@@ -215,7 +215,7 @@ struct net_event_ipv6_nbr {
 struct net_event_ipv6_route {
 	struct in6_addr nexthop;
 	struct in6_addr addr; /* addr/prefix */
-	u8_t prefix_len;
+	uint8_t prefix_len;
 };
 
 #endif /* CONFIG_NET_MGMT_EVENT_INFO */

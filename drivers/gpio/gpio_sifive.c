@@ -47,7 +47,7 @@ struct gpio_sifive_config {
 	struct gpio_driver_config common;
 	uintptr_t            gpio_base_addr;
 	/* multi-level encoded interrupt corresponding to pin 0 */
-	u32_t                gpio_irq_base;
+	uint32_t                gpio_irq_base;
 	sifive_cfg_func_t    gpio_cfg_func;
 };
 
@@ -120,7 +120,7 @@ static void gpio_sifive_irq_handler(void *arg)
 	const struct gpio_sifive_config *cfg = DEV_GPIO_CFG(dev);
 
 	/* Calculate pin and mask from base level 2 line */
-	u8_t pin = 1 + (riscv_plic_get_irq() - (u8_t)(cfg->gpio_irq_base >> 8));
+	uint8_t pin = 1 + (riscv_plic_get_irq() - (uint8_t)(cfg->gpio_irq_base >> 8));
 
 	/* This peripheral tracks each condition separately: a
 	 * transition from low to high will mark the pending bit for

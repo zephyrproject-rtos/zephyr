@@ -70,19 +70,19 @@ struct amg88xx_config {
 	char *i2c_name;
 #ifdef CONFIG_AMG88XX_TRIGGER
 	char *gpio_name;
-	u8_t gpio_pin;
+	uint8_t gpio_pin;
 	gpio_dt_flags_t gpio_flags;
 #endif
-	u8_t i2c_address;
+	uint8_t i2c_address;
 };
 
 struct amg88xx_data {
 	struct device *i2c;
-	s16_t sample[64];
+	int16_t sample[64];
 
 #ifdef CONFIG_AMG88XX_TRIGGER
 	struct device *gpio;
-	u8_t gpio_pin;
+	uint8_t gpio_pin;
 	struct gpio_callback gpio_cb;
 
 	sensor_trigger_handler_t drdy_handler;

@@ -211,7 +211,7 @@
 
 struct lsm9ds0_gyro_config {
 	char *i2c_master_dev_name;
-	u16_t i2c_slave_addr;
+	uint16_t i2c_slave_addr;
 
 #if CONFIG_LSM9DS0_GYRO_TRIGGER_DRDY
 	char *gpio_drdy_dev_name;
@@ -241,8 +241,8 @@ struct lsm9ds0_gyro_data {
 
 	int sample_x, sample_y, sample_z;
 #if defined(CONFIG_LSM9DS0_GYRO_FULLSCALE_RUNTIME)
-	u8_t sample_fs;
-	u8_t fs;
+	uint8_t sample_fs;
+	uint8_t fs;
 #endif
 };
 

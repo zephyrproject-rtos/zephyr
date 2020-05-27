@@ -259,7 +259,7 @@ MODEM_CMD_DEFINE(on_cmd_connect)
 {
 	struct esp_socket *sock;
 	struct esp_data *dev;
-	u8_t link_id;
+	uint8_t link_id;
 
 	link_id = data->match_buf[0] - '0';
 
@@ -276,7 +276,7 @@ MODEM_CMD_DEFINE(on_cmd_closed)
 {
 	struct esp_socket *sock;
 	struct esp_data *dev;
-	u8_t link_id;
+	uint8_t link_id;
 
 	link_id = data->match_buf[0] - '0';
 
@@ -354,7 +354,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ipd)
 	struct esp_socket *sock;
 	struct esp_data *dev;
 	struct net_pkt *pkt;
-	u8_t link_id;
+	uint8_t link_id;
 
 	dev = CONTAINER_OF(data, struct esp_data, cmd_handler_data);
 

@@ -17,7 +17,7 @@ extern "C" {
 
 /** Configuration data */
 struct pwm_stm32_config {
-	u32_t pwm_base;
+	uint32_t pwm_base;
 	/* clock subsystem driving this peripheral */
 	struct stm32_pclken pclken;
 };
@@ -30,7 +30,7 @@ struct pwm_stm32_data {
 	 * Value used to divide the TIM clock.
 	 * Min = 0x0000U, Max = 0xFFFFU
 	 */
-	u32_t pwm_prescaler;
+	uint32_t pwm_prescaler;
 	/* clock device */
 	struct device *clock;
 };

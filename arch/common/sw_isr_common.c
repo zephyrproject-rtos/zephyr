@@ -129,7 +129,7 @@ int __weak arch_irq_connect_dynamic(unsigned int irq,
 				    unsigned int priority,
 				    void (*routine)(void *),
 				    void *parameter,
-				    u32_t flags)
+				    uint32_t flags)
 {
 	ARG_UNUSED(flags);
 	ARG_UNUSED(priority);

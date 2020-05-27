@@ -45,15 +45,15 @@ enum {
 };
 
 struct sensor_hdr_a {
-	u16_t prop_id:11;
-	u16_t length:4;
-	u16_t format:1;
+	uint16_t prop_id:11;
+	uint16_t length:4;
+	uint16_t format:1;
 } __packed;
 
 struct sensor_hdr_b {
-	u8_t length:7;
-	u8_t format:1;
-	u16_t prop_id;
+	uint8_t length:7;
+	uint8_t format:1;
+	uint16_t prop_id;
 } __packed;
 
 static struct k_work hello_work;
@@ -66,7 +66,7 @@ static struct led_onoff_state led_onoff_state[] = {
 	{ .dev_id = 0 },
 };
 
-static void heartbeat(u8_t hops, u16_t feat)
+static void heartbeat(uint8_t hops, uint16_t feat)
 {
 	board_show_text("Heartbeat Received", false, K_SECONDS(2));
 }
@@ -130,8 +130,8 @@ static void gen_onoff_set_unack(struct bt_mesh_model *model,
 	struct net_buf_simple *msg = model->pub->msg;
 	struct led_onoff_state *state = model->user_data;
 	int err;
-	u8_t tid, onoff;
-	s64_t now;
+	uint8_t tid, onoff;
+	int64_t now;
 
 	onoff = net_buf_simple_pull_u8(buf);
 	tid = net_buf_simple_pull_u8(buf);
@@ -206,7 +206,7 @@ static void sens_temperature_celsius_fill(struct net_buf_simple *msg)
 	struct sensor_hdr_a hdr;
 	/* TODO Get only temperature from sensor */
 	struct sensor_value val[2];
-	s16_t temp_degrees;
+	int16_t temp_degrees;
 
 	hdr.format = SENSOR_HDR_A;
 	hdr.length = sizeof(temp_degrees);
@@ -219,7 +219,7 @@ static void sens_temperature_celsius_fill(struct net_buf_simple *msg)
 	net_buf_simple_add_le16(msg, temp_degrees);
 }
 
-static void sens_unknown_fill(u16_t id, struct net_buf_simple *msg)
+static void sens_unknown_fill(uint16_t id, struct net_buf_simple *msg)
 {
 	struct sensor_hdr_b hdr;
 
@@ -239,7 +239,7 @@ static void sens_unknown_fill(u16_t id, struct net_buf_simple *msg)
 	net_buf_simple_add_mem(msg, &hdr, sizeof(hdr));
 }
 
-static void sensor_create_status(u16_t id, struct net_buf_simple *msg)
+static void sensor_create_status(uint16_t id, struct net_buf_simple *msg)
 {
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_SENS_STATUS);
 
@@ -258,7 +258,7 @@ static void sensor_get(struct bt_mesh_model *model,
 		       struct net_buf_simple *buf)
 {
 	NET_BUF_SIMPLE_DEFINE(msg, 1 + MAX_SENS_STATUS_LEN + 4);
-	u16_t sensor_id;
+	uint16_t sensor_id;
 
 	sensor_id = net_buf_simple_pull_le16(buf);
 	sensor_create_status(sensor_id, &msg);
@@ -367,7 +367,7 @@ static void vnd_heartbeat(struct bt_mesh_model *model,
 			  struct bt_mesh_msg_ctx *ctx,
 			  struct net_buf_simple *buf)
 {
-	u8_t init_ttl, hops;
+	uint8_t init_ttl, hops;
 
 	/* Ignore messages from self */
 	if (ctx->addr == bt_mesh_model_elem(model)->addr) {
@@ -489,11 +489,11 @@ void mesh_send_baduser(void)
 
 static int provision_and_configure(void)
 {
-	static const u8_t net_key[16] = {
+	static const uint8_t net_key[16] = {
 		0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc,
 		0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc,
 	};
-	static const u8_t app_key[16] = {
+	static const uint8_t app_key[16] = {
 		0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
 		0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
 	};
@@ -503,8 +503,8 @@ static int provision_and_configure(void)
 		.ttl = DEFAULT_TTL,
 		.period = BT_MESH_PUB_PERIOD_SEC(10),
 	};
-	u8_t dev_key[16];
-	u16_t addr;
+	uint8_t dev_key[16];
+	uint16_t addr;
 	int err;
 
 	err = bt_rand(dev_key, sizeof(dev_key));
@@ -586,14 +586,14 @@ bool mesh_is_initialized(void)
 	return elements[0].addr != BT_MESH_ADDR_UNASSIGNED;
 }
 
-u16_t mesh_get_addr(void)
+uint16_t mesh_get_addr(void)
 {
 	return elements[0].addr;
 }
 
 int mesh_init(void)
 {
-	static const u8_t dev_uuid[16] = { 0xc0, 0xff, 0xee };
+	static const uint8_t dev_uuid[16] = { 0xc0, 0xff, 0xee };
 	static const struct bt_mesh_prov prov = {
 		.uuid = dev_uuid,
 	};

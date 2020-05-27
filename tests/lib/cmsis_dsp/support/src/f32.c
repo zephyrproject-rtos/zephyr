@@ -19,7 +19,7 @@
 #define ABS_ERROR_THRESH_Q15	((q15_t)10)
 #define ABS_ERROR_THRESH_Q31	((q31_t)80)
 
-static void test_arm_copy_f32(const u32_t *input1, size_t length)
+static void test_arm_copy_f32(const uint32_t *input1, size_t length)
 {
 	float32_t *output;
 
@@ -71,7 +71,7 @@ DEFINE_TEST_VARIANT1(arm_fill_f32, 8, 8);
 DEFINE_TEST_VARIANT1(arm_fill_f32, 11, 11);
 
 static void test_arm_float_to_q31(
-	const u32_t *input1, const q31_t *ref, size_t length)
+	const uint32_t *input1, const q31_t *ref, size_t length)
 {
 	q31_t *output;
 
@@ -96,7 +96,7 @@ DEFINE_TEST_VARIANT3(arm_float_to_q31, 8, in_f32, ref_q31, 8);
 DEFINE_TEST_VARIANT3(arm_float_to_q31, 11, in_f32, ref_q31, 11);
 
 static void test_arm_float_to_q15(
-	const u32_t *input1, const q15_t *ref, size_t length)
+	const uint32_t *input1, const q15_t *ref, size_t length)
 {
 	q15_t *output;
 
@@ -121,7 +121,7 @@ DEFINE_TEST_VARIANT3(arm_float_to_q15, 16, in_f32, ref_q15, 16);
 DEFINE_TEST_VARIANT3(arm_float_to_q15, 17, in_f32, ref_q15, 17);
 
 static void test_arm_float_to_q7(
-	const u32_t *input1, const q7_t *ref, size_t length)
+	const uint32_t *input1, const q7_t *ref, size_t length)
 {
 	q7_t *output;
 
@@ -175,7 +175,7 @@ DEFINE_TEST_VARIANT2(arm_weighted_sum_f32, 8, 1, 8);
 DEFINE_TEST_VARIANT2(arm_weighted_sum_f32, 11, 2, 11);
 
 static void test_arm_sort_out(
-	const u32_t *input1, const u32_t *ref, size_t length,
+	const uint32_t *input1, const uint32_t *ref, size_t length,
 	arm_sort_alg alg, arm_sort_dir dir)
 {
 	float32_t *output;
@@ -229,7 +229,7 @@ DEFINE_TEST_VARIANT5(arm_sort_out, selection_11,
 	ARM_SORT_SELECTION, ARM_SORT_ASCENDING);
 
 static void test_arm_merge_sort_out(
-	const u32_t *input1, const u32_t *ref, size_t length,
+	const uint32_t *input1, const uint32_t *ref, size_t length,
 	arm_sort_dir dir)
 {
 	float32_t *output;
@@ -264,7 +264,7 @@ DEFINE_TEST_VARIANT4(arm_merge_sort_out, 11,
 	in_sort, ref_sort, 11, ARM_SORT_ASCENDING);
 
 static void test_arm_sort_in(
-	const u32_t *input1, const u32_t *ref, size_t length,
+	const uint32_t *input1, const uint32_t *ref, size_t length,
 	arm_sort_alg alg, arm_sort_dir dir)
 {
 	float32_t *output;
@@ -317,7 +317,7 @@ DEFINE_TEST_VARIANT5(arm_sort_in, selection_11,
 	ARM_SORT_SELECTION, ARM_SORT_ASCENDING);
 
 static void test_arm_sort_const(
-	const u32_t *input1, const u32_t *ref, size_t length,
+	const uint32_t *input1, const uint32_t *ref, size_t length,
 	arm_sort_alg alg, arm_sort_dir dir)
 {
 	float32_t *output;
@@ -367,7 +367,7 @@ DEFINE_TEST_VARIANT5(arm_sort_const, selection_16,
 	ARM_SORT_SELECTION, ARM_SORT_ASCENDING);
 
 static void test_arm_merge_sort_const(
-	const u32_t *input1, const u32_t *ref, size_t length,
+	const uint32_t *input1, const uint32_t *ref, size_t length,
 	arm_sort_dir dir)
 {
 	float32_t *output;
@@ -402,9 +402,9 @@ DEFINE_TEST_VARIANT4(arm_merge_sort_const, 16,
 	in_sort_const, ref_sort_const, 16, ARM_SORT_ASCENDING);
 
 static void test_arm_spline(
-	const u32_t *input_x, const u32_t *input_y,
-	const u32_t *input_xq, const u32_t *ref, size_t length,
-	u32_t n, arm_spline_type type)
+	const uint32_t *input_x, const uint32_t *input_y,
+	const uint32_t *input_xq, const uint32_t *ref, size_t length,
+	uint32_t n, arm_spline_type type)
 {
 	float32_t *output;
 	float32_t *scratch;

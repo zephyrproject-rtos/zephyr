@@ -35,11 +35,11 @@ static float sqrt(float square)
 	return root;
 }
 
-static s32_t ceiling(float num)
+static int32_t ceiling(float num)
 {
-	s32_t inum;
+	int32_t inum;
 
-	inum = (s32_t) num;
+	inum = (int32_t) num;
 	if (num == (float) inum) {
 		return inum;
 	}
@@ -47,21 +47,21 @@ static s32_t ceiling(float num)
 	return inum + 1;
 }
 
-static u16_t actual_to_linear(u16_t val)
+static uint16_t actual_to_linear(uint16_t val)
 {
 	float tmp;
 
 	tmp = ((float) val / UINT16_MAX);
 
-	return (u16_t) ceiling(UINT16_MAX * tmp * tmp);
+	return (uint16_t) ceiling(UINT16_MAX * tmp * tmp);
 }
 
-static u16_t linear_to_actual(u16_t val)
+static uint16_t linear_to_actual(uint16_t val)
 {
-	return (u16_t) (UINT16_MAX * sqrt(((float) val / UINT16_MAX)));
+	return (uint16_t) (UINT16_MAX * sqrt(((float) val / UINT16_MAX)));
 }
 
-u16_t constrain_lightness(u16_t light)
+uint16_t constrain_lightness(uint16_t light)
 {
 	if (light > 0 && light < ctl->light->range_min) {
 		light = ctl->light->range_min;
@@ -87,7 +87,7 @@ static void constrain_target_lightness2(void)
 	}
 }
 
-u16_t constrain_temperature(u16_t temp)
+uint16_t constrain_temperature(uint16_t temp)
 {
 	if (temp < ctl->temp->range_min) {
 		temp = ctl->temp->range_min;
@@ -98,7 +98,7 @@ u16_t constrain_temperature(u16_t temp)
 	return temp;
 }
 
-static s16_t light_ctl_temp_to_level(u16_t temp)
+static int16_t light_ctl_temp_to_level(uint16_t temp)
 {
 	float tmp;
 
@@ -108,34 +108,34 @@ static s16_t light_ctl_temp_to_level(u16_t temp)
 
 	tmp = tmp / (ctl->temp->range_max - ctl->temp->range_min);
 
-	return (s16_t) (tmp + INT16_MIN);
+	return (int16_t) (tmp + INT16_MIN);
 
 	/* 6.1.3.1.1 2nd formula end */
 }
 
-u16_t level_to_light_ctl_temp(s16_t level)
+uint16_t level_to_light_ctl_temp(int16_t level)
 {
-	u16_t tmp;
+	uint16_t tmp;
 	float diff;
 
 	/* Mesh Model Specification 6.1.3.1.1 1st formula start */
 	diff = (float) (ctl->temp->range_max - ctl->temp->range_min) /
 		       UINT16_MAX;
 
-	tmp = (u16_t) ((level - INT16_MIN) * diff);
+	tmp = (uint16_t) ((level - INT16_MIN) * diff);
 
 	return (ctl->temp->range_min + tmp);
 
 	/* 6.1.3.1.1 1st formula end */
 }
 
-void set_target(u8_t type, void *dptr)
+void set_target(uint8_t type, void *dptr)
 {
 	switch (type) {
 	case ONOFF: {
-		u8_t onoff;
+		uint8_t onoff;
 
-		onoff = *((u8_t *) dptr);
+		onoff = *((uint8_t *) dptr);
 		if (onoff == STATE_OFF) {
 			ctl->light->target = 0U;
 		} else if (onoff == STATE_ON) {
@@ -148,40 +148,40 @@ void set_target(u8_t type, void *dptr)
 	}
 	break;
 	case LEVEL_LIGHT:
-		ctl->light->target = *((s16_t *) dptr) - INT16_MIN;
+		ctl->light->target = *((int16_t *) dptr) - INT16_MIN;
 		ctl->light->target = constrain_lightness(ctl->light->target);
 		break;
 	case DELTA_LEVEL_LIGHT:
-		ctl->light->target =  *((s16_t *) dptr) - INT16_MIN;
+		ctl->light->target =  *((int16_t *) dptr) - INT16_MIN;
 		constrain_target_lightness2();
 		break;
 	case MOVE_LIGHT:
-		ctl->light->target = *((u16_t *) dptr);
+		ctl->light->target = *((uint16_t *) dptr);
 		break;
 	case ACTUAL:
-		ctl->light->target = *((u16_t *) dptr);
+		ctl->light->target = *((uint16_t *) dptr);
 		ctl->light->target = constrain_lightness(ctl->light->target);
 		break;
 	case LINEAR:
-		ctl->light->target = linear_to_actual(*((u16_t *) dptr));
+		ctl->light->target = linear_to_actual(*((uint16_t *) dptr));
 		ctl->light->target = constrain_lightness(ctl->light->target);
 		break;
 	case CTL_LIGHT:
-		ctl->light->target = *((u16_t *) dptr);
+		ctl->light->target = *((uint16_t *) dptr);
 		ctl->light->target = constrain_lightness(ctl->light->target);
 		break;
 	case LEVEL_TEMP:
-		ctl->temp->target = level_to_light_ctl_temp(*((s16_t *) dptr));
+		ctl->temp->target = level_to_light_ctl_temp(*((int16_t *) dptr));
 		break;
 	case MOVE_TEMP:
-		ctl->temp->target = *((u16_t *) dptr);
+		ctl->temp->target = *((uint16_t *) dptr);
 		break;
 	case CTL_TEMP:
-		ctl->temp->target = *((u16_t *) dptr);
+		ctl->temp->target = *((uint16_t *) dptr);
 		ctl->temp->target = constrain_temperature(ctl->temp->target);
 		break;
 	case CTL_DELTA_UV:
-		ctl->duv->target = *((s16_t *) dptr);
+		ctl->duv->target = *((int16_t *) dptr);
 		break;
 	default:
 		return;
@@ -192,7 +192,7 @@ void set_target(u8_t type, void *dptr)
 	}
 }
 
-int get_current(u8_t type)
+int get_current(uint8_t type)
 {
 	switch (type) {
 	case ONOFF:
@@ -206,7 +206,7 @@ int get_current(u8_t type)
 			}
 		}
 	case LEVEL_LIGHT:
-		return (s16_t) (ctl->light->current + INT16_MIN);
+		return (int16_t) (ctl->light->current + INT16_MIN);
 	case ACTUAL:
 		return ctl->light->current;
 	case LINEAR:
@@ -224,7 +224,7 @@ int get_current(u8_t type)
 	}
 }
 
-int get_target(u8_t type)
+int get_target(uint8_t type)
 {
 	switch (type) {
 	case ONOFF:
@@ -234,7 +234,7 @@ int get_target(u8_t type)
 			return STATE_OFF;
 		}
 	case LEVEL_LIGHT:
-		return (s16_t) (ctl->light->target + INT16_MIN);
+		return (int16_t) (ctl->light->target + INT16_MIN);
 	case ACTUAL:
 		return ctl->light->target;
 	case LINEAR:

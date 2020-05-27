@@ -25,7 +25,7 @@ static enum net_verdict ipcp_handle(struct ppp_context *ctx,
 	return ppp_fsm_input(&ctx->ipcp.fsm, PPP_IPCP, pkt);
 }
 
-static bool append_to_buf(struct net_buf *buf, u8_t *data, u8_t data_len)
+static bool append_to_buf(struct net_buf *buf, uint8_t *data, uint8_t data_len)
 {
 	if (data_len > net_buf_tailroom(buf)) {
 		return false;
@@ -50,14 +50,14 @@ static struct net_buf *ipcp_config_info_add(struct ppp_fsm *fsm)
 					       ipcp.fsm);
 
 	/* Currently we support IP address and DNS servers */
-	u8_t options[3 * IP_ADDRESS_OPTION_LEN];
+	uint8_t options[3 * IP_ADDRESS_OPTION_LEN];
 	const struct in_addr *my_addr;
 	struct net_buf *buf;
 	bool added;
 
 	my_addr = &ctx->ipcp.my_options.address;
 
-	u8_t *option = options;
+	uint8_t *option = options;
 	option[0] = IPCP_OPTION_IP_ADDRESS;
 	option[1] = IP_ADDRESS_OPTION_LEN;
 	memcpy(&option[2], &my_addr->s_addr, sizeof(my_addr->s_addr));
@@ -99,7 +99,7 @@ out_of_mem:
 
 static int ipcp_config_info_req(struct ppp_fsm *fsm,
 				struct net_pkt *pkt,
-				u16_t length,
+				uint16_t length,
 				struct net_buf **ret_buf)
 {
 	int nack_idx = 0, address_option_idx = -1;
@@ -213,7 +213,7 @@ static int ipcp_config_info_req(struct ppp_fsm *fsm,
 		net_pkt_cursor_restore(pkt,
 				       &options[address_option_idx].value);
 
-		ret = net_pkt_read(pkt, (u32_t *)&addr, sizeof(addr));
+		ret = net_pkt_read(pkt, (uint32_t *)&addr, sizeof(addr));
 		if (ret < 0) {
 			/* Should not happen, is the pkt corrupt? */
 			return -EMSGSIZE;
@@ -234,7 +234,7 @@ static int ipcp_config_info_req(struct ppp_fsm *fsm,
 
 		if (addr.s_addr) {
 			bool added;
-			u8_t val;
+			uint8_t val;
 
 			/* The address is the remote address, we then need
 			 * to figure out what our address should be.
@@ -260,7 +260,7 @@ static int ipcp_config_info_req(struct ppp_fsm *fsm,
 				goto bail_out;
 			}
 
-			added = append_to_buf(buf, (u8_t *)&addr.s_addr,
+			added = append_to_buf(buf, (uint8_t *)&addr.s_addr,
 					      sizeof(addr.s_addr));
 			if (!added) {
 				goto bail_out;
@@ -334,7 +334,7 @@ static void ipcp_set_dns_servers(struct ppp_fsm *fsm)
 
 static int ipcp_config_info_nack(struct ppp_fsm *fsm,
 				 struct net_pkt *pkt,
-				 u16_t length,
+				 uint16_t length,
 				 bool rejected)
 {
 	struct ppp_context *ctx = CONTAINER_OF(fsm, struct ppp_context,
@@ -391,7 +391,7 @@ static int ipcp_config_info_nack(struct ppp_fsm *fsm,
 
 		net_pkt_cursor_restore(pkt, &nack_options[i].value);
 
-		ret = net_pkt_read(pkt, (u32_t *)&addr, sizeof(addr));
+		ret = net_pkt_read(pkt, (uint32_t *)&addr, sizeof(addr));
 		if (ret < 0) {
 			/* Should not happen, is the pkt corrupt? */
 			return -EMSGSIZE;
@@ -438,7 +438,7 @@ static void ipcp_open(struct ppp_context *ctx)
 	ppp_fsm_open(&ctx->ipcp.fsm);
 }
 
-static void ipcp_close(struct ppp_context *ctx, const u8_t *reason)
+static void ipcp_close(struct ppp_context *ctx, const uint8_t *reason)
 {
 	ppp_fsm_close(&ctx->ipcp.fsm, reason);
 }

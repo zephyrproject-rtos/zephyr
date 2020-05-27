@@ -37,24 +37,24 @@ struct spi_cs_control spi_cs = {
 
 #define STACK_SIZE 512
 #define BUF_SIZE 17
-u8_t buffer_tx[] = "0123456789abcdef\0";
-u8_t buffer_rx[BUF_SIZE] = {};
+uint8_t buffer_tx[] = "0123456789abcdef\0";
+uint8_t buffer_rx[BUF_SIZE] = {};
 
 #define BUF2_SIZE 36
-u8_t buffer2_tx[] = "Thequickbrownfoxjumpsoverthelazydog\0";
-u8_t buffer2_rx[BUF2_SIZE] = {};
+uint8_t buffer2_tx[] = "Thequickbrownfoxjumpsoverthelazydog\0";
+uint8_t buffer2_rx[BUF2_SIZE] = {};
 
 /*
  * We need 5x(buffer size) + 1 to print a comma-separated list of each
  * byte in hex, plus a null.
  */
-u8_t buffer_print_tx[BUF_SIZE * 5 + 1];
-u8_t buffer_print_rx[BUF_SIZE * 5 + 1];
+uint8_t buffer_print_tx[BUF_SIZE * 5 + 1];
+uint8_t buffer_print_rx[BUF_SIZE * 5 + 1];
 
-u8_t buffer_print_tx2[BUF2_SIZE * 5 + 1];
-u8_t buffer_print_rx2[BUF2_SIZE * 5 + 1];
+uint8_t buffer_print_tx2[BUF2_SIZE * 5 + 1];
+uint8_t buffer_print_rx2[BUF2_SIZE * 5 + 1];
 
-static void to_display_format(const u8_t *src, size_t size, char *dst)
+static void to_display_format(const uint8_t *src, size_t size, char *dst)
 {
 	size_t i;
 
@@ -219,7 +219,7 @@ static int spi_complete_loop(struct device *dev, struct spi_config *spi_conf)
 
 static int spi_null_tx_buf(struct device *dev, struct spi_config *spi_conf)
 {
-	static const u8_t EXPECTED_NOP_RETURN_BUF[BUF_SIZE] = { 0 };
+	static const uint8_t EXPECTED_NOP_RETURN_BUF[BUF_SIZE] = { 0 };
 	(void)memset(buffer_rx, 0x77, BUF_SIZE);
 
 	const struct spi_buf tx_bufs[] = {

@@ -60,7 +60,7 @@ struct uart_mux {
 	atomic_t init_done;
 
 	/* Temporary buffer when reading data in ISR */
-	u8_t rx_buf[CONFIG_UART_MUX_TEMP_BUF_SIZE];
+	uint8_t rx_buf[CONFIG_UART_MUX_TEMP_BUF_SIZE];
 };
 
 #define DEFINE_UART_MUX(x, _)						\
@@ -154,7 +154,7 @@ static void uart_mux_cb_work(struct k_work *work)
 static void uart_mux_rx_work(struct k_work *work)
 {
 	struct uart_mux *uart_mux;
-	u8_t *data;
+	uint8_t *data;
 	size_t len;
 	int ret;
 
@@ -191,7 +191,7 @@ static void uart_mux_tx_work(struct k_work *work)
 {
 	struct uart_mux_dev_data *dev_data =
 		CONTAINER_OF(work, struct uart_mux_dev_data, tx_work);
-	u8_t *data;
+	uint8_t *data;
 	size_t len;
 
 	len = ring_buf_get_claim(dev_data->tx_ringbuf, &data,
@@ -271,7 +271,7 @@ static void uart_mux_isr(void *user_data)
 
 static void uart_mux_flush_isr(struct device *dev)
 {
-	u8_t c;
+	uint8_t c;
 
 	while (uart_fifo_read(dev, &c, 1) > 0) {
 		continue;
@@ -460,7 +460,7 @@ static int uart_mux_config_get(struct device *dev, struct uart_config *cfg)
 	return -ENOTSUP;
 }
 
-static int uart_mux_fifo_fill(struct device *dev, const u8_t *tx_data, int len)
+static int uart_mux_fifo_fill(struct device *dev, const uint8_t *tx_data, int len)
 {
 	struct uart_mux_dev_data *dev_data;
 	size_t wrote;
@@ -494,10 +494,10 @@ static int uart_mux_fifo_fill(struct device *dev, const u8_t *tx_data, int len)
 	return wrote;
 }
 
-static int uart_mux_fifo_read(struct device *dev, u8_t *rx_data, const int size)
+static int uart_mux_fifo_read(struct device *dev, uint8_t *rx_data, const int size)
 {
 	struct uart_mux_dev_data *dev_data;
-	u32_t len;
+	uint32_t len;
 
 	if (dev == NULL) {
 		return -EINVAL;
@@ -728,7 +728,7 @@ struct device *z_impl_uart_mux_find(int dlci_address)
 	return NULL;
 }
 
-int uart_mux_send(struct device *uart, const u8_t *buf, size_t size)
+int uart_mux_send(struct device *uart, const uint8_t *buf, size_t size)
 {
 	struct uart_mux_dev_data *dev_data = DEV_DATA(uart);
 
@@ -759,7 +759,7 @@ int uart_mux_send(struct device *uart, const u8_t *buf, size_t size)
 	return 0;
 }
 
-int uart_mux_recv(struct device *mux, struct gsm_dlci *dlci, u8_t *data,
+int uart_mux_recv(struct device *mux, struct gsm_dlci *dlci, uint8_t *data,
 		  size_t len)
 {
 	struct uart_mux_dev_data *dev_data = DEV_DATA(mux);

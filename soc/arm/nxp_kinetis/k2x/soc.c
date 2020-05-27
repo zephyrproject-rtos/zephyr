@@ -127,7 +127,7 @@ static int fsl_frdm_k22f_init(struct device *arg)
 	unsigned int oldLevel; /* old interrupt lock level */
 #if !defined(CONFIG_ARM_MPU)
 #if defined(SYSMPU)
-	u32_t temp_reg;
+	uint32_t temp_reg;
 #endif
 #endif /* !CONFIG_ARM_MPU */
 

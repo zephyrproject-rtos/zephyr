@@ -20,7 +20,7 @@
 
 LOG_MODULE_REGISTER(MCP9808, CONFIG_SENSOR_LOG_LEVEL);
 
-int mcp9808_reg_read(struct device *dev, u8_t reg, u16_t *val)
+int mcp9808_reg_read(struct device *dev, uint8_t reg, uint16_t *val)
 {
 	const struct mcp9808_data *data = dev->driver_data;
 	const struct mcp9808_config *cfg = dev->config_info;

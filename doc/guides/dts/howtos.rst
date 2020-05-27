@@ -370,13 +370,13 @@ device-specific configuration and data structures and API functions, like this:
    	/* per-device values to store in RAM */
    };
    struct my_dev_cfg {
-   	u32_t freq; /* Just an example: initial clock frequency in Hz */
+   	uint32_t freq; /* Just an example: initial clock frequency in Hz */
    	/* other configuration to store in ROM */
    };
 
    /* Implement driver API functions (drivers/some_api.h callbacks): */
-   static int my_driver_api_func1(struct device *dev, u32_t *foo) { /* ... */ }
-   static int my_driver_api_func2(struct device *dev, u64_t bar) { /* ... */ }
+   static int my_driver_api_func1(struct device *dev, uint32_t *foo) { /* ... */ }
+   static int my_driver_api_func2(struct device *dev, uint64_t bar) { /* ... */ }
    static struct some_api my_api_funcs = {
    	.func1 = my_driver_api_func1,
    	.func2 = my_driver_api_func2,

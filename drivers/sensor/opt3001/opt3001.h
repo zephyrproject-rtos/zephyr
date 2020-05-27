@@ -25,7 +25,7 @@
 
 struct opt3001_data {
 	struct device *i2c;
-	u16_t sample;
+	uint16_t sample;
 };
 
 #endif /* _SENSOR_OPT3001_ */

@@ -17,10 +17,10 @@
 #define REL_ERROR_THRESH	(1.0e-5)
 
 static void test_arm_max_f32(
-	const u32_t *input1, int ref_index, size_t length)
+	const uint32_t *input1, int ref_index, size_t length)
 {
 	float32_t val;
-	u32_t index;
+	uint32_t index;
 
 	/* Run test function */
 	arm_max_f32((float32_t *)input1, length, &val, &index);
@@ -38,7 +38,7 @@ DEFINE_TEST_VARIANT3(arm_max_f32, 8, in_com1, 1, 8);
 DEFINE_TEST_VARIANT3(arm_max_f32, 11, in_com1, 2, 11);
 
 static void test_arm_max_no_idx_f32(
-	const u32_t *input1, int ref_index, size_t length)
+	const uint32_t *input1, int ref_index, size_t length)
 {
 	float32_t val;
 
@@ -55,10 +55,10 @@ DEFINE_TEST_VARIANT3(arm_max_no_idx_f32, 8, in_com1, 1, 8);
 DEFINE_TEST_VARIANT3(arm_max_no_idx_f32, 11, in_com1, 2, 11);
 
 static void test_arm_min_f32(
-	const u32_t *input1, int ref_index, size_t length)
+	const uint32_t *input1, int ref_index, size_t length)
 {
 	float32_t val;
-	u32_t index;
+	uint32_t index;
 
 	/* Run test function */
 	arm_min_f32((float32_t *)input1, length, &val, &index);
@@ -76,7 +76,7 @@ DEFINE_TEST_VARIANT3(arm_min_f32, 8, in_com1, 1, 8);
 DEFINE_TEST_VARIANT3(arm_min_f32, 11, in_com1, 2, 11);
 
 static void test_arm_mean_f32(
-	const u32_t *input1, int ref_index, size_t length)
+	const uint32_t *input1, int ref_index, size_t length)
 {
 	float32_t ref[1];
 	float32_t *output;
@@ -109,7 +109,7 @@ DEFINE_TEST_VARIANT3(arm_mean_f32, 8, in_com2, 1, 8);
 DEFINE_TEST_VARIANT3(arm_mean_f32, 11, in_com2, 2, 11);
 
 static void test_arm_power_f32(
-	const u32_t *input1, int ref_index, size_t length)
+	const uint32_t *input1, int ref_index, size_t length)
 {
 	float32_t ref[1];
 	float32_t *output;
@@ -142,7 +142,7 @@ DEFINE_TEST_VARIANT3(arm_power_f32, 8, in_com1, 1, 8);
 DEFINE_TEST_VARIANT3(arm_power_f32, 11, in_com1, 2, 11);
 
 static void test_arm_rms_f32(
-	const u32_t *input1, int ref_index, size_t length)
+	const uint32_t *input1, int ref_index, size_t length)
 {
 	float32_t ref[1];
 	float32_t *output;
@@ -175,7 +175,7 @@ DEFINE_TEST_VARIANT3(arm_rms_f32, 8, in_com1, 1, 8);
 DEFINE_TEST_VARIANT3(arm_rms_f32, 11, in_com1, 2, 11);
 
 static void test_arm_std_f32(
-	const u32_t *input1, int ref_index, size_t length)
+	const uint32_t *input1, int ref_index, size_t length)
 {
 	float32_t ref[1];
 	float32_t *output;
@@ -208,7 +208,7 @@ DEFINE_TEST_VARIANT3(arm_std_f32, 8, in_com1, 1, 8);
 DEFINE_TEST_VARIANT3(arm_std_f32, 11, in_com1, 2, 11);
 
 static void test_arm_var_f32(
-	const u32_t *input1, int ref_index, size_t length)
+	const uint32_t *input1, int ref_index, size_t length)
 {
 	float32_t ref[1];
 	float32_t *output;

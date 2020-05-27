@@ -11,17 +11,17 @@
 #endif
 
 void board_button_1_pressed(void);
-u16_t board_set_target(void);
+uint16_t board_set_target(void);
 void board_play(const char *str);
 
 #if defined(CONFIG_BOARD_BBC_MICROBIT)
-void board_init(u16_t *addr);
+void board_init(uint16_t *addr);
 void board_play_tune(const char *str);
-void board_heartbeat(u8_t hops, u16_t feat);
-void board_other_dev_pressed(u16_t addr);
+void board_heartbeat(uint8_t hops, uint16_t feat);
+void board_other_dev_pressed(uint16_t addr);
 void board_attention(bool attention);
 #else
-static inline void board_init(u16_t *addr)
+static inline void board_init(uint16_t *addr)
 {
 	*addr = NODE_ADDR;
 }
@@ -30,11 +30,11 @@ static inline void board_play_tune(const char *str)
 {
 }
 
-void board_heartbeat(u8_t hops, u16_t feat)
+void board_heartbeat(uint8_t hops, uint16_t feat)
 {
 }
 
-void board_other_dev_pressed(u16_t addr)
+void board_other_dev_pressed(uint16_t addr)
 {
 }
 

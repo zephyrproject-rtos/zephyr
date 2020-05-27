@@ -20,10 +20,10 @@ K_APPMEM_PARTITION_DEFINE(bench_ptn);
 struct k_mem_domain bench_domain;
 
 extern char sline[256];
-extern u64_t arch_timing_enter_user_mode_end;
+extern uint64_t arch_timing_enter_user_mode_end;
 
-u32_t drop_to_user_mode_end_time, drop_to_user_mode_start_time;
-u32_t user_thread_creation_end_time, user_thread_creation_start_time;
+uint32_t drop_to_user_mode_end_time, drop_to_user_mode_start_time;
+uint32_t user_thread_creation_end_time, user_thread_creation_start_time;
 
 struct k_thread my_thread_user;
 K_THREAD_STACK_EXTERN(my_stack_area);
@@ -32,13 +32,13 @@ K_THREAD_STACK_EXTERN(my_stack_area_0);
 
 /******************************************************************************/
 /* syscall needed to read timer value when in user space */
-u32_t z_impl_userspace_read_timer_value(void)
+uint32_t z_impl_userspace_read_timer_value(void)
 {
 	TIMING_INFO_PRE_READ();
 	return TIMING_INFO_GET_TIMER_VALUE();
 }
 
-static inline u32_t z_vrfy_userspace_read_timer_value(void)
+static inline uint32_t z_vrfy_userspace_read_timer_value(void)
 {
 	TIMING_INFO_PRE_READ();
 	return TIMING_INFO_GET_TIMER_VALUE();
@@ -73,7 +73,7 @@ void userspace_bench(void)
 
 void test_drop_to_user_mode_1(void *p1, void *p2, void *p3)
 {
-	volatile u32_t dummy = 100U;
+	volatile uint32_t dummy = 100U;
 
 	dummy++;
 }
@@ -104,21 +104,21 @@ void drop_to_user_mode(void)
 
 	k_yield();
 
-	drop_to_user_mode_end_time = (u32_t)
+	drop_to_user_mode_end_time = (uint32_t)
 		SUBTRACT_CLOCK_CYCLES(arch_timing_enter_user_mode_end);
 
-	u32_t tmp_start_time =
+	uint32_t tmp_start_time =
 		SUBTRACT_CLOCK_CYCLES(drop_to_user_mode_start_time);
 
-	u32_t total_drop_to_user_mode_time =
-		CYCLES_TO_NS((u32_t)
+	uint32_t total_drop_to_user_mode_time =
+		CYCLES_TO_NS((uint32_t)
 			     ((drop_to_user_mode_end_time - tmp_start_time) &
 			      0xFFFFFFFFULL));
 
 	PRINT_STATS("Drop to user mode",
-		    (u32_t)((drop_to_user_mode_end_time - tmp_start_time) &
+		    (uint32_t)((drop_to_user_mode_end_time - tmp_start_time) &
 		     0xFFFFFFFFULL),
-		    (u32_t) (total_drop_to_user_mode_time  & 0xFFFFFFFFULL));
+		    (uint32_t) (total_drop_to_user_mode_time  & 0xFFFFFFFFULL));
 
 
 
@@ -127,7 +127,7 @@ void drop_to_user_mode(void)
 /******************************************************************************/
 void user_thread_creation(void)
 {
-	u32_t total_user_thread_creation_time;
+	uint32_t total_user_thread_creation_time;
 
 	TIMING_INFO_PRE_READ();
 	user_thread_creation_start_time = TIMING_INFO_GET_TIMER_VALUE();
@@ -141,7 +141,7 @@ void user_thread_creation(void)
 	user_thread_creation_end_time = TIMING_INFO_GET_TIMER_VALUE();
 	k_thread_abort(&my_thread_user);
 
-	u32_t total_cycles = (u32_t)
+	uint32_t total_cycles = (uint32_t)
 		((SUBTRACT_CLOCK_CYCLES(user_thread_creation_end_time) -
 		  SUBTRACT_CLOCK_CYCLES(user_thread_creation_start_time)) &
 		 0xFFFFFFFFULL);
@@ -150,13 +150,13 @@ void user_thread_creation(void)
 
 	PRINT_STATS("User thread Creation",
 		    total_cycles,
-		    (u32_t) (total_user_thread_creation_time  & 0xFFFFFFFFULL));
+		    (uint32_t) (total_user_thread_creation_time  & 0xFFFFFFFFULL));
 
 }
 
 /******************************************************************************/
 /* dummy syscalls creation */
-K_APP_BMEM(bench_ptn) u32_t syscall_overhead_start_time,
+K_APP_BMEM(bench_ptn) uint32_t syscall_overhead_start_time,
 	syscall_overhead_end_time;
 
 int z_impl_k_dummy_syscall(void)
@@ -184,7 +184,7 @@ void syscall_overhead_user_thread(void *p1, void *p2, void *p3)
 
 void syscall_overhead(void)
 {
-	u32_t total_syscall_overhead_time;
+	uint32_t total_syscall_overhead_time;
 
 	k_thread_create(&my_thread_user, my_stack_area_0, STACK_SIZE,
 			syscall_overhead_user_thread,
@@ -192,7 +192,7 @@ void syscall_overhead(void)
 			-1 /*priority*/, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
 
-	u32_t total_cycles = (u32_t)
+	uint32_t total_cycles = (uint32_t)
 		((SUBTRACT_CLOCK_CYCLES(syscall_overhead_end_time) -
 		  SUBTRACT_CLOCK_CYCLES(syscall_overhead_start_time)) &
 		 0xFFFFFFFFULL);
@@ -201,16 +201,16 @@ void syscall_overhead(void)
 
 	PRINT_STATS("Syscall overhead",
 		    total_cycles,
-		    (u32_t) (total_syscall_overhead_time  & 0xFFFFFFFFULL));
+		    (uint32_t) (total_syscall_overhead_time  & 0xFFFFFFFFULL));
 
 }
 
 /******************************************************************************/
 K_SEM_DEFINE(test_sema, 1, 10);
-u32_t validation_overhead_obj_init_start_time;
-u32_t validation_overhead_obj_init_end_time;
-u32_t validation_overhead_obj_start_time;
-u32_t validation_overhead_obj_end_time;
+uint32_t validation_overhead_obj_init_start_time;
+uint32_t validation_overhead_obj_init_end_time;
+uint32_t validation_overhead_obj_start_time;
+uint32_t validation_overhead_obj_end_time;
 
 int z_impl_validation_overhead_syscall(void)
 {
@@ -256,30 +256,30 @@ void validation_overhead(void)
 			-1 /*priority*/, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
 
-	u32_t total_cycles_obj_init = (u32_t)
+	uint32_t total_cycles_obj_init = (uint32_t)
 		((SUBTRACT_CLOCK_CYCLES(validation_overhead_obj_init_end_time) -
 		  SUBTRACT_CLOCK_CYCLES(validation_overhead_obj_init_start_time)
 		  ) & 0xFFFFFFFFULL);
 
-	u32_t total_cycles_obj = (u32_t)
+	uint32_t total_cycles_obj = (uint32_t)
 		((SUBTRACT_CLOCK_CYCLES(validation_overhead_obj_end_time) -
 		  SUBTRACT_CLOCK_CYCLES(validation_overhead_obj_start_time)) &
 		 0xFFFFFFFFULL);
 
-	u32_t total_validation_overhead_obj_init_time =
+	uint32_t total_validation_overhead_obj_init_time =
 		CYCLES_TO_NS(total_cycles_obj_init);
 
-	u32_t  total_validation_overhead_obj_time =
+	uint32_t  total_validation_overhead_obj_time =
 		CYCLES_TO_NS(total_cycles_obj);
 
 	PRINT_STATS("Validation overhead k object init",
 		    total_cycles_obj_init,
-		    (u32_t) (total_validation_overhead_obj_init_time  &
+		    (uint32_t) (total_validation_overhead_obj_init_time  &
 			     0xFFFFFFFFULL));
 
 	PRINT_STATS("Validation overhead k object permission",
 		    total_cycles_obj,
-		    (u32_t) (total_validation_overhead_obj_time  &
+		    (uint32_t) (total_validation_overhead_obj_time  &
 			     0xFFFFFFFFULL));
 
 

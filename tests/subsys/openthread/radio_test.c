@@ -38,15 +38,15 @@ energy_scan_done_cb_t scan_done_cb;
 otInstance *ot = (otInstance *)0xAAAA;
 
 /* forward declarations */
-static int scan_mock(struct device *dev, u16_t duration,
+static int scan_mock(struct device *dev, uint16_t duration,
 		     energy_scan_done_cb_t done_cb);
 static enum ieee802154_hw_caps get_capabilities(struct device *dev);
 static int cca_mock(struct device *dev);
-static int set_channel_mock(struct device *dev, u16_t channel);
+static int set_channel_mock(struct device *dev, uint16_t channel);
 static int filter_mock(struct device *dev, bool set,
 		       enum ieee802154_filter_type type,
 		       const struct ieee802154_filter *filter);
-static int set_txpower_mock(struct device *dev, s16_t dbm);
+static int set_txpower_mock(struct device *dev, int16_t dbm);
 static int tx_mock(struct device *dev, enum ieee802154_tx_mode mode,
 		   struct net_pkt *pkt, struct net_buf *frag);
 static int start_mock(struct device *dev);
@@ -73,7 +73,7 @@ static struct ieee802154_radio_api rapi = {
 
 static struct device radio = { .driver_api = &rapi };
 
-static int scan_mock(struct device *dev, u16_t duration,
+static int scan_mock(struct device *dev, uint16_t duration,
 		     energy_scan_done_cb_t done_cb)
 {
 	zassert_equal(dev, &radio, "Device handle incorrect.");
@@ -82,7 +82,7 @@ static int scan_mock(struct device *dev, u16_t duration,
 	return ztest_get_return_value();
 }
 
-static int rssi_scan_mock(struct device *dev, u16_t duration,
+static int rssi_scan_mock(struct device *dev, uint16_t duration,
 			  energy_scan_done_cb_t done_cb)
 {
 	zassert_equal(dev, &radio, "Device handle incorrect.");
@@ -95,7 +95,7 @@ static int rssi_scan_mock(struct device *dev, u16_t duration,
 	return 0;
 }
 
-static int set_channel_mock(struct device *dev, u16_t channel)
+static int set_channel_mock(struct device *dev, uint16_t channel)
 {
 	zassert_equal(dev, &radio, "Device handle incorrect.");
 	ztest_check_expected_value(channel);
@@ -239,7 +239,7 @@ static int filter_mock(struct device *dev, bool set,
 	return 0;
 }
 
-static int set_txpower_mock(struct device *dev, s16_t dbm)
+static int set_txpower_mock(struct device *dev, int16_t dbm)
 {
 	zassert_equal(dev, &radio, "Device handle incorrect.");
 	ztest_check_expected_value(dbm);
@@ -285,9 +285,9 @@ void otPlatRadioTxStarted(otInstance *aInstance, otRadioFrame *aFrame)
  */
 static void test_energy_scan_immediate_test(void)
 {
-	const u8_t chan = 10;
-	const u8_t dur = 100;
-	const s16_t energy = -94;
+	const uint8_t chan = 10;
+	const uint8_t dur = 100;
+	const int16_t energy = -94;
 
 	scan_done_cb = NULL;
 
@@ -317,9 +317,9 @@ static void test_energy_scan_immediate_test(void)
  */
 static void test_energy_scan_delayed_test(void)
 {
-	const u8_t chan = 10;
-	const u8_t dur = 100;
-	const s16_t energy = -94;
+	const uint8_t chan = 10;
+	const uint8_t dur = 100;
+	const int16_t energy = -94;
 
 	scan_done_cb = NULL;
 
@@ -357,8 +357,8 @@ static void create_ack_frame(void)
 {
 	struct net_pkt *packet;
 	struct net_buf *buf;
-	const u8_t lqi = 230;
-	const s8_t rssi = -80;
+	const uint8_t lqi = 230;
+	const int8_t rssi = -80;
 
 	packet = net_pkt_alloc(K_NO_WAIT);
 	buf = net_pkt_get_reserve_tx_data(K_NO_WAIT);
@@ -382,9 +382,9 @@ static void create_ack_frame(void)
  */
 static void test_tx_test(void)
 {
-	const u8_t chan = 20;
-	u8_t chan2 = chan - 1;
-	const s8_t power = -3;
+	const uint8_t chan = 20;
+	uint8_t chan2 = chan - 1;
+	const int8_t power = -3;
 
 	otRadioFrame *frm = otPlatRadioGetTransmitBuffer(ot);
 
@@ -455,7 +455,7 @@ static void test_tx_test(void)
  */
 static void test_tx_power_test(void)
 {
-	s8_t out_power = 0;
+	int8_t out_power = 0;
 
 	otPlatRadioSetTransmitPower(ot, -3);
 	otPlatRadioGetTransmitPower(ot, &out_power);
@@ -486,7 +486,7 @@ static void test_sensitivity_test(void)
 }
 
 static void set_expected_match_values(enum ieee802154_config_type type,
-				      u8_t *addr, bool extended, bool enabled)
+				      uint8_t *addr, bool extended, bool enabled)
 {
 	ztest_expect_value(configure_match_mock, type, type);
 	switch (type) {
@@ -667,7 +667,7 @@ static void test_get_caps_test(void)
  */
 static void test_get_rssi_test(void)
 {
-	const s8_t rssi = -103;
+	const int8_t rssi = -103;
 
 	rapi.ed_scan = rssi_scan_mock;
 
@@ -685,8 +685,8 @@ static void test_get_rssi_test(void)
  */
 static void test_radio_state_test(void)
 {
-	const u8_t channel = 12;
-	const u8_t power = 10;
+	const uint8_t channel = 12;
+	const uint8_t power = 10;
 
 	otPlatRadioSetTransmitPower(ot, power);
 	zassert_equal(otPlatRadioDisable(ot), OT_ERROR_NONE,
@@ -727,8 +727,8 @@ static void test_radio_state_test(void)
  */
 static void test_address_test(void)
 {
-	const u16_t pan_id = 0xDEAD;
-	const u16_t short_add = 0xCAFE;
+	const uint16_t pan_id = 0xDEAD;
+	const uint16_t short_add = 0xCAFE;
 	otExtAddress ieee_addr;
 
 	for (int i = 0; i < sizeof(ieee_addr.m8); i++) {
@@ -761,11 +761,11 @@ static void test_receive_test(void)
 {
 	struct net_pkt *packet;
 	struct net_buf *buf;
-	const u8_t channel = 21;
-	const s8_t power = -5;
-	const u8_t lqi = 240;
-	const s8_t rssi = -90;
-	u8_t len;
+	const uint8_t channel = 21;
+	const int8_t power = -5;
+	const uint8_t lqi = 240;
+	const int8_t rssi = -90;
+	uint8_t len;
 
 	packet = net_pkt_alloc(K_NO_WAIT);
 	buf = net_pkt_get_reserve_tx_data(K_NO_WAIT);

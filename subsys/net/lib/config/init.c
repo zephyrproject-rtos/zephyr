@@ -42,7 +42,7 @@ static struct net_mgmt_event_callback mgmt_iface_cb;
 static struct net_mgmt_event_callback mgmt4_cb;
 
 static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
-				  u32_t mgmt_event,
+				  uint32_t mgmt_event,
 				  struct net_if *iface)
 {
 #if CONFIG_NET_CONFIG_LOG_LEVEL >= LOG_LEVEL_INF
@@ -185,7 +185,7 @@ static struct net_mgmt_event_callback mgmt6_cb;
 static struct in6_addr laddr;
 
 static void ipv6_event_handler(struct net_mgmt_event_callback *cb,
-			       u32_t mgmt_event, struct net_if *iface)
+			       uint32_t mgmt_event, struct net_if *iface)
 {
 	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
 	int i;
@@ -235,10 +235,10 @@ static void ipv6_event_handler(struct net_mgmt_event_callback *cb,
 	}
 }
 
-static void setup_ipv6(struct net_if *iface, u32_t flags)
+static void setup_ipv6(struct net_if *iface, uint32_t flags)
 {
 	struct net_if_addr *ifaddr;
-	u32_t mask = NET_EVENT_IPV6_DAD_SUCCEED;
+	uint32_t mask = NET_EVENT_IPV6_DAD_SUCCEED;
 
 	if (sizeof(CONFIG_NET_CONFIG_MY_IPV6_ADDR) == 1) {
 		/* Empty address, skip setting ANY address in this case */
@@ -288,7 +288,7 @@ static void setup_ipv6(struct net_if *iface, u32_t flags)
 
 #if defined(CONFIG_NET_NATIVE)
 static void iface_up_handler(struct net_mgmt_event_callback *cb,
-			     u32_t mgmt_event, struct net_if *iface)
+			     uint32_t mgmt_event, struct net_if *iface)
 {
 	if (mgmt_event == NET_EVENT_IF_UP) {
 		NET_INFO("Interface %p coming up", iface);
@@ -324,7 +324,7 @@ static bool check_interface(struct net_if *iface)
 }
 #endif
 
-int net_config_init(const char *app_info, u32_t flags, s32_t timeout)
+int net_config_init(const char *app_info, uint32_t flags, int32_t timeout)
 {
 #define LOOP_DIVIDER 10
 	struct net_if *iface = net_if_get_default();
@@ -420,7 +420,7 @@ int net_config_init(const char *app_info, u32_t flags, s32_t timeout)
 #if defined(CONFIG_NET_CONFIG_AUTO_INIT)
 static int init_app(struct device *device)
 {
-	u32_t flags = 0U;
+	uint32_t flags = 0U;
 	int ret;
 
 	ARG_UNUSED(device);

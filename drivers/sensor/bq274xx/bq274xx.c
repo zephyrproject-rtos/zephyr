@@ -17,10 +17,10 @@
 
 #define BQ274XX_SUBCLASS_DELAY 5 /* subclass 64 & 82 needs 5ms delay */
 
-static int bq274xx_command_reg_read(struct bq274xx_data *bq274xx, u8_t reg_addr,
-				    s16_t *val)
+static int bq274xx_command_reg_read(struct bq274xx_data *bq274xx, uint8_t reg_addr,
+				    int16_t *val)
 {
-	u8_t i2c_data[2];
+	uint8_t i2c_data[2];
 	int status;
 
 	status = i2c_burst_read(bq274xx->i2c, DT_INST_REG_ADDR(0), reg_addr,
@@ -36,13 +36,13 @@ static int bq274xx_command_reg_read(struct bq274xx_data *bq274xx, u8_t reg_addr,
 }
 
 static int bq274xx_control_reg_write(struct bq274xx_data *bq274xx,
-				     u16_t subcommand)
+				     uint16_t subcommand)
 {
-	u8_t i2c_data, reg_addr;
+	uint8_t i2c_data, reg_addr;
 	int status = 0;
 
 	reg_addr = BQ274XX_COMMAND_CONTROL_LOW;
-	i2c_data = (u8_t)((subcommand)&0x00FF);
+	i2c_data = (uint8_t)((subcommand)&0x00FF);
 
 	status = i2c_reg_write_byte(bq274xx->i2c, DT_INST_REG_ADDR(0), reg_addr,
 				    i2c_data);
@@ -54,7 +54,7 @@ static int bq274xx_control_reg_write(struct bq274xx_data *bq274xx,
 	k_msleep(BQ274XX_SUBCLASS_DELAY);
 
 	reg_addr = BQ274XX_COMMAND_CONTROL_HIGH;
-	i2c_data = (u8_t)((subcommand >> 8) & 0x00FF);
+	i2c_data = (uint8_t)((subcommand >> 8) & 0x00FF);
 
 	status = i2c_reg_write_byte(bq274xx->i2c, DT_INST_REG_ADDR(0), reg_addr,
 				    i2c_data);
@@ -66,10 +66,10 @@ static int bq274xx_control_reg_write(struct bq274xx_data *bq274xx,
 	return 0;
 }
 
-static int bq274xx_command_reg_write(struct bq274xx_data *bq274xx, u8_t command,
-				     u8_t data)
+static int bq274xx_command_reg_write(struct bq274xx_data *bq274xx, uint8_t command,
+				     uint8_t data)
 {
-	u8_t i2c_data, reg_addr;
+	uint8_t i2c_data, reg_addr;
 	int status = 0;
 
 	reg_addr = command;
@@ -85,10 +85,10 @@ static int bq274xx_command_reg_write(struct bq274xx_data *bq274xx, u8_t command,
 	return 0;
 }
 
-static int bq274xx_read_data_block(struct bq274xx_data *bq274xx, u8_t offset,
-				   u8_t *data, u8_t bytes)
+static int bq274xx_read_data_block(struct bq274xx_data *bq274xx, uint8_t offset,
+				   uint8_t *data, uint8_t bytes)
 {
-	u8_t i2c_data;
+	uint8_t i2c_data;
 	int status = 0;
 
 	i2c_data = BQ274XX_EXTENDED_BLOCKDATA_START + offset;
@@ -105,7 +105,7 @@ static int bq274xx_read_data_block(struct bq274xx_data *bq274xx, u8_t offset,
 	return 0;
 }
 
-static int bq274xx_get_device_type(struct bq274xx_data *bq274xx, u16_t *val)
+static int bq274xx_get_device_type(struct bq274xx_data *bq274xx, uint16_t *val)
 {
 	int status;
 
@@ -162,8 +162,8 @@ static int bq274xx_channel_get(struct device *dev, enum sensor_channel chan,
 	case SENSOR_CHAN_GAUGE_TEMP:
 		int_temp = (bq274xx->internal_temperature * 0.1);
 		int_temp = int_temp - 273.15;
-		val->val1 = (s32_t)int_temp;
-		val->val2 = (int_temp - (s32_t)int_temp) * 1000000;
+		val->val1 = (int32_t)int_temp;
+		val->val2 = (int_temp - (int32_t)int_temp) * 1000000;
 		break;
 
 	case SENSOR_CHAN_GAUGE_STATE_OF_CHARGE:
@@ -353,16 +353,16 @@ static int bq274xx_gauge_init(struct device *dev)
 	struct bq274xx_data *bq274xx = dev->driver_data;
 	const struct bq274xx_config *const config = dev->config_info;
 	int status = 0;
-	u8_t tmp_checksum = 0, checksum_old = 0, checksum_new = 0;
-	u16_t flags = 0, designenergy_mwh = 0, taperrate = 0, id;
-	u8_t designcap_msb, designcap_lsb, designenergy_msb, designenergy_lsb,
+	uint8_t tmp_checksum = 0, checksum_old = 0, checksum_new = 0;
+	uint16_t flags = 0, designenergy_mwh = 0, taperrate = 0, id;
+	uint8_t designcap_msb, designcap_lsb, designenergy_msb, designenergy_lsb,
 		terminatevolt_msb, terminatevolt_lsb, taperrate_msb,
 		taperrate_lsb;
-	u8_t block[32];
+	uint8_t block[32];
 
-	designenergy_mwh = (u16_t)3.7 * config->design_capacity;
+	designenergy_mwh = (uint16_t)3.7 * config->design_capacity;
 	taperrate =
-		(u16_t)config->design_capacity / (0.1 * config->taper_current);
+		(uint16_t)config->design_capacity / (0.1 * config->taper_current);
 
 	bq274xx->i2c = device_get_binding(config->bus_name);
 	if (bq274xx == NULL) {
@@ -441,7 +441,7 @@ static int bq274xx_gauge_init(struct device *dev)
 		return -EIO;
 	}
 
-	for (u8_t i = 0; i < 32; i++) {
+	for (uint8_t i = 0; i < 32; i++) {
 		block[i] = 0;
 	}
 
@@ -452,7 +452,7 @@ static int bq274xx_gauge_init(struct device *dev)
 	}
 
 	tmp_checksum = 0;
-	for (u8_t i = 0; i < 32; i++) {
+	for (uint8_t i = 0; i < 32; i++) {
 		tmp_checksum += block[i];
 	}
 	tmp_checksum = 255 - tmp_checksum;
@@ -540,7 +540,7 @@ static int bq274xx_gauge_init(struct device *dev)
 		return -EIO;
 	}
 
-	for (u8_t i = 0; i < 32; i++) {
+	for (uint8_t i = 0; i < 32; i++) {
 		block[i] = 0;
 	}
 
@@ -551,7 +551,7 @@ static int bq274xx_gauge_init(struct device *dev)
 	}
 
 	checksum_new = 0;
-	for (u8_t i = 0; i < 32; i++) {
+	for (uint8_t i = 0; i < 32; i++) {
 		checksum_new += block[i];
 	}
 	checksum_new = 255 - checksum_new;

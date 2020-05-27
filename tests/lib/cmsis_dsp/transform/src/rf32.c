@@ -17,7 +17,7 @@
 #define SNR_ERROR_THRESH	((float32_t)120)
 
 static void test_arm_rfft_f32_real_backend(
-	bool inverse, const u32_t *input, const u32_t *ref,
+	bool inverse, const uint32_t *input, const uint32_t *ref,
 	size_t length)
 {
 	arm_rfft_fast_instance_f32 inst;
@@ -51,7 +51,7 @@ static void test_arm_rfft_f32_real_backend(
 }
 
 static void test_arm_rfft_f32_real(
-	const u32_t *input, const u32_t *ref, size_t length)
+	const uint32_t *input, const uint32_t *ref, size_t length)
 {
 	test_arm_rfft_f32_real_backend(false, input, ref, length);
 }
@@ -105,7 +105,7 @@ DEFINE_TEST_VARIANT3(arm_rfft_f32_real, step_4096,
 	in_rfft_step_4096, ref_rfft_step_4096, 4096);
 
 static void test_arm_rifft_f32_real(
-	const u32_t *input, const u32_t *ref, size_t length)
+	const uint32_t *input, const uint32_t *ref, size_t length)
 {
 	test_arm_rfft_f32_real_backend(true, input, ref, length);
 }

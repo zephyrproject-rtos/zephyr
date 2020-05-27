@@ -212,7 +212,7 @@
 #endif
 
 #define BUFFER_SIZE  6
-static ZTEST_BMEM s16_t m_sample_buffer[BUFFER_SIZE];
+static ZTEST_BMEM int16_t m_sample_buffer[BUFFER_SIZE];
 
 static const struct adc_channel_cfg m_1st_channel_cfg = {
 	.gain             = ADC_GAIN,
@@ -268,7 +268,7 @@ static void check_samples(int expected_count)
 
 	TC_PRINT("Samples read: ");
 	for (i = 0; i < BUFFER_SIZE; i++) {
-		s16_t sample_value = m_sample_buffer[i];
+		int16_t sample_value = m_sample_buffer[i];
 
 		TC_PRINT("0x%04x ", sample_value);
 		if (i < expected_count) {
@@ -411,7 +411,7 @@ void test_adc_asynchronous_call(void)
 static enum adc_action sample_with_interval_callback(
 				struct device *dev,
 				const struct adc_sequence *sequence,
-				u16_t sampling_index)
+				uint16_t sampling_index)
 {
 	TC_PRINT("%s: sampling %d\n", __func__, sampling_index);
 	return ADC_ACTION_CONTINUE;
@@ -455,11 +455,11 @@ void test_adc_sample_with_interval(void)
 /*
  * test_adc_repeated_samplings
  */
-static u8_t m_samplings_done;
+static uint8_t m_samplings_done;
 static enum adc_action repeated_samplings_callback(
 				struct device *dev,
 				const struct adc_sequence *sequence,
-				u16_t sampling_index)
+				uint16_t sampling_index)
 {
 	++m_samplings_done;
 	TC_PRINT("%s: done %d\n", __func__, m_samplings_done);

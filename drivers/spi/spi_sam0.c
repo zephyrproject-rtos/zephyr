@@ -23,21 +23,21 @@ LOG_MODULE_REGISTER(spi_sam0);
 /* Device constant configuration parameters */
 struct spi_sam0_config {
 	SercomSpi *regs;
-	u32_t pads;
+	uint32_t pads;
 #ifdef MCLK
-	volatile u32_t *mclk;
-	u32_t mclk_mask;
-	u16_t gclk_core_id;
+	volatile uint32_t *mclk;
+	uint32_t mclk_mask;
+	uint16_t gclk_core_id;
 #else
-	u32_t pm_apbcmask;
-	u16_t gclk_clkctrl_id;
+	uint32_t pm_apbcmask;
+	uint16_t gclk_clkctrl_id;
 #endif
 #ifdef CONFIG_SPI_ASYNC
 	char *dma_dev;
-	u8_t tx_dma_request;
-	u8_t tx_dma_channel;
-	u8_t rx_dma_request;
-	u8_t rx_dma_channel;
+	uint8_t tx_dma_request;
+	uint8_t tx_dma_channel;
+	uint8_t rx_dma_request;
+	uint8_t rx_dma_channel;
 #endif
 };
 
@@ -46,7 +46,7 @@ struct spi_sam0_data {
 	struct spi_context ctx;
 #ifdef CONFIG_SPI_ASYNC
 	struct device *dma;
-	u32_t dma_segment_len;
+	uint32_t dma_segment_len;
 #endif
 };
 
@@ -147,11 +147,11 @@ static bool spi_sam0_transfer_ongoing(struct spi_sam0_data *data)
 
 static void spi_sam0_shift_master(SercomSpi *regs, struct spi_sam0_data *data)
 {
-	u8_t tx;
-	u8_t rx;
+	uint8_t tx;
+	uint8_t rx;
 
 	if (spi_context_tx_buf_on(&data->ctx)) {
-		tx = *(u8_t *)(data->ctx.tx_buf);
+		tx = *(uint8_t *)(data->ctx.tx_buf);
 	} else {
 		tx = 0U;
 	}
@@ -187,9 +187,9 @@ static void spi_sam0_finish(SercomSpi *regs)
 /* Fast path that transmits a buf */
 static void spi_sam0_fast_tx(SercomSpi *regs, const struct spi_buf *tx_buf)
 {
-	const u8_t *p = tx_buf->buf;
-	const u8_t *pend = (u8_t *)tx_buf->buf + tx_buf->len;
-	u8_t ch;
+	const uint8_t *p = tx_buf->buf;
+	const uint8_t *pend = (uint8_t *)tx_buf->buf + tx_buf->len;
+	uint8_t ch;
 
 	while (p != pend) {
 		ch = *p++;
@@ -206,7 +206,7 @@ static void spi_sam0_fast_tx(SercomSpi *regs, const struct spi_buf *tx_buf)
 /* Fast path that reads into a buf */
 static void spi_sam0_fast_rx(SercomSpi *regs, const struct spi_buf *rx_buf)
 {
-	u8_t *rx = rx_buf->buf;
+	uint8_t *rx = rx_buf->buf;
 	int len = rx_buf->len;
 
 	if (len <= 0) {
@@ -245,9 +245,9 @@ static void spi_sam0_fast_txrx(SercomSpi *regs,
 			       const struct spi_buf *tx_buf,
 			       const struct spi_buf *rx_buf)
 {
-	const u8_t *tx = tx_buf->buf;
-	const u8_t *txend = (u8_t *)tx_buf->buf + tx_buf->len;
-	u8_t *rx = rx_buf->buf;
+	const uint8_t *tx = tx_buf->buf;
+	const uint8_t *txend = (uint8_t *)tx_buf->buf + tx_buf->len;
+	uint8_t *rx = rx_buf->buf;
 	size_t len = rx_buf->len;
 
 	if (len == 0) {
@@ -433,9 +433,9 @@ static int spi_sam0_transceive_sync(struct device *dev,
 
 #ifdef CONFIG_SPI_ASYNC
 
-static void spi_sam0_dma_rx_done(void *arg, u32_t id, int error_code);
+static void spi_sam0_dma_rx_done(void *arg, uint32_t id, int error_code);
 
-static int spi_sam0_dma_rx_load(struct device *dev, u8_t *buf,
+static int spi_sam0_dma_rx_load(struct device *dev, uint8_t *buf,
 				size_t len)
 {
 	const struct spi_sam0_config *cfg = dev->config_info;
@@ -457,15 +457,15 @@ static int spi_sam0_dma_rx_load(struct device *dev, u8_t *buf,
 	dma_blk.block_size = len;
 
 	if (buf != NULL) {
-		dma_blk.dest_address = (u32_t)buf;
+		dma_blk.dest_address = (uint32_t)buf;
 	} else {
-		static u8_t dummy;
+		static uint8_t dummy;
 
-		dma_blk.dest_address = (u32_t)&dummy;
+		dma_blk.dest_address = (uint32_t)&dummy;
 		dma_blk.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 	}
 
-	dma_blk.source_address = (u32_t)(&(regs->DATA.reg));
+	dma_blk.source_address = (uint32_t)(&(regs->DATA.reg));
 	dma_blk.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 
 	retval = dma_config(data->dma, cfg->rx_dma_channel,
@@ -477,7 +477,7 @@ static int spi_sam0_dma_rx_load(struct device *dev, u8_t *buf,
 	return dma_start(data->dma, cfg->rx_dma_channel);
 }
 
-static int spi_sam0_dma_tx_load(struct device *dev, const u8_t *buf,
+static int spi_sam0_dma_tx_load(struct device *dev, const uint8_t *buf,
 				size_t len)
 {
 	const struct spi_sam0_config *cfg = dev->config_info;
@@ -497,15 +497,15 @@ static int spi_sam0_dma_tx_load(struct device *dev, const u8_t *buf,
 	dma_blk.block_size = len;
 
 	if (buf != NULL) {
-		dma_blk.source_address = (u32_t)buf;
+		dma_blk.source_address = (uint32_t)buf;
 	} else {
-		static const u8_t dummy;
+		static const uint8_t dummy;
 
-		dma_blk.source_address = (u32_t)&dummy;
+		dma_blk.source_address = (uint32_t)&dummy;
 		dma_blk.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 	}
 
-	dma_blk.dest_address = (u32_t)(&(regs->DATA.reg));
+	dma_blk.dest_address = (uint32_t)(&(regs->DATA.reg));
 	dma_blk.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 
 	retval = dma_config(data->dma, cfg->tx_dma_channel,
@@ -521,7 +521,7 @@ static int spi_sam0_dma_tx_load(struct device *dev, const u8_t *buf,
 static bool spi_sam0_dma_advance_segment(struct device *dev)
 {
 	struct spi_sam0_data *data = dev->driver_data;
-	u32_t segment_len;
+	uint32_t segment_len;
 
 	/* Pick the shorter buffer of ones that have an actual length */
 	if (data->ctx.rx_len != 0) {
@@ -579,7 +579,7 @@ static int spi_sam0_dma_advance_buffers(struct device *dev)
 	return 0;
 }
 
-static void spi_sam0_dma_rx_done(void *arg, u32_t id, int error_code)
+static void spi_sam0_dma_rx_done(void *arg, uint32_t id, int error_code)
 {
 	struct device *dev = arg;
 	const struct spi_sam0_config *cfg = dev->config_info;

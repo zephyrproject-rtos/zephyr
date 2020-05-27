@@ -24,7 +24,7 @@ static enum net_verdict ipv6cp_handle(struct ppp_context *ctx,
 	return ppp_fsm_input(&ctx->ipv6cp.fsm, PPP_IPV6CP, pkt);
 }
 
-static bool append_to_buf(struct net_buf *buf, u8_t *data, u8_t data_len)
+static bool append_to_buf(struct net_buf *buf, uint8_t *data, uint8_t data_len)
 {
 	if (data_len > net_buf_tailroom(buf)) {
 		return false;
@@ -47,8 +47,8 @@ static struct net_buf *ipv6cp_config_info_add(struct ppp_fsm *fsm)
 					       ipv6cp.fsm);
 
 	/* Currently we support only one option (IP address) */
-	u8_t option[INTERFACE_IDENTIFIER_OPTION_LEN];
-	u8_t iid[PPP_INTERFACE_IDENTIFIER_LEN];
+	uint8_t option[INTERFACE_IDENTIFIER_OPTION_LEN];
+	uint8_t iid[PPP_INTERFACE_IDENTIFIER_LEN];
 	struct net_linkaddr *linkaddr;
 	struct net_buf *buf;
 	bool added;
@@ -89,7 +89,7 @@ out_of_mem:
 
 static int ipv6cp_config_info_req(struct ppp_fsm *fsm,
 				struct net_pkt *pkt,
-				u16_t length,
+				uint16_t length,
 				struct net_buf **ret_buf)
 {
 	int nack_idx = 0, iface_id_option_idx = -1;
@@ -186,10 +186,10 @@ static int ipv6cp_config_info_req(struct ppp_fsm *fsm,
 			}
 		}
 	} else {
-		u8_t iface_id[PPP_INTERFACE_IDENTIFIER_LEN];
+		uint8_t iface_id[PPP_INTERFACE_IDENTIFIER_LEN];
 		struct ppp_context *ctx;
 		bool added;
-		u8_t val;
+		uint8_t val;
 		int ret;
 
 		ctx = CONTAINER_OF(fsm, struct ppp_context, ipv6cp.fsm);
@@ -214,7 +214,7 @@ static int ipv6cp_config_info_req(struct ppp_fsm *fsm,
 		       sizeof(iface_id));
 
 		if (CONFIG_NET_L2_PPP_LOG_LEVEL >= LOG_LEVEL_DBG) {
-			u8_t iid_str[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
+			uint8_t iid_str[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
 
 			net_sprint_ll_addr_buf(iface_id, sizeof(iface_id),
 					       iid_str, sizeof(iid_str));
@@ -265,11 +265,11 @@ bail_out:
 static int config_info_ack_rej(struct ppp_context *ctx,
 			       struct ppp_fsm *fsm,
 			       struct net_pkt *pkt,
-			       u16_t length,
-			       u8_t code)
+			       uint16_t length,
+			       uint8_t code)
 {
 	struct ppp_option_pkt nack_options[MAX_IPV6CP_OPTIONS];
-	u8_t iface_id[PPP_INTERFACE_IDENTIFIER_LEN];
+	uint8_t iface_id[PPP_INTERFACE_IDENTIFIER_LEN];
 	int i, ret, iface_id_option_idx = -1;
 	enum net_verdict verdict;
 
@@ -319,7 +319,7 @@ static int config_info_ack_rej(struct ppp_context *ctx,
 	memcpy(ctx->ipv6cp.peer_accepted.iid, iface_id, sizeof(iface_id));
 
 	if (CONFIG_NET_L2_PPP_LOG_LEVEL >= LOG_LEVEL_DBG) {
-		u8_t iid_str[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
+		uint8_t iid_str[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
 
 		net_sprint_ll_addr_buf(iface_id, sizeof(iface_id),
 				       iid_str, sizeof(iid_str));
@@ -333,7 +333,7 @@ static int config_info_ack_rej(struct ppp_context *ctx,
 
 static int ipv6cp_config_info_rej(struct ppp_fsm *fsm,
 				struct net_pkt *pkt,
-				u16_t length)
+				uint16_t length)
 {
 	struct ppp_context *ctx = CONTAINER_OF(fsm, struct ppp_context,
 					       ipv6cp.fsm);
@@ -343,7 +343,7 @@ static int ipv6cp_config_info_rej(struct ppp_fsm *fsm,
 
 static int ipv6cp_config_info_ack(struct ppp_fsm *fsm,
 				  struct net_pkt *pkt,
-				  u16_t length)
+				  uint16_t length)
 {
 	struct ppp_context *ctx = CONTAINER_OF(fsm, struct ppp_context,
 					       ipv6cp.fsm);
@@ -367,12 +367,12 @@ static void ipv6cp_open(struct ppp_context *ctx)
 	ppp_fsm_open(&ctx->ipv6cp.fsm);
 }
 
-static void ipv6cp_close(struct ppp_context *ctx, const u8_t *reason)
+static void ipv6cp_close(struct ppp_context *ctx, const uint8_t *reason)
 {
 	ppp_fsm_close(&ctx->ipv6cp.fsm, reason);
 }
 
-static void setup_iid_address(u8_t *iid, struct in6_addr *addr)
+static void setup_iid_address(uint8_t *iid, struct in6_addr *addr)
 {
 	addr->s6_addr[0] = 0xfe;
 	addr->s6_addr[1] = 0x80;
@@ -384,7 +384,7 @@ static void setup_iid_address(u8_t *iid, struct in6_addr *addr)
 	/* addr->s6_addr[8] ^= 0x02; */
 }
 
-static void add_iid_address(struct net_if *iface, u8_t *iid)
+static void add_iid_address(struct net_if *iface, uint8_t *iid)
 {
 	struct net_if_addr *ifaddr;
 	struct in6_addr addr;
@@ -443,7 +443,7 @@ static void ipv6cp_up(struct ppp_fsm *fsm)
 						   (const void *)&peer_addr)));
 	} else {
 		if (CONFIG_NET_L2_PPP_LOG_LEVEL >= LOG_LEVEL_DBG) {
-			u8_t iid_str[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
+			uint8_t iid_str[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
 			char dst[INET6_ADDRSTRLEN];
 			char *addr_str;
 
@@ -495,7 +495,7 @@ static void ipv6cp_down(struct ppp_fsm *fsm)
 						   (const void *)&peer_addr)));
 	} else {
 		if (CONFIG_NET_L2_PPP_LOG_LEVEL >= LOG_LEVEL_DBG) {
-			u8_t iid_str[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
+			uint8_t iid_str[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
 			char dst[INET6_ADDRSTRLEN];
 			char *addr_str;
 

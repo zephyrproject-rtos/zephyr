@@ -23,7 +23,7 @@ LOG_MODULE_DECLARE(main);
 #define PRIORITY                7
 
 /* Some HID sample Report Descriptor */
-static const u8_t hid_report_desc[] = {
+static const uint8_t hid_report_desc[] = {
 	/* 0x05, 0x01,		USAGE_PAGE (Generic Desktop)		*/
 	HID_GI_USAGE_PAGE, USAGE_GEN_DESKTOP,
 	/* 0x09, 0x00,		USAGE (Undefined)			*/
@@ -58,16 +58,16 @@ static const u8_t hid_report_desc[] = {
 	HID_MI_COLLECTION_END,
 };
 
-int debug_cb(struct usb_setup_packet *setup, s32_t *len,
-	     u8_t **data)
+int debug_cb(struct usb_setup_packet *setup, int32_t *len,
+	     uint8_t **data)
 {
 	LOG_DBG("Debug callback");
 
 	return -ENOTSUP;
 }
 
-int set_idle_cb(struct usb_setup_packet *setup, s32_t *len,
-		u8_t **data)
+int set_idle_cb(struct usb_setup_packet *setup, int32_t *len,
+		uint8_t **data)
 {
 	LOG_DBG("Set Idle callback");
 
@@ -76,8 +76,8 @@ int set_idle_cb(struct usb_setup_packet *setup, s32_t *len,
 	return 0;
 }
 
-int get_report_cb(struct usb_setup_packet *setup, s32_t *len,
-		  u8_t **data)
+int get_report_cb(struct usb_setup_packet *setup, int32_t *len,
+		  uint8_t **data)
 {
 	LOG_DBG("Get report callback");
 
@@ -97,7 +97,7 @@ static struct hid_ops ops = {
 
 void hid_thread(void)
 {
-	u8_t report_1[2] = { REPORT_ID_1, 0x00 };
+	uint8_t report_1[2] = { REPORT_ID_1, 0x00 };
 	struct device *hid_dev;
 	int ret, wrote;
 

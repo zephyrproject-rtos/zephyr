@@ -45,7 +45,7 @@ static void process_int(struct device *dev)
 {
 	struct adt7420_data *drv_data = dev->driver_data;
 	const struct adt7420_dev_config *cfg = dev->config_info;
-	u8_t status;
+	uint8_t status;
 
 	/* Clear the status */
 	if (i2c_reg_read_byte(drv_data->i2c, cfg->i2c_addr,
@@ -68,7 +68,7 @@ static void process_int(struct device *dev)
 }
 
 static void adt7420_gpio_callback(struct device *dev,
-				  struct gpio_callback *cb, u32_t pins)
+				  struct gpio_callback *cb, uint32_t pins)
 {
 	struct adt7420_data *drv_data =
 		CONTAINER_OF(cb, struct adt7420_data, gpio_cb);

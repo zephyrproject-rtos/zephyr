@@ -37,7 +37,7 @@ enum smp_shell_mcumgr_state {
 	SMP_SHELL_MCUMGR_STATE_PAYLOAD
 };
 
-static int read_mcumgr_byte(struct smp_shell_data *data, u8_t byte)
+static int read_mcumgr_byte(struct smp_shell_data *data, uint8_t byte)
 {
 	bool frag_1;
 	bool frag_2;
@@ -132,7 +132,7 @@ void smp_shell_process(struct smp_shell_data *data)
 	}
 }
 
-static u16_t smp_shell_get_mtu(const struct net_buf *nb)
+static uint16_t smp_shell_get_mtu(const struct net_buf *nb)
 {
 	return CONFIG_MCUMGR_SMP_SHELL_MTU;
 }

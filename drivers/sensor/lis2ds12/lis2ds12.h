@@ -94,16 +94,16 @@ struct lis2ds12_config {
 struct lis2ds12_data;
 
 struct lis2ds12_transfer_function {
-	int (*read_data)(struct lis2ds12_data *data, u8_t reg_addr,
-			 u8_t *value, u8_t len);
-	int (*write_data)(struct lis2ds12_data *data, u8_t reg_addr,
-			  u8_t *value, u8_t len);
-	int (*read_reg)(struct lis2ds12_data *data, u8_t reg_addr,
-			u8_t *value);
-	int (*write_reg)(struct lis2ds12_data *data, u8_t reg_addr,
-			u8_t value);
-	int (*update_reg)(struct lis2ds12_data *data, u8_t reg_addr,
-			  u8_t mask, u8_t value);
+	int (*read_data)(struct lis2ds12_data *data, uint8_t reg_addr,
+			 uint8_t *value, uint8_t len);
+	int (*write_data)(struct lis2ds12_data *data, uint8_t reg_addr,
+			  uint8_t *value, uint8_t len);
+	int (*read_reg)(struct lis2ds12_data *data, uint8_t reg_addr,
+			uint8_t *value);
+	int (*write_reg)(struct lis2ds12_data *data, uint8_t reg_addr,
+			uint8_t value);
+	int (*update_reg)(struct lis2ds12_data *data, uint8_t reg_addr,
+			  uint8_t mask, uint8_t value);
 };
 
 struct lis2ds12_data {

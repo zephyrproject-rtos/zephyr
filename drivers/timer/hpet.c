@@ -10,7 +10,7 @@
 #include <spinlock.h>
 #include <irq.h>
 
-#define HPET_REG32(off) (*(volatile u32_t *)(long)			\
+#define HPET_REG32(off) (*(volatile uint32_t *)(long)			\
 		       (DT_INST_REG_ADDR(0) + (off)))
 
 #define CLK_PERIOD_REG        HPET_REG32(0x04) /* High dword of caps reg */
@@ -47,7 +47,7 @@ static void hpet_isr(void *arg)
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	u32_t now = MAIN_COUNTER_REG;
+	uint32_t now = MAIN_COUNTER_REG;
 
 	if (IS_ENABLED(CONFIG_SMP) &&
 	    IS_ENABLED(CONFIG_QEMU_TARGET)) {
@@ -56,20 +56,20 @@ static void hpet_isr(void *arg)
 		 * on the other CPU, despite the HPET being
 		 * theoretically a global device.
 		 */
-		s32_t diff = (s32_t)(now - last_count);
+		int32_t diff = (int32_t)(now - last_count);
 
 		if (last_count && diff < 0) {
 			now = last_count;
 		}
 	}
-	u32_t dticks = (now - last_count) / cyc_per_tick;
+	uint32_t dticks = (now - last_count) / cyc_per_tick;
 
 	last_count += dticks * cyc_per_tick;
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		u32_t next = last_count + cyc_per_tick;
+		uint32_t next = last_count + cyc_per_tick;
 
-		if ((s32_t)(next - now) < MIN_DELAY) {
+		if ((int32_t)(next - now) < MIN_DELAY) {
 			next += cyc_per_tick;
 		}
 		TIMER0_COMPARATOR_REG = next;
@@ -87,7 +87,7 @@ static void hpet_isr(void *arg)
 static void set_timer0_irq(unsigned int irq)
 {
 	/* 5-bit IRQ field starting at bit 9 */
-	u32_t val = (TIMER0_CONF_REG & ~(0x1f << 9)) | ((irq & 0x1f) << 9);
+	uint32_t val = (TIMER0_CONF_REG & ~(0x1f << 9)) | ((irq & 0x1f) << 9);
 
 	TIMER0_CONF_REG = val;
 }
@@ -95,7 +95,7 @@ static void set_timer0_irq(unsigned int irq)
 int z_clock_driver_init(struct device *device)
 {
 	extern int z_clock_hw_cycles_per_sec;
-	u32_t hz;
+	uint32_t hz;
 
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
@@ -104,7 +104,7 @@ int z_clock_driver_init(struct device *device)
 	irq_enable(DT_INST_IRQN(0));
 
 	/* CLK_PERIOD_REG is in femtoseconds (1e-15 sec) */
-	hz = (u32_t)(1000000000000000ull / CLK_PERIOD_REG);
+	hz = (uint32_t)(1000000000000000ull / CLK_PERIOD_REG);
 	z_clock_hw_cycles_per_sec = hz;
 	cyc_per_tick = hz / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 
@@ -135,7 +135,7 @@ void smp_timer_init(void)
 	 */
 }
 
-void z_clock_set_timeout(s32_t ticks, bool idle)
+void z_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -146,11 +146,11 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	}
 
 	ticks = ticks == K_TICKS_FOREVER ? max_ticks : ticks;
-	ticks = MAX(MIN(ticks - 1, (s32_t)max_ticks), 0);
+	ticks = MAX(MIN(ticks - 1, (int32_t)max_ticks), 0);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	u32_t now = MAIN_COUNTER_REG, cyc, adj;
-	u32_t max_cyc = max_ticks * cyc_per_tick;
+	uint32_t now = MAIN_COUNTER_REG, cyc, adj;
+	uint32_t max_cyc = max_ticks * cyc_per_tick;
 
 	/* Round up to next tick boundary. */
 	cyc = ticks * cyc_per_tick;
@@ -172,20 +172,20 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 #endif
 }
 
-u32_t z_clock_elapsed(void)
+uint32_t z_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	u32_t ret = (MAIN_COUNTER_REG - last_count) / cyc_per_tick;
+	uint32_t ret = (MAIN_COUNTER_REG - last_count) / cyc_per_tick;
 
 	k_spin_unlock(&lock, key);
 	return ret;
 }
 
-u32_t z_timer_cycle_get_32(void)
+uint32_t z_timer_cycle_get_32(void)
 {
 	return MAIN_COUNTER_REG;
 }

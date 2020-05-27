@@ -26,7 +26,7 @@ struct uart_stm32_config {
 /* driver data */
 struct uart_stm32_data {
 	/* Baud rate */
-	u32_t baud_rate;
+	uint32_t baud_rate;
 	/* clock device */
 	struct device *clock;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN

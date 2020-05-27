@@ -11,7 +11,7 @@
 #include <spinlock.h>
 #include <kernel_structs.h>
 
-#define Z_REG(base, off) (*(volatile u32_t *)((base) + (off)))
+#define Z_REG(base, off) (*(volatile uint32_t *)((base) + (off)))
 
 #define RTC_CNTL_BASE             0x3ff48000
 #define RTC_CNTL_OPTIONS0     Z_REG(RTC_CNTL_BASE, 0x0)

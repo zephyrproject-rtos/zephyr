@@ -13,12 +13,12 @@ static int str_put(int c, void *ctx)
 	tracing_ctx_t *str_ctx = (tracing_ctx_t *)ctx;
 
 	if (str_ctx->status == 0) {
-		u8_t *buf;
-		u32_t claimed_size;
+		uint8_t *buf;
+		uint32_t claimed_size;
 
 		claimed_size = tracing_buffer_put_claim(&buf, 1);
 		if (claimed_size) {
-			*buf = (u8_t)c;
+			*buf = (uint8_t)c;
 			str_ctx->length++;
 		} else {
 			str_ctx->status = -1;
@@ -47,9 +47,9 @@ bool tracing_format_string_put(const char *str, va_list args)
 	return false;
 }
 
-bool tracing_format_raw_data_put(u8_t *data, u32_t size)
+bool tracing_format_raw_data_put(uint8_t *data, uint32_t size)
 {
-	u32_t space = tracing_buffer_space_get();
+	uint32_t space = tracing_buffer_space_get();
 
 	if (space >= size) {
 		tracing_buffer_put(data, size);
@@ -59,15 +59,15 @@ bool tracing_format_raw_data_put(u8_t *data, u32_t size)
 	return false;
 }
 
-bool tracing_format_data_put(tracing_data_t *tracing_data_array, u32_t count)
+bool tracing_format_data_put(tracing_data_t *tracing_data_array, uint32_t count)
 {
-	u32_t total_size = 0U;
+	uint32_t total_size = 0U;
 
-	for (u32_t i = 0; i < count; i++) {
+	for (uint32_t i = 0; i < count; i++) {
 		tracing_data_t *tracing_data =
 				tracing_data_array + i;
-		u8_t *data = tracing_data->data, *buf;
-		u32_t length = tracing_data->length, claimed_size;
+		uint8_t *data = tracing_data->data, *buf;
+		uint32_t length = tracing_data->length, claimed_size;
 
 		do {
 			claimed_size = tracing_buffer_put_claim(&buf, length);

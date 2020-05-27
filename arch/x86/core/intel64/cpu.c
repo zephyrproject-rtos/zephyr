@@ -18,28 +18,28 @@
  * The symbol is weak so that boards/SoC files can override.
  */
 
-__weak u8_t x86_cpu_loapics[] = { 0, 1, 2, 3 };
+__weak uint8_t x86_cpu_loapics[] = { 0, 1, 2, 3 };
 
 extern char x86_ap_start[];  /* AP entry point in locore.S */
 
-extern u8_t _exception_stack[];
-extern u8_t _exception_stack1[];
-extern u8_t _exception_stack2[];
-extern u8_t _exception_stack3[];
+extern uint8_t _exception_stack[];
+extern uint8_t _exception_stack1[];
+extern uint8_t _exception_stack2[];
+extern uint8_t _exception_stack3[];
 
 #ifdef CONFIG_X86_KPTI
-extern u8_t z_x86_trampoline_stack[];
-extern u8_t z_x86_trampoline_stack1[];
-extern u8_t z_x86_trampoline_stack2[];
-extern u8_t z_x86_trampoline_stack3[];
+extern uint8_t z_x86_trampoline_stack[];
+extern uint8_t z_x86_trampoline_stack1[];
+extern uint8_t z_x86_trampoline_stack2[];
+extern uint8_t z_x86_trampoline_stack3[];
 #endif /* CONFIG_X86_KPTI */
 
 Z_GENERIC_SECTION(.tss)
 struct x86_tss64 tss0 = {
 #ifdef CONFIG_X86_KPTI
-	.ist2 = (u64_t) z_x86_trampoline_stack + Z_X86_TRAMPOLINE_STACK_SIZE,
+	.ist2 = (uint64_t) z_x86_trampoline_stack + Z_X86_TRAMPOLINE_STACK_SIZE,
 #endif
-	.ist7 = (u64_t) _exception_stack + CONFIG_EXCEPTION_STACK_SIZE,
+	.ist7 = (uint64_t) _exception_stack + CONFIG_EXCEPTION_STACK_SIZE,
 	.iomapb = 0xFFFF,
 	.cpu = &(_kernel.cpus[0])
 };
@@ -48,9 +48,9 @@ struct x86_tss64 tss0 = {
 Z_GENERIC_SECTION(.tss)
 struct x86_tss64 tss1 = {
 #ifdef CONFIG_X86_KPTI
-	.ist2 = (u64_t) z_x86_trampoline_stack1 + Z_X86_TRAMPOLINE_STACK_SIZE,
+	.ist2 = (uint64_t) z_x86_trampoline_stack1 + Z_X86_TRAMPOLINE_STACK_SIZE,
 #endif
-	.ist7 = (u64_t) _exception_stack1 + CONFIG_EXCEPTION_STACK_SIZE,
+	.ist7 = (uint64_t) _exception_stack1 + CONFIG_EXCEPTION_STACK_SIZE,
 	.iomapb = 0xFFFF,
 	.cpu = &(_kernel.cpus[1])
 };
@@ -60,9 +60,9 @@ struct x86_tss64 tss1 = {
 Z_GENERIC_SECTION(.tss)
 struct x86_tss64 tss2 = {
 #ifdef CONFIG_X86_KPTI
-	.ist2 = (u64_t) z_x86_trampoline_stack2 + Z_X86_TRAMPOLINE_STACK_SIZE,
+	.ist2 = (uint64_t) z_x86_trampoline_stack2 + Z_X86_TRAMPOLINE_STACK_SIZE,
 #endif
-	.ist7 = (u64_t) _exception_stack2 + CONFIG_EXCEPTION_STACK_SIZE,
+	.ist7 = (uint64_t) _exception_stack2 + CONFIG_EXCEPTION_STACK_SIZE,
 	.iomapb = 0xFFFF,
 	.cpu = &(_kernel.cpus[2])
 };
@@ -72,9 +72,9 @@ struct x86_tss64 tss2 = {
 Z_GENERIC_SECTION(.tss)
 struct x86_tss64 tss3 = {
 #ifdef CONFIG_X86_KPTI
-	.ist2 = (u64_t) z_x86_trampoline_stack3 + Z_X86_TRAMPOLINE_STACK_SIZE,
+	.ist2 = (uint64_t) z_x86_trampoline_stack3 + Z_X86_TRAMPOLINE_STACK_SIZE,
 #endif
-	.ist7 = (u64_t) _exception_stack3 + CONFIG_EXCEPTION_STACK_SIZE,
+	.ist7 = (uint64_t) _exception_stack3 + CONFIG_EXCEPTION_STACK_SIZE,
 	.iomapb = 0xFFFF,
 	.cpu = &(_kernel.cpus[3])
 };
@@ -86,7 +86,7 @@ struct x86_cpuboot x86_cpuboot[] = {
 	{
 		.tr = X86_KERNEL_CPU0_TR,
 		.gs_base = &tss0,
-		.sp = (u64_t) (z_interrupt_stacks[0] + CONFIG_ISR_STACK_SIZE +
+		.sp = (uint64_t) (z_interrupt_stacks[0] + CONFIG_ISR_STACK_SIZE +
 			       ARCH_THREAD_STACK_RESERVED),
 		.fn = z_x86_prep_c,
 #ifdef CONFIG_X86_MMU
@@ -121,10 +121,10 @@ struct x86_cpuboot x86_cpuboot[] = {
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
 {
-	u8_t vector = ((unsigned long) x86_ap_start) >> 12;
-	u8_t apic_id = x86_cpu_loapics[cpu_num];
+	uint8_t vector = ((unsigned long) x86_ap_start) >> 12;
+	uint8_t apic_id = x86_cpu_loapics[cpu_num];
 
-	x86_cpuboot[cpu_num].sp = (u64_t) Z_THREAD_STACK_BUFFER(stack) + sz;
+	x86_cpuboot[cpu_num].sp = (uint64_t) Z_THREAD_STACK_BUFFER(stack) + sz;
 	x86_cpuboot[cpu_num].fn = fn;
 	x86_cpuboot[cpu_num].arg = arg;
 #ifdef CONFIG_X86_MMU
@@ -151,10 +151,10 @@ FUNC_NORETURN void z_x86_cpu_init(struct x86_cpuboot *cpuboot)
 
 #ifdef CONFIG_USERSPACE
 	/* Set landing site for 'syscall' instruction */
-	z_x86_msr_write(X86_LSTAR_MSR, (u64_t)z_x86_syscall_entry_stub);
+	z_x86_msr_write(X86_LSTAR_MSR, (uint64_t)z_x86_syscall_entry_stub);
 
 	/* Set segment descriptors for syscall privilege transitions */
-	z_x86_msr_write(X86_STAR_MSR, (u64_t)X86_STAR_UPPER << 32);
+	z_x86_msr_write(X86_STAR_MSR, (uint64_t)X86_STAR_UPPER << 32);
 
 	/* Mask applied to RFLAGS when making a syscall */
 	z_x86_msr_write(X86_FMASK_MSR, EFLAGS_SYSCALL);

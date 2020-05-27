@@ -13,7 +13,7 @@
 LOG_MODULE_REGISTER(ext_log_system);
 
 /** @brief Translation of custom log levels to logging subsystem levels. */
-static const u8_t log_level_lut[] = {
+static const uint8_t log_level_lut[] = {
 	LOG_LEVEL_ERR,  /* EXT_LOG_CRITICAL */
 	LOG_LEVEL_ERR,  /* EXT_LOG_ERROR */
 	LOG_LEVEL_WRN,  /* EXT_LOG_WARNING */

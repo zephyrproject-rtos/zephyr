@@ -38,7 +38,7 @@ LOG_MODULE_REGISTER(soc);
 
 static int nordicsemi_nrf53_init(struct device *arg)
 {
-	u32_t key;
+	uint32_t key;
 
 	ARG_UNUSED(arg);
 
@@ -56,7 +56,7 @@ static int nordicsemi_nrf53_init(struct device *arg)
 
 #if defined(CONFIG_SOC_NRF5340_CPUAPP) && \
 	!defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
-	*((u32_t *)0x500046D0) = 0x1;
+	*((uint32_t *)0x500046D0) = 0x1;
 #endif
 
 #if defined(CONFIG_SOC_DCDC_NRF53X_APP)
@@ -79,7 +79,7 @@ static int nordicsemi_nrf53_init(struct device *arg)
 	return 0;
 }
 
-void arch_busy_wait(u32_t time_us)
+void arch_busy_wait(uint32_t time_us)
 {
 	nrfx_coredep_delay_us(time_us);
 }

@@ -31,7 +31,7 @@ enum winc1500_gpio_index {
 
 struct winc1500_gpio_configuration {
 	struct device *dev;
-	u32_t pin;
+	uint32_t pin;
 };
 
 struct winc1500_device {

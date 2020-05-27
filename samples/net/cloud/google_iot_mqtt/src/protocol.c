@@ -26,7 +26,7 @@ LOG_MODULE_DECLARE(net_google_iot_mqtt, LOG_LEVEL_DBG);
 
 #include <mbedtls/debug.h>
 
-extern s64_t time_base;
+extern int64_t time_base;
 
 /* private key information */
 extern unsigned char zepfull_private_der[];
@@ -37,21 +37,21 @@ extern unsigned int zepfull_private_der_len;
  */
 #include "globalsign.inc"
 
-static u8_t client_id[] = CONFIG_CLOUD_CLIENT_ID;
+static uint8_t client_id[] = CONFIG_CLOUD_CLIENT_ID;
 #ifdef CONFIG_CLOUD_SUBSCRIBE_CONFIG
-static u8_t subs_topic_str[] = CONFIG_CLOUD_SUBSCRIBE_CONFIG;
+static uint8_t subs_topic_str[] = CONFIG_CLOUD_SUBSCRIBE_CONFIG;
 static struct mqtt_topic subs_topic;
 static struct mqtt_subscription_list subs_list;
 #endif
-static u8_t client_username[] = "none";
-static u8_t pub_topic[] = CONFIG_CLOUD_PUBLISH_TOPIC;
+static uint8_t client_username[] = "none";
+static uint8_t pub_topic[] = CONFIG_CLOUD_PUBLISH_TOPIC;
 
 static struct mqtt_publish_param pub_data;
 
-static u8_t token[512];
+static uint8_t token[512];
 
 static bool connected;
-static u64_t next_alive;
+static uint64_t next_alive;
 
 /* The mqtt client struct */
 static struct mqtt_client client_ctx;
@@ -60,8 +60,8 @@ static struct mqtt_client client_ctx;
 static struct sockaddr_storage broker;
 
 /* Buffers for MQTT client. */
-static u8_t rx_buffer[1024];
-static u8_t tx_buffer[1024];
+static uint8_t rx_buffer[1024];
+static uint8_t tx_buffer[1024];
 
 static sec_tag_t m_sec_tags[] = {
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
@@ -82,7 +82,7 @@ static sec_tag_t m_sec_tags[] = {
  */
 time_t my_k_time(time_t *ptr)
 {
-	s64_t stamp;
+	int64_t stamp;
 	time_t now;
 
 	stamp = k_uptime_get();
@@ -132,7 +132,7 @@ void mqtt_evt_handler(struct mqtt_client *const client,
 #ifdef CONFIG_CLOUD_SUBSCRIBE_CONFIG
 	case MQTT_EVT_PUBLISH:
 		{
-			u8_t d[33];
+			uint8_t d[33];
 			int len = evt->param.publish.message.payload.len;
 			int bytes_read;
 
@@ -363,7 +363,7 @@ void mqtt_startup(char *hostname, int port)
 	pub_data.message.topic.topic.utf8 = pub_topic;
 	pub_data.message.topic.topic.size = strlen(pub_topic);
 	pub_data.message.topic.qos = MQTT_QOS_1_AT_LEAST_ONCE;
-	pub_data.message.payload.data = (u8_t *)pub_msg;
+	pub_data.message.payload.data = (uint8_t *)pub_msg;
 	pub_data.message_id = 1U;
 	pub_data.dup_flag = 0U;
 	pub_data.retain_flag = 1U;

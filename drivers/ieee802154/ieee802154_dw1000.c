@@ -70,19 +70,19 @@ static K_THREAD_STACK_DEFINE(dwt_work_queue_stack,
 			     DWT_WORK_QUEUE_STACK_SIZE);
 
 struct dwt_phy_config {
-	u8_t channel;	/* Channel 1, 2, 3, 4, 5, 7 */
-	u8_t dr;	/* Data rate DWT_BR_110K, DWT_BR_850K, DWT_BR_6M8 */
-	u8_t prf;	/* PRF DWT_PRF_16M or DWT_PRF_64M */
+	uint8_t channel;	/* Channel 1, 2, 3, 4, 5, 7 */
+	uint8_t dr;	/* Data rate DWT_BR_110K, DWT_BR_850K, DWT_BR_6M8 */
+	uint8_t prf;	/* PRF DWT_PRF_16M or DWT_PRF_64M */
 
-	u8_t rx_pac_l;		/* DWT_PAC8..DWT_PAC64 */
-	u8_t rx_shr_code;	/* RX SHR preamble code */
-	u8_t rx_ns_sfd;		/* non-standard SFD */
-	u16_t rx_sfd_to;	/* SFD timeout value (in symbols)
+	uint8_t rx_pac_l;		/* DWT_PAC8..DWT_PAC64 */
+	uint8_t rx_shr_code;	/* RX SHR preamble code */
+	uint8_t rx_ns_sfd;		/* non-standard SFD */
+	uint16_t rx_sfd_to;	/* SFD timeout value (in symbols)
 				 * (tx_shr_nsync + 1 + SFD_length - rx_pac_l)
 				 */
 
-	u8_t tx_shr_code;	/* TX SHR preamble code */
-	u32_t tx_shr_nsync;	/* PLEN index, e.g. DWT_PLEN_64 */
+	uint8_t tx_shr_code;	/* TX SHR preamble code */
+	uint32_t tx_shr_nsync;	/* PLEN index, e.g. DWT_PLEN_64 */
 
 	float t_shr;
 	float t_phr;
@@ -91,16 +91,16 @@ struct dwt_phy_config {
 
 struct dwt_hi_cfg {
 	const char *irq_port;
-	u8_t irq_pin;
+	uint8_t irq_pin;
 	gpio_dt_flags_t irq_flags;
 	const char *rst_port;
-	u8_t rst_pin;
+	uint8_t rst_pin;
 	gpio_dt_flags_t rst_flags;
 	const char *spi_port;
-	u8_t spi_cs_pin;
+	uint8_t spi_cs_pin;
 	const char *spi_cs_port;
-	u32_t spi_freq;
-	u8_t spi_slave;
+	uint32_t spi_freq;
+	uint8_t spi_slave;
 };
 
 #define DWT_STATE_TX		0
@@ -124,8 +124,8 @@ struct dwt_context {
 	struct dwt_phy_config rf_cfg;
 	atomic_t state;
 	bool cca_busy;
-	u16_t sleep_mode;
-	u8_t mac_addr[8];
+	uint16_t sleep_mode;
+	uint8_t mac_addr[8];
 };
 
 static const struct dwt_hi_cfg dw1000_0_config = {
@@ -164,21 +164,21 @@ static struct dwt_context dwt_0_context = {
 
 /* This structer is used to read all additional RX frame info at one push */
 struct dwt_rx_info_regs {
-	u8_t rx_fqual[DWT_RX_FQUAL_LEN];
-	u8_t rx_ttcki[DWT_RX_TTCKI_LEN];
-	u8_t rx_ttcko[DWT_RX_TTCKO_LEN];
+	uint8_t rx_fqual[DWT_RX_FQUAL_LEN];
+	uint8_t rx_ttcki[DWT_RX_TTCKI_LEN];
+	uint8_t rx_ttcko[DWT_RX_TTCKO_LEN];
 	/* RX_TIME without RX_RAWST */
-	u8_t rx_time[DWT_RX_TIME_FP_RAWST_OFFSET];
+	uint8_t rx_time[DWT_RX_TIME_FP_RAWST_OFFSET];
 } _packed;
 
 static int dwt_configure_rf_phy(struct dwt_context *ctx);
 
 static int dwt_spi_read(struct dwt_context *ctx,
-			u16_t hdr_len, const u8_t *hdr_buf,
-			u32_t data_len, u8_t *data)
+			uint16_t hdr_len, const uint8_t *hdr_buf,
+			uint32_t data_len, uint8_t *data)
 {
 	const struct spi_buf tx_buf = {
-		.buf = (u8_t *)hdr_buf,
+		.buf = (uint8_t *)hdr_buf,
 		.len = hdr_len
 	};
 	const struct spi_buf_set tx = {
@@ -191,7 +191,7 @@ static int dwt_spi_read(struct dwt_context *ctx,
 			.len = hdr_len,
 		},
 		{
-			.buf = (u8_t *)data,
+			.buf = (uint8_t *)data,
 			.len = data_len,
 		},
 	};
@@ -201,34 +201,34 @@ static int dwt_spi_read(struct dwt_context *ctx,
 	};
 
 	LOG_DBG("spi read, header length %u, data length %u",
-		(u16_t)hdr_len, (u32_t)data_len);
-	LOG_HEXDUMP_DBG(hdr_buf, (u16_t)hdr_len, "rd: header");
+		(uint16_t)hdr_len, (uint32_t)data_len);
+	LOG_HEXDUMP_DBG(hdr_buf, (uint16_t)hdr_len, "rd: header");
 
 	if (spi_transceive(ctx->spi, ctx->spi_cfg, &tx, &rx)) {
 		LOG_ERR("SPI transfer failed");
 		return -EIO;
 	}
 
-	LOG_HEXDUMP_DBG(data, (u32_t)data_len, "rd: data");
+	LOG_HEXDUMP_DBG(data, (uint32_t)data_len, "rd: data");
 
 	return 0;
 }
 
 
 static int dwt_spi_write(struct dwt_context *ctx,
-			 u16_t hdr_len, const u8_t *hdr_buf,
-			 u32_t data_len, const u8_t *data)
+			 uint16_t hdr_len, const uint8_t *hdr_buf,
+			 uint32_t data_len, const uint8_t *data)
 {
 	struct spi_buf buf[2] = {
-		{.buf = (u8_t *)hdr_buf, .len = hdr_len},
-		{.buf = (u8_t *)data, .len = data_len}
+		{.buf = (uint8_t *)hdr_buf, .len = hdr_len},
+		{.buf = (uint8_t *)data, .len = data_len}
 	};
 	struct spi_buf_set buf_set = {.buffers = buf, .count = 2};
 
 	LOG_DBG("spi write, header length %u, data length %u",
-		(u16_t)hdr_len, (u32_t)data_len);
-	LOG_HEXDUMP_DBG(hdr_buf, (u16_t)hdr_len, "wr: header");
-	LOG_HEXDUMP_DBG(data, (u32_t)data_len, "wr: data");
+		(uint16_t)hdr_len, (uint32_t)data_len);
+	LOG_HEXDUMP_DBG(hdr_buf, (uint16_t)hdr_len, "wr: header");
+	LOG_HEXDUMP_DBG(data, (uint32_t)data_len, "wr: data");
 
 	if (spi_write(ctx->spi, ctx->spi_cfg, &buf_set)) {
 		LOG_ERR("SPI read failed");
@@ -240,10 +240,10 @@ static int dwt_spi_write(struct dwt_context *ctx,
 
 /* See 2.2.1.2 Transaction formats of the SPI interface */
 static int dwt_spi_transfer(struct dwt_context *ctx,
-			    u8_t reg, u16_t offset,
-			    size_t buf_len, u8_t *buf, bool write)
+			    uint8_t reg, uint16_t offset,
+			    size_t buf_len, uint8_t *buf, bool write)
 {
-	u8_t hdr[DWT_SPI_TRANS_MAX_HDR_LEN] = {0};
+	uint8_t hdr[DWT_SPI_TRANS_MAX_HDR_LEN] = {0};
 	size_t hdr_len = 0;
 
 	hdr[0] = reg & DWT_SPI_TRANS_REG_MAX_RANGE;
@@ -251,12 +251,12 @@ static int dwt_spi_transfer(struct dwt_context *ctx,
 
 	if (offset != 0) {
 		hdr[0] |= DWT_SPI_TRANS_SUB_ADDR;
-		hdr[1] = (u8_t)offset & DWT_SPI_TRANS_SHORT_MAX_OFFSET;
+		hdr[1] = (uint8_t)offset & DWT_SPI_TRANS_SHORT_MAX_OFFSET;
 		hdr_len += 1;
 
 		if (offset > DWT_SPI_TRANS_SHORT_MAX_OFFSET) {
 			hdr[1] |= DWT_SPI_TRANS_EXTEND_ADDR;
-			hdr[2] =  (u8_t)(offset >> 7);
+			hdr[2] =  (uint8_t)(offset >> 7);
 			hdr_len += 1;
 		}
 
@@ -271,41 +271,41 @@ static int dwt_spi_transfer(struct dwt_context *ctx,
 }
 
 static int dwt_register_read(struct dwt_context *ctx,
-			     u8_t reg, u16_t offset, size_t buf_len, u8_t *buf)
+			     uint8_t reg, uint16_t offset, size_t buf_len, uint8_t *buf)
 {
 	return dwt_spi_transfer(ctx, reg, offset, buf_len, buf, false);
 }
 
 static int dwt_register_write(struct dwt_context *ctx,
-			      u8_t reg, u16_t offset, size_t buf_len, u8_t *buf)
+			      uint8_t reg, uint16_t offset, size_t buf_len, uint8_t *buf)
 {
 	return dwt_spi_transfer(ctx, reg, offset, buf_len, buf, true);
 }
 
-static inline u32_t dwt_reg_read_u32(struct dwt_context *ctx,
-				     u8_t reg, u16_t offset)
+static inline uint32_t dwt_reg_read_u32(struct dwt_context *ctx,
+				     uint8_t reg, uint16_t offset)
 {
-	u8_t buf[sizeof(u32_t)];
+	uint8_t buf[sizeof(uint32_t)];
 
 	dwt_spi_transfer(ctx, reg, offset, sizeof(buf), buf, false);
 
 	return sys_get_le32(buf);
 }
 
-static inline u16_t dwt_reg_read_u16(struct dwt_context *ctx,
-				     u8_t reg, u16_t offset)
+static inline uint16_t dwt_reg_read_u16(struct dwt_context *ctx,
+				     uint8_t reg, uint16_t offset)
 {
-	u8_t buf[sizeof(u16_t)];
+	uint8_t buf[sizeof(uint16_t)];
 
 	dwt_spi_transfer(ctx, reg, offset, sizeof(buf), buf, false);
 
 	return sys_get_le16(buf);
 }
 
-static inline u8_t dwt_reg_read_u8(struct dwt_context *ctx,
-				   u8_t reg, u16_t offset)
+static inline uint8_t dwt_reg_read_u8(struct dwt_context *ctx,
+				   uint8_t reg, uint16_t offset)
 {
-	u8_t buf;
+	uint8_t buf;
 
 	dwt_spi_transfer(ctx, reg, offset, sizeof(buf), &buf, false);
 
@@ -313,27 +313,27 @@ static inline u8_t dwt_reg_read_u8(struct dwt_context *ctx,
 }
 
 static inline void dwt_reg_write_u32(struct dwt_context *ctx,
-				     u8_t reg, u16_t offset, u32_t val)
+				     uint8_t reg, uint16_t offset, uint32_t val)
 {
-	u8_t buf[sizeof(u32_t)];
+	uint8_t buf[sizeof(uint32_t)];
 
 	sys_put_le32(val, buf);
 	dwt_spi_transfer(ctx, reg, offset, sizeof(buf), buf, true);
 }
 
 static inline void dwt_reg_write_u16(struct dwt_context *ctx,
-				     u8_t reg, u16_t offset, u16_t val)
+				     uint8_t reg, uint16_t offset, uint16_t val)
 {
-	u8_t buf[sizeof(u16_t)];
+	uint8_t buf[sizeof(uint16_t)];
 
 	sys_put_le16(val, buf);
 	dwt_spi_transfer(ctx, reg, offset, sizeof(buf), buf, true);
 }
 
 static inline void dwt_reg_write_u8(struct dwt_context *ctx,
-				    u8_t reg, u16_t offset, u8_t val)
+				    uint8_t reg, uint16_t offset, uint8_t val)
 {
-	dwt_spi_transfer(ctx, reg, offset, sizeof(u8_t), &val, true);
+	dwt_spi_transfer(ctx, reg, offset, sizeof(uint8_t), &val, true);
 }
 
 static ALWAYS_INLINE void dwt_setup_int(struct dwt_context *ctx,
@@ -379,10 +379,10 @@ static void dwt_disable_txrx(struct dwt_context *ctx)
 }
 
 /* timeout time in units of 1.026 microseconds */
-static int dwt_enable_rx(struct dwt_context *ctx, u16_t timeout)
+static int dwt_enable_rx(struct dwt_context *ctx, uint16_t timeout)
 {
-	u32_t sys_cfg;
-	u16_t sys_ctrl = DWT_SYS_CTRL_RXENAB;
+	uint32_t sys_cfg;
+	uint16_t sys_ctrl = DWT_SYS_CTRL_RXENAB;
 
 	sys_cfg = dwt_reg_read_u32(ctx, DWT_SYS_CFG_ID, 0);
 
@@ -410,20 +410,20 @@ static inline void dwt_irq_handle_rx_cca(struct dwt_context *ctx)
 			  DWT_SYS_STATUS_ALL_RX_GOOD);
 }
 
-static inline void dwt_irq_handle_rx(struct dwt_context *ctx, u32_t sys_stat)
+static inline void dwt_irq_handle_rx(struct dwt_context *ctx, uint32_t sys_stat)
 {
 	struct net_pkt *pkt = NULL;
 	struct dwt_rx_info_regs rx_inf_reg;
 	float a_const;
-	u32_t rx_finfo;
-	u32_t ttcki;
-	u32_t rx_pacc;
-	u32_t cir_pwr;
-	u32_t flags_to_clear;
-	s32_t ttcko;
-	u16_t pkt_len;
-	u8_t *fctrl;
-	s8_t rx_level = INT8_MIN;
+	uint32_t rx_finfo;
+	uint32_t ttcki;
+	uint32_t rx_pacc;
+	uint32_t cir_pwr;
+	uint32_t flags_to_clear;
+	int32_t ttcko;
+	uint16_t pkt_len;
+	uint8_t *fctrl;
+	int8_t rx_level = INT8_MIN;
 
 	LOG_DBG("RX OK event, SYS_STATUS 0x%08x", sys_stat);
 	flags_to_clear = sys_stat & DWT_SYS_STATUS_ALL_RX_GOOD;
@@ -446,7 +446,7 @@ static inline void dwt_irq_handle_rx(struct dwt_context *ctx, u32_t sys_stat)
 
 	dwt_register_read(ctx, DWT_RX_BUFFER_ID, 0, pkt_len, pkt->buffer->data);
 	dwt_register_read(ctx, DWT_RX_FQUAL_ID, 0, sizeof(rx_inf_reg),
-			  (u8_t *)&rx_inf_reg);
+			  (uint8_t *)&rx_inf_reg);
 	net_buf_add(pkt->buffer, pkt_len);
 	fctrl = pkt->buffer->data;
 
@@ -468,9 +468,9 @@ static inline void dwt_irq_handle_rx(struct dwt_context *ctx, u32_t sys_stat)
 	LOG_DBG("ttcko %d ttcki: 0x%08x", ttcko, ttcki);
 
 	if (IS_ENABLED(CONFIG_NET_PKT_TIMESTAMP)) {
-		u8_t ts_buf[sizeof(u64_t)] = {0};
+		uint8_t ts_buf[sizeof(uint64_t)] = {0};
 		struct net_ptp_time timestamp;
-		u64_t ts_fsec;
+		uint64_t ts_fsec;
 
 		memcpy(ts_buf, rx_inf_reg.rx_time, DWT_RX_TIME_RX_STAMP_LEN);
 		ts_fsec = sys_get_le64(ts_buf) * DWT_TS_TIME_UNITS_FS;
@@ -515,7 +515,7 @@ static inline void dwt_irq_handle_rx(struct dwt_context *ctx, u32_t sys_stat)
 
 	/* LQI not implemented */
 	LOG_DBG("Caught a packet (%u) (RSSI: %d)",
-		pkt_len, (s8_t)net_pkt_ieee802154_rssi(pkt));
+		pkt_len, (int8_t)net_pkt_ieee802154_rssi(pkt));
 	LOG_HEXDUMP_DBG(pkt->buffer->data, pkt_len, "RX buffer:");
 
 	if (net_recv_data(ctx->iface, pkt) == NET_OK) {
@@ -542,7 +542,7 @@ rx_out_enable_rx:
 	}
 }
 
-static void dwt_irq_handle_tx(struct dwt_context *ctx, u32_t sys_stat)
+static void dwt_irq_handle_tx(struct dwt_context *ctx, uint32_t sys_stat)
 {
 	/* Clear TX event bits */
 	dwt_reg_write_u32(ctx, DWT_SYS_STATUS_ID, 0,
@@ -552,7 +552,7 @@ static void dwt_irq_handle_tx(struct dwt_context *ctx, u32_t sys_stat)
 	k_sem_give(&ctx->phy_sem);
 }
 
-static void dwt_irq_handle_rxto(struct dwt_context *ctx, u32_t sys_stat)
+static void dwt_irq_handle_rxto(struct dwt_context *ctx, uint32_t sys_stat)
 {
 	/* Clear RX timeout event bits */
 	dwt_reg_write_u32(ctx, DWT_SYS_STATUS_ID, 0,
@@ -570,7 +570,7 @@ static void dwt_irq_handle_rxto(struct dwt_context *ctx, u32_t sys_stat)
 	}
 }
 
-static void dwt_irq_handle_error(struct dwt_context *ctx, u32_t sys_stat)
+static void dwt_irq_handle_error(struct dwt_context *ctx, uint32_t sys_stat)
 {
 	/* Clear RX error event bits */
 	dwt_reg_write_u32(ctx, DWT_SYS_STATUS_ID, 0, DWT_SYS_STATUS_ALL_RX_ERR);
@@ -595,7 +595,7 @@ static void dwt_irq_work_handler(struct k_work *item)
 {
 	struct dwt_context *ctx = CONTAINER_OF(item, struct dwt_context,
 					       irq_cb_work);
-	u32_t sys_stat;
+	uint32_t sys_stat;
 
 	k_sem_take(&ctx->dev_lock, K_FOREVER);
 
@@ -625,7 +625,7 @@ static void dwt_irq_work_handler(struct k_work *item)
 }
 
 static void dwt_gpio_callback(struct device *dev,
-			      struct gpio_callback *cb, u32_t pins)
+			      struct gpio_callback *cb, uint32_t pins)
 {
 	struct dwt_context *ctx = CONTAINER_OF(cb, struct dwt_context, gpio_cb);
 
@@ -640,7 +640,7 @@ static enum ieee802154_hw_caps dwt_get_capabilities(struct device *dev)
 		IEEE802154_HW_FILTER;
 }
 
-static u32_t dwt_get_pkt_duration_ns(struct dwt_context *ctx, u8_t psdu_len)
+static uint32_t dwt_get_pkt_duration_ns(struct dwt_context *ctx, uint8_t psdu_len)
 {
 	struct dwt_phy_config *rf_cfg = &ctx->rf_cfg;
 	float t_psdu = rf_cfg->t_dsym * psdu_len * 8;
@@ -651,7 +651,7 @@ static u32_t dwt_get_pkt_duration_ns(struct dwt_context *ctx, u8_t psdu_len)
 static int dwt_cca(struct device *dev)
 {
 	struct dwt_context *ctx = dev->driver_data;
-	u32_t cca_dur = (dwt_get_pkt_duration_ns(ctx, 127) +
+	uint32_t cca_dur = (dwt_get_pkt_duration_ns(ctx, 127) +
 			 dwt_get_pkt_duration_ns(ctx, 5)) /
 			 UWB_PHY_TDSYM_PHR_6M8;
 
@@ -681,7 +681,7 @@ static int dwt_cca(struct device *dev)
 	return ctx->cca_busy ? -EBUSY : 0;
 }
 
-static int dwt_ed(struct device *dev, u16_t duration,
+static int dwt_ed(struct device *dev, uint16_t duration,
 		  energy_scan_done_cb_t done_cb)
 {
 	/* TODO: see description Sub-Register 0x23:02 – AGC_CTRL1 */
@@ -689,7 +689,7 @@ static int dwt_ed(struct device *dev, u16_t duration,
 	return -ENOTSUP;
 }
 
-static int dwt_set_channel(struct device *dev, u16_t channel)
+static int dwt_set_channel(struct device *dev, uint16_t channel)
 {
 	struct dwt_context *ctx = dev->driver_data;
 	struct dwt_phy_config *rf_cfg = &ctx->rf_cfg;
@@ -711,7 +711,7 @@ static int dwt_set_channel(struct device *dev, u16_t channel)
 	return 0;
 }
 
-static int dwt_set_pan_id(struct device *dev, u16_t pan_id)
+static int dwt_set_pan_id(struct device *dev, uint16_t pan_id)
 {
 	struct dwt_context *ctx = dev->driver_data;
 
@@ -724,7 +724,7 @@ static int dwt_set_pan_id(struct device *dev, u16_t pan_id)
 	return 0;
 }
 
-static int dwt_set_short_addr(struct device *dev, u16_t short_addr)
+static int dwt_set_short_addr(struct device *dev, uint16_t short_addr)
 {
 	struct dwt_context *ctx = dev->driver_data;
 
@@ -738,7 +738,7 @@ static int dwt_set_short_addr(struct device *dev, u16_t short_addr)
 	return 0;
 }
 
-static int dwt_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
+static int dwt_set_ieee_addr(struct device *dev, const uint8_t *ieee_addr)
 {
 	struct dwt_context *ctx = dev->driver_data;
 
@@ -748,7 +748,7 @@ static int dwt_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
 
 	k_sem_take(&ctx->dev_lock, K_FOREVER);
 	dwt_register_write(ctx, DWT_EUI_64_ID, DWT_EUI_64_OFFSET,
-			   DWT_EUI_64_LEN, (u8_t *)ieee_addr);
+			   DWT_EUI_64_LEN, (uint8_t *)ieee_addr);
 	k_sem_give(&ctx->dev_lock);
 
 	return 0;
@@ -774,7 +774,7 @@ static int dwt_filter(struct device *dev,
 	return -ENOTSUP;
 }
 
-static int dwt_set_power(struct device *dev, s16_t dbm)
+static int dwt_set_power(struct device *dev, int16_t dbm)
 {
 	struct dwt_context *ctx = dev->driver_data;
 
@@ -788,11 +788,11 @@ static int dwt_tx(struct device *dev, enum ieee802154_tx_mode tx_mode,
 {
 	struct dwt_context *ctx = dev->driver_data;
 	size_t len = frag->len;
-	u32_t tx_time = 0;
+	uint32_t tx_time = 0;
 	struct net_ptp_time *txts;
-	u64_t tmp_fs;
-	u32_t tx_fctrl;
-	u8_t sys_ctrl = DWT_SYS_CTRL_TXSTRT;
+	uint64_t tmp_fs;
+	uint32_t tx_fctrl;
+	uint8_t sys_ctrl = DWT_SYS_CTRL_TXSTRT;
 
 	if (atomic_test_and_set_bit(&ctx->state, DWT_STATE_TX)) {
 		LOG_ERR("Transceiver busy");
@@ -855,7 +855,7 @@ static int dwt_tx(struct device *dev, enum ieee802154_tx_mode tx_mode,
 	dwt_reg_write_u8(ctx, DWT_SYS_CTRL_ID, DWT_SYS_CTRL_OFFSET, sys_ctrl);
 
 	if (sys_ctrl & DWT_SYS_CTRL_TXDLYS) {
-		u32_t sys_stat = dwt_reg_read_u32(ctx, DWT_SYS_STATUS_ID, 0);
+		uint32_t sys_stat = dwt_reg_read_u32(ctx, DWT_SYS_STATUS_ID, 0);
 
 		if (sys_stat & DWT_SYS_STATUS_HPDWARN) {
 			LOG_WRN("Half Period Delay Warning");
@@ -867,7 +867,7 @@ static int dwt_tx(struct device *dev, enum ieee802154_tx_mode tx_mode,
 	k_sem_take(&ctx->phy_sem, K_FOREVER);
 
 	if (IS_ENABLED(CONFIG_NET_PKT_TIMESTAMP)) {
-		u8_t ts_buf[sizeof(u64_t)] = {0};
+		uint8_t ts_buf[sizeof(uint64_t)] = {0};
 		struct net_ptp_time timestamp;
 
 		k_sem_take(&ctx->dev_lock, K_FOREVER);
@@ -875,7 +875,7 @@ static int dwt_tx(struct device *dev, enum ieee802154_tx_mode tx_mode,
 				  DWT_TX_TIME_TX_STAMP_OFFSET,
 				  DWT_TX_TIME_TX_STAMP_LEN,
 				  ts_buf);
-		LOG_DBG("ts  hi32 %x", (u32_t)(sys_get_le64(ts_buf) >> 8));
+		LOG_DBG("ts  hi32 %x", (uint32_t)(sys_get_le64(ts_buf) >> 8));
 		LOG_DBG("sys hi32 %x",
 			dwt_reg_read_u32(ctx, DWT_SYS_TIME_ID, 1));
 		k_sem_give(&ctx->dev_lock);
@@ -904,13 +904,13 @@ error:
 }
 
 static void dwt_set_frame_filter(struct dwt_context *ctx,
-				 bool ff_enable, u8_t ff_type)
+				 bool ff_enable, uint8_t ff_type)
 {
-	u32_t sys_cfg_ff = ff_enable ? DWT_SYS_CFG_FFE : 0;
+	uint32_t sys_cfg_ff = ff_enable ? DWT_SYS_CFG_FFE : 0;
 
 	sys_cfg_ff |= ff_type & DWT_SYS_CFG_FF_ALL_EN;
 
-	dwt_reg_write_u8(ctx, DWT_SYS_CFG_ID, 0, (u8_t)sys_cfg_ff);
+	dwt_reg_write_u8(ctx, DWT_SYS_CFG_ID, 0, (uint8_t)sys_cfg_ff);
 }
 
 static int dwt_configure(struct device *dev, enum ieee802154_config_type type,
@@ -979,7 +979,7 @@ static int dwt_hw_reset(struct device *dev)
  * SPI speed in INIT state or for wake-up sequence,
  * see 2.3.2 Overview of main operational states
  */
-static void dwt_set_spi_slow(struct dwt_context *ctx, const u32_t freq)
+static void dwt_set_spi_slow(struct dwt_context *ctx, const uint32_t freq)
 {
 	ctx->spi_cfg_slow.frequency = freq;
 	ctx->spi_cfg = &ctx->spi_cfg_slow;
@@ -994,9 +994,9 @@ static void dwt_set_spi_fast(struct dwt_context *ctx)
 static void dwt_set_rx_mode(struct dwt_context *ctx)
 {
 	struct dwt_phy_config *rf_cfg = &ctx->rf_cfg;
-	u32_t pmsc_ctrl0;
-	u32_t t_on_us;
-	u8_t rx_sniff[2];
+	uint32_t pmsc_ctrl0;
+	uint32_t t_on_us;
+	uint8_t rx_sniff[2];
 
 	/* SNIFF Mode ON time in units of PAC */
 	rx_sniff[0] = CONFIG_IEEE802154_DW1000_SNIFF_ONT &
@@ -1019,7 +1019,7 @@ static void dwt_set_rx_mode(struct dwt_context *ctx)
 static int dwt_start(struct device *dev)
 {
 	struct dwt_context *ctx = dev->driver_data;
-	u8_t cswakeup_buf[32] = {0};
+	uint8_t cswakeup_buf[32] = {0};
 
 	k_sem_take(&ctx->dev_lock, K_FOREVER);
 
@@ -1085,7 +1085,7 @@ static int dwt_stop(struct device *dev)
 
 static inline void dwt_set_sysclks_xti(struct dwt_context *ctx, bool ldeload)
 {
-	u16_t clks = BIT(9) | DWT_PMSC_CTRL0_SYSCLKS_19M;
+	uint16_t clks = BIT(9) | DWT_PMSC_CTRL0_SYSCLKS_19M;
 
 	/*
 	 * See Table 4: Register accesses required to load LDE microcode,
@@ -1101,14 +1101,14 @@ static inline void dwt_set_sysclks_xti(struct dwt_context *ctx, bool ldeload)
 
 static inline void dwt_set_sysclks_auto(struct dwt_context *ctx)
 {
-	u8_t sclks = DWT_PMSC_CTRL0_SYSCLKS_AUTO |
+	uint8_t sclks = DWT_PMSC_CTRL0_SYSCLKS_AUTO |
 		     DWT_PMSC_CTRL0_RXCLKS_AUTO |
 		     DWT_PMSC_CTRL0_TXCLKS_AUTO;
 
 	dwt_reg_write_u8(ctx, DWT_PMSC_ID, DWT_PMSC_CTRL0_OFFSET, sclks);
 }
 
-static u32_t dwt_otpmem_read(struct dwt_context *ctx, u16_t otp_addr)
+static uint32_t dwt_otpmem_read(struct dwt_context *ctx, uint16_t otp_addr)
 {
 	dwt_reg_write_u16(ctx, DWT_OTP_IF_ID, DWT_OTP_ADDR, otp_addr);
 
@@ -1123,8 +1123,8 @@ static u32_t dwt_otpmem_read(struct dwt_context *ctx, u16_t otp_addr)
 
 static int dwt_initialise_dev(struct dwt_context *ctx)
 {
-	u32_t otp_val = 0;
-	u8_t xtal_trim;
+	uint32_t otp_val = 0;
+	uint8_t xtal_trim;
 
 	dwt_set_sysclks_xti(ctx, false);
 	ctx->sleep_mode = 0;
@@ -1167,7 +1167,7 @@ static int dwt_initialise_dev(struct dwt_context *ctx)
 	otp_val = dwt_otpmem_read(ctx, DWT_OTP_XTRIM_ADDR);
 	xtal_trim = otp_val & DWT_FS_XTALT_MASK;
 	LOG_INF("OTP Revision 0x%02x, XTAL Trim 0x%02x",
-		(u8_t)(otp_val >> 8), xtal_trim);
+		(uint8_t)(otp_val >> 8), xtal_trim);
 
 	LOG_DBG("CHIP ID 0x%08x", dwt_otpmem_read(ctx, DWT_OTP_PARTID_ADDR));
 	LOG_DBG("LOT ID 0x%08x", dwt_otpmem_read(ctx, DWT_OTP_LOTID_ADDR));
@@ -1235,25 +1235,25 @@ static int dwt_initialise_dev(struct dwt_context *ctx)
 static int dwt_configure_rf_phy(struct dwt_context *ctx)
 {
 	struct dwt_phy_config *rf_cfg = &ctx->rf_cfg;
-	u8_t chan = rf_cfg->channel;
-	u8_t prf_idx = rf_cfg->prf;
-	u32_t chan_ctrl = 0;
-	u8_t rxctrlh;
-	u8_t pll_tune;
-	u8_t tune4h;
-	u8_t pgdelay;
-	u16_t lde_repc;
-	u16_t agc_tune1;
-	u16_t sfdto;
-	u16_t tune1a;
-	u16_t tune0b;
-	u16_t tune1b;
-	u32_t txctrl;
-	u32_t pll_cfg;
-	u32_t tune2;
-	u32_t sys_cfg;
-	u32_t tx_fctrl;
-	u32_t power;
+	uint8_t chan = rf_cfg->channel;
+	uint8_t prf_idx = rf_cfg->prf;
+	uint32_t chan_ctrl = 0;
+	uint8_t rxctrlh;
+	uint8_t pll_tune;
+	uint8_t tune4h;
+	uint8_t pgdelay;
+	uint16_t lde_repc;
+	uint16_t agc_tune1;
+	uint16_t sfdto;
+	uint16_t tune1a;
+	uint16_t tune0b;
+	uint16_t tune1b;
+	uint32_t txctrl;
+	uint32_t pll_cfg;
+	uint32_t tune2;
+	uint32_t sys_cfg;
+	uint32_t tx_fctrl;
+	uint32_t power;
 
 	if ((chan < 1) || (chan > 7) || (chan == 6)) {
 		LOG_ERR("Channel not supported %u", chan);
@@ -1461,7 +1461,7 @@ static int dwt_configure_rf_phy(struct dwt_context *ctx)
 	 * SHR: synchronisation header (SYNC + SFD)
 	 * PHR: PHY header
 	 */
-	u16_t nsync = BIT(rf_cfg->tx_shr_nsync + 6);
+	uint16_t nsync = BIT(rf_cfg->tx_shr_nsync + 6);
 
 	if (rf_cfg->prf == DWT_PRF_64M) {
 		rf_cfg->t_shr = UWB_PHY_TPSYM_PRF64 *
@@ -1616,13 +1616,13 @@ static int dw1000_init(struct device *dev)
 	return 0;
 }
 
-static inline u8_t *get_mac(struct device *dev)
+static inline uint8_t *get_mac(struct device *dev)
 {
 	struct dwt_context *dw1000 = dev->driver_data;
-	u32_t *ptr = (u32_t *)(dw1000->mac_addr);
+	uint32_t *ptr = (uint32_t *)(dw1000->mac_addr);
 
 	UNALIGNED_PUT(sys_rand32_get(), ptr);
-	ptr = (u32_t *)(dw1000->mac_addr + 4);
+	ptr = (uint32_t *)(dw1000->mac_addr + 4);
 	UNALIGNED_PUT(sys_rand32_get(), ptr);
 
 	dw1000->mac_addr[0] = (dw1000->mac_addr[0] & ~0x01) | 0x02;
@@ -1634,7 +1634,7 @@ static void dwt_iface_api_init(struct net_if *iface)
 {
 	struct device *dev = net_if_get_device(iface);
 	struct dwt_context *dw1000 = dev->driver_data;
-	u8_t *mac = get_mac(dev);
+	uint8_t *mac = get_mac(dev);
 
 	net_if_set_link_addr(iface, mac, 8, NET_LINK_IEEE802154);
 

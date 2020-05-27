@@ -27,7 +27,7 @@ static void tracing_backend_posix_init(void)
 
 static void tracing_backend_posix_output(
 		const struct tracing_backend *backend,
-		u8_t *data, u32_t length)
+		uint8_t *data, uint32_t length)
 {
 	fwrite(data, length, 1, (FILE *)out_stream);
 

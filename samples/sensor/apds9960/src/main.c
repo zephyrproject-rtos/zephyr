@@ -76,7 +76,7 @@ void main(void)
 		       intensity.val1, pdata.val1);
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-		u32_t p_state;
+		uint32_t p_state;
 
 		p_state = DEVICE_PM_LOW_POWER_STATE;
 		device_set_power_state(dev, p_state, NULL, NULL);

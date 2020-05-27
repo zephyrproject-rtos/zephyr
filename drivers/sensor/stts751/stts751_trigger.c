@@ -25,7 +25,7 @@ LOG_MODULE_DECLARE(STTS751, CONFIG_SENSOR_LOG_LEVEL);
 static int stts751_enable_int(struct device *dev, int enable)
 {
 	struct stts751_data *stts751 = dev->driver_data;
-	u8_t en = (enable) ? 0 : 1;
+	uint8_t en = (enable) ? 0 : 1;
 
 	return stts751_pin_event_route_set(stts751->ctx, en);
 }
@@ -77,7 +77,7 @@ static void stts751_handle_interrupt(void *arg)
 }
 
 static void stts751_gpio_callback(struct device *dev,
-				  struct gpio_callback *cb, u32_t pins)
+				  struct gpio_callback *cb, uint32_t pins)
 {
 	const struct stts751_config *cfg = dev->config_info;
 	struct stts751_data *stts751 =

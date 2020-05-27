@@ -91,31 +91,31 @@ enum {
 
 struct provisioner_link {
 	struct bt_mesh_cdb_node *node;
-	u16_t addr;
-	u16_t net_idx;
-	u8_t  attention_duration;
-	u8_t  uuid[16];
+	uint16_t addr;
+	uint16_t net_idx;
+	uint8_t  attention_duration;
+	uint8_t  uuid[16];
 };
 
 struct prov_link {
 	ATOMIC_DEFINE(flags, NUM_FLAGS);
 	struct provisioner_link provisioner[PROVISIONER_LINK];
 
-	u8_t  dhkey[32];         /* Calculated DHKey */
-	u8_t  expect;            /* Next expected PDU */
+	uint8_t  dhkey[32];         /* Calculated DHKey */
+	uint8_t  expect;            /* Next expected PDU */
 
-	u8_t  oob_method;
-	u8_t  oob_action;
-	u8_t  oob_size;
+	uint8_t  oob_method;
+	uint8_t  oob_action;
+	uint8_t  oob_size;
 
-	u8_t  conf[16];          /* Remote Confirmation */
-	u8_t  rand[16];          /* Local Random */
-	u8_t  auth[16];          /* Authentication Value */
+	uint8_t  conf[16];          /* Remote Confirmation */
+	uint8_t  rand[16];          /* Local Random */
+	uint8_t  auth[16];          /* Authentication Value */
 
-	u8_t  conf_salt[16];     /* ConfirmationSalt */
-	u8_t  conf_key[16];      /* ConfirmationKey */
-	u8_t  conf_inputs[145];  /* ConfirmationInputs */
-	u8_t  prov_salt[16];     /* Provisioning Salt */
+	uint8_t  conf_salt[16];     /* ConfirmationSalt */
+	uint8_t  conf_key[16];      /* ConfirmationKey */
+	uint8_t  conf_inputs[145];  /* ConfirmationInputs */
+	uint8_t  prov_salt[16];     /* Provisioning Salt */
 
 	const struct prov_bearer *bearer;
 };
@@ -128,7 +128,7 @@ static struct prov_link link;
 static const struct bt_mesh_prov *prov;
 
 static void send_pub_key(void);
-static void pub_key_ready(const u8_t *pkey);
+static void pub_key_ready(const uint8_t *pkey);
 static void start_sent(int err, void *cb_data);
 
 static int reset_state(void)
@@ -165,7 +165,7 @@ static inline int prov_send(struct net_buf_simple *buf,
 	return link.bearer->send(buf, cb, NULL);
 }
 
-static void prov_buf_init(struct net_buf_simple *buf, u8_t type)
+static void prov_buf_init(struct net_buf_simple *buf, uint8_t type)
 {
 	net_buf_simple_reserve(buf, PROV_BEARER_BUF_HEADROOM);
 	net_buf_simple_add_u8(buf, type);
@@ -179,7 +179,7 @@ static void prov_link_close(enum prov_bearer_link_status status)
 	link.bearer->link_close(status);
 }
 
-static void prov_send_fail_msg(u8_t err)
+static void prov_send_fail_msg(uint8_t err)
 {
 	PROV_BUF(buf, 2);
 
@@ -195,7 +195,7 @@ static void prov_send_fail_msg(u8_t err)
 	}
 }
 
-static void prov_fail(u8_t reason)
+static void prov_fail(uint8_t reason)
 {
 	/* According to Bluetooth Mesh Specification v1.0.1, Section 5.4.4, the
 	 * provisioner just closes the link when something fails, while the
@@ -209,7 +209,7 @@ static void prov_fail(u8_t reason)
 	}
 }
 
-static void prov_invite(const u8_t *data)
+static void prov_invite(const uint8_t *data)
 {
 	PROV_BUF(buf, 12);
 
@@ -311,9 +311,9 @@ static void start_sent(int err, void *cb_data)
 	}
 }
 
-static void prov_capabilities(const u8_t *data)
+static void prov_capabilities(const uint8_t *data)
 {
-	u16_t algorithms, output_action, input_action;
+	uint16_t algorithms, output_action, input_action;
 
 	if (!IS_ENABLED(CONFIG_BT_MESH_PROVISIONER)) {
 		return;
@@ -357,7 +357,7 @@ static void prov_capabilities(const u8_t *data)
 	send_start();
 }
 
-static bt_mesh_output_action_t output_action(u8_t action)
+static bt_mesh_output_action_t output_action(uint8_t action)
 {
 	switch (action) {
 	case OUTPUT_OOB_BLINK:
@@ -375,7 +375,7 @@ static bt_mesh_output_action_t output_action(u8_t action)
 	}
 }
 
-static bt_mesh_input_action_t input_action(u8_t action)
+static bt_mesh_input_action_t input_action(uint8_t action)
 {
 	switch (action) {
 	case INPUT_OOB_PUSH:
@@ -391,7 +391,7 @@ static bt_mesh_input_action_t input_action(u8_t action)
 	}
 }
 
-static int prov_auth(u8_t method, u8_t action, u8_t size)
+static int prov_auth(uint8_t method, uint8_t action, uint8_t size)
 {
 	bt_mesh_output_action_t output;
 	bt_mesh_input_action_t input;
@@ -433,7 +433,7 @@ static int prov_auth(u8_t method, u8_t action, u8_t size)
 
 		if (output == BT_MESH_DISPLAY_STRING) {
 			unsigned char str[9];
-			u8_t i;
+			uint8_t i;
 
 			bt_rand(str, size);
 
@@ -454,9 +454,9 @@ static int prov_auth(u8_t method, u8_t action, u8_t size)
 
 			return prov->output_string((char *)str);
 		} else {
-			u32_t div[8] = { 10, 100, 1000, 10000, 100000,
+			uint32_t div[8] = { 10, 100, 1000, 10000, 100000,
 					    1000000, 10000000, 100000000 };
-			u32_t num;
+			uint32_t num;
 
 			bt_rand(&num, sizeof(num));
 			num %= div[size - 1];
@@ -494,7 +494,7 @@ static int prov_auth(u8_t method, u8_t action, u8_t size)
 	}
 }
 
-static void prov_start(const u8_t *data)
+static void prov_start(const uint8_t *data)
 {
 	BT_DBG("Algorithm:   0x%02x", data[0]);
 	BT_DBG("Public Key:  0x%02x", data[1]);
@@ -590,7 +590,7 @@ static void send_input_complete(void)
 	link.expect = PROV_CONFIRM;
 }
 
-int bt_mesh_input_number(u32_t num)
+int bt_mesh_input_number(uint32_t num)
 {
 	BT_DBG("%u", num);
 
@@ -623,7 +623,7 @@ int bt_mesh_input_string(const char *str)
 static void send_pub_key(void)
 {
 	PROV_BUF(buf, 65);
-	const u8_t *key;
+	const uint8_t *key;
 
 	key = bt_pub_key_get();
 	if (!key) {
@@ -665,7 +665,7 @@ static void send_pub_key(void)
 	}
 }
 
-static void prov_dh_key_cb(const u8_t dhkey[32])
+static void prov_dh_key_cb(const uint8_t dhkey[32])
 {
 	BT_DBG("%p", dhkey);
 
@@ -688,7 +688,7 @@ static void prov_dh_key_cb(const u8_t dhkey[32])
 
 static void prov_dh_key_gen(void)
 {
-	u8_t remote_pk_le[64], *remote_pk;
+	uint8_t remote_pk_le[64], *remote_pk;
 
 	if (atomic_test_bit(link.flags, PROVISIONER)) {
 		remote_pk = &link.conf_inputs[81];
@@ -709,7 +709,7 @@ static void prov_dh_key_gen(void)
 	}
 }
 
-static void prov_pub_key(const u8_t *data)
+static void prov_pub_key(const uint8_t *data)
 {
 	BT_DBG("Remote Public Key: %s", bt_hex(data, 64));
 
@@ -733,7 +733,7 @@ static void prov_pub_key(const u8_t *data)
 	prov_dh_key_gen();
 }
 
-static void pub_key_ready(const u8_t *pkey)
+static void pub_key_ready(const uint8_t *pkey)
 {
 	if (!pkey) {
 		BT_WARN("Public key not available");
@@ -759,7 +759,7 @@ static void notify_input_complete(void)
 	}
 }
 
-static void prov_input_complete(const u8_t *data)
+static void prov_input_complete(const uint8_t *data)
 {
 	BT_DBG("");
 	notify_input_complete();
@@ -769,8 +769,8 @@ static void send_prov_data(void)
 {
 	PROV_BUF(pdu, 34);
 	struct bt_mesh_cdb_subnet *sub;
-	u8_t session_key[16];
-	u8_t nonce[13];
+	uint8_t session_key[16];
+	uint8_t nonce[13];
 	int err;
 
 	err = bt_mesh_session_key(link.dhkey, link.prov_salt, session_key);
@@ -837,7 +837,7 @@ static void send_prov_data(void)
 	link.expect = PROV_COMPLETE;
 }
 
-static void prov_complete(const u8_t *data)
+static void prov_complete(const uint8_t *data)
 {
 	if (!IS_ENABLED(CONFIG_BT_MESH_PROVISIONER)) {
 		return;
@@ -881,10 +881,10 @@ static void send_random(void)
 	}
 }
 
-static void prov_random(const u8_t *data)
+static void prov_random(const uint8_t *data)
 {
-	u8_t conf_verify[16];
-	const u8_t *prov_rand, *dev_rand;
+	uint8_t conf_verify[16];
+	const uint8_t *prov_rand, *dev_rand;
 
 	BT_DBG("Remote Random: %s", bt_hex(data, 16));
 
@@ -927,7 +927,7 @@ static void prov_random(const u8_t *data)
 	}
 }
 
-static void prov_confirm(const u8_t *data)
+static void prov_confirm(const uint8_t *data)
 {
 	BT_DBG("Remote Confirm: %s", bt_hex(data, 16));
 
@@ -947,17 +947,17 @@ static inline bool is_pb_gatt(void)
 	return link.bearer && link.bearer->type == BT_MESH_PROV_GATT;
 }
 
-static void prov_data(const u8_t *data)
+static void prov_data(const uint8_t *data)
 {
 	PROV_BUF(msg, 1);
-	u8_t session_key[16];
-	u8_t nonce[13];
-	u8_t dev_key[16];
-	u8_t pdu[25];
-	u8_t flags;
-	u32_t iv_index;
-	u16_t addr;
-	u16_t net_idx;
+	uint8_t session_key[16];
+	uint8_t nonce[13];
+	uint8_t dev_key[16];
+	uint8_t pdu[25];
+	uint8_t flags;
+	uint32_t iv_index;
+	uint16_t addr;
+	uint16_t net_idx;
 	int err;
 	bool identity_enable;
 
@@ -1035,15 +1035,15 @@ static void prov_data(const u8_t *data)
 	}
 }
 
-static void prov_failed(const u8_t *data)
+static void prov_failed(const uint8_t *data)
 {
 	BT_WARN("Error: 0x%02x", data[0]);
 	reset_state();
 }
 
 static const struct {
-	void (*func)(const u8_t *data);
-	u16_t len;
+	void (*func)(const uint8_t *data);
+	uint16_t len;
 } prov_handlers[] = {
 	{ prov_invite, 1 },
 	{ prov_capabilities, 11 },
@@ -1060,7 +1060,7 @@ static const struct {
 static void prov_recv(const struct prov_bearer *bearer, void *cb_data,
 		      struct net_buf_simple *buf)
 {
-	u8_t type = buf->data[0];
+	uint8_t type = buf->data[0];
 
 	BT_DBG("type 0x%02x len %u", type, buf->len);
 
@@ -1118,7 +1118,7 @@ static void prov_link_closed(const struct prov_bearer *bearer, void *cb_data,
 }
 
 static void prov_bearer_error(const struct prov_bearer *bearer, void *cb_data,
-			      u8_t err)
+			      uint8_t err)
 {
 	prov_fail(err);
 }
@@ -1131,8 +1131,8 @@ static const struct prov_bearer_cb prov_bearer_cb = {
 };
 
 #if defined(CONFIG_BT_MESH_PB_ADV)
-int bt_mesh_pb_adv_open(const u8_t uuid[16], u16_t net_idx, u16_t addr,
-			u8_t attention_duration)
+int bt_mesh_pb_adv_open(const uint8_t uuid[16], uint16_t net_idx, uint16_t addr,
+			uint8_t attention_duration)
 {
 	int err;
 
@@ -1238,7 +1238,7 @@ int bt_mesh_prov_disable(bt_mesh_prov_bearer_t bearers)
 	return 0;
 }
 
-void bt_mesh_prov_complete(u16_t net_idx, u16_t addr)
+void bt_mesh_prov_complete(uint16_t net_idx, uint16_t addr)
 {
 	if (prov->complete) {
 		prov->complete(net_idx, addr);

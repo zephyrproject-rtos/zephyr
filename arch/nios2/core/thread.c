@@ -48,8 +48,8 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	iframe->arg2 = arg2;
 	iframe->arg3 = arg3;
 
-	thread->callee_saved.sp = (u32_t)iframe;
-	thread->callee_saved.ra = (u32_t)z_thread_entry_wrapper;
+	thread->callee_saved.sp = (uint32_t)iframe;
+	thread->callee_saved.ra = (uint32_t)z_thread_entry_wrapper;
 	thread->callee_saved.key = NIOS2_STATUS_PIE_MSK;
 	/* Leave the rest of thread->callee_saved junk */
 }

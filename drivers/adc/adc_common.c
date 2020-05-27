@@ -7,11 +7,11 @@
 #include <drivers/adc.h>
 
 int adc_gain_invert(enum adc_gain gain,
-		    s32_t *value)
+		    int32_t *value)
 {
 	struct gain_desc {
-		u8_t mul;
-		u8_t div;
+		uint8_t mul;
+		uint8_t div;
 	};
 	static const struct gain_desc gains[] = {
 		[ADC_GAIN_1_6] = {.mul = 6, .div = 1},
@@ -32,7 +32,7 @@ int adc_gain_invert(enum adc_gain gain,
 	};
 	int rv = -EINVAL;
 
-	if ((u8_t)gain < ARRAY_SIZE(gains)) {
+	if ((uint8_t)gain < ARRAY_SIZE(gains)) {
 		const struct gain_desc *gdp = &gains[gain];
 
 		if ((gdp->mul != 0) && (gdp->div != 0)) {

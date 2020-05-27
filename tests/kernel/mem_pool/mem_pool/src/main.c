@@ -56,12 +56,12 @@ struct TEST_CASE {
 	struct k_mem_block *block;      /* pointer to block data */
 	struct k_mem_pool *pool_id;     /* pool ID */
 	int size;                       /* request size in bytes */
-	s32_t timeout;                  /* # of ticks to wait */
+	int32_t timeout;                  /* # of ticks to wait */
 	int rcode;                      /* expected return code */
 };
 
 typedef int (*pool_block_get_func_t)(struct k_mem_block *, struct k_mem_pool *,
-				     int, s32_t);
+				     int, int32_t);
 typedef int (*pool_move_block_func_t)(struct k_mem_block *, struct k_mem_pool *);
 
 static volatile int evidence;
@@ -125,7 +125,7 @@ static struct TEST_CASE getwt_set[] = {
  * @return k_mem_pool_alloc() return value
  */
 static int pool_block_get_func(struct k_mem_block *block, struct k_mem_pool *pool,
-			int size, s32_t unused)
+			int size, int32_t unused)
 {
 	ARG_UNUSED(unused);
 
@@ -140,7 +140,7 @@ static int pool_block_get_func(struct k_mem_block *block, struct k_mem_pool *poo
  * @return k_mem_pool_alloc(timeout) return value
  */
 static int pool_block_get_wt_func(struct k_mem_block *block, struct k_mem_pool *pool,
-			   int size, s32_t timeout)
+			   int size, int32_t timeout)
 {
 	return k_mem_pool_alloc(pool, block, size, K_MSEC(timeout));
 }

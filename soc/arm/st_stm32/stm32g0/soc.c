@@ -27,7 +27,7 @@
  */
 static int stm32g0_init(struct device *arg)
 {
-	u32_t key;
+	uint32_t key;
 
 	ARG_UNUSED(arg);
 

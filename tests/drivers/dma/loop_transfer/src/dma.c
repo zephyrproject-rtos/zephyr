@@ -24,19 +24,19 @@ static char rx_data[TRANSFER_LOOPS][RX_BUFF_SIZE] = {{ 0 } };
 
 #define DMA_DEVICE_NAME "DMA_0"
 
-volatile u8_t transfer_count;
+volatile uint8_t transfer_count;
 static struct dma_config dma_cfg = {0};
 static struct dma_block_config dma_block_cfg = {0};
 
-static void test_transfer(struct device *dev, u32_t id)
+static void test_transfer(struct device *dev, uint32_t id)
 {
 	int ret;
 
 	transfer_count++;
 	if (transfer_count < TRANSFER_LOOPS) {
 		dma_block_cfg.block_size = strlen(tx_data);
-		dma_block_cfg.source_address = (u32_t)tx_data;
-		dma_block_cfg.dest_address = (u32_t)rx_data[transfer_count];
+		dma_block_cfg.source_address = (uint32_t)tx_data;
+		dma_block_cfg.dest_address = (uint32_t)rx_data[transfer_count];
 
 		ret = dma_config(dev, id, &dma_cfg);
 		if (ret == 0) {
@@ -50,7 +50,7 @@ static void test_error(void)
 	printk("DMA could not proceed, an error occurred\n");
 }
 
-static void dma_user_callback(void *arg, u32_t id, int error_code)
+static void dma_user_callback(void *arg, uint32_t id, int error_code)
 {
 	struct device *dev = (struct device *)arg;
 
@@ -64,7 +64,7 @@ static void dma_user_callback(void *arg, u32_t id, int error_code)
 void main(void)
 {
 	struct device *dma;
-	static u32_t chan_id;
+	static uint32_t chan_id;
 
 	printk("DMA memory to memory transfer started on %s\n",
 		DMA_DEVICE_NAME);
@@ -90,8 +90,8 @@ void main(void)
 
 	printk("Starting the transfer and waiting for 1 second\n");
 	dma_block_cfg.block_size = strlen(tx_data);
-	dma_block_cfg.source_address = (u32_t)tx_data;
-	dma_block_cfg.dest_address = (u32_t)rx_data[transfer_count];
+	dma_block_cfg.source_address = (uint32_t)tx_data;
+	dma_block_cfg.dest_address = (uint32_t)rx_data[transfer_count];
 
 	if (dma_config(dma, chan_id, &dma_cfg)) {
 		printk("ERROR: transfer config\n");

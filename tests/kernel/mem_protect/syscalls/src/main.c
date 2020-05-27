@@ -104,7 +104,7 @@ static inline int z_vrfy_to_copy(char *dest)
 }
 #include <syscalls/to_copy_mrsh.c>
 
-int z_impl_syscall_arg64(u64_t arg)
+int z_impl_syscall_arg64(uint64_t arg)
 {
 	/* "Hash" (heh) the return to avoid accidental false positives
 	 * due to using common/predictable values.
@@ -112,7 +112,7 @@ int z_impl_syscall_arg64(u64_t arg)
 	return (int)(arg + 0x8c32a9eda4ca2621ULL + (size_t)&kernel_string);
 }
 
-static inline int z_vrfy_syscall_arg64(u64_t arg)
+static inline int z_vrfy_syscall_arg64(uint64_t arg)
 {
 	return z_impl_syscall_arg64(arg);
 }
@@ -122,12 +122,12 @@ static inline int z_vrfy_syscall_arg64(u64_t arg)
  * arguments (this one happens to need 9), and to test generation of
  * 64 bit return values.
  */
-u64_t z_impl_syscall_arg64_big(u32_t arg1, u32_t arg2,
-			       u64_t arg3, u32_t arg4,
-			       u32_t arg5, u64_t arg6)
+uint64_t z_impl_syscall_arg64_big(uint32_t arg1, uint32_t arg2,
+			       uint64_t arg3, uint32_t arg4,
+			       uint32_t arg5, uint64_t arg6)
 {
-	u64_t args[] = { arg1, arg2, arg3, arg4, arg5, arg6 };
-	u64_t ret = 0xae751a24ef464cc0ULL;
+	uint64_t args[] = { arg1, arg2, arg3, arg4, arg5, arg6 };
+	uint64_t ret = 0xae751a24ef464cc0ULL;
 
 	for (int i = 0; i < ARRAY_SIZE(args); i++) {
 		ret += args[i];
@@ -137,9 +137,9 @@ u64_t z_impl_syscall_arg64_big(u32_t arg1, u32_t arg2,
 	return ret;
 }
 
-static inline u64_t z_vrfy_syscall_arg64_big(u32_t arg1, u32_t arg2,
-					     u64_t arg3, u32_t arg4,
-					     u32_t arg5, u64_t arg6)
+static inline uint64_t z_vrfy_syscall_arg64_big(uint32_t arg1, uint32_t arg2,
+					     uint64_t arg3, uint32_t arg4,
+					     uint32_t arg5, uint64_t arg6)
 {
 	return z_impl_syscall_arg64_big(arg1, arg2, arg3, arg4, arg5, arg6);
 }

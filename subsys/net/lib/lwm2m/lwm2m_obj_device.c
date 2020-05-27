@@ -78,10 +78,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 				DEVICE_PWRSRC_MAX*3 + DEVICE_ERROR_CODE_MAX)
 
 /* resource state variables */
-static u8_t  error_code_list[DEVICE_ERROR_CODE_MAX];
-static s32_t time_temp;
-static u32_t time_offset;
-static u8_t  binding_mode[DEVICE_STRING_SHORT];
+static uint8_t  error_code_list[DEVICE_ERROR_CODE_MAX];
+static int32_t time_temp;
+static uint32_t time_offset;
+static uint8_t  binding_mode[DEVICE_STRING_SHORT];
 
 /* only 1 instance of device object exists */
 static struct lwm2m_engine_obj device;
@@ -120,7 +120,7 @@ static struct lwm2m_engine_res_inst *error_code_ri;
 
 /* callbacks */
 
-static int reset_error_list_cb(u16_t obj_inst_id)
+static int reset_error_list_cb(uint16_t obj_inst_id)
 {
 	int i;
 
@@ -133,8 +133,8 @@ static int reset_error_list_cb(u16_t obj_inst_id)
 	return 0;
 }
 
-static void *current_time_read_cb(u16_t obj_inst_id, u16_t res_id,
-				  u16_t res_inst_id, size_t *data_len)
+static void *current_time_read_cb(uint16_t obj_inst_id, uint16_t res_id,
+				  uint16_t res_inst_id, size_t *data_len)
 {
 	time_temp = time_offset + (k_uptime_get() / 1000);
 	*data_len = sizeof(time_temp);
@@ -142,20 +142,20 @@ static void *current_time_read_cb(u16_t obj_inst_id, u16_t res_id,
 	return &time_temp;
 }
 
-static void *current_time_pre_write_cb(u16_t obj_inst_id, u16_t res_id,
-				       u16_t res_inst_id, size_t *data_len)
+static void *current_time_pre_write_cb(uint16_t obj_inst_id, uint16_t res_id,
+				       uint16_t res_inst_id, size_t *data_len)
 {
 	*data_len = sizeof(time_temp);
 	return &time_temp;
 }
 
-static int current_time_post_write_cb(u16_t obj_inst_id, u16_t res_id,
-				      u16_t res_inst_id,
-				      u8_t *data, u16_t data_len,
+static int current_time_post_write_cb(uint16_t obj_inst_id, uint16_t res_id,
+				      uint16_t res_inst_id,
+				      uint8_t *data, uint16_t data_len,
 				      bool last_block, size_t total_size)
 {
 	if (data_len == 4U) {
-		time_offset = *(s32_t *)data - (s32_t)(k_uptime_get() / 1000);
+		time_offset = *(int32_t *)data - (int32_t)(k_uptime_get() / 1000);
 		return 0;
 	}
 
@@ -165,7 +165,7 @@ static int current_time_post_write_cb(u16_t obj_inst_id, u16_t res_id,
 
 /* special setter functions */
 
-__deprecated int lwm2m_device_add_pwrsrc(u8_t pwrsrc_type)
+__deprecated int lwm2m_device_add_pwrsrc(uint8_t pwrsrc_type)
 {
 	int i;
 	struct lwm2m_engine_res *res;
@@ -192,7 +192,7 @@ __deprecated int lwm2m_device_add_pwrsrc(u8_t pwrsrc_type)
 		return -ENOMEM;
 	}
 
-	*(u8_t *)res->res_instances[i].data_ptr = pwrsrc_type;
+	*(uint8_t *)res->res_instances[i].data_ptr = pwrsrc_type;
 	res->res_instances[i].res_inst_id = i;
 	NOTIFY_OBSERVER(LWM2M_OBJECT_DEVICE_ID, 0,
 			DEVICE_AVAILABLE_POWER_SOURCES_ID);
@@ -225,7 +225,7 @@ __deprecated int lwm2m_device_remove_pwrsrc(int index)
 		return -ENOMEM;
 	}
 
-	*(u8_t *)res->res_instances[index].data_ptr = 0;
+	*(uint8_t *)res->res_instances[index].data_ptr = 0;
 	res->res_instances[index].res_inst_id = RES_INSTANCE_NOT_CREATED;
 	NOTIFY_OBSERVER(LWM2M_OBJECT_DEVICE_ID, 0,
 			DEVICE_AVAILABLE_POWER_SOURCES_ID);
@@ -233,7 +233,7 @@ __deprecated int lwm2m_device_remove_pwrsrc(int index)
 	return 0;
 }
 
-static int device_set_pwrsrc_value(char *pathstr, int index, s32_t value)
+static int device_set_pwrsrc_value(char *pathstr, int index, int32_t value)
 {
 	int ret;
 	struct lwm2m_engine_res *res;
@@ -254,7 +254,7 @@ static int device_set_pwrsrc_value(char *pathstr, int index, s32_t value)
 		return -ENOMEM;
 	}
 
-	*(s32_t *)res->res_instances[index].data_ptr = value;
+	*(int32_t *)res->res_instances[index].data_ptr = value;
 	NOTIFY_OBSERVER(LWM2M_OBJECT_DEVICE_ID, 0, res->res_id);
 
 	return 0;
@@ -272,7 +272,7 @@ __deprecated int lwm2m_device_set_pwrsrc_current_ma(int index, int current_ma)
 
 /* error code function */
 
-int lwm2m_device_add_err(u8_t error_code)
+int lwm2m_device_add_err(uint8_t error_code)
 {
 	int i;
 
@@ -298,7 +298,7 @@ static void device_periodic_service(struct k_work *work)
 	NOTIFY_OBSERVER(LWM2M_OBJECT_DEVICE_ID, 0, DEVICE_CURRENT_TIME_ID);
 }
 
-static struct lwm2m_engine_obj_inst *device_create(u16_t obj_inst_id)
+static struct lwm2m_engine_obj_inst *device_create(uint16_t obj_inst_id)
 {
 	int i = 0, j = 0;
 

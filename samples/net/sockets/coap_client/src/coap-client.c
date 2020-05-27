@@ -86,13 +86,13 @@ static int start_coap_client(void)
 static int process_simple_coap_reply(void)
 {
 	struct coap_packet reply;
-	u8_t *data;
+	uint8_t *data;
 	int rcvd;
 	int ret;
 
 	wait();
 
-	data = (u8_t *)k_malloc(MAX_COAP_MSG_LEN);
+	data = (uint8_t *)k_malloc(MAX_COAP_MSG_LEN);
 	if (!data) {
 		return -ENOMEM;
 	}
@@ -126,15 +126,15 @@ end:
 	return ret;
 }
 
-static int send_simple_coap_request(u8_t method)
+static int send_simple_coap_request(uint8_t method)
 {
-	u8_t payload[] = "payload";
+	uint8_t payload[] = "payload";
 	struct coap_packet request;
 	const char * const *p;
-	u8_t *data;
+	uint8_t *data;
 	int r;
 
-	data = (u8_t *)k_malloc(MAX_COAP_MSG_LEN);
+	data = (uint8_t *)k_malloc(MAX_COAP_MSG_LEN);
 	if (!data) {
 		return -ENOMEM;
 	}
@@ -169,7 +169,7 @@ static int send_simple_coap_request(u8_t method)
 			goto end;
 		}
 
-		r = coap_packet_append_payload(&request, (u8_t *)payload,
+		r = coap_packet_append_payload(&request, (uint8_t *)payload,
 					       sizeof(payload) - 1);
 		if (r < 0) {
 			LOG_ERR("Not able to append payload");
@@ -194,7 +194,7 @@ end:
 
 static int send_simple_coap_msgs_and_wait_for_reply(void)
 {
-	u8_t test_type = 0U;
+	uint8_t test_type = 0U;
 	int r;
 
 	while (1) {
@@ -253,14 +253,14 @@ static int send_simple_coap_msgs_and_wait_for_reply(void)
 static int process_large_coap_reply(void)
 {
 	struct coap_packet reply;
-	u8_t *data;
+	uint8_t *data;
 	bool last_block;
 	int rcvd;
 	int ret;
 
 	wait();
 
-	data = (u8_t *)k_malloc(MAX_COAP_MSG_LEN);
+	data = (uint8_t *)k_malloc(MAX_COAP_MSG_LEN);
 	if (!data) {
 		return -ENOMEM;
 	}
@@ -312,7 +312,7 @@ static int send_large_coap_request(void)
 {
 	struct coap_packet request;
 	const char * const *p;
-	u8_t *data;
+	uint8_t *data;
 	int r;
 
 	if (blk_ctx.total_size == 0) {
@@ -320,7 +320,7 @@ static int send_large_coap_request(void)
 					 BLOCK_WISE_TRANSFER_SIZE_GET);
 	}
 
-	data = (u8_t *)k_malloc(MAX_COAP_MSG_LEN);
+	data = (uint8_t *)k_malloc(MAX_COAP_MSG_LEN);
 	if (!data) {
 		return -ENOMEM;
 	}
@@ -386,13 +386,13 @@ static int get_large_coap_msgs(void)
 	return 0;
 }
 
-static int send_obs_reply_ack(u16_t id, u8_t *token, u8_t tkl)
+static int send_obs_reply_ack(uint16_t id, uint8_t *token, uint8_t tkl)
 {
 	struct coap_packet request;
-	u8_t *data;
+	uint8_t *data;
 	int r;
 
-	data = (u8_t *)k_malloc(MAX_COAP_MSG_LEN);
+	data = (uint8_t *)k_malloc(MAX_COAP_MSG_LEN);
 	if (!data) {
 		return -ENOMEM;
 	}
@@ -416,17 +416,17 @@ end:
 static int process_obs_coap_reply(void)
 {
 	struct coap_packet reply;
-	u16_t id;
-	u8_t token[8];
-	u8_t *data;
-	u8_t type;
-	u8_t tkl;
+	uint16_t id;
+	uint8_t token[8];
+	uint8_t *data;
+	uint8_t type;
+	uint8_t tkl;
 	int rcvd;
 	int ret;
 
 	wait();
 
-	data = (u8_t *)k_malloc(MAX_COAP_MSG_LEN);
+	data = (uint8_t *)k_malloc(MAX_COAP_MSG_LEN);
 	if (!data) {
 		return -ENOMEM;
 	}
@@ -455,7 +455,7 @@ static int process_obs_coap_reply(void)
 		goto end;
 	}
 
-	tkl = coap_header_get_token(&reply, (u8_t *)token);
+	tkl = coap_header_get_token(&reply, (uint8_t *)token);
 	id = coap_header_get_id(&reply);
 
 	type = coap_header_get_type(&reply);
@@ -474,10 +474,10 @@ static int send_obs_coap_request(void)
 {
 	struct coap_packet request;
 	const char * const *p;
-	u8_t *data;
+	uint8_t *data;
 	int r;
 
-	data = (u8_t *)k_malloc(MAX_COAP_MSG_LEN);
+	data = (uint8_t *)k_malloc(MAX_COAP_MSG_LEN);
 	if (!data) {
 		return -ENOMEM;
 	}
@@ -519,10 +519,10 @@ static int send_obs_reset_coap_request(void)
 {
 	struct coap_packet request;
 	const char * const *p;
-	u8_t *data;
+	uint8_t *data;
 	int r;
 
-	data = (u8_t *)k_malloc(MAX_COAP_MSG_LEN);
+	data = (uint8_t *)k_malloc(MAX_COAP_MSG_LEN);
 	if (!data) {
 		return -ENOMEM;
 	}
@@ -562,7 +562,7 @@ end:
 
 static int register_observer(void)
 {
-	u8_t counter = 0U;
+	uint8_t counter = 0U;
 	int r;
 
 	while (1) {

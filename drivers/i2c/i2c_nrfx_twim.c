@@ -18,7 +18,7 @@ struct i2c_nrfx_twim_data {
 	volatile nrfx_err_t res;
 	uint32_t dev_config;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	u32_t pm_state;
+	uint32_t pm_state;
 #endif
 };
 
@@ -39,7 +39,7 @@ const struct i2c_nrfx_twim_config *get_dev_config(struct device *dev)
 }
 
 static int i2c_nrfx_twim_transfer(struct device *dev, struct i2c_msg *msgs,
-				  u8_t num_msgs, u16_t addr)
+				  uint8_t num_msgs, uint16_t addr)
 {
 	int ret = 0;
 
@@ -112,7 +112,7 @@ static void event_handler(nrfx_twim_evt_t const *p_event, void *p_context)
 	k_sem_give(&dev_data->completion_sync);
 }
 
-static int i2c_nrfx_twim_configure(struct device *dev, u32_t dev_config)
+static int i2c_nrfx_twim_configure(struct device *dev, uint32_t dev_config)
 {
 	nrfx_twim_t const *inst = &(get_dev_config(dev)->twim);
 
@@ -161,14 +161,14 @@ static int init_twim(struct device *dev)
 }
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static int twim_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
+static int twim_nrfx_pm_control(struct device *dev, uint32_t ctrl_command,
 				void *context, device_pm_cb cb, void *arg)
 {
 	int ret = 0;
-	u32_t pm_current_state = get_dev_data(dev)->pm_state;
+	uint32_t pm_current_state = get_dev_data(dev)->pm_state;
 
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-		u32_t new_state = *((const u32_t *)context);
+		uint32_t new_state = *((const uint32_t *)context);
 
 		if (new_state != pm_current_state) {
 			switch (new_state) {
@@ -199,7 +199,7 @@ static int twim_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 		}
 	} else {
 		__ASSERT_NO_MSG(ctrl_command == DEVICE_PM_GET_POWER_STATE);
-		*((u32_t *)context) = get_dev_data(dev)->pm_state;
+		*((uint32_t *)context) = get_dev_data(dev)->pm_state;
 	}
 
 	if (cb) {

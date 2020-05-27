@@ -34,8 +34,8 @@ extern "C" {
  *                   capabilities).
  */
 struct dac_channel_cfg {
-	u8_t channel_id;
-	u8_t resolution;
+	uint8_t channel_id;
+	uint8_t resolution;
 };
 
 /**
@@ -56,7 +56,7 @@ typedef int (*dac_api_channel_setup)(struct device *dev,
  * See dac_write_value() for argument descriptions.
  */
 typedef int (*dac_api_write_value)(struct device *dev,
-				    u8_t channel, u32_t value);
+				    uint8_t channel, uint32_t value);
 
 /*
  * DAC driver API
@@ -107,10 +107,10 @@ static inline int z_impl_dac_channel_setup(struct device *dev,
  * @retval 0        On success.
  * @retval -EINVAL  If a parameter with an invalid value has been provided.
  */
-__syscall int dac_write_value(struct device *dev, u8_t channel, u32_t value);
+__syscall int dac_write_value(struct device *dev, uint8_t channel, uint32_t value);
 
 static inline int z_impl_dac_write_value(struct device *dev,
-						u8_t channel, u32_t value)
+						uint8_t channel, uint32_t value)
 {
 	const struct dac_driver_api *api =
 				(const struct dac_driver_api *)dev->driver_api;

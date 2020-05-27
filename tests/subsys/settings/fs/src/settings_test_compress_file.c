@@ -95,7 +95,7 @@ void test_config_compress_file(void)
 int file_str_cmp(const char *fname, char const *string, size_t pattern_len)
 {
 	int rc;
-	u32_t len;
+	uint32_t len;
 	size_t rlen;
 	char *buf;
 	struct fs_dirent entry;

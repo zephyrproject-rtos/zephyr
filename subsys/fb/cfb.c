@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(cfb);
 extern const struct cfb_font __font_entry_start[];
 extern const struct cfb_font __font_entry_end[];
 
-static inline u8_t byte_reverse(u8_t b)
+static inline uint8_t byte_reverse(uint8_t b)
 {
 	b = (b & 0xf0) >> 4 | (b & 0x0f) << 4;
 	b = (b & 0xcc) >> 2 | (b & 0x33) << 2;
@@ -25,10 +25,10 @@ static inline u8_t byte_reverse(u8_t b)
 
 struct char_framebuffer {
 	/** Pointer to a buffer in RAM */
-	u8_t *buf;
+	uint8_t *buf;
 
 	/** Size of the framebuffer */
-	u32_t size;
+	uint32_t size;
 
 	/** Pointer to the font entry array */
 	const struct cfb_font *fonts;
@@ -40,22 +40,22 @@ struct char_framebuffer {
 	enum display_screen_info screen_info;
 
 	/** Resolution of a framebuffer in pixels in X direction */
-	u16_t x_res;
+	uint16_t x_res;
 
 	/** Resolution of a framebuffer in pixels in Y direction */
-	u16_t y_res;
+	uint16_t y_res;
 
 	/** Number of pixels per tile, typically 8 */
-	u8_t ppt;
+	uint8_t ppt;
 
 	/** Number of available fonts */
-	u8_t numof_fonts;
+	uint8_t numof_fonts;
 
 	/** Current font index */
-	u8_t font_idx;
+	uint8_t font_idx;
 
 	/** Font kerning */
-	s8_t kerning;
+	int8_t kerning;
 
 	/** Invertedj*/
 	bool inverted;
@@ -63,10 +63,10 @@ struct char_framebuffer {
 
 static struct char_framebuffer char_fb;
 
-static inline u8_t *get_glyph_ptr(const struct cfb_font *fptr, char c)
+static inline uint8_t *get_glyph_ptr(const struct cfb_font *fptr, char c)
 {
 	if (fptr->caps & CFB_FONT_MONO_VPACKED) {
-		return (u8_t *)fptr->data +
+		return (uint8_t *)fptr->data +
 		       (c - fptr->first_char) *
 		       (fptr->width * fptr->height / 8U);
 	}
@@ -78,11 +78,11 @@ static inline u8_t *get_glyph_ptr(const struct cfb_font *fptr, char c)
  * Draw the monochrome character in the monochrome tiled framebuffer,
  * a byte is interpreted as 8 pixels ordered vertically among each other.
  */
-static u8_t draw_char_vtmono(const struct char_framebuffer *fb,
-			     char c, u16_t x, u16_t y)
+static uint8_t draw_char_vtmono(const struct char_framebuffer *fb,
+			     char c, uint16_t x, uint16_t y)
 {
 	const struct cfb_font *fptr = &(fb->fonts[fb->font_idx]);
-	u8_t *glyph_ptr;
+	uint8_t *glyph_ptr;
 	bool need_reverse = (((fb->screen_info & SCREEN_INFO_MONO_MSB_FIRST) != 0)
 			     != ((fptr->caps & CFB_FONT_MSB_FIRST) != 0));
 
@@ -96,11 +96,11 @@ static u8_t draw_char_vtmono(const struct char_framebuffer *fb,
 	}
 
 	for (size_t g_x = 0; g_x < fptr->width; g_x++) {
-		u32_t y_segment = y / 8U;
+		uint32_t y_segment = y / 8U;
 
 		for (size_t g_y = 0; g_y < fptr->height / 8U; g_y++) {
-			u32_t fb_y = (y_segment + g_y) * fb->x_res;
-			u8_t byte;
+			uint32_t fb_y = (y_segment + g_y) * fb->x_res;
+			uint8_t byte;
 
 			if ((fb_y + x + g_x) >= fb->size) {
 				return 0;
@@ -119,7 +119,7 @@ static u8_t draw_char_vtmono(const struct char_framebuffer *fb,
 	return fptr->width;
 }
 
-int cfb_print(struct device *dev, char *str, u16_t x, u16_t y)
+int cfb_print(struct device *dev, char *str, uint16_t x, uint16_t y)
 {
 	const struct char_framebuffer *fb = &char_fb;
 	const struct cfb_font *fptr;
@@ -239,7 +239,7 @@ int cfb_get_display_parameter(struct device *dev,
 	return 0;
 }
 
-int cfb_framebuffer_set_font(struct device *dev, u8_t idx)
+int cfb_framebuffer_set_font(struct device *dev, uint8_t idx)
 {
 	struct char_framebuffer *fb = &char_fb;
 
@@ -252,7 +252,7 @@ int cfb_framebuffer_set_font(struct device *dev, u8_t idx)
 	return 0;
 }
 
-int cfb_get_font_size(struct device *dev, u8_t idx, u8_t *width, u8_t *height)
+int cfb_get_font_size(struct device *dev, uint8_t idx, uint8_t *width, uint8_t *height)
 {
 	const struct char_framebuffer *fb = &char_fb;
 

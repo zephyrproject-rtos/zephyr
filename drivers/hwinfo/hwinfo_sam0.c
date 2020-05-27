@@ -12,20 +12,20 @@
 #include <sys/byteorder.h>
 
 struct sam0_uid {
-	u32_t id[4];
+	uint32_t id[4];
 };
 
-ssize_t z_impl_hwinfo_get_device_id(u8_t *buffer, size_t length)
+ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
 	struct sam0_uid dev_id;
 
-	dev_id.id[0] = sys_cpu_to_be32(*(const u32_t *)
+	dev_id.id[0] = sys_cpu_to_be32(*(const uint32_t *)
 				       DT_INST_REG_ADDR_BY_IDX(0, 0));
-	dev_id.id[1] = sys_cpu_to_be32(*(const u32_t *)
+	dev_id.id[1] = sys_cpu_to_be32(*(const uint32_t *)
 				       DT_INST_REG_ADDR_BY_IDX(0, 1));
-	dev_id.id[2] = sys_cpu_to_be32(*(const u32_t *)
+	dev_id.id[2] = sys_cpu_to_be32(*(const uint32_t *)
 				       DT_INST_REG_ADDR_BY_IDX(0, 2));
-	dev_id.id[3] = sys_cpu_to_be32(*(const u32_t *)
+	dev_id.id[3] = sys_cpu_to_be32(*(const uint32_t *)
 				       DT_INST_REG_ADDR_BY_IDX(0, 3));
 
 	if (length > sizeof(dev_id.id)) {

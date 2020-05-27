@@ -21,7 +21,7 @@ static void test_arm_max_q7(
 	const q7_t *input1, int ref_index, size_t length)
 {
 	q7_t val;
-	u32_t index;
+	uint32_t index;
 
 	/* Run test function */
 	arm_max_q7(input1, length, &val, &index);
@@ -43,7 +43,7 @@ static void test_arm_min_q7(
 	const q7_t *input1, int ref_index, size_t length)
 {
 	q7_t val;
-	u32_t index;
+	uint32_t index;
 
 	/* Run test function */
 	arm_min_q7(input1, length, &val, &index);

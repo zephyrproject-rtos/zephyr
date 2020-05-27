@@ -38,22 +38,22 @@
 struct adxl345_dev_data {
 	unsigned int sample_number;
 	struct device *i2c_master;
-	u8_t i2c_addr;
+	uint8_t i2c_addr;
 
-	s16_t bufx[ADXL345_MAX_FIFO_SIZE];
-	s16_t bufy[ADXL345_MAX_FIFO_SIZE];
-	s16_t bufz[ADXL345_MAX_FIFO_SIZE];
+	int16_t bufx[ADXL345_MAX_FIFO_SIZE];
+	int16_t bufy[ADXL345_MAX_FIFO_SIZE];
+	int16_t bufz[ADXL345_MAX_FIFO_SIZE];
 };
 
 struct adxl345_sample {
-	s16_t x;
-	s16_t y;
-	s16_t z;
+	int16_t x;
+	int16_t y;
+	int16_t z;
 };
 
 struct adxl345_dev_config {
 	const char *i2c_master_name;
-	u16_t i2c_addr;
+	uint16_t i2c_addr;
 };
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_ADX345_ADX345_H_ */

@@ -47,11 +47,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define KW41_DBG_TRACE_SIZE 30
 
 struct kw41_dbg_trace {
-	u8_t	type;
-	u32_t	time;
-	u32_t	irqsts;
-	u32_t	phy_ctrl;
-	u32_t	seq_state;
+	uint8_t	type;
+	uint32_t	time;
+	uint32_t	irqsts;
+	uint32_t	phy_ctrl;
+	uint32_t	seq_state;
 };
 
 struct kw41_dbg_trace kw41_dbg[KW41_DBG_TRACE_SIZE];
@@ -122,7 +122,7 @@ enum {
 };
 
 /* Lookup table for PA_PWR register */
-static const u8_t pa_pwr_lt[] = {
+static const uint8_t pa_pwr_lt[] = {
 	1,                   /* -31.1 dBm: -31 */
 	2, 2, 2, 2, 2, 2, 2, /* -25.0 dBm: -30, -29, -28, -27, -26, -25 */
 	4, 4, 4, 4, 4,       /* -19.0 dBm: -24, -23, -22, -21, -20, -19 */
@@ -148,32 +148,32 @@ static const u8_t pa_pwr_lt[] = {
 
 struct kw41z_context {
 	struct net_if *iface;
-	u8_t mac_addr[8];
+	uint8_t mac_addr[8];
 
 	struct k_sem seq_sync;
 	atomic_t seq_retval;
 
-	u32_t rx_warmup_time;
-	u32_t tx_warmup_time;
+	uint32_t rx_warmup_time;
+	uint32_t tx_warmup_time;
 
 	bool frame_pending; /* FP bit state from the most recent ACK frame. */
 };
 
 static struct kw41z_context kw41z_context_data;
 
-static inline u8_t kw41z_get_instant_state(void)
+static inline uint8_t kw41z_get_instant_state(void)
 {
 	return (ZLL->SEQ_STATE & ZLL_SEQ_STATE_SEQ_STATE_MASK) >>
 	       ZLL_SEQ_STATE_SEQ_STATE_SHIFT;
 }
 
-static inline u8_t kw41z_get_seq_state(void)
+static inline uint8_t kw41z_get_seq_state(void)
 {
 	return (ZLL->PHY_CTRL & ZLL_PHY_CTRL_XCVSEQ_MASK) >>
 	       ZLL_PHY_CTRL_XCVSEQ_SHIFT;
 }
 
-static inline void kw41z_set_seq_state(u8_t state)
+static inline void kw41z_set_seq_state(uint8_t state)
 {
 #if CONFIG_SOC_MKW40Z4
 	/*
@@ -191,7 +191,7 @@ static inline void kw41z_set_seq_state(u8_t state)
 
 static inline void kw41z_wait_for_idle(void)
 {
-	u8_t state = kw41z_get_instant_state();
+	uint8_t state = kw41z_get_instant_state();
 
 	while (state != KW41Z_STATE_IDLE) {
 		state = kw41z_get_instant_state();
@@ -248,7 +248,7 @@ static void kw41z_phy_abort(void)
 
 static void kw41z_isr_timeout_cleanup(void)
 {
-	u32_t irqsts;
+	uint32_t irqsts;
 
 	/*
 	 * Set the PHY sequencer back to IDLE and disable TMR3 comparator
@@ -276,7 +276,7 @@ static void kw41z_isr_timeout_cleanup(void)
 
 static void kw41z_isr_seq_cleanup(void)
 {
-	u32_t irqsts;
+	uint32_t irqsts;
 
 	/* Set the PHY sequencer back to IDLE */
 	ZLL->PHY_CTRL &= ~ZLL_PHY_CTRL_XCVSEQ_MASK;
@@ -315,9 +315,9 @@ static inline void kw41z_disable_seq_irq(void)
  * Set the T3CMP timer comparator. The 'timeout' value is an offset from
  * now.
  */
-static void kw41z_tmr3_set_timeout(u32_t timeout)
+static void kw41z_tmr3_set_timeout(uint32_t timeout)
 {
-	u32_t irqsts;
+	uint32_t irqsts;
 
 	/* Add in the current time so that we can get the comparator to
 	 * match appropriately to our offset time.
@@ -339,7 +339,7 @@ static void kw41z_tmr3_set_timeout(u32_t timeout)
 
 static void kw41z_tmr3_disable(void)
 {
-	u32_t irqsts;
+	uint32_t irqsts;
 
 	/*
 	 * disable TMR3 compare and disable autosequence stop by TC3
@@ -383,7 +383,7 @@ static int kw41z_cca(struct device *dev)
 	return kw41z->seq_retval;
 }
 
-static int kw41z_set_channel(struct device *dev, u16_t channel)
+static int kw41z_set_channel(struct device *dev, uint16_t channel)
 {
 	if (channel < 11 || channel > 26) {
 		return -EINVAL;
@@ -393,7 +393,7 @@ static int kw41z_set_channel(struct device *dev, u16_t channel)
 	return 0;
 }
 
-static int kw41z_set_pan_id(struct device *dev, u16_t pan_id)
+static int kw41z_set_pan_id(struct device *dev, uint16_t pan_id)
 {
 	ZLL->MACSHORTADDRS0 = (ZLL->MACSHORTADDRS0 &
 			       ~ZLL_MACSHORTADDRS0_MACPANID0_MASK) |
@@ -401,7 +401,7 @@ static int kw41z_set_pan_id(struct device *dev, u16_t pan_id)
 	return 0;
 }
 
-static int kw41z_set_short_addr(struct device *dev, u16_t short_addr)
+static int kw41z_set_short_addr(struct device *dev, uint16_t short_addr)
 {
 	ZLL->MACSHORTADDRS0 = (ZLL->MACSHORTADDRS0 &
 			       ~ZLL_MACSHORTADDRS0_MACSHORTADDRS0_MASK) |
@@ -409,9 +409,9 @@ static int kw41z_set_short_addr(struct device *dev, u16_t short_addr)
 	return 0;
 }
 
-static int kw41z_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
+static int kw41z_set_ieee_addr(struct device *dev, const uint8_t *ieee_addr)
 {
-	u32_t val;
+	uint32_t val;
 
 	memcpy(&val, ieee_addr, sizeof(val));
 	ZLL->MACLONGADDRS0_LSB = val;
@@ -444,7 +444,7 @@ static int kw41z_filter(struct device *dev,
 	return -ENOTSUP;
 }
 
-static int kw41z_set_txpower(struct device *dev, s16_t dbm)
+static int kw41z_set_txpower(struct device *dev, int16_t dbm)
 {
 	if (dbm < KW41Z_OUTPUT_POWER_MIN) {
 		LOG_INF("TX-power %d dBm below min of %d dBm, using %d dBm",
@@ -485,7 +485,7 @@ static int kw41z_stop(struct device *dev)
 	return 0;
 }
 
-static u8_t kw41z_convert_lqi(u8_t hw_lqi)
+static uint8_t kw41z_convert_lqi(uint8_t hw_lqi)
 {
 	if (hw_lqi >= 220U) {
 		return 255;
@@ -494,11 +494,11 @@ static u8_t kw41z_convert_lqi(u8_t hw_lqi)
 	}
 }
 
-static inline void kw41z_rx(struct kw41z_context *kw41z, u8_t len)
+static inline void kw41z_rx(struct kw41z_context *kw41z, uint8_t len)
 {
 	struct net_pkt *pkt = NULL;
 	struct net_buf *buf = NULL;
-	u8_t pkt_len, hw_lqi;
+	uint8_t pkt_len, hw_lqi;
 	int rslt;
 
 	LOG_DBG("ENTRY: len: %d", len);
@@ -523,7 +523,7 @@ static inline void kw41z_rx(struct kw41z_context *kw41z, u8_t len)
 
 #if CONFIG_SOC_MKW41Z4
 	/* PKT_BUFFER_RX needs to be accessed aligned to 16 bits */
-	for (u16_t reg_val = 0, i = 0; i < pkt_len; i++) {
+	for (uint16_t reg_val = 0, i = 0; i < pkt_len; i++) {
 		if (i % 2 == 0U) {
 			reg_val = ZLL->PKT_BUFFER_RX[i/2U];
 			buf->data[i] = reg_val & 0xFF;
@@ -533,7 +533,7 @@ static inline void kw41z_rx(struct kw41z_context *kw41z, u8_t len)
 	}
 #else /* CONFIG_SOC_MKW40Z4 */
 	/* PKT_BUFFER needs to be accessed aligned to 32 bits */
-	for (u32_t reg_val = 0, i = 0; i < pkt_len; i++) {
+	for (uint32_t reg_val = 0, i = 0; i < pkt_len; i++) {
 		switch (i % 4) {
 		case 0:
 			reg_val = ZLL->PKT_BUFFER[i/4U];
@@ -575,10 +575,10 @@ out:
 #define ACK_FRAME_TYPE (2 << 0)
 #define ACK_FRAME_PENDING_BIT (1 << 4)
 
-static void handle_ack(struct kw41z_context *kw41z, u8_t seq_number)
+static void handle_ack(struct kw41z_context *kw41z, uint8_t seq_number)
 {
 	struct net_pkt *ack_pkt;
-	u8_t ack_psdu[ACK_FRAME_LEN];
+	uint8_t ack_psdu[ACK_FRAME_LEN];
 
 	ack_pkt = net_pkt_alloc_with_buffer(kw41z->iface, ACK_FRAME_LEN,
 					    AF_UNSPEC, 0, K_NO_WAIT);
@@ -616,9 +616,9 @@ static int kw41z_tx(struct device *dev, enum ieee802154_tx_mode mode,
 		    struct net_pkt *pkt, struct net_buf *frag)
 {
 	struct kw41z_context *kw41z = dev->driver_data;
-	u8_t payload_len = frag->len;
-	u32_t tx_timeout;
-	u8_t xcvseq;
+	uint8_t payload_len = frag->len;
+	uint32_t tx_timeout;
+	uint8_t xcvseq;
 	int key;
 
 	if (mode != IEEE802154_TX_MODE_DIRECT) {
@@ -648,12 +648,12 @@ static int kw41z_tx(struct device *dev, enum ieee802154_tx_mode mode,
 	kw41z_disable_seq_irq();
 
 #if CONFIG_SOC_MKW41Z4
-	((u8_t *)ZLL->PKT_BUFFER_TX)[0] = payload_len + KW41Z_FCS_LENGTH;
-	memcpy(((u8_t *)ZLL->PKT_BUFFER_TX) + 1,
+	((uint8_t *)ZLL->PKT_BUFFER_TX)[0] = payload_len + KW41Z_FCS_LENGTH;
+	memcpy(((uint8_t *)ZLL->PKT_BUFFER_TX) + 1,
 		(void *)frag->data, payload_len);
 #else /* CONFIG_SOC_MKW40Z4 */
-	((u8_t *)ZLL->PKT_BUFFER)[0] = payload_len + KW41Z_FCS_LENGTH;
-	memcpy(((u8_t *)ZLL->PKT_BUFFER) + 1,
+	((uint8_t *)ZLL->PKT_BUFFER)[0] = payload_len + KW41Z_FCS_LENGTH;
+	memcpy(((uint8_t *)ZLL->PKT_BUFFER) + 1,
 		(void *)frag->data, payload_len);
 #endif
 
@@ -711,16 +711,16 @@ static int kw41z_tx(struct device *dev, enum ieee802154_tx_mode mode,
 
 static void kw41z_isr(int unused)
 {
-	u32_t irqsts = ZLL->IRQSTS;
-	u8_t state = kw41z_get_seq_state();
-	u8_t restart_rx = 1U;
-	u32_t rx_len;
+	uint32_t irqsts = ZLL->IRQSTS;
+	uint8_t state = kw41z_get_seq_state();
+	uint8_t restart_rx = 1U;
+	uint32_t rx_len;
 
 	/*
 	 * Variable is used in debug output to capture the state of the
 	 * sequencer at interrupt.
 	 */
-	u32_t seq_state = ZLL->SEQ_STATE;
+	uint32_t seq_state = ZLL->SEQ_STATE;
 
 	LOG_DBG("ENTRY: irqsts: 0x%08X, PHY_CTRL: 0x%08X, "
 		"SEQ_STATE: 0x%08X, SEQ_CTRL: 0x%08X, TMR: %d, state: %d",
@@ -924,7 +924,7 @@ static void kw41z_isr(int unused)
 	}
 }
 
-static inline u8_t *get_mac(struct device *dev)
+static inline uint8_t *get_mac(struct device *dev)
 {
 	struct kw41z_context *kw41z = dev->driver_data;
 
@@ -939,10 +939,10 @@ static inline u8_t *get_mac(struct device *dev)
 	 *       and how to allow for a OUI portion?
 	 */
 
-	u32_t *ptr = (u32_t *)(kw41z->mac_addr);
+	uint32_t *ptr = (uint32_t *)(kw41z->mac_addr);
 
 	UNALIGNED_PUT(sys_rand32_get(), ptr);
-	ptr = (u32_t *)(kw41z->mac_addr + 4);
+	ptr = (uint32_t *)(kw41z->mac_addr + 4);
 	UNALIGNED_PUT(sys_rand32_get(), ptr);
 
 	/*
@@ -1064,7 +1064,7 @@ static void kw41z_iface_init(struct net_if *iface)
 {
 	struct device *dev = net_if_get_device(iface);
 	struct kw41z_context *kw41z = dev->driver_data;
-	u8_t *mac = get_mac(dev);
+	uint8_t *mac = get_mac(dev);
 
 #if defined(CONFIG_KW41_DBG_TRACE)
 	kw41_dbg_idx = 0;

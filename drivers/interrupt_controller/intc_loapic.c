@@ -61,8 +61,8 @@
 #define LOPIC_SUSPEND_BITS_REQD (ROUND_UP((LOAPIC_IRQ_COUNT * LOPIC_SSPND_BITS_PER_IRQ), 32))
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 #include <power/power.h>
-u32_t loapic_suspend_buf[LOPIC_SUSPEND_BITS_REQD / 32] = {0};
-static u32_t loapic_device_power_state = DEVICE_PM_ACTIVE_STATE;
+uint32_t loapic_suspend_buf[LOPIC_SUSPEND_BITS_REQD / 32] = {0};
+static uint32_t loapic_device_power_state = DEVICE_PM_ACTIVE_STATE;
 #endif
 
 /**
@@ -73,7 +73,7 @@ static u32_t loapic_device_power_state = DEVICE_PM_ACTIVE_STATE;
 
 void z_loapic_enable(unsigned char cpu_number)
 {
-	s32_t loApicMaxLvt; /* local APIC Max LVT */
+	int32_t loApicMaxLvt; /* local APIC Max LVT */
 
 #ifndef CONFIG_X2APIC
 	/*
@@ -106,7 +106,7 @@ void z_loapic_enable(unsigned char cpu_number)
 	 * we don't check CPUID to see if x2APIC is supported.
 	 */
 
-	u64_t msr = z_x86_msr_read(X86_APIC_BASE_MSR);
+	uint64_t msr = z_x86_msr_read(X86_APIC_BASE_MSR);
 	msr |= X86_APIC_BASE_MSR_X2APIC;
 	z_x86_msr_write(X86_APIC_BASE_MSR, msr);
 #endif
@@ -322,7 +322,7 @@ int z_irq_controller_isr_vector_get(void)
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 static int loapic_suspend(struct device *port)
 {
-	volatile u32_t lvt; /* local vector table entry value */
+	volatile uint32_t lvt; /* local vector table entry value */
 	int loapic_irq;
 
 	ARG_UNUSED(port);
@@ -381,19 +381,19 @@ int loapic_resume(struct device *port)
 * Implements the driver control management functionality
 * the *context may include IN data or/and OUT data
 */
-static int loapic_device_ctrl(struct device *port, u32_t ctrl_command,
+static int loapic_device_ctrl(struct device *port, uint32_t ctrl_command,
 			      void *context, device_pm_cb cb, void *arg)
 {
 	int ret = 0;
 
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-		if (*((u32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
 			ret = loapic_suspend(port);
-		} else if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 			ret = loapic_resume(port);
 		}
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
-		*((u32_t *)context) = loapic_device_power_state;
+		*((uint32_t *)context) = loapic_device_power_state;
 	}
 
 	if (cb) {

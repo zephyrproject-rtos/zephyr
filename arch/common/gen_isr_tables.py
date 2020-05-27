@@ -46,7 +46,7 @@ def read_intlist(intlist_path, syms):
     include/linker/intlist.ld:
 
      struct {
-       u32_t num_vectors;       <- typically CONFIG_NUM_IRQS
+       uint32_t num_vectors;       <- typically CONFIG_NUM_IRQS
        struct _isr_list isrs[]; <- Usually of smaller size than num_vectors
     }
 
@@ -55,9 +55,9 @@ def read_intlist(intlist_path, syms):
 
     struct _isr_list {
         /** IRQ line number */
-        s32_t irq;
+        int32_t irq;
         /** Flags for this IRQ, see ISR_FLAG_* definitions */
-        s32_t flags;
+        int32_t flags;
         /** ISR to call */
         void *func;
         /** Parameter for non-direct IRQs */
@@ -134,7 +134,7 @@ source_header = """
 #include <arch/cpu.h>
 
 #if defined(CONFIG_GEN_SW_ISR_TABLE) && defined(CONFIG_GEN_IRQ_VECTOR_TABLE)
-#define ISR_WRAPPER ((u32_t)&_isr_wrapper)
+#define ISR_WRAPPER ((uint32_t)&_isr_wrapper)
 #else
 #define ISR_WRAPPER NULL
 #endif
@@ -147,7 +147,7 @@ def write_source_file(fp, vt, swt, intlist, syms):
     nv = intlist["num_vectors"]
 
     if vt:
-        fp.write("u32_t __irq_vector_table _irq_vector_table[%d] = {\n" % nv)
+        fp.write("uint32_t __irq_vector_table _irq_vector_table[%d] = {\n" % nv)
         for i in range(nv):
             fp.write("\t{},\n".format(vt[i]))
         fp.write("};\n")

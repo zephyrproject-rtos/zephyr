@@ -20,12 +20,12 @@
  *
  * @return popcnt of 'octets'
  */
-u8_t util_ones_count_get(u8_t *octets, u8_t octets_len)
+uint8_t util_ones_count_get(uint8_t *octets, uint8_t octets_len)
 {
-	u8_t one_count = 0U;
+	uint8_t one_count = 0U;
 
 	while (octets_len--) {
-		u8_t bite;
+		uint8_t bite;
 
 		bite = *octets;
 		while (bite) {
@@ -53,5 +53,5 @@ int util_rand(void *buf, size_t len)
 			DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
 	}
 
-	return entropy_get_entropy(dev, (u8_t *)buf, len);
+	return entropy_get_entropy(dev, (uint8_t *)buf, len);
 }

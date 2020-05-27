@@ -8,7 +8,7 @@
 
 void ili9340_lcd_init(struct ili9340_data *data)
 {
-	u8_t tx_data[15];
+	uint8_t tx_data[15];
 
 	tx_data[0] = 0x23;
 	ili9340_transmit(data, ILI9340_CMD_POWER_CTRL_1, tx_data, 1);

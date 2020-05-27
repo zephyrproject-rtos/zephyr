@@ -37,16 +37,16 @@ static void isr_done(void *param);
 static void isr_cleanup(void *param);
 static void isr_race(void *param);
 static int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
-		      struct node_tx **tx_release, u8_t *is_rx_enqueue);
+		      struct node_tx **tx_release, uint8_t *is_rx_enqueue);
 static struct pdu_data *empty_tx_enqueue(struct lll_conn *lll);
 
-static u16_t const sca_ppm_lut[] = {500, 250, 150, 100, 75, 50, 30, 20};
-static u8_t crc_expire;
-static u8_t crc_valid;
-static u16_t trx_cnt;
+static uint16_t const sca_ppm_lut[] = {500, 250, 150, 100, 75, 50, 30, 20};
+static uint8_t crc_expire;
+static uint8_t crc_valid;
+static uint16_t trx_cnt;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
-static u8_t mic_state;
+static uint8_t mic_state;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 int lll_conn_init(void)
@@ -73,17 +73,17 @@ int lll_conn_reset(void)
 	return 0;
 }
 
-u8_t lll_conn_sca_local_get(void)
+uint8_t lll_conn_sca_local_get(void)
 {
 	return 0;
 }
 
-u32_t lll_conn_ppm_local_get(void)
+uint32_t lll_conn_ppm_local_get(void)
 {
 	return sca_ppm_lut[0];
 }
 
-u32_t lll_conn_ppm_get(u8_t sca)
+uint32_t lll_conn_ppm_get(uint8_t sca)
 {
 	return sca_ppm_lut[sca];
 }
@@ -136,14 +136,14 @@ void lll_conn_isr_rx(void *param)
 	struct pdu_data *pdu_data_rx;
 	struct pdu_data *pdu_data_tx;
 	struct node_rx_pdu *node_rx;
-	u8_t is_empty_pdu_tx_retry;
-	u8_t is_crc_backoff = 0U;
-	u8_t is_rx_enqueue = 0U;
-	u8_t is_ull_rx = 0U;
-	u8_t rssi_ready;
-	u8_t trx_done;
-	u8_t is_done;
-	u8_t crc_ok;
+	uint8_t is_empty_pdu_tx_retry;
+	uint8_t is_crc_backoff = 0U;
+	uint8_t is_rx_enqueue = 0U;
+	uint8_t is_ull_rx = 0U;
+	uint8_t rssi_ready;
+	uint8_t trx_done;
+	uint8_t is_done;
+	uint8_t crc_ok;
 
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR)
 	lll_prof_latency_capture();
@@ -183,7 +183,7 @@ void lll_conn_isr_rx(void *param)
 	pdu_data_rx = (void *)node_rx->pdu;
 
 	if (crc_ok) {
-		u32_t err;
+		uint32_t err;
 
 		err = isr_rx_pdu(lll, pdu_data_rx, &tx_release, &is_rx_enqueue);
 		if (err) {
@@ -321,7 +321,7 @@ lll_conn_isr_rx_exit:
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
 	/* Collect RSSI for connection */
 	if (rssi_ready) {
-		u8_t rssi = radio_rssi_get();
+		uint8_t rssi = radio_rssi_get();
 
 		lll->rssi_latest = rssi;
 
@@ -346,7 +346,7 @@ lll_conn_isr_rx_exit:
 void lll_conn_isr_tx(void *param)
 {
 	struct lll_conn *lll = (void *)param;
-	u32_t hcto;
+	uint32_t hcto;
 
 	/* TODO: MOVE to a common interface, isr_lll_radio_status? */
 	/* Clear radio status and events */
@@ -437,8 +437,8 @@ void lll_conn_isr_abort(void *param)
 void lll_conn_rx_pkt_set(struct lll_conn *lll)
 {
 	struct node_rx_pdu *node_rx;
-	u16_t max_rx_octets;
-	u8_t phy;
+	uint16_t max_rx_octets;
+	uint8_t phy;
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
 	LL_ASSERT(node_rx);
@@ -474,8 +474,8 @@ void lll_conn_rx_pkt_set(struct lll_conn *lll)
 
 void lll_conn_tx_pkt_set(struct lll_conn *lll, struct pdu_data *pdu_data_tx)
 {
-	u16_t max_tx_octets;
-	u8_t phy, flags;
+	uint16_t max_tx_octets;
+	uint8_t phy, flags;
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	max_tx_octets = lll->max_tx_octets;
@@ -532,7 +532,7 @@ void lll_conn_pdu_tx_prep(struct lll_conn *lll, struct pdu_data **pdu_data_tx)
 	if (!link) {
 		p = empty_tx_enqueue(lll);
 	} else {
-		u16_t max_tx_octets;
+		uint16_t max_tx_octets;
 
 		p = (void *)(tx->pdu + lll->packet_tx_head_offset);
 
@@ -609,7 +609,7 @@ static void isr_done(void *param)
 		struct lll_conn *lll = param;
 
 		if (lll->role) {
-			u32_t preamble_to_addr_us;
+			uint32_t preamble_to_addr_us;
 
 #if defined(CONFIG_BT_CTLR_PHY)
 			preamble_to_addr_us =
@@ -654,7 +654,7 @@ static void isr_race(void *param)
 	radio_status_reset();
 }
 
-static inline bool ctrl_pdu_len_check(u8_t len)
+static inline bool ctrl_pdu_len_check(uint8_t len)
 {
 	return len <= (offsetof(struct pdu_data, llctrl) +
 		       sizeof(struct pdu_data_llctrl));
@@ -662,7 +662,7 @@ static inline bool ctrl_pdu_len_check(u8_t len)
 }
 
 static int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
-		      struct node_tx **tx_release, u8_t *is_rx_enqueue)
+		      struct node_tx **tx_release, uint8_t *is_rx_enqueue)
 {
 	/* Ack for tx-ed data */
 	if (pdu_data_rx->nesn != lll->sn) {
@@ -691,8 +691,8 @@ static int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 
 		if (link) {
 			struct pdu_data *pdu_data_tx;
-			u8_t pdu_data_tx_len;
-			u8_t offset;
+			uint8_t pdu_data_tx_len;
+			uint8_t offset;
 
 			pdu_data_tx = (void *)(tx->pdu +
 					       lll->packet_tx_head_offset);
@@ -742,7 +742,7 @@ static int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 			/* If required, wait for CCM to finish
 			 */
 			if (lll->enc_rx) {
-				u32_t done;
+				uint32_t done;
 
 				done = radio_ccm_is_done();
 				LL_ASSERT(done);
@@ -814,7 +814,7 @@ static struct pdu_data *empty_tx_enqueue(struct lll_conn *lll)
 	return p;
 }
 
-void lll_conn_flush(u16_t handle, struct lll_conn *lll)
+void lll_conn_flush(uint16_t handle, struct lll_conn *lll)
 {
 	/* Nothing to be flushed */
 }

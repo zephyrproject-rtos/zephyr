@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(modem_cmd_handler, CONFIG_MODEM_LOG_LEVEL);
  * Parsing Functions
  */
 
-static bool is_crlf(u8_t c)
+static bool is_crlf(uint8_t c)
 {
 	if (c == '\n' || c == '\r') {
 		return true;
@@ -44,11 +44,11 @@ static void skipcrlf(struct modem_cmd_handler_data *data)
 	}
 }
 
-static u16_t findcrlf(struct modem_cmd_handler_data *data,
-		      struct net_buf **frag, u16_t *offset)
+static uint16_t findcrlf(struct modem_cmd_handler_data *data,
+		      struct net_buf **frag, uint16_t *offset)
 {
 	struct net_buf *buf = data->rx_buf;
-	u16_t len = 0U, pos = 0U;
+	uint16_t len = 0U, pos = 0U;
 
 	while (buf && !is_crlf(*(buf->data + pos))) {
 		if (pos + 1 >= buf->len) {
@@ -107,7 +107,7 @@ static inline struct net_buf *read_rx_allocator(k_timeout_t timeout,
 /* return scanned length for params */
 static int parse_params(struct modem_cmd_handler_data *data,  size_t match_len,
 			struct modem_cmd *cmd,
-			u8_t **argv, size_t argv_len, u16_t *argc)
+			uint8_t **argv, size_t argv_len, uint16_t *argc)
 {
 	int i, count = 0;
 	size_t begin, end;
@@ -173,8 +173,8 @@ static int process_cmd(struct modem_cmd *cmd, size_t match_len,
 			struct modem_cmd_handler_data *data)
 {
 	int parsed_len = 0, ret = 0;
-	u8_t *argv[CONFIG_MODEM_CMD_HANDLER_MAX_PARAM_COUNT];
-	u16_t argc = 0U;
+	uint8_t *argv[CONFIG_MODEM_CMD_HANDLER_MAX_PARAM_COUNT];
+	uint16_t argc = 0U;
 
 	/* reset params */
 	memset(argv, 0, sizeof(argv[0]) * ARRAY_SIZE(argv));
@@ -264,7 +264,7 @@ static void cmd_handler_process(struct modem_cmd_handler *cmd_handler,
 	struct net_buf *frag = NULL;
 	size_t match_len, rx_len, bytes_read = 0;
 	int ret;
-	u16_t offset, len;
+	uint16_t offset, len;
 
 	if (!cmd_handler || !cmd_handler->cmd_handler_data ||
 	    !iface || !iface->read) {
@@ -440,7 +440,7 @@ static int _modem_cmd_send(struct modem_iface *iface,
 			   struct modem_cmd_handler *handler,
 			   struct modem_cmd *handler_cmds,
 			   size_t handler_cmds_len,
-			   const u8_t *buf, struct k_sem *sem,
+			   const uint8_t *buf, struct k_sem *sem,
 			   k_timeout_t timeout, bool no_tx_lock)
 {
 	struct modem_cmd_handler_data *data;
@@ -511,7 +511,7 @@ int modem_cmd_send_nolock(struct modem_iface *iface,
 			  struct modem_cmd_handler *handler,
 			  struct modem_cmd *handler_cmds,
 			  size_t handler_cmds_len,
-			  const u8_t *buf, struct k_sem *sem,
+			  const uint8_t *buf, struct k_sem *sem,
 			  k_timeout_t timeout)
 {
 	return _modem_cmd_send(iface, handler, handler_cmds, handler_cmds_len,
@@ -521,7 +521,7 @@ int modem_cmd_send_nolock(struct modem_iface *iface,
 int modem_cmd_send(struct modem_iface *iface,
 		   struct modem_cmd_handler *handler,
 		   struct modem_cmd *handler_cmds, size_t handler_cmds_len,
-		   const u8_t *buf, struct k_sem *sem, k_timeout_t timeout)
+		   const uint8_t *buf, struct k_sem *sem, k_timeout_t timeout)
 {
 	return _modem_cmd_send(iface, handler, handler_cmds, handler_cmds_len,
 			       buf, sem, timeout, false);

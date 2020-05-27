@@ -78,8 +78,8 @@ static void stm32_i2c_master_finish(struct device *dev)
 }
 
 static inline void msg_init(struct device *dev, struct i2c_msg *msg,
-			    u8_t *next_msg_flags, u16_t slave,
-			    u32_t transfer)
+			    uint8_t *next_msg_flags, uint16_t slave,
+			    uint32_t transfer)
 {
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
 	struct i2c_stm32_data *data = DEV_DATA(dev);
@@ -114,7 +114,7 @@ static inline void msg_init(struct device *dev, struct i2c_msg *msg,
 	}
 }
 
-static s32_t msg_end(struct device *dev, u8_t *next_msg_flags, const char *funcname)
+static int32_t msg_end(struct device *dev, uint8_t *next_msg_flags, const char *funcname)
 {
 	struct i2c_stm32_data *data = DEV_DATA(dev);
 
@@ -166,12 +166,12 @@ static inline void handle_sb(struct device *dev)
 	struct i2c_stm32_data *data = DEV_DATA(dev);
 	I2C_TypeDef *i2c = cfg->i2c;
 
-	u16_t saddr = data->slave_address;
-	u8_t slave;
+	uint16_t saddr = data->slave_address;
+	uint8_t slave;
 
 	if (I2C_ADDR_10_BITS & data->dev_config) {
 		slave = (((saddr & 0x0300) >> 7) & 0xFF);
-		u8_t header = slave | HEADER;
+		uint8_t header = slave | HEADER;
 
 		if (data->current.is_restart == 0U) {
 			data->current.is_restart = 1U;
@@ -324,7 +324,7 @@ static inline void handle_btf(struct device *dev)
 	if (data->current.is_write) {
 		handle_txe(dev);
 	} else {
-		u32_t counter = 0U;
+		uint32_t counter = 0U;
 
 		switch (data->current.len) {
 		case 2:
@@ -367,14 +367,14 @@ static void stm32_i2c_slave_event(struct device *dev)
 		data->slave_cfg->callbacks;
 
 	if (LL_I2C_IsActiveFlag_TXE(i2c) && LL_I2C_IsActiveFlag_BTF(i2c)) {
-		u8_t val;
+		uint8_t val;
 		slave_cb->read_processed(data->slave_cfg, &val);
 		LL_I2C_TransmitData8(i2c, val);
 		return;
 	}
 
 	if (LL_I2C_IsActiveFlag_RXNE(i2c)) {
-		u8_t val = LL_I2C_ReceiveData8(i2c);
+		uint8_t val = LL_I2C_ReceiveData8(i2c);
 		if (slave_cb->write_received(data->slave_cfg, val)) {
 			LL_I2C_AcknowledgeNextData(i2c, LL_I2C_NACK);
 		}
@@ -393,12 +393,12 @@ static void stm32_i2c_slave_event(struct device *dev)
 	}
 
 	if (LL_I2C_IsActiveFlag_ADDR(i2c)) {
-		u32_t dir = LL_I2C_GetTransferDirection(i2c);
+		uint32_t dir = LL_I2C_GetTransferDirection(i2c);
 		if (dir == LL_I2C_DIRECTION_READ) {
 			slave_cb->write_requested(data->slave_cfg);
 			LL_I2C_EnableIT_RX(i2c);
 		} else {
-			u8_t val;
+			uint8_t val;
 			slave_cb->read_requested(data->slave_cfg, &val);
 			LL_I2C_TransmitData8(i2c, val);
 			LL_I2C_EnableIT_TX(i2c);
@@ -415,7 +415,7 @@ int i2c_stm32_slave_register(struct device *dev,
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
 	struct i2c_stm32_data *data = DEV_DATA(dev);
 	I2C_TypeDef *i2c = cfg->i2c;
-	u32_t bitrate_cfg;
+	uint32_t bitrate_cfg;
 	int ret;
 
 	if (!config) {
@@ -552,8 +552,8 @@ end:
 	stm32_i2c_master_mode_end(dev);
 }
 
-s32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
-			  u8_t *next_msg_flags, u16_t saddr)
+int32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
+			  uint8_t *next_msg_flags, uint16_t saddr)
 {
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
 	struct i2c_stm32_data *data = DEV_DATA(dev);
@@ -569,8 +569,8 @@ s32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 	return msg_end(dev, next_msg_flags, __func__);
 }
 
-s32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
-			 u8_t *next_msg_flags, u16_t saddr)
+int32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
+			 uint8_t *next_msg_flags, uint16_t saddr)
 {
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
 	struct i2c_stm32_data *data = DEV_DATA(dev);
@@ -627,7 +627,7 @@ error:
 	return -EIO;
 }
 
-static int stm32_i2c_wait_timeout(u16_t *timeout)
+static int stm32_i2c_wait_timeout(uint16_t *timeout)
 {
 	if (*timeout == 0) {
 		return 1;
@@ -638,15 +638,15 @@ static int stm32_i2c_wait_timeout(u16_t *timeout)
 	}
 }
 
-s32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
-			  u8_t *next_msg_flags, u16_t saddr)
+int32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
+			  uint8_t *next_msg_flags, uint16_t saddr)
 {
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
 	struct i2c_stm32_data *data = DEV_DATA(dev);
 	I2C_TypeDef *i2c = cfg->i2c;
-	u32_t len = msg->len;
-	u16_t timeout;
-	u8_t *buf = msg->buf;
+	uint32_t len = msg->len;
+	uint16_t timeout;
+	uint8_t *buf = msg->buf;
 
 	msg_init(dev, msg, next_msg_flags, saddr, I2C_REQUEST_WRITE);
 
@@ -661,8 +661,8 @@ s32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 		}
 
 		if (I2C_ADDR_10_BITS & data->dev_config) {
-			u8_t slave = (((saddr & 0x0300) >> 7) & 0xFF);
-			u8_t header = slave | HEADER;
+			uint8_t slave = (((saddr & 0x0300) >> 7) & 0xFF);
+			uint8_t header = slave | HEADER;
 
 			LL_I2C_TransmitData8(i2c, header);
 			timeout = STM32_I2C_TIMEOUT_USEC;
@@ -677,7 +677,7 @@ s32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 			slave = data->slave_address & 0xFF;
 			LL_I2C_TransmitData8(i2c, slave);
 		} else {
-			u8_t slave = (saddr << 1) & 0xFF;
+			uint8_t slave = (saddr << 1) & 0xFF;
 
 			LL_I2C_TransmitData8(i2c, slave | I2C_REQUEST_WRITE);
 		}
@@ -730,15 +730,15 @@ end:
 	return msg_end(dev, next_msg_flags, __func__);
 }
 
-s32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
-			 u8_t *next_msg_flags, u16_t saddr)
+int32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
+			 uint8_t *next_msg_flags, uint16_t saddr)
 {
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
 	struct i2c_stm32_data *data = DEV_DATA(dev);
 	I2C_TypeDef *i2c = cfg->i2c;
-	u32_t len = msg->len;
-	u16_t timeout;
-	u8_t *buf = msg->buf;
+	uint32_t len = msg->len;
+	uint16_t timeout;
+	uint8_t *buf = msg->buf;
 
 	msg_init(dev, msg, next_msg_flags, saddr, I2C_REQUEST_READ);
 
@@ -753,8 +753,8 @@ s32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 		}
 
 		if (I2C_ADDR_10_BITS & data->dev_config) {
-			u8_t slave = (((saddr & 0x0300) >> 7) & 0xFF);
-			u8_t header = slave | HEADER;
+			uint8_t slave = (((saddr & 0x0300) >> 7) & 0xFF);
+			uint8_t header = slave | HEADER;
 
 			LL_I2C_TransmitData8(i2c, header);
 			timeout = STM32_I2C_TIMEOUT_USEC;
@@ -791,7 +791,7 @@ s32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 			header |= I2C_REQUEST_READ;
 			LL_I2C_TransmitData8(i2c, header);
 		} else {
-			u8_t slave = ((saddr) << 1) & 0xFF;
+			uint8_t slave = ((saddr) << 1) & 0xFF;
 
 			LL_I2C_TransmitData8(i2c, slave | I2C_REQUEST_READ);
 		}
@@ -856,7 +856,7 @@ s32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 				LL_I2C_GenerateStopCondition(i2c);
 			}
 
-			for (u32_t counter = 2; counter > 0; counter--) {
+			for (uint32_t counter = 2; counter > 0; counter--) {
 				len--;
 				*buf = LL_I2C_ReceiveData8(i2c);
 				buf++;
@@ -887,7 +887,7 @@ end:
 }
 #endif
 
-s32_t stm32_i2c_configure_timing(struct device *dev, u32_t clock)
+int32_t stm32_i2c_configure_timing(struct device *dev, uint32_t clock)
 {
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
 	struct i2c_stm32_data *data = DEV_DATA(dev);

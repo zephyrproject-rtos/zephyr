@@ -48,11 +48,11 @@ struct ipso_buzzer_data {
 	float64_value_t delay_duration;
 	float64_value_t min_off_time;
 
-	u64_t trigger_offset;
+	uint64_t trigger_offset;
 
 	struct k_delayed_work buzzer_work;
 
-	u16_t obj_inst_id;
+	uint16_t obj_inst_id;
 	bool onoff; /* toggle from resource */
 	bool active; /* digital state */
 };
@@ -74,7 +74,7 @@ static struct lwm2m_engine_res res[MAX_INSTANCE_COUNT][BUZZER_MAX_ID];
 static struct lwm2m_engine_res_inst
 		res_inst[MAX_INSTANCE_COUNT][RESOURCE_INSTANCE_COUNT];
 
-static int float2ms(float64_value_t *f, u32_t *ms)
+static int float2ms(float64_value_t *f, uint32_t *ms)
 {
 	*ms = f->val1 * MSEC_PER_SEC;
 	*ms += f->val2 / (LWM2M_FLOAT64_DEC_MAX / MSEC_PER_SEC);
@@ -82,7 +82,7 @@ static int float2ms(float64_value_t *f, u32_t *ms)
 	return 0;
 }
 
-static int get_buzzer_index(u16_t obj_inst_id)
+static int get_buzzer_index(uint16_t obj_inst_id)
 {
 	int i, ret = -ENOENT;
 
@@ -100,7 +100,7 @@ static int get_buzzer_index(u16_t obj_inst_id)
 
 static int start_buzzer(struct ipso_buzzer_data *buzzer)
 {
-	u32_t temp = 0U;
+	uint32_t temp = 0U;
 	char path[MAX_RESOURCE_LEN];
 
 	/* make sure buzzer is currently not active */
@@ -147,9 +147,9 @@ static int stop_buzzer(struct ipso_buzzer_data *buzzer, bool cancel)
 	return 0;
 }
 
-static int onoff_post_write_cb(u16_t obj_inst_id,
-			       u16_t res_id, u16_t res_inst_id,
-			       u8_t *data, u16_t data_len,
+static int onoff_post_write_cb(uint16_t obj_inst_id,
+			       uint16_t res_id, uint16_t res_inst_id,
+			       uint8_t *data, uint16_t data_len,
 			       bool last_block, size_t total_size)
 {
 	int i;
@@ -176,7 +176,7 @@ static void buzzer_work_cb(struct k_work *work)
 	stop_buzzer(buzzer, false);
 }
 
-static struct lwm2m_engine_obj_inst *buzzer_create(u16_t obj_inst_id)
+static struct lwm2m_engine_obj_inst *buzzer_create(uint16_t obj_inst_id)
 {
 	int index, avail = -1, i = 0, j = 0;
 

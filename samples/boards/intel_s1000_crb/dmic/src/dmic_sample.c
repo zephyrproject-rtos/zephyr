@@ -93,7 +93,7 @@ static void dmic_start(void)
 static void dmic_receive(void)
 {
 	int frame_counter = 0;
-	s32_t *mic_in_buf;
+	int32_t *mic_in_buf;
 	size_t size;
 	int ret;
 

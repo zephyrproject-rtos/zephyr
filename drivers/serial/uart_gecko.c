@@ -21,17 +21,17 @@
 struct uart_gecko_config {
 	USART_TypeDef *base;
 	CMU_Clock_TypeDef clock;
-	u32_t baud_rate;
+	uint32_t baud_rate;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(struct device *dev);
 #endif
 	struct soc_gpio_pin pin_rx;
 	struct soc_gpio_pin pin_tx;
 #ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
-	u8_t loc_rx;
-	u8_t loc_tx;
+	uint8_t loc_rx;
+	uint8_t loc_tx;
 #else
-	u8_t loc;
+	uint8_t loc;
 #endif
 };
 
@@ -45,7 +45,7 @@ struct uart_gecko_data {
 static int uart_gecko_poll_in(struct device *dev, unsigned char *c)
 {
 	const struct uart_gecko_config *config = dev->config_info;
-	u32_t flags = USART_StatusGet(config->base);
+	uint32_t flags = USART_StatusGet(config->base);
 
 	if (flags & USART_STATUS_RXDATAV) {
 		*c = USART_Rx(config->base);
@@ -65,7 +65,7 @@ static void uart_gecko_poll_out(struct device *dev, unsigned char c)
 static int uart_gecko_err_check(struct device *dev)
 {
 	const struct uart_gecko_config *config = dev->config_info;
-	u32_t flags = USART_IntGet(config->base);
+	uint32_t flags = USART_IntGet(config->base);
 	int err = 0;
 
 	if (flags & USART_IF_RXOF) {
@@ -88,31 +88,31 @@ static int uart_gecko_err_check(struct device *dev)
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static int uart_gecko_fifo_fill(struct device *dev, const u8_t *tx_data,
+static int uart_gecko_fifo_fill(struct device *dev, const uint8_t *tx_data,
 			       int len)
 {
 	const struct uart_gecko_config *config = dev->config_info;
-	u8_t num_tx = 0U;
+	uint8_t num_tx = 0U;
 
 	while ((len - num_tx > 0) &&
 	       (config->base->STATUS & USART_STATUS_TXBL)) {
 
-		config->base->TXDATA = (u32_t)tx_data[num_tx++];
+		config->base->TXDATA = (uint32_t)tx_data[num_tx++];
 	}
 
 	return num_tx;
 }
 
-static int uart_gecko_fifo_read(struct device *dev, u8_t *rx_data,
+static int uart_gecko_fifo_read(struct device *dev, uint8_t *rx_data,
 			       const int len)
 {
 	const struct uart_gecko_config *config = dev->config_info;
-	u8_t num_rx = 0U;
+	uint8_t num_rx = 0U;
 
 	while ((len - num_rx > 0) &&
 	       (config->base->STATUS & USART_STATUS_RXDATAV)) {
 
-		rx_data[num_rx++] = (u8_t)config->base->RXDATA;
+		rx_data[num_rx++] = (uint8_t)config->base->RXDATA;
 	}
 
 	return num_rx;
@@ -121,7 +121,7 @@ static int uart_gecko_fifo_read(struct device *dev, u8_t *rx_data,
 static void uart_gecko_irq_tx_enable(struct device *dev)
 {
 	const struct uart_gecko_config *config = dev->config_info;
-	u32_t mask = USART_IEN_TXBL | USART_IEN_TXC;
+	uint32_t mask = USART_IEN_TXBL | USART_IEN_TXC;
 
 	USART_IntEnable(config->base, mask);
 }
@@ -129,7 +129,7 @@ static void uart_gecko_irq_tx_enable(struct device *dev)
 static void uart_gecko_irq_tx_disable(struct device *dev)
 {
 	const struct uart_gecko_config *config = dev->config_info;
-	u32_t mask = USART_IEN_TXBL | USART_IEN_TXC;
+	uint32_t mask = USART_IEN_TXBL | USART_IEN_TXC;
 
 	USART_IntDisable(config->base, mask);
 }
@@ -137,7 +137,7 @@ static void uart_gecko_irq_tx_disable(struct device *dev)
 static int uart_gecko_irq_tx_complete(struct device *dev)
 {
 	const struct uart_gecko_config *config = dev->config_info;
-	u32_t flags = USART_IntGet(config->base);
+	uint32_t flags = USART_IntGet(config->base);
 
 	USART_IntClear(config->base, USART_IF_TXC);
 
@@ -147,7 +147,7 @@ static int uart_gecko_irq_tx_complete(struct device *dev)
 static int uart_gecko_irq_tx_ready(struct device *dev)
 {
 	const struct uart_gecko_config *config = dev->config_info;
-	u32_t flags = USART_IntGet(config->base);
+	uint32_t flags = USART_IntGet(config->base);
 
 	return (flags & USART_IF_TXBL) != 0U;
 }
@@ -155,7 +155,7 @@ static int uart_gecko_irq_tx_ready(struct device *dev)
 static void uart_gecko_irq_rx_enable(struct device *dev)
 {
 	const struct uart_gecko_config *config = dev->config_info;
-	u32_t mask = USART_IEN_RXDATAV;
+	uint32_t mask = USART_IEN_RXDATAV;
 
 	USART_IntEnable(config->base, mask);
 }
@@ -163,7 +163,7 @@ static void uart_gecko_irq_rx_enable(struct device *dev)
 static void uart_gecko_irq_rx_disable(struct device *dev)
 {
 	const struct uart_gecko_config *config = dev->config_info;
-	u32_t mask = USART_IEN_RXDATAV;
+	uint32_t mask = USART_IEN_RXDATAV;
 
 	USART_IntDisable(config->base, mask);
 }
@@ -171,7 +171,7 @@ static void uart_gecko_irq_rx_disable(struct device *dev)
 static int uart_gecko_irq_rx_full(struct device *dev)
 {
 	const struct uart_gecko_config *config = dev->config_info;
-	u32_t flags = USART_IntGet(config->base);
+	uint32_t flags = USART_IntGet(config->base);
 
 	return (flags & USART_IF_RXDATAV) != 0U;
 }
@@ -179,7 +179,7 @@ static int uart_gecko_irq_rx_full(struct device *dev)
 static int uart_gecko_irq_rx_ready(struct device *dev)
 {
 	const struct uart_gecko_config *config = dev->config_info;
-	u32_t mask = USART_IEN_RXDATAV;
+	uint32_t mask = USART_IEN_RXDATAV;
 
 	return (config->base->IEN & mask)
 		&& uart_gecko_irq_rx_full(dev);

@@ -19,13 +19,13 @@ struct k_thread tdata1;
 struct k_thread tdata2;
 static ZTEST_BMEM char __aligned(4) tbuffer[MSG_SIZE * MSGQ_LEN];
 static ZTEST_DMEM char __aligned(4) tbuffer1[MSG_SIZE];
-static ZTEST_DMEM u32_t data[MSGQ_LEN] = { MSG0, MSG1 };
+static ZTEST_DMEM uint32_t data[MSGQ_LEN] = { MSG0, MSG1 };
 struct k_sem end_sema;
 
 static void put_msgq(struct k_msgq *pmsgq)
 {
 	int ret;
-	u32_t read_data;
+	uint32_t read_data;
 
 	for (int i = 0; i < MSGQ_LEN; i++) {
 		ret = k_msgq_put(pmsgq, (void *)&data[i], K_NO_WAIT);
@@ -49,7 +49,7 @@ static void put_msgq(struct k_msgq *pmsgq)
 
 static void get_msgq(struct k_msgq *pmsgq)
 {
-	u32_t rx_data, read_data;
+	uint32_t rx_data, read_data;
 	int ret;
 
 	for (int i = 0; i < MSGQ_LEN; i++) {
@@ -71,7 +71,7 @@ static void get_msgq(struct k_msgq *pmsgq)
 
 static void purge_msgq(struct k_msgq *pmsgq)
 {
-	u32_t read_data;
+	uint32_t read_data;
 
 	k_msgq_purge(pmsgq);
 	zassert_equal(k_msgq_num_free_get(pmsgq), MSGQ_LEN, NULL);
@@ -109,7 +109,7 @@ static void thread_entry_overflow(void *p1, void *p2, void *p3)
 {
 	int ret;
 
-	u32_t rx_buf[MSGQ_LEN];
+	uint32_t rx_buf[MSGQ_LEN];
 
 	ret = k_msgq_get(p1, &rx_buf[0], K_FOREVER);
 
@@ -159,7 +159,7 @@ static void msgq_isr(struct k_msgq *pmsgq)
 
 static void thread_entry_get_data(void *p1, void *p2, void *p3)
 {
-	u32_t rx_buf[MSGQ_LEN];
+	uint32_t rx_buf[MSGQ_LEN];
 	int i = 0;
 
 	while (k_msgq_get(p1, &rx_buf[i], K_NO_WAIT) != 0) {

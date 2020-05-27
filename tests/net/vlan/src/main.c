@@ -86,9 +86,9 @@ static K_SEM_DEFINE(wait_data, 0, UINT_MAX);
 
 struct eth_context {
 	struct net_if *iface;
-	u8_t mac_addr[6];
+	uint8_t mac_addr[6];
 
-	u16_t expecting_tag;
+	uint16_t expecting_tag;
 };
 
 static struct eth_context eth_vlan_context;
@@ -150,7 +150,7 @@ static struct ethernet_api api_funcs = {
 	.send = eth_tx,
 };
 
-static void generate_mac(u8_t *mac_addr)
+static void generate_mac(uint8_t *mac_addr)
 {
 	/* 00-00-5E-00-53-xx Documentation RFC 7042 */
 	mac_addr[0] = 0x00;
@@ -194,8 +194,8 @@ NET_DEVICE_INIT(eth_test, "eth_test", eth_init, device_pm_control_nop,
 		NET_ETH_MTU);
 
 struct net_if_test {
-	u8_t idx; /* not used for anything, just a dummy value */
-	u8_t mac_addr[sizeof(struct net_eth_addr)];
+	uint8_t idx; /* not used for anything, just a dummy value */
+	uint8_t mac_addr[sizeof(struct net_eth_addr)];
 	struct net_linkaddr ll_addr;
 };
 
@@ -204,7 +204,7 @@ static int net_iface_dev_init(struct device *dev)
 	return 0;
 }
 
-static u8_t *net_iface_get_mac(struct device *dev)
+static uint8_t *net_iface_get_mac(struct device *dev)
 {
 	struct net_if_test *data = dev->driver_data;
 
@@ -226,7 +226,7 @@ static u8_t *net_iface_get_mac(struct device *dev)
 
 static void net_iface_init(struct net_if *iface)
 {
-	u8_t *mac = net_iface_get_mac(net_if_get_device(iface));
+	uint8_t *mac = net_iface_get_mac(net_if_get_device(iface));
 
 	net_if_set_link_addr(iface, mac, sizeof(struct net_eth_addr),
 			     NET_LINK_ETHERNET);
@@ -420,9 +420,9 @@ static void test_address_setup(void)
 static void test_vlan_tci(void)
 {
 	struct net_pkt *pkt;
-	u16_t tci;
-	u16_t tag;
-	u8_t priority;
+	uint16_t tci;
+	uint16_t tag;
+	uint8_t priority;
 	bool dei;
 
 	pkt = net_pkt_alloc(K_FOREVER);

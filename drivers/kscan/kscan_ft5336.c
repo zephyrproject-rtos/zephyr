@@ -25,11 +25,11 @@ enum ft5336_event {
 
 struct ft5336_config {
 	char *i2c_name;
-	u8_t i2c_address;
+	uint8_t i2c_address;
 #ifdef CONFIG_KSCAN_FT5336_INTERRUPT
 	char *int_gpio_controller;
-	u8_t int_gpio_pin;
-	u8_t int_gpio_flags;
+	uint8_t int_gpio_pin;
+	uint8_t int_gpio_flags;
 	char *label;
 #endif
 };
@@ -51,9 +51,9 @@ static int ft5336_read(struct device *dev)
 {
 	const struct ft5336_config *config = dev->config_info;
 	struct ft5336_data *data = dev->driver_data;
-	u8_t buffer[FT5406_DATA_SIZE];
-	u8_t event;
-	u16_t row, column;
+	uint8_t buffer[FT5406_DATA_SIZE];
+	uint8_t event;
+	uint16_t row, column;
 	bool pressed;
 
 	if (i2c_burst_read(data->i2c, config->i2c_address, 1, buffer,
@@ -100,7 +100,7 @@ static void ft5336_work_handler(struct k_work *work)
 
 #ifdef CONFIG_KSCAN_FT5336_INTERRUPT
 static void ft5336_isr_handler(struct device *dev, struct gpio_callback *cb,
-		    u32_t pins)
+		    uint32_t pins)
 {
 	const struct ft5336_config *config = dev->config_info;
 	struct ft5336_data *drv_data =

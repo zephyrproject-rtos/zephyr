@@ -68,7 +68,7 @@ extern "C" {
 #define MQTT_MAX_PAYLOAD_SIZE 0x0FFFFFFF
 
 /**@brief Computes total size needed to pack a UTF8 string. */
-#define GET_UT8STR_BUFFER_SIZE(STR) (sizeof(u16_t) + (STR)->size)
+#define GET_UT8STR_BUFFER_SIZE(STR) (sizeof(uint16_t) + (STR)->size)
 
 /**@brief Computes total size needed to pack a binary stream. */
 #define GET_BINSTR_BUFFER_SIZE(STR) ((STR)->len)
@@ -121,8 +121,8 @@ extern "C" {
 
 /** Buffer context to iterate over buffer. */
 struct buf_ctx {
-	u8_t *cur;
-	u8_t *end;
+	uint8_t *cur;
+	uint8_t *end;
 };
 
 /**@brief MQTT States. */
@@ -295,8 +295,8 @@ int ping_request_encode(struct buf_ctx *buf);
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int fixed_header_decode(struct buf_ctx *buf, u8_t *type_and_flags,
-			u32_t *length);
+int fixed_header_decode(struct buf_ctx *buf, uint8_t *type_and_flags,
+			uint32_t *length);
 
 /**@brief Decode MQTT Connect Ack packet.
  *
@@ -320,7 +320,7 @@ int connect_ack_decode(const struct mqtt_client *client, struct buf_ctx *buf,
  *
  * @return 0 if the procedure is successful, an error code otherwise.
  */
-int publish_decode(u8_t flags, u32_t var_length, struct buf_ctx *buf,
+int publish_decode(uint8_t flags, uint32_t var_length, struct buf_ctx *buf,
 		   struct mqtt_publish_param *param);
 
 /**@brief Decode MQTT Publish Ack packet.

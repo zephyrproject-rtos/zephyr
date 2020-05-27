@@ -21,13 +21,13 @@
 
 LOG_MODULE_DECLARE(LPS22HH, CONFIG_SENSOR_LOG_LEVEL);
 
-static int lps22hh_spi_read(struct device *dev, u8_t reg_addr,
-			    u8_t *value, u8_t len)
+static int lps22hh_spi_read(struct device *dev, uint8_t reg_addr,
+			    uint8_t *value, uint8_t len)
 {
 	struct lps22hh_data *data = dev->driver_data;
 	const struct lps22hh_config *cfg = dev->config_info;
 	const struct spi_config *spi_cfg = &cfg->spi_conf;
-	u8_t buffer_tx[2] = { reg_addr | LPS22HH_SPI_READ, 0 };
+	uint8_t buffer_tx[2] = { reg_addr | LPS22HH_SPI_READ, 0 };
 	const struct spi_buf tx_buf = {
 			.buf = buffer_tx,
 			.len = 2,
@@ -63,13 +63,13 @@ static int lps22hh_spi_read(struct device *dev, u8_t reg_addr,
 	return 0;
 }
 
-static int lps22hh_spi_write(struct device *dev, u8_t reg_addr,
-			     u8_t *value, u8_t len)
+static int lps22hh_spi_write(struct device *dev, uint8_t reg_addr,
+			     uint8_t *value, uint8_t len)
 {
 	struct lps22hh_data *data = dev->driver_data;
 	const struct lps22hh_config *cfg = dev->config_info;
 	const struct spi_config *spi_cfg = &cfg->spi_conf;
-	u8_t buffer_tx[1] = { reg_addr & ~LPS22HH_SPI_READ };
+	uint8_t buffer_tx[1] = { reg_addr & ~LPS22HH_SPI_READ };
 	const struct spi_buf tx_buf[2] = {
 		{
 			.buf = buffer_tx,

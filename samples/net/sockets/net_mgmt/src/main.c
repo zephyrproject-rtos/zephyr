@@ -84,7 +84,7 @@ static void listener(void)
 	struct sockaddr_nm event_addr;
 	socklen_t event_addr_len;
 	char ipaddr[INET6_ADDRSTRLEN];
-	u8_t buf[MAX_BUF_LEN];
+	uint8_t buf[MAX_BUF_LEN];
 	int fd, ret;
 
 	fd = socket(AF_NET_MGMT, SOCK_DGRAM, NET_MGMT_EVENT_PROTO);

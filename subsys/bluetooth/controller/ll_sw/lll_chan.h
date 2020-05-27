@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-u8_t lll_chan_sel_1(u8_t *chan_use, u8_t hop, u16_t latency, u8_t *chan_map,
-		    u8_t chan_count);
-u8_t lll_chan_sel_2(u16_t counter, u16_t chan_id, u8_t *chan_map,
-		    u8_t chan_count);
+uint8_t lll_chan_sel_1(uint8_t *chan_use, uint8_t hop, uint16_t latency, uint8_t *chan_map,
+		    uint8_t chan_count);
+uint8_t lll_chan_sel_2(uint16_t counter, uint16_t chan_id, uint8_t *chan_map,
+		    uint8_t chan_count);

@@ -21,7 +21,7 @@ LOG_MODULE_DECLARE(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 #include "ppp_internal.h"
 
 static enum net_verdict lcp_handle_ext(struct ppp_fsm *fsm,
-				       enum ppp_packet_type code, u8_t id,
+				       enum ppp_packet_type code, uint8_t id,
 				       struct net_pkt *pkt)
 {
 	enum net_verdict verdict = NET_DROP;
@@ -57,7 +57,7 @@ static enum net_verdict lcp_handle(struct ppp_context *ctx,
 	return ppp_fsm_input(&ctx->lcp.fsm, PPP_LCP, pkt);
 }
 
-static bool append_to_buf(struct net_buf *buf, u8_t *data, u8_t data_len)
+static bool append_to_buf(struct net_buf *buf, uint8_t *data, uint8_t data_len)
 {
 	if (data_len > net_buf_tailroom(buf)) {
 		return false;
@@ -73,7 +73,7 @@ static bool append_to_buf(struct net_buf *buf, u8_t *data, u8_t data_len)
 
 static int lcp_config_info_req(struct ppp_fsm *fsm,
 			       struct net_pkt *pkt,
-			       u16_t length,
+			       uint16_t length,
 			       struct net_buf **buf)
 {
 	struct ppp_option_pkt options[MAX_LCP_OPTIONS];
@@ -214,7 +214,7 @@ static void lcp_open(struct ppp_context *ctx)
 	ppp_fsm_open(&ctx->lcp.fsm);
 }
 
-static void lcp_close(struct ppp_context *ctx, const u8_t *reason)
+static void lcp_close(struct ppp_context *ctx, const uint8_t *reason)
 {
 	if (ctx->phase != PPP_DEAD) {
 		ppp_change_phase(ctx, PPP_TERMINATE);

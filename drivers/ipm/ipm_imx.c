@@ -37,10 +37,10 @@ static void imx_mu_isr(void *arg)
 	const struct imx_mu_config *config = dev->config_info;
 	MU_Type *base = MU(config);
 	struct imx_mu_data *data = dev->driver_data;
-	u32_t data32[IMX_IPM_DATA_REGS];
-	u32_t status_reg;
-	s32_t id;
-	s32_t i;
+	uint32_t data32[IMX_IPM_DATA_REGS];
+	uint32_t status_reg;
+	int32_t id;
+	int32_t i;
 	bool all_registers_full;
 
 	status_reg = base->SR >>= MU_SR_RFn_SHIFT;
@@ -70,7 +70,7 @@ static void imx_mu_isr(void *arg)
 
 				if (data->callback) {
 					data->callback(data->callback_ctx,
-						       (u32_t)id,
+						       (uint32_t)id,
 						       &data32[0]);
 				}
 			}
@@ -87,12 +87,12 @@ static void imx_mu_isr(void *arg)
 #endif
 }
 
-static int imx_mu_ipm_send(struct device *dev, int wait, u32_t id,
+static int imx_mu_ipm_send(struct device *dev, int wait, uint32_t id,
 			   const void *data, int size)
 {
 	const struct imx_mu_config *config = dev->config_info;
 	MU_Type *base = MU(config);
-	u32_t data32[IMX_IPM_DATA_REGS];
+	uint32_t data32[IMX_IPM_DATA_REGS];
 	mu_status_t status;
 	int i;
 
@@ -131,7 +131,7 @@ static int imx_mu_ipm_max_data_size_get(struct device *dev)
 	return CONFIG_IPM_IMX_MAX_DATA_SIZE;
 }
 
-static u32_t imx_mu_ipm_max_id_val_get(struct device *dev)
+static uint32_t imx_mu_ipm_max_id_val_get(struct device *dev)
 {
 	ARG_UNUSED(dev);
 

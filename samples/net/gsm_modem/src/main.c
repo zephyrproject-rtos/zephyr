@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(sample_gsm_ppp, LOG_LEVEL_DBG);
 static struct net_mgmt_event_callback mgmt_cb;
 
 static void event_handler(struct net_mgmt_event_callback *cb,
-			  u32_t mgmt_event, struct net_if *iface)
+			  uint32_t mgmt_event, struct net_if *iface)
 {
 	if ((mgmt_event & (NET_EVENT_L4_CONNECTED
 			   | NET_EVENT_L4_DISCONNECTED)) != mgmt_event) {

@@ -18,7 +18,7 @@
 
 static void test_arm_cfft_f64_cmplx_backend(
 	const arm_cfft_instance_f64 * inst, bool inverse,
-	const u64_t *input, const u64_t *ref, size_t length)
+	const uint64_t *input, const uint64_t *ref, size_t length)
 {
 	float64_t *output;
 
@@ -44,7 +44,7 @@ static void test_arm_cfft_f64_cmplx_backend(
 
 static void test_arm_cfft_f64_cmplx(
 	const arm_cfft_instance_f64 * inst,
-	const u64_t *input, const u64_t *ref, size_t length)
+	const uint64_t *input, const uint64_t *ref, size_t length)
 {
 	test_arm_cfft_f64_cmplx_backend(inst, false, input, ref, length);
 }
@@ -105,7 +105,7 @@ DEFINE_TEST_VARIANT4(arm_cfft_f64_cmplx, step_4096, &arm_cfft_sR_f64_len4096,
 
 static void test_arm_cifft_f64_cmplx(
 	const arm_cfft_instance_f64 * inst,
-	const u64_t *input, const u64_t *ref, size_t length)
+	const uint64_t *input, const uint64_t *ref, size_t length)
 {
 	test_arm_cfft_f64_cmplx_backend(inst, true, input, ref, length);
 }

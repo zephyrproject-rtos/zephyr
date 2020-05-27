@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(dac_stm32);
 #define STM32_FIRST_CHANNEL		1
 
 #define CHAN(n)		LL_DAC_CHANNEL_##n
-static const u32_t table_channels[] = {
+static const uint32_t table_channels[] = {
 	CHAN(1),
 #ifdef LL_DAC_CHANNEL_2
 	CHAN(2),
@@ -46,12 +46,12 @@ struct dac_stm32_cfg {
 
 /* Runtime driver data */
 struct dac_stm32_data {
-	u8_t channel_count;
-	u8_t resolution;
+	uint8_t channel_count;
+	uint8_t resolution;
 };
 
 static int dac_stm32_write_value(struct device *dev,
-					u8_t channel, u32_t value)
+					uint8_t channel, uint32_t value)
 {
 	struct dac_stm32_data *data = dev->driver_data;
 	const struct dac_stm32_cfg *cfg = dev->config_info;

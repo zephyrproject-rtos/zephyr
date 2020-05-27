@@ -16,9 +16,9 @@ struct i2c_nrfx_twi_data {
 	struct k_sem transfer_sync;
 	struct k_sem completion_sync;
 	volatile nrfx_err_t res;
-	u32_t dev_config;
+	uint32_t dev_config;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	u32_t pm_state;
+	uint32_t pm_state;
 #endif
 };
 
@@ -39,7 +39,7 @@ const struct i2c_nrfx_twi_config *get_dev_config(struct device *dev)
 }
 
 static int i2c_nrfx_twi_transfer(struct device *dev, struct i2c_msg *msgs,
-				 u8_t num_msgs, u16_t addr)
+				 uint8_t num_msgs, uint16_t addr)
 {
 	int ret = 0;
 
@@ -59,7 +59,7 @@ static int i2c_nrfx_twi_transfer(struct device *dev, struct i2c_msg *msgs,
 			.type		= (msgs[i].flags & I2C_MSG_READ) ?
 					  NRFX_TWI_XFER_RX : NRFX_TWI_XFER_TX
 		};
-		u32_t xfer_flags = 0;
+		uint32_t xfer_flags = 0;
 		nrfx_err_t res;
 
 		/* In case the STOP condition is not supposed to appear after
@@ -141,7 +141,7 @@ static void event_handler(nrfx_twi_evt_t const *p_event, void *p_context)
 	k_sem_give(&dev_data->completion_sync);
 }
 
-static int i2c_nrfx_twi_configure(struct device *dev, u32_t dev_config)
+static int i2c_nrfx_twi_configure(struct device *dev, uint32_t dev_config)
 {
 	nrfx_twi_t const *inst = &(get_dev_config(dev)->twi);
 
@@ -188,14 +188,14 @@ static int init_twi(struct device *dev)
 }
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static int twi_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
+static int twi_nrfx_pm_control(struct device *dev, uint32_t ctrl_command,
 				void *context, device_pm_cb cb, void *arg)
 {
 	int ret = 0;
-	u32_t pm_current_state = get_dev_data(dev)->pm_state;
+	uint32_t pm_current_state = get_dev_data(dev)->pm_state;
 
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-		u32_t new_state = *((const u32_t *)context);
+		uint32_t new_state = *((const uint32_t *)context);
 
 		if (new_state != pm_current_state) {
 			switch (new_state) {
@@ -225,7 +225,7 @@ static int twi_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 		}
 	} else {
 		__ASSERT_NO_MSG(ctrl_command == DEVICE_PM_GET_POWER_STATE);
-		*((u32_t *)context) = get_dev_data(dev)->pm_state;
+		*((uint32_t *)context) = get_dev_data(dev)->pm_state;
 	}
 
 	if (cb) {

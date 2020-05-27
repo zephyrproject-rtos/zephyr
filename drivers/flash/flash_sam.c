@@ -91,8 +91,8 @@ static int flash_sam_wait_ready(struct device *dev)
 {
 	Efc *const efc = DEV_CFG(dev)->regs;
 
-	u64_t timeout_time = k_uptime_get() + SAM_FLASH_TIMEOUT_MS;
-	u32_t fsr;
+	uint64_t timeout_time = k_uptime_get() + SAM_FLASH_TIMEOUT_MS;
+	uint32_t fsr;
 
 	do {
 		fsr = efc->EEFC_FSR;
@@ -129,8 +129,8 @@ static int flash_sam_write_page(struct device *dev, off_t offset,
 				const void *data, size_t len)
 {
 	Efc *const efc = DEV_CFG(dev)->regs;
-	const u32_t *src = data;
-	u32_t *dst = (u32_t *)((u8_t *)CONFIG_FLASH_BASE_ADDRESS + offset);
+	const uint32_t *src = data;
+	uint32_t *dst = (uint32_t *)((uint8_t *)CONFIG_FLASH_BASE_ADDRESS + offset);
 
 	LOG_DBG("offset = 0x%lx, len = %zu", (long)offset, len);
 
@@ -155,7 +155,7 @@ static int flash_sam_write(struct device *dev, off_t offset,
 			    const void *data, size_t len)
 {
 	int rc;
-	const u8_t *data8 = data;
+	const uint8_t *data8 = data;
 
 	LOG_DBG("offset = 0x%lx, len = %zu", (long)offset, len);
 
@@ -219,7 +219,7 @@ static int flash_sam_read(struct device *dev, off_t offset, void *data,
 		return -EINVAL;
 	}
 
-	memcpy(data, (u8_t *)CONFIG_FLASH_BASE_ADDRESS + offset, len);
+	memcpy(data, (uint8_t *)CONFIG_FLASH_BASE_ADDRESS + offset, len);
 
 	return 0;
 }

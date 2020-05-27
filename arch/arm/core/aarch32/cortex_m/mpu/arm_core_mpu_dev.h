@@ -133,8 +133,8 @@ struct k_thread;
  *   requirements of the MPU hardware.
  */
 void arm_core_mpu_configure_static_mpu_regions(
-	const struct k_mem_partition *static_regions[], const u8_t regions_num,
-	const u32_t background_area_start, const u32_t background_area_end);
+	const struct k_mem_partition *static_regions[], const uint8_t regions_num,
+	const uint32_t background_area_start, const uint32_t background_area_end);
 
 #if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
 
@@ -165,7 +165,7 @@ void arm_core_mpu_configure_static_mpu_regions(
  */
 void arm_core_mpu_mark_areas_for_dynamic_regions(
 	const struct k_mem_partition dyn_region_areas[],
-	const u8_t dyn_region_areas_num);
+	const uint8_t dyn_region_areas_num);
 
 #endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
 
@@ -185,7 +185,7 @@ void arm_core_mpu_mark_areas_for_dynamic_regions(
  * not exceed the number of (currently) available MPU indices.
  */
 void arm_core_mpu_configure_dynamic_mpu_regions(
-	const struct k_mem_partition *dynamic_regions[], u8_t regions_num);
+	const struct k_mem_partition *dynamic_regions[], uint8_t regions_num);
 
 #if defined(CONFIG_USERSPACE)
 /**
@@ -215,7 +215,7 @@ void arm_core_mpu_mem_partition_config_update(
  * @param   base    base address in RAM
  * @param   size    size of the region
  */
-void arm_core_mpu_configure(u8_t type, u32_t base, u32_t size);
+void arm_core_mpu_configure(uint8_t type, uint32_t base, uint32_t size);
 
 /**
  * @brief configure MPU regions for the memory partitions of the memory domain
@@ -237,7 +237,7 @@ void arm_core_mpu_configure_user_context(struct k_thread *thread);
  * @param   part_index  memory partition index
  * @param   part        memory partition info
  */
-void arm_core_mpu_configure_mem_partition(u32_t part_index,
+void arm_core_mpu_configure_mem_partition(uint32_t part_index,
 					  struct k_mem_partition *part);
 
 /**
@@ -245,7 +245,7 @@ void arm_core_mpu_configure_mem_partition(u32_t part_index,
  *
  * @param   part_index  memory partition index
  */
-void arm_core_mpu_mem_partition_remove(u32_t part_index);
+void arm_core_mpu_mem_partition_remove(uint32_t part_index);
 
 /**
  * @brief Get the maximum number of available (free) MPU region indices

@@ -50,7 +50,7 @@
 extern struct k_sem thread_sem;
 
 void gpio_test_callback(struct device *port,
-		   struct gpio_callback *cb, u32_t pins)
+		   struct gpio_callback *cb, uint32_t pins)
 {
 	printk(GPIO_NAME "%d triggered\n", GPIO_INT_PIN);
 }

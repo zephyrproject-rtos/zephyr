@@ -51,7 +51,7 @@ static int lldp_find(struct ethernet_context *ctx, struct net_if *iface)
 	return -ENOENT;
 }
 
-static void lldp_submit_work(u32_t timeout)
+static void lldp_submit_work(uint32_t timeout)
 {
 	if (!k_delayed_work_remaining_get(&lldp_tx_timer) ||
 	    timeout < k_delayed_work_remaining_get(&lldp_tx_timer)) {
@@ -63,7 +63,7 @@ static void lldp_submit_work(u32_t timeout)
 	}
 }
 
-static bool lldp_check_timeout(s64_t start, u32_t time, s64_t timeout)
+static bool lldp_check_timeout(int64_t start, uint32_t time, int64_t timeout)
 {
 	start += time;
 	start = abs(start);
@@ -75,7 +75,7 @@ static bool lldp_check_timeout(s64_t start, u32_t time, s64_t timeout)
 	return true;
 }
 
-static bool lldp_timedout(struct ethernet_lldp *lldp, s64_t timeout)
+static bool lldp_timedout(struct ethernet_lldp *lldp, int64_t timeout)
 {
 	return lldp_check_timeout(lldp->tx_timer_start,
 				  lldp->tx_timer_timeout,
@@ -105,7 +105,7 @@ static int lldp_send(struct ethernet_lldp *lldp)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_LLDP_END_LLDPDU_TLV_ENABLED)) {
-		len += sizeof(u16_t);
+		len += sizeof(uint16_t);
 	}
 
 	pkt = net_pkt_alloc_with_buffer(lldp->iface, len, AF_UNSPEC, 0,
@@ -117,7 +117,7 @@ static int lldp_send(struct ethernet_lldp *lldp)
 
 	net_pkt_set_lldp(pkt, true);
 
-	ret = net_pkt_write(pkt, (u8_t *)lldp->lldpdu,
+	ret = net_pkt_write(pkt, (uint8_t *)lldp->lldpdu,
 			    sizeof(struct net_lldpdu));
 	if (ret < 0) {
 		net_pkt_unref(pkt);
@@ -125,7 +125,7 @@ static int lldp_send(struct ethernet_lldp *lldp)
 	}
 
 	if (lldp->optional_du && lldp->optional_len) {
-		ret = net_pkt_write(pkt, (u8_t *)lldp->optional_du,
+		ret = net_pkt_write(pkt, (uint8_t *)lldp->optional_du,
 				    lldp->optional_len);
 		if (ret < 0) {
 			net_pkt_unref(pkt);
@@ -134,9 +134,9 @@ static int lldp_send(struct ethernet_lldp *lldp)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_LLDP_END_LLDPDU_TLV_ENABLED)) {
-		u16_t tlv_end = htons(NET_LLDP_END_LLDPDU_VALUE);
+		uint16_t tlv_end = htons(NET_LLDP_END_LLDPDU_VALUE);
 
-		ret = net_pkt_write(pkt, (u8_t *)&tlv_end, sizeof(tlv_end));
+		ret = net_pkt_write(pkt, (uint8_t *)&tlv_end, sizeof(tlv_end));
 		if (ret < 0) {
 			net_pkt_unref(pkt);
 			goto out;
@@ -145,7 +145,7 @@ static int lldp_send(struct ethernet_lldp *lldp)
 
 	net_pkt_lladdr_src(pkt)->addr = net_if_get_link_addr(lldp->iface)->addr;
 	net_pkt_lladdr_src(pkt)->len = sizeof(struct net_eth_addr);
-	net_pkt_lladdr_dst(pkt)->addr = (u8_t *)lldp_multicast_eth_addr.addr;
+	net_pkt_lladdr_dst(pkt)->addr = (uint8_t *)lldp_multicast_eth_addr.addr;
 	net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
 
 	if (net_if_send_data(lldp->iface, pkt) == NET_DROP) {
@@ -159,9 +159,9 @@ out:
 	return ret;
 }
 
-static u32_t lldp_manage_timeouts(struct ethernet_lldp *lldp, s64_t timeout)
+static uint32_t lldp_manage_timeouts(struct ethernet_lldp *lldp, int64_t timeout)
 {
-	s32_t next_timeout;
+	int32_t next_timeout;
 
 	if (lldp_timedout(lldp, timeout)) {
 		lldp_send(lldp);
@@ -175,14 +175,14 @@ static u32_t lldp_manage_timeouts(struct ethernet_lldp *lldp, s64_t timeout)
 
 static void lldp_tx_timeout(struct k_work *work)
 {
-	u32_t timeout_update = UINT32_MAX - 1;
-	s64_t timeout = k_uptime_get();
+	uint32_t timeout_update = UINT32_MAX - 1;
+	int64_t timeout = k_uptime_get();
 	struct ethernet_lldp *current, *next;
 
 	ARG_UNUSED(work);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&lldp_ifaces, current, next, node) {
-		u32_t next_timeout;
+		uint32_t next_timeout;
 
 		next_timeout = lldp_manage_timeouts(current, timeout);
 		if (next_timeout < timeout_update) {
@@ -225,7 +225,7 @@ static int lldp_check_iface(struct net_if *iface)
 	return 0;
 }
 
-static int lldp_start(struct net_if *iface, u32_t mgmt_event)
+static int lldp_start(struct net_if *iface, uint32_t mgmt_event)
 {
 	struct ethernet_context *ctx;
 	int ret, slot;
@@ -308,7 +308,7 @@ int net_lldp_register_callback(struct net_if *iface, net_lldp_recv_cb_t cb)
 }
 
 static void iface_event_handler(struct net_mgmt_event_callback *cb,
-				u32_t mgmt_event, struct net_if *iface)
+				uint32_t mgmt_event, struct net_if *iface)
 {
 	lldp_start(iface, mgmt_event);
 }
@@ -339,7 +339,7 @@ int net_lldp_config(struct net_if *iface, const struct net_lldpdu *lldpdu)
 	return 0;
 }
 
-int net_lldp_config_optional(struct net_if *iface, const u8_t *tlv, size_t len)
+int net_lldp_config_optional(struct net_if *iface, const uint8_t *tlv, size_t len)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	int i;

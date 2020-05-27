@@ -45,11 +45,11 @@
 		struct {                                                    \
 			/* TODO: const, optimise RAM use */                 \
 			/* TODO: Separate s,n,f,l out into common struct */ \
-			u8_t const s;         /* Stride between elements */ \
-			u8_t const n;         /* Number of buffers */       \
-			u8_t f;               /* First. Read index */       \
-			u8_t l;               /* Last. Write index */       \
-			u8_t MALIGN(4) m[MROUND(sz) * ((cnt) + 1)];         \
+			uint8_t const s;         /* Stride between elements */ \
+			uint8_t const n;         /* Number of buffers */       \
+			uint8_t f;               /* First. Read index */       \
+			uint8_t l;               /* Last. Write index */       \
+			uint8_t MALIGN(4) m[MROUND(sz) * ((cnt) + 1)];         \
 		} mfifo_##name = {                                          \
 			.n = ((cnt) + 1),                                   \
 			.s = MROUND(sz),                                    \
@@ -79,8 +79,8 @@
  * @param idx[out]  Index of newly allocated buffer
  * @return  True if buffer could be allocated; otherwise false
  */
-static inline bool mfifo_enqueue_idx_get(u8_t count, u8_t first, u8_t last,
-					 u8_t *idx)
+static inline bool mfifo_enqueue_idx_get(uint8_t count, uint8_t first, uint8_t last,
+					 uint8_t *idx)
 {
 	/* Non-destructive: Advance write-index modulo 'count' */
 	last = last + 1;
@@ -116,8 +116,8 @@ static inline bool mfifo_enqueue_idx_get(u8_t count, u8_t first, u8_t last,
  * @brief   Commit a previously allocated buffer (=void-ptr)
  * @details API 2
  */
-static inline void mfifo_by_idx_enqueue(u8_t *fifo, u8_t size, u8_t idx,
-					void *mem, u8_t *last)
+static inline void mfifo_by_idx_enqueue(uint8_t *fifo, uint8_t size, uint8_t idx,
+					void *mem, uint8_t *last)
 {
 	/* API 2: fifo is array of void-ptrs */
 	void **p = (void **)(fifo + (*last) * size); /* buffer preceding idx */
@@ -141,10 +141,10 @@ static inline void mfifo_by_idx_enqueue(u8_t *fifo, u8_t size, u8_t idx,
  *   To commit the enqueue process, mfifo_enqueue() must be called afterwards
  * @return  Index of newly allocated buffer; only valid if mem != NULL
  */
-static inline u8_t mfifo_enqueue_get(u8_t *fifo, u8_t size, u8_t count,
-				     u8_t first, u8_t last, void **mem)
+static inline uint8_t mfifo_enqueue_get(uint8_t *fifo, uint8_t size, uint8_t count,
+				     uint8_t first, uint8_t last, void **mem)
 {
-	u8_t idx;
+	uint8_t idx;
 
 	/* Attempt to allocate new buffer (idx) */
 	if (!mfifo_enqueue_idx_get(count, first, last, &idx)) {
@@ -187,7 +187,7 @@ static inline u8_t mfifo_enqueue_get(u8_t *fifo, u8_t size, u8_t count,
  * @param idx[in]   Index one-ahead of previously allocated buffer
  * @param last[out] Write-index
  */
-static inline void mfifo_enqueue(u8_t idx, u8_t *last)
+static inline void mfifo_enqueue(uint8_t idx, uint8_t *last)
 {
 	*last = idx; /* Commit: Update write index */
 }
@@ -206,7 +206,7 @@ static inline void mfifo_enqueue(u8_t idx, u8_t *last)
  * @details API 1 and 2
  *   Empty if first == last
  */
-static inline u8_t mfifo_avail_count_get(u8_t count, u8_t first, u8_t last)
+static inline uint8_t mfifo_avail_count_get(uint8_t count, uint8_t first, uint8_t last)
 {
 	if (last >= first) {
 		return last - first;
@@ -227,8 +227,8 @@ static inline u8_t mfifo_avail_count_get(u8_t count, u8_t first, u8_t last)
  * @brief Non-destructive peek
  * @details API 1
  */
-static inline void *mfifo_dequeue_get(u8_t *fifo, u8_t size, u8_t first,
-				      u8_t last)
+static inline void *mfifo_dequeue_get(uint8_t *fifo, uint8_t size, uint8_t first,
+				      uint8_t last)
 {
 	if (first == last) {
 		return NULL;
@@ -249,8 +249,8 @@ static inline void *mfifo_dequeue_get(u8_t *fifo, u8_t size, u8_t first,
  * @brief Non-destructive: Peek at head (oldest) buffer
  * @details API 2
  */
-static inline void *mfifo_dequeue_peek(u8_t *fifo, u8_t size, u8_t first,
-				       u8_t last)
+static inline void *mfifo_dequeue_peek(uint8_t *fifo, uint8_t size, uint8_t first,
+				       uint8_t last)
 {
 	if (first == last) {
 		return NULL; /* Queue is empty */
@@ -268,11 +268,11 @@ static inline void *mfifo_dequeue_peek(u8_t *fifo, u8_t size, u8_t first,
 		mfifo_dequeue_peek(mfifo_##name.m, mfifo_##name.s, \
 				   mfifo_##name.f, mfifo_##name.l)
 
-static inline void *mfifo_dequeue_iter_get(u8_t *fifo, u8_t size, u8_t count,
-					   u8_t first, u8_t last, u8_t *idx)
+static inline void *mfifo_dequeue_iter_get(uint8_t *fifo, uint8_t size, uint8_t count,
+					   uint8_t first, uint8_t last, uint8_t *idx)
 {
 	void *p;
-	u8_t i;
+	uint8_t i;
 
 	if (*idx >= count) {
 		*idx = first;
@@ -309,10 +309,10 @@ static inline void *mfifo_dequeue_iter_get(u8_t *fifo, u8_t size, u8_t count,
  * @param first[in,out] Head index, Span: [0 .. count-1]. Will be updated
  * @return              Head buffer; or NULL if queue was empty
  */
-static inline void *mfifo_dequeue(u8_t *fifo, u8_t size, u8_t count,
-				  u8_t last, u8_t *first)
+static inline void *mfifo_dequeue(uint8_t *fifo, uint8_t size, uint8_t count,
+				  uint8_t last, uint8_t *first)
 {
-	u8_t _first = *first; /* Copy read-index */
+	uint8_t _first = *first; /* Copy read-index */
 	void *mem;
 
 	/* Queue is empty if first == last */

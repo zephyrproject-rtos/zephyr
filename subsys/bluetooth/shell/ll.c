@@ -26,7 +26,7 @@
 
 int cmd_ll_addr_get(const struct shell *shell, size_t argc, char *argv[])
 {
-	u8_t addr_type;
+	uint8_t addr_type;
 	const char *str_type;
 	bt_addr_t addr;
 	char str_addr[BT_ADDR_STR_LEN];
@@ -57,8 +57,8 @@ int cmd_ll_addr_get(const struct shell *shell, size_t argc, char *argv[])
 
 int cmd_test_tx(const struct shell *shell, size_t  argc, char *argv[])
 {
-	u8_t chan, len, type, phy;
-	u32_t err;
+	uint8_t chan, len, type, phy;
+	uint32_t err;
 
 	if (argc < 5) {
 		return -EINVAL;
@@ -81,8 +81,8 @@ int cmd_test_tx(const struct shell *shell, size_t  argc, char *argv[])
 
 int cmd_test_rx(const struct shell *shell, size_t  argc, char *argv[])
 {
-	u8_t chan, phy, mod_idx;
-	u32_t err;
+	uint8_t chan, phy, mod_idx;
+	uint32_t err;
 
 	if (argc < 4) {
 		return -EINVAL;
@@ -104,8 +104,8 @@ int cmd_test_rx(const struct shell *shell, size_t  argc, char *argv[])
 
 int cmd_test_end(const struct shell *shell, size_t  argc, char *argv[])
 {
-	u16_t num_rx;
-	u32_t err;
+	uint16_t num_rx;
+	uint32_t err;
 
 	err = ll_test_end(&num_rx);
 	if (err) {
@@ -146,13 +146,13 @@ int cmd_test_end(const struct shell *shell, size_t  argc, char *argv[])
 #if defined(CONFIG_BT_BROADCASTER)
 int cmd_advx(const struct shell *shell, size_t argc, char *argv[])
 {
-	u16_t adv_interval = 0x20;
-	u16_t handle = 0U;
-	u16_t evt_prop = 0U;
-	u8_t adv_type;
-	u8_t enable;
-	u8_t phy_p;
-	s32_t err;
+	uint16_t adv_interval = 0x20;
+	uint16_t handle = 0U;
+	uint16_t evt_prop = 0U;
+	uint8_t adv_type;
+	uint8_t enable;
+	uint8_t phy_p;
+	int32_t err;
 
 	if (argc < 2) {
 		return -EINVAL;
@@ -284,9 +284,9 @@ exit:
 #if defined(CONFIG_BT_OBSERVER)
 int cmd_scanx(const struct shell *shell, size_t  argc, char *argv[])
 {
-	u8_t type = 0U;
-	u8_t enable;
-	s32_t err;
+	uint8_t type = 0U;
+	uint8_t enable;
+	int32_t err;
 
 	if (argc < 2) {
 		return -EINVAL;

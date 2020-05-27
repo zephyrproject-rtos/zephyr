@@ -400,7 +400,7 @@ extern "C" {
  * The pin with index n is present in the set if and only if the bit
  * identified by (1U << n) is set.
  */
-typedef u32_t gpio_port_pins_t;
+typedef uint32_t gpio_port_pins_t;
 
 /**
  * @brief Provides values for a set of pins associated with a port.
@@ -413,7 +413,7 @@ typedef u32_t gpio_port_pins_t;
  * Values of this type are often paired with a `gpio_port_pins_t` value
  * that specifies which encoded pin values are valid for the operation.
  */
-typedef u32_t gpio_port_value_t;
+typedef uint32_t gpio_port_value_t;
 
 /**
  * @brief Provides a type to hold a GPIO pin index.
@@ -421,7 +421,7 @@ typedef u32_t gpio_port_value_t;
  * This reduced-size type is sufficient to record a pin number,
  * e.g. from a devicetree GPIOS property.
  */
-typedef u8_t gpio_pin_t;
+typedef uint8_t gpio_pin_t;
 
 /**
  * @brief Provides a type to hold GPIO devicetree flags.
@@ -430,7 +430,7 @@ typedef u8_t gpio_pin_t;
  * bits of the full flags field, so use a reduced-size type to record
  * that part of a GPIOS property.
  */
-typedef u8_t gpio_dt_flags_t;
+typedef uint8_t gpio_dt_flags_t;
 
 /**
  * @brief Provides a type to hold GPIO configuration flags.
@@ -438,7 +438,7 @@ typedef u8_t gpio_dt_flags_t;
  * This type is sufficient to hold all flags used to control GPIO
  * configuration, whether pin or interrupt.
  */
-typedef u32_t gpio_flags_t;
+typedef uint32_t gpio_flags_t;
 
 /**
  * @brief Maximum number of pins that are supported by `gpio_port_pins_t`.
@@ -559,7 +559,7 @@ __subsystem struct gpio_driver_api {
 			       bool set);
 	int (*enable_callback)(struct device *port, gpio_pin_t pin);
 	int (*disable_callback)(struct device *port, gpio_pin_t pin);
-	u32_t (*get_pending_int)(struct device *dev);
+	uint32_t (*get_pending_int)(struct device *dev);
 };
 
 __syscall int gpio_config(struct device *port, gpio_pin_t pin,
@@ -1205,7 +1205,7 @@ static inline int gpio_pin_toggle(struct device *port, gpio_pin_t pin)
 /* Deprecated in 2.2 release */
 __deprecated static inline int gpio_pin_write(struct device *port,
 					      gpio_pin_t pin,
-					      u32_t value)
+					      uint32_t value)
 {
 	return gpio_pin_set(port, pin, value != 0);
 }
@@ -1227,7 +1227,7 @@ __deprecated static inline int gpio_pin_write(struct device *port,
 /* Deprecated in 2.2 release */
 __deprecated static inline int gpio_pin_read(struct device *port,
 					     gpio_pin_t pin,
-					     u32_t *value)
+					     uint32_t *value)
 {
 	int rv = gpio_pin_get(port, pin);
 

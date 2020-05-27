@@ -62,7 +62,7 @@ static otRadioState sState = OT_RADIO_STATE_DISABLED;
 
 static otRadioFrame sTransmitFrame;
 static otRadioFrame ack_frame;
-static u8_t ack_psdu[ACK_PKT_LENGTH];
+static uint8_t ack_psdu[ACK_PKT_LENGTH];
 
 static struct net_pkt *tx_pkt;
 static struct net_buf *tx_payload;
@@ -70,13 +70,13 @@ static struct net_buf *tx_payload;
 static struct device *radio_dev;
 static struct ieee802154_radio_api *radio_api;
 
-static s8_t tx_power;
-static u16_t channel;
+static int8_t tx_power;
+static uint16_t channel;
 static bool promiscuous;
 
-static u16_t energy_detection_time;
-static u8_t  energy_detection_channel;
-static s16_t energy_detected_value;
+static uint16_t energy_detection_time;
+static uint8_t  energy_detection_channel;
+static int16_t energy_detected_value;
 
 ATOMIC_DEFINE(pending_events, PENDING_EVENT_COUNT);
 K_THREAD_STACK_DEFINE(ot_task_stack, OT_WORKER_STACK_SIZE);
@@ -106,7 +106,7 @@ static inline void clear_pending_events(void)
 	atomic_clear(pending_events);
 }
 
-void energy_detected(struct device *dev, s16_t max_ed)
+void energy_detected(struct device *dev, int16_t max_ed)
 {
 	if (dev == radio_dev) {
 		energy_detected_value = max_ed;
@@ -374,7 +374,7 @@ void platformRadioProcess(otInstance *aInstance)
 
 		if (is_pending_event_set(PENDING_EVENT_DETECT_ENERGY_DONE)) {
 			otPlatRadioEnergyScanDone(aInstance,
-						(s8_t)energy_detected_value);
+						(int8_t)energy_detected_value);
 			reset_pending_event(PENDING_EVENT_DETECT_ENERGY_DONE);
 		}
 	}
@@ -391,7 +391,7 @@ uint16_t platformRadioChannelGet(otInstance *aInstance)
 	return channel;
 }
 
-void otPlatRadioSetPanId(otInstance *aInstance, u16_t aPanId)
+void otPlatRadioSetPanId(otInstance *aInstance, uint16_t aPanId)
 {
 	ARG_UNUSED(aInstance);
 
@@ -408,7 +408,7 @@ void otPlatRadioSetExtendedAddress(otInstance *aInstance,
 			  (struct ieee802154_filter *) &aExtAddress);
 }
 
-void otPlatRadioSetShortAddress(otInstance *aInstance, u16_t aShortAddress)
+void otPlatRadioSetShortAddress(otInstance *aInstance, uint16_t aShortAddress)
 {
 	ARG_UNUSED(aInstance);
 
@@ -458,7 +458,7 @@ otError otPlatRadioSleep(otInstance *aInstance)
 	return error;
 }
 
-otError otPlatRadioReceive(otInstance *aInstance, u8_t aChannel)
+otError otPlatRadioReceive(otInstance *aInstance, uint8_t aChannel)
 {
 	ARG_UNUSED(aInstance);
 
@@ -497,7 +497,7 @@ otRadioFrame *otPlatRadioGetTransmitBuffer(otInstance *aInstance)
 	return &sTransmitFrame;
 }
 
-static void get_rssi_energy_detected(struct device *dev, s16_t max_ed)
+static void get_rssi_energy_detected(struct device *dev, int16_t max_ed)
 {
 	ARG_UNUSED(dev);
 	energy_detected_value = max_ed;
@@ -506,9 +506,9 @@ static void get_rssi_energy_detected(struct device *dev, s16_t max_ed)
 
 int8_t otPlatRadioGetRssi(otInstance *aInstance)
 {
-	s8_t ret_rssi = INT8_MAX;
+	int8_t ret_rssi = INT8_MAX;
 	int error = 0;
-	const u16_t energy_detection_time = 1;
+	const uint16_t energy_detection_time = 1;
 	enum ieee802154_hw_caps radio_caps;
 	ARG_UNUSED(aInstance);
 
@@ -531,7 +531,7 @@ int8_t otPlatRadioGetRssi(otInstance *aInstance)
 		if (error == 0) {
 			k_sem_take(&radio_sem, K_FOREVER);
 
-			ret_rssi = (s8_t)energy_detected_value;
+			ret_rssi = (int8_t)energy_detected_value;
 		}
 	}
 
@@ -588,8 +588,8 @@ void otPlatRadioSetPromiscuous(otInstance *aInstance, bool aEnable)
 	radio_api->configure(radio_dev, IEEE802154_CONFIG_PROMISCUOUS, &config);
 }
 
-otError otPlatRadioEnergyScan(otInstance *aInstance, u8_t aScanChannel,
-			      u16_t aScanDuration)
+otError otPlatRadioEnergyScan(otInstance *aInstance, uint8_t aScanChannel,
+			      uint16_t aScanDuration)
 {
 	energy_detection_time    = aScanDuration;
 	energy_detection_channel = aScanChannel;
@@ -650,11 +650,11 @@ void otPlatRadioEnableSrcMatch(otInstance *aInstance, bool aEnable)
 }
 
 otError otPlatRadioAddSrcMatchShortEntry(otInstance *aInstance,
-					 const u16_t aShortAddress)
+					 const uint16_t aShortAddress)
 {
 	ARG_UNUSED(aInstance);
 
-	u8_t short_address[SHORT_ADDRESS_SIZE];
+	uint8_t short_address[SHORT_ADDRESS_SIZE];
 	struct ieee802154_config config = {
 		.ack_fpb.enabled = true,
 		.ack_fpb.addr = short_address,
@@ -678,7 +678,7 @@ otError otPlatRadioAddSrcMatchExtEntry(otInstance *aInstance,
 
 	struct ieee802154_config config = {
 		.ack_fpb.enabled = true,
-		.ack_fpb.addr = (u8_t *)aExtAddress->m8,
+		.ack_fpb.addr = (uint8_t *)aExtAddress->m8,
 		.ack_fpb.extended = true
 	};
 
@@ -691,11 +691,11 @@ otError otPlatRadioAddSrcMatchExtEntry(otInstance *aInstance,
 }
 
 otError otPlatRadioClearSrcMatchShortEntry(otInstance *aInstance,
-					   const u16_t aShortAddress)
+					   const uint16_t aShortAddress)
 {
 	ARG_UNUSED(aInstance);
 
-	u8_t short_address[SHORT_ADDRESS_SIZE];
+	uint8_t short_address[SHORT_ADDRESS_SIZE];
 	struct ieee802154_config config = {
 		.ack_fpb.enabled = false,
 		.ack_fpb.addr = short_address,
@@ -719,7 +719,7 @@ otError otPlatRadioClearSrcMatchExtEntry(otInstance *aInstance,
 
 	struct ieee802154_config config = {
 		.ack_fpb.enabled = false,
-		.ack_fpb.addr = (u8_t *)aExtAddress->m8,
+		.ack_fpb.addr = (uint8_t *)aExtAddress->m8,
 		.ack_fpb.extended = true
 	};
 

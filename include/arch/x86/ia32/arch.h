@@ -224,12 +224,12 @@ typedef struct s_isrList {
  * FIXME: z_sys_power_save_idle_exit is defined in kernel.h, which cannot be
  *	  included here due to circular dependency
  */
-extern void z_sys_power_save_idle_exit(s32_t ticks);
+extern void z_sys_power_save_idle_exit(int32_t ticks);
 
 static inline void arch_irq_direct_pm(void)
 {
 	if (_kernel.idle) {
-		s32_t idle_val = _kernel.idle;
+		int32_t idle_val = _kernel.idle;
 
 		_kernel.idle = 0;
 		z_sys_power_save_idle_exit(idle_val);
@@ -345,13 +345,13 @@ typedef struct nanoEsf {
 
 
 struct _x86_syscall_stack_frame {
-	u32_t eip;
-	u32_t cs;
-	u32_t eflags;
+	uint32_t eip;
+	uint32_t cs;
+	uint32_t eflags;
 
 	/* These are only present if cs = USER_CODE_SEG */
-	u32_t esp;
-	u32_t ss;
+	uint32_t esp;
+	uint32_t ss;
 };
 
 static ALWAYS_INLINE unsigned int arch_irq_lock(void)

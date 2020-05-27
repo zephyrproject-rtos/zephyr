@@ -52,12 +52,12 @@ void rf2xx_iface_phy_tx_start(struct device *dev)
 	gpio_pin_set(ctx->slptr_gpio, conf->slptr.pin, 0);
 }
 
-u8_t rf2xx_iface_reg_read(struct device *dev,
-			  u8_t addr)
+uint8_t rf2xx_iface_reg_read(struct device *dev,
+			  uint8_t addr)
 {
 	const struct rf2xx_context *ctx = dev->driver_data;
-	u8_t status;
-	u8_t regval = 0;
+	uint8_t status;
+	uint8_t regval = 0;
 
 	addr |= RF2XX_RF_CMD_REG_R;
 
@@ -96,11 +96,11 @@ u8_t rf2xx_iface_reg_read(struct device *dev,
 }
 
 void rf2xx_iface_reg_write(struct device *dev,
-			   u8_t addr,
-			   u8_t data)
+			   uint8_t addr,
+			   uint8_t data)
 {
 	const struct rf2xx_context *ctx = dev->driver_data;
-	u8_t status;
+	uint8_t status;
 
 	addr |= RF2XX_RF_CMD_REG_W;
 
@@ -136,12 +136,12 @@ void rf2xx_iface_reg_write(struct device *dev,
 		(addr & ~(RF2XX_RF_CMD_REG_W)), status, data);
 }
 
-u8_t rf2xx_iface_bit_read(struct device *dev,
-			  u8_t addr,
-			  u8_t mask,
-			  u8_t pos)
+uint8_t rf2xx_iface_bit_read(struct device *dev,
+			  uint8_t addr,
+			  uint8_t mask,
+			  uint8_t pos)
 {
-	u8_t ret;
+	uint8_t ret;
 
 	ret = rf2xx_iface_reg_read(dev, addr);
 	ret &= mask;
@@ -151,12 +151,12 @@ u8_t rf2xx_iface_bit_read(struct device *dev,
 }
 
 void rf2xx_iface_bit_write(struct device *dev,
-			   u8_t reg_addr,
-			   u8_t mask,
-			   u8_t pos,
-			   u8_t new_value)
+			   uint8_t reg_addr,
+			   uint8_t mask,
+			   uint8_t pos,
+			   uint8_t new_value)
 {
-	u8_t current_reg_value;
+	uint8_t current_reg_value;
 
 	current_reg_value = rf2xx_iface_reg_read(dev, reg_addr);
 	current_reg_value &= ~mask;
@@ -167,11 +167,11 @@ void rf2xx_iface_bit_write(struct device *dev,
 }
 
 void rf2xx_iface_frame_read(struct device *dev,
-			    u8_t *data,
-			    u8_t length)
+			    uint8_t *data,
+			    uint8_t length)
 {
 	const struct rf2xx_context *ctx = dev->driver_data;
-	u8_t cmd = RF2XX_RF_CMD_FRAME_R;
+	uint8_t cmd = RF2XX_RF_CMD_FRAME_R;
 
 	const struct spi_buf tx_buf = {
 		.buf = &cmd,
@@ -199,13 +199,13 @@ void rf2xx_iface_frame_read(struct device *dev,
 }
 
 void rf2xx_iface_frame_write(struct device *dev,
-			     u8_t *data,
-			     u8_t length)
+			     uint8_t *data,
+			     uint8_t length)
 {
 	const struct rf2xx_context *ctx = dev->driver_data;
-	u8_t cmd = RF2XX_RF_CMD_FRAME_W;
-	u8_t status;
-	u8_t phr;
+	uint8_t cmd = RF2XX_RF_CMD_FRAME_W;
+	uint8_t status;
+	uint8_t phr;
 
 	/* Sanity check */
 	if (length > 125) {
@@ -250,13 +250,13 @@ void rf2xx_iface_frame_write(struct device *dev,
 }
 
 void rf2xx_iface_sram_read(struct device *dev,
-			    u8_t address,
-			    u8_t *data,
-			    u8_t length)
+			    uint8_t address,
+			    uint8_t *data,
+			    uint8_t length)
 {
 	const struct rf2xx_context *ctx = dev->driver_data;
-	u8_t cmd = RF2XX_RF_CMD_SRAM_R;
-	u8_t status[2];
+	uint8_t cmd = RF2XX_RF_CMD_SRAM_R;
+	uint8_t status[2];
 
 	const struct spi_buf tx_buf[2] = {
 		{

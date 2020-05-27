@@ -97,7 +97,7 @@ static inline void _flash_stm32_sem_give(struct device *dev)
 #if !defined(CONFIG_SOC_SERIES_STM32WBX)
 static int flash_stm32_check_status(struct device *dev)
 {
-	u32_t const error =
+	uint32_t const error =
 #if defined(FLASH_FLAG_PGAERR)
 		FLASH_FLAG_PGAERR |
 #endif
@@ -129,7 +129,7 @@ static int flash_stm32_check_status(struct device *dev)
 
 int flash_stm32_wait_flash_idle(struct device *dev)
 {
-	s64_t timeout_time = k_uptime_get() + STM32_FLASH_TIMEOUT;
+	int64_t timeout_time = k_uptime_get() + STM32_FLASH_TIMEOUT;
 	int rc;
 
 	rc = flash_stm32_check_status(dev);
@@ -194,7 +194,7 @@ static int flash_stm32_read(struct device *dev, off_t offset, void *data,
 
 	LOG_DBG("Read offset: %ld, len: %zu", (long int) offset, len);
 
-	memcpy(data, (u8_t *) CONFIG_FLASH_BASE_ADDRESS + offset, len);
+	memcpy(data, (uint8_t *) CONFIG_FLASH_BASE_ADDRESS + offset, len);
 
 	return 0;
 }

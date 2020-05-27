@@ -22,13 +22,13 @@ static enum power_states pm_state;
 #ifdef CONFIG_SYS_PM_DEBUG
 
 struct pm_debug_info {
-	u32_t count;
-	u32_t last_res;
-	u32_t total_res;
+	uint32_t count;
+	uint32_t last_res;
+	uint32_t total_res;
 };
 
 static struct pm_debug_info pm_dbg_info[SYS_POWER_STATE_MAX];
-static u32_t timer_start, timer_end;
+static uint32_t timer_start, timer_end;
 
 static inline void sys_pm_debug_start_timer(void)
 {
@@ -42,7 +42,7 @@ static inline void sys_pm_debug_stop_timer(void)
 
 static void sys_pm_log_debug_info(enum power_states state)
 {
-	u32_t res = timer_end - timer_start;
+	uint32_t res = timer_end - timer_start;
 
 	pm_dbg_info[state].count++;
 	pm_dbg_info[state].last_res = res;
@@ -89,7 +89,7 @@ void sys_pm_force_power_state(enum power_states state)
 #endif
 }
 
-enum power_states _sys_suspend(s32_t ticks)
+enum power_states _sys_suspend(int32_t ticks)
 {
 	bool deep_sleep;
 #if CONFIG_DEVICE_POWER_MANAGEMENT

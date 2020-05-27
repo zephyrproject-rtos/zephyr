@@ -23,15 +23,15 @@ struct fs_littlefs {
 	struct lfs_config cfg;
 
 	/* Must be cfg.cache_size */
-	u8_t *read_buffer;
+	uint8_t *read_buffer;
 
 	/* Must be cfg.cache_size */
-	u8_t *prog_buffer;
+	uint8_t *prog_buffer;
 
 	/* Mustbe cfg.lookahead_size/4 elements, and
 	 * cfg.lookahead_size must be a multiple of 8.
 	 */
-	u32_t *lookahead_buffer[CONFIG_FS_LITTLEFS_LOOKAHEAD_SIZE / sizeof(u32_t)];
+	uint32_t *lookahead_buffer[CONFIG_FS_LITTLEFS_LOOKAHEAD_SIZE / sizeof(uint32_t)];
 
 	/* These structures are filled automatically at mount. */
 	struct lfs lfs;
@@ -68,9 +68,9 @@ struct fs_littlefs {
  * @param lookahead_sz see :option:`CONFIG_FS_LITTLEFS_LOOKAHEAD_SIZE`
  */
 #define FS_LITTLEFS_DECLARE_CUSTOM_CONFIG(name, read_sz, prog_sz, cache_sz, lookahead_sz) \
-	static u8_t __aligned(4) name ## _read_buffer[cache_sz];			  \
-	static u8_t __aligned(4) name ## _prog_buffer[cache_sz];			  \
-	static u32_t name ## _lookahead_buffer[(lookahead_sz) / sizeof(u32_t)];		  \
+	static uint8_t __aligned(4) name ## _read_buffer[cache_sz];			  \
+	static uint8_t __aligned(4) name ## _prog_buffer[cache_sz];			  \
+	static uint32_t name ## _lookahead_buffer[(lookahead_sz) / sizeof(uint32_t)];		  \
 	static struct fs_littlefs name = {						  \
 		.cfg = {								  \
 			.read_size = (read_sz),						  \

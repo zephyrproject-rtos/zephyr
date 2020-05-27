@@ -52,8 +52,8 @@
 	((const struct uart_device_config * const)(dev)->config_info)
 
 
-#define UART_REG_SET(u, r, v) ((*(u8_t *)(u + r)) = v)
-#define UART_REG_GET(u, r)    (*(u8_t *)(u + r))
+#define UART_REG_SET(u, r, v) ((*(uint8_t *)(u + r)) = v)
+#define UART_REG_GET(u, r)    (*(uint8_t *)(u + r))
 
 #define UART_REG_OR(u, r, v)  UART_REG_SET(u, r, UART_REG_GET(u, r) | (v))
 #define UART_REG_CLR(u, r, v) UART_REG_SET(u, r, UART_REG_GET(u, r) & ~(v))
@@ -89,7 +89,7 @@ static int uart_nsim_init(struct device *dev)
  */
 static void uart_nsim_poll_out(struct device *dev, unsigned char c)
 {
-	u32_t regs = DEV_CFG(dev)->regs;
+	uint32_t regs = DEV_CFG(dev)->regs;
 	/* wait for transmitter to ready to accept a character */
 
 	while (!(UART_GET_STATUS(regs) & TXEMPTY)) {

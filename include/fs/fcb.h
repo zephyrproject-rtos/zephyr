@@ -49,13 +49,13 @@ struct fcb_entry {
 	struct flash_sector *fe_sector;
 	/**< Pointer to info about sector where data are placed */
 
-	u32_t fe_elem_off;
+	uint32_t fe_elem_off;
 	/**< Offset from the start of the sector to beginning of element. */
 
-	u32_t fe_data_off;
+	uint32_t fe_data_off;
 	/**< Offset from the start of the sector to the start of element. */
 
-	u16_t fe_data_len; /**< Size of data area in fcb entry*/
+	uint16_t fe_data_len; /**< Size of data area in fcb entry*/
 };
 
 /**
@@ -85,15 +85,15 @@ struct fcb_entry_ctx {
  */
 struct fcb {
 	/* Caller of fcb_init fills this in */
-	u32_t f_magic;
+	uint32_t f_magic;
 	/**< Magic value. It is placed in the beginning of FCB flash  sector.
 	 * FCB uses this when determining whether sector contains valid data
 	 * or not.
 	 */
 
-	u8_t f_version; /**<  Current version number of the data */
-	u8_t f_sector_cnt; /**< Number of elements in sector array */
-	u8_t f_scratch_cnt;
+	uint8_t f_version; /**<  Current version number of the data */
+	uint8_t f_sector_cnt; /**< Number of elements in sector array */
+	uint8_t f_scratch_cnt;
 	/**< Number of sectors to keep empty. This can be used if you need
 	 * to have scratch space for garbage collecting when FCB fills up.
 	 */
@@ -111,10 +111,10 @@ struct fcb {
 	 */
 
 	struct fcb_entry f_active; /**< internal state */
-	u16_t f_active_id;
+	uint16_t f_active_id;
 	/**< Flash location where the newest data is, internal state */
 
-	u8_t f_align;
+	uint8_t f_align;
 	/**< writes to flash have to aligned to this, internal state */
 
 	const struct flash_area *fap;
@@ -159,7 +159,7 @@ int fcb_init(int f_area_id, struct fcb *fcb);
  *
  * @return 0 on success, non-zero on failure.
  */
-int fcb_append(struct fcb *fcb, u16_t len, struct fcb_entry *loc);
+int fcb_append(struct fcb *fcb, uint16_t len, struct fcb_entry *loc);
 
 /**
  * Finishes entry append operation.
@@ -273,7 +273,7 @@ int fcb_is_empty(struct fcb *fcb);
  *
  * @return 0 on there are any fcbs available; -ENOENT otherwise
  */
-int fcb_offset_last_n(struct fcb *fcb, u8_t entries,
+int fcb_offset_last_n(struct fcb *fcb, uint8_t entries,
 		      struct fcb_entry *last_n_entry);
 
 /**

@@ -23,15 +23,15 @@ typedef int (*transport_connect_handler_t)(struct mqtt_client *client);
 
 /**@brief Transport write handler. */
 typedef int (*transport_write_handler_t)(struct mqtt_client *client,
-					 const u8_t *data, u32_t datalen);
+					 const uint8_t *data, uint32_t datalen);
 
 /**@brief Transport write message handler, similar to POSIX sendmsg function. */
 typedef int (*transport_write_msg_handler_t)(struct mqtt_client *client,
 					     const struct msghdr *message);
 
 /**@brief Transport read handler. */
-typedef int (*transport_read_handler_t)(struct mqtt_client *client, u8_t *data,
-					u32_t buflen, bool shall_block);
+typedef int (*transport_read_handler_t)(struct mqtt_client *client, uint8_t *data,
+					uint32_t buflen, bool shall_block);
 
 /**@brief Transport disconnect handler. */
 typedef int (*transport_disconnect_handler_t)(struct mqtt_client *client);
@@ -80,8 +80,8 @@ int mqtt_transport_connect(struct mqtt_client *client);
  *
  * @retval 0 or an error code indicating reason for failure.
  */
-int mqtt_transport_write(struct mqtt_client *client, const u8_t *data,
-			 u32_t datalen);
+int mqtt_transport_write(struct mqtt_client *client, const uint8_t *data,
+			 uint32_t datalen);
 
 /**@brief Handles write message requests on configured transport.
  *
@@ -104,7 +104,7 @@ int mqtt_transport_write_msg(struct mqtt_client *client,
  * @retval Number of bytes read or an error code indicating reason for failure.
  *         0 if connection was closed.
  */
-int mqtt_transport_read(struct mqtt_client *client, u8_t *data, u32_t buflen,
+int mqtt_transport_read(struct mqtt_client *client, uint8_t *data, uint32_t buflen,
 			bool shall_block);
 
 /**@brief Handles transport disconnection requests on configured transport.
@@ -117,34 +117,34 @@ int mqtt_transport_disconnect(struct mqtt_client *client);
 
 /* Transport handler functions for TCP socket transport. */
 int mqtt_client_tcp_connect(struct mqtt_client *client);
-int mqtt_client_tcp_write(struct mqtt_client *client, const u8_t *data,
-			  u32_t datalen);
+int mqtt_client_tcp_write(struct mqtt_client *client, const uint8_t *data,
+			  uint32_t datalen);
 int mqtt_client_tcp_write_msg(struct mqtt_client *client,
 			      const struct msghdr *message);
-int mqtt_client_tcp_read(struct mqtt_client *client, u8_t *data,
-			 u32_t buflen, bool shall_block);
+int mqtt_client_tcp_read(struct mqtt_client *client, uint8_t *data,
+			 uint32_t buflen, bool shall_block);
 int mqtt_client_tcp_disconnect(struct mqtt_client *client);
 
 #if defined(CONFIG_MQTT_LIB_TLS)
 /* Transport handler functions for TLS socket transport. */
 int mqtt_client_tls_connect(struct mqtt_client *client);
-int mqtt_client_tls_write(struct mqtt_client *client, const u8_t *data,
-			  u32_t datalen);
+int mqtt_client_tls_write(struct mqtt_client *client, const uint8_t *data,
+			  uint32_t datalen);
 int mqtt_client_tls_write_msg(struct mqtt_client *client,
 			      const struct msghdr *message);
-int mqtt_client_tls_read(struct mqtt_client *client, u8_t *data,
-			 u32_t buflen, bool shall_block);
+int mqtt_client_tls_read(struct mqtt_client *client, uint8_t *data,
+			 uint32_t buflen, bool shall_block);
 int mqtt_client_tls_disconnect(struct mqtt_client *client);
 #endif /* CONFIG_MQTT_LIB_TLS */
 
 #if defined(CONFIG_MQTT_LIB_WEBSOCKET)
 int mqtt_client_websocket_connect(struct mqtt_client *client);
-int mqtt_client_websocket_write(struct mqtt_client *client, const u8_t *data,
-				u32_t datalen);
+int mqtt_client_websocket_write(struct mqtt_client *client, const uint8_t *data,
+				uint32_t datalen);
 int mqtt_client_websocket_write_msg(struct mqtt_client *client,
 				    const struct msghdr *message);
-int mqtt_client_websocket_read(struct mqtt_client *client, u8_t *data,
-			       u32_t buflen, bool shall_block);
+int mqtt_client_websocket_read(struct mqtt_client *client, uint8_t *data,
+			       uint32_t buflen, bool shall_block);
 int mqtt_client_websocket_disconnect(struct mqtt_client *client);
 #endif
 

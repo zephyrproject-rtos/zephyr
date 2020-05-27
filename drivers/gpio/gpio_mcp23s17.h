@@ -51,10 +51,10 @@ struct mcp23s17_config {
 	struct gpio_driver_config common;
 
 	const char *const spi_dev_name;
-	const u16_t slave;
-	const u32_t freq;
+	const uint16_t slave;
+	const uint32_t freq;
 	const char *const cs_dev;
-	const u32_t cs_pin;
+	const uint32_t cs_pin;
 };
 
 /** Runtime driver data */
@@ -70,17 +70,17 @@ struct mcp23s17_drv_data {
 	struct k_sem lock;
 
 	struct {
-		u16_t iodir;
-		u16_t ipol;
-		u16_t gpinten;
-		u16_t defval;
-		u16_t intcon;
-		u16_t iocon;
-		u16_t gppu;
-		u16_t intf;
-		u16_t intcap;
-		u16_t gpio;
-		u16_t olat;
+		uint16_t iodir;
+		uint16_t ipol;
+		uint16_t gpinten;
+		uint16_t defval;
+		uint16_t intcon;
+		uint16_t iocon;
+		uint16_t gppu;
+		uint16_t intf;
+		uint16_t intcap;
+		uint16_t gpio;
+		uint16_t olat;
 	} reg_cache;
 };
 

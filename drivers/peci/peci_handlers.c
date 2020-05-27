@@ -8,7 +8,7 @@
 #include <syscall_handler.h>
 
 
-static inline int z_vrfy_peci_config(struct device *dev, u32_t bitrate)
+static inline int z_vrfy_peci_config(struct device *dev, uint32_t bitrate)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_PECI(dev, config));
 

@@ -20,11 +20,11 @@ extern struct k_thread my_thread_0;
 
 extern char sline[];
 
-extern u64_t thread_sleep_start_time;
-extern u64_t thread_sleep_end_time;
-u64_t thread_start_time;
-u64_t thread_end_time;
-static u32_t count;
+extern uint64_t thread_sleep_start_time;
+extern uint64_t thread_sleep_end_time;
+uint64_t thread_start_time;
+uint64_t thread_end_time;
+static uint32_t count;
 
 void thread_yield0_test(void *p1, void *p2, void *p3);
 void thread_yield1_test(void *p1, void *p2, void *p3);
@@ -53,10 +53,10 @@ void yield_bench(void)
 	TIMING_INFO_PRE_READ();
 	thread_sleep_start_time =   TIMING_INFO_OS_GET_TIME();
 	k_sleep(K_MSEC(1000));
-	thread_sleep_end_time =   ((u32_t)arch_timing_value_swap_common);
+	thread_sleep_end_time =   ((uint32_t)arch_timing_value_swap_common);
 
-	u32_t yield_cycles = (thread_end_time - thread_start_time) / 2000U;
-	u32_t sleep_cycles = thread_sleep_end_time - thread_sleep_start_time;
+	uint32_t yield_cycles = (thread_end_time - thread_start_time) / 2000U;
+	uint32_t sleep_cycles = thread_sleep_end_time - thread_sleep_start_time;
 
 	PRINT_STATS("Thread Yield", yield_cycles,
 		CYCLES_TO_NS(yield_cycles));

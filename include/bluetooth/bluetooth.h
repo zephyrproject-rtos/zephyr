@@ -53,7 +53,7 @@ struct bt_conn;
 
 struct bt_le_ext_adv_sent_info {
 	/** The number of advertising events completed. */
-	u8_t num_sent;
+	uint8_t num_sent;
 };
 
 struct bt_le_ext_adv_connected_info {
@@ -210,7 +210,7 @@ void bt_id_get(bt_addr_le_t *addrs, size_t *count);
  *  @return Identity identifier (>= 0) in case of success, or a negative
  *          error code on failure.
  */
-int bt_id_create(bt_addr_le_t *addr, u8_t *irk);
+int bt_id_create(bt_addr_le_t *addr, uint8_t *irk);
 
 /** @brief Reset/reclaim an identity for reuse.
  *
@@ -243,7 +243,7 @@ int bt_id_create(bt_addr_le_t *addr, u8_t *irk);
  *  @return Identity identifier (>= 0) in case of success, or a negative
  *          error code on failure.
  */
-int bt_id_reset(u8_t id, bt_addr_le_t *addr, u8_t *irk);
+int bt_id_reset(uint8_t id, bt_addr_le_t *addr, uint8_t *irk);
 
 /** @brief Delete an identity.
  *
@@ -260,7 +260,7 @@ int bt_id_reset(u8_t id, bt_addr_le_t *addr, u8_t *irk);
  *
  *  @return 0 in case of success, or a negative error code on failure.
  */
-int bt_id_delete(u8_t id);
+int bt_id_delete(uint8_t id);
 
 /** @brief Bluetooth data.
  *
@@ -269,9 +269,9 @@ int bt_id_delete(u8_t id);
  *  bt_le_adv_start() function.
  */
 struct bt_data {
-	u8_t type;
-	u8_t data_len;
-	const u8_t *data;
+	uint8_t type;
+	uint8_t data_len;
+	const uint8_t *data;
 };
 
 /** @brief Helper to declare elements of bt_data arrays
@@ -287,7 +287,7 @@ struct bt_data {
 	{ \
 		.type = (_type), \
 		.data_len = (_data_len), \
-		.data = (const u8_t *)(_data), \
+		.data = (const uint8_t *)(_data), \
 	}
 
 /** @brief Helper to declare elements of bt_data arrays
@@ -299,8 +299,8 @@ struct bt_data {
  *  @param _bytes Variable number of single-byte parameters
  */
 #define BT_DATA_BYTES(_type, _bytes...) \
-	BT_DATA(_type, ((u8_t []) { _bytes }), \
-		sizeof((u8_t []) { _bytes }))
+	BT_DATA(_type, ((uint8_t []) { _bytes }), \
+		sizeof((uint8_t []) { _bytes }))
 
 /** Advertising options */
 enum {
@@ -458,13 +458,13 @@ struct bt_le_adv_param {
 	 *  @note It is not possible to have multiple connectable advertising
 	 *        sets advertising simultaneously using different identities.
 	 */
-	u8_t  id;
+	uint8_t  id;
 
 	/** @brief Advertising Set Identifier, valid range 0x00 - 0x0f.
 	 *
 	 *  @note Requires @ref BT_LE_ADV_OPT_EXT_ADV
 	 **/
-	u8_t  sid;
+	uint8_t  sid;
 
 	/** @brief Secondary channel maximum skip count.
 	 *
@@ -473,16 +473,16 @@ struct bt_le_adv_param {
 	 *
 	 *  @note Requires @ref BT_LE_ADV_OPT_EXT_ADV
 	 */
-	u8_t  secondary_max_skip;
+	uint8_t  secondary_max_skip;
 
 	/** Bit-field of advertising options */
-	u32_t options;
+	uint32_t options;
 
 	/** Minimum Advertising Interval (N * 0.625) */
-	u32_t interval_min;
+	uint32_t interval_min;
 
 	/** Maximum Advertising Interval (N * 0.625) */
-	u32_t interval_max;
+	uint32_t interval_max;
 
 	/** @brief Directed advertising to peer
 	 *
@@ -640,13 +640,13 @@ struct bt_le_ext_adv_start_param {
 	 *  If privacy :option:`CONFIG_BT_PRIVACY` is enabled then the timeout
 	 *  must be less than :option:`CONFIG_BT_RPA_TIMEOUT`.
 	 */
-	u16_t timeout;
+	uint16_t timeout;
 	/** @brief Number of advertising events.
 	 *
 	 *  Application will be notified by the advertiser sent callback.
 	 *  Set to zero for no limit.
 	 */
-	u8_t  num_events;
+	uint8_t  num_events;
 };
 
 /** @brief Start advertising with the given advertising set
@@ -740,15 +740,15 @@ int bt_le_ext_adv_delete(struct bt_le_ext_adv *adv);
  *  @return Index of the advertising set object.
  *  The range of the returned value is 0..CONFIG_BT_EXT_ADV_MAX_ADV_SET-1
  */
-u8_t bt_le_ext_adv_get_index(struct bt_le_ext_adv *adv);
+uint8_t bt_le_ext_adv_get_index(struct bt_le_ext_adv *adv);
 
 /** @brief Advertising set info structure. */
 struct bt_le_ext_adv_info {
 	/* Local identity */
-	u8_t                    id;
+	uint8_t                    id;
 
 	/** Currently selected Transmit Power (dBM). */
-	s8_t                     tx_power;
+	int8_t                     tx_power;
 };
 
 /** @brief Get advertising set info
@@ -772,8 +772,8 @@ int bt_le_ext_adv_get_info(const struct bt_le_ext_adv *adv,
  *  @param adv_type Type of advertising response from advertiser.
  *  @param buf Buffer containing advertiser data.
  */
-typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, s8_t rssi,
-			     u8_t adv_type, struct net_buf_simple *buf);
+typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, int8_t rssi,
+			     uint8_t adv_type, struct net_buf_simple *buf);
 
 enum {
 	/** Convenience value when no options are specified. */
@@ -811,40 +811,40 @@ enum {
 /** LE scan parameters */
 struct bt_le_scan_param {
 	/** Scan type (BT_LE_SCAN_TYPE_ACTIVE or BT_LE_SCAN_TYPE_PASSIVE) */
-	u8_t  type;
+	uint8_t  type;
 
 	union {
 		/** Bit-field of scanning filter options. */
-		u32_t filter_dup __deprecated;
+		uint32_t filter_dup __deprecated;
 
 		/** Bit-field of scanning options. */
-		u32_t options;
+		uint32_t options;
 	};
 
 	/** Scan interval (N * 0.625 ms) */
-	u16_t interval;
+	uint16_t interval;
 
 	/** Scan window (N * 0.625 ms) */
-	u16_t window;
+	uint16_t window;
 
 	/** @brief Scan timeout (N * 10 ms)
 	 *
 	 *  Application will be notified by the scan timeout callback.
 	 *  Set zero to disable timeout.
 	 */
-	u16_t timeout;
+	uint16_t timeout;
 
 	/** @brief Scan interval LE Coded PHY (N * 0.625 MS)
 	 *
 	 *  Set zero to use same as LE 1M PHY scan interval.
 	 */
-	u16_t interval_coded;
+	uint16_t interval_coded;
 
 	/** @brief Scan window LE Coded PHY (N * 0.625 MS)
 	 *
 	 *  Set zero to use same as LE 1M PHY scan window.
 	 */
-	u16_t window_coded;
+	uint16_t window_coded;
 };
 
 /** LE advertisement packet information */
@@ -857,25 +857,25 @@ struct bt_le_scan_recv_info {
 	const bt_addr_le_t *addr;
 
 	/** Advertising Set Identifier. */
-	u8_t sid;
+	uint8_t sid;
 
 	/** Strength of advertiser signal. */
-	s8_t rssi;
+	int8_t rssi;
 
 	/** Transmit power of the advertiser. */
-	s8_t tx_power;
+	int8_t tx_power;
 
 	/** Advertising packet type. */
-	u8_t adv_type;
+	uint8_t adv_type;
 
 	/** Advertising packet properties. */
-	u16_t adv_props;
+	uint16_t adv_props;
 
 	/** Primary advertising channel PHY. */
-	u8_t primary_phy;
+	uint8_t primary_phy;
 
 	/** Secondary advertising channel PHY. */
-	u8_t secondary_phy;
+	uint8_t secondary_phy;
 };
 
 /** Listener context for (LE) scanning. */
@@ -1035,7 +1035,7 @@ int bt_le_whitelist_clear(void);
  *  @return Zero on success or error code otherwise, positive in case of
  *          protocol error or negative (POSIX) in case of stack internal error.
  */
-int bt_le_set_chan_map(u8_t chan_map[5]);
+int bt_le_set_chan_map(uint8_t chan_map[5]);
 
 /** @brief Helper for parsing advertising (or EIR or OOB) data.
  *
@@ -1057,10 +1057,10 @@ void bt_data_parse(struct net_buf_simple *ad,
 /** LE Secure Connections pairing Out of Band data. */
 struct bt_le_oob_sc_data {
 	/** Random Number. */
-	u8_t r[16];
+	uint8_t r[16];
 
 	/** Confirm Value. */
-	u8_t c[16];
+	uint8_t c[16];
 };
 
 /** LE Out of Band information. */
@@ -1101,7 +1101,7 @@ struct bt_le_oob {
  *  @return Zero on success or error code otherwise, positive in case of
  *          protocol error or negative (POSIX) in case of stack internal error.
  */
-int bt_le_oob_get_local(u8_t id, struct bt_le_oob *oob);
+int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob);
 
 /** @brief Get local LE Out of Band (OOB) information.
  *
@@ -1132,19 +1132,19 @@ int bt_le_ext_adv_oob_get_local(struct bt_le_ext_adv *adv,
 /** @brief BR/EDR discovery result structure */
 struct bt_br_discovery_result {
 	/** private */
-	u8_t _priv[4];
+	uint8_t _priv[4];
 
 	/** Remote device address */
 	bt_addr_t addr;
 
 	/** RSSI from inquiry */
-	s8_t rssi;
+	int8_t rssi;
 
 	/** Class of Device */
-	u8_t cod[3];
+	uint8_t cod[3];
 
 	/** Extended Inquiry Response */
-	u8_t eir[240];
+	uint8_t eir[240];
 };
 
 /** @typedef bt_br_discovery_cb_t
@@ -1166,7 +1166,7 @@ struct bt_br_discovery_param {
 	/** Maximum length of the discovery in units of 1.28 seconds.
 	 *  Valid range is 0x01 - 0x30.
 	 */
-	u8_t length;
+	uint8_t length;
 
 	/** True if limited discovery procedure is to be used. */
 	bool limited;
@@ -1345,7 +1345,7 @@ int bt_br_set_connectable(bool enable);
  *
  *  @return 0 on success or negative error value on failure.
  */
-int bt_unpair(u8_t id, const bt_addr_le_t *addr);
+int bt_unpair(uint8_t id, const bt_addr_le_t *addr);
 
 /** Information about a bond with a remote device. */
 struct bt_bond_info {
@@ -1359,7 +1359,7 @@ struct bt_bond_info {
  *  @param func       Function to call for each bond.
  *  @param user_data  Data to pass to the callback function.
  */
-void bt_foreach_bond(u8_t id, void (*func)(const struct bt_bond_info *info,
+void bt_foreach_bond(uint8_t id, void (*func)(const struct bt_bond_info *info,
 					   void *user_data),
 		     void *user_data);
 

@@ -119,7 +119,7 @@ static void test_arm_biquad_cascade_df1_f32_rand(void)
 	size_t sample_index, stage_count, block_size;
 	size_t sample_count = ARRAY_SIZE(in_rand_config) / 2;
 	size_t length = ARRAY_SIZE(ref_rand_mono);
-	const u16_t *config = in_rand_config;
+	const uint16_t *config = in_rand_config;
 	const float32_t *input = (const float32_t *)in_rand_mono_val;
 	const float32_t *coeff = (const float32_t *)in_rand_coeff;
 	const float32_t *ref = (const float32_t *)ref_rand_mono;
@@ -176,7 +176,7 @@ static void test_arm_biquad_cascade_df2t_f32_rand(void)
 	size_t sample_index, stage_count, block_size;
 	size_t sample_count = ARRAY_SIZE(in_rand_config) / 2;
 	size_t length = ARRAY_SIZE(ref_rand_mono);
-	const u16_t *config = in_rand_config;
+	const uint16_t *config = in_rand_config;
 	const float32_t *input = (const float32_t *)in_rand_mono_val;
 	const float32_t *coeff = (const float32_t *)in_rand_coeff;
 	const float32_t *ref = (const float32_t *)ref_rand_mono;
@@ -233,7 +233,7 @@ static void test_arm_biquad_cascade_stereo_df2t_f32_rand(void)
 	size_t sample_index, stage_count, block_size;
 	size_t sample_count = ARRAY_SIZE(in_rand_config) / 2;
 	size_t length = ARRAY_SIZE(ref_rand_stereo);
-	const u16_t *config = in_rand_config;
+	const uint16_t *config = in_rand_config;
 	const float32_t *input = (const float32_t *)in_rand_stereo_val;
 	const float32_t *coeff = (const float32_t *)in_rand_coeff;
 	const float32_t *ref = (const float32_t *)ref_rand_stereo;

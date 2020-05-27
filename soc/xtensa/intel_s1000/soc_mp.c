@@ -26,14 +26,14 @@ static struct device *idc;
 extern void __start(void);
 
 struct cpustart_rec {
-	u32_t		cpu;
+	uint32_t		cpu;
 	arch_cpustart_t	fn;
 	char		*stack_top;
 	void		*arg;
-	u32_t		vecbase;
-	u32_t		alive;
+	uint32_t		vecbase;
+	uint32_t		alive;
 	/* padding to cache line */
-	u8_t		padding[XCHAL_DCACHE_LINESIZE - 6 * 4];
+	uint8_t		padding[XCHAL_DCACHE_LINESIZE - 6 * 4];
 };
 
 static __aligned(XCHAL_DCACHE_LINESIZE)
@@ -122,7 +122,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		(volatile struct soc_dsp_shim_regs *)SOC_DSP_SHIM_REG_BASE;
 	volatile struct soc_global_regs *soc_glb_regs =
 		(volatile struct soc_global_regs *)SOC_S1000_GLB_CTRL_BASE;
-	u32_t vecbase;
+	uint32_t vecbase;
 
 	__ASSERT(cpu_num == 1, "Intel S1000 supports only two CPUs!");
 
@@ -150,7 +150,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	 * and set the vector.
 	 */
 	sys_write32(0x0, SOC_L2RAM_LOCAL_MEM_REG_LSPGCTL);
-	*((u32_t *)LPSRAM_BOOT_VECTOR_ADDR) = (u32_t)__start;
+	*((uint32_t *)LPSRAM_BOOT_VECTOR_ADDR) = (uint32_t)__start;
 
 	/* Disable power gating for DSP core #cpu_num */
 	dsp_shim_regs->pwrctl |= SOC_PWRCTL_DISABLE_PWR_GATING_DSP1;

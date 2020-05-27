@@ -55,7 +55,7 @@ static struct k_sem recv_lock;
 static char payload[] = { 'f', 'o', 'o', 'b', 'a', 'r', '\0' };
 
 struct net_udp_context {
-	u8_t mac_addr[sizeof(struct net_eth_addr)];
+	uint8_t mac_addr[sizeof(struct net_eth_addr)];
 	struct net_linkaddr ll_addr;
 };
 
@@ -68,7 +68,7 @@ int net_udp_dev_init(struct device *dev)
 	return 0;
 }
 
-static u8_t *net_udp_get_mac(struct device *dev)
+static uint8_t *net_udp_get_mac(struct device *dev)
 {
 	struct net_udp_context *context = dev->driver_data;
 
@@ -87,7 +87,7 @@ static u8_t *net_udp_get_mac(struct device *dev)
 
 static void net_udp_iface_init(struct net_if *iface)
 {
-	u8_t *mac = net_udp_get_mac(net_if_get_device(iface));
+	uint8_t *mac = net_udp_get_mac(net_if_get_device(iface));
 
 	net_if_set_link_addr(iface, mac, 6, NET_LINK_ETHERNET);
 }
@@ -145,8 +145,8 @@ NET_DEVICE_INIT(net_udp_test, "net_udp_test",
 struct ud {
 	const struct sockaddr *remote_addr;
 	const struct sockaddr *local_addr;
-	u16_t remote_port;
-	u16_t local_port;
+	uint16_t remote_port;
+	uint16_t local_port;
 	char *test;
 	void *handle;
 };
@@ -194,7 +194,7 @@ static enum net_verdict test_fail(struct net_conn *conn,
 	return NET_DROP;
 }
 
-u8_t ipv6_hop_by_hop_ext_hdr[] = {
+uint8_t ipv6_hop_by_hop_ext_hdr[] = {
 /* Next header UDP */
 0x11,
 /* Length (multiple of 8 octets) */
@@ -230,8 +230,8 @@ u8_t ipv6_hop_by_hop_ext_hdr[] = {
 static bool send_ipv6_udp_msg(struct net_if *iface,
 			      struct in6_addr *src,
 			      struct in6_addr *dst,
-			      u16_t src_port,
-			      u16_t dst_port,
+			      uint16_t src_port,
+			      uint16_t dst_port,
 			      struct ud *ud,
 			      bool expect_failure)
 {
@@ -279,8 +279,8 @@ static bool send_ipv6_udp_msg(struct net_if *iface,
 static bool send_ipv6_udp_long_msg(struct net_if *iface,
 				   struct in6_addr *src,
 				   struct in6_addr *dst,
-				   u16_t src_port,
-				   u16_t dst_port,
+				   uint16_t src_port,
+				   uint16_t dst_port,
 				   struct ud *ud,
 				   bool expect_failure)
 {
@@ -298,7 +298,7 @@ static bool send_ipv6_udp_long_msg(struct net_if *iface,
 		zassert_true(0, "exiting");
 	}
 
-	if (net_pkt_write(pkt, (u8_t *)ipv6_hop_by_hop_ext_hdr,
+	if (net_pkt_write(pkt, (uint8_t *)ipv6_hop_by_hop_ext_hdr,
 			      sizeof(ipv6_hop_by_hop_ext_hdr))) {
 		printk("Cannot write IPv6 ext header pkt %p", pkt);
 		zassert_true(0, "exiting");
@@ -312,7 +312,7 @@ static bool send_ipv6_udp_long_msg(struct net_if *iface,
 		zassert_true(0, "exiting");
 	}
 
-	if (net_pkt_write(pkt, (u8_t *)payload, sizeof(payload))) {
+	if (net_pkt_write(pkt, (uint8_t *)payload, sizeof(payload))) {
 		printk("Cannot write IPv6 ext header pkt %p", pkt);
 		zassert_true(0, "exiting");
 	}
@@ -347,8 +347,8 @@ static bool send_ipv6_udp_long_msg(struct net_if *iface,
 static bool send_ipv4_udp_msg(struct net_if *iface,
 			      struct in_addr *src,
 			      struct in_addr *dst,
-			      u16_t src_port,
-			      u16_t dst_port,
+			      uint16_t src_port,
+			      uint16_t dst_port,
 			      struct ud *ud,
 			      bool expect_failure)
 {
@@ -394,8 +394,8 @@ static bool send_ipv4_udp_msg(struct net_if *iface,
 }
 
 static void set_port(sa_family_t family, struct sockaddr *raddr,
-		     struct sockaddr *laddr, u16_t rport,
-		     u16_t lport)
+		     struct sockaddr *laddr, uint16_t rport,
+		     uint16_t lport)
 {
 	if (family == AF_INET6) {
 		if (raddr) {

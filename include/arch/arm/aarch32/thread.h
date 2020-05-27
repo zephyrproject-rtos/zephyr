@@ -23,15 +23,15 @@
 #include <zephyr/types.h>
 
 struct _callee_saved {
-	u32_t v1;  /* r4 */
-	u32_t v2;  /* r5 */
-	u32_t v3;  /* r6 */
-	u32_t v4;  /* r7 */
-	u32_t v5;  /* r8 */
-	u32_t v6;  /* r9 */
-	u32_t v7;  /* r10 */
-	u32_t v8;  /* r11 */
-	u32_t psp; /* r13 */
+	uint32_t v1;  /* r4 */
+	uint32_t v2;  /* r5 */
+	uint32_t v3;  /* r6 */
+	uint32_t v4;  /* r7 */
+	uint32_t v5;  /* r8 */
+	uint32_t v6;  /* r9 */
+	uint32_t v7;  /* r10 */
+	uint32_t v8;  /* r11 */
+	uint32_t psp; /* r13 */
 };
 
 typedef struct _callee_saved _callee_saved_t;
@@ -60,10 +60,10 @@ struct _preempt_float {
 struct _thread_arch {
 
 	/* interrupt locking key */
-	u32_t basepri;
+	uint32_t basepri;
 
 	/* r0 in stack frame cannot be written to reliably */
-	u32_t swap_return_value;
+	uint32_t swap_return_value;
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	/*
@@ -75,9 +75,9 @@ struct _thread_arch {
 #endif
 
 #if defined(CONFIG_USERSPACE) || defined(CONFIG_FPU_SHARING)
-	u32_t mode;
+	uint32_t mode;
 #if defined(CONFIG_USERSPACE)
-	u32_t priv_stack_start;
+	uint32_t priv_stack_start;
 #endif
 #endif
 };

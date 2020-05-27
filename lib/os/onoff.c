@@ -113,7 +113,7 @@ enum event_type {
 };
 
 static void set_state(struct onoff_manager *mgr,
-		      u32_t state)
+		      uint32_t state)
 {
 	mgr->flags = (state & ONOFF_STATE_MASK)
 		     | (mgr->flags & ~ONOFF_STATE_MASK);
@@ -153,7 +153,7 @@ int onoff_manager_init(struct onoff_manager *mgr,
 }
 
 static void notify_monitors(struct onoff_manager *mgr,
-			    u32_t state,
+			    uint32_t state,
 			    int res)
 {
 	sys_slist_t *mlist = &mgr->monitors;
@@ -167,7 +167,7 @@ static void notify_monitors(struct onoff_manager *mgr,
 
 static void notify_one(struct onoff_manager *mgr,
 		       struct onoff_client *cli,
-		       u32_t state,
+		       uint32_t state,
 		       int res)
 {
 	onoff_client_callback cb =
@@ -180,7 +180,7 @@ static void notify_one(struct onoff_manager *mgr,
 
 static void notify_all(struct onoff_manager *mgr,
 		       sys_slist_t *list,
-		       u32_t state,
+		       uint32_t state,
 		       int res)
 {
 	while (!sys_slist_is_empty(list)) {
@@ -211,7 +211,7 @@ static void transition_complete(struct onoff_manager *mgr,
 static int process_recheck(struct onoff_manager *mgr)
 {
 	int evt = EVT_NOP;
-	u32_t state = mgr->flags & ONOFF_STATE_MASK;
+	uint32_t state = mgr->flags & ONOFF_STATE_MASK;
 
 	if ((state == ONOFF_STATE_OFF)
 	    && !sys_slist_is_empty(&mgr->clients)) {
@@ -236,7 +236,7 @@ static void process_complete(struct onoff_manager *mgr,
 			     sys_slist_t *clients,
 			     int res)
 {
-	u32_t state = mgr->flags & ONOFF_STATE_MASK;
+	uint32_t state = mgr->flags & ONOFF_STATE_MASK;
 
 	if (res < 0) {
 		/* Enter ERROR state and notify all clients. */
@@ -298,7 +298,7 @@ static void process_event(struct onoff_manager *mgr,
 			  k_spinlock_key_t key)
 {
 	sys_slist_t clients;
-	u32_t state = mgr->flags & ONOFF_STATE_MASK;
+	uint32_t state = mgr->flags & ONOFF_STATE_MASK;
 	int res = 0;
 	bool processing = ((mgr->flags & ONOFF_FLAG_PROCESSING) != 0);
 
@@ -373,7 +373,7 @@ static void process_event(struct onoff_manager *mgr,
 		if (do_monitors
 		    || !sys_slist_is_empty(&clients)
 		    || (transit != NULL)) {
-			u32_t flags = mgr->flags | ONOFF_FLAG_PROCESSING;
+			uint32_t flags = mgr->flags | ONOFF_FLAG_PROCESSING;
 
 			mgr->flags = flags;
 			state = flags & ONOFF_STATE_MASK;
@@ -428,7 +428,7 @@ int onoff_request(struct onoff_manager *mgr,
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&mgr->lock);
-	u32_t state = mgr->flags & ONOFF_STATE_MASK;
+	uint32_t state = mgr->flags & ONOFF_STATE_MASK;
 
 	/* Reject if this would overflow the reference count. */
 	if (mgr->refs == SERVICE_REFS_MAX) {
@@ -477,7 +477,7 @@ int onoff_release(struct onoff_manager *mgr)
 	bool stop = false;      /* trigger a stop transition */
 
 	k_spinlock_key_t key = k_spin_lock(&mgr->lock);
-	u32_t state = mgr->flags & ONOFF_STATE_MASK;
+	uint32_t state = mgr->flags & ONOFF_STATE_MASK;
 	int rv = state;
 
 	if (state != ONOFF_STATE_ON) {
@@ -519,7 +519,7 @@ int onoff_reset(struct onoff_manager *mgr,
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&mgr->lock);
-	u32_t state = mgr->flags & ONOFF_STATE_MASK;
+	uint32_t state = mgr->flags & ONOFF_STATE_MASK;
 
 	rv = state;
 
@@ -548,7 +548,7 @@ int onoff_cancel(struct onoff_manager *mgr,
 
 	int rv = -EALREADY;
 	k_spinlock_key_t key = k_spin_lock(&mgr->lock);
-	u32_t state = mgr->flags & ONOFF_STATE_MASK;
+	uint32_t state = mgr->flags & ONOFF_STATE_MASK;
 
 	if (sys_slist_find_and_remove(&mgr->clients, &cli->node)) {
 		__ASSERT_NO_MSG((state == ONOFF_STATE_TO_ON)

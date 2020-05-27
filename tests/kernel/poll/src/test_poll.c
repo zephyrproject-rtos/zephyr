@@ -10,7 +10,7 @@
 /* global values and data structures */
 struct fifo_msg {
 	void *private;
-	u32_t msg;
+	uint32_t msg;
 };
 
 #define SIGNAL_RESULT 0x1ee7d00d

@@ -24,7 +24,7 @@ void test_log_std_msg(void)
 		      IS_ENABLED(CONFIG_64BIT) ? 4 : 3,
 		      "test assumes following setting");
 
-	u32_t used_slabs = k_mem_slab_num_used_get(&log_msg_pool);
+	uint32_t used_slabs = k_mem_slab_num_used_get(&log_msg_pool);
 	log_arg_t args[] = {1, 2, 3, 4, 5, 6};
 	struct log_msg *msg;
 
@@ -65,9 +65,9 @@ void test_log_std_msg(void)
 void test_log_hexdump_msg(void)
 {
 
-	u32_t used_slabs = k_mem_slab_num_used_get(&log_msg_pool);
+	uint32_t used_slabs = k_mem_slab_num_used_get(&log_msg_pool);
 	struct log_msg *msg;
-	u8_t data[128];
+	uint8_t data[128];
 
 	for (int i = 0; i < sizeof(data); i++) {
 		data[i] = i;
@@ -142,10 +142,10 @@ void test_log_hexdump_msg(void)
 void test_log_hexdump_data_get_single_chunk(void)
 {
 	struct log_msg *msg;
-	u8_t data[128];
-	u8_t read_data[128];
+	uint8_t data[128];
+	uint8_t read_data[128];
 	size_t offset;
-	u32_t wr_length;
+	uint32_t wr_length;
 	size_t rd_length;
 	size_t rd_req_length;
 
@@ -241,10 +241,10 @@ void test_log_hexdump_data_get_single_chunk(void)
 void test_log_hexdump_data_get_two_chunks(void)
 {
 	struct log_msg *msg;
-	u8_t data[128];
-	u8_t read_data[128];
+	uint8_t data[128];
+	uint8_t read_data[128];
 	size_t offset;
-	u32_t wr_length;
+	uint32_t wr_length;
 	size_t rd_length;
 	size_t rd_req_length;
 
@@ -334,10 +334,10 @@ void test_log_hexdump_data_get_two_chunks(void)
 void test_log_hexdump_data_get_multiple_chunks(void)
 {
 	struct log_msg *msg;
-	u8_t data[128];
-	u8_t read_data[128];
+	uint8_t data[128];
+	uint8_t read_data[128];
 	size_t offset;
-	u32_t wr_length;
+	uint32_t wr_length;
 	size_t rd_length;
 	size_t rd_req_length;
 

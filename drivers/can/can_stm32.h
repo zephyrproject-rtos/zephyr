@@ -43,7 +43,7 @@ struct can_mailbox {
 	can_tx_callback_t tx_callback;
 	void *callback_arg;
 	struct k_sem tx_int_sem;
-	u32_t error_flags;
+	uint32_t error_flags;
 };
 
 
@@ -61,7 +61,7 @@ struct can_stm32_data {
 	struct can_mailbox mb0;
 	struct can_mailbox mb1;
 	struct can_mailbox mb2;
-	u64_t filter_usage;
+	uint64_t filter_usage;
 	can_rx_callback_t rx_cb[CONFIG_CAN_MAX_FILTER];
 	void *cb_arg[CONFIG_CAN_MAX_FILTER];
 	can_state_change_isr_t state_change_isr;
@@ -70,10 +70,10 @@ struct can_stm32_data {
 struct can_stm32_config {
 	CAN_TypeDef *can;   /*!< CAN Registers*/
 	CAN_TypeDef *master_can;   /*!< CAN Registers for shared filter */
-	u32_t bus_speed;
-	u8_t sjw;
-	u8_t prop_ts1;
-	u8_t ts2;
+	uint32_t bus_speed;
+	uint8_t sjw;
+	uint8_t prop_ts1;
+	uint8_t ts2;
 	struct stm32_pclken pclken;
 	void (*config_irq)(CAN_TypeDef *can);
 };

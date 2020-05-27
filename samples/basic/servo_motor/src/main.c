@@ -39,7 +39,7 @@ enum direction {
 void main(void)
 {
 	struct device *pwm;
-	u32_t pulse_width = MIN_PULSE_USEC;
+	uint32_t pulse_width = MIN_PULSE_USEC;
 	enum direction dir = UP;
 	int ret;
 

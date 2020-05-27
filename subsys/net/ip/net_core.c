@@ -355,8 +355,8 @@ static void process_rx_packet(struct k_work *work)
 
 static void net_queue_rx(struct net_if *iface, struct net_pkt *pkt)
 {
-	u8_t prio = net_pkt_priority(pkt);
-	u8_t tc = net_rx_priority2tc(prio);
+	uint8_t prio = net_pkt_priority(pkt);
+	uint8_t tc = net_rx_priority2tc(prio);
 
 	k_work_init(net_pkt_work(pkt), process_rx_packet);
 

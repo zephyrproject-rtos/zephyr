@@ -48,9 +48,9 @@ struct bt_hfp_hf {
 	struct bt_rfcomm_dlc rfcomm_dlc;
 	char hf_buffer[HF_MAX_BUF_LEN];
 	struct at_client at;
-	u32_t hf_features;
-	u32_t ag_features;
-	s8_t ind_table[HF_MAX_AG_INDICATORS];
+	uint32_t hf_features;
+	uint32_t ag_features;
+	int8_t ind_table[HF_MAX_AG_INDICATORS];
 };
 
 enum hfp_hf_ag_indicators {

@@ -170,7 +170,7 @@ static int cmd_register(const struct shell *shell, size_t argc, char *argv[])
 
 static int cmd_connect(const struct shell *shell, size_t argc, char *argv[])
 {
-	u8_t channel;
+	uint8_t channel;
 	int err;
 
 	if (!default_conn) {
@@ -193,7 +193,7 @@ static int cmd_connect(const struct shell *shell, size_t argc, char *argv[])
 
 static int cmd_send(const struct shell *shell, size_t argc, char *argv[])
 {
-	u8_t buf_data[DATA_MTU] = { [0 ... (DATA_MTU - 1)] = 0xff };
+	uint8_t buf_data[DATA_MTU] = { [0 ... (DATA_MTU - 1)] = 0xff };
 	int ret, len, count = 1;
 	struct net_buf *buf;
 

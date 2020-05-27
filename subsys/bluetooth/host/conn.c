@@ -86,7 +86,7 @@ enum pairing_method {
 };
 
 /* based on table 5.7, Core Spec 4.2, Vol.3 Part C, 5.2.2.6 */
-static const u8_t ssp_method[4 /* remote */][4 /* local */] = {
+static const uint8_t ssp_method[4 /* remote */][4 /* local */] = {
 	      { JUST_WORKS, JUST_WORKS, PASSKEY_INPUT, JUST_WORKS },
 	      { JUST_WORKS, PASSKEY_CONFIRM, PASSKEY_INPUT, JUST_WORKS },
 	      { PASSKEY_DISPLAY, PASSKEY_DISPLAY, PASSKEY_INPUT, JUST_WORKS },
@@ -683,7 +683,7 @@ static int pin_code_neg_reply(const bt_addr_t *bdaddr)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_PIN_CODE_NEG_REPLY, buf, NULL);
 }
 
-static int pin_code_reply(struct bt_conn *conn, const char *pin, u8_t len)
+static int pin_code_reply(struct bt_conn *conn, const char *pin, uint8_t len)
 {
 	struct bt_hci_cp_pin_code_reply *cp;
 	struct net_buf *buf;
@@ -756,7 +756,7 @@ void bt_conn_pin_code_req(struct bt_conn *conn)
 	}
 }
 
-u8_t bt_conn_get_io_capa(void)
+uint8_t bt_conn_get_io_capa(void)
 {
 	if (!bt_auth) {
 		return BT_IO_NO_INPUT_OUTPUT;
@@ -777,12 +777,12 @@ u8_t bt_conn_get_io_capa(void)
 	return BT_IO_NO_INPUT_OUTPUT;
 }
 
-static u8_t ssp_pair_method(const struct bt_conn *conn)
+static uint8_t ssp_pair_method(const struct bt_conn *conn)
 {
 	return ssp_method[conn->br.remote_io_capa][bt_conn_get_io_capa()];
 }
 
-u8_t bt_conn_ssp_get_auth(const struct bt_conn *conn)
+uint8_t bt_conn_ssp_get_auth(const struct bt_conn *conn)
 {
 	/* Validate no bond auth request, and if valid use it. */
 	if ((conn->br.remote_auth == BT_HCI_NO_BONDING) ||
@@ -837,7 +837,7 @@ static int ssp_confirm_neg_reply(struct bt_conn *conn)
 				    NULL);
 }
 
-void bt_conn_ssp_auth_complete(struct bt_conn *conn, u8_t status)
+void bt_conn_ssp_auth_complete(struct bt_conn *conn, uint8_t status)
 {
 	if (!status) {
 		bool bond = !atomic_test_bit(conn->flags, BT_CONN_BR_NOBOND);
@@ -852,7 +852,7 @@ void bt_conn_ssp_auth_complete(struct bt_conn *conn, u8_t status)
 	}
 }
 
-void bt_conn_ssp_auth(struct bt_conn *conn, u32_t passkey)
+void bt_conn_ssp_auth(struct bt_conn *conn, uint32_t passkey)
 {
 	conn->br.pairing_method = ssp_pair_method(conn);
 
@@ -1007,8 +1007,8 @@ void bt_conn_identity_resolved(struct bt_conn *conn)
 	}
 }
 
-int bt_conn_le_start_encryption(struct bt_conn *conn, u8_t rand[8],
-				u8_t ediv[2], const u8_t *ltk, size_t len)
+int bt_conn_le_start_encryption(struct bt_conn *conn, uint8_t rand[8],
+				uint8_t ediv[2], const uint8_t *ltk, size_t len)
 {
 	struct bt_hci_cp_le_start_encryption *cp;
 	struct net_buf *buf;
@@ -1033,7 +1033,7 @@ int bt_conn_le_start_encryption(struct bt_conn *conn, u8_t rand[8],
 #endif /* CONFIG_BT_SMP */
 
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
-u8_t bt_conn_enc_key_size(struct bt_conn *conn)
+uint8_t bt_conn_enc_key_size(struct bt_conn *conn)
 {
 	if (!conn->encrypt) {
 		return 0;
@@ -1045,7 +1045,7 @@ u8_t bt_conn_enc_key_size(struct bt_conn *conn)
 		struct bt_hci_rp_read_encryption_key_size *rp;
 		struct net_buf *buf;
 		struct net_buf *rsp;
-		u8_t key_size;
+		uint8_t key_size;
 
 		buf = bt_hci_cmd_create(BT_HCI_OP_READ_ENCRYPTION_KEY_SIZE,
 					sizeof(*cp));
@@ -1186,10 +1186,10 @@ static void bt_conn_reset_rx_state(struct bt_conn *conn)
 	conn->rx_len = 0U;
 }
 
-void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, u8_t flags)
+void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 {
 	struct bt_l2cap_hdr *hdr;
-	u16_t len;
+	uint16_t len;
 
 	/* Make sure we notify any pending TX callbacks before processing
 	 * new data for this connection.
@@ -1347,12 +1347,12 @@ int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 	return 0;
 }
 
-static bool send_frag(struct bt_conn *conn, struct net_buf *buf, u8_t flags,
+static bool send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags,
 		      bool always_consume)
 {
 	struct bt_conn_tx *tx = tx_data(buf)->tx;
 	struct bt_hci_acl_hdr *hdr;
-	u32_t *pending_no_cb;
+	uint32_t *pending_no_cb;
 	unsigned int key;
 	int err;
 
@@ -1420,7 +1420,7 @@ fail:
 	return false;
 }
 
-static inline u16_t conn_mtu(struct bt_conn *conn)
+static inline uint16_t conn_mtu(struct bt_conn *conn)
 {
 #if defined(CONFIG_BT_BREDR)
 	if (conn->type == BT_CONN_TYPE_BR || !bt_dev.le.mtu) {
@@ -1434,7 +1434,7 @@ static inline u16_t conn_mtu(struct bt_conn *conn)
 static struct net_buf *create_frag(struct bt_conn *conn, struct net_buf *buf)
 {
 	struct net_buf *frag;
-	u16_t frag_len;
+	uint16_t frag_len;
 
 	frag = bt_conn_create_frag(0);
 
@@ -1577,7 +1577,7 @@ void bt_conn_process_tx(struct bt_conn *conn)
 	}
 }
 
-bool bt_conn_exists_le(u8_t id, const bt_addr_le_t *peer)
+bool bt_conn_exists_le(uint8_t id, const bt_addr_le_t *peer)
 {
 	struct bt_conn *conn = bt_conn_lookup_addr_le(id, peer);
 
@@ -1598,7 +1598,7 @@ bool bt_conn_exists_le(u8_t id, const bt_addr_le_t *peer)
 	return false;
 }
 
-struct bt_conn *bt_conn_add_le(u8_t id, const bt_addr_le_t *peer)
+struct bt_conn *bt_conn_add_le(uint8_t id, const bt_addr_le_t *peer)
 {
 	struct bt_conn *conn = conn_new();
 
@@ -1811,7 +1811,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 	}
 }
 
-struct bt_conn *bt_conn_lookup_handle(u16_t handle)
+struct bt_conn *bt_conn_lookup_handle(uint16_t handle)
 {
 	int i;
 
@@ -1852,7 +1852,7 @@ struct bt_conn *bt_conn_lookup_handle(u16_t handle)
 	return NULL;
 }
 
-bool bt_conn_is_peer_addr_le(const struct bt_conn *conn, u8_t id,
+bool bt_conn_is_peer_addr_le(const struct bt_conn *conn, uint8_t id,
 			     const bt_addr_le_t *peer)
 {
 	if (id != conn->id) {
@@ -1872,7 +1872,7 @@ bool bt_conn_is_peer_addr_le(const struct bt_conn *conn, u8_t id,
 	return bt_addr_le_cmp(peer, &conn->le.init_addr) == 0;
 }
 
-struct bt_conn *bt_conn_lookup_addr_le(u8_t id, const bt_addr_le_t *peer)
+struct bt_conn *bt_conn_lookup_addr_le(uint8_t id, const bt_addr_le_t *peer)
 {
 	int i;
 
@@ -1893,7 +1893,7 @@ struct bt_conn *bt_conn_lookup_addr_le(u8_t id, const bt_addr_le_t *peer)
 	return NULL;
 }
 
-struct bt_conn *bt_conn_lookup_state_le(u8_t id, const bt_addr_le_t *peer,
+struct bt_conn *bt_conn_lookup_state_le(uint8_t id, const bt_addr_le_t *peer,
 					const bt_conn_state_t state)
 {
 	int i;
@@ -2044,7 +2044,7 @@ int bt_conn_get_remote_info(struct bt_conn *conn,
 	}
 }
 
-static int conn_disconnect(struct bt_conn *conn, u8_t reason)
+static int conn_disconnect(struct bt_conn *conn, uint8_t reason)
 {
 	int err;
 
@@ -2132,7 +2132,7 @@ int bt_conn_le_phy_update(struct bt_conn *conn,
 }
 #endif
 
-int bt_conn_disconnect(struct bt_conn *conn, u8_t reason)
+int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 {
 	/* Disconnection is initiated by us, so auto connection shall
 	 * be disabled. Otherwise the passive scan would be enabled
@@ -2202,7 +2202,7 @@ static bool create_param_validate(const struct bt_conn_le_create_param *param)
 {
 #if defined(CONFIG_BT_PRIVACY)
 	/* Initiation timeout cannot be greater than the RPA timeout */
-	const u32_t timeout_max = (MSEC_PER_SEC / 10) * CONFIG_BT_RPA_TIMEOUT;
+	const uint32_t timeout_max = (MSEC_PER_SEC / 10) * CONFIG_BT_RPA_TIMEOUT;
 
 	if (param->timeout > timeout_max) {
 		return false;
@@ -2714,15 +2714,15 @@ int bt_conn_auth_pairing_confirm(struct bt_conn *conn)
 }
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
 
-u8_t bt_conn_index(struct bt_conn *conn)
+uint8_t bt_conn_index(struct bt_conn *conn)
 {
-	u8_t index = conn - conns;
+	uint8_t index = conn - conns;
 
 	__ASSERT(index < CONFIG_BT_MAX_CONN, "Invalid bt_conn pointer");
 	return index;
 }
 
-struct bt_conn *bt_conn_lookup_index(u8_t index)
+struct bt_conn *bt_conn_lookup_index(uint8_t index)
 {
 	struct bt_conn *conn;
 

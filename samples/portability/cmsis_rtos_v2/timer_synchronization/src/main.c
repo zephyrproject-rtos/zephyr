@@ -23,7 +23,7 @@ const osTimerAttr_t timer_attr = {
 
 osMessageQueueId_t message_id;
 
-u32_t data;
+uint32_t data;
 
 static char __aligned(4) sample_mem[sizeof(data) * Q_LEN];
 
@@ -38,7 +38,7 @@ static const osMessageQueueAttr_t mem_attrs = {
 
 void read_msg_callback(void *arg)
 {
-	u32_t read_msg;
+	uint32_t read_msg;
 	osStatus_t status;
 
 	status = osMessageQueueGet(message_id, (void *)&read_msg,
@@ -67,7 +67,7 @@ void main(void)
 {
 	osTimerId_t timer_id;
 	osStatus_t status;
-	u32_t counter = 10U;
+	uint32_t counter = 10U;
 
 	data = INITIAL_DATA_VALUE;
 

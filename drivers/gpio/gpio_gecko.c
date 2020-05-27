@@ -62,7 +62,7 @@ struct gpio_gecko_data {
 	/* port ISR callback routine address */
 	sys_slist_t callbacks;
 	/* pin callback routine enable flags, by pin number */
-	u32_t pin_callback_enables;
+	uint32_t pin_callback_enables;
 };
 
 static inline void gpio_gecko_add_port(struct gpio_gecko_common_data *data,
@@ -125,7 +125,7 @@ static int gpio_gecko_configure(struct device *dev,
 	return 0;
 }
 
-static int gpio_gecko_port_get_raw(struct device *dev, u32_t *value)
+static int gpio_gecko_port_get_raw(struct device *dev, uint32_t *value)
 {
 	const struct gpio_gecko_config *config = dev->config_info;
 	GPIO_P_TypeDef *gpio_base = config->gpio_base;
@@ -135,8 +135,8 @@ static int gpio_gecko_port_get_raw(struct device *dev, u32_t *value)
 	return 0;
 }
 
-static int gpio_gecko_port_set_masked_raw(struct device *dev, u32_t mask,
-					  u32_t value)
+static int gpio_gecko_port_set_masked_raw(struct device *dev, uint32_t mask,
+					  uint32_t value)
 {
 	const struct gpio_gecko_config *config = dev->config_info;
 	GPIO_P_TypeDef *gpio_base = config->gpio_base;
@@ -146,7 +146,7 @@ static int gpio_gecko_port_set_masked_raw(struct device *dev, u32_t mask,
 	return 0;
 }
 
-static int gpio_gecko_port_set_bits_raw(struct device *dev, u32_t mask)
+static int gpio_gecko_port_set_bits_raw(struct device *dev, uint32_t mask)
 {
 	const struct gpio_gecko_config *config = dev->config_info;
 	GPIO_P_TypeDef *gpio_base = config->gpio_base;
@@ -160,7 +160,7 @@ static int gpio_gecko_port_set_bits_raw(struct device *dev, u32_t mask)
 	return 0;
 }
 
-static int gpio_gecko_port_clear_bits_raw(struct device *dev, u32_t mask)
+static int gpio_gecko_port_clear_bits_raw(struct device *dev, uint32_t mask)
 {
 	const struct gpio_gecko_config *config = dev->config_info;
 	GPIO_P_TypeDef *gpio_base = config->gpio_base;
@@ -174,7 +174,7 @@ static int gpio_gecko_port_clear_bits_raw(struct device *dev, u32_t mask)
 	return 0;
 }
 
-static int gpio_gecko_port_toggle_bits(struct device *dev, u32_t mask)
+static int gpio_gecko_port_toggle_bits(struct device *dev, uint32_t mask)
 {
 	const struct gpio_gecko_config *config = dev->config_info;
 	GPIO_P_TypeDef *gpio_base = config->gpio_base;
@@ -264,7 +264,7 @@ static void gpio_gecko_common_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
 	struct gpio_gecko_common_data *data = dev->driver_data;
-	u32_t enabled_int, int_status;
+	uint32_t enabled_int, int_status;
 	struct device *port_dev;
 	struct gpio_gecko_data *port_data;
 

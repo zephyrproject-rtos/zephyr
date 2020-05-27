@@ -19,15 +19,15 @@
 #include "soc.h"
 #include <arch/posix/posix_trace.h>
 
-static u64_t tick_period; /* System tick period in microseconds */
+static uint64_t tick_period; /* System tick period in microseconds */
 /* Time (microseconds since boot) of the last timer tick interrupt */
-static u64_t last_tick_time;
+static uint64_t last_tick_time;
 
 /**
  * Return the current HW cycle counter
  * (number of microseconds since boot in 32bits)
  */
-u32_t z_timer_cycle_get_32(void)
+uint32_t z_timer_cycle_get_32(void)
 {
 	return hwm_get_time();
 }
@@ -40,8 +40,8 @@ static void np_timer_isr(void *arg)
 {
 	ARG_UNUSED(arg);
 
-	u64_t now = hwm_get_time();
-	s32_t elapsed_ticks = (now - last_tick_time)/tick_period;
+	uint64_t now = hwm_get_time();
+	int32_t elapsed_ticks = (now - last_tick_time)/tick_period;
 
 	last_tick_time += elapsed_ticks*tick_period;
 	z_clock_announce(elapsed_ticks);
@@ -80,12 +80,12 @@ int z_clock_driver_init(struct device *device)
  * @param idle Hint to the driver that the system is about to enter
  *        the idle state immediately after setting the timeout
  */
-void z_clock_set_timeout(s32_t ticks, bool idle)
+void z_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
 #if defined(CONFIG_TICKLESS_KERNEL)
-	u64_t silent_ticks;
+	uint64_t silent_ticks;
 
 	/* Note that we treat INT_MAX literally as anyhow the maximum amount of
 	 * ticks we can report with z_clock_announce() is INT_MAX
@@ -109,7 +109,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
  * this with appropriate locking, the driver needs only provide an
  * instantaneous answer.
  */
-u32_t z_clock_elapsed(void)
+uint32_t z_clock_elapsed(void)
 {
 	return (hwm_get_time() - last_tick_time)/tick_period;
 }
@@ -134,9 +134,9 @@ u32_t z_clock_elapsed(void)
  * (*1) In reality simulated time is simply not advanced just due to the "MCU"
  * running. Meaning, the SW running on the MCU is assumed to take 0 time.
  */
-void arch_busy_wait(u32_t usec_to_wait)
+void arch_busy_wait(uint32_t usec_to_wait)
 {
-	u64_t time_end = hwm_get_time() + usec_to_wait;
+	uint64_t time_end = hwm_get_time() + usec_to_wait;
 
 	while (hwm_get_time() < time_end) {
 		/*

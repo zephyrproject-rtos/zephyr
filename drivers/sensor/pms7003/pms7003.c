@@ -29,9 +29,9 @@ LOG_MODULE_REGISTER(PMS7003, CONFIG_SENSOR_LOG_LEVEL);
 
 struct pms7003_data {
 	struct device *uart_dev;
-	u16_t pm_1_0;
-	u16_t pm_2_5;
-	u16_t pm_10;
+	uint16_t pm_1_0;
+	uint16_t pm_2_5;
+	uint16_t pm_10;
 };
 
 /**
@@ -43,13 +43,13 @@ struct pms7003_data {
  * @param timeout the timeout in milliseconds
  * @return 0 if success; -ETIME if timeout
  */
-static int uart_wait_for(struct device *dev, u8_t *data, int len, int timeout)
+static int uart_wait_for(struct device *dev, uint8_t *data, int len, int timeout)
 {
 	int matched_size = 0;
-	s64_t timeout_time = k_uptime_get() + K_MSEC(timeout);
+	int64_t timeout_time = k_uptime_get() + K_MSEC(timeout);
 
 	while (1) {
-		u8_t c;
+		uint8_t c;
 
 		if (k_uptime_get() > timeout_time) {
 			return -ETIME;
@@ -80,13 +80,13 @@ static int uart_wait_for(struct device *dev, u8_t *data, int len, int timeout)
  * @param timeout the timeout in milliseconds
  * @return 0 if success; -ETIME if timeout
  */
-static int uart_read_bytes(struct device *dev, u8_t *data, int len, int timeout)
+static int uart_read_bytes(struct device *dev, uint8_t *data, int len, int timeout)
 {
 	int read_size = 0;
-	s64_t timeout_time = k_uptime_get() + K_MSEC(timeout);
+	int64_t timeout_time = k_uptime_get() + K_MSEC(timeout);
 
 	while (1) {
-		u8_t c;
+		uint8_t c;
 
 		if (k_uptime_get() > timeout_time) {
 			return -ETIME;
@@ -111,8 +111,8 @@ static int pms7003_sample_fetch(struct device *dev, enum sensor_channel chan)
 	 * 00 4E 00 03 00 00 00 00 00 00 71 00 02 06
 	 */
 
-	u8_t pms7003_start_bytes[] = {0x42, 0x4d};
-	u8_t pms7003_receive_buffer[30];
+	uint8_t pms7003_start_bytes[] = {0x42, 0x4d};
+	uint8_t pms7003_receive_buffer[30];
 
 	if (uart_wait_for(drv_data->uart_dev, pms7003_start_bytes,
 			  sizeof(pms7003_start_bytes),

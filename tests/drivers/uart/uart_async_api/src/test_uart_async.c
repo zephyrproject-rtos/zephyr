@@ -30,7 +30,7 @@ void test_single_read_callback(struct uart_event *evt, void *user_data)
 		k_sem_give(&tx_done);
 		break;
 	case UART_TX_ABORTED:
-		(*(u32_t *)user_data)++;
+		(*(uint32_t *)user_data)++;
 		break;
 	case UART_RX_RDY:
 		k_sem_give(&rx_rdy);
@@ -47,7 +47,7 @@ void test_single_read_callback(struct uart_event *evt, void *user_data)
 
 }
 
-ZTEST_BMEM volatile u32_t tx_aborted_count;
+ZTEST_BMEM volatile uint32_t tx_aborted_count;
 
 void test_single_read_setup(void)
 {
@@ -63,8 +63,8 @@ void test_single_read(void)
 	struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
 
 
-	u8_t rx_buf[10] = {0};
-	u8_t tx_buf[5] = "test";
+	uint8_t rx_buf[10] = {0};
+	uint8_t tx_buf[5] = "test";
 
 	zassert_not_equal(memcmp(tx_buf, rx_buf, 5), 0,
 			  "Initial buffer check failed");
@@ -89,11 +89,11 @@ void test_single_read(void)
 	zassert_equal(tx_aborted_count, 0, "TX aborted triggered");
 }
 
-ZTEST_BMEM u8_t chained_read_buf0[10];
-ZTEST_BMEM u8_t chained_read_buf1[20];
-ZTEST_BMEM u8_t chained_read_buf2[30];
-ZTEST_DMEM u8_t buf_num = 1U;
-ZTEST_BMEM u8_t *read_ptr;
+ZTEST_BMEM uint8_t chained_read_buf0[10];
+ZTEST_BMEM uint8_t chained_read_buf1[20];
+ZTEST_BMEM uint8_t chained_read_buf2[30];
+ZTEST_DMEM uint8_t buf_num = 1U;
+ZTEST_BMEM uint8_t *read_ptr;
 ZTEST_BMEM volatile size_t read_len;
 
 void test_chained_read_callback(struct uart_event *evt, void *user_data)
@@ -141,7 +141,7 @@ void test_chained_read_setup(void)
 void test_chained_read(void)
 {
 	struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
-	u8_t tx_buf[10];
+	uint8_t tx_buf[10];
 
 	uart_rx_enable(uart_dev, chained_read_buf0, 10, 50);
 
@@ -167,8 +167,8 @@ void test_chained_read(void)
 		      "RX_DISABLED timeout");
 }
 
-ZTEST_BMEM u8_t double_buffer[2][12];
-ZTEST_DMEM u8_t *next_buf = double_buffer[1];
+ZTEST_BMEM uint8_t double_buffer[2][12];
+ZTEST_DMEM uint8_t *next_buf = double_buffer[1];
 
 void test_double_buffer_callback(struct uart_event *evt, void *user_data)
 {
@@ -208,7 +208,7 @@ void test_double_buffer_setup(void)
 void test_double_buffer(void)
 {
 	struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
-	u8_t tx_buf[4];
+	uint8_t tx_buf[4];
 
 	zassert_equal(uart_rx_enable(uart_dev,
 				     double_buffer[0],
@@ -264,8 +264,8 @@ void test_read_abort(void)
 {
 	struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
 
-	u8_t rx_buf[100];
-	u8_t tx_buf[100];
+	uint8_t rx_buf[100];
+	uint8_t tx_buf[100];
 
 	memset(rx_buf, 0, sizeof(rx_buf));
 	memset(tx_buf, 1, sizeof(tx_buf));
@@ -330,8 +330,8 @@ void test_write_abort(void)
 {
 	struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
 
-	u8_t rx_buf[100];
-	u8_t tx_buf[100];
+	uint8_t rx_buf[100];
+	uint8_t tx_buf[100];
 
 	memset(rx_buf, 0, sizeof(rx_buf));
 	memset(tx_buf, 1, sizeof(tx_buf));
@@ -397,8 +397,8 @@ void test_forever_timeout(void)
 {
 	struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
 
-	u8_t rx_buf[100];
-	u8_t tx_buf[100];
+	uint8_t rx_buf[100];
+	uint8_t tx_buf[100];
 
 	memset(rx_buf, 0, sizeof(rx_buf));
 	memset(tx_buf, 1, sizeof(tx_buf));
@@ -431,9 +431,9 @@ void test_forever_timeout(void)
 }
 
 
-ZTEST_DMEM u8_t chained_write_tx_bufs[2][10] = {"Message 1", "Message 2"};
+ZTEST_DMEM uint8_t chained_write_tx_bufs[2][10] = {"Message 1", "Message 2"};
 ZTEST_DMEM bool chained_write_next_buf = true;
-ZTEST_BMEM volatile u8_t tx_sent;
+ZTEST_BMEM volatile uint8_t tx_sent;
 
 void test_chained_write_callback(struct uart_event *evt, void *user_data)
 {
@@ -478,7 +478,7 @@ void test_chained_write(void)
 {
 	struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
 
-	u8_t rx_buf[20];
+	uint8_t rx_buf[20];
 
 	memset(rx_buf, 0, sizeof(rx_buf));
 
@@ -504,10 +504,10 @@ void test_chained_write(void)
 		      "RX_DISABLED timeout");
 }
 
-ZTEST_BMEM u8_t long_rx_buf[1024];
-ZTEST_BMEM u8_t long_rx_buf2[1024];
-ZTEST_BMEM u8_t long_tx_buf[1000];
-ZTEST_BMEM volatile u8_t evt_num;
+ZTEST_BMEM uint8_t long_rx_buf[1024];
+ZTEST_BMEM uint8_t long_rx_buf2[1024];
+ZTEST_BMEM uint8_t long_tx_buf[1000];
+ZTEST_BMEM volatile uint8_t evt_num;
 ZTEST_BMEM size_t long_received[2];
 
 void test_long_buffers_callback(struct uart_event *evt, void *user_data)

@@ -34,7 +34,7 @@ struct gpio_cc13xx_cc26xx_data {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_data common;
 	sys_slist_t callbacks;
-	u32_t pin_callback_enables;
+	uint32_t pin_callback_enables;
 };
 
 static struct gpio_cc13xx_cc26xx_data gpio_cc13xx_cc26xx_data_0;
@@ -44,15 +44,15 @@ static const struct gpio_driver_config gpio_cc13xx_cc26xx_cfg_0 = {
 };
 
 static int gpio_cc13xx_cc26xx_port_set_bits_raw(struct device *port,
-	u32_t mask);
+	uint32_t mask);
 static int gpio_cc13xx_cc26xx_port_clear_bits_raw(struct device *port,
-	u32_t mask);
+	uint32_t mask);
 
 static int gpio_cc13xx_cc26xx_config(struct device *port,
 				     gpio_pin_t pin,
 				     gpio_flags_t flags)
 {
-	u32_t config = 0;
+	uint32_t config = 0;
 
 	__ASSERT_NO_MSG(pin < NUM_IO_MAX);
 
@@ -108,7 +108,7 @@ static int gpio_cc13xx_cc26xx_config(struct device *port,
 	return 0;
 }
 
-static int gpio_cc13xx_cc26xx_port_get_raw(struct device *port, u32_t *value)
+static int gpio_cc13xx_cc26xx_port_get_raw(struct device *port, uint32_t *value)
 {
 	__ASSERT_NO_MSG(value != NULL);
 
@@ -118,7 +118,7 @@ static int gpio_cc13xx_cc26xx_port_get_raw(struct device *port, u32_t *value)
 }
 
 static int gpio_cc13xx_cc26xx_port_set_masked_raw(struct device *port,
-	u32_t mask, u32_t value)
+	uint32_t mask, uint32_t value)
 {
 	GPIO_setMultiDio(mask & value);
 	GPIO_clearMultiDio(mask & ~value);
@@ -126,7 +126,7 @@ static int gpio_cc13xx_cc26xx_port_set_masked_raw(struct device *port,
 	return 0;
 }
 
-static int gpio_cc13xx_cc26xx_port_set_bits_raw(struct device *port, u32_t mask)
+static int gpio_cc13xx_cc26xx_port_set_bits_raw(struct device *port, uint32_t mask)
 {
 	GPIO_setMultiDio(mask);
 
@@ -134,14 +134,14 @@ static int gpio_cc13xx_cc26xx_port_set_bits_raw(struct device *port, u32_t mask)
 }
 
 static int gpio_cc13xx_cc26xx_port_clear_bits_raw(struct device *port,
-	u32_t mask)
+	uint32_t mask)
 {
 	GPIO_clearMultiDio(mask);
 
 	return 0;
 }
 
-static int gpio_cc13xx_cc26xx_port_toggle_bits(struct device *port, u32_t mask)
+static int gpio_cc13xx_cc26xx_port_toggle_bits(struct device *port, uint32_t mask)
 {
 	GPIO_toggleMultiDio(mask);
 
@@ -153,7 +153,7 @@ static int gpio_cc13xx_cc26xx_pin_interrupt_configure(struct device *port,
 		enum gpio_int_trig trig)
 {
 	struct gpio_cc13xx_cc26xx_data *data = port->driver_data;
-	u32_t config = 0;
+	uint32_t config = 0;
 
 	if (mode != GPIO_INT_MODE_DISABLED) {
 		if (mode == GPIO_INT_MODE_EDGE) {
@@ -213,7 +213,7 @@ static int gpio_cc13xx_cc26xx_disable_callback(struct device *port,
 	return 0;
 }
 
-static u32_t gpio_cc13xx_cc26xx_get_pending_int(struct device *dev)
+static uint32_t gpio_cc13xx_cc26xx_get_pending_int(struct device *dev)
 {
 	return GPIO_getEventMultiDio(GPIO_DIO_ALL_MASK);
 }
@@ -225,8 +225,8 @@ static void gpio_cc13xx_cc26xx_isr(void *arg)
 	struct device *dev = arg;
 	struct gpio_cc13xx_cc26xx_data *data = dev->driver_data;
 
-	u32_t status = GPIO_getEventMultiDio(GPIO_DIO_ALL_MASK);
-	u32_t enabled = status & data->pin_callback_enables;
+	uint32_t status = GPIO_getEventMultiDio(GPIO_DIO_ALL_MASK);
+	uint32_t enabled = status & data->pin_callback_enables;
 
 	GPIO_clearEventMultiDio(status);
 

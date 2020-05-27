@@ -79,9 +79,9 @@ enum esp_socket_flags {
 
 struct esp_socket {
 	/* internal */
-	u8_t idx;
-	u8_t link_id;
-	u8_t flags;
+	uint8_t idx;
+	uint8_t link_id;
+	uint8_t flags;
 
 	/* socket info */
 	sa_family_t family;
@@ -127,7 +127,7 @@ enum esp_data_flag {
 struct esp_data {
 	struct net_if *net_iface;
 
-	u8_t flags;
+	uint8_t flags;
 
 	char conn_cmd[CONN_CMD_MAX_LEN];
 
@@ -135,20 +135,20 @@ struct esp_data {
 	struct in_addr ip;
 	struct in_addr gw;
 	struct in_addr nm;
-	u8_t mac_addr[6];
+	uint8_t mac_addr[6];
 
 	/* modem context */
 	struct modem_context mctx;
 
 	/* modem interface */
 	struct modem_iface_uart_data iface_data;
-	u8_t iface_isr_buf[MDM_RECV_BUF_SIZE];
-	u8_t iface_rb_buf[MDM_RING_BUF_SIZE];
+	uint8_t iface_isr_buf[MDM_RECV_BUF_SIZE];
+	uint8_t iface_rb_buf[MDM_RING_BUF_SIZE];
 
 	/* modem cmds */
 	struct modem_cmd_handler_data cmd_handler_data;
-	u8_t cmd_read_buf[MDM_RECV_BUF_SIZE];
-	u8_t cmd_match_buf[MDM_RECV_BUF_SIZE];
+	uint8_t cmd_read_buf[MDM_RECV_BUF_SIZE];
+	uint8_t cmd_match_buf[MDM_RECV_BUF_SIZE];
 
 	/* socket data */
 	struct esp_socket sockets[ESP_MAX_SOCKETS];
@@ -176,7 +176,7 @@ struct net_pkt *esp_prepare_pkt(struct esp_data *dev, struct net_buf *src,
 struct esp_socket *esp_socket_get();
 int esp_socket_put(struct esp_socket *sock);
 struct esp_socket *esp_socket_from_link_id(struct esp_data *data,
-					   u8_t link_id);
+					   uint8_t link_id);
 void esp_socket_init(struct esp_data *data);
 
 static inline struct esp_data *esp_socket_to_dev(struct esp_socket *sock)

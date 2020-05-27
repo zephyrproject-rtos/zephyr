@@ -34,11 +34,11 @@ static struct spi_config lsm6dsl_spi_conf = {
 	.cs        = SPI_CS,
 };
 
-static int lsm6dsl_raw_read(struct lsm6dsl_data *data, u8_t reg_addr,
-			    u8_t *value, u8_t len)
+static int lsm6dsl_raw_read(struct lsm6dsl_data *data, uint8_t reg_addr,
+			    uint8_t *value, uint8_t len)
 {
 	struct spi_config *spi_cfg = &lsm6dsl_spi_conf;
-	u8_t buffer_tx[2] = { reg_addr | LSM6DSL_SPI_READ, 0 };
+	uint8_t buffer_tx[2] = { reg_addr | LSM6DSL_SPI_READ, 0 };
 	const struct spi_buf tx_buf = {
 			.buf = buffer_tx,
 			.len = 2,
@@ -74,11 +74,11 @@ static int lsm6dsl_raw_read(struct lsm6dsl_data *data, u8_t reg_addr,
 	return 0;
 }
 
-static int lsm6dsl_raw_write(struct lsm6dsl_data *data, u8_t reg_addr,
-			     u8_t *value, u8_t len)
+static int lsm6dsl_raw_write(struct lsm6dsl_data *data, uint8_t reg_addr,
+			     uint8_t *value, uint8_t len)
 {
 	struct spi_config *spi_cfg = &lsm6dsl_spi_conf;
-	u8_t buffer_tx[1] = { reg_addr & ~LSM6DSL_SPI_READ };
+	uint8_t buffer_tx[1] = { reg_addr & ~LSM6DSL_SPI_READ };
 	const struct spi_buf tx_buf[2] = {
 		{
 			.buf = buffer_tx,
@@ -106,28 +106,28 @@ static int lsm6dsl_raw_write(struct lsm6dsl_data *data, u8_t reg_addr,
 	return 0;
 }
 
-static int lsm6dsl_spi_read_data(struct lsm6dsl_data *data, u8_t reg_addr,
-				 u8_t *value, u8_t len)
+static int lsm6dsl_spi_read_data(struct lsm6dsl_data *data, uint8_t reg_addr,
+				 uint8_t *value, uint8_t len)
 {
 	return lsm6dsl_raw_read(data, reg_addr, value, len);
 }
 
-static int lsm6dsl_spi_write_data(struct lsm6dsl_data *data, u8_t reg_addr,
-				  u8_t *value, u8_t len)
+static int lsm6dsl_spi_write_data(struct lsm6dsl_data *data, uint8_t reg_addr,
+				  uint8_t *value, uint8_t len)
 {
 	return lsm6dsl_raw_write(data, reg_addr, value, len);
 }
 
-static int lsm6dsl_spi_read_reg(struct lsm6dsl_data *data, u8_t reg_addr,
-				u8_t *value)
+static int lsm6dsl_spi_read_reg(struct lsm6dsl_data *data, uint8_t reg_addr,
+				uint8_t *value)
 {
 	return lsm6dsl_raw_read(data, reg_addr, value, 1);
 }
 
-static int lsm6dsl_spi_update_reg(struct lsm6dsl_data *data, u8_t reg_addr,
-				  u8_t mask, u8_t value)
+static int lsm6dsl_spi_update_reg(struct lsm6dsl_data *data, uint8_t reg_addr,
+				  uint8_t mask, uint8_t value)
 {
-	u8_t tmp_val;
+	uint8_t tmp_val;
 
 	lsm6dsl_raw_read(data, reg_addr, &tmp_val, 1);
 	tmp_val = (tmp_val & ~mask) | (value & mask);

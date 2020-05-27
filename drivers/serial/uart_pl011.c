@@ -17,30 +17,30 @@
  * UART PL011 register map structure
  */
 struct pl011_regs {
-	u32_t dr;			/* data register */
+	uint32_t dr;			/* data register */
 	union {
-		u32_t rsr;
-		u32_t ecr;
+		uint32_t rsr;
+		uint32_t ecr;
 	};
-	u32_t reserved_0[4];
-	u32_t fr;			/* flags register */
-	u32_t reserved_1;
-	u32_t ilpr;
-	u32_t ibrd;
-	u32_t fbrd;
-	u32_t lcr_h;
-	u32_t cr;
-	u32_t ifls;
-	u32_t imsc;
-	u32_t ris;
-	u32_t mis;
-	u32_t icr;
-	u32_t dmacr;
+	uint32_t reserved_0[4];
+	uint32_t fr;			/* flags register */
+	uint32_t reserved_1;
+	uint32_t ilpr;
+	uint32_t ibrd;
+	uint32_t fbrd;
+	uint32_t lcr_h;
+	uint32_t cr;
+	uint32_t ifls;
+	uint32_t imsc;
+	uint32_t ris;
+	uint32_t mis;
+	uint32_t icr;
+	uint32_t dmacr;
 };
 
 /* Device data structure */
 struct pl011_data {
-	u32_t baud_rate;	/* Baud rate */
+	uint32_t baud_rate;	/* Baud rate */
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t irq_cb;
 	void *irq_cb_data;
@@ -168,10 +168,10 @@ static void pl011_disable_fifo(struct device *dev)
 }
 
 static int pl011_set_baudrate(struct device *dev,
-			      u32_t clk, u32_t baudrate)
+			      uint32_t clk, uint32_t baudrate)
 {
 	/* Avoiding float calculations, bauddiv is left shifted by 6 */
-	u64_t bauddiv = (((u64_t)clk) << PL011_FBRD_WIDTH)
+	uint64_t bauddiv = (((uint64_t)clk) << PL011_FBRD_WIDTH)
 				/ (baudrate * 16U);
 
 	/* Valid bauddiv value
@@ -229,14 +229,14 @@ static void pl011_poll_out(struct device *dev,
 	}
 
 	/* Send a character */
-	PL011_REGS(dev)->dr = (u32_t)c;
+	PL011_REGS(dev)->dr = (uint32_t)c;
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static int pl011_fifo_fill(struct device *dev,
-				    const u8_t *tx_data, int len)
+				    const uint8_t *tx_data, int len)
 {
-	u8_t num_tx = 0U;
+	uint8_t num_tx = 0U;
 
 	while (!(PL011_REGS(dev)->fr & PL011_FR_TXFF) &&
 	       (len - num_tx > 0)) {
@@ -246,9 +246,9 @@ static int pl011_fifo_fill(struct device *dev,
 }
 
 static int pl011_fifo_read(struct device *dev,
-				    u8_t *rx_data, const int len)
+				    uint8_t *rx_data, const int len)
 {
-	u8_t num_rx = 0U;
+	uint8_t num_rx = 0U;
 
 	while ((len - num_rx > 0) &&
 	       !(PL011_REGS(dev)->fr & PL011_FR_RXFE)) {
@@ -354,7 +354,7 @@ static const struct uart_driver_api pl011_driver_api = {
 static int pl011_init(struct device *dev)
 {
 	int ret;
-	u32_t lcrh;
+	uint32_t lcrh;
 
 	/* disable the uart */
 	pl011_disable(dev);
@@ -415,7 +415,7 @@ static void pl011_irq_config_func_0(struct device *dev);
 #endif
 
 static struct uart_device_config pl011_cfg_port_0 = {
-	.base = (u8_t *)DT_INST_REG_ADDR(0),
+	.base = (uint8_t *)DT_INST_REG_ADDR(0),
 	.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(0, clocks, clock_frequency),
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = pl011_irq_config_func_0,
@@ -478,7 +478,7 @@ static void pl011_irq_config_func_1(struct device *dev);
 #endif
 
 static struct uart_device_config pl011_cfg_port_1 = {
-	.base = (u8_t *)DT_INST_REG_ADDR(1),
+	.base = (uint8_t *)DT_INST_REG_ADDR(1),
 	.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(1, clocks, clock_frequency),
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = pl011_irq_config_func_1,

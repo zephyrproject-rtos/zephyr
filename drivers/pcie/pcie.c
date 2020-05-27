@@ -16,7 +16,7 @@
 
 bool pcie_probe(pcie_bdf_t bdf, pcie_id_t id)
 {
-	u32_t data;
+	uint32_t data;
 
 	data = pcie_conf_read(bdf, PCIE_CONF_ID);
 
@@ -31,9 +31,9 @@ bool pcie_probe(pcie_bdf_t bdf, pcie_id_t id)
 	return (id == data);
 }
 
-void pcie_set_cmd(pcie_bdf_t bdf, u32_t bits, bool on)
+void pcie_set_cmd(pcie_bdf_t bdf, uint32_t bits, bool on)
 {
-	u32_t cmdstat;
+	uint32_t cmdstat;
 
 	cmdstat = pcie_conf_read(bdf, PCIE_CONF_CMDSTAT);
 
@@ -46,10 +46,10 @@ void pcie_set_cmd(pcie_bdf_t bdf, u32_t bits, bool on)
 	pcie_conf_write(bdf, PCIE_CONF_CMDSTAT, cmdstat);
 }
 
-static u32_t pcie_get_bar(pcie_bdf_t bdf, unsigned int index, bool io)
+static uint32_t pcie_get_bar(pcie_bdf_t bdf, unsigned int index, bool io)
 {
 	int bar;
-	u32_t data;
+	uint32_t data;
 
 	for (bar = PCIE_CONF_BAR0; bar <= PCIE_CONF_BAR5; ++bar) {
 		data = pcie_conf_read(bdf, bar);
@@ -74,19 +74,19 @@ static u32_t pcie_get_bar(pcie_bdf_t bdf, unsigned int index, bool io)
 	return PCIE_CONF_BAR_NONE;
 }
 
-u32_t pcie_get_mbar(pcie_bdf_t bdf, unsigned int index)
+uint32_t pcie_get_mbar(pcie_bdf_t bdf, unsigned int index)
 {
 	return pcie_get_bar(bdf, index, false);
 }
 
 unsigned int pcie_wired_irq(pcie_bdf_t bdf)
 {
-	u32_t data = pcie_conf_read(bdf, PCIE_CONF_INTR);
+	uint32_t data = pcie_conf_read(bdf, PCIE_CONF_INTR);
 
 	return PCIE_CONF_INTR_IRQ(data);
 }
 
-u32_t pcie_get_iobar(pcie_bdf_t bdf, unsigned int index)
+uint32_t pcie_get_iobar(pcie_bdf_t bdf, unsigned int index)
 {
 	return pcie_get_bar(bdf, index, true);
 }

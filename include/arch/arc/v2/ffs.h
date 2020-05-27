@@ -35,7 +35,7 @@ extern "C" {
  */
 
 #if defined(__GNUC__)
-static ALWAYS_INLINE unsigned int find_msb_set(u32_t op)
+static ALWAYS_INLINE unsigned int find_msb_set(uint32_t op)
 {
 	unsigned int bit;
 
@@ -64,7 +64,7 @@ static ALWAYS_INLINE unsigned int find_msb_set(u32_t op)
  */
 
 #if defined(__GNUC__)
-static ALWAYS_INLINE unsigned int find_lsb_set(u32_t op)
+static ALWAYS_INLINE unsigned int find_lsb_set(uint32_t op)
 {
 	unsigned int bit;
 

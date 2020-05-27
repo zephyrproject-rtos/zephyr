@@ -36,7 +36,7 @@ extern "C" {
  *
  * @return VLAN identifier.
  */
-static inline u16_t net_eth_vlan_get_vid(u16_t tci)
+static inline uint16_t net_eth_vlan_get_vid(uint16_t tci)
 {
 	return tci & 0x0fff;
 }
@@ -48,7 +48,7 @@ static inline u16_t net_eth_vlan_get_vid(u16_t tci)
  *
  * @return Drop eligible indicator.
  */
-static inline u8_t net_eth_vlan_get_dei(u16_t tci)
+static inline uint8_t net_eth_vlan_get_dei(uint16_t tci)
 {
 	return (tci >> 12) & 0x01;
 }
@@ -60,7 +60,7 @@ static inline u8_t net_eth_vlan_get_dei(u16_t tci)
  *
  * @return Priority code point.
  */
-static inline u8_t net_eth_vlan_get_pcp(u16_t tci)
+static inline uint8_t net_eth_vlan_get_pcp(uint16_t tci)
 {
 	return (tci >> 13) & 0x07;
 }
@@ -73,7 +73,7 @@ static inline u8_t net_eth_vlan_get_pcp(u16_t tci)
  *
  * @return New TCI value.
  */
-static inline u16_t net_eth_vlan_set_vid(u16_t tci, u16_t vid)
+static inline uint16_t net_eth_vlan_set_vid(uint16_t tci, uint16_t vid)
 {
 	return (tci & 0xf000) | (vid & 0x0fff);
 }
@@ -86,7 +86,7 @@ static inline u16_t net_eth_vlan_set_vid(u16_t tci, u16_t vid)
  *
  * @return New TCI value.
  */
-static inline u16_t net_eth_vlan_set_dei(u16_t tci, bool dei)
+static inline uint16_t net_eth_vlan_set_dei(uint16_t tci, bool dei)
 {
 	return (tci & 0xefff) | ((!!dei) << 12);
 }
@@ -99,7 +99,7 @@ static inline u16_t net_eth_vlan_set_dei(u16_t tci, bool dei)
  *
  * @return New TCI value.
  */
-static inline u16_t net_eth_vlan_set_pcp(u16_t tci, u8_t pcp)
+static inline uint16_t net_eth_vlan_set_pcp(uint16_t tci, uint8_t pcp)
 {
 	return (tci & 0x1fff) | ((pcp & 0x07) << 13);
 }

@@ -80,7 +80,7 @@ static void iis3dhhc_handle_interrupt(void *arg)
 }
 
 static void iis3dhhc_gpio_callback(struct device *dev,
-				    struct gpio_callback *cb, u32_t pins)
+				    struct gpio_callback *cb, uint32_t pins)
 {
 	struct iis3dhhc_data *iis3dhhc =
 		CONTAINER_OF(cb, struct iis3dhhc_data, gpio_cb);

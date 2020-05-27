@@ -15,15 +15,15 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 
 #include <ztest.h>
 
-static const u8_t mac_addr_init[6] = { 0x01, 0x02, 0x03,
+static const uint8_t mac_addr_init[6] = { 0x01, 0x02, 0x03,
 				       0x04,  0x05,  0x06 };
 
-static const u8_t mac_addr_change[6] = { 0x01, 0x02, 0x03,
+static const uint8_t mac_addr_change[6] = { 0x01, 0x02, 0x03,
 					 0x04,  0x05,  0x07 };
 
 struct eth_fake_context {
 	struct net_if *iface;
-	u8_t mac_address[6];
+	uint8_t mac_address[6];
 
 	bool auto_negotiation;
 	bool full_duplex;

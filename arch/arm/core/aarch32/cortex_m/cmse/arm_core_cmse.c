@@ -7,7 +7,7 @@
 #include <zephyr.h>
 #include <aarch32/cortex_m/cmse.h>
 
-int arm_cmse_mpu_region_get(u32_t addr)
+int arm_cmse_mpu_region_get(uint32_t addr)
 {
 	cmse_address_info_t addr_info =	cmse_TT((void *)addr);
 
@@ -18,7 +18,7 @@ int arm_cmse_mpu_region_get(u32_t addr)
 	return -EINVAL;
 }
 
-static int arm_cmse_addr_read_write_ok(u32_t addr, int force_npriv, int rw)
+static int arm_cmse_addr_read_write_ok(uint32_t addr, int force_npriv, int rw)
 {
 	cmse_address_info_t addr_info;
 	if (force_npriv) {
@@ -30,17 +30,17 @@ static int arm_cmse_addr_read_write_ok(u32_t addr, int force_npriv, int rw)
 	return rw ? addr_info.flags.readwrite_ok : addr_info.flags.read_ok;
 }
 
-int arm_cmse_addr_read_ok(u32_t addr, int force_npriv)
+int arm_cmse_addr_read_ok(uint32_t addr, int force_npriv)
 {
 	return arm_cmse_addr_read_write_ok(addr, force_npriv, 0);
 }
 
-int arm_cmse_addr_readwrite_ok(u32_t addr, int force_npriv)
+int arm_cmse_addr_readwrite_ok(uint32_t addr, int force_npriv)
 {
 	return arm_cmse_addr_read_write_ok(addr, force_npriv, 1);
 }
 
-static int arm_cmse_addr_range_read_write_ok(u32_t addr, u32_t size,
+static int arm_cmse_addr_range_read_write_ok(uint32_t addr, uint32_t size,
 	int force_npriv, int rw)
 {
 	int flags = 0;
@@ -60,19 +60,19 @@ static int arm_cmse_addr_range_read_write_ok(u32_t addr, u32_t size,
 	}
 }
 
-int arm_cmse_addr_range_read_ok(u32_t addr, u32_t size, int force_npriv)
+int arm_cmse_addr_range_read_ok(uint32_t addr, uint32_t size, int force_npriv)
 {
 	return arm_cmse_addr_range_read_write_ok(addr, size, force_npriv, 0);
 }
 
-int arm_cmse_addr_range_readwrite_ok(u32_t addr, u32_t size, int force_npriv)
+int arm_cmse_addr_range_readwrite_ok(uint32_t addr, uint32_t size, int force_npriv)
 {
 	return arm_cmse_addr_range_read_write_ok(addr, size, force_npriv, 1);
 }
 
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 
-int arm_cmse_mpu_nonsecure_region_get(u32_t addr)
+int arm_cmse_mpu_nonsecure_region_get(uint32_t addr)
 {
 	cmse_address_info_t addr_info =	cmse_TTA((void *)addr);
 
@@ -83,7 +83,7 @@ int arm_cmse_mpu_nonsecure_region_get(u32_t addr)
 	return -EINVAL;
 }
 
-int arm_cmse_sau_region_get(u32_t addr)
+int arm_cmse_sau_region_get(uint32_t addr)
 {
 	cmse_address_info_t addr_info =	cmse_TT((void *)addr);
 
@@ -94,7 +94,7 @@ int arm_cmse_sau_region_get(u32_t addr)
 	return -EINVAL;
 }
 
-int arm_cmse_idau_region_get(u32_t addr)
+int arm_cmse_idau_region_get(uint32_t addr)
 {
 	cmse_address_info_t addr_info =	cmse_TT((void *)addr);
 
@@ -105,14 +105,14 @@ int arm_cmse_idau_region_get(u32_t addr)
 	return -EINVAL;
 }
 
-int arm_cmse_addr_is_secure(u32_t addr)
+int arm_cmse_addr_is_secure(uint32_t addr)
 {
 	cmse_address_info_t addr_info =	cmse_TT((void *)addr);
 
 	return addr_info.flags.secure;
 }
 
-static int arm_cmse_addr_nonsecure_read_write_ok(u32_t addr,
+static int arm_cmse_addr_nonsecure_read_write_ok(uint32_t addr,
 	int force_npriv, int rw)
 {
 	cmse_address_info_t addr_info;
@@ -126,17 +126,17 @@ static int arm_cmse_addr_nonsecure_read_write_ok(u32_t addr,
 		addr_info.flags.nonsecure_read_ok;
 }
 
-int arm_cmse_addr_nonsecure_read_ok(u32_t addr, int force_npriv)
+int arm_cmse_addr_nonsecure_read_ok(uint32_t addr, int force_npriv)
 {
 	return arm_cmse_addr_nonsecure_read_write_ok(addr, force_npriv, 0);
 }
 
-int arm_cmse_addr_nonsecure_readwrite_ok(u32_t addr, int force_npriv)
+int arm_cmse_addr_nonsecure_readwrite_ok(uint32_t addr, int force_npriv)
 {
 	return arm_cmse_addr_nonsecure_read_write_ok(addr, force_npriv, 1);
 }
 
-static int arm_cmse_addr_range_nonsecure_read_write_ok(u32_t addr, u32_t size,
+static int arm_cmse_addr_range_nonsecure_read_write_ok(uint32_t addr, uint32_t size,
 	int force_npriv, int rw)
 {
 	int flags = CMSE_NONSECURE;
@@ -156,14 +156,14 @@ static int arm_cmse_addr_range_nonsecure_read_write_ok(u32_t addr, u32_t size,
 	}
 }
 
-int arm_cmse_addr_range_nonsecure_read_ok(u32_t addr, u32_t size,
+int arm_cmse_addr_range_nonsecure_read_ok(uint32_t addr, uint32_t size,
 	int force_npriv)
 {
 	return arm_cmse_addr_range_nonsecure_read_write_ok(addr, size,
 		force_npriv, 0);
 }
 
-int arm_cmse_addr_range_nonsecure_readwrite_ok(u32_t addr, u32_t size,
+int arm_cmse_addr_range_nonsecure_readwrite_ok(uint32_t addr, uint32_t size,
 	int force_npriv)
 {
 	return arm_cmse_addr_range_nonsecure_read_write_ok(addr, size,

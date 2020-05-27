@@ -43,9 +43,9 @@ extern "C" {
  * is always a 64 bit count of ticks.
  */
 #ifdef CONFIG_TIMEOUT_64BIT
-typedef s64_t k_ticks_t;
+typedef int64_t k_ticks_t;
 #else
-typedef u32_t k_ticks_t;
+typedef uint32_t k_ticks_t;
 #endif
 
 #define K_TICKS_FOREVER ((k_ticks_t) -1)
@@ -102,7 +102,7 @@ typedef struct {
 #else
 
 /* Legacy timeout API */
-typedef s32_t k_timeout_t;
+typedef int32_t k_timeout_t;
 #define K_TIMEOUT_EQ(a, b) ((a) == (b))
 #define Z_TIMEOUT_NO_WAIT 0
 #define Z_TIMEOUT_TICKS(t) k_ticks_to_ms_ceil32(t)
@@ -161,19 +161,19 @@ extern void z_enable_sys_clock(void);
 #endif
 
 #define __ticks_to_ms(t) __DEPRECATED_MACRO \
-	k_ticks_to_ms_floor64((u64_t)(t))
+	k_ticks_to_ms_floor64((uint64_t)(t))
 #define z_ms_to_ticks(t) \
-	((s32_t)k_ms_to_ticks_ceil32((u32_t)(t)))
+	((int32_t)k_ms_to_ticks_ceil32((uint32_t)(t)))
 #define __ticks_to_us(t) __DEPRECATED_MACRO \
-	((s32_t)k_ticks_to_us_floor32((u32_t)(t)))
+	((int32_t)k_ticks_to_us_floor32((uint32_t)(t)))
 #define z_us_to_ticks(t) __DEPRECATED_MACRO \
-	((s32_t)k_us_to_ticks_ceil32((u32_t)(t)))
+	((int32_t)k_us_to_ticks_ceil32((uint32_t)(t)))
 #define sys_clock_hw_cycles_per_tick() __DEPRECATED_MACRO \
 	((int)k_ticks_to_cyc_floor32(1U))
 #define SYS_CLOCK_HW_CYCLES_TO_NS64(t) __DEPRECATED_MACRO \
-	k_cyc_to_ns_floor64((u64_t)(t))
+	k_cyc_to_ns_floor64((uint64_t)(t))
 #define SYS_CLOCK_HW_CYCLES_TO_NS(t) __DEPRECATED_MACRO \
-	((u32_t)k_cyc_to_ns_floor64(t))
+	((uint32_t)k_cyc_to_ns_floor64(t))
 
 /* added tick needed to account for tick in progress */
 #define _TICK_ALIGN 1
@@ -183,7 +183,7 @@ extern void z_enable_sys_clock(void);
  * and calculates the average cycle time
  */
 #define SYS_CLOCK_HW_CYCLES_TO_NS_AVG(X, NCYCLES) \
-	(u32_t)(k_cyc_to_ns_floor64(X) / NCYCLES)
+	(uint32_t)(k_cyc_to_ns_floor64(X) / NCYCLES)
 
 /**
  * @defgroup clock_apis Kernel Clock APIs
@@ -202,7 +202,7 @@ extern void z_enable_sys_clock(void);
  * @return the current system tick count
  *
  */
-u32_t z_tick_get_32(void);
+uint32_t z_tick_get_32(void);
 
 /**
  *
@@ -211,14 +211,14 @@ u32_t z_tick_get_32(void);
  * @return the current system tick count
  *
  */
-s64_t z_tick_get(void);
+int64_t z_tick_get(void);
 
 #ifndef CONFIG_SYS_CLOCK_EXISTS
 #define z_tick_get() (0)
 #define z_tick_get_32() (0)
 #endif
 
-u64_t z_timeout_end_calc(k_timeout_t timeout);
+uint64_t z_timeout_end_calc(k_timeout_t timeout);
 
 #ifdef __cplusplus
 }

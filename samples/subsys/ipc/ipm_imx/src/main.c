@@ -11,11 +11,11 @@
 
 static struct device *ipm;
 
-static void ipm_callback(void *context, u32_t id, volatile void *data)
+static void ipm_callback(void *context, uint32_t id, volatile void *data)
 {
 	int i;
 	int status;
-	u32_t *data32 = (u32_t *)data;
+	uint32_t *data32 = (uint32_t *)data;
 
 	printk("%s: id = %u, data = 0x", __func__, id);
 	for (i = 0; i < (CONFIG_IPM_IMX_MAX_DATA_SIZE / 4); i++) {

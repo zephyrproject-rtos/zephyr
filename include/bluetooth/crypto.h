@@ -49,8 +49,8 @@ int bt_rand(void *buf, size_t len);
  *
  *  @return Zero on success or error code otherwise.
  */
-int bt_encrypt_le(const u8_t key[16], const u8_t plaintext[16],
-		  u8_t enc_data[16]);
+int bt_encrypt_le(const uint8_t key[16], const uint8_t plaintext[16],
+		  uint8_t enc_data[16]);
 
 /** @brief AES encrypt big-endian data.
  *
@@ -64,8 +64,8 @@ int bt_encrypt_le(const u8_t key[16], const u8_t plaintext[16],
  *
  *  @return Zero on success or error code otherwise.
  */
-int bt_encrypt_be(const u8_t key[16], const u8_t plaintext[16],
-		  u8_t enc_data[16]);
+int bt_encrypt_be(const uint8_t key[16], const uint8_t plaintext[16],
+		  uint8_t enc_data[16]);
 
 
 /** @brief Decrypt big-endian data with AES-CCM.
@@ -88,9 +88,9 @@ int bt_encrypt_be(const u8_t key[16], const u8_t plaintext[16],
  *  @retval -EINVAL  Invalid parameters.
  *  @retval -EBADMSG Authentication failed.
  */
-int bt_ccm_decrypt(const u8_t key[16], u8_t nonce[13], const u8_t *enc_data,
-		   size_t len, const u8_t *aad, size_t aad_len,
-		   u8_t *plaintext, size_t mic_size);
+int bt_ccm_decrypt(const uint8_t key[16], uint8_t nonce[13], const uint8_t *enc_data,
+		   size_t len, const uint8_t *aad, size_t aad_len,
+		   uint8_t *plaintext, size_t mic_size);
 
 
 /** @brief Encrypt big-endian data with AES-CCM.
@@ -112,9 +112,9 @@ int bt_ccm_decrypt(const u8_t key[16], u8_t nonce[13], const u8_t *enc_data,
  *  @retval 0        Successfully encrypted the data.
  *  @retval -EINVAL  Invalid parameters.
  */
-int bt_ccm_encrypt(const u8_t key[16], u8_t nonce[13], const u8_t *enc_data,
-		   size_t len, const u8_t *aad, size_t aad_len,
-		   u8_t *plaintext, size_t mic_size);
+int bt_ccm_encrypt(const uint8_t key[16], uint8_t nonce[13], const uint8_t *enc_data,
+		   size_t len, const uint8_t *aad, size_t aad_len,
+		   uint8_t *plaintext, size_t mic_size);
 
 #ifdef __cplusplus
 }

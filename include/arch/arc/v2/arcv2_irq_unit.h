@@ -196,7 +196,7 @@ void z_arc_v2_irq_unit_sensitivity_set(int irq, int s)
 static ALWAYS_INLINE
 bool z_arc_v2_irq_unit_is_in_isr(void)
 {
-	u32_t act = z_arc_v2_aux_reg_read(_ARC_V2_AUX_IRQ_ACT);
+	uint32_t act = z_arc_v2_aux_reg_read(_ARC_V2_AUX_IRQ_ACT);
 
 	/* in exception ?*/
 	if (z_arc_v2_aux_reg_read(_ARC_V2_STATUS32) & _ARC_V2_STATUS32_AE) {

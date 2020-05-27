@@ -41,10 +41,10 @@
  */
 #define BT_UUID_DES_V8D3                BT_UUID_DECLARE_16(0xb017)
 
-static u8_t   value_v8_value = 0x08;
-static u8_t   des_v8d1_value = 0x01;
-static u8_t   des_v8d2_value = 0x02;
-static u8_t   des_v8d3_value = 0x03;
+static uint8_t   value_v8_value = 0x08;
+static uint8_t   des_v8d1_value = 0x01;
+static uint8_t   des_v8d2_value = 0x02;
+static uint8_t   des_v8d3_value = 0x03;
 static bool   bAuthorized;
 
 /**
@@ -61,9 +61,9 @@ static bool   bAuthorized;
  */
 static ssize_t read_value_v8(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
-			     u16_t len, u16_t offset)
+			     uint16_t len, uint16_t offset)
 {
-	const u8_t *value = attr->user_data;
+	const uint8_t *value = attr->user_data;
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 sizeof(value_v8_value));
@@ -84,9 +84,9 @@ static ssize_t read_value_v8(struct bt_conn *conn,
  */
 static ssize_t write_value_v8(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, const void *buf,
-			      u16_t len, u16_t offset, u8_t flags)
+			      uint16_t len, uint16_t offset, uint8_t flags)
 {
-	u8_t *value = attr->user_data;
+	uint8_t *value = attr->user_data;
 
 	if (offset >= sizeof(value_v8_value))
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -112,9 +112,9 @@ static ssize_t write_value_v8(struct bt_conn *conn,
  */
 static ssize_t read_des_v8d1(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
-			     u16_t len, u16_t offset)
+			     uint16_t len, uint16_t offset)
 {
-	const u8_t *value = attr->user_data;
+	const uint8_t *value = attr->user_data;
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 sizeof(des_v8d1_value));
@@ -135,9 +135,9 @@ static ssize_t read_des_v8d1(struct bt_conn *conn,
  */
 static ssize_t write_des_v8d1(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, const void *buf,
-			      u16_t len, u16_t offset, u8_t flags)
+			      uint16_t len, uint16_t offset, uint8_t flags)
 {
-	u8_t *value = attr->user_data;
+	uint8_t *value = attr->user_data;
 
 	if (offset >= sizeof(des_v8d1_value))
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -163,9 +163,9 @@ static ssize_t write_des_v8d1(struct bt_conn *conn,
  */
 static ssize_t read_des_v8d2(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
-			     u16_t len, u16_t offset)
+			     uint16_t len, uint16_t offset)
 {
-	const u8_t *value = attr->user_data;
+	const uint8_t *value = attr->user_data;
 
 	if (!bAuthorized)
 		return BT_GATT_ERR(BT_ATT_ERR_AUTHORIZATION);
@@ -189,9 +189,9 @@ static ssize_t read_des_v8d2(struct bt_conn *conn,
  */
 static ssize_t write_des_v8d2(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, const void *buf,
-			      u16_t len, u16_t offset, u8_t flags)
+			      uint16_t len, uint16_t offset, uint8_t flags)
 {
-	u8_t *value = attr->user_data;
+	uint8_t *value = attr->user_data;
 
 	if (offset >= sizeof(des_v8d2_value))
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -219,9 +219,9 @@ static ssize_t write_des_v8d2(struct bt_conn *conn,
  */
 static ssize_t read_des_v8d3(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
-			     u16_t len, u16_t offset)
+			     uint16_t len, uint16_t offset)
 {
-	const u8_t *value = attr->user_data;
+	const uint8_t *value = attr->user_data;
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 sizeof(des_v8d3_value));
@@ -242,9 +242,9 @@ static ssize_t read_des_v8d3(struct bt_conn *conn,
  */
 static ssize_t write_des_v8d3(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, const void *buf,
-			      u16_t len, u16_t offset, u8_t flags)
+			      uint16_t len, uint16_t offset, uint8_t flags)
 {
-	u8_t *value = attr->user_data;
+	uint8_t *value = attr->user_data;
 
 	if (offset >= sizeof(des_v8d3_value))
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);

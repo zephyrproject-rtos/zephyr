@@ -27,7 +27,7 @@
 #error Unknown LL variant.
 #endif
 
-void mayfly_enable_cb(u8_t caller_id, u8_t callee_id, u8_t enable)
+void mayfly_enable_cb(uint8_t caller_id, uint8_t callee_id, uint8_t enable)
 {
 	(void)caller_id;
 
@@ -40,7 +40,7 @@ void mayfly_enable_cb(u8_t caller_id, u8_t callee_id, u8_t enable)
 	}
 }
 
-u32_t mayfly_is_enabled(u8_t caller_id, u8_t callee_id)
+uint32_t mayfly_is_enabled(uint8_t caller_id, uint8_t callee_id)
 {
 	(void)caller_id;
 
@@ -64,7 +64,7 @@ u32_t mayfly_is_enabled(u8_t caller_id, u8_t callee_id)
 	return 0;
 }
 
-u32_t mayfly_prio_is_equal(u8_t caller_id, u8_t callee_id)
+uint32_t mayfly_prio_is_equal(uint8_t caller_id, uint8_t callee_id)
 {
 	return (caller_id == callee_id) ||
 #if defined(CONFIG_BT_LL_SW_SPLIT)
@@ -90,7 +90,7 @@ u32_t mayfly_prio_is_equal(u8_t caller_id, u8_t callee_id)
 	       0;
 }
 
-void mayfly_pend(u8_t caller_id, u8_t callee_id)
+void mayfly_pend(uint8_t caller_id, uint8_t callee_id)
 {
 	(void)caller_id;
 

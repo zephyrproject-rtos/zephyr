@@ -18,14 +18,14 @@ enum cpu_state {
 static enum cpu_state last_cpu_state = CPU_STATE_SCHEDULER;
 static enum cpu_state cpu_state_before_interrupts;
 
-static u32_t last_time;
+static uint32_t last_time;
 static struct cpu_stats stats_hw_tick;
 static int nested_interrupts;
 static struct k_thread *current_thread;
 
-void update_counter(volatile u64_t *cnt)
+void update_counter(volatile uint64_t *cnt)
 {
-	u32_t time = k_cycle_get_32();
+	uint32_t time = k_cycle_get_32();
 
 	if (time >= last_time) {
 		(*cnt) += (time - last_time);
@@ -68,7 +68,7 @@ void cpu_stats_get_ns(struct cpu_stats *cpu_stats_ns)
 	irq_unlock(key);
 }
 
-u32_t cpu_stats_non_idle_and_sched_get_percent(void)
+uint32_t cpu_stats_non_idle_and_sched_get_percent(void)
 {
 	int key = irq_lock();
 

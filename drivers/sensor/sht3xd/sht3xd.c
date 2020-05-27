@@ -18,12 +18,12 @@
 LOG_MODULE_REGISTER(SHT3XD, CONFIG_SENSOR_LOG_LEVEL);
 
 #ifdef CONFIG_SHT3XD_SINGLE_SHOT_MODE
-static const u16_t measure_cmd[3] = {
+static const uint16_t measure_cmd[3] = {
 	0x2400, 0x240B, 0x2416
 };
 #endif
 #ifdef CONFIG_SHT3XD_PERIODIC_MODE
-static const u16_t measure_cmd[5][3] = {
+static const uint16_t measure_cmd[5][3] = {
 	{ 0x202F, 0x2024, 0x2032 },
 	{ 0x212D, 0x2126, 0x2130 },
 	{ 0x222B, 0x2220, 0x2236 },
@@ -40,11 +40,11 @@ static const int measure_wait[3] = {
  * CRC algorithm parameters were taken from the
  * "Checksum Calculation" section of the datasheet.
  */
-static u8_t sht3xd_compute_crc(u16_t value)
+static uint8_t sht3xd_compute_crc(uint16_t value)
 {
-	u8_t buf[2] = { value >> 8, value & 0xFF };
-	u8_t crc = 0xFF;
-	u8_t polynom = 0x31;
+	uint8_t buf[2] = { value >> 8, value & 0xFF };
+	uint8_t crc = 0xFF;
+	uint8_t polynom = 0x31;
 	int i, j;
 
 	for (i = 0; i < 2; ++i) {
@@ -61,17 +61,17 @@ static u8_t sht3xd_compute_crc(u16_t value)
 	return crc;
 }
 
-int sht3xd_write_command(struct device *dev, u16_t cmd)
+int sht3xd_write_command(struct device *dev, uint16_t cmd)
 {
-	u8_t tx_buf[2] = { cmd >> 8, cmd & 0xFF };
+	uint8_t tx_buf[2] = { cmd >> 8, cmd & 0xFF };
 
 	return i2c_write(sht3xd_i2c_device(dev), tx_buf, sizeof(tx_buf),
 			 sht3xd_i2c_address(dev));
 }
 
-int sht3xd_write_reg(struct device *dev, u16_t cmd, u16_t val)
+int sht3xd_write_reg(struct device *dev, uint16_t cmd, uint16_t val)
 {
-	u8_t tx_buf[5];
+	uint8_t tx_buf[5];
 
 	tx_buf[0] = cmd >> 8;
 	tx_buf[1] = cmd & 0xFF;
@@ -87,9 +87,9 @@ static int sht3xd_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct sht3xd_data *data = dev->driver_data;
 	struct device *i2c = sht3xd_i2c_device(dev);
-	u8_t address = sht3xd_i2c_address(dev);
-	u8_t rx_buf[6];
-	u16_t t_sample, rh_sample;
+	uint8_t address = sht3xd_i2c_address(dev);
+	uint8_t rx_buf[6];
+	uint16_t t_sample, rh_sample;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
@@ -109,7 +109,7 @@ static int sht3xd_sample_fetch(struct device *dev, enum sensor_channel chan)
 	}
 #endif
 #ifdef CONFIG_SHT3XD_PERIODIC_MODE
-	u8_t tx_buf[2] = {
+	uint8_t tx_buf[2] = {
 		SHT3XD_CMD_FETCH >> 8,
 		SHT3XD_CMD_FETCH & 0xFF
 	};
@@ -144,7 +144,7 @@ static int sht3xd_channel_get(struct device *dev,
 			      struct sensor_value *val)
 {
 	const struct sht3xd_data *data = dev->driver_data;
-	u64_t tmp;
+	uint64_t tmp;
 
 	/*
 	 * See datasheet "Conversion of Signal Output" section
@@ -152,12 +152,12 @@ static int sht3xd_channel_get(struct device *dev,
 	 */
 	if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
 		/* val = -45 + 175 * sample / (2^16 -1) */
-		tmp = (u64_t)data->t_sample * 175U;
-		val->val1 = (s32_t)(tmp / 0xFFFF) - 45;
+		tmp = (uint64_t)data->t_sample * 175U;
+		val->val1 = (int32_t)(tmp / 0xFFFF) - 45;
 		val->val2 = ((tmp % 0xFFFF) * 1000000U) / 0xFFFF;
 	} else if (chan == SENSOR_CHAN_HUMIDITY) {
 		/* val = 100 * sample / (2^16 -1) */
-		u32_t tmp2 = (u32_t)data->rh_sample * 100U;
+		uint32_t tmp2 = (uint32_t)data->rh_sample * 100U;
 		val->val1 = tmp2 / 0xFFFF;
 		/* x * 100000 / 65536 == x * 15625 / 1024 */
 		val->val2 = (tmp2 % 0xFFFF) * 15625U / 1024;

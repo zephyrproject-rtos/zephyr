@@ -52,24 +52,24 @@
 
 #define ULL_ADV_RANDOM_DELAY HAL_TICKER_US_TO_TICKS(10000)
 
-inline struct ll_adv_set *ull_adv_set_get(u16_t handle);
-inline u16_t ull_adv_handle_get(struct ll_adv_set *adv);
+inline struct ll_adv_set *ull_adv_set_get(uint16_t handle);
+inline uint16_t ull_adv_handle_get(struct ll_adv_set *adv);
 
 static int init_reset(void);
-static inline struct ll_adv_set *is_disabled_get(u16_t handle);
-static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
+static inline struct ll_adv_set *is_disabled_get(uint16_t handle);
+static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t lazy,
 		      void *param);
-static void ticker_op_update_cb(u32_t status, void *params);
+static void ticker_op_update_cb(uint32_t status, void *params);
 
 #if defined(CONFIG_BT_PERIPHERAL)
-static void ticker_stop_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
+static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t lazy,
 			   void *param);
-static void ticker_op_stop_cb(u32_t status, void *params);
+static void ticker_op_stop_cb(uint32_t status, void *params);
 static void disabled_cb(void *param);
 static void conn_release(struct ll_adv_set *adv);
 #endif /* CONFIG_BT_PERIPHERAL */
 
-static inline u8_t disable(u16_t handle);
+static inline uint8_t disable(uint16_t handle);
 
 static struct ll_adv_set ll_adv[BT_CTLR_ADV_MAX];
 
@@ -78,30 +78,30 @@ static struct ticker_ext ll_adv_ticker_ext[BT_CTLR_ADV_MAX];
 #endif /* CONFIG_BT_TICKER_EXT */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-u8_t ll_adv_params_set(u8_t handle, u16_t evt_prop, u32_t interval,
-		       u8_t adv_type, u8_t own_addr_type,
-		       u8_t direct_addr_type, u8_t const *const direct_addr,
-		       u8_t chan_map, u8_t filter_policy, u8_t *tx_pwr,
-		       u8_t phy_p, u8_t skip, u8_t phy_s, u8_t sid, u8_t sreq)
+uint8_t ll_adv_params_set(uint8_t handle, uint16_t evt_prop, uint32_t interval,
+		       uint8_t adv_type, uint8_t own_addr_type,
+		       uint8_t direct_addr_type, uint8_t const *const direct_addr,
+		       uint8_t chan_map, uint8_t filter_policy, uint8_t *tx_pwr,
+		       uint8_t phy_p, uint8_t skip, uint8_t phy_s, uint8_t sid, uint8_t sreq)
 {
-	u8_t const pdu_adv_type[] = {PDU_ADV_TYPE_ADV_IND,
+	uint8_t const pdu_adv_type[] = {PDU_ADV_TYPE_ADV_IND,
 				     PDU_ADV_TYPE_DIRECT_IND,
 				     PDU_ADV_TYPE_SCAN_IND,
 				     PDU_ADV_TYPE_NONCONN_IND,
 				     PDU_ADV_TYPE_DIRECT_IND,
 				     PDU_ADV_TYPE_EXT_IND};
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
-u8_t ll_adv_params_set(u16_t interval, u8_t adv_type,
-		       u8_t own_addr_type, u8_t direct_addr_type,
-		       u8_t const *const direct_addr, u8_t chan_map,
-		       u8_t filter_policy)
+uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
+		       uint8_t own_addr_type, uint8_t direct_addr_type,
+		       uint8_t const *const direct_addr, uint8_t chan_map,
+		       uint8_t filter_policy)
 {
-	u8_t const pdu_adv_type[] = {PDU_ADV_TYPE_ADV_IND,
+	uint8_t const pdu_adv_type[] = {PDU_ADV_TYPE_ADV_IND,
 				     PDU_ADV_TYPE_DIRECT_IND,
 				     PDU_ADV_TYPE_SCAN_IND,
 				     PDU_ADV_TYPE_NONCONN_IND,
 				     PDU_ADV_TYPE_DIRECT_IND};
-	u16_t const handle = 0;
+	uint16_t const handle = 0;
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
 	struct ll_adv_set *adv;
@@ -123,7 +123,7 @@ u8_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 	if (adv_type > 0x04) {
 		/* legacy */
 		if (evt_prop & BIT(4)) {
-			u8_t const leg_adv_type[] = { 0x03, 0x04, 0x02, 0x00};
+			uint8_t const leg_adv_type[] = { 0x03, 0x04, 0x02, 0x00};
 
 			adv_type = leg_adv_type[evt_prop & 0x03];
 
@@ -192,12 +192,12 @@ u8_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 	} else if (pdu->type == PDU_ADV_TYPE_EXT_IND) {
 		struct pdu_adv_com_ext_adv *p;
 		struct ext_adv_hdr _h, *h;
-		u8_t *_ptr, *ptr;
-		u8_t len;
+		uint8_t *_ptr, *ptr;
+		uint8_t len;
 
 		p = (void *)&pdu->adv_ext_ind;
 		h = (void *)p->ext_hdr_adi_adv_data;
-		ptr = (u8_t *)h + sizeof(*h);
+		ptr = (uint8_t *)h + sizeof(*h);
 		_ptr = ptr;
 
 		/* No ACAD and no AdvData */
@@ -205,8 +205,8 @@ u8_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 		p->adv_mode = evt_prop & 0x03;
 
 		/* Zero-init header flags */
-		*(u8_t *)&_h = *(u8_t *)h;
-		*(u8_t *)h = 0;
+		*(uint8_t *)&_h = *(uint8_t *)h;
+		*(uint8_t *)h = 0;
 
 		/* AdvA flag */
 		if (_h.adv_addr) {
@@ -246,7 +246,7 @@ u8_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 		}
 
 		/* Calc primary PDU len */
-		len = ptr - (u8_t *)p;
+		len = ptr - (uint8_t *)p;
 		if (len > (offsetof(struct pdu_adv_com_ext_adv,
 				    ext_hdr_adi_adv_data) + sizeof(*h))) {
 			p->ext_hdr_len = len -
@@ -266,7 +266,7 @@ u8_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 
 		/* Tx Power */
 		if (h->tx_pwr) {
-			u8_t _tx_pwr;
+			uint8_t _tx_pwr;
 
 			_tx_pwr = 0;
 			if (tx_pwr) {
@@ -332,17 +332,17 @@ u8_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 }
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-u8_t ll_adv_data_set(u16_t handle, u8_t len, u8_t const *const data)
+uint8_t ll_adv_data_set(uint16_t handle, uint8_t len, uint8_t const *const data)
 {
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
-u8_t ll_adv_data_set(u8_t len, u8_t const *const data)
+uint8_t ll_adv_data_set(uint8_t len, uint8_t const *const data)
 {
-	const u16_t handle = 0;
+	const uint16_t handle = 0;
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 	struct ll_adv_set *adv;
 	struct pdu_adv *prev;
 	struct pdu_adv *pdu;
-	u8_t idx;
+	uint8_t idx;
 
 	adv = ull_adv_set_get(handle);
 	if (!adv) {
@@ -383,17 +383,17 @@ u8_t ll_adv_data_set(u8_t len, u8_t const *const data)
 }
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-u8_t ll_adv_scan_rsp_set(u16_t handle, u8_t len, u8_t const *const data)
+uint8_t ll_adv_scan_rsp_set(uint16_t handle, uint8_t len, uint8_t const *const data)
 {
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
-u8_t ll_adv_scan_rsp_set(u8_t len, u8_t const *const data)
+uint8_t ll_adv_scan_rsp_set(uint8_t len, uint8_t const *const data)
 {
-	const u16_t handle = 0;
+	const uint16_t handle = 0;
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 	struct ll_adv_set *adv;
 	struct pdu_adv *prev;
 	struct pdu_adv *pdu;
-	u8_t idx;
+	uint8_t idx;
 
 	adv = ull_adv_set_get(handle);
 	if (!adv) {
@@ -419,29 +419,29 @@ u8_t ll_adv_scan_rsp_set(u8_t len, u8_t const *const data)
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT) || defined(CONFIG_BT_HCI_MESH_EXT)
 #if defined(CONFIG_BT_HCI_MESH_EXT)
-u8_t ll_adv_enable(u16_t handle, u8_t enable,
-		   u8_t at_anchor, u32_t ticks_anchor, u8_t retry,
-		   u8_t scan_window, u8_t scan_delay)
+uint8_t ll_adv_enable(uint16_t handle, uint8_t enable,
+		   uint8_t at_anchor, uint32_t ticks_anchor, uint8_t retry,
+		   uint8_t scan_window, uint8_t scan_delay)
 {
 #else /* !CONFIG_BT_HCI_MESH_EXT */
-u8_t ll_adv_enable(u16_t handle, u8_t enable)
+uint8_t ll_adv_enable(uint16_t handle, uint8_t enable)
 {
-	u32_t ticks_anchor;
+	uint32_t ticks_anchor;
 #endif /* !CONFIG_BT_HCI_MESH_EXT */
 #else /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_HCI_MESH_EXT */
-u8_t ll_adv_enable(u8_t enable)
+uint8_t ll_adv_enable(uint8_t enable)
 {
-	u16_t const handle = 0;
-	u32_t ticks_anchor;
+	uint16_t const handle = 0;
+	uint32_t ticks_anchor;
 #endif /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_HCI_MESH_EXT */
-	volatile u32_t ret_cb = TICKER_STATUS_BUSY;
-	u32_t ticks_slot_overhead;
+	volatile uint32_t ret_cb = TICKER_STATUS_BUSY;
+	uint32_t ticks_slot_overhead;
 	struct pdu_adv *pdu_scan;
 	struct pdu_adv *pdu_adv;
-	u32_t ticks_slot_offset;
+	uint32_t ticks_slot_offset;
 	struct ll_adv_set *adv;
 	struct lll_adv *lll;
-	u32_t ret;
+	uint32_t ret;
 
 	if (!enable) {
 		return disable(handle);
@@ -466,15 +466,15 @@ u8_t ll_adv_enable(u8_t enable)
 	} else if (pdu_adv->type == PDU_ADV_TYPE_EXT_IND) {
 		struct pdu_adv_com_ext_adv *p;
 		struct ext_adv_hdr *h;
-		u8_t *ptr;
+		uint8_t *ptr;
 
 		p = (void *)&pdu_adv->adv_ext_ind;
 		h = (void *)p->ext_hdr_adi_adv_data;
-		ptr = (u8_t *)h + sizeof(*h);
+		ptr = (uint8_t *)h + sizeof(*h);
 
 		/* AdvA, fill here at enable */
 		if (h->adv_addr) {
-			u8_t *tx_addr = ll_addr_get(pdu_adv->tx_addr, NULL);
+			uint8_t *tx_addr = ll_addr_get(pdu_adv->tx_addr, NULL);
 
 			/* TODO: Privacy check */
 			if (pdu_adv->tx_addr && !mem_nz(tx_addr, BDADDR_SIZE)) {
@@ -514,7 +514,7 @@ u8_t ll_adv_enable(u8_t enable)
 #endif /* !CONFIG_BT_CTLR_PRIVACY */
 
 		if (!priv) {
-			u8_t *tx_addr = ll_addr_get(pdu_adv->tx_addr, NULL);
+			uint8_t *tx_addr = ll_addr_get(pdu_adv->tx_addr, NULL);
 
 			memcpy(&pdu_adv->adv_ind.addr[0], tx_addr,
 			       BDADDR_SIZE);
@@ -719,16 +719,16 @@ u8_t ll_adv_enable(u8_t enable)
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-	const u8_t phy = lll->phy_p;
+	const uint8_t phy = lll->phy_p;
 #else
 	/* Legacy ADV only supports LE_1M PHY */
-	const u8_t phy = 1;
+	const uint8_t phy = 1;
 #endif
 
 	/* For now we adv on all channels enabled in channel map */
-	u8_t ch_map = lll->chan_map;
-	const u8_t adv_chn_cnt = util_ones_count_get(&ch_map, sizeof(ch_map));
-	u32_t slot_us	= EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+	uint8_t ch_map = lll->chan_map;
+	const uint8_t adv_chn_cnt = util_ones_count_get(&ch_map, sizeof(ch_map));
+	uint32_t slot_us	= EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 
 	if (adv_chn_cnt == 0) {
 		/* ADV needs at least one channel */
@@ -741,20 +741,20 @@ u8_t ll_adv_enable(u8_t enable)
 	} else
 #endif
 	{
-		const u8_t adv_data_len = pdu_adv->len;
-		const u8_t rsp_data_len = pdu_scan->len;
-		const u8_t ll_hdr_size  = LL_HEADER_SIZE(phy);
-		u32_t adv_size		= ll_hdr_size + ADVA_SIZE;
-		const u8_t ll_hdr_us	= BYTES2US(ll_hdr_size, phy);
-		const u8_t rx_to_us	= EVENT_RX_TO_US(phy);
-		const u8_t rxtx_turn_us = EVENT_RX_TX_TURNAROUND(phy);
-		const u16_t conn_ind_us = ll_hdr_us +
+		const uint8_t adv_data_len = pdu_adv->len;
+		const uint8_t rsp_data_len = pdu_scan->len;
+		const uint8_t ll_hdr_size  = LL_HEADER_SIZE(phy);
+		uint32_t adv_size		= ll_hdr_size + ADVA_SIZE;
+		const uint8_t ll_hdr_us	= BYTES2US(ll_hdr_size, phy);
+		const uint8_t rx_to_us	= EVENT_RX_TO_US(phy);
+		const uint8_t rxtx_turn_us = EVENT_RX_TX_TURNAROUND(phy);
+		const uint16_t conn_ind_us = ll_hdr_us +
 					  BYTES2US(INITA_SIZE + ADVA_SIZE +
 						   LLDATA_SIZE, phy);
-		const u8_t scan_req_us  = ll_hdr_us +
+		const uint8_t scan_req_us  = ll_hdr_us +
 					  BYTES2US(SCANA_SIZE + ADVA_SIZE, phy);
 		/* ll_header plus AdvA and scan response data */
-		const u16_t scan_rsp_us  = ll_hdr_us +
+		const uint16_t scan_rsp_us  = ll_hdr_us +
 					  BYTES2US(ADVA_SIZE + rsp_data_len,
 						   phy);
 
@@ -787,10 +787,10 @@ u8_t ll_adv_enable(u8_t enable)
 		}
 	}
 
-	u16_t interval = adv->interval;
+	uint16_t interval = adv->interval;
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	if (lll->is_mesh) {
-		u16_t interval_min_us;
+		uint16_t interval_min_us;
 
 		_radio.advertiser.retry = retry;
 		_radio.advertiser.scan_delay_ms = scan_delay;
@@ -879,7 +879,7 @@ u8_t ll_adv_enable(u8_t enable)
 	} else
 #endif /* CONFIG_BT_PERIPHERAL */
 	{
-		const u32_t ticks_slot = adv->evt.ticks_slot +
+		const uint32_t ticks_slot = adv->evt.ticks_slot +
 					 ticks_slot_overhead;
 #if defined(CONFIG_BT_TICKER_EXT)
 		ll_adv_ticker_ext[handle].ticks_slot_window =
@@ -893,7 +893,7 @@ u8_t ll_adv_enable(u8_t enable)
 				   TICKER_USER_ID_THREAD,
 				   (TICKER_ID_ADV_BASE + handle),
 				   ticks_anchor, 0,
-				   HAL_TICKER_US_TO_TICKS((u64_t)interval *
+				   HAL_TICKER_US_TO_TICKS((uint64_t)interval *
 							  625),
 				   TICKER_NULL_REMAINDER,
 #if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE) && \
@@ -962,7 +962,7 @@ int ull_adv_init(void)
 
 int ull_adv_reset(void)
 {
-	u16_t handle;
+	uint16_t handle;
 	int err;
 
 	for (handle = 0U; handle < BT_CTLR_ADV_MAX; handle++) {
@@ -977,7 +977,7 @@ int ull_adv_reset(void)
 	return 0;
 }
 
-inline struct ll_adv_set *ull_adv_set_get(u16_t handle)
+inline struct ll_adv_set *ull_adv_set_get(uint16_t handle)
 {
 	if (handle >= BT_CTLR_ADV_MAX) {
 		return NULL;
@@ -986,17 +986,17 @@ inline struct ll_adv_set *ull_adv_set_get(u16_t handle)
 	return &ll_adv[handle];
 }
 
-inline u16_t ull_adv_handle_get(struct ll_adv_set *adv)
+inline uint16_t ull_adv_handle_get(struct ll_adv_set *adv)
 {
-	return ((u8_t *)adv - (u8_t *)ll_adv) / sizeof(*adv);
+	return ((uint8_t *)adv - (uint8_t *)ll_adv) / sizeof(*adv);
 }
 
-u16_t ull_adv_lll_handle_get(struct lll_adv *lll)
+uint16_t ull_adv_lll_handle_get(struct lll_adv *lll)
 {
 	return ull_adv_handle_get((void *)lll->hdr.parent);
 }
 
-inline struct ll_adv_set *ull_adv_is_enabled_get(u16_t handle)
+inline struct ll_adv_set *ull_adv_is_enabled_get(uint16_t handle)
 {
 	struct ll_adv_set *adv;
 
@@ -1008,7 +1008,7 @@ inline struct ll_adv_set *ull_adv_is_enabled_get(u16_t handle)
 	return adv;
 }
 
-u32_t ull_adv_is_enabled(u16_t handle)
+uint32_t ull_adv_is_enabled(uint16_t handle)
 {
 	struct ll_adv_set *adv;
 
@@ -1020,7 +1020,7 @@ u32_t ull_adv_is_enabled(u16_t handle)
 	return BIT(0);
 }
 
-u32_t ull_adv_filter_pol_get(u16_t handle)
+uint32_t ull_adv_filter_pol_get(uint16_t handle)
 {
 	struct ll_adv_set *adv;
 
@@ -1037,7 +1037,7 @@ static int init_reset(void)
 	return 0;
 }
 
-static inline struct ll_adv_set *is_disabled_get(u16_t handle)
+static inline struct ll_adv_set *is_disabled_get(uint16_t handle)
 {
 	struct ll_adv_set *adv;
 
@@ -1049,7 +1049,7 @@ static inline struct ll_adv_set *is_disabled_get(u16_t handle)
 	return adv;
 }
 
-static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
+static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t lazy,
 		      void *param)
 {
 	static memq_link_t link;
@@ -1057,8 +1057,8 @@ static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	static struct lll_prepare_param p;
 	struct ll_adv_set *adv = param;
 	struct lll_adv *lll;
-	u32_t ret;
-	u8_t ref;
+	uint32_t ret;
+	uint8_t ref;
 
 	DEBUG_RADIO_PREPARE_A(1);
 
@@ -1088,8 +1088,8 @@ static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	if (!lll->is_hdcd)
 #endif /* CONFIG_BT_PERIPHERAL */
 	{
-		u32_t random_delay;
-		u32_t ret;
+		uint32_t random_delay;
+		uint32_t ret;
 
 		lll_entropy_get(sizeof(random_delay), &random_delay);
 		random_delay %= ULL_ADV_RANDOM_DELAY;
@@ -1109,19 +1109,19 @@ static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	DEBUG_RADIO_PREPARE_A(1);
 }
 
-static void ticker_op_update_cb(u32_t status, void *param)
+static void ticker_op_update_cb(uint32_t status, void *param)
 {
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS ||
 		  param == ull_disable_mark_get());
 }
 
 #if defined(CONFIG_BT_PERIPHERAL)
-static void ticker_stop_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
+static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t lazy,
 			   void *param)
 {
 	struct ll_adv_set *adv = param;
-	u16_t handle;
-	u32_t ret;
+	uint16_t handle;
+	uint32_t ret;
 
 #if 0
 	/* NOTE: abort the event, so as to permit ticker_job execution, if
@@ -1148,13 +1148,13 @@ static void ticker_stop_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 		  (ret == TICKER_STATUS_BUSY));
 }
 
-static void ticker_op_stop_cb(u32_t status, void *param)
+static void ticker_op_stop_cb(uint32_t status, void *param)
 {
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, NULL};
 	struct ll_adv_set *adv;
 	struct ull_hdr *hdr;
-	u32_t ret;
+	uint32_t ret;
 
 	/* Ignore if race between thread and ULL */
 	if (status != TICKER_STATUS_SUCCESS) {
@@ -1242,12 +1242,12 @@ static void conn_release(struct ll_adv_set *adv)
 }
 #endif /* CONFIG_BT_PERIPHERAL */
 
-static inline u8_t disable(u16_t handle)
+static inline uint8_t disable(uint16_t handle)
 {
-	volatile u32_t ret_cb = TICKER_STATUS_BUSY;
+	volatile uint32_t ret_cb = TICKER_STATUS_BUSY;
 	struct ll_adv_set *adv;
 	void *mark;
-	u32_t ret;
+	uint32_t ret;
 
 	adv = ull_adv_is_enabled_get(handle);
 	if (!adv) {

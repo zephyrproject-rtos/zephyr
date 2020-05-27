@@ -56,8 +56,8 @@ LOG_MODULE_REGISTER(board_control, CONFIG_BOARD_NRF9160DK_LOG_LEVEL);
  */
 
 __packed struct pin_config {
-	u8_t pin;
-	u8_t val;
+	uint8_t pin;
+	uint8_t val;
 };
 
 /* The following tables specify the configuration of each pin based on the
@@ -183,7 +183,7 @@ static int pins_configure(struct device *port, const struct pin_config cfg[],
 		 * so configure the pin as output with the proper initial
 		 * state.
 		 */
-		u32_t flag = (cfg[i].val ? GPIO_OUTPUT_LOW
+		uint32_t flag = (cfg[i].val ? GPIO_OUTPUT_LOW
 					 : GPIO_OUTPUT_HIGH);
 		err = gpio_pin_configure(port, cfg[i].pin, flag);
 		if (err) {
@@ -198,9 +198,9 @@ static int pins_configure(struct device *port, const struct pin_config cfg[],
 }
 
 static void chip_reset(struct device *gpio,
-		       struct gpio_callback *cb, u32_t pins)
+		       struct gpio_callback *cb, uint32_t pins)
 {
-	const u32_t stamp = k_cycle_get_32();
+	const uint32_t stamp = k_cycle_get_32();
 
 	printk("GPIO reset line asserted, device reset.\n");
 	printk("Bye @ cycle32 %u\n", stamp);
@@ -208,7 +208,7 @@ static void chip_reset(struct device *gpio,
 	NVIC_SystemReset();
 }
 
-static void reset_pin_wait_low(struct device *port, u32_t pin)
+static void reset_pin_wait_low(struct device *port, uint32_t pin)
 {
 	int val;
 
@@ -221,7 +221,7 @@ static void reset_pin_wait_low(struct device *port, u32_t pin)
 static int reset_pin_configure(struct device *p0, struct device *p1)
 {
 	int err;
-	u32_t pin = 0;
+	uint32_t pin = 0;
 	struct device *port = NULL;
 
 	static struct gpio_callback gpio_ctx;

@@ -13,7 +13,7 @@ static struct device *flash_dev;
 static size_t ot_flash_size;
 static size_t ot_flash_offset;
 
-static inline u32_t mapAddress(u32_t aAddress)
+static inline uint32_t mapAddress(uint32_t aAddress)
 {
 	return aAddress + ot_flash_offset;
 }
@@ -54,16 +54,16 @@ otError utilsFlashInit(void)
 	return OT_ERROR_NONE;
 }
 
-u32_t utilsFlashGetSize(void)
+uint32_t utilsFlashGetSize(void)
 {
 	return ot_flash_size;
 }
 
-otError utilsFlashErasePage(u32_t aAddress)
+otError utilsFlashErasePage(uint32_t aAddress)
 {
 	otError err = OT_ERROR_NONE;
 	struct flash_pages_info info;
-	u32_t address;
+	uint32_t address;
 
 	address = mapAddress(aAddress);
 	if (flash_get_page_info_by_offs(flash_dev, address, &info)) {
@@ -83,16 +83,16 @@ otError utilsFlashErasePage(u32_t aAddress)
 	return err;
 }
 
-otError utilsFlashStatusWait(u32_t aTimeout)
+otError utilsFlashStatusWait(uint32_t aTimeout)
 {
 	ARG_UNUSED(aTimeout);
 
 	return OT_ERROR_NONE;
 }
 
-u32_t utilsFlashWrite(u32_t aAddress, uint8_t *aData, u32_t aSize)
+uint32_t utilsFlashWrite(uint32_t aAddress, uint8_t *aData, uint32_t aSize)
 {
-	u32_t index = 0U;
+	uint32_t index = 0U;
 
 	flash_write_protection_set(flash_dev, false);
 	if (!flash_write(flash_dev, mapAddress(aAddress), aData, aSize)) {
@@ -103,9 +103,9 @@ u32_t utilsFlashWrite(u32_t aAddress, uint8_t *aData, u32_t aSize)
 	return index;
 }
 
-u32_t utilsFlashRead(u32_t aAddress, uint8_t *aData, u32_t aSize)
+uint32_t utilsFlashRead(uint32_t aAddress, uint8_t *aData, uint32_t aSize)
 {
-	u32_t index = 0U;
+	uint32_t index = 0U;
 
 	if (!flash_read(flash_dev, mapAddress(aAddress), aData, aSize)) {
 		index = aSize;

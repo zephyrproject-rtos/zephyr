@@ -55,7 +55,7 @@ static struct k_spinlock obj_lock;         /* kobj struct data */
 #define MAX_THREAD_BITS		(CONFIG_MAX_THREAD_BYTES * 8)
 
 #ifdef CONFIG_DYNAMIC_OBJECTS
-extern u8_t _thread_idx_map[CONFIG_MAX_THREAD_BYTES];
+extern uint8_t _thread_idx_map[CONFIG_MAX_THREAD_BYTES];
 #endif
 
 static void clear_perms_cb(struct z_object *ko, void *ctx_ptr);
@@ -100,7 +100,7 @@ struct perm_ctx {
  */
 BUILD_ASSERT(CONFIG_PRIVILEGED_STACK_SIZE % Z_PRIVILEGE_STACK_ALIGN == 0);
 
-u8_t *z_priv_stack_find(k_thread_stack_t *stack)
+uint8_t *z_priv_stack_find(k_thread_stack_t *stack)
 {
 	struct z_object *obj = z_object_find(stack);
 
@@ -117,7 +117,7 @@ struct dyn_obj {
 	struct z_object kobj;
 	sys_dnode_t obj_list;
 	struct rbnode node; /* must be immediately before data member */
-	u8_t data[]; /* The object itself */
+	uint8_t data[]; /* The object itself */
 };
 
 extern struct z_object *z_object_gperf_find(void *obj);

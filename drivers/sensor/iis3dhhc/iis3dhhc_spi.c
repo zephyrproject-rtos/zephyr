@@ -28,11 +28,11 @@ static struct spi_config iis3dhhc_spi_conf = {
 	.cs        = NULL,
 };
 
-static int iis3dhhc_spi_read(struct iis3dhhc_data *ctx, u8_t reg,
-			    u8_t *data, u16_t len)
+static int iis3dhhc_spi_read(struct iis3dhhc_data *ctx, uint8_t reg,
+			    uint8_t *data, uint16_t len)
 {
 	struct spi_config *spi_cfg = &iis3dhhc_spi_conf;
-	u8_t buffer_tx[2] = { reg | IIS3DHHC_SPI_READ, 0 };
+	uint8_t buffer_tx[2] = { reg | IIS3DHHC_SPI_READ, 0 };
 	const struct spi_buf tx_buf = {
 			.buf = buffer_tx,
 			.len = 2,
@@ -63,11 +63,11 @@ static int iis3dhhc_spi_read(struct iis3dhhc_data *ctx, u8_t reg,
 	return 0;
 }
 
-static int iis3dhhc_spi_write(struct iis3dhhc_data *ctx, u8_t reg,
-			     u8_t *data, u16_t len)
+static int iis3dhhc_spi_write(struct iis3dhhc_data *ctx, uint8_t reg,
+			     uint8_t *data, uint16_t len)
 {
 	struct spi_config *spi_cfg = &iis3dhhc_spi_conf;
-	u8_t buffer_tx[1] = { reg & ~IIS3DHHC_SPI_READ };
+	uint8_t buffer_tx[1] = { reg & ~IIS3DHHC_SPI_READ };
 	const struct spi_buf tx_buf[2] = {
 		{
 			.buf = buffer_tx,

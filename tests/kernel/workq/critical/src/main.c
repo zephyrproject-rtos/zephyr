@@ -38,8 +38,8 @@
 #endif
 
 
-static u32_t critical_var;
-static u32_t alt_thread_iterations;
+static uint32_t critical_var;
+static uint32_t alt_thread_iterations;
 
 static struct k_work_q offload_work_q;
 static K_THREAD_STACK_DEFINE(offload_work_q_stack,
@@ -64,7 +64,7 @@ K_SEM_DEFINE(TEST_SEM, 0, UINT_MAX);
  */
 void critical_rtn(struct k_work *unused)
 {
-	volatile u32_t x;
+	volatile uint32_t x;
 
 	ARG_UNUSED(unused);
 
@@ -80,20 +80,20 @@ void critical_rtn(struct k_work *unused)
  *
  * @return number of critical section calls made by a thread
  */
-u32_t critical_loop(const char *tag, u32_t count)
+uint32_t critical_loop(const char *tag, uint32_t count)
 {
-	s64_t now;
-	s64_t last;
-	s64_t mseconds;
+	int64_t now;
+	int64_t last;
+	int64_t mseconds;
 
 	last = mseconds = k_uptime_get();
-	TC_PRINT("Start %s at %u\n", tag, (u32_t)last);
+	TC_PRINT("Start %s at %u\n", tag, (uint32_t)last);
 	while (((now = k_uptime_get())) < mseconds + NUM_MILLISECONDS) {
 		struct k_work work_item;
 
 		if (now < last) {
 			TC_PRINT("Time went backwards: %u < %u\n",
-				 (u32_t)now, (u32_t)last);
+				 (uint32_t)now, (uint32_t)last);
 		}
 		last = now;
 
@@ -109,7 +109,7 @@ u32_t critical_loop(const char *tag, u32_t count)
 		 */
 #endif
 	}
-	TC_PRINT("End %s at %u\n", tag, (u32_t)now);
+	TC_PRINT("End %s at %u\n", tag, (uint32_t)now);
 
 	return count;
 }
@@ -148,7 +148,7 @@ void alternate_thread(void *arg1, void *arg2, void *arg3)
 
 void regression_thread(void *arg1, void *arg2, void *arg3)
 {
-	u32_t ncalls = 0U;
+	uint32_t ncalls = 0U;
 
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);

@@ -71,7 +71,7 @@ static int write(const struct shell_transport *transport,
 		 const void *data, size_t length, size_t *cnt)
 {
 	struct shell_rtt *sh_rtt = (struct shell_rtt *)transport->ctx;
-	const u8_t *data8 = (const u8_t *)data;
+	const uint8_t *data8 = (const uint8_t *)data;
 
 	if (rtt_blocking) {
 		*cnt = SEGGER_RTT_WriteNoLock(0, data8, length);
@@ -107,7 +107,7 @@ static int enable_shell_rtt(struct device *arg)
 {
 	ARG_UNUSED(arg);
 	bool log_backend = CONFIG_SHELL_RTT_INIT_LOG_LEVEL > 0;
-	u32_t level = (CONFIG_SHELL_RTT_INIT_LOG_LEVEL > LOG_LEVEL_DBG) ?
+	uint32_t level = (CONFIG_SHELL_RTT_INIT_LOG_LEVEL > LOG_LEVEL_DBG) ?
 		      CONFIG_LOG_MAX_LEVEL : CONFIG_SHELL_RTT_INIT_LOG_LEVEL;
 
 	shell_init(&shell_rtt, NULL, true, log_backend, level);

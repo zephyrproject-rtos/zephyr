@@ -57,7 +57,7 @@ static int lis2mdl_set_hard_iron(struct device *dev, enum sensor_channel chan,
 				   const struct sensor_value *val)
 {
 	struct lis2mdl_data *lis2mdl = dev->driver_data;
-	u8_t i;
+	uint8_t i;
 	union axis3bit16_t offset;
 
 	for (i = 0U; i < 3; i++) {
@@ -72,9 +72,9 @@ static void lis2mdl_channel_get_mag(struct device *dev,
 				      enum sensor_channel chan,
 				      struct sensor_value *val)
 {
-	s32_t cval;
+	int32_t cval;
 	int i;
-	u8_t ofs_start, ofs_stop;
+	uint8_t ofs_start, ofs_stop;
 	struct lis2mdl_data *lis2mdl = dev->driver_data;
 	struct sensor_value *pval = val;
 
@@ -193,7 +193,7 @@ static int lis2mdl_sample_fetch_temp(struct device *dev)
 {
 	struct lis2mdl_data *lis2mdl = dev->driver_data;
 	union axis1bit16_t raw_temp;
-	s32_t temp;
+	int32_t temp;
 
 	/* fetch raw temperature sample */
 	if (lis2mdl_temperature_raw_get(lis2mdl->ctx, raw_temp.u8bit) < 0) {
@@ -289,7 +289,7 @@ static const struct lis2mdl_config lis2mdl_dev_config = {
 static int lis2mdl_init(struct device *dev)
 {
 	struct lis2mdl_data *lis2mdl = dev->driver_data;
-	u8_t wai;
+	uint8_t wai;
 
 	if (lis2mdl_init_interface(dev)) {
 		return -EINVAL;

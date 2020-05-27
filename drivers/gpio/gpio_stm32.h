@@ -206,7 +206,7 @@ struct gpio_stm32_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
 	/* port base address */
-	u32_t *base;
+	uint32_t *base;
 	/* IO port */
 	int port;
 	struct stm32_pclken pclken;
@@ -219,7 +219,7 @@ struct gpio_stm32_data {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_data common;
 	/* Enabled INT pins generating a cb */
-	u32_t cb_pins;
+	uint32_t cb_pins;
 	/* user ISR cb */
 	sys_slist_t cb;
 };
@@ -232,6 +232,6 @@ struct gpio_stm32_data {
  * @param func GPIO mode
  * @param altf Alternate function
  */
-int gpio_stm32_configure(u32_t *base_addr, int pin, int conf, int altf);
+int gpio_stm32_configure(uint32_t *base_addr, int pin, int conf, int altf);
 
 #endif /* ZEPHYR_DRIVERS_GPIO_GPIO_STM32_H_ */

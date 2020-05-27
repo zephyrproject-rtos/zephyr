@@ -93,7 +93,7 @@ static inline int z_vrfy_k_mutex_init(struct k_mutex *mutex)
 #include <syscalls/k_mutex_init_mrsh.c>
 #endif
 
-static s32_t new_prio_for_inheritance(s32_t target, s32_t limit)
+static int32_t new_prio_for_inheritance(int32_t target, int32_t limit)
 {
 	int new_prio = z_is_prio_higher(target, limit) ? target : limit;
 
@@ -102,7 +102,7 @@ static s32_t new_prio_for_inheritance(s32_t target, s32_t limit)
 	return new_prio;
 }
 
-static bool adjust_owner_prio(struct k_mutex *mutex, s32_t new_prio)
+static bool adjust_owner_prio(struct k_mutex *mutex, int32_t new_prio)
 {
 	if (mutex->owner->base.prio != new_prio) {
 

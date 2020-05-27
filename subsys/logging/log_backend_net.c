@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(log_backend_net, CONFIG_LOG_DEFAULT_LEVEL);
 
 static char hostname[MAX_HOSTNAME_LEN + 1];
 
-static u8_t output_buf[CONFIG_LOG_BACKEND_NET_MAX_BUF_SIZE];
+static uint8_t output_buf[CONFIG_LOG_BACKEND_NET_MAX_BUF_SIZE];
 static bool net_init_done;
 struct sockaddr server_addr;
 static bool panic_mode;
@@ -54,7 +54,7 @@ struct net_buf_pool *get_data_pool(void)
 	return &syslog_tx_bufs;
 }
 
-static int line_out(u8_t *data, size_t length, void *output_ctx)
+static int line_out(uint8_t *data, size_t length, void *output_ctx)
 {
 	struct net_context *ctx = (struct net_context *)output_ctx;
 	int ret = -ENOMEM;
@@ -215,14 +215,14 @@ static void panic(struct log_backend const *const backend)
 }
 
 static void sync_string(const struct log_backend *const backend,
-		     struct log_msg_ids src_level, u32_t timestamp,
+		     struct log_msg_ids src_level, uint32_t timestamp,
 		     const char *fmt, va_list ap)
 {
-	u32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_FORMAT_SYSLOG |
+	uint32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_FORMAT_SYSLOG |
 		LOG_OUTPUT_FLAG_TIMESTAMP |
 		(IS_ENABLED(CONFIG_LOG_BACKEND_NET_SYST_ENABLE) ?
 		LOG_OUTPUT_FLAG_FORMAT_SYST : 0);
-	u32_t key;
+	uint32_t key;
 
 	if (!net_init_done && do_net_init() == 0) {
 		net_init_done = true;

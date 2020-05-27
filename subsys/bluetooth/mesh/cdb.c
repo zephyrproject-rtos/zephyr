@@ -40,10 +40,10 @@ struct bt_mesh_cdb bt_mesh_cdb = {
  * free for use. When a conflict is found, next will be set to the next address
  * available after the conflicting range and -EAGAIN will be returned.
  */
-static int addr_is_free(u16_t addr_start, u8_t num_elem, u16_t *next)
+static int addr_is_free(uint16_t addr_start, uint8_t num_elem, uint16_t *next)
 {
-	u16_t addr_end = addr_start + num_elem - 1;
-	u16_t other_start, other_end;
+	uint16_t addr_end = addr_start + num_elem - 1;
+	uint16_t other_start, other_end;
 	int i;
 
 	if (!BT_MESH_ADDR_IS_UNICAST(addr_start) ||
@@ -83,9 +83,9 @@ static int addr_is_free(u16_t addr_start, u8_t num_elem, u16_t *next)
  *       through the array of nodes N+2 times. A more effective algorithm
  *       could be used if the nodes were stored in a sorted list.
  */
-static u16_t find_lowest_free_addr(u8_t num_elem)
+static uint16_t find_lowest_free_addr(uint8_t num_elem)
 {
-	u16_t addr = 1, next;
+	uint16_t addr = 1, next;
 	int err, i;
 
 	/*
@@ -108,7 +108,7 @@ static u16_t find_lowest_free_addr(u8_t num_elem)
 	return addr;
 }
 
-int bt_mesh_cdb_create(const u8_t key[16])
+int bt_mesh_cdb_create(const uint8_t key[16])
 {
 	struct bt_mesh_cdb_subnet *sub;
 
@@ -162,7 +162,7 @@ void bt_mesh_cdb_clear(void)
 	}
 }
 
-void bt_mesh_cdb_iv_update(u32_t iv_index, bool iv_update)
+void bt_mesh_cdb_iv_update(uint32_t iv_index, bool iv_update)
 {
 	BT_DBG("Updating IV index to %d\n", iv_index);
 
@@ -176,7 +176,7 @@ void bt_mesh_cdb_iv_update(u32_t iv_index, bool iv_update)
 	}
 }
 
-struct bt_mesh_cdb_subnet *bt_mesh_cdb_subnet_alloc(u16_t net_idx)
+struct bt_mesh_cdb_subnet *bt_mesh_cdb_subnet_alloc(uint16_t net_idx)
 {
 	struct bt_mesh_cdb_subnet *sub;
 	int i;
@@ -212,7 +212,7 @@ void bt_mesh_cdb_subnet_del(struct bt_mesh_cdb_subnet *sub, bool store)
 	memset(sub->keys, 0, sizeof(sub->keys));
 }
 
-struct bt_mesh_cdb_subnet *bt_mesh_cdb_subnet_get(u16_t net_idx)
+struct bt_mesh_cdb_subnet *bt_mesh_cdb_subnet_get(uint16_t net_idx)
 {
 	int i;
 
@@ -230,9 +230,9 @@ void bt_mesh_cdb_subnet_store(const struct bt_mesh_cdb_subnet *sub)
 	bt_mesh_store_cdb_subnet(sub);
 }
 
-u8_t bt_mesh_cdb_subnet_flags(const struct bt_mesh_cdb_subnet *sub)
+uint8_t bt_mesh_cdb_subnet_flags(const struct bt_mesh_cdb_subnet *sub)
 {
-	u8_t flags = 0x00;
+	uint8_t flags = 0x00;
 
 	if (sub && sub->kr_flag) {
 		flags |= BT_MESH_NET_FLAG_KR;
@@ -245,8 +245,8 @@ u8_t bt_mesh_cdb_subnet_flags(const struct bt_mesh_cdb_subnet *sub)
 	return flags;
 }
 
-struct bt_mesh_cdb_node *bt_mesh_cdb_node_alloc(const u8_t uuid[16], u16_t addr,
-						u8_t num_elem, u16_t net_idx)
+struct bt_mesh_cdb_node *bt_mesh_cdb_node_alloc(const uint8_t uuid[16], uint16_t addr,
+						uint8_t num_elem, uint16_t net_idx)
 {
 	int i;
 
@@ -289,7 +289,7 @@ void bt_mesh_cdb_node_del(struct bt_mesh_cdb_node *node, bool store)
 	memset(node->dev_key, 0, sizeof(node->dev_key));
 }
 
-struct bt_mesh_cdb_node *bt_mesh_cdb_node_get(u16_t addr)
+struct bt_mesh_cdb_node *bt_mesh_cdb_node_get(uint16_t addr)
 {
 	int i;
 
@@ -326,8 +326,8 @@ void bt_mesh_cdb_node_foreach(bt_mesh_cdb_node_func_t func, void *user_data)
 	}
 }
 
-struct bt_mesh_cdb_app_key *bt_mesh_cdb_app_key_alloc(u16_t net_idx,
-						      u16_t app_idx)
+struct bt_mesh_cdb_app_key *bt_mesh_cdb_app_key_alloc(uint16_t net_idx,
+						      uint16_t app_idx)
 {
 	struct bt_mesh_cdb_app_key *key;
 	int i;
@@ -360,7 +360,7 @@ void bt_mesh_cdb_app_key_del(struct bt_mesh_cdb_app_key *key, bool store)
 	memset(key->keys, 0, sizeof(key->keys));
 }
 
-struct bt_mesh_cdb_app_key *bt_mesh_cdb_app_key_get(u16_t app_idx)
+struct bt_mesh_cdb_app_key *bt_mesh_cdb_app_key_get(uint16_t app_idx)
 {
 	int i;
 

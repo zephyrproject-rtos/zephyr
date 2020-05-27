@@ -47,7 +47,7 @@ static void print_temp_data(struct device *bmg160)
 
 static void test_polling_mode(struct device *bmg160)
 {
-	s32_t remaining_test_time = MAX_TEST_TIME;
+	int32_t remaining_test_time = MAX_TEST_TIME;
 
 	do {
 		if (sensor_sample_fetch(bmg160) < 0) {
@@ -82,7 +82,7 @@ static void trigger_handler(struct device *bmg160, struct sensor_trigger *trigge
 
 static void test_trigger_mode(struct device *bmg160)
 {
-	s32_t remaining_test_time = MAX_TEST_TIME;
+	int32_t remaining_test_time = MAX_TEST_TIME;
 	struct sensor_trigger trig;
 	struct sensor_value attr;
 

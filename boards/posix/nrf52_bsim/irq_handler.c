@@ -122,7 +122,7 @@ static inline void vector_to_irq(int irq_nbr, int *may_swap)
  */
 void posix_irq_handler(void)
 {
-	u64_t irq_lock;
+	uint64_t irq_lock;
 	int irq_nbr;
 	static int may_swap;
 

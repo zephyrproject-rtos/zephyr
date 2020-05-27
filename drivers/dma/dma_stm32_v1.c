@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(dma_stm32_v1);
 /* DMA burst length */
 #define BURST_TRANS_LENGTH_1			0
 
-u32_t table_ll_stream[] = {
+uint32_t table_ll_stream[] = {
 	LL_DMA_STREAM_0,
 	LL_DMA_STREAM_1,
 	LL_DMA_STREAM_2,
@@ -29,7 +29,7 @@ u32_t table_ll_stream[] = {
 	LL_DMA_STREAM_7,
 };
 
-u32_t table_ll_channel[] = {
+uint32_t table_ll_channel[] = {
 	LL_DMA_CHANNEL_0,
 	LL_DMA_CHANNEL_1,
 	LL_DMA_CHANNEL_2,
@@ -62,7 +62,7 @@ void (*func_ll_clear_tc[])(DMA_TypeDef *DMAx) = {
 	LL_DMA_ClearFlag_TC7,
 };
 
-u32_t (*func_ll_is_active_ht[])(DMA_TypeDef *DMAx) = {
+uint32_t (*func_ll_is_active_ht[])(DMA_TypeDef *DMAx) = {
 	LL_DMA_IsActiveFlag_HT0,
 	LL_DMA_IsActiveFlag_HT1,
 	LL_DMA_IsActiveFlag_HT2,
@@ -73,7 +73,7 @@ u32_t (*func_ll_is_active_ht[])(DMA_TypeDef *DMAx) = {
 	LL_DMA_IsActiveFlag_HT7,
 };
 
-u32_t (*func_ll_is_active_tc[])(DMA_TypeDef *DMAx) = {
+uint32_t (*func_ll_is_active_tc[])(DMA_TypeDef *DMAx) = {
 	LL_DMA_IsActiveFlag_TC0,
 	LL_DMA_IsActiveFlag_TC1,
 	LL_DMA_IsActiveFlag_TC2,
@@ -117,7 +117,7 @@ static void (*func_ll_clear_fe[])(DMA_TypeDef *DMAx) = {
 	LL_DMA_ClearFlag_FE7,
 };
 
-static u32_t (*func_ll_is_active_te[])(DMA_TypeDef *DMAx) = {
+static uint32_t (*func_ll_is_active_te[])(DMA_TypeDef *DMAx) = {
 	LL_DMA_IsActiveFlag_TE0,
 	LL_DMA_IsActiveFlag_TE1,
 	LL_DMA_IsActiveFlag_TE2,
@@ -128,7 +128,7 @@ static u32_t (*func_ll_is_active_te[])(DMA_TypeDef *DMAx) = {
 	LL_DMA_IsActiveFlag_TE7,
 };
 
-static u32_t (*func_ll_is_active_dme[])(DMA_TypeDef *DMAx) = {
+static uint32_t (*func_ll_is_active_dme[])(DMA_TypeDef *DMAx) = {
 	LL_DMA_IsActiveFlag_DME0,
 	LL_DMA_IsActiveFlag_DME1,
 	LL_DMA_IsActiveFlag_DME2,
@@ -139,7 +139,7 @@ static u32_t (*func_ll_is_active_dme[])(DMA_TypeDef *DMAx) = {
 	LL_DMA_IsActiveFlag_DME7,
 };
 
-static u32_t (*func_ll_is_active_fe[])(DMA_TypeDef *DMAx) = {
+static uint32_t (*func_ll_is_active_fe[])(DMA_TypeDef *DMAx) = {
 	LL_DMA_IsActiveFlag_FE0,
 	LL_DMA_IsActiveFlag_FE1,
 	LL_DMA_IsActiveFlag_FE2,
@@ -150,7 +150,7 @@ static u32_t (*func_ll_is_active_fe[])(DMA_TypeDef *DMAx) = {
 	LL_DMA_IsActiveFlag_FE7,
 };
 
-void stm32_dma_dump_stream_irq(DMA_TypeDef *dma, u32_t id)
+void stm32_dma_dump_stream_irq(DMA_TypeDef *dma, uint32_t id)
 {
 	LOG_INF("tc: %d, ht: %d, te: %d, dme: %d, fe: %d",
 		func_ll_is_active_tc[id](dma),
@@ -160,14 +160,14 @@ void stm32_dma_dump_stream_irq(DMA_TypeDef *dma, u32_t id)
 		func_ll_is_active_fe[id](dma));
 }
 
-void stm32_dma_clear_stream_irq(DMA_TypeDef *dma, u32_t id)
+void stm32_dma_clear_stream_irq(DMA_TypeDef *dma, uint32_t id)
 {
 	func_ll_clear_te[id](dma);
 	func_ll_clear_dme[id](dma);
 	func_ll_clear_fe[id](dma);
 }
 
-bool stm32_dma_is_irq_happened(DMA_TypeDef *dma, u32_t id)
+bool stm32_dma_is_irq_happened(DMA_TypeDef *dma, uint32_t id)
 {
 	if (func_ll_is_active_fe[id](dma) && LL_DMA_IsEnabledIT_FE(dma, id)) {
 		return true;
@@ -176,7 +176,7 @@ bool stm32_dma_is_irq_happened(DMA_TypeDef *dma, u32_t id)
 	return false;
 }
 
-bool stm32_dma_is_unexpected_irq_happened(DMA_TypeDef *dma, u32_t id)
+bool stm32_dma_is_unexpected_irq_happened(DMA_TypeDef *dma, uint32_t id)
 {
 	if (func_ll_is_active_fe[id](dma) && LL_DMA_IsEnabledIT_FE(dma, id)) {
 		LOG_ERR("FiFo error.");
@@ -189,12 +189,12 @@ bool stm32_dma_is_unexpected_irq_happened(DMA_TypeDef *dma, u32_t id)
 	return false;
 }
 
-void stm32_dma_enable_stream(DMA_TypeDef *dma, u32_t id)
+void stm32_dma_enable_stream(DMA_TypeDef *dma, uint32_t id)
 {
 	LL_DMA_EnableStream(dma, table_ll_stream[id]);
 }
 
-int stm32_dma_disable_stream(DMA_TypeDef *dma, u32_t id)
+int stm32_dma_disable_stream(DMA_TypeDef *dma, uint32_t id)
 {
 
 	if (!LL_DMA_IsEnabledStream(dma, table_ll_stream[id])) {
@@ -205,20 +205,20 @@ int stm32_dma_disable_stream(DMA_TypeDef *dma, u32_t id)
 	return -EAGAIN;
 }
 
-void stm32_dma_disable_fifo_irq(DMA_TypeDef *dma, u32_t id)
+void stm32_dma_disable_fifo_irq(DMA_TypeDef *dma, uint32_t id)
 {
 	LL_DMA_DisableIT_FE(dma, table_ll_stream[id]);
 }
 
-void stm32_dma_config_channel_function(DMA_TypeDef *dma, u32_t id, u32_t slot)
+void stm32_dma_config_channel_function(DMA_TypeDef *dma, uint32_t id, uint32_t slot)
 {
 	LL_DMA_SetChannelSelection(dma, table_ll_stream[id],
 			table_ll_channel[slot]);
 }
 
-u32_t stm32_dma_get_mburst(struct dma_config *config, bool source_periph)
+uint32_t stm32_dma_get_mburst(struct dma_config *config, bool source_periph)
 {
-	u32_t memory_burst;
+	uint32_t memory_burst;
 
 	if (source_periph) {
 		memory_burst = config->dest_burst_length;
@@ -242,9 +242,9 @@ u32_t stm32_dma_get_mburst(struct dma_config *config, bool source_periph)
 	}
 }
 
-u32_t stm32_dma_get_pburst(struct dma_config *config, bool source_periph)
+uint32_t stm32_dma_get_pburst(struct dma_config *config, bool source_periph)
 {
-	u32_t periph_burst;
+	uint32_t periph_burst;
 
 	if (source_periph) {
 		periph_burst = config->source_burst_length;
@@ -278,9 +278,9 @@ u32_t stm32_dma_get_pburst(struct dma_config *config, bool source_periph)
  */
 bool stm32_dma_check_fifo_mburst(LL_DMA_InitTypeDef *DMAx)
 {
-	u32_t msize = DMAx->MemoryOrM2MDstDataSize;
-	u32_t fifo_level = DMAx->FIFOThreshold;
-	u32_t mburst = DMAx->MemBurst;
+	uint32_t msize = DMAx->MemoryOrM2MDstDataSize;
+	uint32_t fifo_level = DMAx->FIFOThreshold;
+	uint32_t mburst = DMAx->MemBurst;
 
 	switch (msize) {
 	case LL_DMA_MDATAALIGN_BYTE:
@@ -331,7 +331,7 @@ bool stm32_dma_check_fifo_mburst(LL_DMA_InitTypeDef *DMAx)
 	}
 }
 
-u32_t stm32_dma_get_fifo_threshold(u16_t fifo_mode_control)
+uint32_t stm32_dma_get_fifo_threshold(uint16_t fifo_mode_control)
 {
 	switch (fifo_mode_control) {
 	case 0:

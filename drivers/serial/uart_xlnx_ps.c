@@ -134,15 +134,15 @@
 /** Device configuration structure */
 struct uart_xlnx_ps_dev_config {
 	struct uart_device_config uconf;
-	u32_t baud_rate;
+	uint32_t baud_rate;
 };
 
 /** Device data structure */
 struct uart_xlnx_ps_dev_data_t {
-	u32_t parity;
-	u32_t stopbits;
-	u32_t databits;
-	u32_t flowctrl;
+	uint32_t parity;
+	uint32_t stopbits;
+	uint32_t databits;
+	uint32_t flowctrl;
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t user_cb;
@@ -172,9 +172,9 @@ static const struct uart_driver_api uart_xlnx_ps_driver_api;
  *
  * @param reg_base Base address of the respective UART's register space.
  */
-static void xlnx_ps_disable_uart(u32_t reg_base)
+static void xlnx_ps_disable_uart(uint32_t reg_base)
 {
-	u32_t regval;
+	uint32_t regval;
 
 	regval = sys_read32(reg_base + XUARTPS_CR_OFFSET);
 	regval &= (~XUARTPS_CR_EN_DIS_MASK);
@@ -197,9 +197,9 @@ static void xlnx_ps_disable_uart(u32_t reg_base)
  *
  * @param reg_base Base address of the respective UART's register space.
  */
-static void xlnx_ps_enable_uart(u32_t reg_base)
+static void xlnx_ps_enable_uart(uint32_t reg_base)
 {
-	u32_t regval;
+	uint32_t regval;
 
 	regval = sys_read32(reg_base + XUARTPS_CR_OFFSET);
 	regval &= (~XUARTPS_CR_EN_DIS_MASK);
@@ -222,13 +222,13 @@ static void xlnx_ps_enable_uart(u32_t reg_base)
  * @param dev UART device struct
  * @param baud_rate The desired baud rate as a decimal value
  */
-static void set_baudrate(struct device *dev, u32_t baud_rate)
+static void set_baudrate(struct device *dev, uint32_t baud_rate)
 {
 	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
-	u32_t divisor, generator;
-	u32_t baud;
-	u32_t clk_freq;
-	u32_t reg_base;
+	uint32_t divisor, generator;
+	uint32_t baud;
+	uint32_t clk_freq;
+	uint32_t reg_base;
 
 	baud = dev_cfg->baud_rate;
 	clk_freq = dev_cfg->uconf.sys_clk_freq;
@@ -241,7 +241,7 @@ static void set_baudrate(struct device *dev, u32_t baud_rate)
 		}
 
 		for (divisor = 4; divisor < 255; divisor++) {
-			u32_t tmpbaud, bauderr;
+			uint32_t tmpbaud, bauderr;
 
 			generator = clk_freq / (baud * (divisor + 1));
 			if (generator < 2 || generator > 65535) {
@@ -284,8 +284,8 @@ static void set_baudrate(struct device *dev, u32_t baud_rate)
 static int uart_xlnx_ps_init(struct device *dev)
 {
 	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
-	u32_t reg_val;
-	u32_t reg_base;
+	uint32_t reg_val;
+	uint32_t reg_base;
 
 	reg_base = dev_cfg->uconf.regs;
 
@@ -338,8 +338,8 @@ static int uart_xlnx_ps_init(struct device *dev)
 static int uart_xlnx_ps_poll_in(struct device *dev, unsigned char *c)
 {
 	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
-	u32_t reg_val;
-	u32_t reg_base;
+	uint32_t reg_val;
+	uint32_t reg_base;
 
 	reg_base = dev_cfg->uconf.regs;
 	reg_val = sys_read32(reg_base + XUARTPS_SR_OFFSET);
@@ -369,8 +369,8 @@ static int uart_xlnx_ps_poll_in(struct device *dev, unsigned char *c)
 static void uart_xlnx_ps_poll_out(struct device *dev, unsigned char c)
 {
 	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
-	u32_t reg_val;
-	u32_t reg_base;
+	uint32_t reg_val;
+	uint32_t reg_base;
 
 	reg_base = dev_cfg->uconf.regs;
 	/* wait for transmitter to ready to accept a character */
@@ -378,7 +378,7 @@ static void uart_xlnx_ps_poll_out(struct device *dev, unsigned char c)
 		reg_val = sys_read32(reg_base + XUARTPS_SR_OFFSET);
 	} while ((reg_val & XUARTPS_SR_TXEMPTY) == 0);
 
-	sys_write32((u32_t)(c & 0xFF), reg_base + XUARTPS_FIFO_OFFSET);
+	sys_write32((uint32_t)(c & 0xFF), reg_base + XUARTPS_FIFO_OFFSET);
 
 	do {
 		reg_val = sys_read32(reg_base + XUARTPS_SR_OFFSET);
@@ -405,7 +405,7 @@ static void uart_xlnx_ps_poll_out(struct device *dev, unsigned char c)
  *         by the hardware.
  */
 static inline bool uart_xlnx_ps_cfg2ll_parity(
-	u32_t *mode_reg,
+	uint32_t *mode_reg,
 	enum uart_config_parity parity)
 {
 	/*
@@ -459,7 +459,7 @@ static inline bool uart_xlnx_ps_cfg2ll_parity(
  *         stop bit configuration being provided by the caller.
  */
 static inline bool uart_xlnx_ps_cfg2ll_stopbits(
-	u32_t *mode_reg,
+	uint32_t *mode_reg,
 	enum uart_config_stop_bits stopbits)
 {
 	/*
@@ -509,7 +509,7 @@ static inline bool uart_xlnx_ps_cfg2ll_stopbits(
  *         data bit configuration being provided by the caller.
  */
 static inline bool uart_xlnx_ps_cfg2ll_databits(
-	u32_t *mode_reg,
+	uint32_t *mode_reg,
 	enum uart_config_data_bits databits)
 {
 	/*
@@ -561,7 +561,7 @@ static inline bool uart_xlnx_ps_cfg2ll_databits(
  *         flow control configuration being provided by the caller.
  */
 static inline bool uart_xlnx_ps_cfg2ll_hwctrl(
-	u32_t *modemcr_reg,
+	uint32_t *modemcr_reg,
 	enum uart_config_flow_control hwctrl)
 {
 	/*
@@ -601,9 +601,9 @@ static int uart_xlnx_ps_configure(struct device *dev,
 	struct uart_xlnx_ps_dev_config *dev_cfg =
 	(struct uart_xlnx_ps_dev_config *)DEV_CFG(dev);
 
-	u32_t reg_base    = dev_cfg->uconf.regs;
-	u32_t mode_reg    = 0;
-	u32_t modemcr_reg = 0;
+	uint32_t reg_base    = dev_cfg->uconf.regs;
+	uint32_t mode_reg    = 0;
+	uint32_t modemcr_reg = 0;
 
 	/* Read the current mode register & modem control register values */
 	mode_reg    = sys_read32(reg_base + XUARTPS_MR_OFFSET);
@@ -655,7 +655,7 @@ static int uart_xlnx_ps_configure(struct device *dev,
  *         enum type.
  */
 static inline enum uart_config_parity uart_xlnx_ps_ll2cfg_parity(
-	u32_t mode_reg)
+	uint32_t mode_reg)
 {
 	/*
 	 * Obtain the current parity configuration from the mode register's
@@ -697,7 +697,7 @@ static inline enum uart_config_parity uart_xlnx_ps_ll2cfg_parity(
  *         enum type.
  */
 static inline enum uart_config_stop_bits uart_xlnx_ps_ll2cfg_stopbits(
-	u32_t mode_reg)
+	uint32_t mode_reg)
 {
 	/*
 	 * Obtain the current stop bit configuration from the mode register's
@@ -734,7 +734,7 @@ static inline enum uart_config_stop_bits uart_xlnx_ps_ll2cfg_stopbits(
  *         enum type.
  */
 static inline enum uart_config_data_bits uart_xlnx_ps_ll2cfg_databits(
-	u32_t mode_reg)
+	uint32_t mode_reg)
 {
 	/*
 	 * Obtain the current data bit configuration from the mode register's
@@ -770,7 +770,7 @@ static inline enum uart_config_data_bits uart_xlnx_ps_ll2cfg_databits(
  *         enum type.
  */
 static inline enum uart_config_flow_control uart_xlnx_ps_ll2cfg_hwctrl(
-	u32_t modemcr_reg)
+	uint32_t modemcr_reg)
 {
 	/*
 	 * Obtain the current flow control configuration from the modem
@@ -812,9 +812,9 @@ static int uart_xlnx_ps_config_get(struct device *dev,
 	 * Control register).
 	 */
 
-	u32_t reg_base    = dev_cfg->uconf.regs;
-	u32_t mode_reg    = sys_read32(reg_base + XUARTPS_MR_OFFSET);
-	u32_t modemcr_reg = sys_read32(reg_base + XUARTPS_MODEMCR_OFFSET);
+	uint32_t reg_base    = dev_cfg->uconf.regs;
+	uint32_t mode_reg    = sys_read32(reg_base + XUARTPS_MR_OFFSET);
+	uint32_t modemcr_reg = sys_read32(reg_base + XUARTPS_MODEMCR_OFFSET);
 
 	cfg->baudrate  = dev_cfg->baud_rate;
 	cfg->parity    = uart_xlnx_ps_ll2cfg_parity(mode_reg);
@@ -836,18 +836,18 @@ static int uart_xlnx_ps_config_get(struct device *dev,
  *
  * @return Number of bytes sent
  */
-static int uart_xlnx_ps_fifo_fill(struct device *dev, const u8_t *tx_data,
+static int uart_xlnx_ps_fifo_fill(struct device *dev, const uint8_t *tx_data,
 				  int size)
 {
 	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
-	u32_t reg_val;
-	u32_t reg_base;
+	uint32_t reg_val;
+	uint32_t reg_base;
 	int onum = 0;
 
 	reg_base = dev_cfg->uconf.regs;
 	reg_val = sys_read32(reg_base + XUARTPS_SR_OFFSET);
 	while (onum < size && (reg_val & XUARTPS_SR_TXFULL) == 0) {
-		sys_write32((u32_t)(tx_data[onum] & 0xFF),
+		sys_write32((uint32_t)(tx_data[onum] & 0xFF),
 				reg_base + XUARTPS_FIFO_OFFSET);
 		onum++;
 		reg_val = sys_read32(reg_base + XUARTPS_SR_OFFSET);
@@ -865,19 +865,19 @@ static int uart_xlnx_ps_fifo_fill(struct device *dev, const u8_t *tx_data,
  *
  * @return Number of bytes read
  */
-static int uart_xlnx_ps_fifo_read(struct device *dev, u8_t *rx_data,
+static int uart_xlnx_ps_fifo_read(struct device *dev, uint8_t *rx_data,
 				  const int size)
 {
 	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
-	u32_t reg_val;
-	u32_t reg_base;
+	uint32_t reg_val;
+	uint32_t reg_base;
 	int inum = 0;
 
 	reg_base = dev_cfg->uconf.regs;
 	reg_val = sys_read32(reg_base + XUARTPS_SR_OFFSET);
 
 	while (inum < size && (reg_val & XUARTPS_SR_RXEMPTY) == 0) {
-		rx_data[inum] = (u8_t)sys_read32(reg_base
+		rx_data[inum] = (uint8_t)sys_read32(reg_base
 				+ XUARTPS_FIFO_OFFSET);
 		inum++;
 		reg_val = sys_read32(reg_base + XUARTPS_SR_OFFSET);
@@ -896,7 +896,7 @@ static int uart_xlnx_ps_fifo_read(struct device *dev, u8_t *rx_data,
 static void uart_xlnx_ps_irq_tx_enable(struct device *dev)
 {
 	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
-	u32_t reg_base;
+	uint32_t reg_base;
 
 	reg_base = dev_cfg->uconf.regs;
 	sys_write32(
@@ -914,7 +914,7 @@ static void uart_xlnx_ps_irq_tx_enable(struct device *dev)
 static void uart_xlnx_ps_irq_tx_disable(struct device *dev)
 {
 	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
-	u32_t reg_base;
+	uint32_t reg_base;
 
 	reg_base = dev_cfg->uconf.regs;
 	sys_write32(
@@ -932,8 +932,8 @@ static void uart_xlnx_ps_irq_tx_disable(struct device *dev)
 static int uart_xlnx_ps_irq_tx_ready(struct device *dev)
 {
 	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
-	u32_t reg_base;
-	u32_t reg_val;
+	uint32_t reg_base;
+	uint32_t reg_val;
 
 	reg_base = dev_cfg->uconf.regs;
 	reg_val = sys_read32(reg_base + XUARTPS_ISR_OFFSET);
@@ -957,8 +957,8 @@ static int uart_xlnx_ps_irq_tx_ready(struct device *dev)
 static int uart_xlnx_ps_irq_tx_complete(struct device *dev)
 {
 	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
-	u32_t reg_base;
-	u32_t reg_val;
+	uint32_t reg_base;
+	uint32_t reg_val;
 
 	reg_base = dev_cfg->uconf.regs;
 	reg_val = sys_read32(reg_base + XUARTPS_SR_OFFSET);
@@ -979,7 +979,7 @@ static int uart_xlnx_ps_irq_tx_complete(struct device *dev)
 static void uart_xlnx_ps_irq_rx_enable(struct device *dev)
 {
 	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
-	u32_t reg_base;
+	uint32_t reg_base;
 
 	reg_base = dev_cfg->uconf.regs;
 	sys_write32(XUARTPS_IXR_RTRIG, reg_base + XUARTPS_IER_OFFSET);
@@ -995,7 +995,7 @@ static void uart_xlnx_ps_irq_rx_enable(struct device *dev)
 static void uart_xlnx_ps_irq_rx_disable(struct device *dev)
 {
 	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
-	u32_t reg_base;
+	uint32_t reg_base;
 
 	reg_base = dev_cfg->uconf.regs;
 	sys_write32(XUARTPS_IXR_RTRIG, reg_base + XUARTPS_IDR_OFFSET);
@@ -1011,8 +1011,8 @@ static void uart_xlnx_ps_irq_rx_disable(struct device *dev)
 static int uart_xlnx_ps_irq_rx_ready(struct device *dev)
 {
 	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
-	u32_t reg_base;
-	u32_t reg_val;
+	uint32_t reg_base;
+	uint32_t reg_val;
 
 	reg_base = dev_cfg->uconf.regs;
 	reg_val = sys_read32(reg_base + XUARTPS_ISR_OFFSET);
@@ -1034,7 +1034,7 @@ static int uart_xlnx_ps_irq_rx_ready(struct device *dev)
 static void uart_xlnx_ps_irq_err_enable(struct device *dev)
 {
 	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
-	u32_t reg_base;
+	uint32_t reg_base;
 
 	reg_base = dev_cfg->uconf.regs;
 	sys_write32(
@@ -1056,7 +1056,7 @@ static void uart_xlnx_ps_irq_err_enable(struct device *dev)
 static void uart_xlnx_ps_irq_err_disable(struct device *dev)
 {
 	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
-	u32_t reg_base;
+	uint32_t reg_base;
 
 	reg_base = dev_cfg->uconf.regs;
 	sys_write32(
@@ -1078,9 +1078,9 @@ static void uart_xlnx_ps_irq_err_disable(struct device *dev)
 static int uart_xlnx_ps_irq_is_pending(struct device *dev)
 {
 	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
-	u32_t reg_base;
-	u32_t reg_imr;
-	u32_t reg_isr;
+	uint32_t reg_base;
+	uint32_t reg_imr;
+	uint32_t reg_isr;
 
 	reg_base = dev_cfg->uconf.regs;
 	reg_imr = sys_read32(reg_base + XUARTPS_IMR_OFFSET);
@@ -1198,7 +1198,7 @@ static struct uart_xlnx_ps_dev_data_t uart_xlnx_ps_dev_data_##port
 static struct uart_xlnx_ps_dev_config uart_xlnx_ps_dev_cfg_##port = { \
 	.uconf = { \
 		.regs = DT_INST_REG_ADDR(port), \
-		.base = (u8_t *)DT_INST_REG_ADDR(port), \
+		.base = (uint8_t *)DT_INST_REG_ADDR(port), \
 		.sys_clk_freq = DT_INST_PROP(port, clock_frequency), \
 		UART_XLNX_PS_IRQ_CONF_FUNC_SET(port) \
 	}, \

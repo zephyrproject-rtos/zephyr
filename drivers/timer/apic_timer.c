@@ -49,7 +49,7 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_SMP), "APIC timer doesn't support SMP");
 
 /*
  * CYCLES_PER_TICK must always be at least '2', otherwise MAX_TICKS
- * will overflow s32_t, which is how 'ticks' are currently represented.
+ * will overflow int32_t, which is how 'ticks' are currently represented.
  */
 
 #define CYCLES_PER_TICK \
@@ -71,21 +71,21 @@ BUILD_ASSERT(CYCLES_PER_TICK >= 2, "APIC timer: bad CYCLES_PER_TICK");
  */
 
 static struct k_spinlock lock;
-static u64_t total_cycles;
-static u32_t cached_icr = CYCLES_PER_TICK;
+static uint64_t total_cycles;
+static uint32_t cached_icr = CYCLES_PER_TICK;
 
 #ifdef CONFIG_TICKLESS_KERNEL
 
-static u64_t last_announcement;	/* last time we called z_clock_announce() */
+static uint64_t last_announcement;	/* last time we called z_clock_announce() */
 
-void z_clock_set_timeout(s32_t n, bool idle)
+void z_clock_set_timeout(int32_t n, bool idle)
 {
 	ARG_UNUSED(idle);
 
-	u32_t ccr;
+	uint32_t ccr;
 	int   full_ticks;	/* number of complete ticks we'll wait */
-	u32_t full_cycles;	/* full_ticks represented as cycles */
-	u32_t partial_cycles;	/* number of cycles to first tick boundary */
+	uint32_t full_cycles;	/* full_ticks represented as cycles */
+	uint32_t partial_cycles;	/* number of cycles to first tick boundary */
 
 	if (n < 1) {
 		full_ticks = 0;
@@ -117,10 +117,10 @@ void z_clock_set_timeout(s32_t n, bool idle)
 	k_spin_unlock(&lock, key);
 }
 
-u32_t z_clock_elapsed(void)
+uint32_t z_clock_elapsed(void)
 {
-	u32_t ccr;
-	u32_t ticks;
+	uint32_t ccr;
+	uint32_t ticks;
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	ccr = x86_read_loapic(LOAPIC_TIMER_CCR);
@@ -136,8 +136,8 @@ static void isr(void *arg)
 {
 	ARG_UNUSED(arg);
 
-	u32_t cycles;
-	s32_t ticks;
+	uint32_t cycles;
+	int32_t ticks;
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
@@ -178,7 +178,7 @@ static void isr(void *arg)
 	z_clock_announce(1);
 }
 
-u32_t z_clock_elapsed(void)
+uint32_t z_clock_elapsed(void)
 {
 	return 0U;
 }
@@ -187,10 +187,10 @@ u32_t z_clock_elapsed(void)
 
 #ifdef CONFIG_APIC_TIMER_TSC
 
-u32_t z_timer_cycle_get_32(void)
+uint32_t z_timer_cycle_get_32(void)
 {
-	u64_t tsc = z_tsc_read();
-	u32_t cycles;
+	uint64_t tsc = z_tsc_read();
+	uint32_t cycles;
 
 	cycles = (tsc * CONFIG_APIC_TIMER_TSC_M) / CONFIG_APIC_TIMER_TSC_N;
 	return cycles;
@@ -198,10 +198,10 @@ u32_t z_timer_cycle_get_32(void)
 
 #else
 
-u32_t z_timer_cycle_get_32(void)
+uint32_t z_timer_cycle_get_32(void)
 {
-	u32_t ret;
-	u32_t ccr;
+	uint32_t ret;
+	uint32_t ccr;
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	ccr = x86_read_loapic(LOAPIC_TIMER_CCR);
@@ -215,7 +215,7 @@ u32_t z_timer_cycle_get_32(void)
 
 int z_clock_driver_init(struct device *device)
 {
-	u32_t val;
+	uint32_t val;
 
 	val = x86_read_loapic(LOAPIC_TIMER_CONFIG);	/* set divider */
 	val &= ~DCR_DIVIDER_MASK;

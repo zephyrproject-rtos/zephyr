@@ -25,7 +25,7 @@
  * some of them might be undefined for a port and we can't test for another
  * macro definition inside a macro.
  */
-static const u8_t sam0_eic_channels[PORT_GROUPS][32] = {
+static const uint8_t sam0_eic_channels[PORT_GROUPS][32] = {
 #if PORT_GROUPS >= 1
 {
 #ifdef PIN_PA00A_EIC_EXTINT_NUM
@@ -689,7 +689,7 @@ static const u8_t sam0_eic_channels[PORT_GROUPS][32] = {
 
 static inline int sam0_eic_map_to_line(int port, int pin)
 {
-	u8_t ch = sam0_eic_channels[port][pin];
+	uint8_t ch = sam0_eic_channels[port][pin];
 
 	if (ch == 0xFF) {
 		return -ENOTSUP;

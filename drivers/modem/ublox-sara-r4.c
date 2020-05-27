@@ -121,23 +121,23 @@ struct socket_read_data {
 	char *recv_buf;
 	size_t recv_buf_len;
 	struct sockaddr *recv_addr;
-	u16_t recv_read_len;
+	uint16_t recv_read_len;
 };
 
 /* driver data */
 struct modem_data {
 	struct net_if *net_iface;
-	u8_t mac_addr[6];
+	uint8_t mac_addr[6];
 
 	/* modem interface */
 	struct modem_iface_uart_data iface_data;
-	u8_t iface_isr_buf[MDM_RECV_BUF_SIZE];
-	u8_t iface_rb_buf[MDM_MAX_DATA_LENGTH];
+	uint8_t iface_isr_buf[MDM_RECV_BUF_SIZE];
+	uint8_t iface_rb_buf[MDM_MAX_DATA_LENGTH];
 
 	/* modem cmds */
 	struct modem_cmd_handler_data cmd_handler_data;
-	u8_t cmd_read_buf[MDM_RECV_BUF_SIZE];
-	u8_t cmd_match_buf[MDM_RECV_BUF_SIZE + 1];
+	uint8_t cmd_read_buf[MDM_RECV_BUF_SIZE];
+	uint8_t cmd_match_buf[MDM_RECV_BUF_SIZE + 1];
 
 	/* socket data */
 	struct modem_socket_config socket_config;
@@ -304,7 +304,7 @@ static ssize_t send_socket_data(struct modem_socket *sock,
 {
 	int ret;
 	char send_buf[sizeof("AT+USO**=#,!###.###.###.###!,#####,####\r\n")];
-	u16_t dst_port = 0U;
+	uint16_t dst_port = 0U;
 
 	if (!sock) {
 		return -EINVAL;
@@ -577,7 +577,7 @@ MODEM_CMD_DEFINE(on_cmd_sockwrite)
 /* Common code for +USOR[D|F]: "<data>" */
 static int on_cmd_sockread_common(int socket_id,
 				  struct modem_cmd_handler_data *data,
-				  int socket_data_length, u16_t len)
+				  int socket_data_length, uint16_t len)
 {
 	struct modem_socket *sock = NULL;
 	struct socket_read_data *sock_data;
@@ -631,7 +631,7 @@ static int on_cmd_sockread_common(int socket_id,
 	}
 
 	ret = net_buf_linearize(sock_data->recv_buf, sock_data->recv_buf_len,
-				data->rx_buf, 0, (u16_t)socket_data_length);
+				data->rx_buf, 0, (uint16_t)socket_data_length);
 	data->rx_buf = net_buf_skip(data->rx_buf, ret);
 	sock_data->recv_read_len = ret;
 	if (ret != socket_data_length) {
@@ -1149,7 +1149,7 @@ static int create_socket(struct modem_socket *sock, const struct sockaddr *addr)
 	int ret;
 	struct modem_cmd cmd = MODEM_CMD("+USOCR: ", on_cmd_sockcreate, 1U, "");
 	char buf[sizeof("AT+USOCR=#,#####\r")];
-	u16_t local_port = 0U, proto = 6U;
+	uint16_t local_port = 0U, proto = 6U;
 
 	if (addr) {
 		if (addr->sa_family == AF_INET6) {
@@ -1254,7 +1254,7 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	int ret;
 	char buf[sizeof("AT+USOCO=#,!###.###.###.###!,#####,#\r")];
-	u16_t dst_port = 0U;
+	uint16_t dst_port = 0U;
 
 	if (!addr) {
 		errno = EINVAL;
@@ -1564,7 +1564,7 @@ static int offload_getaddrinfo(const char *node, const char *service,
 			       struct addrinfo **res)
 {
 	struct modem_cmd cmd = MODEM_CMD("+UDNSRN: ", on_cmd_dns, 1U, ",");
-	u32_t port = 0U;
+	uint32_t port = 0U;
 	int ret;
 	/* DNS command + 128 bytes for domain name parameter */
 	char sendbuf[sizeof("AT+UDNSRN=#,'[]'\r") + 128];
@@ -1653,9 +1653,9 @@ static struct net_offload modem_net_offload = {
 };
 
 #define HASH_MULTIPLIER		37
-static u32_t hash32(char *str, int len)
+static uint32_t hash32(char *str, int len)
 {
-	u32_t h = 0;
+	uint32_t h = 0;
 	int i;
 
 	for (i = 0; i < len; ++i) {
@@ -1665,10 +1665,10 @@ static u32_t hash32(char *str, int len)
 	return h;
 }
 
-static inline u8_t *modem_get_mac(struct device *dev)
+static inline uint8_t *modem_get_mac(struct device *dev)
 {
 	struct modem_data *data = dev->driver_data;
-	u32_t hash_value;
+	uint32_t hash_value;
 
 	data->mac_addr[0] = 0x00;
 	data->mac_addr[1] = 0x10;
@@ -1676,7 +1676,7 @@ static inline u8_t *modem_get_mac(struct device *dev)
 	/* use IMEI for mac_addr */
 	hash_value = hash32(mdata.mdm_imei, strlen(mdata.mdm_imei));
 
-	UNALIGNED_PUT(hash_value, (u32_t *)(data->mac_addr + 2));
+	UNALIGNED_PUT(hash_value, (uint32_t *)(data->mac_addr + 2));
 
 	return data->mac_addr;
 }

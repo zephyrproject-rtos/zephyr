@@ -31,7 +31,7 @@ struct net_nbr_lladdr {
 	struct net_linkaddr_storage lladdr;
 
 	/** Reference count. */
-	u8_t ref;
+	uint8_t ref;
 };
 
 #define NET_NBR_LLADDR_INIT(_name, _count)	\
@@ -45,25 +45,25 @@ struct net_nbr_lladdr {
  */
 struct net_nbr {
 	/** Reference count. */
-	u8_t ref;
+	uint8_t ref;
 
 	/** Link to ll address. This is the index into lladdr array.
 	 * The value NET_NBR_LLADDR_UNKNOWN tells that this neighbor
 	 * does not yet have lladdr linked to it.
 	 */
-	u8_t idx;
+	uint8_t idx;
 
 	/** Amount of data that this neighbor buffer can store. */
-	const u16_t size;
+	const uint16_t size;
 
 	/** Extra data size associated with this neighbor */
-	const u16_t extra_data_size;
+	const uint16_t extra_data_size;
 
 	/** Interface this neighbor is found */
 	struct net_if *iface;
 
 	/** Pointer to the start of data in the neighbor table. */
-	u8_t *data;
+	uint8_t *data;
 
 	/** Function to be called when the neighbor is removed. */
 	void (*const remove)(struct net_nbr *nbr);
@@ -71,15 +71,15 @@ struct net_nbr {
 	/** Start of the data storage. Not to be accessed directly
 	 *  (the data pointer should be used instead).
 	 */
-	u8_t __nbr[0] __net_nbr_align;
+	uint8_t __nbr[0] __net_nbr_align;
 };
 
 /* This is an array of struct net_nbr + some additional data */
 #define NET_NBR_POOL_INIT(_name, _count, _size, _remove, _extra_size)	\
 	struct {							\
 		struct net_nbr nbr;					\
-		u8_t data[ROUND_UP(_size, 4)] __net_nbr_align;	\
-		u8_t extra[ROUND_UP(_extra_size, 4)] __net_nbr_align;\
+		uint8_t data[ROUND_UP(_size, 4)] __net_nbr_align;	\
+		uint8_t extra[ROUND_UP(_extra_size, 4)] __net_nbr_align;\
 	} _name[_count] = {						\
 		[0 ... (_count - 1)] = { .nbr = {			\
 			.idx = NET_NBR_LLADDR_UNKNOWN,			\
@@ -96,7 +96,7 @@ struct net_nbr_table {
 	void (*const clear)(struct net_nbr_table *table);
 
 	/** Max number of neighbors in the pool */
-	const u16_t nbr_count;
+	const uint16_t nbr_count;
 };
 
 #define NET_NBR_LOCAL static
@@ -194,9 +194,9 @@ int net_nbr_unlink(struct net_nbr *nbr, struct net_linkaddr *lladdr);
  * @return Pointer to link layer address storage, NULL if not found
  */
 #if defined(CONFIG_NET_NATIVE)
-struct net_linkaddr_storage *net_nbr_get_lladdr(u8_t idx);
+struct net_linkaddr_storage *net_nbr_get_lladdr(uint8_t idx);
 #else
-static inline struct net_linkaddr_storage *net_nbr_get_lladdr(u8_t idx)
+static inline struct net_linkaddr_storage *net_nbr_get_lladdr(uint8_t idx)
 {
 	ARG_UNUSED(idx);
 

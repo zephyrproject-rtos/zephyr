@@ -42,7 +42,7 @@ extern "C" {
  * @param len The length of the data read.
  * @param offset The offset the data was read from.
  */
-typedef int (*stream_flash_callback_t)(u8_t *buf, size_t len, size_t offset);
+typedef int (*stream_flash_callback_t)(uint8_t *buf, size_t len, size_t offset);
 
 /**
  * @brief Structure for stream flash context
@@ -51,7 +51,7 @@ typedef int (*stream_flash_callback_t)(u8_t *buf, size_t len, size_t offset);
  * with them through the below API.
  */
 struct stream_flash_ctx {
-	u8_t *buf; /* Write buffer */
+	uint8_t *buf; /* Write buffer */
 	size_t buf_len; /* Length of write buffer */
 	size_t buf_bytes; /* Number of bytes currently stored in write buf */
 	struct device *fdev; /* Flash device */
@@ -81,7 +81,7 @@ struct stream_flash_ctx {
  * @return non-negative on success, negative errno code on fail
  */
 int stream_flash_init(struct stream_flash_ctx *ctx, struct device *fdev,
-		      u8_t *buf, size_t buf_len, size_t offset, size_t size,
+		      uint8_t *buf, size_t buf_len, size_t offset, size_t size,
 		      stream_flash_callback_t cb);
 /**
  * @brief Read number of bytes written to the flash.
@@ -108,7 +108,7 @@ size_t stream_flash_bytes_written(struct stream_flash_ctx *ctx);
  *
  * @return non-negative on success, negative errno code on fail
  */
-int stream_flash_buffered_write(struct stream_flash_ctx *ctx, const u8_t *data,
+int stream_flash_buffered_write(struct stream_flash_ctx *ctx, const uint8_t *data,
 				size_t len, bool flush);
 
 /**

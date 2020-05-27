@@ -19,13 +19,13 @@
 #include "ism330dhcx_reg.h"
 
 union axis3bit16_t {
-	s16_t i16bit[3];
-	u8_t u8bit[6];
+	int16_t i16bit[3];
+	uint8_t u8bit[6];
 };
 
 union axis1bit16_t {
-	s16_t i16bit;
-	u8_t u8bit[2];
+	int16_t i16bit;
+	uint8_t u8bit[2];
 };
 
 #define ISM330DHCX_EN_BIT					0x01
@@ -96,25 +96,25 @@ struct ism330dhcx_config {
 	int (*bus_init)(struct device *dev);
 #ifdef CONFIG_ISM330DHCX_TRIGGER
 	const char *int_gpio_port;
-	u8_t int_gpio_pin;
-	u8_t int_gpio_flags;
-	u8_t int_pin;
+	uint8_t int_gpio_pin;
+	uint8_t int_gpio_flags;
+	uint8_t int_pin;
 #endif /* CONFIG_ISM330DHCX_TRIGGER */
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	u16_t i2c_slv_addr;
+	uint16_t i2c_slv_addr;
 #elif DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	struct spi_config spi_conf;
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	const char *gpio_cs_port;
-	u8_t cs_gpio;
+	uint8_t cs_gpio;
 #endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
 };
 
 union samples {
-	u8_t raw[6];
+	uint8_t raw[6];
 	struct {
-		s16_t axis[3];
+		int16_t axis[3];
 	};
 } __aligned(2);
 
@@ -122,38 +122,38 @@ union samples {
 struct ism330dhcx_data;
 
 struct ism330dhcx_tf {
-	int (*read_data)(struct ism330dhcx_data *data, u8_t reg_addr,
-			 u8_t *value, u8_t len);
-	int (*write_data)(struct ism330dhcx_data *data, u8_t reg_addr,
-			  u8_t *value, u8_t len);
-	int (*read_reg)(struct ism330dhcx_data *data, u8_t reg_addr,
-			u8_t *value);
-	int (*write_reg)(struct ism330dhcx_data *data, u8_t reg_addr,
-			u8_t value);
-	int (*update_reg)(struct ism330dhcx_data *data, u8_t reg_addr,
-			  u8_t mask, u8_t value);
+	int (*read_data)(struct ism330dhcx_data *data, uint8_t reg_addr,
+			 uint8_t *value, uint8_t len);
+	int (*write_data)(struct ism330dhcx_data *data, uint8_t reg_addr,
+			  uint8_t *value, uint8_t len);
+	int (*read_reg)(struct ism330dhcx_data *data, uint8_t reg_addr,
+			uint8_t *value);
+	int (*write_reg)(struct ism330dhcx_data *data, uint8_t reg_addr,
+			uint8_t value);
+	int (*update_reg)(struct ism330dhcx_data *data, uint8_t reg_addr,
+			  uint8_t mask, uint8_t value);
 };
 
 #define ISM330DHCX_SHUB_MAX_NUM_SLVS			2
 
 struct ism330dhcx_data {
 	struct device *bus;
-	s16_t acc[3];
-	u32_t acc_gain;
-	s16_t gyro[3];
-	u32_t gyro_gain;
+	int16_t acc[3];
+	uint32_t acc_gain;
+	int16_t gyro[3];
+	uint32_t gyro_gain;
 #if defined(CONFIG_ISM330DHCX_ENABLE_TEMP)
 	int temp_sample;
 #endif
 #if defined(CONFIG_ISM330DHCX_SENSORHUB)
-	u8_t ext_data[2][6];
-	u16_t magn_gain;
+	uint8_t ext_data[2][6];
+	uint16_t magn_gain;
 
 	struct hts221_data {
-		s16_t x0;
-		s16_t x1;
-		s16_t y0;
-		s16_t y1;
+		int16_t x0;
+		int16_t x1;
+		int16_t y0;
+		int16_t y1;
 	} hts221;
 #endif /* CONFIG_ISM330DHCX_SENSORHUB */
 
@@ -165,10 +165,10 @@ struct ism330dhcx_data {
 	stmdev_ctx_t ctx_spi;
 	#endif
 
-	u16_t accel_freq;
-	u8_t accel_fs;
-	u16_t gyro_freq;
-	u8_t gyro_fs;
+	uint16_t accel_freq;
+	uint8_t accel_fs;
+	uint16_t gyro_freq;
+	uint8_t gyro_fs;
 
 #ifdef CONFIG_ISM330DHCX_TRIGGER
 	struct device *gpio;

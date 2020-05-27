@@ -343,8 +343,8 @@ static inline int get_cb_slot(struct dns_resolve_context *ctx)
 }
 
 static inline int get_slot_by_id(struct dns_resolve_context *ctx,
-				 u16_t dns_id,
-				 u16_t query_hash)
+				 uint16_t dns_id,
+				 uint16_t query_hash)
 {
 	int i;
 
@@ -362,15 +362,15 @@ static inline int get_slot_by_id(struct dns_resolve_context *ctx,
 static int dns_read(struct dns_resolve_context *ctx,
 		    struct net_pkt *pkt,
 		    struct net_buf *dns_data,
-		    u16_t *dns_id,
+		    uint16_t *dns_id,
 		    struct net_buf *dns_cname,
-		    u16_t *query_hash)
+		    uint16_t *query_hash)
 {
 	struct dns_addrinfo info = { 0 };
 	/* Helper struct to track the dns msg received from the server */
 	struct dns_msg_t dns_msg;
-	u32_t ttl; /* RR ttl, so far it is not passed to caller */
-	u8_t *src, *addr;
+	uint32_t ttl; /* RR ttl, so far it is not passed to caller */
+	uint8_t *src, *addr;
 	const char *query_name;
 	int address_size;
 	/* index that points to the current answer being analyzed */
@@ -477,7 +477,7 @@ static int dns_read(struct dns_resolve_context *ctx,
 				}
 
 				address_size = DNS_IPV4_LEN;
-				addr = (u8_t *)&net_sin(&info.ai_addr)->
+				addr = (uint8_t *)&net_sin(&info.ai_addr)->
 								sin_addr;
 				info.ai_family = AF_INET;
 				info.ai_addr.sa_family = AF_INET;
@@ -498,7 +498,7 @@ static int dns_read(struct dns_resolve_context *ctx,
 				 */
 #if defined(CONFIG_NET_IPV6)
 				address_size = DNS_IPV6_LEN;
-				addr = (u8_t *)&net_sin6(&info.ai_addr)->
+				addr = (uint8_t *)&net_sin6(&info.ai_addr)->
 								sin6_addr;
 				info.ai_family = AF_INET6;
 				info.ai_addr.sa_family = AF_INET6;
@@ -566,7 +566,7 @@ static int dns_read(struct dns_resolve_context *ctx,
 	 */
 	if (items == 0) {
 		if (dns_msg.response_type == DNS_RESPONSE_CNAME_NO_IP) {
-			u16_t pos = dns_msg.response_position;
+			uint16_t pos = dns_msg.response_position;
 
 			ret = dns_copy_qname(dns_cname->data, &dns_cname->len,
 					     dns_cname->size, &dns_msg, pos);
@@ -619,8 +619,8 @@ static void cb_recv(struct net_context *net_ctx,
 	struct dns_resolve_context *ctx = user_data;
 	struct net_buf *dns_cname = NULL;
 	struct net_buf *dns_data = NULL;
-	u16_t query_hash = 0U;
-	u16_t dns_id = 0U;
+	uint16_t query_hash = 0U;
+	uint16_t dns_id = 0U;
 	int ret, i;
 
 	ARG_UNUSED(net_ctx);
@@ -718,7 +718,7 @@ static int dns_write(struct dns_resolve_context *ctx,
 	struct net_context *net_ctx;
 	struct sockaddr *server;
 	int server_addr_len;
-	u16_t dns_id;
+	uint16_t dns_id;
 	int ret;
 
 	net_ctx = ctx->servers[server_idx].net_ctx;
@@ -784,8 +784,8 @@ static int dns_write(struct dns_resolve_context *ctx,
 }
 
 static int dns_resolve_cancel_with_hash(struct dns_resolve_context *ctx,
-					u16_t dns_id,
-					u16_t query_hash,
+					uint16_t dns_id,
+					uint16_t query_hash,
 					const char *query_name)
 {
 	int i;
@@ -810,15 +810,15 @@ static int dns_resolve_cancel_with_hash(struct dns_resolve_context *ctx,
 }
 
 int dns_resolve_cancel_with_name(struct dns_resolve_context *ctx,
-				 u16_t dns_id,
+				 uint16_t dns_id,
 				 const char *query_name,
 				 enum dns_query_type query_type)
 {
-	u16_t query_hash = 0;
+	uint16_t query_hash = 0;
 
 	if (query_name) {
 		struct net_buf *buf;
-		u16_t len;
+		uint16_t len;
 		int ret;
 
 		/* Use net_buf as a temporary buffer to store the packed
@@ -857,7 +857,7 @@ int dns_resolve_cancel_with_name(struct dns_resolve_context *ctx,
 					    query_name);
 }
 
-int dns_resolve_cancel(struct dns_resolve_context *ctx, u16_t dns_id)
+int dns_resolve_cancel(struct dns_resolve_context *ctx, uint16_t dns_id)
 {
 	return dns_resolve_cancel_with_name(ctx, dns_id, NULL, 0);
 }
@@ -879,10 +879,10 @@ static void query_timeout(struct k_work *work)
 int dns_resolve_name(struct dns_resolve_context *ctx,
 		     const char *query,
 		     enum dns_query_type type,
-		     u16_t *dns_id,
+		     uint16_t *dns_id,
 		     dns_resolve_cb_t cb,
 		     void *user_data,
-		     s32_t timeout)
+		     int32_t timeout)
 {
 	k_timeout_t tout;
 	struct net_buf *dns_data = NULL;
@@ -891,7 +891,7 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 	int ret, i = -1, j = 0;
 	int failure = 0;
 	bool mdns_query = false;
-	u8_t hop_limit;
+	uint8_t hop_limit;
 
 	if (!ctx || !ctx->is_used || !query || !cb) {
 		return -EINVAL;

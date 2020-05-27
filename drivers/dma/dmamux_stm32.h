@@ -10,27 +10,27 @@
 /* this is the configuration of one dmamux channel */
 struct dmamux_stm32_channel {
 	struct device *dev_dma; /* pointer to the associated dma instance */
-	u8_t dma_id; /* ref of the associated dma stream for this instance */
+	uint8_t dma_id; /* ref of the associated dma stream for this instance */
 };
 
 /* the table of all the dmamux channel */
 struct dmamux_stm32_data {
 	struct dmamux_stm32_channel *mux_channels;
 	void *callback_arg;
-	void (*dmamux_callback)(void *arg, u32_t id,
+	void (*dmamux_callback)(void *arg, uint32_t id,
 				int error_code);
 };
 
 /* this is the configuration of the dmamux IP */
 struct dmamux_stm32_config {
 	struct stm32_pclken pclken;
-	u32_t base;
-	u8_t channel_nb;	/* total nb of channels */
-	u8_t gen_nb;	/* total nb of Request generator */
-	u8_t req_nb;	/* total nb of Peripheral Request inputs */
+	uint32_t base;
+	uint8_t channel_nb;	/* total nb of channels */
+	uint8_t gen_nb;	/* total nb of Request generator */
+	uint8_t req_nb;	/* total nb of Peripheral Request inputs */
 };
 
-u32_t table_ll_channel[] = {
+uint32_t table_ll_channel[] = {
 	LL_DMAMUX_CHANNEL_0,
 	LL_DMAMUX_CHANNEL_1,
 	LL_DMAMUX_CHANNEL_2,
@@ -71,7 +71,7 @@ u32_t table_ll_channel[] = {
 #endif /* LL_DMAMUX_CHANNEL_15 */
 };
 
-u32_t (*func_ll_is_active_so[])(DMAMUX_Channel_TypeDef *DMAMUXx) = {
+uint32_t (*func_ll_is_active_so[])(DMAMUX_Channel_TypeDef *DMAMUXx) = {
 	LL_DMAMUX_IsActiveFlag_SO0,
 	LL_DMAMUX_IsActiveFlag_SO1,
 	LL_DMAMUX_IsActiveFlag_SO2,
@@ -149,7 +149,7 @@ void (*func_ll_clear_so[])(DMAMUX_Channel_TypeDef *DMAMUXx) = {
 #endif /* DMAMUX_CSR_SOF15 */
 };
 
-u32_t (*func_ll_is_active_rgo[])(DMAMUX_Channel_TypeDef *DMAMUXx) = {
+uint32_t (*func_ll_is_active_rgo[])(DMAMUX_Channel_TypeDef *DMAMUXx) = {
 	LL_DMAMUX_IsActiveFlag_RGO0,
 	LL_DMAMUX_IsActiveFlag_RGO1,
 	LL_DMAMUX_IsActiveFlag_RGO2,

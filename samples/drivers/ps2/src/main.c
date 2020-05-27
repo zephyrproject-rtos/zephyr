@@ -28,7 +28,7 @@ static bool host_blocked;
 K_THREAD_DEFINE(aux_thread_id, TASK_STACK_SIZE, to_port_60_thread,
 		NULL, NULL, NULL, PRIORITY, 0, 0);
 K_SEM_DEFINE(p60_sem, 0, 1);
-K_MSGQ_DEFINE(aux_to_host_queue, sizeof(u8_t), 8, 4);
+K_MSGQ_DEFINE(aux_to_host_queue, sizeof(uint8_t), 8, 4);
 
 /* We use a timer to saturate the queue */
 K_TIMER_DEFINE(block_ps2_timer, saturate_ps2, NULL);
@@ -45,7 +45,7 @@ static void saturate_ps2(struct k_timer *timer)
 	ps2_enable_callback(ps2_0_dev);
 }
 
-static void mb_callback(struct device *dev, u8_t value)
+static void mb_callback(struct device *dev, uint8_t value)
 {
 	if (k_msgq_put(&aux_to_host_queue, &value, K_NO_WAIT) != 0) {
 		ps2_disable_callback(ps2_0_dev);
@@ -59,7 +59,7 @@ static void mb_callback(struct device *dev, u8_t value)
 /* This data is sent to BIOS and eventually is consumed by the host OS */
 static void to_port_60_thread(void *dummy1, void *dummy2, void *dummy3)
 {
-	u8_t data;
+	uint8_t data;
 
 	while (true) {
 		k_sem_take(&p60_sem, K_FOREVER);

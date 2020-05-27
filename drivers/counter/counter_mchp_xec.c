@@ -33,10 +33,10 @@ LOG_MODULE_REGISTER(counter_mchp_xec, CONFIG_COUNTER_LOG_LEVEL);
 struct counter_xec_config {
 	struct counter_config_info info;
 	void (*config_func)(void);
-	u32_t base_address;
-	u16_t prescaler;
-	u8_t girq_id;
-	u8_t girq_bit;
+	uint32_t base_address;
+	uint16_t prescaler;
+	uint8_t girq_id;
+	uint8_t girq_bit;
 };
 
 struct counter_xec_data {
@@ -98,7 +98,7 @@ static int counter_xec_stop(struct device *dev)
 	return 0;
 }
 
-static int counter_xec_get_value(struct device *dev, u32_t *ticks)
+static int counter_xec_get_value(struct device *dev, uint32_t *ticks)
 {
 	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
 
@@ -106,7 +106,7 @@ static int counter_xec_get_value(struct device *dev, u32_t *ticks)
 	return 0;
 }
 
-static int counter_xec_set_alarm(struct device *dev, u8_t chan_id,
+static int counter_xec_set_alarm(struct device *dev, uint8_t chan_id,
 				 const struct counter_alarm_cfg *alarm_cfg)
 {
 	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
@@ -151,7 +151,7 @@ static int counter_xec_set_alarm(struct device *dev, u8_t chan_id,
 }
 
 
-static int counter_xec_cancel_alarm(struct device *dev, u8_t chan_id)
+static int counter_xec_cancel_alarm(struct device *dev, uint8_t chan_id)
 {
 	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
 	struct counter_xec_data *data = COUNTER_XEC_DATA(dev);
@@ -172,14 +172,14 @@ static int counter_xec_cancel_alarm(struct device *dev, u8_t chan_id)
 	return 0;
 }
 
-static u32_t counter_xec_get_pending_int(struct device *dev)
+static uint32_t counter_xec_get_pending_int(struct device *dev)
 {
 	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
 
 	return counter->STS;
 }
 
-static u32_t counter_xec_get_top_value(struct device *dev)
+static uint32_t counter_xec_get_top_value(struct device *dev)
 {
 	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
 
@@ -241,7 +241,7 @@ static int counter_xec_set_top_value(struct device *dev,
 	return ret;
 }
 
-static u32_t counter_xec_get_max_relative_alarm(struct device *dev)
+static uint32_t counter_xec_get_max_relative_alarm(struct device *dev)
 {
 	const struct counter_xec_config *counter_cfg = COUNTER_XEC_CONFIG(dev);
 

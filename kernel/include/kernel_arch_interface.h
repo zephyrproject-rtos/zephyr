@@ -36,7 +36,7 @@ extern "C" {
  *
  * @param usec_to_wait Wait period, in microseconds
  */
-void arch_busy_wait(u32_t usec_to_wait);
+void arch_busy_wait(uint32_t usec_to_wait);
 #endif
 
 /** @} */

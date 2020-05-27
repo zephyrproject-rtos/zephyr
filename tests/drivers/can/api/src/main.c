@@ -128,7 +128,7 @@ const struct zcan_filter test_std_some_filter = {
 struct zcan_work can_work;
 
 static inline void check_msg(struct zcan_frame *msg1, struct zcan_frame *msg2,
-			     u32_t mask)
+			     uint32_t mask)
 {
 	int cmp_res;
 
@@ -153,7 +153,7 @@ static inline void check_msg(struct zcan_frame *msg1, struct zcan_frame *msg2,
 	zassert_equal(cmp_res, 0, "Received data differ");
 }
 
-static void tx_std_isr(u32_t error_flags, void *arg)
+static void tx_std_isr(uint32_t error_flags, void *arg)
 {
 	struct zcan_frame *msg = (struct zcan_frame *)arg;
 
@@ -162,7 +162,7 @@ static void tx_std_isr(u32_t error_flags, void *arg)
 	zassert_equal(msg->std_id, TEST_CAN_STD_ID, "Arg does not match");
 }
 
-static void tx_std_masked_isr(u32_t error_flags, void *arg)
+static void tx_std_masked_isr(uint32_t error_flags, void *arg)
 {
 	struct zcan_frame *msg = (struct zcan_frame *)arg;
 
@@ -171,7 +171,7 @@ static void tx_std_masked_isr(u32_t error_flags, void *arg)
 	zassert_equal(msg->std_id, TEST_CAN_STD_MASK_ID, "Arg does not match");
 }
 
-static void tx_ext_isr(u32_t error_flags, void *arg)
+static void tx_ext_isr(uint32_t error_flags, void *arg)
 {
 	struct zcan_frame *msg = (struct zcan_frame *)arg;
 
@@ -180,7 +180,7 @@ static void tx_ext_isr(u32_t error_flags, void *arg)
 	zassert_equal(msg->ext_id, TEST_CAN_EXT_ID, "Arg does not match");
 }
 
-static void tx_ext_masked_isr(u32_t error_flags, void *arg)
+static void tx_ext_masked_isr(uint32_t error_flags, void *arg)
 {
 	struct zcan_frame *msg = (struct zcan_frame *)arg;
 
@@ -365,7 +365,7 @@ static void send_receive(const struct zcan_filter *filter, struct zcan_frame *ms
 {
 	int ret, filter_id;
 	struct zcan_frame msg_buffer;
-	u32_t mask = 0U;
+	uint32_t mask = 0U;
 
 	zassert_not_null(can_dev, "Device not not found");
 

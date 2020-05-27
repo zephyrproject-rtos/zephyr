@@ -29,7 +29,7 @@ static int canopen_storage_eeprom_error;
 static CO_SDO_abortCode_t canopen_odf_1010(CO_ODF_arg_t *odf_arg)
 {
 	CO_EM_t *em = odf_arg->object;
-	u32_t value;
+	uint32_t value;
 	int err;
 
 	value = CO_getUint32(odf_arg->data);
@@ -39,7 +39,7 @@ static CO_SDO_abortCode_t canopen_odf_1010(CO_ODF_arg_t *odf_arg)
 	}
 
 	/* Preserve old value */
-	memcpy(odf_arg->data, odf_arg->ODdataStorage, sizeof(u32_t));
+	memcpy(odf_arg->data, odf_arg->ODdataStorage, sizeof(uint32_t));
 
 	if (odf_arg->subIndex != 1U) {
 		return CO_SDO_AB_NONE;
@@ -67,7 +67,7 @@ static CO_SDO_abortCode_t canopen_odf_1011(CO_ODF_arg_t *odf_arg)
 {
 	CO_EM_t *em = odf_arg->object;
 	bool failed = false;
-	u32_t value;
+	uint32_t value;
 	int err;
 
 	value = CO_getUint32(odf_arg->data);
@@ -77,7 +77,7 @@ static CO_SDO_abortCode_t canopen_odf_1011(CO_ODF_arg_t *odf_arg)
 	}
 
 	/* Preserve old value */
-	memcpy(odf_arg->data, odf_arg->ODdataStorage, sizeof(u32_t));
+	memcpy(odf_arg->data, odf_arg->ODdataStorage, sizeof(uint32_t));
 
 	if (odf_arg->subIndex < 1U) {
 		return CO_SDO_AB_NONE;

@@ -16,7 +16,7 @@ struct device *button_device[4];
 K_WORK_DEFINE(button_work, publish);
 
 static void button_pressed(struct device *dev,
-			   struct gpio_callback *cb, u32_t pins)
+			   struct gpio_callback *cb, uint32_t pins)
 {
 	k_work_submit(&button_work);
 }

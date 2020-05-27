@@ -46,7 +46,7 @@ static struct k_delayed_work retx_work;
 #define HCI_3WIRE_LINK_PKT	0x0f
 #define HCI_VENDOR_PKT		0xff
 
-static bool reliable_packet(u8_t type)
+static bool reliable_packet(uint8_t type)
 {
 	switch (type) {
 	case HCI_COMMAND_PKT:
@@ -91,11 +91,11 @@ static struct h5 {
 	struct k_fifo		rx_queue;
 	struct k_fifo		unack_queue;
 
-	u8_t			tx_win;
-	u8_t			tx_ack;
-	u8_t			tx_seq;
+	uint8_t			tx_win;
+	uint8_t			tx_ack;
+	uint8_t			tx_seq;
 
-	u8_t			rx_ack;
+	uint8_t			rx_ack;
 
 	enum {
 		UNINIT,
@@ -111,13 +111,13 @@ static struct h5 {
 	}			rx_state;
 } h5;
 
-static u8_t unack_queue_len;
+static uint8_t unack_queue_len;
 
-static const u8_t sync_req[] = { 0x01, 0x7e };
-static const u8_t sync_rsp[] = { 0x02, 0x7d };
+static const uint8_t sync_req[] = { 0x01, 0x7e };
+static const uint8_t sync_rsp[] = { 0x02, 0x7d };
 /* Third byte may change */
-static u8_t conf_req[3] = { 0x03, 0xfc };
-static const u8_t conf_rsp[] = { 0x04, 0x7b };
+static uint8_t conf_req[3] = { 0x03, 0xfc };
+static const uint8_t conf_rsp[] = { 0x04, 0x7b };
 
 /* H5 signal buffers pool */
 #define MAX_SIG_LEN	3
@@ -137,7 +137,7 @@ static void h5_reset_rx(void)
 	h5.rx_state = START;
 }
 
-static int h5_unslip_byte(u8_t *byte)
+static int h5_unslip_byte(uint8_t *byte)
 {
 	int count;
 
@@ -166,8 +166,8 @@ static int h5_unslip_byte(u8_t *byte)
 
 static void process_unack(void)
 {
-	u8_t next_seq = h5.tx_seq;
-	u8_t number_removed = unack_queue_len;
+	uint8_t next_seq = h5.tx_seq;
+	uint8_t number_removed = unack_queue_len;
 
 	if (!unack_queue_len) {
 		return;
@@ -213,7 +213,7 @@ static void process_unack(void)
 	}
 }
 
-static void h5_print_header(const u8_t *hdr, const char *str)
+static void h5_print_header(const uint8_t *hdr, const char *str)
 {
 	if (H5_HDR_RELIABLE(hdr)) {
 		BT_DBG("%s REL: seq %u ack %u crc %u type %u len %u",
@@ -228,7 +228,7 @@ static void h5_print_header(const u8_t *hdr, const char *str)
 }
 
 #if defined(CONFIG_BT_DEBUG_HCI_DRIVER)
-static void hexdump(const char *str, const u8_t *packet, size_t length)
+static void hexdump(const char *str, const uint8_t *packet, size_t length)
 {
 	int n = 0;
 
@@ -262,7 +262,7 @@ static void hexdump(const char *str, const u8_t *packet, size_t length)
 #define hexdump(str, packet, length)
 #endif
 
-static u8_t h5_slip_byte(u8_t byte)
+static uint8_t h5_slip_byte(uint8_t byte)
 {
 	switch (byte) {
 	case SLIP_DELIMITER:
@@ -279,9 +279,9 @@ static u8_t h5_slip_byte(u8_t byte)
 	}
 }
 
-static void h5_send(const u8_t *payload, u8_t type, int len)
+static void h5_send(const uint8_t *payload, uint8_t type, int len)
 {
-	u8_t hdr[4];
+	uint8_t hdr[4];
 	int i;
 
 	hexdump("<= ", payload, len);
@@ -340,7 +340,7 @@ static void retx_timeout(struct k_work *work)
 		/* Queue unack packets to the beginning of the queue */
 		while ((buf = net_buf_get(&h5.unack_queue, K_NO_WAIT))) {
 			/* include also packet type */
-			net_buf_push(buf, sizeof(u8_t));
+			net_buf_push(buf, sizeof(uint8_t));
 			net_buf_put(&h5.tx_queue, buf);
 			h5.tx_seq = (h5.tx_seq - 1) & 0x07;
 			unack_queue_len--;
@@ -362,7 +362,7 @@ static void ack_timeout(struct k_work *work)
 	h5_send(NULL, HCI_3WIRE_ACK_PKT, 0);
 }
 
-static void h5_process_complete_packet(u8_t *hdr)
+static void h5_process_complete_packet(uint8_t *hdr)
 {
 	struct net_buf *buf;
 
@@ -406,7 +406,7 @@ static void h5_process_complete_packet(u8_t *hdr)
 	}
 }
 
-static inline struct net_buf *get_evt_buf(u8_t evt)
+static inline struct net_buf *get_evt_buf(uint8_t evt)
 {
 	return bt_buf_get_evt(evt, false, K_NO_WAIT);
 }
@@ -414,9 +414,9 @@ static inline struct net_buf *get_evt_buf(u8_t evt)
 static void bt_uart_isr(struct device *unused)
 {
 	static int remaining;
-	u8_t byte;
+	uint8_t byte;
 	int ret;
-	static u8_t hdr[4];
+	static uint8_t hdr[4];
 
 	ARG_UNUSED(unused);
 
@@ -560,14 +560,14 @@ static void bt_uart_isr(struct device *unused)
 	}
 }
 
-static u8_t h5_get_type(struct net_buf *buf)
+static uint8_t h5_get_type(struct net_buf *buf)
 {
 	return net_buf_pull_u8(buf);
 }
 
 static int h5_queue(struct net_buf *buf)
 {
-	u8_t type;
+	uint8_t type;
 
 	BT_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
 
@@ -599,7 +599,7 @@ static void tx_thread(void)
 
 	while (true) {
 		struct net_buf *buf;
-		u8_t type;
+		uint8_t type;
 
 		BT_DBG("link_state %u", h5.link_state);
 
@@ -631,7 +631,7 @@ static void tx_thread(void)
 	}
 }
 
-static void h5_set_txwin(u8_t *conf)
+static void h5_set_txwin(uint8_t *conf)
 {
 	conf[2] = h5.tx_win & 0x07;
 }

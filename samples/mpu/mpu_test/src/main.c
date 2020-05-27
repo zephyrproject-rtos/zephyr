@@ -32,7 +32,7 @@ static int cmd_read(const struct shell *shell, size_t argc, char *argv[])
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	u32_t *p_mem = (u32_t *) RESERVED_MEM_MAP;
+	uint32_t *p_mem = (uint32_t *) RESERVED_MEM_MAP;
 
 	/* Reads from an address that is reserved in the memory map */
 	PR_SHELL(shell, "The value is: %d\n", *p_mem);
@@ -47,8 +47,8 @@ static int cmd_write_mcux(const struct shell *shell, size_t argc, char *argv[])
 	ARG_UNUSED(argv);
 
 	struct device *flash_dev;
-	u32_t value[2];
-	u32_t offset;
+	uint32_t value[2];
+	uint32_t offset;
 
 	flash_dev =
 		device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
@@ -85,8 +85,8 @@ static int cmd_write_stm32(const struct shell *shell, size_t argc, char *argv[])
 		device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 
 	/* 16K reserved to the application */
-	u32_t offset = FLASH_MEM + 0x4000;
-	u32_t value = 0xBADC0DE;
+	uint32_t offset = FLASH_MEM + 0x4000;
+	uint32_t value = 0xBADC0DE;
 
 	PR_SHELL(shell, "write address: 0x%x\n", offset);
 
@@ -108,7 +108,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 	ARG_UNUSED(argv);
 
 	/* 16K reserved to the application */
-	u32_t *p_mem = (u32_t *) (FLASH_MEM + 0x4000);
+	uint32_t *p_mem = (uint32_t *) (FLASH_MEM + 0x4000);
 
 	PR_SHELL(shell, "write address: 0x%x\n", FLASH_MEM + 0x4000);
 
@@ -134,16 +134,16 @@ static int cmd_run(const struct shell *shell, size_t argc, char *argv[])
 
 static int cmd_mtest(const struct shell *shell, size_t argc, char *argv[])
 {
-	u32_t *mem;
-	u32_t val;
+	uint32_t *mem;
+	uint32_t val;
 
-	val = (u32_t)strtol(argv[1], NULL, 16);
-	mem = (u32_t *) val;
+	val = (uint32_t)strtol(argv[1], NULL, 16);
+	mem = (uint32_t *) val;
 
 	if (argc == 2) {
 		PR_SHELL(shell, "The value is: 0x%x\n", *mem);
 	} else {
-		*mem = (u32_t) strtol(argv[2], NULL, 16);
+		*mem = (uint32_t) strtol(argv[2], NULL, 16);
 	}
 
 	return 0;

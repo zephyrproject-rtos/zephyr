@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(wdt_mcux_wdog32);
 struct mcux_wdog32_config {
 	WDOG_Type *base;
 #if DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency)
-	u32_t clock_frequency;
+	uint32_t clock_frequency;
 #else /* !DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency) */
 	char *clock_name;
 	clock_control_subsys_t clock_subsys;
@@ -38,7 +38,7 @@ struct mcux_wdog32_data {
 	bool timeout_valid;
 };
 
-static int mcux_wdog32_setup(struct device *dev, u8_t options)
+static int mcux_wdog32_setup(struct device *dev, uint8_t options)
 {
 	const struct mcux_wdog32_config *config = dev->config_info;
 	struct mcux_wdog32_data *data = dev->driver_data;
@@ -75,14 +75,14 @@ static int mcux_wdog32_disable(struct device *dev)
 }
 
 #define MSEC_TO_WDOG32_TICKS(clock_freq, divider, msec) \
-	((u32_t)(clock_freq * msec / 1000U / divider))
+	((uint32_t)(clock_freq * msec / 1000U / divider))
 
 static int mcux_wdog32_install_timeout(struct device *dev,
 				       const struct wdt_timeout_cfg *cfg)
 {
 	const struct mcux_wdog32_config *config = dev->config_info;
 	struct mcux_wdog32_data *data = dev->driver_data;
-	u32_t clock_freq;
+	uint32_t clock_freq;
 	int div;
 
 	if (data->timeout_valid) {
@@ -159,7 +159,7 @@ static void mcux_wdog32_isr(void *arg)
 	const struct mcux_wdog32_config *config = dev->config_info;
 	struct mcux_wdog32_data *data = dev->driver_data;
 	WDOG_Type *base = config->base;
-	u32_t flags;
+	uint32_t flags;
 
 	flags = WDOG32_GetStatusFlags(base);
 	WDOG32_ClearStatusFlags(base, flags);

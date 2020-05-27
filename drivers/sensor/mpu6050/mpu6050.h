@@ -30,24 +30,24 @@
 #define MPU6050_SLEEP_EN		BIT(6)
 
 /* measured in degrees/sec x10 to avoid floating point */
-static const u16_t mpu6050_gyro_sensitivity_x10[] = {
+static const uint16_t mpu6050_gyro_sensitivity_x10[] = {
 	1310, 655, 328, 164
 };
 
 struct mpu6050_data {
 	struct device *i2c;
 
-	s16_t accel_x;
-	s16_t accel_y;
-	s16_t accel_z;
-	u16_t accel_sensitivity_shift;
+	int16_t accel_x;
+	int16_t accel_y;
+	int16_t accel_z;
+	uint16_t accel_sensitivity_shift;
 
-	s16_t temp;
+	int16_t temp;
 
-	s16_t gyro_x;
-	s16_t gyro_y;
-	s16_t gyro_z;
-	u16_t gyro_sensitivity_x10;
+	int16_t gyro_x;
+	int16_t gyro_y;
+	int16_t gyro_z;
+	uint16_t gyro_sensitivity_x10;
 
 #ifdef CONFIG_MPU6050_TRIGGER
 	struct device *dev;
@@ -70,10 +70,10 @@ struct mpu6050_data {
 
 struct mpu6050_config {
 	const char *i2c_label;
-	u16_t i2c_addr;
+	uint16_t i2c_addr;
 #ifdef CONFIG_MPU6050_TRIGGER
-	u8_t int_pin;
-	u8_t int_flags;
+	uint8_t int_pin;
+	uint8_t int_flags;
 	const char *int_label;
 #endif /* CONFIG_MPU6050_TRIGGER */
 };

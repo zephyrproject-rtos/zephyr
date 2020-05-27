@@ -22,14 +22,14 @@ typedef void (*spi_dw_config_t)(void);
 
 /* Private structures */
 struct spi_dw_config {
-	u32_t regs;
-	u32_t clock_frequency;
+	uint32_t regs;
+	uint32_t clock_frequency;
 #ifdef CONFIG_CLOCK_CONTROL
 	const char *clock_name;
 	void *clock_data;
 #endif /* CONFIG_CLOCK_CONTROL */
 	spi_dw_config_t config_func;
-	u8_t op_modes;
+	uint8_t op_modes;
 };
 
 struct spi_dw_data {
@@ -37,9 +37,9 @@ struct spi_dw_data {
 	struct device *clock;
 #endif /* CONFIG_CLOCK_CONTROL */
 	struct spi_context ctx;
-	u8_t dfs;	/* dfs in bytes: 1,2 or 4 */
-	u8_t fifo_diff;	/* cannot be bigger than FIFO depth */
-	u16_t _unused;
+	uint8_t dfs;	/* dfs in bytes: 1,2 or 4 */
+	uint8_t fifo_diff;	/* cannot be bigger than FIFO depth */
+	uint16_t _unused;
 };
 
 /* Helper macros */
@@ -62,30 +62,30 @@ struct spi_dw_data {
 #endif /* CONFIG_SPI_DW_ARC_AUX_REGS */
 
 #define DEFINE_MM_REG_READ(__reg, __off, __sz)				\
-	static inline u32_t read_##__reg(u32_t addr)			\
+	static inline uint32_t read_##__reg(uint32_t addr)			\
 	{								\
 		return Z_REG_READ(__sz)(addr + __off);			\
 	}
 #define DEFINE_MM_REG_WRITE(__reg, __off, __sz)				\
-	static inline void write_##__reg(u32_t data, u32_t addr)	\
+	static inline void write_##__reg(uint32_t data, uint32_t addr)	\
 	{								\
 		Z_REG_WRITE(__sz)(data, addr + __off);			\
 	}
 
 #define DEFINE_SET_BIT_OP(__reg_bit, __reg_off, __bit)			\
-	static inline void set_bit_##__reg_bit(u32_t addr)		\
+	static inline void set_bit_##__reg_bit(uint32_t addr)		\
 	{								\
 		Z_REG_SET_BIT(addr + __reg_off, __bit);			\
 	}
 
 #define DEFINE_CLEAR_BIT_OP(__reg_bit, __reg_off, __bit)		\
-	static inline void clear_bit_##__reg_bit(u32_t addr)		\
+	static inline void clear_bit_##__reg_bit(uint32_t addr)		\
 	{								\
 		Z_REG_CLEAR_BIT(addr + __reg_off, __bit);		\
 	}
 
 #define DEFINE_TEST_BIT_OP(__reg_bit, __reg_off, __bit)			\
-	static inline int test_bit_##__reg_bit(u32_t addr)		\
+	static inline int test_bit_##__reg_bit(uint32_t addr)		\
 	{								\
 		return Z_REG_TEST_BIT(addr + __reg_off, __bit);		\
 	}

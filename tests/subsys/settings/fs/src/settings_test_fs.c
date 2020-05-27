@@ -10,9 +10,9 @@
 #include "settings_priv.h"
 
 
-u8_t val8;
-u16_t val16;
-u64_t val64;
+uint8_t val8;
+uint16_t val16;
+uint64_t val64;
 
 int test_get_called;
 int test_set_called;
@@ -205,7 +205,7 @@ int settings_test_file_strstr(const char *fname, char const *string,
 			      size_t str_len)
 {
 	int rc;
-	u32_t len;
+	uint32_t len;
 	size_t rlen;
 	char *buf;
 	struct fs_dirent entry;

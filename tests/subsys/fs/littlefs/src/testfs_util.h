@@ -110,7 +110,7 @@ static inline struct testfs_path *testfs_path_copy(struct testfs_path *dp,
  * @return number of octets written, or a negative error code.
  */
 int testfs_write_constant(struct fs_file_t *fp,
-			  u8_t value,
+			  uint8_t value,
 			  unsigned int len);
 
 /** Verify that the file contains a sequence of constant data.
@@ -128,7 +128,7 @@ int testfs_write_constant(struct fs_file_t *fp,
  * read failure.
  */
 int testfs_verify_constant(struct fs_file_t *fp,
-			   u8_t value,
+			   uint8_t value,
 			   unsigned int len);
 
 /** Write an increasing sequence of bytes to the file.
@@ -144,7 +144,7 @@ int testfs_verify_constant(struct fs_file_t *fp,
  * @return number of octets written, or a negative error code.
  */
 int testfs_write_incrementing(struct fs_file_t *fp,
-			      u8_t value,
+			      uint8_t value,
 			      unsigned int len);
 
 /** Verify that the file contains a sequence of increasing data.
@@ -162,15 +162,15 @@ int testfs_write_incrementing(struct fs_file_t *fp,
  * read failure.
  */
 int testfs_verify_incrementing(struct fs_file_t *fp,
-			       u8_t value,
+			       uint8_t value,
 			       unsigned int len);
 
 /** Structure used to describe a filesystem layout. */
 struct testfs_bcmd {
 	enum fs_dir_entry_type type;
 	const char *name;
-	u32_t size;
-	u8_t value;
+	uint32_t size;
+	uint8_t value;
 	bool matched;
 };
 

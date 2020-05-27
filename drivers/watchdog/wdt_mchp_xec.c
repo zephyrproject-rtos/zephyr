@@ -28,7 +28,7 @@ struct wdt_xec_data {
 
 DEVICE_DECLARE(wdt_xec);
 
-static int wdt_xec_setup(struct device *dev, u8_t options)
+static int wdt_xec_setup(struct device *dev, uint8_t options)
 {
 	WDT_Type *wdt_regs = WDT_XEC_REG_BASE;
 	struct wdt_xec_data *data = dev->driver_data;

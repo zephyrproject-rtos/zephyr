@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(mcux_flexcomm);
 struct mcux_flexcomm_config {
 	I2C_Type *base;
 	void (*irq_config_func)(struct device *dev);
-	u32_t bitrate;
+	uint32_t bitrate;
 };
 
 struct mcux_flexcomm_data {
@@ -29,12 +29,12 @@ struct mcux_flexcomm_data {
 	status_t callback_status;
 };
 
-static int mcux_flexcomm_configure(struct device *dev, u32_t dev_config_raw)
+static int mcux_flexcomm_configure(struct device *dev, uint32_t dev_config_raw)
 {
 	const struct mcux_flexcomm_config *config = dev->config_info;
 	I2C_Type *base = config->base;
-	u32_t clock_freq;
-	u32_t baudrate;
+	uint32_t clock_freq;
+	uint32_t baudrate;
 
 	if (!(I2C_MODE_MASTER & dev_config_raw)) {
 		return -EINVAL;
@@ -78,9 +78,9 @@ static void mcux_flexcomm_master_transfer_callback(I2C_Type *base,
 	k_sem_give(&data->device_sync_sem);
 }
 
-static u32_t mcux_flexcomm_convert_flags(int msg_flags)
+static uint32_t mcux_flexcomm_convert_flags(int msg_flags)
 {
-	u32_t flags = 0U;
+	uint32_t flags = 0U;
 
 	if (!(msg_flags & I2C_MSG_STOP)) {
 		flags |= kI2C_TransferNoStopFlag;
@@ -94,7 +94,7 @@ static u32_t mcux_flexcomm_convert_flags(int msg_flags)
 }
 
 static int mcux_flexcomm_transfer(struct device *dev, struct i2c_msg *msgs,
-		u8_t num_msgs, u16_t addr)
+		uint8_t num_msgs, uint16_t addr)
 {
 	const struct mcux_flexcomm_config *config = dev->config_info;
 	struct mcux_flexcomm_data *data = dev->driver_data;
@@ -169,7 +169,7 @@ static int mcux_flexcomm_init(struct device *dev)
 	const struct mcux_flexcomm_config *config = dev->config_info;
 	struct mcux_flexcomm_data *data = dev->driver_data;
 	I2C_Type *base = config->base;
-	u32_t clock_freq, bitrate_cfg;
+	uint32_t clock_freq, bitrate_cfg;
 	i2c_master_config_t master_config;
 	int error;
 

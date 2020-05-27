@@ -50,7 +50,7 @@ enum {
  */
 __net_socket struct spair {
 	int remote; /**< the remote endpoint file descriptor */
-	u32_t flags; /**< status and option bits */
+	uint32_t flags; /**< status and option bits */
 	struct k_sem sem; /**< semaphore for exclusive structure access */
 	struct k_pipe recv_q; /**< receive queue of local endpoint */
 	/** indicates write of local @a recv_q occurred */
@@ -58,7 +58,7 @@ __net_socket struct spair {
 	/** indicates read of local @a recv_q occurred */
 	struct k_poll_signal read_signal;
 	/** buffer for @a recv_q recv_q */
-	u8_t buf[CONFIG_NET_SOCKETPAIR_BUFFER_SIZE];
+	uint8_t buf[CONFIG_NET_SOCKETPAIR_BUFFER_SIZE];
 };
 
 /* forward declaration */
@@ -121,9 +121,9 @@ static inline size_t spair_read_avail(struct spair *spair)
 }
 
 /** Swap two 32-bit integers */
-static inline void swap32(u32_t *a, u32_t *b)
+static inline void swap32(uint32_t *a, uint32_t *b)
 {
-	u32_t c;
+	uint32_t c;
 
 	c = *b;
 	*b = *a;

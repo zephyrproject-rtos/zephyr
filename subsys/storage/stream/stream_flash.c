@@ -106,14 +106,14 @@ static int flash_sync(struct stream_flash_ctx *ctx)
 	return rc;
 }
 
-int stream_flash_buffered_write(struct stream_flash_ctx *ctx, const u8_t *data,
+int stream_flash_buffered_write(struct stream_flash_ctx *ctx, const uint8_t *data,
 				size_t len, bool flush)
 {
 	int processed = 0;
 	int rc = 0;
 	int buf_empty_bytes;
 	size_t fill_length;
-	u8_t filler;
+	uint8_t filler;
 
 	if (!ctx || !data) {
 		return -EFAULT;
@@ -179,7 +179,7 @@ size_t stream_flash_bytes_written(struct stream_flash_ctx *ctx)
 }
 
 int stream_flash_init(struct stream_flash_ctx *ctx, struct device *fdev,
-		      u8_t *buf, size_t buf_len, size_t offset, size_t size,
+		      uint8_t *buf, size_t buf_len, size_t offset, size_t size,
 		      stream_flash_callback_t cb)
 {
 	if (!ctx || !fdev || !buf) {

@@ -18,10 +18,10 @@ LOG_MODULE_REGISTER(test_flash);
 #define TEST_DATA_BYTE_1         0x4a
 #define TEST_DATA_LEN            128
 
-int flash_region_is_empty(u32_t off, void *dst, u32_t len)
+int flash_region_is_empty(uint32_t off, void *dst, uint32_t len)
 {
-	u8_t i;
-	u8_t *u8dst;
+	uint8_t i;
+	uint8_t *u8dst;
 	int rc;
 	const struct flash_area *fap;
 
@@ -52,8 +52,8 @@ int flash_region_is_empty(u32_t off, void *dst, u32_t len)
 void test_flash(void)
 {
 	struct device *flash_dev;
-	u8_t buf[TEST_DATA_LEN];
-	u32_t magic[4];
+	uint8_t buf[TEST_DATA_LEN];
+	uint32_t magic[4];
 	int i;
 
 	flash_dev = device_get_binding(DT_LABEL(DT_INST(0, jedec_spi_nor)));

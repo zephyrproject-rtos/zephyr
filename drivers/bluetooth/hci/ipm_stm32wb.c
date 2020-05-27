@@ -23,13 +23,13 @@
 
 /* Private variables ---------------------------------------------------------*/
 PLACE_IN_SECTION("MB_MEM1") ALIGN(4) static TL_CmdPacket_t BleCmdBuffer;
-PLACE_IN_SECTION("MB_MEM2") ALIGN(4) static u8_t EvtPool[POOL_SIZE];
+PLACE_IN_SECTION("MB_MEM2") ALIGN(4) static uint8_t EvtPool[POOL_SIZE];
 PLACE_IN_SECTION("MB_MEM2") ALIGN(4) static TL_CmdPacket_t SystemCmdBuffer;
-PLACE_IN_SECTION("MB_MEM2") ALIGN(4) static u8_t
+PLACE_IN_SECTION("MB_MEM2") ALIGN(4) static uint8_t
 	SystemSpareEvtBuffer[sizeof(TL_PacketHeader_t) + TL_EVT_HDR_SIZE + 255];
-PLACE_IN_SECTION("MB_MEM2") ALIGN(4) static u8_t
+PLACE_IN_SECTION("MB_MEM2") ALIGN(4) static uint8_t
 	BleSpareEvtBuffer[sizeof(TL_PacketHeader_t) + TL_EVT_HDR_SIZE + 255];
-PLACE_IN_SECTION("MB_MEM2") ALIGN(4) static u8_t
+PLACE_IN_SECTION("MB_MEM2") ALIGN(4) static uint8_t
 	HciAclDataBuffer[sizeof(TL_PacketHeader_t) + 5 + 251];
 
 static void syscmd_status_not(SHCI_TL_CmdStatus_t status);
@@ -50,14 +50,14 @@ static K_SEM_DEFINE(acl_data_ack, 1, 1);
 static K_SEM_DEFINE(ipm_busy, 1, 1);
 
 struct aci_set_tx_power {
-	u8_t cmd;
-	u8_t value[2];
+	uint8_t cmd;
+	uint8_t value[2];
 };
 
 struct aci_set_ble_addr {
-	u8_t config_offset;
-	u8_t length;
-	u8_t value[6];
+	uint8_t config_offset;
+	uint8_t length;
+	uint8_t value[6];
 } __packed;
 
 #define ACI_WRITE_SET_TX_POWER_LEVEL       BT_OP(BT_OGF_VS, 0xFC0F)
@@ -133,7 +133,7 @@ static void tryfix_event(TL_Evt_t *tev)
 	}
 
 	struct bt_hci_evt_le_enh_conn_complete *evt =
-			(void *)((u8_t *)mev + (sizeof(*mev)));
+			(void *)((uint8_t *)mev + (sizeof(*mev)));
 
 	if (!bt_addr_cmp(&evt->peer_addr.a, BT_ADDR_NONE)) {
 		BT_WARN("Invalid peer addr %s", bt_addr_le_str(&evt->peer_addr));
@@ -187,7 +187,7 @@ static void bt_ipm_rx_thread(void)
 			BT_DBG("ACL: handle %x, len %x",
 			       acl_hdr.handle, acl_hdr.len);
 			net_buf_add_mem(buf, &acl_hdr, sizeof(acl_hdr));
-			net_buf_add_mem(buf, (u8_t *)&acl->acl_data,
+			net_buf_add_mem(buf, (uint8_t *)&acl->acl_data,
 					acl_hdr.len);
 			break;
 		default:
@@ -289,7 +289,7 @@ void transport_init(void)
 	TL_Init();
 
 	/**< System channel initialization */
-	shci_init_config.p_cmdbuffer = (u8_t *)&SystemCmdBuffer;
+	shci_init_config.p_cmdbuffer = (uint8_t *)&SystemCmdBuffer;
 	shci_init_config.StatusNotCallBack = syscmd_status_not;
 	shci_init(sysevt_received, (void *) &shci_init_config);
 
@@ -301,7 +301,7 @@ void transport_init(void)
 	TL_MM_Init(&tl_mm_config);
 
 	/**< BLE channel initialization */
-	tl_ble_config.p_cmdbuffer = (u8_t *)&BleCmdBuffer;
+	tl_ble_config.p_cmdbuffer = (uint8_t *)&BleCmdBuffer;
 	tl_ble_config.p_AclDataBuffer = HciAclDataBuffer;
 	tl_ble_config.IoBusEvtCallBack = TM_EvtReceivedCb;
 	tl_ble_config.IoBusAclDataTxAck = TM_AclDataAck;
@@ -392,9 +392,9 @@ static void start_ble_rf(void)
 bt_addr_t *bt_get_ble_addr(void)
 {
 	bt_addr_t *bd_addr;
-	u32_t udn;
-	u32_t company_id;
-	u32_t device_id;
+	uint32_t udn;
+	uint32_t company_id;
+	uint32_t device_id;
 
 	/* Get the 64 bit Unique Device Number UID */
 	/* The UID is used by firmware to derive   */

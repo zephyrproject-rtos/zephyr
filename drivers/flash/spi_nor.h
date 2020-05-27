@@ -13,13 +13,13 @@
 
 struct spi_nor_config {
 	/* JEDEC id from devicetree */
-	u8_t id[SPI_NOR_MAX_ID_LEN];
+	uint8_t id[SPI_NOR_MAX_ID_LEN];
 
 	/* Indicates support for BE32K */
 	bool has_be32k;
 
 	/* Size from devicetree, in bytes */
-	u32_t size;
+	uint32_t size;
 };
 
 /* Status register bits */

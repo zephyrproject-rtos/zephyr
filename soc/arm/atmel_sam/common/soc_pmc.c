@@ -16,7 +16,7 @@
 #error "Unsupported SoC, update soc_pmc.c functions"
 #endif
 
-void soc_pmc_peripheral_enable(u32_t id)
+void soc_pmc_peripheral_enable(uint32_t id)
 {
 	__ASSERT(id < ID_PERIPH_COUNT, "Invalid peripheral id");
 
@@ -33,7 +33,7 @@ void soc_pmc_peripheral_enable(u32_t id)
 	}
 }
 
-void soc_pmc_peripheral_disable(u32_t id)
+void soc_pmc_peripheral_disable(uint32_t id)
 {
 	__ASSERT(id < ID_PERIPH_COUNT, "Invalid peripheral id");
 
@@ -50,7 +50,7 @@ void soc_pmc_peripheral_disable(u32_t id)
 	}
 }
 
-u32_t soc_pmc_peripheral_is_enabled(u32_t id)
+uint32_t soc_pmc_peripheral_is_enabled(uint32_t id)
 {
 	__ASSERT(id < ID_PERIPH_COUNT, "Invalid peripheral id");
 

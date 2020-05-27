@@ -26,9 +26,9 @@ void main(void)
 	struct device *lora_dev;
 	struct lora_modem_config config;
 	int ret, len;
-	u8_t data[MAX_DATA_LEN] = {0};
-	s16_t rssi;
-	s8_t snr;
+	uint8_t data[MAX_DATA_LEN] = {0};
+	int16_t rssi;
+	int8_t snr;
 
 	lora_dev = device_get_binding(DEFAULT_RADIO);
 	if (!lora_dev) {

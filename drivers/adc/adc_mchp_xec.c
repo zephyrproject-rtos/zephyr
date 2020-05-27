@@ -31,22 +31,22 @@ LOG_MODULE_REGISTER(adc_mchp_xec);
 
 struct adc_xec_data {
 	struct adc_context ctx;
-	u16_t *buffer;
-	u16_t *repeat_buffer;
+	uint16_t *buffer;
+	uint16_t *repeat_buffer;
 };
 
 struct adc_xec_regs {
-	u32_t control_reg;
-	u32_t delay_reg;
-	u32_t status_reg;
-	u32_t single_reg;
-	u32_t repeat_reg;
-	u32_t channel_read_reg[8];
-	u32_t unused[18];
-	u32_t config_reg;
-	u32_t vref_channel_reg;
-	u32_t vref_control_reg;
-	u32_t sar_control_reg;
+	uint32_t control_reg;
+	uint32_t delay_reg;
+	uint32_t status_reg;
+	uint32_t single_reg;
+	uint32_t repeat_reg;
+	uint32_t channel_read_reg[8];
+	uint32_t unused[18];
+	uint32_t config_reg;
+	uint32_t vref_channel_reg;
+	uint32_t vref_control_reg;
+	uint32_t sar_control_reg;
 };
 
 #define ADC_XEC_REG_BASE						\
@@ -80,7 +80,7 @@ static int adc_xec_channel_setup(struct device *dev,
 				 const struct adc_channel_cfg *channel_cfg)
 {
 	struct adc_xec_regs *adc_regs = ADC_XEC_REG_BASE;
-	u32_t reg;
+	uint32_t reg;
 
 	ARG_UNUSED(dev);
 
@@ -125,7 +125,7 @@ static bool adc_xec_validate_buffer_size(const struct adc_sequence *sequence)
 {
 	int chan_count = 0;
 	size_t buff_need;
-	u32_t chan_mask;
+	uint32_t chan_mask;
 
 	for (chan_mask = 0x80; chan_mask != 0; chan_mask >>= 1) {
 		if (chan_mask & sequence->channels) {
@@ -133,7 +133,7 @@ static bool adc_xec_validate_buffer_size(const struct adc_sequence *sequence)
 		}
 	}
 
-	buff_need = chan_count * sizeof(u16_t);
+	buff_need = chan_count * sizeof(uint16_t);
 
 	if (sequence->options) {
 		buff_need *= 1 + sequence->options->extra_samplings;
@@ -151,7 +151,7 @@ static int adc_xec_start_read(struct device *dev,
 {
 	struct adc_xec_regs *adc_regs = ADC_XEC_REG_BASE;
 	struct adc_xec_data *data = dev->driver_data;
-	u32_t reg;
+	uint32_t reg;
 
 	if (sequence->channels & ~BIT_MASK(MCHP_ADC_MAX_CHAN)) {
 		LOG_ERR("Incorrect channels, bitmask 0x%x", sequence->channels);
@@ -224,10 +224,10 @@ static void xec_adc_get_sample(struct device *dev)
 {
 	struct adc_xec_regs *adc_regs = ADC_XEC_REG_BASE;
 	struct adc_xec_data *data = dev->driver_data;
-	u32_t idx;
-	u32_t channels = adc_regs->status_reg;
-	u32_t ch_status = channels;
-	u32_t bit;
+	uint32_t idx;
+	uint32_t channels = adc_regs->status_reg;
+	uint32_t ch_status = channels;
+	uint32_t bit;
 
 	/*
 	 * Using the enabled channel bit set, from
@@ -240,7 +240,7 @@ static void xec_adc_get_sample(struct device *dev)
 	while (bit != 0) {
 		idx = bit - 1;
 
-		*data->buffer = (u16_t)adc_regs->channel_read_reg[idx];
+		*data->buffer = (uint16_t)adc_regs->channel_read_reg[idx];
 		data->buffer++;
 
 		channels &= ~BIT(idx);
@@ -255,7 +255,7 @@ static void adc_xec_isr(struct device *dev)
 {
 	struct adc_xec_regs *adc_regs = ADC_XEC_REG_BASE;
 	struct adc_xec_data *data = dev->driver_data;
-	u32_t reg;
+	uint32_t reg;
 
 	/* Clear START_SINGLE bit and clear SINGLE_DONE_STATUS */
 	reg = adc_regs->control_reg;

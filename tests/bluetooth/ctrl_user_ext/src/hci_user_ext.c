@@ -21,7 +21,7 @@
  * in this file are simple stubs without functional behavior.
  */
 
-s8_t hci_user_ext_get_class(struct node_rx_pdu *node_rx)
+int8_t hci_user_ext_get_class(struct node_rx_pdu *node_rx)
 {
 	return 0;
 }

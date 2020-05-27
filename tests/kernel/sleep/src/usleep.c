@@ -62,11 +62,11 @@
 void test_usleep(void)
 {
 	int retries = 0;
-	s64_t elapsed_ms;
+	int64_t elapsed_ms;
 
 	while (retries < RETRIES) {
-		s64_t start_ms;
-		s64_t end_ms;
+		int64_t start_ms;
+		int64_t end_ms;
 		int i;
 
 		++retries;

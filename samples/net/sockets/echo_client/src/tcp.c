@@ -69,7 +69,7 @@ static int send_tcp_data(struct data *data)
 	return ret;
 }
 
-static int compare_tcp_data(struct data *data, const char *buf, u32_t received)
+static int compare_tcp_data(struct data *data, const char *buf, uint32_t received)
 {
 	if (data->tcp.received + received > data->tcp.expecting) {
 		LOG_ERR("Too much data received: TCP %s", data->proto);

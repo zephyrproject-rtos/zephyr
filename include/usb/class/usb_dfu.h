@@ -76,12 +76,12 @@
 
 /** Run-Time Functional Descriptor */
 struct dfu_runtime_descriptor {
-	u8_t bLength;
-	u8_t bDescriptorType;
-	u8_t bmAttributes;
-	u16_t wDetachTimeOut;
-	u16_t wTransferSize;
-	u16_t bcdDFUVersion;
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint8_t bmAttributes;
+	uint16_t wDetachTimeOut;
+	uint16_t wTransferSize;
+	uint16_t bcdDFUVersion;
 } __packed;
 
 /** bStatus values for the DFU_GETSTATUS response */

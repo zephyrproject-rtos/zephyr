@@ -39,7 +39,7 @@ __weak void _sys_pm_power_state_exit_post_ops(enum power_states state)
 }
 
 /* Our PM policy handler */
-enum power_states sys_pm_policy_next_state(s32_t ticks)
+enum power_states sys_pm_policy_next_state(int32_t ticks)
 {
 	static bool test_flag;
 

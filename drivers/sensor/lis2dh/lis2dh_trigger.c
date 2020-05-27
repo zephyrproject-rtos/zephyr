@@ -67,8 +67,8 @@ static int lis2dh_trigger_drdy_set(struct device *dev, enum sensor_channel chan,
 static int lis2dh_start_trigger_int1(struct device *dev)
 {
 	int status;
-	u8_t raw[LIS2DH_BUF_SZ];
-	u8_t ctrl1 = 0U;
+	uint8_t raw[LIS2DH_BUF_SZ];
+	uint8_t ctrl1 = 0U;
 	struct lis2dh_data *lis2dh = dev->driver_data;
 
 	/* power down temporarily to align interrupt & data output sampling */
@@ -126,7 +126,7 @@ static int lis2dh_trigger_anym_set(struct device *dev,
 {
 	struct lis2dh_data *lis2dh = dev->driver_data;
 	int status;
-	u8_t reg_val;
+	uint8_t reg_val;
 
 	setup_int2(dev, false);
 
@@ -190,8 +190,8 @@ int lis2dh_acc_slope_config(struct device *dev, enum sensor_attribute attr,
 	int status;
 
 	if (attr == SENSOR_ATTR_SLOPE_TH) {
-		u8_t range_g, reg_val;
-		u32_t slope_th_ums2;
+		uint8_t range_g, reg_val;
+		uint32_t slope_th_ums2;
 
 		status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_CTRL4,
 						 &reg_val);
@@ -237,7 +237,7 @@ int lis2dh_acc_slope_config(struct device *dev, enum sensor_attribute attr,
 }
 
 static void lis2dh_gpio_int1_callback(struct device *dev,
-				      struct gpio_callback *cb, u32_t pins)
+				      struct gpio_callback *cb, uint32_t pins)
 {
 	struct lis2dh_data *lis2dh =
 		CONTAINER_OF(cb, struct lis2dh_data, gpio_int1_cb);
@@ -255,7 +255,7 @@ static void lis2dh_gpio_int1_callback(struct device *dev,
 
 #if DT_INST_PROP_HAS_IDX(0, irq_gpios, 1)
 static void lis2dh_gpio_int2_callback(struct device *dev,
-				      struct gpio_callback *cb, u32_t pins)
+				      struct gpio_callback *cb, uint32_t pins)
 {
 	struct lis2dh_data *lis2dh =
 		CONTAINER_OF(cb, struct lis2dh_data, gpio_int2_cb);
@@ -321,7 +321,7 @@ static void lis2dh_thread_cb(void *arg)
 			.type = SENSOR_TRIG_DELTA,
 			.chan = lis2dh->chan_drdy,
 		};
-		u8_t reg_val;
+		uint8_t reg_val;
 
 		/* clear interrupt 2 to de-assert int2 line */
 		status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_INT2_SRC,
@@ -374,7 +374,7 @@ int lis2dh_init_interrupt(struct device *dev)
 	struct lis2dh_data *lis2dh = dev->driver_data;
 	int status;
 #if DT_INST_PROP_HAS_IDX(0, irq_gpios, 1)
-	u8_t raw[2];
+	uint8_t raw[2];
 #endif
 
 	/* setup data ready gpio interrupt */

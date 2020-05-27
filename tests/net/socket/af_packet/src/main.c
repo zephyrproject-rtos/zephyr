@@ -20,12 +20,12 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #define DBG(fmt, ...)
 #endif
 
-static u8_t lladdr1[] = { 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
-static u8_t lladdr2[] = { 0x02, 0x02, 0x02, 0x02, 0x02, 0x02 };
+static uint8_t lladdr1[] = { 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
+static uint8_t lladdr2[] = { 0x02, 0x02, 0x02, 0x02, 0x02, 0x02 };
 
 struct eth_fake_context {
 	struct net_if *iface;
-	u8_t *mac_address;
+	uint8_t *mac_address;
 };
 
 static struct eth_fake_context eth_fake_data1 = {

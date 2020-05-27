@@ -15,7 +15,7 @@ K_THREAD_STACK_EXTERN(ustack);
 
 void spin_for_ms(int ms)
 {
-	u32_t t32 = k_uptime_get_32();
+	uint32_t t32 = k_uptime_get_32();
 
 	while (k_uptime_get_32() - t32 < ms) {
 		/* In the posix arch, a busy loop takes no time, so

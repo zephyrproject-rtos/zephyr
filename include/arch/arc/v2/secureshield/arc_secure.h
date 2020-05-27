@@ -37,11 +37,11 @@ extern "C" {
 		(__asm__ volatile("sjli %[sjli_id]\n" :: [sjli_id] "i" (id)))
 
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
-typedef u32_t (*_arc_s_call_handler_t)(u32_t arg1, u32_t arg2, u32_t arg3,
-				      u32_t arg4, u32_t arg5, u32_t arg6);
+typedef uint32_t (*_arc_s_call_handler_t)(uint32_t arg1, uint32_t arg2, uint32_t arg3,
+				      uint32_t arg4, uint32_t arg5, uint32_t arg6);
 
 
-extern void arc_go_to_normal(u32_t addr);
+extern void arc_go_to_normal(uint32_t addr);
 extern void _arc_do_secure_call(void);
 extern const _arc_s_call_handler_t arc_s_call_table[ARC_S_CALL_LIMIT];
 
@@ -50,17 +50,17 @@ extern const _arc_s_call_handler_t arc_s_call_table[ARC_S_CALL_LIMIT];
 
 #ifdef CONFIG_ARC_NORMAL_FIRMWARE
 
-static inline u32_t _arc_s_call_invoke6(u32_t arg1, u32_t arg2, u32_t arg3,
-					  u32_t arg4, u32_t arg5, u32_t arg6,
-					  u32_t call_id)
+static inline uint32_t _arc_s_call_invoke6(uint32_t arg1, uint32_t arg2, uint32_t arg3,
+					  uint32_t arg4, uint32_t arg5, uint32_t arg6,
+					  uint32_t call_id)
 {
-	register u32_t ret __asm__("r0") = arg1;
-	register u32_t r1 __asm__("r1") = arg2;
-	register u32_t r2 __asm__("r2") = arg3;
-	register u32_t r3 __asm__("r3") = arg4;
-	register u32_t r4 __asm__("r4") = arg5;
-	register u32_t r5 __asm__("r5") = arg6;
-	register u32_t r6 __asm__("r6") = call_id;
+	register uint32_t ret __asm__("r0") = arg1;
+	register uint32_t r1 __asm__("r1") = arg2;
+	register uint32_t r2 __asm__("r2") = arg3;
+	register uint32_t r3 __asm__("r3") = arg4;
+	register uint32_t r4 __asm__("r4") = arg5;
+	register uint32_t r5 __asm__("r5") = arg6;
+	register uint32_t r6 __asm__("r6") = call_id;
 
 	compiler_barrier();
 
@@ -74,15 +74,15 @@ static inline u32_t _arc_s_call_invoke6(u32_t arg1, u32_t arg2, u32_t arg3,
 	return ret;
 }
 
-static inline u32_t _arc_s_call_invoke5(u32_t arg1, u32_t arg2, u32_t arg3,
-					  u32_t arg4, u32_t arg5, u32_t call_id)
+static inline uint32_t _arc_s_call_invoke5(uint32_t arg1, uint32_t arg2, uint32_t arg3,
+					  uint32_t arg4, uint32_t arg5, uint32_t call_id)
 {
-	register u32_t ret __asm__("r0") = arg1;
-	register u32_t r1 __asm__("r1") = arg2;
-	register u32_t r2 __asm__("r2") = arg3;
-	register u32_t r3 __asm__("r3") = arg4;
-	register u32_t r4 __asm__("r4") = arg5;
-	register u32_t r6 __asm__("r6") = call_id;
+	register uint32_t ret __asm__("r0") = arg1;
+	register uint32_t r1 __asm__("r1") = arg2;
+	register uint32_t r2 __asm__("r2") = arg3;
+	register uint32_t r3 __asm__("r3") = arg4;
+	register uint32_t r4 __asm__("r4") = arg5;
+	register uint32_t r6 __asm__("r6") = call_id;
 
 	compiler_barrier();
 
@@ -96,14 +96,14 @@ static inline u32_t _arc_s_call_invoke5(u32_t arg1, u32_t arg2, u32_t arg3,
 	return ret;
 }
 
-static inline u32_t _arc_s_call_invoke4(u32_t arg1, u32_t arg2, u32_t arg3,
-					  u32_t arg4, u32_t call_id)
+static inline uint32_t _arc_s_call_invoke4(uint32_t arg1, uint32_t arg2, uint32_t arg3,
+					  uint32_t arg4, uint32_t call_id)
 {
-	register u32_t ret __asm__("r0") = arg1;
-	register u32_t r1 __asm__("r1") = arg2;
-	register u32_t r2 __asm__("r2") = arg3;
-	register u32_t r3 __asm__("r3") = arg4;
-	register u32_t r6 __asm__("r6") = call_id;
+	register uint32_t ret __asm__("r0") = arg1;
+	register uint32_t r1 __asm__("r1") = arg2;
+	register uint32_t r2 __asm__("r2") = arg3;
+	register uint32_t r3 __asm__("r3") = arg4;
+	register uint32_t r6 __asm__("r6") = call_id;
 
 	compiler_barrier();
 
@@ -117,13 +117,13 @@ static inline u32_t _arc_s_call_invoke4(u32_t arg1, u32_t arg2, u32_t arg3,
 	return ret;
 }
 
-static inline u32_t _arc_s_call_invoke3(u32_t arg1, u32_t arg2, u32_t arg3,
-					  u32_t call_id)
+static inline uint32_t _arc_s_call_invoke3(uint32_t arg1, uint32_t arg2, uint32_t arg3,
+					  uint32_t call_id)
 {
-	register u32_t ret __asm__("r0") = arg1;
-	register u32_t r1 __asm__("r1") = arg2;
-	register u32_t r2 __asm__("r2") = arg3;
-	register u32_t r6 __asm__("r6") = call_id;
+	register uint32_t ret __asm__("r0") = arg1;
+	register uint32_t r1 __asm__("r1") = arg2;
+	register uint32_t r2 __asm__("r2") = arg3;
+	register uint32_t r6 __asm__("r6") = call_id;
 
 	compiler_barrier();
 
@@ -136,11 +136,11 @@ static inline u32_t _arc_s_call_invoke3(u32_t arg1, u32_t arg2, u32_t arg3,
 	return ret;
 }
 
-static inline u32_t _arc_s_call_invoke2(u32_t arg1, u32_t arg2, u32_t call_id)
+static inline uint32_t _arc_s_call_invoke2(uint32_t arg1, uint32_t arg2, uint32_t call_id)
 {
-	register u32_t ret __asm__("r0") = arg1;
-	register u32_t r1 __asm__("r1") = arg2;
-	register u32_t r6 __asm__("r6") = call_id;
+	register uint32_t ret __asm__("r0") = arg1;
+	register uint32_t r1 __asm__("r1") = arg2;
+	register uint32_t r6 __asm__("r6") = call_id;
 
 	compiler_barrier();
 
@@ -153,10 +153,10 @@ static inline u32_t _arc_s_call_invoke2(u32_t arg1, u32_t arg2, u32_t call_id)
 	return ret;
 }
 
-static inline u32_t _arc_s_call_invoke1(u32_t arg1, u32_t call_id)
+static inline uint32_t _arc_s_call_invoke1(uint32_t arg1, uint32_t call_id)
 {
-	register u32_t ret __asm__("r0") = arg1;
-	register u32_t r6 __asm__("r6") = call_id;
+	register uint32_t ret __asm__("r0") = arg1;
+	register uint32_t r6 __asm__("r6") = call_id;
 
 	compiler_barrier();
 
@@ -169,10 +169,10 @@ static inline u32_t _arc_s_call_invoke1(u32_t arg1, u32_t call_id)
 	return ret;
 }
 
-static inline u32_t _arc_s_call_invoke0(u32_t call_id)
+static inline uint32_t _arc_s_call_invoke0(uint32_t call_id)
 {
-	register u32_t ret __asm__("r0");
-	register u32_t r6 __asm__("r6") = call_id;
+	register uint32_t ret __asm__("r0");
+	register uint32_t r6 __asm__("r6") = call_id;
 
 	compiler_barrier();
 
@@ -187,7 +187,7 @@ static inline u32_t _arc_s_call_invoke0(u32_t call_id)
 
 static inline bool _arch_is_user_context(void)
 {
-	u32_t status;
+	uint32_t status;
 
 	compiler_barrier();
 

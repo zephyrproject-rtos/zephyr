@@ -22,7 +22,7 @@
 
 LOG_MODULE_REGISTER(LPS22HH, CONFIG_SENSOR_LOG_LEVEL);
 
-static inline int lps22hh_set_odr_raw(struct device *dev, u8_t odr)
+static inline int lps22hh_set_odr_raw(struct device *dev, uint8_t odr)
 {
 	struct lps22hh_data *data = dev->driver_data;
 
@@ -54,21 +54,21 @@ static int lps22hh_sample_fetch(struct device *dev,
 }
 
 static inline void lps22hh_press_convert(struct sensor_value *val,
-					 s32_t raw_val)
+					 int32_t raw_val)
 {
 	/* Pressure sensitivity is 4096 LSB/hPa */
 	/* Convert raw_val to val in kPa */
 	val->val1 = (raw_val >> 12) / 10;
 	val->val2 = (raw_val >> 12) % 10 * 100000 +
-		(((s32_t)((raw_val) & 0x0FFF) * 100000L) >> 12);
+		(((int32_t)((raw_val) & 0x0FFF) * 100000L) >> 12);
 }
 
 static inline void lps22hh_temp_convert(struct sensor_value *val,
-					s16_t raw_val)
+					int16_t raw_val)
 {
 	/* Temperature sensitivity is 100 LSB/deg C */
 	val->val1 = raw_val / 100;
-	val->val2 = ((s32_t)raw_val % 100) * 10000;
+	val->val2 = ((int32_t)raw_val % 100) * 10000;
 }
 
 static int lps22hh_channel_get(struct device *dev,
@@ -88,9 +88,9 @@ static int lps22hh_channel_get(struct device *dev,
 	return 0;
 }
 
-static const u16_t lps22hh_map[] = {0, 1, 10, 25, 50, 75, 100, 200};
+static const uint16_t lps22hh_map[] = {0, 1, 10, 25, 50, 75, 100, 200};
 
-static int lps22hh_odr_set(struct device *dev, u16_t freq)
+static int lps22hh_odr_set(struct device *dev, uint16_t freq)
 {
 	int odr;
 
@@ -145,7 +145,7 @@ static const struct sensor_driver_api lps22hh_api_funcs = {
 static int lps22hh_init_chip(struct device *dev)
 {
 	struct lps22hh_data *data = dev->driver_data;
-	u8_t chip_id;
+	uint8_t chip_id;
 
 	if (lps22hh_device_id_get(data->ctx, &chip_id) < 0) {
 		LOG_DBG("Failed reading chip id");

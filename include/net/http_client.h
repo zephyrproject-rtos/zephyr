@@ -106,12 +106,12 @@ struct http_response {
 	http_response_cb_t cb;
 
 	/** Where the body starts */
-	u8_t *body_start;
+	uint8_t *body_start;
 
 	/** Where the response is stored, this is to be
 	 * provided by the user.
 	 */
-	u8_t *recv_buf;
+	uint8_t *recv_buf;
 
 	/** Response buffer maximum length */
 	size_t recv_buf_len;
@@ -145,9 +145,9 @@ struct http_response {
 	 */
 	char http_status[HTTP_STATUS_STR_SIZE];
 
-	u8_t cl_present : 1;
-	u8_t body_found : 1;
-	u8_t message_complete : 1;
+	uint8_t cl_present : 1;
+	uint8_t body_found : 1;
+	uint8_t message_complete : 1;
 };
 
 /** HTTP client internal data that the application should not touch
@@ -202,7 +202,7 @@ struct http_request {
 	const struct http_parser_settings *http_cb;
 
 	/** User supplied buffer where received data is stored */
-	u8_t *recv_buf;
+	uint8_t *recv_buf;
 
 	/** Length of the user supplied receive buffer */
 	size_t recv_buf_len;
@@ -279,7 +279,7 @@ struct http_request {
  * @return <0 if error, >=0 amount of data sent to the server
  */
 int http_client_req(int sock, struct http_request *req,
-		    s32_t timeout, void *user_data);
+		    int32_t timeout, void *user_data);
 
 #ifdef __cplusplus
 }

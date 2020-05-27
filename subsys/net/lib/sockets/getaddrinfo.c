@@ -34,8 +34,8 @@ struct getaddrinfo_state {
 	const struct zsock_addrinfo *hints;
 	struct k_sem sem;
 	int status;
-	u16_t idx;
-	u16_t port;
+	uint16_t idx;
+	uint16_t port;
 	struct zsock_addrinfo *ai_arr;
 };
 
@@ -284,7 +284,7 @@ static inline int z_vrfy_z_zsock_getaddrinfo_internal(const char *host,
 {
 	struct zsock_addrinfo hints_copy;
 	char *host_copy = NULL, *service_copy = NULL;
-	u32_t ret;
+	uint32_t ret;
 
 	if (hints) {
 		Z_OOPS(z_user_from_copy(&hints_copy, (void *)hints,

@@ -23,20 +23,20 @@
 #define MAX_CLK_STRETCHING  5
 
 struct xec_speed_cfg {
-	u32_t bus_clk;
-	u32_t data_timing;
-	u32_t start_hold_time;
-	u32_t config;
-	u32_t timeout_scale;
+	uint32_t bus_clk;
+	uint32_t data_timing;
+	uint32_t start_hold_time;
+	uint32_t config;
+	uint32_t timeout_scale;
 };
 
 struct i2c_xec_config {
-	u32_t port_sel;
-	u32_t base_addr;
+	uint32_t port_sel;
+	uint32_t base_addr;
 };
 
 struct i2c_xec_data {
-	u32_t pending_stop;
+	uint32_t pending_stop;
 };
 
 /* Recommended programming values based on 16MHz
@@ -86,7 +86,7 @@ static int xec_spin_yield(int *counter)
 	return 0;
 }
 
-static void recover_from_error(u32_t ba)
+static void recover_from_error(uint32_t ba)
 {
 	MCHP_I2C_SMB_CTRL_WO(ba) = MCHP_I2C_SMB_CTRL_PIN |
 				   MCHP_I2C_SMB_CTRL_ESO |
@@ -94,7 +94,7 @@ static void recover_from_error(u32_t ba)
 				   MCHP_I2C_SMB_CTRL_ACK;
 }
 
-static int wait_bus_free(u32_t ba)
+static int wait_bus_free(uint32_t ba)
 {
 	int ret;
 	int counter = 0;
@@ -110,7 +110,7 @@ static int wait_bus_free(u32_t ba)
 	return 0;
 }
 
-static int wait_completion(u32_t ba)
+static int wait_completion(uint32_t ba)
 {
 	int ret;
 	int counter = 0;
@@ -140,21 +140,21 @@ static int wait_completion(u32_t ba)
 	return 0;
 }
 
-static bool check_lines(u32_t ba)
+static bool check_lines(uint32_t ba)
 {
 	return ((!(MCHP_I2C_SMB_BB_CTRL(ba) & MCHP_I2C_SMB_BB_CLKI_RO)) ||
 		(!(MCHP_I2C_SMB_BB_CTRL(ba) & MCHP_I2C_SMB_BB_DATI_RO)));
 }
 
-static int i2c_xec_configure(struct device *dev, u32_t dev_config_raw)
+static int i2c_xec_configure(struct device *dev, uint32_t dev_config_raw)
 {
 	const struct i2c_xec_config *config =
 		(const struct i2c_xec_config *const) (dev->config_info);
-	u32_t ba = config->base_addr;
-	u8_t port_sel = config->port_sel;
-	u32_t speed_id;
-	u32_t cfg, bb_ctrl;
-	u8_t ctrl;
+	uint32_t ba = config->base_addr;
+	uint8_t port_sel = config->port_sel;
+	uint32_t speed_id;
+	uint32_t cfg, bb_ctrl;
+	uint8_t ctrl;
 
 	if (!(dev_config_raw & I2C_MODE_MASTER)) {
 		return -ENOTSUP;
@@ -226,13 +226,13 @@ static int i2c_xec_configure(struct device *dev, u32_t dev_config_raw)
 }
 
 static int i2c_xec_poll_write(struct device *dev, struct i2c_msg msg,
-			      u16_t addr)
+			      uint16_t addr)
 {
 	const struct i2c_xec_config *config =
 		(const struct i2c_xec_config *const) (dev->config_info);
 	struct i2c_xec_data *data =
 		(struct i2c_xec_data *const) (dev->driver_data);
-	u32_t ba = config->base_addr;
+	uint32_t ba = config->base_addr;
 	int ret;
 
 	if (data->pending_stop == 0) {
@@ -289,14 +289,14 @@ static int i2c_xec_poll_write(struct device *dev, struct i2c_msg msg,
 }
 
 static int i2c_xec_poll_read(struct device *dev, struct i2c_msg msg,
-			     u16_t addr)
+			     uint16_t addr)
 {
 	const struct i2c_xec_config *config =
 		(const struct i2c_xec_config *const) (dev->config_info);
 	struct i2c_xec_data *data =
 		(struct i2c_xec_data *const) (dev->driver_data);
-	u32_t ba = config->base_addr;
-	u8_t byte, ctrl;
+	uint32_t ba = config->base_addr;
+	uint8_t byte, ctrl;
 	int ret;
 
 	if (!(msg.flags & I2C_MSG_RESTART)) {
@@ -366,7 +366,7 @@ static int i2c_xec_poll_read(struct device *dev, struct i2c_msg msg,
 }
 
 static int i2c_xec_transfer(struct device *dev, struct i2c_msg *msgs,
-				u8_t num_msgs, u16_t addr)
+				uint8_t num_msgs, uint16_t addr)
 {
 	int ret = 0;
 

@@ -50,7 +50,7 @@ static const char *const core_devices[] = {
 #endif
 
 /* Ordinal of sufficient size to index available devices. */
-typedef u16_t device_idx_t;
+typedef uint16_t device_idx_t;
 
 /* The maximum value representable with a device_idx_t. */
 #define DEVICE_IDX_MAX ((device_idx_t)(-1))
@@ -69,7 +69,7 @@ static device_idx_t num_pm;
 /* Number of devices successfully suspended. */
 static device_idx_t num_susp;
 
-const char *device_pm_state_str(u32_t state)
+const char *device_pm_state_str(uint32_t state)
 {
 	switch (state) {
 	case DEVICE_PM_ACTIVE_STATE:
@@ -87,7 +87,7 @@ const char *device_pm_state_str(u32_t state)
 	}
 }
 
-static int _sys_pm_devices(u32_t state)
+static int _sys_pm_devices(uint32_t state)
 {
 	num_susp = 0;
 

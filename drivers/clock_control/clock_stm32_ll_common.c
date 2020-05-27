@@ -71,7 +71,7 @@ static void config_bus_clk_init(LL_UTILS_ClkInitTypeDef *clk_init)
 #endif /* CONFIG_SOC_SERIES_STM32F0X && CONFIG_SOC_SERIES_STM32G0X */
 }
 
-static u32_t get_bus_clock(u32_t clock, u32_t prescaler)
+static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
 {
 	return clock / prescaler;
 }
@@ -181,7 +181,7 @@ static inline int stm32_clock_control_off(struct device *dev,
 
 static int stm32_clock_control_get_subsys_rate(struct device *clock,
 						clock_control_subsys_t sub_system,
-						u32_t *rate)
+						uint32_t *rate)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
 	/*
@@ -190,11 +190,11 @@ static int stm32_clock_control_get_subsys_rate(struct device *clock,
 	 * since it will be updated after clock configuration and hence
 	 * more likely to contain actual clock speed
 	 */
-	u32_t ahb_clock = SystemCoreClock;
-	u32_t apb1_clock = get_bus_clock(ahb_clock,
+	uint32_t ahb_clock = SystemCoreClock;
+	uint32_t apb1_clock = get_bus_clock(ahb_clock,
 				CONFIG_CLOCK_STM32_APB1_PRESCALER);
 #if !defined (CONFIG_SOC_SERIES_STM32F0X) && !defined (CONFIG_SOC_SERIES_STM32G0X)
-	u32_t apb2_clock = get_bus_clock(ahb_clock,
+	uint32_t apb2_clock = get_bus_clock(ahb_clock,
 				CONFIG_CLOCK_STM32_APB2_PRESCALER);
 #endif /* CONFIG_SOC_SERIES_STM32F0X && CONFIG_SOC_SERIES_STM32G0X */
 
@@ -247,7 +247,7 @@ static struct clock_control_driver_api stm32_clock_control_api = {
  * Unconditionally switch the system clock source to HSI.
  */
 __unused
-static void stm32_clock_switch_to_hsi(u32_t ahb_prescaler)
+static void stm32_clock_switch_to_hsi(uint32_t ahb_prescaler)
 {
 	/* Enable HSI if not enabled */
 	if (LL_RCC_HSI_IsReady() != 1) {
@@ -285,7 +285,7 @@ static inline void stm32_clock_control_mco_init(void)
 static int stm32_clock_control_init(struct device *dev)
 {
 	LL_UTILS_ClkInitTypeDef s_ClkInitStruct;
-	u32_t hclk_prescaler;
+	uint32_t hclk_prescaler;
 
 	ARG_UNUSED(dev);
 

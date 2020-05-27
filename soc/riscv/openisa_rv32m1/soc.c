@@ -111,7 +111,7 @@ int arch_irq_is_enabled(unsigned int irq)
 			return (EVENT_UNIT->INTPTEN &
 				BIT(rv32m1_level1_irq(irq))) != 0;
 		} else {
-			u32_t channel, line, ier;
+			uint32_t channel, line, ier;
 
 			/*
 			 * Here we break the abstraction and look

@@ -9,14 +9,14 @@
 #if defined(CONFIG_ARCH_POSIX)
 #define ALIGN_MS_BOUNDARY		       \
 	do {				       \
-		u32_t t = k_uptime_get_32();   \
+		uint32_t t = k_uptime_get_32();   \
 		while (t == k_uptime_get_32()) \
 			k_busy_wait(50);       \
 	} while (0)
 #else
 #define ALIGN_MS_BOUNDARY		       \
 	do {				       \
-		u32_t t = k_uptime_get_32();   \
+		uint32_t t = k_uptime_get_32();   \
 		while (t == k_uptime_get_32()) \
 			;		       \
 	} while (0)
@@ -34,8 +34,8 @@
  */
 void test_clock_uptime(void)
 {
-	u64_t t64, t32;
-	s64_t d64 = 0;
+	uint64_t t64, t32;
+	int64_t d64 = 0;
 
 	/**TESTPOINT: uptime elapse*/
 	t64 = k_uptime_get();
@@ -74,7 +74,7 @@ void test_clock_uptime(void)
  */
 void test_clock_cycle(void)
 {
-	u32_t c32, c0, c1, t32;
+	uint32_t c32, c0, c1, t32;
 
 	/**TESTPOINT: cycle elapse*/
 	ALIGN_MS_BOUNDARY;
@@ -105,7 +105,7 @@ void test_clock_cycle(void)
 			     (sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC),
 			     NULL);
 		/* delta NS should be greater than 1 milli-second */
-		zassert_true((u32_t)k_cyc_to_ns_floor64(c1 - c0) >
+		zassert_true((uint32_t)k_cyc_to_ns_floor64(c1 - c0) >
 			     (NSEC_PER_SEC / MSEC_PER_SEC), NULL);
 	}
 }

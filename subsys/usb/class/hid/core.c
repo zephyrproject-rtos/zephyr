@@ -115,17 +115,17 @@ struct usb_hid_config {
 #endif
 
 struct hid_device_info {
-	const u8_t *report_desc;
+	const uint8_t *report_desc;
 	size_t report_size;
 	const struct hid_ops *ops;
 #ifdef CONFIG_USB_DEVICE_SOF
-	u32_t sof_cnt[CONFIG_USB_HID_REPORTS + 1];
+	uint32_t sof_cnt[CONFIG_USB_HID_REPORTS + 1];
 	bool idle_on;
 	bool idle_id_report;
-	u8_t idle_rate[CONFIG_USB_HID_REPORTS + 1];
+	uint8_t idle_rate[CONFIG_USB_HID_REPORTS + 1];
 #endif
 #ifdef CONFIG_USB_HID_BOOT_PROTOCOL
-	u8_t protocol;
+	uint8_t protocol;
 #endif
 	struct usb_dev_data common;
 };
@@ -133,18 +133,18 @@ struct hid_device_info {
 static sys_slist_t usb_hid_devlist;
 
 static int hid_on_get_idle(struct hid_device_info *dev_data,
-			   struct usb_setup_packet *setup, s32_t *len,
-			   u8_t **data)
+			   struct usb_setup_packet *setup, int32_t *len,
+			   uint8_t **data)
 {
 #ifdef CONFIG_USB_DEVICE_SOF
-	u8_t report_id = sys_le16_to_cpu(setup->wValue) & 0xFF;
+	uint8_t report_id = sys_le16_to_cpu(setup->wValue) & 0xFF;
 
 	if (report_id > CONFIG_USB_HID_REPORTS) {
 		LOG_ERR("Report id out of limit: %d", report_id);
 		return -ENOTSUP;
 	}
 
-	u32_t size = sizeof(dev_data->idle_rate[report_id]);
+	uint32_t size = sizeof(dev_data->idle_rate[report_id]);
 
 	LOG_DBG("Get Idle callback, report_id: %d", report_id);
 
@@ -157,8 +157,8 @@ static int hid_on_get_idle(struct hid_device_info *dev_data,
 }
 
 static int hid_on_get_report(struct hid_device_info *dev_data,
-			     struct usb_setup_packet *setup, s32_t *len,
-			     u8_t **data)
+			     struct usb_setup_packet *setup, int32_t *len,
+			     uint8_t **data)
 {
 	LOG_DBG("Get Report callback");
 
@@ -168,8 +168,8 @@ static int hid_on_get_report(struct hid_device_info *dev_data,
 }
 
 static int hid_on_get_protocol(struct hid_device_info *dev_data,
-			       struct usb_setup_packet *setup, s32_t *len,
-			       u8_t **data)
+			       struct usb_setup_packet *setup, int32_t *len,
+			       uint8_t **data)
 {
 #ifdef CONFIG_USB_HID_BOOT_PROTOCOL
 	if (setup->wValue) {
@@ -177,7 +177,7 @@ static int hid_on_get_protocol(struct hid_device_info *dev_data,
 		return -ENOTSUP;
 	}
 
-	u32_t size = sizeof(dev_data->protocol);
+	uint32_t size = sizeof(dev_data->protocol);
 
 	LOG_DBG("Get Protocol callback, protocol: %d", dev_data->protocol);
 
@@ -190,12 +190,12 @@ static int hid_on_get_protocol(struct hid_device_info *dev_data,
 }
 
 static int hid_on_set_idle(struct hid_device_info *dev_data,
-			   struct usb_setup_packet *setup, s32_t *len,
-			   u8_t **data)
+			   struct usb_setup_packet *setup, int32_t *len,
+			   uint8_t **data)
 {
 #ifdef CONFIG_USB_DEVICE_SOF
-	u8_t rate = ((sys_le16_to_cpu(setup->wValue) & 0xFF00) >> 8);
-	u8_t report_id = sys_le16_to_cpu(setup->wValue) & 0xFF;
+	uint8_t rate = ((sys_le16_to_cpu(setup->wValue) & 0xFF00) >> 8);
+	uint8_t report_id = sys_le16_to_cpu(setup->wValue) & 0xFF;
 
 	if (report_id > CONFIG_USB_HID_REPORTS) {
 		LOG_ERR("Report id out of limit: %d", report_id);
@@ -210,7 +210,7 @@ static int hid_on_set_idle(struct hid_device_info *dev_data,
 		/* Clear idle */
 		bool clear = true;
 
-		for (u16_t i = 1; i <= CONFIG_USB_HID_REPORTS; i++) {
+		for (uint16_t i = 1; i <= CONFIG_USB_HID_REPORTS; i++) {
 			if (dev_data->idle_rate[i] != 0U) {
 				/* Report with non-zero id has idle rate. */
 				clear = false;
@@ -243,8 +243,8 @@ static int hid_on_set_idle(struct hid_device_info *dev_data,
 }
 
 static int hid_on_set_report(struct hid_device_info *dev_data,
-			     struct usb_setup_packet *setup, s32_t *len,
-			     u8_t **data)
+			     struct usb_setup_packet *setup, int32_t *len,
+			     uint8_t **data)
 {
 	LOG_DBG("Set Report callback");
 
@@ -254,11 +254,11 @@ static int hid_on_set_report(struct hid_device_info *dev_data,
 }
 
 static int hid_on_set_protocol(struct hid_device_info *dev_data,
-			       struct usb_setup_packet *setup, s32_t *len,
-			       u8_t **data)
+			       struct usb_setup_packet *setup, int32_t *len,
+			       uint8_t **data)
 {
 #ifdef CONFIG_USB_HID_BOOT_PROTOCOL
-	u16_t protocol = sys_le16_to_cpu(setup->wValue);
+	uint16_t protocol = sys_le16_to_cpu(setup->wValue);
 
 	if (protocol > HID_PROTOCOL_REPORT) {
 		LOG_ERR("Unsupported protocol: %u", protocol);
@@ -281,7 +281,7 @@ static int hid_on_set_protocol(struct hid_device_info *dev_data,
 #endif
 }
 
-static void usb_set_hid_report_size(const struct usb_cfg_data *cfg, u16_t size)
+static void usb_set_hid_report_size(const struct usb_cfg_data *cfg, uint16_t size)
 {
 	struct usb_if_descriptor *if_desc = (void *)cfg->interface_descriptor;
 	struct usb_hid_config *desc =
@@ -290,7 +290,7 @@ static void usb_set_hid_report_size(const struct usb_cfg_data *cfg, u16_t size)
 	LOG_DBG("if_desc %p desc %p size %u", if_desc, desc, size);
 
 	sys_put_le16(size,
-		     (u8_t *)&(desc->if0_hid.subdesc[0].wDescriptorLength));
+		     (uint8_t *)&(desc->if0_hid.subdesc[0].wDescriptorLength));
 }
 
 #ifdef CONFIG_USB_DEVICE_SOF
@@ -298,7 +298,7 @@ void hid_clear_idle_ctx(struct hid_device_info *dev_data)
 {
 	dev_data->idle_on = false;
 	dev_data->idle_id_report = false;
-	for (u16_t i = 0; i <= CONFIG_USB_HID_REPORTS; i++) {
+	for (uint16_t i = 0; i <= CONFIG_USB_HID_REPORTS; i++) {
 		dev_data->sof_cnt[i] = 0U;
 		dev_data->idle_rate[i] = 0U;
 	}
@@ -306,12 +306,12 @@ void hid_clear_idle_ctx(struct hid_device_info *dev_data)
 
 void hid_sof_handler(struct hid_device_info *dev_data)
 {
-	for (u16_t i = 0; i <= CONFIG_USB_HID_REPORTS; i++) {
+	for (uint16_t i = 0; i <= CONFIG_USB_HID_REPORTS; i++) {
 		if (dev_data->idle_rate[i]) {
 			dev_data->sof_cnt[i]++;
 		}
 
-		u32_t diff = abs((dev_data->idle_rate[i] * 4U)
+		uint32_t diff = abs((dev_data->idle_rate[i] * 4U)
 				 - dev_data->sof_cnt[i]);
 
 		if (diff < (2 + (dev_data->idle_rate[i] / 10U))) {
@@ -333,7 +333,7 @@ void hid_sof_handler(struct hid_device_info *dev_data)
 
 static void hid_do_status_cb(struct hid_device_info *dev_data,
 			     enum usb_dc_status_code status,
-			     const u8_t *param)
+			     const uint8_t *param)
 {
 	switch (status) {
 	case USB_DC_ERROR:
@@ -380,7 +380,7 @@ static void hid_do_status_cb(struct hid_device_info *dev_data,
 
 static void hid_status_cb(struct usb_cfg_data *cfg,
 			  enum usb_dc_status_code status,
-			  const u8_t *param)
+			  const uint8_t *param)
 {
 	struct hid_device_info *dev_data;
 	struct usb_dev_data *common;
@@ -399,7 +399,7 @@ static void hid_status_cb(struct usb_cfg_data *cfg,
 }
 
 static int hid_class_handle_req(struct usb_setup_packet *setup,
-				s32_t *len, u8_t **data)
+				int32_t *len, uint8_t **data)
 {
 	struct hid_device_info *dev_data;
 	struct usb_dev_data *common;
@@ -489,7 +489,7 @@ static int hid_class_handle_req(struct usb_setup_packet *setup,
 }
 
 static int hid_custom_handle_req(struct usb_setup_packet *setup,
-				 s32_t *len, u8_t **data)
+				 int32_t *len, uint8_t **data)
 {
 	LOG_DBG("Standard request: bRequest 0x%x bmRequestType 0x%x len %d",
 		setup->bRequest, setup->bmRequestType, *len);
@@ -498,8 +498,8 @@ static int hid_custom_handle_req(struct usb_setup_packet *setup,
 	    REQTYPE_GET_RECIP(setup->bmRequestType) ==
 					REQTYPE_RECIP_INTERFACE &&
 					setup->bRequest == REQ_GET_DESCRIPTOR) {
-		u8_t value = sys_le16_to_cpu(setup->wValue) >> 8;
-		u8_t iface_num = sys_le16_to_cpu(setup->wIndex);
+		uint8_t value = sys_le16_to_cpu(setup->wValue) >> 8;
+		uint8_t iface_num = sys_le16_to_cpu(setup->wIndex);
 		struct hid_device_info *dev_data;
 		struct usb_dev_data *common;
 		const struct usb_cfg_data *cfg;
@@ -522,7 +522,7 @@ static int hid_custom_handle_req(struct usb_setup_packet *setup,
 			LOG_DBG("Return HID Descriptor");
 
 			*len = MIN(*len, hid_desc->if0_hid.bLength);
-			*data = (u8_t *)&hid_desc->if0_hid;
+			*data = (uint8_t *)&hid_desc->if0_hid;
 			break;
 		case HID_CLASS_DESCRIPTOR_REPORT:
 			LOG_DBG("Return Report Descriptor");
@@ -536,7 +536,7 @@ static int hid_custom_handle_req(struct usb_setup_packet *setup,
 					"Report Descriptor size", *len);
 				*len = MIN(*len, dev_data->report_size);
 			}
-			*data = (u8_t *)dev_data->report_desc;
+			*data = (uint8_t *)dev_data->report_desc;
 			break;
 		default:
 			return -ENOTSUP;
@@ -548,7 +548,7 @@ static int hid_custom_handle_req(struct usb_setup_packet *setup,
 	return -EINVAL;
 }
 
-static void hid_int_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
+static void hid_int_in(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
 	struct hid_device_info *dev_data;
 	struct usb_dev_data *common;
@@ -570,7 +570,7 @@ static void hid_int_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 }
 
 #ifdef CONFIG_ENABLE_HID_INT_OUT_EP
-static void hid_int_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
+static void hid_int_out(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
 	struct hid_device_info *dev_data;
 	struct usb_dev_data *common;
@@ -613,7 +613,7 @@ static void hid_int_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 #endif
 
 static void hid_interface_config(struct usb_desc_header *head,
-				 u8_t bInterfaceNumber)
+				 uint8_t bInterfaceNumber)
 {
 	struct usb_if_descriptor *if_desc = (struct usb_if_descriptor *)head;
 	struct usb_hid_config *desc =
@@ -657,7 +657,7 @@ int usb_hid_init(const struct device *dev)
 	return 0;
 }
 
-void usb_hid_register_device(struct device *dev, const u8_t *desc,
+void usb_hid_register_device(struct device *dev, const uint8_t *desc,
 			     size_t size, const struct hid_ops *ops)
 {
 	struct hid_device_info *dev_data = dev->driver_data;
@@ -674,8 +674,8 @@ void usb_hid_register_device(struct device *dev, const u8_t *desc,
 		&usb_hid_devlist);
 }
 
-int hid_int_ep_write(const struct device *dev, const u8_t *data, u32_t data_len,
-		     u32_t *bytes_ret)
+int hid_int_ep_write(const struct device *dev, const uint8_t *data, uint32_t data_len,
+		     uint32_t *bytes_ret)
 {
 	const struct usb_cfg_data *cfg = dev->config_info;
 
@@ -683,8 +683,8 @@ int hid_int_ep_write(const struct device *dev, const u8_t *data, u32_t data_len,
 			 data_len, bytes_ret);
 }
 
-int hid_int_ep_read(const struct device *dev, u8_t *data, u32_t max_data_len,
-		    u32_t *ret_bytes)
+int hid_int_ep_read(const struct device *dev, uint8_t *data, uint32_t max_data_len,
+		    uint32_t *ret_bytes)
 {
 #ifdef CONFIG_ENABLE_HID_INT_OUT_EP
 	const struct usb_cfg_data *cfg = dev->config_info;

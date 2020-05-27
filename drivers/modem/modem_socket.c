@@ -19,10 +19,10 @@
  * Packet Size Support Functions
  */
 
-u16_t modem_socket_next_packet_size(struct modem_socket_config *cfg,
+uint16_t modem_socket_next_packet_size(struct modem_socket_config *cfg,
 				    struct modem_socket *sock)
 {
-	u16_t total = 0U;
+	uint16_t total = 0U;
 
 	k_sem_take(&cfg->sem_lock, K_FOREVER);
 
@@ -37,10 +37,10 @@ exit:
 	return total;
 }
 
-static u16_t modem_socket_packet_get_total(struct modem_socket *sock)
+static uint16_t modem_socket_packet_get_total(struct modem_socket *sock)
 {
 	int i;
-	u16_t total = 0U;
+	uint16_t total = 0U;
 
 	if (!sock || !sock->packet_count) {
 		return 0U;
@@ -74,7 +74,7 @@ static int modem_socket_packet_drop_first(struct modem_socket *sock)
 int modem_socket_packet_size_update(struct modem_socket_config *cfg,
 				    struct modem_socket *sock, int new_total)
 {
-	u16_t old_total = 0U;
+	uint16_t old_total = 0U;
 
 	if (!sock) {
 		return -EINVAL;
@@ -261,7 +261,7 @@ int modem_socket_poll(struct modem_socket_config *cfg,
 {
 	struct modem_socket *sock;
 	int ret, i;
-	u8_t found_count = 0;
+	uint8_t found_count = 0;
 
 	if (!cfg) {
 		return -EINVAL;

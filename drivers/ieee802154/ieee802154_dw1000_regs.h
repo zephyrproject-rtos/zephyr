@@ -1873,10 +1873,10 @@
  * Map the channel number to the index in the configuration arrays below.
  *                  Channel: na  1  2  3  4  5 na  7
  */
-const u8_t dwt_ch_to_cfg[] = {0, 0, 1, 2, 3, 4, 0, 5};
+const uint8_t dwt_ch_to_cfg[] = {0, 0, 1, 2, 3, 4, 0, 5};
 
 /* Defaults from Table 38: Sub-Register 0x28:0C– RF_TXCTRL values */
-const u32_t dwt_txctrl_defs[] = {
+const uint32_t dwt_txctrl_defs[] = {
 	DWT_RF_TXCTRL_CH1,
 	DWT_RF_TXCTRL_CH2,
 	DWT_RF_TXCTRL_CH3,
@@ -1886,7 +1886,7 @@ const u32_t dwt_txctrl_defs[] = {
 };
 
 /* Defaults from Table 43: Sub-Register 0x2B:07 – FS_PLLCFG values */
-const u32_t dwt_pllcfg_defs[] = {
+const uint32_t dwt_pllcfg_defs[] = {
 	DWT_FS_PLLCFG_CH1,
 	DWT_FS_PLLCFG_CH2,
 	DWT_FS_PLLCFG_CH3,
@@ -1896,7 +1896,7 @@ const u32_t dwt_pllcfg_defs[] = {
 };
 
 /* Defaults from Table 44: Sub-Register 0x2B:0B – FS_PLLTUNE values */
-const u8_t dwt_plltune_defs[] = {
+const uint8_t dwt_plltune_defs[] = {
 	DWT_FS_PLLTUNE_CH1,
 	DWT_FS_PLLTUNE_CH2,
 	DWT_FS_PLLTUNE_CH3,
@@ -1906,7 +1906,7 @@ const u8_t dwt_plltune_defs[] = {
 };
 
 /* Defaults from Table 37: Sub-Register 0x28:0B– RF_RXCTRLH values */
-const u8_t dwt_rxctrlh_defs[] = {
+const uint8_t dwt_rxctrlh_defs[] = {
 	DWT_RF_RXCTRLH_NBW,
 	DWT_RF_RXCTRLH_NBW,
 	DWT_RF_RXCTRLH_NBW,
@@ -1916,7 +1916,7 @@ const u8_t dwt_rxctrlh_defs[] = {
 };
 
 /* Defaults from Table 40: Sub-Register 0x2A:0B – TC_PGDELAY */
-const u8_t dwt_pgdelay_defs[] = {
+const uint8_t dwt_pgdelay_defs[] = {
 	DWT_TC_PGDELAY_CH1,
 	DWT_TC_PGDELAY_CH2,
 	DWT_TC_PGDELAY_CH3,
@@ -1930,7 +1930,7 @@ const u8_t dwt_pgdelay_defs[] = {
  *     0x1E – Transmit Power Control for Smart Transmit Power Control
  *     Transmit Power Control values for 16 MHz, with DIS_STXP = 0
  */
-const u32_t dwt_txpwr_stxp0_16[] = {
+const uint32_t dwt_txpwr_stxp0_16[] = {
 	0x15355575,
 	0x15355575,
 	0x0F2F4F6F,
@@ -1944,7 +1944,7 @@ const u32_t dwt_txpwr_stxp0_16[] = {
  *     0x1E – Transmit Power Control for Smart Transmit Power Control
  *     Transmit Power Control values for 64 MHz, with DIS_STXP = 0
  */
-const u32_t dwt_txpwr_stxp0_64[] = {
+const uint32_t dwt_txpwr_stxp0_64[] = {
 	 0x07274767,
 	 0x07274767,
 	 0x2B4B6B8B,
@@ -1958,7 +1958,7 @@ const u32_t dwt_txpwr_stxp0_64[] = {
  *     0x1E – Transmit Power Control for Manual Transmit Power Control
  *     Transmit Power Control values for 16 MHz, with DIS_STXP = 1
  */
-const u32_t dwt_txpwr_stxp1_16[] = {
+const uint32_t dwt_txpwr_stxp1_16[] = {
 	0x75757575,
 	0x75757575,
 	0x6F6F6F6F,
@@ -1972,7 +1972,7 @@ const u32_t dwt_txpwr_stxp1_16[] = {
  *     0x1E – Transmit Power Control for Manual Transmit Power Control
  *     Transmit Power Control values for 64 MHz, with DIS_STXP = 1
  */
-const u32_t dwt_txpwr_stxp1_64[] = {
+const uint32_t dwt_txpwr_stxp1_64[] = {
 	0x67676767,
 	0x67676767,
 	0x8B8B8B8B,
@@ -1988,7 +1988,7 @@ enum dwt_pulse_repetition_frequency {
 };
 
 /* Defaults from Table 24: Sub-Register 0x23:04 – AGC_TUNE1 values */
-const u16_t dwt_agc_tune1_defs[] = {
+const uint16_t dwt_agc_tune1_defs[] = {
 	DWT_AGC_TUNE1_16M,
 	DWT_AGC_TUNE1_64M
 };
@@ -2001,14 +2001,14 @@ enum dwt_baud_rate {
 };
 
 /* Decawave non-standard SFD lengths */
-const u8_t dwt_ns_sfdlen[] = {
+const uint8_t dwt_ns_sfdlen[] = {
 	DWT_DW_NS_SFD_LEN_110K,
 	DWT_DW_NS_SFD_LEN_850K,
 	DWT_DW_NS_SFD_LEN_6M8
 };
 
 /* Defaults from Table 30: Sub-Register 0x27:02 – DRX_TUNE0b values */
-const u16_t dwt_tune0b_defs[DWT_NUMOF_BRS][2] = {
+const uint16_t dwt_tune0b_defs[DWT_NUMOF_BRS][2] = {
 	{
 		DWT_DRX_TUNE0b_110K_STD,
 		DWT_DRX_TUNE0b_110K_NSTD
@@ -2024,7 +2024,7 @@ const u16_t dwt_tune0b_defs[DWT_NUMOF_BRS][2] = {
 };
 
 /* Defaults from Table 31: Sub-Register 0x27:04 – DRX_TUNE1a values */
-const u16_t dwt_tune1a_defs[] = {
+const uint16_t dwt_tune1a_defs[] = {
 	DWT_DRX_TUNE1a_PRF16,
 	DWT_DRX_TUNE1a_PRF64
 };
@@ -2038,7 +2038,7 @@ enum dwt_acquisition_chunk_size {
 };
 
 /* Defaults from Table 33: Sub-Register 0x27:08 – DRX_TUNE2 values */
-const u32_t dwt_tune2_defs[DWT_NUMOF_PRFS][DWT_NUMOF_PACS] = {
+const uint32_t dwt_tune2_defs[DWT_NUMOF_PRFS][DWT_NUMOF_PACS] = {
 	{
 		DWT_DRX_TUNE2_PRF16_PAC8,
 		DWT_DRX_TUNE2_PRF16_PAC16,
@@ -2059,7 +2059,7 @@ const u32_t dwt_tune2_defs[DWT_NUMOF_PRFS][DWT_NUMOF_PACS] = {
  *
  * For 110 kbps the values have to be divided by 8.
  */
-const u16_t dwt_lde_repc_defs[] = {
+const uint16_t dwt_lde_repc_defs[] = {
 	0,
 	DWT_LDE_REPC_PCODE_1,
 	DWT_LDE_REPC_PCODE_2,
@@ -2104,7 +2104,7 @@ enum dwt_plen_idx {
  * From Table 16: Preamble length selection
  *       BIT(19) | BIT(18) | BIT(21) | BIT(20)
  */
-const u32_t dwt_plen_cfg[] = {
+const uint32_t dwt_plen_cfg[] = {
 	(0       | BIT(18) | 0       | 0),
 	(0       | BIT(18) | 0       | BIT(20)),
 	(0       | BIT(18) | BIT(21) | 0),

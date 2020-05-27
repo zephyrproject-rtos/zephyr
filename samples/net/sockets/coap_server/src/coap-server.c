@@ -47,7 +47,7 @@ LOG_MODULE_REGISTER(net_coap_server_sample, LOG_LEVEL_DBG);
 /* CoAP socket fd */
 static int sock;
 
-static const u8_t plain_text_format;
+static const uint8_t plain_text_format;
 
 static struct coap_observer observers[NUM_OBSERVERS];
 
@@ -180,10 +180,10 @@ static int well_known_core_get(struct coap_resource *resource,
 			       struct sockaddr *addr, socklen_t addr_len)
 {
 	struct coap_packet response;
-	u8_t *data;
+	uint8_t *data;
 	int r;
 
-	data = (u8_t *)k_malloc(MAX_COAP_MSG_LEN);
+	data = (uint8_t *)k_malloc(MAX_COAP_MSG_LEN);
 	if (!data) {
 		return -ENOMEM;
 	}
@@ -207,13 +207,13 @@ static int piggyback_get(struct coap_resource *resource,
 			 struct sockaddr *addr, socklen_t addr_len)
 {
 	struct coap_packet response;
-	u8_t payload[40];
-	u8_t token[8];
-	u8_t *data;
-	u16_t id;
-	u8_t code;
-	u8_t type;
-	u8_t tkl;
+	uint8_t payload[40];
+	uint8_t token[8];
+	uint8_t *data;
+	uint16_t id;
+	uint8_t code;
+	uint8_t type;
+	uint8_t tkl;
 	int r;
 
 	code = coap_header_get_code(request);
@@ -231,13 +231,13 @@ static int piggyback_get(struct coap_resource *resource,
 		type = COAP_TYPE_NON_CON;
 	}
 
-	data = (u8_t *)k_malloc(MAX_COAP_MSG_LEN);
+	data = (uint8_t *)k_malloc(MAX_COAP_MSG_LEN);
 	if (!data) {
 		return -ENOMEM;
 	}
 
 	r = coap_packet_init(&response, data, MAX_COAP_MSG_LEN,
-			     1, type, tkl, (u8_t *)token,
+			     1, type, tkl, (uint8_t *)token,
 			     COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
 		goto end;
@@ -262,7 +262,7 @@ static int piggyback_get(struct coap_resource *resource,
 		goto end;
 	}
 
-	r = coap_packet_append_payload(&response, (u8_t *)payload,
+	r = coap_packet_append_payload(&response, (uint8_t *)payload,
 				       strlen(payload));
 	if (r < 0) {
 		goto end;
@@ -281,12 +281,12 @@ static int test_del(struct coap_resource *resource,
 		    struct sockaddr *addr, socklen_t addr_len)
 {
 	struct coap_packet response;
-	u8_t token[8];
-	u8_t *data;
-	u8_t tkl;
-	u8_t code;
-	u8_t type;
-	u16_t id;
+	uint8_t token[8];
+	uint8_t *data;
+	uint8_t tkl;
+	uint8_t code;
+	uint8_t type;
+	uint16_t id;
 	int r;
 
 	code = coap_header_get_code(request);
@@ -304,13 +304,13 @@ static int test_del(struct coap_resource *resource,
 		type = COAP_TYPE_NON_CON;
 	}
 
-	data = (u8_t *)k_malloc(MAX_COAP_MSG_LEN);
+	data = (uint8_t *)k_malloc(MAX_COAP_MSG_LEN);
 	if (!data) {
 		return -ENOMEM;
 	}
 
 	r = coap_packet_init(&response, data, MAX_COAP_MSG_LEN,
-			     1, type, tkl, (u8_t *)token,
+			     1, type, tkl, (uint8_t *)token,
 			     COAP_RESPONSE_CODE_DELETED, id);
 	if (r < 0) {
 		goto end;
@@ -329,14 +329,14 @@ static int test_put(struct coap_resource *resource,
 		    struct sockaddr *addr, socklen_t addr_len)
 {
 	struct coap_packet response;
-	u8_t token[8];
-	const u8_t *payload;
-	u8_t *data;
-	u16_t payload_len;
-	u8_t code;
-	u8_t type;
-	u8_t tkl;
-	u16_t id;
+	uint8_t token[8];
+	const uint8_t *payload;
+	uint8_t *data;
+	uint16_t payload_len;
+	uint8_t code;
+	uint8_t type;
+	uint8_t tkl;
+	uint16_t id;
 	int r;
 
 	code = coap_header_get_code(request);
@@ -359,13 +359,13 @@ static int test_put(struct coap_resource *resource,
 		type = COAP_TYPE_NON_CON;
 	}
 
-	data = (u8_t *)k_malloc(MAX_COAP_MSG_LEN);
+	data = (uint8_t *)k_malloc(MAX_COAP_MSG_LEN);
 	if (!data) {
 		return -ENOMEM;
 	}
 
 	r = coap_packet_init(&response, data, MAX_COAP_MSG_LEN,
-			     1, type, tkl, (u8_t *)token,
+			     1, type, tkl, (uint8_t *)token,
 			     COAP_RESPONSE_CODE_CHANGED, id);
 	if (r < 0) {
 		goto end;
@@ -389,14 +389,14 @@ static int test_post(struct coap_resource *resource,
 						      NULL };
 	const char * const *p;
 	struct coap_packet response;
-	u8_t token[8];
-	const u8_t *payload;
-	u8_t *data;
-	u16_t payload_len;
-	u8_t code;
-	u8_t type;
-	u8_t tkl;
-	u16_t id;
+	uint8_t token[8];
+	const uint8_t *payload;
+	uint8_t *data;
+	uint16_t payload_len;
+	uint8_t code;
+	uint8_t type;
+	uint8_t tkl;
+	uint16_t id;
 	int r;
 
 	code = coap_header_get_code(request);
@@ -419,13 +419,13 @@ static int test_post(struct coap_resource *resource,
 		type = COAP_TYPE_NON_CON;
 	}
 
-	data = (u8_t *)k_malloc(MAX_COAP_MSG_LEN);
+	data = (uint8_t *)k_malloc(MAX_COAP_MSG_LEN);
 	if (!data) {
 		return -ENOMEM;
 	}
 
 	r = coap_packet_init(&response, data, MAX_COAP_MSG_LEN,
-			     1, type, tkl, (u8_t *)token,
+			     1, type, tkl, (uint8_t *)token,
 			     COAP_RESPONSE_CODE_CREATED, id);
 	if (r < 0) {
 		goto end;
@@ -454,13 +454,13 @@ static int query_get(struct coap_resource *resource,
 {
 	struct coap_option options[4];
 	struct coap_packet response;
-	u8_t payload[40];
-	u8_t token[8];
-	u8_t *data;
-	u16_t id;
-	u8_t code;
-	u8_t type;
-	u8_t tkl;
+	uint8_t payload[40];
+	uint8_t token[8];
+	uint8_t *data;
+	uint16_t id;
+	uint8_t code;
+	uint8_t type;
+	uint8_t tkl;
 	int i, r;
 
 	code = coap_header_get_code(request);
@@ -495,13 +495,13 @@ static int query_get(struct coap_resource *resource,
 
 	LOG_INF("*******");
 
-	data = (u8_t *)k_malloc(MAX_COAP_MSG_LEN);
+	data = (uint8_t *)k_malloc(MAX_COAP_MSG_LEN);
 	if (!data) {
 		return -ENOMEM;
 	}
 
 	r = coap_packet_init(&response, data, MAX_COAP_MSG_LEN,
-			     1, COAP_TYPE_ACK, tkl, (u8_t *) token,
+			     1, COAP_TYPE_ACK, tkl, (uint8_t *) token,
 			     COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
 		goto end;
@@ -526,7 +526,7 @@ static int query_get(struct coap_resource *resource,
 		goto end;
 	}
 
-	r = coap_packet_append_payload(&response, (u8_t *)payload,
+	r = coap_packet_append_payload(&response, (uint8_t *)payload,
 				       strlen(payload));
 	if (r < 0) {
 		goto end;
@@ -549,12 +549,12 @@ static int location_query_post(struct coap_resource *resource,
 						      NULL };
 	const char * const *p;
 	struct coap_packet response;
-	u8_t *data;
-	u8_t token[8];
-	u16_t id;
-	u8_t code;
-	u8_t type;
-	u8_t tkl;
+	uint8_t *data;
+	uint8_t token[8];
+	uint16_t id;
+	uint8_t code;
+	uint8_t type;
+	uint8_t tkl;
 	int r;
 
 	code = coap_header_get_code(request);
@@ -572,13 +572,13 @@ static int location_query_post(struct coap_resource *resource,
 		type = COAP_TYPE_NON_CON;
 	}
 
-	data = (u8_t *)k_malloc(MAX_COAP_MSG_LEN);
+	data = (uint8_t *)k_malloc(MAX_COAP_MSG_LEN);
 	if (!data) {
 		return -ENOMEM;
 	}
 
 	r = coap_packet_init(&response, data, MAX_COAP_MSG_LEN,
-			     1, type, tkl, (u8_t *)token,
+			     1, type, tkl, (uint8_t *)token,
 			     COAP_RESPONSE_CODE_CREATED, id);
 	if (r < 0) {
 		goto end;
@@ -606,13 +606,13 @@ static int separate_get(struct coap_resource *resource,
 			struct sockaddr *addr, socklen_t addr_len)
 {
 	struct coap_packet response;
-	u8_t payload[40];
-	u8_t token[8];
-	u8_t *data;
-	u16_t id;
-	u8_t code;
-	u8_t type;
-	u8_t tkl;
+	uint8_t payload[40];
+	uint8_t token[8];
+	uint8_t *data;
+	uint16_t id;
+	uint8_t code;
+	uint8_t type;
+	uint8_t tkl;
 	int r;
 
 	code = coap_header_get_code(request);
@@ -628,13 +628,13 @@ static int separate_get(struct coap_resource *resource,
 		return 0;
 	}
 
-	data = (u8_t *)k_malloc(MAX_COAP_MSG_LEN);
+	data = (uint8_t *)k_malloc(MAX_COAP_MSG_LEN);
 	if (!data) {
 		return -ENOMEM;
 	}
 
 	r = coap_packet_init(&response, data, MAX_COAP_MSG_LEN,
-			     1, COAP_TYPE_ACK, tkl, (u8_t *)token, 0, id);
+			     1, COAP_TYPE_ACK, tkl, (uint8_t *)token, 0, id);
 	if (r < 0) {
 		goto end;
 	}
@@ -652,7 +652,7 @@ static int separate_get(struct coap_resource *resource,
 
 	/* Do not free and allocate "data" again, re-use the buffer */
 	r = coap_packet_init(&response, data, MAX_COAP_MSG_LEN,
-			     1, type, tkl, (u8_t *)token,
+			     1, type, tkl, (uint8_t *)token,
 			     COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
 		goto end;
@@ -677,7 +677,7 @@ static int separate_get(struct coap_resource *resource,
 		goto end;
 	}
 
-	r = coap_packet_append_payload(&response, (u8_t *)payload,
+	r = coap_packet_append_payload(&response, (uint8_t *)payload,
 				       strlen(payload));
 	if (r < 0) {
 		goto end;
@@ -698,14 +698,14 @@ static int large_get(struct coap_resource *resource,
 {
 	static struct coap_block_context ctx;
 	struct coap_packet response;
-	u8_t payload[64];
-	u8_t token[8];
-	u8_t *data;
-	u16_t size;
-	u16_t id;
-	u8_t code;
-	u8_t type;
-	u8_t tkl;
+	uint8_t payload[64];
+	uint8_t token[8];
+	uint8_t *data;
+	uint16_t size;
+	uint16_t id;
+	uint8_t code;
+	uint8_t type;
+	uint8_t tkl;
 	int r;
 
 	if (ctx.total_size == 0) {
@@ -727,13 +727,13 @@ static int large_get(struct coap_resource *resource,
 	LOG_INF("type: %u code %u id %u", type, code, id);
 	LOG_INF("*******");
 
-	data = (u8_t *)k_malloc(MAX_COAP_MSG_LEN);
+	data = (uint8_t *)k_malloc(MAX_COAP_MSG_LEN);
 	if (!data) {
 		return -ENOMEM;
 	}
 
 	r = coap_packet_init(&response, data, MAX_COAP_MSG_LEN,
-			     1, COAP_TYPE_ACK, tkl, (u8_t *) token,
+			     1, COAP_TYPE_ACK, tkl, (uint8_t *) token,
 			     COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
 		return -EINVAL;
@@ -761,7 +761,7 @@ static int large_get(struct coap_resource *resource,
 
 	memset(payload, 'A', MIN(size, sizeof(payload)));
 
-	r = coap_packet_append_payload(&response, (u8_t *)payload, size);
+	r = coap_packet_append_payload(&response, (uint8_t *)payload, size);
 	if (r < 0) {
 		goto end;
 	}
@@ -780,7 +780,7 @@ end:
 	return r;
 }
 
-static int get_option_int(const struct coap_packet *pkt, u8_t opt)
+static int get_option_int(const struct coap_packet *pkt, uint8_t opt)
 {
 	struct coap_option option;
 	int r;
@@ -799,14 +799,14 @@ static int large_update_put(struct coap_resource *resource,
 {
 	static struct coap_block_context ctx;
 	struct coap_packet response;
-	const u8_t *payload;
-	u8_t token[8];
-	u8_t *data;
-	u16_t id;
-	u16_t len;
-	u8_t code;
-	u8_t type;
-	u8_t tkl;
+	const uint8_t *payload;
+	uint8_t token[8];
+	uint8_t *data;
+	uint16_t id;
+	uint16_t len;
+	uint8_t code;
+	uint8_t type;
+	uint8_t tkl;
 	int r;
 	bool last_block;
 
@@ -857,13 +857,13 @@ static int large_update_put(struct coap_resource *resource,
 		code = COAP_RESPONSE_CODE_CHANGED;
 	}
 
-	data = (u8_t *)k_malloc(MAX_COAP_MSG_LEN);
+	data = (uint8_t *)k_malloc(MAX_COAP_MSG_LEN);
 	if (!data) {
 		return -ENOMEM;
 	}
 
 	r = coap_packet_init(&response, data, MAX_COAP_MSG_LEN,
-			     1, COAP_TYPE_ACK, tkl, (u8_t *) token, code, id);
+			     1, COAP_TYPE_ACK, tkl, (uint8_t *) token, code, id);
 	if (r < 0) {
 		goto end;
 	}
@@ -888,14 +888,14 @@ static int large_create_post(struct coap_resource *resource,
 {
 	static struct coap_block_context ctx;
 	struct coap_packet response;
-	const u8_t *payload;
-	u8_t token[8];
-	u8_t *data;
-	u16_t len;
-	u16_t id;
-	u8_t code;
-	u8_t type;
-	u8_t tkl;
+	const uint8_t *payload;
+	uint8_t token[8];
+	uint8_t *data;
+	uint16_t len;
+	uint16_t id;
+	uint8_t code;
+	uint8_t type;
+	uint8_t tkl;
 	int r;
 	bool last_block;
 
@@ -938,13 +938,13 @@ static int large_create_post(struct coap_resource *resource,
 		code = COAP_RESPONSE_CODE_CREATED;
 	}
 
-	data = (u8_t *)k_malloc(MAX_COAP_MSG_LEN);
+	data = (uint8_t *)k_malloc(MAX_COAP_MSG_LEN);
 	if (!data) {
 		return -ENOMEM;
 	}
 
 	r = coap_packet_init(&response, data, MAX_COAP_MSG_LEN,
-			     1, COAP_TYPE_ACK, tkl, (u8_t *)token, code, id);
+			     1, COAP_TYPE_ACK, tkl, (uint8_t *)token, code, id);
 	if (r < 0) {
 		goto end;
 	}
@@ -965,8 +965,8 @@ end:
 
 static int send_notification_packet(const struct sockaddr *addr,
 				    socklen_t addr_len,
-				    u16_t age, u16_t id,
-				    const u8_t *token, u8_t tkl,
+				    uint16_t age, uint16_t id,
+				    const uint8_t *token, uint8_t tkl,
 				    bool is_response);
 
 static void retransmit_request(struct k_work *work)
@@ -1028,14 +1028,14 @@ static int create_pending_request(struct coap_packet *response,
 
 static int send_notification_packet(const struct sockaddr *addr,
 				    socklen_t addr_len,
-				    u16_t age, u16_t id,
-				    const u8_t *token, u8_t tkl,
+				    uint16_t age, uint16_t id,
+				    const uint8_t *token, uint8_t tkl,
 				    bool is_response)
 {
 	struct coap_packet response;
 	char payload[14];
-	u8_t *data;
-	u8_t type;
+	uint8_t *data;
+	uint8_t type;
 	int r;
 
 	if (is_response) {
@@ -1048,13 +1048,13 @@ static int send_notification_packet(const struct sockaddr *addr,
 		id = coap_next_id();
 	}
 
-	data = (u8_t *)k_malloc(MAX_COAP_MSG_LEN);
+	data = (uint8_t *)k_malloc(MAX_COAP_MSG_LEN);
 	if (!data) {
 		return -ENOMEM;
 	}
 
 	r = coap_packet_init(&response, data, MAX_COAP_MSG_LEN,
-			     1, type, tkl, (u8_t *)token,
+			     1, type, tkl, (uint8_t *)token,
 			     COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
 		goto end;
@@ -1086,7 +1086,7 @@ static int send_notification_packet(const struct sockaddr *addr,
 		goto end;
 	}
 
-	r = coap_packet_append_payload(&response, (u8_t *)payload,
+	r = coap_packet_append_payload(&response, (uint8_t *)payload,
 				       strlen(payload));
 	if (r < 0) {
 		goto end;
@@ -1119,11 +1119,11 @@ static int obs_get(struct coap_resource *resource,
 		   struct sockaddr *addr, socklen_t addr_len)
 {
 	struct coap_observer *observer;
-	u8_t token[8];
-	u16_t id;
-	u8_t code;
-	u8_t type;
-	u8_t tkl;
+	uint8_t token[8];
+	uint16_t id;
+	uint8_t code;
+	uint8_t type;
+	uint8_t tkl;
 	bool observe = true;
 
 	if (!coap_request_is_observe(request)) {
@@ -1172,22 +1172,22 @@ static int core_get(struct coap_resource *resource,
 {
 	static const char dummy_str[] = "Just a test\n";
 	struct coap_packet response;
-	u8_t token[8];
-	u8_t *data;
-	u16_t id;
-	u8_t tkl;
+	uint8_t token[8];
+	uint8_t *data;
+	uint16_t id;
+	uint8_t tkl;
 	int r;
 
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
-	data = (u8_t *)k_malloc(MAX_COAP_MSG_LEN);
+	data = (uint8_t *)k_malloc(MAX_COAP_MSG_LEN);
 	if (!data) {
 		return -ENOMEM;
 	}
 
 	r = coap_packet_init(&response, data, MAX_COAP_MSG_LEN,
-			     1, COAP_TYPE_ACK, tkl, (u8_t *)token,
+			     1, COAP_TYPE_ACK, tkl, (uint8_t *)token,
 			     COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
 		r = -EINVAL;
@@ -1200,7 +1200,7 @@ static int core_get(struct coap_resource *resource,
 		goto end;
 	}
 
-	r = coap_packet_append_payload(&response, (u8_t *)dummy_str,
+	r = coap_packet_append_payload(&response, (uint8_t *)dummy_str,
 				       sizeof(dummy_str));
 	if (r < 0) {
 		r = -EINVAL;
@@ -1313,15 +1313,15 @@ static struct coap_resource *find_resouce_by_observer(
 	return NULL;
 }
 
-static void process_coap_request(u8_t *data, u16_t data_len,
+static void process_coap_request(uint8_t *data, uint16_t data_len,
 				 struct sockaddr *client_addr,
 				 socklen_t client_addr_len)
 {
 	struct coap_packet request;
 	struct coap_pending *pending;
 	struct coap_option options[16] = { 0 };
-	u8_t opt_num = 16U;
-	u8_t type;
+	uint8_t opt_num = 16U;
+	uint8_t type;
 	int r;
 
 	r = coap_packet_parse(&request, data, data_len, options, opt_num);
@@ -1382,7 +1382,7 @@ static int process_client_request(void)
 	int received;
 	struct sockaddr client_addr;
 	socklen_t client_addr_len;
-	u8_t request[MAX_COAP_MSG_LEN];
+	uint8_t request[MAX_COAP_MSG_LEN];
 
 	do {
 		client_addr_len = sizeof(client_addr);

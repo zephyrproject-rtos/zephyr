@@ -37,12 +37,12 @@ extern "C" {
  *
  * @param "void *context" Arbitrary context pointer provided at
  *        registration time.
- * @param "u32_t id" Message type identifier.
+ * @param "uint32_t id" Message type identifier.
  * @param "volatile void *data" Message data pointer. The correct
  *        amount of data to read out
  * must be inferred using the message id/upper level protocol.
  */
-typedef void (*ipm_callback_t)(void *context, u32_t id, volatile void *data);
+typedef void (*ipm_callback_t)(void *context, uint32_t id, volatile void *data);
 
 /**
  * @typedef ipm_send_t
@@ -50,7 +50,7 @@ typedef void (*ipm_callback_t)(void *context, u32_t id, volatile void *data);
  *
  * See @a ipm_send() for argument definitions.
  */
-typedef int (*ipm_send_t)(struct device *ipmdev, int wait, u32_t id,
+typedef int (*ipm_send_t)(struct device *ipmdev, int wait, uint32_t id,
 			  const void *data, int size);
 /**
  * @typedef ipm_max_data_size_get_t
@@ -66,7 +66,7 @@ typedef int (*ipm_max_data_size_get_t)(struct device *ipmdev);
  *
  * See @a ipm_max_id_val_get() for argument definitions.
  */
-typedef u32_t (*ipm_max_id_val_get_t)(struct device *ipmdev);
+typedef uint32_t (*ipm_max_id_val_get_t)(struct device *ipmdev);
 
 /**
  * @typedef ipm_register_callback_t
@@ -128,10 +128,10 @@ __subsystem struct ipm_driver_api {
  *                   or the device isn't an outbound IPM channel.
  * @retval 0         On success.
  */
-__syscall int ipm_send(struct device *ipmdev, int wait, u32_t id,
+__syscall int ipm_send(struct device *ipmdev, int wait, uint32_t id,
 		       const void *data, int size);
 
-static inline int z_impl_ipm_send(struct device *ipmdev, int wait, u32_t id,
+static inline int z_impl_ipm_send(struct device *ipmdev, int wait, uint32_t id,
 			   const void *data, int size)
 {
 	const struct ipm_driver_api *api =
@@ -188,9 +188,9 @@ static inline int z_impl_ipm_max_data_size_get(struct device *ipmdev)
  *
  * @return Maximum possible value of a message ID.
  */
-__syscall u32_t ipm_max_id_val_get(struct device *ipmdev);
+__syscall uint32_t ipm_max_id_val_get(struct device *ipmdev);
 
-static inline u32_t z_impl_ipm_max_id_val_get(struct device *ipmdev)
+static inline uint32_t z_impl_ipm_max_id_val_get(struct device *ipmdev)
 {
 	const struct ipm_driver_api *api =
 		(const struct ipm_driver_api *)ipmdev->driver_api;

@@ -141,7 +141,7 @@ static int test_task_loopback(void)
 	/* wait to let DAC output settle */
 	k_sleep(K_MSEC(10));
 
-	static s16_t m_sample_buffer[1];
+	static int16_t m_sample_buffer[1];
 	static const struct adc_sequence sequence = {
 		.channels    = BIT(ADC_CHANNEL_ID),
 		.buffer      = m_sample_buffer,

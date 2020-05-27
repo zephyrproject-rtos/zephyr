@@ -21,8 +21,8 @@
 #define HIGH_STATE_ON_I2C_LINES    0x7
 
 struct i2c_litex_cfg {
-	volatile u32_t *w_reg;
-	volatile const u32_t *r_reg;
+	volatile uint32_t *w_reg;
+	volatile const uint32_t *r_reg;
 };
 
 #define GET_I2C_CFG(dev)						     \
@@ -31,9 +31,9 @@ struct i2c_litex_cfg {
 #define GET_I2C_BITBANG(dev)						     \
 	((struct i2c_bitbang *) dev->driver_data)
 
-static inline void set_bit(volatile u32_t *reg, u32_t bit, u32_t val)
+static inline void set_bit(volatile uint32_t *reg, uint32_t bit, uint32_t val)
 {
-	u32_t mask = BIT(bit);
+	uint32_t mask = BIT(bit);
 
 	if (val) {
 		*reg |= mask;
@@ -42,9 +42,9 @@ static inline void set_bit(volatile u32_t *reg, u32_t bit, u32_t val)
 	}
 }
 
-static inline int get_bit(volatile const u32_t *reg, u32_t bit)
+static inline int get_bit(volatile const uint32_t *reg, uint32_t bit)
 {
-	u32_t mask = BIT(bit);
+	uint32_t mask = BIT(bit);
 
 	return !!((*reg) & mask);
 }
@@ -92,7 +92,7 @@ static int i2c_litex_init(struct device *dev)
 	return 0;
 }
 
-static int i2c_litex_configure(struct device *dev, u32_t dev_config)
+static int i2c_litex_configure(struct device *dev, uint32_t dev_config)
 {
 	struct i2c_bitbang *bitbang = GET_I2C_BITBANG(dev);
 
@@ -100,7 +100,7 @@ static int i2c_litex_configure(struct device *dev, u32_t dev_config)
 }
 
 static int i2c_litex_transfer(struct device *dev,  struct i2c_msg *msgs,
-		       u8_t num_msgs, u16_t addr)
+		       uint8_t num_msgs, uint16_t addr)
 {
 	struct i2c_bitbang *bitbang = GET_I2C_BITBANG(dev);
 
@@ -119,9 +119,9 @@ static const struct i2c_driver_api i2c_litex_driver_api = {
 #define I2C_LITEX_INIT(n)						       \
 	static const struct i2c_litex_cfg i2c_litex_cfg_##n = {		       \
 		.w_reg =						       \
-		 (volatile u32_t *) DT_INST_REG_ADDR_BY_NAME(n, write),\
+		 (volatile uint32_t *) DT_INST_REG_ADDR_BY_NAME(n, write),\
 		.r_reg =						       \
-		 (volatile u32_t *) DT_INST_REG_ADDR_BY_NAME(n, read), \
+		 (volatile uint32_t *) DT_INST_REG_ADDR_BY_NAME(n, read), \
 	};								       \
 									       \
 	static struct i2c_bitbang i2c_bitbang_##n;			       \

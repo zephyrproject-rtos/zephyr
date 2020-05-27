@@ -289,7 +289,7 @@ void worker(void *p1, void *p2, void *p3)
 		}
 
 		if (do_sleep) {
-			u64_t start = k_uptime_get();
+			uint64_t start = k_uptime_get();
 
 			k_sleep(K_MSEC(1));
 

@@ -12,7 +12,7 @@ struct uart_rtt_config {
 	size_t up_size;
 	void *down_buffer;
 	size_t down_size;
-	u8_t channel;
+	uint8_t channel;
 };
 
 static inline const struct uart_rtt_config *get_dev_config(struct device *dev)
@@ -87,9 +87,9 @@ DEVICE_AND_API_INIT(uart_rtt0, "RTT_0", uart_rtt_init, NULL, NULL,
 #endif
 
 #define UART_RTT_CHANNEL(n)                                                    \
-	static u8_t                                                            \
+	static uint8_t                                                            \
 		uart_rtt##n##_tx_buffer[CONFIG_UART_RTT_##n##_TX_BUFFER_SIZE]; \
-	static u8_t                                                            \
+	static uint8_t                                                            \
 		uart_rtt##n##_rx_buffer[CONFIG_UART_RTT_##n##_RX_BUFFER_SIZE]; \
 									       \
 	static const char uart_rtt##n##_name[] = "RTT_" #n "\0";               \

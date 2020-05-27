@@ -115,10 +115,10 @@
 
 struct bma280_data {
 	struct device *i2c;
-	s16_t x_sample;
-	s16_t y_sample;
-	s16_t z_sample;
-	s8_t temp_sample;
+	int16_t x_sample;
+	int16_t y_sample;
+	int16_t z_sample;
+	int8_t temp_sample;
 
 #ifdef CONFIG_BMA280_TRIGGER
 	struct device *dev;

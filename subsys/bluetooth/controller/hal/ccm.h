@@ -6,9 +6,9 @@
  */
 
 struct ccm {
-	u8_t  key[16];
-	u64_t counter;
-	u8_t  direction:1;
-	u8_t  resv1:7;
-	u8_t  iv[8];
+	uint8_t  key[16];
+	uint64_t counter;
+	uint8_t  direction:1;
+	uint8_t  resv1:7;
+	uint8_t  iv[8];
 } __packed;

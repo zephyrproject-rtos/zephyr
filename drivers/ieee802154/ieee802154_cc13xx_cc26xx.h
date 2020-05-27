@@ -61,7 +61,7 @@
 struct ieee802154_cc13xx_cc26xx_data {
 	struct net_if *iface;
 
-	u8_t mac[8];
+	uint8_t mac[8];
 
 	struct k_sem fg_done;
 	struct k_sem rx_done;
@@ -72,7 +72,7 @@ struct ieee802154_cc13xx_cc26xx_data {
 
 	dataQueue_t rx_queue;
 	rfc_dataEntryPointer_t rx_entry[CC13XX_CC26XX_RX_BUF_SIZE];
-	u8_t rx_data[CC13XX_CC26XX_NUM_RX_BUF]
+	uint8_t rx_data[CC13XX_CC26XX_NUM_RX_BUF]
 		    [CC13XX_CC26XX_RX_BUF_SIZE] __aligned(4);
 
 	volatile rfc_CMD_IEEE_CCA_REQ_t cmd_ieee_cca_req;

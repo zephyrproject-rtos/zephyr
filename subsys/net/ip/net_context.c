@@ -59,7 +59,7 @@ static struct k_sem contexts_lock;
 
 #if defined(CONFIG_NET_UDP) || defined(CONFIG_NET_TCP)
 static int check_used_port(enum net_ip_protocol ip_proto,
-			   u16_t local_port,
+			   uint16_t local_port,
 			   const struct sockaddr *local_addr)
 
 {
@@ -100,10 +100,10 @@ static int check_used_port(enum net_ip_protocol ip_proto,
 	return 0;
 }
 
-static u16_t find_available_port(struct net_context *context,
+static uint16_t find_available_port(struct net_context *context,
 				    const struct sockaddr *addr)
 {
-	u16_t local_port;
+	uint16_t local_port;
 
 	do {
 		local_port = sys_rand32_get() | 0x8000;
@@ -123,7 +123,7 @@ static u16_t find_available_port(struct net_context *context,
 
 int net_context_get(sa_family_t family,
 		    enum net_sock_type type,
-		    u16_t ip_proto,
+		    uint16_t ip_proto,
 		    struct net_context **context)
 {
 	int i, ret = -ENOENT;
@@ -884,7 +884,7 @@ int net_context_connect(struct net_context *context,
 {
 	struct sockaddr *laddr = NULL;
 	struct sockaddr local_addr __unused;
-	u16_t lport, rport;
+	uint16_t lport, rport;
 	int ret;
 
 	NET_ASSERT(addr);
@@ -1103,10 +1103,10 @@ static int get_context_priority(struct net_context *context,
 				void *value, size_t *len)
 {
 #if defined(CONFIG_NET_CONTEXT_PRIORITY)
-	*((u8_t *)value) = context->options.priority;
+	*((uint8_t *)value) = context->options.priority;
 
 	if (len) {
-		*len = sizeof(u8_t);
+		*len = sizeof(uint8_t);
 	}
 
 	return 0;
@@ -1222,7 +1222,7 @@ static int context_setup_udp_packet(struct net_context *context,
 				    socklen_t addrlen)
 {
 	int ret = -EINVAL;
-	u16_t dst_port = 0U;
+	uint16_t dst_port = 0U;
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) &&
 	    net_context_get_family(context) == AF_INET6) {
@@ -1328,10 +1328,10 @@ static void set_pkt_txtime(struct net_pkt *pkt, const struct msghdr *msghdr)
 
 	for (cmsg = CMSG_FIRSTHDR(msghdr); cmsg != NULL;
 	     cmsg = CMSG_NXTHDR(msghdr, cmsg)) {
-		if (cmsg->cmsg_len == CMSG_LEN(sizeof(u64_t)) &&
+		if (cmsg->cmsg_len == CMSG_LEN(sizeof(uint64_t)) &&
 		    cmsg->cmsg_level == SOL_SOCKET &&
 		    cmsg->cmsg_type == SCM_TXTIME) {
-			u64_t txtime = *(u64_t *)CMSG_DATA(cmsg);
+			uint64_t txtime = *(uint64_t *)CMSG_DATA(cmsg);
 
 			net_pkt_set_txtime(pkt, txtime);
 			break;
@@ -1496,7 +1496,7 @@ static int context_sendto(struct net_context *context,
 	context->user_data = user_data;
 
 	if (IS_ENABLED(CONFIG_NET_CONTEXT_PRIORITY)) {
-		u8_t priority;
+		uint8_t priority;
 
 		get_context_priority(context, &priority, NULL);
 		net_pkt_set_priority(pkt, priority);
@@ -1763,7 +1763,7 @@ static int recv_udp(struct net_context *context,
 		.sa_family = net_context_get_family(context),
 	};
 	struct sockaddr *laddr = NULL;
-	u16_t lport = 0U;
+	uint16_t lport = 0U;
 	int ret;
 
 	ARG_UNUSED(timeout);
@@ -1984,7 +1984,7 @@ unlock:
 }
 
 int net_context_update_recv_wnd(struct net_context *context,
-				s32_t delta)
+				int32_t delta)
 {
 	int ret;
 
@@ -2006,11 +2006,11 @@ static int set_context_priority(struct net_context *context,
 				const void *value, size_t len)
 {
 #if defined(CONFIG_NET_CONTEXT_PRIORITY)
-	if (len > sizeof(u8_t)) {
+	if (len > sizeof(uint8_t)) {
 		return -EINVAL;
 	}
 
-	context->options.priority = *((u8_t *)value);
+	context->options.priority = *((uint8_t *)value);
 
 	return 0;
 #else

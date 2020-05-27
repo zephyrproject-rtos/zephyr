@@ -17,25 +17,25 @@ MMU_BOOT_REGION(START_ADDR_RANGE2, ADDR_SIZE, REGION_PERM);
 MMU_BOOT_REGION(START_ADDR_RANGE3, ADDR_SIZE, REGION_PERM);
 MMU_BOOT_REGION(START_ADDR_RANGE4, ADDR_SIZE, REGION_PERM);
 
-static int check_param(u64_t value, u64_t perm)
+static int check_param(uint64_t value, uint64_t perm)
 {
 	return ((value & REGION_PERM) == REGION_PERM);
 }
 
-static int check_param_nonset_region(u64_t value, u64_t perm)
+static int check_param_nonset_region(uint64_t value, uint64_t perm)
 {
-	u32_t status = ((value & Z_X86_MMU_RW) == 0);
+	uint32_t status = ((value & Z_X86_MMU_RW) == 0);
 
 	status &= ((value & Z_X86_MMU_US) == 0);
 	status &= ((value & Z_X86_MMU_P) == 0);
 	return status;
 }
 
-static void starting_addr_range(u32_t start_addr_range)
+static void starting_addr_range(uint32_t start_addr_range)
 {
 
-	u32_t addr_range, status = true;
-	u64_t value;
+	uint32_t addr_range, status = true;
+	uint64_t value;
 
 	for (addr_range = start_addr_range; addr_range <=
 	     (start_addr_range + STARTING_ADDR_RANGE_LMT);
@@ -47,10 +47,10 @@ static void starting_addr_range(u32_t start_addr_range)
 	}
 }
 
-static void before_start_addr_range(u32_t start_addr_range)
+static void before_start_addr_range(uint32_t start_addr_range)
 {
-	u32_t addr_range, status = true;
-	u64_t value;
+	uint32_t addr_range, status = true;
+	uint64_t value;
 
 	for (addr_range = start_addr_range - 0x7000;
 	     addr_range < (start_addr_range); addr_range += 0x1000) {
@@ -63,10 +63,10 @@ static void before_start_addr_range(u32_t start_addr_range)
 	}
 }
 
-static void ending_start_addr_range(u32_t start_addr_range)
+static void ending_start_addr_range(uint32_t start_addr_range)
 {
-	u32_t addr_range, status = true;
-	u64_t value;
+	uint32_t addr_range, status = true;
+	uint64_t value;
 
 	for (addr_range = start_addr_range + ADDR_SIZE; addr_range <
 	     (start_addr_range + ADDR_SIZE + 0x10000);
@@ -95,7 +95,7 @@ static void ending_start_addr_range(u32_t start_addr_range)
  */
 void test_boot_page_table(void)
 {
-	u32_t start_addr_range;
+	uint32_t start_addr_range;
 	int iterator = 0;
 
 	for (iterator = 0; iterator < MEMORY_REG_NUM; iterator++) {

@@ -30,16 +30,16 @@ static const struct flash_pages_layout *layout;
 static size_t layout_size;
 static struct stream_flash_ctx ctx;
 static int page_size;
-static u8_t *cb_buf;
+static uint8_t *cb_buf;
 static size_t cb_len;
 static size_t cb_offset;
 static int cb_ret;
 
-static u8_t buf[BUF_LEN];
-static u8_t read_buf[TESTBUF_SIZE];
-const static u8_t write_buf[TESTBUF_SIZE] = {[0 ... TESTBUF_SIZE - 1] = 0xaa};
-static u8_t written_pattern[TESTBUF_SIZE] = {[0 ... TESTBUF_SIZE - 1] = 0xaa};
-static u8_t erased_pattern[TESTBUF_SIZE]  = {[0 ... TESTBUF_SIZE - 1] = 0xff};
+static uint8_t buf[BUF_LEN];
+static uint8_t read_buf[TESTBUF_SIZE];
+const static uint8_t write_buf[TESTBUF_SIZE] = {[0 ... TESTBUF_SIZE - 1] = 0xaa};
+static uint8_t written_pattern[TESTBUF_SIZE] = {[0 ... TESTBUF_SIZE - 1] = 0xaa};
+static uint8_t erased_pattern[TESTBUF_SIZE]  = {[0 ... TESTBUF_SIZE - 1] = 0xff};
 
 #define VERIFY_BUF(start, size, buf) \
 do { \
@@ -51,7 +51,7 @@ do { \
 #define VERIFY_WRITTEN(start, size) VERIFY_BUF(start, size, written_pattern)
 #define VERIFY_ERASED(start, size) VERIFY_BUF(start, size, erased_pattern)
 
-int stream_flash_callback(u8_t *buf, size_t len, size_t offset)
+int stream_flash_callback(uint8_t *buf, size_t len, size_t offset)
 {
 	if (cb_buf) {
 		zassert_equal(cb_buf, buf, "incorrect buf");

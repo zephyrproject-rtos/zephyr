@@ -99,11 +99,11 @@ static int entropy_stm32_wait_ready(RNG_TypeDef *rng)
 	}
 }
 
-static int entropy_stm32_rng_get_entropy(struct device *dev, u8_t *buffer,
-					 u16_t length)
+static int entropy_stm32_rng_get_entropy(struct device *dev, uint8_t *buffer,
+					 uint16_t length)
 {
 	struct entropy_stm32_rng_dev_data *dev_data;
-	int n = sizeof(u32_t);
+	int n = sizeof(uint32_t);
 	int res;
 
 	__ASSERT_NO_MSG(dev != NULL);
@@ -119,8 +119,8 @@ static int entropy_stm32_rng_get_entropy(struct device *dev, u8_t *buffer,
 	}
 
 	while (length > 0) {
-		u32_t rndbits;
-		u8_t *p_rndbits = (u8_t *)&rndbits;
+		uint32_t rndbits;
+		uint8_t *p_rndbits = (uint8_t *)&rndbits;
 
 		res = entropy_stm32_wait_ready(dev_data->rng);
 		if (res < 0)
@@ -128,7 +128,7 @@ static int entropy_stm32_rng_get_entropy(struct device *dev, u8_t *buffer,
 
 		rndbits = LL_RNG_ReadRandData32(dev_data->rng);
 
-		if (length < sizeof(u32_t))
+		if (length < sizeof(uint32_t))
 			n = length;
 
 		for (int i = 0; i < n; i++) {

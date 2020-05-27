@@ -15,9 +15,9 @@
 LOG_MODULE_REGISTER(crypto_nrf_ecb, CONFIG_CRYPTO_LOG_LEVEL);
 
 struct ecb_data {
-	u8_t key[ECB_AES_KEY_SIZE];
-	u8_t cleartext[ECB_AES_BLOCK_SIZE];
-	u8_t ciphertext[ECB_AES_BLOCK_SIZE];
+	uint8_t key[ECB_AES_KEY_SIZE];
+	uint8_t cleartext[ECB_AES_BLOCK_SIZE];
+	uint8_t ciphertext[ECB_AES_BLOCK_SIZE];
 };
 
 struct nrf_ecb_drv_state {

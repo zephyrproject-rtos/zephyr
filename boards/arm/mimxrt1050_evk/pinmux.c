@@ -29,17 +29,17 @@ static gpio_pin_config_t enet_gpio_config = {
  */
 
 static void mimxrt1050_evk_usdhc_pinmux(
-	u16_t nusdhc, bool init,
-	u32_t speed, u32_t strength)
+	uint16_t nusdhc, bool init,
+	uint32_t speed, uint32_t strength)
 {
-	u32_t cmd_data = IOMUXC_SW_PAD_CTL_PAD_SPEED(speed) |
+	uint32_t cmd_data = IOMUXC_SW_PAD_CTL_PAD_SPEED(speed) |
 				IOMUXC_SW_PAD_CTL_PAD_SRE_MASK |
 				IOMUXC_SW_PAD_CTL_PAD_PKE_MASK |
 				IOMUXC_SW_PAD_CTL_PAD_PUE_MASK |
 				IOMUXC_SW_PAD_CTL_PAD_HYS_MASK |
 				IOMUXC_SW_PAD_CTL_PAD_PUS(1) |
 				IOMUXC_SW_PAD_CTL_PAD_DSE(strength);
-	u32_t clk = IOMUXC_SW_PAD_CTL_PAD_SPEED(speed) |
+	uint32_t clk = IOMUXC_SW_PAD_CTL_PAD_SPEED(speed) |
 				IOMUXC_SW_PAD_CTL_PAD_SRE_MASK |
 				IOMUXC_SW_PAD_CTL_PAD_HYS_MASK |
 				IOMUXC_SW_PAD_CTL_PAD_PUS(0) |

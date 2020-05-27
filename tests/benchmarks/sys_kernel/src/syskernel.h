@@ -28,7 +28,7 @@ extern const char sz_success[];
 extern const char sz_partial[];
 extern const char sz_fail[];
 
-extern u32_t number_of_loops;
+extern uint32_t number_of_loops;
 
 #define sz_module_title_fmt	"\nMODULE: %s"
 #define sz_module_result_fmt	"\n\nPROJECT EXECUTION %s\n"
@@ -45,7 +45,7 @@ extern u32_t number_of_loops;
 #define sz_case_end_fmt		"\nEND TEST CASE"
 #define sz_case_timing_fmt	"%u nSec"
 
-int check_result(int i, u32_t ticks);
+int check_result(int i, uint32_t ticks);
 
 int sema_test(void);
 int lifo_test(void);
@@ -53,9 +53,9 @@ int fifo_test(void);
 int stack_test(void);
 void begin_test(void);
 
-static inline u32_t BENCH_START(void)
+static inline uint32_t BENCH_START(void)
 {
-	u32_t et;
+	uint32_t et;
 
 	begin_test();
 	et = TIME_STAMP_DELTA_GET(0);

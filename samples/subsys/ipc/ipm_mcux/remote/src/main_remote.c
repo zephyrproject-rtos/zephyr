@@ -11,7 +11,7 @@
 
 struct device *ipm;
 
-void ping_ipm_callback(void *context, u32_t id, volatile void *data)
+void ping_ipm_callback(void *context, uint32_t id, volatile void *data)
 {
 	ipm_send(ipm, 1, 0, (const void *)data, 4);
 }

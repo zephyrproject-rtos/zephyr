@@ -35,8 +35,8 @@ extern struct bt_gatt_attr service_c_1_3_attrs[];
 		0xef, 0xcd, 0xab, 0x89, 0x67, 0x45, 0x23, 0x01, \
 		0x00, 0x00, 0x00, 0x00, 0x0b, 0xb0, 0x00, 0x00)
 
-static u8_t   value_v12_value = 0x0C;
-static u8_t   value_v11__128_bit_uuid_value = 0x0B;
+static uint8_t   value_v12_value = 0x0C;
+static uint8_t   value_v11__128_bit_uuid_value = 0x0B;
 
 /**
  * @brief Attribute read call back for the Value V12 attribute
@@ -52,9 +52,9 @@ static u8_t   value_v11__128_bit_uuid_value = 0x0B;
  */
 static ssize_t read_value_v12(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, void *buf,
-			      u16_t len, u16_t offset)
+			      uint16_t len, uint16_t offset)
 {
-	const u8_t *value = attr->user_data;
+	const uint8_t *value = attr->user_data;
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 sizeof(value_v12_value));
@@ -74,9 +74,9 @@ static ssize_t read_value_v12(struct bt_conn *conn,
  */
 static ssize_t read_value_v11__128_bit_uuid(struct bt_conn *conn,
 					    const struct bt_gatt_attr *attr,
-					    void *buf, u16_t len, u16_t offset)
+					    void *buf, uint16_t len, uint16_t offset)
 {
-	const u8_t *value = attr->user_data;
+	const uint8_t *value = attr->user_data;
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 sizeof(value_v11__128_bit_uuid_value));

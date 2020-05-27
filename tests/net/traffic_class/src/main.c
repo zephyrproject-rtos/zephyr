@@ -96,9 +96,9 @@ static struct k_sem wait_data;
 
 struct eth_context {
 	struct net_if *iface;
-	u8_t mac_addr[6];
+	uint8_t mac_addr[6];
 
-	u16_t expecting_tag;
+	uint16_t expecting_tag;
 };
 
 static struct eth_context eth_context;
@@ -164,7 +164,7 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 	if (start_receiving) {
 		struct in6_addr addr;
 		struct net_udp_hdr hdr, *udp_hdr;
-		u16_t port;
+		uint16_t port;
 
 		DBG("Packet %p received\n", pkt);
 
@@ -241,7 +241,7 @@ static struct dummy_api api_funcs = {
 	.send	= eth_tx,
 };
 
-static void generate_mac(u8_t *mac_addr)
+static void generate_mac(uint8_t *mac_addr)
 {
 	/* 00-00-5E-00-53-xx Documentation RFC 7042 */
 	mac_addr[0] = 0x00;
@@ -404,7 +404,7 @@ static void test_traffic_class_general_setup(void)
 
 static void traffic_class_setup(enum net_priority *tc2prio, int count)
 {
-	u8_t priority;
+	uint8_t priority;
 	int i, ret;
 
 	for (i = 0; i < count; i++) {
@@ -459,7 +459,7 @@ static void traffic_class_send_packets_with_prio(enum net_priority prio,
 	/* Start to send data to each queue and verify that the data
 	 * is received in correct order.
 	 */
-	u8_t data[128];
+	uint8_t data[128];
 	int len, ret;
 	int tc = net_tx_priority2tc(prio);
 
@@ -737,7 +737,7 @@ static void traffic_class_recv_packets_with_prio(enum net_priority prio,
 	/* Start to receive data to each queue and verify that the data
 	 * is received in correct order.
 	 */
-	u8_t data[128];
+	uint8_t data[128];
 	int len, ret;
 	int tc = net_rx_priority2tc(prio);
 	const struct in6_addr *src_addr;

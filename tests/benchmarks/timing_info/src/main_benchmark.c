@@ -22,7 +22,7 @@ void __weak calibrate_timer(void)
 
 void main(void)
 {
-	u32_t freq;
+	uint32_t freq;
 
 	calibrate_timer();
 

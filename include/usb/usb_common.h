@@ -138,74 +138,74 @@
 
 /** Standard Device Descriptor */
 struct usb_device_descriptor {
-	u8_t bLength;
-	u8_t bDescriptorType;
-	u16_t bcdUSB;
-	u8_t bDeviceClass;
-	u8_t bDeviceSubClass;
-	u8_t bDeviceProtocol;
-	u8_t bMaxPacketSize0;
-	u16_t idVendor;
-	u16_t idProduct;
-	u16_t bcdDevice;
-	u8_t iManufacturer;
-	u8_t iProduct;
-	u8_t iSerialNumber;
-	u8_t bNumConfigurations;
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint16_t bcdUSB;
+	uint8_t bDeviceClass;
+	uint8_t bDeviceSubClass;
+	uint8_t bDeviceProtocol;
+	uint8_t bMaxPacketSize0;
+	uint16_t idVendor;
+	uint16_t idProduct;
+	uint16_t bcdDevice;
+	uint8_t iManufacturer;
+	uint8_t iProduct;
+	uint8_t iSerialNumber;
+	uint8_t bNumConfigurations;
 } __packed;
 
 /** Unicode (UTF16LE) String Descriptor */
 struct usb_string_descriptor {
-	u8_t bLength;
-	u8_t bDescriptorType;
-	u16_t bString;
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint16_t bString;
 } __packed;
 
 /** Association Descriptor */
 struct usb_association_descriptor {
-	u8_t bLength;
-	u8_t bDescriptorType;
-	u8_t bFirstInterface;
-	u8_t bInterfaceCount;
-	u8_t bFunctionClass;
-	u8_t bFunctionSubClass;
-	u8_t bFunctionProtocol;
-	u8_t iFunction;
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint8_t bFirstInterface;
+	uint8_t bInterfaceCount;
+	uint8_t bFunctionClass;
+	uint8_t bFunctionSubClass;
+	uint8_t bFunctionProtocol;
+	uint8_t iFunction;
 } __packed;
 
 /** Standard Configuration Descriptor */
 struct usb_cfg_descriptor {
-	u8_t bLength;
-	u8_t bDescriptorType;
-	u16_t wTotalLength;
-	u8_t bNumInterfaces;
-	u8_t bConfigurationValue;
-	u8_t iConfiguration;
-	u8_t bmAttributes;
-	u8_t bMaxPower;
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint16_t wTotalLength;
+	uint8_t bNumInterfaces;
+	uint8_t bConfigurationValue;
+	uint8_t iConfiguration;
+	uint8_t bmAttributes;
+	uint8_t bMaxPower;
 } __packed;
 
 /** Standard Interface Descriptor */
 struct usb_if_descriptor {
-	u8_t bLength;
-	u8_t bDescriptorType;
-	u8_t bInterfaceNumber;
-	u8_t bAlternateSetting;
-	u8_t bNumEndpoints;
-	u8_t bInterfaceClass;
-	u8_t bInterfaceSubClass;
-	u8_t bInterfaceProtocol;
-	u8_t iInterface;
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint8_t bInterfaceNumber;
+	uint8_t bAlternateSetting;
+	uint8_t bNumEndpoints;
+	uint8_t bInterfaceClass;
+	uint8_t bInterfaceSubClass;
+	uint8_t bInterfaceProtocol;
+	uint8_t iInterface;
 } __packed;
 
 /** Standard Endpoint Descriptor */
 struct usb_ep_descriptor {
-	u8_t bLength;
-	u8_t bDescriptorType;
-	u8_t bEndpointAddress;
-	u8_t bmAttributes;
-	u16_t wMaxPacketSize;
-	u8_t bInterval;
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint8_t bEndpointAddress;
+	uint8_t bmAttributes;
+	uint16_t wMaxPacketSize;
+	uint8_t bInterval;
 } __packed;
 
 #endif /* ZEPHYR_INCLUDE_USB_USB_COMMON_H_ */

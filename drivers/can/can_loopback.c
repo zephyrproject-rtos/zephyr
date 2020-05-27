@@ -46,7 +46,7 @@ static void dispatch_frame(const struct zcan_frame *frame,
 static inline int check_filter_match(const struct zcan_frame *frame,
 				     const struct zcan_filter *filter)
 {
-	u32_t id, mask, frame_id;
+	uint32_t id, mask, frame_id;
 
 	frame_id = frame->id_type == CAN_STANDARD_IDENTIFIER ?
 			frame->std_id : frame->ext_id;
@@ -193,7 +193,7 @@ void can_loopback_detach(struct device *dev, int filter_id)
 }
 
 int can_loopback_configure(struct device *dev, enum can_mode mode,
-				u32_t bitrate)
+				uint32_t bitrate)
 {
 	struct can_loopback_data *data = DEV_DATA(dev);
 

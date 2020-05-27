@@ -16,7 +16,7 @@
 
 void test_company_id(void)
 {
-	u16_t cid;
+	uint16_t cid;
 	int err;
 
 	cid = 0x1234;
@@ -34,7 +34,7 @@ void test_company_id(void)
 
 void test_subversion_number(void)
 {
-	u16_t svn;
+	uint16_t svn;
 
 	svn = 0x1234;
 	settings_runtime_set("bt/ctlr/subver", &svn, sizeof(svn));

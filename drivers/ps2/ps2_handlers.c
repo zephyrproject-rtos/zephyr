@@ -24,8 +24,8 @@ Z_SYSCALL_HANDLER(ps2_write, dev, value)
 Z_SYSCALL_HANDLER(ps2_read, dev, value)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_PS2(dev, read));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(value, sizeof(u8_t)));
-	return z_impl_ps2_read((struct device *)dev, (u32_t *)value);
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(value, sizeof(uint8_t)));
+	return z_impl_ps2_read((struct device *)dev, (uint32_t *)value);
 }
 
 Z_SYSCALL_HANDLER(ps2_enable_callback)

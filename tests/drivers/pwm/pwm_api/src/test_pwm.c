@@ -72,7 +72,7 @@
 #define UNIT_USECS	1
 #define UNIT_NSECS	2
 
-static int test_task(u32_t port, u32_t period, u32_t pulse, u8_t unit)
+static int test_task(uint32_t port, uint32_t period, uint32_t pulse, uint8_t unit)
 {
 	TC_PRINT("[PWM]: %" PRIu8 ", [period]: %" PRIu32 ", [pulse]: %" PRIu32 "\n",
 		port, period, pulse);

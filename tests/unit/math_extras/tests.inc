@@ -10,7 +10,7 @@
 
 static void VNAME(u32_add)(void)
 {
-	u32_t result = 42;
+	uint32_t result = 42;
 
 	zassert_false(u32_add_overflow(2, 3, &result), NULL);
 	zassert_equal(result, 5, NULL);
@@ -34,7 +34,7 @@ static void VNAME(u32_add)(void)
 
 static void VNAME(u32_mul)(void)
 {
-	u32_t result = 42;
+	uint32_t result = 42;
 
 	zassert_false(u32_mul_overflow(2, 3, &result), NULL);
 	zassert_equal(result, 6, NULL);
@@ -52,7 +52,7 @@ static void VNAME(u32_mul)(void)
 
 static void VNAME(u64_add)(void)
 {
-	u64_t result = 42;
+	uint64_t result = 42;
 
 	zassert_false(u64_add_overflow(2, 3, &result), NULL);
 	zassert_equal(result, 5, NULL);
@@ -76,7 +76,7 @@ static void VNAME(u64_add)(void)
 
 static void VNAME(u64_mul)(void)
 {
-	u64_t result = 42;
+	uint64_t result = 42;
 
 	zassert_false(u64_mul_overflow(2, 3, &result), NULL);
 	zassert_equal(result, 6, NULL);

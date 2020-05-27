@@ -32,14 +32,14 @@ struct mpxxdtyy_data {
 	struct k_mem_slab	*pcm_mem_slab;
 };
 
-u16_t sw_filter_lib_init(struct device *dev, struct dmic_cfg *cfg);
+uint16_t sw_filter_lib_init(struct device *dev, struct dmic_cfg *cfg);
 int sw_filter_lib_run(TPDMFilter_InitStruct *pdm_filter,
 		      void *pdm_block, void *pcm_block,
 		      size_t pdm_size, size_t pcm_size);
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2s)
-int mpxxdtyy_i2s_read(struct device *dev, u8_t stream, void **buffer,
-		      size_t *size, s32_t timeout);
+int mpxxdtyy_i2s_read(struct device *dev, uint8_t stream, void **buffer,
+		      size_t *size, int32_t timeout);
 int mpxxdtyy_i2s_trigger(struct device *dev, enum dmic_trigger cmd);
 int mpxxdtyy_i2s_configure(struct device *dev, struct dmic_cfg *cfg);
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2s) */

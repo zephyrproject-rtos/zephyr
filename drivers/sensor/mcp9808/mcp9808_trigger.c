@@ -14,11 +14,11 @@
 
 LOG_MODULE_DECLARE(MCP9808, CONFIG_SENSOR_LOG_LEVEL);
 
-static int mcp9808_reg_write(struct device *dev, u8_t reg, u16_t val)
+static int mcp9808_reg_write(struct device *dev, uint8_t reg, uint16_t val)
 {
 	const struct mcp9808_data *data = dev->driver_data;
 	const struct mcp9808_config *cfg = dev->config_info;
-	u8_t buf[3] = {
+	uint8_t buf[3] = {
 		reg,
 		val >> 8,	/* big-endian register storage */
 		val & 0xFF,
@@ -31,7 +31,7 @@ int mcp9808_attr_set(struct device *dev, enum sensor_channel chan,
 		     enum sensor_attribute attr,
 		     const struct sensor_value *val)
 {
-	u8_t reg_addr;
+	uint8_t reg_addr;
 	int temp;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_AMBIENT_TEMP);
@@ -121,7 +121,7 @@ int mcp9808_trigger_set(struct device *dev,
 	return rv;
 }
 
-static void alert_cb(struct device *dev, struct gpio_callback *cb, u32_t pins)
+static void alert_cb(struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
 	struct mcp9808_data *data =
 		CONTAINER_OF(cb, struct mcp9808_data, alert_cb);

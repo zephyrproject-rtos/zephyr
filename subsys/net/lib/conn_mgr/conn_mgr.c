@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(conn_mgr, CONFIG_NET_CONNECTION_MANAGER_LOG_LEVEL);
 
 #include <conn_mgr.h>
 
-u16_t iface_states[CONN_MGR_IFACE_MAX];
+uint16_t iface_states[CONN_MGR_IFACE_MAX];
 
 K_SEM_DEFINE(conn_mgr_lock, 1, UINT_MAX);
 

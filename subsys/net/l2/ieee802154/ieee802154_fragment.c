@@ -35,7 +35,7 @@ LOG_MODULE_REGISTER(net_ieee802154_fragment,
 	K_SECONDS(CONFIG_NET_L2_IEEE802154_REASSEMBLY_TIMEOUT)
 #define REASS_CACHE_SIZE CONFIG_NET_L2_IEEE802154_FRAGMENT_REASS_CACHE_SIZE
 
-static u16_t datagram_tag;
+static uint16_t datagram_tag;
 
 /**
  *  Reassemble cache : Depends on cache size it used for reassemble
@@ -44,8 +44,8 @@ static u16_t datagram_tag;
 struct frag_cache {
 	struct k_delayed_work timer;	/* Reassemble timer */
 	struct net_pkt *pkt;		/* Reassemble packet */
-	u16_t size;			/* Datagram size */
-	u16_t tag;			/* Datagram tag */
+	uint16_t size;			/* Datagram size */
+	uint16_t tag;			/* Datagram tag */
 	bool used;
 };
 
@@ -84,22 +84,22 @@ static struct frag_cache cache[REASS_CACHE_SIZE];
  *  +-+-+-+-+-+-+-+-+
  */
 
-static inline void set_datagram_size(u8_t *ptr, u16_t size)
+static inline void set_datagram_size(uint8_t *ptr, uint16_t size)
 {
 	ptr[0] |= ((size & 0x7FF) >> 8);
-	ptr[1] = (u8_t) size;
+	ptr[1] = (uint8_t) size;
 }
 
-static inline void set_datagram_tag(u8_t *ptr, u16_t tag)
+static inline void set_datagram_tag(uint8_t *ptr, uint16_t tag)
 {
 	ptr[0] = tag >> 8;
-	ptr[1] = (u8_t) tag;
+	ptr[1] = (uint8_t) tag;
 }
 
-static inline void set_up_frag_hdr(struct net_buf *frag, u16_t size,
-				   u8_t offset)
+static inline void set_up_frag_hdr(struct net_buf *frag, uint16_t size,
+				   uint8_t offset)
 {
-	u8_t pos = frag->len;
+	uint8_t pos = frag->len;
 
 	if (!offset) {
 		net_buf_add(frag, NET_6LO_FRAG1_HDR_LEN);
@@ -120,17 +120,17 @@ static inline void set_up_frag_hdr(struct net_buf *frag, u16_t size,
 	}
 }
 
-static inline u8_t calc_max_payload(struct net_buf *frag, u8_t offset)
+static inline uint8_t calc_max_payload(struct net_buf *frag, uint8_t offset)
 {
-	u8_t max = frag->size - frag->len;
+	uint8_t max = frag->size - frag->len;
 
 	return (max & 0xF8);
 }
 
-static inline u8_t copy_data(struct ieee802154_fragment_ctx *ctx,
-			     struct net_buf *frame_buf, u8_t max)
+static inline uint8_t copy_data(struct ieee802154_fragment_ctx *ctx,
+			     struct net_buf *frame_buf, uint8_t max)
 {
-	u8_t move = ctx->buf->len - (ctx->pos - ctx->buf->data);
+	uint8_t move = ctx->buf->len - (ctx->pos - ctx->buf->data);
 
 	move = MIN(move, max);
 
@@ -142,7 +142,7 @@ static inline u8_t copy_data(struct ieee802154_fragment_ctx *ctx,
 }
 
 static inline void update_fragment_ctx(struct ieee802154_fragment_ctx *ctx,
-				       u8_t move)
+				       uint8_t move)
 {
 	if (move == (ctx->buf->len - (ctx->pos - ctx->buf->data))) {
 		ctx->buf = ctx->buf->frags;
@@ -181,7 +181,7 @@ static inline void update_fragment_ctx(struct ieee802154_fragment_ctx *ctx,
 void ieee802154_fragment(struct ieee802154_fragment_ctx *ctx,
 			 struct net_buf *frame_buf, bool iphc)
 {
-	u8_t max;
+	uint8_t max;
 
 	if (!ctx->offset) {
 		datagram_tag++;
@@ -203,7 +203,7 @@ void ieee802154_fragment(struct ieee802154_fragment_ctx *ctx,
 	}
 
 	while (max && ctx->buf) {
-		u8_t move;
+		uint8_t move;
 
 		move = copy_data(ctx, frame_buf, max);
 
@@ -215,17 +215,17 @@ void ieee802154_fragment(struct ieee802154_fragment_ctx *ctx,
 	ctx->offset = ctx->processed >> 3;
 }
 
-static inline u16_t get_datagram_size(u8_t *ptr)
+static inline uint16_t get_datagram_size(uint8_t *ptr)
 {
 	return ((ptr[0] & 0x1F) << 8) | ptr[1];
 }
 
-static inline u16_t get_datagram_tag(u8_t *ptr)
+static inline uint16_t get_datagram_tag(uint8_t *ptr)
 {
 	return (ptr[0] << 8) | ptr[1];
 }
 
-static void update_protocol_header_lengths(struct net_pkt *pkt, u16_t size)
+static void update_protocol_header_lengths(struct net_pkt *pkt, uint16_t size)
 {
 	NET_PKT_DATA_ACCESS_DEFINE(ipv6_access, struct net_ipv6_hdr);
 	struct net_ipv6_hdr *ipv6;
@@ -255,9 +255,9 @@ static void update_protocol_header_lengths(struct net_pkt *pkt, u16_t size)
 	}
 }
 
-static inline void clear_reass_cache(u16_t size, u16_t tag)
+static inline void clear_reass_cache(uint16_t size, uint16_t tag)
 {
-	u8_t i;
+	uint8_t i;
 
 	for (i = 0U; i < REASS_CACHE_SIZE; i++) {
 		if (!(cache[i].size == size && cache[i].tag == tag)) {
@@ -300,7 +300,7 @@ static void reass_timeout(struct k_work *work)
  *  discard the fragments.
  */
 static inline struct frag_cache *set_reass_cache(struct net_pkt *pkt,
-						 u16_t size, u16_t tag)
+						 uint16_t size, uint16_t tag)
 {
 	int i;
 
@@ -326,9 +326,9 @@ static inline struct frag_cache *set_reass_cache(struct net_pkt *pkt,
  *  Return cache if it matches with size and tag of stored caches,
  *  otherwise return NULL.
  */
-static inline struct frag_cache *get_reass_cache(u16_t size, u16_t tag)
+static inline struct frag_cache *get_reass_cache(uint16_t size, uint16_t tag)
 {
-	u8_t i;
+	uint8_t i;
 
 	for (i = 0U; i < REASS_CACHE_SIZE; i++) {
 		if (cache[i].used) {
@@ -361,11 +361,11 @@ static inline size_t fragment_cached_pkt_len(struct net_pkt *pkt)
 	size_t len = 0U;
 	struct net_buf *frag;
 	int hdr_len;
-	u8_t *data;
+	uint8_t *data;
 
 	frag = pkt->buffer;
 	while (frag) {
-		u16_t hdr_len = NET_6LO_FRAGN_HDR_LEN;
+		uint16_t hdr_len = NET_6LO_FRAGN_HDR_LEN;
 
 		if ((frag->data[0] & NET_FRAG_DISPATCH_MASK) ==
 		    NET_6LO_DISPATCH_FRAG1) {
@@ -394,14 +394,14 @@ static inline size_t fragment_cached_pkt_len(struct net_pkt *pkt)
 	return len + hdr_len;
 }
 
-static inline u16_t fragment_offset(struct net_buf *frag)
+static inline uint16_t fragment_offset(struct net_buf *frag)
 {
 	if ((frag->data[0] & NET_FRAG_DISPATCH_MASK) ==
 		    NET_6LO_DISPATCH_FRAG1) {
 		return 0;
 	}
 
-	return ((u16_t)frag->data[NET_FRAG_OFFSET_POS] << 3);
+	return ((uint16_t)frag->data[NET_FRAG_OFFSET_POS] << 3);
 }
 
 static void fragment_move_back(struct net_pkt *pkt,
@@ -433,7 +433,7 @@ static inline void fragment_remove_headers(struct net_pkt *pkt)
 
 	frag = pkt->buffer;
 	while (frag) {
-		u16_t hdr_len = NET_6LO_FRAGN_HDR_LEN;
+		uint16_t hdr_len = NET_6LO_FRAGN_HDR_LEN;
 
 		if ((frag->data[0] & NET_FRAG_DISPATCH_MASK) ==
 		    NET_6LO_DISPATCH_FRAG1) {
@@ -484,8 +484,8 @@ static inline enum net_verdict fragment_add_to_cache(struct net_pkt *pkt)
 	bool first_frag = false;
 	struct frag_cache *cache;
 	struct net_buf *frag;
-	u16_t size;
-	u16_t tag;
+	uint16_t size;
+	uint16_t tag;
 
 	/* Parse total size of packet */
 	size = get_datagram_size(pkt->buffer->data);

@@ -30,12 +30,12 @@ extern "C" {
 
 /* data for each DMA channel */
 struct dma_chan_data {
-	u32_t direction;
+	uint32_t direction;
 	void *blkcallback_arg;
-	void (*dma_blkcallback)(void *arg, u32_t channel,
+	void (*dma_blkcallback)(void *arg, uint32_t channel,
 		int error_code);
 	void *tfrcallback_arg;
-	void (*dma_tfrcallback)(void *arg, u32_t channel,
+	void (*dma_tfrcallback)(void *arg, uint32_t channel,
 		int error_code);
 };
 
@@ -93,8 +93,8 @@ struct dma_chan_data {
 
 /* TODO: add FIFO sizes */
 struct chan_arbit_data {
-	u16_t class;
-	u16_t weight;
+	uint16_t class;
+	uint16_t weight;
 };
 
 struct dw_drv_plat_data {
@@ -109,7 +109,7 @@ struct dw_dma_dev_data {
 
 /* Device constant configuration parameters */
 struct dw_dma_dev_cfg {
-	u32_t base;
+	uint32_t base;
 	void (*irq_config)(void);
 };
 
