@@ -1374,7 +1374,7 @@ int net_tcp_connect(struct net_context *context,
 		    void *user_data)
 {
 	struct tcp *conn;
-	int ret;
+	int ret = 0;
 
 	ARG_UNUSED(timeout);
 
@@ -1434,7 +1434,7 @@ int net_tcp_connect(struct net_context *context,
 		break;
 
 	default:
-		return -EPROTONOSUPPORT;
+		ret = -EPROTONOSUPPORT;
 	}
 
 	NET_DBG("conn: %p src: %s, dst: %s", conn,
@@ -1452,7 +1452,7 @@ int net_tcp_connect(struct net_context *context,
 				tcp_recv, context,
 				&context->conn_handler);
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
 
 	/* Input of a (nonexistent) packet with no flags set will cause
@@ -1460,7 +1460,10 @@ int net_tcp_connect(struct net_context *context,
 	 */
 	tcp_in(conn, NULL);
 
-	return 0;
+ out:
+	NET_DBG("conn: %p, ret=%d", conn, ret);
+
+	return ret;
 }
 
 int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
