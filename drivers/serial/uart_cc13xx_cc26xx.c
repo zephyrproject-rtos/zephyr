@@ -564,44 +564,24 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 #define UART_CC13XX_CC26XX_INT_FIELDS
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-/*
- * DEVICE_DEFINE() requires the kernel level to be explicitly passed
- * using the actual macro name, hence we are forced to list these permutations
- * out.
- */
-#define UART_CC13XX_CC26XX_DEVICE_DEFINE_0				 \
-	DEVICE_DEFINE(uart_cc13xx_cc26xx_0, DT_INST_LABEL(0),		 \
-		uart_cc13xx_cc26xx_init_0,				 \
-		uart_cc13xx_cc26xx_pm_control,				 \
-		&uart_cc13xx_cc26xx_data_0, &uart_cc13xx_cc26xx_config_0,\
-		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	 \
+#define UART_CC13XX_CC26XX_DEVICE_DEFINE(n)				     \
+	DEVICE_DEFINE(uart_cc13xx_cc26xx_##n, DT_INST_LABEL(n),		     \
+		uart_cc13xx_cc26xx_init_##n,				     \
+		uart_cc13xx_cc26xx_pm_control,				     \
+		&uart_cc13xx_cc26xx_data_##n, &uart_cc13xx_cc26xx_config_##n,\
+		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	     \
 		&uart_cc13xx_cc26xx_driver_api)
 
-#define UART_CC13XX_CC26XX_DEVICE_DEFINE_1				 \
-	DEVICE_DEFINE(uart_cc13xx_cc26xx_1, DT_INST_LABEL(1),		 \
-		uart_cc13xx_cc26xx_init_1,				 \
-		uart_cc13xx_cc26xx_pm_control,				 \
-		&uart_cc13xx_cc26xx_data_1, &uart_cc13xx_cc26xx_config_1,\
-		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	 \
-		&uart_cc13xx_cc26xx_driver_api)
-
-#define UART_CC13XX_CC26XX_DEVICE_API_INIT_0				 \
-	DEVICE_AND_API_INIT(uart_cc13xx_cc26xx_0, DT_INST_LABEL(0),	 \
-		uart_cc13xx_cc26xx_init_0, &uart_cc13xx_cc26xx_data_0,	 \
-		&uart_cc13xx_cc26xx_config_0, PRE_KERNEL_1,		 \
-		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			 \
-		&uart_cc13xx_cc26xx_driver_api)
-
-#define UART_CC13XX_CC26XX_DEVICE_API_INIT_1				 \
-	DEVICE_AND_API_INIT(uart_cc13xx_cc26xx_1, DT_INST_LABEL(1),	 \
-		uart_cc13xx_cc26xx_init_1, &uart_cc13xx_cc26xx_data_1,	 \
-		&uart_cc13xx_cc26xx_config_1, POST_KERNEL,		 \
-		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			 \
+#define UART_CC13XX_CC26XX_DEVICE_API_INIT(n)				     \
+	DEVICE_AND_API_INIT(uart_cc13xx_cc26xx_##n, DT_INST_LABEL(n),	     \
+		uart_cc13xx_cc26xx_init_##n, &uart_cc13xx_cc26xx_data_##n,   \
+		&uart_cc13xx_cc26xx_config_##n, PRE_KERNEL_1,		     \
+		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			     \
 		&uart_cc13xx_cc26xx_driver_api)
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 #define UART_CC13XX_CC26XX_DEVICE_INIT(n)				\
-	UART_CC13XX_CC26XX_DEVICE_DEFINE_##n
+	UART_CC13XX_CC26XX_DEVICE_DEFINE(n)
 
 #define UART_CC13XX_CC26XX_INIT_PM_STATE				\
 	do {								\
@@ -609,7 +589,7 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 	} while (0)
 #else
 #define UART_CC13XX_CC26XX_DEVICE_INIT(n)				\
-	UART_CC13XX_CC26XX_DEVICE_API_INIT_##n
+	UART_CC13XX_CC26XX_DEVICE_API_INIT(n)
 
 #define UART_CC13XX_CC26XX_INIT_PM_STATE
 #endif
