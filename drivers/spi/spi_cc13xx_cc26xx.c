@@ -282,23 +282,36 @@ static const struct spi_driver_api spi_cc13xx_cc26xx_driver_api = {
 	.release = spi_cc13xx_cc26xx_release,
 };
 
-#define SPI_CC13XX_CC26XX_DOMAIN_0 PRCM_DOMAIN_SERIAL
-#define SPI_CC13XX_CC26XX_DOMAIN_1 PRCM_DOMAIN_PERIPH
-
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
-#define SPI_CC13XX_CC26XX_POWER_SPI(n)					\
-	/* Set Power dependencies & constraints */			\
-	Power_setDependency(PowerCC26XX_PERIPH_SSI##n)
+#define SPI_CC13XX_CC26XX_POWER_SPI(n)					  \
+	do {								  \
+		/* Set Power dependencies & constraints */		  \
+		if (DT_INST_REG_ADDR(n) == 0x40000000) {		  \
+			Power_setDependency(PowerCC26XX_PERIPH_SSI0);	  \
+		} else {						  \
+			Power_setDependency(PowerCC26XX_PERIPH_SSI1);	  \
+		}							  \
+	} while (0)
 #else
 #define SPI_CC13XX_CC26XX_POWER_SPI(n)					  \
 	do {								  \
+		u32_t domain, periph;					  \
+									  \
+		/* Enable UART power domain */				  \
+		if (DT_INST_REG_ADDR(n) == 0x40000000) {		  \
+			domain = PRCM_DOMAIN_SERIAL;			  \
+			periph = PRCM_PERIPH_SSI0;			  \
+		} else {						  \
+			domain = PRCM_DOMAIN_PERIPH;			  \
+			periph = PRCM_PERIPH_SSI1;			  \
+		}							  \
 		/* Enable SSI##n power domain */			  \
-		PRCMPowerDomainOn(SPI_CC13XX_CC26XX_DOMAIN_##n);	  \
+		PRCMPowerDomainOn(domain);				  \
 									  \
 		/* Enable SSI##n peripherals */				  \
-		PRCMPeripheralRunEnable(PRCM_PERIPH_SSI##n);		  \
-		PRCMPeripheralSleepEnable(PRCM_PERIPH_SSI##n);		  \
-		PRCMPeripheralDeepSleepEnable(PRCM_PERIPH_SSI##n);	  \
+		PRCMPeripheralRunEnable(periph);			  \
+		PRCMPeripheralSleepEnable(periph);			  \
+		PRCMPeripheralDeepSleepEnable(periph);			  \
 									  \
 		/* Load PRCM settings */				  \
 		PRCMLoadSet();						  \
@@ -307,8 +320,7 @@ static const struct spi_driver_api spi_cc13xx_cc26xx_driver_api = {
 		}							  \
 									  \
 		/* SSI should not be accessed until power domain is on. */\
-		while (PRCMPowerDomainStatus(				  \
-			SPI_CC13XX_CC26XX_DOMAIN_##n) !=		  \
+		while (PRCMPowerDomainStatus(domain) !=			  \
 			PRCM_DOMAIN_POWER_ON) {				  \
 			continue;					  \
 		}							  \
