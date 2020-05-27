@@ -39,7 +39,7 @@ struct gptp_domain gptp_domain;
 
 int gptp_get_port_number(struct net_if *iface)
 {
-	int port = net_eth_get_ptp_port(iface);
+	int port = net_eth_get_ptp_port(iface) + 1;
 
 	if (port >= GPTP_PORT_START && port < GPTP_PORT_END) {
 		return port;
