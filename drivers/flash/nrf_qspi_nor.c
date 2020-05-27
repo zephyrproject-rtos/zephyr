@@ -500,7 +500,7 @@ static int qspi_nor_read(struct device *dev, off_t addr, void *dest,
 	}
 
 	/* read size must be non-zero multiple of 4 bytes */
-	if (size < 4U) {
+	if ((size > 0) && (size < 4U)) {
 		dest = buf;
 		size = sizeof(buf);
 	} else if (((size % 4U) != 0) || (size == 0)) {
