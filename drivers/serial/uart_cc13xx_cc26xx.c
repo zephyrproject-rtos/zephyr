@@ -490,9 +490,6 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
-#define UART_CC13XX_CC26XX_DOMAIN_0 PRCM_DOMAIN_SERIAL
-#define UART_CC13XX_CC26XX_DOMAIN_1 PRCM_DOMAIN_PERIPH
-
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 #define UART_CC13XX_CC26XX_POWER_UART(n)				\
 	do {								\
@@ -500,7 +497,11 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 		get_dev_data(dev)->tx_constrained = false;		\
 									\
 		/* Set Power dependencies */				\
-		Power_setDependency(PowerCC26XX_PERIPH_UART##n);	\
+		if (DT_INST_REG_ADDR(n) == 0x40001000) {		\
+			Power_setDependency(PowerCC26XX_PERIPH_UART0);	\
+		} else {						\
+			Power_setDependency(PowerCC26X2_PERIPH_UART1);	\
+		}							\
 									\
 		/* Register notification function */			\
 		Power_registerNotify(&get_dev_data(dev)->postNotify,	\
@@ -510,12 +511,21 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 #else
 #define UART_CC13XX_CC26XX_POWER_UART(n)				\
 	do {								\
+		u32_t domain, periph;					\
+									\
 		/* Enable UART power domain */				\
-		PRCMPowerDomainOn(UART_CC13XX_CC26XX_DOMAIN_##n);	\
+		if (DT_INST_REG_ADDR(n) == 0x40001000) {		\
+			domain = PRCM_DOMAIN_SERIAL;			\
+			periph = PRCM_PERIPH_UART0;			\
+		} else {						\
+			domain = PRCM_DOMAIN_PERIPH;			\
+			periph = PRCM_PERIPH_UART1;			\
+		}							\
+		PRCMPowerDomainOn(domain);				\
 									\
 		/* Enable UART peripherals */				\
-		PRCMPeripheralRunEnable(PRCM_PERIPH_UART##n);		\
-		PRCMPeripheralSleepEnable(PRCM_PERIPH_UART##n);		\
+		PRCMPeripheralRunEnable(periph);			\
+		PRCMPeripheralSleepEnable(periph);			\
 									\
 		/* Load PRCM settings */				\
 		PRCMLoadSet();						\
@@ -524,8 +534,7 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 		}							\
 									     \
 		/* UART should not be accessed until power domain is on. */  \
-		while (PRCMPowerDomainStatus(				     \
-			UART_CC13XX_CC26XX_DOMAIN_##n) !=		     \
+		while (PRCMPowerDomainStatus(domain) !=			     \
 			PRCM_DOMAIN_POWER_ON) {				     \
 			continue;					     \
 		}							     \
