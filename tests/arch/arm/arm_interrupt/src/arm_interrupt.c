@@ -180,7 +180,7 @@ void test_arm_interrupt(void)
 	/*
 	 * Simulate a stacking error that is caused explicitly by the
 	 * exception entry context stacking, to verify that the CPU can
-	 * correctly report stacking  errors that are not also Data
+	 * correctly report stacking errors that are not also Data
 	 * access violation errors.
 	 */
 	expected_reason = K_ERR_STACK_CHK_FAIL;
@@ -196,7 +196,7 @@ void test_arm_interrupt(void)
 	test_flag = 4;
 
 	/* Manually set PSP almost at the bottom of the stack. An exception
-	 * entry will make PSP decent below the limit and into the MPU guard
+	 * entry will make PSP descend below the limit and into the MPU guard
 	 * section (or beyond the address pointed by PSPLIM in ARMv8-M MCUs).
 	 */
 	__set_PSP(_current->stack_info.start + 0x10);

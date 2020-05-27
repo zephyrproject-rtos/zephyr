@@ -6,7 +6,9 @@ Description:
 
 The first test verifies that we can handle system fault conditions
 while running in handler mode (i.e. in an ISR). Only for ARM
-Cortex-M targets. The test also verifies
+Cortex-M targets.
+
+The test also verifies
 - the behavior of the spurious interrupt handler, as well as the
   ARM spurious exception handler.
 - the ability of the Cortex-M fault handling mechanism to detect
