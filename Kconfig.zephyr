@@ -363,6 +363,12 @@ config LEGACY_DEVICETREE_MACROS
 	  Zephyr 2.2 and previous versions, rather than the devicetree.h
 	  API introduced during the Zephyr 2.3 development cycle.
 
+config LEGACY_ZEPHYR_INT_TYPES
+	bool "Allow the use of the legacy zephyr integer types"
+	help
+	  Allows the use of the legacy Zephyr integer typedefs defined in
+	  Zephyr 2.3 and previous versions.
+
 endmenu
 endmenu
 
