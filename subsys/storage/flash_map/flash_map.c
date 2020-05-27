@@ -17,12 +17,12 @@
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 struct layout_data {
-	u32_t area_idx;
-	u32_t area_off;
-	u32_t area_len;
+	uint32_t area_idx;
+	uint32_t area_off;
+	uint32_t area_len;
 	void *ret;        /* struct flash_area* or struct flash_sector* */
-	u32_t ret_idx;
-	u32_t ret_len;
+	uint32_t ret_idx;
+	uint32_t ret_len;
 	int status;
 };
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
@@ -48,7 +48,7 @@ void flash_area_foreach(flash_area_cb_t user_cb, void *user_data)
 	}
 }
 
-int flash_area_open(u8_t id, const struct flash_area **fap)
+int flash_area_open(uint8_t id, const struct flash_area **fap)
 {
 	const struct flash_area *area;
 
@@ -115,7 +115,7 @@ static bool should_bail(const struct flash_pages_info *info,
  * flash_area_get_sectors(). A lot of this can be inlined once
  * flash_area_to_sectors() is removed.
  */
-static int flash_area_layout(int idx, u32_t *cnt, void *ret,
+static int flash_area_layout(int idx, uint32_t *cnt, void *ret,
 flash_page_cb cb, struct layout_data *cb_data)
 {
 	struct device *flash_dev;
@@ -169,7 +169,7 @@ static bool get_sectors_cb(const struct flash_pages_info *info, void *datav)
 	return true;
 }
 
-int flash_area_get_sectors(int idx, u32_t *cnt, struct flash_sector *ret)
+int flash_area_get_sectors(int idx, uint32_t *cnt, struct flash_sector *ret)
 {
 	struct layout_data data;
 
@@ -240,7 +240,7 @@ int flash_area_erase(const struct flash_area *fa, off_t off, size_t len)
 	return rc;
 }
 
-u8_t flash_area_align(const struct flash_area *fa)
+uint8_t flash_area_align(const struct flash_area *fa)
 {
 	struct device *dev;
 

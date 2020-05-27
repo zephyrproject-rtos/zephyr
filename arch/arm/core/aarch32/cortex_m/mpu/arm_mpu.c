@@ -36,12 +36,12 @@ LOG_MODULE_DECLARE(mpu);
  * have been reserved by the MPU driver to program the static (fixed) memory
  * regions.
  */
-static u8_t static_regions_num;
+static uint8_t static_regions_num;
 
 /**
  *  Get the number of supported MPU regions.
  */
-static inline u8_t get_num_regions(void)
+static inline uint8_t get_num_regions(void)
 {
 #if defined(CONFIG_CPU_CORTEX_M0PLUS) || \
 	defined(CONFIG_CPU_CORTEX_M3) || \
@@ -55,11 +55,11 @@ static inline u8_t get_num_regions(void)
 	return NUM_MPU_REGIONS;
 #else
 
-	u32_t type = MPU->TYPE;
+	uint32_t type = MPU->TYPE;
 
 	type = (type & MPU_TYPE_DREGION_Msk) >> MPU_TYPE_DREGION_Pos;
 
-	return (u8_t)type;
+	return (uint8_t)type;
 #endif /* CPU_CORTEX_M0PLUS | CPU_CORTEX_M3 | CPU_CORTEX_M4 */
 }
 
@@ -76,7 +76,7 @@ static inline u8_t get_num_regions(void)
 #error "Unsupported ARM CPU"
 #endif
 
-static int region_allocate_and_init(const u8_t index,
+static int region_allocate_and_init(const uint8_t index,
 	const struct arm_mpu_region *region_conf)
 {
 	/* Attempt to allocate new region index. */
@@ -98,7 +98,7 @@ static int region_allocate_and_init(const u8_t index,
 /* This internal function programs an MPU region
  * of a given configuration at a given MPU index.
  */
-static int mpu_configure_region(const u8_t index,
+static int mpu_configure_region(const uint8_t index,
 	const struct k_mem_partition *new_region)
 {
 	struct arm_mpu_region region_conf;
@@ -122,7 +122,7 @@ static int mpu_configure_region(const u8_t index,
  * sanity check of the memory regions to be programmed.
  */
 static int mpu_configure_regions(const struct k_mem_partition
-	*regions[], u8_t regions_num, u8_t start_reg_index,
+	*regions[], uint8_t regions_num, uint8_t start_reg_index,
 	bool do_sanity_check)
 {
 	int i;
@@ -192,21 +192,21 @@ void arm_core_mpu_mem_partition_config_update(
 	k_mem_partition_attr_t *new_attr)
 {
 	/* Find the partition. ASSERT if not found. */
-	u8_t i;
-	u8_t reg_index = get_num_regions();
+	uint8_t i;
+	uint8_t reg_index = get_num_regions();
 
 	for (i = get_dyn_region_min_index(); i < get_num_regions(); i++) {
 		if (!is_enabled_region(i)) {
 			continue;
 		}
 
-		u32_t base = mpu_region_get_base(i);
+		uint32_t base = mpu_region_get_base(i);
 
 		if (base != partition->start) {
 			continue;
 		}
 
-		u32_t size = mpu_region_get_size(i);
+		uint32_t size = mpu_region_get_size(i);
 
 		if (size != partition->size) {
 			continue;
@@ -249,8 +249,8 @@ int arm_core_mpu_buffer_validate(void *addr, size_t size, int write)
  * @brief configure fixed (static) MPU regions.
  */
 void arm_core_mpu_configure_static_mpu_regions(const struct k_mem_partition
-	*static_regions[], const u8_t regions_num,
-	const u32_t background_area_start, const u32_t background_area_end)
+	*static_regions[], const uint8_t regions_num,
+	const uint32_t background_area_start, const uint32_t background_area_end)
 {
 	if (mpu_configure_static_mpu_regions(static_regions, regions_num,
 					       background_area_start, background_area_end) == -EINVAL) {
@@ -266,7 +266,7 @@ void arm_core_mpu_configure_static_mpu_regions(const struct k_mem_partition
  */
 void arm_core_mpu_mark_areas_for_dynamic_regions(
 	const struct k_mem_partition dyn_region_areas[],
-	const u8_t dyn_region_areas_num)
+	const uint8_t dyn_region_areas_num)
 {
 	if (mpu_mark_areas_for_dynamic_regions(dyn_region_areas,
 						 dyn_region_areas_num) == -EINVAL) {
@@ -281,7 +281,7 @@ void arm_core_mpu_mark_areas_for_dynamic_regions(
  * @brief configure dynamic MPU regions.
  */
 void arm_core_mpu_configure_dynamic_mpu_regions(const struct k_mem_partition
-	*dynamic_regions[], u8_t regions_num)
+	*dynamic_regions[], uint8_t regions_num)
 {
 	if (mpu_configure_dynamic_mpu_regions(dynamic_regions, regions_num)
 		== -EINVAL) {
@@ -301,7 +301,7 @@ void arm_core_mpu_configure_dynamic_mpu_regions(const struct k_mem_partition
  */
 static int arm_mpu_init(struct device *arg)
 {
-	u32_t r_index;
+	uint32_t r_index;
 
 	if (mpu_config.num_regions > get_num_regions()) {
 		/* Attempt to configure more MPU regions than

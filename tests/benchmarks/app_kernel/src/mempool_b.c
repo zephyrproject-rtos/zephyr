@@ -18,9 +18,9 @@
  */
 void mempool_test(void)
 {
-	u32_t et; /* elapsed time */
+	uint32_t et; /* elapsed time */
 	int i;
-	s32_t return_value = 0;
+	int32_t return_value = 0;
 	struct k_mem_block block;
 
 	PRINT_STRING(dashline, output_file);

@@ -50,9 +50,9 @@ struct bt_mesh_health_srv_cb {
 	 *
 	 *  @return 0 on success, or (negative) error code otherwise.
 	 */
-	int (*fault_get_cur)(struct bt_mesh_model *model, u8_t *test_id,
-			     u16_t *company_id, u8_t *faults,
-			     u8_t *fault_count);
+	int (*fault_get_cur)(struct bt_mesh_model *model, uint8_t *test_id,
+			     uint16_t *company_id, uint8_t *faults,
+			     uint8_t *fault_count);
 
 	/** @brief Callback for fetching all registered faults.
 	 *
@@ -76,9 +76,9 @@ struct bt_mesh_health_srv_cb {
 	 *
 	 *  @return 0 on success, or (negative) error code otherwise.
 	 */
-	int (*fault_get_reg)(struct bt_mesh_model *model, u16_t company_id,
-			     u8_t *test_id, u8_t *faults,
-			     u8_t *fault_count);
+	int (*fault_get_reg)(struct bt_mesh_model *model, uint16_t company_id,
+			     uint8_t *test_id, uint8_t *faults,
+			     uint8_t *fault_count);
 
 	/** @brief Clear all registered faults associated with the given Company
 	 * ID.
@@ -88,7 +88,7 @@ struct bt_mesh_health_srv_cb {
 	 *
 	 *  @return 0 on success, or (negative) error code otherwise.
 	 */
-	int (*fault_clear)(struct bt_mesh_model *model, u16_t company_id);
+	int (*fault_clear)(struct bt_mesh_model *model, uint16_t company_id);
 
 	/** @brief Run a self-test.
 	 *
@@ -105,8 +105,8 @@ struct bt_mesh_health_srv_cb {
 	 * (negative) error code otherwise. Note that the fault array will not
 	 * be reported back to the client if the test execution didn't start.
 	 */
-	int (*fault_test)(struct bt_mesh_model *model, u8_t test_id,
-			  u16_t company_id);
+	int (*fault_test)(struct bt_mesh_model *model, uint8_t test_id,
+			  uint16_t company_id);
 
 	/** @brief Start calling attention to the device.
 	 *

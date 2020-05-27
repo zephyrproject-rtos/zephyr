@@ -20,8 +20,8 @@
 #include "iis3dhhc_reg.h"
 
 union axis3bit16_t {
-	s16_t i16bit[3];
-	u8_t u8bit[6];
+	int16_t i16bit[3];
+	uint8_t u8bit[6];
 };
 
 struct iis3dhhc_config {
@@ -29,21 +29,21 @@ struct iis3dhhc_config {
 	int (*bus_init)(struct device *dev);
 #ifdef CONFIG_IIS3DHHC_TRIGGER
 	const char *int_port;
-	u8_t int_pin;
-	u8_t int_flags;
+	uint8_t int_pin;
+	uint8_t int_flags;
 #endif
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	struct spi_config spi_conf;
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	const char *gpio_cs_port;
-	u8_t cs_gpio;
+	uint8_t cs_gpio;
 #endif
 #endif
 };
 
 struct iis3dhhc_data {
 	struct device *bus;
-	s16_t acc[3];
+	int16_t acc[3];
 
 	stmdev_ctx_t *ctx;
 
@@ -53,7 +53,7 @@ struct iis3dhhc_data {
 
 #ifdef CONFIG_IIS3DHHC_TRIGGER
 	struct device *gpio;
-	u32_t pin;
+	uint32_t pin;
 	struct gpio_callback gpio_cb;
 
 	sensor_trigger_handler_t handler_drdy;

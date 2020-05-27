@@ -56,10 +56,10 @@
 
 struct pwm_dw_config {
 	/** Base address of registers */
-	u32_t	addr;
+	uint32_t	addr;
 
 	/** Number of ports */
-	u32_t	num_ports;
+	uint32_t	num_ports;
 };
 
 /**
@@ -70,7 +70,7 @@ struct pwm_dw_config {
  *
  * @return The base address of that particular timer
  */
-static inline int pwm_dw_timer_base_addr(struct device *dev, u32_t timer)
+static inline int pwm_dw_timer_base_addr(struct device *dev, uint32_t timer)
 {
 	const struct pwm_dw_config * const cfg =
 	    (const struct pwm_dw_config *)dev->config_info;
@@ -86,7 +86,7 @@ static inline int pwm_dw_timer_base_addr(struct device *dev, u32_t timer)
  *
  * @return The load count 2 address of that particular timer
  */
-static inline int pwm_dw_timer_ldcnt2_addr(struct device *dev, u32_t timer)
+static inline int pwm_dw_timer_ldcnt2_addr(struct device *dev, uint32_t timer)
 {
 	const struct pwm_dw_config * const cfg =
 	    (const struct pwm_dw_config *)dev->config_info;
@@ -95,10 +95,10 @@ static inline int pwm_dw_timer_ldcnt2_addr(struct device *dev, u32_t timer)
 }
 
 
-static int __set_one_port(struct device *dev, u32_t pwm,
-			  u32_t on, u32_t off)
+static int __set_one_port(struct device *dev, uint32_t pwm,
+			  uint32_t on, uint32_t off)
 {
-	u32_t reg_addr;
+	uint32_t reg_addr;
 
 	reg_addr = pwm_dw_timer_base_addr(dev, pwm);
 
@@ -140,13 +140,13 @@ static int __set_one_port(struct device *dev, u32_t pwm,
  * @return 0
  */
 static int pwm_dw_pin_set_cycles(struct device *dev,
-				 u32_t pwm, u32_t period_cycles,
-				 u32_t pulse_cycles, pwm_flags_t flags)
+				 uint32_t pwm, uint32_t period_cycles,
+				 uint32_t pulse_cycles, pwm_flags_t flags)
 {
 	const struct pwm_dw_config * const cfg =
 	    (const struct pwm_dw_config *)dev->config_info;
 	int i;
-	u32_t on, off;
+	uint32_t on, off;
 
 	/* make sure the PWM port exists */
 	if (pwm >= cfg->num_ports) {

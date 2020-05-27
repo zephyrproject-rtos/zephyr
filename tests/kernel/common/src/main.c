@@ -67,7 +67,7 @@ void test_printk(void)
  */
 static void test_version(void)
 {
-	u32_t version = sys_kernel_version_get();
+	uint32_t version = sys_kernel_version_get();
 
 	zassert_true(SYS_KERNEL_VER_MAJOR(version) == KERNEL_VERSION_MAJOR,
 		     "major version mismatch");

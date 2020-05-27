@@ -32,7 +32,7 @@
  */
 
 struct state {
-	u8_t second,
+	uint8_t second,
 	     minute,
 	     hour,
 	     day,
@@ -54,7 +54,7 @@ struct state {
  * the members of 'struct state'.
  */
 
-const u8_t addrs[] = { 0, 2, 4, 7, 8, 9, 10, 11 };
+const uint8_t addrs[] = { 0, 2, 4, 7, 8, 9, 10, 11 };
 
 /*
  * Interesting bits in 'struct state'.
@@ -69,11 +69,11 @@ const u8_t addrs[] = { 0, 2, 4, 7, 8, 9, 10, 11 };
  * we have to spinlock to make the access atomic.
  */
 
-static u8_t read_register(u8_t addr)
+static uint8_t read_register(uint8_t addr)
 {
 	static struct k_spinlock lock;
 	k_spinlock_key_t k;
-	u8_t val;
+	uint8_t val;
 
 	k = k_spin_lock(&lock);
 	sys_out8(addr, X86_CMOS_ADDR);
@@ -88,9 +88,9 @@ static u8_t read_register(u8_t addr)
 void read_state(struct state *state)
 {
 	int i;
-	u8_t *p;
+	uint8_t *p;
 
-	p = (u8_t *) state;
+	p = (uint8_t *) state;
 	for (i = 0; i < sizeof(*state); ++i) {
 		*p++ = read_register(addrs[i]);
 	}
@@ -98,7 +98,7 @@ void read_state(struct state *state)
 
 /* Convert 8-bit (2-digit) BCD to binary equivalent. */
 
-static inline u8_t decode_bcd(u8_t val)
+static inline uint8_t decode_bcd(uint8_t val)
 {
 	return (((val >> 4) & 0x0F) * 10) + (val & 0x0F);
 }
@@ -107,7 +107,7 @@ static inline u8_t decode_bcd(u8_t val)
  * Hinnant's algorithm to calculate the number of days offset from the epoch.
  */
 
-static u32_t hinnant(int y, int m, int d)
+static uint32_t hinnant(int y, int m, int d)
 {
 	unsigned yoe;
 	unsigned doy;
@@ -128,13 +128,13 @@ static u32_t hinnant(int y, int m, int d)
  * This function is long, but linear and easy to follow.
  */
 
-int get_value(struct device *dev, u32_t *ticks)
+int get_value(struct device *dev, uint32_t *ticks)
 {
 	struct state state, state2;
-	u64_t *pun = (u64_t *) &state;
-	u64_t *pun2 = (u64_t *) &state2;
+	uint64_t *pun = (uint64_t *) &state;
+	uint64_t *pun2 = (uint64_t *) &state2;
 	bool pm;
-	u32_t epoch;
+	uint32_t epoch;
 
 	ARG_UNUSED(dev);
 
@@ -162,7 +162,7 @@ int get_value(struct device *dev, u32_t *ticks)
 	}
 
 	if (!(state.status_b & STATUS_B_BIN)) {
-		u8_t *cp = (u8_t *) &state;
+		uint8_t *cp = (uint8_t *) &state;
 		int i;
 
 		for (i = 0; i < NR_BCD_VALS; ++i) {

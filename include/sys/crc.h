@@ -52,8 +52,8 @@ extern "C" {
  *
  * @return The computed CRC16 value
  */
-u16_t crc16(const u8_t *src, size_t len, u16_t polynomial,
-	    u16_t initial_value, bool pad);
+uint16_t crc16(const uint8_t *src, size_t len, uint16_t polynomial,
+	    uint16_t initial_value, bool pad);
 
 /**
  * @brief Generic function for computing CRC 8
@@ -70,7 +70,7 @@ u16_t crc16(const u8_t *src, size_t len, u16_t polynomial,
  *
  * @return The computed CRC8 value
  */
-u8_t crc8(const u8_t *src, size_t len, u8_t polynomial, u8_t initial_value,
+uint8_t crc8(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial_value,
 	  bool reversed);
 
 /**
@@ -96,7 +96,7 @@ u8_t crc8(const u8_t *src, size_t len, u8_t polynomial, u8_t initial_value,
  *
  * @return The computed CRC16 value
  */
-u16_t crc16_ccitt(u16_t seed, const u8_t *src, size_t len);
+uint16_t crc16_ccitt(uint16_t seed, const uint8_t *src, size_t len);
 
 /**
  * @brief Compute the CRC-16/XMODEM checksum of a buffer.
@@ -120,7 +120,7 @@ u16_t crc16_ccitt(u16_t seed, const u8_t *src, size_t len);
  *
  * @return The computed CRC16 value
  */
-u16_t crc16_itu_t(u16_t seed, const u8_t *src, size_t len);
+uint16_t crc16_itu_t(uint16_t seed, const uint8_t *src, size_t len);
 
 /**
  * @brief Compute ANSI variant of CRC 16
@@ -133,7 +133,7 @@ u16_t crc16_itu_t(u16_t seed, const u8_t *src, size_t len);
  *
  * @return The computed CRC16 value
  */
-static inline u16_t crc16_ansi(const u8_t *src, size_t len)
+static inline uint16_t crc16_ansi(const uint8_t *src, size_t len)
 {
 	return crc16(src, len, 0x8005, 0xffff, true);
 }
@@ -147,7 +147,7 @@ static inline u16_t crc16_ansi(const u8_t *src, size_t len)
  * @return CRC32 value.
  *
  */
-u32_t crc32_ieee(const u8_t *data, size_t len);
+uint32_t crc32_ieee(const uint8_t *data, size_t len);
 
 /**
  * @brief Update an IEEE conforming CRC32 checksum.
@@ -159,7 +159,7 @@ u32_t crc32_ieee(const u8_t *data, size_t len);
  * @return CRC32 value.
  *
  */
-u32_t crc32_ieee_update(u32_t crc, const u8_t *data, size_t len);
+uint32_t crc32_ieee_update(uint32_t crc, const uint8_t *data, size_t len);
 
 /**
  * @brief Compute CCITT variant of CRC 8
@@ -172,7 +172,7 @@ u32_t crc32_ieee_update(u32_t crc, const u8_t *data, size_t len);
  *
  * @return The computed CRC8 value
  */
-u8_t crc8_ccitt(u8_t initial_value, const void *buf, size_t len);
+uint8_t crc8_ccitt(uint8_t initial_value, const void *buf, size_t len);
 
 /**
  * @brief Compute the CRC-7 checksum of a buffer.
@@ -187,7 +187,7 @@ u8_t crc8_ccitt(u8_t initial_value, const void *buf, size_t len);
  *
  * @return The computed CRC7 value
  */
-u8_t crc7_be(u8_t seed, const u8_t *src, size_t len);
+uint8_t crc7_be(uint8_t seed, const uint8_t *src, size_t len);
 
 /**
  * @}

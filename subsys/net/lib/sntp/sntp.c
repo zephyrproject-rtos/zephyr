@@ -43,11 +43,11 @@ static void sntp_pkt_dump(struct sntp_pkt *pkt)
 	NET_DBG("tx_tm_f:         %x", pkt->tx_tm_f);
 }
 
-static s32_t parse_response(u8_t *data, u16_t len, u32_t orig_ts,
+static int32_t parse_response(uint8_t *data, uint16_t len, uint32_t orig_ts,
 			    struct sntp_time *time)
 {
 	struct sntp_pkt *pkt = (struct sntp_pkt *)data;
-	u32_t ts;
+	uint32_t ts;
 
 	sntp_pkt_dump(pkt);
 
@@ -99,7 +99,7 @@ static s32_t parse_response(u8_t *data, u16_t len, u32_t orig_ts,
 	return 0;
 }
 
-static int sntp_recv_response(struct sntp_ctx *sntp, u32_t timeout,
+static int sntp_recv_response(struct sntp_ctx *sntp, uint32_t timeout,
 			      struct sntp_time *time)
 {
 	struct sntp_pkt buf = { 0 };
@@ -116,7 +116,7 @@ static int sntp_recv_response(struct sntp_ctx *sntp, u32_t timeout,
 		return -ETIMEDOUT;
 	}
 
-	rcvd = recv(sntp->sock.fd, (u8_t *)&buf, sizeof(buf), 0);
+	rcvd = recv(sntp->sock.fd, (uint8_t *)&buf, sizeof(buf), 0);
 	if (rcvd < 0) {
 		return -errno;
 	}
@@ -125,15 +125,15 @@ static int sntp_recv_response(struct sntp_ctx *sntp, u32_t timeout,
 		return -EMSGSIZE;
 	}
 
-	status = parse_response((u8_t *)&buf, sizeof(buf),
+	status = parse_response((uint8_t *)&buf, sizeof(buf),
 				sntp->expected_orig_ts,
 				time);
 	return status;
 }
 
-static u32_t get_uptime_in_sec(void)
+static uint32_t get_uptime_in_sec(void)
 {
-	u64_t time;
+	uint64_t time;
 
 	time = k_uptime_get_32();
 
@@ -170,7 +170,7 @@ int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr, socklen_t addr_len)
 	return 0;
 }
 
-int sntp_request(struct sntp_ctx *ctx, u32_t timeout, u64_t *epoch_time)
+int sntp_request(struct sntp_ctx *ctx, uint32_t timeout, uint64_t *epoch_time)
 {
 	struct sntp_time time;
 	int res = sntp_query(ctx, timeout, &time);
@@ -180,7 +180,7 @@ int sntp_request(struct sntp_ctx *ctx, u32_t timeout, u64_t *epoch_time)
 	return res;
 }
 
-int sntp_query(struct sntp_ctx *ctx, u32_t timeout, struct sntp_time *time)
+int sntp_query(struct sntp_ctx *ctx, uint32_t timeout, struct sntp_time *time)
 {
 	struct sntp_pkt tx_pkt = { 0 };
 	int ret = 0;
@@ -196,7 +196,7 @@ int sntp_query(struct sntp_ctx *ctx, u32_t timeout, struct sntp_time *time)
 	ctx->expected_orig_ts = get_uptime_in_sec() + OFFSET_1970_JAN_1;
 	tx_pkt.tx_tm_s = htonl(ctx->expected_orig_ts);
 
-	ret = send(ctx->sock.fd, (u8_t *)&tx_pkt, sizeof(tx_pkt), 0);
+	ret = send(ctx->sock.fd, (uint8_t *)&tx_pkt, sizeof(tx_pkt), 0);
 	if (ret < 0) {
 		NET_ERR("Failed to send over UDP socket %d", ret);
 		return ret;

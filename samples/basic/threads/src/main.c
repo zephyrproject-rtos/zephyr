@@ -32,8 +32,8 @@
 
 struct printk_data_t {
 	void *fifo_reserved; /* 1st word reserved for use by fifo */
-	u32_t led;
-	u32_t cnt;
+	uint32_t led;
+	uint32_t cnt;
 };
 
 K_FIFO_DEFINE(printk_fifo);
@@ -45,7 +45,7 @@ struct led {
 	unsigned int gpio_flags;
 };
 
-void blink(const struct led *led, u32_t sleep_ms, u32_t id)
+void blink(const struct led *led, uint32_t sleep_ms, uint32_t id)
 {
 	struct device *gpio_dev;
 	int cnt = 0;

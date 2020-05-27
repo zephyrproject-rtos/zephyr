@@ -168,9 +168,9 @@ static void hci_rx_thread(void)
 	}
 }
 
-static void acl_read_cb(u8_t ep, int size, void *priv)
+static void acl_read_cb(uint8_t ep, int size, void *priv)
 {
-	static u8_t data[BLUETOOTH_BULK_EP_MPS];
+	static uint8_t data[BLUETOOTH_BULK_EP_MPS];
 
 	if (size > 0) {
 		struct net_buf *buf;
@@ -198,7 +198,7 @@ static void acl_read_cb(u8_t ep, int size, void *priv)
 
 static void bluetooth_status_cb(struct usb_cfg_data *cfg,
 				enum usb_dc_status_code status,
-				const u8_t *param)
+				const uint8_t *param)
 {
 	ARG_UNUSED(cfg);
 
@@ -240,7 +240,7 @@ static void bluetooth_status_cb(struct usb_cfg_data *cfg,
 	}
 }
 
-static u8_t vs_read_usb_transport_mode(struct net_buf *buf)
+static uint8_t vs_read_usb_transport_mode(struct net_buf *buf)
 {
 	struct net_buf *rsp;
 	struct bt_hci_rp_vs_read_usb_transport_mode *rp;
@@ -259,10 +259,10 @@ static u8_t vs_read_usb_transport_mode(struct net_buf *buf)
 	return BT_HCI_ERR_EXT_HANDLED;
 }
 
-static u8_t vs_set_usb_transport_mode(struct net_buf *buf)
+static uint8_t vs_set_usb_transport_mode(struct net_buf *buf)
 {
 	struct bt_hci_cp_vs_set_usb_transport_mode *cp;
-	u8_t mode;
+	uint8_t mode;
 
 	cp = net_buf_pull_mem(buf, sizeof(*cp));
 
@@ -294,7 +294,7 @@ static struct bt_hci_raw_cmd_ext cmd_ext[] = {
 };
 
 static int bluetooth_class_handler(struct usb_setup_packet *setup,
-				   s32_t *len, u8_t **data)
+				   int32_t *len, uint8_t **data)
 {
 	struct net_buf *buf;
 
@@ -312,7 +312,7 @@ static int bluetooth_class_handler(struct usb_setup_packet *setup,
 }
 
 static void bluetooth_interface_config(struct usb_desc_header *head,
-				       u8_t bInterfaceNumber)
+				       uint8_t bInterfaceNumber)
 {
 	ARG_UNUSED(head);
 

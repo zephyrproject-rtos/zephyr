@@ -111,7 +111,7 @@ static struct net_pkt *e1000_rx(struct e1000_dev *dev)
 		goto out;
 	}
 
-	buf = INT_TO_POINTER((u32_t)dev->rx.addr);
+	buf = INT_TO_POINTER((uint32_t)dev->rx.addr);
 	len = dev->rx.len - 4;
 
 	if (len <= 0) {
@@ -141,7 +141,7 @@ out:
 static void e1000_isr(struct device *device)
 {
 	struct e1000_dev *dev = device->driver_data;
-	u32_t icr = ior32(dev, ICR); /* Cleared upon read */
+	uint32_t icr = ior32(dev, ICR); /* Cleared upon read */
 
 	icr &= ~(ICR_TXDW | ICR_TXQE);
 
@@ -187,13 +187,13 @@ static struct device DEVICE_NAME_GET(eth_e1000);
 static void e1000_init(struct net_if *iface)
 {
 	struct e1000_dev *dev = net_if_get_device(iface)->driver_data;
-	u32_t ral, rah;
+	uint32_t ral, rah;
 
 	dev->iface = iface;
 
 	/* Setup TX descriptor */
 
-	iow32(dev, TDBAL, (u32_t) &dev->tx);
+	iow32(dev, TDBAL, (uint32_t) &dev->tx);
 	iow32(dev, TDBAH, 0);
 	iow32(dev, TDLEN, 1*16);
 
@@ -207,7 +207,7 @@ static void e1000_init(struct net_if *iface)
 	dev->rx.addr = POINTER_TO_INT(dev->rxb);
 	dev->rx.len = sizeof(dev->rxb);
 
-	iow32(dev, RDBAL, (u32_t) &dev->rx);
+	iow32(dev, RDBAL, (uint32_t) &dev->rx);
 	iow32(dev, RDBAH, 0);
 	iow32(dev, RDLEN, 1*16);
 

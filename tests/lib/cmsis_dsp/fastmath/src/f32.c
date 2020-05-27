@@ -120,7 +120,7 @@ static void test_arm_sqrt_f32(void)
 }
 
 static void test_arm_vlog_f32(
-	const u32_t *input1, const u32_t *ref, size_t length)
+	const uint32_t *input1, const uint32_t *ref, size_t length)
 {
 	float32_t *output;
 
@@ -152,7 +152,7 @@ DEFINE_TEST_VARIANT3(arm_vlog_f32, 8, in_log, ref_log, 8);
 DEFINE_TEST_VARIANT3(arm_vlog_f32, 11, in_log, ref_log, 11);
 
 static void test_arm_vexp_f32(
-	const u32_t *input1, const u32_t *ref, size_t length)
+	const uint32_t *input1, const uint32_t *ref, size_t length)
 {
 	float32_t *output;
 

@@ -22,18 +22,18 @@ extern K_THREAD_STACK_DEFINE(my_stack_area_0, STACK_SIZE);
 extern struct k_thread my_thread;
 extern struct k_thread my_thread_0;
 
-/* u64_t thread_yield_start_time[1000]; */
-/* u64_t thread_yield_end_time[1000]; */
-extern u64_t thread_start_time;
-extern u64_t thread_end_time;
-u64_t sem_start_time;
-u64_t sem_end_time;
-u64_t sem_give_start_time;
-u64_t sem_give_end_time;
+/* uint64_t thread_yield_start_time[1000]; */
+/* uint64_t thread_yield_end_time[1000]; */
+extern uint64_t thread_start_time;
+extern uint64_t thread_end_time;
+uint64_t sem_start_time;
+uint64_t sem_end_time;
+uint64_t sem_give_start_time;
+uint64_t sem_give_end_time;
 
-u32_t swap_called;
-u64_t test_time2;
-u64_t test_time1;
+uint32_t swap_called;
+uint64_t test_time2;
+uint64_t test_time1;
 
 void thread_sem0_test(void *p1, void *p2, void *p3);
 void thread_sem1_test(void *p1, void *p2, void *p3);
@@ -43,8 +43,8 @@ void thread_sem1_give_test(void *p1, void *p2, void *p3);
 k_tid_t sem0_tid;
 k_tid_t sem1_tid;
 
-extern u64_t arch_timing_value_swap_common;
-extern u32_t arch_timing_value_swap_end;
+extern uint64_t arch_timing_value_swap_common;
+extern uint32_t arch_timing_value_swap_end;
 
 void semaphore_bench(void)
 {
@@ -63,9 +63,9 @@ void semaphore_bench(void)
 	k_sleep(K_MSEC(1000));
 
 
-	/* u64_t test_time1 = z_tsc_read(); */
+	/* uint64_t test_time1 = z_tsc_read(); */
 	sem_end_time = (arch_timing_value_swap_common);
-	u32_t sem_cycles = sem_end_time - sem_start_time;
+	uint32_t sem_cycles = sem_end_time - sem_start_time;
 
 	sem0_tid = k_thread_create(&my_thread, my_stack_area,
 				   STACK_SIZE, thread_sem0_give_test,
@@ -78,31 +78,31 @@ void semaphore_bench(void)
 
 	k_sleep(K_MSEC(1000));
 	sem_give_end_time = (arch_timing_value_swap_common);
-	u32_t sem_give_cycles = sem_give_end_time - sem_give_start_time;
+	uint32_t sem_give_cycles = sem_give_end_time - sem_give_start_time;
 
 
 	/* Semaphore without context switch*/
 	TIMING_INFO_PRE_READ();
-	u32_t sem_give_wo_cxt_start = TIMING_INFO_OS_GET_TIME();
+	uint32_t sem_give_wo_cxt_start = TIMING_INFO_OS_GET_TIME();
 
 	k_sem_give(&sem_bench);
 
 	TIMING_INFO_PRE_READ();
-	u32_t sem_give_wo_cxt_end = TIMING_INFO_OS_GET_TIME();
-	u32_t sem_give_wo_cxt_cycles = sem_give_wo_cxt_end -
+	uint32_t sem_give_wo_cxt_end = TIMING_INFO_OS_GET_TIME();
+	uint32_t sem_give_wo_cxt_cycles = sem_give_wo_cxt_end -
 					  sem_give_wo_cxt_start;
 
 	TIMING_INFO_PRE_READ();
-	u32_t sem_take_wo_cxt_start = TIMING_INFO_OS_GET_TIME();
+	uint32_t sem_take_wo_cxt_start = TIMING_INFO_OS_GET_TIME();
 
 	k_sem_take(&sem_bench, K_MSEC(10));
 	TIMING_INFO_PRE_READ();
-	u32_t sem_take_wo_cxt_end = TIMING_INFO_OS_GET_TIME();
-	u32_t sem_take_wo_cxt_cycles = sem_take_wo_cxt_end -
+	uint32_t sem_take_wo_cxt_end = TIMING_INFO_OS_GET_TIME();
+	uint32_t sem_take_wo_cxt_cycles = sem_take_wo_cxt_end -
 					  sem_take_wo_cxt_start;
 
-	/* TC_PRINT("test_time1 , %d cycles\n", (u32_t)test_time1); */
-	/* TC_PRINT("test_time2 , %d cycles\n", (u32_t)test_time2); */
+	/* TC_PRINT("test_time1 , %d cycles\n", (uint32_t)test_time1); */
+	/* TC_PRINT("test_time2 , %d cycles\n", (uint32_t)test_time2); */
 
 	PRINT_STATS("Semaphore Take with context switch",
 		sem_cycles, CYCLES_TO_NS(sem_cycles));
@@ -121,17 +121,17 @@ void semaphore_bench(void)
 K_MUTEX_DEFINE(mutex0);
 void mutex_bench(void)
 {
-	u32_t mutex_lock_start_time;
-	u32_t mutex_lock_end_time;
-	u32_t mutex_lock_diff = 0U;
+	uint32_t mutex_lock_start_time;
+	uint32_t mutex_lock_end_time;
+	uint32_t mutex_lock_diff = 0U;
 
-	u32_t mutex_unlock_start_time;
-	u32_t mutex_unlock_end_time;
-	u32_t mutex_unlock_diff = 0U;
-	u32_t count = 0U;
+	uint32_t mutex_unlock_start_time;
+	uint32_t mutex_unlock_end_time;
+	uint32_t mutex_unlock_diff = 0U;
+	uint32_t count = 0U;
 
 	for (int i = 0; i < 1000; i++) {
-		s64_t before = k_uptime_get();
+		int64_t before = k_uptime_get();
 
 		TIMING_INFO_PRE_READ();
 		mutex_lock_start_time = TIMING_INFO_OS_GET_TIME();
@@ -150,7 +150,7 @@ void mutex_bench(void)
 		mutex_unlock_end_time = TIMING_INFO_OS_GET_TIME();
 
 		/* If timer interrupt occurs we need to omit that sample*/
-		s64_t after = k_uptime_get();
+		int64_t after = k_uptime_get();
 
 		if (after - before) {
 			continue;
@@ -183,7 +183,7 @@ void thread_sem1_test(void *p1, void *p2, void *p3)
 	k_sem_take(&sem_bench, K_MSEC(10));
 }
 
-u32_t sem_count;
+uint32_t sem_count;
 void thread_sem0_test(void *p1, void *p2, void *p3)
 {
 	k_sem_take(&sem_bench, K_MSEC(10));/* To sync threads */

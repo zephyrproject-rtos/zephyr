@@ -81,7 +81,7 @@ static inline int read_frame_options(const struct shell *shell, int pos,
 }
 
 static inline int read_bitrate(const struct shell *shell, int pos, char **argv,
-			       u32_t *bitrate)
+			       uint32_t *bitrate)
 {
 	char *end_ptr;
 	long val;
@@ -92,13 +92,13 @@ static inline int read_bitrate(const struct shell *shell, int pos, char **argv,
 		return -EINVAL;
 	}
 
-	*bitrate = (u32_t)val;
+	*bitrate = (uint32_t)val;
 
 	return ++pos;
 }
 
 static inline int read_id(const struct shell *shell, int pos, char **argv,
-			  bool ext, u32_t *id)
+			  bool ext, uint32_t *id)
 {
 	char *end_ptr;
 	long val;
@@ -118,13 +118,13 @@ static inline int read_id(const struct shell *shell, int pos, char **argv,
 		return -EINVAL;
 	}
 
-	*id = (u32_t)val;
+	*id = (uint32_t)val;
 
 	return ++pos;
 }
 
 static inline int read_mask(const struct shell *shell, int pos, char **argv,
-			  bool ext, u32_t *mask)
+			  bool ext, uint32_t *mask)
 {
 	char *end_ptr;
 	long val;
@@ -144,16 +144,16 @@ static inline int read_mask(const struct shell *shell, int pos, char **argv,
 		return -EINVAL;
 	}
 
-	*mask = (u32_t)val;
+	*mask = (uint32_t)val;
 
 	return ++pos;
 }
 
 static inline int read_data(const struct shell *shell, int pos, char **argv,
-			    size_t argc, u8_t *data, u8_t *dlc)
+			    size_t argc, uint8_t *data, uint8_t *dlc)
 {
 	int i;
-	u8_t *data_ptr = data;
+	uint8_t *data_ptr = data;
 
 	if (argc - pos > CAN_MAX_DLC) {
 		shell_error(shell, "Too many databytes. Max is %d",
@@ -213,7 +213,7 @@ static int cmd_config(const struct shell *shell, size_t argc, char **argv)
 	int pos = 1;
 	bool silent = false, loopback = false;
 	enum can_mode mode;
-	u32_t bitrate;
+	uint32_t bitrate;
 	int ret;
 
 	can_dev = device_get_binding(argv[pos]);
@@ -262,7 +262,7 @@ static int cmd_send(const struct shell *shell, size_t argc, char **argv)
 	bool rtr = false, ext = false;
 	struct zcan_frame frame;
 	int ret;
-	u32_t id;
+	uint32_t id;
 
 	can_dev = device_get_binding(argv[pos]);
 	if (!can_dev) {
@@ -313,7 +313,7 @@ static int cmd_attach(const struct shell *shell, size_t argc, char **argv)
 	bool rtr = false, ext = false, rtr_mask = false;
 	struct zcan_filter filter;
 	int ret;
-	u32_t id, mask;
+	uint32_t id, mask;
 
 	can_dev = device_get_binding(argv[pos]);
 	if (!can_dev) {

@@ -42,13 +42,13 @@
 struct ak8975_data {
 	struct device *i2c;
 
-	s16_t x_sample;
-	s16_t y_sample;
-	s16_t z_sample;
+	int16_t x_sample;
+	int16_t y_sample;
+	int16_t z_sample;
 
-	u8_t x_adj;
-	u8_t y_adj;
-	u8_t z_adj;
+	uint8_t x_adj;
+	uint8_t y_adj;
+	uint8_t z_adj;
 };
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_AK8975_AK8975_H_ */

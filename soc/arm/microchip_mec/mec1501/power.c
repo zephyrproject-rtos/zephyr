@@ -103,7 +103,7 @@ static void z_power_soc_sleep(void)
 #endif
 
 /*
- * Called from _sys_suspend(s32_t ticks) in subsys/power.c
+ * Called from _sys_suspend(int32_t ticks) in subsys/power.c
  * For deep sleep _sys_suspend has executed all the driver
  * power management call backs.
  */

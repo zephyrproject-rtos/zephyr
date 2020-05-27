@@ -21,8 +21,8 @@
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 LOG_MODULE_DECLARE(IIS2MDC);
 
-static int iis2mdc_i2c_read(struct device *dev, u8_t reg_addr,
-				 u8_t *value, u16_t len)
+static int iis2mdc_i2c_read(struct device *dev, uint8_t reg_addr,
+				 uint8_t *value, uint16_t len)
 {
 	struct iis2mdc_data *data = dev->driver_data;
 	const struct iis2mdc_config *cfg = dev->config_info;
@@ -31,8 +31,8 @@ static int iis2mdc_i2c_read(struct device *dev, u8_t reg_addr,
 			      reg_addr, value, len);
 }
 
-static int iis2mdc_i2c_write(struct device *dev, u8_t reg_addr,
-				  u8_t *value, u16_t len)
+static int iis2mdc_i2c_write(struct device *dev, uint8_t reg_addr,
+				  uint8_t *value, uint16_t len)
 {
 	struct iis2mdc_data *data = dev->driver_data;
 	const struct iis2mdc_config *cfg = dev->config_info;

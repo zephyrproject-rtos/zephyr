@@ -86,7 +86,7 @@ uint32_t osEventFlagsClear(osEventFlagsId_t ef_id, uint32_t flags)
 {
 	struct cv2_event_flags *events = (struct cv2_event_flags *)ef_id;
 	int key;
-	u32_t sig;
+	uint32_t sig;
 
 	if ((ef_id == NULL) || (flags & 0x80000000)) {
 		return osFlagsErrorParameter;
@@ -108,9 +108,9 @@ uint32_t osEventFlagsWait(osEventFlagsId_t ef_id, uint32_t flags,
 {
 	struct cv2_event_flags *events = (struct cv2_event_flags *)ef_id;
 	int retval, key;
-	u32_t sig;
-	u32_t time_delta_ms, timeout_ms = k_ticks_to_ms_floor64(timeout);
-	u64_t time_stamp_start, hwclk_cycles_delta, time_delta_ns;
+	uint32_t sig;
+	uint32_t time_delta_ms, timeout_ms = k_ticks_to_ms_floor64(timeout);
+	uint64_t time_stamp_start, hwclk_cycles_delta, time_delta_ns;
 
 	/* Can be called from ISRs only if timeout is set to 0 */
 	if (timeout > 0 && k_is_in_isr()) {
@@ -123,7 +123,7 @@ uint32_t osEventFlagsWait(osEventFlagsId_t ef_id, uint32_t flags,
 
 	for (;;) {
 
-		time_stamp_start = (u64_t)k_cycle_get_32();
+		time_stamp_start = (uint64_t)k_cycle_get_32();
 
 		switch (timeout) {
 		case 0:
@@ -170,12 +170,12 @@ uint32_t osEventFlagsWait(osEventFlagsId_t ef_id, uint32_t flags,
 			 * the time that has already elapsed.
 			 */
 			hwclk_cycles_delta =
-				(u64_t)k_cycle_get_32() - time_stamp_start;
+				(uint64_t)k_cycle_get_32() - time_stamp_start;
 
 			time_delta_ns =
-				(u32_t)k_cyc_to_ns_floor64(hwclk_cycles_delta);
+				(uint32_t)k_cyc_to_ns_floor64(hwclk_cycles_delta);
 
-			time_delta_ms = (u32_t)time_delta_ns / NSEC_PER_MSEC;
+			time_delta_ms = (uint32_t)time_delta_ns / NSEC_PER_MSEC;
 
 			if (timeout_ms > time_delta_ms) {
 				timeout_ms -= time_delta_ms;

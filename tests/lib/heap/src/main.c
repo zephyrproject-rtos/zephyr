@@ -119,10 +119,10 @@ void testfree(void *arg, void *p)
 
 static void log_result(size_t sz, struct z_heap_stress_result *r)
 {
-	u32_t tot = r->total_allocs + r->total_frees;
-	u32_t avg = (u32_t)((r->accumulated_in_use_bytes + tot/2) / tot);
-	u32_t avg_pct = (u32_t)((100ULL * avg + sz / 2) / sz);
-	u32_t succ_pct = ((100ULL * r->successful_allocs + r->total_allocs / 2)
+	uint32_t tot = r->total_allocs + r->total_frees;
+	uint32_t avg = (uint32_t)((r->accumulated_in_use_bytes + tot/2) / tot);
+	uint32_t avg_pct = (uint32_t)((100ULL * avg + sz / 2) / sz);
+	uint32_t succ_pct = ((100ULL * r->successful_allocs + r->total_allocs / 2)
 			  / r->total_allocs);
 
 	TC_PRINT("successful allocs: %d/%d (%d%%), frees: %d,"

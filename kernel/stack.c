@@ -42,7 +42,7 @@ SYS_INIT(init_stack_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 #endif /* CONFIG_OBJECT_TRACING */
 
 void k_stack_init(struct k_stack *stack, stack_data_t *buffer,
-		  u32_t num_entries)
+		  uint32_t num_entries)
 {
 	z_waitq_init(&stack->wait_q);
 	stack->lock = (struct k_spinlock) {};
@@ -53,16 +53,16 @@ void k_stack_init(struct k_stack *stack, stack_data_t *buffer,
 	z_object_init(stack);
 }
 
-s32_t z_impl_k_stack_alloc_init(struct k_stack *stack, u32_t num_entries)
+int32_t z_impl_k_stack_alloc_init(struct k_stack *stack, uint32_t num_entries)
 {
 	void *buffer;
-	s32_t ret;
+	int32_t ret;
 
 	buffer = z_thread_malloc(num_entries * sizeof(stack_data_t));
 	if (buffer != NULL) {
 		k_stack_init(stack, buffer, num_entries);
 		stack->flags = K_STACK_FLAG_ALLOC;
-		ret = (s32_t)0;
+		ret = (int32_t)0;
 	} else {
 		ret = -ENOMEM;
 	}
@@ -71,8 +71,8 @@ s32_t z_impl_k_stack_alloc_init(struct k_stack *stack, u32_t num_entries)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline s32_t z_vrfy_k_stack_alloc_init(struct k_stack *stack,
-					      u32_t num_entries)
+static inline int32_t z_vrfy_k_stack_alloc_init(struct k_stack *stack,
+					      uint32_t num_entries)
 {
 	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(stack, K_OBJ_STACK));
 	Z_OOPS(Z_SYSCALL_VERIFY(num_entries > 0));
@@ -87,7 +87,7 @@ int k_stack_cleanup(struct k_stack *stack)
 		return -EAGAIN;
 	}
 
-	if ((stack->flags & K_STACK_FLAG_ALLOC) != (u8_t)0) {
+	if ((stack->flags & K_STACK_FLAG_ALLOC) != (uint8_t)0) {
 		k_free(stack->base);
 		stack->base = NULL;
 		stack->flags &= ~K_STACK_FLAG_ALLOC;

@@ -168,7 +168,7 @@ static int tcp_endpoint_set(union tcp_endpoint *ep, struct net_pkt *pkt,
 	return ret;
 }
 
-static const char *tcp_flags(u8_t flags)
+static const char *tcp_flags(uint8_t flags)
 {
 #define BUF_SIZE 25 /* 6 * 4 + 1 */
 	static char buf[BUF_SIZE];
@@ -223,7 +223,7 @@ static const char *tcp_th(struct net_pkt *pkt)
 
 	if (th->th_off < 5) {
 		len += snprintk(buf + len, BUF_SIZE - len,
-				"bogus th_off: %hu", (u16_t)th->th_off);
+				"bogus th_off: %hu", (uint16_t)th->th_off);
 		goto end;
 	}
 
@@ -358,7 +358,7 @@ static void tcp_send_process(struct k_work *work)
 			conn = NULL;
 		}
 	} else {
-		u8_t fl = th_get(pkt)->th_flags;
+		uint8_t fl = th_get(pkt)->th_flags;
 		bool forget = ACK == fl || PSH == fl || (ACK | PSH) == fl ||
 			RST & fl;
 
@@ -440,9 +440,9 @@ static const char *tcp_conn_state(struct tcp *conn, struct net_pkt *pkt)
 	return buf;
 }
 
-static u8_t *tcp_options_get(struct net_pkt *pkt, int tcp_options_len)
+static uint8_t *tcp_options_get(struct net_pkt *pkt, int tcp_options_len)
 {
-	static u8_t options[40]; /* TCP header max options size is 40 */
+	static uint8_t options[40]; /* TCP header max options size is 40 */
 	struct net_pkt_cursor backup;
 
 	net_pkt_cursor_backup(pkt, &backup);
@@ -459,8 +459,8 @@ static bool tcp_options_check(struct tcp_options *recv_options,
 			      struct net_pkt *pkt, ssize_t len)
 {
 	bool result = len > 0 && ((len % 4) == 0) ? true : false;
-	u8_t *options = tcp_options_get(pkt, len);
-	u8_t opt, opt_len;
+	uint8_t *options = tcp_options_get(pkt, len);
+	uint8_t opt, opt_len;
 
 	NET_DBG("len=%zd", len);
 
@@ -484,7 +484,7 @@ static bool tcp_options_check(struct tcp_options *recv_options,
 			}
 			opt_len = options[1];
 		}
-		NET_DBG("opt: %hu, opt_len: %hu", (u16_t)opt, (u16_t)opt_len);
+		NET_DBG("opt: %hu, opt_len: %hu", (uint16_t)opt, (uint16_t)opt_len);
 
 		if (opt_len < 2 || opt_len > len) {
 			result = false;
@@ -498,7 +498,7 @@ static bool tcp_options_check(struct tcp_options *recv_options,
 				goto end;
 			}
 
-			recv_options->mss = ntohs(*((u16_t *)(options + 2)));
+			recv_options->mss = ntohs(*((uint16_t *)(options + 2)));
 			recv_options->mss_found = true;
 			NET_DBG("MSS=%hu", recv_options->mss);
 			break;
@@ -571,8 +571,8 @@ static int tcp_finalize_pkt(struct net_pkt *pkt)
 	return -EINVAL;
 }
 
-static int tcp_header_add(struct tcp *conn, struct net_pkt *pkt, u8_t flags,
-			  u32_t seq)
+static int tcp_header_add(struct tcp *conn, struct net_pkt *pkt, uint8_t flags,
+			  uint32_t seq)
 {
 	NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct tcphdr);
 	struct tcphdr *th;
@@ -616,8 +616,8 @@ static int ip_header_add(struct tcp *conn, struct net_pkt *pkt)
 	return -EINVAL;
 }
 
-static void tcp_out_ext(struct tcp *conn, u8_t flags, struct net_pkt *data,
-			u32_t seq)
+static void tcp_out_ext(struct tcp *conn, uint8_t flags, struct net_pkt *data,
+			uint32_t seq)
 {
 	struct net_pkt *pkt;
 	int ret;
@@ -666,7 +666,7 @@ out:
 	return;
 }
 
-static void tcp_out(struct tcp *conn, u8_t flags)
+static void tcp_out(struct tcp *conn, uint8_t flags)
 {
 	tcp_out_ext(conn, flags, NULL /* no data */, conn->seq);
 }
@@ -1063,7 +1063,7 @@ err:
 static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 {
 	struct tcphdr *th = pkt ? th_get(pkt) : NULL;
-	u8_t next = 0, fl = th ? th->th_flags : 0;
+	uint8_t next = 0, fl = th ? th->th_flags : 0;
 	size_t tcp_options_len = th ? (th->th_off - 5) * 4 : 0;
 	size_t len;
 
@@ -1160,7 +1160,7 @@ next_state:
 		}
 
 		if (th && net_tcp_seq_cmp(th_ack(th), conn->seq) > 0) {
-			u32_t len_acked = th_ack(th) - conn->seq;
+			uint32_t len_acked = th_ack(th) - conn->seq;
 
 			NET_DBG("conn: %p len_acked=%u", conn, len_acked);
 
@@ -1307,7 +1307,7 @@ int net_tcp_listen(struct net_context *context)
 	return 0;
 }
 
-int net_tcp_update_recv_wnd(struct net_context *context, s32_t delta)
+int net_tcp_update_recv_wnd(struct net_context *context, int32_t delta)
 {
 	ARG_UNUSED(context);
 	ARG_UNUSED(delta);
@@ -1368,7 +1368,7 @@ int net_tcp_send_data(struct net_context *context, net_context_send_cb_t cb,
 int net_tcp_connect(struct net_context *context,
 		    const struct sockaddr *remote_addr,
 		    struct sockaddr *local_addr,
-		    u16_t remote_port, u16_t local_port,
+		    uint16_t remote_port, uint16_t local_port,
 		    k_timeout_t timeout, net_context_connect_cb_t cb,
 		    void *user_data)
 {
@@ -1467,7 +1467,7 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 {
 	struct tcp *conn = context->tcp;
 	struct sockaddr local_addr = { };
-	u16_t local_port, remote_port;
+	uint16_t local_port, remote_port;
 
 	if (!conn) {
 		return -EINVAL;
@@ -1817,8 +1817,8 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 	return NET_DROP;
 }
 
-static void test_cb_register(sa_family_t family, u8_t proto, u16_t remote_port,
-			     u16_t local_port, net_conn_cb_t cb)
+static void test_cb_register(sa_family_t family, uint8_t proto, uint16_t remote_port,
+			     uint16_t local_port, net_conn_cb_t cb)
 {
 	struct net_conn_handle *conn_handle = NULL;
 	const struct sockaddr addr = { .sa_family = family, };

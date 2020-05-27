@@ -114,12 +114,12 @@ struct arc_connect_cmd {
 	union {
 		struct {
 #ifdef CONFIG_BIG_ENDIAN
-			u32_t pad:8, param:16, cmd:8;
+			uint32_t pad:8, param:16, cmd:8;
 #else
-			u32_t cmd:8, param:16, pad:8;
+			uint32_t cmd:8, param:16, pad:8;
 #endif
 		};
-		u32_t val;
+		uint32_t val;
 	};
 };
 
@@ -127,20 +127,20 @@ struct arc_connect_bcr {
 	union {
 		struct {
 #ifdef CONFIG_BIG_ENDIAN
-			u32_t pad4:6, pw_dom:1, pad3:1,
+			uint32_t pad4:6, pw_dom:1, pad3:1,
 			idu:1, pad2:1, num_cores:6,
 			pad:1,  gfrc:1, dbg:1, pw:1,
 			msg:1, sem:1, ipi:1, slv:1,
 			ver:8;
 #else
-			u32_t ver:8,
+			uint32_t ver:8,
 			slv:1, ipi:1, sem:1, msg:1,
 			pw:1, dbg:1, gfrc:1, pad:1,
 			num_cores:6, pad2:1, idu:1,
 			pad3:1, pw_dom:1, pad4:6;
 #endif
 		};
-		u32_t val;
+		uint32_t val;
 	};
 };
 
@@ -148,16 +148,16 @@ struct arc_connect_idu_bcr {
 	union {
 		struct {
 #ifdef CONFIG_BIG_ENDIAN
-			u32_t pad:21, cirqnum:3, ver:8;
+			uint32_t pad:21, cirqnum:3, ver:8;
 #else
-			u32_t ver:8, cirqnum:3, pad:21;
+			uint32_t ver:8, cirqnum:3, pad:21;
 #endif
 		};
-		u32_t val;
+		uint32_t val;
 	};
 };
 
-static inline void z_arc_connect_cmd(u32_t cmd, u32_t param)
+static inline void z_arc_connect_cmd(uint32_t cmd, uint32_t param)
 {
 	struct arc_connect_cmd regval;
 
@@ -168,63 +168,63 @@ static inline void z_arc_connect_cmd(u32_t cmd, u32_t param)
 	z_arc_v2_aux_reg_write(_ARC_V2_CONNECT_CMD, regval.val);
 }
 
-static inline void z_arc_connect_cmd_data(u32_t cmd, u32_t param,
-				   u32_t data)
+static inline void z_arc_connect_cmd_data(uint32_t cmd, uint32_t param,
+				   uint32_t data)
 {
 	z_arc_v2_aux_reg_write(_ARC_V2_CONNECT_WDATA, data);
 	z_arc_connect_cmd(cmd, param);
 }
 
-static inline u32_t z_arc_connect_cmd_readback(void)
+static inline uint32_t z_arc_connect_cmd_readback(void)
 {
 	return z_arc_v2_aux_reg_read(_ARC_V2_CONNECT_READBACK);
 }
 
 
 /* inter-core interrupt related functions */
-extern void z_arc_connect_ici_generate(u32_t core_id);
-extern void z_arc_connect_ici_ack(u32_t core_id);
-extern u32_t z_arc_connect_ici_read_status(u32_t core_id);
-extern u32_t z_arc_connect_ici_check_src(void);
+extern void z_arc_connect_ici_generate(uint32_t core_id);
+extern void z_arc_connect_ici_ack(uint32_t core_id);
+extern uint32_t z_arc_connect_ici_read_status(uint32_t core_id);
+extern uint32_t z_arc_connect_ici_check_src(void);
 extern void z_arc_connect_ici_clear(void);
 
 /* inter-core debug related functions */
-extern void z_arc_connect_debug_reset(u32_t core_mask);
-extern void z_arc_connect_debug_halt(u32_t core_mask);
-extern void z_arc_connect_debug_run(u32_t core_mask);
-extern void z_arc_connect_debug_mask_set(u32_t core_mask, u32_t mask);
-extern u32_t z_arc_connect_debug_mask_read(u32_t core_mask);
-extern void z_arc_connect_debug_select_set(u32_t core_mask);
-extern u32_t z_arc_connect_debug_select_read(void);
-extern u32_t z_arc_connect_debug_en_read(void);
-extern u32_t z_arc_connect_debug_cmd_read(void);
-extern u32_t z_arc_connect_debug_core_read(void);
+extern void z_arc_connect_debug_reset(uint32_t core_mask);
+extern void z_arc_connect_debug_halt(uint32_t core_mask);
+extern void z_arc_connect_debug_run(uint32_t core_mask);
+extern void z_arc_connect_debug_mask_set(uint32_t core_mask, uint32_t mask);
+extern uint32_t z_arc_connect_debug_mask_read(uint32_t core_mask);
+extern void z_arc_connect_debug_select_set(uint32_t core_mask);
+extern uint32_t z_arc_connect_debug_select_read(void);
+extern uint32_t z_arc_connect_debug_en_read(void);
+extern uint32_t z_arc_connect_debug_cmd_read(void);
+extern uint32_t z_arc_connect_debug_core_read(void);
 
 /* global free-running counter(gfrc) related functions */
 extern void z_arc_connect_gfrc_clear(void);
-extern u64_t z_arc_connect_gfrc_read(void);
+extern uint64_t z_arc_connect_gfrc_read(void);
 extern void z_arc_connect_gfrc_enable(void);
 extern void z_arc_connect_gfrc_disable(void);
-extern void z_arc_connect_gfrc_core_set(u32_t core_mask);
-extern u32_t z_arc_connect_gfrc_halt_read(void);
-extern u32_t z_arc_connect_gfrc_core_read(void);
+extern void z_arc_connect_gfrc_core_set(uint32_t core_mask);
+extern uint32_t z_arc_connect_gfrc_halt_read(void);
+extern uint32_t z_arc_connect_gfrc_core_read(void);
 
 /* interrupt distribute unit related functions */
 extern void z_arc_connect_idu_enable(void);
 extern void z_arc_connect_idu_disable(void);
-extern u32_t z_arc_connect_idu_read_enable(void);
-extern void z_arc_connect_idu_set_mode(u32_t irq_num,
-	u16_t trigger_mode, u16_t distri_mode);
-extern u32_t z_arc_connect_idu_read_mode(u32_t irq_num);
-extern void z_arc_connect_idu_set_dest(u32_t irq_num, u32_t core_mask);
-extern u32_t z_arc_connect_idu_read_dest(u32_t irq_num);
-extern void z_arc_connect_idu_gen_cirq(u32_t irq_num);
-extern void z_arc_connect_idu_ack_cirq(u32_t irq_num);
-extern u32_t z_arc_connect_idu_check_status(u32_t irq_num);
-extern u32_t z_arc_connect_idu_check_source(u32_t irq_num);
-extern void z_arc_connect_idu_set_mask(u32_t irq_num, u32_t mask);
-extern u32_t z_arc_connect_idu_read_mask(u32_t irq_num);
-extern u32_t z_arc_connect_idu_check_first(u32_t irq_num);
+extern uint32_t z_arc_connect_idu_read_enable(void);
+extern void z_arc_connect_idu_set_mode(uint32_t irq_num,
+	uint16_t trigger_mode, uint16_t distri_mode);
+extern uint32_t z_arc_connect_idu_read_mode(uint32_t irq_num);
+extern void z_arc_connect_idu_set_dest(uint32_t irq_num, uint32_t core_mask);
+extern uint32_t z_arc_connect_idu_read_dest(uint32_t irq_num);
+extern void z_arc_connect_idu_gen_cirq(uint32_t irq_num);
+extern void z_arc_connect_idu_ack_cirq(uint32_t irq_num);
+extern uint32_t z_arc_connect_idu_check_status(uint32_t irq_num);
+extern uint32_t z_arc_connect_idu_check_source(uint32_t irq_num);
+extern void z_arc_connect_idu_set_mask(uint32_t irq_num, uint32_t mask);
+extern uint32_t z_arc_connect_idu_read_mask(uint32_t irq_num);
+extern uint32_t z_arc_connect_idu_check_first(uint32_t irq_num);
 
 #ifdef __cplusplus
 }

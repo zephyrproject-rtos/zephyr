@@ -35,9 +35,9 @@ size_t tp_str_to_hex(void *buf, size_t bufsize, const char *s)
 
 	for (i = 0, j = 0; i < len; i += 2, j++) {
 
-		u8_t byte = (s[i] - '0') << 4 | (s[i + 1] - '0');
+		uint8_t byte = (s[i] - '0') << 4 | (s[i + 1] - '0');
 
-		((u8_t *) buf)[j] = byte;
+		((uint8_t *) buf)[j] = byte;
 	}
 
 	return j;
@@ -56,7 +56,7 @@ void *tp_malloc(size_t size, const char *file, int line, const char *func)
 
 	mem->header = TP_MEM_HEADER_COOKIE;
 
-	mem->footer = (void *) ((u8_t *) &mem->mem + size);
+	mem->footer = (void *) ((uint8_t *) &mem->mem + size);
 	*mem->footer = TP_MEM_FOOTER_COOKIE;
 
 	sys_slist_append(&tp_mem, (sys_snode_t *) mem);
@@ -66,7 +66,7 @@ void *tp_malloc(size_t size, const char *file, int line, const char *func)
 
 static void dump(void *data, size_t len)
 {
-	u8_t *buf = data;
+	uint8_t *buf = data;
 	size_t i, width = 8;
 
 	for (i = 0; i < len; i++) {
@@ -109,7 +109,7 @@ void tp_mem_chk(struct tp_mem *mem)
 
 void tp_free(void *ptr, const char *file, int line, const char *func)
 {
-	struct tp_mem *mem = (void *)((u8_t *) ptr - sizeof(struct tp_mem));
+	struct tp_mem *mem = (void *)((uint8_t *) ptr - sizeof(struct tp_mem));
 
 	tp_mem_chk(mem);
 
@@ -285,7 +285,7 @@ void tp_pkt_stat(void)
 		(_seq)->of ? "OF" : "");				\
 }
 
-u32_t tp_seq_track(int kind, u32_t *pvalue, int req,
+uint32_t tp_seq_track(int kind, uint32_t *pvalue, int req,
 			const char *file, int line, const char *func)
 {
 	struct tp_seq *seq = k_calloc(1, sizeof(struct tp_seq));
@@ -582,7 +582,7 @@ void tp_out(sa_family_t af, struct net_if *iface, const char *msg,
 {
 	if (tp_trace) {
 		size_t json_len;
-		static u8_t buf[128]; /* TODO: Merge all static buffers and
+		static uint8_t buf[128]; /* TODO: Merge all static buffers and
 				       * eventually drop them
 				       */
 		struct tp_new tp = {

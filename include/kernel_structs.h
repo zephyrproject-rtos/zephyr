@@ -101,7 +101,7 @@ typedef struct _ready_q _ready_q_t;
 
 struct _cpu {
 	/* nested interrupt count */
-	u32_t nested;
+	uint32_t nested;
 
 	/* interrupt stack pointer base */
 	char *irq_stack;
@@ -122,11 +122,11 @@ struct _cpu {
 	int slice_ticks;
 #endif
 
-	u8_t id;
+	uint8_t id;
 
 #ifdef CONFIG_SMP
 	/* True when _current is allowed to context switch */
-	u8_t swap_ok;
+	uint8_t swap_ok;
 #endif
 };
 
@@ -141,7 +141,7 @@ struct z_kernel {
 #endif
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
-	s32_t idle; /* Number of ticks for kernel idling */
+	int32_t idle; /* Number of ticks for kernel idling */
 #endif
 
 	/*
@@ -220,7 +220,7 @@ typedef void (*_timeout_func_t)(struct _timeout *t);
 
 struct _timeout {
 	sys_dnode_t node;
-	s32_t dticks;
+	int32_t dticks;
 	_timeout_func_t fn;
 };
 

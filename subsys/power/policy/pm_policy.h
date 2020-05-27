@@ -41,7 +41,7 @@ void sys_pm_resume_devices(void);
 /**
  * @brief Function to get the next PM state based on the ticks
  */
-enum power_states sys_pm_policy_next_state(s32_t ticks);
+enum power_states sys_pm_policy_next_state(int32_t ticks);
 
 /**
  * @brief Function to determine whether to put devices in low

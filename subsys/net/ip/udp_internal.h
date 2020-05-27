@@ -40,10 +40,10 @@ extern "C" {
  * @return 0 on success, negative errno otherwise.
  */
 #if defined(CONFIG_NET_NATIVE_UDP)
-int net_udp_create(struct net_pkt *pkt, u16_t src_port, u16_t dst_port);
+int net_udp_create(struct net_pkt *pkt, uint16_t src_port, uint16_t dst_port);
 #else
 static inline int net_udp_create(struct net_pkt *pkt,
-				 u16_t src_port, u16_t dst_port)
+				 uint16_t src_port, uint16_t dst_port)
 {
 	ARG_UNUSED(pkt);
 	ARG_UNUSED(src_port);
@@ -111,11 +111,11 @@ struct net_udp_hdr *net_udp_input(struct net_pkt *pkt,
  *
  * @return Return 0 if the registration succeed, <0 otherwise.
  */
-int net_udp_register(u8_t family,
+int net_udp_register(uint8_t family,
 		     const struct sockaddr *remote_addr,
 		     const struct sockaddr *local_addr,
-		     u16_t remote_port,
-		     u16_t local_port,
+		     uint16_t remote_port,
+		     uint16_t local_port,
 		     net_conn_cb_t cb,
 		     void *user_data,
 		     struct net_conn_handle **handle);

@@ -17,15 +17,15 @@ LOG_MODULE_REGISTER(net_mqtt_publisher_sample, LOG_LEVEL_DBG);
 #include "config.h"
 
 /* Buffers for MQTT client. */
-static u8_t rx_buffer[APP_MQTT_BUFFER_SIZE];
-static u8_t tx_buffer[APP_MQTT_BUFFER_SIZE];
+static uint8_t rx_buffer[APP_MQTT_BUFFER_SIZE];
+static uint8_t tx_buffer[APP_MQTT_BUFFER_SIZE];
 
 #if defined(CONFIG_MQTT_LIB_WEBSOCKET)
 /* Making RX buffer large enough that the full IPv6 packet can fit into it */
 #define MQTT_LIB_WEBSOCKET_RECV_BUF_LEN 1280
 
 /* Websocket needs temporary buffer to store partial packets */
-static u8_t temp_ws_rx_buf[MQTT_LIB_WEBSOCKET_RECV_BUF_LEN];
+static uint8_t temp_ws_rx_buf[MQTT_LIB_WEBSOCKET_RECV_BUF_LEN];
 #endif
 
 /* The mqtt client struct */
@@ -207,7 +207,7 @@ static char *get_mqtt_payload(enum mqtt_qos qos)
 	static char payload[30];
 
 	snprintk(payload, sizeof(payload), "{d:{temperature:%d}}",
-		 (u8_t)sys_rand32_get());
+		 (uint8_t)sys_rand32_get());
 #else
 	static char payload[] = "DOORS:OPEN_QoSx";
 
@@ -232,7 +232,7 @@ static int publish(struct mqtt_client *client, enum mqtt_qos qos)
 	struct mqtt_publish_param param;
 
 	param.message.topic.qos = qos;
-	param.message.topic.topic.utf8 = (u8_t *)get_mqtt_topic();
+	param.message.topic.topic.utf8 = (uint8_t *)get_mqtt_topic();
 	param.message.topic.topic.size =
 			strlen(param.message.topic.topic.utf8);
 	param.message.payload.data = get_mqtt_payload(qos);
@@ -291,7 +291,7 @@ static void client_init(struct mqtt_client *client)
 	/* MQTT client configuration */
 	client->broker = &broker;
 	client->evt_cb = mqtt_evt_handler;
-	client->client_id.utf8 = (u8_t *)MQTT_CLIENTID;
+	client->client_id.utf8 = (uint8_t *)MQTT_CLIENTID;
 	client->client_id.size = strlen(MQTT_CLIENTID);
 	client->password = NULL;
 	client->user_name = NULL;
@@ -384,8 +384,8 @@ static int try_to_connect(struct mqtt_client *client)
 
 static int process_mqtt_and_sleep(struct mqtt_client *client, int timeout)
 {
-	s64_t remaining = timeout;
-	s64_t start_time = k_uptime_get();
+	int64_t remaining = timeout;
+	int64_t start_time = k_uptime_get();
 	int rc;
 
 	while (remaining > 0 && connected) {

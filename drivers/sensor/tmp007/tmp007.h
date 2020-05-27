@@ -35,7 +35,7 @@
 
 struct tmp007_data {
 	struct device *i2c;
-	s16_t sample;
+	int16_t sample;
 
 #ifdef CONFIG_TMP007_TRIGGER
 	struct device *gpio;
@@ -60,12 +60,12 @@ struct tmp007_data {
 };
 
 #ifdef CONFIG_TMP007_TRIGGER
-int tmp007_reg_read(struct tmp007_data *drv_data, u8_t reg, u16_t *val);
+int tmp007_reg_read(struct tmp007_data *drv_data, uint8_t reg, uint16_t *val);
 
-int tmp007_reg_write(struct tmp007_data *drv_data, u8_t reg, u16_t val);
+int tmp007_reg_write(struct tmp007_data *drv_data, uint8_t reg, uint16_t val);
 
-int tmp007_reg_update(struct tmp007_data *drv_data, u8_t reg,
-		      u16_t mask, u16_t val);
+int tmp007_reg_update(struct tmp007_data *drv_data, uint8_t reg,
+		      uint16_t mask, uint16_t val);
 
 int tmp007_attr_set(struct device *dev,
 		    enum sensor_channel chan,

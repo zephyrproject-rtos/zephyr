@@ -30,12 +30,12 @@ static ZTEST_DMEM struct in_addr addr_v4 = { { { 192, 0, 2, 3 } } };
 #define DBG(fmt, ...)
 #endif
 
-static const u8_t mac_addr_init[6] = { 0x01, 0x02, 0x03,
+static const uint8_t mac_addr_init[6] = { 0x01, 0x02, 0x03,
 				       0x04,  0x05,  0x06 };
 
 struct eth_fake_context {
 	struct net_if *iface;
-	u8_t mac_address[6];
+	uint8_t mac_address[6];
 
 	bool auto_negotiation;
 	bool full_duplex;
@@ -380,7 +380,7 @@ static void test_net_mgmt_catch_events(void)
 	struct sockaddr_nm event_addr;
 	socklen_t event_addr_len;
 	char ipaddr[INET6_ADDRSTRLEN];
-	u8_t buf[MAX_BUF_LEN];
+	uint8_t buf[MAX_BUF_LEN];
 	int event_count = 2;
 	int ret;
 

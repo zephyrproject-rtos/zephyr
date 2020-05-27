@@ -15,20 +15,20 @@ extern "C" {
 
 #define SHELL_MSG_SPECIFY_SUBCOMMAND	"Please specify a subcommand.\n"
 
-s32_t row_span_with_buffer_offsets_get(struct shell_multiline_cons *cons,
-				       u16_t offset1,
-				       u16_t offset2);
+int32_t row_span_with_buffer_offsets_get(struct shell_multiline_cons *cons,
+				       uint16_t offset1,
+				       uint16_t offset2);
 
-s32_t column_span_with_buffer_offsets_get(struct shell_multiline_cons *cons,
-					  u16_t offset1,
-					  u16_t offset2);
+int32_t column_span_with_buffer_offsets_get(struct shell_multiline_cons *cons,
+					  uint16_t offset1,
+					  uint16_t offset2);
 
 void shell_multiline_data_calc(struct shell_multiline_cons *cons,
-				   u16_t buff_pos, u16_t buff_len);
+				   uint16_t buff_pos, uint16_t buff_len);
 
-static inline u16_t shell_strlen(const char *str)
+static inline uint16_t shell_strlen(const char *str)
 {
-	return str == NULL ? 0U : (u16_t)strlen(str);
+	return str == NULL ? 0U : (uint16_t)strlen(str);
 }
 
 char shell_make_argv(size_t *argc, const char **argv,
@@ -37,7 +37,7 @@ char shell_make_argv(size_t *argc, const char **argv,
 /** @brief Removes pattern and following space
  *
  */
-void shell_pattern_remove(char *buff, u16_t *buff_len, const char *pattern);
+void shell_pattern_remove(char *buff, uint16_t *buff_len, const char *pattern);
 
 /** @brief Get subcommand with given index from the root.
  *
@@ -77,7 +77,7 @@ const struct shell_static_entry *shell_get_last_command(
 					struct shell_static_entry *dloc,
 					bool only_static);
 
-int shell_command_add(char *buff, u16_t *buff_len,
+int shell_command_add(char *buff, uint16_t *buff_len,
 		      const char *new_cmd, const char *pattern);
 
 const struct shell_static_entry *shell_root_cmd_find(const char *syntax);

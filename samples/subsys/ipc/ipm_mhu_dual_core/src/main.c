@@ -24,7 +24,7 @@ static void main_cpu_0(void)
 
 static void main_cpu_1(void)
 {
-	const u32_t set_mhu = 1;
+	const uint32_t set_mhu = 1;
 
 	ipm_send(mhu0, 0, MHU_CPU0, &set_mhu, 1);
 
@@ -32,10 +32,10 @@ static void main_cpu_1(void)
 	}
 }
 
-static void mhu_isr_callback(void *context, u32_t cpu_id,
+static void mhu_isr_callback(void *context, uint32_t cpu_id,
 					volatile void *data)
 {
-	const u32_t set_mhu = 1;
+	const uint32_t set_mhu = 1;
 
 	printk("MHU ISR on CPU %d\n", cpu_id);
 	if (cpu_id == MHU_CPU0) {

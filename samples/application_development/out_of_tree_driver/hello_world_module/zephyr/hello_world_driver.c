@@ -13,7 +13,7 @@
  */
 
 static struct hello_world_dev_data {
-	u32_t foo;
+	uint32_t foo;
 } data;
 
 static int init(struct device *dev)

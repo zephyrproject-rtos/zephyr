@@ -74,7 +74,7 @@ extern "C" {
 #define TIMER_ABSTIME 4
 #endif
 
-static inline s32_t _ts_to_ms(const struct timespec *to)
+static inline int32_t _ts_to_ms(const struct timespec *to)
 {
 	return (to->tv_sec * MSEC_PER_SEC) + (to->tv_nsec / NSEC_PER_MSEC);
 }

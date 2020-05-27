@@ -30,11 +30,11 @@ static int mcux_mcg_off(struct device *dev, clock_control_subsys_t sub_system)
 
 static int mcux_mcg_get_rate(struct device *dev,
 			     clock_control_subsys_t sub_system,
-			     u32_t *rate)
+			     uint32_t *rate)
 {
 	clock_name_t clock_name;
 
-	switch ((u32_t) sub_system) {
+	switch ((uint32_t) sub_system) {
 	case KINETIS_MCG_FIXED_FREQ_CLK:
 		clock_name = kCLOCK_McgFixedFreqClk;
 		break;

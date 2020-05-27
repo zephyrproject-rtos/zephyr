@@ -27,17 +27,17 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_MGMT_EVENT_LOG_LEVEL);
 	MAX(sizeof(TEST_INFO_STRING), sizeof(struct in6_addr))
 
 /* Notifier infra */
-static u32_t event2throw;
-static u32_t throw_times;
-static u32_t throw_sleep;
+static uint32_t event2throw;
+static uint32_t throw_times;
+static uint32_t throw_sleep;
 static bool with_info;
 static K_THREAD_STACK_DEFINE(thrower_stack, 512 + CONFIG_TEST_EXTRA_STACKSIZE);
 static struct k_thread thrower_thread_data;
 static struct k_sem thrower_lock;
 
 /* Receiver infra */
-static u32_t rx_event;
-static u32_t rx_calls;
+static uint32_t rx_event;
+static uint32_t rx_calls;
 static size_t info_length_in_test;
 static struct net_mgmt_event_callback rx_cb;
 static char *info_string = TEST_INFO_STRING;
@@ -47,14 +47,14 @@ static struct in6_addr addr6 = { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0,
 
 static char info_data[TEST_MGMT_EVENT_INFO_SIZE];
 
-static int test_mgmt_request(u32_t mgmt_request,
-			     struct net_if *iface, void *data, u32_t len)
+static int test_mgmt_request(uint32_t mgmt_request,
+			     struct net_if *iface, void *data, uint32_t len)
 {
-	u32_t *test_data = data;
+	uint32_t *test_data = data;
 
 	ARG_UNUSED(iface);
 
-	if (len == sizeof(u32_t)) {
+	if (len == sizeof(uint32_t)) {
 		*test_data = 1U;
 
 		return 0;
@@ -74,7 +74,7 @@ int fake_dev_init(struct device *dev)
 
 static void fake_iface_init(struct net_if *iface)
 {
-	static u8_t mac[8] = { 0x00, 0x00, 0x00, 0x00, 0x0a, 0x0b, 0x0c, 0x0d};
+	static uint8_t mac[8] = { 0x00, 0x00, 0x00, 0x00, 0x0a, 0x0b, 0x0c, 0x0d};
 
 	net_if_set_link_addr(iface, mac, 8, NET_LINK_DUMMY);
 }
@@ -96,7 +96,7 @@ NET_DEVICE_INIT(net_event_test, "net_event_test",
 
 void test_requesting_nm(void)
 {
-	u32_t data = 0U;
+	uint32_t data = 0U;
 
 	TC_PRINT("- Request Net MGMT\n");
 
@@ -130,18 +130,18 @@ static void thrower_thread(void)
 }
 
 static void receiver_cb(struct net_mgmt_event_callback *cb,
-			u32_t nm_event, struct net_if *iface)
+			uint32_t nm_event, struct net_if *iface)
 {
 	TC_PRINT("\t\tReceived event 0x%08X\n", nm_event);
 
 	if (with_info && cb->info) {
 		if (cb->info_length != info_length_in_test) {
-			rx_calls = (u32_t) -1;
+			rx_calls = (uint32_t) -1;
 			return;
 		}
 
 		if (memcmp(info_data, cb->info, info_length_in_test)) {
-			rx_calls = (u32_t) -1;
+			rx_calls = (uint32_t) -1;
 			return;
 		}
 	}
@@ -150,7 +150,7 @@ static void receiver_cb(struct net_mgmt_event_callback *cb,
 	rx_calls++;
 }
 
-static int sending_event(u32_t times, bool receiver, bool info)
+static int sending_event(uint32_t times, bool receiver, bool info)
 {
 	TC_PRINT("- Sending event %u times, %s a receiver, %s info\n",
 		 times, receiver ? "with" : "without",
@@ -182,19 +182,19 @@ static int sending_event(u32_t times, bool receiver, bool info)
 	return TC_PASS;
 }
 
-static int test_sending_event(u32_t times, bool receiver)
+static int test_sending_event(uint32_t times, bool receiver)
 {
 	return sending_event(times, receiver, false);
 }
 
-static int test_sending_event_info(u32_t times, bool receiver)
+static int test_sending_event_info(uint32_t times, bool receiver)
 {
 	return sending_event(times, receiver, true);
 }
 
-static int test_synchronous_event_listener(u32_t times, bool on_iface)
+static int test_synchronous_event_listener(uint32_t times, bool on_iface)
 {
-	u32_t event_mask;
+	uint32_t event_mask;
 	int ret;
 
 	TC_PRINT("- Synchronous event listener %s\n",
@@ -251,7 +251,7 @@ static void initialize_event_tests(void)
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 }
 
-static int test_core_event(u32_t event, bool (*func)(void))
+static int test_core_event(uint32_t event, bool (*func)(void))
 {
 	TC_PRINT("- Triggering core event: 0x%08X\n", event);
 

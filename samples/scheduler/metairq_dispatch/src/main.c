@@ -33,10 +33,10 @@ K_THREAD_DEFINE(metairq_thread, STACK_SIZE, metairq_fn,
  */
 struct {
 	atomic_t num_mirq;
-	u32_t mirq_latencies[MAX_EVENTS];
+	uint32_t mirq_latencies[MAX_EVENTS];
 	struct {
-		u32_t nevt;
-		u32_t latencies[MAX_EVENTS * 2 / NUM_THREADS];
+		uint32_t nevt;
+		uint32_t latencies[MAX_EVENTS * 2 / NUM_THREADS];
 	} threads[NUM_THREADS];
 } stats;
 
@@ -73,21 +73,21 @@ static void metairq_fn(void *p1, void *p2, void *p3)
 /* Simple recursive implementation of an integer square root, cribbed
  * from wikipedia
  */
-static u32_t isqrt(u64_t n)
+static uint32_t isqrt(uint64_t n)
 {
 	if (n > 1) {
-		u64_t lo = isqrt(n >> 2) << 1;
-		u64_t hi = lo + 1;
+		uint64_t lo = isqrt(n >> 2) << 1;
+		uint64_t hi = lo + 1;
 
-		return (u32_t)(((hi * hi) > n) ? lo : hi);
+		return (uint32_t)(((hi * hi) > n) ? lo : hi);
 	}
-	return (u32_t) n;
+	return (uint32_t) n;
 }
 
-static void calc_stats(const u32_t *array, u32_t n,
-		       u32_t *lo, u32_t *hi, u32_t *mean, u32_t *stdev)
+static void calc_stats(const uint32_t *array, uint32_t n,
+		       uint32_t *lo, uint32_t *hi, uint32_t *mean, uint32_t *stdev)
 {
-	u64_t tot = 0, totsq = 0;
+	uint64_t tot = 0, totsq = 0;
 
 	*lo = INT_MAX;
 	*hi = 0;
@@ -97,10 +97,10 @@ static void calc_stats(const u32_t *array, u32_t n,
 		tot += array[i];
 	}
 
-	*mean = (u32_t)((tot + (n / 2)) / n);
+	*mean = (uint32_t)((tot + (n / 2)) / n);
 
 	for (int i = 0; i < n; i++) {
-		s64_t d = (s32_t) (array[i] - *mean);
+		int64_t d = (int32_t) (array[i] - *mean);
 
 		totsq += d * d;
 	}
@@ -108,7 +108,7 @@ static void calc_stats(const u32_t *array, u32_t n,
 	*stdev = isqrt((totsq + (n / 2)) / n);
 }
 
-static void record_latencies(struct msg *m, u32_t latency)
+static void record_latencies(struct msg *m, uint32_t latency)
 {
 	/* Workaround: qemu emulation shows an erroneously high
 	 * metairq latency for the very first event of 7-8us.  Maybe
@@ -134,7 +134,7 @@ static void record_latencies(struct msg *m, u32_t latency)
 	 * finish.
 	 */
 	if (m->seq == MAX_EVENTS - 1) {
-		u32_t hi, lo, mean, stdev, ret;
+		uint32_t hi, lo, mean, stdev, ret;
 
 		ret = k_sem_take(&report_cookie, K_FOREVER);
 		__ASSERT_NO_MSG(ret == 0);
@@ -178,7 +178,7 @@ static void thread_fn(void *p1, void *p2, void *p3)
 
 	while (true) {
 		int ret = k_msgq_get(&threads[id].msgq, &m, K_FOREVER);
-		u32_t start = k_cycle_get_32();
+		uint32_t start = k_cycle_get_32();
 
 		__ASSERT_NO_MSG(ret == 0);
 
@@ -195,7 +195,7 @@ static void thread_fn(void *p1, void *p2, void *p3)
 			}
 		}
 
-		u32_t dur = k_cycle_get_32() - start;
+		uint32_t dur = k_cycle_get_32() - start;
 
 #ifdef LOG_EVERY_EVENT
 		/* Log the message, its thread, and the following cycle values:

@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(usb_loopback);
 #define LOOPBACK_OUT_EP_IDX		0
 #define LOOPBACK_IN_EP_IDX		1
 
-static u8_t loopback_buf[1024];
+static uint8_t loopback_buf[1024];
 
 /* usb.rst config structure start */
 struct usb_loopback_config {
@@ -68,16 +68,16 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_loopback_config loopback_cfg = {
 };
 /* usb.rst config structure end */
 
-static void loopback_out_cb(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
+static void loopback_out_cb(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
-	u32_t bytes_to_read;
+	uint32_t bytes_to_read;
 
 	usb_read(ep, NULL, 0, &bytes_to_read);
 	LOG_DBG("ep 0x%x, bytes to read %d ", ep, bytes_to_read);
 	usb_read(ep, loopback_buf, bytes_to_read, NULL);
 }
 
-static void loopback_in_cb(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
+static void loopback_in_cb(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
 	if (usb_write(ep, loopback_buf, CONFIG_LOOPBACK_BULK_EP_MPS, NULL)) {
 		LOG_DBG("ep 0x%x", ep);
@@ -99,7 +99,7 @@ static struct usb_ep_cfg_data ep_cfg[] = {
 
 static void loopback_status_cb(struct usb_cfg_data *cfg,
 			       enum usb_dc_status_code status,
-			       const u8_t *param)
+			       const uint8_t *param)
 {
 	ARG_UNUSED(cfg);
 
@@ -124,7 +124,7 @@ static void loopback_status_cb(struct usb_cfg_data *cfg,
 
 /* usb.rst vendor handler start */
 static int loopback_vendor_handler(struct usb_setup_packet *setup,
-				   s32_t *len, u8_t **data)
+				   int32_t *len, uint8_t **data)
 {
 	LOG_DBG("Class request: bRequest 0x%x bmRequestType 0x%x len %d",
 		setup->bRequest, setup->bmRequestType, *len);
@@ -151,7 +151,7 @@ static int loopback_vendor_handler(struct usb_setup_packet *setup,
 /* usb.rst vendor handler end */
 
 static void loopback_interface_config(struct usb_desc_header *head,
-				      u8_t bInterfaceNumber)
+				      uint8_t bInterfaceNumber)
 {
 	ARG_UNUSED(head);
 

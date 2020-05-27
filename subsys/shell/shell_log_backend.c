@@ -9,14 +9,14 @@
 #include "shell_ops.h"
 #include <logging/log_ctrl.h>
 
-int shell_log_backend_output_func(u8_t *data, size_t length, void *ctx)
+int shell_log_backend_output_func(uint8_t *data, size_t length, void *ctx)
 {
 	shell_print_stream(ctx, data, length);
 	return length;
 }
 
 void shell_log_backend_enable(const struct shell_log_backend *backend,
-			      void *ctx, u32_t init_log_level)
+			      void *ctx, uint32_t init_log_level)
 {
 	int err = 0;
 
@@ -62,8 +62,8 @@ static void flush_expired_messages(const struct shell *shell)
 	int err;
 	struct shell_log_backend_msg msg;
 	struct k_msgq *msgq = shell->log_backend->msgq;
-	u32_t timeout = shell->log_backend->timeout;
-	u32_t now = k_uptime_get_32();
+	uint32_t timeout = shell->log_backend->timeout;
+	uint32_t now = k_uptime_get_32();
 
 	while (1) {
 		err = k_msgq_peek(msgq, &msg);
@@ -127,7 +127,7 @@ void shell_log_backend_disable(const struct shell_log_backend *backend)
 static void msg_process(const struct log_output *log_output,
 			struct log_msg *msg, bool colors)
 {
-	u32_t flags = LOG_OUTPUT_FLAG_LEVEL |
+	uint32_t flags = LOG_OUTPUT_FLAG_LEVEL |
 		      LOG_OUTPUT_FLAG_TIMESTAMP |
 		      LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
 
@@ -141,7 +141,7 @@ static void msg_process(const struct log_output *log_output,
 
 bool shell_log_backend_process(const struct shell_log_backend *backend)
 {
-	u32_t dropped;
+	uint32_t dropped;
 	const struct shell *shell =
 			(const struct shell *)backend->backend->cb->ctx;
 	bool colors = IS_ENABLED(CONFIG_SHELL_VT100_COLORS) &&
@@ -208,12 +208,12 @@ static void put(const struct log_backend *const backend, struct log_msg *msg)
 }
 
 static void put_sync_string(const struct log_backend *const backend,
-			    struct log_msg_ids src_level, u32_t timestamp,
+			    struct log_msg_ids src_level, uint32_t timestamp,
 			    const char *fmt, va_list ap)
 {
 	const struct shell *shell = (const struct shell *)backend->cb->ctx;
-	u32_t key;
-	u32_t flags = LOG_OUTPUT_FLAG_LEVEL |
+	uint32_t key;
+	uint32_t flags = LOG_OUTPUT_FLAG_LEVEL |
 		      LOG_OUTPUT_FLAG_TIMESTAMP |
 		      LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
 
@@ -234,12 +234,12 @@ static void put_sync_string(const struct log_backend *const backend,
 }
 
 static void put_sync_hexdump(const struct log_backend *const backend,
-			 struct log_msg_ids src_level, u32_t timestamp,
-			 const char *metadata, const u8_t *data, u32_t length)
+			 struct log_msg_ids src_level, uint32_t timestamp,
+			 const char *metadata, const uint8_t *data, uint32_t length)
 {
 	const struct shell *shell = (const struct shell *)backend->cb->ctx;
-	u32_t key;
-	u32_t flags = LOG_OUTPUT_FLAG_LEVEL |
+	uint32_t key;
+	uint32_t flags = LOG_OUTPUT_FLAG_LEVEL |
 		      LOG_OUTPUT_FLAG_TIMESTAMP |
 		      LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
 
@@ -290,7 +290,7 @@ static void panic(const struct log_backend *const backend)
 	}
 }
 
-static void dropped(const struct log_backend *const backend, u32_t cnt)
+static void dropped(const struct log_backend *const backend, uint32_t cnt)
 {
 	const struct shell *shell = (const struct shell *)backend->cb->ctx;
 	const struct shell_log_backend *log_backend = shell->log_backend;

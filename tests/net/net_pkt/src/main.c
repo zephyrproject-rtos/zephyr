@@ -15,9 +15,9 @@
 
 #include <ztest.h>
 
-static u8_t mac_addr[sizeof(struct net_eth_addr)];
+static uint8_t mac_addr[sizeof(struct net_eth_addr)];
 static struct net_if *eth_if;
-static u8_t small_buffer[512];
+static uint8_t small_buffer[512];
 
 /************************\
  * FAKE ETHERNET DEVICE *
@@ -209,7 +209,7 @@ static void test_net_pkt_basics_of_rw(void)
 {
 	struct net_pkt_cursor backup;
 	struct net_pkt *pkt;
-	u16_t value16;
+	uint16_t value16;
 	int ret;
 
 	pkt = net_pkt_alloc_with_buffer(eth_if, 512,
@@ -457,7 +457,7 @@ void test_net_pkt_advanced_basics(void)
 	 * position in the buffer and cast it to the type you want.
 	 */
 	{
-		u32_t *val = (u32_t *)net_pkt_cursor_get_pos(pkt);
+		uint32_t *val = (uint32_t *)net_pkt_cursor_get_pos(pkt);
 
 		*val = 0U;
 		/* etc... */
@@ -534,7 +534,7 @@ void test_net_pkt_easier_rw_usage(void)
 		     "Pkt not properly unreferenced");
 }
 
-u8_t b5_data[10] = "qrstuvwxyz";
+uint8_t b5_data[10] = "qrstuvwxyz";
 struct net_buf b5 = {
 	.ref   = 1,
 	.data  = b5_data,
@@ -542,7 +542,7 @@ struct net_buf b5 = {
 	.size  = 0,
 };
 
-u8_t b4_data[4] = "mnop";
+uint8_t b4_data[4] = "mnop";
 struct net_buf b4 = {
 	.frags = &b5,
 	.ref   = 1,
@@ -556,7 +556,7 @@ struct net_buf b3 = {
 	.ref   = 1,
 };
 
-u8_t b2_data[8] = "efghijkl";
+uint8_t b2_data[8] = "efghijkl";
 struct net_buf b2 = {
 	.frags = &b3,
 	.ref   = 1,
@@ -565,7 +565,7 @@ struct net_buf b2 = {
 	.size  = sizeof(b2_data),
 };
 
-u8_t b1_data[4] = "abcd";
+uint8_t b1_data[4] = "abcd";
 struct net_buf b1 = {
 	.frags = &b2,
 	.ref   = 1,
@@ -636,8 +636,8 @@ void test_net_pkt_pull(void)
 	const int PULL_AMOUNT = 8;
 	const int LARGE_PULL_AMOUNT = 200;
 	struct net_pkt *dummy_pkt;
-	static u8_t pkt_data[PULL_TEST_PKT_DATA_SIZE];
-	static u8_t pkt_data_readback[PULL_TEST_PKT_DATA_SIZE];
+	static uint8_t pkt_data[PULL_TEST_PKT_DATA_SIZE];
+	static uint8_t pkt_data_readback[PULL_TEST_PKT_DATA_SIZE];
 	size_t len;
 	int i, ret;
 
@@ -747,7 +747,7 @@ void test_net_pkt_pull(void)
 
 void test_net_pkt_clone(void)
 {
-	u8_t buf[26] = {"abcdefghijklmnopqrstuvwxyz"};
+	uint8_t buf[26] = {"abcdefghijklmnopqrstuvwxyz"};
 	struct net_pkt *pkt;
 	struct net_pkt *cloned_pkt;
 	int ret;

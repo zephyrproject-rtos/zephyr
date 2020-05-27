@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
  * Use values for low-power mode in DS "Mechanical (Sensor) characteristics",
  * multiplied by 100.
  */
-static const u32_t lis2dh_reg_val_to_scale[] = {
+static const uint32_t lis2dh_reg_val_to_scale[] = {
 #if DT_NODE_HAS_STATUS(DT_INST(0, st_lsm303agr_accel), okay)
 	ACCEL_SCALE(1563),
 	ACCEL_SCALE(3126),
@@ -36,10 +36,10 @@ static const u32_t lis2dh_reg_val_to_scale[] = {
 #endif
 };
 
-static void lis2dh_convert(s16_t raw_val, u32_t scale,
+static void lis2dh_convert(int16_t raw_val, uint32_t scale,
 			   struct sensor_value *val)
 {
-	s32_t converted_val;
+	int32_t converted_val;
 
 	/*
 	 * maximum converted value we can get is: max(raw_val) * max(scale)
@@ -106,9 +106,9 @@ static int lis2dh_sample_fetch(struct device *dev, enum sensor_channel chan)
 		return status;
 	}
 
-	for (i = 0; i < (3 * sizeof(s16_t)); i += sizeof(s16_t)) {
-		s16_t *sample =
-			(s16_t *)&lis2dh->sample.raw[1 + i];
+	for (i = 0; i < (3 * sizeof(int16_t)); i += sizeof(int16_t)) {
+		int16_t *sample =
+			(int16_t *)&lis2dh->sample.raw[1 + i];
 
 		*sample = sys_le16_to_cpu(*sample);
 	}
@@ -122,10 +122,10 @@ static int lis2dh_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 #ifdef CONFIG_LIS2DH_ODR_RUNTIME
 /* 1620 & 5376 are low power only */
-static const u16_t lis2dh_odr_map[] = {0, 1, 10, 25, 50, 100, 200, 400, 1620,
+static const uint16_t lis2dh_odr_map[] = {0, 1, 10, 25, 50, 100, 200, 400, 1620,
 				       1344, 5376};
 
-static int lis2dh_freq_to_odr_val(u16_t freq)
+static int lis2dh_freq_to_odr_val(uint16_t freq)
 {
 	size_t i;
 
@@ -143,11 +143,11 @@ static int lis2dh_freq_to_odr_val(u16_t freq)
 	return -EINVAL;
 }
 
-static int lis2dh_acc_odr_set(struct device *dev, u16_t freq)
+static int lis2dh_acc_odr_set(struct device *dev, uint16_t freq)
 {
 	int odr;
 	int status;
-	u8_t value;
+	uint8_t value;
 	struct lis2dh_data *data = dev->driver_data;
 
 	odr = lis2dh_freq_to_odr_val(freq);
@@ -182,7 +182,7 @@ static int lis2dh_acc_odr_set(struct device *dev, u16_t freq)
 #define LIS2DH_RANGE_IDX_TO_VALUE(idx)		(1 << ((idx) + 1))
 #define LIS2DH_NUM_RANGES			4
 
-static int lis2dh_range_to_reg_val(u16_t range)
+static int lis2dh_range_to_reg_val(uint16_t range)
 {
 	int i;
 
@@ -195,7 +195,7 @@ static int lis2dh_range_to_reg_val(u16_t range)
 	return -EINVAL;
 }
 
-static int lis2dh_acc_range_set(struct device *dev, s32_t range)
+static int lis2dh_acc_range_set(struct device *dev, int32_t range)
 {
 	struct lis2dh_data *lis2dh = dev->driver_data;
 	int fs;
@@ -271,8 +271,8 @@ int lis2dh_init(struct device *dev)
 	struct lis2dh_data *lis2dh = dev->driver_data;
 	const struct lis2dh_config *cfg = dev->config_info;
 	int status;
-	u8_t id;
-	u8_t raw[6];
+	uint8_t id;
+	uint8_t raw[6];
 
 	lis2dh->bus = device_get_binding(cfg->bus_name);
 	if (!lis2dh->bus) {
@@ -338,7 +338,7 @@ int lis2dh_init(struct device *dev)
 
 	LOG_INF("bus=%s fs=%d, odr=0x%x lp_en=0x%x scale=%d",
 		    LIS2DH_BUS_DEV_NAME, 1 << (LIS2DH_FS_IDX + 1),
-		    LIS2DH_ODR_IDX, (u8_t)LIS2DH_LP_EN_BIT, lis2dh->scale);
+		    LIS2DH_ODR_IDX, (uint8_t)LIS2DH_LP_EN_BIT, lis2dh->scale);
 
 	/* enable accel measurements and set power mode and data rate */
 	return lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1,

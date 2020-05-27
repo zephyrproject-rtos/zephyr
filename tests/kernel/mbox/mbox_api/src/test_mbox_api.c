@@ -501,7 +501,7 @@ static void tmbox_get(struct k_mbox *pmbox)
 		break;
 	case MULTIPLE_WAITING_GET:
 		/* Create 5 threads who will wait on a mbox_get. */
-		for (u32_t i = 0; i < 5; i++) {
+		for (uint32_t i = 0; i < 5; i++) {
 			k_thread_create(&waiting_get_tid[i],
 					waiting_get_stack[i],
 					STACK_SIZE,

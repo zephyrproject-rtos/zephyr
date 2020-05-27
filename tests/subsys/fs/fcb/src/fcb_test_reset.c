@@ -13,7 +13,7 @@ void test_fcb_reset(void)
 	int rc;
 	int i;
 	struct fcb_entry loc;
-	u8_t test_data[128];
+	uint8_t test_data[128];
 	int var_cnt;
 
 	fcb = &test_fcb;

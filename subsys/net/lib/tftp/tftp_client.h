@@ -44,7 +44,7 @@
  */
 static inline int send_ack(int sock, int block)
 {
-	u8_t tmp[4];
+	uint8_t tmp[4];
 
 	LOG_INF("Client acking Block Number: %d", block);
 

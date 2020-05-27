@@ -30,7 +30,7 @@
 
 static int powerup_adv7513(struct device *i2c_dev)
 {
-	u8_t data;
+	uint8_t data;
 
 	TC_PRINT("Powering up ADV7513\n");
 	/* write to HPD control registers */
@@ -66,8 +66,8 @@ static int powerup_adv7513(struct device *i2c_dev)
 static int test_i2c_adv7513(void)
 {
 	struct device *i2c_dev = device_get_binding(DT_LABEL(DT_INST(0, nios2_i2c)));
-	u32_t i2c_cfg = I2C_SPEED_SET(I2C_SPEED_STANDARD) | I2C_MODE_MASTER;
-	u8_t data;
+	uint32_t i2c_cfg = I2C_SPEED_SET(I2C_SPEED_STANDARD) | I2C_MODE_MASTER;
+	uint8_t data;
 
 	if (!i2c_dev) {
 		TC_PRINT("cannot get i2c device\n");

@@ -25,18 +25,18 @@ struct mcux_ftm_config {
 	clock_control_subsys_t clock_subsys;
 	ftm_clock_source_t ftm_clock_source;
 	ftm_clock_prescale_t prescale;
-	u8_t channel_count;
+	uint8_t channel_count;
 	ftm_pwm_mode_t mode;
 };
 
 struct mcux_ftm_data {
-	u32_t clock_freq;
-	u32_t period_cycles;
+	uint32_t clock_freq;
+	uint32_t period_cycles;
 	ftm_chnl_pwm_config_param_t channel[MAX_CHANNELS];
 };
 
-static int mcux_ftm_pin_set(struct device *dev, u32_t pwm,
-			    u32_t period_cycles, u32_t pulse_cycles,
+static int mcux_ftm_pin_set(struct device *dev, uint32_t pwm,
+			    uint32_t period_cycles, uint32_t pulse_cycles,
 			    pwm_flags_t flags)
 {
 	const struct mcux_ftm_config *config = dev->config_info;
@@ -95,8 +95,8 @@ static int mcux_ftm_pin_set(struct device *dev, u32_t pwm,
 	return 0;
 }
 
-static int mcux_ftm_get_cycles_per_sec(struct device *dev, u32_t pwm,
-				       u64_t *cycles)
+static int mcux_ftm_get_cycles_per_sec(struct device *dev, uint32_t pwm,
+				       uint64_t *cycles)
 {
 	const struct mcux_ftm_config *config = dev->config_info;
 	struct mcux_ftm_data *data = dev->driver_data;

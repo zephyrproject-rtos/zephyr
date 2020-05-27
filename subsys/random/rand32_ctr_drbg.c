@@ -80,7 +80,7 @@ static int ctr_drbg_initialize(void)
 
 #elif defined(CONFIG_TINYCRYPT)
 
-	u8_t entropy[TC_AES_KEY_SIZE + TC_AES_BLOCK_SIZE];
+	uint8_t entropy[TC_AES_KEY_SIZE + TC_AES_BLOCK_SIZE];
 
 	ret = entropy_get_entropy(entropy_driver, (void *)&entropy,
 				  sizeof(entropy));
@@ -104,7 +104,7 @@ static int ctr_drbg_initialize(void)
 }
 
 
-int sys_csrand_get(void *dst, u32_t outlen)
+int sys_csrand_get(void *dst, uint32_t outlen)
 {
 	int ret;
 	unsigned int key = irq_lock();
@@ -122,7 +122,7 @@ int sys_csrand_get(void *dst, u32_t outlen)
 
 #elif defined(CONFIG_TINYCRYPT)
 
-	u8_t entropy[TC_AES_KEY_SIZE + TC_AES_BLOCK_SIZE];
+	uint8_t entropy[TC_AES_KEY_SIZE + TC_AES_BLOCK_SIZE];
 
 	ret = tc_ctr_prng_generate(&ctr_ctx, 0, 0, (uint8_t *)dst, outlen);
 

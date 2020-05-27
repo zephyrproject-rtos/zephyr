@@ -72,7 +72,7 @@ static inline void mqtt_mutex_unlock(struct mqtt_client *client)
  *
  * @retval Current wall clock or sys tick value in milliseconds.
  */
-static inline u32_t mqtt_sys_tick_in_ms_get(void)
+static inline uint32_t mqtt_sys_tick_in_ms_get(void)
 {
 	return k_uptime_get_32();
 }
@@ -83,9 +83,9 @@ static inline u32_t mqtt_sys_tick_in_ms_get(void)
  *
  * @retval Time elapsed since last_activity time.
  */
-static inline u32_t mqtt_elapsed_time_in_ms_get(u32_t last_activity)
+static inline uint32_t mqtt_elapsed_time_in_ms_get(uint32_t last_activity)
 {
-	s32_t diff = k_uptime_get_32() - last_activity;
+	int32_t diff = k_uptime_get_32() - last_activity;
 
 	if (diff < 0) {
 		return 0;

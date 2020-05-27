@@ -211,7 +211,7 @@ static inline int z_impl_flash_write_protection_set(struct device *dev,
 struct flash_pages_info {
 	off_t start_offset; /* offset from the base of flash address */
 	size_t size;
-	u32_t index;
+	uint32_t index;
 };
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
@@ -236,7 +236,7 @@ __syscall int flash_get_page_info_by_offs(struct device *dev, off_t offset,
  *
  *  @return  0 on success, -EINVAL  if page of the index doesn't exist.
  */
-__syscall int flash_get_page_info_by_idx(struct device *dev, u32_t page_index,
+__syscall int flash_get_page_info_by_idx(struct device *dev, uint32_t page_index,
 					 struct flash_pages_info *info);
 
 /**

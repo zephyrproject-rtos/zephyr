@@ -56,7 +56,7 @@ static inline void can_work_buffer_init(struct can_frame_buffer *buffer)
 static inline int can_work_buffer_put(struct zcan_frame *frame,
 				      struct can_frame_buffer *buffer)
 {
-	u16_t next_head = WORK_BUF_MOD_SIZE(buffer->head + 1);
+	uint16_t next_head = WORK_BUF_MOD_SIZE(buffer->head + 1);
 
 	if (buffer->head == WORK_BUF_FULL) {
 		return -1;
@@ -87,7 +87,7 @@ struct zcan_frame *can_work_buffer_get_next(struct can_frame_buffer *buffer)
 
 static inline void can_work_buffer_free_next(struct can_frame_buffer *buffer)
 {
-	u16_t next_tail = WORK_BUF_MOD_SIZE(buffer->tail + 1);
+	uint16_t next_tail = WORK_BUF_MOD_SIZE(buffer->tail + 1);
 
 	if (buffer->head == buffer->tail) {
 		return;

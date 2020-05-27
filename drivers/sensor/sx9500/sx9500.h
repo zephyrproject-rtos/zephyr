@@ -26,8 +26,8 @@
 
 struct sx9500_data {
 	struct device *i2c_master;
-	u16_t i2c_slave_addr;
-	u8_t prox_stat;
+	uint16_t i2c_slave_addr;
+	uint8_t prox_stat;
 
 	struct gpio_callback gpio_cb;
 

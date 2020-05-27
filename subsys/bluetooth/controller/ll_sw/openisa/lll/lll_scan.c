@@ -43,9 +43,9 @@ static int prepare_cb(struct lll_prepare_param *prepare_param);
 static int is_abort_cb(void *next, int prio, void *curr,
 		       lll_prepare_cb_t *resume_cb, int *resume_prio);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
-static void ticker_stop_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
+static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t lazy,
 			   void *param);
-static void ticker_op_start_cb(u32_t status, void *param);
+static void ticker_op_start_cb(uint32_t status, void *param);
 static void isr_rx(void *param);
 static void isr_tx(void *param);
 static void isr_done(void *param);
@@ -54,24 +54,24 @@ static void isr_abort(void *param);
 static void isr_cleanup(void *param);
 static void isr_race(void *param);
 
-static inline bool isr_rx_scan_check(struct lll_scan *lll, u8_t irkmatch_ok,
-				     u8_t devmatch_ok, u8_t rl_idx);
-static inline u32_t isr_rx_pdu(struct lll_scan *lll, u8_t devmatch_ok,
-			       u8_t devmatch_id, u8_t irkmatch_ok,
-			       u8_t irkmatch_id, u8_t rl_idx, u8_t rssi_ready);
+static inline bool isr_rx_scan_check(struct lll_scan *lll, uint8_t irkmatch_ok,
+				     uint8_t devmatch_ok, uint8_t rl_idx);
+static inline uint32_t isr_rx_pdu(struct lll_scan *lll, uint8_t devmatch_ok,
+			       uint8_t devmatch_id, uint8_t irkmatch_ok,
+			       uint8_t irkmatch_id, uint8_t rl_idx, uint8_t rssi_ready);
 static inline bool isr_scan_init_check(struct lll_scan *lll,
-				       struct pdu_adv *pdu, u8_t rl_idx);
+				       struct pdu_adv *pdu, uint8_t rl_idx);
 static inline bool isr_scan_init_adva_check(struct lll_scan *lll,
-					    struct pdu_adv *pdu, u8_t rl_idx);
+					    struct pdu_adv *pdu, uint8_t rl_idx);
 static inline bool isr_scan_tgta_check(struct lll_scan *lll, bool init,
-				       struct pdu_adv *pdu, u8_t rl_idx,
+				       struct pdu_adv *pdu, uint8_t rl_idx,
 				       bool *dir_report);
 static inline bool isr_scan_tgta_rpa_check(struct lll_scan *lll,
 					   struct pdu_adv *pdu,
 					   bool *dir_report);
 static inline bool isr_scan_rsp_adva_matches(struct pdu_adv *srsp);
-static u32_t isr_rx_scan_report(struct lll_scan *lll, u8_t rssi_ready,
-				u8_t rl_idx, bool dir_report);
+static uint32_t isr_rx_scan_report(struct lll_scan *lll, uint8_t rssi_ready,
+				uint8_t rl_idx, bool dir_report);
 
 
 int lll_scan_init(void)
@@ -118,12 +118,12 @@ static int init_reset(void)
 static int prepare_cb(struct lll_prepare_param *prepare_param)
 {
 	struct lll_scan *lll = prepare_param->param;
-	u32_t aa = sys_cpu_to_le32(PDU_AC_ACCESS_ADDR);
-	u32_t ticks_at_event, ticks_at_start;
+	uint32_t aa = sys_cpu_to_le32(PDU_AC_ACCESS_ADDR);
+	uint32_t ticks_at_event, ticks_at_start;
 	struct node_rx_pdu *node_rx;
 	struct evt_hdr *evt;
-	u32_t remainder_us;
-	u32_t remainder;
+	uint32_t remainder_us;
+	uint32_t remainder;
 
 	DEBUG_RADIO_START_O(1);
 
@@ -159,7 +159,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	LL_ASSERT(node_rx);
 	radio_pkt_rx_set(node_rx->pdu);
 
-	radio_aa_set((u8_t *)&aa);
+	radio_aa_set((uint8_t *)&aa);
 	radio_crc_configure(((0x5bUL) | ((0x06UL) << 8) | ((0x00UL) << 16)),
 			    0x555555);
 
@@ -175,11 +175,11 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	if (ull_filter_lll_rl_enabled()) {
 		struct lll_filter *filter =
 			ull_filter_lll_get(!!(lll->filter_policy & 0x1));
-		u8_t count, *irks = ull_filter_lll_irks_get(&count);
+		uint8_t count, *irks = ull_filter_lll_irks_get(&count);
 
 		radio_filter_configure(filter->enable_bitmask,
 				       filter->addr_type_bitmask,
-				       (u8_t *)filter->bdaddr);
+				       (uint8_t *)filter->bdaddr);
 
 		radio_ar_configure(count, irks);
 	} else
@@ -192,7 +192,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 
 			radio_filter_configure(wl->enable_bitmask,
 					       wl->addr_type_bitmask,
-					       (u8_t *)wl->bdaddr);
+					       (uint8_t *)wl->bdaddr);
 		}
 
 	ticks_at_event = prepare_param->ticks_at_expire;
@@ -233,7 +233,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	} else
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 	{
-		u32_t ret;
+		uint32_t ret;
 
 		if (lll->ticks_window) {
 			/* start window close timeout */
@@ -327,14 +327,14 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	lll_done(param);
 }
 
-static void ticker_stop_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
+static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t lazy,
 			   void *param)
 {
 	radio_isr_set(isr_cleanup, param);
 	radio_disable();
 }
 
-static void ticker_op_start_cb(u32_t status, void *param)
+static void ticker_op_start_cb(uint32_t status, void *param)
 {
 	ARG_UNUSED(param);
 
@@ -344,14 +344,14 @@ static void ticker_op_start_cb(u32_t status, void *param)
 static void isr_rx(void *param)
 {
 	struct lll_scan *lll = (void *)param;
-	u8_t trx_done;
-	u8_t crc_ok;
-	u8_t devmatch_ok;
-	u8_t devmatch_id;
-	u8_t irkmatch_ok;
-	u8_t irkmatch_id;
-	u8_t rssi_ready;
-	u8_t rl_idx;
+	uint8_t trx_done;
+	uint8_t crc_ok;
+	uint8_t devmatch_ok;
+	uint8_t devmatch_id;
+	uint8_t irkmatch_ok;
+	uint8_t irkmatch_id;
+	uint8_t rssi_ready;
+	uint8_t rl_idx;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_latency_capture();
@@ -398,7 +398,7 @@ static void isr_rx(void *param)
 #endif
 	if (crc_ok && isr_rx_scan_check(lll, irkmatch_ok, devmatch_ok,
 					rl_idx)) {
-		u32_t err;
+		uint32_t err;
 
 		err = isr_rx_pdu(lll, devmatch_ok, devmatch_id, irkmatch_ok,
 				 irkmatch_id, rl_idx, rssi_ready);
@@ -419,7 +419,7 @@ isr_rx_do_close:
 static void isr_tx(void *param)
 {
 	struct node_rx_pdu *node_rx;
-	u32_t hcto;
+	uint32_t hcto;
 
 	/* TODO: MOVE to a common interface, isr_lll_radio_status? */
 	/* Clear radio status and events */
@@ -445,7 +445,7 @@ static void isr_tx(void *param)
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (ull_filter_lll_rl_enabled()) {
-		u8_t count, *irks = ull_filter_lll_irks_get(&count);
+		uint8_t count, *irks = ull_filter_lll_irks_get(&count);
 
 		radio_ar_configure(count, irks);
 	}
@@ -499,7 +499,7 @@ static void isr_common_done(void *param)
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (ull_filter_lll_rl_enabled()) {
-		u8_t count, *irks = ull_filter_lll_irks_get(&count);
+		uint8_t count, *irks = ull_filter_lll_irks_get(&count);
 
 		radio_ar_configure(count, irks);
 	}
@@ -512,7 +512,7 @@ static void isr_common_done(void *param)
 
 static void isr_done(void *param)
 {
-	u32_t start_us;
+	uint32_t start_us;
 
 	isr_common_done(param);
 
@@ -537,7 +537,7 @@ static void isr_done(void *param)
 
 static void isr_window(void *param)
 {
-	u32_t ticks_at_start, remainder_us;
+	uint32_t ticks_at_start, remainder_us;
 
 	isr_common_done(param);
 
@@ -640,8 +640,8 @@ static void isr_race(void *param)
 	radio_status_reset();
 }
 
-static inline bool isr_rx_scan_check(struct lll_scan *lll, u8_t irkmatch_ok,
-				     u8_t devmatch_ok, u8_t rl_idx)
+static inline bool isr_rx_scan_check(struct lll_scan *lll, uint8_t irkmatch_ok,
+				     uint8_t devmatch_ok, uint8_t rl_idx)
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	return (((lll->filter_policy & 0x01) == 0) &&
@@ -655,9 +655,9 @@ static inline bool isr_rx_scan_check(struct lll_scan *lll, u8_t irkmatch_ok,
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 }
 
-static inline u32_t isr_rx_pdu(struct lll_scan *lll, u8_t devmatch_ok,
-			       u8_t devmatch_id, u8_t irkmatch_ok,
-			       u8_t irkmatch_id, u8_t rl_idx, u8_t rssi_ready)
+static inline uint32_t isr_rx_pdu(struct lll_scan *lll, uint8_t devmatch_ok,
+			       uint8_t devmatch_id, uint8_t irkmatch_ok,
+			       uint8_t irkmatch_id, uint8_t rl_idx, uint8_t rssi_ready)
 {
 	struct node_rx_pdu *node_rx;
 	struct pdu_adv *pdu_adv_rx;
@@ -677,11 +677,11 @@ static inline u32_t isr_rx_pdu(struct lll_scan *lll, u8_t devmatch_ok,
 		struct node_rx_ftr *ftr;
 		struct node_rx_pdu *rx;
 		struct pdu_adv *pdu_tx;
-		u32_t conn_interval_us;
-		u32_t conn_offset_us;
-		u32_t conn_space_us;
+		uint32_t conn_interval_us;
+		uint32_t conn_offset_us;
+		uint32_t conn_space_us;
 		struct evt_hdr *evt;
-		u32_t pdu_end_us;
+		uint32_t pdu_end_us;
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		bt_addr_t *lrpa;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
@@ -699,7 +699,7 @@ static inline u32_t isr_rx_pdu(struct lll_scan *lll, u8_t devmatch_ok,
 
 		pdu_end_us = radio_tmr_end_get();
 		if (!lll->ticks_window) {
-			u32_t scan_interval_us;
+			uint32_t scan_interval_us;
 
 			/* FIXME: is this correct for continuous scanning? */
 			scan_interval_us = lll->interval * 625U;
@@ -751,7 +751,7 @@ static inline u32_t isr_rx_pdu(struct lll_scan *lll, u8_t devmatch_ok,
 		       &lll_conn->crc_init[0], 3);
 		pdu_tx->connect_ind.win_size = 1;
 
-		conn_interval_us = (u32_t)lll_conn->interval * 1250U;
+		conn_interval_us = (uint32_t)lll_conn->interval * 1250U;
 		conn_offset_us = radio_tmr_end_get() + 502 + 1250;
 
 		if (!IS_ENABLED(CONFIG_BT_CTLR_SCHED_ADVANCED) ||
@@ -760,7 +760,7 @@ static inline u32_t isr_rx_pdu(struct lll_scan *lll, u8_t devmatch_ok,
 			pdu_tx->connect_ind.win_offset = sys_cpu_to_le16(0);
 		} else {
 			conn_space_us = lll->conn_win_offset_us;
-			while ((conn_space_us & ((u32_t)1 << 31)) ||
+			while ((conn_space_us & ((uint32_t)1 << 31)) ||
 			       (conn_space_us < conn_offset_us)) {
 				conn_space_us += conn_interval_us;
 			}
@@ -830,7 +830,7 @@ static inline u32_t isr_rx_pdu(struct lll_scan *lll, u8_t devmatch_ok,
 		rx->hdr.type = NODE_RX_TYPE_CONNECTION;
 		rx->hdr.handle = 0xffff;
 
-		u8_t pdu_adv_rx_chan_sel = pdu_adv_rx->chan_sel;
+		uint8_t pdu_adv_rx_chan_sel = pdu_adv_rx->chan_sel;
 
 		memcpy(rx->pdu, pdu_tx, (offsetof(struct pdu_adv, connect_ind) +
 					  sizeof(struct pdu_adv_connect_ind)));
@@ -878,7 +878,7 @@ static inline u32_t isr_rx_pdu(struct lll_scan *lll, u8_t devmatch_ok,
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		bt_addr_t *lrpa;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
-		u32_t err;
+		uint32_t err;
 
 		/* setup tIFS switching */
 		radio_tmr_tifs_set(EVENT_IFS_US);
@@ -973,7 +973,7 @@ static inline u32_t isr_rx_pdu(struct lll_scan *lll, u8_t devmatch_ok,
 #else /* !CONFIG_BT_CENTRAL */
 		   1) {
 #endif /* !CONFIG_BT_CENTRAL */
-		u32_t err;
+		uint32_t err;
 
 		/* save the scan response packet */
 		err = isr_rx_scan_report(lll, rssi_ready,
@@ -994,7 +994,7 @@ static inline u32_t isr_rx_pdu(struct lll_scan *lll, u8_t devmatch_ok,
 }
 
 static inline bool isr_scan_init_check(struct lll_scan *lll,
-				       struct pdu_adv *pdu, u8_t rl_idx)
+				       struct pdu_adv *pdu, uint8_t rl_idx)
 {
 	return ((((lll->filter_policy & 0x01) != 0U) ||
 		 isr_scan_init_adva_check(lll, pdu, rl_idx)) &&
@@ -1007,7 +1007,7 @@ static inline bool isr_scan_init_check(struct lll_scan *lll,
 }
 
 static inline bool isr_scan_init_adva_check(struct lll_scan *lll,
-					    struct pdu_adv *pdu, u8_t rl_idx)
+					    struct pdu_adv *pdu, uint8_t rl_idx)
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	/* Only applies to initiator with no whitelist */
@@ -1020,7 +1020,7 @@ static inline bool isr_scan_init_adva_check(struct lll_scan *lll,
 }
 
 static inline bool isr_scan_tgta_check(struct lll_scan *lll, bool init,
-				       struct pdu_adv *pdu, u8_t rl_idx,
+				       struct pdu_adv *pdu, uint8_t rl_idx,
 				       bool *dir_report)
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
@@ -1072,8 +1072,8 @@ static inline bool isr_scan_rsp_adva_matches(struct pdu_adv *srsp)
 			&srsp->scan_rsp.addr[0], BDADDR_SIZE) == 0));
 }
 
-static u32_t isr_rx_scan_report(struct lll_scan *lll, u8_t rssi_ready,
-				u8_t rl_idx, bool dir_report)
+static uint32_t isr_rx_scan_report(struct lll_scan *lll, uint8_t rssi_ready,
+				uint8_t rl_idx, bool dir_report)
 {
 	struct node_rx_pdu *node_rx;
 	struct pdu_adv *pdu_adv_rx;

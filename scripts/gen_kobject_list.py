@@ -747,7 +747,7 @@ def write_gperf_table(fp, syms, objs, little_endian, static_begin, static_end):
     if "CONFIG_GEN_PRIV_STACKS" in syms:
         metadata_names["K_OBJ_THREAD_STACK_ELEMENT"] = "stack_data"
         if stack_counter != 0:
-            fp.write("static u8_t Z_GENERIC_SECTION(.priv_stacks.noinit) "
+            fp.write("static uint8_t Z_GENERIC_SECTION(.priv_stacks.noinit) "
                      " __aligned(Z_PRIVILEGE_STACK_ALIGN)"
                      " priv_stacks[%d][CONFIG_PRIVILEGED_STACK_SIZE];\n"
                      % stack_counter)
@@ -765,7 +765,7 @@ def write_gperf_table(fp, syms, objs, little_endian, static_begin, static_end):
                 # instead
                 size = ko.data
                 ko.data = "&stack_data[%d]" % counter
-                fp.write("\t{ %d, (u8_t *)(&priv_stacks[%d]) }"
+                fp.write("\t{ %d, (uint8_t *)(&priv_stacks[%d]) }"
                          % (size, counter))
                 if counter != (stack_counter - 1):
                     fp.write(",")
@@ -831,7 +831,7 @@ def write_gperf_table(fp, syms, objs, little_endian, static_begin, static_end):
     # Generate the array of already mapped thread indexes
     fp.write('\n')
     fp.write('Z_GENERIC_SECTION(.kobject_data.data) ')
-    fp.write('u8_t _thread_idx_map[%d] = {' % (thread_max_bytes))
+    fp.write('uint8_t _thread_idx_map[%d] = {' % (thread_max_bytes))
 
     for i in range(0, thread_max_bytes):
         fp.write(' 0x%x, ' % (thread_idx_map[i]))

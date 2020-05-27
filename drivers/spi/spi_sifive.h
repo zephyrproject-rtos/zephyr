@@ -67,8 +67,8 @@ struct spi_sifive_data {
 };
 
 struct spi_sifive_cfg {
-	u32_t base;
-	u32_t f_sys;
+	uint32_t base;
+	uint32_t f_sys;
 };
 
 #endif /* _SPI_SIFIVE__H */

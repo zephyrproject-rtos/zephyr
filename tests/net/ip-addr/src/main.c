@@ -51,7 +51,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 
 #define TEST_LL_6(a, b, c, d, e, f, expected)				\
 	do {								\
-		u8_t ll[] = { a, b, c, d, e, f };			\
+		uint8_t ll[] = { a, b, c, d, e, f };			\
 		zassert_false(strcmp(net_sprint_ll_addr(ll, sizeof(ll)),\
 				     expected),				\
 			      "Test %s failed.\n", expected);		\
@@ -59,7 +59,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 
 #define TEST_LL_8(a, b, c, d, e, f, g, h, expected)			\
 	do {								\
-		u8_t ll[] = { a, b, c, d, e, f, g, h };			\
+		uint8_t ll[] = { a, b, c, d, e, f, g, h };			\
 		zassert_false(strcmp(net_sprint_ll_addr(ll, sizeof(ll)), \
 				     expected),				\
 			      "Test %s failed.\n", expected);		\
@@ -67,8 +67,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 
 #define TEST_LL_6_TWO(a, b, c, d, e, f, expected)			\
 	do {								\
-		u8_t ll1[] = { a, b, c, d, e, f };			\
-		u8_t ll2[] = { f, e, d, c, b, a };			\
+		uint8_t ll1[] = { a, b, c, d, e, f };			\
+		uint8_t ll2[] = { f, e, d, c, b, a };			\
 		char out[2 * sizeof("xx:xx:xx:xx:xx:xx") + 1 + 1];	\
 		snprintk(out, sizeof(out), "%s ",			\
 			 net_sprint_ll_addr(ll1, sizeof(ll1)));		\
@@ -100,7 +100,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 	} while (0)
 
 struct net_test_context {
-	u8_t mac_addr[6];
+	uint8_t mac_addr[6];
 	struct net_linkaddr ll_addr;
 };
 
@@ -113,7 +113,7 @@ int net_test_init(struct device *dev)
 	return 0;
 }
 
-static u8_t *net_test_get_mac(struct device *dev)
+static uint8_t *net_test_get_mac(struct device *dev)
 {
 	struct net_test_context *context = dev->driver_data;
 
@@ -132,7 +132,7 @@ static u8_t *net_test_get_mac(struct device *dev)
 
 static void net_test_iface_init(struct net_if *iface)
 {
-	u8_t *mac = net_test_get_mac(net_if_get_device(iface));
+	uint8_t *mac = net_test_get_mac(net_if_get_device(iface));
 
 	net_if_set_link_addr(iface, mac, 6, NET_LINK_ETHERNET);
 }
@@ -255,20 +255,20 @@ static void test_ipv6_addresses(void)
 		     "My IPv6 address check failed");
 
 	/**TESTPOINTS: Check IPv6 prefix*/
-	zassert_true(net_ipv6_is_prefix((u8_t *)&addr6_pref1,
-					(u8_t *)&addr6_pref2, 64),
+	zassert_true(net_ipv6_is_prefix((uint8_t *)&addr6_pref1,
+					(uint8_t *)&addr6_pref2, 64),
 		     "Same IPv6 prefix test failed");
 
-	zassert_false(net_ipv6_is_prefix((u8_t *)&addr6_pref1,
-					 (u8_t *)&addr6_pref3, 64),
+	zassert_false(net_ipv6_is_prefix((uint8_t *)&addr6_pref1,
+					 (uint8_t *)&addr6_pref3, 64),
 		      "Different IPv6 prefix test failed");
 
-	zassert_false(net_ipv6_is_prefix((u8_t *)&addr6_pref1,
-					 (u8_t *)&addr6_pref2, 128),
+	zassert_false(net_ipv6_is_prefix((uint8_t *)&addr6_pref1,
+					 (uint8_t *)&addr6_pref2, 128),
 		      "Different full IPv6 prefix test failed");
 
-	zassert_false(net_ipv6_is_prefix((u8_t *)&addr6_pref1,
-					 (u8_t *)&addr6_pref3, 255),
+	zassert_false(net_ipv6_is_prefix((uint8_t *)&addr6_pref1,
+					 (uint8_t *)&addr6_pref3, 255),
 		      "Too long prefix test failed");
 
 	ifmaddr1 = net_if_ipv6_maddr_add(net_if_get_default(), &mcast);

@@ -24,7 +24,7 @@ struct cfg_data {
 	/**
 	 * @brief Magic number for config data payloads (0x55CFDA7A).
 	 */
-	u32_t magic;
+	uint32_t magic;
 
 	/**
 	 * @brief The version number for the stored config record.
@@ -33,10 +33,10 @@ struct cfg_data {
 	 * definition changes to allow version management of config data at
 	 * the application level.
 	 */
-	u16_t version;
+	uint16_t version;
 
 	/** @brief 256-byte debug scratch area. */
-	u8_t scratch[256];
+	uint8_t scratch[256];
 };
 
 /**

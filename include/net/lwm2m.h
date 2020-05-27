@@ -128,8 +128,8 @@ struct lwm2m_ctx {
  *
  * @return Callback returns a pointer to the data buffer or NULL for failure.
  */
-typedef void *(*lwm2m_engine_get_data_cb_t)(u16_t obj_inst_id,
-					    u16_t res_id, u16_t res_inst_id,
+typedef void *(*lwm2m_engine_get_data_cb_t)(uint16_t obj_inst_id,
+					    uint16_t res_id, uint16_t res_inst_id,
 					    size_t *data_len);
 
 /**
@@ -157,9 +157,9 @@ typedef void *(*lwm2m_engine_get_data_cb_t)(u16_t obj_inst_id,
  * @return Callback returns a negative error code (errno.h) indicating
  *         reason of failure or 0 for success.
  */
-typedef int (*lwm2m_engine_set_data_cb_t)(u16_t obj_inst_id,
-					  u16_t res_id, u16_t res_inst_id,
-					  u8_t *data, u16_t data_len,
+typedef int (*lwm2m_engine_set_data_cb_t)(uint16_t obj_inst_id,
+					  uint16_t res_id, uint16_t res_inst_id,
+					  uint8_t *data, uint16_t data_len,
 					  bool last_block, size_t total_size);
 
 /**
@@ -179,7 +179,7 @@ typedef int (*lwm2m_engine_set_data_cb_t)(u16_t obj_inst_id,
  * @return Callback returns a negative error code (errno.h) indicating
  *         reason of failure or 0 for success.
  */
-typedef int (*lwm2m_engine_user_cb_t)(u16_t obj_inst_id);
+typedef int (*lwm2m_engine_user_cb_t)(uint16_t obj_inst_id);
 
 /**
  * @brief Power source types used for the "Available Power Sources" resource of
@@ -233,7 +233,7 @@ typedef int (*lwm2m_engine_user_cb_t)(u16_t obj_inst_id);
  * @return The newly added index of the power source.  The index is used
  *         for removing the power source, setting voltage or setting current.
  */
-__deprecated int lwm2m_device_add_pwrsrc(u8_t pwr_src_type);
+__deprecated int lwm2m_device_add_pwrsrc(uint8_t pwr_src_type);
 
 /**
  * @brief Remove power source previously registered in the LwM2M Device object.
@@ -274,7 +274,7 @@ __deprecated int lwm2m_device_set_pwrsrc_current_ma(int index, int current_ma);
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_device_add_err(u8_t error_code);
+int lwm2m_device_add_err(uint8_t error_code);
 
 
 /**
@@ -367,8 +367,8 @@ struct coap_block_context *lwm2m_firmware_get_block_context();
  * @brief 32-bit variant of the LwM2M float structure
  */
 typedef struct float32_value {
-	s32_t val1;
-	s32_t val2;
+	int32_t val1;
+	int32_t val2;
 } float32_value_t;
 
 /**
@@ -380,8 +380,8 @@ typedef struct float32_value {
  * @brief 32-bit variant of the LwM2M float structure
  */
 typedef struct float64_value {
-	s64_t val1;
-	s64_t val2;
+	int64_t val1;
+	int64_t val2;
 } float64_value_t;
 
 /**
@@ -406,7 +406,7 @@ int lwm2m_engine_create_obj_inst(char *pathstr);
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_set_opaque(char *pathstr, char *data_ptr, u16_t data_len);
+int lwm2m_engine_set_opaque(char *pathstr, char *data_ptr, uint16_t data_len);
 
 /**
  * @brief Set resource (instance) value (string)
@@ -426,7 +426,7 @@ int lwm2m_engine_set_string(char *pathstr, char *data_ptr);
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_set_u8(char *pathstr, u8_t value);
+int lwm2m_engine_set_u8(char *pathstr, uint8_t value);
 
 /**
  * @brief Set resource (instance) value (u16)
@@ -436,7 +436,7 @@ int lwm2m_engine_set_u8(char *pathstr, u8_t value);
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_set_u16(char *pathstr, u16_t value);
+int lwm2m_engine_set_u16(char *pathstr, uint16_t value);
 
 /**
  * @brief Set resource (instance) value (u32)
@@ -446,7 +446,7 @@ int lwm2m_engine_set_u16(char *pathstr, u16_t value);
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_set_u32(char *pathstr, u32_t value);
+int lwm2m_engine_set_u32(char *pathstr, uint32_t value);
 
 /**
  * @brief Set resource (instance) value (u64)
@@ -456,7 +456,7 @@ int lwm2m_engine_set_u32(char *pathstr, u32_t value);
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_set_u64(char *pathstr, u64_t value);
+int lwm2m_engine_set_u64(char *pathstr, uint64_t value);
 
 /**
  * @brief Set resource (instance) value (s8)
@@ -466,7 +466,7 @@ int lwm2m_engine_set_u64(char *pathstr, u64_t value);
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_set_s8(char *pathstr, s8_t value);
+int lwm2m_engine_set_s8(char *pathstr, int8_t value);
 
 /**
  * @brief Set resource (instance) value (s16)
@@ -476,7 +476,7 @@ int lwm2m_engine_set_s8(char *pathstr, s8_t value);
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_set_s16(char *pathstr, s16_t value);
+int lwm2m_engine_set_s16(char *pathstr, int16_t value);
 
 /**
  * @brief Set resource (instance) value (s32)
@@ -486,7 +486,7 @@ int lwm2m_engine_set_s16(char *pathstr, s16_t value);
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_set_s32(char *pathstr, s32_t value);
+int lwm2m_engine_set_s32(char *pathstr, int32_t value);
 
 /**
  * @brief Set resource (instance) value (s64)
@@ -496,7 +496,7 @@ int lwm2m_engine_set_s32(char *pathstr, s32_t value);
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_set_s64(char *pathstr, s64_t value);
+int lwm2m_engine_set_s64(char *pathstr, int64_t value);
 
 /**
  * @brief Set resource (instance) value (bool)
@@ -537,7 +537,7 @@ int lwm2m_engine_set_float64(char *pathstr, float64_value_t *value);
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_get_opaque(char *pathstr, void *buf, u16_t buflen);
+int lwm2m_engine_get_opaque(char *pathstr, void *buf, uint16_t buflen);
 
 /**
  * @brief Get resource (instance) value (string)
@@ -548,7 +548,7 @@ int lwm2m_engine_get_opaque(char *pathstr, void *buf, u16_t buflen);
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_get_string(char *pathstr, void *str, u16_t strlen);
+int lwm2m_engine_get_string(char *pathstr, void *str, uint16_t strlen);
 
 /**
  * @brief Get resource (instance) value (u8)
@@ -558,7 +558,7 @@ int lwm2m_engine_get_string(char *pathstr, void *str, u16_t strlen);
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_get_u8(char *pathstr, u8_t *value);
+int lwm2m_engine_get_u8(char *pathstr, uint8_t *value);
 
 /**
  * @brief Get resource (instance) value (u16)
@@ -568,7 +568,7 @@ int lwm2m_engine_get_u8(char *pathstr, u8_t *value);
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_get_u16(char *pathstr, u16_t *value);
+int lwm2m_engine_get_u16(char *pathstr, uint16_t *value);
 
 /**
  * @brief Get resource (instance) value (u32)
@@ -578,7 +578,7 @@ int lwm2m_engine_get_u16(char *pathstr, u16_t *value);
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_get_u32(char *pathstr, u32_t *value);
+int lwm2m_engine_get_u32(char *pathstr, uint32_t *value);
 
 /**
  * @brief Get resource (instance) value (u64)
@@ -588,7 +588,7 @@ int lwm2m_engine_get_u32(char *pathstr, u32_t *value);
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_get_u64(char *pathstr, u64_t *value);
+int lwm2m_engine_get_u64(char *pathstr, uint64_t *value);
 
 /**
  * @brief Get resource (instance) value (s8)
@@ -598,7 +598,7 @@ int lwm2m_engine_get_u64(char *pathstr, u64_t *value);
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_get_s8(char *pathstr, s8_t *value);
+int lwm2m_engine_get_s8(char *pathstr, int8_t *value);
 
 /**
  * @brief Get resource (instance) value (s16)
@@ -608,7 +608,7 @@ int lwm2m_engine_get_s8(char *pathstr, s8_t *value);
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_get_s16(char *pathstr, s16_t *value);
+int lwm2m_engine_get_s16(char *pathstr, int16_t *value);
 
 /**
  * @brief Get resource (instance) value (s32)
@@ -618,7 +618,7 @@ int lwm2m_engine_get_s16(char *pathstr, s16_t *value);
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_get_s32(char *pathstr, s32_t *value);
+int lwm2m_engine_get_s32(char *pathstr, int32_t *value);
 
 /**
  * @brief Get resource (instance) value (s64)
@@ -628,7 +628,7 @@ int lwm2m_engine_get_s32(char *pathstr, s32_t *value);
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_get_s64(char *pathstr, s64_t *value);
+int lwm2m_engine_get_s64(char *pathstr, int64_t *value);
 
 /**
  * @brief Get resource (instance) value (bool)
@@ -728,7 +728,7 @@ int lwm2m_engine_register_exec_callback(char *pathstr,
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_register_create_callback(u16_t obj_id,
+int lwm2m_engine_register_create_callback(uint16_t obj_id,
 					  lwm2m_engine_user_cb_t cb);
 
 /**
@@ -741,7 +741,7 @@ int lwm2m_engine_register_create_callback(u16_t obj_id,
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_register_delete_callback(u16_t obj_id,
+int lwm2m_engine_register_delete_callback(uint16_t obj_id,
 					  lwm2m_engine_user_cb_t cb);
 
 /**
@@ -772,8 +772,8 @@ int lwm2m_engine_register_delete_callback(u16_t obj_id,
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_set_res_data(char *pathstr, void *data_ptr, u16_t data_len,
-			      u8_t data_flags);
+int lwm2m_engine_set_res_data(char *pathstr, void *data_ptr, uint16_t data_len,
+			      uint8_t data_flags);
 
 /**
  * @brief Get data buffer for a resource
@@ -788,8 +788,8 @@ int lwm2m_engine_set_res_data(char *pathstr, void *data_ptr, u16_t data_len,
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_get_res_data(char *pathstr, void **data_ptr, u16_t *data_len,
-			      u8_t *data_flags);
+int lwm2m_engine_get_res_data(char *pathstr, void **data_ptr, uint16_t *data_len,
+			      uint8_t *data_flags);
 
 /**
  * @brief Create a resource instance

@@ -31,11 +31,11 @@ LOG_MODULE_REGISTER(pwm_stm32);
 
 #define CHANNEL_LENGTH 4
 
-static u32_t __get_tim_clk(u32_t bus_clk,
+static uint32_t __get_tim_clk(uint32_t bus_clk,
 			      clock_control_subsys_t *sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
-	u32_t tim_clk, apb_psc;
+	uint32_t tim_clk, apb_psc;
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
 	if (pclken->bus == STM32_CLOCK_BUS_APB1) {
@@ -107,14 +107,14 @@ static u32_t __get_tim_clk(u32_t bus_clk,
  *
  * return 0, or negative errno code
  */
-static int pwm_stm32_pin_set(struct device *dev, u32_t pwm,
-			     u32_t period_cycles, u32_t pulse_cycles,
+static int pwm_stm32_pin_set(struct device *dev, uint32_t pwm,
+			     uint32_t period_cycles, uint32_t pulse_cycles,
 			     pwm_flags_t flags)
 {
 	struct pwm_stm32_data *data = DEV_DATA(dev);
 	TIM_HandleTypeDef *TimerHandle = &data->hpwm;
 	TIM_OC_InitTypeDef sConfig;
-	u32_t channel;
+	uint32_t channel;
 	bool counter_32b;
 
 	if (period_cycles == 0U || pulse_cycles > period_cycles) {
@@ -194,12 +194,12 @@ static int pwm_stm32_pin_set(struct device *dev, u32_t pwm,
  *
  * return 0, or negative errno code
  */
-static int pwm_stm32_get_cycles_per_sec(struct device *dev, u32_t pwm,
-					u64_t *cycles)
+static int pwm_stm32_get_cycles_per_sec(struct device *dev, uint32_t pwm,
+					uint64_t *cycles)
 {
 	const struct pwm_stm32_config *cfg = DEV_CFG(dev);
 	struct pwm_stm32_data *data = DEV_DATA(dev);
-	u32_t bus_clk, tim_clk;
+	uint32_t bus_clk, tim_clk;
 
 	if (cycles == NULL) {
 		return -EINVAL;
@@ -215,7 +215,7 @@ static int pwm_stm32_get_cycles_per_sec(struct device *dev, u32_t pwm,
 	tim_clk = __get_tim_clk(bus_clk,
 			(clock_control_subsys_t *)&cfg->pclken);
 
-	*cycles = (u64_t)(tim_clk / (data->pwm_prescaler + 1));
+	*cycles = (uint64_t)(tim_clk / (data->pwm_prescaler + 1));
 
 	return 0;
 }

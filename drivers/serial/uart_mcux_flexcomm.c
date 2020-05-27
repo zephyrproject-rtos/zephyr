@@ -24,8 +24,8 @@
 
 struct mcux_flexcomm_config {
 	USART_Type *base;
-	u32_t clock_source;
-	u32_t baud_rate;
+	uint32_t clock_source;
+	uint32_t baud_rate;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(struct device *dev);
 #endif
@@ -41,7 +41,7 @@ struct mcux_flexcomm_data {
 static int mcux_flexcomm_poll_in(struct device *dev, unsigned char *c)
 {
 	const struct mcux_flexcomm_config *config = dev->config_info;
-	u32_t flags = USART_GetStatusFlags(config->base);
+	uint32_t flags = USART_GetStatusFlags(config->base);
 	int ret = -1;
 
 	if (flags & kUSART_RxFifoFullFlag) {
@@ -67,7 +67,7 @@ static void mcux_flexcomm_poll_out(struct device *dev,
 static int mcux_flexcomm_err_check(struct device *dev)
 {
 	const struct mcux_flexcomm_config *config = dev->config_info;
-	u32_t flags = USART_GetStatusFlags(config->base);
+	uint32_t flags = USART_GetStatusFlags(config->base);
 	int err = 0;
 
 	if (flags & kStatus_USART_RxRingBufferOverrun) {
@@ -91,11 +91,11 @@ static int mcux_flexcomm_err_check(struct device *dev)
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static int mcux_flexcomm_fifo_fill(struct device *dev, const u8_t *tx_data,
+static int mcux_flexcomm_fifo_fill(struct device *dev, const uint8_t *tx_data,
 			       int len)
 {
 	const struct mcux_flexcomm_config *config = dev->config_info;
-	u8_t num_tx = 0U;
+	uint8_t num_tx = 0U;
 
 	while ((len - num_tx > 0) &&
 	       (USART_GetStatusFlags(config->base)
@@ -107,11 +107,11 @@ static int mcux_flexcomm_fifo_fill(struct device *dev, const u8_t *tx_data,
 	return num_tx;
 }
 
-static int mcux_flexcomm_fifo_read(struct device *dev, u8_t *rx_data,
+static int mcux_flexcomm_fifo_read(struct device *dev, uint8_t *rx_data,
 			       const int len)
 {
 	const struct mcux_flexcomm_config *config = dev->config_info;
-	u8_t num_rx = 0U;
+	uint8_t num_rx = 0U;
 
 	while ((len - num_rx > 0) &&
 	       (USART_GetStatusFlags(config->base)
@@ -126,7 +126,7 @@ static int mcux_flexcomm_fifo_read(struct device *dev, u8_t *rx_data,
 static void mcux_flexcomm_irq_tx_enable(struct device *dev)
 {
 	const struct mcux_flexcomm_config *config = dev->config_info;
-	u32_t mask = kUSART_TxLevelInterruptEnable;
+	uint32_t mask = kUSART_TxLevelInterruptEnable;
 
 	USART_EnableInterrupts(config->base, mask);
 }
@@ -134,7 +134,7 @@ static void mcux_flexcomm_irq_tx_enable(struct device *dev)
 static void mcux_flexcomm_irq_tx_disable(struct device *dev)
 {
 	const struct mcux_flexcomm_config *config = dev->config_info;
-	u32_t mask = kUSART_TxLevelInterruptEnable;
+	uint32_t mask = kUSART_TxLevelInterruptEnable;
 
 	USART_DisableInterrupts(config->base, mask);
 }
@@ -142,7 +142,7 @@ static void mcux_flexcomm_irq_tx_disable(struct device *dev)
 static int mcux_flexcomm_irq_tx_complete(struct device *dev)
 {
 	const struct mcux_flexcomm_config *config = dev->config_info;
-	u32_t flags = USART_GetStatusFlags(config->base);
+	uint32_t flags = USART_GetStatusFlags(config->base);
 
 	return (flags & kUSART_TxFifoEmptyFlag) != 0U;
 }
@@ -150,7 +150,7 @@ static int mcux_flexcomm_irq_tx_complete(struct device *dev)
 static int mcux_flexcomm_irq_tx_ready(struct device *dev)
 {
 	const struct mcux_flexcomm_config *config = dev->config_info;
-	u32_t mask = kUSART_TxLevelInterruptEnable;
+	uint32_t mask = kUSART_TxLevelInterruptEnable;
 
 	return (USART_GetEnabledInterrupts(config->base) & mask)
 		&& mcux_flexcomm_irq_tx_complete(dev);
@@ -159,7 +159,7 @@ static int mcux_flexcomm_irq_tx_ready(struct device *dev)
 static void mcux_flexcomm_irq_rx_enable(struct device *dev)
 {
 	const struct mcux_flexcomm_config *config = dev->config_info;
-	u32_t mask = kUSART_RxLevelInterruptEnable;
+	uint32_t mask = kUSART_RxLevelInterruptEnable;
 
 	USART_EnableInterrupts(config->base, mask);
 }
@@ -167,7 +167,7 @@ static void mcux_flexcomm_irq_rx_enable(struct device *dev)
 static void mcux_flexcomm_irq_rx_disable(struct device *dev)
 {
 	const struct mcux_flexcomm_config *config = dev->config_info;
-	u32_t mask = kUSART_RxLevelInterruptEnable;
+	uint32_t mask = kUSART_RxLevelInterruptEnable;
 
 	USART_DisableInterrupts(config->base, mask);
 }
@@ -175,7 +175,7 @@ static void mcux_flexcomm_irq_rx_disable(struct device *dev)
 static int mcux_flexcomm_irq_rx_full(struct device *dev)
 {
 	const struct mcux_flexcomm_config *config = dev->config_info;
-	u32_t flags = USART_GetStatusFlags(config->base);
+	uint32_t flags = USART_GetStatusFlags(config->base);
 
 	return (flags & kUSART_RxFifoNotEmptyFlag) != 0U;
 }
@@ -183,7 +183,7 @@ static int mcux_flexcomm_irq_rx_full(struct device *dev)
 static int mcux_flexcomm_irq_rx_ready(struct device *dev)
 {
 	const struct mcux_flexcomm_config *config = dev->config_info;
-	u32_t mask = kUSART_RxLevelInterruptEnable;
+	uint32_t mask = kUSART_RxLevelInterruptEnable;
 
 	return (USART_GetEnabledInterrupts(config->base) & mask)
 		&& mcux_flexcomm_irq_rx_full(dev);
@@ -192,7 +192,7 @@ static int mcux_flexcomm_irq_rx_ready(struct device *dev)
 static void mcux_flexcomm_irq_err_enable(struct device *dev)
 {
 	const struct mcux_flexcomm_config *config = dev->config_info;
-	u32_t mask = kStatus_USART_NoiseError |
+	uint32_t mask = kStatus_USART_NoiseError |
 			kStatus_USART_FramingError |
 			kStatus_USART_ParityError;
 
@@ -202,7 +202,7 @@ static void mcux_flexcomm_irq_err_enable(struct device *dev)
 static void mcux_flexcomm_irq_err_disable(struct device *dev)
 {
 	const struct mcux_flexcomm_config *config = dev->config_info;
-	u32_t mask = kStatus_USART_NoiseError |
+	uint32_t mask = kStatus_USART_NoiseError |
 			kStatus_USART_FramingError |
 			kStatus_USART_ParityError;
 
@@ -246,7 +246,7 @@ static int mcux_flexcomm_init(struct device *dev)
 {
 	const struct mcux_flexcomm_config *config = dev->config_info;
 	usart_config_t usart_config;
-	u32_t clock_freq;
+	uint32_t clock_freq;
 
 	clock_freq = CLOCK_GetFlexCommClkFreq(config->clock_source);
 

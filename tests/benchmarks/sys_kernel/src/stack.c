@@ -143,7 +143,7 @@ void stack_thread3(void *par1, void *par2, void *par3)
  */
 int stack_test(void)
 {
-	u32_t t;
+	uint32_t t;
 	int i = 0;
 	int return_value = 0;
 

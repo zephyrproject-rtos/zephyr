@@ -207,7 +207,7 @@ void z_ztest_expect_data(const char *fn, const char *name, void *val)
 }
 
 void z_ztest_check_expected_data(const char *fn, const char *name, void *data,
-				 u32_t length)
+				 uint32_t length)
 {
 	struct parameter *param;
 	void *expected;

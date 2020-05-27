@@ -77,10 +77,10 @@ CTF Top-Layer Example
 The CTF_EVENT macro will serialize each argument to a field::
 
   /* Example for illustration */
-  static inline void ctf_top_foo(u32_t thread_id, ctf_bounded_string_t name)
+  static inline void ctf_top_foo(uint32_t thread_id, ctf_bounded_string_t name)
   {
     CTF_EVENT(
-      CTF_LITERAL(u8_t, 42),
+      CTF_LITERAL(uint8_t, 42),
       thread_id,
       name,
       "hello, I was emitted from function: ",

@@ -10,14 +10,14 @@
 #include <spinlock.h>
 #include <arch/cpu.h>
 
-#define CYC_PER_TICK	((u32_t)((u64_t)sys_clock_hw_cycles_per_sec() \
-			       / (u64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
+#define CYC_PER_TICK	((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec() \
+			       / (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
 
 #define MAX_TICKS	((0xffffffffu - CYC_PER_TICK) / CYC_PER_TICK)
 #define MIN_DELAY	(1000)
 
 static struct k_spinlock lock;
-static volatile u64_t last_cycle;
+static volatile uint64_t last_cycle;
 
 static void arm_arch_timer_compare_isr(void *arg)
 {
@@ -25,15 +25,15 @@ static void arm_arch_timer_compare_isr(void *arg)
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	u64_t curr_cycle = arm_arch_timer_count();
-	u32_t delta_ticks = (u32_t)((curr_cycle - last_cycle) / CYC_PER_TICK);
+	uint64_t curr_cycle = arm_arch_timer_count();
+	uint32_t delta_ticks = (uint32_t)((curr_cycle - last_cycle) / CYC_PER_TICK);
 
 	last_cycle += delta_ticks * CYC_PER_TICK;
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		u64_t next_cycle = last_cycle + CYC_PER_TICK;
+		uint64_t next_cycle = last_cycle + CYC_PER_TICK;
 
-		if ((s64_t)(next_cycle - curr_cycle) < MIN_DELAY) {
+		if ((int64_t)(next_cycle - curr_cycle) < MIN_DELAY) {
 			next_cycle += CYC_PER_TICK;
 		}
 		arm_arch_timer_set_compare(next_cycle);
@@ -57,7 +57,7 @@ int z_clock_driver_init(struct device *device)
 	return 0;
 }
 
-void z_clock_set_timeout(s32_t ticks, bool idle)
+void z_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -68,17 +68,17 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	}
 
 	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
-	ticks = MAX(MIN(ticks - 1, (s32_t)MAX_TICKS), 0);
+	ticks = MAX(MIN(ticks - 1, (int32_t)MAX_TICKS), 0);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	u64_t curr_cycle = arm_arch_timer_count();
-	u32_t req_cycle = ticks * CYC_PER_TICK;
+	uint64_t curr_cycle = arm_arch_timer_count();
+	uint32_t req_cycle = ticks * CYC_PER_TICK;
 
 	/* Round up to next tick boundary */
-	req_cycle += (u32_t)(curr_cycle - last_cycle) + (CYC_PER_TICK - 1);
+	req_cycle += (uint32_t)(curr_cycle - last_cycle) + (CYC_PER_TICK - 1);
 	req_cycle = (req_cycle / CYC_PER_TICK) * CYC_PER_TICK;
 
-	if ((s32_t)(req_cycle + last_cycle - curr_cycle) < MIN_DELAY) {
+	if ((int32_t)(req_cycle + last_cycle - curr_cycle) < MIN_DELAY) {
 		req_cycle += CYC_PER_TICK;
 	}
 
@@ -88,21 +88,21 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 #endif
 }
 
-u32_t z_clock_elapsed(void)
+uint32_t z_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	u32_t ret = ((u32_t)arm_arch_timer_count() - (u32_t)last_cycle)
+	uint32_t ret = ((uint32_t)arm_arch_timer_count() - (uint32_t)last_cycle)
 		    / CYC_PER_TICK;
 
 	k_spin_unlock(&lock, key);
 	return ret;
 }
 
-u32_t z_timer_cycle_get_32(void)
+uint32_t z_timer_cycle_get_32(void)
 {
-	return (u32_t)arm_arch_timer_count();
+	return (uint32_t)arm_arch_timer_count();
 }

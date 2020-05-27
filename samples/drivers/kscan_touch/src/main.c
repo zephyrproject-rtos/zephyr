@@ -19,7 +19,7 @@ struct device *kscan_dev;
 
 #define TOUCH_CONTROLLER_LABEL DT_LABEL(DT_ALIAS(kscan0))
 
-static void k_callback(struct device *dev, u32_t row, u32_t col, bool pressed)
+static void k_callback(struct device *dev, uint32_t row, uint32_t col, bool pressed)
 {
 	ARG_UNUSED(dev);
 	if (pressed) {

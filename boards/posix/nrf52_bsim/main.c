@@ -38,7 +38,7 @@ uint8_t inner_main_clean_up(int exit_code)
 
 	bs_clean_back_channels();
 
-	u8_t bst_result = bst_delete();
+	uint8_t bst_result = bst_delete();
 
 	if (bst_result != 0U) {
 		bs_trace_raw_time(2, "main: The TESTCASE FAILED with return "

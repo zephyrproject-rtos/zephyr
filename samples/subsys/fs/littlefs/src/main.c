@@ -93,7 +93,7 @@ void main(void)
 		goto out;
 	}
 
-	u32_t boot_count = 0;
+	uint32_t boot_count = 0;
 
 	if (rc >= 0) {
 		rc = fs_read(&file, &boot_count, sizeof(boot_count));

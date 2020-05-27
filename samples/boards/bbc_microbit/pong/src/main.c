@@ -88,7 +88,7 @@ static const struct pong_choice mode_choice[] = {
 
 static bool remote_lost;
 static bool started;
-static s64_t ended;
+static int64_t ended;
 
 static struct k_delayed_work refresh;
 
@@ -104,8 +104,8 @@ static struct x_y ball_pos = BALL_START;
 /* Ball velocity */
 static struct x_y ball_vel = { 0, 0 };
 
-static s64_t a_timestamp;
-static s64_t b_timestamp;
+static int64_t a_timestamp;
+static int64_t b_timestamp;
 
 #define SOUND_PIN            EXT_P0_GPIO_PIN
 #define SOUND_PERIOD_PADDLE  200
@@ -230,8 +230,8 @@ static bool ball_visible(void)
 
 static void check_start(void)
 {
-	u32_t delta;
-	u8_t rnd;
+	uint32_t delta;
+	uint8_t rnd;
 
 	if (!a_timestamp || !b_timestamp) {
 		return;
@@ -380,7 +380,7 @@ static void game_refresh(struct k_work *work)
 	k_sem_give(&disp_update);
 }
 
-void pong_ball_received(s8_t x_pos, s8_t y_pos, s8_t x_vel, s8_t y_vel)
+void pong_ball_received(int8_t x_pos, int8_t y_pos, int8_t x_vel, int8_t y_vel)
 {
 	printk("ball_received(%d, %d, %d, %d)\n", x_pos, y_pos, x_vel, y_vel);
 
@@ -393,7 +393,7 @@ void pong_ball_received(s8_t x_pos, s8_t y_pos, s8_t x_vel, s8_t y_vel)
 }
 
 static void button_pressed(struct device *dev, struct gpio_callback *cb,
-			   u32_t pins)
+			   uint32_t pins)
 {
 	/* Filter out spurious presses */
 	if (pins & BIT(DT_GPIO_PIN(DT_ALIAS(sw0), gpios))) {

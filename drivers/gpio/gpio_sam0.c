@@ -24,7 +24,7 @@ struct gpio_sam0_config {
 	struct gpio_driver_config common;
 	PortGroup *regs;
 #ifdef CONFIG_SAM0_EIC
-	u8_t id;
+	uint8_t id;
 #endif
 };
 
@@ -43,7 +43,7 @@ struct gpio_sam0_data {
 	((struct gpio_sam0_data *const)(dev)->driver_data)
 
 #ifdef CONFIG_SAM0_EIC
-static void gpio_sam0_isr(u32_t pins, void *arg)
+static void gpio_sam0_isr(uint32_t pins, void *arg)
 {
 	struct device *const dev = (struct device *) arg;
 	struct gpio_sam0_data *const data = DEV_DATA(dev);
@@ -122,7 +122,7 @@ static int gpio_sam0_port_set_masked_raw(struct device *dev,
 					 gpio_port_value_t value)
 {
 	const struct gpio_sam0_config *config = DEV_CFG(dev);
-	u32_t out = config->regs->OUT.reg;
+	uint32_t out = config->regs->OUT.reg;
 
 	config->regs->OUT.reg = (out & ~mask) | (value & mask);
 
@@ -274,7 +274,7 @@ int gpio_sam0_disable_callback(struct device *dev, gpio_pin_t pin)
 	return sam0_eic_disable_interrupt(config->id, pin);
 }
 
-static u32_t gpio_sam0_get_pending_int(struct device *dev)
+static uint32_t gpio_sam0_get_pending_int(struct device *dev)
 {
 	const struct gpio_sam0_config *config = DEV_CFG(dev);
 

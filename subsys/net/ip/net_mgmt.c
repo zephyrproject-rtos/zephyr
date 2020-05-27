@@ -19,11 +19,11 @@ LOG_MODULE_REGISTER(net_mgmt, CONFIG_NET_MGMT_EVENT_LOG_LEVEL);
 #include "net_private.h"
 
 struct mgmt_event_entry {
-	u32_t event;
+	uint32_t event;
 	struct net_if *iface;
 
 #ifdef CONFIG_NET_MGMT_EVENT_INFO
-	u8_t info[NET_EVENT_INFO_MAX_SIZE];
+	uint8_t info[NET_EVENT_INFO_MAX_SIZE];
 	size_t info_length;
 #endif /* CONFIG_NET_MGMT_EVENT_INFO */
 };
@@ -39,15 +39,15 @@ static K_SEM_DEFINE(net_mgmt_lock, 1, 1);
 K_THREAD_STACK_DEFINE(mgmt_stack, CONFIG_NET_MGMT_EVENT_STACK_SIZE);
 static struct k_thread mgmt_thread_data;
 static struct mgmt_event_entry events[CONFIG_NET_MGMT_EVENT_QUEUE_SIZE];
-static u32_t global_event_mask;
+static uint32_t global_event_mask;
 static sys_slist_t event_callbacks;
-static s16_t in_event;
-static s16_t out_event;
+static int16_t in_event;
+static int16_t out_event;
 
-static inline void mgmt_push_event(u32_t mgmt_event, struct net_if *iface,
+static inline void mgmt_push_event(uint32_t mgmt_event, struct net_if *iface,
 				   void *info, size_t length)
 {
-	s16_t i_idx;
+	int16_t i_idx;
 
 #ifndef CONFIG_NET_MGMT_EVENT_INFO
 	ARG_UNUSED(info);
@@ -82,7 +82,7 @@ static inline void mgmt_push_event(u32_t mgmt_event, struct net_if *iface,
 	events[i_idx].iface = iface;
 
 	if (i_idx == out_event) {
-		u16_t o_idx = out_event + 1;
+		uint16_t o_idx = out_event + 1;
 
 		if (o_idx == CONFIG_NET_MGMT_EVENT_QUEUE_SIZE) {
 			o_idx = 0U;
@@ -102,7 +102,7 @@ static inline void mgmt_push_event(u32_t mgmt_event, struct net_if *iface,
 
 static inline struct mgmt_event_entry *mgmt_pop_event(void)
 {
-	s16_t o_idx;
+	int16_t o_idx;
 
 	if (out_event < 0 || !events[out_event].event) {
 		return NULL;
@@ -127,7 +127,7 @@ static inline void mgmt_clean_event(struct mgmt_event_entry *mgmt_event)
 	mgmt_event->iface = NULL;
 }
 
-static inline void mgmt_add_event_mask(u32_t event_mask)
+static inline void mgmt_add_event_mask(uint32_t event_mask)
 {
 	global_event_mask |= event_mask;
 }
@@ -143,7 +143,7 @@ static inline void mgmt_rebuild_global_event_mask(void)
 	}
 }
 
-static inline bool mgmt_is_event_handled(u32_t mgmt_event)
+static inline bool mgmt_is_event_handled(uint32_t mgmt_event)
 {
 	return (((NET_MGMT_GET_LAYER(mgmt_event) &
 		  NET_MGMT_GET_LAYER(global_event_mask)) ==
@@ -256,8 +256,8 @@ static void mgmt_thread(void)
 }
 
 static int mgmt_event_wait_call(struct net_if *iface,
-				u32_t mgmt_event_mask,
-				u32_t *raised_event,
+				uint32_t mgmt_event_mask,
+				uint32_t *raised_event,
 				struct net_if **event_iface,
 				const void **info,
 				size_t *info_length,
@@ -334,7 +334,7 @@ void net_mgmt_del_event_callback(struct net_mgmt_event_callback *cb)
 	k_sem_give(&net_mgmt_lock);
 }
 
-void net_mgmt_event_notify_with_info(u32_t mgmt_event, struct net_if *iface,
+void net_mgmt_event_notify_with_info(uint32_t mgmt_event, struct net_if *iface,
 				     void *info, size_t length)
 {
 	if (mgmt_is_event_handled(mgmt_event)) {
@@ -348,8 +348,8 @@ void net_mgmt_event_notify_with_info(u32_t mgmt_event, struct net_if *iface,
 	}
 }
 
-int net_mgmt_event_wait(u32_t mgmt_event_mask,
-			u32_t *raised_event,
+int net_mgmt_event_wait(uint32_t mgmt_event_mask,
+			uint32_t *raised_event,
 			struct net_if **iface,
 			const void **info,
 			size_t *info_length,
@@ -361,8 +361,8 @@ int net_mgmt_event_wait(u32_t mgmt_event_mask,
 }
 
 int net_mgmt_event_wait_on_iface(struct net_if *iface,
-				 u32_t mgmt_event_mask,
-				 u32_t *raised_event,
+				 uint32_t mgmt_event_mask,
+				 uint32_t *raised_event,
 				 const void **info,
 				 size_t *info_length,
 				 k_timeout_t timeout)

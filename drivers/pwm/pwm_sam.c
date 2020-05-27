@@ -17,19 +17,19 @@ LOG_MODULE_REGISTER(pwm_sam);
 
 struct sam_pwm_config {
 	Pwm *regs;
-	u32_t id;
-	u8_t prescaler;
-	u8_t divider;
+	uint32_t id;
+	uint8_t prescaler;
+	uint8_t divider;
 };
 
 #define DEV_CFG(dev) \
 	((const struct sam_pwm_config * const)(dev)->config_info)
 
-static int sam_pwm_get_cycles_per_sec(struct device *dev, u32_t pwm,
-				      u64_t *cycles)
+static int sam_pwm_get_cycles_per_sec(struct device *dev, uint32_t pwm,
+				      uint64_t *cycles)
 {
-	u8_t prescaler = DEV_CFG(dev)->prescaler;
-	u8_t divider = DEV_CFG(dev)->divider;
+	uint8_t prescaler = DEV_CFG(dev)->prescaler;
+	uint8_t divider = DEV_CFG(dev)->divider;
 
 	*cycles = SOC_ATMEL_SAM_MCK_FREQ_HZ /
 		  ((1 << prescaler) * divider);
@@ -37,8 +37,8 @@ static int sam_pwm_get_cycles_per_sec(struct device *dev, u32_t pwm,
 	return 0;
 }
 
-static int sam_pwm_pin_set(struct device *dev, u32_t ch,
-			   u32_t period_cycles, u32_t pulse_cycles,
+static int sam_pwm_pin_set(struct device *dev, uint32_t ch,
+			   uint32_t period_cycles, uint32_t pulse_cycles,
 			   pwm_flags_t flags)
 {
 	Pwm *const pwm = DEV_CFG(dev)->regs;
@@ -78,9 +78,9 @@ static int sam_pwm_pin_set(struct device *dev, u32_t ch,
 static int sam_pwm_init(struct device *dev)
 {
 	Pwm *const pwm = DEV_CFG(dev)->regs;
-	u32_t id = DEV_CFG(dev)->id;
-	u8_t prescaler = DEV_CFG(dev)->prescaler;
-	u8_t divider = DEV_CFG(dev)->divider;
+	uint32_t id = DEV_CFG(dev)->id;
+	uint8_t prescaler = DEV_CFG(dev)->prescaler;
+	uint8_t divider = DEV_CFG(dev)->divider;
 
 	/* FIXME: way to validate prescaler & divider */
 

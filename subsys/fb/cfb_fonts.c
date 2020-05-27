@@ -14,7 +14,7 @@
 #define CFB_FONTS_FIRST_CHAR	32
 #define CFB_FONTS_LAST_CHAR	126
 
-const u8_t cfb_font_1016[95][20] = {
+const uint8_t cfb_font_1016[95][20] = {
 	/*   */
 	{
 		0x00, 0x00,
@@ -1252,7 +1252,7 @@ const u8_t cfb_font_1016[95][20] = {
 	},
 };
 
-const u8_t cfb_font_1524[95][45] = {
+const uint8_t cfb_font_1524[95][45] = {
 	/*   */
 	{
 		0x00, 0x00, 0x00,
@@ -2965,7 +2965,7 @@ const u8_t cfb_font_1524[95][45] = {
 	},
 };
 
-const u8_t cfb_font_2032[95][80] = {
+const uint8_t cfb_font_2032[95][80] = {
 	/*   */
 	{
 		0x00, 0x00, 0x00, 0x00,

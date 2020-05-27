@@ -162,7 +162,7 @@ struct sys_notify {
 	 * are zeroed by the async notify API init functions, and will
 	 * be zeroed by sys_notify_finalize().
 	 */
-	u32_t volatile flags;
+	uint32_t volatile flags;
 
 	/*
 	 * The result of the operation.
@@ -175,9 +175,9 @@ struct sys_notify {
 };
 
 /** @internal */
-static inline u32_t sys_notify_get_method(const struct sys_notify *notify)
+static inline uint32_t sys_notify_get_method(const struct sys_notify *notify)
 {
-	u32_t method = notify->flags >> SYS_NOTIFY_METHOD_POS;
+	uint32_t method = notify->flags >> SYS_NOTIFY_METHOD_POS;
 
 	return method & SYS_NOTIFY_METHOD_MASK;
 }

@@ -45,18 +45,18 @@ static K_THREAD_STACK_DEFINE(tx_stack, 1024);
 static struct k_thread tx_thread_data;
 
 /* Buffer for SLIP encoded data for the worst case */
-static u8_t slip_buf[1 + 2 * CONFIG_NET_BUF_DATA_SIZE];
+static uint8_t slip_buf[1 + 2 * CONFIG_NET_BUF_DATA_SIZE];
 
 /* ieee802.15.4 device */
 static struct ieee802154_radio_api *radio_api;
 static struct device *ieee802154_dev;
-u8_t mac_addr[8];
+uint8_t mac_addr[8];
 
 /* UART device */
 static struct device *uart_dev;
 
 /* SLIP state machine */
-static u8_t slip_state = STATE_OK;
+static uint8_t slip_state = STATE_OK;
 
 static struct net_pkt *pkt_curr;
 
@@ -158,7 +158,7 @@ static void interrupt_handler(struct device *dev)
 }
 
 /* Allocate and send data to USB Host */
-static void send_data(u8_t *cfg, u8_t *data, size_t len)
+static void send_data(uint8_t *cfg, uint8_t *data, size_t len)
 {
 	struct net_pkt *pkt;
 
@@ -187,8 +187,8 @@ static void send_data(u8_t *cfg, u8_t *data, size_t len)
 
 static void get_ieee_addr(void)
 {
-	u8_t cfg[2] = { '!', 'M' };
-	u8_t mac[8];
+	uint8_t cfg[2] = { '!', 'M' };
+	uint8_t mac[8];
 
 	LOG_DBG("");
 
@@ -200,7 +200,7 @@ static void get_ieee_addr(void)
 
 static void process_request(struct net_buf *buf)
 {
-	u8_t cmd = net_buf_pull_u8(buf);
+	uint8_t cmd = net_buf_pull_u8(buf);
 
 
 	switch (cmd) {
@@ -213,10 +213,10 @@ static void process_request(struct net_buf *buf)
 	}
 }
 
-static void send_pkt_report(u8_t seq, u8_t status, u8_t num_tx)
+static void send_pkt_report(uint8_t seq, uint8_t status, uint8_t num_tx)
 {
-	u8_t cfg[2] = { '!', 'R' };
-	u8_t report[3];
+	uint8_t cfg[2] = { '!', 'R' };
+	uint8_t report[3];
 
 	report[0] = seq;
 	report[1] = status;
@@ -228,7 +228,7 @@ static void send_pkt_report(u8_t seq, u8_t status, u8_t num_tx)
 static void process_data(struct net_pkt *pkt)
 {
 	struct net_buf *buf = net_buf_frag_last(pkt->buffer);
-	u8_t seq, num_attr;
+	uint8_t seq, num_attr;
 	int ret, i;
 
 	seq = net_buf_pull_u8(buf);
@@ -262,7 +262,7 @@ static void process_data(struct net_pkt *pkt)
 	send_pkt_report(seq, ret, 1);
 }
 
-static void set_channel(u8_t chan)
+static void set_channel(uint8_t chan)
 {
 	LOG_DBG("Set channel %u", chan);
 
@@ -272,7 +272,7 @@ static void set_channel(u8_t chan)
 static void process_config(struct net_pkt *pkt)
 {
 	struct net_buf *buf = net_buf_frag_last(pkt->buffer);
-	u8_t cmd = net_buf_pull_u8(buf);
+	uint8_t cmd = net_buf_pull_u8(buf);
 
 	LOG_DBG("Process config %c", cmd);
 
@@ -295,7 +295,7 @@ static void rx_thread(void)
 	while (true) {
 		struct net_pkt *pkt;
 		struct net_buf *buf;
-		u8_t specifier;
+		uint8_t specifier;
 
 		pkt = k_fifo_get(&rx_queue, K_FOREVER);
 		buf = net_buf_frag_last(pkt->buffer);
@@ -322,10 +322,10 @@ static void rx_thread(void)
 	}
 }
 
-static size_t slip_buffer(u8_t *sbuf, struct net_buf *buf)
+static size_t slip_buffer(uint8_t *sbuf, struct net_buf *buf)
 {
 	size_t len = buf->len;
-	u8_t *sbuf_orig = sbuf;
+	uint8_t *sbuf_orig = sbuf;
 	int i;
 
 	/**
@@ -334,7 +334,7 @@ static size_t slip_buffer(u8_t *sbuf, struct net_buf *buf)
 	 */
 
 	for (i = 0; i < len; i++) {
-		u8_t byte = net_buf_pull_u8(buf);
+		uint8_t byte = net_buf_pull_u8(buf);
 
 		switch (byte) {
 		case SLIP_END:
@@ -355,7 +355,7 @@ static size_t slip_buffer(u8_t *sbuf, struct net_buf *buf)
 	return sbuf - sbuf_orig;
 }
 
-static int try_write(u8_t *data, u16_t len)
+static int try_write(uint8_t *data, uint16_t len)
 {
 	int wrote;
 
@@ -427,9 +427,9 @@ static void init_tx_queue(void)
 /**
  * FIXME choose correct OUI, or add support in L2
  */
-static u8_t *get_mac(struct device *dev)
+static uint8_t *get_mac(struct device *dev)
 {
-	u32_t *ptr = (u32_t *)mac_addr;
+	uint32_t *ptr = (uint32_t *)mac_addr;
 
 	mac_addr[7] = 0x00;
 	mac_addr[6] = 0x12;
@@ -463,7 +463,7 @@ static bool init_ieee802154(void)
 	if (IEEE802154_HW_FILTER &
 	    radio_api->get_capabilities(ieee802154_dev)) {
 		struct ieee802154_filter filter;
-		u16_t short_addr;
+		uint16_t short_addr;
 
 		/* Set short address */
 		short_addr = (mac_addr[0] << 8) + mac_addr[1];
@@ -514,7 +514,7 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 void main(void)
 {
 	struct device *dev;
-	u32_t baudrate, dtr = 0U;
+	uint32_t baudrate, dtr = 0U;
 	int ret;
 
 	LOG_INF("Starting wpan_serial application");

@@ -37,10 +37,10 @@ int amg88xx_attr_set(struct device *dev,
 {
 	struct amg88xx_data *drv_data = dev->driver_data;
 	const struct amg88xx_config *config = dev->config_info;
-	s16_t int_level = (val->val1 * 1000000 + val->val2) /
+	int16_t int_level = (val->val1 * 1000000 + val->val2) /
 			  AMG88XX_TREG_LSB_SCALING;
-	u8_t intl_reg;
-	u8_t inth_reg;
+	uint8_t intl_reg;
+	uint8_t inth_reg;
 
 	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
 		return -ENOTSUP;
@@ -59,13 +59,13 @@ int amg88xx_attr_set(struct device *dev,
 	}
 
 	if (i2c_reg_write_byte(drv_data->i2c, config->i2c_address,
-			       intl_reg, (u8_t)int_level)) {
+			       intl_reg, (uint8_t)int_level)) {
 		LOG_DBG("Failed to set INTxL attribute!");
 		return -EIO;
 	}
 
 	if (i2c_reg_write_byte(drv_data->i2c, config->i2c_address,
-			       inth_reg, (u8_t)(int_level >> 8))) {
+			       inth_reg, (uint8_t)(int_level >> 8))) {
 		LOG_DBG("Failed to set INTxH attribute!");
 		return -EIO;
 	}
@@ -74,7 +74,7 @@ int amg88xx_attr_set(struct device *dev,
 }
 
 static void amg88xx_gpio_callback(struct device *dev,
-				  struct gpio_callback *cb, u32_t pins)
+				  struct gpio_callback *cb, uint32_t pins)
 {
 	struct amg88xx_data *drv_data =
 		CONTAINER_OF(cb, struct amg88xx_data, gpio_cb);
@@ -93,7 +93,7 @@ static void amg88xx_thread_cb(void *arg)
 	struct device *dev = arg;
 	struct amg88xx_data *drv_data = dev->driver_data;
 	const struct amg88xx_config *config = dev->config_info;
-	u8_t status;
+	uint8_t status;
 
 	if (i2c_reg_read_byte(drv_data->i2c, config->i2c_address,
 			      AMG88XX_STAT, &status) < 0) {

@@ -26,10 +26,10 @@
 /**
  * This internal function initializes a MPU region
  */
-static inline void _region_init(u32_t index, u32_t region_addr, u32_t size,
-				u32_t region_attr)
+static inline void _region_init(uint32_t index, uint32_t region_addr, uint32_t size,
+				uint32_t region_attr)
 {
-	u8_t bits = find_msb_set(size) - 1;
+	uint8_t bits = find_msb_set(size) - 1;
 
 	index = index * 2U;
 
@@ -57,7 +57,7 @@ static inline void _region_init(u32_t index, u32_t region_addr, u32_t size,
  * This internal function is utilized by the MPU driver to parse the intent
  * type (i.e. THREAD_STACK_REGION) and return the correct region index.
  */
-static inline int get_region_index_by_type(u32_t type)
+static inline int get_region_index_by_type(uint32_t type)
 {
 	/*
 	 * The new MPU regions are allocated per type after the statically
@@ -90,7 +90,7 @@ static inline int get_region_index_by_type(u32_t type)
 /**
  * This internal function checks if region is enabled or not
  */
-static inline bool _is_enabled_region(u32_t r_index)
+static inline bool _is_enabled_region(uint32_t r_index)
 {
 	return ((z_arc_v2_aux_reg_read(_ARC_V2_MPU_RDB0 + r_index * 2U)
 		 & AUX_MPU_RDB_VALID_MASK) == AUX_MPU_RDB_VALID_MASK);
@@ -99,11 +99,11 @@ static inline bool _is_enabled_region(u32_t r_index)
 /**
  * This internal function check if the given buffer in in the region
  */
-static inline bool _is_in_region(u32_t r_index, u32_t start, u32_t size)
+static inline bool _is_in_region(uint32_t r_index, uint32_t start, uint32_t size)
 {
-	u32_t r_addr_start;
-	u32_t r_addr_end;
-	u32_t r_size_lshift;
+	uint32_t r_addr_start;
+	uint32_t r_addr_end;
+	uint32_t r_size_lshift;
 
 	r_addr_start = z_arc_v2_aux_reg_read(_ARC_V2_MPU_RDB0 + r_index * 2U)
 		       & (~AUX_MPU_RDB_VALID_MASK);
@@ -122,9 +122,9 @@ static inline bool _is_in_region(u32_t r_index, u32_t start, u32_t size)
 /**
  * This internal function check if the region is user accessible or not
  */
-static inline bool _is_user_accessible_region(u32_t r_index, int write)
+static inline bool _is_user_accessible_region(uint32_t r_index, int write)
 {
-	u32_t r_ap;
+	uint32_t r_ap;
 
 	r_ap = z_arc_v2_aux_reg_read(_ARC_V2_MPU_RDP0 + r_index * 2U);
 
@@ -146,10 +146,10 @@ static inline bool _is_user_accessible_region(u32_t r_index, int write)
  * @param base base address in RAM
  * @param size size of the region
  */
-static inline int _mpu_configure(u8_t type, u32_t base, u32_t size)
+static inline int _mpu_configure(uint8_t type, uint32_t base, uint32_t size)
 {
-	s32_t region_index =  get_region_index_by_type(type);
-	u32_t region_attr = get_region_attr_by_type(type);
+	int32_t region_index =  get_region_index_by_type(type);
+	uint32_t region_attr = get_region_attr_by_type(type);
 
 	LOG_DBG("Region info: 0x%x 0x%x", base, size);
 
@@ -200,7 +200,7 @@ void arc_core_mpu_configure_thread(struct k_thread *thread)
 	if (thread->base.user_options & K_USER) {
 		LOG_DBG("configure user thread %p's stack", thread);
 		if (_mpu_configure(THREAD_STACK_USER_REGION,
-		(u32_t)thread->stack_obj, thread->stack_info.size) < 0) {
+		(uint32_t)thread->stack_obj, thread->stack_info.size) < 0) {
 			LOG_ERR("user thread %p's stack failed", thread);
 			return;
 		}
@@ -217,9 +217,9 @@ void arc_core_mpu_configure_thread(struct k_thread *thread)
  *
  * @param region_attr region attribute of default region
  */
-void arc_core_mpu_default(u32_t region_attr)
+void arc_core_mpu_default(uint32_t region_attr)
 {
-	u32_t val =  z_arc_v2_aux_reg_read(_ARC_V2_MPU_EN) &
+	uint32_t val =  z_arc_v2_aux_reg_read(_ARC_V2_MPU_EN) &
 		    (~AUX_MPU_RDP_ATTR_MASK);
 
 	region_attr &= AUX_MPU_RDP_ATTR_MASK;
@@ -234,8 +234,8 @@ void arc_core_mpu_default(u32_t region_attr)
  * @param base    base address
  * @param region_attr region attribute
  */
-int arc_core_mpu_region(u32_t index, u32_t base, u32_t size,
-			 u32_t region_attr)
+int arc_core_mpu_region(uint32_t index, uint32_t base, uint32_t size,
+			 uint32_t region_attr)
 {
 	if (index >= get_num_regions()) {
 		return -EINVAL;
@@ -259,7 +259,7 @@ void arc_core_mpu_configure_mem_domain(struct k_thread *thread)
 {
 	int region_index =
 		get_region_index_by_type(THREAD_DOMAIN_PARTITION_REGION);
-	u32_t num_partitions;
+	uint32_t num_partitions;
 	struct k_mem_partition *pparts;
 	struct k_mem_domain *mem_domain = NULL;
 
@@ -316,7 +316,7 @@ void arc_core_mpu_remove_mem_domain(struct k_mem_domain *mem_domain)
  * @param partition_id  memory partition id
  */
 void arc_core_mpu_remove_mem_partition(struct k_mem_domain *domain,
-			u32_t part_id)
+			uint32_t part_id)
 {
 	ARG_UNUSED(domain);
 
@@ -351,7 +351,7 @@ int arc_core_mpu_buffer_validate(void *addr, size_t size, int write)
 	 */
 	for (r_index = 0; r_index < get_num_regions(); r_index++) {
 		if (!_is_enabled_region(r_index) ||
-		    !_is_in_region(r_index, (u32_t)addr, size)) {
+		    !_is_in_region(r_index, (uint32_t)addr, size)) {
 			continue;
 		}
 
@@ -377,8 +377,8 @@ static int arc_mpu_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
 
-	u32_t num_regions;
-	u32_t i;
+	uint32_t num_regions;
+	uint32_t i;
 
 	num_regions = get_num_regions();
 

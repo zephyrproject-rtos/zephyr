@@ -13,13 +13,13 @@
 /* LMP90xxx supports GPIO D0..D6 */
 #define LMP90XXX_GPIO_MAX 6
 
-int lmp90xxx_gpio_set_output(struct device *dev, u8_t pin);
+int lmp90xxx_gpio_set_output(struct device *dev, uint8_t pin);
 
-int lmp90xxx_gpio_set_input(struct device *dev, u8_t pin);
+int lmp90xxx_gpio_set_input(struct device *dev, uint8_t pin);
 
-int lmp90xxx_gpio_set_pin_value(struct device *dev, u8_t pin, bool value);
+int lmp90xxx_gpio_set_pin_value(struct device *dev, uint8_t pin, bool value);
 
-int lmp90xxx_gpio_get_pin_value(struct device *dev, u8_t pin, bool *value);
+int lmp90xxx_gpio_get_pin_value(struct device *dev, uint8_t pin, bool *value);
 
 int lmp90xxx_gpio_port_get_raw(struct device *dev, gpio_port_value_t *value);
 

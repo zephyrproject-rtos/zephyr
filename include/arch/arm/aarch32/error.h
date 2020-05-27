@@ -33,7 +33,7 @@ extern "C" {
  * Force them unlocked as well.
  */
 #define ARCH_EXCEPT(reason_p) \
-register u32_t r0 __asm__("r0") = reason_p; \
+register uint32_t r0 __asm__("r0") = reason_p; \
 do { \
 	__asm__ volatile ( \
 		"cpsie i\n\t" \

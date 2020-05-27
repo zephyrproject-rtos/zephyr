@@ -34,11 +34,11 @@ static struct spi_config lis2ds12_spi_conf = {
 	.cs        = NULL,
 };
 
-static int lis2ds12_raw_read(struct lis2ds12_data *data, u8_t reg_addr,
-			    u8_t *value, u8_t len)
+static int lis2ds12_raw_read(struct lis2ds12_data *data, uint8_t reg_addr,
+			    uint8_t *value, uint8_t len)
 {
 	struct spi_config *spi_cfg = &lis2ds12_spi_conf;
-	u8_t buffer_tx[2] = { reg_addr | LIS2DS12_SPI_READ, 0 };
+	uint8_t buffer_tx[2] = { reg_addr | LIS2DS12_SPI_READ, 0 };
 	const struct spi_buf tx_buf = {
 			.buf = buffer_tx,
 			.len = 2,
@@ -74,11 +74,11 @@ static int lis2ds12_raw_read(struct lis2ds12_data *data, u8_t reg_addr,
 	return 0;
 }
 
-static int lis2ds12_raw_write(struct lis2ds12_data *data, u8_t reg_addr,
-			     u8_t *value, u8_t len)
+static int lis2ds12_raw_write(struct lis2ds12_data *data, uint8_t reg_addr,
+			     uint8_t *value, uint8_t len)
 {
 	struct spi_config *spi_cfg = &lis2ds12_spi_conf;
-	u8_t buffer_tx[1] = { reg_addr & ~LIS2DS12_SPI_READ };
+	uint8_t buffer_tx[1] = { reg_addr & ~LIS2DS12_SPI_READ };
 	const struct spi_buf tx_buf[2] = {
 		{
 			.buf = buffer_tx,
@@ -106,36 +106,36 @@ static int lis2ds12_raw_write(struct lis2ds12_data *data, u8_t reg_addr,
 	return 0;
 }
 
-static int lis2ds12_spi_read_data(struct lis2ds12_data *data, u8_t reg_addr,
-				 u8_t *value, u8_t len)
+static int lis2ds12_spi_read_data(struct lis2ds12_data *data, uint8_t reg_addr,
+				 uint8_t *value, uint8_t len)
 {
 	return lis2ds12_raw_read(data, reg_addr, value, len);
 }
 
-static int lis2ds12_spi_write_data(struct lis2ds12_data *data, u8_t reg_addr,
-				  u8_t *value, u8_t len)
+static int lis2ds12_spi_write_data(struct lis2ds12_data *data, uint8_t reg_addr,
+				  uint8_t *value, uint8_t len)
 {
 	return lis2ds12_raw_write(data, reg_addr, value, len);
 }
 
-static int lis2ds12_spi_read_reg(struct lis2ds12_data *data, u8_t reg_addr,
-				u8_t *value)
+static int lis2ds12_spi_read_reg(struct lis2ds12_data *data, uint8_t reg_addr,
+				uint8_t *value)
 {
 	return lis2ds12_raw_read(data, reg_addr, value, 1);
 }
 
-static int lis2ds12_spi_write_reg(struct lis2ds12_data *data, u8_t reg_addr,
-				u8_t value)
+static int lis2ds12_spi_write_reg(struct lis2ds12_data *data, uint8_t reg_addr,
+				uint8_t value)
 {
-	u8_t tmp_val = value;
+	uint8_t tmp_val = value;
 
 	return lis2ds12_raw_write(data, reg_addr, &tmp_val, 1);
 }
 
-static int lis2ds12_spi_update_reg(struct lis2ds12_data *data, u8_t reg_addr,
-				  u8_t mask, u8_t value)
+static int lis2ds12_spi_update_reg(struct lis2ds12_data *data, uint8_t reg_addr,
+				  uint8_t mask, uint8_t value)
 {
-	u8_t tmp_val;
+	uint8_t tmp_val;
 
 	lis2ds12_raw_read(data, reg_addr, &tmp_val, 1);
 	tmp_val = (tmp_val & ~mask) | (value & mask);

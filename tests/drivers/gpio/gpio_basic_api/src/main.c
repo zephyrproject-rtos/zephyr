@@ -100,7 +100,7 @@ static void board_setup(void)
 	/* Assumes ARDUINO pins are mapped on PORT0 on all boards*/
 	struct device *port0 =
 		device_get_binding(CONFIG_PINMUX_MCUX_LPC_PORT0_NAME);
-	const u32_t pin_config = (
+	const uint32_t pin_config = (
 			IOCON_PIO_FUNC0 |
 			IOCON_PIO_INV_DI |
 			IOCON_PIO_DIGITAL_EN |

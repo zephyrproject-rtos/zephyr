@@ -48,34 +48,34 @@ struct bme280_data {
 #endif
 
 	/* Compensation parameters. */
-	u16_t dig_t1;
-	s16_t dig_t2;
-	s16_t dig_t3;
-	u16_t dig_p1;
-	s16_t dig_p2;
-	s16_t dig_p3;
-	s16_t dig_p4;
-	s16_t dig_p5;
-	s16_t dig_p6;
-	s16_t dig_p7;
-	s16_t dig_p8;
-	s16_t dig_p9;
-	u8_t dig_h1;
-	s16_t dig_h2;
-	u8_t dig_h3;
-	s16_t dig_h4;
-	s16_t dig_h5;
-	s8_t dig_h6;
+	uint16_t dig_t1;
+	int16_t dig_t2;
+	int16_t dig_t3;
+	uint16_t dig_p1;
+	int16_t dig_p2;
+	int16_t dig_p3;
+	int16_t dig_p4;
+	int16_t dig_p5;
+	int16_t dig_p6;
+	int16_t dig_p7;
+	int16_t dig_p8;
+	int16_t dig_p9;
+	uint8_t dig_h1;
+	int16_t dig_h2;
+	uint8_t dig_h3;
+	int16_t dig_h4;
+	int16_t dig_h5;
+	int8_t dig_h6;
 
 	/* Compensated values. */
-	s32_t comp_temp;
-	u32_t comp_press;
-	u32_t comp_humidity;
+	int32_t comp_temp;
+	uint32_t comp_press;
+	uint32_t comp_humidity;
 
 	/* Carryover between temperature and pressure/humidity compensation. */
-	s32_t t_fine;
+	int32_t t_fine;
 
-	u8_t chip_id;
+	uint8_t chip_id;
 };
 
 struct bme280_spi_cfg {
@@ -88,7 +88,7 @@ union bme280_bus_config {
 	const struct bme280_spi_cfg *spi_cfg;
 #endif
 #if BME280_BUS_I2C
-	u16_t i2c_addr;
+	uint16_t i2c_addr;
 #endif
 };
 
@@ -100,10 +100,10 @@ struct bme280_config {
 
 typedef int (*bme280_reg_read_fn)(struct device *bus,
 				  const union bme280_bus_config *bus_config,
-				  u8_t start, u8_t *buf, int size);
+				  uint8_t start, uint8_t *buf, int size);
 typedef int (*bme280_reg_write_fn)(struct device *bus,
 				   const union bme280_bus_config *bus_config,
-				   u8_t reg, u8_t val);
+				   uint8_t reg, uint8_t val);
 
 struct bme280_reg_io {
 	bme280_reg_read_fn read;
@@ -139,9 +139,9 @@ to_spi_config(const union bme280_bus_config *bus_config)
 
 static int bme280_reg_read_spi(struct device *bus,
 			       const union bme280_bus_config *bus_config,
-			       u8_t start, u8_t *buf, int size)
+			       uint8_t start, uint8_t *buf, int size)
 {
-	u8_t addr;
+	uint8_t addr;
 	const struct spi_buf tx_buf = {
 		.buf = &addr,
 		.len = 1
@@ -180,9 +180,9 @@ static int bme280_reg_read_spi(struct device *bus,
 
 static int bme280_reg_write_spi(struct device *bus,
 				const union bme280_bus_config *bus_config,
-				u8_t reg, u8_t val)
+				uint8_t reg, uint8_t val)
 {
-	u8_t cmd[2] = { reg & 0x7F, val };
+	uint8_t cmd[2] = { reg & 0x7F, val };
 	const struct spi_buf tx_buf = {
 		.buf = cmd,
 		.len = 2
@@ -210,7 +210,7 @@ static const struct bme280_reg_io bme280_reg_io_spi = {
 #if BME280_BUS_I2C
 static int bme280_reg_read_i2c(struct device *bus,
 			       const union bme280_bus_config *bus_config,
-			       u8_t start, u8_t *buf, int size)
+			       uint8_t start, uint8_t *buf, int size)
 {
 	return i2c_burst_read(bus, bus_config->i2c_addr,
 			      start, buf, size);
@@ -218,7 +218,7 @@ static int bme280_reg_read_i2c(struct device *bus,
 
 static int bme280_reg_write_i2c(struct device *bus,
 				const union bme280_bus_config *bus_config,
-				u8_t reg, u8_t val)
+				uint8_t reg, uint8_t val)
 {
 	return i2c_reg_write_byte(bus, bus_config->i2c_addr,
 				  reg, val);
@@ -231,13 +231,13 @@ static const struct bme280_reg_io bme280_reg_io_i2c = {
 #endif /* BME280_BUS_I2C */
 
 static inline int bme280_reg_read(struct device *dev,
-				  u8_t start, u8_t *buf, int size)
+				  uint8_t start, uint8_t *buf, int size)
 {
 	return to_config(dev)->reg_io->read(to_bus(dev), to_bus_config(dev),
 					    start, buf, size);
 }
 
-static inline int bme280_reg_write(struct device *dev, u8_t reg, u8_t val)
+static inline int bme280_reg_write(struct device *dev, uint8_t reg, uint8_t val)
 {
 	return to_config(dev)->reg_io->write(to_bus(dev), to_bus_config(dev),
 					     reg, val);
@@ -247,31 +247,31 @@ static inline int bme280_reg_write(struct device *dev, u8_t reg, u8_t val)
  * Compensation code taken from BME280 datasheet, Section 4.2.3
  * "Compensation formula".
  */
-static void bme280_compensate_temp(struct bme280_data *data, s32_t adc_temp)
+static void bme280_compensate_temp(struct bme280_data *data, int32_t adc_temp)
 {
-	s32_t var1, var2;
+	int32_t var1, var2;
 
-	var1 = (((adc_temp >> 3) - ((s32_t)data->dig_t1 << 1)) *
-		((s32_t)data->dig_t2)) >> 11;
-	var2 = (((((adc_temp >> 4) - ((s32_t)data->dig_t1)) *
-		  ((adc_temp >> 4) - ((s32_t)data->dig_t1))) >> 12) *
-		((s32_t)data->dig_t3)) >> 14;
+	var1 = (((adc_temp >> 3) - ((int32_t)data->dig_t1 << 1)) *
+		((int32_t)data->dig_t2)) >> 11;
+	var2 = (((((adc_temp >> 4) - ((int32_t)data->dig_t1)) *
+		  ((adc_temp >> 4) - ((int32_t)data->dig_t1))) >> 12) *
+		((int32_t)data->dig_t3)) >> 14;
 
 	data->t_fine = var1 + var2;
 	data->comp_temp = (data->t_fine * 5 + 128) >> 8;
 }
 
-static void bme280_compensate_press(struct bme280_data *data, s32_t adc_press)
+static void bme280_compensate_press(struct bme280_data *data, int32_t adc_press)
 {
-	s64_t var1, var2, p;
+	int64_t var1, var2, p;
 
-	var1 = ((s64_t)data->t_fine) - 128000;
-	var2 = var1 * var1 * (s64_t)data->dig_p6;
-	var2 = var2 + ((var1 * (s64_t)data->dig_p5) << 17);
-	var2 = var2 + (((s64_t)data->dig_p4) << 35);
-	var1 = ((var1 * var1 * (s64_t)data->dig_p3) >> 8) +
-		((var1 * (s64_t)data->dig_p2) << 12);
-	var1 = (((((s64_t)1) << 47) + var1)) * ((s64_t)data->dig_p1) >> 33;
+	var1 = ((int64_t)data->t_fine) - 128000;
+	var2 = var1 * var1 * (int64_t)data->dig_p6;
+	var2 = var2 + ((var1 * (int64_t)data->dig_p5) << 17);
+	var2 = var2 + (((int64_t)data->dig_p4) << 35);
+	var1 = ((var1 * var1 * (int64_t)data->dig_p3) >> 8) +
+		((var1 * (int64_t)data->dig_p2) << 12);
+	var1 = (((((int64_t)1) << 47) + var1)) * ((int64_t)data->dig_p1) >> 33;
 
 	/* Avoid exception caused by division by zero. */
 	if (var1 == 0) {
@@ -281,36 +281,36 @@ static void bme280_compensate_press(struct bme280_data *data, s32_t adc_press)
 
 	p = 1048576 - adc_press;
 	p = (((p << 31) - var2) * 3125) / var1;
-	var1 = (((s64_t)data->dig_p9) * (p >> 13) * (p >> 13)) >> 25;
-	var2 = (((s64_t)data->dig_p8) * p) >> 19;
-	p = ((p + var1 + var2) >> 8) + (((s64_t)data->dig_p7) << 4);
+	var1 = (((int64_t)data->dig_p9) * (p >> 13) * (p >> 13)) >> 25;
+	var2 = (((int64_t)data->dig_p8) * p) >> 19;
+	p = ((p + var1 + var2) >> 8) + (((int64_t)data->dig_p7) << 4);
 
-	data->comp_press = (u32_t)p;
+	data->comp_press = (uint32_t)p;
 }
 
 static void bme280_compensate_humidity(struct bme280_data *data,
-				       s32_t adc_humidity)
+				       int32_t adc_humidity)
 {
-	s32_t h;
+	int32_t h;
 
-	h = (data->t_fine - ((s32_t)76800));
-	h = ((((adc_humidity << 14) - (((s32_t)data->dig_h4) << 20) -
-		(((s32_t)data->dig_h5) * h)) + ((s32_t)16384)) >> 15) *
-		(((((((h * ((s32_t)data->dig_h6)) >> 10) * (((h *
-		((s32_t)data->dig_h3)) >> 11) + ((s32_t)32768))) >> 10) +
-		((s32_t)2097152)) * ((s32_t)data->dig_h2) + 8192) >> 14);
+	h = (data->t_fine - ((int32_t)76800));
+	h = ((((adc_humidity << 14) - (((int32_t)data->dig_h4) << 20) -
+		(((int32_t)data->dig_h5) * h)) + ((int32_t)16384)) >> 15) *
+		(((((((h * ((int32_t)data->dig_h6)) >> 10) * (((h *
+		((int32_t)data->dig_h3)) >> 11) + ((int32_t)32768))) >> 10) +
+		((int32_t)2097152)) * ((int32_t)data->dig_h2) + 8192) >> 14);
 	h = (h - (((((h >> 15) * (h >> 15)) >> 7) *
-		((s32_t)data->dig_h1)) >> 4));
+		((int32_t)data->dig_h1)) >> 4));
 	h = (h > 419430400 ? 419430400 : h);
 
-	data->comp_humidity = (u32_t)(h >> 12);
+	data->comp_humidity = (uint32_t)(h >> 12);
 }
 
 static int bme280_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct bme280_data *data = to_data(dev);
-	u8_t buf[8];
-	s32_t adc_press, adc_temp, adc_humidity;
+	uint8_t buf[8];
+	int32_t adc_press, adc_temp, adc_humidity;
 	int size = 6;
 	int ret;
 
@@ -402,12 +402,12 @@ static const struct sensor_driver_api bme280_api_funcs = {
 static int bme280_read_compensation(struct device *dev)
 {
 	struct bme280_data *data = to_data(dev);
-	u16_t buf[12];
-	u8_t hbuf[7];
+	uint16_t buf[12];
+	uint8_t hbuf[7];
 	int err = 0;
 
 	err = bme280_reg_read(dev, BME280_REG_COMP_START,
-			      (u8_t *)buf, sizeof(buf));
+			      (uint8_t *)buf, sizeof(buf));
 
 	if (err < 0) {
 		LOG_DBG("COMP_START read failed: %d", err);

@@ -55,10 +55,10 @@ struct sys_heap {
 };
 
 struct z_heap_stress_result {
-	u32_t total_allocs;
-	u32_t successful_allocs;
-	u32_t total_frees;
-	u64_t accumulated_in_use_bytes;
+	uint32_t total_allocs;
+	uint32_t successful_allocs;
+	uint32_t total_frees;
+	uint64_t accumulated_in_use_bytes;
 };
 
 /** @brief Initialize sys_heap
@@ -150,7 +150,7 @@ bool sys_heap_validate(struct sys_heap *h);
 void sys_heap_stress(void *(*alloc)(void *arg, size_t bytes),
 		     void (*free)(void *arg, void *p),
 		     void *arg, size_t total_bytes,
-		     u32_t op_count,
+		     uint32_t op_count,
 		     void *scratch_mem, size_t scratch_bytes,
 		     int target_percent,
 		     struct z_heap_stress_result *result);

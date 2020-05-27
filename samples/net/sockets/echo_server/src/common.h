@@ -22,7 +22,7 @@ struct data {
 	struct {
 		int sock;
 		char recv_buffer[RECV_BUFFER_SIZE];
-		u32_t counter;
+		uint32_t counter;
 	} udp;
 
 	struct {
@@ -31,7 +31,7 @@ struct data {
 		struct {
 			int sock;
 			char recv_buffer[RECV_BUFFER_SIZE];
-			u32_t counter;
+			uint32_t counter;
 		} accepted[CONFIG_NET_SAMPLE_NUM_HANDLERS];
 	} tcp;
 };

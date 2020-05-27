@@ -11,10 +11,10 @@
 #include <sys/byteorder.h>
 
 struct nrf_uid {
-	u32_t id[2];
+	uint32_t id[2];
 };
 
-ssize_t z_impl_hwinfo_get_device_id(u8_t *buffer, size_t length)
+ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
 	struct nrf_uid dev_id;
 

@@ -44,9 +44,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define RESOURCE_INSTANCE_COUNT	(FIRMWARE_MAX_ID - 1)
 
 /* resource state variables */
-static u8_t update_state;
-static u8_t update_result;
-static u8_t delivery_method;
+static uint8_t update_state;
+static uint8_t update_result;
+static uint8_t delivery_method;
 static char package_uri[PACKAGE_URI_LEN];
 
 /* only 1 instance of firmware object exists */
@@ -74,12 +74,12 @@ static lwm2m_engine_user_cb_t update_cb;
 extern int lwm2m_firmware_start_transfer(char *package_uri);
 #endif
 
-u8_t lwm2m_firmware_get_update_state(void)
+uint8_t lwm2m_firmware_get_update_state(void)
 {
 	return update_state;
 }
 
-void lwm2m_firmware_set_update_state(u8_t state)
+void lwm2m_firmware_set_update_state(uint8_t state)
 {
 	bool error = false;
 
@@ -118,14 +118,14 @@ void lwm2m_firmware_set_update_state(u8_t state)
 	LOG_DBG("Update state = %d", update_state);
 }
 
-u8_t lwm2m_firmware_get_update_result(void)
+uint8_t lwm2m_firmware_get_update_result(void)
 {
 	return update_result;
 }
 
-void lwm2m_firmware_set_update_result(u8_t result)
+void lwm2m_firmware_set_update_result(uint8_t result)
 {
-	u8_t state;
+	uint8_t state;
 	bool error = false;
 
 	/* Check LWM2M SPEC appendix E.6.1 */
@@ -187,11 +187,11 @@ void lwm2m_firmware_set_update_result(u8_t result)
 	LOG_DBG("Update result = %d", update_result);
 }
 
-static int package_write_cb(u16_t obj_inst_id, u16_t res_id,
-			    u16_t res_inst_id, u8_t *data, u16_t data_len,
+static int package_write_cb(uint16_t obj_inst_id, uint16_t res_id,
+			    uint16_t res_inst_id, uint8_t *data, uint16_t data_len,
 			    bool last_block, size_t total_size)
 {
-	u8_t state;
+	uint8_t state;
 	int ret;
 
 	state = lwm2m_firmware_get_update_state();
@@ -236,14 +236,14 @@ static int package_write_cb(u16_t obj_inst_id, u16_t res_id,
 	return ret;
 }
 
-static int package_uri_write_cb(u16_t obj_inst_id, u16_t res_id,
-				u16_t res_inst_id, u8_t *data, u16_t data_len,
+static int package_uri_write_cb(uint16_t obj_inst_id, uint16_t res_id,
+				uint16_t res_inst_id, uint8_t *data, uint16_t data_len,
 				bool last_block, size_t total_size)
 {
 	LOG_DBG("PACKAGE_URI WRITE: %s", log_strdup(package_uri));
 
 #ifdef CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
-	u8_t state = lwm2m_firmware_get_update_state();
+	uint8_t state = lwm2m_firmware_get_update_state();
 
 	if (state == STATE_IDLE) {
 		lwm2m_firmware_set_update_result(RESULT_DEFAULT);
@@ -279,10 +279,10 @@ lwm2m_engine_user_cb_t lwm2m_firmware_get_update_cb(void)
 	return update_cb;
 }
 
-static int firmware_update_cb(u16_t obj_inst_id)
+static int firmware_update_cb(uint16_t obj_inst_id)
 {
 	lwm2m_engine_user_cb_t callback;
-	u8_t state;
+	uint8_t state;
 	int ret;
 
 	state = lwm2m_firmware_get_update_state();
@@ -308,7 +308,7 @@ static int firmware_update_cb(u16_t obj_inst_id)
 	return 0;
 }
 
-static struct lwm2m_engine_obj_inst *firmware_create(u16_t obj_inst_id)
+static struct lwm2m_engine_obj_inst *firmware_create(uint16_t obj_inst_id)
 {
 	int i = 0, j = 0;
 

@@ -16,8 +16,8 @@
 #define EVENT_PIPELINE_MAX 7
 #define EVENT_DONE_MAX 3
 
-#define HDR_ULL(p)     ((void *)((u8_t *)(p) + sizeof(struct evt_hdr)))
-#define HDR_ULL2LLL(p) ((struct lll_hdr *)((u8_t *)(p) + \
+#define HDR_ULL(p)     ((void *)((uint8_t *)(p) + sizeof(struct evt_hdr)))
+#define HDR_ULL2LLL(p) ((struct lll_hdr *)((uint8_t *)(p) + \
 					   sizeof(struct ull_hdr)))
 #define HDR_LLL2EVT(p) ((struct evt_hdr *)((struct lll_hdr *)(p))->parent)
 
@@ -78,27 +78,27 @@ enum ull_status {
 };
 
 struct evt_hdr {
-	u32_t ticks_xtal_to_start;
-	u32_t ticks_active_to_start;
-	u32_t ticks_preempt_to_start;
-	u32_t ticks_slot;
+	uint32_t ticks_xtal_to_start;
+	uint32_t ticks_active_to_start;
+	uint32_t ticks_preempt_to_start;
+	uint32_t ticks_slot;
 };
 
 struct ull_hdr {
-	u8_t ref; /* Number of ongoing (between Prepare and Done) events */
+	uint8_t ref; /* Number of ongoing (between Prepare and Done) events */
 	void (*disabled_cb)(void *param);
 	void *disabled_param;
 };
 
 struct lll_hdr {
 	void *parent;
-	u8_t is_stop:1;
+	uint8_t is_stop:1;
 };
 
 struct lll_prepare_param {
-	u32_t ticks_at_expire;
-	u32_t remainder;
-	u16_t lazy;
+	uint32_t ticks_at_expire;
+	uint32_t remainder;
+	uint16_t lazy;
 	void  *param;
 };
 
@@ -114,8 +114,8 @@ struct lll_event {
 	lll_is_abort_cb_t        is_abort_cb;
 	lll_abort_cb_t           abort_cb;
 	int                      prio;
-	u8_t                     is_resume:1;
-	u8_t                     is_aborted:1;
+	uint8_t                     is_resume:1;
+	uint8_t                     is_aborted:1;
 };
 
 enum node_rx_type {
@@ -193,19 +193,19 @@ enum node_rx_type {
 struct node_rx_ftr {
 	void  *param;
 	void  *extra;
-	u32_t ticks_anchor;
-	u32_t us_radio_end;
-	u32_t us_radio_rdy;
-	u8_t  rssi;
+	uint32_t ticks_anchor;
+	uint32_t us_radio_end;
+	uint32_t us_radio_rdy;
+	uint8_t  rssi;
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	u8_t  lrpa_used:1;
-	u8_t  rl_idx;
+	uint8_t  lrpa_used:1;
+	uint8_t  rl_idx;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 #if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
-	u8_t  direct;
+	uint8_t  direct;
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 #if defined(CONFIG_BT_HCI_MESH_EXT)
-	u8_t  chan_idx;
+	uint8_t  chan_idx;
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 };
 
@@ -215,12 +215,12 @@ struct node_rx_hdr {
 	union {
 		void        *next;
 		memq_link_t *link;
-		u8_t        ack_last;
+		uint8_t        ack_last;
 	};
 
 	enum node_rx_type   type;
-	u8_t                user_meta; /* User metadata */
-	u16_t               handle;
+	uint8_t                user_meta; /* User metadata */
+	uint16_t               handle;
 
 	union {
 #if defined(CONFIG_BT_CTLR_RX_PDU_META)
@@ -232,7 +232,7 @@ struct node_rx_hdr {
 
 struct node_rx_pdu {
 	struct node_rx_hdr hdr;
-	u8_t               pdu[0];
+	uint8_t               pdu[0];
 };
 
 enum {
@@ -248,19 +248,19 @@ enum {
 };
 
 struct event_done_extra_slave {
-	u32_t start_to_address_actual_us;
-	u32_t window_widening_event_us;
-	u32_t preamble_to_addr_us;
+	uint32_t start_to_address_actual_us;
+	uint32_t window_widening_event_us;
+	uint32_t preamble_to_addr_us;
 };
 
 struct event_done_extra {
-	u8_t type;
+	uint8_t type;
 	union {
 		struct {
-			u16_t trx_cnt;
-			u8_t  crc_valid;
+			uint16_t trx_cnt;
+			uint8_t  crc_valid;
 #if defined(CONFIG_BT_CTLR_LE_ENC)
-			u8_t  mic_state;
+			uint8_t  mic_state;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 			union {
 				struct event_done_extra_slave slave;
@@ -307,20 +307,20 @@ int lll_prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 		struct lll_prepare_param *prepare_param);
 void lll_resume(void *param);
 void lll_disable(void *param);
-u32_t lll_radio_is_idle(void);
-s8_t lll_radio_tx_pwr_min_get(void);
-s8_t lll_radio_tx_pwr_max_get(void);
-s8_t lll_radio_tx_pwr_floor(s8_t tx_pwr_lvl);
+uint32_t lll_radio_is_idle(void);
+int8_t lll_radio_tx_pwr_min_get(void);
+int8_t lll_radio_tx_pwr_max_get(void);
+int8_t lll_radio_tx_pwr_floor(int8_t tx_pwr_lvl);
 
 int ull_prepare_enqueue(lll_is_abort_cb_t is_abort_cb,
 			       lll_abort_cb_t abort_cb,
 			       struct lll_prepare_param *prepare_param,
 			       lll_prepare_cb_t prepare_cb, int prio,
-			       u8_t is_resume);
+			       uint8_t is_resume);
 void *ull_prepare_dequeue_get(void);
-void *ull_prepare_dequeue_iter(u8_t *idx);
-void *ull_pdu_rx_alloc_peek(u8_t count);
-void *ull_pdu_rx_alloc_peek_iter(u8_t *idx);
+void *ull_prepare_dequeue_iter(uint8_t *idx);
+void *ull_pdu_rx_alloc_peek(uint8_t count);
+void *ull_pdu_rx_alloc_peek_iter(uint8_t *idx);
 void *ull_pdu_rx_alloc(void);
 void ull_rx_put(memq_link_t *link, void *rx);
 void ull_rx_sched(void);

@@ -247,7 +247,7 @@ In order to use instance level filtering following steps must be performed:
 
    struct foo_object {
    	LOG_INSTANCE_PTR_DECLARE(log);
-   	u32_t id;
+   	uint32_t id;
    }
 
 - module must provide macro for instantiation. In that macro, logger instance

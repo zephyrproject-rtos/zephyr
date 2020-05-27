@@ -18,7 +18,7 @@
 
 static void test_arm_cfft_f32_cmplx_backend(
 	const arm_cfft_instance_f32 * inst, bool inverse,
-	const u32_t *input, const u32_t *ref, size_t length)
+	const uint32_t *input, const uint32_t *ref, size_t length)
 {
 	float32_t *output;
 
@@ -44,7 +44,7 @@ static void test_arm_cfft_f32_cmplx_backend(
 
 static void test_arm_cfft_f32_cmplx(
 	const arm_cfft_instance_f32 * inst,
-	const u32_t *input, const u32_t *ref, size_t length)
+	const uint32_t *input, const uint32_t *ref, size_t length)
 {
 	test_arm_cfft_f32_cmplx_backend(inst, false, input, ref, length);
 }
@@ -105,7 +105,7 @@ DEFINE_TEST_VARIANT4(arm_cfft_f32_cmplx, step_4096, &arm_cfft_sR_f32_len4096,
 
 static void test_arm_cifft_f32_cmplx(
 	const arm_cfft_instance_f32 * inst,
-	const u32_t *input, const u32_t *ref, size_t length)
+	const uint32_t *input, const uint32_t *ref, size_t length)
 {
 	test_arm_cfft_f32_cmplx_backend(inst, true, input, ref, length);
 }

@@ -89,9 +89,9 @@ static int gpio_stm32_flags_to_conf(int flags, int *pincfg)
 /**
  * @brief Translate pin to pinval that the LL library needs
  */
-static inline u32_t stm32_pinval_get(int pin)
+static inline uint32_t stm32_pinval_get(int pin)
 {
-	u32_t pinval;
+	uint32_t pinval;
 
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 	pinval = (1 << pin) << GPIO_PIN_MASK_POS;
@@ -109,7 +109,7 @@ static inline u32_t stm32_pinval_get(int pin)
 /**
  * @brief Configure the hardware.
  */
-int gpio_stm32_configure(u32_t *base_addr, int pin, int conf, int altf)
+int gpio_stm32_configure(uint32_t *base_addr, int pin, int conf, int altf)
 {
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)base_addr;
 
@@ -118,7 +118,7 @@ int gpio_stm32_configure(u32_t *base_addr, int pin, int conf, int altf)
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 	ARG_UNUSED(altf);
 
-	u32_t temp = conf & (STM32_MODE_INOUT_MASK << STM32_MODE_INOUT_SHIFT);
+	uint32_t temp = conf & (STM32_MODE_INOUT_MASK << STM32_MODE_INOUT_SHIFT);
 
 	if (temp == STM32_MODE_INPUT) {
 		temp = conf & (STM32_CNF_IN_MASK << STM32_CNF_IN_SHIFT);
@@ -222,7 +222,7 @@ static inline uint32_t gpio_stm32_pin_to_exti_line(int pin)
 
 static void gpio_stm32_set_exti_source(int port, int pin)
 {
-	u32_t line = gpio_stm32_pin_to_exti_line(pin);
+	uint32_t line = gpio_stm32_pin_to_exti_line(pin);
 
 #if defined(CONFIG_SOC_SERIES_STM32L0X) && defined(LL_SYSCFG_EXTI_PORTH)
 	/*
@@ -249,7 +249,7 @@ static void gpio_stm32_set_exti_source(int port, int pin)
 
 static int gpio_stm32_get_exti_source(int pin)
 {
-	u32_t line = gpio_stm32_pin_to_exti_line(pin);
+	uint32_t line = gpio_stm32_pin_to_exti_line(pin);
 	int port;
 
 #ifdef CONFIG_SOC_SERIES_STM32F1X
@@ -309,7 +309,7 @@ static int gpio_stm32_enable_int(int port, int pin)
 	return 0;
 }
 
-static int gpio_stm32_port_get_raw(struct device *dev, u32_t *value)
+static int gpio_stm32_port_get_raw(struct device *dev, uint32_t *value)
 {
 	const struct gpio_stm32_config *cfg = dev->config_info;
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
@@ -325,7 +325,7 @@ static int gpio_stm32_port_set_masked_raw(struct device *dev,
 {
 	const struct gpio_stm32_config *cfg = dev->config_info;
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
-	u32_t port_value;
+	uint32_t port_value;
 
 	port_value = LL_GPIO_ReadOutputPort(gpio);
 	LL_GPIO_WriteOutputPort(gpio, (port_value & ~mask) | (mask & value));
@@ -576,7 +576,7 @@ static int gpio_stm32_init(struct device *device)
 		.common = {						       \
 			 .port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(16U), \
 		},							       \
-		.base = (u32_t *)__base_addr,				       \
+		.base = (uint32_t *)__base_addr,				       \
 		.port = __port,						       \
 		.pclken = { .bus = __bus, .enr = __cenr }		       \
 	};								       \

@@ -118,9 +118,9 @@ static inline bool is_power_of_two(unsigned int x)
 	return (x != 0U) && ((x & (x - 1)) == 0U);
 }
 
-static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
+static inline int64_t arithmetic_shift_right(int64_t value, uint8_t shift)
 {
-	s64_t sign_ext;
+	int64_t sign_ext;
 
 	if (shift == 0U) {
 		return value;
@@ -144,7 +144,7 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int char2hex(char c, u8_t *x);
+int char2hex(char c, uint8_t *x);
 
 /**
  * @brief      Convert a single hexadecimal nibble into a character.
@@ -154,7 +154,7 @@ int char2hex(char c, u8_t *x);
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int hex2char(u8_t x, char *c);
+int hex2char(uint8_t x, char *c);
 
 /**
  * @brief      Convert a binary array into string representation.
@@ -166,7 +166,7 @@ int hex2char(u8_t x, char *c);
  *
  * @return     The length of the converted string, or 0 if an error occurred.
  */
-size_t bin2hex(const u8_t *buf, size_t buflen, char *hex, size_t hexlen);
+size_t bin2hex(const uint8_t *buf, size_t buflen, char *hex, size_t hexlen);
 
 /*
  * Convert hex string to byte string
@@ -184,12 +184,12 @@ size_t bin2hex(const u8_t *buf, size_t buflen, char *hex, size_t hexlen);
  *
  * @return     The length of the binary array , or 0 if an error occurred.
  */
-size_t hex2bin(const char *hex, size_t hexlen, u8_t *buf, size_t buflen);
+size_t hex2bin(const char *hex, size_t hexlen, uint8_t *buf, size_t buflen);
 
 /**
- * @brief      Convert a u8_t into decimal string representation.
+ * @brief      Convert a uint8_t into decimal string representation.
  *
- * Convert a u8_t value into ASCII decimal string representation.
+ * Convert a uint8_t value into ASCII decimal string representation.
  * The string is terminated if there is enough space in buf.
  *
  * @param[out] buf     Address of where to store the string representation.
@@ -199,7 +199,7 @@ size_t hex2bin(const char *hex, size_t hexlen, u8_t *buf, size_t buflen);
  * @return     The length of the converted string (excluding terminator if
  *             any), or 0 if an error occurred.
  */
-u8_t u8_to_dec(char *buf, u8_t buflen, u8_t value);
+uint8_t u8_to_dec(char *buf, uint8_t buflen, uint8_t value);
 
 #endif /* !_ASMLANGUAGE */
 
@@ -297,12 +297,12 @@ u8_t u8_to_dec(char *buf, u8_t buflen, u8_t value);
  *
  * Usage example:
  *
- * \#define MACRO(x) COND_CODE_1(CONFIG_FLAG, (u32_t x;), ())
+ * \#define MACRO(x) COND_CODE_1(CONFIG_FLAG, (uint32_t x;), ())
  *
  * It can be considered as alternative to:
  *
  * \#if defined(CONFIG_FLAG) && (CONFIG_FLAG == 1)
- * \#define MACRO(x) u32_t x;
+ * \#define MACRO(x) uint32_t x;
  * \#else
  * \#define MACRO(x)
  * \#endif
@@ -331,12 +331,12 @@ u8_t u8_to_dec(char *buf, u8_t buflen, u8_t value);
  *
  * Usage example:
  *
- * IF_ENABLED(CONFIG_FLAG, (u32_t foo;))
+ * IF_ENABLED(CONFIG_FLAG, (uint32_t foo;))
  *
  * It can be considered as more compact alternative to:
  *
  * \#if defined(CONFIG_FLAG) && (CONFIG_FLAG == 1)
- *	u32_t foo;
+ *	uint32_t foo;
  * \#endif
  *
  * @param _flag		Evaluated flag

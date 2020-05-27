@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(adc_nrfx_saadc);
 struct driver_data {
 	struct adc_context ctx;
 
-	u8_t positive_inputs[SAADC_CH_NUM];
+	uint8_t positive_inputs[SAADC_CH_NUM];
 };
 
 static struct driver_data m_data = {
@@ -36,7 +36,7 @@ static int adc_nrfx_channel_setup(struct device *dev,
 		.resistor_n = NRF_SAADC_RESISTOR_DISABLED,
 		.burst      = NRF_SAADC_BURST_DISABLED,
 	};
-	u8_t channel_id = channel_cfg->channel_id;
+	uint8_t channel_id = channel_cfg->channel_id;
 
 	if (channel_id >= SAADC_CH_NUM) {
 		return -EINVAL;
@@ -186,7 +186,7 @@ static int set_resolution(const struct adc_sequence *sequence)
 }
 
 static int set_oversampling(const struct adc_sequence *sequence,
-			    u8_t active_channels)
+			    uint8_t active_channels)
 {
 	nrf_saadc_oversample_t nrf_oversampling;
 
@@ -235,7 +235,7 @@ static int set_oversampling(const struct adc_sequence *sequence,
 }
 
 static int check_buffer_size(const struct adc_sequence *sequence,
-			     u8_t active_channels)
+			     uint8_t active_channels)
 {
 	size_t needed_buffer_size;
 
@@ -256,9 +256,9 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 static int start_read(struct device *dev, const struct adc_sequence *sequence)
 {
 	int error;
-	u32_t selected_channels = sequence->channels;
-	u8_t active_channels;
-	u8_t channel_id;
+	uint32_t selected_channels = sequence->channels;
+	uint8_t active_channels;
+	uint8_t channel_id;
 
 	/* Signal an error if channel selection is invalid (no channels or
 	 * a non-existing one is selected).

@@ -1201,8 +1201,8 @@ static void test_arrays(void)
 }
 
 struct test_gpio_info {
-	u32_t reg_addr;
-	u32_t reg_len;
+	uint32_t reg_addr;
+	uint32_t reg_len;
 };
 
 struct test_gpio_data {

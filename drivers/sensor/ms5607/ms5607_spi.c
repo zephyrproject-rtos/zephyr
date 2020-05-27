@@ -33,7 +33,7 @@ static struct spi_config ms5607_spi_conf = {
 	.cs = SPI_CS,
 };
 
-static int ms5607_spi_raw_cmd(const struct ms5607_data *data, u8_t cmd)
+static int ms5607_spi_raw_cmd(const struct ms5607_data *data, uint8_t cmd)
 {
 	const struct spi_buf buf = {
 		.buf = &cmd,
@@ -60,12 +60,12 @@ static int ms5607_spi_reset(const struct ms5607_data *data)
 	return 0;
 }
 
-static int ms5607_spi_read_prom(const struct ms5607_data *data, u8_t cmd,
-				u16_t *val)
+static int ms5607_spi_read_prom(const struct ms5607_data *data, uint8_t cmd,
+				uint16_t *val)
 {
 	int err;
 
-	u8_t tx[3] = { cmd, 0, 0 };
+	uint8_t tx[3] = { cmd, 0, 0 };
 	const struct spi_buf tx_buf = {
 		.buf = tx,
 		.len = 3,
@@ -73,10 +73,10 @@ static int ms5607_spi_read_prom(const struct ms5607_data *data, u8_t cmd,
 
 	union {
 		struct {
-			u8_t pad;
-			u16_t prom_value;
+			uint8_t pad;
+			uint16_t prom_value;
 		} __packed;
-		u8_t rx[3];
+		uint8_t rx[3];
 	} rx;
 
 
@@ -109,16 +109,16 @@ static int ms5607_spi_read_prom(const struct ms5607_data *data, u8_t cmd,
 }
 
 
-static int ms5607_spi_start_conversion(const struct ms5607_data *data, u8_t cmd)
+static int ms5607_spi_start_conversion(const struct ms5607_data *data, uint8_t cmd)
 {
 	return ms5607_spi_raw_cmd(data, cmd);
 }
 
-static int ms5607_spi_read_adc(const struct ms5607_data *data, u32_t *val)
+static int ms5607_spi_read_adc(const struct ms5607_data *data, uint32_t *val)
 {
 	int err;
 
-	u8_t tx[4] = { MS5607_CMD_CONV_READ_ADC, 0, 0, 0 };
+	uint8_t tx[4] = { MS5607_CMD_CONV_READ_ADC, 0, 0, 0 };
 	const struct spi_buf tx_buf = {
 		.buf = tx,
 		.len = 4,
@@ -126,9 +126,9 @@ static int ms5607_spi_read_adc(const struct ms5607_data *data, u32_t *val)
 
 	union {
 		struct {
-			u32_t adc_value;
+			uint32_t adc_value;
 		} __packed;
-		u8_t rx[4];
+		uint8_t rx[4];
 	} rx;
 
 	const struct spi_buf rx_buf = {

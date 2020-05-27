@@ -45,7 +45,7 @@
  * @brief  Calculation of SNR
  * @param  float*   Pointer to the reference buffer
  * @param  float*   Pointer to the test buffer
- * @param  u32_t    total number of samples
+ * @param  uint32_t    total number of samples
  * @return float    SNR
  * The function calculates signal to noise ratio for the reference output
  * and test output
@@ -71,10 +71,10 @@
 	} while (0)
 
 static inline double arm_snr_f64(const double *pRef, const double *pTest,
-	u32_t buffSize)
+	uint32_t buffSize)
 {
 	double EnergySignal = 0.0, EnergyError = 0.0;
-	u32_t i;
+	uint32_t i;
 	double SNR;
 
 	for (i = 0; i < buffSize; i++) {
@@ -101,10 +101,10 @@ static inline double arm_snr_f64(const double *pRef, const double *pTest,
 }
 
 static inline float arm_snr_f32(const float *pRef, const float *pTest,
-	u32_t buffSize)
+	uint32_t buffSize)
 {
 	float EnergySignal = 0.0, EnergyError = 0.0;
-	u32_t i;
+	uint32_t i;
 	float SNR;
 
 	for (i = 0; i < buffSize; i++) {
@@ -132,10 +132,10 @@ static inline float arm_snr_f32(const float *pRef, const float *pTest,
 }
 
 static inline float arm_snr_q63(const q63_t *pRef, const q63_t *pTest,
-	u32_t buffSize)
+	uint32_t buffSize)
 {
 	double EnergySignal = 0.0, EnergyError = 0.0;
-	u32_t i;
+	uint32_t i;
 	float SNR;
 
 	double testVal, refVal;
@@ -159,10 +159,10 @@ static inline float arm_snr_q63(const q63_t *pRef, const q63_t *pTest,
 }
 
 static inline float arm_snr_q31(const q31_t *pRef, const q31_t *pTest,
-	u32_t buffSize)
+	uint32_t buffSize)
 {
 	float EnergySignal = 0.0, EnergyError = 0.0;
-	u32_t i;
+	uint32_t i;
 	float SNR;
 
 	float32_t testVal, refVal;
@@ -187,10 +187,10 @@ static inline float arm_snr_q31(const q31_t *pRef, const q31_t *pTest,
 }
 
 static inline float arm_snr_q15(const q15_t *pRef, const q15_t *pTest,
-	u32_t buffSize)
+	uint32_t buffSize)
 {
 	float EnergySignal = 0.0, EnergyError = 0.0;
-	u32_t i;
+	uint32_t i;
 	float SNR;
 
 	float32_t testVal, refVal;
@@ -213,10 +213,10 @@ static inline float arm_snr_q15(const q15_t *pRef, const q15_t *pTest,
 }
 
 static inline float arm_snr_q7(const q7_t *pRef, const q7_t *pTest,
-	u32_t buffSize)
+	uint32_t buffSize)
 {
 	float EnergySignal = 0.0, EnergyError = 0.0;
-	u32_t i;
+	uint32_t i;
 	float SNR;
 
 	float32_t testVal, refVal;

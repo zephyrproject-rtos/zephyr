@@ -27,7 +27,7 @@ struct mcux_igpio_data {
 	/* port ISR callback routine address */
 	sys_slist_t callbacks;
 	/* pin callback routine enable flags, by pin number */
-	u32_t pin_callback_enables;
+	uint32_t pin_callback_enables;
 };
 
 static int mcux_igpio_configure(struct device *dev,
@@ -61,7 +61,7 @@ static int mcux_igpio_configure(struct device *dev,
 	return 0;
 }
 
-static int mcux_igpio_port_get_raw(struct device *dev, u32_t *value)
+static int mcux_igpio_port_get_raw(struct device *dev, uint32_t *value)
 {
 	const struct mcux_igpio_config *config = dev->config_info;
 	GPIO_Type *base = config->base;
@@ -71,8 +71,8 @@ static int mcux_igpio_port_get_raw(struct device *dev, u32_t *value)
 	return 0;
 }
 
-static int mcux_igpio_port_set_masked_raw(struct device *dev, u32_t mask,
-		u32_t value)
+static int mcux_igpio_port_set_masked_raw(struct device *dev, uint32_t mask,
+		uint32_t value)
 {
 	const struct mcux_igpio_config *config = dev->config_info;
 	GPIO_Type *base = config->base;
@@ -82,7 +82,7 @@ static int mcux_igpio_port_set_masked_raw(struct device *dev, u32_t mask,
 	return 0;
 }
 
-static int mcux_igpio_port_set_bits_raw(struct device *dev, u32_t mask)
+static int mcux_igpio_port_set_bits_raw(struct device *dev, uint32_t mask)
 {
 	const struct mcux_igpio_config *config = dev->config_info;
 	GPIO_Type *base = config->base;
@@ -92,7 +92,7 @@ static int mcux_igpio_port_set_bits_raw(struct device *dev, u32_t mask)
 	return 0;
 }
 
-static int mcux_igpio_port_clear_bits_raw(struct device *dev, u32_t mask)
+static int mcux_igpio_port_clear_bits_raw(struct device *dev, uint32_t mask)
 {
 	const struct mcux_igpio_config *config = dev->config_info;
 	GPIO_Type *base = config->base;
@@ -102,7 +102,7 @@ static int mcux_igpio_port_clear_bits_raw(struct device *dev, u32_t mask)
 	return 0;
 }
 
-static int mcux_igpio_port_toggle_bits(struct device *dev, u32_t mask)
+static int mcux_igpio_port_toggle_bits(struct device *dev, uint32_t mask)
 {
 	const struct mcux_igpio_config *config = dev->config_info;
 	GPIO_Type *base = config->base;
@@ -120,7 +120,7 @@ static int mcux_igpio_pin_interrupt_configure(struct device *dev,
 	struct mcux_igpio_data *data = dev->driver_data;
 	GPIO_Type *base = config->base;
 	unsigned int key;
-	u8_t icr;
+	uint8_t icr;
 	int shift;
 
 	if (mode == GPIO_INT_MODE_DISABLED) {
@@ -202,7 +202,7 @@ static void mcux_igpio_port_isr(void *arg)
 	const struct mcux_igpio_config *config = dev->config_info;
 	struct mcux_igpio_data *data = dev->driver_data;
 	GPIO_Type *base = config->base;
-	u32_t enabled_int, int_flags;
+	uint32_t enabled_int, int_flags;
 
 	int_flags = base->ISR;
 	enabled_int = int_flags & data->pin_callback_enables;

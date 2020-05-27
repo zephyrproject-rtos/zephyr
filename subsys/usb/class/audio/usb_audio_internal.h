@@ -195,7 +195,7 @@
  */
 struct usb_audio_entity {
 	enum usb_audio_cs_ac_int_desc_subtypes subtype;
-	u8_t id;
+	uint8_t id;
 };
 
 /**
@@ -205,26 +205,26 @@ struct usb_audio_entity {
  * .bLength.
  */
 struct cs_ac_if_descriptor {
-	u8_t bLength;
-	u8_t bDescriptorType;
-	u8_t bDescriptorSubtype;
-	u16_t bcdADC;
-	u16_t wTotalLength;
-	u8_t bInCollection;
-	u8_t baInterfaceNr[2];
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint8_t bDescriptorSubtype;
+	uint16_t bcdADC;
+	uint16_t wTotalLength;
+	uint8_t bInCollection;
+	uint8_t baInterfaceNr[2];
 } __packed;
 
 struct input_terminal_descriptor {
-	u8_t bLength;
-	u8_t bDescriptorType;
-	u8_t bDescriptorSubtype;
-	u8_t bTerminalID;
-	u16_t wTerminalType;
-	u8_t bAssocTerminal;
-	u8_t bNrChannels;
-	u16_t wChannelConfig;
-	u8_t iChannelNames;
-	u8_t iTerminal;
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint8_t bDescriptorSubtype;
+	uint8_t bTerminalID;
+	uint16_t wTerminalType;
+	uint8_t bAssocTerminal;
+	uint8_t bNrChannels;
+	uint16_t wChannelConfig;
+	uint8_t iChannelNames;
+	uint8_t iTerminal;
 } __packed;
 
 /**
@@ -232,88 +232,88 @@ struct input_terminal_descriptor {
  * This structure is just a helper not a common type.
  */
 struct feature_unit_descriptor {
-	u8_t bLength;
-	u8_t bDescriptorType;
-	u8_t bDescriptorSubtype;
-	u8_t bUnitID;
-	u8_t bSourceID;
-	u8_t bControlSize;
-	u16_t bmaControls[1];
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint8_t bDescriptorSubtype;
+	uint8_t bUnitID;
+	uint8_t bSourceID;
+	uint8_t bControlSize;
+	uint16_t bmaControls[1];
 } __packed;
 
 struct output_terminal_descriptor {
-	u8_t bLength;
-	u8_t bDescriptorType;
-	u8_t bDescriptorSubtype;
-	u8_t bTerminalID;
-	u16_t wTerminalType;
-	u8_t bAssocTerminal;
-	u8_t bSourceID;
-	u8_t iTerminal;
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint8_t bDescriptorSubtype;
+	uint8_t bTerminalID;
+	uint16_t wTerminalType;
+	uint8_t bAssocTerminal;
+	uint8_t bSourceID;
+	uint8_t iTerminal;
 } __packed;
 
 struct as_cs_interface_descriptor {
-	u8_t  bLength;
-	u8_t  bDescriptorType;
-	u8_t  bDescriptorSubtype;
-	u8_t  bTerminalLink;
-	u8_t  bDelay;
-	u16_t wFormatTag;
+	uint8_t  bLength;
+	uint8_t  bDescriptorType;
+	uint8_t  bDescriptorSubtype;
+	uint8_t  bTerminalLink;
+	uint8_t  bDelay;
+	uint16_t wFormatTag;
 } __packed;
 
 struct format_type_i_descriptor {
-	u8_t bLength;
-	u8_t bDescriptorType;
-	u8_t bDescriptorSubtype;
-	u8_t bFormatType;
-	u8_t bNrChannels;
-	u8_t bSubframeSize;
-	u8_t bBitResolution;
-	u8_t bSamFreqType;
-	u8_t tSamFreq[3];
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint8_t bDescriptorSubtype;
+	uint8_t bFormatType;
+	uint8_t bNrChannels;
+	uint8_t bSubframeSize;
+	uint8_t bBitResolution;
+	uint8_t bSamFreqType;
+	uint8_t tSamFreq[3];
 } __packed;
 
 struct std_as_ad_endpoint_descriptor {
-	u8_t bLength;
-	u8_t bDescriptorType;
-	u8_t bEndpointAddress;
-	u8_t bmAttributes;
-	u16_t wMaxPacketSize;
-	u8_t bInterval;
-	u8_t bRefresh;
-	u8_t bSynchAddress;
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint8_t bEndpointAddress;
+	uint8_t bmAttributes;
+	uint16_t wMaxPacketSize;
+	uint8_t bInterval;
+	uint8_t bRefresh;
+	uint8_t bSynchAddress;
 } __packed;
 
 struct cs_as_ad_ep_descriptor {
-	u8_t bLength;
-	u8_t bDescriptorType;
-	u8_t bDescriptorSubtype;
-	u8_t bmAttributes;
-	u8_t bLockDelayUnits;
-	u16_t wLockDelay;
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint8_t bDescriptorSubtype;
+	uint8_t bmAttributes;
+	uint8_t bLockDelayUnits;
+	uint16_t wLockDelay;
 } __packed;
 
 #define DECLARE_HEADER(dev, i, ifaces)	\
 struct dev##_cs_ac_if_descriptor_##i {	\
-	u8_t bLength;			\
-	u8_t bDescriptorType;		\
-	u8_t bDescriptorSubtype;	\
-	u16_t bcdADC;			\
-	u16_t wTotalLength;		\
-	u8_t bInCollection;		\
-	u8_t baInterfaceNr[ifaces];	\
+	uint8_t bLength;			\
+	uint8_t bDescriptorType;		\
+	uint8_t bDescriptorSubtype;	\
+	uint16_t bcdADC;			\
+	uint16_t wTotalLength;		\
+	uint8_t bInCollection;		\
+	uint8_t baInterfaceNr[ifaces];	\
 } __packed
 
 #define DECLARE_FEATURE_UNIT(dev, i)		\
 struct dev##_feature_unit_descriptor_##i {	\
-	u8_t bLength;				\
-	u8_t bDescriptorType;			\
-	u8_t bDescriptorSubtype;		\
-	u8_t bUnitID;				\
-	u8_t bSourceID;				\
-	u8_t bControlSize;			\
-	u16_t bmaControls[CH_CNT(dev, i) + 1];	\
-	u8_t iFeature;				\
+	uint8_t bLength;				\
+	uint8_t bDescriptorType;			\
+	uint8_t bDescriptorSubtype;		\
+	uint8_t bUnitID;				\
+	uint8_t bSourceID;				\
+	uint8_t bControlSize;			\
+	uint16_t bmaControls[CH_CNT(dev, i) + 1];	\
+	uint8_t iFeature;				\
 } __packed
 
 #define INIT_IAD(iface_subclass, if_cnt)			\
@@ -461,7 +461,7 @@ struct dev##_descriptor_##i {						\
 	.bDescriptorSubtype = USB_AUDIO_FEATURE_UNIT,			\
 	.bUnitID = unit_id,						\
 	.bSourceID = source_id,						\
-	.bControlSize = sizeof(u16_t),					\
+	.bControlSize = sizeof(uint16_t),					\
 	.bmaControls = { FEATURES(dev, i) },				\
 	.iFeature = 0,							\
 }

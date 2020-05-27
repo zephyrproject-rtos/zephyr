@@ -57,7 +57,7 @@ static void mpu_init(void)
  * Note:
  *   The caller must provide a valid region index.
  */
-static void region_init(const u32_t index,
+static void region_init(const uint32_t index,
 	const struct arm_mpu_region *region_conf)
 {
 	ARM_MPU_SetRegion(
@@ -116,10 +116,10 @@ static int mpu_partition_is_valid(const struct k_mem_partition *part)
  * needs to be enabled.
  *
  */
-static inline int get_region_index(u32_t start, u32_t size)
+static inline int get_region_index(uint32_t start, uint32_t size)
 {
-	u32_t region_start_addr = arm_cmse_mpu_region_get(start);
-	u32_t region_end_addr = arm_cmse_mpu_region_get(start + size - 1);
+	uint32_t region_start_addr = arm_cmse_mpu_region_get(start);
+	uint32_t region_end_addr = arm_cmse_mpu_region_get(start + size - 1);
 
 	/* MPU regions are contiguous so return the region number,
 	 * if both start and end address are in the same region.
@@ -130,33 +130,33 @@ static inline int get_region_index(u32_t start, u32_t size)
 	return -EINVAL;
 }
 
-static inline u32_t mpu_region_get_base(const u32_t index)
+static inline uint32_t mpu_region_get_base(const uint32_t index)
 {
 	MPU->RNR = index;
 	return MPU->RBAR & MPU_RBAR_BASE_Msk;
 }
 
-static inline void mpu_region_set_base(const u32_t index, const u32_t base)
+static inline void mpu_region_set_base(const uint32_t index, const uint32_t base)
 {
 	MPU->RNR = index;
 	MPU->RBAR = (MPU->RBAR & (~MPU_RBAR_BASE_Msk))
 		| (base & MPU_RBAR_BASE_Msk);
 }
 
-static inline u32_t mpu_region_get_last_addr(const u32_t index)
+static inline uint32_t mpu_region_get_last_addr(const uint32_t index)
 {
 	MPU->RNR = index;
 	return (MPU->RLAR & MPU_RLAR_LIMIT_Msk) | (~MPU_RLAR_LIMIT_Msk);
 }
 
-static inline void mpu_region_set_limit(const u32_t index, const u32_t limit)
+static inline void mpu_region_set_limit(const uint32_t index, const uint32_t limit)
 {
 	MPU->RNR = index;
 	MPU->RLAR = (MPU->RLAR & (~MPU_RLAR_LIMIT_Msk))
 		| (limit & MPU_RLAR_LIMIT_Msk);
 }
 
-static inline void mpu_region_get_access_attr(const u32_t index,
+static inline void mpu_region_get_access_attr(const uint32_t index,
 	arm_mpu_region_attr_t *attr)
 {
 	MPU->RNR = index;
@@ -167,7 +167,7 @@ static inline void mpu_region_get_access_attr(const u32_t index,
 		MPU_RLAR_AttrIndx_Pos;
 }
 
-static inline void mpu_region_get_conf(const u32_t index,
+static inline void mpu_region_get_conf(const uint32_t index,
 	struct arm_mpu_region *region_conf)
 {
 	MPU->RNR = index;
@@ -193,7 +193,7 @@ static inline void mpu_region_get_conf(const u32_t index,
  */
 static inline void get_region_attr_from_k_mem_partition_info(
 	arm_mpu_region_attr_t *p_attr,
-	const k_mem_partition_attr_t *attr, u32_t base, u32_t size)
+	const k_mem_partition_attr_t *attr, uint32_t base, uint32_t size)
 {
 	p_attr->rbar = attr->rbar &
 		(MPU_RBAR_XN_Msk | MPU_RBAR_AP_Msk | MPU_RBAR_SH_Msk);
@@ -228,7 +228,7 @@ static inline int get_dyn_region_min_index(void)
 	return dyn_reg_min_index;
 }
 
-static inline u32_t mpu_region_get_size(u32_t index)
+static inline uint32_t mpu_region_get_size(uint32_t index)
 {
 	return mpu_region_get_last_addr(index) + 1
 		- mpu_region_get_base(index);
@@ -240,7 +240,7 @@ static inline u32_t mpu_region_get_size(u32_t index)
  * Note:
  *   The caller must provide a valid region number.
  */
-static inline int is_enabled_region(u32_t index)
+static inline int is_enabled_region(uint32_t index)
 {
 	MPU->RNR = index;
 
@@ -272,8 +272,8 @@ static inline int is_enabled_region(u32_t index)
  */
 static inline int mpu_buffer_validate(void *addr, size_t size, int write)
 {
-	u32_t _addr = (u32_t)addr;
-	u32_t _size = (u32_t)size;
+	uint32_t _addr = (uint32_t)addr;
+	uint32_t _size = (uint32_t)size;
 
 	if (write) {
 		if (arm_cmse_addr_range_readwrite_ok(_addr, _size, 1)) {
@@ -290,8 +290,8 @@ static inline int mpu_buffer_validate(void *addr, size_t size, int write)
 	 * Validation failure may be due to SAU/IDAU presence.
 	 * We re-check user accessibility based on MPU only.
 	 */
-	s32_t r_index_base = arm_cmse_mpu_region_get(_addr);
-	s32_t r_index_last = arm_cmse_mpu_region_get(_addr + _size - 1);
+	int32_t r_index_base = arm_cmse_mpu_region_get(_addr);
+	int32_t r_index_last = arm_cmse_mpu_region_get(_addr + _size - 1);
 
 	if ((r_index_base != -EINVAL) && (r_index_base == r_index_last)) {
 		/* Valid MPU region, check permissions on base address only. */
@@ -312,15 +312,15 @@ static inline int mpu_buffer_validate(void *addr, size_t size, int write)
 
 #endif /* CONFIG_USERSPACE */
 
-static int region_allocate_and_init(const u8_t index,
+static int region_allocate_and_init(const uint8_t index,
 	const struct arm_mpu_region *region_conf);
 
-static int mpu_configure_region(const u8_t index,
+static int mpu_configure_region(const uint8_t index,
 	const struct k_mem_partition *new_region);
 
 #if !defined(CONFIG_MPU_GAP_FILLING)
 static int mpu_configure_regions(const struct k_mem_partition
-	*regions[], u8_t regions_num, u8_t start_reg_index,
+	*regions[], uint8_t regions_num, uint8_t start_reg_index,
 	bool do_sanity_check);
 #endif
 
@@ -332,7 +332,7 @@ static int mpu_configure_regions(const struct k_mem_partition
  * area, effectively, leaving no space in this area uncovered by MPU.
  */
 static int mpu_configure_regions_and_partition(const struct k_mem_partition
-	*regions[], u8_t regions_num, u8_t start_reg_index,
+	*regions[], uint8_t regions_num, uint8_t start_reg_index,
 	bool do_sanity_check)
 {
 	int i;
@@ -367,9 +367,9 @@ static int mpu_configure_regions_and_partition(const struct k_mem_partition
 		 * The new memory region is to be placed inside the underlying
 		 * region, possibly splitting the underlying region into two.
 		 */
-		u32_t u_reg_base = mpu_region_get_base(u_reg_index);
-		u32_t u_reg_last = mpu_region_get_last_addr(u_reg_index);
-		u32_t reg_last = regions[i]->start + regions[i]->size - 1;
+		uint32_t u_reg_base = mpu_region_get_base(u_reg_index);
+		uint32_t u_reg_last = mpu_region_get_last_addr(u_reg_index);
+		uint32_t reg_last = regions[i]->start + regions[i]->size - 1;
 
 		if ((regions[i]->start == u_reg_base) &&
 			(reg_last == u_reg_last)) {
@@ -468,9 +468,9 @@ static int mpu_configure_regions_and_partition(const struct k_mem_partition
  * performed, the error signal is propagated to the caller of the function.
  */
 static int mpu_configure_static_mpu_regions(const struct k_mem_partition
-	*static_regions[], const u8_t regions_num,
-	const u32_t background_area_base,
-	const u32_t background_area_end)
+	*static_regions[], const uint8_t regions_num,
+	const uint32_t background_area_base,
+	const uint32_t background_area_end)
 {
 	int mpu_reg_index = static_regions_num;
 
@@ -495,7 +495,7 @@ static int mpu_configure_static_mpu_regions(const struct k_mem_partition
  */
 static int mpu_mark_areas_for_dynamic_regions(
 		const struct k_mem_partition dyn_region_areas[],
-		const u8_t dyn_region_areas_num)
+		const uint8_t dyn_region_areas_num)
 {
 	/* In ARMv8-M architecture we need to store the index values
 	 * and the default configuration of the MPU regions, inside
@@ -539,7 +539,7 @@ static int mpu_mark_areas_for_dynamic_regions(
  * performed, the error signal is propagated to the caller of the function.
  */
 static int mpu_configure_dynamic_mpu_regions(const struct k_mem_partition
-	*dynamic_regions[], u8_t regions_num)
+	*dynamic_regions[], uint8_t regions_num)
 {
 	int mpu_reg_index = static_regions_num;
 

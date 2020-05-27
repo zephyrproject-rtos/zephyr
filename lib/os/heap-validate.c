@@ -79,7 +79,7 @@ bool sys_heap_validate(struct sys_heap *heap)
 	 */
 	for (int b = 0; b <= bucket_idx(h, h->len); b++) {
 		chunkid_t c0 = h->buckets[b].next;
-		u32_t n = 0;
+		uint32_t n = 0;
 
 		check_nexts(h, b);
 
@@ -173,7 +173,7 @@ struct z_heap_stress_rec {
 	size_t nblocks;
 	size_t blocks_alloced;
 	size_t bytes_alloced;
-	u32_t target_percent;
+	uint32_t target_percent;
 };
 
 struct z_heap_stress_block {
@@ -185,13 +185,13 @@ struct z_heap_stress_block {
  *
  * Here to guarantee cross-platform test repeatability.
  */
-static u32_t rand32(void)
+static uint32_t rand32(void)
 {
-	static u64_t state = 123456789; /* seed */
+	static uint64_t state = 123456789; /* seed */
 
 	state = state * 2862933555777941757UL + 3037000493UL;
 
-	return (u32_t)(state >> 32);
+	return (uint32_t)(state >> 32);
 }
 
 static bool rand_alloc_choice(struct z_heap_stress_rec *sr)
@@ -219,9 +219,9 @@ static bool rand_alloc_choice(struct z_heap_stress_rec *sr)
 	 * though!).
 	 */
 	__ASSERT(sr->total_bytes < 0xffffffffU / 100, "too big for u32!");
-	u32_t full_pct = (100 * sr->bytes_alloced) / sr->total_bytes;
-	u32_t target = sr->target_percent ? sr->target_percent : 1;
-	u32_t free_chance = 0xffffffffU;
+	uint32_t full_pct = (100 * sr->bytes_alloced) / sr->total_bytes;
+	uint32_t target = sr->target_percent ? sr->target_percent : 1;
+	uint32_t free_chance = 0xffffffffU;
 
 	if (full_pct < sr->target_percent) {
 		free_chance = full_pct * (0x80000000U / target);
@@ -262,7 +262,7 @@ static size_t rand_free_choice(struct z_heap_stress_rec *sr)
 void sys_heap_stress(void *(*alloc)(void *arg, size_t bytes),
 		     void (*free)(void *arg, void *p),
 		     void *arg, size_t total_bytes,
-		     u32_t op_count,
+		     uint32_t op_count,
 		     void *scratch_mem, size_t scratch_bytes,
 		     int target_percent,
 		     struct z_heap_stress_result *result)
@@ -279,7 +279,7 @@ void sys_heap_stress(void *(*alloc)(void *arg, size_t bytes),
 
 	*result = (struct z_heap_stress_result) {0};
 
-	for (u32_t i = 0; i < op_count; i++) {
+	for (uint32_t i = 0; i < op_count; i++) {
 		if (rand_alloc_choice(&sr)) {
 			size_t sz = rand_alloc_size(&sr);
 			void *p = sr.alloc(sr.arg, sz);

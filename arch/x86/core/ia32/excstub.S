@@ -49,7 +49,7 @@
  *
  * C function prototype:
  *
- * void _exception_enter(u32_t error_code, void *handler)
+ * void _exception_enter(uint32_t error_code, void *handler)
  *
  */
 

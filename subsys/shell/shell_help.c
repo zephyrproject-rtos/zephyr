@@ -107,10 +107,10 @@ static void formatted_text_print(const struct shell *shell, const char *str,
 }
 
 static void help_item_print(const struct shell *shell, const char *item_name,
-			    u16_t item_name_width, const char *item_help)
+			    uint16_t item_name_width, const char *item_help)
 {
-	static const u8_t tabulator[] = "  ";
-	const u16_t offset = 2 * strlen(tabulator) + item_name_width + 1;
+	static const uint8_t tabulator[] = "  ";
+	const uint16_t offset = 2 * strlen(tabulator) + item_name_width + 1;
 
 	if (item_name == NULL) {
 		return;
@@ -123,12 +123,12 @@ static void help_item_print(const struct shell *shell, const char *item_name,
 				       item_name_width, item_name,
 				       tabulator);
 	} else {
-		u16_t tmp = item_name_width - strlen(item_name);
+		uint16_t tmp = item_name_width - strlen(item_name);
 		char space = ' ';
 
 		shell_internal_fprintf(shell, SHELL_NORMAL, "%s%s", tabulator,
 				       item_name);
-		for (u16_t i = 0; i < tmp; i++) {
+		for (uint16_t i = 0; i < tmp; i++) {
 			shell_write(shell, &space, 1);
 		}
 		shell_internal_fprintf(shell, SHELL_NORMAL, "%s:", tabulator);
@@ -150,7 +150,7 @@ void shell_help_subcmd_print(const struct shell *shell)
 	const struct shell_static_entry *entry = NULL;
 	const struct shell_static_entry *parent = &shell->ctx->active_cmd;
 	struct shell_static_entry dloc;
-	u16_t longest = 0U;
+	uint16_t longest = 0U;
 	size_t idx = 0;
 
 	/* Searching for the longest subcommand to print. */
@@ -177,7 +177,7 @@ void shell_help_cmd_print(const struct shell *shell)
 {
 	static const char cmd_sep[] = " - ";	/* commands separator */
 
-	u16_t field_width = shell_strlen(shell->ctx->active_cmd.syntax) +
+	uint16_t field_width = shell_strlen(shell->ctx->active_cmd.syntax) +
 							  shell_strlen(cmd_sep);
 
 	shell_internal_fprintf(shell, SHELL_NORMAL, "%s%s",

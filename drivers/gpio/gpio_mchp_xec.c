@@ -14,12 +14,12 @@
 #include "gpio_utils.h"
 
 #define GPIO_IN_BASE(config) \
-	((__IO u32_t *)(GPIO_PARIN_BASE + (config->port_num << 2)))
+	((__IO uint32_t *)(GPIO_PARIN_BASE + (config->port_num << 2)))
 
 #define GPIO_OUT_BASE(config) \
-	((__IO u32_t *)(GPIO_PAROUT_BASE + (config->port_num << 2)))
+	((__IO uint32_t *)(GPIO_PAROUT_BASE + (config->port_num << 2)))
 
-static const u32_t valid_ctrl_masks[NUM_MCHP_GPIO_PORTS] = {
+static const uint32_t valid_ctrl_masks[NUM_MCHP_GPIO_PORTS] = {
 	(MCHP_GPIO_PORT_A_BITMAP),
 	(MCHP_GPIO_PORT_B_BITMAP),
 	(MCHP_GPIO_PORT_C_BITMAP),
@@ -34,26 +34,26 @@ struct gpio_xec_data {
 	/* port ISR callback routine address */
 	sys_slist_t callbacks;
 	/* pin callback routine enable flags, by pin number */
-	u32_t pin_callback_enables;
+	uint32_t pin_callback_enables;
 };
 
 struct gpio_xec_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
-	__IO u32_t *pcr1_base;
-	u8_t girq_id;
-	u32_t port_num;
-	u32_t flags;
+	__IO uint32_t *pcr1_base;
+	uint8_t girq_id;
+	uint32_t port_num;
+	uint32_t flags;
 };
 
 static int gpio_xec_configure(struct device *dev,
 			      gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_xec_config *config = dev->config_info;
-	__IO u32_t *current_pcr1;
-	u32_t pcr1 = 0U;
-	u32_t mask = 0U;
-	__IO u32_t *gpio_out_reg = GPIO_OUT_BASE(config);
+	__IO uint32_t *current_pcr1;
+	uint32_t pcr1 = 0U;
+	uint32_t mask = 0U;
+	__IO uint32_t *gpio_out_reg = GPIO_OUT_BASE(config);
 
 	/* Validate pin number range in terms of current port */
 	if ((valid_ctrl_masks[config->port_num] & BIT(pin)) == 0U) {
@@ -134,10 +134,10 @@ static int gpio_xec_pin_interrupt_configure(struct device *dev,
 {
 	const struct gpio_xec_config *config = dev->config_info;
 	struct gpio_xec_data *drv_data = dev->driver_data;
-	__IO u32_t *current_pcr1;
-	u32_t pcr1 = 0U;
-	u32_t mask = 0U;
-	u32_t gpio_interrupt = 0U;
+	__IO uint32_t *current_pcr1;
+	uint32_t pcr1 = 0U;
+	uint32_t mask = 0U;
+	uint32_t gpio_interrupt = 0U;
 
 	/* Validate pin number range in terms of current port */
 	if ((valid_ctrl_masks[config->port_num] & BIT(pin)) == 0U) {
@@ -212,61 +212,61 @@ static int gpio_xec_pin_interrupt_configure(struct device *dev,
 	return 0;
 }
 
-static int gpio_xec_port_set_masked_raw(struct device *dev, u32_t mask,
-					u32_t value)
+static int gpio_xec_port_set_masked_raw(struct device *dev, uint32_t mask,
+					uint32_t value)
 {
 	const struct gpio_xec_config *config = dev->config_info;
 
 	/* GPIO output registers are used for writing */
-	__IO u32_t *gpio_base = GPIO_OUT_BASE(config);
+	__IO uint32_t *gpio_base = GPIO_OUT_BASE(config);
 
 	*gpio_base = (*gpio_base & ~mask) | (mask & value);
 
 	return 0;
 }
 
-static int gpio_xec_port_set_bits_raw(struct device *dev, u32_t mask)
+static int gpio_xec_port_set_bits_raw(struct device *dev, uint32_t mask)
 {
 	const struct gpio_xec_config *config = dev->config_info;
 
 	/* GPIO output registers are used for writing */
-	__IO u32_t *gpio_base = GPIO_OUT_BASE(config);
+	__IO uint32_t *gpio_base = GPIO_OUT_BASE(config);
 
 	*gpio_base |= mask;
 
 	return 0;
 }
 
-static int gpio_xec_port_clear_bits_raw(struct device *dev, u32_t mask)
+static int gpio_xec_port_clear_bits_raw(struct device *dev, uint32_t mask)
 {
 	const struct gpio_xec_config *config = dev->config_info;
 
 	/* GPIO output registers are used for writing */
-	__IO u32_t *gpio_base = GPIO_OUT_BASE(config);
+	__IO uint32_t *gpio_base = GPIO_OUT_BASE(config);
 
 	*gpio_base &= ~mask;
 
 	return 0;
 }
 
-static int gpio_xec_port_toggle_bits(struct device *dev, u32_t mask)
+static int gpio_xec_port_toggle_bits(struct device *dev, uint32_t mask)
 {
 	const struct gpio_xec_config *config = dev->config_info;
 
 	/* GPIO output registers are used for writing */
-	__IO u32_t *gpio_base = GPIO_OUT_BASE(config);
+	__IO uint32_t *gpio_base = GPIO_OUT_BASE(config);
 
 	*gpio_base ^= mask;
 
 	return 0;
 }
 
-static int gpio_xec_port_get_raw(struct device *dev, u32_t *value)
+static int gpio_xec_port_get_raw(struct device *dev, uint32_t *value)
 {
 	const struct gpio_xec_config *config = dev->config_info;
 
 	/* GPIO input registers are used for reading */
-	__IO u32_t *gpio_base = GPIO_IN_BASE(config);
+	__IO uint32_t *gpio_base = GPIO_IN_BASE(config);
 
 	*value = *gpio_base;
 
@@ -308,8 +308,8 @@ static void gpio_gpio_xec_port_isr(void *arg)
 	struct device *dev = (struct device *)arg;
 	const struct gpio_xec_config *config = dev->config_info;
 	struct gpio_xec_data *data = dev->driver_data;
-	u32_t girq_result;
-	u32_t enabled_int;
+	uint32_t girq_result;
+	uint32_t enabled_int;
 
 	/* Figure out which interrupts have been triggered from the EC
 	 * aggregator result register
@@ -344,7 +344,7 @@ static const struct gpio_xec_config gpio_xec_port000_036_config = {
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(
 					DT_NODELABEL(gpio_000_036)),
 	},
-	.pcr1_base = (u32_t *) DT_REG_ADDR(DT_NODELABEL(gpio_000_036)),
+	.pcr1_base = (uint32_t *) DT_REG_ADDR(DT_NODELABEL(gpio_000_036)),
 	.port_num = MCHP_GPIO_000_036,
 #if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_000_036), irq)
 	.girq_id = MCHP_GIRQ11_ID,
@@ -389,7 +389,7 @@ static const struct gpio_xec_config gpio_xec_port040_076_config = {
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(
 					DT_NODELABEL(gpio_040_076)),
 	},
-	.pcr1_base = (u32_t *) DT_REG_ADDR(DT_NODELABEL(gpio_040_076)),
+	.pcr1_base = (uint32_t *) DT_REG_ADDR(DT_NODELABEL(gpio_040_076)),
 	.port_num = MCHP_GPIO_040_076,
 #if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_040_076), irq)
 	.girq_id = MCHP_GIRQ10_ID,
@@ -434,7 +434,7 @@ static const struct gpio_xec_config gpio_xec_port100_136_config = {
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(
 					DT_NODELABEL(gpio_100_136)),
 	},
-	.pcr1_base = (u32_t *) DT_REG_ADDR(DT_NODELABEL(gpio_100_136)),
+	.pcr1_base = (uint32_t *) DT_REG_ADDR(DT_NODELABEL(gpio_100_136)),
 	.port_num = MCHP_GPIO_100_136,
 #if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_100_136), irq)
 	.girq_id = MCHP_GIRQ09_ID,
@@ -479,7 +479,7 @@ static const struct gpio_xec_config gpio_xec_port140_176_config = {
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(
 					DT_NODELABEL(gpio_140_176)),
 	},
-	.pcr1_base = (u32_t *) DT_REG_ADDR(DT_NODELABEL(gpio_140_176)),
+	.pcr1_base = (uint32_t *) DT_REG_ADDR(DT_NODELABEL(gpio_140_176)),
 	.port_num = MCHP_GPIO_140_176,
 #if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_140_176), irq)
 	.girq_id = MCHP_GIRQ08_ID,
@@ -524,7 +524,7 @@ static const struct gpio_xec_config gpio_xec_port200_236_config = {
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(
 					DT_NODELABEL(gpio_200_236)),
 	},
-	.pcr1_base = (u32_t *) DT_REG_ADDR(DT_NODELABEL(gpio_200_236)),
+	.pcr1_base = (uint32_t *) DT_REG_ADDR(DT_NODELABEL(gpio_200_236)),
 	.port_num = MCHP_GPIO_200_236,
 #if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_200_236), irq)
 	.girq_id = MCHP_GIRQ12_ID,
@@ -569,7 +569,7 @@ static const struct gpio_xec_config gpio_xec_port240_276_config = {
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(
 					DT_NODELABEL(gpio_240_276)),
 	},
-	.pcr1_base = (u32_t *) DT_REG_ADDR(DT_NODELABEL(gpio_240_276)),
+	.pcr1_base = (uint32_t *) DT_REG_ADDR(DT_NODELABEL(gpio_240_276)),
 	.port_num = MCHP_GPIO_240_276,
 #if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_240_276), irq)
 	.girq_id = MCHP_GIRQ26_ID,

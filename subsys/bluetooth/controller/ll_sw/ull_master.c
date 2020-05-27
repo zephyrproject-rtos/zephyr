@@ -49,24 +49,24 @@
 #include <soc.h>
 #include "hal/debug.h"
 
-static void ticker_op_stop_scan_cb(u32_t status, void *params);
-static void ticker_op_cb(u32_t status, void *params);
-static inline void access_addr_get(u8_t access_addr[]);
+static void ticker_op_stop_scan_cb(uint32_t status, void *params);
+static void ticker_op_cb(uint32_t status, void *params);
+static inline void access_addr_get(uint8_t access_addr[]);
 static inline void conn_release(struct ll_scan_set *scan);
 
-u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
-			  u8_t filter_policy, u8_t peer_addr_type,
-			  u8_t *peer_addr, u8_t own_addr_type,
-			  u16_t interval, u16_t latency, u16_t timeout)
+uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
+			  uint8_t filter_policy, uint8_t peer_addr_type,
+			  uint8_t *peer_addr, uint8_t own_addr_type,
+			  uint16_t interval, uint16_t latency, uint16_t timeout)
 {
 	struct lll_conn *conn_lll;
 	struct ll_scan_set *scan;
-	u32_t conn_interval_us;
+	uint32_t conn_interval_us;
 	struct lll_scan *lll;
 	struct ll_conn *conn;
 	memq_link_t *link;
-	u8_t access_addr[4];
-	u8_t hop;
+	uint8_t access_addr[4];
+	uint8_t hop;
 	int err;
 
 	scan = ull_scan_is_disabled_get(0);
@@ -160,7 +160,7 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 
 	conn_lll->data_chan_count =
 		ull_conn_chan_map_cpy(conn_lll->data_chan_map);
-	util_rand(&hop, sizeof(u8_t));
+	util_rand(&hop, sizeof(uint8_t));
 	conn_lll->data_chan_hop = 5 + (hop % 12);
 	conn_lll->data_chan_sel = 0;
 	conn_lll->data_chan_use = 0;
@@ -172,7 +172,7 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 
 	conn->connect_expire = 6U;
 	conn->supervision_expire = 0U;
-	conn_interval_us = (u32_t)interval * 1250U;
+	conn_interval_us = (uint32_t)interval * 1250U;
 	conn->supervision_reload = RADIO_CONN_EVENTS(timeout * 10000U,
 							 conn_interval_us);
 
@@ -286,11 +286,11 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 	return ull_scan_enable(scan);
 }
 
-u8_t ll_connect_disable(void **rx)
+uint8_t ll_connect_disable(void **rx)
 {
 	struct lll_conn *conn_lll;
 	struct ll_scan_set *scan;
-	u8_t status;
+	uint8_t status;
 
 	scan = ull_scan_is_enabled_get(0);
 	if (!scan) {
@@ -318,7 +318,7 @@ u8_t ll_connect_disable(void **rx)
 
 		cc->hdr.type = NODE_RX_TYPE_CONNECTION;
 		cc->hdr.handle = 0xffff;
-		*((u8_t *)cc->pdu) = BT_HCI_ERR_UNKNOWN_CONN_ID;
+		*((uint8_t *)cc->pdu) = BT_HCI_ERR_UNKNOWN_CONN_ID;
 
 		ftr = &(cc->hdr.rx_ftr);
 		ftr->param = &scan->lll;
@@ -329,10 +329,10 @@ u8_t ll_connect_disable(void **rx)
 	return status;
 }
 
-u8_t ll_chm_update(u8_t *chm)
+uint8_t ll_chm_update(uint8_t *chm)
 {
-	u16_t handle;
-	u8_t ret;
+	uint16_t handle;
+	uint8_t ret;
 
 	ull_conn_chan_map_set(chm);
 
@@ -363,7 +363,7 @@ u8_t ll_chm_update(u8_t *chm)
 }
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
-u8_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
+uint8_t ll_enc_req_send(uint16_t handle, uint8_t *rand, uint8_t *ediv, uint8_t *ltk)
 {
 	struct ll_conn *conn;
 	struct node_tx *tx;
@@ -439,18 +439,18 @@ u8_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 		      struct node_rx_ftr *ftr, struct lll_conn *lll)
 {
-	u32_t conn_offset_us, conn_interval_us;
-	u8_t ticker_id_scan, ticker_id_conn;
-	u8_t peer_addr[BDADDR_SIZE];
-	u32_t ticks_slot_overhead;
-	u32_t ticks_slot_offset;
+	uint32_t conn_offset_us, conn_interval_us;
+	uint8_t ticker_id_scan, ticker_id_conn;
+	uint8_t peer_addr[BDADDR_SIZE];
+	uint32_t ticks_slot_overhead;
+	uint32_t ticks_slot_offset;
 	struct ll_scan_set *scan;
 	struct node_rx_cc *cc;
 	struct ll_conn *conn;
 	struct pdu_adv *pdu_tx;
-	u8_t peer_addr_type;
-	u32_t ticker_status;
-	u8_t chan_sel;
+	uint8_t peer_addr_type;
+	uint32_t ticker_status;
+	uint8_t chan_sel;
 
 	((struct lll_scan *)ftr->param)->conn = NULL;
 
@@ -470,7 +470,7 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	cc->role = 0U;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	u8_t rl_idx = ftr->rl_idx;
+	uint8_t rl_idx = ftr->rl_idx;
 
 	if (ftr->lrpa_used) {
 		memcpy(&cc->local_rpa[0], &pdu_tx->connect_ind.init_addr[0],
@@ -532,9 +532,9 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 		cs = (void *)rx_csa->pdu;
 
 		if (chan_sel) {
-			u16_t aa_ls = ((u16_t)lll->access_addr[1] << 8) |
+			uint16_t aa_ls = ((uint16_t)lll->access_addr[1] << 8) |
 				      lll->access_addr[0];
-			u16_t aa_ms = ((u16_t)lll->access_addr[3] << 8) |
+			uint16_t aa_ms = ((uint16_t)lll->access_addr[3] << 8) |
 				      lll->access_addr[2];
 
 			lll->data_chan_sel = 1;
@@ -587,8 +587,8 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	ticker_status = ticker_stop(TICKER_INSTANCE_ID_CTLR,
 				    TICKER_USER_ID_ULL_HIGH,
 				    ticker_id_scan, ticker_op_stop_scan_cb,
-				    (void *)(u32_t)ticker_id_scan);
-	ticker_op_stop_scan_cb(ticker_status, (void *)(u32_t)ticker_id_scan);
+				    (void *)(uint32_t)ticker_id_scan);
+	ticker_op_stop_scan_cb(ticker_status, (void *)(uint32_t)ticker_id_scan);
 
 	/* Scanner stop can expire while here in this ISR.
 	 * Deferred attempt to stop can fail as it would have
@@ -622,15 +622,15 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 #endif
 }
 
-void ull_master_ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
+void ull_master_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t lazy,
 			  void *param)
 {
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_master_prepare};
 	static struct lll_prepare_param p;
 	struct ll_conn *conn = param;
-	u32_t err;
-	u8_t ref;
+	uint32_t err;
+	uint8_t ref;
 
 	DEBUG_RADIO_PREPARE_M(1);
 
@@ -679,12 +679,12 @@ void ull_master_ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	DEBUG_RADIO_PREPARE_M(1);
 }
 
-static void ticker_op_stop_scan_cb(u32_t status, void *params)
+static void ticker_op_stop_scan_cb(uint32_t status, void *params)
 {
 	/* TODO: */
 }
 
-static void ticker_op_cb(u32_t status, void *params)
+static void ticker_op_cb(uint32_t status, void *params)
 {
 	ARG_UNUSED(params);
 
@@ -707,19 +707,19 @@ static void ticker_op_cb(u32_t status, void *params)
  * - It shall have no more than eleven transitions in the least significant 16
  *   bits.
  */
-static inline void access_addr_get(u8_t access_addr[])
+static inline void access_addr_get(uint8_t access_addr[])
 {
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-	u8_t transitions_lsb16;
-	u8_t ones_count_lsb8;
+	uint8_t transitions_lsb16;
+	uint8_t ones_count_lsb8;
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
-	u8_t consecutive_cnt;
-	u8_t consecutive_bit;
-	u32_t adv_aa_check;
-	u32_t aa;
-	u8_t transitions;
-	u8_t bit_idx;
-	u8_t retry;
+	uint8_t consecutive_cnt;
+	uint8_t consecutive_bit;
+	uint32_t adv_aa_check;
+	uint32_t aa;
+	uint8_t transitions;
+	uint8_t bit_idx;
+	uint8_t retry;
 
 	retry = 3U;
 again:
@@ -739,11 +739,11 @@ again:
 	consecutive_bit = (aa >> bit_idx) & 0x01;
 	while (bit_idx--) {
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-		u8_t transitions_lsb16_prev = transitions_lsb16;
+		uint8_t transitions_lsb16_prev = transitions_lsb16;
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
-		u8_t consecutive_cnt_prev = consecutive_cnt;
-		u8_t transitions_prev = transitions;
-		u8_t bit;
+		uint8_t consecutive_cnt_prev = consecutive_cnt;
+		uint8_t transitions_prev = transitions;
+		uint8_t bit;
 
 		bit = (aa >> bit_idx) & 0x01;
 		if (bit == consecutive_bit) {
@@ -845,7 +845,7 @@ again:
 	 * packets Access Address by only one bit.
 	 */
 	adv_aa_check = aa ^ PDU_AC_ACCESS_ADDR;
-	if (util_ones_count_get((u8_t *)&adv_aa_check,
+	if (util_ones_count_get((uint8_t *)&adv_aa_check,
 				sizeof(adv_aa_check)) <= 1) {
 		goto again;
 	}

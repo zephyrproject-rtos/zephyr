@@ -98,25 +98,25 @@ size_t plain_text_put_format(struct lwm2m_output_context *out,
 }
 
 static size_t put_s32(struct lwm2m_output_context *out,
-		      struct lwm2m_obj_path *path, s32_t value)
+		      struct lwm2m_obj_path *path, int32_t value)
 {
 	return plain_text_put_format(out, "%d", value);
 }
 
 static size_t put_s8(struct lwm2m_output_context *out,
-		     struct lwm2m_obj_path *path, s8_t value)
+		     struct lwm2m_obj_path *path, int8_t value)
 {
 	return plain_text_put_format(out, "%d", value);
 }
 
 static size_t put_s16(struct lwm2m_output_context *out,
-		      struct lwm2m_obj_path *path, s16_t value)
+		      struct lwm2m_obj_path *path, int16_t value)
 {
 	return plain_text_put_format(out, "%d", value);
 }
 
 static size_t put_s64(struct lwm2m_output_context *out,
-		      struct lwm2m_obj_path *path, s64_t value)
+		      struct lwm2m_obj_path *path, int64_t value)
 {
 	return plain_text_put_format(out, "%lld", value);
 }
@@ -200,15 +200,15 @@ static int get_length_left(struct lwm2m_input_context *in)
 }
 
 static size_t plain_text_read_number(struct lwm2m_input_context *in,
-				     s64_t *value1,
-				     s64_t *value2,
+				     int64_t *value1,
+				     int64_t *value2,
 				     bool accept_sign, bool accept_dot)
 {
-	s64_t *counter = value1;
+	int64_t *counter = value1;
 	int i = 0;
 	bool neg = false;
 	bool dot_found = false;
-	u8_t tmp;
+	uint8_t tmp;
 
 	/* initialize values to 0 */
 	*value1 = 0;
@@ -246,28 +246,28 @@ static size_t plain_text_read_number(struct lwm2m_input_context *in,
 	return i;
 }
 
-static size_t get_s32(struct lwm2m_input_context *in, s32_t *value)
+static size_t get_s32(struct lwm2m_input_context *in, int32_t *value)
 {
-	s64_t tmp = 0;
+	int64_t tmp = 0;
 	size_t len = 0;
 
 	len = plain_text_read_number(in, &tmp, NULL, true, false);
 	if (len > 0) {
-		*value = (s32_t)tmp;
+		*value = (int32_t)tmp;
 	}
 
 	return len;
 }
 
-static size_t get_s64(struct lwm2m_input_context *in, s64_t *value)
+static size_t get_s64(struct lwm2m_input_context *in, int64_t *value)
 {
 	return plain_text_read_number(in, value, NULL, true, false);
 }
 
 static size_t get_string(struct lwm2m_input_context *in,
-			 u8_t *value, size_t buflen)
+			 uint8_t *value, size_t buflen)
 {
-	u16_t in_len = get_length_left(in);
+	uint16_t in_len = get_length_left(in);
 
 	if (in_len > buflen) {
 		/* TODO: generate warning? */
@@ -287,13 +287,13 @@ static size_t get_string(struct lwm2m_input_context *in,
 static size_t get_float32fix(struct lwm2m_input_context *in,
 			     float32_value_t *value)
 {
-	s64_t tmp1, tmp2;
+	int64_t tmp1, tmp2;
 	size_t len = 0;
 
 	len = plain_text_read_number(in, &tmp1, &tmp2, true, true);
 	if (len > 0) {
-		value->val1 = (s32_t)tmp1;
-		value->val2 = (s32_t)tmp2;
+		value->val1 = (int32_t)tmp1;
+		value->val2 = (int32_t)tmp2;
 	}
 
 	return len;
@@ -309,7 +309,7 @@ static size_t get_float64fix(struct lwm2m_input_context *in,
 static size_t get_bool(struct lwm2m_input_context *in,
 		       bool *value)
 {
-	u8_t tmp;
+	uint8_t tmp;
 
 	if (buf_read_u8(&tmp, CPKT_BUF_READ(in->in_cpkt), &in->offset) < 0) {
 		return 0;
@@ -324,7 +324,7 @@ static size_t get_bool(struct lwm2m_input_context *in,
 }
 
 static size_t get_opaque(struct lwm2m_input_context *in,
-			 u8_t *value, size_t buflen, bool *last_block)
+			 uint8_t *value, size_t buflen, bool *last_block)
 {
 	in->opaque_len = get_length_left(in);
 	return lwm2m_engine_get_opaque_more(in, value, buflen, last_block);
@@ -368,7 +368,7 @@ int do_write_op_plain_text(struct lwm2m_message *msg)
 	struct lwm2m_engine_res *res = NULL;
 	struct lwm2m_engine_res_inst *res_inst = NULL;
 	int ret, i;
-	u8_t created = 0U;
+	uint8_t created = 0U;
 
 	ret = lwm2m_get_or_create_engine_obj(msg, &obj_inst, &created);
 	if (ret < 0) {

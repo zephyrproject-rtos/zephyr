@@ -23,13 +23,13 @@
  * for when z_swap() switches to it for the first time.
  */
 struct _x86_initial_frame {
-	u32_t swap_retval;
-	u32_t ebp;
-	u32_t ebx;
-	u32_t esi;
-	u32_t edi;
+	uint32_t swap_retval;
+	uint32_t ebp;
+	uint32_t ebx;
+	uint32_t esi;
+	uint32_t edi;
 	void *thread_entry;
-	u32_t eflags;
+	uint32_t eflags;
 	k_thread_entry_t entry;
 	void *p1;
 	void *p2;
@@ -101,7 +101,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	initial_frame->p3 = parameter3;
 	initial_frame->eflags = EFLAGS_INITIAL;
 #ifdef _THREAD_WRAPPER_REQUIRED
-	initial_frame->edi = (u32_t)swap_entry;
+	initial_frame->edi = (uint32_t)swap_entry;
 	initial_frame->thread_entry = z_x86_thread_entry_wrapper;
 #else
 	initial_frame->thread_entry = swap_entry;

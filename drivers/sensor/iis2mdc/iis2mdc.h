@@ -18,13 +18,13 @@
 #include "iis2mdc_reg.h"
 
 union axis3bit16_t {
-	s16_t i16bit[3];
-	u8_t u8bit[6];
+	int16_t i16bit[3];
+	uint8_t u8bit[6];
 };
 
 union axis1bit16_t {
-	s16_t i16bit;
-	u8_t u8bit[2];
+	int16_t i16bit;
+	uint8_t u8bit[2];
 };
 
 struct iis2mdc_config {
@@ -36,12 +36,12 @@ struct iis2mdc_config {
 	gpio_dt_flags_t drdy_flags;
 #endif  /* CONFIG_IIS2MDC_TRIGGER */
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	u16_t i2c_slv_addr;
+	uint16_t i2c_slv_addr;
 #elif DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	struct spi_config spi_conf;
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	const char *gpio_cs_port;
-	u8_t cs_gpio;
+	uint8_t cs_gpio;
 #endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
 };
@@ -49,9 +49,9 @@ struct iis2mdc_config {
 /* Sensor data */
 struct iis2mdc_data {
 	struct device *bus;
-	u16_t i2c_addr;
-	s16_t mag[3];
-	s32_t temp_sample;
+	uint16_t i2c_addr;
+	int16_t mag[3];
+	int32_t temp_sample;
 
 	stmdev_ctx_t *ctx;
 

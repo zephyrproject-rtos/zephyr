@@ -518,7 +518,7 @@
  * phandle properties
  *
  * These are special-cased to manage the impedance mismatch between
- * phandles, which are just u32_t node properties that only make sense
+ * phandles, which are just uint32_t node properties that only make sense
  * within the tree itself, and C values.
  */
 

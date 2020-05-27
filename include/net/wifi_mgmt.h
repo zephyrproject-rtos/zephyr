@@ -81,22 +81,22 @@ enum net_event_wifi_cmd {
  * via its info attribute (see net_mgmt.h)
  */
 struct wifi_scan_result {
-	u8_t ssid[WIFI_SSID_MAX_LEN];
-	u8_t ssid_length;
+	uint8_t ssid[WIFI_SSID_MAX_LEN];
+	uint8_t ssid_length;
 
-	u8_t channel;
+	uint8_t channel;
 	enum wifi_security_type security;
-	s8_t rssi;
+	int8_t rssi;
 };
 
 struct wifi_connect_req_params {
-	u8_t *ssid;
-	u8_t ssid_length; /* Max 32 */
+	uint8_t *ssid;
+	uint8_t ssid_length; /* Max 32 */
 
-	u8_t *psk;
-	u8_t psk_length; /* Min 8 - Max 64 */
+	uint8_t *psk;
+	uint8_t psk_length; /* Min 8 - Max 64 */
 
-	u8_t channel;
+	uint8_t channel;
 	enum wifi_security_type security;
 };
 

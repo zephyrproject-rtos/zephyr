@@ -43,8 +43,8 @@ static void turn_off_clock(struct device *dev, clock_control_subsys_t subsys)
 /* Function tests if during given time expected number of calibrations and
  * skips occurs.
  */
-static void test_calibration(u32_t exp_cal, u32_t exp_skip,
-				u32_t sleep_ms, u32_t line)
+static void test_calibration(uint32_t exp_cal, uint32_t exp_skip,
+				uint32_t sleep_ms, uint32_t line)
 {
 	int cal_cnt;
 	int skip_cnt;
@@ -70,7 +70,7 @@ static void test_calibration(u32_t exp_cal, u32_t exp_skip,
  */
 static void sync_just_after_calibration(void)
 {
-	u32_t cal_cnt = z_nrf_clock_calibration_count();
+	uint32_t cal_cnt = z_nrf_clock_calibration_count();
 
 	/* wait until calibration is performed. */
 	while (z_nrf_clock_calibration_count() == cal_cnt) {

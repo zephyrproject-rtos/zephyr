@@ -51,15 +51,15 @@ typedef void (*net_trickle_cb_t)(struct net_trickle *trickle,
  * only via the Trickle API.
  */
 struct net_trickle {
-	u32_t Imin;		/* Min interval size in ms */
-	u8_t Imax;		/* Max number of doublings */
-	u8_t k;			/* Redundancy constant */
+	uint32_t Imin;		/* Min interval size in ms */
+	uint8_t Imax;		/* Max number of doublings */
+	uint8_t k;			/* Redundancy constant */
 
-	u32_t I;		/* Current interval size */
-	u32_t Istart;		/* Start of the interval in ms */
-	u8_t c;			/* Consistency counter */
+	uint32_t I;		/* Current interval size */
+	uint32_t Istart;		/* Start of the interval in ms */
+	uint8_t c;			/* Consistency counter */
 
-	u32_t Imax_abs;		/* Max interval size in ms (not doublings)
+	uint32_t Imax_abs;		/* Max interval size in ms (not doublings)
 				 */
 
 	struct k_delayed_work timer;
@@ -82,9 +82,9 @@ struct net_trickle {
  * @return Return 0 if ok and <0 if error.
  */
 int net_trickle_create(struct net_trickle *trickle,
-		       u32_t Imin,
-		       u8_t Imax,
-		       u8_t k);
+		       uint32_t Imin,
+		       uint8_t Imax,
+		       uint8_t k);
 
 /**
  * @brief Start a Trickle timer.

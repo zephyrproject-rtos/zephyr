@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(eeprom_stm32);
 K_MUTEX_DEFINE(lock);
 
 struct eeprom_stm32_config {
-	u32_t addr;
+	uint32_t addr;
 	size_t size;
 };
 
@@ -24,7 +24,7 @@ static int eeprom_stm32_read(struct device *dev, off_t offset, void *buf,
 				size_t len)
 {
 	const struct eeprom_stm32_config *config = dev->config_info;
-	u8_t *pbuf = buf;
+	uint8_t *pbuf = buf;
 
 	if (!len) {
 		return 0;
@@ -38,7 +38,7 @@ static int eeprom_stm32_read(struct device *dev, off_t offset, void *buf,
 	k_mutex_lock(&lock, K_FOREVER);
 
 	while (len) {
-		*pbuf = *(__IO u8_t*)(config->addr + offset);
+		*pbuf = *(__IO uint8_t*)(config->addr + offset);
 
 		pbuf++;
 		offset++;
@@ -54,7 +54,7 @@ static int eeprom_stm32_write(struct device *dev, off_t offset,
 				const void *buf, size_t len)
 {
 	const struct eeprom_stm32_config *config = dev->config_info;
-	const u8_t *pbuf = buf;
+	const uint8_t *pbuf = buf;
 	HAL_StatusTypeDef ret = HAL_OK;
 
 	if (!len) {

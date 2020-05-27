@@ -131,8 +131,8 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
  *      out_queue and presented to application.
  */
 struct stream {
-	s32_t state;
-	u32_t dma_channel;
+	int32_t state;
+	uint32_t dma_channel;
 	struct dma_config dma_cfg;
 	struct dma_block_config dma_block;
 	struct k_msgq in_queue;
@@ -144,7 +144,7 @@ struct stream {
 struct i2s_cavs_config {
 	struct i2s_cavs_ssp *regs;
 	struct i2s_cavs_mn_div *mn_regs;
-	u32_t irq_id;
+	uint32_t irq_id;
 	void (*irq_connect)(void);
 };
 
@@ -166,7 +166,7 @@ I2S_DEVICE_OBJECT_DECLARE(1);
 I2S_DEVICE_OBJECT_DECLARE(2);
 I2S_DEVICE_OBJECT_DECLARE(3);
 
-static void i2s_dma_tx_callback(void *, u32_t, int);
+static void i2s_dma_tx_callback(void *, uint32_t, int);
 static void i2s_tx_stream_disable(struct i2s_cavs_dev_data *,
 		volatile struct i2s_cavs_ssp *const, struct device *);
 static void i2s_rx_stream_disable(struct i2s_cavs_dev_data *,
@@ -186,7 +186,7 @@ static inline void i2s_purge_stream_buffers(struct stream *strm,
 }
 
 /* This function is executed in the interrupt context */
-static void i2s_dma_tx_callback(void *arg, u32_t channel,
+static void i2s_dma_tx_callback(void *arg, uint32_t channel,
 		int status)
 {
 	struct device *dev = (struct device *)arg;
@@ -215,7 +215,7 @@ static void i2s_dma_tx_callback(void *arg, u32_t channel,
 		if (ret == 0) {
 			/* reload the DMA */
 			dma_reload(dev_data->dev_dma, strm->dma_channel,
-					(u32_t)buffer, (u32_t)&ssp->ssd,
+					(uint32_t)buffer, (uint32_t)&ssp->ssd,
 					dev_data->cfg.block_size);
 			dma_start(dev_data->dev_dma, strm->dma_channel);
 			ssp->ssc1 |= SSCR1_TSRE;
@@ -242,7 +242,7 @@ static void i2s_dma_tx_callback(void *arg, u32_t channel,
 	}
 }
 
-static void i2s_dma_rx_callback(void *arg, u32_t channel, int status)
+static void i2s_dma_rx_callback(void *arg, uint32_t channel, int status)
 {
 	struct device *dev = (struct device *)arg;
 	const struct i2s_cavs_config *const dev_cfg = DEV_CFG(dev);
@@ -287,7 +287,7 @@ static void i2s_dma_rx_callback(void *arg, u32_t channel, int status)
 
 			/* reload the DMA */
 			dma_reload(dev_data->dev_dma, strm->dma_channel,
-					(u32_t)&ssp->ssd, (u32_t)buffer,
+					(uint32_t)&ssp->ssd, (uint32_t)buffer,
 					dev_data->cfg.block_size);
 			dma_start(dev_data->dev_dma, strm->dma_channel);
 			ssp->ssc1 |= SSCR1_RSRE;
@@ -308,26 +308,26 @@ static int i2s_cavs_configure(struct device *dev, enum i2s_dir dir,
 	volatile struct i2s_cavs_ssp *const ssp = dev_cfg->regs;
 	volatile struct i2s_cavs_mn_div *const mn_div = dev_cfg->mn_regs;
 	struct dma_block_config *dma_block;
-	u8_t num_words = i2s_cfg->channels;
-	u8_t word_size_bits = i2s_cfg->word_size;
-	u8_t word_size_bytes;
-	u32_t bit_clk_freq, mclk;
+	uint8_t num_words = i2s_cfg->channels;
+	uint8_t word_size_bits = i2s_cfg->word_size;
+	uint8_t word_size_bytes;
+	uint32_t bit_clk_freq, mclk;
 	int ret;
 
-	u32_t ssc0;
-	u32_t ssc1;
-	u32_t ssc2;
-	u32_t ssc3;
-	u32_t sspsp;
-	u32_t sspsp2;
-	u32_t sstsa;
-	u32_t ssrsa;
-	u32_t ssto;
-	u32_t ssioc = 0U;
-	u32_t mdiv;
-	u32_t i2s_m = 0U;
-	u32_t i2s_n = 0U;
-	u32_t frame_len = 0U;
+	uint32_t ssc0;
+	uint32_t ssc1;
+	uint32_t ssc2;
+	uint32_t ssc3;
+	uint32_t sspsp;
+	uint32_t sspsp2;
+	uint32_t sstsa;
+	uint32_t ssrsa;
+	uint32_t ssto;
+	uint32_t ssioc = 0U;
+	uint32_t mdiv;
+	uint32_t i2s_m = 0U;
+	uint32_t i2s_n = 0U;
+	uint32_t frame_len = 0U;
 	bool inverted_frame = false;
 
 	if ((dev_data->tx.state != I2S_STATE_NOT_READY) &&
@@ -529,8 +529,8 @@ static int i2s_cavs_configure(struct device *dev, enum i2s_dir dir,
 
 	dma_block = dev_data->tx.dma_cfg.head_block;
 	dma_block->block_size = i2s_cfg->block_size;
-	dma_block->source_address = (u32_t)NULL;
-	dma_block->dest_address = (u32_t)&ssp->ssd;
+	dma_block->source_address = (uint32_t)NULL;
+	dma_block->dest_address = (uint32_t)&ssp->ssd;
 
 	ret = dma_config(dev_data->dev_dma, dev_data->tx.dma_channel,
 			&dev_data->tx.dma_cfg);
@@ -541,8 +541,8 @@ static int i2s_cavs_configure(struct device *dev, enum i2s_dir dir,
 
 	dma_block = dev_data->rx.dma_cfg.head_block;
 	dma_block->block_size = i2s_cfg->block_size;
-	dma_block->source_address = (u32_t)&ssp->ssd;
-	dma_block->dest_address = (u32_t)NULL;
+	dma_block->source_address = (uint32_t)&ssp->ssd;
+	dma_block->dest_address = (uint32_t)NULL;
 
 	ret = dma_config(dev_data->dev_dma, dev_data->rx.dma_channel,
 			&dev_data->rx.dma_cfg);
@@ -579,8 +579,8 @@ static int i2s_tx_stream_start(struct i2s_cavs_dev_data *dev_data,
 		return ret;
 	}
 
-	ret = dma_reload(dev_dma, strm->dma_channel, (u32_t)buffer,
-			(u32_t)&ssp->ssd, dev_data->cfg.block_size);
+	ret = dma_reload(dev_dma, strm->dma_channel, (uint32_t)buffer,
+			(uint32_t)&ssp->ssd, dev_data->cfg.block_size);
 	if (ret != 0) {
 		LOG_ERR("dma_reload failed (%d)", ret);
 		return ret;
@@ -626,8 +626,8 @@ static int i2s_rx_stream_start(struct i2s_cavs_dev_data *dev_data,
 
 	SOC_DCACHE_INVALIDATE(buffer, dev_data->cfg.block_size);
 
-	ret = dma_reload(dev_dma, strm->dma_channel, (u32_t)&ssp->ssd,
-			(u32_t)buffer, dev_data->cfg.block_size);
+	ret = dma_reload(dev_dma, strm->dma_channel, (uint32_t)&ssp->ssd,
+			(uint32_t)buffer, dev_data->cfg.block_size);
 	if (ret != 0) {
 		LOG_ERR("dma_reload failed (%d)", ret);
 		return ret;
@@ -685,7 +685,7 @@ static void i2s_rx_stream_disable(struct i2s_cavs_dev_data *dev_data,
 			      struct device *dev_dma)
 {
 	struct stream *strm = &dev_data->rx;
-	u32_t data;
+	uint32_t data;
 
 	/* Disable DMA service request handshake logic. Handshake is
 	 * not required now since DMA is not in operation.
@@ -821,7 +821,7 @@ static void i2s_cavs_isr(void *arg)
 	const struct i2s_cavs_config *const dev_cfg = DEV_CFG(dev);
 	volatile struct i2s_cavs_ssp *const ssp = dev_cfg->regs;
 	struct i2s_cavs_dev_data *const dev_data = DEV_DATA(dev);
-	u32_t status;
+	uint32_t status;
 
 	/* clear interrupts */
 	status = ssp->sss;

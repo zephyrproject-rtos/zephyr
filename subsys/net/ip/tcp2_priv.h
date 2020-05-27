@@ -117,22 +117,22 @@ enum pkt_addr {
 };
 
 struct tcphdr {
-	u16_t th_sport;
-	u16_t th_dport;
-	u32_t th_seq;
-	u32_t th_ack;
+	uint16_t th_sport;
+	uint16_t th_dport;
+	uint32_t th_seq;
+	uint32_t th_ack;
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	u8_t th_x2:4;	/* unused */
-	u8_t th_off:4;	/* data offset */
+	uint8_t th_x2:4;	/* unused */
+	uint8_t th_off:4;	/* data offset */
 #endif
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	u8_t th_off:4;
-	u8_t th_x2:4;
+	uint8_t th_off:4;
+	uint8_t th_x2:4;
 #endif
-	u8_t th_flags;
-	u16_t th_win;
-	u16_t th_sum;
-	u16_t th_urp;
+	uint8_t th_flags;
+	uint16_t th_win;
+	uint16_t th_sum;
+	uint16_t th_urp;
 };
 
 enum th_flags {
@@ -170,8 +170,8 @@ union tcp_endpoint {
 };
 
 struct tcp_options {
-	u16_t mss;
-	u16_t window;
+	uint16_t mss;
+	uint16_t window;
 	bool mss_found : 1;
 	bool wnd_found : 1;
 };
@@ -182,19 +182,19 @@ struct tcp { /* TCP connection */
 	struct k_mutex lock;
 	void *recv_user_data;
 	enum tcp_state state;
-	u32_t seq;
-	u32_t ack;
+	uint32_t seq;
+	uint32_t ack;
 	union tcp_endpoint src;
 	union tcp_endpoint dst;
-	u16_t recv_win;
-	u16_t send_win;
+	uint16_t recv_win;
+	uint16_t send_win;
 	struct tcp_options recv_options;
 	struct k_delayed_work send_timer;
 	sys_slist_t send_queue;
 	struct k_delayed_work send_data_timer;
 	struct net_pkt *send_data;
 	size_t send_data_total;
-	u8_t send_data_retries;
+	uint8_t send_data_retries;
 	int unacked_len;
 	enum tcp_data_mode data_mode;
 	bool in_retransmission;

@@ -207,7 +207,7 @@ config BT_CTLR_TX_BUFFER_SIZE
 	  then controller will perform fragmentation before transmitting on the
 	  the packet on air.
 	  Maximum is set to 251 due to implementation limitations (use of
-	  u8_t for length field in PDU buffer structure).
+	  uint8_t for length field in PDU buffer structure).
 
 choice
 	prompt "Tx Power"

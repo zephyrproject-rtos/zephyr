@@ -43,7 +43,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 }
 
 static int setup_iface(struct net_if *iface, const char *ipv6_addr,
-		       const char *ipv4_addr, u16_t vlan_tag)
+		       const char *ipv4_addr, uint16_t vlan_tag)
 {
 	struct net_if_addr *ifaddr;
 	struct in_addr addr4;

@@ -408,7 +408,7 @@ extern atomic_val_t atomic_nand(atomic_t *target, atomic_val_t value);
  */
 
 #define ATOMIC_BITS (sizeof(atomic_val_t) * 8)
-#define ATOMIC_MASK(bit) (1 << ((u32_t)(bit) & (ATOMIC_BITS - 1)))
+#define ATOMIC_MASK(bit) (1 << ((uint32_t)(bit) & (ATOMIC_BITS - 1)))
 #define ATOMIC_ELEM(addr, bit) ((addr) + ((bit) / ATOMIC_BITS))
 
 /**

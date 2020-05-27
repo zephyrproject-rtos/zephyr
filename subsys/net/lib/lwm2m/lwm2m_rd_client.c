@@ -96,14 +96,14 @@ enum sm_engine_state {
 };
 
 struct lwm2m_rd_client_info {
-	u32_t lifetime;
+	uint32_t lifetime;
 	struct lwm2m_ctx *ctx;
-	u8_t engine_state;
-	u8_t use_bootstrap;
-	u8_t trigger_update;
+	uint8_t engine_state;
+	uint8_t use_bootstrap;
+	uint8_t trigger_update;
 
-	s64_t last_update;
-	s64_t last_tx;
+	int64_t last_update;
+	int64_t last_tx;
 
 	char ep_name[CLIENT_EP_LEN];
 	char server_ep[CLIENT_EP_LEN];
@@ -113,14 +113,14 @@ struct lwm2m_rd_client_info {
 
 /* buffers */
 static char query_buffer[64]; /* allocate some data for queries and updates */
-static u8_t client_data[256]; /* allocate some data for the RD */
+static uint8_t client_data[256]; /* allocate some data for the RD */
 
 void engine_update_tx_time(void)
 {
 	client.last_tx = k_uptime_get();
 }
 
-static void set_sm_state(u8_t sm_state)
+static void set_sm_state(uint8_t sm_state)
 {
 	enum lwm2m_rd_client_event event = LWM2M_RD_CLIENT_EVENT_NONE;
 
@@ -160,7 +160,7 @@ static bool sm_is_registered(void)
 		client.engine_state <= ENGINE_DEREGISTER_FAILED);
 }
 
-static u8_t get_sm_state(void)
+static uint8_t get_sm_state(void)
 {
 	/* TODO: add locking? */
 	return client.engine_state;
@@ -219,7 +219,7 @@ static int do_bootstrap_reply_cb(const struct coap_packet *response,
 				 struct coap_reply *reply,
 				 const struct sockaddr *from)
 {
-	u8_t code;
+	uint8_t code;
 
 	code = coap_header_get_code(response);
 	LOG_DBG("Bootstrap callback (code:%u.%u)",
@@ -266,7 +266,7 @@ static int do_registration_reply_cb(const struct coap_packet *response,
 				    const struct sockaddr *from)
 {
 	struct coap_option options[2];
-	u8_t code;
+	uint8_t code;
 	int ret;
 
 	code = coap_header_get_code(response);
@@ -333,7 +333,7 @@ static int do_update_reply_cb(const struct coap_packet *response,
 			      struct coap_reply *reply,
 			      const struct sockaddr *from)
 {
-	u8_t code;
+	uint8_t code;
 
 	code = coap_header_get_code(response);
 	LOG_INF("Update callback (code:%u.%u)",
@@ -370,7 +370,7 @@ static int do_deregister_reply_cb(const struct coap_packet *response,
 				  struct coap_reply *reply,
 				  const struct sockaddr *from)
 {
-	u8_t code;
+	uint8_t code;
 
 	code = coap_header_get_code(response);
 	LOG_DBG("Deregister callback (code:%u.%u)",
@@ -402,7 +402,7 @@ static void do_deregister_timeout_cb(struct lwm2m_message *msg)
 }
 
 static int sm_select_next_sec_inst(bool bootstrap_server,
-				   int *sec_obj_inst, u32_t *lifetime)
+				   int *sec_obj_inst, uint32_t *lifetime)
 {
 	char pathstr[MAX_RESOURCE_LEN];
 	int ret, end, i, obj_inst_id, found = -1;
@@ -601,7 +601,7 @@ static int sm_send_registration(bool send_obj_support_data,
 				lwm2m_message_timeout_cb_t timeout_cb)
 {
 	struct lwm2m_message *msg;
-	u16_t client_data_len;
+	uint16_t client_data_len;
 	int ret;
 	char binding[CLIENT_BINDING_LEN];
 

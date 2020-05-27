@@ -31,7 +31,7 @@ struct shell_history {
  * @param _size Memory dedicated for shell history.
  */
 #define SHELL_HISTORY_DEFINE(_name, _size) \
-	static u8_t __noinit __aligned(sizeof(void *)) \
+	static uint8_t __noinit __aligned(sizeof(void *)) \
 			_name##_ring_buf_data[_size]; \
 	static struct ring_buf _name##_ring_buf = \
 		{ \
@@ -80,7 +80,7 @@ void shell_history_mode_exit(struct shell_history *history);
  * @return True if remains in history mode.
  */
 bool shell_history_get(struct shell_history *history, bool up,
-		       u8_t *dst, u16_t *len);
+		       uint8_t *dst, uint16_t *len);
 
 /**
  * @brief Put line into shell command history.
@@ -92,7 +92,7 @@ bool shell_history_get(struct shell_history *history, bool up,
  * @param len		Data length.
  *
  */
-void shell_history_put(struct shell_history *history, u8_t *line, size_t len);
+void shell_history_put(struct shell_history *history, uint8_t *line, size_t len);
 
 /**
  * @brief Get state of shell history.

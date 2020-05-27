@@ -8,20 +8,20 @@
 #include <string.h>
 #include <syscall_handler.h>
 
-static inline int z_vrfy_i2c_configure(struct device *dev, u32_t dev_config)
+static inline int z_vrfy_i2c_configure(struct device *dev, uint32_t dev_config)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_I2C(dev, configure));
 	return z_impl_i2c_configure((struct device *)dev, dev_config);
 }
 #include <syscalls/i2c_configure_mrsh.c>
 
-static u32_t copy_msgs_and_transfer(struct device *dev,
+static uint32_t copy_msgs_and_transfer(struct device *dev,
 				    const struct i2c_msg *msgs,
-				    u8_t num_msgs,
-				    u16_t addr)
+				    uint8_t num_msgs,
+				    uint16_t addr)
 {
 	struct i2c_msg copy[num_msgs];
-	u8_t i;
+	uint8_t i;
 
 	/* Use a local copy to avoid switcheroo attacks. */
 	memcpy(copy, msgs, num_msgs * sizeof(*msgs));
@@ -38,8 +38,8 @@ static u32_t copy_msgs_and_transfer(struct device *dev,
 }
 
 static inline int z_vrfy_i2c_transfer(struct device *dev,
-				     struct i2c_msg *msgs, u8_t num_msgs,
-				     u16_t addr)
+				     struct i2c_msg *msgs, uint8_t num_msgs,
+				     uint16_t addr)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_I2C));
 
@@ -56,7 +56,7 @@ static inline int z_vrfy_i2c_transfer(struct device *dev,
 
 	return copy_msgs_and_transfer((struct device *)dev,
 				      (struct i2c_msg *)msgs,
-				      (u8_t)num_msgs, (u16_t)addr);
+				      (uint8_t)num_msgs, (uint16_t)addr);
 }
 #include <syscalls/i2c_transfer_mrsh.c>
 

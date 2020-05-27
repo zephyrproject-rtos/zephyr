@@ -40,7 +40,7 @@ static struct simplelink_data simplelink_data;
 static K_SEM_DEFINE(ip_acquired, 0, 1);
 
 /* Handle connection events from the SimpleLink Event Handlers: */
-static void simplelink_wifi_cb(u32_t event, struct sl_connect_state *conn)
+static void simplelink_wifi_cb(uint32_t event, struct sl_connect_state *conn)
 {
 	int status;
 
@@ -101,7 +101,7 @@ static void simplelink_scan_work_handler(struct k_work *work)
 		    SL_ERROR_WLAN_GET_NETWORK_LIST_EAGAIN) &&
 		   (simplelink_data.scan_retries++ <
 		    CONFIG_WIFI_SIMPLELINK_MAX_SCAN_RETRIES)) {
-		s32_t delay;
+		int32_t delay;
 
 		/* Try again: */
 		simplelink_data.num_results_or_err = z_simplelink_start_scan();
@@ -138,7 +138,7 @@ static int simplelink_mgmt_scan(struct device *dev, scan_result_cb_t cb)
 	 * already returned, or indicate a retry is required:
 	 */
 	if ((err > 0) || (err == SL_ERROR_WLAN_GET_NETWORK_LIST_EAGAIN)) {
-		s32_t delay = (err > 0 ? 0 : SCAN_RETRY_DELAY);
+		int32_t delay = (err > 0 ? 0 : SCAN_RETRY_DELAY);
 
 		/* Store for later reference by delayed work handler: */
 		simplelink_data.cb = cb;

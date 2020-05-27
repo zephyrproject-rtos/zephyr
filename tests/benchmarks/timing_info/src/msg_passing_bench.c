@@ -23,38 +23,38 @@ K_MBOX_DEFINE(benchmark_mbox);
 K_SEM_DEFINE(mbox_sem, 1, 1);
 
 /* common location for the swap to write the tsc data*/
-extern u32_t arch_timing_value_swap_end;
-extern u64_t arch_timing_value_swap_common;
+extern uint32_t arch_timing_value_swap_end;
+extern uint64_t arch_timing_value_swap_common;
 
 /* location of the time stamps*/
-u64_t __msg_q_put_state;
-u64_t __msg_q_get_state;
+uint64_t __msg_q_put_state;
+uint64_t __msg_q_get_state;
 
-u64_t __msg_q_put_w_cxt_start_time;
-u64_t __msg_q_put_w_cxt_end_time;
+uint64_t __msg_q_put_w_cxt_start_time;
+uint64_t __msg_q_put_w_cxt_end_time;
 
-u64_t __msg_q_put_wo_cxt_start_time;  /* without context switch */
-u64_t __msg_q_put_wo_cxt_end_time;
+uint64_t __msg_q_put_wo_cxt_start_time;  /* without context switch */
+uint64_t __msg_q_put_wo_cxt_end_time;
 
-u64_t __msg_q_get_w_cxt_start_time;
-u64_t __msg_q_get_w_cxt_end_time;
+uint64_t __msg_q_get_w_cxt_start_time;
+uint64_t __msg_q_get_w_cxt_end_time;
 
-u64_t msg_q_get_wo_cxt_start_time;
-u64_t msg_q_get_wo_cxt_end_time;
+uint64_t msg_q_get_wo_cxt_start_time;
+uint64_t msg_q_get_wo_cxt_end_time;
 
-u32_t __mbox_sync_put_state;
-u64_t mbox_sync_put_start_time;
-u64_t mbox_sync_put_end_time;
+uint32_t __mbox_sync_put_state;
+uint64_t mbox_sync_put_start_time;
+uint64_t mbox_sync_put_end_time;
 
-u32_t __mbox_sync_get_state;
-u64_t mbox_sync_get_start_time;
-u64_t mbox_sync_get_end_time;
+uint32_t __mbox_sync_get_state;
+uint64_t mbox_sync_get_start_time;
+uint64_t mbox_sync_get_end_time;
 
-u64_t mbox_async_put_start_time;
-u64_t mbox_async_put_end_time;
+uint64_t mbox_async_put_start_time;
+uint64_t mbox_async_put_end_time;
 
-u64_t mbox_get_w_cxt_start_time;
-u64_t mbox_get_w_cxt_end_time;
+uint64_t mbox_get_w_cxt_start_time;
+uint64_t mbox_get_w_cxt_end_time;
 
 /*For benchmarking msg queues*/
 k_tid_t producer_w_cxt_switch_tid;
@@ -91,7 +91,7 @@ void thread_mbox_sync_get_receive(void *p1, void *p2, void *p3);
 void thread_mbox_async_put_send(void *p1, void *p2, void *p3);
 void thread_mbox_async_put_receive(void *p1, void *p2, void *p3);
 
-volatile u64_t time_check;
+volatile uint64_t time_check;
 int received_data_get;
 int received_data_consumer;
 int data_to_send;
@@ -131,7 +131,7 @@ void msg_passing_bench(void)
 				thread_producer_msgq_w_cxt_switch, NULL,
 				NULL, NULL, 2 /*priority*/, 0, K_MSEC(50));
 
-	u32_t msg_status =  k_msgq_get(&benchmark_q, &received_data,
+	uint32_t msg_status =  k_msgq_get(&benchmark_q, &received_data,
 				       K_MSEC(300));
 
 	producer_wo_cxt_switch_tid =
@@ -142,7 +142,7 @@ void msg_passing_bench(void)
 
 	k_thread_abort(producer_w_cxt_switch_tid);
 	k_thread_abort(producer_wo_cxt_switch_tid);
-	__msg_q_put_w_cxt_end_time = ((u32_t)arch_timing_value_swap_common);
+	__msg_q_put_w_cxt_end_time = ((uint32_t)arch_timing_value_swap_common);
 	ARG_UNUSED(msg_status);
 
 	/*******************************************************************/
@@ -285,44 +285,44 @@ void msg_passing_bench(void)
 
 	/* Only print lower 32bit of time result */
 	PRINT_STATS("Message Queue Put with context switch",
-		    (u32_t)((__msg_q_put_w_cxt_end_time -
+		    (uint32_t)((__msg_q_put_w_cxt_end_time -
 			     __msg_q_put_w_cxt_start_time) & 0xFFFFFFFFULL),
-		    (u32_t) (total_msg_q_put_w_cxt_time  & 0xFFFFFFFFULL));
+		    (uint32_t) (total_msg_q_put_w_cxt_time  & 0xFFFFFFFFULL));
 
 	PRINT_STATS("Message Queue Put without context switch",
-		    (u32_t)((__msg_q_put_wo_cxt_end_time -
+		    (uint32_t)((__msg_q_put_wo_cxt_end_time -
 			     __msg_q_put_wo_cxt_start_time) & 0xFFFFFFFFULL),
-		    (u32_t) (total_msg_q_put_wo_cxt_time  & 0xFFFFFFFFULL));
+		    (uint32_t) (total_msg_q_put_wo_cxt_time  & 0xFFFFFFFFULL));
 
 	PRINT_STATS("Message Queue get with context switch",
-		    (u32_t)((__msg_q_get_w_cxt_end_time -
+		    (uint32_t)((__msg_q_get_w_cxt_end_time -
 			     __msg_q_get_w_cxt_start_time) & 0xFFFFFFFFULL),
-		    (u32_t) (total_msg_q_get_w_cxt_time & 0xFFFFFFFFULL));
+		    (uint32_t) (total_msg_q_get_w_cxt_time & 0xFFFFFFFFULL));
 
 	PRINT_STATS("Message Queue get without context switch",
-		    (u32_t)((msg_q_get_wo_cxt_end_time -
+		    (uint32_t)((msg_q_get_wo_cxt_end_time -
 			     msg_q_get_wo_cxt_start_time) & 0xFFFFFFFFULL),
-		    (u32_t) (total_msg_q_get_wo_cxt_time  & 0xFFFFFFFFULL));
+		    (uint32_t) (total_msg_q_get_wo_cxt_time  & 0xFFFFFFFFULL));
 
 	PRINT_STATS("MailBox synchronous put",
-		    (u32_t)((mbox_sync_put_end_time - mbox_sync_put_start_time)
+		    (uint32_t)((mbox_sync_put_end_time - mbox_sync_put_start_time)
 			    & 0xFFFFFFFFULL),
-		    (u32_t) (total_mbox_sync_put_time  & 0xFFFFFFFFULL));
+		    (uint32_t) (total_mbox_sync_put_time  & 0xFFFFFFFFULL));
 
 	PRINT_STATS("MailBox synchronous get",
-		    (u32_t)((mbox_sync_get_end_time - mbox_sync_get_start_time)
+		    (uint32_t)((mbox_sync_get_end_time - mbox_sync_get_start_time)
 			    & 0xFFFFFFFFULL),
-		    (u32_t) (total_mbox_sync_get_time  & 0xFFFFFFFFULL));
+		    (uint32_t) (total_mbox_sync_get_time  & 0xFFFFFFFFULL));
 
 	PRINT_STATS("MailBox asynchronous put",
-		    (u32_t)((mbox_async_put_end_time - mbox_async_put_start_time)
+		    (uint32_t)((mbox_async_put_end_time - mbox_async_put_start_time)
 			    & 0xFFFFFFFFULL),
-		    (u32_t) (total_mbox_async_put_time  & 0xFFFFFFFFULL));
+		    (uint32_t) (total_mbox_async_put_time  & 0xFFFFFFFFULL));
 
 	PRINT_STATS("MailBox get without context switch",
-		    (u32_t)((mbox_get_w_cxt_end_time - mbox_get_w_cxt_start_time)
+		    (uint32_t)((mbox_get_w_cxt_end_time - mbox_get_w_cxt_start_time)
 			    & 0xFFFFFFFFULL),
-		    (u32_t) (total_mbox_get_w_cxt_time  & 0xFFFFFFFFULL));
+		    (uint32_t) (total_mbox_get_w_cxt_time  & 0xFFFFFFFFULL));
 
 }
 
@@ -332,7 +332,7 @@ void thread_producer_msgq_w_cxt_switch(void *p1, void *p2, void *p3)
 
 	arch_timing_value_swap_end = 1U;
 	TIMING_INFO_PRE_READ();
-	__msg_q_put_w_cxt_start_time = (u32_t) TIMING_INFO_OS_GET_TIME();
+	__msg_q_put_w_cxt_start_time = (uint32_t) TIMING_INFO_OS_GET_TIME();
 	k_msgq_put(&benchmark_q, &data_to_send, K_NO_WAIT);
 }
 

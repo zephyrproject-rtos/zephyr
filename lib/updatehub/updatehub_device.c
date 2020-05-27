@@ -9,7 +9,7 @@
 
 bool updatehub_get_device_identity(char *id, int id_max_len)
 {
-	u8_t hwinfo_id[DEVICE_ID_BIN_MAX_SIZE];
+	uint8_t hwinfo_id[DEVICE_ID_BIN_MAX_SIZE];
 	size_t length;
 
 	length = hwinfo_get_device_id(hwinfo_id, DEVICE_ID_BIN_MAX_SIZE);

@@ -24,13 +24,13 @@ LOG_MODULE_REGISTER(crypto_stm32);
 #define CRYP_SUPPORT (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | \
 		      CAP_NO_IV_PREFIX)
 #define BLOCK_LEN_BYTES 16
-#define BLOCK_LEN_WORDS (BLOCK_LEN_BYTES / sizeof(u32_t))
+#define BLOCK_LEN_WORDS (BLOCK_LEN_BYTES / sizeof(uint32_t))
 #define CRYPTO_MAX_SESSION CONFIG_CRYPTO_STM32_MAX_SESSION
 
 struct crypto_stm32_session crypto_stm32_sessions[CRYPTO_MAX_SESSION];
 
-static void copy_reverse_words(u8_t *dst_buf, int dst_len,
-			       u8_t *src_buf, int src_len)
+static void copy_reverse_words(uint8_t *dst_buf, int dst_len,
+			       uint8_t *src_buf, int src_len)
 {
 	int i;
 
@@ -38,13 +38,13 @@ static void copy_reverse_words(u8_t *dst_buf, int dst_len,
 	__ASSERT_NO_MSG((dst_len % 4) == 0);
 
 	memcpy(dst_buf, src_buf, src_len);
-	for (i = 0; i < dst_len; i += sizeof(u32_t)) {
-		sys_mem_swap(&dst_buf[i], sizeof(u32_t));
+	for (i = 0; i < dst_len; i += sizeof(uint32_t)) {
+		sys_mem_swap(&dst_buf[i], sizeof(uint32_t));
 	}
 }
 
-static int do_encrypt(struct cipher_ctx *ctx, u8_t *in_buf, int in_len,
-		      u8_t *out_buf)
+static int do_encrypt(struct cipher_ctx *ctx, uint8_t *in_buf, int in_len,
+		      uint8_t *out_buf)
 {
 	HAL_StatusTypeDef status;
 
@@ -73,8 +73,8 @@ static int do_encrypt(struct cipher_ctx *ctx, u8_t *in_buf, int in_len,
 	return 0;
 }
 
-static int do_decrypt(struct cipher_ctx *ctx, u8_t *in_buf, int in_len,
-		      u8_t *out_buf)
+static int do_decrypt(struct cipher_ctx *ctx, uint8_t *in_buf, int in_len,
+		      uint8_t *out_buf)
 {
 	HAL_StatusTypeDef status;
 
@@ -146,15 +146,15 @@ static int crypto_stm32_ecb_decrypt(struct cipher_ctx *ctx,
 }
 
 static int crypto_stm32_cbc_encrypt(struct cipher_ctx *ctx,
-				    struct cipher_pkt *pkt, u8_t *iv)
+				    struct cipher_pkt *pkt, uint8_t *iv)
 {
 	int ret;
-	u32_t vec[BLOCK_LEN_WORDS];
+	uint32_t vec[BLOCK_LEN_WORDS];
 	int out_offset = 0;
 
 	struct crypto_stm32_session *session = CRYPTO_STM32_SESSN(ctx);
 
-	copy_reverse_words((u8_t *)vec, sizeof(vec), iv, BLOCK_LEN_BYTES);
+	copy_reverse_words((uint8_t *)vec, sizeof(vec), iv, BLOCK_LEN_BYTES);
 	session->config.pInitVect = vec;
 
 	if ((ctx->flags & CAP_NO_IV_PREFIX) == 0U) {
@@ -173,15 +173,15 @@ static int crypto_stm32_cbc_encrypt(struct cipher_ctx *ctx,
 }
 
 static int crypto_stm32_cbc_decrypt(struct cipher_ctx *ctx,
-				    struct cipher_pkt *pkt, u8_t *iv)
+				    struct cipher_pkt *pkt, uint8_t *iv)
 {
 	int ret;
-	u32_t vec[BLOCK_LEN_WORDS];
+	uint32_t vec[BLOCK_LEN_WORDS];
 	int in_offset = 0;
 
 	struct crypto_stm32_session *session = CRYPTO_STM32_SESSN(ctx);
 
-	copy_reverse_words((u8_t *)vec, sizeof(vec), iv, BLOCK_LEN_BYTES);
+	copy_reverse_words((uint8_t *)vec, sizeof(vec), iv, BLOCK_LEN_BYTES);
 	session->config.pInitVect = vec;
 
 	if ((ctx->flags & CAP_NO_IV_PREFIX) == 0U) {
@@ -198,15 +198,15 @@ static int crypto_stm32_cbc_decrypt(struct cipher_ctx *ctx,
 }
 
 static int crypto_stm32_ctr_encrypt(struct cipher_ctx *ctx,
-				    struct cipher_pkt *pkt, u8_t *iv)
+				    struct cipher_pkt *pkt, uint8_t *iv)
 {
 	int ret;
-	u32_t ctr[BLOCK_LEN_WORDS] = {0};
+	uint32_t ctr[BLOCK_LEN_WORDS] = {0};
 	int ivlen = ctx->keylen - (ctx->mode_params.ctr_info.ctr_len >> 3);
 
 	struct crypto_stm32_session *session = CRYPTO_STM32_SESSN(ctx);
 
-	copy_reverse_words((u8_t *)ctr, sizeof(ctr), iv, ivlen);
+	copy_reverse_words((uint8_t *)ctr, sizeof(ctr), iv, ivlen);
 	session->config.pInitVect = ctr;
 
 	ret = do_encrypt(ctx, pkt->in_buf, pkt->in_len, pkt->out_buf);
@@ -218,15 +218,15 @@ static int crypto_stm32_ctr_encrypt(struct cipher_ctx *ctx,
 }
 
 static int crypto_stm32_ctr_decrypt(struct cipher_ctx *ctx,
-				    struct cipher_pkt *pkt, u8_t *iv)
+				    struct cipher_pkt *pkt, uint8_t *iv)
 {
 	int ret;
-	u32_t ctr[BLOCK_LEN_WORDS] = {0};
+	uint32_t ctr[BLOCK_LEN_WORDS] = {0};
 	int ivlen = ctx->keylen - (ctx->mode_params.ctr_info.ctr_len >> 3);
 
 	struct crypto_stm32_session *session = CRYPTO_STM32_SESSN(ctx);
 
-	copy_reverse_words((u8_t *)ctr, sizeof(ctr), iv, ivlen);
+	copy_reverse_words((uint8_t *)ctr, sizeof(ctr), iv, ivlen);
 	session->config.pInitVect = ctr;
 
 	ret = do_decrypt(ctx, pkt->in_buf, pkt->in_len, pkt->out_buf);
@@ -369,7 +369,7 @@ static int crypto_stm32_session_setup(struct device *dev,
 		}
 	}
 
-	copy_reverse_words((u8_t *)session->key, CRYPTO_STM32_AES_MAX_KEY_LEN,
+	copy_reverse_words((uint8_t *)session->key, CRYPTO_STM32_AES_MAX_KEY_LEN,
 			   ctx->key.bit_stream, ctx->keylen);
 
 	session->config.pKey = session->key;

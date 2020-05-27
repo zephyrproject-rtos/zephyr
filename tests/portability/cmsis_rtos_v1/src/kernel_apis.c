@@ -39,13 +39,13 @@ void test_kernel_start(void)
  */
 void test_kernel_systick(void)
 {
-	u32_t start_time, stop_time, diff, max, min;
+	uint32_t start_time, stop_time, diff, max, min;
 
 	start_time = osKernelSysTick();
 	k_busy_wait(WAIT_TIME_US);
 	stop_time = osKernelSysTick();
 
-	diff = (u32_t)k_cyc_to_ns_floor64(stop_time -
+	diff = (uint32_t)k_cyc_to_ns_floor64(stop_time -
 					 start_time) / NSEC_PER_USEC;
 
 	/* Check that it's within 1%.  On some Zephyr platforms

@@ -45,8 +45,8 @@
 struct cypress_psoc6_config {
 	CySCB_Type *base;
 	GPIO_PRT_Type *port;
-	u32_t rx_num;
-	u32_t tx_num;
+	uint32_t rx_num;
+	uint32_t tx_num;
 	en_hsiom_sel_t rx_val;
 	en_hsiom_sel_t tx_val;
 	en_clk_dst_t scb_clock;
@@ -126,7 +126,7 @@ static int uart_psoc6_init(struct device *dev)
 static int uart_psoc6_poll_in(struct device *dev, unsigned char *c)
 {
 	const struct cypress_psoc6_config *config = dev->config_info;
-	u32_t rec;
+	uint32_t rec;
 
 	rec = Cy_SCB_UART_Get(config->base);
 	*c = (unsigned char)(rec & 0xff);

@@ -37,7 +37,7 @@ LOG_MODULE_REGISTER(adc_shell);
 struct adc_hdl {
 	char *device_name;
 	struct adc_channel_cfg channel_config;
-	u8_t resolution;
+	uint8_t resolution;
 };
 
 #define ADC_HDL_LIST_ENTRY(inst)					\
@@ -69,19 +69,19 @@ struct adc_hdl adc_list[] = {
 };
 
 struct args_index {
-	s8_t adc;
-	s8_t parent_adc;
-	u8_t channel;
-	u8_t conf;
-	u8_t acq_unit;
+	int8_t adc;
+	int8_t parent_adc;
+	uint8_t channel;
+	uint8_t conf;
+	uint8_t acq_unit;
 };
 
 struct args_number {
-	u8_t help;
-	u8_t channel;
-	u8_t acq_time;
-	u8_t resolution;
-	u8_t read;
+	uint8_t help;
+	uint8_t channel;
+	uint8_t acq_time;
+	uint8_t resolution;
+	uint8_t read;
 };
 
 static const struct args_index args_indx = {
@@ -143,7 +143,7 @@ static int cmd_adc_channel(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 	adc_list[chosen_adc].channel_config.channel_id =
-		(u8_t)strtol(argv[args_indx.conf], NULL, 10);
+		(uint8_t)strtol(argv[args_indx.conf], NULL, 10);
 	retval = adc_channel_setup(adc_dev,
 			&adc_list[chosen_adc].channel_config);
 	LOG_DBG("Channel setup returned %i\n", retval);
@@ -209,7 +209,7 @@ static int cmd_adc_acq(const struct shell *shell, size_t argc, char **argv)
 	int retval = 0;
 	struct device *adc_dev;
 	int chosen_adc;
-	u16_t acq_time;
+	uint16_t acq_time;
 
 	if (argc != args_no.acq_time) {
 		shell_fprintf(shell, SHELL_NORMAL,
@@ -233,7 +233,7 @@ static int cmd_adc_acq(const struct shell *shell, size_t argc, char **argv)
 		shell_error(shell, "<time> must be digits");
 		return -EINVAL;
 	}
-	acq_time = (u16_t)strtol(argv[args_indx.conf], NULL, 10);
+	acq_time = (uint16_t)strtol(argv[args_indx.conf], NULL, 10);
 	if (!strcmp(argv[args_indx.acq_unit], "us")) {
 		adc_list[chosen_adc].channel_config.acquisition_time =
 			ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, acq_time);
@@ -281,7 +281,7 @@ static int cmd_adc_reso(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 	adc_list[chosen_adc].resolution =
-		(u8_t)strtol(argv[args_indx.conf], NULL, 10);
+		(uint8_t)strtol(argv[args_indx.conf], NULL, 10);
 	retval = adc_channel_setup(adc_dev,
 			&adc_list[chosen_adc].channel_config);
 	return retval;
@@ -340,7 +340,7 @@ static int cmd_adc_read(const struct shell *shell, size_t argc, char **argv)
 	int retval = 0;
 	int chosen_adc = -1;
 	struct device *adc_dev;
-	u16_t m_sample_buffer[BUFFER_SIZE];
+	uint16_t m_sample_buffer[BUFFER_SIZE];
 
 	if (argc != args_no.read) {
 		shell_fprintf(shell, SHELL_NORMAL,
@@ -352,7 +352,7 @@ static int cmd_adc_read(const struct shell *shell, size_t argc, char **argv)
 		shell_error(shell, "Device not in device list");
 		return 0;
 	}
-	u8_t adc_channel_id = strtol(argv[args_indx.channel], NULL, 10);
+	uint8_t adc_channel_id = strtol(argv[args_indx.channel], NULL, 10);
 
 	adc_dev = device_get_binding(adc_list[chosen_adc].device_name);
 	if (adc_dev == NULL) {
@@ -381,9 +381,9 @@ static int cmd_adc_print(const struct shell *shell, size_t argc, char **argv)
 	int i;
 	char *gain = "1";
 	char *ref = "INTERNAL";
-	u16_t acq_time;
-	u8_t channel_id;
-	u8_t resolution;
+	uint16_t acq_time;
+	uint8_t channel_id;
+	uint8_t resolution;
 
 	chosen_adc = get_adc_from_list(argv[args_indx.adc]);
 	if (chosen_adc < 0) {

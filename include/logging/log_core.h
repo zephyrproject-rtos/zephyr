@@ -35,13 +35,13 @@ extern "C" {
 #endif
 
 #define LOG_FUNCTION_PREFIX_MASK \
-	(((u32_t)IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_ERR) << \
+	(((uint32_t)IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_ERR) << \
 	  LOG_LEVEL_ERR) | \
-	 ((u32_t)IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_WRN) << \
+	 ((uint32_t)IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_WRN) << \
 	  LOG_LEVEL_WRN) | \
-	 ((u32_t)IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_INF) << \
+	 ((uint32_t)IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_INF) << \
 	  LOG_LEVEL_INF) | \
-	 ((u32_t)IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_DBG) << LOG_LEVEL_DBG))
+	 ((uint32_t)IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_DBG) << LOG_LEVEL_DBG))
 
 /** @brief Macro for returning local level value if defined or default.
  *
@@ -294,7 +294,7 @@ static inline char z_log_minimal_level_to_char(int level)
 
 #define Z_LOG(_level, ...)			       \
 	__LOG(_level,				       \
-	      (u16_t)LOG_CURRENT_MODULE_ID(),	       \
+	      (uint16_t)LOG_CURRENT_MODULE_ID(),	       \
 	      LOG_CURRENT_DYNAMIC_DATA_ADDR(),	       \
 	      __VA_ARGS__)
 
@@ -347,7 +347,7 @@ static inline char z_log_minimal_level_to_char(int level)
 
 #define Z_LOG_HEXDUMP(_level, _data, _length, _str)	       \
 	__LOG_HEXDUMP(_level,				       \
-		      (u16_t)LOG_CURRENT_MODULE_ID(),	       \
+		      (uint16_t)LOG_CURRENT_MODULE_ID(),	       \
 		      LOG_CURRENT_DYNAMIC_DATA_ADDR(),	       \
 		      _data, _length, _str)
 
@@ -421,7 +421,7 @@ extern struct log_source_const_data __log_const_end[0];
  * @param source_id Source ID.
  * @return Name.
  */
-static inline const char *log_name_get(u32_t source_id)
+static inline const char *log_name_get(uint32_t source_id)
 {
 	return __log_const_start[source_id].name;
 }
@@ -431,7 +431,7 @@ static inline const char *log_name_get(u32_t source_id)
  * @param source_id Source ID.
  * @return Level.
  */
-static inline u8_t log_compiled_level_get(u32_t source_id)
+static inline uint8_t log_compiled_level_get(uint32_t source_id)
 {
 	return __log_const_start[source_id].level;
 }
@@ -443,15 +443,15 @@ static inline u8_t log_compiled_level_get(u32_t source_id)
  *
  * @return Source ID.
  */
-static inline u32_t log_const_source_id(
+static inline uint32_t log_const_source_id(
 				const struct log_source_const_data *data)
 {
-	return ((u8_t *)data - (u8_t *)__log_const_start)/
+	return ((uint8_t *)data - (uint8_t *)__log_const_start)/
 			sizeof(struct log_source_const_data);
 }
 
 /** @brief Get number of registered sources. */
-static inline u32_t log_sources_count(void)
+static inline uint32_t log_sources_count(void)
 {
 	return log_const_source_id(__log_const_end);
 }
@@ -474,7 +474,7 @@ extern struct log_source_dynamic_data __log_dynamic_end[0];
  *
  * @return Pointer to the filter set.
  */
-static inline u32_t *log_dynamic_filters_get(u32_t source_id)
+static inline uint32_t *log_dynamic_filters_get(uint32_t source_id)
 {
 	return &__log_dynamic_start[source_id].filters;
 }
@@ -486,9 +486,9 @@ static inline u32_t *log_dynamic_filters_get(u32_t source_id)
  *
  * @return Source ID.
  */
-static inline u32_t log_dynamic_source_id(struct log_source_dynamic_data *data)
+static inline uint32_t log_dynamic_source_id(struct log_source_dynamic_data *data)
 {
-	return ((u8_t *)data - (u8_t *)__log_dynamic_start)/
+	return ((uint8_t *)data - (uint8_t *)__log_dynamic_start)/
 			sizeof(struct log_source_dynamic_data);
 }
 
@@ -551,7 +551,7 @@ void log_3(const char *str,
  */
 void log_n(const char *str,
 	   log_arg_t *args,
-	   u32_t narg,
+	   uint32_t narg,
 	   struct log_msg_ids src_level);
 
 /** @brief Hexdump log.
@@ -561,7 +561,7 @@ void log_n(const char *str,
  * @param length	Data length.
  * @param src_level	Log identification.
  */
-void log_hexdump(const char *str, const void *data, u32_t length,
+void log_hexdump(const char *str, const void *data, uint32_t length,
 		 struct log_msg_ids src_level);
 
 /** @brief Process log message synchronously.
@@ -580,7 +580,7 @@ void log_string_sync(struct log_msg_ids src_level, const char *fmt, ...);
  * @param len		Data length.
  */
 void log_hexdump_sync(struct log_msg_ids src_level, const char *metadata,
-		      const void *data, u32_t len);
+		      const void *data, uint32_t len);
 
 /**
  * @brief Writes a generic log message to the log.
@@ -618,14 +618,14 @@ void log_free(void *buf);
  *
  * Value can be used to determine pool size.
  */
-u32_t log_get_strdup_pool_utilization(void);
+uint32_t log_get_strdup_pool_utilization(void);
 
 /**
  * @brief Get length of the longest string duplicated.
  *
  * Value can be used to determine buffer size in the string duplicates pool.
  */
-u32_t log_get_strdup_longest_string(void);
+uint32_t log_get_strdup_longest_string(void);
 
 /** @brief Indicate to the log core that one log message has been dropped.
  */
@@ -654,10 +654,10 @@ void __printf_like(2, 3) log_from_user(struct log_msg_ids src_level,
  *
  * @return Mask with %s format specifiers found.
  */
-u32_t z_log_get_s_mask(const char *str, u32_t nargs);
+uint32_t z_log_get_s_mask(const char *str, uint32_t nargs);
 
 /* Internal function used by log_from_user(). */
-__syscall void z_log_string_from_user(u32_t src_level_val, const char *str);
+__syscall void z_log_string_from_user(uint32_t src_level_val, const char *str);
 
 /** @brief Log binary data (displayed as hexdump) from user mode context.
  *
@@ -670,12 +670,12 @@ __syscall void z_log_string_from_user(u32_t src_level_val, const char *str);
  * @param len		Data length.
  */
 void log_hexdump_from_user(struct log_msg_ids src_level, const char *metadata,
-			   const void *data, u32_t len);
+			   const void *data, uint32_t len);
 
 /* Internal function used by log_hexdump_from_user(). */
-__syscall void z_log_hexdump_from_user(u32_t src_level_val,
+__syscall void z_log_hexdump_from_user(uint32_t src_level_val,
 				       const char *metadata,
-				       const u8_t *data, u32_t len);
+				       const uint8_t *data, uint32_t len);
 
 #include <syscalls/log_core.h>
 

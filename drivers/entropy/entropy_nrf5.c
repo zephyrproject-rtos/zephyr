@@ -69,15 +69,15 @@
  */
 
 struct rng_pool {
-	u8_t first_alloc;
-	u8_t first_read;
-	u8_t last;
-	u8_t mask;
-	u8_t threshold;
-	u8_t buffer[0];
+	uint8_t first_alloc;
+	uint8_t first_read;
+	uint8_t last;
+	uint8_t mask;
+	uint8_t threshold;
+	uint8_t buffer[0];
 };
 
-#define RNG_POOL_DEFINE(name, len) u8_t name[sizeof(struct rng_pool) + (len)]
+#define RNG_POOL_DEFINE(name, len) uint8_t name[sizeof(struct rng_pool) + (len)]
 
 BUILD_ASSERT((CONFIG_ENTROPY_NRF5_ISR_POOL_SIZE &
 	      (CONFIG_ENTROPY_NRF5_ISR_POOL_SIZE - 1)) == 0,
@@ -121,13 +121,13 @@ static int random_byte_get(void)
 #if defined(CONFIG_BT_CTLR_FAST_ENC)
 #pragma GCC optimize ("Ofast")
 #endif
-static u16_t rng_pool_get(struct rng_pool *rngp, u8_t *buf, u16_t len)
+static uint16_t rng_pool_get(struct rng_pool *rngp, uint8_t *buf, uint16_t len)
 {
-	u32_t last  = rngp->last;
-	u32_t mask  = rngp->mask;
-	u8_t *dst   = buf;
-	u32_t first, available;
-	u32_t other_read_in_progress;
+	uint32_t last  = rngp->last;
+	uint32_t mask  = rngp->mask;
+	uint8_t *dst   = buf;
+	uint32_t first, available;
+	uint32_t other_read_in_progress;
 	unsigned int key;
 
 	key = irq_lock();
@@ -178,11 +178,11 @@ static u16_t rng_pool_get(struct rng_pool *rngp, u8_t *buf, u16_t len)
 }
 #pragma GCC pop_options
 
-static int rng_pool_put(struct rng_pool *rngp, u8_t byte)
+static int rng_pool_put(struct rng_pool *rngp, uint8_t byte)
 {
-	u8_t first = rngp->first_read;
-	u8_t last  = rngp->last;
-	u8_t mask  = rngp->mask;
+	uint8_t first = rngp->first_read;
+	uint8_t last  = rngp->last;
+	uint8_t mask  = rngp->mask;
 
 	/* Signal error if the pool is full. */
 	if (((last - first) & mask) == mask) {
@@ -195,7 +195,7 @@ static int rng_pool_put(struct rng_pool *rngp, u8_t byte)
 	return 0;
 }
 
-static void rng_pool_init(struct rng_pool *rngp, u16_t size, u8_t threshold)
+static void rng_pool_init(struct rng_pool *rngp, uint16_t size, uint8_t threshold)
 {
 	rngp->first_alloc = 0U;
 	rngp->first_read  = 0U;
@@ -227,13 +227,13 @@ static void isr(void *arg)
 	}
 }
 
-static int entropy_nrf5_get_entropy(struct device *device, u8_t *buf, u16_t len)
+static int entropy_nrf5_get_entropy(struct device *device, uint8_t *buf, uint16_t len)
 {
 	/* Check if this API is called on correct driver instance. */
 	__ASSERT_NO_MSG(&entropy_nrf5_data == DEV_DATA(device));
 
 	while (len) {
-		u16_t bytes;
+		uint16_t bytes;
 
 		k_sem_take(&entropy_nrf5_data.sem_lock, K_FOREVER);
 		bytes = rng_pool_get((struct rng_pool *)(entropy_nrf5_data.thr),
@@ -253,10 +253,10 @@ static int entropy_nrf5_get_entropy(struct device *device, u8_t *buf, u16_t len)
 	return 0;
 }
 
-static int entropy_nrf5_get_entropy_isr(struct device *dev, u8_t *buf, u16_t len,
-					u32_t flags)
+static int entropy_nrf5_get_entropy_isr(struct device *dev, uint8_t *buf, uint16_t len,
+					uint32_t flags)
 {
-	u16_t cnt = len;
+	uint16_t cnt = len;
 
 	/* Check if this API is called on correct driver instance. */
 	__ASSERT_NO_MSG(&entropy_nrf5_data == DEV_DATA(dev));

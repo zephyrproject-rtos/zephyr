@@ -68,7 +68,7 @@ static int random_entropy(struct device *dev, char *buffer, char num)
 static int get_entropy(void)
 {
 	struct device *dev;
-	u8_t buffer[BUFFER_LENGTH] = { 0 };
+	uint8_t buffer[BUFFER_LENGTH] = { 0 };
 	int ret;
 
 	dev = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);

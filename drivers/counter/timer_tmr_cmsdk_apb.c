@@ -33,7 +33,7 @@ struct tmr_cmsdk_apb_dev_data {
 	counter_top_callback_t top_callback;
 	void *top_user_data;
 
-	u32_t load;
+	uint32_t load;
 };
 
 static int tmr_cmsdk_apb_start(struct device *dev)
@@ -60,7 +60,7 @@ static int tmr_cmsdk_apb_stop(struct device *dev)
 	return 0;
 }
 
-static int tmr_cmsdk_apb_get_value(struct device *dev, u32_t *ticks)
+static int tmr_cmsdk_apb_get_value(struct device *dev, uint32_t *ticks)
 {
 	const struct tmr_cmsdk_apb_cfg * const cfg =
 						dev->config_info;
@@ -101,16 +101,16 @@ static int tmr_cmsdk_apb_set_top_value(struct device *dev,
 	return 0;
 }
 
-static u32_t tmr_cmsdk_apb_get_top_value(struct device *dev)
+static uint32_t tmr_cmsdk_apb_get_top_value(struct device *dev)
 {
 	struct tmr_cmsdk_apb_dev_data *data = dev->driver_data;
 
-	u32_t ticks = data->load;
+	uint32_t ticks = data->load;
 
 	return ticks;
 }
 
-static u32_t tmr_cmsdk_apb_get_pending_int(struct device *dev)
+static uint32_t tmr_cmsdk_apb_get_pending_int(struct device *dev)
 {
 	const struct tmr_cmsdk_apb_cfg * const cfg =
 						dev->config_info;

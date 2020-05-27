@@ -90,19 +90,19 @@
 	((level) == 2) ? L2_SPACE : L3_SPACE)
 #endif
 
-static u64_t base_xlat_table[NUM_BASE_LEVEL_ENTRIES]
-		__aligned(NUM_BASE_LEVEL_ENTRIES * sizeof(u64_t));
+static uint64_t base_xlat_table[NUM_BASE_LEVEL_ENTRIES]
+		__aligned(NUM_BASE_LEVEL_ENTRIES * sizeof(uint64_t));
 
-static u64_t xlat_tables[CONFIG_MAX_XLAT_TABLES][XLAT_TABLE_ENTRIES]
-		__aligned(XLAT_TABLE_ENTRIES * sizeof(u64_t));
+static uint64_t xlat_tables[CONFIG_MAX_XLAT_TABLES][XLAT_TABLE_ENTRIES]
+		__aligned(XLAT_TABLE_ENTRIES * sizeof(uint64_t));
 
 /* Translation table control register settings */
-static u64_t get_tcr(int el)
+static uint64_t get_tcr(int el)
 {
-	u64_t tcr;
-	u64_t pa_bits = CONFIG_ARM64_PA_BITS;
-	u64_t va_bits = CONFIG_ARM64_VA_BITS;
-	u64_t tcr_ps_bits;
+	uint64_t tcr;
+	uint64_t pa_bits = CONFIG_ARM64_PA_BITS;
+	uint64_t va_bits = CONFIG_ARM64_VA_BITS;
+	uint64_t tcr_ps_bits;
 
 	switch (pa_bits) {
 	case 48:
@@ -145,20 +145,20 @@ static u64_t get_tcr(int el)
 	return tcr;
 }
 
-static int pte_desc_type(u64_t *pte)
+static int pte_desc_type(uint64_t *pte)
 {
 	return *pte & PTE_DESC_TYPE_MASK;
 }
 
-static u64_t *calculate_pte_index(u64_t addr, int level)
+static uint64_t *calculate_pte_index(uint64_t addr, int level)
 {
 	int base_level = XLAT_TABLE_BASE_LEVEL;
-	u64_t *pte;
-	u64_t idx;
+	uint64_t *pte;
+	uint64_t idx;
 	unsigned int i;
 
 	/* Walk through all translation tables to find pte index */
-	pte = (u64_t *)base_xlat_table;
+	pte = (uint64_t *)base_xlat_table;
 	for (i = base_level; i <= XLAT_TABLE_LEVEL_MAX; i++) {
 		idx = XLAT_TABLE_VA_IDX(addr, i);
 		pte += idx;
@@ -170,26 +170,26 @@ static u64_t *calculate_pte_index(u64_t addr, int level)
 		if (pte_desc_type(pte) != PTE_TABLE_DESC)
 			return NULL;
 		/* Move to the next translation table level */
-		pte = (u64_t *)(*pte & 0x0000fffffffff000ULL);
+		pte = (uint64_t *)(*pte & 0x0000fffffffff000ULL);
 	}
 
 	return NULL;
 }
 
-static void set_pte_table_desc(u64_t *pte, u64_t *table, unsigned int level)
+static void set_pte_table_desc(uint64_t *pte, uint64_t *table, unsigned int level)
 {
 #if DUMP_PTE
 	MMU_DEBUG("%s", XLAT_TABLE_LEVEL_SPACE(level));
 	MMU_DEBUG("%p: [Table] %p\n", pte, table);
 #endif
 	/* Point pte to new table */
-	*pte = PTE_TABLE_DESC | (u64_t)table;
+	*pte = PTE_TABLE_DESC | (uint64_t)table;
 }
 
-static void set_pte_block_desc(u64_t *pte, u64_t addr_pa,
+static void set_pte_block_desc(uint64_t *pte, uint64_t addr_pa,
 			       unsigned int attrs, unsigned int level)
 {
-	u64_t desc = addr_pa;
+	uint64_t desc = addr_pa;
 	unsigned int mem_type;
 
 	desc |= (level == 3) ? PTE_PAGE_DESC : PTE_BLOCK_DESC;
@@ -247,21 +247,21 @@ static void set_pte_block_desc(u64_t *pte, u64_t addr_pa,
 }
 
 /* Returns a new reallocated table */
-static u64_t *new_prealloc_table(void)
+static uint64_t *new_prealloc_table(void)
 {
 	static unsigned int table_idx;
 
 	__ASSERT(table_idx < CONFIG_MAX_XLAT_TABLES,
 		"Enough xlat tables not allocated");
 
-	return (u64_t *)(xlat_tables[table_idx++]);
+	return (uint64_t *)(xlat_tables[table_idx++]);
 }
 
 /* Splits a block into table with entries spanning the old block */
-static void split_pte_block_desc(u64_t *pte, int level)
+static void split_pte_block_desc(uint64_t *pte, int level)
 {
-	u64_t old_block_desc = *pte;
-	u64_t *new_table;
+	uint64_t old_block_desc = *pte;
+	uint64_t *new_table;
 	unsigned int i = 0;
 	/* get address size shift bits for next level */
 	int levelshift = LEVEL_TO_VA_SIZE_SHIFT(level + 1);
@@ -284,13 +284,13 @@ static void split_pte_block_desc(u64_t *pte, int level)
 /* Create/Populate translation table(s) for given region */
 static void init_xlat_tables(const struct arm_mmu_region *region)
 {
-	u64_t *pte;
-	u64_t virt = region->base_va;
-	u64_t phys = region->base_pa;
-	u64_t size = region->size;
-	u64_t attrs = region->attrs;
-	u64_t level_size;
-	u64_t *new_table;
+	uint64_t *pte;
+	uint64_t virt = region->base_va;
+	uint64_t phys = region->base_pa;
+	uint64_t size = region->size;
+	uint64_t attrs = region->attrs;
+	uint64_t level_size;
+	uint64_t *new_table;
 	unsigned int level = XLAT_TABLE_BASE_LEVEL;
 
 	MMU_DEBUG("mmap: virt %llx phys %llx size %llx\n", virt, phys, size);
@@ -361,7 +361,7 @@ static void setup_page_tables(void)
 {
 	unsigned int index;
 	const struct arm_mmu_region *region;
-	u64_t max_va = 0, max_pa = 0;
+	uint64_t max_va = 0, max_pa = 0;
 
 	for (index = 0; index < mmu_config.num_regions; index++) {
 		region = &mmu_config.mmu_regions[index];
@@ -392,7 +392,7 @@ static void setup_page_tables(void)
 static void enable_mmu_el1(unsigned int flags)
 {
 	ARG_UNUSED(flags);
-	u64_t val;
+	uint64_t val;
 
 	/* Set MAIR, TCR and TBBR registers */
 	__asm__ volatile("msr mair_el1, %0"
@@ -405,7 +405,7 @@ static void enable_mmu_el1(unsigned int flags)
 			: "memory", "cc");
 	__asm__ volatile("msr ttbr0_el1, %0"
 			:
-			: "r" ((u64_t)base_xlat_table)
+			: "r" ((uint64_t)base_xlat_table)
 			: "memory", "cc");
 
 	/* Ensure these changes are seen before MMU is enabled */
@@ -434,7 +434,7 @@ static void enable_mmu_el1(unsigned int flags)
  */
 static int arm_mmu_init(struct device *arg)
 {
-	u64_t val;
+	uint64_t val;
 	unsigned int idx, flags = 0;
 
 	/* Current MMU code supports only EL1 */
@@ -449,9 +449,9 @@ static int arm_mmu_init(struct device *arg)
 
 	MMU_DEBUG("xlat tables:\n");
 	MMU_DEBUG("base table(L%d): %p, %d entries\n", XLAT_TABLE_BASE_LEVEL,
-			(u64_t *)base_xlat_table, NUM_BASE_LEVEL_ENTRIES);
+			(uint64_t *)base_xlat_table, NUM_BASE_LEVEL_ENTRIES);
 	for (idx = 0; idx < CONFIG_MAX_XLAT_TABLES; idx++)
-		MMU_DEBUG("%d: %p\n", idx, (u64_t *)(xlat_tables + idx));
+		MMU_DEBUG("%d: %p\n", idx, (uint64_t *)(xlat_tables + idx));
 
 	setup_page_tables();
 

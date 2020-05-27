@@ -48,12 +48,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 /* resource state variables */
 static char  security_uri[MAX_INSTANCE_COUNT][SECURITY_URI_LEN];
-static u8_t  client_identity[MAX_INSTANCE_COUNT][IDENTITY_LEN];
-static u8_t  server_pk[MAX_INSTANCE_COUNT][KEY_LEN];
-static u8_t  secret_key[MAX_INSTANCE_COUNT][KEY_LEN];
+static uint8_t  client_identity[MAX_INSTANCE_COUNT][IDENTITY_LEN];
+static uint8_t  server_pk[MAX_INSTANCE_COUNT][KEY_LEN];
+static uint8_t  secret_key[MAX_INSTANCE_COUNT][KEY_LEN];
 static bool  bootstrap_flag[MAX_INSTANCE_COUNT];
-static u8_t  security_mode[MAX_INSTANCE_COUNT];
-static u16_t short_server_id[MAX_INSTANCE_COUNT];
+static uint8_t  security_mode[MAX_INSTANCE_COUNT];
+static uint16_t short_server_id[MAX_INSTANCE_COUNT];
 
 static struct lwm2m_engine_obj security;
 static struct lwm2m_engine_obj_field fields[] = {
@@ -77,7 +77,7 @@ static struct lwm2m_engine_res res[MAX_INSTANCE_COUNT][SECURITY_MAX_ID];
 static struct lwm2m_engine_res_inst
 			res_inst[MAX_INSTANCE_COUNT][RESOURCE_INSTANCE_COUNT];
 
-static struct lwm2m_engine_obj_inst *security_create(u16_t obj_inst_id)
+static struct lwm2m_engine_obj_inst *security_create(uint16_t obj_inst_id)
 {
 	int index, i = 0, j = 0;
 
@@ -143,7 +143,7 @@ static struct lwm2m_engine_obj_inst *security_create(u16_t obj_inst_id)
 	return &inst[index];
 }
 
-int lwm2m_security_inst_id_to_index(u16_t obj_inst_id)
+int lwm2m_security_inst_id_to_index(uint16_t obj_inst_id)
 {
 	int i;
 

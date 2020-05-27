@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(sx1276);
 #define SX1276_REG_PA_DAC			0x4d
 #define SX1276_REG_VERSION			0x42
 
-static u32_t saved_time;
+static uint32_t saved_time;
 extern DioIrqHandler *DioIrq[];
 
 struct sx1276_dio {
@@ -60,10 +60,10 @@ struct sx1276_data {
 	struct k_sem data_sem;
 	struct k_timer timer;
 	RadioEvents_t sx1276_event;
-	u8_t *rx_buf;
-	u8_t rx_len;
-	s8_t snr;
-	s16_t rssi;
+	uint8_t *rx_buf;
+	uint8_t rx_len;
+	int8_t snr;
+	int16_t rssi;
 } dev_data;
 
 bool SX1276CheckRfFrequency(uint32_t frequency)
@@ -77,12 +77,12 @@ void SX1276SetAntSwLowPower(bool status)
 	/* TODO */
 }
 
-void SX1276SetBoardTcxo(u8_t state)
+void SX1276SetBoardTcxo(uint8_t state)
 {
 	/* TODO */
 }
 
-void SX1276SetAntSw(u8_t opMode)
+void SX1276SetAntSw(uint8_t opMode)
 {
 	/* TODO */
 }
@@ -109,17 +109,17 @@ void BoardCriticalSectionEnd(uint32_t *mask)
 	irq_unlock(*mask);
 }
 
-u32_t RtcGetTimerValue(void)
+uint32_t RtcGetTimerValue(void)
 {
 	return k_uptime_get_32();
 }
 
-u32_t RtcGetTimerElapsedTime(void)
+uint32_t RtcGetTimerElapsedTime(void)
 {
 	return (k_uptime_get_32() - saved_time);
 }
 
-u32_t RtcGetMinimumTimeout(void)
+uint32_t RtcGetMinimumTimeout(void)
 {
 	return 1;
 }
@@ -136,12 +136,12 @@ static void timer_callback(struct k_timer *_timer)
 	TimerIrqHandler();
 }
 
-void RtcSetAlarm(u32_t timeout)
+void RtcSetAlarm(uint32_t timeout)
 {
 	k_timer_start(&dev_data.timer, K_MSEC(timeout), K_NO_WAIT);
 }
 
-u32_t RtcSetTimerContext(void)
+uint32_t RtcSetTimerContext(void)
 {
 	saved_time = k_uptime_get_32();
 
@@ -149,22 +149,22 @@ u32_t RtcSetTimerContext(void)
 }
 
 /* For us, 1 tick = 1 milli second. So no need to do any conversion here */
-u32_t RtcGetTimerContext(void)
+uint32_t RtcGetTimerContext(void)
 {
 	return saved_time;
 }
 
-void DelayMsMcu(u32_t ms)
+void DelayMsMcu(uint32_t ms)
 {
 	k_sleep(K_MSEC(ms));
 }
 
-u32_t RtcMs2Tick(uint32_t milliseconds)
+uint32_t RtcMs2Tick(uint32_t milliseconds)
 {
 	return milliseconds;
 }
 
-u32_t RtcTick2Ms(uint32_t tick)
+uint32_t RtcTick2Ms(uint32_t tick)
 {
 	return tick;
 }
@@ -177,7 +177,7 @@ static void sx1276_dio_work_handle(struct k_work *work)
 }
 
 static void sx1276_irq_callback(struct device *dev,
-				struct gpio_callback *cb, u32_t pins)
+				struct gpio_callback *cb, uint32_t pins)
 {
 	unsigned int i, pin;
 
@@ -230,7 +230,7 @@ void SX1276IoIrqInit(DioIrqHandler **irqHandlers)
 
 }
 
-static int sx1276_transceive(u8_t reg, bool write, void *data, size_t length)
+static int sx1276_transceive(uint8_t reg, bool write, void *data, size_t length)
 {
 	const struct spi_buf buf[2] = {
 		{
@@ -260,17 +260,17 @@ static int sx1276_transceive(u8_t reg, bool write, void *data, size_t length)
 	return spi_write(dev_data.spi, &dev_data.spi_cfg, &tx);
 }
 
-int sx1276_read(u8_t reg_addr, u8_t *data, u8_t len)
+int sx1276_read(uint8_t reg_addr, uint8_t *data, uint8_t len)
 {
 	return sx1276_transceive(reg_addr, false, data, len);
 }
 
-int sx1276_write(u8_t reg_addr, u8_t *data, u8_t len)
+int sx1276_write(uint8_t reg_addr, uint8_t *data, uint8_t len)
 {
 	return sx1276_transceive(reg_addr | BIT(7), true, data, len);
 }
 
-void SX1276WriteBuffer(u16_t addr, u8_t *buffer, u8_t size)
+void SX1276WriteBuffer(uint16_t addr, uint8_t *buffer, uint8_t size)
 {
 	int ret;
 
@@ -280,7 +280,7 @@ void SX1276WriteBuffer(u16_t addr, u8_t *buffer, u8_t size)
 	}
 }
 
-void SX1276ReadBuffer(u16_t addr, u8_t *buffer, u8_t size)
+void SX1276ReadBuffer(uint16_t addr, uint8_t *buffer, uint8_t size)
 {
 	int ret;
 
@@ -293,8 +293,8 @@ void SX1276ReadBuffer(u16_t addr, u8_t *buffer, u8_t size)
 void SX1276SetRfTxPower(int8_t power)
 {
 	int ret;
-	u8_t pa_config = 0;
-	u8_t pa_dac = 0;
+	uint8_t pa_config = 0;
+	uint8_t pa_dac = 0;
 
 	ret = sx1276_read(SX1276_REG_PA_CONFIG, &pa_config, 1);
 	if (ret < 0) {
@@ -362,7 +362,7 @@ void SX1276SetRfTxPower(int8_t power)
 	}
 }
 
-static int sx1276_lora_send(struct device *dev, u8_t *data, u32_t data_len)
+static int sx1276_lora_send(struct device *dev, uint8_t *data, uint32_t data_len)
 {
 	Radio.SetMaxPayloadLength(MODEM_LORA, data_len);
 
@@ -376,7 +376,7 @@ static void sx1276_tx_done(void)
 	Radio.Sleep();
 }
 
-static void sx1276_rx_done(u8_t *payload, u16_t size, int16_t rssi, int8_t snr)
+static void sx1276_rx_done(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
 {
 	Radio.Sleep();
 
@@ -388,8 +388,8 @@ static void sx1276_rx_done(u8_t *payload, u16_t size, int16_t rssi, int8_t snr)
 	k_sem_give(&dev_data.data_sem);
 }
 
-static int sx1276_lora_recv(struct device *dev, u8_t *data, u8_t size,
-			    k_timeout_t timeout, s16_t *rssi, s8_t *snr)
+static int sx1276_lora_recv(struct device *dev, uint8_t *data, uint8_t size,
+			    k_timeout_t timeout, int16_t *rssi, int8_t *snr)
 {
 	int ret;
 
@@ -446,8 +446,8 @@ static int sx1276_lora_config(struct device *dev,
 	return 0;
 }
 
-static int sx1276_lora_test_cw(struct device *dev, u32_t frequency,
-			       s8_t tx_power, u16_t duration)
+static int sx1276_lora_test_cw(struct device *dev, uint32_t frequency,
+			       int8_t tx_power, uint16_t duration)
 {
 	Radio.SetTxContinuousWave(frequency, tx_power, duration);
 	return 0;
@@ -482,7 +482,7 @@ static int sx1276_lora_init(struct device *dev)
 {
 	static struct spi_cs_control spi_cs;
 	int ret;
-	u8_t regval;
+	uint8_t regval;
 
 	dev_data.spi = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (!dev_data.spi) {

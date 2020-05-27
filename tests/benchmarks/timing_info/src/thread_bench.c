@@ -19,24 +19,24 @@ char sline[256];
 /* FILE *output_file = stdout; */
 
 /* location of the time stamps*/
-extern u32_t arch_timing_value_swap_end;
-extern u64_t arch_timing_value_swap_temp;
-extern u64_t arch_timing_value_swap_common;
+extern uint32_t arch_timing_value_swap_end;
+extern uint64_t arch_timing_value_swap_temp;
+extern uint64_t arch_timing_value_swap_common;
 
-volatile u64_t thread_abort_end_time;
-volatile u64_t thread_abort_start_time;
+volatile uint64_t thread_abort_end_time;
+volatile uint64_t thread_abort_start_time;
 
 /* Thread suspend*/
-volatile u64_t thread_suspend_start_time;
-volatile u64_t thread_suspend_end_time;
+volatile uint64_t thread_suspend_start_time;
+volatile uint64_t thread_suspend_end_time;
 
 /* Thread resume*/
-volatile u64_t thread_resume_start_time;
-volatile u64_t thread_resume_end_time;
+volatile uint64_t thread_resume_start_time;
+volatile uint64_t thread_resume_end_time;
 
 /* Thread sleep*/
-volatile u64_t thread_sleep_start_time;
-volatile u64_t thread_sleep_end_time;
+volatile uint64_t thread_sleep_start_time;
+volatile uint64_t thread_sleep_end_time;
 
 /*For benchmarking msg queues*/
 k_tid_t producer_tid;
@@ -48,10 +48,10 @@ K_THREAD_STACK_DEFINE(my_stack_area_0, STACK_SIZE);
 struct k_thread my_thread;
 struct k_thread my_thread_0;
 
-u32_t arch_timing_value_swap_end_test = 1U;
-u64_t dummy_time;
-u64_t start_time;
-u64_t test_end_time;
+uint32_t arch_timing_value_swap_end_test = 1U;
+uint64_t dummy_time;
+uint64_t start_time;
+uint64_t test_end_time;
 
 /* Disable the overhead calculations, this is needed to calculate
  * the overhead created by the benchmarking code itself.
@@ -59,7 +59,7 @@ u64_t test_end_time;
 #define DISABLE_OVERHEAD_MEASUREMENT
 
 #if defined(CONFIG_X86) && !defined(DISABLE_OVERHEAD_MEASUREMENT)
-u32_t benchmarking_overhead_swap(void)
+uint32_t benchmarking_overhead_swap(void)
 {
 
 	__asm__ __volatile__ (
@@ -115,14 +115,14 @@ void main_msg_bench(void);
 void system_thread_bench(void)
 {
 	/*Thread create*/
-	u64_t thread_create_start_time;
-	u64_t thread_create_end_time;
+	uint64_t thread_create_start_time;
+	uint64_t thread_create_end_time;
 
 	DECLARE_VAR(thread, create)
 
 	/*Thread cancel*/
-	u64_t thread_cancel_start_time;
-	u64_t thread_cancel_end_time;
+	uint64_t thread_cancel_start_time;
+	uint64_t thread_cancel_end_time;
 	DECLARE_VAR(thread, cancel)
 
 	/* Thread Abort*/
@@ -151,11 +151,11 @@ void system_thread_bench(void)
 	 * arch_timing_swap_start.
 	 */
 #endif
-	u32_t total_swap_cycles = arch_timing_swap_end - arch_timing_swap_start;
+	uint32_t total_swap_cycles = arch_timing_swap_end - arch_timing_swap_start;
 
 	/* Interrupt latency*/
-	u64_t local_end_intr_time = arch_timing_irq_end;
-	u64_t local_start_intr_time = arch_timing_irq_start;
+	uint64_t local_end_intr_time = arch_timing_irq_end;
+	uint64_t local_start_intr_time = arch_timing_irq_start;
 
 	/*******************************************************************/
 	/* thread create*/
@@ -210,57 +210,57 @@ void system_thread_bench(void)
 
 	/* Only print lower 32bit of time result */
 	PRINT_STATS("Context switch",
-		(u32_t)(total_swap_cycles & 0xFFFFFFFFULL),
-		(u32_t) CYCLES_TO_NS(total_swap_cycles));
+		(uint32_t)(total_swap_cycles & 0xFFFFFFFFULL),
+		(uint32_t) CYCLES_TO_NS(total_swap_cycles));
 
 	/*TC_PRINT("Swap Overhead:%d cycles\n", benchmarking_overhead_swap());*/
 
 	/*Interrupt latency */
-	u32_t intr_latency_cycles = SUBTRACT_CLOCK_CYCLES(local_end_intr_time) -
+	uint32_t intr_latency_cycles = SUBTRACT_CLOCK_CYCLES(local_end_intr_time) -
 		SUBTRACT_CLOCK_CYCLES(local_start_intr_time);
 
 	PRINT_STATS("Interrupt latency",
-		(u32_t)(intr_latency_cycles),
-		(u32_t) (CYCLES_TO_NS(intr_latency_cycles)));
+		(uint32_t)(intr_latency_cycles),
+		(uint32_t) (CYCLES_TO_NS(intr_latency_cycles)));
 
 	/*tick overhead*/
-	u32_t tick_overhead_cycles =
+	uint32_t tick_overhead_cycles =
 		SUBTRACT_CLOCK_CYCLES(arch_timing_tick_end) -
 		SUBTRACT_CLOCK_CYCLES(arch_timing_tick_start);
 
 	PRINT_STATS("Tick overhead",
-		(u32_t)(tick_overhead_cycles),
-		(u32_t) (CYCLES_TO_NS(tick_overhead_cycles)));
+		(uint32_t)(tick_overhead_cycles),
+		(uint32_t) (CYCLES_TO_NS(tick_overhead_cycles)));
 
 	/*thread creation*/
 	PRINT_STATS("Thread Creation",
-		(u32_t)((thread_create_end_time - thread_create_start_time) &
+		(uint32_t)((thread_create_end_time - thread_create_start_time) &
 			   0xFFFFFFFFULL),
-		(u32_t) ((total_thread_create_time) & 0xFFFFFFFFULL));
+		(uint32_t) ((total_thread_create_time) & 0xFFFFFFFFULL));
 
 	/*thread cancel*/
 	PRINT_STATS("Thread cancel",
-		(u32_t)((thread_cancel_end_time - thread_cancel_start_time) &
+		(uint32_t)((thread_cancel_end_time - thread_cancel_start_time) &
 			   0xFFFFFFFFULL),
-		(u32_t) (total_thread_cancel_time  & 0xFFFFFFFFULL));
+		(uint32_t) (total_thread_cancel_time  & 0xFFFFFFFFULL));
 
 	/*thread abort*/
 	PRINT_STATS("Thread abort",
-		(u32_t)((thread_abort_end_time - thread_abort_start_time) &
+		(uint32_t)((thread_abort_end_time - thread_abort_start_time) &
 			   0xFFFFFFFFULL),
-		(u32_t) (total_thread_abort_time  & 0xFFFFFFFFULL));
+		(uint32_t) (total_thread_abort_time  & 0xFFFFFFFFULL));
 
 	/*thread suspend*/
 	PRINT_STATS("Thread Suspend",
-		(u32_t)((thread_suspend_end_time - thread_suspend_start_time) &
+		(uint32_t)((thread_suspend_end_time - thread_suspend_start_time) &
 			   0xFFFFFFFFULL),
-		(u32_t) (total_thread_suspend_time  & 0xFFFFFFFFULL));
+		(uint32_t) (total_thread_suspend_time  & 0xFFFFFFFFULL));
 
 	/*thread resume*/
 	PRINT_STATS("Thread Resume",
-		(u32_t)((thread_resume_end_time - thread_suspend_end_time)
+		(uint32_t)((thread_resume_end_time - thread_suspend_end_time)
 			   & 0xFFFFFFFFULL),
-		(u32_t) (total_thread_resume_time  & 0xFFFFFFFFULL));
+		(uint32_t) (total_thread_resume_time  & 0xFFFFFFFFULL));
 
 
 }
@@ -281,16 +281,16 @@ void thread_suspend_test(void *p1, void *p2, void *p3)
 void heap_malloc_free_bench(void)
 {
 	/* heap malloc*/
-	u64_t heap_malloc_start_time = 0U;
-	u64_t heap_malloc_end_time = 0U;
+	uint64_t heap_malloc_start_time = 0U;
+	uint64_t heap_malloc_end_time = 0U;
 
 	/* heap free*/
-	u64_t heap_free_start_time = 0U;
-	u64_t heap_free_end_time = 0U;
+	uint64_t heap_free_start_time = 0U;
+	uint64_t heap_free_end_time = 0U;
 
-	s32_t count = 0;
-	u32_t sum_malloc = 0U;
-	u32_t sum_free = 0U;
+	int32_t count = 0;
+	uint32_t sum_malloc = 0U;
+	uint32_t sum_free = 0U;
 
 	k_sleep(K_MSEC(10));
 	while (count++ != 100) {
@@ -316,10 +316,10 @@ void heap_malloc_free_bench(void)
 	}
 
 	PRINT_STATS("Heap Malloc",
-		(u32_t)((sum_malloc / count) & 0xFFFFFFFFULL),
-		(u32_t)(CYCLES_TO_NS(sum_malloc / count)));
+		(uint32_t)((sum_malloc / count) & 0xFFFFFFFFULL),
+		(uint32_t)(CYCLES_TO_NS(sum_malloc / count)));
 	PRINT_STATS("Heap Free",
-		(u32_t)((sum_free / count) & 0xFFFFFFFFULL),
-		(u32_t)(CYCLES_TO_NS(sum_free / count)));
+		(uint32_t)((sum_free / count) & 0xFFFFFFFFULL),
+		(uint32_t)(CYCLES_TO_NS(sum_free / count)));
 
 }

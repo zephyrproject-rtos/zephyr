@@ -309,7 +309,7 @@ static void test_write_kernel_data(void)
  */
 K_APP_DMEM(part0) volatile char *priv_stack_ptr;
 #if defined(CONFIG_ARC)
-K_APP_DMEM(part0) s32_t size = (0 - CONFIG_PRIVILEGED_STACK_SIZE -
+K_APP_DMEM(part0) int32_t size = (0 - CONFIG_PRIVILEGED_STACK_SIZE -
 			       STACK_GUARD_SIZE);
 #endif
 
@@ -659,7 +659,7 @@ static void test_access_other_memdomain(void)
 
 
 #if defined(CONFIG_ARM)
-extern u8_t *z_priv_stack_find(void *obj);
+extern uint8_t *z_priv_stack_find(void *obj);
 #endif
 extern k_thread_stack_t ztest_thread_stack[];
 
@@ -932,7 +932,7 @@ static inline int z_vrfy_check_perms(void *addr, size_t size, int write)
 void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 {
 	size_t stack_size, unused;
-	u8_t val;
+	uint8_t val;
 	char *stack_start, *stack_ptr, *stack_end, *obj_start, *obj_end;
 	volatile char *pos;
 	int ret, expected;
@@ -1045,7 +1045,7 @@ void stest_thread_entry(void *p1, void *p2, void *p3)
 	}
 }
 
-void stest_thread_launch(void *stack_obj, size_t obj_size, u32_t flags,
+void stest_thread_launch(void *stack_obj, size_t obj_size, uint32_t flags,
 			 bool drop)
 {
 	int ret;

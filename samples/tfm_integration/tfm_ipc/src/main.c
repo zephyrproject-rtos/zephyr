@@ -15,15 +15,15 @@
 
 K_MUTEX_DEFINE(tfm_mutex);
 
-s32_t tfm_ns_interface_dispatch(veneer_fn fn,
-				  u32_t arg0, u32_t arg1,
-				  u32_t arg2, u32_t arg3)
+int32_t tfm_ns_interface_dispatch(veneer_fn fn,
+				  uint32_t arg0, uint32_t arg1,
+				  uint32_t arg2, uint32_t arg3)
 {
-	s32_t result;
+	int32_t result;
 
 	/* TFM request protected by NS lock */
 	if (k_mutex_lock(&tfm_mutex, K_FOREVER) != 0) {
-		return (s32_t)TFM_ERROR_GENERIC;
+		return (int32_t)TFM_ERROR_GENERIC;
 	}
 
 	result = fn(arg0, arg1, arg2, arg3);
@@ -49,7 +49,7 @@ enum tfm_status_e tfm_ns_interface_init(void)
  */
 static void tfm_ipc_test_1001(void)
 {
-	u32_t version;
+	uint32_t version;
 
 	version = psa_framework_version();
 	if (version == PSA_FRAMEWORK_VERSION) {
@@ -68,7 +68,7 @@ static void tfm_ipc_test_1001(void)
  */
 static void tfm_ipc_test_1002(void)
 {
-	u32_t version;
+	uint32_t version;
 
 	version = psa_version(IPC_SERVICE_TEST_BASIC_SID);
 	if (version == PSA_VERSION_NONE) {
@@ -121,7 +121,7 @@ static void tfm_ipc_test_1004(void)
 					   sizeof(char) } };
 	psa_handle_t handle;
 	psa_status_t status;
-	u32_t version;
+	uint32_t version;
 
 	version = psa_version(IPC_SERVICE_TEST_BASIC_SID);
 	printk("TFM service support version is %d.\n", version);

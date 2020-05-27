@@ -29,9 +29,9 @@ static lv_disp_buf_t disp_buf;
 
 #define NBR_PIXELS_IN_BUFFER (BUFFER_SIZE * 8 / CONFIG_LVGL_BITS_PER_PIXEL)
 
-static u8_t buf0[BUFFER_SIZE];
+static uint8_t buf0[BUFFER_SIZE];
 #ifdef CONFIG_LVGL_DOUBLE_VDB
-static u8_t buf1[BUFFER_SIZE];
+static uint8_t buf1[BUFFER_SIZE];
 #endif
 
 #endif /* CONFIG_LVGL_BUFFER_ALLOC_STATIC */
@@ -56,7 +56,7 @@ static void lvgl_log(lv_log_level_t level, const char *file, uint32_t line,
 	 * * LOG_LEVEL_INF 3
 	 * * LOG_LEVEL_DBG 4
 	 */
-	u8_t zephyr_level = LOG_LEVEL_DBG - level;
+	uint8_t zephyr_level = LOG_LEVEL_DBG - level;
 
 	ARG_UNUSED(file);
 	ARG_UNUSED(line);
@@ -85,8 +85,8 @@ static int lvgl_allocate_rendering_buffers(lv_disp_drv_t *disp_drv)
 {
 	void *buf0 = NULL;
 	void *buf1 = NULL;
-	u16_t buf_nbr_pixels;
-	u32_t buf_size;
+	uint16_t buf_nbr_pixels;
+	uint32_t buf_size;
 	struct display_capabilities cap;
 	struct device *display_dev = (struct device *)disp_drv->user_data;
 
@@ -153,8 +153,8 @@ static int lvgl_allocate_rendering_buffers(lv_disp_drv_t *disp_drv)
 K_MSGQ_DEFINE(kscan_msgq, sizeof(lv_indev_data_t),
 	      CONFIG_LVGL_POINTER_KSCAN_MSGQ_COUNT, 4);
 
-static void lvgl_pointer_kscan_callback(struct device *dev, u32_t row,
-					u32_t col, bool pressed)
+static void lvgl_pointer_kscan_callback(struct device *dev, uint32_t row,
+					uint32_t col, bool pressed)
 {
 	lv_indev_data_t data = {
 		.point.x = col,

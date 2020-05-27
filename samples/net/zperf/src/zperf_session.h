@@ -35,7 +35,7 @@ enum session_proto {
 
 struct session {
 	/* Tuple for UDP */
-	u16_t port;
+	uint16_t port;
 	struct net_addr ip;
 
 	/* TCP session */
@@ -44,15 +44,15 @@ struct session {
 	enum state state;
 
 	/* Stat data */
-	u32_t counter;
-	u32_t next_id;
-	u32_t outorder;
-	u32_t error;
-	u64_t length;
-	u32_t start_time;
-	u32_t last_time;
-	s32_t jitter;
-	s32_t last_transit_time;
+	uint32_t counter;
+	uint32_t next_id;
+	uint32_t outorder;
+	uint32_t error;
+	uint64_t length;
+	uint32_t start_time;
+	uint32_t last_time;
+	int32_t jitter;
+	int32_t last_transit_time;
 
 	/* Stats packet*/
 	struct zperf_server_hdr stat;

@@ -48,8 +48,8 @@ extern PowerCC26X2_ModuleState PowerCC26X2_module;
 void sys_set_power_state(enum power_states state)
 {
 #ifdef CONFIG_SYS_POWER_SLEEP_STATES
-	u32_t modeVIMS;
-	u32_t constraints;
+	uint32_t modeVIMS;
+	uint32_t constraints;
 #endif
 
 	LOG_DBG("SoC entering power state %d", state);
@@ -147,7 +147,7 @@ static int power_initialize(struct device *dev)
 static int unlatch_pins(struct device *dev)
 {
 	/* Get the reason for reset. */
-	u32_t rSrc = SysCtrlResetSourceGet();
+	uint32_t rSrc = SysCtrlResetSourceGet();
 
 	if (rSrc == RSTSRC_WAKEUP_FROM_SHUTDOWN) {
 		PowerCtrlPadSleepDisable();

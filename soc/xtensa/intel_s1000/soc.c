@@ -17,11 +17,11 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(soc);
 
-static u32_t ref_clk_freq;
+static uint32_t ref_clk_freq;
 
 #define CAVS_INTC_NODE(n) DT_INST(n, intel_cavs_intc)
 
-void z_soc_irq_enable(u32_t irq)
+void z_soc_irq_enable(uint32_t irq)
 {
 	struct device *dev_cavs, *dev_ictl;
 
@@ -80,7 +80,7 @@ void z_soc_irq_enable(u32_t irq)
 	irq_enable_next_level(dev_ictl, INTR_CNTL_IRQ_NUM(irq));
 }
 
-void z_soc_irq_disable(u32_t irq)
+void z_soc_irq_disable(uint32_t irq)
 {
 	struct device *dev_cavs, *dev_ictl;
 
@@ -224,7 +224,7 @@ static inline void soc_set_resource_ownership(void)
 		SOC_GENO_MNDIV_OWNER_DSP;
 }
 
-u32_t soc_get_ref_clk_freq(void)
+uint32_t soc_get_ref_clk_freq(void)
 {
 	return ref_clk_freq;
 }
@@ -297,7 +297,7 @@ static inline void soc_read_bootstraps(void)
 {
 	volatile struct soc_global_regs *regs =
 		(volatile struct soc_global_regs *)SOC_S1000_GLB_CTRL_BASE;
-	u32_t bootstrap;
+	uint32_t bootstrap;
 
 	bootstrap = regs->straps;
 

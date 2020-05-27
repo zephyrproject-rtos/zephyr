@@ -35,7 +35,7 @@ void gptp_call_phase_dis_cb(void)
 {
 	struct gptp_global_ds *global_ds;
 	sys_snode_t *sn, *sns;
-	u8_t *gm_id;
+	uint8_t *gm_id;
 
 	global_ds = GPTP_GLOBAL_DS();
 	gm_id = &global_ds->gm_priority.root_system_id.grand_master_id[0];
@@ -76,7 +76,7 @@ int gptp_event_capture(struct net_ptp_time *slave_time, bool *gm_present)
 	return -EAGAIN;
 }
 
-char *gptp_sprint_clock_id(const u8_t *clk_id, char *output, size_t output_len)
+char *gptp_sprint_clock_id(const uint8_t *clk_id, char *output, size_t output_len)
 {
 	return net_sprint_ll_addr_buf(clk_id, 8, output, output_len);
 }

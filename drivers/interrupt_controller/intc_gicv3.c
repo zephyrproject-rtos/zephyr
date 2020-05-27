@@ -18,9 +18,9 @@ mem_addr_t gic_rdists[GIC_NUM_CPU_IF];
  * Wait for register write pending
  * TODO: add timed wait
  */
-static int gic_wait_rwp(u32_t intid)
+static int gic_wait_rwp(uint32_t intid)
 {
-	u32_t rwp_mask;
+	uint32_t rwp_mask;
 	mem_addr_t base;
 
 	if (intid < GIC_SPI_INT_BASE) {
@@ -38,12 +38,12 @@ static int gic_wait_rwp(u32_t intid)
 }
 
 void arm_gic_irq_set_priority(unsigned int intid,
-			      unsigned int prio, u32_t flags)
+			      unsigned int prio, uint32_t flags)
 {
-	u32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
-	u32_t idx = intid / GIC_NUM_INTR_PER_REG;
-	u32_t shift;
-	u32_t val;
+	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
+	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
+	uint32_t shift;
+	uint32_t val;
 	mem_addr_t base = GET_DIST_BASE(intid);
 
 	/* Disable the interrupt */
@@ -67,16 +67,16 @@ void arm_gic_irq_set_priority(unsigned int intid,
 
 void arm_gic_irq_enable(unsigned int intid)
 {
-	u32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
-	u32_t idx = intid / GIC_NUM_INTR_PER_REG;
+	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
+	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
 
 	sys_write32(mask, ISENABLER(GET_DIST_BASE(intid), idx));
 }
 
 void arm_gic_irq_disable(unsigned int intid)
 {
-	u32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
-	u32_t idx = intid / GIC_NUM_INTR_PER_REG;
+	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
+	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
 
 	sys_write32(mask, ICENABLER(GET_DIST_BASE(intid), idx));
 	/* poll to ensure write is complete */
@@ -85,9 +85,9 @@ void arm_gic_irq_disable(unsigned int intid)
 
 bool arm_gic_irq_is_enabled(unsigned int intid)
 {
-	u32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
-	u32_t idx = intid / GIC_NUM_INTR_PER_REG;
-	u32_t val;
+	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
+	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
+	uint32_t val;
 
 	val = sys_read32(ISENABLER(GET_DIST_BASE(intid), idx));
 
@@ -131,8 +131,8 @@ static void gicv3_rdist_enable(mem_addr_t rdist)
  */
 static void gicv3_cpuif_init(void)
 {
-	u32_t icc_sre;
-	u32_t intid;
+	uint32_t icc_sre;
+	uint32_t intid;
 
 	mem_addr_t base = gic_rdists[GET_CPUID] + GICR_SGI_BASE_OFF;
 

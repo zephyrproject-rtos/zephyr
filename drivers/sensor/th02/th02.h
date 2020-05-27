@@ -27,8 +27,8 @@
 
 struct th02_data {
 	struct device *i2c;
-	u16_t t_sample;
-	u16_t rh_sample;
+	uint16_t t_sample;
+	uint16_t rh_sample;
 };
 
 #endif /* _SENSOR_TH02_ */

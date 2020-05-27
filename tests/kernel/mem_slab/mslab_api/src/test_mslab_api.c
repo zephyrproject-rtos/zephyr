@@ -62,7 +62,7 @@ static void tmslab_alloc_timeout(void *data)
 {
 	struct k_mem_slab *pslab = (struct k_mem_slab *)data;
 	void *block[BLK_NUM], *block_fail;
-	s64_t tms;
+	int64_t tms;
 
 	for (int i = 0; i < BLK_NUM; i++) {
 		zassert_true(k_mem_slab_alloc(pslab, &block[i], K_NO_WAIT) == 0,

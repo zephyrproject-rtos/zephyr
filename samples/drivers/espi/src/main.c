@@ -42,15 +42,15 @@ LOG_MODULE_DECLARE(espi, CONFIG_ESPI_LOG_LEVEL);
 #define EVENT_DETAILS(x)      ((x & EVENT_DETAILS_MASK) >> EVENT_DETAILS_POS)
 
 struct oob_header {
-	u8_t dest_slave_addr;
-	u8_t oob_cmd_code;
-	u8_t byte_cnt;
-	u8_t src_slave_addr;
+	uint8_t dest_slave_addr;
+	uint8_t oob_cmd_code;
+	uint8_t byte_cnt;
+	uint8_t src_slave_addr;
 };
 
 struct oob_response {
 	struct oob_header hdr;
-	u8_t buf[MAX_RESP_SIZE];
+	uint8_t buf[MAX_RESP_SIZE];
 };
 
 #ifdef CONFIG_ESPI_GPIO_DEV_NEEDED
@@ -65,14 +65,14 @@ static struct espi_callback vw_rdy_cb;
 static struct espi_callback vw_cb;
 static struct espi_callback p80_cb;
 
-static u8_t espi_rst_sts;
+static uint8_t espi_rst_sts;
 
 #ifdef CONFIG_ESPI_FLASH_CHANNEL
-static u8_t flash_write_buf[MAX_TEST_BUF_SIZE];
-static u8_t flash_read_buf[MAX_TEST_BUF_SIZE];
+static uint8_t flash_write_buf[MAX_TEST_BUF_SIZE];
+static uint8_t flash_read_buf[MAX_TEST_BUF_SIZE];
 #endif
 
-static void host_warn_handler(u32_t signal, u32_t status)
+static void host_warn_handler(uint32_t signal, uint32_t status)
 {
 	switch (signal) {
 	case ESPI_VWIRE_SIGNAL_HOST_RST_WARN:
@@ -148,8 +148,8 @@ static void vwire_handler(struct device *dev, struct espi_callback *cb,
 static void periph_handler(struct device *dev, struct espi_callback *cb,
 			   struct espi_event event)
 {
-	u8_t periph_type;
-	u8_t periph_index;
+	uint8_t periph_type;
+	uint8_t periph_index;
 
 	periph_type = EVENT_TYPE(event.evt_details);
 	periph_index = EVENT_DETAILS(event.evt_details);
@@ -217,10 +217,10 @@ int espi_init(void)
 	return ret;
 }
 
-static int wait_for_pin(struct device *dev, u8_t pin, u16_t timeout,
+static int wait_for_pin(struct device *dev, uint8_t pin, uint16_t timeout,
 			int exp_level)
 {
-	u16_t loop_cnt = timeout;
+	uint16_t loop_cnt = timeout;
 	int level;
 
 	do {
@@ -249,11 +249,11 @@ static int wait_for_pin(struct device *dev, u8_t pin, u16_t timeout,
 
 static int wait_for_vwire(struct device *espi_dev,
 			  enum espi_vwire_signal signal,
-			  u16_t timeout, u8_t exp_level)
+			  uint16_t timeout, uint8_t exp_level)
 {
 	int ret;
-	u8_t level;
-	u16_t loop_cnt = timeout;
+	uint8_t level;
+	uint16_t loop_cnt = timeout;
 
 	do {
 		ret = espi_receive_vwire(espi_dev, signal, &level);
@@ -278,9 +278,9 @@ static int wait_for_vwire(struct device *espi_dev,
 	return 0;
 }
 
-static int wait_for_espi_reset(u8_t exp_sts)
+static int wait_for_espi_reset(uint8_t exp_sts)
 {
-	u16_t loop_cnt = CONFIG_ESPI_VIRTUAL_WIRE_TIMEOUT;
+	uint16_t loop_cnt = CONFIG_ESPI_VIRTUAL_WIRE_TIMEOUT;
 
 	do {
 		if (exp_sts == espi_rst_sts) {
@@ -346,11 +346,11 @@ int espi_handshake(void)
 }
 
 #ifdef CONFIG_ESPI_FLASH_CHANNEL
-int read_test_block(u8_t *buf, u32_t start_flash_adr, u16_t block_len)
+int read_test_block(uint8_t *buf, uint32_t start_flash_adr, uint16_t block_len)
 {
-	u8_t i = 0;
-	u32_t flash_addr = start_flash_adr;
-	u16_t transactions = block_len/MAX_FLASH_REQUEST;
+	uint8_t i = 0;
+	uint32_t flash_addr = start_flash_adr;
+	uint16_t transactions = block_len/MAX_FLASH_REQUEST;
 	int ret = 0;
 	struct espi_flash_packet pckt;
 
@@ -373,11 +373,11 @@ int read_test_block(u8_t *buf, u32_t start_flash_adr, u16_t block_len)
 	return 0;
 }
 
-int write_test_block(u8_t *buf, u32_t start_flash_adr, u16_t block_len)
+int write_test_block(uint8_t *buf, uint32_t start_flash_adr, uint16_t block_len)
 {
-	u8_t i = 0;
-	u32_t flash_addr = start_flash_adr;
-	u16_t transactions = block_len/MAX_FLASH_REQUEST;
+	uint8_t i = 0;
+	uint32_t flash_addr = start_flash_adr;
+	uint16_t transactions = block_len/MAX_FLASH_REQUEST;
 	int ret = 0;
 	struct espi_flash_packet pckt;
 
@@ -401,11 +401,11 @@ int write_test_block(u8_t *buf, u32_t start_flash_adr, u16_t block_len)
 	return 0;
 }
 
-static int espi_flash_test(u32_t start_flash_addr, u8_t blocks)
+static int espi_flash_test(uint32_t start_flash_addr, uint8_t blocks)
 {
-	u8_t i;
-	u8_t pattern;
-	u32_t flash_addr;
+	uint8_t i;
+	uint8_t pattern;
+	uint32_t flash_addr;
 	int ret = 0;
 
 	LOG_INF("Test eSPI write flash");
@@ -471,9 +471,9 @@ int get_pch_temp(struct device *dev)
 	oob_hdr.src_slave_addr = SRC_SLV_ADDR;
 
 	/* Packetize OOB request */
-	req_pckt.buf = (u8_t *)&oob_hdr;
+	req_pckt.buf = (uint8_t *)&oob_hdr;
 	req_pckt.len = sizeof(struct oob_header);
-	resp_pckt.buf = (u8_t *)&rsp;
+	resp_pckt.buf = (uint8_t *)&rsp;
 	resp_pckt.len = MAX_RESP_SIZE;
 
 	ret = espi_send_oob(dev, &req_pckt);

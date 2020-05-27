@@ -31,14 +31,14 @@
 	(!defined(_MSC_VER) || _MSC_VER < 1600) && !defined(__WINE__)
 #include <BaseTsd.h>
 #include <stddef.h>
-typedef __int8 s8_t;
-typedef unsigned __int8 u8_t;
-typedef __int16 s16_t;
-typedef unsigned __int16 u16_t;
-typedef __int32 s32_t;
-typedef unsigned __int32 u32_t;
-typedef __int64 s64_t;
-typedef unsigned __int64 u64_t;
+typedef __int8 int8_t;
+typedef unsigned __int8 uint8_t;
+typedef __int16 int16_t;
+typedef unsigned __int16 uint16_t;
+typedef __int32 int32_t;
+typedef unsigned __int32 uint32_t;
+typedef __int64 int64_t;
+typedef unsigned __int64 uint64_t;
 #else
 #include <zephyr/types.h>
 #include <stddef.h>
@@ -189,8 +189,8 @@ struct http_parser {
 	unsigned int index : 7;        /* index into current matcher */
 	unsigned int lenient_http_headers : 1;
 
-	u32_t nread;          /* # bytes read in various scenarios */
-	u64_t content_length; /* # bytes in body (0 if no Content-Length
+	uint32_t nread;          /* # bytes read in various scenarios */
+	uint64_t content_length; /* # bytes in body (0 if no Content-Length
 				  * header)
 				  */
 	/** READ-ONLY **/

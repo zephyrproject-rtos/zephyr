@@ -18,12 +18,12 @@ struct apa102_data {
 static int apa102_update(struct device *dev, void *buf, size_t size)
 {
 	struct apa102_data *data = dev->driver_data;
-	static const u8_t zeros[] = {0, 0, 0, 0};
-	static const u8_t ones[] = {0xFF, 0xFF, 0xFF, 0xFF};
+	static const uint8_t zeros[] = {0, 0, 0, 0};
+	static const uint8_t ones[] = {0xFF, 0xFF, 0xFF, 0xFF};
 	const struct spi_buf tx_bufs[] = {
 		{
 			/* Start frame: at least 32 zeros */
-			.buf = (u8_t *)zeros,
+			.buf = (uint8_t *)zeros,
 			.len = sizeof(zeros),
 		},
 		{
@@ -36,7 +36,7 @@ static int apa102_update(struct device *dev, void *buf, size_t size)
 			 * remaining bits to the LEDs at the end of
 			 * the strip.
 			 */
-			.buf = (u8_t *)ones,
+			.buf = (uint8_t *)ones,
 			.len = sizeof(ones),
 		},
 	};
@@ -51,16 +51,16 @@ static int apa102_update(struct device *dev, void *buf, size_t size)
 static int apa102_update_rgb(struct device *dev, struct led_rgb *pixels,
 			     size_t count)
 {
-	u8_t *p = (u8_t *)pixels;
+	uint8_t *p = (uint8_t *)pixels;
 	size_t i;
 	/* SOF (3 bits) followed by the 0 to 31 global dimming level */
-	u8_t prefix = 0xE0 | 31;
+	uint8_t prefix = 0xE0 | 31;
 
 	/* Rewrite to the on-wire format */
 	for (i = 0; i < count; i++) {
-		u8_t r = pixels[i].r;
-		u8_t g = pixels[i].g;
-		u8_t b = pixels[i].b;
+		uint8_t r = pixels[i].r;
+		uint8_t g = pixels[i].g;
+		uint8_t b = pixels[i].b;
 
 		*p++ = prefix;
 		*p++ = b;
@@ -72,7 +72,7 @@ static int apa102_update_rgb(struct device *dev, struct led_rgb *pixels,
 	return apa102_update(dev, pixels, sizeof(struct led_rgb) * count);
 }
 
-static int apa102_update_channels(struct device *dev, u8_t *channels,
+static int apa102_update_channels(struct device *dev, uint8_t *channels,
 				  size_t num_channels)
 {
 	/* Not implemented */

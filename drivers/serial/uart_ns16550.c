@@ -259,7 +259,7 @@ struct uart_ns16550_device_config {
 	struct uart_device_config devconf;
 
 #ifdef UART_NS16550_PCP_ENABLED
-	u32_t pcp;
+	uint32_t pcp;
 #endif
 
 #ifdef UART_NS16550_PCIE_ENABLED
@@ -278,19 +278,19 @@ struct uart_ns16550_dev_data_t {
 	struct k_spinlock lock;
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	u8_t iir_cache;	/**< cache of IIR since it clears when read */
+	uint8_t iir_cache;	/**< cache of IIR since it clears when read */
 	uart_irq_callback_user_data_t cb;  /**< Callback function pointer */
 	void *cb_data;	/**< Callback function arg */
 #endif
 
 #ifdef UART_NS16550_DLF_ENABLED
-	u8_t dlf;		/**< DLF value */
+	uint8_t dlf;		/**< DLF value */
 #endif
 };
 
 static const struct uart_driver_api uart_ns16550_driver_api;
 
-static inline u32_t get_port(struct device *dev)
+static inline uint32_t get_port(struct device *dev)
 {
 #ifdef UART_NS16550_PCIE_ENABLED
 	if (DEV_CFG(dev)->pcie) {
@@ -301,17 +301,17 @@ static inline u32_t get_port(struct device *dev)
 	return DEV_CFG(dev)->devconf.port;
 }
 
-static void set_baud_rate(struct device *dev, u32_t baud_rate)
+static void set_baud_rate(struct device *dev, uint32_t baud_rate)
 {
 	const struct uart_ns16550_device_config * const dev_cfg = DEV_CFG(dev);
 	struct uart_ns16550_dev_data_t * const dev_data = DEV_DATA(dev);
-	u32_t divisor; /* baud rate divisor */
-	u8_t lcr_cache;
+	uint32_t divisor; /* baud rate divisor */
+	uint8_t lcr_cache;
 
 	if ((baud_rate != 0U) && (dev_cfg->devconf.sys_clk_freq != 0U)) {
 		/*
 		 * calculate baud rate divisor. a variant of
-		 * (u32_t)(dev_cfg->sys_clk_freq / (16.0 * baud_rate) + 0.5)
+		 * (uint32_t)(dev_cfg->sys_clk_freq / (16.0 * baud_rate) + 0.5)
 		 */
 		divisor = ((dev_cfg->devconf.sys_clk_freq + (baud_rate << 3))
 					/ baud_rate) >> 4;
@@ -335,7 +335,7 @@ static int uart_ns16550_configure(struct device *dev,
 	struct uart_ns16550_dev_data_t * const dev_data = DEV_DATA(dev);
 	const struct uart_ns16550_device_config * const dev_cfg = DEV_CFG(dev);
 
-	u8_t mdc = 0U;
+	uint8_t mdc = 0U;
 
 	/* temp for return value if error occurs in this locked region */
 	int ret = 0;
@@ -366,7 +366,7 @@ static int uart_ns16550_configure(struct device *dev,
 #endif
 
 #ifdef UART_NS16550_PCP_ENABLED
-	u32_t pcp = dev_cfg->pcp;
+	uint32_t pcp = dev_cfg->pcp;
 
 	if (pcp) {
 		pcp |= PCP_EN;
@@ -591,7 +591,7 @@ static int uart_ns16550_err_check(struct device *dev)
  *
  * @return Number of bytes sent
  */
-static int uart_ns16550_fifo_fill(struct device *dev, const u8_t *tx_data,
+static int uart_ns16550_fifo_fill(struct device *dev, const uint8_t *tx_data,
 				  int size)
 {
 	int i;
@@ -615,7 +615,7 @@ static int uart_ns16550_fifo_fill(struct device *dev, const u8_t *tx_data,
  *
  * @return Number of bytes read
  */
-static int uart_ns16550_fifo_read(struct device *dev, u8_t *rx_data,
+static int uart_ns16550_fifo_read(struct device *dev, uint8_t *rx_data,
 				  const int size)
 {
 	int i;
@@ -872,9 +872,9 @@ static void uart_ns16550_isr(void *arg)
  * @return 0 if successful, failed otherwise
  */
 static int uart_ns16550_line_ctrl_set(struct device *dev,
-				      u32_t ctrl, u32_t val)
+				      uint32_t ctrl, uint32_t val)
 {
-	u32_t mdc, chg;
+	uint32_t mdc, chg;
 	k_spinlock_key_t key;
 
 	switch (ctrl) {
@@ -919,7 +919,7 @@ static int uart_ns16550_line_ctrl_set(struct device *dev,
  *
  * @return 0 if successful, failed otherwise
  */
-static int uart_ns16550_drv_cmd(struct device *dev, u32_t cmd, u32_t p)
+static int uart_ns16550_drv_cmd(struct device *dev, uint32_t cmd, uint32_t p)
 {
 #ifdef UART_NS16550_DLF_ENABLED
 	if (cmd == CMD_SET_DLF) {

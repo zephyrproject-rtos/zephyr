@@ -132,8 +132,8 @@ extern "C" {
  */
 struct spi_cs_control {
 	struct device	*gpio_dev;
-	u32_t		gpio_pin;
-	u32_t		delay;
+	uint32_t		gpio_pin;
+	uint32_t		delay;
 };
 
 /**
@@ -158,9 +158,9 @@ struct spi_cs_control {
  * transceive call. Rest of the attributes are not meant to be tweaked.
  */
 struct spi_config {
-	u32_t		frequency;
-	u16_t		operation;
-	u16_t		slave;
+	uint32_t		frequency;
+	uint16_t		operation;
+	uint16_t		slave;
 
 	const struct spi_cs_control *cs;
 };

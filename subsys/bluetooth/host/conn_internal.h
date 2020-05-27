@@ -48,16 +48,16 @@ struct bt_conn_le {
 	bt_addr_le_t		init_addr;
 	bt_addr_le_t		resp_addr;
 
-	u16_t			interval;
-	u16_t			interval_min;
-	u16_t			interval_max;
+	uint16_t			interval;
+	uint16_t			interval_min;
+	uint16_t			interval_max;
 
-	u16_t			latency;
-	u16_t			timeout;
-	u16_t			pending_latency;
-	u16_t			pending_timeout;
+	uint16_t			latency;
+	uint16_t			timeout;
+	uint16_t			pending_latency;
+	uint16_t			pending_timeout;
 
-	u8_t			features[8];
+	uint8_t			features[8];
 
 	struct bt_keys		*keys;
 
@@ -76,11 +76,11 @@ struct bt_conn_le {
 
 struct bt_conn_br {
 	bt_addr_t		dst;
-	u8_t			remote_io_capa;
-	u8_t			remote_auth;
-	u8_t			pairing_method;
+	uint8_t			remote_io_capa;
+	uint8_t			remote_auth;
+	uint8_t			pairing_method;
 	/* remote LMP features pages per 8 bytes each */
-	u8_t			features[LMP_MAX_PAGES][8];
+	uint8_t			features[LMP_MAX_PAGES][8];
 
 	struct bt_keys_link_key	*link_key;
 };
@@ -88,7 +88,7 @@ struct bt_conn_br {
 struct bt_conn_sco {
 	/* Reference to ACL Connection */
 	struct bt_conn          *acl;
-	u16_t                pkt_type;
+	uint16_t                pkt_type;
 };
 #endif
 
@@ -101,31 +101,31 @@ struct bt_conn_tx {
 	void *user_data;
 
 	/* Number of pending packets without a callback after this one */
-	u32_t pending_no_cb;
+	uint32_t pending_no_cb;
 };
 
 struct bt_conn {
-	u16_t			handle;
-	u8_t			type;
-	u8_t			role;
+	uint16_t			handle;
+	uint8_t			type;
+	uint8_t			role;
 
 	ATOMIC_DEFINE(flags, BT_CONN_NUM_FLAGS);
 
 	/* Which local identity address this connection uses */
-	u8_t                    id;
+	uint8_t                    id;
 
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 	bt_security_t		sec_level;
 	bt_security_t		required_sec_level;
-	u8_t			encrypt;
+	uint8_t			encrypt;
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
 
 	/* Connection error or reason for disconnect */
-	u8_t			err;
+	uint8_t			err;
 
 	bt_conn_state_t		state;
 
-	u16_t		        rx_len;
+	uint16_t		        rx_len;
 	struct net_buf		*rx;
 
 	/* Sent but not acknowledged TX packets with a callback */
@@ -133,7 +133,7 @@ struct bt_conn {
 	/* Sent but not acknowledged TX packets without a callback before
 	 * the next packet (if any) in tx_pending.
 	 */
-	u32_t                   pending_no_cb;
+	uint32_t                   pending_no_cb;
 
 	/* Completed TX for which we need to call the callback */
 	sys_slist_t		tx_complete;
@@ -161,15 +161,15 @@ struct bt_conn {
 
 #if defined(CONFIG_BT_REMOTE_VERSION)
 	struct bt_conn_rv {
-		u8_t  version;
-		u16_t manufacturer;
-		u16_t subversion;
+		uint8_t  version;
+		uint16_t manufacturer;
+		uint16_t subversion;
 	} rv;
 #endif
 };
 
 /* Process incoming data for a connection */
-void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, u8_t flags);
+void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags);
 
 /* Send data over a connection */
 int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
@@ -181,10 +181,10 @@ static inline int bt_conn_send(struct bt_conn *conn, struct net_buf *buf)
 }
 
 /* Check if a connection object with the peer already exists */
-bool bt_conn_exists_le(u8_t id, const bt_addr_le_t *peer);
+bool bt_conn_exists_le(uint8_t id, const bt_addr_le_t *peer);
 
 /* Add a new LE connection */
-struct bt_conn *bt_conn_add_le(u8_t id, const bt_addr_le_t *peer);
+struct bt_conn *bt_conn_add_le(uint8_t id, const bt_addr_le_t *peer);
 
 /* Add a new BR/EDR connection */
 struct bt_conn *bt_conn_add_br(const bt_addr_t *peer);
@@ -202,18 +202,18 @@ struct bt_conn *bt_conn_lookup_addr_sco(const bt_addr_t *peer);
 struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer);
 
 void bt_conn_pin_code_req(struct bt_conn *conn);
-u8_t bt_conn_get_io_capa(void);
-u8_t bt_conn_ssp_get_auth(const struct bt_conn *conn);
-void bt_conn_ssp_auth(struct bt_conn *conn, u32_t passkey);
-void bt_conn_ssp_auth_complete(struct bt_conn *conn, u8_t status);
+uint8_t bt_conn_get_io_capa(void);
+uint8_t bt_conn_ssp_get_auth(const struct bt_conn *conn);
+void bt_conn_ssp_auth(struct bt_conn *conn, uint32_t passkey);
+void bt_conn_ssp_auth_complete(struct bt_conn *conn, uint8_t status);
 
-void bt_conn_disconnect_all(u8_t id);
+void bt_conn_disconnect_all(uint8_t id);
 
 /* Look up an existing connection */
-struct bt_conn *bt_conn_lookup_handle(u16_t handle);
+struct bt_conn *bt_conn_lookup_handle(uint16_t handle);
 
 /* Check if the connection is with the given peer. */
-bool bt_conn_is_peer_addr_le(const struct bt_conn *conn, u8_t id,
+bool bt_conn_is_peer_addr_le(const struct bt_conn *conn, uint8_t id,
 			     const bt_addr_le_t *peer);
 
 /* Helpers for identifying & looking up connections based on the the index to
@@ -221,12 +221,12 @@ bool bt_conn_is_peer_addr_le(const struct bt_conn *conn, u8_t id,
  * e.g. as the handle since that's assigned to us by the controller.
  */
 #define BT_CONN_INDEX_INVALID 0xff
-struct bt_conn *bt_conn_lookup_index(u8_t index);
+struct bt_conn *bt_conn_lookup_index(uint8_t index);
 
 /* Look up a connection state. For BT_ADDR_LE_ANY, returns the first connection
  * with the specific state
  */
-struct bt_conn *bt_conn_lookup_state_le(u8_t id, const bt_addr_le_t *peer,
+struct bt_conn *bt_conn_lookup_state_le(uint8_t id, const bt_addr_le_t *peer,
 					const bt_conn_state_t state);
 
 /* Set connection object in certain state and perform action related to state */
@@ -247,8 +247,8 @@ bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param);
 
 #if defined(CONFIG_BT_SMP)
 /* rand and ediv should be in BT order */
-int bt_conn_le_start_encryption(struct bt_conn *conn, u8_t rand[8],
-				u8_t ediv[2], const u8_t *ltk, size_t len);
+int bt_conn_le_start_encryption(struct bt_conn *conn, uint8_t rand[8],
+				uint8_t ediv[2], const uint8_t *ltk, size_t len);
 
 /* Notify higher layers that RPA was resolved */
 void bt_conn_identity_resolved(struct bt_conn *conn);

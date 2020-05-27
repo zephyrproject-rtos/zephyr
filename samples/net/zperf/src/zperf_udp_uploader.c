@@ -18,7 +18,7 @@ LOG_MODULE_DECLARE(net_zperf_sample, LOG_LEVEL_DBG);
 #include "zperf.h"
 #include "zperf_internal.h"
 
-static u8_t sample_packet[sizeof(struct zperf_udp_datagram) +
+static uint8_t sample_packet[sizeof(struct zperf_udp_datagram) +
 			  sizeof(struct zperf_client_hdr_v1) +
 			  PACKET_SIZE_MAX];
 
@@ -73,9 +73,9 @@ static void stat_received(struct net_context *context,
 
 static inline void zperf_upload_fin(const struct shell *shell,
 				    struct net_context *context,
-				    u32_t nb_packets,
-				    u32_t end_time,
-				    u32_t packet_size,
+				    uint32_t nb_packets,
+				    uint32_t end_time,
+				    uint32_t packet_size,
 				    struct zperf_results *results)
 {
 	struct net_pkt *stat = NULL;
@@ -163,14 +163,14 @@ void zperf_udp_upload(const struct shell *shell,
 		      unsigned int rate_in_kbps,
 		      struct zperf_results *results)
 {
-	u32_t packet_duration = (u32_t)(((u64_t) packet_size *
+	uint32_t packet_duration = (uint32_t)(((uint64_t) packet_size *
 					       SEC_TO_HW_CYCLES(1) * 8U) /
-					      (u64_t)(rate_in_kbps * 1024U));
-	u32_t duration = MSEC_TO_HW_CYCLES(duration_in_ms);
-	u32_t print_interval = SEC_TO_HW_CYCLES(1);
-	u32_t delay = packet_duration;
-	u32_t nb_packets = 0U;
-	u32_t start_time, last_print_time, last_loop_time, end_time;
+					      (uint64_t)(rate_in_kbps * 1024U));
+	uint32_t duration = MSEC_TO_HW_CYCLES(duration_in_ms);
+	uint32_t print_interval = SEC_TO_HW_CYCLES(1);
+	uint32_t delay = packet_duration;
+	uint32_t nb_packets = 0U;
+	uint32_t start_time, last_print_time, last_loop_time, end_time;
 
 	if (packet_size > PACKET_SIZE_MAX) {
 		shell_fprintf(shell, SHELL_WARNING,
@@ -194,8 +194,8 @@ void zperf_udp_upload(const struct shell *shell,
 	do {
 		struct zperf_udp_datagram *datagram;
 		struct zperf_client_hdr_v1 *hdr;
-		u32_t loop_time;
-		s32_t adjust;
+		uint32_t loop_time;
+		int32_t adjust;
 		int ret;
 
 		/* Timestamp */

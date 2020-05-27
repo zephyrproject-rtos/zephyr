@@ -639,7 +639,7 @@ int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 				  sys_dlist_get(&xfer_list);
 	while ((thread != NULL) && (num_bytes_read < bytes_to_read)) {
 		desc = (struct k_pipe_desc *)thread->base.swap_data;
-		bytes_copied = pipe_xfer((u8_t *)data + num_bytes_read,
+		bytes_copied = pipe_xfer((uint8_t *)data + num_bytes_read,
 					  bytes_to_read - num_bytes_read,
 					  desc->buffer, desc->bytes_to_xfer);
 
@@ -663,7 +663,7 @@ int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 
 	if ((writer != NULL) && (num_bytes_read < bytes_to_read)) {
 		desc = (struct k_pipe_desc *)writer->base.swap_data;
-		bytes_copied = pipe_xfer((u8_t *)data + num_bytes_read,
+		bytes_copied = pipe_xfer((uint8_t *)data + num_bytes_read,
 					  bytes_to_read - num_bytes_read,
 					  desc->buffer, desc->bytes_to_xfer);
 
@@ -722,7 +722,7 @@ int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 
 	struct k_pipe_desc  pipe_desc;
 
-	pipe_desc.buffer        = (u8_t *)data + num_bytes_read;
+	pipe_desc.buffer        = (uint8_t *)data + num_bytes_read;
 	pipe_desc.bytes_to_xfer = bytes_to_read - num_bytes_read;
 
 	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {

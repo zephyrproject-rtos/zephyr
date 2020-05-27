@@ -22,19 +22,19 @@
 
 static struct k_spinlock lock;
 
-static u32_t last_count;
+static uint32_t last_count;
 
-static u32_t counter_sub(u32_t a, u32_t b)
+static uint32_t counter_sub(uint32_t a, uint32_t b)
 {
 	return (a - b) & COUNTER_MAX;
 }
 
-static void set_comparator(u32_t cyc)
+static void set_comparator(uint32_t cyc)
 {
 	nrf_timer_cc_set(TIMER, 0, cyc & COUNTER_MAX);
 }
 
-static u32_t counter(void)
+static uint32_t counter(void)
 {
 	nrf_timer_task_trigger(TIMER, nrf_timer_capture_task_get(1));
 
@@ -47,13 +47,13 @@ void timer0_nrf_isr(void *arg)
 	TIMER->EVENTS_COMPARE[0] = 0;
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	u32_t t = counter();
-	u32_t dticks = counter_sub(t, last_count) / CYC_PER_TICK;
+	uint32_t t = counter();
+	uint32_t dticks = counter_sub(t, last_count) / CYC_PER_TICK;
 
 	last_count += dticks * CYC_PER_TICK;
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		u32_t next = last_count + CYC_PER_TICK;
+		uint32_t next = last_count + CYC_PER_TICK;
 
 		/* As below: we're guaranteed to get an interrupt as
 		 * long as it's set two or more cycles in the future
@@ -103,16 +103,16 @@ int z_clock_driver_init(struct device *device)
 	return 0;
 }
 
-void z_clock_set_timeout(s32_t ticks, bool idle)
+void z_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
 #ifdef CONFIG_TICKLESS_KERNEL
 	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
-	ticks = MAX(MIN(ticks - 1, (s32_t)MAX_TICKS), 0);
+	ticks = MAX(MIN(ticks - 1, (int32_t)MAX_TICKS), 0);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	u32_t cyc, dt, t = counter();
+	uint32_t cyc, dt, t = counter();
 	bool zli_fixup = IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS);
 
 	/* Round up to next tick boundary */
@@ -164,23 +164,23 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 #endif /* CONFIG_TICKLESS_KERNEL */
 }
 
-u32_t z_clock_elapsed(void)
+uint32_t z_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	u32_t ret = counter_sub(counter(), last_count) / CYC_PER_TICK;
+	uint32_t ret = counter_sub(counter(), last_count) / CYC_PER_TICK;
 
 	k_spin_unlock(&lock, key);
 	return ret;
 }
 
-u32_t z_timer_cycle_get_32(void)
+uint32_t z_timer_cycle_get_32(void)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	u32_t ret = counter_sub(counter(), last_count) + last_count;
+	uint32_t ret = counter_sub(counter(), last_count) + last_count;
 
 	k_spin_unlock(&lock, key);
 	return ret;

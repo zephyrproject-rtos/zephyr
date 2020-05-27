@@ -34,8 +34,8 @@ extern "C" {
  * See entropy_get_entropy() for argument description
  */
 typedef int (*entropy_get_entropy_t)(struct device *dev,
-				    u8_t *buffer,
-				    u16_t length);
+				    uint8_t *buffer,
+				    uint16_t length);
 /**
  * @typedef entropy_get_entropy_isr_t
  * @brief Callback API to get entropy from an ISR.
@@ -43,9 +43,9 @@ typedef int (*entropy_get_entropy_t)(struct device *dev,
  * See entropy_get_entropy_isr() for argument description
  */
 typedef int (*entropy_get_entropy_isr_t)(struct device *dev,
-					 u8_t *buffer,
-					 u16_t length,
-					 u32_t flags);
+					 uint8_t *buffer,
+					 uint16_t length,
+					 uint32_t flags);
 __subsystem struct entropy_driver_api {
 	entropy_get_entropy_t     get_entropy;
 	entropy_get_entropy_isr_t get_entropy_isr;
@@ -62,12 +62,12 @@ __subsystem struct entropy_driver_api {
  * @retval -ERRNO errno code on error.
  */
 __syscall int entropy_get_entropy(struct device *dev,
-				  u8_t *buffer,
-				  u16_t length);
+				  uint8_t *buffer,
+				  uint16_t length);
 
 static inline int z_impl_entropy_get_entropy(struct device *dev,
-					    u8_t *buffer,
-					    u16_t length)
+					    uint8_t *buffer,
+					    uint16_t length)
 {
 	const struct entropy_driver_api *api =
 		(const struct entropy_driver_api *)dev->driver_api;
@@ -91,9 +91,9 @@ static inline int z_impl_entropy_get_entropy(struct device *dev,
  * @retval number of bytes filled with entropy or -error.
  */
 static inline int entropy_get_entropy_isr(struct device *dev,
-					  u8_t *buffer,
-					  u16_t length,
-					  u32_t flags)
+					  uint8_t *buffer,
+					  uint16_t length,
+					  uint32_t flags)
 {
 	const struct entropy_driver_api *api =
 		(const struct entropy_driver_api *)dev->driver_api;

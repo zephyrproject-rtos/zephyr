@@ -16,8 +16,8 @@
 
 #include "ull_scan_types.h"
 
-void ull_sched_after_mstr_slot_get(u8_t user_id, u32_t ticks_slot_abs,
-				   u32_t *ticks_anchor, u32_t *us_offset)
+void ull_sched_after_mstr_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
+				   uint32_t *ticks_anchor, uint32_t *us_offset)
 {
 	/* TODO: */
 }

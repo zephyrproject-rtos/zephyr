@@ -274,15 +274,15 @@
 
 struct enc424j600_config {
 	const char *gpio_port;
-	u8_t gpio_pin;
+	uint8_t gpio_pin;
 	gpio_dt_flags_t gpio_flags;
 	const char *spi_port;
-	u8_t spi_cs_pin;
+	uint8_t spi_cs_pin;
 	const char *spi_cs_port;
-	u32_t spi_freq;
-	u8_t spi_slave;
-	u8_t full_duplex;
-	s32_t timeout;
+	uint32_t spi_freq;
+	uint8_t spi_slave;
+	uint8_t full_duplex;
+	int32_t timeout;
 };
 
 struct enc424j600_runtime {
@@ -292,7 +292,7 @@ struct enc424j600_runtime {
 			      CONFIG_ETH_ENC424J600_RX_THREAD_STACK_SIZE);
 
 	struct k_thread thread;
-	u8_t mac_address[6];
+	uint8_t mac_address[6];
 	struct device *gpio;
 	struct device *spi;
 	struct spi_cs_control spi_cs;
@@ -300,7 +300,7 @@ struct enc424j600_runtime {
 	struct gpio_callback gpio_cb;
 	struct k_sem tx_rx_sem;
 	struct k_sem int_sem;
-	u16_t next_pkt_ptr;
+	uint16_t next_pkt_ptr;
 	bool suspended : 1;
 	bool iface_initialized : 1;
 };

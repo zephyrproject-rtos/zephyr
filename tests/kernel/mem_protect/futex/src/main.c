@@ -61,7 +61,7 @@ void futex_wake_from_isr(struct k_futex *futex)
 /* test futex wait, no futex wake */
 void futex_wait_task(void *p1, void *p2, void *p3)
 {
-	s32_t ret_value;
+	int32_t ret_value;
 	k_ticks_t time_val = *(int *)p1;
 
 	zassert_true(time_val >= (int)K_TICKS_FOREVER,
@@ -92,7 +92,7 @@ void futex_wait_task(void *p1, void *p2, void *p3)
 
 void futex_wake_task(void *p1, void *p2, void *p3)
 {
-	s32_t ret_value;
+	int32_t ret_value;
 	int woken_num = *(int *)p1;
 
 	ret_value = k_futex_wake(&simple_futex,
@@ -103,7 +103,7 @@ void futex_wake_task(void *p1, void *p2, void *p3)
 
 void futex_wait_wake_task(void *p1, void *p2, void *p3)
 {
-	s32_t ret_value;
+	int32_t ret_value;
 	int time_val = *(int *)p1;
 
 	zassert_true(time_val >= (int)K_TICKS_FOREVER, "invalid timeout parameter");
@@ -131,7 +131,7 @@ void futex_wait_wake_task(void *p1, void *p2, void *p3)
 
 void futex_multiple_wake_task(void *p1, void *p2, void *p3)
 {
-	s32_t ret_value;
+	int32_t ret_value;
 	int woken_num = *(int *)p1;
 	int idx = *(int *)p2;
 
@@ -145,7 +145,7 @@ void futex_multiple_wake_task(void *p1, void *p2, void *p3)
 
 void futex_multiple_wait_wake_task(void *p1, void *p2, void *p3)
 {
-	s32_t ret_value;
+	int32_t ret_value;
 	int time_val = *(int *)p1;
 	int idx = *(int *)p2;
 

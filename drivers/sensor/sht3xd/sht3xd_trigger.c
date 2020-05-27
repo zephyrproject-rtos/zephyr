@@ -14,21 +14,21 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(SHT3XD, CONFIG_SENSOR_LOG_LEVEL);
 
-static u16_t sht3xd_temp_processed_to_raw(const struct sensor_value *val)
+static uint16_t sht3xd_temp_processed_to_raw(const struct sensor_value *val)
 {
-	u64_t uval;
+	uint64_t uval;
 
 	/* ret = (val + 45) * (2^16 - 1) / 175 */
-	uval = (u64_t)(val->val1 + 45) * 1000000U + val->val2;
+	uval = (uint64_t)(val->val1 + 45) * 1000000U + val->val2;
 	return ((uval * 0xFFFF) / 175) / 1000000;
 }
 
 static int sht3xd_rh_processed_to_raw(const struct sensor_value *val)
 {
-	u64_t uval;
+	uint64_t uval;
 
 	/* ret = val * (2^16 -1) / 100 */
-	uval = (u64_t)val->val1 * 1000000U + val->val2;
+	uval = (uint64_t)val->val1 * 1000000U + val->val2;
 	return ((uval * 0xFFFF) / 100) / 1000000;
 }
 
@@ -38,7 +38,7 @@ int sht3xd_attr_set(struct device *dev,
 		    const struct sensor_value *val)
 {
 	struct sht3xd_data *data = dev->driver_data;
-	u16_t set_cmd, clear_cmd, reg_val, temp, rh;
+	uint16_t set_cmd, clear_cmd, reg_val, temp, rh;
 
 	if (attr == SENSOR_ATTR_LOWER_THRESH) {
 		if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
@@ -143,7 +143,7 @@ int sht3xd_trigger_set(struct device *dev,
 }
 
 static void sht3xd_gpio_callback(struct device *dev,
-				 struct gpio_callback *cb, u32_t pins)
+				 struct gpio_callback *cb, uint32_t pins)
 {
 	struct sht3xd_data *data =
 		CONTAINER_OF(cb, struct sht3xd_data, alert_cb);

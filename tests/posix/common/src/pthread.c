@@ -404,7 +404,7 @@ void test_posix_pthread_execution(void)
 
 void test_posix_pthread_termination(void)
 {
-	s32_t i, ret;
+	int32_t i, ret;
 	int oldstate, policy;
 	pthread_attr_t attr[N_THR_T];
 	struct sched_param schedparam;

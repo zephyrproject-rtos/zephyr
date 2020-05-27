@@ -43,11 +43,11 @@ LOG_MODULE_REGISTER(flash_sam0);
 
 #define PAGES_PER_ROW (ROW_SIZE / FLASH_PAGE_SIZE)
 
-#define FLASH_MEM(_a) ((u32_t *)((u8_t *)((_a) + CONFIG_FLASH_BASE_ADDRESS)))
+#define FLASH_MEM(_a) ((uint32_t *)((uint8_t *)((_a) + CONFIG_FLASH_BASE_ADDRESS)))
 
 struct flash_sam0_data {
 #if CONFIG_SOC_FLASH_SAM0_EMULATE_BYTE_PAGES
-	u8_t buf[ROW_SIZE];
+	uint8_t buf[ROW_SIZE];
 	off_t offset;
 #endif
 
@@ -133,9 +133,9 @@ static int flash_sam0_check_status(off_t offset)
 static int flash_sam0_write_page(struct device *dev, off_t offset,
 				 const void *data)
 {
-	const u32_t *src = data;
-	const u32_t *end = src + FLASH_PAGE_SIZE / sizeof(*src);
-	u32_t *dst = FLASH_MEM(offset);
+	const uint32_t *src = data;
+	const uint32_t *end = src + FLASH_PAGE_SIZE / sizeof(*src);
+	uint32_t *dst = FLASH_MEM(offset);
 	int err;
 
 #ifdef NVMCTRL_CTRLA_CMD_PBC
@@ -147,7 +147,7 @@ static int flash_sam0_write_page(struct device *dev, off_t offset,
 
 	/* Ensure writes happen 32 bits at a time. */
 	for (; src != end; src++, dst++) {
-		*dst = UNALIGNED_GET((u32_t *)src);
+		*dst = UNALIGNED_GET((uint32_t *)src);
 	}
 
 #ifdef NVMCTRL_CTRLA_CMD_WP
@@ -216,7 +216,7 @@ static int flash_sam0_write(struct device *dev, off_t offset,
 			    const void *data, size_t len)
 {
 	struct flash_sam0_data *ctx = dev->driver_data;
-	const u8_t *pdata = data;
+	const uint8_t *pdata = data;
 	off_t addr;
 	int err;
 
@@ -253,7 +253,7 @@ static int flash_sam0_write(struct device *dev, off_t offset,
 static int flash_sam0_write(struct device *dev, off_t offset,
 			    const void *data, size_t len)
 {
-	const u8_t *pdata = data;
+	const uint8_t *pdata = data;
 	int err;
 	size_t idx;
 
@@ -299,7 +299,7 @@ static int flash_sam0_read(struct device *dev, off_t offset, void *data,
 		return err;
 	}
 
-	memcpy(data, (u8_t *)CONFIG_FLASH_BASE_ADDRESS + offset, len);
+	memcpy(data, (uint8_t *)CONFIG_FLASH_BASE_ADDRESS + offset, len);
 
 	return 0;
 }

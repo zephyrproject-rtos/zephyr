@@ -17,18 +17,18 @@ struct k_thread mem_domain_1_tid, mem_domain_2_tid, mem_domain_6_tid;
 
 /****************************************************************************/
 /* The mem domains needed.*/
-u8_t MEM_DOMAIN_ALIGNMENT mem_domain_buf[MEM_REGION_ALLOC];
-u8_t MEM_DOMAIN_ALIGNMENT mem_domain_buf1[MEM_REGION_ALLOC];
+uint8_t MEM_DOMAIN_ALIGNMENT mem_domain_buf[MEM_REGION_ALLOC];
+uint8_t MEM_DOMAIN_ALIGNMENT mem_domain_buf1[MEM_REGION_ALLOC];
 
 /* partitions added later in the test cases.*/
-u8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part1[MEM_REGION_ALLOC];
-u8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part2[MEM_REGION_ALLOC];
-u8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part3[MEM_REGION_ALLOC];
-u8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part4[MEM_REGION_ALLOC];
-u8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part5[MEM_REGION_ALLOC];
-u8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part6[MEM_REGION_ALLOC];
-u8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part7[MEM_REGION_ALLOC];
-u8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part8[MEM_REGION_ALLOC];
+uint8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part1[MEM_REGION_ALLOC];
+uint8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part2[MEM_REGION_ALLOC];
+uint8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part3[MEM_REGION_ALLOC];
+uint8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part4[MEM_REGION_ALLOC];
+uint8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part5[MEM_REGION_ALLOC];
+uint8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part6[MEM_REGION_ALLOC];
+uint8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part7[MEM_REGION_ALLOC];
+uint8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part8[MEM_REGION_ALLOC];
 
 K_MEM_PARTITION_DEFINE(mem_domain_memory_partition,
 		       mem_domain_buf,
@@ -164,7 +164,7 @@ static void thread_entry_rw(void *p1, void *p2, void *p3)
 {
 	set_fault_valid(false);
 
-	u8_t read_data = mem_domain_buf[0];
+	uint8_t read_data = mem_domain_buf[0];
 
 	/* Just to avoid compiler warnings */
 	(void) read_data;
@@ -201,7 +201,7 @@ static void user_thread_entry_ro(void *p1, void *p2, void *p3)
 	set_fault_valid(true);
 
 	/* Read the partition */
-	u8_t read_data = mem_domain_buf1[0];
+	uint8_t read_data = mem_domain_buf1[0];
 
 	/* Just to avoid compiler warning */
 	(void) read_data;
@@ -351,8 +351,8 @@ void test_mem_domain_add_partitions_invalid(void *p1, void *p2, void *p3)
 	/* Subtract one since the domain is initialized with one partition
 	 * already present.
 	 */
-	u8_t max_partitions = (u8_t)arch_mem_domain_max_partitions_get() - 1;
-	u8_t index;
+	uint8_t max_partitions = (uint8_t)arch_mem_domain_max_partitions_get() - 1;
+	uint8_t index;
 
 	k_mem_domain_remove_thread(k_current_get());
 
@@ -415,8 +415,8 @@ static void mem_domain_for_user_tc4(void *max_partitions, void *p2, void *p3)
 void test_mem_domain_add_partitions_simple(void *p1, void *p2, void *p3)
 {
 
-	u8_t max_partitions = (u8_t)arch_mem_domain_max_partitions_get();
-	u8_t index;
+	uint8_t max_partitions = (uint8_t)arch_mem_domain_max_partitions_get();
+	uint8_t index;
 
 	k_mem_domain_init(&mem_domain_tc3_mem_domain,
 			  1,

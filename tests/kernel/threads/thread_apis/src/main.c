@@ -382,7 +382,7 @@ int join_scenario(enum control_method m)
 
 void test_thread_join(void)
 {
-	s64_t interval;
+	int64_t interval;
 
 #ifdef CONFIG_USERSPACE
 	/* scenario: thread never started */

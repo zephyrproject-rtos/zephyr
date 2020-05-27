@@ -53,25 +53,25 @@ struct x86_tss64 {
 	 * but we need to get (some of) their offsets from assembly.
 	 */
 
-	u8_t reserved0[4];
+	uint8_t reserved0[4];
 
-	u64_t rsp0;		/* privileged stacks */
-	u64_t rsp1;
-	u64_t rsp2;
+	uint64_t rsp0;		/* privileged stacks */
+	uint64_t rsp1;
+	uint64_t rsp2;
 
-	u8_t reserved[8];
+	uint8_t reserved[8];
 
-	u64_t ist1;		/* interrupt stacks */
-	u64_t ist2;
-	u64_t ist3;
-	u64_t ist4;
-	u64_t ist5;
-	u64_t ist6;
-	u64_t ist7;
+	uint64_t ist1;		/* interrupt stacks */
+	uint64_t ist2;
+	uint64_t ist3;
+	uint64_t ist4;
+	uint64_t ist5;
+	uint64_t ist6;
+	uint64_t ist7;
 
-	u8_t reserved1[10];
+	uint8_t reserved1[10];
 
-	u16_t iomapb;		/* offset to I/O base */
+	uint16_t iomapb;		/* offset to I/O base */
 
 	/*
 	 * Zephyr specific portion. Stash per-CPU data here for convenience.
@@ -97,21 +97,21 @@ typedef struct x86_tss64 x86_tss64_t;
  */
 
 struct _callee_saved {
-	u64_t rsp;
-	u64_t rbx;
-	u64_t rbp;
-	u64_t r12;
-	u64_t r13;
-	u64_t r14;
-	u64_t r15;
-	u64_t rip;
-	u64_t rflags;
+	uint64_t rsp;
+	uint64_t rbx;
+	uint64_t rbp;
+	uint64_t r12;
+	uint64_t r13;
+	uint64_t r14;
+	uint64_t r15;
+	uint64_t rip;
+	uint64_t rflags;
 };
 
 typedef struct _callee_saved _callee_saved_t;
 
 struct _thread_arch {
-	u8_t flags;
+	uint8_t flags;
 
 #ifdef CONFIG_USERSPACE
 	/* Pointer to page tables used by this thread. Supervisor threads
@@ -126,19 +126,19 @@ struct _thread_arch {
 	char *psp;
 
 	/* SS and CS selectors for this thread when restoring context */
-	u64_t ss;
-	u64_t cs;
+	uint64_t ss;
+	uint64_t cs;
 #endif
 
-	u64_t rax;
-	u64_t rcx;
-	u64_t rdx;
-	u64_t rsi;
-	u64_t rdi;
-	u64_t r8;
-	u64_t r9;
-	u64_t r10;
-	u64_t r11;
+	uint64_t rax;
+	uint64_t rcx;
+	uint64_t rdx;
+	uint64_t rsi;
+	uint64_t rdi;
+	uint64_t r8;
+	uint64_t r9;
+	uint64_t r10;
+	uint64_t r11;
 	char __aligned(X86_FXSAVE_ALIGN) sse[X86_FXSAVE_SIZE];
 };
 

@@ -6,7 +6,7 @@
 
 #include <drivers/hwinfo.h>
 
-ssize_t __weak z_impl_hwinfo_get_device_id(u8_t *buffer, size_t length)
+ssize_t __weak z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
 	return -ENOTSUP;
 }

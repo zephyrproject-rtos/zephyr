@@ -30,7 +30,7 @@ struct net_icmpv4_hdr_opts_data {
 	const struct in_addr *src;
 };
 
-static int icmpv4_create(struct net_pkt *pkt, u8_t icmp_type, u8_t icmp_code)
+static int icmpv4_create(struct net_pkt *pkt, uint8_t icmp_type, uint8_t icmp_code)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmpv4_access,
 					      struct net_icmp_hdr);
@@ -75,17 +75,17 @@ int net_icmpv4_finalize(struct net_pkt *pkt)
 /* Parse Record Route and add our own IP address based on
  * free entries.
  */
-static int icmpv4_update_record_route(u8_t *opt_data,
-				      u8_t opt_len,
+static int icmpv4_update_record_route(uint8_t *opt_data,
+				      uint8_t opt_len,
 				      struct net_pkt *reply,
 				      const struct in_addr *src)
 {
-	u8_t len = net_pkt_ipv4_opts_len(reply);
-	u8_t addr_len = sizeof(struct in_addr);
-	u8_t ptr_offset = 4U;
-	u8_t offset = 0U;
-	u8_t skip;
-	u8_t ptr;
+	uint8_t len = net_pkt_ipv4_opts_len(reply);
+	uint8_t addr_len = sizeof(struct in_addr);
+	uint8_t ptr_offset = 4U;
+	uint8_t offset = 0U;
+	uint8_t skip;
+	uint8_t ptr;
 
 	if (net_pkt_write_u8(reply, NET_IPV4_OPTS_RR)) {
 		goto drop;
@@ -183,20 +183,20 @@ drop:
  * Internet Timestamp. Timestamp value : 32-bit timestamp
  * in milliseconds since midnight UT.
  */
-static int icmpv4_update_time_stamp(u8_t *opt_data,
-				   u8_t opt_len,
+static int icmpv4_update_time_stamp(uint8_t *opt_data,
+				   uint8_t opt_len,
 				   struct net_pkt *reply,
 				   const struct in_addr *src)
 {
-	u8_t len = net_pkt_ipv4_opts_len(reply);
-	u8_t addr_len = sizeof(struct in_addr);
-	u8_t ptr_offset = 5U;
-	u8_t offset = 0U;
-	u8_t new_entry_len;
-	u8_t overflow;
-	u8_t flag;
-	u8_t skip;
-	u8_t ptr;
+	uint8_t len = net_pkt_ipv4_opts_len(reply);
+	uint8_t addr_len = sizeof(struct in_addr);
+	uint8_t ptr_offset = 5U;
+	uint8_t offset = 0U;
+	uint8_t new_entry_len;
+	uint8_t overflow;
+	uint8_t flag;
+	uint8_t skip;
+	uint8_t ptr;
 
 	if (net_pkt_write_u8(reply, NET_IPV4_OPTS_TS)) {
 		goto drop;
@@ -264,10 +264,10 @@ static int icmpv4_update_time_stamp(u8_t *opt_data,
 
 	switch (flag) {
 	case NET_IPV4_TS_OPT_TS_ONLY:
-		new_entry_len = sizeof(u32_t);
+		new_entry_len = sizeof(uint32_t);
 		break;
 	case NET_IPV4_TS_OPT_TS_ADDR:
-		new_entry_len = addr_len + sizeof(u32_t);
+		new_entry_len = addr_len + sizeof(uint32_t);
 		break;
 	case NET_IPV4_TS_OPT_TS_PRES: /* TODO */
 	default:
@@ -304,9 +304,9 @@ static int icmpv4_update_time_stamp(u8_t *opt_data,
 			goto drop;
 		}
 
-		len += sizeof(u32_t);
+		len += sizeof(uint32_t);
 
-		offset += sizeof(u32_t);
+		offset += sizeof(uint32_t);
 
 		break;
 	case NET_IPV4_TS_OPT_TS_ADDR:
@@ -320,9 +320,9 @@ static int icmpv4_update_time_stamp(u8_t *opt_data,
 			goto drop;
 		}
 
-		len += sizeof(u32_t);
+		len += sizeof(uint32_t);
 
-		offset += (addr_len + sizeof(u32_t));
+		offset += (addr_len + sizeof(uint32_t));
 
 		break;
 	}
@@ -343,9 +343,9 @@ drop:
 	return -EINVAL;
 }
 
-static int icmpv4_reply_to_options(u8_t opt_type,
-				   u8_t *opt_data,
-				   u8_t opt_len,
+static int icmpv4_reply_to_options(uint8_t opt_type,
+				   uint8_t *opt_data,
+				   uint8_t opt_len,
 				   void *user_data)
 {
 	struct net_icmpv4_hdr_opts_data *ud =
@@ -367,7 +367,7 @@ static int icmpv4_handle_header_options(struct net_pkt *pkt,
 					const struct in_addr *src)
 {
 	struct net_icmpv4_hdr_opts_data ud;
-	u8_t len;
+	uint8_t len;
 
 	ud.reply = reply;
 	ud.src = src;
@@ -380,7 +380,7 @@ static int icmpv4_handle_header_options(struct net_pkt *pkt,
 
 	/* IPv4 optional header part should ends in 32 bit boundary */
 	if (len % 4U != 0U) {
-		u8_t i = 4U - (len % 4U);
+		uint8_t i = 4U - (len % 4U);
 
 		if (net_pkt_memset(reply, NET_IPV4_OPTS_NOP, i)) {
 			return -EINVAL;
@@ -413,7 +413,7 @@ static enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt,
 {
 	struct net_pkt *reply = NULL;
 	const struct in_addr *src;
-	s16_t payload_len;
+	int16_t payload_len;
 
 	/* If interface can not select src address based on dst addr
 	 * and src address is unspecified, drop the echo request.
@@ -496,8 +496,8 @@ drop:
 
 int net_icmpv4_send_echo_request(struct net_if *iface,
 				 struct in_addr *dst,
-				 u16_t identifier,
-				 u16_t sequence,
+				 uint16_t identifier,
+				 uint16_t sequence,
 				 const void *data,
 				 size_t data_size)
 {
@@ -569,7 +569,7 @@ drop:
 	return ret;
 }
 
-int net_icmpv4_send_error(struct net_pkt *orig, u8_t type, u8_t code)
+int net_icmpv4_send_error(struct net_pkt *orig, uint8_t type, uint8_t code)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access, struct net_ipv4_hdr);
 	int err = -EIO;

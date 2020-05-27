@@ -50,10 +50,10 @@ enum cfb_font_caps {
 struct cfb_font {
 	const void *data;
 	enum cfb_font_caps caps;
-	u8_t width;
-	u8_t height;
-	u8_t first_char;
-	u8_t last_char;
+	uint8_t width;
+	uint8_t height;
+	uint8_t first_char;
+	uint8_t last_char;
 };
 
 /**
@@ -88,7 +88,7 @@ struct cfb_font {
  *
  * @return 0 on success, negative value otherwise
  */
-int cfb_print(struct device *dev, char *str, u16_t x, u16_t y);
+int cfb_print(struct device *dev, char *str, uint16_t x, uint16_t y);
 
 /**
  * @brief Clear framebuffer.
@@ -137,7 +137,7 @@ int cfb_get_display_parameter(struct device *dev, enum cfb_display_param);
  *
  * @return 0 on success, negative value otherwise
  */
-int cfb_framebuffer_set_font(struct device *dev, u8_t idx);
+int cfb_framebuffer_set_font(struct device *dev, uint8_t idx);
 
 /**
  * @brief Get font size.
@@ -149,7 +149,7 @@ int cfb_framebuffer_set_font(struct device *dev, u8_t idx);
  *
  * @return 0 on success, negative value otherwise
  */
-int cfb_get_font_size(struct device *dev, u8_t idx, u8_t *width, u8_t *height);
+int cfb_get_font_size(struct device *dev, uint8_t idx, uint8_t *width, uint8_t *height);
 
 /**
  * @brief Get number of fonts.

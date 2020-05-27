@@ -25,8 +25,8 @@
 /* the number of mutex lock/unlock cycles */
 #define N_TEST_MUTEX 1000
 
-static u32_t timestamp_start;
-static u32_t timestamp_end;
+static uint32_t timestamp_start;
+static uint32_t timestamp_end;
 
 K_SEM_DEFINE(lock_unlock_sema, 0, N_TEST_SEMA);
 K_MUTEX_DEFINE(TEST_MUTEX);
@@ -43,7 +43,7 @@ K_MUTEX_DEFINE(TEST_MUTEX);
 int sema_lock_unlock(void)
 {
 	int i;
-	u32_t diff;
+	uint32_t diff;
 
 	PRINT_FORMAT(" 3 - Measure average time to signal a sema then test"
 		     " that sema");
@@ -111,7 +111,7 @@ int sema_lock_unlock(void)
 int mutex_lock_unlock(void)
 {
 	int i;
-	u32_t diff;
+	uint32_t diff;
 
 	benchmark_timer_start();
 	PRINT_FORMAT(" 4- Measure average time to lock a mutex then"

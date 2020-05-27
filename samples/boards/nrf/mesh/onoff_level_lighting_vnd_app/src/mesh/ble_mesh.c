@@ -10,7 +10,7 @@
 
 #ifdef OOB_AUTH_ENABLE
 
-static int output_number(bt_mesh_output_action_t action, u32_t number)
+static int output_number(bt_mesh_output_action_t action, uint32_t number)
 {
 	printk("OOB Number: %u\n", number);
 	return 0;
@@ -24,7 +24,7 @@ static int output_string(const char *str)
 
 #endif
 
-static void prov_complete(u16_t net_idx, u16_t addr)
+static void prov_complete(uint16_t net_idx, uint16_t addr)
 {
 }
 
@@ -33,7 +33,7 @@ static void prov_reset(void)
 	bt_mesh_prov_enable(BT_MESH_PROV_ADV | BT_MESH_PROV_GATT);
 }
 
-static u8_t dev_uuid[16] = { 0xdd, 0xdd };
+static uint8_t dev_uuid[16] = { 0xdd, 0xdd };
 
 static const struct bt_mesh_prov prov = {
 	.uuid = dev_uuid,

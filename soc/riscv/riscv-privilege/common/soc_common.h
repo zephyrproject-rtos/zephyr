@@ -45,10 +45,10 @@ void soc_interrupt_init(void);
 #endif
 
 #if defined(CONFIG_RISCV_HAS_PLIC)
-void riscv_plic_irq_enable(u32_t irq);
-void riscv_plic_irq_disable(u32_t irq);
-int riscv_plic_irq_is_enabled(u32_t irq);
-void riscv_plic_set_priority(u32_t irq, u32_t priority);
+void riscv_plic_irq_enable(uint32_t irq);
+void riscv_plic_irq_disable(uint32_t irq);
+int riscv_plic_irq_is_enabled(uint32_t irq);
+void riscv_plic_set_priority(uint32_t irq, uint32_t priority);
 int riscv_plic_get_irq(void);
 #endif
 

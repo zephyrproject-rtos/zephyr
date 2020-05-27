@@ -123,25 +123,25 @@ struct fxos8700_config {
 	char *i2c_name;
 #ifdef CONFIG_FXOS8700_TRIGGER
 	char *gpio_name;
-	u8_t gpio_pin;
+	uint8_t gpio_pin;
 	gpio_dt_flags_t gpio_flags;
 #endif
-	u8_t i2c_address;
+	uint8_t i2c_address;
 	char *reset_name;
-	u8_t reset_pin;
+	uint8_t reset_pin;
 	gpio_dt_flags_t reset_flags;
 	enum fxos8700_mode mode;
 	enum fxos8700_power_mode power_mode;
 	enum fxos8700_range range;
-	u8_t start_addr;
-	u8_t start_channel;
-	u8_t num_channels;
+	uint8_t start_addr;
+	uint8_t start_channel;
+	uint8_t num_channels;
 #ifdef CONFIG_FXOS8700_PULSE
-	u8_t pulse_cfg;
-	u8_t pulse_ths[3];
-	u8_t pulse_tmlt;
-	u8_t pulse_ltcy;
-	u8_t pulse_wind;
+	uint8_t pulse_cfg;
+	uint8_t pulse_ths[3];
+	uint8_t pulse_tmlt;
+	uint8_t pulse_ltcy;
+	uint8_t pulse_wind;
 #endif
 };
 
@@ -150,7 +150,7 @@ struct fxos8700_data {
 	struct k_sem sem;
 #ifdef CONFIG_FXOS8700_TRIGGER
 	struct device *gpio;
-	u8_t gpio_pin;
+	uint8_t gpio_pin;
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t drdy_handler;
 #endif
@@ -170,11 +170,11 @@ struct fxos8700_data {
 	struct k_work work;
 	struct device *dev;
 #endif
-	s16_t raw[FXOS8700_MAX_NUM_CHANNELS];
+	int16_t raw[FXOS8700_MAX_NUM_CHANNELS];
 #ifdef CONFIG_FXOS8700_TEMP
-	s8_t temp;
+	int8_t temp;
 #endif
-	u8_t whoami;
+	uint8_t whoami;
 };
 
 int fxos8700_get_power(struct device *dev, enum fxos8700_power *power);

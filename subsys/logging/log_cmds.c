@@ -92,10 +92,10 @@ static int log_status(const struct shell *shell,
 		      const struct log_backend *backend,
 		      size_t argc, char **argv)
 {
-	u32_t modules_cnt = log_sources_count();
-	u32_t dynamic_lvl;
-	u32_t compiled_lvl;
-	u32_t i;
+	uint32_t modules_cnt = log_sources_count();
+	uint32_t dynamic_lvl;
+	uint32_t compiled_lvl;
+	uint32_t i;
 
 
 	if (!log_backend_is_active(backend)) {
@@ -142,9 +142,9 @@ static int cmd_log_backend_status(const struct shell *shell,
 
 static int module_id_get(const char *name)
 {
-	u32_t modules_cnt = log_sources_count();
+	uint32_t modules_cnt = log_sources_count();
 	const char *tmp_name;
-	u32_t i;
+	uint32_t i;
 
 	for (i = 0U; i < modules_cnt; i++) {
 		tmp_name = log_source_name_get(CONFIG_LOG_DOMAIN_ID, i);
@@ -158,7 +158,7 @@ static int module_id_get(const char *name)
 
 static void filters_set(const struct shell *shell,
 			const struct log_backend *backend,
-			size_t argc, char **argv, u32_t level)
+			size_t argc, char **argv, uint32_t level)
 {
 	int i;
 	int id;
@@ -172,7 +172,7 @@ static void filters_set(const struct shell *shell,
 	for (i = 0; i < cnt; i++) {
 		id = all ? i : module_id_get(argv[i]);
 		if (id >= 0) {
-			u32_t set_lvl = log_filter_set(backend,
+			uint32_t set_lvl = log_filter_set(backend,
 						       CONFIG_LOG_DOMAIN_ID,
 						       id, level);
 
@@ -378,9 +378,9 @@ static int cmd_log_strdup_utilization(const struct shell *shell,
 	#define CONFIG_LOG_STRDUP_MAX_STRING 0
 	#endif
 
-	u32_t buf_cnt = log_get_strdup_pool_utilization();
-	u32_t buf_size = log_get_strdup_longest_string();
-	u32_t percent = CONFIG_LOG_STRDUP_BUF_COUNT ?
+	uint32_t buf_cnt = log_get_strdup_pool_utilization();
+	uint32_t buf_size = log_get_strdup_longest_string();
+	uint32_t percent = CONFIG_LOG_STRDUP_BUF_COUNT ?
 			100 * buf_cnt / CONFIG_LOG_STRDUP_BUF_COUNT : 0;
 
 	shell_print(shell,

@@ -256,7 +256,7 @@ struct device {
 	const void *driver_api;
 	void * const driver_data;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	int (*device_pm_control)(struct device *device, u32_t command,
+	int (*device_pm_control)(struct device *device, uint32_t command,
 				 void *context, device_pm_cb cb, void *arg);
 	struct device_pm * const pm;
 #endif
@@ -349,7 +349,7 @@ __syscall struct device *device_get_binding(const char *name);
  *
  * @param state State id which name should be returned
  */
-const char *device_pm_state_str(u32_t state);
+const char *device_pm_state_str(uint32_t state);
 
 /**
  * @brief Indicate that the device is in the middle of a transaction
@@ -390,7 +390,7 @@ void device_busy_clear(struct device *busy_dev);
  * @retval -ENOTSUP for all operations.
  */
 int device_pm_control_nop(struct device *unused_device,
-			  u32_t unused_ctrl_command,
+			  uint32_t unused_ctrl_command,
 			  void *unused_context,
 			  device_pm_cb cb,
 			  void *unused_arg);
@@ -409,7 +409,7 @@ int device_pm_control_nop(struct device *unused_device,
  * @retval Errno Negative errno code if failure. Callback will not be called.
  */
 static inline int device_set_power_state(struct device *device,
-					 u32_t device_power_state,
+					 uint32_t device_power_state,
 					 device_pm_cb cb, void *arg)
 {
 	return device->device_pm_control(device,
@@ -431,7 +431,7 @@ static inline int device_set_power_state(struct device *device,
  * @retval Errno Negative errno code if failure.
  */
 static inline int device_get_power_state(struct device *device,
-					 u32_t *device_power_state)
+					 uint32_t *device_power_state)
 {
 	return device->device_pm_control(device,
 					 DEVICE_PM_GET_POWER_STATE,

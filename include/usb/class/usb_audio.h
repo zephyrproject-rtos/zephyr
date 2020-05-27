@@ -155,8 +155,8 @@ enum usb_audio_direction {
 struct usb_audio_fu_evt {
 	enum usb_audio_direction dir;
 	enum usb_audio_fucs cs;
-	u8_t channel;
-	u8_t val_len;
+	uint8_t channel;
+	uint8_t val_len;
 	const void *val;
 };
 

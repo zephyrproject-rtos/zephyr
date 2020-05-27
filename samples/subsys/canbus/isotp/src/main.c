@@ -61,7 +61,7 @@ void rx_8_0_thread(void *arg1, void *arg2, void *arg3)
 	ARG_UNUSED(arg3);
 	int ret, rem_len, received_len;
 	struct net_buf *buf;
-	static u8_t rx_buffer[7];
+	static uint8_t rx_buffer[7];
 
 
 	ret = isotp_bind(&recv_ctx_8_0, can_dev,
@@ -107,7 +107,7 @@ void rx_0_5_thread(void *arg1, void *arg2, void *arg3)
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
 	int ret, received_len;
-	static u8_t rx_buffer[32];
+	static uint8_t rx_buffer[32];
 
 	ret = isotp_bind(&recv_ctx_0_5, can_dev,
 			 &tx_addr_0_5, &rx_addr_0_5,

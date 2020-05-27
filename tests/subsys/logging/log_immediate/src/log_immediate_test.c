@@ -39,7 +39,7 @@ static void thread_func(void *p1, void *p2, void *p3)
 {
 	intptr_t id = (intptr_t)p1;
 	int buf_len = 8*id + 8;
-	u8_t *buf = alloca(buf_len);
+	uint8_t *buf = alloca(buf_len);
 
 	while (1) {
 		LOG_INF("test string printed %d %d %p", 1, 2, k_current_get());

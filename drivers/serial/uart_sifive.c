@@ -33,13 +33,13 @@
 #define CTRL_CNT(x)    (((x) & 0x07) << 16)
 
 struct uart_sifive_regs_t {
-	u32_t tx;
-	u32_t rx;
-	u32_t txctrl;
-	u32_t rxctrl;
-	u32_t ie;
-	u32_t ip;
-	u32_t div;
+	uint32_t tx;
+	uint32_t rx;
+	uint32_t txctrl;
+	uint32_t rxctrl;
+	uint32_t ie;
+	uint32_t ip;
+	uint32_t div;
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -48,10 +48,10 @@ typedef void (*irq_cfg_func_t)(void);
 
 struct uart_sifive_device_config {
 	uintptr_t   port;
-	u32_t       sys_clk_freq;
-	u32_t       baud_rate;
-	u32_t       rxcnt_irq;
-	u32_t       txcnt_irq;
+	uint32_t       sys_clk_freq;
+	uint32_t       baud_rate;
+	uint32_t       rxcnt_irq;
+	uint32_t       txcnt_irq;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	irq_cfg_func_t cfg_func;
 #endif
@@ -103,7 +103,7 @@ static void uart_sifive_poll_out(struct device *dev,
 static int uart_sifive_poll_in(struct device *dev, unsigned char *c)
 {
 	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
-	u32_t val = uart->rx;
+	uint32_t val = uart->rx;
 
 	if (val & RXDATA_EMPTY) {
 		return -1;
@@ -126,7 +126,7 @@ static int uart_sifive_poll_in(struct device *dev, unsigned char *c)
  * @return Number of bytes sent
  */
 static int uart_sifive_fifo_fill(struct device *dev,
-				const u8_t *tx_data,
+				const uint8_t *tx_data,
 				int size)
 {
 	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
@@ -148,12 +148,12 @@ static int uart_sifive_fifo_fill(struct device *dev,
  * @return Number of bytes read
  */
 static int uart_sifive_fifo_read(struct device *dev,
-				u8_t *rx_data,
+				uint8_t *rx_data,
 				const int size)
 {
 	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 	int i;
-	u32_t val;
+	uint32_t val;
 
 	for (i = 0; i < size; i++) {
 		val = uart->rx;
@@ -161,7 +161,7 @@ static int uart_sifive_fifo_read(struct device *dev,
 		if (val & RXDATA_EMPTY)
 			break;
 
-		rx_data[i] = (u8_t)(val & RXDATA_MASK);
+		rx_data[i] = (uint8_t)(val & RXDATA_MASK);
 	}
 
 	return i;

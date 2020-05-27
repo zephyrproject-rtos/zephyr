@@ -44,7 +44,7 @@ extern struct k_sem thread_sem;
 #define FRAME_CLK_FREQ		48000
 #define I2S_WORDSIZE		32
 #define BLOCK_SIZE		192
-#define BLOCK_SIZE_BYTES	(BLOCK_SIZE * sizeof(s32_t))
+#define BLOCK_SIZE_BYTES	(BLOCK_SIZE * sizeof(int32_t))
 #define FRAMES_PER_ITERATION	50
 #define TIMEOUT			2000
 

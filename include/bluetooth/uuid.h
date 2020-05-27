@@ -32,22 +32,22 @@ enum {
 
 /** @brief This is a 'tentative' type and should be used as a pointer only */
 struct bt_uuid {
-	u8_t type;
+	uint8_t type;
 };
 
 struct bt_uuid_16 {
 	struct bt_uuid uuid;
-	u16_t val;
+	uint16_t val;
 };
 
 struct bt_uuid_32 {
 	struct bt_uuid uuid;
-	u32_t val;
+	uint32_t val;
 };
 
 struct bt_uuid_128 {
 	struct bt_uuid uuid;
-	u8_t val[16];
+	uint8_t val[16];
 };
 
 #define BT_UUID_INIT_16(value)		\
@@ -587,7 +587,7 @@ int bt_uuid_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2);
  *
  *  @return true if the data was valid and the UUID was successfully created.
  */
-bool bt_uuid_create(struct bt_uuid *uuid, const u8_t *data, u8_t data_len);
+bool bt_uuid_create(struct bt_uuid *uuid, const uint8_t *data, uint8_t data_len);
 
 /** @brief Convert Bluetooth UUID to string.
  *

@@ -84,7 +84,7 @@ static int malloc_prepare(struct device *unused)
 	ARG_UNUSED(unused);
 
 #if CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE
-	z_malloc_partition.start = (u32_t)heap_base;
+	z_malloc_partition.start = (uint32_t)heap_base;
 #else
 	z_malloc_partition.start = HEAP_BASE;
 #endif

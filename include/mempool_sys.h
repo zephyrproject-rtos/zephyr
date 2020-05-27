@@ -18,9 +18,9 @@
  * good to move to a variable bit size based on configuration.
  */
 struct k_mem_block_id {
-	u32_t pool : 8;
-	u32_t level : 4;
-	u32_t block : 20;
+	uint32_t pool : 8;
+	uint32_t level : 4;
+	uint32_t block : 20;
 };
 
 struct k_mem_block {

@@ -11,7 +11,7 @@
 struct timer_data {
 	int expire_cnt;
 	int stop_cnt;
-	s64_t timestamp;
+	int64_t timestamp;
 };
 
 #define DURATION 100
@@ -87,7 +87,7 @@ static void init_timer_data(void)
 static void duration_expire(struct k_timer *timer)
 {
 	/** TESTPOINT: expire function */
-	s64_t interval = k_uptime_delta(&tdata.timestamp);
+	int64_t interval = k_uptime_delta(&tdata.timestamp);
 
 	tdata.expire_cnt++;
 	if (tdata.expire_cnt == 1) {
@@ -127,7 +127,7 @@ static void status_expire(struct k_timer *timer)
 	}
 }
 
-static void busy_wait_ms(s32_t ms)
+static void busy_wait_ms(int32_t ms)
 {
 	k_busy_wait(ms*1000);
 }
@@ -274,8 +274,8 @@ static void tick_sync(void)
  */
 void test_timer_periodicity(void)
 {
-	u64_t period_ms = k_ticks_to_ms_floor64(k_ms_to_ticks_ceil32(PERIOD));
-	s64_t delta;
+	uint64_t period_ms = k_ticks_to_ms_floor64(k_ms_to_ticks_ceil32(PERIOD));
+	int64_t delta;
 
 	/* Start at a tick boundary, otherwise a tick expiring between
 	 * the unlocked (and unlockable) start/uptime/sync steps below
@@ -565,12 +565,12 @@ void test_timer_user_data(void)
 
 void test_timer_remaining(void)
 {
-	u32_t dur_ticks = k_ms_to_ticks_ceil32(DURATION);
-	u32_t target_rem_ticks = k_ms_to_ticks_ceil32(DURATION / 2) + 1;
-	u32_t rem_ms, rem_ticks, exp_ticks;
-	s32_t delta_ticks;
-	u32_t slew_ticks;
-	u64_t now;
+	uint32_t dur_ticks = k_ms_to_ticks_ceil32(DURATION);
+	uint32_t target_rem_ticks = k_ms_to_ticks_ceil32(DURATION / 2) + 1;
+	uint32_t rem_ms, rem_ticks, exp_ticks;
+	int32_t delta_ticks;
+	uint32_t slew_ticks;
+	uint64_t now;
 
 	k_usleep(1); /* align to tick */
 
@@ -598,7 +598,7 @@ void test_timer_remaining(void)
 	 * dur_ticks/2.  Also set a threshold based on expected clock
 	 * skew.
 	 */
-	delta_ticks = (s32_t)(rem_ticks - target_rem_ticks);
+	delta_ticks = (int32_t)(rem_ticks - target_rem_ticks);
 	slew_ticks = BUSY_SLEW_THRESHOLD_TICKS(DURATION * USEC_PER_MSEC / 2U);
 	zassert_true(abs(delta_ticks) <= MAX(slew_ticks, 1U),
 		     "tick/busy slew %d larger than test threshold %u",
@@ -611,18 +611,18 @@ void test_timer_remaining(void)
 	 * delay cannot be exactly represented as an integer number of
 	 * ticks.
 	 */
-	zassert_true(((s64_t)exp_ticks - (s64_t)now) <= (dur_ticks / 2) + 1,
+	zassert_true(((int64_t)exp_ticks - (int64_t)now) <= (dur_ticks / 2) + 1,
 		     NULL);
 }
 
 void test_timeout_abs(void)
 {
 #ifdef CONFIG_TIMEOUT_64BIT
-	const u64_t exp_ms = 10000000;
-	u64_t cap_ticks;
-	u64_t rem_ticks;
-	u64_t cap2_ticks;
-	u64_t exp_ticks = k_ms_to_ticks_ceil64(exp_ms);
+	const uint64_t exp_ms = 10000000;
+	uint64_t cap_ticks;
+	uint64_t rem_ticks;
+	uint64_t cap2_ticks;
+	uint64_t exp_ticks = k_ms_to_ticks_ceil64(exp_ms);
 	k_timeout_t t = K_TIMEOUT_ABS_TICKS(exp_ticks), t2;
 
 	/* Check the other generator macros to make sure they produce

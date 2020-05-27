@@ -49,7 +49,7 @@ void main(void)
 {
 	struct device *lmp90100;
 	double resistance;
-	s32_t buffer;
+	int32_t buffer;
 	int err;
 	const struct adc_channel_cfg ch_cfg = {
 		.channel_id = 0,

@@ -39,16 +39,16 @@
  * @param prescaler Pointer to prescaler value.
  * @param reload Pointer to reload value.
  */
-static void iwdg_stm32_convert_timeout(u32_t timeout,
-				       u32_t *prescaler,
-				       u32_t *reload)
+static void iwdg_stm32_convert_timeout(uint32_t timeout,
+				       uint32_t *prescaler,
+				       uint32_t *reload)
 {
 
-	u16_t divider = 0U;
-	u8_t shift = 0U;
+	uint16_t divider = 0U;
+	uint8_t shift = 0U;
 
 	/* Convert timeout to seconds. */
-	u32_t m_timeout = (u64_t)timeout * LSI_VALUE / 1000000;
+	uint32_t m_timeout = (uint64_t)timeout * LSI_VALUE / 1000000;
 
 	do {
 		divider = 4 << shift;
@@ -60,10 +60,10 @@ static void iwdg_stm32_convert_timeout(u32_t timeout,
 	 * defines of LL_IWDG_PRESCALER_XX type.
 	 */
 	*prescaler = --shift;
-	*reload = (u32_t)(m_timeout / divider) - 1;
+	*reload = (uint32_t)(m_timeout / divider) - 1;
 }
 
-static int iwdg_stm32_setup(struct device *dev, u8_t options)
+static int iwdg_stm32_setup(struct device *dev, uint8_t options)
 {
 	IWDG_TypeDef *iwdg = IWDG_STM32_STRUCT(dev);
 
@@ -97,10 +97,10 @@ static int iwdg_stm32_install_timeout(struct device *dev,
 				      const struct wdt_timeout_cfg *config)
 {
 	IWDG_TypeDef *iwdg = IWDG_STM32_STRUCT(dev);
-	u32_t timeout = config->window.max * USEC_PER_MSEC;
-	u32_t prescaler = 0U;
-	u32_t reload = 0U;
-	u32_t tickstart;
+	uint32_t timeout = config->window.max * USEC_PER_MSEC;
+	uint32_t prescaler = 0U;
+	uint32_t reload = 0U;
+	uint32_t tickstart;
 
 	if (config->callback != NULL) {
 		return -ENOTSUP;

@@ -31,7 +31,7 @@ void test_fd_set(void)
 	fd_set set;
 
 	/* Relies on specific value of CONFIG_POSIX_MAX_FDS in prj.conf */
-	zassert_equal(sizeof(set.bitset), sizeof(u32_t) * 2, "");
+	zassert_equal(sizeof(set.bitset), sizeof(uint32_t) * 2, "");
 
 	FD_ZERO(&set);
 	zassert_equal(set.bitset[0], 0, "");
@@ -69,7 +69,7 @@ void test_select(void)
 	struct sockaddr_in6 c_addr;
 	struct sockaddr_in6 s_addr;
 	fd_set readfds;
-	u32_t tstamp;
+	uint32_t tstamp;
 	ssize_t len;
 	char buf[10];
 	struct timeval tval;

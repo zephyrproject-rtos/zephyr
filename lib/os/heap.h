@@ -52,12 +52,12 @@ typedef size_t chunkid_t;
 enum chunk_fields { SIZE_AND_USED, LEFT_SIZE, FREE_PREV, FREE_NEXT };
 
 struct z_heap {
-	u64_t *buf;
+	uint64_t *buf;
 	struct z_heap_bucket *buckets;
-	u32_t len;
-	u32_t size_mask;
-	u32_t chunk0;
-	u32_t avail_buckets;
+	uint32_t len;
+	uint32_t size_mask;
+	uint32_t chunk0;
+	uint32_t avail_buckets;
 };
 
 struct z_heap_bucket {
@@ -76,9 +76,9 @@ static inline size_t chunk_field(struct z_heap *h, chunkid_t c,
 	void *cmem = &h->buf[c];
 
 	if (big_heap(h)) {
-		return ((u32_t *)cmem)[f];
+		return ((uint32_t *)cmem)[f];
 	} else {
-		return ((u16_t *)cmem)[f];
+		return ((uint16_t *)cmem)[f];
 	}
 }
 
@@ -92,9 +92,9 @@ static inline void chunk_set(struct z_heap *h, chunkid_t c,
 	void *cmem = &h->buf[c];
 
 	if (big_heap(h)) {
-		((u32_t *)cmem)[f] = (u32_t) val;
+		((uint32_t *)cmem)[f] = (uint32_t) val;
 	} else {
-		((u16_t *)cmem)[f] = (u16_t) val;
+		((uint16_t *)cmem)[f] = (uint16_t) val;
 	}
 }
 

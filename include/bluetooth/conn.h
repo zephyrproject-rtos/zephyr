@@ -33,10 +33,10 @@ struct bt_conn;
 
 /** Connection parameters for LE connections */
 struct bt_le_conn_param {
-	u16_t interval_min;
-	u16_t interval_max;
-	u16_t latency;
-	u16_t timeout;
+	uint16_t interval_min;
+	uint16_t interval_max;
+	uint16_t latency;
+	uint16_t timeout;
 };
 
 /** @brief Initialize connection parameters
@@ -77,14 +77,14 @@ struct bt_le_conn_param {
 
 /** Connection PHY information for LE connections */
 struct bt_conn_le_phy_info {
-	u8_t tx_phy; /** Connection transmit PHY */
-	u8_t rx_phy; /** Connection receive PHY */
+	uint8_t tx_phy; /** Connection transmit PHY */
+	uint8_t rx_phy; /** Connection receive PHY */
 };
 
 /** Preferred PHY parameters for LE connections */
 struct bt_conn_le_phy_param {
-	u8_t pref_tx_phy; /** Bitmask of preferred transmit PHYs */
-	u8_t pref_rx_phy; /** Bitmask of preferred receive PHYs */
+	uint8_t pref_tx_phy; /** Bitmask of preferred transmit PHYs */
+	uint8_t pref_rx_phy; /** Bitmask of preferred receive PHYs */
 };
 
 /** Initialize PHY parameters
@@ -131,21 +131,21 @@ struct bt_conn_le_phy_param {
 /** Connection data length information for LE connections */
 struct bt_conn_le_data_len_info {
 	/** Maximum Link Layer transmission payload size in bytes. */
-	u16_t tx_max_len;
+	uint16_t tx_max_len;
 	/** Maximum Link Layer transmission payload time in us. */
-	u16_t tx_max_time;
+	uint16_t tx_max_time;
 	/** Maximum Link Layer reception payload size in bytes. */
-	u16_t rx_max_len;
+	uint16_t rx_max_len;
 	/** Maximum Link Layer reception payload time in us. */
-	u16_t rx_max_time;
+	uint16_t rx_max_time;
 };
 
 /** Connection data length parameters for LE connections */
 struct bt_conn_le_data_len_param {
 	/** Maximum Link Layer transmission payload size in bytes. */
-	u16_t tx_max_len;
+	uint16_t tx_max_len;
 	/** Maximum Link Layer transmission payload time in us. */
-	u16_t tx_max_time;
+	uint16_t tx_max_time;
 };
 
 /** Initialize transmit data length parameters
@@ -218,7 +218,7 @@ void bt_conn_foreach(int type, void (*func)(struct bt_conn *conn, void *data),
  *
  *  @return Connection object or NULL if not found.
  */
-struct bt_conn *bt_conn_lookup_addr_le(u8_t id, const bt_addr_le_t *peer);
+struct bt_conn *bt_conn_lookup_addr_le(uint8_t id, const bt_addr_le_t *peer);
 
 /** @brief Get destination (peer) address of a connection.
  *
@@ -238,7 +238,7 @@ const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn);
  *  @return Index of the connection object.
  *          The range of the returned value is 0..CONFIG_BT_MAX_CONN-1
  */
-u8_t bt_conn_index(struct bt_conn *conn);
+uint8_t bt_conn_index(struct bt_conn *conn);
 
 /** Connection Type */
 enum {
@@ -264,9 +264,9 @@ struct bt_conn_le_info {
 	const bt_addr_le_t *local;
 	/** Remote device address used during connection setup. */
 	const bt_addr_le_t *remote;
-	u16_t interval; /** Connection interval */
-	u16_t latency; /** Connection slave latency */
-	u16_t timeout; /** Connection supervision timeout */
+	uint16_t interval; /** Connection interval */
+	uint16_t latency; /** Connection slave latency */
+	uint16_t timeout; /** Connection supervision timeout */
 
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
 	const struct bt_conn_le_phy_info      *phy;
@@ -292,11 +292,11 @@ enum {
 /** Connection Info Structure */
 struct bt_conn_info {
 	/** Connection Type. */
-	u8_t type;
+	uint8_t type;
 	/** Connection Role. */
-	u8_t role;
+	uint8_t role;
 	/** Which local identity the connection was created with */
-	u8_t id;
+	uint8_t id;
 	/** Connection Type specific Info.*/
 	union {
 		/** LE Connection specific Info. */
@@ -310,17 +310,17 @@ struct bt_conn_info {
 struct bt_conn_le_remote_info {
 
 	/** Remote LE feature set (bitmask). */
-	const u8_t *features;
+	const uint8_t *features;
 };
 
 /** BR/EDR Connection Remote Info structure */
 struct bt_conn_br_remote_info {
 
 	/** Remote feature set (pages of bitmasks). */
-	const u8_t *features;
+	const uint8_t *features;
 
 	/** Number of pages in the remote feature set. */
-	u8_t num_pages;
+	uint8_t num_pages;
 };
 
 /** @brief Connection Remote Info Structure
@@ -330,16 +330,16 @@ struct bt_conn_br_remote_info {
  */
 struct bt_conn_remote_info {
 	/** Connection Type */
-	u8_t  type;
+	uint8_t  type;
 
 	/** Remote Link Layer version */
-	u8_t  version;
+	uint8_t  version;
 
 	/** Remote manufacturer identifier */
-	u16_t manufacturer;
+	uint16_t manufacturer;
 
 	/** Per-manufacturer unique revision */
-	u16_t subversion;
+	uint16_t subversion;
 
 	union {
 		/** LE connection remote info */
@@ -417,7 +417,7 @@ int bt_conn_le_phy_update(struct bt_conn *conn,
  *
  *  @return Zero on success or (negative) error code on failure.
  */
-int bt_conn_disconnect(struct bt_conn *conn, u8_t reason);
+int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason);
 
 enum {
 	/** Convenience value when no options are specified. */
@@ -441,25 +441,25 @@ enum {
 struct bt_conn_le_create_param {
 
 	/** Bit-field of create connection options. */
-	u32_t options;
+	uint32_t options;
 
 	/** Scan interval (N * 0.625 ms) */
-	u16_t interval;
+	uint16_t interval;
 
 	/** Scan window (N * 0.625 ms) */
-	u16_t window;
+	uint16_t window;
 
 	/** @brief Scan interval LE Coded PHY (N * 0.625 MS)
 	 *
 	 *  Set zero to use same as LE 1M PHY scan interval
 	 */
-	u16_t interval_coded;
+	uint16_t interval_coded;
 
 	/** @brief Scan window LE Coded PHY (N * 0.625 MS)
 	 *
 	 *  Set zero to use same as LE 1M PHY scan window.
 	 */
-	u16_t window_coded;
+	uint16_t window_coded;
 
 	/** @brief Connection initiation timeout (N * 10 MS)
 	 *
@@ -468,7 +468,7 @@ struct bt_conn_le_create_param {
 	 *
 	 *  @note Unused in @ref bt_conn_create_auto_le
 	 */
-	u16_t timeout;
+	uint16_t timeout;
 };
 
 /** @brief Initialize create connection parameters
@@ -716,7 +716,7 @@ static inline int __deprecated bt_conn_security(struct bt_conn *conn,
  *
  *  @return Encryption key size.
  */
-u8_t bt_conn_enc_key_size(struct bt_conn *conn);
+uint8_t bt_conn_enc_key_size(struct bt_conn *conn);
 
 enum bt_security_err {
 	/** Security procedure successful. */
@@ -777,7 +777,7 @@ struct bt_conn_cb {
 	 *    advertiser started by @ref bt_le_adv_start failed to be connected
 	 *    within the timeout.
 	 */
-	void (*connected)(struct bt_conn *conn, u8_t err);
+	void (*connected)(struct bt_conn *conn, uint8_t err);
 
 	/** @brief A connection has been disconnected.
 	 *
@@ -796,7 +796,7 @@ struct bt_conn_cb {
 	 *  @param conn Connection object.
 	 *  @param reason HCI reason for the disconnection.
 	 */
-	void (*disconnected)(struct bt_conn *conn, u8_t reason);
+	void (*disconnected)(struct bt_conn *conn, uint8_t reason);
 
 	/** @brief LE connection parameter update request.
 	 *
@@ -832,8 +832,8 @@ struct bt_conn_cb {
 	 *  @param latency Connection latency.
 	 *  @param timeout Connection supervision timeout.
 	 */
-	void (*le_param_updated)(struct bt_conn *conn, u16_t interval,
-				 u16_t latency, u16_t timeout);
+	void (*le_param_updated)(struct bt_conn *conn, uint16_t interval,
+				 uint16_t latency, uint16_t timeout);
 #if defined(CONFIG_BT_SMP)
 	/** @brief Remote Identity Address has been resolved.
 	 *
@@ -945,7 +945,7 @@ void bt_set_oob_data_flag(bool enable);
  *
  *  @return Zero on success or -EINVAL if NULL
  */
-int bt_le_oob_set_legacy_tk(struct bt_conn *conn, const u8_t *tk);
+int bt_le_oob_set_legacy_tk(struct bt_conn *conn, const uint8_t *tk);
 
 /** @brief Set OOB data during LE Secure Connections (SC) pairing procedure
  *
@@ -1051,26 +1051,26 @@ struct bt_conn_oob_info {
  */
 struct bt_conn_pairing_feat {
 	/** IO Capability, Core Spec. Vol 3, Part H, 3.5.1, Table 3.4 */
-	u8_t io_capability;
+	uint8_t io_capability;
 
 	/** OOB data flag, Core Spec. Vol 3, Part H, 3.5.1, Table 3.5 */
-	u8_t oob_data_flag;
+	uint8_t oob_data_flag;
 
 	/** AuthReq, Core Spec. Vol 3, Part H, 3.5.1, Fig. 3.3 */
-	u8_t auth_req;
+	uint8_t auth_req;
 
 	/** Maximum Encryption Key Size, Core Spec. Vol 3, Part H, 3.5.1 */
-	u8_t max_enc_key_size;
+	uint8_t max_enc_key_size;
 
 	/** Initiator Key Distribution/Generation, Core Spec. Vol 3, Part H,
 	 *  3.6.1, Fig. 3.11
 	 */
-	u8_t init_key_dist;
+	uint8_t init_key_dist;
 
 	/** Responder Key Distribution/Generation, Core Spec. Vol 3, Part H
 	 *  3.6.1, Fig. 3.11
 	 */
-	u8_t resp_key_dist;
+	uint8_t resp_key_dist;
 };
 #endif /* CONFIG_BT_SMP_APP_PAIRING_ACCEPT */
 

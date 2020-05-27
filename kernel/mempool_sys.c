@@ -48,14 +48,14 @@ int k_mem_pool_alloc(struct k_mem_pool *p, struct k_mem_block *block,
 		     size_t size, k_timeout_t timeout)
 {
 	int ret;
-	u64_t end = 0;
+	uint64_t end = 0;
 
 	__ASSERT(!(arch_is_in_isr() && !K_TIMEOUT_EQ(timeout, K_NO_WAIT)), "");
 
 	end = z_timeout_end_calc(timeout);
 
 	while (true) {
-		u32_t level_num, block_num;
+		uint32_t level_num, block_num;
 
 		ret = z_sys_mem_pool_block_alloc(&p->base, size,
 						 &level_num, &block_num,
@@ -72,7 +72,7 @@ int k_mem_pool_alloc(struct k_mem_pool *p, struct k_mem_block *block,
 		z_pend_curr_unlocked(&p->wait_q, timeout);
 
 		if (!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-			s64_t remaining = end - z_tick_get();
+			int64_t remaining = end - z_tick_get();
 
 			if (remaining <= 0) {
 				break;

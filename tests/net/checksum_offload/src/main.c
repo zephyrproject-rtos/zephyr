@@ -85,9 +85,9 @@ static K_SEM_DEFINE(wait_data, 0, UINT_MAX);
 
 struct eth_context {
 	struct net_if *iface;
-	u8_t mac_addr[6];
+	uint8_t mac_addr[6];
 
-	u16_t expecting_tag;
+	uint16_t expecting_tag;
 };
 
 static struct eth_context eth_context_offloading_disabled;
@@ -108,7 +108,7 @@ static void eth_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 }
 
-static u16_t get_udp_chksum(struct net_pkt *pkt)
+static uint16_t get_udp_chksum(struct net_pkt *pkt)
 {
 	NET_PKT_DATA_ACCESS_DEFINE(udp_access, struct net_udp_hdr);
 	struct net_udp_hdr *udp_hdr;
@@ -150,8 +150,8 @@ static int eth_tx_offloading_disabled(struct device *dev, struct net_pkt *pkt)
 
 	if (start_receiving) {
 		struct net_udp_hdr hdr, *udp_hdr;
-		u16_t port;
-		u8_t lladdr[6];
+		uint16_t port;
+		uint8_t lladdr[6];
 
 		DBG("Packet %p received\n", pkt);
 
@@ -200,7 +200,7 @@ static int eth_tx_offloading_disabled(struct device *dev, struct net_pkt *pkt)
 	}
 
 	if (test_started) {
-		u16_t chksum;
+		uint16_t chksum;
 
 		chksum = get_udp_chksum(pkt);
 
@@ -228,7 +228,7 @@ static int eth_tx_offloading_enabled(struct device *dev, struct net_pkt *pkt)
 	}
 
 	if (test_started) {
-		u16_t chksum;
+		uint16_t chksum;
 
 		chksum = get_udp_chksum(pkt);
 
@@ -267,7 +267,7 @@ static struct ethernet_api api_funcs_offloading_enabled = {
 	.send = eth_tx_offloading_enabled,
 };
 
-static void generate_mac(u8_t *mac_addr)
+static void generate_mac(uint8_t *mac_addr)
 {
 	/* 00-00-5E-00-53-xx Documentation RFC 7042 */
 	mac_addr[0] = 0x00;

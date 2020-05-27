@@ -30,8 +30,8 @@ LOG_MODULE_DECLARE(can_driver, CONFIG_CAN_LOG_LEVEL);
  * filter_in_bank[enum can_filter_type] = number of filters in bank for this type
  * reg_demand[enum can_filter_type] = how many registers are used for this type
  */
-static const u8_t filter_in_bank[] = {2, 4, 1, 2};
-static const u8_t reg_demand[] = {2, 1, 4, 2};
+static const uint8_t filter_in_bank[] = {2, 4, 1, 2};
+static const uint8_t reg_demand[] = {2, 1, 4, 2};
 
 static void can_stm32_signal_tx_complete(struct can_mailbox *mb)
 {
@@ -126,7 +126,7 @@ static inline void can_stm32_bus_state_change_isr(CAN_TypeDef *can,
 static inline
 void can_stm32_tx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
 {
-	u32_t bus_off;
+	uint32_t bus_off;
 
 	bus_off = can->ESR & CAN_ESR_BOFF;
 
@@ -250,7 +250,7 @@ static void can_stm32_state_change_isr(void *arg)
 
 static int can_enter_init_mode(CAN_TypeDef *can)
 {
-	u32_t start_time;
+	uint32_t start_time;
 
 	can->MCR |= CAN_MCR_INRQ;
 	start_time = k_cycle_get_32();
@@ -267,7 +267,7 @@ static int can_enter_init_mode(CAN_TypeDef *can)
 
 static int can_leave_init_mode(CAN_TypeDef *can)
 {
-	u32_t start_time;
+	uint32_t start_time;
 
 	can->MCR &= ~CAN_MCR_INRQ;
 	start_time = k_cycle_get_32();
@@ -283,7 +283,7 @@ static int can_leave_init_mode(CAN_TypeDef *can)
 
 static int can_leave_sleep_mode(CAN_TypeDef *can)
 {
-	u32_t start_time;
+	uint32_t start_time;
 
 	can->MCR &= ~CAN_MCR_SLEEP;
 	start_time = k_cycle_get_32();
@@ -298,19 +298,19 @@ static int can_leave_sleep_mode(CAN_TypeDef *can)
 }
 
 int can_stm32_runtime_configure(struct device *dev, enum can_mode mode,
-				u32_t bitrate)
+				uint32_t bitrate)
 {
 	CAN_HandleTypeDef hcan;
 	const struct can_stm32_config *cfg = DEV_CFG(dev);
 	CAN_TypeDef *can = cfg->can;
 	struct can_stm32_data *data = DEV_DATA(dev);
 	struct device *clock;
-	u32_t clock_rate;
-	u32_t prescaler;
-	u32_t reg_mode;
-	u32_t ts1;
-	u32_t ts2;
-	u32_t sjw;
+	uint32_t clock_rate;
+	uint32_t prescaler;
+	uint32_t reg_mode;
+	uint32_t ts1;
+	uint32_t ts2;
+	uint32_t sjw;
 	int ret;
 
 	clock = device_get_binding(STM32_CLOCK_CONTROL_NAME);
@@ -506,7 +506,7 @@ int can_stm32_recover(struct device *dev, k_timeout_t timeout)
 	struct can_stm32_data *data = DEV_DATA(dev);
 	CAN_TypeDef *can = cfg->can;
 	int ret = CAN_TIMEOUT;
-	s64_t start_time;
+	int64_t start_time;
 
 	if (!(can->ESR & CAN_ESR_BOFF)) {
 		return 0;
@@ -548,7 +548,7 @@ int can_stm32_send(struct device *dev, const struct zcan_frame *msg,
 	const struct can_stm32_config *cfg = DEV_CFG(dev);
 	struct can_stm32_data *data = DEV_DATA(dev);
 	CAN_TypeDef *can = cfg->can;
-	u32_t transmit_status_register = can->TSR;
+	uint32_t transmit_status_register = can->TSR;
 	CAN_TxMailBox_TypeDef *mailbox = NULL;
 	struct can_mailbox *mb = NULL;
 
@@ -690,21 +690,21 @@ static int can_stm32_shift_arr(void **arr, int start, int count)
 	return 0;
 }
 
-enum can_filter_type can_stm32_get_filter_type(int bank_nr, u32_t mode_reg,
-					       u32_t scale_reg)
+enum can_filter_type can_stm32_get_filter_type(int bank_nr, uint32_t mode_reg,
+					       uint32_t scale_reg)
 {
-	u32_t mode_masked  = (mode_reg  >> bank_nr) & 0x01;
-	u32_t scale_masked = (scale_reg >> bank_nr) & 0x01;
+	uint32_t mode_masked  = (mode_reg  >> bank_nr) & 0x01;
+	uint32_t scale_masked = (scale_reg >> bank_nr) & 0x01;
 	enum can_filter_type type = (scale_masked << 1) | mode_masked;
 
 	return type;
 }
 
-static int can_calc_filter_index(int filter_nr, u32_t mode_reg, u32_t scale_reg)
+static int can_calc_filter_index(int filter_nr, uint32_t mode_reg, uint32_t scale_reg)
 {
 	int filter_bank = filter_nr / 4;
 	int cnt = 0;
-	u32_t mode_masked, scale_masked;
+	uint32_t mode_masked, scale_masked;
 	enum can_filter_type filter_type;
 	/*count filters in the banks before */
 	for (int i = 0; i < filter_bank; i++) {
@@ -723,7 +723,7 @@ static int can_calc_filter_index(int filter_nr, u32_t mode_reg, u32_t scale_reg)
 static void can_stm32_set_filter_bank(int filter_nr,
 				      CAN_FilterRegister_TypeDef *filter_reg,
 				      enum can_filter_type filter_type,
-				      u32_t id, u32_t mask)
+				      uint32_t id, uint32_t mask)
 {
 	switch (filter_type) {
 	case CAN_FILTER_STANDARD:
@@ -775,11 +775,11 @@ static void can_stm32_set_filter_bank(int filter_nr,
 }
 
 static inline void can_stm32_set_mode_scale(enum can_filter_type filter_type,
-					    u32_t *mode_reg, u32_t *scale_reg,
+					    uint32_t *mode_reg, uint32_t *scale_reg,
 					    int  bank_nr)
 {
-	u32_t mode_reg_bit  = (filter_type & 0x01) << bank_nr;
-	u32_t scale_reg_bit = (filter_type >>   1) << bank_nr;
+	uint32_t mode_reg_bit  = (filter_type & 0x01) << bank_nr;
+	uint32_t scale_reg_bit = (filter_type >>   1) << bank_nr;
 
 	*mode_reg &= ~(1 << bank_nr);
 	*mode_reg |= mode_reg_bit;
@@ -788,21 +788,21 @@ static inline void can_stm32_set_mode_scale(enum can_filter_type filter_type,
 	*scale_reg |= scale_reg_bit;
 }
 
-static inline u32_t can_generate_std_mask(const struct zcan_filter *filter)
+static inline uint32_t can_generate_std_mask(const struct zcan_filter *filter)
 {
 	return  (filter->std_id_mask << CAN_FIRX_STD_ID_POS) |
 		(filter->rtr_mask    << CAN_FIRX_STD_RTR_POS) |
 		(1U                  << CAN_FIRX_STD_IDE_POS);
 }
 
-static inline u32_t can_generate_ext_mask(const struct zcan_filter *filter)
+static inline uint32_t can_generate_ext_mask(const struct zcan_filter *filter)
 {
 	return  (filter->ext_id_mask << CAN_FIRX_EXT_EXT_ID_POS) |
 		(filter->rtr_mask    << CAN_FIRX_EXT_RTR_POS) |
 		(1U                  << CAN_FIRX_EXT_IDE_POS);
 }
 
-static inline u32_t can_generate_std_id(const struct zcan_filter *filter)
+static inline uint32_t can_generate_std_id(const struct zcan_filter *filter)
 {
 
 	return  (filter->std_id << CAN_FIRX_STD_ID_POS) |
@@ -810,7 +810,7 @@ static inline u32_t can_generate_std_id(const struct zcan_filter *filter)
 
 }
 
-static inline u32_t can_generate_ext_id(const struct zcan_filter *filter)
+static inline uint32_t can_generate_ext_id(const struct zcan_filter *filter)
 {
 	return  (filter->ext_id << CAN_FIRX_EXT_EXT_ID_POS) |
 		(filter->rtr    << CAN_FIRX_EXT_RTR_POS) |
@@ -822,12 +822,12 @@ static inline int can_stm32_set_filter(const struct zcan_filter *filter,
 				       CAN_TypeDef *can,
 				       int *filter_index)
 {
-	u32_t mask = 0U;
-	u32_t id = 0U;
+	uint32_t mask = 0U;
+	uint32_t id = 0U;
 	int filter_nr = 0;
 	int filter_index_new = CAN_NO_FREE_FILTER;
 	int bank_nr;
-	u32_t bank_bit;
+	uint32_t bank_bit;
 	int register_demand;
 	enum can_filter_type filter_type;
 	enum can_filter_type bank_mode;
@@ -864,8 +864,8 @@ static inline int can_stm32_set_filter(const struct zcan_filter *filter,
 		    filter_type);
 
 	do {
-		u64_t usage_shifted = (device_data->filter_usage >> filter_nr);
-		u64_t usage_demand_mask = (1ULL << register_demand) - 1;
+		uint64_t usage_shifted = (device_data->filter_usage >> filter_nr);
+		uint64_t usage_demand_mask = (1ULL << register_demand) - 1;
 		bool bank_is_empty;
 
 		bank_nr = filter_nr / 4;
@@ -900,8 +900,8 @@ static inline int can_stm32_set_filter(const struct zcan_filter *filter,
 	if (filter_type != bank_mode) {
 		int shift_width, start_index;
 		int res;
-		u32_t mode_reg  = can->FM1R;
-		u32_t scale_reg = can->FS1R;
+		uint32_t mode_reg  = can->FM1R;
+		uint32_t scale_reg = can->FS1R;
 
 		can_stm32_set_mode_scale(filter_type, &mode_reg, &scale_reg,
 					 bank_nr);
@@ -990,11 +990,11 @@ void can_stm32_detach(struct device *dev, int filter_nr)
 	CAN_TypeDef *can = cfg->master_can;
 	int bank_nr;
 	int filter_index;
-	u32_t bank_bit;
-	u32_t mode_reg;
-	u32_t scale_reg;
+	uint32_t bank_bit;
+	uint32_t mode_reg;
+	uint32_t scale_reg;
 	enum can_filter_type type;
-	u32_t reset_mask;
+	uint32_t reset_mask;
 
 	__ASSERT_NO_MSG(filter_nr >= 0 && filter_nr < CAN_MAX_NUMBER_OF_FILTERS);
 

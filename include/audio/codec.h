@@ -96,7 +96,7 @@ typedef union {
  * Codec configuration parameters
  */
 struct audio_codec_cfg {
-	u32_t			mclk_freq;	/* MCLK input frequency in Hz */
+	uint32_t			mclk_freq;	/* MCLK input frequency in Hz */
 	audio_dai_type_t	dai_type;	/* Digital interface type */
 	audio_dai_cfg_t		dai_cfg;	/* DAI configuration info */
 };

@@ -18,27 +18,27 @@
 /* Registers in the FPGA system control block */
 struct mps2_fpgaio {
 	/* Offset: 0x000 LED connections */
-	volatile u32_t led0;
+	volatile uint32_t led0;
 	/* Offset: 0x004 RESERVED */
-	volatile u32_t reserved1;
+	volatile uint32_t reserved1;
 	/* Offset: 0x008 Buttons */
-	volatile u32_t button;
+	volatile uint32_t button;
 	/* Offset: 0x00c RESERVED */
-	volatile u32_t reserved2;
+	volatile uint32_t reserved2;
 	/* Offset: 0x010 1Hz up counter */
-	volatile u32_t clk1hz;
+	volatile uint32_t clk1hz;
 	/* Offset: 0x014 100Hz up counter */
-	volatile u32_t clk100hz;
+	volatile uint32_t clk100hz;
 	/* Offset: 0x018 Cycle up counter */
-	volatile u32_t counter;
+	volatile uint32_t counter;
 	/* Offset: 0x01c Reload value for prescale counter */
-	volatile u32_t prescale;
+	volatile uint32_t prescale;
 	/* Offset: 0x020 32-bit Prescale counter */
-	volatile u32_t pscntr;
+	volatile uint32_t pscntr;
 	/* Offset: 0x024 RESERVED */
-	volatile u32_t reserved3[10];
+	volatile uint32_t reserved3[10];
 	/* Offset: 0x04c Misc control */
-	volatile u32_t misc;
+	volatile uint32_t misc;
 };
 
 /* Defines for bits in fpgaio led0 register */

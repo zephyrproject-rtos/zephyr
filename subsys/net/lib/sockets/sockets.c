@@ -739,7 +739,7 @@ static int sock_get_pkt_src_addr(struct net_pkt *pkt,
 {
 	int ret = 0;
 	struct net_pkt_cursor backup;
-	u16_t *port;
+	uint16_t *port;
 
 	if (!addr || !pkt) {
 		return -EINVAL;
@@ -1155,9 +1155,9 @@ static int zsock_poll_update_ctx(struct net_context *ctx,
 	return 0;
 }
 
-static inline int time_left(u32_t start, u32_t timeout)
+static inline int time_left(uint32_t start, uint32_t timeout)
 {
-	u32_t elapsed = k_uptime_get_32() - start;
+	uint32_t elapsed = k_uptime_get_32() - start;
 
 	return timeout - elapsed;
 }
@@ -1173,7 +1173,7 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
 	struct k_poll_event *pev_end = poll_events + ARRAY_SIZE(poll_events);
 	const struct fd_op_vtable *vtable;
 	k_timeout_t timeout;
-	u64_t end;
+	uint64_t end;
 
 	if (poll_timeout < 0) {
 		timeout = K_FOREVER;
@@ -1230,7 +1230,7 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
 
 	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
 	    !K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-		s64_t remaining = end - z_tick_get();
+		int64_t remaining = end - z_tick_get();
 
 		if (remaining <= 0) {
 			timeout = K_NO_WAIT;
@@ -1295,7 +1295,7 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
 			}
 
 			if (!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-				s64_t remaining = end - z_tick_get();
+				int64_t remaining = end - z_tick_get();
 
 				if (remaining <= 0) {
 					break;

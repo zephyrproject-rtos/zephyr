@@ -20,8 +20,8 @@ static struct acpi_madt *madt;
 
 static bool validate_checksum(void *buf, int len)
 {
-	u8_t *cp = buf;
-	u8_t checksum = 0;
+	uint8_t *cp = buf;
+	uint8_t checksum = 0;
 
 	while (len--) {
 		checksum += *(cp++);
@@ -88,7 +88,7 @@ void z_acpi_init(void)
 	 * If it's valid, then remember it for later.
 	 */
 
-	int nr_sdts = (rsdt->sdt.length - sizeof(rsdt)) / sizeof(u32_t);
+	int nr_sdts = (rsdt->sdt.length - sizeof(rsdt)) / sizeof(uint32_t);
 	for (int i = 0; i < nr_sdts; ++i) {
 		struct acpi_sdt *sdt = UINT_TO_POINTER(rsdt->sdts[i]);
 

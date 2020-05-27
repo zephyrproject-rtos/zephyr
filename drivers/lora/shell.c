@@ -68,7 +68,7 @@ static int parse_long_range(long *out, const struct shell *shell,
 	return 0;
 }
 
-static int parse_freq(u32_t *out, const struct shell *shell, const char *arg)
+static int parse_freq(uint32_t *out, const struct shell *shell, const char *arg)
 {
 	char *eptr;
 	long long llval;
@@ -85,7 +85,7 @@ static int parse_freq(u32_t *out, const struct shell *shell, const char *arg)
 		return -EINVAL;
 	}
 
-	*out = (u32_t)llval;
+	*out = (uint32_t)llval;
 	return 0;
 }
 
@@ -255,8 +255,8 @@ static int cmd_lora_recv(const struct shell *shell, size_t argc, char **argv)
 	struct device *dev;
 	long timeout = 0;
 	int ret;
-	s16_t rssi;
-	s8_t snr;
+	int16_t rssi;
+	int8_t snr;
 
 	modem_config.tx = false;
 	dev = get_configured_modem(shell);
@@ -288,7 +288,7 @@ static int cmd_lora_test_cw(const struct shell *shell,
 {
 	struct device *dev;
 	int ret;
-	u32_t freq;
+	uint32_t freq;
 	long power, duration;
 
 	dev = get_modem(shell);
@@ -304,7 +304,7 @@ static int cmd_lora_test_cw(const struct shell *shell,
 		return -EINVAL;
 	}
 
-	ret = lora_test_cw(dev, (u32_t)freq, (s8_t)power, (u16_t)duration);
+	ret = lora_test_cw(dev, (uint32_t)freq, (int8_t)power, (uint16_t)duration);
 	if (ret < 0) {
 		shell_error(shell, "LoRa test CW failed: %i", ret);
 		return ret;

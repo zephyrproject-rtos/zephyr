@@ -23,11 +23,11 @@ extern "C" {
 #if defined(CONFIG_DISK_ACCESS_USDHC1) ||	\
 	defined(CONFIG_DISK_ACCESS_USDHC2)
 
-typedef void (*usdhc_pin_cfg_cb)(u16_t nusdhc, bool init,
-	u32_t speed, u32_t strength);
+typedef void (*usdhc_pin_cfg_cb)(uint16_t nusdhc, bool init,
+	uint32_t speed, uint32_t strength);
 
-void imxrt_usdhc_pinmux(u16_t nusdhc,
-	bool init, u32_t speed, u32_t strength);
+void imxrt_usdhc_pinmux(uint16_t nusdhc,
+	bool init, uint32_t speed, uint32_t strength);
 
 void imxrt_usdhc_pinmux_cb_register(usdhc_pin_cfg_cb cb);
 

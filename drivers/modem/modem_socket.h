@@ -33,8 +33,8 @@ __net_socket struct modem_socket {
 	int sock_fd;
 
 	/** packet data */
-	u16_t packet_sizes[CONFIG_MODEM_SOCKET_PACKET_COUNT];
-	u16_t packet_count;
+	uint16_t packet_sizes[CONFIG_MODEM_SOCKET_PACKET_COUNT];
+	uint16_t packet_count;
 
 	/** data ready semaphore */
 	struct k_sem sem_data_ready;
@@ -61,7 +61,7 @@ struct modem_socket_config {
 };
 
 /* return size of the first packet */
-u16_t modem_socket_next_packet_size(struct modem_socket_config *cfg,
+uint16_t modem_socket_next_packet_size(struct modem_socket_config *cfg,
 				    struct modem_socket *sock);
 int modem_socket_packet_size_update(struct modem_socket_config *cfg,
 				    struct modem_socket *sock, int new_total);

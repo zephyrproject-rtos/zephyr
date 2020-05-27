@@ -43,7 +43,7 @@ static inline uintptr_t esf_get_code(const z_arch_esf_t *esf)
 }
 
 #ifdef CONFIG_THREAD_STACK_INFO
-bool z_x86_check_stack_bounds(uintptr_t addr, size_t size, u16_t cs)
+bool z_x86_check_stack_bounds(uintptr_t addr, size_t size, uint16_t cs)
 {
 	uintptr_t start, end;
 
@@ -89,7 +89,7 @@ struct stack_frame {
 
 #define MAX_STACK_FRAMES 8
 
-static void unwind_stack(uintptr_t base_ptr, u16_t cs)
+static void unwind_stack(uintptr_t base_ptr, uint16_t cs)
 {
 	struct stack_frame *frame;
 	int i;
@@ -342,7 +342,7 @@ void z_x86_page_fault_handler(z_arch_esf_t *esf)
 #ifdef CONFIG_X86_64
 		if ((void *)esf->rip >= exceptions[i].start &&
 		    (void *)esf->rip < exceptions[i].end) {
-			esf->rip = (u64_t)(exceptions[i].fixup);
+			esf->rip = (uint64_t)(exceptions[i].fixup);
 			return;
 		}
 #else

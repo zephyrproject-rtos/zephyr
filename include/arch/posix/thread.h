@@ -29,10 +29,10 @@ extern "C" {
 
 struct _callee_saved {
 	/* IRQ status before irq_lock() and call to z_swap() */
-	u32_t key;
+	uint32_t key;
 
 	/* Return value of z_swap() */
-	u32_t retval;
+	uint32_t retval;
 
 	/* Thread status pointer */
 	void *thread_status;

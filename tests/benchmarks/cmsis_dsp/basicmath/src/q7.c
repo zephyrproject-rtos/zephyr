@@ -85,7 +85,7 @@ static const q7_t input2[PATTERN_LENGTH] = {
 
 void test_benchmark_vec_add_q7(void)
 {
-	u32_t irq_key, timestamp, timespan;
+	uint32_t irq_key, timestamp, timespan;
 	q7_t *output;
 
 	/* Allocate output buffer */
@@ -110,7 +110,7 @@ void test_benchmark_vec_add_q7(void)
 
 void test_benchmark_vec_sub_q7(void)
 {
-	u32_t irq_key, timestamp, timespan;
+	uint32_t irq_key, timestamp, timespan;
 	q7_t *output;
 
 	/* Allocate output buffer */
@@ -135,7 +135,7 @@ void test_benchmark_vec_sub_q7(void)
 
 void test_benchmark_vec_mult_q7(void)
 {
-	u32_t irq_key, timestamp, timespan;
+	uint32_t irq_key, timestamp, timespan;
 	q7_t *output;
 
 	/* Allocate output buffer */
@@ -160,7 +160,7 @@ void test_benchmark_vec_mult_q7(void)
 
 void test_benchmark_vec_abs_q7(void)
 {
-	u32_t irq_key, timestamp, timespan;
+	uint32_t irq_key, timestamp, timespan;
 	q7_t *output;
 
 	/* Allocate output buffer */
@@ -185,7 +185,7 @@ void test_benchmark_vec_abs_q7(void)
 
 void test_benchmark_vec_negate_q7(void)
 {
-	u32_t irq_key, timestamp, timespan;
+	uint32_t irq_key, timestamp, timespan;
 	q7_t *output;
 
 	/* Allocate output buffer */
@@ -210,7 +210,7 @@ void test_benchmark_vec_negate_q7(void)
 
 void test_benchmark_vec_offset_q7(void)
 {
-	u32_t irq_key, timestamp, timespan;
+	uint32_t irq_key, timestamp, timespan;
 	q7_t *output;
 
 	/* Allocate output buffer */
@@ -235,7 +235,7 @@ void test_benchmark_vec_offset_q7(void)
 
 void test_benchmark_vec_scale_q7(void)
 {
-	u32_t irq_key, timestamp, timespan;
+	uint32_t irq_key, timestamp, timespan;
 	q7_t *output;
 
 	/* Allocate output buffer */
@@ -260,7 +260,7 @@ void test_benchmark_vec_scale_q7(void)
 
 void test_benchmark_vec_dot_prod_q7(void)
 {
-	u32_t irq_key, timestamp, timespan;
+	uint32_t irq_key, timestamp, timespan;
 	q31_t output;
 
 	/* Begin benchmark */

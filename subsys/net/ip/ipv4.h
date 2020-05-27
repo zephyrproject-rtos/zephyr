@@ -73,10 +73,10 @@ static inline int net_ipv4_create(struct net_pkt *pkt,
  * @return 0 on success, negative errno otherwise.
  */
 #if defined(CONFIG_NET_NATIVE_IPV4)
-int net_ipv4_finalize(struct net_pkt *pkt, u8_t next_header_proto);
+int net_ipv4_finalize(struct net_pkt *pkt, uint8_t next_header_proto);
 #else
 static inline int net_ipv4_finalize(struct net_pkt *pkt,
-				    u8_t next_header_proto)
+				    uint8_t next_header_proto)
 {
 	ARG_UNUSED(pkt);
 	ARG_UNUSED(next_header_proto);
@@ -99,9 +99,9 @@ static inline int net_ipv4_finalize(struct net_pkt *pkt,
  *
  * @return 0 on success, negative otherwise.
  */
-typedef int (*net_ipv4_parse_hdr_options_cb_t)(u8_t opt_type,
-					       u8_t *opt_data,
-					       u8_t opt_len,
+typedef int (*net_ipv4_parse_hdr_options_cb_t)(uint8_t opt_type,
+					       uint8_t *opt_data,
+					       uint8_t opt_len,
 					       void *user_data);
 
 /**

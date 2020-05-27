@@ -85,10 +85,10 @@ const char *testfs_path_extend(struct testfs_path *pp,
 }
 
 int testfs_write_constant(struct fs_file_t *fp,
-			  u8_t value,
+			  uint8_t value,
 			  unsigned int len)
 {
-	u8_t buffer[TESTFS_BUFFER_SIZE];
+	uint8_t buffer[TESTFS_BUFFER_SIZE];
 	unsigned int rem = len;
 
 	memset(buffer, value, sizeof(buffer));
@@ -113,10 +113,10 @@ int testfs_write_constant(struct fs_file_t *fp,
 }
 
 int testfs_verify_constant(struct fs_file_t *fp,
-			   u8_t value,
+			   uint8_t value,
 			   unsigned int len)
 {
-	u8_t buffer[TESTFS_BUFFER_SIZE];
+	uint8_t buffer[TESTFS_BUFFER_SIZE];
 	unsigned int match = 0;
 
 	while (len > 0) {
@@ -153,10 +153,10 @@ int testfs_verify_constant(struct fs_file_t *fp,
 }
 
 int testfs_write_incrementing(struct fs_file_t *fp,
-			      u8_t value,
+			      uint8_t value,
 			      unsigned int len)
 {
-	u8_t buffer[TESTFS_BUFFER_SIZE];
+	uint8_t buffer[TESTFS_BUFFER_SIZE];
 	unsigned int rem = len;
 
 	while (rem > 0) {
@@ -183,10 +183,10 @@ int testfs_write_incrementing(struct fs_file_t *fp,
 }
 
 int testfs_verify_incrementing(struct fs_file_t *fp,
-			       u8_t value,
+			       uint8_t value,
 			       unsigned int len)
 {
-	u8_t buffer[TESTFS_BUFFER_SIZE];
+	uint8_t buffer[TESTFS_BUFFER_SIZE];
 	unsigned int match = 0;
 
 	while (len > 0) {

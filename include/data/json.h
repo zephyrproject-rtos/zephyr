@@ -58,10 +58,10 @@ struct json_obj_descr {
 	 * power of 2 in order to keep this value in the 0-3 range
 	 * and thus use only 2 bits.
 	 */
-	u32_t align_shift : 2;
+	uint32_t align_shift : 2;
 
 	/* 127 characters is more than enough for a field name. */
-	u32_t field_name_len : 7;
+	uint32_t field_name_len : 7;
 
 	/* Valid values here (enum json_tokens): JSON_TOK_STRING,
 	 * JSON_TOK_NUMBER, JSON_TOK_TRUE, JSON_TOK_FALSE,
@@ -69,10 +69,10 @@ struct json_obj_descr {
 	 * ignored.) Maximum value is '}' (125), so this has to be 7 bits
 	 * long.
 	 */
-	u32_t type : 7;
+	uint32_t type : 7;
 
 	/* 65535 bytes is more than enough for many JSON payloads. */
-	u32_t offset : 16;
+	uint32_t offset : 16;
 
 	union {
 		struct {

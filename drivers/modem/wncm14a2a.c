@@ -131,7 +131,7 @@ static const struct mdm_control_pinconfig pinconfig[] = {
 
 #define CMD_HANDLER(cmd_, cb_) { \
 	.cmd = cmd_, \
-	.cmd_len = (u16_t)sizeof(cmd_)-1, \
+	.cmd_len = (uint16_t)sizeof(cmd_)-1, \
 	.func = on_cmd_ ## cb_ \
 }
 
@@ -145,7 +145,7 @@ static const struct mdm_control_pinconfig pinconfig[] = {
 NET_BUF_POOL_DEFINE(mdm_recv_pool, MDM_RECV_MAX_BUF, MDM_RECV_BUF_SIZE,
 		    0, NULL);
 
-static u8_t mdm_recv_buf[MDM_MAX_DATA_LENGTH];
+static uint8_t mdm_recv_buf[MDM_MAX_DATA_LENGTH];
 
 /* RX thread structures */
 K_THREAD_STACK_DEFINE(wncm14a2a_rx_stack,
@@ -179,7 +179,7 @@ struct wncm14a2a_socket {
 
 struct wncm14a2a_iface_ctx {
 	struct net_if *iface;
-	u8_t mac_addr[6];
+	uint8_t mac_addr[6];
 
 	/* GPIO PORT devices */
 	struct device *gpio_port_dev[MAX_MDM_CONTROL_PINS];
@@ -211,8 +211,8 @@ struct wncm14a2a_iface_ctx {
 
 struct cmd_handler {
 	const char *cmd;
-	u16_t cmd_len;
-	void (*func)(struct net_buf **buf, u16_t len);
+	uint16_t cmd_len;
+	void (*func)(struct net_buf **buf, uint16_t len);
 };
 
 static struct wncm14a2a_iface_ctx ictx;
@@ -221,11 +221,11 @@ static void wncm14a2a_read_rx(struct net_buf **buf);
 
 /*** Verbose Debugging Functions ***/
 #if defined(ENABLE_VERBOSE_MODEM_RECV_HEXDUMP)
-static inline void hexdump(const u8_t *packet, size_t length)
+static inline void hexdump(const uint8_t *packet, size_t length)
 {
 	char output[sizeof("xxxxyyyy xxxxyyyy")];
 	int n = 0, k = 0;
-	u8_t byte;
+	uint8_t byte;
 
 	while (length--) {
 		if (n % 16 == 0) {
@@ -344,7 +344,7 @@ char *wncm14a2a_sprint_ip_addr(const struct sockaddr *addr)
 
 /* Send an AT command with a series of response handlers */
 static int send_at_cmd(struct wncm14a2a_socket *sock,
-			const u8_t *data, int timeout)
+			const uint8_t *data, int timeout)
 {
 	int ret;
 
@@ -414,7 +414,7 @@ static int send_data(struct wncm14a2a_socket *sock, struct net_pkt *pkt)
 
 /*** NET_BUF HELPERS ***/
 
-static bool is_crlf(u8_t c)
+static bool is_crlf(uint8_t c)
 {
 	if (c == '\n' || c == '\r') {
 		return true;
@@ -434,10 +434,10 @@ static void net_buf_skipcrlf(struct net_buf **buf)
 	}
 }
 
-static u16_t net_buf_findcrlf(struct net_buf *buf, struct net_buf **frag,
-			      u16_t *offset)
+static uint16_t net_buf_findcrlf(struct net_buf *buf, struct net_buf **frag,
+			      uint16_t *offset)
 {
-	u16_t len = 0U, pos = 0U;
+	uint16_t len = 0U, pos = 0U;
 
 	while (buf && !is_crlf(*(buf->data + pos))) {
 		if (pos + 1 >= buf->len) {
@@ -470,7 +470,7 @@ static int pkt_setup_ip_data(struct net_pkt *pkt,
 			     struct wncm14a2a_socket *sock)
 {
 	int hdr_len = 0;
-	u16_t src_port = 0U, dst_port = 0U;
+	uint16_t src_port = 0U, dst_port = 0U;
 
 #if defined(CONFIG_NET_IPV6)
 	if (net_pkt_family(pkt) == AF_INET6) {
@@ -546,7 +546,7 @@ static int pkt_setup_ip_data(struct net_pkt *pkt,
 /*** MODEM RESPONSE HANDLERS ***/
 
 /* Last Socket ID Handler */
-static void on_cmd_atcmdecho(struct net_buf **buf, u16_t len)
+static void on_cmd_atcmdecho(struct net_buf **buf, uint16_t len)
 {
 	char value[2];
 	/* make sure only a single digit is picked up for socket_id */
@@ -555,13 +555,13 @@ static void on_cmd_atcmdecho(struct net_buf **buf, u16_t len)
 }
 
 /* Echo Handler for commands without related sockets */
-static void on_cmd_atcmdecho_nosock(struct net_buf **buf, u16_t len)
+static void on_cmd_atcmdecho_nosock(struct net_buf **buf, uint16_t len)
 {
 	/* clear last_socket_id */
 	ictx.last_socket_id = 0;
 }
 
-static void on_cmd_atcmdinfo_manufacturer(struct net_buf **buf, u16_t len)
+static void on_cmd_atcmdinfo_manufacturer(struct net_buf **buf, uint16_t len)
 {
 	size_t out_len;
 
@@ -572,7 +572,7 @@ static void on_cmd_atcmdinfo_manufacturer(struct net_buf **buf, u16_t len)
 	LOG_INF("Manufacturer: %s", ictx.mdm_manufacturer);
 }
 
-static void on_cmd_atcmdinfo_model(struct net_buf **buf, u16_t len)
+static void on_cmd_atcmdinfo_model(struct net_buf **buf, uint16_t len)
 {
 	size_t out_len;
 
@@ -583,7 +583,7 @@ static void on_cmd_atcmdinfo_model(struct net_buf **buf, u16_t len)
 	LOG_INF("Model: %s", ictx.mdm_model);
 }
 
-static void on_cmd_atcmdinfo_revision(struct net_buf **buf, u16_t len)
+static void on_cmd_atcmdinfo_revision(struct net_buf **buf, uint16_t len)
 {
 	size_t out_len;
 
@@ -594,10 +594,10 @@ static void on_cmd_atcmdinfo_revision(struct net_buf **buf, u16_t len)
 	LOG_INF("Revision: %s", ictx.mdm_revision);
 }
 
-static void on_cmd_atcmdecho_nosock_imei(struct net_buf **buf, u16_t len)
+static void on_cmd_atcmdecho_nosock_imei(struct net_buf **buf, uint16_t len)
 {
 	struct net_buf *frag = NULL;
-	u16_t offset;
+	uint16_t offset;
 	size_t out_len;
 
 	/* make sure IMEI data is received */
@@ -629,7 +629,7 @@ static void on_cmd_atcmdecho_nosock_imei(struct net_buf **buf, u16_t len)
 }
 
 /* Handler: %MEAS: RSSI:Reported= -68, Ant0= -63, Ant1= -251 */
-static void on_cmd_atcmdinfo_rssi(struct net_buf **buf, u16_t len)
+static void on_cmd_atcmdinfo_rssi(struct net_buf **buf, uint16_t len)
 {
 	int start = 0, i = 0;
 	size_t value_size;
@@ -670,7 +670,7 @@ static void on_cmd_atcmdinfo_rssi(struct net_buf **buf, u16_t len)
 }
 
 /* Handler: OK */
-static void on_cmd_sockok(struct net_buf **buf, u16_t len)
+static void on_cmd_sockok(struct net_buf **buf, uint16_t len)
 {
 	struct wncm14a2a_socket *sock = NULL;
 
@@ -684,7 +684,7 @@ static void on_cmd_sockok(struct net_buf **buf, u16_t len)
 }
 
 /* Handler: ERROR */
-static void on_cmd_sockerror(struct net_buf **buf, u16_t len)
+static void on_cmd_sockerror(struct net_buf **buf, uint16_t len)
 {
 	struct wncm14a2a_socket *sock = NULL;
 
@@ -698,7 +698,7 @@ static void on_cmd_sockerror(struct net_buf **buf, u16_t len)
 }
 
 /* Handler: @EXTERR:<exterror_id> */
-static void on_cmd_sockexterror(struct net_buf **buf, u16_t len)
+static void on_cmd_sockexterror(struct net_buf **buf, uint16_t len)
 {
 	char value[8];
 	size_t out_len;
@@ -718,7 +718,7 @@ static void on_cmd_sockexterror(struct net_buf **buf, u16_t len)
 }
 
 /* Handler: @SOCKDIAL:<status> */
-static void on_cmd_sockdial(struct net_buf **buf, u16_t len)
+static void on_cmd_sockdial(struct net_buf **buf, uint16_t len)
 {
 	char value[8];
 	size_t out_len;
@@ -730,7 +730,7 @@ static void on_cmd_sockdial(struct net_buf **buf, u16_t len)
 }
 
 /* Handler: @SOCKCREAT:<socket_id> */
-static void on_cmd_sockcreat(struct net_buf **buf, u16_t len)
+static void on_cmd_sockcreat(struct net_buf **buf, uint16_t len)
 {
 	char value[2];
 	struct wncm14a2a_socket *sock = NULL;
@@ -746,7 +746,7 @@ static void on_cmd_sockcreat(struct net_buf **buf, u16_t len)
 }
 
 /* Handler: @SOCKWRITE:<actual_length> */
-static void on_cmd_sockwrite(struct net_buf **buf, u16_t len)
+static void on_cmd_sockwrite(struct net_buf **buf, uint16_t len)
 {
 	char value[8];
 	size_t out_len;
@@ -786,10 +786,10 @@ static void sockreadrecv_cb_work(struct k_work *work)
 }
 
 /* Handler: @SOCKREAD:<actual_length>,"<hex encoded binary>" */
-static void on_cmd_sockread(struct net_buf **buf, u16_t len)
+static void on_cmd_sockread(struct net_buf **buf, uint16_t len)
 {
 	struct wncm14a2a_socket *sock = NULL;
-	u8_t c = 0U;
+	uint8_t c = 0U;
 	int i, actual_length, hdr_len = 0;
 	size_t value_size;
 	char value[10];
@@ -904,7 +904,7 @@ static void on_cmd_sockread(struct net_buf **buf, u16_t len)
 }
 
 /* Handler: @SOCKDATAIND: <socket_id>,<session_status>,<left_bytes> */
-static void on_cmd_sockdataind(struct net_buf **buf, u16_t len)
+static void on_cmd_sockdataind(struct net_buf **buf, uint16_t len)
 {
 	int socket_id, session_status, left_bytes;
 	size_t out_len;
@@ -966,7 +966,7 @@ static void on_cmd_sockdataind(struct net_buf **buf, u16_t len)
 	}
 }
 
-static void on_cmd_socknotifyev(struct net_buf **buf, u16_t len)
+static void on_cmd_socknotifyev(struct net_buf **buf, uint16_t len)
 {
 	char value[40];
 	size_t out_len;
@@ -1026,10 +1026,10 @@ static void on_cmd_socknotifyev(struct net_buf **buf, u16_t len)
 	}
 }
 
-static int net_buf_ncmp(struct net_buf *buf, const u8_t *s2, size_t n)
+static int net_buf_ncmp(struct net_buf *buf, const uint8_t *s2, size_t n)
 {
 	struct net_buf *frag = buf;
-	u16_t offset = 0U;
+	uint16_t offset = 0U;
 
 	while ((n > 0) && (*(frag->data + offset) == *s2) && (*s2 != '\0')) {
 		if (offset == frag->len) {
@@ -1057,10 +1057,10 @@ static inline struct net_buf *read_rx_allocator(k_timeout_t timeout,
 
 static void wncm14a2a_read_rx(struct net_buf **buf)
 {
-	u8_t uart_buffer[MDM_RECV_BUF_SIZE];
+	uint8_t uart_buffer[MDM_RECV_BUF_SIZE];
 	size_t bytes_read = 0;
 	int ret;
-	u16_t rx_len;
+	uint16_t rx_len;
 
 	/* read all of the data from mdm_receiver */
 	while (true) {
@@ -1102,7 +1102,7 @@ static void wncm14a2a_rx(void)
 	struct net_buf *rx_buf = NULL;
 	struct net_buf *frag = NULL;
 	int i;
-	u16_t offset, len;
+	uint16_t offset, len;
 
 	static const struct cmd_handler handlers[] = {
 		/* NON-SOCKET COMMAND ECHOES to clear last_socket_id */
@@ -1592,11 +1592,11 @@ static int offload_connect(struct net_context *context,
 			   const struct sockaddr *addr,
 			   socklen_t addrlen,
 			   net_context_connect_cb_t cb,
-			   s32_t timeout,
+			   int32_t timeout,
 			   void *user_data)
 {
 	int ret, dst_port = -1;
-	s32_t timeout_sec = -1; /* if not changed, this will be min timeout */
+	int32_t timeout_sec = -1; /* if not changed, this will be min timeout */
 	char buf[sizeof("AT@SOCKCONN=#,###.###.###.###,#####,#####\r")];
 	struct wncm14a2a_socket *sock;
 
@@ -1670,7 +1670,7 @@ static int offload_connect(struct net_context *context,
 
 static int offload_accept(struct net_context *context,
 			  net_tcp_accept_cb_t cb,
-			  s32_t timeout,
+			  int32_t timeout,
 			  void *user_data)
 {
 	/* NOT IMPLEMENTED */
@@ -1681,7 +1681,7 @@ static int offload_sendto(struct net_pkt *pkt,
 			  const struct sockaddr *dst_addr,
 			  socklen_t addrlen,
 			  net_context_send_cb_t cb,
-			  s32_t timeout,
+			  int32_t timeout,
 			  void *user_data)
 {
 	struct net_context *context = net_pkt_context(pkt);
@@ -1714,7 +1714,7 @@ static int offload_sendto(struct net_pkt *pkt,
 
 static int offload_send(struct net_pkt *pkt,
 			net_context_send_cb_t cb,
-			s32_t timeout,
+			int32_t timeout,
 			void *user_data)
 {
 	struct net_context *context = net_pkt_context(pkt);
@@ -1741,7 +1741,7 @@ static int offload_send(struct net_pkt *pkt,
 
 static int offload_recv(struct net_context *context,
 			net_context_recv_cb_t cb,
-			s32_t timeout,
+			int32_t timeout,
 			void *user_data)
 {
 	struct wncm14a2a_socket *sock;
@@ -1817,7 +1817,7 @@ static struct net_offload offload_funcs = {
 	.put = offload_put,
 };
 
-static inline u8_t *wncm14a2a_get_mac(struct device *dev)
+static inline uint8_t *wncm14a2a_get_mac(struct device *dev)
 {
 	struct wncm14a2a_iface_ctx *ctx = dev->driver_data;
 
@@ -1825,7 +1825,7 @@ static inline u8_t *wncm14a2a_get_mac(struct device *dev)
 	ctx->mac_addr[1] = 0x10;
 
 	UNALIGNED_PUT(sys_cpu_to_be32(sys_rand32_get()),
-		      (u32_t *)(ctx->mac_addr + 2));
+		      (uint32_t *)(ctx->mac_addr + 2));
 
 	return ctx->mac_addr;
 }

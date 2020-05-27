@@ -178,12 +178,12 @@ coccilib.report.print_report(p[0], msg);
  @
 identifier FN;
 identifier P;
-typedef s32_t, u32_t;
+typedef int32_t, uint32_t;
 @@
  FN(...,
 (int
-|s32_t
-|u32_t
+|int32_t
+|uint32_t
 )
  P, ...) {
  ...
@@ -201,12 +201,12 @@ typedef s32_t, u32_t;
 identifier FN;
 identifier P;
 position p;
-typedef s32_t, u32_t;
+typedef int32_t, uint32_t;
 @@
  FN(...,
 (int
-|s32_t
-|u32_t
+|int32_t
+|uint32_t
 )
  P, ...) {
  ...

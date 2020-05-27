@@ -80,26 +80,26 @@ LOG_MODULE_REGISTER(bq274xx, CONFIG_SENSOR_LOG_LEVEL);
 
 struct bq274xx_data {
 	struct device *i2c;
-	u16_t voltage;
-	s16_t avg_current;
-	s16_t stdby_current;
-	s16_t max_load_current;
-	s16_t avg_power;
-	u16_t state_of_charge;
-	s16_t state_of_health;
-	u16_t internal_temperature;
-	u16_t full_charge_capacity;
-	u16_t remaining_charge_capacity;
-	u16_t nom_avail_capacity;
-	u16_t full_avail_capacity;
+	uint16_t voltage;
+	int16_t avg_current;
+	int16_t stdby_current;
+	int16_t max_load_current;
+	int16_t avg_power;
+	uint16_t state_of_charge;
+	int16_t state_of_health;
+	uint16_t internal_temperature;
+	uint16_t full_charge_capacity;
+	uint16_t remaining_charge_capacity;
+	uint16_t nom_avail_capacity;
+	uint16_t full_avail_capacity;
 };
 
 struct bq274xx_config {
 	char *bus_name;
-	u16_t design_voltage;
-	u16_t design_capacity;
-	u16_t taper_current;
-	u16_t terminate_voltage;
+	uint16_t design_voltage;
+	uint16_t design_capacity;
+	uint16_t taper_current;
+	uint16_t terminate_voltage;
 };
 
 #endif

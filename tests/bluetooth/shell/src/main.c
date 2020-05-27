@@ -103,7 +103,7 @@ SHELL_CMD_ARG_REGISTER(hrs, &hrs_cmds, "Heart Rate Service shell commands",
 #if defined(CONFIG_BT_GATT_HRS)
 static void hrs_notify(void)
 {
-	static u8_t heartrate = 90U;
+	static uint8_t heartrate = 90U;
 
 	/* Heartrate measurements simulation */
 	heartrate++;

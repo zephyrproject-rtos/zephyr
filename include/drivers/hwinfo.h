@@ -50,9 +50,9 @@ extern "C" {
  * @retval -ENOTSUP if there is no implementation for the particular device.
  * @retval any negative value on driver specific errors.
  */
-__syscall ssize_t hwinfo_get_device_id(u8_t *buffer, size_t length);
+__syscall ssize_t hwinfo_get_device_id(uint8_t *buffer, size_t length);
 
-ssize_t z_impl_hwinfo_get_device_id(u8_t *buffer, size_t length);
+ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length);
 
 /**
  * @}

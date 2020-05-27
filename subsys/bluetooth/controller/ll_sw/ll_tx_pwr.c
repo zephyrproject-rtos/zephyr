@@ -34,8 +34,8 @@
 #include "ull_conn_types.h"
 #include "ull_conn_internal.h"
 
-u8_t ll_tx_pwr_lvl_get(u8_t handle_type,
-		       u16_t handle, u8_t type, s8_t *tx_pwr_lvl)
+uint8_t ll_tx_pwr_lvl_get(uint8_t handle_type,
+		       uint16_t handle, uint8_t type, int8_t *tx_pwr_lvl)
 {
 	switch (handle_type) {
 #if defined(CONFIG_BT_BROADCASTER) &&\
@@ -118,8 +118,8 @@ u8_t ll_tx_pwr_lvl_get(u8_t handle_type,
 }
 
 
-u8_t ll_tx_pwr_lvl_set(u8_t handle_type, u16_t handle,
-		       s8_t *tx_pwr_lvl)
+uint8_t ll_tx_pwr_lvl_set(uint8_t handle_type, uint16_t handle,
+		       int8_t *tx_pwr_lvl)
 {
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 	if (*tx_pwr_lvl == BT_HCI_VS_LL_TX_POWER_LEVEL_NO_PREF) {
@@ -199,7 +199,7 @@ u8_t ll_tx_pwr_lvl_set(u8_t handle_type, u16_t handle,
 }
 #endif /* CONFIG_BT_LL_SW_SPLIT */
 
-void ll_tx_pwr_get(s8_t *min, s8_t *max)
+void ll_tx_pwr_get(int8_t *min, int8_t *max)
 {
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 	*min = lll_radio_tx_pwr_min_get();

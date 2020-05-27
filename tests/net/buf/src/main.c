@@ -21,18 +21,18 @@ struct bt_data {
 	void *hci_sync;
 
 	union {
-		u16_t hci_opcode;
-		u16_t acl_handle;
+		uint16_t hci_opcode;
+		uint16_t acl_handle;
 	};
 
-	u8_t type;
+	uint8_t type;
 };
 
 struct in6_addr {
 	union {
-		u8_t		u6_addr8[16];
-		u16_t	u6_addr16[8]; /* In big endian */
-		u32_t	u6_addr32[4]; /* In big endian */
+		uint8_t		u6_addr8[16];
+		uint16_t	u6_addr16[8]; /* In big endian */
+		uint32_t	u6_addr32[4]; /* In big endian */
 	} in6_u;
 #define s6_addr			in6_u.u6_addr8
 #define s6_addr16		in6_u.u6_addr16
@@ -40,21 +40,21 @@ struct in6_addr {
 };
 
 struct ipv6_hdr {
-	u8_t vtc;
-	u8_t tcflow;
-	u16_t flow;
-	u8_t len[2];
-	u8_t nexthdr;
-	u8_t hop_limit;
+	uint8_t vtc;
+	uint8_t tcflow;
+	uint16_t flow;
+	uint8_t len[2];
+	uint8_t nexthdr;
+	uint8_t hop_limit;
 	struct in6_addr src;
 	struct in6_addr dst;
 } __attribute__((__packed__));
 
 struct udp_hdr {
-	u16_t src_port;
-	u16_t dst_port;
-	u16_t len;
-	u16_t chksum;
+	uint16_t src_port;
+	uint16_t dst_port;
+	uint16_t len;
+	uint16_t chksum;
 } __attribute__((__packed__));
 
 static int destroy_called;
@@ -340,7 +340,7 @@ static void test_net_buf_big_buf(void)
 	}
 
 	ipv6 = (struct ipv6_hdr *)(frag->data - net_buf_headroom(frag));
-	udp = (struct udp_hdr *)((u8_t *)ipv6 + sizeof(*ipv6));
+	udp = (struct udp_hdr *)((uint8_t *)ipv6 + sizeof(*ipv6));
 
 	net_buf_frag_add(buf, frag);
 	net_buf_unref(buf);
@@ -393,7 +393,7 @@ static void test_net_buf_multi_frags(void)
 	}
 
 	ipv6 = (struct ipv6_hdr *)(frags[i]->data - net_buf_headroom(frags[i]));
-	udp = (struct udp_hdr *)((u8_t *)ipv6 + sizeof(*ipv6));
+	udp = (struct udp_hdr *)((uint8_t *)ipv6 + sizeof(*ipv6));
 
 	net_buf_unref(buf);
 
@@ -460,19 +460,19 @@ static void test_net_buf_var_pool(void)
 static void test_net_buf_byte_order(void)
 {
 	struct net_buf *buf;
-	u8_t le16[2] = { 0x02, 0x01 };
-	u8_t be16[2] = { 0x01, 0x02 };
-	u8_t le24[3] = { 0x03, 0x02, 0x01 };
-	u8_t be24[3] = { 0x01, 0x02, 0x03 };
-	u8_t le32[4] = { 0x04, 0x03, 0x02, 0x01 };
-	u8_t be32[4] = { 0x01, 0x02, 0x03, 0x04 };
-	u8_t le48[6] = { 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
-	u8_t be48[6] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
-	u8_t le64[8] = { 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
-	u8_t be64[8] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 };
-	u16_t u16;
-	u32_t u32;
-	u64_t u64;
+	uint8_t le16[2] = { 0x02, 0x01 };
+	uint8_t be16[2] = { 0x01, 0x02 };
+	uint8_t le24[3] = { 0x03, 0x02, 0x01 };
+	uint8_t be24[3] = { 0x01, 0x02, 0x03 };
+	uint8_t le32[4] = { 0x04, 0x03, 0x02, 0x01 };
+	uint8_t be32[4] = { 0x01, 0x02, 0x03, 0x04 };
+	uint8_t le48[6] = { 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
+	uint8_t be48[6] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+	uint8_t le64[8] = { 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
+	uint8_t be64[8] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 };
+	uint16_t u16;
+	uint32_t u32;
+	uint64_t u64;
 
 	buf = net_buf_alloc_len(&fixed_pool, 16, K_FOREVER);
 	zassert_not_null(buf, "Failed to get buffer");

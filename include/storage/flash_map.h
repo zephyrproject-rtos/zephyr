@@ -56,9 +56,9 @@ extern "C" {
  * contains all data needed to operate on the flash partitions.
  */
 struct flash_area {
-	u8_t fa_id; /** ID of flash area */
-	u8_t fa_device_id;
-	u16_t pad16;
+	uint8_t fa_id; /** ID of flash area */
+	uint8_t fa_device_id;
+	uint16_t pad16;
 	off_t fa_off; /** flash partition offset */
 	size_t fa_size; /** flash partition size */
 	const char *fa_dev_name; /** flash device name */
@@ -84,7 +84,7 @@ struct flash_sector {
  * @param[out] fa Pointer which has to reference flash_area. If
  * @p ID is unknown, it will be NULL on output.
  */
-int flash_area_open(u8_t id, const struct flash_area **fa);
+int flash_area_open(uint8_t id, const struct flash_area **fa);
 
 /**
  * @brief Close flash_area
@@ -155,7 +155,7 @@ int flash_area_erase(const struct flash_area *fa, off_t off, size_t len);
  *
  * @return Alignment restriction for flash writes in [B].
  */
-u8_t flash_area_align(const struct flash_area *fa);
+uint8_t flash_area_align(const struct flash_area *fa);
 
 /**
  * Retrieve info about sectors within the area.
@@ -169,7 +169,7 @@ u8_t flash_area_align(const struct flash_area *fa);
  * -ENOMEM if There are too many flash pages on the flash_area to fit in the
  * array.
  */
-int flash_area_get_sectors(int fa_id, u32_t *count,
+int flash_area_get_sectors(int fa_id, uint32_t *count,
 			   struct flash_sector *sectors);
 
 /**

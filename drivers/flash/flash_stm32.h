@@ -38,7 +38,7 @@ struct flash_stm32_priv {
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 static inline bool flash_stm32_range_exists(struct device *dev,
 					    off_t offset,
-					    u32_t len)
+					    uint32_t len)
 {
 	struct flash_pages_info info;
 
@@ -48,7 +48,7 @@ static inline bool flash_stm32_range_exists(struct device *dev,
 #endif	/* CONFIG_FLASH_PAGE_LAYOUT */
 
 bool flash_stm32_valid_range(struct device *dev, off_t offset,
-			     u32_t len, bool write);
+			     uint32_t len, bool write);
 
 int flash_stm32_write_range(struct device *dev, unsigned int offset,
 			    const void *data, unsigned int len);

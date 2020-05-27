@@ -13,9 +13,9 @@
 
 #define CONCURRENT_READER_LIMIT  (CONFIG_MAX_PTHREAD_COUNT + 1)
 
-s64_t timespec_to_timeoutms(const struct timespec *abstime);
-static u32_t read_lock_acquire(pthread_rwlock_t *rwlock, s32_t timeout);
-static u32_t write_lock_acquire(pthread_rwlock_t *rwlock, s32_t timeout);
+int64_t timespec_to_timeoutms(const struct timespec *abstime);
+static uint32_t read_lock_acquire(pthread_rwlock_t *rwlock, int32_t timeout);
+static uint32_t write_lock_acquire(pthread_rwlock_t *rwlock, int32_t timeout);
 
 /**
  * @brief Initialize read-write lock object.
@@ -85,15 +85,15 @@ int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock)
 int pthread_rwlock_timedrdlock(pthread_rwlock_t *rwlock,
 			       const struct timespec *abstime)
 {
-	s32_t timeout;
-	u32_t ret = 0U;
+	int32_t timeout;
+	uint32_t ret = 0U;
 
 	if (rwlock->status == NOT_INITIALIZED || abstime->tv_nsec < 0 ||
 	    abstime->tv_nsec > NSEC_PER_SEC) {
 		return EINVAL;
 	}
 
-	timeout = (s32_t) timespec_to_timeoutms(abstime);
+	timeout = (int32_t) timespec_to_timeoutms(abstime);
 
 	if (read_lock_acquire(rwlock, timeout) != 0U) {
 		ret = ETIMEDOUT;
@@ -147,15 +147,15 @@ int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock)
 int pthread_rwlock_timedwrlock(pthread_rwlock_t *rwlock,
 			       const struct timespec *abstime)
 {
-	s32_t timeout;
-	u32_t ret = 0U;
+	int32_t timeout;
+	uint32_t ret = 0U;
 
 	if (rwlock->status == NOT_INITIALIZED || abstime->tv_nsec < 0 ||
 	    abstime->tv_nsec > NSEC_PER_SEC) {
 		return EINVAL;
 	}
 
-	timeout = (s32_t) timespec_to_timeoutms(abstime);
+	timeout = (int32_t) timespec_to_timeoutms(abstime);
 
 	if (write_lock_acquire(rwlock, timeout) != 0U) {
 		ret = ETIMEDOUT;
@@ -212,9 +212,9 @@ int pthread_rwlock_unlock(pthread_rwlock_t *rwlock)
 }
 
 
-static u32_t read_lock_acquire(pthread_rwlock_t *rwlock, s32_t timeout)
+static uint32_t read_lock_acquire(pthread_rwlock_t *rwlock, int32_t timeout)
 {
-	u32_t ret = 0U;
+	uint32_t ret = 0U;
 
 	if (k_sem_take(&rwlock->wr_sem, SYS_TIMEOUT_MS(timeout)) == 0) {
 		k_sem_take(&rwlock->reader_active, K_NO_WAIT);
@@ -227,10 +227,10 @@ static u32_t read_lock_acquire(pthread_rwlock_t *rwlock, s32_t timeout)
 	return ret;
 }
 
-static u32_t write_lock_acquire(pthread_rwlock_t *rwlock, s32_t timeout)
+static uint32_t write_lock_acquire(pthread_rwlock_t *rwlock, int32_t timeout)
 {
-	u32_t ret = 0U;
-	s64_t elapsed_time, st_time = k_uptime_get();
+	uint32_t ret = 0U;
+	int64_t elapsed_time, st_time = k_uptime_get();
 	k_timeout_t k_timeout;
 
 	k_timeout = SYS_TIMEOUT_MS(timeout);

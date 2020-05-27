@@ -45,14 +45,14 @@ static bool reassembly_init_done;
 static struct net_ipv6_reassembly
 reassembly[CONFIG_NET_IPV6_FRAGMENT_MAX_COUNT];
 
-int net_ipv6_find_last_ext_hdr(struct net_pkt *pkt, u16_t *next_hdr_off,
-			       u16_t *last_hdr_off)
+int net_ipv6_find_last_ext_hdr(struct net_pkt *pkt, uint16_t *next_hdr_off,
+			       uint16_t *last_hdr_off)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
 	struct net_ipv6_hdr *hdr;
-	u8_t next_nexthdr;
-	u8_t nexthdr;
-	u16_t length;
+	uint8_t next_nexthdr;
+	uint8_t nexthdr;
+	uint16_t length;
 
 	if (!pkt || !pkt->frags || !next_hdr_off || !last_hdr_off) {
 		return -EINVAL;
@@ -84,7 +84,7 @@ int net_ipv6_find_last_ext_hdr(struct net_pkt *pkt, u16_t *next_hdr_off,
 		case NET_IPV6_NEXTHDR_DESTO:
 			length = 0U;
 
-			if (net_pkt_read_u8(pkt, (u8_t *)&length)) {
+			if (net_pkt_read_u8(pkt, (uint8_t *)&length)) {
 				goto fail;
 			}
 
@@ -119,7 +119,7 @@ fail:
 	return -EINVAL;
 }
 
-static struct net_ipv6_reassembly *reassembly_get(u32_t id,
+static struct net_ipv6_reassembly *reassembly_get(uint32_t id,
 						  struct in6_addr *src,
 						  struct in6_addr *dst)
 {
@@ -158,7 +158,7 @@ static struct net_ipv6_reassembly *reassembly_get(u32_t id,
 	return &reassembly[avail];
 }
 
-static bool reassembly_cancel(u32_t id,
+static bool reassembly_cancel(uint32_t id,
 			      struct in6_addr *src,
 			      struct in6_addr *dst)
 {
@@ -167,7 +167,7 @@ static bool reassembly_cancel(u32_t id,
 	NET_DBG("Cancel 0x%x", id);
 
 	for (i = 0; i < CONFIG_NET_IPV6_FRAGMENT_MAX_COUNT; i++) {
-		s32_t remaining;
+		int32_t remaining;
 
 		if (reassembly[i].id != id ||
 		    !net_ipv6_addr_cmp(src, &reassembly[i].src) ||
@@ -233,7 +233,7 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 
 	struct net_pkt *pkt;
 	struct net_buf *last;
-	u8_t next_hdr;
+	uint8_t next_hdr;
 	int i, len;
 
 	k_delayed_work_cancel(&reass->timer);
@@ -365,7 +365,7 @@ void net_ipv6_frag_foreach(net_ipv6_frag_cb_t cb, void *user_data)
  */
 static bool fragment_verify(struct net_ipv6_reassembly *reass)
 {
-	u16_t offset;
+	uint16_t offset;
 	int i, prev_len;
 
 	prev_len = net_pkt_get_len(reass->pkt[0]);
@@ -425,13 +425,13 @@ static int shift_packets(struct net_ipv6_reassembly *reass, int pos)
 
 enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
 					      struct net_ipv6_hdr *hdr,
-					      u8_t nexthdr)
+					      uint8_t nexthdr)
 {
 	struct net_ipv6_reassembly *reass = NULL;
-	u16_t flag;
+	uint16_t flag;
 	bool found;
-	u8_t more;
-	u32_t id;
+	uint8_t more;
+	uint32_t id;
 	int i;
 
 	if (!reassembly_init_done) {
@@ -562,14 +562,14 @@ drop:
 #define BUF_ALLOC_TIMEOUT K_MSEC(100)
 
 static int send_ipv6_fragment(struct net_pkt *pkt,
-			      u16_t fit_len,
-			      u16_t frag_offset,
-			      u16_t next_hdr_off,
-			      u8_t next_hdr,
+			      uint16_t fit_len,
+			      uint16_t frag_offset,
+			      uint16_t next_hdr_off,
+			      uint8_t next_hdr,
 			      bool final)
 {
 	NET_PKT_DATA_ACCESS_DEFINE(frag_access, struct net_ipv6_frag_hdr);
-	u8_t frag_pkt_next_hdr = NET_IPV6_NEXTHDR_HBHO;
+	uint8_t frag_pkt_next_hdr = NET_IPV6_NEXTHDR_HBHO;
 	int ret = -ENOBUFS;
 	struct net_ipv6_frag_hdr *frag_hdr;
 	struct net_pkt *frag_pkt;
@@ -654,14 +654,14 @@ fail:
 }
 
 int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
-				 u16_t pkt_len)
+				 uint16_t pkt_len)
 {
-	u16_t next_hdr_off;
-	u16_t last_hdr_off;
-	u16_t frag_offset;
+	uint16_t next_hdr_off;
+	uint16_t last_hdr_off;
+	uint16_t frag_offset;
 	size_t length;
-	u8_t next_hdr;
-	u8_t last_hdr;
+	uint8_t next_hdr;
+	uint8_t last_hdr;
 	int fit_len;
 	int ret;
 

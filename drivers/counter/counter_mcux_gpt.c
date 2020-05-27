@@ -44,7 +44,7 @@ static int mcux_gpt_stop(struct device *dev)
 	return 0;
 }
 
-static int mcux_gpt_get_value(struct device *dev, u32_t *ticks)
+static int mcux_gpt_get_value(struct device *dev, uint32_t *ticks)
 {
 	const struct mcux_gpt_config *config = dev->config_info;
 
@@ -52,14 +52,14 @@ static int mcux_gpt_get_value(struct device *dev, u32_t *ticks)
 	return 0;
 }
 
-static int mcux_gpt_set_alarm(struct device *dev, u8_t chan_id,
+static int mcux_gpt_set_alarm(struct device *dev, uint8_t chan_id,
 			      const struct counter_alarm_cfg *alarm_cfg)
 {
 	const struct mcux_gpt_config *config = dev->config_info;
 	struct mcux_gpt_data *data = dev->driver_data;
 
-	u32_t current = GPT_GetCurrentTimerCount(config->base);
-	u32_t ticks = alarm_cfg->ticks;
+	uint32_t current = GPT_GetCurrentTimerCount(config->base);
+	uint32_t ticks = alarm_cfg->ticks;
 
 	if (chan_id != 0) {
 		LOG_ERR("Invalid channel id");
@@ -84,7 +84,7 @@ static int mcux_gpt_set_alarm(struct device *dev, u8_t chan_id,
 	return 0;
 }
 
-static int mcux_gpt_cancel_alarm(struct device *dev, u8_t chan_id)
+static int mcux_gpt_cancel_alarm(struct device *dev, uint8_t chan_id)
 {
 	const struct mcux_gpt_config *config = dev->config_info;
 	struct mcux_gpt_data *data = dev->driver_data;
@@ -105,8 +105,8 @@ void mcux_gpt_isr(void *p)
 	struct device *dev = p;
 	const struct mcux_gpt_config *config = dev->config_info;
 	struct mcux_gpt_data *data = dev->driver_data;
-	u32_t current = GPT_GetCurrentTimerCount(config->base);
-	u32_t status;
+	uint32_t current = GPT_GetCurrentTimerCount(config->base);
+	uint32_t status;
 
 	status =  GPT_GetStatusFlags(config->base, kGPT_OutputCompare1Flag |
 				     kGPT_RollOverFlag);
@@ -126,7 +126,7 @@ void mcux_gpt_isr(void *p)
 	}
 }
 
-static u32_t mcux_gpt_get_pending_int(struct device *dev)
+static uint32_t mcux_gpt_get_pending_int(struct device *dev)
 {
 	const struct mcux_gpt_config *config = dev->config_info;
 
@@ -153,14 +153,14 @@ static int mcux_gpt_set_top_value(struct device *dev,
 	return 0;
 }
 
-static u32_t mcux_gpt_get_top_value(struct device *dev)
+static uint32_t mcux_gpt_get_top_value(struct device *dev)
 {
 	const struct mcux_gpt_config *config = dev->config_info;
 
 	return config->info.max_top_value;
 }
 
-static u32_t mcux_gpt_get_max_relative_alarm(struct device *dev)
+static uint32_t mcux_gpt_get_max_relative_alarm(struct device *dev)
 {
 	const struct mcux_gpt_config *config = dev->config_info;
 
@@ -171,7 +171,7 @@ static int mcux_gpt_init(struct device *dev)
 {
 	const struct mcux_gpt_config *config = dev->config_info;
 	gpt_config_t gptConfig;
-	u32_t clock_freq;
+	uint32_t clock_freq;
 
 	/* Adjust divider to match expected freq */
 	clock_freq = CLOCK_GetFreq(config->clock_source);

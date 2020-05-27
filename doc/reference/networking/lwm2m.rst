@@ -259,7 +259,7 @@ for:
 
 .. code-block:: c
 
-	static int device_reboot_cb(u16_t obj_inst_id)
+	static int device_reboot_cb(uint16_t obj_inst_id)
 	{
 		LOG_INF("Device rebooting.");
 		LOG_PANIC();

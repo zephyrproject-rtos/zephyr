@@ -60,14 +60,14 @@ struct ipso_timer_data {
 	float64_value_t min_off_time;
 	float64_value_t cumulative_time;
 
-	u64_t trigger_offset;
-	u32_t trigger_counter;
-	u32_t cumulative_time_ms;
+	uint64_t trigger_offset;
+	uint32_t trigger_counter;
+	uint32_t cumulative_time_ms;
 
 	struct k_delayed_work timer_work;
 
-	u16_t obj_inst_id;
-	u8_t timer_mode;
+	uint16_t obj_inst_id;
+	uint8_t timer_mode;
 	bool enabled;
 	bool active;
 };
@@ -94,7 +94,7 @@ static struct lwm2m_engine_res res[MAX_INSTANCE_COUNT][TIMER_MAX_ID];
 static struct lwm2m_engine_res_inst
 		res_inst[MAX_INSTANCE_COUNT][RESOURCE_INSTANCE_COUNT];
 
-static int ms2float(u32_t ms, float64_value_t *f)
+static int ms2float(uint32_t ms, float64_value_t *f)
 {
 	f->val1 = ms / MSEC_PER_SEC;
 	f->val2 = (ms % MSEC_PER_SEC) * (LWM2M_FLOAT64_DEC_MAX / MSEC_PER_SEC);
@@ -102,7 +102,7 @@ static int ms2float(u32_t ms, float64_value_t *f)
 	return 0;
 }
 
-static int float2ms(float64_value_t *f, u32_t *ms)
+static int float2ms(float64_value_t *f, uint32_t *ms)
 {
 	*ms = f->val1 * MSEC_PER_SEC;
 	*ms += f->val2 / (LWM2M_FLOAT64_DEC_MAX / MSEC_PER_SEC);
@@ -110,7 +110,7 @@ static int float2ms(float64_value_t *f, u32_t *ms)
 	return 0;
 }
 
-static int get_timer_index(u16_t obj_inst_id)
+static int get_timer_index(uint16_t obj_inst_id)
 {
 	int i, ret = -ENOENT;
 
@@ -128,7 +128,7 @@ static int get_timer_index(u16_t obj_inst_id)
 
 static int start_timer(struct ipso_timer_data *timer)
 {
-	u32_t temp = 0U;
+	uint32_t temp = 0U;
 	char path[MAX_RESOURCE_LEN];
 
 	/* make sure timer is enabled and not already active */
@@ -179,11 +179,11 @@ static int stop_timer(struct ipso_timer_data *timer, bool cancel)
 	return 0;
 }
 
-static void *remaining_time_read_cb(u16_t obj_inst_id,
-				    u16_t res_id, u16_t res_inst_id,
+static void *remaining_time_read_cb(uint16_t obj_inst_id,
+				    uint16_t res_id, uint16_t res_inst_id,
 				    size_t *data_len)
 {
-	u32_t temp = 0U;
+	uint32_t temp = 0U;
 	int i;
 
 	i = get_timer_index(obj_inst_id);
@@ -204,12 +204,12 @@ static void *remaining_time_read_cb(u16_t obj_inst_id,
 	return &timer_data[i].remaining_time;
 }
 
-static void *cumulative_time_read_cb(u16_t obj_inst_id,
-				     u16_t res_id, u16_t res_inst_id,
+static void *cumulative_time_read_cb(uint16_t obj_inst_id,
+				     uint16_t res_id, uint16_t res_inst_id,
 				     size_t *data_len)
 {
 	int i;
-	u32_t temp;
+	uint32_t temp;
 
 	i = get_timer_index(obj_inst_id);
 	if (i < 0) {
@@ -227,9 +227,9 @@ static void *cumulative_time_read_cb(u16_t obj_inst_id,
 	return &timer_data[i].cumulative_time;
 }
 
-static int cumulative_time_post_write_cb(u16_t obj_inst_id,
-					 u16_t res_id, u16_t res_inst_id,
-					 u8_t *data, u16_t data_len,
+static int cumulative_time_post_write_cb(uint16_t obj_inst_id,
+					 uint16_t res_id, uint16_t res_inst_id,
+					 uint8_t *data, uint16_t data_len,
 					 bool last_block, size_t total_size)
 {
 	int i;
@@ -243,9 +243,9 @@ static int cumulative_time_post_write_cb(u16_t obj_inst_id,
 	return 0;
 }
 
-static int enabled_post_write_cb(u16_t obj_inst_id,
-				 u16_t res_id, u16_t res_inst_id,
-				 u8_t *data, u16_t data_len,
+static int enabled_post_write_cb(uint16_t obj_inst_id,
+				 uint16_t res_id, uint16_t res_inst_id,
+				 uint8_t *data, uint16_t data_len,
 				 bool last_block, size_t total_size)
 {
 	int i;
@@ -263,9 +263,9 @@ static int enabled_post_write_cb(u16_t obj_inst_id,
 	return 0;
 }
 
-static int trigger_counter_post_write_cb(u16_t obj_inst_id,
-					 u16_t res_id, u16_t res_inst_id,
-					 u8_t *data, u16_t data_len,
+static int trigger_counter_post_write_cb(uint16_t obj_inst_id,
+					 uint16_t res_id, uint16_t res_inst_id,
+					 uint8_t *data, uint16_t data_len,
 					 bool last_block, size_t total_size)
 {
 	int i;
@@ -287,7 +287,7 @@ static void timer_work_cb(struct k_work *work)
 	stop_timer(timer, false);
 }
 
-static int timer_trigger_cb(u16_t obj_inst_id)
+static int timer_trigger_cb(uint16_t obj_inst_id)
 {
 	int i;
 
@@ -299,7 +299,7 @@ static int timer_trigger_cb(u16_t obj_inst_id)
 	return start_timer(&timer_data[i]);
 }
 
-static struct lwm2m_engine_obj_inst *timer_create(u16_t obj_inst_id)
+static struct lwm2m_engine_obj_inst *timer_create(uint16_t obj_inst_id)
 {
 	int index, avail = -1, i = 0, j = 0;
 

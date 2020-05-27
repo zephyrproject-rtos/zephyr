@@ -367,7 +367,7 @@ static int sync_goodbye(const struct fs_mount_t *mp)
 	zassert_equal(fs_stat(path.path, &stat),
 		      0,
 		      "stat existing hello failed");
-	printk("sync size %u\n", (u32_t)stat.size);
+	printk("sync size %u\n", (uint32_t)stat.size);
 
 	zassert_equal(stat.size, TESTFS_BUFFER_SIZE,
 		      "stat synced goodbye not correct");

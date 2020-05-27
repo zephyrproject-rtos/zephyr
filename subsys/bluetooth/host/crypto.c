@@ -31,8 +31,8 @@ static struct tc_hmac_prng_struct prng;
 
 static int prng_reseed(struct tc_hmac_prng_struct *h)
 {
-	u8_t seed[32];
-	s64_t extra;
+	uint8_t seed[32];
+	int64_t extra;
 	size_t i;
 	int ret;
 
@@ -53,7 +53,7 @@ static int prng_reseed(struct tc_hmac_prng_struct *h)
 
 	extra = k_uptime_get();
 
-	ret = tc_hmac_prng_reseed(h, seed, sizeof(seed), (u8_t *)&extra,
+	ret = tc_hmac_prng_reseed(h, seed, sizeof(seed), (uint8_t *)&extra,
 				  sizeof(extra));
 	if (ret == TC_CRYPTO_FAIL) {
 		BT_ERR("Failed to re-seed PRNG");
@@ -115,11 +115,11 @@ int bt_rand(void *buf, size_t len)
 	return -EIO;
 }
 
-int bt_encrypt_le(const u8_t key[16], const u8_t plaintext[16],
-		  u8_t enc_data[16])
+int bt_encrypt_le(const uint8_t key[16], const uint8_t plaintext[16],
+		  uint8_t enc_data[16])
 {
 	struct tc_aes_key_sched_struct s;
-	u8_t tmp[16];
+	uint8_t tmp[16];
 
 	BT_DBG("key %s", bt_hex(key, 16));
 	BT_DBG("plaintext %s", bt_hex(plaintext, 16));
@@ -143,8 +143,8 @@ int bt_encrypt_le(const u8_t key[16], const u8_t plaintext[16],
 	return 0;
 }
 
-int bt_encrypt_be(const u8_t key[16], const u8_t plaintext[16],
-		  u8_t enc_data[16])
+int bt_encrypt_be(const uint8_t key[16], const uint8_t plaintext[16],
+		  uint8_t enc_data[16])
 {
 	struct tc_aes_key_sched_struct s;
 

@@ -31,10 +31,10 @@
 
 #if CONFIG_BT_GATT_DIS_PNP
 struct dis_pnp {
-	u8_t pnp_vid_src;
-	u16_t pnp_vid;
-	u16_t pnp_pid;
-	u16_t pnp_ver;
+	uint8_t pnp_vid_src;
+	uint16_t pnp_vid;
+	uint16_t pnp_pid;
+	uint16_t pnp_ver;
 } __packed;
 
 static struct dis_pnp dis_pnp_id = {
@@ -46,22 +46,22 @@ static struct dis_pnp dis_pnp_id = {
 #endif
 
 #if defined(CONFIG_BT_GATT_DIS_SETTINGS)
-static u8_t dis_model[CONFIG_BT_GATT_DIS_STR_MAX] = CONFIG_BT_GATT_DIS_MODEL;
-static u8_t dis_manuf[CONFIG_BT_GATT_DIS_STR_MAX] = CONFIG_BT_GATT_DIS_MANUF;
+static uint8_t dis_model[CONFIG_BT_GATT_DIS_STR_MAX] = CONFIG_BT_GATT_DIS_MODEL;
+static uint8_t dis_manuf[CONFIG_BT_GATT_DIS_STR_MAX] = CONFIG_BT_GATT_DIS_MANUF;
 #if defined(CONFIG_BT_GATT_DIS_SERIAL_NUMBER)
-static u8_t dis_serial_number[CONFIG_BT_GATT_DIS_STR_MAX] =
+static uint8_t dis_serial_number[CONFIG_BT_GATT_DIS_STR_MAX] =
 	CONFIG_BT_GATT_DIS_SERIAL_NUMBER_STR;
 #endif
 #if defined(CONFIG_BT_GATT_DIS_FW_REV)
-static u8_t dis_fw_rev[CONFIG_BT_GATT_DIS_STR_MAX] =
+static uint8_t dis_fw_rev[CONFIG_BT_GATT_DIS_STR_MAX] =
 	CONFIG_BT_GATT_DIS_FW_REV_STR;
 #endif
 #if defined(CONFIG_BT_GATT_DIS_HW_REV)
-static u8_t dis_hw_rev[CONFIG_BT_GATT_DIS_STR_MAX] =
+static uint8_t dis_hw_rev[CONFIG_BT_GATT_DIS_STR_MAX] =
 	CONFIG_BT_GATT_DIS_HW_REV_STR;
 #endif
 #if defined(CONFIG_BT_GATT_DIS_SW_REV)
-static u8_t dis_sw_rev[CONFIG_BT_GATT_DIS_STR_MAX] =
+static uint8_t dis_sw_rev[CONFIG_BT_GATT_DIS_STR_MAX] =
 	CONFIG_BT_GATT_DIS_SW_REV_STR;
 #endif
 
@@ -85,7 +85,7 @@ static u8_t dis_sw_rev[CONFIG_BT_GATT_DIS_STR_MAX] =
 
 static ssize_t read_str(struct bt_conn *conn,
 			  const struct bt_gatt_attr *attr, void *buf,
-			  u16_t len, u16_t offset)
+			  uint16_t len, uint16_t offset)
 {
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, attr->user_data,
 				 strlen(attr->user_data));
@@ -94,7 +94,7 @@ static ssize_t read_str(struct bt_conn *conn,
 #if CONFIG_BT_GATT_DIS_PNP
 static ssize_t read_pnp_id(struct bt_conn *conn,
 			   const struct bt_gatt_attr *attr, void *buf,
-			   u16_t len, u16_t offset)
+			   uint16_t len, uint16_t offset)
 {
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &dis_pnp_id,
 				 sizeof(dis_pnp_id));

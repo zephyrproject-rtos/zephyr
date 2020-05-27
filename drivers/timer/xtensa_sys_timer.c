@@ -20,15 +20,15 @@
 static struct k_spinlock lock;
 static unsigned int last_count;
 
-static void set_ccompare(u32_t val)
+static void set_ccompare(uint32_t val)
 {
 	__asm__ volatile ("wsr.CCOMPARE" STRINGIFY(CONFIG_XTENSA_TIMER_ID) " %0"
 			  :: "r"(val));
 }
 
-static u32_t ccount(void)
+static uint32_t ccount(void)
 {
-	u32_t val;
+	uint32_t val;
 
 	__asm__ volatile ("rsr.CCOUNT %0" : "=r"(val));
 	return val;
@@ -39,15 +39,15 @@ static void ccompare_isr(void *arg)
 	ARG_UNUSED(arg);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	u32_t curr = ccount();
-	u32_t dticks = (curr - last_count) / CYC_PER_TICK;
+	uint32_t curr = ccount();
+	uint32_t dticks = (curr - last_count) / CYC_PER_TICK;
 
 	last_count += dticks * CYC_PER_TICK;
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		u32_t next = last_count + CYC_PER_TICK;
+		uint32_t next = last_count + CYC_PER_TICK;
 
-		if ((s32_t)(next - curr) < MIN_DELAY) {
+		if ((int32_t)(next - curr) < MIN_DELAY) {
 			next += CYC_PER_TICK;
 		}
 		set_ccompare(next);
@@ -65,16 +65,16 @@ int z_clock_driver_init(struct device *device)
 	return 0;
 }
 
-void z_clock_set_timeout(s32_t ticks, bool idle)
+void z_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
 #if defined(CONFIG_TICKLESS_KERNEL)
 	ticks = ticks == K_TICKS_FOREVER ? MAX_TICKS : ticks;
-	ticks = MAX(MIN(ticks - 1, (s32_t)MAX_TICKS), 0);
+	ticks = MAX(MIN(ticks - 1, (int32_t)MAX_TICKS), 0);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	u32_t curr = ccount(), cyc, adj;
+	uint32_t curr = ccount(), cyc, adj;
 
 	/* Round up to next tick boundary */
 	cyc = ticks * CYC_PER_TICK;
@@ -96,20 +96,20 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 #endif
 }
 
-u32_t z_clock_elapsed(void)
+uint32_t z_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	u32_t ret = (ccount() - last_count) / CYC_PER_TICK;
+	uint32_t ret = (ccount() - last_count) / CYC_PER_TICK;
 
 	k_spin_unlock(&lock, key);
 	return ret;
 }
 
-u32_t z_timer_cycle_get_32(void)
+uint32_t z_timer_cycle_get_32(void)
 {
 	return ccount();
 }

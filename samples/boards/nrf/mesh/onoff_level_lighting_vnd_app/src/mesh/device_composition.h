@@ -29,48 +29,48 @@
 
 struct vendor_state {
 	int current;
-	u32_t response;
-	u8_t last_tid;
-	u16_t last_src_addr;
-	u16_t last_dst_addr;
-	s64_t last_msg_timestamp;
+	uint32_t response;
+	uint8_t last_tid;
+	uint16_t last_src_addr;
+	uint16_t last_dst_addr;
+	int64_t last_msg_timestamp;
 };
 
 struct lightness {
-	u16_t current;
-	u16_t target;
+	uint16_t current;
+	uint16_t target;
 
-	u16_t def;
-	u16_t last;
+	uint16_t def;
+	uint16_t last;
 
-	u8_t status_code;
-	u16_t range_min;
-	u16_t range_max;
-	u32_t range;
+	uint8_t status_code;
+	uint16_t range_min;
+	uint16_t range_max;
+	uint32_t range;
 
 	int delta;
 };
 
 struct temperature {
-	u16_t current;
-	u16_t target;
+	uint16_t current;
+	uint16_t target;
 
-	u16_t def;
+	uint16_t def;
 
-	u8_t status_code;
-	u16_t range_min;
-	u16_t range_max;
-	u32_t range;
+	uint8_t status_code;
+	uint16_t range_min;
+	uint16_t range_max;
+	uint32_t range;
 
 	int delta;
 };
 
 
 struct delta_uv {
-	s16_t current;
-	s16_t target;
+	int16_t current;
+	int16_t target;
 
-	s16_t def;
+	int16_t def;
 
 	int delta;
 };
@@ -80,12 +80,12 @@ struct light_ctl_state {
 	struct temperature *temp;
 	struct delta_uv *duv;
 
-	u8_t onpowerup, tt;
+	uint8_t onpowerup, tt;
 
-	u8_t last_tid;
-	u16_t last_src_addr;
-	u16_t last_dst_addr;
-	s64_t last_msg_timestamp;
+	uint8_t last_tid;
+	uint16_t last_src_addr;
+	uint16_t last_dst_addr;
+	int64_t last_msg_timestamp;
 
 	struct transition *transition;
 };

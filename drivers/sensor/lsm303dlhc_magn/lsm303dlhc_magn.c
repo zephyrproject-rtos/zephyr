@@ -20,8 +20,8 @@ static int lsm303dlhc_sample_fetch(struct device *dev,
 {
 	const struct lsm303dlhc_magn_config *config = dev->config_info;
 	struct lsm303dlhc_magn_data *drv_data = dev->driver_data;
-	u8_t magn_buf[6];
-	u8_t status;
+	uint8_t magn_buf[6];
+	uint8_t status;
 
 	/* Check data ready flag */
 	if (i2c_reg_read_byte(drv_data->i2c,
@@ -53,7 +53,7 @@ static int lsm303dlhc_sample_fetch(struct device *dev,
 }
 
 static void lsm303dlhc_convert(struct sensor_value *val,
-			       s64_t raw_val)
+			       int64_t raw_val)
 {
 	val->val1 = raw_val / LSM303DLHC_MAGN_LSB_GAUSS;
 	val->val2 = (1000000 * raw_val / LSM303DLHC_MAGN_LSB_GAUSS) % 1000000;

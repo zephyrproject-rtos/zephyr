@@ -42,7 +42,7 @@ LOG_MODULE_REGISTER(qspi_nor, CONFIG_FLASH_LOG_LEVEL);
  * If no data to transmit/receive - pass 0.
  */
 struct qspi_buf {
-	u8_t *buf;
+	uint8_t *buf;
 	size_t len;
 };
 
@@ -55,7 +55,7 @@ struct qspi_buf {
  * @param rx_buf structure used for RX purposes. Can be NULL if not used.
  */
 struct qspi_cmd {
-	u8_t op_code;
+	uint8_t op_code;
 	const struct qspi_buf *tx_buf;
 	const struct qspi_buf *rx_buf;
 };
@@ -108,7 +108,7 @@ static inline bool qspi_is_used_read_quad_mode(nrf_qspi_readoc_t lines)
 	}
 }
 
-static inline int qspi_get_lines_write(u8_t lines)
+static inline int qspi_get_lines_write(uint8_t lines)
 {
 	register int ret = -EINVAL;
 
@@ -132,7 +132,7 @@ static inline int qspi_get_lines_write(u8_t lines)
 	return ret;
 }
 
-static inline int qspi_get_lines_read(u8_t lines)
+static inline int qspi_get_lines_read(uint8_t lines)
 {
 	register int ret = -EINVAL;
 
@@ -167,7 +167,7 @@ static inline int qspi_get_lines_read(u8_t lines)
  * @retval NRF_SPI_PRESCALER in case of success or;
  *		   -EINVAL in case of failure
  */
-static inline nrf_qspi_frequency_t get_nrf_qspi_prescaler(u32_t frequency)
+static inline nrf_qspi_frequency_t get_nrf_qspi_prescaler(uint32_t frequency)
 {
 	register int ret = -EINVAL;
 
@@ -309,7 +309,7 @@ static int qspi_send_cmd(struct device *dev, const struct qspi_cmd *cmd)
 }
 
 /* QSPI erase */
-static int qspi_erase(struct device *dev, u32_t addr, u32_t size)
+static int qspi_erase(struct device *dev, uint32_t addr, uint32_t size)
 {
 	/* Check input parameters */
 	if (!size) {
@@ -322,7 +322,7 @@ static int qspi_erase(struct device *dev, u32_t addr, u32_t size)
 	qspi_lock(dev);
 	while ((rv == 0) && (size > 0)) {
 		nrfx_err_t res = !NRFX_SUCCESS;
-		u32_t adj = 0;
+		uint32_t adj = 0;
 
 		if (size == params->size) {
 			/* chip erase */
@@ -434,7 +434,7 @@ static int qspi_nrfx_configure(struct device *dev)
 				return -EIO;
 			}
 
-			u8_t tx = BIT(CONFIG_NORDIC_QSPI_NOR_QE_BIT);
+			uint8_t tx = BIT(CONFIG_NORDIC_QSPI_NOR_QE_BIT);
 
 			const struct qspi_buf tx_buff = { .buf = &tx, .len = sizeof(tx), };
 
@@ -462,7 +462,7 @@ static int qspi_nrfx_configure(struct device *dev)
 static inline int qspi_nor_read_id(struct device *dev,
 				   const struct qspi_nor_config *const flash_id)
 {
-	u8_t rx_b[QSPI_NOR_MAX_ID_LEN];
+	uint8_t rx_b[QSPI_NOR_MAX_ID_LEN];
 	const struct qspi_buf q_rx_buf = {
 		.buf = rx_b,
 		.len = QSPI_NOR_MAX_ID_LEN
@@ -492,7 +492,7 @@ static int qspi_nor_read(struct device *dev, off_t addr, void *dest,
 {
 	void *dptr = dest;
 	size_t dlen = size;
-	u8_t __aligned(4) buf[4];
+	uint8_t __aligned(4) buf[4];
 
 	if (!dest) {
 		return -EINVAL;

@@ -40,7 +40,7 @@ int esp_socket_put(struct esp_socket *sock)
 }
 
 struct esp_socket *esp_socket_from_link_id(struct esp_data *data,
-					   u8_t link_id)
+					   uint8_t link_id)
 {
 	int i;
 

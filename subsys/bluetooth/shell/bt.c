@@ -39,7 +39,7 @@
 #define DEVICE_NAME		CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
 
-static u8_t selected_id = BT_ID_DEFAULT;
+static uint8_t selected_id = BT_ID_DEFAULT;
 const struct shell *ctx_shell;
 
 #if defined(CONFIG_BT_CONN)
@@ -57,7 +57,7 @@ static struct bt_le_oob oob_remote;
 #define KEY_STR_LEN 33
 
 #if defined(CONFIG_BT_EXT_ADV)
-static u8_t selected_adv;
+static uint8_t selected_adv;
 struct bt_le_ext_adv *adv_sets[CONFIG_BT_EXT_ADV_MAX_ADV_SET];
 #endif
 
@@ -76,7 +76,7 @@ static bool data_cb(struct bt_data *data, void *user_data)
 	}
 }
 
-static const char *phy2str(u8_t phy)
+static const char *phy2str(uint8_t phy)
 {
 	switch (phy) {
 	case 0: return "No packets";
@@ -217,7 +217,7 @@ static void print_le_oob(const struct shell *shell, struct bt_le_oob *oob)
 	shell_print(shell, "%29s %32s %32s", addr, r, c);
 }
 
-static void connected(struct bt_conn *conn, u8_t err)
+static void connected(struct bt_conn *conn, uint8_t err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 
@@ -243,7 +243,7 @@ done:
 	}
 }
 
-static void disconnected(struct bt_conn *conn, u8_t reason)
+static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 
@@ -265,8 +265,8 @@ static bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
 	return true;
 }
 
-static void le_param_updated(struct bt_conn *conn, u16_t interval,
-			     u16_t latency, u16_t timeout)
+static void le_param_updated(struct bt_conn *conn, uint16_t interval,
+			     uint16_t latency, uint16_t timeout)
 {
 	shell_print(ctx_shell, "LE conn param updated: int 0x%04x lat %d "
 		     "to %d", interval, latency, timeout);
@@ -306,7 +306,7 @@ static void security_changed(struct bt_conn *conn, bt_security_t level,
 #endif
 
 #if defined(CONFIG_BT_REMOTE_INFO)
-static const char *ver_str(u8_t ver)
+static const char *ver_str(uint8_t ver)
 {
 	const char * const str[] = {
 		"1.0b", "1.1", "1.2", "2.0", "2.1", "3.0", "4.0", "4.1", "4.2",
@@ -336,7 +336,7 @@ static void remote_info_available(struct bt_conn *conn,
 	}
 
 	if (info.type == BT_CONN_TYPE_LE) {
-		u8_t features[8];
+		uint8_t features[8];
 		char features_str[2 * sizeof(features) +  1];
 
 		sys_memcpy_swap(features, remote_info->le.features,
@@ -451,8 +451,8 @@ static int cmd_init(const struct shell *shell, size_t argc, char *argv[])
 #if defined(CONFIG_BT_HCI)
 static int cmd_hci_cmd(const struct shell *shell, size_t argc, char *argv[])
 {
-	u8_t ogf;
-	u16_t ocf;
+	uint8_t ogf;
+	uint16_t ocf;
 	struct net_buf *buf = NULL, *rsp;
 	int err;
 
@@ -531,7 +531,7 @@ static int cmd_id_reset(const struct shell *shell, size_t argc, char *argv[])
 {
 	char addr_str[BT_ADDR_LE_STR_LEN];
 	bt_addr_le_t addr;
-	u8_t id;
+	uint8_t id;
 	int err;
 
 	if (argc < 2) {
@@ -565,7 +565,7 @@ static int cmd_id_reset(const struct shell *shell, size_t argc, char *argv[])
 
 static int cmd_id_delete(const struct shell *shell, size_t argc, char *argv[])
 {
-	u8_t id;
+	uint8_t id;
 	int err;
 
 	if (argc < 2) {
@@ -609,7 +609,7 @@ static int cmd_id_select(const struct shell *shell, size_t argc, char *argv[])
 	char addr_str[BT_ADDR_LE_STR_LEN];
 	bt_addr_le_t addrs[CONFIG_BT_ID_MAX];
 	size_t count = CONFIG_BT_ID_MAX;
-	u8_t id;
+	uint8_t id;
 
 	id = strtol(argv[1], NULL, 10);
 
@@ -627,8 +627,8 @@ static int cmd_id_select(const struct shell *shell, size_t argc, char *argv[])
 }
 
 #if defined(CONFIG_BT_OBSERVER)
-static int cmd_active_scan_on(const struct shell *shell, u32_t options,
-			      u16_t timeout)
+static int cmd_active_scan_on(const struct shell *shell, uint32_t options,
+			      uint16_t timeout)
 {
 	int err;
 	struct bt_le_scan_param param = {
@@ -652,8 +652,8 @@ static int cmd_active_scan_on(const struct shell *shell, u32_t options,
 	return 0;
 }
 
-static int cmd_passive_scan_on(const struct shell *shell, u32_t options,
-			       u16_t timeout)
+static int cmd_passive_scan_on(const struct shell *shell, uint32_t options,
+			       uint16_t timeout)
 {
 	struct bt_le_scan_param param = {
 			.type       = BT_LE_SCAN_TYPE_PASSIVE,
@@ -695,8 +695,8 @@ static int cmd_scan_off(const struct shell *shell)
 static int cmd_scan(const struct shell *shell, size_t argc, char *argv[])
 {
 	const char *action;
-	u32_t options = 0;
-	u16_t timeout = 0;
+	uint32_t options = 0;
+	uint16_t timeout = 0;
 
 	/* Parse duplicate filtering data */
 	for (size_t argn = 2; argn < argc; argn++) {
@@ -943,7 +943,7 @@ static int cmd_adv_create(const struct shell *shell, size_t argc, char *argv[])
 {
 	struct bt_le_adv_param param;
 	struct bt_le_ext_adv *adv;
-	u8_t adv_index;
+	uint8_t adv_index;
 	int err;
 
 	if (!adv_param_parse(argc, argv, &param)) {
@@ -987,9 +987,9 @@ static int cmd_adv_param(const struct shell *shell, size_t argc, char *argv[])
 
 static int cmd_adv_data(const struct shell *shell, size_t argc, char *argv[])
 {
-	u8_t discov_data = (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR);
+	uint8_t discov_data = (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR);
 	struct bt_le_ext_adv *adv = adv_sets[selected_adv];
-	static u8_t hex_data[1650];
+	static uint8_t hex_data[1650];
 	struct bt_data *data;
 	struct bt_data ad[8];
 	struct bt_data sd[8];
@@ -1068,8 +1068,8 @@ static int cmd_adv_start(const struct shell *shell, size_t argc, char *argv[])
 {
 	struct bt_le_ext_adv *adv = adv_sets[selected_adv];
 	struct bt_le_ext_adv_start_param param;
-	u8_t num_events = 0;
-	s32_t timeout = 0;
+	uint8_t num_events = 0;
+	int32_t timeout = 0;
 	int err;
 
 	if (!adv) {
@@ -1157,7 +1157,7 @@ static int cmd_adv_delete(const struct shell *shell, size_t argc, char *argv[])
 static int cmd_adv_select(const struct shell *shell, size_t argc, char *argv[])
 {
 	if (argc == 2) {
-		u8_t id = strtol(argv[1], NULL, 10);
+		uint8_t id = strtol(argv[1], NULL, 10);
 
 		if (!(id < ARRAY_SIZE(adv_sets))) {
 			return -EINVAL;
@@ -1227,7 +1227,7 @@ static int cmd_connect_le(const struct shell *shell, size_t argc, char *argv[])
 	int err;
 	bt_addr_le_t addr;
 	struct bt_conn *conn;
-	u32_t options = 0;
+	uint32_t options = 0;
 
 	err = bt_addr_le_from_str(argv[1], argv[2], &addr);
 	if (err) {
@@ -1367,7 +1367,7 @@ static int cmd_select(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
-static const char *get_conn_type_str(u8_t type)
+static const char *get_conn_type_str(uint8_t type)
 {
 	switch (type) {
 	case BT_CONN_TYPE_LE: return "LE";
@@ -1377,7 +1377,7 @@ static const char *get_conn_type_str(u8_t type)
 	}
 }
 
-static const char *get_conn_role_str(u8_t role)
+static const char *get_conn_role_str(uint8_t role)
 {
 	switch (role) {
 	case BT_CONN_ROLE_MASTER: return "master";
@@ -1501,10 +1501,10 @@ static int cmd_conn_update(const struct shell *shell, size_t argc, char *argv[])
 }
 
 #if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
-static u16_t tx_time_calc(u8_t phy, u16_t max_len)
+static uint16_t tx_time_calc(uint8_t phy, uint16_t max_len)
 {
 	/* Access address + header + payload + MIC + CRC */
-	u16_t total_len = 4 + 2 + max_len + 4 + 3;
+	uint16_t total_len = 4 + 2 + max_len + 4 + 3;
 
 	switch (phy) {
 	case BT_GAP_LE_PHY_1M:
@@ -1533,7 +1533,7 @@ static int cmd_conn_data_len_update(const struct shell *shell, size_t argc,
 		param.tx_max_time = strtoul(argv[2], NULL, 10);
 	} else {
 		/* Assume 1M if not able to retrieve PHY */
-		u8_t phy = BT_GAP_LE_PHY_1M;
+		uint8_t phy = BT_GAP_LE_PHY_1M;
 
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
 		struct bt_conn_info info;
@@ -1588,7 +1588,7 @@ static int cmd_conn_phy_update(const struct shell *shell, size_t argc,
 #if defined(CONFIG_BT_CENTRAL)
 static int cmd_chan_map(const struct shell *shell, size_t argc, char *argv[])
 {
-	u8_t chan_map[5] = {};
+	uint8_t chan_map[5] = {};
 	int err;
 
 	if (hex2bin(argv[1], strlen(argv[1]), chan_map, 5) == 0) {
@@ -2237,7 +2237,7 @@ static int cmd_wl_connect(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err;
 	const char *action = argv[1];
-	u32_t options = 0;
+	uint32_t options = 0;
 
 #if defined(CONFIG_BT_EXT_ADV)
 	for (size_t argn = 2; argn < argc; argn++) {
@@ -2337,7 +2337,7 @@ static int cmd_auth_passkey(const struct shell *shell,
 #if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
 static int cmd_auth_oob_tk(const struct shell *shell, size_t argc, char *argv[])
 {
-	u8_t tk[16];
+	uint8_t tk[16];
 	size_t len;
 	int err;
 

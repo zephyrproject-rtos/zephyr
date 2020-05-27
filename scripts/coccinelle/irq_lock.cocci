@@ -10,7 +10,7 @@ virtual patch
 @find depends on !(file in "ext")@
 type T;
 identifier i;
-typedef uint32_t,u32_t;
+typedef uint32_t,uint32_t;
 @@
 
 (
@@ -18,7 +18,7 @@ typedef uint32_t,u32_t;
 |
  unsigned int i = irq_lock();
 |
- u32_t i = irq_lock();
+ uint32_t i = irq_lock();
 |
 - T
 + unsigned int
@@ -35,7 +35,7 @@ identifier i;
 |
  unsigned int i;
 |
- u32_t i;
+ uint32_t i;
 |
 - T
 + unsigned int

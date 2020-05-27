@@ -6,11 +6,11 @@
 
 #include <sys/crc.h>
 
-u8_t crc7_be(u8_t seed, const u8_t *src, size_t len)
+uint8_t crc7_be(uint8_t seed, const uint8_t *src, size_t len)
 {
 	while (len--) {
-		u8_t e = seed ^ *src++;
-		u8_t f = e ^ (e >> 4) ^ (e >> 7);
+		uint8_t e = seed ^ *src++;
+		uint8_t f = e ^ (e >> 4) ^ (e >> 7);
 
 		seed = (f << 1) ^ (f << 4);
 	}

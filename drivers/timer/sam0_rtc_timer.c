@@ -67,15 +67,15 @@ BUILD_ASSERT(CYCLES_PER_TICK > 1,
 #define GCLK_EVAL(n) GCLK_CLKCTRL_GEN_GCLK##n
 
 /* Tick/cycle count of the last announce call. */
-static volatile u32_t rtc_last;
+static volatile uint32_t rtc_last;
 
 #ifndef CONFIG_TICKLESS_KERNEL
 
 /* Current tick count. */
-static volatile u32_t rtc_counter;
+static volatile uint32_t rtc_counter;
 
 /* Tick value of the next timeout. */
-static volatile u32_t rtc_timeout;
+static volatile uint32_t rtc_timeout;
 
 #endif /* CONFIG_TICKLESS_KERNEL */
 
@@ -99,7 +99,7 @@ static inline void rtc_sync(void)
  * then - when bus synchronization completes - the COUNT register is read and
  * returned.
  */
-static u32_t rtc_count(void)
+static uint32_t rtc_count(void)
 {
 #ifdef RTC_READREQ_RREQ
 	RTC0->READREQ.reg = RTC_READREQ_RREQ;
@@ -143,17 +143,17 @@ static void rtc_isr(void *arg)
 	ARG_UNUSED(arg);
 
 	/* Read and clear the interrupt flag register. */
-	u16_t status = RTC0->INTFLAG.reg;
+	uint16_t status = RTC0->INTFLAG.reg;
 
 	RTC0->INTFLAG.reg = status;
 
 #ifdef CONFIG_TICKLESS_KERNEL
 
 	/* Read the current counter and announce the elapsed time in ticks. */
-	u32_t count = rtc_count();
+	uint32_t count = rtc_count();
 
 	if (count != rtc_last) {
-		u32_t ticks = (count - rtc_last) / CYCLES_PER_TICK;
+		uint32_t ticks = (count - rtc_last) / CYCLES_PER_TICK;
 
 		z_clock_announce(ticks);
 		rtc_last += ticks * CYCLES_PER_TICK;
@@ -200,9 +200,9 @@ int z_clock_driver_init(struct device *device)
 
 	/* Configure RTC with 32-bit mode, configured prescaler and MATCHCLR. */
 #ifdef RTC_MODE0_CTRL_MODE
-	u16_t ctrl = RTC_MODE0_CTRL_MODE(0) | RTC_MODE0_CTRL_PRESCALER(0);
+	uint16_t ctrl = RTC_MODE0_CTRL_MODE(0) | RTC_MODE0_CTRL_PRESCALER(0);
 #else
-	u16_t ctrl = RTC_MODE0_CTRLA_MODE(0) | RTC_MODE0_CTRLA_PRESCALER(0);
+	uint16_t ctrl = RTC_MODE0_CTRLA_MODE(0) | RTC_MODE0_CTRLA_PRESCALER(0);
 #endif
 
 #ifndef CONFIG_TICKLESS_KERNEL
@@ -248,18 +248,18 @@ int z_clock_driver_init(struct device *device)
 	return 0;
 }
 
-void z_clock_set_timeout(s32_t ticks, bool idle)
+void z_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
 #ifdef CONFIG_TICKLESS_KERNEL
 
 	ticks = (ticks == K_FOREVER) ? MAX_TICKS : ticks;
-	ticks = MAX(MIN(ticks - 1, (s32_t) MAX_TICKS), 0);
+	ticks = MAX(MIN(ticks - 1, (int32_t) MAX_TICKS), 0);
 
 	/* Compute number of RTC cycles until the next timeout. */
-	u32_t count = rtc_count();
-	u32_t timeout = ticks * CYCLES_PER_TICK + count % CYCLES_PER_TICK;
+	uint32_t count = rtc_count();
+	uint32_t timeout = ticks * CYCLES_PER_TICK + count % CYCLES_PER_TICK;
 
 	/* Round to the nearest tick boundary. */
 	timeout = (timeout + CYCLES_PER_TICK - 1) / CYCLES_PER_TICK
@@ -297,7 +297,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 #endif /* CONFIG_TICKLESS_KERNEL */
 }
 
-u32_t z_clock_elapsed(void)
+uint32_t z_clock_elapsed(void)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
 	return (rtc_count() - rtc_last) / CYCLES_PER_TICK;
@@ -306,7 +306,7 @@ u32_t z_clock_elapsed(void)
 #endif
 }
 
-u32_t z_timer_cycle_get_32(void)
+uint32_t z_timer_cycle_get_32(void)
 {
 	/* Just return the absolute value of RTC cycle counter. */
 	return rtc_count();

@@ -279,7 +279,7 @@ with a different interrupt line. In ``drivers/subsystem/subsystem_my_driver.h``:
   typedef void (*my_driver_config_irq_t)(struct device *device);
 
   struct my_driver_config {
-        u32_t base_addr;
+        uint32_t base_addr;
         my_driver_config_irq_t config_func;
   };
 

@@ -64,16 +64,16 @@ struct ssd16xx_data {
 #if defined(SSD16XX_CS_CNTRL)
 	struct spi_cs_control cs_ctrl;
 #endif
-	u8_t scan_mode;
+	uint8_t scan_mode;
 };
 
-static u8_t ssd16xx_lut_initial[] = DT_INST_PROP(0, lut_initial);
-static u8_t ssd16xx_lut_default[] = DT_INST_PROP(0, lut_default);
+static uint8_t ssd16xx_lut_initial[] = DT_INST_PROP(0, lut_initial);
+static uint8_t ssd16xx_lut_default[] = DT_INST_PROP(0, lut_default);
 #if DT_INST_NODE_HAS_PROP(0, softstart)
-static u8_t ssd16xx_softstart[] = DT_INST_PROP(0, softstart);
+static uint8_t ssd16xx_softstart[] = DT_INST_PROP(0, softstart);
 #endif
-static u8_t ssd16xx_gdv[] = DT_INST_PROP(0, gdv);
-static u8_t ssd16xx_sdv[] = DT_INST_PROP(0, sdv);
+static uint8_t ssd16xx_gdv[] = DT_INST_PROP(0, gdv);
+static uint8_t ssd16xx_sdv[] = DT_INST_PROP(0, sdv);
 
 #if !DT_INST_NODE_HAS_PROP(0, lut_initial)
 #error "No initial waveform look up table (LUT) selected!"
@@ -84,7 +84,7 @@ static u8_t ssd16xx_sdv[] = DT_INST_PROP(0, sdv);
 #endif
 
 static inline int ssd16xx_write_cmd(struct ssd16xx_data *driver,
-				    u8_t cmd, u8_t *data, size_t len)
+				    uint8_t cmd, uint8_t *data, size_t len)
 {
 	int err;
 	struct spi_buf buf = {.buf = &cmd, .len = sizeof(cmd)};
@@ -120,10 +120,10 @@ static inline void ssd16xx_busy_wait(struct ssd16xx_data *driver)
 	}
 }
 
-static inline size_t push_x_param(u8_t *data, u16_t x)
+static inline size_t push_x_param(uint8_t *data, uint16_t x)
 {
 #if DT_INST_PROP(0, pp_width_bits) == 8
-	data[0] = (u8_t)x;
+	data[0] = (uint8_t)x;
 	return 1;
 #elif DT_INST_PROP(0, pp_width_bits) == 16
 	sys_put_le16(sys_cpu_to_le16(x), data);
@@ -133,10 +133,10 @@ static inline size_t push_x_param(u8_t *data, u16_t x)
 #endif
 }
 
-static inline size_t push_y_param(u8_t *data, u16_t y)
+static inline size_t push_y_param(uint8_t *data, uint16_t y)
 {
 #if DT_INST_PROP(0, pp_height_bits) == 8
-	data[0] = (u8_t)y;
+	data[0] = (uint8_t)y;
 	return 1;
 #elif DT_INST_PROP(0, pp_height_bits) == 16
 	sys_put_le16(sys_cpu_to_le16(y), data);
@@ -148,10 +148,10 @@ static inline size_t push_y_param(u8_t *data, u16_t y)
 
 
 static inline int ssd16xx_set_ram_param(struct ssd16xx_data *driver,
-					u16_t sx, u16_t ex, u16_t sy, u16_t ey)
+					uint16_t sx, uint16_t ex, uint16_t sy, uint16_t ey)
 {
 	int err;
-	u8_t tmp[4];
+	uint8_t tmp[4];
 	size_t len;
 
 	len  = push_x_param(tmp, sx);
@@ -172,10 +172,10 @@ static inline int ssd16xx_set_ram_param(struct ssd16xx_data *driver,
 }
 
 static inline int ssd16xx_set_ram_ptr(struct ssd16xx_data *driver,
-				      u16_t x, u16_t y)
+				      uint16_t x, uint16_t y)
 {
 	int err;
-	u8_t tmp[2];
+	uint8_t tmp[2];
 	size_t len;
 
 	len = push_x_param(tmp, x);
@@ -211,7 +211,7 @@ static int ssd16xx_blanking_on(const struct device *dev)
 static int ssd16xx_update_display(const struct device *dev)
 {
 	struct ssd16xx_data *driver = dev->driver_data;
-	u8_t tmp;
+	uint8_t tmp;
 	int err;
 
 	tmp = (SSD16XX_CTRL2_ENABLE_CLK |
@@ -229,19 +229,19 @@ static int ssd16xx_update_display(const struct device *dev)
 				 NULL, 0);
 }
 
-static int ssd16xx_write(const struct device *dev, const u16_t x,
-			 const u16_t y,
+static int ssd16xx_write(const struct device *dev, const uint16_t x,
+			 const uint16_t y,
 			 const struct display_buffer_descriptor *desc,
 			 const void *buf)
 {
 	struct ssd16xx_data *driver = dev->driver_data;
 	int err;
 	size_t buf_len;
-	u16_t x_start;
-	u16_t x_end;
-	u16_t y_start;
-	u16_t y_end;
-	u16_t panel_h = EPD_PANEL_HEIGHT -
+	uint16_t x_start;
+	uint16_t x_end;
+	uint16_t y_start;
+	uint16_t y_end;
+	uint16_t panel_h = EPD_PANEL_HEIGHT -
 			EPD_PANEL_HEIGHT % EPD_PANEL_NUMOF_ROWS_PER_PAGE;
 
 	if (desc->pitch < desc->width) {
@@ -319,7 +319,7 @@ static int ssd16xx_write(const struct device *dev, const u16_t x,
 		return err;
 	}
 
-	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_WRITE_RAM, (u8_t *)buf,
+	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_WRITE_RAM, (uint8_t *)buf,
 				buf_len);
 	if (err < 0) {
 		return err;
@@ -328,8 +328,8 @@ static int ssd16xx_write(const struct device *dev, const u16_t x,
 	return ssd16xx_update_display(dev);
 }
 
-static int ssd16xx_read(const struct device *dev, const u16_t x,
-			const u16_t y,
+static int ssd16xx_read(const struct device *dev, const uint16_t x,
+			const uint16_t y,
 			const struct display_buffer_descriptor *desc,
 			void *buf)
 {
@@ -344,13 +344,13 @@ static void *ssd16xx_get_framebuffer(const struct device *dev)
 }
 
 static int ssd16xx_set_brightness(const struct device *dev,
-				  const u8_t brightness)
+				  const uint8_t brightness)
 {
 	LOG_WRN("not supported");
 	return -ENOTSUP;
 }
 
-static int ssd16xx_set_contrast(const struct device *dev, u8_t contrast)
+static int ssd16xx_set_contrast(const struct device *dev, uint8_t contrast)
 {
 	LOG_WRN("not supported");
 	return -ENOTSUP;
@@ -390,14 +390,14 @@ static int ssd16xx_set_pixel_format(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static int ssd16xx_clear_cntlr_mem(struct device *dev, u8_t ram_cmd,
+static int ssd16xx_clear_cntlr_mem(struct device *dev, uint8_t ram_cmd,
 				   bool update)
 {
 	struct ssd16xx_data *driver = dev->driver_data;
-	u8_t clear_page[EPD_PANEL_WIDTH];
-	u16_t panel_h = EPD_PANEL_HEIGHT /
+	uint8_t clear_page[EPD_PANEL_WIDTH];
+	uint16_t panel_h = EPD_PANEL_HEIGHT /
 			EPD_PANEL_NUMOF_ROWS_PER_PAGE;
-	u8_t scan_mode = SSD16XX_DATA_ENTRY_XIYDY;
+	uint8_t scan_mode = SSD16XX_DATA_ENTRY_XIYDY;
 
 	/*
 	 * Clear unusable memory area when the resolution of the panel is not
@@ -442,7 +442,7 @@ static int ssd16xx_clear_cntlr_mem(struct device *dev, u8_t ram_cmd,
 static int ssd16xx_controller_init(struct device *dev)
 {
 	int err;
-	u8_t tmp[3];
+	uint8_t tmp[3];
 	size_t len;
 	struct ssd16xx_data *driver = dev->driver_data;
 

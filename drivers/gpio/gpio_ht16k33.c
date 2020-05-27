@@ -29,7 +29,7 @@ struct gpio_ht16k33_cfg {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
 	char *parent_dev_name;
-	u8_t keyscan_idx;
+	uint8_t keyscan_idx;
 };
 
 struct gpio_ht16k33_data {
@@ -122,7 +122,7 @@ static int gpio_ht16k33_pin_interrupt_configure(struct device *port,
 }
 
 void ht16k33_process_keyscan_row_data(struct device *dev,
-				      u32_t keys)
+				      uint32_t keys)
 {
 	struct gpio_ht16k33_data *data = dev->driver_data;
 
@@ -152,7 +152,7 @@ static int gpio_ht16k33_disable_callback(struct device *dev,
 	return -ENOTSUP;
 }
 
-static u32_t gpio_ht16k33_get_pending_int(struct device *dev)
+static uint32_t gpio_ht16k33_get_pending_int(struct device *dev)
 {
 	struct gpio_ht16k33_data *data = dev->driver_data;
 

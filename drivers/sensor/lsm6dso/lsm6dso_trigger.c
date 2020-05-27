@@ -205,7 +205,7 @@ static void lsm6dso_handle_interrupt(void *arg)
 }
 
 static void lsm6dso_gpio_callback(struct device *dev,
-				    struct gpio_callback *cb, u32_t pins)
+				    struct gpio_callback *cb, uint32_t pins)
 {
 	struct lsm6dso_data *lsm6dso =
 		CONTAINER_OF(cb, struct lsm6dso_data, gpio_cb);

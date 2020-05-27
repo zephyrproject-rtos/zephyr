@@ -28,32 +28,32 @@ LOG_MODULE_REGISTER(sx1509b, CONFIG_GPIO_LOG_LEVEL);
 #define NUM_PINS 16
 
 /* Max to select all pins supported on the device. */
-#define ALL_PINS ((u16_t)BIT_MASK(NUM_PINS))
+#define ALL_PINS ((uint16_t)BIT_MASK(NUM_PINS))
 
 /* Reset delay is 2.5 ms, round up for Zephyr resolution */
 #define RESET_DELAY_MS 3
 
 /** Cache of the output configuration and data of the pins. */
 struct sx1509b_pin_state {
-	u16_t input_disable;    /* 0x00 */
-	u16_t long_slew;        /* 0x02 */
-	u16_t low_drive;        /* 0x04 */
-	u16_t pull_up;          /* 0x06 */
-	u16_t pull_down;        /* 0x08 */
-	u16_t open_drain;       /* 0x0A */
-	u16_t polarity;         /* 0x0C */
-	u16_t dir;              /* 0x0E */
-	u16_t data;             /* 0x10 */
+	uint16_t input_disable;    /* 0x00 */
+	uint16_t long_slew;        /* 0x02 */
+	uint16_t low_drive;        /* 0x04 */
+	uint16_t pull_up;          /* 0x06 */
+	uint16_t pull_down;        /* 0x08 */
+	uint16_t open_drain;       /* 0x0A */
+	uint16_t polarity;         /* 0x0C */
+	uint16_t dir;              /* 0x0E */
+	uint16_t data;             /* 0x10 */
 } __packed;
 
 struct sx1509b_irq_state {
-	u16_t interrupt_mask;   /* 0x12 */
-	u32_t interrupt_sense;  /* 0x14, 0x16 */
+	uint16_t interrupt_mask;   /* 0x12 */
+	uint32_t interrupt_sense;  /* 0x14, 0x16 */
 } __packed;
 
 struct sx1509b_debounce_state {
-	u8_t debounce_config;	/* 0x22 */
-	u16_t debounce_enable;  /* 0x23 */
+	uint8_t debounce_config;	/* 0x22 */
+	uint16_t debounce_enable;  /* 0x23 */
 } __packed;
 
 /** Runtime driver data */
@@ -74,7 +74,7 @@ struct sx1509b_drv_data {
 	/* user ISR cb */
 	sys_slist_t cb;
 	/* Enabled INT pins generating a cb */
-	u16_t cb_pins;
+	uint16_t cb_pins;
 #endif /* CONFIG_GPIO_SX1509B_INTERRUPT */
 
 };
@@ -89,7 +89,7 @@ struct sx1509b_config {
 	gpio_pin_t gpio_pin;
 	gpio_dt_flags_t gpio_flags;
 #endif /* CONFIG_GPIO_SX1509B_INTERRUPT */
-	u16_t i2c_slave_addr;
+	uint16_t i2c_slave_addr;
 };
 
 /* General configuration register addresses */
@@ -148,10 +148,10 @@ enum {
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-static inline int i2c_reg_write_word_be(struct device *dev, u16_t dev_addr,
-					u8_t reg_addr, u16_t value)
+static inline int i2c_reg_write_word_be(struct device *dev, uint16_t dev_addr,
+					uint8_t reg_addr, uint16_t value)
 {
-	u8_t tx_buf[3] = { reg_addr, value >> 8, value & 0xff };
+	uint8_t tx_buf[3] = { reg_addr, value >> 8, value & 0xff };
 
 	return i2c_write(dev, tx_buf, 3, dev_addr);
 }
@@ -167,10 +167,10 @@ static inline int i2c_reg_write_word_be(struct device *dev, u16_t dev_addr,
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-static inline int i2c_reg_write_byte_be(struct device *dev, u16_t dev_addr,
-					u8_t reg_addr, u8_t value)
+static inline int i2c_reg_write_byte_be(struct device *dev, uint16_t dev_addr,
+					uint8_t reg_addr, uint8_t value)
 {
-	u8_t tx_buf[3] = { reg_addr, value };
+	uint8_t tx_buf[3] = { reg_addr, value };
 
 	return i2c_write(dev, tx_buf, 2, dev_addr);
 }
@@ -182,14 +182,14 @@ static int sx1509b_handle_interrupt(void *arg)
 	const struct sx1509b_config *cfg = dev->config_info;
 	struct sx1509b_drv_data *drv_data = dev->driver_data;
 	int ret = 0;
-	u16_t int_source;
-	u8_t cmd = SX1509B_REG_INTERRUPT_SOURCE;
+	uint16_t int_source;
+	uint8_t cmd = SX1509B_REG_INTERRUPT_SOURCE;
 
 	k_sem_take(&drv_data->lock, K_FOREVER);
 
 	ret = i2c_write_read(drv_data->i2c_master, cfg->i2c_slave_addr,
 			     &cmd, sizeof(cmd),
-			     (u8_t *)&int_source, sizeof(int_source));
+			     (uint8_t *)&int_source, sizeof(int_source));
 	if (ret != 0) {
 		goto out;
 	}
@@ -220,7 +220,7 @@ static void sx1509b_work_handler(struct k_work *work)
 }
 
 static void sx1509_int_cb(struct device *dev, struct gpio_callback *gpio_cb,
-			   u32_t pins)
+			   uint32_t pins)
 {
 	struct sx1509b_drv_data *drv_data = CONTAINER_OF(gpio_cb,
 		struct sx1509b_drv_data, gpio_cb);
@@ -239,7 +239,7 @@ static int sx1509b_config(struct device *dev,
 	struct sx1509b_drv_data *drv_data = dev->driver_data;
 	struct sx1509b_pin_state *pins = &drv_data->pin_state;
 	struct {
-		u8_t reg;
+		uint8_t reg;
 		struct sx1509b_pin_state pins;
 	} __packed pin_buf;
 	struct sx1509b_debounce_state *debounce = &drv_data->debounce_state;
@@ -349,7 +349,7 @@ static int sx1509b_config(struct device *dev,
 
 	if (rc == 0) {
 		struct {
-			u8_t reg;
+			uint8_t reg;
 			struct sx1509b_debounce_state debounce;
 		} __packed debounce_buf;
 
@@ -375,7 +375,7 @@ static int port_get(struct device *dev,
 {
 	const struct sx1509b_config *cfg = dev->config_info;
 	struct sx1509b_drv_data *drv_data = dev->driver_data;
-	u16_t pin_data;
+	uint16_t pin_data;
 	int rc = 0;
 
 	/* Can't do I2C bus operations from an ISR */
@@ -385,7 +385,7 @@ static int port_get(struct device *dev,
 
 	k_sem_take(&drv_data->lock, K_FOREVER);
 
-	u8_t cmd = SX1509B_REG_DATA;
+	uint8_t cmd = SX1509B_REG_DATA;
 
 	rc = i2c_write_read(drv_data->i2c_master, cfg->i2c_slave_addr,
 			    &cmd, sizeof(cmd),
@@ -414,12 +414,12 @@ static int port_write(struct device *dev,
 
 	const struct sx1509b_config *cfg = dev->config_info;
 	struct sx1509b_drv_data *drv_data = dev->driver_data;
-	u16_t *outp = &drv_data->pin_state.data;
+	uint16_t *outp = &drv_data->pin_state.data;
 
 	k_sem_take(&drv_data->lock, K_FOREVER);
 
-	u16_t orig_out = *outp;
-	u16_t out = ((orig_out & ~mask) | (value & mask)) ^ toggle;
+	uint16_t orig_out = *outp;
+	uint16_t out = ((orig_out & ~mask) | (value & mask)) ^ toggle;
 	int rc = i2c_reg_write_word_be(drv_data->i2c_master, cfg->i2c_slave_addr,
 				       SX1509B_REG_DATA, out);
 	if (rc == 0) {
@@ -480,7 +480,7 @@ static int pin_interrupt_configure(struct device *dev,
 	struct sx1509b_drv_data *drv_data = dev->driver_data;
 	struct sx1509b_irq_state *irq = &drv_data->irq_state;
 	struct {
-		u8_t reg;
+		uint8_t reg;
 		struct sx1509b_irq_state irq;
 	} __packed irq_buf;
 

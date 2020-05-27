@@ -131,14 +131,14 @@ DEBUGGER (Master 1) can't be disabled in Region 0. */
 
 struct nxp_mpu_region_attr {
 	/* NXP MPU region access permission attributes */
-	u32_t attr;
+	uint32_t attr;
 };
 
 typedef struct nxp_mpu_region_attr nxp_mpu_region_attr_t;
 
 /* Typedef for the k_mem_partition attribute*/
 typedef struct {
-	u32_t ap_attr;
+	uint32_t ap_attr;
 } k_mem_partition_attr_t;
 
 /* Kernel macros for memory attribution
@@ -220,9 +220,9 @@ typedef struct {
 /* Region definition data structure */
 struct nxp_mpu_region {
 	/* Region Base Address */
-	u32_t base;
+	uint32_t base;
 	/* Region End Address */
-	u32_t end;
+	uint32_t end;
 	/* Region Name */
 	const char *name;
 	/* Region Attributes */
@@ -240,11 +240,11 @@ struct nxp_mpu_region {
 /* MPU configuration data structure */
 struct nxp_mpu_config {
 	/* Number of regions */
-	u32_t num_regions;
+	uint32_t num_regions;
 	/* Regions */
 	const struct nxp_mpu_region *mpu_regions;
 	/* SRAM Region */
-	u32_t sram_region;
+	uint32_t sram_region;
 };
 
 /* Reference to the MPU configuration.
@@ -263,7 +263,7 @@ extern const struct nxp_mpu_config mpu_config;
 	BUILD_ASSERT((size) % \
 		CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE == 0 && \
 		(size) >= CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE && \
-		(u32_t)(start) % CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE == 0, \
+		(uint32_t)(start) % CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE == 0, \
 		"the size of the partition must align with minimum MPU \
 		 region size" \
 		" and greater than or equal to minimum MPU region size." \

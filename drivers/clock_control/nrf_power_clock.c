@@ -35,7 +35,7 @@ LOG_MODULE_REGISTER(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 /* Clock subsys structure */
 struct nrf_clock_control_sub_data {
 	sys_slist_t list;	/* List of users requesting callback */
-	u8_t ref;		/* Users counter */
+	uint8_t ref;		/* Users counter */
 	bool started;		/* Indicated that clock is started */
 };
 
@@ -64,7 +64,7 @@ static void clkstarted_handle(struct device *dev,
 /* Return true if given event has enabled interrupt and is triggered. Event
  * is cleared.
  */
-static bool clock_event_check_and_clean(nrf_clock_event_t evt, u32_t intmask)
+static bool clock_event_check_and_clean(nrf_clock_event_t evt, uint32_t intmask)
 {
 	bool ret = nrf_clock_event_check(NRF_CLOCK, evt) &&
 			nrf_clock_int_enable_check(NRF_CLOCK, intmask);
@@ -234,7 +234,7 @@ static int clock_async_start(struct device *dev,
 	const struct nrf_clock_control_sub_config *config;
 	struct nrf_clock_control_sub_data *clk_data;
 	int key;
-	u8_t ref;
+	uint8_t ref;
 
 	__ASSERT_NO_MSG(type < CLOCK_CONTROL_NRF_TYPE_COUNT);
 	config = get_sub_config(dev, type);
@@ -369,7 +369,7 @@ static void clkstarted_handle(struct device *dev,
 }
 
 #if defined(CONFIG_USB_NRFX)
-static bool power_event_check_and_clean(nrf_power_event_t evt, u32_t intmask)
+static bool power_event_check_and_clean(nrf_power_event_t evt, uint32_t intmask)
 {
 	bool ret = nrf_power_event_check(NRF_POWER, evt) &&
 			nrf_power_int_enable_check(NRF_POWER, intmask);
@@ -441,7 +441,7 @@ void nrf_power_clock_isr(void *arg)
 #ifdef CONFIG_USB_NRFX
 void nrf5_power_usb_power_int_enable(bool enable)
 {
-	u32_t mask;
+	uint32_t mask;
 
 	mask = NRF_POWER_INT_USBDETECTED_MASK |
 	       NRF_POWER_INT_USBREMOVED_MASK |

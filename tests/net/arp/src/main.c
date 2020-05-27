@@ -45,7 +45,7 @@ static struct net_eth_addr hwaddr = { { 0x42, 0x11, 0x69, 0xde, 0xfa, 0xec } };
 static int send_status = -EINVAL;
 
 struct net_arp_context {
-	u8_t mac_addr[sizeof(struct net_eth_addr)];
+	uint8_t mac_addr[sizeof(struct net_eth_addr)];
 	struct net_linkaddr ll_addr;
 };
 
@@ -58,7 +58,7 @@ int net_arp_dev_init(struct device *dev)
 	return 0;
 }
 
-static u8_t *net_arp_get_mac(struct device *dev)
+static uint8_t *net_arp_get_mac(struct device *dev)
 {
 	struct net_arp_context *context = dev->driver_data;
 
@@ -77,7 +77,7 @@ static u8_t *net_arp_get_mac(struct device *dev)
 
 static void net_arp_iface_init(struct net_if *iface)
 {
-	u8_t *mac = net_arp_get_mac(net_if_get_device(iface));
+	uint8_t *mac = net_arp_get_mac(net_if_get_device(iface));
 
 	net_if_set_link_addr(iface, mac, 6, NET_LINK_ETHERNET);
 }
@@ -112,12 +112,12 @@ static int tester_send(struct device *dev, struct net_pkt *pkt)
 
 				snprintk(out, sizeof(out), "%s",
 					 net_sprint_ll_addr(
-						 (u8_t *)&hdr->dst,
+						 (uint8_t *)&hdr->dst,
 						 sizeof(struct net_eth_addr)));
 				printk("Invalid dst hwaddr %s, should be %s\n",
 				       out,
 				       net_sprint_ll_addr(
-					       (u8_t *)&hwaddr,
+					       (uint8_t *)&hwaddr,
 					       sizeof(struct net_eth_addr)));
 				send_status = -EINVAL;
 				return send_status;
@@ -130,12 +130,12 @@ static int tester_send(struct device *dev, struct net_pkt *pkt)
 
 				snprintk(out, sizeof(out), "%s",
 					 net_sprint_ll_addr(
-						 (u8_t *)&hdr->src,
+						 (uint8_t *)&hdr->src,
 						 sizeof(struct net_eth_addr)));
 				printk("Invalid src hwaddr %s, should be %s\n",
 				       out,
 				       net_sprint_ll_addr(
-					       (u8_t *)&hwaddr,
+					       (uint8_t *)&hwaddr,
 					       sizeof(struct net_eth_addr)));
 				send_status = -EINVAL;
 				return send_status;
@@ -268,7 +268,7 @@ static inline struct net_pkt *prepare_arp_request(struct net_if *iface,
 }
 
 static void setup_eth_header(struct net_if *iface, struct net_pkt *pkt,
-			     const struct net_eth_addr *hwaddr, u16_t type)
+			     const struct net_eth_addr *hwaddr, uint16_t type)
 {
 	struct net_eth_hdr *hdr = (struct net_eth_hdr *)net_pkt_data(pkt);
 
@@ -358,7 +358,7 @@ void test_arp(void)
 		len, AF_INET, 0, K_SECONDS(1));
 	zassert_not_null(pkt, "out of mem");
 
-	net_pkt_lladdr_src(pkt)->addr = (u8_t *)net_if_get_link_addr(iface);
+	net_pkt_lladdr_src(pkt)->addr = (uint8_t *)net_if_get_link_addr(iface);
 	net_pkt_lladdr_src(pkt)->len = sizeof(struct net_eth_addr);
 
 	ipv4 = (struct net_ipv4_hdr *)net_buf_add(pkt->buffer,

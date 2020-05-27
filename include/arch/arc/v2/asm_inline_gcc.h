@@ -22,7 +22,7 @@ extern "C" {
 /**
  *  @brief read timestamp register (CPU frequency)
  */
-extern u64_t z_tsc_read(void);
+extern uint64_t z_tsc_read(void);
 
 #ifdef __cplusplus
 }

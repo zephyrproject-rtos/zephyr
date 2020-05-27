@@ -26,19 +26,19 @@ LOG_MODULE_REGISTER(net_6lo, CONFIG_NET_6LO_LOG_LEVEL);
 struct net_6lo_context {
 	struct in6_addr prefix;
 	struct net_if *iface;
-	u16_t lifetime;
-	u8_t is_used		: 1;
-	u8_t compress	: 1;
-	u8_t cid		: 4;
-	u8_t unused		: 2;
+	uint16_t lifetime;
+	uint8_t is_used		: 1;
+	uint8_t compress	: 1;
+	uint8_t cid		: 4;
+	uint8_t unused		: 2;
 } __packed;
 
-static inline u8_t get_6co_compress(struct net_icmpv6_nd_opt_6co *opt)
+static inline uint8_t get_6co_compress(struct net_icmpv6_nd_opt_6co *opt)
 {
 	return (opt->flag & 0x10) >> 4;
 }
 
-static inline u8_t get_6co_cid(struct net_icmpv6_nd_opt_6co *opt)
+static inline uint8_t get_6co_cid(struct net_icmpv6_nd_opt_6co *opt)
 {
 	return opt->flag & 0x0F;
 }
@@ -46,20 +46,20 @@ static inline u8_t get_6co_cid(struct net_icmpv6_nd_opt_6co *opt)
 static struct net_6lo_context ctx_6co[CONFIG_NET_MAX_6LO_CONTEXTS];
 #endif
 
-static const u8_t udp_nhc_inline_size_table[] = {4, 3, 3, 1};
+static const uint8_t udp_nhc_inline_size_table[] = {4, 3, 3, 1};
 
-static const u8_t tf_inline_size_table[] = {4, 3, 1, 0};
+static const uint8_t tf_inline_size_table[] = {4, 3, 1, 0};
 /* The first bit of the index is SAC        |  SAC=0   |  SAC=1   |*/
-static const u8_t sa_inline_size_table[] = {16, 8, 2, 0, 0, 8, 2, 0};
+static const uint8_t sa_inline_size_table[] = {16, 8, 2, 0, 0, 8, 2, 0};
 
 /* The first bit is M, the second DAC
  *	| M=0 DAC=0 | M=0 DAC=1 | M=1 DAC=0  | M=1 DAC=1 (DAM always 00)
  */
-static const u8_t da_inline_size_table[] = {
+static const uint8_t da_inline_size_table[] = {
 	16, 8, 2, 0, 0, 8, 2, 0, 16, 6, 4, 1, 6
 	};
 
-static int get_udp_nhc_inlined_size(u8_t nhc)
+static int get_udp_nhc_inlined_size(uint8_t nhc)
 {
 	int size = 0;
 
@@ -79,7 +79,7 @@ static int get_udp_nhc_inlined_size(u8_t nhc)
 	return size;
 }
 
-static int get_ihpc_inlined_size(u16_t iphc)
+static int get_ihpc_inlined_size(uint16_t iphc)
 {
 	int size = 0;
 
@@ -157,7 +157,7 @@ static inline bool net_6lo_maddr_48_bit_compressible(struct in6_addr *addr)
 
 #if defined(CONFIG_NET_6LO_CONTEXT)
 /* RFC 6775, 4.2, 5.4.2, 5.4.3 and 7.2*/
-static inline void set_6lo_context(struct net_if *iface, u8_t index,
+static inline void set_6lo_context(struct net_if *iface, uint8_t index,
 				   struct net_icmpv6_nd_opt_6co *context)
 
 {
@@ -176,7 +176,7 @@ void net_6lo_set_context(struct net_if *iface,
 			 struct net_icmpv6_nd_opt_6co *context)
 {
 	int unused = -1;
-	u8_t i;
+	uint8_t i;
 
 	/* If the context information already exists, update or remove
 	 * as per data.
@@ -212,9 +212,9 @@ void net_6lo_set_context(struct net_if *iface,
 
 /* Get the context by matching cid */
 static inline struct net_6lo_context *
-get_6lo_context_by_cid(struct net_if *iface, u8_t cid)
+get_6lo_context_by_cid(struct net_if *iface, uint8_t cid)
 {
-	u8_t i;
+	uint8_t i;
 
 	for (i = 0U; i < CONFIG_NET_MAX_6LO_CONTEXTS; i++) {
 		if (!ctx_6co[i].is_used) {
@@ -233,7 +233,7 @@ get_6lo_context_by_cid(struct net_if *iface, u8_t cid)
 static inline struct net_6lo_context *
 get_6lo_context_by_addr(struct net_if *iface, struct in6_addr *addr)
 {
-	u8_t i;
+	uint8_t i;
 
 	for (i = 0U; i < CONFIG_NET_MAX_6LO_CONTEXTS; i++) {
 		if (!ctx_6co[i].is_used) {
@@ -265,10 +265,10 @@ get_6lo_context_by_addr(struct net_if *iface, struct in6_addr *addr)
  * IPv6 traffic class format is DSCP, ECN.
  * DSCP(6), ECN(2).
  */
-static u8_t *compress_tfl(struct net_ipv6_hdr *ipv6, u8_t *inline_ptr,
-			  u16_t *iphc)
+static uint8_t *compress_tfl(struct net_ipv6_hdr *ipv6, uint8_t *inline_ptr,
+			  uint16_t *iphc)
 {
-	u8_t tcl;
+	uint8_t tcl;
 
 	tcl = ((ipv6->vtc & 0x0F) << 4) | ((ipv6->tcflow & 0xF0) >> 4);
 	tcl = (tcl << 6) | (tcl >> 2);   /* ECN(2), DSCP(6) */
@@ -298,7 +298,7 @@ static u8_t *compress_tfl(struct net_ipv6_hdr *ipv6, u8_t *inline_ptr,
 			inline_ptr -= sizeof(ipv6->flow);
 			memmove(inline_ptr, &ipv6->flow, sizeof(ipv6->flow));
 
-			inline_ptr -= sizeof(u8_t);
+			inline_ptr -= sizeof(uint8_t);
 			*inline_ptr = (tcl & 0xC0) | (ipv6->tcflow & 0x0F);
 		} else {
 			NET_DBG("ECN + DSCP + 4-bit Pad + Flow Label");
@@ -309,7 +309,7 @@ static u8_t *compress_tfl(struct net_ipv6_hdr *ipv6, u8_t *inline_ptr,
 			inline_ptr -= sizeof(ipv6->flow);
 			memmove(inline_ptr, &ipv6->flow, sizeof(ipv6->flow));
 
-			inline_ptr -= sizeof(u8_t);
+			inline_ptr -= sizeof(uint8_t);
 			*inline_ptr = ipv6->tcflow & 0x0F;
 			inline_ptr -= sizeof(tcl);
 			*inline_ptr = tcl;
@@ -320,8 +320,8 @@ static u8_t *compress_tfl(struct net_ipv6_hdr *ipv6, u8_t *inline_ptr,
 }
 
 /* Helper to compress Hop limit */
-static u8_t *compress_hoplimit(struct net_ipv6_hdr *ipv6, u8_t *inline_ptr,
-			       u16_t *iphc)
+static uint8_t *compress_hoplimit(struct net_ipv6_hdr *ipv6, uint8_t *inline_ptr,
+			       uint16_t *iphc)
 {
 	/* Hop Limit */
 	switch (ipv6->hop_limit) {
@@ -347,8 +347,8 @@ static u8_t *compress_hoplimit(struct net_ipv6_hdr *ipv6, u8_t *inline_ptr,
 }
 
 /* Helper to compress Next header */
-static u8_t *compress_nh(struct net_ipv6_hdr *ipv6, u8_t *inline_ptr,
-			 u16_t *iphc)
+static uint8_t *compress_nh(struct net_ipv6_hdr *ipv6, uint8_t *inline_ptr,
+			 uint16_t *iphc)
 {
 	/* Next header */
 	if (ipv6->nexthdr == IPPROTO_UDP) {
@@ -362,8 +362,8 @@ static u8_t *compress_nh(struct net_ipv6_hdr *ipv6, u8_t *inline_ptr,
 }
 
 /* Helpers to compress Source Address */
-static u8_t *compress_sa(struct net_ipv6_hdr *ipv6, struct net_pkt *pkt,
-			 u8_t *inline_ptr, u16_t *iphc)
+static uint8_t *compress_sa(struct net_ipv6_hdr *ipv6, struct net_pkt *pkt,
+			 uint8_t *inline_ptr, uint16_t *iphc)
 {
 	NET_ASSERT(net_pkt_lladdr_src(pkt)->addr);
 
@@ -380,8 +380,8 @@ static u8_t *compress_sa(struct net_ipv6_hdr *ipv6, struct net_pkt *pkt,
 		NET_DBG("SAM_10 src addr 16 bit compressible");
 		*iphc |= NET_6LO_IPHC_SAM_10;
 
-		inline_ptr -= sizeof(u16_t);
-		memmove(inline_ptr, &ipv6->src.s6_addr[14], sizeof(u16_t));
+		inline_ptr -= sizeof(uint16_t);
+		memmove(inline_ptr, &ipv6->src.s6_addr[14], sizeof(uint16_t));
 
 		return inline_ptr;
 	}
@@ -396,8 +396,8 @@ static u8_t *compress_sa(struct net_ipv6_hdr *ipv6, struct net_pkt *pkt,
 	return inline_ptr;
 }
 
-static u8_t *set_sa_inline(struct net_ipv6_hdr *ipv6, u8_t *inline_ptr,
-			   u16_t *iphc)
+static uint8_t *set_sa_inline(struct net_ipv6_hdr *ipv6, uint8_t *inline_ptr,
+			   uint16_t *iphc)
 {
 	*iphc |= NET_6LO_IPHC_SAM_00;
 	inline_ptr -= 16U;
@@ -406,8 +406,8 @@ static u8_t *set_sa_inline(struct net_ipv6_hdr *ipv6, u8_t *inline_ptr,
 }
 
 #if defined(CONFIG_NET_6LO_CONTEXT)
-static u8_t *compress_sa_ctx(struct net_ipv6_hdr *ipv6, u8_t *inline_ptr,
-			     struct net_pkt *pkt, u16_t *iphc,
+static uint8_t *compress_sa_ctx(struct net_ipv6_hdr *ipv6, uint8_t *inline_ptr,
+			     struct net_pkt *pkt, uint16_t *iphc,
 			     struct net_6lo_context *src)
 {
 	NET_ASSERT(net_pkt_lladdr_src(pkt)->addr);
@@ -429,8 +429,8 @@ static u8_t *compress_sa_ctx(struct net_ipv6_hdr *ipv6, u8_t *inline_ptr,
 
 		*iphc |= NET_6LO_IPHC_SAM_10;
 
-		inline_ptr -= sizeof(u16_t);
-		memmove(inline_ptr, &ipv6->src.s6_addr[14], sizeof(u16_t));
+		inline_ptr -= sizeof(uint16_t);
+		memmove(inline_ptr, &ipv6->src.s6_addr[14], sizeof(uint16_t));
 		return inline_ptr;
 	}
 
@@ -447,8 +447,8 @@ static u8_t *compress_sa_ctx(struct net_ipv6_hdr *ipv6, u8_t *inline_ptr,
 #endif
 
 /* Helpers to compress Destination Address */
-static u8_t *compress_da_mcast(struct net_ipv6_hdr *ipv6, u8_t *inline_ptr,
-			       u16_t *iphc)
+static uint8_t *compress_da_mcast(struct net_ipv6_hdr *ipv6, uint8_t *inline_ptr,
+			       uint16_t *iphc)
 {
 	*iphc |= NET_6LO_IPHC_M_1;
 
@@ -460,8 +460,8 @@ static u8_t *compress_da_mcast(struct net_ipv6_hdr *ipv6, u8_t *inline_ptr,
 		/* last byte */
 		*iphc |= NET_6LO_IPHC_DAM_11;
 
-		inline_ptr -= sizeof(u8_t);
-		memmove(inline_ptr, &ipv6->dst.s6_addr[15], sizeof(u8_t));
+		inline_ptr -= sizeof(uint8_t);
+		memmove(inline_ptr, &ipv6->dst.s6_addr[15], sizeof(uint8_t));
 
 		return inline_ptr;
 	}
@@ -475,8 +475,8 @@ static u8_t *compress_da_mcast(struct net_ipv6_hdr *ipv6, u8_t *inline_ptr,
 		inline_ptr -= 3U;
 		memmove(inline_ptr, &ipv6->dst.s6_addr[13], 3U);
 
-		inline_ptr -= sizeof(u8_t);
-		memmove(inline_ptr, &ipv6->dst.s6_addr[1], sizeof(u8_t));
+		inline_ptr -= sizeof(uint8_t);
+		memmove(inline_ptr, &ipv6->dst.s6_addr[1], sizeof(uint8_t));
 
 		return inline_ptr;
 	}
@@ -490,8 +490,8 @@ static u8_t *compress_da_mcast(struct net_ipv6_hdr *ipv6, u8_t *inline_ptr,
 		inline_ptr -= 5U;
 		memmove(inline_ptr, &ipv6->dst.s6_addr[11], 5U);
 
-		inline_ptr -= sizeof(u8_t);
-		memmove(inline_ptr, &ipv6->dst.s6_addr[1], sizeof(u8_t));
+		inline_ptr -= sizeof(uint8_t);
+		memmove(inline_ptr, &ipv6->dst.s6_addr[1], sizeof(uint8_t));
 
 		return inline_ptr;
 	}
@@ -505,8 +505,8 @@ static u8_t *compress_da_mcast(struct net_ipv6_hdr *ipv6, u8_t *inline_ptr,
 	return inline_ptr;
 }
 
-static u8_t *compress_da(struct net_ipv6_hdr *ipv6, struct net_pkt *pkt,
-			 u8_t *inline_ptr, u16_t *iphc)
+static uint8_t *compress_da(struct net_ipv6_hdr *ipv6, struct net_pkt *pkt,
+			 uint8_t *inline_ptr, uint16_t *iphc)
 {
 	NET_ASSERT(net_pkt_lladdr_dst(pkt)->addr);
 	/* Address is fully elided */
@@ -523,8 +523,8 @@ static u8_t *compress_da(struct net_ipv6_hdr *ipv6, struct net_pkt *pkt,
 
 		*iphc |= NET_6LO_IPHC_DAM_10;
 
-		inline_ptr -= sizeof(u16_t);
-		memmove(inline_ptr, &ipv6->dst.s6_addr[14], sizeof(u16_t));
+		inline_ptr -= sizeof(uint16_t);
+		memmove(inline_ptr, &ipv6->dst.s6_addr[14], sizeof(uint16_t));
 		return inline_ptr;
 	}
 
@@ -539,8 +539,8 @@ static u8_t *compress_da(struct net_ipv6_hdr *ipv6, struct net_pkt *pkt,
 	return inline_ptr;
 }
 
-static u8_t *set_da_inline(struct net_ipv6_hdr *ipv6, u8_t *inline_ptr,
-			   u16_t *iphc)
+static uint8_t *set_da_inline(struct net_ipv6_hdr *ipv6, uint8_t *inline_ptr,
+			   uint16_t *iphc)
 {
 	*iphc |= NET_6LO_IPHC_DAM_00;
 	inline_ptr -= 16U;
@@ -549,8 +549,8 @@ static u8_t *set_da_inline(struct net_ipv6_hdr *ipv6, u8_t *inline_ptr,
 }
 
 #if defined(CONFIG_NET_6LO_CONTEXT)
-static u8_t *compress_da_ctx(struct net_ipv6_hdr *ipv6, u8_t *inline_ptr,
-			     struct net_pkt *pkt, u16_t *iphc,
+static uint8_t *compress_da_ctx(struct net_ipv6_hdr *ipv6, uint8_t *inline_ptr,
+			     struct net_pkt *pkt, uint16_t *iphc,
 			     struct net_6lo_context *dst)
 {
 	*iphc |= NET_6LO_IPHC_DAC_1;
@@ -567,8 +567,8 @@ static u8_t *compress_da_ctx(struct net_ipv6_hdr *ipv6, u8_t *inline_ptr,
 		NET_DBG("DAM_10 dst addr 16 bit compressible");
 
 		*iphc |= NET_6LO_IPHC_DAM_10;
-		inline_ptr -= sizeof(u16_t);
-		memmove(inline_ptr, &ipv6->dst.s6_addr[14], sizeof(u16_t));
+		inline_ptr -= sizeof(uint16_t);
+		memmove(inline_ptr, &ipv6->dst.s6_addr[14], sizeof(uint16_t));
 		return inline_ptr;
 	}
 
@@ -585,12 +585,12 @@ static u8_t *compress_da_ctx(struct net_ipv6_hdr *ipv6, u8_t *inline_ptr,
 #endif
 
 /* Helper to compress Next header UDP */
-static inline u8_t *compress_nh_udp(struct net_udp_hdr *udp, u8_t *inline_ptr,
+static inline uint8_t *compress_nh_udp(struct net_udp_hdr *udp, uint8_t *inline_ptr,
 				    bool compress_checksum)
 {
-	u8_t nhc = NET_6LO_NHC_UDP_BARE;
-	u8_t *inline_ptr_udp = inline_ptr;
-	u8_t tmp;
+	uint8_t nhc = NET_6LO_NHC_UDP_BARE;
+	uint8_t *inline_ptr_udp = inline_ptr;
+	uint8_t tmp;
 
 	/* 4.3.3 UDP LOWPAN_NHC Format
 	 *   0   1   2   3   4   5   6   7
@@ -627,10 +627,10 @@ static inline u8_t *compress_nh_udp(struct net_udp_hdr *udp, u8_t *inline_ptr,
 		  */
 		nhc |= NET_6LO_NHC_UDP_PORT_11;
 
-		tmp = (u8_t)(htons(udp->src_port));
+		tmp = (uint8_t)(htons(udp->src_port));
 		tmp = tmp << 4;
 
-		tmp |= (((u8_t)(htons(udp->dst_port))) & 0x0F);
+		tmp |= (((uint8_t)(htons(udp->dst_port))) & 0x0F);
 		inline_ptr_udp -= sizeof(tmp);
 		*inline_ptr_udp = tmp;
 
@@ -643,8 +643,8 @@ static inline u8_t *compress_nh_udp(struct net_udp_hdr *udp, u8_t *inline_ptr,
 		 */
 		nhc |= NET_6LO_NHC_UDP_PORT_01;
 
-		inline_ptr_udp -= sizeof(u8_t);
-		*inline_ptr_udp = (u8_t)(htons(udp->dst_port));
+		inline_ptr_udp -= sizeof(uint8_t);
+		*inline_ptr_udp = (uint8_t)(htons(udp->dst_port));
 
 		inline_ptr_udp -= sizeof(udp->src_port);
 		memmove(inline_ptr_udp, &udp->src_port, sizeof(udp->src_port));
@@ -661,8 +661,8 @@ static inline u8_t *compress_nh_udp(struct net_udp_hdr *udp, u8_t *inline_ptr,
 		inline_ptr_udp -= sizeof(udp->dst_port);
 		memmove(inline_ptr_udp, &udp->dst_port, sizeof(udp->dst_port));
 
-		inline_ptr_udp -= sizeof(u8_t);
-		*inline_ptr_udp = (u8_t)(htons(udp->src_port));
+		inline_ptr_udp -= sizeof(uint8_t);
+		*inline_ptr_udp = (uint8_t)(htons(udp->src_port));
 
 	} else {
 		NET_DBG("Can not compress ports, ports are inlined");
@@ -724,11 +724,11 @@ static inline int compress_IPHC_header(struct net_pkt *pkt)
 	struct net_6lo_context *src_ctx = NULL;
 	struct net_6lo_context *dst_ctx = NULL;
 #endif
-	u8_t compressed = 0;
-	u16_t iphc = (NET_6LO_DISPATCH_IPHC << 8);
+	uint8_t compressed = 0;
+	uint16_t iphc = (NET_6LO_DISPATCH_IPHC << 8);
 	struct net_ipv6_hdr *ipv6 = NET_IPV6_HDR(pkt);
 	struct net_udp_hdr *udp;
-	u8_t *inline_pos;
+	uint8_t *inline_pos;
 
 	if (pkt->frags->len < NET_IPV6H_LEN) {
 		NET_ERR("Invalid length %d, min %d",
@@ -806,7 +806,7 @@ sa_end:
 
 #if defined(CONFIG_NET_6LO_CONTEXT)
 	if (iphc & NET_6LO_IPHC_CID_1) {
-		inline_pos -= sizeof(u8_t);
+		inline_pos -= sizeof(uint8_t);
 		*inline_pos = 0;
 
 		if (src_ctx) {
@@ -831,10 +831,10 @@ sa_end:
 }
 
 /* Helper to uncompress Traffic class and Flow label */
-static inline u8_t *uncompress_tfl(u16_t iphc, u8_t *cursor,
+static inline uint8_t *uncompress_tfl(uint16_t iphc, uint8_t *cursor,
 				  struct net_ipv6_hdr *ipv6)
 {
-	u8_t tcl;
+	uint8_t tcl;
 
 	/* Uncompress tcl and flow label */
 	switch (iphc & NET_6LO_IPHC_TF_11) {
@@ -888,7 +888,7 @@ static inline u8_t *uncompress_tfl(u16_t iphc, u8_t *cursor,
 }
 
 /* Helper to uncompress Hoplimit */
-static inline u8_t *uncompress_hoplimit(u16_t iphc, u8_t *cursor,
+static inline uint8_t *uncompress_hoplimit(uint16_t iphc, uint8_t *cursor,
 				       struct net_ipv6_hdr *ipv6)
 {
 	switch (iphc & NET_6LO_IPHC_HLIM_MASK) {
@@ -915,7 +915,7 @@ static inline u8_t *uncompress_hoplimit(u16_t iphc, u8_t *cursor,
 }
 
 /* Helper to uncompress Source Address */
-static inline u8_t *uncompress_sa(u16_t iphc, u8_t *cursor,
+static inline uint8_t *uncompress_sa(uint16_t iphc, uint8_t *cursor,
 				 struct net_ipv6_hdr *ipv6,
 				 struct net_pkt *pkt)
 {
@@ -970,7 +970,7 @@ static inline u8_t *uncompress_sa(u16_t iphc, u8_t *cursor,
 }
 
 #if defined(CONFIG_NET_6LO_CONTEXT)
-static inline u8_t *uncompress_sa_ctx(u16_t iphc, u8_t *cursor,
+static inline uint8_t *uncompress_sa_ctx(uint16_t iphc, uint8_t *cursor,
 				     struct net_ipv6_hdr *ipv6,
 				     struct net_6lo_context *ctx,
 				     struct net_pkt *pkt)
@@ -1026,7 +1026,7 @@ static inline u8_t *uncompress_sa_ctx(u16_t iphc, u8_t *cursor,
 #endif
 
 /* Helpers to uncompress Destination Address */
-static inline u8_t *uncompress_da_mcast(u16_t iphc, u8_t *cursor,
+static inline uint8_t *uncompress_da_mcast(uint16_t iphc, uint8_t *cursor,
 				       struct net_ipv6_hdr *ipv6)
 {
 	NET_DBG("Dst is multicast");
@@ -1104,7 +1104,7 @@ static inline u8_t *uncompress_da_mcast(u16_t iphc, u8_t *cursor,
 }
 
 /* Helper to uncompress Destination Address */
-static inline u8_t *uncompress_da(u16_t iphc, u8_t *cursor,
+static inline uint8_t *uncompress_da(uint16_t iphc, uint8_t *cursor,
 				 struct net_ipv6_hdr *ipv6,
 				 struct net_pkt *pkt)
 {
@@ -1161,7 +1161,7 @@ static inline u8_t *uncompress_da(u16_t iphc, u8_t *cursor,
 }
 
 #if defined(CONFIG_NET_6LO_CONTEXT)
-static inline u8_t *uncompress_da_ctx(u16_t iphc, u8_t *cursor,
+static inline uint8_t *uncompress_da_ctx(uint16_t iphc, uint8_t *cursor,
 				     struct net_ipv6_hdr *ipv6,
 				     struct net_6lo_context *ctx,
 				     struct net_pkt *pkt)
@@ -1220,7 +1220,7 @@ static inline u8_t *uncompress_da_ctx(u16_t iphc, u8_t *cursor,
 #endif
 
 /* Helper to uncompress NH UDP */
-static u8_t *uncompress_nh_udp(u8_t nhc, u8_t *cursor,
+static uint8_t *uncompress_nh_udp(uint8_t nhc, uint8_t *cursor,
 				      struct net_udp_hdr *udp)
 {
 
@@ -1247,7 +1247,7 @@ static u8_t *uncompress_nh_udp(u8_t nhc, u8_t *cursor,
 
 		memmove(&udp->src_port, cursor, sizeof(udp->src_port));
 		cursor += sizeof(udp->src_port);
-		udp->dst_port = htons(((u16_t)NET_6LO_NHC_UDP_8_BIT_PORT << 8) |
+		udp->dst_port = htons(((uint16_t)NET_6LO_NHC_UDP_8_BIT_PORT << 8) |
 				*cursor);
 		cursor++;
 
@@ -1255,7 +1255,7 @@ static u8_t *uncompress_nh_udp(u8_t nhc, u8_t *cursor,
 	case NET_6LO_NHC_UDP_PORT_10:
 		NET_DBG("src 8 bits, dst full inlined");
 
-		udp->src_port = htons(((u16_t)NET_6LO_NHC_UDP_8_BIT_PORT << 8) |
+		udp->src_port = htons(((uint16_t)NET_6LO_NHC_UDP_8_BIT_PORT << 8) |
 				*cursor);
 		cursor++;
 		memmove(&udp->dst_port, cursor, sizeof(udp->dst_port));
@@ -1285,11 +1285,11 @@ static u8_t *uncompress_nh_udp(u8_t nhc, u8_t *cursor,
 
 #if defined(CONFIG_NET_6LO_CONTEXT)
 /* Helper function to uncompress src and dst contexts */
-static inline void uncompress_cid(struct net_pkt *pkt, u8_t cid,
+static inline void uncompress_cid(struct net_pkt *pkt, uint8_t cid,
 				  struct net_6lo_context **src,
 				  struct net_6lo_context **dst)
 {
-	u8_t cid_tmp;
+	uint8_t cid_tmp;
 
 	/* Extract source and destination Context Index,
 	 * Either src or dest address is context based or both.
@@ -1312,20 +1312,20 @@ static bool uncompress_IPHC_header(struct net_pkt *pkt)
 {
 	struct net_udp_hdr *udp = NULL;
 	struct net_buf *frag = NULL;
-	u8_t nhc = 0;
+	uint8_t nhc = 0;
 	int nhc_inline_size = 0;
 	struct net_ipv6_hdr *ipv6;
-	u16_t len;
-	u16_t iphc;
+	uint16_t len;
+	uint16_t iphc;
 	int inline_size, compressed_hdr_size;
 	size_t diff;
-	u8_t *cursor;
+	uint8_t *cursor;
 #if defined(CONFIG_NET_6LO_CONTEXT)
 	struct net_6lo_context *src = NULL;
 	struct net_6lo_context *dst = NULL;
 #endif
 
-	iphc = ntohs(UNALIGNED_GET((u16_t *)pkt->buffer->data));
+	iphc = ntohs(UNALIGNED_GET((uint16_t *)pkt->buffer->data));
 
 	inline_size = get_ihpc_inlined_size(iphc);
 	if (inline_size < 0) {
@@ -1343,8 +1343,8 @@ static bool uncompress_IPHC_header(struct net_pkt *pkt)
 		}
 
 		nhc_inline_size = get_udp_nhc_inlined_size(nhc);
-		compressed_hdr_size += sizeof(u8_t) + nhc_inline_size;
-		diff += sizeof(struct net_udp_hdr) - sizeof(u8_t) -
+		compressed_hdr_size += sizeof(uint8_t) + nhc_inline_size;
+		diff += sizeof(struct net_udp_hdr) - sizeof(uint8_t) -
 			nhc_inline_size;
 	}
 
@@ -1555,8 +1555,8 @@ bool net_6lo_uncompress(struct net_pkt *pkt)
 int net_6lo_uncompress_hdr_diff(struct net_pkt *pkt)
 {
 	int inline_size, compressed_hdr_size, nhc_inline_size, diff;
-	u16_t iphc;
-	u8_t nhc;
+	uint16_t iphc;
+	uint8_t nhc;
 
 	if (pkt->frags->data[0] == NET_6LO_DISPATCH_IPV6) {
 		return -1;
@@ -1567,7 +1567,7 @@ int net_6lo_uncompress_hdr_diff(struct net_pkt *pkt)
 		return 0;
 	}
 
-	iphc = ntohs(UNALIGNED_GET((u16_t *)pkt->buffer->data));
+	iphc = ntohs(UNALIGNED_GET((uint16_t *)pkt->buffer->data));
 
 	inline_size = get_ihpc_inlined_size(iphc);
 	if (inline_size < 0) {
@@ -1585,8 +1585,8 @@ int net_6lo_uncompress_hdr_diff(struct net_pkt *pkt)
 		}
 
 		nhc_inline_size = get_udp_nhc_inlined_size(nhc);
-		compressed_hdr_size += sizeof(u8_t) + nhc_inline_size;
-		diff += sizeof(struct net_udp_hdr) - sizeof(u8_t) -
+		compressed_hdr_size += sizeof(uint8_t) + nhc_inline_size;
+		diff += sizeof(struct net_udp_hdr) - sizeof(uint8_t) -
 			nhc_inline_size;
 	}
 

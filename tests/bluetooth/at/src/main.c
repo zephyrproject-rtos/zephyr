@@ -23,7 +23,7 @@ static const char example_data[] = "\r\n+ABCD:999\r\n";
 
 int at_handle(struct at_client *hf_at)
 {
-	u32_t val;
+	uint32_t val;
 
 	zassert_equal(at_get_number(hf_at, &val), 0, "Error getting value");
 

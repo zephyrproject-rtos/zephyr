@@ -487,10 +487,10 @@ static void gptp_init_port_ds(int port)
 	port_ds->compute_neighbor_prop_delay = true;
 
 	/* Random Sequence Numbers. */
-	port_ds->sync_seq_id = (u16_t)sys_rand32_get();
-	port_ds->pdelay_req_seq_id = (u16_t)sys_rand32_get();
-	port_ds->announce_seq_id = (u16_t)sys_rand32_get();
-	port_ds->signaling_seq_id = (u16_t)sys_rand32_get();
+	port_ds->sync_seq_id = (uint16_t)sys_rand32_get();
+	port_ds->pdelay_req_seq_id = (uint16_t)sys_rand32_get();
+	port_ds->announce_seq_id = (uint16_t)sys_rand32_get();
+	port_ds->signaling_seq_id = (uint16_t)sys_rand32_get();
 
 #if defined(CONFIG_NET_GPTP_STATISTICS)
 	/* Initialize stats data set. */
@@ -592,8 +592,8 @@ static void gptp_add_port(struct net_if *iface, void *user_data)
 }
 
 void gptp_set_time_itv(struct gptp_uscaled_ns *interval,
-		       u16_t seconds,
-		       s8_t log_msg_interval)
+		       uint16_t seconds,
+		       int8_t log_msg_interval)
 {
 	int i;
 
@@ -618,7 +618,7 @@ void gptp_set_time_itv(struct gptp_uscaled_ns *interval,
 	/* NSEC_PER_SEC is between 2^30 and 2^31, seconds is less thant 2^16,
 	 * thus the computation will be less than 2^63.
 	 */
-	interval->low =	(seconds * (u64_t)NSEC_PER_SEC) << 16;
+	interval->low =	(seconds * (uint64_t)NSEC_PER_SEC) << 16;
 
 	if (log_msg_interval <= 0) {
 		interval->low >>= -log_msg_interval;
@@ -651,9 +651,9 @@ void gptp_set_time_itv(struct gptp_uscaled_ns *interval,
 	}
 }
 
-s32_t gptp_uscaled_ns_to_timer_ms(struct gptp_uscaled_ns *usns)
+int32_t gptp_uscaled_ns_to_timer_ms(struct gptp_uscaled_ns *usns)
 {
-	u64_t tmp;
+	uint64_t tmp;
 
 	if (usns->high) {
 		/* Do not calculate, it reaches max value. */
@@ -674,10 +674,10 @@ s32_t gptp_uscaled_ns_to_timer_ms(struct gptp_uscaled_ns *usns)
 
 }
 
-static s32_t timer_get_remaining_and_stop(struct k_timer *timer)
+static int32_t timer_get_remaining_and_stop(struct k_timer *timer)
 {
 	unsigned int key;
-	s32_t timer_value;
+	int32_t timer_value;
 
 	key = irq_lock();
 	timer_value = k_timer_remaining_get(timer);
@@ -689,11 +689,11 @@ static s32_t timer_get_remaining_and_stop(struct k_timer *timer)
 	return timer_value;
 }
 
-static s32_t update_itv(struct gptp_uscaled_ns *itv,
-			 s8_t *cur_log_itv,
-			 s8_t *ini_log_itv,
-			 s8_t new_log_itv,
-			 s8_t correction_log_itv)
+static int32_t update_itv(struct gptp_uscaled_ns *itv,
+			 int8_t *cur_log_itv,
+			 int8_t *ini_log_itv,
+			 int8_t new_log_itv,
+			 int8_t correction_log_itv)
 {
 	switch (new_log_itv) {
 	case GPTP_ITV_KEEP:
@@ -712,10 +712,10 @@ static s32_t update_itv(struct gptp_uscaled_ns *itv,
 	return gptp_uscaled_ns_to_timer_ms(itv);
 }
 
-void gptp_update_pdelay_req_interval(int port, s8_t log_val)
+void gptp_update_pdelay_req_interval(int port, int8_t log_val)
 {
-	s32_t remaining;
-	s32_t new_itv, old_itv;
+	int32_t remaining;
+	int32_t new_itv, old_itv;
 	struct gptp_pdelay_req_state *state_pdelay;
 	struct gptp_port_ds *port_ds;
 
@@ -738,13 +738,13 @@ void gptp_update_pdelay_req_interval(int port, s8_t log_val)
 	k_timer_start(&state_pdelay->pdelay_timer, K_MSEC(new_itv), K_NO_WAIT);
 }
 
-void gptp_update_sync_interval(int port, s8_t log_val)
+void gptp_update_sync_interval(int port, int8_t log_val)
 {
 	struct gptp_pss_send_state *state_pss_send;
 	struct gptp_port_ds *port_ds;
-	s32_t new_itv, old_itv, period;
-	s32_t remaining;
-	u32_t time_spent;
+	int32_t new_itv, old_itv, period;
+	int32_t remaining;
+	uint32_t time_spent;
 
 	port_ds = GPTP_PORT_DS(port);
 	state_pss_send = &GPTP_PORT_STATE(port)->pss_send;
@@ -789,10 +789,10 @@ void gptp_update_sync_interval(int port, s8_t log_val)
 		      K_MSEC(period));
 }
 
-void gptp_update_announce_interval(int port, s8_t log_val)
+void gptp_update_announce_interval(int port, int8_t log_val)
 {
-	s32_t remaining;
-	s32_t new_itv, old_itv;
+	int32_t remaining;
+	int32_t new_itv, old_itv;
 	struct gptp_port_announce_transmit_state *state_ann;
 	struct gptp_port_bmca_data *bmca_data;
 	struct gptp_port_ds *port_ds;
@@ -968,10 +968,10 @@ static void vlan_disabled(struct k_work *work)
 }
 
 static void vlan_event_handler(struct net_mgmt_event_callback *cb,
-			       u32_t mgmt_event,
+			       uint32_t mgmt_event,
 			       struct net_if *iface)
 {
-	u16_t tag;
+	uint16_t tag;
 
 	if (mgmt_event != NET_EVENT_ETHERNET_VLAN_TAG_ENABLED &&
 	    mgmt_event != NET_EVENT_ETHERNET_VLAN_TAG_DISABLED) {
@@ -983,7 +983,7 @@ static void vlan_event_handler(struct net_mgmt_event_callback *cb,
 		return;
 	}
 
-	tag = *((u16_t *)cb->info);
+	tag = *((uint16_t *)cb->info);
 	if (tag != CONFIG_NET_GPTP_VLAN_TAG) {
 		return;
 	}

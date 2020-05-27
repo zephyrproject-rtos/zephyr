@@ -30,12 +30,12 @@ LOG_MODULE_REGISTER(grove_light, CONFIG_SENSOR_LOG_LEVEL);
 struct gls_data {
 	struct device *adc;
 	struct adc_channel_cfg ch_cfg;
-	u16_t raw;
+	uint16_t raw;
 };
 
 struct gls_config {
 	const char *adc_label;
-	u8_t adc_channel;
+	uint8_t adc_channel;
 };
 
 static struct adc_sequence_options options = {
@@ -59,7 +59,7 @@ static int gls_channel_get(struct device *dev,
 			   struct sensor_value *val)
 {
 	struct gls_data *drv_data = dev->driver_data;
-	u16_t analog_val = drv_data->raw;
+	uint16_t analog_val = drv_data->raw;
 	double ldr_val, dval;
 
 	/*
@@ -70,8 +70,8 @@ static int gls_channel_get(struct device *dev,
 	ldr_val = (BIT(GROVE_RESOLUTION) - 1.0 - analog_val) * 10.0 / analog_val;
 	dval = 10000.0 / pow(ldr_val * 15.0, 4.0/3.0);
 
-	val->val1 = (s32_t)dval;
-	val->val2 = ((s32_t)(dval * 1000000)) % 1000000;
+	val->val1 = (int32_t)dval;
+	val->val2 = ((int32_t)(dval * 1000000)) % 1000000;
 
 	return 0;
 }

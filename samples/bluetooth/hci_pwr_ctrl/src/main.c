@@ -22,7 +22,7 @@
 #include <bluetooth/services/hrs.h>
 
 static struct bt_conn *default_conn;
-static u16_t default_conn_handle;
+static uint16_t default_conn_handle;
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -36,13 +36,13 @@ static const struct bt_data ad[] = {
 static struct k_thread pwr_thread_data;
 static K_THREAD_STACK_DEFINE(pwr_thread_stack, 320);
 
-static const s8_t txp[DEVICE_BEACON_TXPOWER_NUM] = {4, 0, -3, -8,
+static const int8_t txp[DEVICE_BEACON_TXPOWER_NUM] = {4, 0, -3, -8,
 						    -15, -18, -23, -30};
 static const struct bt_le_adv_param *param =
 	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_USE_NAME,
 			0x0020, 0x0020, NULL);
 
-static void read_conn_rssi(u16_t handle, s8_t *rssi)
+static void read_conn_rssi(uint16_t handle, int8_t *rssi)
 {
 	struct net_buf *buf, *rsp = NULL;
 	struct bt_hci_cp_read_rssi *cp;
@@ -61,7 +61,7 @@ static void read_conn_rssi(u16_t handle, s8_t *rssi)
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_RSSI, buf, &rsp);
 	if (err) {
-		u8_t reason = rsp ?
+		uint8_t reason = rsp ?
 			((struct bt_hci_rp_read_rssi *)rsp->data)->status : 0;
 		printk("Read RSSI err: %d reason 0x%02x\n", err, reason);
 		return;
@@ -74,7 +74,7 @@ static void read_conn_rssi(u16_t handle, s8_t *rssi)
 }
 
 
-static void set_tx_power(u8_t handle_type, u16_t handle, s8_t tx_pwr_lvl)
+static void set_tx_power(uint8_t handle_type, uint16_t handle, int8_t tx_pwr_lvl)
 {
 	struct bt_hci_cp_vs_write_tx_power_level *cp;
 	struct bt_hci_rp_vs_write_tx_power_level *rp;
@@ -96,7 +96,7 @@ static void set_tx_power(u8_t handle_type, u16_t handle, s8_t tx_pwr_lvl)
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_WRITE_TX_POWER_LEVEL,
 				   buf, &rsp);
 	if (err) {
-		u8_t reason = rsp ?
+		uint8_t reason = rsp ?
 			((struct bt_hci_rp_vs_write_tx_power_level *)
 			  rsp->data)->status : 0;
 		printk("Set Tx power err: %d reason 0x%02x\n", err, reason);
@@ -109,7 +109,7 @@ static void set_tx_power(u8_t handle_type, u16_t handle, s8_t tx_pwr_lvl)
 	net_buf_unref(rsp);
 }
 
-static void get_tx_power(u8_t handle_type, u16_t handle, s8_t *tx_pwr_lvl)
+static void get_tx_power(uint8_t handle_type, uint16_t handle, int8_t *tx_pwr_lvl)
 {
 	struct bt_hci_cp_vs_read_tx_power_level *cp;
 	struct bt_hci_rp_vs_read_tx_power_level *rp;
@@ -131,7 +131,7 @@ static void get_tx_power(u8_t handle_type, u16_t handle, s8_t *tx_pwr_lvl)
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_READ_TX_POWER_LEVEL,
 				   buf, &rsp);
 	if (err) {
-		u8_t reason = rsp ?
+		uint8_t reason = rsp ?
 			((struct bt_hci_rp_vs_read_tx_power_level *)
 			  rsp->data)->status : 0;
 		printk("Read Tx power err: %d reason 0x%02x\n", err, reason);
@@ -144,10 +144,10 @@ static void get_tx_power(u8_t handle_type, u16_t handle, s8_t *tx_pwr_lvl)
 	net_buf_unref(rsp);
 }
 
-static void connected(struct bt_conn *conn, u8_t err)
+static void connected(struct bt_conn *conn, uint8_t err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
-	s8_t txp;
+	int8_t txp;
 	int ret;
 
 	if (err) {
@@ -180,7 +180,7 @@ static void connected(struct bt_conn *conn, u8_t err)
 	}
 }
 
-static void disconnected(struct bt_conn *conn, u8_t reason)
+static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	printk("Disconnected (reason 0x%02x)\n", reason);
 
@@ -217,7 +217,7 @@ static void bt_ready(int err)
 
 static void hrs_notify(void)
 {
-	static u8_t heartrate = 90U;
+	static uint8_t heartrate = 90U;
 
 	/* Heartrate measurements simulation */
 	heartrate++;
@@ -230,8 +230,8 @@ static void hrs_notify(void)
 
 void modulate_tx_power(void *p1, void *p2, void *p3)
 {
-	s8_t txp_get = 0;
-	u8_t idx = 0;
+	int8_t txp_get = 0;
+	uint8_t idx = 0;
 
 	while (1) {
 		if (!default_conn) {
@@ -248,8 +248,8 @@ void modulate_tx_power(void *p1, void *p2, void *p3)
 
 			idx = (idx+1) % DEVICE_BEACON_TXPOWER_NUM;
 		} else {
-			s8_t rssi = 0xFF;
-			s8_t txp_adaptive;
+			int8_t rssi = 0xFF;
+			int8_t txp_adaptive;
 
 			idx = 0;
 
@@ -279,7 +279,7 @@ void modulate_tx_power(void *p1, void *p2, void *p3)
 
 void main(void)
 {
-	s8_t txp_get = 0xFF;
+	int8_t txp_get = 0xFF;
 	int err;
 
 	default_conn = NULL;

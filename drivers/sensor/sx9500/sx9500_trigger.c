@@ -65,7 +65,7 @@ int sx9500_trigger_set(struct device *dev,
 #ifdef CONFIG_SX9500_TRIGGER_OWN_THREAD
 
 static void sx9500_gpio_cb(struct device *port,
-			   struct gpio_callback *cb, u32_t pins)
+			   struct gpio_callback *cb, uint32_t pins)
 {
 	struct sx9500_data *data =
 		CONTAINER_OF(cb, struct sx9500_data, gpio_cb);
@@ -79,7 +79,7 @@ static void sx9500_thread_main(int arg1, int unused)
 {
 	struct device *dev = INT_TO_POINTER(arg1);
 	struct sx9500_data *data = dev->driver_data;
-	u8_t reg_val;
+	uint8_t reg_val;
 
 	ARG_UNUSED(unused);
 
@@ -105,7 +105,7 @@ static void sx9500_thread_main(int arg1, int unused)
 #else /* CONFIG_SX9500_TRIGGER_GLOBAL_THREAD */
 
 static void sx9500_gpio_cb(struct device *port,
-			   struct gpio_callback *cb, u32_t pins)
+			   struct gpio_callback *cb, uint32_t pins)
 {
 	struct sx9500_data *data =
 		CONTAINER_OF(cb, struct sx9500_data, gpio_cb);
@@ -119,7 +119,7 @@ static void sx9500_gpio_thread_cb(void *arg)
 {
 	struct device *dev = arg;
 	struct sx9500_data *data = dev->driver_data;
-	u8_t reg_val;
+	uint8_t reg_val;
 
 	if (i2c_reg_read_byte(data->i2c_master, data->i2c_slave_addr,
 			      SX9500_REG_IRQ_SRC, &reg_val) < 0) {

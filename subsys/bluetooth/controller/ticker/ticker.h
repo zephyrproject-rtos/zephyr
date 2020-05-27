@@ -24,7 +24,7 @@
  *
  * @{
  */
-#define TICKER_NULL             ((u8_t)((u8_t)0 - 1))
+#define TICKER_NULL             ((uint8_t)((uint8_t)0 - 1))
 #define TICKER_NULL_REMAINDER   0
 #define TICKER_NULL_PERIOD      0
 #define TICKER_NULL_SLOT        0
@@ -75,28 +75,28 @@
  */
 #define TICKER_PRIORITY_CRITICAL -128
 
-typedef u8_t (*ticker_caller_id_get_cb_t)(u8_t user_id);
-typedef void (*ticker_sched_cb_t)(u8_t caller_id, u8_t callee_id, u8_t chain,
+typedef uint8_t (*ticker_caller_id_get_cb_t)(uint8_t user_id);
+typedef void (*ticker_sched_cb_t)(uint8_t caller_id, uint8_t callee_id, uint8_t chain,
 				  void *instance);
-typedef void (*ticker_trigger_set_cb_t)(u32_t value);
+typedef void (*ticker_trigger_set_cb_t)(uint32_t value);
 
 /** \brief Timer timeout function type.
  */
-typedef void (*ticker_timeout_func) (u32_t ticks_at_expire, u32_t remainder,
-				     u16_t lazy, void *context);
+typedef void (*ticker_timeout_func) (uint32_t ticks_at_expire, uint32_t remainder,
+				     uint16_t lazy, void *context);
 
 /** \brief Timer operation complete function type.
  */
-typedef void (*ticker_op_func) (u32_t status, void *op_context);
+typedef void (*ticker_op_func) (uint32_t status, void *op_context);
 
 #if defined(CONFIG_BT_TICKER_EXT)
 struct ticker_ext {
-	u32_t ticks_slot_window; /* Window in which the slot
+	uint32_t ticks_slot_window; /* Window in which the slot
 				  * reservation may be re-scheduled
 				  * to avoid collision
 				  */
-	s32_t ticks_drift;	 /* Applied drift since last expiry */
-	u8_t  reschedule_state;	 /* State of re-scheduling of the
+	int32_t ticks_drift;	 /* Applied drift since last expiry */
+	uint8_t  reschedule_state;	 /* State of re-scheduling of the
 				  * node. See defines
 				  * TICKER_RESCHEDULE_STATE_XXX
 				  */
@@ -114,47 +114,47 @@ struct ticker_ext {
  * \param[in]  count_op
  * \param[in]  user_op
  */
-u32_t ticker_init(u8_t instance_index, u8_t count_node, void *node,
-		  u8_t count_user, void *user, u8_t count_op, void *user_op,
+uint32_t ticker_init(uint8_t instance_index, uint8_t count_node, void *node,
+		  uint8_t count_user, void *user, uint8_t count_op, void *user_op,
 		  ticker_caller_id_get_cb_t caller_id_get_cb,
 		  ticker_sched_cb_t sched_cb,
 		  ticker_trigger_set_cb_t trigger_set_cb);
-bool ticker_is_initialized(u8_t instance_index);
-void ticker_trigger(u8_t instance_index);
+bool ticker_is_initialized(uint8_t instance_index);
+void ticker_trigger(uint8_t instance_index);
 void ticker_worker(void *param);
 void ticker_job(void *param);
-u32_t ticker_start(u8_t instance_index, u8_t user_id, u8_t ticker_id,
-		   u32_t ticks_anchor, u32_t ticks_first, u32_t ticks_periodic,
-		   u32_t remainder_periodic, u16_t lazy, u32_t ticks_slot,
+uint32_t ticker_start(uint8_t instance_index, uint8_t user_id, uint8_t ticker_id,
+		   uint32_t ticks_anchor, uint32_t ticks_first, uint32_t ticks_periodic,
+		   uint32_t remainder_periodic, uint16_t lazy, uint32_t ticks_slot,
 		   ticker_timeout_func fp_timeout_func, void *context,
 		   ticker_op_func fp_op_func, void *op_context);
-u32_t ticker_update(u8_t instance_index, u8_t user_id, u8_t ticker_id,
-		    u32_t ticks_drift_plus, u32_t ticks_drift_minus,
-		    u32_t ticks_slot_plus, u32_t ticks_slot_minus, u16_t lazy,
-		    u8_t force, ticker_op_func fp_op_func, void *op_context);
-u32_t ticker_stop(u8_t instance_index, u8_t user_id, u8_t ticker_id,
+uint32_t ticker_update(uint8_t instance_index, uint8_t user_id, uint8_t ticker_id,
+		    uint32_t ticks_drift_plus, uint32_t ticks_drift_minus,
+		    uint32_t ticks_slot_plus, uint32_t ticks_slot_minus, uint16_t lazy,
+		    uint8_t force, ticker_op_func fp_op_func, void *op_context);
+uint32_t ticker_stop(uint8_t instance_index, uint8_t user_id, uint8_t ticker_id,
 		  ticker_op_func fp_op_func, void *op_context);
-u32_t ticker_stop_abs(u8_t instance_index, u8_t user_id, u8_t ticker_id,
-		      u32_t ticks_at_stop, ticker_op_func fp_op_func,
+uint32_t ticker_stop_abs(uint8_t instance_index, uint8_t user_id, uint8_t ticker_id,
+		      uint32_t ticks_at_stop, ticker_op_func fp_op_func,
 		      void *op_context);
-u32_t ticker_next_slot_get(u8_t instance_index, u8_t user_id,
-			   u8_t *ticker_id_head, u32_t *ticks_current,
-			   u32_t *ticks_to_expire,
+uint32_t ticker_next_slot_get(uint8_t instance_index, uint8_t user_id,
+			   uint8_t *ticker_id_head, uint32_t *ticks_current,
+			   uint32_t *ticks_to_expire,
 			   ticker_op_func fp_op_func, void *op_context);
-u32_t ticker_job_idle_get(u8_t instance_index, u8_t user_id,
+uint32_t ticker_job_idle_get(uint8_t instance_index, uint8_t user_id,
 			  ticker_op_func fp_op_func, void *op_context);
-void ticker_job_sched(u8_t instance_index, u8_t user_id);
-u32_t ticker_ticks_now_get(void);
-u32_t ticker_ticks_diff_get(u32_t ticks_now, u32_t ticks_old);
+void ticker_job_sched(uint8_t instance_index, uint8_t user_id);
+uint32_t ticker_ticks_now_get(void);
+uint32_t ticker_ticks_diff_get(uint32_t ticks_now, uint32_t ticks_old);
 #if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
-u32_t ticker_priority_set(u8_t instance_index, u8_t user_id, u8_t ticker_id,
-			  s8_t priority, ticker_op_func fp_op_func,
+uint32_t ticker_priority_set(uint8_t instance_index, uint8_t user_id, uint8_t ticker_id,
+			  int8_t priority, ticker_op_func fp_op_func,
 			  void *op_context);
 #if defined(CONFIG_BT_TICKER_EXT)
-u32_t ticker_start_ext(u8_t instance_index, u8_t user_id, u8_t ticker_id,
-		       u32_t ticks_anchor, u32_t ticks_first,
-		       u32_t ticks_periodic, u32_t remainder_periodic,
-		       u16_t lazy, u32_t ticks_slot,
+uint32_t ticker_start_ext(uint8_t instance_index, uint8_t user_id, uint8_t ticker_id,
+		       uint32_t ticks_anchor, uint32_t ticks_first,
+		       uint32_t ticks_periodic, uint32_t remainder_periodic,
+		       uint16_t lazy, uint32_t ticks_slot,
 		       ticker_timeout_func fp_timeout_func, void *context,
 		       ticker_op_func fp_op_func, void *op_context,
 		       struct ticker_ext *ext_data);

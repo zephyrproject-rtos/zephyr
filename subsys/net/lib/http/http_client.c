@@ -164,7 +164,7 @@ static int on_status(struct http_parser *parser, const char *at, size_t length)
 	struct http_request *req = CONTAINER_OF(parser,
 						struct http_request,
 						internal.parser);
-	u16_t len;
+	uint16_t len;
 
 	len = MIN(length, sizeof(req->internal.response.http_status) - 1);
 	memcpy(req->internal.response.http_status, at, len);
@@ -188,7 +188,7 @@ static int on_header_field(struct http_parser *parser, const char *at,
 						struct http_request,
 						internal.parser);
 	const char *content_len = "Content-Length";
-	u16_t len;
+	uint16_t len;
 
 	len = strlen(content_len);
 	if (length >= len && strncasecmp(at, content_len, len) == 0) {
@@ -263,8 +263,8 @@ static int on_body(struct http_parser *parser, const char *at, size_t length)
 	}
 
 	if (!req->internal.response.body_start &&
-	    (u8_t *)at != (u8_t *)req->internal.response.recv_buf) {
-		req->internal.response.body_start = (u8_t *)at;
+	    (uint8_t *)at != (uint8_t *)req->internal.response.recv_buf) {
+		req->internal.response.body_start = (uint8_t *)at;
 	}
 
 	if (req->internal.response.cb) {
@@ -468,7 +468,7 @@ static void http_timeout(struct k_work *work)
 }
 
 int http_client_req(int sock, struct http_request *req,
-		    s32_t timeout, void *user_data)
+		    int32_t timeout, void *user_data)
 {
 	/* Utilize the network usage by sending data in bigger blocks */
 	char send_buf[MAX_SEND_BUF_LEN];
@@ -605,7 +605,7 @@ int http_client_req(int sock, struct http_request *req,
 
 			total_sent += ret;
 		} else {
-			u32_t length;
+			uint32_t length;
 
 			if (req->payload_len == 0) {
 				length = strlen(req->payload);

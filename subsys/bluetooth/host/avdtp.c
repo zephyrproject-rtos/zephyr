@@ -49,9 +49,9 @@ static struct bt_avdtp_seid_lsep *lseps;
 #define AVDTP_TIMEOUT K_SECONDS(6)
 
 static const struct {
-	u8_t sig_id;
+	uint8_t sig_id;
 	void (*func)(struct bt_avdtp *session, struct net_buf *buf,
-		     u8_t msg_type);
+		     uint8_t msg_type);
 } handler[] = {
 };
 
@@ -80,12 +80,12 @@ static int avdtp_send(struct bt_avdtp *session,
 	return result;
 }
 
-static struct net_buf *avdtp_create_pdu(u8_t msg_type,
-					u8_t pkt_type,
-					u8_t sig_id)
+static struct net_buf *avdtp_create_pdu(uint8_t msg_type,
+					uint8_t pkt_type,
+					uint8_t sig_id)
 {
 	struct net_buf *buf;
-	static u8_t tid;
+	static uint8_t tid;
 	struct bt_avdtp_single_sig_hdr *hdr;
 
 	BT_DBG("");
@@ -138,7 +138,7 @@ void bt_avdtp_l2cap_disconnected(struct bt_l2cap_chan *chan)
 	/* Clear the Pending req if set*/
 }
 
-void bt_avdtp_l2cap_encrypt_changed(struct bt_l2cap_chan *chan, u8_t status)
+void bt_avdtp_l2cap_encrypt_changed(struct bt_l2cap_chan *chan, uint8_t status)
 {
 	BT_DBG("");
 }
@@ -147,7 +147,7 @@ int bt_avdtp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_avdtp_single_sig_hdr *hdr;
 	struct bt_avdtp *session = AVDTP_CHAN(chan);
-	u8_t i, msgtype, sigid, tid;
+	uint8_t i, msgtype, sigid, tid;
 
 	if (buf->len < sizeof(*hdr)) {
 		BT_ERR("Recvd Wrong AVDTP Header");
@@ -256,12 +256,12 @@ int bt_avdtp_register(struct bt_avdtp_event_cb *cb)
 	return 0;
 }
 
-int bt_avdtp_register_sep(u8_t media_type, u8_t role,
+int bt_avdtp_register_sep(uint8_t media_type, uint8_t role,
 			  struct bt_avdtp_seid_lsep *lsep)
 {
 	BT_DBG("");
 
-	static u8_t bt_avdtp_seid = BT_AVDTP_MIN_SEID;
+	static uint8_t bt_avdtp_seid = BT_AVDTP_MIN_SEID;
 
 	if (!lsep) {
 		return -EIO;

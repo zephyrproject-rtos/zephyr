@@ -152,7 +152,7 @@ struct winc1500_data {
 	struct net_if *iface;
 	unsigned char mac[6];
 	scan_result_cb_t scan_cb;
-	u8_t scan_result;
+	uint8_t scan_result;
 	bool connecting;
 	bool connected;
 };
@@ -166,7 +166,7 @@ static void stack_stats(void)
 	log_stack_usage(&winc1500_thread_data);
 }
 
-static char *socket_error_string(s8_t err)
+static char *socket_error_string(int8_t err)
 {
 	switch (err) {
 	case SOCK_ERR_NO_ERROR:
@@ -225,7 +225,7 @@ static char *socket_error_string(s8_t err)
 	}
 }
 
-static char *wifi_cb_msg_2_str(u8_t message_type)
+static char *wifi_cb_msg_2_str(uint8_t message_type)
 {
 	switch (message_type) {
 	case M2M_WIFI_RESP_CURRENT_RSSI:
@@ -261,7 +261,7 @@ static char *wifi_cb_msg_2_str(u8_t message_type)
 	}
 }
 
-static char *socket_message_to_string(u8_t message)
+static char *socket_message_to_string(uint8_t message)
 {
 	switch (message) {
 	case SOCKET_MSG_BIND:
@@ -383,7 +383,7 @@ static int winc1500_connect(struct net_context *context,
 			    const struct sockaddr *addr,
 			    socklen_t addrlen,
 			    net_context_connect_cb_t cb,
-			    s32_t timeout,
+			    int32_t timeout,
 			    void *user_data)
 {
 	SOCKET socket = (int)context->offload_context;
@@ -414,7 +414,7 @@ static int winc1500_connect(struct net_context *context,
  */
 static int winc1500_accept(struct net_context *context,
 			   net_tcp_accept_cb_t cb,
-			   s32_t timeout,
+			   int32_t timeout,
 			   void *user_data)
 {
 	SOCKET socket = (int)context->offload_context;
@@ -447,7 +447,7 @@ static int winc1500_accept(struct net_context *context,
  */
 static int winc1500_send(struct net_pkt *pkt,
 			 net_context_send_cb_t cb,
-			 s32_t timeout,
+			 int32_t timeout,
 			 void *user_data)
 {
 	struct net_context *context = pkt->context;
@@ -490,7 +490,7 @@ static int winc1500_sendto(struct net_pkt *pkt,
 			   const struct sockaddr *dst_addr,
 			   socklen_t addrlen,
 			   net_context_send_cb_t cb,
-			   s32_t timeout,
+			   int32_t timeout,
 			   void *user_data)
 {
 	struct net_context *context = pkt->context;
@@ -558,7 +558,7 @@ static int prepare_pkt(struct socket_data *sock_data)
  */
 static int winc1500_recv(struct net_context *context,
 			 net_context_recv_cb_t cb,
-			 s32_t timeout,
+			 int32_t timeout,
 			 void *user_data)
 {
 	SOCKET socket = (int) context->offload_context;
@@ -641,9 +641,9 @@ static void handle_wifi_con_state_changed(void *pvMsg)
 
 static void handle_wifi_dhcp_conf(void *pvMsg)
 {
-	u8_t *pu8IPAddress = (u8_t *)pvMsg;
+	uint8_t *pu8IPAddress = (uint8_t *)pvMsg;
 	struct in_addr addr;
-	u8_t i;
+	uint8_t i;
 
 	/* Connected and got IP address*/
 	LOG_DBG("Wi-Fi connected, IP is %u.%u.%u.%u",
@@ -740,7 +740,7 @@ static void handle_scan_done(void *pvMsg)
 	}
 }
 
-static void winc1500_wifi_cb(u8_t message_type, void *pvMsg)
+static void winc1500_wifi_cb(uint8_t message_type, void *pvMsg)
 {
 	LOG_DBG("Msg Type %d %s",
 		message_type, wifi_cb_msg_2_str(message_type));
@@ -977,10 +977,10 @@ static int winc1500_mgmt_scan(struct device *dev, scan_result_cb_t cb)
 static int winc1500_mgmt_connect(struct device *dev,
 				 struct wifi_connect_req_params *params)
 {
-	u8_t ssid[M2M_MAX_SSID_LEN];
+	uint8_t ssid[M2M_MAX_SSID_LEN];
 	tuniM2MWifiAuth psk;
-	u8_t security;
-	u16_t channel;
+	uint8_t security;
+	uint16_t channel;
 	void *auth;
 
 	memcpy(ssid, params->ssid, params->ssid_length);

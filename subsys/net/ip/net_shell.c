@@ -758,9 +758,9 @@ static void print_tc_tx_stats(const struct shell *shell, struct net_if *iface)
 			   GET_STAT(iface, tc.sent[i].priority),
 			   GET_STAT(iface, tc.sent[i].pkts),
 			   GET_STAT(iface, tc.sent[i].bytes),
-			   (u32_t)(GET_STAT(iface,
+			   (uint32_t)(GET_STAT(iface,
 					    tc.sent[i].tx_time.sum) /
-				   (u64_t)count));
+				   (uint64_t)count));
 		}
 	}
 #else
@@ -782,7 +782,7 @@ static void print_tc_tx_stats(const struct shell *shell, struct net_if *iface)
 
 	if (count != 0) {
 		PR("Avg %s net_pkt (%u) time %lu us\n", "TX", count,
-		   (u32_t)(GET_STAT(iface, tx_time.sum) / (u64_t)count));
+		   (uint32_t)(GET_STAT(iface, tx_time.sum) / (uint64_t)count));
 	}
 #else
 	ARG_UNUSED(iface);
@@ -815,9 +815,9 @@ static void print_tc_rx_stats(const struct shell *shell, struct net_if *iface)
 			   GET_STAT(iface, tc.recv[i].priority),
 			   GET_STAT(iface, tc.recv[i].pkts),
 			   GET_STAT(iface, tc.recv[i].bytes),
-			   (u32_t)(GET_STAT(iface,
+			   (uint32_t)(GET_STAT(iface,
 					    tc.recv[i].rx_time.sum) /
-				   (u64_t)count));
+				   (uint64_t)count));
 		}
 	}
 #else
@@ -839,7 +839,7 @@ static void print_tc_rx_stats(const struct shell *shell, struct net_if *iface)
 
 	if (count != 0) {
 		PR("Avg %s net_pkt (%u) time %lu us\n", "RX", count,
-		   (u32_t)(GET_STAT(iface, rx_time.sum) / (u64_t)count));
+		   (uint32_t)(GET_STAT(iface, rx_time.sum) / (uint64_t)count));
 	}
 #else
 	ARG_UNUSED(iface);
@@ -855,7 +855,7 @@ static void print_net_pm_stats(const struct shell *shell, struct net_if *iface)
 	PR("\tLast time     : %u ms\n",
 	   GET_STAT(iface, pm.last_suspend_time));
 	PR("\tAverage time  : %u ms\n",
-	   (u32_t)(GET_STAT(iface, pm.overall_suspend_time) /
+	   (uint32_t)(GET_STAT(iface, pm.overall_suspend_time) /
 		   GET_STAT(iface, pm.suspend_count)));
 	PR("\tTotal time    : %llu ms\n",
 	   GET_STAT(iface, pm.overall_suspend_time));
@@ -963,8 +963,8 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 #if defined(CONFIG_NET_CONTEXT_TIMESTAMP) && defined(CONFIG_NET_NATIVE)
 	if (GET_STAT(iface, tx_time.count) > 0) {
 		PR("Network pkt TX time %lu us\n",
-		   (u32_t)(GET_STAT(iface, tx_time.sum) /
-			   (u64_t)GET_STAT(iface, tx_time.count)));
+		   (uint32_t)(GET_STAT(iface, tx_time.sum) /
+			   (uint64_t)GET_STAT(iface, tx_time.count)));
 	}
 #endif
 
@@ -1152,7 +1152,7 @@ static void tcp_cb(struct net_tcp *tcp, void *user_data)
 	struct net_shell_user_data *data = user_data;
 	const struct shell *shell = data->shell;
 	int *count = data->user_data;
-	u16_t recv_mss = net_tcp_get_recv_mss(tcp);
+	uint16_t recv_mss = net_tcp_get_recv_mss(tcp);
 
 	PR("%p %p   %5u    %5u %10u %10u %5u   %s\n",
 	   tcp, tcp->context,
@@ -1575,7 +1575,7 @@ static void print_dns_info(const struct shell *shell,
 	PR("Pending queries:\n");
 
 	for (i = 0; i < CONFIG_DNS_NUM_CONCUR_QUERIES; i++) {
-		s32_t remaining;
+		int32_t remaining;
 
 		if (!ctx->queries[i].cb) {
 			continue;
@@ -2006,12 +2006,12 @@ static void gptp_print_port_info(const struct shell *shell, int port)
 	   ": %s\n", port_ds->is_measuring_delay ? "yes" : "no");
 	PR("One way propagation time on %s    : %u ns\n",
 	   "the link attached to this port",
-	   (u32_t)port_ds->neighbor_prop_delay);
+	   (uint32_t)port_ds->neighbor_prop_delay);
 	PR("Propagation time threshold for %s : %u ns\n",
 	   "the link attached to this port",
-	   (u32_t)port_ds->neighbor_prop_delay_thresh);
+	   (uint32_t)port_ds->neighbor_prop_delay_thresh);
 	PR("Estimate of the ratio of the frequency with the peer          "
-	   ": %u\n", (u32_t)port_ds->neighbor_rate_ratio);
+	   ": %u\n", (uint32_t)port_ds->neighbor_rate_ratio);
 	PR("Asymmetry on the link relative to the grand master time base  "
 	   ": %lld\n", port_ds->delay_asymmetry);
 	PR("Maximum interval between sync %s                        "
@@ -2406,9 +2406,9 @@ static int cmd_net_iface_down(const struct shell *shell, size_t argc,
 }
 
 #if defined(CONFIG_NET_NATIVE_IPV6)
-static u32_t time_diff(u32_t time1, u32_t time2)
+static uint32_t time_diff(uint32_t time1, uint32_t time2)
 {
-	return (u32_t)abs((s32_t)time1 - (s32_t)time2);
+	return (uint32_t)abs((int32_t)time1 - (int32_t)time2);
 }
 
 static void address_lifetime_cb(struct net_if *iface, void *user_data)
@@ -2435,18 +2435,18 @@ static void address_lifetime_cb(struct net_if *iface, void *user_data)
 	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
 		struct net_if_ipv6_prefix *prefix;
 		char remaining_str[sizeof("01234567890")];
-		u64_t remaining;
-		u8_t prefix_len;
+		uint64_t remaining;
+		uint8_t prefix_len;
 
 		if (!ipv6->unicast[i].is_used ||
 		    ipv6->unicast[i].address.family != AF_INET6) {
 			continue;
 		}
 
-		remaining = (u64_t)ipv6->unicast[i].lifetime.timer_timeout +
-			(u64_t)ipv6->unicast[i].lifetime.wrap_counter *
-			(u64_t)NET_TIMEOUT_MAX_VALUE -
-			(u64_t)time_diff(k_uptime_get_32(),
+		remaining = (uint64_t)ipv6->unicast[i].lifetime.timer_timeout +
+			(uint64_t)ipv6->unicast[i].lifetime.wrap_counter *
+			(uint64_t)NET_TIMEOUT_MAX_VALUE -
+			(uint64_t)time_diff(k_uptime_get_32(),
 				ipv6->unicast[i].lifetime.timer_start);
 
 		prefix = net_if_ipv6_prefix_get(iface,
@@ -2462,7 +2462,7 @@ static void address_lifetime_cb(struct net_if *iface, void *user_data)
 				 "infinite");
 		} else {
 			snprintk(remaining_str, sizeof(remaining_str) - 1,
-				 "%u", (u32_t)(remaining / 1000U));
+				 "%u", (uint32_t)(remaining / 1000U));
 		}
 
 		PR("%s  \t%s\t%s    \t%s/%d\n",
@@ -2769,7 +2769,7 @@ static void nbr_cb(struct net_nbr *nbr, void *user_data)
 	char *state_pad = "";
 	const char *state_str;
 #if defined(CONFIG_NET_IPV6_ND)
-	s64_t remaining;
+	int64_t remaining;
 #endif
 
 #if defined(CONFIG_NET_L2_IEEE802154)
@@ -2876,7 +2876,7 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_pkt *pkt,
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmp_access,
 					      struct net_icmpv6_echo_req);
 	struct net_icmpv6_echo_req *icmp_echo;
-	u32_t cycles;
+	uint32_t cycles;
 
 	icmp_echo = (struct net_icmpv6_echo_req *)net_pkt_get_data(pkt,
 								&icmp_access);
@@ -2910,9 +2910,9 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_pkt *pkt,
 		 net_pkt_ieee802154_rssi(pkt),
 #endif
 #ifdef CONFIG_FPU
-		 ((u32_t)k_cyc_to_ns_floor64(cycles) / 1000000.f));
+		 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000.f));
 #else
-		 ((u32_t)k_cyc_to_ns_floor64(cycles) / 1000000));
+		 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000));
 #endif
 	k_sem_give(&ping_timeout);
 
@@ -2958,7 +2958,7 @@ static int ping_ipv6(const struct shell *shell,
 	PR("PING %s\n", host);
 
 	for (int i = 0; i < count; ++i) {
-		u32_t time_stamp = htonl(k_cycle_get_32());
+		uint32_t time_stamp = htonl(k_cycle_get_32());
 
 		ret = net_icmpv6_send_echo_request(iface,
 						   &ipv6_target,
@@ -3005,7 +3005,7 @@ static enum net_verdict handle_ipv4_echo_reply(struct net_pkt *pkt,
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmp_access,
 					      struct net_icmpv4_echo_req);
-	u32_t cycles;
+	uint32_t cycles;
 	struct net_icmpv4_echo_req *icmp_echo;
 
 	icmp_echo = (struct net_icmpv4_echo_req *)net_pkt_get_data(pkt,
@@ -3034,9 +3034,9 @@ static enum net_verdict handle_ipv4_echo_reply(struct net_pkt *pkt,
 		 ntohs(icmp_echo->sequence),
 		 ip_hdr->ttl,
 #ifdef CONFIG_FPU
-		 ((u32_t)k_cyc_to_ns_floor64(cycles) / 1000000.f));
+		 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000.f));
 #else
-		 ((u32_t)k_cyc_to_ns_floor64(cycles) / 1000000));
+		 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000));
 #endif
 	k_sem_give(&ping_timeout);
 
@@ -3063,7 +3063,7 @@ static int ping_ipv4(const struct shell *shell,
 	PR("PING %s\n", host);
 
 	for (int i = 0; i < count; ++i) {
-		u32_t time_stamp = htonl(k_cycle_get_32());
+		uint32_t time_stamp = htonl(k_cycle_get_32());
 
 		ret = net_icmpv4_send_echo_request(iface,
 						   &ipv4_target,
@@ -3204,7 +3204,7 @@ wait_reply:
 
 static struct net_pkt *get_net_pkt(const char *ptr_str)
 {
-	u8_t buf[sizeof(intptr_t)];
+	uint8_t buf[sizeof(intptr_t)];
 	intptr_t ptr = 0;
 	size_t len;
 	int i;
@@ -3618,7 +3618,7 @@ static void print_connect_info(const struct shell *shell,
 	}
 }
 
-static void tcp_connect(const struct shell *shell, char *host, u16_t port,
+static void tcp_connect(const struct shell *shell, char *host, uint16_t port,
 			struct net_context **ctx)
 {
 	struct net_if *iface = net_if_get_default();
@@ -3737,7 +3737,7 @@ static int cmd_net_tcp_connect(const struct shell *shell, size_t argc,
 	/* tcp connect <ip> port */
 	char *endptr;
 	char *ip;
-	u16_t port;
+	uint16_t port;
 
 	/* tcp connect <ip> port */
 	if (tcp_ctx && net_context_is_used(tcp_ctx)) {
@@ -3793,7 +3793,7 @@ static int cmd_net_tcp_send(const struct shell *shell, size_t argc,
 
 	user_data.shell = shell;
 
-	ret = net_context_send(tcp_ctx, (u8_t *)argv[arg],
+	ret = net_context_send(tcp_ctx, (uint8_t *)argv[arg],
 			       strlen(argv[arg]), tcp_sent_cb,
 			       TCP_TIMEOUT, &user_data);
 	if (ret < 0) {
@@ -3850,7 +3850,7 @@ static void iface_vlan_del_cb(struct net_if *iface, void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
 	const struct shell *shell = data->shell;
-	u16_t vlan_tag = POINTER_TO_UINT(data->user_data);
+	uint16_t vlan_tag = POINTER_TO_UINT(data->user_data);
 	int ret;
 
 	ret = net_eth_vlan_disable(iface, vlan_tag);
@@ -3934,10 +3934,10 @@ static int cmd_net_vlan_add(const struct shell *shell, size_t argc,
 #if defined(CONFIG_NET_VLAN)
 	int arg = 0;
 	int ret;
-	u16_t tag;
+	uint16_t tag;
 	struct net_if *iface;
 	char *endptr;
-	u32_t iface_idx;
+	uint32_t iface_idx;
 #endif
 
 #if defined(CONFIG_NET_VLAN)
@@ -4009,7 +4009,7 @@ static int cmd_net_vlan_del(const struct shell *shell, size_t argc,
 	int arg = 0;
 	struct net_shell_user_data user_data;
 	char *endptr;
-	u16_t tag;
+	uint16_t tag;
 #endif
 
 #if defined(CONFIG_NET_VLAN)
@@ -4026,7 +4026,7 @@ static int cmd_net_vlan_del(const struct shell *shell, size_t argc,
 	}
 
 	user_data.shell = shell;
-	user_data.user_data = UINT_TO_POINTER((u32_t)tag);
+	user_data.user_data = UINT_TO_POINTER((uint32_t)tag);
 
 	net_if_foreach(iface_vlan_del_cb, &user_data);
 

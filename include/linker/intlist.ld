@@ -10,7 +10,7 @@
  * What we create here is a data structure:
  *
  * struct {
- *	u32_t num_vectors;       <- typically CONFIG_NUM_IRQS
+ *	uint32_t num_vectors;       <- typically CONFIG_NUM_IRQS
  *	struct _isr_list isrs[]; <- Usually of smaller size than num_vectors
  * }
  *

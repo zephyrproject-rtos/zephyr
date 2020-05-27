@@ -53,7 +53,7 @@ unsigned long ul = 40000;
 
 /* FIXME
  * we know printk doesn't have full support for 64-bit values.
- * at least show it can print u64_t values less than 32-bits wide
+ * at least show it can print uint64_t values less than 32-bits wide
  */
 unsigned long long ull = 22;
 
@@ -63,7 +63,7 @@ signed int si = -32768;
 signed long sl = -40000;
 signed long long sll = -22;
 
-u32_t hex = 0xCAFEBABE;
+uint32_t hex = 0xCAFEBABE;
 
 void *ptr = (void *)0xBEEF;
 

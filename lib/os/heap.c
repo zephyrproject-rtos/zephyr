@@ -9,7 +9,7 @@
 
 static void *chunk_mem(struct z_heap *h, chunkid_t c)
 {
-	u8_t *ret = ((u8_t *)&h->buf[c]) + chunk_header_bytes(h);
+	uint8_t *ret = ((uint8_t *)&h->buf[c]) + chunk_header_bytes(h);
 
 	CHECK(!(((size_t)ret) & (big_heap(h) ? 7 : 3)));
 
@@ -115,8 +115,8 @@ void sys_heap_free(struct sys_heap *heap, void *mem)
 	}
 
 	struct z_heap *h = heap->heap;
-	chunkid_t c = ((u8_t *)mem - chunk_header_bytes(h)
-		       - (u8_t *)h->buf) / CHUNK_UNIT;
+	chunkid_t c = ((uint8_t *)mem - chunk_header_bytes(h)
+		       - (uint8_t *)h->buf) / CHUNK_UNIT;
 
 	/* Merge with right chunk?  We can just absorb it. */
 	if (!last_chunk(h, c) && !used(h, right_chunk(h, c))) {
@@ -217,7 +217,7 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 	struct z_heap *h = (struct z_heap *)addr;
 
 	heap->heap = (struct z_heap *)addr;
-	h->buf = (u64_t *)addr;
+	h->buf = (uint64_t *)addr;
 	h->buckets = (void *)(addr + CHUNK_UNIT * hdr_chunks);
 	h->len = buf_sz;
 	h->size_mask = (1 << (big_heap(h) ? 31 : 15)) - 1;

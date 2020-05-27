@@ -19,8 +19,8 @@ K_SEM_DEFINE(sync_sem, 0, 1);
 K_SEM_DEFINE(multiple_send_sem, 0, 1);
 
 
-ZTEST_BMEM u8_t tx_buffer[PIPE_SIZE + 1];
-ZTEST_BMEM u8_t rx_buffer[PIPE_SIZE + 1];
+ZTEST_BMEM uint8_t tx_buffer[PIPE_SIZE + 1];
+ZTEST_BMEM uint8_t rx_buffer[PIPE_SIZE + 1];
 
 #define TOTAL_ELEMENTS (sizeof(single_elements) / sizeof(struct pipe_sequence))
 #define TOTAL_WAIT_ELEMENTS (sizeof(wait_elements) / \
@@ -45,9 +45,9 @@ ZTEST_BMEM u8_t rx_buffer[PIPE_SIZE + 1];
 
 /* encompasing structs */
 struct pipe_sequence {
-	u32_t size;
-	u32_t min_size;
-	u32_t sent_bytes;
+	uint32_t size;
+	uint32_t min_size;
+	uint32_t sent_bytes;
 	int return_value;
 };
 
@@ -116,9 +116,9 @@ struct k_thread get_single_tid;
 
 /* Helper functions */
 
-u32_t rx_buffer_check(char *buffer, u32_t size)
+uint32_t rx_buffer_check(char *buffer, uint32_t size)
 {
-	u32_t index;
+	uint32_t index;
 
 	for (index = 0U; index < size; index++) {
 		if (buffer[index] != (char) index) {
@@ -135,7 +135,7 @@ u32_t rx_buffer_check(char *buffer, u32_t size)
 /******************************************************************************/
 void pipe_put_single(void)
 {
-	u32_t index;
+	uint32_t index;
 	size_t written;
 	int return_value;
 	size_t min_xfer;
@@ -169,7 +169,7 @@ void pipe_put_single(void)
 
 void pipe_get_single(void *p1, void *p2, void *p3)
 {
-	u32_t index;
+	uint32_t index;
 	size_t read;
 	int return_value;
 	size_t min_xfer;
@@ -210,7 +210,7 @@ void pipe_get_single(void *p1, void *p2, void *p3)
 /******************************************************************************/
 void pipe_put_multiple(void)
 {
-	u32_t index;
+	uint32_t index;
 	size_t written;
 	int return_value;
 	size_t min_xfer;
@@ -247,7 +247,7 @@ void pipe_put_multiple(void)
 
 void pipe_get_multiple(void *p1, void *p2, void *p3)
 {
-	u32_t index;
+	uint32_t index;
 	size_t read;
 	int return_value;
 	size_t min_xfer;
@@ -528,8 +528,8 @@ void pipe_get_on_empty_pipe(void)
 {
 	size_t read;
 	int return_value;
-	u32_t read_size;
-	u32_t size_array[] = { 1, PIPE_SIZE - 1, PIPE_SIZE, PIPE_SIZE + 1 };
+	uint32_t read_size;
+	uint32_t size_array[] = { 1, PIPE_SIZE - 1, PIPE_SIZE, PIPE_SIZE + 1 };
 
 	for (int i = 0; i < 4; i++) {
 		read_size = size_array[i];
@@ -568,7 +568,7 @@ void pipe_get_on_empty_pipe(void)
 /******************************************************************************/
 void pipe_put_forever_timeout(void)
 {
-	u32_t index;
+	uint32_t index;
 	size_t written;
 	int return_value;
 	size_t min_xfer;
@@ -602,7 +602,7 @@ void pipe_put_forever_timeout(void)
 
 void pipe_get_forever_timeout(void *p1, void *p2, void *p3)
 {
-	u32_t index;
+	uint32_t index;
 	size_t read;
 	int return_value;
 	size_t min_xfer;
@@ -640,7 +640,7 @@ void pipe_get_forever_timeout(void *p1, void *p2, void *p3)
 /******************************************************************************/
 void pipe_put_get_timeout(void)
 {
-	u32_t index;
+	uint32_t index;
 	size_t read;
 	int return_value;
 	size_t min_xfer;

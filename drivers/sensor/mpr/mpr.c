@@ -39,8 +39,8 @@ static int mpr_read_reg(struct device *dev)
 	struct mpr_data *data = dev->driver_data;
 	const struct mpr_config *cfg = dev->config_info;
 
-	u8_t write_buf[] = { MPR_OUTPUT_MEASUREMENT_COMMAND, 0x00, 0x00 };
-	u8_t read_buf[4] = { 0x0 };
+	uint8_t write_buf[] = { MPR_OUTPUT_MEASUREMENT_COMMAND, 0x00, 0x00 };
+	uint8_t read_buf[4] = { 0x0 };
 
 	int rc = i2c_write(data->i2c_master, write_buf, sizeof(write_buf),
 			   cfg->i2c_addr);
@@ -49,7 +49,7 @@ static int mpr_read_reg(struct device *dev)
 		return rc;
 	}
 
-	u8_t retries = MPR_REG_READ_MAX_RETRIES;
+	uint8_t retries = MPR_REG_READ_MAX_RETRIES;
 
 	for (; retries > 0; retries--) {
 		k_sleep(K_MSEC(MPR_REG_READ_DATA_CONV_DELAY_MS));
@@ -88,7 +88,7 @@ static int mpr_read_reg(struct device *dev)
  *
  * returns pressure [kPa] * 10^6
  */
-static inline void mpr_convert_reg(const u32_t *reg, s64_t *value)
+static inline void mpr_convert_reg(const uint32_t *reg, int64_t *value)
 {
 	*value = (*reg - MPR_OUTPUT_MIN) * (MPR_P_MAX - MPR_P_MIN);
 	*value *= MPR_CONVERSION_FACTOR;
@@ -111,7 +111,7 @@ static int mpr_channel_get(struct device *dev,
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_PRESS);
 
-	s64_t value;
+	int64_t value;
 
 	mpr_convert_reg(&data->reg_val, &value);
 

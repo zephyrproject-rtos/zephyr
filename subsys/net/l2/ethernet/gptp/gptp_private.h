@@ -60,8 +60,8 @@ int gptp_get_port_number(struct net_if *iface);
  * @param log_msg_interval Logarithm 2 to apply to this interval.
  */
 void gptp_set_time_itv(struct gptp_uscaled_ns *interval,
-		       u16_t seconds,
-		       s8_t log_msg_interval);
+		       uint16_t seconds,
+		       int8_t log_msg_interval);
 
 /**
  * @brief Convert uscaled ns to ms for timer use.
@@ -71,7 +71,7 @@ void gptp_set_time_itv(struct gptp_uscaled_ns *interval,
  * @return INT32_MAX if value exceed timer max value, 0 if the result of the
  *	    conversion is less 1ms, the converted value otherwise.
  */
-s32_t gptp_uscaled_ns_to_timer_ms(struct gptp_uscaled_ns *usns);
+int32_t gptp_uscaled_ns_to_timer_ms(struct gptp_uscaled_ns *usns);
 
 /**
  * @brief Update pDelay request interval and its timer.
@@ -80,7 +80,7 @@ s32_t gptp_uscaled_ns_to_timer_ms(struct gptp_uscaled_ns *usns);
  *
  * @param log_val New logarithm 2 to apply to this interval.
  */
-void gptp_update_pdelay_req_interval(int port, s8_t log_val);
+void gptp_update_pdelay_req_interval(int port, int8_t log_val);
 
 /**
  * @brief Update sync interval and its timer.
@@ -89,7 +89,7 @@ void gptp_update_pdelay_req_interval(int port, s8_t log_val);
  *
  * @param log_val New logarithm 2 to apply to this interval.
  */
-void gptp_update_sync_interval(int port, s8_t log_val);
+void gptp_update_sync_interval(int port, int8_t log_val);
 
 /**
  * @brief Update announce interval and its timer.
@@ -99,7 +99,7 @@ void gptp_update_sync_interval(int port, s8_t log_val);
  * @param log_val New logarithm 2 to apply to this interval.
  */
 
-void gptp_update_announce_interval(int port, s8_t log_val);
+void gptp_update_announce_interval(int port, int8_t log_val);
 
 /**
  * @brief Convert a ptp timestamp to nanoseconds.
@@ -108,7 +108,7 @@ void gptp_update_announce_interval(int port, s8_t log_val);
  *
  * @return Number of nanoseconds.
  */
-static inline u64_t gptp_timestamp_to_nsec(struct net_ptp_time *ts)
+static inline uint64_t gptp_timestamp_to_nsec(struct net_ptp_time *ts)
 {
 	if (!ts) {
 		return 0;

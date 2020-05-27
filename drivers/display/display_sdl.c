@@ -21,7 +21,7 @@ struct sdl_display_data {
 	SDL_Texture *texture;
 	bool display_on;
 	enum display_pixel_format current_pixel_format;
-	u8_t buf[4 * CONFIG_SDL_DISPLAY_X_RES * CONFIG_SDL_DISPLAY_Y_RES];
+	uint8_t buf[4 * CONFIG_SDL_DISPLAY_X_RES * CONFIG_SDL_DISPLAY_Y_RES];
 };
 
 static struct sdl_display_data sdl_display_data;
@@ -93,91 +93,91 @@ static void sdl_display_write_argb8888(void *disp_buf,
 	memcpy(disp_buf, buf, desc->pitch * 4U * desc->height);
 }
 
-static void sdl_display_write_rgb888(u8_t *disp_buf,
+static void sdl_display_write_rgb888(uint8_t *disp_buf,
 		const struct display_buffer_descriptor *desc, const void *buf)
 {
-	u32_t w_idx;
-	u32_t h_idx;
-	u32_t pixel;
-	const u8_t *byte_ptr;
+	uint32_t w_idx;
+	uint32_t h_idx;
+	uint32_t pixel;
+	const uint8_t *byte_ptr;
 
 	__ASSERT((desc->pitch * 3U * desc->height) <= desc->buf_size,
 			"Input buffer to small");
 
 	for (h_idx = 0U; h_idx < desc->height; ++h_idx) {
 		for (w_idx = 0U; w_idx < desc->width; ++w_idx) {
-			byte_ptr = (const u8_t *)buf +
+			byte_ptr = (const uint8_t *)buf +
 				((h_idx * desc->pitch) + w_idx) * 3U;
 			pixel = *byte_ptr << 16;
 			pixel |= *(byte_ptr + 1) << 8;
 			pixel |= *(byte_ptr + 2);
-			*((u32_t *)disp_buf) = pixel;
+			*((uint32_t *)disp_buf) = pixel;
 			disp_buf += 4;
 		}
 	}
 }
 
-static void sdl_display_write_rgb565(u8_t *disp_buf,
+static void sdl_display_write_rgb565(uint8_t *disp_buf,
 		const struct display_buffer_descriptor *desc, const void *buf)
 {
-	u32_t w_idx;
-	u32_t h_idx;
-	u32_t pixel;
-	const u16_t *pix_ptr;
-	u16_t rgb565;
+	uint32_t w_idx;
+	uint32_t h_idx;
+	uint32_t pixel;
+	const uint16_t *pix_ptr;
+	uint16_t rgb565;
 
 	__ASSERT((desc->pitch * 2U * desc->height) <= desc->buf_size,
 			"Input buffer to small");
 
 	for (h_idx = 0U; h_idx < desc->height; ++h_idx) {
 		for (w_idx = 0U; w_idx < desc->width; ++w_idx) {
-			pix_ptr = (const u16_t *)buf +
+			pix_ptr = (const uint16_t *)buf +
 				((h_idx * desc->pitch) + w_idx);
 			rgb565 = sys_be16_to_cpu(*pix_ptr);
 			pixel = (((rgb565 >> 11) & 0x1F) * 255 / 31) << 16;
 			pixel |= (((rgb565 >> 5) & 0x3F) * 255 / 63) << 8;
 			pixel |= (rgb565 & 0x1F) * 255 / 31;
-			*((u32_t *)disp_buf) = pixel;
+			*((uint32_t *)disp_buf) = pixel;
 			disp_buf += 4;
 		}
 	}
 }
 
-static void sdl_display_write_bgr565(u8_t *disp_buf,
+static void sdl_display_write_bgr565(uint8_t *disp_buf,
 		const struct display_buffer_descriptor *desc, const void *buf)
 {
-	u32_t w_idx;
-	u32_t h_idx;
-	u32_t pixel;
-	const u16_t *pix_ptr;
+	uint32_t w_idx;
+	uint32_t h_idx;
+	uint32_t pixel;
+	const uint16_t *pix_ptr;
 
 	__ASSERT((desc->pitch * 2U * desc->height) <= desc->buf_size,
 			"Input buffer to small");
 
 	for (h_idx = 0U; h_idx < desc->height; ++h_idx) {
 		for (w_idx = 0U; w_idx < desc->width; ++w_idx) {
-			pix_ptr = (const u16_t *)buf +
+			pix_ptr = (const uint16_t *)buf +
 				((h_idx * desc->pitch) + w_idx);
 			pixel = (((*pix_ptr >> 11) & 0x1F) * 255 / 31) << 16;
 			pixel |= (((*pix_ptr >> 5) & 0x3F) * 255 / 63) << 8;
 			pixel |= (*pix_ptr & 0x1F) * 255 / 31;
-			*((u32_t *)disp_buf) = pixel;
+			*((uint32_t *)disp_buf) = pixel;
 			disp_buf += 4;
 		}
 	}
 }
 
-static void sdl_display_write_mono(u8_t *disp_buf,
+static void sdl_display_write_mono(uint8_t *disp_buf,
 		const struct display_buffer_descriptor *desc, const void *buf,
 		const bool one_is_black)
 {
-	u32_t w_idx;
-	u32_t h_idx;
-	u32_t tile_idx;
-	u32_t pixel;
-	const u8_t *byte_ptr;
-	u32_t one_color;
-	u8_t *disp_buf_start;
+	uint32_t w_idx;
+	uint32_t h_idx;
+	uint32_t tile_idx;
+	uint32_t pixel;
+	const uint8_t *byte_ptr;
+	uint32_t one_color;
+	uint8_t *disp_buf_start;
 
 	__ASSERT((desc->pitch * desc->height) <= (desc->buf_size * 8U),
 			"Input buffer to small");
@@ -192,7 +192,7 @@ static void sdl_display_write_mono(u8_t *disp_buf,
 
 	for (tile_idx = 0U; tile_idx < desc->height/8U; ++tile_idx) {
 		for (w_idx = 0U; w_idx < desc->width; ++w_idx) {
-			byte_ptr = (const u8_t *)buf +
+			byte_ptr = (const uint8_t *)buf +
 				((tile_idx * desc->pitch) + w_idx);
 			disp_buf_start = disp_buf;
 			for (h_idx = 0U; h_idx < 8; ++h_idx) {
@@ -201,7 +201,7 @@ static void sdl_display_write_mono(u8_t *disp_buf,
 				} else {
 					pixel = (~one_color) & 0x00FFFFFF;
 				}
-				*((u32_t *)disp_buf) = pixel;
+				*((uint32_t *)disp_buf) = pixel;
 				disp_buf += (desc->width * 4U);
 			}
 			disp_buf = disp_buf_start;
@@ -211,8 +211,8 @@ static void sdl_display_write_mono(u8_t *disp_buf,
 	}
 }
 
-static int sdl_display_write(const struct device *dev, const u16_t x,
-			     const u16_t y,
+static int sdl_display_write(const struct device *dev, const uint16_t x,
+			     const uint16_t y,
 			     const struct display_buffer_descriptor *desc,
 			     const void *buf)
 {
@@ -258,8 +258,8 @@ static int sdl_display_write(const struct device *dev, const u16_t x,
 	return 0;
 }
 
-static int sdl_display_read(const struct device *dev, const u16_t x,
-			    const u16_t y,
+static int sdl_display_read(const struct device *dev, const uint16_t x,
+			    const uint16_t y,
 			    const struct display_buffer_descriptor *desc,
 			    void *buf)
 {
@@ -319,13 +319,13 @@ static int sdl_display_blanking_on(const struct device *dev)
 }
 
 static int sdl_display_set_brightness(const struct device *dev,
-		const u8_t brightness)
+		const uint8_t brightness)
 {
 	return -ENOTSUP;
 }
 
 static int sdl_display_set_contrast(const struct device *dev,
-		const u8_t contrast)
+		const uint8_t contrast)
 {
 	return -ENOTSUP;
 }

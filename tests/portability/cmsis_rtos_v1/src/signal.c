@@ -43,7 +43,7 @@ void test_multiple_signal_flags(void const *thread_id)
 
 	for (sig_cnt = 0; sig_cnt < max_signal_cnt; sig_cnt++) {
 		/* create unique signal flags to set one flag at a time */
-		s32_t signal_each_flag = SIGNAL_FLAG << sig_cnt;
+		int32_t signal_each_flag = SIGNAL_FLAG << sig_cnt;
 		/* check if each signal flag is set properly */
 		signals = osSignalSet((osThreadId)thread_id, signal_each_flag);
 		zassert_not_equal(signals, 0x80000000,

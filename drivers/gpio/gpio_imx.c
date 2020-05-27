@@ -27,7 +27,7 @@ struct imx_gpio_data {
 	/* port ISR callback routine address */
 	sys_slist_t callbacks;
 	/* pin callback routine enable flags, by pin number */
-	u32_t pin_callback_enables;
+	uint32_t pin_callback_enables;
 };
 
 static int imx_gpio_configure(struct device *port, gpio_pin_t pin,
@@ -68,7 +68,7 @@ static int imx_gpio_configure(struct device *port, gpio_pin_t pin,
 	return 0;
 }
 
-static int imx_gpio_port_get_raw(struct device *port, u32_t *value)
+static int imx_gpio_port_get_raw(struct device *port, uint32_t *value)
 {
 	const struct imx_gpio_config *config = port->config_info;
 	GPIO_Type *base = config->base;
@@ -131,10 +131,10 @@ static int imx_gpio_pin_interrupt_configure(struct device *port,
 	const struct imx_gpio_config *config = port->config_info;
 	struct imx_gpio_data *data = port->driver_data;
 	GPIO_Type *base = config->base;
-	volatile u32_t *icr_reg;
+	volatile uint32_t *icr_reg;
 	unsigned int key;
-	u32_t icr_val;
-	u8_t shift;
+	uint32_t icr_val;
+	uint8_t shift;
 
 	if (((base->GDIR & BIT(pin)) != 0U)
 	    && (mode != GPIO_INT_MODE_DISABLED)) {
@@ -216,7 +216,7 @@ static void imx_gpio_port_isr(void *arg)
 	struct device *port = (struct device *)arg;
 	const struct imx_gpio_config *config = port->config_info;
 	struct imx_gpio_data *data = port->driver_data;
-	u32_t enabled_int;
+	uint32_t enabled_int;
 
 	enabled_int = config->base->ISR & data->pin_callback_enables;
 	config->base->ISR = enabled_int;

@@ -41,7 +41,7 @@
 
 static struct k_delayed_work beacon_timer;
 
-static struct bt_mesh_subnet *cache_check(u8_t data[21])
+static struct bt_mesh_subnet *cache_check(uint8_t data[21])
 {
 	int i;
 
@@ -60,7 +60,7 @@ static struct bt_mesh_subnet *cache_check(u8_t data[21])
 	return NULL;
 }
 
-static void cache_add(u8_t data[21], struct bt_mesh_subnet *sub)
+static void cache_add(uint8_t data[21], struct bt_mesh_subnet *sub)
 {
 	memcpy(sub->beacon_cache, data, 21);
 }
@@ -77,7 +77,7 @@ static void beacon_complete(int err, void *user_data)
 void bt_mesh_beacon_create(struct bt_mesh_subnet *sub,
 			   struct net_buf_simple *buf)
 {
-	u8_t flags = bt_mesh_net_flags(sub);
+	uint8_t flags = bt_mesh_net_flags(sub);
 	struct bt_mesh_subnet_keys *keys;
 
 	net_buf_simple_add_u8(buf, BEACON_TYPE_SECURE);
@@ -113,7 +113,7 @@ static int secure_beacon_send(void)
 	static const struct bt_mesh_send_cb send_cb = {
 		.end = beacon_complete,
 	};
-	u32_t now = k_uptime_get_32();
+	uint32_t now = k_uptime_get_32();
 	int i;
 
 	BT_DBG("");
@@ -121,7 +121,7 @@ static int secure_beacon_send(void)
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
 		struct bt_mesh_subnet *sub = &bt_mesh.sub[i];
 		struct net_buf *buf;
-		u32_t time_diff;
+		uint32_t time_diff;
 
 		if (sub->net_idx == BT_MESH_KEY_UNUSED) {
 			continue;
@@ -152,9 +152,9 @@ static int secure_beacon_send(void)
 static int unprovisioned_beacon_send(void)
 {
 	const struct bt_mesh_prov *prov;
-	u8_t uri_hash[16] = { 0 };
+	uint8_t uri_hash[16] = { 0 };
 	struct net_buf *buf;
-	u16_t oob_info;
+	uint16_t oob_info;
 
 	BT_DBG("");
 
@@ -209,10 +209,10 @@ static void unprovisioned_beacon_recv(struct net_buf_simple *buf)
 {
 #if defined(CONFIG_BT_MESH_PB_ADV)
 	const struct bt_mesh_prov *prov;
-	u8_t *uuid;
-	u16_t oob_info;
-	u32_t uri_hash_val;
-	u32_t *uri_hash = NULL;
+	uint8_t *uuid;
+	uint16_t oob_info;
+	uint32_t uri_hash_val;
+	uint32_t *uri_hash = NULL;
 
 	if (buf->len != 18 && buf->len != 22) {
 		BT_ERR("Invalid unprovisioned beacon length (%u)", buf->len);
@@ -293,11 +293,11 @@ static void beacon_send(struct k_work *work)
 
 static void secure_beacon_recv(struct net_buf_simple *buf)
 {
-	u8_t *data, *net_id, *auth;
+	uint8_t *data, *net_id, *auth;
 	struct bt_mesh_subnet *sub;
-	u32_t iv_index;
+	uint32_t iv_index;
 	bool new_key, kr_change, iv_change;
-	u8_t flags;
+	uint8_t flags;
 
 	if (buf->len < 21) {
 		BT_ERR("Too short secure beacon (len %u)", buf->len);
@@ -374,7 +374,7 @@ update_stats:
 
 void bt_mesh_beacon_recv(struct net_buf_simple *buf)
 {
-	u8_t type;
+	uint8_t type;
 
 	BT_DBG("%u bytes: %s", buf->len, bt_hex(buf->data, buf->len));
 

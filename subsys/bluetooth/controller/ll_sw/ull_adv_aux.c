@@ -22,27 +22,27 @@
 #include "ull_adv_types.h"
 #include "ull_adv_internal.h"
 
-u8_t ll_adv_aux_random_addr_set(u8_t handle, u8_t *addr)
+uint8_t ll_adv_aux_random_addr_set(uint8_t handle, uint8_t *addr)
 {
 	/* TODO: store in adv set instance */
 	return 0;
 }
 
-u8_t *ll_adv_aux_random_addr_get(u8_t handle, u8_t *addr)
+uint8_t *ll_adv_aux_random_addr_get(uint8_t handle, uint8_t *addr)
 {
 	/* TODO: copy adv set instance addr into addr and/or return reference */
 	return NULL;
 }
 
-u8_t ll_adv_aux_ad_data_set(u8_t handle, u8_t op, u8_t frag_pref, u8_t len,
-			    u8_t *data)
+uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, uint8_t len,
+			    uint8_t *data)
 {
 	struct pdu_adv_com_ext_adv *p;
 	struct ll_adv_set *adv;
 	struct ext_adv_hdr *h;
 	struct pdu_adv *prev;
 	struct pdu_adv *pdu;
-	u8_t idx;
+	uint8_t idx;
 
 	/* TODO: */
 
@@ -72,32 +72,32 @@ u8_t ll_adv_aux_ad_data_set(u8_t handle, u8_t op, u8_t frag_pref, u8_t len,
 	return 0;
 }
 
-u8_t ll_adv_aux_sr_data_set(u8_t handle, u8_t op, u8_t frag_pref, u8_t len,
-			    u8_t *data)
+uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, uint8_t len,
+			    uint8_t *data)
 {
 	/* TODO: */
 	return 0;
 }
 
-u16_t ll_adv_aux_max_data_length_get(void)
+uint16_t ll_adv_aux_max_data_length_get(void)
 {
 	/* TODO: return a Kconfig value */
 	return 0;
 }
 
-u8_t ll_adv_aux_set_count_get(void)
+uint8_t ll_adv_aux_set_count_get(void)
 {
 	/*  TODO: return a Kconfig value */
 	return 0;
 }
 
-u8_t ll_adv_aux_set_remove(u8_t handle)
+uint8_t ll_adv_aux_set_remove(uint8_t handle)
 {
 	/* TODO: reset/release primary channel and Aux channel PDUs */
 	return 0;
 }
 
-u8_t ll_adv_aux_set_clear(void)
+uint8_t ll_adv_aux_set_clear(void)
 {
 	/* TODO: reset/release all adv set primary channel and  Aux channel
 	 * PDUs

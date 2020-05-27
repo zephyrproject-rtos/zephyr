@@ -28,7 +28,7 @@ struct i2c_bitbang_io {
 struct i2c_bitbang {
 	const struct i2c_bitbang_io	*io;
 	void				*io_context;
-	u32_t				delays[2];
+	uint32_t				delays[2];
 };
 
 /**
@@ -46,7 +46,7 @@ void i2c_bitbang_init(struct i2c_bitbang *bitbang,
  * Implementation of the functionality required by the 'configure' function
  * in struct i2c_driver_api.
  */
-int i2c_bitbang_configure(struct i2c_bitbang *bitbang, u32_t dev_config);
+int i2c_bitbang_configure(struct i2c_bitbang *bitbang, uint32_t dev_config);
 
 /**
  * Implementation of the functionality required by the 'recover_bus'
@@ -59,5 +59,5 @@ int i2c_bitbang_recover_bus(struct i2c_bitbang *bitbang);
  * in struct i2c_driver_api.
  */
 int i2c_bitbang_transfer(struct i2c_bitbang *bitbang,
-			   struct i2c_msg *msgs, u8_t num_msgs,
-			   u16_t slave_address);
+			   struct i2c_msg *msgs, uint8_t num_msgs,
+			   uint16_t slave_address);

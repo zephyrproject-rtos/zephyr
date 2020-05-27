@@ -47,11 +47,11 @@ static struct net_tcp tcp_context[NET_MAX_TCP_CONTEXT];
 
 static struct tcp_backlog_entry {
 	struct net_tcp *tcp;
-	u32_t send_seq;
-	u32_t send_ack;
+	uint32_t send_seq;
+	uint32_t send_ack;
 	struct k_delayed_work ack_timer;
 	struct sockaddr remote;
-	u16_t send_mss;
+	uint16_t send_mss;
 } tcp_backlog[CONFIG_NET_TCP_BACKLOG_SIZE];
 
 #if defined(CONFIG_NET_TCP_ACK_TIMEOUT)
@@ -99,11 +99,11 @@ static struct tcp_backlog_entry {
 
 
 struct tcp_segment {
-	u32_t seq;
-	u32_t ack;
-	u16_t wnd;
-	u8_t flags;
-	u8_t optlen;
+	uint32_t seq;
+	uint32_t ack;
+	uint16_t wnd;
+	uint8_t flags;
+	uint8_t optlen;
 	void *options;
 	struct sockaddr_ptr *src_addr;
 	const struct sockaddr *dst_addr;
@@ -122,8 +122,8 @@ static void net_tcp_trace(struct net_pkt *pkt,
 			  struct net_tcp *tcp,
 			  struct net_tcp_hdr *tcp_hdr)
 {
-	u32_t rel_ack, ack;
-	u8_t flags;
+	uint32_t rel_ack, ack;
+	uint8_t flags;
 
 	if (CONFIG_NET_TCP_LOG_LEVEL < LOG_LEVEL_DBG) {
 		return;
@@ -166,7 +166,7 @@ static void net_tcp_trace(struct net_pkt *pkt,
 
 static inline k_timeout_t retry_timeout(const struct net_tcp *tcp)
 {
-	return K_MSEC(((u32_t)1 << tcp->retry_timeout_shift) *
+	return K_MSEC(((uint32_t)1 << tcp->retry_timeout_shift) *
 		      CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT);
 }
 
@@ -424,9 +424,9 @@ static int prepare_segment(struct net_tcp *tcp,
 	struct net_context *context = tcp->context;
 	struct net_buf *tail = NULL;
 	struct net_tcp_hdr *tcp_hdr;
-	u16_t dst_port, src_port;
+	uint16_t dst_port, src_port;
 	bool pkt_allocated;
-	u8_t optlen = 0U;
+	uint8_t optlen = 0U;
 	int status;
 
 	NET_ASSERT(context);
@@ -559,20 +559,20 @@ fail:
 	return status;
 }
 
-u32_t net_tcp_get_recv_wnd(const struct net_tcp *tcp)
+uint32_t net_tcp_get_recv_wnd(const struct net_tcp *tcp)
 {
 	return tcp->recv_wnd;
 }
 
-int net_tcp_prepare_segment(struct net_tcp *tcp, u8_t flags,
+int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
 			    void *options, size_t optlen,
 			    const struct sockaddr_ptr *local,
 			    const struct sockaddr *remote,
 			    struct net_pkt **send_pkt)
 {
 	struct tcp_segment segment = { 0 };
-	u32_t seq;
-	u16_t wnd;
+	uint32_t seq;
+	uint16_t wnd;
 	int status;
 
 	if (!local) {
@@ -638,9 +638,9 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, u8_t flags,
 	return 0;
 }
 
-static inline u32_t get_size(u32_t pos1, u32_t pos2)
+static inline uint32_t get_size(uint32_t pos1, uint32_t pos2)
 {
-	u32_t size;
+	uint32_t size;
 
 	if (pos1 <= pos2) {
 		size = pos2 - pos1;
@@ -669,7 +669,7 @@ static inline size_t ip_max_packet_len(struct in_addr *dest_ip)
 #define ip_max_packet_len(...) 0
 #endif /* CONFIG_NET_IPV4 */
 
-u16_t net_tcp_get_recv_mss(const struct net_tcp *tcp)
+uint16_t net_tcp_get_recv_mss(const struct net_tcp *tcp)
 {
 	sa_family_t family = net_context_get_family(tcp->context);
 
@@ -710,10 +710,10 @@ u16_t net_tcp_get_recv_mss(const struct net_tcp *tcp)
 	return 0;
 }
 
-static void net_tcp_set_syn_opt(struct net_tcp *tcp, u8_t *options,
-				u8_t *optionlen)
+static void net_tcp_set_syn_opt(struct net_tcp *tcp, uint8_t *options,
+				uint8_t *optionlen)
 {
-	u32_t recv_mss;
+	uint32_t recv_mss;
 
 	*optionlen = 0U;
 
@@ -726,7 +726,7 @@ static void net_tcp_set_syn_opt(struct net_tcp *tcp, u8_t *options,
 
 	recv_mss |= (NET_TCP_MSS_OPT << 24) | (NET_TCP_MSS_SIZE << 16);
 	UNALIGNED_PUT(htonl(recv_mss),
-		      (u32_t *)(options + *optionlen));
+		      (uint32_t *)(options + *optionlen));
 
 	*optionlen += NET_TCP_MSS_SIZE;
 }
@@ -734,8 +734,8 @@ static void net_tcp_set_syn_opt(struct net_tcp *tcp, u8_t *options,
 int net_tcp_prepare_ack(struct net_tcp *tcp, const struct sockaddr *remote,
 			struct net_pkt **pkt)
 {
-	u8_t options[NET_TCP_MAX_OPT_SIZE];
-	u8_t optionlen;
+	uint8_t options[NET_TCP_MAX_OPT_SIZE];
+	uint8_t optionlen;
 
 	switch (net_tcp_get_state(tcp)) {
 	case NET_TCP_SYN_RCVD:
@@ -1124,7 +1124,7 @@ int net_tcp_send_data(struct net_context *context, net_context_send_cb_t cb,
 	return 0;
 }
 
-bool net_tcp_ack_received(struct net_context *ctx, u32_t ack)
+bool net_tcp_ack_received(struct net_context *ctx, uint32_t ack)
 {
 	struct net_tcp *tcp = ctx->tcp;
 	sys_slist_t *list = &ctx->tcp->sent_list;
@@ -1145,8 +1145,8 @@ bool net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 	while (!sys_slist_is_empty(list)) {
 		NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct net_tcp_hdr);
 		struct net_tcp_hdr *tcp_hdr;
-		u32_t last_seq;
-		u32_t seq_len;
+		uint32_t last_seq;
+		uint32_t seq_len;
 
 		head = sys_slist_peek_head(list);
 		pkt = CONTAINER_OF(head, struct net_pkt, sent_list);
@@ -1249,7 +1249,7 @@ void net_tcp_init(void)
 static void validate_state_transition(enum net_tcp_state current,
 				      enum net_tcp_state new)
 {
-	static const u16_t valid_transitions[] = {
+	static const uint16_t valid_transitions[] = {
 		[NET_TCP_CLOSED] = 1 << NET_TCP_LISTEN |
 			1 << NET_TCP_SYN_SENT |
 			/* Initial transition from closed->established when
@@ -1394,7 +1394,7 @@ int net_tcp_finalize(struct net_pkt *pkt)
 int net_tcp_parse_opts(struct net_pkt *pkt, int opt_totlen,
 		       struct net_tcp_options *opts)
 {
-	u8_t opt, optlen;
+	uint8_t opt, optlen;
 
 	while (opt_totlen) {
 		if (net_pkt_read_u8(pkt, &opt)) {
@@ -1542,9 +1542,9 @@ int net_tcp_listen(struct net_context *context)
 	return -EOPNOTSUPP;
 }
 
-int net_tcp_update_recv_wnd(struct net_context *context, s32_t delta)
+int net_tcp_update_recv_wnd(struct net_context *context, int32_t delta)
 {
-	s32_t new_win;
+	int32_t new_win;
 
 	if (!context->tcp) {
 		NET_ERR("context->tcp == NULL");
@@ -1587,7 +1587,7 @@ static void tcp_copy_ip_addr_from_hdr(sa_family_t family,
 				      struct sockaddr *addr,
 				      bool is_src_addr)
 {
-	u16_t port;
+	uint16_t port;
 
 	if (is_src_addr) {
 		port = tcp_hdr->src_port;
@@ -1679,7 +1679,7 @@ static int tcp_backlog_syn(struct net_pkt *pkt,
 			   union net_ip_header *ip_hdr,
 			   struct net_tcp_hdr *tcp_hdr,
 			   struct net_context *context,
-			   u16_t send_mss)
+			   uint16_t send_mss)
 {
 	int empty_slot = -1;
 
@@ -1887,7 +1887,7 @@ static void print_send_info(struct net_pkt *pkt,
 			    const char *msg, const struct sockaddr *remote)
 {
 	if (CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG) {
-		u16_t port = 0U;
+		uint16_t port = 0U;
 
 		if (IS_ENABLED(CONFIG_NET_IPV4) &&
 		    net_pkt_family(pkt) == AF_INET) {
@@ -1915,8 +1915,8 @@ static inline int send_syn_segment(struct net_context *context,
 {
 	struct net_pkt *pkt = NULL;
 	int ret;
-	u8_t options[NET_TCP_MAX_OPT_SIZE];
-	u8_t optionlen = 0U;
+	uint8_t options[NET_TCP_MAX_OPT_SIZE];
+	uint8_t optionlen = 0U;
 
 	if (flags == NET_TCP_SYN) {
 		net_tcp_set_syn_opt(context->tcp, options, &optionlen);
@@ -2010,10 +2010,10 @@ static int send_reset(struct net_context *context,
 	return ret;
 }
 
-static u16_t adjust_data_len(struct net_pkt *pkt, struct net_tcp_hdr *tcp_hdr,
-			     u16_t data_len)
+static uint16_t adjust_data_len(struct net_pkt *pkt, struct net_tcp_hdr *tcp_hdr,
+			     uint16_t data_len)
 {
-	u8_t offset = tcp_hdr->offset >> 4;
+	uint8_t offset = tcp_hdr->offset >> 4;
 
 	/* We need to adjust the length of the data part if there
 	 * are TCP options.
@@ -2044,8 +2044,8 @@ NET_CONN_CB(tcp_established)
 	struct net_tcp_hdr *tcp_hdr = proto_hdr->tcp;
 	enum net_verdict ret = NET_OK;
 	bool do_not_send_ack = false;
-	u8_t tcp_flags;
-	u16_t data_len;
+	uint8_t tcp_flags;
+	uint16_t data_len;
 
 	k_mutex_lock(&context->lock, K_FOREVER);
 
@@ -2606,7 +2606,7 @@ int net_tcp_accept(struct net_context *context,
 {
 	struct sockaddr local_addr;
 	struct sockaddr *laddr = NULL;
-	u16_t lport = 0U;
+	uint16_t lport = 0U;
 	int ret;
 
 	NET_ASSERT(context->tcp);
@@ -2681,8 +2681,8 @@ int net_tcp_accept(struct net_context *context,
 int net_tcp_connect(struct net_context *context,
 		    const struct sockaddr *addr,
 		    struct sockaddr *laddr,
-		    u16_t rport,
-		    u16_t lport,
+		    uint16_t rport,
+		    uint16_t lport,
 		    k_timeout_t timeout,
 		    net_context_connect_cb_t cb,
 		    void *user_data)

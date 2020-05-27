@@ -69,10 +69,10 @@
 #define SOC_GPIO_FUNC_OUT_1             (6 << SOC_GPIO_FUNC_POS)
 
 struct soc_gpio_pin {
-	u32_t mask;     /** pin(s) bit mask */
+	uint32_t mask;     /** pin(s) bit mask */
 	Pio *regs;         /** pointer to registers of the PIO controller */
-	u8_t periph_id; /** peripheral ID of the PIO controller */
-	u32_t flags;    /** pin flags/attributes */
+	uint8_t periph_id; /** peripheral ID of the PIO controller */
+	uint32_t flags;    /** pin flags/attributes */
 };
 
 /**
@@ -147,7 +147,7 @@ static inline void soc_gpio_clear(const struct soc_gpio_pin *pin)
  * @return pin(s) value. To assess value of a specific pin the pin's bit
  * field has to be read.
  */
-static inline u32_t soc_gpio_get(const struct soc_gpio_pin *pin)
+static inline uint32_t soc_gpio_get(const struct soc_gpio_pin *pin)
 {
 	return pin->regs->PIO_PDSR & pin->mask;
 }
@@ -172,7 +172,7 @@ static inline u32_t soc_gpio_get(const struct soc_gpio_pin *pin)
  * @param div  slow clock divider, valid values: from 0 to 2^14 - 1
  */
 static inline void soc_gpio_debounce_length_set(const struct soc_gpio_pin *pin,
-						u32_t div)
+						uint32_t div)
 {
 	pin->regs->PIO_SCDR = PIO_SCDR_DIV(div);
 }

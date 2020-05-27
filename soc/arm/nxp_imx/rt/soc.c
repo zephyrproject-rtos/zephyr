@@ -234,8 +234,8 @@ void imxrt_usdhc_pinmux_cb_register(usdhc_pin_cfg_cb cb)
 	g_usdhc_pin_cfg_cb = cb;
 }
 
-void imxrt_usdhc_pinmux(u16_t nusdhc, bool init,
-	u32_t speed, u32_t strength)
+void imxrt_usdhc_pinmux(uint16_t nusdhc, bool init,
+	uint32_t speed, uint32_t strength)
 {
 	if (g_usdhc_pin_cfg_cb)
 		g_usdhc_pin_cfg_cb(nusdhc, init,

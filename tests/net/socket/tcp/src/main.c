@@ -424,7 +424,7 @@ void test_v4_accept_timeout(void)
 	/* Test if accept() will timeout properly */
 	int s_sock;
 	int new_sock;
-	u32_t tstamp;
+	uint32_t tstamp;
 	struct sockaddr_in s_saddr;
 	struct sockaddr addr;
 	socklen_t addrlen = sizeof(addr);

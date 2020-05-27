@@ -20,7 +20,7 @@ struct entropy_cc13xx_cc26xx_data {
 	struct k_sem lock;
 	struct k_sem sync;
 	struct ring_buf pool;
-	u8_t data[CONFIG_ENTROPY_CC13XX_CC26XX_POOL_SIZE];
+	uint8_t data[CONFIG_ENTROPY_CC13XX_CC26XX_POOL_SIZE];
 };
 
 DEVICE_DECLARE(entropy_cc13xx_cc26xx);
@@ -31,11 +31,11 @@ get_dev_data(struct device *dev)
 	return dev->driver_data;
 }
 
-static int entropy_cc13xx_cc26xx_get_entropy(struct device *dev, u8_t *buf,
-					     u16_t len)
+static int entropy_cc13xx_cc26xx_get_entropy(struct device *dev, uint8_t *buf,
+					     uint16_t len)
 {
 	struct entropy_cc13xx_cc26xx_data *data = get_dev_data(dev);
-	u32_t cnt;
+	uint32_t cnt;
 
 	TRNGIntEnable(TRNG_NUMBER_READY);
 
@@ -58,8 +58,8 @@ static int entropy_cc13xx_cc26xx_get_entropy(struct device *dev, u8_t *buf,
 static void entropy_cc13xx_cc26xx_isr(void *arg)
 {
 	struct entropy_cc13xx_cc26xx_data *data = get_dev_data(arg);
-	u32_t src, cnt, off;
-	u32_t num[2];
+	uint32_t src, cnt, off;
+	uint32_t num[2];
 
 	/* Interrupt service routine as described in TRM section 18.6.1.3.2 */
 	src = TRNGStatusGet();
@@ -69,7 +69,7 @@ static void entropy_cc13xx_cc26xx_isr(void *arg)
 		num[1] = TRNGNumberGet(TRNG_HI_WORD);
 		num[0] = TRNGNumberGet(TRNG_LOW_WORD);
 
-		cnt = ring_buf_put(&data->pool, (u8_t *)num, sizeof(num));
+		cnt = ring_buf_put(&data->pool, (uint8_t *)num, sizeof(num));
 
 		/* When pool is full disable interrupt and stop reading numbers */
 		if (cnt != sizeof(num)) {

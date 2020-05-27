@@ -205,7 +205,7 @@ static void ism330dhcx_handle_interrupt(void *arg)
 }
 
 static void ism330dhcx_gpio_callback(struct device *dev,
-				    struct gpio_callback *cb, u32_t pins)
+				    struct gpio_callback *cb, uint32_t pins)
 {
 	struct ism330dhcx_data *ism330dhcx =
 		CONTAINER_OF(cb, struct ism330dhcx_data, gpio_cb);

@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(smp_udp_sample);
 static struct net_mgmt_event_callback mgmt_cb;
 
 static void event_handler(struct net_mgmt_event_callback *cb,
-			  u32_t mgmt_event, struct net_if *iface)
+			  uint32_t mgmt_event, struct net_if *iface)
 {
 	if ((mgmt_event & EVENT_MASK) != mgmt_event) {
 		return;

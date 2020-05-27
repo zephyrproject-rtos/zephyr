@@ -26,7 +26,7 @@ static char rx_data[DMA_BUFF_SIZE];
 static struct dma_config dma_cfg = {0};
 static struct dma_block_config dma_block_cfg = {0};
 
-static void dma_user_callback(void *arg, u32_t id, int error_code)
+static void dma_user_callback(void *arg, uint32_t id, int error_code)
 {
 	if (error_code == 0) {
 		TC_PRINT("DMA completed successfully\n");
@@ -40,7 +40,7 @@ static void dma_user_callback(void *arg, u32_t id, int error_code)
 void test_msgdma(void)
 {
 	struct device *dma;
-	static u32_t chan_id;
+	static uint32_t chan_id;
 	int i;
 
 	dma = device_get_binding(CONFIG_DMA_0_NAME);
@@ -69,8 +69,8 @@ void test_msgdma(void)
 
 	/* Init DMA descriptor info */
 	dma_block_cfg.block_size = DMA_BUFF_SIZE;
-	dma_block_cfg.source_address = (u32_t)tx_data;
-	dma_block_cfg.dest_address = (u32_t)rx_data;
+	dma_block_cfg.source_address = (uint32_t)tx_data;
+	dma_block_cfg.dest_address = (uint32_t)rx_data;
 
 	/* Configure DMA */
 	zassert_true(dma_config(dma, chan_id, &dma_cfg) == 0,

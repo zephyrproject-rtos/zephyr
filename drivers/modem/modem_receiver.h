@@ -56,7 +56,7 @@ struct mdm_receiver_context *mdm_receiver_context_from_id(int id);
  * @retval 0 if ok, < 0 if error.
  */
 int mdm_receiver_recv(struct mdm_receiver_context *ctx,
-		      u8_t *buf, size_t size, size_t *bytes_read);
+		      uint8_t *buf, size_t size, size_t *bytes_read);
 
 /**
  * @brief  Sends the data over specified receiver context.
@@ -68,7 +68,7 @@ int mdm_receiver_recv(struct mdm_receiver_context *ctx,
  * @retval 0 if ok, < 0 if error.
  */
 int mdm_receiver_send(struct mdm_receiver_context *ctx,
-		      const u8_t *buf, size_t size);
+		      const uint8_t *buf, size_t size);
 
 /**
  * @brief  Registers receiver context.
@@ -84,7 +84,7 @@ int mdm_receiver_send(struct mdm_receiver_context *ctx,
  */
 int mdm_receiver_register(struct mdm_receiver_context *ctx,
 			  const char *uart_dev_name,
-			  u8_t *buf, size_t size);
+			  uint8_t *buf, size_t size);
 
 int mdm_receiver_sleep(struct mdm_receiver_context *ctx);
 

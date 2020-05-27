@@ -279,8 +279,8 @@ z_x86_user_string_nlen_fixup:
 
 /* FUNC_NORETURN void z_x86_userspace_enter(k_thread_entry_t user_entry,
  *					   void *p1, void *p2, void *p3,
- *					   u32_t stack_end,
- *					   u32_t stack_start)
+ *					   uint32_t stack_end,
+ *					   uint32_t stack_start)
  *
  * A one-way trip to userspace.
  */

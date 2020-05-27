@@ -29,7 +29,7 @@ K_THREAD_STACK_ARRAY_DEFINE(rx_stack, NET_TC_RX_COUNT,
 static struct net_traffic_class tx_classes[NET_TC_TX_COUNT];
 static struct net_traffic_class rx_classes[NET_TC_RX_COUNT];
 
-bool net_tc_submit_to_tx_queue(u8_t tc, struct net_pkt *pkt)
+bool net_tc_submit_to_tx_queue(uint8_t tc, struct net_pkt *pkt)
 {
 	if (k_work_pending(net_pkt_work(pkt))) {
 		return false;
@@ -40,7 +40,7 @@ bool net_tc_submit_to_tx_queue(u8_t tc, struct net_pkt *pkt)
 	return true;
 }
 
-void net_tc_submit_to_rx_queue(u8_t tc, struct net_pkt *pkt)
+void net_tc_submit_to_rx_queue(uint8_t tc, struct net_pkt *pkt)
 {
 	k_work_submit_to_queue(&rx_classes[tc].work_q, net_pkt_work(pkt));
 }
@@ -66,7 +66,7 @@ int net_rx_priority2tc(enum net_priority prio)
 }
 
 /* Convert traffic class to thread priority */
-static u8_t tx_tc2thread(u8_t tc)
+static uint8_t tx_tc2thread(uint8_t tc)
 {
 	/* Initial implementation just maps the traffic class to certain queue.
 	 * If there are less queues than classes, then map them into
@@ -83,7 +83,7 @@ static u8_t tx_tc2thread(u8_t tc)
 	 * that thread_priorities[7] value should contain the highest priority
 	 * for the TX queue handling thread.
 	 */
-	static const u8_t thread_priorities[] = {
+	static const uint8_t thread_priorities[] = {
 #if NET_TC_TX_COUNT == 1
 		7
 #endif
@@ -119,7 +119,7 @@ static u8_t tx_tc2thread(u8_t tc)
 }
 
 /* Convert traffic class to thread priority */
-static u8_t rx_tc2thread(u8_t tc)
+static uint8_t rx_tc2thread(uint8_t tc)
 {
 	/* Initial implementation just maps the traffic class to certain queue.
 	 * If there are less queues than classes, then map them into
@@ -136,7 +136,7 @@ static u8_t rx_tc2thread(u8_t tc)
 	 * that thread_priorities[7] value should contain the highest priority
 	 * for the RX queue handling thread.
 	 */
-	static const u8_t thread_priorities[] = {
+	static const uint8_t thread_priorities[] = {
 #if NET_TC_RX_COUNT == 1
 		7
 #endif
@@ -227,7 +227,7 @@ void net_tc_tx_init(void)
 #endif
 
 	for (i = 0; i < NET_TC_TX_COUNT; i++) {
-		u8_t thread_priority;
+		uint8_t thread_priority;
 
 		thread_priority = tx_tc2thread(i);
 		tx_classes[i].tc = thread_priority;
@@ -257,7 +257,7 @@ void net_tc_rx_init(void)
 #endif
 
 	for (i = 0; i < NET_TC_RX_COUNT; i++) {
-		u8_t thread_priority;
+		uint8_t thread_priority;
 
 		thread_priority = rx_tc2thread(i);
 		rx_classes[i].tc = thread_priority;

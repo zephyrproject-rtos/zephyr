@@ -36,7 +36,7 @@
 /* A 32bit value cannot exceed 0xFFFFFFFF/LPTIM_TIMEBASE counting cycles.
  * This is for example about of 65000 x 2000ms when clocked by LSI
  */
-static u32_t accumulated_lptim_cnt;
+static uint32_t accumulated_lptim_cnt;
 
 static struct k_spinlock lock;
 
@@ -57,14 +57,14 @@ static void lptim_irq_handler(struct device *unused)
 		 * used in the z_timer_cycle_get_32() function.
 		 * Reading the CNT register gives a reliable value
 		 */
-		u32_t autoreload = LL_LPTIM_GetAutoReload(LPTIM1) + 1;
+		uint32_t autoreload = LL_LPTIM_GetAutoReload(LPTIM1) + 1;
 
 		accumulated_lptim_cnt += autoreload;
 
 		k_spin_unlock(&lock, key);
 
 		/* announce the elapsed time in ms (count register is 16bit) */
-		u32_t dticks = (autoreload
+		uint32_t dticks = (autoreload
 				* CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 				/ LPTIM_CLOCK;
 
@@ -166,10 +166,10 @@ int z_clock_driver_init(struct device *device)
 	return 0;
 }
 
-void z_clock_set_timeout(s32_t ticks, bool idle)
+void z_clock_set_timeout(int32_t ticks, bool idle)
 {
 	/* new LPTIM1 AutoReload value to set (aligned on Kernel ticks) */
-	u32_t next_arr = 0;
+	uint32_t next_arr = 0;
 
 	ARG_UNUSED(idle);
 
@@ -189,13 +189,13 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	 * treated identically: it simply indicates the kernel would like the
 	 * next tick announcement as soon as possible.
 	 */
-	ticks = MAX(MIN(ticks - 1, (s32_t)LPTIM_TIMEBASE), 1);
+	ticks = MAX(MIN(ticks - 1, (int32_t)LPTIM_TIMEBASE), 1);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	/* read current counter value (cannot exceed 16bit) */
 
-	volatile u32_t lp_time = LL_LPTIM_GetCounter(LPTIM1);
+	volatile uint32_t lp_time = LL_LPTIM_GetCounter(LPTIM1);
 
 	/* It should be noted that to read reliably the content
 	 * of the LPTIM_CNT register, two successive read accesses
@@ -206,7 +206,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 		lp_time = LL_LPTIM_GetCounter(LPTIM1);
 	}
 
-	u32_t autoreload = LL_LPTIM_GetAutoReload(LPTIM1);
+	uint32_t autoreload = LL_LPTIM_GetAutoReload(LPTIM1);
 
 	if (LL_LPTIM_IsActiveFlag_ARRM(LPTIM1)
 	    || ((autoreload - lp_time) < LPTIM_GUARD_VALUE)) {
@@ -225,7 +225,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 			/ LPTIM_CLOCK) + 1) * LPTIM_CLOCK
 			/ (CONFIG_SYS_CLOCK_TICKS_PER_SEC);
 	/* add count unit from the expected nb of Ticks */
-	next_arr = next_arr + ((u32_t)(ticks) * LPTIM_CLOCK)
+	next_arr = next_arr + ((uint32_t)(ticks) * LPTIM_CLOCK)
 			/ CONFIG_SYS_CLOCK_TICKS_PER_SEC - 1;
 
 	/* maximise to TIMEBASE */
@@ -251,7 +251,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	k_spin_unlock(&lock, key);
 }
 
-u32_t z_clock_elapsed(void)
+uint32_t z_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
@@ -259,7 +259,7 @@ u32_t z_clock_elapsed(void)
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	volatile u32_t lp_time = LL_LPTIM_GetCounter(LPTIM1);
+	volatile uint32_t lp_time = LL_LPTIM_GetCounter(LPTIM1);
 
 	/* It should be noted that to read reliably the content
 	 * of the LPTIM_CNT register, two successive read accesses
@@ -283,18 +283,18 @@ u32_t z_clock_elapsed(void)
 	/* gives the value of LPTIM1 counter (ms)
 	 * since the previous 'announce'
 	 */
-	u64_t ret = (lp_time * CONFIG_SYS_CLOCK_TICKS_PER_SEC) / LPTIM_CLOCK;
+	uint64_t ret = (lp_time * CONFIG_SYS_CLOCK_TICKS_PER_SEC) / LPTIM_CLOCK;
 
-	return (u32_t)(ret);
+	return (uint32_t)(ret);
 }
 
-u32_t z_timer_cycle_get_32(void)
+uint32_t z_timer_cycle_get_32(void)
 {
 	/* just gives the accumulated count in a number of hw cycles */
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	volatile u32_t lp_time = LL_LPTIM_GetCounter(LPTIM1);
+	volatile uint32_t lp_time = LL_LPTIM_GetCounter(LPTIM1);
 
 	/* It should be noted that to read reliably the content
 	 * of the LPTIM_CNT register, two successive read accesses
@@ -315,10 +315,10 @@ u32_t z_timer_cycle_get_32(void)
 	lp_time += accumulated_lptim_cnt;
 
 	/* convert lptim count in a nb of hw cycles with precision */
-	u64_t ret = lp_time * (sys_clock_hw_cycles_per_sec() / LPTIM_CLOCK);
+	uint64_t ret = lp_time * (sys_clock_hw_cycles_per_sec() / LPTIM_CLOCK);
 
 	k_spin_unlock(&lock, key);
 
 	/* convert in hw cycles (keeping 32bit value) */
-	return (u32_t)(ret);
+	return (uint32_t)(ret);
 }
