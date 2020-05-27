@@ -503,7 +503,7 @@ static int qspi_nor_read(struct device *dev, off_t addr, void *dest,
 	/* Since the QSPI driver requires data to be at least 4 bytes we need
 	 * to use a 4 byte buffer for reads smaller than 4 bytes.
 	 */
-	if (size < 4U) {
+	if ((size > 0) && (size < 4U)) {
 		dest = buf;
 		size = sizeof(buf);
 	} else if ((size % 4U) != 0) {
