@@ -5,6 +5,12 @@
       The <a href="/latest/{{ pagename }}.html">latest development version</a>
       of this page may be more current than this released {{ version }} version.
     </div>
+  {% else %}
+    <div class="wy-alert wy-alert-danger">
+     This is the documentation for the latest (master) development branch of
+     Zephyr. If you are looking for the documentation of previous releases, use
+     the drop-down menu on the left and select the desired version.
+    </div>
   {% endif %}
   {{ super() }}
 {% endblock %}
