@@ -45,6 +45,11 @@ static const char *const core_devices[] = {
 static const char *const core_devices[] = {
 	"",
 };
+#elif defined(CONFIG_SOC_SERIES_STM32L4X)
+#define MAX_PM_DEVICES	1
+static const char *const core_devices[] = {
+	"sys_clock",
+};
 #else
 #error "Add SoC's core devices list for PM"
 #endif
