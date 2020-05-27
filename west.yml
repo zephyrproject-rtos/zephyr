@@ -56,7 +56,7 @@ manifest:
       revision: f1fa8241f8786198ba41155413243de36ed878a5
       path: modules/hal/infineon
     - name: hal_nordic
-      revision: 742d8fb839406951ef7f95d0132bfa8c2635343f
+      revision: 00580f43b9d48f2079d611ce12f0fbc78d3040f1
       path: modules/hal/nordic
     - name: hal_openisa
       revision: 3b54187649cc9b37161d49918f1ad28ff7c7f830
@@ -74,10 +74,10 @@ manifest:
       revision: d1bc80d021f4ebc31f6e8b36f14b738cc26c7b03
       path: modules/hal/stm32
     - name: hal_ti
-      revision: 15b76302bf27c307e2250467116b0f95f506ba4b
+      revision: aabc6a04a8e871cbb01e02c22bb409f68001dc64
       path: modules/hal/ti
     - name: libmetal
-      revision: 3c3c9ec83bbb99390e34f8f2ba273ec86cf2b67c
+      revision: 87e9e7f2c5b4e238236fe703db61ba23e48dc2ef
       path: modules/hal/libmetal
     - name: lvgl
       revision: 74fc2e753a997bd71cefa34dd9c56dcb954b42e2
@@ -86,16 +86,16 @@ manifest:
       path: modules/crypto/mbedtls
       revision: 4bf099f1254332d16dcd931ccea0a88d24a7d3c7
     - name: mcuboot
-      revision: e88113bbebe34ff2ccc6627ffae885cfeed6fdfd
+      revision: ba7748d0923077488fd8d7864db8d0af0a4b4657
       path: bootloader/mcuboot
     - name: mcumgr
-      revision: 5885efb7cabf7b566577b73129c9d277d7d8848d
+      revision: 898a5a7f5224be8345e58eca3b9a84389ed61d15
       path: modules/lib/mcumgr
     - name: net-tools
       revision: 1c4fdba512b268033a4cf926bddd323866c3261a
       path: tools/net-tools
     - name: hal_nxp
-      revision: 80a337dc4cc980f80e595971147eb41458b29ae8
+      revision: 44c6b1998d9526713c00f5c6a49b8a910419c50a
       path: modules/hal/nxp
     - name: open-amp
       revision: 724f7e2a4519d7e1d40ef330042682dea950c991
