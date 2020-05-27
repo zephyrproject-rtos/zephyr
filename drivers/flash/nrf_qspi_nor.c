@@ -562,15 +562,6 @@ static int qspi_nor_write(struct device *dev, off_t addr, const void *src,
 	if (size < 4U) {
 		src = buf;
 		size = sizeof(buf);
-		/* read out the whole word so that unchanged data can be
-		 * written back
-		 */
-		nrfx_err_t res = nrfx_qspi_read(buf, size, addr);
-
-		if (res != 0) {
-			return qspi_get_zephyr_ret_code(res);
-		}
-		memcpy(buf, sptr, dlen);
 	} else if ((size % 4U) != 0) {
 		return -EINVAL;
 	}
@@ -595,7 +586,20 @@ static int qspi_nor_write(struct device *dev, off_t addr, const void *src,
 	}
 
 
-	nrfx_err_t res;
+	nrfx_err_t res = NRFX_SUCCESS;
+
+	qspi_lock(dev);
+
+	if (sptr != src) {
+		/* read out the whole word so that unchanged data can be
+		 * written back
+		 */
+		res = nrfx_qspi_read(buf, size, addr);
+		qspi_wait_for_completion(dev, res);
+		if (res == NRFX_SUCCESS) {
+			memcpy(buf, sptr, dlen);
+		}
+	}
 
 	/* if the data smaller than a whole word the function already copies
 	 * the data in ram
@@ -604,20 +608,20 @@ static int qspi_nor_write(struct device *dev, off_t addr, const void *src,
 		/* pre-read failed */
 	} else if (IS_ENABLED(CONFIG_NORDIC_QSPI_NOR_FLASH_ALLOW_STACK_USAGE_FOR_DATA_IN_FLASH) &&
 	    ((u32_t)sptr < CONFIG_SRAM_BASE_ADDRESS) && !(size < 4U)) {
-		for (size_t bytes_written = 0; bytes_written < dlen;) {
+		size_t bytes_written = 0;
+
+		while ((res == NRFX_SUCCESS)
+		       && (bytes_written < dlen)) {
 			memcpy(buf, ((u8_t *)sptr + bytes_written),
 			       sizeof(buf));
-			qspi_lock(dev);
 			res = nrfx_qspi_write(buf, sizeof(buf),
 					      addr + bytes_written);
 			qspi_wait_for_completion(dev, res);
-			if (res != NRFX_SUCCESS) {
-				return qspi_get_zephyr_ret_code(res);
+			if (res == NRFX_SUCCESS) {
+				bytes_written += sizeof(buf);
 			}
-			bytes_written += sizeof(buf);
 		}
 	} else {
-		qspi_lock(dev);
 		res = nrfx_qspi_write(src, size, addr);
 		qspi_wait_for_completion(dev, res);
 	}
