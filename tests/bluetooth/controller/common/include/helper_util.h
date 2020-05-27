@@ -10,6 +10,7 @@ void test_print_conn(struct ull_cp_conn *conn);
 void test_set_role(struct ull_cp_conn *conn, u8_t role);
 void test_setup(struct ull_cp_conn *conn);
 void event_prepare(struct ull_cp_conn *conn);
+void event_tx_ack(struct ull_cp_conn *conn, struct node_tx *tx);
 void event_done(struct ull_cp_conn *conn);
 u16_t event_counter(struct ull_cp_conn *conn);
 
