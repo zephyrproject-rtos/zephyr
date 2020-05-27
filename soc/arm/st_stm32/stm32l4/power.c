@@ -5,6 +5,9 @@
  */
 #include <zephyr.h>
 #include <power/power.h>
+#include <soc.h>
+#include <init.h>
+
 #include <stm32l4xx_ll_bus.h>
 #include <stm32l4xx_ll_cortex.h>
 #include <stm32l4xx_ll_pwr.h>
@@ -26,8 +29,6 @@ void sys_set_power_state(enum power_states state)
 		/* Enable the Debug Module during STOP mode */
 		LL_DBGMCU_EnableDBGStopMode();
 #endif /* CONFIG_DEBUG */
-		/* enable Power clock */
-		LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 		/* ensure HSI is the wake-up system clock */
 		LL_RCC_SetClkAfterWakeFromStop(LL_RCC_STOP_WAKEUPCLOCK_HSI);
 		/* enter STOP0 mode */
@@ -44,8 +45,6 @@ void sys_set_power_state(enum power_states state)
 		/* Enable the Debug Module during STOP mode */
 		LL_DBGMCU_EnableDBGStopMode();
 #endif /* CONFIG_DEBUG */
-		/* enable Power clock */
-		LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 		/* ensure HSI is the wake-up system clock */
 		LL_RCC_SetClkAfterWakeFromStop(LL_RCC_STOP_WAKEUPCLOCK_HSI);
 		/* enter STOP1 mode */
@@ -61,8 +60,6 @@ void sys_set_power_state(enum power_states state)
 		/* Enable the Debug Module during STOP mode */
 		LL_DBGMCU_EnableDBGStopMode();
 #endif /* CONFIG_DEBUG */
-		/* enable Power clock */
-		LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 		/* ensure HSI is the wake-up system clock */
 		LL_RCC_SetClkAfterWakeFromStop(LL_RCC_STOP_WAKEUPCLOCK_HSI);
 #ifdef PWR_CR1_RRSTP
@@ -114,3 +111,22 @@ void _sys_pm_power_state_exit_post_ops(enum power_states state)
 	 */
 	irq_unlock(0);
 }
+
+/* Initialize STM32 Power */
+static int stm32_power_init(struct device *dev)
+{
+	unsigned int ret;
+
+	ARG_UNUSED(dev);
+
+	ret = irq_lock();
+
+	/* enable Power clock */
+	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+
+	irq_unlock(ret);
+
+	return 0;
+}
+
+SYS_INIT(stm32_power_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
