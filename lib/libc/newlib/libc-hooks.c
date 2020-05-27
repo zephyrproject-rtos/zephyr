@@ -275,6 +275,18 @@ __weak int *__errno(void)
 	return z_errno();
 }
 
+/* This function gets called if static buffer overflow detection is enabled
+ * on stdlib side (Newlib here), in case such an overflow is detected. Newlib
+ * provides an implementation not suitable for us, so we override it here.
+ */
+__weak FUNC_NORETURN void __chk_fail(void)
+{
+	static const char chk_fail_msg[] = "* buffer overflow detected *\n";
+	_write(2, chk_fail_msg, sizeof(chk_fail_msg) - 1);
+	k_oops();
+	CODE_UNREACHABLE;
+}
+
 #if CONFIG_XTENSA
 extern int _read(int fd, char *buf, int nbytes);
 extern int _open(const char *name, int mode);
