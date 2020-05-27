@@ -317,6 +317,7 @@ enum pdu_data_llctrl_type {
 	PDU_DATA_LLCTRL_TYPE_PHY_RSP = 0x17,
 	PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND = 0x18,
 	PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND = 0x19,
+	PDU_DATA_LLCTRL_TYPE_UNUSED = 0xFF
 };
 
 struct pdu_data_llctrl_conn_update_ind {

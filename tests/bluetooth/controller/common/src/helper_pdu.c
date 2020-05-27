@@ -91,6 +91,17 @@ void helper_pdu_encode_feature_rsp(struct pdu_data *pdu, void *param)
 	}
 }
 
+void helper_pdu_encode_min_used_chans_ind(struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_min_used_chans_ind *p = param;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, min_used_chans_ind) +
+		sizeof(struct pdu_data_llctrl_min_used_chans_ind);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND;
+	pdu->llctrl.min_used_chans_ind.phys = p->phys;
+	pdu->llctrl.min_used_chans_ind.min_used_chans = p->min_used_chans;
+}
 
 void helper_pdu_encode_version_ind(struct pdu_data *pdu, void *param)
 {
@@ -262,6 +273,16 @@ void helper_pdu_verify_feature_rsp(const char *file, u32_t line,
 			      "Wrong feature data\nCalled at %s:%d\n",
 			      file, line);
 	}
+}
+
+void helper_pdu_verify_min_used_chans_ind(const char *file, u32_t line, struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_min_used_chans_ind *p = param;
+
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND, "Not a MIN_USED_CHAN_IND.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.min_used_chans_ind.phys, p->phys, "Wrong PHY.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.min_used_chans_ind.min_used_chans, p->min_used_chans, "Channel count\nCalled at %s:%d\n", file, line);
 }
 
 void helper_pdu_verify_enc_req(const char *file, u32_t line, struct pdu_data *pdu, void *param)

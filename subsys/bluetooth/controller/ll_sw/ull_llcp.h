@@ -47,6 +47,13 @@ struct ull_cp_conn {
 			u64_t features_peer;
 			u64_t features_used;
 		} fex;
+
+		/* Minimum used channels procedure state */
+		struct {
+			u8_t phys;
+			u8_t min_used_chans;
+		} muc;
+
 	} llcp;
 
 	struct mocked_lll_conn {
@@ -99,6 +106,11 @@ void ull_cp_release_ntf(struct node_rx_pdu *ntf);
 void ull_cp_run(struct ull_cp_conn *conn);
 
 /**
+ * @brief Handle TX ack PDU.
+ */
+void ull_cp_tx_ack(struct ull_cp_conn *conn, struct node_tx *tx);
+
+/**
  * @brief Handle received LL Control PDU.
  */
 void ull_cp_rx(struct ull_cp_conn *conn, struct node_rx_pdu *rx);
@@ -117,6 +129,11 @@ u8_t ull_cp_version_exchange(struct ull_cp_conn *conn);
  * @brief Initiate a Featue Exchange Procedure.
  */
 u8_t ull_cp_feature_exchange(struct ull_cp_conn *conn);
+
+/**
+ * @brief Initiate a Minimum used channels Procedure.
+ */
+u8_t ull_cp_min_used_chans(struct ull_cp_conn *conn, u8_t phys, u8_t min_used_chans);
 
 /**
  * @brief Initiate a Encryption Start Procedure.
