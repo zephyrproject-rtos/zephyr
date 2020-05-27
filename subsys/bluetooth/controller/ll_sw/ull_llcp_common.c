@@ -35,13 +35,15 @@
 #include <soc.h>
 #include "hal/debug.h"
 
-/* LLCP Local Procedure Encryption FSM states */
+/* LLCP Local Procedure FSM states */
 enum {
 	LP_COMMON_STATE_IDLE,
 	LP_COMMON_STATE_WAIT_TX,
+	LP_COMMON_STATE_WAIT_TX_ACK,
 	LP_COMMON_STATE_WAIT_RX,
 	LP_COMMON_STATE_WAIT_NTF,
 };
+
 
 /* LLCP Local Procedure Common FSM events */
 enum {
@@ -59,6 +61,9 @@ enum {
 
 	/* Instant collision detected */
 	LP_COMMON_EVT_COLLISION,
+
+	/* Ack received */
+	LP_COMMON_EVT_ACK,
 };
 
 /* LLCP Remote Procedure Common FSM states */
@@ -107,6 +112,11 @@ static void lp_comm_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 	case PROC_FEATURE_EXCHANGE:
 		pdu_encode_feature_req(conn, pdu);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
+		break;
+	case PROC_MIN_USED_CHANS:
+		pdu_encode_min_used_chans_ind(ctx, pdu);
+		ctx->tx_ack = tx;
+		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
 		break;
 	case PROC_VERSION_EXCHANGE:
 		pdu_encode_version_ind(pdu);
@@ -207,6 +217,10 @@ static void lp_comm_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_
 			ctx->state = LP_COMMON_STATE_IDLE;
 		}
 		break;
+	case PROC_MIN_USED_CHANS:
+		lr_complete(conn);
+		ctx->state = LP_COMMON_STATE_IDLE;
+		break;
 	case PROC_VERSION_EXCHANGE:
 		if (!ntf_alloc_is_available()) {
 			ctx->state = LP_COMMON_STATE_WAIT_NTF;
@@ -240,6 +254,14 @@ static void lp_comm_send_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_
 			lp_comm_tx(conn, ctx);
 			conn->llcp.fex.sent = 1;
 			ctx->state = LP_COMMON_STATE_WAIT_RX;
+		}
+		break;
+	case PROC_MIN_USED_CHANS:
+		if (!tx_alloc_is_available() || ctx->pause) {
+			ctx->state = LP_COMMON_STATE_WAIT_TX;
+		} else {
+			lp_comm_tx(conn, ctx);
+			ctx->state = LP_COMMON_STATE_WAIT_TX_ACK;
 		}
 		break;
 	case PROC_VERSION_EXCHANGE:
@@ -283,6 +305,26 @@ static void lp_comm_st_wait_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx, u
 	/* TODO */
 }
 
+static void lp_comm_st_wait_tx_ack(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	switch (evt) {
+	case LP_COMMON_EVT_ACK:
+		switch (ctx->proc) {
+		case PROC_MIN_USED_CHANS:
+			ctx->tx_ack = NULL;
+			lp_comm_complete(conn, ctx, evt, param);
+			break;
+		default:
+			/* Ignore for other procedures */
+			break;
+		}
+	default:
+		/* Ignore other evts */
+		break;
+	}
+	/* TODO */
+}
+
 static void lp_comm_rx_decode(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
 {
 	ctx->response_opcode = pdu->llctrl.opcode;
@@ -297,6 +339,9 @@ static void lp_comm_rx_decode(struct ull_cp_conn *conn, struct proc_ctx *ctx, st
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_REQ:
 	case PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ:
 		pdu_decode_feature_req(conn, pdu);
+		break;
+	case PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND:
+		/* No response expected */
 		break;
 	case PDU_DATA_LLCTRL_TYPE_VERSION_IND:
 		pdu_decode_version_ind(conn, pdu);
@@ -337,6 +382,9 @@ static void lp_comm_execute_fsm(struct ull_cp_conn *conn, struct proc_ctx *ctx, 
 	case LP_COMMON_STATE_WAIT_TX:
 		lp_comm_st_wait_tx(conn, ctx, evt, param);
 		break;
+	case LP_COMMON_STATE_WAIT_TX_ACK:
+		lp_comm_st_wait_tx_ack(conn, ctx, evt, param);
+		break;
 	case LP_COMMON_STATE_WAIT_RX:
 		lp_comm_st_wait_rx(conn, ctx, evt, param);
 		break;
@@ -347,6 +395,10 @@ static void lp_comm_execute_fsm(struct ull_cp_conn *conn, struct proc_ctx *ctx, 
 		/* Unknown state */
 		LL_ASSERT(0);
 	}
+}
+void ull_cp_priv_lp_comm_tx_ack(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
+{
+	lp_comm_execute_fsm(conn, ctx, LP_COMMON_EVT_ACK, tx->pdu);
 }
 
 void ull_cp_priv_lp_comm_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
@@ -379,6 +431,9 @@ static void rp_comm_rx_decode(struct ull_cp_conn *conn, struct proc_ctx *ctx, st
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_REQ:
 	case PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ:
 		pdu_decode_feature_req(conn, pdu);
+		break;
+	case PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND:
+		pdu_decode_min_used_chans_ind(conn, pdu);
 		break;
 	case PDU_DATA_LLCTRL_TYPE_VERSION_IND:
 		pdu_decode_version_ind(conn, pdu);
@@ -480,6 +535,10 @@ static void rp_comm_send_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_
 			/* TODO */
 			LL_ASSERT(0);
 		}
+		break;
+	case PROC_MIN_USED_CHANS:
+		/* No response */
+		ctx->state = RP_COMMON_STATE_IDLE;
 		break;
 	default:
 		/* Unknown procedure */

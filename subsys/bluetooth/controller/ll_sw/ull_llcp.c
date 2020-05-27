@@ -184,6 +184,9 @@ struct proc_ctx *ull_cp_priv_create_local_procedure(enum llcp_proc proc)
 	case PROC_FEATURE_EXCHANGE:
 		lp_comm_init_proc(ctx);
 		break;
+	case PROC_MIN_USED_CHANS:
+		lp_comm_init_proc(ctx);
+		break;
 	case PROC_VERSION_EXCHANGE:
 		lp_comm_init_proc(ctx);
 		break;
@@ -215,6 +218,9 @@ struct proc_ctx *ull_cp_priv_create_remote_procedure(enum llcp_proc proc)
 		rp_comm_init_proc(ctx);
 		break;
 	case PROC_FEATURE_EXCHANGE:
+		rp_comm_init_proc(ctx);
+		break;
+	case PROC_MIN_USED_CHANS:
 		rp_comm_init_proc(ctx);
 		break;
 	case PROC_VERSION_EXCHANGE:
@@ -261,6 +267,9 @@ void ull_cp_conn_init(struct ull_cp_conn *conn)
 	/* Reset the cached version Information (PROC_VERSION_EXCHANGE) */
 	memset(&conn->llcp.vex, 0, sizeof(conn->llcp.vex));
 
+	/* Reset the cached min used channels information (PROC_MIN_USED_CHANS) */
+	memset(&conn->llcp.muc, 0, sizeof(conn->llcp.muc));
+
 	/*
 	 * set the feature exchange fields
 	 *
@@ -302,6 +311,32 @@ void ull_cp_state_set(struct ull_cp_conn *conn, u8_t state)
 	default:
 		break;
 	}
+} 
+
+u8_t ull_cp_min_used_chans(struct ull_cp_conn *conn, u8_t phys, u8_t min_used_chans)
+{
+	struct proc_ctx *ctx;
+
+	if (conn->lll.role != BT_HCI_ROLE_SLAVE ) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	ctx = create_local_procedure(PROC_MIN_USED_CHANS);
+	if (!ctx) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	/* TODO - (erbr):
+	 * Figure out excactly how to store these parameters when
+	 * integrating this into the LL.
+	 * Should it be stored in the conn or in the ctx?
+	 */
+	ctx->data.muc.phys = phys;
+	ctx->data.muc.min_used_chans = min_used_chans;
+
+	lr_enqueue(conn, ctx);
+
+	return BT_HCI_ERR_SUCCESS;
 }
 
 u8_t ull_cp_le_ping(struct ull_cp_conn *conn)
@@ -414,6 +449,17 @@ static bool pdu_is_reject(struct pdu_data *pdu, struct proc_ctx *ctx)
 {
 	/* TODO(thoh): For LL_REJECT_IND check if the active procedure is supporting the PDU */
 	return (((pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND) && (ctx->tx_opcode == pdu->llctrl.reject_ext_ind.reject_opcode)) || (pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_IND));
+}
+
+void ull_cp_tx_ack(struct ull_cp_conn *conn, struct node_tx *tx)
+{
+	struct proc_ctx *ctx;
+
+	ctx = lr_peek(conn);
+	if (ctx && ctx->tx_ack == tx) {
+		/* TX ack re. local request */
+		lr_tx_ack(conn, ctx, tx);
+	}
 }
 
 void ull_cp_rx(struct ull_cp_conn *conn, struct node_rx_pdu *rx)

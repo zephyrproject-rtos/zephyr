@@ -181,11 +181,31 @@ void ull_cp_priv_pdu_decode_feature_rsp(struct ull_cp_conn *conn,
 	conn->llcp.fex.features_peer = featureset;
 	conn->llcp.fex.valid = 1;
 }
+/*
+ * Minimum used channels Procedure Helpers
+ */
+
+void ull_cp_priv_pdu_encode_min_used_chans_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_min_used_chans_ind *p;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, min_used_chans_ind) + sizeof(struct pdu_data_llctrl_min_used_chans_ind);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND;
+	p = &pdu->llctrl.min_used_chans_ind;
+	p->phys = ctx->data.muc.phys;
+	p->min_used_chans = ctx->data.muc.min_used_chans;
+}
+
+void ull_cp_priv_pdu_decode_min_used_chans_ind(struct ull_cp_conn *conn, struct pdu_data *pdu)
+{
+	conn->llcp.muc.phys = pdu->llctrl.min_used_chans_ind.phys;
+	conn->llcp.muc.min_used_chans = pdu->llctrl.min_used_chans_ind.min_used_chans;
+}
 
 /*
  * Version Exchange Procedure Helper
  */
-
 void ull_cp_priv_pdu_encode_version_ind(struct pdu_data *pdu)
 {
 	u16_t cid;
