@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2020 Ruuvi Innovations Ltd (Oy)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 /dts-v1/;
 #include <nordic/nrf52832_qfaa.dtsi>
 
