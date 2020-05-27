@@ -66,6 +66,9 @@ static bool proc_with_instant(struct proc_ctx *ctx)
 	case PROC_FEATURE_EXCHANGE:
 		return 0U;
 		break;
+	case PROC_MIN_USED_CHANS:
+		return 0U;
+		break;
 	case PROC_LE_PING:
 		return 0U;
 		break;
@@ -145,6 +148,9 @@ void ull_cp_priv_rr_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct no
 	case PROC_FEATURE_EXCHANGE:
 		rp_comm_rx(conn, ctx, rx);
 		break;
+	case PROC_MIN_USED_CHANS:
+		rp_comm_rx(conn, ctx, rx);
+		break;
 	case PROC_VERSION_EXCHANGE:
 		rp_comm_rx(conn, ctx, rx);
 		break;
@@ -160,6 +166,15 @@ void ull_cp_priv_rr_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct no
 	}
 }
 
+void ull_cp_priv_rr_tx_ack(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
+{
+	switch (ctx->proc) {
+	default:
+		/* Ignore tx_ack */
+		break;
+	}
+}
+
 static void rr_act_run(struct ull_cp_conn *conn)
 {
 	struct proc_ctx *ctx;
@@ -171,6 +186,9 @@ static void rr_act_run(struct ull_cp_conn *conn)
 		rp_comm_run(conn, ctx, NULL);
 		break;
 	case PROC_FEATURE_EXCHANGE:
+		rp_comm_run(conn, ctx, NULL);
+		break;
+	case PROC_MIN_USED_CHANS:
 		rp_comm_run(conn, ctx, NULL);
 		break;
 	case PROC_VERSION_EXCHANGE:
@@ -436,6 +454,9 @@ void ull_cp_priv_rr_new(struct ull_cp_conn *conn, struct node_rx_pdu *rx)
 		break;
 	case PDU_DATA_LLCTRL_TYPE_PHY_REQ:
 		proc = PROC_PHY_UPDATE;
+		break;
+	case PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND:
+		proc = PROC_MIN_USED_CHANS;
 		break;
 	default:
 		/* Unknown opcode */
