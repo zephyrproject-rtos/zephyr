@@ -11,17 +11,23 @@ menu "Supported TLS version"
 
 config MBEDTLS_TLS_VERSION_1_0
 	bool "Enable support for TLS 1.0"
+	select MBEDTLS_CIPHER
 	select MBEDTLS_MAC_MD5_ENABLED
 	select MBEDTLS_MAC_SHA1_ENABLED
+	select MBEDTLS_MD
 
 config MBEDTLS_TLS_VERSION_1_1
 	bool "Enable support for TLS 1.1 (DTLS 1.0)"
+	select MBEDTLS_CIPHER
 	select MBEDTLS_MAC_MD5_ENABLED
 	select MBEDTLS_MAC_SHA1_ENABLED
+	select MBEDTLS_MD
 
 config MBEDTLS_TLS_VERSION_1_2
 	bool "Enable support for TLS 1.2 (DTLS 1.2)"
-	default y
+	default y if !NET_L2_OPENTHREAD
+	select MBEDTLS_CIPHER
+	select MBEDTLS_MD
 
 config MBEDTLS_DTLS
 	bool "Enable support for DTLS"
@@ -280,8 +286,15 @@ config MBEDTLS_CTR_DRBG_ENABLED
 
 config MBEDTLS_HMAC_DRBG_ENABLED
 	bool "Enable the HMAC_DRBG random generator"
+	select MBEDTLS_MD
 
 comment "Other configurations"
+
+config MBEDTLS_CIPHER
+	bool "Enable the generic cipher layer."
+
+config MBEDTLS_MD
+	bool "Enable the generic message digest layer."
 
 config MBEDTLS_GENPRIME_ENABLED
 	bool "Enable the prime-number generation code."
