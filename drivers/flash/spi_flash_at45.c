@@ -429,6 +429,12 @@ static int spi_flash_at45_erase(struct device *dev, off_t offset, size_t size)
 		return -ENODEV;
 	}
 
+	/* Diagnose region errors before starting to erase. */
+	if (((offset % cfg->page_size) != 0)
+	    || ((size % cfg->page_size) != 0)) {
+		return -EINVAL;
+	}
+
 	acquire(dev);
 
 	if (size == cfg->chip_size) {
