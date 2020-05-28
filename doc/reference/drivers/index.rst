@@ -105,8 +105,8 @@ split into read-only and runtime-mutable parts. At a high level we have:
   struct device {
 	const char *name;
 	const void *config;
-        const void *driver_api;
-        void * const driver_data;
+        const void *api;
+        void * const data;
   };
 
 The ``config`` member is for read-only configuration data set at build time. For
@@ -114,11 +114,11 @@ example, base memory mapped IO addresses, IRQ line numbers, or other fixed
 physical characteristics of the device. This is the ``config`` pointer
 passed to ``DEVICE_DEFINE()`` and related macros.
 
-The ``driver_data`` struct is kept in RAM, and is used by the driver for
+The ``data`` struct is kept in RAM, and is used by the driver for
 per-instance runtime housekeeping. For example, it may contain reference counts,
 semaphores, scratch buffers, etc.
 
-The ``driver_api`` struct maps generic subsystem APIs to the device-specific
+The ``api`` struct maps generic subsystem APIs to the device-specific
 implementations in the driver. It is typically read-only and populated at
 build time. The next section describes this in more detail.
 
@@ -146,7 +146,7 @@ A subsystem API definition typically looks like this:
   {
         struct subsystem_api *api;
 
-        api = (struct subsystem_api *)device->driver_api;
+        api = (struct subsystem_api *)device->api;
         return api->do_this(device, foo, bar);
   }
 
@@ -154,7 +154,7 @@ A subsystem API definition typically looks like this:
   {
         struct subsystem_api *api;
 
-        api = (struct subsystem_api *)device->driver_api;
+        api = (struct subsystem_api *)device->api;
         api->do_that(device, foo, bar);
   }
 
@@ -183,7 +183,7 @@ The driver would then pass ``my_driver_api_funcs`` as the ``api`` argument to
 
 .. note::
 
-        Since pointers to the API functions are referenced in the ``driver_api``
+        Since pointers to the API functions are referenced in the ``api``
         struct, they will always be included in the binary even if unused;
         ``gc-sections`` linker option will always see at least one reference to
         them. Providing for link-time size optimizations with driver APIs in
@@ -269,7 +269,7 @@ Single Driver, Multiple Instances
 
 Some drivers may be instantiated multiple times in a given system. For example
 there can be multiple GPIO banks, or multiple UARTS. Each instance of the driver
-will have a different ``config`` struct and ``driver_data`` struct.
+will have a different ``config`` struct and ``data`` struct.
 
 Configuring interrupts for multiple drivers instances is a special case. If each
 instance needs to configure a different interrupt line, this can be accomplished
@@ -331,11 +331,11 @@ Then when the particular instance is declared:
         .config_func = my_driver_config_irq_0
   }
 
-  static struct my_driver_data_0;
+  static struct my_data_0;
 
   DEVICE_AND_API_INIT(my_driver_0, MY_DRIVER_0_NAME, my_driver_init,
-                      &my_driver_data_0, &my_driver_config_0, POST_KERNEL,
-                      MY_DRIVER_0_PRIORITY, &my_driver_api_funcs);
+                      &my_data_0, &my_driver_config_0, POST_KERNEL,
+                      MY_DRIVER_0_PRIORITY, &my_api_funcs);
 
   #endif /* CONFIG_MY_DRIVER_0 */
 
