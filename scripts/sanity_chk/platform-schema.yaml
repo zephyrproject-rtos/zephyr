@@ -49,6 +49,8 @@ mapping:
     mapping:
       "default":
         type: bool
+      "integration":
+        type: bool
       "ignore_tags":
         type: seq
         seq:
