@@ -273,7 +273,7 @@ static void write_kerntext(void)
 static int kernel_data;
 
 /**
- * @brief Testto read from kernel data section
+ * @brief Test to read from kernel data section
  *
  * @ingroup kernel_memprotect_tests
  */
@@ -1105,6 +1105,15 @@ void test_unimplemented_syscall(void)
 	missing_syscall();
 }
 
+/**
+ * @brief Test bad syscall handler
+ *
+ * @details When a system call handler decides to terminate the calling thread,
+ * the kernel will produce error which indicates the context, where the faulting
+ * system call was made from user code.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 void test_bad_syscall(void)
 {
 	expect_fault = true;
