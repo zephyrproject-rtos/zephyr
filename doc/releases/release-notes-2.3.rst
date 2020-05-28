@@ -85,9 +85,13 @@ Deprecated in this release
 
 * Devicetree
 
-  * The C macros generated from devicetree. Use the new ``<devicetree.h>``
-    accessor API instead; see :ref:`dt-guide` for details. Use of the legacy
-    macros requires enabling :option:`CONFIG_LEGACY_DEVICETREE_MACROS`.
+  * The C macros generated from the devicetree in previous releases are now
+    deprecated in favor of a new ``<devicetree.h>`` API.
+  * See :ref:`dt-from-c` for a high-level guide to the new API, and
+    :ref:`devicetree_api` for an API reference.
+  * Use of the legacy macros now requires explicitly enabling
+    :option:`CONFIG_LEGACY_DEVICETREE_MACROS`. See :ref:`dt-legacy-macros` for
+    more information, including a link to a migration guide to the new API.
 
 Removed APIs in this release
 ============================
