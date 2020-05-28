@@ -9,11 +9,16 @@
 #include <init.h>
 #include <ztest.h>
 #include <sys/printk.h>
+#include "abstract_driver.h"
 
 
 #define DUMMY_PORT_1    "dummy"
 #define DUMMY_PORT_2    "dummy_driver"
 #define BAD_DRIVER	"bad_driver"
+
+#define MY_DRIVER_A     "my_driver_A"
+#define MY_DRIVER_B     "my_driver_B"
+
 
 /**
  * @brief Test cases to verify device objects
@@ -34,6 +39,13 @@
  * It creates a dummy_driver device object with basic init and configuration
  * information and validates its binding.
  *
+ * Validates three kinds situations of driver object:
+ * 1. A non-existing device object.
+ * 2. An existing device object with basic init and configuration information.
+ * 3. A failed init device object.
+ *
+ * @ingroup kernel_device_tests
+ *
  * @see device_get_binding(), device_busy_set(), device_busy_clear(),
  * DEVICE_AND_API_INIT()
  */
@@ -41,8 +53,11 @@ void test_dummy_device(void)
 {
 	struct device *dev;
 
+	/* Validates device binding for a non-existing device object */
 	dev = device_get_binding(DUMMY_PORT_1);
 	zassert_equal(dev, NULL, NULL);
+
+	/* Validates device binding for an existing device object */
 	dev = device_get_binding(DUMMY_PORT_2);
 	zassert_false((dev == NULL), NULL);
 
@@ -214,6 +229,7 @@ void test_dummy_device_pm(void)
 	}
 	zassert_true((ret == 0), "Unable to set active state to device");
 
+	/* Set device state to BUSY*/
 	device_busy_set(dev);
 
 	busy = device_any_busy_check();
@@ -222,6 +238,7 @@ void test_dummy_device_pm(void)
 	busy = device_busy_check(dev);
 	zassert_false((busy == 0), NULL);
 
+	/* Clear device BUSY state*/
 	device_busy_clear(dev);
 
 	busy = device_busy_check(dev);
@@ -246,6 +263,110 @@ void test_dummy_device_pm(void)
 }
 #endif
 
+/* this is for storing sequence during initializtion */
+extern int init_level_sequence[4];
+extern int init_priority_sequence[4];
+extern unsigned int seq_level_cnt;
+extern unsigned int seq_priority_cnt;
+
+/**
+ * @brief Test initialization level for device driver instances
+ *
+ * @details After the defined device instances have initialized, we check the
+ * sequence number that each driver stored during initialization. If the
+ * sequence of initial level stored is corresponding with our expectation, it
+ * means assigning the level for driver instance works.
+ *
+ * @ingroup kernel_device_tests
+ */
+void test_device_init_level(void)
+{
+	bool seq_correct = true;
+
+	/* we check if the stored executing sequence for different level is
+	 * correct, and it should be 1, 2, 3, 4
+	 */
+	for (int i = 0; i < 4; i++) {
+		if (init_level_sequence[i] != (i+1))
+			seq_correct = false;
+	}
+
+	zassert_true((seq_correct == true),
+			"init sequence is not correct");
+}
+
+/**
+ * @brief Test initialization priorities for device driver instances
+ *
+ * details After the defined device instances have initialized, we check the
+ * sequence number that each driver stored during initialization. If the
+ * sequence of initial priority stored is corresponding with our expectation, it
+ * means assigning the priority for driver instance works.
+ *
+ * @ingroup kernel_device_tests
+ */
+void test_device_init_priority(void)
+{
+	bool sequence_correct = true;
+
+	/* we check if the stored pexecuting sequence for priority is correct,
+	 * and it should be 1, 2, 3, 4
+	 */
+	for (int i = 0; i < 4; i++) {
+		if (init_priority_sequence[i] != (i+1))
+			sequence_correct = false;
+	}
+
+	zassert_true((sequence_correct == true),
+			"init sequence is not correct");
+}
+
+
+/**
+ * @brief Test abstraction of device drivers with common functionalities
+ *
+ * @details Abstraction of device drivers with common functionalities
+ * shall be provided as an intermediate interface between applications
+ * and device drivers, where such interface is implemented by individual
+ * device drivers. We verify this by following step:
+
+ * 1. Define a subsystem api for drivers.
+ * 2. Define and create two driver instances.
+ * 3. Two drivers call the same subsystem API, and we verify that each
+ * driver instance will call their own implementations.
+ *
+ * @ingroup kernel_device_tests
+ */
+void test_abstraction_driver_common(void)
+{
+	struct device *dev;
+	int ret;
+	int foo = 2;
+	int bar = 1;
+	unsigned int baz = 0;
+
+	/* verify driver A API has called */
+	dev = device_get_binding(MY_DRIVER_A);
+	zassert_false((dev == NULL), NULL);
+
+	ret = subsystem_do_this(dev, foo, bar);
+	zassert_true(ret == (foo + bar), "common API do_this fail");
+
+	subsystem_do_that(dev, &baz);
+	zassert_true(baz == 1, "common API do_that fail");
+
+	/* verify driver B API has called */
+	dev = device_get_binding(MY_DRIVER_B);
+	zassert_false((dev == NULL), NULL);
+
+	ret = subsystem_do_this(dev, foo, bar);
+	zassert_true(ret == (foo - bar), "common API do_this fail");
+
+	subsystem_do_that(dev, &baz);
+	zassert_true(baz == 2, "common API do_that fail");
+}
+
+
 /**
  * @}
  */
@@ -258,6 +379,9 @@ void test_main(void)
 			 ztest_unit_test(test_dummy_device),
 			 ztest_unit_test(test_pre_kernel_detection),
 			 ztest_user_unit_test(test_bogus_dynamic_name),
-			 ztest_user_unit_test(test_dynamic_name));
+			 ztest_user_unit_test(test_dynamic_name),
+			 ztest_unit_test(test_device_init_level),
+			 ztest_unit_test(test_device_init_priority),
+			 ztest_unit_test(test_abstraction_driver_common));
 	ztest_run_test_suite(device);
 }
