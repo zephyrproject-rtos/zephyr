@@ -1921,6 +1921,8 @@ static void prefix_start_timer(struct net_if_ipv6_prefix *ifprefix,
 {
 	u64_t expire_timeout = (u64_t)MSEC_PER_SEC * (u64_t)lifetime;
 
+	(void)sys_slist_find_and_remove(&active_prefix_lifetime_timers,
+					&ifprefix->lifetime.node);
 	sys_slist_append(&active_prefix_lifetime_timers,
 			 &ifprefix->lifetime.node);
 
