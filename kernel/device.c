@@ -189,9 +189,10 @@ int device_lock(struct device *dev)
 		(struct device_context *)__device_context_start +
 		(dev - __device_start);
 
-	k_sem_take(&dc->lock, K_FOREVER);
+	if (!k_is_in_isr()) {
+		k_sem_take(&dc->lock, K_FOREVER);
+	}
 #endif
-
 	return 0;
 }
 
@@ -202,7 +203,9 @@ int device_release(struct device *dev)
 		(struct device_context *)__device_context_start +
 		(dev - __device_start);
 
-	k_sem_give(&dc->lock);
+	if (!k_is_in_isr()) {
+		k_sem_give(&dc->lock);
+	}
 #endif
 	return 0;
 }
