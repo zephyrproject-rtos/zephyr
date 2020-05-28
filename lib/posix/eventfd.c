@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 
-#include <sys/eventfd.h>
+#include <posix/sys/eventfd.h>
 
 #include <net/socket.h>
 
