@@ -3,4 +3,6 @@ common:
   tags: crypto
 tests:
   benchmark.crypto.mbedtls:
-    platform_whitelist: qemu_x86 frdm_k64f sam_e70_xplained nrf52840dk_nrf52840
+    filter: CONFIG_TEST_RANDOM_GENERATOR
+    integration_platforms:
+      - qemu_x86
