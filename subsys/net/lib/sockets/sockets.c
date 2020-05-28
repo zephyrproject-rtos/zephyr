@@ -45,8 +45,36 @@ const struct socket_op_vtable sock_fd_op_vtable;
 static inline void *get_sock_vtable(
 			int sock, const struct socket_op_vtable **vtable)
 {
-	return z_get_fd_obj_and_vtable(sock,
-				       (const struct fd_op_vtable **)vtable);
+	void *ctx;
+
+	ctx = z_get_fd_obj_and_vtable(sock,
+				      (const struct fd_op_vtable **)vtable);
+
+#ifdef CONFIG_USERSPACE
+	if (z_is_in_user_syscall()) {
+		struct z_object *zo;
+		int ret;
+
+		zo = z_object_find(ctx);
+		ret = z_object_validate(zo, K_OBJ_NET_SOCKET, _OBJ_INIT_TRUE);
+
+		if (ret != 0) {
+			z_dump_object_error(ret, ctx, zo, K_OBJ_NET_SOCKET);
+			/* Invalidate the context, the caller doesn't have
+			 * sufficient permission or there was some other
+			 * problem with the net socket object
+			 */
+			ctx = NULL;
+		}
+	}
+#endif /* CONFIG_USERSPACE */
+
+	if (ctx == NULL) {
+		NET_ERR("invalid access on sock %d by thread %p", sock,
+			_current);
+	}
+
+	return ctx;
 }
 
 void *z_impl_zsock_get_context_object(int sock)
@@ -140,13 +168,6 @@ int zsock_socket_internal(int family, int type, int proto)
 	/* recv_q and accept_q are in union */
 	k_fifo_init(&ctx->recv_q);
 
-#ifdef CONFIG_USERSPACE
-	/* Set net context object as initialized and grant access to the
-	 * calling thread (and only the calling thread)
-	 */
-	z_object_recycle(ctx);
-#endif
-
 	/* TCP context is effectively owned by both application
 	 * and the stack: stack may detect that peer closed/aborted
 	 * connection, but it must not dispose of the context behind
@@ -203,9 +224,6 @@ static inline int z_vrfy_zsock_socket(int family, int type, int proto)
 
 int zsock_close_ctx(struct net_context *ctx)
 {
-#ifdef CONFIG_USERSPACE
-	z_object_uninit(ctx);
-#endif
 	/* Reset callbacks to avoid any race conditions while
 	 * flushing queues. No need to check return values here,
 	 * as these are fail-free operations and we're closing
@@ -226,8 +244,8 @@ int zsock_close_ctx(struct net_context *ctx)
 
 int z_impl_zsock_close(int sock)
 {
-	const struct fd_op_vtable *vtable;
-	void *ctx = z_get_fd_obj_and_vtable(sock, &vtable);
+	const struct socket_op_vtable *vtable;
+	void *ctx = get_sock_vtable(sock, &vtable);
 
 	if (ctx == NULL) {
 		return -1;
@@ -237,7 +255,8 @@ int z_impl_zsock_close(int sock)
 
 	NET_DBG("close: ctx=%p, fd=%d", ctx, sock);
 
-	return z_fdtable_call_ioctl(vtable, ctx, ZFD_IOCTL_CLOSE);
+	return z_fdtable_call_ioctl((const struct fd_op_vtable *)vtable,
+				    ctx, ZFD_IOCTL_CLOSE);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -467,9 +486,6 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 
 	net_context_set_accepting(ctx, false);
 
-#ifdef CONFIG_USERSPACE
-	z_object_recycle(ctx);
-#endif
 
 	if (addr != NULL && addrlen != NULL) {
 		int len = MIN(*addrlen, sizeof(ctx->remote));
@@ -1067,15 +1083,16 @@ ssize_t z_vrfy_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
  */
 int z_impl_zsock_fcntl(int sock, int cmd, int flags)
 {
-	const struct fd_op_vtable *vtable;
+	const struct socket_op_vtable *vtable;
 	void *obj;
 
-	obj = z_get_fd_obj_and_vtable(sock, &vtable);
+	obj = get_sock_vtable(sock, &vtable);
 	if (obj == NULL) {
 		return -1;
 	}
 
-	return z_fdtable_call_ioctl(vtable, obj, cmd, flags);
+	return z_fdtable_call_ioctl((const struct fd_op_vtable *)vtable,
+				    obj, cmd, flags);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -1177,7 +1194,8 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
 			continue;
 		}
 
-		ctx = z_get_fd_obj_and_vtable(pfd->fd, &vtable);
+		ctx = get_sock_vtable(pfd->fd,
+				(const struct socket_op_vtable **)&vtable);
 		if (ctx == NULL) {
 			/* Will set POLLNVAL in return loop */
 			continue;
@@ -1243,7 +1261,8 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
 				continue;
 			}
 
-			ctx = z_get_fd_obj_and_vtable(pfd->fd, &vtable);
+			ctx = get_sock_vtable(pfd->fd,
+				(const struct socket_op_vtable **)&vtable);
 			if (ctx == NULL) {
 				pfd->revents = ZSOCK_POLLNVAL;
 				ret++;
@@ -1600,8 +1619,8 @@ int zsock_getsockname_ctx(struct net_context *ctx, struct sockaddr *addr,
 int z_impl_zsock_getsockname(int sock, struct sockaddr *addr,
 			     socklen_t *addrlen)
 {
-	const struct fd_op_vtable *vtable;
-	void *ctx = z_get_fd_obj_and_vtable(sock, &vtable);
+	const struct socket_op_vtable *vtable;
+	void *ctx = get_sock_vtable(sock, &vtable);
 
 	if (ctx == NULL) {
 		return -1;
@@ -1609,8 +1628,8 @@ int z_impl_zsock_getsockname(int sock, struct sockaddr *addr,
 
 	NET_DBG("getsockname: ctx=%p, fd=%d", ctx, sock);
 
-	return z_fdtable_call_ioctl(vtable, ctx, ZFD_IOCTL_GETSOCKNAME,
-				    addr, addrlen);
+	return z_fdtable_call_ioctl((const struct fd_op_vtable *)vtable, ctx,
+				    ZFD_IOCTL_GETSOCKNAME, addr, addrlen);
 }
 
 #ifdef CONFIG_USERSPACE
