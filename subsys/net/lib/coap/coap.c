@@ -944,6 +944,8 @@ int coap_get_option_int(const struct coap_packet *cpkt, uint16_t code)
 	return val;
 }
 
+#define get_block_option(cpkt, code) coap_get_option_int(cpkt, code)
+
 static int update_descriptive_block(struct coap_block_context *ctx,
 				    int block, int size)
 {
