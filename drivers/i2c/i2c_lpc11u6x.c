@@ -13,7 +13,7 @@
 #include <dt-bindings/pinctrl/lpc11u6x-pinctrl.h>
 #include "i2c_lpc11u6x.h"
 
-#define DEV_CFG(dev) ((dev)->config_info)
+#define DEV_CFG(dev) ((dev)->config)
 #define DEV_BASE(dev) (((struct lpc11u6x_i2c_config *) DEV_CFG((dev)))->base)
 #define DEV_DATA(dev) ((dev)->driver_data)
 

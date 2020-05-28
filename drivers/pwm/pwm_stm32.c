@@ -82,7 +82,7 @@ static inline struct pwm_stm32_data *to_data(struct device *dev)
 
 static inline const struct pwm_stm32_config *to_config(struct device *dev)
 {
-	return dev->config_info;
+	return dev->config;
 }
 
 /**

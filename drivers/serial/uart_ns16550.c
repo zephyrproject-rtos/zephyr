@@ -203,7 +203,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 
 #define DEV_CFG(dev) \
 	((const struct uart_ns16550_device_config * const) \
-	 (dev)->config_info)
+	 (dev)->config)
 #define DEV_DATA(dev) \
 	((struct uart_ns16550_dev_data_t *)(dev)->driver_data)
 

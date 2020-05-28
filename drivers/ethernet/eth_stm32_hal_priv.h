@@ -47,7 +47,7 @@ struct eth_stm32_hal_dev_data {
 };
 
 #define DEV_CFG(dev) \
-	((const struct eth_stm32_hal_dev_cfg *)(dev)->config_info)
+	((const struct eth_stm32_hal_dev_cfg *)(dev)->config)
 #define DEV_DATA(dev) \
 	((struct eth_stm32_hal_dev_data *)(dev)->driver_data)
 

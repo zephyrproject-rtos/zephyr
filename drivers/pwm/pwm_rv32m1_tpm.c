@@ -42,7 +42,7 @@ static int rv32m1_tpm_pin_set(struct device *dev, uint32_t pwm,
 			      uint32_t period_cycles, uint32_t pulse_cycles,
 			      pwm_flags_t flags)
 {
-	const struct rv32m1_tpm_config *config = dev->config_info;
+	const struct rv32m1_tpm_config *config = dev->config;
 	struct rv32m1_tpm_data *data = dev->driver_data;
 	uint8_t duty_cycle;
 
@@ -118,7 +118,7 @@ static int rv32m1_tpm_pin_set(struct device *dev, uint32_t pwm,
 static int rv32m1_tpm_get_cycles_per_sec(struct device *dev, uint32_t pwm,
 					 uint64_t *cycles)
 {
-	const struct rv32m1_tpm_config *config = dev->config_info;
+	const struct rv32m1_tpm_config *config = dev->config;
 	struct rv32m1_tpm_data *data = dev->driver_data;
 
 	*cycles = data->clock_freq >> config->prescale;
@@ -128,7 +128,7 @@ static int rv32m1_tpm_get_cycles_per_sec(struct device *dev, uint32_t pwm,
 
 static int rv32m1_tpm_init(struct device *dev)
 {
-	const struct rv32m1_tpm_config *config = dev->config_info;
+	const struct rv32m1_tpm_config *config = dev->config;
 	struct rv32m1_tpm_data *data = dev->driver_data;
 	tpm_chnl_pwm_signal_param_t *channel = data->channel;
 	struct device *clock_dev;

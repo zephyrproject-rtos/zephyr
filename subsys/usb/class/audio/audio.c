@@ -810,7 +810,7 @@ int usb_audio_send(const struct device *dev, struct net_buf *buffer,
 		   size_t len)
 {
 	struct usb_audio_dev_data *audio_dev_data = dev->driver_data;
-	struct usb_cfg_data *cfg = (void *)dev->config_info;
+	struct usb_cfg_data *cfg = (void *)dev->config;
 	/* EP ISO IN is always placed first in the endpoint table */
 	uint8_t ep = cfg->endpoint[0].ep_addr;
 
@@ -900,7 +900,7 @@ void usb_audio_register(struct device *dev,
 			const struct usb_audio_ops *ops)
 {
 	struct usb_audio_dev_data *audio_dev_data = dev->driver_data;
-	const struct usb_cfg_data *cfg = dev->config_info;
+	const struct usb_cfg_data *cfg = dev->config;
 	const struct std_if_descriptor *iface_descr =
 		cfg->interface_descriptor;
 	const struct cs_ac_if_descriptor *header =
@@ -916,7 +916,7 @@ void usb_audio_register(struct device *dev,
 	sys_slist_append(&usb_audio_data_devlist, &audio_dev_data->common.node);
 
 	LOG_DBG("Device dev %p dev_data %p cfg %p added to devlist %p",
-		dev, audio_dev_data, dev->config_info,
+		dev, audio_dev_data, dev->config,
 		&usb_audio_data_devlist);
 }
 

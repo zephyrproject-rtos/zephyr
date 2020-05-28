@@ -30,8 +30,7 @@ int dmamux_stm32_configure(struct device *dev, uint32_t id,
 {
 	/* device is the dmamux, id is the dmamux channel from 0 */
 	struct dmamux_stm32_data *data = dev->driver_data;
-	const struct dmamux_stm32_config *dev_config =
-					dev->config_info;
+	const struct dmamux_stm32_config *dev_config = dev->config;
 
 	/*
 	 * request line ID for this mux channel is stored
@@ -78,8 +77,7 @@ int dmamux_stm32_configure(struct device *dev, uint32_t id,
 
 int dmamux_stm32_start(struct device *dev, uint32_t id)
 {
-	const struct dmamux_stm32_config *dev_config =
-				dev->config_info;
+	const struct dmamux_stm32_config *dev_config = dev->config;
 	struct dmamux_stm32_data *data = dev->driver_data;
 
 	/* check if this channel is valid */
@@ -99,8 +97,7 @@ int dmamux_stm32_start(struct device *dev, uint32_t id)
 
 int dmamux_stm32_stop(struct device *dev, uint32_t id)
 {
-	const struct dmamux_stm32_config *dev_config =
-				dev->config_info;
+	const struct dmamux_stm32_config *dev_config = dev->config;
 	struct dmamux_stm32_data *data = dev->driver_data;
 
 	/* check if this channel is valid */
@@ -121,8 +118,7 @@ int dmamux_stm32_stop(struct device *dev, uint32_t id)
 int dmamux_stm32_reload(struct device *dev, uint32_t id,
 			    uint32_t src, uint32_t dst, size_t size)
 {
-	const struct dmamux_stm32_config *dev_config =
-				dev->config_info;
+	const struct dmamux_stm32_config *dev_config = dev->config;
 	struct dmamux_stm32_data *data = dev->driver_data;
 
 	/* check if this channel is valid */
@@ -144,8 +140,7 @@ int dmamux_stm32_reload(struct device *dev, uint32_t id,
 static int dmamux_stm32_init(struct device *dev)
 {
 	struct dmamux_stm32_data *data = dev->driver_data;
-	const struct dmamux_stm32_config *config =
-				dev->config_info;
+	const struct dmamux_stm32_config *config = dev->config;
 	struct device *clk =
 		device_get_binding(STM32_CLOCK_CONTROL_NAME);
 

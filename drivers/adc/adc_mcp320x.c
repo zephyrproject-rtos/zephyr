@@ -52,7 +52,7 @@ struct mcp320x_data {
 static int mcp320x_channel_setup(struct device *dev,
 				 const struct adc_channel_cfg *channel_cfg)
 {
-	const struct mcp320x_config *config = dev->config_info;
+	const struct mcp320x_config *config = dev->config;
 	struct mcp320x_data *data = dev->driver_data;
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
@@ -86,7 +86,7 @@ static int mcp320x_channel_setup(struct device *dev,
 static int mcp320x_validate_buffer_size(struct device *dev,
 					const struct adc_sequence *sequence)
 {
-	const struct mcp320x_config *config = dev->config_info;
+	const struct mcp320x_config *config = dev->config;
 	uint8_t channels = 0;
 	size_t needed;
 	uint32_t mask;
@@ -112,7 +112,7 @@ static int mcp320x_validate_buffer_size(struct device *dev,
 static int mcp320x_start_read(struct device *dev,
 			      const struct adc_sequence *sequence)
 {
-	const struct mcp320x_config *config = dev->config_info;
+	const struct mcp320x_config *config = dev->config;
 	struct mcp320x_data *data = dev->driver_data;
 	int err;
 
@@ -181,7 +181,7 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 
 static int mcp320x_read_channel(struct device *dev, uint8_t channel, uint16_t *result)
 {
-	const struct mcp320x_config *config = dev->config_info;
+	const struct mcp320x_config *config = dev->config;
 	struct mcp320x_data *data = dev->driver_data;
 	uint8_t tx_bytes[2];
 	uint8_t rx_bytes[2];
@@ -273,7 +273,7 @@ static void mcp320x_acquisition_thread(struct device *dev)
 
 static int mcp320x_init(struct device *dev)
 {
-	const struct mcp320x_config *config = dev->config_info;
+	const struct mcp320x_config *config = dev->config;
 	struct mcp320x_data *data = dev->driver_data;
 
 	k_sem_init(&data->sem, 0, 1);

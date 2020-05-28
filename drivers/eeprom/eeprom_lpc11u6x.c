@@ -30,7 +30,7 @@ struct eeprom_lpc11u6x_config {
 static int eeprom_lpc11u6x_read(struct device *dev,
 				off_t offset, void *data, size_t len)
 {
-	const struct eeprom_lpc11u6x_config *config = dev->config_info;
+	const struct eeprom_lpc11u6x_config *config = dev->config;
 	uint32_t cmd[5];
 	int ret;
 
@@ -63,7 +63,7 @@ static int eeprom_lpc11u6x_read(struct device *dev,
 static int eeprom_lpc11u6x_write(struct device *dev,
 				 off_t offset, const void *data, size_t len)
 {
-	const struct eeprom_lpc11u6x_config *config = dev->config_info;
+	const struct eeprom_lpc11u6x_config *config = dev->config;
 	uint32_t cmd[5];
 	int ret;
 
@@ -95,7 +95,7 @@ static int eeprom_lpc11u6x_write(struct device *dev,
 
 static size_t eeprom_lpc11u6x_size(struct device *dev)
 {
-	const struct eeprom_lpc11u6x_config *config = dev->config_info;
+	const struct eeprom_lpc11u6x_config *config = dev->config;
 
 	return config->size;
 }

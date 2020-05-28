@@ -74,7 +74,7 @@ static int dummy_init_interrupt(struct device *dev)
 static int dummy_sensor_init(struct device *dev)
 {
 	struct dummy_sensor_data *data = dev->driver_data;
-	const struct dummy_sensor_config *config = dev->config_info;
+	const struct dummy_sensor_config *config = dev->config;
 	/* i2c should be null for dummy driver */
 	struct device *i2c = device_get_binding(config->i2c_name);
 

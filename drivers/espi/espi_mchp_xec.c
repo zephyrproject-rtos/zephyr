@@ -360,7 +360,7 @@ static int espi_xec_write_lpc_request(struct device *dev,
 				      uint32_t *data)
 {
 	struct espi_xec_config *config =
-		(struct espi_xec_config *) (dev->config_info);
+		(struct espi_xec_config *) (dev->config);
 
 	volatile uint32_t __attribute__((unused)) dummy;
 
@@ -678,7 +678,7 @@ static void send_slave_bootdone(struct device *dev)
 static void espi_init_oob(struct device *dev)
 {
 	struct espi_xec_config *config =
-		(struct espi_xec_config *) (dev->config_info);
+		(struct espi_xec_config *) (dev->config);
 
 	/* Enable OOB Tx/Rx interrupts */
 	MCHP_GIRQ_ENSET(config->bus_girq_id) = (MCHP_ESPI_OOB_UP_GIRQ_VAL |
@@ -700,7 +700,7 @@ static void espi_init_oob(struct device *dev)
 static void espi_init_flash(struct device *dev)
 {
 	struct espi_xec_config *config =
-	    (struct espi_xec_config *)(dev->config_info);
+	    (struct espi_xec_config *)(dev->config);
 
 	LOG_DBG("%s", __func__);
 
@@ -713,7 +713,7 @@ static void espi_init_flash(struct device *dev)
 
 static void espi_bus_init(struct device *dev)
 {
-	const struct espi_xec_config *config = dev->config_info;
+	const struct espi_xec_config *config = dev->config;
 
 	/* Enable bus interrupts */
 	MCHP_GIRQ_ENSET(config->bus_girq_id) = MCHP_ESPI_ESPI_RST_GIRQ_VAL |
@@ -858,7 +858,7 @@ static void espi_pc_isr(struct device *dev)
 static void espi_vwire_chanel_isr(struct device *dev)
 {
 	struct espi_xec_data *data = (struct espi_xec_data *)(dev->driver_data);
-	const struct espi_xec_config *config = dev->config_info;
+	const struct espi_xec_config *config = dev->config;
 	struct espi_event evt = { .evt_type = ESPI_BUS_EVENT_CHANNEL_READY,
 				  .evt_details = ESPI_CHANNEL_VWIRE,
 				  .evt_data = 0 };
@@ -1198,7 +1198,7 @@ static uint8_t periph_isr_cnt = sizeof(peripherals_isr) / sizeof(struct espi_isr
 static void espi_xec_bus_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	const struct espi_xec_config *config = dev->config_info;
+	const struct espi_xec_config *config = dev->config;
 	uint32_t girq_result;
 
 	girq_result = MCHP_GIRQ_RESULT(config->bus_girq_id);
@@ -1219,7 +1219,7 @@ static void espi_xec_bus_isr(void *arg)
 static void espi_xec_vw_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	const struct espi_xec_config *config = dev->config_info;
+	const struct espi_xec_config *config = dev->config;
 	uint32_t girq_result;
 
 	girq_result = MCHP_GIRQ_RESULT(config->vw_girq_id);
@@ -1240,7 +1240,7 @@ static void espi_xec_vw_isr(void *arg)
 static void espi_xec_periph_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	const struct espi_xec_config *config = dev->config_info;
+	const struct espi_xec_config *config = dev->config;
 	uint32_t girq_result;
 
 	girq_result = MCHP_GIRQ_RESULT(config->pc_girq_id);
@@ -1290,7 +1290,7 @@ DEVICE_AND_API_INIT(espi_xec_0, DT_INST_LABEL(0),
 
 static int espi_xec_init(struct device *dev)
 {
-	const struct espi_xec_config *config = dev->config_info;
+	const struct espi_xec_config *config = dev->config;
 	struct espi_xec_data *data = (struct espi_xec_data *)(dev->driver_data);
 
 	data->plt_rst_asserted = 0;

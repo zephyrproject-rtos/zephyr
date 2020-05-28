@@ -99,8 +99,7 @@ struct gpio_pca95xx_drv_data {
  */
 static int read_port_regs(struct device *dev, uint8_t reg, uint16_t *buf)
 {
-	const struct gpio_pca95xx_config * const config =
-		dev->config_info;
+	const struct gpio_pca95xx_config * const config = dev->config;
 	struct gpio_pca95xx_drv_data * const drv_data =
 		(struct gpio_pca95xx_drv_data * const)dev->driver_data;
 	struct device * const i2c_master = drv_data->i2c_master;
@@ -139,8 +138,7 @@ static int read_port_regs(struct device *dev, uint8_t reg, uint16_t *buf)
 static int write_port_regs(struct device *dev, uint8_t reg,
 			   uint16_t *cache, uint16_t value)
 {
-	const struct gpio_pca95xx_config * const config =
-		dev->config_info;
+	const struct gpio_pca95xx_config * const config = dev->config;
 	struct gpio_pca95xx_drv_data * const drv_data =
 		(struct gpio_pca95xx_drv_data * const)dev->driver_data;
 	struct device * const i2c_master = drv_data->i2c_master;
@@ -252,8 +250,7 @@ static int setup_pin_dir(struct device *dev, uint32_t pin, int flags)
  */
 static int setup_pin_pullupdown(struct device *dev, uint32_t pin, int flags)
 {
-	const struct gpio_pca95xx_config * const config =
-		dev->config_info;
+	const struct gpio_pca95xx_config * const config = dev->config;
 	struct gpio_pca95xx_drv_data * const drv_data =
 		(struct gpio_pca95xx_drv_data * const)dev->driver_data;
 	uint16_t reg_pud;
@@ -316,8 +313,7 @@ static int gpio_pca95xx_config(struct device *dev,
 		(struct gpio_pca95xx_drv_data * const)dev->driver_data;
 
 #if (CONFIG_GPIO_LOG_LEVEL >= LOG_LEVEL_DEBUG)
-	const struct gpio_pca95xx_config * const config =
-		dev->config_info;
+	const struct gpio_pca95xx_config * const config = dev->config;
 	uint16_t i2c_addr = config->i2c_slave_addr;
 #endif
 
@@ -470,8 +466,7 @@ static const struct gpio_driver_api gpio_pca95xx_drv_api_funcs = {
  */
 static int gpio_pca95xx_init(struct device *dev)
 {
-	const struct gpio_pca95xx_config * const config =
-		dev->config_info;
+	const struct gpio_pca95xx_config * const config = dev->config;
 	struct gpio_pca95xx_drv_data * const drv_data =
 		(struct gpio_pca95xx_drv_data * const)dev->driver_data;
 	struct device *i2c_master;

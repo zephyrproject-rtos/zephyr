@@ -83,7 +83,7 @@ static void iis2dh_handle_interrupt(void *arg)
 {
 	struct device *dev = (struct device *)arg;
 	struct iis2dh_data *iis2dh = dev->driver_data;
-	const struct iis2dh_device_config *cfg = dev->config_info;
+	const struct iis2dh_device_config *cfg = dev->config;
 
 	iis2dh_handle_drdy_int(dev);
 
@@ -139,7 +139,7 @@ static void iis2dh_work_cb(struct k_work *work)
 int iis2dh_init_interrupt(struct device *dev)
 {
 	struct iis2dh_data *iis2dh = dev->driver_data;
-	const struct iis2dh_device_config *cfg = dev->config_info;
+	const struct iis2dh_device_config *cfg = dev->config;
 	int ret;
 
 	/* setup data ready gpio interrupt */

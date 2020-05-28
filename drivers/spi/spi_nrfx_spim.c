@@ -40,7 +40,7 @@ static inline struct spi_nrfx_data *get_dev_data(struct device *dev)
 
 static inline const struct spi_nrfx_config *get_dev_config(struct device *dev)
 {
-	return dev->config_info;
+	return dev->config;
 }
 
 static inline nrf_spim_frequency_t get_nrf_spim_frequency(uint32_t frequency)

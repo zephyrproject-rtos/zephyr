@@ -28,7 +28,7 @@ struct dac_sam0_cfg {
 	uint8_t refsel;
 };
 
-#define DEV_CFG(dev) ((const struct dac_sam0_cfg *const)(dev)->config_info)
+#define DEV_CFG(dev) ((const struct dac_sam0_cfg *const)(dev)->config)
 
 /* Write to the DAC. */
 static int dac_sam0_write_value(struct device *dev, uint8_t channel,

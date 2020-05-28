@@ -20,7 +20,7 @@ static inline void setup_drdy(struct device *dev,
 {
 	struct bmc150_magn_data *data = dev->driver_data;
 	const struct bmc150_magn_config *const cfg =
-		dev->config_info;
+		dev->config;
 
 	gpio_pin_interrupt_configure(data->gpio_drdy,
 				     cfg->gpio_drdy_int_pin,
@@ -36,7 +36,7 @@ int bmc150_magn_trigger_set(struct device *dev,
 {
 	struct bmc150_magn_data *data = dev->driver_data;
 	const struct bmc150_magn_config * const config =
-					dev->config_info;
+					dev->config;
 	uint8_t state;
 
 #if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
@@ -86,7 +86,7 @@ static void bmc150_magn_thread_main(void *arg1, void *arg2, void *arg3)
 {
 	struct device *dev = (struct device *) arg1;
 	struct bmc150_magn_data *data = dev->driver_data;
-	const struct bmc150_magn_config *config = dev->config_info;
+	const struct bmc150_magn_config *config = dev->config;
 	uint8_t reg_val;
 
 	while (1) {
@@ -110,7 +110,7 @@ static void bmc150_magn_thread_main(void *arg1, void *arg2, void *arg3)
 static int bmc150_magn_set_drdy_polarity(struct device *dev, int state)
 {
 	struct bmc150_magn_data *data = dev->driver_data;
-	const struct bmc150_magn_config *config = dev->config_info;
+	const struct bmc150_magn_config *config = dev->config;
 
 	if (state) {
 		state = 1;
@@ -125,7 +125,7 @@ static int bmc150_magn_set_drdy_polarity(struct device *dev, int state)
 int bmc150_magn_init_interrupt(struct device *dev)
 {
 	const struct bmc150_magn_config * const config =
-						dev->config_info;
+						dev->config;
 	struct bmc150_magn_data *data = dev->driver_data;
 
 

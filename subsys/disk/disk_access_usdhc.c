@@ -2658,7 +2658,7 @@ static int usdhc_board_access_init(struct usdhc_priv *priv)
 
 static int usdhc_access_init(const struct device *dev)
 {
-	const struct usdhc_config *config = dev->config_info;
+	const struct usdhc_config *config = dev->config;
 	struct usdhc_priv *priv = dev->driver_data;
 	int ret;
 

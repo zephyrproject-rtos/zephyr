@@ -73,7 +73,7 @@ struct pwm_dw_config {
 static inline int pwm_dw_timer_base_addr(struct device *dev, uint32_t timer)
 {
 	const struct pwm_dw_config * const cfg =
-	    (const struct pwm_dw_config *)dev->config_info;
+	    (const struct pwm_dw_config *)dev->config;
 
 	return (cfg->addr + (timer * REG_OFFSET));
 }
@@ -89,7 +89,7 @@ static inline int pwm_dw_timer_base_addr(struct device *dev, uint32_t timer)
 static inline int pwm_dw_timer_ldcnt2_addr(struct device *dev, uint32_t timer)
 {
 	const struct pwm_dw_config * const cfg =
-	    (const struct pwm_dw_config *)dev->config_info;
+	    (const struct pwm_dw_config *)dev->config;
 
 	return (cfg->addr + REG_TMR_LOAD_CNT2 + (timer * REG_OFFSET_LOAD_CNT2));
 }
@@ -144,7 +144,7 @@ static int pwm_dw_pin_set_cycles(struct device *dev,
 				 uint32_t pulse_cycles, pwm_flags_t flags)
 {
 	const struct pwm_dw_config * const cfg =
-	    (const struct pwm_dw_config *)dev->config_info;
+	    (const struct pwm_dw_config *)dev->config;
 	int i;
 	uint32_t on, off;
 

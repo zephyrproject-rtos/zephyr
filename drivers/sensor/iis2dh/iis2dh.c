@@ -92,7 +92,7 @@ static int iis2dh_set_range(struct device *dev, uint16_t range)
 static int iis2dh_set_odr(struct device *dev, uint16_t odr)
 {
 	struct iis2dh_data *iis2dh = dev->driver_data;
-	const struct iis2dh_device_config *cfg = dev->config_info;
+	const struct iis2dh_device_config *cfg = dev->config;
 	iis2dh_odr_t val;
 
 	val = IIS2DH_ODR_TO_REG_HR(cfg->pm, odr);
@@ -230,7 +230,7 @@ static const struct sensor_driver_api iis2dh_driver_api = {
 static int iis2dh_init_interface(struct device *dev)
 {
 	struct iis2dh_data *iis2dh = dev->driver_data;
-	const struct iis2dh_device_config *cfg = dev->config_info;
+	const struct iis2dh_device_config *cfg = dev->config;
 
 	iis2dh->bus = device_get_binding(cfg->bus_name);
 	if (!iis2dh->bus) {
@@ -252,7 +252,7 @@ static int iis2dh_init_interface(struct device *dev)
 static int iis2dh_init(struct device *dev)
 {
 	struct iis2dh_data *iis2dh = dev->driver_data;
-	const struct iis2dh_device_config *cfg = dev->config_info;
+	const struct iis2dh_device_config *cfg = dev->config;
 	uint8_t wai;
 
 	if (iis2dh_init_interface(dev)) {

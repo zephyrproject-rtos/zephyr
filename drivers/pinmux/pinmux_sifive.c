@@ -24,7 +24,7 @@ struct pinmux_sifive_regs_t {
 
 #define DEV_CFG(dev)					\
 	((const struct pinmux_sifive_config * const)	\
-	 (dev)->config_info)
+	 (dev)->config)
 
 #define DEV_PINMUX(dev)						\
 	((struct pinmux_sifive_regs_t *)(DEV_CFG(dev))->base)

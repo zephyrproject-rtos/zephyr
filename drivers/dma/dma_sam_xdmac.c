@@ -47,7 +47,7 @@ struct sam_xdmac_dev_data {
 
 #define DEV_NAME(dev) ((dev)->name)
 #define DEV_CFG(dev) \
-	((const struct sam_xdmac_dev_cfg *const)(dev)->config_info)
+	((const struct sam_xdmac_dev_cfg *const)(dev)->config)
 #define DEV_DATA(dev) \
 	((struct sam_xdmac_dev_data *const)(dev)->driver_data)
 

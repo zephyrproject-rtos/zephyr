@@ -234,7 +234,7 @@ static int uart_mux_init(struct device *dev)
 	k_work_init(&dev_data->cb_work, uart_mux_cb_work);
 
 	LOG_DBG("Device %s dev %p dev_data %p cfg %p created",
-		dev->name, dev, dev_data, dev->config_info);
+		dev->name, dev, dev_data, dev->config);
 
 	return 0;
 }

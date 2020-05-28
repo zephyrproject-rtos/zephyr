@@ -36,7 +36,7 @@ struct spi_mcux_data {
 
 static int spi_mcux_transfer_next_packet(struct device *dev)
 {
-	const struct spi_mcux_config *config = dev->config_info;
+	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->driver_data;
 	SPI_Type *base = config->base;
 	struct spi_context *ctx = &data->ctx;
@@ -106,7 +106,7 @@ static int spi_mcux_transfer_next_packet(struct device *dev)
 static void spi_mcux_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	const struct spi_mcux_config *config = dev->config_info;
+	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->driver_data;
 	SPI_Type *base = config->base;
 
@@ -128,7 +128,7 @@ static void spi_mcux_master_transfer_callback(SPI_Type *base,
 static int spi_mcux_configure(struct device *dev,
 			      const struct spi_config *spi_cfg)
 {
-	const struct spi_mcux_config *config = dev->config_info;
+	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->driver_data;
 	SPI_Type *base = config->base;
 	dspi_master_config_t master_config;
@@ -268,7 +268,7 @@ static int spi_mcux_release(struct device *dev,
 
 static int spi_mcux_init(struct device *dev)
 {
-	const struct spi_mcux_config *config = dev->config_info;
+	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->driver_data;
 
 	config->irq_config_func(dev);

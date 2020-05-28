@@ -805,7 +805,7 @@ static const struct ism330dhcx_config ism330dhcx_config = {
 
 static int ism330dhcx_init(struct device *dev)
 {
-	const struct ism330dhcx_config * const config = dev->config_info;
+	const struct ism330dhcx_config * const config = dev->config;
 	struct ism330dhcx_data *data = dev->driver_data;
 
 	data->bus = device_get_binding(config->bus_name);

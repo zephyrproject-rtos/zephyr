@@ -78,7 +78,7 @@ static void set_millis(struct sensor_value *val, int val_millis)
 static int max17055_channel_get(struct device *dev, enum sensor_channel chan,
 				struct sensor_value *valp)
 {
-	const struct max17055_config *const config = dev->config_info;
+	const struct max17055_config *const config = dev->config;
 	struct max17055_data *const priv = dev->driver_data;
 	unsigned int tmp;
 
@@ -200,7 +200,7 @@ static int max17055_sample_fetch(struct device *dev, enum sensor_channel chan)
 static int max17055_gauge_init(struct device *dev)
 {
 	struct max17055_data *priv = dev->driver_data;
-	const struct max17055_config *const config = dev->config_info;
+	const struct max17055_config *const config = dev->config;
 
 	priv->i2c = device_get_binding(config->bus_name);
 	if (!priv->i2c) {

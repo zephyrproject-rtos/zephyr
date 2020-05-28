@@ -88,7 +88,7 @@ struct sht3xd_data {
 
 static inline uint8_t sht3xd_i2c_address(struct device *dev)
 {
-	const struct sht3xd_config *dcp = dev->config_info;
+	const struct sht3xd_config *dcp = dev->config;
 
 	return dcp->base_address;
 }

@@ -28,7 +28,7 @@ static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 
 	d = (struct device *)arg1;
 	driver_data = d->driver_data;
-	config_info = d->config_info;
+	config_info = d->config;
 	ARG_UNUSED(arg2);
 	size32 = 0U;
 	pos = 0;
@@ -118,7 +118,7 @@ static void ipm_console_receive_callback(struct device *ipm_dev, void *context,
 int ipm_console_receiver_init(struct device *d)
 {
 	const struct ipm_console_receiver_config_info *config_info =
-		d->config_info;
+		d->config;
 	struct ipm_console_receiver_runtime_data *driver_data = d->driver_data;
 	struct device *ipm;
 

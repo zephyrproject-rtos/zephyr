@@ -37,7 +37,7 @@ int ipm_console_sender_init(struct device *d)
 {
 	const struct ipm_console_sender_config_info *config_info;
 
-	config_info = d->config_info;
+	config_info = d->config;
 	ipm_console_device = device_get_binding(config_info->bind_to);
 
 	if (!ipm_console_device) {

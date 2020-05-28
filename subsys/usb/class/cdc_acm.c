@@ -302,7 +302,7 @@ static void tx_work_handler(struct k_work *work)
 	struct cdc_acm_dev_data_t *dev_data =
 		CONTAINER_OF(work, struct cdc_acm_dev_data_t, tx_work);
 	struct device *dev = dev_data->common.dev;
-	struct usb_cfg_data *cfg = (void *)dev->config_info;
+	struct usb_cfg_data *cfg = (void *)dev->config;
 	uint8_t ep = cfg->endpoint[ACM_IN_EP_IDX].ep_addr;
 	uint8_t *data;
 	size_t len;
@@ -414,7 +414,7 @@ static void cdc_acm_do_cb(struct cdc_acm_dev_data_t *dev_data,
 			  const uint8_t *param)
 {
 	struct device *dev = dev_data->common.dev;
-	struct usb_cfg_data *cfg = (void *)dev->config_info;
+	struct usb_cfg_data *cfg = (void *)dev->config;
 
 	/* Check the USB status and do needed action if required */
 	switch (status) {
@@ -541,7 +541,7 @@ static int cdc_acm_init(struct device *dev)
 	sys_slist_append(&cdc_acm_data_devlist, &dev_data->common.node);
 
 	LOG_DBG("Device dev %p dev_data %p cfg %p added to devlist %p",
-		dev, dev_data, dev->config_info, &cdc_acm_data_devlist);
+		dev, dev_data, dev->config, &cdc_acm_data_devlist);
 
 	k_sem_init(&poll_wait_sem, 0, UINT_MAX);
 	k_work_init(&dev_data->cb_work, cdc_acm_irq_callback_work_handler);
@@ -813,7 +813,7 @@ static void cdc_acm_baudrate_set(struct device *dev, uint32_t baudrate)
 static int cdc_acm_send_notification(struct device *dev, uint16_t serial_state)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
-	struct usb_cfg_data * const cfg = (void *)dev->config_info;
+	struct usb_cfg_data * const cfg = (void *)dev->config;
 	struct cdc_acm_notification notification;
 	uint32_t cnt = 0U;
 

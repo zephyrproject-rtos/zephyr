@@ -149,7 +149,7 @@ static bool check_lines(uint32_t ba)
 static int i2c_xec_configure(struct device *dev, uint32_t dev_config_raw)
 {
 	const struct i2c_xec_config *config =
-		(const struct i2c_xec_config *const) (dev->config_info);
+		(const struct i2c_xec_config *const) (dev->config);
 	uint32_t ba = config->base_addr;
 	uint8_t port_sel = config->port_sel;
 	uint32_t speed_id;
@@ -229,7 +229,7 @@ static int i2c_xec_poll_write(struct device *dev, struct i2c_msg msg,
 			      uint16_t addr)
 {
 	const struct i2c_xec_config *config =
-		(const struct i2c_xec_config *const) (dev->config_info);
+		(const struct i2c_xec_config *const) (dev->config);
 	struct i2c_xec_data *data =
 		(struct i2c_xec_data *const) (dev->driver_data);
 	uint32_t ba = config->base_addr;
@@ -292,7 +292,7 @@ static int i2c_xec_poll_read(struct device *dev, struct i2c_msg msg,
 			     uint16_t addr)
 {
 	const struct i2c_xec_config *config =
-		(const struct i2c_xec_config *const) (dev->config_info);
+		(const struct i2c_xec_config *const) (dev->config);
 	struct i2c_xec_data *data =
 		(struct i2c_xec_data *const) (dev->driver_data);
 	uint32_t ba = config->base_addr;

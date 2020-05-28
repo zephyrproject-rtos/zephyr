@@ -46,7 +46,7 @@ struct rv32m1_intmux_config {
 };
 
 #define DEV_CFG(dev) \
-	((struct rv32m1_intmux_config *)(dev->config_info))
+	((struct rv32m1_intmux_config *)(dev->config))
 
 #define DEV_REGS(dev) (DEV_CFG(dev)->regs)
 

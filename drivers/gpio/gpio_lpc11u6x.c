@@ -24,7 +24,7 @@
 #include "gpio_utils.h"
 
 #define DEV_CFG(dev)  ((const struct gpio_lpc11u6x_config *) \
-		       ((dev)->config_info))
+		       ((dev)->config))
 #define DEV_DATA(dev) ((struct gpio_lpc11u6x_data *) \
 		       ((dev)->driver_data))
 
