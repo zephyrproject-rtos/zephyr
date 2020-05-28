@@ -52,7 +52,7 @@ extern "C" {
  * and define device PM control function.
  *
  * @details Invokes DEVICE_DEFINE() with no power management support
- * (@p pm_control_fn), no API (@p api), and a device name derived from
+ * (@p pm_control_fn), no API (@p api_ptr), and a device name derived from
  * the @p init_fn name (@p dev_name).
  */
 #define SYS_DEVICE_DEFINE(drv_name, init_fn, pm_control_fn, level, prio) \
@@ -64,13 +64,13 @@ extern "C" {
  * @def DEVICE_INIT
  *
  * @brief Invoke DEVICE_DEFINE() with no power management support (@p
- * pm_control_fn) and no API (@p api).
+ * pm_control_fn) and no API (@p api_ptr).
  */
 #define DEVICE_INIT(dev_name, drv_name, init_fn,			\
-		    data, cfg_ptr, level, prio)				\
+		    data_ptr, cfg_ptr, level, prio)			\
 	DEVICE_DEFINE(dev_name, drv_name, init_fn,			\
 		      device_pm_control_nop,				\
-		      data, cfg_ptr, level, prio, NULL)
+		      data_ptr, cfg_ptr, level, prio, NULL)
 
 /**
  * @def DEVICE_AND_API_INIT
@@ -79,10 +79,10 @@ extern "C" {
  * pm_control_fn).
  */
 #define DEVICE_AND_API_INIT(dev_name, drv_name, init_fn,		\
-			    data, cfg_ptr, level, prio, api)		\
+			    data_ptr, cfg_ptr, level, prio, api_ptr)	\
 	DEVICE_DEFINE(dev_name, drv_name, init_fn,			\
 		      device_pm_control_nop,				\
-		      data, cfg_ptr, level, prio, api)
+		      data_ptr, cfg_ptr, level, prio, api_ptr)
 
 /**
  * @def DEVICE_DEFINE
@@ -109,7 +109,7 @@ extern "C" {
  * @param pm_control_fn Pointer to device_pm_control function.
  * Can be empty function (device_pm_control_nop) if not implemented.
  *
- * @param data Pointer to the device's private data.
+ * @param data_ptr Pointer to the device's private data.
  *
  * @param cfg_ptr The address to the structure containing the
  * configuration information for this instance of the driver.
@@ -120,19 +120,19 @@ extern "C" {
  * @param prio Priority within the selected initialization level. See
  * SYS_INIT() for details.
  *
- * @param api Provides an initial pointer to the API function struct
+ * @param api_ptr Provides an initial pointer to the API function struct
  * used by the driver. Can be NULL.
  */
 #define DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_control_fn,	\
-		      data, cfg_ptr, level, prio, api)			\
+		      data_ptr, cfg_ptr, level, prio, api_ptr)		\
 	Z_DEVICE_DEFINE_PM(dev_name)					\
 	static Z_DECL_ALIGN(struct device)				\
 		DEVICE_NAME_GET(dev_name) __used			\
 	__attribute__((__section__(".device_" #level STRINGIFY(prio)))) = { \
 		.name = drv_name,					\
 		.config = (cfg_ptr),					\
-		.driver_api = (api),					\
-		.driver_data = (data),					\
+		.api = (api_ptr),					\
+		.data = (data_ptr),					\
 		Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)	\
 	};								\
 	Z_INIT_ENTRY_DEFINE(_CONCAT(__device_, dev_name), init_fn,	\
@@ -203,9 +203,9 @@ struct device {
 	/** Address of device instance config information */
 	const void *config;
 	/** Address of the API structure exposed by the device instance */
-	const void *driver_api;
+	const void *api;
 	/** Address of the device instance private data */
-	void * const driver_data;
+	void * const data;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	/** Power Management function */
 	int (*device_pm_control)(struct device *device, uint32_t command,
@@ -247,7 +247,7 @@ size_t z_device_get_all_static(struct device **devices);
  */
 static inline bool z_device_ready(const struct device *dev)
 {
-	return dev->driver_api != NULL;
+	return dev->api != NULL;
 }
 
 /**
