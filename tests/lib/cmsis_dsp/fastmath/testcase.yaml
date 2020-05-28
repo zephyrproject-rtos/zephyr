@@ -1,6 +1,10 @@
 tests:
   libraries.cmsis_dsp.fastmath:
-    platform_whitelist: frdm_k64f sam_e70_xplained mps2_an521
+    filter: CONFIG_CPU_CORTEX_R or CONFIG_CPU_CORTEX_M
+    integration_platforms:
+      - frdm_k64f
+      - sam_e70_xplained
+      - mps2_an521
     tags: cmsis_dsp
     min_flash: 128
     min_ram: 64
