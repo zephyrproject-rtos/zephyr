@@ -103,7 +103,7 @@ static void show(const struct shell *shell, pcie_bdf_t bdf)
 	}
 }
 
-static int cmd_lspcie(const struct shell *shell, size_t argc, char **argv)
+static int cmd_pcie_ls(const struct shell *shell, size_t argc, char **argv)
 {
 	int bus;
 	int dev;
@@ -119,5 +119,11 @@ static int cmd_lspcie(const struct shell *shell, size_t argc, char **argv)
 
 	return 0;
 }
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_pcie_cmds,
+			       SHELL_CMD(ls, NULL,
+					 "List PCIE devices", cmd_pcie_ls),
+			       SHELL_SUBCMD_SET_END /* Array terminated. */
+		);
 
-SHELL_CMD_REGISTER(lspcie, NULL, "List PCI(e) devices", cmd_lspcie);
+
+SHELL_CMD_REGISTER(pcie, &sub_pcie_cmds, "PCI(e) device information", cmd_pcie_ls);
