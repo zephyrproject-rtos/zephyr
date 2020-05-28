@@ -427,6 +427,10 @@ struct device_context {
 	 * invoked.
 	 */
 	bool initialized : 1;
+
+#if defined(CONFIG_DEVICE_CONCURRENT_ACCESS)
+	struct k_sem lock;
+#endif
 };
 
 struct pm_device;
@@ -796,22 +800,55 @@ __deprecated static inline int device_usable_check(const struct device *dev)
 	return device_is_ready(dev) ? 0 : -ENODEV;
 }
 
+#if defined(CONFIG_DEVICE_CONCURRENT_ACCESS)
+
+/**
+ * @brief Lock an interrupt based device structure to avoid concurrent access.
+ *
+ * Note: Needs to be the first function called when entering a device API call.
+ *
+ * @param dev A valid pointer on a struct device instance
+ *
+ * @return 0 if device got locked, a negative errno otherwise.
+ */
+int device_lock(struct device *dev);
+
+/**
+ * @brief Release a previously locked device
+ *
+ * Note: Needs to be the last funtion called before returning a device API call.
+ *
+ * @param dev A valid pointer on a struct device instance.
+ * @param status The status to return
+ *
+ * @return status of the device
+ */
+int device_release(struct device *dev, int status);
+
+#else /* CONFIG_DEVICE_CONCURRENT_ACCESS */
+
+#define device_lock(...) (0U)
+#define device_release(_dev, _status) (_status)
+
+#endif /* CONFIG_DEVICE_CONCURRENT_ACCESS */
+
 /**
  * @}
  */
 
-/* Synthesize the name of the object that holds device ordinal and
- * dependency data. If the object doesn't come from a devicetree
- * node, use dev_name.
- */
-#define Z_DEVICE_HANDLE_NAME(node_id, dev_name)				\
-	_CONCAT(__devicehdl_,						\
-		COND_CODE_1(DT_NODE_EXISTS(node_id),			\
-			    (node_id),					\
-			    (dev_name)))
+#if defined(CONFIG_DEVICE_CONCURRENT_ACCESS)
 
-#define Z_DEVICE_EXTRA_HANDLES(...)				\
-	FOR_EACH_NONEMPTY_TERM(IDENTITY, (,), __VA_ARGS__)
+/* Initialize structure device_context's specific attributes */
+#define Z_DEVICE_CONTEXT_INITIALIZE(_obj)			\
+	{							\
+		.lock = Z_SEM_INITIALIZER(_obj.lock, 1, 1),	\
+	}
+
+#else /* CONFIG_DEVICE_CONCURRENT_ACCESS */
+
+#define Z_DEVICE_CONTEXT_INITIALIZE(_obj) {}
+
+#endif /* CONFIG_DEVICE_CONCURRENT_ACCESS */
 
 /*
  * Utility macro to define and initialize the device runtime context.
@@ -827,7 +864,21 @@ __deprecated static inline int device_usable_check(const struct device *dev)
 	static Z_DECL_ALIGN(struct device_context)			\
 		Z_DEVICE_CONTEXT_NAME(dev_name)	__used			\
 	__attribute__(							\
-		(__section__(".z_devcontext_" #level STRINGIFY(prio)"_")));
+		(__section__(".z_devcontext_" #level STRINGIFY(prio)"_"))) = \
+		Z_DEVICE_CONTEXT_INITIALIZE(Z_DEVICE_CONTEXT_NAME(dev_name));
+
+/* Synthesize the name of the object that holds device ordinal and
+ * dependency data. If the object doesn't come from a devicetree
+ * node, use dev_name.
+ */
+#define Z_DEVICE_HANDLE_NAME(node_id, dev_name)				\
+	_CONCAT(__devicehdl_,						\
+		COND_CODE_1(DT_NODE_EXISTS(node_id),			\
+			    (node_id),					\
+			    (dev_name)))
+
+#define Z_DEVICE_EXTRA_HANDLES(...)				\
+	FOR_EACH_NONEMPTY_TERM(IDENTITY, (,), __VA_ARGS__)
 
 /* Construct objects that are referenced from struct device. These
  * include power management and dependency handles.

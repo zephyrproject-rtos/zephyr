@@ -210,3 +210,23 @@ int device_supported_foreach(const struct device *dev,
 
 	return device_visitor(handles, handle_count, visitor_cb, context);
 }
+
+#if defined(CONFIG_DEVICE_CONCURRENT_ACCESS)
+
+int device_lock(struct device *dev)
+{
+	struct device_context *dc = GET_DEV_CONTEXT(dev);
+
+	return k_sem_take(&dc->lock, K_FOREVER);
+}
+
+int device_release(struct device *dev, int status)
+{
+	struct device_context *dc = GET_DEV_CONTEXT(dev);
+
+	k_sem_give(&dc->lock);
+
+	return status;
+}
+
+#endif /* CONFIG_DEVICE_CONCURRENT_ACCESS */
