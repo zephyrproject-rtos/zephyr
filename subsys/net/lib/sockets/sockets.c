@@ -49,6 +49,23 @@ static inline void *get_sock_vtable(
 				       (const struct fd_op_vtable **)vtable);
 }
 
+void *z_impl_zsock_get_context_object(int sock)
+{
+	const struct socket_op_vtable *ignored;
+
+	return get_sock_vtable(sock, &ignored);
+}
+
+#ifdef CONFIG_USERSPACE
+void *z_vrfy_zsock_get_context_object(int sock)
+{
+	/* All checking done in implementation */
+	return z_impl_zsock_get_context_object(sock);
+}
+
+#include <syscalls/zsock_get_context_object_mrsh.c>
+#endif
+
 static void zsock_received_cb(struct net_context *ctx,
 			      struct net_pkt *pkt,
 			      union net_ip_header *ip_hdr,
