@@ -134,10 +134,19 @@ Architectures
 
   * CMSIS has been moved out of the main tree and now resides in its
     own standalone module repository
+  * Updated CMSIS version to 5.7.0
+  * Added CMSIS-DSP library integration
+  * Added semihosting console support
   * Cleanups and improvements to the Cortex-M exception vector table
   * Fixed the behavior of Cortex-M spurious IRQ handler
   * Fixed parsing of Cortex-M MemManage Stacking Errors
   * Fixed the arch_cpu_idle() implementation for Cortex-M and Cortex-R
+  * Renamed Cortex-R architecture port to cortex_a_r in preparation for the
+    AArch32 Cortex-A architecture port
+  * Added processor exception handling and reporting framework for Cortex-R
+  * Added nested interrupt support on AArch32 Cortex-R and AArch64 Cortex-A
+  * Refactored Cortex-R interrupt system to remove fake multi-level interrupt
+    controller abstraction scheme
 
 
 * POSIX:
