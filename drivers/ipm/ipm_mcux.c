@@ -38,7 +38,7 @@ static void mcux_mailbox_isr(void *arg)
 {
 	struct device *dev = arg;
 	struct mcux_mailbox_data *data = dev->driver_data;
-	const struct mcux_mailbox_config *config = dev->config_info;
+	const struct mcux_mailbox_config *config = dev->config;
 	mailbox_cpu_id_t cpu_id;
 
 	cpu_id = MAILBOX_ID_THIS_CPU;
@@ -67,7 +67,7 @@ static void mcux_mailbox_isr(void *arg)
 static int mcux_mailbox_ipm_send(struct device *d, int wait, uint32_t id,
 			const void *data, int size)
 {
-	const struct mcux_mailbox_config *config = d->config_info;
+	const struct mcux_mailbox_config *config = d->config;
 	MAILBOX_Type *base = config->base;
 	uint32_t data32[MCUX_IPM_DATA_REGS]; /* Until we change API
 					   * to uint32_t array
@@ -135,7 +135,7 @@ static int mcux_mailbox_ipm_set_enabled(struct device *d, int enable)
 
 static int mcux_mailbox_init(struct device *dev)
 {
-	const struct mcux_mailbox_config *config = dev->config_info;
+	const struct mcux_mailbox_config *config = dev->config;
 
 	MAILBOX_Init(config->base);
 	config->irq_config_func(dev);

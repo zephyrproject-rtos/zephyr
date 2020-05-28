@@ -24,7 +24,7 @@ static int ism330dhcx_spi_read(struct device *dev, uint8_t reg_addr,
 			    uint8_t *value, uint8_t len)
 {
 	struct ism330dhcx_data *data = dev->driver_data;
-	const struct ism330dhcx_config *cfg = dev->config_info;
+	const struct ism330dhcx_config *cfg = dev->config;
 	const struct spi_config *spi_cfg = &cfg->spi_conf;
 	uint8_t buffer_tx[2] = { reg_addr | ISM330DHCX_SPI_READ, 0 };
 	const struct spi_buf tx_buf = {
@@ -66,7 +66,7 @@ static int ism330dhcx_spi_write(struct device *dev, uint8_t reg_addr,
 			     uint8_t *value, uint8_t len)
 {
 	struct ism330dhcx_data *data = dev->driver_data;
-	const struct ism330dhcx_config *cfg = dev->config_info;
+	const struct ism330dhcx_config *cfg = dev->config;
 	const struct spi_config *spi_cfg = &cfg->spi_conf;
 	uint8_t buffer_tx[1] = { reg_addr & ~ISM330DHCX_SPI_READ };
 	const struct spi_buf tx_buf[2] = {
@@ -107,7 +107,7 @@ int ism330dhcx_spi_init(struct device *dev)
 	data->ctx->handle = dev;
 
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	const struct ism330dhcx_config *cfg = dev->config_info;
+	const struct ism330dhcx_config *cfg = dev->config;
 
 	/* handle SPI CS thru GPIO if it is the case */
 	data->cs_ctrl.gpio_dev = device_get_binding(cfg->gpio_cs_port);

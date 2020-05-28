@@ -518,7 +518,7 @@ static int hid_custom_handle_req(struct usb_setup_packet *setup,
 
 		switch (value) {
 		case HID_CLASS_DESCRIPTOR_HID:
-			cfg = common->dev->config_info;
+			cfg = common->dev->config;
 			hid_desc = cfg->interface_descriptor;
 
 			LOG_DBG("Return HID Descriptor");
@@ -646,7 +646,7 @@ static void hid_interface_config(struct usb_desc_header *head,
 
 int usb_hid_init(const struct device *dev)
 {
-	struct usb_cfg_data *cfg = (void *)dev->config_info;
+	struct usb_cfg_data *cfg = (void *)dev->config;
 	struct hid_device_info *dev_data = dev->driver_data;
 
 	LOG_DBG("Initializing HID Device: dev %p", dev);
@@ -679,7 +679,7 @@ void usb_hid_register_device(struct device *dev, const uint8_t *desc,
 int hid_int_ep_write(const struct device *dev, const uint8_t *data, uint32_t data_len,
 		     uint32_t *bytes_ret)
 {
-	const struct usb_cfg_data *cfg = dev->config_info;
+	const struct usb_cfg_data *cfg = dev->config;
 
 	return usb_write(cfg->endpoint[HID_INT_IN_EP_IDX].ep_addr, data,
 			 data_len, bytes_ret);
@@ -689,7 +689,7 @@ int hid_int_ep_read(const struct device *dev, uint8_t *data, uint32_t max_data_l
 		    uint32_t *ret_bytes)
 {
 #ifdef CONFIG_ENABLE_HID_INT_OUT_EP
-	const struct usb_cfg_data *cfg = dev->config_info;
+	const struct usb_cfg_data *cfg = dev->config;
 
 	return usb_read(cfg->endpoint[HID_INT_OUT_EP_IDX].ep_addr,
 			data, max_data_len, ret_bytes);

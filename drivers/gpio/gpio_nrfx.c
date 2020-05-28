@@ -42,7 +42,7 @@ static inline struct gpio_nrfx_data *get_port_data(struct device *port)
 
 static inline const struct gpio_nrfx_cfg *get_port_cfg(struct device *port)
 {
-	return port->config_info;
+	return port->config;
 }
 
 static int gpiote_channel_alloc(atomic_t *mask, uint32_t abs_pin,

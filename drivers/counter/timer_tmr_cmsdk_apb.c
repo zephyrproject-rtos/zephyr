@@ -39,7 +39,7 @@ struct tmr_cmsdk_apb_dev_data {
 static int tmr_cmsdk_apb_start(struct device *dev)
 {
 	const struct tmr_cmsdk_apb_cfg * const cfg =
-						dev->config_info;
+						dev->config;
 	struct tmr_cmsdk_apb_dev_data *data = dev->driver_data;
 
 	/* Set the timer reload to count */
@@ -53,7 +53,7 @@ static int tmr_cmsdk_apb_start(struct device *dev)
 static int tmr_cmsdk_apb_stop(struct device *dev)
 {
 	const struct tmr_cmsdk_apb_cfg * const cfg =
-						dev->config_info;
+						dev->config;
 	/* Disable the timer */
 	cfg->timer->ctrl = 0x0;
 
@@ -63,7 +63,7 @@ static int tmr_cmsdk_apb_stop(struct device *dev)
 static int tmr_cmsdk_apb_get_value(struct device *dev, uint32_t *ticks)
 {
 	const struct tmr_cmsdk_apb_cfg * const cfg =
-						dev->config_info;
+						dev->config;
 	struct tmr_cmsdk_apb_dev_data *data = dev->driver_data;
 
 	/* Get Counter Value */
@@ -75,7 +75,7 @@ static int tmr_cmsdk_apb_set_top_value(struct device *dev,
 				       const struct counter_top_cfg *top_cfg)
 {
 	const struct tmr_cmsdk_apb_cfg * const cfg =
-						dev->config_info;
+						dev->config;
 	struct tmr_cmsdk_apb_dev_data *data = dev->driver_data;
 
 	/* Counter is always reset when top value is updated. */
@@ -113,7 +113,7 @@ static uint32_t tmr_cmsdk_apb_get_top_value(struct device *dev)
 static uint32_t tmr_cmsdk_apb_get_pending_int(struct device *dev)
 {
 	const struct tmr_cmsdk_apb_cfg * const cfg =
-						dev->config_info;
+						dev->config;
 
 	return cfg->timer->intstatus;
 }
@@ -132,7 +132,7 @@ static void tmr_cmsdk_apb_isr(void *arg)
 	struct device *dev = (struct device *)arg;
 	struct tmr_cmsdk_apb_dev_data *data = dev->driver_data;
 	const struct tmr_cmsdk_apb_cfg * const cfg =
-						dev->config_info;
+						dev->config;
 
 	cfg->timer->intclear = TIMER_CTRL_INT_CLEAR;
 	if (data->top_callback) {
@@ -143,7 +143,7 @@ static void tmr_cmsdk_apb_isr(void *arg)
 static int tmr_cmsdk_apb_init(struct device *dev)
 {
 	const struct tmr_cmsdk_apb_cfg * const cfg =
-						dev->config_info;
+						dev->config;
 
 #ifdef CONFIG_CLOCK_CONTROL
 	/* Enable clock for subsystem */

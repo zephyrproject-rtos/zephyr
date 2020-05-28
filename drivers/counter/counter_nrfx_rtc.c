@@ -74,7 +74,7 @@ static inline struct counter_nrfx_data *get_dev_data(struct device *dev)
 static inline const struct counter_nrfx_config *get_nrfx_config(
 							struct device *dev)
 {
-	return CONTAINER_OF(dev->config_info,
+	return CONTAINER_OF(dev->config,
 				struct counter_nrfx_config, info);
 }
 

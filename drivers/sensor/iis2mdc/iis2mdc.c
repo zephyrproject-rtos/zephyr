@@ -242,8 +242,7 @@ static const struct sensor_driver_api iis2mdc_driver_api = {
 
 static int iis2mdc_init_interface(struct device *dev)
 {
-	const struct iis2mdc_config *const config =
-						dev->config_info;
+	const struct iis2mdc_config *const config = dev->config;
 	struct iis2mdc_data *iis2mdc = dev->driver_data;
 
 	iis2mdc->bus = device_get_binding(config->master_dev_name);

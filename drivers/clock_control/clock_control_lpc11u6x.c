@@ -15,7 +15,7 @@
 #include "clock_control_lpc11u6x.h"
 
 #define DEV_CFG(dev)  ((const struct lpc11u6x_syscon_config *) \
-		      ((dev)->config_info))
+		      ((dev)->config))
 
 #define DEV_DATA(dev) ((struct lpc11u6x_syscon_data *) \
 		      ((dev)->driver_data))

@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(i2c_nios2);
 #define NIOS2_I2C_TIMEOUT_USEC		1000
 
 #define DEV_CFG(dev) \
-	((struct i2c_nios2_config *)(dev)->config_info)
+	((struct i2c_nios2_config *)(dev)->config)
 
 struct i2c_nios2_config {
 	ALT_AVALON_I2C_DEV_t	i2c_dev;

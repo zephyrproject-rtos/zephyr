@@ -133,7 +133,7 @@ static int beetle_clock_control_get_subsys_rate(struct device *clock,
 {
 #ifdef CONFIG_CLOCK_CONTROL_BEETLE_ENABLE_PLL
 	const struct beetle_clock_control_cfg_t * const cfg =
-						clock->config_info;
+						clock->config;
 	uint32_t nc_mainclk = beetle_round_freq(cfg->freq);
 
 	*rate = nc_mainclk;
@@ -219,7 +219,7 @@ static int beetle_clock_control_init(struct device *dev)
 {
 #ifdef CONFIG_CLOCK_CONTROL_BEETLE_ENABLE_PLL
 	const struct beetle_clock_control_cfg_t * const cfg =
-						dev->config_info;
+						dev->config;
 
 	/*
 	 * Enable PLL if Beetle is configured to run at a different

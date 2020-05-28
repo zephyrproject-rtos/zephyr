@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(dma_pl330);
 
 #define DEV_NAME(dev) ((dev)->name)
 #define DEV_CFG(dev) \
-	((const struct dma_pl330_config *const)(dev)->config_info)
+	((const struct dma_pl330_config *const)(dev)->config)
 
 #define DEV_DATA(dev) \
 	((struct dma_pl330_dev_data *const)(dev)->driver_data)

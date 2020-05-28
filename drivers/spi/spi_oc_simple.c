@@ -90,7 +90,7 @@ int spi_oc_simple_transceive(struct device *dev,
 			  const struct spi_buf_set *tx_bufs,
 			  const struct spi_buf_set *rx_bufs)
 {
-	const struct spi_oc_simple_cfg *info = dev->config_info;
+	const struct spi_oc_simple_cfg *info = dev->config;
 	struct spi_oc_simple_data *spi = SPI_OC_SIMPLE_DATA(dev);
 	struct spi_context *ctx = &spi->ctx;
 
@@ -184,7 +184,7 @@ static struct spi_driver_api spi_oc_simple_api = {
 
 int spi_oc_simple_init(struct device *dev)
 {
-	const struct spi_oc_simple_cfg *info = dev->config_info;
+	const struct spi_oc_simple_cfg *info = dev->config;
 
 	/* Clear chip selects */
 	sys_write8(0, SPI_OC_SIMPLE_SPSS(info));

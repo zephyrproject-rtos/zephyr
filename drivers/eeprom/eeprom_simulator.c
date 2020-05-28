@@ -36,7 +36,7 @@ struct eeprom_sim_config {
 };
 
 #define DEV_NAME(dev) ((dev)->name)
-#define DEV_CONFIG(dev) ((dev)->config_info)
+#define DEV_CONFIG(dev) ((dev)->config)
 
 #define EEPROM(addr) (mock_eeprom + (addr))
 

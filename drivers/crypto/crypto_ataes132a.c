@@ -44,7 +44,7 @@ static int ataes132a_send_command(struct device *dev, uint8_t opcode,
 {
 	int retry_count = 0;
 	struct ataes132a_device_data *data = dev->driver_data;
-	const struct ataes132a_device_config *cfg = dev->config_info;
+	const struct ataes132a_device_config *cfg = dev->config;
 	uint8_t count;
 	uint8_t status;
 	uint8_t crc[2];
@@ -167,7 +167,7 @@ static int ataes132a_send_command(struct device *dev, uint8_t opcode,
 int ataes132a_init(struct device *dev)
 {
 	struct ataes132a_device_data *ataes132a = dev->driver_data;
-	const struct ataes132a_device_config *cfg = dev->config_info;
+	const struct ataes132a_device_config *cfg = dev->config;
 	uint32_t i2c_cfg;
 
 	LOG_DBG("ATAES132A INIT");
@@ -798,7 +798,7 @@ static int ataes132a_session_setup(struct device *dev, struct cipher_ctx *ctx,
 {
 	uint8_t key_id = *((uint8_t *)ctx->key.handle);
 	struct ataes132a_device_data *data = dev->driver_data;
-	const struct ataes132a_device_config *cfg = dev->config_info;
+	const struct ataes132a_device_config *cfg = dev->config;
 	uint8_t config;
 
 	if (ataes132a_state[key_id].in_use) {

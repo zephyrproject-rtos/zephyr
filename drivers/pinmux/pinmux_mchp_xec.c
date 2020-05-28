@@ -25,7 +25,7 @@ struct pinmux_xec_config {
 
 static int pinmux_xec_set(struct device *dev, uint32_t pin, uint32_t func)
 {
-	const struct pinmux_xec_config *config = dev->config_info;
+	const struct pinmux_xec_config *config = dev->config;
 	__IO uint32_t *current_pcr1;
 	uint32_t pcr1 = 0;
 	uint32_t mask = 0;
@@ -78,7 +78,7 @@ static int pinmux_xec_set(struct device *dev, uint32_t pin, uint32_t func)
 
 static int pinmux_xec_get(struct device *dev, uint32_t pin, uint32_t *func)
 {
-	const struct pinmux_xec_config *config = dev->config_info;
+	const struct pinmux_xec_config *config = dev->config;
 	__IO uint32_t *current_pcr1;
 
 	/* Validate pin number in terms of current port */

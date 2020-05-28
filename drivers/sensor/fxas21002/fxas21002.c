@@ -20,7 +20,7 @@ static const uint32_t sample_period[] = {
 
 static int fxas21002_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
-	const struct fxas21002_config *config = dev->config_info;
+	const struct fxas21002_config *config = dev->config;
 	struct fxas21002_data *data = dev->driver_data;
 	uint8_t buffer[FXAS21002_MAX_NUM_BYTES];
 	int16_t *raw;
@@ -73,7 +73,7 @@ static void fxas21002_convert(struct sensor_value *val, int16_t raw,
 static int fxas21002_channel_get(struct device *dev, enum sensor_channel chan,
 				 struct sensor_value *val)
 {
-	const struct fxas21002_config *config = dev->config_info;
+	const struct fxas21002_config *config = dev->config;
 	struct fxas21002_data *data = dev->driver_data;
 	int start_channel;
 	int num_channels;
@@ -132,7 +132,7 @@ static int fxas21002_channel_get(struct device *dev, enum sensor_channel chan,
 
 int fxas21002_get_power(struct device *dev, enum fxas21002_power *power)
 {
-	const struct fxas21002_config *config = dev->config_info;
+	const struct fxas21002_config *config = dev->config;
 	struct fxas21002_data *data = dev->driver_data;
 	uint8_t val = *power;
 
@@ -150,7 +150,7 @@ int fxas21002_get_power(struct device *dev, enum fxas21002_power *power)
 
 int fxas21002_set_power(struct device *dev, enum fxas21002_power power)
 {
-	const struct fxas21002_config *config = dev->config_info;
+	const struct fxas21002_config *config = dev->config;
 	struct fxas21002_data *data = dev->driver_data;
 
 	return i2c_reg_update_byte(data->i2c, config->i2c_address,
@@ -186,7 +186,7 @@ uint32_t fxas21002_get_transition_time(enum fxas21002_power start,
 
 static int fxas21002_init(struct device *dev)
 {
-	const struct fxas21002_config *config = dev->config_info;
+	const struct fxas21002_config *config = dev->config;
 	struct fxas21002_data *data = dev->driver_data;
 	uint32_t transition_time;
 	uint8_t whoami;

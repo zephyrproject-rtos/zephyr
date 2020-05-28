@@ -18,7 +18,7 @@ struct rv32m1_pcc_config {
 	uint32_t base_address;
 };
 
-#define DEV_CFG(dev)  ((struct rv32m1_pcc_config *)(dev->config_info))
+#define DEV_CFG(dev)  ((struct rv32m1_pcc_config *)(dev->config))
 #define DEV_BASE(dev) (DEV_CFG(dev)->base_address)
 
 static inline clock_ip_name_t clock_ip(struct device *dev,

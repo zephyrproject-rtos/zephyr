@@ -520,7 +520,7 @@ For example:
    }
 
    #define DEV_CFG(_dev) \
-      ((const struct my_driver_config *)((_dev)->config_info))
+      ((const struct my_driver_config *)((_dev)->config))
 
    #define DEV_DATA(_dev) \
       ((struct my_driver_dev_data *)((_dev)->driver_data))

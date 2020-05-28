@@ -65,7 +65,7 @@ struct eeprom_at2x_data {
 
 static inline int eeprom_at2x_write_protect(struct device *dev)
 {
-	const struct eeprom_at2x_config *config = dev->config_info;
+	const struct eeprom_at2x_config *config = dev->config;
 	struct eeprom_at2x_data *data = dev->driver_data;
 
 	if (!data->wp_gpio_dev) {
@@ -77,7 +77,7 @@ static inline int eeprom_at2x_write_protect(struct device *dev)
 
 static inline int eeprom_at2x_write_enable(struct device *dev)
 {
-	const struct eeprom_at2x_config *config = dev->config_info;
+	const struct eeprom_at2x_config *config = dev->config;
 	struct eeprom_at2x_data *data = dev->driver_data;
 
 	if (!data->wp_gpio_dev) {
@@ -90,7 +90,7 @@ static inline int eeprom_at2x_write_enable(struct device *dev)
 static int eeprom_at2x_read(struct device *dev, off_t offset, void *buf,
 			    size_t len)
 {
-	const struct eeprom_at2x_config *config = dev->config_info;
+	const struct eeprom_at2x_config *config = dev->config;
 	struct eeprom_at2x_data *data = dev->driver_data;
 	int err;
 
@@ -118,7 +118,7 @@ static int eeprom_at2x_read(struct device *dev, off_t offset, void *buf,
 static size_t eeprom_at2x_limit_write_count(struct device *dev, off_t offset,
 					    size_t len)
 {
-	const struct eeprom_at2x_config *config = dev->config_info;
+	const struct eeprom_at2x_config *config = dev->config;
 	size_t count = len;
 	off_t page_boundary;
 
@@ -139,7 +139,7 @@ static size_t eeprom_at2x_limit_write_count(struct device *dev, off_t offset,
 static int eeprom_at2x_write(struct device *dev, off_t offset, const void *buf,
 			     size_t len)
 {
-	const struct eeprom_at2x_config *config = dev->config_info;
+	const struct eeprom_at2x_config *config = dev->config;
 	struct eeprom_at2x_data *data = dev->driver_data;
 	const uint8_t *pbuf = buf;
 	int ret;
@@ -193,7 +193,7 @@ static int eeprom_at2x_write(struct device *dev, off_t offset, const void *buf,
 
 static size_t eeprom_at2x_size(struct device *dev)
 {
-	const struct eeprom_at2x_config *config = dev->config_info;
+	const struct eeprom_at2x_config *config = dev->config;
 
 	return config->size;
 }
@@ -202,7 +202,7 @@ static size_t eeprom_at2x_size(struct device *dev)
 static int eeprom_at24_read(struct device *dev, off_t offset, void *buf,
 			    size_t len)
 {
-	const struct eeprom_at2x_config *config = dev->config_info;
+	const struct eeprom_at2x_config *config = dev->config;
 	struct eeprom_at2x_data *data = dev->driver_data;
 	int64_t timeout;
 	uint8_t addr[2];
@@ -236,7 +236,7 @@ static int eeprom_at24_read(struct device *dev, off_t offset, void *buf,
 static int eeprom_at24_write(struct device *dev, off_t offset,
 			     const void *buf, size_t len)
 {
-	const struct eeprom_at2x_config *config = dev->config_info;
+	const struct eeprom_at2x_config *config = dev->config;
 	struct eeprom_at2x_data *data = dev->driver_data;
 	int count = eeprom_at2x_limit_write_count(dev, offset, len);
 	uint8_t block[config->addr_width / 8 + count];
@@ -313,7 +313,7 @@ static int eeprom_at25_rdsr(struct device *dev, uint8_t *status)
 
 static int eeprom_at25_wait_for_idle(struct device *dev)
 {
-	const struct eeprom_at2x_config *config = dev->config_info;
+	const struct eeprom_at2x_config *config = dev->config;
 	int64_t timeout;
 	uint8_t status;
 	int err;
@@ -342,7 +342,7 @@ static int eeprom_at25_wait_for_idle(struct device *dev)
 static int eeprom_at25_read(struct device *dev, off_t offset, void *buf,
 			    size_t len)
 {
-	const struct eeprom_at2x_config *config = dev->config_info;
+	const struct eeprom_at2x_config *config = dev->config;
 	struct eeprom_at2x_data *data = dev->driver_data;
 	size_t cmd_len = 1 + config->addr_width / 8;
 	uint8_t cmd[4] = { EEPROM_AT25_READ, 0, 0, 0 };
@@ -424,7 +424,7 @@ static int eeprom_at25_wren(struct device *dev)
 static int eeprom_at25_write(struct device *dev, off_t offset,
 			     const void *buf, size_t len)
 {
-	const struct eeprom_at2x_config *config = dev->config_info;
+	const struct eeprom_at2x_config *config = dev->config;
 	struct eeprom_at2x_data *data = dev->driver_data;
 	int count = eeprom_at2x_limit_write_count(dev, offset, len);
 	uint8_t cmd[4] = { EEPROM_AT25_WRITE, 0, 0, 0 };
@@ -484,7 +484,7 @@ static int eeprom_at25_write(struct device *dev, off_t offset,
 
 static int eeprom_at2x_init(struct device *dev)
 {
-	const struct eeprom_at2x_config *config = dev->config_info;
+	const struct eeprom_at2x_config *config = dev->config;
 	struct eeprom_at2x_data *data = dev->driver_data;
 	int err;
 

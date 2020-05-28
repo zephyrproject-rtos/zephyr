@@ -31,7 +31,7 @@ struct mcux_flexcomm_data {
 
 static int mcux_flexcomm_configure(struct device *dev, uint32_t dev_config_raw)
 {
-	const struct mcux_flexcomm_config *config = dev->config_info;
+	const struct mcux_flexcomm_config *config = dev->config;
 	I2C_Type *base = config->base;
 	uint32_t clock_freq;
 	uint32_t baudrate;
@@ -96,7 +96,7 @@ static uint32_t mcux_flexcomm_convert_flags(int msg_flags)
 static int mcux_flexcomm_transfer(struct device *dev, struct i2c_msg *msgs,
 		uint8_t num_msgs, uint16_t addr)
 {
-	const struct mcux_flexcomm_config *config = dev->config_info;
+	const struct mcux_flexcomm_config *config = dev->config;
 	struct mcux_flexcomm_data *data = dev->driver_data;
 	I2C_Type *base = config->base;
 	i2c_master_transfer_t transfer;
@@ -159,7 +159,7 @@ static int mcux_flexcomm_transfer(struct device *dev, struct i2c_msg *msgs,
 static void mcux_flexcomm_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	const struct mcux_flexcomm_config *config = dev->config_info;
+	const struct mcux_flexcomm_config *config = dev->config;
 	struct mcux_flexcomm_data *data = dev->driver_data;
 	I2C_Type *base = config->base;
 
@@ -168,7 +168,7 @@ static void mcux_flexcomm_isr(void *arg)
 
 static int mcux_flexcomm_init(struct device *dev)
 {
-	const struct mcux_flexcomm_config *config = dev->config_info;
+	const struct mcux_flexcomm_config *config = dev->config;
 	struct mcux_flexcomm_data *data = dev->driver_data;
 	I2C_Type *base = config->base;
 	uint32_t clock_freq, bitrate_cfg;

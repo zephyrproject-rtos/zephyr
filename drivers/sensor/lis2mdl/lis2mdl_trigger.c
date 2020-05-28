@@ -54,8 +54,7 @@ static void lis2mdl_handle_interrupt(void *arg)
 {
 	struct device *dev = arg;
 	struct lis2mdl_data *lis2mdl = dev->driver_data;
-	const struct lis2mdl_config *const config =
-						dev->config_info;
+	const struct lis2mdl_config *const config = dev->config;
 	struct sensor_trigger drdy_trigger = {
 		.type = SENSOR_TRIG_DATA_READY,
 	};
@@ -73,7 +72,7 @@ static void lis2mdl_gpio_callback(struct device *dev,
 {
 	struct lis2mdl_data *lis2mdl =
 		CONTAINER_OF(cb, struct lis2mdl_data, gpio_cb);
-	const struct lis2mdl_config *const config = lis2mdl->dev->config_info;
+	const struct lis2mdl_config *const config = lis2mdl->dev->config;
 
 	ARG_UNUSED(pins);
 
@@ -114,7 +113,7 @@ static void lis2mdl_work_cb(struct k_work *work)
 int lis2mdl_init_interrupt(struct device *dev)
 {
 	struct lis2mdl_data *lis2mdl = dev->driver_data;
-	const struct lis2mdl_config *const config = dev->config_info;
+	const struct lis2mdl_config *const config = dev->config;
 
 	/* setup data ready gpio interrupt */
 	lis2mdl->gpio = device_get_binding(config->gpio_name);

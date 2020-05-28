@@ -20,7 +20,7 @@ struct rv32m1_entropy_config {
 static int entropy_rv32m1_trng_get_entropy(struct device *dev, uint8_t *buffer,
 					 uint16_t length)
 {
-	const struct rv32m1_entropy_config *config = dev->config_info;
+	const struct rv32m1_entropy_config *config = dev->config;
 	status_t status;
 
 	ARG_UNUSED(dev);
@@ -48,7 +48,7 @@ DEVICE_AND_API_INIT(entropy_rv32m1_trng, DT_INST_LABEL(0),
 
 static int entropy_rv32m1_trng_init(struct device *dev)
 {
-	const struct rv32m1_entropy_config *config = dev->config_info;
+	const struct rv32m1_entropy_config *config = dev->config;
 	trng_config_t conf;
 	status_t status;
 

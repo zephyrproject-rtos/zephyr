@@ -320,7 +320,7 @@ static int pwm_led_esp32_pin_set_cycles(struct device *dev,
 	int timer;
 	int ret;
 	const struct pwm_led_esp32_config * const config =
-		(const struct pwm_led_esp32_config *) dev->config_info;
+		(const struct pwm_led_esp32_config *) dev->config;
 
 	ARG_UNUSED(period_cycles);
 
@@ -373,7 +373,7 @@ static int pwm_led_esp32_get_cycles_per_sec(struct device *dev, uint32_t pwm,
 	int timer;
 	int speed_mode;
 
-	config = (const struct pwm_led_esp32_config *) dev->config_info;
+	config = (const struct pwm_led_esp32_config *) dev->config;
 
 	channel = pwm_led_esp32_get_gpio_config(pwm, config->ch_cfg);
 	if (channel < 0) {

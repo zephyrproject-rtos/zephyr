@@ -146,7 +146,7 @@ static inline struct uarte_nrfx_data *get_dev_data(struct device *dev)
 
 static inline const struct uarte_nrfx_config *get_dev_config(struct device *dev)
 {
-	return dev->config_info;
+	return dev->config;
 }
 
 static inline NRF_UARTE_Type *get_uarte_instance(struct device *dev)

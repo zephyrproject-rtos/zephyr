@@ -13,7 +13,7 @@
 
 #include "uart_lpc11u6x.h"
 
-#define DEV_CFG(dev) ((dev)->config_info)
+#define DEV_CFG(dev) ((dev)->config)
 #define DEV_DATA(dev) ((dev)->driver_data)
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay)

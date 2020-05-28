@@ -39,7 +39,7 @@ static int mcux_ftm_pin_set(struct device *dev, uint32_t pwm,
 			    uint32_t period_cycles, uint32_t pulse_cycles,
 			    pwm_flags_t flags)
 {
-	const struct mcux_ftm_config *config = dev->config_info;
+	const struct mcux_ftm_config *config = dev->config;
 	struct mcux_ftm_data *data = dev->driver_data;
 	status_t status;
 
@@ -98,7 +98,7 @@ static int mcux_ftm_pin_set(struct device *dev, uint32_t pwm,
 static int mcux_ftm_get_cycles_per_sec(struct device *dev, uint32_t pwm,
 				       uint64_t *cycles)
 {
-	const struct mcux_ftm_config *config = dev->config_info;
+	const struct mcux_ftm_config *config = dev->config;
 	struct mcux_ftm_data *data = dev->driver_data;
 
 	*cycles = data->clock_freq >> config->prescale;
@@ -108,7 +108,7 @@ static int mcux_ftm_get_cycles_per_sec(struct device *dev, uint32_t pwm,
 
 static int mcux_ftm_init(struct device *dev)
 {
-	const struct mcux_ftm_config *config = dev->config_info;
+	const struct mcux_ftm_config *config = dev->config;
 	struct mcux_ftm_data *data = dev->driver_data;
 	ftm_chnl_pwm_config_param_t *channel = data->channel;
 	struct device *clock_dev;

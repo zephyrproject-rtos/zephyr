@@ -211,7 +211,7 @@ __syscall bool counter_is_counting_up(const struct device *dev);
 static inline bool z_impl_counter_is_counting_up(const struct device *dev)
 {
 	const struct counter_config_info *config =
-			(const struct counter_config_info *)dev->config_info;
+			(const struct counter_config_info *)dev->config;
 
 	return config->flags & COUNTER_CONFIG_INFO_COUNT_UP;
 }
@@ -228,7 +228,7 @@ __syscall uint8_t counter_get_num_of_channels(const struct device *dev);
 static inline uint8_t z_impl_counter_get_num_of_channels(const struct device *dev)
 {
 	const struct counter_config_info *config =
-			(const struct counter_config_info *)dev->config_info;
+			(const struct counter_config_info *)dev->config;
 
 	return config->channels;
 }
@@ -246,7 +246,7 @@ __syscall uint32_t counter_get_frequency(const struct device *dev);
 static inline uint32_t z_impl_counter_get_frequency(const struct device *dev)
 {
 	const struct counter_config_info *config =
-			(const struct counter_config_info *)dev->config_info;
+			(const struct counter_config_info *)dev->config;
 
 	return config->freq;
 }
@@ -265,7 +265,7 @@ static inline uint32_t z_impl_counter_us_to_ticks(const struct device *dev,
 					       uint64_t us)
 {
 	const struct counter_config_info *config =
-			(const struct counter_config_info *)dev->config_info;
+			(const struct counter_config_info *)dev->config;
 	uint64_t ticks = (us * config->freq) / USEC_PER_SEC;
 
 	return (ticks > (uint64_t)UINT32_MAX) ? UINT32_MAX : ticks;
@@ -285,7 +285,7 @@ static inline uint64_t z_impl_counter_ticks_to_us(const struct device *dev,
 					       uint32_t ticks)
 {
 	const struct counter_config_info *config =
-			(const struct counter_config_info *)dev->config_info;
+			(const struct counter_config_info *)dev->config;
 
 	return ((uint64_t)ticks * USEC_PER_SEC) / config->freq;
 }
@@ -302,7 +302,7 @@ __syscall uint32_t counter_get_max_top_value(const struct device *dev);
 static inline uint32_t z_impl_counter_get_max_top_value(const struct device *dev)
 {
 	const struct counter_config_info *config =
-			(const struct counter_config_info *)dev->config_info;
+			(const struct counter_config_info *)dev->config;
 
 	return config->max_top_value;
 }

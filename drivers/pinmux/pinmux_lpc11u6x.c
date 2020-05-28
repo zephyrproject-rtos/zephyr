@@ -24,7 +24,7 @@
 
 
 #define DEV_CFG(dev)  ((const struct pinmux_lpc11u6x_config *) \
-		      ((dev)->config_info))
+		      ((dev)->config))
 
 struct pinmux_lpc11u6x_config {
 	uint8_t port;

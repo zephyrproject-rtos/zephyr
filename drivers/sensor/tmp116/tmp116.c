@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(TMP116);
 static int tmp116_reg_read(struct device *dev, uint8_t reg, uint16_t *val)
 {
 	struct tmp116_data *drv_data = dev->driver_data;
-	const struct tmp116_dev_config *cfg = dev->config_info;
+	const struct tmp116_dev_config *cfg = dev->config;
 
 	if (i2c_burst_read(drv_data->i2c, cfg->i2c_addr, reg, (uint8_t *)val, 2)
 	    < 0) {

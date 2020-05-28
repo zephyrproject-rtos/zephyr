@@ -32,7 +32,7 @@ static int8_t dht_measure_signal_duration(struct device *dev,
 					bool active)
 {
 	struct dht_data *drv_data = dev->driver_data;
-	const struct dht_config *cfg = dev->config_info;
+	const struct dht_config *cfg = dev->config;
 	uint32_t elapsed_cycles;
 	uint32_t max_wait_cycles = (uint32_t)(
 		(uint64_t)DHT_SIGNAL_MAX_WAIT_DURATION *
@@ -60,7 +60,7 @@ static int8_t dht_measure_signal_duration(struct device *dev,
 static int dht_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct dht_data *drv_data = dev->driver_data;
-	const struct dht_config *cfg = dev->config_info;
+	const struct dht_config *cfg = dev->config;
 	int ret = 0;
 	int8_t signal_duration[DHT_DATA_BITS_NUM];
 	int8_t max_duration, min_duration, avg_duration;
@@ -225,7 +225,7 @@ static int dht_init(struct device *dev)
 {
 	int rc = 0;
 	struct dht_data *drv_data = dev->driver_data;
-	const struct dht_config *cfg = dev->config_info;
+	const struct dht_config *cfg = dev->config;
 
 	drv_data->gpio = device_get_binding(cfg->ctrl);
 	if (drv_data->gpio == NULL) {

@@ -351,7 +351,7 @@ static int bq274xx_sample_fetch(struct device *dev, enum sensor_channel chan)
 static int bq274xx_gauge_init(struct device *dev)
 {
 	struct bq274xx_data *bq274xx = dev->driver_data;
-	const struct bq274xx_config *const config = dev->config_info;
+	const struct bq274xx_config *const config = dev->config;
 	int status = 0;
 	uint8_t tmp_checksum = 0, checksum_old = 0, checksum_new = 0;
 	uint16_t flags = 0, designenergy_mwh = 0, taperrate = 0, id;

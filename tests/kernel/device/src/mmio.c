@@ -119,7 +119,7 @@ const struct foo_mult_config_info foo12_config = {
 };
 
 #define DEV_DATA(dev)	((struct foo_mult_dev_data *)((dev)->driver_data))
-#define DEV_CFG(dev)	((struct foo_mult_config_info *)((dev)->config_info))
+#define DEV_CFG(dev)	((struct foo_mult_config_info *)((dev)->config))
 
 int foo_mult_init(struct device *device)
 {

@@ -572,7 +572,7 @@ static bool dps310_measure_tmp(struct dps310_data *data,
 static int dps310_init(struct device *dev)
 {
 	struct dps310_data *data = dev->driver_data;
-	const struct dps310_cfg *config = dev->config_info;
+	const struct dps310_cfg *config = dev->config;
 
 	data->i2c_master = device_get_binding(config->i2c_bus_name);
 	if (data->i2c_master == NULL) {
@@ -664,7 +664,7 @@ static int dps310_init(struct device *dev)
 static int dps310_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct dps310_data *data = dev->driver_data;
-	const struct dps310_cfg *config = dev->config_info;
+	const struct dps310_cfg *config = dev->config;
 
 	LOG_DBG("Fetching sample from DPS310");
 
