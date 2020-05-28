@@ -19,6 +19,7 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config CAN_SHELL
 	bool "Enable CAN Shell"
+	default y
 	depends on SHELL
 	help
 	  Enable CAN Shell for testing.
