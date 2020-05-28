@@ -284,15 +284,19 @@ def marshall_defs(func_name, func_type, args):
 
     if func_type == "void":
         mrsh += "\t" + "%s;\n" % vrfy_call
+        mrsh += "\t" + "_current->syscall_frame = NULL;\n"
         mrsh += "\t" + "return 0;\n"
     else:
         mrsh += "\t" + "%s ret = %s;\n" % (func_type, vrfy_call)
+
         if need_split(func_type):
             ptr = "((u64_t *)%s)" % mrsh_rval(nmrsh - 1, nmrsh)
             mrsh += "\t" + "Z_OOPS(Z_SYSCALL_MEMORY_WRITE(%s, 8));\n" % ptr
             mrsh += "\t" + "*%s = ret;\n" % ptr
+            mrsh += "\t" + "_current->syscall_frame = NULL;\n"
             mrsh += "\t" + "return 0;\n"
         else:
+            mrsh += "\t" + "_current->syscall_frame = NULL;\n"
             mrsh += "\t" + "return (uintptr_t) ret;\n"
 
     mrsh += "}\n"
