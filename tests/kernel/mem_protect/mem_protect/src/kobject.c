@@ -723,8 +723,12 @@ static void supervisor_from_user_child(void *p1, void *p2, void *p3)
 
 	zassert_unreachable("k_object validation failure in k thread create");
 }
+
 /**
- * @brief Test to create a new supervisor thread from user.
+ * @brief Test to create a new supervisor thread from user
+ *
+ * @details The system kernel must prevent user threads from creating supervisor
+ * threads.
  *
  * @ingroup kernel_memprotect_tests
  */
