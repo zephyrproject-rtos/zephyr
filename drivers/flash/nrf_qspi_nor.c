@@ -311,8 +311,13 @@ static int qspi_send_cmd(struct device *dev, const struct qspi_cmd *cmd)
 /* QSPI erase */
 static int qspi_erase(struct device *dev, uint32_t addr, uint32_t size)
 {
-	/* Check input parameters */
-	if (!size) {
+	/* address must be sector-aligned */
+	if ((addr % QSPI_SECTOR_SIZE) != 0) {
+		return -EINVAL;
+	}
+
+	/* size must be a non-zero multiple of sectors */
+	if ((size == 0) || (size % QSPI_SECTOR_SIZE) != 0) {
 		return -EINVAL;
 	}
 
@@ -512,11 +517,9 @@ static int qspi_nor_read(struct device *dev, off_t addr, void *dest,
 
 	const struct qspi_nor_config *params = dev->config_info;
 
-	/* should be between 0 and flash size */
-	if (addr >= params->size ||
-	    addr < 0 ||
-	    size > params->size ||
-	    (addr) + size > params->size) {
+	/* affected region should be within device */
+	if (addr < 0 ||
+	    (addr + size) > params->size) {
 		LOG_ERR("read error: address or size "
 			"exceeds expected values."
 			"Addr: 0x%lx size %zu", (long)addr, size);
@@ -563,11 +566,9 @@ static int qspi_nor_write(struct device *dev, off_t addr, const void *src,
 		return -EACCES;
 	}
 
-	/* should be between 0 and flash size */
-	if (addr >= params->size ||
-	    addr < 0 ||
-	    size > params->size ||
-	    (addr) + size > params->size) {
+	/* affected region should be within device */
+	if (addr < 0 ||
+	    (addr + size) > params->size) {
 		LOG_ERR("write error: address or size "
 			"exceeds expected values."
 			"Addr: 0x%lx size %zu", (long)addr, size);
@@ -594,11 +595,9 @@ static int qspi_nor_erase(struct device *dev, off_t addr, size_t size)
 		return -EACCES;
 	}
 
-	/* should be between 0 and flash size */
-	if (addr >= params->size ||
-	    addr < 0 ||
-	    size > params->size ||
-	    (addr) + size > params->size) {
+	/* affected region should be within device */
+	if (addr < 0 ||
+	    (addr + size) > params->size) {
 		LOG_ERR("erase error: address or size "
 			"exceeds expected values."
 			"Addr: 0x%lx size %zu", (long)addr, size);
