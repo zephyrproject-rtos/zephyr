@@ -15,6 +15,7 @@ config HWINFO_HAS_DRIVER
 
 config HWINFO_SHELL
 	bool "Enable HWINFO Shell"
+	default y
 	depends on SHELL
 	help
 	  Enable hwinfo Shell for testing.
