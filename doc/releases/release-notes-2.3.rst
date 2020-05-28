@@ -132,7 +132,13 @@ Architectures
 
 * ARM:
 
-  * <TBD>
+  * CMSIS has been moved out of the main tree and now resides in its
+    own standalone module repository
+  * Cleanups and improvements to the Cortex-M exception vector table
+  * Fixed the behavior of Cortex-M spurious IRQ handler
+  * Fixed parsing of Cortex-M MemManage Stacking Errors
+  * Fixed the arch_cpu_idle() implementation for Cortex-M and Cortex-R
+
 
 * POSIX:
 
