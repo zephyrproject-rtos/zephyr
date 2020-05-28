@@ -332,6 +332,7 @@ foreach(root ${BOARD_ROOT})
   # x_nucleo_iks01a1/x_nucleo_iks01a1.overlay;x_nucleo_iks01a2/x_nucleo_iks01a2.overlay
   # we construct a list of shield names by extracting file name and
   # removing the extension.
+  unset(SHIELD_LIST)
   foreach(shield_path ${shields_refs_list})
     get_filename_component(shield ${shield_path} NAME_WE)
     list(APPEND SHIELD_LIST ${shield})
