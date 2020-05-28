@@ -67,23 +67,18 @@ static ssize_t eventfd_read_op(void *obj, void *buf, size_t sz)
 {
 	struct eventfd *efd = obj;
 	eventfd_t count;
-	int ret = 0;
+	int ret;
 
 	if (sz < sizeof(eventfd_t)) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	if (efd->cnt == 0) {
-		if (efd->flags & EFD_NONBLOCK) {
-			ret = -EAGAIN;
-		} else {
-			ret = k_sem_take(&efd->read_sem, K_FOREVER);
-		}
-	}
+	ret = k_sem_take(&efd->read_sem,
+			 (efd->flags & EFD_NONBLOCK) ? K_NO_WAIT : K_FOREVER);
 
 	if (ret < 0) {
-		errno = -ret;
+		errno = EAGAIN;
 		return -1;
 	}
 
@@ -128,7 +123,9 @@ static ssize_t eventfd_write_op(void *obj, const void *buf, size_t sz)
 	}
 
 	efd->cnt += count;
-	k_sem_give(&efd->read_sem);
+	if (count) {
+		k_sem_give(&efd->read_sem);
+	}
 
 	return sizeof(eventfd_t);
 }
@@ -228,7 +225,7 @@ int eventfd(unsigned int initval, int flags)
 
 	efd->flags = EFD_IN_USE | flags;
 	efd->cnt = 0;
-	k_sem_init(&efd->read_sem, 0, UINT32_MAX);
+	k_sem_init(&efd->read_sem, 0, 1);
 	k_sem_init(&efd->write_sem, 0, UINT32_MAX);
 
 	z_finalize_fd(fd, efd, &eventfd_fd_vtable);
