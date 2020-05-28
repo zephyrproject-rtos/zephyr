@@ -28,7 +28,7 @@ static int mcux_dac_channel_setup(struct device *dev,
 				    const struct dac_channel_cfg *channel_cfg)
 {
 	const struct mcux_dac_config *config = dev->config;
-	struct mcux_dac_data *data = dev->driver_data;
+	struct mcux_dac_data *data = dev->data;
 	dac_config_t dac_config;
 
 	if (channel_cfg->channel_id != 0) {
@@ -55,7 +55,7 @@ static int mcux_dac_channel_setup(struct device *dev,
 static int mcux_dac_write_value(struct device *dev, uint8_t channel, uint32_t value)
 {
 	const struct mcux_dac_config *config = dev->config;
-	struct mcux_dac_data *data = dev->driver_data;
+	struct mcux_dac_data *data = dev->data;
 
 	if (!data->configured) {
 		LOG_ERR("channel not initialized");

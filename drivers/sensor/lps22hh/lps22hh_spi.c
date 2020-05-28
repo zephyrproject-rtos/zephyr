@@ -24,7 +24,7 @@ LOG_MODULE_DECLARE(LPS22HH, CONFIG_SENSOR_LOG_LEVEL);
 static int lps22hh_spi_read(struct device *dev, uint8_t reg_addr,
 			    uint8_t *value, uint8_t len)
 {
-	struct lps22hh_data *data = dev->driver_data;
+	struct lps22hh_data *data = dev->data;
 	const struct lps22hh_config *cfg = dev->config;
 	const struct spi_config *spi_cfg = &cfg->spi_conf;
 	uint8_t buffer_tx[2] = { reg_addr | LPS22HH_SPI_READ, 0 };
@@ -66,7 +66,7 @@ static int lps22hh_spi_read(struct device *dev, uint8_t reg_addr,
 static int lps22hh_spi_write(struct device *dev, uint8_t reg_addr,
 			     uint8_t *value, uint8_t len)
 {
-	struct lps22hh_data *data = dev->driver_data;
+	struct lps22hh_data *data = dev->data;
 	const struct lps22hh_config *cfg = dev->config;
 	const struct spi_config *spi_cfg = &cfg->spi_conf;
 	uint8_t buffer_tx[1] = { reg_addr & ~LPS22HH_SPI_READ };
@@ -99,7 +99,7 @@ static int lps22hh_spi_write(struct device *dev, uint8_t reg_addr,
 
 int lps22hh_spi_init(struct device *dev)
 {
-	struct lps22hh_data *data = dev->driver_data;
+	struct lps22hh_data *data = dev->data;
 
 	data->ctx_spi.read_reg = (stmdev_read_ptr) lps22hh_spi_read;
 	data->ctx_spi.write_reg = (stmdev_write_ptr) lps22hh_spi_write;

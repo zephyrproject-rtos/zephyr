@@ -366,7 +366,7 @@ static enum ieee802154_hw_caps kw41z_get_capabilities(struct device *dev)
 
 static int kw41z_cca(struct device *dev)
 {
-	struct kw41z_context *kw41z = dev->driver_data;
+	struct kw41z_context *kw41z = dev->data;
 
 	kw41z_phy_abort();
 
@@ -615,7 +615,7 @@ out:
 static int kw41z_tx(struct device *dev, enum ieee802154_tx_mode mode,
 		    struct net_pkt *pkt, struct net_buf *frag)
 {
-	struct kw41z_context *kw41z = dev->driver_data;
+	struct kw41z_context *kw41z = dev->data;
 	uint8_t payload_len = frag->len;
 	uint32_t tx_timeout;
 	uint8_t xcvseq;
@@ -926,7 +926,7 @@ static void kw41z_isr(int unused)
 
 static inline uint8_t *get_mac(struct device *dev)
 {
-	struct kw41z_context *kw41z = dev->driver_data;
+	struct kw41z_context *kw41z = dev->data;
 
 	/*
 	 * The KW40Z has two 32-bit registers for the MAC address where
@@ -957,7 +957,7 @@ static inline uint8_t *get_mac(struct device *dev)
 
 static int kw41z_init(struct device *dev)
 {
-	struct kw41z_context *kw41z = dev->driver_data;
+	struct kw41z_context *kw41z = dev->data;
 	xcvrStatus_t xcvrStatus;
 
 	xcvrStatus = XCVR_Init(ZIGBEE_MODE, DR_500KBPS);
@@ -1063,7 +1063,7 @@ static int kw41z_init(struct device *dev)
 static void kw41z_iface_init(struct net_if *iface)
 {
 	struct device *dev = net_if_get_device(iface);
-	struct kw41z_context *kw41z = dev->driver_data;
+	struct kw41z_context *kw41z = dev->data;
 	uint8_t *mac = get_mac(dev);
 
 #if defined(CONFIG_KW41_DBG_TRACE)

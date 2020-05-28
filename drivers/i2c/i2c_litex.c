@@ -29,7 +29,7 @@ struct i2c_litex_cfg {
 	((const struct i2c_litex_cfg *) dev->config)
 
 #define GET_I2C_BITBANG(dev)						     \
-	((struct i2c_bitbang *) dev->driver_data)
+	((struct i2c_bitbang *) dev->data)
 
 static inline void set_bit(volatile uint32_t *reg, uint32_t bit, uint32_t val)
 {

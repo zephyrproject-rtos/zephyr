@@ -647,7 +647,7 @@ static void hid_interface_config(struct usb_desc_header *head,
 int usb_hid_init(const struct device *dev)
 {
 	struct usb_cfg_data *cfg = (void *)dev->config;
-	struct hid_device_info *dev_data = dev->driver_data;
+	struct hid_device_info *dev_data = dev->data;
 
 	LOG_DBG("Initializing HID Device: dev %p", dev);
 
@@ -662,7 +662,7 @@ int usb_hid_init(const struct device *dev)
 void usb_hid_register_device(struct device *dev, const uint8_t *desc,
 			     size_t size, const struct hid_ops *ops)
 {
-	struct hid_device_info *dev_data = dev->driver_data;
+	struct hid_device_info *dev_data = dev->data;
 
 	dev_data->report_desc = desc;
 	dev_data->report_size = size;

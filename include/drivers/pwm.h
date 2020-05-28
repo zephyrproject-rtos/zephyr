@@ -83,7 +83,7 @@ static inline int z_impl_pwm_pin_set_cycles(struct device *dev, uint32_t pwm,
 {
 	struct pwm_driver_api *api;
 
-	api = (struct pwm_driver_api *)dev->driver_api;
+	api = (struct pwm_driver_api *)dev->api;
 	return api->pin_set(dev, pwm, period, pulse, flags);
 }
 
@@ -107,7 +107,7 @@ static inline int z_impl_pwm_get_cycles_per_sec(struct device *dev, uint32_t pwm
 {
 	struct pwm_driver_api *api;
 
-	api = (struct pwm_driver_api *)dev->driver_api;
+	api = (struct pwm_driver_api *)dev->api;
 	return api->get_cycles_per_sec(dev, pwm, cycles);
 }
 

@@ -78,7 +78,7 @@ static inline int cipher_query_hwcaps(struct device *dev)
 	struct crypto_driver_api *api;
 	int tmp;
 
-	api = (struct crypto_driver_api *) dev->driver_api;
+	api = (struct crypto_driver_api *) dev->api;
 
 	tmp = api->query_hw_caps(dev);
 
@@ -122,7 +122,7 @@ static inline int cipher_begin_session(struct device *dev,
 	struct crypto_driver_api *api;
 	uint32_t flags;
 
-	api = (struct crypto_driver_api *) dev->driver_api;
+	api = (struct crypto_driver_api *) dev->api;
 	ctx->device = dev;
 	ctx->ops.cipher_mode = mode;
 
@@ -160,7 +160,7 @@ static inline int cipher_free_session(struct device *dev,
 {
 	struct crypto_driver_api *api;
 
-	api = (struct crypto_driver_api *) dev->driver_api;
+	api = (struct crypto_driver_api *) dev->api;
 
 	return api->free_session(dev, ctx);
 }
@@ -184,7 +184,7 @@ static inline int cipher_callback_set(struct device *dev,
 {
 	struct crypto_driver_api *api;
 
-	api = (struct crypto_driver_api *) dev->driver_api;
+	api = (struct crypto_driver_api *) dev->api;
 
 	if (api->crypto_async_callback_set) {
 		return api->crypto_async_callback_set(dev, cb);

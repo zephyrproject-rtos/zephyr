@@ -180,7 +180,7 @@ static int gpio_gecko_pin_interrupt_configure(struct device *dev,
 		enum gpio_int_trig trig)
 {
 	const struct gpio_gecko_config *config = dev->config;
-	struct gpio_gecko_data *data = dev->driver_data;
+	struct gpio_gecko_data *data = dev->data;
 
 	/* Interrupt on static level is not supported by the hardware */
 	if (mode == GPIO_INT_MODE_LEVEL) {
@@ -221,7 +221,7 @@ static int gpio_gecko_pin_interrupt_configure(struct device *dev,
 static int gpio_gecko_manage_callback(struct device *dev,
 				      struct gpio_callback *callback, bool set)
 {
-	struct gpio_gecko_data *data = dev->driver_data;
+	struct gpio_gecko_data *data = dev->data;
 
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
@@ -232,7 +232,7 @@ static int gpio_gecko_manage_callback(struct device *dev,
 static void gpio_gecko_common_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	struct gpio_gecko_common_data *data = dev->driver_data;
+	struct gpio_gecko_common_data *data = dev->data;
 	uint32_t enabled_int, int_status;
 	struct device *port_dev;
 	struct gpio_gecko_data *port_data;
@@ -241,7 +241,7 @@ static void gpio_gecko_common_isr(void *arg)
 
 	for (unsigned int i = 0; int_status && (i < data->count); i++) {
 		port_dev = data->ports[i];
-		port_data = port_dev->driver_data;
+		port_data = port_dev->data;
 		enabled_int = int_status & port_data->int_enabled_mask;
 		if (enabled_int != 0) {
 			int_status &= ~enabled_int;

@@ -177,7 +177,7 @@ static int lmp90xxx_read_reg(struct device *dev, uint8_t addr, uint8_t *dptr,
 			     size_t len)
 {
 	const struct lmp90xxx_config *config = dev->config;
-	struct lmp90xxx_data *data = dev->driver_data;
+	struct lmp90xxx_data *data = dev->data;
 	uint8_t ura = LMP90XXX_URA(addr);
 	uint8_t inst1_uab[2] = { LMP90XXX_INST1_WAB, ura };
 	uint8_t inst2 = LMP90XXX_INST2_R | LMP90XXX_LRA(addr);
@@ -251,7 +251,7 @@ static int lmp90xxx_write_reg(struct device *dev, uint8_t addr, uint8_t *dptr,
 			      size_t len)
 {
 	const struct lmp90xxx_config *config = dev->config;
-	struct lmp90xxx_data *data = dev->driver_data;
+	struct lmp90xxx_data *data = dev->data;
 	uint8_t ura = LMP90XXX_URA(addr);
 	uint8_t inst1_uab[2] = { LMP90XXX_INST1_WAB, ura };
 	uint8_t inst2 = LMP90XXX_INST2_WB | LMP90XXX_LRA(addr);
@@ -380,7 +380,7 @@ static inline int lmp90xxx_acq_time_to_odr(uint16_t acq_time)
 static int lmp90xxx_adc_channel_setup(struct device *dev,
 				      const struct adc_channel_cfg *channel_cfg)
 {
-	struct lmp90xxx_data *data = dev->driver_data;
+	struct lmp90xxx_data *data = dev->data;
 	uint8_t chx_inputcn = LMP90XXX_BURNOUT_EN(0); /* No burnout currents */
 	uint8_t chx_config = LMP90XXX_BUF_EN(0);      /* No buffer */
 	uint8_t payload[2];
@@ -498,7 +498,7 @@ static int lmp90xxx_adc_start_read(struct device *dev,
 				   const struct adc_sequence *sequence)
 {
 	const struct lmp90xxx_config *config = dev->config;
-	struct lmp90xxx_data *data = dev->driver_data;
+	struct lmp90xxx_data *data = dev->data;
 	int err;
 
 	if (sequence->resolution != config->resolution) {
@@ -529,7 +529,7 @@ static int lmp90xxx_adc_read_async(struct device *dev,
 				   const struct adc_sequence *sequence,
 				   struct k_poll_signal *async)
 {
-	struct lmp90xxx_data *data = dev->driver_data;
+	struct lmp90xxx_data *data = dev->data;
 	int err;
 
 	adc_context_lock(&data->ctx, async ? true : false, async);
@@ -571,7 +571,7 @@ static int lmp90xxx_adc_read_channel(struct device *dev, uint8_t channel,
 				     int32_t *result)
 {
 	const struct lmp90xxx_config *config = dev->config;
-	struct lmp90xxx_data *data = dev->driver_data;
+	struct lmp90xxx_data *data = dev->data;
 	uint8_t adc_done;
 	uint8_t ch_scan;
 	uint8_t buf[4]; /* ADC_DOUT + CRC */
@@ -649,7 +649,7 @@ static int lmp90xxx_adc_read_channel(struct device *dev, uint8_t channel,
 
 static void lmp90xxx_acquisition_thread(struct device *dev)
 {
-	struct lmp90xxx_data *data = dev->driver_data;
+	struct lmp90xxx_data *data = dev->data;
 	uint8_t bgcalcn = LMP90XXX_BGCALN(0x3); /* Default to BgCalMode3 */
 	int32_t result = 0;
 	uint8_t channel;
@@ -712,7 +712,7 @@ static void lmp90xxx_drdyb_callback(struct device *port,
 #ifdef CONFIG_ADC_LMP90XXX_GPIO
 int lmp90xxx_gpio_set_output(struct device *dev, uint8_t pin)
 {
-	struct lmp90xxx_data *data = dev->driver_data;
+	struct lmp90xxx_data *data = dev->data;
 	int err = 0;
 	uint8_t tmp;
 
@@ -737,7 +737,7 @@ int lmp90xxx_gpio_set_output(struct device *dev, uint8_t pin)
 
 int lmp90xxx_gpio_set_input(struct device *dev, uint8_t pin)
 {
-	struct lmp90xxx_data *data = dev->driver_data;
+	struct lmp90xxx_data *data = dev->data;
 	int err = 0;
 	uint8_t tmp;
 
@@ -762,7 +762,7 @@ int lmp90xxx_gpio_set_input(struct device *dev, uint8_t pin)
 
 int lmp90xxx_gpio_set_pin_value(struct device *dev, uint8_t pin, bool value)
 {
-	struct lmp90xxx_data *data = dev->driver_data;
+	struct lmp90xxx_data *data = dev->data;
 	int err = 0;
 	uint8_t tmp;
 
@@ -789,7 +789,7 @@ int lmp90xxx_gpio_set_pin_value(struct device *dev, uint8_t pin, bool value)
 
 int lmp90xxx_gpio_get_pin_value(struct device *dev, uint8_t pin, bool *value)
 {
-	struct lmp90xxx_data *data = dev->driver_data;
+	struct lmp90xxx_data *data = dev->data;
 	int err = 0;
 	uint8_t tmp;
 
@@ -811,7 +811,7 @@ int lmp90xxx_gpio_get_pin_value(struct device *dev, uint8_t pin, bool *value)
 
 int lmp90xxx_gpio_port_get_raw(struct device *dev, gpio_port_value_t *value)
 {
-	struct lmp90xxx_data *data = dev->driver_data;
+	struct lmp90xxx_data *data = dev->data;
 	uint8_t tmp;
 	int err;
 
@@ -829,7 +829,7 @@ int lmp90xxx_gpio_port_set_masked_raw(struct device *dev,
 				      gpio_port_pins_t mask,
 				      gpio_port_value_t value)
 {
-	struct lmp90xxx_data *data = dev->driver_data;
+	struct lmp90xxx_data *data = dev->data;
 	int err = 0;
 	uint8_t tmp;
 
@@ -850,7 +850,7 @@ int lmp90xxx_gpio_port_set_masked_raw(struct device *dev,
 
 int lmp90xxx_gpio_port_set_bits_raw(struct device *dev, gpio_port_pins_t pins)
 {
-	struct lmp90xxx_data *data = dev->driver_data;
+	struct lmp90xxx_data *data = dev->data;
 	int err = 0;
 	uint8_t tmp;
 
@@ -872,7 +872,7 @@ int lmp90xxx_gpio_port_set_bits_raw(struct device *dev, gpio_port_pins_t pins)
 int lmp90xxx_gpio_port_clear_bits_raw(struct device *dev,
 				      gpio_port_pins_t pins)
 {
-	struct lmp90xxx_data *data = dev->driver_data;
+	struct lmp90xxx_data *data = dev->data;
 	int err = 0;
 	uint8_t tmp;
 
@@ -893,7 +893,7 @@ int lmp90xxx_gpio_port_clear_bits_raw(struct device *dev,
 
 int lmp90xxx_gpio_port_toggle_bits(struct device *dev, gpio_port_pins_t pins)
 {
-	struct lmp90xxx_data *data = dev->driver_data;
+	struct lmp90xxx_data *data = dev->data;
 	uint8_t tmp;
 	int err;
 
@@ -915,7 +915,7 @@ int lmp90xxx_gpio_port_toggle_bits(struct device *dev, gpio_port_pins_t pins)
 static int lmp90xxx_init(struct device *dev)
 {
 	const struct lmp90xxx_config *config = dev->config;
-	struct lmp90xxx_data *data = dev->driver_data;
+	struct lmp90xxx_data *data = dev->data;
 	struct device *drdyb_dev;
 	k_tid_t tid;
 	int err;

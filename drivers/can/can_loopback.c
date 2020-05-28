@@ -288,7 +288,7 @@ DEVICE_AND_API_INIT(can_loopback_1, CONFIG_CAN_LOOPBACK_DEV_NAME,
 static int socket_can_init_1(struct device *dev)
 {
 	struct device *can_dev = DEVICE_GET(can_loopback_1);
-	struct socket_can_context *socket_context = dev->driver_data;
+	struct socket_can_context *socket_context = dev->data;
 
 	LOG_DBG("Init socket CAN device %p (%s) for dev %p (%s)",
 		dev, dev->name, can_dev, can_dev->name);

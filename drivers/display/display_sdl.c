@@ -29,7 +29,7 @@ static struct sdl_display_data sdl_display_data;
 static int sdl_display_init(struct device *dev)
 {
 	struct sdl_display_data *disp_data =
-	    (struct sdl_display_data *)dev->driver_data;
+	    (struct sdl_display_data *)dev->data;
 	LOG_DBG("Initializing display driver");
 
 	memset(disp_data, 0, sizeof(struct sdl_display_data));
@@ -219,7 +219,7 @@ static int sdl_display_write(const struct device *dev, const uint16_t x,
 	SDL_Rect rect;
 
 	struct sdl_display_data *disp_data =
-		(struct sdl_display_data *)dev->driver_data;
+		(struct sdl_display_data *)dev->data;
 
 	LOG_DBG("Writing %dx%d (w,h) bitmap @ %dx%d (x,y)", desc->width,
 			desc->height, x, y);
@@ -278,7 +278,7 @@ static int sdl_display_read(const struct device *dev, const uint16_t x,
 			    void *buf)
 {
 	struct sdl_display_data *disp_data =
-		(struct sdl_display_data *)dev->driver_data;
+		(struct sdl_display_data *)dev->data;
 	SDL_Rect rect;
 
 	rect.x = x;
@@ -305,7 +305,7 @@ static void *sdl_display_get_framebuffer(const struct device *dev)
 static int sdl_display_blanking_off(const struct device *dev)
 {
 	struct sdl_display_data *disp_data =
-		(struct sdl_display_data *)dev->driver_data;
+		(struct sdl_display_data *)dev->data;
 
 	LOG_DBG("Turning display blacking off");
 
@@ -321,7 +321,7 @@ static int sdl_display_blanking_off(const struct device *dev)
 static int sdl_display_blanking_on(const struct device *dev)
 {
 	struct sdl_display_data *disp_data =
-		(struct sdl_display_data *)dev->driver_data;
+		(struct sdl_display_data *)dev->data;
 
 	LOG_DBG("Turning display blanking on");
 
@@ -348,7 +348,7 @@ static void sdl_display_get_capabilities(
 	const struct device *dev, struct display_capabilities *capabilities)
 {
 	struct sdl_display_data *disp_data =
-	    (struct sdl_display_data *)dev->driver_data;
+	    (struct sdl_display_data *)dev->data;
 
 	memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = CONFIG_SDL_DISPLAY_X_RES;
@@ -368,7 +368,7 @@ static int sdl_display_set_pixel_format(const struct device *dev,
 		const enum display_pixel_format pixel_format)
 {
 	struct sdl_display_data *disp_data =
-		(struct sdl_display_data *)dev->driver_data;
+		(struct sdl_display_data *)dev->data;
 
 	switch (pixel_format) {
 	case PIXEL_FORMAT_ARGB_8888:

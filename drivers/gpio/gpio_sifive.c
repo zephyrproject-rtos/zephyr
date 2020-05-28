@@ -64,7 +64,7 @@ struct gpio_sifive_data {
 #define DEV_GPIO(dev)							\
 	((volatile struct gpio_sifive_t *)(DEV_GPIO_CFG(dev))->gpio_base_addr)
 #define DEV_GPIO_DATA(dev)				\
-	((struct gpio_sifive_data *)(dev)->driver_data)
+	((struct gpio_sifive_data *)(dev)->data)
 
 /* _irq_level and _level2_irq are copied from
  * soc/riscv/riscv-privileged/common/soc_common_irq.c

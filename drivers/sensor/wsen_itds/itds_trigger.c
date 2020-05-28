@@ -19,7 +19,7 @@ static int itds_trigger_drdy_set(struct device *dev,
 				 enum sensor_channel chan,
 				 sensor_trigger_handler_t handler)
 {
-	struct itds_device_data *ddata = dev->driver_data;
+	struct itds_device_data *ddata = dev->data;
 	const struct itds_device_config *cfg = dev->config;
 	uint8_t drdy_en = 0U;
 	int ret;
@@ -93,7 +93,7 @@ static void itds_gpio_callback(struct device *port,
 
 int itds_trigger_mode_init(struct device *dev)
 {
-	struct itds_device_data *ddata = dev->driver_data;
+	struct itds_device_data *ddata = dev->data;
 	const struct itds_device_config *cfg = dev->config;
 
 	ddata->gpio = device_get_binding(cfg->gpio_port);

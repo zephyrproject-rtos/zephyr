@@ -218,7 +218,7 @@ static void rv32m1_lpuart_irq_callback_set(struct device *dev,
 				       uart_irq_callback_user_data_t cb,
 				       void *cb_data)
 {
-	struct rv32m1_lpuart_data *data = dev->driver_data;
+	struct rv32m1_lpuart_data *data = dev->data;
 
 	data->callback = cb;
 	data->cb_data = cb_data;
@@ -227,7 +227,7 @@ static void rv32m1_lpuart_irq_callback_set(struct device *dev,
 static void rv32m1_lpuart_isr(void *arg)
 {
 	struct device *dev = arg;
-	struct rv32m1_lpuart_data *data = dev->driver_data;
+	struct rv32m1_lpuart_data *data = dev->data;
 
 	if (data->callback) {
 		data->callback(dev, data->cb_data);

@@ -1106,7 +1106,7 @@ static void config_can_1_irq(CAN_TypeDef *can)
 static int socket_can_init_1(struct device *dev)
 {
 	struct device *can_dev = DEVICE_GET(can_stm32_1);
-	struct socket_can_context *socket_context = dev->driver_data;
+	struct socket_can_context *socket_context = dev->data;
 
 	LOG_DBG("Init socket CAN device %p (%s) for dev %p (%s)",
 		dev, dev->name, can_dev, can_dev->name);
@@ -1189,7 +1189,7 @@ static void config_can_2_irq(CAN_TypeDef *can)
 static int socket_can_init_2(struct device *dev)
 {
 	struct device *can_dev = DEVICE_GET(can_stm32_2);
-	struct socket_can_context *socket_context = dev->driver_data;
+	struct socket_can_context *socket_context = dev->data;
 
 	LOG_DBG("Init socket CAN device %p (%s) for dev %p (%s)",
 		dev, dev->name, can_dev, can_dev->name);

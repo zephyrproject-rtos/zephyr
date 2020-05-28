@@ -523,7 +523,7 @@ For example:
       ((const struct my_driver_config *)((_dev)->config))
 
    #define DEV_DATA(_dev) \
-      ((struct my_driver_dev_data *)((_dev)->driver_data))
+      ((struct my_driver_dev_data *)((_dev)->data))
 
    const static struct my_driver_config my_driver_config_0 = {
       ...

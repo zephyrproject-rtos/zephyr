@@ -22,7 +22,7 @@ extern "C" {
 #define DEV_CFG(dev) \
 	((const struct mpxxdtyy_config *const)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct mpxxdtyy_data *const)(dev)->driver_data)
+	((struct mpxxdtyy_data *const)(dev)->data)
 
 struct mpxxdtyy_data {
 	struct device		*comm_master;

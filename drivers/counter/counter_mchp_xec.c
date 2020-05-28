@@ -55,7 +55,7 @@ struct counter_xec_data {
 	  _dev->config))
 
 #define COUNTER_XEC_DATA(_dev)				\
-	((struct counter_xec_data *)dev->driver_data)
+	((struct counter_xec_data *)dev->data)
 
 static int counter_xec_start(struct device *dev)
 {

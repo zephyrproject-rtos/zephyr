@@ -26,7 +26,7 @@
 #define DEV_CFG(dev)  ((const struct gpio_lpc11u6x_config *) \
 		       ((dev)->config))
 #define DEV_DATA(dev) ((struct gpio_lpc11u6x_data *) \
-		       ((dev)->driver_data))
+		       ((dev)->data))
 
 /* Offset from syscon base address. */
 #define LPC11U6X_PINTSEL_REGS	0x178
@@ -469,21 +469,21 @@ static void gpio_lpc11u6x_isr(void *arg)
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)
 	if (pins[0]) {
 		port = DEVICE_GET(gpio_lpc11u6x_0);
-		data = port->driver_data;
+		data = port->data;
 		gpio_fire_callbacks(&data->cb_list, port, pins[0]);
 	}
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay)
 	if (pins[1]) {
 		port = DEVICE_GET(gpio_lpc11u6x_1);
-		data = port->driver_data;
+		data = port->data;
 		gpio_fire_callbacks(&data->cb_list, port, pins[1]);
 	}
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio2), okay)
 	if (pins[2]) {
 		port = DEVICE_GET(gpio_lpc11u6x_2);
-		data = port->driver_data;
+		data = port->data;
 		gpio_fire_callbacks(&data->cb_list, port, pins[2]);
 	}
 #endif

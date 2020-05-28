@@ -166,7 +166,7 @@ static int mcux_igpio_pin_interrupt_configure(struct device *dev,
 static int mcux_igpio_manage_callback(struct device *dev,
 				     struct gpio_callback *callback, bool set)
 {
-	struct mcux_igpio_data *data = dev->driver_data;
+	struct mcux_igpio_data *data = dev->data;
 
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
@@ -175,7 +175,7 @@ static void mcux_igpio_port_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
 	const struct mcux_igpio_config *config = dev->config;
-	struct mcux_igpio_data *data = dev->driver_data;
+	struct mcux_igpio_data *data = dev->data;
 	GPIO_Type *base = config->base;
 	uint32_t int_flags;
 

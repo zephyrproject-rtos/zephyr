@@ -21,7 +21,7 @@
 #define DEV_CFG(dev) \
 	((const struct leuart_gecko_config * const)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct leuart_gecko_data * const)(dev)->driver_data)
+	((struct leuart_gecko_data * const)(dev)->data)
 #define DEV_BASE(dev) \
 	((LEUART_TypeDef *)(DEV_CFG(dev))->base)
 
@@ -225,7 +225,7 @@ static void leuart_gecko_irq_callback_set(struct device *dev,
 					  uart_irq_callback_user_data_t cb,
 					  void *cb_data)
 {
-	struct leuart_gecko_data *data = dev->driver_data;
+	struct leuart_gecko_data *data = dev->data;
 
 	data->callback = cb;
 	data->cb_data = cb_data;
@@ -234,7 +234,7 @@ static void leuart_gecko_irq_callback_set(struct device *dev,
 static void leuart_gecko_isr(void *arg)
 {
 	struct device *dev = arg;
-	struct leuart_gecko_data *data = dev->driver_data;
+	struct leuart_gecko_data *data = dev->data;
 
 	if (data->callback) {
 		data->callback(dev, data->cb_data);

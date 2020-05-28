@@ -98,7 +98,7 @@ static inline int led_strip_update_rgb(struct device *dev,
 				       struct led_rgb *pixels,
 				       size_t num_pixels) {
 	const struct led_strip_driver_api *api =
-		(const struct led_strip_driver_api *)dev->driver_api;
+		(const struct led_strip_driver_api *)dev->api;
 
 	return api->update_rgb(dev, pixels, num_pixels);
 }
@@ -124,7 +124,7 @@ static inline int led_strip_update_channels(struct device *dev,
 					    uint8_t *channels,
 					    size_t num_channels) {
 	const struct led_strip_driver_api *api =
-		(const struct led_strip_driver_api *)dev->driver_api;
+		(const struct led_strip_driver_api *)dev->api;
 
 	return api->update_channels(dev, channels, num_channels);
 }

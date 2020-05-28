@@ -381,7 +381,7 @@ static inline int z_impl_adc_channel_setup(struct device *dev,
 				const struct adc_channel_cfg *channel_cfg)
 {
 	const struct adc_driver_api *api =
-				(const struct adc_driver_api *)dev->driver_api;
+				(const struct adc_driver_api *)dev->api;
 
 	return api->channel_setup(dev, channel_cfg);
 }
@@ -414,7 +414,7 @@ static inline int z_impl_adc_read(struct device *dev,
 				  const struct adc_sequence *sequence)
 {
 	const struct adc_driver_api *api =
-				(const struct adc_driver_api *)dev->driver_api;
+				(const struct adc_driver_api *)dev->api;
 
 	return api->read(dev, sequence);
 }
@@ -446,7 +446,7 @@ static inline int z_impl_adc_read_async(struct device *dev,
 					struct k_poll_signal *async)
 {
 	const struct adc_driver_api *api =
-				(const struct adc_driver_api *)dev->driver_api;
+				(const struct adc_driver_api *)dev->api;
 
 	return api->read_async(dev, sequence, async);
 }
@@ -464,7 +464,7 @@ static inline int z_impl_adc_read_async(struct device *dev,
 static inline uint16_t adc_ref_internal(struct device *dev)
 {
 	const struct adc_driver_api *api =
-				(const struct adc_driver_api *)dev->driver_api;
+				(const struct adc_driver_api *)dev->api;
 
 	return api->ref_internal;
 }

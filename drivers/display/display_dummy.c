@@ -17,7 +17,7 @@ static struct dummy_display_data dummy_display_data;
 static int dummy_display_init(struct device *dev)
 {
 	struct dummy_display_data *disp_data =
-	    (struct dummy_display_data *)dev->driver_data;
+	    (struct dummy_display_data *)dev->data;
 
 	disp_data->current_pixel_format = PIXEL_FORMAT_ARGB_8888;
 
@@ -87,7 +87,7 @@ static void dummy_display_get_capabilities(const struct device *dev,
 		struct display_capabilities *capabilities)
 {
 	struct dummy_display_data *disp_data =
-		(struct dummy_display_data *)dev->driver_data;
+		(struct dummy_display_data *)dev->data;
 
 	memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = CONFIG_DUMMY_DISPLAY_X_RES;
@@ -105,7 +105,7 @@ static int dummy_display_set_pixel_format(const struct device *dev,
 		const enum display_pixel_format pixel_format)
 {
 	struct dummy_display_data *disp_data =
-		(struct dummy_display_data *)dev->driver_data;
+		(struct dummy_display_data *)dev->data;
 
 	disp_data->current_pixel_format = pixel_format;
 	return 0;

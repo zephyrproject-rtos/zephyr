@@ -30,7 +30,7 @@ static int lis3mdl_channel_get(struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
-	struct lis3mdl_data *drv_data = dev->driver_data;
+	struct lis3mdl_data *drv_data = dev->data;
 
 	if (chan == SENSOR_CHAN_MAGN_XYZ) {
 		/* magn_val = sample / mang_gain */
@@ -60,7 +60,7 @@ static int lis3mdl_channel_get(struct device *dev,
 
 int lis3mdl_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
-	struct lis3mdl_data *drv_data = dev->driver_data;
+	struct lis3mdl_data *drv_data = dev->data;
 	int16_t buf[4];
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
@@ -102,7 +102,7 @@ static const struct sensor_driver_api lis3mdl_driver_api = {
 
 int lis3mdl_init(struct device *dev)
 {
-	struct lis3mdl_data *drv_data = dev->driver_data;
+	struct lis3mdl_data *drv_data = dev->data;
 	uint8_t chip_cfg[6];
 	uint8_t id, idx;
 

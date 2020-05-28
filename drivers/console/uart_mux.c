@@ -88,7 +88,7 @@ struct uart_mux_config {
 };
 
 #define DEV_DATA(dev) \
-	((struct uart_mux_dev_data *)(dev)->driver_data)
+	((struct uart_mux_dev_data *)(dev)->data)
 
 struct uart_mux_dev_data {
 	sys_snode_t node;

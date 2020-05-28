@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(pwm_imx);
 #define DEV_CFG(dev) \
 	((const struct imx_pwm_config * const)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct imx_pwm_data * const)(dev)->driver_data)
+	((struct imx_pwm_data * const)(dev)->data)
 #define DEV_BASE(dev) \
 	((PWM_Type *)(DEV_CFG(dev))->base)
 

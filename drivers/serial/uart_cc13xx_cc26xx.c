@@ -42,7 +42,7 @@ struct uart_cc13xx_cc26xx_data {
 
 static inline struct uart_cc13xx_cc26xx_data *get_dev_data(struct device *dev)
 {
-	return dev->driver_data;
+	return dev->data;
 }
 
 static inline const struct uart_device_config *get_dev_conf(struct device *dev)

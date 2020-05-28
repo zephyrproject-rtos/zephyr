@@ -1748,7 +1748,7 @@ static bool test_init(void)
 	 * used target board and linker. We cannot guarantee that network
 	 * interfaces are always set the same way in the linker section.
 	 */
-	api = net_if_get_device(iface)->driver_api;
+	api = net_if_get_device(iface)->api;
 	if (api->send != tester_send) {
 		my_iface = iface + 1;
 		peer_iface = iface;

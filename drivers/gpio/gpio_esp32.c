@@ -60,7 +60,7 @@ static int gpio_esp32_config(struct device *dev,
 			     gpio_pin_t pin,
 			     gpio_flags_t flags)
 {
-	struct gpio_esp32_data *data = dev->driver_data;
+	struct gpio_esp32_data *data = dev->data;
 	uint32_t io_pin = pin + data->port.pin_offset; /* Range from 0 - 39 */
 	uint32_t *reg = GET_GPIO_PIN_REG(io_pin);
 	uint32_t func;
@@ -117,7 +117,7 @@ static int gpio_esp32_config(struct device *dev,
 
 static int gpio_esp32_port_get_raw(struct device *port, uint32_t *value)
 {
-	struct gpio_esp32_data *data = port->driver_data;
+	struct gpio_esp32_data *data = port->data;
 
 	*value = *data->port.input_reg;
 
@@ -127,7 +127,7 @@ static int gpio_esp32_port_get_raw(struct device *port, uint32_t *value)
 static int gpio_esp32_port_set_masked_raw(struct device *port,
 					  uint32_t mask, uint32_t value)
 {
-	struct gpio_esp32_data *data = port->driver_data;
+	struct gpio_esp32_data *data = port->data;
 	uint32_t key;
 
 	key = irq_lock();
@@ -141,7 +141,7 @@ static int gpio_esp32_port_set_masked_raw(struct device *port,
 static int gpio_esp32_port_set_bits_raw(struct device *port,
 					uint32_t pins)
 {
-	struct gpio_esp32_data *data = port->driver_data;
+	struct gpio_esp32_data *data = port->data;
 
 	*data->port.set_reg = pins;
 	return 0;
@@ -150,7 +150,7 @@ static int gpio_esp32_port_set_bits_raw(struct device *port,
 static int gpio_esp32_port_clear_bits_raw(struct device *port,
 					  uint32_t pins)
 {
-	struct gpio_esp32_data *data = port->driver_data;
+	struct gpio_esp32_data *data = port->data;
 
 	*data->port.clear_reg = pins;
 	return 0;
@@ -159,7 +159,7 @@ static int gpio_esp32_port_clear_bits_raw(struct device *port,
 static int gpio_esp32_port_toggle_bits(struct device *port,
 				       uint32_t pins)
 {
-	struct gpio_esp32_data *data = port->driver_data;
+	struct gpio_esp32_data *data = port->data;
 	uint32_t key;
 
 	key = irq_lock();
@@ -218,7 +218,7 @@ static int gpio_esp32_pin_interrupt_configure(struct device *port,
 					      enum gpio_int_mode mode,
 					      enum gpio_int_trig trig)
 {
-	struct gpio_esp32_data *data = port->driver_data;
+	struct gpio_esp32_data *data = port->data;
 	uint32_t io_pin = pin + data->port.pin_offset; /* Range from 0 - 39 */
 	uint32_t *reg = GET_GPIO_PIN_REG(io_pin);
 	int intr_trig_mode = convert_int_type(mode, trig);
@@ -248,14 +248,14 @@ static int gpio_esp32_manage_callback(struct device *dev,
 				      struct gpio_callback *callback,
 				      bool set)
 {
-	struct gpio_esp32_data *data = dev->driver_data;
+	struct gpio_esp32_data *data = dev->data;
 
 	return gpio_manage_callback(&data->cb, callback, set);
 }
 
 static void gpio_esp32_fire_callbacks(struct device *device)
 {
-	struct gpio_esp32_data *data = device->driver_data;
+	struct gpio_esp32_data *data = device->data;
 	uint32_t irq_status = *data->port.irq_status_reg;
 
 	*data->port.irq_ack_reg = irq_status;
@@ -267,7 +267,7 @@ static void gpio_esp32_isr(void *param);
 
 static int gpio_esp32_init(struct device *device)
 {
-	struct gpio_esp32_data *data = device->driver_data;
+	struct gpio_esp32_data *data = device->data;
 	static bool isr_connected;
 
 	data->pinmux = device_get_binding(CONFIG_PINMUX_NAME);

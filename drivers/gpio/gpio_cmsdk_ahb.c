@@ -188,7 +188,7 @@ static void gpio_cmsdk_ahb_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
 	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config;
-	struct gpio_cmsdk_ahb_dev_data *data = dev->driver_data;
+	struct gpio_cmsdk_ahb_dev_data *data = dev->data;
 	uint32_t int_stat;
 
 	int_stat = cfg->port->intstatus;
@@ -204,7 +204,7 @@ static int gpio_cmsdk_ahb_manage_callback(struct device *dev,
 					  struct gpio_callback *callback,
 					  bool set)
 {
-	struct gpio_cmsdk_ahb_dev_data *data = dev->driver_data;
+	struct gpio_cmsdk_ahb_dev_data *data = dev->data;
 
 	return gpio_manage_callback(&data->gpio_cb, callback, set);
 }

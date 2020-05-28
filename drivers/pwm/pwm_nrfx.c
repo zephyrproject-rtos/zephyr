@@ -132,7 +132,7 @@ static int pwm_nrfx_pin_set(struct device *dev, uint32_t pwm,
 	 * TODO: Remove this comment when issue has been resolved.
 	 */
 	const struct pwm_nrfx_config *config = dev->config;
-	struct pwm_nrfx_data *data = dev->driver_data;
+	struct pwm_nrfx_data *data = dev->data;
 	uint8_t channel;
 	bool was_stopped;
 

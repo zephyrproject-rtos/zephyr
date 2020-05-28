@@ -26,7 +26,7 @@ LOG_MODULE_DECLARE(LSM6DSO, CONFIG_SENSOR_LOG_LEVEL);
 static int lsm6dso_enable_t_int(struct device *dev, int enable)
 {
 	const struct lsm6dso_config *cfg = dev->config;
-	struct lsm6dso_data *lsm6dso = dev->driver_data;
+	struct lsm6dso_data *lsm6dso = dev->data;
 	lsm6dso_pin_int2_route_t int2_route;
 
 	if (enable) {
@@ -54,7 +54,7 @@ static int lsm6dso_enable_t_int(struct device *dev, int enable)
 static int lsm6dso_enable_xl_int(struct device *dev, int enable)
 {
 	const struct lsm6dso_config *cfg = dev->config;
-	struct lsm6dso_data *lsm6dso = dev->driver_data;
+	struct lsm6dso_data *lsm6dso = dev->data;
 
 	if (enable) {
 		union axis3bit16_t buf;
@@ -90,7 +90,7 @@ static int lsm6dso_enable_xl_int(struct device *dev, int enable)
 static int lsm6dso_enable_g_int(struct device *dev, int enable)
 {
 	const struct lsm6dso_config *cfg = dev->config;
-	struct lsm6dso_data *lsm6dso = dev->driver_data;
+	struct lsm6dso_data *lsm6dso = dev->data;
 
 	if (enable) {
 		union axis3bit16_t buf;
@@ -126,7 +126,7 @@ int lsm6dso_trigger_set(struct device *dev,
 			  const struct sensor_trigger *trig,
 			  sensor_trigger_handler_t handler)
 {
-	struct lsm6dso_data *lsm6dso = dev->driver_data;
+	struct lsm6dso_data *lsm6dso = dev->data;
 
 	if (trig->chan == SENSOR_CHAN_ACCEL_XYZ) {
 		lsm6dso->handler_drdy_acc = handler;
@@ -164,7 +164,7 @@ int lsm6dso_trigger_set(struct device *dev,
 static void lsm6dso_handle_interrupt(void *arg)
 {
 	struct device *dev = arg;
-	struct lsm6dso_data *lsm6dso = dev->driver_data;
+	struct lsm6dso_data *lsm6dso = dev->data;
 	struct sensor_trigger drdy_trigger = {
 		.type = SENSOR_TRIG_DATA_READY,
 	};
@@ -227,7 +227,7 @@ static void lsm6dso_gpio_callback(struct device *dev,
 static void lsm6dso_thread(int dev_ptr, int unused)
 {
 	struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct lsm6dso_data *lsm6dso = dev->driver_data;
+	struct lsm6dso_data *lsm6dso = dev->data;
 
 	ARG_UNUSED(unused);
 
@@ -250,7 +250,7 @@ static void lsm6dso_work_cb(struct k_work *work)
 
 int lsm6dso_init_interrupt(struct device *dev)
 {
-	struct lsm6dso_data *lsm6dso = dev->driver_data;
+	struct lsm6dso_data *lsm6dso = dev->data;
 	const struct lsm6dso_config *cfg = dev->config;
 	int ret;
 

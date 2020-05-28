@@ -21,7 +21,7 @@ LOG_MODULE_DECLARE(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
 static int lis2dh_raw_read(struct device *dev, uint8_t reg_addr,
 			    uint8_t *value, uint8_t len)
 {
-	struct lis2dh_data *data = dev->driver_data;
+	struct lis2dh_data *data = dev->data;
 	const struct lis2dh_config *cfg = dev->config;
 	const struct spi_config *spi_cfg = &cfg->spi_conf;
 	uint8_t buffer_tx[2] = { reg_addr | LIS2DH_SPI_READ_BIT, 0 };
@@ -67,7 +67,7 @@ static int lis2dh_raw_read(struct device *dev, uint8_t reg_addr,
 static int lis2dh_raw_write(struct device *dev, uint8_t reg_addr,
 			     uint8_t *value, uint8_t len)
 {
-	struct lis2dh_data *data = dev->driver_data;
+	struct lis2dh_data *data = dev->data;
 	const struct lis2dh_config *cfg = dev->config;
 	const struct spi_config *spi_cfg = &cfg->spi_conf;
 	uint8_t buffer_tx[1] = { reg_addr & ~LIS2DH_SPI_READ_BIT };
@@ -149,7 +149,7 @@ static const struct lis2dh_transfer_function lis2dh_spi_transfer_fn = {
 
 int lis2dh_spi_init(struct device *dev)
 {
-	struct lis2dh_data *data = dev->driver_data;
+	struct lis2dh_data *data = dev->data;
 
 	data->hw_tf = &lis2dh_spi_transfer_fn;
 

@@ -680,7 +680,7 @@ int lsm6dso_shub_get_idx(enum sensor_channel type)
 int lsm6dso_shub_fetch_external_devs(struct device *dev)
 {
 	uint8_t n;
-	struct lsm6dso_data *data = dev->driver_data;
+	struct lsm6dso_data *data = dev->data;
 	struct lsm6dso_shub_slist *sp;
 
 	/* read data from external slave */
@@ -705,7 +705,7 @@ int lsm6dso_shub_config(struct device *dev, enum sensor_channel chan,
 			enum sensor_attribute attr,
 			const struct sensor_value *val)
 {
-	struct lsm6dso_data *data = dev->driver_data;
+	struct lsm6dso_data *data = dev->data;
 	struct lsm6dso_shub_slist *sp = NULL;
 	uint8_t n;
 
@@ -731,7 +731,7 @@ int lsm6dso_shub_config(struct device *dev, enum sensor_channel chan,
 
 int lsm6dso_shub_init(struct device *dev)
 {
-	struct lsm6dso_data *data = dev->driver_data;
+	struct lsm6dso_data *data = dev->data;
 	uint8_t i, n = 0, regn;
 	uint8_t chip_id;
 	struct lsm6dso_shub_slist *sp;

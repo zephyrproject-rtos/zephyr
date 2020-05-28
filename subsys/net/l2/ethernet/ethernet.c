@@ -146,7 +146,7 @@ static void ethernet_update_rx_stats(struct net_if *iface,
 static inline bool eth_is_vlan_tag_stripped(struct net_if *iface)
 {
 	struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api = dev->driver_api;
+	const struct ethernet_api *api = dev->api;
 
 	return (api->get_capabilities(dev) & ETHERNET_HW_VLAN_TAG_STRIP);
 }
@@ -557,7 +557,7 @@ static void ethernet_remove_l2_header(struct net_pkt *pkt)
 
 static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 {
-	const struct ethernet_api *api = net_if_get_device(iface)->driver_api;
+	const struct ethernet_api *api = net_if_get_device(iface)->api;
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	uint16_t ptype;
 	int ret;
@@ -658,7 +658,7 @@ error:
 static inline int ethernet_enable(struct net_if *iface, bool state)
 {
 	const struct ethernet_api *eth =
-		net_if_get_device(iface)->driver_api;
+		net_if_get_device(iface)->api;
 
 	if (!eth) {
 		return -ENOENT;
@@ -853,7 +853,7 @@ int net_eth_vlan_enable(struct net_if *iface, uint16_t tag)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	const struct ethernet_api *eth =
-		net_if_get_device(iface)->driver_api;
+		net_if_get_device(iface)->api;
 	struct ethernet_vlan *vlan;
 	int i;
 
@@ -926,7 +926,7 @@ int net_eth_vlan_disable(struct net_if *iface, uint16_t tag)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	const struct ethernet_api *eth =
-		net_if_get_device(iface)->driver_api;
+		net_if_get_device(iface)->api;
 	struct ethernet_vlan *vlan;
 
 	if (!eth) {
@@ -1025,7 +1025,7 @@ void net_eth_carrier_off(struct net_if *iface)
 struct device *net_eth_get_ptp_clock(struct net_if *iface)
 {
 	struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api = dev->driver_api;
+	const struct ethernet_api *api = dev->api;
 
 	if (!api) {
 		return NULL;

@@ -31,7 +31,7 @@ static struct cavs_idc_data cavs_idc_device_data;
 
 static void cavs_idc_isr(struct device *dev)
 {
-	struct cavs_idc_data *drv_data = dev->driver_data;
+	struct cavs_idc_data *drv_data = dev->data;
 
 	uint32_t i, id;
 	void *ext;
@@ -159,7 +159,7 @@ static uint32_t cavs_idc_max_id_val_get(struct device *dev)
 static void cavs_idc_register_callback(struct device *dev, ipm_callback_t cb,
 				       void *user_data)
 {
-	struct cavs_idc_data *drv_data = dev->driver_data;
+	struct cavs_idc_data *drv_data = dev->data;
 
 	drv_data->cb = cb;
 	drv_data->user_data = user_data;

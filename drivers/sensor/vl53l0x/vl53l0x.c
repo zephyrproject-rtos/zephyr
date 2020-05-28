@@ -47,7 +47,7 @@ struct vl53l0x_data {
 
 static int vl53l0x_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
-	struct vl53l0x_data *drv_data = dev->driver_data;
+	struct vl53l0x_data *drv_data = dev->data;
 	VL53L0X_Error ret;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL
@@ -69,7 +69,7 @@ static int vl53l0x_channel_get(struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
-	struct vl53l0x_data *drv_data = (struct vl53l0x_data *)dev->driver_data;
+	struct vl53l0x_data *drv_data = (struct vl53l0x_data *)dev->data;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_DISTANCE
 			|| chan == SENSOR_CHAN_PROX);
@@ -97,7 +97,7 @@ static const struct sensor_driver_api vl53l0x_api_funcs = {
 
 static int vl53l0x_setup_single_shot(struct device *dev)
 {
-	struct vl53l0x_data *drv_data = dev->driver_data;
+	struct vl53l0x_data *drv_data = dev->data;
 	int ret;
 	uint8_t VhvSettings;
 	uint8_t PhaseCal;
@@ -197,7 +197,7 @@ exit:
 
 static int vl53l0x_init(struct device *dev)
 {
-	struct vl53l0x_data *drv_data = dev->driver_data;
+	struct vl53l0x_data *drv_data = dev->data;
 	VL53L0X_Error ret;
 	uint16_t vl53l0x_id = 0U;
 	VL53L0X_DeviceInfo_t vl53l0x_dev_info;

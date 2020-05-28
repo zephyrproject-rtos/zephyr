@@ -864,7 +864,7 @@ int net_context_dev_init(struct device *dev)
 
 static uint8_t *net_context_get_mac(struct device *dev)
 {
-	struct net_context_test *context = dev->driver_data;
+	struct net_context_test *context = dev->data;
 
 	if (context->mac_addr[2] == 0x00) {
 		/* 00-00-5E-00-53-xx Documentation RFC 7042 */

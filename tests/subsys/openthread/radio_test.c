@@ -73,7 +73,7 @@ static struct ieee802154_radio_api rapi = {
 	.ed_scan = scan_mock
 };
 
-static struct device radio = { .driver_api = &rapi };
+static struct device radio = { .api = &rapi };
 
 static int scan_mock(struct device *dev, uint16_t duration,
 		     energy_scan_done_cb_t done_cb)

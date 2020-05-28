@@ -141,7 +141,7 @@ struct uarte_init_config {
 
 static inline struct uarte_nrfx_data *get_dev_data(struct device *dev)
 {
-	return dev->driver_data;
+	return dev->data;
 }
 
 static inline const struct uarte_nrfx_config *get_dev_config(struct device *dev)

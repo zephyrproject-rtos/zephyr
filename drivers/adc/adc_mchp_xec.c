@@ -150,7 +150,7 @@ static int adc_xec_start_read(struct device *dev,
 			      const struct adc_sequence *sequence)
 {
 	struct adc_xec_regs *adc_regs = ADC_XEC_REG_BASE;
-	struct adc_xec_data *data = dev->driver_data;
+	struct adc_xec_data *data = dev->data;
 	uint32_t reg;
 
 	if (sequence->channels & ~BIT_MASK(MCHP_ADC_MAX_CHAN)) {
@@ -194,7 +194,7 @@ static int adc_xec_start_read(struct device *dev,
 static int adc_xec_read(struct device *dev,
 			const struct adc_sequence *sequence)
 {
-	struct adc_xec_data *data = dev->driver_data;
+	struct adc_xec_data *data = dev->data;
 	int error;
 
 	adc_context_lock(&data->ctx, false, NULL);
@@ -209,7 +209,7 @@ static int adc_xec_read_async(struct device *dev,
 			      const struct adc_sequence *sequence,
 			      struct k_poll_signal *async)
 {
-	struct adc_xec_data *data = dev->driver_data;
+	struct adc_xec_data *data = dev->data;
 	int error;
 
 	adc_context_lock(&data->ctx, true, async);
@@ -223,7 +223,7 @@ static int adc_xec_read_async(struct device *dev,
 static void xec_adc_get_sample(struct device *dev)
 {
 	struct adc_xec_regs *adc_regs = ADC_XEC_REG_BASE;
-	struct adc_xec_data *data = dev->driver_data;
+	struct adc_xec_data *data = dev->data;
 	uint32_t idx;
 	uint32_t channels = adc_regs->status_reg;
 	uint32_t ch_status = channels;
@@ -254,7 +254,7 @@ static void xec_adc_get_sample(struct device *dev)
 static void adc_xec_isr(struct device *dev)
 {
 	struct adc_xec_regs *adc_regs = ADC_XEC_REG_BASE;
-	struct adc_xec_data *data = dev->driver_data;
+	struct adc_xec_data *data = dev->data;
 	uint32_t reg;
 
 	/* Clear START_SINGLE bit and clear SINGLE_DONE_STATUS */
@@ -285,7 +285,7 @@ struct adc_driver_api adc_xec_api = {
 static int adc_xec_init(struct device *dev)
 {
 	struct adc_xec_regs *adc_regs = ADC_XEC_REG_BASE;
-	struct adc_xec_data *data = dev->driver_data;
+	struct adc_xec_data *data = dev->data;
 
 	adc_regs->control_reg =  XEC_ADC_CTRL_ACTIVATE
 		| XEC_ADC_CTRL_POWER_SAVER_DIS

@@ -33,7 +33,7 @@ struct ws2812_gpio_cfg {
 
 static struct ws2812_gpio_data *dev_data(struct device *dev)
 {
-	return dev->driver_data;
+	return dev->data;
 }
 
 static const struct ws2812_gpio_cfg *dev_cfg(struct device *dev)

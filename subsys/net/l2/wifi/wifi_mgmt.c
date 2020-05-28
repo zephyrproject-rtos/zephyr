@@ -20,7 +20,7 @@ static int wifi_connect(uint32_t mgmt_request, struct net_if *iface,
 		(struct wifi_connect_req_params *)data;
 	struct device *dev = net_if_get_device(iface);
 	struct net_wifi_mgmt_offload *off_api =
-		(struct net_wifi_mgmt_offload *) dev->driver_api;
+		(struct net_wifi_mgmt_offload *) dev->api;
 
 	if (off_api == NULL || off_api->connect == NULL) {
 		return -ENOTSUP;
@@ -74,7 +74,7 @@ static int wifi_scan(uint32_t mgmt_request, struct net_if *iface,
 {
 	struct device *dev = net_if_get_device(iface);
 	struct net_wifi_mgmt_offload *off_api =
-		(struct net_wifi_mgmt_offload *) dev->driver_api;
+		(struct net_wifi_mgmt_offload *) dev->api;
 
 	if (off_api == NULL || off_api->scan == NULL) {
 		return -ENOTSUP;
@@ -91,7 +91,7 @@ static int wifi_disconnect(uint32_t mgmt_request, struct net_if *iface,
 {
 	struct device *dev = net_if_get_device(iface);
 	struct net_wifi_mgmt_offload *off_api =
-		(struct net_wifi_mgmt_offload *) dev->driver_api;
+		(struct net_wifi_mgmt_offload *) dev->api;
 
 	if (off_api == NULL || off_api->disconnect == NULL) {
 		return -ENOTSUP;
@@ -131,7 +131,7 @@ static int wifi_ap_enable(uint32_t mgmt_request, struct net_if *iface,
 		(struct wifi_connect_req_params *)data;
 	struct device *dev = net_if_get_device(iface);
 	struct net_wifi_mgmt_offload *off_api =
-		(struct net_wifi_mgmt_offload *) dev->driver_api;
+		(struct net_wifi_mgmt_offload *) dev->api;
 
 	if (off_api == NULL || off_api->ap_enable == NULL) {
 		return -ENOTSUP;
@@ -147,7 +147,7 @@ static int wifi_ap_disable(uint32_t mgmt_request, struct net_if *iface,
 {
 	struct device *dev = net_if_get_device(iface);
 	struct net_wifi_mgmt_offload *off_api =
-		(struct net_wifi_mgmt_offload *) dev->driver_api;
+		(struct net_wifi_mgmt_offload *) dev->api;
 
 	if (off_api == NULL || off_api->ap_enable == NULL) {
 		return -ENOTSUP;

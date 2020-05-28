@@ -102,7 +102,7 @@ static void rv32m1_lpi2c_master_transfer_callback(LPI2C_Type *base,
 						  void *userData)
 {
 	struct device *dev = userData;
-	struct rv32m1_lpi2c_data *data = dev->driver_data;
+	struct rv32m1_lpi2c_data *data = dev->data;
 
 	ARG_UNUSED(base);
 	ARG_UNUSED(handle);
@@ -130,7 +130,7 @@ static int rv32m1_lpi2c_transfer(struct device *dev, struct i2c_msg *msgs,
 				 uint8_t num_msgs, uint16_t addr)
 {
 	const struct rv32m1_lpi2c_config *config = dev->config;
-	struct rv32m1_lpi2c_data *data = dev->driver_data;
+	struct rv32m1_lpi2c_data *data = dev->data;
 	lpi2c_master_transfer_t transfer;
 	status_t status;
 	int ret = 0;
@@ -203,7 +203,7 @@ static void rv32m1_lpi2c_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
 	const struct rv32m1_lpi2c_config *config = dev->config;
-	struct rv32m1_lpi2c_data *data = dev->driver_data;
+	struct rv32m1_lpi2c_data *data = dev->data;
 
 	LPI2C_MasterTransferHandleIRQ(config->base, &data->handle);
 }
@@ -211,7 +211,7 @@ static void rv32m1_lpi2c_isr(void *arg)
 static int rv32m1_lpi2c_init(struct device *dev)
 {
 	const struct rv32m1_lpi2c_config *config = dev->config;
-	struct rv32m1_lpi2c_data *data = dev->driver_data;
+	struct rv32m1_lpi2c_data *data = dev->data;
 	lpi2c_master_config_t master_config;
 	struct device *clk;
 	uint32_t clk_freq, dev_cfg;

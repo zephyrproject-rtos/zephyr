@@ -141,7 +141,7 @@ static int i2c_esp32_configure_speed(struct device *dev,
 	};
 
 	const struct i2c_esp32_config *config = dev->config;
-	struct i2c_esp32_data *data = dev->driver_data;
+	struct i2c_esp32_data *data = dev->data;
 
 	uint32_t sys_clk_freq = 0;
 	uint32_t freq_hz = speed_to_freq_tbl[speed];
@@ -186,7 +186,7 @@ static int i2c_esp32_configure_speed(struct device *dev,
 static int i2c_esp32_configure(struct device *dev, uint32_t dev_config)
 {
 	const struct i2c_esp32_config *config = dev->config;
-	struct i2c_esp32_data *data = dev->driver_data;
+	struct i2c_esp32_data *data = dev->data;
 	unsigned int key = irq_lock();
 	uint32_t v = 0U;
 	int ret;
@@ -294,7 +294,7 @@ static int i2c_esp32_spin_yield(int *counter)
 static int i2c_esp32_transmit(struct device *dev)
 {
 	const struct i2c_esp32_config *config = dev->config;
-	struct i2c_esp32_data *data = dev->driver_data;
+	struct i2c_esp32_data *data = dev->data;
 	uint32_t status;
 
 	/* Start transmission and wait for the ISR to give the semaphore */
@@ -361,7 +361,7 @@ i2c_esp32_write_addr(struct device *dev,
 		     uint16_t addr)
 {
 	const struct i2c_esp32_config *config = dev->config;
-	struct i2c_esp32_data *data = dev->driver_data;
+	struct i2c_esp32_data *data = dev->data;
 	uint32_t addr_len = 1U;
 
 	i2c_esp32_reset_fifo(config);
@@ -522,7 +522,7 @@ static int i2c_esp32_write_msg(struct device *dev, uint16_t addr,
 static int i2c_esp32_transfer(struct device *dev, struct i2c_msg *msgs,
 			      uint8_t num_msgs, uint16_t addr)
 {
-	struct i2c_esp32_data *data = dev->driver_data;
+	struct i2c_esp32_data *data = dev->data;
 	int ret = 0;
 	uint8_t i;
 
@@ -559,7 +559,7 @@ static void i2c_esp32_isr(void *arg)
 	const struct i2c_esp32_config *config = device->config;
 
 	if (sys_read32(I2C_INT_STATUS_REG(config->index)) & fifo_give_mask) {
-		struct i2c_esp32_data *data = device->driver_data;
+		struct i2c_esp32_data *data = device->data;
 
 		/* Only give the semaphore if a watched interrupt happens.
 		 * Error checking is performed at the other side of the
@@ -674,7 +674,7 @@ DEVICE_AND_API_INIT(i2c_esp32_1, DT_INST_LABEL(1), &i2c_esp32_init,
 static int i2c_esp32_init(struct device *dev)
 {
 	const struct i2c_esp32_config *config = dev->config;
-	struct i2c_esp32_data *data = dev->driver_data;
+	struct i2c_esp32_data *data = dev->data;
 	uint32_t bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
 	data->clock_dev = device_get_binding(config->clock_name);
 

@@ -60,7 +60,7 @@ int tmp007_reg_update(struct tmp007_data *drv_data, uint8_t reg,
 
 static int tmp007_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
-	struct tmp007_data *drv_data = dev->driver_data;
+	struct tmp007_data *drv_data = dev->data;
 	uint16_t val;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_AMBIENT_TEMP);
@@ -82,7 +82,7 @@ static int tmp007_channel_get(struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
-	struct tmp007_data *drv_data = dev->driver_data;
+	struct tmp007_data *drv_data = dev->data;
 	int32_t uval;
 
 	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
@@ -107,7 +107,7 @@ static const struct sensor_driver_api tmp007_driver_api = {
 
 int tmp007_init(struct device *dev)
 {
-	struct tmp007_data *drv_data = dev->driver_data;
+	struct tmp007_data *drv_data = dev->data;
 
 	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (drv_data->i2c == NULL) {

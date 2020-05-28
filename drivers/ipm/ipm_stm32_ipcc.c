@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(ipm_stm32_ipcc, CONFIG_IPM_LOG_LEVEL);
 #define DEV_CFG(dev)							\
 	((const struct stm32_ipcc_mailbox_config * const)(dev)->config)
 #define DEV_DATA(dev)							\
-	((struct stm32_ipcc_mbx_data * const)(dev)->driver_data)
+	((struct stm32_ipcc_mbx_data * const)(dev)->data)
 #define MBX_STRUCT(dev)					\
 	((IPCC_TypeDef *)(DEV_CFG(dev))->uconf.base)
 
@@ -155,7 +155,7 @@ static void stm32_ipcc_mailbox_tx_isr(void *arg)
 static int stm32_ipcc_mailbox_ipm_send(struct device *dev, int wait, uint32_t id,
 				       const void *buff, int size)
 {
-	struct stm32_ipcc_mbx_data *data = dev->driver_data;
+	struct stm32_ipcc_mbx_data *data = dev->data;
 	const struct stm32_ipcc_mailbox_config *cfg = DEV_CFG(dev);
 
 	ARG_UNUSED(wait);

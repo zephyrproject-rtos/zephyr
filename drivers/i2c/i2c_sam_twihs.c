@@ -70,7 +70,7 @@ struct i2c_sam_twihs_dev_data {
 #define DEV_CFG(dev) \
 	((const struct i2c_sam_twihs_dev_cfg *const)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct i2c_sam_twihs_dev_data *const)(dev)->driver_data)
+	((struct i2c_sam_twihs_dev_data *const)(dev)->data)
 
 static int i2c_clk_set(Twihs *const twihs, uint32_t speed)
 {

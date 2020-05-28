@@ -26,7 +26,7 @@ struct bmi160_device_data bmi160_data;
 static int bmi160_transceive(struct device *dev, uint8_t reg,
 			     bool write, void *data, size_t length)
 {
-	struct bmi160_device_data *bmi160 = dev->driver_data;
+	struct bmi160_device_data *bmi160 = dev->data;
 	const struct spi_buf buf[2] = {
 		{
 			.buf = &reg,
@@ -197,7 +197,7 @@ static int bmi160_freq_to_odr_val(uint16_t freq_int, uint16_t freq_milli)
 static int bmi160_acc_odr_set(struct device *dev, uint16_t freq_int,
 			      uint16_t freq_milli)
 {
-	struct bmi160_device_data *bmi160 = dev->driver_data;
+	struct bmi160_device_data *bmi160 = dev->data;
 	int odr = bmi160_freq_to_odr_val(freq_int, freq_milli);
 
 	if (odr < 0) {
@@ -299,7 +299,7 @@ static int bmi160_do_calibration(struct device *dev, uint8_t foc_conf)
 #if defined(CONFIG_BMI160_ACCEL_RANGE_RUNTIME)
 static int bmi160_acc_range_set(struct device *dev, int32_t range)
 {
-	struct bmi160_device_data *bmi160 = dev->driver_data;
+	struct bmi160_device_data *bmi160 = dev->data;
 	int32_t reg_val = bmi160_range_to_reg_val(range,
 						  bmi160_acc_range_map,
 						  BMI160_ACC_RANGE_MAP_SIZE);
@@ -360,7 +360,7 @@ static int bmi160_acc_ofs_set(struct device *dev, enum sensor_channel chan,
 static int  bmi160_acc_calibrate(struct device *dev, enum sensor_channel chan,
 				 const struct sensor_value *xyz_calib_value)
 {
-	struct bmi160_device_data *bmi160 = dev->driver_data;
+	struct bmi160_device_data *bmi160 = dev->data;
 	uint8_t foc_pos[] = {
 		BMI160_FOC_ACC_X_POS,
 		BMI160_FOC_ACC_Y_POS,
@@ -463,7 +463,7 @@ static int bmi160_gyr_odr_set(struct device *dev, uint16_t freq_int,
 #if defined(CONFIG_BMI160_GYRO_RANGE_RUNTIME)
 static int bmi160_gyr_range_set(struct device *dev, uint16_t range)
 {
-	struct bmi160_device_data *bmi160 = dev->driver_data;
+	struct bmi160_device_data *bmi160 = dev->data;
 	int32_t reg_val = bmi160_range_to_reg_val(range,
 						bmi160_gyr_range_map,
 						BMI160_GYR_RANGE_MAP_SIZE);
@@ -545,7 +545,7 @@ static int bmi160_gyr_ofs_set(struct device *dev, enum sensor_channel chan,
 
 static int bmi160_gyr_calibrate(struct device *dev, enum sensor_channel chan)
 {
-	struct bmi160_device_data *bmi160 = dev->driver_data;
+	struct bmi160_device_data *bmi160 = dev->data;
 
 	ARG_UNUSED(chan);
 
@@ -627,7 +627,7 @@ static int bmi160_attr_set(struct device *dev, enum sensor_channel chan,
 #endif
 static int bmi160_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
-	struct bmi160_device_data *bmi160 = dev->driver_data;
+	struct bmi160_device_data *bmi160 = dev->data;
 	size_t i;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
@@ -709,7 +709,7 @@ static inline void bmi160_gyr_channel_get(struct device *dev,
 					  enum sensor_channel chan,
 					  struct sensor_value *val)
 {
-	struct bmi160_device_data *bmi160 = dev->driver_data;
+	struct bmi160_device_data *bmi160 = dev->data;
 
 	bmi160_channel_convert(chan, bmi160->scale.gyr,
 			       bmi160->sample.gyr, val);
@@ -721,7 +721,7 @@ static inline void bmi160_acc_channel_get(struct device *dev,
 					  enum sensor_channel chan,
 					  struct sensor_value *val)
 {
-	struct bmi160_device_data *bmi160 = dev->driver_data;
+	struct bmi160_device_data *bmi160 = dev->data;
 
 	bmi160_channel_convert(chan, bmi160->scale.acc,
 			       bmi160->sample.acc, val);
@@ -732,7 +732,7 @@ static int bmi160_temp_channel_get(struct device *dev, struct sensor_value *val)
 {
 	uint16_t temp_raw = 0U;
 	int32_t temp_micro = 0;
-	struct bmi160_device_data *bmi160 = dev->driver_data;
+	struct bmi160_device_data *bmi160 = dev->data;
 
 	if (bmi160->pmu_sts.raw == 0U) {
 		return -EINVAL;
@@ -793,7 +793,7 @@ static const struct sensor_driver_api bmi160_api = {
 
 int bmi160_init(struct device *dev)
 {
-	struct bmi160_device_data *bmi160 = dev->driver_data;
+	struct bmi160_device_data *bmi160 = dev->data;
 	uint8_t val = 0U;
 	int32_t acc_range, gyr_range;
 

@@ -86,7 +86,7 @@ static int si7006_get_old_temperature(struct device *i2c_dev,
 static int si7006_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	int retval;
-	struct si7006_data *si_data = dev->driver_data;
+	struct si7006_data *si_data = dev->data;
 
 	retval = si7006_get_humidity(si_data->i2c_dev, si_data);
 	if (retval == 0) {
@@ -104,7 +104,7 @@ static int si7006_sample_fetch(struct device *dev, enum sensor_channel chan)
 static int si7006_channel_get(struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
-	struct si7006_data *si_data = dev->driver_data;
+	struct si7006_data *si_data = dev->data;
 
 	if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
 
@@ -146,7 +146,7 @@ static const struct sensor_driver_api si7006_api = {
 
 static int si7006_init(struct device *dev)
 {
-	struct si7006_data *drv_data = dev->driver_data;
+	struct si7006_data *drv_data = dev->data;
 
 	drv_data->i2c_dev = device_get_binding(
 		DT_INST_BUS_LABEL(0));

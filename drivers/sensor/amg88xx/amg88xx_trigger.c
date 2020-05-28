@@ -35,7 +35,7 @@ int amg88xx_attr_set(struct device *dev,
 		     enum sensor_attribute attr,
 		     const struct sensor_value *val)
 {
-	struct amg88xx_data *drv_data = dev->driver_data;
+	struct amg88xx_data *drv_data = dev->data;
 	const struct amg88xx_config *config = dev->config;
 	int16_t int_level = (val->val1 * 1000000 + val->val2) /
 			  AMG88XX_TREG_LSB_SCALING;
@@ -91,7 +91,7 @@ static void amg88xx_gpio_callback(struct device *dev,
 static void amg88xx_thread_cb(void *arg)
 {
 	struct device *dev = arg;
-	struct amg88xx_data *drv_data = dev->driver_data;
+	struct amg88xx_data *drv_data = dev->data;
 	const struct amg88xx_config *config = dev->config;
 	uint8_t status;
 
@@ -115,7 +115,7 @@ static void amg88xx_thread_cb(void *arg)
 static void amg88xx_thread(int dev_ptr, int unused)
 {
 	struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct amg88xx_data *drv_data = dev->driver_data;
+	struct amg88xx_data *drv_data = dev->data;
 
 	ARG_UNUSED(unused);
 
@@ -139,7 +139,7 @@ int amg88xx_trigger_set(struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
-	struct amg88xx_data *drv_data = dev->driver_data;
+	struct amg88xx_data *drv_data = dev->data;
 	const struct amg88xx_config *config = dev->config;
 
 	if (i2c_reg_write_byte(drv_data->i2c, config->i2c_address,
@@ -169,7 +169,7 @@ int amg88xx_trigger_set(struct device *dev,
 
 int amg88xx_init_interrupt(struct device *dev)
 {
-	struct amg88xx_data *drv_data = dev->driver_data;
+	struct amg88xx_data *drv_data = dev->data;
 	const struct amg88xx_config *config = dev->config;
 
 	/* setup gpio interrupt */

@@ -251,7 +251,7 @@ static void set_ppp_carrier_on(struct gsm_modem *gsm)
 		return;
 	}
 
-	api = (const struct ppp_api *)ppp_dev->driver_api;
+	api = (const struct ppp_api *)ppp_dev->api;
 	api->start(ppp_dev);
 }
 
@@ -561,7 +561,7 @@ static void gsm_configure(struct k_work *work)
 
 static int gsm_init(struct device *device)
 {
-	struct gsm_modem *gsm = device->driver_data;
+	struct gsm_modem *gsm = device->data;
 	int r;
 
 	LOG_DBG("Generic GSM modem (%p)", gsm);

@@ -100,7 +100,7 @@ int net_route_dev_init(struct device *dev)
 
 static uint8_t *net_route_get_mac(struct device *dev)
 {
-	struct net_route_test *route = dev->driver_data;
+	struct net_route_test *route = dev->data;
 
 	if (route->mac_addr[2] == 0x00) {
 		/* 00-00-5E-00-53-xx Documentation RFC 7042 */

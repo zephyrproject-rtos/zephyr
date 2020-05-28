@@ -100,7 +100,7 @@ struct uart_esp32_data {
 #define DEV_CFG(dev) \
 	((const struct uart_esp32_config *const)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct uart_esp32_data *)(dev)->driver_data)
+	((struct uart_esp32_data *)(dev)->data)
 #define DEV_BASE(dev) \
 	((volatile struct uart_esp32_regs_t  *)(DEV_CFG(dev))->dev_conf.base)
 

@@ -20,7 +20,7 @@ LOG_MODULE_DECLARE(BMA280, CONFIG_SENSOR_LOG_LEVEL);
 static inline void setup_int1(struct device *dev,
 			      bool enable)
 {
-	struct bma280_data *data = dev->driver_data;
+	struct bma280_data *data = dev->data;
 
 	gpio_pin_interrupt_configure(data->gpio,
 				     DT_INST_GPIO_PIN(0, int1_gpios),
@@ -34,7 +34,7 @@ int bma280_attr_set(struct device *dev,
 		    enum sensor_attribute attr,
 		    const struct sensor_value *val)
 {
-	struct bma280_data *drv_data = dev->driver_data;
+	struct bma280_data *drv_data = dev->data;
 	uint64_t slope_th;
 
 	if (chan != SENSOR_CHAN_ACCEL_XYZ) {
@@ -87,7 +87,7 @@ static void bma280_gpio_callback(struct device *dev,
 static void bma280_thread_cb(void *arg)
 {
 	struct device *dev = arg;
-	struct bma280_data *drv_data = dev->driver_data;
+	struct bma280_data *drv_data = dev->data;
 	uint8_t status = 0U;
 	int err = 0;
 
@@ -129,7 +129,7 @@ static void bma280_thread_cb(void *arg)
 static void bma280_thread(int dev_ptr, int unused)
 {
 	struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct bma280_data *drv_data = dev->driver_data;
+	struct bma280_data *drv_data = dev->data;
 
 	ARG_UNUSED(unused);
 
@@ -154,7 +154,7 @@ int bma280_trigger_set(struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler)
 {
-	struct bma280_data *drv_data = dev->driver_data;
+	struct bma280_data *drv_data = dev->data;
 
 	if (trig->type == SENSOR_TRIG_DATA_READY) {
 		/* disable data ready interrupt while changing trigger params */
@@ -211,7 +211,7 @@ int bma280_trigger_set(struct device *dev,
 
 int bma280_init_interrupt(struct device *dev)
 {
-	struct bma280_data *drv_data = dev->driver_data;
+	struct bma280_data *drv_data = dev->data;
 
 	/* set latched interrupts */
 	if (i2c_reg_write_byte(drv_data->i2c, BMA280_I2C_ADDRESS,

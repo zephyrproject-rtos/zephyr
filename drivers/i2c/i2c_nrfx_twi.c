@@ -31,7 +31,7 @@ struct i2c_nrfx_twi_config {
 
 static inline struct i2c_nrfx_twi_data *get_dev_data(struct device *dev)
 {
-	return dev->driver_data;
+	return dev->data;
 }
 
 static inline

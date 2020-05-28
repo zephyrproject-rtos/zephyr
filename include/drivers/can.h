@@ -354,7 +354,7 @@ static inline int z_impl_can_send(struct device *dev,
 				 void *callback_arg)
 {
 	const struct can_driver_api *api =
-		(const struct can_driver_api *)dev->driver_api;
+		(const struct can_driver_api *)dev->api;
 
 	return api->send(dev, msg, timeout, callback_isr, callback_arg);
 }
@@ -478,7 +478,7 @@ static inline int can_attach_isr(struct device *dev,
 				       const struct zcan_filter *filter)
 {
 	const struct can_driver_api *api =
-		(const struct can_driver_api *)dev->driver_api;
+		(const struct can_driver_api *)dev->api;
 
 	return api->attach_isr(dev, isr, callback_arg, filter);
 }
@@ -499,7 +499,7 @@ __syscall void can_detach(struct device *dev, int filter_id);
 static inline void z_impl_can_detach(struct device *dev, int filter_id)
 {
 	const struct can_driver_api *api =
-		(const struct can_driver_api *)dev->driver_api;
+		(const struct can_driver_api *)dev->api;
 
 	return api->detach(dev, filter_id);
 }
@@ -521,7 +521,7 @@ static inline int z_impl_can_configure(struct device *dev, enum can_mode mode,
 				      uint32_t bitrate)
 {
 	const struct can_driver_api *api =
-		(const struct can_driver_api *)dev->driver_api;
+		(const struct can_driver_api *)dev->api;
 
 	return api->configure(dev, mode, bitrate);
 }
@@ -544,7 +544,7 @@ enum can_state z_impl_can_get_state(struct device *dev,
 				    struct can_bus_err_cnt *err_cnt)
 {
 	const struct can_driver_api *api =
-		(const struct can_driver_api *)dev->driver_api;
+		(const struct can_driver_api *)dev->api;
 
 	return api->get_state(dev, err_cnt);
 }
@@ -566,7 +566,7 @@ __syscall int can_recover(struct device *dev, k_timeout_t timeout);
 static inline int z_impl_can_recover(struct device *dev, k_timeout_t timeout)
 {
 	const struct can_driver_api *api =
-		(const struct can_driver_api *)dev->driver_api;
+		(const struct can_driver_api *)dev->api;
 
 	return api->recover(dev, timeout);
 }
@@ -592,7 +592,7 @@ void can_register_state_change_isr(struct device *dev,
 				   can_state_change_isr_t isr)
 {
 	const struct can_driver_api *api =
-		(const struct can_driver_api *)dev->driver_api;
+		(const struct can_driver_api *)dev->api;
 
 	return api->register_state_change_isr(dev, isr);
 }

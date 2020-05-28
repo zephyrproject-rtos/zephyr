@@ -73,7 +73,7 @@ static int max44009_attr_set(struct device *dev, enum sensor_channel chan,
 			     enum sensor_attribute attr,
 			     const struct sensor_value *val)
 {
-	struct max44009_data *drv_data = dev->driver_data;
+	struct max44009_data *drv_data = dev->data;
 	uint8_t value;
 	uint32_t cr;
 
@@ -113,7 +113,7 @@ static int max44009_attr_set(struct device *dev, enum sensor_channel chan,
 
 static int max44009_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
-	struct max44009_data *drv_data = dev->driver_data;
+	struct max44009_data *drv_data = dev->data;
 	uint8_t val_h, val_l;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_LIGHT);
@@ -139,7 +139,7 @@ static int max44009_sample_fetch(struct device *dev, enum sensor_channel chan)
 static int max44009_channel_get(struct device *dev, enum sensor_channel chan,
 				struct sensor_value *val)
 {
-	struct max44009_data *drv_data = dev->driver_data;
+	struct max44009_data *drv_data = dev->data;
 	uint32_t uval;
 
 	if (chan != SENSOR_CHAN_LIGHT) {
@@ -171,7 +171,7 @@ static const struct sensor_driver_api max44009_driver_api = {
 
 int max44009_init(struct device *dev)
 {
-	struct max44009_data *drv_data = dev->driver_data;
+	struct max44009_data *drv_data = dev->data;
 
 	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (drv_data->i2c == NULL) {

@@ -30,7 +30,7 @@ static int hmc5883l_channel_get(struct device *dev,
 				enum sensor_channel chan,
 				struct sensor_value *val)
 {
-	struct hmc5883l_data *drv_data = dev->driver_data;
+	struct hmc5883l_data *drv_data = dev->data;
 
 	if (chan == SENSOR_CHAN_MAGN_X) {
 		hmc5883l_convert(val, drv_data->x_sample,
@@ -55,7 +55,7 @@ static int hmc5883l_channel_get(struct device *dev,
 
 static int hmc5883l_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
-	struct hmc5883l_data *drv_data = dev->driver_data;
+	struct hmc5883l_data *drv_data = dev->data;
 	int16_t buf[3];
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
@@ -85,7 +85,7 @@ static const struct sensor_driver_api hmc5883l_driver_api = {
 
 int hmc5883l_init(struct device *dev)
 {
-	struct hmc5883l_data *drv_data = dev->driver_data;
+	struct hmc5883l_data *drv_data = dev->data;
 	uint8_t chip_cfg[3], id[3], idx;
 
 	drv_data->i2c = device_get_binding(

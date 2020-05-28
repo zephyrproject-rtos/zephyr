@@ -109,7 +109,7 @@ static void clock_irqs_enable(void)
 static struct nrf_clock_control_sub_data *get_sub_data(struct device *dev,
 					      enum clock_control_nrf_type type)
 {
-	struct nrf_clock_control_data *data = dev->driver_data;
+	struct nrf_clock_control_data *data = dev->data;
 
 	return &data->subsys[type];
 }
@@ -127,7 +127,7 @@ static const struct nrf_clock_control_sub_config *get_sub_config(
 static struct onoff_manager *get_onoff_manager(struct device *dev,
 					enum clock_control_nrf_type type)
 {
-	struct nrf_clock_control_data *data = dev->driver_data;
+	struct nrf_clock_control_data *data = dev->data;
 
 	return &data->mgr[type];
 }
@@ -263,8 +263,7 @@ static void hfclk_stop(void)
 
 static uint32_t *get_hf_flags(void)
 {
-	struct nrf_clock_control_data *data =
-					DEVICE_GET(clock_nrf)->driver_data;
+	struct nrf_clock_control_data *data = DEVICE_GET(clock_nrf)->data;
 
 	return &data->subsys[CLOCK_CONTROL_NRF_TYPE_HFCLK].flags;
 }
@@ -412,8 +411,7 @@ static int api_blocking_start(struct device *dev, clock_control_subsys_t subsys)
 
 static clock_control_subsys_t get_subsys(struct onoff_manager *mgr)
 {
-	struct nrf_clock_control_data *data =
-					DEVICE_GET(clock_nrf)->driver_data;
+	struct nrf_clock_control_data *data = DEVICE_GET(clock_nrf)->data;
 	size_t offset = (size_t)(mgr - data->mgr);
 
 	return (clock_control_subsys_t)offset;
@@ -525,7 +523,7 @@ static int clk_init(struct device *dev)
 	nrf_clock_lf_src_set(NRF_CLOCK, CLOCK_CONTROL_NRF_K32SRC);
 
 	if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION)) {
-		struct nrf_clock_control_data *data = dev->driver_data;
+		struct nrf_clock_control_data *data = dev->data;
 
 		z_nrf_clock_calibration_init(data->mgr);
 	}

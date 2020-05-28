@@ -363,7 +363,7 @@ static int lsm6dsl_shub_set_data_channel(struct lsm6dsl_data *data)
 
 int lsm6dsl_shub_read_external_chip(struct device *dev, uint8_t *buf, uint8_t len)
 {
-	struct lsm6dsl_data *data = dev->driver_data;
+	struct lsm6dsl_data *data = dev->data;
 
 	data->hw_tf->read_data(data, LSM6DSL_REG_SENSORHUB1, buf, len);
 
@@ -372,7 +372,7 @@ int lsm6dsl_shub_read_external_chip(struct device *dev, uint8_t *buf, uint8_t le
 
 int lsm6dsl_shub_init_external_chip(struct device *dev)
 {
-	struct lsm6dsl_data *data = dev->driver_data;
+	struct lsm6dsl_data *data = dev->data;
 	uint8_t i;
 	uint8_t chip_id = 0U;
 	uint8_t slv_i2c_addr;

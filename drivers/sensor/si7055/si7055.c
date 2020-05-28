@@ -74,7 +74,7 @@ static int si7055_get_temperature(struct device *i2c_dev,
 static int si7055_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	int retval;
-	struct si7055_data *si_data = dev->driver_data;
+	struct si7055_data *si_data = dev->data;
 
 	retval = si7055_get_temperature(si_data->i2c_dev, si_data);
 
@@ -89,7 +89,7 @@ static int si7055_sample_fetch(struct device *dev, enum sensor_channel chan)
 static int si7055_channel_get(struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
-	struct si7055_data *si_data = dev->driver_data;
+	struct si7055_data *si_data = dev->data;
 
 	/* Refer to
 	 * https://www.silabs.com/documents/public/data-sheets/Si7050-1-3-4-5-A20.pdf
@@ -128,7 +128,7 @@ static const struct sensor_driver_api si7055_api = {
 
 static int si7055_init(struct device *dev)
 {
-	struct si7055_data *drv_data = dev->driver_data;
+	struct si7055_data *drv_data = dev->data;
 
 	drv_data->i2c_dev = device_get_binding(
 		DT_INST_BUS_LABEL(0));

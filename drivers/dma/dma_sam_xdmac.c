@@ -49,7 +49,7 @@ struct sam_xdmac_dev_data {
 #define DEV_CFG(dev) \
 	((const struct sam_xdmac_dev_cfg *const)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct sam_xdmac_dev_data *const)(dev)->driver_data)
+	((struct sam_xdmac_dev_data *const)(dev)->data)
 
 static void sam_xdmac_isr(void *arg)
 {

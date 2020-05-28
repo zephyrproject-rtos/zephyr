@@ -267,7 +267,7 @@ static int gpio_xec_port_get_raw(struct device *dev, uint32_t *value)
 static int gpio_xec_manage_callback(struct device *dev,
 				    struct gpio_callback *callback, bool set)
 {
-	struct gpio_xec_data *data = dev->driver_data;
+	struct gpio_xec_data *data = dev->data;
 
 	gpio_manage_callback(&data->callbacks, callback, set);
 
@@ -278,7 +278,7 @@ static void gpio_gpio_xec_port_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
 	const struct gpio_xec_config *config = dev->config;
-	struct gpio_xec_data *data = dev->driver_data;
+	struct gpio_xec_data *data = dev->data;
 	uint32_t girq_result;
 
 	/* Figure out which interrupts have been triggered from the EC

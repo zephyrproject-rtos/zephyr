@@ -33,7 +33,7 @@ static void fxas21002_gpio_callback(struct device *dev,
 
 static int fxas21002_handle_drdy_int(struct device *dev)
 {
-	struct fxas21002_data *data = dev->driver_data;
+	struct fxas21002_data *data = dev->data;
 
 	struct sensor_trigger drdy_trig = {
 		.type = SENSOR_TRIG_DATA_READY,
@@ -51,7 +51,7 @@ static void fxas21002_handle_int(void *arg)
 {
 	struct device *dev = (struct device *)arg;
 	const struct fxas21002_config *config = dev->config;
-	struct fxas21002_data *data = dev->driver_data;
+	struct fxas21002_data *data = dev->data;
 	uint8_t int_source;
 
 	k_sem_take(&data->sem, K_FOREVER);
@@ -77,7 +77,7 @@ static void fxas21002_handle_int(void *arg)
 static void fxas21002_thread_main(void *arg1, void *unused1, void *unused2)
 {
 	struct device *dev = (struct device *)arg1;
-	struct fxas21002_data *data = dev->driver_data;
+	struct fxas21002_data *data = dev->data;
 
 	ARG_UNUSED(unused1);
 	ARG_UNUSED(unused2);
@@ -104,7 +104,7 @@ int fxas21002_trigger_set(struct device *dev,
 			 sensor_trigger_handler_t handler)
 {
 	const struct fxas21002_config *config = dev->config;
-	struct fxas21002_data *data = dev->driver_data;
+	struct fxas21002_data *data = dev->data;
 	enum fxas21002_power power = FXAS21002_POWER_STANDBY;
 	uint32_t transition_time;
 	uint8_t mask;
@@ -172,7 +172,7 @@ exit:
 int fxas21002_trigger_init(struct device *dev)
 {
 	const struct fxas21002_config *config = dev->config;
-	struct fxas21002_data *data = dev->driver_data;
+	struct fxas21002_data *data = dev->data;
 	uint8_t ctrl_reg2;
 
 #if defined(CONFIG_FXAS21002_TRIGGER_OWN_THREAD)

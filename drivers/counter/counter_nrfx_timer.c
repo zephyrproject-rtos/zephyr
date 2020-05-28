@@ -52,7 +52,7 @@ struct counter_timer_config {
 
 static inline struct counter_nrfx_data *get_dev_data(struct device *dev)
 {
-	return dev->driver_data;
+	return dev->data;
 }
 
 static inline const struct counter_nrfx_config *get_nrfx_config(

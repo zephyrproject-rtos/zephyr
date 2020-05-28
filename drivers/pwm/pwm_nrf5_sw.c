@@ -102,7 +102,7 @@ static int pwm_nrf5_sw_pin_set(struct device *dev, uint32_t pwm,
 
 	config = (const struct pwm_config *)dev->config;
 	timer = config->timer;
-	data = dev->driver_data;
+	data = dev->data;
 
 	if (flags) {
 		/* PWM polarity not supported (yet?) */

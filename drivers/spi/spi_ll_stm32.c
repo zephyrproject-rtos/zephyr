@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 (const struct spi_stm32_config * const)(dev->config)
 
 #define DEV_DATA(dev)					\
-(struct spi_stm32_data * const)(dev->driver_data)
+(struct spi_stm32_data * const)(dev->data)
 
 /*
  * Check for SPI_SR_FRE to determine support for TI mode frame format
@@ -412,7 +412,7 @@ static void spi_stm32_isr(void *arg)
 {
 	struct device * const dev = (struct device *) arg;
 	const struct spi_stm32_config *cfg = dev->config;
-	struct spi_stm32_data *data = dev->driver_data;
+	struct spi_stm32_data *data = dev->data;
 	SPI_TypeDef *spi = cfg->spi;
 	int err;
 
@@ -791,7 +791,7 @@ static const struct spi_driver_api api_funcs = {
 
 static int spi_stm32_init(struct device *dev)
 {
-	struct spi_stm32_data *data __attribute__((unused)) = dev->driver_data;
+	struct spi_stm32_data *data __attribute__((unused)) = dev->data;
 	const struct spi_stm32_config *cfg = dev->config;
 
 	__ASSERT_NO_MSG(device_get_binding(STM32_CLOCK_CONTROL_NAME));

@@ -192,7 +192,7 @@ int stream_flash_init(struct stream_flash_ctx *ctx, struct device *fdev,
 	size_t layout_size = 0;
 	size_t total_size = 0;
 	const struct flash_pages_layout *layout;
-	const struct flash_driver_api *api = fdev->driver_api;
+	const struct flash_driver_api *api = fdev->api;
 
 	if (buf_len % flash_get_write_block_size(fdev)) {
 		LOG_ERR("Buffer size is not aligned to minimal write-block-size");

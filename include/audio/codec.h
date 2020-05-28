@@ -142,7 +142,7 @@ static inline int audio_codec_configure(struct device *dev,
 		struct audio_codec_cfg *cfg)
 {
 	const struct audio_codec_api *api =
-		(const struct audio_codec_api *)dev->driver_api;
+		(const struct audio_codec_api *)dev->api;
 
 	return api->configure(dev, cfg);
 }
@@ -159,7 +159,7 @@ static inline int audio_codec_configure(struct device *dev,
 static inline void audio_codec_start_output(struct device *dev)
 {
 	const struct audio_codec_api *api =
-		(const struct audio_codec_api *)dev->driver_api;
+		(const struct audio_codec_api *)dev->api;
 
 	api->start_output(dev);
 }
@@ -176,7 +176,7 @@ static inline void audio_codec_start_output(struct device *dev)
 static inline void audio_codec_stop_output(struct device *dev)
 {
 	const struct audio_codec_api *api =
-		(const struct audio_codec_api *)dev->driver_api;
+		(const struct audio_codec_api *)dev->api;
 
 	api->stop_output(dev);
 }
@@ -197,7 +197,7 @@ static inline int audio_codec_set_property(struct device *dev, audio_property_t 
 		audio_channel_t channel, audio_property_value_t val)
 {
 	const struct audio_codec_api *api =
-		(const struct audio_codec_api *)dev->driver_api;
+		(const struct audio_codec_api *)dev->api;
 
 	return api->set_property(dev, property, channel, val);
 }
@@ -216,7 +216,7 @@ static inline int audio_codec_set_property(struct device *dev, audio_property_t 
 static inline int audio_codec_apply_properties(struct device *dev)
 {
 	const struct audio_codec_api *api =
-		(const struct audio_codec_api *)dev->driver_api;
+		(const struct audio_codec_api *)dev->api;
 
 	return api->apply_properties(dev);
 }
