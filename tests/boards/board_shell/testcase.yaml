@@ -1,5 +1,0 @@
-tests:
-  boards.shell.shell:
-    tags: shell
-    harness: keyboard
-    platform_whitelist: nrf52840dk_nrf52840 frdm_k64f
