@@ -304,6 +304,8 @@ struct device_context {
 /**
  * @brief Lock an interrupt based device structure to avoid concurrent access.
  *
+ * @param sync A semaphore used for API call synchronization
+ * @param call_status The status to return from the call
  * @param dev A valid pointer on a struct device instance
  *
  * @return 0 if device got locked, a negative errno otherwise.

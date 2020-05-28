@@ -201,7 +201,10 @@ void device_call_complete(struct device *dev, int status)
 		(dev - __device_start);
 
 	dc->call_status = status;
-	k_sem_give(&dc->sync);
+
+	if (!k_is_in_isr()) {
+		k_sem_give(&dc->sync);
+	}
 }
 
 int device_release(struct device *dev)
@@ -211,7 +214,9 @@ int device_release(struct device *dev)
 		(dev - __device_start);
 	u32_t status;
 
-	k_sem_take(&dc->sync, K_FOREVER);
+	if (!k_is_in_isr()) {
+		k_sem_take(&dc->sync, K_FOREVER);
+	}
 
 	status = dc->call_status;
 
