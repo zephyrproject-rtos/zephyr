@@ -69,6 +69,17 @@ enum updatehub_response updatehub_probe(void);
  */
 enum updatehub_response updatehub_update(void);
 
+#if defined(CONFIG_WATCHDOG)
+/**
+ * @brief Kick the watchdog
+ *
+ * @details This function, if implemented elsewhere in the firmware, is
+ * called whenever a valid packet has been received and written into flash.
+ * This can be used to kick a watchdog during firmware download.
+ */
+__weak void updatehub_watchdog_kick(void);
+#endif
+
 /**
  * @}
  */

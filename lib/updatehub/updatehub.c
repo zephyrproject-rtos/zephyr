@@ -431,6 +431,9 @@ static void install_update_cb(void)
 	}
 
 	ctx.code_status = UPDATEHUB_OK;
+#if defined(CONFIG_WATCHDOG)
+	updatehub_watchdog_kick();
+#endif
 
 cleanup:
 	k_free(data);
@@ -869,4 +872,8 @@ void updatehub_autohandler(void)
 {
 	k_delayed_work_init(&updatehub_work_handle, autohandler);
 	k_delayed_work_submit(&updatehub_work_handle, K_NO_WAIT);
+}
+
+void updatehub_watchdog_kick(void)
+{
 }
