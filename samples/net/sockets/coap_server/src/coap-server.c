@@ -39,11 +39,6 @@ LOG_MODULE_REGISTER(net_coap_server_sample, LOG_LEVEL_DBG);
 
 #define NUM_PENDINGS 3
 
-/* block option helper */
-#define GET_BLOCK_NUM(v)        ((v) >> 4)
-#define GET_BLOCK_SIZE(v)       (((v) & 0x7))
-#define GET_MORE(v)             (!!((v) & 0x08))
-
 /* CoAP socket fd */
 static int sock;
 
@@ -780,19 +775,6 @@ end:
 	return r;
 }
 
-static int get_option_int(const struct coap_packet *pkt, uint8_t opt)
-{
-	struct coap_option option;
-	int r;
-
-	r = coap_find_options(pkt, opt, &option, 1);
-	if (r <= 0) {
-		return -ENOENT;
-	}
-
-	return coap_option_value_to_int(&option);
-}
-
 static int large_update_put(struct coap_resource *resource,
 			    struct coap_packet *request,
 			    struct sockaddr *addr, socklen_t addr_len)
@@ -810,7 +792,7 @@ static int large_update_put(struct coap_resource *resource,
 	int r;
 	bool last_block;
 
-	r = get_option_int(request, COAP_OPTION_BLOCK1);
+	r = coap_get_option_int(request, COAP_OPTION_BLOCK1);
 	if (r < 0) {
 		return -EINVAL;
 	}
@@ -899,7 +881,7 @@ static int large_create_post(struct coap_resource *resource,
 	int r;
 	bool last_block;
 
-	r = get_option_int(request, COAP_OPTION_BLOCK1);
+	r = coap_get_option_int(request, COAP_OPTION_BLOCK1);
 	if (r < 0) {
 		return -EINVAL;
 	}
