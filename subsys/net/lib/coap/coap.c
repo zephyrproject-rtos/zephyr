@@ -921,9 +921,9 @@ int coap_append_size2_option(struct coap_packet *cpkt,
 	return coap_append_option_int(cpkt, COAP_OPTION_SIZE2, ctx->total_size);
 }
 
-static int get_block_option(const struct coap_packet *cpkt, uint16_t code)
+int coap_get_option_int(const struct coap_packet *cpkt, uint16_t code)
 {
-	struct coap_option option;
+	struct coap_option option = {};
 	unsigned int val;
 	int count = 1;
 
@@ -936,6 +936,8 @@ static int get_block_option(const struct coap_packet *cpkt, uint16_t code)
 
 	return val;
 }
+
+#define get_block_option(cpkt, code) coap_get_option_int(cpkt, code)
 
 static int update_descriptive_block(struct coap_block_context *ctx,
 				    int block, int size)
@@ -1236,19 +1238,7 @@ void coap_pendings_clear(struct coap_pending *pendings, size_t len)
 	}
 }
 
-static int get_observe_option(const struct coap_packet *cpkt)
-{
-	struct coap_option option = {};
-	uint16_t count = 1U;
-	int r;
-
-	r = coap_find_options(cpkt, COAP_OPTION_OBSERVE, &option, count);
-	if (r <= 0) {
-		return -ENOENT;
-	}
-
-	return coap_option_value_to_int(&option);
-}
+#define get_observe_option(cpkt) coap_get_option_int(cpkt, COAP_OPTION_OBSERVE)
 
 struct coap_reply *coap_response_received(
 	const struct coap_packet *response,
