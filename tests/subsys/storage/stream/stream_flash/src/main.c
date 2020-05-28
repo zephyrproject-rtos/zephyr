@@ -306,6 +306,17 @@ static void test_stream_flash_buffered_write_callback(void)
 	zassert_equal(rc, -EFAULT, "expected failure from callback");
 }
 
+static void test_stream_flash_flush(void)
+{
+	int rc;
+
+	init_target();
+
+	/* Perform flush with NULL data pointer and 0 lentgth */
+	rc = stream_flash_buffered_write(&ctx, NULL, 0, true);
+	zassert_equal(rc, 0, "expected success");
+}
+
 #ifdef CONFIG_STREAM_FLASH_ERASE
 static void test_stream_flash_buffered_write_whole_page(void)
 {
@@ -381,6 +392,7 @@ void test_main(void)
 	     ztest_unit_test(test_stream_flash_buffered_write_multi_page),
 	     ztest_unit_test(test_stream_flash_buf_size_greater_than_page_size),
 	     ztest_unit_test(test_stream_flash_buffered_write_callback),
+	     ztest_unit_test(test_stream_flash_flush),
 	     ztest_unit_test(test_stream_flash_buffered_write_whole_page),
 	     ztest_unit_test(test_stream_flash_erase_page),
 	     ztest_unit_test(test_stream_flash_bytes_written)
