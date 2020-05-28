@@ -20,7 +20,7 @@
 
 set -xe
 
-sanitycheck_options=" --inline-logs -N -v"
+sanitycheck_options=" --inline-logs -N -v --integration"
 export BSIM_OUT_PATH="${BSIM_OUT_PATH:-/opt/bsim/}"
 if [ ! -d "${BSIM_OUT_PATH}" ]; then
         unset BSIM_OUT_PATH
