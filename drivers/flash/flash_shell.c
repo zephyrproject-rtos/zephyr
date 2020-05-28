@@ -20,7 +20,7 @@
 extern struct device __device_start[];
 extern struct device __device_end[];
 
-static uint8_t test_arr[TEST_ARR_SIZE];
+static uint8_t __aligned(4) test_arr[TEST_ARR_SIZE];
 
 static int parse_helper(const struct shell *shell, size_t *argc,
 		char **argv[], struct device **flash_dev, uint32_t *addr)
