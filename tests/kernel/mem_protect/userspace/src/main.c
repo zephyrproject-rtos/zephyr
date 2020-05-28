@@ -17,6 +17,7 @@
 #include <debug/stack.h>
 #include <syscall_handler.h>
 #include "test_syscall.h"
+#include <drivers/sensor.h>
 
 #if defined(CONFIG_ARC)
 #include <arch/arc/v2/mpu/arc_core_mpu.h>
@@ -993,6 +994,31 @@ void test_oops_stackcheck(void)
 	test_oops(K_ERR_STACK_CHK_FAIL, K_ERR_STACK_CHK_FAIL);
 }
 
+/**
+ * @brief Test system call handler for device driver subsystem API
+ *
+ * @details
+ * - System call handler for device driver subsystem API must check
+ *   that the driver implements the particular API being called.
+ *   If it is not implemented, will happen kernel oops.
+ * - In our case for the binded device is impossible to use
+ *   sensor_sample_fetch(), will happen error "unimplemented system call.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+void test_dev_driver_syscall_api_impl(void)
+{
+	int rc;
+
+	expect_fault = true;
+	expected_reason = K_ERR_KERNEL_OOPS;
+
+	struct device *dev = device_get_binding(
+			DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
+
+	rc = sensor_sample_fetch(dev);
+}
+
 void z_impl_check_syscall_context(void)
 {
 	int key = irq_lock();
@@ -1144,6 +1170,7 @@ void test_main(void)
 			 ztest_user_unit_test(test_oops_maxint),
 			 ztest_user_unit_test(test_oops_stackcheck),
 			 ztest_unit_test(test_object_recycle),
+			 ztest_user_unit_test(test_dev_driver_syscall_api_impl),
 			 ztest_user_unit_test(test_syscall_context),
 			 ztest_unit_test(test_tls_leakage),
 			 ztest_unit_test(test_tls_pointer)
