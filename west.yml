@@ -21,6 +21,8 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+    - name: apache
+      url-base: https://github.com/apache
 
   #
   # Please add items below based on alphabetical order
@@ -88,8 +90,9 @@ manifest:
     - name: mcuboot
       revision: e88113bbebe34ff2ccc6627ffae885cfeed6fdfd
       path: bootloader/mcuboot
-    - name: mcumgr
-      revision: 5885efb7cabf7b566577b73129c9d277d7d8848d
+    - name: mynewt-mcumgr
+      remote: apache
+      revision: pull/81/head
       path: modules/lib/mcumgr
     - name: net-tools
       revision: 1c4fdba512b268033a4cf926bddd323866c3261a
