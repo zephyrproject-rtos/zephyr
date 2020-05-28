@@ -17,6 +17,7 @@
 #include <device.h>
 #include <soc.h>
 #include <drivers/uart.h>
+#include <drivers/clock_control.h>
 #include <errno.h>
 #include <sys/util.h>
 
@@ -62,6 +63,7 @@ struct uart_esp32_regs_t {
 struct uart_esp32_config {
 
 	struct uart_device_config dev_conf;
+	const char *clock_name;
 
 	const struct {
 		int tx_out;
@@ -77,7 +79,7 @@ struct uart_esp32_config {
 		int cts;
 	} pins;
 
-	const struct esp32_peripheral peripheral;
+	const clock_control_subsys_t peripheral_id;
 
 	const struct {
 		int source;
@@ -88,6 +90,7 @@ struct uart_esp32_config {
 /* driver data */
 struct uart_esp32_data {
 	struct uart_config uart_config;
+	struct device *clock_dev;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t irq_cb;
 	void *irq_cb_data;
@@ -185,7 +188,14 @@ static int uart_esp32_config_get(struct device *dev, struct uart_config *cfg)
 
 static int uart_esp32_set_baudrate(struct device *dev, int baudrate)
 {
-	uint32_t sys_clk_freq = DEV_CFG(dev)->dev_conf.sys_clk_freq;
+	uint32_t sys_clk_freq = 0;
+
+	if (clock_control_get_rate(DEV_DATA(dev)->clock_dev,
+				   DEV_CFG(dev)->peripheral_id,
+				   &sys_clk_freq)) {
+		return -EINVAL;
+	}
+
 	uint32_t clk_div = (((sys_clk_freq) << 4) / baudrate);
 
 	while (UART_TXFIFO_COUNT(DEV_BASE(dev)->status)) {
@@ -237,7 +247,7 @@ static int uart_esp32_configure(struct device *dev,
 		      | (UART_TX_FIFO_THRESH << UART_TXFIFO_EMPTY_THRHD_S);
 
 	uart_esp32_configure_pins(dev);
-	esp32_enable_peripheral(&DEV_CFG(dev)->peripheral);
+	clock_control_on(DEV_DATA(dev)->clock_dev, DEV_CFG(dev)->peripheral_id);
 
 	/*
 	 * Reset RX Buffer by reading all received bytes
@@ -305,6 +315,12 @@ static int uart_esp32_configure(struct device *dev,
 
 static int uart_esp32_init(struct device *dev)
 {
+	struct uart_esp32_data *data = DEV_DATA(dev);
+
+	data->clock_dev = device_get_binding(DEV_CFG(dev)->clock_name);
+
+	__ASSERT_NO_MSG(data->clock_dev);
+
 	uart_esp32_configure(dev, &DEV_DATA(dev)->uart_config);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -483,16 +499,11 @@ static const struct uart_esp32_config uart_esp32_cfg_port_##idx = {	       \
 	.dev_conf = {							       \
 		.base =							       \
 		    (uint8_t *)DT_INST_REG_ADDR(idx), \
-		.sys_clk_freq =						       \
-			DT_PROP(DT_INST(0, cadence_tensilica_xtensa_lx6), clock_frequency),\
 		ESP32_UART_IRQ_HANDLER_FUNC(idx)			       \
 	},								       \
-									       \
-	.peripheral = {							       \
-		.clk = DPORT_UART##idx##_CLK_EN,			       \
-		.rst = DPORT_UART##idx##_RST,				       \
-	},								       \
-									       \
+											   \
+	.clock_name = DT_INST_CLOCKS_LABEL(idx),			       \
+											   \
 	.signals = {							       \
 		.tx_out = U##idx##TXD_OUT_IDX,				       \
 		.rx_in = U##idx##RXD_IN_IDX,				       \
@@ -509,7 +520,8 @@ static const struct uart_esp32_config uart_esp32_cfg_port_##idx = {	       \
 			.cts = DT_INST_PROP(idx, cts_pin),   \
 			))						       \
 	},								       \
-									       \
+											   \
+	.peripheral_id = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset), \
 	.irq = {							       \
 		.source = ETS_UART##idx##_INTR_SOURCE,			       \
 		.line = INST_##idx##_ESPRESSIF_ESP32_UART_IRQ_0,	       \
