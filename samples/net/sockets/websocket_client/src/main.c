@@ -218,7 +218,7 @@ static void recv_data_wso_api(int sock, size_t amount, uint8_t *buf,
 	if (remaining != 0 || total_read != amount ||
 	    /* Do not check the final \n at the end of the msg */
 	    memcmp(lorem_ipsum, buf, amount - 1) != 0) {
-		LOG_ERR("%s data recv failure %zd/%d bytes (remaining %lld)",
+		LOG_ERR("%s data recv failure %zd/%d bytes (remaining %" PRId64 ")",
 			proto, amount, total_read, remaining);
 		LOG_HEXDUMP_DBG(buf, total_read, "received ws buf");
 		LOG_HEXDUMP_DBG(lorem_ipsum, total_read, "sent ws buf");

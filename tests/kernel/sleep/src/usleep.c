@@ -87,7 +87,7 @@ void test_usleep(void)
 		}
 	}
 
-	printk("elapsed_ms = %lld\n", elapsed_ms);
+	printk("elapsed_ms = %" PRId64 "\n", elapsed_ms);
 	zassert_true(elapsed_ms >= LOWER_BOUND_MS, "short sleep");
 	zassert_true(elapsed_ms <= UPPER_BOUND_MS, "overslept");
 }
