@@ -54,6 +54,8 @@ void test_posix_realtime(void)
 	int ret;
 	struct timespec rts, mts;
 	struct timeval tv;
+	uint64_t mtns;
+	uint64_t rtns;
 
 	/* Minimal sleep to align us to the next tick interval. This
 	 * helps with a case that 2 consecutive calls to clock_gettime()
@@ -70,8 +72,15 @@ void test_posix_realtime(void)
 	ret = clock_gettime(CLOCK_REALTIME, &rts);
 	zassert_equal(ret, 0, "Fail to get realtime clock");
 
-	zassert_equal(rts.tv_sec, mts.tv_sec, "Seconds not equal");
-	zassert_equal(rts.tv_nsec, mts.tv_nsec, "Nanoseconds not equal");
+	/* Error if rts is more than 1 ms different from mts.  (They
+	 * should be equal, but if the sync k_usleep() above didn't
+	 * succeed a single ms rollover of the underlying k_uptime
+	 * clock might occur between the two calls).
+	 */
+	mtns = mts.tv_sec * NSEC_PER_SEC + mts.tv_nsec;
+	rtns = rts.tv_sec * NSEC_PER_SEC + rts.tv_nsec;
+	zassert_true((rtns - mtns) <= (NSEC_PER_SEC / MSEC_PER_SEC),
+			"MONOTONIC !~ REALTIME");
 
 	/* Set a particular time.  In this case, the output of:
 	 * `date +%s -d 2018-01-01T15:45:01Z`
