@@ -193,7 +193,7 @@ int cfb_framebuffer_invert(struct device *dev)
 
 int cfb_framebuffer_finalize(struct device *dev)
 {
-	const struct display_driver_api *api = dev->driver_api;
+	const struct display_driver_api *api = dev->api;
 	const struct char_framebuffer *fb = &char_fb;
 	struct display_buffer_descriptor desc;
 
@@ -280,7 +280,7 @@ int cfb_get_numof_fonts(struct device *dev)
 
 int cfb_framebuffer_init(struct device *dev)
 {
-	const struct display_driver_api *api = dev->driver_api;
+	const struct display_driver_api *api = dev->api;
 	struct char_framebuffer *fb = &char_fb;
 	struct display_capabilities cfg;
 

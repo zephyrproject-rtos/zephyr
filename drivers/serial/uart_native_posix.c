@@ -200,7 +200,7 @@ static int np_uart_0_init(struct device *dev)
 {
 	struct native_uart_status *d;
 
-	d = (struct native_uart_status *)dev->driver_data;
+	d = (struct native_uart_status *)dev->data;
 
 	if (IS_ENABLED(CONFIG_NATIVE_UART_0_ON_OWN_PTY)) {
 		int tty_fn = open_tty(d, DT_INST_LABEL(0),
@@ -238,7 +238,7 @@ static int np_uart_1_init(struct device *dev)
 	struct native_uart_status *d;
 	int tty_fn;
 
-	d = (struct native_uart_status *)dev->driver_data;
+	d = (struct native_uart_status *)dev->data;
 
 	tty_fn = open_tty(d, CONFIG_UART_NATIVE_POSIX_PORT_1_NAME, false);
 
@@ -261,7 +261,7 @@ static void np_uart_poll_out(struct device *dev,
 	int ret;
 	struct native_uart_status *d;
 
-	d = (struct native_uart_status *)dev->driver_data;
+	d = (struct native_uart_status *)dev->data;
 	ret = write(d->out_fd, &out_char, 1);
 
 	if (ret != 1) {
@@ -292,7 +292,7 @@ static int np_uart_stdin_poll_in(struct device *dev, unsigned char *p_char)
 	}
 
 	int n = -1;
-	int in_f = ((struct native_uart_status *)dev->driver_data)->in_fd;
+	int in_f = ((struct native_uart_status *)dev->data)->in_fd;
 
 	int ready;
 	fd_set readfds;
@@ -329,7 +329,7 @@ static int np_uart_stdin_poll_in(struct device *dev, unsigned char *p_char)
 static int np_uart_tty_poll_in(struct device *dev, unsigned char *p_char)
 {
 	int n = -1;
-	int in_f = ((struct native_uart_status *)dev->driver_data)->in_fd;
+	int in_f = ((struct native_uart_status *)dev->data)->in_fd;
 
 	n = read(in_f, p_char, 1);
 	if (n == -1) {

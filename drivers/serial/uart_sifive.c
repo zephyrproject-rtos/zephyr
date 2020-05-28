@@ -70,7 +70,7 @@ struct uart_sifive_data {
 #define DEV_UART(dev)						\
 	((struct uart_sifive_regs_t *)(DEV_CFG(dev))->port)
 #define DEV_DATA(dev)						\
-	((struct uart_sifive_data * const)(dev)->driver_data)
+	((struct uart_sifive_data * const)(dev)->data)
 
 /**
  * @brief Output a character in polled mode.

@@ -35,7 +35,7 @@ LOG_MODULE_REGISTER(dma_dw);
 #define DW_CFG_LOW_DEF			0x0
 
 #define DEV_NAME(dev) ((dev)->name)
-#define DEV_DATA(dev) ((struct dw_dma_dev_data *const)(dev)->driver_data)
+#define DEV_DATA(dev) ((struct dw_dma_dev_data *const)(dev)->data)
 #define DEV_CFG(dev) \
 	((const struct dw_dma_dev_cfg *const)(dev)->config)
 

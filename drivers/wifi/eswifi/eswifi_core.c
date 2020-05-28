@@ -412,7 +412,7 @@ static void eswifi_iface_init(struct net_if *iface)
 
 static int eswifi_mgmt_scan(struct device *dev, scan_result_cb_t cb)
 {
-	struct eswifi_dev *eswifi = dev->driver_data;
+	struct eswifi_dev *eswifi = dev->data;
 
 	LOG_DBG("");
 
@@ -429,7 +429,7 @@ static int eswifi_mgmt_scan(struct device *dev, scan_result_cb_t cb)
 
 static int eswifi_mgmt_disconnect(struct device *dev)
 {
-	struct eswifi_dev *eswifi = dev->driver_data;
+	struct eswifi_dev *eswifi = dev->data;
 
 	LOG_DBG("");
 
@@ -475,7 +475,7 @@ static int __eswifi_sta_config(struct eswifi_dev *eswifi,
 static int eswifi_mgmt_connect(struct device *dev,
 			       struct wifi_connect_req_params *params)
 {
-	struct eswifi_dev *eswifi = dev->driver_data;
+	struct eswifi_dev *eswifi = dev->data;
 	int err;
 
 	LOG_DBG("");
@@ -503,7 +503,7 @@ void eswifi_async_msg(struct eswifi_dev *eswifi, char *msg, size_t len)
 static int eswifi_mgmt_ap_enable(struct device *dev,
 				 struct wifi_connect_req_params *params)
 {
-	struct eswifi_dev *eswifi = dev->driver_data;
+	struct eswifi_dev *eswifi = dev->data;
 	struct net_if_ipv4 *ipv4 = eswifi->iface->config.ip.ipv4;
 	struct net_if_addr *unicast = NULL;
 	int err = -EIO, i;
@@ -609,7 +609,7 @@ static int eswifi_mgmt_ap_enable(struct device *dev,
 
 static int eswifi_mgmt_ap_disable(struct device *dev)
 {
-	struct eswifi_dev *eswifi = dev->driver_data;
+	struct eswifi_dev *eswifi = dev->data;
 	char cmd[] = "AE\r";
 	int err;
 
@@ -630,7 +630,7 @@ static int eswifi_mgmt_ap_disable(struct device *dev)
 
 static int eswifi_init(struct device *dev)
 {
-	struct eswifi_dev *eswifi = dev->driver_data;
+	struct eswifi_dev *eswifi = dev->data;
 
 	LOG_DBG("");
 

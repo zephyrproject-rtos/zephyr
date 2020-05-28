@@ -40,7 +40,7 @@ static void lis2ds12_gpio_callback(struct device *dev,
 
 static void lis2ds12_handle_drdy_int(struct device *dev)
 {
-	struct lis2ds12_data *data = dev->driver_data;
+	struct lis2ds12_data *data = dev->data;
 
 	if (data->data_ready_handler != NULL) {
 		data->data_ready_handler(dev, &data->data_ready_trigger);
@@ -50,7 +50,7 @@ static void lis2ds12_handle_drdy_int(struct device *dev)
 static void lis2ds12_handle_int(void *arg)
 {
 	struct device *dev = arg;
-	struct lis2ds12_data *data = dev->driver_data;
+	struct lis2ds12_data *data = dev->data;
 	const struct lis2ds12_config *cfg = dev->config;
 	uint8_t status;
 
@@ -71,7 +71,7 @@ static void lis2ds12_handle_int(void *arg)
 static void lis2ds12_thread(int dev_ptr, int unused)
 {
 	struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct lis2ds12_data *data = dev->driver_data;
+	struct lis2ds12_data *data = dev->data;
 
 	ARG_UNUSED(unused);
 
@@ -94,7 +94,7 @@ static void lis2ds12_work_cb(struct k_work *work)
 
 static int lis2ds12_init_interrupt(struct device *dev)
 {
-	struct lis2ds12_data *data = dev->driver_data;
+	struct lis2ds12_data *data = dev->data;
 
 	/* Enable latched mode */
 	if (data->hw_tf->update_reg(data,
@@ -119,7 +119,7 @@ static int lis2ds12_init_interrupt(struct device *dev)
 
 int lis2ds12_trigger_init(struct device *dev)
 {
-	struct lis2ds12_data *data = dev->driver_data;
+	struct lis2ds12_data *data = dev->data;
 	const struct lis2ds12_config *cfg = dev->config;
 
 	/* setup data ready gpio interrupt */
@@ -164,7 +164,7 @@ int lis2ds12_trigger_set(struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
-	struct lis2ds12_data *data = dev->driver_data;
+	struct lis2ds12_data *data = dev->data;
 	const struct lis2ds12_config *cfg = dev->config;
 	uint8_t buf[6];
 

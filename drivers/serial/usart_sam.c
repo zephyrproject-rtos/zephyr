@@ -46,7 +46,7 @@ struct usart_sam_dev_data {
 #define DEV_CFG(dev) \
 	((const struct usart_sam_dev_cfg *const)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct usart_sam_dev_data *const)(dev)->driver_data)
+	((struct usart_sam_dev_data *const)(dev)->data)
 
 
 static int baudrate_set(Usart *const usart, uint32_t baudrate,

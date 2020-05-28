@@ -87,7 +87,7 @@ static uint32_t wdt_sam0_timeout_to_wdt_period(uint32_t timeout_ms)
 
 static void wdt_sam0_isr(struct device *dev)
 {
-	struct wdt_sam0_dev_data *data = dev->driver_data;
+	struct wdt_sam0_dev_data *data = dev->data;
 
 	WDT_REGS->INTFLAG.reg = WDT_INTFLAG_EW;
 
@@ -98,7 +98,7 @@ static void wdt_sam0_isr(struct device *dev)
 
 static int wdt_sam0_setup(struct device *dev, uint8_t options)
 {
-	struct wdt_sam0_dev_data *data = dev->driver_data;
+	struct wdt_sam0_dev_data *data = dev->data;
 
 	if (wdt_sam0_is_enabled()) {
 		LOG_ERR("Watchdog already setup");
@@ -142,7 +142,7 @@ static int wdt_sam0_disable(struct device *dev)
 static int wdt_sam0_install_timeout(struct device *dev,
 				const struct wdt_timeout_cfg *cfg)
 {
-	struct wdt_sam0_dev_data *data = dev->driver_data;
+	struct wdt_sam0_dev_data *data = dev->data;
 	uint32_t window, per;
 
 	/* CONFIG is enable protected, error out if already enabled */
@@ -227,7 +227,7 @@ timeout_invalid:
 
 static int wdt_sam0_feed(struct device *dev, int channel_id)
 {
-	struct wdt_sam0_dev_data *data = dev->driver_data;
+	struct wdt_sam0_dev_data *data = dev->data;
 
 	if (!data->timeout_valid) {
 		LOG_ERR("No valid timeout installed");

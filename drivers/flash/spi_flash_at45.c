@@ -85,7 +85,7 @@ static const struct flash_parameters flash_at45_parameters = {
 
 static struct spi_flash_at45_data *get_dev_data(struct device *dev)
 {
-	return dev->driver_data;
+	return dev->data;
 }
 
 static const struct spi_flash_at45_config *get_dev_config(struct device *dev)

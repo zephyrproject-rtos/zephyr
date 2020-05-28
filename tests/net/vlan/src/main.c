@@ -97,7 +97,7 @@ static struct eth_context eth_vlan_context;
 static void eth_vlan_iface_init(struct net_if *iface)
 {
 	struct device *dev = net_if_get_device(iface);
-	struct eth_context *context = dev->driver_data;
+	struct eth_context *context = dev->data;
 
 	net_if_set_link_addr(iface, context->mac_addr,
 			     sizeof(context->mac_addr),
@@ -108,7 +108,7 @@ static void eth_vlan_iface_init(struct net_if *iface)
 
 static int eth_tx(struct device *dev, struct net_pkt *pkt)
 {
-	struct eth_context *context = dev->driver_data;
+	struct eth_context *context = dev->data;
 
 	zassert_equal_ptr(&eth_vlan_context, context,
 			  "Context pointers do not match (%p vs %p)",
@@ -164,7 +164,7 @@ static void generate_mac(uint8_t *mac_addr)
 
 static int eth_vlan_init(struct device *dev)
 {
-	struct eth_context *context = dev->driver_data;
+	struct eth_context *context = dev->data;
 
 	generate_mac(context->mac_addr);
 
@@ -178,7 +178,7 @@ ETH_NET_DEVICE_INIT(eth_vlan_test, "eth_vlan_test",
 
 static int eth_init(struct device *dev)
 {
-	struct eth_context *context = dev->driver_data;
+	struct eth_context *context = dev->data;
 
 	generate_mac(context->mac_addr);
 
@@ -207,7 +207,7 @@ static int net_iface_dev_init(struct device *dev)
 
 static uint8_t *net_iface_get_mac(struct device *dev)
 {
-	struct net_if_test *data = dev->driver_data;
+	struct net_if_test *data = dev->data;
 
 	if (data->mac_addr[2] == 0x00) {
 		/* 00-00-5E-00-53-xx Documentation RFC 7042 */
@@ -742,7 +742,7 @@ static void test_vlan_send_data(void)
 	zassert_equal(ret, 0, "Context bind failure test failed");
 
 	iface = eth_interfaces[1]; /* This is the VLAN interface */
-	ctx = net_if_get_device(iface)->driver_data;
+	ctx = net_if_get_device(iface)->data;
 	eth_ctx = net_if_l2_data(iface);
 	ret = net_eth_is_vlan_enabled(eth_ctx, iface);
 	zassert_equal(ret, true, "VLAN disabled for interface 1");
@@ -750,7 +750,7 @@ static void test_vlan_send_data(void)
 	ctx->expecting_tag = VLAN_TAG_1;
 
 	iface = eth_interfaces[3]; /* This is also VLAN interface */
-	ctx = net_if_get_device(iface)->driver_data;
+	ctx = net_if_get_device(iface)->data;
 	eth_ctx = net_if_l2_data(iface);
 	ret = net_eth_is_vlan_enabled(eth_ctx, iface);
 	zassert_equal(ret, true, "VLAN disabled for interface 1");

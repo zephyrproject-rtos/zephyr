@@ -40,7 +40,7 @@ static int tmr_cmsdk_apb_start(struct device *dev)
 {
 	const struct tmr_cmsdk_apb_cfg * const cfg =
 						dev->config;
-	struct tmr_cmsdk_apb_dev_data *data = dev->driver_data;
+	struct tmr_cmsdk_apb_dev_data *data = dev->data;
 
 	/* Set the timer reload to count */
 	cfg->timer->reload = data->load;
@@ -64,7 +64,7 @@ static int tmr_cmsdk_apb_get_value(struct device *dev, uint32_t *ticks)
 {
 	const struct tmr_cmsdk_apb_cfg * const cfg =
 						dev->config;
-	struct tmr_cmsdk_apb_dev_data *data = dev->driver_data;
+	struct tmr_cmsdk_apb_dev_data *data = dev->data;
 
 	/* Get Counter Value */
 	*ticks = data->load - cfg->timer->value;
@@ -76,7 +76,7 @@ static int tmr_cmsdk_apb_set_top_value(struct device *dev,
 {
 	const struct tmr_cmsdk_apb_cfg * const cfg =
 						dev->config;
-	struct tmr_cmsdk_apb_dev_data *data = dev->driver_data;
+	struct tmr_cmsdk_apb_dev_data *data = dev->data;
 
 	/* Counter is always reset when top value is updated. */
 	if (top_cfg->flags & COUNTER_TOP_CFG_DONT_RESET) {
@@ -103,7 +103,7 @@ static int tmr_cmsdk_apb_set_top_value(struct device *dev,
 
 static uint32_t tmr_cmsdk_apb_get_top_value(struct device *dev)
 {
-	struct tmr_cmsdk_apb_dev_data *data = dev->driver_data;
+	struct tmr_cmsdk_apb_dev_data *data = dev->data;
 
 	uint32_t ticks = data->load;
 
@@ -130,7 +130,7 @@ static const struct counter_driver_api tmr_cmsdk_apb_api = {
 static void tmr_cmsdk_apb_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	struct tmr_cmsdk_apb_dev_data *data = dev->driver_data;
+	struct tmr_cmsdk_apb_dev_data *data = dev->data;
 	const struct tmr_cmsdk_apb_cfg * const cfg =
 						dev->config;
 

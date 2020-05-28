@@ -538,7 +538,7 @@ static uint16_t ppp_escape_byte(uint8_t byte, int *offset)
 
 static int ppp_send(struct device *dev, struct net_pkt *pkt)
 {
-	struct ppp_driver_context *ppp = dev->driver_data;
+	struct ppp_driver_context *ppp = dev->data;
 	struct net_buf *buf = pkt->buffer;
 	uint16_t protocol = 0;
 	int send_off = 0;
@@ -684,7 +684,7 @@ static void ppp_isr_cb_work(struct k_work *work)
 
 static int ppp_driver_init(struct device *dev)
 {
-	struct ppp_driver_context *ppp = dev->driver_data;
+	struct ppp_driver_context *ppp = dev->data;
 
 	LOG_DBG("[%p] dev %p", ppp, dev);
 
@@ -717,7 +717,7 @@ static inline struct net_linkaddr *ppp_get_mac(struct ppp_driver_context *ppp)
 
 static void ppp_iface_init(struct net_if *iface)
 {
-	struct ppp_driver_context *ppp = net_if_get_device(iface)->driver_data;
+	struct ppp_driver_context *ppp = net_if_get_device(iface)->data;
 	struct net_linkaddr *ll_addr;
 
 	LOG_DBG("[%p] iface %p", ppp, iface);
@@ -768,7 +768,7 @@ use_random_mac:
 #if defined(CONFIG_NET_STATISTICS_PPP)
 static struct net_stats_ppp *ppp_get_stats(struct device *dev)
 {
-	struct ppp_driver_context *context = dev->driver_data;
+	struct ppp_driver_context *context = dev->data;
 
 	return &context->stats;
 }
@@ -811,7 +811,7 @@ static void ppp_uart_isr(struct device *uart, void *user_data)
 
 static int ppp_start(struct device *dev)
 {
-	struct ppp_driver_context *context = dev->driver_data;
+	struct ppp_driver_context *context = dev->data;
 
 	/* Init the PPP UART only once. This should only be done after
 	 * the GSM muxing is setup and enabled. GSM modem will call this
@@ -871,7 +871,7 @@ static int ppp_start(struct device *dev)
 
 static int ppp_stop(struct device *dev)
 {
-	struct ppp_driver_context *context = dev->driver_data;
+	struct ppp_driver_context *context = dev->data;
 
 	net_ppp_carrier_off(context->iface);
 

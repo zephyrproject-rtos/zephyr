@@ -93,7 +93,7 @@ static int mcux_rtc_set_alarm(struct device *dev, uint8_t chan_id,
 	const struct counter_config_info *info = dev->config;
 	const struct mcux_rtc_config *config =
 		CONTAINER_OF(info, struct mcux_rtc_config, info);
-	struct mcux_rtc_data *data = dev->driver_data;
+	struct mcux_rtc_data *data = dev->data;
 
 	uint32_t ticks = alarm_cfg->ticks;
 	uint32_t current = mcux_rtc_read(dev);
@@ -129,7 +129,7 @@ static int mcux_rtc_set_alarm(struct device *dev, uint8_t chan_id,
 
 static int mcux_rtc_cancel_alarm(struct device *dev, uint8_t chan_id)
 {
-	struct mcux_rtc_data *data = dev->driver_data;
+	struct mcux_rtc_data *data = dev->data;
 
 	if (chan_id != 0U) {
 		LOG_ERR("Invalid channel id");
@@ -147,7 +147,7 @@ static int mcux_rtc_set_top_value(struct device *dev,
 	const struct counter_config_info *info = dev->config;
 	const struct mcux_rtc_config *config =
 			CONTAINER_OF(info, struct mcux_rtc_config, info);
-	struct mcux_rtc_data *data = dev->driver_data;
+	struct mcux_rtc_data *data = dev->data;
 
 	if (cfg->ticks != info->max_top_value) {
 		LOG_ERR("Wrap can only be set to 0x%x.", info->max_top_value);
@@ -195,7 +195,7 @@ static void mcux_rtc_isr(void *arg)
 	const struct counter_config_info *info = dev->config;
 	const struct mcux_rtc_config *config =
 		CONTAINER_OF(info, struct mcux_rtc_config, info);
-	struct mcux_rtc_data *data = dev->driver_data;
+	struct mcux_rtc_data *data = dev->data;
 	counter_alarm_callback_t cb;
 	uint32_t current = mcux_rtc_read(dev);
 

@@ -135,7 +135,7 @@ static inline int i2c_burst_write16(struct device *dev, uint16_t dev_addr,
 static int mt9m114_write_reg(struct device *dev, uint16_t reg_addr, uint8_t reg_size,
 			     void *value)
 {
-	struct mt9m114_data *drv_data = dev->driver_data;
+	struct mt9m114_data *drv_data = dev->data;
 
 	switch (reg_size) {
 	case 2:
@@ -157,7 +157,7 @@ static int mt9m114_write_reg(struct device *dev, uint16_t reg_addr, uint8_t reg_
 static int mt9m114_read_reg(struct device *dev, uint16_t reg_addr, uint8_t reg_size,
 			    void *value)
 {
-	struct mt9m114_data *drv_data = dev->driver_data;
+	struct mt9m114_data *drv_data = dev->data;
 	int err;
 
 	if (reg_size > 4) {
@@ -257,7 +257,7 @@ static int mt9m114_set_state(struct device *dev, uint8_t state)
 static int mt9m114_set_fmt(struct device *dev, enum video_endpoint_id ep,
 			   struct video_format *fmt)
 {
-	struct mt9m114_data *drv_data = dev->driver_data;
+	struct mt9m114_data *drv_data = dev->data;
 	uint16_t output_format;
 	int ret;
 
@@ -299,7 +299,7 @@ static int mt9m114_set_fmt(struct device *dev, enum video_endpoint_id ep,
 static int mt9m114_get_fmt(struct device *dev, enum video_endpoint_id ep,
 			   struct video_format *fmt)
 {
-	struct mt9m114_data *drv_data = dev->driver_data;
+	struct mt9m114_data *drv_data = dev->data;
 
 	*fmt = drv_data->fmt;
 
@@ -388,7 +388,7 @@ static struct mt9m114_data mt9m114_data_0;
 
 static int mt9m114_init_0(struct device *dev)
 {
-	struct mt9m114_data *drv_data = dev->driver_data;
+	struct mt9m114_data *drv_data = dev->data;
 
 	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (drv_data->i2c == NULL) {

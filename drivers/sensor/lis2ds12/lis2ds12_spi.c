@@ -153,7 +153,7 @@ static const struct lis2ds12_transfer_function lis2ds12_spi_transfer_fn = {
 
 int lis2ds12_spi_init(struct device *dev)
 {
-	struct lis2ds12_data *data = dev->driver_data;
+	struct lis2ds12_data *data = dev->data;
 
 	data->hw_tf = &lis2ds12_spi_transfer_fn;
 

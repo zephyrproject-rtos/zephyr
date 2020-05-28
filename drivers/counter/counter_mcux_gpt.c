@@ -56,7 +56,7 @@ static int mcux_gpt_set_alarm(struct device *dev, uint8_t chan_id,
 			      const struct counter_alarm_cfg *alarm_cfg)
 {
 	const struct mcux_gpt_config *config = dev->config;
-	struct mcux_gpt_data *data = dev->driver_data;
+	struct mcux_gpt_data *data = dev->data;
 
 	uint32_t current = GPT_GetCurrentTimerCount(config->base);
 	uint32_t ticks = alarm_cfg->ticks;
@@ -87,7 +87,7 @@ static int mcux_gpt_set_alarm(struct device *dev, uint8_t chan_id,
 static int mcux_gpt_cancel_alarm(struct device *dev, uint8_t chan_id)
 {
 	const struct mcux_gpt_config *config = dev->config;
-	struct mcux_gpt_data *data = dev->driver_data;
+	struct mcux_gpt_data *data = dev->data;
 
 	if (chan_id != 0) {
 		LOG_ERR("Invalid channel id");
@@ -104,7 +104,7 @@ void mcux_gpt_isr(void *p)
 {
 	struct device *dev = p;
 	const struct mcux_gpt_config *config = dev->config;
-	struct mcux_gpt_data *data = dev->driver_data;
+	struct mcux_gpt_data *data = dev->data;
 	uint32_t current = GPT_GetCurrentTimerCount(config->base);
 	uint32_t status;
 
@@ -137,7 +137,7 @@ static int mcux_gpt_set_top_value(struct device *dev,
 				  const struct counter_top_cfg *cfg)
 {
 	const struct mcux_gpt_config *config = dev->config;
-	struct mcux_gpt_data *data = dev->driver_data;
+	struct mcux_gpt_data *data = dev->data;
 
 	if (cfg->ticks != config->info.max_top_value) {
 		LOG_ERR("Wrap can only be set to 0x%x",

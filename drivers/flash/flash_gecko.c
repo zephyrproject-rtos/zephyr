@@ -32,7 +32,7 @@ static const struct flash_parameters flash_gecko_parameters = {
 
 #define DEV_NAME(dev) ((dev)->name)
 #define DEV_DATA(dev) \
-	((struct flash_gecko_data *const)(dev)->driver_data)
+	((struct flash_gecko_data *const)(dev)->data)
 
 static bool write_range_is_valid(off_t offset, uint32_t size);
 static bool read_range_is_valid(off_t offset, uint32_t size);

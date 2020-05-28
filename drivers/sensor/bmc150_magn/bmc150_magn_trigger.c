@@ -18,7 +18,7 @@ LOG_MODULE_DECLARE(BMC150_MAGN, CONFIG_SENSOR_LOG_LEVEL);
 static inline void setup_drdy(struct device *dev,
 			      bool enable)
 {
-	struct bmc150_magn_data *data = dev->driver_data;
+	struct bmc150_magn_data *data = dev->data;
 	const struct bmc150_magn_config *const cfg =
 		dev->config;
 
@@ -34,7 +34,7 @@ int bmc150_magn_trigger_set(struct device *dev,
 			    const struct sensor_trigger *trig,
 			    sensor_trigger_handler_t handler)
 {
-	struct bmc150_magn_data *data = dev->driver_data;
+	struct bmc150_magn_data *data = dev->data;
 	const struct bmc150_magn_config * const config =
 					dev->config;
 	uint8_t state;
@@ -85,7 +85,7 @@ static void bmc150_magn_gpio_drdy_callback(struct device *dev,
 static void bmc150_magn_thread_main(void *arg1, void *arg2, void *arg3)
 {
 	struct device *dev = (struct device *) arg1;
-	struct bmc150_magn_data *data = dev->driver_data;
+	struct bmc150_magn_data *data = dev->data;
 	const struct bmc150_magn_config *config = dev->config;
 	uint8_t reg_val;
 
@@ -109,7 +109,7 @@ static void bmc150_magn_thread_main(void *arg1, void *arg2, void *arg3)
 
 static int bmc150_magn_set_drdy_polarity(struct device *dev, int state)
 {
-	struct bmc150_magn_data *data = dev->driver_data;
+	struct bmc150_magn_data *data = dev->data;
 	const struct bmc150_magn_config *config = dev->config;
 
 	if (state) {
@@ -126,7 +126,7 @@ int bmc150_magn_init_interrupt(struct device *dev)
 {
 	const struct bmc150_magn_config * const config =
 						dev->config;
-	struct bmc150_magn_data *data = dev->driver_data;
+	struct bmc150_magn_data *data = dev->data;
 
 
 #if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)

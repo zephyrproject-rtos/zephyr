@@ -14,7 +14,7 @@
 #define DEV_CFG(dev) \
 	((const struct ipm_mhu_device_config * const)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct ipm_mhu_data *)(dev)->driver_data)
+	((struct ipm_mhu_data *)(dev)->data)
 #define IPM_MHU_REGS(dev) \
 	((volatile struct ipm_mhu_reg_map_t *)(DEV_CFG(dev))->base)
 

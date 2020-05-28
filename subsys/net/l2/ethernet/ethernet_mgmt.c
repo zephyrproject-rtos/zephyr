@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(net_ethernet_mgmt, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 static inline bool is_hw_caps_supported(struct device *dev,
 					enum ethernet_hw_caps caps)
 {
-	const struct ethernet_api *api = dev->driver_api;
+	const struct ethernet_api *api = dev->api;
 
 	if (!api) {
 		return false;
@@ -31,7 +31,7 @@ static int ethernet_set_config(uint32_t mgmt_request,
 {
 	struct ethernet_req_params *params = (struct ethernet_req_params *)data;
 	struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api = dev->driver_api;
+	const struct ethernet_api *api = dev->api;
 	struct ethernet_config config = { 0 };
 	enum ethernet_config_type type;
 
@@ -177,7 +177,7 @@ static int ethernet_get_config(uint32_t mgmt_request,
 {
 	struct ethernet_req_params *params = (struct ethernet_req_params *)data;
 	struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api = dev->driver_api;
+	const struct ethernet_api *api = dev->api;
 	struct ethernet_config config = { 0 };
 	int ret = 0;
 	enum ethernet_config_type type;

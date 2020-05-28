@@ -37,7 +37,7 @@ struct mcux_mailbox_data {
 static void mcux_mailbox_isr(void *arg)
 {
 	struct device *dev = arg;
-	struct mcux_mailbox_data *data = dev->driver_data;
+	struct mcux_mailbox_data *data = dev->data;
 	const struct mcux_mailbox_config *config = dev->config;
 	mailbox_cpu_id_t cpu_id;
 
@@ -119,7 +119,7 @@ static void mcux_mailbox_ipm_register_callback(struct device *d,
 					       ipm_callback_t cb,
 					       void *context)
 {
-	struct mcux_mailbox_data *driver_data = d->driver_data;
+	struct mcux_mailbox_data *driver_data = d->data;
 
 	driver_data->callback = cb;
 	driver_data->callback_ctx = context;

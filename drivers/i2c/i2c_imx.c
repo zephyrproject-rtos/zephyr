@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(i2c_imx);
 #define DEV_CFG(dev) \
 	((const struct i2c_imx_config * const)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct i2c_imx_data * const)(dev)->driver_data)
+	((struct i2c_imx_data * const)(dev)->data)
 #define DEV_BASE(dev) \
 	((I2C_Type *)(DEV_CFG(dev))->base)
 

@@ -32,7 +32,7 @@
 static void gpio_stm32_isr(int line, void *arg)
 {
 	struct device *dev = arg;
-	struct gpio_stm32_data *data = dev->driver_data;
+	struct gpio_stm32_data *data = dev->data;
 
 	gpio_fire_callbacks(&data->cb, dev, BIT(line));
 }
@@ -480,7 +480,7 @@ static int gpio_stm32_manage_callback(struct device *dev,
 				      struct gpio_callback *callback,
 				      bool set)
 {
-	struct gpio_stm32_data *data = dev->driver_data;
+	struct gpio_stm32_data *data = dev->data;
 
 	return gpio_manage_callback(&data->cb, callback, set);
 }

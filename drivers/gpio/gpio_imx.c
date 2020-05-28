@@ -177,7 +177,7 @@ static int imx_gpio_pin_interrupt_configure(struct device *port,
 static int imx_gpio_manage_callback(struct device *port,
 				    struct gpio_callback *cb, bool set)
 {
-	struct imx_gpio_data *data = port->driver_data;
+	struct imx_gpio_data *data = port->data;
 
 	return gpio_manage_callback(&data->callbacks, cb, set);
 }
@@ -186,7 +186,7 @@ static void imx_gpio_port_isr(void *arg)
 {
 	struct device *port = (struct device *)arg;
 	const struct imx_gpio_config *config = port->config;
-	struct imx_gpio_data *data = port->driver_data;
+	struct imx_gpio_data *data = port->data;
 	uint32_t int_status;
 
 	int_status = config->base->ISR;

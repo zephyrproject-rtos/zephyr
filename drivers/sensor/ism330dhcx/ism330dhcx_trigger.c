@@ -26,7 +26,7 @@ LOG_MODULE_DECLARE(ISM330DHCX, CONFIG_SENSOR_LOG_LEVEL);
 static int ism330dhcx_enable_t_int(struct device *dev, int enable)
 {
 	const struct ism330dhcx_config *cfg = dev->config;
-	struct ism330dhcx_data *ism330dhcx = dev->driver_data;
+	struct ism330dhcx_data *ism330dhcx = dev->data;
 	ism330dhcx_pin_int2_route_t int2_route;
 
 	if (enable) {
@@ -54,7 +54,7 @@ static int ism330dhcx_enable_t_int(struct device *dev, int enable)
 static int ism330dhcx_enable_xl_int(struct device *dev, int enable)
 {
 	const struct ism330dhcx_config *cfg = dev->config;
-	struct ism330dhcx_data *ism330dhcx = dev->driver_data;
+	struct ism330dhcx_data *ism330dhcx = dev->data;
 
 	if (enable) {
 		union axis3bit16_t buf;
@@ -90,7 +90,7 @@ static int ism330dhcx_enable_xl_int(struct device *dev, int enable)
 static int ism330dhcx_enable_g_int(struct device *dev, int enable)
 {
 	const struct ism330dhcx_config *cfg = dev->config;
-	struct ism330dhcx_data *ism330dhcx = dev->driver_data;
+	struct ism330dhcx_data *ism330dhcx = dev->data;
 
 	if (enable) {
 		union axis3bit16_t buf;
@@ -126,7 +126,7 @@ int ism330dhcx_trigger_set(struct device *dev,
 			  const struct sensor_trigger *trig,
 			  sensor_trigger_handler_t handler)
 {
-	struct ism330dhcx_data *ism330dhcx = dev->driver_data;
+	struct ism330dhcx_data *ism330dhcx = dev->data;
 
 	if (trig->chan == SENSOR_CHAN_ACCEL_XYZ) {
 		ism330dhcx->handler_drdy_acc = handler;
@@ -164,7 +164,7 @@ int ism330dhcx_trigger_set(struct device *dev,
 static void ism330dhcx_handle_interrupt(void *arg)
 {
 	struct device *dev = arg;
-	struct ism330dhcx_data *ism330dhcx = dev->driver_data;
+	struct ism330dhcx_data *ism330dhcx = dev->data;
 	struct sensor_trigger drdy_trigger = {
 		.type = SENSOR_TRIG_DATA_READY,
 	};
@@ -227,7 +227,7 @@ static void ism330dhcx_gpio_callback(struct device *dev,
 static void ism330dhcx_thread(int dev_ptr, int unused)
 {
 	struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct ism330dhcx_data *ism330dhcx = dev->driver_data;
+	struct ism330dhcx_data *ism330dhcx = dev->data;
 
 	ARG_UNUSED(unused);
 
@@ -250,7 +250,7 @@ static void ism330dhcx_work_cb(struct k_work *work)
 
 int ism330dhcx_init_interrupt(struct device *dev)
 {
-	struct ism330dhcx_data *ism330dhcx = dev->driver_data;
+	struct ism330dhcx_data *ism330dhcx = dev->data;
 	const struct ism330dhcx_config *cfg = dev->config;
 	int ret;
 

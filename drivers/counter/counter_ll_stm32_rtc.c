@@ -56,7 +56,7 @@ struct rtc_stm32_data {
 };
 
 
-#define DEV_DATA(dev) ((struct rtc_stm32_data *)(dev)->driver_data)
+#define DEV_DATA(dev) ((struct rtc_stm32_data *)(dev)->data)
 #define DEV_CFG(dev)	\
 ((const struct rtc_stm32_config * const)(dev)->config)
 

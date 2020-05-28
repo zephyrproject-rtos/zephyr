@@ -44,7 +44,7 @@ int lsm6dsl_trigger_set(struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
-	struct lsm6dsl_data *drv_data = dev->driver_data;
+	struct lsm6dsl_data *drv_data = dev->data;
 
 	__ASSERT_NO_MSG(trig->type == SENSOR_TRIG_DATA_READY);
 
@@ -79,7 +79,7 @@ static void lsm6dsl_gpio_callback(struct device *dev,
 static void lsm6dsl_thread_cb(void *arg)
 {
 	struct device *dev = arg;
-	struct lsm6dsl_data *drv_data = dev->driver_data;
+	struct lsm6dsl_data *drv_data = dev->data;
 
 	if (drv_data->data_ready_handler != NULL) {
 		drv_data->data_ready_handler(dev,
@@ -93,7 +93,7 @@ static void lsm6dsl_thread_cb(void *arg)
 static void lsm6dsl_thread(int dev_ptr, int unused)
 {
 	struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct lsm6dsl_data *drv_data = dev->driver_data;
+	struct lsm6dsl_data *drv_data = dev->data;
 
 	ARG_UNUSED(unused);
 
@@ -116,7 +116,7 @@ static void lsm6dsl_work_cb(struct k_work *work)
 
 int lsm6dsl_init_interrupt(struct device *dev)
 {
-	struct lsm6dsl_data *drv_data = dev->driver_data;
+	struct lsm6dsl_data *drv_data = dev->data;
 
 	/* setup data ready gpio interrupt */
 	drv_data->gpio = device_get_binding(DT_INST_GPIO_LABEL(0, irq_gpios));

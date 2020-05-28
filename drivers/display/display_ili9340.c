@@ -49,7 +49,7 @@ static void ili9340_exit_sleep(struct ili9340_data *data)
 
 static int ili9340_init(struct device *dev)
 {
-	struct ili9340_data *data = (struct ili9340_data *)dev->driver_data;
+	struct ili9340_data *data = (struct ili9340_data *)dev->data;
 
 	LOG_DBG("Initializing display driver");
 
@@ -137,7 +137,7 @@ static int ili9340_write(const struct device *dev, const uint16_t x,
 			 const struct display_buffer_descriptor *desc,
 			 const void *buf)
 {
-	struct ili9340_data *data = (struct ili9340_data *)dev->driver_data;
+	struct ili9340_data *data = (struct ili9340_data *)dev->data;
 	const uint8_t *write_data_start = (uint8_t *) buf;
 	struct spi_buf tx_buf;
 	struct spi_buf_set tx_bufs;
@@ -196,7 +196,7 @@ static void *ili9340_get_framebuffer(const struct device *dev)
 
 static int ili9340_display_blanking_off(const struct device *dev)
 {
-	struct ili9340_data *data = (struct ili9340_data *)dev->driver_data;
+	struct ili9340_data *data = (struct ili9340_data *)dev->data;
 
 	LOG_DBG("Turning display blanking off");
 	ili9340_transmit(data, ILI9340_CMD_DISPLAY_ON, NULL, 0);
@@ -205,7 +205,7 @@ static int ili9340_display_blanking_off(const struct device *dev)
 
 static int ili9340_display_blanking_on(const struct device *dev)
 {
-	struct ili9340_data *data = (struct ili9340_data *)dev->driver_data;
+	struct ili9340_data *data = (struct ili9340_data *)dev->data;
 
 	LOG_DBG("Turning display blanking on");
 	ili9340_transmit(data, ILI9340_CMD_DISPLAY_OFF, NULL, 0);

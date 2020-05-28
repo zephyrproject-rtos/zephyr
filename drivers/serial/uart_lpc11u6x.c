@@ -14,7 +14,7 @@
 #include "uart_lpc11u6x.h"
 
 #define DEV_CFG(dev) ((dev)->config)
-#define DEV_DATA(dev) ((dev)->driver_data)
+#define DEV_DATA(dev) ((dev)->data)
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay)
 static int lpc11u6x_uart0_poll_in(struct device *dev, unsigned char *c)

@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(LPS25HB, CONFIG_SENSOR_LOG_LEVEL);
 
 static inline int lps25hb_power_ctrl(struct device *dev, uint8_t value)
 {
-	struct lps25hb_data *data = dev->driver_data;
+	struct lps25hb_data *data = dev->data;
 	const struct lps25hb_config *config = dev->config;
 
 	return i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
@@ -33,7 +33,7 @@ static inline int lps25hb_power_ctrl(struct device *dev, uint8_t value)
 
 static inline int lps25hb_set_odr_raw(struct device *dev, uint8_t odr)
 {
-	struct lps25hb_data *data = dev->driver_data;
+	struct lps25hb_data *data = dev->data;
 	const struct lps25hb_config *config = dev->config;
 
 	return i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
@@ -45,7 +45,7 @@ static inline int lps25hb_set_odr_raw(struct device *dev, uint8_t odr)
 static int lps25hb_sample_fetch(struct device *dev,
 				enum sensor_channel chan)
 {
-	struct lps25hb_data *data = dev->driver_data;
+	struct lps25hb_data *data = dev->data;
 	const struct lps25hb_config *config = dev->config;
 	uint8_t out[5];
 	int offset;
@@ -93,7 +93,7 @@ static int lps25hb_channel_get(struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
-	struct lps25hb_data *data = dev->driver_data;
+	struct lps25hb_data *data = dev->data;
 
 	if (chan == SENSOR_CHAN_PRESS) {
 		lps25hb_press_convert(val, data->sample_press);
@@ -113,7 +113,7 @@ static const struct sensor_driver_api lps25hb_api_funcs = {
 
 static int lps25hb_init_chip(struct device *dev)
 {
-	struct lps25hb_data *data = dev->driver_data;
+	struct lps25hb_data *data = dev->data;
 	const struct lps25hb_config *config = dev->config;
 	uint8_t chip_id;
 
@@ -163,7 +163,7 @@ err_poweroff:
 static int lps25hb_init(struct device *dev)
 {
 	const struct lps25hb_config * const config = dev->config;
-	struct lps25hb_data *data = dev->driver_data;
+	struct lps25hb_data *data = dev->data;
 
 	data->i2c_master = device_get_binding(config->i2c_master_dev_name);
 	if (!data->i2c_master) {

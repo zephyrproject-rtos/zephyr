@@ -60,7 +60,7 @@
 LOG_MODULE_REGISTER(usb_cdc_acm);
 
 #define DEV_DATA(dev)						\
-	((struct cdc_acm_dev_data_t * const)(dev)->driver_data)
+	((struct cdc_acm_dev_data_t * const)(dev)->data)
 
 /* 115200bps, no parity, 1 stop bit, 8bit char */
 #define CDC_ACM_DEFAULT_BAUDRATE {sys_cpu_to_le32(115200), 0, 0, 8}
@@ -770,7 +770,7 @@ int cdc_acm_dte_rate_callback_set(struct device *dev,
 {
 	struct cdc_acm_dev_data_t *const dev_data = DEV_DATA(dev);
 
-	if (dev->driver_api != &cdc_acm_driver_api) {
+	if (dev->api != &cdc_acm_driver_api) {
 		return -EINVAL;
 	}
 

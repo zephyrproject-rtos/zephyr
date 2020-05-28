@@ -42,7 +42,7 @@ struct wdt_gecko_data {
 
 #define DEV_NAME(dev) ((dev)->name)
 #define DEV_DATA(dev) \
-	((struct wdt_gecko_data *)(dev)->driver_data)
+	((struct wdt_gecko_data *)(dev)->data)
 #define DEV_CFG(dev) \
 	((const struct wdt_gecko_cfg *)(dev)->config)
 

@@ -63,7 +63,7 @@ static int opt3001_reg_update(struct opt3001_data *drv_data, uint8_t reg,
 
 static int opt3001_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
-	struct opt3001_data *drv_data = dev->driver_data;
+	struct opt3001_data *drv_data = dev->data;
 	uint16_t value;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_LIGHT);
@@ -82,7 +82,7 @@ static int opt3001_sample_fetch(struct device *dev, enum sensor_channel chan)
 static int opt3001_channel_get(struct device *dev, enum sensor_channel chan,
 			       struct sensor_value *val)
 {
-	struct opt3001_data *drv_data = dev->driver_data;
+	struct opt3001_data *drv_data = dev->data;
 	int32_t uval;
 
 	if (chan != SENSOR_CHAN_LIGHT) {
@@ -112,7 +112,7 @@ static const struct sensor_driver_api opt3001_driver_api = {
 
 static int opt3001_chip_init(struct device *dev)
 {
-	struct opt3001_data *drv_data = dev->driver_data;
+	struct opt3001_data *drv_data = dev->data;
 	uint16_t value;
 
 	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));

@@ -79,7 +79,7 @@ struct uart_sam0_dev_data {
 
 #define DEV_CFG(dev) \
 	((const struct uart_sam0_dev_cfg *const)(dev)->config)
-#define DEV_DATA(dev) ((struct uart_sam0_dev_data * const)(dev)->driver_data)
+#define DEV_DATA(dev) ((struct uart_sam0_dev_data * const)(dev)->data)
 
 static void wait_synchronization(SercomUsart *const usart)
 {

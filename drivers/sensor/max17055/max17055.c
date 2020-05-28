@@ -79,7 +79,7 @@ static int max17055_channel_get(struct device *dev, enum sensor_channel chan,
 				struct sensor_value *valp)
 {
 	const struct max17055_config *const config = dev->config;
-	struct max17055_data *const priv = dev->driver_data;
+	struct max17055_data *const priv = dev->data;
 	unsigned int tmp;
 
 	switch (chan) {
@@ -160,7 +160,7 @@ static int max17055_channel_get(struct device *dev, enum sensor_channel chan,
 
 static int max17055_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
-	struct max17055_data *priv = dev->driver_data;
+	struct max17055_data *priv = dev->data;
 	struct {
 		int reg_addr;
 		int16_t *dest;
@@ -199,7 +199,7 @@ static int max17055_sample_fetch(struct device *dev, enum sensor_channel chan)
  */
 static int max17055_gauge_init(struct device *dev)
 {
-	struct max17055_data *priv = dev->driver_data;
+	struct max17055_data *priv = dev->data;
 	const struct max17055_config *const config = dev->config;
 
 	priv->i2c = device_get_binding(config->bus_name);

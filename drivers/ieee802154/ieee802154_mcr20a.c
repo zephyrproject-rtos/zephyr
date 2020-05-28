@@ -325,7 +325,7 @@ error:
 
 static int mcr20a_timer_init(struct device *dev, uint8_t tb)
 {
-	struct mcr20a_context *mcr20a = dev->driver_data;
+	struct mcr20a_context *mcr20a = dev->data;
 	uint8_t buf[3] = {0, 0, 0};
 	uint8_t ctrl4;
 
@@ -501,7 +501,7 @@ static inline uint32_t mcr20a_get_rssi(uint32_t lqi)
 
 static inline uint8_t *get_mac(struct device *dev)
 {
-	struct mcr20a_context *mcr20a = dev->driver_data;
+	struct mcr20a_context *mcr20a = dev->data;
 	uint32_t *ptr = (uint32_t *)(mcr20a->mac_addr);
 
 	UNALIGNED_PUT(sys_rand32_get(), ptr);
@@ -713,7 +713,7 @@ static inline bool irqsts3_event(struct mcr20a_context *mcr20a,
 static void mcr20a_thread_main(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	struct mcr20a_context *mcr20a = dev->driver_data;
+	struct mcr20a_context *mcr20a = dev->data;
 	uint8_t dregs[MCR20A_PHY_CTRL4 + 1];
 	bool set_new_seq;
 	uint8_t ctrl1 = 0U;
@@ -816,7 +816,7 @@ static inline void setup_gpio_callbacks(struct mcr20a_context *mcr20a)
 
 static int mcr20a_set_cca_mode(struct device *dev, uint8_t mode)
 {
-	struct mcr20a_context *mcr20a = dev->driver_data;
+	struct mcr20a_context *mcr20a = dev->data;
 	uint8_t ctrl4;
 
 	ctrl4 = read_reg_phy_ctrl4(mcr20a);
@@ -842,7 +842,7 @@ static enum ieee802154_hw_caps mcr20a_get_capabilities(struct device *dev)
 /* Note: CCA before TX is enabled by default */
 static int mcr20a_cca(struct device *dev)
 {
-	struct mcr20a_context *mcr20a = dev->driver_data;
+	struct mcr20a_context *mcr20a = dev->data;
 	int retval;
 
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
@@ -890,7 +890,7 @@ error:
 
 static int mcr20a_set_channel(struct device *dev, uint16_t channel)
 {
-	struct mcr20a_context *mcr20a = dev->driver_data;
+	struct mcr20a_context *mcr20a = dev->data;
 	uint8_t buf[3];
 	uint8_t ctrl1;
 	int retval = -EIO;
@@ -945,7 +945,7 @@ out:
 
 static int mcr20a_set_pan_id(struct device *dev, uint16_t pan_id)
 {
-	struct mcr20a_context *mcr20a = dev->driver_data;
+	struct mcr20a_context *mcr20a = dev->data;
 
 	pan_id = sys_le16_to_cpu(pan_id);
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
@@ -964,7 +964,7 @@ static int mcr20a_set_pan_id(struct device *dev, uint16_t pan_id)
 
 static int mcr20a_set_short_addr(struct device *dev, uint16_t short_addr)
 {
-	struct mcr20a_context *mcr20a = dev->driver_data;
+	struct mcr20a_context *mcr20a = dev->data;
 
 	short_addr = sys_le16_to_cpu(short_addr);
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
@@ -983,7 +983,7 @@ static int mcr20a_set_short_addr(struct device *dev, uint16_t short_addr)
 
 static int mcr20a_set_ieee_addr(struct device *dev, const uint8_t *ieee_addr)
 {
-	struct mcr20a_context *mcr20a = dev->driver_data;
+	struct mcr20a_context *mcr20a = dev->data;
 
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
 
@@ -1025,7 +1025,7 @@ static int mcr20a_filter(struct device *dev,
 
 static int mcr20a_set_txpower(struct device *dev, int16_t dbm)
 {
-	struct mcr20a_context *mcr20a = dev->driver_data;
+	struct mcr20a_context *mcr20a = dev->data;
 	uint8_t pwr;
 
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
@@ -1087,7 +1087,7 @@ static int mcr20a_tx(struct device *dev,
 		     struct net_pkt *pkt,
 		     struct net_buf *frag)
 {
-	struct mcr20a_context *mcr20a = dev->driver_data;
+	struct mcr20a_context *mcr20a = dev->data;
 	uint8_t seq = ieee802154_is_ar_flag_set(frag) ? MCR20A_XCVSEQ_TX_RX :
 						     MCR20A_XCVSEQ_TX;
 	int retval;
@@ -1147,7 +1147,7 @@ error:
 
 static int mcr20a_start(struct device *dev)
 {
-	struct mcr20a_context *mcr20a = dev->driver_data;
+	struct mcr20a_context *mcr20a = dev->data;
 	uint8_t timeout = 6U;
 	uint8_t status;
 
@@ -1205,7 +1205,7 @@ error:
 
 static int mcr20a_stop(struct device *dev)
 {
-	struct mcr20a_context *mcr20a = dev->driver_data;
+	struct mcr20a_context *mcr20a = dev->data;
 	uint8_t power_mode;
 
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
@@ -1269,7 +1269,7 @@ error:
 
 static int power_on_and_setup(struct device *dev)
 {
-	struct mcr20a_context *mcr20a = dev->driver_data;
+	struct mcr20a_context *mcr20a = dev->data;
 	uint8_t timeout = 6U;
 	int pin;
 	uint8_t tmp = 0U;
@@ -1335,7 +1335,7 @@ static int power_on_and_setup(struct device *dev)
 
 static inline int configure_gpios(struct device *dev)
 {
-	struct mcr20a_context *mcr20a = dev->driver_data;
+	struct mcr20a_context *mcr20a = dev->data;
 
 	/* setup gpio for the modem interrupt */
 	mcr20a->irq_gpio =
@@ -1372,7 +1372,7 @@ static inline int configure_gpios(struct device *dev)
 
 static inline int configure_spi(struct device *dev)
 {
-	struct mcr20a_context *mcr20a = dev->driver_data;
+	struct mcr20a_context *mcr20a = dev->data;
 
 	mcr20a->spi = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (!mcr20a->spi) {
@@ -1412,7 +1412,7 @@ static inline int configure_spi(struct device *dev)
 
 static int mcr20a_init(struct device *dev)
 {
-	struct mcr20a_context *mcr20a = dev->driver_data;
+	struct mcr20a_context *mcr20a = dev->data;
 
 	k_mutex_init(&mcr20a->phy_mutex);
 	k_sem_init(&mcr20a->isr_sem, 0, 1);
@@ -1448,7 +1448,7 @@ static int mcr20a_init(struct device *dev)
 static void mcr20a_iface_init(struct net_if *iface)
 {
 	struct device *dev = net_if_get_device(iface);
-	struct mcr20a_context *mcr20a = dev->driver_data;
+	struct mcr20a_context *mcr20a = dev->data;
 	uint8_t *mac = get_mac(dev);
 
 	net_if_set_link_addr(iface, mac, 8, NET_LINK_IEEE802154);

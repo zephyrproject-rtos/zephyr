@@ -266,7 +266,7 @@ static void adc_stm32_start_conversion(struct device *dev)
 static int start_read(struct device *dev, const struct adc_sequence *sequence)
 {
 	const struct adc_stm32_cfg *config = dev->config;
-	struct adc_stm32_data *data = dev->driver_data;
+	struct adc_stm32_data *data = dev->data;
 	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
 	uint8_t resolution;
 	int err;
@@ -388,7 +388,7 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 static void adc_stm32_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	struct adc_stm32_data *data = (struct adc_stm32_data *)dev->driver_data;
+	struct adc_stm32_data *data = (struct adc_stm32_data *)dev->data;
 	const struct adc_stm32_cfg *config =
 		(const struct adc_stm32_cfg *)dev->config;
 	ADC_TypeDef *adc = config->base;
@@ -403,7 +403,7 @@ static void adc_stm32_isr(void *arg)
 static int adc_stm32_read(struct device *dev,
 			  const struct adc_sequence *sequence)
 {
-	struct adc_stm32_data *data = dev->driver_data;
+	struct adc_stm32_data *data = dev->data;
 	int error;
 
 	adc_context_lock(&data->ctx, false, NULL);
@@ -418,7 +418,7 @@ static int adc_stm32_read_async(struct device *dev,
 				 const struct adc_sequence *sequence,
 				 struct k_poll_signal *async)
 {
-	struct adc_stm32_data *data = dev->driver_data;
+	struct adc_stm32_data *data = dev->data;
 	int error;
 
 	adc_context_lock(&data->ctx, true, async);
@@ -467,7 +467,7 @@ static int adc_stm32_channel_setup(struct device *dev,
 			    const struct adc_channel_cfg *channel_cfg)
 {
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32L0X)
-	struct adc_stm32_data *data = dev->driver_data;
+	struct adc_stm32_data *data = dev->data;
 #endif
 	int acq_time_index;
 
@@ -544,7 +544,7 @@ static void adc_stm32_calib(struct device *dev)
 
 static int adc_stm32_init(struct device *dev)
 {
-	struct adc_stm32_data *data = dev->driver_data;
+	struct adc_stm32_data *data = dev->data;
 	const struct adc_stm32_cfg *config = dev->config;
 	struct device *clk =
 		device_get_binding(STM32_CLOCK_CONTROL_NAME);

@@ -55,7 +55,7 @@ static struct nrf5_802154_data nrf5_data;
 
 /* Convenience defines for RADIO */
 #define NRF5_802154_DATA(dev) \
-	((struct nrf5_802154_data * const)(dev)->driver_data)
+	((struct nrf5_802154_data * const)(dev)->data)
 
 #define NRF5_802154_CFG(dev) \
 	((const struct nrf5_802154_config * const)(dev)->config)

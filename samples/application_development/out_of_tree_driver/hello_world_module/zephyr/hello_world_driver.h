@@ -33,7 +33,7 @@ __subsystem struct hello_world_driver_api {
 __syscall     void        hello_world_print(struct device *dev);
 static inline void z_impl_hello_world_print(struct device *dev)
 {
-	const struct hello_world_driver_api *api = dev->driver_api;
+	const struct hello_world_driver_api *api = dev->api;
 
 	__ASSERT(api->print, "Callback pointer should not be NULL");
 

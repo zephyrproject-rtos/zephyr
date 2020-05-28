@@ -45,7 +45,7 @@ DEVICE_DECLARE(entropy_cc13xx_cc26xx);
 static inline struct entropy_cc13xx_cc26xx_data *
 get_dev_data(struct device *dev)
 {
-	return dev->driver_data;
+	return dev->data;
 }
 
 static void start_trng(struct entropy_cc13xx_cc26xx_data *data)

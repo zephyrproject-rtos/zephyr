@@ -231,7 +231,7 @@ static int i2c_xec_poll_write(struct device *dev, struct i2c_msg msg,
 	const struct i2c_xec_config *config =
 		(const struct i2c_xec_config *const) (dev->config);
 	struct i2c_xec_data *data =
-		(struct i2c_xec_data *const) (dev->driver_data);
+		(struct i2c_xec_data *const) (dev->data);
 	uint32_t ba = config->base_addr;
 	int ret;
 
@@ -294,7 +294,7 @@ static int i2c_xec_poll_read(struct device *dev, struct i2c_msg msg,
 	const struct i2c_xec_config *config =
 		(const struct i2c_xec_config *const) (dev->config);
 	struct i2c_xec_data *data =
-		(struct i2c_xec_data *const) (dev->driver_data);
+		(struct i2c_xec_data *const) (dev->data);
 	uint32_t ba = config->base_addr;
 	uint8_t byte, ctrl;
 	int ret;
@@ -411,7 +411,7 @@ static const struct i2c_driver_api i2c_xec_driver_api = {
 static int i2c_xec_init(struct device *dev)
 {
 	struct i2c_xec_data *data =
-		(struct i2c_xec_data *const) (dev->driver_data);
+		(struct i2c_xec_data *const) (dev->data);
 	data->pending_stop = 0;
 	return 0;
 }

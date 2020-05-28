@@ -61,7 +61,7 @@ static int mcux_lptmr_set_top_value(struct device *dev,
 				  const struct counter_top_cfg *cfg)
 {
 	const struct mcux_lptmr_config *config = dev->config;
-	struct mcux_lptmr_data *data = dev->driver_data;
+	struct mcux_lptmr_data *data = dev->data;
 
 	if (cfg->ticks == 0) {
 		return -EINVAL;
@@ -115,7 +115,7 @@ static void mcux_lptmr_isr(void *arg)
 {
 	struct device *dev = arg;
 	const struct mcux_lptmr_config *config = dev->config;
-	struct mcux_lptmr_data *data = dev->driver_data;
+	struct mcux_lptmr_data *data = dev->data;
 	uint32_t flags;
 
 	flags = LPTMR_GetStatusFlags(config->base);

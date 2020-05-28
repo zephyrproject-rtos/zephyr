@@ -50,7 +50,7 @@ struct dma_mcux_edma_data {
 
 #define DEV_CFG(dev)                                                           \
 	((const struct dma_mcux_edma_config *const)dev->config)
-#define DEV_DATA(dev) ((struct dma_mcux_edma_data *)dev->driver_data)
+#define DEV_DATA(dev) ((struct dma_mcux_edma_data *)dev->data)
 #define DEV_BASE(dev) ((DMA_Type *)DEV_CFG(dev)->base)
 
 #define DEV_DMAMUX_BASE(dev) ((DMAMUX_Type *)DEV_CFG(dev)->dmamux_base)

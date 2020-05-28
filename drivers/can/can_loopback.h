@@ -10,7 +10,7 @@
 
 #include <drivers/can.h>
 
-#define DEV_DATA(dev) ((struct can_loopback_data *const)(dev)->driver_data)
+#define DEV_DATA(dev) ((struct can_loopback_data *const)(dev)->data)
 #define DEV_CFG(dev) \
 	((const struct can_loopback_config *const)(dev)->config)
 

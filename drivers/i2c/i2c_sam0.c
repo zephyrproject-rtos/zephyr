@@ -62,7 +62,7 @@ struct i2c_sam0_dev_data {
 #define DEV_CFG(dev) \
 	((const struct i2c_sam0_dev_config *const)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct i2c_sam0_dev_data *const)(dev)->driver_data)
+	((struct i2c_sam0_dev_data *const)(dev)->data)
 
 static void wait_synchronization(SercomI2cm *regs)
 {

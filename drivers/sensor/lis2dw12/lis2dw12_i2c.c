@@ -43,7 +43,7 @@ stmdev_ctx_t lis2dw12_i2c_ctx = {
 
 int lis2dw12_i2c_init(struct device *dev)
 {
-	struct lis2dw12_data *data = dev->driver_data;
+	struct lis2dw12_data *data = dev->data;
 
 	data->ctx = &lis2dw12_i2c_ctx;
 	data->ctx->handle = data;

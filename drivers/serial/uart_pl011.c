@@ -143,7 +143,7 @@ struct pl011_data {
 #define DEV_CFG(dev) \
 	((const struct uart_device_config * const)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct pl011_data *)(dev)->driver_data)
+	((struct pl011_data *)(dev)->data)
 #define PL011_REGS(dev) \
 	((volatile struct pl011_regs  *)(DEV_CFG(dev))->base)
 

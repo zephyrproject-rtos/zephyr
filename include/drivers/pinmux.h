@@ -84,7 +84,7 @@ __subsystem struct pinmux_driver_api {
 static inline int pinmux_pin_set(struct device *dev, uint32_t pin, uint32_t func)
 {
 	const struct pinmux_driver_api *api =
-		(const struct pinmux_driver_api *)dev->driver_api;
+		(const struct pinmux_driver_api *)dev->api;
 
 	return api->set(dev, pin, func);
 }
@@ -92,7 +92,7 @@ static inline int pinmux_pin_set(struct device *dev, uint32_t pin, uint32_t func
 static inline int pinmux_pin_get(struct device *dev, uint32_t pin, uint32_t *func)
 {
 	const struct pinmux_driver_api *api =
-		(const struct pinmux_driver_api *)dev->driver_api;
+		(const struct pinmux_driver_api *)dev->api;
 
 	return api->get(dev, pin, func);
 }
@@ -100,7 +100,7 @@ static inline int pinmux_pin_get(struct device *dev, uint32_t pin, uint32_t *fun
 static inline int pinmux_pin_pullup(struct device *dev, uint32_t pin, uint8_t func)
 {
 	const struct pinmux_driver_api *api =
-		(const struct pinmux_driver_api *)dev->driver_api;
+		(const struct pinmux_driver_api *)dev->api;
 
 	return api->pullup(dev, pin, func);
 }
@@ -109,7 +109,7 @@ static inline int pinmux_pin_input_enable(struct device *dev, uint32_t pin,
 					  uint8_t func)
 {
 	const struct pinmux_driver_api *api =
-		(const struct pinmux_driver_api *)dev->driver_api;
+		(const struct pinmux_driver_api *)dev->api;
 
 	return api->input(dev, pin, func);
 }

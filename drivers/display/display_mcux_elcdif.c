@@ -45,7 +45,7 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x,
 			     const void *buf)
 {
 	const struct mcux_elcdif_config *config = dev->config;
-	struct mcux_elcdif_data *data = dev->driver_data;
+	struct mcux_elcdif_data *data = dev->data;
 
 	uint8_t write_idx = data->write_idx;
 	uint8_t read_idx = !write_idx;
@@ -168,7 +168,7 @@ static void mcux_elcdif_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
 	const struct mcux_elcdif_config *config = dev->config;
-	struct mcux_elcdif_data *data = dev->driver_data;
+	struct mcux_elcdif_data *data = dev->data;
 	uint32_t status;
 
 	status = ELCDIF_GetInterruptStatus(config->base);
@@ -180,7 +180,7 @@ static void mcux_elcdif_isr(void *arg)
 static int mcux_elcdif_init(struct device *dev)
 {
 	const struct mcux_elcdif_config *config = dev->config;
-	struct mcux_elcdif_data *data = dev->driver_data;
+	struct mcux_elcdif_data *data = dev->data;
 	int i;
 
 	elcdif_rgb_mode_config_t rgb_mode = config->rgb_mode;

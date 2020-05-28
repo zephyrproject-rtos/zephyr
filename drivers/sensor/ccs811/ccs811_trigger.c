@@ -20,7 +20,7 @@ int ccs811_attr_set(struct device *dev,
 		    enum sensor_attribute attr,
 		    const struct sensor_value *thr)
 {
-	struct ccs811_data *drv_data = dev->driver_data;
+	struct ccs811_data *drv_data = dev->data;
 	int rc;
 
 	if (chan != SENSOR_CHAN_CO2) {
@@ -48,7 +48,7 @@ int ccs811_attr_set(struct device *dev,
 static inline void setup_irq(struct device *dev,
 			     bool enable)
 {
-	struct ccs811_data *data = dev->driver_data;
+	struct ccs811_data *data = dev->data;
 	unsigned int flags = enable
 			     ? GPIO_INT_LEVEL_ACTIVE
 			     : GPIO_INT_DISABLE;
@@ -58,7 +58,7 @@ static inline void setup_irq(struct device *dev,
 
 static inline void handle_irq(struct device *dev)
 {
-	struct ccs811_data *data = dev->driver_data;
+	struct ccs811_data *data = dev->data;
 
 	setup_irq(dev, false);
 
@@ -71,7 +71,7 @@ static inline void handle_irq(struct device *dev)
 
 static void process_irq(struct device *dev)
 {
-	struct ccs811_data *data = dev->driver_data;
+	struct ccs811_data *data = dev->data;
 
 	if (data->handler != NULL) {
 		data->handler(dev, &data->trigger);
@@ -98,7 +98,7 @@ static void gpio_callback(struct device *dev,
 static void irq_thread(int dev_ptr, int unused)
 {
 	struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct ccs811_data *drv_data = dev->driver_data;
+	struct ccs811_data *drv_data = dev->data;
 
 	ARG_UNUSED(unused);
 
@@ -122,7 +122,7 @@ int ccs811_trigger_set(struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler)
 {
-	struct ccs811_data *drv_data = dev->driver_data;
+	struct ccs811_data *drv_data = dev->data;
 	uint8_t drdy_thresh = CCS811_MODE_THRESH | CCS811_MODE_DATARDY;
 	int rc;
 
@@ -170,7 +170,7 @@ int ccs811_trigger_set(struct device *dev,
 
 int ccs811_init_interrupt(struct device *dev)
 {
-	struct ccs811_data *drv_data = dev->driver_data;
+	struct ccs811_data *drv_data = dev->data;
 
 	drv_data->dev = dev;
 

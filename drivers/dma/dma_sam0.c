@@ -27,7 +27,7 @@ struct dma_sam0_data {
 };
 
 #define DEV_DATA(dev) \
-	((struct dma_sam0_data *const)(dev)->driver_data)
+	((struct dma_sam0_data *const)(dev)->data)
 
 
 /* Handles DMA interrupts and dispatches to the individual channel */

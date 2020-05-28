@@ -286,7 +286,7 @@ static void uart_mcux_irq_callback_set(struct device *dev,
 				       uart_irq_callback_user_data_t cb,
 				       void *cb_data)
 {
-	struct uart_mcux_data *data = dev->driver_data;
+	struct uart_mcux_data *data = dev->data;
 
 	data->callback = cb;
 	data->cb_data = cb_data;
@@ -295,7 +295,7 @@ static void uart_mcux_irq_callback_set(struct device *dev,
 static void uart_mcux_isr(void *arg)
 {
 	struct device *dev = arg;
-	struct uart_mcux_data *data = dev->driver_data;
+	struct uart_mcux_data *data = dev->data;
 
 	if (data->callback) {
 		data->callback(dev, data->cb_data);

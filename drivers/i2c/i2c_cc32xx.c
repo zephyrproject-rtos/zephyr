@@ -41,7 +41,7 @@ LOG_MODULE_REGISTER(i2c_cc32xx);
 #define DEV_CFG(dev) \
 	((const struct i2c_cc32xx_config *const)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct i2c_cc32xx_data *const)(dev)->driver_data)
+	((struct i2c_cc32xx_data *const)(dev)->data)
 #define DEV_BASE(dev) \
 	((DEV_CFG(dev))->base)
 

@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(sample_driver);
  */
 
 #define DEV_DATA(dev) \
-	((struct sample_driver_foo_dev_data *const)(dev)->driver_data)
+	((struct sample_driver_foo_dev_data *const)(dev)->data)
 
 struct sample_driver_foo_dev_data {
 	sample_driver_callback_t cb;

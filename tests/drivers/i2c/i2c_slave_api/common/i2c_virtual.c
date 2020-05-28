@@ -15,7 +15,7 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(main);
 
-#define DEV_DATA(dev) ((struct i2c_virtual_data * const)(dev)->driver_data)
+#define DEV_DATA(dev) ((struct i2c_virtual_data * const)(dev)->data)
 
 struct i2c_virtual_data {
 	sys_slist_t slaves;

@@ -46,7 +46,7 @@
 static inline int has_i2c_master(struct device *dev)
 {
 	struct pwm_pca9685_drv_data * const drv_data =
-		(struct pwm_pca9685_drv_data * const)dev->driver_data;
+		(struct pwm_pca9685_drv_data * const)dev->data;
 	struct device * const i2c_master = drv_data->i2c_master;
 
 	if (i2c_master) {
@@ -67,7 +67,7 @@ static int pwm_pca9685_pin_set_cycles(struct device *dev, uint32_t pwm,
 	const struct pwm_pca9685_config * const config =
 		dev->config;
 	struct pwm_pca9685_drv_data * const drv_data =
-		(struct pwm_pca9685_drv_data * const)dev->driver_data;
+		(struct pwm_pca9685_drv_data * const)dev->data;
 	struct device * const i2c_master = drv_data->i2c_master;
 	uint16_t i2c_addr = config->i2c_slave_addr;
 	uint8_t buf[] = { 0, 0, 0, 0, 0};
@@ -130,7 +130,7 @@ int pwm_pca9685_init(struct device *dev)
 	const struct pwm_pca9685_config * const config =
 		dev->config;
 	struct pwm_pca9685_drv_data * const drv_data =
-		(struct pwm_pca9685_drv_data * const)dev->driver_data;
+		(struct pwm_pca9685_drv_data * const)dev->data;
 	struct device *i2c_master;
 	uint8_t buf[] = {0, 0};
 	int ret;

@@ -80,7 +80,7 @@ static int ens210_measure(struct device *i2c_dev, enum sensor_channel chan)
 
 static int ens210_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
-	struct ens210_data *drv_data = dev->driver_data;
+	struct ens210_data *drv_data = dev->data;
 	struct ens210_value_data data[2];
 	int ret, cnt;
 
@@ -161,7 +161,7 @@ static int ens210_channel_get(struct device *dev,
 			      enum sensor_channel chan,
 			      struct sensor_value *val)
 {
-	struct ens210_data *drv_data = dev->driver_data;
+	struct ens210_data *drv_data = dev->data;
 	int32_t temp_frac;
 	int32_t humidity_frac;
 
@@ -265,7 +265,7 @@ static const struct sensor_driver_api en210_driver_api = {
 
 static int ens210_init(struct device *dev)
 {
-	struct ens210_data *drv_data = dev->driver_data;
+	struct ens210_data *drv_data = dev->data;
 	const struct ens210_sens_run sense_run = {
 		.t_run = ENS210_T_RUN,
 		.h_run = ENS210_H_RUN

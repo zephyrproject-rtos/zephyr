@@ -57,7 +57,7 @@ int isl29035_attr_set(struct device *dev,
 		      enum sensor_attribute attr,
 		      const struct sensor_value *val)
 {
-	struct isl29035_driver_data *drv_data = dev->driver_data;
+	struct isl29035_driver_data *drv_data = dev->data;
 	uint8_t lsb_reg, msb_reg;
 	uint16_t raw_val;
 
@@ -97,7 +97,7 @@ static void isl29035_gpio_callback(struct device *dev,
 
 static void isl29035_thread_cb(struct device *dev)
 {
-	struct isl29035_driver_data *drv_data = dev->driver_data;
+	struct isl29035_driver_data *drv_data = dev->data;
 	uint8_t val;
 
 	/* clear interrupt */
@@ -118,7 +118,7 @@ static void isl29035_thread_cb(struct device *dev)
 static void isl29035_thread(int ptr, int unused)
 {
 	struct device *dev = INT_TO_POINTER(ptr);
-	struct isl29035_driver_data *drv_data = dev->driver_data;
+	struct isl29035_driver_data *drv_data = dev->data;
 
 	ARG_UNUSED(unused);
 
@@ -143,7 +143,7 @@ int isl29035_trigger_set(struct device *dev,
 			 const struct sensor_trigger *trig,
 			 sensor_trigger_handler_t handler)
 {
-	struct isl29035_driver_data *drv_data = dev->driver_data;
+	struct isl29035_driver_data *drv_data = dev->data;
 
 	/* disable interrupt callback while changing parameters */
 	setup_int(drv_data, false);
@@ -163,7 +163,7 @@ int isl29035_trigger_set(struct device *dev,
 
 int isl29035_init_interrupt(struct device *dev)
 {
-	struct isl29035_driver_data *drv_data = dev->driver_data;
+	struct isl29035_driver_data *drv_data = dev->data;
 
 	/* set interrupt persistence */
 	if (i2c_reg_update_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,

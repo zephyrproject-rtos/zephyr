@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(LSM6DS0, CONFIG_SENSOR_LOG_LEVEL);
 
 static inline int lsm6ds0_reboot(struct device *dev)
 {
-	struct lsm6ds0_data *data = dev->driver_data;
+	struct lsm6ds0_data *data = dev->data;
 	const struct lsm6ds0_config *config = dev->config;
 
 	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
@@ -42,7 +42,7 @@ static inline int lsm6ds0_reboot(struct device *dev)
 static inline int lsm6ds0_accel_axis_ctrl(struct device *dev, int x_en,
 					  int y_en, int z_en)
 {
-	struct lsm6ds0_data *data = dev->driver_data;
+	struct lsm6ds0_data *data = dev->data;
 	const struct lsm6ds0_config *config = dev->config;
 	uint8_t state = (x_en << LSM6DS0_SHIFT_CTRL_REG5_XL_XEN_XL) |
 			(y_en << LSM6DS0_SHIFT_CTRL_REG5_XL_YEN_XL) |
@@ -58,7 +58,7 @@ static inline int lsm6ds0_accel_axis_ctrl(struct device *dev, int x_en,
 
 static int lsm6ds0_accel_set_fs_raw(struct device *dev, uint8_t fs)
 {
-	struct lsm6ds0_data *data = dev->driver_data;
+	struct lsm6ds0_data *data = dev->data;
 	const struct lsm6ds0_config *config = dev->config;
 
 	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
@@ -73,7 +73,7 @@ static int lsm6ds0_accel_set_fs_raw(struct device *dev, uint8_t fs)
 
 static int lsm6ds0_accel_set_odr_raw(struct device *dev, uint8_t odr)
 {
-	struct lsm6ds0_data *data = dev->driver_data;
+	struct lsm6ds0_data *data = dev->data;
 	const struct lsm6ds0_config *config = dev->config;
 
 	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
@@ -89,7 +89,7 @@ static int lsm6ds0_accel_set_odr_raw(struct device *dev, uint8_t odr)
 static inline int lsm6ds0_gyro_axis_ctrl(struct device *dev, int x_en, int y_en,
 					 int z_en)
 {
-	struct lsm6ds0_data *data = dev->driver_data;
+	struct lsm6ds0_data *data = dev->data;
 	const struct lsm6ds0_config *config = dev->config;
 	uint8_t state = (x_en << LSM6DS0_SHIFT_CTRL_REG4_XEN_G) |
 			(y_en << LSM6DS0_SHIFT_CTRL_REG4_YEN_G) |
@@ -105,7 +105,7 @@ static inline int lsm6ds0_gyro_axis_ctrl(struct device *dev, int x_en, int y_en,
 
 static int lsm6ds0_gyro_set_fs_raw(struct device *dev, uint8_t fs)
 {
-	struct lsm6ds0_data *data = dev->driver_data;
+	struct lsm6ds0_data *data = dev->data;
 	const struct lsm6ds0_config *config = dev->config;
 
 	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
@@ -120,7 +120,7 @@ static int lsm6ds0_gyro_set_fs_raw(struct device *dev, uint8_t fs)
 
 static int lsm6ds0_gyro_set_odr_raw(struct device *dev, uint8_t odr)
 {
-	struct lsm6ds0_data *data = dev->driver_data;
+	struct lsm6ds0_data *data = dev->data;
 	const struct lsm6ds0_config *config = dev->config;
 
 	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
@@ -135,7 +135,7 @@ static int lsm6ds0_gyro_set_odr_raw(struct device *dev, uint8_t odr)
 
 static int lsm6ds0_sample_fetch_accel(struct device *dev)
 {
-	struct lsm6ds0_data *data = dev->driver_data;
+	struct lsm6ds0_data *data = dev->data;
 	const struct lsm6ds0_config *config = dev->config;
 	uint8_t buf[6];
 
@@ -163,7 +163,7 @@ static int lsm6ds0_sample_fetch_accel(struct device *dev)
 
 static int lsm6ds0_sample_fetch_gyro(struct device *dev)
 {
-	struct lsm6ds0_data *data = dev->driver_data;
+	struct lsm6ds0_data *data = dev->data;
 	const struct lsm6ds0_config *config = dev->config;
 	uint8_t buf[6];
 
@@ -192,7 +192,7 @@ static int lsm6ds0_sample_fetch_gyro(struct device *dev)
 #if defined(CONFIG_LSM6DS0_ENABLE_TEMP)
 static int lsm6ds0_sample_fetch_temp(struct device *dev)
 {
-	struct lsm6ds0_data *data = dev->driver_data;
+	struct lsm6ds0_data *data = dev->data;
 	const struct lsm6ds0_config *config = dev->config;
 	uint8_t buf[2];
 
@@ -372,7 +372,7 @@ static int lsm6ds0_channel_get(struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
-	struct lsm6ds0_data *data = dev->driver_data;
+	struct lsm6ds0_data *data = dev->data;
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
@@ -406,7 +406,7 @@ static const struct sensor_driver_api lsm6ds0_api_funcs = {
 
 static int lsm6ds0_init_chip(struct device *dev)
 {
-	struct lsm6ds0_data *data = dev->driver_data;
+	struct lsm6ds0_data *data = dev->data;
 	const struct lsm6ds0_config *config = dev->config;
 	uint8_t chip_id;
 
@@ -483,7 +483,7 @@ static int lsm6ds0_init_chip(struct device *dev)
 static int lsm6ds0_init(struct device *dev)
 {
 	const struct lsm6ds0_config * const config = dev->config;
-	struct lsm6ds0_data *data = dev->driver_data;
+	struct lsm6ds0_data *data = dev->data;
 
 	data->i2c_master = device_get_binding(config->i2c_master_dev_name);
 	if (!data->i2c_master) {

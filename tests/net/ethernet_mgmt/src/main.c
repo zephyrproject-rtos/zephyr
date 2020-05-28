@@ -42,7 +42,7 @@ static struct eth_fake_context eth_fake_data;
 static void eth_fake_iface_init(struct net_if *iface)
 {
 	struct device *dev = net_if_get_device(iface);
-	struct eth_fake_context *ctx = dev->driver_data;
+	struct eth_fake_context *ctx = dev->data;
 
 	ctx->iface = iface;
 
@@ -119,7 +119,7 @@ static int eth_fake_set_config(struct device *dev,
 			       enum ethernet_config_type type,
 			       const struct ethernet_config *config)
 {
-	struct eth_fake_context *ctx = dev->driver_data;
+	struct eth_fake_context *ctx = dev->data;
 	int priority_queues_num = ARRAY_SIZE(ctx->priority_queues);
 	enum ethernet_qav_param_type qav_param_type;
 	int queue_id;
@@ -214,7 +214,7 @@ static int eth_fake_get_config(struct device *dev,
 			       enum ethernet_config_type type,
 			       struct ethernet_config *config)
 {
-	struct eth_fake_context *ctx = dev->driver_data;
+	struct eth_fake_context *ctx = dev->data;
 	int priority_queues_num = ARRAY_SIZE(ctx->priority_queues);
 	enum ethernet_qav_param_type qav_param_type;
 	int queue_id;
@@ -274,7 +274,7 @@ static struct ethernet_api eth_fake_api_funcs = {
 
 static int eth_fake_init(struct device *dev)
 {
-	struct eth_fake_context *ctx = dev->driver_data;
+	struct eth_fake_context *ctx = dev->data;
 	int i;
 
 	ctx->auto_negotiation = true;
@@ -446,7 +446,7 @@ static void test_change_qav_params(void)
 {
 	struct net_if *iface = net_if_get_default();
 	struct device *dev = net_if_get_device(iface);
-	struct eth_fake_context *ctx = dev->driver_data;
+	struct eth_fake_context *ctx = dev->data;
 	struct ethernet_req_params params;
 	int available_priority_queues;
 	int i;

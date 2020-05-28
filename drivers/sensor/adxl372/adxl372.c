@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(ADXL372, CONFIG_SENSOR_LOG_LEVEL);
 static int adxl372_bus_access(struct device *dev, uint8_t reg,
 			      void *data, size_t length)
 {
-	struct adxl372_data *adxl372_data = dev->driver_data;
+	struct adxl372_data *adxl372_data = dev->data;
 
 #ifdef CONFIG_ADXL372_SPI
 	const struct spi_buf buf[2] = {
@@ -536,7 +536,7 @@ static int adxl372_configure_fifo(struct device *dev,
 			       enum adxl372_fifo_format format,
 			       uint16_t fifo_samples)
 {
-	struct adxl372_data *data = dev->driver_data;
+	struct adxl372_data *data = dev->data;
 	uint8_t fifo_config;
 	int ret;
 
@@ -691,7 +691,7 @@ static int adxl372_attr_set(struct device *dev, enum sensor_channel chan,
 
 static int adxl372_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
-	struct adxl372_data *data = dev->driver_data;
+	struct adxl372_data *data = dev->data;
 	const struct adxl372_dev_config *cfg = dev->config;
 
 	return adxl372_get_accel_data(dev, cfg->max_peak_detect_mode,
@@ -714,7 +714,7 @@ static int adxl372_channel_get(struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
-	struct adxl372_data *data = dev->driver_data;
+	struct adxl372_data *data = dev->data;
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
@@ -877,7 +877,7 @@ static int adxl372_probe(struct device *dev)
 
 static int adxl372_init(struct device *dev)
 {
-	struct adxl372_data *data = dev->driver_data;
+	struct adxl372_data *data = dev->data;
 	const struct adxl372_dev_config *cfg = dev->config;
 
 #ifdef CONFIG_ADXL372_I2C

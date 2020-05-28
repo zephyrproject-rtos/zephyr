@@ -26,7 +26,7 @@ static int video_sw_generator_set_fmt(struct device *dev,
 				      enum video_endpoint_id ep,
 				      struct video_format *fmt)
 {
-	struct video_sw_generator_data *data = dev->driver_data;
+	struct video_sw_generator_data *data = dev->data;
 
 	if (ep != VIDEO_EP_OUT) {
 		return -EINVAL;
@@ -41,7 +41,7 @@ static int video_sw_generator_get_fmt(struct device *dev,
 				      enum video_endpoint_id ep,
 				      struct video_format *fmt)
 {
-	struct video_sw_generator_data *data = dev->driver_data;
+	struct video_sw_generator_data *data = dev->data;
 
 	if (ep != VIDEO_EP_OUT) {
 		return -EINVAL;
@@ -54,14 +54,14 @@ static int video_sw_generator_get_fmt(struct device *dev,
 
 static int video_sw_generator_stream_start(struct device *dev)
 {
-	struct video_sw_generator_data *data = dev->driver_data;
+	struct video_sw_generator_data *data = dev->data;
 
 	return k_delayed_work_submit(&data->buf_work, K_MSEC(33));
 }
 
 static int video_sw_generator_stream_stop(struct device *dev)
 {
-	struct video_sw_generator_data *data = dev->driver_data;
+	struct video_sw_generator_data *data = dev->data;
 
 	k_delayed_work_cancel(&data->buf_work);
 
@@ -127,7 +127,7 @@ static int video_sw_generator_enqueue(struct device *dev,
 				      enum video_endpoint_id ep,
 				      struct video_buffer *vbuf)
 {
-	struct video_sw_generator_data *data = dev->driver_data;
+	struct video_sw_generator_data *data = dev->data;
 
 	if (ep != VIDEO_EP_OUT) {
 		return -EINVAL;
@@ -143,7 +143,7 @@ static int video_sw_generator_dequeue(struct device *dev,
 				      struct video_buffer **vbuf,
 				      k_timeout_t timeout)
 {
-	struct video_sw_generator_data *data = dev->driver_data;
+	struct video_sw_generator_data *data = dev->data;
 
 	if (ep != VIDEO_EP_OUT) {
 		return -EINVAL;
@@ -161,7 +161,7 @@ static int video_sw_generator_flush(struct device *dev,
 				    enum video_endpoint_id ep,
 				    bool cancel)
 {
-	struct video_sw_generator_data *data = dev->driver_data;
+	struct video_sw_generator_data *data = dev->data;
 	struct video_buffer *vbuf;
 
 	if (!cancel) {
@@ -210,7 +210,7 @@ static int video_sw_generator_set_signal(struct device *dev,
 					 enum video_endpoint_id ep,
 					 struct k_poll_signal *signal)
 {
-	struct video_sw_generator_data *data = dev->driver_data;
+	struct video_sw_generator_data *data = dev->data;
 
 	if (data->signal && signal != NULL) {
 		return -EALREADY;
@@ -226,7 +226,7 @@ static inline int video_sw_generator_set_ctrl(struct device *dev,
 					      unsigned int cid,
 					      void *value)
 {
-	struct video_sw_generator_data *data = dev->driver_data;
+	struct video_sw_generator_data *data = dev->data;
 
 	switch (cid) {
 	case VIDEO_CID_VFLIP:
@@ -263,7 +263,7 @@ static struct video_sw_generator_data video_sw_generator_data_0 = {
 
 static int video_sw_generator_init(struct device *dev)
 {
-	struct video_sw_generator_data *data = dev->driver_data;
+	struct video_sw_generator_data *data = dev->data;
 
 	data->dev = dev;
 	k_fifo_init(&data->fifo_in);

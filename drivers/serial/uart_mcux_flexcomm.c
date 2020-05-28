@@ -224,7 +224,7 @@ static void mcux_flexcomm_irq_callback_set(struct device *dev,
 				       uart_irq_callback_user_data_t cb,
 				       void *cb_data)
 {
-	struct mcux_flexcomm_data *data = dev->driver_data;
+	struct mcux_flexcomm_data *data = dev->data;
 
 	data->callback = cb;
 	data->cb_data = cb_data;
@@ -233,7 +233,7 @@ static void mcux_flexcomm_irq_callback_set(struct device *dev,
 static void mcux_flexcomm_isr(void *arg)
 {
 	struct device *dev = arg;
-	struct mcux_flexcomm_data *data = dev->driver_data;
+	struct mcux_flexcomm_data *data = dev->data;
 
 	if (data->callback) {
 		data->callback(dev, data->cb_data);

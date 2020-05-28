@@ -764,7 +764,7 @@ static int disk_spi_sdhc_init(struct device *dev);
 
 static int sdhc_spi_init(struct device *dev)
 {
-	struct sdhc_spi_data *data = dev->driver_data;
+	struct sdhc_spi_data *data = dev->data;
 
 	data->spi = device_get_binding(DT_BUS_LABEL(DT_INST(0, zephyr_mmc_spi_slot)));
 
@@ -787,7 +787,7 @@ static int sdhc_spi_init(struct device *dev)
 static int disk_spi_sdhc_access_status(struct disk_info *disk)
 {
 	struct device *dev = disk->dev;
-	struct sdhc_spi_data *data = dev->driver_data;
+	struct sdhc_spi_data *data = dev->data;
 
 	return data->status;
 }
@@ -796,7 +796,7 @@ static int disk_spi_sdhc_access_read(struct disk_info *disk,
 	uint8_t *buf, uint32_t sector, uint32_t count)
 {
 	struct device *dev = disk->dev;
-	struct sdhc_spi_data *data = dev->driver_data;
+	struct sdhc_spi_data *data = dev->data;
 	int err;
 
 	LOG_DBG("sector=%u count=%u", sector, count);
@@ -814,7 +814,7 @@ static int disk_spi_sdhc_access_write(struct disk_info *disk,
 	const uint8_t *buf, uint32_t sector, uint32_t count)
 {
 	struct device *dev = disk->dev;
-	struct sdhc_spi_data *data = dev->driver_data;
+	struct sdhc_spi_data *data = dev->data;
 	int err;
 
 	LOG_DBG("sector=%u count=%u", sector, count);
@@ -832,7 +832,7 @@ static int disk_spi_sdhc_access_ioctl(struct disk_info *disk,
 	uint8_t cmd, void *buf)
 {
 	struct device *dev = disk->dev;
-	struct sdhc_spi_data *data = dev->driver_data;
+	struct sdhc_spi_data *data = dev->data;
 	int err;
 
 	err = sdhc_map_disk_status(data->status);
@@ -862,7 +862,7 @@ static int disk_spi_sdhc_access_ioctl(struct disk_info *disk,
 static int disk_spi_sdhc_access_init(struct disk_info *disk)
 {
 	struct device *dev = disk->dev;
-	struct sdhc_spi_data *data = dev->driver_data;
+	struct sdhc_spi_data *data = dev->data;
 	int err;
 
 	err = sdhc_spi_detect(data);
@@ -886,7 +886,7 @@ static struct disk_info spi_sdhc_disk = {
 
 static int disk_spi_sdhc_init(struct device *dev)
 {
-	struct sdhc_spi_data *data = dev->driver_data;
+	struct sdhc_spi_data *data = dev->data;
 
 	data->status = DISK_STATUS_UNINIT;
 

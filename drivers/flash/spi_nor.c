@@ -93,7 +93,7 @@ static const struct flash_parameters flash_nor_parameters = {
 static inline void record_entered_dpd(const struct device *const dev)
 {
 #if DT_INST_NODE_HAS_PROP(0, has_dpd)
-	struct spi_nor_data *const driver_data = dev->driver_data;
+	struct spi_nor_data *const driver_data = dev->data;
 
 	driver_data->ts_enter_dpd = k_uptime_get_32();
 #endif
@@ -105,7 +105,7 @@ static inline void record_entered_dpd(const struct device *const dev)
 static inline void delay_until_exit_dpd_ok(const struct device *const dev)
 {
 #if DT_INST_NODE_HAS_PROP(0, has_dpd)
-	struct spi_nor_data *const driver_data = dev->driver_data;
+	struct spi_nor_data *const driver_data = dev->data;
 	int32_t since = (int32_t)(k_uptime_get_32() - driver_data->ts_enter_dpd);
 
 	/* If the time is negative the 32-bit counter has wrapped,
@@ -147,7 +147,7 @@ static int spi_nor_access(const struct device *const dev,
 			  uint8_t opcode, bool is_addressed, off_t addr,
 			  void *data, size_t length, bool is_write)
 {
-	struct spi_nor_data *const driver_data = dev->driver_data;
+	struct spi_nor_data *const driver_data = dev->data;
 
 	uint8_t buf[4] = {
 		opcode,
@@ -248,7 +248,7 @@ static int exit_dpd(const struct device *const dev)
 static void acquire_device(struct device *dev)
 {
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-		struct spi_nor_data *const driver_data = dev->driver_data;
+		struct spi_nor_data *const driver_data = dev->data;
 
 		k_sem_take(&driver_data->sem, K_FOREVER);
 	}
@@ -270,7 +270,7 @@ static void release_device(struct device *dev)
 	}
 
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-		struct spi_nor_data *const driver_data = dev->driver_data;
+		struct spi_nor_data *const driver_data = dev->data;
 
 		k_sem_give(&driver_data->sem);
 	}
@@ -485,7 +485,7 @@ static int spi_nor_write_protection_set(struct device *dev, bool write_protect)
  */
 static int spi_nor_configure(struct device *dev)
 {
-	struct spi_nor_data *data = dev->driver_data;
+	struct spi_nor_data *data = dev->data;
 	const struct spi_nor_config *params = dev->config;
 
 	data->spi = device_get_binding(DT_INST_BUS_LABEL(0));
@@ -536,7 +536,7 @@ static int spi_nor_configure(struct device *dev)
 static int spi_nor_init(struct device *dev)
 {
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-		struct spi_nor_data *const driver_data = dev->driver_data;
+		struct spi_nor_data *const driver_data = dev->data;
 
 		k_sem_init(&driver_data->sem, 1, UINT_MAX);
 	}

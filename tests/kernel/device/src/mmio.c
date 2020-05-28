@@ -118,7 +118,7 @@ const struct foo_mult_config_info foo12_config = {
 	DEVICE_MMIO_NAMED_ROM_INIT(grault, 2)
 };
 
-#define DEV_DATA(dev)	((struct foo_mult_dev_data *)((dev)->driver_data))
+#define DEV_DATA(dev)	((struct foo_mult_dev_data *)((dev)->data))
 #define DEV_CFG(dev)	((struct foo_mult_config_info *)((dev)->config))
 
 int foo_mult_init(struct device *device)

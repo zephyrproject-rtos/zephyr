@@ -82,7 +82,7 @@ static inline int z_impl_kscan_config(struct device *dev,
 					kscan_callback_t callback)
 {
 	const struct kscan_driver_api *api =
-				(struct kscan_driver_api *)dev->driver_api;
+				(struct kscan_driver_api *)dev->api;
 
 	return api->config(dev, callback);
 }
@@ -98,7 +98,7 @@ __syscall int kscan_enable_callback(struct device *dev);
 static inline int z_impl_kscan_enable_callback(struct device *dev)
 {
 	const struct kscan_driver_api *api =
-			(const struct kscan_driver_api *)dev->driver_api;
+			(const struct kscan_driver_api *)dev->api;
 
 	if (api->enable_callback == NULL) {
 		return -ENOTSUP;
@@ -119,7 +119,7 @@ __syscall int kscan_disable_callback(struct device *dev);
 static inline int z_impl_kscan_disable_callback(struct device *dev)
 {
 	const struct kscan_driver_api *api =
-			(const struct kscan_driver_api *)dev->driver_api;
+			(const struct kscan_driver_api *)dev->api;
 
 	if (api->disable_callback == NULL) {
 		return -ENOTSUP;

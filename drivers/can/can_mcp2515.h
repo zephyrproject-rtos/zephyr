@@ -16,7 +16,7 @@
 
 #define DEV_CFG(dev) \
 	((const struct mcp2515_config *const)(dev)->config)
-#define DEV_DATA(dev) ((struct mcp2515_data *const)(dev)->driver_data)
+#define DEV_DATA(dev) ((struct mcp2515_data *const)(dev)->data)
 
 struct mcp2515_tx_cb {
 	struct k_sem sem;

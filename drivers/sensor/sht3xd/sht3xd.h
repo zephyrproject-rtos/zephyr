@@ -95,7 +95,7 @@ static inline uint8_t sht3xd_i2c_address(struct device *dev)
 
 static inline struct device *sht3xd_i2c_device(struct device *dev)
 {
-	const struct sht3xd_data *ddp = dev->driver_data;
+	const struct sht3xd_data *ddp = dev->data;
 
 	return ddp->bus;
 }

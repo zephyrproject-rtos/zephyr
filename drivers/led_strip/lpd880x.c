@@ -42,7 +42,7 @@ struct lpd880x_data {
 
 static int lpd880x_update(struct device *dev, void *data, size_t size)
 {
-	struct lpd880x_data *drv_data = dev->driver_data;
+	struct lpd880x_data *drv_data = dev->data;
 	/*
 	 * Per the AdaFruit reverse engineering notes on the protocol,
 	 * a zero byte propagates through at most 32 LED driver ICs.
@@ -128,7 +128,7 @@ static int lpd880x_strip_update_channels(struct device *dev, uint8_t *channels,
 
 static int lpd880x_strip_init(struct device *dev)
 {
-	struct lpd880x_data *data = dev->driver_data;
+	struct lpd880x_data *data = dev->data;
 	struct spi_config *config = &data->config;
 
 	data->spi = device_get_binding(DT_INST_BUS_LABEL(0));

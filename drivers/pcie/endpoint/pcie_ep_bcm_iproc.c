@@ -52,7 +52,7 @@ static int iproc_pcie_map_addr(struct device *dev, uint64_t pcie_addr,
 			       enum pcie_ob_mem_type ob_mem_type)
 {
 	const struct iproc_pcie_ep_config *cfg = dev->config;
-	struct iproc_pcie_ep_ctx *ctx = dev->driver_data;
+	struct iproc_pcie_ep_ctx *ctx = dev->data;
 	uint64_t pcie_ob_base, pcie_ob_size, pcie_addr_start, offset;
 	uint32_t mapped_size;
 	enum pcie_outbound_map idx;
@@ -119,7 +119,7 @@ out:
 
 static void iproc_pcie_unmap_addr(struct device *dev, uint64_t mapped_addr)
 {
-	struct iproc_pcie_ep_ctx *ctx = dev->driver_data;
+	struct iproc_pcie_ep_ctx *ctx = dev->data;
 	k_spinlock_key_t key;
 
 	key = k_spin_lock(&ctx->ob_map_lock);
@@ -215,7 +215,7 @@ static int iproc_pcie_raise_irq(struct device *dev,
 				enum pci_ep_irq_type irq_type,
 				uint32_t irq_num)
 {
-	struct iproc_pcie_ep_ctx *ctx = dev->driver_data;
+	struct iproc_pcie_ep_ctx *ctx = dev->data;
 	k_spinlock_key_t key;
 	int ret;
 
@@ -244,7 +244,7 @@ static int iproc_pcie_register_reset_cb(struct device *dev,
 					enum pcie_reset reset,
 					pcie_ep_reset_callback_t cb, void *arg)
 {
-	struct iproc_pcie_ep_ctx *ctx = dev->driver_data;
+	struct iproc_pcie_ep_ctx *ctx = dev->data;
 
 	if (reset < PCIE_PERST || reset >= PCIE_RESET_MAX)
 		return -EINVAL;
@@ -260,7 +260,7 @@ static int iproc_pcie_register_reset_cb(struct device *dev,
 static void iproc_pcie_perst(void *arg)
 {
 	struct device *dev = arg;
-	struct iproc_pcie_ep_ctx *ctx = dev->driver_data;
+	struct iproc_pcie_ep_ctx *ctx = dev->data;
 	void *reset_data;
 	uint32_t data;
 
@@ -282,7 +282,7 @@ static void iproc_pcie_perst(void *arg)
 static void iproc_pcie_hot_reset(void *arg)
 {
 	struct device *dev = arg;
-	struct iproc_pcie_ep_ctx *ctx = dev->driver_data;
+	struct iproc_pcie_ep_ctx *ctx = dev->data;
 	void *reset_data;
 	uint32_t data;
 
@@ -305,7 +305,7 @@ static void iproc_pcie_flr(void *arg)
 {
 	struct device *dev = arg;
 	const struct iproc_pcie_ep_config *cfg = dev->config;
-	struct iproc_pcie_ep_ctx *ctx = dev->driver_data;
+	struct iproc_pcie_ep_ctx *ctx = dev->data;
 	void *reset_data;
 	uint32_t data;
 
@@ -430,7 +430,7 @@ static int iproc_pcie_mode_check(const struct iproc_pcie_ep_config *cfg)
 static int iproc_pcie_ep_init(struct device *dev)
 {
 	const struct iproc_pcie_ep_config *cfg = dev->config;
-	struct iproc_pcie_ep_ctx *ctx = dev->driver_data;
+	struct iproc_pcie_ep_ctx *ctx = dev->data;
 	int ret;
 	uint32_t data;
 

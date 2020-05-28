@@ -2382,7 +2382,7 @@ static struct ptp_context ptp_gmac_0_context;
 static int ptp_clock_sam_gmac_set(struct device *dev,
 				  struct net_ptp_time *tm)
 {
-	struct ptp_context *ptp_context = dev->driver_data;
+	struct ptp_context *ptp_context = dev->data;
 	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(ptp_context->eth_dev);
 	Gmac *gmac = cfg->regs;
 
@@ -2396,7 +2396,7 @@ static int ptp_clock_sam_gmac_set(struct device *dev,
 static int ptp_clock_sam_gmac_get(struct device *dev,
 				  struct net_ptp_time *tm)
 {
-	struct ptp_context *ptp_context = dev->driver_data;
+	struct ptp_context *ptp_context = dev->data;
 	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(ptp_context->eth_dev);
 	Gmac *gmac = cfg->regs;
 
@@ -2408,7 +2408,7 @@ static int ptp_clock_sam_gmac_get(struct device *dev,
 
 static int ptp_clock_sam_gmac_adjust(struct device *dev, int increment)
 {
-	struct ptp_context *ptp_context = dev->driver_data;
+	struct ptp_context *ptp_context = dev->data;
 	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(ptp_context->eth_dev);
 	Gmac *gmac = cfg->regs;
 
@@ -2440,8 +2440,8 @@ static const struct ptp_clock_driver_api ptp_api = {
 static int ptp_gmac_init(struct device *port)
 {
 	struct device *eth_dev = DEVICE_GET(eth0_sam_gmac);
-	struct eth_sam_dev_data *dev_data = eth_dev->driver_data;
-	struct ptp_context *ptp_context = port->driver_data;
+	struct eth_sam_dev_data *dev_data = eth_dev->data;
+	struct ptp_context *ptp_context = port->data;
 
 	dev_data->ptp_clock = port;
 	ptp_context->eth_dev = eth_dev;

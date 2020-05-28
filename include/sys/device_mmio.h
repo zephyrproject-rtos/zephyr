@@ -132,7 +132,7 @@ struct z_device_mmio_rom {
  * This gets accessed by the DEVICE_MMIO_MAP() and DEVICE_MMIO_GET() macros.
  *
  * Depending on configuration, no memory may be reserved at all.
- * This must be the first member of the driver_data struct.
+ * This must be the first member of the data struct.
  *
  * There must be a corresponding DEVICE_MMIO_ROM in config_info if the
  * physical address is known at build time, but may be omitted if not (such
@@ -170,7 +170,7 @@ struct z_device_mmio_rom {
  * @param device device instance object
  * @retval mm_reg_t  pointer to storage location
  */
-#define DEVICE_MMIO_RAM_PTR(device)	(mm_reg_t *)((device)->driver_data)
+#define DEVICE_MMIO_RAM_PTR(device)	(mm_reg_t *)((device)->data)
 #endif /* DEVICE_MMIO_IS_IN_RAM */
 
 /**
@@ -182,7 +182,7 @@ struct z_device_mmio_rom {
  *
  * What gets stored here varies considerably by configuration.
  * This must be the first member of the config struct. There must be
- * a corresponding DEVICE_MMIO_RAM in driver_data.
+ * a corresponding DEVICE_MMIO_RAM in data.
  *
  * This storage is not used if the device is PCIe and may be omitted.
  *

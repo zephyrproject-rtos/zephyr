@@ -86,7 +86,7 @@ uint16_t get_temp(struct device *dev)
 
 static int th02_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
-	struct th02_data *drv_data = dev->driver_data;
+	struct th02_data *drv_data = dev->data;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_AMBIENT_TEMP);
 
@@ -101,7 +101,7 @@ static int th02_sample_fetch(struct device *dev, enum sensor_channel chan)
 static int th02_channel_get(struct device *dev, enum sensor_channel chan,
 			    struct sensor_value *val)
 {
-	struct th02_data *drv_data = dev->driver_data;
+	struct th02_data *drv_data = dev->data;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_AMBIENT_TEMP ||
 			chan == SENSOR_CHAN_HUMIDITY);
@@ -126,7 +126,7 @@ static const struct sensor_driver_api th02_driver_api = {
 
 static int th02_init(struct device *dev)
 {
-	struct th02_data *drv_data = dev->driver_data;
+	struct th02_data *drv_data = dev->data;
 
 	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (drv_data->i2c == NULL) {

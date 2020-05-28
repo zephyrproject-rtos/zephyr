@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(dma_pl330);
 	((const struct dma_pl330_config *const)(dev)->config)
 
 #define DEV_DATA(dev) \
-	((struct dma_pl330_dev_data *const)(dev)->driver_data)
+	((struct dma_pl330_dev_data *const)(dev)->data)
 
 #define BYTE_WIDTH(burst_size) (1 << (burst_size))
 

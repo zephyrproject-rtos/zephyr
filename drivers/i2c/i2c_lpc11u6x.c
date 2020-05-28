@@ -15,7 +15,7 @@
 
 #define DEV_CFG(dev) ((dev)->config)
 #define DEV_BASE(dev) (((struct lpc11u6x_i2c_config *) DEV_CFG((dev)))->base)
-#define DEV_DATA(dev) ((dev)->driver_data)
+#define DEV_DATA(dev) ((dev)->data)
 
 static void lpc11u6x_i2c_set_bus_speed(const struct lpc11u6x_i2c_config *cfg,
 				       struct device *clk_dev,

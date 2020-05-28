@@ -82,7 +82,7 @@ static int net_iface_dev_init(struct device *dev)
 
 static uint8_t *net_iface_get_mac(struct device *dev)
 {
-	struct net_if_test *data = dev->driver_data;
+	struct net_if_test *data = dev->data;
 
 	if (data->mac_addr[2] == 0x00) {
 		/* 00-00-5E-00-53-xx Documentation RFC 7042 */
@@ -116,7 +116,7 @@ static int sender_iface(struct device *dev, struct net_pkt *pkt)
 	}
 
 	if (test_started) {
-		struct net_if_test *data = dev->driver_data;
+		struct net_if_test *data = dev->data;
 
 		DBG("Sending at iface %d %p\n",
 		    net_if_get_by_iface(net_pkt_iface(pkt)),
@@ -196,7 +196,7 @@ static struct eth_fake_context eth_fake_data;
 static void eth_fake_iface_init(struct net_if *iface)
 {
 	struct device *dev = net_if_get_device(iface);
-	struct eth_fake_context *ctx = dev->driver_data;
+	struct eth_fake_context *ctx = dev->data;
 
 	ctx->iface = iface;
 
@@ -225,7 +225,7 @@ static int eth_fake_set_config(struct device *dev,
 			       enum ethernet_config_type type,
 			       const struct ethernet_config *config)
 {
-	struct eth_fake_context *ctx = dev->driver_data;
+	struct eth_fake_context *ctx = dev->data;
 
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
@@ -254,7 +254,7 @@ static struct ethernet_api eth_fake_api_funcs = {
 
 static int eth_fake_init(struct device *dev)
 {
-	struct eth_fake_context *ctx = dev->driver_data;
+	struct eth_fake_context *ctx = dev->data;
 
 	ctx->promisc_mode = false;
 
@@ -289,7 +289,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
 		const struct ethernet_api *api =
-			net_if_get_device(iface)->driver_api;
+			net_if_get_device(iface)->api;
 
 		/* As native_posix board will introduce another ethernet
 		 * interface, make sure that we only use our own in this test.
@@ -328,15 +328,15 @@ static void test_iface_setup(void)
 
 	idx = net_if_get_by_iface(iface1);
 	((struct net_if_test *)
-	 net_if_get_device(iface1)->driver_data)->idx = idx;
+	 net_if_get_device(iface1)->data)->idx = idx;
 
 	idx = net_if_get_by_iface(iface2);
 	((struct net_if_test *)
-	 net_if_get_device(iface2)->driver_data)->idx = idx;
+	 net_if_get_device(iface2)->data)->idx = idx;
 
 	idx = net_if_get_by_iface(iface3);
 	((struct net_if_test *)
-	 net_if_get_device(iface3)->driver_data)->idx = idx;
+	 net_if_get_device(iface3)->data)->idx = idx;
 
 	DBG("Interfaces: [%d] iface1 %p, [%d] iface2 %p, [%d] iface3 %p\n",
 	    net_if_get_by_iface(iface1), iface1,

@@ -47,7 +47,7 @@ static uint8_t sx9500_reg_defaults[] = {
 
 static int sx9500_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
-	struct sx9500_data *data = (struct sx9500_data *) dev->driver_data;
+	struct sx9500_data *data = (struct sx9500_data *) dev->data;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_PROX);
 
@@ -59,7 +59,7 @@ static int sx9500_channel_get(struct device *dev,
 			      enum sensor_channel chan,
 			      struct sensor_value *val)
 {
-	struct sx9500_data *data = (struct sx9500_data *) dev->driver_data;
+	struct sx9500_data *data = (struct sx9500_data *) dev->data;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_PROX);
 
@@ -80,7 +80,7 @@ static const struct sensor_driver_api sx9500_api_funcs = {
 
 static int sx9500_init_chip(struct device *dev)
 {
-	struct sx9500_data *data = (struct sx9500_data *) dev->driver_data;
+	struct sx9500_data *data = (struct sx9500_data *) dev->data;
 	uint8_t val;
 
 	if (i2c_write(data->i2c_master, sx9500_reg_defaults,
@@ -110,7 +110,7 @@ static int sx9500_init_chip(struct device *dev)
 
 int sx9500_init(struct device *dev)
 {
-	struct sx9500_data *data = dev->driver_data;
+	struct sx9500_data *data = dev->data;
 
 	data->i2c_master = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (!data->i2c_master) {

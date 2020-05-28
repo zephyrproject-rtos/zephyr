@@ -456,7 +456,7 @@ static bool init_ieee802154(void)
 		return false;
 	}
 
-	radio_api = (struct ieee802154_radio_api *)ieee802154_dev->driver_api;
+	radio_api = (struct ieee802154_radio_api *)ieee802154_dev->api;
 
 	/**
 	 * Do actual initialization of the chip

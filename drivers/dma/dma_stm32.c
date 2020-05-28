@@ -57,7 +57,7 @@ static void dma_stm32_clear_stream_irq(struct device *dev, uint32_t id)
 static void dma_stm32_irq_handler(void *arg)
 {
 	struct device *dev = arg;
-	struct dma_stm32_data *data = dev->driver_data;
+	struct dma_stm32_data *data = dev->data;
 	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
 	struct dma_stm32_stream *stream;
@@ -240,7 +240,7 @@ static int dma_stm32_configure(struct device *dev, uint32_t id,
 			       struct dma_config *config)
 #endif /* CONFIG_DMAMUX_STM32 */
 {
-	struct dma_stm32_data *data = dev->driver_data;
+	struct dma_stm32_data *data = dev->data;
 	struct dma_stm32_stream *stream = &data->streams[id - STREAM_OFFSET];
 	const struct dma_stm32_config *dev_config =
 					dev->config;
@@ -479,7 +479,7 @@ static int dma_stm32_reload(struct device *dev, uint32_t id,
 {
 	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
-	struct dma_stm32_data *data = dev->driver_data;
+	struct dma_stm32_data *data = dev->data;
 	struct dma_stm32_stream *stream = &data->streams[id - STREAM_OFFSET];
 
 	/* give channel from index 0 */
@@ -526,7 +526,7 @@ static int dma_stm32_start(struct device *dev, uint32_t id)
 {
 	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
-	struct dma_stm32_data *data = dev->driver_data;
+	struct dma_stm32_data *data = dev->data;
 
 	/* give channel from index 0 */
 	id = id - STREAM_OFFSET;
@@ -549,7 +549,7 @@ int dma_stm32_stop(struct device *dev, uint32_t id)
 static int dma_stm32_stop(struct device *dev, uint32_t id)
 #endif /* CONFIG_DMAMUX_STM32 */
 {
-	struct dma_stm32_data *data = dev->driver_data;
+	struct dma_stm32_data *data = dev->data;
 	struct dma_stm32_stream *stream = &data->streams[id - STREAM_OFFSET];
 	const struct dma_stm32_config *config =
 				dev->config;
@@ -582,7 +582,7 @@ struct k_mem_block block;
 
 static int dma_stm32_init(struct device *dev)
 {
-	struct dma_stm32_data *data = dev->driver_data;
+	struct dma_stm32_data *data = dev->data;
 	const struct dma_stm32_config *config = dev->config;
 	struct device *clk =
 		device_get_binding(STM32_CLOCK_CONTROL_NAME);
@@ -625,7 +625,7 @@ static int dma_stm32_get_status(struct device *dev, uint32_t id,
 {
 	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
-	struct dma_stm32_data *data = dev->driver_data;
+	struct dma_stm32_data *data = dev->data;
 	struct dma_stm32_stream *stream;
 
 	/* give channel from index 0 */
@@ -694,7 +694,7 @@ DMA_INIT(0);
 
 static void dma_stm32_config_irq_0(struct device *dev)
 {
-	struct dma_stm32_data *data = dev->driver_data;
+	struct dma_stm32_data *data = dev->data;
 
 	IRQ_INIT(0, 0);
 	IRQ_INIT(0, 1);
@@ -720,7 +720,7 @@ DMA_INIT(1);
 
 static void dma_stm32_config_irq_1(struct device *dev)
 {
-	struct dma_stm32_data *data = dev->driver_data;
+	struct dma_stm32_data *data = dev->data;
 
 	IRQ_INIT(1, 0);
 	IRQ_INIT(1, 1);

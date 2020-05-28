@@ -140,7 +140,7 @@ static inline int burst_write_i2c(struct device *dev, uint16_t dev_addr,
 				  uint16_t start_addr, uint8_t *buf,
 				  uint8_t num_bytes)
 {
-	const struct i2c_driver_api *api = dev->driver_api;
+	const struct i2c_driver_api *api = dev->api;
 	uint8_t addr_buffer[2];
 	struct i2c_msg msg[2];
 
@@ -162,7 +162,7 @@ static inline int burst_read_i2c(struct device *dev, uint16_t dev_addr,
 				 uint16_t start_addr, uint8_t *buf,
 				 uint8_t num_bytes)
 {
-	const struct i2c_driver_api *api = dev->driver_api;
+	const struct i2c_driver_api *api = dev->api;
 	uint8_t addr_buffer[2];
 	struct i2c_msg msg[2];
 

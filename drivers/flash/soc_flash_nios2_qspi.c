@@ -68,7 +68,7 @@ static const struct flash_parameters flash_nios2_qspi_parameters = {
 
 static int flash_nios2_qspi_erase(struct device *dev, off_t offset, size_t len)
 {
-	struct flash_nios2_qspi_config *flash_cfg = dev->driver_data;
+	struct flash_nios2_qspi_config *flash_cfg = dev->data;
 	alt_qspi_controller2_dev *qspi_dev = &flash_cfg->qspi_dev;
 	uint32_t block_offset, offset_in_block, length_to_erase;
 	uint32_t erase_offset = offset; /* address of next byte to erase */
@@ -164,7 +164,7 @@ static int flash_nios2_qspi_write_block(struct device *dev, int block_offset,
 					int mem_offset, const void *data,
 					size_t len)
 {
-	struct flash_nios2_qspi_config *flash_cfg = dev->driver_data;
+	struct flash_nios2_qspi_config *flash_cfg = dev->data;
 	alt_qspi_controller2_dev *qspi_dev = &flash_cfg->qspi_dev;
 	uint32_t buffer_offset = 0U; /* offset into data buffer to get write data */
 	int32_t remaining_length = len; /* length left to write */
@@ -261,7 +261,7 @@ qspi_write_block_err:
 static int flash_nios2_qspi_write(struct device *dev, off_t offset,
 				  const void *data, size_t len)
 {
-	struct flash_nios2_qspi_config *flash_cfg = dev->driver_data;
+	struct flash_nios2_qspi_config *flash_cfg = dev->data;
 	alt_qspi_controller2_dev *qspi_dev = &flash_cfg->qspi_dev;
 	uint32_t block_offset, offset_in_block, length_to_write;
 	uint32_t write_offset = offset; /* address of next byte to write */
@@ -327,7 +327,7 @@ qspi_write_err:
 static int flash_nios2_qspi_read(struct device *dev, off_t offset,
 				 void *data, size_t len)
 {
-	struct flash_nios2_qspi_config *flash_cfg = dev->driver_data;
+	struct flash_nios2_qspi_config *flash_cfg = dev->data;
 	alt_qspi_controller2_dev *qspi_dev = &flash_cfg->qspi_dev;
 	uint32_t buffer_offset = 0U; /* offset into data buffer to get read data */
 	uint32_t remaining_length = len; /* length left to read */
@@ -393,7 +393,7 @@ static int flash_nios2_qspi_read(struct device *dev, off_t offset,
 
 static int flash_nios2_qspi_write_protection(struct device *dev, bool enable)
 {
-	struct flash_nios2_qspi_config *flash_cfg = dev->driver_data;
+	struct flash_nios2_qspi_config *flash_cfg = dev->data;
 	alt_qspi_controller2_dev *qspi_dev = &flash_cfg->qspi_dev;
 	uint32_t status, lock_val;
 	int32_t rc = 0, timeout;
@@ -476,7 +476,7 @@ static const struct flash_driver_api flash_nios2_qspi_api = {
 
 static int flash_nios2_qspi_init(struct device *dev)
 {
-	struct flash_nios2_qspi_config *flash_cfg = dev->driver_data;
+	struct flash_nios2_qspi_config *flash_cfg = dev->data;
 
 	k_sem_init(&flash_cfg->sem_lock, 1, 1);
 	return 0;

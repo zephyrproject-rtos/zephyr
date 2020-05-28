@@ -36,7 +36,7 @@ static void imx_mu_isr(void *arg)
 	struct device *dev = (struct device *)arg;
 	const struct imx_mu_config *config = dev->config;
 	MU_Type *base = MU(config);
-	struct imx_mu_data *data = dev->driver_data;
+	struct imx_mu_data *data = dev->data;
 	uint32_t data32[IMX_IPM_DATA_REGS];
 	uint32_t status_reg;
 	int32_t id;
@@ -142,7 +142,7 @@ static void imx_mu_ipm_register_callback(struct device *dev,
 					 ipm_callback_t cb,
 					 void *user_data)
 {
-	struct imx_mu_data *driver_data = dev->driver_data;
+	struct imx_mu_data *driver_data = dev->data;
 
 	driver_data->callback = cb;
 	driver_data->user_data = user_data;
