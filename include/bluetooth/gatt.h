@@ -917,6 +917,42 @@ static inline int bt_gatt_notify(struct bt_conn *conn,
 	return bt_gatt_notify_cb(conn, &params);
 }
 
+/** @brief Notify attribute value change by UUID.
+ *
+ *  Send notification of attribute value change, if connection is NULL notify
+ *  all peer that have notification enabled via CCC otherwise do a direct
+ *  notification only on the given connection.
+ *
+ *  The attribute object is the starting point for the search of the UUID.
+ *
+ *  @param conn Connection object.
+ *  @param uuid The UUID. If the server contains multiple services with the same
+ *              UUID, then the first occurrence, starting from the attr given,
+ *              is used.
+ *  @param attr Pointer to an attribute that serves as the starting point for
+ *              the search of a match for the UUID.
+ *  @param data Pointer to Attribute data.
+ *  @param len  Attribute value length.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+static inline int bt_gatt_notify_uuid(struct bt_conn *conn,
+				      const struct bt_uuid *uuid,
+				      const struct bt_gatt_attr *attr,
+				      const void *data, uint16_t len)
+{
+	struct bt_gatt_notify_params params;
+
+	memset(&params, 0, sizeof(params));
+
+	params.uuid = uuid;
+	params.attr = attr;
+	params.data = data;
+	params.len = len;
+
+	return bt_gatt_notify_cb(conn, &params);
+}
+
 /** @typedef bt_gatt_indicate_func_t
  *  @brief Indication complete result callback.
  *
