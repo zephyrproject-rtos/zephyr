@@ -142,10 +142,6 @@ static int sock_nfds;
 /* TODO: figure out what's correct value */
 #define TIMEOUT_BLOCKWISE_TRANSFER_MS (MSEC_PER_SEC * 30)
 
-#define GET_BLOCK_NUM(v)	((v) >> 4)
-#define GET_BLOCK_SIZE(v)	(((v) & 0x7))
-#define GET_MORE(v)		(!!((v) & 0x08))
-
 struct block_context {
 	struct coap_block_context ctx;
 	int64_t timestamp;
@@ -787,20 +783,6 @@ int lwm2m_delete_obj_inst(uint16_t obj_id, uint16_t obj_inst_id)
 }
 
 /* utility functions */
-
-static int get_option_int(const struct coap_packet *cpkt, uint8_t opt)
-{
-	struct coap_option option = {};
-	uint16_t count = 1U;
-	int r;
-
-	r = coap_find_options(cpkt, opt, &option, count);
-	if (r <= 0) {
-		return -ENOENT;
-	}
-
-	return coap_option_value_to_int(&option);
-}
 
 static uint16_t atou16(uint8_t *buf, uint16_t buflen, uint16_t *len)
 {
@@ -2303,7 +2285,7 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 
 	if (res->post_write_cb) {
 		/* Get block1 option for checking MORE block flag */
-		ret = get_option_int(msg->in.in_cpkt, COAP_OPTION_BLOCK1);
+		ret = coap_get_option_int(msg->in.in_cpkt, COAP_OPTION_BLOCK1);
 		if (ret >= 0) {
 			last_block = !GET_MORE(ret);
 
@@ -3398,7 +3380,8 @@ static int handle_request(struct coap_packet *request,
 		}
 
 		/* check for observe */
-		observe = get_option_int(msg->in.in_cpkt, COAP_OPTION_OBSERVE);
+		observe = coap_get_option_int(msg->in.in_cpkt,
+					      COAP_OPTION_OBSERVE);
 		msg->code = COAP_RESPONSE_CODE_CONTENT;
 		break;
 
@@ -3443,7 +3426,7 @@ static int handle_request(struct coap_packet *request,
 	coap_packet_get_payload(msg->in.in_cpkt, &payload_len);
 
 	/* Check for block transfer */
-	r = get_option_int(msg->in.in_cpkt, COAP_OPTION_BLOCK1);
+	r = coap_get_option_int(msg->in.in_cpkt, COAP_OPTION_BLOCK1);
 	if (r > 0) {
 		last_block = !GET_MORE(r);
 
