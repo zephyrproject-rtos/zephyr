@@ -311,7 +311,7 @@ typedef uint32_t gpio_flags_t;
 
 /**
  * This structure is common to all GPIO drivers and is expected to be
- * the first element in the object pointed to by the config_info field
+ * the first element in the object pointed to by the config field
  * in the device structure.
  */
 struct gpio_driver_config {
