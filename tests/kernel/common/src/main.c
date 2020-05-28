@@ -29,6 +29,7 @@ extern void test_printk(void);
 extern void test_timeout_order(void);
 extern void test_clock_cycle(void);
 extern void test_clock_uptime(void);
+extern void test_ms_time_duration(void);
 extern void test_multilib(void);
 extern void test_thread_context(void);
 extern void test_bootdelay(void);
@@ -124,6 +125,7 @@ void test_main(void)
 			 ztest_unit_test(test_version),
 			 ztest_unit_test(test_multilib),
 			 ztest_unit_test(test_thread_context),
+			 ztest_unit_test(test_ms_time_duration),
 			 ztest_unit_test(test_bounds_check_mitigation)
 			 );
 
