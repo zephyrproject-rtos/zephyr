@@ -112,6 +112,8 @@ static int test_callback(gpio_flags_t int_flags)
 	gpio_pin_write(dev, PIN_OUT, active_level);
 	k_sleep(K_MSEC(1000));
 	(void)gpio_pin_disable_callback(dev, PIN_IN);
+	(void)gpio_remove_callback(dev, &drv_data->gpio_cb);
+	(void)gpio_pin_configure(dev, PIN_IN, GPIO_INT_DISABLE);
 
 	/*= checkpoint: check callback is triggered =*/
 	TC_PRINT("INT cfg %x, cnt %d\n", int_flags, cb_cnt);
@@ -136,13 +138,9 @@ static int test_callback(gpio_flags_t int_flags)
 	}
 
 pass_exit:
-	gpio_remove_callback(dev, &drv_data->gpio_cb);
-	gpio_pin_configure(dev, PIN_IN, GPIO_INT_DISABLE);
 	return TC_PASS;
 
 err_exit:
-	gpio_remove_callback(dev, &drv_data->gpio_cb);
-	gpio_pin_configure(dev, PIN_IN, GPIO_INT_DISABLE);
 	return TC_FAIL;
 }
 
