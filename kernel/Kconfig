@@ -747,6 +747,15 @@ config SCHED_IPI_SUPPORTED
 	  take an interrupt, which can be arbitrarily far in the
 	  future).
 
+config TRACE_SCHED_IPI
+	bool "Enable Test IPI"
+	help
+	  When true, it will add a hook into z_sched_ipi(), in order
+	  to check if schedule IPI has called or not, for testing
+	  purpose.
+	depends on SCHED_IPI_SUPPORTED
+	depends on MP_NUM_CPUS>1
+
 endmenu
 
 config TICKLESS_IDLE

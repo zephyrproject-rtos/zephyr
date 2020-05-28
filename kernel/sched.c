@@ -1268,12 +1268,19 @@ void z_impl_k_wakeup(k_tid_t thread)
 	}
 }
 
+#ifdef CONFIG_TRACE_SCHED_IPI
+extern void z_trace_sched_ipi(void);
+#endif
+
 #ifdef CONFIG_SMP
 void z_sched_ipi(void)
 {
 	/* NOTE: When adding code to this, make sure this is called
 	 * at appropriate location when !CONFIG_SCHED_IPI_SUPPORTED.
 	 */
+#ifdef CONFIG_TRACE_SCHED_IPI
+	z_trace_sched_ipi();
+#endif
 }
 
 void z_sched_abort(struct k_thread *thread)
