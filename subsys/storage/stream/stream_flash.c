@@ -115,7 +115,7 @@ int stream_flash_buffered_write(struct stream_flash_ctx *ctx, const uint8_t *dat
 	size_t fill_length;
 	uint8_t filler;
 
-	if (!ctx || !data) {
+	if (!ctx) {
 		return -EFAULT;
 	}
 
