@@ -147,6 +147,11 @@ enum coap_response_code {
 
 #define COAP_CODE_EMPTY (0)
 
+/* block option helper */
+#define GET_BLOCK_NUM(v)        ((v) >> 4)
+#define GET_BLOCK_SIZE(v)       (((v) & 0x7))
+#define GET_MORE(v)             (!!((v) & 0x08))
+
 struct coap_observer;
 struct coap_packet;
 struct coap_pending;
@@ -563,6 +568,17 @@ int coap_append_size1_option(struct coap_packet *cpkt,
  */
 int coap_append_size2_option(struct coap_packet *cpkt,
 			     struct coap_block_context *ctx);
+
+/**
+ * @brief Get the integer representation of a CoAP option.
+ *
+ * @param cpkt Packet to be inspected
+ * @param code CoAP option code
+ *
+ * @return Integer value >= 0 in case of success or negative in case
+ * of error.
+ */
+int coap_get_option_int(const struct coap_packet *cpkt, uint16_t code);
 
 /**
  * @brief Retrieves BLOCK{1,2} and SIZE{1,2} from @a cpkt and updates
