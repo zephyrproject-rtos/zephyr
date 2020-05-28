@@ -1208,12 +1208,6 @@ class SanityConfigParser:
             d[k] = v
 
         for k, v in self.tests[name].items():
-            if k not in valid_keys:
-                raise ConfigurationError(
-                    self.filename,
-                    "Unknown config key '%s' in definition for '%s'" %
-                    (k, name))
-
             if k in d:
                 if isinstance(d[k], str):
                     # By default, we just concatenate string values of keys
@@ -1379,6 +1373,7 @@ class TestCase(DisablePyTestCollectionMixin):
         self.depends_on = None
         self.min_flash = -1
         self.extra_sections = None
+        self.integration = []
 
     @staticmethod
     def get_unique(testcase_root, workdir, name):
@@ -2213,6 +2208,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                        "arch_whitelist": {"type": "set"},
                        "arch_exclude": {"type": "set"},
                        "extra_sections": {"type": "list", "default": []},
+                       "integration": {"type": "list", "default": []},
                        "platform_exclude": {"type": "set"},
                        "platform_whitelist": {"type": "set"},
                        "toolchain_exclude": {"type": "set"},
@@ -2280,6 +2276,9 @@ class TestSuite(DisablePyTestCollectionMixin):
 
         # hardcoded for now
         self.connected_hardware = []
+
+        # run integration tests only
+        self.integration = False
 
     def get_platform_instances(self, platform):
         filtered_dict = {k:v for k,v in self.instances.items() if k.startswith(platform + "/")}
@@ -2551,6 +2550,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                         tc.depends_on = tc_dict["depends_on"]
                         tc.min_flash = tc_dict["min_flash"]
                         tc.extra_sections = tc_dict["extra_sections"]
+                        tc.integration = tc_dict["integration"]
 
                         tc.parse_subcases(tc_path)
 
@@ -2670,6 +2670,10 @@ class TestSuite(DisablePyTestCollectionMixin):
 
                 if device_testing_filter and instance.build_only:
                     discards[instance] = "Not runnable on device"
+                    continue
+
+                if self.integration and tc.integration and plat.name not in tc.integration:
+                    discards[instance] = "Excluded for integration run"
                     continue
 
                 if tc.skip:

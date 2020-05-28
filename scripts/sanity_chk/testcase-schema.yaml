@@ -38,6 +38,11 @@ mapping:
       "filter":
         type: str
         required: no
+      "integration":
+        type: seq
+        required: no
+        sequence:
+          - type: str
       "harness":
         type: str
         required: no
@@ -158,6 +163,11 @@ mapping:
           "filter":
             type: str
             required: no
+          "integration":
+            type: seq
+            required: no
+            sequence:
+              - type: str
           "harness":
             type: str
             required: no

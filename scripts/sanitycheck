@@ -434,6 +434,13 @@ Artificially long but functional example:
         action="store_true",
         help="do not update the results of the last run of the sanity "
              "checks")
+
+    parser.add_argument(
+        "-G",
+        "--integration",
+        action="store_true",
+        help="Run integration tests")
+
     case_select.add_argument(
         "-F",
         "--load-tests",
@@ -786,6 +793,7 @@ def main():
     suite.west_flash = options.west_flash
     suite.west_runner = options.west_runner
     suite.verbose = VERBOSE
+    suite.integration = options.integration
 
     if options.ninja:
         suite.generator_cmd = "ninja"
