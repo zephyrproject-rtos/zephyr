@@ -104,14 +104,14 @@ split into read-only and runtime-mutable parts. At a high level we have:
 
   struct device {
 	const char *name;
-	const void *config_info;
+	const void *config;
         const void *driver_api;
         void * const driver_data;
   };
 
-The ``config_info`` member is for read-only configuration data set at build time. For
+The ``config`` member is for read-only configuration data set at build time. For
 example, base memory mapped IO addresses, IRQ line numbers, or other fixed
-physical characteristics of the device. This is the ``config_info`` structure
+physical characteristics of the device. This is the ``config`` pointer
 passed to ``DEVICE_DEFINE()`` and related macros.
 
 The ``driver_data`` struct is kept in RAM, and is used by the driver for
@@ -269,7 +269,7 @@ Single Driver, Multiple Instances
 
 Some drivers may be instantiated multiple times in a given system. For example
 there can be multiple GPIO banks, or multiple UARTS. Each instance of the driver
-will have a different ``config_info`` struct and ``driver_data`` struct.
+will have a different ``config`` struct and ``driver_data`` struct.
 
 Configuring interrupts for multiple drivers instances is a special case. If each
 instance needs to configure a different interrupt line, this can be accomplished
@@ -300,7 +300,7 @@ In the implementation of the common init function:
 
   int my_driver_init(struct device *device)
   {
-        const struct my_driver_config *config = device->config_info;
+        const struct my_driver_config *config = device->config;
 
         DEVICE_MMIO_MAP(device, K_MEM_CACHE_NONE);
 
