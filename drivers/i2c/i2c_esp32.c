@@ -17,6 +17,7 @@
 #include <drivers/gpio.h>
 #include <drivers/gpio/gpio_esp32.h>
 #include <drivers/i2c.h>
+#include <drivers/clock_control.h>
 #include <sys/util.h>
 #include <string.h>
 
@@ -61,6 +62,7 @@ struct i2c_esp32_data {
 
 	struct k_sem fifo_sem;
 	struct k_sem transfer_sem;
+	struct device *clock_dev;
 };
 
 typedef void (*irq_connect_cb)(void);
@@ -69,6 +71,7 @@ struct i2c_esp32_config {
 	int index;
 
 	irq_connect_cb connect_irq;
+	const char *clock_name;
 
 	const struct {
 		int sda_out;
@@ -82,7 +85,7 @@ struct i2c_esp32_config {
 		int sda;
 	} pins;
 
-	const struct esp32_peripheral peripheral;
+	const clock_control_subsys_t peripheral_id;
 
 	const struct {
 		bool tx_lsb_first;
@@ -126,7 +129,7 @@ static int i2c_esp32_configure_pins(int pin, int matrix_out, int matrix_in)
 	return 0;
 }
 
-static int i2c_esp32_configure_speed(const struct i2c_esp32_config *config,
+static int i2c_esp32_configure_speed(struct device *dev,
 				     uint32_t speed)
 {
 	static const uint32_t speed_to_freq_tbl[] = {
@@ -136,6 +139,11 @@ static int i2c_esp32_configure_speed(const struct i2c_esp32_config *config,
 		[I2C_SPEED_HIGH] = 0,
 		[I2C_SPEED_ULTRA] = 0
 	};
+
+	const struct i2c_esp32_config *config = dev->config_info;
+	struct i2c_esp32_data *data = dev->driver_data;
+
+	uint32_t sys_clk_freq = 0;
 	uint32_t freq_hz = speed_to_freq_tbl[speed];
 	uint32_t period;
 
@@ -143,8 +151,13 @@ static int i2c_esp32_configure_speed(const struct i2c_esp32_config *config,
 		return -ENOTSUP;
 	}
 
-	period = (APB_CLK_FREQ / freq_hz);
+	if (clock_control_get_rate(data->clock_dev,
+				   config->peripheral_id,
+				   &sys_clk_freq)) {
+		return -EINVAL;
+	}
 
+	period = (sys_clk_freq / freq_hz);
 	period /= 2U; /* Set hold and setup times to 1/2th of period */
 
 	esp32_set_mask32(period << I2C_SCL_LOW_PERIOD_S,
@@ -192,7 +205,7 @@ static int i2c_esp32_configure(struct device *dev, uint32_t dev_config)
 		return ret;
 	}
 
-	esp32_enable_peripheral(&config->peripheral);
+	clock_control_on(data->clock_dev, config->peripheral_id);
 
 	/* MSB or LSB first is configurable for both TX and RX */
 	if (config->mode.tx_lsb_first) {
@@ -228,7 +241,7 @@ static int i2c_esp32_configure(struct device *dev, uint32_t dev_config)
 	v |= I2C_CLK_EN;
 	sys_write32(v, I2C_CTR_REG(config->index));
 
-	ret = i2c_esp32_configure_speed(config, I2C_SPEED_GET(dev_config));
+	ret = i2c_esp32_configure_speed(dev, I2C_SPEED_GET(dev_config));
 	if (ret < 0) {
 		goto out;
 	}
@@ -578,6 +591,8 @@ static void i2c_esp32_connect_irq_0(void)
 static const struct i2c_esp32_config i2c_esp32_config_0 = {
 	.index = 0,
 	.connect_irq = i2c_esp32_connect_irq_0,
+	.clock_name = DT_INST_CLOCKS_LABEL(0),
+	.peripheral_id = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(0, offset),
 	.sig = {
 		.sda_out = I2CEXT0_SDA_OUT_IDX,
 		.sda_in = I2CEXT0_SDA_IN_IDX,
@@ -587,10 +602,6 @@ static const struct i2c_esp32_config i2c_esp32_config_0 = {
 	.pins = {
 		.scl = DT_INST_PROP(0, scl_pin),
 		.sda = DT_INST_PROP(0, sda_pin),
-	},
-	.peripheral = {
-		.clk = DPORT_I2C_EXT0_CLK_EN,
-		.rst = DPORT_I2C_EXT0_RST,
 	},
 	.mode = {
 		.tx_lsb_first =
@@ -626,6 +637,8 @@ static void i2c_esp32_connect_irq_1(void)
 static const struct i2c_esp32_config i2c_esp32_config_1 = {
 	.index = 1,
 	.connect_irq = i2c_esp32_connect_irq_1,
+	.clock_name = DT_INST_CLOCKS_LABEL(1),
+	.peripheral_id = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(1, offset),
 	.sig = {
 		.sda_out = I2CEXT1_SDA_OUT_IDX,
 		.sda_in = I2CEXT1_SDA_IN_IDX,
@@ -635,10 +648,6 @@ static const struct i2c_esp32_config i2c_esp32_config_1 = {
 	.pins = {
 		.scl = DT_INST_PROP(1, scl_pin),
 		.sda = DT_INST_PROP(1, sda_pin),
-	},
-	.peripheral = {
-		.clk = DPORT_I2C_EXT1_CLK_EN,
-		.rst = DPORT_I2C_EXT1_RST,
 	},
 	.mode = {
 		.tx_lsb_first =
@@ -667,6 +676,10 @@ static int i2c_esp32_init(struct device *dev)
 	const struct i2c_esp32_config *config = dev->config_info;
 	struct i2c_esp32_data *data = dev->driver_data;
 	uint32_t bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
+	data->clock_dev = device_get_binding(config->clock_name);
+
+	__ASSERT_NO_MSG(data->clock_dev);
+
 	unsigned int key = irq_lock();
 
 	k_sem_init(&data->fifo_sem, 1, 1);
