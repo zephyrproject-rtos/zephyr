@@ -555,10 +555,13 @@ static void umode_enter_func(void)
 }
 
 /**
- * @brief Test to check enter to usermode
- *
- * @ingroup kernel_memprotect_tests
- */
+* @brief Test to check supervisor thread enter one-way to usermode
+*
+* @details A thread running in supervisor mode must have one-way operation
+* ability to drop privileges to user mode.
+*
+* @ingroup kernel_memprotect_tests
+*/
 static void test_user_mode_enter(void)
 {
 	expect_fault = false;
