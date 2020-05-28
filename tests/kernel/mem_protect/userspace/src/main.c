@@ -1084,6 +1084,15 @@ void scenario_entry(void *stack_obj, size_t obj_size)
 			    true);
 }
 
+/**
+ * @brief Test kernel provides user thread read/write access to its own stack
+ * memory buffer
+ *
+ * @details Thread can access its own stack memory buffer and perform
+ * read/write operations.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 void test_stack_buffer(void)
 {
 	printk("Reserved space: %zu\n", K_THREAD_STACK_RESERVED);
