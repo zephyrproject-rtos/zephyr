@@ -146,6 +146,44 @@ struct zsock_addrinfo {
 };
 
 /**
+ * @brief Obtain a file descriptor's associated net context
+ *
+ * With CONFIG_USERSPACE enabled, the kernel's object permission system
+ * must apply to socket file descriptors. When a socket is opened, by default
+ * only the caller has permission, access by other threads will fail unless
+ * they have been specifically granted permission.
+ *
+ * This is achieved by tagging data structure definitions that implement the
+ * underlying object associated with a network socket file descriptor with
+ * '__net_socket`. All pointers to instances of these will be known to the
+ * kernel as kernel objects with type K_OBJ_NET_SOCKET.
+ *
+ * This API is intended for threads that need to grant access to the object
+ * associated with a particular file descriptor to another thread. The
+ * returned pointer represents the underlying K_OBJ_NET_SOCKET  and
+ * may be passed to APIs like k_object_access_grant().
+ *
+ * In a system like Linux which has the notion of threads running in processes
+ * in a shared virtual address space, this sort of management is unnecessary as
+ * the scope of file descriptors is implemented at the process level.
+ *
+ * However in Zephyr the file descriptor scope is global, and MPU-based systems
+ * are not able to implement a process-like model due to the lack of memory
+ * virtualization hardware. They use discrete object permissions and memory
+ * domains instead to define thread access scope.
+ *
+ * User threads will have no direct access to the returned object
+ * and will fault if they try to access its memory; the pointer can only be
+ * used to make permission assignment calls, which follow exactly the rules
+ * for other kernel objects like device drivers and IPC.
+ *
+ * @param sock file descriptor
+ * @return pointer to associated network socket object, or NULL if the
+ *         file descriptor wasn't valid or the caller had no access permission
+ */
+__syscall void *zsock_get_context_object(int sock);
+
+/**
  * @brief Create a network socket
  *
  * @details
@@ -156,6 +194,11 @@ struct zsock_addrinfo {
  * This function is also exposed as ``socket()``
  * if :option:`CONFIG_NET_SOCKETS_POSIX_NAMES` is defined.
  * @endrst
+ *
+ * If CONFIG_USERSPACE is enabled, the caller will be granted access to the
+ * context object associated with the returned file descriptor.
+ * @see zsock_get_context_object()
+ *
  */
 __syscall int zsock_socket(int family, int type, int proto);
 
