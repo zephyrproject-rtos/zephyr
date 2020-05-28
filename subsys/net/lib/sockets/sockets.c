@@ -615,9 +615,82 @@ static inline ssize_t z_vrfy_zsock_sendmsg(int sock,
 					   const struct msghdr *msg,
 					   int flags)
 {
-	/* TODO: Create a copy of msg_buf and copy the data there */
+	struct msghdr msg_copy;
+	size_t i;
+	int ret;
 
-	return z_impl_zsock_sendmsg(sock, (const struct msghdr *)msg, flags);
+	Z_OOPS(z_user_from_copy(&msg_copy, (void *)msg, sizeof(msg_copy)));
+
+	msg_copy.msg_name = NULL;
+	msg_copy.msg_control = NULL;
+
+	msg_copy.msg_iov = z_user_alloc_from_copy(msg->msg_iov,
+				       msg->msg_iovlen * sizeof(struct iovec));
+	if (!msg_copy.msg_iov) {
+		errno = ENOMEM;
+		goto fail;
+	}
+
+	for (i = 0; i < msg->msg_iovlen; i++) {
+		msg_copy.msg_iov[i].iov_base =
+			z_user_alloc_from_copy(msg->msg_iov[i].iov_base,
+					       msg->msg_iov[i].iov_len);
+		if (!msg_copy.msg_iov[i].iov_base) {
+			errno = ENOMEM;
+			goto fail;
+		}
+
+		msg_copy.msg_iov[i].iov_len = msg->msg_iov[i].iov_len;
+	}
+
+	msg_copy.msg_name = z_user_alloc_from_copy(msg->msg_name,
+						   msg->msg_namelen);
+	if (!msg_copy.msg_name) {
+		errno = ENOMEM;
+		goto fail;
+	}
+
+	msg_copy.msg_control = z_user_alloc_from_copy(msg->msg_control,
+						      msg->msg_controllen);
+	if (!msg_copy.msg_control) {
+		errno = ENOMEM;
+		goto fail;
+	}
+
+	ret = z_impl_zsock_sendmsg(sock, (const struct msghdr *)&msg_copy,
+				   flags);
+
+	k_free(msg_copy.msg_name);
+	k_free(msg_copy.msg_control);
+
+	for (i = 0; i < msg_copy.msg_iovlen; i++) {
+		k_free(msg_copy.msg_iov[i].iov_base);
+	}
+
+	k_free(msg_copy.msg_iov);
+
+	return ret;
+
+fail:
+	if (msg_copy.msg_name) {
+		k_free(msg_copy.msg_name);
+	}
+
+	if (msg_copy.msg_control) {
+		k_free(msg_copy.msg_control);
+	}
+
+	if (msg_copy.msg_iov) {
+		for (i = 0; i < msg_copy.msg_iovlen; i++) {
+			if (msg_copy.msg_iov[i].iov_base) {
+				k_free(msg_copy.msg_iov[i].iov_base);
+			}
+		}
+
+		k_free(msg_copy.msg_iov);
+	}
+
+	return -1;
 }
 #include <syscalls/zsock_sendmsg_mrsh.c>
 #endif /* CONFIG_USERSPACE */
