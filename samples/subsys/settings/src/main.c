@@ -85,7 +85,7 @@ int alpha_handle_set(const char *name, size_t len, settings_read_cb read_cb,
 
 		if (!next) {
 			rc = read_cb(cb_arg, &length_val, sizeof(length_val));
-			printk("<alpha/length> = %lld\n", length_val);
+			printk("<alpha/length> = %" PRId64 "\n", length_val);
 			return 0;
 		}
 
@@ -318,7 +318,7 @@ static void example_direct_load_subtree(void)
 	rc = settings_load_subtree_direct("alpha/length", direct_loader,
 					  (void *)&dld);
 	if (rc == 0) {
-		printk("  direct.length = %lld\n", dld.length);
+		printk("  direct.length = %" PRId64 "\n", dld.length);
 		printk("  direct.length_1 = %d\n", dld.length_1);
 		printk("  direct.length_2 = %d\n", dld.length_2);
 	} else {

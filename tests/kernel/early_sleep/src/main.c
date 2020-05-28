@@ -102,7 +102,7 @@ static void test_early_sleep(void)
 	 */
 	k_thread_priority_set(k_current_get(), 0);
 
-	TC_PRINT("msec per tick: %lld.%03lld, ticks to sleep: %d\n",
+	TC_PRINT("msec per tick: %" PRId64 ".%03" PRId64 ", ticks to sleep: %d\n",
 			k_ticks_to_ms_floor64(1000) / 1000U,
 			k_ticks_to_ms_floor64(1000) % 1000,
 			TEST_TICKS_TO_SLEEP);

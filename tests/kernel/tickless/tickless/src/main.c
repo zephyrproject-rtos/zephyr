@@ -137,7 +137,7 @@ void ticklessTestThread(void)
 	printk("Calibrated time stamp period = 0x%x%x\n",
 	       (uint32_t)(cal_tsc >> 32), (uint32_t)(cal_tsc & 0xFFFFFFFFLL));
 #elif defined(CONFIG_ARCH_POSIX)
-	printk("Calibrated time stamp period = %llu\n", cal_tsc);
+	printk("Calibrated time stamp period = %" PRIu64 "\n", cal_tsc);
 #elif defined(CONFIG_ARM)
 	printk("Calibrated time stamp period = 0x%x\n", cal_tsc);
 #endif
@@ -184,8 +184,8 @@ void ticklessTestThread(void)
 	printk("Cal   time stamp: 0x%x%x\n",
 	       (uint32_t)(cal_tsc >> 32), (uint32_t)(cal_tsc & 0xFFFFFFFFLL));
 #elif defined(CONFIG_ARCH_POSIX)
-	printk("diff  time stamp: %llu\n", diff_tsc);
-	printk("Cal   time stamp: %llu\n", cal_tsc);
+	printk("diff  time stamp: %" PRIu64 "\n", diff_tsc);
+	printk("Cal   time stamp: %" PRIu64 "\n", cal_tsc);
 #elif defined(CONFIG_ARM)
 	printk("diff  time stamp: 0x%x\n", diff_tsc);
 	printk("Cal   time stamp: 0x%x\n", cal_tsc);

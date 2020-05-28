@@ -50,7 +50,7 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 {
 	int64_t t = k_uptime_delta(&elapsed_slice);
 
-	TC_PRINT("elapsed slice %lld, expected: <%lld, %lld>\n",
+	TC_PRINT("elapsed slice %" PRId64 ", expected: <%" PRId64 ", %" PRId64 ">\n",
 		t, SLICE_SIZE, SLICE_SIZE_LIMIT);
 
 	/**TESTPOINT: verify slicing scheduler behaves as expected*/
