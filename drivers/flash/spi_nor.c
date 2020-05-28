@@ -385,9 +385,19 @@ static int spi_nor_erase(struct device *dev, off_t addr, size_t size)
 	const struct spi_nor_config *params = dev->config_info;
 	int ret = 0;
 
-	/* should be between 0 and flash size */
+	/* erase area must be subregion of device */
 	if ((addr < 0) || ((size + addr) > params->size)) {
 		return -ENODEV;
+	}
+
+	/* address must be sector-aligned */
+	if (!SPI_NOR_IS_SECTOR_ALIGNED(addr)) {
+		return -EINVAL;
+	}
+
+	/* size must be a multiple of sectors */
+	if ((size % SPI_NOR_SECTOR_SIZE) != 0) {
+		return -EINVAL;
 	}
 
 	acquire_device(dev);
