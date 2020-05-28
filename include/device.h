@@ -67,10 +67,10 @@ extern "C" {
  * pm_control_fn) and no API (@p api).
  */
 #define DEVICE_INIT(dev_name, drv_name, init_fn,			\
-		    data, cfg_info, level, prio)			\
+		    data, cfg_ptr, level, prio)				\
 	DEVICE_DEFINE(dev_name, drv_name, init_fn,			\
 		      device_pm_control_nop,				\
-		      data, cfg_info, level, prio, NULL)
+		      data, cfg_ptr, level, prio, NULL)
 
 /**
  * @def DEVICE_AND_API_INIT
@@ -79,10 +79,10 @@ extern "C" {
  * pm_control_fn).
  */
 #define DEVICE_AND_API_INIT(dev_name, drv_name, init_fn,		\
-			    data, cfg_info, level, prio, api)		\
+			    data, cfg_ptr, level, prio, api)		\
 	DEVICE_DEFINE(dev_name, drv_name, init_fn,			\
 		      device_pm_control_nop,				\
-		      data, cfg_info, level, prio, api)
+		      data, cfg_ptr, level, prio, api)
 
 /**
  * @def DEVICE_DEFINE
@@ -111,7 +111,7 @@ extern "C" {
  *
  * @param data Pointer to the device's private data.
  *
- * @param cfg_info The address to the structure containing the
+ * @param cfg_ptr The address to the structure containing the
  * configuration information for this instance of the driver.
  *
  * @param level The initialization level.  See SYS_INIT() for
@@ -124,13 +124,13 @@ extern "C" {
  * used by the driver. Can be NULL.
  */
 #define DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_control_fn,	\
-		      data, cfg_info, level, prio, api)			\
+		      data, cfg_ptr, level, prio, api)			\
 	Z_DEVICE_DEFINE_PM(dev_name)					\
 	static Z_DECL_ALIGN(struct device)				\
 		DEVICE_NAME_GET(dev_name) __used			\
 	__attribute__((__section__(".device_" #level STRINGIFY(prio)))) = { \
 		.name = drv_name,					\
-		.config_info = (cfg_info),				\
+		.config = (cfg_ptr),					\
 		.driver_api = (api),					\
 		.driver_data = (data),					\
 		Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)	\
@@ -201,7 +201,7 @@ struct device {
 	/** Name of the device instance */
 	const char *name;
 	/** Address of device instance config information */
-	const void *config_info;
+	const void *config;
 	/** Address of the API structure exposed by the device instance */
 	const void *driver_api;
 	/** Address of the device instance private data */
