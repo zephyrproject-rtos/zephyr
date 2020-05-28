@@ -438,20 +438,24 @@ static int nrf5_stop(struct device *dev)
 	return 0;
 }
 
+#if !CONFIG_MPSL
 static void nrf5_radio_irq(void *arg)
 {
 	ARG_UNUSED(arg);
 
 	nrf_802154_radio_irq_handler();
 }
+#endif
 
 static void nrf5_irq_config(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
+#if !CONFIG_MPSL
 	IRQ_CONNECT(RADIO_IRQn, NRF_802154_IRQ_PRIORITY,
 		    nrf5_radio_irq, NULL, 0);
 	irq_enable(RADIO_IRQn);
+#endif
 }
 
 static int nrf5_init(struct device *dev)
