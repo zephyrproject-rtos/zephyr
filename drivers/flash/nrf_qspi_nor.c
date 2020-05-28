@@ -29,6 +29,7 @@
 /* for accessing devicetree properties of the bus node */
 #define QSPI_NODE DT_BUS(DT_DRV_INST(0))
 #define QSPI_PROP_AT(prop, idx) DT_PROP_BY_IDX(QSPI_NODE, prop, idx)
+#define QSPI_PROP_LEN(prop) DT_PROP_LEN(QSPI_NODE, prop)
 
 LOG_MODULE_REGISTER(qspi_nor, CONFIG_FLASH_LOG_LEVEL);
 
@@ -381,8 +382,13 @@ static inline void qspi_fill_init_struct(nrfx_qspi_config_t *initstruct)
 	initstruct->pins.csn_pin = QSPI_PROP_AT(csn_pins, 0);
 	initstruct->pins.io0_pin = QSPI_PROP_AT(io_pins, 0);
 	initstruct->pins.io1_pin = QSPI_PROP_AT(io_pins, 1);
+#if QSPI_PROP_LEN(io_pins) > 2
 	initstruct->pins.io2_pin = QSPI_PROP_AT(io_pins, 2);
 	initstruct->pins.io3_pin = QSPI_PROP_AT(io_pins, 3);
+#else
+	initstruct->pins.io2_pin = NRF_QSPI_PIN_NOT_CONNECTED;
+	initstruct->pins.io3_pin = NRF_QSPI_PIN_NOT_CONNECTED;
+#endif
 
 	/* Configure Protocol interface */
 #if DT_INST_NODE_HAS_PROP(0, readoc_enum)
