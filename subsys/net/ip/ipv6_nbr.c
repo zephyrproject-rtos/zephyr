@@ -2361,6 +2361,12 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt,
 
 			break;
 		case NET_ICMPV6_ND_OPT_PREFIX_INFO:
+			if (nd_opt_hdr->len != 4) {
+				NET_ERR("DROP: Invalid %s length (%d)",
+					"prefix opt", nd_opt_hdr->len);
+				goto drop;
+			}
+
 			if (!handle_ra_prefix(pkt)) {
 				goto drop;
 			}
@@ -2370,8 +2376,8 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt,
 		case NET_ICMPV6_ND_OPT_6CO:
 			/* RFC 6775, 4.2 (Length)*/
 			if (!(nd_opt_hdr->len == 2U || nd_opt_hdr->len == 3U)) {
-				NET_ERR("DROP: Invalid 6CO length %d",
-					nd_opt_hdr->len);
+				NET_ERR("DROP: Invalid %s length %d",
+					"6CO", nd_opt_hdr->len);
 				goto drop;
 			}
 
