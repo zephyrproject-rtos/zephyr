@@ -81,6 +81,24 @@ extern "C" {
 	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn,		\
 			    data, cfg_info, level, prio, NULL)
 
+/* Initialize structure device_context */
+#if defined(CONFIG_DEVICE_CONCURRENT_ACCESS)
+#define DEVICE_CONTEXT_INITIALIZE(_obj)				\
+	{							\
+		.lock = Z_SEM_INITIALIZER(_obj.lock, 1, 1),	\
+	}
+
+#define DEVICE_CONTEXT_DEFINE(dev_name, level, prio)			\
+	static Z_DECL_ALIGN(struct device_context)			\
+		_CONCAT(__device_context_, dev_name) __used		\
+	__attribute__(							\
+		(__section__(".device_context_" #level STRINGIFY(prio)))) = \
+		DEVICE_CONTEXT_INITIALIZE(_CONCAT(__device_context_,	\
+						  dev_name))		\
+
+#else
+#define DEVICE_CONTEXT_DEFINE(dev_name, level, prio)
+#endif
 
 /**
  * @def DEVICE_AND_API_INIT
@@ -97,6 +115,7 @@ extern "C" {
 #ifndef CONFIG_DEVICE_POWER_MANAGEMENT
 #define DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info, \
 			    level, prio, api)				\
+	DEVICE_CONTEXT_DEFINE(dev_name, level, prio);			\
 	static Z_DECL_ALIGN(struct device)				\
 		_CONCAT(__device_, dev_name) __used			\
 	__attribute__((__section__(".device_" #level STRINGIFY(prio)))) = { \
@@ -151,6 +170,7 @@ extern "C" {
 			K_POLL_MODE_NOTIFY_ONLY,			\
 			&_CONCAT(__pm_, dev_name).signal),		\
 	};								\
+	DEVICE_CONTEXT_DEFINE(dev_name, level, prio);			\
 	static Z_DECL_ALIGN(struct device)				\
 		_CONCAT(__device_, dev_name) __used			\
 	__attribute__((__section__(".device_" #level STRINGIFY(prio)))) = { \
@@ -261,6 +281,35 @@ struct device {
 	struct device_pm * const pm;
 #endif
 };
+
+/**
+ * @brief Runtime device context structure per-driver instance
+ *
+ * @param lock A semaphore used to protect against concurrent access
+ */
+struct device_context {
+#ifdef CONFIG_DEVICE_CONCURRENT_ACCESS
+	struct k_sem lock;
+#endif
+};
+
+/**
+ * @brief Lock an interrupt based device structure to avoid concurrent access.
+ *
+ * @param dev A valid pointer on a struct device instance
+ *
+ * @return 0 if device got locked, a negative errno otherwise.
+ */
+int device_lock(struct device *dev);
+
+/**
+ * @brief Release a previously locked device
+ *
+ * @param dev A valid pointer on a struct device instance.
+ *
+ * @return status of the device
+ */
+int device_release(struct device *dev);
 
 /**
  * @brief Retrieve the device structure for a driver by name

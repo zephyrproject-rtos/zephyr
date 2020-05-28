@@ -88,6 +88,21 @@
 		KEEP(*(SORT(.init_[_A-Z0-9]*)))	\
 
 
+#ifdef CONFIG_DEVICE_CONCURRENT_ACCESS
+
+#define DEVICE_CONTEXT_SECTIONS()				\
+		__device_context_start = .;			\
+		CREATE_OBJ_LEVEL(device_context, PRE_KERNEL_1)	\
+		CREATE_OBJ_LEVEL(device_context, PRE_KERNEL_2)	\
+		CREATE_OBJ_LEVEL(device_context, POST_KERNEL)	\
+		CREATE_OBJ_LEVEL(device_context, APPLICATION)	\
+		CREATE_OBJ_LEVEL(device_context, SMP)		\
+		__device_context_end = .;
+
+#else
+#define DEVICE_CONTEXT_SECTIONS()
+#endif /* CONFIG_DEVICE_CONCURRENT_ACCESS */
+
 /*
  * link in devices objects, which are tied to the init ones;
  * the objects are thus sorted the same way as their init object parent
@@ -101,7 +116,8 @@
 		CREATE_OBJ_LEVEL(device, APPLICATION)	\
 		CREATE_OBJ_LEVEL(device, SMP)		\
 		__device_end = .;			\
-		DEVICE_BUSY_BITFIELD()			\
+		DEVICE_BUSY_BITFIELD();			\
+		DEVICE_CONTEXT_SECTIONS()		\
 
 
 /*

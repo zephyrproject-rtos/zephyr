@@ -1,0 +1,16 @@
+# Device configuration options
+
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Device driver generic options"
+
+config DEVICE_CONCURRENT_ACCESS
+	bool "Enable concurrent access"
+	default y
+	help
+	  If disabled, devices will not be protected over concurrent access.
+	  This can be a valid possibility if you know your devices will not be
+	  accessed by 2+ threads, and thus will reduce the memory footprint.
+
+endmenu
