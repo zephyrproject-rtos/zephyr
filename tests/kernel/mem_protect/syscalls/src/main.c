@@ -337,6 +337,44 @@ void test_syscall_torture(void)
 	printk("\n");
 }
 
+bool z_impl_syscall_context(void)
+{
+	return z_is_in_user_syscall();
+}
+
+static inline bool z_vrfy_syscall_context(void)
+{
+	return z_impl_syscall_context();
+}
+#include <syscalls/syscall_context_mrsh.c>
+
+void test_syscall_context_user(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	zassert_true(syscall_context(),
+		     "not reported in user syscall");
+}
+
+/* Show that z_is_in_syscall() works properly */
+void test_syscall_context(void)
+{
+	/* We're a regular supervisor thread. */
+	zassert_false(z_is_in_user_syscall(),
+		      "reported in user syscall when in supv. thread ctx");
+
+	/* Make a system call from supervisor mode. The check in the
+	 * implementation function should return false.
+	 */
+	zassert_false(syscall_context(),
+		      "reported in user syscall when called from supervisor");
+
+	/* Remainder of the test in user mode */
+	k_thread_user_mode_enter(test_syscall_context_user, NULL, NULL, NULL);
+}
+
 K_MEM_POOL_DEFINE(test_pool, BUF_SIZE, BUF_SIZE, 4 * NR_THREADS, 4);
 
 void test_main(void)
@@ -352,7 +390,8 @@ void test_main(void)
 			 ztest_user_unit_test(test_user_string_copy),
 			 ztest_user_unit_test(test_user_string_alloc_copy),
 			 ztest_user_unit_test(test_arg64),
-			 ztest_unit_test(test_syscall_torture)
+			 ztest_unit_test(test_syscall_torture),
+			 ztest_unit_test(test_syscall_context)
 			 );
 	ztest_run_test_suite(syscalls);
 }
