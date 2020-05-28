@@ -288,6 +288,13 @@ else()
   set(ARCH_DIR ${ARCH_ROOT}/arch)
 endif()
 
+if(DEFINED SHIELD)
+  string(REPLACE " " ";" SHIELD_AS_LIST "${SHIELD}")
+endif()
+# SHIELD-NOTFOUND is a real CMake list, from which valid shields can be popped.
+# After processing all shields, only invalid shields will be left in this list.
+set(SHIELD-NOTFOUND ${SHIELD_AS_LIST})
+
 # Use BOARD to search for a '_defconfig' file.
 # e.g. zephyr/boards/arm/96b_carbon_nrf51/96b_carbon_nrf51_defconfig.
 # When found, use that path to infer the ARCH we are building for.
@@ -314,9 +321,6 @@ foreach(root ${BOARD_ROOT})
   endif()
 
   set(shield_dir ${root}/boards/shields)
-  if(DEFINED SHIELD)
-     string(REPLACE " " ";" SHIELD_AS_LIST "${SHIELD}")
-  endif()
   # Match the .overlay files in the shield directories to make sure we are
   # finding shields, e.g. x_nucleo_iks01a1/x_nucleo_iks01a1.overlay
   file(GLOB_RECURSE shields_refs_list
@@ -340,7 +344,7 @@ foreach(root ${BOARD_ROOT})
         continue()
       endif()
 
-      list(REMOVE_ITEM SHIELD ${s})
+      list(REMOVE_ITEM SHIELD-NOTFOUND ${s})
 
       list(GET shields_refs_list ${_idx} s_path)
       get_filename_component(s_dir ${s_path} DIRECTORY)
@@ -411,8 +415,8 @@ if(NOT BOARD_DIR)
   message(FATAL_ERROR "Invalid usage")
 endif()
 
-if(DEFINED SHIELD AND NOT (SHIELD STREQUAL ""))
-  foreach (s ${SHIELD})
+if(DEFINED SHIELD AND NOT (SHIELD-NOTFOUND STREQUAL ""))
+  foreach (s ${SHIELD-NOTFOUND})
     message("No shield named '${s}' found")
   endforeach()
   print_usage()
