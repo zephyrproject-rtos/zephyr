@@ -39,6 +39,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #define SERVER_PORT 4242
 #define CLIENT_PORT 9898
 
+static ZTEST_BMEM char rx_buf[400];
+
 /* Common routine to communicate packets over pair of sockets. */
 static void comm_sendto_recvfrom(int client_sock,
 				 struct sockaddr *client_addr,
@@ -53,7 +55,6 @@ static void comm_sendto_recvfrom(int client_sock,
 	socklen_t addrlen;
 	struct sockaddr addr2;
 	socklen_t addrlen2;
-	static char rx_buf[400] = {0};
 
 	zassert_not_null(client_addr, "null client addr");
 	zassert_not_null(server_addr, "null server addr");
@@ -356,7 +357,6 @@ static void comm_sendmsg_recvfrom(int client_sock,
 	ssize_t recved;
 	struct sockaddr addr;
 	socklen_t addrlen;
-	static char rx_buf[400];
 	int len, i;
 
 	zassert_not_null(client_addr, "null client addr");
@@ -572,6 +572,8 @@ void test_v4_sendmsg_recvfrom_connected(void)
 	msg.msg_controllen = sizeof(cmsgbuf.buf);
 	msg.msg_iov = io_vector;
 	msg.msg_iovlen = 1;
+	msg.msg_name = &server_addr;
+	msg.msg_namelen = sizeof(server_addr);
 
 	cmsg = CMSG_FIRSTHDR(&msg);
 	cmsg->cmsg_len = CMSG_LEN(sizeof(int));
@@ -634,6 +636,8 @@ void test_v6_sendmsg_recvfrom_connected(void)
 	msg.msg_controllen = sizeof(cmsgbuf.buf);
 	msg.msg_iov = io_vector;
 	msg.msg_iovlen = 1;
+	msg.msg_name = &server_addr;
+	msg.msg_namelen = sizeof(server_addr);
 
 	cmsg = CMSG_FIRSTHDR(&msg);
 	cmsg->cmsg_len = CMSG_LEN(sizeof(int));
@@ -738,7 +742,7 @@ struct eth_fake_context {
 };
 
 static struct eth_fake_context eth_fake_data;
-static struct sockaddr_in6 server_addr;
+static ZTEST_BMEM struct sockaddr_in6 server_addr;
 
 /* The semaphore is there to wait the data to be received. */
 static ZTEST_BMEM SYS_MUTEX_DEFINE(wait_data);
@@ -919,9 +923,13 @@ void test_main(void)
 			 ztest_unit_test(test_so_priority),
 			 ztest_unit_test(test_so_txtime),
 			 ztest_unit_test(test_v4_sendmsg_recvfrom),
+			 ztest_user_unit_test(test_v4_sendmsg_recvfrom),
 			 ztest_unit_test(test_v6_sendmsg_recvfrom),
+			 ztest_user_unit_test(test_v6_sendmsg_recvfrom),
 			 ztest_unit_test(test_v4_sendmsg_recvfrom_connected),
+			 ztest_user_unit_test(test_v4_sendmsg_recvfrom_connected),
 			 ztest_unit_test(test_v6_sendmsg_recvfrom_connected),
+			 ztest_user_unit_test(test_v6_sendmsg_recvfrom_connected),
 			 ztest_unit_test(test_setup_eth),
 			 ztest_unit_test(test_v6_sendmsg_with_txtime),
 			 ztest_user_unit_test(test_v6_sendmsg_with_txtime)
