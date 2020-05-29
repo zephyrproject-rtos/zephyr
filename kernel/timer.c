@@ -109,6 +109,10 @@ void k_timer_init(struct k_timer *timer,
 void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 			  k_timeout_t period)
 {
+	if (K_TIMEOUT_EQ(duration, K_FOREVER)) {
+		return;
+	}
+
 #ifdef CONFIG_LEGACY_TIMEOUT_API
 	duration = k_ms_to_ticks_ceil32(duration);
 	period = k_ms_to_ticks_ceil32(period);
