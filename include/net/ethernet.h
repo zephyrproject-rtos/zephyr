@@ -618,7 +618,7 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
  * @param init_fn Address to the init function of the driver.
  * @param pm_control_fn Pointer to device_pm_control function.
  * Can be empty function (device_pm_control_nop) if not implemented.
- * @param data Pointer to the device's configuration data.
+ * @param data Pointer to the device's private data.
  * @param cfg_info The address to the structure containing the
  * configuration information for this instance of the driver.
  * @param prio The initialization level at which configuration occurs.
