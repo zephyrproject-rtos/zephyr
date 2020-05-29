@@ -18,6 +18,7 @@
 #include <kernel.h>
 #include <sys/fdtable.h>
 #include <sys/speculation.h>
+#include <syscall_handler.h>
 
 struct fd_entry {
 	void *obj;
@@ -132,6 +133,16 @@ int z_reserve_fd(void)
 void z_finalize_fd(int fd, void *obj, const struct fd_op_vtable *vtable)
 {
 	/* Assumes fd was already bounds-checked. */
+#ifdef CONFIG_USERSPACE
+	/* descriptor context objects are inserted into the table when they
+	 * are ready for use. Mark the object as initialized and grant the
+	 * caller (and only the caller) access.
+	 *
+	 * This call is a no-op if obj is invalid or points to something
+	 * not a kernel object.
+	 */
+	z_object_recycle(obj);
+#endif
 	fdtable[fd].obj = obj;
 	fdtable[fd].vtable = vtable;
 }
