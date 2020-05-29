@@ -34,6 +34,8 @@ source "subsys/lorawan/Kconfig"
 
 source "subsys/mgmt/Kconfig"
 
+source "subsys/modbus/Kconfig"
+
 source "subsys/net/Kconfig"
 
 source "subsys/power/Kconfig"
