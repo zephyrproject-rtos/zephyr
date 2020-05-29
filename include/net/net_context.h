@@ -196,7 +196,7 @@ struct tls_context;
  * If there is no such source address there, the packet cannot be sent
  * anyway. This saves 12 bytes / context in IPv6.
  */
-struct net_context {
+__net_socket struct net_context {
 	/** User data.
 	 *
 	 *  First member of the structure to let users either have user data
