@@ -86,6 +86,14 @@ config UPDATEHUB_DTLS
 	  Enables DTLS communication between the UpdateHub
 	  client and the server
 
+config UPDATEHUB_COAP_CONN_TIMEOUT
+	int "CoAP connection timeout in seconds"
+	default 10
+	range 1 360
+	depends on UPDATEHUB
+	help
+	  Set the CoAP connection timeout value.
+
 config UPDATEHUB_COAP_MAX_RETRY
 	int "Maximum retries attempts to download a packet"
 	default 10

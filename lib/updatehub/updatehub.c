@@ -26,6 +26,7 @@ LOG_MODULE_REGISTER(updatehub, CONFIG_UPDATEHUB_LOG_LEVEL);
 #include "updatehub_priv.h"
 #include "updatehub_firmware.h"
 #include "updatehub_device.h"
+#include "updatehub_timer.h"
 
 #if defined(CONFIG_UPDATEHUB_DTLS)
 #define CA_CERTIFICATE_TAG 1
@@ -363,6 +364,29 @@ static bool install_update_cb_sha256(void)
 	return true;
 }
 
+static int install_update_cb_check_blk_num(struct coap_packet *resp)
+{
+	int blk_num;
+	int blk2_opt;
+
+	blk2_opt = coap_get_option_int(resp, COAP_OPTION_BLOCK2);
+
+	if ((resp->max_len - resp->offset) <= 0 || (blk2_opt < 0)) {
+		LOG_DBG("Invalid data received or block number is < 0");
+		return -ENOENT;
+	}
+
+	blk_num = GET_BLOCK_NUM(blk2_opt);
+
+	if (blk_num == updatehub_blk_get(UPDATEHUB_BLK_INDEX)) {
+		updatehub_blk_inc(UPDATEHUB_BLK_INDEX);
+
+		return 0;
+	}
+
+	return -EAGAIN;
+}
+
 static void install_update_cb(void)
 {
 	struct coap_packet response_packet;
@@ -389,6 +413,15 @@ static void install_update_cb(void)
 		ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
 		goto cleanup;
 	}
+
+	if (install_update_cb_check_blk_num(&response_packet) < 0) {
+		ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
+		goto cleanup;
+	}
+
+	updatehub_tmr_stop();
+	updatehub_blk_set(UPDATEHUB_BLK_ATTEMPT, 0);
+	updatehub_blk_set(UPDATEHUB_BLK_TX_AVAILABLE, 1);
 
 	ctx.downloaded_size = ctx.downloaded_size +
 			      (response_packet.max_len - response_packet.offset);
@@ -438,9 +471,6 @@ cleanup:
 
 static enum updatehub_response install_update(void)
 {
-	int verification_download = 0;
-	int attempts_download = 0;
-
 	if (boot_erase_img_bank(FLASH_AREA_ID(image_1)) != 0) {
 		LOG_ERR("Failed to init flash and erase second slot");
 		ctx.code_status = UPDATEHUB_FLASH_INIT_ERROR;
@@ -469,30 +499,42 @@ static enum updatehub_response install_update(void)
 	flash_img_init(&ctx.flash_ctx);
 
 	ctx.downloaded_size = 0;
+	updatehub_blk_set(UPDATEHUB_BLK_ATTEMPT, 0);
+	updatehub_blk_set(UPDATEHUB_BLK_INDEX, 0);
+	updatehub_blk_set(UPDATEHUB_BLK_TX_AVAILABLE, 1);
 
 	while (ctx.downloaded_size != ctx.block.total_size) {
-		verification_download = ctx.downloaded_size;
+		if (updatehub_blk_get(UPDATEHUB_BLK_TX_AVAILABLE)) {
+			if (send_request(COAP_TYPE_CON, COAP_METHOD_GET,
+					 UPDATEHUB_DOWNLOAD) < 0) {
+				ctx.code_status = UPDATEHUB_NETWORKING_ERROR;
+				goto cleanup;
+			}
 
-		if (send_request(COAP_TYPE_CON, COAP_METHOD_GET,
-				 UPDATEHUB_DOWNLOAD) < 0) {
-			ctx.code_status = UPDATEHUB_NETWORKING_ERROR;
-			goto cleanup;
+			updatehub_blk_set(UPDATEHUB_BLK_TX_AVAILABLE, 0);
+			updatehub_blk_inc(UPDATEHUB_BLK_ATTEMPT);
+			updatehub_tmr_start();
 		}
 
 		install_update_cb();
 
-		if (ctx.code_status != UPDATEHUB_OK) {
+		if (ctx.code_status == UPDATEHUB_OK) {
+			continue;
+		}
+
+		if (ctx.code_status != UPDATEHUB_DOWNLOAD_ERROR &&
+		    ctx.code_status != UPDATEHUB_NETWORKING_ERROR) {
+			LOG_DBG("status: %d", ctx.code_status);
 			goto cleanup;
 		}
 
-		if (verification_download == ctx.downloaded_size) {
-			if (attempts_download ==
-			    CONFIG_UPDATEHUB_COAP_MAX_RETRY) {
-				LOG_ERR("Could not get the packet");
-				ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
-				goto cleanup;
-			}
-			attempts_download++;
+		if (updatehub_blk_get(UPDATEHUB_BLK_ATTEMPT) ==
+		    CONFIG_UPDATEHUB_COAP_MAX_RETRY) {
+			updatehub_tmr_stop();
+
+			LOG_ERR("Could not get the packet");
+			ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
+			goto cleanup;
 		}
 	}
 
@@ -719,6 +761,9 @@ enum updatehub_response updatehub_probe(void)
 		goto cleanup;
 	}
 
+	LOG_DBG("metadata size: %d", strlen(metadata));
+	LOG_HEXDUMP_DBG(metadata, MAX_DOWNLOAD_DATA, "metadata");
+
 	memcpy(metadata_copy, metadata, strlen(metadata));
 	if (json_obj_parse(metadata, strlen(metadata),
 			   recv_probe_sh_array_descr,
@@ -747,6 +792,7 @@ enum updatehub_response updatehub_probe(void)
 		       metadata_any_boards.objects[1].objects.sha256sum,
 		       SHA256_HEX_DIGEST_SIZE);
 		update_info.image_size = metadata_any_boards.objects[1].objects.size;
+		LOG_DBG("metadata_any: %s", update_info.sha256sum_image);
 	} else {
 		if (!is_compatible_hardware(&metadata_some_boards)) {
 			LOG_ERR("Incompatible hardware");
@@ -769,6 +815,7 @@ enum updatehub_response updatehub_probe(void)
 		       SHA256_HEX_DIGEST_SIZE);
 		update_info.image_size =
 			metadata_some_boards.objects[1].objects.size;
+		LOG_DBG("metadata_some: %s", update_info.sha256sum_image);
 	}
 
 	ctx.code_status = UPDATEHUB_HAS_UPDATE;
