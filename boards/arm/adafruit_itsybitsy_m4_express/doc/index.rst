@@ -120,6 +120,33 @@ Flashing
 
    You should see "Hello World! arm" in your terminal.
 
+Debugging
+=========
+
+In addition to the built-in bootloader, the ItsyBitsy can be flashed and
+debugged using a SWD probe such as the Segger J-Link.
+
+#. Connect the board to the probe by connecting the :code:`SWCLK`,
+   :code:`SWDIO`, :code:`RESET`, :code:`GND`, and :code:`3V3` pins on the
+   ItsyBitsy to the :code:`SWCLK`, :code:`SWDIO`, :code:`RESET`, :code:`GND`,
+   and :code:`VTref` pins on the `J-Link`_.
+
+#. Flash the image:
+
+   .. zephyr-app-commands::
+      :zephyr-app: samples/hello_world
+      :board: adafruit_itsybitsy_m4_express
+      :goals: flash -r openocd
+      :compact:
+
+#. Start debugging:
+
+   .. zephyr-app-commands::
+      :zephyr-app: samples/hello_world
+      :board: adafruit_itsybitsy_m4_express
+      :goals: debug
+      :compact:
+
 References
 **********
 
@@ -133,3 +160,6 @@ References
 
 .. _schematic:
     https://learn.adafruit.com/introducing-adafruit-itsybitsy-m4/downloads
+
+.. _J-Link:
+    https://www.segger.com/products/debug-probes/j-link/technology/interface-description/
