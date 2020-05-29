@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.13.1)
 project(Zephyr-Kernel-Doc LANGUAGES)
 
 set(NO_BOILERPLATE TRUE)
-find_package(Zephyr HINTS $ENV{ZEPHYR_BASE} ..)
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE} ..)
 
 # Find west to (optionally) process modules for Kconfig
 find_program(

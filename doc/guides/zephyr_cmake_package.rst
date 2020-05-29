@@ -152,7 +152,7 @@ To do this, use the following ``find_package()`` syntax:
 
 .. code-block:: cmake
 
-   find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
+   find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 This syntax instructs CMake to first search for Zephyr using the Zephyr base environment setting
 :envvar:`ZEPHYR_BASE` and then use the normal search paths.
