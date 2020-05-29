@@ -131,6 +131,7 @@ static void happy_path(
 		 * Test with sendmsg(2) / recv(2) - Zephyr lacks recvmsg atm
 		 */
 
+		memset(&msghdr, 0, sizeof(msghdr));
 		msghdr.msg_iov = &iovec;
 		msghdr.msg_iovlen = 1;
 		iovec.iov_base = (void *)expected_msg;
