@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.13.1)
 # This application has its own Kconfig options.
 set(KCONFIG_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/Kconfig)
 
-find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(NONE)
 
 target_include_directories(app PRIVATE ${ZEPHYR_BASE}/lib/updatehub/include)

@@ -14,7 +14,7 @@ else()
 	message(FATAL_ERROR "${BOARD} was not supported for this sample")
 endif()
 
-find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(openamp_remote)
 
 target_sources(app PRIVATE src/main.c)

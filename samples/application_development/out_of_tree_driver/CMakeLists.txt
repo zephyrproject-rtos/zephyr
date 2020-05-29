@@ -13,7 +13,7 @@ cmake_minimum_required(VERSION 3.13.1)
 # be able to find the module's syscalls.
 list(APPEND SYSCALL_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/hello_world_module/zephyr)
 
-find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(NONE)
 
 target_sources(app PRIVATE
