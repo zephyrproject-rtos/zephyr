@@ -183,7 +183,7 @@ struct bt_l2cap_le_conn_rsp {
 	u16_t mps;
 	u16_t credits;
 	u16_t result;
-};
+} __packed;
 
 #define BT_L2CAP_LE_CREDITS             0x16
 struct bt_l2cap_le_credits {
