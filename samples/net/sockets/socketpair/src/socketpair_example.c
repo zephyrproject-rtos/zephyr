@@ -47,7 +47,12 @@ static const char *const names[] = {
 static void hello(int fd, const char *name)
 {
 	/* write(2) should be used after #25443 */
-	send(fd, name, strlen(name), 0);
+	int res = send(fd, name, strlen(name), 0);
+
+	if (res != strlen(name)) {
+		printf("%s(): send: expected: %d actual: %d errno: %d\n",
+			__func__, (int)strlen(name), res, errno);
+	}
 }
 
 static void *fun(void *arg)
@@ -153,7 +158,7 @@ int main(int argc, char *argv[])
 			if ((fds[i].revents & POLLHUP) != 0) {
 				printf("fd: %d: hung up\n", fd);
 				close(ctx[idx].spair[0]);
-				printf("main: closed fd %d\n",
+				printf("%s: closed fd %d\n", __func__,
 					ctx[idx].spair[0]);
 				pthread_join(ctx[idx].thread, &unused);
 				printf("joined %s\n", ctx[idx].name);
