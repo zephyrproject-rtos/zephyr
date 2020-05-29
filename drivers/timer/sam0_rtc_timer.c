@@ -254,7 +254,7 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 
 #ifdef CONFIG_TICKLESS_KERNEL
 
-	ticks = (ticks == K_FOREVER) ? MAX_TICKS : ticks;
+	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
 	ticks = MAX(MIN(ticks - 1, (int32_t) MAX_TICKS), 0);
 
 	/* Compute number of RTC cycles until the next timeout. */
@@ -274,8 +274,8 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 
 #else /* !CONFIG_TICKLESS_KERNEL */
 
-	if (ticks == K_FOREVER) {
-		/* Disable comparator for K_FOREVER and other negative
+	if (ticks == K_TICKS_FOREVER) {
+		/* Disable comparator for K_TICKS_FOREVER and other negative
 		 * values.
 		 */
 		rtc_timeout = rtc_counter;
