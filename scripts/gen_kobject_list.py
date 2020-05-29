@@ -918,7 +918,7 @@ def write_kobj_size_output(fp):
 def parse_subsystems_list_file(path):
     with open(path, "r") as fp:
         subsys_list = json.load(fp)
-    subsystems.extend(subsys_list)
+    subsystems.extend(subsys_list["__subsystem"])
 
 def parse_args():
     global args
