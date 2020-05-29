@@ -59,6 +59,8 @@
 		tc-2 = &tc2;
 		tc-4 = &tc4;
 		tc-6 = &tc6;
+
+		watchdog0 = &wdog;
 	};
 
 	chosen {

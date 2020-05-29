@@ -30,7 +30,7 @@ Hardware
 Supported Features
 ==================
 
-The adafruit_itsybitsy_m4_express board configuration supports the following
+The adafruit_itsybitsy_m4_express board supports the following
 hardware features:
 
 +-----------+------------+------------------------------------------+
@@ -40,17 +40,34 @@ hardware features:
 +-----------+------------+------------------------------------------+
 | SYSTICK   | on-chip    | systick                                  |
 +-----------+------------+------------------------------------------+
-| WDT       | on-chip    | Watchdog                                 |
+| DMA       | on-chip    | Direct Memory Access controller          |
 +-----------+------------+------------------------------------------+
 | GPIO      | on-chip    | I/O ports                                |
 +-----------+------------+------------------------------------------+
+| HWINFO    | on-chip    | Unique 128 bit serial number             |
++-----------+------------+------------------------------------------+
+| RTC       | on-chip    | Real-Time Counter                        |
++-----------+------------+------------------------------------------+
+| SPI       | on-chip    | Serial Peripheral Interface ports        |
++-----------+------------+------------------------------------------+
+| TRNG      | on-chip    | True Random Number Generator             |
++-----------+------------+------------------------------------------+
 | USART     | on-chip    | Serial ports                             |
++-----------+------------+------------------------------------------+
+| USB       | on-chip    | USB device                               |
++-----------+------------+------------------------------------------+
+| WDT       | on-chip    | Watchdog Timer                           |
 +-----------+------------+------------------------------------------+
 
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig file
 :zephyr_file:`boards/arm/adafruit_itsybitsy_m4_express/adafruit_itsybitsy_m4_express_defconfig`.
+
+Zephyr can use the default Cortex-M SYSTICK timer or the SAM0 specific
+RTC.  To use the RTC, set `CONFIG_CORTEX_M_SYSTICK=n` and set
+`CONFIG_SYS_CLOCK_TICKS_PER_SEC` to no more than 32 kHZ divided by 7,
+i.e. no more than 4500.
 
 Connections and IOs
 ===================
@@ -69,6 +86,21 @@ Serial Port
 
 The SAMD51 MCU has 6 SERCOM based USARTs.  On the ItsyBitsy, SERCOM3 is
 the Zephyr console and is available on pins 0 (RX) and 1 (TX).
+
+SPI Port
+========
+
+The SAMD51 MCU has 6 SERCOM based SPIs.  On the ItsyBitsy, SERCOM1 can be put
+into SPI mode and used to connect to devices over the SCK (SCLK), MO (MOSI), and
+MI (MISO) pins.
+
+USB Device Port
+===============
+
+The SAMD51 MCU has a USB device port that can be used to communicate
+with a host PC.  See the :ref:`usb-samples` sample applications for
+more, such as the :ref:`usb_cdc-acm` sample which sets up a virtual
+serial port that echos characters back to the host PC.
 
 Programming and Debugging
 *************************
