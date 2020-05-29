@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-struct modem_socket {
+__net_socket struct modem_socket {
 	sa_family_t family;
 	enum net_sock_type type;
 	enum net_ip_protocol ip_proto;

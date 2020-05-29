@@ -48,7 +48,7 @@ enum {
  * - write operations may block if the remote @a recv_q is full
  * - each endpoint may be blocking or non-blocking
  */
-struct spair {
+__net_socket struct spair {
 	int remote; /**< the remote endpoint file descriptor */
 	u32_t flags; /**< status and option bits */
 	struct k_sem sem; /**< semaphore for exclusive structure access */

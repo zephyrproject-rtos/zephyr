@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(net_sock_mgmt, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #define MSG_ALLOC_TIMEOUT K_MSEC(100)
 
-struct net_mgmt_socket {
+__net_socket struct net_mgmt_socket {
 	/* Network interface related to this socket */
 	struct net_if *iface;
 
