@@ -67,7 +67,7 @@ extern "C" {
  *
  * @param init_fn Address to the init function of the driver.
  *
- * @param data Pointer to the device's configuration data.
+ * @param data Pointer to the device's private data.
  *
  * @param cfg_info The address to the structure containing the
  * configuration information for this instance of the driver.
