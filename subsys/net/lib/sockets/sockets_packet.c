@@ -68,14 +68,6 @@ static int zpacket_socket(int family, int type, int proto)
 
 	/* recv_q and accept_q are in union */
 	k_fifo_init(&ctx->recv_q);
-
-#ifdef CONFIG_USERSPACE
-	/* Set net context object as initialized and grant access to the
-	 * calling thread (and only the calling thread)
-	 */
-	z_object_recycle(ctx);
-#endif
-
 	z_finalize_fd(fd, ctx,
 		      (const struct fd_op_vtable *)&packet_sock_fd_op_vtable);
 

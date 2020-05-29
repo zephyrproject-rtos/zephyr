@@ -364,14 +364,6 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 	}
 
 	ctx->sock = fd;
-
-#ifdef CONFIG_USERSPACE
-	/* Set net context object as initialized and grant access to the
-	 * calling thread (and only the calling thread)
-	 */
-	z_object_recycle(ctx);
-#endif
-
 	z_finalize_fd(fd, ctx,
 		      (const struct fd_op_vtable *)&websocket_fd_op_vtable);
 
