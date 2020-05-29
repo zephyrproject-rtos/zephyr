@@ -117,8 +117,7 @@ static void happy_path(
 
 		res = recvfrom(sv[(!i) & 1], actual_msg, sizeof(actual_msg), 0,
 			NULL, &len);
-
-		zassert_not_equal(res, -1, "recvfrom(2) failed: %d", errno);
+		zassert_true(res >= 0, "recvfrom(2) failed: %d", errno);
 		actual_msg_len = res;
 		zassert_equal(actual_msg_len, expected_msg_len,
 			      "wrong return value");
