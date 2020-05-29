@@ -40,7 +40,7 @@ __syscall\s+                    # __syscall attribute, must be first
 [)]                             # Closing parenthesis
 ''', regex_flags)
 
-struct_tags = ["__subsystem"]
+struct_tags = ["__subsystem", "__net_socket"]
 
 tagged_struct_decl_template = r'''
 %s\s+                           # tag, must be first

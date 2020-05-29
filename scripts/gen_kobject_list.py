@@ -73,6 +73,10 @@ from collections import OrderedDict
 #
 #  - The third items is a boolean indicating whether this item can be
 #    dynamically allocated with k_object_alloc()
+#
+# Key names in all caps do not correspond to a specific data type but instead
+# indicate that objects of its type are of a family of compatible data
+# structures
 
 # Regular dictionaries are ordered only with Python 3.6 and
 # above. Good summary and pointers to official documents at:
@@ -90,6 +94,7 @@ kobjects = OrderedDict([
     ("k_timer", (None, False, True)),
     ("_k_thread_stack_element", (None, False, False)),
     ("device", (None, False, False)),
+    ("NET_SOCKET", (None, False, False)),
     ("sys_mutex", (None, True, False)),
     ("k_futex", (None, True, False))
 ])
@@ -120,6 +125,9 @@ subsystems = [
     # Fake 'sample driver' subsystem, used by tests/samples
     "sample_driver_api"
 ]
+
+# Names of all structs tagged with __net_socket, found by parse_syscalls.py
+net_sockets = [ ]
 
 def subsystem_to_enum(subsys):
     return "K_OBJ_DRIVER_" + subsys[:-11].upper()
@@ -405,6 +413,8 @@ def analyze_die_struct(die):
         type_env[offset] = KobjectType(offset, name, size)
     elif name in subsystems:
         type_env[offset] = KobjectType(offset, name, size, api=True)
+    elif name in net_sockets:
+        type_env[offset] = KobjectType(offset, "NET_SOCKET", size)
     else:
         at = AggregateType(offset, name, size)
         type_env[offset] = at
@@ -892,6 +902,7 @@ def parse_subsystems_list_file(path):
     with open(path, "r") as fp:
         subsys_list = json.load(fp)
     subsystems.extend(subsys_list["__subsystem"])
+    net_sockets.extend(subsys_list["__net_socket"])
 
 def parse_args():
     global args
