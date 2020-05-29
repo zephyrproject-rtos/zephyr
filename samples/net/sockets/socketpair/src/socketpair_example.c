@@ -181,6 +181,10 @@ int main(int argc, char *argv[])
 
 			fd = fds[i].fd;
 			idx = fd_to_idx(fd, ctx, ARRAY_SIZE(ctx));
+			if (idx < 0) {
+				printf("failed to map fd %d to index\n", fd);
+				continue;
+			}
 
 			if ((fds[i].revents & POLLIN) != 0) {
 
