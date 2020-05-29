@@ -115,6 +115,7 @@ static void happy_path(
 
 		memset(actual_msg, 0, sizeof(actual_msg));
 
+		len = 0;
 		res = recvfrom(sv[(!i) & 1], actual_msg, sizeof(actual_msg), 0,
 			NULL, &len);
 		zassert_true(res >= 0, "recvfrom(2) failed: %d", errno);
