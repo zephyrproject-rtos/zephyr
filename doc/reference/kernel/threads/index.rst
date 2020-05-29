@@ -341,7 +341,13 @@ The following code has the same effect as the code segment above.
 
     K_THREAD_DEFINE(my_tid, MY_STACK_SIZE,
                     my_entry_point, NULL, NULL, NULL,
-                    MY_PRIORITY, 0, K_NO_WAIT);
+                    MY_PRIORITY, 0, 0);
+
+.. note::
+   The delay parameter to :cpp:func:`k_thread_create()` is a
+   :c:type:`k_timeout_t` value, so :c:macro:`K_NO_WAIT` means to start the
+   thread immediately. The corresponding parameter to :c:macro:`K_THREAD_DEFINE`
+   is a duration in integral milliseconds, so the equivalent argument is 0.
 
 User Mode Constraints
 ---------------------
