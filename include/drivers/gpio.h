@@ -448,7 +448,7 @@ typedef u32_t gpio_flags_t;
 /**
  * This structure is common to all GPIO drivers and is expected to be
  * the first element in the object pointed to by the config_info field
- * in the device's config structure.
+ * in the device structure.
  */
 struct gpio_driver_config {
 	/* Mask identifying pins supported by the controller.
@@ -461,7 +461,7 @@ struct gpio_driver_config {
 
 /**
  * This structure is common to all GPIO drivers and is expected to be the first
- * element in the driver's struct driver_data decleration.
+ * element in the driver's struct driver_data declaration.
  */
 struct gpio_driver_data {
 	/* Mask identifying pins that are configured as active low.
