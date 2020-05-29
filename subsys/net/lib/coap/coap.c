@@ -937,8 +937,6 @@ int coap_get_option_int(const struct coap_packet *cpkt, uint16_t code)
 	return val;
 }
 
-#define get_block_option(cpkt, code) coap_get_option_int(cpkt, code)
-
 static int update_descriptive_block(struct coap_block_context *ctx,
 				    int block, int size)
 {
@@ -1020,10 +1018,10 @@ int coap_update_from_block(const struct coap_packet *cpkt,
 {
 	int r, block1, block2, size1, size2;
 
-	block1 = get_block_option(cpkt, COAP_OPTION_BLOCK1);
-	block2 = get_block_option(cpkt, COAP_OPTION_BLOCK2);
-	size1 = get_block_option(cpkt, COAP_OPTION_SIZE1);
-	size2 = get_block_option(cpkt, COAP_OPTION_SIZE2);
+	block1 = coap_get_option_int(cpkt, COAP_OPTION_BLOCK1);
+	block2 = coap_get_option_int(cpkt, COAP_OPTION_BLOCK2);
+	size1 = coap_get_option_int(cpkt, COAP_OPTION_SIZE1);
+	size2 = coap_get_option_int(cpkt, COAP_OPTION_SIZE2);
 
 	size1 = size1 == -ENOENT ? 0 : size1;
 	size2 = size2 == -ENOENT ? 0 : size2;
@@ -1051,9 +1049,9 @@ size_t coap_next_block(const struct coap_packet *cpkt,
 	int block;
 
 	if (is_request(cpkt)) {
-		block = get_block_option(cpkt, COAP_OPTION_BLOCK1);
+		block = coap_get_option_int(cpkt, COAP_OPTION_BLOCK1);
 	} else {
-		block = get_block_option(cpkt, COAP_OPTION_BLOCK2);
+		block = coap_get_option_int(cpkt, COAP_OPTION_BLOCK2);
 	}
 
 	if (!GET_MORE(block)) {
@@ -1238,8 +1236,6 @@ void coap_pendings_clear(struct coap_pending *pendings, size_t len)
 	}
 }
 
-#define get_observe_option(cpkt) coap_get_option_int(cpkt, COAP_OPTION_OBSERVE)
-
 struct coap_reply *coap_response_received(
 	const struct coap_packet *response,
 	const struct sockaddr *from,
@@ -1270,7 +1266,7 @@ struct coap_reply *coap_response_received(
 			continue;
 		}
 
-		age = get_observe_option(response);
+		age = coap_get_option_int(response, COAP_OPTION_OBSERVE);
 		if (age > 0) {
 			/* age == 2 means that the notifications wrapped,
 			 * or this is the first one
@@ -1305,7 +1301,7 @@ void coap_reply_init(struct coap_reply *reply,
 
 	reply->tkl = tkl;
 
-	age = get_observe_option(request);
+	age = coap_get_option_int(request, COAP_OPTION_OBSERVE);
 
 	/* It means that the request enabled observing a resource */
 	if (age == 0) {
@@ -1347,7 +1343,7 @@ int coap_resource_notify(struct coap_resource *resource)
 
 bool coap_request_is_observe(const struct coap_packet *request)
 {
-	return get_observe_option(request) == 0;
+	return coap_get_option_int(request, COAP_OPTION_OBSERVE) == 0;
 }
 
 void coap_observer_init(struct coap_observer *observer,
