@@ -7,7 +7,7 @@ if(BOARD STREQUAL unit_testing)
   find_package(ZephyrUnittest HINTS $ENV{ZEPHYR_BASE})
   project(mock)
 else()
-  find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
+  find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
   project(mock)
 
   FILE(GLOB app_sources src/*.c)

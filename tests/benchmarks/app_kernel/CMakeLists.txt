@@ -5,7 +5,7 @@ if(BOARD STREQUAL "minnowboard")
   set(CONF_FILE prj_fp.conf)
 endif()
 
-find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(app_kernel)
 
 FILE(GLOB app_sources src/*.c)
