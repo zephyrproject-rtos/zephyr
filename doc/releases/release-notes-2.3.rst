@@ -469,6 +469,10 @@ Libraries / Subsystems
   * socketpair() function implemented.
   * eventfd() function (Linux-like extension) implemented.
 
+* Power management:
+
+  * Add system and device power management support on TI CC13x2/CC26x2.
+
 HALs
 ****
 
