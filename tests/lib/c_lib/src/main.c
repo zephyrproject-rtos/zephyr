@@ -26,6 +26,9 @@
 #include <zephyr/types.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include <ctype.h>
 
 /* Recent GCC's are issuing a warning for the truncated strncpy()
  * below (the static source string is longer than the locally-defined
@@ -179,7 +182,7 @@ void test_strcmp(void)
 
 void test_strncmp(void)
 {
-	const char pattern[] = "eeeeeeeeeeee";
+	static const char pattern[] = "eeeeeeeeeeee";
 
 	/* Note we don't want to count the final \0 that sizeof will */
 	__ASSERT_NO_MSG(sizeof(pattern) - 1 > BUFSIZE);
@@ -319,6 +322,242 @@ void test_bsearch(void)
 	zassert_not_null(result, "bsearch -key found");
 }
 
+/**
+ *
+ * @brief Test abs function
+ *
+ */
+
+void test_abs(void)
+{
+	int val = -5, value = 5;
+
+	zassert_equal(abs(val), 5, "abs -5");
+	zassert_equal(abs(value), 5, "abs 5");
+}
+
+/**
+ *
+ * @brief Test atoi function
+ *
+ */
+void test_atoi(void)
+{
+	zassert_equal(atoi("123"), 123, "atoi error");
+	zassert_equal(atoi("2c5"), 2, "atoi error");
+	zassert_equal(atoi("acd"), 0, "atoi error");
+	zassert_equal(atoi(" "), 0, "atoi error");
+	zassert_equal(atoi(""), 0, "atoi error");
+	zassert_equal(atoi("3-4e"), 3, "atoi error");
+	zassert_equal(atoi("8+1c"), 8, "atoi error");
+}
+
+/**
+ *
+ * @brief Test value type
+ *
+ * @details This function check the char type,
+ * and verify the return value.
+ *
+ * @see isalnum(), isalpha(), isdigit(), isgraph(),
+ * isprint(), isspace(), isupper(), isxdigit().
+ *
+ */
+void test_checktype(void)
+{
+	static const char exp_alnum[] =
+		"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+	static const char exp_alpha[] =
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+	static const char exp_digit[] = "0123456789";
+	static const char exp_graph[] =
+		"!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
+	static const char exp_print[] =
+		" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
+	static const char exp_space[] = {"\x9\xa\xb\xc\xd\x20"};
+
+	static const char exp_upper[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	static const char exp_xdigit[] = "0123456789ABCDEFabcdef";
+	char buf[128];
+	char *ptr = buf;
+
+	for (int i = 0; i < 128; i++) {
+		if (isalnum(i))
+			*ptr++ = i;
+	}
+	*ptr = '\0';
+	zassert_equal(strcmp(buf, exp_alnum), 0, "isalnum error");
+
+	ptr = buf;
+	for (int i = 0; i < 128; i++) {
+		if (isalpha(i))
+			*ptr++ = i;
+	}
+	*ptr = '\0';
+	zassert_equal(strcmp(buf, exp_alpha), 0, "isalpha error");
+
+	ptr = buf;
+	for (int i = 0; i < 128; i++) {
+		if (isdigit(i))
+			*ptr++ = i;
+	}
+	*ptr = '\0';
+	zassert_equal(strcmp(buf, exp_digit), 0, "isdigit error");
+
+	ptr = buf;
+	for (int i = 0; i < 128; i++) {
+		if (isgraph(i))
+			*ptr++ = i;
+	}
+	*ptr = '\0';
+	zassert_equal(strcmp(buf, exp_graph), 0, "isgraph error");
+
+	ptr = buf;
+	for (int i = 0; i < 128; i++) {
+		if (isprint(i))
+			*ptr++ = i;
+	}
+	*ptr = '\0';
+	zassert_equal(strcmp(buf, exp_print), 0, "isprint error");
+
+	ptr = buf;
+	for (int i = 0; i < 128; i++) {
+		if (isupper(i))
+			*ptr++ = i;
+	}
+	*ptr = '\0';
+	zassert_equal(strcmp(buf, exp_upper), 0, "isupper error");
+
+	ptr = buf;
+	for (int i = 0; i < 128; i++) {
+		if (isspace(i))
+			*ptr++ = i;
+	}
+	*ptr = '\0';
+	zassert_equal(strcmp(buf, exp_space), 0, "isspace error");
+
+	ptr = buf;
+	for (int i = 0; i < 128; i++) {
+		if (isxdigit(i))
+			*ptr++ = i;
+	}
+	*ptr = '\0';
+	zassert_equal(strcmp(buf, exp_xdigit), 0, "isxdigit error");
+}
+
+/**
+ *
+ * @brief Test character operation
+ *
+ * @see memchr(), memcpy(), memmove().
+ *
+ */
+void test_memstr(void)
+{
+	static const char str[] = "testfunction";
+	int ch1 = 'e', ch2 = 'z';
+	char arr[10], move_arr[6] = "12123";
+	static const char num[6] = "12121";
+
+	zassert_equal(memchr(str, ch1, strlen(str)), str + 1,
+		     "memchr 'testfunction' 'e' ");
+	zassert_equal(memchr(str, ch2, strlen(str)), NULL,
+		     "memchr 'testfunction' 'z'");
+
+	zassert_equal(memcpy(arr, num, sizeof(num)), arr, "memcpy error");
+	zassert_equal(memcmp(num, arr, sizeof(num)), 0,
+		     "memcpy failed");
+
+	zassert_equal(memmove(move_arr + 2, move_arr, 3), move_arr + 2,
+		     "memmove error");
+	zassert_equal(memcmp(num, move_arr, 6), 0,
+		     "memmove failed");
+}
+
+/**
+ *
+ * @brief test str operate functions
+ *
+ * @see strcat(), strcspn(), strncat().
+ *
+ */
+void test_str_operate(void)
+{
+	char str1[10] = "aabbcc", ncat[10] = "ddee";
+	char *str2 = "b";
+	char *str3 = "d";
+	int ret;
+	char *ptr;
+
+	zassert_not_null(strcat(str1, str3), "strcat false");
+	zassert_equal(strcmp(str1, "aabbccd"), 0, "test strcat failed");
+
+	ret = strcspn(str1, str2);
+	zassert_equal(ret, 2, "strcspn failed");
+	ret = strcspn(str1, str3);
+	zassert_equal(ret, 6, "strcspn not found str");
+
+	zassert_true(strncat(ncat, str1, 2), "strncat failed");
+	zassert_equal(strcmp(ncat, "ddeeaa"), 0, "strncat failed");
+
+	zassert_is_null(strrchr(ncat, 'z'),
+		       "strrchr not found this word. failed");
+	ptr = strrchr(ncat, 'e');
+	zassert_equal(strcmp(ptr, "eaa"), 0, "strrchr failed");
+
+	zassert_is_null(strstr(str1, "xyz"), "strstr aabbccd with xyz failed");
+	zassert_not_null(strstr(str1, str2), "strstr aabbccd with b failed");
+}
+
+/**
+ *
+ * @brief test strtol function
+ *
+ */
+void test_strtoxl(void)
+{
+	char buf1[20] = "10379aegi";
+	char buf2[20] = "10379aegi";
+	char buf3[20] = "010379aegi";
+	char buf4[20] = "0x10379aegi";
+	char *stop = NULL;
+	long ret;
+	unsigned long retul;
+
+	ret = strtol(buf3, &stop, 8);
+	zassert_equal(ret, 543, "strtol base = 8 failed");
+	ret = strtol(buf1, &stop, 10);
+	zassert_equal(ret, 10379, "strtol base = 10 failed");
+	retul = strtoul(buf2, &stop, 10);
+	zassert_equal(ret, 10379, "strtoul base = 10 failed");
+	ret = strtol(buf4, &stop, 16);
+	zassert_equal(ret, 17004974, "strtol base = 16 failed");
+}
+
+/**
+ *
+ * @brief test convert function
+ *
+ */
+void test_tolower_toupper(void)
+{
+	static const char test[] = "Az09Za\t\n#!";
+	static const char toup[] = "AZ09ZA\t\n#!";
+	static const char tolw[] = "az09za\t\n#!";
+	char up[11];
+	char lw[11];
+	int i = 0;
+
+	for (; i < strlen(test); i++) {
+		up[i] = toupper(test[i]);
+		lw[i] = tolower(test[i]);
+	}
+	lw[i] = up[i] = '\0';
+
+	zassert_equal(strcmp(up, toup), 0, "toupper error");
+	zassert_equal(strcmp(lw, tolw), 0, "tolower error");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(test_c_lib,
@@ -335,7 +574,13 @@ void test_main(void)
 			 ztest_unit_test(test_strlen),
 			 ztest_unit_test(test_strcmp),
 			 ztest_unit_test(test_strxspn),
-			 ztest_unit_test(test_bsearch)
+			 ztest_unit_test(test_bsearch),
+			 ztest_unit_test(test_abs),
+			 ztest_unit_test(test_atoi),
+			 ztest_unit_test(test_checktype),
+			 ztest_unit_test(test_memstr),
+			 ztest_unit_test(test_str_operate),
+			 ztest_unit_test(test_tolower_toupper)
 			 );
 	ztest_run_test_suite(test_c_lib);
 }
