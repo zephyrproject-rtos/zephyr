@@ -1,0 +1,141 @@
+# Kconfig - Greybus configuration options
+#
+# Copyright (c) 2019 Christopher Friedt, <chrisfriedt@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GREYBUS
+	bool "Greybus"
+	select POSIX_API
+	select PTHREAD_IPC
+	help
+	  This option enables Greybus support.
+
+if GREYBUS
+
+module = GREYBUS
+module-str = gb
+#source "subsys/logging/Kconfig.template.log_config"
+
+config GREYBUS_STATIC_MANIFEST
+	bool "Static Greybus Manifest"
+	default n
+	help
+	  Statically linke a Greybus manifest. This
+	  manifest must be pre-compiled with the 'manifesto' tool
+	  and also pre-converted to a C-array using the 'xxd' tool
+	  or something similar.
+	  
+	  The resulting static-manifest.h must include a
+	  static const unsigned char manifest_mnfb[]; as well as
+	  static const unsigned manifest_mnfb_len;
+
+config GREYBUS_AUDIO
+	bool "Greybus Audio"
+	default n
+	help
+	  Select this for Greybus Audio support.
+
+config GREYBUS_CAMERA
+	bool "Greybus Camera"
+	default n
+	help
+	  Select this for Greybus Camera support.
+
+config GREYBUS_CONTROL
+	bool "Greybus Control"
+	default n
+	help
+	  Select this for a Greybus Control cport.
+
+config GREYBUS_DEBUG
+	bool "Debug Greybus"
+	default n
+	help
+	  Select this to debug Greybus.
+
+config GREYBUS_LOG_FUNC
+	bool "Greybus Debug with Function Name"
+	default n
+	help
+	  Select this option to show the function name in Greybus debug messages.
+
+config GREYBUS_LOG_FILE
+	bool "Greybus Debug with File Name"
+	default y
+	help
+	  Select this option to show the filename and line number in Greybus debug messages.
+
+config GREYBUS_GPIO
+	bool "Greybus GPIO"
+	default n
+	help
+	  Select this for Greybus GPIO support.
+
+config GREYBUS_HID
+	bool "Greybus HID"
+	default n
+	help
+	  Select this for Greybus HID support.
+
+config GREYBUS_I2C
+	bool "Greybus I2C support"
+	default n
+	help
+	  Select this for Greybus I2C support.
+
+config GREYBUS_LIGHTS
+	bool "Greybus Lights"
+	default n
+	help
+	  Select this for Greybus Light support.
+
+config GREYBUS_LOOPBACK
+	bool "Greybus Loopback"
+	default n
+	help
+	  Select this for Greybus Loopback support.
+
+config GREYBUS_POWER_SUPPLY
+	bool "Greybus Power Supply"
+	default n
+	help
+	  Select this for Greybus Power Supply support.
+
+config GREYBUS_PWM
+	bool "Greybus PWM"
+	default n
+	help
+	  Select this for Greybus Pulse Width Modulation support.
+
+config GREYBUS_SDIO
+	bool "Greybus SDIO"
+	default n
+	help
+	  Select this for Greybus Secure Digital IO support.
+
+config GREYBUS_SPI
+	bool "Greybus SPI"
+	default n
+	help
+	  Select this for Greybus Serial Peripheral Interface support.
+
+config GREYBUS_UART
+	bool "Greybus UART"
+	default n
+	help
+	  Select this for Greybus Universal Asynchronous Receiver Transmitter support.
+
+config GREYBUS_USB
+	bool "Greybus USB"
+	default n
+	help
+	  Select this for Greybus Universal Serial Bus support.
+
+config GREYBUS_VIBRATOR
+	bool "Greybus Vibrator"
+	default n
+	help
+	  Select this for Greybus Vibrator support.
+
+endif # GREYBUS

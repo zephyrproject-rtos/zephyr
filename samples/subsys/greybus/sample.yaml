@@ -1,0 +1,12 @@
+sample:
+  description: TBD
+  name: TBD
+tests:
+  sample.greybus.uart:
+    harness: greybus_uart
+    platform_whitelist: qemu_x86 qemu_cortex_m3
+    tags: greybus uart
+  sample.greybus.uart.cc1352r1_launchxl:
+    extra_args: OVERLAY_CONFIG="cc1352r1_launchxl.conf"
+  sample.greybus.uart.nrf52840dk_nrf52840:
+    extra_args: OVERLAY_CONFIG="nrf52840dk_nrf52840.conf"

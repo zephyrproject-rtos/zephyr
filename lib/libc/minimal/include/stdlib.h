@@ -28,6 +28,9 @@ void *bsearch(const void *key, const void *array,
 	      size_t count, size_t size,
 	      int (*cmp)(const void *key, const void *element));
 
+void qsort(void *base, size_t nmemb, size_t size,
+           int (*compar)(const void *, const void *));
+
 #define EXIT_SUCCESS 0
 #define EXIT_FAILURE 1
 void _exit(int status);
