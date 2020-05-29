@@ -476,19 +476,11 @@ static ssize_t spair_write(void *obj, const void *buffer, size_t count)
 				goto out;
 			}
 
-			res = k_sem_take(&remote->sem, K_NO_WAIT);
+			res = k_sem_take(&remote->sem, K_FOREVER);
 			if (res < 0) {
-				if (is_nonblock) {
-					errno = -res;
-					res = -1;
-					goto out;
-				}
-				res = k_sem_take(&remote->sem, K_FOREVER);
-				if (res < 0) {
-					errno = -res;
-					res = -1;
-					goto out;
-				}
+				errno = -res;
+				res = -1;
+				goto out;
 			}
 
 			have_remote_sem = true;
