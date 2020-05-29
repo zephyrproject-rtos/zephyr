@@ -195,7 +195,11 @@ void test_timer_period_0(void)
 {
 	init_timer_data();
 	/** TESTPOINT: set period 0 */
-	k_timer_start(&period0_timer, K_MSEC(DURATION), K_NO_WAIT);
+	k_timer_start(&period0_timer,
+		      K_TICKS(k_ms_to_ticks_floor32(DURATION)
+			      - BUSY_SLEW_THRESHOLD_TICKS(DURATION
+							  * USEC_PER_MSEC)),
+		      K_NO_WAIT);
 	tdata.timestamp = k_uptime_get();
 	busy_wait_ms(DURATION + 1);
 
