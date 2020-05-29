@@ -406,6 +406,29 @@ static int install_update_cb_check_blk_num(struct coap_packet *resp)
 	return -EAGAIN;
 }
 
+static int install_update_cb_check_blk_num(struct coap_packet *resp)
+{
+	int blk_num;
+	int blk2_opt;
+
+	blk2_opt = coap_get_option_int(resp, COAP_OPTION_BLOCK2);
+
+	if ((resp->max_len - resp->offset) <= 0 || (blk2_opt < 0)) {
+		LOG_DBG("Invalid data received or block number is < 0");
+		return -ENOENT;
+	}
+
+	blk_num = GET_BLOCK_NUM(blk2_opt);
+
+	if (blk_num == updatehub_blk_get(UPDATEHUB_BLK_INDEX)) {
+		updatehub_blk_inc(UPDATEHUB_BLK_INDEX);
+
+		return 0;
+	}
+
+	return -EAGAIN;
+}
+
 static void install_update_cb(void)
 {
 	struct coap_packet response_packet;
