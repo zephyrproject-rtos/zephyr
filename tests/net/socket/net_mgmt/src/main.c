@@ -350,6 +350,16 @@ static void test_net_mgmt_setup(void)
 	fd = socket(AF_NET_MGMT, SOCK_DGRAM, NET_MGMT_EVENT_PROTO);
 	zassert_false(fd < 0, "Cannot create net_mgmt socket (%d)", errno);
 
+#ifdef CONFIG_USERSPACE
+	/* Set the underlying net_context to global access scope so that
+	 * other scenario threads may use it
+	 */
+	void *ctx = zsock_get_context_object(fd);
+
+	zassert_not_null(ctx, "null net_context");
+	k_object_access_all_grant(ctx);
+#endif /* CONFIG_USERSPACE */
+
 	memset(&sockaddr, 0, sizeof(sockaddr));
 
 	sockaddr.nm_family = AF_NET_MGMT;
