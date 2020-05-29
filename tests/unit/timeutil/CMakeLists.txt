@@ -2,4 +2,4 @@
 
 project(timeutil)
 set(SOURCES main.c test_gmtime.c  test_s32.c test_s64.c)
-find_package(ZephyrUnittest HINTS $ENV{ZEPHYR_BASE})
+find_package(ZephyrUnittest REQUIRED HINTS $ENV{ZEPHYR_BASE})
