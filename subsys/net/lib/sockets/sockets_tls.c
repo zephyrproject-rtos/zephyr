@@ -1159,13 +1159,6 @@ static int ztls_socket(int family, int type, int proto)
 	/* recv_q and accept_q are in union */
 	k_fifo_init(&ctx->recv_q);
 
-#ifdef CONFIG_USERSPACE
-	/* Set net context object as initialized and grant access to the
-	 * calling thread (and only the calling thread)
-	 */
-	z_object_recycle(ctx);
-#endif
-
 	if (tls_proto != 0) {
 		/* If TLS protocol is used, allocate TLS context */
 		ctx->tls = tls_alloc();
@@ -1284,10 +1277,6 @@ int ztls_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 	}
 
 	child = k_fifo_get(&parent->accept_q, K_FOREVER);
-
-	#ifdef CONFIG_USERSPACE
-		z_object_recycle(child);
-	#endif
 
 	if (addr != NULL && addrlen != NULL) {
 		int len = MIN(*addrlen, sizeof(child->remote));
