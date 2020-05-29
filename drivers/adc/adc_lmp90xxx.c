@@ -916,6 +916,7 @@ static int lmp90xxx_init(struct device *dev)
 	const struct lmp90xxx_config *config = dev->config_info;
 	struct lmp90xxx_data *data = dev->driver_data;
 	struct device *drdyb_dev;
+	k_tid_t tid;
 	int err;
 
 	k_mutex_init(&data->ura_lock);
@@ -1022,12 +1023,13 @@ static int lmp90xxx_init(struct device *dev)
 		}
 	}
 
-	k_thread_create(&data->thread, data->stack,
-			CONFIG_ADC_LMP90XXX_ACQUISITION_THREAD_STACK_SIZE,
-			(k_thread_entry_t)lmp90xxx_acquisition_thread,
-			dev, NULL, NULL,
-			CONFIG_ADC_LMP90XXX_ACQUISITION_THREAD_PRIO,
-			0, K_NO_WAIT);
+	tid = k_thread_create(&data->thread, data->stack,
+			      CONFIG_ADC_LMP90XXX_ACQUISITION_THREAD_STACK_SIZE,
+			      (k_thread_entry_t)lmp90xxx_acquisition_thread,
+			      dev, NULL, NULL,
+			      CONFIG_ADC_LMP90XXX_ACQUISITION_THREAD_PRIO,
+			      0, K_NO_WAIT);
+	k_thread_name_set(tid, "adc_lmp90xxx");
 
 	/* Put device in stand-by to prepare it for single-shot conversion */
 	err = lmp90xxx_write_reg8(dev, LMP90XXX_REG_PWRCN, LMP90XXX_PWRCN(0x3));
