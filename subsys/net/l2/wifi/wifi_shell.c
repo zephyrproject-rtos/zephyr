@@ -251,6 +251,8 @@ static int cmd_wifi_scan(const struct shell *shell, size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_default();
 
+	context.shell = shell;
+
 	if (net_mgmt(NET_REQUEST_WIFI_SCAN, iface, NULL, 0)) {
 		shell_fprintf(shell, SHELL_WARNING, "Scan request failed\n");
 
