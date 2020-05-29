@@ -8,3 +8,13 @@ toolchain:
   - zephyr
   - gnuarmemb
   - xtools
+supported:
+  - dma
+  - gpio
+  - hwinfo
+  - pinmux
+  - pwm
+  - spi
+  - uart
+  - usb_device
+  - watchdog

@@ -63,6 +63,8 @@
 #define DEFAULT_PWM_PORT 2 /* PWM on EXT2 connector, pin 8 */
 #elif defined CONFIG_PWM_NRFX
 #define DEFAULT_PWM_PORT DT_PROP(DT_ALIAS(pwm_0), ch0_pin)
+#elif defined CONFIG_BOARD_ADAFRUIT_ITSYBITSY_M4_EXPRESS
+#define DEFAULT_PWM_PORT 2 /* TCC1/WO[2] on PA18 (D7) */
 #else
 #define DEFAULT_PWM_PORT 0
 #endif
