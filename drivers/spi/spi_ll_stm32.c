@@ -886,7 +886,7 @@ static void spi_stm32_irq_config_func_##id(struct device *dev)		\
 .dma_##dir = {								\
 	 COND_CODE_1(DT_INST_DMAS_HAS_NAME(id, dir),			\
 		     (SPI_DMA_CHANNEL_INIT(id, dir, DIR, src, dest)),	\
-		     NULL)						\
+		     (NULL))						\
 	     },
 #else
 #define SPI_DMA_CHANNEL(id, dir, DIR, src, dest)
