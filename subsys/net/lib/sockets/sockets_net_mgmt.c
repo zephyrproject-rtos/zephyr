@@ -80,13 +80,6 @@ int znet_mgmt_socket(int family, int type, int proto)
 	mgmt->alloc_timeout = MSG_ALLOC_TIMEOUT;
 	mgmt->wait_timeout = K_FOREVER;
 
-#if defined(CONFIG_USERSPACE)
-	/* Set net context object as initialized and grant access to the
-	 * calling thread (and only the calling thread)
-	 */
-	z_object_recycle(mgmt);
-#endif
-
 	z_finalize_fd(fd, mgmt,
 		     (const struct fd_op_vtable *)&net_mgmt_sock_fd_op_vtable);
 
