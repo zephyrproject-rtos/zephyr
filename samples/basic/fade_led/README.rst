@@ -24,7 +24,7 @@ Building and Running
 To build and flash this sample for the :ref:`nrf52840dk_nrf52840`:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/basic/blink_led
+   :zephyr-app: samples/basic/fade_led
    :board: nrf52840dk_nrf52840
    :goals: build flash
    :compact:
