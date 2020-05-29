@@ -10,6 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <toolchain/common.h>
+
 #define WS_SHA1_OUTPUT_LEN 20
 
 /* Min Websocket header length */
@@ -24,7 +26,7 @@
 /**
  * Websocket connection information
  */
-struct websocket_context {
+__net_socket struct websocket_context {
 	union {
 		/** User data.
 		 */
