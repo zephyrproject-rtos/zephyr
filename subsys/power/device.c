@@ -7,7 +7,6 @@
 #include <zephyr.h>
 #include <kernel.h>
 #include <string.h>
-#include <soc.h>
 #include <device.h>
 #include "policy/pm_policy.h"
 
