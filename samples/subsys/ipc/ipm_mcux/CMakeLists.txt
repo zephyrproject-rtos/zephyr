@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.13.1)
 set(BOARD lpcxpresso54114_m4)
 
 
-find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 if(NOT ("${BOARD}" STREQUAL "lpcxpresso54114_m4"))
   message(FATAL_ERROR "${BOARD} was specified, but this sample only supports lpcxpresso54114_m4")
