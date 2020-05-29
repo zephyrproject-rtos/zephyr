@@ -6,6 +6,10 @@
 config KERNEL_SHELL
 	bool "Enable kernel shell"
 	default y
+	imply INIT_STACKS
+	imply THREAD_MONITOR
+	imply THREAD_NAME
+	imply THREAD_STACK_INFO
 	help
 	  This shell provides access to basic kernel data like version, uptime
 	  and other useful information.
