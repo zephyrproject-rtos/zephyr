@@ -153,6 +153,8 @@ static bool start_coap_client(void)
 	int resolve_attempts = 10;
 	int ret = -1;
 
+	memset(&hints, 0, sizeof(hints));
+
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
 		hints.ai_family = AF_INET6;
 		hints.ai_socktype = SOCK_STREAM;
