@@ -1013,16 +1013,20 @@ static ssize_t spair_sendmsg(void *obj, const struct msghdr *msg,
 
 	int res;
 	size_t len = 0;
+	bool is_connected;
+	size_t avail;
+	bool is_nonblock;
 	struct spair *const spair = (struct spair *)obj;
-	const bool is_connected = sock_is_connected(spair);
-	const size_t avail = is_connected ? spair_write_avail(spair) : 0;
-	const bool is_nonblock = sock_is_nonblock(spair);
 
 	if (spair == NULL || msg == NULL) {
 		errno = EINVAL;
 		res = -1;
 		goto out;
 	}
+
+	is_connected = sock_is_connected(spair);
+	avail = is_connected ? spair_write_avail(spair) : 0;
+	is_nonblock = sock_is_nonblock(spair);
 
 	for (size_t i = 0; i < msg->msg_iovlen; ++i) {
 		/* check & msg->msg_iov[i]? */
