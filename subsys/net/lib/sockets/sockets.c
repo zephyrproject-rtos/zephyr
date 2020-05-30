@@ -1586,7 +1586,7 @@ int zsock_getsockname_ctx(struct net_context *ctx, struct sockaddr *addr,
 
 	/* If we don't have a connection handler, the socket is not bound */
 	if (ctx->conn_handler) {
-		SET_ERRNO(EINVAL);
+		SET_ERRNO(-EINVAL);
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && ctx->local.family == AF_INET) {
@@ -1611,7 +1611,7 @@ int zsock_getsockname_ctx(struct net_context *ctx, struct sockaddr *addr,
 
 		memcpy(addr, &addr6, MIN(*addrlen, newlen));
 	} else {
-		SET_ERRNO(EINVAL);
+		SET_ERRNO(-EINVAL);
 	}
 
 	*addrlen = newlen;
