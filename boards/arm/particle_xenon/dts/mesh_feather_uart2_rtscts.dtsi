@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2020 Peter Bigot Consulting, LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Add hardware flow control to UART2, which is exposed only on Xenon
+ * mesh boards.
+ */
+&uart1 {
+	rts-pin = <35>;
+	cts-pin = <43>;
+	/* optional mesh_feather_uart2_rtscts.dtsi */
+};
