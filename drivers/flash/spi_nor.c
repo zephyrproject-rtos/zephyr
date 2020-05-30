@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Savoir-Faire Linux.
+ * Copyright (c) 2020 Peter Bigot Consulting, LLC
  *
  * This driver is heavily inspired from the spi_flash_w25qxxdv.c SPI NOR driver.
  *
@@ -16,6 +17,7 @@
 #include <logging/log.h>
 
 #include "spi_nor.h"
+#include "jesd216.h"
 #include "flash_priv.h"
 
 LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
@@ -62,6 +64,14 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
 #define T_DPDD_MS 0
 #endif /* DPD_WAKEUP_SEQUENCE */
 
+struct spi_nor_config {
+	/* JEDEC id from devicetree */
+	uint8_t id[SPI_NOR_MAX_ID_LEN];
+
+	/* Size from devicetree, in bytes */
+	uint32_t size;
+};
+
 /**
  * struct spi_nor_data - Structure for defining the SPI NOR access
  * @spi: The SPI device
@@ -81,6 +91,8 @@ struct spi_nor_data {
 	 */
 	uint32_t ts_enter_dpd;
 #endif
+	uint32_t page_size;
+	struct jesd216_erase_type erase_types[4];
 	struct k_sem sem;
 };
 
@@ -193,6 +205,45 @@ static int spi_nor_access(const struct device *const dev,
 	spi_nor_access(dev, opcode, false, 0, NULL, 0, true)
 #define spi_nor_cmd_addr_write(dev, opcode, addr, src, length) \
 	spi_nor_access(dev, opcode, true, addr, (void *)src, length, true)
+
+/*
+ * @brief Read content from the SFDP hierarchy
+ *
+ * @param dev Device struct
+ * @param addr The address to send
+ * @param data The buffer to store or read the value
+ * @param length The size of the buffer
+ * @return 0 on success, negative errno code otherwise
+ */
+static int read_sfdp(const struct device *const dev,
+		     off_t addr, void *data, size_t length)
+{
+	struct spi_nor_data *const driver_data = dev->data;
+	uint8_t buf[] = {
+		JESD216_CMD_READ_SFDP,
+		addr >> 16,
+		addr >> 8,
+		addr,
+		0,		/* wait state */
+	};
+	struct spi_buf spi_buf[] = {
+		{
+			.buf = buf,
+			.len = sizeof(buf),
+		},
+		{
+			.buf = data,
+			.len = length,
+		}
+	};
+	const struct spi_buf_set buf_set = {
+		.buffers = spi_buf,
+		.count = ARRAY_SIZE(spi_buf),
+	};
+
+	return spi_transceive(driver_data->spi, &driver_data->spi_cfg,
+			      &buf_set, &buf_set);
+}
 
 static int enter_dpd(const struct device *const dev)
 {
@@ -342,6 +393,7 @@ static int spi_nor_read(struct device *dev, off_t addr, void *dest,
 static int spi_nor_write(struct device *dev, off_t addr, const void *src,
 			 size_t size)
 {
+	const struct spi_nor_data *data = dev->data;
 	const struct spi_nor_config *params = dev->config;
 	int ret = 0;
 
@@ -356,14 +408,14 @@ static int spi_nor_write(struct device *dev, off_t addr, const void *src,
 		size_t to_write = size;
 
 		/* Don't write more than a page. */
-		if (to_write >= SPI_NOR_PAGE_SIZE) {
-			to_write = SPI_NOR_PAGE_SIZE;
+		if (to_write >= data->page_size) {
+			to_write = data->page_size;
 		}
 
 		/* Don't write across a page boundary */
-		if (((addr + to_write - 1U) / SPI_NOR_PAGE_SIZE)
-		    != (addr / SPI_NOR_PAGE_SIZE)) {
-			to_write = SPI_NOR_PAGE_SIZE - (addr % SPI_NOR_PAGE_SIZE);
+		if (((addr + to_write - 1U) / data->page_size)
+		    != (addr / data->page_size)) {
+			to_write = data->page_size - (addr % data->page_size);
 		}
 
 		spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
@@ -387,6 +439,7 @@ out:
 
 static int spi_nor_erase(struct device *dev, off_t addr, size_t size)
 {
+	struct spi_nor_data *data = dev->data;
 	const struct spi_nor_config *params = dev->config;
 	int ret = 0;
 
@@ -407,48 +460,41 @@ static int spi_nor_erase(struct device *dev, off_t addr, size_t size)
 
 	acquire_device(dev);
 
-	while (size) {
-		/* write enable */
+	while ((size > 0) && (ret == 0)) {
 		spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
 
 		if (size == params->size) {
 			/* chip erase */
 			spi_nor_cmd_write(dev, SPI_NOR_CMD_CE);
 			size -= params->size;
-		} else if ((size >= SPI_NOR_BLOCK_SIZE)
-			   && SPI_NOR_IS_BLOCK_ALIGNED(addr)) {
-			/* 64 KiB block erase */
-			spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_BE, addr,
-			NULL, 0);
-			addr += SPI_NOR_BLOCK_SIZE;
-			size -= SPI_NOR_BLOCK_SIZE;
-		} else if ((size >= SPI_NOR_BLOCK32_SIZE)
-			   && SPI_NOR_IS_BLOCK32_ALIGNED(addr)
-			   && params->has_be32k) {
-			/* 32 KiB block erase */
-			spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_BE_32K, addr,
-					       NULL, 0);
-			addr += SPI_NOR_BLOCK32_SIZE;
-			size -= SPI_NOR_BLOCK32_SIZE;
-		} else if ((size >= SPI_NOR_SECTOR_SIZE)
-			   && SPI_NOR_IS_SECTOR_ALIGNED(addr)) {
-			/* sector erase */
-			spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_SE, addr,
-					       NULL, 0);
-			addr += SPI_NOR_SECTOR_SIZE;
-			size -= SPI_NOR_SECTOR_SIZE;
 		} else {
-			/* minimal erase size is at least a sector size */
-			LOG_DBG("unsupported at 0x%lx size %zu", (long)addr,
-				size);
-			ret = -EINVAL;
-			goto out;
-		}
+			const struct jesd216_erase_type *etp = data->erase_types;
+			const struct jesd216_erase_type * const ete = etp
+				+ ARRAY_SIZE(data->erase_types);
+			const struct jesd216_erase_type *bet = NULL;
 
+			while (etp < ete) {
+				if ((etp->exp != 0)
+				    && SPI_NOR_IS_ALIGNED(addr, etp->exp)
+				    && SPI_NOR_IS_ALIGNED(size, etp->exp)
+				    && ((bet == NULL)
+					|| (etp->exp > bet->exp))) {
+					bet = etp;
+				}
+			}
+			if (bet != NULL) {
+				spi_nor_cmd_addr_write(dev, bet->cmd, addr, NULL, 0);
+				addr += BIT(bet->exp);
+				size -= BIT(bet->exp);
+			} else {
+				LOG_DBG("Can't erase %zu at 0x%lx",
+					size, (long)addr);
+				ret = -EINVAL;
+			}
+		}
 		spi_nor_wait_until_ready(dev);
 	}
 
-out:
 	release_device(dev);
 
 	return ret;
@@ -474,6 +520,92 @@ static int spi_nor_write_protection_set(struct device *dev, bool write_protect)
 	release_device(dev);
 
 	return ret;
+}
+
+static int spi_nor_process_bfp(struct device *dev,
+			       const struct jesd216_param_header *php)
+{
+	struct spi_nor_data *data = dev->data;
+	union {
+		uint32_t dw[MIN(php->len_dw, 20)];
+		struct jesd216_bfp bfp;
+	} u;
+	const struct jesd216_bfp *bfp = &u.bfp;
+	struct jesd216_erase_type *etp = data->erase_types;
+	int rc = read_sfdp(dev, jesd216_param_addr(php), u.dw, sizeof(u.dw));
+
+	if (rc != 0) {
+		LOG_ERR("SFDP.BFP failed: %d", rc);
+		return rc;
+	}
+
+	LOG_INF("%s: %u MiBy flash", dev->name, (uint32_t)(jesd216_bfp_density(bfp) >> 23));
+
+	/* Copy over the erase types, preserving their order.  (The
+	 * Sector Map Parameter table references them by index.)
+	 */
+	memset(data->erase_types, 0, sizeof(data->erase_types));
+	BUILD_ASSERT(ARRAY_SIZE(data->erase_types) == 4);
+	for (uint8_t ti = 1; ti <= 4; ++ti) {
+		if (jesd216_bfp_erase(bfp, ti, etp) == 0) {
+			LOG_DBG("Erase %u with %02x", (uint32_t)BIT(etp->exp), etp->cmd);
+		}
+		++etp;
+	}
+
+	data->page_size = jesd216_bfp_page_size(php, bfp);
+	LOG_DBG("Page size %u bytes", data->page_size);
+
+	return rc;
+}
+
+static int spi_nor_process_sfdp(struct device *dev)
+{
+	const uint8_t decl_nph = 2;
+	union {
+		/* We only process BFP so use one parameter block */
+		uint8_t raw[JESD216_SFDP_SIZE(decl_nph)];
+		struct jesd216_sfdp_header sfdp;
+	} u;
+	const struct jesd216_sfdp_header *hp = &u.sfdp;
+	int rc = read_sfdp(dev, 0, u.raw, sizeof(u.raw));
+
+	if (rc != 0) {
+		LOG_ERR("SFDP read failed: %d", rc);
+		return rc;
+	}
+
+	uint32_t magic = jesd216_sfdp_magic(hp);
+
+	if (magic != JESD216_SFDP_MAGIC) {
+		LOG_ERR("SFDP magic %08x invalid", magic);
+		return -EINVAL;
+	}
+
+	LOG_INF("%s: SFDP v %u.%u AP %x with %u PH", dev->name,
+		hp->rev_major, hp->rev_minor, hp->access, hp->nph);
+
+	const struct jesd216_param_header *php = hp->phdr;
+	const struct jesd216_param_header *phpe = php + MIN(decl_nph, hp->nph);
+
+	while (php != phpe) {
+		uint16_t id = jesd216_param_id(php);
+
+		LOG_INF("PH%u: %04x rev %u.%u: %u DW @ %x",
+			(php - hp->phdr), id, php->rev_major, php->rev_minor,
+			php->len_dw, jesd216_param_addr(php));
+
+		if (id == JESD216_SFDP_PARAM_ID_BFP) {
+			rc = spi_nor_process_bfp(dev, php);
+			if (rc != 0) {
+				LOG_INF("SFDP BFP failed: %d", rc);
+				break;
+			}
+		}
+		++php;
+	}
+
+	return rc;
 }
 
 /**
@@ -513,6 +645,21 @@ static int spi_nor_configure(struct device *dev)
 
 	/* Might be in DPD if system restarted without power cycle. */
 	exit_dpd(dev);
+
+	if (spi_nor_process_sfdp(dev) != 0) {
+		/* This driver has always assumed that both 64 KiBy
+		 * and 4 KiBy erase operations are available.
+		 */
+		data->erase_types[0] = (struct jesd216_erase_type){
+			.cmd = SPI_NOR_CMD_BE,
+			.exp = 16,
+		};
+		data->erase_types[1] = (struct jesd216_erase_type){
+			.cmd = SPI_NOR_CMD_SE,
+			.exp = 12,
+		};
+		data->page_size = 256;
+	}
 
 	/* now the spi bus is configured, we can verify the flash id */
 	if (spi_nor_read_id(dev, params) != 0) {
@@ -595,9 +742,6 @@ static const struct flash_driver_api spi_nor_api = {
 
 static const struct spi_nor_config flash_id = {
 	.id = DT_INST_PROP(0, jedec_id),
-#if DT_INST_NODE_HAS_PROP(0, has_be32k)
-	.has_be32k = true,
-#endif /* DT_INST_NODE_HAS_PROP(0, has_be32k) */
 	.size = DT_INST_PROP(0, size) / 8,
 };
 
