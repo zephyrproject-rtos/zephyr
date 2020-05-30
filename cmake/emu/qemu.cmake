@@ -51,7 +51,7 @@ endif()
 list(APPEND QEMU_FLAGS -serial chardev:con)
 
 # Connect semihosting console to the console chardev if configured.
-if(CONFIG_SEMIHOST_CONSOLE)
+if(CONFIG_SEMIHOSTING_CONSOLE)
   list(APPEND QEMU_FLAGS
     -semihosting-config enable=on,target=auto,chardev=con
     )
