@@ -219,6 +219,13 @@ static void spi_sam0_fast_rx(SercomSpi *regs, const struct spi_buf *rx_buf)
 	regs->DATA.reg = 0;
 	len--;
 
+	/* Ensure the data register has shifted to the shift register before
+	 * continuing.	Later writes are synchronised by waiting for the receive
+	 * to complete.
+	 */
+	while (!regs->INTFLAG.bit.DRE) {
+	}
+
 	while (len) {
 		/* Load byte N+1 into the transmit register */
 		regs->DATA.reg = 0;
