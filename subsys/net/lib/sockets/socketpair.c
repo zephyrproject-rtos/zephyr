@@ -193,8 +193,11 @@ static void spair_delete(struct spair *spair)
 
 	/* ensure no private information is released to the memory pool */
 	memset(spair, 0, sizeof(*spair));
-
+#ifdef CONFIG_USERSPACE
+	k_object_free(spair);
+#else
 	k_free(spair);
+#endif
 
 	if (remote != NULL && have_remote_sem) {
 		k_sem_give(&remote->sem);
@@ -214,7 +217,18 @@ static struct spair *spair_new(void)
 {
 	struct spair *spair;
 
+#ifdef CONFIG_USERSPACE
+	struct z_object *zo = z_dynamic_object_create(sizeof(*spair));
+
+	if (zo == NULL) {
+		spair = NULL;
+	} else {
+		spair = zo->name;
+		zo->type = K_OBJ_NET_SOCKET;
+	}
+#else
 	spair = k_malloc(sizeof(*spair));
+#endif
 	if (spair == NULL) {
 		errno = ENOMEM;
 		goto out;
