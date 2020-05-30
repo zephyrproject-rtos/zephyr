@@ -375,7 +375,7 @@ static inline void *z_impl_k_object_alloc(enum k_objects otype)
  *
  * @param obj
  */
-static inline void k_obj_free(void *obj)
+static inline void k_object_free(void *obj)
 {
 	ARG_UNUSED(obj);
 }
