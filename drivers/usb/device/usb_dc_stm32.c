@@ -110,6 +110,8 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
  */
 #ifdef USB
 
+#define CFG_HW_RCC_CRRCR_CCIPR_SEMID	5
+
 #define EP0_MPS 64U
 #define EP_MPS 64U
 
@@ -252,6 +254,11 @@ static int usb_dc_stm32_clock_enable(void)
 			"is required by HSI48.");
 	}
 #endif /* CONFIG_SOC_SERIES_STM32L0X */
+
+#ifdef CONFIG_SOC_SERIES_STM32WBX
+	while (LL_HSEM_1StepLock(HSEM, CFG_HW_RCC_CRRCR_CCIPR_SEMID)) {
+	}
+#endif /* CONFIG_SOC_SERIES_STM32WBX */
 
 	LL_RCC_HSI48_Enable();
 	while (!LL_RCC_HSI48_IsReady()) {
@@ -908,6 +915,16 @@ int usb_dc_ep_mps(const u8_t ep)
 int usb_dc_detach(void)
 {
 	LOG_ERR("Not implemented");
+
+#ifdef CONFIG_SOC_SERIES_STM32WBX
+	LL_HSEM_ReleaseLock(HSEM, CFG_HW_RCC_CRRCR_CCIPR_SEMID, 0);
+	/*
+	 * TODO: AN5289 notes a process of locking Sem0, with possible waits
+	 * via interrupts before switching off CLK48, but lacking any actual
+	 * examples of that, that remains to be implemented.  See
+	 * https://github.com/zephyrproject-rtos/zephyr/pull/25850
+	 */
+#endif /* CONFIG_SOC_SERIES_STM32WBX */
 
 	return 0;
 }
