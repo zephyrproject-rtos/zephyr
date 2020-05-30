@@ -23,7 +23,7 @@ properties:
   has-be32k:
     type: boolean
     required: false
-    description: Indicates the device supports the BE32K (0xD8) command
+    description: Not used after Zephyr 2.3.0
 
   requires-ulbpr:
     type: boolean

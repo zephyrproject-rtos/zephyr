@@ -4,6 +4,7 @@
 menuconfig SPI_NOR
 	bool "SPI NOR Flash"
 	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_JESD216
 	depends on SPI
 
 if SPI_NOR
