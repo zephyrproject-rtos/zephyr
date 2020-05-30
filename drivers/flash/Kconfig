@@ -17,6 +17,12 @@ config FLASH_HAS_PAGE_LAYOUT
 	  This option is enabled when the SoC flash driver supports
 	  retrieving the layout of flash memory pages.
 
+config FLASH_JESD216
+	bool
+	help
+	 Selected by drivers that support JESD216-compatible flash
+	 devices to enable building a common support module.
+
 menuconfig FLASH
 	bool "Flash hardware support"
 	help
