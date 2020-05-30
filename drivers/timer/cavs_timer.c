@@ -36,6 +36,9 @@ static volatile struct soc_dsp_shim_regs *shim_regs =
 
 static void set_compare(uint64_t time)
 {
+	/* Disarm the comparator to prevent spurious triggers */
+	shim_regs->dspwctcs &= ~DSP_WCT_CS_TA(TIMER);
+
 #if (TIMER == 0)
 	/* Set compare register */
 	shim_regs->dspwct0c = time;
