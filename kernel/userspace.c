@@ -72,6 +72,9 @@ const char *otype_to_str(enum k_objects otype)
 	/* otype-to-str.h is generated automatically during build by
 	 * gen_kobject_list.py
 	 */
+	case K_OBJ_ANY:
+		ret = "generic";
+		break;
 #include <otype-to-str.h>
 	default:
 		ret = "?";
@@ -252,43 +255,20 @@ static void thread_idx_free(uintptr_t tidx)
 	sys_bitfield_set_bit((mem_addr_t)_thread_idx_map, tidx);
 }
 
-void *z_impl_k_object_alloc(enum k_objects otype)
+struct z_object *z_dynamic_object_create(size_t size)
 {
 	struct dyn_obj *dyn_obj;
-	uintptr_t tidx;
 
-	/* Stacks are not supported, we don't yet have mem pool APIs
-	 * to request memory that is aligned
-	 */
-	__ASSERT(otype > K_OBJ_ANY && otype < K_OBJ_LAST &&
-		 otype != K_OBJ_THREAD_STACK_ELEMENT,
-		 "bad object type requested");
-
-	dyn_obj = z_thread_malloc(sizeof(*dyn_obj) + obj_size_get(otype));
+	dyn_obj = z_thread_malloc(sizeof(*dyn_obj) + size);
 	if (dyn_obj == NULL) {
-		LOG_WRN("could not allocate kernel object");
+		LOG_ERR("could not allocate kernel object, out of memory");
 		return NULL;
 	}
 
-	dyn_obj->kobj.name = (char *)&dyn_obj->data;
-	dyn_obj->kobj.type = otype;
-	dyn_obj->kobj.flags = K_OBJ_FLAG_ALLOC;
+	dyn_obj->kobj.name = &dyn_obj->data;
+	dyn_obj->kobj.type = K_OBJ_ANY;
+	dyn_obj->kobj.flags = 0;
 	(void)memset(dyn_obj->kobj.perms, 0, CONFIG_MAX_THREAD_BYTES);
-
-	/* Need to grab a new thread index for k_thread */
-	if (otype == K_OBJ_THREAD) {
-		if (!thread_idx_alloc(&tidx)) {
-			k_free(dyn_obj);
-			return NULL;
-		}
-
-		dyn_obj->kobj.data.thread_id = tidx;
-	}
-
-	/* The allocating thread implicitly gets permission on kernel objects
-	 * that it allocates
-	 */
-	z_thread_perms_set(&dyn_obj->kobj, _current);
 
 	k_spinlock_key_t key = k_spin_lock(&lists_lock);
 
@@ -296,7 +276,60 @@ void *z_impl_k_object_alloc(enum k_objects otype)
 	sys_dlist_append(&obj_list, &dyn_obj->obj_list);
 	k_spin_unlock(&lists_lock, key);
 
-	return dyn_obj->kobj.name;
+	return &dyn_obj->kobj;
+}
+
+void *z_impl_k_object_alloc(enum k_objects otype)
+{
+	struct z_object *zo;
+	uintptr_t tidx;
+
+	if (otype <= K_OBJ_ANY || otype >= K_OBJ_LAST) {
+		LOG_ERR("bad object type %d requested", otype);
+		return NULL;
+	}
+
+	switch (otype) {
+	case K_OBJ_THREAD:
+		if (!thread_idx_alloc(&tidx)) {
+			LOG_ERR("out of free thread indexes");
+			return NULL;
+		}
+		break;
+	/* The following are currently not allowed at all */
+	case K_OBJ_FUTEX:			/* Lives in user memory */
+	case K_OBJ_SYS_MUTEX:			/* Lives in user memory */
+	case K_OBJ_THREAD_STACK_ELEMENT:	/* No aligned allocator */
+	case K_OBJ_NET_SOCKET:			/* Indeterminate size */
+		LOG_ERR("forbidden object type '%s' requested",
+			otype_to_str(otype));
+		return NULL;
+	default:
+		/* Remainder within bounds are permitted */
+		break;
+	}
+
+	zo = z_dynamic_object_create(obj_size_get(otype));
+	if (zo == NULL) {
+		return NULL;
+	}
+	zo->type = otype;
+
+	if (otype == K_OBJ_THREAD) {
+		zo->data.thread_id = tidx;
+	}
+
+	/* The allocating thread implicitly gets permission on kernel objects
+	 * that it allocates
+	 */
+	z_thread_perms_set(zo, _current);
+
+	/* Activates reference counting logic for automatic disposal when
+	 * all permissions have been revoked
+	 */
+	zo->flags |= K_OBJ_FLAG_ALLOC;
+
+	return zo->name;
 }
 
 void k_object_free(void *obj)
@@ -508,6 +541,12 @@ void z_dump_object_error(int retval, void *obj, struct z_object *ko,
 	switch (retval) {
 	case -EBADF:
 		LOG_ERR("%p is not a valid %s", obj, otype_to_str(otype));
+		if (ko == NULL) {
+			LOG_ERR("address is not a known kernel object");
+		} else {
+			LOG_ERR("address is actually a %s",
+				otype_to_str(ko->type));
+		}
 		break;
 	case -EPERM:
 		dump_permission_error(ko);

@@ -79,7 +79,8 @@ from collections import OrderedDict
 #    the object to be located in user-accessible memory.
 #
 #  - The third items is a boolean indicating whether this item can be
-#    dynamically allocated with k_object_alloc()
+#    dynamically allocated with k_object_alloc(). Keep this in sync with
+#    the switch statement in z_impl_k_object_alloc().
 #
 # Key names in all caps do not correspond to a specific data type but instead
 # indicate that objects of its type are of a family of compatible data
