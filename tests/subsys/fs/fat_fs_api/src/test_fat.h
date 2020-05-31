@@ -9,7 +9,12 @@
 #include <fs/fs.h>
 
 #define FATFS_MNTP	"/NAND:"
+#if IS_ENABLED(CONFIG_FS_FATFS_LFN)
+#define TEST_FILE	FATFS_MNTP \
+	"/testlongfilenamethatsmuchlongerthan8.3chars.text"
+#else
 #define TEST_FILE	FATFS_MNTP"/testfile.txt"
+#endif /* IS_ENABLED(CONFIG_FS_FATFS_LFN) */
 #define TEST_DIR	FATFS_MNTP"/testdir"
 #define TEST_DIR_FILE	FATFS_MNTP"/testdir/testfile.txt"
 
