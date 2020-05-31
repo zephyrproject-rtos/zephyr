@@ -299,7 +299,8 @@ static ssize_t send_socket_data(struct modem_socket *sock,
 				const struct sockaddr *dst_addr,
 				struct modem_cmd *handler_cmds,
 				size_t handler_cmds_len,
-				const char *buf, size_t buf_len, int timeout)
+				const char *buf, size_t buf_len,
+				k_timeout_t timeout)
 {
 	int ret;
 	char send_buf[sizeof("AT+USO**=#,!###.###.###.###!,#####,####\r\n")];
@@ -351,13 +352,13 @@ static ssize_t send_socket_data(struct modem_socket *sock,
 	k_sleep(MDM_PROMPT_CMD_DELAY);
 	mctx.iface.write(&mctx.iface, buf, buf_len);
 
-	if (timeout == K_NO_WAIT) {
+	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		ret = 0;
 		goto exit;
 	}
 
 	k_sem_reset(&mdata.sem_response);
-	ret = k_sem_take(&mdata.sem_response, K_MSEC(timeout));
+	ret = k_sem_take(&mdata.sem_response, timeout);
 
 	if (ret == 0) {
 		ret = modem_cmd_handler_get_error(&mdata.cmd_handler_data);
