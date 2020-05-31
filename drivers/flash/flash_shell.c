@@ -156,7 +156,11 @@ static int cmd_read(const struct shell *shell, size_t argc, char *argv[])
 	while (cnt--) {
 		uint32_t data;
 
-		flash_read(flash_dev, addr, &data, sizeof(data));
+		ret = flash_read(flash_dev, addr, &data, sizeof(data));
+		if (ret != 0) {
+			shell_error(shell, "Read ERROR!");
+			return -EIO;
+		}
 		shell_print(shell, "0x%08x ", data);
 		addr += sizeof(data);
 	}
