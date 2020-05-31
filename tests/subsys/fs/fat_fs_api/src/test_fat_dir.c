@@ -106,7 +106,7 @@ static int test_rmdir(void)
 	int res;
 	struct fs_dir_t dirp;
 	static struct fs_dirent entry;
-	char file_path[80];
+	char file_path[80 + MAX_FILE_NAME];
 
 	TC_PRINT("\nrmdir tests:\n");
 
