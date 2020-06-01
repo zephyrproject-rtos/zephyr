@@ -246,7 +246,7 @@ void mqtt_startup(char *hostname, int port)
 
 		if (err != 0) {
 			LOG_ERR("Unable to get address for broker, error %d",
-				res);
+				err);
 			return;
 		}
 		LOG_INF("DNS resolved for mqtt.googleapis.com:8833");
