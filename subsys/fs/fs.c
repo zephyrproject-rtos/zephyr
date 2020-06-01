@@ -24,7 +24,7 @@ static sys_dlist_t fs_mnt_list;
 static struct k_mutex mutex;
 
 /* file system map table */
-static struct fs_file_system_t *fs_map[FS_TYPE_END];
+static const struct fs_file_system_t *fs_map[FS_TYPE_END];
 
 static int fs_get_mnt_point(struct fs_mount_t **mnt_pntp,
 			    const char *name, size_t *match_len)
@@ -526,7 +526,7 @@ int fs_statvfs(const char *abs_path, struct fs_statvfs *stat)
 int fs_mount(struct fs_mount_t *mp)
 {
 	struct fs_mount_t *itr;
-	struct fs_file_system_t *fs;
+	const struct fs_file_system_t *fs;
 	sys_dnode_t *node;
 	int rc = -EINVAL;
 
@@ -664,7 +664,7 @@ int fs_readmount(int *number, const char **name)
 }
 
 /* Register File system */
-int fs_register(enum fs_type type, struct fs_file_system_t *fs)
+int fs_register(enum fs_type type, const struct fs_file_system_t *fs)
 {
 	int rc = 0;
 
@@ -682,7 +682,7 @@ reg_err:
 }
 
 /* Unregister File system */
-int fs_unregister(enum fs_type type, struct fs_file_system_t *fs)
+int fs_unregister(enum fs_type type, const struct fs_file_system_t *fs)
 {
 	int rc = 0;
 
