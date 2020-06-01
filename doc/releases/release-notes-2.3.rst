@@ -278,7 +278,10 @@ Drivers and Sensors
 
 * GPIO
 
-  * <TBD>
+  * Add mcp23s17 driver
+  * Add STM32L5 support to stm32 driver
+  * Add interrupt support to sx1509b driver
+  * Fix interrupt handling in sifive, intel_apl, mchp_xec, mcux_igpio driver
 
 * Hardware Info
 
