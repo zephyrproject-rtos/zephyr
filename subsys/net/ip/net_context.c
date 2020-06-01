@@ -387,10 +387,6 @@ int net_context_put(struct net_context *context)
 
 	/* net_tcp_put() will handle decrementing refcount on stack's behalf */
 	net_tcp_put(context);
-	/* Assume it's better to have goto to immediate label than ugly
-	 * not indented #ifdef (if only they were intended!).
-	 */
-	goto unlock;
 
 unlock:
 	k_mutex_unlock(&context->lock);
