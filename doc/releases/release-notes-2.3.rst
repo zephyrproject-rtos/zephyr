@@ -9,7 +9,19 @@ We are pleased to announce the release of Zephyr RTOS version 2.3.0.
 
 Major enhancements with this release include:
 
-* <TBD>
+* A new Zephyr CMake package has been introduced, reducing the need for
+  environment variables
+* A new Devicetree API, based on hierarchical macros, has been introduced. This
+  new API allows the C code to access virtually all nodes and properties in a
+  clean, organized fashion
+* The kernel timeout API has been overhauled to be flexible and configurable,
+  with future support for features like 64-bit and absolute timeouts in mind
+* A new k_heap/sys_heap heap allocator has been introduced, with much better
+  performance than the existing k_mem_pool/sys_mem_pool
+* Zephyr now integrates with the TF-M (Trusted Firmware M) PSA-compliant
+  framework
+* The Bluetooth Low Energy Host now supports Advertisement Extensions
+* The CMSIS-DSP library is now included and integrated
 
 The following sections provide detailed lists of changes by component.
 
