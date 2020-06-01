@@ -527,7 +527,12 @@ HALs
 Documentation
 *************
 
-* <TBD>
+* New API overview page added.
+* Reference pages have been cleaned up and organized.
+* The Devicetree documentation has been expanded significally.
+* The project roles have been overhauled in the Contribution Guidelines pages.
+* The documentation on driver-specific APIs has been simplified.
+* Documentation for new APIs, boards and samples.
 
 Tests and Samples
 *****************
