@@ -156,7 +156,7 @@ Architectures
 
 * POSIX:
 
-  * <TBD>
+  * Added support for building on ARM hosts
 
 * RISC-V:
 
