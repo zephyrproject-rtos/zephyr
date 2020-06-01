@@ -9,7 +9,6 @@ Tests for testinstance class
 
 import os
 import sys
-import shutil
 import pytest
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
@@ -74,7 +73,6 @@ def test_create_overlay(class_testsuite, all_testcases_dict, platforms_list, tes
     testinstance = TestInstance(testcase, platform, class_testsuite.outdir)
     platform.type = platform_type
     assert testinstance.create_overlay(platform, enable_asan, enable_coverage, coverage_platform) == expected_content
-    shutil.rmtree(test_data + "sanity_out_demo")
 
 def test_calculate_sizes(class_testsuite, all_testcases_dict, platforms_list):
     """ Test Calculate sizes method for zephyr elf"""
