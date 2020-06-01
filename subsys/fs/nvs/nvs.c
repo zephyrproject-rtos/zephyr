@@ -696,6 +696,7 @@ int nvs_init(struct nvs_fs *fs, const char *dev_name)
 
 	int rc;
 	struct flash_pages_info info;
+	size_t write_block_size;
 
 	k_mutex_init(&fs->nvs_lock);
 
@@ -705,13 +706,14 @@ int nvs_init(struct nvs_fs *fs, const char *dev_name)
 		return -ENXIO;
 	}
 
-	fs->write_block_size = flash_get_write_block_size(fs->flash_device);
+	write_block_size = flash_get_write_block_size(fs->flash_device);
 
 	/* check that the write block size is supported */
-	if (fs->write_block_size > NVS_BLOCK_SIZE) {
+	if (write_block_size > NVS_BLOCK_SIZE || write_block_size == 0) {
 		LOG_ERR("Unsupported write block size");
 		return -EINVAL;
 	}
+	fs->write_block_size = write_block_size;
 
 	/* check that sector size is a multiple of pagesize */
 	rc = flash_get_page_info_by_offs(fs->flash_device, fs->offset, &info);
