@@ -20,7 +20,7 @@ Major enhancements with this release include:
   performance than the existing k_mem_pool/sys_mem_pool
 * Zephyr now integrates with the TF-M (Trusted Firmware M) PSA-compliant
   framework
-* The Bluetooth Low Energy Host now supports Advertisement Extensions
+* The Bluetooth Low Energy Host now supports LE Advertising Extensions
 * The CMSIS-DSP library is now included and integrated
 
 The following sections provide detailed lists of changes by component.
@@ -475,15 +475,31 @@ Bluetooth
 
 * Host:
 
-  * <TBD>
+  * Support for LE Advertising Extensions has been added.
+  * The Host is now 5.2 compliant, with support for EATT, L2CAP ECRED mode and
+    all new GATT PDUs.
+  * New application-controlled data length and PHY update APIs.
+  * Legacy OOB pairing support has been added.
+  * Multiple improvements to OOB data access and pairing.
+  * The Host now uses the new thread analyzer functionality.
+  * Multiple bug fixes and improvements
 
 * BLE split software Controller:
 
-  * <TBD>
+  * The Controller is now 5.2 compliant.
+  * A new HCI USB H4 driver has been added, which can interact with BlueZ's
+    counterpart Host driver.
+  * PHY support is now configurable.
+  * Only control procedures supported by the peer are now used.
+  * The Nordic nRF52820 IC is now supported
+  * OpenISA/RV32M1:
+    * 2Mbps PHY support.
+    * Radio deep sleep mode support.
+    * Controller-based privacy support.
 
 * BLE legacy software Controller:
 
-  * <TBD>
+  * The legacy Controller has been removed from the tree.
 
 Build and Infrastructure
 ************************
