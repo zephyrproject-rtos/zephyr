@@ -9,26 +9,18 @@
 #include <drivers/entropy.h>
 #include <string.h>
 
-static struct device *entropy_driver;
-
 #if defined(CONFIG_ENTROPY_DEVICE_RANDOM_GENERATOR)
 u32_t sys_rand32_get(void)
 {
-	struct device *dev = entropy_driver;
+	struct device *dev;
 	u32_t random_num;
 	int ret;
 
-	if (unlikely(!dev)) {
-		/* Only one entropy device exists, so this is safe even
-		 * if the whole operation isn't atomic.
-		 */
-		dev = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
-		__ASSERT((dev != NULL),
-			"Device driver for %s (DT_CHOSEN_ZEPHYR_ENTROPY_LABEL) not found. "
-			"Check your build configuration!",
-			DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
-		entropy_driver = dev;
-	}
+	dev = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
+	__ASSERT((dev != NULL),
+		"Device driver for %s (DT_CHOSEN_ZEPHYR_ENTROPY_LABEL) not found. "
+		"Check your build configuration!",
+		DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
 
 	ret = entropy_get_entropy(dev, (u8_t *)&random_num,
 				  sizeof(random_num));
@@ -48,21 +40,15 @@ u32_t sys_rand32_get(void)
 
 static int rand_get(u8_t *dst, size_t outlen, bool csrand)
 {
-	struct device *dev = entropy_driver;
+	struct device *dev;
 	u32_t random_num;
 	int ret;
 
-	if (unlikely(!dev)) {
-		/* Only one entropy device exists, so this is safe even
-		 * if the whole operation isn't atomic.
-		 */
-		dev = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
-		__ASSERT((dev != NULL),
-			"Device driver for %s (DT_CHOSEN_ZEPHYR_ENTROPY_LABEL) not found. "
-			"Check your build configuration!",
-			DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
-		entropy_driver = dev;
-	}
+	dev = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
+	__ASSERT((dev != NULL),
+		"Device driver for %s (DT_CHOSEN_ZEPHYR_ENTROPY_LABEL) not found. "
+		"Check your build configuration!",
+		DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
 
 	ret = entropy_get_entropy(dev, dst, outlen);
 
