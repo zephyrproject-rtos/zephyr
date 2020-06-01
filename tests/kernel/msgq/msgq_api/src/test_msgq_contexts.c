@@ -198,6 +198,47 @@ static void msgq_thread_data_passing(struct k_msgq *pmsgq)
 	k_msgq_purge(pmsgq);
 }
 
+static void get_empty_entry(void *p1, void *p2, void *p3)
+{
+	int ret;
+	uint32_t rx_buf[MSGQ_LEN];
+
+	/* make sure there is no message in the queue */
+	ret = k_msgq_peek(p1, rx_buf);
+	zassert_equal(ret, -ENOMSG, "Peek message from empty queue");
+
+	ret = k_msgq_get(p1, rx_buf, K_NO_WAIT);
+	zassert_equal(ret, -ENOMSG, "Got message from empty queue");
+
+	/* blocked to TIMEOUT */
+	ret = k_msgq_get(p1, rx_buf, TIMEOUT);
+	zassert_equal(ret, -EAGAIN, "Got message from empty queue");
+
+	k_sem_give(&end_sema);
+	/* blocked forever */
+	k_msgq_get(p1, rx_buf, K_FOREVER);
+}
+
+static void put_full_entry(void *p1, void *p2, void *p3)
+{
+	int ret;
+
+	/* make sure the queue is full */
+	zassert_equal(k_msgq_num_free_get(p1), 0, NULL);
+	zassert_equal(k_msgq_num_used_get(p1), 1, NULL);
+
+	ret = k_msgq_put(p1, &data[1], K_NO_WAIT);
+	zassert_equal(ret, -ENOMSG, "Put message to full queue");
+
+	/* blocked to TIMEOUT */
+	ret = k_msgq_put(p1, &data[1], TIMEOUT);
+	zassert_equal(ret, -EAGAIN, "Put message to full queue");
+
+	k_sem_give(&end_sema);
+	/* blocked forever */
+	k_msgq_put(p1, &data[1], K_FOREVER);
+}
+
 /**
  * @addtogroup kernel_message_queue_tests
  * @{
@@ -314,6 +355,62 @@ void test_msgq_alloc(void)
 	/* Requesting a huge size of MSG to validate overflow*/
 	ret = k_msgq_alloc_init(&kmsgq_test_alloc, OVERFLOW_SIZE_MSG, MSGQ_LEN);
 	zassert_true(ret == -EINVAL, "Invalid request");
+}
+
+/**
+ * @brief Get message from an empty queue
+ *
+ * @details
+ * - A thread get message from an empty message queue will get a -ENOMSG if
+ *   timeout is set to K_NO_WAIT
+ * - A thread get message from an empty message queue will be blocked if timeout
+ *   is set to a positive value or K_FOREVER
+ *
+ * @see k_msgq_get()
+ */
+void test_msgq_empty(void)
+{
+	int pri = k_thread_priority_get(k_current_get()) - 1;
+
+	k_msgq_init(&msgq1, tbuffer1, MSG_SIZE, 1);
+	k_sem_init(&end_sema, 0, 1);
+
+	k_tid_t tid = k_thread_create(&tdata2, tstack2, STACK_SIZE,
+				      get_empty_entry, &msgq1, NULL,
+				      NULL, pri, 0, K_NO_WAIT);
+
+	k_sem_take(&end_sema, K_FOREVER);
+	/* that getting thread is being blocked now */
+	zassert_equal(tid->base.thread_state, _THREAD_PENDING, NULL);
+	k_thread_abort(tid);
+}
+
+/**
+ * @brief Put message to a full queue
+ *
+ * @details
+ * - A thread put message to a full message queue will get a -ENOMSG if
+ *   timeout is set to K_NO_WAIT
+ * - A thread put message to a full message queue will be blocked if timeout
+ *   is set to a positive value or K_FOREVER
+ *
+ * @see k_msgq_put()
+ */
+void test_msgq_full(void)
+{
+	int pri = k_thread_priority_get(k_current_get()) - 1;
+
+	k_msgq_init(&msgq1, tbuffer1, MSG_SIZE, 1);
+	k_sem_init(&end_sema, 0, 1);
+
+	k_msgq_put(&msgq1, &data[0], K_NO_WAIT);
+	k_tid_t tid = k_thread_create(&tdata2, tstack2, STACK_SIZE,
+					put_full_entry, &msgq1, NULL,
+					NULL, pri, 0, K_NO_WAIT);
+	k_sem_take(&end_sema, K_FOREVER);
+	/* that putting thread is being blocked now */
+	zassert_equal(tid->base.thread_state, _THREAD_PENDING, NULL);
+	k_thread_abort(tid);
 }
 
 /**

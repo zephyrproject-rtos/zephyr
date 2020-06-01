@@ -21,6 +21,8 @@ extern void test_msgq_purge_when_put(void);
 extern void test_msgq_attrs_get(void);
 extern void test_msgq_alloc(void);
 extern void test_msgq_pend_thread(void);
+extern void test_msgq_empty(void);
+extern void test_msgq_full(void);
 #ifdef CONFIG_USERSPACE
 extern void test_msgq_user_thread(void);
 extern void test_msgq_user_thread_overflow(void);
@@ -79,6 +81,8 @@ void test_main(void)
 			 ztest_1cpu_unit_test(test_msgq_purge_when_put),
 			 ztest_user_unit_test(test_msgq_user_purge_when_put),
 			 ztest_1cpu_unit_test(test_msgq_pend_thread),
+			 ztest_1cpu_unit_test(test_msgq_empty),
+			 ztest_1cpu_unit_test(test_msgq_full),
 			 ztest_unit_test(test_msgq_alloc));
 	ztest_run_test_suite(msgq_api);
 }
