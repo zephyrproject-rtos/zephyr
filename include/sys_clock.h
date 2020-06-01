@@ -108,8 +108,8 @@ typedef s32_t k_timeout_t;
 #define Z_TIMEOUT_TICKS(t) k_ticks_to_ms_ceil32(t)
 #define Z_FOREVER K_TICKS_FOREVER
 #define Z_TIMEOUT_MS(t) (t)
-#define Z_TIMEOUT_US(t) ((t) * 1000)
-#define Z_TIMEOUT_NS(t) ((t) * 1000000)
+#define Z_TIMEOUT_US(t) ((999 + (t)) / 1000)
+#define Z_TIMEOUT_NS(t) ((999999 + (t)) / 1000000)
 #define Z_TIMEOUT_CYC(t) k_cyc_to_ms_ceil32(MAX((t), 0))
 
 #endif
