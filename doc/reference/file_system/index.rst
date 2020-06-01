@@ -16,9 +16,9 @@ pulled out through a file system registration API.
 
 .. code-block:: c
 
-        int fs_register(enum fs_type type, struct fs_file_system_t *fs);
+        int fs_register(enum fs_type type, const struct fs_file_system_t *fs);
 
-        int fs_unregister(enum fs_type type, struct fs_file_system_t *fs);
+        int fs_unregister(enum fs_type type, const struct fs_file_system_t *fs);
 
 Zephyr RTOS supports multiple instances of a file system by making use of
 the mount point as the disk volume name, which is used by the file system library
