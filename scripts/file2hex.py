@@ -29,7 +29,7 @@ def parse_args():
     parser.add_argument("-g", "--gzip", action="store_true",
                         help="Compress the file using gzip before output")
     parser.add_argument("-t", "--gzip-mtime", type=int, default=0,
-                         nargs='?', const=None,
+                        nargs='?', const=None,
                         help="""mtime seconds in the gzip header.
                         Defaults to zero to keep builds deterministic. For
                         current date and time (= "now") use this option
