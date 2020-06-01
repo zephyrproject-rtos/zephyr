@@ -20,6 +20,7 @@
 #ifndef ZEPHYR_INCLUDE_RANDOM_RAND32_H_
 #define ZEPHYR_INCLUDE_RANDOM_RAND32_H_
 
+#include <kernel.h>
 #include <zephyr/types.h>
 #include <stddef.h>
 
@@ -71,6 +72,31 @@ extern void sys_rand_get(void *dst, size_t len);
  *
  */
 extern int sys_csrand_get(void *dst, size_t len);
+
+
+/**
+ * @brief Allow user thread access to random API.
+ *
+ * Random API that uses entropy device requires that the user thread has
+ * granted access to the entropy driver. This API is a helper that should be
+ * called before a user thread uses any other random API.
+ *
+ * @note This function is not necessary if the thread was already granted
+ * access to the entropy device.
+ *
+ * @param thread thread to give access to the entropy driver
+ *
+ */
+#if defined(CONFIG_ENTROPY_DEVICE_RANDOM_GENERATOR) || \
+	defined(CONFIG_HARDWARE_DEVICE_CS_GENERATOR) || \
+	defined(CONFIG_CTR_DRBG_CSPRNG_GENERATOR)
+extern void sys_rand_access_grant(struct k_thread *thread);
+#else
+static inline void sys_rand_access_grant(struct k_thread *thread)
+{
+	ARG_UNUSED(thread);
+}
+#endif
 
 #ifdef __cplusplus
 }
