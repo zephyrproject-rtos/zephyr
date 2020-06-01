@@ -320,10 +320,6 @@ Drivers and Sensors
 
   * <TBD>
 
-* LED
-
-  * <TBD>
-
 * Modem
 
   * Add support for GSM 07.10 muxing protocol to generic GSM modem
