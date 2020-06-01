@@ -125,7 +125,22 @@ Stable API changes in this release
 Kernel
 ******
 
-* <TBD>
+* A new general purpose memory allocator, sys_heap/k_heap, was added
+  to Zephyr with more conventional API/behavior, better space
+  efficiency and higher performance than the pre-existing mem_pool.
+  The older mem_pool APIs are, by default, wrappers around this new
+  heap backend and will be deprecated in an upcoming release.  The
+  original implementation remains available for this release via
+  disabling CONFIG_MEM_POOL_HEAP_BACKEND.
+
+
+* The timeout arguments to all kernel calls are now a "k_timeout_t"
+  type instead of a 32 bit millisecond count.  These can be
+  initialized in arbitrary time units (ns/us/ms, ticks), be
+  interpreted relative to either current time or system start, and be
+  expressed in 64 bit quantities.  This involves a minor change to the
+  API, so the original API is still available in a completely
+  source-compatible way via CONFIG_LEGACY_TIMEOUT_API.
 
 Architectures
 *************
