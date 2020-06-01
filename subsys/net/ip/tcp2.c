@@ -35,19 +35,79 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt);
 int (*tcp_send_cb)(struct net_pkt *pkt) = NULL;
 size_t (*tcp_recv_cb)(struct tcp *conn, struct net_pkt *pkt) = NULL;
 
+static int tcp_pkt_linearize(struct net_pkt *pkt, size_t pos, size_t len)
+{
+	struct net_buf *buf, *first = pkt->cursor.buf, *second = first->frags;
+	int ret = 0;
+	size_t len1, len2;
+
+	if (net_pkt_get_len(pkt) < (pos + len)) {
+		NET_ERR("Insufficient packet len=%d (pos+len=%zu)",
+			net_pkt_get_len(pkt), pos + len);
+		ret = -EINVAL;
+		goto out;
+	}
+
+	buf = net_pkt_get_frag(pkt, TCP_PKT_ALLOC_TIMEOUT);
+
+	if (!buf || buf->size < len) {
+		if (buf) {
+			net_buf_unref(buf);
+		}
+		ret = -ENOBUFS;
+		goto out;
+	}
+
+	net_buf_linearize(buf->data, buf->size, pkt->frags, pos, len);
+	net_buf_add(buf, len);
+
+	len1 = first->len - (pkt->cursor.pos - pkt->cursor.buf->data);
+	len2 = len - len1;
+
+	first->len -= len1;
+
+	while (len2) {
+		size_t pull_len = MIN(second->len, len2);
+		struct net_buf *next;
+
+		len2 -= pull_len;
+		net_buf_pull(second, pull_len);
+		next = second->frags;
+		if (second->len == 0) {
+			net_buf_unref(second);
+		}
+		second = next;
+	}
+
+	buf->frags = second;
+	first->frags = buf;
+ out:
+	return ret;
+}
+
 static struct tcphdr *th_get(struct net_pkt *pkt)
 {
-	NET_PKT_DATA_ACCESS_DEFINE(th_access, struct tcphdr);
-
+	size_t ip_len = net_pkt_ip_hdr_len(pkt) + net_pkt_ip_opts_len(pkt);
+	struct tcphdr *th = NULL;
+ again:
 	net_pkt_cursor_init(pkt);
 	net_pkt_set_overwrite(pkt, true);
 
-	/* net_pkt_ip_hdr_len(), net_pkt_ip_opts_len() account for IPv4/IPv6 */
+	if (net_pkt_skip(pkt, ip_len) != 0) {
+		goto out;
+	}
 
-	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) +
-		     net_pkt_ip_opts_len(pkt));
+	if (!net_pkt_is_contiguous(pkt, sizeof(*th))) {
+		if (tcp_pkt_linearize(pkt, ip_len, sizeof(*th)) < 0) {
+			goto out;
+		}
 
-	return net_pkt_get_data(pkt, &th_access);
+		goto again;
+	}
+
+	th = net_pkt_cursor_get_pos(pkt);
+ out:
+	return th;
 }
 
 static size_t tcp_endpoint_len(sa_family_t af)
