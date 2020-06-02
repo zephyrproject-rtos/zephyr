@@ -6,3 +6,5 @@ tests:
     filter: dt_compat_enabled_with_alias("gpio-leds", "led0")
     depends_on: gpio
     harness: led
+    integration_platforms:
+      - frdm_k64f
