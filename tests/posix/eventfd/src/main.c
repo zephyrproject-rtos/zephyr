@@ -105,13 +105,30 @@ static void test_eventfd_poll_timeout(void)
 	close(fd);
 }
 
+struct test_thread_data {
+	int fd;
+	struct k_sem written_twice;
+};
+
 static void *test_thread_wait_and_write(void *arg)
 {
-	int ret, fd = *((int *)arg);
+	struct test_thread_data *d = arg;
+	int fd = d->fd;
+	int ret;
 
 	k_sleep(K_MSEC(500));
 
 	ret = eventfd_write(fd, 10);
+	zassert_true(ret == 0, "write ret %d", ret);
+
+	ret = eventfd_write(fd, 10);
+	zassert_true(ret == 0, "write ret %d", ret);
+
+	k_sem_give(&d->written_twice);
+
+	k_sleep(K_MSEC(1500));
+
+	ret = eventfd_write(fd, 5);
 	zassert_true(ret == 0, "write ret %d", ret);
 
 	return NULL;
@@ -123,6 +140,7 @@ static void test_eventfd_poll_event(void)
 	pthread_attr_t attr;
 	struct pollfd pfd;
 	eventfd_t val;
+	struct test_thread_data d;
 	int fd, ret;
 
 	fd = eventfd(0, 0);
@@ -141,20 +159,47 @@ static void test_eventfd_poll_event(void)
 	ret = pthread_attr_setstack(&attr, eventfd_stack, EVENTFD_STACK_SIZE);
 	zassert_true(ret == 0, "pthread_attr_setstack ret %d", ret);
 
+	d.fd = fd;
+	k_sem_init(&d.written_twice, 0, 1);
+
 	ret = pthread_create(&eventfd_thread, &attr, test_thread_wait_and_write,
-			     &fd);
+			     &d);
 	zassert_true(ret == 0, "pthread_create ret %d", ret);
 
 	pfd.fd = fd;
 	pfd.events = POLLIN;
 
+	TC_PRINT("Waiting for first event\n");
+
 	ret = poll(&pfd, 1, 3000);
 	zassert_true(ret == 1, "poll ret %d %d", ret, pfd.revents);
 	zassert_equal(pfd.revents, POLLIN, "POLLIN not set");
 
+	k_sem_take(&d.written_twice, K_FOREVER);
+
+	TC_PRINT("Reading two events\n");
+
 	ret = eventfd_read(fd, &val);
 	zassert_true(ret == 0, "read ret %d", ret);
-	zassert_true(val == 10, "val == %d", val);
+	zassert_true(val == 20, "val == %d", val);
+
+	TC_PRINT("Waiting 1s for event after 1.5s (should timeout)\n");
+
+	ret = poll(&pfd, 1, 1000);
+	zassert_true(ret == 0, "poll ret %d %d", ret, pfd.revents);
+	zassert_equal(pfd.revents, 0, "POLLIN set");
+
+	TC_PRINT("Waiting 3s for event after 0.5s (should succeed)\n");
+
+	ret = poll(&pfd, 1, 3000);
+	zassert_true(ret == 1, "poll ret %d %d", ret, pfd.revents);
+	zassert_equal(pfd.revents, POLLIN, "POLLIN not set");
+
+	TC_PRINT("Reading last event\n");
+
+	ret = eventfd_read(fd, &val);
+	zassert_true(ret == 0, "read ret %d", ret);
+	zassert_true(val == 5, "val == %d", val);
 
 	close(fd);
 }
