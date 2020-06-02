@@ -2155,12 +2155,9 @@ static inline u32_t k_cycle_get_32(void)
 struct k_queue {
 	sys_sflist_t data_q;
 	struct k_spinlock lock;
-	union {
-		_wait_q_t wait_q;
+	_wait_q_t wait_q;
 
-		_POLL_EVENT;
-	};
-
+	_POLL_EVENT;
 	_OBJECT_TRACING_NEXT_PTR(k_queue)
 	_OBJECT_TRACING_LINKED_FLAG
 };
@@ -2169,10 +2166,8 @@ struct k_queue {
 	{ \
 	.data_q = SYS_SLIST_STATIC_INIT(&obj.data_q), \
 	.lock = { }, \
-	{ \
-		.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
-		_POLL_EVENT_OBJ_INIT(obj) \
-	}, \
+	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q),	\
+	_POLL_EVENT_OBJ_INIT(obj)		\
 	_OBJECT_TRACING_INIT \
 	}
 
