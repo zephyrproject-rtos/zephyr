@@ -659,7 +659,11 @@ void test_timeout_abs(void)
 	cap2_ticks = k_uptime_ticks();
 	k_timer_stop(&remain_timer);
 	zassert_true((cap_ticks + rem_ticks + 1 == exp_ticks)
-		     || (rem_ticks + cap2_ticks + 1 == exp_ticks),
+		     || (rem_ticks + cap2_ticks + 1 == exp_ticks)
+		     || (INEXACT_MS_CONVERT
+			 && (cap_ticks + rem_ticks == exp_ticks))
+		     || (INEXACT_MS_CONVERT
+			 && (rem_ticks + cap2_ticks == exp_ticks)),
 		     NULL);
 #endif
 }
