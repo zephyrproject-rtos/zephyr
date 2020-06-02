@@ -13,6 +13,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/mesh.h>
+#include <zephyr/sys/util.h>
 
 #include <zephyr/bluetooth/hci.h>
 
@@ -34,6 +35,12 @@
 #define LOG_LEVEL CONFIG_BT_MESH_PROXY_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_mesh_gatt);
+
+/* Interval to update random value in (10 minutes).
+ *
+ * Defined in the Bluetooth Mesh Specification v1.1, Section 7.2.2.2.4.
+ */
+#define PROXY_RANDOM_UPDATE_INTERVAL (10 * 60 * MSEC_PER_SEC)
 
 #if defined(CONFIG_BT_MESH_PROXY_USE_DEVICE_NAME)
 #define ADV_OPT_USE_NAME BT_LE_ADV_OPT_USE_NAME
@@ -312,10 +319,15 @@ static void proxy_msg_recv(struct bt_mesh_proxy_role *role)
 static int beacon_send(struct bt_mesh_proxy_client *client,
 		       struct bt_mesh_subnet *sub)
 {
-	NET_BUF_SIMPLE_DEFINE(buf, 23);
+	int err;
+
+	NET_BUF_SIMPLE_DEFINE(buf, 28);
 
 	net_buf_simple_reserve(&buf, 1);
-	bt_mesh_beacon_create(sub, &buf);
+	err = bt_mesh_beacon_create(sub, &buf);
+	if (err) {
+		return err;
+	}
 
 	return bt_mesh_proxy_msg_send(client->cli->conn, BT_MESH_PROXY_BEACON,
 				      &buf, NULL, NULL);
@@ -354,7 +366,7 @@ void bt_mesh_proxy_beacon_send(struct bt_mesh_subnet *sub)
 	}
 }
 
-static void node_id_start(struct bt_mesh_subnet *sub)
+static void identity_enabled(struct bt_mesh_subnet *sub)
 {
 	sub->node_id = BT_MESH_NODE_IDENTITY_RUNNING;
 	sub->node_id_start = k_uptime_get_32();
@@ -366,9 +378,31 @@ static void node_id_start(struct bt_mesh_subnet *sub)
 	}
 }
 
-void bt_mesh_proxy_identity_start(struct bt_mesh_subnet *sub)
+static void node_id_start(struct bt_mesh_subnet *sub)
 {
-	node_id_start(sub);
+#if defined(CONFIG_BT_MESH_PRIV_BEACONS)
+	sub->priv_beacon.node_id = false;
+#endif
+
+	identity_enabled(sub);
+}
+
+static void private_node_id_start(struct bt_mesh_subnet *sub)
+{
+#if defined(CONFIG_BT_MESH_PRIV_BEACONS)
+	sub->priv_beacon.node_id = true;
+#endif
+
+	identity_enabled(sub);
+}
+
+void bt_mesh_proxy_identity_start(struct bt_mesh_subnet *sub, bool private)
+{
+	if (private) {
+		private_node_id_start(sub);
+	} else {
+		node_id_start(sub);
+	}
 
 	/* Prioritize the recently enabled subnet */
 	beacon_sub = sub;
@@ -401,20 +435,39 @@ int bt_mesh_proxy_identity_enable(void)
 	return 0;
 }
 
-#define NODE_ID_LEN  19
+int bt_mesh_proxy_private_identity_enable(void)
+{
+	LOG_DBG("");
+
+	if (!IS_ENABLED(CONFIG_BT_MESH_PRIV_BEACONS)) {
+		return -ENOTSUP;
+	}
+
+	if (!bt_mesh_is_provisioned()) {
+		return -EAGAIN;
+	}
+
+	if (bt_mesh_subnet_foreach(private_node_id_start)) {
+		bt_mesh_adv_gatt_update();
+	}
+
+	return 0;
+}
+
+#define ENC_ID_LEN  19
 #define NET_ID_LEN   11
 
 #define NODE_ID_TIMEOUT (CONFIG_BT_MESH_NODE_ID_TIMEOUT * MSEC_PER_SEC)
 
-static uint8_t proxy_svc_data[NODE_ID_LEN] = {
+static uint8_t proxy_svc_data[ENC_ID_LEN] = {
 	BT_UUID_16_ENCODE(BT_UUID_MESH_PROXY_VAL),
 };
 
-static const struct bt_data node_id_ad[] = {
+static const struct bt_data enc_id_ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL,
 		      BT_UUID_16_ENCODE(BT_UUID_MESH_PROXY_VAL)),
-	BT_DATA(BT_DATA_SVC_DATA16, proxy_svc_data, NODE_ID_LEN),
+	BT_DATA(BT_DATA_SVC_DATA16, proxy_svc_data, ENC_ID_LEN),
 };
 
 static const struct bt_data net_id_ad[] = {
@@ -424,44 +477,111 @@ static const struct bt_data net_id_ad[] = {
 	BT_DATA(BT_DATA_SVC_DATA16, proxy_svc_data, NET_ID_LEN),
 };
 
-static int node_id_adv(struct bt_mesh_subnet *sub, int32_t duration)
+static int randomize_bt_addr(void)
 {
+	/* TODO: There appears to be no way to force an RPA/NRPA refresh. */
+	return 0;
+}
+
+static int enc_id_adv(struct bt_mesh_subnet *sub, uint8_t type,
+		      uint8_t hash[16], int32_t duration)
+{
+	struct bt_le_adv_param slow_adv_param = {
+		.options = ADV_OPT_PROXY,
+		ADV_SLOW_INT,
+	};
 	struct bt_le_adv_param fast_adv_param = {
 		.options = ADV_OPT_PROXY,
 		ADV_FAST_INT,
 	};
-	uint8_t tmp[16];
 	int err;
 
-	LOG_DBG("");
-
-	proxy_svc_data[2] = BT_MESH_ID_TYPE_NODE;
-
-	err = bt_rand(proxy_svc_data + 11, 8);
+	err = bt_encrypt_be(sub->keys[SUBNET_KEY_TX_IDX(sub)].identity, hash, hash);
 	if (err) {
 		return err;
 	}
 
-	(void)memset(tmp, 0, 6);
-	memcpy(tmp + 6, proxy_svc_data + 11, 8);
-	sys_put_be16(bt_mesh_primary_addr(), tmp + 14);
-
-	err = bt_encrypt_be(sub->keys[SUBNET_KEY_TX_IDX(sub)].identity, tmp,
-			    tmp);
+	/* Section 7.2.2.2.4: The AdvA field shall be regenerated whenever the Random field is
+	 * regenerated.
+	 */
+	err = randomize_bt_addr();
 	if (err) {
+		LOG_ERR("AdvA refresh failed: %d", err);
 		return err;
 	}
 
-	memcpy(proxy_svc_data + 3, tmp + 8, 8);
+	proxy_svc_data[2] = type;
+	memcpy(&proxy_svc_data[3], &hash[8], 8);
 
-	err = bt_mesh_adv_gatt_start(&fast_adv_param, duration, node_id_ad,
-				     ARRAY_SIZE(node_id_ad), NULL, 0);
+	err = bt_mesh_adv_gatt_start(
+		type == BT_MESH_ID_TYPE_PRIV_NET ? &slow_adv_param : &fast_adv_param,
+		duration, enc_id_ad, ARRAY_SIZE(enc_id_ad), NULL, 0);
 	if (err) {
-		LOG_WRN("Failed to advertise using Node ID (err %d)", err);
+		LOG_WRN("Failed to advertise using type 0x%02x (err %d)", type, err);
 		return err;
 	}
 
 	return 0;
+}
+
+static int node_id_adv(struct bt_mesh_subnet *sub, int32_t duration)
+{
+	uint8_t *random = &proxy_svc_data[11];
+	uint8_t tmp[16];
+	int err;
+
+	LOG_DBG("0x%03x", sub->net_idx);
+
+	err = bt_rand(random, 8);
+	if (err) {
+		return err;
+	}
+
+	memset(&tmp[0], 0x00, 6);
+	memcpy(&tmp[6], random, 8);
+	sys_put_be16(bt_mesh_primary_addr(), &tmp[14]);
+
+	return enc_id_adv(sub, BT_MESH_ID_TYPE_NODE, tmp, duration);
+}
+
+static int priv_node_id_adv(struct bt_mesh_subnet *sub, int32_t duration)
+{
+	uint8_t *random = &proxy_svc_data[11];
+	uint8_t tmp[16];
+	int err;
+
+	LOG_DBG("0x%03x", sub->net_idx);
+
+	err = bt_rand(random, 8);
+	if (err) {
+		return err;
+	}
+
+	memset(&tmp[0], 0x00, 5);
+	tmp[5] = 0x03;
+	memcpy(&tmp[6], random, 8);
+	sys_put_be16(bt_mesh_primary_addr(), &tmp[14]);
+
+	return enc_id_adv(sub, BT_MESH_ID_TYPE_PRIV_NODE, tmp, duration);
+}
+
+static int priv_net_id_adv(struct bt_mesh_subnet *sub, int32_t duration)
+{
+	uint8_t *random = &proxy_svc_data[11];
+	uint8_t tmp[16];
+	int err;
+
+	LOG_DBG("0x%03x", sub->net_idx);
+
+	err = bt_rand(random, 8);
+	if (err) {
+		return err;
+	}
+
+	memcpy(&tmp[0], sub->keys[SUBNET_KEY_TX_IDX(sub)].net_id, 8);
+	memcpy(&tmp[8], random, 8);
+
+	return enc_id_adv(sub, BT_MESH_ID_TYPE_PRIV_NET, tmp, duration);
 }
 
 static int net_id_adv(struct bt_mesh_subnet *sub, int32_t duration)
@@ -471,8 +591,6 @@ static int net_id_adv(struct bt_mesh_subnet *sub, int32_t duration)
 		ADV_SLOW_INT,
 	};
 	int err;
-
-	LOG_DBG("");
 
 	proxy_svc_data[2] = BT_MESH_ID_TYPE_NET;
 
@@ -497,7 +615,8 @@ static bool advertise_subnet(struct bt_mesh_subnet *sub)
 	}
 
 	return (sub->node_id == BT_MESH_NODE_IDENTITY_RUNNING ||
-		bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED);
+		bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED ||
+		bt_mesh_priv_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED);
 }
 
 static struct bt_mesh_subnet *next_sub(void)
@@ -591,12 +710,20 @@ static int gatt_proxy_advertise(struct bt_mesh_subnet *sub)
 
 		if (sub->node_id == BT_MESH_NODE_IDENTITY_RUNNING) {
 			uint32_t active = k_uptime_get_32() - sub->node_id_start;
+			bool priv_node_id = false;
 
 			if (active < NODE_ID_TIMEOUT) {
 				remaining = MIN(remaining, NODE_ID_TIMEOUT - active);
-				LOG_DBG("Node ID active for %u ms, %d ms remaining", active,
-					remaining);
-				err = node_id_adv(sub, remaining);
+				LOG_DBG("Node ID active for %u ms, %d ms remaining",
+					active, remaining);
+#if defined(CONFIG_BT_MESH_PRIV_BEACONS)
+				priv_node_id = sub->priv_beacon.node_id;
+#endif
+				if (priv_node_id) {
+					err = priv_node_id_adv(sub, remaining);
+				} else {
+					err = node_id_adv(sub, remaining);
+				}
 				planned = true;
 			} else {
 				bt_mesh_proxy_identity_stop(sub);
@@ -608,10 +735,25 @@ static int gatt_proxy_advertise(struct bt_mesh_subnet *sub)
 		 * A node that does not support the Proxy feature or
 		 * has the GATT Proxy state disabled shall not advertise with Network ID.
 		 */
-		if (sub->node_id == BT_MESH_NODE_IDENTITY_STOPPED &&
-		    bt_mesh_gatt_proxy_get() == BT_MESH_FEATURE_ENABLED) {
-			err = net_id_adv(sub, remaining);
-			planned = true;
+		if (sub->node_id == BT_MESH_NODE_IDENTITY_STOPPED) {
+			if (IS_ENABLED(CONFIG_BT_MESH_PRIV_BEACONS) &&
+			    (bt_mesh_priv_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED)) {
+				/* Bluetooth mesh specification v1.1, section 7.2.2.2.4: The Random
+				 * field should be updated every 10 minutes. Limit advertising to
+				 * 10 minutes to ensure regeneration of a new random value at least
+				 * that often.
+				 */
+				if (remaining == SYS_FOREVER_MS ||
+				    remaining > PROXY_RANDOM_UPDATE_INTERVAL) {
+					remaining = PROXY_RANDOM_UPDATE_INTERVAL;
+				}
+
+				err = priv_net_id_adv(sub, remaining);
+				planned = true;
+			} else if (bt_mesh_gatt_proxy_get() == BT_MESH_FEATURE_ENABLED) {
+				err = net_id_adv(sub, remaining);
+				planned = true;
+			}
 		}
 
 		beacon_sub = bt_mesh_subnet_next(sub);

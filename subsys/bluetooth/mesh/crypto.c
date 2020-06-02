@@ -702,3 +702,126 @@ int bt_mesh_dhkey_gen(const uint8_t *pub_key, const uint8_t *priv_key, uint8_t *
 
 	return 0;
 }
+
+static int private_beacon_obf(const uint8_t pbk[16], const uint8_t data[5],
+			      const uint8_t random[13], uint8_t out[5])
+{
+	uint8_t salt[16];
+	int i, err;
+
+	/* C1 = 0x01 | random | 0x0001 */
+	salt[0] = 0x01;
+	memcpy(&salt[1], random, 13);
+	sys_put_be16(0x0001, &salt[14]);
+
+	/* ObfData = e(pbk, C1) ^ (flags | iv_index) */
+	err = bt_encrypt_be(pbk, salt, salt);
+	if (err) {
+		return err;
+	}
+
+	for (i = 0; i < 5; i++) {
+		out[i] = data[i] ^ salt[i];
+	}
+
+
+	return 0;
+}
+
+static int private_beacon_auth(const uint8_t pbk[16],
+			       const uint8_t beacon_data[5],
+			       const uint8_t random[13], uint8_t auth[8])
+{
+	uint8_t salt[16], tmp[16];
+	int i, err;
+
+	/* B0 = 0x19 | random | 0x0005 */
+	salt[0] = 0x19;
+	memcpy(&salt[1], random, 13);
+	sys_put_be16(0x0005, &salt[14]);
+
+	/* T0 = e(PBK, b0) */
+	err = bt_encrypt_be(pbk, salt, tmp);
+	if (err) {
+		return err;
+	}
+
+	/* P = flags | iv_index | 000 */
+	/* T1 = e(PBK, P ^ T0) */
+	for (i = 0; i < 5; i++) {
+		tmp[i] ^= beacon_data[i];
+	}
+
+	err = bt_encrypt_be(pbk, tmp, tmp);
+	if (err) {
+		return err;
+	}
+
+	/* C0 = 0x01 | random | 0x0000 */
+	salt[0] = 0x01;
+	sys_put_be16(0x0000, &salt[14]);
+
+	/* T2 = T1 ^ e(PBK, C0) */
+	memcpy(auth, tmp, 8);
+
+	err = bt_encrypt_be(pbk, salt, tmp);
+	if (err) {
+		return err;
+	}
+
+	/* Auth = T2[0..7] */
+	for (i = 0; i < 8; i++) {
+		auth[i] ^= tmp[i];
+	}
+
+	return 0;
+}
+
+int bt_mesh_beacon_decrypt(const uint8_t pbk[16], const uint8_t random[13],
+			   const uint8_t data[5],
+			   const uint8_t expected_auth[8], uint8_t out[5])
+{
+	uint8_t auth[8];
+	int err;
+
+	LOG_DBG("");
+
+	err = private_beacon_obf(pbk, data, random, out);
+	if (err) {
+		return err;
+	}
+
+	err = private_beacon_auth(pbk, out, random, auth);
+	if (err) {
+		return err;
+	}
+
+	LOG_DBG("0x%02x, 0x%08x", out[0], sys_get_be32(&out[1]));
+
+	if (memcmp(auth, expected_auth, 8)) {
+		LOG_DBG("Invalid auth: %s expected %s", bt_hex(auth, 8),
+			bt_hex(expected_auth, 8));
+		return -EBADMSG;
+	}
+
+	return 0;
+}
+
+int bt_mesh_beacon_encrypt(const uint8_t pbk[16], uint8_t flags,
+			   uint32_t iv_index, const uint8_t random[13],
+			   uint8_t data[5], uint8_t auth[8])
+{
+	int err;
+
+	LOG_WRN("Enc beacon: 0x%02x, 0x%08x", flags, iv_index);
+
+	data[0] = flags;
+	sys_put_be32(iv_index, &data[1]);
+
+	err = private_beacon_auth(pbk, data, random, auth);
+	if (err) {
+		return err;
+	}
+
+	return private_beacon_obf(pbk, data, random, data);
+}

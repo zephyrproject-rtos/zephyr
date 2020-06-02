@@ -546,6 +546,13 @@ static int gatt_proxy_set(struct bt_mesh_model *model,
 
 	(void)bt_mesh_gatt_proxy_set(buf->data[0]);
 
+	/** 4.2.46.1: If the value of the Node Identity state of the node for any subnet is 0x01,
+	 * then the value of the Private Node Identity state shall be Disable (0x00).
+	 */
+	if (IS_ENABLED(CONFIG_BT_MESH_PRIV_BEACONS) && buf->data[0]) {
+		(void)bt_mesh_priv_gatt_proxy_set(BT_MESH_FEATURE_DISABLED);
+	}
+
 	return send_gatt_proxy_status(model, ctx);
 }
 

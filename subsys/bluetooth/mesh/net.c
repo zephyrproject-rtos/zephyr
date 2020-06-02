@@ -96,6 +96,10 @@ struct bt_mesh_net bt_mesh = {
 	.sar_tx = BT_MESH_SAR_TX_INIT,
 	.sar_rx = BT_MESH_SAR_RX_INIT,
 #endif
+
+#if defined(CONFIG_BT_MESH_PRIV_BEACONS)
+	.priv_beacon_int = 0x3c,
+#endif
 };
 
 /* Mesh Profile Specification 3.10.6
@@ -355,7 +359,8 @@ do_update:
 	bt_mesh_subnet_foreach(bt_mesh_beacon_update);
 
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
-	    bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED) {
+		(bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED ||
+		 bt_mesh_priv_gatt_proxy_get() == BT_MESH_PRIV_GATT_PROXY_ENABLED)) {
 		bt_mesh_proxy_beacon_send(NULL);
 	}
 
@@ -673,7 +678,8 @@ static bool relay_to_adv(enum bt_mesh_net_if net_if)
 	case BT_MESH_NET_IF_ADV:
 		return (bt_mesh_relay_get() == BT_MESH_RELAY_ENABLED);
 	case BT_MESH_NET_IF_PROXY:
-		return (bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED);
+		return (bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED) ||
+			(bt_mesh_priv_gatt_proxy_get() == BT_MESH_PRIV_GATT_PROXY_ENABLED);
 	default:
 		return false;
 	}
@@ -693,7 +699,8 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 	if (rx->net_if == BT_MESH_NET_IF_ADV &&
 	    !rx->friend_cred &&
 	    bt_mesh_relay_get() != BT_MESH_RELAY_ENABLED &&
-	    bt_mesh_gatt_proxy_get() != BT_MESH_GATT_PROXY_ENABLED) {
+	    bt_mesh_gatt_proxy_get() != BT_MESH_GATT_PROXY_ENABLED &&
+	    bt_mesh_priv_gatt_proxy_get() != BT_MESH_PRIV_GATT_PROXY_ENABLED) {
 		return;
 	}
 
@@ -747,7 +754,8 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 	 */
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
 	    (rx->friend_cred ||
-	     bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED)) {
+	     bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED ||
+	     bt_mesh_priv_gatt_proxy_get() == BT_MESH_PRIV_GATT_PROXY_ENABLED)) {
 		bt_mesh_proxy_relay(buf, rx->ctx.recv_dst);
 	}
 
@@ -858,6 +866,7 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
 		bt_mesh_proxy_addr_add(data, rx.ctx.addr);
 
 		if (bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_DISABLED &&
+		    bt_mesh_priv_gatt_proxy_get() == BT_MESH_PRIV_GATT_PROXY_DISABLED &&
 		    !rx.local_match) {
 			LOG_INF("Proxy is disabled; ignoring message");
 			return;
