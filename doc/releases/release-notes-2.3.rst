@@ -175,6 +175,11 @@ Boards & SoC Support
 
 .. rst-class:: rst-columns
 
+   * Broadcom Viper BCM58402
+   * Infineon XMC4500 SoC
+   * Nordic nRF52820 SoC
+   * NXP LPC55S16 SoC
+   * SiLabs EFR32BG13P SoC
    * STM32L5 series of Ultra-low-power MCUs
 
 * Added support for these ARM boards:
