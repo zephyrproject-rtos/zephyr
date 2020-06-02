@@ -375,7 +375,7 @@ before pushing on zephyr repo. To do this, make the file
     while read local_ref local_sha remote_ref remote_sha
     do
         args="$remote $url $local_ref $local_sha $remote_ref $remote_sha"
-        exec ${ZEPHYR_BASE}/series-push-hook.sh $args
+        exec ${ZEPHYR_BASE}/scripts/series-push-hook.sh $args
     done
 
     exit 0
