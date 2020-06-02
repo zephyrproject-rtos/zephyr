@@ -105,7 +105,7 @@ static inline const char *TC_RESULT_TO_STR(int result)
 #endif
 
 #ifndef TC_START
-#define TC_START(name) PRINT_DATA("starting test - %s\n", name)
+#define TC_START(name) PRINT_DATA("START - %s\n", name)
 #endif
 
 #ifndef TC_END
@@ -116,7 +116,7 @@ static inline const char *TC_RESULT_TO_STR(int result)
 /* prints result and the function name */
 #define Z_TC_END_RESULT(result, func)					\
 	do {								\
-		TC_END(result, "%s - %s\n", TC_RESULT_TO_STR(result), func); \
+		TC_END(result, " %s - %s\n", TC_RESULT_TO_STR(result), func); \
 		PRINT_LINE;						\
 	} while (0)
 #endif
