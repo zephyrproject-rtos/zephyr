@@ -244,18 +244,18 @@ Drivers and Sensors
 
 * ADC
 
-  * Add support for STM32G4, STM32L1 and STM32H7 series
-  * Enable internal voltage reference source on stm32
+  * Added support for STM32G4, STM32L1 and STM32H7 series
+  * Enabled internal voltage reference source on stm32
 
 * Bluetooth
 
-  * Add an RX thread on stm32wb hci wrapper
-  * Improve BLE support for rv32m1_vega:
+  * Added an RX thread on stm32wb hci wrapper
+  * Improved BLE support for rv32m1_vega:
 
-    - Add Resolvable Private Address support
-    - Enable power saving support
-    - Add 2 Mbps support
-    - Enable controller-based privacy
+    - Added Resolvable Private Address support
+    - Enabled power saving support
+    - Added 2 Mbps support
+    - Enabled controller-based privacy
 
 * CAN
 
@@ -263,8 +263,8 @@ Drivers and Sensors
 
 * Clock Control
 
-  * Enable MSI range config in PLL mode on stm32
-  * Fix AHB clock computation based on core on stm32h7
+  * Enabled MSI range config in PLL mode on stm32
+  * Fixed AHB clock computation based on core on stm32h7
 
 * Console
 
@@ -272,12 +272,12 @@ Drivers and Sensors
 
 * Counter
 
-  * Add support on stm32h7 and stm32l0
-  * Fix alarm tick count on stm32
+  * Added support on stm32h7 and stm32l0
+  * Fixed alarm tick count on stm32
 
 * DAC
 
-  * Add stm32l0 series support
+  * Added stm32l0 series support
 
 * Display
 
@@ -285,7 +285,7 @@ Drivers and Sensors
 
 * DMA
 
-  * Enable use of DMAMUX on stm32l4+ and stm32wb
+  * Enabled use of DMAMUX on stm32l4+ and stm32wb
   * Various fixes on stm32 dma management
 
 * EEPROM
@@ -298,32 +298,32 @@ Drivers and Sensors
 
 * Ethernet
 
-  * Add SAM E54 max queue count referencing
-  * Add SAM0 family support to gmac driver
-  * Add sam4e support to queue in gmac
-  * Add network power management support to mcux
-  * Add VLAN support to enc28j60
-  * Add VLAN support to stm32
-  * Add Ethernet cable link status support to gmac
-  * Add support for i.MXRT1060 family to mcux
-  * Add support for getting manual MAC address from devicetree
-  * Add support for enabling random MAC address from devicetree
+  * Added SAM E54 max queue count referencing
+  * Added SAM0 family support to gmac driver
+  * Added sam4e support to queue in gmac
+  * Added network power management support to mcux
+  * Added VLAN support to enc28j60
+  * Added VLAN support to stm32
+  * Added Ethernet cable link status support to gmac
+  * Added support for i.MXRT1060 family to mcux
+  * Added support for getting manual MAC address from devicetree
+  * Added support for enabling random MAC address from devicetree
   * Various fixes to setup and cache handling in gmac
-  * Fix how unique MAC address is determined in mcux
-  * Fix Ethernet cable link detection in gecko
-  * Fix stm32 when receiving data during initialization
+  * Fixed how unique MAC address is determined in mcux
+  * Fixed Ethernet cable link detection in gecko
+  * Fixed stm32 when receiving data during initialization
 
 * Flash
 
-  * Add logs on stm32
-  * Fix wrong bank erasing on stm32g4
+  * Added logs on stm32
+  * Fixed wrong bank erasing on stm32g4
 
 * GPIO
 
-  * Add mcp23s17 driver
-  * Add STM32L5 support to stm32 driver
-  * Add interrupt support to sx1509b driver
-  * Fix interrupt handling in sifive, intel_apl, mchp_xec, mcux_igpio driver
+  * Added mcp23s17 driver
+  * Added STM32L5 support to stm32 driver
+  * Added interrupt support to sx1509b driver
+  * Fixed interrupt handling in sifive, intel_apl, mchp_xec, mcux_igpio driver
 
 * Hardware Info
 
@@ -331,7 +331,7 @@ Drivers and Sensors
 
 * I2C
 
-  * Add support to stm32h7
+  * Added support to stm32h7
 
 * I2S
 
@@ -339,19 +339,19 @@ Drivers and Sensors
 
 * IEEE 802.15.4
 
-  * Add Decawave DW1000 driver
-  * Add "no auto start" option and local MAC address support to rf2xx
-  * Add support for Frame Pending Bit (FPB) handling in nrf5
-  * Add CSMA CA transmit capability to nrf5
-  * Add PAN coordinator mode support to nrf5
-  * Add support for promiscuous mode to nrf5
-  * Add support for energy scan function to nrf5
-  * Fix RX timestamp handling in nrf5
+  * Added Decawave DW1000 driver
+  * Added "no auto start" option and local MAC address support to rf2xx
+  * Added support for Frame Pending Bit (FPB) handling in nrf5
+  * Added CSMA CA transmit capability to nrf5
+  * Added PAN coordinator mode support to nrf5
+  * Added support for promiscuous mode to nrf5
+  * Added support for energy scan function to nrf5
+  * Fixed RX timestamp handling in nrf5
   * Various fixes to rf2xx
 
 * Interrupt Controller
 
-  * Fix PLIC register space
+  * Fixed PLIC register space
   * <TBD>
 
 * IPM
@@ -364,19 +364,19 @@ Drivers and Sensors
 
 * Modem
 
-  * Add support for GSM 07.10 muxing protocol to generic GSM modem
-  * Add support for modem commands that do not have a line ending
-  * Add automatic detection of ublox-sara-r4 modem type
-  * Add automatic setting of APN for ublox-sara-r4
-  * Add sendmsg() support to ublox-sara-r4
-  * Fix UDP socket closing in ublox-sara-r4
-  * Fix RSSI calculation for Sara U201
-  * Fix TCP context release and RX socket src/dst port assignment in wncm14a2a
-  * Change PPP driver connection to generic GSM modem
+  * Added support for GSM 07.10 muxing protocol to generic GSM modem
+  * Added support for modem commands that do not have a line ending
+  * Added automatic detection of ublox-sara-r4 modem type
+  * Added automatic setting of APN for ublox-sara-r4
+  * Added sendmsg() support to ublox-sara-r4
+  * Fixed UDP socket closing in ublox-sara-r4
+  * Fixed RSSI calculation for Sara U201
+  * Fixed TCP context release and RX socket src/dst port assignment in wncm14a2a
+  * Changed PPP driver connection to generic GSM modem
 
 * Pinmux
 
-  * Fix compilation errors in rv32m1_vega pinmux
+  * Fixed compilation errors in rv32m1_vega pinmux
   * <TBD>
 
 * PS/2
@@ -385,22 +385,22 @@ Drivers and Sensors
 
 * PWM
 
-  * Add support to stm32h7
+  * Added support to stm32h7
 
 * Sensor
 
-  * Add support for Analog Devices ADXL345 3-axis I2C accelerometer
+  * Added support for Analog Devices ADXL345 3-axis I2C accelerometer
   * <TBD>
 
 * Serial
 
-  * Add uart_mux driver that is used in GSM 07.10 muxing protocol
-  * Add support for parity setting from dts on stm32
-  * Add support for stm32l5
+  * Added uart_mux driver that is used in GSM 07.10 muxing protocol
+  * Added support for parity setting from dts on stm32
+  * Added support for stm32l5
 
 * SPI
 
-  * Add support for DMA client on stm32
+  * Added support for DMA client on stm32
 
 * Timer
 
@@ -408,9 +408,9 @@ Drivers and Sensors
 
 * USB
 
-  * Add experimental USB Audio implementation.
-  * Add support to stm32wb
-  * Fix PMA leak at reset on stm32
+  * Added experimental USB Audio implementation.
+  * Added support to stm32wb
+  * Fixed PMA leak at reset on stm32
 
 * Video
 
@@ -418,13 +418,13 @@ Drivers and Sensors
 
 * Watchdog
 
-  * Add support on stm32g0
-  * Disable iwdg at boot on stm32
+  * Added support on stm32g0
+  * Disabled iwdg at boot on stm32
 
 * WiFi
 
-  * Add scan completion indication to eswifi
-  * Add support to ESP8266 and ESP32
+  * Added scan completion indication to eswifi
+  * Added support to ESP8266 and ESP32
 
 
 Networking
