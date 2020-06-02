@@ -295,6 +295,7 @@ int k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list)
 #if defined(CONFIG_POLL)
 static void *k_queue_poll(struct k_queue *queue, k_timeout_t timeout)
 {
+	s64_t now = z_tick_get(), end = 2 + z_timeout_end_calc(timeout);
 	struct k_poll_event event;
 	int err;
 	k_spinlock_key_t key;
@@ -303,16 +304,31 @@ static void *k_queue_poll(struct k_queue *queue, k_timeout_t timeout)
 	k_poll_event_init(&event, K_POLL_TYPE_FIFO_DATA_AVAILABLE,
 			  K_POLL_MODE_NOTIFY_ONLY, queue);
 
-	event.state = K_POLL_STATE_NOT_READY;
-	err = k_poll(&event, 1, timeout);
+	/* This loop is needed because there is an inherent race with
+	 * k_poll() when used like this: the item may be removed by
+	 * another thread between the "data available" return from
+	 * k_poll() and the queue list removal, causing a spurious
+	 * early return.
+	 */
+	do {
+		event.state = K_POLL_STATE_NOT_READY;
+		err = k_poll(&event, 1,
+			     K_TIMEOUT_EQ(timeout, K_FOREVER) ? timeout :
+			     K_TICKS(end - now));
 
-	if (err && err != -EAGAIN) {
-		return NULL;
-	}
+		if (err && err != -EAGAIN) {
+			return NULL;
+		}
 
-	key = k_spin_lock(&queue->lock);
-	val = z_queue_node_peek(sys_sflist_get(&queue->data_q), true);
-	k_spin_unlock(&queue->lock, key);
+		if (err == 0) {
+			key = k_spin_lock(&queue->lock);
+			val = z_queue_node_peek(sys_sflist_get(&queue->data_q),
+						true);
+			k_spin_unlock(&queue->lock, key);
+		}
+
+		now = z_tick_get();
+	} while (val == NULL && now < end);
 
 	return val;
 }
