@@ -56,6 +56,12 @@ static inline int bt_mesh_beacon_key(const uint8_t net_key[16],
 	return bt_mesh_id128(net_key, "nkbk", beacon_key);
 }
 
+static inline int bt_mesh_private_beacon_key(const uint8_t net_key[16],
+					     uint8_t private_beacon_key[16])
+{
+	return bt_mesh_id128(net_key, "nkpk", private_beacon_key);
+}
+
 int bt_mesh_beacon_auth(const uint8_t beacon_key[16], uint8_t flags,
 			const uint8_t net_id[8], uint32_t iv_index,
 			uint8_t auth[8]);
@@ -150,3 +156,10 @@ int bt_mesh_prov_encrypt(const uint8_t key[16], uint8_t nonce[13],
 			 const uint8_t data[25], uint8_t out[25 + 8]);
 
 int bt_mesh_dhkey_gen(const uint8_t *pub_key, const uint8_t *priv_key, uint8_t *dhkey);
+
+int bt_mesh_beacon_decrypt(const uint8_t pbk[16], const uint8_t random[13],
+			   const uint8_t data[5], const uint8_t expected_auth[8],
+			   uint8_t out[5]);
+
+int bt_mesh_beacon_encrypt(const uint8_t pbk[16], uint8_t flags, uint32_t iv_index,
+			   const uint8_t random[13], uint8_t data[5], uint8_t auth[8]);
