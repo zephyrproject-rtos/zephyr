@@ -73,4 +73,13 @@ config PRINTK64
 	  reduce code size if it is unused elsewhere in the
 	  application.  Most apps should leave this set to y.
 
+config PRINTK_SYNC
+	bool "Serialize printk() calls"
+	default y if SMP && MP_NUM_CPUS > 1
+	help
+	  When true, a spinlock will be taken around the output from a
+	  single printk() call, preventing the output data from
+	  interleaving with concurrent usage from another CPU or an
+	  preempting interrupt.
+
 endmenu
