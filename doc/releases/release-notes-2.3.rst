@@ -82,6 +82,7 @@ Deprecated in this release
   * nrf52840_pca10090 has been renamed to nrf9160dk_nrf52840
   * nrf52_pca20020 has been renamed to thingy52_nrf52832
   * nrf5340_dk_nrf5340 has been renamed to nrf5340pdk_nrf5340
+  * efr32_slwstk6061a has been renamed to efr32_radio_brd4250b
 
 * Devicetree
 
@@ -181,9 +182,18 @@ Boards & SoC Support
   .. rst-class:: rst-columns
 
      * 96Boards AeroCore 2
+     * Adafruit Feather nRF52840 Express
      * Adafruit Feather STM32F405 Express
      * Black STM32 F407VE Development Board
      * Black STM32 F407ZG Pro Development Board
+     * Broadcom BCM958402M2
+     * EFR32 BRD4104A (SLWRB4104A)
+     * Infineon XMC45-RELAX-KIT
+     * nRF52820 emulation on nRF52833 DK
+     * nrf9160 INNBLUE21
+     * nrf9160 INNBLUE22
+     * NXP LPCXpresso55S16
+     * SEGGER IP Switch Board
      * ST Nucleo H743ZI
      * ST Nucleo F303RE
      * ST Nucleo L552ZE-Q
