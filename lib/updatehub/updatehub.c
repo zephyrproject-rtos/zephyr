@@ -42,7 +42,6 @@ LOG_MODULE_REGISTER(updatehub, CONFIG_UPDATEHUB_LOG_LEVEL);
  * otherwise download size will be less than real size.
  */
 #define MAX_DOWNLOAD_DATA (MAX_PAYLOAD_SIZE + 32)
-#define COAP_MAX_RETRY 3
 #define MAX_IP_SIZE 30
 
 #define SHA256_HEX_DIGEST_SIZE	((TC_SHA256_DIGEST_SIZE * 2) + 1)
@@ -486,7 +485,8 @@ static enum updatehub_response install_update(void)
 		}
 
 		if (verification_download == ctx.downloaded_size) {
-			if (attempts_download == COAP_MAX_RETRY) {
+			if (attempts_download ==
+			    CONFIG_UPDATEHUB_COAP_MAX_RETRY) {
 				LOG_ERR("Could not get the packet");
 				ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
 				goto cleanup;
