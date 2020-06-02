@@ -11,8 +11,6 @@ static inline void hal_swi_init(void)
 	/* No platform-specific initialization required. */
 }
 
-/* SW IRQs required for the nRF5 BLE Controller. */
-#if defined(CONFIG_BT_LL_SW_SPLIT)
 /* Split architecture uses max. two SWI */
 #define HAL_SWI_RADIO_IRQ  SWI4_IRQn
 #define HAL_SWI_WORKER_IRQ RTC0_IRQn
@@ -29,10 +27,6 @@ static inline void hal_swi_lll_pend(void)
 	NVIC_SetPendingIRQ(HAL_SWI_RADIO_IRQ);
 }
 
-#else
-#error "CTRL architecture not defined"
-#endif
-
 static inline void hal_swi_worker_pend(void)
 {
 	NVIC_SetPendingIRQ(HAL_SWI_WORKER_IRQ);
@@ -44,9 +38,6 @@ static inline void hal_swi_job_pend(void)
 }
 
 #elif defined(CONFIG_SOC_SERIES_NRF53X)
-
-/* SW IRQs required for the nRF5 BLE Controller. */
-#if defined(CONFIG_BT_LL_SW_SPLIT)
 
 static inline void hal_swi_init(void)
 {
@@ -80,8 +71,4 @@ static inline void hal_swi_job_pend(void)
 	NVIC_SetPendingIRQ(HAL_SWI_JOB_IRQ);
 }
 
-#else
-#error "Legacy Controller architecture is not supported. "
-#endif /* CONFIG_BT_LL_SW_SPLIT */
-
-#endif /* CONFIG_SOC_SERIES_NRF51X || CONFIG_SOC_COMPATIBLE_NRF52X */
+#endif /* CONFIG_SOC_SERIES_NRF53X */

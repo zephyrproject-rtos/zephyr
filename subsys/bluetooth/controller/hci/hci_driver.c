@@ -45,10 +45,6 @@
 #include "ll_sw/lll.h"
 #include "ll.h"
 
-#if (!defined(CONFIG_BT_LL_SW_SPLIT))
-#include "ll_sw/ctrl.h"
-#endif /* CONFIG_BT_LL_SW_SPLIT */
-
 #include "hci_internal.h"
 
 #include "hal/debug.h"
@@ -75,7 +71,7 @@ static struct net_buf *process_prio_evt(struct node_rx_pdu *node_rx,
 #if defined(CONFIG_BT_CONN)
 	if (node_rx->hdr.user_meta == HCI_CLASS_EVT_CONNECTION) {
 		uint16_t handle;
-		struct pdu_data *pdu_data = PDU_DATA(node_rx);
+		struct pdu_data *pdu_data = (void *)node_rx->pdu;
 
 		handle = node_rx->hdr.handle;
 		if (node_rx->hdr.type == NODE_RX_TYPE_TERMINATE) {

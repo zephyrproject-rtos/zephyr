@@ -36,10 +36,6 @@
 #include "hci_internal.h"
 #include "hci_vendor.h"
 
-#if (!defined(CONFIG_BT_LL_SW_SPLIT))
-#include "ll_sw/ctrl.h"
-#endif /* CONFIG_BT_LL_SW_SPLIT */
-
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 #include "ll_sw/ll_mesh.h"
 #endif /* CONFIG_BT_HCI_MESH_EXT */
@@ -3003,9 +2999,6 @@ static inline void le_mesh_scan_report(struct pdu_adv *adv,
 	struct bt_hci_evt_mesh_scanning_report *mep;
 	struct bt_hci_evt_mesh_scan_report *sr;
 	uint32_t instant;
-#if !defined(CONFIG_BT_LL_SW_SPLIT)
-	uint8_t *extra;
-#endif
 	uint8_t chan;
 
 	LL_ASSERT(adv->type == PDU_ADV_TYPE_NONCONN_IND);
@@ -3017,17 +3010,8 @@ static inline void le_mesh_scan_report(struct pdu_adv *adv,
 		return;
 	}
 
-#if defined(CONFIG_BT_LL_SW_SPLIT)
 	chan = node_rx->hdr.rx_ftr.chan;
 	instant = node_rx->hdr.rx_ftr.anchor_ticks;
-#else
-	extra = &adv->payload[adv->len + PDU_AC_SIZE_RSSI + PDU_AC_SIZE_PRIV +
-			      PDU_AC_SIZE_SCFP];
-
-	chan = *extra;
-	extra++;
-	instant = sys_get_le32(extra);
-#endif /* CONFIG_BT_LL_SW_SPLIT */
 
 	mep = mesh_evt(buf, BT_HCI_EVT_MESH_SCANNING_REPORT,
 			    sizeof(*mep) + sizeof(*sr));
@@ -3056,9 +3040,6 @@ static void le_advertising_report(struct pdu_data *pdu_data,
 	struct bt_hci_evt_le_advertising_info *adv_info;
 	uint8_t data_len;
 	uint8_t info_len;
-#if !defined(CONFIG_BT_LL_SW_SPLIT)
-	uint8_t *extra;
-#endif
 	int8_t rssi;
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	uint8_t rl_idx;
@@ -3068,7 +3049,6 @@ static void le_advertising_report(struct pdu_data *pdu_data,
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 	int8_t *prssi;
 
-#if defined(CONFIG_BT_LL_SW_SPLIT)
 	rssi = -(node_rx->hdr.rx_ftr.rssi);
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	rl_idx = node_rx->hdr.rx_ftr.rl_idx;
@@ -3076,21 +3056,6 @@ static void le_advertising_report(struct pdu_data *pdu_data,
 #if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
 	direct = node_rx->hdr.rx_ftr.direct;
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
-
-#else
-	extra = &adv->payload[adv->len];
-	rssi = -(*extra);
-	extra += PDU_AC_SIZE_RSSI;
-
-#if defined(CONFIG_BT_CTLR_PRIVACY)
-	rl_idx = *extra;
-	extra += PDU_AC_SIZE_PRIV;
-#endif
-#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
-	direct = *extra;
-	extra += PDU_AC_SIZE_SCFP;
-#endif
-#endif /* CONFIG_BT_LL_SW_SPLIT */
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (adv->tx_addr) {
@@ -3642,9 +3607,6 @@ static void le_scan_req_received(struct pdu_data *pdu_data,
 	    !(le_event_mask & BT_EVT_MASK_LE_SCAN_REQ_RECEIVED)) {
 		bt_addr_le_t addr;
 		uint8_t handle;
-#if !defined(CONFIG_BT_LL_SW_SPLIT)
-		uint8_t *extra;
-#endif
 		int8_t rssi;
 
 		handle = 0U;
@@ -3652,13 +3614,8 @@ static void le_scan_req_received(struct pdu_data *pdu_data,
 		memcpy(&addr.a.val[0], &adv->scan_req.scan_addr[0],
 		       sizeof(bt_addr_t));
 
-#if defined(CONFIG_BT_LL_SW_SPLIT)
 		/* The Link Layer currently returns RSSI as an absolute value */
 		rssi = -(node_rx->hdr.rx_ftr.rssi);
-#else
-		extra = &adv->payload[adv->len];
-		rssi = -(*extra);
-#endif /* CONFIG_BT_LL_SW_SPLIT */
 
 		BT_DBG("handle: %d, addr: %s, rssi: %d dB.",
 		       handle, bt_addr_le_str(&addr), rssi);
@@ -4248,7 +4205,7 @@ static void encode_data_ctrl(struct node_rx_pdu *node_rx,
 #if defined(CONFIG_BT_CONN)
 void hci_acl_encode(struct node_rx_pdu *node_rx, struct net_buf *buf)
 {
-	struct pdu_data *pdu_data = PDU_DATA(node_rx);
+	struct pdu_data *pdu_data = (void *)node_rx->pdu;
 	struct bt_hci_acl_hdr *acl;
 	uint16_t handle_flags;
 	uint16_t handle;
@@ -4292,7 +4249,7 @@ void hci_acl_encode(struct node_rx_pdu *node_rx, struct net_buf *buf)
 
 void hci_evt_encode(struct node_rx_pdu *node_rx, struct net_buf *buf)
 {
-	struct pdu_data *pdu_data = PDU_DATA(node_rx);
+	struct pdu_data *pdu_data = (void *)node_rx->pdu;
 
 	if (node_rx->hdr.type != NODE_RX_TYPE_DC_PDU) {
 		encode_control(node_rx, pdu_data, buf);
@@ -4325,7 +4282,7 @@ void hci_num_cmplt_encode(struct net_buf *buf, uint16_t handle, uint8_t num)
 uint8_t hci_get_class(struct node_rx_pdu *node_rx)
 {
 #if defined(CONFIG_BT_CONN)
-	struct pdu_data *pdu_data = PDU_DATA(node_rx);
+	struct pdu_data *pdu_data = (void *)node_rx->pdu;
 #endif
 
 	if (node_rx->hdr.type != NODE_RX_TYPE_DC_PDU) {
