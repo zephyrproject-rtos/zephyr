@@ -42,6 +42,10 @@ typedef uint32_t printk_val_t;
  */
 #define DIGITS_BUFLEN (11 * (sizeof(printk_val_t) / 4) - 1)
 
+#ifdef CONFIG_PRINTK_SYNC
+static struct k_spinlock lock;
+#endif
+
 #ifdef CONFIG_PRINTK
 /**
  * @brief Default character output routine that does nothing
@@ -371,26 +375,47 @@ void vprintk(const char *fmt, va_list ap)
 		}
 	} else {
 		struct out_context ctx = { 0 };
+#ifdef CONFIG_PRINTK_SYNC
+		k_spinlock_key_t key = k_spin_lock(&lock);
+#endif
 
 		z_vprintk(char_out, &ctx, fmt, ap);
+
+#ifdef CONFIG_PRINTK_SYNC
+		k_spin_unlock(&lock, key);
+#endif
 	}
 }
 #else
 void vprintk(const char *fmt, va_list ap)
 {
 	struct out_context ctx = { 0 };
+#ifdef CONFIG_PRINTK_SYNC
+	k_spinlock_key_t key = k_spin_lock(&lock);
+#endif
 
 	z_vprintk(char_out, &ctx, fmt, ap);
+
+#ifdef CONFIG_PRINTK_SYNC
+	k_spin_unlock(&lock, key);
+#endif
 }
 #endif /* CONFIG_USERSPACE */
 
 void z_impl_k_str_out(char *c, size_t n)
 {
 	size_t i;
+#ifdef CONFIG_PRINTK_SYNC
+	k_spinlock_key_t key = k_spin_lock(&lock);
+#endif
 
 	for (i = 0; i < n; i++) {
 		_char_out(c[i]);
 	}
+
+#ifdef CONFIG_PRINTK_SYNC
+	k_spin_unlock(&lock, key);
+#endif
 }
 
 #ifdef CONFIG_USERSPACE
