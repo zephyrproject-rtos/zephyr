@@ -73,6 +73,10 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH_LARGE_COMP_DATA_SRV  large_comp_data
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_LARGE_COMP_DATA_CLI  large_comp_data_cli.c)
 
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_PRIV_BEACON_SRV priv_beacon_srv.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_PRIV_BEACON_CLI priv_beacon_cli.c)
+
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_SELF_TEST test.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_CDB cdb.c)

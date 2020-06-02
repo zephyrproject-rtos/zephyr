@@ -128,6 +128,8 @@ struct bt_mesh_elem {
 #define BT_MESH_MODEL_ID_HEALTH_CLI                0x0003
 #define BT_MESH_MODEL_ID_REMOTE_PROV_SRV           0x0004
 #define BT_MESH_MODEL_ID_REMOTE_PROV_CLI           0x0005
+#define BT_MESH_MODEL_ID_PRIV_BEACON_SRV           0x000a
+#define BT_MESH_MODEL_ID_PRIV_BEACON_CLI           0x000b
 #define BT_MESH_MODEL_ID_SAR_CFG_SRV               0x000e
 #define BT_MESH_MODEL_ID_SAR_CFG_CLI               0x000f
 #define BT_MESH_MODEL_ID_LARGE_COMP_DATA_SRV       0x0012
