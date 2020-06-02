@@ -790,6 +790,14 @@ static void config_sub_devices(struct device *dev)
 	ESPI_EIO_BAR_REGS->EC_BAR_MBOX = ESPI_XEC_MBOX_BAR_ADDRESS |
 		MCHP_ESPI_IO_BAR_HOST_VALID;
 #endif
+#ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT
+	ESPI_EIO_BAR_REGS->EC_BAR_ACPI_EC_1 =
+	       CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT_PORT_NUM |
+		MCHP_ESPI_IO_BAR_HOST_VALID;
+	ESPI_EIO_BAR_REGS->EC_BAR_MBOX = ESPI_XEC_MBOX_BAR_ADDRESS |
+		MCHP_ESPI_IO_BAR_HOST_VALID;
+#endif
+
 #ifdef CONFIG_ESPI_PERIPHERAL_DEBUG_PORT_80
 	ESPI_EIO_BAR_REGS->EC_BAR_P80CAP_0 = ESPI_XEC_PORT80_BAR_ADDRESS |
 		MCHP_ESPI_IO_BAR_HOST_VALID;
@@ -1070,6 +1078,20 @@ static void ibf_isr(struct device *dev)
 	espi_send_callbacks(&data->callbacks, dev, evt);
 }
 
+#ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT
+static void ibf_pvt_isr(struct device *dev)
+{
+	struct espi_xec_data *data = (struct espi_xec_data *)(dev->driver_data);
+	struct espi_event evt = {
+		.evt_type = ESPI_BUS_PERIPHERAL_NOTIFICATION,
+		.evt_details = ESPI_PERIPHERAL_HOST_IO_PVT,
+		.evt_data = ESPI_PERIPHERAL_NODATA
+	};
+
+	espi_send_callbacks(&data->callbacks, dev, evt);
+}
+#endif
+
 static void ibf_kbc_isr(struct device *dev)
 {
 	struct espi_xec_data *data = (struct espi_xec_data *)(dev->driver_data);
@@ -1152,6 +1174,9 @@ const struct espi_isr m2s_vwires_isr[] = {
 
 const struct espi_isr peripherals_isr[] = {
 	{MCHP_ACPI_EC_0_IBF_GIRQ, ibf_isr},
+#ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT
+	{MCHP_ACPI_EC_1_IBF_GIRQ, ibf_pvt_isr},
+#endif
 	{MCHP_KBC_IBF_GIRQ, ibf_kbc_isr},
 	{MCHP_PORT80_DEBUG0_GIRQ_VAL, port80_isr},
 	{MCHP_PORT80_DEBUG1_GIRQ_VAL, port81_isr},
@@ -1328,8 +1353,10 @@ static int espi_xec_init(struct device *dev)
 #endif
 #ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO
 	MCHP_GIRQ_ENSET(config->pc_girq_id) = MCHP_ACPI_EC_0_IBF_GIRQ;
-	MCHP_GIRQ_ENSET(config->pc_girq_id) = MCHP_ACPI_EC_1_IBF_GIRQ;
 	MCHP_GIRQ_ENSET(config->pc_girq_id) = MCHP_ACPI_EC_2_IBF_GIRQ;
+#endif
+#ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT
+	MCHP_GIRQ_ENSET(config->pc_girq_id) = MCHP_ACPI_EC_1_IBF_GIRQ;
 #endif
 #ifdef CONFIG_ESPI_PERIPHERAL_DEBUG_PORT_80
 	MCHP_GIRQ_ENSET(config->pc_girq_id) = MCHP_PORT80_DEBUG0_GIRQ_VAL |
