@@ -20,6 +20,9 @@ config ESPI_FLASH_CHANNEL
 config ESPI_PERIPHERAL_HOST_IO
 	default  y
 
+config ESPI_PERIPHERAL_HOST_IO_PVT
+	default  y
+
 config ESPI_PERIPHERAL_DEBUG_PORT_80
 	default y
 
