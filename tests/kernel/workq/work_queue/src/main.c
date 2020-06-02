@@ -286,14 +286,6 @@ static void coop_delayed_work_cancel_main(int arg1, int arg2)
 
 	TC_PRINT(" - Cancel delayed work from coop thread\n");
 	k_delayed_work_cancel(&delayed_tests[1].work);
-
-#if defined(CONFIG_POLL)
-	k_delayed_work_submit(&delayed_tests[2].work,
-			      K_NO_WAIT /* Submit immediately */);
-
-	TC_PRINT(" - Cancel pending delayed work from coop thread\n");
-	k_delayed_work_cancel(&delayed_tests[2].work);
-#endif
 }
 
 /**
