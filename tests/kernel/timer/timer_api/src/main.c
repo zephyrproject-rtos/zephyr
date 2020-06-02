@@ -204,7 +204,9 @@ void test_timer_period_0(void)
 	busy_wait_ms(DURATION + 1);
 
 	/** TESTPOINT: ensure it is one-short timer */
-	TIMER_ASSERT(tdata.expire_cnt == 1, &period0_timer);
+	TIMER_ASSERT((tdata.expire_cnt == 1)
+		     || (INEXACT_MS_CONVERT
+			 && (tdata.expire_cnt == 0)), &period0_timer);
 	TIMER_ASSERT(tdata.stop_cnt == 0, &period0_timer);
 
 	/* cleanup environemtn */
