@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2019 O.S.Systems
+# Copyright (c) 2018-2020 O.S.Systems
 # SPDX -License-Identifier: Apache-2.0
 
 menuconfig UPDATEHUB
@@ -85,6 +85,15 @@ config UPDATEHUB_DTLS
 	help
 	  Enables DTLS communication between the UpdateHub
 	  client and the server
+
+config UPDATEHUB_COAP_MAX_RETRY
+	int "Maximum retries attempts to download a packet"
+	default 10
+	range 3 10
+	depends on UPDATEHUB
+	help
+	  Set the maximum number of retries attempts to download a packet
+	  before abort a current update.
 
 module = UPDATEHUB
 module-str = Log level for UpdateHub
