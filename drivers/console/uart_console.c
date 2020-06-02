@@ -601,7 +601,7 @@ static int uart_console_init(struct device *arg)
 
 	__ASSERT_NO_MSG(uart_console_dev);
 
-#if defined(CONFIG_USB_UART_CONSOLE) && defined(CONFIG_USB_UART_DTR_WAIT)
+#if defined(CONFIG_USB_UART_CONSOLE)
 	int ret;
 
 	ret = usb_enable(NULL);
@@ -609,6 +609,7 @@ static int uart_console_init(struct device *arg)
 		return ret;
 	}
 
+#if defined(CONFIG_USB_UART_DTR_WAIT)
 	while (1) {
 		u32_t dtr = 0U;
 
@@ -618,6 +619,7 @@ static int uart_console_init(struct device *arg)
 		}
 	}
 	k_busy_wait(1000000);
+#endif
 #endif
 
 	uart_console_hook_install();
