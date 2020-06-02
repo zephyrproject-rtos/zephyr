@@ -1,6 +1,5 @@
 tests:
   crypto.mbedtls:
-    filter: not CONFIG_DEBUG
     min_flash: 65
     min_ram: 36
     tags: crypto mbedtls userspace
