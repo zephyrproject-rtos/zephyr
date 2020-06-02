@@ -36,4 +36,12 @@ config GIC_VER
 	default 2 if GIC_V2
 	default 3 if GIC_V3
 
+config GIC_MASTER
+	bool "GIC Master core controls the GIC Distributor."
+	default y
+	help
+	  As GIC Distributor is shared among multiple cores, which may be running in AMP,
+	  it is necessary that only one of the cores configures/control GIC distributor.
+	  All other cores should only configure their core-specific GIC CPU interfaces.
+
 endif # CPU_CORTEX

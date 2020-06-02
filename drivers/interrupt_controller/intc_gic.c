@@ -14,6 +14,31 @@
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <drivers/interrupt_controller/gic.h>
 
+static inline unsigned int cpu_id(void)
+{
+	unsigned int mpidr = 0;
+
+#if (CONFIG_CPU_CORTEX_R == 1)
+	/* Read MPIDR and AND-out the cluster id etc. */
+	__asm volatile("mrc p15, 0, %0, c0, c0, 5" : "=r"(mpidr));
+	mpidr &= 0xF;
+#endif /* CONFIG_CPU_CORTEX_R == 1 */
+
+	return mpidr;
+}
+
+static void set_irq_target(unsigned int irq)
+{
+	int offset = (irq % 4) << 3;
+	int reg    = (irq / 4) << 2;
+	unsigned int tmp32;
+
+	/* Update the IRQ target CPU list. */
+	tmp32 = ((1 << cpu_id()) << offset);
+	tmp32 |= sys_read32(GICD_ITARGETSRn + reg);
+	sys_write32(tmp32, GICD_ITARGETSRn + reg);
+}
+
 void arm_gic_irq_enable(unsigned int irq)
 {
 	int int_grp, int_off;
@@ -21,6 +46,10 @@ void arm_gic_irq_enable(unsigned int irq)
 	int_grp = irq / 32;
 	int_off = irq % 32;
 
+	/* Update Interrupt target. */
+	set_irq_target(irq);
+
+	/* Enable the GIC Interrupt. */
 	sys_write32((1 << int_off), (GICD_ISENABLERn + int_grp * 4));
 }
 
@@ -83,6 +112,14 @@ void arm_gic_eoi(unsigned int irq)
 	sys_write32(irq, GICC_EOIR);
 }
 
+#if (CONFIG_GIC_MASTER == 1)
+/*
+ * Initialize GIC distributor.
+ * NOTE: As GIC Distributor is shared among multiple cores, which may be
+ *       running in AMP, is necessary that only one of the cores
+ *		 configures/control GIC distributor. All other cores should only
+ *		 configure their core-specific GIC CPU interfaces.
+ */
 static void gic_dist_init(void)
 {
 	unsigned int gic_irqs, i;
@@ -98,13 +135,6 @@ static void gic_dist_init(void)
 	 * from the Distributor to the CPU interfaces
 	 */
 	sys_write32(0, GICD_CTLR);
-
-	/*
-	 * Set all global interrupts to this CPU only.
-	 */
-	for (i = GIC_SPI_INT_BASE; i < gic_irqs; i += 4) {
-		sys_write32(0x01010101, GICD_ITARGETSRn + i);
-	}
 
 	/*
 	 * Set all global interrupts to be level triggered, active low.
@@ -140,6 +170,7 @@ static void gic_dist_init(void)
 	 */
 	sys_write32(1, GICD_CTLR);
 }
+#endif /* CONFIG_GIC_MASTER == 1 */
 
 static void gic_cpu_init(void)
 {
@@ -188,8 +219,10 @@ static void gic_cpu_init(void)
 #define GIC_PARENT_IRQ_FLAGS 0
 int arm_gic_init(void)
 {
+#if (CONFIG_GIC_MASTER == 1)
 	/* Init of Distributor interface registers */
 	gic_dist_init();
+#endif /* CONFIG_GIC_MASTER == 1 */
 
 	/* Init CPU interface registers */
 	gic_cpu_init();
