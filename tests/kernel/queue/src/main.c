@@ -52,6 +52,7 @@ void test_main(void)
 			 ztest_1cpu_unit_test(test_queue_get_2threads),
 			 ztest_1cpu_unit_test(test_queue_get_fail),
 			 ztest_1cpu_unit_test(test_queue_loop),
-			 ztest_unit_test(test_queue_alloc));
+			 ztest_unit_test(test_queue_alloc),
+			 ztest_1cpu_unit_test(test_queue_poll_race));
 	ztest_run_test_suite(queue_api);
 }

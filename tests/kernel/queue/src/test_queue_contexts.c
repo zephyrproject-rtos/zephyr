@@ -287,3 +287,63 @@ void test_queue_alloc(void)
 
 	tqueue_alloc(&queue);
 }
+
+
+/* Does nothing but read items out of the queue and verify that they
+ * are non-null.  Two such threads will be created.
+ */
+static void queue_poll_race_consume(void *p1, void *p2, void *p3)
+{
+	struct k_queue *q = p1;
+	int *count = p2;
+
+	while (true) {
+		zassert_true(k_queue_get(q, K_FOREVER) != NULL, NULL);
+		*count += 1;
+	}
+}
+
+/* There was a historical race in the queue internals when CONFIG_POLL
+ * was enabled -- it was possible to wake up a lower priority thread
+ * with an insert but then steal it with a higher priority thread
+ * before it got a chance to run, and the lower priority thread would
+ * then return NULL before its timeout expired.
+ */
+void test_queue_poll_race(void)
+{
+	int prio = k_thread_priority_get(k_current_get());
+	int mid_count = 0, low_count = 0;
+
+	k_queue_init(&queue);
+
+	k_thread_create(&tdata, tstack, STACK_SIZE,
+			queue_poll_race_consume,
+			&queue, &mid_count, NULL,
+			prio + 1, 0, K_NO_WAIT);
+
+	k_thread_create(&tdata1, tstack1, STACK_SIZE,
+			queue_poll_race_consume,
+			&queue, &low_count, NULL,
+			prio + 2, 0, K_NO_WAIT);
+
+	/* Let them initialize and block */
+	k_sleep(K_TICKS(2));
+
+	/* Insert two items.  This will wake up both threads, but the
+	 * higher priority thread (tdata1) might (if CONFIG_POLL)
+	 * consume both.  The lower priority thread should stay
+	 * asleep.
+	 */
+	k_queue_append(&queue, &data[0]);
+	k_queue_append(&queue, &data[1]);
+
+	zassert_true(low_count == 0, NULL);
+	zassert_true(mid_count == 0, NULL);
+
+	k_sleep(K_TICKS(2));
+
+	zassert_true(low_count + mid_count == 2, NULL);
+
+	k_thread_abort(&tdata);
+	k_thread_abort(&tdata1);
+}
