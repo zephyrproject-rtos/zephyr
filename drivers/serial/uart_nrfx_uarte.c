@@ -594,6 +594,7 @@ static int uarte_nrfx_rx_disable(struct device *dev)
 	}
 	if (data->async->rx_next_buf != NULL) {
 		nrf_uarte_shorts_disable(uarte, NRF_UARTE_SHORT_ENDRX_STARTRX);
+		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
 	}
 
 	k_timer_stop(&data->async->rx_timeout_timer);
