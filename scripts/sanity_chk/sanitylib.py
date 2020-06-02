@@ -1214,7 +1214,7 @@ class SanityConfigParser:
                     # which appear both in "common" and per-test sections,
                     # but some keys are handled in adhoc way based on their
                     # semantics.
-                    if k == "filter":
+                    if k == "filter" or k == "pre-filter":
                         d[k] = "(%s) and (%s)" % (d[k], v)
                     else:
                         d[k] += " " + v
@@ -1363,6 +1363,7 @@ class TestCase(DisablePyTestCollectionMixin):
         self.toolchain_exclude = None
         self.toolchain_whitelist = None
         self.tc_filter = None
+        self.tc_pre_filter = None
         self.timeout = 60
         self.harness = ""
         self.harness_config = {}
@@ -1791,6 +1792,19 @@ class FilterBuilder(CMake):
         super().__init__(testcase, platform, source_dir, build_dir)
 
         self.log = "config-sanitycheck.log"
+        self.subsys2compats = dict()
+        self.get_subsys2compats()
+
+    def get_subsys2compats(self):
+        bindings_path = os.path.join(ZEPHYR_BASE, "dts", "bindings")
+        for dirpath, dirnames, filenames in os.walk(bindings_path, topdown=True):
+            sub = os.path.basename(dirpath)
+            bi = self.subsys2compats.get(sub, [])
+            for b in filenames:
+                if "yaml" in b:
+                    bi.append(os.path.splitext(b)[0])
+            if bi:
+                self.subsys2compats[sub] = bi
 
     def parse_generated(self):
 
@@ -1839,7 +1853,7 @@ class FilterBuilder(CMake):
                             warn_reg_unit_address_mismatch=False)
                 else:
                     edt = None
-                res = expr_parser.parse(self.testcase.tc_filter, filter_data, edt)
+                res = expr_parser.parse(self.testcase.tc_filter, filter_data, edt, self.subsys2compats)
 
             except (ValueError, SyntaxError) as se:
                 sys.stderr.write(
@@ -2214,6 +2228,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                        "toolchain_exclude": {"type": "set"},
                        "toolchain_whitelist": {"type": "set"},
                        "filter": {"type": "str"},
+                       "pre-filter": {"type": "str"},
                        "harness": {"type": "str"},
                        "harness_config": {"type": "map", "default": {}}
                        }
@@ -2279,6 +2294,24 @@ class TestSuite(DisablePyTestCollectionMixin):
 
         # run integration tests only
         self.integration = False
+
+        self.edt_cache = dict()
+        self.subsys2compats = dict()
+
+        # initialize subsystem map
+        self.get_subsys2compats()
+
+
+    def get_subsys2compats(self):
+        bindings_path = os.path.join(ZEPHYR_BASE, "dts", "bindings")
+        for dirpath, dirnames, filenames in os.walk(bindings_path, topdown=True):
+            sub = os.path.basename(dirpath)
+            bi = self.subsys2compats.get(sub, [])
+            for b in filenames:
+                if "yaml" in b:
+                    bi.append(os.path.splitext(b)[0])
+            if bi:
+                self.subsys2compats[sub] = bi
 
     def get_platform_instances(self, platform):
         filtered_dict = {k:v for k,v in self.instances.items() if k.startswith(platform + "/")}
@@ -2538,6 +2571,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                         tc.toolchain_exclude = tc_dict["toolchain_exclude"]
                         tc.toolchain_whitelist = tc_dict["toolchain_whitelist"]
                         tc.tc_filter = tc_dict["filter"]
+                        tc.tc_pre_filter = tc_dict["pre-filter"]
                         tc.timeout = tc_dict["timeout"]
                         tc.harness = tc_dict["harness"]
                         tc.harness_config = tc_dict["harness_config"]
@@ -2642,6 +2676,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         logger.info("Building initial testcase list...")
 
         for tc_name, tc in self.testcases.items():
+            #print(tc.name)
             # list of instances per testcase, aka configurations.
             instance_list = []
             for plat in platforms:
@@ -2756,6 +2791,26 @@ class TestSuite(DisablePyTestCollectionMixin):
                 if set(plat.ignore_tags) & tc.tags:
                     discards[instance] = "Excluded tags per platform"
                     continue
+
+
+                dts_path = os.path.join(ZEPHYR_BASE, "dts_db", plat.name + ".dts.pre.tmp")
+                if os.path.exists(dts_path) and tc.tc_pre_filter:
+                    try:
+                        if os.path.exists(dts_path) and not self.edt_cache.get(plat.name):
+                            edt = edtlib.EDT(dts_path, [os.path.join(ZEPHYR_BASE, "dts", "bindings")],
+                                    warn_reg_unit_address_mismatch=False)
+                            self.edt_cache[plat.name] = edt
+
+                        res = expr_parser.parse(tc.tc_pre_filter, {}, self.edt_cache.get(plat.name, None), self.subsys2compats)
+
+                    except (ValueError, SyntaxError) as se:
+                        sys.stderr.write(
+                            "Failed processing %s\n" % self.testcase.yamlfile)
+                        raise se
+
+                    if not res:
+                        discards[instance] = "Platform is excluded by pre-filter (DTS)."
+                        continue
 
                 # if nothing stopped us until now, it means this configuration
                 # needs to be added.

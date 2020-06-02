@@ -38,6 +38,9 @@ mapping:
       "filter":
         type: str
         required: no
+      "pre-filter":
+        type: str
+        required: no
       "integration":
         type: seq
         required: no
@@ -161,6 +164,9 @@ mapping:
             type: str
             required: no
           "filter":
+            type: str
+            required: no
+          "pre-filter":
             type: str
             required: no
           "integration":

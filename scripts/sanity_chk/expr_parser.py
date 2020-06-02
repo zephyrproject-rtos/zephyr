@@ -9,6 +9,7 @@ import os
 import copy
 import threading
 import re
+import pprint
 
 try:
     import ply.lex as lex
@@ -196,13 +197,14 @@ def ast_sym_int(ast, env):
             return int(v, 10)
     return 0
 
-def ast_expr(ast, env, edt):
+
+def ast_expr(ast, env, edt, subsys2compats):
     if ast[0] == "not":
-        return not ast_expr(ast[1], env, edt)
+        return not ast_expr(ast[1], env, edt, subsys2compats)
     elif ast[0] == "or":
-        return ast_expr(ast[1], env, edt) or ast_expr(ast[2], env, edt)
+        return ast_expr(ast[1], env, edt, subsys2compats) or ast_expr(ast[2], env, edt, subsys2compats)
     elif ast[0] == "and":
-        return ast_expr(ast[1], env, edt) and ast_expr(ast[2], env, edt)
+        return ast_expr(ast[1], env, edt, subsys2compats) and ast_expr(ast[2], env, edt, subsys2compats)
     elif ast[0] == "==":
         return ast_sym(ast[1], env) == ast[2]
     elif ast[0] == "!=":
@@ -227,10 +229,28 @@ def ast_expr(ast, env, edt):
             if compat in node.compats and node.enabled:
                 return True
         return False
+    elif ast[0] == "dt_prop_enabled":
+        prop = ast[1][0]
+        for node in edt.nodes:
+            if prop in node.props and node.enabled:
+                return True
+        return False
+    elif ast[0] == "dt_bus_enabled":
+        bus = ast[1][0]
+        for node in edt.nodes:
+            if node.bus == bus and node.enabled:
+                return True
+        return False
     elif ast[0] == "dt_alias_exists":
         alias = ast[1][0]
         for node in edt.nodes:
             if alias in node.aliases and node.enabled:
+                return True
+        return False
+    elif ast[0] == "subsys_dt_compat_enabled":
+        subsys = ast[1][0]
+        for compat in subsys2compats.get(subsys, []):
+            if edt.compat2enabled.get(compat, None):
                 return True
         return False
     elif ast[0] == "dt_compat_enabled_with_alias":
@@ -240,10 +260,16 @@ def ast_expr(ast, env, edt):
             if node.enabled and alias in node.aliases and node.matching_compat == compat:
                 return True
         return False
+    elif ast[0] == "dt_label_enabled":
+        label = ast[1][0]
+        for node in edt.nodes:
+            if node.enabled and label in node.labels:
+                return True
+        return False
 
 mutex = threading.Lock()
 
-def parse(expr_text, env, edt):
+def parse(expr_text, env, edt, subsys2compats):
     """Given a text representation of an expression in our language,
     use the provided environment to determine whether the expression
     is true or false"""
@@ -255,7 +281,7 @@ def parse(expr_text, env, edt):
     finally:
         mutex.release()
 
-    return ast_expr(ast, env, edt)
+    return ast_expr(ast, env, edt, subsys2compats)
 
 # Just some test code
 if __name__ == "__main__":
