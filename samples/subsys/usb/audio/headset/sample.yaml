@@ -2,6 +2,6 @@ sample:
   name: USB audio headset sample
 tests:
   sample.usb.audio.headset:
-    depends_on: usb_device
+    pre-filter: subsys_dt_compat_enabled("usb")
     tags: usb
     platform_whitelist: nrf52840dk_nrf52840

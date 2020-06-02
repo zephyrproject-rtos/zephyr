@@ -2,4 +2,4 @@ tests:
   net.6lo:
     tags: net 6loWPAN
     min_ram: 32
-    depends_on: netif
+    pre-filter: subsys_dt_compat_enabled("ethernet")

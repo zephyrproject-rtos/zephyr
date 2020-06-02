@@ -4,5 +4,5 @@ tests:
   sample.sensor.bmm150:
     harness: sensor
     tags: sensors
-    depends_on: gpio i2c
+    pre-filter: subsys_dt_compat_enabled("gpio") and subsys_dt_compat_enabled("i2c")
     filter: dt_compat_enabled("bosch,bmm150")

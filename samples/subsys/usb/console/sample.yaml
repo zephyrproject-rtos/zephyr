@@ -2,5 +2,5 @@ sample:
   name: Console over USB
 tests:
   sample.usb.console:
-    depends_on: usb_device usb_cdc
+    pre-filter: subsys_dt_compat_enabled("usb")
     tags: usb

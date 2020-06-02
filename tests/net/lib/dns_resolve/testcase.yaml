@@ -1,6 +1,6 @@
 common:
   tags: dns net
-  depends_on: netif
+  pre-filter: subsys_dt_compat_enabled("ethernet")
 tests:
   net.dns.resolve:
     min_ram: 21

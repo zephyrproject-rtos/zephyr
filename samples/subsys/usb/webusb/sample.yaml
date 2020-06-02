@@ -2,7 +2,7 @@ sample:
   name: Web USB
 tests:
   sample.usb.webusb:
-    depends_on: usb_device
+    pre-filter: subsys_dt_compat_enabled("usb")
     tags: usb
     platform_exclude: native_posix native_posix_64
     harness: TBD

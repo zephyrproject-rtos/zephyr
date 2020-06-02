@@ -1,7 +1,7 @@
 common:
   harness: net
   tags: net socket
-  depends_on: netif
+  pre-filter: subsys_dt_compat_enabled("ethernet")
   min_flash: 140
 sample:
   description: Test network sockets using a client/server

@@ -4,7 +4,8 @@ tests:
   sample.sensor.hts221:
     harness: console
     tags: sensors
-    depends_on: i2c hts221
+    pre-filter: subsys_dt_compat_enabled("i2c")
+    filter: dt_compat_enabled("st,hts221")
     harness_config:
         type: multi_line
         ordered: yes

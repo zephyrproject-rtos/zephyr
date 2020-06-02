@@ -3,5 +3,5 @@ sample:
 tests:
   sample.sensor.isl29035:
     tags: sensors
-    depends_on: i2c
+    pre-filter: subsys_dt_compat_enabled("i2c")
     platform_whitelist: nrf52dk_nrf52832

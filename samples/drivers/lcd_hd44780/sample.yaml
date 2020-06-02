@@ -5,4 +5,4 @@ tests:
     platform_whitelist: arduino_due
     tags: display
     harness: display
-    depends_on: gpio
+    pre-filter: subsys_dt_compat_enabled("gpio")

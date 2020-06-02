@@ -9,4 +9,4 @@ tests:
         ordered: true
         regex:
             - "mb data(.*)"
-    depends_on: peci
+    pre-filter: subsys_dt_compat_enabled("PECI")

@@ -1,7 +1,7 @@
 common:
   harness: net
   tags: net
-  depends_on: netif
+  pre-filter: subsys_dt_compat_enabled("ethernet")
   min_flash: 140
 sample:
   description: Runs the OpenThread stack as NCP BR

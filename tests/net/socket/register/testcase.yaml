@@ -1,5 +1,5 @@
 common:
-  depends_on: netif
+  pre-filter: subsys_dt_compat_enabled("ethernet")
   tags: net socket socket.register
 tests:
   net.socket.register:

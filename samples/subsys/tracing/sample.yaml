@@ -30,14 +30,14 @@ tests:
     extra_args: CONF_FILE="prj_uart.conf"
   tracing.transport.usb:
     platform_whitelist: sam_e70_xplained
-    depends_on: usb_device
+    pre-filter: subsys_dt_compat_enabled("usb")
     extra_args: CONF_FILE="prj_usb.conf"
   tracing.transport.ctf:
     platform_whitelist: qemu_x86 qemu_x86_64
     extra_args: CONF_FILE="prj_uart_ctf.conf"
   tracing.transport.ctf:
     platform_whitelist: sam_e70_xplained
-    depends_on: usb_device
+    pre-filter: subsys_dt_compat_enabled("usb")
     extra_args: CONF_FILE="prj_usb_ctf.conf"
   tracing.transport.native_posix:
     platform_whitelist: native_posix

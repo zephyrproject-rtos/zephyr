@@ -2,7 +2,7 @@ sample:
   name: ADT7420 Sensor Sample
 tests:
   sample.sensor.adt7420:
-    pre-filter: dt_bus_enabled("i2c")
+    pre-filter: subsys_dt_compat_enabled("i2c")
     filter: dt_compat_enabled("adi,adt7420")
     tags: sensors
     integration:

@@ -4,5 +4,5 @@ tests:
   sample.sensor.magn_polling:
     harness: sensor
     tags: sensors
-    depends_on: i2c gpio
+    pre-filter: subsys_dt_compat_enabled("i2c") and subsys_dt_compat_enabled("gpio")
     filter: dt_compat_enabled("bosch,bmc150_magn")

@@ -1,4 +1,4 @@
 tests:
   net.tcp.simple:
-    depends_on: netif
+    pre-filter: subsys_dt_compat_enabled("ethernet")
     tags: net tcp

@@ -1,7 +1,7 @@
 common:
   harness: net
   tags: net socket
-  depends_on: netif
+  pre-filter: subsys_dt_compat_enabled("ethernet")
   min_flash: 140
 sample:
   description: Test network sockets using a client/server
@@ -25,12 +25,12 @@ tests:
     extra_args: OVERLAY_CONFIG="overlay-802154.conf"
     platform_whitelist: nrf52840dk_nrf52840
   sample.net.sockets.echo_server.usbnet:
-    depends_on: usb_device
+    pre-filter: subsys_dt_compat_enabled("usb")
     harness: net
     extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
     tags: net usb
   sample.net.sockets.echo_server.usbnet_composite:
-    depends_on: usb_device
+    pre-filter: subsys_dt_compat_enabled("usb")
     harness: net
     extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
     extra_configs:

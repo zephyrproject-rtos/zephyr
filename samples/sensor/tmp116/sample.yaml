@@ -5,7 +5,7 @@ tests:
     harness: console
     platform_whitelist: nucleo_f401re
     tags: sensors
-    depends_on: i2c
+    pre-filter: subsys_dt_compat_enabled("i2c")
     harness_config:
         type: one_line
         regex:

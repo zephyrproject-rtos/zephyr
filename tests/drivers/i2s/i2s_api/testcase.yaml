@@ -1,4 +1,4 @@
 tests:
   drivers.i2s:
-    depends_on: i2s
+    pre-filter: subsys_dt_compat_enabled("i2s")
     tags: drivers userspace

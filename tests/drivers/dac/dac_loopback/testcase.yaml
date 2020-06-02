@@ -2,4 +2,4 @@ common:
   tags: dac drivers
 tests:
   drivers.dac:
-    depends_on: dac
+    pre-filter: subsys_dt_compat_enabled("dac")

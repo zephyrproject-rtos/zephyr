@@ -1,6 +1,6 @@
 common:
   tags: http net
-  depends_on: netif
+  pre-filter: subsys_dt_compat_enabled("ethernet")
 tests:
   net.http:
     min_ram: 16

@@ -5,7 +5,7 @@ tests:
   sample.net.updatehub:
     harness: net
     tags: net wifi
-    depends_on: netif
+    pre-filter: subsys_dt_compat_enabled("ethernet")
     build_only: true
     platform_whitelist: frdm_k64f sam_v71_xult
     extra_configs:

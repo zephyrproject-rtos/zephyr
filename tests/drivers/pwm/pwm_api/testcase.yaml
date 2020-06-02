@@ -5,4 +5,4 @@ tests:
             dt_alias_exists("pwm-1") or
             dt_alias_exists("pwm-2") or
             dt_alias_exists("pwm-3")
-    depends_on: pwm
+    pre-filter: subsys_dt_compat_enabled("pwm")

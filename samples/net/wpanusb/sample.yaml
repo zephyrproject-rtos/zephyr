@@ -2,7 +2,7 @@ sample:
   description: Test wpanusb sample
   name: wpanusb
 common:
-  depends_on: usb_device
+  pre-filter: subsys_dt_compat_enabled("usb")
   tags: net ieee802154 usb
   harness: net
 tests:

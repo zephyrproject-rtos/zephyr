@@ -1,8 +1,12 @@
 tests:
   peripheral.eeprom:
-    platform_whitelist: native_posix native_posix_64 qemu_x86
-    tags: drivers userspace
+    tags: drivers
+    pre-filter: subsys_dt_compat_enabled_and_match("mtd", "eeprom")
+    integration:
+      - native_posix
   peripheral.eeprom.generic:
     build_only: true
-    depends_on: eeprom
-    tags: drivers userspace
+    pre-filter: subsys_dt_compat_enabled_and_match("mtd", "eeprom")
+    tags: drivers
+    integration:
+      - native_posix

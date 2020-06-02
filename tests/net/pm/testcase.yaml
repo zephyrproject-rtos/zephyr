@@ -2,7 +2,7 @@ common:
   # There is nothing hw specific to be tested here
   # so let's limit the test to qemu_x86
   platform_whitelist: qemu_x86
-  depends_on: netif
+  pre-filter: subsys_dt_compat_enabled("ethernet")
 tests:
   net.pm:
     tags: net

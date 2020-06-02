@@ -4,5 +4,5 @@ sample:
 tests:
   sample.net.sockets.echo:
     harness: net
-    depends_on: netif
+    pre-filter: subsys_dt_compat_enabled("ethernet")
     tags: net socket

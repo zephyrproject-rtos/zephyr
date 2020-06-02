@@ -4,7 +4,7 @@ tests:
   sample.sensor.dps310:
     harness: console
     tags: sensors
-    depends_on: i2c arduino_i2c
+    pre-filter: subsys_dt_compat_enabled("i2c") and dt_compat_enabled("arduino-header-r3")
     harness_config:
         type: one_line
         regex:

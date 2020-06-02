@@ -4,4 +4,5 @@ tests:
   sample.sensor.lsm303dlhc:
     harness: sensor
     tags: samples sensor
-    depends_on: i2c lsm303dlhc
+    pre-filter: subsys_dt_compat_enabled("i2c")
+    filter: dt_compat_enabled("st,lsm303dlhc-accel")

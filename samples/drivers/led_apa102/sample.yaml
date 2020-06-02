@@ -5,4 +5,4 @@ tests:
   sample.drivers.led.apa102:
     platform_whitelist: nucleo_l432kc
     tags: LED
-    depends_on: spi
+    pre-filter: subsys_dt_compat_enabled("spi")

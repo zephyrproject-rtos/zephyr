@@ -4,7 +4,7 @@ tests:
   sample.basic.blinky:
     tags: LED gpio
     filter: dt_compat_enabled_with_alias("gpio-leds", "led0")
-    depends_on: gpio
+    pre-filter: subsys_dt_compat_enabled("gpio")
     harness: led
     integration:
       - frdm_k64f

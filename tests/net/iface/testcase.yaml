@@ -1,7 +1,7 @@
 common:
   min_ram: 16
   tags: net iface userspace
-  depends_on: netif
+  pre-filter: subsys_dt_compat_enabled("ethernet")
 tests:
   net.iface.with_userspace:
     extra_configs:

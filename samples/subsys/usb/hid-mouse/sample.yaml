@@ -2,7 +2,7 @@ sample:
   name: USB HID mouse sample
 tests:
   sample.usb.hid-mouse:
-    depends_on: usb_device gpio
+    pre-filter: subsys_dt_compat_enabled("usb") and subsys_dt_compat_enabled("gpio")
     harness: button
     filter: dt_alias_exists("sw0")
     tags: usb

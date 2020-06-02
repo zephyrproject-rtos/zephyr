@@ -2,6 +2,9 @@ sample:
   name: Sample for MEMS sensors VL53L0X
 tests:
   sample.sensor.vl53l0x:
-    build_only: true
-    depends_on: i2c vl53l0x
+    pre-filter: subsys_dt_compat_enabled("i2c")
+    filter: dt_compat_enabled("st,vl53l0x")
+    harness: console
     tags: sensors
+    harness_config:
+      fixture: sensor_vl53l0x

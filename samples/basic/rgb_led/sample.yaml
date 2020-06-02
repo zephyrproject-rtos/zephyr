@@ -6,5 +6,5 @@ tests:
             dt_alias_exists("green-pwm-led") and
             dt_alias_exists("blue-pwm-led")
     tags: drivers pwm
-    depends_on: pwm
+    pre-filter: subsys_dt_compat_enabled("pwm")
     harness: led

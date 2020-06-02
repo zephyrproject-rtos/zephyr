@@ -6,4 +6,4 @@ tests:
     harness: sensor
     tags: sensors
     platform_whitelist: hexiwear_k64
-    depends_on: i2c
+    pre-filter: subsys_dt_compat_enabled("i2c")

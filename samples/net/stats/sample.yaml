@@ -6,4 +6,4 @@ tests:
     harness: net
     min_ram: 64
     tags: net statistics
-    depends_on: netif
+    pre-filter: subsys_dt_compat_enabled("ethernet")

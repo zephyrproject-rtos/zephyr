@@ -2,6 +2,6 @@ sample:
   name: USB audio Headphones Microphone sample
 tests:
   sample.usb.audio.headphones_microphone:
-    depends_on: usb_device
+    pre-filter: subsys_dt_compat_enabled("usb")
     tags: usb
     platform_whitelist: nrf52840dk_nrf52840

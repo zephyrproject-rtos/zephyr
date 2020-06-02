@@ -3,7 +3,7 @@ sample:
 tests:
   sample.subsys.canbus.canopen:
     tags: CAN
-    depends_on: can
+    pre-filter: dt_bus_enabled("can")
     platform_whitelist: twr_ke18f frdm_k64f
     harness: console
     harness_config:

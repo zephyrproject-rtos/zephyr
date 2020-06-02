@@ -1,5 +1,5 @@
 tests:
   drivers.counter:
     tags: drivers
-    depends_on: counter
+    pre-filter: subsys_dt_compat_enabled("counter")
     platform_whitelist: nrf52840dk_nrf52840

@@ -6,4 +6,4 @@ tests:
     harness: sensor
     platform_whitelist: 96b_argonkey
     tags: sensors
-    depends_on: i2s gpio
+    pre-filter: subsys_dt_compat_enabled("i2s") and subsys_dt_compat_enabled("gpio")

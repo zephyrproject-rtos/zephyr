@@ -7,4 +7,4 @@ sample:
 tests:
   sample.net.lldp:
     platform_whitelist: native_posix native_posix_64
-    depends_on: netif
+    pre-filter: subsys_dt_compat_enabled("ethernet")

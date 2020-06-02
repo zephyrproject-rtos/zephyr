@@ -1,4 +1,4 @@
 tests:
   net.tls_credentials:
     tags: net tls
-    depends_on: netif
+    pre-filter: subsys_dt_compat_enabled("ethernet")

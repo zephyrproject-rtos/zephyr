@@ -2,6 +2,7 @@ sample:
   name: KSCAN touch driver api sample
 tests:
   sample.drivers.kscan_touch:
+    pre-filter: subsys_dt_compat_enabled("kscan")
     tags: drivers
     harness: console
     harness_config:
@@ -9,4 +10,3 @@ tests:
         ordered: true
         regex:
             - "kb data(.*)"
-    depends_on: kscan:touch

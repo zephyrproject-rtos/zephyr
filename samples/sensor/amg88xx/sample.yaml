@@ -4,7 +4,7 @@ sample:
 tests:
   sample.sensor.amg88xx:
     build_only: true
-    depends_on: arduino_i2c arduino_gpio
+    pre-filter: dt_label_enabled("arduino_i2c") and dt_label_enabled("arduino_gpio")
     tags: sensors
     extra_configs:
       - CONFIG_AMG88XX_TRIGGER_GLOBAL_THREAD=y

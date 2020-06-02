@@ -6,4 +6,4 @@ tests:
     platform_whitelist: frdm_k64f
     harness: shield
     tags: shield
-    depends_on: arduino_spi
+    pre-filter: dt_label_enabled("arduino_spi")

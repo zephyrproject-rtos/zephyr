@@ -2,7 +2,7 @@ sample:
   name: USB HID CDC ACM sample
 tests:
   sample.usb.hid-cdc:
-    depends_on: usb_device
+    pre-filter: subsys_dt_compat_enabled("usb")
     platform_whitelist: nrf52840dk_nrf52840 nrf52840dongle_nrf52840
     harness: button
     tags: usb

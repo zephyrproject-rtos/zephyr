@@ -3,6 +3,7 @@ common:
   tags: crypto
 tests:
   benchmark.crypto.mbedtls:
+    filter: CONFIG_ENTROPY_DEVICE_RANDOM_GENERATOR or CONFIG_TIMER_RANDOM_GENERATOR or CONFIG_XOROSHIRO_RANDOM_GENERATOR
     integration:
       - qemu_x86
       - mps2_an385

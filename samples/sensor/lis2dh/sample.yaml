@@ -4,4 +4,4 @@ tests:
   sample.sensor.lis2dh:
     harness: sensor
     tags: samples sensor
-    depends_on: i2c lis2dh
+    pre-filter: subsys_dt_compat_enabled("i2c") and dt_compat_enabled("st,lis2dh")

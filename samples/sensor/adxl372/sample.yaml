@@ -4,11 +4,11 @@ tests:
   sample.sensor.adxl372:
     harness: sensor
     tags: sensors
-    depends_on: spi
+    pre-filter: subsys_dt_compat_enabled("spi")
     platform_whitelist: nrf52dk_nrf52832
   sample.sensor.adxl372.i2c:
     harness: sensor
     tags: sensors
-    depends_on: i2c
+    pre-filter: subsys_dt_compat_enabled("i2c")
     platform_whitelist: frdm_k64f
     extra_args: "CONF_FILE=prj_i2c.conf"

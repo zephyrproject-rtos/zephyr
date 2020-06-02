@@ -6,4 +6,4 @@ tests:
     harness: sensor
     platform_whitelist: sensortile_box
     tags: sensors
-    depends_on: i2c spi gpio
+    pre-filter: subsys_dt_compat_enabled("i2c") and subsys_dt_compat_enabled("spi") and subsys_dt_compat_enabled("gpio")

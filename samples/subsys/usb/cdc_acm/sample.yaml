@@ -2,7 +2,7 @@ sample:
   name: CDC ACM USB
 tests:
   sample.usb.cdc-acm:
-    depends_on: usb_device gpio
+    pre-filter: subsys_dt_compat_enabled("usb") and subsys_dt_compat_enabled("gpio")
     tags: usb
     harness: console
     harness_config:
@@ -10,7 +10,7 @@ tests:
       regex:
         - "Wait for DTR"
   sample.usb.cdc-acm.comp:
-    depends_on: usb_device gpio
+    pre-filter: subsys_dt_compat_enabled("usb") and subsys_dt_compat_enabled("gpio")
     tags: usb
     extra_args: "-DOVERLAY_CONFIG=overlay-composite-cdc-msc.conf"
     harness: console

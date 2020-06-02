@@ -5,7 +5,7 @@ tests:
     harness: console
     platform_whitelist: reel_board
     tags: sensors
-    depends_on: i2c gpio
+    pre-filter: subsys_dt_compat_enabled("i2c") and subsys_dt_compat_enabled("gpio")
     harness_config:
         type: multi_line
         ordered: true
@@ -17,7 +17,7 @@ tests:
     harness: console
     platform_whitelist: reel_board
     tags: sensors
-    depends_on: i2c gpio
+    pre-filter: subsys_dt_compat_enabled("i2c") and subsys_dt_compat_enabled("gpio")
     extra_configs:
       - CONFIG_APDS9960_TRIGGER_GLOBAL_THREAD=y
     harness_config:

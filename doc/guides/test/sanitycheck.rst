@@ -267,7 +267,7 @@ extra_configs: <list of extra configurations>
           tags: drivers adc
         tests:
           test:
-            depends_on: adc
+            pre-filter: subsys_dt_compat_enabled("adc")
           test_async:
             extra_configs:
               - CONFIG_ADC_ASYNC=y

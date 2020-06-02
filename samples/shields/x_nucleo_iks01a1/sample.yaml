@@ -5,4 +5,4 @@ tests:
     platform_exclude: disco_l475_iot1
     harness: shield
     tags: shield
-    depends_on: arduino_i2c arduino_gpio
+    pre-filter: dt_label_enabled("arduino_i2c") and dt_label_enabled("arduino_gpio")

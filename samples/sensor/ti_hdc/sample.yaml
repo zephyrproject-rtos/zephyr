@@ -5,4 +5,4 @@ tests:
     harness: sensor
     platform_whitelist: reel_board nucleo_l496zg
     tags: sensors
-    depends_on: i2c
+    pre-filter: subsys_dt_compat_enabled("i2c")

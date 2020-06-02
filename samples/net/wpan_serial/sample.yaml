@@ -2,7 +2,7 @@ sample:
   description: Test wpan_serial sample
   name: wpan_serial
 common:
-    depends_on: usb_device
+    pre-filter: subsys_dt_compat_enabled("usb")
     harness: net
     tags: usb ieee802154
 tests:

@@ -4,12 +4,12 @@ sample:
 tests:
   sample.net.lwm2m_client:
     harness: net
-    depends_on: netif
+    pre-filter: subsys_dt_compat_enabled("ethernet")
     platform_whitelist: qemu_x86 frdm_k64f
     tags: net lwm2m
   sample.net.lwm2m_client.dtls:
     harness: net
-    depends_on: netif
+    pre-filter: subsys_dt_compat_enabled("ethernet")
     extra_args: OVERLAY_CONFIG=overlay-dtls.conf
     platform_whitelist: qemu_x86 frdm_k64f
     tags: net lwm2m
@@ -20,7 +20,7 @@ tests:
     tags: net lwm2m
   sample.net.lwm2m_client.queue_mode:
     harness: net
-    depends_on: netif
+    pre-filter: subsys_dt_compat_enabled("ethernet")
     extra_args: OVERLAY_CONFIG=overlay-queue.conf
     platform_whitelist: qemu_x86
     tags: net lwm2m

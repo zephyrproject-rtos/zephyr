@@ -7,4 +7,4 @@ sample:
   name: IPv4 autoconf sample app
 tests:
   sample.net.ipv4_autoconf:
-    depends_on: netif
+    pre-filter: subsys_dt_compat_enabled("ethernet")

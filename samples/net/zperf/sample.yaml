@@ -9,27 +9,28 @@ sample:
   name: zperf
 tests:
   sample.net.zperf:
-    platform_whitelist: qemu_x86
+    integration:
+      - qemu_x86
   sample.net.zperf.netusb_ecm:
     extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
     tags: usb net zperf
-    depends_on: usb_device
+    pre-filter: subsys_dt_compat_enabled("usb")
   sample.net.zperf.netusb_eem:
     extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
     extra_configs:
       - CONFIG_USB_DEVICE_NETWORK_ECM=n
       - CONFIG_USB_DEVICE_NETWORK_EEM=y
     tags: usb net zperf
-    depends_on: usb_device
+    pre-filter: subsys_dt_compat_enabled("usb")
   sample.net.zperf.netusb_rndis:
     extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
     extra_configs:
       - CONFIG_USB_DEVICE_NETWORK_ECM=n
       - CONFIG_USB_DEVICE_NETWORK_RNDIS=y
     tags: usb net zperf
-    depends_on: usb_device
+    pre-filter: subsys_dt_compat_enabled("usb")
   sample.net.zperf.shield:
     platform_whitelist: reel_board
     extra_args: SHIELD=link_board_eth
     tags: shield net zperf
-    depends_on: arduino_spi arduino_gpio
+    pre-filter: dt_label_enabled("arduino_spi") and dt_label_enabled("arduino_gpio")

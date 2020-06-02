@@ -6,4 +6,4 @@ tests:
     harness: sensor
     platform_whitelist: nrf9160_innblue22
     tags: sensors
-    depends_on: i2c
+    pre-filter: subsys_dt_compat_enabled("i2c")

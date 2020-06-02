@@ -1,5 +1,5 @@
 tests:
   drivers.i2c_slave:
-    depends_on: i2c
+    pre-filter: subsys_dt_compat_enabled("i2c")
     tags: drivers i2c
     platform_whitelist: nucleo_f091rc stm32f072b_disco

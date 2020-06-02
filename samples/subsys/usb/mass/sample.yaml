@@ -15,7 +15,7 @@ tests:
         - "The device is put in USB mass storage mode."
   sample.usb.mass_ram:
     min_ram: 32
-    depends_on: usb_device gpio
+    pre-filter: subsys_dt_compat_enabled("usb") and subsys_dt_compat_enabled("gpio")
     extra_args: OVERLAY_CONFIG="overlay-ram-disk.conf"
     extra_configs:
         - CONFIG_LOG_DEFAULT_LEVEL=3

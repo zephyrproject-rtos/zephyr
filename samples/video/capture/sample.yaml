@@ -5,4 +5,4 @@ tests:
     build_only: true
     tags: video
     platform_whitelist: mimxrt1064_evk
-    depends_on: video
+    pre-filter: subsys_dt_compat_enabled("video")

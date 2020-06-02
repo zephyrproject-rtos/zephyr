@@ -5,5 +5,5 @@ tests:
     # FIXME: We should remove those and just rely on depends_on
     filter: dt_alias_exists("pwm-led0")
     tags: drivers pwm
-    depends_on: pwm
+    pre-filter: subsys_dt_compat_enabled("pwm")
     harness: led

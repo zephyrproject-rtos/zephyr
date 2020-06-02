@@ -1,6 +1,6 @@
 common:
   tags: net socket can CAN
-  depends_on: can
+  pre-filter: dt_bus_enabled("can")
   harness: can
   platform_whitelist: stm32f072b_disco nucleo_l432kc
 sample:

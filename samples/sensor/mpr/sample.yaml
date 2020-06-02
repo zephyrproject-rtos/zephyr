@@ -4,5 +4,5 @@ tests:
   sample.sensor.mpr:
     harness: sensor
     tags: sensors
-    depends_on: i2c
+    pre-filter: subsys_dt_compat_enabled("i2c")
     platform_whitelist: arduino_due

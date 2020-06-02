@@ -1,11 +1,11 @@
 common:
-  depends_on: gpio spi i2c
+  pre-filter: subsys_dt_compat_enabled("gpio") and subsys_dt_compat_enabled("spi") and subsys_dt_compat_enabled("i2c")
 tests:
   drivers.build.build:
     build_only: true
     min_ram: 16
     tags: drivers
-    depends_on: adc i2c
+    pre-filter: subsys_dt_compat_enabled("adc") and subsys_dt_compat_enabled("i2c")
   net.ethernet.build:
     build_only: true
     extra_args: CONF_FILE=ethernet.conf
@@ -13,21 +13,21 @@ tests:
     min_ram: 32
     platform_exclude:  frdm_kw41z
     tags: drivers
-    depends_on: spi netif
+    pre-filter: subsys_dt_compat_enabled("spi") and dt_bus_enabled("netif")
   sensors.build.trigger_a_h:
     build_only: true
     extra_args: CONF_FILE=sensors_trigger_a_h.conf
     min_ram: 32
     platform_exclude:  frdm_kw41z
     tags: drivers
-    depends_on: adc spi
+    pre-filter: subsys_dt_compat_enabled("adc") and subsys_dt_compat_enabled("spi")
   sensors.build.trigger_i_z:
     build_only: true
     extra_args: CONF_FILE=sensors_trigger_i_z.conf
     min_ram: 32
     platform_exclude:  frdm_kw41z
     tags: drivers
-    depends_on: adc spi
+    pre-filter: subsys_dt_compat_enabled("adc") and subsys_dt_compat_enabled("spi")
   sensors.build.a_h:
     build_only: true
     extra_args: CONF_FILE=sensors_a_h.conf
@@ -35,28 +35,28 @@ tests:
     min_ram: 32
     platform_exclude:  frdm_kw41z
     tags: drivers
-    depends_on: adc spi
+    pre-filter: subsys_dt_compat_enabled("adc") and subsys_dt_compat_enabled("spi")
   sensors.build.i_z:
     build_only: true
     extra_args: CONF_FILE=sensors_i_z.conf
     min_ram: 32
     platform_exclude:  frdm_kw41z
     tags: drivers
-    depends_on: adc spi
+    pre-filter: subsys_dt_compat_enabled("adc") and subsys_dt_compat_enabled("spi")
   sensors.build.stmemsc:
     build_only: true
     extra_args: CONF_FILE=sensors_stmemsc.conf
     min_ram: 32
     platform_exclude:  frdm_kw41z
     tags: drivers
-    depends_on: adc spi
+    pre-filter: subsys_dt_compat_enabled("adc") and subsys_dt_compat_enabled("spi")
   sensors.build.stmemsc_trigger:
     build_only: true
     extra_args: CONF_FILE=sensors_stmemsc_trigger.conf
     min_ram: 32
     platform_exclude:  frdm_kw41z
     tags: drivers
-    depends_on: adc spi
+    pre-filter: subsys_dt_compat_enabled("adc") and subsys_dt_compat_enabled("spi")
   drivers.clock.build:
     build_only: true
     extra_configs:
@@ -65,9 +65,9 @@ tests:
     build_only: true
     extra_args: CONF_FILE=gpio.conf
     min_ram: 32
-    depends_on: gpio spi
+    pre-filter: subsys_dt_compat_enabled("gpio") and subsys_dt_compat_enabled("spi") and subsys_dt_compat_enabled("i2c")
   drivers.eeprom.build:
     build_only: true
     extra_args: CONF_FILE=eeprom.conf
     min_ram: 32
-    depends_on: gpio i2c spi
+    pre-filter: subsys_dt_compat_enabled("gpio") and subsys_dt_compat_enabled("spi") and subsys_dt_compat_enabled("i2c")

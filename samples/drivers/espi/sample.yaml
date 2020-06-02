@@ -2,6 +2,7 @@ sample:
   name: eSPI driver sample
 tests:
   sample.drivers.espi:
+    pre-filter: subsys_dt_compat_enabled("espi")
     tags: drivers
     harness: console
     harness_config:
@@ -39,4 +40,3 @@ tests:
             - "espi: Postcode fe"
             - "espi: Postcode 7f"
             - "espi: eSPI sample completed"
-    depends_on: espi

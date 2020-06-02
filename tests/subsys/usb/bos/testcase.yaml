@@ -1,4 +1,4 @@
 tests:
   usb.bos:
-    depends_on: usb_device
+    pre-filter: subsys_dt_compat_enabled("usb")
     tags: usb bos

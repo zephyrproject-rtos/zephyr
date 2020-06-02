@@ -4,5 +4,5 @@ tests:
   sample.drivers.spi.fujitsu_fram:
     tags: drivers fram
     harness: fram
-    depends_on: gpio spi
+    pre-filter: subsys_dt_compat_enabled("gpio") and subsys_dt_compat_enabled("spi")
     filter: dt_alias_exists("spi-1")

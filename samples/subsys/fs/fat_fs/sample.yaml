@@ -4,6 +4,6 @@ common:
   tags: filesystem
 tests:
   sample.filesystem.fat_fs:
-    depends_on: sdhc
+    pre-filter: subsys_dt_compat_enabled("mmc")
   sample.filesystem.fat_fs.overlay:
     platform_whitelist: nrf52840_blip
