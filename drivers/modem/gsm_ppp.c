@@ -244,14 +244,14 @@ static int gsm_setup_mccmno(struct gsm_modem *gsm)
 static void set_ppp_carrier_on(struct gsm_modem *gsm)
 {
 	struct device *ppp_dev = device_get_binding(CONFIG_NET_PPP_DRV_NAME);
-	const struct ppp_api *api =
-				(const struct ppp_api *)ppp_dev->driver_api;
+	const struct ppp_api *api;
 
 	if (!ppp_dev) {
 		LOG_ERR("Cannot find PPP %s!", "device");
 		return;
 	}
 
+	api = (const struct ppp_api *)ppp_dev->driver_api;
 	api->start(ppp_dev);
 }
 
