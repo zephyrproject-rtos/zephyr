@@ -8,6 +8,7 @@
 
 /.github/                                 @nashif @galak
 /.known-issues/                           @inakypg @nashif
+/.buildkite/                              @galak
 /arch/arc/                                @vonhust @ruuddw
 /arch/arm/                                @MaureenHelm @galak
 /arch/arm/core/cortex_m/cmse/             @ioannisg
