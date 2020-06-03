@@ -29,6 +29,7 @@ struct flash_priv {
 };
 
 static const struct flash_parameters flash_mcux_parameters = {
+	.write_block_size = FSL_FEATURE_FLASH_PFLASH_BLOCK_WRITE_UNIT_SIZE,
 	.erase_value = 0xff,
 };
 
@@ -154,7 +155,6 @@ static const struct flash_driver_api flash_mcux_api = {
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = flash_mcux_pages_layout,
 #endif
-	.write_block_size = FSL_FEATURE_FLASH_PFLASH_BLOCK_WRITE_UNIT_SIZE,
 };
 
 static int flash_mcux_init(struct device *dev)

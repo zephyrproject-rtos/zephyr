@@ -215,7 +215,7 @@ int stream_flash_init(struct stream_flash_ctx *ctx, struct device *fdev,
 	}
 
 	if ((offset + size) > total_size ||
-	    offset % api->write_block_size) {
+	    offset % flash_get_write_block_size(fdev)) {
 		LOG_ERR("Incorrect parameter");
 		return -EFAULT;
 	}

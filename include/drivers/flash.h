@@ -42,6 +42,7 @@ struct flash_pages_layout {
  * through a runtime.
  */
 struct flash_parameters {
+	const size_t write_block_size;
 	uint8_t erase_value; /* Byte value of erased flash */
 };
 
@@ -89,7 +90,6 @@ __subsystem struct flash_driver_api {
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	flash_api_pages_layout page_layout;
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
-	const size_t write_block_size;
 };
 
 /**
@@ -304,7 +304,7 @@ static inline size_t z_impl_flash_get_write_block_size(struct device *dev)
 	const struct flash_driver_api *api =
 		(const struct flash_driver_api *)dev->driver_api;
 
-	return api->write_block_size;
+	return api->get_parameters(dev)->write_block_size;
 }
 
 

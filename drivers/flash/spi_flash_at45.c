@@ -77,6 +77,7 @@ struct spi_flash_at45_config {
 };
 
 static const struct flash_parameters flash_at45_parameters = {
+	.write_block_size = 1,
 	.erase_value = 0xff,
 };
 
@@ -645,7 +646,6 @@ static const struct flash_driver_api spi_flash_at45_api = {
 #if IS_ENABLED(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = spi_flash_at45_pages_layout,
 #endif
-	.write_block_size = 1,
 };
 
 #define DT_DRV_COMPAT atmel_at45

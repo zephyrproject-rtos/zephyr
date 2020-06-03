@@ -106,6 +106,11 @@ static int erase_in_timeslice(uint32_t addr, uint32_t size);
 #endif /* CONFIG_SOC_FLASH_NRF_RADIO_SYNC */
 
 static const struct flash_parameters flash_nrf_parameters = {
+#if IS_ENABLED(CONFIG_SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS)
+	.write_block_size = 1,
+#else
+	.write_block_size = 4,
+#endif
 	.erase_value = 0xff,
 };
 
@@ -298,11 +303,6 @@ static const struct flash_driver_api flash_nrf_api = {
 	.get_parameters = flash_nrf_get_parameters,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = flash_nrf_pages_layout,
-#endif
-#if IS_ENABLED(CONFIG_SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS)
-	.write_block_size = 1,
-#else
-	.write_block_size = 4,
 #endif
 };
 

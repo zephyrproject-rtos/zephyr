@@ -26,6 +26,7 @@ struct flash_gecko_data {
 
 
 static const struct flash_parameters flash_gecko_parameters = {
+	.write_block_size = DT_PROP(SOC_NV_FLASH_NODE, write_block_size),
 	.erase_value = 0xff,
 };
 
@@ -216,7 +217,6 @@ static const struct flash_driver_api flash_gecko_driver_api = {
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_gecko_page_layout,
 #endif
-	.write_block_size = DT_PROP(SOC_NV_FLASH_NODE, write_block_size),
 };
 
 static struct flash_gecko_data flash_gecko_0_data;

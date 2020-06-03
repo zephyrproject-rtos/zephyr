@@ -47,6 +47,7 @@ struct flash_sam_dev_data {
 };
 
 static const struct flash_parameters flash_sam_parameters = {
+	.write_block_size = FLASH_WRITE_BLK_SZ,
 	.erase_value = 0xff,
 };
 
@@ -360,7 +361,6 @@ static const struct flash_driver_api flash_sam_api = {
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_sam_page_layout,
 #endif
-	.write_block_size = FLASH_WRITE_BLK_SZ,
 };
 
 static const struct flash_sam_dev_cfg flash_sam_cfg = {

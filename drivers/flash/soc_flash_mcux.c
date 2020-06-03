@@ -44,6 +44,11 @@ struct flash_priv {
 };
 
 static const struct flash_parameters flash_mcux_parameters = {
+#if DT_NODE_HAS_PROP(SOC_NV_FLASH_NODE, write_block_size)
+	.write_block_size = DT_PROP(SOC_NV_FLASH_NODE, write_block_size),
+#else
+	.write_block_size = FSL_FEATURE_FLASH_PFLASH_BLOCK_WRITE_UNIT_SIZE,
+#endif
 	.erase_value = 0xff,
 };
 
@@ -167,11 +172,6 @@ static const struct flash_driver_api flash_mcux_api = {
 	.get_parameters = flash_mcux_get_parameters,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = flash_mcux_pages_layout,
-#endif
-#if DT_NODE_HAS_PROP(SOC_NV_FLASH_NODE, write_block_size)
-	.write_block_size = DT_PROP(SOC_NV_FLASH_NODE, write_block_size),
-#else
-	.write_block_size = FSL_FEATURE_FLASH_PFLASH_BLOCK_WRITE_UNIT_SIZE,
 #endif
 };
 

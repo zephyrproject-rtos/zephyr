@@ -62,6 +62,11 @@ static const struct flash_pages_layout flash_sam0_pages_layout = {
 #endif
 
 static const struct flash_parameters flash_sam0_parameters = {
+#if CONFIG_SOC_FLASH_SAM0_EMULATE_BYTE_PAGES
+	.write_block_size = 1,
+#else
+	.write_block_size = FLASH_PAGE_SIZE,
+#endif
 	.erase_value = 0xff,
 };
 
@@ -429,11 +434,6 @@ static const struct flash_driver_api flash_sam0_api = {
 	.get_parameters = flash_sam0_get_parameters,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_sam0_page_layout,
-#endif
-#if CONFIG_SOC_FLASH_SAM0_EMULATE_BYTE_PAGES
-	.write_block_size = 1,
-#else
-	.write_block_size = FLASH_PAGE_SIZE,
 #endif
 };
 

@@ -34,6 +34,7 @@
 LOG_MODULE_REGISTER(qspi_nor, CONFIG_FLASH_LOG_LEVEL);
 
 static const struct flash_parameters qspi_flash_parameters = {
+	.write_block_size = 1,
 	.erase_value = 0xff,
 };
 
@@ -787,7 +788,6 @@ static const struct flash_driver_api qspi_nor_api = {
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = qspi_nor_pages_layout,
 #endif
-	.write_block_size = 1,
 };
 
 
