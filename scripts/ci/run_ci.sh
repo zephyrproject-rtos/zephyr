@@ -126,9 +126,14 @@ function run_bsim_bt_tests() {
 }
 
 function get_tests_to_run() {
+
+	# dump all dts data for pre-filter
+	./scripts/sanitycheck -T samples/synchronization/ -O dts_db --cmake-only
+	for f in `find  dts_db/  -name *.dts.pre.tmp `; do b=`basename $f`; cp $f dts_db/$b; done
+
 	./scripts/zephyr_module.py --sanitycheck-out module_tests.args
-	./scripts/ci/get_modified_tests.py --commits ${commit_range} > modified_tests.args
-	./scripts/ci/get_modified_boards.py --commits ${commit_range} > modified_boards.args
+	#./scripts/ci/get_modified_tests.py --commits ${commit_range} > modified_tests.args
+	#./scripts/ci/get_modified_boards.py --commits ${commit_range} > modified_boards.args
 
 	if [ -s modified_boards.args ]; then
 		${sanitycheck} ${sanitycheck_options} +modified_boards.args --save-tests test_file_1.txt || exit 1
@@ -257,9 +262,9 @@ if [ -n "$main_ci" ]; then
 
 	if [ "$SC" == "full" ]; then
 	# Save list of tests to be run
-	${sanitycheck} ${sanitycheck_options} --save-tests test_file_3.txt || exit 1
+		${sanitycheck} ${sanitycheck_options} --save-tests test_file_3.txt || exit 1
 	else
-	echo "test,arch,platform,status,extra_args,handler,handler_time,ram_size,rom_size" > test_file_3.txt
+		echo "test,arch,platform,status,extra_args,handler,handler_time,ram_size,rom_size" > test_file_3.txt
 	fi
 
 	# Remove headers from all files but the first one to generate one
