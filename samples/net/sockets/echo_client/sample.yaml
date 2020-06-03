@@ -52,3 +52,6 @@ tests:
     slow: true
     tags: net openthread
     platform_whitelist: frdm_kw41z
+  sample.net.sockets.echo_client.userspace:
+    extra_args: CONFIG_USERSPACE=y OVERLAY_CONFIG="overlay-e1000.conf"
+    platform_whitelist: qemu_x86
