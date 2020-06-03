@@ -30,13 +30,15 @@
 /* nb of LPTIM counter unit per kernel tick  */
 #define COUNT_PER_TICK (LPTIM_CLOCK / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
+/* minimum nb of clock cycles to have to set autoreload register correctly */
+#define LPTIM_GUARD_VALUE 2
+
 /* A 32bit value cannot exceed 0xFFFFFFFF/LPTIM_TIMEBASE counting cycles.
  * This is for example about of 65000 x 2000ms when clocked by LSI
  */
 static u32_t accumulated_lptim_cnt;
 
 static struct k_spinlock lock;
-volatile u8_t  lptim_fired;
 
 static void lptim_irq_handler(struct device *unused)
 {
@@ -50,13 +52,6 @@ static void lptim_irq_handler(struct device *unused)
 
 		/* do not change ARR yet, z_clock_announce will do */
 		LL_LPTIM_ClearFLAG_ARRM(LPTIM1);
-
-		if (lptim_fired) {
-			lptim_fired = 0;
-#if defined(LPTIM_CR_COUNTRST)
-			LL_LPTIM_ResetCounter(LPTIM1);
-#endif
-		}
 
 		/* increase the total nb of autoreload count
 		 * used in the z_timer_cycle_get_32() function.
@@ -147,7 +142,6 @@ int z_clock_driver_init(struct device *device)
 	LL_LPTIM_ClearFlag_ARROK(LPTIM1);
 
 	accumulated_lptim_cnt = 0;
-	lptim_fired = 0;
 
 	/* Enable the LPTIM1 counter */
 	LL_LPTIM_Enable(LPTIM1);
@@ -212,6 +206,17 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 		lp_time = LL_LPTIM_GetCounter(LPTIM1);
 	}
 
+	u32_t autoreload = LL_LPTIM_GetAutoReload(LPTIM1);
+
+	if (LL_LPTIM_IsActiveFlag_ARRM(LPTIM1)
+	    || ((autoreload - lp_time) < LPTIM_GUARD_VALUE)) {
+		/* interrupt happens or happens soon.
+		 * It's impossible to set autoreload value.
+		 */
+		k_spin_unlock(&lock, key);
+		return;
+	}
+
 	/* calculate the next arr value (cannot exceed 16bit)
 	 * adjust the next ARR match value to align on Ticks
 	 * from the current counter value to first next Tick
@@ -227,15 +232,12 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	if (next_arr > LPTIM_TIMEBASE) {
 		next_arr = LPTIM_TIMEBASE;
 	}
-
-	/* If we are close to the roll over of the ticker counter
-	 * change current tick so it can be compared with buffer.
-	 * If this event got outdated fire interrupt right now,
-	 * else schedule it normally.
+	/* The new autoreload value must be LPTIM_GUARD_VALUE clock cycles
+	 * after current lptim to make sure we don't miss
+	 * an autoreload interrupt
 	 */
-	if (next_arr <= ((lp_time + 1) & LPTIM_TIMEBASE)) {
-		NVIC_SetPendingIRQ(LPTIM1_IRQn);
-		lptim_fired = 1;
+	else if (next_arr < (lp_time + LPTIM_GUARD_VALUE)) {
+		next_arr = lp_time + LPTIM_GUARD_VALUE;
 	}
 
 	/* ARROK bit validates previous write operation to ARR register */
