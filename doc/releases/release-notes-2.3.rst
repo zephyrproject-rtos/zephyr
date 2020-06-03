@@ -500,7 +500,23 @@ Bluetooth
 Build and Infrastructure
 ************************
 
-* <TBD>
+* Zephyr CMake package
+
+  * The Zephyr main repository now includes a Zephyr CMake package.
+    This allows for registering Zephyr in the CMake user package registry and
+    allows for easier integration into Zephyr applications, by using the CMake
+    function, ``find_package(Zephyr ...)``.
+    Registering the Zephyr CMake package in the CMake user package registry
+    removes the need for setting of ``ZEPHYR_BASE``, sourcing ``zephyr-env.sh``,
+    or running ``zephyr-env.cmd``.
+  * A new ``west`` extension command, ``west zephyr-export`` is introduced for easy
+    registration of Zephyr CMake package in the CMake user package registry.
+  * Zephyr Build Configuration CMake package hook.
+    Zephyr offers the possibility of configuring the Zephyr build system through
+    a Zephyr Build Configuration package. A single Zephyr workspace
+    ``ZephyrBuildConfig.cmake`` will be loaded if present in the Zephyr
+    workspace. This allows users to configure the Zephyr build system on a per
+    workspace setup, as an alternative to using a ``.zephyrrc`` system wide file.
 
 * Devicetree
 
