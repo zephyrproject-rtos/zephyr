@@ -253,6 +253,13 @@ def ast_expr(ast, env, edt, subsys2compats):
             if edt.compat2enabled.get(compat, None):
                 return True
         return False
+    elif ast[0] == "subsys_dt_compat_enabled_and_match":
+        subsys = ast[1][0]
+        substring = ast[1][1]
+        for compat in subsys2compats.get(subsys, []):
+            if edt.compat2enabled.get(compat, None) and compat.find(substring) > 0:
+                return True
+        return False
     elif ast[0] == "dt_compat_enabled_with_alias":
         compat = ast[1][0]
         alias = ast[1][1]
