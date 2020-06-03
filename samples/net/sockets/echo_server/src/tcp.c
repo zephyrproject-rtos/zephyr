@@ -26,16 +26,14 @@ LOG_MODULE_DECLARE(net_echo_server_sample, LOG_LEVEL_DBG);
 K_THREAD_STACK_ARRAY_DEFINE(tcp4_handler_stack, CONFIG_NET_SAMPLE_NUM_HANDLERS,
 			    STACK_SIZE);
 static struct k_thread tcp4_handler_thread[CONFIG_NET_SAMPLE_NUM_HANDLERS];
-static k_tid_t tcp4_handler_tid[CONFIG_NET_SAMPLE_NUM_HANDLERS];
-static bool tcp4_handler_in_use[CONFIG_NET_SAMPLE_NUM_HANDLERS];
+static APP_BMEM bool tcp4_handler_in_use[CONFIG_NET_SAMPLE_NUM_HANDLERS];
 #endif
 
 #if defined(CONFIG_NET_IPV6)
 K_THREAD_STACK_ARRAY_DEFINE(tcp6_handler_stack, CONFIG_NET_SAMPLE_NUM_HANDLERS,
 			    STACK_SIZE);
 static struct k_thread tcp6_handler_thread[CONFIG_NET_SAMPLE_NUM_HANDLERS];
-static k_tid_t tcp6_handler_tid[CONFIG_NET_SAMPLE_NUM_HANDLERS];
-static bool tcp6_handler_in_use[CONFIG_NET_SAMPLE_NUM_HANDLERS];
+static APP_BMEM bool tcp6_handler_in_use[CONFIG_NET_SAMPLE_NUM_HANDLERS];
 #endif
 
 static void process_tcp4(void);
@@ -43,11 +41,13 @@ static void process_tcp6(void);
 
 K_THREAD_DEFINE(tcp4_thread_id, STACK_SIZE,
 		process_tcp4, NULL, NULL, NULL,
-		THREAD_PRIORITY, 0, -1);
+		THREAD_PRIORITY,
+		IS_ENABLED(CONFIG_USERSPACE) ? K_USER : 0, -1);
 
 K_THREAD_DEFINE(tcp6_thread_id, STACK_SIZE,
 		process_tcp6, NULL, NULL, NULL,
-		THREAD_PRIORITY, 0, -1);
+		THREAD_PRIORITY,
+		IS_ENABLED(CONFIG_USERSPACE) ? K_USER : 0, -1);
 
 static ssize_t sendall(int sock, const void *buf, size_t len)
 {
@@ -238,14 +238,16 @@ static int process_tcp(struct data *data)
 	if (client_addr.sin_family == AF_INET6) {
 		tcp6_handler_in_use[slot] = true;
 
-		tcp6_handler_tid[slot] = k_thread_create(
+		k_thread_create(
 			&tcp6_handler_thread[slot],
 			tcp6_handler_stack[slot],
 			K_THREAD_STACK_SIZEOF(tcp6_handler_stack[slot]),
 			(k_thread_entry_t)handle_data,
 			INT_TO_POINTER(slot), data, &tcp6_handler_in_use[slot],
 			THREAD_PRIORITY,
-			0, K_NO_WAIT);
+			IS_ENABLED(CONFIG_USERSPACE) ? K_USER |
+						       K_INHERIT_PERMS : 0,
+			K_NO_WAIT);
 	}
 #endif
 
@@ -253,14 +255,16 @@ static int process_tcp(struct data *data)
 	if (client_addr.sin_family == AF_INET) {
 		tcp4_handler_in_use[slot] = true;
 
-		tcp4_handler_tid[slot] = k_thread_create(
+		k_thread_create(
 			&tcp4_handler_thread[slot],
 			tcp4_handler_stack[slot],
 			K_THREAD_STACK_SIZEOF(tcp4_handler_stack[slot]),
 			(k_thread_entry_t)handle_data,
 			INT_TO_POINTER(slot), data, &tcp4_handler_in_use[slot],
 			THREAD_PRIORITY,
-			0, K_NO_WAIT);
+			IS_ENABLED(CONFIG_USERSPACE) ? K_USER |
+						       K_INHERIT_PERMS : 0,
+			K_NO_WAIT);
 	}
 #endif
 
@@ -335,13 +339,35 @@ void start_tcp(void)
 #endif
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		k_thread_start(tcp6_thread_id);
-	}
+#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_USERSPACE)
+	k_mem_domain_add_thread(&app_domain, tcp6_thread_id);
 
-	if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		k_thread_start(tcp4_thread_id);
+	for (i = 0; i < CONFIG_NET_SAMPLE_NUM_HANDLERS; i++) {
+		k_mem_domain_add_thread(&app_domain, &tcp6_handler_thread[i]);
+
+		k_thread_access_grant(tcp6_thread_id, &tcp6_handler_thread[i]);
+		k_thread_access_grant(tcp6_thread_id, &tcp6_handler_stack[i]);
 	}
+#endif
+
+	k_thread_start(tcp6_thread_id);
+#endif
+
+#if defined(CONFIG_NET_IPV4)
+#if defined(CONFIG_USERSPACE)
+	k_mem_domain_add_thread(&app_domain, tcp4_thread_id);
+
+	for (i = 0; i < CONFIG_NET_SAMPLE_NUM_HANDLERS; i++) {
+		k_mem_domain_add_thread(&app_domain, &tcp4_handler_thread[i]);
+
+		k_thread_access_grant(tcp4_thread_id, &tcp4_handler_thread[i]);
+		k_thread_access_grant(tcp4_thread_id, &tcp4_handler_stack[i]);
+	}
+#endif
+
+	k_thread_start(tcp4_thread_id);
+#endif
 }
 
 void stop_tcp(void)
@@ -361,7 +387,7 @@ void stop_tcp(void)
 		for (i = 0; i < CONFIG_NET_SAMPLE_NUM_HANDLERS; i++) {
 #if defined(CONFIG_NET_IPV6)
 			if (tcp6_handler_in_use[i] == true) {
-				k_thread_abort(tcp6_handler_tid[i]);
+				k_thread_abort(&tcp6_handler_thread[i]);
 			}
 #endif
 			if (conf.ipv6.tcp.accepted[i].sock >= 0) {
@@ -379,7 +405,7 @@ void stop_tcp(void)
 		for (i = 0; i < CONFIG_NET_SAMPLE_NUM_HANDLERS; i++) {
 #if defined(CONFIG_NET_IPV4)
 			if (tcp4_handler_in_use[i] == true) {
-				k_thread_abort(tcp4_handler_tid[i]);
+				k_thread_abort(&tcp4_handler_thread[i]);
 			}
 #endif
 			if (conf.ipv4.tcp.accepted[i].sock >= 0) {

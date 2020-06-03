@@ -58,3 +58,6 @@ tests:
     extra_args: OVERLAY_CONFIG="overlay-smsc911x.conf"
     tags: net
     platform_whitelist: mps2_an385
+  sample.net.sockets.echo_server.userspace:
+    extra_args: CONFIG_USERSPACE=y OVERLAY_CONFIG="overlay-e1000.conf"
+    platform_whitelist: qemu_x86
