@@ -58,6 +58,22 @@ int pkt_list_add(struct openthread_context *context, struct net_pkt *pkt)
 	return 0;
 }
 
+void pkt_list_remove_first(struct openthread_context *context)
+{
+	u16_t idx = context->pkt_list_in_idx;
+
+	if (idx == 0U) {
+		idx = CONFIG_OPENTHREAD_PKT_LIST_SIZE - 1;
+	} else {
+		idx--;
+	}
+	context->pkt_list_in_idx = idx;
+
+	if (context->pkt_list_full) {
+		context->pkt_list_full = 0U;
+	}
+}
+
 struct net_pkt *pkt_list_peek(struct openthread_context *context)
 {
 	if ((context->pkt_list_in_idx == context->pkt_list_out_idx) &&
