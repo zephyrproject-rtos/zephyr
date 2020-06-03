@@ -36,7 +36,7 @@
 };
 
 &spi0 {
-	status = "okay";
+	status = "disabled";
 
 	#address-cells = <1>;
 	#size-cells = <0>;
