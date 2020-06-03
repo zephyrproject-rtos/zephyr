@@ -1,6 +1,7 @@
 common:
   harness: net
-  depends_on: serial-net
+  # FIXME
+  platform_whitelist: qemu_x86
   tags: net ppp modem gsm
 sample:
   description: Sample for generic GSM modem

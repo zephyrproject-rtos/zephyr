@@ -1,5 +1,5 @@
 common:
-  depends_on: serial-net
+  platform_whitelist: qemu_x86
   tags: net ppp
 tests:
   net.ppp:

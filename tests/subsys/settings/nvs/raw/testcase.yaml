@@ -1,5 +1,5 @@
 tests:
   system.settings.nvs:
-    depends_on: nvs
+    filter: dt_label_enabled("storage")
     min_ram: 32
-    tags: settings_nvs
+    tags: settings nvs

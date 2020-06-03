@@ -3,9 +3,10 @@ sample:
 
 tests:
   sample.nvs.basic:
-    tags: settings
-    depends_on: nvs
-    platform_exclude: qemu_x86
+    tags: settings samples
+    pre-filter: subsys_dt_compat_enabled("flash_controller") and dt_compat_enabled("soc-nv-flash")
+    filter: dt_compat_enabled("fixed-partitions") and dt_label_enabled("storage")
+    arch_whitelist: arm
     harness: console
     harness_config:
       type: multi_line
