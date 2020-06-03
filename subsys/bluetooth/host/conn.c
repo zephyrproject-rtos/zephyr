@@ -364,14 +364,6 @@ static void conn_update_timeout(struct k_work *work)
 		 * state transition.
 		 */
 		bt_conn_unref(conn);
-
-		/* A new reference likely to have been released here,
-		 * Resume advertising.
-		 */
-		if (IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
-			bt_le_adv_resume();
-		}
-
 		return;
 	}
 
@@ -1968,6 +1960,11 @@ void bt_conn_unref(struct bt_conn *conn)
 
 	BT_DBG("handle %u ref %u -> %u", conn->handle, old,
 	       atomic_get(&conn->ref));
+
+	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
+	    atomic_get(&conn->ref) == 0) {
+		bt_le_adv_resume();
+	}
 }
 
 const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn)
