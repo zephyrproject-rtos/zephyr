@@ -183,11 +183,6 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 		return;
 	}
 
-	/* ARROK bit validates previous write operation to ARR register */
-	while (LL_LPTIM_IsActiveFlag_ARROK(LPTIM1) == 0) {
-	}
-	LL_LPTIM_ClearFlag_ARROK(LPTIM1);
-
 	if (ticks == K_TICKS_FOREVER) {
 		/* disable LPTIM */
 		LL_APB1_GRP1_ForceReset(LL_APB1_GRP1_PERIPH_LPTIM1);
@@ -242,6 +237,12 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 		NVIC_SetPendingIRQ(LPTIM1_IRQn);
 		lptim_fired = 1;
 	}
+
+	/* ARROK bit validates previous write operation to ARR register */
+	while (LL_LPTIM_IsActiveFlag_ARROK(LPTIM1) == 0) {
+	}
+	LL_LPTIM_ClearFlag_ARROK(LPTIM1);
+
 	/* run timer and wait for the reload match */
 	LL_LPTIM_SetAutoReload(LPTIM1, next_arr);
 
