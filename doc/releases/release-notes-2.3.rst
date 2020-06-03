@@ -266,7 +266,7 @@ Drivers and Sensors
 
     - Added Resolvable Private Address support
     - Enabled power saving support
-    - Added 2 Mbps support
+    - Added 2 Mbps PHY support
     - Enabled controller-based privacy
 
 * CAN
@@ -595,7 +595,8 @@ Bluetooth
   * Only control procedures supported by the peer are now used.
   * The Nordic nRF52820 IC is now supported
   * OpenISA/RV32M1:
-    * 2Mbps PHY support.
+
+    * 2 Mbps PHY support.
     * Radio deep sleep mode support.
     * Controller-based privacy support.
 
