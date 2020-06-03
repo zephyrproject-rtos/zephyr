@@ -42,7 +42,7 @@ static int tcp_pkt_linearize(struct net_pkt *pkt, size_t pos, size_t len)
 	size_t len1, len2;
 
 	if (net_pkt_get_len(pkt) < (pos + len)) {
-		NET_ERR("Insufficient packet len=%d (pos+len=%zu)",
+		NET_ERR("Insufficient packet len=%zd (pos+len=%zu)",
 			net_pkt_get_len(pkt), pos + len);
 		ret = -EINVAL;
 		goto out;
