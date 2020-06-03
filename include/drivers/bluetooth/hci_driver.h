@@ -32,33 +32,40 @@ enum {
 	BT_QUIRK_NO_RESET = BIT(0),
 };
 
-/**
- * @brief Check if an HCI event is high priority or not.
+/* @brief The HCI event shall be given to bt_recv_prio */
+#define BT_HCI_EVT_FLAG_RECV_PRIO BIT(0)
+/* @brief  The HCI event shall be given to bt_recv. */
+#define BT_HCI_EVT_FLAG_RECV      BIT(1)
+
+/** @brief Get HCI event flags.
  *
- * Helper for the HCI driver to know which events are ok to be passed
- * through the RX thread and which must be given to bt_recv_prio() from
- * another context (e.g. ISR). If this function returns true it's safe
- * to pass the event through the RX thread, however if it returns false
- * then this risks a deadlock.
+ * Helper for the HCI driver to get HCI event flags that describes rules that.
+ * must be followed.
+ *
+ * When CONFIG_BT_RECV_IS_RX_THREAD is enabled the flags
+ * BT_HCI_EVT_FLAG_RECV and BT_HCI_EVT_FLAG_RECV_PRIO indicates if the event
+ * should be given to bt_recv or bt_recv_prio.
  *
  * @param evt HCI event code.
  *
- * @return true if the event can be processed in the RX thread, false
- *         if it cannot.
+ * @return HCI event flags for the specified event.
  */
-static inline bool bt_hci_evt_is_prio(uint8_t evt)
+static inline uint8_t bt_hci_evt_get_flags(uint8_t evt)
 {
 	switch (evt) {
-	case BT_HCI_EVT_CMD_COMPLETE:
-	case BT_HCI_EVT_CMD_STATUS:
+	case BT_HCI_EVT_DISCONN_COMPLETE:
+		return BT_HCI_EVT_FLAG_RECV | BT_HCI_EVT_FLAG_RECV_PRIO;
 		/* fallthrough */
 #if defined(CONFIG_BT_CONN)
 	case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
 	case BT_HCI_EVT_DATA_BUF_OVERFLOW:
-#endif
-		return true;
+		/* fallthrough */
+#endif /* defined(CONFIG_BT_CONN) */
+	case BT_HCI_EVT_CMD_COMPLETE:
+	case BT_HCI_EVT_CMD_STATUS:
+		return BT_HCI_EVT_FLAG_RECV_PRIO;
 	default:
-		return false;
+		return BT_HCI_EVT_FLAG_RECV;
 	}
 }
 
@@ -67,9 +74,11 @@ static inline bool bt_hci_evt_is_prio(uint8_t evt)
  *
  * This is the main function through which the HCI driver provides the
  * host with data from the controller. The buffer needs to have its type
- * set with the help of bt_buf_set_type() before calling this API. This API
- * should not be used for so-called high priority HCI events, which should
- * instead be delivered to the host stack through bt_recv_prio().
+ * set with the help of bt_buf_set_type() before calling this API.
+ *
+ * When CONFIG_BT_RECV_IS_RX_THREAD is defined then this API should not be used
+ * for so-called high priority HCI events, which should instead be delivered to
+ * the host stack through bt_recv_prio().
  *
  * @param buf Network buffer containing data from the controller.
  *
@@ -82,8 +91,8 @@ int bt_recv(struct net_buf *buf);
  *
  * This is the same as bt_recv(), except that it should be used for
  * so-called high priority HCI events. There's a separate
- * bt_hci_evt_is_prio() helper that can be used to identify which events
- * are high priority.
+ * bt_hci_evt_get_flags() helper that can be used to identify which events
+ * have the BT_HCI_EVT_FLAG_RECV_PRIO flag set.
  *
  * As with bt_recv(), the buffer needs to have its type set with the help of
  * bt_buf_set_type() before calling this API. The only exception is so called

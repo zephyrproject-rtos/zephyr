@@ -393,12 +393,6 @@ static void h5_process_complete_packet(uint8_t *hdr)
 		net_buf_put(&h5.rx_queue, buf);
 		break;
 	case HCI_EVENT_PKT:
-		if (buf->len > sizeof(struct bt_hci_evt_hdr) &&
-			bt_hci_evt_is_prio(((struct bt_hci_evt_hdr *)buf->data)->evt)) {
-			hexdump("=> ", buf->data, buf->len);
-			bt_recv_prio(buf);
-			break;
-		}
 	case HCI_ACLDATA_PKT:
 		hexdump("=> ", buf->data, buf->len);
 		bt_recv(buf);

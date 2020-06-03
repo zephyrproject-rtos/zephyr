@@ -9,6 +9,7 @@
  */
 typedef enum __packed {
 	BT_CONN_DISCONNECTED,
+	BT_CONN_DISCONNECT_COMPLETE,
 	BT_CONN_CONNECT_SCAN,
 	BT_CONN_CONNECT_AUTO,
 	BT_CONN_CONNECT_ADV,
@@ -211,6 +212,13 @@ void bt_conn_disconnect_all(uint8_t id);
 
 /* Look up an existing connection */
 struct bt_conn *bt_conn_lookup_handle(uint16_t handle);
+
+static inline bool bt_conn_is_handle_valid(struct bt_conn *conn)
+{
+	return conn->state == BT_CONN_CONNECTED ||
+	       conn->state == BT_CONN_DISCONNECT ||
+	       conn->state == BT_CONN_DISCONNECT_COMPLETE;
+}
 
 /* Check if the connection is with the given peer. */
 bool bt_conn_is_peer_addr_le(const struct bt_conn *conn, uint8_t id,

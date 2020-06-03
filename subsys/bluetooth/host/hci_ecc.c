@@ -96,7 +96,11 @@ static void send_cmd_status(uint16_t opcode, uint8_t status)
 	evt->opcode = sys_cpu_to_le16(opcode);
 	evt->status = status;
 
-	bt_recv_prio(buf);
+	if (IS_ENABLED(CONFIG_BT_RECV_IS_RX_THREAD)) {
+		bt_recv_prio(buf);
+	} else {
+		bt_recv(buf);
+	}
 }
 
 static uint8_t generate_keys(void)

@@ -385,12 +385,8 @@ static void bt_spi_rx_thread(void)
 				continue;
 			}
 
-			if (rxmsg[PACKET_TYPE] == HCI_EVT &&
-			    bt_hci_evt_is_prio(rxmsg[EVT_HEADER_EVENT])) {
-				bt_recv_prio(buf);
-			} else {
-				bt_recv(buf);
-			}
+			bt_recv(buf);
+
 		/* On BlueNRG-MS, host is expected to read */
 		/* as long as IRQ pin is high */
 		} while (irq_pin_high());

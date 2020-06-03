@@ -109,11 +109,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 
 		BT_DBG("Calling bt_recv(%p)", buf);
 
-		if (frame[0] == H4_EVT && bt_hci_evt_is_prio(frame[1])) {
-			bt_recv_prio(buf);
-		} else {
-			bt_recv(buf);
-		}
+		bt_recv(buf);
 
 		k_yield();
 	}
