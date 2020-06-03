@@ -16,6 +16,7 @@
 /.known-issues/                           @nashif
 /.github/				  @nashif
 /.github/workflows/                       @galak @nashif
+/.buildkite/				  @galak
 /arch/arc/                                @vonhust @ruuddw
 /arch/arm/                                @MaureenHelm @galak @ioannisg
 /arch/arm/core/aarch32/cortex_m/cmse/     @ioannisg
