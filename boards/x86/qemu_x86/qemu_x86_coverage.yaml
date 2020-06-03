@@ -11,3 +11,5 @@ testing:
   ignore_tags:
      - net
      - bluetooth
+     - drivers
+     - samples
