@@ -56,6 +56,13 @@ API Changes
     big endian.
     The nordic driver byte swaps the entire 64 bit word to big endian.
 
+* I2C
+
+  * Added a new API for recovering an I2C bus from situations where the I2C
+    master and one or more I2C slaves are out of synchronization (e.g. if the
+    I2C master was reset in the middle of an I2C transaction or if a noise
+    pulse was induced on the SCL line).
+
 Deprecated in this release
 ==========================
 
@@ -246,6 +253,11 @@ Drivers and Sensors
 
   * Added support for STM32G4, STM32L1 and STM32H7 series
   * Enabled internal voltage reference source on stm32
+  * Added Microchip MCP320x driver
+
+* Audio
+
+  * N/A
 
 * Bluetooth
 
@@ -259,7 +271,8 @@ Drivers and Sensors
 
 * CAN
 
-  * <TBD>
+  * Converted can-primary alias to zephyr,can-primary chosen property
+  * Converted loopback driver to use a thread to send frames
 
 * Clock Control
 
@@ -268,20 +281,36 @@ Drivers and Sensors
 
 * Console
 
-  * <TBD>
+  * Fixed USB initialization
+  * Added semihosting console
 
 * Counter
 
   * Added support on stm32h7 and stm32l0
   * Fixed alarm tick count on stm32
+  * Added Maxim DS3231 driver
+  * Added NXP Kinetis LPTMR driver
+
+* Crypto
+
+  * Added driver for nRF ECB
+  * Added CAP_NO_IV_PREFIX capability to stm32 driver
 
 * DAC
 
   * Added stm32l0 series support
+  * Added DAC shell
+  * Added NXP Kinetis DAC and DAC32 drivers
+
+* Debug
+
+  * N/A
 
 * Display
 
-  * <TBD>
+  * Added power management support to st7789v driver
+  * Reworked controller memory initialization in ssd16xx driver
+  * Updated st7789v driver to set x-offset and y-offset properties properly
 
 * DMA
 
@@ -290,11 +319,16 @@ Drivers and Sensors
 
 * EEPROM
 
-  * <TBD>
+  * N/A
 
 * Entropy
 
-  * <TBD>
+  * Removed Kconfig HAS_DTS_ENTROPY
+  * Implemented ISR specific get entropy call in gecko driver
+
+* ESPI
+
+  * Various fixes in Microchip driver
 
 * Ethernet
 
@@ -317,6 +351,9 @@ Drivers and Sensors
 
   * Added logs on stm32
   * Fixed wrong bank erasing on stm32g4
+  * Various fixes in nrf_qspi_nor driver
+  * Added driver for AT456 compatible SPI flash chips
+  * Enabled support for SAMV71
 
 * GPIO
 
@@ -324,18 +361,27 @@ Drivers and Sensors
   * Added STM32L5 support to stm32 driver
   * Added interrupt support to sx1509b driver
   * Fixed interrupt handling in sifive, intel_apl, mchp_xec, mcux_igpio driver
+  * Various fixes in intel_apl driver
+  * Added MCP23S17 driver
+  * Fixed port 1 interrupts in mcux lpc driver
 
 * Hardware Info
 
-  * <TBD>
+  * Fixed ESP32 implementation
+  * Updated byte order in all drivers
 
 * I2C
 
   * Added support to stm32h7
+  * Added write/read and bus recovery commands to shell
+  * Added bus recovery function to gpio bitbang driver
+  * Fixed fast and fast+ mode bus speeds in several drivers
+  * Added mcux flexcomm driver
 
 * I2S
 
-  * <TBD>
+  * Added I2S master DMA support and clock output to stm32 driver
+  * Enabled SAMV71
 
 * IEEE 802.15.4
 
@@ -352,15 +398,33 @@ Drivers and Sensors
 * Interrupt Controller
 
   * Fixed PLIC register space
-  * <TBD>
+  * Added support for STM32L5 series
+  * Added GIC V3 driver
+  * Fixed ICFGRn access and config in GIC driver
+  * Optimized the arc v2 interrupt unit driver
 
 * IPM
 
-  * <TBD>
+  * Added CAVS DSP Intra-DSP Communication (IDC) driver
 
 * Keyboard Scan
 
-  * <TBD>
+  * Added interrupt support to the ft5336 touch controller driver
+  * Added SDL mouse driver
+
+* LED
+
+  * N/A
+
+* LED Strip
+
+  * N/A
+
+* LoRa
+
+  * Added a LoRa shell
+  * Replaced counter driver usage with k_timer calls
+  * Various fixes in sx1276 driver
 
 * Modem
 
@@ -374,47 +438,89 @@ Drivers and Sensors
   * Fixed TCP context release and RX socket src/dst port assignment in wncm14a2a
   * Changed PPP driver connection to generic GSM modem
 
+* Neural Net
+
+  * N/A
+
+* PCIe
+
+  * N/A
+
+* PECI
+
+  * Added Microchip XEC driver
+
 * Pinmux
 
   * Fixed compilation errors in rv32m1_vega pinmux
-  * <TBD>
 
 * PS/2
 
-  * <TBD>
+  * Tuned PS2 driver to support several mice brands
 
 * PWM
 
   * Added support to stm32h7
+  * Enhanced mcux ftm driver to configure pwm in ticks and allow configuring the clock prescaler
+  * Added mcux tpm driver
+  * Fixed nrfx driver to wait until PWM is stopped before restarting it
 
 * Sensor
 
   * Added support for Analog Devices ADXL345 3-axis I2C accelerometer
-  * <TBD>
+  * Added Infineon DPS310 driver
+  * Fixed temperature conversion in SI7006 driver
+  * Added Honeywell MPR driver
+  * Added BQ27421 driver
+  * Added weighted average filter to NXP Kinetis temperature driver
+  * Enabled single shot mode in ENS210 driver
+  * Added forced sampling mode to BME280 driver
+  * Added IIS2MDC magnetometer driver
+  * Added IIS2DLPC accelerometer driver
+  * Added ISM330DHCX IMU driver
+  * Added MEC tachometer driver
+  * Fixed I2C and SPI bus communication in LIS2DH driver
 
 * Serial
 
   * Added uart_mux driver that is used in GSM 07.10 muxing protocol
   * Added support for parity setting from dts on stm32
   * Added support for stm32l5
+  * Various fixes in ns16550 driver
+  * Added XMC driver
+  * Added interrupt and runtime configuration support to Xilinx driver
+  * Fixed interrupt support in sifive driver
+  * Enhanced nrfx driver TX only mode support
+  * Added SAMV71 support to sam driver
 
 * SPI
 
   * Added support for DMA client on stm32
+  * Increased clock frequency in mcux flexcomm driver
+  * Added power management support to cc13xx_cc26xx driver
 
 * Timer
 
-  * <TBD>
+  * Various fixes in stm32_lptim driver
+  * Removed RTC1 dependency from nrf driver
+  * Various fixes in arcv2_timer0 driver
+  * Fixed TICKLESS=n processing in nrf_rtc and stm32_lptim drivers
+  * Added CAVS DSP wall clock timer driver
+  * Implemented tickless support in xlnx_psttc_timer driver
 
 * USB
 
   * Added experimental USB Audio implementation.
   * Added support to stm32wb
   * Fixed PMA leak at reset on stm32
+  * Various fixes in usb_dc_nrfx driver
+  * Refactored usb_dc_mcux_ehci driver
 
 * Video
 
-  * <TBD>
+  * Added dedicated video init priority
+  * Various fixes in sw_generator and mcux_csi
+  * Fixed video buffer alignment
 
 * Watchdog
 
