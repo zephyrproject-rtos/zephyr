@@ -13,6 +13,7 @@ import argparse
 import os
 import re
 
+
 def retrieve_data(input_file):
     extracted_coverage_info = {}
     capture_data = False
@@ -33,11 +34,12 @@ def retrieve_data(input_file):
             file_name = line.split("<")[0][1:]
             # Remove the trailing new line char
             hex_dump = line.split("<")[1][:-1]
-            extracted_coverage_info.update({file_name:hex_dump})
+            extracted_coverage_info.update({file_name: hex_dump})
 
     if not reached_end:
-        print("incomplete data captured from %s" %input_file)
+        print("incomplete data captured from %s" % input_file)
     return extracted_coverage_info
+
 
 def create_gcda_files(extracted_coverage_info):
     if args.verbose:
@@ -69,7 +71,6 @@ def parse_args():
     parser.add_argument("-v", "--verbose", action="count", default=0,
                         help="Verbose Output")
     args = parser.parse_args()
-
 
 
 def main():
