@@ -652,11 +652,13 @@ static inline ssize_t z_vrfy_zsock_sendmsg(int sock,
 		}
 	}
 
-	msg_copy.msg_control = z_user_alloc_from_copy(msg->msg_control,
-						      msg->msg_controllen);
-	if (!msg_copy.msg_control) {
-		errno = ENOMEM;
-		goto fail;
+	if (msg->msg_controllen > 0) {
+		msg_copy.msg_control = z_user_alloc_from_copy(msg->msg_control,
+							  msg->msg_controllen);
+		if (!msg_copy.msg_control) {
+			errno = ENOMEM;
+			goto fail;
+		}
 	}
 
 	ret = z_impl_zsock_sendmsg(sock, (const struct msghdr *)&msg_copy,
