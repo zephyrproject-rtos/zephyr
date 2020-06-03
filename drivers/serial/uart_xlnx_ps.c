@@ -1198,7 +1198,6 @@ static struct uart_xlnx_ps_dev_data_t uart_xlnx_ps_dev_data_##port
 static struct uart_xlnx_ps_dev_config uart_xlnx_ps_dev_cfg_##port = { \
 	.uconf = { \
 		.regs = DT_INST_REG_ADDR(port), \
-		.base = (uint8_t *)DT_INST_REG_ADDR(port), \
 		.sys_clk_freq = DT_INST_PROP(port, clock_frequency), \
 		UART_XLNX_PS_IRQ_CONF_FUNC_SET(port) \
 	}, \
