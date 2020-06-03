@@ -28,6 +28,7 @@
 #endif
 
 static const struct flash_parameters flash_wb_parameters = {
+	.write_block_size = 1,
 	.erase_value = 0xff,
 };
 
@@ -409,7 +410,6 @@ static const struct flash_driver_api spi_flash_api = {
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = flash_wb_pages_layout,
 #endif
-	.write_block_size = 1,
 };
 
 static int spi_flash_wb_configure(struct device *dev)

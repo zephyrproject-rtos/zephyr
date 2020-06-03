@@ -62,6 +62,7 @@ struct flash_nios2_qspi_config {
 };
 
 static const struct flash_parameters flash_nios2_qspi_parameters = {
+	.write_block_size = NIOS2_WRITE_BLOCK_SIZE,
 	.erase_value = 0xff,
 };
 
@@ -471,7 +472,6 @@ static const struct flash_driver_api flash_nios2_qspi_api = {
 	.page_layout = (flash_api_pages_layout)
 		       flash_page_layout_not_implemented,
 #endif
-	.write_block_size = NIOS2_WRITE_BLOCK_SIZE,
 };
 
 static int flash_nios2_qspi_init(struct device *dev)

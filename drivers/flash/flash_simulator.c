@@ -142,6 +142,7 @@ static bool write_protection;
 static const struct flash_driver_api flash_sim_api;
 
 static const struct flash_parameters flash_sim_parameters = {
+	.write_block_size = FLASH_SIMULATOR_PROG_UNIT,
 	.erase_value = FLASH_SIMULATOR_ERASE_VALUE
 };
 
@@ -362,7 +363,6 @@ static const struct flash_driver_api flash_sim_api = {
 	.write = flash_sim_write,
 	.erase = flash_sim_erase,
 	.write_protection = flash_wp_set,
-	.write_block_size = FLASH_SIMULATOR_PROG_UNIT,
 	.get_parameters = flash_sim_get_parameters,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_sim_page_layout,

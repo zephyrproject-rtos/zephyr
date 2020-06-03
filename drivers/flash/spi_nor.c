@@ -85,6 +85,7 @@ struct spi_nor_data {
 };
 
 static const struct flash_parameters flash_nor_parameters = {
+	.write_block_size = 1,
 	.erase_value = 0xff,
 };
 
@@ -589,7 +590,6 @@ static const struct flash_driver_api spi_nor_api = {
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = spi_nor_pages_layout,
 #endif
-	.write_block_size = 1,
 };
 
 static const struct spi_nor_config flash_id = {
