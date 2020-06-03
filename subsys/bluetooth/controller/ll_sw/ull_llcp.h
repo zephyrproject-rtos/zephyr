@@ -136,3 +136,9 @@ void ull_cp_ltk_req_neq_reply(struct ull_cp_conn *conn);
  * @brief Initiate a PHY Update Procedure.
  */
 u8_t ull_cp_phy_update(struct ull_cp_conn *conn);
+
+u8_t ull_cp_conn_update(struct ull_cp_conn *conn, u16_t interval_min, u16_t interval_max, u16_t latency, u16_t timeout);
+
+void ull_cp_conn_param_req_reply(struct ull_cp_conn *conn);
+
+void ull_cp_conn_param_req_neg_reply(struct ull_cp_conn *conn);

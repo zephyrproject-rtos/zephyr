@@ -12,6 +12,8 @@ enum llcp_proc {
 	PROC_VERSION_EXCHANGE,
 	PROC_ENCRYPTION_START,
 	PROC_PHY_UPDATE,
+	PROC_CONN_UPDATE,
+	PROC_CONN_PARAM_REQ,
 };
 
 /* LLCP Procedure Context */
@@ -52,6 +54,11 @@ struct proc_ctx {
 			u16_t instant;
 		} pu;
 
+		/* Connection Update & Connection Parameter Request */
+		struct {
+			u8_t error;
+			u16_t instant;
+		} cu;
 	} data;
 	struct {
 		u8_t type;
@@ -282,6 +289,31 @@ static inline void lp_pu_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, voi
 
 
 /*
+ * LLCP Local Procedure Connection Update
+ */
+void ull_cp_priv_lp_cu_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
+
+static inline void lp_cu_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
+{
+	return ull_cp_priv_lp_cu_rx(conn, ctx, rx);
+}
+
+void ull_cp_priv_lp_cu_init_proc(struct proc_ctx *ctx);
+
+static inline void lp_cu_init_proc(struct proc_ctx *ctx)
+{
+	return ull_cp_priv_lp_cu_init_proc(ctx);
+}
+
+void ull_cp_priv_lp_cu_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, void *param);
+
+static inline void lp_cu_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, void *param)
+{
+	return ull_cp_priv_lp_cu_run(conn, ctx, param);
+}
+
+
+/*
  * LLCP Remote Procedure PHY Update
  */
 void ull_cp_priv_rp_pu_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
@@ -303,6 +335,44 @@ void ull_cp_priv_rp_pu_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, void 
 static inline void rp_pu_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	return ull_cp_priv_rp_pu_run(conn, ctx, param);
+}
+
+/*
+ * LLCP Remote Procedure Connection Update
+ */
+void ull_cp_priv_rp_cu_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
+
+static inline void rp_cu_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
+{
+	return ull_cp_priv_rp_cu_rx(conn, ctx, rx);
+}
+
+void ull_cp_priv_rp_cu_init_proc(struct proc_ctx *ctx);
+
+static inline void rp_cu_init_proc(struct proc_ctx *ctx)
+{
+	return ull_cp_priv_rp_cu_init_proc(ctx);
+}
+
+void ull_cp_priv_rp_cu_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, void *param);
+
+static inline void rp_cu_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, void *param)
+{
+	return ull_cp_priv_rp_cu_run(conn, ctx, param);
+}
+
+void ull_cp_priv_rp_conn_param_req_reply(struct ull_cp_conn *conn, struct proc_ctx *ctx);
+
+static inline void rp_conn_param_req_reply(struct ull_cp_conn *conn, struct proc_ctx *ctx)
+{
+	return ull_cp_priv_rp_conn_param_req_reply(conn, ctx);
+}
+
+void ull_cp_priv_rp_conn_param_req_neg_reply(struct ull_cp_conn *conn, struct proc_ctx *ctx);
+
+static inline void rp_conn_param_req_neg_reply(struct ull_cp_conn *conn, struct proc_ctx *ctx)
+{
+	return ull_cp_priv_rp_conn_param_req_neg_reply(conn, ctx);
 }
 
 
@@ -633,6 +703,38 @@ static inline void pdu_decode_phy_update_ind(struct proc_ctx *ctx, struct pdu_da
 {
 	return ull_cp_priv_pdu_decode_phy_update_ind(ctx, pdu);
 }
+
+/*
+ * Connection Update Procedure Helper
+ */
+void ull_cp_priv_pdu_encode_conn_param_req(struct proc_ctx *ctx, struct pdu_data *pdu);
+
+static inline void pdu_encode_conn_param_req(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_encode_conn_param_req(ctx, pdu);
+}
+
+void ull_cp_priv_pdu_encode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu);
+
+static inline void pdu_encode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_encode_conn_param_rsp(ctx, pdu);
+}
+
+void ull_cp_priv_pdu_encode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
+
+static inline void pdu_encode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_encode_conn_update_ind(ctx, pdu);
+}
+
+void ull_cp_priv_pdu_decode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
+
+static inline void pdu_decode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_decode_conn_update_ind(ctx, pdu);
+}
+
 
 #ifdef ZTEST_UNITTEST
 bool lr_is_disconnected(struct ull_cp_conn *conn);

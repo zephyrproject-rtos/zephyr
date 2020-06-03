@@ -24,6 +24,7 @@ FILE(GLOB ll_sw_sources
         $ENV{ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_common.c
         $ENV{ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_phy.c
         $ENV{ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_enc.c
+        $ENV{ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_conn.c
         $ENV{ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp.c
 )
 

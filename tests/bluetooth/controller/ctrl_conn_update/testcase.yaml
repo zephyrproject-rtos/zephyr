@@ -1,0 +1,5 @@
+common:
+    tags: test_framework bluetooth conn_update conn_param_req ull_llcp
+tests:
+  bluetooth.controller.ctrl_conn_update.test:
+     type: unit
