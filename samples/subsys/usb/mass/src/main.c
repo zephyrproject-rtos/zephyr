@@ -26,6 +26,7 @@ static FATFS fat_fs;
 static struct fs_mount_t fs_mnt = {
 	.type = FS_FATFS,
 	.mnt_point = FATFS_MNTP,
+	.storage_dev = (void *)FLASH_AREA_ID(storage),
 	.fs_data = &fat_fs,
 };
 #elif CONFIG_FILE_SYSTEM_LITTLEFS
