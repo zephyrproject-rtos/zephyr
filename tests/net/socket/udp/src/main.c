@@ -470,6 +470,54 @@ void test_v4_sendmsg_recvfrom(void)
 	zassert_equal(rv, 0, "close failed");
 }
 
+void test_v4_sendmsg_recvfrom_no_aux_data(void)
+{
+	int rv;
+	int client_sock;
+	int server_sock;
+	struct sockaddr_in client_addr;
+	struct sockaddr_in server_addr;
+	struct msghdr msg;
+	struct iovec io_vector[1];
+
+	prepare_sock_udp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
+			    &client_sock, &client_addr);
+	prepare_sock_udp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, SERVER_PORT,
+			    &server_sock, &server_addr);
+
+	rv = bind(server_sock,
+		  (struct sockaddr *)&server_addr,
+		  sizeof(server_addr));
+	zassert_equal(rv, 0, "server bind failed");
+
+	rv = bind(client_sock,
+		  (struct sockaddr *)&client_addr,
+		  sizeof(client_addr));
+	zassert_equal(rv, 0, "client bind failed");
+
+	io_vector[0].iov_base = TEST_STR_SMALL;
+	io_vector[0].iov_len = strlen(TEST_STR_SMALL);
+
+	memset(&msg, 0, sizeof(msg));
+	msg.msg_iov = io_vector;
+	msg.msg_iovlen = 1;
+	msg.msg_name = &server_addr;
+	msg.msg_namelen = sizeof(server_addr);
+
+	comm_sendmsg_recvfrom(client_sock,
+			      (struct sockaddr *)&client_addr,
+			      sizeof(client_addr),
+			      &msg,
+			      server_sock,
+			      (struct sockaddr *)&server_addr,
+			      sizeof(server_addr));
+
+	rv = close(client_sock);
+	zassert_equal(rv, 0, "close failed");
+	rv = close(server_sock);
+	zassert_equal(rv, 0, "close failed");
+}
+
 void test_v6_sendmsg_recvfrom(void)
 {
 	int rv;
@@ -920,6 +968,8 @@ void test_main(void)
 			 ztest_unit_test(test_so_txtime),
 			 ztest_unit_test(test_v4_sendmsg_recvfrom),
 			 ztest_user_unit_test(test_v4_sendmsg_recvfrom),
+			 ztest_unit_test(test_v4_sendmsg_recvfrom_no_aux_data),
+			 ztest_user_unit_test(test_v4_sendmsg_recvfrom_no_aux_data),
 			 ztest_unit_test(test_v6_sendmsg_recvfrom),
 			 ztest_user_unit_test(test_v6_sendmsg_recvfrom),
 			 ztest_unit_test(test_v4_sendmsg_recvfrom_connected),
