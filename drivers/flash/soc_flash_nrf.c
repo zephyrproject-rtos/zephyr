@@ -105,6 +105,10 @@ static int erase_op(void *context); /* instance of flash_op_handler_t */
 static int erase_in_timeslice(uint32_t addr, uint32_t size);
 #endif /* CONFIG_SOC_FLASH_NRF_RADIO_SYNC */
 
+static const struct flash_parameters flash_nrf_parameters = {
+	.erase_value = 0xff,
+};
+
 #if defined(CONFIG_MULTITHREADING)
 /* semaphore for locking flash resources (tickers) */
 static struct k_sem sem_lock;
@@ -278,11 +282,20 @@ static void flash_nrf_pages_layout(struct device *dev,
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
+static const struct flash_parameters *
+flash_nrf_get_parameters(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return &flash_nrf_parameters;
+}
+
 static const struct flash_driver_api flash_nrf_api = {
 	.read = flash_nrf_read,
 	.write = flash_nrf_write,
 	.erase = flash_nrf_erase,
 	.write_protection = flash_nrf_write_protection,
+	.get_parameters = flash_nrf_get_parameters,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = flash_nrf_pages_layout,
 #endif

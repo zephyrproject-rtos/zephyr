@@ -19,6 +19,9 @@
 #define FLASH_SIMULATOR_PROG_UNIT DT_PROP(SOC_NV_FLASH_NODE, write_block_size)
 #define FLASH_SIMULATOR_FLASH_SIZE DT_REG_SIZE(SOC_NV_FLASH_NODE)
 
+#define FLASH_SIMULATOR_ERASE_VALUE \
+		DT_PROP(DT_PARENT(SOC_NV_FLASH_NODE), erase_value)
+
 /* Offset between pages */
 #define TEST_SIM_FLASH_SIZE FLASH_SIMULATOR_FLASH_SIZE
 
@@ -266,6 +269,15 @@ static void test_double_write(void)
 	zassert_equal(-EIO, rc, "Unexpected error code (%d)", rc);
 }
 
+static void test_get_erase_value(void)
+{
+	const struct flash_parameters *fp = flash_get_parameters(flash_dev);
+
+	zassert_equal(fp->erase_value, FLASH_SIMULATOR_ERASE_VALUE,
+		      "Expected erase value %x",
+		      FLASH_SIMULATOR_ERASE_VALUE);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(flash_sim_api,
@@ -275,7 +287,8 @@ void test_main(void)
 			 ztest_unit_test(test_access),
 			 ztest_unit_test(test_out_of_bounds),
 			 ztest_unit_test(test_align),
-			 ztest_unit_test(test_double_write));
+			 ztest_unit_test(test_double_write),
+			 ztest_unit_test(test_get_erase_value));
 
 	ztest_run_test_suite(flash_sim_api);
 }

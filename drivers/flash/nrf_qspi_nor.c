@@ -33,6 +33,10 @@
 
 LOG_MODULE_REGISTER(qspi_nor, CONFIG_FLASH_LOG_LEVEL);
 
+static const struct flash_parameters qspi_flash_parameters = {
+	.erase_value = 0xff,
+};
+
 /**
  * @brief QSPI buffer structure
  * Structure used both for TX and RX purposes.
@@ -757,6 +761,14 @@ static const struct flash_pages_layout dev_layout = {
 };
 #undef LAYOUT_PAGES_COUNT
 
+static const struct flash_parameters *
+qspi_flash_get_parameters(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return &qspi_flash_parameters;
+}
+
 static void qspi_nor_pages_layout(struct device *dev,
 				  const struct flash_pages_layout **layout,
 				  size_t *layout_size)
@@ -771,6 +783,7 @@ static const struct flash_driver_api qspi_nor_api = {
 	.write = qspi_nor_write,
 	.erase = qspi_nor_erase,
 	.write_protection = qspi_nor_write_protection_set,
+	.get_parameters = qspi_flash_get_parameters,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = qspi_nor_pages_layout,
 #endif
