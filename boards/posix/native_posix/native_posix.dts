@@ -30,6 +30,7 @@
 
 		#address-cells = <1>;
 		#size-cells = <1>;
+		erase-value = <0xff>;
 
 		label = "flash_ctrl";
 

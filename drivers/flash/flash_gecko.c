@@ -24,6 +24,11 @@ struct flash_gecko_data {
 	struct k_sem mutex;
 };
 
+
+static const struct flash_parameters flash_gecko_parameters = {
+	.erase_value = 0xff,
+};
+
 #define DEV_NAME(dev) ((dev)->name)
 #define DEV_DATA(dev) \
 	((struct flash_gecko_data *const)(dev)->driver_data)
@@ -178,6 +183,14 @@ void flash_gecko_page_layout(struct device *dev,
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
+static const struct flash_parameters *
+flash_gecko_get_parameters(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return &flash_gecko_parameters;
+}
+
 static int flash_gecko_init(struct device *dev)
 {
 	struct flash_gecko_data *const dev_data = DEV_DATA(dev);
@@ -199,6 +212,7 @@ static const struct flash_driver_api flash_gecko_driver_api = {
 	.write = flash_gecko_write,
 	.erase = flash_gecko_erase,
 	.write_protection = flash_gecko_write_protection,
+	.get_parameters = flash_gecko_get_parameters,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_gecko_page_layout,
 #endif

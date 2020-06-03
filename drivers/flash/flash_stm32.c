@@ -57,6 +57,11 @@ LOG_MODULE_REGISTER(flash_stm32, CONFIG_FLASH_LOG_LEVEL);
 
 #define CFG_HW_FLASH_SEMID	2
 
+static const struct flash_parameters flash_stm32_parameters = {
+	/* WARNING: This value may be not valid for L0/L1 chips */
+	.erase_value = 0xff,
+};
+
 #if defined(CONFIG_MULTITHREADING)
 /*
  * This is named flash_stm32_sem_take instead of flash_stm32_lock (and
@@ -281,6 +286,14 @@ static int flash_stm32_write_protection(struct device *dev, bool enable)
 	return rc;
 }
 
+static const struct flash_parameters *
+flash_stm32_get_parameters(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return &flash_stm32_parameters;
+}
+
 static struct flash_stm32_priv flash_data = {
 	.regs = (FLASH_TypeDef *) DT_INST_REG_ADDR(0),
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || \
@@ -299,6 +312,7 @@ static const struct flash_driver_api flash_stm32_api = {
 	.erase = flash_stm32_erase,
 	.write = flash_stm32_write,
 	.read = flash_stm32_read,
+	.get_parameters = flash_stm32_get_parameters,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_stm32_page_layout,
 #endif

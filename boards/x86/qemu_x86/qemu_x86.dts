@@ -54,6 +54,7 @@
 
 		#address-cells = <1>;
 		#size-cells = <1>;
+		erase-value = <0xff>;
 
 		flash_sim0: flash_sim@0 {
 			compatible = "soc-nv-flash";

@@ -42,6 +42,8 @@
 #define FLASH_SIMULATOR_FLASH_SIZE DT_REG_SIZE(SOC_NV_FLASH_NODE)
 
 #define FLASH_SIMULATOR_DEV_NAME DT_INST_LABEL(0)
+#define FLASH_SIMULATOR_ERASE_VALUE \
+		DT_PROP(DT_PARENT(SOC_NV_FLASH_NODE), erase_value)
 
 #define FLASH_SIMULATOR_PAGE_COUNT (FLASH_SIMULATOR_FLASH_SIZE / \
 				    FLASH_SIMULATOR_ERASE_UNIT)
@@ -139,6 +141,10 @@ static bool write_protection;
 
 static const struct flash_driver_api flash_sim_api;
 
+static const struct flash_parameters flash_sim_parameters = {
+	.erase_value = FLASH_SIMULATOR_ERASE_VALUE
+};
+
 static int flash_range_is_valid(struct device *dev, off_t offset, size_t len)
 {
 	ARG_UNUSED(dev);
@@ -219,7 +225,7 @@ static int flash_sim_write(struct device *dev, const off_t offset,
 
 		uint8_t buf[FLASH_SIMULATOR_PROG_UNIT];
 
-		memset(buf, 0xFF, sizeof(buf));
+		memset(buf, FLASH_SIMULATOR_ERASE_VALUE, sizeof(buf));
 		if (memcmp(buf, FLASH(offset + i), sizeof(buf))) {
 			STATS_INC(flash_sim_stats, double_writes);
 #if !CONFIG_FLASH_SIMULATOR_DOUBLE_WRITES
@@ -273,9 +279,9 @@ static void unit_erase(const uint32_t unit)
 				(unit * FLASH_SIMULATOR_ERASE_UNIT);
 
 	/* byte pattern to fill the flash with */
-	uint8_t byte_pattern = 0xFF;
+	uint8_t byte_pattern = FLASH_SIMULATOR_ERASE_VALUE;
 
-	/* erase the memory unit by pulling all bits to one */
+	/* erase the memory unit by setting it to erase value */
 	memset(FLASH(unit_addr), byte_pattern,
 	       FLASH_SIMULATOR_ERASE_UNIT);
 }
@@ -343,12 +349,21 @@ static void flash_sim_page_layout(struct device *dev,
 }
 #endif
 
+static const struct flash_parameters *
+flash_sim_get_parameters(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return &flash_sim_parameters;
+}
+
 static const struct flash_driver_api flash_sim_api = {
 	.read = flash_sim_read,
 	.write = flash_sim_write,
 	.erase = flash_sim_erase,
 	.write_protection = flash_wp_set,
 	.write_block_size = FLASH_SIMULATOR_PROG_UNIT,
+	.get_parameters = flash_sim_get_parameters,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_sim_page_layout,
 #endif
@@ -409,7 +424,7 @@ static int flash_mock_init(struct device *dev)
 
 static int flash_mock_init(struct device *dev)
 {
-	memset(mock_flash, 0xFF, ARRAY_SIZE(mock_flash));
+	memset(mock_flash, FLASH_SIMULATOR_ERASE_VALUE, ARRAY_SIZE(mock_flash));
 	return 0;
 }
 

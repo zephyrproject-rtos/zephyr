@@ -61,6 +61,10 @@ static const struct flash_pages_layout flash_sam0_pages_layout = {
 };
 #endif
 
+static const struct flash_parameters flash_sam0_parameters = {
+	.erase_value = 0xff,
+};
+
 static inline void flash_sam0_sem_take(struct device *dev)
 {
 	struct flash_sam0_data *ctx = dev->driver_data;
@@ -388,6 +392,14 @@ void flash_sam0_page_layout(struct device *dev,
 }
 #endif
 
+static const struct flash_parameters *
+flash_sam0_get_parameters(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return &flash_sam0_parameters;
+}
+
 static int flash_sam0_init(struct device *dev)
 {
 	struct flash_sam0_data *ctx = dev->driver_data;
@@ -414,6 +426,7 @@ static const struct flash_driver_api flash_sam0_api = {
 	.erase = flash_sam0_erase,
 	.write = flash_sam0_write,
 	.read = flash_sam0_read,
+	.get_parameters = flash_sam0_get_parameters,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_sam0_page_layout,
 #endif

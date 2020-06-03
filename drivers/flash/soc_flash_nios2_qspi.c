@@ -61,6 +61,10 @@ struct flash_nios2_qspi_config {
 	struct k_sem sem_lock;
 };
 
+static const struct flash_parameters flash_nios2_qspi_parameters = {
+	.erase_value = 0xff,
+};
+
 static int flash_nios2_qspi_erase(struct device *dev, off_t offset, size_t len)
 {
 	struct flash_nios2_qspi_config *flash_cfg = dev->driver_data;
@@ -449,11 +453,20 @@ static int flash_nios2_qspi_write_protection(struct device *dev, bool enable)
 	return rc;
 }
 
+static const struct flash_parameters *
+flash_nios2_qspi_get_parameters(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return &flash_nios2_qspi_parameters;
+}
+
 static const struct flash_driver_api flash_nios2_qspi_api = {
 	.write_protection = flash_nios2_qspi_write_protection,
 	.erase = flash_nios2_qspi_erase,
 	.write = flash_nios2_qspi_write,
 	.read = flash_nios2_qspi_read,
+	.get_parameters = flash_nios2_qspi_get_parameters,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = (flash_api_pages_layout)
 		       flash_page_layout_not_implemented,

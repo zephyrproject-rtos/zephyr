@@ -43,6 +43,10 @@ struct flash_priv {
 	uint32_t pflash_block_base;
 };
 
+static const struct flash_parameters flash_mcux_parameters = {
+	.erase_value = 0xff,
+};
+
 /*
  * Interrupt vectors could be executed from flash hence the need for locking.
  * The underlying MCUX driver takes care of copying the functions to SRAM.
@@ -137,13 +141,21 @@ static const struct flash_pages_layout dev_layout = {
 };
 
 static void flash_mcux_pages_layout(struct device *dev,
-									const struct flash_pages_layout **layout,
-									size_t *layout_size)
+				    const struct flash_pages_layout **layout,
+				    size_t *layout_size)
 {
 	*layout = &dev_layout;
 	*layout_size = 1;
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
+
+static const struct flash_parameters *
+flash_mcux_get_parameters(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return &flash_mcux_parameters;
+}
 
 static struct flash_priv flash_data;
 
@@ -152,6 +164,7 @@ static const struct flash_driver_api flash_mcux_api = {
 	.erase = flash_mcux_erase,
 	.write = flash_mcux_write,
 	.read = flash_mcux_read,
+	.get_parameters = flash_mcux_get_parameters,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = flash_mcux_pages_layout,
 #endif

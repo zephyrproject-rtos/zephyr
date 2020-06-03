@@ -76,6 +76,10 @@ struct spi_flash_at45_config {
 	uint8_t jedec_id[3];
 };
 
+static const struct flash_parameters flash_at45_parameters = {
+	.erase_value = 0xff,
+};
+
 static struct spi_flash_at45_data *get_dev_data(struct device *dev)
 {
 	return dev->driver_data;
@@ -624,11 +628,20 @@ static int spi_flash_at45_pm_control(struct device *dev, uint32_t ctrl_command,
 }
 #endif /* IS_ENABLED(CONFIG_DEVICE_POWER_MANAGEMENT) */
 
+static const struct flash_parameters *
+flash_at45_get_parameters(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return &flash_at45_parameters;
+}
+
 static const struct flash_driver_api spi_flash_at45_api = {
 	.read = spi_flash_at45_read,
 	.write = spi_flash_at45_write,
 	.erase = spi_flash_at45_erase,
 	.write_protection = spi_flash_at45_write_protection,
+	.get_parameters = flash_at45_get_parameters,
 #if IS_ENABLED(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = spi_flash_at45_pages_layout,
 #endif
