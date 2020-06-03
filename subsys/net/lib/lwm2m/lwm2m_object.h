@@ -379,7 +379,7 @@ struct lwm2m_input_context {
 	uint16_t offset;
 
 	/* length of incoming opaque */
-	uint16_t opaque_len;
+	size_t opaque_len;
 
 	/* private output data */
 	void *user_data;
