@@ -57,6 +57,7 @@ struct nvs_fs {
 
 	struct k_mutex nvs_lock;
 	struct device *flash_device;
+	const struct flash_parameters *flash_parameters;
 };
 
 /**
