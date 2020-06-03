@@ -734,4 +734,4 @@ static int littlefs_init(struct device *dev)
 	return fs_register(FS_LITTLEFS, &littlefs_fs);
 }
 
-SYS_INIT(littlefs_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(littlefs_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
