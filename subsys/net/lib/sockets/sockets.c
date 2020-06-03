@@ -643,11 +643,13 @@ static inline ssize_t z_vrfy_zsock_sendmsg(int sock,
 		msg_copy.msg_iov[i].iov_len = msg->msg_iov[i].iov_len;
 	}
 
-	msg_copy.msg_name = z_user_alloc_from_copy(msg->msg_name,
-						   msg->msg_namelen);
-	if (!msg_copy.msg_name) {
-		errno = ENOMEM;
-		goto fail;
+	if (msg->msg_namelen > 0) {
+		msg_copy.msg_name = z_user_alloc_from_copy(msg->msg_name,
+							   msg->msg_namelen);
+		if (!msg_copy.msg_name) {
+			errno = ENOMEM;
+			goto fail;
+		}
 	}
 
 	msg_copy.msg_control = z_user_alloc_from_copy(msg->msg_control,
