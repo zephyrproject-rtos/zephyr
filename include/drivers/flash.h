@@ -36,12 +36,22 @@ struct flash_pages_layout {
 };
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
+/**
+ * Flash memory parameters. Contents of this structure suppose to be
+ * filled in during flash device initialization and stay constant
+ * through a runtime.
+ */
+struct flash_parameters {
+	uint8_t erase_value; /* Byte value of erased flash */
+};
+
 typedef int (*flash_api_read)(struct device *dev, off_t offset, void *data,
 			      size_t len);
 typedef int (*flash_api_write)(struct device *dev, off_t offset,
 			       const void *data, size_t len);
 typedef int (*flash_api_erase)(struct device *dev, off_t offset, size_t size);
 typedef int (*flash_api_write_protection)(struct device *dev, bool enable);
+typedef const struct flash_parameters* (*flash_api_get_parameters)(const struct device *dev);
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 /**
@@ -75,6 +85,7 @@ __subsystem struct flash_driver_api {
 	flash_api_write write;
 	flash_api_erase erase;
 	flash_api_write_protection write_protection;
+	flash_api_get_parameters get_parameters;
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	flash_api_pages_layout page_layout;
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
@@ -294,6 +305,28 @@ static inline size_t z_impl_flash_get_write_block_size(struct device *dev)
 		(const struct flash_driver_api *)dev->driver_api;
 
 	return api->write_block_size;
+}
+
+
+/**
+ *  @brief  Get pointer to flash_parameters structure
+ *
+ *  Returned pointer points to a structure that should be considered
+ *  constant through a runtime, regardless if it is defined in RAM or
+ *  Flash.
+ *  Developer is free to cache the structure pointer or copy its contents.
+ *
+ *  @return pointer to flash_parameters structure characteristic for
+ *          the device.
+ */
+__syscall const struct flash_parameters *flash_get_parameters(const struct device *dev);
+
+static inline const struct flash_parameters *z_impl_flash_get_parameters(const struct device *dev)
+{
+	const struct flash_driver_api *api =
+		(const struct flash_driver_api *)dev->driver_api;
+
+	return api->get_parameters(dev);
 }
 
 #ifdef __cplusplus
