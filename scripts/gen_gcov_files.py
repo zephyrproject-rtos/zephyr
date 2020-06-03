@@ -4,10 +4,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# This script will parse the serial console log file and create the required
-# gcda files.
-# Usage python3 ${ZEPHYR_BASE}/scripts/gen_gcov_files.py -i console_output.log
-# Add -v for verbose
+
+"""This script will parse the serial console log file and create the required
+gcda files.
+"""
 
 import argparse
 import os
