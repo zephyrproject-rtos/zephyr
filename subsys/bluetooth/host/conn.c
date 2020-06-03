@@ -110,6 +110,8 @@ static inline const char *state2str(bt_conn_state_t state)
 	switch (state) {
 	case BT_CONN_DISCONNECTED:
 		return "disconnected";
+	case BT_CONN_DISCONNECT_COMPLETE:
+		return "disconnect-complete";
 	case BT_CONN_CONNECT_SCAN:
 		return "connect-scan";
 	case BT_CONN_CONNECT_DIR_ADV:
@@ -1725,9 +1727,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		 * running.
 		 */
 		switch (old_state) {
-		case BT_CONN_CONNECTED:
-		case BT_CONN_DISCONNECT:
-			process_unack_tx(conn);
+		case BT_CONN_DISCONNECT_COMPLETE:
 			tx_notify(conn);
 
 			/* Cancel Connection Update if it is pending */
@@ -1783,8 +1783,11 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			 */
 			bt_conn_unref(conn);
 			break;
+		case BT_CONN_CONNECTED:
+		case BT_CONN_DISCONNECT:
 		case BT_CONN_DISCONNECTED:
-			/* Cannot happen, no transition. */
+			/* Cannot happen. */
+			BT_WARN("Invalid (%u) old state", state);
 			break;
 		}
 		break;
@@ -1813,6 +1816,9 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		break;
 	case BT_CONN_DISCONNECT:
 		break;
+	case BT_CONN_DISCONNECT_COMPLETE:
+		process_unack_tx(conn);
+		break;
 	default:
 		BT_WARN("no valid (%u) state was set", state);
 
@@ -1830,8 +1836,7 @@ struct bt_conn *bt_conn_lookup_handle(uint16_t handle)
 		}
 
 		/* We only care about connections with a valid handle */
-		if (conns[i].state != BT_CONN_CONNECTED &&
-		    conns[i].state != BT_CONN_DISCONNECT) {
+		if (!bt_conn_is_handle_valid(&conns[i])) {
 			continue;
 		}
 
@@ -1847,8 +1852,7 @@ struct bt_conn *bt_conn_lookup_handle(uint16_t handle)
 		}
 
 		/* We only care about connections with a valid handle */
-		if (sco_conns[i].state != BT_CONN_CONNECTED &&
-		    sco_conns[i].state != BT_CONN_DISCONNECT) {
+		if (!bt_conn_is_handle_valid(&conns[i])) {
 			continue;
 		}
 

@@ -199,13 +199,7 @@ static void bt_ipm_rx_thread(void)
 
 		TL_MM_EvtDone(hcievt);
 
-		if (hcievt->evtserial.type == HCI_EVT &&
-		    bt_hci_evt_is_prio(hcievt->evtserial.evt.evtcode)) {
-			bt_recv_prio(buf);
-		} else {
-			bt_recv(buf);
-		}
-
+		bt_recv(buf);
 end_loop:
 		k_sem_give(&ipm_busy);
 	}

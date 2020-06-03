@@ -229,7 +229,7 @@ static size_t h4_discard(struct device *uart, size_t len)
 static inline void read_payload(void)
 {
 	struct net_buf *buf;
-	bool prio;
+	uint8_t evt_flags;
 	int read;
 
 	if (!rx.buf) {
@@ -271,23 +271,25 @@ static inline void read_payload(void)
 		return;
 	}
 
-	prio = (rx.type == H4_EVT && bt_hci_evt_is_prio(rx.evt.evt));
-
 	buf = rx.buf;
 	rx.buf = NULL;
 
 	if (rx.type == H4_EVT) {
+		evt_flags = bt_hci_evt_get_flags(rx.evt.evt);
 		bt_buf_set_type(buf, BT_BUF_EVT);
 	} else {
+		evt_flags = BT_HCI_EVT_FLAG_RECV;
 		bt_buf_set_type(buf, BT_BUF_ACL_IN);
 	}
 
 	reset_rx();
 
-	if (prio) {
+	if (evt_flags & BT_HCI_EVT_FLAG_RECV_PRIO) {
 		BT_DBG("Calling bt_recv_prio(%p)", buf);
 		bt_recv_prio(buf);
-	} else {
+	}
+
+	if (evt_flags & BT_HCI_EVT_FLAG_RECV) {
 		BT_DBG("Putting buf %p to rx fifo", buf);
 		net_buf_put(&rx.fifo, buf);
 	}

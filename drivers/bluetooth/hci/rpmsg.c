@@ -48,8 +48,7 @@ static bool is_hci_event_discardable(const uint8_t *evt_data)
 	}
 }
 
-static struct net_buf *bt_rpmsg_evt_recv(uint8_t *data, size_t remaining,
-					 bool *prio)
+static struct net_buf *bt_rpmsg_evt_recv(uint8_t *data, size_t remaining)
 {
 	bool discardable;
 	struct bt_hci_evt_hdr hdr;
@@ -83,8 +82,6 @@ static struct net_buf *bt_rpmsg_evt_recv(uint8_t *data, size_t remaining,
 	}
 
 	net_buf_add_mem(buf, &hdr, sizeof(hdr));
-	*prio = bt_hci_evt_is_prio(hdr.evt);
-
 	net_buf_add_mem(buf, data, remaining);
 
 	return buf;
@@ -127,7 +124,6 @@ static struct net_buf *bt_rpmsg_acl_recv(uint8_t *data, size_t remaining)
 void bt_rpmsg_rx(uint8_t *data, size_t len)
 {
 	uint8_t pkt_indicator;
-	bool prio = false;
 	struct net_buf *buf = NULL;
 	size_t remaining = len;
 
@@ -138,7 +134,7 @@ void bt_rpmsg_rx(uint8_t *data, size_t len)
 
 	switch (pkt_indicator) {
 	case RPMSG_EVT:
-		buf = bt_rpmsg_evt_recv(data, remaining, &prio);
+		buf = bt_rpmsg_evt_recv(data, remaining);
 		break;
 
 	case RPMSG_ACL:
@@ -152,11 +148,8 @@ void bt_rpmsg_rx(uint8_t *data, size_t len)
 
 	if (buf) {
 		BT_DBG("Calling bt_recv(%p)", buf);
-		if (prio) {
-			bt_recv_prio(buf);
-		} else {
-			bt_recv(buf);
-		}
+
+		bt_recv(buf);
 
 		BT_HEXDUMP_DBG(buf->data, buf->len, "RX buf payload:");
 	}
