@@ -572,8 +572,6 @@ void test_v4_sendmsg_recvfrom_connected(void)
 	msg.msg_controllen = sizeof(cmsgbuf.buf);
 	msg.msg_iov = io_vector;
 	msg.msg_iovlen = 1;
-	msg.msg_name = &server_addr;
-	msg.msg_namelen = sizeof(server_addr);
 
 	cmsg = CMSG_FIRSTHDR(&msg);
 	cmsg->cmsg_len = CMSG_LEN(sizeof(int));
@@ -636,8 +634,6 @@ void test_v6_sendmsg_recvfrom_connected(void)
 	msg.msg_controllen = sizeof(cmsgbuf.buf);
 	msg.msg_iov = io_vector;
 	msg.msg_iovlen = 1;
-	msg.msg_name = &server_addr;
-	msg.msg_namelen = sizeof(server_addr);
 
 	cmsg = CMSG_FIRSTHDR(&msg);
 	cmsg->cmsg_len = CMSG_LEN(sizeof(int));
