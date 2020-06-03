@@ -1672,7 +1672,7 @@ static void hci_disconn_complete(struct net_buf *buf)
 	conn = bt_conn_lookup_handle(handle);
 	if (!conn) {
 		BT_ERR("Unable to look up conn with handle %u", handle);
-		goto advertise;
+		return;
 	}
 
 	conn->err = evt->reason;
@@ -1707,11 +1707,6 @@ static void hci_disconn_complete(struct net_buf *buf)
 #endif /* defined(CONFIG_BT_CENTRAL) && !defined(CONFIG_BT_WHITELIST) */
 
 	bt_conn_unref(conn);
-
-advertise:
-	if (IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
-		bt_le_adv_resume();
-	}
 }
 
 static int hci_le_read_remote_features(struct bt_conn *conn)
