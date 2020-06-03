@@ -1,13 +1,17 @@
 common:
-  harness: display
   tags: display
 sample:
   description: Character framebuffer test
   name: cfb sample
 tests:
   sample.display.cfb.ssd1306:
-    platform_whitelist: frdm_k64f
+    pre-filter: subsys_dt_compat_enabled("i2c") and dt_label_enabled("arduino_i2c") and not dt_compat_enabled("solomon,ssd16xxfb")
     extra_args: SHIELD=ssd1306_128x64
     tags: shield
+    harness: console
+    harness_config:
+      fixture: shield_ssd1306_128x64
   sample.display.cfb.ssd16xx:
-    platform_whitelist: reel_board
+    pre-filter: dt_compat_enabled("solomon,ssd16xxfb")
+    harness: display
+
