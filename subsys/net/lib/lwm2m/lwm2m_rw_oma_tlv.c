@@ -919,6 +919,17 @@ int do_write_op_tlv(struct lwm2m_message *msg)
 	struct oma_tlv tlv;
 	int ret;
 
+	/* In case of Firmware object Package resource go directly to the
+	 * message processing - consecutive blocks will not carry the TLV
+	 * header.
+	 */
+	if (msg->path.obj_id == 5 && msg->path.res_id == 0) {
+		ret = do_write_op_tlv_item(msg);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
 	while (true) {
 		/*
 		 * This initial read of TLV data won't advance frag/offset.
