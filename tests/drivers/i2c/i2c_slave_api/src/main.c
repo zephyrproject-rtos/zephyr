@@ -43,7 +43,7 @@ static void to_display_format(const uint8_t *src, size_t size, char *dst)
 	}
 }
 
-static void run_full_read(struct device *i2c, uint8_t addr, uint8_t *comp_buffer)
+static int run_full_read(struct device *i2c, uint8_t addr, uint8_t *comp_buffer)
 {
 	int ret;
 
@@ -62,15 +62,16 @@ static void run_full_read(struct device *i2c, uint8_t addr, uint8_t *comp_buffer
 				  buffer_print_eeprom);
 		LOG_ERR("Buffer contents are different: %s",
 			    buffer_print_i2c);
-		LOG_ERR("                           vs: %s",
+		LOG_ERR("                 vs expected: %s",
 			    buffer_print_eeprom);
-
-		ztest_test_fail();
+		return -EINVAL;
 	}
+
+	return 0;
 }
 
-static void run_partial_read(struct device *i2c, uint8_t addr, uint8_t *comp_buffer,
-			     unsigned int offset)
+static int run_partial_read(struct device *i2c, uint8_t addr,
+			    uint8_t *comp_buffer, unsigned int offset)
 {
 	int ret;
 
@@ -88,14 +89,15 @@ static void run_partial_read(struct device *i2c, uint8_t addr, uint8_t *comp_buf
 				  buffer_print_eeprom);
 		LOG_ERR("Buffer contents are different: %s",
 			    buffer_print_i2c);
-		LOG_ERR("                           vs: %s",
+		LOG_ERR("                  vs expected: %s",
 			    buffer_print_eeprom);
-
-		ztest_test_fail();
+		return -EINVAL;
 	}
+
+	return 0;
 }
 
-static void run_program_read(struct device *i2c, uint8_t addr, unsigned int offset)
+static int run_program_read(struct device *i2c, uint8_t addr, unsigned int offset)
 {
 	int ret, i;
 
@@ -121,12 +123,12 @@ static void run_program_read(struct device *i2c, uint8_t addr, unsigned int offs
 		if (i2c_buffer[i] != i) {
 			to_display_format(i2c_buffer, TEST_DATA_SIZE-offset,
 					  buffer_print_i2c);
-			LOG_ERR("Invalid Buffer content: %s",
-				    buffer_print_i2c);
-
-			ztest_test_fail();
+			LOG_ERR("Invalid Buffer content: %s", buffer_print_i2c);
+			return -EINVAL;
 		}
 	}
+
+	return 0;
 }
 
 void test_eeprom_slave(void)
@@ -201,23 +203,31 @@ void test_eeprom_slave(void)
 	LOG_INF("EEPROM %s Attached !", label_eeprom1);
 
 	/* Run Tests without bus access conflicts */
-	run_full_read(i2c_0, reg_addr1, eeprom_1_data);
-	run_full_read(i2c_1, reg_addr0, eeprom_0_data);
+	zassert_equal(0, run_full_read(i2c_0, reg_addr1, eeprom_1_data),
+		     "Full read from #1 failed");
+	zassert_equal(0, run_full_read(i2c_1, reg_addr0, eeprom_0_data),
+		     "Full read from #2 failed");
 
 	for (offset = 0 ; offset < TEST_DATA_SIZE-1 ; ++offset) {
-		run_partial_read(i2c_0, reg_addr1, eeprom_1_data, offset);
+		zassert_equal(0, run_partial_read(i2c_0, reg_addr1,
+			      eeprom_1_data, offset),
+			      "Partial read i2c0 inst1 failed");
 	}
 
 	for (offset = 0 ; offset < TEST_DATA_SIZE-1 ; ++offset) {
-		run_partial_read(i2c_1, reg_addr0, eeprom_0_data, offset);
+		zassert_equal(0, run_partial_read(i2c_1, reg_addr0,
+			      eeprom_0_data, offset),
+			      "Partial read i2c1 inst0 failed");
 	}
 
 	for (offset = 0 ; offset < TEST_DATA_SIZE-1 ; ++offset) {
-		run_program_read(i2c_0, reg_addr1, offset);
+		zassert_equal(0, run_program_read(i2c_0, reg_addr1, offset),
+			      "Program read i2c0 inst1 failed");
 	}
 
 	for (offset = 0 ; offset < TEST_DATA_SIZE-1 ; ++offset) {
-		run_program_read(i2c_1, reg_addr0, offset);
+		zassert_equal(0, run_program_read(i2c_1, reg_addr0, offset),
+			      "Program read i2c1 inst0 failed");
 	}
 
 	LOG_INF("Success !");
