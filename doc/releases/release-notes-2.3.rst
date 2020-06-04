@@ -167,7 +167,15 @@ Architectures
 
 * ARC:
 
-  * <TBD>
+  * Changed to automatic generation of privilege stack for ARC MPU V2 to
+    avoid the potential waste of memory When USERSPACE is configured
+  * Enhanced runtime programming for the MPU v3 by making the gap-filling
+    of kernel memory a user-configurable feature
+  * Refactored the thread switch code in epilogue of irq and exception
+  * Refactored the assembly codes for better maintenance
+  * Fixed the behavior of ARC timer driver
+  * Fixed the behavior of ARC SMP
+  * Fixed the wrong configurations of ARC boards in Kconfig and DTS
 
 * ARM:
 
