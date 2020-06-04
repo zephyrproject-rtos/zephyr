@@ -1969,6 +1969,7 @@ PREDEFINED             = "CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT" \
                          "CONFIG_DEVICE_IDLE_PM" \
                          "CONFIG_ERRNO" \
                          "CONFIG_EXECUTION_BENCHMARKING" \
+                         "CONFIG_FLASH_JESD216_API" \
                          "CONFIG_FLASH_PAGE_LAYOUT" \
                          "CONFIG_FPU" \
                          "CONFIG_FPU_SHARING" \
