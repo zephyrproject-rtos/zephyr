@@ -40,6 +40,32 @@ static const char * const state2str(enum gptp_port_state state)
 
 	return "<unknown>";
 }
+
+static const char * const pa_info_state2str(enum gptp_pa_info_states state)
+{
+	switch (state) {
+	case GPTP_PA_INFO_DISABLED:
+		return "DISABLED";
+	case GPTP_PA_INFO_POST_DISABLED:
+		return "POST_DISABLED";
+	case GPTP_PA_INFO_AGED:
+		return "AGED";
+	case GPTP_PA_INFO_UPDATE:
+		return "UPDATE";
+	case GPTP_PA_INFO_CURRENT:
+		return "CURRENT";
+	case GPTP_PA_INFO_RECEIVE:
+		return "RECEIVE";
+	case GPTP_PA_INFO_SUPERIOR_MASTER_PORT:
+		return "SUPERIOR_MASTER_PORT";
+	case GPTP_PA_INFO_REPEATED_MASTER_PORT:
+		return "REPEATED_MASTER_PORT";
+	case GPTP_PA_INFO_INFERIOR_MASTER_OR_OTHER_PORT:
+		return "INFERIOR_MASTER_OR_OTHER_PORT";
+	}
+
+	return "<unknown>";
+}
 #endif
 
 #if CONFIG_NET_GPTP_LOG_LEVEL >= LOG_LEVEL_DBG
@@ -64,6 +90,33 @@ void gptp_change_port_state(int port, enum gptp_port_state state)
 
 	global_ds->selected_role[port] = state;
 };
+
+#if CONFIG_NET_GPTP_LOG_LEVEL >= LOG_LEVEL_DBG
+void gptp_change_pa_info_state_debug(
+	int port,
+	struct gptp_port_announce_information_state *pa_info_state,
+	enum gptp_pa_info_states state,
+	const char *caller,
+	int line)
+#else
+void gptp_change_pa_info_state(
+	int port,
+	struct gptp_port_announce_information_state *pa_info_state,
+	enum gptp_pa_info_states state)
+#endif
+{
+	if (pa_info_state->state == state) {
+		return;
+	}
+
+#if CONFIG_NET_GPTP_LOG_LEVEL >= LOG_LEVEL_DBG
+	NET_DBG("[%d] PA info state %s -> %s (%s():%d)", port,
+		pa_info_state2str(pa_info_state->state),
+		pa_info_state2str(state), caller, line);
+#endif
+
+	pa_info_state->state = state;
+}
 
 static void gptp_mi_half_sync_itv_timeout(struct k_timer *timer)
 {
@@ -205,7 +258,7 @@ static void gptp_mi_init_port_announce_info_sm(int port)
 		     announce_timer_handler, NULL);
 
 	state->ann_expired = false;
-	state->state = GPTP_PA_INFO_DISABLED;
+	gptp_change_pa_info_state(port, state, GPTP_PA_INFO_DISABLED);
 }
 
 static void gptp_mi_init_bmca_data(int port)
@@ -1379,7 +1432,7 @@ static void gptp_mi_port_announce_information_state_machine(int port)
 
 	if ((!port_ds->ptt_port_enabled || !port_ds->as_capable) &&
 	    (bmca_data->info_is != GPTP_INFO_IS_DISABLED)) {
-		state->state = GPTP_PA_INFO_DISABLED;
+		gptp_change_pa_info_state(port, state, GPTP_PA_INFO_DISABLED);
 	}
 
 	switch (state->state) {
@@ -1388,16 +1441,19 @@ static void gptp_mi_port_announce_information_state_machine(int port)
 		bmca_data->info_is = GPTP_INFO_IS_DISABLED;
 		SET_RESELECT(global_ds, port);
 		CLEAR_SELECTED(global_ds, port);
-		state->state = GPTP_PA_INFO_POST_DISABLED;
+		gptp_change_pa_info_state(port, state,
+					  GPTP_PA_INFO_POST_DISABLED);
 		k_timer_stop(&state->ann_rcpt_expiry_timer);
 		state->ann_expired = true;
 		/* Fallthrough. */
 
 	case GPTP_PA_INFO_POST_DISABLED:
 		if (port_ds->ptt_port_enabled && port_ds->as_capable) {
-			state->state = GPTP_PA_INFO_AGED;
+			gptp_change_pa_info_state(port, state,
+						  GPTP_PA_INFO_AGED);
 		} else if (bmca_data->rcvd_msg) {
-			state->state = GPTP_PA_INFO_DISABLED;
+			gptp_change_pa_info_state(port, state,
+						  GPTP_PA_INFO_DISABLED);
 		}
 
 		break;
@@ -1407,7 +1463,7 @@ static void gptp_mi_port_announce_information_state_machine(int port)
 		CLEAR_SELECTED(global_ds, port);
 		SET_RESELECT(global_ds, port);
 		/* Transition will be actually tested in UPDATE state. */
-		state->state = GPTP_PA_INFO_UPDATE;
+		gptp_change_pa_info_state(port, state, GPTP_PA_INFO_UPDATE);
 		break;
 
 	case GPTP_PA_INFO_UPDATE:
@@ -1421,7 +1477,8 @@ static void gptp_mi_port_announce_information_state_machine(int port)
 			bmca_data->updt_info = false;
 			bmca_data->info_is = GPTP_INFO_IS_MINE;
 			bmca_data->new_info = true;
-			state->state = GPTP_PA_INFO_CURRENT;
+			gptp_change_pa_info_state(port, state,
+						  GPTP_PA_INFO_CURRENT);
 		}
 
 		break;
@@ -1429,16 +1486,19 @@ static void gptp_mi_port_announce_information_state_machine(int port)
 	case GPTP_PA_INFO_CURRENT:
 		pss_rcv = &GPTP_PORT_STATE(port)->pss_rcv;
 		if (IS_SELECTED(global_ds, port) && bmca_data->updt_info) {
-			state->state = GPTP_PA_INFO_UPDATE;
+			gptp_change_pa_info_state(port, state,
+						  GPTP_PA_INFO_UPDATE);
 		} else if (bmca_data->rcvd_msg && !bmca_data->updt_info) {
-			state->state = GPTP_PA_INFO_RECEIVE;
+			gptp_change_pa_info_state(port, state,
+						  GPTP_PA_INFO_RECEIVE);
 		} else if ((bmca_data->info_is == GPTP_INFO_IS_RECEIVED) &&
 			   !bmca_data->updt_info &&
 			   !bmca_data->rcvd_msg &&
 			   (state->ann_expired ||
 			    (global_ds->gm_present &&
 			   pss_rcv->rcv_sync_receipt_timeout_timer_expired))) {
-			state->state = GPTP_PA_INFO_AGED;
+			gptp_change_pa_info_state(port, state,
+						  GPTP_PA_INFO_AGED);
 		}
 
 		break;
@@ -1446,16 +1506,18 @@ static void gptp_mi_port_announce_information_state_machine(int port)
 	case GPTP_PA_INFO_RECEIVE:
 		switch (rcv_info(port)) {
 		case GPTP_RCVD_INFO_SUPERIOR_MASTER_INFO:
-			state->state = GPTP_PA_INFO_SUPERIOR_MASTER_PORT;
+			gptp_change_pa_info_state(port, state,
+				GPTP_PA_INFO_SUPERIOR_MASTER_PORT);
 			break;
 		case GPTP_RCVD_INFO_REPEATED_MASTER_INFO:
-			state->state = GPTP_PA_INFO_REPEATED_MASTER_PORT;
+			gptp_change_pa_info_state(port, state,
+				GPTP_PA_INFO_REPEATED_MASTER_PORT);
 			break;
 		case GPTP_RCVD_INFO_INFERIOR_MASTER_INFO:
 			/* Fallthrough. */
 		case GPTP_RCVD_INFO_OTHER_INFO:
-			state->state =
-				GPTP_PA_INFO_INFERIOR_MASTER_OR_OTHER_PORT;
+			gptp_change_pa_info_state(port, state,
+				GPTP_PA_INFO_INFERIOR_MASTER_OR_OTHER_PORT);
 			break;
 		}
 
@@ -1470,7 +1532,8 @@ static void gptp_mi_port_announce_information_state_machine(int port)
 		if (!bmca_data->rcvd_announce_ptr) {
 			/* Shouldn't be reached. Checked for safety reason. */
 			bmca_data->rcvd_msg = false;
-			state->state = GPTP_PA_INFO_CURRENT;
+			gptp_change_pa_info_state(port, state,
+						  GPTP_PA_INFO_CURRENT);
 			break;
 		}
 
@@ -1505,7 +1568,7 @@ static void gptp_mi_port_announce_information_state_machine(int port)
 		}
 
 		bmca_data->rcvd_msg = false;
-		state->state = GPTP_PA_INFO_CURRENT;
+		gptp_change_pa_info_state(port, state, GPTP_PA_INFO_CURRENT);
 		break;
 	}
 }
