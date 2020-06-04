@@ -91,7 +91,6 @@ int z_pinmux_stm32_set(uint32_t pin, uint32_t func,
  * in the configuration array. Pin numbers in @pin_num field are
  * STM32PIN() encoded.
  *
- * @return array of pin assignments
  */
 void stm32_setup_pins(const struct pin_config *pinconf,
 		      size_t pins);
