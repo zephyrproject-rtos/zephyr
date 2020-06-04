@@ -5,6 +5,11 @@ if BOARD_ALTERA_MAX10
 config BOARD
 	default "altera_max10"
 
+if I2C
+config I2C_NIOS2
+	default y
+endif
+
 if FLASH
 
 config SOC_FLASH_NIOS2_QSPI
