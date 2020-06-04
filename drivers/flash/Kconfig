@@ -25,6 +25,7 @@ config FLASH_JESD216
 
 config FLASH_JESD216_API
 	bool "Provide API to read JESD216 flash parameters"
+	depends on FLASH_JESD216
 	help
 	  This option extends the Zephyr flash API with the ability
 	  to access the Serial Flash Discoverable Parameter section
