@@ -133,6 +133,23 @@ void gptp_change_port_state_debug(int port, enum gptp_port_state state,
 				  const char *caller, int line);
 #endif
 
+#if CONFIG_NET_GPTP_LOG_LEVEL < LOG_LEVEL_DBG
+void gptp_change_pa_info_state(
+	int port,
+	struct gptp_port_announce_information_state *pa_info_state,
+	enum gptp_pa_info_states state);
+#else
+#define gptp_change_pa_info_state(port, pa_info_state, state)		\
+	gptp_change_pa_info_state_debug(port, pa_info_state, state,	\
+					__func__, __LINE__)
+
+void gptp_change_pa_info_state_debug(
+	int port,
+	struct gptp_port_announce_information_state *pa_info_state,
+	enum gptp_pa_info_states state,
+	const char *caller, int line);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
