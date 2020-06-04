@@ -31,7 +31,7 @@ BUILD_ASSERT((CONFIG_IMG_BLOCK_BUF_SIZE % FLASH_WRITE_BLOCK_SIZE == 0),
 	     "CONFIG_IMG_BLOCK_BUF_SIZE is not a multiple of "
 	     "FLASH_WRITE_BLOCK_SIZE");
 
-int flash_img_buffered_write(struct flash_img_context *ctx, uint8_t *data,
+int flash_img_buffered_write(struct flash_img_context *ctx, const uint8_t *data,
 			     size_t len, bool flush)
 {
 	int rc;
