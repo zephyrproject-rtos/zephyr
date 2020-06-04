@@ -5,7 +5,9 @@
  */
 
 #include <ztest.h>
+#ifdef CONFIG_FLASH
 #include <drivers/flash.h>
+#endif
 #include <device.h>
 
 /* configuration derived from DT */
