@@ -549,6 +549,28 @@ static int qspi_nor_read(struct device *dev, off_t addr, void *dest,
 	return rc;
 }
 
+/* addr aligned, sptr not null, slen less than 4 */
+static inline nrfx_err_t write_sub_word(struct device *dev, off_t addr,
+					const void *sptr, size_t slen)
+{
+	uint8_t __aligned(4) buf[4];
+	nrfx_err_t res;
+
+	/* read out the whole word so that unchanged data can be
+	 * written back
+	 */
+	res = nrfx_qspi_read(buf, sizeof(buf), addr);
+	qspi_wait_for_completion(dev, res);
+
+	if (res == NRFX_SUCCESS) {
+		memcpy(sptr, buf, slen);
+		res = nrfx_qspi_write(src, size, addr);
+		qspi_wait_for_completion(dev, res);
+	}
+
+	return res;
+}
+
 static int qspi_nor_write(struct device *dev, off_t addr, const void *src,
 			  size_t size)
 {
@@ -556,8 +578,9 @@ static int qspi_nor_write(struct device *dev, off_t addr, const void *src,
 		return -EINVAL;
 	}
 
-	/* write size must be non-zero multiple of 4 bytes */
-	if (((size % 4U) != 0) || (size == 0)) {
+	/* write size must be non-zero, less than 4, or a multiple of 4 */
+	if ((size == 0)
+	    || ((size > 4) && ((size % 4U) != 0))) {
 		return -EINVAL;
 	}
 	/* address must be 4-byte aligned */
@@ -581,11 +604,16 @@ static int qspi_nor_write(struct device *dev, off_t addr, const void *src,
 		return -EINVAL;
 	}
 
+	nrfx_err_t res = NRFX_SUCCESS;
+
 	qspi_lock(dev);
 
-	nrfx_err_t res = nrfx_qspi_write(src, size, addr);
-
-	qspi_wait_for_completion(dev, res);
+	if (size < 4U) {
+		res = write_sub_word(dev, addr, src, size);
+	} else {
+		res = nrfx_qspi_write(src, size, addr);
+		qspi_wait_for_completion(dev, res);
+	}
 
 	qspi_unlock(dev);
 
