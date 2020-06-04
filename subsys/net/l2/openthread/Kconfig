@@ -96,8 +96,13 @@ module-str = Log level for OpenThread driver
 module-help = Enables OpenThread driver to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
+config OPENTHREAD_THREAD_PREEMPTIVE
+	bool "Set Openthread thread to be preemptive"
+	default n
+
 config OPENTHREAD_THREAD_PRIORITY
 	int "OpenThread thread priority"
+	default 0 if OPENTHREAD_THREAD_PREEMPTIVE
 	default 8
 
 config OPENTHREAD_THREAD_STACK_SIZE
