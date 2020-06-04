@@ -407,7 +407,8 @@ static void start_rcv_sync_timer(struct gptp_port_ds *port_ds,
 {
 	k_timeout_t duration;
 
-	duration = K_MSEC(port_ds->sync_receipt_timeout_time_itv);
+	duration = K_MSEC(port_ds->sync_receipt_timeout_time_itv /
+			  (NSEC_PER_USEC * USEC_PER_MSEC));
 
 	k_timer_start(&state->rcv_sync_receipt_timeout_timer, duration,
 		      K_NO_WAIT);
