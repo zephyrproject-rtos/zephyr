@@ -693,6 +693,11 @@ static void rxto_isr(void)
 {
 	nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_RXTO);
 
+	/* Send rxrdy if there is any data pending. */
+	if (uart0_cb.rx_counter - uart0_cb.rx_offset) {
+		rx_rdy_evt();
+	}
+
 	buf_released_evt();
 	if (uart0_cb.rx_secondary_buffer_length) {
 		uart0_cb.rx_buffer = uart0_cb.rx_secondary_buffer;
