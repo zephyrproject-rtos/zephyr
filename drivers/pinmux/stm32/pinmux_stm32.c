@@ -103,7 +103,7 @@ static int enable_port(uint32_t port, const struct device *clk)
 	return clock_control_on(clk, (clock_control_subsys_t *) &pclken);
 }
 
-static int stm32_pin_configure(int pin, int func, int altf)
+static int stm32_pin_configure(uint32_t pin, uint32_t func, uint32_t altf)
 {
 	/* determine IO port registers location */
 	uint32_t offset = STM32_PORT(pin) * GPIO_REG_SIZE;
