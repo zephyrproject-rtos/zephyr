@@ -6,6 +6,7 @@
 
 #include <ztest.h>
 #include <sys/dlist.h>
+#include "time.h"
 
 static sys_dlist_t test_list;
 
@@ -161,13 +162,91 @@ static inline bool verify_tail_head(sys_dlist_t *list,
 
 	return true;
 }
+
+static enum dlist_perf_stats {PEEK_HEAD_TAIL, INSERT_REMOVE} operation;
+clock_t check_dlist_perf(sys_dlist_t *test_dlist, size_t size)
+{
+	struct container_node node_ii[30] = {0};
+	struct container_node test_node;
+
+	sys_dlist_init(test_dlist);
+	zassert_true(sys_dlist_is_empty(test_dlist), NULL);
+
+	/*avoid that array index is overflow*/
+	size = size < 30 ? size : 30;
+
+	for (int i = 0; i < size; i++) {
+		sys_dlist_append(test_dlist, &node_ii[i].node);
+	}
+
+	clock_t start = 0, finish = 0;
+
+	start = clock();
+	for (int i = 0; i < 10000; i++) {
+		switch (operation) {
+		case PEEK_HEAD_TAIL:
+			sys_dlist_peek_head(test_dlist);
+			sys_dlist_peek_tail(test_dlist);
+			break;
+		case INSERT_REMOVE:
+			sys_dlist_insert(&node_ii[size/2].node,
+					&test_node.node);
+			sys_dlist_remove(&test_node.node);
+			break;
+		default:
+			/*Just running without no operations*/
+			break;
+		}
+	}
+	finish = clock();
+
+	return finish - start;
+}
+
+void check_some_operations(enum dlist_perf_stats op)
+{
+	clock_t const_time[3] = {0};
+
+	operation = op;
+	/*test list size is 10 nodes*/
+	const_time[0] = check_dlist_perf(&test_list, 10);
+	/*test list size is 20 nodes*/
+	const_time[1] = check_dlist_perf(&test_list, 20);
+	/*test list size is 30 nodes*/
+	const_time[2] = check_dlist_perf(&test_list, 30);
+
+	zassert_within(const_time[0], const_time[1], 20, NULL);
+	zassert_within(const_time[1], const_time[2], 20, NULL);
+}
 /**
  * @addtogroup unit_tests
  * @{
  */
 
 /**
- * @brief Verify doubly linked list funtionalities
+ * @brief test dlist some operations running in constant time.
+ *
+ * @details
+ * Define a double list, and record the time of running some
+ * operations by API clock() in usr/libc of native posix platform
+ * Verify some operations running in constant time.
+ *
+ * @ingroup lib_list_tests
+ *
+ * @see sys_dlist_peek_head(), sys_dlist_peek_tail(),
+ * sys_dlist_insert(), sys_dlist_remove().
+ */
+void test_check_dlist_perf(void)
+{
+	/**TESTPOINT: test peek head and tail in constant time*/
+	check_some_operations(PEEK_HEAD_TAIL);
+	/**TESTPOINT: test insert and remove in constant time*/
+	check_some_operations(INSERT_REMOVE);
+}
+
+
+/**
+ * @brief Verify doubly linked list functionalities
  *
  * @see sys_dlist_append(), sys_dlist_remove(), sys_dlist_prepend(),
  * sys_dlist_remove(), sys_dlist_insert(), sys_dlist_peek_next()
@@ -281,7 +360,7 @@ void test_dlist(void)
 	zassert_true((verify_emptyness(&test_list)),
 		     "test_list should be empty");
 
-	/* test iterator from a node */
+	/* test iterator of "for each" style from a node */
 	struct data_node {
 		sys_dnode_t node;
 		int data;
