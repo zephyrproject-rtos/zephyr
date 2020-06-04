@@ -152,8 +152,6 @@ Kernel
   heap backend and will be deprecated in an upcoming release.  The
   original implementation remains available for this release via
   disabling CONFIG_MEM_POOL_HEAP_BACKEND.
-
-
 * The timeout arguments to all kernel calls are now a "k_timeout_t"
   type instead of a 32 bit millisecond count.  These can be
   initialized in arbitrary time units (ns/us/ms, ticks), be
@@ -161,6 +159,14 @@ Kernel
   expressed in 64 bit quantities.  This involves a minor change to the
   API, so the original API is still available in a completely
   source-compatible way via CONFIG_LEGACY_TIMEOUT_API.
+* Simplify dummy thread implementation and properly name idle threads
+* Centralized new thread priority check
+* Refactor device structures and introduced struct init_entry which is
+  a generic init end-point. SYS_INIT() generates only a struct init_entry via
+  calling INIT_ENTRY_DEFINE(). Also removed struct deviceconfig leaving
+  struct device to own everything now.
+
+
 
 Architectures
 *************
@@ -200,7 +206,10 @@ Architectures
 
 * x86:
 
-  * <TBD>
+  * Instrument code for timing information
+  * Add ability for SoC to add MMU regions
+  * x86 FPU sharing symbols renamed
+  * early_serial: extend to support MMIO UART
 
 Boards & SoC Support
 ********************
@@ -437,14 +446,6 @@ Drivers and Sensors
   * Fixed RSSI calculation for Sara U201
   * Fixed TCP context release and RX socket src/dst port assignment in wncm14a2a
   * Changed PPP driver connection to generic GSM modem
-
-* Neural Net
-
-  * N/A
-
-* PCIe
-
-  * N/A
 
 * PECI
 
