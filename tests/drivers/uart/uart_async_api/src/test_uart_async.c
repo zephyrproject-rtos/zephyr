@@ -12,6 +12,8 @@ K_SEM_DEFINE(rx_rdy, 0, 1);
 K_SEM_DEFINE(rx_buf_released, 0, 1);
 K_SEM_DEFINE(rx_disabled, 0, 1);
 
+ZTEST_BMEM volatile bool failed_in_isr;
+
 #ifdef CONFIG_USERSPACE
 void set_permissions(void)
 {
@@ -235,6 +237,8 @@ void test_double_buffer(void)
 
 void test_read_abort_callback(struct uart_event *evt, void *user_data)
 {
+	int err;
+
 	switch (evt->type) {
 	case UART_TX_DONE:
 		k_sem_give(&tx_done);
@@ -244,8 +248,12 @@ void test_read_abort_callback(struct uart_event *evt, void *user_data)
 		break;
 	case UART_RX_BUF_RELEASED:
 		k_sem_give(&rx_buf_released);
+		err = k_sem_take(&rx_rdy, K_NO_WAIT);
+		failed_in_isr |= (err < 0);
 		break;
 	case UART_RX_DISABLED:
+		err = k_sem_take(&rx_buf_released, K_NO_WAIT);
+		failed_in_isr |= (err < 0);
 		k_sem_give(&rx_disabled);
 		break;
 	default:
@@ -257,7 +265,13 @@ void test_read_abort_setup(void)
 {
 	struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
 
+	failed_in_isr = false;
 	uart_callback_set(uart_dev, test_read_abort_callback, NULL);
+
+	k_sem_reset(&rx_rdy);
+	k_sem_reset(&rx_buf_released);
+	k_sem_reset(&rx_disabled);
+	k_sem_reset(&tx_done);
 }
 
 void test_read_abort(void)
@@ -277,17 +291,18 @@ void test_read_abort(void)
 	zassert_equal(k_sem_take(&rx_rdy, K_MSEC(100)), 0, "RX_RDY timeout");
 	zassert_equal(memcmp(tx_buf, rx_buf, 5), 0, "Buffers not equal");
 
-
 	uart_tx(uart_dev, tx_buf, 95, 100);
+
+	/* Wait for at least one character. RX_RDY event will be generated only
+	 * if there is pending data.
+	 */
+	k_busy_wait(1000);
+
 	uart_rx_disable(uart_dev);
 	zassert_equal(k_sem_take(&tx_done, K_MSEC(100)), 0, "TX_DONE timeout");
-	zassert_equal(k_sem_take(&rx_buf_released, K_MSEC(100)),
-		      0,
-		      "RX_BUF_RELEASED timeout");
 	zassert_equal(k_sem_take(&rx_disabled, K_MSEC(100)), 0,
 		      "RX_DISABLED timeout");
-	zassert_not_equal(k_sem_take(&rx_rdy, K_MSEC(100)), 0,
-			  "RX_RDY occurred");
+	zassert_false(failed_in_isr, "Unexpected order of uart events");
 	zassert_not_equal(memcmp(tx_buf, rx_buf, 100), 0, "Buffers equal");
 }
 
