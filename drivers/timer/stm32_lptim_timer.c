@@ -178,10 +178,14 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 	}
 
 	if (ticks == K_TICKS_FOREVER) {
-		/* disable LPTIM */
-		LL_APB1_GRP1_ForceReset(LL_APB1_GRP1_PERIPH_LPTIM1);
+		/* disable LPTIM clock to avoid counting */
 		LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_LPTIM1);
 		return;
+	}
+
+	/* if LPTIM clock was previously stopped, it must now be restored */
+	if (!LL_APB1_GRP1_IsEnabledClock(LL_APB1_GRP1_PERIPH_LPTIM1)) {
+		LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_LPTIM1);
 	}
 
 	/* passing ticks==1 means "announce the next tick",
