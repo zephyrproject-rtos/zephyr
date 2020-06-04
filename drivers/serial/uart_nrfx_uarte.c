@@ -935,6 +935,17 @@ static void rx_timeout(struct k_timer *timer)
 	int32_t len = data->async->rx_total_byte_cnt
 		    - data->async->rx_total_user_byte_cnt;
 
+	if (!hw_rx_counting_enabled(data) &&
+	    (len < 0)) {
+		/* Prevent too low value of rx_cnt.cnt which may occur due to
+		 * latencies in handling of the RXRDY interrupt.
+		 * At this point, the number of received bytes is at least
+		 * equal to what was reported to the user.
+		 */
+		data->async->rx_cnt.cnt = data->async->rx_total_user_byte_cnt;
+		len = 0;
+	}
+
 	/* Check for current buffer being full.
 	 * if the UART receives characters before the the ENDRX is handled
 	 * and the 'next' buffer is set up, then the SHORT between ENDRX and
@@ -1042,15 +1053,6 @@ static void endrx_isr(const struct device *dev)
 	}
 
 	data->async->rx_total_user_byte_cnt += rx_len;
-
-	if (!hw_rx_counting_enabled(data)) {
-		/* Prevent too low value of rx_cnt.cnt which may occur due to
-		 * latencies in handling of the RXRDY interrupt. Because whole
-		 * buffer was filled we can be sure that rx_total_user_byte_cnt
-		 * is current total number of received bytes.
-		 */
-		data->async->rx_cnt.cnt = data->async->rx_total_user_byte_cnt;
-	}
 
 	/* Only send the RX_RDY event if there is something to send */
 	if (rx_len > 0) {
