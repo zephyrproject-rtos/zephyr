@@ -72,4 +72,17 @@ static inline size_t z_vrfy_flash_get_page_count(struct device *dev)
 }
 #include <syscalls/flash_get_page_count_mrsh.c>
 
-#endif
+#endif /* CONFIG_FLASH_PAGE_LAYOUT */
+
+#ifdef CONFIG_FLASH_JESD216_API
+
+static inline int z_vrfy_flash_sfdp_read(struct device *dev, off_t offset,
+					 void *data, size_t len)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_FLASH(dev, sfdp_read));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(data, len));
+	return z_impl_flash_sfdp_read(dev, offset, data, len);
+}
+#include <syscalls/flash_sfdp_read.c>
+
+#endif /* CONFIG_FLASH_JESD216_API */
