@@ -65,7 +65,7 @@ size_t flash_img_bytes_written(struct flash_img_context *ctx);
  *
  * @return  0 on success, negative errno code on fail
  */
-int flash_img_buffered_write(struct flash_img_context *ctx, uint8_t *data,
+int flash_img_buffered_write(struct flash_img_context *ctx, const uint8_t *data,
 		    size_t len, bool flush);
 
 #ifdef __cplusplus
