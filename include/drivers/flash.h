@@ -83,6 +83,7 @@ typedef void (*flash_api_pages_layout)(struct device *dev,
 
 typedef int (*flash_api_sfdp_read)(struct device *dev, off_t offset,
 				   void *data, size_t len);
+typedef int (*flash_api_read_jedec_id)(struct device *dev, uint8_t *id);
 
 __subsystem struct flash_driver_api {
 	flash_api_read read;
@@ -95,6 +96,7 @@ __subsystem struct flash_driver_api {
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 #if defined(CONFIG_FLASH_JESD216_API)
 	flash_api_sfdp_read sfdp_read;
+	flash_api_read_jedec_id read_jedec_id;
 #endif /* CONFIG_FLASH_JESD216_API */
 };
 
@@ -328,6 +330,31 @@ static inline int z_impl_flash_sfdp_read(struct device *dev, off_t offset,
 
 	if (api->sfdp_read != NULL) {
 		rv = api->sfdp_read(dev, offset, data, len);
+	}
+	return rv;
+}
+
+/**
+ * @brief Read the JEDEC ID from a compatible flash device.
+ *
+ * @param dev device from which id will be read
+ * @param id pointer to a buffer of at least 3 bytes into which id
+ * will be stored
+ *
+ * @retval 0 on successful store of 3-byte JEDEC id
+ * @retval -ENOTSUP if flash driver doesn't support this function
+ * @retval negative values for other errors
+ */
+__syscall int flash_read_jedec_id(struct device *dev, uint8_t *id);
+
+static inline int z_impl_flash_read_jedec_id(struct device *dev, uint8_t *id)
+{
+	int rv = -ENOTSUP;
+	const struct flash_driver_api *api =
+		(const struct flash_driver_api *)dev->api;
+
+	if (api->read_jedec_id != NULL) {
+		rv = api->read_jedec_id(dev, id);
 	}
 	return rv;
 }

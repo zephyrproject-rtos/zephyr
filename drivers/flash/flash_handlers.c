@@ -85,4 +85,13 @@ static inline int z_vrfy_flash_sfdp_read(struct device *dev, off_t offset,
 }
 #include <syscalls/flash_sfdp_read.c>
 
+static inline int z_vrfy_flash_read_jedec_id(struct device *dev,
+					     uint8_t *id)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_FLASH(dev, read_jedec_id));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(id, 3));
+	return z_impl_flash_read_jedec_id(dev, id);
+}
+#include <syscalls/flash_sfdp_jedec_id.c>
+
 #endif /* CONFIG_FLASH_JESD216_API */
