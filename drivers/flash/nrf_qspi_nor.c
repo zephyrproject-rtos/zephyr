@@ -557,11 +557,49 @@ static inline nrfx_err_t write_sub_word(struct device *dev, off_t addr,
 	qspi_wait_for_completion(dev, res);
 
 	if (res == NRFX_SUCCESS) {
-		memcpy(sptr, buf, slen);
-		res = nrfx_qspi_write(src, size, addr);
+		memcpy(buf, sptr, slen);
+		res = nrfx_qspi_write(buf, sizeof(buf), addr);
 		qspi_wait_for_completion(dev, res);
 	}
 
+	return res;
+}
+
+BUILD_ASSERT((CONFIG_NORDIC_QSPI_NOR_STACK_WRITE_BUFFER_SIZE % 4) == 0,
+	     "NOR stack buffer must be multiple of 4 bytes");
+
+#define NVMC_WRITE_OK (CONFIG_NORDIC_QSPI_NOR_STACK_WRITE_BUFFER_SIZE > 0)
+
+/* If enabled write using a stack-allocated aligned SRAM buffer as
+ * required for DMA transfers by QSPI peripheral.
+ *
+ * If not enabled return the error the peripheral would have produced.
+ */
+static inline nrfx_err_t write_from_nvmc(struct device *dev, off_t addr,
+					 const void *sptr, size_t slen)
+{
+#if NVMC_WRITE_OK
+	uint8_t __aligned(4) buf[CONFIG_NORDIC_QSPI_NOR_STACK_WRITE_BUFFER_SIZE];
+	const uint8_t *sp = sptr;
+	nrfx_err_t res = NRFX_SUCCESS;
+
+	while ((slen > 0) && (res == NRFX_SUCCESS)) {
+		size_t len = MIN(slen, sizeof(buf));
+
+		memcpy(buf, sp, len);
+		res = nrfx_qspi_write(buf, sizeof(buf),
+				      addr);
+		qspi_wait_for_completion(dev, res);
+
+		if (res == NRFX_SUCCESS) {
+			slen -= len;
+			sp += len;
+			addr += len;
+		}
+	}
+#else /* NVMC_WRITE_OK */
+	nrfx_err_t res = NRFX_ERROR_INVALID_ADDR;
+#endif /* NVMC_WRITE_OK */
 	return res;
 }
 
@@ -604,6 +642,8 @@ static int qspi_nor_write(struct device *dev, off_t addr, const void *src,
 
 	if (size < 4U) {
 		res = write_sub_word(dev, addr, src, size);
+	} else if (((uintptr_t)src < CONFIG_SRAM_BASE_ADDRESS)) {
+		res = write_from_nvmc(dev, addr, src, size);
 	} else {
 		res = nrfx_qspi_write(src, size, addr);
 		qspi_wait_for_completion(dev, res);
