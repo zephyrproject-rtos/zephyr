@@ -37,7 +37,7 @@ static const struct device_data devices[] = {
 			{
 				.subsys = CLOCK_CONTROL_NRF_SUBSYS_LF,
 				.startup_us = (CLOCK_CONTROL_NRF_K32SRC ==
-					NRF_CLOCK_LFCLK_RC) ? 1000 : 300000
+					NRF_CLOCK_LFCLK_RC) ? 1000 : 500000
 			}
 		},
 		.subsys_cnt = CLOCK_CONTROL_NRF_TYPE_COUNT
