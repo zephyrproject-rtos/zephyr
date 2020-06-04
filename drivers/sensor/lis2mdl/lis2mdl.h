@@ -57,6 +57,10 @@ struct lis2mdl_data {
 
 	stmdev_ctx_t *ctx;
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uint32_t power_state;
+#endif
+
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	stmdev_ctx_t ctx_i2c;
 #elif DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
