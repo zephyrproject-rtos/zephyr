@@ -41,7 +41,7 @@ static atomic_val_t _rand32_counter;
  * @return a 32-bit number
  */
 
-uint32_t sys_rand32_get(void)
+uint32_t z_impl_sys_rand32_get(void)
 {
 	return k_cycle_get_32() + atomic_add(&_rand32_counter, _RAND32_INC);
 }
@@ -60,7 +60,7 @@ uint32_t sys_rand32_get(void)
  * @return N/A
  */
 
-void sys_rand_get(void *dst, size_t outlen)
+void z_impl_sys_rand_get(void *dst, size_t outlen)
 {
 	uint32_t len = 0;
 	uint32_t blocksize = 4;
