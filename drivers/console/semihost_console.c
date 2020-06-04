@@ -13,16 +13,23 @@ extern void __stdout_hook_install(int (*fn)(int));
 
 static int semihost_console_out(int ch)
 {
-	static unsigned char c;
+	static unsigned short n;
+	static unsigned char buf[CONFIG_SEMIHOST_CONSOLE_OUTPUT_BUFFER_SIZE];
 
-	c = ch;
-	__asm__ __volatile__ (
-		"movs	r1, %0\n"
-		"movs	r0, #3\n"
-		"bkpt	0xab\n"
-		:
-		: "r" (&c)
-		: "r0", "r1");
+	buf[n++] = ch;
+	buf[n] = 0;
+
+	if (ch == 0 || n >= sizeof(buf) - 2 || ch == '\r' || ch == '\n') {
+		__asm__ __volatile__ (
+			"movs	r1, %0\n"
+			"movs	r0, #4\n"
+			"bkpt	0xab\n"
+			:
+			: "r" (buf)
+			: "r0", "r1");
+		n = 0;
+	}
+
 	return ch;
 }
 

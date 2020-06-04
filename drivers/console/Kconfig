@@ -305,6 +305,16 @@ config SEMIHOST_CONSOLE
 	  This option is compatible with hardware and with QEMU, through the
 	  (automatic) use of the -semihosting-config switch when invoking it.
 
+if SEMIHOST_CONSOLE
+
+config SEMIHOST_CONSOLE_OUTPUT_BUFFER_SIZE
+	int "Semihosting output buffer size"
+	default 64
+	help
+	  Size of the semihosting console buffer in bytes
+
+endif
+
 module = UART_CONSOLE
 module-str = UART console
 source "subsys/logging/Kconfig.template.log_config"
