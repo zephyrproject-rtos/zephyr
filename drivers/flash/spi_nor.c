@@ -304,7 +304,7 @@ static int spi_nor_access(const struct device *const dev,
 #define spi_nor_cmd_addr_write(dev, opcode, addr, src, length) \
 	spi_nor_access(dev, opcode, true, addr, (void *)src, length, true)
 
-#if CONFIG_SPI_NOR_SFDP_RUNTIME
+#if defined(CONFIG_SPI_NOR_SFDP_RUNTIME) || defined(CONFIG_FLASH_JESD216_API)
 /*
  * @brief Read content from the SFDP hierarchy
  *
@@ -598,6 +598,24 @@ static int spi_nor_write_protection_set(struct device *dev, bool write_protect)
 
 	return ret;
 }
+
+#if defined(CONFIG_FLASH_JESD216_API)
+
+static int spi_nor_sfdp_read(struct device *dev, off_t addr,
+			     void *dest, size_t size)
+{
+	acquire_device(dev);
+
+	spi_nor_wait_until_ready(dev);
+
+	int ret = read_sfdp(dev, addr, dest, size);
+
+	release_device(dev);
+
+	return ret;
+}
+
+#endif /* CONFIG_FLASH_JESD216_API */
 
 static int spi_nor_read_jedec_id(struct device *dev,
 				 uint8_t *id)
@@ -947,6 +965,10 @@ static const struct flash_driver_api spi_nor_api = {
 	.get_parameters = flash_nor_get_parameters,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = spi_nor_pages_layout,
+#endif
+#if defined(CONFIG_FLASH_JESD216_API)
+	.sfdp_read = spi_nor_sfdp_read,
+	.read_jedec_id = spi_nor_read_jedec_id,
 #endif
 };
 
