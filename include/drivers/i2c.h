@@ -628,6 +628,31 @@ static inline int i2c_reg_update_byte(struct device *dev, uint8_t dev_addr,
 	return i2c_reg_write_byte(dev, dev_addr, reg_addr, new_value);
 }
 
+/**
+ * @brief Dump out an I2C message
+ *
+ * Dumps out a list of I2C messages. For any that are writes (W), the data is
+ * displayed in hex.
+ *
+ * It looks something like this (with name "testing"):
+ *
+ * D: I2C msg: testing, addr=56
+ * D:    W len=01:
+ * D: contents:
+ * D: 06                      |.
+ * D:    W len=0e:
+ * D: contents:
+ * D: 00 01 02 03 04 05 06 07 |........
+ * D: 08 09 0a 0b 0c 0d       |......
+ *
+ * @param name Name of this dump, displayed at the top.
+ * @param msgs Array of messages to dump.
+ * @param num_msgs Number of messages to dump.
+ * @param addr Address of the I2C target device.
+ */
+void i2c_dump_msgs(const char *name, const struct i2c_msg *msgs,
+		   uint8_t num_msgs, uint16_t addr);
+
 struct i2c_client_config {
 	char *i2c_master;
 	uint16_t i2c_addr;
