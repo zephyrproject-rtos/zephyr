@@ -58,9 +58,9 @@ void yield_bench(void)
 	uint32_t yield_cycles = (thread_end_time - thread_start_time) / 2000U;
 	uint32_t sleep_cycles = thread_sleep_end_time - thread_sleep_start_time;
 
-	PRINT_STATS("Thread Yield", yield_cycles,
+	PRINT_STATS("Thread yield", yield_cycles,
 		CYCLES_TO_NS(yield_cycles));
-	PRINT_STATS("Thread Sleep", sleep_cycles,
+	PRINT_STATS("Thread sleep", sleep_cycles,
 		CYCLES_TO_NS(sleep_cycles));
 
 }

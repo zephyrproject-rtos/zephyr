@@ -104,15 +104,15 @@ void semaphore_bench(void)
 	/* TC_PRINT("test_time1 , %d cycles\n", (uint32_t)test_time1); */
 	/* TC_PRINT("test_time2 , %d cycles\n", (uint32_t)test_time2); */
 
-	PRINT_STATS("Semaphore Take with context switch",
+	PRINT_STATS("Semaphore take with context switch",
 		sem_cycles, CYCLES_TO_NS(sem_cycles));
-	PRINT_STATS("Semaphore Give with context switch",
+	PRINT_STATS("Semaphore give with context switch",
 		sem_give_cycles, CYCLES_TO_NS(sem_give_cycles));
 
-	PRINT_STATS("Semaphore Take without context switch",
+	PRINT_STATS("Semaphore take without context switch",
 		sem_take_wo_cxt_cycles,
 		CYCLES_TO_NS(sem_take_wo_cxt_cycles));
-	PRINT_STATS("Semaphore Give without context switch",
+	PRINT_STATS("Semaphore give without context switch",
 		sem_give_wo_cxt_cycles,
 		CYCLES_TO_NS(sem_give_wo_cxt_cycles));
 

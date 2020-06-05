@@ -284,42 +284,42 @@ void msg_passing_bench(void)
 	/*******************************************************************/
 
 	/* Only print lower 32bit of time result */
-	PRINT_STATS("Message Queue Put with context switch",
+	PRINT_STATS("Message queue put with context switch",
 		    (uint32_t)((__msg_q_put_w_cxt_end_time -
 			     __msg_q_put_w_cxt_start_time) & 0xFFFFFFFFULL),
 		    (uint32_t) (total_msg_q_put_w_cxt_time  & 0xFFFFFFFFULL));
 
-	PRINT_STATS("Message Queue Put without context switch",
+	PRINT_STATS("Message queue put without context switch",
 		    (uint32_t)((__msg_q_put_wo_cxt_end_time -
 			     __msg_q_put_wo_cxt_start_time) & 0xFFFFFFFFULL),
 		    (uint32_t) (total_msg_q_put_wo_cxt_time  & 0xFFFFFFFFULL));
 
-	PRINT_STATS("Message Queue get with context switch",
+	PRINT_STATS("Message queue get with context switch",
 		    (uint32_t)((__msg_q_get_w_cxt_end_time -
 			     __msg_q_get_w_cxt_start_time) & 0xFFFFFFFFULL),
 		    (uint32_t) (total_msg_q_get_w_cxt_time & 0xFFFFFFFFULL));
 
-	PRINT_STATS("Message Queue get without context switch",
+	PRINT_STATS("Message queue get without context switch",
 		    (uint32_t)((msg_q_get_wo_cxt_end_time -
 			     msg_q_get_wo_cxt_start_time) & 0xFFFFFFFFULL),
 		    (uint32_t) (total_msg_q_get_wo_cxt_time  & 0xFFFFFFFFULL));
 
-	PRINT_STATS("MailBox synchronous put",
+	PRINT_STATS("Mailbox synchronous put",
 		    (uint32_t)((mbox_sync_put_end_time - mbox_sync_put_start_time)
 			    & 0xFFFFFFFFULL),
 		    (uint32_t) (total_mbox_sync_put_time  & 0xFFFFFFFFULL));
 
-	PRINT_STATS("MailBox synchronous get",
+	PRINT_STATS("Mailbox synchronous get",
 		    (uint32_t)((mbox_sync_get_end_time - mbox_sync_get_start_time)
 			    & 0xFFFFFFFFULL),
 		    (uint32_t) (total_mbox_sync_get_time  & 0xFFFFFFFFULL));
 
-	PRINT_STATS("MailBox asynchronous put",
+	PRINT_STATS("Mailbox asynchronous put",
 		    (uint32_t)((mbox_async_put_end_time - mbox_async_put_start_time)
 			    & 0xFFFFFFFFULL),
 		    (uint32_t) (total_mbox_async_put_time  & 0xFFFFFFFFULL));
 
-	PRINT_STATS("MailBox get without context switch",
+	PRINT_STATS("Mailbox get without context switch",
 		    (uint32_t)((mbox_get_w_cxt_end_time - mbox_get_w_cxt_start_time)
 			    & 0xFFFFFFFFULL),
 		    (uint32_t) (total_mbox_get_w_cxt_time  & 0xFFFFFFFFULL));

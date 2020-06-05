@@ -33,7 +33,7 @@ void main(void)
 	benchmark_timer_start();
 
 	TC_START("Time Measurement");
-	TC_PRINT("Timing Results: Clock Frequency: %u MHz\n", freq);
+	TC_PRINT("Timing results: Clock frequency: %u MHz\n", freq);
 
 	/*******************************************************************/
 	/* System parameters and thread Benchmarking*/
@@ -66,7 +66,7 @@ void main(void)
 #endif
 
 
-	TC_PRINT("Timing Measurement  finished\n");
+	TC_PRINT("Time Measurement finished\n");
 
 	/* for sanity regression test utility. */
 	TC_END_RESULT(TC_PASS);
