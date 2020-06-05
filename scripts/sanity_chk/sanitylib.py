@@ -1966,18 +1966,13 @@ class ProjectBuilder(FilterBuilder):
         test code not following sanitycheck's rules etc). It is required for
         the full report to be filled correctly.
         """
-        if self.instance.status == 'passed':
-            for case in self.instance.testcase.cases:
-                if case not in self.instance.results:
-                    self.instance.results[case] = 'PASS'
-        if self.instance.status == 'failed':
-            for case in self.instance.testcase.cases:
-                if case not in self.instance.results:
-                    self.instance.results[case] = 'FAIL'
-        if self.instance.status == 'skipped':
-            for case in self.instance.testcase.cases:
-                if case not in self.instance.results:
-                    self.instance.results[case] = 'SKIP'
+        for case in self.instance.testcase.cases:
+            if case not in self.instance.results:
+                self.instance.results[case] = 'SKIP'
+                logger.warning(
+                    f"Missing verdict for {case} test case in {self.instance.name} "
+                    f"set to SKIP")
+                self.suite.warnings += 1
 
     def process(self, message):
         op = message.get('op')
