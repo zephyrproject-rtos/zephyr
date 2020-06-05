@@ -2,8 +2,8 @@
 
 .. _zephyr_2.3:
 
-Zephyr 2.3.0 (Working Draft)
-############################
+Zephyr 2.3.0
+############
 
 We are pleased to announce the release of Zephyr RTOS version 2.3.0.
 
