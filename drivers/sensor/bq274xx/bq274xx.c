@@ -365,7 +365,7 @@ static int bq274xx_gauge_init(struct device *dev)
 		(uint16_t)config->design_capacity / (0.1 * config->taper_current);
 
 	bq274xx->i2c = device_get_binding(config->bus_name);
-	if (bq274xx == NULL) {
+	if (bq274xx->i2c == NULL) {
 		LOG_ERR("Could not get pointer to %s device.",
 			config->bus_name);
 		return -EINVAL;
