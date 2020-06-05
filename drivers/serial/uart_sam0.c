@@ -970,21 +970,6 @@ static int uart_sam0_rx_disable(struct device *dev)
 	regs->INTENCLR.reg = SERCOM_USART_INTENCLR_RXC;
 	dma_stop(dev_data->dma, cfg->rx_dma_channel);
 
-	if (dev_data->rx_next_len) {
-		struct uart_event evt = {
-			.type = UART_RX_BUF_RELEASED,
-			.data.rx_buf = {
-				.buf = dev_data->rx_next_buf,
-			},
-		};
-
-		dev_data->rx_next_buf = NULL;
-		dev_data->rx_next_len = 0U;
-
-		if (dev_data->async_cb) {
-			dev_data->async_cb(&evt, dev_data->async_cb_data);
-		}
-	}
 
 	if (dma_get_status(dev_data->dma, cfg->rx_dma_channel,
 			   &st) == 0 && st.pending_length != 0U) {
@@ -1005,6 +990,22 @@ static int uart_sam0_rx_disable(struct device *dev)
 
 	if (dev_data->async_cb) {
 		dev_data->async_cb(&evt, dev_data->async_cb_data);
+	}
+
+	if (dev_data->rx_next_len) {
+		struct uart_event evt = {
+			.type = UART_RX_BUF_RELEASED,
+			.data.rx_buf = {
+				.buf = dev_data->rx_next_buf,
+			},
+		};
+
+		dev_data->rx_next_buf = NULL;
+		dev_data->rx_next_len = 0U;
+
+		if (dev_data->async_cb) {
+			dev_data->async_cb(&evt, dev_data->async_cb_data);
+		}
 	}
 
 	evt.type = UART_RX_DISABLED;
