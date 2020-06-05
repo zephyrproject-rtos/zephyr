@@ -662,7 +662,7 @@ Libraries / Subsystems
 
 * Random
 
-  * <TBD>
+  * Removed the ``rand32_timestamp`` driver.
 
 * POSIX subsystem:
 
