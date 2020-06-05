@@ -698,6 +698,8 @@ static void esp_init_work(struct k_work *work)
 		SETUP_CMD_NOHANDLE("AT"),
 		/* turn off echo */
 		SETUP_CMD_NOHANDLE("ATE0"),
+		/* switch to station mode */
+		SETUP_CMD_NOHANDLE("AT+CWMODE=1"),
 #if defined(CONFIG_WIFI_ESP_AT_VERSION_2_0)
 		SETUP_CMD_NOHANDLE("AT+CWAUTOCONN=0"),
 #endif
