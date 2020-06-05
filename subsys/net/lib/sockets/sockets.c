@@ -51,7 +51,7 @@ static inline void *get_sock_vtable(
 				      (const struct fd_op_vtable **)vtable);
 
 #ifdef CONFIG_USERSPACE
-	if (z_is_in_user_syscall()) {
+	if (ctx != NULL && z_is_in_user_syscall()) {
 		struct z_object *zo;
 		int ret;
 
