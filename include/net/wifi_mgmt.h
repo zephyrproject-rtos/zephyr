@@ -15,6 +15,10 @@
 #include <net/net_mgmt.h>
 #include <net/wifi.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Management part definitions */
 
 #define _NET_WIFI_LAYER	NET_MGMT_LAYER_L2
@@ -142,5 +146,9 @@ void wifi_mgmt_raise_connect_result_event(struct net_if *iface, int status);
 void wifi_mgmt_raise_disconnect_result_event(struct net_if *iface, int status);
 
 #endif /* CONFIG_WIFI_OFFLOAD */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_NET_WIFI_MGMT_H_ */
