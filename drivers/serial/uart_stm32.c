@@ -745,11 +745,11 @@ static int uart_stm32_init(const struct device *dev)
 #define STM32_UART_IRQ_HANDLER(index)					\
 static void uart_stm32_irq_config_func_##index(const struct device *dev)	\
 {									\
-	IRQ_CONNECT(DT_INST_IRQN(index),		\
-		DT_INST_IRQ(index, priority),		\
+	IRQ_CONNECT(DT_INST_IRQN(index),				\
+		DT_INST_IRQ(index, priority),				\
 		uart_stm32_isr, DEVICE_GET(uart_stm32_##index),		\
 		0);							\
-	irq_enable(DT_INST_IRQN(index));		\
+	irq_enable(DT_INST_IRQN(index));				\
 }
 #else
 #define STM32_UART_IRQ_HANDLER_DECL(index)
@@ -762,21 +762,21 @@ STM32_UART_IRQ_HANDLER_DECL(index);					\
 									\
 static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 	.uconf = {							\
-		.base = (uint8_t *)DT_INST_REG_ADDR(index),\
+		.base = (uint8_t *)DT_INST_REG_ADDR(index),		\
 		STM32_UART_IRQ_HANDLER_FUNC(index)			\
 	},								\
-	.pclken = { .bus = DT_INST_CLOCKS_CELL(index, bus),	\
-		    .enr = DT_INST_CLOCKS_CELL(index, bits)	\
+	.pclken = { .bus = DT_INST_CLOCKS_CELL(index, bus),		\
+		    .enr = DT_INST_CLOCKS_CELL(index, bits)		\
 	},								\
-	.hw_flow_control = DT_INST_PROP(index, hw_flow_control),\
-	.parity = DT_INST_PROP(index, parity)\
+	.hw_flow_control = DT_INST_PROP(index, hw_flow_control),	\
+	.parity = DT_INST_PROP(index, parity),				\
 };									\
 									\
 static struct uart_stm32_data uart_stm32_data_##index = {		\
-	.baud_rate = DT_INST_PROP(index, current_speed)	\
+	.baud_rate = DT_INST_PROP(index, current_speed),		\
 };									\
 									\
-DEVICE_AND_API_INIT(uart_stm32_##index, DT_INST_LABEL(index),\
+DEVICE_AND_API_INIT(uart_stm32_##index, DT_INST_LABEL(index),		\
 		    &uart_stm32_init,					\
 		    &uart_stm32_data_##index, &uart_stm32_cfg_##index,	\
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
