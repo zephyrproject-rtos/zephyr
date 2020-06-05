@@ -233,9 +233,9 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 	entry->subcmd = &dsub_device_name;
 
 	for (dev = __device_start; dev != __device_end; dev++) {
-		if ((dev->driver_api != NULL) &&
+		if ((dev->driver_api != NULL) && (dev->name != NULL) &&
 		    strstr(dev->name, I2C_DEVICE_PREFIX) != NULL &&
-		    strcmp(dev->name, "") && (dev->name != NULL)) {
+		    strcmp(dev->name, "")) {
 			if (idx == device_idx) {
 				entry->syntax = dev->name;
 				break;
