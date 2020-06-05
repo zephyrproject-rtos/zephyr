@@ -3,38 +3,38 @@
 #
 
 include_directories(
-        $ENV{ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/include
-        $ENV{ZEPHYR_BASE}/tests/bluetooth/controller/common/include
-        $ENV{ZEPHYR_BASE}/include/bluetooth
-        $ENV{ZEPHYR_BASE}/subsys/bluetooth
-        $ENV{ZEPHYR_BASE}/subsys/bluetooth/controller
-        $ENV{ZEPHYR_BASE}/subsys/bluetooth/controller/util
-        $ENV{ZEPHYR_BASE}/subsys/bluetooth/controller/include
-        $ENV{ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw
+        ${ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/include
+        ${ZEPHYR_BASE}/tests/bluetooth/controller/common/include
+        ${ZEPHYR_BASE}/include/bluetooth
+        ${ZEPHYR_BASE}/subsys/bluetooth
+        ${ZEPHYR_BASE}/subsys/bluetooth/controller
+        ${ZEPHYR_BASE}/subsys/bluetooth/controller/util
+        ${ZEPHYR_BASE}/subsys/bluetooth/controller/include
+        ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw
 )
 
 FILE(GLOB ll_sw_sources
-        $ENV{ZEPHYR_BASE}/subsys/bluetooth/controller/util/mem.c
-        $ENV{ZEPHYR_BASE}/subsys/bluetooth/controller/util/memq.c
-        $ENV{ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_tx_queue.c
+        ${ZEPHYR_BASE}/subsys/bluetooth/controller/util/mem.c
+        ${ZEPHYR_BASE}/subsys/bluetooth/controller/util/memq.c
+        ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_tx_queue.c
 
-        $ENV{ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_local.c
-        $ENV{ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_remote.c
-        $ENV{ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_pdu.c
-        $ENV{ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_common.c
-        $ENV{ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_phy.c
-        $ENV{ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_enc.c
-        $ENV{ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp.c
+        ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_local.c
+        ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_remote.c
+        ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_pdu.c
+        ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_common.c
+        ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_phy.c
+        ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_enc.c
+        ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp.c
 )
 
 FILE(GLOB mock_sources
-        $ENV{ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/src/ll.c
-        $ENV{ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/src/ll_assert.c
+        ${ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/src/ll.c
+        ${ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/src/ll_assert.c
 )
 
 FILE(GLOB common_sources
-        $ENV{ZEPHYR_BASE}/tests/bluetooth/controller/common/src/helper_pdu.c
-        $ENV{ZEPHYR_BASE}/tests/bluetooth/controller/common/src/helper_util.c
+        ${ZEPHYR_BASE}/tests/bluetooth/controller/common/src/helper_pdu.c
+        ${ZEPHYR_BASE}/tests/bluetooth/controller/common/src/helper_util.c
 )
 
 add_definitions(-include kconfig.h)
