@@ -2,3 +2,4 @@ tests:
   kernel.workqueue:
     min_flash: 34
     tags: kernel
+    filter: not CONFIG_KERNEL_COHERENCE

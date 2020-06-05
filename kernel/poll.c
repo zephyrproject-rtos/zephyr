@@ -243,11 +243,19 @@ static int k_poll_poller_cb(struct k_poll_event *event, uint32_t state)
 	return 0;
 }
 
+#ifdef CONFIG_KERNEL_COHERENCE
+#error CONFIG_POLL and CONFIG_KERNEL_COHERENCE are not compatible
+#endif
+
 int z_impl_k_poll(struct k_poll_event *events, int num_events,
 		  k_timeout_t timeout)
 {
 	int events_registered;
 	k_spinlock_key_t key;
+
+	/* FIXME: this shared data is stack-allocated and needs
+	 * proper treatment to be compatible with KERNEL_COHERENCE.
+	 */
 	struct _poller poller = { .is_polling = true,
 				  .thread     = _current,
 				  .cb         = k_poll_poller_cb };
