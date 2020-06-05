@@ -15,6 +15,9 @@ CONFIG_GPIO=y
 # clock configuration
 CONFIG_CLOCK_CONTROL=y
 
+# Enable MPU
+CONFIG_ARM_MPU=y
+
 # By default SERIAL peripherals are assigned to m7
 
 # enable uart driver

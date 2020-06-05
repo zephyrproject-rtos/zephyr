@@ -11,5 +11,6 @@ config SOC_SERIES_STM32L1X
 	select SOC_FAMILY_STM32
 	select HAS_STM32CUBE
 	select HAS_SWO
+	select CPU_HAS_ARM_MPU
 	help
 	  Enable support for STM32L1 MCU series
