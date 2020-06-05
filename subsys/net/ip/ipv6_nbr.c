@@ -880,7 +880,16 @@ ignore_frag_error:
 		if (net_if_ipv6_addr_onlink(&iface, nexthop)) {
 			net_pkt_set_iface(pkt, iface);
 		} else {
-			iface = net_pkt_iface(pkt);
+			/* nexthop might be the nbr list, e.g. a link-local
+			 * address of a connected peer.
+			 */
+			nbr = net_ipv6_nbr_lookup(NULL, nexthop);
+			if (nbr) {
+				iface = nbr->iface;
+				net_pkt_set_iface(pkt, iface);
+			} else {
+				iface = net_pkt_iface(pkt);
+			}
 		}
 
 		/* If the above check returns null, we try to send
