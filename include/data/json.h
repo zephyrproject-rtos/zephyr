@@ -655,6 +655,24 @@ int json_obj_encode_buf(const struct json_obj_descr *descr, size_t descr_len,
 			const void *val, char *buffer, size_t buf_size);
 
 /**
+ * @brief Encodes an array in a contiguous memory location
+ *
+ * @param descr Pointer to the descriptor array
+ *
+ * @param val Struct holding the values
+ *
+ * @param buffer Buffer to store the JSON data
+ *
+ * @param buf_size Size of buffer, in bytes, with space for the terminating
+ * NUL character
+ *
+ * @return 0 if object has been successfully encoded. A negative value
+ * indicates an error (as defined on errno.h).
+ */
+int json_arr_encode_buf(const struct json_obj_descr *descr, const void *val,
+			char *buffer, size_t buf_size);
+
+/**
  * @brief Encodes an object using an arbitrary writer function
  *
  * @param descr Pointer to the descriptor array
@@ -674,6 +692,24 @@ int json_obj_encode_buf(const struct json_obj_descr *descr, size_t descr_len,
 int json_obj_encode(const struct json_obj_descr *descr, size_t descr_len,
 		    const void *val, json_append_bytes_t append_bytes,
 		    void *data);
+
+/**
+ * @brief Encodes an array using an arbitrary writer function
+ *
+ * @param descr Pointer to the descriptor array
+ *
+ * @param val Struct holding the values
+ *
+ * @param append_bytes Function to append bytes to the output
+ *
+ * @param data Data pointer to be passed to the append_bytes callback
+ * function.
+ *
+ * @return 0 if object has been successfully encoded. A negative value
+ * indicates an error.
+ */
+int json_arr_encode(const struct json_obj_descr *descr, const void *val,
+		    json_append_bytes_t append_bytes, void *data);
 
 #ifdef __cplusplus
 }
