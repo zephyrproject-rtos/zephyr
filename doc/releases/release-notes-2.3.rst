@@ -51,6 +51,18 @@ The following CVEs are addressed by this release:
 More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 
+Known issues
+************
+
+You can check all currently known issues by listing them using the GitHub
+interface and listing all issues with the `bug label
+<https://github.com/zephyrproject-rtos/zephyr/issues?q=is%3Aissue+is%3Aopen+label%3Abug>`_.
+
+A single high-priority bug is currently open:
+
+* :github:`23364` - Bluetooth: bt_recv deadlock on supervision timeout with
+  pending GATT Write Commands
+
 API Changes
 ***********
 
