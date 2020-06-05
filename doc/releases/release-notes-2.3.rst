@@ -124,8 +124,17 @@ Deprecated in this release
     :option:`CONFIG_LEGACY_DEVICETREE_MACROS`. See :ref:`dt-legacy-macros` for
     more information, including a link to a migration guide to the new API.
 
+* Other
+
+  * ``MACRO_MAP`` has been deprecated. Use ``FOR_EACH`` instead.
+  * ``BUILD_ASSERT_MSG`` has been deprecated. Use ``BUILD_ASSERT`` instead.
+
 Removed APIs in this release
 ============================
+
+* The ``INLINE`` macro in ``util.h`` has been removed.
+* ``STACK_ANALYZE``, ``stack_analyze`` and ``stack_unused_space_get`` have been
+  removed.
 
 
 Stable API changes in this release
@@ -235,44 +244,43 @@ Boards & SoC Support
 
 * Added support for these SoC series:
 
-.. rst-class:: rst-columns
-
-   * Broadcom Viper BCM58402
-   * Infineon XMC4500 SoC
-   * Nordic nRF52820 SoC
-   * NXP LPC55S16 SoC
-   * SiLabs EFR32BG13P SoC
-   * STM32L5 series of Ultra-low-power MCUs
+  * Broadcom Viper BCM58402
+  * Infineon XMC4500 SoC
+  * Nordic nRF52820 SoC
+  * NXP LPC55S16 SoC
+  * SiLabs EFR32BG13P SoC
+  * STM32L5 series of Ultra-low-power MCUs
 
 * Added support for these ARM boards:
 
-  .. rst-class:: rst-columns
+  * 96Boards AeroCore 2
+  * Adafruit Feather nRF52840 Express
+  * Adafruit Feather STM32F405 Express
+  * Black STM32 F407VE Development Board
+  * Black STM32 F407ZG Pro Development Board
+  * Broadcom BCM958402M2
+  * EFR32 BRD4104A (SLWRB4104A)
+  * Infineon XMC45-RELAX-KIT
+  * nRF52820 emulation on nRF52833 DK
+  * nrf9160 INNBLUE21
+  * nrf9160 INNBLUE22
+  * NXP LPCXpresso55S16
+  * SEGGER IP Switch Board
+  * ST Nucleo H743ZI
+  * ST Nucleo F303RE
+  * ST Nucleo L552ZE-Q
 
-     * 96Boards AeroCore 2
-     * Adafruit Feather nRF52840 Express
-     * Adafruit Feather STM32F405 Express
-     * Black STM32 F407VE Development Board
-     * Black STM32 F407ZG Pro Development Board
-     * Broadcom BCM958402M2
-     * EFR32 BRD4104A (SLWRB4104A)
-     * Infineon XMC45-RELAX-KIT
-     * nRF52820 emulation on nRF52833 DK
-     * nrf9160 INNBLUE21
-     * nrf9160 INNBLUE22
-     * NXP LPCXpresso55S16
-     * SEGGER IP Switch Board
-     * ST Nucleo H743ZI
-     * ST Nucleo F303RE
-     * ST Nucleo L552ZE-Q
+* Made these changes in other boards
+
+  * ``up_squared`` now defaults to the x86_64 architecture
+  * ``intel_s1000`` now supports SMP
 
 * Added support for these following shields:
 
-  .. rst-class:: rst-columns
-
-     * Espressif ESP-8266 Module
-     * MikroElektronika ADC Click
-     * MikroElectronica Eth Click
-     * ST X-NUCLEO-IKS02A1: MEMS Inertial and Environmental Multi sensor shield
+  * Espressif ESP-8266 Module
+  * MikroElektronika ADC Click
+  * MikroElectronica Eth Click
+  * ST X-NUCLEO-IKS02A1: MEMS Inertial and Environmental Multi sensor shield
 
 Drivers and Sensors
 *******************
