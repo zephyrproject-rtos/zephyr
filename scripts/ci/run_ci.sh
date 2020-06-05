@@ -146,7 +146,8 @@ function west_setup() {
 	pushd ..
 	if [ ! -d .west ]; then
 		west init -l ${git_dir}
-		west update
+		west update 1> west.update.log
+		west forall -c 'git reset --hard HEAD'
 	fi
 	popd
 }
@@ -252,6 +253,8 @@ if [ -n "$main_ci" ]; then
 	# Save list of tests to be run
 	${sanitycheck} ${sanitycheck_options} --save-tests test_file_3.txt || exit 1
 	cat test_file_1.txt test_file_2.txt test_file_3.txt > test_file.txt
+
+	echo "+++ run sanitycheck"
 
 	# Run a subset of tests based on matrix size
 	${sanitycheck} ${sanitycheck_options} --load-tests test_file.txt \
