@@ -174,11 +174,6 @@ struct usb_interface_cfg_data {
  * may only be updated after calls to usb_deconfig
  */
 struct usb_cfg_data {
-	/**
-	 * USB device description, see
-	 * http://www.beyondlogic.org/usbnutshell/usb5.shtml#DeviceDescriptors
-	 */
-	const uint8_t *usb_device_description;
 	/** Pointer to interface descriptor */
 	const void *interface_descriptor;
 	/** Function for interface runtime configuration */
