@@ -91,6 +91,17 @@ typedef int (*led_api_on)(struct device *dev, uint32_t led);
 typedef int (*led_api_off)(struct device *dev, uint32_t led);
 
 /**
+ * @typedef led_api_write_channels()
+ * @brief Callback API for writing a strip of LED channels
+ *
+ * @see led_api_write_channels() for arguments descriptions.
+ */
+typedef int (*led_api_write_channels)(struct device *dev,
+				      uint32_t start_channel,
+				      uint32_t num_channels,
+				      const uint8_t *buf);
+
+/**
  * @brief LED driver API
  */
 __subsystem struct led_driver_api {
@@ -102,6 +113,7 @@ __subsystem struct led_driver_api {
 	led_api_get_info get_info;
 	led_api_set_brightness set_brightness;
 	led_api_set_color set_color;
+	led_api_write_channels write_channels;
 };
 
 /**
@@ -181,6 +193,59 @@ static inline int z_impl_led_set_brightness(struct device *dev, uint32_t led,
 		return -ENOTSUP;
 	}
 	return api->set_brightness(dev, led, value);
+}
+
+/**
+ * @brief Write/update a strip of LED channels
+ *
+ * This optional routine writes a strip of LED channels to the given array of
+ * levels. Therefore it can be used to configure several LEDs at the same time.
+ *
+ * Calling this function after led_blink() won't affect blinking.
+ *
+ * @param dev LED device
+ * @param start_channel Absolute number (i.e. not relative to a LED) of the
+ *        first channel to update.
+ * @param num_channels The number of channels to write/update.
+ * @param buf array of values to configure the channels with. num_channels
+ *        entries must be provided.
+ * @return 0 on success, negative on error
+ */
+__syscall int led_write_channels(struct device *dev, uint32_t start_channel,
+				 uint32_t num_channels, const uint8_t *buf);
+
+static inline int
+z_impl_led_write_channels(struct device *dev, uint32_t start_channel,
+			  uint32_t num_channels, const uint8_t *buf)
+{
+	const struct led_driver_api *api =
+		(const struct led_driver_api *)dev->api;
+
+	if (!api->write_channels) {
+		return -ENOTSUP;
+	}
+	return api->write_channels(dev, start_channel, num_channels, buf);
+}
+
+/**
+ * @brief Set a single LED channel
+ *
+ * This optional routine sets a single LED channel to the given value.
+ *
+ * Calling this function after led_blink() won't affect blinking.
+ *
+ * @param dev LED device
+ * @param channel Absolute channel number (i.e. not relative to a LED)
+ * @param value Value to configure the channel with
+ * @return 0 on success, negative on error
+ */
+__syscall int led_set_channel(struct device *dev,
+			      uint32_t channel, uint8_t value);
+
+static inline int z_impl_led_set_channel(struct device *dev,
+					 uint32_t channel, uint8_t value)
+{
+	return z_impl_led_write_channels(dev, channel, 1, &value);
 }
 
 /**
