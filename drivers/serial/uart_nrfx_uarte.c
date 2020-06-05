@@ -114,12 +114,18 @@ struct uarte_nrfx_data {
 	uint8_t rx_data;
 };
 
+#define CTS_PIN_SET_MASK BIT(1)
+#define RTS_PIN_SET_MASK BIT(2)
+
+#define IS_CTS_PIN_SET(mask) (mask & CTS_PIN_SET_MASK)
+#define IS_RTS_PIN_SET(mask) (mask & RTS_PIN_SET_MASK)
+
 /**
  * @brief Structure for UARTE configuration.
  */
 struct uarte_nrfx_config {
 	NRF_UARTE_Type *uarte_regs; /* Instance address */
-	bool rts_cts_pins_set;
+	uint8_t rts_cts_pins_set;
 	bool gpio_mgmt;
 #ifdef CONFIG_UART_ASYNC_API
 	nrfx_timer_t timer;
@@ -1266,17 +1272,16 @@ static int uarte_instance_init(struct device *dev,
 
 	nrf_uarte_txrx_pins_set(uarte, config->pseltxd, config->pselrxd);
 
-	if (config->pselcts != NRF_UARTE_PSEL_DISCONNECTED &&
-	    config->pselrts != NRF_UARTE_PSEL_DISCONNECTED) {
+	if (config->pselcts != NRF_UARTE_PSEL_DISCONNECTED) {
+		nrf_gpio_cfg_input(config->pselcts, NRF_GPIO_PIN_NOPULL);
+	}
+
+	if (config->pselrts != NRF_UARTE_PSEL_DISCONNECTED) {
 		nrf_gpio_pin_write(config->pselrts, 1);
 		nrf_gpio_cfg_output(config->pselrts);
-
-		nrf_gpio_cfg_input(config->pselcts, NRF_GPIO_PIN_NOPULL);
-
-		nrf_uarte_hwfc_pins_set(uarte,
-					config->pselrts,
-					config->pselcts);
 	}
+
+	nrf_uarte_hwfc_pins_set(uarte, config->pselrts, config->pselcts);
 
 	err = uarte_nrfx_configure(dev, &get_dev_data(dev)->uart_config);
 	if (err) {
@@ -1341,9 +1346,12 @@ static void uarte_nrfx_pins_enable(struct device *dev, bool enable)
 			nrf_gpio_cfg_input(rx_pin, NRF_GPIO_PIN_NOPULL);
 		}
 
-		if (get_dev_config(dev)->rts_cts_pins_set) {
+		if (IS_RTS_PIN_SET(get_dev_config(dev)->rts_cts_pins_set)) {
 			nrf_gpio_pin_write(rts_pin, 1);
 			nrf_gpio_cfg_output(rts_pin);
+		}
+
+		if (IS_CTS_PIN_SET(get_dev_config(dev)->rts_cts_pins_set)) {
 			nrf_gpio_cfg_input(cts_pin,
 					   NRF_GPIO_PIN_NOPULL);
 		}
@@ -1352,9 +1360,13 @@ static void uarte_nrfx_pins_enable(struct device *dev, bool enable)
 		if (rx_pin != NRF_UARTE_PSEL_DISCONNECTED) {
 			nrf_gpio_cfg_default(rx_pin);
 		}
-		if (get_dev_config(dev)->rts_cts_pins_set) {
-			nrf_gpio_cfg_default(cts_pin);
+
+		if (IS_RTS_PIN_SET(get_dev_config(dev)->rts_cts_pins_set)) {
 			nrf_gpio_cfg_default(rts_pin);
+		}
+
+		if (IS_CTS_PIN_SET(get_dev_config(dev)->rts_cts_pins_set)) {
+			nrf_gpio_cfg_default(cts_pin);
 		}
 	}
 }
@@ -1452,8 +1464,8 @@ static int uarte_nrfx_pm_control(struct device *dev, uint32_t ctrl_command,
 		    (UARTE_PROP(idx, pin_prop)),			       \
 		    (NRF_UARTE_PSEL_DISCONNECTED))
 
-#define UARTE_RTS_CTS_PINS_SET(idx)					       \
-	(UARTE_HAS_PROP(idx, rts_pin) && UARTE_HAS_PROP(idx, cts_pin))
+#define HWFC_AVAILABLE(idx)					       \
+	(UARTE_HAS_PROP(idx, rts_pin) || UARTE_HAS_PROP(idx, cts_pin))
 
 #define UARTE_IRQ_CONFIGURE(idx, isr_handler)				       \
 	do {								       \
@@ -1462,7 +1474,15 @@ static int uarte_nrfx_pm_control(struct device *dev, uint32_t ctrl_command,
 		irq_enable(DT_IRQN(UARTE(idx)));			       \
 	} while (0)
 
+#define HWFC_CONFIG_CHECK(idx) \
+	BUILD_ASSERT( \
+		(UARTE_PROP(idx, hw_flow_control) && HWFC_AVAILABLE(idx)) \
+		|| \
+		!UARTE_PROP(idx, hw_flow_control) \
+	)
+
 #define UART_NRF_UARTE_DEVICE(idx)					       \
+	HWFC_CONFIG_CHECK(idx);						       \
 	DEVICE_DECLARE(uart_nrfx_uarte##idx);				       \
 	UARTE_INT_DRIVEN(idx);						       \
 	UARTE_ASYNC(idx);						       \
@@ -1475,7 +1495,9 @@ static int uarte_nrfx_pm_control(struct device *dev, uint32_t ctrl_command,
 	};								       \
 	static const struct uarte_nrfx_config uarte_##idx##z_config = {	       \
 		.uarte_regs = (NRF_UARTE_Type *)DT_REG_ADDR(UARTE(idx)),       \
-		.rts_cts_pins_set = UARTE_RTS_CTS_PINS_SET(idx),	       \
+		.rts_cts_pins_set =					       \
+			(UARTE_HAS_PROP(idx, rts_pin) ? RTS_PIN_SET_MASK : 0) |\
+			(UARTE_HAS_PROP(idx, cts_pin) ? CTS_PIN_SET_MASK : 0), \
 		.gpio_mgmt = IS_ENABLED(CONFIG_UART_##idx##_GPIO_MANAGEMENT),  \
 		IF_ENABLED(CONFIG_UART_##idx##_NRF_HW_ASYNC,		       \
 			(.timer = NRFX_TIMER_INSTANCE(			       \
@@ -1516,7 +1538,7 @@ static int uarte_nrfx_pm_control(struct device *dev, uint32_t ctrl_command,
 		.parity = IS_ENABLED(CONFIG_UART_##idx##_NRF_PARITY_BIT)       \
 			  ? UART_CFG_PARITY_EVEN			       \
 			  : UART_CFG_PARITY_NONE,			       \
-		.flow_ctrl = IS_ENABLED(CONFIG_UART_##idx##_NRF_FLOW_CONTROL)  \
+		.flow_ctrl = UARTE_PROP(idx, hw_flow_control)  \
 			     ? UART_CFG_FLOW_CTRL_RTS_CTS		       \
 			     : UART_CFG_FLOW_CTRL_NONE,			       \
 	}
