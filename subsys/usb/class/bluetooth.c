@@ -320,7 +320,6 @@ static void bluetooth_interface_config(struct usb_desc_header *head,
 }
 
 USBD_CFG_DATA_DEFINE(primary, hci) struct usb_cfg_data bluetooth_config = {
-	.usb_device_description = NULL,
 	.interface_config = bluetooth_interface_config,
 	.interface_descriptor = &bluetooth_cfg.if0,
 	.cb_usb_status = bluetooth_status_cb,
