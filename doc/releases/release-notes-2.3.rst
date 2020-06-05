@@ -165,7 +165,7 @@ Stable API changes in this release
 Kernel
 ******
 
-* A new general purpose memory allocator, sys_heap/k_heap, was added
+* A new general purpose memory allocator, sys_heap/k_heap, has been added
   to Zephyr with more conventional API/behavior, better space
   efficiency and higher performance than the pre-existing mem_pool.
   The older mem_pool APIs are, by default, wrappers around this new
@@ -179,14 +179,12 @@ Kernel
   expressed in 64 bit quantities.  This involves a minor change to the
   API, so the original API is still available in a completely
   source-compatible way via CONFIG_LEGACY_TIMEOUT_API.
-* Simplify dummy thread implementation and properly name idle threads
+* Simplified dummy thread implementation and properly name idle threads
 * Centralized new thread priority check
-* Refactor device structures and introduced struct init_entry which is
+* Refactored device structures and introduced struct init_entry which is
   a generic init end-point. SYS_INIT() generates only a struct init_entry via
   calling INIT_ENTRY_DEFINE(). Also removed struct deviceconfig leaving
   struct device to own everything now.
-
-
 
 Architectures
 *************
@@ -228,16 +226,16 @@ Architectures
 
 * RISC-V:
 
-  * Add support for hard floating point for RISC-V
-  * Add march and mabi options to Kconfig
-  * Fix compilation warning for platforms without PLIC
+  * Added support for hard floating point for RISC-V
+  * Added march and mabi options to Kconfig
+  * Fixed compilation warning for platforms without PLIC
 
 * x86:
 
-  * Instrument code for timing information
-  * Add ability for SoC to add MMU regions
+  * Instrumented code for timing information
+  * Added ability for SoC to add MMU regions
   * x86 FPU sharing symbols renamed
-  * early_serial: extend to support MMIO UART
+  * early_serial: extended to support MMIO UART
 
 Boards & SoC Support
 ********************
@@ -564,41 +562,41 @@ Drivers and Sensors
 Networking
 **********
 
-* Convert networking to use new k_timeout_t infrastructure
-* Enhance new TCP stack support
-* Add minimal support for TFTP client (RFC 1350)
-* Add support for network device driver power management
-* Add support for socketpair() BSD socket API
-* Add support for QEMU user networking (SLIRP)
-* Add support to disable automatic network attachment in OpenThread
-* Add support for Frame Pending Bit handling in OpenThread
-* Add support for RX frame handling in OpenThread
-* Add support for TX started notification in OpenThread
-* Add support for HW CSMA CA in OpenThread
-* Add support for promiscuous mode in OpenThread
-* Add support for reading OPAQUE resources with OMA TLV in LWM2M
-* Add config to enable PAN coordinator mode in IEEE 802.15.4
-* Add config to enable promiscuous mode in IEEE 802.15.4
-* Add support for subscribe in Azure cloud sample
-* Add support for queue mode in lwm2m_client sample
-* Add support to allow change of the QEMU Ethernet interface name
-* Add support for PPP IPCP to negotiate used DNS servers
-* Add support for setting hostname in DHCPv4 request
-* Fix binding AF_PACKET socket type multiple times
-* Fix LLDPDU data in sent LLDP packets
-* Fix and enhance Google IoT sample application documentation
-* Fix MQTT cloud sample when polling incoming messages
-* Fix LWM2M socket error handling, and pending and reply handling during start
-* Fix LWM2M retransmission logic
-* Fix LWM2M Cell ID resource initialization
-* Fix COAP pending and reply handling
-* Fix wpan_serial sample application and enable USB during initialization
-* Fix HTTP client payload issue on HTTP upload
-* Fix MQTT Websocket incoming data handling and accept packets only in RX
-* Fix MQTT Publish message length validation
-* Fix IEEE 802.15.4 received frame length validation
-* Fix IEEE 802.15.4 and avoid ACK processing when not needed
-* Fix IEEE 802.15.4 and allow energy detection scan unconditionally
+* Converted networking to use new k_timeout_t infrastructure
+* Enhanced new TCP stack support
+* Added minimal support for TFTP client (RFC 1350)
+* Added support for network device driver power management
+* Added support for socketpair() BSD socket API
+* Added support for QEMU user networking (SLIRP)
+* Added support to disable automatic network attachment in OpenThread
+* Added support for Frame Pending Bit handling in OpenThread
+* Added support for RX frame handling in OpenThread
+* Added support for TX started notification in OpenThread
+* Added support for HW CSMA CA in OpenThread
+* Added support for promiscuous mode in OpenThread
+* Added support for reading OPAQUE resources with OMA TLV in LWM2M
+* Added config to enable PAN coordinator mode in IEEE 802.15.4
+* Added config to enable promiscuous mode in IEEE 802.15.4
+* Added support for subscribe in Azure cloud sample
+* Added support for queue mode in lwm2m_client sample
+* Added support to allow change of the QEMU Ethernet interface name
+* Added support for PPP IPCP to negotiate used DNS servers
+* Added support for setting hostname in DHCPv4 request
+* Fixed binding AF_PACKET socket type multiple times
+* Fixed LLDPDU data in sent LLDP packets
+* Fixed and enhance Google IoT sample application documentation
+* Fixed MQTT cloud sample when polling incoming messages
+* Fixed LWM2M socket error handling, and pending and reply handling during start
+* Fixed LWM2M retransmission logic
+* Fixed LWM2M Cell ID resource initialization
+* Fixed COAP pending and reply handling
+* Fixed wpan_serial sample application and enable USB during initialization
+* Fixed HTTP client payload issue on HTTP upload
+* Fixed MQTT Websocket incoming data handling and accept packets only in RX
+* Fixed MQTT Publish message length validation
+* Fixed IEEE 802.15.4 received frame length validation
+* IEEE 802.15.4: avoided ACK processing when not needed
+* IEEE 802.15.4: Now allows energy detection scan unconditionally
 
 Bluetooth
 *********
