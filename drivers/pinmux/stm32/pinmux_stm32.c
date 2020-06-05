@@ -117,6 +117,47 @@ static int stm32_pin_configure(uint32_t pin, uint32_t func, uint32_t altf)
 }
 
 /**
+ * @brief helper for converting dt stm32 pinctrl format to existing pin config
+ *        format
+ *
+ * @param *pinctrl pointer to soc_gpio_pinctrl list
+ * @param list_size list size
+ */
+
+void stm32_dt_pinctrl_configure(const struct soc_gpio_pinctrl *pinctrl,
+				size_t list_size)
+{
+#if !defined(CONFIG_SOC_SERIES_STM32F1X)
+	const struct device *clk;
+	uint32_t pin, mux;
+	uint32_t func = 0;
+
+	/* make sure to enable port clock first */
+	clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
+
+	for (int i = 0; i < list_size; i++) {
+		mux = pinctrl[i].pinmux;
+
+		if (STM32_DT_PINMUX_FUNC(mux) < ANALOG) {
+			func = pinctrl[i].pincfg | STM32_MODER_ALT_MODE;
+		} else if (STM32_DT_PINMUX_FUNC(mux) == ANALOG) {
+			func = STM32_MODER_ANALOG_MODE;
+		} else {
+			/* Not supported */
+			__ASSERT_NO_MSG(STM32_DT_PINMUX_FUNC(mux));
+		}
+
+		pin = STM32PIN(STM32_DT_PINMUX_PORT(mux),
+			       STM32_DT_PINMUX_LINE(mux));
+
+		enable_port(STM32_PORT(pin), clk);
+
+		stm32_pin_configure(pin, func, STM32_DT_PINMUX_FUNC(mux));
+	}
+#endif
+}
+
+/**
  * @brief pin setup
  *
  * @param pin  STM32PIN() encoded pin ID

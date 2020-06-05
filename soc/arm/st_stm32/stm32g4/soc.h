@@ -25,7 +25,7 @@
 #include <stm32g4xx.h>
 
 /* Add include for DTS generated information */
-#include <devicetree.h>
+#include <st_stm32_dt.h>
 
 #ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
 #include <stm32g4xx_ll_utils.h>
