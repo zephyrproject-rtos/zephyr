@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/l4/stm32l475Xg.dtsi>
+#include <st/l4/stm32l475r(c-e-g)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 
 / {
@@ -50,6 +51,8 @@
 
 &usart1 {
 	current-speed = <115200>;
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
