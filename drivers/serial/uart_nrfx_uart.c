@@ -33,11 +33,19 @@
 #define RX_PIN		NRF_UART_PSEL_DISCONNECTED
 #endif
 
-#define HW_FLOW_CONTROL	(HAS_PROP(rts_pin) && HAS_PROP(cts_pin))
-#if HW_FLOW_CONTROL
-#define RTS_PIN		PROP(rts_pin)
-#define CTS_PIN		PROP(cts_pin)
-#endif
+#define HW_FLOW_CONTROL_AVAILABLE	(HAS_PROP(rts_pin) || HAS_PROP(cts_pin))
+
+/* Protect against enabling flow control without pins set. */
+BUILD_ASSERT((PROP(hw_flow_control) && HW_FLOW_CONTROL_AVAILABLE) ||
+		!PROP(hw_flow_control));
+
+#define RTS_PIN \
+	COND_CODE_1(HAS_PROP(rts_pin), \
+		(PROP(rts_pin)), (NRF_UART_PSEL_DISCONNECTED))
+
+#define CTS_PIN \
+	COND_CODE_1(HAS_PROP(cts_pin), \
+		(PROP(cts_pin)), (NRF_UART_PSEL_DISCONNECTED))
 
 #define IRQN		DT_INST_IRQN(0)
 #define IRQ_PRIO	DT_INST_IRQ(0, priority)
@@ -49,21 +57,9 @@ struct uart_nrfx_data {
 	struct uart_config uart_config;
 };
 
-/**
- * @brief Structure for UART configuration.
- */
-struct uart_nrfx_config {
-	bool rts_cts_pins_set;
-};
-
 static inline struct uart_nrfx_data *get_dev_data(struct device *dev)
 {
 	return dev->driver_data;
-}
-
-static inline const struct uart_nrfx_config *get_dev_config(struct device *dev)
-{
-	return dev->config_info;
 }
 
 #ifdef CONFIG_UART_0_ASYNC
@@ -85,8 +81,8 @@ static struct {
 	const uint8_t *volatile tx_buffer;
 	size_t tx_buffer_length;
 	volatile size_t tx_counter;
-#if HW_FLOW_CONTROL
-	int32_t tx_timeout;
+#if HW_FLOW_CONTROL_AVAILABLE
+	s32_t tx_timeout;
 	struct k_delayed_work tx_timeout_work;
 #endif
 } uart0_cb;
@@ -347,7 +343,7 @@ static int uart_nrfx_configure(struct device *dev,
 		uart_cfg.hwfc = NRF_UART_HWFC_DISABLED;
 		break;
 	case UART_CFG_FLOW_CTRL_RTS_CTS:
-		if (get_dev_config(dev)->rts_cts_pins_set) {
+		if (HW_FLOW_CONTROL_AVAILABLE) {
 			uart_cfg.hwfc = NRF_UART_HWFC_ENABLED;
 		} else {
 			return -ENOTSUP;
@@ -423,7 +419,7 @@ static int uart_nrfx_tx(struct device *dev, const uint8_t *buf, size_t len,
 	}
 
 	uart0_cb.tx_buffer = buf;
-#if	HW_FLOW_CONTROL
+#if	HW_FLOW_CONTROL_AVAILABLE
 	uart0_cb.tx_timeout = timeout;
 #endif
 	nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_TXDRDY);
@@ -442,7 +438,7 @@ static int uart_nrfx_tx_abort(struct device *dev)
 	if (uart0_cb.tx_buffer_length == 0) {
 		return -EINVAL;
 	}
-#if	HW_FLOW_CONTROL
+#if	HW_FLOW_CONTROL_AVAILABLE
 	if (uart0_cb.tx_timeout != SYS_FOREVER_MS) {
 		k_delayed_work_cancel(&uart0_cb.tx_timeout_work);
 	}
@@ -621,7 +617,7 @@ static void tx_isr(void)
 	uart0_cb.tx_counter++;
 	if (uart0_cb.tx_counter < uart0_cb.tx_buffer_length &&
 	    !uart0_cb.tx_abort) {
-#if	HW_FLOW_CONTROL
+#if	HW_FLOW_CONTROL_AVAILABLE
 		if (uart0_cb.tx_timeout != SYS_FOREVER_MS) {
 			k_delayed_work_submit(&uart0_cb.tx_timeout_work,
 					      K_MSEC(uart0_cb.tx_timeout));
@@ -633,7 +629,7 @@ static void tx_isr(void)
 
 		nrf_uart_txd_set(uart0_addr, txd);
 	} else {
-#if	HW_FLOW_CONTROL
+#if	HW_FLOW_CONTROL_AVAILABLE
 
 		if (uart0_cb.tx_timeout != SYS_FOREVER_MS) {
 			k_delayed_work_cancel(&uart0_cb.tx_timeout_work);
@@ -736,7 +732,7 @@ static void rx_timeout(struct k_work *work)
 	rx_rdy_evt();
 }
 
-#if	HW_FLOW_CONTROL
+#if HW_FLOW_CONTROL_AVAILABLE
 static void tx_timeout(struct k_work *work)
 {
 	struct uart_event evt;
@@ -958,17 +954,20 @@ static int uart_nrfx_init(struct device *dev)
 	}
 
 	nrf_uart_txrx_pins_set(uart0_addr, TX_PIN, RX_PIN);
-#if	HW_FLOW_CONTROL
-	/* Setting default height state of the RTS PIN to avoid glitches
-	 * on the line during peripheral activation/deactivation.
-	 */
-	nrf_gpio_pin_write(RTS_PIN, 1);
-	nrf_gpio_cfg_output(RTS_PIN);
 
-	nrf_gpio_cfg_input(CTS_PIN, NRF_GPIO_PIN_NOPULL);
+	if (HAS_PROP(rts_pin)) {
+		/* Setting default height state of the RTS PIN to avoid glitches
+		 * on the line during peripheral activation/deactivation.
+		 */
+		nrf_gpio_pin_write(RTS_PIN, 1);
+		nrf_gpio_cfg_output(RTS_PIN);
+	}
+
+	if (HAS_PROP(cts_pin)) {
+		nrf_gpio_cfg_input(CTS_PIN, NRF_GPIO_PIN_NOPULL);
+	}
 
 	nrf_uart_hwfc_pins_set(uart0_addr, RTS_PIN, CTS_PIN);
-#endif
 
 	/* Set initial configuration */
 	err = uart_nrfx_configure(dev, &get_dev_data(dev)->uart_config);
@@ -1007,7 +1006,7 @@ static int uart_nrfx_init(struct device *dev)
 
 #ifdef CONFIG_UART_0_ASYNC
 	k_delayed_work_init(&uart0_cb.rx_timeout_work, rx_timeout);
-#if	HW_FLOW_CONTROL
+#if HW_FLOW_CONTROL_AVAILABLE
 	k_delayed_work_init(&uart0_cb.tx_timeout_work, tx_timeout);
 #endif
 #endif
@@ -1069,9 +1068,11 @@ static void uart_nrfx_pins_enable(struct device *dev, bool enable)
 			nrf_gpio_cfg_input(rx_pin, NRF_GPIO_PIN_NOPULL);
 		}
 
-		if (get_dev_config(dev)->rts_cts_pins_set) {
+		if (HAS_PROP(rts_pin)) {
 			nrf_gpio_pin_write(rts_pin, 1);
 			nrf_gpio_cfg_output(rts_pin);
+		}
+		if (HAS_PROP(cts_pin)) {
 			nrf_gpio_cfg_input(cts_pin,
 					   NRF_GPIO_PIN_NOPULL);
 		}
@@ -1080,9 +1081,13 @@ static void uart_nrfx_pins_enable(struct device *dev, bool enable)
 		if (RX_PIN_USED) {
 			nrf_gpio_cfg_default(rx_pin);
 		}
-		if (get_dev_config(dev)->rts_cts_pins_set) {
-			nrf_gpio_cfg_default(cts_pin);
+
+		if (HAS_PROP(rts_pin)) {
 			nrf_gpio_cfg_default(rts_pin);
+		}
+
+		if (HAS_PROP(cts_pin)) {
+			nrf_gpio_cfg_default(cts_pin);
 		}
 	}
 }
@@ -1140,16 +1145,9 @@ static struct uart_nrfx_data uart_nrfx_uart0_data = {
 #else
 		.parity    = UART_CFG_PARITY_NONE,
 #endif /* CONFIG_UART_0_NRF_PARITY_BIT */
-#ifdef CONFIG_UART_0_NRF_FLOW_CONTROL
-		.flow_ctrl = UART_CFG_FLOW_CTRL_RTS_CTS,
-#else
-		.flow_ctrl = UART_CFG_FLOW_CTRL_NONE,
-#endif /* CONFIG_UART_0_NRF_FLOW_CONTROL */
+		.flow_ctrl = PROP(hw_flow_control) ?
+			UART_CFG_FLOW_CTRL_RTS_CTS : UART_CFG_FLOW_CTRL_NONE,
 	}
-};
-
-static const struct uart_nrfx_config uart_nrfx_uart0_config = {
-	.rts_cts_pins_set = HW_FLOW_CONTROL,
 };
 
 DEVICE_DEFINE(uart_nrfx_uart0,
@@ -1157,7 +1155,7 @@ DEVICE_DEFINE(uart_nrfx_uart0,
 	      uart_nrfx_init,
 	      uart_nrfx_pm_control,
 	      &uart_nrfx_uart0_data,
-	      &uart_nrfx_uart0_config,
+	      NULL,
 	      /* Initialize UART device before UART console. */
 	      PRE_KERNEL_1,
 	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
