@@ -33,6 +33,24 @@ static inline int z_vrfy_led_set_brightness(struct device *dev, uint32_t led,
 }
 #include <syscalls/led_set_brightness_mrsh.c>
 
+static inline int
+z_vrfy_led_write_channels(struct device *dev, uint32_t start_channel,
+			  uint32_t num_channels, const uint8_t *buf)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_LED));
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(buf, num_channels));
+	return z_impl_led_write_channels(dev, start_channel, num_channels, buf);
+}
+#include <syscalls/led_write_channels_mrsh.c>
+
+static inline int z_vrfy_led_set_channel(struct device *dev,
+					 uint32_t channel, uint8_t value)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_LED));
+	return z_impl_led_set_channel(dev, channel, value);
+}
+#include <syscalls/led_set_channel_mrsh.c>
+
 static inline int z_impl_led_set_color(struct device *dev, uint32_t led,
 				       uint8_t num_colors, const uint8_t *color)
 {
