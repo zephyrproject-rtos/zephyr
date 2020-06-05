@@ -233,7 +233,7 @@ void system_thread_bench(void)
 		(uint32_t) (CYCLES_TO_NS(tick_overhead_cycles)));
 
 	/*thread creation*/
-	PRINT_STATS("Thread Creation",
+	PRINT_STATS("Thread creation",
 		(uint32_t)((thread_create_end_time - thread_create_start_time) &
 			   0xFFFFFFFFULL),
 		(uint32_t) ((total_thread_create_time) & 0xFFFFFFFFULL));
@@ -251,13 +251,13 @@ void system_thread_bench(void)
 		(uint32_t) (total_thread_abort_time  & 0xFFFFFFFFULL));
 
 	/*thread suspend*/
-	PRINT_STATS("Thread Suspend",
+	PRINT_STATS("Thread suspend",
 		(uint32_t)((thread_suspend_end_time - thread_suspend_start_time) &
 			   0xFFFFFFFFULL),
 		(uint32_t) (total_thread_suspend_time  & 0xFFFFFFFFULL));
 
 	/*thread resume*/
-	PRINT_STATS("Thread Resume",
+	PRINT_STATS("Thread resume",
 		(uint32_t)((thread_resume_end_time - thread_suspend_end_time)
 			   & 0xFFFFFFFFULL),
 		(uint32_t) (total_thread_resume_time  & 0xFFFFFFFFULL));
@@ -315,10 +315,10 @@ void heap_malloc_free_bench(void)
 		sum_free += heap_free_end_time - heap_free_start_time;
 	}
 
-	PRINT_STATS("Heap Malloc",
+	PRINT_STATS("Heap malloc",
 		(uint32_t)((sum_malloc / count) & 0xFFFFFFFFULL),
 		(uint32_t)(CYCLES_TO_NS(sum_malloc / count)));
-	PRINT_STATS("Heap Free",
+	PRINT_STATS("Heap free",
 		(uint32_t)((sum_free / count) & 0xFFFFFFFFULL),
 		(uint32_t)(CYCLES_TO_NS(sum_free / count)));
 

@@ -148,7 +148,7 @@ void user_thread_creation(void)
 
 	total_user_thread_creation_time = CYCLES_TO_NS(total_cycles);
 
-	PRINT_STATS("User thread Creation",
+	PRINT_STATS("User thread creation",
 		    total_cycles,
 		    (uint32_t) (total_user_thread_creation_time  & 0xFFFFFFFFULL));
 
@@ -272,12 +272,12 @@ void validation_overhead(void)
 	uint32_t  total_validation_overhead_obj_time =
 		CYCLES_TO_NS(total_cycles_obj);
 
-	PRINT_STATS("Validation overhead k object init",
+	PRINT_STATS("Validation overhead k_object init",
 		    total_cycles_obj_init,
 		    (uint32_t) (total_validation_overhead_obj_init_time  &
 			     0xFFFFFFFFULL));
 
-	PRINT_STATS("Validation overhead k object permission",
+	PRINT_STATS("Validation overhead k_object permission",
 		    total_cycles_obj,
 		    (uint32_t) (total_validation_overhead_obj_time  &
 			     0xFFFFFFFFULL));
