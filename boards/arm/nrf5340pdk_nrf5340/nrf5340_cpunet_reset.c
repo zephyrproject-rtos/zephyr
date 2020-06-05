@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Nordic Semiconductor ASA.
+ * Copyright (c) 2019-2020 Nordic Semiconductor ASA.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +27,12 @@ LOG_MODULE_REGISTER(nrf5340pdk_nrf5340_cpuapp, CONFIG_LOG_DEFAULT_LEVEL);
 #define CPUNET_UARTE_PIN_RTS 10
 #define CPUNET_UARTE_PIN_CTS 12
 
+#if defined(CONFIG_BT_CTLR_DEBUG_PINS_CPUAPP)
+#include <../subsys/bluetooth/controller/ll_sw/nordic/hal/nrf5/debug.h>
+#else
+#define DEBUG_SETUP()
+#endif
+
 static void remoteproc_mgr_config(void)
 {
 	/* UARTE */
@@ -41,6 +47,9 @@ static void remoteproc_mgr_config(void)
 	GPIO_PIN_CNF_MCUSEL_NetworkMCU << GPIO_PIN_CNF_MCUSEL_Pos;
 	NRF_P0->PIN_CNF[CPUNET_UARTE_PIN_CTS] =
 	GPIO_PIN_CNF_MCUSEL_NetworkMCU << GPIO_PIN_CNF_MCUSEL_Pos;
+
+	/* Route Bluetooth Controller Debug Pins */
+	DEBUG_SETUP();
 
 	/* Retain nRF5340 Network MCU in Secure domain (bus
 	 * accesses by Network MCU will have Secure attribute set).
