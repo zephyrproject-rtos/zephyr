@@ -21,8 +21,7 @@
 #include <autoconf.h>
 #include <stm32mp1xx.h>
 
-/* Add include for DTS generated information */
-#include <devicetree.h>
+#include <st_stm32_dt.h>
 
 #include <stm32mp1xx_ll_hsem.h>
 

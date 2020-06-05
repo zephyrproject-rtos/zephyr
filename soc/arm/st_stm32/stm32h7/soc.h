@@ -15,7 +15,7 @@
 #include <stm32h7xx.h>
 
 /* Add include for DTS generated information */
-#include <devicetree.h>
+#include <st_stm32_dt.h>
 
 #ifdef CONFIG_STM32H7_DUAL_CORE
 #include <stm32h7xx_ll_hsem.h>

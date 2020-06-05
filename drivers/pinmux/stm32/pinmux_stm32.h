@@ -21,6 +21,36 @@
 #endif /* CONFIG_SOC_SERIES_STM32F1X */
 #include "pinmux/pinmux.h"
 
+/**
+ * @brief structure to convey pinctrl information for stm32 soc
+ * value
+ */
+struct soc_gpio_pinctrl {
+	uint32_t pinmux;
+	uint32_t pincfg;
+};
+
+/**
+ * @brief helper to extract IO port number from STM32_PINMUX() encoded
+ * value
+ */
+#define STM32_DT_PINMUX_PORT(__pin) \
+	(((__pin) >> 12) & 0xf)
+
+/**
+ * @brief helper to extract IO pin number from STM32_PINMUX() encoded
+ * value
+ */
+#define STM32_DT_PINMUX_LINE(__pin) \
+	(((__pin) >> 8) & 0xf)
+
+/**
+ * @brief helper to extract IO pin func from STM32_PINMUX() encoded
+ * value
+ */
+#define STM32_DT_PINMUX_FUNC(__pin) \
+	((__pin) & 0xff)
+
 
 /* pretend that array will cover pin functions */
 typedef int stm32_pin_func_t;
@@ -94,6 +124,18 @@ int z_pinmux_stm32_set(uint32_t pin, uint32_t func,
  */
 void stm32_setup_pins(const struct pin_config *pinconf,
 		      size_t pins);
+
+/**
+ * @brief helper for converting dt stm32 pinctrl format to existing pin config
+ *        format
+ *
+ * @param *pinctrl pointer to soc_gpio_pinctrl list
+ * @param list_size provided list size
+ *
+ */
+void stm32_dt_pinctrl_configure(const struct soc_gpio_pinctrl *pinctrl,
+				size_t list_size);
+
 
 /* common pinmux device name for all STM32 chips */
 #define STM32_PINMUX_NAME "stm32-pinmux"
