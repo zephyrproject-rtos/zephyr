@@ -88,7 +88,8 @@ if [ -n "$MAIN_CI" ]; then
         pushd ..
 	if [ ! -d .west ]; then
 		west init -l zephyr
-		west update
+		west update 1> west.update.log
+		west forall -c 'git reset --hard HEAD'
 	fi
         popd
 
@@ -285,6 +286,8 @@ if [ -n "$MAIN_CI" ]; then
 
 	# Save list of tests to be run
 	${SANITYCHECK} ${SANITYCHECK_OPTIONS} --save-tests test_file.txt || exit 1
+
+	echo "+++ run sanitycheck"
 
 	# Run a subset of tests based on matrix size
 	${SANITYCHECK} ${SANITYCHECK_OPTIONS} --load-tests test_file.txt \
