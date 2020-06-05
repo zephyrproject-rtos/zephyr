@@ -27,9 +27,6 @@ config BT_CTLR
 
 if MODEM
 
-config UART_1_NRF_FLOW_CONTROL
-	default y
-
 config MODEM_UBLOX_SARA
 	default y
 
