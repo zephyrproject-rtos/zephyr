@@ -16,6 +16,15 @@ static inline int z_vrfy_led_blink(struct device *dev, uint32_t led,
 }
 #include <syscalls/led_blink_mrsh.c>
 
+static inline int z_vrfy_led_get_info(struct device *dev, uint32_t led,
+				      const struct led_info **info)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_LED));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(info, sizeof(*info)));
+	return z_impl_led_get_info(dev, led, info);
+}
+#include <syscalls/led_get_info_mrsh.c>
+
 static inline int z_vrfy_led_set_brightness(struct device *dev, uint32_t led,
 				     uint8_t value)
 {
