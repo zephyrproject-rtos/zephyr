@@ -92,7 +92,6 @@ struct usb_test_config {
 #define DEFINE_TEST_CFG_DATA(x, _)				\
 	USBD_CFG_DATA_DEFINE(primary, test_##x)			\
 	struct usb_cfg_data test_config_##x = {			\
-	.usb_device_description = NULL,				\
 	.interface_config = interface_config,			\
 	.interface_descriptor = &test_cfg_##x.if0,		\
 	.cb_usb_status = NULL,					\

@@ -579,8 +579,7 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 		 */
 
 		/* Set the DFU mode descriptors to be used after reset */
-		dfu_config.usb_device_description = (uint8_t *) &dfu_mode_desc;
-		if (usb_set_config(dfu_config.usb_device_description) != 0) {
+		if (usb_set_config((uint8_t *)&dfu_mode_desc) != 0) {
 			LOG_ERR("usb_set_config failed in DFU_DETACH");
 			return -EIO;
 		}
@@ -707,7 +706,6 @@ static void dfu_interface_config(struct usb_desc_header *head,
 
 /* Configuration of the DFU Device send to the USB Driver */
 USBD_CFG_DATA_DEFINE(primary, dfu) struct usb_cfg_data dfu_config = {
-	.usb_device_description = NULL,
 	.interface_config = dfu_interface_config,
 	.interface_descriptor = &dfu_cfg.if0,
 	.cb_usb_status = dfu_status_cb,
@@ -723,7 +721,6 @@ USBD_CFG_DATA_DEFINE(primary, dfu) struct usb_cfg_data dfu_config = {
  * which is an alternative (secondary) device descriptor.
  */
 USBD_CFG_DATA_DEFINE(secondary, dfu) struct usb_cfg_data dfu_mode_config = {
-	.usb_device_description = NULL,
 	.interface_config = NULL,
 	.interface_descriptor = &dfu_mode_desc.sec_dfu_cfg.if0,
 	.cb_usb_status = dfu_status_cb,

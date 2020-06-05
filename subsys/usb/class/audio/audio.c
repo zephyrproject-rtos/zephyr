@@ -923,7 +923,6 @@ void usb_audio_register(struct device *dev,
 #define DEFINE_AUDIO_DEVICE(dev, i)					  \
 	USBD_CFG_DATA_DEFINE(primary, audio)				  \
 	struct usb_cfg_data dev##_audio_config_##i = {			  \
-		.usb_device_description	= NULL,				  \
 		.interface_config = audio_interface_config,		  \
 		.interface_descriptor = &dev##_desc_##i.std_ac_interface, \
 		.cb_usb_status = audio_cb_usb_status,			  \

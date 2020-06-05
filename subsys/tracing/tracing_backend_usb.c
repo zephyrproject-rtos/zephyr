@@ -125,7 +125,6 @@ static struct usb_ep_cfg_data ep_cfg[] = {
 
 USBD_CFG_DATA_DEFINE(primary, tracing_backend_usb)
 	struct usb_cfg_data tracing_backend_usb_config = {
-	.usb_device_description = NULL,
 	.interface_descriptor = &dev_desc.if0,
 	.cb_usb_status = dev_status_cb,
 	.interface = {
