@@ -73,7 +73,7 @@ __subsystem struct led_driver_api {
  * This routine starts blinking an LED forever with the given time period
  *
  * @param dev LED device
- * @param led LED channel/pin
+ * @param led LED number
  * @param delay_on Time period (in milliseconds) an LED should be ON
  * @param delay_off Time period (in milliseconds) an LED should be OFF
  * @return 0 on success, negative on error
@@ -97,7 +97,7 @@ static inline int z_impl_led_blink(struct device *dev, uint32_t led,
  * Calling this function after led_blink() won't affect blinking.
  *
  * @param dev LED device
- * @param led LED channel/pin
+ * @param led LED number
  * @param value Brightness value to set in percent
  * @return 0 on success, negative on error
  */
@@ -119,7 +119,7 @@ static inline int z_impl_led_set_brightness(struct device *dev, uint32_t led,
  * This routine turns on an LED
  *
  * @param dev LED device
- * @param led LED channel/pin
+ * @param led LED number
  * @return 0 on success, negative on error
  */
 __syscall int led_on(struct device *dev, uint32_t led);
@@ -138,7 +138,7 @@ static inline int z_impl_led_on(struct device *dev, uint32_t led)
  * This routine turns off an LED
  *
  * @param dev LED device
- * @param led LED channel/pin
+ * @param led LED number
  * @return 0 on success, negative on error
  */
 __syscall int led_off(struct device *dev, uint32_t led);
