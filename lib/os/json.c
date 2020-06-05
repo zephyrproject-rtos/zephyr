@@ -865,6 +865,15 @@ int json_obj_encode(const struct json_obj_descr *descr, size_t descr_len,
 	return append_bytes("}", 1, data);
 }
 
+int json_arr_encode(const struct json_obj_descr *descr, const void *val,
+		    json_append_bytes_t append_bytes, void *data)
+{
+	void *ptr = (char *)val + descr->offset;
+
+	return arr_encode(descr->array.element_descr, ptr, val, append_bytes,
+			  data);
+}
+
 struct appender {
 	char *buffer;
 	size_t used;
@@ -893,6 +902,14 @@ int json_obj_encode_buf(const struct json_obj_descr *descr, size_t descr_len,
 
 	return json_obj_encode(descr, descr_len, val, append_bytes_to_buf,
 			       &appender);
+}
+
+int json_arr_encode_buf(const struct json_obj_descr *descr, const void *val,
+			char *buffer, size_t buf_size)
+{
+	struct appender appender = { .buffer = buffer, .size = buf_size };
+
+	return json_arr_encode(descr, val, append_bytes_to_buf, &appender);
 }
 
 static int measure_bytes(const char *bytes, size_t len, void *data)
