@@ -9,11 +9,14 @@ choice
 
 config SOC_STM32L053XX
 	bool "STM32L053XX"
+	select CPU_HAS_ARM_MPU
 
 config SOC_STM32L072XX
 	bool "STM32L072XX"
+	select CPU_HAS_ARM_MPU
 
 config SOC_STM32L073XX
 	bool "STM32L073XX"
+	select CPU_HAS_ARM_MPU
 
 endchoice
