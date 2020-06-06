@@ -1,0 +1,27 @@
+# Copyright (c) 2018 Foundries.io Ltd
+# Copyright (c) 2020 Karsten Koenig
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# The OpenISA RV32M1 SoC directory in arm supports the ARM Cortex
+# cores on OpenISA RV32M1 SoCs.
+#
+# The Zephyr "soc" abstraction isn't a great fit here. These SoCs (in
+# the strict physical sense of "systems on chip") also contain RISC-V
+# cores, so this type of "soc" doesn't really belong to a single "arch".
+#
+# However, due to constraints imposed by Zephyr's file hierarchy
+# conventions, those "other" cores are supported under a different soc
+# subdirectory, soc/riscv32 instead of soc/arm.
+
+choice
+	prompt "OpenISA RV32M1 ARM Core Selection"
+	depends on SOC_OPENISA_RV32M1_ARM
+
+config SOC_OPENISA_RV32M1_M4
+	bool "OpenISA RV32M1 M4 core"
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_HAS_FPU
+
+endchoice

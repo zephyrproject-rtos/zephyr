@@ -1,0 +1,123 @@
+/*
+ * Copyright (c) 2018 Foundries.io Ltd
+ * Copyright (c) 2020 Karsten Koenig
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <arm/rv32m1/rv32m1_cortex.dtsi>
+
+/ {
+	aliases {
+		system-lptmr = &lptmr0;
+	};
+
+	cpus {
+		/delete-node/ cpu@1;
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
+
+&lptmr0 {
+	interrupts = <29 1>;
+};
+
+&lptmr1 {
+	interrupts = <30 1>;
+};
+
+&lptmr2 {
+	interrupts = <59 1>;
+};
+
+&gpioa {
+	interrupts = <48 1>;
+};
+
+&gpiob {
+	interrupts = <49 1>;
+};
+
+&gpioc {
+	interrupts = <50 1>;
+};
+
+&gpiod {
+	interrupts = <51 1>;
+};
+
+&gpioe {
+	interrupts = <64 1>;
+};
+
+&lpuart0 {
+	interrupts = <44 1>;
+};
+
+&lpuart1 {
+	interrupts = <45 1>;
+};
+
+&lpuart2 {
+	interrupts = <46 1>;
+};
+
+&lpuart3 {
+	interrupts = <63 1>;
+};
+
+&lpi2c0 {
+	interrupts = <36 1>;
+};
+
+&lpi2c1 {
+	interrupts = <37 1>;
+};
+
+&lpi2c2 {
+	interrupts = <38 1>;
+};
+
+&lpi2c3 {
+	interrupts = <61 1>;
+};
+
+&lpspi0 {
+	interrupts = <41 1>;
+};
+
+&lpspi1 {
+	interrupts = <42 1>;
+};
+
+&lpspi2 {
+	interrupts = <43 1>;
+};
+
+&lpspi3 {
+	interrupts = <62 1>;
+};
+
+&tpm0 {
+	interrupts = <31 1>;
+};
+
+&tpm1 {
+	interrupts = <32 1>;
+};
+
+&tpm2 {
+	interrupts = <33 1>;
+};
+
+&tpm3 {
+	interrupts = <60 1>;
+};
+
+&trng {
+	interrupts = <57 1>;
+};
+

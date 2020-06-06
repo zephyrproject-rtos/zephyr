@@ -1,0 +1,13 @@
+# Copyright (c) 2020 Karsten Koenig
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_RV32M1_VEGA_CORTEX
+
+config BOARD
+	default "rv32m1_vega_cortex_m4" if SOC_OPENISA_RV32M1_M4
+
+config UART_RV32M1_LPUART
+	default y
+	depends on SERIAL
+
+endif # BOARD_RV32M1_VEGA

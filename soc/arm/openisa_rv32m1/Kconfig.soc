@@ -1,0 +1,23 @@
+# Copyright (c) 2018 Foundries.io Ltd
+# Copyright (c) 2020 Karsten Koenig
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_OPENISA_RV32M1_ARM
+	bool "OpenISA RV32M1 ARM cores"
+	# The following select is due to limitations in the linker script.
+	# (We can't make it a 'depends on' without causing a dependency loop).
+	select XIP
+	select SOC_OPENISA_RV32M1
+	select HAS_RV32M1_LPUART
+	select HAS_RV32M1_LPI2C
+	select HAS_RV32M1_LPSPI
+	select HAS_RV32M1_TPM
+	select VEGA_SDK_HAL
+	select CLOCK_CONTROL
+	select HAS_RV32M1_FTFX
+
+	help
+	  Enable support for OpenISA RV32M1 ARM processors. Choose
+	  this option to target the Cortex-M4 or Cortex-M0+ core. This
+	  option should not be used to target either RISC-V core.

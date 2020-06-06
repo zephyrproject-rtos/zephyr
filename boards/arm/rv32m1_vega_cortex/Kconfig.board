@@ -1,0 +1,6 @@
+# Copyright (c) 2020 Karsten Koenig
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RV32M1_VEGA_CORTEX
+	bool "RV32M1 ARM cores"
+	depends on SOC_OPENISA_RV32M1_ARM
