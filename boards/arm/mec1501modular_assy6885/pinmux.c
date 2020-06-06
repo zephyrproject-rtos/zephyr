@@ -149,13 +149,15 @@ static int board_pinmux_init(struct device *dev)
 				MCHP_ECS_DCTRL_MODE_SWD);
 
 	/* Configure pins that are not GPIOS by default */
+#ifdef CONFIG_SOC_MEC1501_VCI_PINS_AS_GPIOS
 	pinmux_pin_set(porta, MCHP_GPIO_000, MCHP_GPIO_CTRL_MUX_F0);
 	pinmux_pin_set(portd, MCHP_GPIO_161, MCHP_GPIO_CTRL_MUX_F0);
 	pinmux_pin_set(portd, MCHP_GPIO_162, MCHP_GPIO_CTRL_MUX_F0);
 	pinmux_pin_set(portd, MCHP_GPIO_163, MCHP_GPIO_CTRL_MUX_F0);
-	pinmux_pin_set(portd, MCHP_GPIO_170, MCHP_GPIO_CTRL_MUX_F0);
 	pinmux_pin_set(portd, MCHP_GPIO_172, MCHP_GPIO_CTRL_MUX_F0);
 	pinmux_pin_set(portf, MCHP_GPIO_250, MCHP_GPIO_CTRL_MUX_F0);
+#endif
+	pinmux_pin_set(portd, MCHP_GPIO_170, MCHP_GPIO_CTRL_MUX_F0);
 
 	/* See table 2-4 from the data sheet for pin multiplexing*/
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart1), okay)
