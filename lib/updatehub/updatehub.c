@@ -624,6 +624,7 @@ static void probe_cb(char *metadata, size_t metadata_size)
 		return;
 	}
 
+	memset(metadata, 0, metadata_size);
 	memcpy(metadata, reply.data + reply.offset,
 	       reply.max_len - reply.offset);
 
