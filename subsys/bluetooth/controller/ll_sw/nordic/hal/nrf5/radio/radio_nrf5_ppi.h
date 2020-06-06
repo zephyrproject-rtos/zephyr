@@ -738,9 +738,19 @@ static inline void hal_radio_enable_on_tick_ppi_config_and_enable(uint8_t trx)
 	if (trx) {
 		HAL_RADIO_ENABLE_ON_TICK_PPI_REGISTER_TASK_TX =
 			HAL_RADIO_ENABLE_ON_TICK_PPI_TASK_TX_SET;
+
+		/* Address nRF5340 Engineering A Errata 16 */
+		if (IS_ENABLED(CONFIG_BT_CTLR_TIFS_HW)) {
+			HAL_RADIO_ENABLE_ON_TICK_PPI_REGISTER_TASK_RX = 0;
+		}
 	} else {
 		HAL_RADIO_ENABLE_ON_TICK_PPI_REGISTER_TASK_RX =
 			HAL_RADIO_ENABLE_ON_TICK_PPI_TASK_RX_SET;
+
+		/* Address nRF5340 Engineering A Errata 16 */
+		if (IS_ENABLED(CONFIG_BT_CTLR_TIFS_HW)) {
+			HAL_RADIO_ENABLE_ON_TICK_PPI_REGISTER_TASK_TX = 0;
+		}
 	}
 
 	nrf_dppi_channels_enable(
@@ -1380,6 +1390,10 @@ static inline void hal_radio_sw_switch_ppi_group_setup(void)
 		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_1_INCLUDE ==
 			HAL_SW_SWITCH_RADIO_ENABLE_PPI_1_INCLUDE,
 		"Radio enable and Group disable not on the same PPI channel.");
+
+	/* Address nRF5340 Engineering A Errata 16 */
+	HAL_RADIO_ENABLE_ON_TICK_PPI_REGISTER_TASK_TX = 0;
+	HAL_RADIO_ENABLE_ON_TICK_PPI_REGISTER_TASK_RX = 0;
 }
 
 static inline void hal_radio_group_task_disable_ppi_setup(void)
