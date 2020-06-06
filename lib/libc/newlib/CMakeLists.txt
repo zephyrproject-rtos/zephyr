@@ -3,6 +3,8 @@
 zephyr_library()
 zephyr_library_sources(libc-hooks.c)
 
+zephyr_library_sources_ifdef(CONFIG_ASSERT assert.c)
+
 # Zephyr normally uses -ffreestanding, which with current GNU toolchains
 # means that the flag macros used by newlib 3.x <inttypes.h> to signal
 # support for PRI.64 macros are not present.  To make them available we
@@ -47,4 +49,3 @@ if(CONFIG_NEWLIB_LIBC_NANO)
     -specs=nano.specs
     )
 endif()
-
