@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <device.h>
 #include <drivers/pinmux.h>
+#include <soc.h>
 
 #include <fsl_common.h>
 #include <fsl_clock.h>

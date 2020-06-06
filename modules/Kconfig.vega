@@ -1,9 +1,14 @@
 # Copyright (c) 2018 Foundries.io
 # SPDX-License-Identifier: Apache-2.0
 
+config SOC_OPENISA_RV32M1
+	bool "OpenISA RV32M1 core"
+	help
+	  Basic OpenISA RV32M1 support.
+
 config VEGA_SDK_HAL
 	bool "RV32M1 VEGA SDK support"
-	depends on SOC_OPENISA_RV32M1_RISCV32
+	depends on SOC_OPENISA_RV32M1
 
 config HAS_RV32M1_LPUART
 	bool

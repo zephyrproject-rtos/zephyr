@@ -82,7 +82,7 @@ endif()
 
 if(CONFIG_SOC_COMPATIBLE_NRF)
   include(ll_sw/nrf.cmake)
-elseif(CONFIG_SOC_OPENISA_RV32M1_RISCV32)
+elseif(CONFIG_SOC_OPENISA_RV32M1)
   include(ll_sw/openisa.cmake)
 endif()
 

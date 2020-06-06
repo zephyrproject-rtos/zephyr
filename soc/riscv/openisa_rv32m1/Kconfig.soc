@@ -7,6 +7,7 @@ config SOC_OPENISA_RV32M1_RISCV32
 	# The following select is due to limitations in the linker script.
 	# (We can't make it a 'depends on' without causing a dependency loop).
 	select XIP
+	select SOC_OPENISA_RV32M1
 	select HAS_RV32M1_LPUART
 	select HAS_RV32M1_LPI2C
 	select HAS_RV32M1_LPSPI
