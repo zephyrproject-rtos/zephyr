@@ -21,6 +21,12 @@ config PWM_SHELL
 	help
 	  Enable the PWM related shell commands.
 
+config PWM_CAPTURE
+	bool "Provide API for PWM capture"
+	help
+	  This option extends the Zephyr PWM API with the ability to capture PWM
+	  period/pulse widths.
+
 source "drivers/pwm/Kconfig.pca9685"
 
 source "drivers/pwm/Kconfig.dw"
