@@ -22,4 +22,5 @@ zephyr_library_sources_ifdef(CONFIG_PWM_NPCX		pwm_npcx.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_XLNX_AXI_TIMER	pwm_xlnx_axi_timer.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE   pwm_handlers.c)
+zephyr_library_sources_ifdef(CONFIG_PWM_CAPTURE pwm_capture.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_SHELL   pwm_shell.c)
