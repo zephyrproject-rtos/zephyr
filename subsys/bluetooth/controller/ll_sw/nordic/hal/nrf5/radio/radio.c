@@ -304,10 +304,7 @@ void radio_tx_enable(void)
 void radio_disable(void)
 {
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
-	hal_radio_nrf_ppi_channels_disable(BIT(HAL_SW_SWITCH_TIMER_CLEAR_PPI) |
-				 BIT(HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI));
-	hal_radio_nrf_ppi_group_disable(SW_SWITCH_TIMER_TASK_GROUP(0));
-	hal_radio_nrf_ppi_group_disable(SW_SWITCH_TIMER_TASK_GROUP(1));
+	hal_radio_sw_switch_cleanup();
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 	NRF_RADIO->SHORTS = 0;

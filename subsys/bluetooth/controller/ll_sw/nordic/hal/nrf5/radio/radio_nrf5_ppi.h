@@ -19,11 +19,6 @@ static inline void hal_radio_nrf_ppi_channels_disable(uint32_t mask)
 	nrf_ppi_channels_disable(NRF_PPI, mask);
 }
 
-static inline void hal_radio_nrf_ppi_group_disable(uint32_t group)
-{
-	nrf_ppi_group_disable(NRF_PPI, group);
-}
-
 /*******************************************************************************
  * Enable Radio on Event Timer tick:
  * wire the EVENT_TIMER EVENTS_COMPARE[0] event to RADIO TASKS_TXEN/RXEN task.
@@ -468,6 +463,13 @@ static inline void hal_radio_sw_switch_disable(void)
 		BIT(HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI));
 }
 
+static inline void hal_radio_sw_switch_cleanup(void)
+{
+	hal_radio_sw_switch_disable();
+	nrf_ppi_group_disable(NRF_PPI, SW_SWITCH_TIMER_TASK_GROUP(0));
+	nrf_ppi_group_disable(NRF_PPI, SW_SWITCH_TIMER_TASK_GROUP(1));
+}
+
 #if defined(CONFIG_BT_CTLR_PHY_CODED) && \
 	defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
 /* The 2 adjacent TIMER EVENTS_COMPARE event offsets used for implementing
@@ -692,11 +694,6 @@ static inline void hal_radio_nrf_ppi_channels_enable(uint32_t mask)
 static inline void hal_radio_nrf_ppi_channels_disable(uint32_t mask)
 {
 	nrf_dppi_channels_disable(NRF_DPPIC, mask);
-}
-
-static inline void hal_radio_nrf_ppi_group_disable(uint32_t group)
-{
-	nrf_dppi_group_disable(NRF_DPPIC, group);
 }
 
 /*******************************************************************************
@@ -1289,6 +1286,15 @@ static inline void hal_radio_sw_switch_disable(void)
 	HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_REGISTER_TASK(1) = 0;
 }
 
+static inline void hal_radio_sw_switch_cleanup(void)
+{
+	hal_radio_sw_switch_disable();
+	nrf_dppi_channels_disable(NRF_DPPIC,
+				  (BIT(HAL_SW_SWITCH_TIMER_CLEAR_PPI) |
+				   BIT(HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI)));
+	nrf_dppi_group_disable(NRF_DPPIC, SW_SWITCH_TIMER_TASK_GROUP(0));
+	nrf_dppi_group_disable(NRF_DPPIC, SW_SWITCH_TIMER_TASK_GROUP(1));
+}
 
 static inline void hal_radio_sw_switch_coded_tx_config_set(uint8_t ppi_en,
 	uint8_t ppi_dis, uint8_t cc_s2, uint8_t group_index)
