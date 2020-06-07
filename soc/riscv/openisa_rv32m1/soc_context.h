@@ -24,12 +24,12 @@
 
 /* Initial saved state. */
 #define SOC_ESF_INIT						\
-	0xdeadbaad,						\
-	0xdeadbaad,						\
-	0xdeadbaad,						\
-	0xdeadbaad,						\
-	0xdeadbaad,						\
-	0xdeadbaad
+	0,						\
+	0,						\
+	0,						\
+	0,						\
+	0,						\
+	0
 
 #endif /* CONFIG_SOC_OPENISA_RV32M1_RI5CY */
 
