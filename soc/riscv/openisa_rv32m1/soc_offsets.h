@@ -13,6 +13,7 @@
 
 #ifdef CONFIG_SOC_OPENISA_RV32M1_RI5CY
 
+#ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 /*
  * Ensure offset macros are available in <offsets.h>.
  *
@@ -28,6 +29,13 @@
 	GEN_OFFSET_SYM(soc_esf_t, lpcount1);			\
 	GEN_ABSOLUTE_SYM(__EVENT_INTPTPENDCLEAR,		\
 			 (uint32_t)&EVENT0->INTPTPENDCLEAR)
+#else
+
+#define GEN_SOC_OFFSET_SYMS()					\
+	GEN_ABSOLUTE_SYM(__EVENT_INTPTPENDCLEAR,		\
+			 (uint32_t)&EVENT0->INTPTPENDCLEAR)
+
+#endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
 
 #endif /* CONFIG_SOC_OPENISA_RV32M1_RI5CY */
 
