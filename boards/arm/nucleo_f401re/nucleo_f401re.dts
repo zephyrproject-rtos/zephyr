@@ -29,6 +29,13 @@
 		};
 	};
 
+	pwmleds {
+		compatible = "pwm-leds";
+		green_pwm_led: green_pwm_led {
+			pwms = <&pwm2 1 0>;
+		};
+	};
+
 	gpio_keys {
 		compatible = "gpio-keys";
 		user_button: button {
@@ -40,6 +47,7 @@
 	aliases {
 		led0 = &green_led_2;
 		sw0 = &user_button;
+		pwm-led0 = &green_pwm_led;
 	};
 };
 
