@@ -21,6 +21,10 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 	struct __esf *stack_init;
 
+#ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
+	const struct soc_esf soc_esf_init = {SOC_ESF_INIT};
+#endif
+
 	z_new_thread_init(thread, stack_memory, stack_size);
 
 	/* Initial stack frame for thread */
@@ -64,6 +68,10 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	stack_init->fp_state = 0;
 #endif
 	stack_init->mepc = (ulong_t)z_thread_entry_wrapper;
+
+#ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
+	stack_init->soc_context = soc_esf_init;
+#endif
 
 	thread->callee_saved.sp = (ulong_t)stack_init;
 }
