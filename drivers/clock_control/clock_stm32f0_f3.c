@@ -30,37 +30,24 @@ void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
 	 */
 	pllinit->PLLMul = ((CONFIG_CLOCK_STM32_PLL_MULTIPLIER - 2)
 					<< RCC_CFGR_PLLMUL_Pos);
-#if defined(RCC_PLLSRC_PREDIV1_SUPPORT)
-	/* PREDIV support is a specific RCC configuration present on */
-	/* following SoCs: STM32F070x6, STM32F070xB and STM32F030xC */
-	/* cf Reference manual for more details */
-#if defined(CONFIG_CLOCK_STM32_PLL_SRC_HSI)
-	pllinit->PLLDiv = LL_RCC_PLLSOURCE_HSI;
-#else
 
-#if defined(CONFIG_CLOCK_STM32_PLL_PREDIV1)
 	/*
-	 * PLL DIV
-	 * 1  -> LL_RCC_PLLSOURCE_HSE_DIV_1  -> 0x00010000
-	 * 2  -> LL_RCC_PLLSOURCE_HSE_DIV_2  -> 0x00010001
-	 * 3  -> LL_RCC_PLLSOURCE_HSE_DIV_3  -> 0x00010002
-	 * ...
-	 * 16 -> LL_RCC_PLLSOURCE_HSE_DIV_16 -> 0x0001000F
-	 */
-	pllinit->PLLDiv = (RCC_CFGR_PLLSRC_HSE_PREDIV |
-					(CONFIG_CLOCK_STM32_PLL_PREDIV1 - 1));
-#endif /* CONFIG_CLOCK_STM32_PLL_PREDIV1 */
-
-#endif /* CONFIG_CLOCK_STM32_PLL_SRC_HSI */
-#else
-	/*
-	 * PLL Prediv
+	 * PLL PREDIV
 	 * 1  -> LL_RCC_PREDIV_DIV_1  -> 0x00000000
 	 * 2  -> LL_RCC_PREDIV_DIV_2  -> 0x00000001
 	 * 3  -> LL_RCC_PREDIV_DIV_3  -> 0x00000002
 	 * ...
 	 * 16 -> LL_RCC_PREDIV_DIV_16 -> 0x0000000F
 	 */
+#if defined(RCC_PLLSRC_PREDIV1_SUPPORT)
+	/*
+	 * PREDIV1 support is a specific RCC configuration present on
+	 * following SoCs: STM32F04xx, STM32F07xx, STM32F09xx,
+	 * STM32F030xC, STM32F302xE, STM32F303xE and STM32F39xx
+	 * cf Reference manual for more details
+	 */
+	pllinit->PLLDiv = CONFIG_CLOCK_STM32_PLL_PREDIV1 - 1;
+#else
 	pllinit->Prediv = CONFIG_CLOCK_STM32_PLL_PREDIV - 1;
 #endif /* RCC_PLLSRC_PREDIV1_SUPPORT */
 }
