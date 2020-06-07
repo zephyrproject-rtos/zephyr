@@ -7,23 +7,25 @@ if SOC_SERIES_STM32F0X || SOC_SERIES_STM32F3X
 
 config CLOCK_STM32_PLL_PREDIV
 	int "PREDIV Prescaler"
+	depends on CLOCK_STM32_SYSCLK_SRC_PLL
 	default 1
 	range 1 16
 	help
-	  PREDIV is PLLSCR clock signal prescaler, allowed values: 1 - 16.
+	  PREDIV is a PLL clock signal prescaler for the HSE output.
+	  It is supported by those parts that do not support PREDIV1.
+	  If configured on a non-supported part, this config will be ignored.
+	  Allowed values: 1 - 16.
 
 config CLOCK_STM32_PLL_PREDIV1
 	int "PREDIV1 Prescaler"
-	depends on CLOCK_STM32_PLL_SRC_HSE
-	depends on SOC_SERIES_STM32F0X
+	depends on CLOCK_STM32_SYSCLK_SRC_PLL
 	default 1
 	range 1 16
 	help
-	  PREDIV is PLLSCR clock signal prescaler, present on STM32F0 SoC having
-	  an HSE Oscillator available like the stm32f04xx, stm32f07xx,
-	  stm32f09xx and stm32f030xc parts. If configured on a non supported
-	  part, the HSI oscillator will be used a default PLL source and this
-	  config will be ignored.
+	  PREDIV1 is a PLL clock signal prescaler for any PLL input.
+	  It is supported by STM32F04xx, STM32F07xx, STM32F09xx, STM32F030xC,
+	  STM32F302xE, STM32F303xE and STM32F39xx parts.
+	  If configured on a non-supported part, this config will be ignored.
 	  Allowed values: 1 - 16.
 
 config CLOCK_STM32_PLL_MULTIPLIER
@@ -32,6 +34,8 @@ config CLOCK_STM32_PLL_MULTIPLIER
 	default 6
 	range 2 16
 	help
-	  PLL multiplier, allowed values: 2-16. PLL output must not exceed 48MHz.
+	  PLL multiplier, allowed values: 2-16.
+	  PLL output must not exceed 48MHz for STM32F0 series
+	  or 72MHz for STM32F3 series.
 
 endif # SOC_SERIES_STM32F0X || SOC_SERIES_STM32F3X
