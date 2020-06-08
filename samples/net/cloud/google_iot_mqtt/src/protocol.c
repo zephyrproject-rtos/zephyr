@@ -249,7 +249,7 @@ void mqtt_startup(char *hostname, int port)
 				err);
 			return;
 		}
-		LOG_INF("DNS resolved for mqtt.googleapis.com:8833");
+		LOG_INF("DNS resolved for mqtt.googleapis.com:8883");
 
 		mqtt_client_init(client);
 
