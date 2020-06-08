@@ -136,7 +136,7 @@ is capable of holding 64 words of data and metadata information.
     struct my_struct ms;
 
     void init_my_struct {
-        ring_buf_init(&ms.rb, sizeof(ms.buffer), ms.buffer);
+        ring_buf_init(&ms.rb, MY_RING_BUF_SIZE, ms.buffer);
         ...
     }
 
