@@ -9,5 +9,8 @@ gitlint
 # helper for developers
 junit2html
 
+# Script used to build firmware images for NXP LPC MCUs.
+lpc_checksum
+
 # used by scripts/gen_cfb_font_header.py - helper script for user
 Pillow
