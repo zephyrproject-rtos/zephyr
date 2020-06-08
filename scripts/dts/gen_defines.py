@@ -84,6 +84,7 @@ def main():
                               f"DT_{node.parent.z_path_id}")
 
             write_child_functions(node)
+            write_dep_info(node)
             write_idents_and_existence(node)
             write_bus(node)
             write_special_props(node)
@@ -144,7 +145,7 @@ DTS input file:
 Directories with bindings:
   {", ".join(map(relativize, edt.bindings_dirs))}
 
-Nodes in dependency order (ordinal and path):
+Node dependency ordering (ordinal and path):
 """
 
     for scc in edt.scc_order():
@@ -167,7 +168,7 @@ def write_node_comment(node):
     s = f"""\
 Devicetree node: {node.path}
 
-Node's generated path identifier: DT_{node.z_path_id}
+Node identifier: DT_{node.z_path_id}
 """
 
     if node.matching_compat:
@@ -175,18 +176,6 @@ Node's generated path identifier: DT_{node.z_path_id}
 Binding (compatible = {node.matching_compat}):
   {relativize(node.binding_path)}
 """
-
-    s += f"\nDependency Ordinal: {node.dep_ordinal}\n"
-
-    if node.depends_on:
-        s += "\nRequires:\n"
-        for dep in node.depends_on:
-            s += f"  {dep.dep_ordinal:<3} {dep.path}\n"
-
-    if node.required_by:
-        s += "\nSupports:\n"
-        for req in node.required_by:
-            s += f"  {req.dep_ordinal:<3} {req.path}\n"
 
     if node.description:
         # Indent description by two spaces
@@ -444,6 +433,31 @@ def write_vanilla_props(node):
             out_dt_define(macro, val)
     else:
         out_comment("(No generic property macros)")
+
+
+def write_dep_info(node):
+    # Write dependency-related information about the node.
+
+    def fmt_dep_list(dep_list):
+        if dep_list:
+            # Sort the list by dependency ordinal for predictability.
+            sorted_list = sorted(dep_list, key=lambda node: node.dep_ordinal)
+            return "\\\n\t" + \
+                " \\\n\t".join(f"{n.dep_ordinal}, /* {n.path} */"
+                               for n in sorted_list)
+        else:
+            return "/* nothing */"
+
+    out_comment("Node's dependency ordinal:")
+    out_dt_define(f"{node.z_path_id}_ORD", node.dep_ordinal)
+
+    out_comment("Ordinals for what this node depends on directly:")
+    out_dt_define(f"{node.z_path_id}_REQUIRES_ORDS",
+                  fmt_dep_list(node.depends_on))
+
+    out_comment("Ordinals for what depends directly on this node:")
+    out_dt_define(f"{node.z_path_id}_SUPPORTS_ORDS",
+                  fmt_dep_list(node.required_by))
 
 
 def prop2value(prop):

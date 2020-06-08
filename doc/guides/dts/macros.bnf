@@ -50,6 +50,13 @@ node-macro =/ %s"DT_N" path-id %s"_PARENT"
 node-macro =/ %s"DT_N" path-id %s"_FOREACH_CHILD"
 ; The node's status macro
 node-macro =/ %s"DT_N" path-id %s"_STATUS_" dt-name
+; The node's dependency ordinal. This is a non-negative integer
+; value that is used to represent dependency information.
+node-macro =/ %s"DT_N" path-id %s"_ORD"
+; The dependency ordinals of a node's requirements (direct dependencies).
+node-macro =/ %s"DT_N" path-id %s"_REQUIRES_ORDS"
+; The dependency ordinals of a node supports (reverse direct dependencies).
+node-macro =/ %s"DT_N" path-id %s"_SUPPORTS_ORDS"
 
 ; --------------------------------------------------------------------
 ; property-macro: a macro related to a node property
