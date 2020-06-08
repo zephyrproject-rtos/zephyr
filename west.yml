@@ -21,6 +21,7 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+      url-base: https://github.com/bytecodealliance
 
   #
   # Please add items below based on alphabetical order
@@ -133,6 +134,9 @@ manifest:
     - name: trusted-firmware-m
       path: modules/tee/tfm
       revision: 7de2daa1967b2dc12cbe0fcc0171ac3064ea596b
+    - name: wasm-micro-runtime
+      path: modules/lib/wasm-micro-runtime
+      revision: 7a287fd1a90836bb3de86eba9889cd689bd493ab
 
   self:
     path: zephyr
