@@ -566,7 +566,7 @@ void test_timer_user_data(void)
 void test_timer_remaining(void)
 {
 	uint32_t dur_ticks = k_ms_to_ticks_ceil32(DURATION);
-	uint32_t target_rem_ticks = k_ms_to_ticks_ceil32(DURATION / 2) + 1;
+	uint32_t target_rem_ticks = k_ms_to_ticks_ceil32(DURATION / 2);
 	uint32_t rem_ms, rem_ticks, exp_ticks;
 	int32_t delta_ticks;
 	uint32_t slew_ticks;
