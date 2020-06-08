@@ -10,7 +10,7 @@ We are pleased to announce the release of Zephyr RTOS version 2.4.0.
 Major enhancements with this release include:
 
 * Moved to using C99 integer types and deprecate Zephyr integer types.  The
-  Zephyr types can be enabled by Kconfig LEGACY_ZEPHYR_INT_TYPES option.
+  Zephyr types can be enabled by Kconfig DEPRECATED_ZEPHYR_INT_TYPES option.
 
 The following sections provide detailed lists of changes by component.
 
@@ -35,7 +35,7 @@ API Changes
 ***********
 
 * Moved to using C99 integer types and deprecate Zephyr integer types.  The
-  Zephyr types can be enabled by Kconfig LEGACY_ZEPHYR_INT_TYPES option.
+  Zephyr types can be enabled by Kconfig DEPRECATED_ZEPHYR_INT_TYPES option.
 
 Deprecated in this release
 ==========================

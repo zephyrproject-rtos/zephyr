@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#ifdef CONFIG_LEGACY_ZEPHYR_INT_TYPES
+#ifdef CONFIG_DEPRECATED_ZEPHYR_INT_TYPES
 
 typedef signed char         s8_t;
 typedef signed short        s16_t;
