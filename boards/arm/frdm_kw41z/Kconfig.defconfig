@@ -23,59 +23,24 @@ config PINMUX_MCUX_PORTA
 	default y
 
 config PINMUX_MCUX_PORTB
-	default y if ADC_0
+	default y if "$(dt_nodelabel_enabled,adc0)" && ADC
+	default y if "$(dt_nodelabel_enabled,tpm1)" && PWM
 
 config PINMUX_MCUX_PORTC
 	default y
 
 endif # PINMUX_MCUX
 
-if GPIO_MCUX
-
-config GPIO_MCUX_PORTA
-	default y
-
-config GPIO_MCUX_PORTB
-	default n
-
-config GPIO_MCUX_PORTC
-	default y
-
-endif # GPIO_MCUX
-
-if UART_MCUX_LPUART
-
-config UART_MCUX_LPUART_0
-	default y if UART_CONSOLE
-
-endif # UART_MCUX
-
-if I2C
-
-config I2C_1
-	default y
-
-endif # I2C
-
-if ADC
-
-config ADC_0
-	default y
-
-endif # ADC
-
-if FXOS8700
-
 config FXOS8700_DRDY_INT1
 	default y
-
-endif # FXOS8700
-
-if SPI
+	depends on FXOS8700
 
 config SPI_0
 	default y
+	depends on SPI
 
-endif # SPI
+choice ADC_MCUX_ADC16_VREF
+	default ADC_MCUX_ADC16_VREF_ALTERNATE
+endchoice
 
 endif # BOARD_FRDM_KW41Z

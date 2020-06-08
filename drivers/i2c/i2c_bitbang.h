@@ -49,6 +49,12 @@ void i2c_bitbang_init(struct i2c_bitbang *bitbang,
 int i2c_bitbang_configure(struct i2c_bitbang *bitbang, u32_t dev_config);
 
 /**
+ * Implementation of the functionality required by the 'recover_bus'
+ * function in struct i2c_driver_api.
+ */
+int i2c_bitbang_recover_bus(struct i2c_bitbang *bitbang);
+
+/**
  * Implementation of the functionality required by the 'transfer' function
  * in struct i2c_driver_api.
  */

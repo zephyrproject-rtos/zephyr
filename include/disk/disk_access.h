@@ -17,6 +17,12 @@
 #ifndef ZEPHYR_INCLUDE_DISK_DISK_ACCESS_H_
 #define ZEPHYR_INCLUDE_DISK_DISK_ACCESS_H_
 
+/**
+ * @brief Disk Access APIs
+ * @defgroup disk_access_interface Disk Access Interface
+ * @{
+ */
+
 #include <kernel.h>
 #include <zephyr/types.h>
 #include <sys/dlist.h>
@@ -130,5 +136,9 @@ int disk_access_unregister(struct disk_info *disk);
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_DISK_DISK_ACCESS_H_ */

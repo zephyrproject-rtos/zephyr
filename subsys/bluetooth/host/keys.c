@@ -54,8 +54,7 @@ struct bt_keys *bt_keys_get_addr(u8_t id, const bt_addr_le_t *addr)
 		}
 
 		if (first_free_slot == ARRAY_SIZE(key_pool) &&
-		    (!bt_addr_le_cmp(&keys->addr, BT_ADDR_LE_ANY) ||
-		     !keys->enc_size)) {
+		    !bt_addr_le_cmp(&keys->addr, BT_ADDR_LE_ANY)) {
 			first_free_slot = i;
 		}
 	}
@@ -63,6 +62,7 @@ struct bt_keys *bt_keys_get_addr(u8_t id, const bt_addr_le_t *addr)
 #if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 	if (first_free_slot == ARRAY_SIZE(key_pool)) {
 		struct bt_keys *oldest = &key_pool[0];
+		bt_addr_le_t oldest_addr;
 
 		for (i = 1; i < ARRAY_SIZE(key_pool); i++) {
 			struct bt_keys *current = &key_pool[i];
@@ -72,7 +72,9 @@ struct bt_keys *bt_keys_get_addr(u8_t id, const bt_addr_le_t *addr)
 			}
 		}
 
-		bt_unpair(oldest->id, &oldest->addr);
+		/* Use a copy as bt_unpair will clear the oldest key. */
+		bt_addr_le_copy(&oldest_addr, &oldest->addr);
+		bt_unpair(oldest->id, &oldest_addr);
 		if (!bt_addr_le_cmp(&oldest->addr, BT_ADDR_LE_ANY)) {
 			first_free_slot = oldest - &key_pool[0];
 		}
@@ -237,7 +239,7 @@ void bt_keys_clear(struct bt_keys *keys)
 {
 	BT_DBG("%s (keys 0x%04x)", bt_addr_le_str(&keys->addr), keys->keys);
 
-	if (keys->keys & BT_KEYS_IRK) {
+	if (keys->state & BT_KEYS_ID_ADDED) {
 		bt_id_del(keys);
 	}
 
@@ -261,24 +263,6 @@ void bt_keys_clear(struct bt_keys *keys)
 	}
 
 	(void)memset(keys, 0, sizeof(*keys));
-}
-
-static void keys_clear_id(struct bt_keys *keys, void *data)
-{
-	u8_t *id = data;
-
-	if (*id == keys->id) {
-		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-			bt_gatt_clear(*id, &keys->addr);
-		}
-
-		bt_keys_clear(keys);
-	}
-}
-
-void bt_keys_clear_all(u8_t id)
-{
-	bt_keys_foreach(BT_KEYS_ALL, keys_clear_id, &id);
 }
 
 #if defined(CONFIG_BT_SETTINGS)
@@ -316,7 +300,7 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	struct bt_keys *keys;
 	bt_addr_le_t addr;
 	u8_t id;
-	size_t len;
+	ssize_t len;
 	int err;
 	char val[BT_KEYS_STORAGE_LEN];
 	const char *next;
@@ -328,7 +312,7 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 
 	len = read_cb(cb_arg, val, sizeof(val));
 	if (len < 0) {
-		BT_ERR("Failed to read value (err %zu)", len);
+		BT_ERR("Failed to read value (err %zd)", len);
 		return -EINVAL;
 	}
 
@@ -380,7 +364,7 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 				continue;
 			}
 
-			BT_ERR("Invalid key length %zu != %zu", len,
+			BT_ERR("Invalid key length %zd != %zu", len,
 			       BT_KEYS_STORAGE_LEN);
 			bt_keys_clear(keys);
 
@@ -412,7 +396,11 @@ static int keys_commit(void)
 	 * called multiple times for the same address, especially if
 	 * the keys were already removed.
 	 */
-	bt_keys_foreach(BT_KEYS_IRK, id_add, NULL);
+	if (IS_ENABLED(CONFIG_BT_CENTRAL) && IS_ENABLED(CONFIG_BT_PRIVACY)) {
+		bt_keys_foreach(BT_KEYS_ALL, id_add, NULL);
+	} else {
+		bt_keys_foreach(BT_KEYS_IRK, id_add, NULL);
+	}
 
 	return 0;
 }

@@ -11,7 +11,6 @@ Sense 2) contains a MCU from the EFR32MG family built on ARM® Cortex®-M4F
 processor with low power capabilities.
 
 .. image:: ./efr32mg_sltb004a.jpg
-   :width: 640px
    :align: center
    :alt: EFR32MG-SLTB004A
 
@@ -76,6 +75,12 @@ The efr32mg_sltb004a board configuration supports the following hardware feature
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c port-polling                    |
 +-----------+------------+-------------------------------------+
+| SPI(M)    | on-chip    | spi port-polling                    |
++-----------+------------+-------------------------------------+
+| WATCHDOG  | on-chip    | watchdog                            |
++-----------+------------+-------------------------------------+
+| TRNG      | on-chip    | true random number generator        |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/efr32mg_sltb004a/efr32mg_sltb004a_defconfig``.
@@ -118,6 +123,14 @@ in the board's and microcontroller's datasheets and manuals.
 | PC4  | I2C_SDA     | ENV_I2C_SDA I2C1_SDA #17          |
 +------+-------------+-----------------------------------+
 | PC5  | I2C_SCL     | ENV_I2C_SCL I2C1_SCL #17          |
++------+-------------+-----------------------------------+
+| PK0  | SPI_MOSI    | Flash MOSI US2_TX #29             |
++------+-------------+-----------------------------------+
+| PK2  | SPI_MISO    | Flash MISO US2_RX #30             |
++------+-------------+-----------------------------------+
+| PF7  | SPI_SCLK    | Flash SCLK US2_CLK #18            |
++------+-------------+-----------------------------------+
+| PK1  | SPI_CS      | Flash Chip Select (GPIO)          |
 +------+-------------+-----------------------------------+
 
 System Clock

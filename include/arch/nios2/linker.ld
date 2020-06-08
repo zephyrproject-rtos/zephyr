@@ -120,6 +120,7 @@ SECTIONS
         . = ALT_CPU_RESET_ADDR;
 
         _image_text_start = .;
+
         *(.text)
         *(".text.*")
         *(.gnu.linkonce.t.*)
@@ -299,4 +300,3 @@ SECTIONS
 #include <linker/debug-sections.ld>
 
     }
-

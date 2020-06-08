@@ -9,6 +9,11 @@
 #include <dt-bindings/gpio/gpio.h>
 
 / {
+	chosen {
+		zephyr,entropy = &rng;
+		zephyr,flash-controller = &flash_controller;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -64,6 +69,7 @@
 
 	soc {
 		sram1: memory@21000000 {
+			device_type = "memory";
 			compatible = "mmio-sram";
 		};
 
@@ -110,6 +116,7 @@
 			gpio-controller;
 			reg = <0x418c0800 0x300>;
 			#gpio-cells = <2>;
+			ngpios = <16>;
 			label = "GPIO_1";
 			status = "disabled";
 		};
@@ -156,7 +163,7 @@
 		rng: random@41009000 {
 			compatible = "nordic,nrf-rng";
 			reg = <0x41009000 0x1000>;
-			interrupts = <9 0>;
+			interrupts = <9 1>;
 			status = "okay";
 			label = "RNG";
 		};
@@ -247,7 +254,7 @@
 			status = "okay";
 		};
 
-		wdt: watchdog@4100b000 {
+		wdt: wdt0: watchdog@4100b000 {
 			compatible = "nordic,nrf-watchdog";
 			reg = <0x4100b000 0x1000>;
 			interrupts = <11 1>;

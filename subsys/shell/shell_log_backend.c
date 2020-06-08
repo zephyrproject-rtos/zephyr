@@ -73,7 +73,7 @@ static void flush_expired_messages(const struct shell *shell)
 			log_msg_put(msg.msg);
 
 			if (IS_ENABLED(CONFIG_SHELL_STATS)) {
-				shell->stats->log_lost_cnt++;
+				atomic_inc(&shell->stats->log_lost_cnt);
 			}
 		} else {
 			break;
@@ -91,7 +91,7 @@ static void msg_to_fifo(const struct shell *shell,
 	};
 
 	err = k_msgq_put(shell->log_backend->msgq, &t_msg,
-			 shell->log_backend->timeout);
+			 K_MSEC(shell->log_backend->timeout));
 
 	switch (err) {
 	case 0:

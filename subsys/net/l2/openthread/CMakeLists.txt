@@ -11,7 +11,3 @@ zephyr_library_sources(
   openthread.c
   openthread_utils.c
   )
-
-add_dependencies(subsys__net__ip__l2__openthread
-  ot
-  )

@@ -37,7 +37,7 @@ static void arm_musca_pinmux_defaults(void)
  */
 static void arm_musca_pinmux_defaults(void)
 {
-	volatile u32_t *scc = (u32_t *)DT_ARM_SCC_BASE_ADDRESS;
+	volatile u32_t *scc = (u32_t *)DT_REG_ADDR(DT_INST(0, arm_scc));
 
 	/* there is only altfunc1, so steer all alt funcs to use 1 */
 	scc[IOMUX_ALTF1_INSEL] = 0xffff;

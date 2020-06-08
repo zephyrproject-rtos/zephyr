@@ -90,7 +90,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	/* Note that we treat INT_MAX literally as anyhow the maximum amount of
 	 * ticks we can report with z_clock_announce() is INT_MAX
 	 */
-	if (ticks == K_FOREVER) {
+	if (ticks == K_TICKS_FOREVER) {
 		silent_ticks = INT64_MAX;
 	} else if (ticks > 0) {
 		silent_ticks = ticks - 1;
@@ -122,13 +122,27 @@ u32_t z_clock_elapsed(void)
  *
  * Note that interrupts may be received in the meanwhile and that therefore this
  * thread may loose context
+ *
+ * This special arch_busy_wait() is necessary due to how the POSIX arch/SOC INF
+ * models a CPU. Conceptually it could be thought as if the MCU was running
+ * at an infinitely high clock, and therefore no simulated time passes while
+ * executing instructions(*1).
+ * Therefore to be able to busy wait this function does the equivalent of
+ * programming a dedicated timer which will raise a non-maskable interrupt,
+ * and halting the CPU.
+ *
+ * (*1) In reality simulated time is simply not advanced just due to the "MCU"
+ * running. Meaning, the SW running on the MCU is assumed to take 0 time.
  */
 void arch_busy_wait(u32_t usec_to_wait)
 {
 	u64_t time_end = hwm_get_time() + usec_to_wait;
 
 	while (hwm_get_time() < time_end) {
-		/*There may be wakes due to other interrupts*/
+		/*
+		 * There may be wakes due to other interrupts including
+		 * other threads calling arch_busy_wait
+		 */
 		hwtimer_wake_in_time(time_end);
 		posix_halt_cpu();
 	}

@@ -64,4 +64,3 @@ void test_main(void)
 
 	ztest_run_test_suite(lib_jwt_test);
 }
-

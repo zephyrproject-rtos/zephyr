@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_lpc_spi
+
 #include <errno.h>
 #include <drivers/spi.h>
 #include <fsl_spi.h>
@@ -30,7 +32,7 @@ struct spi_mcux_data {
 
 static void spi_mcux_transfer_next_packet(struct device *dev)
 {
-	const struct spi_mcux_config *config = dev->config->config_info;
+	const struct spi_mcux_config *config = dev->config_info;
 	struct spi_mcux_data *data = dev->driver_data;
 	SPI_Type *base = config->base;
 	struct spi_context *ctx = &data->ctx;
@@ -97,7 +99,7 @@ static void spi_mcux_transfer_next_packet(struct device *dev)
 static void spi_mcux_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	const struct spi_mcux_config *config = dev->config->config_info;
+	const struct spi_mcux_config *config = dev->config_info;
 	struct spi_mcux_data *data = dev->driver_data;
 	SPI_Type *base = config->base;
 
@@ -119,7 +121,7 @@ static void spi_mcux_master_transfer_callback(SPI_Type *base,
 static int spi_mcux_configure(struct device *dev,
 			      const struct spi_config *spi_cfg)
 {
-	const struct spi_mcux_config *config = dev->config->config_info;
+	const struct spi_mcux_config *config = dev->config_info;
 	struct spi_mcux_data *data = dev->driver_data;
 	SPI_Type *base = config->base;
 	spi_master_config_t master_config;
@@ -167,18 +169,18 @@ static int spi_mcux_configure(struct device *dev,
 
 	master_config.baudRate_Bps = spi_cfg->frequency;
 
-	/* The clock frequency is currently hardcoded until we can support a
-	 * proper clock_control driver for lpc socs. This requires a new
-	 * MCUXpresso SDK release for lpcxpresso55s69 to fix conflicting
-	 * definitions of kCLOCK_Flexcomm0 in enum clock_name_t and enum
-	 * clock_ip_name_t.
+	/* The clock frequency is hardcoded CPU's speed to allow SPI to
+	 * function at high speeds. The core clock and flexcomm should
+	 * use the same clock source.
 	 */
-	clock_freq = MHZ(12);
+	clock_freq = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 
 	SPI_MasterInit(base, &master_config, clock_freq);
 
 	SPI_MasterTransferCreateHandle(base, &data->handle,
 				       spi_mcux_master_transfer_callback, dev);
+
+	SPI_SetDummyData(base, 0);
 
 	data->ctx.config = spi_cfg;
 	spi_context_cs_configure(&data->ctx);
@@ -247,7 +249,7 @@ static int spi_mcux_release(struct device *dev,
 
 static int spi_mcux_init(struct device *dev)
 {
-	const struct spi_mcux_config *config = dev->config->config_info;
+	const struct spi_mcux_config *config = dev->config_info;
 	struct spi_mcux_data *data = dev->driver_data;
 
 	config->irq_config_func(dev);
@@ -269,7 +271,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 	static void spi_mcux_config_func_##id(struct device *dev);	\
 	static const struct spi_mcux_config spi_mcux_config_##id = {	\
 		.base =							\
-		(SPI_Type *)DT_NXP_LPC_SPI_SPI_##id##_BASE_ADDRESS,	\
+		(SPI_Type *)DT_INST_REG_ADDR(id),			\
 		.irq_config_func = spi_mcux_config_func_##id,		\
 	};								\
 	static struct spi_mcux_data spi_mcux_data_##id = {		\
@@ -277,7 +279,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 		SPI_CONTEXT_INIT_SYNC(spi_mcux_data_##id, ctx),		\
 	};								\
 	DEVICE_AND_API_INIT(spi_mcux_##id,				\
-			    DT_NXP_LPC_SPI_SPI_##id##_LABEL,		\
+			    DT_INST_LABEL(id),				\
 			    &spi_mcux_init,				\
 			    &spi_mcux_data_##id,			\
 			    &spi_mcux_config_##id,			\
@@ -286,45 +288,11 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 			    &spi_mcux_driver_api);			\
 	static void spi_mcux_config_func_##id(struct device *dev)	\
 	{								\
-		IRQ_CONNECT(DT_NXP_LPC_SPI_SPI_##id##_IRQ_0,		\
-			    DT_NXP_LPC_SPI_SPI_##id##_IRQ_0_PRIORITY,	\
+		IRQ_CONNECT(DT_INST_IRQN(id),				\
+			    DT_INST_IRQ(id, priority),			\
 			    spi_mcux_isr, DEVICE_GET(spi_mcux_##id),	\
 			    0);						\
-		irq_enable(DT_NXP_LPC_SPI_SPI_##id##_IRQ_0);		\
+		irq_enable(DT_INST_IRQN(id));				\
 	}
 
-#ifdef CONFIG_SPI_0
-SPI_MCUX_FLEXCOMM_DEVICE(0)
-#endif
-
-#ifdef CONFIG_SPI_1
-SPI_MCUX_FLEXCOMM_DEVICE(1)
-#endif
-
-#ifdef CONFIG_SPI_2
-SPI_MCUX_FLEXCOMM_DEVICE(2)
-#endif
-
-#ifdef CONFIG_SPI_3
-SPI_MCUX_FLEXCOMM_DEVICE(3)
-#endif
-
-#ifdef CONFIG_SPI_4
-SPI_MCUX_FLEXCOMM_DEVICE(4)
-#endif
-
-#ifdef CONFIG_SPI_5
-SPI_MCUX_FLEXCOMM_DEVICE(5)
-#endif
-
-#ifdef CONFIG_SPI_6
-SPI_MCUX_FLEXCOMM_DEVICE(6)
-#endif
-
-#ifdef CONFIG_SPI_7
-SPI_MCUX_FLEXCOMM_DEVICE(7)
-#endif
-
-#ifdef CONFIG_SPI_8
-SPI_MCUX_FLEXCOMM_DEVICE(8)
-#endif
+DT_INST_FOREACH_STATUS_OKAY(SPI_MCUX_FLEXCOMM_DEVICE)

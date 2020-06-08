@@ -22,7 +22,7 @@
 
 #include "posix_core.h"
 #include <arch/posix/posix_soc_if.h>
-#include <debug/tracing.h>
+#include <tracing/tracing.h>
 
 void arch_cpu_idle(void)
 {

@@ -17,20 +17,10 @@ config GPIO_MCUX_LPC_PORT0
 	help
 	  Enable Port 0.
 
-config GPIO_MCUX_LPC_PORT0_NAME
-	string "Port 0 driver name"
-	depends on GPIO_MCUX_LPC_PORT0
-	default "GPIO_0"
-
 config GPIO_MCUX_LPC_PORT1
 	bool "Port 1"
 	depends on PINMUX_MCUX_LPC_PORT1
 	help
 	  Enable Port 1.
-
-config GPIO_MCUX_LPC_PORT1_NAME
-	string "Port 1 driver name"
-	depends on GPIO_MCUX_LPC_PORT1
-	default "GPIO_1"
 
 endif # GPIO_MCUX_LPC

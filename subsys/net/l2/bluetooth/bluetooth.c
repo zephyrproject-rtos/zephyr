@@ -114,6 +114,8 @@ static int net_bt_send(struct net_if *iface, struct net_pkt *pkt)
 
 	ret = bt_l2cap_chan_send(&conn->ipsp_chan.chan, buffer);
 	if (ret < 0) {
+		NET_ERR("Unable to send packet: %d", ret);
+		bt_l2cap_chan_disconnect(&conn->ipsp_chan.chan);
 		return ret;
 	}
 
@@ -250,10 +252,10 @@ static struct net_buf *ipsp_alloc_buf(struct bt_l2cap_chan *chan)
 {
 	NET_DBG("Channel %p requires buffer", chan);
 
-	return net_pkt_get_reserve_rx_data(K_FOREVER);
+	return net_pkt_get_reserve_rx_data(BUF_TIMEOUT);
 }
 
-static struct bt_l2cap_chan_ops ipsp_ops = {
+static const struct bt_l2cap_chan_ops ipsp_ops = {
 	.alloc_buf	= ipsp_alloc_buf,
 	.recv		= ipsp_recv,
 	.connected	= ipsp_connected,
@@ -390,9 +392,8 @@ static int bt_connect(u32_t mgmt_request, struct net_if *iface, void *data,
 					     L2CAP_IPSP_PSM);
 	}
 
-	default_conn = bt_conn_create_le(addr, BT_LE_CONN_PARAM_DEFAULT);
-
-	return 0;
+	return bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN,
+				 BT_LE_CONN_PARAM_DEFAULT, &default_conn);
 }
 
 static bool eir_found(u8_t type, const u8_t *data, u8_t data_len,
@@ -472,7 +473,8 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
 			 struct net_buf_simple *ad)
 {
 	/* We're only interested in connectable events */
-	if (type == BT_LE_ADV_IND || type == BT_LE_ADV_DIRECT_IND) {
+	if (type == BT_GAP_ADV_TYPE_ADV_IND ||
+	    type == BT_GAP_ADV_TYPE_ADV_DIRECT_IND) {
 		ad_parse(ad, eir_found, (void *)addr);
 	}
 }

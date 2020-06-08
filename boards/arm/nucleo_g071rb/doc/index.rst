@@ -96,6 +96,8 @@ The Zephyr nucleo_g071rb board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | CLOCK     | on-chip    | reset and clock control             |
 +-----------+------------+-------------------------------------+
+| WATCHDOG  | on-chip    | independent watchdog                |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.
 
@@ -131,13 +133,25 @@ Flashing
 ========
 
 Nucleo G071RB board includes an ST-LINK/V2-1 embedded debug tool interface.
+
 This interface is not yet supported by the openocd version included in the Zephyr SDK.
+
 Instead, support can be enabled on pyocd by adding "pack" support with
 the following pyocd command:
 
 .. code-block:: console
 
    $ pyocd pack --install stm32g071rb
+
+Note:
+To manually enable the openocd interface, You can still update, compile and install
+a 'local' openocd from the official openocd repo http://openocd.zylin.com .
+Then run the following openocd command where the '/usr/local/bin/openocd'is your path
+for the freshly installed openocd, given by "$ which openocd" :
+
+.. code-block:: console
+
+   $ west flash --openocd /usr/local/bin/openocd
 
 Flashing an application to Nucleo G071RB
 ----------------------------------------

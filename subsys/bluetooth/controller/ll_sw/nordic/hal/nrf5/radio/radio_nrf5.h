@@ -5,8 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nrfx/hal/nrf_timer.h>
-
 #define HAL_RADIO_NS2US_CEIL(ns)  ((ns + 999)/1000)
 #define HAL_RADIO_NS2US_ROUND(ns) ((ns + 500)/1000)
 
@@ -28,6 +26,8 @@
 #include "radio_nrf52810.h"
 #elif defined(CONFIG_SOC_NRF52811)
 #include "radio_nrf52811.h"
+#elif defined(CONFIG_SOC_NRF52820)
+#include "radio_nrf52820.h"
 #elif defined(CONFIG_SOC_NRF52832)
 #include "radio_nrf52832.h"
 #elif defined(CONFIG_SOC_NRF52833)

@@ -19,6 +19,7 @@ config SOC_NRF9160
 	select HAS_HW_NRF_GPIOTE
 	select HAS_HW_NRF_I2S
 	select HAS_HW_NRF_IPC
+	select HAS_HW_NRF_NVMC_PE
 	select HAS_HW_NRF_PDM
 	select HAS_HW_NRF_POWER
 	select HAS_HW_NRF_PWM0

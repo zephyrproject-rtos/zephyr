@@ -194,6 +194,9 @@ enum net_if_flag {
 	 */
 	NET_IF_NO_AUTO_START,
 
+	/** Power management specific: interface is being suspended */
+	NET_IF_SUSPENDED,
+
 /** @cond INTERNAL_HIDDEN */
 	/* Total number of flags - must be at the end of the enum */
 	NET_IF_NUM_FLAGS
@@ -469,6 +472,14 @@ struct net_if {
 
 	/** Network interface instance configuration */
 	struct net_if_config config;
+
+#if defined(CONFIG_NET_POWER_MANAGEMENT)
+	/** Keep track of packets pending in traffic queues. This is
+	 * needed to avoid putting network device driver to sleep if
+	 * there are packets waiting to be sent.
+	 */
+	int tx_pending;
+#endif
 } __net_if_align;
 
 /**
@@ -550,7 +561,7 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt);
  */
 static inline const struct net_l2 * const net_if_l2(struct net_if *iface)
 {
-	if (!iface) {
+	if (!iface || !iface->if_dev) {
 		return NULL;
 	}
 
@@ -2101,6 +2112,55 @@ void net_if_unset_promisc(struct net_if *iface);
  */
 bool net_if_is_promisc(struct net_if *iface);
 
+/**
+ * @brief Check if there are any pending TX network data for a given network
+ *        interface.
+ *
+ * @param iface Pointer to network interface
+ *
+ * @return True if there are pending TX network packets for this network
+ *         interface, False otherwise.
+ */
+static inline bool net_if_are_pending_tx_packets(struct net_if *iface)
+{
+#if defined(CONFIG_NET_POWER_MANAGEMENT)
+	return !!iface->tx_pending;
+#else
+	ARG_UNUSED(iface);
+
+	return false;
+#endif
+}
+
+#ifdef CONFIG_NET_POWER_MANAGEMENT
+/**
+ * @brief Suspend a network interface from a power management perspective
+ *
+ * @param iface Pointer to network interface
+ *
+ * @return 0 on success, or -EALREADY/-EBUSY as possible errors.
+ */
+int net_if_suspend(struct net_if *iface);
+
+/**
+ * @brief Resume a network interface from a power management perspective
+ *
+ * @param iface Pointer to network interface
+ *
+ * @return 0 on success, or -EALREADY as a possible error.
+ */
+int net_if_resume(struct net_if *iface);
+
+/**
+ * @brief Check if the network interface is suspended or not.
+ *
+ * @param iface Pointer to network interface
+ *
+ * @return True if interface is suspended, False otherwise.
+ */
+bool net_if_is_suspended(struct net_if *iface);
+#endif /* CONFIG_NET_POWER_MANAGEMENT */
+
 /** @cond INTERNAL_HIDDEN */
 struct net_if_api {
 	void (*init)(struct net_if *iface);
@@ -2170,7 +2230,9 @@ struct net_if_api {
  * @param drv_name The name this instance of the driver exposes to
  * the system.
  * @param init_fn Address to the init function of the driver.
- * @param data Pointer to the device's configuration data.
+ * @param pm_control_fn Pointer to device_pm_control function.
+ * Can be empty function (device_pm_control_nop) if not implemented.
+ * @param data Pointer to the device's private data.
  * @param cfg_info The address to the structure containing the
  * configuration information for this instance of the driver.
  * @param prio The initialization level at which configuration occurs.
@@ -2180,12 +2242,12 @@ struct net_if_api {
  * @param l2_ctx_type Type of L2 context data.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define NET_DEVICE_INIT(dev_name, drv_name, init_fn,		\
-			data, cfg_info, prio, api, l2,		\
-			l2_ctx_type, mtu)			\
-	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data,	\
-			    cfg_info, POST_KERNEL, prio, api);	\
-	NET_L2_DATA_INIT(dev_name, 0, l2_ctx_type);		\
+#define NET_DEVICE_INIT(dev_name, drv_name, init_fn, pm_control_fn,	\
+			data, cfg_info, prio, api, l2,			\
+			l2_ctx_type, mtu)				\
+	DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_control_fn, data, \
+		      cfg_info, POST_KERNEL, prio, api);		\
+	NET_L2_DATA_INIT(dev_name, 0, l2_ctx_type);			\
 	NET_IF_INIT(dev_name, 0, l2, mtu, NET_IF_MAX_CONFIGS)
 
 /**
@@ -2201,7 +2263,9 @@ struct net_if_api {
  * the system.
  * @param instance Instance identifier.
  * @param init_fn Address to the init function of the driver.
- * @param data Pointer to the device's configuration data.
+ * @param pm_control_fn Pointer to device_pm_control function.
+ * Can be empty function (device_pm_control_nop) if not implemented.
+ * @param data Pointer to the device's private data.
  * @param cfg_info The address to the structure containing the
  * configuration information for this instance of the driver.
  * @param prio The initialization level at which configuration occurs.
@@ -2212,10 +2276,10 @@ struct net_if_api {
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
 #define NET_DEVICE_INIT_INSTANCE(dev_name, drv_name, instance, init_fn,	\
-				 data, cfg_info, prio, api, l2,		\
-				 l2_ctx_type, mtu)			\
-	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data,		\
-			    cfg_info, POST_KERNEL, prio, api);		\
+				 pm_control_fn, data, cfg_info, prio,	\
+				 api, l2, l2_ctx_type, mtu)		\
+	DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_control_fn, data,	\
+		      cfg_info, POST_KERNEL, prio, api);		\
 	NET_L2_DATA_INIT(dev_name, instance, l2_ctx_type);		\
 	NET_IF_INIT(dev_name, instance, l2, mtu, NET_IF_MAX_CONFIGS)
 
@@ -2230,7 +2294,9 @@ struct net_if_api {
  * @param drv_name The name this instance of the driver exposes to
  * the system.
  * @param init_fn Address to the init function of the driver.
- * @param data Pointer to the device's configuration data.
+ * @param pm_control_fn Pointer to device_pm_control function.
+ * Can be empty function (device_pm_control_nop) if not implemented.
+ * @param data Pointer to the device's private data.
  * @param cfg_info The address to the structure containing the
  * configuration information for this instance of the driver.
  * @param prio The initialization level at which configuration occurs.
@@ -2238,10 +2304,11 @@ struct net_if_api {
  * used by the driver. Can be NULL.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define NET_DEVICE_OFFLOAD_INIT(dev_name, drv_name, init_fn,	\
-				data, cfg_info, prio, api, mtu)	\
-	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data,	\
-			    cfg_info, POST_KERNEL, prio, api);	\
+#define NET_DEVICE_OFFLOAD_INIT(dev_name, drv_name, init_fn,		\
+				pm_control_fn, data, cfg_info, prio,	\
+				api, mtu)				\
+	DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_control_fn, data,	\
+		      cfg_info, POST_KERNEL, prio, api);		\
 	NET_IF_OFFLOAD_INIT(dev_name, 0, mtu)
 
 #ifdef __cplusplus

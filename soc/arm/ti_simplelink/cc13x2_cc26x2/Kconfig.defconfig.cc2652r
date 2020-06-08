@@ -3,9 +3,6 @@
 # Copyright (c) 2019 Brett Witherspoon
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_CC2652R
-
 config SOC
 	default "cc2652r"
-
-endif # SOC_CC2652R
+	depends on SOC_CC2652R

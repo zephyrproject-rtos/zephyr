@@ -1,8 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_IOTDK
-
 config BOARD
 	default "iotdk"
-
-endif # BOARD_IOTDK
+	depends on BOARD_IOTDK

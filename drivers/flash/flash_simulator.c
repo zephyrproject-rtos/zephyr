@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT zephyr_sim_flash
+
 #include <device.h>
 #include <drivers/flash.h>
 #include <init.h>
@@ -29,18 +31,17 @@
 
 /* configuration derived from DT */
 #ifdef CONFIG_ARCH_POSIX
-#define FLASH_SIMULATOR_BASE_OFFSET DT_FLASH_BASE_ADDRESS
-#define FLASH_SIMULATOR_ERASE_UNIT DT_FLASH_ERASE_BLOCK_SIZE
-#define FLASH_SIMULATOR_PROG_UNIT DT_FLASH_WRITE_BLOCK_SIZE
-#define FLASH_SIMULATOR_FLASH_SIZE (DT_FLASH_SIZE * 1024)
-#define FLASH_SIMULATOR_DEV_NAME DT_FLASH_DEV_NAME
+#define SOC_NV_FLASH_NODE DT_CHILD(DT_DRV_INST(0), flash_0)
 #else
-#define FLASH_SIMULATOR_BASE_OFFSET DT_FLASH_SIM_BASE_ADDRESS
-#define FLASH_SIMULATOR_ERASE_UNIT DT_FLASH_SIM_ERASE_BLOCK_SIZE
-#define FLASH_SIMULATOR_PROG_UNIT DT_FLASH_SIM_WRITE_BLOCK_SIZE
-#define FLASH_SIMULATOR_FLASH_SIZE DT_FLASH_SIM_SIZE
-#define FLASH_SIMULATOR_DEV_NAME "FLASH_SIMULATOR"
+#define SOC_NV_FLASH_NODE DT_CHILD(DT_DRV_INST(0), flash_sim_0)
 #endif /* CONFIG_ARCH_POSIX */
+
+#define FLASH_SIMULATOR_BASE_OFFSET DT_REG_ADDR(SOC_NV_FLASH_NODE)
+#define FLASH_SIMULATOR_ERASE_UNIT DT_PROP(SOC_NV_FLASH_NODE, erase_block_size)
+#define FLASH_SIMULATOR_PROG_UNIT DT_PROP(SOC_NV_FLASH_NODE, write_block_size)
+#define FLASH_SIMULATOR_FLASH_SIZE DT_REG_SIZE(SOC_NV_FLASH_NODE)
+
+#define FLASH_SIMULATOR_DEV_NAME DT_INST_LABEL(0)
 
 #define FLASH_SIMULATOR_PAGE_COUNT (FLASH_SIMULATOR_FLASH_SIZE / \
 				    FLASH_SIMULATOR_ERASE_UNIT)
@@ -357,6 +358,9 @@ static const struct flash_driver_api flash_sim_api = {
 
 static int flash_mock_init(struct device *dev)
 {
+	struct stat f_stat;
+	int rc;
+
 	if (flash_file_path == NULL) {
 		flash_file_path = default_flash_file_path;
 	}
@@ -364,6 +368,14 @@ static int flash_mock_init(struct device *dev)
 	flash_fd = open(flash_file_path, O_RDWR | O_CREAT, (mode_t)0600);
 	if (flash_fd == -1) {
 		posix_print_warning("Failed to open flash device file "
+				    "%s: %s\n",
+				    flash_file_path, strerror(errno));
+		return -EIO;
+	}
+
+	rc = fstat(flash_fd, &f_stat);
+	if (rc) {
+		posix_print_warning("Failed to get status of flash device file "
 				    "%s: %s\n",
 				    flash_file_path, strerror(errno));
 		return -EIO;
@@ -383,6 +395,11 @@ static int flash_mock_init(struct device *dev)
 				    "%s: %s\n",
 				    flash_file_path, strerror(errno));
 		return -EIO;
+	}
+
+	if (f_stat.st_size == 0) {
+		/* erase the memory unit by pulling all bits to one */
+		(void)memset(mock_flash, 0xff, FLASH_SIMULATOR_FLASH_SIZE);
 	}
 
 	return 0;

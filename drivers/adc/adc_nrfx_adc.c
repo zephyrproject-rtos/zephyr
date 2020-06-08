@@ -12,6 +12,8 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(adc_nrfx_adc);
 
+#define DT_DRV_COMPAT nordic_nrf_adc
+
 struct driver_data {
 	struct adc_context ctx;
 
@@ -255,12 +257,11 @@ static int init_adc(struct device *dev)
 
 	if (result != NRFX_SUCCESS) {
 		LOG_ERR("Failed to initialize device: %s",
-			    dev->config->name);
+			    dev->name);
 		return -EBUSY;
 	}
 
-	IRQ_CONNECT(DT_NORDIC_NRF_ADC_ADC_0_IRQ_0,
-		    DT_NORDIC_NRF_ADC_ADC_0_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    nrfx_isr, nrfx_adc_irq_handler, 0);
 
 	adc_context_unlock_unconditionally(&m_data.ctx);
@@ -277,9 +278,22 @@ static const struct adc_driver_api adc_nrfx_driver_api = {
 	.ref_internal  = 1200,
 };
 
-#ifdef CONFIG_ADC_0
-DEVICE_AND_API_INIT(adc_0, DT_NORDIC_NRF_ADC_ADC_0_LABEL,
-		    init_adc, NULL, NULL,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &adc_nrfx_driver_api);
-#endif /* CONFIG_ADC_0 */
+/*
+ * There is only one instance on supported SoCs, so inst is guaranteed
+ * to be 0 if any instance is okay. (We use adc_0 above, so the driver
+ * is relying on the numeric instance value in a way that happens to
+ * be safe.)
+ *
+ * Just in case that assumption becomes invalid in the future, we use
+ * a BUILD_ASSERT().
+ */
+#define ADC_INIT(inst)							\
+	BUILD_ASSERT((inst) == 0,					\
+		     "multiple instances not supported");		\
+	DEVICE_AND_API_INIT(adc_0, DT_INST_LABEL(0),			\
+			    init_adc, NULL, NULL,			\
+			    POST_KERNEL,				\
+			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    &adc_nrfx_driver_api);
+
+DT_INST_FOREACH_STATUS_OKAY(ADC_INIT)

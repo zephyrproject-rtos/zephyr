@@ -22,12 +22,13 @@
 	aliases {
 		led0 = &led0;
 		sw0 = &user_button;
+		i2c-0 = &sercom1;
 	};
 
 	leds {
 		compatible = "gpio-leds";
 		led0: led_0 {
-			gpios = <&porta 19 0>;
+			gpios = <&porta 19 GPIO_ACTIVE_LOW>;
 			label = "Yellow LED";
 		};
 	};
@@ -35,7 +36,7 @@
 	buttons {
 		compatible = "gpio-keys";
 		user_button: button_0 {
-			gpios = <&porta 28 (GPIO_PUD_PULL_UP | GPIO_INT_ACTIVE_LOW)>;
+			gpios = <&porta 28 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "SW0";
 		};
 	};
@@ -60,6 +61,34 @@
 	label = "I2C_0";
 	#address-cells = <1>;
 	#size-cells = <0>;
+};
+
+&sercom4 {
+	status = "okay";
+	compatible = "atmel,sam0-spi";
+	/*
+	 *	CS-PB31; MOSI-PB30; MISO-PC19; SCLK-PC18
+	 *	PAD[1]; PAD[2]; PAD[0]; PAD[3]
+	 */
+	dipo = <0>;
+	dopo = <1>;
+	label = "SPI_RF2XX";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	cs-gpios = <&portb 31 0>;
+
+	rf2xx@0 {
+		compatible = "atmel,rf2xx";
+		reg = <0x0>;
+		label = "RF2XX_0";
+		spi-max-frequency = <6000000>;
+		irq-gpios = <&portb 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		reset-gpios = <&portb 15 GPIO_ACTIVE_LOW>;
+		slptr-gpios = <&porta 20 GPIO_ACTIVE_HIGH>;
+		dig2-gpios = <&portb 17 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		status = "okay";
+	};
 };
 
 &sercom5 {

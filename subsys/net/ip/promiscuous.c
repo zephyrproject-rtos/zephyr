@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(net_promisc, CONFIG_NET_PROMISC_LOG_LEVEL);
 static K_FIFO_DEFINE(promiscuous_queue);
 static atomic_t enabled = ATOMIC_INIT(0);
 
-struct net_pkt *net_promisc_mode_wait_data(s32_t timeout)
+struct net_pkt *net_promisc_mode_wait_data(k_timeout_t timeout)
 {
 	return k_fifo_get(&promiscuous_queue, timeout);
 }
@@ -96,4 +96,3 @@ enum net_verdict net_promisc_mode_input(struct net_pkt *pkt)
 
 	return NET_OK;
 }
-

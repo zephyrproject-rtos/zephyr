@@ -145,22 +145,17 @@ static void canbus_st_min_timeout(struct _timeout *t)
 	k_work_submit_to_queue(&net_canbus_workq, &ctx->pkt->work);
 }
 
-static s32_t canbus_stmin_to_ticks(u8_t stmin)
+static k_timeout_t canbus_stmin_to_ticks(u8_t stmin)
 {
-	s32_t time_ms;
-
 	/* According to ISO 15765-2 stmin should be 127ms if value is corrupt */
 	if (stmin > NET_CAN_STMIN_MAX ||
 	    (stmin > NET_CAN_STMIN_MS_MAX && stmin < NET_CAN_STMIN_US_BEGIN)) {
-		time_ms = K_MSEC(NET_CAN_STMIN_MS_MAX);
+		return K_MSEC(NET_CAN_STMIN_MS_MAX);
 	} else if (stmin >= NET_CAN_STMIN_US_BEGIN) {
-		/* This should be 100us-900us but zephyr can't handle that */
-		time_ms = K_MSEC(1);
-	} else {
-		time_ms = stmin;
+		return K_USEC((stmin + 1 - NET_CAN_STMIN_US_BEGIN) * 100U);
 	}
 
-	return k_ms_to_ticks_ceil32(time_ms);
+	return K_MSEC(stmin);
 }
 
 static u16_t canbus_get_lladdr(struct net_linkaddr *net_lladdr)
@@ -533,7 +528,7 @@ static enum net_verdict canbus_process_cf(struct net_pkt *pkt)
 		}
 	} else {
 		z_add_timeout(&rx_ctx->timeout, canbus_rx_timeout,
-			      k_ms_to_ticks_ceil32(NET_CAN_BS_TIME));
+			      NET_CAN_BS_TIME);
 
 		if (NET_CAN_BS != 0 && !mcast) {
 			rx_ctx->act_block_nr++;
@@ -636,8 +631,7 @@ static enum net_verdict canbus_process_ff(struct net_pkt *pkt)
 	}
 
 	/* At this point we expect to get Consecutive frames directly */
-	z_add_timeout(&rx_ctx->timeout, canbus_rx_timeout,
-		      k_ms_to_ticks_ceil32(NET_CAN_BS_TIME));
+	z_add_timeout(&rx_ctx->timeout, canbus_rx_timeout, NET_CAN_BS_TIME);
 
 	rx_ctx->state = NET_CAN_RX_STATE_CF;
 
@@ -764,7 +758,7 @@ static void canbus_tx_work(struct net_pkt *pkt)
 					ctx);
 				ctx->state = NET_CAN_TX_STATE_WAIT_FC;
 				z_add_timeout(&ctx->timeout, canbus_tx_timeout,
-					      k_ms_to_ticks_ceil32(NET_CAN_BS_TIME));
+					      NET_CAN_BS_TIME);
 				break;
 			} else if (ctx->opts.stmin) {
 				ctx->state = NET_CAN_TX_STATE_WAIT_ST;
@@ -777,7 +771,7 @@ static void canbus_tx_work(struct net_pkt *pkt)
 	case NET_CAN_TX_STATE_WAIT_ST:
 		NET_DBG("SM wait ST. CTX: %p", ctx);
 		z_add_timeout(&ctx->timeout, canbus_st_min_timeout,
-			      k_ms_to_ticks_ceil32(canbus_stmin_to_ticks(ctx->opts.stmin)));
+			      canbus_stmin_to_ticks(ctx->opts.stmin));
 		ctx->state = NET_CAN_TX_STATE_SEND_CF;
 		break;
 
@@ -833,7 +827,7 @@ static enum net_verdict canbus_process_fc_data(struct canbus_isotp_tx_ctx *ctx,
 		NET_DBG("Got WAIT frame. CTX: %p", ctx);
 		z_abort_timeout(&ctx->timeout);
 		z_add_timeout(&ctx->timeout, canbus_tx_timeout,
-			      k_ms_to_ticks_ceil32(NET_CAN_BS_TIME));
+			      NET_CAN_BS_TIME);
 		if (ctx->wft >= NET_CAN_WFTMAX) {
 			NET_INFO("Got to many wait frames. CTX: %p", ctx);
 			ctx->state = NET_CAN_TX_STATE_ERR;
@@ -1023,12 +1017,12 @@ static int canbus_send_multiple_frames(struct net_pkt *pkt, size_t len,
 
 	if (!mcast) {
 		z_add_timeout(&tx_ctx->timeout, canbus_tx_timeout,
-			      k_ms_to_ticks_ceil32(NET_CAN_BS_TIME));
+			      NET_CAN_BS_TIME);
 		tx_ctx->state = NET_CAN_TX_STATE_WAIT_FC;
 	} else {
 		tx_ctx->state = NET_CAN_TX_STATE_SEND_CF;
 		z_add_timeout(&tx_ctx->timeout, canbus_start_sending_cf,
-			      k_ms_to_ticks_ceil32(NET_CAN_FF_CF_TIME));
+			      NET_CAN_FF_CF_TIME);
 	}
 
 	return 0;

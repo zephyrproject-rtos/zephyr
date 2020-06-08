@@ -45,7 +45,7 @@ static u8_t l2cap_policy;
 static struct bt_conn *l2cap_whitelist[CONFIG_BT_MAX_CONN];
 
 static u32_t l2cap_rate;
-static u32_t l2cap_recv_delay;
+static u32_t l2cap_recv_delay_ms;
 static K_FIFO_DEFINE(l2cap_recv_fifo);
 struct l2ch {
 	struct k_delayed_work recv_work;
@@ -54,6 +54,8 @@ struct l2ch {
 #define L2CH_CHAN(_chan) CONTAINER_OF(_chan, struct l2ch, ch.chan)
 #define L2CH_WORK(_work) CONTAINER_OF(_work, struct l2ch, recv_work)
 #define L2CAP_CHAN(_chan) _chan->ch.chan
+
+static bool metrics;
 
 static int l2cap_recv_metrics(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
@@ -94,6 +96,10 @@ static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct l2ch *l2ch = L2CH_CHAN(chan);
 
+	if (metrics) {
+		return l2cap_recv_metrics(chan, buf);
+	}
+
 	shell_print(ctx_shell, "Incoming data channel %p len %u", chan,
 		    buf->len);
 
@@ -101,13 +107,13 @@ static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		shell_hexdump(ctx_shell, buf->data, buf->len);
 	}
 
-	if (l2cap_recv_delay) {
+	if (l2cap_recv_delay_ms > 0) {
 		/* Submit work only if queue is empty */
 		if (k_fifo_is_empty(&l2cap_recv_fifo)) {
 			shell_print(ctx_shell, "Delaying response in %u ms...",
-				    l2cap_recv_delay);
+				    l2cap_recv_delay_ms);
 			k_delayed_work_submit(&l2ch->recv_work,
-					      l2cap_recv_delay);
+					      K_MSEC(l2cap_recv_delay_ms));
 		}
 		net_buf_put(&l2cap_recv_fifo, buf);
 		return -EINPROGRESS;
@@ -143,14 +149,14 @@ static void l2cap_disconnected(struct bt_l2cap_chan *chan)
 static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan)
 {
 	/* print if metrics is disabled */
-	if (chan->ops->recv != l2cap_recv_metrics) {
+	if (!metrics) {
 		shell_print(ctx_shell, "Channel %p requires buffer", chan);
 	}
 
 	return net_buf_alloc(&data_rx_pool, K_FOREVER);
 }
 
-static struct bt_l2cap_chan_ops l2cap_ops = {
+static const struct bt_l2cap_chan_ops l2cap_ops = {
 	.alloc_buf	= l2cap_alloc_buf,
 	.recv		= l2cap_recv,
 	.sent		= l2cap_sent,
@@ -340,10 +346,10 @@ static int cmd_send(const struct shell *shell, size_t argc, char *argv[])
 static int cmd_recv(const struct shell *shell, size_t argc, char *argv[])
 {
 	if (argc > 1) {
-		l2cap_recv_delay = strtoul(argv[1], NULL, 10);
+		l2cap_recv_delay_ms = strtoul(argv[1], NULL, 10);
 	} else {
 		shell_print(shell, "l2cap receive delay: %u ms",
-			    l2cap_recv_delay);
+			    l2cap_recv_delay_ms);
 	}
 
 	return 0;
@@ -362,9 +368,9 @@ static int cmd_metrics(const struct shell *shell, size_t argc, char *argv[])
 	action = argv[1];
 
 	if (!strcmp(action, "on")) {
-		l2cap_ops.recv = l2cap_recv_metrics;
+		metrics = true;
 	} else if (!strcmp(action, "off")) {
-		l2cap_ops.recv = l2cap_recv;
+		metrics = false;
 	} else {
 		shell_help(shell);
 		return 0;
@@ -440,4 +446,3 @@ static int cmd_l2cap(const struct shell *shell, size_t argc, char **argv)
 
 SHELL_CMD_ARG_REGISTER(l2cap, &l2cap_cmds, "Bluetooth L2CAP shell commands",
 		       cmd_l2cap, 1, 1);
-

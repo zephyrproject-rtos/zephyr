@@ -1,7 +1,7 @@
 .. _stm3210c_eval_board:
 
-STM3210C-EVAL
-#############
+ST STM3210C Evaluation
+######################
 
 Overview
 ********

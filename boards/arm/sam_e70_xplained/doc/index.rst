@@ -1,13 +1,14 @@
 .. _sam_e70_xplained:
 
-SAM E70 Xplained
-################
+SAM E70(B) Xplained
+###################
 
 Overview
 ********
 
 The SAM E70 Xplained evaluation kit is a development platform to evaluate the
-Atmel SAM E70 series microcontrollers.
+Atmel SAM E70 series microcontrollers. The current version allows to use both
+IC variations ATSAME70Q21A(B).
 
 .. image:: img/sam_e70_xplained.png
      :width: 500px
@@ -17,7 +18,7 @@ Atmel SAM E70 series microcontrollers.
 Hardware
 ********
 
-- ATSAME70Q21 ARM Cortex-M7 Processor
+- ATSAME70Q21A(B) ARM Cortex-M7 Processor
 - 12 MHz crystal oscillator
 - 32.768 kHz crystal oscillator (not populated)
 - AT24MAC402 EEPROM
@@ -138,6 +139,13 @@ Flashing
       :goals: build flash
 
    You should see "Hello World! arm" in your terminal.
+
+#. To use the SoC variation B IC, you need type "sam_e70b_xplained".
+
+   .. zephyr-app-commands::
+      :zephyr-app: samples/hello_world
+      :board: sam_e70b_xplained
+      :goals: build flash
 
 You can flash the image using an external debug adapter such as J-Link
 or ULINK, connected to the 20-pin JTAG header. Supply the name of the

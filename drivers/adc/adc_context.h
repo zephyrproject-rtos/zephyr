@@ -95,7 +95,7 @@ static inline void adc_context_enable_timer(struct adc_context *ctx)
 	u32_t interval_us = ctx->options.interval_us;
 	u32_t interval_ms = ceiling_fraction(interval_us, 1000UL);
 
-	k_timer_start(&ctx->timer, K_NO_WAIT, interval_ms);
+	k_timer_start(&ctx->timer, K_NO_WAIT, K_MSEC(interval_ms));
 }
 
 static inline void adc_context_disable_timer(struct adc_context *ctx)

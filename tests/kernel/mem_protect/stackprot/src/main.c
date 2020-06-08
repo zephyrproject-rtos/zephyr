@@ -126,6 +126,11 @@ void test_create_alt_thread(void)
 	k_thread_create(&alt_thread_data, alt_thread_stack_area, STACKSIZE,
 			(k_thread_entry_t)alternate_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(1), K_USER, K_NO_WAIT);
+
+	/* Note that this sleep is required on SMP platforms where
+	 * that thread will execute asynchronously!
+	 */
+	k_sleep(K_MSEC(100));
 }
 
 void test_main(void)

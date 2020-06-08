@@ -120,6 +120,7 @@ NET_DEVICE_INIT_INSTANCE(net_iface1_test,
 			 "iface1",
 			 iface1,
 			 net_iface_dev_init,
+			 device_pm_control_nop,
 			 &net_iface1_data,
 			 NULL,
 			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -181,9 +182,9 @@ static int eth_fake_init(struct device *dev)
 	return 0;
 }
 
-ETH_NET_DEVICE_INIT(eth_fake, "eth_fake", eth_fake_init, &eth_fake_data,
-		    NULL, CONFIG_ETH_INIT_PRIORITY, &eth_fake_api_funcs,
-		    NET_ETH_MTU);
+ETH_NET_DEVICE_INIT(eth_fake, "eth_fake", eth_fake_init, device_pm_control_nop,
+		    &eth_fake_data, NULL, CONFIG_ETH_INIT_PRIORITY,
+		    &eth_fake_api_funcs, NET_ETH_MTU);
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 static const char *iface2str(struct net_if *iface)
@@ -214,7 +215,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	}
 }
 
-static void iface_setup(void)
+static void test_iface_setup(void)
 {
 	struct net_if_mcast_addr *maddr;
 	struct net_if_addr *ifaddr;
@@ -311,7 +312,7 @@ static int bytes_from_hostname_unique(u8_t *buf, int buf_len, const char *src)
 	return 0;
 }
 
-static void hostname_get(void)
+static void test_hostname_get(void)
 {
 	const char *hostname;
 	const char *config_hostname = CONFIG_NET_HOSTNAME;
@@ -334,7 +335,7 @@ static void hostname_get(void)
 	}
 }
 
-static void hostname_set(void)
+static void test_hostname_set(void)
 {
 	if (IS_ENABLED(CONFIG_NET_HOSTNAME_UNIQUE)) {
 		int ret;
@@ -348,9 +349,9 @@ static void hostname_set(void)
 void test_main(void)
 {
 	ztest_test_suite(net_hostname_test,
-			 ztest_unit_test(iface_setup),
-			 ztest_unit_test(hostname_get),
-			 ztest_unit_test(hostname_set)
+			 ztest_unit_test(test_iface_setup),
+			 ztest_unit_test(test_hostname_get),
+			 ztest_unit_test(test_hostname_set)
 		);
 
 	ztest_run_test_suite(net_hostname_test);

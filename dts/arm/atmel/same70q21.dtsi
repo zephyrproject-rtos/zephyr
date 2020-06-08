@@ -6,6 +6,7 @@
 
 #include <mem.h>
 #include <atmel/same70.dtsi>
+#include "dma_atmel_same70.h"
 
 / {
 	sram0: memory@20400000 {

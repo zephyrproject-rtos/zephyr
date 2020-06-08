@@ -11,6 +11,19 @@
 extern "C" {
 #endif
 
+/** @brief System-wide macro to denote "forever" in milliseconds
+ *
+ *  Usage of this macro is limited to APIs that want to expose a timeout value
+ *  that can optionally be unlimited, or "forever".
+ *  This macro can not be fed into kernel functions or macros directly. Use
+ *  @ref SYS_TIMEOUT_MS instead.
+ */
+#define SYS_FOREVER_MS (-1)
+
+/** @brief System-wide macro to convert milliseconds to kernel timeouts
+ */
+#define SYS_TIMEOUT_MS(ms) ((ms) == SYS_FOREVER_MS ? K_FOREVER : K_MSEC(ms))
+
 /* Exhaustively enumerated, highly optimized time unit conversion API */
 
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
@@ -24,7 +37,17 @@ static inline int z_impl_z_clock_hw_cycles_per_sec_runtime_get(void)
 }
 #endif /* CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME */
 
-static inline int sys_clock_hw_cycles_per_sec(void)
+#if defined(__cplusplus) && __cplusplus >= 201402L
+  #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
+    #define TIME_CONSTEXPR
+  #else
+    #define TIME_CONSTEXPR constexpr
+  #endif
+#else
+  #define TIME_CONSTEXPR
+#endif
+
+static TIME_CONSTEXPR inline int sys_clock_hw_cycles_per_sec(void)
 {
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
 	return z_clock_hw_cycles_per_sec_runtime_get();
@@ -52,9 +75,10 @@ static inline int sys_clock_hw_cycles_per_sec(void)
  *    round_off - Return the nearest value to the resulting fraction
  *                (pass both round_up/off as false to get "round_down")
  */
-static ALWAYS_INLINE u64_t z_tmcvt(u64_t t, u32_t from_hz, u32_t to_hz,
-				   bool const_hz, bool result32,
-				   bool round_up, bool round_off)
+static TIME_CONSTEXPR ALWAYS_INLINE u64_t z_tmcvt(u64_t t, u32_t from_hz,
+						  u32_t to_hz, bool const_hz,
+						  bool result32, bool round_up,
+						  bool round_off)
 {
 	bool mul_ratio = const_hz &&
 		(to_hz > from_hz) && ((to_hz % from_hz) == 0);
@@ -84,7 +108,7 @@ static ALWAYS_INLINE u64_t z_tmcvt(u64_t t, u32_t from_hz, u32_t to_hz,
 	 */
 	if (div_ratio) {
 		t += off;
-		if (result32) {
+		if (result32 && (t < BIT64(32))) {
 			return ((u32_t)t) / (from_hz / to_hz);
 		} else {
 			return t / (from_hz / to_hz);
@@ -158,7 +182,7 @@ static ALWAYS_INLINE u64_t z_tmcvt(u64_t t, u32_t from_hz, u32_t to_hz,
  *                 print " * \@return The converted time value\n";
  *                 print " *", "/\n";
  *
- *                 print "static inline $type $sym($type t)\n{\n\t";
+ *                 print "static TIME_CONSTEXPR inline $type $sym($type t)\n{\n\t";
  *                 print "/", "* Generated.  Do not edit.  See above. *", "/\n\t";
  *                 print "return z_tmcvt(t, Z_HZ_$from_unit, Z_HZ_$to_unit,";
  *                 print " $const_hz, $ret32, $rup, $roff);\n";
@@ -187,7 +211,7 @@ static ALWAYS_INLINE u64_t z_tmcvt(u64_t t, u32_t from_hz, u32_t to_hz,
  *
  * @return The converted time value
  */
-static inline u32_t k_ms_to_cyc_floor32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_ms_to_cyc_floor32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ms, Z_HZ_cyc, Z_CCYC, true, false, false);
@@ -201,7 +225,7 @@ static inline u32_t k_ms_to_cyc_floor32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_ms_to_cyc_floor64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_ms_to_cyc_floor64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ms, Z_HZ_cyc, Z_CCYC, false, false, false);
@@ -215,7 +239,7 @@ static inline u64_t k_ms_to_cyc_floor64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_ms_to_cyc_near32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_ms_to_cyc_near32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ms, Z_HZ_cyc, Z_CCYC, true, false, true);
@@ -229,7 +253,7 @@ static inline u32_t k_ms_to_cyc_near32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_ms_to_cyc_near64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_ms_to_cyc_near64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ms, Z_HZ_cyc, Z_CCYC, false, false, true);
@@ -243,7 +267,7 @@ static inline u64_t k_ms_to_cyc_near64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_ms_to_cyc_ceil32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_ms_to_cyc_ceil32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ms, Z_HZ_cyc, Z_CCYC, true, true, false);
@@ -257,7 +281,7 @@ static inline u32_t k_ms_to_cyc_ceil32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_ms_to_cyc_ceil64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_ms_to_cyc_ceil64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ms, Z_HZ_cyc, Z_CCYC, false, true, false);
@@ -271,7 +295,7 @@ static inline u64_t k_ms_to_cyc_ceil64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_ms_to_ticks_floor32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_ms_to_ticks_floor32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ms, Z_HZ_ticks, true, true, false, false);
@@ -285,7 +309,7 @@ static inline u32_t k_ms_to_ticks_floor32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_ms_to_ticks_floor64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_ms_to_ticks_floor64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ms, Z_HZ_ticks, true, false, false, false);
@@ -299,7 +323,7 @@ static inline u64_t k_ms_to_ticks_floor64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_ms_to_ticks_near32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_ms_to_ticks_near32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ms, Z_HZ_ticks, true, true, false, true);
@@ -313,7 +337,7 @@ static inline u32_t k_ms_to_ticks_near32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_ms_to_ticks_near64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_ms_to_ticks_near64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ms, Z_HZ_ticks, true, false, false, true);
@@ -327,7 +351,7 @@ static inline u64_t k_ms_to_ticks_near64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_ms_to_ticks_ceil32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_ms_to_ticks_ceil32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ms, Z_HZ_ticks, true, true, true, false);
@@ -341,7 +365,7 @@ static inline u32_t k_ms_to_ticks_ceil32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_ms_to_ticks_ceil64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_ms_to_ticks_ceil64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ms, Z_HZ_ticks, true, false, true, false);
@@ -355,7 +379,7 @@ static inline u64_t k_ms_to_ticks_ceil64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_us_to_cyc_floor32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_us_to_cyc_floor32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_us, Z_HZ_cyc, Z_CCYC, true, false, false);
@@ -369,7 +393,7 @@ static inline u32_t k_us_to_cyc_floor32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_us_to_cyc_floor64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_us_to_cyc_floor64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_us, Z_HZ_cyc, Z_CCYC, false, false, false);
@@ -383,7 +407,7 @@ static inline u64_t k_us_to_cyc_floor64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_us_to_cyc_near32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_us_to_cyc_near32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_us, Z_HZ_cyc, Z_CCYC, true, false, true);
@@ -397,7 +421,7 @@ static inline u32_t k_us_to_cyc_near32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_us_to_cyc_near64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_us_to_cyc_near64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_us, Z_HZ_cyc, Z_CCYC, false, false, true);
@@ -411,7 +435,7 @@ static inline u64_t k_us_to_cyc_near64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_us_to_cyc_ceil32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_us_to_cyc_ceil32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_us, Z_HZ_cyc, Z_CCYC, true, true, false);
@@ -425,7 +449,7 @@ static inline u32_t k_us_to_cyc_ceil32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_us_to_cyc_ceil64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_us_to_cyc_ceil64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_us, Z_HZ_cyc, Z_CCYC, false, true, false);
@@ -439,7 +463,7 @@ static inline u64_t k_us_to_cyc_ceil64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_us_to_ticks_floor32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_us_to_ticks_floor32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_us, Z_HZ_ticks, true, true, false, false);
@@ -453,7 +477,7 @@ static inline u32_t k_us_to_ticks_floor32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_us_to_ticks_floor64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_us_to_ticks_floor64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_us, Z_HZ_ticks, true, false, false, false);
@@ -467,7 +491,7 @@ static inline u64_t k_us_to_ticks_floor64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_us_to_ticks_near32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_us_to_ticks_near32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_us, Z_HZ_ticks, true, true, false, true);
@@ -481,7 +505,7 @@ static inline u32_t k_us_to_ticks_near32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_us_to_ticks_near64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_us_to_ticks_near64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_us, Z_HZ_ticks, true, false, false, true);
@@ -495,7 +519,7 @@ static inline u64_t k_us_to_ticks_near64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_us_to_ticks_ceil32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_us_to_ticks_ceil32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_us, Z_HZ_ticks, true, true, true, false);
@@ -509,7 +533,7 @@ static inline u32_t k_us_to_ticks_ceil32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_us_to_ticks_ceil64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_us_to_ticks_ceil64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_us, Z_HZ_ticks, true, false, true, false);
@@ -523,7 +547,7 @@ static inline u64_t k_us_to_ticks_ceil64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_ns_to_cyc_floor32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_ns_to_cyc_floor32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ns, Z_HZ_cyc, Z_CCYC, true, false, false);
@@ -537,7 +561,7 @@ static inline u32_t k_ns_to_cyc_floor32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_ns_to_cyc_floor64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_ns_to_cyc_floor64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ns, Z_HZ_cyc, Z_CCYC, false, false, false);
@@ -551,7 +575,7 @@ static inline u64_t k_ns_to_cyc_floor64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_ns_to_cyc_near32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_ns_to_cyc_near32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ns, Z_HZ_cyc, Z_CCYC, true, false, true);
@@ -565,7 +589,7 @@ static inline u32_t k_ns_to_cyc_near32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_ns_to_cyc_near64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_ns_to_cyc_near64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ns, Z_HZ_cyc, Z_CCYC, false, false, true);
@@ -579,7 +603,7 @@ static inline u64_t k_ns_to_cyc_near64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_ns_to_cyc_ceil32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_ns_to_cyc_ceil32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ns, Z_HZ_cyc, Z_CCYC, true, true, false);
@@ -593,7 +617,7 @@ static inline u32_t k_ns_to_cyc_ceil32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_ns_to_cyc_ceil64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_ns_to_cyc_ceil64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ns, Z_HZ_cyc, Z_CCYC, false, true, false);
@@ -607,7 +631,7 @@ static inline u64_t k_ns_to_cyc_ceil64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_ns_to_ticks_floor32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_ns_to_ticks_floor32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ns, Z_HZ_ticks, true, true, false, false);
@@ -621,7 +645,7 @@ static inline u32_t k_ns_to_ticks_floor32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_ns_to_ticks_floor64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_ns_to_ticks_floor64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ns, Z_HZ_ticks, true, false, false, false);
@@ -635,7 +659,7 @@ static inline u64_t k_ns_to_ticks_floor64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_ns_to_ticks_near32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_ns_to_ticks_near32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ns, Z_HZ_ticks, true, true, false, true);
@@ -649,7 +673,7 @@ static inline u32_t k_ns_to_ticks_near32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_ns_to_ticks_near64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_ns_to_ticks_near64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ns, Z_HZ_ticks, true, false, false, true);
@@ -663,7 +687,7 @@ static inline u64_t k_ns_to_ticks_near64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_ns_to_ticks_ceil32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_ns_to_ticks_ceil32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ns, Z_HZ_ticks, true, true, true, false);
@@ -677,7 +701,7 @@ static inline u32_t k_ns_to_ticks_ceil32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_ns_to_ticks_ceil64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_ns_to_ticks_ceil64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ns, Z_HZ_ticks, true, false, true, false);
@@ -691,7 +715,7 @@ static inline u64_t k_ns_to_ticks_ceil64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_cyc_to_ms_floor32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_cyc_to_ms_floor32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_ms, Z_CCYC, true, false, false);
@@ -705,7 +729,7 @@ static inline u32_t k_cyc_to_ms_floor32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_cyc_to_ms_floor64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_cyc_to_ms_floor64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_ms, Z_CCYC, false, false, false);
@@ -719,7 +743,7 @@ static inline u64_t k_cyc_to_ms_floor64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_cyc_to_ms_near32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_cyc_to_ms_near32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_ms, Z_CCYC, true, false, true);
@@ -733,7 +757,7 @@ static inline u32_t k_cyc_to_ms_near32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_cyc_to_ms_near64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_cyc_to_ms_near64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_ms, Z_CCYC, false, false, true);
@@ -747,7 +771,7 @@ static inline u64_t k_cyc_to_ms_near64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_cyc_to_ms_ceil32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_cyc_to_ms_ceil32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_ms, Z_CCYC, true, true, false);
@@ -761,7 +785,7 @@ static inline u32_t k_cyc_to_ms_ceil32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_cyc_to_ms_ceil64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_cyc_to_ms_ceil64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_ms, Z_CCYC, false, true, false);
@@ -775,7 +799,7 @@ static inline u64_t k_cyc_to_ms_ceil64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_cyc_to_us_floor32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_cyc_to_us_floor32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_us, Z_CCYC, true, false, false);
@@ -789,7 +813,7 @@ static inline u32_t k_cyc_to_us_floor32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_cyc_to_us_floor64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_cyc_to_us_floor64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_us, Z_CCYC, false, false, false);
@@ -803,7 +827,7 @@ static inline u64_t k_cyc_to_us_floor64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_cyc_to_us_near32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_cyc_to_us_near32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_us, Z_CCYC, true, false, true);
@@ -817,7 +841,7 @@ static inline u32_t k_cyc_to_us_near32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_cyc_to_us_near64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_cyc_to_us_near64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_us, Z_CCYC, false, false, true);
@@ -831,7 +855,7 @@ static inline u64_t k_cyc_to_us_near64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_cyc_to_us_ceil32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_cyc_to_us_ceil32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_us, Z_CCYC, true, true, false);
@@ -845,7 +869,7 @@ static inline u32_t k_cyc_to_us_ceil32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_cyc_to_us_ceil64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_cyc_to_us_ceil64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_us, Z_CCYC, false, true, false);
@@ -859,7 +883,7 @@ static inline u64_t k_cyc_to_us_ceil64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_cyc_to_ns_floor32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_cyc_to_ns_floor32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_ns, Z_CCYC, true, false, false);
@@ -873,7 +897,7 @@ static inline u32_t k_cyc_to_ns_floor32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_cyc_to_ns_floor64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_cyc_to_ns_floor64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_ns, Z_CCYC, false, false, false);
@@ -887,7 +911,7 @@ static inline u64_t k_cyc_to_ns_floor64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_cyc_to_ns_near32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_cyc_to_ns_near32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_ns, Z_CCYC, true, false, true);
@@ -901,7 +925,7 @@ static inline u32_t k_cyc_to_ns_near32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_cyc_to_ns_near64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_cyc_to_ns_near64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_ns, Z_CCYC, false, false, true);
@@ -915,7 +939,7 @@ static inline u64_t k_cyc_to_ns_near64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_cyc_to_ns_ceil32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_cyc_to_ns_ceil32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_ns, Z_CCYC, true, true, false);
@@ -929,7 +953,7 @@ static inline u32_t k_cyc_to_ns_ceil32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_cyc_to_ns_ceil64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_cyc_to_ns_ceil64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_ns, Z_CCYC, false, true, false);
@@ -943,7 +967,7 @@ static inline u64_t k_cyc_to_ns_ceil64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_cyc_to_ticks_floor32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_cyc_to_ticks_floor32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_ticks, Z_CCYC, true, false, false);
@@ -957,7 +981,7 @@ static inline u32_t k_cyc_to_ticks_floor32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_cyc_to_ticks_floor64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_cyc_to_ticks_floor64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_ticks, Z_CCYC, false, false, false);
@@ -971,7 +995,7 @@ static inline u64_t k_cyc_to_ticks_floor64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_cyc_to_ticks_near32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_cyc_to_ticks_near32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_ticks, Z_CCYC, true, false, true);
@@ -985,7 +1009,7 @@ static inline u32_t k_cyc_to_ticks_near32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_cyc_to_ticks_near64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_cyc_to_ticks_near64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_ticks, Z_CCYC, false, false, true);
@@ -999,7 +1023,7 @@ static inline u64_t k_cyc_to_ticks_near64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_cyc_to_ticks_ceil32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_cyc_to_ticks_ceil32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_ticks, Z_CCYC, true, true, false);
@@ -1013,7 +1037,7 @@ static inline u32_t k_cyc_to_ticks_ceil32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_cyc_to_ticks_ceil64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_cyc_to_ticks_ceil64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_ticks, Z_CCYC, false, true, false);
@@ -1027,7 +1051,7 @@ static inline u64_t k_cyc_to_ticks_ceil64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_ticks_to_ms_floor32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_ticks_to_ms_floor32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_ms, true, true, false, false);
@@ -1041,7 +1065,7 @@ static inline u32_t k_ticks_to_ms_floor32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_ticks_to_ms_floor64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_ticks_to_ms_floor64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_ms, true, false, false, false);
@@ -1055,7 +1079,7 @@ static inline u64_t k_ticks_to_ms_floor64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_ticks_to_ms_near32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_ticks_to_ms_near32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_ms, true, true, false, true);
@@ -1069,7 +1093,7 @@ static inline u32_t k_ticks_to_ms_near32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_ticks_to_ms_near64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_ticks_to_ms_near64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_ms, true, false, false, true);
@@ -1083,7 +1107,7 @@ static inline u64_t k_ticks_to_ms_near64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_ticks_to_ms_ceil32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_ticks_to_ms_ceil32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_ms, true, true, true, false);
@@ -1097,7 +1121,7 @@ static inline u32_t k_ticks_to_ms_ceil32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_ticks_to_ms_ceil64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_ticks_to_ms_ceil64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_ms, true, false, true, false);
@@ -1111,7 +1135,7 @@ static inline u64_t k_ticks_to_ms_ceil64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_ticks_to_us_floor32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_ticks_to_us_floor32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_us, true, true, false, false);
@@ -1125,7 +1149,7 @@ static inline u32_t k_ticks_to_us_floor32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_ticks_to_us_floor64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_ticks_to_us_floor64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_us, true, false, false, false);
@@ -1139,7 +1163,7 @@ static inline u64_t k_ticks_to_us_floor64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_ticks_to_us_near32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_ticks_to_us_near32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_us, true, true, false, true);
@@ -1153,7 +1177,7 @@ static inline u32_t k_ticks_to_us_near32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_ticks_to_us_near64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_ticks_to_us_near64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_us, true, false, false, true);
@@ -1167,7 +1191,7 @@ static inline u64_t k_ticks_to_us_near64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_ticks_to_us_ceil32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_ticks_to_us_ceil32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_us, true, true, true, false);
@@ -1181,7 +1205,7 @@ static inline u32_t k_ticks_to_us_ceil32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_ticks_to_us_ceil64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_ticks_to_us_ceil64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_us, true, false, true, false);
@@ -1195,7 +1219,7 @@ static inline u64_t k_ticks_to_us_ceil64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_ticks_to_ns_floor32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_ticks_to_ns_floor32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_ns, true, true, false, false);
@@ -1209,7 +1233,7 @@ static inline u32_t k_ticks_to_ns_floor32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_ticks_to_ns_floor64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_ticks_to_ns_floor64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_ns, true, false, false, false);
@@ -1223,7 +1247,7 @@ static inline u64_t k_ticks_to_ns_floor64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_ticks_to_ns_near32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_ticks_to_ns_near32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_ns, true, true, false, true);
@@ -1237,7 +1261,7 @@ static inline u32_t k_ticks_to_ns_near32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_ticks_to_ns_near64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_ticks_to_ns_near64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_ns, true, false, false, true);
@@ -1251,7 +1275,7 @@ static inline u64_t k_ticks_to_ns_near64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_ticks_to_ns_ceil32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_ticks_to_ns_ceil32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_ns, true, true, true, false);
@@ -1265,7 +1289,7 @@ static inline u32_t k_ticks_to_ns_ceil32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_ticks_to_ns_ceil64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_ticks_to_ns_ceil64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_ns, true, false, true, false);
@@ -1279,7 +1303,7 @@ static inline u64_t k_ticks_to_ns_ceil64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_ticks_to_cyc_floor32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_ticks_to_cyc_floor32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_cyc, Z_CCYC, true, false, false);
@@ -1293,7 +1317,7 @@ static inline u32_t k_ticks_to_cyc_floor32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_ticks_to_cyc_floor64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_ticks_to_cyc_floor64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_cyc, Z_CCYC, false, false, false);
@@ -1307,7 +1331,7 @@ static inline u64_t k_ticks_to_cyc_floor64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_ticks_to_cyc_near32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_ticks_to_cyc_near32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_cyc, Z_CCYC, true, false, true);
@@ -1321,7 +1345,7 @@ static inline u32_t k_ticks_to_cyc_near32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_ticks_to_cyc_near64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_ticks_to_cyc_near64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_cyc, Z_CCYC, false, false, true);
@@ -1335,7 +1359,7 @@ static inline u64_t k_ticks_to_cyc_near64(u64_t t)
  *
  * @return The converted time value
  */
-static inline u32_t k_ticks_to_cyc_ceil32(u32_t t)
+static TIME_CONSTEXPR inline u32_t k_ticks_to_cyc_ceil32(u32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_cyc, Z_CCYC, true, true, false);
@@ -1349,7 +1373,7 @@ static inline u32_t k_ticks_to_cyc_ceil32(u32_t t)
  *
  * @return The converted time value
  */
-static inline u64_t k_ticks_to_cyc_ceil64(u64_t t)
+static TIME_CONSTEXPR inline u64_t k_ticks_to_cyc_ceil64(u64_t t)
 {
 	/* Generated.  Do not edit.  See above. */
 	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_cyc, Z_CCYC, false, true, false);
@@ -1358,6 +1382,8 @@ static inline u64_t k_ticks_to_cyc_ceil64(u64_t t)
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
 #include <syscalls/time_units.h>
 #endif
+
+#undef TIME_CONSTEXPR
 
 #ifdef __cplusplus
 } /* extern "C" */

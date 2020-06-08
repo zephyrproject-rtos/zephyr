@@ -104,7 +104,12 @@ u32_t cntr_cnt_get(void)
 
 void cntr_cmp_set(u8_t cmp, u32_t value)
 {
-	cnt_diff = cntr_cnt_get();
+	/*
+	 * When the LPTMR is enabled, the first increment will take an
+	 * additional one or two prescaler clock cycles due to
+	 * synchronization logic.
+	 */
+	cnt_diff = cntr_cnt_get() + 1;
 	LPTMR1->CSR &= ~LPTMR_CSR_TEN_MASK;
 
 	value -= cnt_diff;

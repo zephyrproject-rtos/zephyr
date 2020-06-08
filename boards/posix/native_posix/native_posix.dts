@@ -16,6 +16,8 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,uart-mcumgr = &uart0;
 		zephyr,flash = &flash0;
+		zephyr,entropy = &rng;
+		zephyr,flash-controller = &flashcontroller0;
 	};
 
 	aliases {
@@ -70,7 +72,7 @@
 
 	eeprom0: eeprom {
 		status = "okay";
-		compatible = "zephyr,native-posix-eeprom";
+		compatible = "zephyr,sim-eeprom";
 		label = "EEPROM_0";
 		size = <DT_SIZE_K(32)>;
 	};
@@ -84,4 +86,11 @@
 		 */
 		current-speed = <0>;
 	};
+
+	rng: rng {
+		status = "okay";
+		compatible = "zephyr,native-posix-rng";
+		label = "ENTROPY_0";
+	};
+
 };

@@ -7,6 +7,10 @@
 #include <st/f4/stm32f411.dtsi>
 
 / {
+	chosen {
+		zephyr,entropy = &rng;
+	};
+
 	soc {
 		pinctrl: pin-controller@40020000 {
 			reg = <0x40020000 0x1c00>;
@@ -133,6 +137,14 @@
 				label = "PWM_14";
 				#pwm-cells = <2>;
 			};
+		};
+
+		rng: rng@50060800 {
+			compatible = "st,stm32-rng";
+			reg = <0x50060800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000040>;
+			status = "disabled";
+			label = "RNG";
 		};
 
 		usbotg_fs: usb@50000000 {

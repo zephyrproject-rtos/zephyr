@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_fxos8700
+
 #include "fxos8700.h"
 #include <sys/util.h>
 #include <sys/__assert.h>
@@ -15,7 +17,7 @@ LOG_MODULE_REGISTER(FXOS8700, CONFIG_SENSOR_LOG_LEVEL);
 
 int fxos8700_set_odr(struct device *dev, const struct sensor_value *val)
 {
-	const struct fxos8700_config *config = dev->config->config_info;
+	const struct fxos8700_config *config = dev->config_info;
 	struct fxos8700_data *data = dev->driver_data;
 	s32_t dr = val->val1;
 
@@ -73,7 +75,7 @@ static int fxos8700_set_mt_ths(struct device *dev,
 			       const struct sensor_value *val)
 {
 #ifdef CONFIG_FXOS8700_MOTION
-	const struct fxos8700_config *config = dev->config->config_info;
+	const struct fxos8700_config *config = dev->config_info;
 	struct fxos8700_data *data = dev->driver_data;
 	u64_t micro_ms2 = abs(val->val1 * 1000000LL + val->val2);
 	u64_t ths = micro_ms2 / FXOS8700_FF_MT_THS_SCALE;
@@ -115,7 +117,7 @@ static int fxos8700_attr_set(struct device *dev,
 
 static int fxos8700_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
-	const struct fxos8700_config *config = dev->config->config_info;
+	const struct fxos8700_config *config = dev->config_info;
 	struct fxos8700_data *data = dev->driver_data;
 	u8_t buffer[FXOS8700_MAX_NUM_BYTES];
 	u8_t num_bytes;
@@ -232,7 +234,7 @@ static void fxos8700_temp_convert(struct sensor_value *val, s8_t raw)
 static int fxos8700_channel_get(struct device *dev, enum sensor_channel chan,
 				struct sensor_value *val)
 {
-	const struct fxos8700_config *config = dev->config->config_info;
+	const struct fxos8700_config *config = dev->config_info;
 	struct fxos8700_data *data = dev->driver_data;
 	int start_channel;
 	int num_channels;
@@ -339,7 +341,7 @@ static int fxos8700_channel_get(struct device *dev, enum sensor_channel chan,
 
 int fxos8700_get_power(struct device *dev, enum fxos8700_power *power)
 {
-	const struct fxos8700_config *config = dev->config->config_info;
+	const struct fxos8700_config *config = dev->config_info;
 	struct fxos8700_data *data = dev->driver_data;
 	u8_t val = *power;
 
@@ -357,7 +359,7 @@ int fxos8700_get_power(struct device *dev, enum fxos8700_power *power)
 
 int fxos8700_set_power(struct device *dev, enum fxos8700_power power)
 {
-	const struct fxos8700_config *config = dev->config->config_info;
+	const struct fxos8700_config *config = dev->config_info;
 	struct fxos8700_data *data = dev->driver_data;
 
 	return i2c_reg_update_byte(data->i2c, config->i2c_address,
@@ -368,7 +370,7 @@ int fxos8700_set_power(struct device *dev, enum fxos8700_power power)
 
 static int fxos8700_init(struct device *dev)
 {
-	const struct fxos8700_config *config = dev->config->config_info;
+	const struct fxos8700_config *config = dev->config_info;
 	struct fxos8700_data *data = dev->driver_data;
 	struct sensor_value odr = {.val1 = 6, .val2 = 250000};
 	struct device *rst;
@@ -390,14 +392,16 @@ static int fxos8700_init(struct device *dev)
 			return -EINVAL;
 		}
 
-		gpio_pin_configure(rst, config->reset_pin, GPIO_DIR_OUT);
-		gpio_pin_write(rst, config->reset_pin, 1);
+		gpio_pin_configure(rst, config->reset_pin,
+				   GPIO_OUTPUT_INACTIVE | config->reset_flags);
+
+		gpio_pin_set(rst, config->reset_pin, 1);
 		/* The datasheet does not mention how long to pulse
 		 * the RST pin high in order to reset. Stay on the
 		 * safe side and pulse for 1 millisecond.
 		 */
 		k_busy_wait(USEC_PER_MSEC);
-		gpio_pin_write(rst, config->reset_pin, 0);
+		gpio_pin_set(rst, config->reset_pin, 0);
 	} else {
 		/* Software reset the sensor. Upon issuing a software
 		 * reset command over the I2C interface, the sensor
@@ -519,14 +523,16 @@ static const struct sensor_driver_api fxos8700_driver_api = {
 };
 
 static const struct fxos8700_config fxos8700_config = {
-	.i2c_name = DT_INST_0_NXP_FXOS8700_BUS_NAME,
-	.i2c_address = DT_INST_0_NXP_FXOS8700_BASE_ADDRESS,
-#ifdef DT_INST_0_NXP_FXOS8700_RESET_GPIOS_CONTROLLER
-	.reset_name = DT_INST_0_NXP_FXOS8700_RESET_GPIOS_CONTROLLER,
-	.reset_pin = DT_INST_0_NXP_FXOS8700_RESET_GPIOS_PIN,
+	.i2c_name = DT_INST_BUS_LABEL(0),
+	.i2c_address = DT_INST_REG_ADDR(0),
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
+	.reset_name = DT_INST_GPIO_LABEL(0, reset_gpios),
+	.reset_pin = DT_INST_GPIO_PIN(0, reset_gpios),
+	.reset_flags = DT_INST_GPIO_FLAGS(0, reset_gpios),
 #else
 	.reset_name = NULL,
 	.reset_pin = 0,
+	.reset_flags = 0,
 #endif
 #ifdef CONFIG_FXOS8700_MODE_ACCEL
 	.mode = FXOS8700_MODE_ACCEL,
@@ -562,11 +568,13 @@ static const struct fxos8700_config fxos8700_config = {
 #endif
 #ifdef CONFIG_FXOS8700_TRIGGER
 #ifdef CONFIG_FXOS8700_DRDY_INT1
-	.gpio_name = DT_INST_0_NXP_FXOS8700_INT1_GPIOS_CONTROLLER,
-	.gpio_pin = DT_INST_0_NXP_FXOS8700_INT1_GPIOS_PIN,
+	.gpio_name = DT_INST_GPIO_LABEL(0, int1_gpios),
+	.gpio_pin = DT_INST_GPIO_PIN(0, int1_gpios),
+	.gpio_flags = DT_INST_GPIO_FLAGS(0, int1_gpios),
 #else
-	.gpio_name = DT_INST_0_NXP_FXOS8700_INT2_GPIOS_CONTROLLER,
-	.gpio_pin = DT_INST_0_NXP_FXOS8700_INT2_GPIOS_PIN,
+	.gpio_name = DT_INST_GPIO_LABEL(0, int2_gpios),
+	.gpio_pin = DT_INST_GPIO_PIN(0, int2_gpios),
+	.gpio_flags = DT_INST_GPIO_FLAGS(0, int2_gpios),
 #endif
 #endif
 #ifdef CONFIG_FXOS8700_PULSE
@@ -582,7 +590,7 @@ static const struct fxos8700_config fxos8700_config = {
 
 static struct fxos8700_data fxos8700_data;
 
-DEVICE_AND_API_INIT(fxos8700, DT_INST_0_NXP_FXOS8700_LABEL, fxos8700_init,
+DEVICE_AND_API_INIT(fxos8700, DT_INST_LABEL(0), fxos8700_init,
 		    &fxos8700_data, &fxos8700_config,
 		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &fxos8700_driver_api);

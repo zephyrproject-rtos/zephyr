@@ -1,0 +1,64 @@
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config MODEM_GSM_PPP
+	bool "Support GSM modems"
+	select MODEM_CONTEXT
+	select MODEM_CMD_HANDLER
+	select MODEM_IFACE_UART
+	help
+	  Enable GSM modems that support standard AT commands and PPP.
+
+if MODEM_GSM_PPP
+
+choice
+	prompt "Modem type"
+	default MODEM_GSM_GENERIC
+	help
+	  Type/manufacturer of the GSM modem
+
+config MODEM_GSM_GENERIC
+	bool "Generic GSM modem"
+	help
+	  The modem does not need any special handling etc.
+
+config MODEM_GSM_SIMCOM
+	bool "SIMCOM modem"
+	help
+	  Use this if you have SIMCOM based modem like SIM800 etc.
+
+endchoice
+
+config MODEM_GSM_UART_NAME
+	string "UART device name the modem is connected to"
+
+config MODEM_GSM_RX_STACK_SIZE
+	int "Size of the stack allocated for receiving data from modem"
+	default 512
+	help
+	  Sets the stack size which will be used by the GSM RX thread.
+
+config MODEM_GSM_INIT_PRIORITY
+	int "Init priority for the GSM modem driver"
+	default 42
+	range 0 99
+	help
+	  The GSM modem is initialized in POST_KERNEL using priority in
+	  the range 0-99.
+
+config MODEM_GSM_APN
+	string "Access Point Name"
+	default "internet"
+	help
+	  Specify Access Point Name, i.e. the name to identify Internet IP
+	  GPRS cellular data context.
+
+config MODEM_GSM_MANUAL_MCCMNO
+	string "MCC/MNO for establishing network connection"
+	help
+	  This setting is used in the AT+COPS command to set the MCC/MNO
+	  for the network connection context.  This value is specific to
+	  the network provider and may need to be changed if auto is not
+	  selected.
+
+endif

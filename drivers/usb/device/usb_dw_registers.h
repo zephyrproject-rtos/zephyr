@@ -22,7 +22,7 @@ extern "C" {
 #endif
 
 /* Number of USB controllers */
-enum USB_DW { USB_DW_0 = 0, USB_DW_NUM };
+enum USB_DW_N { USB_DW_0 = 0, USB_DW_NUM };
 
 /* USB IN EP index */
 enum usb_dw_in_ep_idx {
@@ -197,9 +197,10 @@ struct usb_dw_reg {
 #define USB_DW_CORE_RST_TIMEOUT_US 10000
 #define USB_DW_PLL_TIMEOUT_US 100
 
-#define USB_DW_EP_FIFO(ep) (*(u32_t *)(USB_DW_BASE + 0x1000 * (ep + 1)))
+#define USB_DW_EP_FIFO(ep)						\
+	(*(u32_t *)(DT_INST_REG_ADDR(0) + 0x1000 * (ep + 1)))
 /* USB register block base address */
-#define USB_DW ((struct usb_dw_reg *)USB_DW_BASE)
+#define USB_DW ((struct usb_dw_reg *)DT_INST_REG_ADDR(0))
 
 #define DW_USB_IN_EP_NUM		(6)
 #define DW_USB_OUT_EP_NUM		(4)

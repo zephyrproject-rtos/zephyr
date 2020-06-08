@@ -41,6 +41,57 @@ static inline void z_vrfy_uart_poll_out(struct device *dev,
 }
 #include <syscalls/uart_poll_out_mrsh.c>
 
+static inline int z_vrfy_uart_config_get(struct device *dev,
+		struct uart_config *cfg)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, config_get));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(cfg, sizeof(struct uart_config)));
+
+	return z_impl_uart_config_get(dev, cfg);
+}
+#include <syscalls/uart_config_get_mrsh.c>
+
+static inline int z_vrfy_uart_configure(struct device *dev,
+		const struct uart_config *cfg)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, config_get));
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(cfg, sizeof(struct uart_config)));
+
+	return z_impl_uart_configure(dev, cfg);
+}
+#include <syscalls/uart_configure_mrsh.c>
+
+#ifdef CONFIG_UART_ASYNC_API
+/* callback_set() excluded as we don't allow ISR callback installation from
+ * user mode
+ *
+ * rx_buf_rsp() excluded as it's designed to be called from ISR callbacks
+ */
+
+static inline int z_vrfy_uart_tx(struct device *dev, const u8_t *buf,
+				 size_t len, s32_t timeout)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, tx));
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(buf, len));
+	return z_impl_uart_tx(dev, buf, len, timeout);
+}
+#include <syscalls/uart_tx_mrsh.c>
+
+UART_SIMPLE(tx_abort);
+#include <syscalls/uart_tx_abort_mrsh.c>
+
+static inline int z_vrfy_uart_rx_enable(struct device *dev, u8_t *buf,
+					size_t len, s32_t timeout)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, rx_enable));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(buf, len));
+	return z_impl_uart_rx_enable(dev, buf, len, timeout);
+}
+#include <syscalls/uart_rx_enable_mrsh.c>
+
+UART_SIMPLE(rx_disable);
+#include <syscalls/uart_rx_disable_mrsh.c>
+#endif /* CONFIG_UART_ASYNC_API */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 UART_SIMPLE_VOID(irq_tx_enable)

@@ -9,8 +9,7 @@
 
 / {
 	model = "VNG VBLUno52 BLE 5.0 board";
-	compatible = "vng,vbluno52", "nordic,nrf52832-qfaa",
-		     "nordic,nrf52832";
+	compatible = "vng,vbluno52";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -40,7 +39,7 @@
 		compatible = "gpio-keys";
 		button0: button_0 {
 			/* gpio flags need validation */
-			gpios = <&gpio0 17 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
 			label = "Button";
 		};
 	};

@@ -6,23 +6,25 @@
 menuconfig ETH_SAM_GMAC
 	bool "Atmel SAM Ethernet driver"
 	depends on SOC_FAMILY_SAM
-	select NOCACHE_MEMORY
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	help
 	  Enable Atmel SAM MCU Family Ethernet driver.
 
 if ETH_SAM_GMAC
 
-config ETH_SAM_GMAC_NAME
-	string "Device name"
-	default "ETH_0"
-	help
-	  Device name allows user to obtain a handle to the device object
-	  required by all driver API functions. Device name has to be unique.
+# Workaround for not being able to have commas in macro arguments
+DT_ETH_SAM_GMAC_PATH := $(dt_nodelabel_path,gmac)
+
+# Just for readability, to keep the following lines shorter.
+DT_ETH_SAM_GMAC_NQ := $(dt_node_int_prop_int,$(DT_ETH_SAM_GMAC_PATH),num-queues)
 
 config ETH_SAM_GMAC_QUEUES
-	int "Number of hardware TX and RX queues"
+	int "Number of active hardware TX and RX queues"
 	default 1
-	range 1 3
+	range 1 $(DT_ETH_SAM_GMAC_NQ) if SOC_SERIES_SAME70 || \
+						SOC_SERIES_SAMV71 || \
+						SOC_SERIES_SAM4E || \
+						SOC_SERIES_SAME54
 	help
 	  Select the number of hardware queues used by the driver. Packets will be
 	  routed to appropriate queues based on their priority.
@@ -44,6 +46,9 @@ config ETH_SAM_GMAC_FORCED_QUEUE
 	default 0
 	range 0 1 if ETH_SAM_GMAC_QUEUES = 2
 	range 0 2 if ETH_SAM_GMAC_QUEUES = 3
+	range 0 3 if ETH_SAM_GMAC_QUEUES = 4
+	range 0 4 if ETH_SAM_GMAC_QUEUES = 5
+	range 0 5 if ETH_SAM_GMAC_QUEUES = 6
 	help
 	  Which queue to force the routing to. This affects both the TX and RX queues
 	  setup.
@@ -63,67 +68,18 @@ config ETH_SAM_GMAC_BUF_RX_COUNT
 	  fit at least two Ethernet frames: one being received by the GMAC module
 	  and the other being processed by the higher layer networking stack.
 
-config ETH_SAM_GMAC_IRQ_PRI
-	int "Interrupt priority"
-	default 0
+config ETH_SAM_GMAC_MONITOR_PERIOD
+	int "Monitor task execution period"
+	default 1000
 	help
-	  IRQ priority of Ethernet device
-
-choice ETH_SAM_GMAC_MAC_SELECT
-	prompt "MAC address"
-	help
-	  Choose how to configure MAC address.
-
-config ETH_SAM_GMAC_MAC_MANUAL
-	bool "Manual"
-	help
-	  Assign an arbitrary MAC address.
+	  Monitor task execution period in milliseconds. The monitor task is
+	  periodically executed to detect and report any changes in the PHY
+	  link status to the operating system.
 
 config ETH_SAM_GMAC_MAC_I2C_EEPROM
 	bool "Read from an I2C EEPROM"
 	help
 	  Read MAC address from an I2C EEPROM.
-
-config ETH_SAM_GMAC_RANDOM_MAC
-	bool "Random MAC address"
-	help
-	  Generate a random MAC address dynamically.
-
-endchoice
-
-if ETH_SAM_GMAC_MAC_MANUAL
-
-config ETH_SAM_GMAC_MAC0
-	hex "MAC Address Byte 0"
-	default 0
-	range 0 0xff
-
-config ETH_SAM_GMAC_MAC1
-	hex "MAC Address Byte 1"
-	default 0
-	range 0 0xff
-
-config ETH_SAM_GMAC_MAC2
-	hex "MAC Address Byte 2"
-	default 0
-	range 0 0xff
-
-config ETH_SAM_GMAC_MAC3
-	hex "MAC Address Byte 3"
-	default 0
-	range 0 0xff
-
-config ETH_SAM_GMAC_MAC4
-	hex "MAC Address Byte 4"
-	default 0
-	range 0 0xff
-
-config ETH_SAM_GMAC_MAC5
-	hex "MAC Address Byte 5"
-	default 0
-	range 0 0xff
-
-endif # ETH_SAM_GMAC_MAC_MANUAL
 
 if ETH_SAM_GMAC_MAC_I2C_EEPROM
 
@@ -155,16 +111,6 @@ config ETH_SAM_GMAC_MAC_I2C_DEV_NAME
 	  obtain handle to the I2C device object.
 
 endif # ETH_SAM_GMAC_MAC_I2C_EEPROM
-
-choice
-	prompt "MII/RMII Interface to the Physical Layer"
-
-	config ETH_SAM_GMAC_RMII
-		bool "RMII"
-
-	config ETH_SAM_GMAC_MII
-		bool "MII"
-endchoice
 
 config ETH_SAM_GMAC_PHY_ADDR
 	int "GMAC PHY Address"

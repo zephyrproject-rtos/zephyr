@@ -1,0 +1,12 @@
+# Copyright (c) 2019 Laczen
+# SPDX-License-Identifier: Apache-2.0
+
+description: Zephyr Simulated EEPROM device
+
+compatible: "zephyr,sim-eeprom"
+
+include: eeprom-base.yaml
+
+properties:
+    size:
+      required: true

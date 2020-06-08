@@ -3,12 +3,9 @@
 # Copyright (c) 2016 Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_FAMILY_ARM
-
 config TIMER_TMR_CMSDK_APB
 	bool "ARM CMSDK (Cortex-M System Design Kit) Timer driver"
+	depends on SOC_FAMILY_ARM
 	help
 	  The timers (TMR) present in the platform are used as timers.
 	  This option enables the support for the timers.
-
-endif # SOC_FAMILY_ARM

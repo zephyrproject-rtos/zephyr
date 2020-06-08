@@ -89,12 +89,31 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *pStack,
  * 3) Set the stack pointer to the value provided in switch_to
  * 4) Pop off all thread state from the stack we switched to and return.
  *
- * Some arches may implement thread->switch handle as a pointer to the thread
- * itself, and save context somewhere in thread->arch. In this case, on initial
- * context switch from the dummy thread, thread->switch handle for the outgoing
- * thread is NULL. Instead of dereferencing switched_from all the way to get
- * the thread pointer, subtract ___thread_t_switch_handle_OFFSET to obtain the
- * thread pointer instead.
+ * Some arches may implement thread->switch handle as a pointer to the
+ * thread itself, and save context somewhere in thread->arch. In this
+ * case, on initial context switch from the dummy thread,
+ * thread->switch handle for the outgoing thread is NULL. Instead of
+ * dereferencing switched_from all the way to get the thread pointer,
+ * subtract ___thread_t_switch_handle_OFFSET to obtain the thread
+ * pointer instead.  That is, such a scheme would have behavior like
+ * (in C pseudocode):
+ *
+ * void arch_switch(void *switch_to, void **switched_from)
+ * {
+ *     struct k_thread *new = switch_to;
+ *     struct k_thread *old = CONTAINER_OF(switched_from, struct k_thread,
+ *                                         switch_handle);
+ *
+ *     // save old context...
+ *     *switched_from = old;
+ *     // restore new context...
+ * }
+ *
+ * Note that, regardless of the underlying handle representation, the
+ * incoming switched_from pointer MUST be written through with a
+ * non-NULL value after all relevant thread state has been saved.  The
+ * kernel uses this as a synchronization signal to be able to wait for
+ * switch completion from another CPU.
  *
  * @param switch_to Incoming thread's switch handle
  * @param switched_from Pointer to outgoing thread's switch handle storage
@@ -146,7 +165,7 @@ void arch_switch_to_main_thread(struct k_thread *main_thread,
 				  k_thread_entry_t _main);
 #endif /* CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN */
 
-#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 /**
  * @brief Disable floating point context preservation
  *
@@ -160,7 +179,7 @@ void arch_switch_to_main_thread(struct k_thread *main_thread,
  * @retval -EINVAL If the floating point disabling could not be performed.
  */
 int arch_float_disable(struct k_thread *thread);
-#endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
+#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
 /** @} */
 
@@ -193,31 +212,10 @@ static inline bool arch_is_in_isr(void);
 
 /** @} */
 
-
-/**
- * @defgroup arch-benchmarking Architecture-specific benchmarking globals
- * @ingroup arch-interface
- */
-
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-extern u64_t arch_timing_swap_start;
-extern u64_t arch_timing_swap_end;
-extern u64_t arch_timing_irq_start;
-extern u64_t arch_timing_irq_end;
-extern u64_t arch_timing_tick_start;
-extern u64_t arch_timing_tick_end;
-extern u64_t arch_timing_user_mode_end;
-extern u32_t arch_timing_value_swap_end;
-extern u64_t arch_timing_value_swap_common;
-extern u64_t arch_timing_value_swap_temp;
-#endif /* CONFIG_EXECUTION_BENCHMARKING */
-
-/** @} */
-
-
 /**
  * @defgroup arch-misc Miscellaneous architecture APIs
  * @ingroup arch-interface
+ * @{
  */
 
 /**

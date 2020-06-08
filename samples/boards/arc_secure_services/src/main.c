@@ -36,7 +36,7 @@ void threadA(void *dummy1, void *dummy2, void *dummy3)
 }
 
 K_THREAD_DEFINE(thread_a, STACKSIZE, threadA, NULL, NULL, NULL,
-		PRIORITY, 0, K_NO_WAIT);
+		PRIORITY, 0, 0);
 
 
 void main(void)
@@ -54,6 +54,6 @@ void main(void)
 	while (1) {
 		printk("I am the %s thread in secure world: %d\n",
 				 __func__, i++);
-		k_sleep(SLEEPTIME);
+		k_msleep(SLEEPTIME);
 	}
 }

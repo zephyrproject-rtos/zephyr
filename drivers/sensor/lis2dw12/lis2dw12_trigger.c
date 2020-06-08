@@ -8,6 +8,8 @@
  * https://www.st.com/resource/en/datasheet/lis2dw12.pdf
  */
 
+#define DT_DRV_COMPAT st_lis2dw12
+
 #include <kernel.h>
 #include <drivers/sensor.h>
 #include <drivers/gpio.h>
@@ -23,7 +25,7 @@ LOG_MODULE_DECLARE(LIS2DW12, CONFIG_SENSOR_LOG_LEVEL);
 static int lis2dw12_enable_int(struct device *dev,
 			       enum sensor_trigger_type type, int enable)
 {
-	const struct lis2dw12_device_config *cfg = dev->config->config_info;
+	const struct lis2dw12_device_config *cfg = dev->config_info;
 	struct lis2dw12_data *lis2dw12 = dev->driver_data;
 	lis2dw12_reg_t int_route;
 
@@ -166,7 +168,7 @@ static void lis2dw12_handle_interrupt(void *arg)
 {
 	struct device *dev = (struct device *)arg;
 	struct lis2dw12_data *lis2dw12 = dev->driver_data;
-	const struct lis2dw12_device_config *cfg = dev->config->config_info;
+	const struct lis2dw12_device_config *cfg = dev->config_info;
 	lis2dw12_all_sources_t sources;
 
 	lis2dw12_all_sources_get(lis2dw12->ctx, &sources);
@@ -183,7 +185,8 @@ static void lis2dw12_handle_interrupt(void *arg)
 	}
 #endif /* CONFIG_LIS2DW12_PULSE */
 
-	gpio_pin_enable_callback(lis2dw12->gpio, cfg->int_gpio_pin);
+	gpio_pin_interrupt_configure(lis2dw12->gpio, cfg->int_gpio_pin,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 }
 
 static void lis2dw12_gpio_callback(struct device *dev,
@@ -196,7 +199,8 @@ static void lis2dw12_gpio_callback(struct device *dev,
 		return;
 	}
 
-	gpio_pin_disable_callback(dev, lis2dw12->gpio_pin);
+	gpio_pin_interrupt_configure(dev, lis2dw12->gpio_pin,
+				     GPIO_INT_DISABLE);
 
 #if defined(CONFIG_LIS2DW12_TRIGGER_OWN_THREAD)
 	k_sem_give(&lis2dw12->gpio_sem);
@@ -233,7 +237,7 @@ static void lis2dw12_work_cb(struct k_work *work)
 int lis2dw12_init_interrupt(struct device *dev)
 {
 	struct lis2dw12_data *lis2dw12 = dev->driver_data;
-	const struct lis2dw12_device_config *cfg = dev->config->config_info;
+	const struct lis2dw12_device_config *cfg = dev->config_info;
 	int ret;
 
 	/* setup data ready gpio interrupt (INT1 or INT2) */
@@ -260,8 +264,7 @@ int lis2dw12_init_interrupt(struct device *dev)
 	lis2dw12->gpio_pin = cfg->int_gpio_pin;
 
 	ret = gpio_pin_configure(lis2dw12->gpio, cfg->int_gpio_pin,
-			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			   GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE);
+				 GPIO_INPUT | cfg->int_gpio_flags);
 	if (ret < 0) {
 		LOG_DBG("Could not configure gpio");
 		return ret;
@@ -281,5 +284,6 @@ int lis2dw12_init_interrupt(struct device *dev)
 		return -EIO;
 	}
 
-	return gpio_pin_enable_callback(lis2dw12->gpio, cfg->int_gpio_pin);
+	return gpio_pin_interrupt_configure(lis2dw12->gpio, cfg->int_gpio_pin,
+					    GPIO_INT_EDGE_TO_ACTIVE);
 }

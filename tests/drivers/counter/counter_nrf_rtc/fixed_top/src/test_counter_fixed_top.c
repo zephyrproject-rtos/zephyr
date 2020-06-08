@@ -16,11 +16,11 @@ static volatile u32_t top_cnt;
 const char *devices[] = {
 #ifdef CONFIG_COUNTER_RTC0
 	/* Nordic RTC0 may be reserved for Bluetooth */
-	DT_NORDIC_NRF_RTC_RTC_0_LABEL,
+	DT_LABEL(DT_NODELABEL(rtc0)),
 #endif
 	/* Nordic RTC1 is used for the system clock */
 #ifdef CONFIG_COUNTER_RTC2
-	DT_NORDIC_NRF_RTC_RTC_2_LABEL,
+	DT_LABEL(DT_NODELABEL(rtc2)),
 #endif
 
 };

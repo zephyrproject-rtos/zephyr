@@ -19,12 +19,14 @@ int mpu6050_trigger_set(struct device *dev,
 			sensor_trigger_handler_t handler)
 {
 	struct mpu6050_data *drv_data = dev->driver_data;
+	const struct mpu6050_config *cfg = dev->config_info;
 
 	if (trig->type != SENSOR_TRIG_DATA_READY) {
 		return -ENOTSUP;
 	}
 
-	gpio_pin_disable_callback(drv_data->gpio, CONFIG_MPU6050_GPIO_PIN_NUM);
+	gpio_pin_interrupt_configure(drv_data->gpio, cfg->int_pin,
+				     GPIO_INT_DISABLE);
 
 	drv_data->data_ready_handler = handler;
 	if (handler == NULL) {
@@ -33,7 +35,8 @@ int mpu6050_trigger_set(struct device *dev,
 
 	drv_data->data_ready_trigger = *trig;
 
-	gpio_pin_enable_callback(drv_data->gpio, CONFIG_MPU6050_GPIO_PIN_NUM);
+	gpio_pin_interrupt_configure(drv_data->gpio, cfg->int_pin,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 
 	return 0;
 }
@@ -43,10 +46,12 @@ static void mpu6050_gpio_callback(struct device *dev,
 {
 	struct mpu6050_data *drv_data =
 		CONTAINER_OF(cb, struct mpu6050_data, gpio_cb);
+	const struct mpu6050_config *cfg = drv_data->dev->config_info;
 
 	ARG_UNUSED(pins);
 
-	gpio_pin_disable_callback(dev, CONFIG_MPU6050_GPIO_PIN_NUM);
+	gpio_pin_interrupt_configure(drv_data->gpio, cfg->int_pin,
+				     GPIO_INT_DISABLE);
 
 #if defined(CONFIG_MPU6050_TRIGGER_OWN_THREAD)
 	k_sem_give(&drv_data->gpio_sem);
@@ -59,13 +64,16 @@ static void mpu6050_thread_cb(void *arg)
 {
 	struct device *dev = arg;
 	struct mpu6050_data *drv_data = dev->driver_data;
+	const struct mpu6050_config *cfg = dev->config_info;
 
 	if (drv_data->data_ready_handler != NULL) {
 		drv_data->data_ready_handler(dev,
 					     &drv_data->data_ready_trigger);
 	}
 
-	gpio_pin_enable_callback(drv_data->gpio, CONFIG_MPU6050_GPIO_PIN_NUM);
+	gpio_pin_interrupt_configure(drv_data->gpio, cfg->int_pin,
+				     GPIO_INT_EDGE_TO_ACTIVE);
+
 }
 
 #ifdef CONFIG_MPU6050_TRIGGER_OWN_THREAD
@@ -96,22 +104,24 @@ static void mpu6050_work_cb(struct k_work *work)
 int mpu6050_init_interrupt(struct device *dev)
 {
 	struct mpu6050_data *drv_data = dev->driver_data;
+	const struct mpu6050_config *cfg = dev->config_info;
 
 	/* setup data ready gpio interrupt */
-	drv_data->gpio = device_get_binding(CONFIG_MPU6050_GPIO_DEV_NAME);
+	drv_data->gpio = device_get_binding(cfg->int_label);
 	if (drv_data->gpio == NULL) {
 		LOG_ERR("Failed to get pointer to %s device",
-			    CONFIG_MPU6050_GPIO_DEV_NAME);
+			    cfg->int_label);
 		return -EINVAL;
 	}
 
-	gpio_pin_configure(drv_data->gpio, CONFIG_MPU6050_GPIO_PIN_NUM,
-			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			   GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE);
+	drv_data->dev = dev;
+
+	gpio_pin_configure(drv_data->gpio, cfg->int_pin,
+			   GPIO_INPUT | cfg->int_flags);
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   mpu6050_gpio_callback,
-			   BIT(CONFIG_MPU6050_GPIO_PIN_NUM));
+			   BIT(cfg->int_pin));
 
 	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
 		LOG_ERR("Failed to set gpio callback");
@@ -119,7 +129,7 @@ int mpu6050_init_interrupt(struct device *dev)
 	}
 
 	/* enable data ready interrupt */
-	if (i2c_reg_write_byte(drv_data->i2c, CONFIG_MPU6050_I2C_ADDR,
+	if (i2c_reg_write_byte(drv_data->i2c, cfg->i2c_addr,
 			       MPU6050_REG_INT_EN, MPU6050_DRDY_EN) < 0) {
 		LOG_ERR("Failed to enable data ready interrupt.");
 		return -EIO;
@@ -135,10 +145,10 @@ int mpu6050_init_interrupt(struct device *dev)
 			0, K_NO_WAIT);
 #elif defined(CONFIG_MPU6050_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = mpu6050_work_cb;
-	drv_data->dev = dev;
 #endif
 
-	gpio_pin_enable_callback(drv_data->gpio, CONFIG_MPU6050_GPIO_PIN_NUM);
+	gpio_pin_interrupt_configure(drv_data->gpio, cfg->int_pin,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 
 	return 0;
 }

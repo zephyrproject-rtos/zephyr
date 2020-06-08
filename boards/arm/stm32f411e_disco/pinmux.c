@@ -14,10 +14,13 @@
 
 /* pin assignments for STM32F411E-DISCO board */
 static const struct pin_config pinconf[] = {
-#ifdef CONFIG_UART_2
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usart2), okay) && CONFIG_SERIAL
 	{STM32_PIN_PA2, STM32F4_PINMUX_FUNC_PA2_USART2_TX},
 	{STM32_PIN_PA3, STM32F4_PINMUX_FUNC_PA3_USART2_RX},
-#endif	/* CONFIG_UART_2 */
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm4), okay) && CONFIG_PWM
+	{STM32_PIN_PD12, STM32F4_PINMUX_FUNC_PD12_PWM4_CH1 },
+#endif
 };
 
 static int pinmux_stm32_init(struct device *port)

@@ -45,6 +45,16 @@ static struct k_thread tthread[THREADS_NUM];
 static K_THREAD_STACK_ARRAY_DEFINE(tstack, THREADS_NUM, STACK_SIZE);
 
 static volatile int thread_started[THREADS_NUM - 1];
+
+static int curr_cpu(void)
+{
+	unsigned int k = arch_irq_lock();
+	int ret = arch_curr_cpu()->id;
+
+	arch_irq_unlock(k);
+	return ret;
+}
+
 /**
  * @brief Tests for SMP
  * @defgroup kernel_smp_tests SMP Tests
@@ -120,7 +130,7 @@ static void child_fn(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 	int parent_cpu_id = POINTER_TO_INT(p1);
 
-	zassert_true(parent_cpu_id != arch_curr_cpu()->id,
+	zassert_true(parent_cpu_id != curr_cpu(),
 		     "Parent isn't on other core");
 
 	sync_count++;
@@ -140,7 +150,7 @@ void test_cpu_id_threads(void)
 	/* Make sure idle thread runs on each core */
 	k_sleep(K_MSEC(1000));
 
-	int parent_cpu_id = arch_curr_cpu()->id;
+	int parent_cpu_id = curr_cpu();
 
 	k_tid_t tid = k_thread_create(&t2, t2_stack, T2_STACK_SIZE, child_fn,
 				      INT_TO_POINTER(parent_cpu_id), NULL,
@@ -161,7 +171,7 @@ static void thread_entry(void *p1, void *p2, void *p3)
 	int count = 0;
 
 	tinfo[thread_num].executed  = 1;
-	tinfo[thread_num].cpu_id = arch_curr_cpu()->id;
+	tinfo[thread_num].cpu_id = curr_cpu();
 
 	while (count++ < 5) {
 		k_busy_wait(DELAY_US);
@@ -198,7 +208,8 @@ static void spawn_threads(int prio, int thread_num,
 		tinfo[i].tid = k_thread_create(&tthread[i], tstack[i],
 					       STACK_SIZE, thread_entry,
 					       INT_TO_POINTER(i), NULL, NULL,
-					       tinfo[i].priority, 0, delay);
+					       tinfo[i].priority, 0,
+					       K_MSEC(delay));
 		if (delay) {
 			/* Increase delay for each thread */
 			delay = delay + 10;
@@ -338,7 +349,7 @@ void test_sleep_threads(void)
 	spawn_threads(K_PRIO_COOP(10), THREADS_NUM, !EQUAL_PRIORITY,
 		      &thread_entry, !THREAD_DELAY);
 
-	k_sleep(TIMEOUT);
+	k_msleep(TIMEOUT);
 
 	for (int i = 0; i < THREADS_NUM; i++) {
 		zassert_true(tinfo[i].executed == 1,
@@ -357,7 +368,7 @@ static void thread_wakeup_entry(void *p1, void *p2, void *p3)
 
 	thread_started[thread_num] = 1;
 
-	k_sleep(DELAY_US * 1000);
+	k_msleep(DELAY_US * 1000);
 
 	tinfo[thread_num].executed  = 1;
 }

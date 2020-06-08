@@ -1,0 +1,15 @@
+# MIMXRT1010-EVK board
+
+# Copyright (c) 2019, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MIMXRT1010_EVK
+
+config BOARD
+	default "mimxrt1010_evk" if BOARD_MIMXRT1010_EVK
+
+choice CODE_LOCATION
+	default CODE_FLEXSPI
+endchoice
+
+endif # BOARD_MIMXRT1010_EVK

@@ -5,5 +5,4 @@
 
 config BOARD_NUCLEO_F401RE
 	bool "NUCLEO-64 F401RE Development Board"
-	select I2C_1 if I2C
 	depends on SOC_STM32F401XE

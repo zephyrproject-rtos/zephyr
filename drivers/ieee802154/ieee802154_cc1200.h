@@ -13,7 +13,26 @@
 #include <sys/atomic.h>
 #include <drivers/spi.h>
 
-#include <ieee802154/cc1200.h>
+#include <drivers/ieee802154/cc1200.h>
+
+/* Note for EMK & EM adapter booster pack users:
+ * SPI pins are easy, RESET as well, but when it comes to GPIO:
+ * CHIP -> EM adapter
+ * GPIO0 -> GPIOA
+ * GPIO1 -> reserved (it's SPI MISO)
+ * GPIO2 -> GPIOB
+ * GPIO3 -> GPIO3
+ */
+
+enum cc1200_gpio_index {
+	CC1200_GPIO_IDX_GPIO0,
+	CC1200_GPIO_IDX_MAX,
+};
+
+struct cc1200_gpio_configuration {
+	struct device *dev;
+	u32_t pin;
+};
 
 /* Runtime context structure
  ***************************
@@ -22,7 +41,7 @@
 struct cc1200_context {
 	struct net_if *iface;
 	/**************************/
-	struct cc1200_gpio_configuration *gpios;
+	struct cc1200_gpio_configuration gpios[CC1200_GPIO_IDX_MAX];
 	struct gpio_callback rx_tx_cb;
 	struct device *spi;
 	struct spi_config spi_cfg;

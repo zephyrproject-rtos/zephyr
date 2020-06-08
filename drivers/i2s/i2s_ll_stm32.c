@@ -4,12 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT st_stm32_i2s
+
 #include <string.h>
 #include <drivers/dma.h>
 #include <drivers/i2s.h>
 #include <dt-bindings/dma/stm32_dma.h>
 #include <soc.h>
-#include <clock_control/stm32_clock_control.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 #include <drivers/clock_control.h>
 
 #include "i2s_ll_stm32.h"
@@ -223,6 +225,13 @@ static int i2s_stm32_configure(struct device *dev, enum i2s_dir dir,
 		return ret;
 	}
 
+	/* set I2S Master Clock */
+	if (stream->master) {
+		LL_I2S_EnableMasterClock(cfg->i2s);
+	} else {
+		LL_I2S_DisableMasterClock(cfg->i2s);
+	}
+
 	/* set I2S Data Format */
 	if (i2s_cfg->word_size == 16U) {
 		LL_I2S_SetDataFormat(cfg->i2s, LL_I2S_DATAFORMAT_16B);
@@ -374,7 +383,8 @@ static int i2s_stm32_read(struct device *dev, void **mem_block, size_t *size)
 	}
 
 	if (dev_data->rx.state != I2S_STATE_ERROR) {
-		ret = k_sem_take(&dev_data->rx.sem, dev_data->rx.cfg.timeout);
+		ret = k_sem_take(&dev_data->rx.sem,
+				 SYS_TIMEOUT_MS(dev_data->rx.cfg.timeout));
 		if (ret < 0) {
 			return ret;
 		}
@@ -400,7 +410,8 @@ static int i2s_stm32_write(struct device *dev, void *mem_block, size_t size)
 		return -EIO;
 	}
 
-	ret = k_sem_take(&dev_data->tx.sem, dev_data->tx.cfg.timeout);
+	ret = k_sem_take(&dev_data->tx.sem,
+			 SYS_TIMEOUT_MS(dev_data->tx.cfg.timeout));
 	if (ret < 0) {
 		return ret;
 	}
@@ -670,7 +681,7 @@ static int i2s_stm32_initialize(struct device *dev)
 		return -ENODEV;
 	}
 
-	LOG_INF("%s inited", dev->config->name);
+	LOG_INF("%s inited", dev->name);
 
 	return 0;
 }
@@ -838,34 +849,36 @@ static struct device *get_dev_from_tx_dma_channel(u32_t dma_channel)
 	return active_dma_tx_channel[dma_channel];
 }
 
-/* src_dev and dest_dev should be 'MEM' or 'PERIPH'. */
+/* src_dev and dest_dev should be 'MEMORY' or 'PERIPHERAL'. */
 #define I2S_DMA_CHANNEL_INIT(index, dir, dir_cap, src_dev, dest_dev)	\
 .dir = {								\
-	.dma_name = DT_I2S_##index##_DMA_CONTROLLER_##dir_cap,		\
-	.dma_channel = DT_I2S_##index##_DMA_CHANNEL_##dir_cap,		\
+	.dma_name = DT_DMAS_LABEL_BY_NAME(DT_NODELABEL(i2s##index), dir),\
+	.dma_channel = \
+		DT_DMAS_CELL_BY_NAME(DT_NODELABEL(i2s##index), dir, channel),\
 	.dma_cfg = {							\
 		.block_count = 2,					\
-		.dma_slot = DT_I2S_##index##_DMA_SLOT_##dir_cap,	\
-		.channel_direction = PERIPHERAL_TO_MEMORY,		\
+		.dma_slot = \
+		    DT_DMAS_CELL_BY_NAME(DT_NODELABEL(i2s##index), dir, slot),\
+		.channel_direction = src_dev##_TO_##dest_dev,		\
 		.source_data_size = 2,  /* 16bit default */		\
 		.dest_data_size = 2,    /* 16bit default */		\
 		.source_burst_length = 0, /* SINGLE transfer */		\
 		.dest_burst_length = 1,					\
 		.channel_priority = STM32_DMA_CONFIG_PRIORITY(		\
-			DT_I2S_##index##_DMA_CHANNEL_CONFIG_##dir_cap),	\
+	 DT_DMAS_CELL_BY_NAME(DT_NODELABEL(i2s##index), dir, channel_config)),\
 		.dma_callback = dma_##dir##_callback,			\
 	},								\
 	.src_addr_increment = STM32_DMA_CONFIG_##src_dev##_ADDR_INC(	\
-		DT_I2S_##index##_DMA_CHANNEL_CONFIG_##dir_cap),		\
+	 DT_DMAS_CELL_BY_NAME(DT_NODELABEL(i2s##index), dir, channel_config)),\
 	.dst_addr_increment = STM32_DMA_CONFIG_##dest_dev##_ADDR_INC(	\
-		DT_I2S_##index##_DMA_CHANNEL_CONFIG_##dir_cap),		\
+	 DT_DMAS_CELL_BY_NAME(DT_NODELABEL(i2s##index), dir, channel_config)),\
 	.fifo_threshold = STM32_DMA_FEATURES_FIFO_THRESHOLD(		\
-		DT_I2S_##index##_DMA_FEATURES_##dir_cap),		\
+	 DT_DMAS_CELL_BY_NAME(DT_NODELABEL(i2s##index), dir, channel_config)),\
 	.stream_start = dir##_stream_start,				\
 	.stream_disable = dir##_stream_disable,				\
 	.queue_drop = dir##_queue_drop,					\
 	.mem_block_queue.buf = dir##_##index##_ring_buf,		\
-	.mem_block_queue.len = ARRAY_SIZE(dir##_##index##_ring_buf),	\
+	.mem_block_queue.len = ARRAY_SIZE(dir##_##index##_ring_buf)	\
 }
 
 #define I2S_INIT(index, clk_sel)					\
@@ -874,10 +887,10 @@ static struct device DEVICE_NAME_GET(i2s_stm32_##index);		\
 static void i2s_stm32_irq_config_func_##index(struct device *dev);	\
 									\
 static const struct i2s_stm32_cfg i2s_stm32_config_##index = {		\
-	.i2s = (SPI_TypeDef *) DT_I2S_##index##_BASE_ADDRESS,		\
+	.i2s = (SPI_TypeDef *) DT_REG_ADDR(DT_NODELABEL(i2s##index)),	\
 	.pclken = {							\
-		.enr = DT_I2S_##index##_CLOCK_BITS,			\
-		.bus = DT_I2S_##index##_CLOCK_BUS,			\
+		.enr = DT_CLOCKS_CELL(DT_NODELABEL(i2s##index), bits),	\
+		.bus = DT_CLOCKS_CELL(DT_NODELABEL(i2s##index), bus),	\
 	},								\
 	.i2s_clk_sel = CLK_SEL_##clk_sel,				\
 	.irq_config = i2s_stm32_irq_config_func_##index,		\
@@ -887,37 +900,41 @@ struct queue_item rx_##index##_ring_buf[CONFIG_I2S_STM32_RX_BLOCK_COUNT + 1];\
 struct queue_item tx_##index##_ring_buf[CONFIG_I2S_STM32_TX_BLOCK_COUNT + 1];\
 									\
 static struct i2s_stm32_data i2s_stm32_data_##index = {			\
-	I2S_DMA_CHANNEL_INIT(index, rx, RX, PERIPH, MEM),		\
-	I2S_DMA_CHANNEL_INIT(index, tx, TX, MEM, PERIPH),		\
+	UTIL_AND(DT_DMAS_HAS_NAME(DT_NODELABEL(i2s##index), rx),	\
+		I2S_DMA_CHANNEL_INIT(index, rx, RX, PERIPHERAL, MEMORY)),\
+	UTIL_AND(DT_DMAS_HAS_NAME(DT_NODELABEL(i2s##index), tx),	\
+		I2S_DMA_CHANNEL_INIT(index, tx, TX, MEMORY, PERIPHERAL)),\
 };									\
-DEVICE_AND_API_INIT(i2s_stm32_##index, DT_I2S_##index##_NAME,		\
+DEVICE_AND_API_INIT(i2s_stm32_##index,					\
+		    DT_LABEL(DT_NODELABEL(i2s##index)),			\
 		    &i2s_stm32_initialize, &i2s_stm32_data_##index,	\
 		    &i2s_stm32_config_##index, POST_KERNEL,		\
 		    CONFIG_I2S_INIT_PRIORITY, &i2s_stm32_driver_api);	\
 									\
 static void i2s_stm32_irq_config_func_##index(struct device *dev)	\
 {									\
-	IRQ_CONNECT(DT_I2S_##index##_IRQ, DT_I2S_##index##_IRQ_PRI,	\
+	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(i2s##index)),			\
+		    DT_IRQ(DT_NODELABEL(i2s##index), priority),		\
 		    i2s_stm32_isr, DEVICE_GET(i2s_stm32_##index), 0);	\
-	irq_enable(DT_I2S_##index##_IRQ);				\
+	irq_enable(DT_IRQN(DT_NODELABEL(i2s##index)));			\
 }
 
-#ifdef CONFIG_I2S_1
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2s1), okay)
 I2S_INIT(1, 2)
-#endif /* CONFIG_I2S_1 */
+#endif
 
-#ifdef CONFIG_I2S_2
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2s2), okay)
 I2S_INIT(2, 1)
-#endif /* CONFIG_I2S_2 */
+#endif
 
-#ifdef CONFIG_I2S_3
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2s3), okay)
 I2S_INIT(3, 1)
-#endif /* CONFIG_I2S_3 */
+#endif
 
-#ifdef CONFIG_I2S_4
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2s4), okay)
 I2S_INIT(4, 2)
-#endif /* CONFIG_I2S_4 */
+#endif
 
-#ifdef CONFIG_I2S_5
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2s5), okay)
 I2S_INIT(5, 2)
-#endif /* CONFIG_I2S_5 */
+#endif

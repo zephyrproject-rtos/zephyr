@@ -179,6 +179,15 @@ Other hardware features are not yet supported on this Zephyr port.
 The default configuration can be found in the defconfig file:
 ``boards/arm/nucleo_wb55rg/nucleo_wb55rg_defconfig``
 
+Bluetooth and compatibility with STM32WB Copro Wireless Binaries
+================================================================
+
+To operate bluetooth on Nucleo WB55RG, Cortex-M0 core should be flashed with
+a valid STM32WB Coprocessor binaries (either 'Full stack' or 'HCI Layer').
+These binaries are delivered in STM32WB Cube packages, under
+Projects/STM32WB_Copro_Wireless_Binaries/STM32WB5x/
+To date, interoperability and backward compatibility has been tested and is
+guaranteed up to version 1.5 of STM32Cube package releases.
 
 Connections and IOs
 ===================
@@ -233,8 +242,10 @@ Flashing
 ========
 
 Nucleo WB55RG board includes an ST-LINK/V2-1 embedded debug tool
-interface.  This interface is not yet supported by the openocd version.
-Instead, support can be enabled on pyocd by adding "pack" support with
+interface.  This interface is supported by the openocd version included in the
+Zephyr SDK since v0.11.0.
+
+If you prefer, you can use pyocd, but it requires to enable "pack" support with
 the following pyocd command:
 
 .. code-block:: console

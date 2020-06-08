@@ -1,49 +1,16 @@
 /*
- * Copyright (c) 2018 Lexmark International, Inc.
+ * Copyright (c) 2019 Carlo Caione <ccaione@baylibre.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file
- * @brief Stack helpers for Cortex-R CPUs
- *
- * Stack helper functions.
- */
+#ifndef ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_R_STACK_H_
+#define ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_R_STACK_H_
 
-#ifndef _ARM_CORTEXR_STACK__H_
-#define _ARM_CORTEXR_STACK__H_
-
-#ifdef __cplusplus
-extern "C" {
+#ifndef CONFIG_COMPAT_INCLUDES
+#warning "This header file has moved, include <aarch32/cortex_a_r/stack.h> instead."
 #endif
 
-#ifdef _ASMLANGUAGE
+#include <aarch32/cortex_a_r/stack.h>
 
-/* nothing */
-
-#else
-
-extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
-
-extern void z_arm_init_stacks(void);
-
-/**
- *
- * @brief Setup interrupt stack
- *
- * On Cortex-R, the interrupt stack is set up by reset.S
- *
- * @return N/A
- */
-static ALWAYS_INLINE void z_arm_interrupt_stack_setup(void)
-{
-}
-
-#endif /* _ASMLANGUAGE */
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* _ARM_CORTEXR_STACK__H_ */
+#endif /* ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_R_STACK_H_ */

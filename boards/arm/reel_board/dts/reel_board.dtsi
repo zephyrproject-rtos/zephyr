@@ -9,30 +9,36 @@
 	leds {
 		compatible = "gpio-leds";
 		red_led: led_0 {
-			gpios = <&gpio0 11 0>;
+			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 			label = "User D3 red";
 		};
 		green_led: led_1 {
-			gpios = <&gpio0 12 0>;
+			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 			label = "User D3 green";
 		};
 		blue_led: led_2 {
-			gpios = <&gpio1 9 0>;
+			gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
 			label = "User D3 blue";
 		};
 	};
 
 	pwmleds {
 		compatible = "pwm-leds";
-		pwm_led0: pwm_led_0 {
-			pwms = <&pwm0 13>;
+		red_pwm_led: pwm_led_0 {
+			pwms = <&pwm0 11>;
+		};
+		green_pwm_led: pwm_led_1 {
+			pwms = <&pwm0 12>;
+		};
+		blue_pwm_led: pwm_led_2 {
+			pwms = <&pwm0 41>;
 		};
 	};
 
 	gpio_keys {
 		compatible = "gpio-keys";
 		user_button: button_0 {
-			gpios = <&gpio0 7 GPIO_PUD_PULL_UP>;
+			gpios = <&gpio0 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "User Button";
 		};
 	};
@@ -70,7 +76,12 @@
 		led0 = &red_led;
 		led1 = &green_led;
 		led2 = &blue_led;
-		pwm-led0 = &pwm_led0;
+		pwm-led0 = &red_pwm_led;
+		pwm-led1 = &green_pwm_led;
+		pwm-led2 = &blue_pwm_led;
+		red-pwm-led = &red_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
 		sw0 = &user_button;
 	};
 };
@@ -113,29 +124,34 @@ arduino_i2c: &i2c0 {
 		compatible = "nxp,fxos8700","nxp,mma8652fc";
 		reg = <0x1d>;
 		label = "MMA8652FC";
-		int1-gpios = <&gpio0 24 0>;
-		int2-gpios = <&gpio0 25 0>;
+		int1-gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
 	};
 
 	ti_hdc@43 {
 		compatible = "ti,hdc","ti,hdc1010";
 		reg = <0x43>;
 		label = "HDC1010";
-		drdy-gpios = <&gpio0 22 GPIO_PUD_PULL_UP>;
+		drdy-gpios = <&gpio0 22 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	};
 
 	apds9960@39 {
 		compatible = "avago,apds9960";
 		reg = <0x39>;
 		label = "APDS9960";
-		int-gpios = <&gpio0 23 0>;
+		int-gpios = <&gpio0 23 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	};
 };
 
 &pwm0 {
 	status = "okay";
 	ch0-pin = <13>;
-	ch0-inverted;
+	ch1-pin = <11>;
+	ch1-inverted;
+	ch2-pin = <12>;
+	ch2-inverted;
+	ch3-pin = <41>;
+	ch3-inverted;
 };
 
 arduino_spi: &spi3 {
@@ -143,6 +159,7 @@ arduino_spi: &spi3 {
 	sck-pin = <47>;
 	miso-pin = <46>;
 	mosi-pin = <45>;
+	cs-gpios = <&arduino_header 16 0>; /* D10 */
 };
 
 &flash0 {
@@ -161,11 +178,11 @@ arduino_spi: &spi3 {
 		};
 		slot0_partition: partition@c000 {
 			label = "image-0";
-			reg = <0x0000C000 0x000067000>;
+			reg = <0x0000C000 0x00067000>;
 		};
 		slot1_partition: partition@73000 {
 			label = "image-1";
-			reg = <0x00073000 0x000067000>;
+			reg = <0x00073000 0x00067000>;
 		};
 		scratch_partition: partition@da000 {
 			label = "image-scratch";
@@ -177,7 +194,10 @@ arduino_spi: &spi3 {
 		 * 0x000fffff is reserved for use by the application.
 		 */
 
-		/* Storage partition will be used by FCB/NFFS/NVS if enabled. */
+		/*
+		 * Storage partition will be used by FCB/LittleFS/NVS
+		 * if enabled.
+		 */
 		storage_partition: partition@f8000 {
 			label = "storage";
 			reg = <0x000f8000 0x00008000>;

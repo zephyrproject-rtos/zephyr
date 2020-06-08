@@ -1,0 +1,285 @@
+# ARM Cortex-M platform configuration options
+
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# NOTE: We have the specific core implementations first and outside of the
+# if CPU_CORTEX_M block so that SoCs can select which core they are using
+# without having to select all the options related to that core.  Everything
+# else is captured inside the if CPU_CORTEX_M block so they are not exposed
+# if one select a differnet ARM Cortex Family (Cortex-A or Cortex-R)
+
+config CPU_CORTEX_M0
+	bool
+	select CPU_CORTEX_M
+	select ARMV6_M_ARMV8_M_BASELINE
+	help
+	  This option signifies the use of a Cortex-M0 CPU
+
+config CPU_CORTEX_M0PLUS
+	bool
+	select CPU_CORTEX_M
+	select ARMV6_M_ARMV8_M_BASELINE
+	help
+	  This option signifies the use of a Cortex-M0+ CPU
+
+config CPU_CORTEX_M3
+	bool
+	select CPU_CORTEX_M
+	select ARMV7_M_ARMV8_M_MAINLINE
+	help
+	  This option signifies the use of a Cortex-M3 CPU
+
+config CPU_CORTEX_M4
+	bool
+	select CPU_CORTEX_M
+	select ARMV7_M_ARMV8_M_MAINLINE
+	select ARMV7_M_ARMV8_M_FP if CPU_HAS_FPU
+	help
+	  This option signifies the use of a Cortex-M4 CPU
+
+config CPU_CORTEX_M23
+	bool
+	select CPU_CORTEX_M
+	select ARMV8_M_BASELINE
+	select ARMV8_M_SE if CPU_HAS_TEE
+	help
+	  This option signifies the use of a Cortex-M23 CPU
+
+config CPU_CORTEX_M33
+	bool
+	select CPU_CORTEX_M
+	select ARMV8_M_MAINLINE
+	select ARMV8_M_SE if CPU_HAS_TEE
+	select ARMV7_M_ARMV8_M_FP if CPU_HAS_FPU
+	help
+	  This option signifies the use of a Cortex-M33 CPU
+
+config CPU_CORTEX_M7
+	bool
+	select CPU_CORTEX_M
+	select ARMV7_M_ARMV8_M_MAINLINE
+	select ARMV7_M_ARMV8_M_FP if CPU_HAS_FPU
+	help
+	  This option signifies the use of a Cortex-M7 CPU
+
+if CPU_CORTEX_M
+
+config CPU_CORTEX_M_HAS_SYSTICK
+	bool
+	help
+	  This option is enabled when the CPU implements the SysTick timer.
+
+config CPU_CORTEX_M_HAS_DWT
+	bool
+	depends on !CPU_CORTEX_M0 && !CPU_CORTEX_M0PLUS
+	help
+	  This option signifies that the CPU implements the Data Watchpoint and
+	  Trace (DWT) unit specified by the ARMv7-M and above.
+
+	  While ARMv6-M does define a "DWT" unit, this is significantly different
+	  from the DWT specified by the ARMv7-M and above in terms of both feature
+	  set and register mappings.
+
+config CPU_CORTEX_M_HAS_BASEPRI
+	bool
+	depends on ARMV7_M_ARMV8_M_MAINLINE
+	help
+	  This option signifies the CPU has the BASEPRI register.
+
+	  The BASEPRI register defines the minimum priority for
+	  exception processing. When BASEPRI is set to a nonzero
+	  value, it prevents the activation of all exceptions with
+	  the same or lower priority level as the BASEPRI value.
+	  Always present in CPUs that implement the ARMv7-M or
+	  ARM8-M Mainline architectures.
+
+config CPU_CORTEX_M_HAS_VTOR
+	bool
+	depends on !CPU_CORTEX_M0
+	help
+	  This option signifies the CPU has the VTOR register.
+	  The VTOR indicates the offset of the vector table base
+	  address from memory address 0x00000000. Always present
+	  in CPUs implementing the ARMv7-M or ARMv8-M architectures.
+	  Optional in CPUs implementing ARMv6-M, ARMv8-M Baseline
+	  architectures (except for Cortex-M0, where it is never
+	  implemented).
+
+config CPU_CORTEX_M_HAS_SPLIM
+	bool
+	depends on ARMV8_M_MAINLINE || (ARMV8_M_SE && !ARM_NONSECURE_FIRMWARE)
+	help
+	  This option signifies the CPU has the MSPLIM, PSPLIM registers.
+
+	  The stack pointer limit registers, MSPLIM, PSPLIM, limit the
+	  extend to which the Main and Process Stack Pointers, respectively,
+	  can descend. MSPLIM, PSPLIM are always present in ARMv8-M
+	  MCUs that implement the ARMv8-M Main Extension (Mainline).
+
+	  In an ARMv8-M Mainline implementation with the Security Extension
+	  the MSPLIM, PSPLIM registers have additional Secure instances.
+	  In an ARMv8-M Baseline implementation with the Security Extension
+	  the MSPLIM, PSPLIM registers have only Secure instances.
+
+config CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
+	bool
+	depends on ARMV7_M_ARMV8_M_MAINLINE
+	help
+	  This option signifies the CPU may trigger system faults
+	  (other than HardFault) with configurable priority, and,
+	  therefore, it needs to reserve a priority level for them.
+
+config CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP
+	bool
+	help
+	  This option signifies the Cortex-M0 has some mechanisms that can map
+	  the vector table to SRAM
+
+config CPU_CORTEX_M_HAS_CMSE
+	bool
+	depends on ARMV8_M_BASELINE || ARMV8_M_MAINLINE
+	help
+	  This option signifies the Cortex-M CPU has the CMSE intrinsics.
+
+config ARMV6_M_ARMV8_M_BASELINE
+	bool
+	select ATOMIC_OPERATIONS_C
+	select ISA_THUMB2
+	help
+	  This option signifies the use of an ARMv6-M processor
+	  implementation, or the use of an ARMv8-M processor
+	  supporting the Baseline implementation.
+
+	  Notes:
+	  - A Processing Element (PE) without the Main Extension
+	  is also referred to as a Baseline Implementation. A
+	  Baseline implementation has a subset of the instructions,
+	  registers, and features, of a Mainline implementation.
+	  - ARMv6-M compatibility is provided by all ARMv8-M
+	  implementations.
+
+config ARMV8_M_BASELINE
+	bool
+	select ARMV6_M_ARMV8_M_BASELINE
+	select CPU_CORTEX_M_HAS_CMSE
+	help
+	  This option signifies the use of an ARMv8-M processor
+	  implementation.
+
+	  ARMv8-M Baseline includes additional features
+	  not present in the ARMv6-M architecture.
+
+config ARMV7_M_ARMV8_M_MAINLINE
+	bool
+	select ATOMIC_OPERATIONS_BUILTIN
+	select ISA_THUMB2
+	select CPU_CORTEX_M_HAS_BASEPRI
+	select CPU_CORTEX_M_HAS_VTOR
+	select CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
+	select CPU_CORTEX_M_HAS_SYSTICK
+	help
+	  This option signifies the use of an ARMv7-M processor
+	  implementation, or the use of a backwards-compatible
+	  ARMv8-M processor implementation supporting the Main
+	  Extension.
+
+	  Notes:
+	  - A Processing Element (PE) with the Main Extension is also
+	  referred to as a Mainline Implementation.
+	  - ARMv7-M compatibility requires the Main Extension.
+
+	  From https://developer.arm.com/products/architecture/m-profile:
+	  The Main Extension provides backwards compatibility
+	  with ARMv7-M.
+
+config ARMV8_M_MAINLINE
+	bool
+	select ARMV7_M_ARMV8_M_MAINLINE
+	select CPU_CORTEX_M_HAS_SPLIM
+	select CPU_CORTEX_M_HAS_CMSE
+	help
+	  This option signifies the use of an ARMv8-M processor
+	  implementation, supporting the Main Extension.
+
+	  ARMv8-M Main Extension includes additional features
+	  not present in the ARMv7-M architecture.
+
+config ARMV8_M_SE
+	bool
+	depends on ARMV8_M_BASELINE || ARMV8_M_MAINLINE
+	select CPU_CORTEX_M_HAS_SPLIM if !ARM_NONSECURE_FIRMWARE
+	help
+	  This option signifies the use of an ARMv8-M processor
+	  implementation (Baseline or Mainline) supporting the
+	  Security Extensions.
+
+config ARMV7_M_ARMV8_M_FP
+	bool
+	depends on ARMV7_M_ARMV8_M_MAINLINE && !CPU_CORTEX_M3
+	help
+	  This option signifies the use of an ARMv7-M processor
+	  implementation, or the use of an ARMv8-M processor
+	  implementation supporting the Floating-Point Extension.
+
+config ARMV8_M_DSP
+	bool
+	depends on ARMV8_M_MAINLINE
+	help
+	  This option signifies the use of an ARMv8-M processor
+	  implementation supporting the DSP Extension.
+
+config XIP
+	default y
+
+menu "ARM Cortex-M0/M0+/M3/M4/M7/M23/M33 options"
+    depends on ARMV6_M_ARMV8_M_BASELINE || ARMV7_M_ARMV8_M_MAINLINE
+
+config GEN_ISR_TABLES
+	default y
+
+config ZERO_LATENCY_IRQS
+	bool "Enable zero-latency interrupts"
+	depends on CPU_CORTEX_M_HAS_BASEPRI
+	help
+	  The kernel may reserve some of the highest interrupts priorities in
+	  the system for its own use. These interrupts will not be masked
+	  by interrupt locking.
+	  When connecting interrupts the kernel will offset all interrupts
+	  to lower priority than those reserved by the kernel.
+	  Zero-latency interrupt can be used to set up an interrupt at the
+	  highest interrupt priority which will not be blocked by interrupt
+	  locking.
+	  Since Zero-latency ISRs will run in the same priority or possibly at
+	  higher priority than the rest of the kernel they cannot use any
+	  kernel functionality.
+
+config DYNAMIC_DIRECT_INTERRUPTS
+	bool "Enable support for dynamic direct interrupts"
+	depends on DYNAMIC_INTERRUPTS
+	help
+	  Direct interrupts are designed for performance-critical interrupt
+	  handling and do not go through all of the common interrupt handling
+	  code. This option enables the installation of interrupt service
+	  routines for direct interrupts at runtime.
+	  Note: this requires enabling support for dynamic interrupts in the
+	  kernel.
+
+config SW_VECTOR_RELAY
+	bool "Enable Software Vector Relay"
+	default y if BOOTLOADER_MCUBOOT
+	depends on ARMV6_M_ARMV8_M_BASELINE && !(CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP || CPU_CORTEX_M_HAS_VTOR)
+	help
+	  Add Vector Table relay handler and relay vector table, to
+	  relay interrupts based on a vector table pointer. This is only
+	  required for Cortex-M0 (or an Armv8-M baseline core) with no hardware
+	  vector table relocation mechanisms or for Cortex-M0+
+	  (or an Armv8-M baseline core) with no VTOR and no other hardware
+	  relocation table mechanisms.
+
+endmenu
+
+rsource "mpu/Kconfig"
+rsource "tz/Kconfig"
+
+endif # CPU_CORTEX_M

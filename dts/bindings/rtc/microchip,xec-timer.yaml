@@ -1,13 +1,7 @@
-#
 # Copyright (c) 2019, Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: Microchip XEC basic timer
-
-description: |
-    This binding gives a base representation of the Microchip XEC basic timer
+description: Microchip XEC basic timer
 
 compatible: "microchip,xec-timer"
 
@@ -29,6 +23,16 @@ properties:
       description: Timer frequency equals clock-frequency divided by the prescaler value
 
     max-value:
-      type: array
+      type: int
       required: true
       description: Maximum counter value the instance can handle
+
+    girq:
+      type: int
+      required: true
+      description: GIRQ for this device
+
+    girq-bit:
+      type: int
+      required: true
+      description: Bit position in GIRQ for this device

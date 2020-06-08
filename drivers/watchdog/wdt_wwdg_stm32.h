@@ -8,7 +8,7 @@
 #define ZEPHYR_DRIVERS_WATCHDOG_WWDG_STM32_H_
 
 #include <zephyr/types.h>
-#include <clock_control/stm32_clock_control.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 #include <drivers/clock_control.h>
 
 /**
@@ -37,7 +37,7 @@ struct wwdg_stm32_data {
 };
 
 #define WWDG_STM32_CFG(dev) \
-	((const struct wwdg_stm32_config *const)(dev)->config->config_info)
+	((const struct wwdg_stm32_config *const)(dev)->config_info)
 
 #define WWDG_STM32_DATA(dev) \
 	((struct wwdg_stm32_data *const)(dev)->driver_data)

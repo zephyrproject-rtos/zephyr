@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
-title: Controller with one data value
 description: Controller with one data value
 
 compatible: "phandle-array-controller-1"

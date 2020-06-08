@@ -17,7 +17,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <kernel.h>
-#include <usb/usb_dc.h>
+#include <drivers/usb/usb_dc.h>
 #include <usb/usb_device.h>
 #include <drivers/clock_control.h>
 #include <hal/nrf_power.h>
@@ -28,6 +28,9 @@
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(usb_nrfx);
+
+/* USB device controller access from devicetree */
+#define DT_DRV_COMPAT nordic_nrf_usbd
 
 /**
  * @brief nRF USBD peripheral states
@@ -71,14 +74,14 @@ enum usbd_event_type {
  * @param max_sz  Max packet size supported by endpoint.
  * @param en      Enable/Disable flag.
  * @param addr    Endpoint address.
- * @param type    Endpoint type.
+ * @param type    Endpoint transfer type.
  */
 struct nrf_usbd_ep_cfg {
 	usb_dc_ep_callback cb;
 	u32_t max_sz;
 	bool en;
 	u8_t addr;
-	enum usb_dc_ep_type type;
+	enum usb_dc_ep_transfer_type type;
 
 };
 
@@ -184,18 +187,18 @@ K_MEM_POOL_DEFINE(fifo_elem_pool, FIFO_ELEM_MIN_SZ, FIFO_ELEM_MAX_SZ,
  */
 
 /** Number of IN Endpoints configured (including control) */
-#define CFG_EPIN_CNT (DT_NORDIC_NRF_USBD_USBD_0_NUM_IN_ENDPOINTS + \
-		      DT_NORDIC_NRF_USBD_USBD_0_NUM_BIDIR_ENDPOINTS)
+#define CFG_EPIN_CNT (DT_INST_PROP(0, num_in_endpoints) +	\
+		      DT_INST_PROP(0, num_bidir_endpoints))
 
 /** Number of OUT Endpoints configured (including control) */
-#define CFG_EPOUT_CNT (DT_NORDIC_NRF_USBD_USBD_0_NUM_OUT_ENDPOINTS + \
-		       DT_NORDIC_NRF_USBD_USBD_0_NUM_BIDIR_ENDPOINTS)
+#define CFG_EPOUT_CNT (DT_INST_PROP(0, num_out_endpoints) +	\
+		       DT_INST_PROP(0, num_bidir_endpoints))
 
 /** Number of ISO IN Endpoints */
-#define CFG_EP_ISOIN_CNT DT_NORDIC_NRF_USBD_USBD_0_NUM_ISOIN_ENDPOINTS
+#define CFG_EP_ISOIN_CNT DT_INST_PROP(0, num_isoin_endpoints)
 
 /** Number of ISO OUT Endpoints */
-#define CFG_EP_ISOOUT_CNT DT_NORDIC_NRF_USBD_USBD_0_NUM_ISOOUT_ENDPOINTS
+#define CFG_EP_ISOOUT_CNT DT_INST_PROP(0, num_isoout_endpoints)
 
 /** ISO endpoint index */
 #define EP_ISOIN_INDEX CFG_EPIN_CNT
@@ -536,7 +539,7 @@ static int hf_clock_enable(bool on, bool blocking)
 	struct device *clock;
 	static bool clock_requested;
 
-	clock = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL "_16M");
+	clock = device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_clock)));
 	if (!clock) {
 		LOG_ERR("NRF HF Clock device not found!");
 		return ret;
@@ -547,9 +550,10 @@ static int hf_clock_enable(bool on, bool blocking)
 			/* Do not request HFCLK multiple times. */
 			return 0;
 		}
-		ret = clock_control_on(clock, NULL);
+		ret = clock_control_on(clock, CLOCK_CONTROL_NRF_SUBSYS_HF);
 		while (blocking &&
-			clock_control_get_status(clock, NULL) !=
+			clock_control_get_status(clock,
+						 CLOCK_CONTROL_NRF_SUBSYS_HF) !=
 					CLOCK_CONTROL_STATUS_ON) {
 		}
 	} else {
@@ -559,7 +563,7 @@ static int hf_clock_enable(bool on, bool blocking)
 			 */
 			return 0;
 		}
-		ret = clock_control_off(clock, NULL);
+		ret = clock_control_off(clock, CLOCK_CONTROL_NRF_SUBSYS_HF);
 	}
 
 	if (ret && (blocking || (ret != -EINPROGRESS))) {
@@ -632,6 +636,11 @@ static void ep_ctx_reset(struct nrf_usbd_ep_ctx *ep_ctx)
 	ep_ctx->buf.data = ep_ctx->buf.block.data;
 	ep_ctx->buf.curr = ep_ctx->buf.data;
 	ep_ctx->buf.len  = 0U;
+
+	/* Abort ongoing write operation. */
+	if (ep_ctx->write_in_progress) {
+		nrfx_usbd_ep_abort(ep_addr_to_nrfx(ep_ctx->cfg.addr));
+	}
 
 	ep_ctx->read_complete = true;
 	ep_ctx->read_pending = false;
@@ -838,7 +847,7 @@ static inline void usbd_work_process_setup(struct nrf_usbd_ep_ctx *ep_ctx)
 	usbd_setup->wLength = nrf_usbd_setup_wlength_get(NRF_USBD);
 	ep_ctx->buf.len = sizeof(struct usb_setup_packet);
 
-	LOG_DBG("SETUP: r:%d rt:%d v:%d i:%d l:%d",
+	LOG_DBG("SETUP: bR:0x%02x bmRT:0x%02x wV:0x%04x wI:0x%04x wL:%d",
 		(u32_t)usbd_setup->bRequest,
 		(u32_t)usbd_setup->bmRequestType,
 		(u32_t)usbd_setup->wValue,
@@ -853,9 +862,8 @@ static inline void usbd_work_process_setup(struct nrf_usbd_ep_ctx *ep_ctx)
 	if ((REQTYPE_GET_DIR(usbd_setup->bmRequestType)
 	     == REQTYPE_DIR_TO_DEVICE)
 	    && (usbd_setup->wLength)) {
-		struct nrf_usbd_ctx *ctx = get_usbd_ctx();
-
-		ctx->ctrl_read_len -= usbd_setup->wLength;
+		ctx->ctrl_read_len = usbd_setup->wLength;
+		/* Allow data chunk on EP0 OUT */
 		nrfx_usbd_setup_data_clear();
 	} else {
 		ctx->ctrl_read_len = 0U;
@@ -1006,6 +1014,7 @@ static void usbd_event_transfer_ctrl(nrfx_usbd_evt_t const *const p_event)
 
 			if (ctx->ctrl_read_len > ep_ctx->buf.len) {
 				ctx->ctrl_read_len -= ep_ctx->buf.len;
+				/* Allow next data chunk on EP0 OUT */
 				nrfx_usbd_setup_data_clear();
 			} else {
 				ctx->ctrl_read_len = 0U;
@@ -1049,6 +1058,12 @@ static void usbd_event_transfer_data(nrfx_usbd_evt_t const *const p_event)
 			ev->evt.ep_evt.ep = ep_ctx;
 			usbd_evt_put(ev);
 			usbd_work_schedule();
+		}
+		break;
+
+		case NRFX_USBD_EP_ABORTED: {
+			LOG_DBG("Endpoint 0x%02x write aborted",
+				p_event->data.eptransfer.ep);
 		}
 		break;
 
@@ -1231,6 +1246,45 @@ static inline void usbd_reinit(void)
 	}
 }
 
+/**
+ * @brief funciton to generate fake receive request for
+ * ISO OUT EP.
+ *
+ * ISO OUT endpoint does not generate irq by itself and reading
+ * from ISO OUT ep is sunchronized with SOF frame. For more details
+ * refer to Nordic usbd specification.
+ */
+static void usbd_sof_trigger_iso_read(void)
+{
+	struct usbd_event *ev;
+	struct nrf_usbd_ep_ctx *ep_ctx;
+
+	ep_ctx = endpoint_ctx(NRFX_USBD_EPOUT8);
+	if (!ep_ctx) {
+		LOG_ERR("There is no ISO ep");
+		return;
+	}
+
+	if (ep_ctx->cfg.en) {
+		/* Dissect receive request
+		 * if the iso OUT ep is enabled
+		 */
+		ep_ctx->read_pending = true;
+		ep_ctx->read_complete = true;
+		ev = usbd_evt_alloc();
+		if (!ev) {
+			LOG_ERR("Failed to alloc evt");
+			return;
+		}
+		ev->evt_type = USBD_EVT_EP;
+		ev->evt.ep_evt.evt_type = EP_EVT_RECV_REQ;
+		ev->evt.ep_evt.ep = ep_ctx;
+		usbd_evt_put(ev);
+		usbd_work_schedule();
+	} else {
+		LOG_DBG("Endpoint is not enabled");
+	}
+}
 
 /* Work handler */
 static void usbd_work_handler(struct k_work *item)
@@ -1269,6 +1323,8 @@ static void usbd_work_handler(struct k_work *item)
 			}
 			break;
 		case USBD_EVT_SOF:
+			usbd_sof_trigger_iso_read();
+
 			if (ctx->status_cb) {
 				ctx->status_cb(USB_DC_SOF, NULL);
 			}
@@ -1308,8 +1364,7 @@ int usb_dc_attach(void)
 	k_work_init(&ctx->usb_work, usbd_work_handler);
 	k_mutex_init(&ctx->drv_lock);
 
-	IRQ_CONNECT(DT_NORDIC_NRF_USBD_USBD_0_IRQ_0,
-		    DT_NORDIC_NRF_USBD_USBD_0_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    nrfx_isr, nrfx_usbd_irq_handler, 0);
 
 	err = nrfx_usbd_init(usbd_event_handler);
@@ -1467,10 +1522,13 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const ep_cfg)
 	ep_ctx->cfg.type = ep_cfg->ep_type;
 	ep_ctx->cfg.max_sz = ep_cfg->ep_mps;
 
-	if ((ep_cfg->ep_mps & (ep_cfg->ep_mps - 1)) != 0U) {
-		LOG_ERR("EP max packet size must be a power of 2");
-		return -EINVAL;
+	if (!NRF_USBD_EPISO_CHECK(ep_cfg->ep_addr)) {
+		if ((ep_cfg->ep_mps & (ep_cfg->ep_mps - 1)) != 0U) {
+			LOG_ERR("EP max packet size must be a power of 2");
+			return -EINVAL;
+		}
 	}
+
 	nrfx_usbd_ep_max_packet_size_set(ep_addr_to_nrfx(ep_cfg->ep_addr),
 					 ep_cfg->ep_mps);
 
@@ -1525,6 +1583,7 @@ int usb_dc_ep_clear_stall(const u8_t ep)
 		return -EINVAL;
 	}
 
+	nrfx_usbd_ep_dtoggle_clear(ep_addr_to_nrfx(ep));
 	nrfx_usbd_ep_stall_clear(ep_addr_to_nrfx(ep));
 	LOG_DBG("Unstall on EP 0x%02x", ep);
 
@@ -1571,6 +1630,7 @@ int usb_dc_ep_enable(const u8_t ep)
 		return -EINVAL;
 	}
 
+	nrfx_usbd_ep_dtoggle_clear(ep_addr_to_nrfx(ep));
 	if (ep_ctx->cfg.en) {
 		return -EALREADY;
 	}
@@ -1802,6 +1862,7 @@ int usb_dc_ep_read_continue(u8_t ep)
 			struct usbd_event *ev = usbd_evt_alloc();
 
 			if (!ev) {
+				k_mutex_unlock(&ctx->drv_lock);
 				return -ENOMEM;
 			}
 

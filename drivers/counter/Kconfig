@@ -36,4 +36,8 @@ source "drivers/counter/Kconfig.mcux_gpt"
 
 source "drivers/counter/Kconfig.xec"
 
+source "drivers/counter/Kconfig.mcux_lptmr"
+
+source "drivers/counter/Kconfig.maxim_ds3231"
+
 endif # COUNTER

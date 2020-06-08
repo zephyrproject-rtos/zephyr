@@ -28,7 +28,7 @@ static void do_mdns_ipv6_lookup(struct k_work *work);
 #endif
 #endif
 
-#define DNS_TIMEOUT K_SECONDS(2)
+#define DNS_TIMEOUT (2 * MSEC_PER_SEC)
 
 void dns_result_cb(enum dns_resolve_status status,
 		   struct dns_addrinfo *info,
@@ -89,21 +89,21 @@ void mdns_result_cb(enum dns_resolve_status status,
 
 	switch (status) {
 	case DNS_EAI_CANCELED:
-		LOG_INF("DNS query was canceled");
+		LOG_INF("mDNS query was canceled");
 		return;
 	case DNS_EAI_FAIL:
-		LOG_INF("DNS resolve failed");
+		LOG_INF("mDNS resolve failed");
 		return;
 	case DNS_EAI_NODATA:
-		LOG_INF("Cannot resolve address");
+		LOG_INF("Cannot resolve address using mDNS");
 		return;
 	case DNS_EAI_ALLDONE:
-		LOG_INF("DNS resolving finished");
+		LOG_INF("mDNS resolving finished");
 		return;
 	case DNS_EAI_INPROGRESS:
 		break;
 	default:
-		LOG_INF("DNS resolving error (%d)", status);
+		LOG_INF("mDNS resolving error (%d)", status);
 		return;
 	}
 
@@ -135,7 +135,7 @@ static struct k_delayed_work ipv4_timer;
 static void do_ipv4_lookup(struct k_work *work)
 {
 	static const char *query = "www.zephyrproject.org";
-	u16_t dns_id;
+	static u16_t dns_id;
 	int ret;
 
 	ret = dns_get_addr_info(query,
@@ -247,24 +247,11 @@ static void do_mdns_ipv4_lookup(struct k_work *work)
 #error "You need to define an IPv4 address or enable DHCPv4!"
 #endif
 
-static void setup_ipv4(struct net_if *iface)
+static void do_ipv4_lookup(void)
 {
 	static const char *query = "www.zephyrproject.org";
-	char hr_addr[NET_IPV4_ADDR_LEN];
-	struct in_addr addr;
-	u16_t dns_id;
+	static u16_t dns_id;
 	int ret;
-
-	if (net_addr_pton(AF_INET, CONFIG_NET_CONFIG_MY_IPV4_ADDR, &addr)) {
-		LOG_ERR("Invalid address: %s", CONFIG_NET_CONFIG_MY_IPV4_ADDR);
-		return;
-	}
-
-	net_if_ipv4_addr_add(iface, &addr, NET_ADDR_MANUAL, 0);
-
-	LOG_INF("IPv4 address: %s",
-		log_strdup(net_addr_ntop(AF_INET, &addr, hr_addr,
-					 NET_IPV4_ADDR_LEN)));
 
 	ret = dns_get_addr_info(query,
 				DNS_QUERY_TYPE_A,
@@ -278,6 +265,13 @@ static void setup_ipv4(struct net_if *iface)
 	}
 
 	LOG_DBG("DNS id %u", dns_id);
+}
+
+static void setup_ipv4(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+
+	do_ipv4_lookup();
 
 #if defined(CONFIG_MDNS_RESOLVER) && defined(CONFIG_NET_IPV4)
 	k_delayed_work_init(&mdns_ipv4_timer, do_mdns_ipv4_lookup);
@@ -298,7 +292,7 @@ static void setup_ipv4(struct net_if *iface)
 static void do_ipv6_lookup(void)
 {
 	static const char *query = "www.zephyrproject.org";
-	u16_t dns_id;
+	static u16_t dns_id;
 	int ret;
 
 	ret = dns_get_addr_info(query,
@@ -317,6 +311,8 @@ static void do_ipv6_lookup(void)
 
 static void setup_ipv6(struct net_if *iface)
 {
+	ARG_UNUSED(iface);
+
 	do_ipv6_lookup();
 
 #if defined(CONFIG_MDNS_RESOLVER) && defined(CONFIG_NET_IPV6)

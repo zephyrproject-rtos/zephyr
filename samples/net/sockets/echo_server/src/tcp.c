@@ -43,11 +43,11 @@ static void process_tcp6(void);
 
 K_THREAD_DEFINE(tcp4_thread_id, STACK_SIZE,
 		process_tcp4, NULL, NULL, NULL,
-		THREAD_PRIORITY, 0, K_FOREVER);
+		THREAD_PRIORITY, 0, -1);
 
 K_THREAD_DEFINE(tcp6_thread_id, STACK_SIZE,
 		process_tcp6, NULL, NULL, NULL,
-		THREAD_PRIORITY, 0, K_FOREVER);
+		THREAD_PRIORITY, 0, -1);
 
 static ssize_t sendall(int sock, const void *buf, size_t len)
 {
@@ -220,7 +220,7 @@ static int process_tcp(struct data *data)
 			&client_addr_len);
 	if (client < 0) {
 		LOG_ERR("%s accept error (%d)", data->proto, -errno);
-		return -errno;
+		return 0;
 	}
 
 	slot = get_free_slot(data);

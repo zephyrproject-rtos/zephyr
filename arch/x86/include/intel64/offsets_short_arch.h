@@ -65,4 +65,10 @@
 #define _thread_offset_to_sse \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_sse_OFFSET)
 
+#define _thread_offset_to_ss \
+	(___thread_t_arch_OFFSET + ___thread_arch_t_ss_OFFSET)
+
+#define _thread_offset_to_cs \
+	(___thread_t_arch_OFFSET + ___thread_arch_t_cs_OFFSET)
+
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_INTEL64_OFFSETS_SHORT_ARCH_H_ */

@@ -47,7 +47,7 @@ static int tun_drv_io_thread(void);
 
 K_THREAD_DEFINE(tun_drv_io_thread_id, TUN_DRV_IO_THREAD_STACK_SIZE,
 		tun_drv_io_thread, NULL, NULL, NULL, TUN_DRV_IO_THREAD_PRIORITY,
-		0, K_NO_WAIT);
+		0, 0);
 
 static int tun_drv_io_thread(void)
 {

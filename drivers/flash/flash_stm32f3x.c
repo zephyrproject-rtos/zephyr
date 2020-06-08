@@ -35,12 +35,12 @@ static unsigned int get_page(off_t offset)
 
 static int erase_page(struct device *dev, unsigned int page)
 {
-	struct stm32f3x_flash *regs = FLASH_STM32_REGS(dev);
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	u32_t page_address = CONFIG_FLASH_BASE_ADDRESS;
 	int rc;
 
 	/* if the control register is locked, do not fail silently */
-	if (regs->cr & FLASH_CR_LOCK) {
+	if (regs->CR & FLASH_CR_LOCK) {
 		return -EIO;
 	}
 
@@ -53,16 +53,16 @@ static int erase_page(struct device *dev, unsigned int page)
 	page_address += page * FLASH_PAGE_SIZE;
 
 	/* Set the PER bit and select the page you wish to erase */
-	regs->cr |= FLASH_CR_PER;
+	regs->CR |= FLASH_CR_PER;
 	/* Set page address */
-	regs->ar = page_address;
+	regs->AR = page_address;
 	/* Set the STRT bit */
-	regs->cr |= FLASH_CR_STRT;
+	regs->CR |= FLASH_CR_STRT;
 
 	/* Wait for the BSY bit */
 	rc = flash_stm32_wait_flash_idle(dev);
 
-	regs->cr &= ~FLASH_CR_PER;
+	regs->CR &= ~FLASH_CR_PER;
 
 	return rc;
 }
@@ -87,12 +87,12 @@ int flash_stm32_block_erase_loop(struct device *dev, unsigned int offset,
 static int write_hword(struct device *dev, off_t offset, u16_t val)
 {
 	volatile u16_t *flash = (u16_t *)(offset + CONFIG_FLASH_BASE_ADDRESS);
-	struct stm32f3x_flash *regs = FLASH_STM32_REGS(dev);
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	u32_t tmp;
 	int rc;
 
 	/* if the control register is locked, do not fail silently */
-	if (regs->cr & FLASH_CR_LOCK) {
+	if (regs->CR & FLASH_CR_LOCK) {
 		return -EIO;
 	}
 
@@ -108,10 +108,10 @@ static int write_hword(struct device *dev, off_t offset, u16_t val)
 	}
 
 	/* Set the PG bit */
-	regs->cr |= FLASH_CR_PG;
+	regs->CR |= FLASH_CR_PG;
 
 	/* Flush the register write */
-	tmp = regs->cr;
+	tmp = regs->CR;
 
 	/* Perform the data write operation at the desired memory address */
 	*flash = val;
@@ -120,7 +120,7 @@ static int write_hword(struct device *dev, off_t offset, u16_t val)
 	rc = flash_stm32_wait_flash_idle(dev);
 
 	/* Clear the PG bit */
-	regs->cr &= (~FLASH_CR_PG);
+	regs->CR &= (~FLASH_CR_PG);
 
 	return rc;
 }
@@ -153,8 +153,8 @@ void flash_stm32_page_layout(struct device *dev,
 	ARG_UNUSED(dev);
 
 	if (stm32f3_flash_layout.pages_count == 0) {
-		stm32f3_flash_layout.pages_count = DT_FLASH_SIZE \
-						* 1024 / FLASH_PAGE_SIZE;
+		stm32f3_flash_layout.pages_count =
+			DT_REG_SIZE(DT_INST(0, soc_nv_flash)) / FLASH_PAGE_SIZE;
 		stm32f3_flash_layout.pages_size = FLASH_PAGE_SIZE;
 	}
 

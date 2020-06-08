@@ -13,7 +13,7 @@
 #include <device.h>
 #include <drivers/spi.h>
 
-#define SPI_BASE_ADDR DT_INST_0_LITEX_SPI_BASE_ADDRESS
+#define SPI_BASE_ADDR DT_INST_REG_ADDR(0)
 #define SPI_CONTROL_REG SPI_BASE_ADDR
 #define SPI_STATUS_REG (SPI_BASE_ADDR + 0x08)
 #define SPI_MOSI_DATA_REG (SPI_BASE_ADDR + 0x0c)

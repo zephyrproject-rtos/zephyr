@@ -13,20 +13,14 @@
 	compatible = "nxp,mimxrt1062";
 
 	aliases {
-		gpio-1= &gpio1;
-		gpio-2= &gpio2;
-		gpio-3= &gpio3;
-		gpio-4= &gpio4;
-		gpio-5= &gpio5;
-		uart-1 = &uart1;
 		led0 = &green_led;
 		sw0 = &user_button;
-		eth = &eth;
+		kscan0 = &touch_controller;
 	};
 
 	chosen {
-		zephyr,console = &uart1;
-		zephyr,shell-uart = &uart1;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
 	};
 
 	sdram0: memory@80000000 {
@@ -39,7 +33,7 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led: led-1 {
-			gpios = <&gpio1 9 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
 		};
 	};
@@ -48,7 +42,7 @@
 		compatible = "gpio-keys";
 		user_button: button-1 {
 			label = "User SW8";
-			gpios = <&gpio5 0 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio5 0 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -91,9 +85,9 @@
 	};
 };
 
-arduino_serial: &uart3 {};
+arduino_serial: &lpuart3 {};
 
-&flexspi0 {
+&flexspi {
 	reg = <0x402a8000 0x4000>, <0x60000000 0x800000>;
 	is25wp064: is25wp064@0 {
 		compatible = "issi,is25wp064", "jedec,spi-nor";
@@ -106,7 +100,7 @@ arduino_serial: &uart3 {};
 	};
 };
 
-&lcdif1 {
+&lcdif {
 	status = "okay";
 	port {
 		lcd_panel_out: endpoint {
@@ -115,22 +109,35 @@ arduino_serial: &uart3 {};
 	};
 };
 
-&i2c1 {
+&lpi2c1 {
 	status = "okay";
+
+	touch_controller: ft5336@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		label = "FT5336";
+		int-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
+	};
 };
 
-&uart1 {
+&lpuart1 {
 	status = "okay";
 	current-speed = <115200>;
 };
 
-&eth {
+&enet {
 	status = "okay";
 	ptp {
 		status = "okay";
 	};
 };
 
-&usbd1 {
+&usb1 {
 	status = "okay";
+};
+
+&usdhc1 {
+	status = "okay";
+	pwr-gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
+	cd-gpios = <&gpio2 28 GPIO_ACTIVE_LOW>;
 };

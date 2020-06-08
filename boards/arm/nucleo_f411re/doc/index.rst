@@ -52,7 +52,7 @@ Nucleo F411RE provides the following hardware components:
 - SysTick timer
 - USART/UART (3)
 - I2C (3)
-- SPI (5)
+- SPI/I2S (5)
 - SDIO
 - USB 2.0 OTG FS
 - DMA Controller
@@ -82,6 +82,8 @@ The Zephyr nucleo_f411re board configuration supports the following hardware fea
 | PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
+| I2S       | on-chip    | i2s                                 |
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
@@ -122,9 +124,11 @@ Default Zephyr Peripheral Mapping:
 - I2C2 SCL/SDA : PB10/PB3
 - I2C1 SCL/SDA : PA8/B4
 - SPI1 CS/SCK/MISO/MOSI : PA4/PA5/PA6/PA7 (Arduino SPI)
+- I2S1 SCK/SD : PA5/PA7 (Arduino I2S)
 - USER_PB   : PC13
 - LD2       : PA5
 
+.. note:: Please note that SPI1 and I2S1 are connected to the same mcu pins, as the h/w controller is the same one.
 
 System Clock
 ------------

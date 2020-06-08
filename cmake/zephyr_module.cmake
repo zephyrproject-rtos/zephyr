@@ -21,7 +21,7 @@ endif()
 set(KCONFIG_MODULES_FILE ${CMAKE_BINARY_DIR}/Kconfig.modules)
 
 if(WEST)
-  set(WEST_ARG "--west-path" ${WEST})
+  set(WEST_ARG "--west-path" ${WEST} "--zephyr-base" ${ZEPHYR_BASE})
 endif()
 
 if(WEST OR ZEPHYR_MODULES)

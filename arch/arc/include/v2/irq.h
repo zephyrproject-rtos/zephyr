@@ -46,9 +46,6 @@ extern "C" {
 #define _ARC_V2_INIT_IRQ_LOCK_KEY (0x10 | _ARC_V2_DEF_IRQ_LEVEL)
 
 #ifndef _ASMLANGUAGE
-
-extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
-
 /*
  * z_irq_setup
  *

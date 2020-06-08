@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019 Synopsys, Inc. All rights reserved.
  *

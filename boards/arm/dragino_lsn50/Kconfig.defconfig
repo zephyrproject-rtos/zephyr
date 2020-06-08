@@ -8,11 +8,4 @@ if BOARD_DRAGINO_LSN50
 config BOARD
 	default "dragino_lsn50"
 
-if UART_CONSOLE
-
-config UART_1
-	default y
-
-endif # UART_CONSOLE
-
 endif # BOARD_DRAGINO_LSN50

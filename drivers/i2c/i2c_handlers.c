@@ -73,3 +73,10 @@ static inline int z_vrfy_i2c_slave_driver_unregister(struct device *dev)
 	return z_vrfy_i2c_slave_driver_unregister(dev);
 }
 #include <syscalls/i2c_slave_driver_unregister_mrsh.c>
+
+static inline int z_vrfy_i2c_recover_bus(struct device *dev)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_I2C));
+	return z_impl_i2c_recover_bus(dev);
+}
+#include <syscalls/i2c_recover_bus_mrsh.c>

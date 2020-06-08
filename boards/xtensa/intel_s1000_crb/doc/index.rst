@@ -51,7 +51,9 @@ The Intel S1000 contains the following:
   - GPIO: 8 GPIOs with PWM output capability
 
 
-For more information refer to the `Intel Speech Enabling Developer Kit`_ page.
+.. note::
+
+   This board is not available for purchase anymore.
 
 System requirements
 *******************
@@ -68,15 +70,21 @@ have a registered account at https://tensilicatools.com.
 The toolchain installer and the core configuration can be downloaded by following
 the links at `Tensilica Tools for Sue Creek`_
 
-Select version RF-2016.4 and download the archive. The archive contains two files:
+Select version RI-2018.0 and download the archive. The archive contains two files:
 
-- Installer: :file:`Xplorer-6.0.4-linux-installer.bin` and
+- Installer: :file:`Xplorer-8.0.8-linux-x64-installer.bin` and
 - Core configuration
-  :file:`2018-05-15_5afafc055d3f4_X6H3SUE_2016_4_linux_redist.tgz`
+  :file:`X6H3SUE_RI_2018_0_linux_redist.tgz`
 
 For JTAG based debugging, download the XOCD package as well.
 
 A node locked license key can also be generated from the `SDK portal`_.
+
+.. note::
+
+   Please upgrade to RI-2018.0 version of XCC if you have previously installed
+   the older RF-2016.4 version of XCC. The old toolchain does not support
+   the C/C++ standards required for building Zephyr applications.
 
 Set up build environment
 ========================
@@ -86,8 +94,8 @@ Run the installer using these commands:
 .. code-block:: console
 
    cd ~/Downloads
-   chmod +x Xplorer-6.0.4-linux-installer.bin
-   ./Xplorer-6.0.4-linux-installer.bin
+   chmod +x Xplorer-8.0.8-linux-installer.bin
+   ./Xplorer-8.0.8-linux-installer.bin
 
 Please note a dialogue box should pop-up after running this command. In case the
 graphical installation tool does not start, the tool will revert to console
@@ -129,23 +137,23 @@ software keys you have downloaded from `Tensilica Tools for Sue Creek`_
 
    .. code-block:: console
 
-      cp sue-creek-SDK-license.dat <path to  SDK>/XtDevTools/install/tools/RF-2016.4-linux/XtensaTools/Tools/lic/license.dat"
+      cp sue-creek-SDK-license.dat <path to SDK>/XtDevTools/install/tools/RI-2018.0-linux/XtensaTools/Tools/lic/license.dat"
 
 After the tool chain is successfully installed, the core build needs to be
 installed as follows
 
 .. code-block:: console
 
-   tar -xvzf 2018-05-15_5afafc055d3f4_X6H3SUE_2016_4_linux_redist.tgz --directory <path to SDK>/XtDevTools/install/builds
-   cd <path to  SDK>/XtDevTools/install/builds/RF-2016.4-linux/X6H3SUE_2016_4
+   tar -xvzf X6H3SUE_RI_2018_0_linux_redist.tgz --directory <path to SDK>/XtDevTools/install/builds
+   cd <path to SDK>/XtDevTools/install/builds/RI-2018.0-linux/X6H3SUE_RI_2018_0
    ./install
 
 The :file:`install` script is the Xtensa Processor Configuration Installation
 Tool which is required to update the installation path. When it prompts to
 enter the path to the Xtensa Tools directory, enter
-:file:`<path to SDK>/XtDevTools/install/tools/RF-2016.4-linux/XtensaTools`.
+:file:`<path to SDK>/XtDevTools/install/tools/RI-2018.0-linux/XtensaTools`.
 You should use the default registry
-:file:`<path to SDK>/XtDevTools/install/tools/RF-2016.4-linux/XtensaTools/config`.
+:file:`<path to SDK>/XtDevTools/install/tools/RI-2018.0-linux/XtensaTools/config`.
 
 With the XCC toolchain installed, the Zephyr build system must be instructed
 to use this particular variant by setting the ``ZEPHYR_TOOLCHAIN_VARIANT``
@@ -155,9 +163,9 @@ shell variable. Some more environment variables are also required (see below):
 
    export XTENSA_TOOLCHAIN_PATH=<path to SDK>
    export ZEPHYR_TOOLCHAIN_VARIANT=xcc
-   export TOOLCHAIN_VER=RF-2016.4-linux
-   export XTENSA_CORE=X6H3SUE_2016_4
-   export XTENSA_SYSTEM=${XTENSA_TOOLCHAIN_PATH}/XtDevTools/install/tools/RF-2016.4-linux/XtensaTools/config/
+   export TOOLCHAIN_VER=RI-2018.0-linux
+   export XTENSA_CORE=X6H3SUE_RI_2018_0
+   export XTENSA_SYSTEM=${XTENSA_TOOLCHAIN_PATH}/XtDevTools/install/tools/RI-2018.0-linux/XtensaTools/config/
    export XTENSA_BUILD_PATHS=${XTENSA_TOOLCHAIN_PATH}/XtDevTools/install/builds/
    export XTENSA_OCD_PATH=<path to XOCD>/xocd-12.0.4
 
@@ -283,5 +291,3 @@ Those 2 pins are Pin5 HOST_RST_N_LT_R) and Pin21 (+V_HOST_3P3_1P8).
 .. _Tensilica Tools for Sue Creek: https://tensilicatools.com/platform/intel-sue-creek
 
 .. _SDK portal: https://tensilicatools.com
-
-.. _Intel Speech Enabling Developer Kit: https://software.intel.com/en-us/iot/speech-enabling-dev-kit

@@ -96,7 +96,7 @@ static void dcache_flush_mlines(u32_t start_addr, u32_t size)
 	end_addr = start_addr + size - 1;
 	start_addr &= (u32_t)(~(DCACHE_LINE_SIZE - 1));
 
-	key = irq_lock(); /* --enter critical section-- */
+	key = arch_irq_lock(); /* --enter critical section-- */
 
 	do {
 		z_arc_v2_aux_reg_write(_ARC_V2_DC_FLDL, start_addr);
@@ -113,7 +113,7 @@ static void dcache_flush_mlines(u32_t start_addr, u32_t size)
 		start_addr += DCACHE_LINE_SIZE;
 	} while (start_addr <= end_addr);
 
-	irq_unlock(key); /* --exit critical section-- */
+	arch_irq_unlock(key); /* --exit critical section-- */
 
 }
 

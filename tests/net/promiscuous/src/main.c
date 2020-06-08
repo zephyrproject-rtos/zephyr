@@ -142,13 +142,15 @@ static int eth_fake_init(struct device *dev)
 	return 0;
 }
 
-ETH_NET_DEVICE_INIT(eth_fake1, "eth_fake1", eth_fake_init, &eth_fake_data1,
-		    NULL, CONFIG_ETH_INIT_PRIORITY, &eth_fake_api_funcs,
-		    NET_ETH_MTU);
+ETH_NET_DEVICE_INIT(eth_fake1, "eth_fake1",
+		    eth_fake_init, device_pm_control_nop,
+		    &eth_fake_data1, NULL, CONFIG_ETH_INIT_PRIORITY,
+		    &eth_fake_api_funcs, NET_ETH_MTU);
 
-ETH_NET_DEVICE_INIT(eth_fake2, "eth_fake2", eth_fake_init, &eth_fake_data2,
-		    NULL, CONFIG_ETH_INIT_PRIORITY, &eth_fake_api_funcs,
-		    NET_ETH_MTU);
+ETH_NET_DEVICE_INIT(eth_fake2, "eth_fake2",
+		    eth_fake_init, device_pm_control_nop,
+		    &eth_fake_data2, NULL, CONFIG_ETH_INIT_PRIORITY,
+		    &eth_fake_api_funcs, NET_ETH_MTU);
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 static const char *iface2str(struct net_if *iface)
@@ -195,7 +197,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	}
 }
 
-static void iface_setup(void)
+static void test_iface_setup(void)
 {
 	struct net_if_mcast_addr *maddr;
 	struct net_if_addr *ifaddr;
@@ -318,25 +320,25 @@ static void _set_promisc_mode_off(struct net_if *iface)
 		      iface);
 }
 
-static void set_promisc_mode_on_again(void)
+static void test_set_promisc_mode_on_again(void)
 {
 	_set_promisc_mode_on_again(iface1);
 	_set_promisc_mode_on_again(iface2);
 }
 
-static void set_promisc_mode_on(void)
+static void test_set_promisc_mode_on(void)
 {
 	_set_promisc_mode_on(iface1);
 	_set_promisc_mode_on(iface2);
 }
 
-static void set_promisc_mode_off_again(void)
+static void test_set_promisc_mode_off_again(void)
 {
 	_set_promisc_mode_off_again(iface1);
 	_set_promisc_mode_off_again(iface2);
 }
 
-static void set_promisc_mode_off(void)
+static void test_set_promisc_mode_off(void)
 {
 	_set_promisc_mode_off(iface1);
 	_set_promisc_mode_off(iface2);
@@ -359,13 +361,13 @@ static void _recv_data(struct net_if *iface, struct net_pkt **pkt)
 static struct net_pkt *pkt1;
 static struct net_pkt *pkt2;
 
-static void recv_data(void)
+static void test_recv_data(void)
 {
 	_recv_data(iface1, &pkt1);
 	_recv_data(iface2, &pkt2);
 }
 
-static void verify_data(void)
+static void test_verify_data(void)
 {
 	struct net_pkt *pkt;
 
@@ -381,13 +383,13 @@ static void verify_data(void)
 void test_main(void)
 {
 	ztest_test_suite(net_promisc_test,
-			 ztest_unit_test(iface_setup),
-			 ztest_unit_test(set_promisc_mode_on),
-			 ztest_unit_test(set_promisc_mode_on_again),
-			 ztest_unit_test(recv_data),
-			 ztest_unit_test(verify_data),
-			 ztest_unit_test(set_promisc_mode_off),
-			 ztest_unit_test(set_promisc_mode_off_again));
+			 ztest_unit_test(test_iface_setup),
+			 ztest_unit_test(test_set_promisc_mode_on),
+			 ztest_unit_test(test_set_promisc_mode_on_again),
+			 ztest_unit_test(test_recv_data),
+			 ztest_unit_test(test_verify_data),
+			 ztest_unit_test(test_set_promisc_mode_off),
+			 ztest_unit_test(test_set_promisc_mode_off_again));
 
 	ztest_run_test_suite(net_promisc_test);
 }

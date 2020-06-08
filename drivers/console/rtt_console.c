@@ -30,7 +30,7 @@ static void wait(void)
 			k_busy_wait(1000*CONFIG_RTT_TX_RETRY_DELAY_MS);
 		}
 	} else {
-		k_sleep(CONFIG_RTT_TX_RETRY_DELAY_MS);
+		k_msleep(CONFIG_RTT_TX_RETRY_DELAY_MS);
 	}
 }
 

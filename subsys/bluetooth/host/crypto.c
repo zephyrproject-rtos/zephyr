@@ -14,6 +14,7 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/conn.h>
+#include <bluetooth/crypto.h>
 
 #include <tinycrypt/constants.h>
 #include <tinycrypt/hmac_prng.h>
@@ -32,7 +33,8 @@ static int prng_reseed(struct tc_hmac_prng_struct *h)
 {
 	u8_t seed[32];
 	s64_t extra;
-	int ret, i;
+	size_t i;
+	int ret;
 
 	for (i = 0; i < (sizeof(seed) / 8); i++) {
 		struct bt_hci_rp_le_rand *rp;

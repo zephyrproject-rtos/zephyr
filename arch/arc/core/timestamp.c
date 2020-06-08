@@ -29,10 +29,10 @@ u64_t z_tsc_read(void)
 	u64_t t;
 	u32_t count;
 
-	key = irq_lock();
+	key = arch_irq_lock();
 	t = (u64_t)z_tick_get();
 	count = z_arc_v2_aux_reg_read(_ARC_V2_TMR0_COUNT);
-	irq_unlock(key);
+	arch_irq_unlock(key);
 	t *= k_ticks_to_cyc_floor64(1);
 	t += (u64_t)count;
 	return t;

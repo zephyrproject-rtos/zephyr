@@ -34,18 +34,8 @@ config HARVARD
 config ARC_FIRQ
 	default y
 
-if SERIAL
-
 config UART_NS16550
 	default y
-
-endif # SERIAL
-
-if UART_CONSOLE
-
-config UART_NS16550_PORT_0
-	default y
-
-endif # UART_CONSOLE
+	depends on SERIAL
 
 endif # ARC_IOT

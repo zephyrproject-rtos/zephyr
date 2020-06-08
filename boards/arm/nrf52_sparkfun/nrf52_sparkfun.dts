@@ -10,8 +10,7 @@
 
 / {
 	model = "Sparkfun nRF52832 Breakout";
-	compatible = "sparkfun,nrf52832", "nordic,nrf52832-qfaa",
-		     "nordic,nrf52832";
+	compatible = "sparkfun,nrf52832";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -32,7 +31,7 @@
 	leds {
 		compatible = "gpio-leds";
 		led0: led_0 {
-			gpios = <&gpio0 7 0>;
+			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 			label = "LED";
 		};
 	};
@@ -41,7 +40,7 @@
 		compatible = "gpio-keys";
 		button0: button_0 {
 			/* gpio flags need validation */
-			gpios = <&gpio0 6 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio0 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Button";
 		};
 	};

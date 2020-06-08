@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT arm_cortex_m3
+
 /**
  * @file
  * @brief Driver for Clock Control of Beetle MCUs.
@@ -15,7 +17,7 @@
 #include <soc.h>
 #include <drivers/clock_control.h>
 #include <sys/util.h>
-#include <clock_control/arm_clock_control.h>
+#include <drivers/clock_control/arm_clock_control.h>
 
 #define MAINCLK_BASE_FREQ 24000000
 
@@ -131,7 +133,7 @@ static int beetle_clock_control_get_subsys_rate(struct device *clock,
 {
 #ifdef CONFIG_CLOCK_CONTROL_BEETLE_ENABLE_PLL
 	const struct beetle_clock_control_cfg_t * const cfg =
-						clock->config->config_info;
+						clock->config_info;
 	u32_t nc_mainclk = beetle_round_freq(cfg->freq);
 
 	*rate = nc_mainclk;
@@ -217,7 +219,7 @@ static int beetle_clock_control_init(struct device *dev)
 {
 #ifdef CONFIG_CLOCK_CONTROL_BEETLE_ENABLE_PLL
 	const struct beetle_clock_control_cfg_t * const cfg =
-						dev->config->config_info;
+						dev->config_info;
 
 	/*
 	 * Enable PLL if Beetle is configured to run at a different
@@ -233,7 +235,7 @@ static int beetle_clock_control_init(struct device *dev)
 
 static const struct beetle_clock_control_cfg_t beetle_cc_cfg = {
 	.clock_control_id = 0,
-	.freq = DT_ARM_CORTEX_M3_0_CLOCK_FREQUENCY,
+	.freq = DT_INST_PROP(0, clock_frequency),
 };
 
 /**

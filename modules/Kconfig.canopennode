@@ -1,0 +1,9 @@
+# CANopenNode CANopen protocol stack
+
+# Copyright (c) 2019 Vestas Wind System A/S
+# SPDX-License-Identifier: Apache-2.0
+
+config CANOPENNODE
+	bool "CANopenNode Support"
+	help
+	  This option enables the CANopenNode library.

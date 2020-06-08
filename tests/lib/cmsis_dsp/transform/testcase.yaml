@@ -1,0 +1,55 @@
+common:
+  platform_whitelist: frdm_k64f sam_e70_xplained mps2_an521
+  tags: cmsis_dsp
+
+tests:
+  libraries.cmsis_dsp.transform:
+    skip: true
+  libraries.cmsis_dsp.transform.cq15:
+    min_flash: 512
+    min_ram: 64
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_TRANSFORM_CQ15=y
+  libraries.cmsis_dsp.transform.rq15:
+    min_flash: 512
+    min_ram: 64
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_TRANSFORM_RQ15=y
+  libraries.cmsis_dsp.transform.cq31:
+    min_flash: 1024
+    min_ram: 64
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_TRANSFORM_CQ31=y
+  libraries.cmsis_dsp.transform.rq31:
+    min_flash: 1024
+    min_ram: 64
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_TRANSFORM_RQ31=y
+  libraries.cmsis_dsp.transform.cf32:
+    min_flash: 1024
+    min_ram: 64
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_TRANSFORM_CF32=y
+  libraries.cmsis_dsp.transform.rf32:
+    min_flash: 512
+    min_ram: 64
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_TRANSFORM_RF32=y
+  libraries.cmsis_dsp.transform.cf64:
+    min_flash: 1024
+    min_ram: 64
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_TRANSFORM_CF64=y
+  libraries.cmsis_dsp.transform.rf64:
+    min_flash: 1024
+    min_ram: 64
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_TRANSFORM_RF64=y

@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_imx_mu
+
 #include <errno.h>
 #include <string.h>
 #include <device.h>
@@ -32,7 +34,7 @@ struct imx_mu_data {
 static void imx_mu_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	const struct imx_mu_config *config = dev->config->config_info;
+	const struct imx_mu_config *config = dev->config_info;
 	MU_Type *base = MU(config);
 	struct imx_mu_data *data = dev->driver_data;
 	u32_t data32[IMX_IPM_DATA_REGS];
@@ -88,7 +90,7 @@ static void imx_mu_isr(void *arg)
 static int imx_mu_ipm_send(struct device *dev, int wait, u32_t id,
 			   const void *data, int size)
 {
-	const struct imx_mu_config *config = dev->config->config_info;
+	const struct imx_mu_config *config = dev->config_info;
 	MU_Type *base = MU(config);
 	u32_t data32[IMX_IPM_DATA_REGS];
 	mu_status_t status;
@@ -148,7 +150,7 @@ static void imx_mu_ipm_register_callback(struct device *dev,
 
 static int imx_mu_ipm_set_enabled(struct device *dev, int enable)
 {
-	const struct imx_mu_config *config = dev->config->config_info;
+	const struct imx_mu_config *config = dev->config_info;
 	MU_Type *base = MU(config);
 
 #if CONFIG_IPM_IMX_MAX_DATA_SIZE_4
@@ -186,7 +188,7 @@ static int imx_mu_ipm_set_enabled(struct device *dev, int enable)
 
 static int imx_mu_init(struct device *dev)
 {
-	const struct imx_mu_config *config = dev->config->config_info;
+	const struct imx_mu_config *config = dev->config_info;
 
 	MU_Init(MU(config));
 	config->irq_config_func(dev);
@@ -207,13 +209,13 @@ static const struct ipm_driver_api imx_mu_driver_api = {
 static void imx_mu_config_func_b(struct device *dev);
 
 static const struct imx_mu_config imx_mu_b_config = {
-	.base = (MU_Type *)DT_IPM_IMX_MU_B_BASE_ADDRESS,
+	.base = (MU_Type *)DT_INST_REG_ADDR(0),
 	.irq_config_func = imx_mu_config_func_b,
 };
 
 static struct imx_mu_data imx_mu_b_data;
 
-DEVICE_AND_API_INIT(mu_b, DT_IPM_IMX_MU_B_NAME,
+DEVICE_AND_API_INIT(mu_b, DT_INST_LABEL(0),
 		    &imx_mu_init,
 		    &imx_mu_b_data, &imx_mu_b_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -221,9 +223,9 @@ DEVICE_AND_API_INIT(mu_b, DT_IPM_IMX_MU_B_NAME,
 
 static void imx_mu_config_func_b(struct device *dev)
 {
-	IRQ_CONNECT(DT_IPM_IMX_MU_B_IRQ,
-		    DT_IPM_IMX_MU_B_IRQ_PRI,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
 		    imx_mu_isr, DEVICE_GET(mu_b), 0);
 
-	irq_enable(DT_IPM_IMX_MU_B_IRQ);
+	irq_enable(DT_INST_IRQN(0));
 }

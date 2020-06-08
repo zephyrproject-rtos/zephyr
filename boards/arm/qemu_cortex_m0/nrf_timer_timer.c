@@ -74,13 +74,12 @@ int z_clock_driver_init(struct device *device)
 
 	ARG_UNUSED(device);
 
-	clock = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL "_16M");
+	clock = device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_clock)));
 	if (!clock) {
 		return -1;
 	}
 
-	/* turn on clock in blocking mode. */
-	clock_control_on(clock, (void *)1);
+	clock_control_on(clock, CLOCK_CONTROL_NRF_SUBSYS_HF);
 
 	nrf_timer_frequency_set(TIMER, NRF_TIMER_FREQ_1MHz);
 	nrf_timer_bit_width_set(TIMER, NRF_TIMER_BIT_WIDTH_32);
@@ -97,7 +96,7 @@ int z_clock_driver_init(struct device *device)
 	nrf_timer_task_trigger(TIMER, NRF_TIMER_TASK_CLEAR);
 	nrf_timer_task_trigger(TIMER, NRF_TIMER_TASK_START);
 
-	if (!IS_ENABLED(TICKLESS_KERNEL)) {
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		set_comparator(counter() + CYC_PER_TICK);
 	}
 
@@ -109,7 +108,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	ARG_UNUSED(idle);
 
 #ifdef CONFIG_TICKLESS_KERNEL
-	ticks = (ticks == K_FOREVER) ? MAX_TICKS : ticks;
+	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
 	ticks = MAX(MIN(ticks - 1, (s32_t)MAX_TICKS), 0);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);

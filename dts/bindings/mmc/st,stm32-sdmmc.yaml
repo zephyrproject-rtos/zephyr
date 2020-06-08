@@ -1,0 +1,21 @@
+description: stm32 sdmmc disk access
+
+compatible: "st,stm32-sdmmc"
+
+include: mmc.yaml
+
+properties:
+    clocks:
+        required: true
+    label:
+        required: true
+    reg:
+        required: true
+    cd-gpios:
+        type: phandle-array
+        required: false
+        description: Card Detect pin
+    pwr-gpios:
+        type: phandle-array
+        required: false
+        description: Power pin

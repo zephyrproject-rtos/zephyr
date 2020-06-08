@@ -1,5 +1,5 @@
 identifier: nucleo_l073rz
-name: NUCLEO-L073RZ
+name: ST Nucleo L073RZ
 type: mcu
 arch: arm
 toolchain:
@@ -17,3 +17,4 @@ supported:
   - spi
   - watchdog
   - adc
+  - dac

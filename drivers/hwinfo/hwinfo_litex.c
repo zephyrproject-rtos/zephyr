@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT litex_dna0
+
 #include <drivers/hwinfo.h>
 #include <soc.h>
 #include <string.h>
@@ -12,8 +14,8 @@
 
 ssize_t z_impl_hwinfo_get_device_id(u8_t *buffer, size_t length)
 {
-	u32_t volatile *ptr = (u32_t volatile *)(DT_INST_0_LITEX_DNA0_BASE_ADDRESS);
-	ssize_t end = MIN(length, (DT_INST_0_LITEX_DNA0_SIZE / sizeof(u32_t)));
+	u32_t volatile *ptr = (u32_t volatile *)(DT_INST_REG_ADDR(0));
+	ssize_t end = MIN(length, (DT_INST_REG_SIZE(0) / sizeof(u32_t)));
 
 	for (int i = 0; i < end; i++) {
 		/* In LiteX even though registers are 32-bit wide, each one

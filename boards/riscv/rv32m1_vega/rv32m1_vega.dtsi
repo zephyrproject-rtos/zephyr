@@ -9,6 +9,12 @@
 		led1 = &blue_led;
 		led2 = &red_led;
 		led3 = &sts_led;
+		pwm-led0 = &blue_pwm_led;
+		pwm-led1 = &green_pwm_led;
+		pwm-led2 = &red_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		red-pwm-led = &red_pwm_led;
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
 		sw2 = &user_button_4;
@@ -18,20 +24,36 @@
 	leds {
 		compatible = "gpio-leds";
 		blue_led: led_0 {
-			gpios = <&gpioa 22 0>;
+			gpios = <&gpioa 22 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
 		green_led: led_1 {
-			gpios = <&gpioa 23 0>;
+			gpios = <&gpioa 23 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
 		red_led: led_2 {
-			gpios = <&gpioa 24 0>;
+			gpios = <&gpioa 24 GPIO_ACTIVE_HIGH>;
 			label = "User LD3";
 		};
 		sts_led: led_3 {
-			gpios = <&gpioe 0 0>;
+			gpios = <&gpioe 0 GPIO_ACTIVE_HIGH>;
 			label = "User LD4";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		blue_pwm_led: pwm_led_0 {
+			pwms = <&tpm2 2 0 0>;
+			label = "User PWM LD1";
+		};
+		green_pwm_led: pwm_led_1 {
+			pwms = <&tpm2 1 0 0>;
+			label = "User PWM LD2";
+		};
+		red_pwm_led: pwm_led_2 {
+			pwms = <&tpm2 0 0 0>;
+			label = "User PWM LD3";
 		};
 	};
 
@@ -39,19 +61,19 @@
 		compatible = "gpio-keys";
 		user_button_2: button_0 {
 			label = "User SW2";
-			gpios = <&gpioa 0 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
 		};
 		user_button_3: button_1 {
 			label = "User SW3";
-			gpios = <&gpioe 8 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpioe 8 GPIO_ACTIVE_LOW>;
 		};
 		user_button_4: button_2 {
 			label = "User SW4";
-			gpios = <&gpioe 9 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpioe 9 GPIO_ACTIVE_LOW>;
 		};
 		user_button_5: button_3 {
 			label = "User SW5";
-			gpios = <&gpioe 12 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpioe 12 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -85,31 +107,35 @@
 	};
 };
 
-arduino_serial: &uart1 {};
+arduino_serial: &lpuart1 {};
 
-&uart0 {
+&lpuart0 {
 	current-speed = <115200>;
 	status = "okay";
 };
 
-arduino_i2c: &i2c0 {
+arduino_i2c: &lpi2c0 {
 	status = "okay";
 };
 
-&i2c3 {
+&lpi2c3 {
 	status = "okay";
 
 	fxos8700@1e {
 		compatible = "nxp,fxos8700";
 		reg = <0x1e>;
 		label = "FXOS8700";
-		reset-gpios = <&gpioe 27 0>;
-		int1-gpios = <&gpioe 1 0>;
-		int2-gpios = <&gpioe 22 0>;
+		reset-gpios = <&gpioe 27 GPIO_ACTIVE_HIGH>;
+		int1-gpios = <&gpioe 1 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&gpioe 22 GPIO_ACTIVE_LOW>;
 	};
 };
 
-&spi1 {
+arduino_spi: &lpspi0 {
+	status = "okay";
+};
+
+&lpspi1 {
 	status = "okay";
 	cs-gpios = <&gpiob 22 0>;
 	mx25r32: mx25r3235f@0 {
@@ -121,4 +147,8 @@ arduino_i2c: &i2c0 {
 		size = <33554432>;
 		has-be32k;
 	};
+};
+
+&tpm2 {
+	status = "okay";
 };

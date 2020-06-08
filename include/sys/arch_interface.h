@@ -41,7 +41,7 @@ extern "C" {
 struct k_thread;
 struct k_mem_domain;
 
-typedef struct _k_thread_stack_element k_thread_stack_t;
+typedef struct z_thread_stack_element k_thread_stack_t;
 
 typedef void (*k_thread_entry_t)(void *p1, void *p2, void *p3);
 
@@ -108,8 +108,15 @@ static inline u32_t arch_k_cycle_get_32(void);
  * @see K_THREAD_STACK_RESERVED
  */
 
+/**
+ * @def ARCH_STACK_PTR_ALIGN
+ *
+ * Required alignment of the CPU's stack pointer register value, dictated by
+ * hardware constraints and the ABI calling convention.
+ *
+ * @see Z_STACK_PTR_ALIGN
+ */
 /** @} */
-
 
 /**
  * @addtogroup arch-pm
@@ -126,6 +133,10 @@ static inline u32_t arch_k_cycle_get_32(void);
  * Architectures that do not implement power management instructions may
  * immediately return, otherwise a power-saving instruction should be
  * issued to wait for an interrupt.
+ *
+ * @note The function is expected to return after the interrupt that has
+ * caused the CPU to exit power-saving mode has been serviced, although
+ * this is not a firm requirement.
  *
  * @see k_cpu_idle()
  */
@@ -160,6 +171,13 @@ void arch_cpu_atomic_idle(unsigned int key);
  */
 
 /**
+ * Per-cpu entry function
+ *
+ * @param context parameter, implementation specific
+ */
+typedef FUNC_NORETURN void (*arch_cpustart_t)(void *data);
+
+/**
  * @brief Start a numbered CPU on a MP-capable system
  *
  * This starts and initializes a specific CPU.  The main thread on startup is
@@ -176,12 +194,11 @@ void arch_cpu_atomic_idle(unsigned int key);
  * @param cpu_num Integer number of the CPU
  * @param stack Stack memory for the CPU
  * @param sz Stack buffer size, in bytes
- * @param fn Function to begin running on the CPU.  First argument is
- *        an irq_unlock() key.
+ * @param fn Function to begin running on the CPU.
  * @param arg Untyped argument to be passed to "fn"
  */
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
-		    void (*fn)(int key, void *data), void *arg);
+		    arch_cpustart_t fn, void *arg);
 /** @} */
 
 
@@ -572,6 +589,8 @@ void arch_mem_domain_destroy(struct k_mem_domain *domain);
  * if the supplied memory buffer spans multiple enabled memory management
  * regions (even if all such regions permit user access).
  *
+ * @warning 0 size buffer has undefined behavior.
+ *
  * @param addr start address of the buffer
  * @param size the size of the buffer
  * @param write If nonzero, additionally check if the area is writable.
@@ -632,6 +651,27 @@ FUNC_NORETURN void arch_syscall_oops(void *ssf);
  */
 size_t arch_user_string_nlen(const char *s, size_t maxsize, int *err);
 #endif /* CONFIG_USERSPACE */
+
+/** @} */
+
+/**
+ * @defgroup arch-benchmarking Architecture-specific benchmarking globals
+ * @ingroup arch-interface
+ * @{
+ */
+
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+extern u64_t arch_timing_swap_start;
+extern u64_t arch_timing_swap_end;
+extern u64_t arch_timing_irq_start;
+extern u64_t arch_timing_irq_end;
+extern u64_t arch_timing_tick_start;
+extern u64_t arch_timing_tick_end;
+extern u64_t arch_timing_user_mode_end;
+extern u32_t arch_timing_value_swap_end;
+extern u64_t arch_timing_value_swap_common;
+extern u64_t arch_timing_value_swap_temp;
+#endif /* CONFIG_EXECUTION_BENCHMARKING */
 
 /** @} */
 

@@ -1,0 +1,4 @@
+tests:
+  can.isotp.conformance:
+    tags: can isotp
+    depends_on: can

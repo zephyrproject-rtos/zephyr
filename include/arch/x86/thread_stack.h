@@ -9,9 +9,9 @@
 #include <arch/x86/mmustructs.h>
 
 #ifdef CONFIG_X86_64
-#define STACK_ALIGN 16UL
+#define ARCH_STACK_PTR_ALIGN 16UL
 #else
-#define STACK_ALIGN 4UL
+#define ARCH_STACK_PTR_ALIGN 4UL
 #endif
 
 #ifdef CONFIG_USERSPACE
@@ -52,13 +52,15 @@
  * many pages we need.
  */
 
+#define PHYS_RAM_ADDR DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#define PHYS_RAM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
+
 /* Define a range [Z_X86_PT_START, Z_X86_PT_END) which is the memory range
  * covered by all the page tables needed for system RAM
  */
-#define Z_X86_PT_START	((u32_t)ROUND_DOWN(DT_PHYS_RAM_ADDR, Z_X86_PT_AREA))
-#define Z_X86_PT_END	((u32_t)ROUND_UP(DT_PHYS_RAM_ADDR + \
-					 (DT_RAM_SIZE * 1024UL), \
-					 Z_X86_PT_AREA))
+#define Z_X86_PT_START	((uintptr_t)ROUND_DOWN(PHYS_RAM_ADDR, Z_X86_PT_AREA))
+#define Z_X86_PT_END	((uintptr_t)ROUND_UP(PHYS_RAM_ADDR + PHYS_RAM_SIZE, \
+					     Z_X86_PT_AREA))
 
 /* Number of page tables needed to cover system RAM. Depends on the specific
  * bounds of system RAM, but roughly 1 page table per 2MB of RAM
@@ -68,10 +70,9 @@
 /* Same semantics as above, but for the page directories needed to cover
  * system RAM.
  */
-#define Z_X86_PD_START	((u32_t)ROUND_DOWN(DT_PHYS_RAM_ADDR, Z_X86_PD_AREA))
-#define Z_X86_PD_END	((u32_t)ROUND_UP(DT_PHYS_RAM_ADDR + \
-					 (DT_RAM_SIZE * 1024UL), \
-					 Z_X86_PD_AREA))
+#define Z_X86_PD_START	((uintptr_t)ROUND_DOWN(PHYS_RAM_ADDR, Z_X86_PD_AREA))
+#define Z_X86_PD_END	((uintptr_t)ROUND_UP(PHYS_RAM_ADDR + PHYS_RAM_SIZE, \
+					     Z_X86_PD_AREA))
 /* Number of page directories needed to cover system RAM. Depends on the
  * specific bounds of system RAM, but roughly 1 page directory per 1GB of RAM
  */
@@ -81,11 +82,10 @@
 /* Same semantics as above, but for the page directory pointer tables needed
  * to cover system RAM. On 32-bit there is just one 4-entry PDPT.
  */
-#define Z_X86_PDPT_START	((u32_t)ROUND_DOWN(DT_PHYS_RAM_ADDR, \
-						   Z_X86_PD_AREA))
-#define Z_X86_PDPT_END	((u32_t)ROUND_UP(DT_PHYS_RAM_ADDR + \
-					 (DT_RAM_SIZE * 1024UL), \
-					 Z_X86_PDPT_AREA))
+#define Z_X86_PDPT_START	((uintptr_t)ROUND_DOWN(PHYS_RAM_ADDR, \
+						       Z_X86_PDPT_AREA))
+#define Z_X86_PDPT_END	((uintptr_t)ROUND_UP(PHYS_RAM_ADDR + PHYS_RAM_SIZE, \
+					     Z_X86_PDPT_AREA))
 /* Number of PDPTs needed to cover system RAM. Depends on the
  * specific bounds of system RAM, but roughly 1 PDPT per 512GB of RAM
  */
@@ -112,7 +112,7 @@
 #if defined(CONFIG_HW_STACK_PROTECTION) || defined(CONFIG_USERSPACE)
 #define Z_X86_STACK_BASE_ALIGN	MMU_PAGE_SIZE
 #else
-#define Z_X86_STACK_BASE_ALIGN	STACK_ALIGN
+#define Z_X86_STACK_BASE_ALIGN	ARCH_STACK_PTR_ALIGN
 #endif
 
 #ifdef CONFIG_USERSPACE
@@ -122,7 +122,7 @@
  */
 #define Z_X86_STACK_SIZE_ALIGN	MMU_PAGE_SIZE
 #else
-#define Z_X86_STACK_SIZE_ALIGN	STACK_ALIGN
+#define Z_X86_STACK_SIZE_ALIGN	ARCH_STACK_PTR_ALIGN
 #endif
 
 #ifndef _ASMLANGUAGE
@@ -196,10 +196,10 @@ struct z_x86_thread_stack_header {
 } __packed __aligned(Z_X86_STACK_BASE_ALIGN);
 
 #define ARCH_THREAD_STACK_RESERVED \
-	((u32_t)sizeof(struct z_x86_thread_stack_header))
+	sizeof(struct z_x86_thread_stack_header)
 
 #define ARCH_THREAD_STACK_DEFINE(sym, size) \
-	struct _k_thread_stack_element __noinit \
+	struct z_thread_stack_element __noinit \
 		__aligned(Z_X86_STACK_BASE_ALIGN) \
 		sym[ROUND_UP((size), Z_X86_STACK_SIZE_ALIGN) + \
 			ARCH_THREAD_STACK_RESERVED]
@@ -211,12 +211,12 @@ struct z_x86_thread_stack_header {
 		ARCH_THREAD_STACK_RESERVED)
 
 #define ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	struct _k_thread_stack_element __noinit \
+	struct z_thread_stack_element __noinit \
 		__aligned(Z_X86_STACK_BASE_ALIGN) \
 		sym[nmemb][ARCH_THREAD_STACK_LEN(size)]
 
 #define ARCH_THREAD_STACK_MEMBER(sym, size) \
-	struct _k_thread_stack_element __aligned(Z_X86_STACK_BASE_ALIGN) \
+	struct z_thread_stack_element __aligned(Z_X86_STACK_BASE_ALIGN) \
 		sym[ROUND_UP((size), Z_X86_STACK_SIZE_ALIGN) + \
 			ARCH_THREAD_STACK_RESERVED]
 

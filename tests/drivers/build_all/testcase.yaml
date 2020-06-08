@@ -65,7 +65,7 @@ tests:
     build_only: true
     extra_args: CONF_FILE=gpio.conf
     min_ram: 32
-    depends_on: gpio
+    depends_on: gpio spi
   drivers.eeprom.build:
     build_only: true
     extra_args: CONF_FILE=eeprom.conf

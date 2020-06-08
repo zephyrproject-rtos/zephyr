@@ -45,8 +45,7 @@ static void disconnect_event_notify(struct mqtt_client *client, int result)
 	struct mqtt_evt evt;
 
 	/* Determine appropriate event to generate. */
-	if (MQTT_HAS_STATE(client, MQTT_STATE_CONNECTED) ||
-	    MQTT_HAS_STATE(client, MQTT_STATE_DISCONNECTING)) {
+	if (MQTT_HAS_STATE(client, MQTT_STATE_CONNECTED)) {
 		evt.type = MQTT_EVT_DISCONNECT;
 		evt.result = result;
 	} else {
@@ -111,6 +110,9 @@ static int client_connect(struct mqtt_client *client)
 
 	client->internal.last_activity = mqtt_sys_tick_in_ms_get();
 
+	/* Reset the unanswered ping count for a new connection */
+	client->unacked_ping = 0;
+
 	MQTT_TRC("Connect completed");
 
 	return 0;
@@ -145,8 +147,29 @@ static int client_write(struct mqtt_client *client, const u8_t *data,
 
 	err_code = mqtt_transport_write(client, data, datalen);
 	if (err_code < 0) {
-		MQTT_TRC("TCP write failed, errno = %d, "
-			 "closing connection", errno);
+		MQTT_TRC("Transport write failed, err_code = %d, "
+			 "closing connection", err_code);
+		client_disconnect(client, err_code);
+		return err_code;
+	}
+
+	MQTT_TRC("[%p]: Transport write complete.", client);
+	client->internal.last_activity = mqtt_sys_tick_in_ms_get();
+
+	return 0;
+}
+
+static int client_write_msg(struct mqtt_client *client,
+			    const struct msghdr *message)
+{
+	int err_code;
+
+	MQTT_TRC("[%p]: Transport writing message.", client);
+
+	err_code = mqtt_transport_write_msg(client, message);
+	if (err_code < 0) {
+		MQTT_TRC("Transport write failed, err_code = %d, "
+			 "closing connection", err_code);
 		client_disconnect(client, err_code);
 		return err_code;
 	}
@@ -231,6 +254,8 @@ int mqtt_publish(struct mqtt_client *client,
 {
 	int err_code;
 	struct buf_ctx packet;
+	struct iovec io_vector[2];
+	struct msghdr msg;
 
 	NULL_PARAM_CHECK(client);
 	NULL_PARAM_CHECK(param);
@@ -254,13 +279,17 @@ int mqtt_publish(struct mqtt_client *client,
 		goto error;
 	}
 
-	err_code = client_write(client, packet.cur, packet.end - packet.cur);
-	if (err_code < 0) {
-		goto error;
-	}
+	io_vector[0].iov_base = packet.cur;
+	io_vector[0].iov_len = packet.end - packet.cur;
+	io_vector[1].iov_base = param->message.payload.data;
+	io_vector[1].iov_len = param->message.payload.len;
 
-	err_code = client_write(client, param->message.payload.data,
-				param->message.payload.len);
+	memset(&msg, 0, sizeof(msg));
+
+	msg.msg_iov = io_vector;
+	msg.msg_iovlen = ARRAY_SIZE(io_vector);
+
+	err_code = client_write_msg(client, &msg);
 
 error:
 	MQTT_TRC("[CID %p]:[State 0x%02x]: << result 0x%08x",
@@ -448,7 +477,7 @@ int mqtt_disconnect(struct mqtt_client *client)
 		goto error;
 	}
 
-	MQTT_SET_STATE_EXCLUSIVE(client, MQTT_STATE_DISCONNECTING);
+	client_disconnect(client, 0);
 
 error:
 	mqtt_mutex_unlock(client);
@@ -548,6 +577,12 @@ int mqtt_ping(struct mqtt_client *client)
 
 	err_code = client_write(client, packet.cur, packet.end - packet.cur);
 
+	if (client->unacked_ping >= INT8_MAX) {
+		MQTT_TRC("PING count overflow!");
+	} else {
+		client->unacked_ping++;
+	}
+
 error:
 	mqtt_mutex_unlock(client);
 
@@ -571,27 +606,47 @@ int mqtt_abort(struct mqtt_client *client)
 
 int mqtt_live(struct mqtt_client *client)
 {
+	int err_code = 0;
 	u32_t elapsed_time;
+	bool ping_sent = false;
 
 	NULL_PARAM_CHECK(client);
 
 	mqtt_mutex_lock(client);
 
-	if (MQTT_HAS_STATE(client, MQTT_STATE_DISCONNECTING)) {
-		client_disconnect(client, 0);
-	} else {
-		elapsed_time = mqtt_elapsed_time_in_ms_get(
-					client->internal.last_activity);
-
-		if ((client->keepalive > 0) &&
-		    (elapsed_time >= (client->keepalive * 1000))) {
-			(void)mqtt_ping(client);
-		}
+	elapsed_time = mqtt_elapsed_time_in_ms_get(
+				client->internal.last_activity);
+	if ((client->keepalive > 0) &&
+	    (elapsed_time >= (client->keepalive * 1000))) {
+		err_code = mqtt_ping(client);
+		ping_sent = true;
 	}
 
 	mqtt_mutex_unlock(client);
 
-	return 0;
+	if (ping_sent) {
+		return err_code;
+	} else {
+		return -EAGAIN;
+	}
+}
+
+u32_t mqtt_keepalive_time_left(const struct mqtt_client *client)
+{
+	u32_t elapsed_time = mqtt_elapsed_time_in_ms_get(
+					client->internal.last_activity);
+	u32_t keepalive_ms = 1000U * client->keepalive;
+
+	if (client->keepalive == 0) {
+		/* Keep alive not enabled. */
+		return UINT32_MAX;
+	}
+
+	if (keepalive_ms <= elapsed_time) {
+		return 0;
+	}
+
+	return keepalive_ms - elapsed_time;
 }
 
 int mqtt_input(struct mqtt_client *client)
@@ -604,9 +659,7 @@ int mqtt_input(struct mqtt_client *client)
 
 	MQTT_TRC("state:0x%08x", client->internal.state);
 
-	if (MQTT_HAS_STATE(client, MQTT_STATE_DISCONNECTING)) {
-		client_disconnect(client, 0);
-	} else if (MQTT_HAS_STATE(client, MQTT_STATE_TCP_CONNECTED)) {
+	if (MQTT_HAS_STATE(client, MQTT_STATE_TCP_CONNECTED)) {
 		err_code = client_read(client);
 	} else {
 		err_code = -EACCES;
@@ -689,4 +742,3 @@ int mqtt_readall_publish_payload(struct mqtt_client *client, u8_t *buffer,
 
 	return 0;
 }
-

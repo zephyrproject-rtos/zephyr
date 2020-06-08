@@ -1,10 +1,18 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # This file must be included into the toplevel CMakeLists.txt file of
-# Zephyr applications, e.g. zephyr/samples/hello_world/CMakeLists.txt
-# must start with the line:
+# Zephyr applications.
+# Zephyr CMake package automatically includes this file when CMake function
+# find_package() is used.
 #
-# include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
+# To ensure this file is loaded in a Zephyr application it must start with
+# one of those lines:
+#
+# find_package(Zephyr)
+# find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
+#
+# The `HINTS $ENV{ZEPHYR_BASE}` variant is required for any application inside
+# the Zephyr repository.
 #
 # It exists to reduce boilerplate code that Zephyr expects to be in
 # application CMakeLists.txt code.
@@ -63,6 +71,8 @@ set(__build_dir ${CMAKE_CURRENT_BINARY_DIR}/zephyr)
 
 set(PROJECT_BINARY_DIR ${__build_dir})
 
+message(STATUS "Application: ${APPLICATION_SOURCE_DIR}")
+
 add_custom_target(code_data_relocation_target)
 
 # CMake's 'project' concept has proven to not be very useful for Zephyr
@@ -73,12 +83,18 @@ add_custom_target(code_data_relocation_target)
 # It is recommended to always use ZEPHYR_BASE instead of PROJECT_SOURCE_DIR
 # when trying to reference ENV${ZEPHYR_BASE}.
 
+set(ENV_ZEPHYR_BASE $ENV{ZEPHYR_BASE})
+# This add support for old style boilerplate include.
+if((NOT DEFINED ZEPHYR_BASE) AND (DEFINED ENV_ZEPHYR_BASE))
+  set(ZEPHYR_BASE ${ENV_ZEPHYR_BASE} CACHE PATH "Zephyr base")
+endif()
+
+find_package(ZephyrBuildConfiguration NAMES ZephyrBuild PATHS ${ZEPHYR_BASE}/../* QUIET NO_DEFAULT_PATH NO_POLICY_SCOPE)
+
 # Note any later project() resets PROJECT_SOURCE_DIR
-file(TO_CMAKE_PATH "$ENV{ZEPHYR_BASE}" PROJECT_SOURCE_DIR)
+file(TO_CMAKE_PATH "${ZEPHYR_BASE}" PROJECT_SOURCE_DIR)
 
 set(ZEPHYR_BINARY_DIR ${PROJECT_BINARY_DIR})
-set(ZEPHYR_BASE ${PROJECT_SOURCE_DIR})
-set(ENV{ZEPHYR_BASE}   ${ZEPHYR_BASE})
 
 set(AUTOCONF_H ${__build_dir}/include/generated/autoconf.h)
 # Re-configure (Re-execute all CMakeLists.txt code) when autoconf.h changes
@@ -156,7 +172,7 @@ if(CACHED_BOARD)
   # Warn the user if it looks like he is trying to change the board
   # without cleaning first
   if(board_cli_argument)
-    if(NOT (CACHED_BOARD STREQUAL board_cli_argument))
+    if(NOT ((CACHED_BOARD STREQUAL board_cli_argument) OR (BOARD_DEPRECATED STREQUAL board_cli_argument)))
       message(WARNING "The build directory must be cleaned pristinely when changing boards")
       # TODO: Support changing boards without requiring a clean build
     endif()
@@ -177,7 +193,22 @@ else()
 endif()
 
 assert(BOARD "BOARD not set")
-message(STATUS "Selected BOARD ${BOARD}")
+message(STATUS "Board: ${BOARD}")
+
+if(DEFINED ENV{ZEPHYR_BOARD_ALIASES})
+  include($ENV{ZEPHYR_BOARD_ALIASES})
+  if(${BOARD}_BOARD_ALIAS)
+    set(BOARD_ALIAS ${BOARD} CACHE STRING "Board alias, provided by user")
+    set(BOARD ${${BOARD}_BOARD_ALIAS})
+    message(STATUS "Aliased BOARD=${BOARD_ALIAS} changed to ${BOARD}")
+  endif()
+endif()
+include(${ZEPHYR_BASE}/boards/deprecated.cmake)
+if(${BOARD}_DEPRECATED)
+  set(BOARD_DEPRECATED ${BOARD} CACHE STRING "Deprecated board name, provided by user")
+  set(BOARD ${${BOARD}_DEPRECATED})
+  message(WARNING "Deprecated BOARD=${BOARD_DEPRECATED} name specified, board automatically changed to: ${BOARD}.")
+endif()
 
 # Store the selected board in the cache
 set(CACHED_BOARD ${BOARD} CACHE STRING "Selected board")
@@ -257,12 +288,29 @@ else()
   set(ARCH_DIR ${ARCH_ROOT}/arch)
 endif()
 
+if(DEFINED SHIELD)
+  string(REPLACE " " ";" SHIELD_AS_LIST "${SHIELD}")
+endif()
+# SHIELD-NOTFOUND is a real CMake list, from which valid shields can be popped.
+# After processing all shields, only invalid shields will be left in this list.
+set(SHIELD-NOTFOUND ${SHIELD_AS_LIST})
+
 # Use BOARD to search for a '_defconfig' file.
 # e.g. zephyr/boards/arm/96b_carbon_nrf51/96b_carbon_nrf51_defconfig.
 # When found, use that path to infer the ARCH we are building for.
 foreach(root ${BOARD_ROOT})
   # NB: find_path will return immediately if the output variable is
   # already set
+  if (BOARD_ALIAS)
+    find_path(BOARD_HIDDEN_DIR
+      NAMES ${BOARD_ALIAS}_defconfig
+      PATHS ${root}/boards/*/*
+      NO_DEFAULT_PATH
+      )
+    if(BOARD_HIDDEN_DIR)
+      message("Board alias ${BOARD_ALIAS} is hiding the real board of same name")
+    endif()
+  endif()
   find_path(BOARD_DIR
     NAMES ${BOARD}_defconfig
     PATHS ${root}/boards/*/*
@@ -273,9 +321,6 @@ foreach(root ${BOARD_ROOT})
   endif()
 
   set(shield_dir ${root}/boards/shields)
-  if(DEFINED SHIELD)
-     string(REPLACE " " ";" SHIELD_AS_LIST "${SHIELD}")
-  endif()
   # Match the .overlay files in the shield directories to make sure we are
   # finding shields, e.g. x_nucleo_iks01a1/x_nucleo_iks01a1.overlay
   file(GLOB_RECURSE shields_refs_list
@@ -294,69 +339,70 @@ foreach(root ${BOARD_ROOT})
 
   if(DEFINED SHIELD)
     foreach(s ${SHIELD_AS_LIST})
-      list(REMOVE_ITEM SHIELD ${s})
       list(FIND SHIELD_LIST ${s} _idx)
-      if (NOT _idx EQUAL -1)
-        list(GET shields_refs_list ${_idx} s_path)
-        get_filename_component(s_dir ${s_path} DIRECTORY)
+      if (_idx EQUAL -1)
+        continue()
+      endif()
 
-        # if shield config flag is on, add shield overlay to the shield overlays
-        # list and dts_fixup file to the shield fixup file
+      list(REMOVE_ITEM SHIELD-NOTFOUND ${s})
+
+      list(GET shields_refs_list ${_idx} s_path)
+      get_filename_component(s_dir ${s_path} DIRECTORY)
+
+      # if shield config flag is on, add shield overlay to the shield overlays
+      # list and dts_fixup file to the shield fixup file
+      list(APPEND
+        shield_dts_files
+        ${shield_dir}/${s_path}
+        )
+      list(APPEND
+        shield_dts_fixups
+        ${shield_dir}/${s_dir}/dts_fixup.h
+        )
+
+      # search for shield/boards/board.overlay file
+      if(EXISTS ${shield_dir}/${s_dir}/boards/${BOARD}.overlay)
+        # add shield/board overlay to the shield overlays list
         list(APPEND
           shield_dts_files
-          ${shield_dir}/${s_path}
-        )
+          ${shield_dir}/${s_dir}/boards/${BOARD}.overlay
+          )
+      endif()
+
+      # search for shield/boards/shield/board.overlay file
+      if(EXISTS ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.overlay)
+        # add shield/board overlay to the shield overlays list
         list(APPEND
-          shield_dts_fixups
-          ${shield_dir}/${s_dir}/dts_fixup.h
-        )
-
-        # search for shield/boards/board.overlay file
-        if(EXISTS ${shield_dir}/${s_dir}/boards/${BOARD}.overlay)
-          # add shield/board overlay to the shield overlays list
-          list(APPEND
-            shield_dts_files
-            ${shield_dir}/${s_dir}/boards/${BOARD}.overlay
+          shield_dts_files
+          ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.overlay
           )
-        endif()
+      endif()
 
-        # search for shield/boards/shield/board.overlay file
-        if(EXISTS ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.overlay)
-          # add shield/board overlay to the shield overlays list
-          list(APPEND
-            shield_dts_files
-            ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.overlay
+      # search for shield/shield.conf file
+      if(EXISTS ${shield_dir}/${s_dir}/${s}.conf)
+        # add shield.conf to the shield config list
+        list(APPEND
+          shield_conf_files
+          ${shield_dir}/${s_dir}/${s}.conf
           )
-        endif()
+      endif()
 
-        # search for shield/shield.conf file
-        if(EXISTS ${shield_dir}/${s_dir}/${s}.conf)
-          # add shield.conf to the shield config list
-          list(APPEND
-            shield_conf_files
-            ${shield_dir}/${s_dir}/${s}.conf
+      # search for shield/boards/board.conf file
+      if(EXISTS ${shield_dir}/${s_dir}/boards/${BOARD}.conf)
+        # add HW specific board.conf to the shield config list
+        list(APPEND
+          shield_conf_files
+          ${shield_dir}/${s_dir}/boards/${BOARD}.conf
           )
-        endif()
+      endif()
 
-        # search for shield/boards/board.conf file
-        if(EXISTS ${shield_dir}/${s_dir}/boards/${BOARD}.conf)
-          # add HW specific board.conf to the shield config list
-          list(APPEND
-            shield_conf_files
-            ${shield_dir}/${s_dir}/boards/${BOARD}.conf
+      # search for shield/boards/shield/board.conf file
+      if(EXISTS ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.conf)
+        # add HW specific board.conf to the shield config list
+        list(APPEND
+          shield_conf_files
+          ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.conf
           )
-        endif()
-
-        # search for shield/boards/shield/board.conf file
-        if(EXISTS ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.conf)
-          # add HW specific board.conf to the shield config list
-          list(APPEND
-            shield_conf_files
-            ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.conf
-          )
-        endif()
-      else()
-        list(APPEND NOT_FOUND_SHIELD_LIST ${s})
       endif()
     endforeach()
   endif()
@@ -369,8 +415,8 @@ if(NOT BOARD_DIR)
   message(FATAL_ERROR "Invalid usage")
 endif()
 
-if(DEFINED SHIELD AND DEFINED NOT_FOUND_SHIELD_LIST)
-  foreach (s ${NOT_FOUND_SHIELD_LIST})
+if(DEFINED SHIELD AND NOT (SHIELD-NOTFOUND STREQUAL ""))
+  foreach (s ${SHIELD-NOTFOUND})
     message("No shield named '${s}' found")
   endforeach()
   print_usage()
@@ -442,6 +488,9 @@ set(CMAKE_CXX_COMPILER_FORCED 1)
 
 include(${ZEPHYR_BASE}/cmake/host-tools.cmake)
 
+# Include board specific device-tree flags before parsing.
+include(${BOARD_DIR}/pre_dt_board.cmake OPTIONAL)
+
 # DTS should be close to kconfig because CONFIG_ variables from
 # kconfig and dts should be available at the same time.
 #
@@ -507,17 +556,22 @@ include(${BOARD_DIR}/board.cmake OPTIONAL)
 # The Qemu supported ethernet driver should define CONFIG_ETH_NIC_MODEL
 # string that tells what nic model Qemu should use.
 if(CONFIG_QEMU_TARGET)
-  if(CONFIG_NET_QEMU_ETHERNET)
-    if(CONFIG_ETH_NIC_MODEL)
-      list(APPEND QEMU_FLAGS_${ARCH}
-        -nic tap,model=${CONFIG_ETH_NIC_MODEL},script=no,downscript=no,ifname=zeth
-      )
-    else()
-      message(FATAL_ERROR "
-        No Qemu ethernet driver configured!
-        Enable Qemu supported ethernet driver like e1000 at drivers/ethernet"
-      )
+  if ((CONFIG_NET_QEMU_ETHERNET OR CONFIG_NET_QEMU_USER) AND NOT CONFIG_ETH_NIC_MODEL)
+    message(FATAL_ERROR "
+      No Qemu ethernet driver configured!
+      Enable Qemu supported ethernet driver like e1000 at drivers/ethernet"
+    )
+  elseif(CONFIG_NET_QEMU_ETHERNET)
+    if(CONFIG_ETH_QEMU_EXTRA_ARGS)
+      set(NET_QEMU_ETH_EXTRA_ARGS ",${CONFIG_ETH_QEMU_EXTRA_ARGS}")
     endif()
+    list(APPEND QEMU_FLAGS_${ARCH}
+      -nic tap,model=${CONFIG_ETH_NIC_MODEL},script=no,downscript=no,ifname=${CONFIG_ETH_QEMU_IFACE_NAME}${NET_QEMU_ETH_EXTRA_ARGS}
+    )
+  elseif(CONFIG_NET_QEMU_USER)
+    list(APPEND QEMU_FLAGS_${ARCH}
+      -nic user,model=${CONFIG_ETH_NIC_MODEL},${CONFIG_NET_QEMU_USER_EXTRA_ARGS}
+    )
   else()
     list(APPEND QEMU_FLAGS_${ARCH}
       -net none

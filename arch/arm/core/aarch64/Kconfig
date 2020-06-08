@@ -1,0 +1,169 @@
+# ARM64 core configuration options
+
+# Copyright (c) 2019 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config CPU_CORTEX_A
+	bool
+	select CPU_CORTEX
+	select HAS_FLASH_LOAD_OFFSET
+	help
+	  This option signifies the use of a CPU of the Cortex-A family.
+
+config CPU_CORTEX_A53
+	bool
+	select CPU_CORTEX_A
+	select ARMV8_A
+	help
+	  This option signifies the use of a Cortex-A53 CPU
+
+config CPU_CORTEX_A72
+	bool
+	select CPU_CORTEX_A
+	select ARMV8_A
+	help
+	  This option signifies the use of a Cortex-A72 CPU
+
+config SWITCH_TO_EL1
+	bool "Switch to EL1 at boot"
+	default y
+	help
+	  This option indicates that we want to switch to EL1 at boot. Only
+	  switching to EL1 from EL3 is supported.
+
+config NUM_IRQS
+	int
+
+config MAIN_STACK_SIZE
+	default 4096
+
+config IDLE_STACK_SIZE
+	default 4096
+
+config ISR_STACK_SIZE
+	default 4096
+
+config TEST_EXTRA_STACKSIZE
+	default 2048
+
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 4096
+
+config CMSIS_THREAD_MAX_STACK_SIZE
+	default 4096
+
+config CMSIS_V2_THREAD_MAX_STACK_SIZE
+	default 4096
+
+config CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE
+	default 4096
+
+config IPM_CONSOLE_STACK_SIZE
+	default 2048
+
+if CPU_CORTEX_A
+
+config ARMV8_A
+	bool
+	select ATOMIC_OPERATIONS_BUILTIN
+	help
+	  This option signifies the use of an ARMv8-A processor
+	  implementation.
+
+	  From https://developer.arm.com/products/architecture/cpu-architecture/a-profile:
+	  The Armv8-A architecture introduces the ability to use 64-bit and
+	  32-bit Execution states, known as AArch64 and AArch32 respectively.
+	  The AArch64 Execution state supports the A64 instruction set, holds
+	  addresses in 64-bit registers and allows instructions in the base
+	  instruction set to use 64-bit registers for their processing. The AArch32
+	  Execution state is a 32-bit Execution state that preserves backwards
+	  compatibility with the Armv7-A architecture and enhances that profile
+	  so that it can support some features included in the AArch64 state.
+	  It supports the T32 and A32 instruction sets.
+
+config GEN_ISR_TABLES
+	default y
+
+config GEN_IRQ_VECTOR_TABLE
+	default n
+
+config ARM_MMU
+	bool "ARM MMU Support"
+	default y
+	help
+	  Memory Management Unit support.
+
+if ARM_MMU
+
+config MAX_XLAT_TABLES
+	int "Maximum numbers of translation tables"
+	default 7
+	help
+	  This option specifies the maximum numbers of translation tables
+	  excluding the base translation table. Based on this, translation
+	  tables are allocated at compile time and used at runtime as needed.
+	  If the runtime need exceeds preallocated numbers of translation
+	  tables, it will result in assert. Number of translation tables
+	  required is decided based on how many discrete memory regions
+	  (both normal and device memory) are present on given platform and
+	  how much granularity is required while assigning attributes
+	  to these memory regions.
+
+choice
+	prompt "Virtual address space size"
+	default ARM64_VA_BITS_32
+	help
+	  Allows choosing one of multiple possible virtual address
+	  space sizes. The level of translation table is determined by
+	  a combination of page size and virtual address space size.
+
+config ARM64_VA_BITS_32
+	bool "32-bit"
+
+config ARM64_VA_BITS_36
+	bool "36-bit"
+
+config ARM64_VA_BITS_42
+	bool "42-bit"
+
+config ARM64_VA_BITS_48
+	bool "48-bit"
+endchoice
+
+config ARM64_VA_BITS
+	int
+	default 32 if ARM64_VA_BITS_32
+	default 36 if ARM64_VA_BITS_36
+	default 42 if ARM64_VA_BITS_42
+	default 48 if ARM64_VA_BITS_48
+
+choice
+	prompt "Physical address space size"
+	default ARM64_PA_BITS_32
+	help
+	  Choose the maximum physical address range that the kernel will
+	  support.
+
+config ARM64_PA_BITS_32
+	bool "32-bit"
+
+config ARM64_PA_BITS_36
+	bool "36-bit"
+
+config ARM64_PA_BITS_42
+	bool "42-bit"
+
+config ARM64_PA_BITS_48
+	bool "48-bit"
+endchoice
+
+config ARM64_PA_BITS
+	int
+	default 32 if ARM64_PA_BITS_32
+	default 36 if ARM64_PA_BITS_36
+	default 42 if ARM64_PA_BITS_42
+	default 48 if ARM64_PA_BITS_48
+
+endif # ARM_MMU
+
+endif # CPU_CORTEX_A

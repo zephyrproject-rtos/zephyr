@@ -47,20 +47,6 @@
 #define ESS_EQUAL_TO_REF_VALUE			0x08
 #define ESS_NOT_EQUAL_TO_REF_VALUE		0x09
 
-static inline void int_to_le24(u32_t value, u8_t *u24)
-{
-	u24[0] = value & 0xff;
-	u24[1] = (value >> 8) & 0xff;
-	u24[2] = (value >> 16) & 0xff;
-}
-
-static inline u32_t le24_to_int(const u8_t *u24)
-{
-	return ((u32_t)u24[0] |
-		(u32_t)u24[1] << 8 |
-		(u32_t)u24[2] << 16);
-}
-
 static ssize_t read_u16(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, u16_t len, u16_t offset)
 {
@@ -163,8 +149,8 @@ static ssize_t read_es_measurement(struct bt_conn *conn,
 
 	rsp.flags = sys_cpu_to_le16(value->flags);
 	rsp.sampling_function = value->sampling_func;
-	int_to_le24(value->meas_period, rsp.measurement_period);
-	int_to_le24(value->update_interval, rsp.update_interval);
+	sys_put_le24(value->meas_period, rsp.measurement_period);
+	sys_put_le24(value->update_interval, rsp.update_interval);
 	rsp.application = value->application;
 	rsp.measurement_uncertainty = value->meas_uncertainty;
 
@@ -216,7 +202,7 @@ static ssize_t read_temp_trigger_setting(struct bt_conn *conn,
 			struct es_trigger_setting_seconds rp;
 
 			rp.condition = sensor->condition;
-			int_to_le24(sensor->seconds, rp.sec);
+			sys_put_le24(sensor->seconds, rp.sec);
 
 			return bt_gatt_attr_read(conn, attr, buf, len, offset,
 						 &rp, sizeof(rp));
@@ -446,7 +432,7 @@ void main(void)
 	bt_conn_auth_cb_register(&auth_cb_display);
 
 	while (1) {
-		k_sleep(MSEC_PER_SEC);
+		k_sleep(K_SECONDS(1));
 
 		/* Temperature simulation */
 		if (simulate_temp) {

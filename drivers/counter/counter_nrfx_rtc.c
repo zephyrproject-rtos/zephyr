@@ -74,7 +74,7 @@ static inline struct counter_nrfx_data *get_dev_data(struct device *dev)
 static inline const struct counter_nrfx_config *get_nrfx_config(
 							struct device *dev)
 {
-	return CONTAINER_OF(dev->config->config_info,
+	return CONTAINER_OF(dev->config_info,
 				struct counter_nrfx_config, info);
 }
 
@@ -95,6 +95,12 @@ static int stop(struct device *dev)
 static u32_t read(struct device *dev)
 {
 	return nrf_rtc_counter_get(get_nrfx_config(dev)->rtc);
+}
+
+static int get_value(struct device *dev, u32_t *ticks)
+{
+	*ticks = read(dev);
+	return 0;
 }
 
 /* Return true if value equals 2^n - 1 */
@@ -516,7 +522,7 @@ static u32_t get_pending_int(struct device *dev)
 	return 0;
 }
 
-static int init_rtc(struct device *dev, u8_t prescaler)
+static int init_rtc(struct device *dev, u32_t prescaler)
 {
 	struct device *clock;
 	const struct counter_nrfx_config *nrfx_config = get_nrfx_config(dev);
@@ -526,12 +532,12 @@ static int init_rtc(struct device *dev, u8_t prescaler)
 	NRF_RTC_Type *rtc = nrfx_config->rtc;
 	int err;
 
-	clock = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL "_32K");
+	clock = device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_clock)));
 	if (!clock) {
 		return -ENODEV;
 	}
 
-	clock_control_on(clock, NULL);
+	clock_control_on(clock, CLOCK_CONTROL_NRF_SUBSYS_LF);
 
 	nrf_rtc_prescaler_set(rtc, prescaler);
 
@@ -637,7 +643,7 @@ static void irq_handler(struct device *dev)
 static const struct counter_driver_api counter_nrfx_driver_api = {
 	.start = start,
 	.stop = stop,
-	.read = read,
+	.get_value = get_value,
 	.set_alarm = set_channel_alarm,
 	.cancel_alarm = cancel_alarm,
 	.set_top_value = set_top_value,
@@ -648,18 +654,25 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 	.set_guard_period = set_guard_period,
 };
 
+/*
+ * Devicetree access is done with node labels due to HAL API
+ * requirements. In particular, RTCx_CC_NUM values from HALs
+ * are indexed by peripheral number, so DT_INST APIs won't work.
+ */
+
+#define RTC(idx)		DT_NODELABEL(rtc##idx)
+#define RTC_PROP(idx, prop)	DT_PROP(RTC(idx), prop)
+
 #define COUNTER_NRF_RTC_DEVICE(idx)					       \
-	BUILD_ASSERT_MSG((DT_NORDIC_NRF_RTC_RTC_##idx##_PRESCALER - 1) <=      \
-			RTC_PRESCALER_PRESCALER_Msk,			       \
-			"RTC prescaler out of range");			       \
+	BUILD_ASSERT((RTC_PROP(idx, prescaler) - 1) <=			       \
+		     RTC_PRESCALER_PRESCALER_Msk,			       \
+		     "RTC prescaler out of range");			       \
 	DEVICE_DECLARE(rtc_##idx);					       \
 	static int counter_##idx##_init(struct device *dev)		       \
 	{								       \
-		IRQ_CONNECT(DT_NORDIC_NRF_RTC_RTC_##idx##_IRQ_0,	       \
-			    DT_NORDIC_NRF_RTC_RTC_##idx##_IRQ_0_PRIORITY,      \
+		IRQ_CONNECT(DT_IRQN(RTC(idx)), DT_IRQ(RTC(idx), priority),     \
 			    irq_handler, DEVICE_GET(rtc_##idx), 0);	       \
-		return init_rtc(dev,					       \
-				DT_NORDIC_NRF_RTC_RTC_##idx##_PRESCALER - 1);  \
+		return init_rtc(dev, RTC_PROP(idx, prescaler) - 1);	       \
 	}								       \
 	static struct counter_nrfx_data counter_##idx##_data;		       \
 	static struct counter_nrfx_ch_data				       \
@@ -668,22 +681,22 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 	static const struct counter_nrfx_config nrfx_counter_##idx##_config = {\
 		.info = {						       \
 			.max_top_value = COUNTER_MAX_TOP_VALUE,		       \
-			.freq = DT_NORDIC_NRF_RTC_RTC_##idx##_CLOCK_FREQUENCY /\
-				(DT_NORDIC_NRF_RTC_RTC_##idx##_PRESCALER),     \
+			.freq = RTC_PROP(idx, clock_frequency) /	       \
+				RTC_PROP(idx, prescaler),		       \
 			.flags = COUNTER_CONFIG_INFO_COUNT_UP,		       \
-			.channels = DT_NORDIC_NRF_RTC_RTC_##idx##_FIXED_TOP ?  \
+			.channels = RTC_PROP(idx, fixed_top) ?		       \
 				RTC##idx##_CC_NUM : RTC##idx##_CC_NUM - 1      \
 		},							       \
 		.ch_data = counter##idx##_ch_data,			       \
-		.rtc = NRF_RTC##idx,					       \
-		COND_CODE_1(DT_NORDIC_NRF_RTC_RTC_##idx##_PPI_WRAP,	       \
-			    (.use_ppi = true,), ())			       \
-		COND_CODE_1(CONFIG_COUNTER_RTC_CUSTOM_TOP_SUPPORT,	       \
-		  (.fixed_top = DT_NORDIC_NRF_RTC_RTC_##idx##_FIXED_TOP,), ()) \
+		.rtc = (NRF_RTC_Type *)DT_REG_ADDR(RTC(idx)),		       \
+		IF_ENABLED(CONFIG_COUNTER_RTC_WITH_PPI_WRAP,		       \
+			   (.use_ppi = RTC_PROP(idx, ppi_wrap),))	       \
+		IF_ENABLED(CONFIG_COUNTER_RTC_CUSTOM_TOP_SUPPORT,	       \
+			   (.fixed_top = RTC_PROP(idx, fixed_top),))	       \
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, idx)	       \
 	};								       \
 	DEVICE_AND_API_INIT(rtc_##idx,					       \
-			    DT_NORDIC_NRF_RTC_RTC_##idx##_LABEL,	       \
+			    DT_LABEL(RTC(idx)),				       \
 			    counter_##idx##_init,			       \
 			    &counter_##idx##_data,			       \
 			    &nrfx_counter_##idx##_config.info,		       \

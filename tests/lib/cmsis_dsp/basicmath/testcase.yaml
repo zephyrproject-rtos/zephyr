@@ -1,0 +1,6 @@
+tests:
+  libraries.cmsis_dsp.basicmath:
+    platform_whitelist: frdm_k64f sam_e70_xplained mps2_an521
+    tags: cmsis_dsp
+    min_flash: 128
+    min_ram: 64

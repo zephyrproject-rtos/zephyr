@@ -8,17 +8,24 @@
  */
 
 #include <arch/cpu.h>
-#include <gpio/gpio_mmio32.h>
+#include <drivers/gpio/gpio_mmio32.h>
 #include <init.h>
 #include <soc.h>
 
+
 /* Setup GPIO drivers for accessing FPGAIO registers */
-GPIO_MMIO32_INIT(fpgaio_led0, DT_FPGAIO_LED0_GPIO_NAME, DT_FPGAIO_LED0,
-				BIT_MASK(DT_FPGAIO_LED0_NUM));
-GPIO_MMIO32_INIT(fpgaio_button, DT_FPGAIO_BUTTON_GPIO_NAME, DT_FPGAIO_BUTTON,
-				BIT_MASK(DT_FPGAIO_BUTTON_NUM));
-GPIO_MMIO32_INIT(fpgaio_misc, DT_FPGAIO_MISC_GPIO_NAME, DT_FPGAIO_MISC,
-				BIT_MASK(DT_FPGAIO_MISC_NUM));
+#define FPGAIO_NODE(n) DT_INST(n, arm_mps2_fpgaio_gpio)
+#define FPGAIO_INIT(n)						\
+	GPIO_MMIO32_INIT(fpgaio_##n, DT_LABEL(FPGAIO_NODE(n)),	\
+			DT_REG_ADDR(FPGAIO_NODE(n)),		\
+			BIT_MASK(DT_PROP(FPGAIO_NODE(n), ngpios)))
+
+/* We expect there to be 3 arm,mps2-fpgaio-gpio devices:
+ * led0, button, and misc
+ */
+FPGAIO_INIT(0);
+FPGAIO_INIT(1);
+FPGAIO_INIT(2);
 
 /* (Secure System Control) Base Address */
 #define SSE_200_SYSTEM_CTRL_S_BASE	(0x50021000UL)
@@ -26,20 +33,32 @@ GPIO_MMIO32_INIT(fpgaio_misc, DT_FPGAIO_MISC_GPIO_NAME, DT_FPGAIO_MISC,
 #define SSE_200_SYSTEM_CTRL_CPU_WAIT	(SSE_200_SYSTEM_CTRL_S_BASE + 0x118)
 #define SSE_200_CPU_ID_UNIT_BASE	(0x5001F000UL)
 
-#define NON_SECURE_FLASH_ADDRESS	(0x100000)
-#define NON_SECURE_FLASH_OFFSET	(0x10000000)
+/* The base address that the application image will start at on the secondary
+ * (non-TrustZone) Cortex-M33 mcu.
+ */
+#define CPU1_FLASH_ADDRESS      (0x100000)
+
+/* The memory map offset for the application image, which is used
+ * to determine the location of the reset vector at startup.
+ */
+#define CPU1_FLASH_OFFSET       (0x10000000)
+
+/* Space reserved for TF-M's secure bootloader on the secondary mcu.
+ * This space is reserved whether BL2 is used or not.
+ */
+#define BL2_HEADER_SIZE         (0x400)
 
 /**
  * @brief Wake up CPU 1 from another CPU, this is plaform specific.
- *
  */
 void wakeup_cpu1(void)
 {
 	/* Set the Initial Secure Reset Vector Register for CPU 1 */
 	*(u32_t *)(SSE_200_SYSTEM_CTRL_INITSVTOR1) =
-					CONFIG_FLASH_BASE_ADDRESS +
-					NON_SECURE_FLASH_ADDRESS -
-					NON_SECURE_FLASH_OFFSET;
+		CONFIG_FLASH_BASE_ADDRESS +
+		BL2_HEADER_SIZE +
+		CPU1_FLASH_ADDRESS -
+		CPU1_FLASH_OFFSET;
 
 	/* Set the CPU Boot wait control after reset */
 	*(u32_t *)(SSE_200_SYSTEM_CTRL_CPU_WAIT) = 0;

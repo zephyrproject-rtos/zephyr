@@ -16,29 +16,28 @@ choice DATA_LOCATION
 	default DATA_SEMC
 endchoice
 
-if GPIO_MCUX_IGPIO
+config DISK_ACCESS_USDHC1
+	default y
+	depends on DISK_ACCESS_USDHC
 
-config GPIO_MCUX_IGPIO_1
+config I2C
+	default y if KSCAN
+
+config KSCAN
+	default y if LVGL
+
+if KSCAN
+
+config KSCAN_FT5336
 	default y
 
-config GPIO_MCUX_IGPIO_5
+config KSCAN_FT5336_INTERRUPT
 	default y
 
-endif # GPIO_MCUX_IGPIO
+config KSCAN_INIT_PRIORITY
+	default 60
 
-if I2C_MCUX_LPI2C
-
-config I2C_1
-	default y
-
-endif # I2C_MCUX_LPI2C
-
-if UART_MCUX_LPUART
-
-config UART_MCUX_LPUART_1
-	default y
-
-endif # UART_MCUX_LPUART
+endif # KSCAN
 
 if NETWORKING
 
@@ -54,6 +53,12 @@ if LVGL
 
 config LVGL_DISPLAY_DEV_NAME
 	default "ELCDIF_1"
+
+config LVGL_POINTER_KSCAN
+	default y
+
+config LVGL_POINTER_KSCAN_DEV_NAME
+	default "FT5336"
 
 config LVGL_HOR_RES
 	default 480
@@ -72,12 +77,5 @@ choice LVGL_COLOR_DEPTH
 endchoice
 
 endif # LVGL
-
-if PWM_MCUX
-
-config FLEXPWM2_PWM3
-	default y
-
-endif
 
 endif # BOARD_MIMXRT1064_EVK

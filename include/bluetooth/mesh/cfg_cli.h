@@ -211,6 +211,21 @@ int bt_mesh_cfg_relay_set(u16_t net_idx, u16_t addr, u8_t new_relay,
 int bt_mesh_cfg_net_key_add(u16_t net_idx, u16_t addr, u16_t key_net_idx,
 			    const u8_t net_key[16], u8_t *status);
 
+/** @brief Get a list of the target node's network key indexes.
+ *
+ *  @param net_idx Network index to encrypt with.
+ *  @param addr    Target node address.
+ *  @param keys    Net key index list response parameter. Will be filled with
+ *                 all the returned network key indexes it can fill.
+ *  @param key_cnt Net key index list length. Should be set to the
+ *                 capacity of the @c keys list when calling. Will return the
+ *                 number of returned network key indexes upon success.
+ *
+ *  @return 0 on success, or (negative) error code on failure.
+ */
+int bt_mesh_cfg_net_key_get(u16_t net_idx, u16_t addr, u16_t *keys,
+			    size_t *key_cnt);
+
 /** @brief Add an application key to the target node.
  *
  *  @param net_idx     Network index to encrypt with.
@@ -225,6 +240,26 @@ int bt_mesh_cfg_net_key_add(u16_t net_idx, u16_t addr, u16_t key_net_idx,
 int bt_mesh_cfg_app_key_add(u16_t net_idx, u16_t addr, u16_t key_net_idx,
 			    u16_t key_app_idx, const u8_t app_key[16],
 			    u8_t *status);
+
+/** @brief Get a list of the target node's application key indexes for a
+ *         specific network key.
+ *
+ *  @param net_idx     Network index to encrypt with.
+ *  @param addr        Target node address.
+ *  @param key_net_idx Network key index to request the app key indexes of.
+ *  @param status      Status response parameter.
+ *  @param keys        App key index list response parameter. Will be filled
+ *                     with all the returned application key indexes it can
+ *                     fill.
+ *  @param key_cnt     App key index list length. Should be set to the
+ *                     capacity of the @c keys list when calling. Will return
+ *                     the number of returned application key indexes upon
+ *                     success.
+ *
+ *  @return 0 on success, or (negative) error code on failure.
+ */
+int bt_mesh_cfg_app_key_get(u16_t net_idx, u16_t addr, u16_t key_net_idx,
+			    u8_t *status, u16_t *keys, size_t *key_cnt);
 
 /** @brief Bind an application to a SIG model on the target node.
  *
@@ -255,6 +290,48 @@ int bt_mesh_cfg_mod_app_bind(u16_t net_idx, u16_t addr, u16_t elem_addr,
 int bt_mesh_cfg_mod_app_bind_vnd(u16_t net_idx, u16_t addr, u16_t elem_addr,
 				 u16_t mod_app_idx, u16_t mod_id, u16_t cid,
 				 u8_t *status);
+
+/** @brief Get a list of all applications bound to a SIG model on the target
+ *         node.
+ *
+ *  @param net_idx   Network index to encrypt with.
+ *  @param addr      Target node address.
+ *  @param elem_addr Element address the model is in.
+ *  @param mod_id    Model ID.
+ *  @param status    Status response parameter.
+ *  @param apps      App index list response parameter. Will be filled with all
+ *                   the returned application key indexes it can fill.
+ *  @param app_cnt   App index list length. Should be set to the capacity of the
+ *                   @c apps list when calling. Will return the number of
+ *                   returned application key indexes upon success.
+ *
+ *  @return 0 on success, or (negative) error code on failure.
+ */
+int bt_mesh_cfg_mod_app_get(u16_t net_idx, u16_t addr, u16_t elem_addr,
+			    u16_t mod_id, u8_t *status, u16_t *apps,
+			    size_t *app_cnt);
+
+
+/** @brief Get a list of all applications bound to a vendor model on the target
+ *         node.
+ *
+ *  @param net_idx   Network index to encrypt with.
+ *  @param addr      Target node address.
+ *  @param elem_addr Element address the model is in.
+ *  @param mod_id    Model ID.
+ *  @param cid       Company ID of the model.
+ *  @param status    Status response parameter.
+ *  @param apps      App index list response parameter. Will be filled with all
+ *                   the returned application key indexes it can fill.
+ *  @param app_cnt   App index list length. Should be set to the capacity of the
+ *                   @c apps list when calling. Will return the number of
+ *                   returned application key indexes upon success.
+ *
+ *  @return 0 on success, or (negative) error code on failure.
+ */
+int bt_mesh_cfg_mod_app_get_vnd(u16_t net_idx, u16_t addr, u16_t elem_addr,
+				u16_t mod_id, u16_t cid, u8_t *status,
+				u16_t *apps, size_t *app_cnt);
 
 /** @def BT_MESH_PUB_PERIOD_100MS
  *
@@ -591,6 +668,45 @@ int bt_mesh_cfg_mod_sub_va_overwrite_vnd(u16_t net_idx, u16_t addr,
 					 u16_t mod_id, u16_t cid,
 					 u16_t *virt_addr, u8_t *status);
 
+/** @brief Get the subscription list of a SIG model on the target node.
+ *
+ *  @param net_idx   Network index to encrypt with.
+ *  @param addr      Target node address.
+ *  @param elem_addr Element address the model is in.
+ *  @param mod_id    Model ID.
+ *  @param status    Status response parameter.
+ *  @param subs      Subscription list response parameter. Will be filled with
+ *                   all the returned subscriptions it can fill.
+ *  @param sub_cnt   Subscription list element count. Should be set to the
+ *                   capacity of the @c subs list when calling. Will return the
+ *                   number of returned subscriptions upon success.
+ *
+ *  @return 0 on success, or (negative) error code on failure.
+ */
+int bt_mesh_cfg_mod_sub_get(u16_t net_idx, u16_t addr, u16_t elem_addr,
+			    u16_t mod_id, u8_t *status, u16_t *subs,
+			    size_t *sub_cnt);
+
+/** @brief Get the subscription list of a vendor model on the target node.
+ *
+ *  @param net_idx   Network index to encrypt with.
+ *  @param addr      Target node address.
+ *  @param elem_addr Element address the model is in.
+ *  @param mod_id    Model ID.
+ *  @param cid       Company ID of the model.
+ *  @param status    Status response parameter.
+ *  @param subs      Subscription list response parameter. Will be filled with
+ *                   all the returned subscriptions it can fill.
+ *  @param sub_cnt   Subscription list element count. Should be set to the
+ *                   capacity of the @c subs list when calling. Will return the
+ *                   number of returned subscriptions upon success.
+ *
+ *  @return 0 on success, or (negative) error code on failure.
+ */
+int bt_mesh_cfg_mod_sub_get_vnd(u16_t net_idx, u16_t addr, u16_t elem_addr,
+				u16_t mod_id, u16_t cid, u8_t *status,
+				u16_t *subs, size_t *sub_cnt);
+
 /** Heartbeat subscription configuration parameters. */
 struct bt_mesh_cfg_hb_sub {
 	/** Source address to receive Heartbeat messages from. */
@@ -716,7 +832,7 @@ int bt_mesh_cfg_hb_pub_get(u16_t net_idx, u16_t addr,
 
 /** @brief Get the current transmission timeout value.
  *
- *  @return The configured transmission timeout.
+ *  @return The configured transmission timeout in milliseconds.
  */
 s32_t bt_mesh_cfg_cli_timeout_get(void);
 

@@ -29,7 +29,7 @@ static inline struct wdt_nrfx_data *get_dev_data(struct device *dev)
 
 static inline const struct wdt_nrfx_config *get_dev_config(struct device *dev)
 {
-	return dev->config->config_info;
+	return dev->config_info;
 }
 
 
@@ -150,6 +150,8 @@ static void wdt_event_handler(struct device *dev)
 	}
 }
 
+#define WDT(idx) DT_NODELABEL(wdt##idx)
+
 #define WDT_NRFX_WDT_DEVICE(idx)					       \
 	DEVICE_DECLARE(wdt_##idx);					       \
 	static void wdt_##idx##_event_handler(void)			       \
@@ -159,8 +161,7 @@ static void wdt_event_handler(struct device *dev)
 	static int wdt_##idx##_init(struct device *dev)			       \
 	{								       \
 		nrfx_err_t err_code;					       \
-		IRQ_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_WDT##idx),		       \
-			    DT_NORDIC_NRF_WATCHDOG_WDT_##idx##_IRQ_0_PRIORITY, \
+		IRQ_CONNECT(DT_IRQN(WDT(idx)), DT_IRQ(WDT(idx), priority),     \
 			    nrfx_isr, nrfx_wdt_##idx##_irq_handler, 0);	       \
 		err_code = nrfx_wdt_init(&get_dev_config(dev)->wdt,	       \
 				 &get_dev_config(dev)->config,		       \
@@ -181,13 +182,13 @@ static void wdt_event_handler(struct device *dev)
 			.reload_value  = 2000,				       \
 		}							       \
 	};								       \
-	DEVICE_DEFINE(wdt_##idx, DT_NORDIC_NRF_WATCHDOG_WDT_##idx##_LABEL,     \
-		      wdt_##idx##_init,					       \
-		      NULL,						       \
-		      &wdt_##idx##_data,				       \
-		      &wdt_##idx##z_config,				       \
-		      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	       \
-		      &wdt_nrfx_driver_api)
+	DEVICE_AND_API_INIT(wdt_##idx,					       \
+			    DT_LABEL(WDT(idx)),				       \
+			    wdt_##idx##_init,				       \
+			    &wdt_##idx##_data,				       \
+			    &wdt_##idx##z_config,			       \
+			    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,  \
+			    &wdt_nrfx_driver_api)
 
 #ifdef CONFIG_NRFX_WDT0
 WDT_NRFX_WDT_DEVICE(0);

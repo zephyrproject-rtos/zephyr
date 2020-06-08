@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 Nordic Semiconductor ASA
+ * Copyright (c) 2018-2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,11 +14,14 @@
 
 #include "hal/ticker.h"
 #include "hal/ccm.h"
+#include "hal/radio.h"
+
 #include "ticker/ticker.h"
 
 #include "pdu.h"
 #include "ll.h"
 #include "ll_feat.h"
+#include "ll_settings.h"
 
 #include "lll.h"
 #include "lll_vendor.h"
@@ -48,7 +51,8 @@
 
 static void ticker_op_stop_scan_cb(u32_t status, void *params);
 static void ticker_op_cb(u32_t status, void *params);
-static void access_addr_get(u8_t access_addr[]);
+static inline void access_addr_get(u8_t access_addr[]);
+static inline void conn_release(struct ll_scan_set *scan);
 
 u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 			  u8_t filter_policy, u8_t peer_addr_type,
@@ -63,6 +67,7 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 	memq_link_t *link;
 	u8_t access_addr[4];
 	u8_t hop;
+	int err;
 
 	scan = ull_scan_is_disabled_get(0);
 	if (!scan) {
@@ -98,7 +103,7 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 	access_addr_get(access_addr);
 	memcpy(conn_lll->access_addr, &access_addr,
 	       sizeof(conn_lll->access_addr));
-	bt_rand(&conn_lll->crc_init[0], 3);
+	util_rand(&conn_lll->crc_init[0], 3);
 
 	conn_lll->handle = 0xFFFF;
 	conn_lll->interval = interval;
@@ -124,8 +129,8 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 	conn_lll->max_rx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
 
 #if defined(CONFIG_BT_CTLR_PHY)
-	conn_lll->max_tx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, 0);
-	conn_lll->max_rx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, 0);
+	conn_lll->max_tx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
+	conn_lll->max_rx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
 #endif /* CONFIG_BT_CTLR_PHY */
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
@@ -138,9 +143,15 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
 	conn_lll->rssi_latest = 0x7F;
+#if defined(CONFIG_BT_CTLR_CONN_RSSI_EVENT)
 	conn_lll->rssi_reported = 0x7F;
 	conn_lll->rssi_sample_count = 0;
+#endif /* CONFIG_BT_CTLR_CONN_RSSI_EVENT */
 #endif /* CONFIG_BT_CTLR_CONN_RSSI */
+
+#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
+	conn_lll->tx_pwr_lvl = RADIO_TXP_DEFAULT;
+#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 
 	/* FIXME: BEGIN: Move to ULL? */
 	conn_lll->latency_prepare = 0;
@@ -149,7 +160,7 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 
 	conn_lll->data_chan_count =
 		ull_conn_chan_map_cpy(conn_lll->data_chan_map);
-	bt_rand(&hop, sizeof(u8_t));
+	util_rand(&hop, sizeof(u8_t));
 	conn_lll->data_chan_hop = 5 + (hop % 12);
 	conn_lll->data_chan_sel = 0;
 	conn_lll->data_chan_use = 0;
@@ -190,7 +201,8 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 	conn->llcp_rx = NULL;
 	conn->llcp_cu.req = conn->llcp_cu.ack = 0;
 	conn->llcp_feature.req = conn->llcp_feature.ack = 0;
-	conn->llcp_feature.features = LL_FEAT;
+	conn->llcp_feature.features_conn = LL_FEAT;
+	conn->llcp_feature.features_peer = 0;
 	conn->llcp_version.req = conn->llcp_version.ack = 0;
 	conn->llcp_version.tx = conn->llcp_version.rx = 0U;
 	conn->llcp_terminate.reason_peer = 0U;
@@ -214,6 +226,7 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	conn->llcp_length.req = conn->llcp_length.ack = 0U;
+	conn->llcp_length.disabled = 0U;
 	conn->llcp_length.cache.tx_octets = 0U;
 	conn->default_tx_octets = ull_conn_default_tx_octets_get();
 
@@ -224,6 +237,7 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	conn->llcp_phy.req = conn->llcp_phy.ack = 0U;
+	conn->llcp_phy.disabled = 0U;
 	conn->llcp_phy.pause_tx = 0U;
 	conn->phy_pref_tx = ull_conn_default_phy_tx_get();
 	conn->phy_pref_rx = ull_conn_default_phy_rx_get();
@@ -262,7 +276,12 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 	scan->own_addr_type = own_addr_type;
 
 	/* wait for stable clocks */
-	lll_clock_wait();
+	err = lll_clock_wait();
+	if (err) {
+		conn_release(scan);
+
+		return BT_HCI_ERR_HW_FAILURE;
+	}
 
 	return ull_scan_enable(scan);
 }
@@ -286,6 +305,7 @@ u8_t ll_connect_disable(void **rx)
 	status = ull_scan_disable(0, scan);
 	if (!status) {
 		struct ll_conn *conn = (void *)HDR_LLL2EVT(conn_lll);
+		struct node_rx_ftr *ftr;
 		struct node_rx_pdu *cc;
 		memq_link_t *link;
 
@@ -299,6 +319,10 @@ u8_t ll_connect_disable(void **rx)
 		cc->hdr.type = NODE_RX_TYPE_CONNECTION;
 		cc->hdr.handle = 0xffff;
 		*((u8_t *)cc->pdu) = BT_HCI_ERR_UNKNOWN_CONN_ID;
+
+		ftr = &(cc->hdr.rx_ftr);
+		ftr->param = &scan->lll;
+
 		*rx = cc;
 	}
 
@@ -377,8 +401,8 @@ u8_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 			memcpy(enc_req->rand, rand, sizeof(enc_req->rand));
 			enc_req->ediv[0] = ediv[0];
 			enc_req->ediv[1] = ediv[1];
-			bt_rand(enc_req->skdm, sizeof(enc_req->skdm));
-			bt_rand(enc_req->ivm, sizeof(enc_req->ivm));
+			util_rand(enc_req->skdm, sizeof(enc_req->skdm));
+			util_rand(enc_req->ivm, sizeof(enc_req->ivm));
 		} else if (conn->lll.enc_rx && conn->lll.enc_tx) {
 			memcpy(&conn->llcp_enc.rand[0], rand,
 			       sizeof(conn->llcp_enc.rand));
@@ -417,12 +441,14 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 {
 	u32_t conn_offset_us, conn_interval_us;
 	u8_t ticker_id_scan, ticker_id_conn;
+	u8_t peer_addr[BDADDR_SIZE];
 	u32_t ticks_slot_overhead;
 	u32_t ticks_slot_offset;
 	struct ll_scan_set *scan;
 	struct node_rx_cc *cc;
 	struct ll_conn *conn;
 	struct pdu_adv *pdu_tx;
+	u8_t peer_addr_type;
 	u32_t ticker_status;
 	u8_t chan_sel;
 
@@ -433,15 +459,8 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 
 	pdu_tx = (void *)((struct node_rx_pdu *)rx)->pdu;
 
-#if defined(CONFIG_BT_CTLR_PRIVACY)
-	u8_t own_addr_type = pdu_tx->tx_addr;
-	u8_t own_addr[BDADDR_SIZE];
-	u8_t peer_addr[BDADDR_SIZE];
-	u8_t rl_idx = ftr->rl_idx;
-
-	memcpy(own_addr, &pdu_tx->connect_ind.init_addr[0], BDADDR_SIZE);
+	peer_addr_type = pdu_tx->rx_addr;
 	memcpy(peer_addr, &pdu_tx->connect_ind.adv_addr[0], BDADDR_SIZE);
-#endif
 
 	/* This is the chan sel bit from the received adv pdu */
 	chan_sel = pdu_tx->chan_sel;
@@ -451,11 +470,16 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	cc->role = 0U;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	cc->own_addr_type = own_addr_type;
-	memcpy(&cc->own_addr[0], &own_addr[0], BDADDR_SIZE);
+	u8_t rl_idx = ftr->rl_idx;
+
+	if (ftr->lrpa_used) {
+		memcpy(&cc->local_rpa[0], &pdu_tx->connect_ind.init_addr[0],
+		       BDADDR_SIZE);
+	} else {
+		memset(&cc->local_rpa[0], 0x0, BDADDR_SIZE);
+	}
 
 	if (rl_idx != FILTER_IDX_NONE) {
-		/* TODO: store rl_idx instead if safe */
 		/* Store identity address */
 		ll_rl_id_addr_get(rl_idx, &cc->peer_addr_type,
 				  &cc->peer_addr[0]);
@@ -469,8 +493,8 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 #else
 	if (1) {
 #endif /* CONFIG_BT_CTLR_PRIVACY */
-		cc->peer_addr_type = scan->lll.adv_addr_type;
-		memcpy(cc->peer_addr, scan->lll.adv_addr, BDADDR_SIZE);
+		cc->peer_addr_type = peer_addr_type;
+		memcpy(cc->peer_addr, &peer_addr[0], BDADDR_SIZE);
 	}
 
 	cc->interval = lll->interval;
@@ -480,6 +504,10 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 
 	lll->handle = ll_conn_handle_get(conn);
 	rx->handle = lll->handle;
+
+#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
+	lll->tx_pwr_lvl = RADIO_TXP_DEFAULT;
+#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 
 	/* Use Channel Selection Algorithm #2 if peer too supports it */
 	if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
@@ -603,14 +631,21 @@ void ull_master_ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	struct ll_conn *conn = param;
 	u32_t err;
 	u8_t ref;
-	int ret;
 
 	DEBUG_RADIO_PREPARE_M(1);
 
-	/* Handle any LL Control Procedures */
-	ret = ull_conn_llcp(conn, ticks_at_expire, lazy);
-	if (ret) {
-		return;
+	/* If this is a must-expire callback, LLCP state machine does not need
+	 * to know. Will be called with lazy > 0 when scheduled in air.
+	 */
+	if (!IS_ENABLED(CONFIG_BT_CTLR_CONN_META) ||
+	    (lazy != TICKER_LAZY_MUST_EXPIRE)) {
+		int ret;
+
+		/* Handle any LL Control Procedures */
+		ret = ull_conn_llcp(conn, ticks_at_expire, lazy);
+		if (ret) {
+			return;
+		}
 	}
 
 	/* Increment prepare reference count */
@@ -672,7 +707,7 @@ static void ticker_op_cb(u32_t status, void *params)
  * - It shall have no more than eleven transitions in the least significant 16
  *   bits.
  */
-static void access_addr_get(u8_t access_addr[])
+static inline void access_addr_get(u8_t access_addr[])
 {
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 	u8_t transitions_lsb16;
@@ -691,7 +726,7 @@ again:
 	LL_ASSERT(retry);
 	retry--;
 
-	bt_rand(access_addr, 4);
+	util_rand(access_addr, 4);
 	aa = sys_get_le32(access_addr);
 
 	bit_idx = 31U;
@@ -809,7 +844,7 @@ again:
 	 * It shall not be a sequence that differs from the advertising channel
 	 * packets Access Address by only one bit.
 	 */
-	adv_aa_check = aa ^ 0x8e89bed6;
+	adv_aa_check = aa ^ PDU_AC_ACCESS_ADDR;
 	if (util_ones_count_get((u8_t *)&adv_aa_check,
 				sizeof(adv_aa_check)) <= 1) {
 		goto again;
@@ -822,4 +857,28 @@ again:
 	}
 
 	sys_put_le32(aa, access_addr);
+}
+
+static inline void conn_release(struct ll_scan_set *scan)
+{
+	struct lll_conn *lll = scan->lll.conn;
+	struct node_rx_pdu *cc;
+	struct ll_conn *conn;
+	memq_link_t *link;
+
+	LL_ASSERT(!lll->link_tx_free);
+	link = memq_deinit(&lll->memq_tx.head, &lll->memq_tx.tail);
+	LL_ASSERT(link);
+	lll->link_tx_free = link;
+
+	conn = (void *)HDR_LLL2EVT(lll);
+
+	cc = (void *)&conn->llcp_terminate.node_rx;
+	link = cc->hdr.link;
+	LL_ASSERT(link);
+
+	ll_rx_link_release(link);
+
+	ll_conn_release(conn);
+	scan->lll.conn = NULL;
 }

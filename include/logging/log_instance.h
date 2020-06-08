@@ -66,8 +66,6 @@ struct log_source_dynamic_data {
  * @brief Macro for initializing a pointer to the logger instance.
  */
 
-/** @} */
-
 #ifdef CONFIG_LOG
 
 #define LOG_INSTANCE_FULL_NAME(_module_name, _inst_name) \

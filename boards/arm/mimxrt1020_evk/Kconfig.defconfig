@@ -16,36 +16,6 @@ choice DATA_LOCATION
 	default DATA_SEMC
 endchoice
 
-if GPIO_MCUX_IGPIO
-
-config GPIO_MCUX_IGPIO_1
-	default y
-
-config GPIO_MCUX_IGPIO_5
-	default y
-
-endif # GPIO_MCUX_IGPIO
-
-if I2C_MCUX_LPI2C
-
-config I2C_1
-	default y
-
-config I2C_4
-	default y
-
-endif # I2C_MCUX_LPI2C
-
-if UART_MCUX_LPUART
-
-config UART_MCUX_LPUART_1
-	default y
-
-config UART_MCUX_LPUART_2
-	default y if BT_UART
-
-endif # UART_MCUX_LPUART
-
 if NETWORKING
 
 config NET_L2_ETHERNET

@@ -71,3 +71,11 @@ config SOC_RWDATA_LD
 	  under include/arch/.
 
 endif # ARC || ARM || X86 || NIOS2 || RISCV
+
+config SOC_DEPRECATED_RELEASE
+	string
+	help
+	  This hidden option is set in the SoC configuration and indicates
+	  the Zephyr release that the SoC configuration will be removed.
+	  When set, any build for that SoC will generate a clearly visible
+	  deprecation warning.

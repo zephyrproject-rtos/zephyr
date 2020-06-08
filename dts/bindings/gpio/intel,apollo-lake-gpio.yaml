@@ -1,0 +1,22 @@
+# Copyright (c) 2019 Peter Bigot Consulting, LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Apollo Lake GPIO Map
+
+    Map from Apollo Lake GPIO to component GPIO driver instances.
+
+    The Apollo Lake GPIO architecture provides four controllers each of
+    which has more than 32 pins.  To be supported on Zephyr these pins
+    must be mapped to sub-devices that have no more than 32 pins each.
+    This compatible is used to map the full controller to its
+    subdevices.
+
+    The NORTH controller supports 78 pins.
+    The NORTHWEST controller supports 77 pins.
+    The WEST controller supports 47 pins.
+    The SOUTHWEST controller supports 43 pins.
+
+compatible: "intel,apollo-lake-gpio"
+
+include: [gpio-nexus.yaml, base.yaml]

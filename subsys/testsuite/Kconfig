@@ -45,17 +45,22 @@ config COVERAGE
 	  For more information see
 	  https://docs.zephyrproject.org/latest/guides/coverage.html
 
-if COVERAGE
 config COVERAGE_GCOV
 	bool "Create Coverage data from hardware platform"
-	depends on !NATIVE_APPLICATION
 	default y
+	depends on COVERAGE
+	depends on !NATIVE_APPLICATION
 	help
 	  This option will select the custom gcov library. The reports will
 	  be available over serial. This serial dump can be passed to
 	  gen_gcov_files.py which creates the required .gcda files. These
 	  can be read by gcov utility. For more details see gcovr.com .
-endif
+
+config COVERAGE_DUMP
+	bool "Dump coverage data on exit"
+	depends on COVERAGE_GCOV
+	help
+	  Dump collected coverage information to console on exit.
 
 config TEST_USERSPACE
 	bool "Indicate that this test exercises user mode"
@@ -80,7 +85,7 @@ config TEST_LOGGING_DEFAULTS
 	bool "Enable test case logging defaults"
 	depends on TEST
 	select LOG
-	select LOG_MINIMAL
+	imply LOG_MINIMAL
 	default y
 	help
 	  Option which implements default policy of enabling logging in

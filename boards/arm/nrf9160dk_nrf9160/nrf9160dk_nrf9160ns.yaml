@@ -1,0 +1,14 @@
+identifier: nrf9160dk_nrf9160ns
+name: nRF9160-DK-NRF9160-Non-Secure
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 128
+flash: 256
+supported:
+  - i2c
+  - pwm
+  - watchdog

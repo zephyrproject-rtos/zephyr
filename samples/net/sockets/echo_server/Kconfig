@@ -58,4 +58,11 @@ config NET_SAMPLE_PSK_HEADER_FILE
 	  Name of a header file containing a
 	  pre-shared key.
 
+config NET_SAMPLE_CERTS_WITH_SC
+	bool "Signed certificates"
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	help
+	  Enable this flag, if you are interested to run this
+	  application with signed certificates and keys.
+
 source "Kconfig.zephyr"

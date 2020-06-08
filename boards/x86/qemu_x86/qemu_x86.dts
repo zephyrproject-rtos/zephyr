@@ -21,6 +21,7 @@
 	aliases {
 		uart-0 = &uart0;
 		uart-1 = &uart1;
+		eeprom-0 = &eeprom0;
 	};
 
 	chosen {
@@ -32,6 +33,7 @@
 		zephyr,uart-pipe = &uart1;
 		zephyr,bt-mon-uart = &uart1;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,flash-controller = &sim_flash;
 	};
 
 	soc {
@@ -39,14 +41,14 @@
 			compatible = "intel,e1000";
 			reg = <0xfebc0000 0x100>;
 			label = "eth0";
-			interrupts = <11 IRQ_TYPE_EDGE_RISING 3>;
+			interrupts = <11 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
 			interrupt-parent = <&intc>;
 
 			status = "okay";
 		};
 	};
 
-	sim_flash {
+	sim_flash: sim_flash {
 		compatible = "zephyr,sim-flash";
 		label = "FLASH_SIMULATOR";
 
@@ -60,6 +62,13 @@
 			erase-block-size = <1024>;
 			write-block-size = <4>;
 		};
+	};
+
+	eeprom0: eeprom {
+		status = "okay";
+		compatible = "zephyr,sim-eeprom";
+		label = "EEPROM_0";
+		size = <DT_SIZE_K(32)>;
 	};
 };
 
@@ -87,7 +96,10 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		/* Storage partition will be used by FCB/NFFS/NVS if enabled. */
+		/*
+		 * Storage partition will be used by FCB/LittleFS/NVS
+		 * if enabled.
+		 */
 		storage_partition: partition@1000 {
 			label = "storage";
 			reg = <0x00001000 0x00010000>;

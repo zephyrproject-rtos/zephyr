@@ -17,24 +17,25 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,ccm = &ccm0;
+		zephyr,can-primary = &can2;
 	};
 
 	leds {
 		compatible = "gpio-leds";
 		orange_led_3: led_3 {
-			gpios = <&gpiod 13 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiod 13 GPIO_ACTIVE_HIGH>;
 			label = "User LD3";
 		};
 		green_led_4: led_4 {
-			gpios = <&gpiod 12 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiod 12 GPIO_ACTIVE_HIGH>;
 			label = "User LD4";
 		};
 		red_led_5: led_5 {
-			gpios = <&gpiod 14 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiod 14 GPIO_ACTIVE_HIGH>;
 			label = "User LD5";
 		};
 		blue_led_6: led_6 {
-			gpios = <&gpiod 15 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiod 15 GPIO_ACTIVE_HIGH>;
 			label = "User LD6";
 		};
 	};
@@ -43,7 +44,7 @@
 		compatible = "gpio-keys";
 		user_button: button {
 			label = "Key";
-			gpios = <&gpioa 0 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -69,7 +70,7 @@
 &timers2 {
 	status = "okay";
 
-	pwm {
+	pwm2: pwm {
 		status = "okay";
 	};
 };
@@ -79,5 +80,15 @@
 };
 
 &usbotg_fs {
+	status = "okay";
+};
+
+&can1 {
+	bus-speed = <125000>;
+	status = "disabled";
+};
+
+&can2 {
+	bus-speed = <125000>;
 	status = "okay";
 };

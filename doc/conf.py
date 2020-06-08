@@ -75,7 +75,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Zephyr Project'
-copyright = u'2015-2019 Zephyr Project members and individual contributors'
+copyright = u'2015-2020 Zephyr Project members and individual contributors'
 author = u'The Zephyr Project'
 
 # The following code tries to extract the information by reading the Makefile,
@@ -277,7 +277,7 @@ sourcelink_suffix = '.txt'
 
 # The name of a javascript file (relative to the configuration directory) that
 # implements a search results scorer. If empty, the default will be used.
-#html_search_scorer = 'scorer.js'
+html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'zephyrdoc'
@@ -316,7 +316,6 @@ html_redirect_pages = [
 		('boards/arm/arduino_zero/doc/arduino_zero', 'boards/arm/arduino_zero/doc/index'),
 		('boards/arm/atsamd20_xpro/doc/atsamd20_xpro', 'boards/arm/atsamd20_xpro/doc/index'),
 		('boards/arm/bbc_microbit/doc/board', 'boards/arm/bbc_microbit/doc/index'),
-		('boards/arm/cc2650_sensortag/doc/cc2650_sensortag', 'boards/arm/cc2650_sensortag/doc/index'),
 		('boards/arm/cc3220sf_launchxl/doc/cc3220sf_launchxl', 'boards/arm/cc3220sf_launchxl/doc/index'),
 		('boards/arm/colibri_imx7d_m4/doc/colibri_imx7d_m4', 'boards/arm/colibri_imx7d_m4/doc/index'),
 		('boards/arm/disco_l475_iot1/doc/disco_l475_iot1', 'boards/arm/disco_l475_iot1/doc/index'),
@@ -338,16 +337,28 @@ html_redirect_pages = [
 		('boards/arm/msp_exp432p401r_launchxl/doc/msp_exp432p401r_launchxl', 'boards/arm/msp_exp432p401r_launchxl/doc/index'),
 		('boards/arm/nrf51_ble400/doc/nrf51_ble400', 'boards/arm/nrf51_ble400/doc/index'),
 		('boards/arm/nrf51_blenano/doc/nrf51_blenano', 'boards/arm/nrf51_blenano/doc/index'),
-		('boards/arm/nrf51_pca10028/doc/nrf51_pca10028', 'boards/arm/nrf51_pca10028/doc/index'),
+		('boards/arm/nrf51_pca10028/doc/nrf51_pca10028', 'boards/arm/nrf51dk_nrf51422/doc/index'),
+		('boards/arm/nrf51_pca10028/doc/index', 'boards/arm/nrf51dk_nrf51422/doc/index'),
+		('boards/arm/nrf51_pca10031/doc/index', 'boards/arm/nrf51dongle_nrf51422/doc/index'),
 		('boards/arm/nrf51_vbluno51/doc/nrf51_vbluno51', 'boards/arm/nrf51_vbluno51/doc/index'),
-		('boards/arm/nrf52810_pca10040/doc/nrf52810_pca10040', 'boards/arm/nrf52810_pca10040/doc/index'),
-		('boards/arm/nrf52840_pca10056/doc/nrf52840_pca10056', 'boards/arm/nrf52840_pca10056/doc/index'),
-		('boards/arm/nrf52840_pca10059/doc/nrf52840_pca10059', 'boards/arm/nrf52840_pca10059/doc/index'),
+		('boards/arm/nrf52810_pca10040/doc/nrf52810_pca10040', 'boards/arm/nrf52dk_nrf52810/doc/index'),
+		('boards/arm/nrf52810_pca10040/doc/index', 'boards/arm/nrf52dk_nrf52810/doc/index'),
+		('boards/arm/nrf52811_pca10056/doc/index', 'boards/arm/nrf52840dk_nrf52811/doc/index'),
+		('boards/arm/nrf52833_pca10100/doc/index', 'boards/arm/nrf52833dk_nrf52833/doc/index'),
+		('boards/arm/nrf52840_pca10056/doc/nrf52840_pca10056', 'boards/arm/nrf52840dk_nrf52840/doc/index'),
+		('boards/arm/nrf52840_pca10056/doc/index', 'boards/arm/nrf52840dk_nrf52840/doc/index'),
+		('boards/arm/nrf9160_pca10090/doc/index', 'boards/arm/nrf9160dk_nrf9160/doc/index'),
+		('boards/arm/nrf52840_pca10090/doc/index', 'boards/arm/nrf9160dk_nrf52840/doc/index'),
+		('boards/arm/nrf52840_pca10059/doc/nrf52840_pca10059', 'boards/arm/nrf52840dongle_nrf52840/doc/index'),
+		('boards/arm/nrf52840_pca10059/doc/index', 'boards/arm/nrf52840dongle_nrf52840/doc/index'),
 		('boards/arm/nrf52_adafruit_feather/doc/nrf52_adafruit_feather', 'boards/arm/nrf52_adafruit_feather/doc/index'),
 		('boards/arm/nrf52_blenano2/doc/nrf52_blenano2', 'boards/arm/nrf52_blenano2/doc/index'),
-		('boards/arm/nrf52_pca10040/doc/nrf52_pca10040', 'boards/arm/nrf52_pca10040/doc/index'),
-		('boards/arm/nrf52_pca20020/doc/nrf52_pca20020', 'boards/arm/nrf52_pca20020/doc/index'),
+		('boards/arm/nrf52_pca10040/doc/nrf52_pca10040', 'boards/arm/nrf52dk_nrf52832/doc/index'),
+		('boards/arm/nrf52_pca10040/doc/index', 'boards/arm/nrf52dk_nrf52832/doc/index'),
+		('boards/arm/nrf52_pca20020/doc/nrf52_pca20020', 'boards/arm/thingy52_nrf52832/doc/index'),
+		('boards/arm/nrf52_pca20020/doc/index', 'boards/arm/thingy52_nrf52832/doc/index'),
 		('boards/arm/nrf52_vbluno52/doc/nrf52_vbluno52', 'boards/arm/nrf52_vbluno52/doc/index'),
+		('boards/arm/nrf5340_dk_nrf5340/doc/index', 'boards/arm/nrf5340pdk_nrf5340/doc/index'),
 		('boards/arm/nucleo_f030r8/doc/nucleof030r8', 'boards/arm/nucleo_f030r8/doc/index'),
 		('boards/arm/nucleo_f070rb/doc/nucleof070rb', 'boards/arm/nucleo_f070rb/doc/index'),
 		('boards/arm/nucleo_f091rc/doc/nucleof091rc', 'boards/arm/nucleo_f091rc/doc/index'),
@@ -528,12 +539,11 @@ html_context = {
     'theme_logo_only': False,
     'current_version': version,
     'versions': (("latest", "/"),
+                 ("2.3.0", "/2.3.0/"),
+                 ("2.2.0", "/2.2.0/"),
                  ("2.1.0", "/2.1.0/"),
                  ("2.0.0", "/2.0.0/"),
                  ("1.14.1", "/1.14.1/"),
-                 ("1.13.0", "/1.13.0/"),
-                 ("1.12.0", "/1.12.0/"),
-                 ("1.11.0", "/1.11.0/"),
                 )
 }
 

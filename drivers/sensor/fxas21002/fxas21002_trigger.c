@@ -21,7 +21,8 @@ static void fxas21002_gpio_callback(struct device *dev,
 		return;
 	}
 
-	gpio_pin_disable_callback(dev, data->gpio_pin);
+	gpio_pin_interrupt_configure(data->gpio, data->gpio_pin,
+				     GPIO_INT_DISABLE);
 
 #if defined(CONFIG_FXAS21002_TRIGGER_OWN_THREAD)
 	k_sem_give(&data->trig_sem);
@@ -49,7 +50,7 @@ static int fxas21002_handle_drdy_int(struct device *dev)
 static void fxas21002_handle_int(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	const struct fxas21002_config *config = dev->config->config_info;
+	const struct fxas21002_config *config = dev->config_info;
 	struct fxas21002_data *data = dev->driver_data;
 	u8_t int_source;
 
@@ -68,7 +69,8 @@ static void fxas21002_handle_int(void *arg)
 		fxas21002_handle_drdy_int(dev);
 	}
 
-	gpio_pin_enable_callback(data->gpio, config->gpio_pin);
+	gpio_pin_interrupt_configure(data->gpio, config->gpio_pin,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 }
 
 #ifdef CONFIG_FXAS21002_TRIGGER_OWN_THREAD
@@ -101,7 +103,7 @@ int fxas21002_trigger_set(struct device *dev,
 			 const struct sensor_trigger *trig,
 			 sensor_trigger_handler_t handler)
 {
-	const struct fxas21002_config *config = dev->config->config_info;
+	const struct fxas21002_config *config = dev->config_info;
 	struct fxas21002_data *data = dev->driver_data;
 	enum fxas21002_power power = FXAS21002_POWER_STANDBY;
 	u32_t transition_time;
@@ -169,7 +171,7 @@ exit:
 
 int fxas21002_trigger_init(struct device *dev)
 {
-	const struct fxas21002_config *config = dev->config->config_info;
+	const struct fxas21002_config *config = dev->config_info;
 	struct fxas21002_data *data = dev->driver_data;
 	u8_t ctrl_reg2;
 
@@ -206,15 +208,15 @@ int fxas21002_trigger_init(struct device *dev)
 	data->gpio_pin = config->gpio_pin;
 
 	gpio_pin_configure(data->gpio, config->gpio_pin,
-			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			   GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
+			   GPIO_INPUT | config->gpio_flags);
 
 	gpio_init_callback(&data->gpio_cb, fxas21002_gpio_callback,
 			   BIT(config->gpio_pin));
 
 	gpio_add_callback(data->gpio, &data->gpio_cb);
 
-	gpio_pin_enable_callback(data->gpio, config->gpio_pin);
+	gpio_pin_interrupt_configure(data->gpio, config->gpio_pin,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 
 	return 0;
 }

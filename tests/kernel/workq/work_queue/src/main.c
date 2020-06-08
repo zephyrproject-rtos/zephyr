@@ -60,13 +60,13 @@ static void work_handler(struct k_work *work)
 			CONTAINER_OF(work, struct delayed_test_item, work);
 
 	TC_PRINT(" - Running test item %d\n", ti->key);
-	k_sleep(WORK_ITEM_WAIT);
+	k_msleep(WORK_ITEM_WAIT);
 
 	results[num_results++] = ti->key;
 }
 
 /**
- * @ingroup kernel_workqueue_delayed_tests
+ * @ingroup kernel_workqueue_tests
  * @see k_work_init()
  */
 static void delayed_test_items_init(void)
@@ -98,17 +98,17 @@ static void coop_work_main(int arg1, int arg2)
 	ARG_UNUSED(arg2);
 
 	/* Let the preempt thread submit the first work item. */
-	k_sleep(SUBMIT_WAIT / 2);
+	k_msleep(SUBMIT_WAIT / 2);
 
 	for (i = 1; i < NUM_TEST_ITEMS; i += 2) {
 		TC_PRINT(" - Submitting work %d from coop thread\n", i + 1);
 		k_work_submit(&delayed_tests[i].work.work);
-		k_sleep(SUBMIT_WAIT);
+		k_msleep(SUBMIT_WAIT);
 	}
 }
 
 /**
- * @ingroup kernel_workqueue_delayed_tests
+ * @ingroup kernel_workqueue_tests
  * @see k_work_submit()
  */
 static void delayed_test_items_submit(void)
@@ -122,7 +122,7 @@ static void delayed_test_items_submit(void)
 	for (i = 0; i < NUM_TEST_ITEMS; i += 2) {
 		TC_PRINT(" - Submitting work %d from preempt thread\n", i + 1);
 		k_work_submit(&delayed_tests[i].work.work);
-		k_sleep(SUBMIT_WAIT);
+		k_msleep(SUBMIT_WAIT);
 	}
 }
 
@@ -146,7 +146,7 @@ static void check_results(int num_tests)
 /**
  * @brief Test work queue items submission sequence
  *
- * @ingroup kernel_workqueue_delayed_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_work_init(), k_work_submit()
  */
@@ -159,7 +159,7 @@ static void test_sequence(void)
 	delayed_test_items_submit();
 
 	TC_PRINT(" - Waiting for work to finish\n");
-	k_sleep(CHECK_WAIT);
+	k_msleep(CHECK_WAIT);
 
 	check_results(NUM_TEST_ITEMS);
 	reset_results();
@@ -172,7 +172,7 @@ static void resubmit_work_handler(struct k_work *work)
 	struct delayed_test_item *ti =
 			CONTAINER_OF(work, struct delayed_test_item, work);
 
-	k_sleep(WORK_ITEM_WAIT);
+	k_msleep(WORK_ITEM_WAIT);
 
 	results[num_results++] = ti->key;
 
@@ -185,7 +185,7 @@ static void resubmit_work_handler(struct k_work *work)
 /**
  * @brief Test work queue item resubmission
  *
- * @ingroup kernel_workqueue_delayed_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_work_submit()
  */
@@ -200,7 +200,7 @@ static void test_resubmit(void)
 	k_work_submit(&delayed_tests[0].work.work);
 
 	TC_PRINT(" - Waiting for work to finish\n");
-	k_sleep(CHECK_WAIT);
+	k_msleep(CHECK_WAIT);
 
 	TC_PRINT(" - Checking results\n");
 	check_results(NUM_TEST_ITEMS);
@@ -220,7 +220,7 @@ static void delayed_work_handler(struct k_work *work)
 /**
  * @brief Test delayed work queue init
  *
- * @ingroup kernel_workqueue_delayed_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_delayed_work_init()
  */
@@ -243,20 +243,20 @@ static void coop_delayed_work_main(int arg1, int arg2)
 	ARG_UNUSED(arg2);
 
 	/* Let the preempt thread submit the first work item. */
-	k_sleep(SUBMIT_WAIT / 2);
+	k_msleep(SUBMIT_WAIT / 2);
 
 	for (i = 1; i < NUM_TEST_ITEMS; i += 2) {
 		TC_PRINT(" - Submitting delayed work %d from"
 			 " coop thread\n", i + 1);
 		k_delayed_work_submit(&delayed_tests[i].work,
-				      (i + 1) * WORK_ITEM_WAIT);
+				      K_MSEC((i + 1) * WORK_ITEM_WAIT));
 	}
 }
 
 /**
  * @brief Test delayed workqueue submit
  *
- * @ingroup kernel_workqueue_delayed_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_delayed_work_init(), k_delayed_work_submit()
  */
@@ -272,7 +272,7 @@ static void test_delayed_submit(void)
 		TC_PRINT(" - Submitting delayed work %d from"
 			 " preempt thread\n", i + 1);
 		zassert_true(k_delayed_work_submit(&delayed_tests[i].work,
-						   (i + 1) * WORK_ITEM_WAIT) == 0, NULL);
+			   K_MSEC((i + 1) * WORK_ITEM_WAIT)) == 0, NULL);
 	}
 
 }
@@ -282,24 +282,16 @@ static void coop_delayed_work_cancel_main(int arg1, int arg2)
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
 
-	k_delayed_work_submit(&delayed_tests[1].work, WORK_ITEM_WAIT);
+	k_delayed_work_submit(&delayed_tests[1].work, K_MSEC(WORK_ITEM_WAIT));
 
 	TC_PRINT(" - Cancel delayed work from coop thread\n");
 	k_delayed_work_cancel(&delayed_tests[1].work);
-
-#if defined(CONFIG_POLL)
-	k_delayed_work_submit(&delayed_tests[2].work,
-			      K_NO_WAIT /* Submit immediately */);
-
-	TC_PRINT(" - Cancel pending delayed work from coop thread\n");
-	k_delayed_work_cancel(&delayed_tests[2].work);
-#endif
 }
 
 /**
  * @brief Test work queue delayed cancel
  *
- * @ingroup kernel_workqueue_delayed_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_delayed_work_init(), k_delayed_work_submit(),
  * k_delayed_work_cancel()
@@ -308,7 +300,7 @@ static void test_delayed_cancel(void)
 {
 	TC_PRINT("Starting delayed cancel test\n");
 
-	k_delayed_work_submit(&delayed_tests[0].work, WORK_ITEM_WAIT);
+	k_delayed_work_submit(&delayed_tests[0].work, K_MSEC(WORK_ITEM_WAIT));
 
 	TC_PRINT(" - Cancel delayed work from preempt thread\n");
 	k_delayed_work_cancel(&delayed_tests[0].work);
@@ -318,7 +310,7 @@ static void test_delayed_cancel(void)
 			NULL, NULL, NULL, K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);
 
 	TC_PRINT(" - Waiting for work to finish\n");
-	k_sleep(WORK_ITEM_WAIT_ALIGNED);
+	k_msleep(WORK_ITEM_WAIT_ALIGNED);
 
 	TC_PRINT(" - Checking results\n");
 	check_results(0);
@@ -334,14 +326,14 @@ static void delayed_resubmit_work_handler(struct k_work *work)
 	if (ti->key < NUM_TEST_ITEMS) {
 		ti->key++;
 		TC_PRINT(" - Resubmitting delayed work\n");
-		k_delayed_work_submit(&ti->work, WORK_ITEM_WAIT);
+		k_delayed_work_submit(&ti->work, K_MSEC(WORK_ITEM_WAIT));
 	}
 }
 
 /**
  * @brief Test delayed resubmission of work queue item
  *
- * @ingroup kernel_workqueue_delayed_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_delayed_work_init(), k_delayed_work_submit()
  */
@@ -354,10 +346,10 @@ static void test_delayed_resubmit(void)
 			    delayed_resubmit_work_handler);
 
 	TC_PRINT(" - Submitting delayed work\n");
-	k_delayed_work_submit(&delayed_tests[0].work, WORK_ITEM_WAIT);
+	k_delayed_work_submit(&delayed_tests[0].work, K_MSEC(WORK_ITEM_WAIT));
 
 	TC_PRINT(" - Waiting for work to finish\n");
-	k_sleep(CHECK_WAIT);
+	k_msleep(CHECK_WAIT);
 
 	TC_PRINT(" - Checking results\n");
 	check_results(NUM_TEST_ITEMS);
@@ -388,7 +380,7 @@ static void coop_delayed_work_resubmit(void)
 /**
  * @brief Test delayed resubmission of work queue thread
  *
- * @ingroup kernel_workqueue_delayed_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_delayed_work_init()
  */
@@ -404,7 +396,7 @@ static void test_delayed_resubmit_thread(void)
 			NULL, NULL, NULL, K_PRIO_COOP(10), 0, K_NO_WAIT);
 
 	TC_PRINT(" - Waiting for work to finish\n");
-	k_sleep(WORK_ITEM_WAIT_ALIGNED);
+	k_msleep(WORK_ITEM_WAIT_ALIGNED);
 
 	TC_PRINT(" - Checking results\n");
 	check_results(1);
@@ -414,7 +406,7 @@ static void test_delayed_resubmit_thread(void)
 /**
  * @brief Test delayed work items
  *
- * @ingroup kernel_workqueue_delayed_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_delayed_work_init(), k_delayed_work_submit()
  */
@@ -429,7 +421,7 @@ static void test_delayed(void)
 	test_delayed_submit();
 
 	TC_PRINT(" - Waiting for delayed work to finish\n");
-	k_sleep(CHECK_WAIT);
+	k_msleep(CHECK_WAIT);
 
 	TC_PRINT(" - Checking results\n");
 	check_results(NUM_TEST_ITEMS);
@@ -452,7 +444,7 @@ static void triggered_work_handler(struct k_work *work)
 /**
  * @brief Test triggered work queue init
  *
- * @ingroup kernel_workqueue_triggered_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_work_poll_init()
  */
@@ -476,11 +468,11 @@ static void test_triggered_init(void)
 /**
  * @brief Test triggered workqueue submit
  *
- * @ingroup kernel_workqueue_triggered_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_work_poll_init(), k_work_poll_submit()
  */
-static void test_triggered_submit(s32_t timeout)
+static void test_triggered_submit(k_timeout_t timeout)
 {
 	int i;
 
@@ -495,7 +487,7 @@ static void test_triggered_submit(s32_t timeout)
 /**
  * @brief Trigger triggered workqueue execution
  *
- * @ingroup kernel_workqueue_triggered_tests
+ * @ingroup kernel_workqueue_tests
  */
 static void test_triggered_trigger(void)
 {
@@ -511,7 +503,7 @@ static void test_triggered_trigger(void)
 /**
  * @brief Test triggered work items
  *
- * @ingroup kernel_workqueue_triggered_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_work_poll_init(), k_work_poll_submit()
  */
@@ -532,7 +524,7 @@ static void test_triggered(void)
 	test_triggered_trigger();
 
 	/* Items should be executed when we will be sleeping. */
-	k_sleep(WORK_ITEM_WAIT);
+	k_msleep(WORK_ITEM_WAIT);
 
 	TC_PRINT(" - Checking results\n");
 	check_results(NUM_TEST_ITEMS);
@@ -542,7 +534,7 @@ static void test_triggered(void)
 /**
  * @brief Test already triggered work items
  *
- * @ingroup kernel_workqueue_triggered_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_work_poll_init(), k_work_poll_submit()
  */
@@ -563,7 +555,7 @@ static void test_already_triggered(void)
 	test_triggered_submit(K_FOREVER);
 
 	/* Items should be executed when we will be sleeping. */
-	k_sleep(WORK_ITEM_WAIT);
+	k_msleep(WORK_ITEM_WAIT);
 
 	TC_PRINT(" - Checking results\n");
 	check_results(NUM_TEST_ITEMS);
@@ -591,7 +583,7 @@ static void triggered_resubmit_work_handler(struct k_work *work)
 /**
  * @brief Test resubmission of triggered work queue item
  *
- * @ingroup kernel_workqueue_triggered_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_work_poll_init(), k_work_poll_submit()
  */
@@ -624,7 +616,7 @@ static void test_triggered_resubmit(void)
 									i + 1);
 		zassert_true(k_poll_signal_raise(&triggered_tests[0].signal,
 						 1) == 0, NULL);
-		k_sleep(WORK_ITEM_WAIT);
+		k_msleep(WORK_ITEM_WAIT);
 	}
 
 	TC_PRINT(" - Checking results\n");
@@ -635,7 +627,7 @@ static void test_triggered_resubmit(void)
 /**
  * @brief Test triggered work items with K_NO_WAIT timeout
  *
- * @ingroup kernel_workqueue_triggered_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_work_poll_init(), k_work_poll_submit()
  */
@@ -656,7 +648,7 @@ static void test_triggered_no_wait(void)
 	test_triggered_submit(K_NO_WAIT);
 
 	/* Items should be executed when we will be sleeping. */
-	k_sleep(WORK_ITEM_WAIT);
+	k_msleep(WORK_ITEM_WAIT);
 
 	TC_PRINT(" - Checking results\n");
 	check_results(NUM_TEST_ITEMS);
@@ -666,7 +658,7 @@ static void test_triggered_no_wait(void)
 /**
  * @brief Test expired triggered work items with K_NO_WAIT timeout
  *
- * @ingroup kernel_workqueue_triggered_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_work_poll_init(), k_work_poll_submit()
  */
@@ -684,7 +676,7 @@ static void test_triggered_no_wait_expired(void)
 	test_triggered_submit(K_NO_WAIT);
 
 	/* Items should be executed when we will be sleeping. */
-	k_sleep(WORK_ITEM_WAIT);
+	k_msleep(WORK_ITEM_WAIT);
 
 	TC_PRINT(" - Checking results\n");
 	check_results(NUM_TEST_ITEMS);
@@ -694,7 +686,7 @@ static void test_triggered_no_wait_expired(void)
 /**
  * @brief Test triggered work items with arbitrary timeout
  *
- * @ingroup kernel_workqueue_triggered_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_work_poll_init(), k_work_poll_submit()
  */
@@ -712,10 +704,10 @@ static void test_triggered_wait(void)
 	test_triggered_trigger();
 
 	TC_PRINT(" - Submitting triggered test items\n");
-	test_triggered_submit(2 * SUBMIT_WAIT);
+	test_triggered_submit(K_MSEC(2 * SUBMIT_WAIT));
 
 	/* Items should be executed when we will be sleeping. */
-	k_sleep(SUBMIT_WAIT);
+	k_msleep(SUBMIT_WAIT);
 
 	TC_PRINT(" - Checking results\n");
 	check_results(NUM_TEST_ITEMS);
@@ -725,7 +717,7 @@ static void test_triggered_wait(void)
 /**
  * @brief Test expired triggered work items with arbitrary timeout
  *
- * @ingroup kernel_workqueue_triggered_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_work_poll_init(), k_work_poll_submit()
  */
@@ -740,15 +732,15 @@ static void test_triggered_wait_expired(void)
 	test_triggered_init();
 
 	TC_PRINT(" - Submitting triggered test items\n");
-	test_triggered_submit(2 * SUBMIT_WAIT);
+	test_triggered_submit(K_MSEC(2 * SUBMIT_WAIT));
 
 	/* Items should not be executed when we will be sleeping here. */
-	k_sleep(SUBMIT_WAIT);
+	k_msleep(SUBMIT_WAIT);
 	TC_PRINT(" - Checking results (before timeout)\n");
 	check_results(0);
 
 	/* Items should be executed when we will be sleeping here. */
-	k_sleep(SUBMIT_WAIT);
+	k_msleep(SUBMIT_WAIT);
 	TC_PRINT(" - Checking results (after timeout)\n");
 	check_results(NUM_TEST_ITEMS);
 

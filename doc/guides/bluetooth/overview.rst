@@ -93,6 +93,3 @@ Bluetooth stack.
     * Local controller support as a virtual HCI driver
 
   * Verified with multiple popular controllers
-
-
-

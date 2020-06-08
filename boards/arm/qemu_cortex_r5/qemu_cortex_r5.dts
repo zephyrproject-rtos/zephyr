@@ -6,7 +6,7 @@
  */
 
 /dts-v1/;
-#include <arm/xilinx/zynqmp.dtsi>
+#include <arm/xilinx/zynqmp_rpu.dtsi>
 
 / {
 	model = "QEMU Cortex-R5";
@@ -28,5 +28,5 @@
 
 &ttc0 {
 	status = "okay";
-	clock-frequency = <100000000>;
+	clock-frequency = <12000000>;
 };

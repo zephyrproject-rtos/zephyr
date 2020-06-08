@@ -9,34 +9,11 @@
 	compatible = "nxp,mk64f12", "nxp,k64f", "nxp,k6x";
 
 	aliases {
-		adc-0 = &adc0;
-		adc-1 = &adc1;
-		pwm-0 = &pwm0;
-		pwm-1 = &pwm1;
-		pwm-2 = &pwm2;
-		pwm-3 = &pwm3;
-		uart-0 = &uart0;
-		uart-3 = &uart3;
-		pinmux-a = &pinmux_a;
-		pinmux-b = &pinmux_b;
-		pinmux-c = &pinmux_c;
-		pinmux-d = &pinmux_d;
-		pinmux-e = &pinmux_e;
-		gpio-a = &gpioa;
-		gpio-b = &gpiob;
-		gpio-c = &gpioc;
-		gpio-d = &gpiod;
-		gpio-e = &gpioe;
-		i2c-0 = &i2c0;
-		i2c-1 = &i2c1;
-		i2c-2 = &i2c2;
 		led0 = &green_led;
 		led1 = &blue_led;
 		led2 = &red_led;
 		sw0 = &user_button_3;
 		sw1 = &user_button_2;
-		eth = &eth;
-		can-0 = &can0;
 	};
 
 	chosen {
@@ -46,20 +23,21 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,uart-pipe = &uart0;
+		zephyr,can-primary = &flexcan0;
 	};
 
 	leds {
 		compatible = "gpio-leds";
 		red_led: led_0 {
-			gpios = <&gpiob 22 0>;
+			gpios = <&gpiob 22 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
 		};
 		green_led: led_1 {
-			gpios = <&gpioe 26 0>;
+			gpios = <&gpioe 26 GPIO_ACTIVE_LOW>;
 			label = "User LD2";
 		};
 		blue_led: led_2 {
-			gpios = <&gpiob 21 0>;
+			gpios = <&gpiob 21 GPIO_ACTIVE_LOW>;
 			label = "User LD3";
 		};
 	};
@@ -68,11 +46,11 @@
 		compatible = "gpio-keys";
 		user_button_2: button_0 {
 			label = "User SW2";
-			gpios = <&gpioc 6 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpioc 6 GPIO_ACTIVE_LOW>;
 		};
 		user_button_3: button_1 {
 			label = "User SW3";
-			gpios = <&gpioa 4 (GPIO_INT_ACTIVE_LOW | GPIO_PUD_PULL_UP)>;
+			gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -126,6 +104,15 @@ arduino_serial: &uart3 {
 	status = "okay";
 };
 
+&temp1 {
+	status = "okay";
+};
+
+&dac0 {
+	status = "okay";
+	voltage-reference = <2>;
+};
+
 arduino_i2c: &i2c0 {
 	status = "okay";
 
@@ -133,8 +120,8 @@ arduino_i2c: &i2c0 {
 		compatible = "nxp,fxos8700";
 		reg = <0x1d>;
 		label = "FXOS8700";
-		int1-gpios = <&gpioc 6 0>;
-		int2-gpios = <&gpioc 13 0>;
+		int1-gpios = <&gpioc 6 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
 	};
 };
 
@@ -142,8 +129,10 @@ arduino_spi: &spi0 {
 	status = "okay";
 };
 
-&pwm3 {
+&ftm3 {
 	status = "okay";
+	compatible = "nxp,kinetis-ftm-pwm";
+	#pwm-cells = <3>;
 };
 
 &uart0 {
@@ -151,10 +140,30 @@ arduino_spi: &spi0 {
 	current-speed = <115200>;
 };
 
-&usbd {
+&usbotg {
 	compatible = "nxp,kinetis-usbd";
 	status = "okay";
 	num-bidir-endpoints = <8>;
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&gpioe {
+	status = "okay";
 };
 
 &flash0 {
@@ -198,15 +207,14 @@ arduino_spi: &spi0 {
 	};
 };
 
-&eth {
+&enet {
 	status = "okay";
 	ptp {
 		status = "okay";
 	};
 };
 
-
-&can0 {
+&flexcan0 {
 	status = "okay";
 	bus-speed = <125000>;
 };

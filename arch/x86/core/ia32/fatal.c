@@ -22,20 +22,6 @@ LOG_MODULE_DECLARE(os);
 
 __weak void z_debug_fatal_hook(const z_arch_esf_t *esf) { ARG_UNUSED(esf); }
 
-
-#ifdef CONFIG_BOARD_QEMU_X86
-FUNC_NORETURN void arch_system_halt(unsigned int reason)
-{
-	ARG_UNUSED(reason);
-
-	/* Causes QEMU to exit. We passed the following on the command line:
-	 * -device isa-debug-exit,iobase=0xf4,iosize=0x04
-	 */
-	sys_out32(0, 0xf4);
-	CODE_UNREACHABLE;
-}
-#endif
-
 void z_x86_spurious_irq(const z_arch_esf_t *esf)
 {
 	int vector = z_irq_controller_isr_vector_get();
@@ -64,50 +50,15 @@ void arch_syscall_oops(void *ssf_ptr)
 	z_x86_fatal_error(K_ERR_KERNEL_OOPS, &oops);
 }
 
-#ifdef CONFIG_X86_KERNEL_OOPS
-void z_do_kernel_oops(const z_arch_esf_t *esf)
-{
-	u32_t *stack_ptr = (u32_t *)esf->esp;
-	u32_t reason = *stack_ptr;
-
-#ifdef CONFIG_USERSPACE
-	/* User mode is only allowed to induce oopses and stack check
-	 * failures via this software interrupt
-	 */
-	if (esf->cs == USER_CODE_SEG && !(reason == K_ERR_KERNEL_OOPS ||
-					  reason == K_ERR_STACK_CHK_FAIL)) {
-		reason = K_ERR_KERNEL_OOPS;
-	}
-#endif
-
-	z_x86_fatal_error(reason, esf);
-}
-
 extern void (*_kernel_oops_handler)(void);
 NANO_CPU_INT_REGISTER(_kernel_oops_handler, NANO_SOFT_IRQ,
-		      CONFIG_X86_KERNEL_OOPS_VECTOR / 16,
-		      CONFIG_X86_KERNEL_OOPS_VECTOR, 3);
-#endif
+		      Z_X86_OOPS_VECTOR / 16, Z_X86_OOPS_VECTOR, 3);
 
 #if CONFIG_EXCEPTION_DEBUG
 FUNC_NORETURN static void generic_exc_handle(unsigned int vector,
 					     const z_arch_esf_t *pEsf)
 {
-	switch (vector) {
-	case IV_GENERAL_PROTECTION:
-		LOG_ERR("General Protection Fault");
-		break;
-	case IV_DEVICE_NOT_AVAILABLE:
-		LOG_ERR("Floating point unit not enabled");
-		break;
-	default:
-		LOG_ERR("CPU exception %d", vector);
-		break;
-	}
-	if ((BIT(vector) & _EXC_ERROR_CODE_FAULTS) != 0) {
-		LOG_ERR("Exception code: 0x%x", pEsf->errorCode);
-	}
-	z_x86_fatal_error(K_ERR_CPU_EXCEPTION, pEsf);
+	z_x86_unhandled_cpu_exception(vector, pEsf);
 }
 
 #define _EXC_FUNC(vector) \
@@ -230,8 +181,8 @@ static FUNC_NORETURN __used void df_handler_top(void)
 	_df_esf.eflags = _main_tss.eflags;
 
 	/* Restore the main IA task to a runnable state */
-	_main_tss.esp = (u32_t)(ARCH_THREAD_STACK_BUFFER(_interrupt_stack) +
-				CONFIG_ISR_STACK_SIZE);
+	_main_tss.esp = (u32_t)(ARCH_THREAD_STACK_BUFFER(
+		z_interrupt_stacks[0]) + CONFIG_ISR_STACK_SIZE);
 	_main_tss.cs = CODE_SEG;
 	_main_tss.ds = DATA_SEG;
 	_main_tss.es = DATA_SEG;

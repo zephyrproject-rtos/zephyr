@@ -4,8 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nordic_nrf_ipc
+
 #include <string.h>
-#include <ipm.h>
+#include <drivers/ipm.h>
 #include <nrfx_ipc.h>
 #include "ipm_nrfx_ipc.h"
 
@@ -82,10 +84,10 @@ static int ipm_nrf_set_enabled(struct device *dev, int enable)
 {
 	/* Enable configured channels */
 	if (enable) {
-		irq_enable(DT_INST_0_NORDIC_NRF_IPC_IRQ_0);
+		irq_enable(DT_INST_IRQN(0));
 		nrfx_ipc_receive_event_group_enable((uint32_t)IPC_EVENT_BITS);
 	} else {
-		irq_disable(DT_INST_0_NORDIC_NRF_IPC_IRQ_0);
+		irq_disable(DT_INST_IRQN(0));
 		nrfx_ipc_receive_event_group_disable((uint32_t)IPC_EVENT_BITS);
 	}
 	return 0;
@@ -105,7 +107,7 @@ static const struct ipm_driver_api ipm_nrf_driver_api = {
 	.set_enabled = ipm_nrf_set_enabled
 };
 
-DEVICE_AND_API_INIT(ipm_nrf, DT_INST_0_NORDIC_NRF_IPC_LABEL,
+DEVICE_AND_API_INIT(ipm_nrf, DT_INST_LABEL(0),
 		    ipm_nrf_init, NULL, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &ipm_nrf_driver_api);
@@ -205,7 +207,7 @@ static int vipm_nrf_##_idx##_set_enabled(struct device *dev, int enable)\
 		LOG_ERR("IPM_" #_idx " is TX message channel");		\
 		return -EINVAL;						\
 	} else if (enable) {						\
-		irq_enable(DT_INST_0_NORDIC_NRF_IPC_IRQ_0);		\
+		irq_enable(DT_INST_IRQN(0));		\
 		nrfx_ipc_receive_event_enable(_idx);			\
 	} else if (!enable) {						\
 		nrfx_ipc_receive_event_disable(_idx);			\
@@ -227,8 +229,7 @@ DEVICE_AND_API_INIT(vipm_nrf_##_idx, "IPM_"#_idx,			\
 		    &vipm_nrf_##_idx##_driver_api)
 
 #define VIPM_DEVICE(_idx, _)						\
-	COND_CODE_1(IS_ENABLED(CONFIG_IPM_MSG_CH_##_idx##_ENABLE),	\
-		    (VIPM_DEVICE_1(_idx);), ())
+	IF_ENABLED(CONFIG_IPM_MSG_CH_##_idx##_ENABLE, (VIPM_DEVICE_1(_idx);))
 
 UTIL_LISTIFY(NRFX_IPC_ID_MAX_VALUE, VIPM_DEVICE, _);
 
@@ -242,8 +243,8 @@ static void gipm_init(void)
 #else
 	nrfx_ipc_init(0, vipm_dispatcher, (void *)&nrfx_ipm_data);
 #endif
-	IRQ_CONNECT(DT_INST_0_NORDIC_NRF_IPC_IRQ_0,
-		    DT_INST_0_NORDIC_NRF_IPC_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
 		    nrfx_isr, nrfx_ipc_irq_handler, 0);
 
 	/* Set up signals and channels */

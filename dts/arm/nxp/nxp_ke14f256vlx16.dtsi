@@ -6,5 +6,5 @@
 
 #include <nxp/nxp_ke1xf256vlx16.dtsi>
 
-/delete-node/ &can0;
-/delete-node/ &can1;
+/delete-node/ &flexcan0;
+/delete-node/ &flexcan1;

@@ -23,6 +23,8 @@ extern void test_queue_alloc_prepend_user(void);
 extern void test_queue_alloc_append_user(void);
 #endif
 extern void test_queue_alloc(void);
+extern void test_queue_poll_race(void);
+
 extern struct k_mem_pool test_pool;
 
 typedef struct qdata {

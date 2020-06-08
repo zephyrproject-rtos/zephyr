@@ -14,4 +14,3 @@ void test_main(void)
 			 ztest_1cpu_unit_test(test_mslab_alloc_wait_prio));
 	ztest_run_test_suite(mslab_concept);
 }
-

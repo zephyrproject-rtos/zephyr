@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <atmel/same70b.dtsi>
+
+#include "dma_atmel_samv71.h"

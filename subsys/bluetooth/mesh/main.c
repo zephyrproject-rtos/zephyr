@@ -59,6 +59,53 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
 		pb_gatt_enabled = false;
 	}
 
+	/*
+	 * FIXME:
+	 * Should net_key and iv_index be over-ridden?
+	 */
+	if (IS_ENABLED(CONFIG_BT_MESH_CDB)) {
+		const struct bt_mesh_comp *comp;
+		const struct bt_mesh_prov *prov;
+		struct bt_mesh_cdb_node *node;
+
+		if (!atomic_test_bit(bt_mesh_cdb.flags,
+				     BT_MESH_CDB_VALID)) {
+			BT_ERR("No valid network");
+			atomic_clear_bit(bt_mesh.flags, BT_MESH_VALID);
+			return -EINVAL;
+		}
+
+		comp = bt_mesh_comp_get();
+		if (comp == NULL) {
+			BT_ERR("Failed to get node composition");
+			atomic_clear_bit(bt_mesh.flags, BT_MESH_VALID);
+			return -EINVAL;
+		}
+
+		if (!bt_mesh_cdb_subnet_get(net_idx)) {
+			BT_ERR("No subnet with idx %d", net_idx);
+			atomic_clear_bit(bt_mesh.flags, BT_MESH_VALID);
+			return -ENOENT;
+		}
+
+		prov = bt_mesh_prov_get();
+		node = bt_mesh_cdb_node_alloc(prov->uuid, addr,
+					      comp->elem_count, net_idx);
+		if (node == NULL) {
+			BT_ERR("Failed to allocate database node");
+			atomic_clear_bit(bt_mesh.flags, BT_MESH_VALID);
+			return -ENOMEM;
+		}
+
+		addr = node->addr;
+		iv_index = bt_mesh_cdb.iv_index;
+		memcpy(node->dev_key, dev_key, 16);
+
+		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+			bt_mesh_store_cdb_node(node);
+		}
+	}
+
 	err = bt_mesh_net_create(net_idx, flags, net_key, iv_index);
 	if (err) {
 		atomic_clear_bit(bt_mesh.flags, BT_MESH_VALID);
@@ -76,6 +123,11 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
 
 	memcpy(bt_mesh.dev_key, dev_key, 16);
 
+	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) &&
+	    IS_ENABLED(CONFIG_BT_MESH_LPN_SUB_ALL_NODES_ADDR)) {
+		bt_mesh_lpn_group_add(BT_MESH_ADDR_ALL_NODES);
+	}
+
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		BT_DBG("Storing network information persistently");
 		bt_mesh_store_net();
@@ -83,7 +135,7 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
 		bt_mesh_store_iv(false);
 	}
 
-	bt_mesh_net_start();
+	bt_mesh_start();
 
 	return 0;
 }
@@ -127,6 +179,12 @@ void bt_mesh_reset(void)
 	bt_mesh_tx_reset();
 
 	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
+		if (IS_ENABLED(CONFIG_BT_MESH_LPN_SUB_ALL_NODES_ADDR)) {
+			u16_t group = BT_MESH_ADDR_ALL_NODES;
+
+			bt_mesh_lpn_group_del(&group, 1);
+		}
+
 		bt_mesh_lpn_disable(true);
 	}
 
@@ -157,57 +215,6 @@ void bt_mesh_reset(void)
 bool bt_mesh_is_provisioned(void)
 {
 	return atomic_test_bit(bt_mesh.flags, BT_MESH_VALID);
-}
-
-int bt_mesh_prov_enable(bt_mesh_prov_bearer_t bearers)
-{
-	if (bt_mesh_is_provisioned()) {
-		return -EALREADY;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_DEBUG)) {
-		const struct bt_mesh_prov *prov = bt_mesh_prov_get();
-		struct bt_uuid_128 uuid = { .uuid = { BT_UUID_TYPE_128 } };
-
-		memcpy(uuid.val, prov->uuid, 16);
-		BT_INFO("Device UUID: %s", bt_uuid_str(&uuid.uuid));
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_PB_ADV) &&
-	    (bearers & BT_MESH_PROV_ADV)) {
-		/* Make sure we're scanning for provisioning inviations */
-		bt_mesh_scan_enable();
-		/* Enable unprovisioned beacon sending */
-		bt_mesh_beacon_enable();
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT) &&
-	    (bearers & BT_MESH_PROV_GATT)) {
-		bt_mesh_proxy_prov_enable();
-		bt_mesh_adv_update();
-	}
-
-	return 0;
-}
-
-int bt_mesh_prov_disable(bt_mesh_prov_bearer_t bearers)
-{
-	if (bt_mesh_is_provisioned()) {
-		return -EALREADY;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_PB_ADV) &&
-	    (bearers & BT_MESH_PROV_ADV)) {
-		bt_mesh_beacon_disable();
-		bt_mesh_scan_disable();
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT) &&
-	    (bearers & BT_MESH_PROV_GATT)) {
-		bt_mesh_proxy_prov_disable(true);
-	}
-
-	return 0;
 }
 
 static void model_suspend(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
@@ -256,7 +263,8 @@ static void model_resume(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 		s32_t period_ms = bt_mesh_model_pub_period_get(mod);
 
 		if (period_ms) {
-			k_delayed_work_submit(&mod->pub->timer, period_ms);
+			k_delayed_work_submit(&mod->pub->timer,
+					      K_MSEC(period_ms));
 		}
 	}
 }
@@ -304,6 +312,10 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
 		return err;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_MESH_PROXY)) {
+		bt_mesh_proxy_init();
+	}
+
 	if (IS_ENABLED(CONFIG_BT_MESH_PROV)) {
 		err = bt_mesh_prov_init(prov);
 		if (err) {
@@ -316,13 +328,25 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
 	bt_mesh_beacon_init();
 	bt_mesh_adv_init();
 
-	if (IS_ENABLED(CONFIG_BT_MESH_PROXY)) {
-		bt_mesh_proxy_init();
-	}
-
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		bt_mesh_settings_init();
 	}
+
+	return 0;
+}
+
+static void model_start(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
+			bool vnd, bool primary, void *user_data)
+{
+	if (mod->cb && mod->cb->start) {
+		mod->cb->start(mod);
+	}
+}
+
+int bt_mesh_start(void)
+{
+	bt_mesh_net_start();
+	bt_mesh_model_foreach(model_start, NULL);
 
 	return 0;
 }

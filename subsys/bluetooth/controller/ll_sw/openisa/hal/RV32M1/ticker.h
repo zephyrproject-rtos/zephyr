@@ -7,9 +7,13 @@
 
 #define HAL_TICKER_CNTR_CLK_FREQ_HZ 32768U
 
-#define HAL_TICKER_CNTR_CMP_OFFSET_MIN 3
+#define HAL_TICKER_CNTR_CMP_OFFSET_MIN 2
 
-#define HAL_TICKER_CNTR_SET_LATENCY 0
+#define HAL_TICKER_CNTR_SET_LATENCY 1
+/*
+ * When the LPTMR is enabled, the first increment will take an additional
+ * one or two prescaler clock cycles due to synchronization logic.
+ */
 
 #define HAL_TICKER_US_TO_TICKS(x) \
 	( \
@@ -38,3 +42,7 @@
  */
 #define HAL_TICKER_REMAINDER_RANGE \
 	HAL_TICKER_TICKS_TO_US(1000000)
+
+/* Macro defining the margin for positioning re-scheduled nodes */
+#define HAL_TICKER_RESCHEDULE_MARGIN \
+	HAL_TICKER_US_TO_TICKS(150)

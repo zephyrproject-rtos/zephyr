@@ -122,7 +122,7 @@ static int start_buzzer(struct ipso_buzzer_data *buzzer)
 	lwm2m_engine_set_bool(path, true);
 
 	float2ms(&buzzer->delay_duration, &temp);
-	k_delayed_work_submit(&buzzer->buzzer_work, temp);
+	k_delayed_work_submit(&buzzer->buzzer_work, K_MSEC(temp));
 
 	return 0;
 }

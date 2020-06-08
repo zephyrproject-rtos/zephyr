@@ -1,0 +1,61 @@
+# Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
+# Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmel SAM-family GMAC Ethernet
+
+compatible: "atmel,sam-gmac"
+
+include: ethernet.yaml
+
+properties:
+    reg:
+      required: true
+
+    num-queues:
+      type: int
+      required: true
+      description: Number of hardware TX and RX queues
+
+    max-frame-size:
+        type: int
+        description:
+          Maximum transfer unit (IEEE defined MTU), rather than the
+          maximum frame size (there\'s contradiction in the Devicetree
+          Specification). The current supported values are 1518, 1536
+          and 10240 (jumbo frames).
+        default: 1518
+
+    max-speed:
+        type: int
+        description:
+          Specifies maximum speed in Mbit/s supported by the device.
+        default: 100
+
+    phy-connection-type:
+        type: string
+        description:
+          Operation mode of the PHY interface
+        enum:
+          - "rmii"
+          - "mii"
+        default: "rmii"
+
+    pinctrl-0:
+      type: phandles
+      required: false
+      description: |
+        PIO pin configuration for the various GMAC signals that include
+        GTXCK, GTXEN, GTX[3..0], GTXER, GRXCK, GRXDV, GRX[3..0], GRXER,
+        GCRS, GCOL, GMDC, and GMDIO.  Which signals are used vary based
+        on if the PHY connection is MII or RMII (see datasheet for more
+        details).  We expect that the phandles will reference pinctrl nodes.
+        These nodes will have a nodelabel that matches the Atmel SoC HAL
+        defines and be of the form p<port><pin><periph>_<inst>_<signal>.
+
+        For example the GMAC on SAME7x would be for RMII
+           pinctrl-0 = <&pd0a_gmac_gtxck &pd1a_gmac_gtxen
+                        &pd2a_gmac_gtx0 &pd3a_gmac_gtx1
+                        &pd4a_gmac_grxdv &pd5a_gmac_grx0
+                        &pd6a_gmac_grx1 &pd7a_gmac_grxer
+                        &pd8a_gmac_gmdc &pd9a_gmac_gmdio>;

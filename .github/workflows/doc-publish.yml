@@ -1,0 +1,112 @@
+# Copyright (c) 2020 Linaro Limited.
+# SPDX-License-Identifier: Apache-2.0
+
+name: Doc build for Release or Daily
+
+# Either a daily based on schedule/cron or only on tag push
+on:
+  schedule:
+    - cron:  '50 22 * * *'
+  push:
+    tags:
+    - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Update PATH for west
+      run: |
+        echo "::add-path::$HOME/.local/bin"
+
+    - name: Determine tag
+      id: tag
+      run: |
+        # We expect to get here either due to a schedule event in which
+        # case we are doing a daily build of the docs, or because a new
+        # tag was pushed, in which case we are building docs for a release
+        if [ ${GITHUB_EVENT_NAME} == "schedule" ]; then
+           echo ::set-output name=TYPE::daily;
+           echo ::set-output name=RELEASE::latest;
+        elif [ ${GITHUB_EVENT_NAME} == "push" ]; then
+           # If push due to a tag GITHUB_REF will look like refs/tags/TAG-FOO
+           # chop of 'refs/tags' so RELEASE=TAG-FOO
+           echo ::set-output name=TYPE::release;
+           echo ::set-output name=RELEASE::${GITHUB_REF/refs\/tags\//};
+        else
+           exit 1
+        fi
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: checkout
+      uses: actions/checkout@v2
+
+    - name: install-pkgs
+      run: |
+        sudo apt-get install -y ninja-build doxygen
+
+    - name: cache-pip
+      uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-doc-pip
+
+    - name: install-pip
+      run: |
+        pip3 install setuptools
+        pip3 install 'breathe>=4.9.1,<4.15.0' 'docutils>=0.14' \
+                     'sphinx>=1.7.5,<3.0' sphinx_rtd_theme sphinx-tabs \
+                     sphinxcontrib-svg2pdfconverter 'west>=0.6.2'
+        pip3 install pyelftools
+
+    - name: west setup
+      run: |
+        west init -l . || true
+
+    - name: build-docs
+      env:
+        DOC_TAG: ${{ steps.tag.outputs.TYPE }}
+      run: |
+        source zephyr-env.sh
+        make DOC_TAG=${DOC_TAG} htmldocs
+
+    - name: check-warns
+      run: |
+        if [ -s doc/_build/doc.warnings ]; then
+           docwarn=$(cat doc/_build/doc.warnings)
+           docwarn="${docwarn//'%'/'%25'}"
+           docwarn="${docwarn//$'\n'/'%0A'}"
+           docwarn="${docwarn//$'\r'/'%0D'}"
+           # We treat doc warnings as errors
+           echo "::error file=doc.warnings::$docwarn"
+           exit 1
+        fi
+
+    - name: Upload to AWS S3
+      env:
+        RELEASE: ${{ steps.tag.outputs.RELEASE }}
+      run: |
+        echo "DOC_RELEASE=[$RELEASE]"
+        if [ "$RELEASE" == "latest" ]; then
+           export
+           echo "publish latest docs"
+           aws s3 sync  --quiet doc/_build/html s3://docs.zephyrproject.org/latest --delete
+           echo "success sync of latest docs"
+        else
+           DOC_RELEASE=${RELEASE}.0
+           echo "publish release docs: ${DOC_RELEASE}"
+           aws s3 sync  --quiet doc/_build/html s3://docs.zephyrproject.org/${DOC_RELEASE}
+           echo "success sync of rel docs"
+        fi
+        if [ -d doc/_build/doxygen/html ]; then
+           echo "publish doxygen"
+           aws s3 sync  --quiet doc/_build/doxygen/html s3://docs.zephyrproject.org/apidoc/${RELEASE} --delete
+           echo "success publish of doxygen"
+        fi

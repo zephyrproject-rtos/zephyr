@@ -15,19 +15,19 @@
 #include <sys/util.h>
 #include <sys/printk.h>
 
-#define LOG_LEVEL_NONE 0
-#define LOG_LEVEL_ERR  1
-#define LOG_LEVEL_WRN  2
-#define LOG_LEVEL_INF  3
-#define LOG_LEVEL_DBG  4
+#define LOG_LEVEL_NONE 0U
+#define LOG_LEVEL_ERR  1U
+#define LOG_LEVEL_WRN  2U
+#define LOG_LEVEL_INF  3U
+#define LOG_LEVEL_DBG  4U
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #ifndef CONFIG_LOG
-#define CONFIG_LOG_DEFAULT_LEVEL 0
-#define CONFIG_LOG_MAX_LEVEL 0
+#define CONFIG_LOG_DEFAULT_LEVEL 0U
+#define CONFIG_LOG_MAX_LEVEL 0U
 #endif
 
 #if !defined(CONFIG_LOG) || defined(CONFIG_LOG_MINIMAL)
@@ -53,11 +53,16 @@ extern "C" {
 #define Z_LOG_RESOLVED_LEVEL1(_level, _default) \
 	__COND_CODE(_LOG_XXXX##_level, (_level), (_default))
 
-#define _LOG_XXXX0 _LOG_YYYY,
-#define _LOG_XXXX1 _LOG_YYYY,
-#define _LOG_XXXX2 _LOG_YYYY,
-#define _LOG_XXXX3 _LOG_YYYY,
-#define _LOG_XXXX4 _LOG_YYYY,
+#define _LOG_XXXX0  _LOG_YYYY,
+#define _LOG_XXXX0U _LOG_YYYY,
+#define _LOG_XXXX1  _LOG_YYYY,
+#define _LOG_XXXX1U _LOG_YYYY,
+#define _LOG_XXXX2  _LOG_YYYY,
+#define _LOG_XXXX2U _LOG_YYYY,
+#define _LOG_XXXX3  _LOG_YYYY,
+#define _LOG_XXXX3U _LOG_YYYY,
+#define _LOG_XXXX4  _LOG_YYYY,
+#define _LOG_XXXX4U _LOG_YYYY,
 
 /**
  * @brief Macro for conditional code generation if provided log level allows.
@@ -79,10 +84,14 @@ extern "C" {
 #define Z_LOG_EVAL1(_eval_level, _iftrue, _iffalse) \
 	__COND_CODE(_LOG_ZZZZ##_eval_level, _iftrue, _iffalse)
 
-#define _LOG_ZZZZ1 _LOG_YYYY,
-#define _LOG_ZZZZ2 _LOG_YYYY,
-#define _LOG_ZZZZ3 _LOG_YYYY,
-#define _LOG_ZZZZ4 _LOG_YYYY,
+#define _LOG_ZZZZ1  _LOG_YYYY,
+#define _LOG_ZZZZ1U _LOG_YYYY,
+#define _LOG_ZZZZ2  _LOG_YYYY,
+#define _LOG_ZZZZ2U _LOG_YYYY,
+#define _LOG_ZZZZ3  _LOG_YYYY,
+#define _LOG_ZZZZ3U _LOG_YYYY,
+#define _LOG_ZZZZ4  _LOG_YYYY,
+#define _LOG_ZZZZ4U _LOG_YYYY,
 
 /** @brief Macro for getting log level for given module.
  *
@@ -199,7 +208,7 @@ extern "C" {
 
 #define __LOG_ARG_CAST(_x) (log_arg_t)(_x),
 
-#define __LOG_ARGUMENTS(...) MACRO_MAP(__LOG_ARG_CAST, __VA_ARGS__)
+#define __LOG_ARGUMENTS(...) FOR_EACH(__LOG_ARG_CAST, __VA_ARGS__)
 
 #define _LOG_INTERNAL_LONG(_src_level, _str, ...)		  \
 	do {							  \
@@ -223,7 +232,7 @@ extern "C" {
 /******************************************************************************/
 /****************** Defiinitions used by minimal logging **********************/
 /******************************************************************************/
-void log_minimal_hexdump_print(int level, const char *data, size_t size);
+void log_minimal_hexdump_print(int level, const void *data, size_t size);
 
 #define Z_LOG_TO_PRINTK(_level, fmt, ...) do {				     \
 		printk("%c: " fmt "\n", z_log_minimal_level_to_char(_level), \
@@ -308,24 +317,28 @@ static inline char z_log_minimal_level_to_char(int level)
 		if (Z_LOG_CONST_LEVEL_CHECK(_level)) {			       \
 			if (IS_ENABLED(CONFIG_LOG_MINIMAL)) {		       \
 				Z_LOG_TO_PRINTK(_level, "%s", _str);	       \
-				log_minimal_hexdump_print(_level, _data,       \
+				log_minimal_hexdump_print(_level,	       \
+							  (const char *)_data, \
 							  _length);	       \
 			} else if (is_user_context ||			       \
 				   (_level <= LOG_RUNTIME_FILTER(_filter))) {  \
 				struct log_msg_ids src_level = {	       \
 					.level = _level,		       \
+					.domain_id = CONFIG_LOG_DOMAIN_ID,     \
 					.source_id = _id,		       \
-					.domain_id = CONFIG_LOG_DOMAIN_ID      \
 				};					       \
 									       \
 				if (is_user_context) {			       \
 					log_hexdump_from_user(src_level, _str, \
-							      _data, _length); \
+							      (const char *)_data, \
+							      _length);	       \
 				} else if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) { \
 					log_hexdump_sync(src_level, _str,      \
-							 _data, _length);      \
+							 (const char *)_data,  \
+							  _length);	       \
 				} else {				       \
-					log_hexdump(_str, _data, _length,      \
+					log_hexdump(_str, (const char *)_data, \
+						    _length,		       \
 						    src_level);		       \
 				}					       \
 			}						       \
@@ -334,7 +347,7 @@ static inline char z_log_minimal_level_to_char(int level)
 
 #define Z_LOG_HEXDUMP(_level, _data, _length, _str)	       \
 	__LOG_HEXDUMP(_level,				       \
-		      LOG_CURRENT_MODULE_ID(),		       \
+		      (u16_t)LOG_CURRENT_MODULE_ID(),	       \
 		      LOG_CURRENT_DYNAMIC_DATA_ADDR(),	       \
 		      _data, _length, _str)
 
@@ -353,7 +366,7 @@ static inline char z_log_minimal_level_to_char(int level)
 /******************************************************************************/
 
 /** @brief Number of bits used to encode log level. */
-#define LOG_LEVEL_BITS 3
+#define LOG_LEVEL_BITS 3U
 
 /** @brief Filter slot size. */
 #define LOG_FILTER_SLOT_SIZE LOG_LEVEL_BITS
@@ -362,7 +375,7 @@ static inline char z_log_minimal_level_to_char(int level)
 #define LOG_FILTERS_NUM_OF_SLOTS (32 / LOG_FILTER_SLOT_SIZE)
 
 /** @brief Slot mask. */
-#define LOG_FILTER_SLOT_MASK (BIT(LOG_FILTER_SLOT_SIZE) - 1)
+#define LOG_FILTER_SLOT_MASK (BIT(LOG_FILTER_SLOT_SIZE) - 1U)
 
 /** @brief Bit offset of a slot.
  *
@@ -548,9 +561,7 @@ void log_n(const char *str,
  * @param length	Data length.
  * @param src_level	Log identification.
  */
-void log_hexdump(const char *str,
-		 const u8_t *data,
-		 u32_t length,
+void log_hexdump(const char *str, const void *data, u32_t length,
 		 struct log_msg_ids src_level);
 
 /** @brief Process log message synchronously.
@@ -569,7 +580,7 @@ void log_string_sync(struct log_msg_ids src_level, const char *fmt, ...);
  * @param len		Data length.
  */
 void log_hexdump_sync(struct log_msg_ids src_level, const char *metadata,
-		      const u8_t *data, u32_t len);
+		      const void *data, u32_t len);
 
 /**
  * @brief Writes a generic log message to the log.
@@ -632,6 +643,18 @@ void log_dropped(void);
 void __printf_like(2, 3) log_from_user(struct log_msg_ids src_level,
 				       const char *fmt, ...);
 
+/**
+ * @brief Create mask with occurences of a string format specifiers (%s).
+ *
+ * Result is stored as the mask (argument n is n'th bit). Bit is set if string
+ * format specifier was found.
+ *
+ * @param str String.
+ * @param nargs Number of arguments in the string.
+ *
+ * @return Mask with %s format specifiers found.
+ */
+u32_t z_log_get_s_mask(const char *str, u32_t nargs);
 
 /* Internal function used by log_from_user(). */
 __syscall void z_log_string_from_user(u32_t src_level_val, const char *str);
@@ -647,7 +670,7 @@ __syscall void z_log_string_from_user(u32_t src_level_val, const char *str);
  * @param len		Data length.
  */
 void log_hexdump_from_user(struct log_msg_ids src_level, const char *metadata,
-			   const u8_t *data, u32_t len);
+			   const void *data, u32_t len);
 
 /* Internal function used by log_hexdump_from_user(). */
 __syscall void z_log_hexdump_from_user(u32_t src_level_val,

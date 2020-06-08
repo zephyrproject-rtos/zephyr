@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_kinetis_ftm_pwm
+
 #include <drivers/clock_control.h>
 #include <errno.h>
 #include <drivers/pwm.h>
@@ -30,15 +32,16 @@ struct mcux_ftm_config {
 struct mcux_ftm_data {
 	u32_t clock_freq;
 	u32_t period_cycles;
-	ftm_chnl_pwm_signal_param_t channel[MAX_CHANNELS];
+	ftm_chnl_pwm_config_param_t channel[MAX_CHANNELS];
 };
 
 static int mcux_ftm_pin_set(struct device *dev, u32_t pwm,
-			    u32_t period_cycles, u32_t pulse_cycles)
+			    u32_t period_cycles, u32_t pulse_cycles,
+			    pwm_flags_t flags)
 {
-	const struct mcux_ftm_config *config = dev->config->config_info;
+	const struct mcux_ftm_config *config = dev->config_info;
 	struct mcux_ftm_data *data = dev->driver_data;
-	u8_t duty_cycle;
+	status_t status;
 
 	if ((period_cycles == 0U) || (pulse_cycles > period_cycles)) {
 		LOG_ERR("Invalid combination: period_cycles=%d, "
@@ -51,52 +54,43 @@ static int mcux_ftm_pin_set(struct device *dev, u32_t pwm,
 		return -ENOTSUP;
 	}
 
-	duty_cycle = pulse_cycles * 100U / period_cycles;
-	data->channel[pwm].dutyCyclePercent = duty_cycle;
+	data->channel[pwm].dutyValue = pulse_cycles;
 
-	LOG_DBG("pulse_cycles=%d, period_cycles=%d, duty_cycle=%d",
-		    pulse_cycles, period_cycles, duty_cycle);
+	if ((flags & PWM_POLARITY_INVERTED) == 0) {
+		data->channel[pwm].level = kFTM_HighTrue;
+	} else {
+		data->channel[pwm].level = kFTM_LowTrue;
+	}
+
+	LOG_DBG("pulse_cycles=%d, period_cycles=%d, flags=%d",
+		pulse_cycles, period_cycles, flags);
 
 	if (period_cycles != data->period_cycles) {
-		u32_t pwm_freq;
-		status_t status;
-
-		LOG_WRN("Changing period cycles from %d to %d"
-			    " affects all %d channels in %s",
-			    data->period_cycles, period_cycles,
-			    config->channel_count, dev->config->name);
+		if (data->period_cycles != 0) {
+			/* Only warn when not changing from zero */
+			LOG_WRN("Changing period cycles from %d to %d"
+				" affects all %d channels in %s",
+				data->period_cycles, period_cycles,
+				config->channel_count, dev->name);
+		}
 
 		data->period_cycles = period_cycles;
 
-		pwm_freq = (data->clock_freq >> config->prescale) /
-			   period_cycles;
-
-		LOG_DBG("pwm_freq=%d, clock_freq=%d", pwm_freq,
-			data->clock_freq);
-
-		if (pwm_freq == 0U) {
-			LOG_ERR("Could not set up pwm_freq=%d", pwm_freq);
-			return -EINVAL;
-		}
-
 		FTM_StopTimer(config->base);
+		FTM_SetTimerPeriod(config->base, period_cycles);
 
-		status = FTM_SetupPwm(config->base, data->channel,
-				      config->channel_count, config->mode,
-				      pwm_freq, data->clock_freq);
-
-		if (status != kStatus_Success) {
-			LOG_ERR("Could not set up pwm");
-			return -ENOTSUP;
-		}
 		FTM_SetSoftwareTrigger(config->base, true);
 		FTM_StartTimer(config->base, config->ftm_clock_source);
 
-	} else {
-		FTM_UpdatePwmDutycycle(config->base, pwm, config->mode,
-				       duty_cycle);
-		FTM_SetSoftwareTrigger(config->base, true);
 	}
+
+	status = FTM_SetupPwmMode(config->base, data->channel,
+				  config->channel_count, config->mode);
+	if (status != kStatus_Success) {
+		LOG_ERR("Could not set up pwm");
+		return -ENOTSUP;
+	}
+	FTM_SetSoftwareTrigger(config->base, true);
 
 	return 0;
 }
@@ -104,7 +98,7 @@ static int mcux_ftm_pin_set(struct device *dev, u32_t pwm,
 static int mcux_ftm_get_cycles_per_sec(struct device *dev, u32_t pwm,
 				       u64_t *cycles)
 {
-	const struct mcux_ftm_config *config = dev->config->config_info;
+	const struct mcux_ftm_config *config = dev->config_info;
 	struct mcux_ftm_data *data = dev->driver_data;
 
 	*cycles = data->clock_freq >> config->prescale;
@@ -114,9 +108,9 @@ static int mcux_ftm_get_cycles_per_sec(struct device *dev, u32_t pwm,
 
 static int mcux_ftm_init(struct device *dev)
 {
-	const struct mcux_ftm_config *config = dev->config->config_info;
+	const struct mcux_ftm_config *config = dev->config_info;
 	struct mcux_ftm_data *data = dev->driver_data;
-	ftm_chnl_pwm_signal_param_t *channel = data->channel;
+	ftm_chnl_pwm_config_param_t *channel = data->channel;
 	struct device *clock_dev;
 	ftm_config_t ftm_config;
 	int i;
@@ -140,9 +134,9 @@ static int mcux_ftm_init(struct device *dev)
 
 	for (i = 0; i < config->channel_count; i++) {
 		channel->chnlNumber = i;
-		channel->level = kFTM_LowTrue;
-		channel->dutyCyclePercent = 0;
-		channel->firstEdgeDelayPercent = 0;
+		channel->level = kFTM_NoPwmSignal;
+		channel->dutyValue = 0;
+		channel->firstEdgeValue = 0;
 		channel++;
 	}
 
@@ -159,82 +153,25 @@ static const struct pwm_driver_api mcux_ftm_driver_api = {
 	.get_cycles_per_sec = mcux_ftm_get_cycles_per_sec,
 };
 
-#ifdef CONFIG_PWM_0
-static const struct mcux_ftm_config mcux_ftm_config_0 = {
-	.base = (FTM_Type *)DT_FTM_0_BASE_ADDRESS,
-	.clock_name = DT_FTM_0_CLOCK_NAME,
-	.clock_subsys =
-		(clock_control_subsys_t) DT_FTM_0_CLOCK_SUBSYS,
-	.ftm_clock_source = kFTM_FixedClock,
-	.prescale = kFTM_Prescale_Divide_16,
-	.channel_count = FSL_FEATURE_FTM_CHANNEL_COUNTn(FTM0),
-	.mode = kFTM_EdgeAlignedPwm,
-};
+#define TO_FTM_PRESCALE_DIVIDE(val) _DO_CONCAT(kFTM_Prescale_Divide_, val)
 
-static struct mcux_ftm_data mcux_ftm_data_0;
+#define FTM_DEVICE(n) \
+	static const struct mcux_ftm_config mcux_ftm_config_##n = { \
+		.base = (FTM_Type *)DT_INST_REG_ADDR(n),\
+		.clock_name = DT_INST_CLOCKS_LABEL(n), \
+		.clock_subsys = (clock_control_subsys_t) \
+			DT_INST_CLOCKS_CELL(n, name), \
+		.ftm_clock_source = kFTM_FixedClock, \
+		.prescale = TO_FTM_PRESCALE_DIVIDE(DT_INST_PROP(n, prescaler)),\
+		.channel_count = FSL_FEATURE_FTM_CHANNEL_COUNTn((FTM_Type *) \
+			DT_INST_REG_ADDR(n)), \
+		.mode = kFTM_EdgeAlignedPwm, \
+	}; \
+	static struct mcux_ftm_data mcux_ftm_data_##n; \
+	DEVICE_AND_API_INIT(mcux_ftm_##n, DT_INST_LABEL(n), \
+			    &mcux_ftm_init, &mcux_ftm_data_##n, \
+			    &mcux_ftm_config_##n, \
+			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+			    &mcux_ftm_driver_api);
 
-DEVICE_AND_API_INIT(mcux_ftm_0, DT_FTM_0_NAME, &mcux_ftm_init,
-		    &mcux_ftm_data_0, &mcux_ftm_config_0,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &mcux_ftm_driver_api);
-#endif /* CONFIG_PWM_0 */
-
-#ifdef CONFIG_PWM_1
-static const struct mcux_ftm_config mcux_ftm_config_1 = {
-	.base = (FTM_Type *)DT_FTM_1_BASE_ADDRESS,
-	.clock_name = DT_FTM_1_CLOCK_NAME,
-	.clock_subsys =
-		(clock_control_subsys_t) DT_FTM_1_CLOCK_SUBSYS,
-	.ftm_clock_source = kFTM_FixedClock,
-	.prescale = kFTM_Prescale_Divide_16,
-	.channel_count = FSL_FEATURE_FTM_CHANNEL_COUNTn(FTM1),
-	.mode = kFTM_EdgeAlignedPwm,
-};
-
-static struct mcux_ftm_data mcux_ftm_data_1;
-
-DEVICE_AND_API_INIT(mcux_ftm_1, DT_FTM_1_NAME, &mcux_ftm_init,
-		    &mcux_ftm_data_1, &mcux_ftm_config_1,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &mcux_ftm_driver_api);
-#endif /* CONFIG_PWM_1 */
-
-#ifdef CONFIG_PWM_2
-static const struct mcux_ftm_config mcux_ftm_config_2 = {
-	.base = (FTM_Type *)DT_FTM_2_BASE_ADDRESS,
-	.clock_name = DT_FTM_2_CLOCK_NAME,
-	.clock_subsys =
-		(clock_control_subsys_t) DT_FTM_2_CLOCK_SUBSYS,
-	.ftm_clock_source = kFTM_FixedClock,
-	.prescale = kFTM_Prescale_Divide_16,
-	.channel_count = FSL_FEATURE_FTM_CHANNEL_COUNTn(FTM2),
-	.mode = kFTM_EdgeAlignedPwm,
-};
-
-static struct mcux_ftm_data mcux_ftm_data_2;
-
-DEVICE_AND_API_INIT(mcux_ftm_2, DT_FTM_2_NAME, &mcux_ftm_init,
-		    &mcux_ftm_data_2, &mcux_ftm_config_2,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &mcux_ftm_driver_api);
-#endif /* CONFIG_PWM_2 */
-
-#ifdef CONFIG_PWM_3
-static const struct mcux_ftm_config mcux_ftm_config_3 = {
-	.base = (FTM_Type *)DT_FTM_3_BASE_ADDRESS,
-	.clock_name = DT_FTM_3_CLOCK_NAME,
-	.clock_subsys =
-		(clock_control_subsys_t) DT_FTM_3_CLOCK_SUBSYS,
-	.ftm_clock_source = kFTM_FixedClock,
-	.prescale = kFTM_Prescale_Divide_16,
-	.channel_count = FSL_FEATURE_FTM_CHANNEL_COUNTn(FTM3),
-	.mode = kFTM_EdgeAlignedPwm,
-};
-
-static struct mcux_ftm_data mcux_ftm_data_3;
-
-DEVICE_AND_API_INIT(mcux_ftm_3, DT_FTM_3_NAME, &mcux_ftm_init,
-		    &mcux_ftm_data_3, &mcux_ftm_config_3,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &mcux_ftm_driver_api);
-#endif /* CONFIG_PWM_3 */
+DT_INST_FOREACH_STATUS_OKAY(FTM_DEVICE)

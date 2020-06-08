@@ -26,7 +26,7 @@
 	GTEXT(z_x86_prep_c)
 
 	GDATA(_idt_base_address)
-	GDATA(_interrupt_stack)
+	GDATA(z_interrupt_stacks)
 	GDATA(z_x86_idt)
 #ifndef CONFIG_GDT_DYNAMIC
 	GDATA(_gdt)
@@ -85,7 +85,7 @@ __csSet:
 #endif /* CONFIG_SET_GDT */
 
 
-#if !defined(CONFIG_FLOAT)
+#if !defined(CONFIG_FPU)
 	/*
 	 * Force an #NM exception for floating point instructions
 	 * since FP support hasn't been configured
@@ -126,7 +126,7 @@ __csSet:
 
   #endif /* CONFIG_SSE */
 
-#endif /* !CONFIG_FLOAT */
+#endif /* !CONFIG_FPU */
 
 	/*
 	 * Set the stack pointer to the area used for the interrupt stack.
@@ -135,8 +135,8 @@ __csSet:
 	 * dual-purposing of this area of memory is safe since
 	 * interrupts are disabled until the first context switch.
 	 *
-	 * kernel/init.c enforces that the _interrupt_stack pointer and
-	 * the ISR stack size are some multiple of STACK_ALIGN, which
+	 * kernel/init.c enforces that the z_interrupt_stacks pointer and
+	 * the ISR stack size are some multiple of ARCH_STACK_PTR_ALIGN, which
 	 * is at least 4.
 	 *
 	 * This is also used to call the _sys_resume_from_deep_sleep()
@@ -150,7 +150,7 @@ __csSet:
 	 */
 #ifdef CONFIG_INIT_STACKS
 	movl $0xAAAAAAAA, %eax
-	leal _interrupt_stack, %edi
+	leal z_interrupt_stacks, %edi
 #ifdef CONFIG_X86_STACK_PROTECTION
 	addl $4096, %edi
 #endif
@@ -159,7 +159,7 @@ __csSet:
 	rep  stosl
 #endif
 
-	movl	$_interrupt_stack, %esp
+	movl	$z_interrupt_stacks, %esp
 #ifdef CONFIG_X86_STACK_PROTECTION
 	/* In this configuration, all stacks, including IRQ stack, are declared
 	 * with a 4K non-present guard page preceding the stack buffer
@@ -236,11 +236,13 @@ __csSet:
 	lidt	z_x86_idt		/* load 32-bit operand size IDT */
 
 #ifdef CONFIG_LOAPIC
+	/* For BSP, cpu_number is 0 */
+	xorl	%eax, %eax
+	pushl	%eax
 	call	z_loapic_enable
 #endif
 
 	pushl	%ebx		/* pointer to multiboot info, or NULL */
-	pushl	%eax		/* junk, unused argument */
 	call	z_x86_prep_c	/* enter kernel; never returns */
 
 _x86_bss_zero:

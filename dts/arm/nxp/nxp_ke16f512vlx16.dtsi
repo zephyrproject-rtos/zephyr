@@ -6,10 +6,10 @@
 
 #include <nxp/nxp_ke1xf512vlx16.dtsi>
 
-/delete-node/ &can1;
+/delete-node/ &flexcan1;
 
 / {
 	aliases {
-		can-0 = &can0;
+		can-0 = &flexcan0;
 	};
 };

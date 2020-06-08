@@ -22,7 +22,7 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led_2: led_2 {
-			gpios = <&gpioa 5 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
 	};
@@ -31,13 +31,15 @@
 		compatible = "gpio-keys";
 		user_button: button {
 			label = "User";
-			gpios = <&gpioc 13 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
 		};
 	};
 
 	aliases {
 		led0 = &green_led_2;
 		sw0 = &user_button;
+		adc1 = &adc1;
+		dac1 = &dac1;
 	};
 };
 
@@ -64,5 +66,9 @@
 };
 
 &adc1 {
+	status = "okay";
+};
+
+&dac1 {
 	status = "okay";
 };

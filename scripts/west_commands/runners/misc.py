@@ -15,13 +15,13 @@ from runners.core import ZephyrBinaryRunner, RunnerCaps
 class MiscFlasher(ZephyrBinaryRunner):
     '''Runner for handling special purpose flashing commands.'''
 
-    def __init__(self, cfg, command, args):
+    def __init__(self, cfg, cmd, args):
         super().__init__(cfg)
-        if not command:
+        if not cmd:
             # This is a board definition error, not a user error,
             # so we can do it now and not in do_run().
             raise ValueError('no command was given')
-        self.command = command
+        self.cmd = cmd
         self.args = args
 
     @classmethod
@@ -34,7 +34,7 @@ class MiscFlasher(ZephyrBinaryRunner):
 
     @classmethod
     def do_add_parser(cls, parser):
-        parser.add_argument('command',
+        parser.add_argument('cmd',
                             help='''command to run; it will be passed the
                             build directory as its first argument''')
         parser.add_argument('args', nargs='*',
@@ -43,8 +43,8 @@ class MiscFlasher(ZephyrBinaryRunner):
 
     @classmethod
     def create(cls, cfg, args):
-        return MiscFlasher(cfg, args.command, args.args)
+        return MiscFlasher(cfg, args.cmd, args.args)
 
     def do_run(self, *args, **kwargs):
-        self.require(self.command)
-        self.check_call([self.command, self.cfg.build_dir] + self.args)
+        self.require(self.cmd)
+        self.check_call([self.cmd, self.cfg.build_dir] + self.args)

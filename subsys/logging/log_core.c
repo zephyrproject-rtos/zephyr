@@ -81,23 +81,7 @@ static u32_t dummy_timestamp(void)
 	return 0;
 }
 
-/**
- * @brief Count number of string format specifiers (%s).
- *
- * Result is stored as the mask (argument n is n'th bit). Bit is set if %s was
- * found.
- *
- * @note Algorithm does not take into account complex format specifiers as they
- *	 hardly used in log messages and including them would significantly
- *	 extended this function which is called on every log message is feature
- *	 is enabled.
- *
- * @param str String.
- * @param nargs Number of arguments in the string.
- *
- * @return Mask with %s format specifiers found.
- */
-static u32_t count_s(const char *str, u32_t nargs)
+u32_t z_log_get_s_mask(const char *str, u32_t nargs)
 {
 	char curr;
 	bool arm = false;
@@ -109,7 +93,7 @@ static u32_t count_s(const char *str, u32_t nargs)
 	while ((curr = *str++) && arg < nargs) {
 		if (curr == '%') {
 			arm = !arm;
-		} else if (arm && isalpha(curr)) {
+		} else if (arm && isalpha((int)curr)) {
 			if (curr == 's') {
 				mask |= BIT(arg);
 			}
@@ -162,7 +146,8 @@ static bool is_rodata(const void *addr)
  */
 static void detect_missed_strdup(struct log_msg *msg)
 {
-#define ERR_MSG	"argument %d in log message \"%s\" missing log_strdup()."
+#define ERR_MSG	"argument %d in source %s log message \"%s\" missing" \
+		"log_strdup()."
 	u32_t idx;
 	const char *str;
 	const char *msg_str;
@@ -173,17 +158,21 @@ static void detect_missed_strdup(struct log_msg *msg)
 	}
 
 	msg_str = log_msg_str_get(msg);
-	mask = count_s(msg_str, log_msg_nargs_get(msg));
+	mask = z_log_get_s_mask(msg_str, log_msg_nargs_get(msg));
 
 	while (mask) {
 		idx = 31 - __builtin_clz(mask);
 		str = (const char *)log_msg_arg_get(msg, idx);
 		if (!is_rodata(str) && !log_is_strdup(str) &&
 			(str != log_strdup_fail_msg)) {
+			const char *src_name =
+				log_source_name_get(CONFIG_LOG_DOMAIN_ID,
+						    log_msg_source_id_get(msg));
+
 			if (IS_ENABLED(CONFIG_ASSERT)) {
-				__ASSERT(0, ERR_MSG, idx, msg_str);
+				__ASSERT(0, ERR_MSG, idx, src_name, msg_str);
 			} else {
-				LOG_ERR(ERR_MSG, idx, msg_str);
+				LOG_ERR(ERR_MSG, idx, src_name, msg_str);
 			}
 		}
 
@@ -214,7 +203,7 @@ static inline void msg_finalize(struct log_msg *msg,
 		irq_unlock(key);
 	} else if (proc_tid != NULL && buffered_cnt == 1) {
 		k_timer_start(&log_process_thread_timer,
-			CONFIG_LOG_PROCESS_THREAD_SLEEP_MS, K_NO_WAIT);
+			K_MSEC(CONFIG_LOG_PROCESS_THREAD_SLEEP_MS), K_NO_WAIT);
 	} else if (CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) {
 		if ((buffered_cnt == CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) &&
 		    (proc_tid != NULL)) {
@@ -309,15 +298,15 @@ void log_n(const char *str,
 	}
 }
 
-void log_hexdump(const char *str,
-		 const u8_t *data,
-		 u32_t length,
+void log_hexdump(const char *str, const void *data, u32_t length,
 		 struct log_msg_ids src_level)
 {
 	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
-		log_frontend_hexdump(str, data, length, src_level);
+		log_frontend_hexdump(str, (const u8_t *)data, length,
+				     src_level);
 	} else {
-		struct log_msg *msg = log_msg_hexdump_create(str, data, length);
+		struct log_msg *msg =
+			log_msg_hexdump_create(str, (const u8_t *)data, length);
 
 		if (msg == NULL) {
 			return;
@@ -429,10 +418,11 @@ void log_string_sync(struct log_msg_ids src_level, const char *fmt, ...)
 }
 
 void log_hexdump_sync(struct log_msg_ids src_level, const char *metadata,
-		      const u8_t *data, u32_t len)
+		      const void *data, u32_t len)
 {
 	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
-		log_frontend_hexdump(metadata, data, len, src_level);
+		log_frontend_hexdump(metadata, (const u8_t *)data, len,
+				     src_level);
 	} else {
 		struct log_backend const *backend;
 		u32_t timestamp = timestamp_func();
@@ -441,9 +431,9 @@ void log_hexdump_sync(struct log_msg_ids src_level, const char *metadata,
 			backend = log_backend_get(i);
 
 			if (log_backend_is_active(backend)) {
-				log_backend_put_sync_hexdump(backend, src_level,
-							timestamp, metadata,
-							data, len);
+				log_backend_put_sync_hexdump(
+					backend, src_level, timestamp, metadata,
+					(const u8_t *)data, len);
 			}
 		}
 	}
@@ -1089,7 +1079,7 @@ void z_vrfy_z_log_hexdump_from_user(u32_t src_level_val, const char *metadata,
 #include <syscalls/z_log_hexdump_from_user_mrsh.c>
 
 void log_hexdump_from_user(struct log_msg_ids src_level, const char *metadata,
-			   const u8_t *data, u32_t len)
+			   const void *data, u32_t len)
 {
 	union {
 		struct log_msg_ids structure;
@@ -1098,7 +1088,8 @@ void log_hexdump_from_user(struct log_msg_ids src_level, const char *metadata,
 
 	__ASSERT_NO_MSG(sizeof(src_level) <= sizeof(u32_t));
 	src_level_union.structure = src_level;
-	z_log_hexdump_from_user(src_level_union.value, metadata, data, len);
+	z_log_hexdump_from_user(src_level_union.value, metadata,
+				(const u8_t *)data, len);
 }
 #else
 void z_impl_z_log_string_from_user(u32_t src_level_val, const char *str)
@@ -1139,7 +1130,7 @@ void log_generic_from_user(struct log_msg_ids src_level,
 }
 
 void log_hexdump_from_user(struct log_msg_ids src_level, const char *metadata,
-			   const u8_t *data, u32_t len)
+			   const void *data, u32_t len)
 {
 	ARG_UNUSED(src_level);
 	ARG_UNUSED(metadata);

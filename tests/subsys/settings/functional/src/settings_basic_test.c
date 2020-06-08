@@ -20,9 +20,8 @@ LOG_MODULE_REGISTER(settings_basic_test);
 #include <storage/flash_map.h>
 #endif
 #if IS_ENABLED(CONFIG_SETTINGS_FS)
-#include <device.h>
 #include <fs/fs.h>
-#include <nffs/nffs.h>
+#include <fs/littlefs.h>
 #endif
 
 /* The standard test expects a cleared flash area.  Make sure it has
@@ -32,7 +31,7 @@ static void test_clear_settings(void)
 {
 #if IS_ENABLED(CONFIG_SETTINGS_FCB) || IS_ENABLED(CONFIG_SETTINGS_NVS)
 	const struct flash_area *fap;
-	int rc = flash_area_open(DT_FLASH_AREA_STORAGE_ID, &fap);
+	int rc = flash_area_open(FLASH_AREA_ID(storage), &fap);
 
 	if (rc == 0) {
 		rc = flash_area_erase(fap, 0, fap->fa_size);
@@ -41,26 +40,20 @@ static void test_clear_settings(void)
 	zassert_true(rc == 0, "clear settings failed");
 #endif
 #if IS_ENABLED(CONFIG_SETTINGS_FS)
-	/* NFFS work area strcut */
-	static struct nffs_flash_desc flash_desc;
+	FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(cstorage);
 
 	/* mounting info */
-	static struct fs_mount_t nffs_mnt = {
-		.type = FS_NFFS,
-		.mnt_point = "/ff",
-		.fs_data = &flash_desc,
-	};
-	struct device *flash_dev;
+	static struct fs_mount_t littlefs_mnt = {
+	.type = FS_LITTLEFS,
+	.fs_data = &cstorage,
+	.storage_dev = (void *)FLASH_AREA_ID(storage),
+	.mnt_point = "/ff"
+};
+
 	int rc;
 
-	flash_dev = device_get_binding(CONFIG_FS_NFFS_FLASH_DEV_NAME);
-	zassert_not_null(flash_dev, "Can't bind to the flash device");
-
-	/* set backend storage dev */
-	nffs_mnt.storage_dev = flash_dev;
-
-	rc = fs_mount(&nffs_mnt);
-	zassert_true(rc == 0, "mounting nffs [%d]\n", rc);
+	rc = fs_mount(&littlefs_mnt);
+	zassert_true(rc == 0, "mounting littlefs [%d]\n", rc);
 
 	rc = fs_unlink(CONFIG_SETTINGS_FS_FILE);
 	zassert_true(rc == 0 || rc == -ENOENT,

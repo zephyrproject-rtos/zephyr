@@ -59,7 +59,7 @@ static int sample_driver_foo_state_set(struct device *dev, bool active)
 
 	data->timer.user_data = dev;
 	if (active) {
-		k_timer_start(&data->timer, K_MSEC(1000), K_MSEC(1000));
+		k_timer_start(&data->timer, K_MSEC(100), K_MSEC(100));
 	} else {
 		k_timer_stop(&data->timer);
 	}
@@ -114,4 +114,3 @@ DEVICE_AND_API_INIT(sample_driver_foo_0, SAMPLE_DRIVER_NAME_0,
 		    &sample_driver_foo_dev_data_0, NULL,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &sample_driver_foo_api);
-

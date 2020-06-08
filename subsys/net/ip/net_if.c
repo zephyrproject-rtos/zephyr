@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 
 #include "net_stats.h"
 
-#define REACHABLE_TIME K_SECONDS(30) /* in ms */
+#define REACHABLE_TIME (MSEC_PER_SEC * 30) /* in ms */
 /*
  * split the min/max random reachable factors into numerator/denominator
  * so that integer-based math works better
@@ -100,9 +100,7 @@ static sys_slist_t mcast_monitor_callbacks;
 #define CONFIG_NET_PKT_TIMESTAMP_STACK_SIZE 1024
 #endif
 
-NET_STACK_DEFINE(TIMESTAMP, tx_ts_stack,
-		 CONFIG_NET_PKT_TIMESTAMP_STACK_SIZE,
-		 CONFIG_NET_PKT_TIMESTAMP_STACK_SIZE);
+K_THREAD_STACK_DEFINE(tx_ts_stack, CONFIG_NET_PKT_TIMESTAMP_STACK_SIZE);
 K_FIFO_DEFINE(tx_ts_queue);
 
 static struct k_thread tx_thread_ts;
@@ -115,8 +113,11 @@ static sys_slist_t timestamp_callbacks;
 #if CONFIG_NET_IF_LOG_LEVEL >= LOG_LEVEL_DBG
 #define debug_check_packet(pkt)						\
 	do {								\
-		NET_DBG("Processing (pkt %p, prio %d) network packet",	\
-			pkt, net_pkt_priority(pkt));			\
+		NET_DBG("Processing (pkt %p, prio %d) network packet "	\
+			"iface %p/%d",					\
+			pkt, net_pkt_priority(pkt),			\
+			net_pkt_iface(pkt),				\
+			net_if_get_by_iface(net_pkt_iface(pkt)));	\
 									\
 		NET_ASSERT(pkt->frags);					\
 	} while (0)
@@ -146,7 +147,10 @@ static inline void net_context_send_cb(struct net_context *context,
 
 static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 {
-	struct net_linkaddr *dst;
+	struct net_linkaddr ll_dst = {
+		.addr = NULL
+	};
+	struct net_linkaddr_storage ll_dst_storage;
 	struct net_context *context;
 	int status;
 
@@ -163,13 +167,25 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 
 	debug_check_packet(pkt);
 
-	dst = net_pkt_lladdr_dst(pkt);
+	/* If there're any link callbacks, with such a callback receiving
+	 * a destination address, copy that address out of packet, just in
+	 * case packet is freed before callback is called.
+	 */
+	if (!sys_slist_is_empty(&link_callbacks)) {
+		if (net_linkaddr_set(&ll_dst_storage,
+				     net_pkt_lladdr_dst(pkt)->addr,
+				     net_pkt_lladdr_dst(pkt)->len) == 0) {
+			ll_dst.addr = ll_dst_storage.addr;
+			ll_dst.len = ll_dst_storage.len;
+			ll_dst.type = net_pkt_lladdr_dst(pkt)->type;
+		}
+	}
+
 	context = net_pkt_context(pkt);
 
 	if (net_if_flag_is_set(iface, NET_IF_UP)) {
 		if (IS_ENABLED(CONFIG_NET_TCP) &&
 		    net_pkt_family(pkt) != AF_UNSPEC) {
-			net_pkt_set_sent(pkt, true);
 			net_pkt_set_queued(pkt, false);
 		}
 
@@ -235,8 +251,8 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 		}
 	}
 
-	if (dst->addr) {
-		net_if_call_link_cb(iface, dst, status);
+	if (ll_dst.addr) {
+		net_if_call_link_cb(iface, &ll_dst, status);
 	}
 
 	return true;
@@ -244,11 +260,18 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 
 static void process_tx_packet(struct k_work *work)
 {
+	struct net_if *iface;
 	struct net_pkt *pkt;
 
 	pkt = CONTAINER_OF(work, struct net_pkt, work);
 
-	net_if_tx(net_pkt_iface(pkt), pkt);
+	iface = net_pkt_iface(pkt);
+
+	net_if_tx(iface, pkt);
+
+#if defined(CONFIG_NET_POWER_MANAGEMENT)
+	iface->tx_pending--;
+#endif
 }
 
 void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
@@ -266,7 +289,16 @@ void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
 	NET_DBG("TC %d with prio %d pkt %p", tc, prio, pkt);
 #endif
 
-	net_tc_submit_to_tx_queue(tc, pkt);
+#if defined(CONFIG_NET_POWER_MANAGEMENT)
+	iface->tx_pending++;
+#endif
+
+	if (!net_tc_submit_to_tx_queue(tc, pkt)) {
+#if defined(CONFIG_NET_POWER_MANAGEMENT)
+		iface->tx_pending--
+#endif
+			;
+	}
 }
 
 void net_if_stats_reset(struct net_if *iface)
@@ -315,11 +347,18 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 	enum net_verdict verdict = NET_OK;
 	int status = -EIO;
 
-	if (!net_if_flag_is_set(iface, NET_IF_UP)) {
+	if (!net_if_flag_is_set(iface, NET_IF_UP) ||
+	    net_if_flag_is_set(iface, NET_IF_SUSPENDED)) {
 		/* Drop packet if interface is not up */
 		NET_WARN("iface %p is down", iface);
 		verdict = NET_DROP;
 		status = -ENETDOWN;
+		goto done;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_OFFLOAD) && !net_if_l2(iface)) {
+		NET_WARN("no l2 for iface %p, discard pkt", iface);
+		verdict = NET_DROP;
 		goto done;
 	}
 
@@ -435,6 +474,9 @@ struct net_if *net_if_get_default(void)
 #endif
 #if defined(CONFIG_NET_DEFAULT_IF_CANBUS)
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(CANBUS));
+#endif
+#if defined(CONFIG_NET_DEFAULT_IF_PPP)
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(PPP));
 #endif
 
 	return iface ? iface : __net_if_start;
@@ -562,13 +604,13 @@ static void iface_router_run_timer(u32_t current_time)
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&active_router_timers,
 					 router, next, node) {
 		u32_t current_timer = router->life_start +
-			K_SECONDS(router->lifetime) - current_time;
+			(MSEC_PER_SEC * router->lifetime) - current_time;
 
 		new_timer = MIN(current_timer, new_timer);
 	}
 
 	if (new_timer != UINT_MAX) {
-		k_delayed_work_submit(&router_timer, new_timer);
+		k_delayed_work_submit(&router_timer, K_MSEC(new_timer));
 	}
 }
 
@@ -576,6 +618,7 @@ static void iface_router_expired(struct k_work *work)
 {
 	u32_t current_time = k_uptime_get_32();
 	struct net_if_router *router, *next;
+	sys_snode_t *prev_node = NULL;
 
 	ARG_UNUSED(work);
 
@@ -583,15 +626,18 @@ static void iface_router_expired(struct k_work *work)
 					  router, next, node) {
 
 		if ((s32_t)(router->life_start +
-			    K_SECONDS(router->lifetime) - current_time) > 0) {
+			    (MSEC_PER_SEC * router->lifetime) -
+			    current_time) > 0) {
 			/* We have to loop on all active routers as their
 			 * lifetime differ from each other.
 			 */
+			prev_node = &router->node;
 			continue;
 		}
 
 		iface_router_notify_deletion(router, "has expired");
-
+		sys_slist_remove(&active_router_timers,
+				 prev_node, &router->node);
 		router->is_used = false;
 	}
 
@@ -842,7 +888,7 @@ static void join_mcast_nodes(struct net_if *iface, struct in6_addr *addr)
 #endif /* CONFIG_NET_IPV6_MLD */
 
 #if defined(CONFIG_NET_IPV6_DAD)
-#define DAD_TIMEOUT K_MSEC(100)
+#define DAD_TIMEOUT 100 /* ms */
 
 static void dad_timeout(struct k_work *work)
 {
@@ -893,8 +939,8 @@ static void dad_timeout(struct k_work *work)
 
 	if (ifaddr) {
 		k_delayed_work_submit(&dad_timer,
-				      ifaddr->dad_start +
-				      DAD_TIMEOUT - current_time);
+				      K_MSEC(ifaddr->dad_start +
+					     DAD_TIMEOUT - current_time));
 	}
 }
 
@@ -919,7 +965,8 @@ static void net_if_ipv6_start_dad(struct net_if *iface,
 			sys_slist_append(&active_dad_timers, &ifaddr->dad_node);
 
 			if (!k_delayed_work_remaining_get(&dad_timer)) {
-				k_delayed_work_submit(&dad_timer, DAD_TIMEOUT);
+				k_delayed_work_submit(&dad_timer,
+						      K_MSEC(DAD_TIMEOUT));
 			}
 		}
 	} else {
@@ -1007,7 +1054,7 @@ static inline void net_if_ipv6_start_dad(struct net_if *iface,
 #endif /* CONFIG_NET_IPV6_DAD */
 
 #if defined(CONFIG_NET_IPV6_ND)
-#define RS_TIMEOUT K_SECONDS(1)
+#define RS_TIMEOUT (1 * MSEC_PER_SEC)
 #define RS_COUNT 3
 
 static void rs_timeout(struct k_work *work)
@@ -1052,8 +1099,8 @@ static void rs_timeout(struct k_work *work)
 
 	if (ipv6) {
 		k_delayed_work_submit(&rs_timer,
-				      ipv6->rs_start +
-				      RS_TIMEOUT - current_time);
+				      K_MSEC(ipv6->rs_start +
+					     RS_TIMEOUT - current_time));
 	}
 }
 
@@ -1072,7 +1119,7 @@ void net_if_start_rs(struct net_if *iface)
 		sys_slist_append(&active_rs_timers, &ipv6->rs_node);
 
 		if (!k_delayed_work_remaining_get(&rs_timer)) {
-			k_delayed_work_submit(&rs_timer, RS_TIMEOUT);
+			k_delayed_work_submit(&rs_timer, K_MSEC(RS_TIMEOUT));
 		}
 	}
 }
@@ -1281,7 +1328,8 @@ static void address_lifetime_timeout(struct k_work *work)
 
 		NET_DBG("Waiting for %d ms", (s32_t)timeout_update);
 
-		k_delayed_work_submit(&address_lifetime_timer, timeout_update);
+		k_delayed_work_submit(&address_lifetime_timer,
+				      K_MSEC(timeout_update));
 	}
 }
 
@@ -1303,10 +1351,10 @@ static void address_submit_work(struct net_if_addr *ifaddr)
 
 		if (ifaddr->lifetime.wrap_counter > 0 && remaining == 0) {
 			k_delayed_work_submit(&address_lifetime_timer,
-					      NET_TIMEOUT_MAX_VALUE);
+					      K_MSEC(NET_TIMEOUT_MAX_VALUE));
 		} else {
 			k_delayed_work_submit(&address_lifetime_timer,
-					      ifaddr->lifetime.timer_timeout);
+				       K_MSEC(ifaddr->lifetime.timer_timeout));
 		}
 
 		NET_DBG("Next wakeup in %d ms",
@@ -1316,7 +1364,7 @@ static void address_submit_work(struct net_if_addr *ifaddr)
 
 static void address_start_timer(struct net_if_addr *ifaddr, u32_t vlifetime)
 {
-	u64_t expire_timeout = K_SECONDS((u64_t)vlifetime);
+	u64_t expire_timeout = (u64_t)MSEC_PER_SEC * (u64_t)vlifetime;
 
 	sys_slist_append(&active_address_lifetime_timers,
 			 &ifaddr->lifetime.node);
@@ -1841,7 +1889,8 @@ static void prefix_lifetime_timeout(struct k_work *work)
 
 		NET_DBG("Waiting for %d ms", (u32_t)timeout_update);
 
-		k_delayed_work_submit(&prefix_lifetime_timer, timeout_update);
+		k_delayed_work_submit(&prefix_lifetime_timer,
+				      K_MSEC(timeout_update));
 	}
 }
 
@@ -1856,10 +1905,10 @@ static void prefix_submit_work(struct net_if_ipv6_prefix *ifprefix)
 
 		if (ifprefix->lifetime.wrap_counter > 0 && remaining == 0) {
 			k_delayed_work_submit(&prefix_lifetime_timer,
-					      NET_TIMEOUT_MAX_VALUE);
+					      K_MSEC(NET_TIMEOUT_MAX_VALUE));
 		} else {
 			k_delayed_work_submit(&prefix_lifetime_timer,
-					      ifprefix->lifetime.timer_timeout);
+				     K_MSEC(ifprefix->lifetime.timer_timeout));
 		}
 
 		NET_DBG("Next wakeup in %d ms",
@@ -1870,8 +1919,10 @@ static void prefix_submit_work(struct net_if_ipv6_prefix *ifprefix)
 static void prefix_start_timer(struct net_if_ipv6_prefix *ifprefix,
 			       u32_t lifetime)
 {
-	u64_t expire_timeout = K_SECONDS((u64_t)lifetime);
+	u64_t expire_timeout = (u64_t)MSEC_PER_SEC * (u64_t)lifetime;
 
+	(void)sys_slist_find_and_remove(&active_prefix_lifetime_timers,
+					&ifprefix->lifetime.node);
 	sys_slist_append(&active_prefix_lifetime_timers,
 			 &ifprefix->lifetime.node);
 
@@ -3584,6 +3635,43 @@ bool net_if_is_promisc(struct net_if *iface)
 
 	return net_if_flag_is_set(iface, NET_IF_PROMISC);
 }
+
+#ifdef CONFIG_NET_POWER_MANAGEMENT
+
+int net_if_suspend(struct net_if *iface)
+{
+	if (net_if_are_pending_tx_packets(iface)) {
+		return -EBUSY;
+	}
+
+	if (net_if_flag_test_and_set(iface, NET_IF_SUSPENDED)) {
+		return -EALREADY;
+	}
+
+	net_stats_add_suspend_start_time(iface, k_cycle_get_32());
+
+	return 0;
+}
+
+int net_if_resume(struct net_if *iface)
+{
+	if (!net_if_flag_is_set(iface, NET_IF_SUSPENDED)) {
+		return -EALREADY;
+	}
+
+	net_if_flag_clear(iface, NET_IF_SUSPENDED);
+
+	net_stats_add_suspend_end_time(iface, k_cycle_get_32());
+
+	return 0;
+}
+
+bool net_if_is_suspended(struct net_if *iface)
+{
+	return net_if_flag_is_set(iface, NET_IF_SUSPENDED);
+}
+
+#endif /* CONFIG_NET_POWER_MANAGEMENT */
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP_THREAD)
 static void net_tx_ts_thread(void)

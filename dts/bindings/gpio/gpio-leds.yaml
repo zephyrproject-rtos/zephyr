@@ -1,14 +1,11 @@
 # Copyright (c) 2018, Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-title: GPIO LEDs
-
 description: GPIO LEDs parent node
 
 compatible: "gpio-leds"
 
 child-binding:
-    title: GPIO LED node
     description: GPIO LED child node
     properties:
        gpios:

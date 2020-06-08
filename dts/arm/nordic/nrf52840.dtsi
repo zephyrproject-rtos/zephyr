@@ -6,6 +6,11 @@
 #include "nrf5_common.dtsi"
 
 / {
+	chosen {
+		zephyr,entropy = &rng;
+		zephyr,flash-controller = &flash_controller;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -24,6 +29,7 @@
 		spi-1 = &spi1;
 		spi-2 = &spi2;
 		spi-3 = &spi3;
+		qspi-0 = &qspi;
 		uart-0 = &uart0;
 		uart-1 = &uart1;
 		adc-0 = &adc;
@@ -51,7 +57,7 @@
 
 	soc {
 
-		flash-controller@4001e000 {
+		flash_controller: flash-controller@4001e000 {
 			compatible = "nordic,nrf52-flash-controller";
 			reg = <0x4001e000 0x1000>;
 
@@ -130,6 +136,7 @@
 			reg = <0x50000300 0x200
 			       0x50000800 0x300>;
 			#gpio-cells = <2>;
+			ngpios = <16>;
 			label = "GPIO_1";
 			status = "disabled";
 		};
@@ -212,6 +219,14 @@
 			label = "QDEC";
 		};
 
+		rng: random@4000d000 {
+			compatible = "nordic,nrf-rng";
+			reg = <0x4000d000 0x1000>;
+			interrupts = <13 1>;
+			status = "okay";
+			label = "RNG";
+		};
+
 		spi0: spi@40003000 {
 			/*
 			 * This spi node can be SPI, SPIM, or SPIS,
@@ -268,6 +283,16 @@
 			interrupts = <47 1>;
 			status = "disabled";
 			label = "SPI_3";
+		};
+
+		qspi: qspi@40029000 {
+			compatible = "nordic,nrf-qspi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40029000 0x1000>;
+			interrupts = <41 1>;
+			status = "disabled";
+			label = "QSPI";
 		};
 
 		rtc0: rtc@4000b000 {
@@ -366,7 +391,7 @@
 			label = "USBD";
 		};
 
-		wdt: watchdog@40010000 {
+		wdt: wdt0: watchdog@40010000 {
 			compatible = "nordic,nrf-watchdog";
 			reg = <0x40010000 0x1000>;
 			interrupts = <16 1>;

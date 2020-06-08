@@ -24,17 +24,10 @@ config MCG_VDIV0
 config MCG_FCRDIV
 	default 2
 
-if UART_MCUX
-
-config UART_MCUX_0
-	default y
-
-endif # UART_MCUX
-
 if PINMUX_MCUX
 
 config PINMUX_MCUX_PORTA
-	default y if UART_MCUX_0
+	default y if "$(dt_nodelabel_enabled,uart0)" && SERIAL
 
 config PINMUX_MCUX_PORTB
 	default y if SPI_1
@@ -47,62 +40,12 @@ config PINMUX_MCUX_PORTD
 
 endif # PINMUX_MCUX
 
-if GPIO_MCUX
-
-config GPIO_MCUX_PORTA
-	default y
-
-config GPIO_MCUX_PORTB
-	default y
-
-config GPIO_MCUX_PORTC
-	default y
-
-config GPIO_MCUX_PORTD
-	default y
-
-config GPIO_MCUX_PORTE
-	default y
-
-endif # GPIO_MCUX
-
-if I2C
-
-config I2C_0
-	default y
-
-config I2C_1
-	default n
-
-endif # I2C
-
-if ADC
-
-config ADC_0
-	default y
-
-endif # ADC
-
-if PWM_MCUX_FTM
-
-config PWM_1
-	default y
-
-endif # PWM_MCUX_FTM
-
-if SPI
-
 config SPI_1
 	default y
-
-endif # SPI
-
-if IEEE802154_MCR20A
+	depends on SPI
 
 config MCR20A_IS_PART_OF_KW2XD_SIP
 	default y
-
-endif # IEEE802154_MCR20A
-
+	depends on IEEE802154_MCR20A
 
 endif # BOARD_USB_KW24D512

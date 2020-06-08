@@ -3,18 +3,23 @@
 # SPDX-License-Identifier: Apache-2.0
 
 set(EMU_PLATFORM qemu)
-set(QEMU_ARCH aarch64)
+set(QEMU_ARCH xilinx-aarch64)
 
 set(QEMU_CPU_TYPE_${ARCH} cortex-r5)
 set(QEMU_FLAGS_${ARCH}
   -nographic
-  -machine xlnx-zcu102
-  -global xlnx,zynqmp.boot-cpu="rpu-cpu[0]"
-  -smp 6
+  -machine arm-generic-fdt
+  -dtb ${ZEPHYR_BASE}/boards/${ARCH}/${BOARD}/fdt-single_arch-zcu102-arm.dtb
   )
 
+if(CONFIG_QEMU_ICOUNT)
+  list(APPEND QEMU_EXTRA_FLAGS -icount shift=3,align=off,sleep=off -rtc clock=vm)
+endif()
+
 set(QEMU_KERNEL_OPTION
-  "-device;loader,file=$<TARGET_FILE:zephyr_final>,cpu-num=4"
+  "-device;loader,file=\$<TARGET_FILE:\${logical_target_for_zephyr_elf}>,cpu-num=4"
+  "-device;loader,addr=0xff5e023c,data=0x80008fde,data-len=4"
+  "-device;loader,addr=0xff9a0000,data=0x80000218,data-len=4"
   )
 
 board_set_debugger_ifnset(qemu)

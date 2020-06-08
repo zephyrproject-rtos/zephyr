@@ -1,7 +1,4 @@
-title: OpenISA GPIO
-
-description: |
-    This is a representation of the OpenISA GPIO nodes
+description: OpenISA GPIO node
 
 compatible: "openisa,rv32m1-gpio"
 
@@ -19,6 +16,13 @@ properties:
 
     "#gpio-cells":
       const: 2
+
+    openisa,rv32m1-port:
+      required: true
+      type: phandle
+      description: |
+        A phandle reference to the device tree node that contains the pinmux
+        port associated with this GPIO controller.
 
 gpio-cells:
   - pin

@@ -124,7 +124,8 @@ struct mb_display *mb_display_get(void);
  *
  * @param disp      Display object.
  * @param mode      One of the MB_DISPLAY_MODE_* options.
- * @param duration  Duration how long to show each image (in milliseconds).
+ * @param duration  Duration how long to show each image (in milliseconds), or
+ *                  @ref SYS_FOREVER_MS.
  * @param img       Array of image bitmaps (struct mb_image objects).
  * @param img_count Number of images in 'img' array.
  */
@@ -143,7 +144,8 @@ void mb_display_image(struct mb_display *disp, u32_t mode, s32_t duration,
  *
  * @param disp     Display object.
  * @param mode     One of the MB_DISPLAY_MODE_* options.
- * @param duration Duration how long to show each character (in milliseconds).
+ * @param duration Duration how long to show each character (in milliseconds),
+ *                 or @ref SYS_FOREVER_MS.
  * @param fmt      printf-style format string
  * @param ...      Optional list of format arguments.
  */

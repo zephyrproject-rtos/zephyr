@@ -15,7 +15,7 @@
 #include <drivers/i2c.h>
 #include <drivers/spi.h>
 #include <drivers/gpio.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <zephyr/types.h>
 #include <sys/util.h>
 #include "lps22hh_reg.h"
@@ -36,12 +36,13 @@ struct lps22hh_config {
 #ifdef CONFIG_LPS22HH_TRIGGER
 	const char *drdy_port;
 	u8_t drdy_pin;
+	u8_t drdy_flags;
 #endif
-#ifdef DT_ST_LPS22HH_BUS_I2C
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	u16_t i2c_slv_addr;
-#elif DT_ST_LPS22HH_BUS_SPI
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	struct spi_config spi_conf;
-#if defined(DT_INST_0_ST_LPS22HH_CS_GPIO_CONTROLLER)
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	const char *gpio_cs_port;
 	u8_t cs_gpio;
 #endif
@@ -55,9 +56,9 @@ struct lps22hh_data {
 
 	stmdev_ctx_t *ctx;
 
-#ifdef DT_ST_LPS22HH_BUS_I2C
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	stmdev_ctx_t ctx_i2c;
-#elif DT_ST_LPS22HH_BUS_SPI
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	stmdev_ctx_t ctx_spi;
 #endif
 
@@ -79,7 +80,7 @@ struct lps22hh_data {
 #endif
 
 #endif /* CONFIG_LPS22HH_TRIGGER */
-#if defined(DT_INST_0_ST_LPS22HH_CS_GPIO_CONTROLLER)
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	struct spi_cs_control cs_ctrl;
 #endif
 };

@@ -2,4 +2,4 @@ tests:
   kernel.scheduler.preempt:
     tags: kernel
     filter: not CONFIG_SMP
-    platform_exclude: nrf52810_pca10040
+    platform_exclude: nrf52dk_nrf52810

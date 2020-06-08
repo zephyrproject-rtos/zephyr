@@ -18,6 +18,7 @@
 #define ER32KSEL_LPO1KHZ	(3)
 
 #define LPUART0SRC_OSCERCLK	(1)
+#define TPMSRC_MCGPLLCLK	(1)
 
 #define CLKDIV1_DIVBY2		(1)
 
@@ -66,8 +67,15 @@ static ALWAYS_INLINE void clock_init(void)
 
 	CLOCK_SetSimConfig(&simConfig);
 
-#if CONFIG_UART_MCUX_LPUART_0
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart0), okay)
 	CLOCK_SetLpuartClock(LPUART0SRC_OSCERCLK);
+#endif
+
+#if defined(CONFIG_PWM) && \
+	(DT_NODE_HAS_STATUS(DT_NODELABEL(pwm0), okay) || \
+	 DT_NODE_HAS_STATUS(DT_NODELABEL(pwm1), okay) || \
+	 DT_NODE_HAS_STATUS(DT_NODELABEL(pwm2), okay))
+	CLOCK_SetTpmClock(TPMSRC_MCGPLLCLK);
 #endif
 }
 
@@ -79,9 +87,6 @@ static int kwx_init(struct device *arg)
 
 	/* disable interrupts */
 	oldLevel = irq_lock();
-
-	/* Disable the watchdog */
-	SIM->COPC = 0;
 
 	/* Initialize system clock to 40 MHz */
 	clock_init();
@@ -95,6 +100,12 @@ static int kwx_init(struct device *arg)
 	/* restore interrupt state */
 	irq_unlock(oldLevel);
 	return 0;
+}
+
+void z_arm_watchdog_init(void)
+{
+	/* Disable the watchdog */
+	SIM->COPC = 0;
 }
 
 SYS_INIT(kwx_init, PRE_KERNEL_1, 0);

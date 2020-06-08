@@ -269,4 +269,3 @@ static int native_posix_console_init(struct device *arg)
 
 SYS_INIT(native_posix_console_init, PRE_KERNEL_1,
 	CONFIG_NATIVE_POSIX_CONSOLE_INIT_PRIORITY);
-

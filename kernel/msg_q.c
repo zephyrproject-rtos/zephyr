@@ -23,6 +23,7 @@
 #include <init.h>
 #include <syscall_handler.h>
 #include <kernel_internal.h>
+#include <sys/check.h>
 
 #ifdef CONFIG_OBJECT_TRACING
 
@@ -98,20 +99,23 @@ int z_vrfy_k_msgq_alloc_init(struct k_msgq *q, size_t msg_size,
 #include <syscalls/k_msgq_alloc_init_mrsh.c>
 #endif
 
-void k_msgq_cleanup(struct k_msgq *msgq)
+int k_msgq_cleanup(struct k_msgq *msgq)
 {
-	__ASSERT_NO_MSG(z_waitq_head(&msgq->wait_q) == NULL);
+	CHECKIF(z_waitq_head(&msgq->wait_q) != NULL) {
+		return -EBUSY;
+	}
 
 	if ((msgq->flags & K_MSGQ_FLAG_ALLOC) != 0) {
 		k_free(msgq->buffer_start);
 		msgq->flags &= ~K_MSGQ_FLAG_ALLOC;
 	}
+	return 0;
 }
 
 
-int z_impl_k_msgq_put(struct k_msgq *msgq, void *data, s32_t timeout)
+int z_impl_k_msgq_put(struct k_msgq *msgq, void *data, k_timeout_t timeout)
 {
-	__ASSERT(!arch_is_in_isr() || timeout == K_NO_WAIT, "");
+	__ASSERT(!arch_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT), "");
 
 	struct k_thread *pending_thread;
 	k_spinlock_key_t key;
@@ -141,7 +145,7 @@ int z_impl_k_msgq_put(struct k_msgq *msgq, void *data, s32_t timeout)
 			msgq->used_msgs++;
 		}
 		result = 0;
-	} else if (timeout == K_NO_WAIT) {
+	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		/* don't wait for message space to become available */
 		result = -ENOMSG;
 	} else {
@@ -156,7 +160,8 @@ int z_impl_k_msgq_put(struct k_msgq *msgq, void *data, s32_t timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_k_msgq_put(struct k_msgq *q, void *data, s32_t timeout)
+static inline int z_vrfy_k_msgq_put(struct k_msgq *q, void *data,
+				    k_timeout_t timeout)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(q, K_OBJ_MSGQ));
 	Z_OOPS(Z_SYSCALL_MEMORY_READ(data, q->msg_size));
@@ -184,9 +189,9 @@ static inline void z_vrfy_k_msgq_get_attrs(struct k_msgq *q,
 #include <syscalls/k_msgq_get_attrs_mrsh.c>
 #endif
 
-int z_impl_k_msgq_get(struct k_msgq *msgq, void *data, s32_t timeout)
+int z_impl_k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout)
 {
-	__ASSERT(!arch_is_in_isr() || timeout == K_NO_WAIT, "");
+	__ASSERT(!arch_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT), "");
 
 	k_spinlock_key_t key;
 	struct k_thread *pending_thread;
@@ -222,7 +227,7 @@ int z_impl_k_msgq_get(struct k_msgq *msgq, void *data, s32_t timeout)
 			return 0;
 		}
 		result = 0;
-	} else if (timeout == K_NO_WAIT) {
+	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		/* don't wait for a message to become available */
 		result = -ENOMSG;
 	} else {
@@ -237,7 +242,8 @@ int z_impl_k_msgq_get(struct k_msgq *msgq, void *data, s32_t timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_k_msgq_get(struct k_msgq *q, void *data, s32_t timeout)
+static inline int z_vrfy_k_msgq_get(struct k_msgq *q, void *data,
+				    k_timeout_t timeout)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(q, K_OBJ_MSGQ));
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(data, q->msg_size));

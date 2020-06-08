@@ -340,6 +340,13 @@ void lwm2m_firmware_set_update_cb(lwm2m_engine_user_cb_t cb);
  * @return A registered callback function to receive the execute event.
  */
 lwm2m_engine_user_cb_t lwm2m_firmware_get_update_cb(void);
+
+/**
+ * @brief Get the block context of the current firmware block.
+ *
+ * @param[out] ctx A buffer to store the block context.
+ */
+struct coap_block_context *lwm2m_firmware_get_block_context();
 #endif
 #endif
 
@@ -837,7 +844,8 @@ enum lwm2m_rd_client_event {
 	LWM2M_RD_CLIENT_EVENT_REG_UPDATE_FAILURE,
 	LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE,
 	LWM2M_RD_CLIENT_EVENT_DEREGISTER_FAILURE,
-	LWM2M_RD_CLIENT_EVENT_DISCONNECT
+	LWM2M_RD_CLIENT_EVENT_DISCONNECT,
+	LWM2M_RD_CLIENT_EVENT_QUEUE_MODE_RX_OFF,
 };
 
 /**

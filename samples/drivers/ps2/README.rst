@@ -6,7 +6,7 @@ PS/2 Interface
 Overview
 ********
 
-This sample demonstrates how to use the :ref:`PS/2 API <ps2>`.
+This sample demonstrates how to use the :ref:`PS/2 API <ps2_api>`.
 Callbacks are registered that will write to the console indicating PS2 events.
 These events indicate mouse configuration responses and mouse interaction.
 

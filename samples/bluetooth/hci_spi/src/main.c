@@ -30,28 +30,29 @@
 #define LOG_MODULE_NAME hci_spi
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#define HCI_CMD                 0x01
-#define HCI_ACL                 0x02
-#define HCI_SCO                 0x03
-#define HCI_EVT                 0x04
+#define HCI_CMD                0x01
+#define HCI_ACL                0x02
+#define HCI_SCO                0x03
+#define HCI_EVT                0x04
 
 /* Special Values */
-#define SPI_WRITE               0x0A
-#define SPI_READ                0x0B
-#define READY_NOW               0x02
-#define SANITY_CHECK            0x02
+#define SPI_WRITE              0x0A
+#define SPI_READ               0x0B
+#define READY_NOW              0x02
+#define SANITY_CHECK           0x02
 
 /* Offsets */
-#define STATUS_HEADER_READY     0
-#define STATUS_HEADER_TOREAD    3
+#define STATUS_HEADER_READY    0
+#define STATUS_HEADER_TOREAD   3
 
-#define PACKET_TYPE             0
-#define EVT_BLUE_INITIALIZED    0x01
+#define PACKET_TYPE            0
+#define EVT_BLUE_INITIALIZED   0x01
 
-#define GPIO_IRQ_PIN            DT_INST_0_ZEPHYR_BT_HCI_SPI_SLAVE_IRQ_GPIOS_PIN
+#define GPIO_IRQ_PIN           DT_GPIO_PIN(DT_INST(0, zephyr_bt_hci_spi_slave), irq_gpios)
+#define GPIO_IRQ_FLAGS         DT_GPIO_FLAGS(DT_INST(0, zephyr_bt_hci_spi_slave), irq_gpios)
 
 /* Needs to be aligned with the SPI master buffer size */
-#define SPI_MAX_MSG_LEN         255
+#define SPI_MAX_MSG_LEN        255
 
 static u8_t rxmsg[SPI_MAX_MSG_LEN];
 static struct spi_buf rx;
@@ -69,27 +70,6 @@ const static struct spi_buf_set tx_bufs = {
 
 /* HCI buffer pools */
 #define CMD_BUF_SIZE BT_BUF_RX_SIZE
-
-NET_BUF_POOL_FIXED_DEFINE(cmd_tx_pool, CONFIG_BT_HCI_CMD_COUNT, CMD_BUF_SIZE,
-			  NULL);
-
-#if defined(CONFIG_BT_CTLR)
-#define BT_L2CAP_MTU (CONFIG_BT_CTLR_TX_BUFFER_SIZE - \
-		      BT_L2CAP_HDR_SIZE)
-#else
-#define BT_L2CAP_MTU 65 /* 64-byte public key + opcode */
-#endif /* CONFIG_BT_CTLR */
-
-/* Data size needed for ACL buffers */
-#define BT_BUF_ACL_SIZE BT_L2CAP_BUF_SIZE(BT_L2CAP_MTU)
-
-#if defined(CONFIG_BT_CTLR_TX_BUFFERS)
-#define TX_BUF_COUNT CONFIG_BT_CTLR_TX_BUFFERS
-#else
-#define TX_BUF_COUNT 6
-#endif
-
-NET_BUF_POOL_FIXED_DEFINE(acl_tx_pool, TX_BUF_COUNT, BT_BUF_ACL_SIZE, NULL);
 
 static struct device *spi_hci_dev;
 static struct spi_config spi_cfg = {
@@ -131,7 +111,7 @@ static inline int spi_send(struct net_buf *buf)
 	}
 	header_slave[STATUS_HEADER_TOREAD] = buf->len;
 
-	gpio_pin_write(gpio_dev, GPIO_IRQ_PIN, 1);
+	gpio_pin_set(gpio_dev, GPIO_IRQ_PIN, 1);
 
 	/* Coordinate transfer lock with the spi rx thread */
 	k_sem_take(&sem_spi_tx, K_FOREVER);
@@ -156,7 +136,7 @@ static inline int spi_send(struct net_buf *buf)
 	}
 	net_buf_unref(buf);
 
-	gpio_pin_write(gpio_dev, GPIO_IRQ_PIN, 0);
+	gpio_pin_set(gpio_dev, GPIO_IRQ_PIN, 0);
 	k_sem_give(&sem_spi_rx);
 
 	return 0;
@@ -215,13 +195,9 @@ static void bt_tx_thread(void *p1, void *p2, void *p3)
 
 		switch (rxmsg[PACKET_TYPE]) {
 		case HCI_CMD:
-			memcpy(&cmd_hdr, &rxmsg[1], sizeof(cmd_hdr));
-
-			buf = net_buf_alloc(&cmd_tx_pool, K_NO_WAIT);
+			buf = bt_buf_get_tx(BT_BUF_CMD, K_NO_WAIT, &rxmsg[1],
+					    sizeof(cmd_hdr));
 			if (buf) {
-				bt_buf_set_type(buf, BT_BUF_CMD);
-				net_buf_add_mem(buf, &cmd_hdr,
-						sizeof(cmd_hdr));
 				net_buf_add_mem(buf, &rxmsg[4],
 						cmd_hdr.param_len);
 			} else {
@@ -230,13 +206,9 @@ static void bt_tx_thread(void *p1, void *p2, void *p3)
 			}
 			break;
 		case HCI_ACL:
-			memcpy(&acl_hdr, &rxmsg[1], sizeof(acl_hdr));
-
-			buf = net_buf_alloc(&acl_tx_pool, K_NO_WAIT);
+			buf = bt_buf_get_tx(BT_BUF_ACL_OUT, K_NO_WAIT,
+					    &rxmsg[1], sizeof(acl_hdr));
 			if (buf) {
-				bt_buf_set_type(buf, BT_BUF_ACL_OUT);
-				net_buf_add_mem(buf, &acl_hdr,
-						sizeof(acl_hdr));
 				net_buf_add_mem(buf, &rxmsg[5],
 						sys_le16_to_cpu(acl_hdr.len));
 			} else {
@@ -258,8 +230,6 @@ static void bt_tx_thread(void *p1, void *p2, void *p3)
 			net_buf_unref(buf);
 		}
 
-		STACK_ANALYZE("tx_stack", bt_tx_thread_stack);
-
 		/* Make sure other threads get a chance to run */
 		k_yield();
 	}
@@ -271,18 +241,18 @@ static int hci_spi_init(struct device *unused)
 
 	LOG_DBG("");
 
-	spi_hci_dev = device_get_binding(DT_INST_0_ZEPHYR_BT_HCI_SPI_SLAVE_BUS_NAME);
+	spi_hci_dev = device_get_binding(DT_BUS_LABEL(DT_INST(0, zephyr_bt_hci_spi_slave)));
 	if (!spi_hci_dev) {
 		return -EINVAL;
 	}
 
 	gpio_dev = device_get_binding(
-		DT_INST_0_ZEPHYR_BT_HCI_SPI_SLAVE_IRQ_GPIOS_CONTROLLER);
+		DT_GPIO_LABEL(DT_INST(0, zephyr_bt_hci_spi_slave), irq_gpios));
 	if (!gpio_dev) {
 		return -EINVAL;
 	}
 	gpio_pin_configure(gpio_dev, GPIO_IRQ_PIN,
-			   GPIO_DIR_OUT | GPIO_PUD_PULL_DOWN);
+			   GPIO_OUTPUT_INACTIVE | GPIO_IRQ_FLAGS);
 
 	return 0;
 }
@@ -311,10 +281,10 @@ void main(void)
 				K_THREAD_STACK_SIZEOF(bt_tx_thread_stack),
 				bt_tx_thread, NULL, NULL, NULL, K_PRIO_COOP(7),
 				0, K_NO_WAIT);
+	k_thread_name_set(&bt_tx_thread_data, "bt_tx_thread");
 
 	/* Send a vendor event to announce that the slave is initialized */
-	buf = net_buf_alloc(&cmd_tx_pool, K_FOREVER);
-	bt_buf_set_type(buf, BT_BUF_EVT);
+	buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
 	evt_hdr = net_buf_add(buf, sizeof(*evt_hdr));
 	evt_hdr->evt = BT_HCI_EVT_VENDOR;
 	evt_hdr->len = 2U;

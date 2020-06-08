@@ -11,17 +11,17 @@
 
 static struct k_mutex *get_k_mutex(struct sys_mutex *mutex)
 {
-	struct _k_object *obj;
+	struct z_object *obj;
 
 	obj = z_object_find(mutex);
 	if (obj == NULL || obj->type != K_OBJ_SYS_MUTEX) {
 		return NULL;
 	}
 
-	return (struct k_mutex *)obj->data;
+	return obj->data.mutex;
 }
 
-static bool check_sys_mutex_addr(u32_t addr)
+static bool check_sys_mutex_addr(struct sys_mutex *addr)
 {
 	/* sys_mutex memory is never touched, just used to lookup the
 	 * underlying k_mutex, but we don't want threads using mutexes
@@ -30,7 +30,7 @@ static bool check_sys_mutex_addr(u32_t addr)
 	return Z_SYSCALL_MEMORY_WRITE(addr, sizeof(struct sys_mutex));
 }
 
-int z_impl_z_sys_mutex_kernel_lock(struct sys_mutex *mutex, s32_t timeout)
+int z_impl_z_sys_mutex_kernel_lock(struct sys_mutex *mutex, k_timeout_t timeout)
 {
 	struct k_mutex *kernel_mutex = get_k_mutex(mutex);
 
@@ -42,9 +42,9 @@ int z_impl_z_sys_mutex_kernel_lock(struct sys_mutex *mutex, s32_t timeout)
 }
 
 static inline int z_vrfy_z_sys_mutex_kernel_lock(struct sys_mutex *mutex,
-						 s32_t timeout)
+						 k_timeout_t timeout)
 {
-	if (check_sys_mutex_addr((u32_t) mutex)) {
+	if (check_sys_mutex_addr(mutex)) {
 		return -EACCES;
 	}
 
@@ -70,7 +70,7 @@ int z_impl_z_sys_mutex_kernel_unlock(struct sys_mutex *mutex)
 
 static inline int z_vrfy_z_sys_mutex_kernel_unlock(struct sys_mutex *mutex)
 {
-	if (check_sys_mutex_addr((u32_t) mutex)) {
+	if (check_sys_mutex_addr(mutex)) {
 		return -EACCES;
 	}
 

@@ -1,0 +1,20 @@
+identifier: nrf52833dk_nrf52833
+name: nRF52833-DK-NRF52833
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - usb_device
+  - ble
+  - gpio
+  - ieee802154
+  - pwm
+  - watchdog
+  - counter

@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright 2020 Broadcom.
+
+config BOARD
+	default "bcm958401m2"
+	depends on BOARD_VALKYRIE_BCM958401M2

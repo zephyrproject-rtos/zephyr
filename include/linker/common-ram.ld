@@ -1,11 +1,6 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
-	SECTION_DATA_PROLOGUE(initlevel,,)
-	{
-		DEVICE_INIT_SECTIONS()
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-#if defined(CONFIG_GEN_ISR_TABLES) && defined(CONFIG_DYNAMIC_INTERRUPTS)
+#if defined(CONFIG_GEN_SW_ISR_TABLE) && defined(CONFIG_DYNAMIC_INTERRUPTS)
 	SECTION_DATA_PROLOGUE(sw_isr_table,,)
 	{
 		/*
@@ -14,16 +9,14 @@
 		 * instruction.  See include/sw_isr_table.h.
 		 */
 		. = ALIGN(CONFIG_ARCH_SW_ISR_TABLE_ALIGN);
-		*(SW_ISR_TABLE)
+		*(_SW_ISR_TABLE_SECTION_NAME)
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif
 
-	/* verify we don't have rogue .init_<something> initlevel sections */
-	SECTION_DATA_PROLOGUE(initlevel_error,,)
+	SECTION_DATA_PROLOGUE(devices,,)
 	{
-		DEVICE_INIT_UNDEFINED_SECTION()
-	}
-	ASSERT(SIZEOF(initlevel_error) == 0, "Undefined initialization levels used.")
+		DEVICE_SECTIONS()
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	SECTION_DATA_PROLOGUE(initshell,,)
 	{
@@ -74,6 +67,13 @@
 		_k_mem_pool_list_start = .;
 		KEEP(*("._k_mem_pool.static.*"))
 		_k_mem_pool_list_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+	SECTION_DATA_PROLOGUE(_k_heap_area,,SUBALIGN(4))
+	{
+		_k_heap_list_start = .;
+		KEEP(*("._k_heap.static.*"))
+		_k_heap_list_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	SECTION_DATA_PROLOGUE(_k_sem_area,,SUBALIGN(4))
@@ -150,16 +150,6 @@
 		__net_if_dev_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-#if defined(CONFIG_NET_SHELL)
-	SECTION_DATA_PROLOGUE(net_stack,,SUBALIGN(4))
-	{
-		__net_stack_start = .;
-		*(".net_stack.*")
-		KEEP(*(SORT_BY_NAME(".net_stack*")))
-		__net_stack_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-#endif /* CONFIG_NET_SHELL */
-
 	SECTION_DATA_PROLOGUE(net_l2_data,,SUBALIGN(4))
 	{
 		__net_l2_data_start = .;
@@ -167,6 +157,16 @@
 		KEEP(*(SORT_BY_NAME(".net_l2.data*")))
 		__net_l2_data_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+#if defined(CONFIG_UART_MUX)
+	SECTION_DATA_PROLOGUE(uart_mux,,SUBALIGN(4))
+	{
+		__uart_mux_start = .;
+		*(".uart_mux.*")
+		KEEP(*(SORT_BY_NAME(".uart_mux.*")))
+		__uart_mux_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#endif
 
 #if defined(CONFIG_USB_DEVICE_STACK)
 	SECTION_DATA_PROLOGUE(usb_descriptor,,SUBALIGN(1))

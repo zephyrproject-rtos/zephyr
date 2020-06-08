@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT adi_adxl372
+
 #include <kernel.h>
 #include <string.h>
 #include <drivers/sensor.h>
@@ -56,7 +58,7 @@ static int adxl372_bus_access(struct device *dev, u8_t reg,
 
 	return spi_write(adxl372_data->bus, &adxl372_data->spi_cfg, &tx);
 #elif CONFIG_ADXL372_I2C
-	const struct adxl372_dev_config *cfg = dev->config->config_info;
+	const struct adxl372_dev_config *cfg = dev->config_info;
 
 	if (reg & ADXL372_READ) {
 		return i2c_burst_read(adxl372_data->bus, cfg->i2c_addr,
@@ -635,7 +637,7 @@ static int adxl372_attr_set_thresh(struct device *dev, enum sensor_channel chan,
 			    enum sensor_attribute attr,
 			    const struct sensor_value *val)
 {
-	const struct adxl372_dev_config *cfg = dev->config->config_info;
+	const struct adxl372_dev_config *cfg = dev->config_info;
 	struct adxl372_activity_threshold threshold;
 	s32_t value;
 	s64_t micro_ms2 = val->val1 * 1000000LL + val->val2;
@@ -690,7 +692,7 @@ static int adxl372_attr_set(struct device *dev, enum sensor_channel chan,
 static int adxl372_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct adxl372_data *data = dev->driver_data;
-	const struct adxl372_dev_config *cfg = dev->config->config_info;
+	const struct adxl372_dev_config *cfg = dev->config_info;
 
 	return adxl372_get_accel_data(dev, cfg->max_peak_detect_mode,
 				      &data->sample);
@@ -748,7 +750,7 @@ static const struct sensor_driver_api adxl372_api_funcs = {
 
 static int adxl372_probe(struct device *dev)
 {
-	const struct adxl372_dev_config *cfg = dev->config->config_info;
+	const struct adxl372_dev_config *cfg = dev->config_info;
 	u8_t dev_id, part_id;
 	int ret;
 
@@ -876,7 +878,7 @@ static int adxl372_probe(struct device *dev)
 static int adxl372_init(struct device *dev)
 {
 	struct adxl372_data *data = dev->driver_data;
-	const struct adxl372_dev_config *cfg = dev->config->config_info;
+	const struct adxl372_dev_config *cfg = dev->config_info;
 
 #ifdef CONFIG_ADXL372_I2C
 	data->bus  = device_get_binding(cfg->i2c_port);
@@ -897,7 +899,7 @@ static int adxl372_init(struct device *dev)
 	data->spi_cfg.frequency = cfg->spi_max_frequency;
 	data->spi_cfg.slave = cfg->spi_slave;
 
-#if defined(DT_INST_0_ADI_ADXL372_CS_GPIOS_CONTROLLER)
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	/* handle SPI CS thru GPIO if it is the case */
 
 	data->adxl372_cs_ctrl.gpio_dev = device_get_binding(cfg->gpio_cs_port);
@@ -924,21 +926,22 @@ static struct adxl372_data adxl372_data;
 
 static const struct adxl372_dev_config adxl372_config = {
 #ifdef CONFIG_ADXL372_I2C
-	.i2c_port = DT_INST_0_ADI_ADXL372_BUS_NAME,
-	.i2c_addr = DT_INST_0_ADI_ADXL372_BASE_ADDRESS,
+	.i2c_port = DT_INST_BUS_LABEL(0),
+	.i2c_addr = DT_INST_REG_ADDR(0),
 #endif
 #ifdef CONFIG_ADXL372_SPI
-	.spi_port = DT_INST_0_ADI_ADXL372_BUS_NAME,
-	.spi_slave = DT_INST_0_ADI_ADXL372_BASE_ADDRESS,
-	.spi_max_frequency = DT_INST_0_ADI_ADXL372_SPI_MAX_FREQUENCY,
-#ifdef DT_INST_0_ADI_ADXL372_CS_GPIOS_CONTROLLER
-	.gpio_cs_port = DT_INST_0_ADI_ADXL372_CS_GPIOS_CONTROLLER,
-	.cs_gpio = DT_INST_0_ADI_ADXL372_CS_GPIOS_PIN,
+	.spi_port = DT_INST_BUS_LABEL(0),
+	.spi_slave = DT_INST_REG_ADDR(0),
+	.spi_max_frequency = DT_INST_PROP(0, spi_max_frequency),
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
+	.gpio_cs_port = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
+	.cs_gpio = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
 #endif
 #endif
 #ifdef CONFIG_ADXL372_TRIGGER
-	.gpio_port = DT_INST_0_ADI_ADXL372_INT1_GPIOS_CONTROLLER,
-	.int_gpio = DT_INST_0_ADI_ADXL372_INT1_GPIOS_PIN,
+	.gpio_port = DT_INST_GPIO_LABEL(0, int1_gpios),
+	.int_gpio = DT_INST_GPIO_PIN(0, int1_gpios),
+	.int_flags = DT_INST_GPIO_FLAGS(0, int1_gpios),
 #endif
 
 	.max_peak_detect_mode = IS_ENABLED(CONFIG_ADXL372_PEAK_DETECT_MODE),
@@ -1010,6 +1013,6 @@ static const struct adxl372_dev_config adxl372_config = {
 	.op_mode = ADXL372_FULL_BW_MEASUREMENT,
 };
 
-DEVICE_AND_API_INIT(adxl372, DT_INST_0_ADI_ADXL372_LABEL, adxl372_init,
+DEVICE_AND_API_INIT(adxl372, DT_INST_LABEL(0), adxl372_init,
 		    &adxl372_data, &adxl372_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &adxl372_api_funcs);

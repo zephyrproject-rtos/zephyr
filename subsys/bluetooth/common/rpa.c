@@ -14,19 +14,42 @@
 #include <stddef.h>
 #include <errno.h>
 #include <string.h>
-#include <sys/atomic.h>
-#include <sys/util.h>
-#include <sys/byteorder.h>
-#include <debug/stack.h>
-
-#include <tinycrypt/constants.h>
-#include <tinycrypt/aes.h>
-#include <tinycrypt/utils.h>
-#include <tinycrypt/cmac_mode.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_RPA)
 #define LOG_MODULE_NAME bt_rpa
 #include "common/log.h"
+
+#include <bluetooth/crypto.h>
+
+#if defined(CONFIG_BT_CTLR) && defined(CONFIG_BT_HOST_CRYPTO)
+#include "../controller/util/util.h"
+#include "../controller/hal/ecb.h"
+#endif /* defined(CONFIG_BT_CTLR) && defined(CONFIG_BT_HOST_CRYPTO) */
+
+#if defined(CONFIG_BT_PRIVACY) || defined(CONFIG_BT_CTLR_PRIVACY)
+static int internal_rand(void *buf, size_t len)
+{
+/* Force using controller rand function. */
+#if defined(CONFIG_BT_CTLR) && defined(CONFIG_BT_HOST_CRYPTO)
+	return util_rand(buf, len);
+#else
+	return bt_rand(buf, len);
+#endif
+}
+#endif /* defined(CONFIG_BT_PRIVACY) || defined(CONFIG_BT_CTLR_PRIVACY) */
+
+static int internal_encrypt_le(const u8_t key[16], const u8_t plaintext[16],
+			       u8_t enc_data[16])
+{
+/* Force using controller encrypt function if supported. */
+#if defined(CONFIG_BT_CTLR) && defined(CONFIG_BT_HOST_CRYPTO) && \
+    defined(CONFIG_BT_CTLR_LE_ENC)
+	ecb_encrypt(key, plaintext, enc_data, NULL);
+	return 0;
+#else
+	return bt_encrypt_le(key, plaintext, enc_data);
+#endif
+}
 
 static int ah(const u8_t irk[16], const u8_t r[3], u8_t out[3])
 {
@@ -40,7 +63,7 @@ static int ah(const u8_t irk[16], const u8_t r[3], u8_t out[3])
 	memcpy(res, r, 3);
 	(void)memset(res + 3, 0, 13);
 
-	err = bt_encrypt_le(irk, res, res);
+	err = internal_encrypt_le(irk, res, res);
 	if (err) {
 		return err;
 	}
@@ -78,7 +101,7 @@ int bt_rpa_create(const u8_t irk[16], bt_addr_t *rpa)
 {
 	int err;
 
-	err = bt_rand(rpa->val + 3, 3);
+	err = internal_rand(rpa->val + 3, 3);
 	if (err) {
 		return err;
 	}
@@ -100,4 +123,3 @@ int bt_rpa_create(const u8_t irk[16], bt_addr_t *rpa)
 	return -ENOTSUP;
 }
 #endif /* CONFIG_BT_PRIVACY */
-

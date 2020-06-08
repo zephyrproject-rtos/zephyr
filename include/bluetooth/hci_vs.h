@@ -15,6 +15,29 @@
 extern "C" {
 #endif
 
+#define BT_VS_CMD_BIT_VERSION                       0
+#define BT_VS_CMD_BIT_SUP_CMD                       1
+#define BT_VS_CMD_BIT_SUP_FEAT                      2
+#define BT_VS_CMD_BIT_SET_EVT_MASK                  3
+#define BT_VS_CMD_BIT_RESET                         4
+#define BT_VS_CMD_BIT_WRITE_BDADDR                  5
+#define BT_VS_CMD_BIT_SET_TRACE_ENABLE              6
+#define BT_VS_CMD_BIT_READ_BUILD_INFO               7
+#define BT_VS_CMD_BIT_READ_STATIC_ADDRS             8
+#define BT_VS_CMD_BIT_READ_KEY_ROOTS                9
+#define BT_VS_CMD_BIT_READ_CHIP_TEMP               10
+#define BT_VS_CMD_BIT_READ_HOST_STACK_CMD          11
+#define BT_VS_CMD_BIT_SET_SCAN_REP_ENABLE          12
+#define BT_VS_CMD_BIT_WRITE_TX_POWER               13
+#define BT_VS_CMD_BIT_READ_TX_POWER                14
+
+#define BT_VS_CMD_SUP_FEAT(cmd)                 BT_LE_FEAT_TEST(cmd, \
+						BT_VS_CMD_BIT_SUP_FEAT)
+#define BT_VS_CMD_READ_STATIC_ADDRS(cmd)        BT_LE_FEAT_TEST(cmd, \
+						BT_VS_CMD_BIT_READ_STATIC_ADDRS)
+#define BT_VS_CMD_READ_KEY_ROOTS(cmd)           BT_LE_FEAT_TEST(cmd, \
+						BT_VS_CMD_BIT_READ_KEY_ROOTS)
+
 #define BT_HCI_VS_HW_PLAT_INTEL                 0x0001
 #define BT_HCI_VS_HW_PLAT_NORDIC                0x0002
 #define BT_HCI_VS_HW_PLAT_NXP                   0x0003
@@ -128,6 +151,54 @@ struct bt_hci_rp_vs_read_host_stack_cmds {
 #define BT_HCI_OP_VS_SET_SCAN_REQ_REPORTS       BT_OP(BT_OGF_VS, 0x000d)
 struct bt_hci_cp_vs_set_scan_req_reports {
 	u8_t  enable;
+} __packed;
+
+#define BT_HCI_VS_LL_HANDLE_TYPE_ADV       0x00
+#define BT_HCI_VS_LL_HANDLE_TYPE_SCAN      0x01
+#define BT_HCI_VS_LL_HANDLE_TYPE_CONN      0x02
+#define BT_HCI_VS_LL_TX_POWER_LEVEL_NO_PREF     0x7F
+#define BT_HCI_OP_VS_WRITE_TX_POWER_LEVEL       BT_OP(BT_OGF_VS, 0x000e)
+struct bt_hci_cp_vs_write_tx_power_level {
+	u8_t  handle_type;
+	u16_t handle;
+	s8_t  tx_power_level;
+} __packed;
+
+struct bt_hci_rp_vs_write_tx_power_level {
+	u8_t  status;
+	u8_t  handle_type;
+	u16_t handle;
+	s8_t  selected_tx_power;
+} __packed;
+
+#define BT_HCI_OP_VS_READ_TX_POWER_LEVEL        BT_OP(BT_OGF_VS, 0x000f)
+struct bt_hci_cp_vs_read_tx_power_level {
+	u8_t  handle_type;
+	u16_t handle;
+} __packed;
+
+struct bt_hci_rp_vs_read_tx_power_level {
+	u8_t  status;
+	u8_t  handle_type;
+	u16_t handle;
+	s8_t  tx_power_level;
+} __packed;
+
+#define BT_HCI_OP_VS_READ_USB_TRANSPORT_MODE    BT_OP(BT_OGF_VS, 0x0010)
+
+struct bt_hci_rp_vs_read_usb_transport_mode {
+	u8_t  status;
+	u8_t  num_supported_modes;
+	u8_t  supported_mode[0];
+} __packed;
+
+#define BT_HCI_VS_USB_H2_MODE                  0x00
+#define BT_HCI_VS_USB_H4_MODE                  0x01
+
+#define BT_HCI_OP_VS_SET_USB_TRANSPORT_MODE    BT_OP(BT_OGF_VS, 0x0011)
+
+struct bt_hci_cp_vs_set_usb_transport_mode {
+	u8_t  mode;
 } __packed;
 
 /* Events */

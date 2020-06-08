@@ -10,7 +10,7 @@
 #include <init.h>
 #include <sys/util.h>
 #include <bluetooth/hci.h>
-#include <bluetooth/hci_driver.h>
+#include <drivers/bluetooth/hci_driver.h>
 #include "bluetooth/addr.h"
 
 #include "app_conf.h"
@@ -67,6 +67,11 @@ struct aci_set_ble_addr {
 #define HCI_CONFIG_DATA_RANDOM_ADDRESS_OFFSET	0x2E
 
 static bt_addr_t bd_addr_udn;
+
+/* Rx thread definitions */
+K_FIFO_DEFINE(ipm_rx_events_fifo);
+static K_THREAD_STACK_DEFINE(ipm_rx_stack, CONFIG_BT_STM32_IPM_RX_STACK_SIZE);
+static struct k_thread ipm_rx_thread_data;
 
 static void stm32wb_start_ble(void)
 {
@@ -139,57 +144,72 @@ static void tryfix_event(TL_Evt_t *tev)
 
 void TM_EvtReceivedCb(TL_EvtPacket_t *hcievt)
 {
-	struct net_buf *buf;
-	struct bt_hci_acl_hdr acl_hdr;
-	TL_AclDataSerial_t *acl;
+	k_fifo_put(&ipm_rx_events_fifo, hcievt);
+}
 
-	k_sem_take(&ipm_busy, K_NO_WAIT);
+static void bt_ipm_rx_thread(void)
+{
+	while (true) {
+		static TL_EvtPacket_t *hcievt;
+		struct net_buf *buf = NULL;
+		struct bt_hci_acl_hdr acl_hdr;
+		TL_AclDataSerial_t *acl;
 
-	switch (hcievt->evtserial.type) {
-	case HCI_EVT:
-		BT_DBG("EVT: hcievt->evtserial.evt.evtcode: 0x%02x",
-		       hcievt->evtserial.evt.evtcode);
-		switch (hcievt->evtserial.evt.evtcode) {
-		case BT_HCI_EVT_VENDOR:
-			/* Vendor events are currently unsupported */
-			BT_ERR("Unknown evtcode type 0x%02x",
+		hcievt = k_fifo_get(&ipm_rx_events_fifo, K_FOREVER);
+
+		k_sem_take(&ipm_busy, K_FOREVER);
+
+		switch (hcievt->evtserial.type) {
+		case HCI_EVT:
+			BT_DBG("EVT: hcievt->evtserial.evt.evtcode: 0x%02x",
 			       hcievt->evtserial.evt.evtcode);
-			goto out;
-		default:
-			buf = bt_buf_get_evt(hcievt->evtserial.evt.evtcode, false,
-					     K_FOREVER);
+			switch (hcievt->evtserial.evt.evtcode) {
+			case BT_HCI_EVT_VENDOR:
+				/* Vendor events are currently unsupported */
+				BT_ERR("Unknown evtcode type 0x%02x",
+				       hcievt->evtserial.evt.evtcode);
+				TL_MM_EvtDone(hcievt);
+				goto end_loop;
+			default:
+				buf = bt_buf_get_evt(
+					hcievt->evtserial.evt.evtcode,
+					false, K_FOREVER);
+			}
+			tryfix_event(&hcievt->evtserial.evt);
+			net_buf_add_mem(buf, &hcievt->evtserial.evt,
+					hcievt->evtserial.evt.plen + 2);
 			break;
+		case HCI_ACL:
+			acl = &(((TL_AclDataPacket_t *)hcievt)->AclDataSerial);
+			buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
+			acl_hdr.handle = acl->handle;
+			acl_hdr.len = acl->length;
+			BT_DBG("ACL: handle %x, len %x",
+			       acl_hdr.handle, acl_hdr.len);
+			net_buf_add_mem(buf, &acl_hdr, sizeof(acl_hdr));
+			net_buf_add_mem(buf, (u8_t *)&acl->acl_data,
+					acl_hdr.len);
+			break;
+		default:
+			BT_ERR("Unknown BT buf type %d",
+			       hcievt->evtserial.type);
+			TL_MM_EvtDone(hcievt);
+			goto end_loop;
 		}
-		tryfix_event(&hcievt->evtserial.evt);
-		net_buf_add_mem(buf, &hcievt->evtserial.evt,
-				hcievt->evtserial.evt.plen + 2);
-		break;
-	case HCI_ACL:
-		acl = &(((TL_AclDataPacket_t *)hcievt)->AclDataSerial);
-		buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
-		acl_hdr.handle = acl->handle;
-		acl_hdr.len = acl->length;
-		BT_DBG("ACL: handle %x, len %x", acl_hdr.handle, acl_hdr.len);
-		net_buf_add_mem(buf, &acl_hdr, sizeof(acl_hdr));
-		net_buf_add_mem(buf, (u8_t *)&acl->acl_data, acl_hdr.len);
-		break;
-	default:
-		BT_ERR("Unknown BT buf type %d", hcievt->evtserial.type);
+
 		TL_MM_EvtDone(hcievt);
-		goto out;
+
+		if (hcievt->evtserial.type == HCI_EVT &&
+		    bt_hci_evt_is_prio(hcievt->evtserial.evt.evtcode)) {
+			bt_recv_prio(buf);
+		} else {
+			bt_recv(buf);
+		}
+
+end_loop:
+		k_sem_give(&ipm_busy);
 	}
 
-	TL_MM_EvtDone(hcievt);
-
-	if (hcievt->evtserial.type == HCI_EVT &&
-	    bt_hci_evt_is_prio(hcievt->evtserial.evt.evtcode)) {
-		bt_recv_prio(buf);
-	} else {
-		bt_recv(buf);
-	}
-
-out:
-	k_sem_give(&ipm_busy);
 }
 
 static void TM_AclDataAck(void)
@@ -209,7 +229,7 @@ void shci_cmd_resp_release(uint32_t flag)
 
 void shci_cmd_resp_wait(uint32_t timeout)
 {
-	k_sem_take(&ble_sys_wait_cmd_rsp, timeout);
+	k_sem_take(&ble_sys_wait_cmd_rsp, K_MSEC(timeout));
 }
 
 void ipcc_reset(void)
@@ -475,6 +495,13 @@ static int bt_ipm_ble_init(void)
 static int bt_ipm_open(void)
 {
 	int err;
+
+	/* Start RX thread */
+	k_thread_create(&ipm_rx_thread_data, ipm_rx_stack,
+			K_THREAD_STACK_SIZEOF(ipm_rx_stack),
+			(k_thread_entry_t)bt_ipm_rx_thread, NULL, NULL, NULL,
+			K_PRIO_COOP(CONFIG_BT_RX_PRIO - 1),
+			0, K_NO_WAIT);
 
 	/* Take BLE out of reset */
 	ipcc_reset();

@@ -6,7 +6,7 @@
 
 #include <linker/sections.h>
 #include <toolchain.h>
-#include <soc.h>
+#include <arch/cpu.h>
 
 /* Exports */
 GTEXT(_WdogInit)
@@ -39,7 +39,7 @@ GTEXT(_WdogInit)
  */
 SECTION_FUNC(TEXT, _WdogInit)
 	/* Disable interrupts if they're on. This is timing-sensitive code. */
-	csrrc t0, mstatus, SOC_MSTATUS_IEN
+	csrrc t0, mstatus, MSTATUS_IEN
 
 	/* Get base address. */
 	li t1, WDOG_BASE

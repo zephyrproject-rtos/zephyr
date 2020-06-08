@@ -6,7 +6,7 @@ Kernel Objects
 A kernel object can be one of three classes of data:
 
 * A core kernel object, such as a semaphore, thread, pipe, etc.
-* A thread stack, which is an array of :c:type:`struct _k_thread_stack_element`
+* A thread stack, which is an array of :c:type:`struct z_thread_stack_element`
   and declared with :c:macro:`K_THREAD_STACK_DEFINE()`
 * A device driver instance (struct device) that belongs to one of a defined
   set of subsystems
@@ -51,7 +51,7 @@ call APIs, several conditions must be met on how the kernel object is declared:
 
 * The object must be declared as a top-level global at build time, such that it
   appears in the ELF symbol table. It is permitted to declare kernel objects
-  with static scope. The post-build script ``gen_kobject_list.py`` scans the
+  with static scope. The post-build script :ref:`gen_kobject_list.py` scans the
   generated ELF file to find kernel objects and places their memory addresses
   in a special table of kernel object metadata.  Kernel objects may be members
   of arrays or embedded within other data structures.
@@ -66,7 +66,7 @@ Kernel objects that are found but do not meet the above conditions will not be
 included in the generated table that is used to validate kernel object pointers
 passed in from user mode.
 
-The debug output of the ``gen_kobject_list.py`` script may be useful when
+The debug output of the :ref:`gen_kobject_list.py` script may be useful when
 debugging why some object was unexpectedly not being tracked. This
 information will be printed if the script is run with the ``--verbose`` flag,
 or if the build system is invoked with verbose output.
@@ -98,7 +98,7 @@ the access control aspects of the permission system are not enforced.
 Implementation Details
 ======================
 
-The ``gen_kobject_list.py`` script is a post-build step which finds all the
+The :ref:`gen_kobject_list.py` script is a post-build step which finds all the
 valid kernel object instances in the binary. It accomplishes this by parsing
 the DWARF debug information present in the generated ELF file for the kernel.
 
@@ -116,7 +116,7 @@ be prevented. When a device struct is found, its API pointer is examined to
 determine what subsystem the driver belongs to.
 
 The table itself maps kernel object memory addresses to instances of
-:c:type:`struct _k_object`, which has all the metadata for that object. This
+:c:type:`struct z_object`, which has all the metadata for that object. This
 includes:
 
 * A bitfield indicating permissions on that object. All threads have a
@@ -128,9 +128,8 @@ includes:
   instance of :cpp:enum:`k_objects`.
 * A set of flags for that object. This is currently used to track
   initialization state and whether an object is public or not.
-* An extra data field. This is currently used for thread stack objects
-  to denote how large the stack is, and for thread objects to indicate
-  the thread's index in kernel object permission bitfields.
+* An extra data field. The semantics of this field vary by object type, see
+  the definition of :c:type:`union z_object_data`.
 
 Dynamic objects allocated at runtime are tracked in a runtime red/black tree
 which is used in parallel to the gperf table when validating object pointers.
@@ -210,8 +209,8 @@ Some objects will be implicitly initialized at boot:
 * Device driver objects are considered initialized after their init function
   is run by the kernel early in the boot process.
 
-If a kernel object is initialized with a private static initializer, the
-object must have :c:func:`_k_object_init()` called on it at some point by a supervisor
+If a kernel object is initialized with a private static initializer, the object
+must have :c:func:`z_object_init()` called on it at some point by a supervisor
 thread, otherwise the kernel will consider the object uninitialized if accessed
 by a user thread. This is very uncommon, typically only for kernel objects that
 are embedded within some larger struct and initialized statically.
@@ -224,12 +223,12 @@ are embedded within some larger struct and initialized statically.
     };
 
     struct foo my_foo = {
-        .sem = _K_SEM_INITIALIZER(my_foo.sem, 0, 1),
+        .sem = Z_SEM_INITIALIZER(my_foo.sem, 0, 1),
         ...
     };
 
     ...
-    _k_object_init(&my_foo.sem);
+    z_object_init(&my_foo.sem);
     ...
 
 

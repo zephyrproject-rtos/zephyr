@@ -85,7 +85,7 @@ static int msg_sending;
 
 K_SEM_DEFINE(wait_data, 0, UINT_MAX);
 
-#define WAIT_TIME 250
+#define WAIT_TIME K_MSEC(250)
 
 struct net_route_test {
 	u8_t mac_addr[sizeof(struct net_eth_addr)];
@@ -217,14 +217,18 @@ static struct dummy_api net_route_if_api_peer = {
 #define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(DUMMY_L2)
 
 NET_DEVICE_INIT_INSTANCE(net_route_test, "net_route_test", host,
-		 net_route_dev_init, &net_route_data, NULL,
-		 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		 &net_route_if_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 127);
+			 net_route_dev_init, device_pm_control_nop,
+			 &net_route_data, NULL,
+			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+			 &net_route_if_api, _ETH_L2_LAYER,
+			 _ETH_L2_CTX_TYPE, 127);
 
 NET_DEVICE_INIT_INSTANCE(net_route_test_peer, "net_route_test_peer", peer,
-		 net_route_dev_init, &net_route_data_peer, NULL,
-		 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		 &net_route_if_api_peer, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 127);
+			 net_route_dev_init, device_pm_control_nop,
+			 &net_route_data_peer, NULL,
+			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+			 &net_route_if_api_peer, _ETH_L2_LAYER,
+			 _ETH_L2_CTX_TYPE, 127);
 
 static void test_init(void)
 {
@@ -280,7 +284,7 @@ static void test_init(void)
 	}
 }
 
-static void net_ctx_create(void)
+static void test_net_ctx_create(void)
 {
 	int ret;
 
@@ -324,7 +328,7 @@ static bool net_test_nbr_lookup_ok(struct net_if *iface,
 	return true;
 }
 
-static void populate_nbr_cache(void)
+static void test_populate_nbr_cache(void)
 {
 	struct net_nbr *nbr;
 
@@ -354,7 +358,7 @@ static void populate_nbr_cache(void)
 	zassert_true(net_test_nbr_lookup_ok(my_iface, &peer_addr), NULL);
 }
 
-static void route_add(void)
+static void test_route_add(void)
 {
 	entry = net_route_add(my_iface,
 			      &dest_addr, 128,
@@ -363,7 +367,7 @@ static void route_add(void)
 	zassert_not_null(entry, "Route add failed");
 }
 
-static void route_update(void)
+static void test_route_update(void)
 {
 	struct net_route_entry *update_entry;
 
@@ -374,7 +378,7 @@ static void route_update(void)
 			  "Route add again failed");
 }
 
-static void route_del(void)
+static void test_route_del(void)
 {
 	int ret;
 
@@ -384,7 +388,7 @@ static void route_del(void)
 	}
 }
 
-static void route_del_again(void)
+static void test_route_del_again(void)
 {
 	int ret;
 
@@ -394,7 +398,7 @@ static void route_del_again(void)
 	}
 }
 
-static void route_get_nexthop(void)
+static void test_route_get_nexthop(void)
 {
 	struct in6_addr *nexthop;
 
@@ -406,7 +410,7 @@ static void route_get_nexthop(void)
 		     "Route nexthop does not match");
 }
 
-static void route_lookup_ok(void)
+static void test_route_lookup_ok(void)
 {
 	struct net_route_entry *entry;
 
@@ -415,7 +419,7 @@ static void route_lookup_ok(void)
 			 "Route lookup failed");
 }
 
-static void route_lookup_fail(void)
+static void test_route_lookup_fail(void)
 {
 	struct net_route_entry *entry;
 
@@ -424,7 +428,7 @@ static void route_lookup_fail(void)
 			"Route lookup failed for peer address");
 }
 
-static void route_del_nexthop(void)
+static void test_route_del_nexthop(void)
 {
 	struct in6_addr *nexthop = &peer_addr;
 	int ret;
@@ -433,7 +437,7 @@ static void route_del_nexthop(void)
 	zassert_false((ret <= 0), "Route del nexthop failed");
 }
 
-static void route_del_nexthop_again(void)
+static void test_route_del_nexthop_again(void)
 {
 	struct in6_addr *nexthop = &peer_addr;
 	int ret;
@@ -442,7 +446,7 @@ static void route_del_nexthop_again(void)
 	zassert_false((ret >= 0), "Route del again nexthop failed");
 }
 
-static void route_add_many(void)
+static void test_route_add_many(void)
 {
 	int i;
 
@@ -456,7 +460,7 @@ static void route_add_many(void)
 		}
 }
 
-static void route_del_many(void)
+static void test_route_del_many(void)
 {
 	int i;
 
@@ -473,20 +477,20 @@ void test_main(void)
 {
 	ztest_test_suite(test_route,
 			ztest_unit_test(test_init),
-			ztest_unit_test(net_ctx_create),
-			ztest_unit_test(populate_nbr_cache),
-			ztest_unit_test(route_add),
-			ztest_unit_test(route_update),
-			ztest_unit_test(route_get_nexthop),
-			ztest_unit_test(route_lookup_ok),
-			ztest_unit_test(route_lookup_fail),
-			ztest_unit_test(route_del),
-			ztest_unit_test(route_add),
-			ztest_unit_test(route_del_nexthop),
-			ztest_unit_test(route_del_again),
-			ztest_unit_test(route_del_nexthop_again),
-			ztest_unit_test(populate_nbr_cache),
-			ztest_unit_test(route_add_many),
-			ztest_unit_test(route_del_many));
+			ztest_unit_test(test_net_ctx_create),
+			ztest_unit_test(test_populate_nbr_cache),
+			ztest_unit_test(test_route_add),
+			ztest_unit_test(test_route_update),
+			ztest_unit_test(test_route_get_nexthop),
+			ztest_unit_test(test_route_lookup_ok),
+			ztest_unit_test(test_route_lookup_fail),
+			ztest_unit_test(test_route_del),
+			ztest_unit_test(test_route_add),
+			ztest_unit_test(test_route_del_nexthop),
+			ztest_unit_test(test_route_del_again),
+			ztest_unit_test(test_route_del_nexthop_again),
+			ztest_unit_test(test_populate_nbr_cache),
+			ztest_unit_test(test_route_add_many),
+			ztest_unit_test(test_route_del_many));
 	ztest_run_test_suite(test_route);
 }

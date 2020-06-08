@@ -770,6 +770,7 @@ __comp_west()
 		debug
 		debugserver
 		attach
+		zephyr-export
 	)
 
 	local cmds=(${builtin_cmds[*]} ${zephyr_ext_cmds[*]})

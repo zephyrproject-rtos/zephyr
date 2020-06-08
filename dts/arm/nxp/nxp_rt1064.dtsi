@@ -6,7 +6,7 @@
 
 #include <nxp/nxp_rt1060.dtsi>
 
-&flexspi1 {
+&flexspi2 {
 	reg = <0x402a4000 0x4000>, <0x70000000 0x400000>;
 	/* WINBOND */
 	w25q32jvwj0: w25q32jvwj@0 {

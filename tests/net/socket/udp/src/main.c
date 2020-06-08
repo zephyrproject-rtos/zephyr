@@ -39,6 +39,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #define SERVER_PORT 4242
 #define CLIENT_PORT 9898
 
+static ZTEST_BMEM char rx_buf[400];
+
 /* Common routine to communicate packets over pair of sockets. */
 static void comm_sendto_recvfrom(int client_sock,
 				 struct sockaddr *client_addr,
@@ -53,7 +55,6 @@ static void comm_sendto_recvfrom(int client_sock,
 	socklen_t addrlen;
 	struct sockaddr addr2;
 	socklen_t addrlen2;
-	static char rx_buf[400] = {0};
 
 	zassert_not_null(client_addr, "null client addr");
 	zassert_not_null(server_addr, "null server addr");
@@ -356,7 +357,6 @@ static void comm_sendmsg_recvfrom(int client_sock,
 	ssize_t recved;
 	struct sockaddr addr;
 	socklen_t addrlen;
-	static char rx_buf[400];
 	int len, i;
 
 	zassert_not_null(client_addr, "null client addr");
@@ -455,6 +455,54 @@ void test_v4_sendmsg_recvfrom(void)
 	cmsg->cmsg_level = SOL_SOCKET;
 	cmsg->cmsg_type = 1122;
 	*(int *)CMSG_DATA(cmsg) = 42;
+
+	comm_sendmsg_recvfrom(client_sock,
+			      (struct sockaddr *)&client_addr,
+			      sizeof(client_addr),
+			      &msg,
+			      server_sock,
+			      (struct sockaddr *)&server_addr,
+			      sizeof(server_addr));
+
+	rv = close(client_sock);
+	zassert_equal(rv, 0, "close failed");
+	rv = close(server_sock);
+	zassert_equal(rv, 0, "close failed");
+}
+
+void test_v4_sendmsg_recvfrom_no_aux_data(void)
+{
+	int rv;
+	int client_sock;
+	int server_sock;
+	struct sockaddr_in client_addr;
+	struct sockaddr_in server_addr;
+	struct msghdr msg;
+	struct iovec io_vector[1];
+
+	prepare_sock_udp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
+			    &client_sock, &client_addr);
+	prepare_sock_udp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, SERVER_PORT,
+			    &server_sock, &server_addr);
+
+	rv = bind(server_sock,
+		  (struct sockaddr *)&server_addr,
+		  sizeof(server_addr));
+	zassert_equal(rv, 0, "server bind failed");
+
+	rv = bind(client_sock,
+		  (struct sockaddr *)&client_addr,
+		  sizeof(client_addr));
+	zassert_equal(rv, 0, "client bind failed");
+
+	io_vector[0].iov_base = TEST_STR_SMALL;
+	io_vector[0].iov_len = strlen(TEST_STR_SMALL);
+
+	memset(&msg, 0, sizeof(msg));
+	msg.msg_iov = io_vector;
+	msg.msg_iovlen = 1;
+	msg.msg_name = &server_addr;
+	msg.msg_namelen = sizeof(server_addr);
 
 	comm_sendmsg_recvfrom(client_sock,
 			      (struct sockaddr *)&client_addr,
@@ -738,7 +786,7 @@ struct eth_fake_context {
 };
 
 static struct eth_fake_context eth_fake_data;
-static struct sockaddr_in6 server_addr;
+static ZTEST_BMEM struct sockaddr_in6 server_addr;
 
 /* The semaphore is there to wait the data to be received. */
 static ZTEST_BMEM SYS_MUTEX_DEFINE(wait_data);
@@ -757,7 +805,7 @@ static struct net_linkaddr server_link_addr = {
 #define MY_IPV6_ADDR "2001:db8:100::1"
 #define PEER_IPV6_ADDR "2001:db8:100::2"
 #define TEST_TXTIME 0xff112233445566ff
-#define WAIT_TIME 250
+#define WAIT_TIME K_MSEC(250)
 
 static void eth_fake_iface_init(struct net_if *iface)
 {
@@ -808,11 +856,11 @@ static int eth_fake_init(struct device *dev)
 	return 0;
 }
 
-ETH_NET_DEVICE_INIT(eth_fake, "eth_fake", eth_fake_init, &eth_fake_data,
-		    NULL, CONFIG_ETH_INIT_PRIORITY, &eth_fake_api_funcs,
-		    NET_ETH_MTU);
+ETH_NET_DEVICE_INIT(eth_fake, "eth_fake", eth_fake_init, device_pm_control_nop,
+		    &eth_fake_data, NULL, CONFIG_ETH_INIT_PRIORITY,
+		    &eth_fake_api_funcs, NET_ETH_MTU);
 
-static void setup_eth(void)
+static void test_setup_eth(void)
 {
 	struct net_if_addr *ifaddr;
 	int ret;
@@ -919,10 +967,16 @@ void test_main(void)
 			 ztest_unit_test(test_so_priority),
 			 ztest_unit_test(test_so_txtime),
 			 ztest_unit_test(test_v4_sendmsg_recvfrom),
+			 ztest_user_unit_test(test_v4_sendmsg_recvfrom),
+			 ztest_unit_test(test_v4_sendmsg_recvfrom_no_aux_data),
+			 ztest_user_unit_test(test_v4_sendmsg_recvfrom_no_aux_data),
 			 ztest_unit_test(test_v6_sendmsg_recvfrom),
+			 ztest_user_unit_test(test_v6_sendmsg_recvfrom),
 			 ztest_unit_test(test_v4_sendmsg_recvfrom_connected),
+			 ztest_user_unit_test(test_v4_sendmsg_recvfrom_connected),
 			 ztest_unit_test(test_v6_sendmsg_recvfrom_connected),
-			 ztest_unit_test(setup_eth),
+			 ztest_user_unit_test(test_v6_sendmsg_recvfrom_connected),
+			 ztest_unit_test(test_setup_eth),
 			 ztest_unit_test(test_v6_sendmsg_with_txtime),
 			 ztest_user_unit_test(test_v6_sendmsg_with_txtime)
 		);

@@ -3,9 +3,10 @@
 
 source "soc/arm/nxp_lpc/*/Kconfig.defconfig.series"
 
-if SPI
+config I2C_MCUX_FLEXCOMM
+	default y if HAS_MCUX_FLEXCOMM
+	depends on I2C
 
 config SPI_MCUX_FLEXCOMM
 	default y if HAS_MCUX_FLEXCOMM
-
-endif # SPI
+	depends on SPI

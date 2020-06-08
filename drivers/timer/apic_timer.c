@@ -8,7 +8,7 @@
 #include <spinlock.h>
 #include <drivers/interrupt_controller/loapic.h>
 
-BUILD_ASSERT_MSG(!IS_ENABLED(CONFIG_SMP), "APIC timer doesn't support SMP");
+BUILD_ASSERT(!IS_ENABLED(CONFIG_SMP), "APIC timer doesn't support SMP");
 
 /*
  * Overview:
@@ -55,7 +55,7 @@ BUILD_ASSERT_MSG(!IS_ENABLED(CONFIG_SMP), "APIC timer doesn't support SMP");
 #define CYCLES_PER_TICK \
 	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
-BUILD_ASSERT_MSG(CYCLES_PER_TICK >= 2, "APIC timer: bad CYCLES_PER_TICK");
+BUILD_ASSERT(CYCLES_PER_TICK >= 2, "APIC timer: bad CYCLES_PER_TICK");
 
 /* max number of ticks we can load into the timer in one shot */
 
@@ -89,7 +89,7 @@ void z_clock_set_timeout(s32_t n, bool idle)
 
 	if (n < 1) {
 		full_ticks = 0;
-	} else if ((n == K_FOREVER) || (n > MAX_TICKS)) {
+	} else if ((n == K_TICKS_FOREVER) || (n > MAX_TICKS)) {
 		full_ticks = MAX_TICKS - 1;
 	} else {
 		full_ticks = n - 1;

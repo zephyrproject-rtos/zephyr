@@ -20,21 +20,26 @@ config TEST_EXTRA_STACKSIZE
 config SYSTEM_WORKQUEUE_STACK_SIZE
 	default 8192
 
-config OFFLOAD_WORKQUEUE_STACK_SIZE
-	default 8192
-
 config EXCEPTION_STACK_SIZE
 	int "Size of the exception stack(s)"
-	default 1024
+	default 2048
 	help
 	  The exception stack(s) (one per CPU) are used both for exception
 	  processing and early kernel/CPU initialization. They need only
 	  support limited call-tree depth and must fit into the low core,
 	  so they are typically smaller than the ISR stacks.
 
+config X86_EXCEPTION_STACK_TRACE
+	bool
+	default y
+	depends on EXCEPTION_STACK_TRACE
+	depends on NO_OPTIMIZATIONS
+	help
+	  Internal config to enable runtime stack traces on fatal exceptions.
+
 config SCHED_IPI_VECTOR
 	int "IDT vector to use for scheduler IPI"
-	default 33
+	default 34
 	range 33 255
 	depends on SMP
 
@@ -66,5 +71,14 @@ config X86_STACK_PROTECTION
 	  This option leverages the MMU to cause a system fatal error if the
 	  bounds of the current process stack are overflowed. This is done
 	  by preceding all stack areas with a 4K guard page.
+
+config X86_USERSPACE
+	bool
+	default y if USERSPACE
+	select THREAD_STACK_INFO
+	help
+	 This option enables APIs to drop a thread's privileges down to ring 3,
+	 supporting user-level threads that are protected from each other and
+	 from crashing the kernel.
 
 endif # X86_64

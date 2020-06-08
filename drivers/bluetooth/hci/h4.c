@@ -20,7 +20,7 @@
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
-#include <bluetooth/hci_driver.h>
+#include <drivers/bluetooth/hci_driver.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_driver
@@ -157,7 +157,7 @@ static void reset_rx(void)
 	rx.discardable = false;
 }
 
-static struct net_buf *get_rx(int timeout)
+static struct net_buf *get_rx(k_timeout_t timeout)
 {
 	BT_DBG("type 0x%02x, evt 0x%02x", rx.type, rx.evt.evt);
 

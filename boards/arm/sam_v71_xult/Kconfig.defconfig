@@ -1,0 +1,46 @@
+# Atmel SMART SAM V71 Xplained Board configuration
+
+# Copyright (c) 2019 Gerson Fernando Budke
+# Copyright (c) 2016 Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_SAM_V71_XULT
+
+config BOARD
+	default "sam_v71_xult"
+
+if ETH_SAM_GMAC
+
+# Read MAC address from AT24MAC402 EEPROM
+
+config ETH_SAM_GMAC_MAC_I2C_EEPROM
+	default y
+
+config ETH_SAM_GMAC_MAC_I2C_SLAVE_ADDRESS
+	default 0x5F
+
+config ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS
+	default 0x9A
+
+config ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS_SIZE
+	default 1
+
+config ETH_SAM_GMAC_MAC_I2C_DEV_NAME
+	default "I2C_0"
+
+config ETH_SAM_GMAC_MAC_I2C_EEPROM
+	select I2C
+
+endif # ETH_SAM_GMAC
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+config ETH_SAM_GMAC
+	default y if NET_L2_ETHERNET
+
+endif # NETWORKING
+
+endif # BOARD_SAM_V71_XULT

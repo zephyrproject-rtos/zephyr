@@ -7,7 +7,7 @@ Overview
 ********
 
 This sample app demonstrates use of Zephyr's :ref:`file system API
-<file_system>` over `littlefs`_, using a file system with a file that
+<file_system_api>` over `littlefs`_, using a file system with a file that
 counts the number of times the system has booted.  Other information
 about the file system is also displayed.
 
@@ -18,7 +18,7 @@ Requirements
 ************
 
 The partition labeled "storage" will be used for the file system; see
-:ref:`flash_partitions`.  If that area does not already have a
+:ref:`legacy_flash_partitions`.  If that area does not already have a
 compatible littlefs file system its contents will be replaced by an
 empty file system.  You will see diagnostics like this::
 
@@ -52,7 +52,7 @@ On this device the file system will be placed in the SOC flash.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/fs/littlefs
-   :board: nrf52840_pca10056
+   :board: nrf52840dk_nrf52840
    :goals: build
    :compact:
 

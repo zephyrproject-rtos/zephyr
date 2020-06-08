@@ -15,12 +15,9 @@ config NUM_IRQS
 config CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
 	default y
 
-if KINETIS_FLASH_CONFIG
-
 config KINETIS_FLASH_CONFIG_FOPT
 	default 0x7d
-
-endif # KINETIS_FLASH_CONFIG
+	depends on KINETIS_FLASH_CONFIG
 
 if CLOCK_CONTROL
 
@@ -35,78 +32,58 @@ config CLOCK_CONTROL_MCUX_PCC
 
 endif # CLOCK_CONTROL
 
-if WATCHDOG
-
 config WDT_MCUX_WDOG32
 	default y
-
-endif # WATCHDOG
+	depends on WATCHDOG
 
 if COUNTER
 
 config COUNTER_MCUX_RTC
 	default y
 
-endif # COUNTER
+config COUNTER_MCUX_LPTMR
+	default y
 
-if PWM
+endif # COUNTER
 
 config PWM_MCUX_FTM
 	default y
-
-endif # PWM
-
-if PINMUX
+	depends on PWM
 
 config PINMUX_MCUX
 	default y
-
-endif # PINMUX
+	depends on PINMUX
 
 config GPIO
 	default y
 
-if GPIO
-
 config GPIO_MCUX
 	default y
-
-endif # GPIO
-
-if FLASH
+	depends on GPIO
 
 config SOC_FLASH_MCUX
 	default y
-
-endif # FLASH
-
-if SERIAL
+	depends on FLASH
 
 config UART_MCUX_LPUART
 	default y
-
-endif # SERIAL
-
-if I2C
+	depends on SERIAL
 
 config I2C_MCUX_LPI2C
 	default y
-
-endif # I2C
-
-if SPI
+	depends on I2C
 
 config SPI_MCUX_LPSPI
 	default y
-
-endif # SPI
-
-if ADC
+	depends on SPI
 
 config ADC_MCUX_ADC12
 	default y
+	depends on ADC
 
-endif # ADC
+config DAC_MCUX_DAC32
+	default y
+	depends on DAC
 
 source "soc/arm/nxp_kinetis/ke1xf/Kconfig.defconfig.mke*"
 

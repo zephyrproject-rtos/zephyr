@@ -6,7 +6,7 @@
 
 #include "test_sched.h"
 #define THREADS_NUM     3
-#define DURATION	1
+#define DURATION	K_MSEC(1)
 
 BUILD_ASSERT(THREADS_NUM <= MAX_NUM_THREAD);
 
@@ -25,7 +25,7 @@ static void thread_entry(void *p1, void *p2, void *p3)
 	int sleep_ms = POINTER_TO_INT(p2);
 
 	if (sleep_ms > 0) {
-		k_sleep(sleep_ms);
+		k_msleep(sleep_ms);
 	}
 
 	int tnum = POINTER_TO_INT(p1);

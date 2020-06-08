@@ -61,6 +61,11 @@ properties:
         required: false
         description: Clock gate information
 
+    clock-names:
+        type: string-array
+        required: false
+        description: name of each clock
+
     "#address-cells":
         type: int
         required: false
@@ -70,3 +75,13 @@ properties:
         type: int
         required: false
         description: number of size cells in reg property
+
+    dmas:
+      required: false
+      type: phandle-array
+      description: DMA channels specifiers
+
+    dma-names:
+      required: false
+      type: string-array
+      description: Provided names of DMA channel specifiers

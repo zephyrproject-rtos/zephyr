@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_kinetis_i2c
+
 #include <errno.h>
 #include <drivers/i2c.h>
 #include <soc.h>
@@ -17,7 +19,7 @@ LOG_MODULE_REGISTER(i2c_mcux);
 #include "i2c-priv.h"
 
 #define DEV_CFG(dev) \
-	((const struct i2c_mcux_config * const)(dev)->config->config_info)
+	((const struct i2c_mcux_config * const)(dev)->config_info)
 #define DEV_DATA(dev) \
 	((struct i2c_mcux_data * const)(dev)->driver_data)
 #define DEV_BASE(dev) \
@@ -56,6 +58,9 @@ static int i2c_mcux_configure(struct device *dev, u32_t dev_config_raw)
 		baudrate = KHZ(100);
 		break;
 	case I2C_SPEED_FAST:
+		baudrate = KHZ(400);
+		break;
+	case I2C_SPEED_FAST_PLUS:
 		baudrate = MHZ(1);
 		break;
 	default:
@@ -202,15 +207,16 @@ static const struct i2c_driver_api i2c_mcux_driver_api = {
 	static void i2c_mcux_config_func_ ## n(struct device *dev);	\
 									\
 	static const struct i2c_mcux_config i2c_mcux_config_ ## n = {	\
-		.base = (I2C_Type *)DT_I2C_MCUX_ ## n ## _BASE_ADDRESS,	\
+		.base = (I2C_Type *)DT_INST_REG_ADDR(n),\
 		.clock_source = I2C ## n ## _CLK_SRC,			\
 		.irq_config_func = i2c_mcux_config_func_ ## n,		\
-		.bitrate = DT_I2C_MCUX_ ## n ## _BITRATE,		\
+		.bitrate = DT_INST_PROP(n, clock_frequency),		\
 	};								\
 									\
 	static struct i2c_mcux_data i2c_mcux_data_ ## n;		\
 									\
-	DEVICE_AND_API_INIT(i2c_mcux_ ## n, DT_I2C_ ## n ## _NAME,	\
+	DEVICE_AND_API_INIT(i2c_mcux_ ## n,				\
+			DT_INST_LABEL(n),				\
 			&i2c_mcux_init, &i2c_mcux_data_ ## n,		\
 			&i2c_mcux_config_ ## n, POST_KERNEL,		\
 			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
@@ -218,25 +224,12 @@ static const struct i2c_driver_api i2c_mcux_driver_api = {
 									\
 	static void i2c_mcux_config_func_ ## n(struct device *dev)	\
 	{								\
-		IRQ_CONNECT(DT_I2C_MCUX_ ## n ## _IRQ,			\
-			DT_I2C_MCUX_ ## n ## _IRQ_PRI, i2c_mcux_isr,	\
+		IRQ_CONNECT(DT_INST_IRQN(n),				\
+			DT_INST_IRQ(n, priority),			\
+			i2c_mcux_isr,					\
 			DEVICE_GET(i2c_mcux_ ## n), 0);			\
 									\
-		irq_enable(DT_I2C_MCUX_ ## n ## _IRQ);			\
+		irq_enable(DT_INST_IRQN(n));				\
 	}
 
-#ifdef CONFIG_I2C_0
-	I2C_DEVICE_INIT_MCUX(0)
-#endif
-
-#ifdef CONFIG_I2C_1
-	I2C_DEVICE_INIT_MCUX(1)
-#endif
-
-#ifdef CONFIG_I2C_2
-	I2C_DEVICE_INIT_MCUX(2)
-#endif
-
-#ifdef CONFIG_I2C_3
-	I2C_DEVICE_INIT_MCUX(3)
-#endif
+DT_INST_FOREACH_STATUS_OKAY(I2C_DEVICE_INIT_MCUX)

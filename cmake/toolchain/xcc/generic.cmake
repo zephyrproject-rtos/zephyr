@@ -23,15 +23,22 @@ set(SYSROOT_DIR    ${TOOLCHAIN_HOME}/${SYSROOT_TARGET})
 # xt-xcc does not support -Og, so make it -O0
 set(OPTIMIZE_FOR_DEBUG_FLAG "-O0")
 
-set(CC xcc)
-set(C++ xc++)
+if(EXISTS ${CROSS_COMPILE}clang)
+  set(CC clang)
+  set(C++ clang++)
+else()
+  set(CC xcc)
+  set(C++ xc++)
+
+  list(APPEND TOOLCHAIN_C_FLAGS
+    -imacros${ZEPHYR_BASE}/include/toolchain/xcc_missing_defs.h
+    )
+endif()
 
 set(NOSYSDEF_CFLAG "")
 
 list(APPEND TOOLCHAIN_C_FLAGS -fms-extensions)
 
-list(APPEND TOOLCHAIN_C_FLAGS
-  -imacros${ZEPHYR_BASE}/include/toolchain/xcc_missing_defs.h
-  )
-
 set(TOOLCHAIN_HAS_NEWLIB OFF CACHE BOOL "True if toolchain supports newlib")
+
+message(STATUS "Found toolchain: xcc (${XTENSA_TOOLCHAIN_PATH})")

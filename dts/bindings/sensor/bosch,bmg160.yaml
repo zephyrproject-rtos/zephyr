@@ -1,8 +1,6 @@
 # Copyright (c) 2019, Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-title: Bosch BMG160 gyroscope
-
 description: |
     Bosch BMG160 gyroscope.  See more info at:
     https://www.bosch-sensortec.com/bst/products/all_products/bmg160

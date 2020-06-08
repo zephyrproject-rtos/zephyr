@@ -10,7 +10,7 @@
 #include <device.h>
 #include <drivers/i2c.h>
 
-#define I2C_DEV DT_ALIAS_I2C_0_LABEL
+#define I2C_DEV DT_LABEL(DT_ALIAS(i2c_0))
 
 /**
  * @file Sample app using the Fujitsu MB85RC256V FRAM through ARC I2C.

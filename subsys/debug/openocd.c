@@ -25,6 +25,10 @@ enum {
 	OPENOCD_OFFSET_T_COOP_FLOAT,
 };
 
+#if CONFIG_MP_NUM_CPUS > 1
+#error "This code doesn't work properly with multiple CPUs enabled"
+#endif
+
 /* Forward-compatibility notes: 1) Only append items to this table; otherwise
  * OpenOCD versions that expect less items will read garbage values.
  * 2) Avoid incompatible changes that affect the interpretation of existing
@@ -36,7 +40,7 @@ __attribute__((used, section(".openocd_dbg")))
 size_t _kernel_openocd_offsets[] = {
 	/* Version 0 starts */
 	[OPENOCD_OFFSET_VERSION] = 1,
-	[OPENOCD_OFFSET_K_CURR_THREAD] = offsetof(struct z_kernel, current),
+	[OPENOCD_OFFSET_K_CURR_THREAD] = offsetof(struct _cpu, current),
 	[OPENOCD_OFFSET_K_THREADS] = offsetof(struct z_kernel, threads),
 	[OPENOCD_OFFSET_T_ENTRY] = offsetof(struct k_thread, entry),
 	[OPENOCD_OFFSET_T_NEXT_THREAD] = offsetof(struct k_thread, next_thread),
@@ -44,15 +48,23 @@ size_t _kernel_openocd_offsets[] = {
 	[OPENOCD_OFFSET_T_USER_OPTIONS] = offsetof(struct _thread_base,
 						   user_options),
 	[OPENOCD_OFFSET_T_PRIO] = offsetof(struct _thread_base, prio),
-#if defined(CONFIG_ARM)
+#if defined(CONFIG_ARM64)
+	[OPENOCD_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
+						callee_saved.sp),
+#elif defined(CONFIG_ARM)
 	[OPENOCD_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
 						callee_saved.psp),
 #elif defined(CONFIG_ARC)
 	[OPENOCD_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
 						callee_saved.sp),
 #elif defined(CONFIG_X86)
+#if defined(CONFIG_X86_64)
+	[OPENOCD_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
+						callee_saved.rsp),
+#else
 	[OPENOCD_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
 						callee_saved.esp),
+#endif
 #elif defined(CONFIG_NIOS2)
 	[OPENOCD_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
 						callee_saved.sp),
@@ -70,13 +82,17 @@ size_t _kernel_openocd_offsets[] = {
 
 	[OPENOCD_OFFSET_T_NAME] = offsetof(struct k_thread, name),
 	[OPENOCD_OFFSET_T_ARCH] = offsetof(struct k_thread, arch),
-#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING) && defined(CONFIG_ARM)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) && defined(CONFIG_ARM)
 	[OPENOCD_OFFSET_T_PREEMPT_FLOAT] = offsetof(struct _thread_arch,
 						    preempt_float),
 	[OPENOCD_OFFSET_T_COOP_FLOAT] = OPENOCD_UNIMPLEMENTED,
-#elif defined(CONFIG_FLOAT) && defined(CONFIG_X86)
+#elif defined(CONFIG_FPU) && defined(CONFIG_X86)
+#if defined(CONFIG_X86_64)
+	[OPENOCD_OFFSET_T_PREEMPT_FLOAT] = offsetof(struct _thread_arch, sse),
+#else
 	[OPENOCD_OFFSET_T_PREEMPT_FLOAT] = offsetof(struct _thread_arch,
 						    preempFloatReg),
+#endif
 	[OPENOCD_OFFSET_T_COOP_FLOAT] = OPENOCD_UNIMPLEMENTED,
 #else
 	[OPENOCD_OFFSET_T_PREEMPT_FLOAT] = OPENOCD_UNIMPLEMENTED,

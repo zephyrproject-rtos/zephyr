@@ -1,6 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
-set(CROSS_COMPILE_TARGET_arm         arm-zephyr-eabi)
+if(CONFIG_ARM64)
+  set(CROSS_COMPILE_TARGET_arm         aarch64-zephyr-elf)
+else()
+  set(CROSS_COMPILE_TARGET_arm         arm-zephyr-eabi)
+endif()
 set(CROSS_COMPILE_TARGET_nios2     nios2-zephyr-elf)
 set(CROSS_COMPILE_TARGET_riscv   riscv64-zephyr-elf)
 set(CROSS_COMPILE_TARGET_mips     mipsel-zephyr-elf)
@@ -13,13 +17,6 @@ set(SYSROOT_TARGET       ${CROSS_COMPILE_TARGET})
 
 if("${ARCH}" STREQUAL "xtensa")
   set(SYSROOT_DIR ${TOOLCHAIN_HOME}/xtensa/${SOC_NAME}/${SYSROOT_TARGET})
-  set(TOOLCHAIN_INCLUDES
-    ${SYSROOT_DIR}/include/arch/include
-    ${SYSROOT_DIR}/include
-    )
-
-  LIST(APPEND TOOLCHAIN_LIBS hal)
-  LIST(APPEND LIB_INCLUDE_DIR -L${SYSROOT_DIR}/lib)
   set(CROSS_COMPILE ${TOOLCHAIN_HOME}/xtensa/${SOC_NAME}/${CROSS_COMPILE_TARGET}/bin/${CROSS_COMPILE_TARGET}-)
 else()
   set(SYSROOT_DIR   ${TOOLCHAIN_HOME}/${SYSROOT_TARGET}/${SYSROOT_TARGET})

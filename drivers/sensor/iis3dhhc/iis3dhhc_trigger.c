@@ -8,6 +8,8 @@
  * https://www.st.com/resource/en/datasheet/iis3dhhc.pdf
  */
 
+#define DT_DRV_COMPAT st_iis3dhhc
+
 #include <kernel.h>
 #include <drivers/sensor.h>
 #include <drivers/gpio.h>
@@ -67,13 +69,14 @@ static void iis3dhhc_handle_interrupt(void *arg)
 	struct sensor_trigger drdy_trigger = {
 		.type = SENSOR_TRIG_DATA_READY,
 	};
-	const struct iis3dhhc_config *cfg = dev->config->config_info;
+	const struct iis3dhhc_config *cfg = dev->config_info;
 
 	if (iis3dhhc->handler_drdy != NULL) {
 		iis3dhhc->handler_drdy(dev, &drdy_trigger);
 	}
 
-	gpio_pin_enable_callback(iis3dhhc->gpio, cfg->int_pin);
+	gpio_pin_interrupt_configure(iis3dhhc->gpio, cfg->int_pin,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 }
 
 static void iis3dhhc_gpio_callback(struct device *dev,
@@ -81,11 +84,12 @@ static void iis3dhhc_gpio_callback(struct device *dev,
 {
 	struct iis3dhhc_data *iis3dhhc =
 		CONTAINER_OF(cb, struct iis3dhhc_data, gpio_cb);
-	const struct iis3dhhc_config *cfg = dev->config->config_info;
+	const struct iis3dhhc_config *cfg = dev->config_info;
 
 	ARG_UNUSED(pins);
 
-	gpio_pin_disable_callback(dev, cfg->int_pin);
+	gpio_pin_interrupt_configure(iis3dhhc->gpio, cfg->int_pin,
+				     GPIO_INT_DISABLE);
 
 #if defined(CONFIG_IIS3DHHC_TRIGGER_OWN_THREAD)
 	k_sem_give(&iis3dhhc->gpio_sem);
@@ -122,7 +126,7 @@ static void iis3dhhc_work_cb(struct k_work *work)
 int iis3dhhc_init_interrupt(struct device *dev)
 {
 	struct iis3dhhc_data *iis3dhhc = dev->driver_data;
-	const struct iis3dhhc_config *cfg = dev->config->config_info;
+	const struct iis3dhhc_config *cfg = dev->config_info;
 	int ret;
 
 	/* setup data ready gpio interrupt (INT1 or INT2) */
@@ -146,8 +150,7 @@ int iis3dhhc_init_interrupt(struct device *dev)
 #endif /* CONFIG_IIS3DHHC_TRIGGER_OWN_THREAD */
 
 	ret = gpio_pin_configure(iis3dhhc->gpio, cfg->int_pin,
-			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			   GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE);
+				 GPIO_INPUT | cfg->int_flags);
 	if (ret < 0) {
 		LOG_DBG("Could not configure gpio");
 		return ret;
@@ -167,5 +170,6 @@ int iis3dhhc_init_interrupt(struct device *dev)
 		return -EIO;
 	}
 
-	return gpio_pin_enable_callback(iis3dhhc->gpio, cfg->int_pin);
+	return gpio_pin_interrupt_configure(iis3dhhc->gpio, cfg->int_pin,
+					    GPIO_INT_EDGE_TO_ACTIVE);
 }

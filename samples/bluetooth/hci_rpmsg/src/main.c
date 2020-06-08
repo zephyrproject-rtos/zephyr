@@ -14,7 +14,7 @@
 #include <sys/byteorder.h>
 #include <logging/log.h>
 #include <sys/util.h>
-#include <ipm.h>
+#include <drivers/ipm.h>
 
 #include <openamp/open_amp.h>
 #include <metal/sys.h>
@@ -33,10 +33,19 @@
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 /* Configuration defines */
+#if !DT_HAS_CHOSEN(zephyr_ipc_shm)
+#error "Sample requires definition of shared memory for rpmsg"
+#endif
 
-#define SHM_START_ADDR      (DT_IPC_SHM_BASE_ADDRESS + 0x400)
+#define SHM_NODE            DT_CHOSEN(zephyr_ipc_shm)
+#define SHM_BASE_ADDRESS    DT_REG_ADDR(SHM_NODE)
+#define SHM_START_ADDR      (SHM_BASE_ADDRESS + 0x400)
 #define SHM_SIZE            0x7c00
 #define SHM_DEVICE_NAME     "sram0.shm"
+
+BUILD_ASSERT((SHM_START_ADDR + SHM_SIZE - SHM_BASE_ADDRESS)
+		<= DT_REG_SIZE(SHM_NODE),
+	"Allocated size exceeds available shared memory reserved for IPC");
 
 #define VRING_COUNT         2
 #define VRING_TX_ADDRESS    (SHM_START_ADDR + SHM_SIZE - 0x400)
@@ -44,7 +53,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define VRING_ALIGNMENT     4
 #define VRING_SIZE          16
 
-#define VDEV_STATUS_ADDR    DT_IPC_SHM_BASE_ADDRESS
+#define VDEV_STATUS_ADDR    SHM_BASE_ADDRESS
 
 /* End of configuration defines */
 
@@ -127,29 +136,6 @@ static void rpmsg_service_unbind(struct rpmsg_endpoint *ep)
 
 static K_THREAD_STACK_DEFINE(tx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
 static struct k_thread tx_thread_data;
-
-/* HCI command buffers */
-#define CMD_BUF_SIZE BT_BUF_RX_SIZE
-NET_BUF_POOL_FIXED_DEFINE(cmd_tx_pool, CONFIG_BT_HCI_CMD_COUNT, CMD_BUF_SIZE,
-			  NULL);
-
-#if defined(CONFIG_BT_CTLR_TX_BUFFER_SIZE)
-#define BT_L2CAP_MTU (CONFIG_BT_CTLR_TX_BUFFER_SIZE - BT_L2CAP_HDR_SIZE)
-#else
-#define BT_L2CAP_MTU 65 /* 64-byte public key + opcode */
-#endif /* CONFIG_BT_CTLR */
-
-/** Data size needed for ACL buffers */
-#define BT_BUF_ACL_SIZE BT_L2CAP_BUF_SIZE(BT_L2CAP_MTU)
-
-#if defined(CONFIG_BT_CTLR_TX_BUFFERS)
-#define TX_BUF_COUNT CONFIG_BT_CTLR_TX_BUFFERS
-#else
-#define TX_BUF_COUNT 6
-#endif
-
-NET_BUF_POOL_FIXED_DEFINE(acl_tx_pool, TX_BUF_COUNT, BT_BUF_ACL_SIZE, NULL);
-
 static K_FIFO_DEFINE(tx_queue);
 
 #define HCI_RPMSG_CMD 0x01
@@ -159,35 +145,30 @@ static K_FIFO_DEFINE(tx_queue);
 
 static struct net_buf *hci_rpmsg_cmd_recv(u8_t *data, size_t remaining)
 {
-	struct bt_hci_cmd_hdr hdr;
+	struct bt_hci_cmd_hdr *hdr = (void *)data;
 	struct net_buf *buf;
 
-	if (remaining < sizeof(hdr)) {
+	if (remaining < sizeof(*hdr)) {
 		LOG_ERR("Not enought data for command header");
 		return NULL;
 	}
 
-	buf = net_buf_alloc(&cmd_tx_pool, K_NO_WAIT);
+	buf = bt_buf_get_tx(BT_BUF_CMD, K_NO_WAIT, hdr, sizeof(*hdr));
 	if (buf) {
-		bt_buf_set_type(buf, BT_BUF_CMD);
-
-		memcpy((void *)&hdr, data, sizeof(hdr));
-		data += sizeof(hdr);
-		remaining -= sizeof(hdr);
-
-		net_buf_add_mem(buf, &hdr, sizeof(hdr));
+		data += sizeof(*hdr);
+		remaining -= sizeof(*hdr);
 	} else {
 		LOG_ERR("No available command buffers!");
 		return NULL;
 	}
 
-	if (remaining != hdr.param_len) {
+	if (remaining != hdr->param_len) {
 		LOG_ERR("Command payload length is not correct");
 		net_buf_unref(buf);
 		return NULL;
 	}
 
-	LOG_DBG("len %u", hdr.param_len);
+	LOG_DBG("len %u", hdr->param_len);
 	net_buf_add_mem(buf, data, remaining);
 
 	return buf;
@@ -195,29 +176,24 @@ static struct net_buf *hci_rpmsg_cmd_recv(u8_t *data, size_t remaining)
 
 static struct net_buf *hci_rpmsg_acl_recv(u8_t *data, size_t remaining)
 {
-	struct bt_hci_acl_hdr hdr;
+	struct bt_hci_acl_hdr *hdr = (void *)data;
 	struct net_buf *buf;
 
-	if (remaining < sizeof(hdr)) {
+	if (remaining < sizeof(*hdr)) {
 		LOG_ERR("Not enought data for ACL header");
 		return NULL;
 	}
 
-	buf = net_buf_alloc(&acl_tx_pool, K_NO_WAIT);
+	buf = bt_buf_get_tx(BT_BUF_ACL_OUT, K_NO_WAIT, hdr, sizeof(*hdr));
 	if (buf) {
-		bt_buf_set_type(buf, BT_BUF_ACL_OUT);
-
-		memcpy((void *)&hdr, data, sizeof(hdr));
-		data += sizeof(hdr);
-		remaining -= sizeof(hdr);
-
-		net_buf_add_mem(buf, &hdr, sizeof(hdr));
+		data += sizeof(*hdr);
+		remaining -= sizeof(*hdr);
 	} else {
 		LOG_ERR("No available ACL buffers!");
 		return NULL;
 	}
 
-	if (remaining != sys_le16_to_cpu(hdr.len)) {
+	if (remaining != sys_le16_to_cpu(hdr->len)) {
 		LOG_ERR("ACL payload length is not correct");
 		net_buf_unref(buf);
 		return NULL;

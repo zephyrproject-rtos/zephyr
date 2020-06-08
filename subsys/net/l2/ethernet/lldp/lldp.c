@@ -56,7 +56,7 @@ static void lldp_submit_work(u32_t timeout)
 	if (!k_delayed_work_remaining_get(&lldp_tx_timer) ||
 	    timeout < k_delayed_work_remaining_get(&lldp_tx_timer)) {
 		k_delayed_work_cancel(&lldp_tx_timer);
-		k_delayed_work_submit(&lldp_tx_timer, timeout);
+		k_delayed_work_submit(&lldp_tx_timer, K_MSEC(timeout));
 
 		NET_DBG("Next wakeup in %d ms",
 			k_delayed_work_remaining_get(&lldp_tx_timer));
@@ -104,6 +104,10 @@ static int lldp_send(struct ethernet_lldp *lldp)
 		len = sizeof(struct net_lldpdu);
 	}
 
+	if (IS_ENABLED(CONFIG_NET_LLDP_END_LLDPDU_TLV_ENABLED)) {
+		len += sizeof(u16_t);
+	}
+
 	pkt = net_pkt_alloc_with_buffer(lldp->iface, len, AF_UNSPEC, 0,
 					BUF_ALLOC_TIMEOUT);
 	if (!pkt) {
@@ -111,18 +115,20 @@ static int lldp_send(struct ethernet_lldp *lldp)
 		goto out;
 	}
 
-	if (net_pkt_write(pkt, (u8_t *)lldp->lldpdu,
-			  sizeof(struct net_lldpdu))) {
+	net_pkt_set_lldp(pkt, true);
+
+	ret = net_pkt_write(pkt, (u8_t *)lldp->lldpdu,
+			    sizeof(struct net_lldpdu));
+	if (ret < 0) {
 		net_pkt_unref(pkt);
-		ret = -ENOMEM;
 		goto out;
 	}
 
 	if (lldp->optional_du && lldp->optional_len) {
-		if (!net_pkt_write(pkt, (u8_t *)lldp->optional_du,
-				   lldp->optional_len)) {
+		ret = net_pkt_write(pkt, (u8_t *)lldp->optional_du,
+				    lldp->optional_len);
+		if (ret < 0) {
 			net_pkt_unref(pkt);
-			ret = -ENOMEM;
 			goto out;
 		}
 	}
@@ -130,9 +136,9 @@ static int lldp_send(struct ethernet_lldp *lldp)
 	if (IS_ENABLED(CONFIG_NET_LLDP_END_LLDPDU_TLV_ENABLED)) {
 		u16_t tlv_end = htons(NET_LLDP_END_LLDPDU_VALUE);
 
-		if (!net_pkt_write(pkt, (u8_t *)&tlv_end, sizeof(tlv_end))) {
+		ret = net_pkt_write(pkt, (u8_t *)&tlv_end, sizeof(tlv_end));
+		if (ret < 0) {
 			net_pkt_unref(pkt);
-			ret = -ENOMEM;
 			goto out;
 		}
 	}
@@ -187,7 +193,7 @@ static void lldp_tx_timeout(struct k_work *work)
 	if (timeout_update < (UINT32_MAX - 1)) {
 		NET_DBG("Waiting for %u ms", timeout_update);
 
-		k_delayed_work_submit(&lldp_tx_timer, timeout_update);
+		k_delayed_work_submit(&lldp_tx_timer, K_MSEC(timeout_update));
 	}
 }
 
@@ -201,7 +207,7 @@ static void lldp_start_timer(struct ethernet_context *ctx,
 
 	ctx->lldp[slot].tx_timer_start = k_uptime_get();
 	ctx->lldp[slot].tx_timer_timeout =
-		K_SECONDS(CONFIG_NET_LLDP_TX_INTERVAL);
+				CONFIG_NET_LLDP_TX_INTERVAL * MSEC_PER_SEC;
 
 	lldp_submit_work(ctx->lldp[slot].tx_timer_timeout);
 }

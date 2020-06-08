@@ -22,7 +22,7 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led_1: led_1 {
-			gpios = <&gpioi 1 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpioi 1 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
 	};
@@ -31,13 +31,14 @@
 		compatible = "gpio-keys";
 		user_button: button {
 			label = "User";
-			gpios = <&gpioi 11 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpioi 11 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
 	aliases {
 		led0 = &green_led_1;
 		sw0 = &user_button;
+		kscan0 = &touch_controller;
 	};
 };
 
@@ -48,6 +49,18 @@ arduino_serial: &usart6 {};
 &i2c1 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c3 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	touch_controller: ft5336@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		label = "FT5336";
+		int-gpios = <&gpioi 13 0>;
+	};
 };
 
 &spi2 {
@@ -71,11 +84,16 @@ arduino_serial: &usart6 {};
 &timers1 {
 	status = "okay";
 
-	pwm {
+	pwm1: pwm {
 		status = "okay";
 	};
 };
 
 &rtc {
 	status = "okay";
+};
+
+&sdmmc1 {
+	status = "okay";
+	cd-gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
 };

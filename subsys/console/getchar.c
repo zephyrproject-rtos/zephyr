@@ -8,7 +8,7 @@
 #include <device.h>
 #include <console/console.h>
 #include <console/tty.h>
-#include <uart.h>
+#include <drivers/uart.h>
 
 static struct tty_serial console_serial;
 

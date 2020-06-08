@@ -5,6 +5,7 @@
 
 menuconfig GPIO
 	bool "GPIO Drivers"
+	select HAS_DTS_GPIO
 	help
 	  Include GPIO drivers in system config
 
@@ -21,7 +22,9 @@ config GPIO_SHELL
 
 source "drivers/gpio/Kconfig.dw"
 
-source "drivers/gpio/Kconfig.pcal9535a"
+source "drivers/gpio/Kconfig.pca95xx"
+
+source "drivers/gpio/Kconfig.mcp23s17"
 
 source "drivers/gpio/Kconfig.mcux"
 
@@ -42,8 +45,6 @@ source "drivers/gpio/Kconfig.cc13xx_cc26xx"
 source "drivers/gpio/Kconfig.cc32xx"
 
 source "drivers/gpio/Kconfig.sifive"
-
-source "drivers/gpio/Kconfig.cc2650"
 
 source "drivers/gpio/Kconfig.esp32"
 
@@ -66,5 +67,9 @@ source "drivers/gpio/Kconfig.stellaris"
 source "drivers/gpio/Kconfig.rv32m1"
 
 source "drivers/gpio/Kconfig.ht16k33"
+
+source "drivers/gpio/Kconfig.lmp90xxx"
+
+source "drivers/gpio/Kconfig.litex"
 
 endif # GPIO

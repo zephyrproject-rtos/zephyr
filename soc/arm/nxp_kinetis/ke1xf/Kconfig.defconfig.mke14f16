@@ -3,9 +3,6 @@
 # Copyright (c) 2019 Vestas Wind Systems A/S
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_MKE14F16
-
 config SOC
 	default "mke14f16"
-
-endif # SOC_MKE14F16
+	depends on SOC_MKE14F16

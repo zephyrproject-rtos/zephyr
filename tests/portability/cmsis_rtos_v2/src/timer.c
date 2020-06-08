@@ -8,7 +8,7 @@
 #include <cmsis_os2.h>
 
 #define ONESHOT_TIME_TICKS      100
-#define PERIOD_TICKS            50
+#define PERIOD_TICKS            MAX(50, k_ms_to_ticks_ceil32(5))
 #define NUM_PERIODS             5
 
 u32_t num_oneshots_executed;
@@ -100,10 +100,7 @@ void test_timer(void)
 	 */
 	osDelay(timerDelay * NUM_PERIODS + 10);
 
-	/* The first firing of the timer should be ignored.
-	 * Hence checking for NUM_PERIODS + 1.
-	 */
-	zassert_true(num_periods_executed == NUM_PERIODS + 1,
+	zassert_true(num_periods_executed == NUM_PERIODS,
 		     "error setting up periodic timer");
 
 	/* Delete the timer before stop */

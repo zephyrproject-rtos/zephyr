@@ -40,7 +40,8 @@ def main():
         checks = (check_always_n,
                   check_unused,
                   check_pointless_menuconfigs,
-                  check_defconfig_only_definition)
+                  check_defconfig_only_definition,
+                  check_missing_config_prefix)
 
     first = True
     for check in checks:
@@ -99,6 +100,22 @@ files. A common base definition should probably be added
 somewhere for such symbols, and the type declaration ('int',
 'hex', etc.) removed from Kconfig.defconfig.""")
 
+    parser.add_argument(
+        "-p", "--check-missing-config-prefix",
+        action="append_const", dest="checks", const=check_missing_config_prefix,
+        help="""\
+Look for references like
+
+    #if MACRO
+    #if(n)def MACRO
+    defined(MACRO)
+    IS_ENABLED(MACRO)
+
+where MACRO is the name of a defined Kconfig symbol but
+doesn't have a CONFIG_ prefix. Could be a typo.
+
+Macros that are #define'd somewhere are not flagged.""")
+
     return parser.parse_args()
 
 
@@ -134,6 +151,50 @@ def check_defconfig_only_definition():
             print(name_and_locs(sym))
 
 
+def check_missing_config_prefix():
+    print_header("Symbol references that might be missing a CONFIG_ prefix")
+
+    # Paths to modules
+    modpaths = run(("west", "list", "-f{abspath}")).splitlines()
+
+    # Gather #define'd macros that might overlap with symbol names, so that
+    # they don't trigger false positives
+    defined = set()
+    for modpath in modpaths:
+        regex = r"#\s*define\s+([A-Z0-9_]+)\b"
+        defines = run(("git", "grep", "--extended-regexp", regex),
+                      cwd=modpath, check=False)
+        # Could pass --only-matching to git grep as well, but it was added
+        # pretty recently (2018)
+        defined.update(re.findall(regex, defines))
+
+    # Filter out symbols whose names are #define'd too. Preserve definition
+    # order to make the output consistent.
+    syms = [sym for sym in kconf.unique_defined_syms
+            if sym.name not in defined]
+
+    # grep for symbol references in #ifdef/defined() that are missing a CONFIG_
+    # prefix. Work around an "argument list too long" error from 'git grep' by
+    # checking symbols in batches.
+    for batch in split_list(syms, 200):
+        # grep for '#if((n)def) <symbol>', 'defined(<symbol>', and
+        # 'IS_ENABLED(<symbol>', with a missing CONFIG_ prefix
+        regex = r"(?:#\s*if(?:n?def)\s+|\bdefined\s*\(\s*|IS_ENABLED\(\s*)(?:" + \
+                "|".join(sym.name for sym in batch) + r")\b"
+        cmd = ("git", "grep", "--line-number", "-I", "--perl-regexp", regex)
+
+        for modpath in modpaths:
+            print(run(cmd, cwd=modpath, check=False), end="")
+
+
+def split_list(lst, batch_size):
+    # check_missing_config_prefix() helper generator that splits a list into
+    # equal-sized batches (possibly with a shorter batch at the end)
+
+    for i in range(0, len(lst), batch_size):
+        yield lst[i:i + batch_size]
+
+
 def print_header(s):
     print(s + "\n" + len(s)*"=")
 
@@ -151,7 +212,7 @@ def init_kconfig():
         BOARD_DIR="boards/*/*",
         ARCH="*")
 
-    kconf = kconfiglib.Kconfig()
+    kconf = kconfiglib.Kconfig(suppress_traceback=True)
 
 
 def modules_file_dir():
@@ -189,7 +250,7 @@ def referenced_outside_kconfig():
 
     # 'git grep' all modules
     for modpath in run(("west", "list", "-f{abspath}")).splitlines():
-        for line in run(("git", "grep", "-h", "--extended-regexp", regex),
+        for line in run(("git", "grep", "-h", "-I", "--extended-regexp", regex),
                         cwd=modpath).splitlines():
             # Don't record lines starting with "CONFIG_FOO=" or "# CONFIG_FOO="
             # as references, so that symbols that are only assigned in .config
@@ -229,27 +290,51 @@ def name_and_locs(sym):
         ", ".join("{0.filename}:{0.linenr}".format(node) for node in sym.nodes))
 
 
-def run(cmd, cwd=TOP_DIR):
+def run(cmd, cwd=TOP_DIR, check=True):
     # Runs 'cmd' with subprocess, returning the decoded stdout output. 'cwd' is
     # the working directory. It defaults to the top-level Zephyr directory.
+    # Exits with an error if the command exits with a non-zero return code if
+    # 'check' is True.
 
     cmd_s = " ".join(shlex.quote(word) for word in cmd)
 
     try:
         process = subprocess.Popen(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd)
-    except FileNotFoundError:
-        sys.exit("'{}' not found".format(cmd[0]))
     except OSError as e:
-        sys.exit("Failed to run '{}': {}".format(cmd_s, e))
+        err("Failed to run '{}': {}".format(cmd_s, e))
 
     stdout, stderr = process.communicate()
-    if process.returncode or stderr:
-        sys.exit("'{}' exited with status {}.\n\nstdout:\n{}\n\nstderr:\n{}"
-                 .format(cmd_s, process.returncode,
-                         stdout.decode("utf-8"), stderr.decode("utf-8")))
+    # errors="ignore" temporarily works around
+    # https://github.com/zephyrproject-rtos/esp-idf/pull/2
+    stdout = stdout.decode("utf-8", errors="ignore")
+    stderr = stderr.decode("utf-8")
+    if check and process.returncode:
+        err("""\
+'{}' exited with status {}.
 
-    return stdout.decode("utf-8")
+===stdout===
+{}
+===stderr===
+{}""".format(cmd_s, process.returncode, stdout, stderr))
+
+    if stderr:
+        warn("'{}' wrote to stderr:\n{}".format(cmd_s, stderr))
+
+    return stdout
+
+
+def err(msg):
+    sys.exit(executable() + "error: " + msg)
+
+
+def warn(msg):
+    print(executable() + "warning: " + msg, file=sys.stderr)
+
+
+def executable():
+    cmd = sys.argv[0]  # Empty string if missing
+    return cmd + ": " if cmd else ""
 
 
 if __name__ == "__main__":

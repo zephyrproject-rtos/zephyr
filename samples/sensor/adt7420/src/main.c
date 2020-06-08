@@ -10,12 +10,42 @@
 #include <stdio.h>
 #include <sys/__assert.h>
 
-K_SEM_DEFINE(sem, 0, 1);
+#define DELAY_WITH_TRIGGER K_SECONDS(5)
+#define DELAY_WITHOUT_TRIGGER K_SECONDS(1)
 
+#define UCEL_PER_CEL 1000000
+#define UCEL_PER_MCEL 1000
+#define TEMP_INITIAL_CEL 21
+#define TEMP_WINDOW_HALF_UCEL 500000
+
+K_SEM_DEFINE(sem, 0, 1);
+static const char *now_str(void)
+{
+	static char buf[16]; /* ...HH:MM:SS.MMM */
+	u32_t now = k_uptime_get_32();
+	unsigned int ms = now % MSEC_PER_SEC;
+	unsigned int s;
+	unsigned int min;
+	unsigned int h;
+
+	now /= MSEC_PER_SEC;
+	s = now % 60U;
+	now /= 60U;
+	min = now % 60U;
+	now /= 60U;
+	h = now;
+
+	snprintf(buf, sizeof(buf), "%u:%02u:%02u.%03u",
+		 h, min, s, ms);
+	return buf;
+}
 static void trigger_handler(struct device *dev, struct sensor_trigger *trigger)
 {
 	k_sem_give(&sem);
 }
+
+static int low_ucel;
+static int high_ucel;
 
 static int sensor_set_attribute(struct device *dev, enum sensor_channel chan,
 				enum sensor_attribute attr, int value)
@@ -23,8 +53,8 @@ static int sensor_set_attribute(struct device *dev, enum sensor_channel chan,
 	struct sensor_value sensor_val;
 	int ret;
 
-	sensor_val.val1 = value / 1000000;
-	sensor_val.val2 = value % 1000000;
+	sensor_val.val1 = value / UCEL_PER_CEL;
+	sensor_val.val2 = value % UCEL_PER_CEL;
 
 	ret = sensor_attr_set(dev, chan, attr, &sensor_val);
 	if (ret) {
@@ -34,10 +64,43 @@ static int sensor_set_attribute(struct device *dev, enum sensor_channel chan,
 	return ret;
 }
 
+static bool temp_in_window(const struct sensor_value *val)
+{
+	int temp_ucel = val->val1 * UCEL_PER_CEL + val->val2;
+
+	return (temp_ucel >= low_ucel) && (temp_ucel <= high_ucel);
+}
+
+static int sensor_set_window(struct device *dev,
+			     const struct sensor_value *val)
+{
+	int temp_ucel = val->val1 * UCEL_PER_CEL + val->val2;
+
+	low_ucel = temp_ucel - TEMP_WINDOW_HALF_UCEL;
+	high_ucel = temp_ucel + TEMP_WINDOW_HALF_UCEL;
+
+	int rc = sensor_set_attribute(dev, SENSOR_CHAN_AMBIENT_TEMP,
+				      SENSOR_ATTR_UPPER_THRESH, high_ucel);
+
+	if (rc == 0) {
+		sensor_set_attribute(dev, SENSOR_CHAN_AMBIENT_TEMP,
+				     SENSOR_ATTR_LOWER_THRESH, low_ucel);
+	}
+
+	if (rc == 0) {
+		printk("Alert on temp outside [%d, %d] mCel\n",
+		       low_ucel / UCEL_PER_MCEL,
+		       high_ucel / UCEL_PER_MCEL);
+	}
+
+	return rc;
+}
+
 static void process(struct device *dev)
 {
 	struct sensor_value temp_val;
 	int ret;
+	bool reset_window = false;
 
 	/* Set upddate rate to 240 mHz */
 	sensor_set_attribute(dev, SENSOR_CHAN_AMBIENT_TEMP,
@@ -48,25 +111,21 @@ static void process(struct device *dev)
 			.type = SENSOR_TRIG_THRESHOLD,
 			.chan = SENSOR_CHAN_AMBIENT_TEMP,
 		};
+		struct sensor_value val = {
+			.val1 = TEMP_INITIAL_CEL,
+		};
 
-		/* Set lower and upper threshold to 10 and 30 °C */
-		sensor_set_attribute(dev, SENSOR_CHAN_AMBIENT_TEMP,
-				     SENSOR_ATTR_UPPER_THRESH, 30 * 1000000);
-		sensor_set_attribute(dev, SENSOR_CHAN_AMBIENT_TEMP,
-				     SENSOR_ATTR_LOWER_THRESH, 10 * 1000000);
-
-		if (sensor_trigger_set(dev, &trig, trigger_handler)) {
+		ret = sensor_set_window(dev, &val);
+		if (ret == 0) {
+			ret = sensor_trigger_set(dev, &trig, trigger_handler);
+		}
+		if (ret != 0) {
 			printf("Could not set trigger\n");
 			return;
 		}
 	}
 
 	while (1) {
-		if (IS_ENABLED(CONFIG_ADT7420_TRIGGER)) {
-			printf("Waiting for a threshold event\n");
-			k_sem_take(&sem, K_FOREVER);
-		}
-
 		ret = sensor_sample_fetch(dev);
 		if (ret) {
 			printf("sensor_sample_fetch failed ret %d\n", ret);
@@ -80,25 +139,44 @@ static void process(struct device *dev)
 			return;
 		}
 
-		printf("temperature %.6f C\n",
-		       sensor_value_to_double(&temp_val));
+		if (IS_ENABLED(CONFIG_ADT7420_TRIGGER)) {
+			reset_window |= !temp_in_window(&temp_val);
+		}
 
-		if (!IS_ENABLED(CONFIG_ADT7420_TRIGGER)) {
-			k_sleep(K_MSEC(1000));
+		printf("[%s]: temperature %.6f Cel%s\n", now_str(),
+		       sensor_value_to_double(&temp_val),
+		       reset_window ? ": NEED RESET" : "");
+
+
+		if (IS_ENABLED(CONFIG_ADT7420_TRIGGER)) {
+			if (reset_window) {
+				ret = sensor_set_window(dev, &temp_val);
+			}
+			if (ret) {
+				printf("Window update failed ret %d\n", ret);
+				return;
+			}
+
+			printk("Wait for trigger...");
+			ret = k_sem_take(&sem, DELAY_WITH_TRIGGER);
+			reset_window = (ret == 0);
+			printk("%s\n", reset_window ? "ALERTED!" : "timed-out");
+		} else {
+			k_sleep(DELAY_WITHOUT_TRIGGER);
 		}
 	}
 }
 
 void main(void)
 {
-	struct device *dev = device_get_binding(DT_INST_0_ADI_ADT7420_LABEL);
+	struct device *dev = device_get_binding(DT_LABEL(DT_INST(0, adi_adt7420)));
 
 	if (dev == NULL) {
 		printf("Failed to get device binding\n");
 		return;
 	}
 
-	printf("device is %p, name is %s\n", dev, dev->config->name);
+	printf("device is %p, name is %s\n", dev, dev->name);
 
 	process(dev);
 }

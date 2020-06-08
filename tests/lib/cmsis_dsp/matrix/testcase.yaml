@@ -1,0 +1,50 @@
+common:
+  platform_whitelist: frdm_k64f sam_e70_xplained mps2_an521
+  tags: cmsis_dsp
+
+tests:
+  libraries.cmsis_dsp.matrix:
+    skip: true
+  libraries.cmsis_dsp.matrix.unary_q15:
+    min_flash: 128
+    min_ram: 64
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_MATRIX_UNARY_Q15=y
+  libraries.cmsis_dsp.matrix.unary_q31:
+    min_flash: 128
+    min_ram: 64
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_MATRIX_UNARY_Q31=y
+  libraries.cmsis_dsp.matrix.unary_f32:
+    min_flash: 128
+    min_ram: 64
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_MATRIX_UNARY_F32=y
+  libraries.cmsis_dsp.matrix.unary_f64:
+    min_flash: 128
+    min_ram: 64
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_MATRIX_UNARY_F64=y
+  libraries.cmsis_dsp.matrix.binary_q15:
+    platform_exclude: mps2_an521
+    min_flash: 128
+    min_ram: 128
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_MATRIX_BINARY_Q15=y
+  libraries.cmsis_dsp.matrix.binary_q31:
+    min_flash: 128
+    min_ram: 128
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_MATRIX_BINARY_Q31=y
+  libraries.cmsis_dsp.matrix.binary_f32:
+    min_flash: 128
+    min_ram: 128
+    extra_args: CONF_FILE=prj_base.conf
+    extra_configs:
+      - CONFIG_CMSIS_DSP_TEST_MATRIX_BINARY_F32=y

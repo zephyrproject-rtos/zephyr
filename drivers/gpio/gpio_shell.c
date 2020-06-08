@@ -49,7 +49,7 @@ static const struct args_number args_no = {
 static int cmd_gpio_conf(const struct shell *shell, size_t argc, char **argv)
 {
 	u8_t index = 0U;
-	int type = GPIO_DIR_OUT;
+	int type = GPIO_OUTPUT;
 	struct device *dev;
 
 	if (argc == args_no.conf &&
@@ -57,9 +57,9 @@ static int cmd_gpio_conf(const struct shell *shell, size_t argc, char **argv)
 	    isalpha((unsigned char)argv[args_indx.mode][0])) {
 		index = (u8_t)atoi(argv[args_indx.index]);
 		if (!strcmp(argv[args_indx.mode], "in")) {
-			type = GPIO_DIR_IN;
+			type = GPIO_INPUT;
 		} else if (!strcmp(argv[args_indx.mode], "out")) {
-			type = GPIO_DIR_OUT;
+			type = GPIO_OUTPUT;
 		} else {
 			return 0;
 		}
@@ -85,7 +85,6 @@ static int cmd_gpio_get(const struct shell *shell,
 {
 	struct device *dev;
 	u8_t index = 0U;
-	u32_t value = 0U;
 	int rc;
 
 	if (argc == args_no.get && isdigit((unsigned char)argv[args_indx.index][0])) {
@@ -101,11 +100,11 @@ static int cmd_gpio_get(const struct shell *shell,
 		index = (u8_t)atoi(argv[2]);
 		shell_print(shell, "Reading %s pin %d",
 			     argv[args_indx.port], index);
-		rc = gpio_pin_read(dev, index, &value);
-		if (rc == 0) {
-			shell_print(shell, "Value %d", value);
+		rc = gpio_pin_get(dev, index);
+		if (rc >= 0) {
+			shell_print(shell, "Value %d", rc);
 		} else {
-			shell_error(shell, "Error reading value");
+			shell_error(shell, "Error %d reading value", rc);
 			return -EIO;
 		}
 	}
@@ -135,7 +134,7 @@ static int cmd_gpio_set(const struct shell *shell,
 		index = (u8_t)atoi(argv[2]);
 		shell_print(shell, "Writing to %s pin %d",
 			    argv[args_indx.port], index);
-		gpio_pin_write(dev, index, value);
+		gpio_pin_set(dev, index, value);
 	}
 
 	return 0;

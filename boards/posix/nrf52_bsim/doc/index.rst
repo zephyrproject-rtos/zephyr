@@ -1,4 +1,3 @@
-
 .. _nrf52_bsim:
 
 NRF52 simulated board (BabbleSim)

@@ -1,7 +1,7 @@
-title: STM32 TIMERS
+# Copyright (c) 2020, STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
 
-description: |
-    This binding gives a base representation of the STM32 TIMERS
+description: STM32 timers
 
 compatible: "st,stm32-timers"
 

@@ -11,6 +11,7 @@
 #include "settings/settings.h"
 #include "settings/settings_nvs.h"
 #include "settings_priv.h"
+#include <storage/flash_map.h>
 
 #include <logging/log.h>
 LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
@@ -256,4 +257,64 @@ int settings_nvs_backend_init(struct settings_nvs *cf)
 
 	LOG_DBG("Initialized");
 	return 0;
+}
+
+int settings_backend_init(void)
+{
+	static struct settings_nvs default_settings_nvs;
+	int rc;
+	u16_t cnt = 0;
+	size_t nvs_sector_size, nvs_size = 0;
+	const struct flash_area *fa;
+	struct flash_sector hw_flash_sector;
+	u32_t sector_cnt = 1;
+
+	rc = flash_area_open(FLASH_AREA_ID(storage), &fa);
+	if (rc) {
+		return rc;
+	}
+
+	rc = flash_area_get_sectors(FLASH_AREA_ID(storage), &sector_cnt,
+				    &hw_flash_sector);
+	if (rc == -ENODEV) {
+		return rc;
+	} else if (rc != 0 && rc != -ENOMEM) {
+		k_panic();
+	}
+
+	nvs_sector_size = CONFIG_SETTINGS_NVS_SECTOR_SIZE_MULT *
+			  hw_flash_sector.fs_size;
+
+	if (nvs_sector_size > UINT16_MAX) {
+		return -EDOM;
+	}
+
+	while (cnt < CONFIG_SETTINGS_NVS_SECTOR_COUNT) {
+		nvs_size += nvs_sector_size;
+		if (nvs_size > fa->fa_size) {
+			break;
+		}
+		cnt++;
+	}
+
+	/* define the nvs file system using the page_info */
+	default_settings_nvs.cf_nvs.sector_size = nvs_sector_size;
+	default_settings_nvs.cf_nvs.sector_count = cnt;
+	default_settings_nvs.cf_nvs.offset = fa->fa_off;
+	default_settings_nvs.flash_dev_name = fa->fa_dev_name;
+
+	rc = settings_nvs_backend_init(&default_settings_nvs);
+	if (rc) {
+		return rc;
+	}
+
+	rc = settings_nvs_src(&default_settings_nvs);
+
+	if (rc) {
+		return rc;
+	}
+
+	rc = settings_nvs_dst(&default_settings_nvs);
+
+	return rc;
 }

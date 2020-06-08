@@ -1,7 +1,7 @@
 sample:
   name: Dining Philosophers
 common:
-  extra_args: "-DDEBUG_PRINTF=1"
+  extra_args: DEBUG_PRINTF=1
   tags: introduction
   harness: console
   harness_config:
@@ -15,10 +15,6 @@ common:
 tests:
   sample.kernel.philosopher:
     tags: introduction
-  sample.kernel.philosopher.tracing:
-    min_ram: 32
-    extra_configs:
-      - CONFIG_SEGGER_SYSTEMVIEW=y
   sample.kernel.philosopher.same_prio:
     extra_args: "-DSAME_PRIO=1"
   sample.kernel.philosopher.static:
@@ -36,6 +32,7 @@ tests:
       - CONFIG_NUM_PREEMPT_PRIORITIES=6
       - CONFIG_NUM_COOP_PRIORITIES=0
       - CONFIG_BT=n
+      - CONFIG_NETWORKING=n
   sample.kernel.philosopher.coop_only:
     extra_configs:
       - CONFIG_NUM_PREEMPT_PRIORITIES=0

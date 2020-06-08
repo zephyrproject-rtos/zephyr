@@ -20,7 +20,7 @@
 #include <fsl_common.h>
 
 /* Add include for DTS generated information */
-#include <generated_dts_board.h>
+#include <devicetree.h>
 
 #endif /* !_ASMLANGUAGE */
 

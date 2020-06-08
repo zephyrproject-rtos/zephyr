@@ -55,11 +55,11 @@ static int cmd_info(const struct shell *shell, size_t argc, char **argv)
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	char *device_id = k_malloc(DEVICE_ID_MAX_SIZE);
+	char *device_id = k_malloc(DEVICE_ID_HEX_MAX_SIZE);
 	char *firmware_version = k_malloc(BOOT_IMG_VER_STRLEN_MAX);
 
+	updatehub_get_device_identity(device_id, DEVICE_ID_HEX_MAX_SIZE);
 	updatehub_get_firmware_version(firmware_version, BOOT_IMG_VER_STRLEN_MAX);
-	updatehub_get_device_identity(device_id, DEVICE_ID_MAX_SIZE);
 
 	shell_fprintf(shell, SHELL_NORMAL, "Unique device id: %s\n",
 		      device_id);

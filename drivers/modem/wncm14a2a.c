@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT wnc_m14a2a
+
 #define LOG_DOMAIN modem_wncm14a2a
 #define LOG_LEVEL CONFIG_MODEM_LOG_LEVEL
 #include <logging/log.h>
@@ -42,12 +44,14 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 struct mdm_control_pinconfig {
 	char *dev_name;
-	u32_t pin;
+	gpio_pin_t pin;
+	gpio_flags_t flags;
 };
 
-#define PINCONFIG(name_, pin_) { \
+#define PINCONFIG(name_, pin_, flags_) { \
 	.dev_name = name_, \
-	.pin = pin_ \
+	.pin = pin_, \
+	.flags = flags_ \
 }
 
 /* pin settings */
@@ -57,7 +61,7 @@ enum mdm_control_pins {
 	MDM_KEEP_AWAKE,
 	MDM_RESET,
 	SHLD_3V3_1V8_SIG_TRANS_ENA,
-#ifdef DT_INST_0_WNC_M14A2A_MDM_SEND_OK_GPIOS_PIN
+#if DT_INST_NODE_HAS_PROP(0, mdm_send_ok_gpios)
 	MDM_SEND_OK,
 #endif
 	MAX_MDM_CONTROL_PINS,
@@ -65,33 +69,39 @@ enum mdm_control_pins {
 
 static const struct mdm_control_pinconfig pinconfig[] = {
 	/* MDM_BOOT_MODE_SEL */
-	PINCONFIG(DT_INST_0_WNC_M14A2A_MDM_BOOT_MODE_SEL_GPIOS_CONTROLLER,
-		  DT_INST_0_WNC_M14A2A_MDM_BOOT_MODE_SEL_GPIOS_PIN),
+	PINCONFIG(DT_INST_GPIO_LABEL(0, mdm_boot_mode_sel_gpios),
+		  DT_INST_GPIO_PIN(0, mdm_boot_mode_sel_gpios),
+		  DT_INST_GPIO_FLAGS(0, mdm_boot_mode_sel_gpios)),
 
 	/* MDM_POWER */
-	PINCONFIG(DT_INST_0_WNC_M14A2A_MDM_POWER_GPIOS_CONTROLLER,
-		  DT_INST_0_WNC_M14A2A_MDM_POWER_GPIOS_PIN),
+	PINCONFIG(DT_INST_GPIO_LABEL(0, mdm_power_gpios),
+		  DT_INST_GPIO_PIN(0, mdm_power_gpios),
+		  DT_INST_GPIO_FLAGS(0, mdm_power_gpios)),
 
 	/* MDM_KEEP_AWAKE */
-	PINCONFIG(DT_INST_0_WNC_M14A2A_MDM_KEEP_AWAKE_GPIOS_CONTROLLER,
-		  DT_INST_0_WNC_M14A2A_MDM_KEEP_AWAKE_GPIOS_PIN),
+	PINCONFIG(DT_INST_GPIO_LABEL(0, mdm_keep_awake_gpios),
+		  DT_INST_GPIO_PIN(0, mdm_keep_awake_gpios),
+		  DT_INST_GPIO_FLAGS(0, mdm_keep_awake_gpios)),
 
 	/* MDM_RESET */
-	PINCONFIG(DT_INST_0_WNC_M14A2A_MDM_RESET_GPIOS_CONTROLLER,
-		  DT_INST_0_WNC_M14A2A_MDM_RESET_GPIOS_PIN),
+	PINCONFIG(DT_INST_GPIO_LABEL(0, mdm_reset_gpios),
+		  DT_INST_GPIO_PIN(0, mdm_reset_gpios),
+		  DT_INST_GPIO_FLAGS(0, mdm_reset_gpios)),
 
 	/* SHLD_3V3_1V8_SIG_TRANS_ENA */
-	PINCONFIG(DT_INST_0_WNC_M14A2A_MDM_SHLD_TRANS_ENA_GPIOS_CONTROLLER,
-		  DT_INST_0_WNC_M14A2A_MDM_SHLD_TRANS_ENA_GPIOS_PIN),
+	PINCONFIG(DT_INST_GPIO_LABEL(0, mdm_shld_trans_ena_gpios),
+		  DT_INST_GPIO_PIN(0, mdm_shld_trans_ena_gpios),
+		  DT_INST_GPIO_FLAGS(0, mdm_shld_trans_ena_gpios)),
 
-#ifdef DT_INST_0_WNC_M14A2A_MDM_SEND_OK_GPIOS_PIN
+#if DT_INST_NODE_HAS_PROP(0, mdm_send_ok_gpios)
 	/* MDM_SEND_OK */
-	PINCONFIG(DT_INST_0_WNC_M14A2A_MDM_SEND_OK_GPIOS_CONTROLLER,
-		  DT_INST_0_WNC_M14A2A_MDM_SEND_OK_GPIOS_PIN),
+	PINCONFIG(DT_INST_GPIO_LABEL(0, mdm_send_ok_gpios),
+		  DT_INST_GPIO_PIN(0, mdm_send_ok_gpios),
+		  DT_INST_GPIO_FLAGS(0, mdm_send_ok_gpios)),
 #endif
 };
 
-#define MDM_UART_DEV_NAME		DT_INST_0_WNC_M14A2A_BUS_NAME
+#define MDM_UART_DEV_NAME		DT_INST_BUS_LABEL(0)
 
 #define MDM_BOOT_MODE_SPECIAL		0
 #define MDM_BOOT_MODE_NORMAL		1
@@ -106,9 +116,9 @@ static const struct mdm_control_pinconfig pinconfig[] = {
 #define MDM_SEND_OK_ENABLED		0
 #define MDM_SEND_OK_DISABLED		1
 
-#define MDM_CMD_TIMEOUT			K_SECONDS(5)
-#define MDM_CMD_SEND_TIMEOUT		K_SECONDS(10)
-#define MDM_CMD_CONN_TIMEOUT		K_SECONDS(31)
+#define MDM_CMD_TIMEOUT			(5 * MSEC_PER_SEC)
+#define MDM_CMD_SEND_TIMEOUT		(10 * MSEC_PER_SEC)
+#define MDM_CMD_CONN_TIMEOUT		(31 * MSEC_PER_SEC)
 
 #define MDM_MAX_DATA_LENGTH		1500
 
@@ -344,16 +354,16 @@ static int send_at_cmd(struct wncm14a2a_socket *sock,
 	mdm_receiver_send(&ictx.mdm_ctx, data, strlen(data));
 	mdm_receiver_send(&ictx.mdm_ctx, "\r\n", 2);
 
-	if (timeout == K_NO_WAIT) {
+	if (timeout == 0) {
 		return 0;
 	}
 
 	if (!sock) {
 		k_sem_reset(&ictx.response_sem);
-		ret = k_sem_take(&ictx.response_sem, timeout);
+		ret = k_sem_take(&ictx.response_sem, K_MSEC(timeout));
 	} else {
 		k_sem_reset(&sock->sock_send_sem);
-		ret = k_sem_take(&sock->sock_send_sem, timeout);
+		ret = k_sem_take(&sock->sock_send_sem, K_MSEC(timeout));
 	}
 
 	if (ret == 0) {
@@ -392,7 +402,7 @@ static int send_data(struct wncm14a2a_socket *sock, struct net_pkt *pkt)
 
 	mdm_receiver_send(&ictx.mdm_ctx, "\r\n", 2);
 	k_sem_reset(&sock->sock_send_sem);
-	ret = k_sem_take(&sock->sock_send_sem, MDM_CMD_SEND_TIMEOUT);
+	ret = k_sem_take(&sock->sock_send_sem, K_MSEC(MDM_CMD_SEND_TIMEOUT));
 	if (ret == 0) {
 		ret = ictx.last_error;
 	} else if (ret == -EAGAIN) {
@@ -470,6 +480,8 @@ static int pkt_setup_ip_data(struct net_pkt *pkt,
 			    &((struct sockaddr_in6 *)&sock->src)->sin6_addr)) {
 			return -1;
 		}
+		src_port = ntohs(net_sin6(&sock->src)->sin6_port);
+		dst_port = ntohs(net_sin6(&sock->dst)->sin6_port);
 
 		hdr_len = sizeof(struct net_ipv6_hdr);
 	} else
@@ -482,6 +494,8 @@ static int pkt_setup_ip_data(struct net_pkt *pkt,
 			    &((struct sockaddr_in *)&sock->src)->sin_addr)) {
 			return -1;
 		}
+		src_port = ntohs(net_sin(&sock->src)->sin_port);
+		dst_port = ntohs(net_sin(&sock->dst)->sin_port);
 
 		hdr_len = sizeof(struct net_ipv4_hdr);
 	} else
@@ -492,7 +506,7 @@ static int pkt_setup_ip_data(struct net_pkt *pkt,
 
 #if defined(CONFIG_NET_UDP)
 	if (sock->ip_proto == IPPROTO_UDP) {
-		if (net_udp_create(pkt, src_port, dst_port)) {
+		if (net_udp_create(pkt, dst_port, src_port)) {
 			return -1;
 		}
 
@@ -512,8 +526,8 @@ static int pkt_setup_ip_data(struct net_pkt *pkt,
 		(void)memset(tcp, 0, NET_TCPH_LEN);
 
 		/* Setup TCP header */
-		tcp->src_port = src_port;
-		tcp->dst_port = dst_port;
+		tcp->src_port = dst_port;
+		tcp->dst_port = src_port;
 
 		if (net_pkt_set_data(pkt, &tcp_access)) {
 			return -1;
@@ -948,7 +962,7 @@ static void on_cmd_sockdataind(struct net_buf **buf, u16_t len)
 		 * send_at_cmd().  Instead, when the resulting response is
 		 * received, we trigger on_cmd_sockread() to handle it.
 		 */
-		send_at_cmd(sock, sendbuf, K_NO_WAIT);
+		send_at_cmd(sock, sendbuf, 0);
 	}
 }
 
@@ -1035,7 +1049,8 @@ static int net_buf_ncmp(struct net_buf *buf, const u8_t *s2, size_t n)
 	return (n == 0) ? 0 : (*(frag->data + offset) - *s2);
 }
 
-static inline struct net_buf *read_rx_allocator(s32_t timeout, void *user_data)
+static inline struct net_buf *read_rx_allocator(k_timeout_t timeout,
+						void *user_data)
 {
 	return net_buf_alloc((struct net_buf_pool *)user_data, timeout);
 }
@@ -1215,12 +1230,12 @@ static int modem_pin_init(void)
 	 * (doesn't go through the signal level translator)
 	 */
 	LOG_DBG("MDM_RESET_PIN -> ASSERTED");
-	gpio_pin_write(ictx.gpio_port_dev[MDM_RESET],
-		       pinconfig[MDM_RESET].pin, MDM_RESET_ASSERTED);
+	gpio_pin_set_raw(ictx.gpio_port_dev[MDM_RESET],
+			 pinconfig[MDM_RESET].pin, MDM_RESET_ASSERTED);
 	k_sleep(K_SECONDS(7));
 	LOG_DBG("MDM_RESET_PIN -> NOT_ASSERTED");
-	gpio_pin_write(ictx.gpio_port_dev[MDM_RESET],
-		       pinconfig[MDM_RESET].pin, MDM_RESET_NOT_ASSERTED);
+	gpio_pin_set_raw(ictx.gpio_port_dev[MDM_RESET],
+			 pinconfig[MDM_RESET].pin, MDM_RESET_NOT_ASSERTED);
 
 	/* disable signal level translator (necessary
 	 * for the modem to boot properly).  All signals
@@ -1230,9 +1245,9 @@ static int modem_pin_init(void)
 	 * be in the correct state.
 	 */
 	LOG_DBG("SIG_TRANS_ENA_PIN -> DISABLED");
-	gpio_pin_write(ictx.gpio_port_dev[SHLD_3V3_1V8_SIG_TRANS_ENA],
-		       pinconfig[SHLD_3V3_1V8_SIG_TRANS_ENA].pin,
-		       SHLD_3V3_1V8_SIG_TRANS_DISABLED);
+	gpio_pin_set_raw(ictx.gpio_port_dev[SHLD_3V3_1V8_SIG_TRANS_ENA],
+			 pinconfig[SHLD_3V3_1V8_SIG_TRANS_ENA].pin,
+			 SHLD_3V3_1V8_SIG_TRANS_DISABLED);
 
 	/* While the level translator is disabled and ouptut pins
 	 * are tristated, make sure the inputs are in the same state
@@ -1240,18 +1255,22 @@ static int modem_pin_init(void)
 	 * enabled, there are no differences.
 	 */
 	LOG_DBG("MDM_BOOT_MODE_SEL_PIN -> NORMAL");
-	gpio_pin_write(ictx.gpio_port_dev[MDM_BOOT_MODE_SEL],
-		       pinconfig[MDM_BOOT_MODE_SEL].pin, MDM_BOOT_MODE_NORMAL);
+	gpio_pin_set_raw(ictx.gpio_port_dev[MDM_BOOT_MODE_SEL],
+			 pinconfig[MDM_BOOT_MODE_SEL].pin,
+			 MDM_BOOT_MODE_NORMAL);
 	LOG_DBG("MDM_POWER_PIN -> ENABLE");
-	gpio_pin_write(ictx.gpio_port_dev[MDM_POWER],
-		       pinconfig[MDM_POWER].pin, MDM_POWER_ENABLE);
+	gpio_pin_set_raw(ictx.gpio_port_dev[MDM_POWER],
+			 pinconfig[MDM_POWER].pin,
+			 MDM_POWER_ENABLE);
 	LOG_DBG("MDM_KEEP_AWAKE_PIN -> ENABLED");
-	gpio_pin_write(ictx.gpio_port_dev[MDM_KEEP_AWAKE],
-		       pinconfig[MDM_KEEP_AWAKE].pin, MDM_KEEP_AWAKE_ENABLED);
-#ifdef DT_INST_0_WNC_M14A2A_MDM_SEND_OK_GPIOS_PIN
+	gpio_pin_set_raw(ictx.gpio_port_dev[MDM_KEEP_AWAKE],
+			 pinconfig[MDM_KEEP_AWAKE].pin,
+			 MDM_KEEP_AWAKE_ENABLED);
+#if DT_INST_NODE_HAS_PROP(0, mdm_send_ok_gpios)
 	LOG_DBG("MDM_SEND_OK_PIN -> ENABLED");
-	gpio_pin_write(ictx.gpio_port_dev[MDM_SEND_OK],
-		       pinconfig[MDM_SEND_OK].pin, MDM_SEND_OK_ENABLED);
+	gpio_pin_set_raw(ictx.gpio_port_dev[MDM_SEND_OK],
+			 pinconfig[MDM_SEND_OK].pin,
+			 MDM_SEND_OK_ENABLED);
 #endif
 
 	/* wait for the WNC Module to perform its initial boot correctly */
@@ -1263,9 +1282,9 @@ static int modem_pin_init(void)
 	 * When enabled, there will be no changes in the above 4 pins...
 	 */
 	LOG_DBG("SIG_TRANS_ENA_PIN -> ENABLED");
-	gpio_pin_write(ictx.gpio_port_dev[SHLD_3V3_1V8_SIG_TRANS_ENA],
-		       pinconfig[SHLD_3V3_1V8_SIG_TRANS_ENA].pin,
-		       SHLD_3V3_1V8_SIG_TRANS_ENABLED);
+	gpio_pin_set_raw(ictx.gpio_port_dev[SHLD_3V3_1V8_SIG_TRANS_ENA],
+			 pinconfig[SHLD_3V3_1V8_SIG_TRANS_ENA].pin,
+			 SHLD_3V3_1V8_SIG_TRANS_ENABLED);
 
 	LOG_INF("... Done!");
 
@@ -1280,12 +1299,14 @@ static void modem_wakeup_pin_fix(void)
 	LOG_DBG("Toggling MDM_KEEP_AWAKE_PIN to avoid missed characters");
 	k_sleep(K_MSEC(20));
 	LOG_DBG("MDM_KEEP_AWAKE_PIN -> DISABLED");
-	gpio_pin_write(ictx.gpio_port_dev[MDM_KEEP_AWAKE],
-		       pinconfig[MDM_KEEP_AWAKE].pin, MDM_KEEP_AWAKE_DISABLED);
+	gpio_pin_set_raw(ictx.gpio_port_dev[MDM_KEEP_AWAKE],
+			 pinconfig[MDM_KEEP_AWAKE].pin,
+			 MDM_KEEP_AWAKE_DISABLED);
 	k_sleep(K_SECONDS(2));
 	LOG_DBG("MDM_KEEP_AWAKE_PIN -> ENABLED");
-	gpio_pin_write(ictx.gpio_port_dev[MDM_KEEP_AWAKE],
-		       pinconfig[MDM_KEEP_AWAKE].pin, MDM_KEEP_AWAKE_ENABLED);
+	gpio_pin_set_raw(ictx.gpio_port_dev[MDM_KEEP_AWAKE],
+			 pinconfig[MDM_KEEP_AWAKE].pin,
+			 MDM_KEEP_AWAKE_ENABLED);
 	k_sleep(K_MSEC(20));
 }
 
@@ -1456,7 +1477,7 @@ static int wncm14a2a_init(struct device *dev)
 		}
 
 		gpio_pin_configure(ictx.gpio_port_dev[i], pinconfig[i].pin,
-			   GPIO_DIR_OUT);
+				   pinconfig[i].flags | GPIO_OUTPUT);
 	}
 
 	/* Set modem data storage */
@@ -1772,6 +1793,14 @@ static int offload_put(struct net_context *context)
 	sock->context->send_cb = NULL;
 	socket_put(sock);
 	net_context_unref(context);
+	if (sock->type == SOCK_STREAM) {
+		/* TCP contexts are referenced twice,
+		 *  once for the app and once for the stack.
+		 *  Since TCP stack is not used for offload,
+		 *  unref a second time.
+		 */
+		net_context_unref(context);
+	}
 
 	return 0;
 }
@@ -1818,6 +1847,6 @@ static struct net_if_api api_funcs = {
 };
 
 NET_DEVICE_OFFLOAD_INIT(modem_wncm14a2a, "MODEM_WNCM14A2A",
-			wncm14a2a_init, &ictx,
+			wncm14a2a_init, device_pm_control_nop, &ictx,
 			NULL, CONFIG_MODEM_WNCM14A2A_INIT_PRIORITY, &api_funcs,
 			MDM_MAX_DATA_LENGTH);

@@ -30,7 +30,8 @@ static inline int aloha_radio_send(struct net_if *iface,
 	while (retries) {
 		retries--;
 
-		ret = ieee802154_tx(iface, pkt, frag);
+		ret = ieee802154_tx(iface, IEEE802154_TX_MODE_DIRECT,
+				    pkt, frag);
 		if (ret) {
 			continue;
 		}
@@ -48,6 +49,11 @@ static enum net_verdict aloha_radio_handle_ack(struct net_if *iface,
 					       struct net_pkt *pkt)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
+
+	if (IS_ENABLED(CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA) &&
+	    ieee802154_get_hw_capabilities(iface) & IEEE802154_HW_CSMA) {
+		return NET_OK;
+	}
 
 	return handle_ack(ctx, pkt);
 }

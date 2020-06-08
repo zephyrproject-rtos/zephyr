@@ -60,7 +60,7 @@ static void tx(int *can_fd)
 	LOG_DBG("Sending CAN data...");
 
 	while (1) {
-		ret = send(fd, &frame, sizeof(frame), K_FOREVER);
+		ret = send(fd, &frame, sizeof(frame), 0);
 		if (ret < 0) {
 			LOG_ERR("Cannot send CAN message (%d)", -errno);
 		}

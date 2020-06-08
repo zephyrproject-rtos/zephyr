@@ -1,4 +1,4 @@
-.. _i2c:
+.. _i2c_api:
 
 
 I2C
@@ -13,8 +13,6 @@ Configuration Options
 Related configuration options:
 
 * :option:`CONFIG_I2C`
-
-.. _i2c_api:
 
 API Reference
 *************

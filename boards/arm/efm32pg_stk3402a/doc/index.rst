@@ -59,12 +59,35 @@ The efm32pg_stk3402a board configuration supports the following hardware feature
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c port-polling                    |
 +-----------+------------+-------------------------------------+
+| WATCHDOG  | on-chip    | watchdog                            |
++-----------+------------+-------------------------------------+
+| TRNG      | on-chip    | true random number generator        |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
 	``boards/arm/efm32pg_stk3402a/efm32pg_stk3402a_defconfig``
 
+The default configuration when building for this EFM32JG12B SoC can be found in
+another defconfig file:
+
+	``boards/arm/efm32pg_stk3402a/efm32pg_stk3402a_defconfig_jg``
+
 Other hardware features are currently not supported by the port.
+
+EFM32 Jade Gecko SoC
+--------------------
+
+The EFM32 Pearl Gecko Starter Kit EFM32PG-STK3402A can also be used to evaluate
+the EFM32 Jade Gecko SoC (EFM32JG12B). The only difference between the Pearl
+Gecko and the Jade Gecko is their core. The Pearl Gecko contains an ARM®
+Cortex®-M4F core, and the Jade Gecko an ARM® Cortex®-M3 core. Other features
+such as memory and peripherals are the same.
+
+Code that is built for the Jade Gecko also runs on an equivalent Pearl Gecko.
+
+To build firmware for the Jade Gecko and run it on the EFM32 Pearl Gecko Starter
+Kit, use the board ``efm32pg_stk3402a_jg`` instead of ``efm32pg_stk3402a``.
 
 Connections and IOs
 ===================

@@ -20,16 +20,6 @@ config MCG_VDIV0
 config MCG_FCRDIV
 	default 1
 
-if UART_MCUX
-
-config UART_MCUX_0
-	default y if UART_CONSOLE
-
-config UART_MCUX_3
-	default y if BT_UART
-
-endif # UART_MCUX
-
 if PINMUX_MCUX
 
 config PINMUX_MCUX_PORTA
@@ -42,59 +32,21 @@ config PINMUX_MCUX_PORTC
 	default y
 
 config PINMUX_MCUX_PORTD
-	default y if SPI_0 || UART_MCUX_2
+	default y if "$(dt_nodelabel_enabled,spi0)" && SPI
+	default y if "$(dt_nodelabel_enabled,uart2)" && SERIAL
 
 config PINMUX_MCUX_PORTE
 	default y
 
 endif # PINMUX_MCUX
 
-if GPIO_MCUX
-
-config GPIO_MCUX_PORTA
-	default y
-
-config GPIO_MCUX_PORTB
-	default y
-
-config GPIO_MCUX_PORTC
-	default y
-
-config GPIO_MCUX_PORTD
-	default y
-
-config GPIO_MCUX_PORTE
-	default y
-
-endif # GPIO_MCUX
-
-if I2C
-
-config I2C_0
-	default y
-
-endif # I2C
-
-if ADC
-
-config ADC_1
-	default y
-
-endif # ADC
-
-if PWM_MCUX_FTM
-
-config PWM_3
-	default y
-
-endif # PWM_MCUX_FTM
-
-if SPI
+config TEMP_KINETIS
+	default y if "$(dt_nodelabel_enabled,adc1)"
+	depends on SENSOR
 
 config SPI_0
 	default y
-
-endif # SPI
+	depends on SPI
 
 if NETWORKING
 
@@ -105,12 +57,5 @@ config ETH_MCUX_0
 	default y if NET_L2_ETHERNET
 
 endif # NETWORKING
-
-if CAN
-
-config CAN_0
-	default y
-
-endif # CAN
 
 endif # BOARD_FRDM_K64F

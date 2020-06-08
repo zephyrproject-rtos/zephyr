@@ -12,24 +12,8 @@ source "soc/arm/st_stm32/stm32l0/Kconfig.defconfig.stm32l0*"
 config SOC_SERIES
 	default "stm32l0"
 
-if GPIO_STM32
-
-# GPIO ports A, B and C are set in ../common/Kconfig.defconfig.series
-
-endif # GPIO_STM32
-
-if I2C_STM32
-
-config I2C_STM32_V2
-	default y
-
-endif # I2C_STM32
-
-if DMA_STM32
-
 config DMA_STM32_V2
 	default y
-
-endif # DMA
+	depends on DMA_STM32
 
 endif # SOC_SERIES_STM32L0X

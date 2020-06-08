@@ -8,11 +8,13 @@
  * https://www.st.com/resource/en/datasheet/lis2mdl.pdf
  */
 
+#define DT_DRV_COMPAT st_lis2mdl
+
 #include <string.h>
 #include "lis2mdl.h"
 #include <logging/log.h>
 
-#ifdef DT_ST_LIS2MDL_BUS_SPI
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 
 #define LIS2MDL_SPI_READ		(1 << 7)
 
@@ -23,7 +25,7 @@ static int lis2mdl_spi_read(struct device *dev, u8_t reg_addr,
 			    u8_t *value, u8_t len)
 {
 	struct lis2mdl_data *data = dev->driver_data;
-	const struct lis2mdl_config *cfg = dev->config->config_info;
+	const struct lis2mdl_config *cfg = dev->config_info;
 	const struct spi_config *spi_cfg = &cfg->spi_conf;
 	u8_t buffer_tx[2] = { reg_addr | LIS2MDL_SPI_READ, 0 };
 	const struct spi_buf tx_buf = {
@@ -65,7 +67,7 @@ static int lis2mdl_spi_write(struct device *dev, u8_t reg_addr,
 			     u8_t *value, u8_t len)
 {
 	struct lis2mdl_data *data = dev->driver_data;
-	const struct lis2mdl_config *cfg = dev->config->config_info;
+	const struct lis2mdl_config *cfg = dev->config_info;
 	const struct spi_config *spi_cfg = &cfg->spi_conf;
 	u8_t buffer_tx[1] = { reg_addr & ~LIS2MDL_SPI_READ };
 	const struct spi_buf tx_buf[2] = {
@@ -105,8 +107,8 @@ int lis2mdl_spi_init(struct device *dev)
 	data->ctx = &data->ctx_spi;
 	data->ctx->handle = dev;
 
-#if defined(DT_INST_0_ST_LIS2MDL_CS_GPIOS_CONTROLLER)
-	const struct lis2mdl_config *cfg = dev->config->config_info;
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
+	const struct lis2mdl_config *cfg = dev->config_info;
 
 	/* handle SPI CS thru GPIO if it is the case */
 	data->cs_ctrl.gpio_dev = device_get_binding(cfg->gpio_cs_port);
@@ -131,4 +133,4 @@ int lis2mdl_spi_init(struct device *dev)
 
 	return 0;
 }
-#endif /* DT_ST_LIS2MDL_BUS_SPI */
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */

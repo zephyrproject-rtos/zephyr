@@ -20,4 +20,4 @@ config UPDATEHUB_POLLING
 	  intervention.
 endif #!UPDATEHUB_MANUAL
 
-source "$ZEPHYR_BASE/Kconfig.zephyr"
+source "Kconfig.zephyr"

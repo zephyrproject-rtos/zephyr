@@ -8,6 +8,7 @@ menuconfig BT_MESH
 	select TINYCRYPT
 	select TINYCRYPT_AES
 	select TINYCRYPT_AES_CMAC
+	select BT_HOST_CCM
 	depends on BT_OBSERVER && BT_BROADCASTER
 	help
 	  This option enables Bluetooth Mesh support. The specific
@@ -19,7 +20,6 @@ if BT_MESH
 # Virtual option enabled whenever Generic Provisioning layer is needed
 config BT_MESH_PROV
 	bool
-	select BT_ECC
 
 config BT_MESH_PB_ADV
 	bool "Provisioning support using the advertising bearer (PB-ADV)"
@@ -31,22 +31,40 @@ config BT_MESH_PB_ADV
 
 config BT_MESH_PROVISIONER
 	bool "Provisioner support"
-	select BT_ECC
 	select BT_MESH_PROV
 	help
 	  Enable this option to have support for provisioning remote devices.
 
-if BT_MESH_PROVISIONER
+config BT_MESH_CDB
+	bool "Mesh Configuration Database [EXPERIMENTAL]"
 
-config BT_MESH_NODE_COUNT
-	int "Maximum number of saved nodes per network"
+if BT_MESH_CDB
+
+config BT_MESH_CDB_NODE_COUNT
+	int "Maximum number of nodes in the database"
 	default 1
 	range 1 4096
 	help
 	  This option specifies how many nodes each network can at most
-	  save in the provisioning database.
+	  save in the configuration database.
 
-endif # BT_MESH_PROVISIONER
+config BT_MESH_CDB_SUBNET_COUNT
+	int "Maximum number of subnets in the database"
+	default 1
+	range 1 4096
+	help
+	  This option specifies how many subnets that can at most be
+	  saved in the configuration database.
+
+config BT_MESH_CDB_APP_KEY_COUNT
+	int "Maximum number of application keys in the database"
+	default 1
+	range 1 4096
+	help
+	  This option specifies how many application keys that can at most
+	  be saved in the configuration database.
+
+endif # BT_MESH_CDB
 
 if BT_CONN
 
@@ -83,18 +101,15 @@ config BT_MESH_NODE_ID_TIMEOUT
 	  be the appropriate value as well, so just leaving this as the
 	  default is the safest option.
 
-if BT_MESH_PROXY
-
 config BT_MESH_PROXY_FILTER_SIZE
 	int "Maximum number of filter entries per Proxy Client"
 	default 3 if BT_MESH_GATT_PROXY
 	default 1
 	range 1 32767
+	depends on BT_MESH_PROXY
 	help
 	  This option specifies how many Proxy Filter entries the local
 	  node supports.
-
-endif # BT_MESH_PROXY
 
 endif # BT_CONN
 
@@ -171,7 +186,7 @@ config BT_MESH_MSG_CACHE_SIZE
 config BT_MESH_ADV_BUF_COUNT
 	int "Number of advertising buffers"
 	default 6
-	range 6 256
+	range 3 256
 	help
 	  Number of advertising buffers available. This should be chosen
 	  based on what kind of features the local node should have. E.g.
@@ -209,7 +224,7 @@ config BT_MESH_IVU_DIVIDER
 config BT_MESH_TX_SEG_MSG_COUNT
 	int "Maximum number of simultaneous outgoing segmented messages"
 	default 1
-	range 1 BT_MESH_ADV_BUF_COUNT
+	range 1 255
 	help
 	  Maximum number of simultaneous outgoing multi-segment and/or
 	  reliable messages.
@@ -222,17 +237,41 @@ config BT_MESH_RX_SEG_MSG_COUNT
 	  Maximum number of simultaneous incoming multi-segment and/or
 	  reliable messages.
 
-config BT_MESH_RX_SDU_MAX
-	int "Maximum incoming Upper Transport Access PDU length"
-	default 72
-	range 24 384
+config BT_MESH_SEG_BUFS
+	int "Number of segment buffers available"
+	default 64
+	range BT_MESH_RX_SEG_MAX 16384 if BT_MESH_RX_SEG_MAX > \
+					  BT_MESH_TX_SEG_MAX
+	range BT_MESH_TX_SEG_MAX 16384
 	help
-	  Maximum incoming Upper Transport Access PDU length. This
-	  determines also how many segments incoming segmented messages
-	  can have. Each segment can contain 12 bytes, so this value should
-	  be set to a multiple of 12 to avoid wasted memory. The minimum
-	  requirement is 2 segments (24 bytes) whereas the maximum supported
-	  by the Mesh specification is 32 segments (384 bytes).
+	  The incoming and outgoing segmented messages allocate their
+	  segments from the same pool. Each segment is a 12 byte block,
+	  and may only be used by one message at the time.
+
+	  Outgoing messages will allocate their segments at the start of the
+	  transmission, and release them one by one as soon as they have been
+	  acknowledged by the receiver. Incoming messages allocate all their
+	  segments at the start of the transaction, and won't release them until
+	  the message is fully received.
+
+config BT_MESH_RX_SEG_MAX
+	int "Maximum number of segments in incoming messages"
+	default 3
+	range 2 32
+	help
+	  Maximum number of segments supported for incoming messages.
+	  This value should typically be fine-tuned based on what
+	  models the local node supports, i.e. what's the largest
+	  message payload that the node needs to be able to receive.
+	  This value affects memory and call stack consumption, which
+	  is why the default is lower than the maximum that the
+	  specification would allow (32 segments).
+
+	  The maximum incoming SDU size is 12 times this number (out of
+	  which 4 or 8 bytes is used for the Transport Layer MIC). For
+	  example, 5 segments means the maximum SDU size is 60 bytes,
+	  which leaves 56 bytes for application layer data using a
+	  4-byte MIC and 52 bytes using an 8-byte MIC.
 
 config BT_MESH_TX_SEG_MAX
 	int "Maximum number of segments in outgoing messages"
@@ -243,20 +282,15 @@ config BT_MESH_TX_SEG_MAX
 	  This value should typically be fine-tuned based on what
 	  models the local node supports, i.e. what's the largest
 	  message payload that the node needs to be able to send.
-	  This value affects memory and call stack consumption, which
-	  is why the default is lower than the maximum that the
-	  specification would allow (32 segments).
+	  This value affects memory consumption, which is why the
+	  default is lower than the maximum that the specification
+	  would allow (32 segments).
 
 	  The maximum outgoing SDU size is 12 times this number (out of
 	  which 4 or 8 bytes is used for the Transport Layer MIC). For
 	  example, 5 segments means the maximum SDU size is 60 bytes,
 	  which leaves 56 bytes for application layer data using a
 	  4-byte MIC and 52 bytes using an 8-byte MIC.
-
-	  Be sure to specify a sufficient number of advertising buffers
-	  when setting this option to a higher value. There must be at
-	  least three more advertising buffers (BT_MESH_ADV_BUF_COUNT)
-	  as there are outgoing segments.
 
 config BT_MESH_RELAY
 	bool "Relay support"
@@ -410,6 +444,12 @@ config BT_MESH_FRIEND_SUB_LIST_SIZE
 	help
 	  Size of the Subscription List that can be supported by a
 	  Friend node for a Low Power node.
+
+config BT_MESH_LPN_SUB_ALL_NODES_ADDR
+	bool "Automatically subscribe all nodes address"
+	help
+	  Automatically subscribe all nodes address when friendship
+	  established.
 
 config BT_MESH_FRIEND_LPN_COUNT
 	int "Number of supported LPN nodes"
@@ -589,6 +629,12 @@ config BT_MESH_DEBUG_SETTINGS
 	depends on BT_SETTINGS
 	help
 	  Use this option to enable persistent settings debug logs.
+
+config BT_MESH_DEBUG_CDB
+	bool "Configuration database debug"
+	depends on BT_MESH_CDB
+	help
+	  Use this option to enable configuration database debug logs.
 
 endif # BT_MESH_DEBUG
 

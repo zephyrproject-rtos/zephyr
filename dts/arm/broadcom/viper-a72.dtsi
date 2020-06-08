@@ -1,0 +1,62 @@
+/*
+ * Copyright 2020 Broadcom
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-a.dtsi>
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+
+#include "viper-common.dtsi"
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a72";
+			reg = <0>;
+		};
+	};
+
+	soc {
+		gic: interrupt-controller@42700000 {
+			compatible = "arm,gic";
+			reg = <0x42700000 0x010000>,
+			      <0x42780000 0x600000>;
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			label = "GIC";
+			status = "okay";
+		};
+
+		arch_timer: timer {
+			compatible = "arm,arm-timer";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>,
+				     <GIC_PPI 14 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>,
+				     <GIC_PPI 11 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>,
+				     <GIC_PPI 10 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			label = "arch_timer";
+		};
+
+	};
+};
+
+&uart0 {
+	interrupt-parent = <&gic>;
+	interrupts = <GIC_SPI 24 IRQ_TYPE_LEVEL
+		      IRQ_DEFAULT_PRIORITY>;
+};
+
+&uart1 {
+	interrupt-parent = <&gic>;
+	interrupts = <GIC_SPI 181 IRQ_TYPE_LEVEL
+		      IRQ_DEFAULT_PRIORITY>;
+};

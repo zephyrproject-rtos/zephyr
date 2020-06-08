@@ -7,9 +7,9 @@
 
 #include <toolchain.h>
 #include <irq.h>
-#include <soc.h>
+#include <arch/cpu.h>
 
-#include <debug/tracing.h>
+#include <tracing/tracing.h>
 
 static ALWAYS_INLINE void riscv_idle(unsigned int key)
 {
@@ -33,7 +33,7 @@ static ALWAYS_INLINE void riscv_idle(unsigned int key)
  */
 void arch_cpu_idle(void)
 {
-	riscv_idle(SOC_MSTATUS_IEN);
+	riscv_idle(MSTATUS_IEN);
 }
 
 /**

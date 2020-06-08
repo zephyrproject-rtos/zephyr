@@ -7,9 +7,9 @@ add_subdirectory(../../src settings_test_bindir)
 target_link_libraries(settings_fcb_test PRIVATE settings_test)
 
 zephyr_include_directories(
-	$ENV{ZEPHYR_BASE}/subsys/settings/include
-	$ENV{ZEPHYR_BASE}/subsys/settings/src
-	$ENV{ZEPHYR_BASE}/tests/subsys/settings/fcb/src
+	${ZEPHYR_BASE}/subsys/settings/include
+	${ZEPHYR_BASE}/subsys/settings/src
+	${ZEPHYR_BASE}/tests/subsys/settings/fcb/src
 	)
 
 FILE(GLOB mysources *.c)

@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT microchip_xec_ps2
+
 #include <errno.h>
 #include <device.h>
 #include <drivers/ps2.h>
@@ -30,7 +32,7 @@ struct ps2_xec_data {
 
 static int ps2_xec_configure(struct device *dev, ps2_callback_t callback_isr)
 {
-	const struct ps2_xec_config *config = dev->config->config_info;
+	const struct ps2_xec_config *config = dev->config_info;
 	struct ps2_xec_data *data = dev->driver_data;
 	PS2_Type *base = config->base;
 
@@ -67,7 +69,7 @@ static int ps2_xec_configure(struct device *dev, ps2_callback_t callback_isr)
 
 static int ps2_xec_write(struct device *dev, u8_t value)
 {
-	const struct ps2_xec_config *config = dev->config->config_info;
+	const struct ps2_xec_config *config = dev->config_info;
 	struct ps2_xec_data *data = dev->driver_data;
 	PS2_Type *base = config->base;
 	int i = 0;
@@ -84,7 +86,7 @@ static int ps2_xec_write(struct device *dev, u8_t value)
 	 * FSM.
 	 */
 	while (((base->STATUS &
-		(MCHP_PS2_STATUS_RXD_RDY | MCHP_PS2_STATUS_TX_IDLE))
+		(MCHP_PS2_STATUS_RX_BUSY | MCHP_PS2_STATUS_TX_IDLE))
 		!= MCHP_PS2_STATUS_TX_IDLE) && (i < PS2_TIMEOUT)) {
 		k_busy_wait(50);
 		i++;
@@ -100,8 +102,9 @@ static int ps2_xec_write(struct device *dev, u8_t value)
 
 	/* Read to clear data ready bit in the status register*/
 	dummy = base->TRX_BUFF;
-
+	k_sleep(K_MSEC(1));
 	base->STATUS = MCHP_PS2_STATUS_RW1C_MASK;
+
 	/* Switch the interface to TX mode and enable state machine */
 	base->CTRL = MCHP_PS2_CTRL_TR_TX | MCHP_PS2_CTRL_EN;
 
@@ -115,7 +118,7 @@ static int ps2_xec_write(struct device *dev, u8_t value)
 
 static int ps2_xec_inhibit_interface(struct device *dev)
 {
-	const struct ps2_xec_config *config = dev->config->config_info;
+	const struct ps2_xec_config *config = dev->config_info;
 	struct ps2_xec_data *data = dev->driver_data;
 	PS2_Type *base = config->base;
 
@@ -134,7 +137,7 @@ static int ps2_xec_inhibit_interface(struct device *dev)
 
 static int ps2_xec_enable_interface(struct device *dev)
 {
-	const struct ps2_xec_config *config = dev->config->config_info;
+	const struct ps2_xec_config *config = dev->config_info;
 	struct ps2_xec_data *data = dev->driver_data;
 	PS2_Type *base = config->base;
 
@@ -148,7 +151,7 @@ static int ps2_xec_enable_interface(struct device *dev)
 static void ps2_xec_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	const struct ps2_xec_config *config = dev->config->config_info;
+	const struct ps2_xec_config *config = dev->config_info;
 	struct ps2_xec_data *data = dev->driver_data;
 	PS2_Type *base = config->base;
 	u32_t status;
@@ -167,7 +170,7 @@ static void ps2_xec_isr(void *arg)
 		    (MCHP_PS2_STATUS_TX_TMOUT | MCHP_PS2_STATUS_TX_ST_TMOUT)) {
 		/* Clear sticky bits and go to read mode */
 		base->STATUS = MCHP_PS2_STATUS_RW1C_MASK;
-		LOG_ERR("TX time out");
+		LOG_ERR("TX time out: %0x", status);
 	}
 
 	/* The control register reverts to RX automatically after
@@ -188,15 +191,15 @@ static const struct ps2_driver_api ps2_xec_driver_api = {
 static int ps2_xec_init_0(struct device *dev);
 
 static const struct ps2_xec_config ps2_xec_config_0 = {
-	.base = (PS2_Type *) DT_PS2_XEC_0_BASE_ADDR,
-	.girq_id = MCHP_GIRQ18_ID,
-	.girq_bit = MCHP_PS2_0_GIRQ_POS,
-	.isr_nvic = DT_PS2_XEC_0_IRQ,
+	.base = (PS2_Type *) DT_INST_REG_ADDR(0),
+	.girq_id = DT_INST_PROP(0, girq),
+	.girq_bit = DT_INST_PROP(0, girq_bit),
+	.isr_nvic = DT_INST_IRQN(0),
 };
 
 static struct ps2_xec_data ps2_xec_port_data_0;
 
-DEVICE_AND_API_INIT(ps2_xec_0, DT_PS2_XEC_0_LABEL,
+DEVICE_AND_API_INIT(ps2_xec_0, DT_INST_LABEL(0),
 		    &ps2_xec_init_0,
 		    &ps2_xec_port_data_0, &ps2_xec_config_0,
 		    POST_KERNEL, CONFIG_PS2_INIT_PRIORITY,
@@ -211,11 +214,11 @@ static int ps2_xec_init_0(struct device *dev)
 
 	k_sem_init(&data->tx_lock, 0, 1);
 
-	IRQ_CONNECT(DT_PS2_XEC_0_IRQ,
-		    DT_PS2_XEC_0_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
 		    ps2_xec_isr, DEVICE_GET(ps2_xec_0), 0);
 
-	irq_enable(DT_PS2_XEC_0_IRQ);
+	irq_enable(DT_INST_IRQN(0));
 
 	return 0;
 }
@@ -225,16 +228,16 @@ static int ps2_xec_init_0(struct device *dev)
 static int ps2_xec_init_1(struct device *dev);
 
 static const struct ps2_xec_config ps2_xec_config_1 = {
-	.base = (PS2_Type *) DT_PS2_XEC_1_BASE_ADDR,
-	.girq_id = MCHP_GIRQ18_ID,
-	.girq_bit = MCHP_PS2_1_GIRQ_POS,
-	.isr_nvic = DT_PS2_XEC_1_IRQ,
+	.base = (PS2_Type *) DT_INST_REG_ADDR(1),
+	.girq_id = DT_INST_PROP(1, girq),
+	.girq_bit = DT_INST_PROP(1, girq_bit),
+	.isr_nvic = DT_INST_IRQN(1),
 
 };
 
 static struct ps2_xec_data ps2_xec_port_data_1;
 
-DEVICE_AND_API_INIT(ps2_xec_1, DT_PS2_XEC_1_LABEL,
+DEVICE_AND_API_INIT(ps2_xec_1, DT_INST_LABEL(1),
 		    &ps2_xec_init_1,
 		    &ps2_xec_port_data_1, &ps2_xec_config_1,
 		    POST_KERNEL, CONFIG_PS2_INIT_PRIORITY,
@@ -248,11 +251,11 @@ static int ps2_xec_init_1(struct device *dev)
 
 	k_sem_init(&data->tx_lock, 0, 1);
 
-	IRQ_CONNECT(DT_PS2_XEC_1_IRQ,
-		    DT_PS2_XEC_1_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(1),
+		    DT_INST_IRQ(1, priority),
 		    ps2_xec_isr, DEVICE_GET(ps2_xec_1), 0);
 
-	irq_enable(DT_PS2_XEC_1_IRQ);
+	irq_enable(DT_INST_IRQN(1));
 
 	return 0;
 }

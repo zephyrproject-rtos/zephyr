@@ -18,4 +18,3 @@
 
 /* scratchpad for the string used to print on console */
 char tmp_string[TMP_STRING_SIZE];
-

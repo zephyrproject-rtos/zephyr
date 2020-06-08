@@ -275,7 +275,7 @@ void test_mslab(void)
 }
 
 K_THREAD_DEFINE(HELPER, STACKSIZE, helper_thread, NULL, NULL, NULL,
-		7, 0, K_NO_WAIT);
+		7, 0, 0);
 
 /*test case main entry*/
 void test_main(void)

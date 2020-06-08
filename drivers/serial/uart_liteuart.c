@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT litex_uart0
+
 #include <kernel.h>
 #include <arch/cpu.h>
 #include <init.h>
@@ -14,14 +16,14 @@
 
 #define UART_EV_TX	(1 << 0)
 #define UART_EV_RX	(1 << 1)
-#define UART_BASE_ADDR	DT_INST_0_LITEX_UART0_BASE_ADDRESS
+#define UART_BASE_ADDR	DT_INST_REG_ADDR(0)
 #define UART_RXTX	((UART_BASE_ADDR) + 0x00)
 #define UART_TXFULL	((UART_BASE_ADDR) + 0x04)
 #define UART_RXEMPTY	((UART_BASE_ADDR) + 0x08)
 #define UART_EV_STATUS	((UART_BASE_ADDR) + 0x0c)
 #define UART_EV_PENDING	((UART_BASE_ADDR) + 0x10)
 #define UART_EV_ENABLE	((UART_BASE_ADDR) + 0x14)
-#define UART_IRQ	DT_INST_0_LITEX_UART0_IRQ_0
+#define UART_IRQ	DT_INST_IRQN(0)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 typedef void (*irq_cfg_func_t)(void);
@@ -313,10 +315,10 @@ static int uart_liteuart_init(struct device *dev);
 
 static const struct uart_liteuart_device_config uart_liteuart_dev_cfg_0 = {
 	.port		= UART_BASE_ADDR,
-	.baud_rate	= DT_INST_0_LITEX_UART0_CURRENT_SPEED
+	.baud_rate	= DT_INST_PROP(0, current_speed)
 };
 
-DEVICE_AND_API_INIT(uart_liteuart_0, DT_INST_0_LITEX_UART0_LABEL,
+DEVICE_AND_API_INIT(uart_liteuart_0, DT_INST_LABEL(0),
 		uart_liteuart_init,
 		&uart_liteuart_data_0, &uart_liteuart_dev_cfg_0,
 		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -327,7 +329,7 @@ static int uart_liteuart_init(struct device *dev)
 	sys_write8(UART_EV_TX | UART_EV_RX, UART_EV_PENDING);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	IRQ_CONNECT(UART_IRQ, DT_INST_0_LITEX_UART0_IRQ_0_PRIORITY,
+	IRQ_CONNECT(UART_IRQ, DT_INST_IRQ(0, priority),
 			liteuart_uart_irq_handler, DEVICE_GET(uart_liteuart_0),
 			0);
 	irq_enable(UART_IRQ);

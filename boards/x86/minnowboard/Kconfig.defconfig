@@ -8,4 +8,7 @@ config BOARD
 config BUILD_OUTPUT_STRIPPED
 	default y
 
+config X86_MMU_PAGE_POOL_PAGES
+	default 3072 if X86_MMU
+
 endif # BOARD_MINNOWBOARD

@@ -111,6 +111,15 @@ config ARCV2_TIMER_IRQ_PRIORITY
 	  This option specifies the IRQ priority used by the ARC timer. Lower
 	  values have higher priority.
 
+config ARM_ARCH_TIMER
+	bool "ARM architected timer"
+	depends on GIC
+	select TICKLESS_CAPABLE
+	help
+	  This module implements a kernel device driver for the ARM architected
+	  timer which provides per-cpu timers attached to a GIC to deliver its
+	  per-processor interrupts via PPIs.
+
 config CORTEX_M_SYSTICK
 	bool "Cortex-M SYSTICK timer"
 	depends on CPU_CORTEX_M_HAS_SYSTICK
@@ -230,6 +239,7 @@ config XLNX_PSTTC_TIMER
 	bool "Xilinx PS ttc timer support"
 	default y
 	depends on SOC_XILINX_ZYNQMP
+	select TICKLESS_CAPABLE
 	help
 	  This module implements a kernel device driver for the Xilinx ZynqMP
 	  platform provides the standard "system clock driver" interfaces.
@@ -242,6 +252,17 @@ config XLNX_PSTTC_TIMER_INDEX
 	depends on XLNX_PSTTC_TIMER
 	help
 	  This is the index of TTC timer picked to provide system clock.
+
+config CAVS_TIMER
+	bool "CAVS DSP Wall Clock Timer on Intel SoC"
+	depends on CAVS_ICTL
+	select TICKLESS_CAPABLE
+	help
+	  The DSP wall clock timer is a timer driven directly by
+	  external oscillator and is external to the CPU core(s).
+	  It is not as fast as the internal core clock, but provides
+	  a common and synchronized counter for all CPU cores (which
+	  is useful for SMP).
 
 config SYSTEM_CLOCK_DISABLE
 	bool "API to disable system clock"
@@ -283,21 +304,5 @@ config TICKLESS_CAPABLE
 	  one should be expected not to produce a call to
 	  z_clock_announce() (really, not to produce an interrupt at
 	  all) until the specified expiration.
-
-config QEMU_TICKLESS_WORKAROUND
-	bool "Disable tickless on qemu due to asynchrony bug"
-	depends on QEMU_TARGET && TICKLESS_KERNEL
-	help
-	  Qemu (without -icount) has trouble keeping time when the
-	  host process needs to timeshare.  The host OS will routinely
-	  schedule out a process at timescales equivalent to the guest
-	  tick rate.  With traditional ticks delivered regularly by
-	  the hardware, that's mostly OK as it looks like a late
-	  interrupt.  But in tickless mode, the driver needs some CPU
-	  in order to schedule the tick in the first place.  If that
-	  gets delayed across a tick boundary, time gets wonky.  This
-	  tunable is a hint to the driver to disable tickless
-	  accounting on qemu.  Use it only on tests that are known to
-	  have problems.
 
 endmenu

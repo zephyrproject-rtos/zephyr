@@ -271,8 +271,6 @@ void test_i2s_rx_empty_timeout(void)
 	zassert_equal(ret, -EAGAIN, "i2s_read did not timed out");
 }
 
-#define TEST_I2S_TRANSFER_RESTART_PAUSE_LENGTH_US  1000
-
 /** @brief Re-start I2S transfer.
  *
  * - STOP trigger stops transfer / reception at the end of the current block,
@@ -319,7 +317,7 @@ void test_i2s_transfer_restart(void)
 	TC_PRINT("Stop transmission\n");
 
 	/* Keep interface inactive */
-	k_sleep(TEST_I2S_TRANSFER_RESTART_PAUSE_LENGTH_US);
+	k_sleep(K_MSEC(1000));
 
 	TC_PRINT("Start transmission\n");
 
@@ -352,8 +350,6 @@ void test_i2s_transfer_restart(void)
 	zassert_equal(ret, TC_PASS, NULL);
 	TC_PRINT("%d<-OK\n", 3);
 }
-
-#define TEST_I2S_TRANSFER_RX_OVERRUN_PAUSE_LENGTH_US  200
 
 /** @brief RX buffer overrun.
  *
@@ -396,7 +392,7 @@ void test_i2s_transfer_rx_overrun(void)
 	zassert_equal(ret, 0, "TX DRAIN trigger failed");
 
 	/* Wait for transmission to finish */
-	k_sleep(TEST_I2S_TRANSFER_RX_OVERRUN_PAUSE_LENGTH_US);
+	k_sleep(K_MSEC(200));
 
 	/* Read all available data blocks in RX queue */
 	for (int i = 0; i < NUM_RX_BLOCKS; i++) {

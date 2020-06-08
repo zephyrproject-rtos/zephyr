@@ -18,20 +18,21 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,dtcm = &dtcm;
+		zephyr,can-primary = &can1;
 	};
 
 	leds {
 		compatible = "gpio-leds";
 		green_led: led_0 {
-			gpios = <&gpiob 0 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiob 0 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
 		blue_led: led_1 {
-			gpios = <&gpiob 7 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
 		red_led: led_2 {
-			gpios = <&gpiob 14 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiob 14 GPIO_ACTIVE_HIGH>;
 			label = "User LD3";
 		};
 	};
@@ -40,7 +41,7 @@
 		compatible = "gpio-keys";
 		user_button: button_0 {
 			label = "User";
-			gpios = <&gpioc 13 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -74,7 +75,7 @@
 &timers1 {
 	status = "okay";
 
-	pwm {
+	pwm1: pwm {
 		status = "okay";
 	};
 };
@@ -105,5 +106,9 @@
 };
 
 &adc1 {
+	status = "okay";
+};
+
+&rng {
 	status = "okay";
 };

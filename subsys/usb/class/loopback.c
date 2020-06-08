@@ -77,8 +77,7 @@ static void loopback_out_cb(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 	usb_read(ep, loopback_buf, bytes_to_read, NULL);
 }
 
-static void loopback_in_cb(u8_t ep,
-				enum usb_dc_ep_cb_status_code ep_status)
+static void loopback_in_cb(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
 	if (usb_write(ep, loopback_buf, CONFIG_LOOPBACK_BULK_EP_MPS, NULL)) {
 		LOG_DBG("ep 0x%x", ep);
@@ -105,9 +104,9 @@ static void loopback_status_cb(struct usb_cfg_data *cfg,
 	ARG_UNUSED(cfg);
 
 	switch (status) {
-	case USB_DC_CONFIGURED:
+	case USB_DC_INTERFACE:
 		loopback_in_cb(ep_cfg[LOOPBACK_IN_EP_IDX].ep_addr, 0);
-		LOG_DBG("USB device configured");
+		LOG_DBG("USB interface configured");
 		break;
 	case USB_DC_SET_HALT:
 		LOG_DBG("Set Feature ENDPOINT_HALT");

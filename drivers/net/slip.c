@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/net_if.h>
 #include <net/net_core.h>
 #include <net/dummy.h>
-#include <console/uart_pipe.h>
+#include <drivers/console/uart_pipe.h>
 
 #define SLIP_END     0300
 #define SLIP_ESC     0333
@@ -338,7 +338,7 @@ static u8_t *recv_cb(u8_t *buf, size_t *off)
 				while (bytes && buf) {
 					char msg[8 + 1];
 
-					snprintf(msg, sizeof(msg),
+					snprintk(msg, sizeof(msg),
 						 ">slip %2d", count);
 
 					LOG_HEXDUMP_DBG(buf->data, buf->len,
@@ -455,9 +455,11 @@ static const struct ethernet_api slip_if_api = {
 #define _SLIP_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(ETHERNET_L2)
 #define _SLIP_MTU 1500
 
-ETH_NET_DEVICE_INIT(slip, CONFIG_SLIP_DRV_NAME, slip_init, &slip_context_data,
-		    NULL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &slip_if_api,
-		    _SLIP_MTU);
+ETH_NET_DEVICE_INIT(slip, CONFIG_SLIP_DRV_NAME,
+		    slip_init, device_pm_control_nop,
+		    &slip_context_data, NULL,
+		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		    &slip_if_api, _SLIP_MTU);
 #else
 
 static const struct dummy_api slip_if_api = {
@@ -470,7 +472,7 @@ static const struct dummy_api slip_if_api = {
 #define _SLIP_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(DUMMY_L2)
 #define _SLIP_MTU 576
 
-NET_DEVICE_INIT(slip, CONFIG_SLIP_DRV_NAME, slip_init, &slip_context_data,
-		NULL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &slip_if_api,
-		_SLIP_L2_LAYER, _SLIP_L2_CTX_TYPE, _SLIP_MTU);
+NET_DEVICE_INIT(slip, CONFIG_SLIP_DRV_NAME, slip_init, device_pm_control_nop,
+		&slip_context_data, NULL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		&slip_if_api, _SLIP_L2_LAYER, _SLIP_L2_CTX_TYPE, _SLIP_MTU);
 #endif

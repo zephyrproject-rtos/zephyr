@@ -94,9 +94,9 @@
 			compatible = "sifive,plic-1.0.0";
 			interrupt-controller;
 			interrupts-extended = <&hlic 11>;
-			reg = <0xc000000 0x2000
-			       0xc002000 0x1fe000
-			       0xc200000 0x2000000>;
+			reg = <0x0c000000 0x00002000
+			       0x0c002000 0x001fe000
+			       0x0c200000 0x03e00000>;
 			reg-names = "prio", "irq_en", "reg";
 			riscv,max-priority = <7>;
 			riscv,ndev = <52>;

@@ -1,0 +1,114 @@
+/*
+ * Copyright (c) 2020 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <st/f4/stm32f427vi.dtsi>
+
+/ {
+	model = "96Boards Gumstix AeroCore 2";
+	compatible = "gumstix,aerocore2", "st,stm32f427";
+
+	chosen {
+		zephyr,console = &uart7;
+		zephyr,shell-uart = &uart7;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,ccm = &ccm0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		yellow_led_1: led_1 {
+			gpios = <&gpioe 10 GPIO_ACTIVE_HIGH>;
+			label = "USR1 LED";
+		};
+		blue_led_2: led_2 {
+			gpios = <&gpioe 9 GPIO_ACTIVE_HIGH>;
+			label = "USR2 LED";
+		};
+	};
+
+	aliases {
+		led0 = &yellow_led_1;
+		led1 = &blue_led_2;
+	};
+
+};
+
+&usart1 {
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart2 {
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart3 {
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&uart7 {
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&uart8 {
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&spi1 {
+	status = "okay";
+};
+
+&spi2 {
+	status = "okay";
+};
+
+&spi3 {
+	status = "okay";
+};
+
+&spi4 {
+	status = "okay";
+};
+
+&i2c2 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&usbotg_fs {
+	status = "okay";
+};
+
+&timers4 {
+	status = "okay";
+
+	pwm4: pwm {
+		status = "okay";
+	};
+};
+
+&timers5 {
+	status = "okay";
+
+	pwm5: pwm {
+		status = "okay";
+	};
+};
+
+&adc1 {
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};

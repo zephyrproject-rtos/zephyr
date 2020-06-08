@@ -19,13 +19,19 @@ void test_cmos_rate(void)
 {
 	struct device *cmos;
 	u32_t start, elapsed;
+	int err;
 
 	cmos = device_get_binding("CMOS");
 	zassert_true(cmos != NULL, "can't find CMOS counter device");
 
-	start = counter_read(cmos);
-	k_sleep(DELAY_MS);
-	elapsed = counter_read(cmos) - start;
+	err = counter_get_value(cmos, &start);
+	zassert_true(err == 0, "failed to read CMOS counter device");
+
+	k_msleep(DELAY_MS);
+
+	err = counter_get_value(cmos, &elapsed);
+	zassert_true(err == 0, "failed to read CMOS counter device");
+	elapsed -= start;
 
 	zassert_true(elapsed >= MIN_BOUND, "busted minimum bound");
 	zassert_true(elapsed <= MAX_BOUND, "busted maximum bound");

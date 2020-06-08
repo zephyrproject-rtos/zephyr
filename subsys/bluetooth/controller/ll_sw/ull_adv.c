@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 Nordic Semiconductor ASA
+ * Copyright (c) 2016-2020 Nordic Semiconductor ASA
  * Copyright (c) 2016 Vinayak Kariappa Chettimada
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -12,6 +12,7 @@
 
 #include "hal/ccm.h"
 #include "hal/ticker.h"
+#include "hal/radio.h"
 
 #include "util/util.h"
 #include "util/mem.h"
@@ -23,6 +24,7 @@
 #include "pdu.h"
 #include "ll.h"
 #include "ll_feat.h"
+#include "ll_settings.h"
 #include "lll.h"
 #include "lll_vendor.h"
 #include "lll_clock.h"
@@ -48,6 +50,8 @@
 #include <soc.h>
 #include "hal/debug.h"
 
+#define ULL_ADV_RANDOM_DELAY HAL_TICKER_US_TO_TICKS(10000)
+
 inline struct ll_adv_set *ull_adv_set_get(u16_t handle);
 inline u16_t ull_adv_handle_get(struct ll_adv_set *adv);
 
@@ -62,12 +66,16 @@ static void ticker_stop_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 			   void *param);
 static void ticker_op_stop_cb(u32_t status, void *params);
 static void disabled_cb(void *param);
-static inline void conn_release(struct ll_adv_set *adv);
+static void conn_release(struct ll_adv_set *adv);
 #endif /* CONFIG_BT_PERIPHERAL */
 
 static inline u8_t disable(u16_t handle);
 
 static struct ll_adv_set ll_adv[BT_CTLR_ADV_MAX];
+
+#if defined(CONFIG_BT_TICKER_EXT)
+static struct ticker_ext ll_adv_ticker_ext[BT_CTLR_ADV_MAX];
+#endif /* CONFIG_BT_TICKER_EXT */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 u8_t ll_adv_params_set(u8_t handle, u16_t evt_prop, u32_t interval,
@@ -427,7 +435,6 @@ u8_t ll_adv_enable(u8_t enable)
 	u32_t ticks_anchor;
 #endif /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_HCI_MESH_EXT */
 	volatile u32_t ret_cb = TICKER_STATUS_BUSY;
-	u8_t   rl_idx = FILTER_IDX_NONE;
 	u32_t ticks_slot_overhead;
 	struct pdu_adv *pdu_scan;
 	struct pdu_adv *pdu_adv;
@@ -446,14 +453,11 @@ u8_t ll_adv_enable(u8_t enable)
 	}
 
 	lll = &adv->lll;
+#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
+	lll->tx_pwr_lvl = RADIO_TXP_DEFAULT;
+#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 
 	pdu_adv = lll_adv_data_peek(lll);
-	if (pdu_adv->tx_addr) {
-		if (!mem_nz(ll_addr_get(1, NULL), BDADDR_SIZE)) {
-			return BT_HCI_ERR_INVALID_PARAM;
-		}
-	}
-
 	pdu_scan = lll_adv_scan_rsp_peek(lll);
 
 	if (0) {
@@ -470,8 +474,14 @@ u8_t ll_adv_enable(u8_t enable)
 
 		/* AdvA, fill here at enable */
 		if (h->adv_addr) {
-			memcpy(ptr, ll_addr_get(pdu_adv->tx_addr, NULL),
-			       BDADDR_SIZE);
+			u8_t *tx_addr = ll_addr_get(pdu_adv->tx_addr, NULL);
+
+			/* TODO: Privacy check */
+			if (pdu_adv->tx_addr && !mem_nz(tx_addr, BDADDR_SIZE)) {
+				return BT_HCI_ERR_INVALID_PARAM;
+			}
+
+			memcpy(ptr, tx_addr, BDADDR_SIZE);
 		}
 
 		/* TODO: TargetA, fill here at enable */
@@ -480,33 +490,45 @@ u8_t ll_adv_enable(u8_t enable)
 		bool priv = false;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
+		lll->rl_idx = FILTER_IDX_NONE;
+
 		/* Prepare whitelist and optionally resolving list */
 		ull_filter_adv_update(lll->filter_policy);
 
 		if (adv->own_addr_type == BT_ADDR_LE_PUBLIC_ID ||
 		    adv->own_addr_type == BT_ADDR_LE_RANDOM_ID) {
 			/* Look up the resolving list */
-			rl_idx = ull_filter_rl_find(adv->id_addr_type,
-						    adv->id_addr, NULL);
+			lll->rl_idx = ull_filter_rl_find(adv->id_addr_type,
+							 adv->id_addr, NULL);
 
-			if (rl_idx != FILTER_IDX_NONE) {
+			if (lll->rl_idx != FILTER_IDX_NONE) {
 				/* Generate RPAs if required */
 				ull_filter_rpa_update(false);
 			}
 
-			ull_filter_adv_pdu_update(adv, rl_idx, pdu_adv);
-			ull_filter_adv_pdu_update(adv, rl_idx, pdu_scan);
+			ull_filter_adv_pdu_update(adv, pdu_adv);
+			ull_filter_adv_pdu_update(adv, pdu_scan);
+
 			priv = true;
 		}
 #endif /* !CONFIG_BT_CTLR_PRIVACY */
 
 		if (!priv) {
-			memcpy(&pdu_adv->adv_ind.addr[0],
-			       ll_addr_get(pdu_adv->tx_addr, NULL),
+			u8_t *tx_addr = ll_addr_get(pdu_adv->tx_addr, NULL);
+
+			memcpy(&pdu_adv->adv_ind.addr[0], tx_addr,
 			       BDADDR_SIZE);
-			memcpy(&pdu_scan->scan_rsp.addr[0],
-			       ll_addr_get(pdu_adv->tx_addr, NULL),
+			memcpy(&pdu_scan->scan_rsp.addr[0], tx_addr,
 			       BDADDR_SIZE);
+		}
+
+		/* In case the local IRK was not set or no match was
+		 * found the fallback address was used instead, check
+		 * that a valid address has been set.
+		 */
+		if (pdu_adv->tx_addr &&
+		    !mem_nz(pdu_adv->adv_ind.addr, BDADDR_SIZE)) {
+			return BT_HCI_ERR_INVALID_PARAM;
 		}
 	}
 
@@ -528,6 +550,7 @@ u8_t ll_adv_enable(u8_t enable)
 		struct ll_conn *conn;
 		struct lll_conn *conn_lll;
 		void *link;
+		int err;
 
 		if (lll->conn) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
@@ -579,8 +602,8 @@ u8_t ll_adv_enable(u8_t enable)
 		/* Use the default 1M packet max time. Value of 0 is
 		 * equivalent to using BIT(0).
 		 */
-		conn_lll->max_tx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, 0);
-		conn_lll->max_rx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, 0);
+		conn_lll->max_tx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
+		conn_lll->max_rx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
 #endif /* CONFIG_BT_CTLR_PHY */
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
@@ -593,9 +616,15 @@ u8_t ll_adv_enable(u8_t enable)
 
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
 		conn_lll->rssi_latest = 0x7F;
+#if defined(CONFIG_BT_CTLR_CONN_RSSI_EVENT)
 		conn_lll->rssi_reported = 0x7F;
 		conn_lll->rssi_sample_count = 0;
+#endif /* CONFIG_BT_CTLR_CONN_RSSI_EVENT */
 #endif /* CONFIG_BT_CTLR_CONN_RSSI */
+
+#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
+		conn_lll->tx_pwr_lvl = RADIO_TXP_DEFAULT;
+#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 
 		/* FIXME: BEGIN: Move to ULL? */
 		conn_lll->role = 1;
@@ -625,7 +654,8 @@ u8_t ll_adv_enable(u8_t enable)
 		conn->llcp_rx = NULL;
 		conn->llcp_cu.req = conn->llcp_cu.ack = 0;
 		conn->llcp_feature.req = conn->llcp_feature.ack = 0;
-		conn->llcp_feature.features = LL_FEAT;
+		conn->llcp_feature.features_conn = LL_FEAT;
+		conn->llcp_feature.features_peer = 0;
 		conn->llcp_version.req = conn->llcp_version.ack = 0;
 		conn->llcp_version.tx = conn->llcp_version.rx = 0;
 		conn->llcp_terminate.reason_peer = 0;
@@ -649,6 +679,7 @@ u8_t ll_adv_enable(u8_t enable)
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		conn->llcp_length.req = conn->llcp_length.ack = 0U;
+		conn->llcp_length.disabled = 0U;
 		conn->llcp_length.cache.tx_octets = 0U;
 		conn->default_tx_octets = ull_conn_default_tx_octets_get();
 
@@ -659,6 +690,7 @@ u8_t ll_adv_enable(u8_t enable)
 
 #if defined(CONFIG_BT_CTLR_PHY)
 		conn->llcp_phy.req = conn->llcp_phy.ack = 0;
+		conn->llcp_phy.disabled = 0U;
 		conn->llcp_phy.pause_tx = 0U;
 		conn->phy_pref_tx = ull_conn_default_phy_tx_get();
 		conn->phy_pref_rx = ull_conn_default_phy_rx_get();
@@ -677,15 +709,14 @@ u8_t ll_adv_enable(u8_t enable)
 		lll_hdr_init(&conn->lll, conn);
 
 		/* wait for stable clocks */
-		lll_clock_wait();
+		err = lll_clock_wait();
+		if (err) {
+			conn_release(adv);
+
+			return BT_HCI_ERR_HW_FAILURE;
+		}
 	}
 #endif /* CONFIG_BT_PERIPHERAL */
-
-#if defined(CONFIG_BT_CTLR_PRIVACY)
-	adv->rl_idx = rl_idx;
-#else
-	ARG_UNUSED(rl_idx);
-#endif /* CONFIG_BT_CTLR_PRIVACY */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	const u8_t phy = lll->phy_p;
@@ -848,7 +879,17 @@ u8_t ll_adv_enable(u8_t enable)
 	} else
 #endif /* CONFIG_BT_PERIPHERAL */
 	{
-		ret = ticker_start(TICKER_INSTANCE_ID_CTLR,
+		const u32_t ticks_slot = adv->evt.ticks_slot +
+					 ticks_slot_overhead;
+#if defined(CONFIG_BT_TICKER_EXT)
+		ll_adv_ticker_ext[handle].ticks_slot_window =
+			ULL_ADV_RANDOM_DELAY + ticks_slot;
+
+		ret = ticker_start_ext(
+#else
+		ret = ticker_start(
+#endif /* CONFIG_BT_TICKER_EXT */
+				   TICKER_INSTANCE_ID_CTLR,
 				   TICKER_USER_ID_THREAD,
 				   (TICKER_ID_ADV_BASE + handle),
 				   ticks_anchor, 0,
@@ -862,9 +903,15 @@ u8_t ll_adv_enable(u8_t enable)
 #else
 				   TICKER_NULL_LAZY,
 #endif
-				   (adv->evt.ticks_slot + ticks_slot_overhead),
+				   ticks_slot,
 				   ticker_cb, adv,
-				   ull_ticker_status_give, (void *)&ret_cb);
+				   ull_ticker_status_give,
+				   (void *)&ret_cb
+#if defined(CONFIG_BT_TICKER_EXT)
+				   ,
+				   &ll_adv_ticker_ext[handle]
+#endif /* CONFIG_BT_TICKER_EXT */
+				   );
 	}
 
 	ret = ull_ticker_status_take(ret, &ret_cb);
@@ -1045,7 +1092,7 @@ static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 		u32_t ret;
 
 		lll_entropy_get(sizeof(random_delay), &random_delay);
-		random_delay %= HAL_TICKER_US_TO_TICKS(10000);
+		random_delay %= ULL_ADV_RANDOM_DELAY;
 		random_delay += 1;
 
 		ret = ticker_update(TICKER_INSTANCE_ID_CTLR,
@@ -1166,7 +1213,7 @@ static void disabled_cb(void *param)
 
 	cc = (void *)rx->pdu;
 	memset(cc, 0x00, sizeof(struct node_rx_cc));
-	cc->status = 0x3c;
+	cc->status = BT_HCI_ERR_ADV_TIMEOUT;
 
 	ftr = &(rx->hdr.rx_ftr);
 	ftr->param = param;
@@ -1175,7 +1222,7 @@ static void disabled_cb(void *param)
 	ll_rx_sched();
 }
 
-static inline void conn_release(struct ll_adv_set *adv)
+static void conn_release(struct ll_adv_set *adv)
 {
 	struct lll_conn *lll = adv->lll.conn;
 	memq_link_t *link;

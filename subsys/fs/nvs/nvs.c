@@ -571,7 +571,8 @@ static int nvs_startup(struct nvs_fs *fs)
 	}
 	/* all sectors are closed, this is not a nvs fs */
 	if (closed_sectors == fs->sector_count) {
-		return -EDEADLK;
+		rc = -EDEADLK;
+		goto end;
 	}
 
 	if (i == fs->sector_count) {
@@ -617,7 +618,8 @@ static int nvs_startup(struct nvs_fs *fs)
 			 */
 			if (fs->ate_wra == fs->data_wra && last_ate.len) {
 				/* not a delete ate */
-				return -ESPIPE;
+				rc = -ESPIPE;
+				goto end;
 			}
 		}
 

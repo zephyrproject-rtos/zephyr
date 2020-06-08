@@ -115,7 +115,7 @@
  * anyway!).
  */
 #if defined(XT_SIMULATOR) && !defined(XT_CLOCK_FREQ)
-#define XT_CLOCK_FREQ	DT_CPU_CLOCK_FREQUENCY
+#define XT_CLOCK_FREQ	DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
 #endif
 
 #if !defined(XT_CLOCK_FREQ) && !defined(XT_BOARD)
@@ -153,4 +153,3 @@ extern void z_xt_tick_divisor_init(void);
 #endif // Internal/External timer
 
 #endif  /* ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_TIMER_H_ */
-

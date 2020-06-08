@@ -24,7 +24,7 @@ static const pthread_attr_t init_pthread_attrs = {
 	.stack = NULL,
 	.stacksize = 0,
 	.flags = PTHREAD_INIT_FLAGS,
-	.delayedstart = K_NO_WAIT,
+	.delayedstart = 0,
 #if defined(CONFIG_PREEMPT_ENABLED)
 	.schedpolicy = SCHED_RR,
 #else
@@ -190,7 +190,7 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 						 (void *)arg, NULL,
 						 threadroutine, prio,
 						 (~K_ESSENTIAL & attr->flags),
-						 attr->delayedstart);
+						 K_MSEC(attr->delayedstart));
 	return 0;
 }
 
@@ -596,4 +596,48 @@ int pthread_attr_destroy(pthread_attr_t *attr)
 	}
 
 	return EINVAL;
+}
+
+int pthread_setname_np(pthread_t thread, const char *name)
+{
+#ifdef CONFIG_THREAD_NAME
+	k_tid_t kthread = (k_tid_t)thread;
+
+	if (kthread == NULL) {
+		return ESRCH;
+	}
+
+	if (name == NULL) {
+		return EINVAL;
+	}
+
+	return k_thread_name_set(kthread, name);
+#else
+	ARG_UNUSED(thread);
+	ARG_UNUSED(name);
+	return 0;
+#endif
+}
+
+int pthread_getname_np(pthread_t thread, char *name, size_t len)
+{
+#ifdef CONFIG_THREAD_NAME
+	k_tid_t kthread = (k_tid_t)thread;
+
+	if (kthread == NULL) {
+		return ESRCH;
+	}
+
+	if (name == NULL) {
+		return EINVAL;
+	}
+
+	memset(name, '\0', len);
+	return k_thread_name_copy(kthread, name, len-1);
+#else
+	ARG_UNUSED(thread);
+	ARG_UNUSED(name);
+	ARG_UNUSED(len);
+	return 0;
+#endif
 }

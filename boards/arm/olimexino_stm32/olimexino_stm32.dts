@@ -16,16 +16,17 @@
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,can-primary = &can1;
 	};
 
 	leds {
 		compatible = "gpio-leds";
 		green_led_1: led_1 {
-			gpios = <&gpioa 5 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
 			label = "LED1";
 		};
 		yellow_led_2: led_2 {
-			gpios = <&gpioa 1 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpioa 1 GPIO_ACTIVE_HIGH>;
 			label = "LED2";
 		};
 	};
@@ -34,7 +35,7 @@
 		compatible = "gpio-keys";
 		user_button: button {
 			label = "Key";
-			gpios = <&gpioc 9 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpioc 9 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -78,7 +79,7 @@ uext_serial: &usart1 {};
 
 &spi2 {
 	status = "okay";
-	cs-gpios = <&gpiod 2 0>;
+	cs-gpios = <&gpiod 2 GPIO_ACTIVE_HIGH>;
 
 	sdhc0: sdhc@0 {
 		compatible = "zephyr,mmc-spi-slot";
@@ -91,13 +92,13 @@ uext_serial: &usart1 {};
 
 &usb {
 	status = "okay";
-	disconnect-gpios = <&gpioc 12 0>;
+	disconnect-gpios = <&gpioc 12 GPIO_ACTIVE_LOW>;
 };
 
 &timers1 {
 	status = "okay";
 
-	pwm {
+	pwm1: pwm {
 		status = "okay";
 	};
 };

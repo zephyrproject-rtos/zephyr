@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/net_if.h>
 #include <net/net_pkt.h>
 
-#include <console/uart_pipe.h>
+#include <drivers/console/uart_pipe.h>
 #include <net/ieee802154_radio.h>
 
 #include "ieee802154_uart_pipe.h"
@@ -266,6 +266,7 @@ static int upipe_set_txpower(struct device *dev, s16_t dbm)
 }
 
 static int upipe_tx(struct device *dev,
+		    enum ieee802154_tx_mode mode,
 		    struct net_pkt *pkt,
 		    struct net_buf *frag)
 {
@@ -273,6 +274,11 @@ static int upipe_tx(struct device *dev,
 	u8_t *pkt_buf = frag->data;
 	u8_t len = frag->len;
 	u8_t i, data;
+
+	if (mode != IEEE802154_TX_MODE_DIRECT) {
+		NET_ERR("TX mode %d not supported", mode);
+		return -ENOTSUP;
+	}
 
 	LOG_DBG("%p (%u)", frag, len);
 
@@ -384,7 +390,8 @@ static struct ieee802154_radio_api upipe_radio_api = {
 };
 
 NET_DEVICE_INIT(upipe_15_4, CONFIG_IEEE802154_UPIPE_DRV_NAME,
-		upipe_init, &upipe_context_data, NULL,
+		upipe_init, device_pm_control_nop,
+		&upipe_context_data, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&upipe_radio_api, IEEE802154_L2,
 		NET_L2_GET_CTX_TYPE(IEEE802154_L2), 125);

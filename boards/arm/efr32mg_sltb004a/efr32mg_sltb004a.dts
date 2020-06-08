@@ -11,11 +11,14 @@
 	model = "Silabs EFR32MG SLTB004A board (aka Thunderboard Sense 2)";
 	compatible = "silabs,efr32mg_sltb004a", "silabs,efr32mg";
 
+	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &led0;
 		led1 = &led1;
 		sw0 = &button0;
 		sw1 = &button1;
+		watchdog0 = &wdog0;
+		watchdog1 = &wdog1;
 	};
 
 	chosen {
@@ -41,12 +44,12 @@
 		compatible = "gpio-keys";
 		button0: button_0 {
 			/* gpio flags need validation */
-			gpios = <&gpiod 14 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpiod 14 GPIO_ACTIVE_LOW>;
 			label = "User Push Button 0";
 		};
 		button1: button_1 {
 			/* gpio flags need validation */
-			gpios = <&gpiod 15 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpiod 15 GPIO_ACTIVE_LOW>;
 			label = "User Push Button 1";
 		};
 	};
@@ -61,6 +64,31 @@
 	location-rx = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(1)>;
 	location-tx = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(0)>;
 	status = "okay";
+};
+
+&usart2 {
+	compatible = "silabs,gecko-spi-usart";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	location-rx = <GECKO_LOCATION(30) GECKO_PORT_K GECKO_PIN(2)>;
+	location-tx = <GECKO_LOCATION(29) GECKO_PORT_K GECKO_PIN(0)>;
+	location-clk = <GECKO_LOCATION(18) GECKO_PORT_F GECKO_PIN(7)>;
+
+	cs-gpios = <&gpiok 1 0>;
+
+	status = "okay";
+
+	mx25r80: mx25r8035f@0 {
+		compatible = "jedec,spi-nor";
+		label = "MX25R8035F";
+		reg = <0>;
+		spi-max-frequency = <80000000>;
+		size = <0x800000>;
+		has-be32k;
+		jedec-id = [c2 28 14];
+	};
 };
 
 &leuart0 {
@@ -92,6 +120,30 @@
 	status = "okay";
 };
 
+&gpioa {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&gpiof {
+	status = "okay";
+};
+
+&gpiok {
+	status = "okay";
+};
+
+&wdog0 {
+	status = "okay";
+};
+
+&wdog1 {
+	status = "okay";
+};
+
 &flash0 {
 	/*
 	 * For more information, see:
@@ -102,11 +154,15 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		/* Set 4Kb of storage at the end of the 1024Kb of flash */
-		storage_partition: partition@ff000 {
+		/* Set 6Kb of storage at the end of the 1024Kb of flash */
+		storage_partition: partition@fe800 {
 			label = "storage";
-			reg = <0x000ff000 0x00001000>;
+			reg = <0x000fe800 0x00001800>;
 		};
 
 	};
+};
+
+&trng0 {
+		status = "okay";
 };

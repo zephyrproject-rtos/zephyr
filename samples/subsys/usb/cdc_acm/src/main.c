@@ -19,6 +19,7 @@
 #include <zephyr.h>
 #include <sys/ring_buffer.h>
 
+#include <usb/usb_device.h>
 #include <logging/log.h>
 LOG_MODULE_REGISTER(cdc_acm_echo, LOG_LEVEL_INF);
 
@@ -78,6 +79,12 @@ void main(void)
 	dev = device_get_binding("CDC_ACM_0");
 	if (!dev) {
 		LOG_ERR("CDC ACM device not found");
+		return;
+	}
+
+	ret = usb_enable(NULL);
+	if (ret != 0) {
+		LOG_ERR("Failed to enable USB");
 		return;
 	}
 

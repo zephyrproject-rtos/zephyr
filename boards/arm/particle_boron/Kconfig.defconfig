@@ -8,27 +8,6 @@ if BOARD_PARTICLE_BORON
 config BOARD
 	default "particle_boron"
 
-if ADC
-
-config ADC_0
-	default y
-
-endif # ADC
-
-if I2C
-
-config I2C_0
-	default y
-
-endif # I2C
-
-if SPI
-
-config SPI_2
-	default y
-
-endif # SPI
-
 if USB
 
 config USB_NRFX
@@ -39,20 +18,14 @@ config USB_DEVICE_STACK
 
 endif # USB
 
-if IEEE802154
-
 config IEEE802154_NRF5
 	default y
-
-endif # IEEE802154
+	depends on IEEE802154
 
 config BT_CTLR
 	default BT
 
 if MODEM
-
-config UART_1_NRF_UARTE
-	default y
 
 config UART_1_NRF_FLOW_CONTROL
 	default y

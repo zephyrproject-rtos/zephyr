@@ -12,8 +12,8 @@ config BT_HAS_HCI_VS
 
 config BT_HCI_VS
 	bool "Zephyr HCI Vendor-Specific Commands"
-	depends on BT_HAS_HCI_VS
-	default y
+	depends on BT_HAS_HCI_VS || !BT_CTLR
+	default y if BT_HAS_HCI_VS
 	help
 	  Enable support for the Zephyr HCI Vendor-Specific Commands in the
 	  Host and/or Controller. This enables Set Version Information,
@@ -61,8 +61,7 @@ config BT_ASSERT
 	default y
 	help
 	  Use a custom Bluetooth assert implementation instead of the
-	  kernel-wide __ASSERT(), which is enabled by CONFIG_ASSERT and is
-	  disabled by default.
+	  kernel-wide __ASSERT() when CONFIG_ASSERT is disabled.
 
 if BT_ASSERT
 

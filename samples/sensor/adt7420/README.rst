@@ -8,7 +8,12 @@ Description
 
 This sample application periodically (1Hz) measures the ambient temperature
 in degrees Celsius. The result is written to the console.
-Optionally, it also shows how to use the upper and lower threshold triggers.
+
+When configured in trigger mode the update interval is 5 s, and the
+sample maintains a |plusminus| 1 |deg| C window around a recent
+temperature.  As soon as the temperature goes outside the window an
+interrupt causes the application to display an event and update the
+upper and lower window boundaries.
 
 References
 **********
@@ -31,12 +36,12 @@ Building and Running
 This project outputs sensor data to the console. It requires an ADT7420
 sensor. It should work with any platform featuring a I2C peripheral interface.
 It does not work on QEMU.
-In this example below the :ref:`nrf52_pca10040` board is used.
+In this example below the :ref:`nrf52dk_nrf52832` board is used.
 
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/adt7420
-   :board: nrf52_pca10040
+   :board: nrf52dk_nrf52832
    :goals: build flash
 
 Sample Output
@@ -44,12 +49,12 @@ Sample Output
 
 .. code-block:: console
 
-   device is 0x20002b74, name is ADT7420
-   temperature 24.984375 C
-   temperature 24.968750 C
-   temperature 24.968750 C
-   temperature 24.968750 C
-   temperature 24.953125 C
+   *** Booting Zephyr OS build zephyr-v2.1.0-538-g12b2ed2cf7c3  ***
+   device is 0x2000101c, name is ADT7420
+   [0:00:00.011]: temperature 21.203125 Cel
+   [0:00:01.015]: temperature 21.171875 Cel
+   [0:00:02.019]: temperature 21.171875 Cel
+   [0:00:03.023]: temperature 21.187500 Cel
+   [0:00:04.027]: temperature 21.140625 Cel
 
 <repeats endlessly>
-

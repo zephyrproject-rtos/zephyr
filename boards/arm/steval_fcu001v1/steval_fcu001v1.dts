@@ -21,12 +21,12 @@
 	leds {
 		compatible = "gpio-leds";
 		red_led_1: led_1 {
-			gpios = <&gpiob 5 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiob 5 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
 
 		red_led_2: led_2 {
-			gpios = <&gpiob 4 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiob 4 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
 	};
@@ -36,7 +36,6 @@
 		led1 = &red_led_2;
 	};
 };
-
 
 &i2c2 {
 	status = "okay";
@@ -51,7 +50,7 @@
 &timers2 {
 	status = "okay";
 
-	pwm {
+	pwm2: pwm {
 		status = "okay";
 	};
 };

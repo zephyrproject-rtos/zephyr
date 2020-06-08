@@ -45,12 +45,12 @@ There are three types of configuration file:
      combination of :envvar:`%HOMEDRIVE%` and :envvar:`%HOMEPATH%`.
 
 3. **Local**: Settings in this file affect west's behavior for the
-   current :term:`west installation`. The file is :file:`.west/config`, relative
-   to the installation's root directory.
+   current :term:`west workspace`. The file is :file:`.west/config`, relative
+   to the workspace's root directory.
 
 A setting in a file which appears lower down on this list overrides an earlier
 setting. For example, if ``color.ui`` is ``true`` in the system's configuration
-file, but ``false`` in the installation's, then the final value is
+file, but ``false`` in the workspace's, then the final value is
 ``false``. Similarly, settings in the user configuration file override system
 settings, and so on.
 
@@ -76,11 +76,11 @@ To set ``manifest.path`` to :file:`some-other-manifest`:
 
 Doing the above means that commands like ``west update`` will look for the
 :term:`west manifest` inside the :file:`some-other-manifest` directory
-(relative to the installation root directory) instead of the directory given to
+(relative to the workspace root directory) instead of the directory given to
 ``west init``, so be careful!
 
 To read ``zephyr.base``, the value which will be used as ``ZEPHYR_BASE`` if it
-is unset in the calling environment (also relative to the installation root):
+is unset in the calling environment (also relative to the workspace root):
 
 .. code-block:: console
 
@@ -101,7 +101,7 @@ zephyr``.)
 
 To set ``color.ui`` to ``false`` in the global (user-wide) configuration file,
 so that west will no longer print colored output for that user when run in any
-installation:
+workspace:
 
 .. code-block:: console
 
@@ -136,7 +136,7 @@ commands are documented in the pages for those commands.
    * - ``commands.allow_extensions``
      - Boolean, default ``true``, disables :ref:`west-extensions` if ``false``
    * - ``manifest.path``
-     - String, relative path from the :term:`west installation` root directory
+     - String, relative path from the :term:`west workspace` root directory
        to the manifest repository used by ``west update`` and other commands
        which parse the manifest. Set locally by ``west init``.
    * - ``update.fetch``

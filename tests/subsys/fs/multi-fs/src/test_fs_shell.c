@@ -32,7 +32,7 @@ void test_fs_help(void)
 	test_shell_exec("help", 0);
 	test_shell_exec("help fs", 0);
 	test_shell_exec("fs mount fat", -EINVAL);
-	test_shell_exec("fs mount nffs", -EINVAL);
+	test_shell_exec("fs mount littlefs", -EINVAL);
 #else
 	ztest_test_skip();
 #endif
@@ -42,7 +42,7 @@ void test_fs_fat_mount(void)
 {
 	test_shell_exec("fs mount fat /RAM:", 0);
 }
-void test_fs_nffs_mount(void)
+void test_fs_littlefs_mount(void)
 {
-	test_shell_exec("fs mount nffs /nffs", 0);
+	test_shell_exec("fs mount littlefs /littlefs", 0);
 }

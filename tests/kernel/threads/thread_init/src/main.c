@@ -20,7 +20,7 @@
 #define INIT_PREEMPT_P2 ((void *)6)
 #define INIT_PREEMPT_P3 ((void *)7)
 #define INIT_PREEMPT_OPTION (K_USER | K_INHERIT_PERMS)
-#define INIT_PREEMPT_DELAY K_NO_WAIT
+#define INIT_PREEMPT_DELAY 0
 
 static void thread_entry(void *p1, void *p2, void *p3);
 
@@ -144,7 +144,8 @@ void test_kinit_preempt_thread(void)
 	k_tid_t pthread = k_thread_create(&thread_preempt, stack_preempt,
 					  INIT_PREEMPT_STACK_SIZE, thread_entry, INIT_PREEMPT_P1,
 					  INIT_PREEMPT_P2, INIT_PREEMPT_P3, INIT_PREEMPT_PRIO,
-					  INIT_PREEMPT_OPTION, INIT_PREEMPT_DELAY);
+					  INIT_PREEMPT_OPTION,
+					  K_MSEC(INIT_PREEMPT_DELAY));
 
 	/*record time stamp of thread creation*/
 	t_create = k_uptime_get();
@@ -175,9 +176,9 @@ void test_kinit_coop_thread(void)
 {
 	/*create coop thread*/
 	k_tid_t pthread = k_thread_create(&thread_coop, stack_coop,
-					  INIT_COOP_STACK_SIZE, thread_entry, INIT_COOP_P1,
-					  INIT_COOP_P2, INIT_COOP_P3, INIT_COOP_PRIO,
-					  INIT_COOP_OPTION, INIT_COOP_DELAY);
+			  INIT_COOP_STACK_SIZE, thread_entry, INIT_COOP_P1,
+			  INIT_COOP_P2, INIT_COOP_P3, INIT_COOP_PRIO,
+			  INIT_COOP_OPTION, K_MSEC(INIT_COOP_DELAY));
 
 	/*record time stamp of thread creation*/
 	t_create = k_uptime_get();

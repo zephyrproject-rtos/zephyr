@@ -60,6 +60,7 @@ static inline void insert_frag(struct net_pkt *pkt, struct net_buf *frag)
 }
 
 static int fake_tx(struct device *dev,
+		   enum ieee802154_tx_mode mode,
 		   struct net_pkt *pkt,
 		   struct net_buf *frag)
 {
@@ -126,7 +127,7 @@ static struct ieee802154_radio_api fake_radio_api = {
 };
 
 NET_DEVICE_INIT(fake, "fake_ieee802154",
-		fake_init, NULL, NULL,
+		fake_init, device_pm_control_nop, NULL, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&fake_radio_api, IEEE802154_L2,
 		NET_L2_GET_CTX_TYPE(IEEE802154_L2), 125);

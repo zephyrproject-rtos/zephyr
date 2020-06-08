@@ -8,14 +8,12 @@ if(CONFIG_FILE_SYSTEM)
   zephyr_library_sources(fs.c fs_impl.c)
   zephyr_library_sources_ifdef(CONFIG_FAT_FILESYSTEM_ELM   fat_fs.c)
   zephyr_library_sources_ifdef(CONFIG_FILE_SYSTEM_LITTLEFS littlefs_fs.c)
-  zephyr_library_sources_ifdef(CONFIG_FILE_SYSTEM_NFFS     nffs_fs.c)
   zephyr_library_sources_ifdef(CONFIG_FILE_SYSTEM_SHELL    shell.c)
 
   zephyr_library_link_libraries(FS)
 
   target_link_libraries_ifdef(CONFIG_FAT_FILESYSTEM_ELM   FS INTERFACE ELMFAT)
   target_link_libraries_ifdef(CONFIG_FILE_SYSTEM_LITTLEFS FS INTERFACE LITTLEFS)
-  target_link_libraries_ifdef(CONFIG_FILE_SYSTEM_NFFS     FS INTERFACE NFFS)
 endif()
 
 add_subdirectory_ifdef(CONFIG_FCB  ./fcb)

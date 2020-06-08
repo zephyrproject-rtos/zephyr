@@ -1,0 +1,167 @@
+/*
+ * Copyright (c) 2017 Piotr Mienkowski
+ * Copyright (c) 2017 Justin Watson
+ * Copyright (c) 2019-2020 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2c-0 = &twihs0;
+		i2c-1 = &twihs1;
+		i2c-2 = &twihs2;
+		led0 = &yellow_led0;
+		led1 = &yellow_led1;
+		sw0 = &sw0_user_button;
+		sw1 = &sw1_user_button;
+	};
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		yellow_led0: led_0 {
+			gpios = <&pioa 23 GPIO_ACTIVE_LOW>;
+			label = "User LED 0";
+		};
+		yellow_led1: led_1 {
+			gpios = <&pioc 9 GPIO_ACTIVE_LOW>;
+			label = "User LED 1";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		/* The switch is labeled SW300/301 in the schematic, and
+		 * labeled SW0 on the board, and labeld ERASE User Button
+		 * on docs
+		 */
+		sw0_user_button: button_1 {
+			label = "User Button 0";
+			gpios = <&pioa 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		};
+		sw1_user_button: button_2 {
+			label = "User Button 1";
+			gpios = <&piob 12 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <300000000>;
+};
+
+&afec0 {
+	status = "okay";
+};
+
+&afec1 {
+	status = "okay";
+};
+
+&twihs0 {
+	status = "okay";
+};
+
+&twihs2 {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+};
+
+&usart1 {
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&wdt {
+	status = "okay";
+};
+
+&usbhs {
+	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+};
+
+&pwm0 {
+	status = "okay";
+};
+
+&pioa {
+	status = "okay";
+};
+
+&piob {
+	status = "okay";
+};
+
+&pioc {
+	status = "okay";
+};
+
+&piod {
+	status = "okay";
+};
+
+&pioe {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * The first half of sector 0 (64 kbytes)
+		 * is reserved for the bootloader
+		 */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 0x00010000>;
+			read-only;
+		};
+
+		/* From sector 1 to sector 7 (included): slot0 (896 kbytes) */
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x0020000 0x000e0000>;
+		};
+
+		/* From sector 8 to sector 14 (included): slot1 (896 kbytes) */
+		slot1_partition: partition@100000 {
+			label = "image-1";
+			reg = <0x00100000 0x000e0000>;
+		};
+
+		/* Sector 15: scratch (128 kbytes) */
+		scratch_partition: partition@1e0000 {
+			label = "image-scratch";
+			reg = <0x001e0000 0x00020000>;
+		};
+	};
+};
+
+&ssc {
+	status = "okay";
+	label = "I2S_0";
+	dma-names = "rx", "tx";
+	dmas = <&xdmac 22 DMA_PERID_SSC_RX>, <&xdmac 23 DMA_PERID_SSC_TX>;
+	pinctrl-0 = <&pd24b_ssc_rf &pa22a_ssc_rk &pa10c_ssc_rd
+		     &pb0d_ssc_tf &pb1d_ssc_tk &pb5d_ssc_td>;
+};

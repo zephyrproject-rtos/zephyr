@@ -43,7 +43,7 @@ static void process_sample(struct device *dev)
 
 void main(void)
 {
-	struct device *dev = device_get_binding(DT_INST_0_ST_LPS22HB_PRESS_LABEL);
+	struct device *dev = device_get_binding(DT_LABEL(DT_INST(0, st_lps22hb_press)));
 
 	if (dev == NULL) {
 		printf("Could not get LPS22HB device\n");

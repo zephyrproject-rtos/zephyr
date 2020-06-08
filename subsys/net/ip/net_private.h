@@ -76,7 +76,7 @@ static inline enum net_verdict net_ipv6_input(struct net_pkt *pkt,
 	return NET_CONTINUE;
 }
 #endif
-extern void net_tc_submit_to_tx_queue(u8_t tc, struct net_pkt *pkt);
+extern bool net_tc_submit_to_tx_queue(u8_t tc, struct net_pkt *pkt);
 extern void net_tc_submit_to_rx_queue(u8_t tc, struct net_pkt *pkt);
 extern enum net_verdict net_promisc_mode_input(struct net_pkt *pkt);
 

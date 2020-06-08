@@ -1,0 +1,19 @@
+#
+# Copyright (c) 2019 Manivannan Sadhasivam
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config HAS_SEMTECH_LORAMAC
+	bool "Semtech LoRaMac Stack"
+	help
+	  This option enables the use of Semtech's LoRaMac stack
+
+config HAS_SEMTECH_RADIO_DRIVERS
+	bool "Semtech LoRa Radio Drivers"
+	help
+	  This option enables the use of Semtech's Radio drivers
+
+config HAS_SEMTECH_SX1276
+	bool
+	depends on HAS_SEMTECH_RADIO_DRIVERS

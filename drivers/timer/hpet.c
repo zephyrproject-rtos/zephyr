@@ -3,13 +3,15 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#define DT_DRV_COMPAT intel_hpet
 #include <drivers/timer/system_timer.h>
 #include <sys_clock.h>
 #include <spinlock.h>
 #include <irq.h>
 
 #define HPET_REG32(off) (*(volatile u32_t *)(long)			\
-		       (DT_INST_0_INTEL_HPET_BASE_ADDRESS + (off)))
+		       (DT_INST_REG_ADDR(0) + (off)))
 
 #define CLK_PERIOD_REG        HPET_REG32(0x04) /* High dword of caps reg */
 #define GENERAL_CONF_REG      HPET_REG32(0x10)
@@ -37,7 +39,14 @@ static unsigned int last_count;
 static void hpet_isr(void *arg)
 {
 	ARG_UNUSED(arg);
+
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	extern void read_timer_start_of_tick_handler(void);
+	read_timer_start_of_tick_handler();
+#endif
+
 	k_spinlock_key_t key = k_spin_lock(&lock);
+
 	u32_t now = MAIN_COUNTER_REG;
 
 	if (IS_ENABLED(CONFIG_SMP) &&
@@ -57,8 +66,7 @@ static void hpet_isr(void *arg)
 
 	last_count += dticks * cyc_per_tick;
 
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL) ||
-	    IS_ENABLED(CONFIG_QEMU_TICKLESS_WORKAROUND)) {
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		u32_t next = last_count + cyc_per_tick;
 
 		if ((s32_t)(next - now) < MIN_DELAY) {
@@ -69,6 +77,11 @@ static void hpet_isr(void *arg)
 
 	k_spin_unlock(&lock, key);
 	z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : 1);
+
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	extern void read_timer_end_of_tick_handler(void);
+	read_timer_end_of_tick_handler();
+#endif
 }
 
 static void set_timer0_irq(unsigned int irq)
@@ -84,11 +97,11 @@ int z_clock_driver_init(struct device *device)
 	extern int z_clock_hw_cycles_per_sec;
 	u32_t hz;
 
-	IRQ_CONNECT(DT_INST_0_INTEL_HPET_IRQ_0,
-		    DT_INST_0_INTEL_HPET_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
 		    hpet_isr, 0, 0);
-	set_timer0_irq(DT_INST_0_INTEL_HPET_IRQ_0);
-	irq_enable(DT_INST_0_INTEL_HPET_IRQ_0);
+	set_timer0_irq(DT_INST_IRQN(0));
+	irq_enable(DT_INST_IRQN(0));
 
 	/* CLK_PERIOD_REG is in femtoseconds (1e-15 sec) */
 	hz = (u32_t)(1000000000000000ull / CLK_PERIOD_REG);
@@ -126,13 +139,13 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
-#if defined(CONFIG_TICKLESS_KERNEL) && !defined(CONFIG_QEMU_TICKLESS_WORKAROUND)
-	if (ticks == K_FOREVER && idle) {
+#if defined(CONFIG_TICKLESS_KERNEL)
+	if (ticks == K_TICKS_FOREVER && idle) {
 		GENERAL_CONF_REG &= ~GCONF_ENABLE;
 		return;
 	}
 
-	ticks = ticks == K_FOREVER ? max_ticks : ticks;
+	ticks = ticks == K_TICKS_FOREVER ? max_ticks : ticks;
 	ticks = MAX(MIN(ticks - 1, (s32_t)max_ticks), 0);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);

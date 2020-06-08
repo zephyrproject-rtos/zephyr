@@ -40,16 +40,29 @@
 #include <stm32g0xx_ll_gpio.h>
 #endif
 
+#ifdef CONFIG_I2C
+#include <stm32g0xx_ll_i2c.h>
+#endif
+
+#ifdef CONFIG_IWDG_STM32
+#include <stm32g0xx_ll_iwdg.h>
+#endif
+
 #ifdef CONFIG_WWDG_STM32
 #include <stm32g0xx_ll_wwdg.h>
 #endif
 
 #ifdef CONFIG_SERIAL_HAS_DRIVER
 #include <stm32g0xx_ll_usart.h>
+#include <stm32g0xx_ll_lpuart.h>
+#endif
+
+#ifdef CONFIG_HWINFO_STM32
+#include <stm32g0xx_ll_utils.h>
 #endif
 
 /* Add include for DTS generated information */
-#include <generated_dts_board.h>
+#include <devicetree.h>
 
 #endif /* !_ASMLANGUAGE */
 

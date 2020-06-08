@@ -30,8 +30,6 @@ extern "C" {
 
 static ALWAYS_INLINE void arch_kernel_init(void)
 {
-	_kernel.irq_stack =
-		Z_THREAD_STACK_BUFFER(_interrupt_stack) + CONFIG_ISR_STACK_SIZE;
 }
 
 static ALWAYS_INLINE void
@@ -45,7 +43,7 @@ FUNC_NORETURN void z_nios2_fatal_error(unsigned int reason,
 
 static inline bool arch_is_in_isr(void)
 {
-	return _kernel.nested != 0U;
+	return _kernel.cpus[0].nested != 0U;
 }
 
 #ifdef CONFIG_IRQ_OFFLOAD

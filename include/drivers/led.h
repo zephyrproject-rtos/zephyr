@@ -4,12 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Public LED driver APIs
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_LED_H_
 #define ZEPHYR_INCLUDE_DRIVERS_LED_H_
 
 /**
- * @file
- * @brief Public LED driver APIs
+ * @brief LED Interface
+ * @defgroup led_interface LED Interface
+ * @ingroup io_interfaces
+ * @{
  */
 
 #include <zephyr/types.h>
@@ -53,7 +60,7 @@ typedef int (*led_api_off)(struct device *dev, u32_t led);
  *
  * This is the mandatory API any LED driver needs to expose.
  */
-struct led_driver_api {
+__subsystem struct led_driver_api {
 	led_api_blink blink;
 	led_api_set_brightness set_brightness;
 	led_api_on on;
@@ -77,7 +84,8 @@ __syscall int led_blink(struct device *dev, u32_t led,
 static inline int z_impl_led_blink(struct device *dev, u32_t led,
 			    u32_t delay_on, u32_t delay_off)
 {
-	const struct led_driver_api *api = dev->driver_api;
+	const struct led_driver_api *api =
+		(const struct led_driver_api *)dev->driver_api;
 
 	return api->blink(dev, led, delay_on, delay_off);
 }
@@ -99,7 +107,8 @@ __syscall int led_set_brightness(struct device *dev, u32_t led,
 static inline int z_impl_led_set_brightness(struct device *dev, u32_t led,
 				     u8_t value)
 {
-	const struct led_driver_api *api = dev->driver_api;
+	const struct led_driver_api *api =
+		(const struct led_driver_api *)dev->driver_api;
 
 	return api->set_brightness(dev, led, value);
 }
@@ -117,7 +126,8 @@ __syscall int led_on(struct device *dev, u32_t led);
 
 static inline int z_impl_led_on(struct device *dev, u32_t led)
 {
-	const struct led_driver_api *api = dev->driver_api;
+	const struct led_driver_api *api =
+		(const struct led_driver_api *)dev->driver_api;
 
 	return api->on(dev, led);
 }
@@ -135,10 +145,15 @@ __syscall int led_off(struct device *dev, u32_t led);
 
 static inline int z_impl_led_off(struct device *dev, u32_t led)
 {
-	const struct led_driver_api *api = dev->driver_api;
+	const struct led_driver_api *api =
+		(const struct led_driver_api *)dev->driver_api;
 
 	return api->off(dev, led);
 }
+
+/**
+ * @}
+ */
 
 #include <syscalls/led.h>
 

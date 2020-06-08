@@ -1,0 +1,26 @@
+# Copyright (c) 2020, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG
+	default y
+
+config LOG_PRINTK
+	default y
+
+config SENSOR_LOG_LEVEL
+	default 4
+
+# Workaround for not being able to have commas in macro arguments
+DT_COMPAT_BOSCH_BME280 := bosch,bme280
+
+# Enable SPI support by default if there are any BME280 sensors
+# on a SPI bus.
+config SPI
+	default $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BME280),spi)
+
+# Enable I2C support by default if there are any BME280 sensors
+# on an I2C bus.
+config I2C
+	default $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BME280),i2c)
+
+source "Kconfig.zephyr"

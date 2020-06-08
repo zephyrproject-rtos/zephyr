@@ -1,7 +1,7 @@
 sample:
   name: CMSIS_RTOS_V2 Dining Philosophers
 common:
-  extra_args: "-DDEBUG_PRINTF=1"
+  extra_args: DEBUG_PRINTF=1
   tags: cmsis_rtos
   min_ram: 32
   min_flash: 34

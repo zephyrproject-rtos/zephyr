@@ -32,13 +32,6 @@
 #include <sys/util.h>
 #include <random/rand32.h>
 
-/*
- * UARTs: UART0 & UART1 & UART2
- */
-#define DT_UART_NS16550_PORT_0_IRQ_FLAGS	0 /* Default */
-#define DT_UART_NS16550_PORT_1_IRQ_FLAGS	0 /* Default */
-#define DT_UART_NS16550_PORT_2_IRQ_FLAGS	0 /* Default */
-
 /* PINMUX IO Hardware Functions */
 #define HSDK_PINMUX_FUNS		8
 

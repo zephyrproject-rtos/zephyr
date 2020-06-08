@@ -74,4 +74,3 @@ library included with Zephyr:
    - toupper()
    - vsnprintf()
    - vsprintf()
-

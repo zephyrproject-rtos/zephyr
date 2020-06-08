@@ -5,7 +5,10 @@ set_ifndef(C++ g++)
 # Configures CMake for using GCC, this script is re-used by several
 # GCC-based toolchains
 
-find_program(CMAKE_C_COMPILER ${CROSS_COMPILE}${CC} PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+find_program(CMAKE_C_COMPILER ${CROSS_COMPILE}${CC} PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+if(${CMAKE_C_COMPILER} STREQUAL CMAKE_C_COMPILER-NOTFOUND)
+  message(FATAL_ERROR "C compiler ${CROSS_COMPILE}${CC} not found - Please check your toolchain installation")
+endif()
 
 if(CONFIG_CPLUSPLUS)
   set(cplusplus_compiler ${CROSS_COMPILE}${C++})
@@ -19,7 +22,7 @@ else()
     set(cplusplus_compiler ${CMAKE_C_COMPILER})
   endif()
 endif()
-find_program(CMAKE_CXX_COMPILER ${cplusplus_compiler} PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+find_program(CMAKE_CXX_COMPILER ${cplusplus_compiler} PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 
 set(NOSTDINC "")
 
@@ -49,11 +52,7 @@ elseif("${ARCH}" STREQUAL "arc")
     -mcpu=${GCC_M_CPU}
     )
 elseif("${ARCH}" STREQUAL "riscv")
-  if(CONFIG_64BIT)
-    list(APPEND TOOLCHAIN_C_FLAGS -mabi=lp64 -march=rv64imac -mcmodel=medany)
-  else()
-    list(APPEND TOOLCHAIN_C_FLAGS -mabi=ilp32 -march=rv32ima)
-  endif()
+  include(${CMAKE_CURRENT_LIST_DIR}/target_riscv.cmake)
 elseif("${ARCH}" STREQUAL "x86")
   include(${CMAKE_CURRENT_LIST_DIR}/target_x86.cmake)
 endif()
@@ -86,7 +85,6 @@ if(SYSROOT_DIR)
     )
 
   set(LIBC_LIBRARY_DIR "\"${SYSROOT_DIR}\"/lib/${NEWLIB_DIR}")
-  set(LIBC_INCLUDE_DIR ${SYSROOT_DIR}/include)
 endif()
 
 # For CMake to be able to test if a compiler flag is supported by the

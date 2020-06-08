@@ -25,7 +25,7 @@
 #include <stm32g4xx.h>
 
 /* Add include for DTS generated information */
-#include <generated_dts_board.h>
+#include <devicetree.h>
 
 #ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
 #include <stm32g4xx_ll_utils.h>
@@ -65,7 +65,7 @@
 #endif
 
 #ifdef CONFIG_WWDG_STM32
-#include <stm32l4xx_ll_wwdg.h>
+#include <stm32g4xx_ll_wwdg.h>
 #endif
 
 #ifdef CONFIG_ENTROPY_STM32_RNG
@@ -76,6 +76,10 @@
 #include <stm32g4xx_ll_rtc.h>
 #include <stm32g4xx_ll_exti.h>
 #include <stm32g4xx_ll_pwr.h>
+#endif
+
+#ifdef CONFIG_HWINFO_STM32
+#include <stm32g4xx_ll_utils.h>
 #endif
 
 #endif /* !_ASMLANGUAGE */

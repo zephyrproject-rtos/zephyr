@@ -33,11 +33,11 @@ config MAIN_STACK_SIZE
 config IDLE_STACK_SIZE
 	default 2048
 
-if ZTEST
-
 config ZTEST_STACKSIZE
 	default 2048
+	depends on ZTEST
 
-endif # ZTEST
+config NUM_IRQS
+	default 113
 
 endif # SOC_EMSDP_EM6

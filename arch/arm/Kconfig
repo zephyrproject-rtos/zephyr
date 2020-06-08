@@ -6,9 +6,44 @@
 menu "ARM Options"
 	depends on ARM
 
-source "arch/arm/core/Kconfig"
-
 config ARCH
 	default "arm"
+
+config ARM64
+	bool
+	select 64BIT
+
+config CPU_CORTEX
+	bool
+	help
+	  This option signifies the use of a CPU of the Cortex family.
+
+config ARM_CUSTOM_INTERRUPT_CONTROLLER
+	bool
+	depends on !CPU_CORTEX_M
+	help
+	  This option indicates that the ARM CPU is connected to a custom (i.e.
+	  non-GIC) interrupt controller.
+
+	  A number of Cortex-A and Cortex-R cores (Cortex-A5, Cortex-R4/5, ...)
+	  allow interfacing to a custom external interrupt controller and this
+	  option must be selected when such cores are connected to an interrupt
+	  controller that is not the ARM Generic Interrupt Controller (GIC).
+
+	  When this option is selected, the architecture interrupt control
+	  functions are mapped to the SoC interrupt control interface, which is
+	  implemented at the SoC level.
+
+	  N.B. This option is only applicable to the Cortex-A and Cortex-R
+	       family cores. The Cortex-M family cores are always equipped with
+	       the ARM Nested Vectored Interrupt Controller (NVIC).
+
+if !ARM64
+rsource "core/aarch32/Kconfig"
+endif
+
+if ARM64
+rsource "core/aarch64/Kconfig"
+endif
 
 endmenu

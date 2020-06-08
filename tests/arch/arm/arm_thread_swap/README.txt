@@ -1,6 +1,9 @@
-Title: Test to verify the thread-swap (context-switch) mechanism (ARM Only)
+Title: Test suite to verify the thread-swap (context-switch) and system-calls
+mechanisms (ARM Only)
 
 Description:
+
+Thread-swap test:
 
 This test verifies that the ARM thread context-switch mechanism
 behaves as expected. In particular, the test verifies that:
@@ -25,6 +28,18 @@ Notes:
   The test is currently supported in ARM Cortex-M Baseline and Mainline
   targets.
 
+Syscalls test:
+
+This test verifies that the ARM mechanism for user system calls
+behaves as expected. In particular, the test verifies that:
+- the mode variable with respect to the user mode flag always indicates
+  the mode in which a user thread is currently executing.
+- threads in system calls are using the privileged thread stack
+- stack pointer limit checking mechanism behaves as expected for
+  user threads in PRIV mode and supervisor threads
+
+The test is currently supported in ARM Cortex-M Baseline and Mainline
+targets with support for user space.
 
 ---------------------------------------------------------------------------
 
@@ -59,5 +74,13 @@ starting test - test_arm_thread_swap
 PASS - test_arm_thread_swap
 ===================================================================
 Test suite arm_thread_swap succeeded
+Running test suite arm_syscalls
+===================================================================
+starting test - test_arm_syscalls
+Available IRQ line: 68
+USR Thread: IRQ Line: 68
+PASS - test_arm_syscalls
+===================================================================
+Test suite arm_syscalls succeeded
 ===================================================================
 PROJECT EXECUTION SUCCESSFUL

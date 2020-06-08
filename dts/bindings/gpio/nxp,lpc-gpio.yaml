@@ -1,10 +1,7 @@
 # Copyright (c) 2019, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-title: LPC GPIO
-
-description: |
-    This is a representation of the LPC GPIO nodes
+description: LPC GPIO node
 
 compatible: "nxp,lpc-gpio"
 

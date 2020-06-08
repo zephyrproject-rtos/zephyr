@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT atmel_sam_spi
+
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(spi_sam);
@@ -21,8 +23,8 @@ LOG_MODULE_REGISTER(spi_sam);
 struct spi_sam_config {
 	Spi *regs;
 	u32_t periph_id;
-	struct soc_gpio_pin pins;
-	struct soc_gpio_pin cs[SAM_SPI_CHIP_SELECT_COUNT];
+	u32_t num_pins;
+	struct soc_gpio_pin pins[];
 };
 
 /* Device run time data */
@@ -49,7 +51,7 @@ static int spi_slave_to_mr_pcs(int slave)
 static int spi_sam_configure(struct device *dev,
 			     const struct spi_config *config)
 {
-	const struct spi_sam_config *cfg = dev->config->config_info;
+	const struct spi_sam_config *cfg = dev->config_info;
 	struct spi_sam_data *data = dev->driver_data;
 	Spi *regs = cfg->regs;
 	u32_t spi_mr = 0U, spi_csr = 0U;
@@ -270,7 +272,7 @@ static void spi_sam_fast_transceive(struct device *dev,
 				    const struct spi_buf_set *tx_bufs,
 				    const struct spi_buf_set *rx_bufs)
 {
-	const struct spi_sam_config *cfg = dev->config->config_info;
+	const struct spi_sam_config *cfg = dev->config_info;
 	size_t tx_count = 0;
 	size_t rx_count = 0;
 	Spi *regs = cfg->regs;
@@ -359,7 +361,7 @@ static int spi_sam_transceive(struct device *dev,
 			      const struct spi_buf_set *tx_bufs,
 			      const struct spi_buf_set *rx_bufs)
 {
-	const struct spi_sam_config *cfg = dev->config->config_info;
+	const struct spi_sam_config *cfg = dev->config_info;
 	struct spi_sam_data *data = dev->driver_data;
 	Spi *regs = cfg->regs;
 	int err;
@@ -427,18 +429,12 @@ static int spi_sam_release(struct device *dev,
 
 static int spi_sam_init(struct device *dev)
 {
-	const struct spi_sam_config *cfg = dev->config->config_info;
+	const struct spi_sam_config *cfg = dev->config_info;
 	struct spi_sam_data *data = dev->driver_data;
-	int i;
 
 	soc_pmc_peripheral_enable(cfg->periph_id);
-	soc_gpio_configure(&cfg->pins);
 
-	for (i = 0; i < SAM_SPI_CHIP_SELECT_COUNT; i++) {
-		if (cfg->cs[i].regs) {
-			soc_gpio_configure(&cfg->cs[i]);
-		}
-	}
+	soc_gpio_list_configure(cfg->pins, cfg->num_pins);
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
@@ -457,48 +453,12 @@ static const struct spi_driver_api spi_sam_driver_api = {
 	.release = spi_sam_release,
 };
 
-#ifndef PIN_SPI0_CS0
-#define PIN_SPI0_CS0 {0, (Pio *)0, 0, 0}
-#endif
-
-#ifndef PIN_SPI0_CS1
-#define PIN_SPI0_CS1 {0, (Pio *)0, 0, 0}
-#endif
-
-#ifndef PIN_SPI0_CS2
-#define PIN_SPI0_CS2 {0, (Pio *)0, 0, 0}
-#endif
-
-#ifndef PIN_SPI0_CS3
-#define PIN_SPI0_CS3 {0, (Pio *)0, 0, 0}
-#endif
-
-#define PINS_SPI0_CS { PIN_SPI0_CS0, PIN_SPI0_CS1, PIN_SPI0_CS2, PIN_SPI0_CS3 }
-
-#ifndef PIN_SPI1_CS0
-#define PIN_SPI1_CS0 {0, (Pio *)0, 0, 0}
-#endif
-
-#ifndef PIN_SPI1_CS1
-#define PIN_SPI1_CS1 {0, (Pio *)0, 0, 0}
-#endif
-
-#ifndef PIN_SPI1_CS2
-#define PIN_SPI1_CS2 {0, (Pio *)0, 0, 0}
-#endif
-
-#ifndef PIN_SPI1_CS3
-#define PIN_SPI1_CS3 {0, (Pio *)0, 0, 0}
-#endif
-
-#define PINS_SPI1_CS { PIN_SPI1_CS0, PIN_SPI1_CS1, PIN_SPI1_CS2, PIN_SPI1_CS3 }
-
 #define SPI_SAM_DEFINE_CONFIG(n)					\
 	static const struct spi_sam_config spi_sam_config_##n = {	\
-		.regs = (Spi *)DT_SPI_##n##_BASE_ADDRESS,		\
-		.periph_id = DT_SPI_##n##_PERIPHERAL_ID,		\
-		.pins = PINS_SPI##n,					\
-		.cs = PINS_SPI##n##_CS,					\
+		.regs = (Spi *)DT_INST_REG_ADDR(n),			\
+		.periph_id = DT_INST_PROP(n, peripheral_id),		\
+		.num_pins = ATMEL_SAM_DT_NUM_PINS(n),			\
+		.pins = ATMEL_SAM_DT_PINS(n),				\
 	}
 
 #define SPI_SAM_DEVICE_INIT(n)						\
@@ -508,15 +468,9 @@ static const struct spi_driver_api spi_sam_driver_api = {
 		SPI_CONTEXT_INIT_SYNC(spi_sam_dev_data_##n, ctx),	\
 	};								\
 	DEVICE_AND_API_INIT(spi_sam_##n,				\
-			    DT_SPI_##n##_NAME,				\
+			    DT_INST_LABEL(n),				\
 			    &spi_sam_init, &spi_sam_dev_data_##n,	\
 			    &spi_sam_config_##n, POST_KERNEL,		\
-			    CONFIG_SPI_INIT_PRIORITY, &spi_sam_driver_api)
+			    CONFIG_SPI_INIT_PRIORITY, &spi_sam_driver_api);
 
-#if DT_SPI_0_BASE_ADDRESS
-SPI_SAM_DEVICE_INIT(0);
-#endif
-
-#if DT_SPI_1_BASE_ADDRESS
-SPI_SAM_DEVICE_INIT(1);
-#endif
+DT_INST_FOREACH_STATUS_OKAY(SPI_SAM_DEVICE_INIT)

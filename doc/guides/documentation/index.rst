@@ -3,6 +3,10 @@
 Documentation Guidelines
 ########################
 
+.. note::
+
+   For instructions on building the documentation, see :ref:`zephyr_doc`.
+
 Zephyr Project content is written using the `reStructuredText`_ markup
 language (.rst file extension) with Sphinx extensions, and processed
 using Sphinx to create a formatted standalone website.  Developers can
@@ -392,7 +396,7 @@ For example::
 
    .. code-block:: c
 
-      struct _k_object {
+      struct z_object {
          char *name;
          u8_t perms[CONFIG_MAX_THREAD_BYTES];
          u8_t type;
@@ -408,7 +412,7 @@ This would be rendered as:
 
    .. code-block:: c
 
-      struct _k_object {
+      struct z_object {
          char *name;
          u8_t perms[CONFIG_MAX_THREAD_BYTES];
          u8_t type;
@@ -602,3 +606,5 @@ Put your right hand in
 See the :zephyr_raw:`doc/getting_started/index.rst` source file and compare
 with the :ref:`getting_started` to see a full example.  As implemented,
 only one set of numbered steps is intended per document.
+
+For instructions on building the documentation, see :ref:`zephyr_doc`.

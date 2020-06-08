@@ -15,9 +15,6 @@
 extern "C" {
 #endif
 
-#define SHELL_DEFAULT_TERMINAL_WIDTH	(80u) /* Default PuTTY width. */
-#define SHELL_DEFAULT_TERMINAL_HEIGHT	(24u) /* Default PuTTY height. */
-
 static inline void shell_raw_fprintf(const struct shell_fprintf *const ctx,
 				     const char *fmt, ...)
 {

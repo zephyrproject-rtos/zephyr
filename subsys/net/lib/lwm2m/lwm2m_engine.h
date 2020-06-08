@@ -96,6 +96,8 @@ int lwm2m_engine_add_service(k_work_handler_t service, u32_t period_ms);
 int lwm2m_engine_get_resource(char *pathstr,
 			      struct lwm2m_engine_res **res);
 
+void lwm2m_engine_get_binding(char *binding);
+
 size_t lwm2m_engine_get_opaque_more(struct lwm2m_input_context *in,
 				    u8_t *buf, size_t buflen, bool *last_block);
 

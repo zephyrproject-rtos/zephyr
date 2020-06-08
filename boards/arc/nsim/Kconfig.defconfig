@@ -5,12 +5,8 @@ if BOARD_NSIM
 config BOARD
 	default "nsim"
 
-if SERIAL
-
 config UART_NSIM
 	default y
-
-endif # SERIAL
-
+	depends on SERIAL
 
 endif # BOARD_NSIM

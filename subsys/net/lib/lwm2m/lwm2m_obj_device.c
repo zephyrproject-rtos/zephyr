@@ -7,7 +7,6 @@
 
 /*
  * TODO:
- * - Implement UTC_OFFSET & TIMEZONE
  * - Configurable CURRENT_TIME notification delay
  */
 
@@ -65,7 +64,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define DEVICE_STRING_SHORT	8
 
-#define DEVICE_SERVICE_INTERVAL K_SECONDS(10)
+#define DEVICE_SERVICE_INTERVAL_MS (MSEC_PER_SEC * 10)
 
 /*
  * Calculate resource instances as follows:
@@ -330,6 +329,8 @@ static struct lwm2m_engine_obj_inst *device_create(u16_t obj_inst_id)
 			 current_time_read_cb,
 			 current_time_pre_write_cb,
 			 current_time_post_write_cb, NULL);
+	INIT_OBJ_RES_OPTDATA(DEVICE_UTC_OFFSET_ID, res, i, res_inst, j);
+	INIT_OBJ_RES_OPTDATA(DEVICE_TIMEZONE_ID, res, i, res_inst, j);
 	INIT_OBJ_RES_DATA(DEVICE_SUPPORTED_BINDING_MODES_ID, res, i,
 			  res_inst, j, binding_mode, DEVICE_STRING_SHORT);
 	INIT_OBJ_RES_OPTDATA(DEVICE_TYPE_ID, res, i, res_inst, j);
@@ -352,8 +353,7 @@ static int lwm2m_device_init(struct device *dev)
 
 	/* Set default values */
 	time_offset = 0U;
-	/* currently only support UDP binding mode (no SMS or Queue mode) */
-	strcpy(binding_mode, "U");
+	lwm2m_engine_get_binding(binding_mode);
 
 	/* initialize the device field data */
 	device.obj_id = LWM2M_OBJECT_DEVICE_ID;
@@ -371,7 +371,7 @@ static int lwm2m_device_init(struct device *dev)
 
 	/* call device_periodic_service() every 10 seconds */
 	ret = lwm2m_engine_add_service(device_periodic_service,
-				       DEVICE_SERVICE_INTERVAL);
+				       DEVICE_SERVICE_INTERVAL_MS);
 	return ret;
 }
 

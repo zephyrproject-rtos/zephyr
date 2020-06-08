@@ -18,7 +18,7 @@
 #define ZEPHYR_INCLUDE_ARCH_POSIX_ARCH_H_
 
 /* Add include for DTS generated information */
-#include <generated_dts_board.h>
+#include <devicetree.h>
 
 #include <toolchain.h>
 #include <irq.h>
@@ -33,11 +33,9 @@ extern "C" {
 #endif
 
 #ifdef CONFIG_64BIT
-#define STACK_ALIGN 8
-#define STACK_ALIGN_SIZE 8
+#define ARCH_STACK_PTR_ALIGN 8
 #else
-#define STACK_ALIGN 4
-#define STACK_ALIGN_SIZE 4
+#define ARCH_STACK_PTR_ALIGN 4
 #endif
 
 struct __esf {

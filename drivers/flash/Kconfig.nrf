@@ -7,11 +7,10 @@ config FLASH_NRF_FORCE_ALT
 	  This option can be enabled to force an alternative implementation
 	  of the flash driver.
 
-if !FLASH_NRF_FORCE_ALT
-
-config SOC_FLASH_NRF
+menuconfig SOC_FLASH_NRF
 	bool "Nordic Semiconductor nRF flash driver"
 	depends on SOC_FAMILY_NRF
+	depends on !FLASH_NRF_FORCE_ALT
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
 	select NRFX_NVMC
@@ -19,18 +18,50 @@ config SOC_FLASH_NRF
 	help
 	  Enables Nordic Semiconductor nRF flash driver.
 
+if SOC_FLASH_NRF
+
 config SOC_FLASH_NRF_RADIO_SYNC
 	bool "Nordic nRFx flash driver synchronized with radio"
-	depends on SOC_FLASH_NRF && BT_CTLR
 	default y
+	depends on BT_CTLR
 	help
 	  Enable synchronization between flash memory driver and radio.
 
+config SOC_FLASH_NRF_PARTIAL_ERASE
+	bool "Nordic nRFx flash driver partial erase"
+	depends on HAS_HW_NRF_NVMC_PE
+	help
+	  Enable partial erase feature. Partial erase is performed in time
+	  slices instead of blocking MCU, for the time it is needed to
+	  complete operation over given area.
+	  This allows interrupting flash erase between operations
+	  to perform other task by MCU.
+	  This feature may also be used for better syncing flash erase
+	  operations, when compiled with SOC_FLASH_NRF_RADIO_SYNC,
+	  with Bluetooth.
+
+config SOC_FLASH_NRF_PARTIAL_ERASE_MS
+	int "Partial erase timeout in MS"
+	depends on SOC_FLASH_NRF_PARTIAL_ERASE
+	default 3
+	help
+	  This is maximum time, in ms, that NVMC will use to erase part
+	  of Flash, before stopping to let CPU resume operation.
+	  Minimal timeout is 2ms maximum should not exceed half of
+	  FLASH_PAGE_ERASE_MAX_TIME_US im ms.
+
 config SOC_FLASH_NRF_UICR
 	bool "Access to UICR"
-	depends on SOC_FLASH_NRF && !TRUSTED_EXECUTION_NONSECURE
+	depends on !TRUSTED_EXECUTION_NONSECURE
 	help
 	  Enable operations on UICR. Once enabled UICR are written or read as
 	  ordinary flash memory. Erase is possible for whole UICR at once.
 
-endif #!FLASH_NRF_FORCE_ALT
+config SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS
+	bool "8-bit write block size emulation"
+	help
+	  When this option is enabled writing chunks less than minimal write
+	  block size parameter (imposed by manufacturer) is possible but operation
+	  is more complex and requires basic user knowledge about NVMC controller.
+
+endif # SOC_FLASH_NRF

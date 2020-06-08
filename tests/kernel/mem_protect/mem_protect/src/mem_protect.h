@@ -11,7 +11,17 @@
 #include <stdlib.h>
 
 /* Flag needed to figure out if the fault was expected or not. */
-extern bool valid_fault;
+extern volatile bool valid_fault;
+
+static inline void set_fault_valid(bool valid)
+{
+	valid_fault = valid;
+	/* Put a barrier here, such that no instructions get ordered by the
+	 * compiler before we set valid_fault. This can happen with expansion
+	 * of inline syscall invocation functions.
+	 */
+	compiler_barrier();
+}
 
 /* For inherit.c */
 #define INHERIT_STACK_SIZE CONFIG_MAIN_STACK_SIZE
@@ -38,11 +48,3 @@ extern bool valid_fault;
 
 /* for kobject.c */
 #define KOBJECT_STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
-
-/* Sync semaphore */
-extern struct k_sem sync_sem;
-#define SYNC_SEM_TIMEOUT (K_FOREVER)
-
-/* For the data memory barrier */
-extern struct k_sem barrier_sem;
-#define USERSPACE_BARRIER k_sem_give(&barrier_sem)

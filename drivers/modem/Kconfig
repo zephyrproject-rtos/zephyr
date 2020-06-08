@@ -74,6 +74,7 @@ config MODEM_IFACE_UART
 
 config MODEM_CMD_HANDLER
 	bool "Generic modem command handler"
+	select NET_BUF
 	help
 	  This generic command handler uses a modem interface to process
 	  incoming data and hand it back to the modem driver via callbacks
@@ -125,5 +126,6 @@ config MODEM_SHELL
 
 source "drivers/modem/Kconfig.ublox-sara-r4"
 source "drivers/modem/Kconfig.wncm14a2a"
+source "drivers/modem/Kconfig.gsm"
 
 endif # MODEM

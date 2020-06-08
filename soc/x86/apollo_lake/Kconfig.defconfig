@@ -12,6 +12,12 @@ config SOC
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 19200000
 
+config HPET_TIMER
+	default y
+
+config APIC_TIMER
+	default y if !HPET_TIMER
+
 if APIC_TIMER
 
 config APIC_TIMER_IRQ
@@ -35,25 +41,16 @@ endif # APIC_TIMER
 config CLFLUSH_DETECT
 	default y if CACHE_FLUSHING
 
-if DYNAMIC_INTERRUPTS
-
 config X86_DYNAMIC_IRQ_STUBS
 	default 16
-
-endif # DYNAMIC_INTERRUPTS
-
-if I2C
+	depends on DYNAMIC_INTERRUPTS
 
 config I2C_DW
 	default y
-
-endif # I2C
-
-if GPIO
+	depends on I2C
 
 config GPIO_INTEL_APL
 	default y
-
-endif # GPIO
+	depends on GPIO
 
 endif # SOC_APOLLO_LAKE

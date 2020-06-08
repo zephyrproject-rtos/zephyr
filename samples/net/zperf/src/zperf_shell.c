@@ -793,9 +793,10 @@ static int shell_cmd_upload(const struct shell *shell, size_t argc,
 	}
 
 	if (argc > 3) {
-		duration_in_ms = K_SECONDS(strtoul(argv[start + 3], NULL, 10));
+		duration_in_ms = MSEC_PER_SEC * strtoul(argv[start + 3],
+							NULL, 10);
 	} else {
-		duration_in_ms = K_SECONDS(1);
+		duration_in_ms = MSEC_PER_SEC * 1;
 	}
 
 	if (argc > 4) {
@@ -912,9 +913,10 @@ static int shell_cmd_upload2(const struct shell *shell, size_t argc,
 	}
 
 	if (argc > 2) {
-		duration_in_ms = K_SECONDS(strtoul(argv[start + 2], NULL, 10));
+		duration_in_ms = MSEC_PER_SEC * strtoul(argv[start + 2],
+							NULL, 10);
 	} else {
-		duration_in_ms = K_SECONDS(1);
+		duration_in_ms = MSEC_PER_SEC * 1;
 	}
 
 	if (argc > 3) {

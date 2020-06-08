@@ -166,4 +166,3 @@ API Reference
 
 .. doxygengroup:: mutex_apis
    :project: Zephyr
-

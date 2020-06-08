@@ -1,4 +1,4 @@
-.. _sensor:
+.. _sensor_api:
 
 Sensors
 #######

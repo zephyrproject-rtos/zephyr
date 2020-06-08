@@ -1,7 +1,4 @@
-title: STM32 LPUART
-
-description: |
-    This binding gives a base representation of the STM32 LPUART
+description: STM32 LPUART
 
 compatible: "st,stm32-lpuart"
 
@@ -17,3 +14,8 @@ properties:
     clocks:
       required: true
 
+    parity:
+      required: false
+      type: int
+      description: Configures the parity of the adapter. Value 0 for none, 1 for odd and 2 for even parity.
+      default: 0

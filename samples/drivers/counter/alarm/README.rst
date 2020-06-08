@@ -9,6 +9,10 @@ This sample provides an example of alarm application using counter API.
 It sets an alarm with an initial delay of 2 seconds. At each alarm
 expiry, a new alarm is configured with a delay multiplied by 2.
 
+.. note::
+   In case of 1Hz frequency (RTC for example), precision is 1 second.
+   Therefore, the sample output may differ in 1 second
+
 Requirements
 ************
 

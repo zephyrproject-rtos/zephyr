@@ -1,4 +1,4 @@
-.. _gpio:
+.. _gpio_api:
 
 
 GPIO

@@ -14,11 +14,11 @@ Building and Running
 
 This sample can be found under :zephyr_file:`samples/bluetooth/ipsp` in the
 Zephyr tree.
-Sample can be built and executed for the nRF52840 PCA10056 as follows:
+Sample can be built and executed for the nRF52840 DK NRF52840 as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/ipsp
-   :board: nrf52840_pca10056
+   :board: nrf52840dk_nrf52840
    :goals: build flash
    :compact:
 
@@ -33,7 +33,7 @@ Building and Running for Linux kernels released before 4.12
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/ipsp
-   :board: nrf52840_pca10056
+   :board: nrf52840dk_nrf52840
    :conf: "prj_zep1656.conf"
    :goals: build flash
    :compact:

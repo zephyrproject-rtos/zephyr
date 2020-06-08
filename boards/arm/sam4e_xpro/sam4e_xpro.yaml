@@ -1,0 +1,13 @@
+identifier: sam4e_xpro
+name: SAM4E Xplained Pro
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - netif:eth
+  - gpio
+  - spi
+  - watchdog

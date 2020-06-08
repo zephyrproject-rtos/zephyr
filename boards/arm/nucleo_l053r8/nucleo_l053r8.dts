@@ -22,7 +22,7 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led_2: led_2 {
-			gpios = <&gpioa 5 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
 	};
@@ -31,15 +31,21 @@
 		compatible = "gpio-keys";
 		user_button: button {
 			label = "User";
-			gpios = <&gpioc 13 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
 		};
 	};
 
 	aliases {
 		led0 = &green_led_2;
 		sw0 = &user_button;
+		eeprom-0 = &eeprom;
 	};
 };
+
+/* Due to limited available memory, don't enable gpiod and gpiof */
+/* (Test cases fail due to 'SRAM' region overflow) */
+&gpiod {status = "disabled";};
+&gpioh {status = "disabled";};
 
 &usart1 {
 	current-speed = <115200>;
@@ -56,5 +62,9 @@
 };
 
 &spi1 {
+	status = "okay";
+};
+
+&eeprom {
 	status = "okay";
 };

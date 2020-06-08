@@ -88,6 +88,10 @@ the following hardware features:
 +-----------+------------+-------------------------------------+
 | I2C(M)    | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
+| TPM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
 | SENSOR    | off-chip   | fxos8700 polling;                   |
 |           |            | fxos8700 trigger;                   |
 +-----------+------------+-------------------------------------+
@@ -111,6 +115,8 @@ supports the following hardware features:
 | UART      | on-chip    | serial                              |
 +-----------+------------+-------------------------------------+
 | I2C(M)    | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
+| TPM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
 | SENSOR    | off-chip   | fxos8700 polling;                   |
 |           |            | fxos8700 trigger;                   |
@@ -136,22 +142,16 @@ with this board:
 - peripheral_esp (Environmental Sensing Service)
 - peripheral_hr (Heart Rate)
 - peripheral_ht (Health Thermometer)
+- peripheral
 - scan_adv
 
 .. note::
 
    BLE Software Link Layer limitations:
 
-   - **no 2 Mbps PHY**
    - no 512/256 Kbps PHY
-   - **no controller-based cryptographic services (neither RPA nor LL encryption
-     or decryption)**
-   - no mesh support
-   - **no power-save**
    - no TX power adjustment
 
-   Limitations marked **bold** above are planned to be addressed on this
-   platform.
 
 Connections and IOs
 ===================

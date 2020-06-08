@@ -22,54 +22,32 @@ config SYS_CLOCK_TICKS_PER_SEC
 config NUM_IRQS
 	default 38
 
-config TI_CCFG_PRESENT
-	bool
-	default y
-
 config CC13X2_CC26X2_RTC_TIMER
 	default y
 
-if PINMUX
-
 config PINMUX_CC13XX_CC26XX
 	default y
-
-endif # PINMUX
-
-if GPIO
+	depends on PINMUX
 
 config GPIO_CC13XX_CC26XX
 	default y
-
-endif # GPIO
-
-if ENTROPY_GENERATOR
+	depends on GPIO
 
 config ENTROPY_CC13XX_CC26XX_RNG
 	default y
-
-endif # ENTROPY_GENERATOR
-
-if SERIAL
+	depends on ENTROPY_GENERATOR
 
 config UART_CC13XX_CC26XX
 	default y
-
-endif # SERIAL
-
-if I2C
+	depends on SERIAL
 
 config I2C_CC13XX_CC26XX
 	default y
-
-endif # I2C
-
-if SPI
+	depends on I2C
 
 config SPI_CC13XX_CC26XX
 	default y
-
-endif # SPI
+	depends on SPI
 
 if IEEE802154
 

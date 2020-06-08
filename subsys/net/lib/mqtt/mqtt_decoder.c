@@ -158,14 +158,14 @@ static int unpack_data(u32_t length, struct buf_ctx *buf,
  * @retval -EINVAL if the length decoding would use more that 4 bytes.
  * @retval -EAGAIN if the buffer would be exceeded during the read.
  */
-int packet_length_decode(struct buf_ctx *buf, u32_t *length)
+static int packet_length_decode(struct buf_ctx *buf, u32_t *length)
 {
 	u8_t shift = 0U;
 	u8_t bytes = 0U;
 
 	*length = 0U;
 	do {
-		if (bytes > MQTT_MAX_LENGTH_BYTES) {
+		if (bytes >= MQTT_MAX_LENGTH_BYTES) {
 			return -EINVAL;
 		}
 
@@ -178,6 +178,10 @@ int packet_length_decode(struct buf_ctx *buf, u32_t *length)
 		shift += MQTT_LENGTH_SHIFT;
 		bytes++;
 	} while ((*(buf->cur++) & MQTT_LENGTH_CONTINUATION_BIT) != 0U);
+
+	if (*length > MQTT_MAX_PAYLOAD_SIZE) {
+		return -EINVAL;
+	}
 
 	MQTT_TRC("length:0x%08x", *length);
 
@@ -250,6 +254,13 @@ int publish_decode(u8_t flags, u32_t var_length, struct buf_ctx *buf,
 		}
 
 		var_header_length += sizeof(u16_t);
+	}
+
+	if (var_length < var_header_length) {
+		MQTT_ERR("Corrupted PUBLISH message, header length (%u) larger "
+			 "than total length (%u)", var_header_length,
+			 var_length);
+		return -EINVAL;
 	}
 
 	param->message.payload.data = NULL;

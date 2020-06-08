@@ -39,8 +39,12 @@
 #if defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
 #define TICKER_NODE_T_SIZE      40
 #else
+#if defined(CONFIG_BT_TICKER_EXT)
+#define TICKER_NODE_T_SIZE      48
+#else
 #define TICKER_NODE_T_SIZE      44
-#endif
+#endif /* CONFIG_BT_TICKER_EXT */
+#endif /* CONFIG_BT_TICKER_COMPATIBILITY_MODE*/
 
 /** \brief Timer user type size.
  */
@@ -48,7 +52,11 @@
 
 /** \brief Timer user operation type size.
  */
+#if defined(CONFIG_BT_TICKER_EXT)
+#define TICKER_USER_OP_T_SIZE   52
+#else
 #define TICKER_USER_OP_T_SIZE   48
+#endif /* CONFIG_BT_TICKER_EXT */
 
 #define TICKER_CALL_ID_NONE     0
 #define TICKER_CALL_ID_ISR      1
@@ -81,6 +89,20 @@ typedef void (*ticker_timeout_func) (u32_t ticks_at_expire, u32_t remainder,
  */
 typedef void (*ticker_op_func) (u32_t status, void *op_context);
 
+#if defined(CONFIG_BT_TICKER_EXT)
+struct ticker_ext {
+	u32_t ticks_slot_window; /* Window in which the slot
+				  * reservation may be re-scheduled
+				  * to avoid collision
+				  */
+	s32_t ticks_drift;	 /* Applied drift since last expiry */
+	u8_t  reschedule_state;	 /* State of re-scheduling of the
+				  * node. See defines
+				  * TICKER_RESCHEDULE_STATE_XXX
+				  */
+};
+#endif /* CONFIG_BT_TICKER_EXT */
+
 /** \brief Timer module initialization.
  *
  * \param[in]  instance_index  Timer mode instance 0 or 1 (uses RTC0 CMP0 or
@@ -112,6 +134,9 @@ u32_t ticker_update(u8_t instance_index, u8_t user_id, u8_t ticker_id,
 		    u8_t force, ticker_op_func fp_op_func, void *op_context);
 u32_t ticker_stop(u8_t instance_index, u8_t user_id, u8_t ticker_id,
 		  ticker_op_func fp_op_func, void *op_context);
+u32_t ticker_stop_abs(u8_t instance_index, u8_t user_id, u8_t ticker_id,
+		      u32_t ticks_at_stop, ticker_op_func fp_op_func,
+		      void *op_context);
 u32_t ticker_next_slot_get(u8_t instance_index, u8_t user_id,
 			   u8_t *ticker_id_head, u32_t *ticks_current,
 			   u32_t *ticks_to_expire,
@@ -125,4 +150,13 @@ u32_t ticker_ticks_diff_get(u32_t ticks_now, u32_t ticks_old);
 u32_t ticker_priority_set(u8_t instance_index, u8_t user_id, u8_t ticker_id,
 			  s8_t priority, ticker_op_func fp_op_func,
 			  void *op_context);
+#if defined(CONFIG_BT_TICKER_EXT)
+u32_t ticker_start_ext(u8_t instance_index, u8_t user_id, u8_t ticker_id,
+		       u32_t ticks_anchor, u32_t ticks_first,
+		       u32_t ticks_periodic, u32_t remainder_periodic,
+		       u16_t lazy, u32_t ticks_slot,
+		       ticker_timeout_func fp_timeout_func, void *context,
+		       ticker_op_func fp_op_func, void *op_context,
+		       struct ticker_ext *ext_data);
+#endif /* CONFIG_BT_TICKER_EXT */
 #endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */

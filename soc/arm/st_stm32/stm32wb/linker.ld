@@ -11,4 +11,4 @@
 #define RAM2_SIZE (20 * 1K)
 #define RAM2_ADDR 0x20038000
 
-#include <arch/arm/cortex_m/scripts/linker.ld>
+#include <arch/arm/aarch32/cortex_m/scripts/linker.ld>

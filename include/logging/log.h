@@ -306,7 +306,7 @@ static inline char *log_strdup(const char *str)
 #define _LOG_ARG1(arg1, ...) arg1
 
 #define _LOG_MODULE_CONST_DATA_CREATE(_name, _level)			     \
-	COND_CODE_1(LOG_IN_CPLUSPLUS, (extern), ())			     \
+	IF_ENABLED(LOG_IN_CPLUSPLUS, (extern))				     \
 	const struct log_source_const_data LOG_ITEM_CONST_DATA(_name)	     \
 	__attribute__ ((section("." STRINGIFY(LOG_ITEM_CONST_DATA(_name))))) \
 	__attribute__((used)) = {					     \
@@ -322,11 +322,8 @@ static inline char *log_strdup(const char *str)
 	__attribute__((used))
 
 #define _LOG_MODULE_DYNAMIC_DATA_COND_CREATE(_name)		\
-	COND_CODE_1(						\
-		CONFIG_LOG_RUNTIME_FILTERING,			\
-		(_LOG_MODULE_DYNAMIC_DATA_CREATE(_name);),	\
-		()						\
-		)
+	IF_ENABLED(CONFIG_LOG_RUNTIME_FILTERING,		\
+		  (_LOG_MODULE_DYNAMIC_DATA_CREATE(_name);))
 
 #define _LOG_MODULE_DATA_CREATE(_name, _level)			\
 	_LOG_MODULE_CONST_DATA_CREATE(_name, _level);		\
@@ -406,17 +403,17 @@ static inline char *log_strdup(const char *str)
 			LOG_ITEM_DYNAMIC_DATA(GET_ARG1(__VA_ARGS__));	      \
 									      \
 	static const struct log_source_const_data *			      \
-		__log_current_const_data __attribute__((unused)) =	      \
+		__log_current_const_data __unused =			      \
 			_LOG_LEVEL_RESOLVE(__VA_ARGS__) ?		      \
 			&LOG_ITEM_CONST_DATA(GET_ARG1(__VA_ARGS__)) : NULL;   \
 									      \
 	static struct log_source_dynamic_data *				      \
-		__log_current_dynamic_data __attribute__((unused)) =	      \
+		__log_current_dynamic_data __unused =			      \
 			(_LOG_LEVEL_RESOLVE(__VA_ARGS__) &&		      \
 			IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) ?	      \
 			&LOG_ITEM_DYNAMIC_DATA(GET_ARG1(__VA_ARGS__)) : NULL; \
 									      \
-	static const u32_t __log_level __attribute__((unused)) =	      \
+	static const u32_t __log_level __unused =			      \
 					_LOG_LEVEL_RESOLVE(__VA_ARGS__)
 
 /**
@@ -426,9 +423,8 @@ static inline char *log_strdup(const char *str)
  * @param level Level used in file or in function.
  *
  */
-#define LOG_LEVEL_SET(level) \
-	static const u32_t __log_level __attribute__((unused)) = \
-			_LOG_LEVEL_RESOLVE(level)
+#define LOG_LEVEL_SET(level) static const u32_t __log_level __unused = \
+				Z_LOG_RESOLVED_LEVEL(level, 0)
 
 /**
  * @}

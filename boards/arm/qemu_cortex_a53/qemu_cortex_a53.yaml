@@ -1,0 +1,11 @@
+identifier: qemu_cortex_a53
+name: QEMU Emulation for Cortex-A53
+type: qemu
+simulation: qemu
+arch: arm
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 128
+testing:
+  default: true

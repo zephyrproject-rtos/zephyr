@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT litex_spi
+
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(spi_litespi);
@@ -169,19 +171,15 @@ static struct spi_driver_api spi_litespi_api = {
 		SPI_CONTEXT_INIT_SYNC(spi_litespi_data_##n, ctx), \
 	}; \
 	static struct spi_litespi_cfg spi_litespi_cfg_##n = { \
-		.base = DT_INST_##n##_LITEX_SPI_CONTROL_BASE_ADDRESS, \
+		.base = DT_INST_REG_ADDR_BY_NAME(n, control), \
 	}; \
 	DEVICE_AND_API_INIT(spi_##n, \
-			DT_INST_##n##_LITEX_SPI_LABEL, \
+			DT_INST_LABEL(n), \
 			spi_litespi_init, \
 			&spi_litespi_data_##n, \
 			&spi_litespi_cfg_##n, \
 			POST_KERNEL, \
 			CONFIG_SPI_INIT_PRIORITY, \
-			&spi_litespi_api)
+			&spi_litespi_api);
 
-#ifdef DT_INST_0_LITEX_SPI_LABEL
-
-SPI_INIT(0);
-
-#endif /* DT_INST_0_LITEX_SPI_LABEL */
+DT_INST_FOREACH_STATUS_OKAY(SPI_INIT)

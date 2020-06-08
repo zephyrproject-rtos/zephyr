@@ -3,40 +3,26 @@
 Board Porting Guide
 ###################
 
-When building an application you must specify the target hardware and
-the exact board or model. Specifying the board name results in a binary that
-is suited for the target hardware by selecting the right Zephyr features and
-components and setting the right Zephyr configuration for that specific target
-hardware.
+To add Zephyr support for a new :term:`board`, you at least need a *board
+directory* with various files in it. Files in the board directory inherit
+support for at least one SoC and all of its features. Therefore, Zephyr must
+support your :term:`SoC` as well.
 
-A board is defined as a special configuration of an SoC with possible additional
-components.
-For example, a board might have sensors and flash memory implemented as
-additional features on top of what the SoC provides. Such additional hardware is
-configured and referenced in the Zephyr board configuration.
+Boards, SoCs, etc.
+******************
 
-The board implements at least one SoC and thus inherits all of the features
-that are provided by the SoC. When porting a board to Zephyr, you should
-first make sure the SoC is implemented in Zephyr.
+Zephyr's hardware support hierarchy has these layers, from most to least
+specific:
 
-Hardware Configuration Hierarchy
-********************************
+- Board: a particular CPU instance and its peripherals in a concrete hardware
+  specification
+- SoC: the exact system on a chip the board's CPU is part of
+- SoC series: a smaller group of tightly related SoCs
+- SoC family: a wider group of SoCs with similar characteristics
+- CPU core: a particular CPU in an architecture
+- Architecture: an instruction set architecture
 
-Hardware definitions in Zephyr follow a well-defined hierarchy of configurations
-and layers, below are the layers from top to bottom:
-
-- Board
-- SoC
-- SoC Series
-- SoC Family
-- CPU Core
-- Architecture
-
-This design contributes to code reuse and implementation of device drivers and
-features at the bottom of the hierarchy making a board configuration as simple
-as a selection of features that are implemented by the underlying layers. The
-figures below shows this hierarchy with a few example of boards currently
-available in the source tree:
+You can visualize the hierarchy like this:
 
 .. figure:: board/hierarchy.png
    :width: 500px
@@ -45,131 +31,491 @@ available in the source tree:
 
    Configuration Hierarchy
 
+Here are some examples. Notice how the SoC series and family levels are
+not always used.
 
-Hierarchy Example
+.. list-table::
+   :header-rows: 1
 
-+------------+-----------+--------------+------------+--------------+---------+
-|Board       |FRDM K64F  |nRF52 NITROGEN|nRF51XX     |Quark SE C1000|Arduino  |
-|            |           |              |            |Devboard      |101      |
-+============+===========+==============+============+==============+=========+
-|SOC         |MK64F12    |nRF52832      |nRF51XX     |Quark SE C1000|Curie    |
-+------------+-----------+--------------+------------+--------------+---------+
-|SOC Series  |Kinetis K6x|Nordic NRF52  |Nordic NRF51|Quark SE      |Quark SE |
-|            |Series     |              |            |              |         |
-+------------+-----------+--------------+------------+--------------+---------+
-|SOC Family  |NXP Kinetis|Nordic NRF5   |Nordic NRF5 |Quark         |Quark    |
-+------------+-----------+--------------+------------+--------------+---------+
-|CPU Core    |Cortex-M4  |Cortex-M4     |Cortex-M0   |Lakemont      |Lakemont |
-+------------+-----------+--------------+------------+--------------+---------+
-|Architecture|ARM        |ARM           |ARM         |x86           |x86      |
-+------------+-----------+--------------+------------+--------------+---------+
+   * - Board
+     - SoC
+     - SoC series
+     - SoC family
+     - CPU core
+     - Architecture
+   * - :ref:`nrf52dk_nrf52832 <nrf52dk_nrf52832>`
+     - nRF52832
+     - nRF52
+     - Nordic nRF5
+     - Arm Cortex-M4
+     - Arm
+   * - :ref:`frdm_k64f <frdm_k64f>`
+     - MK64F12
+     - Kinetis K6x
+     - NXP Kinetis
+     - Arm Cortex-M4
+     - Arm
+   * - :ref:`stm32h474i_disco <stm32h747i_disco_board>`
+     - STM32H747XI
+     - STM32H7
+     - STMicro STM32
+     - Arm Cortex-M7
+     - Arm
+   * - :ref:`rv32m1_vega_ri5cy <rv32m1_vega>`
+     - RV32M1
+     - (Not used)
+     - (Not used)
+     - RI5CY
+     - RISC-V
 
+Make sure your SoC is supported
+*******************************
+
+Start by making sure your SoC is supported by Zephyr. If it is, it's time to
+:ref:`create-your-board-directory`. If you don't know, try:
+
+- checking :ref:`boards` for names that look relevant, and reading individual
+  board documentation to find out for sure.
+- asking your SoC vendor
+
+If you need to add SoC, CPU core, or even architecture support, this is the
+wrong page, but here is some general advice.
 
 Architecture
 ============
-If your CPU architecture is already supported by Zephyr, there is no
-architecture work involved in porting to your board.  If your CPU architecture
-is not supported by the Zephyr kernel, you can add support by following the
-instructions available at :ref:`architecture_porting_guide`.
+
+See :ref:`architecture_porting_guide`.
 
 CPU Core
 ========
 
-Some OS code depends on the CPU core that your board is using. For
-example, a given CPU core has a specific assembly language instruction set, and
-may require special cross compiler or compiler settings to use the appropriate
-instruction set.
+CPU core support files go in ``core`` subdirectories under :zephyr_file:`arch`,
+e.g. :zephyr_file:`arch/x86/core`.
 
-If your CPU architecture is already supported by Zephyr, there is no CPU core
-work involved in porting to your platform or board. You need only to select the
-appropriate CPU in your configuration and the rest will be taken care of by the
-configuration system in Zephyr which will select the features implemented
-by the corresponding CPU.
-
-Platform
-========
-
-This layer implements most of the features that need porting and is split into
-three layers to allow for code reuse when dealing with implementations with
-slight differences.
-
-SoC Family
-----------
-
-This layer is a container of all SoCs of the same class that, for example
-implement one single type of CPU core but differ in peripherals and features.
-The base hardware will in most cases be the same across all SoCs and MCUs of
-this family.
-
-SoC Series
-----------
-
-Moving closer to the SoC, the series is derived from an SoC family. A series is
-defined by a feature set that serves the purpose of distinguishing different
-SoCs belonging to the same family.
+See :ref:`gs_toolchain` for information about toolchains (compiler, linker,
+etc.) supported by Zephyr. If you need to support a new toolchain,
+:ref:`build_overview` is a good place to start learning about the build system.
+Please reach out to the community if you are looking for advice or want to
+collaborate on toolchain support.
 
 SoC
----
+===
 
-Finally, an SoC is actual hardware component that is physically available on a
-board.
+Zephyr SoC support files are in architecture-specific subdirectories of
+:zephyr_file:`soc`. They are generally grouped by SoC family.
 
-Board
-=====
+When adding a new SoC family or series for a vendor that already has SoC
+support within Zephyr, please try to extract common functionality into shared
+files to avoid duplication. If there is no support for your vendor yet, you can
+add it in a new directory ``zephyr/soc/<YOUR-ARCH>/<YOUR-SOC>``; please use
+self-explanatory directory names.
 
-A board implements an SoC with all its features, together with peripherals
-available on the board that differentiates the board with additional interfaces
-and features not available in the SoC.
+.. _create-your-board-directory:
 
-A board port on Zephyr typically consists of two parts:
+Create your board directory
+***************************
 
-- A hardware description (usually done by device tree), which specifies embedded
-  SoC reference, connectors and any other hardware components such as LEDs,
-  buttons, sensors or communication peripherals (USB, BLE controller, ...).
+Once you've found an existing board that uses your SoC, you can usually start
+by copy/pasting its board directory and changing its contents for your
+hardware.
 
-- A software configuration (done using Kconfig) of features and peripheral
-  drivers. This default board configuration is subordinated to features
-  activation which is application responsibility. Though, it should also enable
-  a minimal set of features common to many applications and to applicable
-  project-provided :ref:`samples-and-demos`.
+You need to give your board a unique name. Run ``west boards`` for a list of
+names that are already taken, and pick something new. Let's say your board is
+called ``plank`` (please don't actually use that name).
 
+Start by creating the board directory ``zephyr/boards/<ARCH>/plank``, where
+``<ARCH>`` is your SoC's architecture subdirectory. (You don't have to put your
+board directory in the zephyr repository, but it's the easiest way to get
+started. See :ref:`custom_board_definition` for documentation on moving your
+board directory to a separate repository once it's working.)
+
+Your board directory should look like this:
+
+.. code-block:: none
+
+   boards/<ARCH>/plank
+   ├── board.cmake
+   ├── CMakeLists.txt
+   ├── doc
+   │   ├── plank.png
+   │   └── index.rst
+   ├── Kconfig.board
+   ├── Kconfig.defconfig
+   ├── plank_defconfig
+   ├── plank.dts
+   └── plank.yaml
+
+Replace ``plank`` with your board's name, of course.
+
+The mandatory files are:
+
+#. :file:`plank.dts`: a hardware description in :ref:`devicetree
+   <dt-guide>` format. This declares your SoC, connectors, and any
+   other hardware components such as LEDs, buttons, sensors, or communication
+   peripherals (USB, BLE controller, etc).
+
+#. :file:`Kconfig.board`, :file:`Kconfig.defconfig`, :file:`plank_defconfig`:
+   software configuration in :ref:`kconfig` formats. This provides default
+   settings for software features and peripheral drivers.
+
+The optional files are:
+
+- :file:`board.cmake`: used for :ref:`flash-and-debug-support`
+- :file:`CMakeLists.txt`: if you need to add additional source files to
+  your build.
+
+  One common use for this file is to add a :file:`pinmux.c` file in your board
+  directory to the build, which configures pin controllers at boot time. In
+  that case, :file:`CMakeLists.txt` usually looks like this:
+
+  .. code-block:: cmake
+
+     if(CONFIG_PINMUX)
+       zephyr_library()
+       zephyr_library_sources(pinmux.c)
+       zephyr_library_include_directories(${ZEPHYR_BASE}/drivers)
+     endif()
+
+- :file:`doc/index.rst`, :file:`doc/plank.png`: documentation for and a picture
+  of your board. You only need this if you're :ref:`contributing-your-board` to
+  Zephyr.
+- :file:`plank.yaml`: a YAML file with miscellaneous metadata used by the
+  :ref:`sanitycheck_script`.
 
 .. _default_board_configuration:
 
-Default board configuration
-***************************
+Write your devicetree
+*********************
 
-When porting Zephyr to a board, you must provide the board's default
-Kconfig configuration, which is used in application builds unless explicitly
-overridden.
+The devicetree file :file:`boards/<ARCH>/plank/plank.dts` describes your board
+hardware in the Devicetree Source (DTS) format (as usual, change ``plank`` to
+your board's name). If you're new to devicetree, see :ref:`devicetree-intro`.
+
+In general, :file:`plank.dts` should look like this:
+
+.. code-block:: none
+
+   /dts-v1/;
+   #include <your_soc_vendor/your_soc.dtsi>
+
+   / {
+   	model = "A human readable name";
+   	compatible = "yourcompany,plank";
+
+   	chosen {
+   		zephyr,console = &your_uart_console;
+   		zephyr,sram = &your_memory_node;
+   		/* other chosen settings  for your hardware */
+   	};
+
+   	/*
+   	 * Your board-specific hardware: buttons, LEDs, sensors, etc.
+   	 */
+
+   	leds {
+   		compatible = "gpio-leds";
+   		led0: led_0 {
+   			gpios = < /* GPIO your LED is hooked up to */ >;
+   			label = "LED 0";
+   		};
+   		/* ... other LEDs ... */
+   	};
+
+   	buttons {
+   		compatible = "gpio-keys";
+   		/* ... your button definitions ... */
+   	};
+
+   	/* These aliases are provided for compatibility with samples */
+   	aliases {
+   		led0 = &led0; /* now you support the blinky sample! */
+   		/* other aliases go here */
+   	};
+   };
+
+   &some_peripheral_you_want_to_enable { /* like a GPIO or SPI controller */
+   	status = "okay";
+   };
+
+   &another_peripheral_you_want {
+   	status = "okay";
+   };
+
+If you're in a hurry, simple hardware can usually be supported by copy/paste
+followed by trial and error. If you want to understand details, you will need
+to read the rest of the devicetree documentation and the devicetree
+specification.
+
+.. _dt_k6x_example:
+
+Example: FRDM-K64F and Hexiwear K64
+===================================
+
+.. Give the filenames instead of the full paths below, as it's easier to read.
+   The cramped 'foo.dts<path>' style avoids extra spaces before commas.
+
+This section contains concrete examples related to writing your board's
+devicetree.
+
+The FRDM-K64F and Hexiwear K64 board devicetrees are defined in
+:zephyr_file:`frdm_k64fs.dts <boards/arm/frdm_k64f/frdm_k64f.dts>` and
+:zephyr_file:`hexiwear_k64.dts <boards/arm/hexiwear_k64/hexiwear_k64.dts>`
+respectively. Both boards have NXP SoCs from the same Kinetis SoC family, the
+K6X.
+
+Common devicetree definitions for K6X are stored in :zephyr_file:`nxp_k6x.dtsi
+<dts/arm/nxp/nxp_k6x.dtsi>`, which is included by both board :file:`.dts`
+files. :zephyr_file:`nxp_k6x.dtsi<dts/arm/nxp/nxp_k6x.dtsi>` in turn includes
+:zephyr_file:`armv7-m.dtsi<dts/arm/armv7-m.dtsi>`, which has common definitions
+for Arm v7-M cores.
+
+Since :zephyr_file:`nxp_k6x.dtsi<dts/arm/nxp/nxp_k6x.dtsi>` is meant to be
+generic across K6X-based boards, it leaves many devices disabled by default
+using ``status`` properties.  For example, there is a CAN controller defined as
+follows (with unimportant parts skipped):
+
+.. code-block:: DTS
+
+   can0: can@40024000 {
+	...
+	status = "disabled";
+	...
+   };
+
+It is up to the board :file:`.dts` or application overlay files to enable these
+devices as desired, by setting ``status = "okay"``. The board :file:`.dts`
+files are also responsible for any board-specific configuration of the device,
+such as adding nodes for on-board sensors, LEDs, buttons, etc.
+
+For example, FRDM-K64 (but not Hexiwear K64) :file:`.dts` enables the CAN
+controller and sets the bus speed:
+
+.. code-block:: DTS
+
+   &can0 {
+	status = "okay";
+	bus-speed = <125000>;
+   };
+
+The ``&can0 { ... };`` syntax adds/overrides properties on the node with label
+``can0``, i.e. the ``can@4002400`` node defined in the :file:`.dtsi` file.
+
+Other examples of board-specific customization is pointing properties in
+``aliases`` and ``chosen`` to the right nodes (see :ref:`dt-alias-chosen`), and
+making GPIO/pinmux assignments.
+
+Write Kconfig files
+*******************
+
+Zephyr uses the Kconfig language to configure software features. Your board
+needs to provide some Kconfig settings before you can compile a Zephyr
+application for it.
 
 Setting Kconfig configuration values is documented in detail in
-:ref:`setting_configuration_values`, which you should go through. Note that the
-default board configuration might involve both :file:`<BOARD>_defconfig` and
-:file:`Kconfig.defconfig` files. The rest of this section contains some
-board-specific guidelines.
+:ref:`setting_configuration_values`.
 
-In order to provide consistency across the various boards and ease the work of
-users providing applications that are not board specific, the following
-guidelines should be followed when porting a board. Unless explicitly stated,
-peripherals should be disabled by default.
+There are three mandatory Kconfig files in the board directory for a board
+named ``plank``:
 
-- Configure and enable a working clock configuration, along with a tick source.
+.. code-block:: none
+
+   boards/<ARCH>/plank
+   ├── Kconfig.board
+   ├── Kconfig.defconfig
+   └── plank_defconfig
+
+:file:`Kconfig.board`
+  Included by :zephyr_file:`boards/Kconfig` to include your board
+  in the list of options.
+
+  This should at least contain a definition for a ``BOARD_PLANK`` option,
+  which looks something like this:
+
+  .. code-block:: none
+
+     config BOARD_PLANK
+     	bool "Plank board"
+     	depends on SOC_SERIES_YOUR_SOC_SERIES_HERE
+     	select SOC_PART_NUMBER_ABCDEFGH
+
+:file:`Kconfig.defconfig`
+  Board-specific default values for Kconfig options.
+
+  The entire file should be inside an ``if BOARD_PLANK`` / ``endif`` pair of
+  lines, like this:
+
+  .. code-block:: none
+
+     if BOARD_PLANK
+
+     # Always set CONFIG_BOARD here. This isn't meant to be customized,
+     # but is set as a "default" due to Kconfig language restrictions.
+     config BOARD
+     	default "plank"
+
+     # Other options you want enabled by default go next. Examples:
+
+     config FOO
+     	default y
+
+     if NETWORKING
+     config SOC_ETHERNET_DRIVER
+     	default y
+     endif # NETWORKING
+
+     endif # BOARD_PLANK
+
+:file:`plank_defconfig`
+  A Kconfig fragment that is merged as-is into the final build directory
+  :file:`.config` whenever an application is compiled for your board.
+
+  You should at least select your board's SOC and do any mandatory settings for
+  your system clock, console, etc. The results are architecture-specific, but
+  typically look something like this:
+
+  .. code-block:: none
+
+     CONFIG_SOC_${VENDOR_XYZ3000}=y                      /* select your SoC */
+     CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=120000000   /* set up your clock, etc */
+     CONFIG_SERIAL=y
+
+Build, test, and fix
+********************
+
+Now it's time to build and test the application(s) you want to run on your
+board until you're satisfied.
+
+For example:
+
+.. code-block:: console
+
+   west build -b plank samples/hello_world
+   west flash
+
+For ``west flash`` to work, see :ref:`flash-and-debug-support` below. You can
+also just flash :file:`build/zephyr/zephyr.elf`, :file:`zephyr.hex`, or
+:file:`zephyr.bin` with any other tools you prefer.
+
+.. _porting-general-recommendations:
+
+General recommendations
+***********************
+
+For consistency and to make it easier for users to build generic applications
+that are not board specific for your board, please follow these guidelines
+while porting.
+
+- Unless explicitly recommended otherwise by this section, leave peripherals
+  and their drivers disabled by default.
+
+- Configure and enable a system clock, along with a tick source.
 
 - Provide pin and driver configuration that matches the board's valuable
   components such as sensors, buttons or LEDs, and communication interfaces
   such as USB, Ethernet connector, or Bluetooth/Wi-Fi chip.
 
-- When a well-known connector is present (such as used on an Arduino or
-  96board), configure pins to fit this connector.
+- If your board uses a well-known connector standard (like Arduino, Mikrobus,
+  Grove, or 96Boards connectors), add connector nodes to your DTS and configure
+  pin muxes accordingly.
 
 - Configure components that enable the use of these pins, such as
-  configuring an SPI instance for Arduino SPI.
+  configuring an SPI instance to use the usual Arduino SPI pins.
 
-- If available, configure and enable a serial output for the console.
+- If available, configure and enable a serial output for the console
+  using the ``zephyr,console`` chosen node in the devicetree.
 
-- Propose and configure a default network interface.
+- If your board supports networking, configure a default interface.
 
-- Enable all GPIO ports.
+- Enable all GPIO ports connected to peripherals or expansion connectors.
 
 - If available, enable pinmux and interrupt controller drivers.
+
+- It is recommended to enable the MPU by default, if there is support for it
+  in hardware. For boards with limited memory resources it is acceptable to
+  disable it.
+
+.. _flash-and-debug-support:
+
+Flash and debug support
+***********************
+
+Zephyr supports :ref:`west-build-flash-debug` via west extension commands.
+
+To add ``west flash`` and ``west debug`` support for your board, you need to
+create a :file:`board.cmake` file in your board directory. This file's job is
+to configure a "runner" for your board. (There's nothing special you need to
+do to get ``west build`` support for your board.)
+
+"Runners" are Zephyr-specific Python classes that wrap :ref:`flash and debug
+host tools <debug-host-tools>` and integrate with west and the zephyr build
+system to support ``west flash`` and related commands. Each runner supports
+flashing, debugging, or both. You need to configure the arguments to these
+Python scripts in your :file:`board.cmake` to support those commands like this
+example :file:`board.cmake`:
+
+.. code-block:: cmake
+
+   board_runner_args(nrfjprog "--nrf-family=NRF52")
+   board_runner_args(jlink "--device=nrf52" "--speed=4000")
+   board_runner_args(pyocd "--target=nrf52" "--frequency=4000000")
+
+   include(${ZEPHYR_BASE}/boards/common/nrfjprog.board.cmake)
+   include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
+   include(${ZEPHYR_BASE}/boards/common/pyocd.board.cmake)
+
+This example configures the ``nrfjprog``, ``jlink``, and ``pyocd`` runners.
+
+.. warning::
+
+   Runners usually have names which match the tools they wrap, so the ``jlink``
+   runner wraps Segger's J-Link tools, and so on. But the runner command line
+   options like ``--speed`` etc. are specific to the Python scripts.
+
+For more details:
+
+- Run ``west flash --context`` to see a list of available runners which support
+  flashing, and ``west flash --context -r <RUNNER>`` to view the specific options
+  available for an individual runner.
+- Run ``west debug --context`` and ``west debug --context <RUNNER>`` to get
+  the same output for runners which support debugging.
+- Run ``west flash --help`` and ``west debug --help`` for top-level options
+  for flashing and debugging.
+- See :ref:`west-runner` for Python APIs.
+- Look for :file:`board.cmake` files for other boards similar to your own for
+  more examples.
+
+To see what a ``west flash`` or ``west debug`` command is doing exactly, run it
+in verbose mode:
+
+.. code-block:: sh
+
+   west --verbose flash
+   west --verbose debug
+
+Verbose mode prints any host tool commands the runner uses.
+
+The order of the ``include()`` calls in your :file:`board.cmake` matters. The
+first ``include`` sets the default runner if it's not already set. For example,
+including ``nrfjprog.board.cmake`` first means that ``nrjfprog`` is the default
+flash runner for this board. Since ``nrfjprog`` does not support debugging,
+``jlink`` is the default debug runner.
+
+.. _contributing-your-board:
+
+Contributing your board
+***********************
+
+If you want to contribute your board to Zephyr, first -- thanks!
+
+There are some extra things you'll need to do:
+
+#. Make sure you've followed all the :ref:`porting-general-recommendations`.
+   They are requirements for boards included with Zephyr.
+
+#. Add documentation for your board using the template file
+   :zephyr_file:`doc/templates/board.tmpl`. See :ref:`zephyr_doc` for
+   information on how to build your documentation before submitting
+   your pull request.
+
+#. Prepare a pull request adding your board which follows the
+   :ref:`contribute_guidelines`.

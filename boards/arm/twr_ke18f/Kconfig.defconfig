@@ -8,23 +8,6 @@ if BOARD_TWR_KE18F
 config BOARD
 	default "twr_ke18f"
 
-if UART_MCUX_LPUART
-
-config UART_MCUX_LPUART_0
-	default y if UART_CONSOLE
-
-endif # UART_MCUX_LPUART
-
-if I2C
-
-config I2C_0
-	default y
-
-config I2C_1
-	default y
-
-endif # I2C
-
 if SPI_MCUX_LPSPI
 
 config SPI_0
@@ -34,13 +17,6 @@ config SPI_1
 	default y
 
 endif # SPI_MCUX_LPSPI
-
-if CAN
-
-config CAN_0
-	default y
-
-endif # CAN
 
 if PINMUX_MCUX
 
@@ -61,40 +37,8 @@ config PINMUX_MCUX_PORTE
 
 endif # PINMUX_MCUX
 
-if GPIO_MCUX
-
-config GPIO_MCUX_PORTA
-	default y
-
-config GPIO_MCUX_PORTB
-	default y
-
-config GPIO_MCUX_PORTC
-	default y
-
-config GPIO_MCUX_PORTD
-	default y
-
-config GPIO_MCUX_PORTE
-	default y
-
-endif # GPIO_MCUX
-
-if ADC
-
-config ADC_0
-	default y
-
-endif # ADC
-
-if PWM
-
-config PWM_0
-	default y
-
-config PWM_3
-	default y
-
-endif # PWM
+config TEMP_KINETIS
+	default y if "$(dt_nodelabel_enabled,adc0)"
+	depends on SENSOR
 
 endif # BOARD_TWR_KE18F

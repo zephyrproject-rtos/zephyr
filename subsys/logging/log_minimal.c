@@ -34,8 +34,9 @@ static void minimal_hexdump_line_print(const char *data, size_t length)
 	printk("\n");
 }
 
-void log_minimal_hexdump_print(int level, const char *data, size_t size)
+void log_minimal_hexdump_print(int level, const void *_data, size_t size)
 {
+	const char *data = (const char *)_data;
 	while (size > 0) {
 		printk("%c: ", z_log_minimal_level_to_char(level));
 		minimal_hexdump_line_print(data, size);

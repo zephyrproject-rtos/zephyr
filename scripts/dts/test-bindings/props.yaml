@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
-title: Device.props test
 description: Device.props test
 
 compatible: "props"
@@ -43,3 +42,6 @@ properties:
     # too
     foo-gpios:
         type: phandle-array
+
+    path:
+        type: path

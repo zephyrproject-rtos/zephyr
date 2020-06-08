@@ -9,6 +9,7 @@
 
 menuconfig IMG_MANAGER
 	bool "DFU image manager"
+	select STREAM_FLASH
 	help
 	  Enable support for managing DFU image.
 
@@ -29,18 +30,16 @@ config MCUBOOT_IMG_MANAGER
 
 endchoice
 
-if MCUBOOT_IMG_MANAGER
 config MCUBOOT_TRAILER_SWAP_TYPE
 	bool "use trailer's swap_type field"
 	default y
+	depends on MCUBOOT_IMG_MANAGER
 	help
 	  Enables usage swap type field which is required after
 	  "Fix double swap on interrupted revert"  mcuboot patch
 	  (https://github.com/JuulLabs-OSS/mcuboot/pull/485)
 	  Disable this option if need to be compatible with earlier version
 	  of MCUBoot.
-endif
-
 
 config IMG_BLOCK_BUF_SIZE
 	int "Image writer buffer size"
@@ -50,10 +49,10 @@ config IMG_BLOCK_BUF_SIZE
 	  Size (in Bytes) of buffer for image writer. Must be a multiple of
 	  the access alignment required by used flash driver.
 
-config 	IMG_ERASE_PROGRESSIVELY
+config IMG_ERASE_PROGRESSIVELY
 	bool "Erase flash progressively when receiving new firmware"
 	depends on MCUBOOT_IMG_MANAGER
-	select FLASH_PAGE_LAYOUT
+	select STREAM_FLASH_ERASE
 	help
 	  If enabled, flash is erased as necessary when receiving new firmware,
 	  instead of erasing the whole image slot at once. This is necessary

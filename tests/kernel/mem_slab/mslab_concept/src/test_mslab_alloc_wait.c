@@ -82,7 +82,7 @@ void test_mslab_alloc_wait_prio(void)
 				 tmslab_alloc_wait_timeout, NULL, NULL, NULL,
 				 K_PRIO_PREEMPT(0), 0, K_MSEC(20));
 	/*relinquish CPU for above threads to start */
-	k_sleep(K_MSEC(30));
+	k_msleep(30);
 	/*free one block, expected to unblock thread "tid[1]"*/
 	k_mem_slab_free(&mslab1, &block[0]);
 	/*wait for all threads exit*/

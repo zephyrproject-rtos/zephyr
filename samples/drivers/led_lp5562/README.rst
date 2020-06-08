@@ -29,16 +29,16 @@ mappings used by this sample.
 Building and Running
 ********************
 
-Build the application for the :ref:`nrf52840_pca10056` board, and connect
+Build the application for the :ref:`nrf52840dk_nrf52840` board, and connect
 a LP5562 LED driver on the bus I2C0 at the address 0x30.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/led_lp5562
-   :board: nrf52840_pca10056
+   :board: nrf52840dk_nrf52840
    :goals: build
    :compact:
 
 For flashing the application, refer to the Flashing section of the
-:ref:`nrf52840_pca10056` board documentation.
+:ref:`nrf52840dk_nrf52840` board documentation.
 
 .. _LP5562 Manual: http://www.ti.com/lit/ds/symlink/lp5562.pdf

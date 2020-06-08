@@ -11,70 +11,14 @@ config BOARD
 config CLOCK_STM32_LSE
 	default y
 
-if STM32_LPTIM_TIMER
-
 choice STM32_LPTIM_CLOCK
 	default STM32_LPTIM_CLOCK_LSE
-
+	depends on STM32_LPTIM_TIMER
 endchoice
-
-endif #STM32_LPTIM_TIMER
-
-if UART_CONSOLE
-
-config UART_1
-	default y
-
-endif # UART_CONSOLE
-
-if SERIAL
-
-config LPUART_1
-	default y
-
-endif # SERIAL
-
-if I2C
-
-config I2C_1
-	default y
-
-config I2C_3
-	default y
-
-config I2C_STM32_INTERRUPT
-	default y
-
-endif # I2C
-
-if SPI
-
-config SPI_1
-	default y
-
-endif # SPI
-
-if ADC
-
-config ADC_1
-	default y
-
-endif # ADC
-
-if BT_DEBUG_MONITOR
-
-config LPUART_1
-	default y
-
-endif # BT_DEBUG_MONITOR
-
-if BT
 
 choice BT_HCI_BUS_TYPE
 	default BT_STM32_IPM
-
+	depends on BT
 endchoice
-
-endif # BT
 
 endif # BOARD_NUCLEO_WB55RG

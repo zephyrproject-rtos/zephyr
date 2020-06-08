@@ -32,14 +32,14 @@
 #include <zephyr.h>
 #include <ztest.h>
 
-#if defined(DT_ALIAS_PWM_0_LABEL)
-#define PWM_DEV_NAME DT_ALIAS_PWM_0_LABEL
-#elif defined(DT_ALIAS_PWM_1_LABEL)
-#define PWM_DEV_NAME DT_ALIAS_PWM_1_LABEL
-#elif defined(DT_ALIAS_PWM_2_LABEL)
-#define PWM_DEV_NAME DT_ALIAS_PWM_2_LABEL
-#elif defined(DT_ALIAS_PWM_3_LABEL)
-#define PWM_DEV_NAME DT_ALIAS_PWM_3_LABEL
+#if DT_NODE_HAS_STATUS(DT_ALIAS(pwm_0), okay)
+#define PWM_DEV_NAME DT_LABEL(DT_ALIAS(pwm_0))
+#elif DT_NODE_HAS_STATUS(DT_ALIAS(pwm_1), okay)
+#define PWM_DEV_NAME DT_LABEL(DT_ALIAS(pwm_1))
+#elif DT_NODE_HAS_STATUS(DT_ALIAS(pwm_2), okay)
+#define PWM_DEV_NAME DT_LABEL(DT_ALIAS(pwm_2))
+#elif DT_NODE_HAS_STATUS(DT_ALIAS(pwm_3), okay)
+#define PWM_DEV_NAME DT_LABEL(DT_ALIAS(pwm_3))
 #else
 #error "Define a PWM device"
 #endif
@@ -63,7 +63,7 @@
 #if defined CONFIG_BOARD_SAM_E70_XPLAINED
 #define DEFAULT_PWM_PORT 2 /* PWM on EXT2 connector, pin 8 */
 #elif defined CONFIG_PWM_NRFX
-#define DEFAULT_PWM_PORT DT_ALIAS_PWM_0_CH0_PIN
+#define DEFAULT_PWM_PORT DT_PROP(DT_ALIAS(pwm_0), ch0_pin)
 #else
 #define DEFAULT_PWM_PORT 0
 #endif
@@ -86,19 +86,19 @@ static int test_task(u32_t port, u32_t period, u32_t pulse, u8_t unit)
 
 	if (unit == UNIT_CYCLES) {
 		/* Verify pwm_pin_set_cycles() */
-		if (pwm_pin_set_cycles(pwm_dev, port, period, pulse)) {
+		if (pwm_pin_set_cycles(pwm_dev, port, period, pulse, 0)) {
 			TC_PRINT("Fail to set the period and pulse width\n");
 			return TC_FAIL;
 		}
 	} else if (unit == UNIT_USECS) {
 		/* Verify pwm_pin_set_usec() */
-		if (pwm_pin_set_usec(pwm_dev, port, period, pulse)) {
+		if (pwm_pin_set_usec(pwm_dev, port, period, pulse, 0)) {
 			TC_PRINT("Fail to set the period and pulse width\n");
 			return TC_FAIL;
 		}
 	} else { /* unit == UNIT_NSECS */
 		/* Verify pwm_pin_set_nsec() */
-		if (pwm_pin_set_nsec(pwm_dev, port, period, pulse)) {
+		if (pwm_pin_set_nsec(pwm_dev, port, period, pulse, 0)) {
 			TC_PRINT("Fail to set the period and pulse width\n");
 			return TC_FAIL;
 		}

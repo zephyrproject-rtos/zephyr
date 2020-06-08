@@ -19,6 +19,8 @@ void test_qspi_flash(void)
 {
 	struct device *flash_dev;
 	u32_t i, offset, rd_val, wr_val;
+	u8_t wr_buf[4] = {0xAA, 0xBB, 0xCC, 0xDD};
+	u8_t rd_buf[2];
 
 	flash_dev = device_get_binding(CONFIG_SOC_FLASH_NIOS2_QSPI_DEV_NAME);
 	zassert_equal(!flash_dev, TC_PASS, "Flash device not found!");
@@ -53,6 +55,19 @@ void test_qspi_flash(void)
 				TC_PASS, "Flash read call failed!");
 		zassert_equal(rd_val != wr_val,	TC_PASS,
 					"Flash Write & Read Test failed!!");
+		TC_PRINT("PASS\n");
+
+
+		/* Flash Unaligned Read Test */
+		TC_PRINT("	Flash Unaligned Read Test...");
+		zassert_equal(flash_write(flash_dev, offset + sizeof(wr_val),
+				&wr_buf, sizeof(wr_buf)),
+				TC_PASS, "Flash write call failed!");
+		zassert_equal(flash_read(flash_dev, offset + sizeof(wr_val) + 1,
+				&rd_buf, sizeof(rd_buf)),
+				TC_PASS, "Flash read call failed!");
+		zassert_equal(memcmp(wr_buf + 1, rd_buf, sizeof(rd_buf)),
+				TC_PASS, "Flash Write & Read Test failed!!");
 		TC_PRINT("PASS\n");
 
 

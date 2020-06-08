@@ -10,11 +10,9 @@
 #include <zephyr.h>
 #include <ztest.h>
 
-#if defined(DT_KSCAN_0_NAME)
-#define KSCAN_DEV_NAME DT_KSCAN_0_NAME
-#endif
+#define KSCAN_DEV_NAME DT_LABEL(DT_ALIAS(kscan0))
 
-static void kb_callback(struct device *dev, u8_t row, u8_t col, bool pressed)
+static void kb_callback(struct device *dev, u32_t row, u32_t col, bool pressed)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(row);
@@ -99,4 +97,3 @@ void test_control_callback(void)
 	zassert_true(test_disable_enable_callback() == TC_PASS, NULL);
 	k_sleep(K_MSEC(1000));
 }
-

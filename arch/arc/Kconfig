@@ -128,7 +128,7 @@ config ARC_FIRQ_STACK_SIZE
 	help
 	  The size of firq stack.
 
-config 	ARC_HAS_STACK_CHECKING
+config ARC_HAS_STACK_CHECKING
 	bool "ARC has STACK_CHECKING"
 	default y
 	help
@@ -145,6 +145,7 @@ config ARC_CONNECT
 
 config ARC_STACK_CHECKING
 	bool
+	select NO_UNUSED_STACK_INSPECTION
 	help
 	  Use ARC STACK_CHECKING to do stack protection
 
@@ -152,7 +153,7 @@ config ARC_STACK_PROTECTION
 	bool
 	default y if HW_STACK_PROTECTION
 	select ARC_STACK_CHECKING if ARC_HAS_STACK_CHECKING
-	select MPU_STACK_GUARD if (!ARC_STACK_CHECKING && ARC_MPU)
+	select MPU_STACK_GUARD if (!ARC_STACK_CHECKING && ARC_MPU && ARC_MPU_VER !=2)
 	select THREAD_STACK_INFO
 	help
 	  This option enables either:
@@ -210,7 +211,7 @@ config CODE_DENSITY
 
 config ARC_HAS_ACCL_REGS
 	bool "Reg Pair ACCL:ACCH (FPU and/or MPY > 6)"
-	default y if FLOAT
+	default y if FPU
 	help
 	  Depending on the configuration, CPU can contain accumulator reg-pair
 	  (also referred to as r58:r59). These can also be used by gcc as GPR so

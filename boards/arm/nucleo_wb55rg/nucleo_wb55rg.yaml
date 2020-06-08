@@ -1,5 +1,5 @@
 identifier: nucleo_wb55rg
-name: NUCLEO-WB55RG
+name: ST Nucleo WB55RG
 type: mcu
 arch: arm
 toolchain:
@@ -19,3 +19,4 @@ supported:
   - arduino_gpio
   - arduino_i2c
   - arduino_spi
+  - usb_device

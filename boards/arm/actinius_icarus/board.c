@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(board_control, CONFIG_BOARD_ICARUS_LOG_LEVEL);
 
 static void select_sim(void)
 {
-	struct device *port = device_get_binding(DT_GPIO_P0_DEV_NAME);
+	struct device *port = device_get_binding(DT_LABEL(DT_NODELABEL(gpio0)));
 
 	if (!port) {
 		LOG_ERR("Could not get GPIO Device Binding");
@@ -22,12 +22,11 @@ static void select_sim(void)
 		return;
 	}
 
-	gpio_pin_configure(port, SIM_SELECT_PIN, GPIO_DIR_OUT);
 	#ifdef CONFIG_BOARD_SELECT_SIM_EXTERNAL
-		gpio_pin_write(port, SIM_SELECT_PIN, 0);
+		gpio_pin_configure(port, SIM_SELECT_PIN, GPIO_OUTPUT_LOW);
 		LOG_INF("External SIM is selected");
 	#else
-		gpio_pin_write(port, SIM_SELECT_PIN, 1);
+		gpio_pin_configure(port, SIM_SELECT_PIN, GPIO_OUTPUT_HIGH);
 		LOG_INF("eSIM is selected");
 	#endif
 }

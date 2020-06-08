@@ -1,0 +1,40 @@
+# TF-M/PSA Related
+
+# Copyright (c) 2019, 2020 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config BUILD_WITH_TFM
+	bool "Build with TF-M as the Secure Execution Environment"
+	depends on TRUSTED_EXECUTION_NONSECURE
+	help
+	  When enabled, this option instructs the Zephyr build process to
+	  additionaly generate a TF-M image for the Secure Execution
+	  environment, along with the Zephyr image. The Zephyr image
+	  itself is to be executed in the Non-Secure Processing Environment.
+	  The required dependency on TRUSTED_EXECUTION_NONSECURE
+	  ensures that the Zephyr image is built as a Non-Secure image. Both
+	  TF-M and Zephyr images, as well as the veneer object file that links
+	  them, are generated during the normal Zephyr build process.
+
+	  Note:
+	    Building with the "_nonsecure" BOARD variant (e.g.
+	    "mps2_an521_nonsecure") ensures that
+	    CONFIG_TRUSTED_EXECUTION_NONSECURE ie enabled.
+
+config TFM_KEY_FILE_S
+	string "Path to private key used to sign secure firmware images."
+	depends on BUILD_WITH_TFM
+	default "${ZEPHYR_BASE}/../modules/tee/tfm/trusted-firmware-m/bl2/ext/mcuboot/root-rsa-3072.pem"
+	help
+	  The path and filename for the .pem file containing the private key
+	  that should be used by the BL2 bootloader when signing secure
+	  firmware images.
+
+config TFM_KEY_FILE_NS
+	string "Path to private key used to sign non-secure firmware images."
+	depends on BUILD_WITH_TFM
+	default "${ZEPHYR_BASE}/../modules/tee/tfm/trusted-firmware-m/bl2/ext/mcuboot/root-rsa-3072_1.pem"
+	help
+	  The path and filename for the .pem file containing the private key
+	  that should be used by the BL2 bootloader when signing non-secure
+	  firmware images.

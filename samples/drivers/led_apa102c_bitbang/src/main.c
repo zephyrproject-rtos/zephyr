@@ -23,13 +23,13 @@
 #include <device.h>
 #include <drivers/gpio.h>
 /* in millisecond */
-#define SLEEPTIME	250
+#define SLEEPTIME	K_MSEC(250)
 
 #define GPIO_DATA_PIN	16
 #define GPIO_CLK_PIN	19
 #define GPIO_NAME	"GPIO_"
 
-#define GPIO_DRV_NAME	DT_ALIAS_GPIO_0_LABEL
+#define GPIO_DRV_NAME	DT_LABEL(DT_ALIAS(gpio_0))
 
 #define APA102C_START_FRAME	0x00000000
 #define APA102C_END_FRAME	0xFFFFFFFF
@@ -55,11 +55,11 @@ void send_rgb(struct device *gpio_dev, u32_t rgb)
 
 	for (i = 0; i < 32; i++) {
 		/* MSB goes in first */
-		gpio_pin_write(gpio_dev, GPIO_DATA_PIN, !!(rgb & 0x80000000));
+		gpio_pin_set_raw(gpio_dev, GPIO_DATA_PIN, (rgb & BIT(31)) != 0);
 
 		/* Latch data into LED */
-		gpio_pin_write(gpio_dev, GPIO_CLK_PIN, 1);
-		gpio_pin_write(gpio_dev, GPIO_CLK_PIN, 0);
+		gpio_pin_set_raw(gpio_dev, GPIO_CLK_PIN, 1);
+		gpio_pin_set_raw(gpio_dev, GPIO_CLK_PIN, 0);
 
 		rgb <<= 1;
 	}
@@ -79,12 +79,12 @@ void main(void)
 	}
 
 	/* Setup GPIO output */
-	ret = gpio_pin_configure(gpio_dev, GPIO_DATA_PIN, (GPIO_DIR_OUT));
+	ret = gpio_pin_configure(gpio_dev, GPIO_DATA_PIN, GPIO_OUTPUT);
 	if (ret) {
 		printk("Error configuring " GPIO_NAME "%d!\n", GPIO_DATA_PIN);
 	}
 
-	ret = gpio_pin_configure(gpio_dev, GPIO_CLK_PIN, (GPIO_DIR_OUT));
+	ret = gpio_pin_configure(gpio_dev, GPIO_CLK_PIN, GPIO_OUTPUT);
 	if (ret) {
 		printk("Error configuring " GPIO_NAME "%d!\n", GPIO_CLK_PIN);
 	}

@@ -27,11 +27,11 @@ LOG_MODULE_REGISTER(app);
 #define PR_WARNING(shell, fmt, ...)				\
 	shell_fprintf(shell, SHELL_WARNING, fmt, ##__VA_ARGS__)
 /*
- * When DT_FLASH_DEV_NAME is available, we use it here. Otherwise,
- * the device can be set at runtime with the set_device command.
+ * When DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL is available, we use it here.
+ * Otherwise the device can be set at runtime with the set_device command.
  */
-#ifndef DT_FLASH_DEV_NAME
-#define DT_FLASH_DEV_NAME ""
+#ifndef DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL
+#define DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL ""
 #endif
 
 /* Command usage info. */
@@ -570,7 +570,7 @@ static int cmd_set_dev(const struct shell *shell, size_t argc, char **argv)
 	}
 	if (flash_device) {
 		PR_SHELL(shell, "Leaving behind device %s\n",
-			 flash_device->config->name);
+			 flash_device->name);
 	}
 	flash_device = dev;
 
@@ -579,12 +579,14 @@ static int cmd_set_dev(const struct shell *shell, size_t argc, char **argv)
 
 void main(void)
 {
-	flash_device = device_get_binding(DT_FLASH_DEV_NAME);
+	flash_device =
+		device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 	if (flash_device) {
-		printk("Found flash device %s.\n", DT_FLASH_DEV_NAME);
+		printk("Found flash controller %s.\n",
+			DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 		printk("Flash I/O commands can be run.\n");
 	} else {
-		printk("**No flash device found!**\n");
+		printk("**No flash controller found!**\n");
 		printk("Run set_device <name> to specify one "
 		       "before using other commands.\n");
 	}
@@ -612,4 +614,3 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_flash,
 );
 
 SHELL_CMD_REGISTER(flash, &sub_flash, "Flash realated commands.", cmd_flash);
-

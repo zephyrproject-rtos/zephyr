@@ -19,13 +19,21 @@
 #define BME280_REG_CONFIG               0xF5
 #define BME280_REG_CTRL_MEAS            0xF4
 #define BME280_REG_CTRL_HUM             0xF2
+#define BME280_REG_STATUS               0xF3
 
 #define BMP280_CHIP_ID_SAMPLE_1         0x56
 #define BMP280_CHIP_ID_SAMPLE_2         0x57
 #define BMP280_CHIP_ID_MP               0x58
 #define BME280_CHIP_ID                  0x60
+#define BME280_MODE_FORCED              0x01
 #define BME280_MODE_NORMAL              0x03
 #define BME280_SPI_3W_DISABLE           0x00
+
+#if defined CONFIG_BME280_MODE_NORMAL
+#define BME280_MODE BME280_MODE_NORMAL
+#elif defined CONFIG_BME280_MODE_FORCED
+#define BME280_MODE BME280_MODE_FORCED
+#endif
 
 #if defined CONFIG_BME280_TEMP_OVER_1X
 #define BME280_TEMP_OVER                (1 << 5)
@@ -95,50 +103,9 @@
 
 #define BME280_CTRL_MEAS_VAL            (BME280_PRESS_OVER | \
 					 BME280_TEMP_OVER |  \
-					 BME280_MODE_NORMAL)
+					 BME280_MODE)
 #define BME280_CONFIG_VAL               (BME280_STANDBY | \
 					 BME280_FILTER |  \
 					 BME280_SPI_3W_DISABLE)
-
-struct bme280_data {
-#ifdef DT_BOSCH_BME280_BUS_I2C
-	struct device *i2c_master;
-	u16_t i2c_slave_addr;
-#elif defined DT_BOSCH_BME280_BUS_SPI
-	struct device *spi;
-	struct spi_config spi_cfg;
-#else
-#error "BME280 device type not specified"
-#endif
-	/* Compensation parameters. */
-	u16_t dig_t1;
-	s16_t dig_t2;
-	s16_t dig_t3;
-	u16_t dig_p1;
-	s16_t dig_p2;
-	s16_t dig_p3;
-	s16_t dig_p4;
-	s16_t dig_p5;
-	s16_t dig_p6;
-	s16_t dig_p7;
-	s16_t dig_p8;
-	s16_t dig_p9;
-	u8_t dig_h1;
-	s16_t dig_h2;
-	u8_t dig_h3;
-	s16_t dig_h4;
-	s16_t dig_h5;
-	s8_t dig_h6;
-
-	/* Compensated values. */
-	s32_t comp_temp;
-	u32_t comp_press;
-	u32_t comp_humidity;
-
-	/* Carryover between temperature and pressure/humidity compensation. */
-	s32_t t_fine;
-
-	u8_t chip_id;
-};
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BME280_BME280_H_ */

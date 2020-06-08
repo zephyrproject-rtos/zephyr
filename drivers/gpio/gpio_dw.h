@@ -18,6 +18,8 @@ extern "C" {
 typedef void (*gpio_config_irq_t)(struct device *port);
 
 struct gpio_dw_config {
+	/* gpio_driver_config needs to be first */
+	struct gpio_driver_config common;
 	u32_t bits;
 	u32_t irq_num; /* set to 0 if GPIO port cannot interrupt */
 	gpio_config_irq_t config_func;
@@ -32,6 +34,8 @@ struct gpio_dw_config {
 };
 
 struct gpio_dw_runtime {
+	/* gpio_driver_data needs to be first */
+	struct gpio_driver_data common;
 	u32_t base_addr;
 #ifdef CONFIG_GPIO_DW_CLOCK_GATE
 	struct device *clock;

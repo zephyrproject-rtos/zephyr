@@ -2,6 +2,7 @@
 
 config SOC_ATOM
 	bool "Intel ATOM SoC"
+	select X86
 	select CPU_ATOM
 	select X86_MMU
 	select ARCH_HAS_USERSPACE

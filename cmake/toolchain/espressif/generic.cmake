@@ -18,3 +18,4 @@ set(SYSROOT_DIR   ${TOOLCHAIN_HOME}/${SYSROOT_TARGET})
 
 set(TOOLCHAIN_HAS_NEWLIB ON CACHE BOOL "True if toolchain supports newlib")
 
+message(STATUS "Found toolchain: espressif (${ESPRESSIF_TOOLCHAIN_PATH})")

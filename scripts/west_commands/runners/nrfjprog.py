@@ -54,34 +54,41 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def create(cls, cfg, args):
-        ret = NrfJprogBinaryRunner(cfg, args.nrf_family, args.softreset,
-                                   args.snr, erase=args.erase,
-                                   tool_opt=args.tool_opt)
-        ret.ensure_snr()
-        return ret
+        return NrfJprogBinaryRunner(cfg, args.nrf_family, args.softreset,
+                                    args.snr, erase=args.erase,
+                                    tool_opt=args.tool_opt)
 
     def ensure_snr(self):
         if not self.snr:
-            self.snr = self.get_board_snr_from_user()
+            self.snr = self.get_board_snr()
 
-    def get_board_snr_from_user(self):
+    def get_board_snr(self):
+        # Use nrfjprog --ids to discover connected boards.
+        #
+        # If there's exactly one board connected, it's safe to assume
+        # the user wants that one. Otherwise, bail unless there are
+        # multiple boards and we are connected to a terminal, in which
+        # case use print() and input() to ask what the user wants.
+
         snrs = self.check_output(['nrfjprog', '--ids'])
         snrs = snrs.decode(sys.getdefaultencoding()).strip().splitlines()
-
         if not snrs:
             raise RuntimeError('"nrfjprog --ids" did not find a board; '
                                'is the board connected?')
-
-        if len(snrs) == 1:
+        elif len(snrs) == 1:
             board_snr = snrs[0]
             if board_snr == '0':
                 raise RuntimeError('"nrfjprog --ids" returned 0; '
                                    'is a debugger already connected?')
             return board_snr
+        elif not sys.stdin.isatty():
+            raise RuntimeError(
+                f'refusing to guess which of {len(snrs)} '
+                'connected boards to use. (Interactive prompts '
+                'disabled since standard input is not a terminal.) '
+                'Please specify a serial number on the command line.')
 
-        # Use of print() here is advised. We don't want to lose
-        # this information in a separate log -- this is
-        # interactive and requires a terminal.
+        snrs = sorted(snrs)
         print('There are multiple boards connected.')
         for i, snr in enumerate(snrs, 1):
             print('{}. {}'.format(i, snr))
@@ -102,11 +109,10 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
     def do_run(self, command, **kwargs):
         self.require('nrfjprog')
 
+        self.ensure_snr()
+
         commands = []
-        if self.snr is None:
-            raise ValueError("self.snr must not be None")
-        else:
-            board_snr = self.snr.lstrip("0")
+        board_snr = self.snr.lstrip("0")
 
         if not os.path.isfile(self.hex_):
             raise ValueError('Cannot flash; hex file ({}) does not exist. '.

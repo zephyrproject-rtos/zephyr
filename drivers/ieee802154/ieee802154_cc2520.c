@@ -1,5 +1,7 @@
 /* ieee802154_cc2520.c - TI CC2520 driver */
 
+#define DT_DRV_COMPAT ti_cc2520
+
 /*
  * Copyright (c) 2016 Intel Corporation.
  *
@@ -16,6 +18,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <kernel.h>
 #include <arch/cpu.h>
+#include <debug/stack.h>
 
 #include <device.h>
 #include <init.h>
@@ -56,7 +59,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define CC2520_TX_THRESHOLD		(0x7F)
 #define CC2520_FCS_LENGTH		(2)
 
-#if defined(CONFIG_IEEE802154_CC2520_GPIO_SPI_CS)
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 static struct spi_cs_control cs_ctrl;
 #endif
 
@@ -354,24 +357,24 @@ static inline void set_reset(struct device *dev, u32_t value)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
-	gpio_pin_write(cc2520->gpios[CC2520_GPIO_IDX_RESET].dev,
-		       cc2520->gpios[CC2520_GPIO_IDX_RESET].pin, value);
+	gpio_pin_set_raw(cc2520->gpios[CC2520_GPIO_IDX_RESET].dev,
+			 cc2520->gpios[CC2520_GPIO_IDX_RESET].pin, value);
 }
 
 static inline void set_vreg_en(struct device *dev, u32_t value)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
-	gpio_pin_write(cc2520->gpios[CC2520_GPIO_IDX_VREG_EN].dev,
-		       cc2520->gpios[CC2520_GPIO_IDX_VREG_EN].pin, value);
+	gpio_pin_set_raw(cc2520->gpios[CC2520_GPIO_IDX_VREG_EN].dev,
+			 cc2520->gpios[CC2520_GPIO_IDX_VREG_EN].pin, value);
 }
 
 static inline u32_t get_fifo(struct cc2520_context *cc2520)
 {
 	u32_t pin_value;
 
-	gpio_pin_read(cc2520->gpios[CC2520_GPIO_IDX_FIFO].dev,
-		      cc2520->gpios[CC2520_GPIO_IDX_FIFO].pin, &pin_value);
+	pin_value = gpio_pin_get_raw(cc2520->gpios[CC2520_GPIO_IDX_FIFO].dev,
+				     cc2520->gpios[CC2520_GPIO_IDX_FIFO].pin);
 
 	return pin_value;
 }
@@ -380,8 +383,8 @@ static inline u32_t get_fifop(struct cc2520_context *cc2520)
 {
 	u32_t pin_value;
 
-	gpio_pin_read(cc2520->gpios[CC2520_GPIO_IDX_FIFOP].dev,
-		      cc2520->gpios[CC2520_GPIO_IDX_FIFOP].pin, &pin_value);
+	pin_value = gpio_pin_get_raw(cc2520->gpios[CC2520_GPIO_IDX_FIFOP].dev,
+				     cc2520->gpios[CC2520_GPIO_IDX_FIFOP].pin);
 
 	return pin_value;
 }
@@ -390,8 +393,8 @@ static inline u32_t get_cca(struct cc2520_context *cc2520)
 {
 	u32_t pin_value;
 
-	gpio_pin_read(cc2520->gpios[CC2520_GPIO_IDX_CCA].dev,
-		      cc2520->gpios[CC2520_GPIO_IDX_CCA].pin, &pin_value);
+	pin_value = gpio_pin_get_raw(cc2520->gpios[CC2520_GPIO_IDX_CCA].dev,
+				     cc2520->gpios[CC2520_GPIO_IDX_CCA].pin);
 
 	return pin_value;
 }
@@ -429,29 +432,19 @@ static inline void fifop_int_handler(struct device *port,
 static void enable_fifop_interrupt(struct cc2520_context *cc2520,
 				   bool enable)
 {
-	if (enable) {
-		gpio_pin_enable_callback(
-			cc2520->gpios[CC2520_GPIO_IDX_FIFOP].dev,
-			cc2520->gpios[CC2520_GPIO_IDX_FIFOP].pin);
-	} else {
-		gpio_pin_disable_callback(
-			cc2520->gpios[CC2520_GPIO_IDX_FIFOP].dev,
-			cc2520->gpios[CC2520_GPIO_IDX_FIFOP].pin);
-	}
+	gpio_pin_interrupt_configure(
+		cc2520->gpios[CC2520_GPIO_IDX_FIFOP].dev,
+		cc2520->gpios[CC2520_GPIO_IDX_FIFOP].pin,
+		enable ? GPIO_INT_EDGE_TO_ACTIVE : GPIO_INT_DISABLE);
 }
 
 static void enable_sfd_interrupt(struct cc2520_context *cc2520,
 				 bool enable)
 {
-	if (enable) {
-		gpio_pin_enable_callback(
-			cc2520->gpios[CC2520_GPIO_IDX_SFD].dev,
-			cc2520->gpios[CC2520_GPIO_IDX_SFD].pin);
-	} else {
-		gpio_pin_disable_callback(
-			cc2520->gpios[CC2520_GPIO_IDX_SFD].dev,
-			cc2520->gpios[CC2520_GPIO_IDX_SFD].pin);
-	}
+	gpio_pin_interrupt_configure(
+		cc2520->gpios[CC2520_GPIO_IDX_SFD].dev,
+		cc2520->gpios[CC2520_GPIO_IDX_SFD].pin,
+		enable ? GPIO_INT_EDGE_TO_ACTIVE : GPIO_INT_DISABLE);
 }
 
 static inline void setup_gpio_callbacks(struct device *dev)
@@ -670,9 +663,7 @@ static void cc2520_rx(int arg)
 			goto out;
 		}
 
-		net_analyze_stack("CC2520 Rx Fiber stack",
-				Z_THREAD_STACK_BUFFER(cc2520->cc2520_rx_stack),
-				K_THREAD_STACK_SIZEOF(cc2520->cc2520_rx_stack));
+		log_stack_usage(&cc2520->cc2520_rx_thread);
 		continue;
 flush:
 		cc2520_print_exceptions(cc2520);
@@ -802,6 +793,7 @@ error:
 }
 
 static int cc2520_tx(struct device *dev,
+		     enum ieee802154_tx_mode mode,
 		     struct net_pkt *pkt,
 		     struct net_buf *frag)
 {
@@ -810,6 +802,11 @@ static int cc2520_tx(struct device *dev,
 	struct cc2520_context *cc2520 = dev->driver_data;
 	u8_t retry = 2U;
 	bool status;
+
+	if (mode != IEEE802154_TX_MODE_DIRECT) {
+		NET_ERR("TX mode %d not supported", mode);
+		return -ENOTSUP;
+	}
 
 	LOG_DBG("%p (%u)", frag, len);
 
@@ -973,37 +970,112 @@ static int power_on_and_setup(struct device *dev)
 	return 0;
 }
 
+static struct cc2520_gpio_configuration *configure_gpios(struct device *dev)
+{
+	struct cc2520_context *cc2520 = dev->driver_data;
+	struct device *gpio;
+
+	/* VREG_EN */
+	gpio = device_get_binding(DT_INST_GPIO_LABEL(0, vreg_en_gpios));
+	if (!gpio) {
+		return NULL;
+	}
+
+	cc2520->gpios[CC2520_GPIO_IDX_VREG_EN].pin = DT_INST_GPIO_PIN(0, vreg_en_gpios);
+	gpio_pin_configure(gpio, cc2520->gpios[CC2520_GPIO_IDX_VREG_EN].pin,
+			   GPIO_OUTPUT_LOW | DT_INST_GPIO_FLAGS(0, vreg_en_gpios));
+	cc2520->gpios[CC2520_GPIO_IDX_VREG_EN].dev = gpio;
+
+	/* RESET */
+	gpio = device_get_binding(DT_INST_GPIO_LABEL(0, reset_gpios));
+	if (!gpio) {
+		return NULL;
+	}
+
+	cc2520->gpios[CC2520_GPIO_IDX_RESET].pin = DT_INST_GPIO_PIN(0, reset_gpios);
+	gpio_pin_configure(gpio, cc2520->gpios[CC2520_GPIO_IDX_RESET].pin,
+			   GPIO_OUTPUT_LOW | DT_INST_GPIO_FLAGS(0, reset_gpios));
+	cc2520->gpios[CC2520_GPIO_IDX_RESET].dev = gpio;
+
+	/*FIFO */
+	gpio = device_get_binding(DT_INST_GPIO_LABEL(0, fifo_gpios));
+	if (!gpio) {
+		return NULL;
+	}
+
+	cc2520->gpios[CC2520_GPIO_IDX_FIFO].pin = DT_INST_GPIO_PIN(0, fifo_gpios);
+	gpio_pin_configure(gpio, cc2520->gpios[CC2520_GPIO_IDX_FIFO].pin,
+			   GPIO_INPUT | DT_INST_GPIO_FLAGS(0, fifo_gpios));
+	cc2520->gpios[CC2520_GPIO_IDX_FIFO].dev = gpio;
+
+	/* CCA */
+	gpio = device_get_binding(DT_INST_GPIO_LABEL(0, cca_gpios));
+	if (!gpio) {
+		return NULL;
+	}
+
+	cc2520->gpios[CC2520_GPIO_IDX_CCA].pin = DT_INST_GPIO_PIN(0, cca_gpios);
+	gpio_pin_configure(gpio, cc2520->gpios[CC2520_GPIO_IDX_CCA].pin,
+			   GPIO_INPUT | DT_INST_GPIO_FLAGS(0, cca_gpios));
+	cc2520->gpios[CC2520_GPIO_IDX_CCA].dev = gpio;
+
+	/* SFD */
+	gpio = device_get_binding(DT_INST_GPIO_LABEL(0, sfd_gpios));
+	if (!gpio) {
+		return NULL;
+	}
+
+	cc2520->gpios[CC2520_GPIO_IDX_SFD].pin = DT_INST_GPIO_PIN(0, sfd_gpios);
+	gpio_pin_configure(gpio, cc2520->gpios[CC2520_GPIO_IDX_SFD].pin,
+			   GPIO_INPUT | DT_INST_GPIO_FLAGS(0, sfd_gpios));
+	cc2520->gpios[CC2520_GPIO_IDX_SFD].dev = gpio;
+
+	/* FIFOP */
+	gpio = device_get_binding(DT_INST_GPIO_LABEL(0, fifop_gpios));
+	if (!gpio) {
+		return NULL;
+	}
+
+	cc2520->gpios[CC2520_GPIO_IDX_FIFOP].pin = DT_INST_GPIO_PIN(0, fifop_gpios);
+	gpio_pin_configure(gpio, cc2520->gpios[CC2520_GPIO_IDX_FIFOP].pin,
+			   GPIO_INPUT | DT_INST_GPIO_FLAGS(0, sfd_gpios));
+	cc2520->gpios[CC2520_GPIO_IDX_FIFOP].dev = gpio;
+
+	return cc2520->gpios;
+}
+
+
 static inline int configure_spi(struct device *dev)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
-	cc2520->spi = device_get_binding(DT_INST_0_TI_CC2520_BUS_NAME);
+	cc2520->spi = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (!cc2520->spi) {
 		LOG_ERR("Unable to get SPI device");
 		return -ENODEV;
 	}
 
-#if defined(CONFIG_IEEE802154_CC2520_GPIO_SPI_CS)
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	cs_ctrl.gpio_dev = device_get_binding(
-		DT_INST_0_TI_CC2520_CS_GPIOS_CONTROLLER);
+		DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
 	if (!cs_ctrl.gpio_dev) {
 		LOG_ERR("Unable to get GPIO SPI CS device");
 		return -ENODEV;
 	}
 
-	cs_ctrl.gpio_pin = DT_INST_0_TI_CC2520_CS_GPIOS_PIN;
+	cs_ctrl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
 	cs_ctrl.delay = 0U;
 
 	cc2520->spi_cfg.cs = &cs_ctrl;
 
 	LOG_DBG("SPI GPIO CS configured on %s:%u",
-		    DT_INST_0_TI_CC2520_CS_GPIOS_CONTROLLER,
-		    DT_INST_0_TI_CC2520_CS_GPIOS_PIN);
-#endif /* CONFIG_IEEE802154_CC2520_GPIO_SPI_CS */
+		    DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
+		    DT_INST_SPI_DEV_CS_GPIOS_PIN(0));
+#endif
 
-	cc2520->spi_cfg.frequency = DT_INST_0_TI_CC2520_SPI_MAX_FREQUENCY;
+	cc2520->spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
 	cc2520->spi_cfg.operation = SPI_WORD_SET(8);
-	cc2520->spi_cfg.slave = DT_INST_0_TI_CC2520_BASE_ADDRESS;
+	cc2520->spi_cfg.slave = DT_INST_REG_ADDR(0);
 
 	return 0;
 }
@@ -1019,8 +1091,7 @@ static int cc2520_init(struct device *dev)
 	k_sem_init(&cc2520->access_lock, 1, 1);
 #endif
 
-	cc2520->gpios = cc2520_configure_gpios();
-	if (!cc2520->gpios) {
+	if (!configure_gpios(dev)) {
 		LOG_ERR("Configuring GPIOS failed");
 		return -EIO;
 	}
@@ -1041,6 +1112,7 @@ static int cc2520_init(struct device *dev)
 			CONFIG_IEEE802154_CC2520_RX_STACK_SIZE,
 			(k_thread_entry_t)cc2520_rx,
 			dev, NULL, NULL, K_PRIO_COOP(2), 0, K_NO_WAIT);
+	k_thread_name_set(&cc2520->cc2520_rx_thread, "cc2520_rx");
 
 	LOG_INF("CC2520 initialized");
 
@@ -1082,16 +1154,11 @@ DEVICE_AND_API_INIT(cc2520, CONFIG_IEEE802154_CC2520_DRV_NAME,
 		    &cc2520_radio_api);
 #else
 NET_DEVICE_INIT(cc2520, CONFIG_IEEE802154_CC2520_DRV_NAME,
-		cc2520_init, &cc2520_context_data, NULL,
+		cc2520_init, device_pm_control_nop,
+		&cc2520_context_data, NULL,
 		CONFIG_IEEE802154_CC2520_INIT_PRIO,
 		&cc2520_radio_api, IEEE802154_L2,
 		NET_L2_GET_CTX_TYPE(IEEE802154_L2), 125);
-
-NET_STACK_INFO_ADDR(RX, cc2520,
-		    CONFIG_IEEE802154_CC2520_RX_STACK_SIZE,
-		    CONFIG_IEEE802154_CC2520_RX_STACK_SIZE,
-		    cc2520_context_data.cc2520_rx_stack,
-		    0);
 #endif
 
 

@@ -7,14 +7,15 @@
 
 #include <zephyr.h>
 #include <drivers/flash.h>
+#include <storage/flash_map.h>
 #include <device.h>
 #include <stdio.h>
 
 
 #ifdef CONFIG_TRUSTED_EXECUTION_NONSECURE
-#define FLASH_TEST_OFFSET DT_FLASH_AREA_IMAGE_1_NONSECURE_OFFSET
+#define FLASH_TEST_OFFSET FLASH_AREA_OFFSET(image_1_nonsecure)
 #else
-#define FLASH_TEST_OFFSET DT_FLASH_AREA_IMAGE_1_OFFSET
+#define FLASH_TEST_OFFSET FLASH_AREA_OFFSET(image_1)
 #endif
 
 #define FLASH_PAGE_SIZE   4096
@@ -43,7 +44,8 @@ void main(void)
 	printf("\nNordic nRF5 Flash Testing\n");
 	printf("=========================\n");
 
-	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
+	flash_dev =
+		device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 
 	if (!flash_dev) {
 		printf("Nordic nRF5 flash driver was not found!\n");

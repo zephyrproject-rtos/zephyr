@@ -37,6 +37,30 @@ extern "C" {
 #define SHELL_CMD_ROOT_LVL		(0u)
 
 /**
+ * @brief Flag indicates that optional arguments will be treated as one,
+ *	  unformatted argument.
+ *
+ * By default, shell is parsing all arguments, treats all spaces as argument
+ * separators unless they are within quotation marks which are removed in that
+ * case. If command rely on unformatted argument then this flag shall be used
+ * in place of number of optional arguments in command definition to indicate
+ * that only mandatory arguments shall be parsed and remaining command string is
+ * passed as a raw string.
+ */
+#define SHELL_OPT_ARG_RAW	(0xFE)
+
+/**
+ * @brief Flag indicateding that number of optional arguments is not limited.
+ */
+#define SHELL_OPT_ARG_CHECK_SKIP (0xFF)
+
+/**
+ * @brief Flag indicating maximum number of optional arguments that can be
+ *	  validated.
+ */
+#define SHELL_OPT_ARG_MAX		(0xFD)
+
+/**
  * @brief Shell API
  * @defgroup shell_api Shell API
  * @ingroup shell
@@ -162,10 +186,10 @@ struct shell_static_entry {
 					mandatory, optional) \
 		), \
 		(\
-		static shell_cmd_handler dummy_##syntax##handler \
-			__attribute__((unused)) = handler;\
+		static shell_cmd_handler dummy_##syntax##_handler __unused = \
+								handler;\
 		static const struct shell_cmd_entry *dummy_subcmd_##syntax \
-			__attribute__((unused)) = subcmd\
+			__unused = subcmd\
 		)\
 	)
 /**
@@ -224,23 +248,6 @@ struct shell_static_entry {
 	}
 
 /**
- * @brief Deprecated macro for creating a subcommand set.
- *
- * It must be used outside of any function body.
- *
- * @param[in] name	Name of the subcommand set.
- */
-#define SHELL_CREATE_STATIC_SUBCMD_SET(name)			\
-	__DEPRECATED_MACRO					\
-	static const struct shell_static_entry shell_##name[];	\
-	static const struct shell_cmd_entry name = {		\
-		.is_dynamic = false,				\
-		.u.entry = shell_##name				\
-	};							\
-	static const struct shell_static_entry shell_##name[] =
-
-
-/**
  * @brief Define ending subcommands set.
  *
  */
@@ -257,15 +264,6 @@ struct shell_static_entry {
 		.is_dynamic = true,			\
 		.u = { .dynamic_get = get }		\
 	}
-
-/**
- * @brief Deprecated macro for creating a dynamic entry.
- *
- * @param[in] name	Name of the dynamic entry.
- * @param[in] get	Pointer to the function returning dynamic commands array
- */
-#define SHELL_CREATE_DYNAMIC_CMD(name, get)		\
-	__DEPRECATED_MACRO SHELL_DYNAMIC_CMD_CREATE(name, get)
 
 /**
  * @brief Initializes a shell command with arguments.
@@ -501,7 +499,7 @@ struct shell_transport {
  * @brief Shell statistics structure.
  */
 struct shell_stats {
-	u32_t log_lost_cnt; /*!< Lost log counter.*/
+	atomic_t log_lost_cnt; /*!< Lost log counter.*/
 };
 
 #ifdef CONFIG_SHELL_STATS
@@ -527,8 +525,8 @@ struct shell_flags {
 	u32_t last_nl     :8; /*!< Last received new line character */
 };
 
-BUILD_ASSERT_MSG((sizeof(struct shell_flags) == sizeof(u32_t)),
-		 "Structure must fit in 4 bytes");
+BUILD_ASSERT((sizeof(struct shell_flags) == sizeof(u32_t)),
+	     "Structure must fit in 4 bytes");
 
 
 /**
@@ -655,7 +653,7 @@ extern void shell_print_stream(const void *user_ctx, const char *data,
 	SHELL_STATS_DEFINE(_name);					      \
 	static K_THREAD_STACK_DEFINE(_name##_stack, CONFIG_SHELL_STACK_SIZE); \
 	static struct k_thread _name##_thread;				      \
-	static const struct shell _name = {				      \
+	static const Z_STRUCT_SECTION_ITERABLE(shell, _name) = {	      \
 		.default_prompt = _prompt,				      \
 		.iface = _transport_iface,				      \
 		.ctx = &UTIL_CAT(_name, _ctx),				      \
@@ -751,6 +749,21 @@ int shell_stop(const struct shell *shell);
  */
 void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
 		   const char *fmt, ...);
+
+/**
+ * @brief vprintf-like function which sends formatted data stream to the shell.
+ *
+ * This function can be used from the command handler or from threads, but not
+ * from an interrupt context. It is similar to shell_fprintf() but takes a
+ * va_list instead of variable arguments.
+ *
+ * @param[in] shell	Pointer to the shell instance.
+ * @param[in] color	Printed text color.
+ * @param[in] fmt	Format string.
+ * @param[in] args	List of parameters to print.
+ */
+void shell_vfprintf(const struct shell *shell, enum shell_vt100_color color,
+		   const char *fmt, va_list args);
 
 /**
  * @brief Print data in hexadecimal format.
@@ -862,6 +875,19 @@ void shell_help(const struct shell *shell);
  * @returns		Result of the execution
  */
 int shell_execute_cmd(const struct shell *shell, const char *cmd);
+
+/** @brief Set root command for all shell instances.
+ *
+ * It allows setting from the code the root command. It is an equivalent of
+ * calling select command with one of the root commands as the argument
+ * (e.g "select log") except it sets command for all shell instances.
+ *
+ * @param cmd String with one of the root commands or null pointer to reset.
+ *
+ * @retval 0 if root command is set.
+ * @retval -EINVAL if invalid root command is provided.
+ */
+int shell_set_root_cmd(const char *cmd);
 
 /**
  * @}

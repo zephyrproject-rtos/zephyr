@@ -280,7 +280,7 @@ static int try_to_connect(struct mqtt_client *client)
 
 		rc = mqtt_connect(client);
 		if (rc != 0) {
-			k_sleep(APP_SLEEP_MSECS);
+			k_sleep(K_MSEC(APP_SLEEP_MSECS));
 			continue;
 		}
 
@@ -413,10 +413,6 @@ static int test_disconnect(void)
 	}
 
 	wait(APP_SLEEP_MSECS);
-	rc = mqtt_input(&client_ctx);
-	if (rc != 0) {
-		return TC_FAIL;
-	}
 
 	if (connected) {
 		return TC_FAIL;

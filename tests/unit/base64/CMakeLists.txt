@@ -2,4 +2,4 @@
 
 project(base64)
 set(SOURCES main.c)
-include($ENV{ZEPHYR_BASE}/subsys/testsuite/unittest.cmake)
+find_package(ZephyrUnittest HINTS $ENV{ZEPHYR_BASE})

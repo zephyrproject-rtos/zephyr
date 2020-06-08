@@ -54,4 +54,3 @@ void k_work_q_user_start(struct k_work_q *work_q, k_thread_stack_t *stack,
 	k_thread_name_set(&work_q->thread, WORKQUEUE_THREAD_NAME);
 	k_thread_start(&work_q->thread);
 }
-

@@ -7,11 +7,11 @@
 
 /dts-v1/;
 #include <nordic/nrf52832_qfaa.dtsi>
+#include "feather_connector.dtsi"
 
 / {
 	model = "nRF52 Adafruit Feather";
-	compatible = "adafruit,nrf52_adafruit_feather", "nordic,nrf52832-qfaa",
-		     "nordic,nrf52832";
+	compatible = "adafruit,nrf52_adafruit_feather";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -46,8 +46,7 @@
 	buttons {
 		compatible = "gpio-keys";
 		button0: button_0 {
-			gpios = <&gpio0 20 (GPIO_PUD_PULL_UP |
-					    GPIO_INT_ACTIVE_LOW)>;
+			gpios = <&gpio0 20 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Button";
 		};
 	};

@@ -140,6 +140,22 @@ uart1: uart@9000 {
 	label = "UART_1";
 };
 
+uart2: uart@b000 {
+	compatible = "nordic,nrf-uarte";
+	reg = <0xb000 0x1000>;
+	interrupts = <11 1>;
+	status = "disabled";
+	label = "UART_2";
+};
+
+uart3: uart@c000 {
+	compatible = "nordic,nrf-uarte";
+	reg = <0xc000 0x1000>;
+	interrupts = <12 1>;
+	status = "disabled";
+	label = "UART_3";
+};
+
 i2c0: i2c@8000 {
 	/*
 	 * This i2c node can be either TWIM or TWIS, for the user to pick:
@@ -169,6 +185,38 @@ i2c1: i2c@9000 {
 	interrupts = <9 1>;
 	status = "disabled";
 	label = "I2C_1";
+};
+
+i2c2: i2c@b000 {
+	/*
+	 * This i2c node can be TWIM or TWIS,
+	 * for the user to pick:
+	 * compatible = "nordic,nrf-twim" or
+	 *              "nordic,nrf-twis".
+	 */
+	#address-cells = <1>;
+	#size-cells = <0>;
+	reg = <0xb000 0x1000>;
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	interrupts = <11 1>;
+	status = "disabled";
+	label = "I2C_2";
+};
+
+i2c3: i2c@c000 {
+	/*
+	 * This i2c node can be TWIM or TWIS,
+	 * for the user to pick:
+	 * compatible = "nordic,nrf-twim" or
+	 *              "nordic,nrf-twis".
+	 */
+	#address-cells = <1>;
+	#size-cells = <0>;
+	reg = <0xc000 0x1000>;
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	interrupts = <12 1>;
+	status = "disabled";
+	label = "I2C_3";
 };
 
 spi0: spi@8000 {
@@ -201,14 +249,44 @@ spi1: spi@9000 {
 	label = "SPI_1";
 };
 
-spi2: spi@a000 {
+spi2: spi@b000 {
+	/*
+	 * This spi node can be either SPIM or SPIS,
+	 * for the user to pick:
+	 * compatible = "nordic,nrf-spim" or
+	 *              "nordic,nrf-spis".
+	 */
+	#address-cells = <1>;
+	#size-cells = <0>;
+	reg = <0xb000 0x1000>;
+	interrupts = <11 1>;
+	status = "disabled";
+	label = "SPI_2";
+};
+
+spi3: spi@c000 {
+	/*
+	 * This spi node can be either SPIM or SPIS,
+	 * for the user to pick:
+	 * compatible = "nordic,nrf-spim" or
+	 *              "nordic,nrf-spis".
+	 */
+	#address-cells = <1>;
+	#size-cells = <0>;
+	reg = <0xc000 0x1000>;
+	interrupts = <12 1>;
+	status = "disabled";
+	label = "SPI_3";
+};
+
+spi4: spi@a000 {
 	compatible = "nordic,nrf-spim";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0xa000 0x1000>;
 	interrupts = <10 1>;
 	status = "disabled";
-	label = "SPI_2";
+	label = "SPI_4";
 };
 
 pwm0: pwm@21000 {
@@ -238,6 +316,15 @@ pwm2: pwm@23000 {
 	#pwm-cells = <1>;
 };
 
+pwm3: pwm@24000 {
+	compatible = "nordic,nrf-pwm";
+	reg = <0x24000 0x1000>;
+	interrupts = <36 1>;
+	status = "disabled";
+	label = "PWM_3";
+	#pwm-cells = <1>;
+};
+
 gpio0: gpio@842500 {
 	compatible = "nordic,nrf-gpio";
 	gpio-controller;
@@ -252,6 +339,7 @@ gpio1: gpio@842800 {
 	gpio-controller;
 	reg = <0x842800 0x300>;
 	#gpio-cells = <2>;
+	ngpios = <16>;
 	label = "GPIO_1";
 	status = "disabled";
 };
@@ -291,12 +379,20 @@ power: power@5000 {
 	status = "okay";
 };
 
-wdt: watchdog@18000 {
+wdt: wdt0: watchdog@18000 {
 	compatible = "nordic,nrf-watchdog";
 	reg = <0x18000 0x1000>;
 	interrupts = <24 1>;
 	status = "okay";
 	label = "WDT";
+};
+
+wdt1: watchdog@19000 {
+	compatible = "nordic,nrf-watchdog";
+	reg = <0x19000 0x1000>;
+	interrupts = <25 1>;
+	status = "disabled";
+	label = "WDT_1";
 };
 
 timer0: timer@f000 {

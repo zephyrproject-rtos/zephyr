@@ -62,7 +62,8 @@ static struct k_work mesh_start_work;
 
 /* Definitions of models user data (Start) */
 static struct led_onoff_state led_onoff_state[] = {
-	{ .dev_id = DEV_IDX_LED0 },
+	/* Use LED 0 for this model */
+	{ .dev_id = 0 },
 };
 
 static void heartbeat(u8_t hops, u16_t feat)
@@ -143,7 +144,7 @@ static void gen_onoff_set_unack(struct bt_mesh_model *model,
 
 	now = k_uptime_get();
 	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
-	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
+	    (now - state->last_msg_timestamp <= (6 * MSEC_PER_SEC))) {
 		printk("Already received message\n");
 	}
 
@@ -155,7 +156,6 @@ static void gen_onoff_set_unack(struct bt_mesh_model *model,
 	printk("addr 0x%02x state 0x%02x\n",
 	       bt_mesh_model_elem(model)->addr, state->current);
 
-	/* Pin set low turns on LED's on the reel board */
 	if (set_led_state(state->dev_id, onoff)) {
 		printk("Failed to set led state\n");
 
@@ -438,7 +438,6 @@ static void send_hello(struct k_work *work)
 {
 	NET_BUF_SIMPLE_DEFINE(msg, 3 + HELLO_MAX + 4);
 	struct bt_mesh_msg_ctx ctx = {
-		.net_idx = NET_IDX,
 		.app_idx = APP_IDX,
 		.addr = GROUP_ADDR,
 		.send_ttl = DEFAULT_TTL,
@@ -466,7 +465,6 @@ static void send_baduser(struct k_work *work)
 {
 	NET_BUF_SIMPLE_DEFINE(msg, 3 + HELLO_MAX + 4);
 	struct bt_mesh_msg_ctx ctx = {
-		.net_idx = NET_IDX,
 		.app_idx = APP_IDX,
 		.addr = GROUP_ADDR,
 		.send_ttl = DEFAULT_TTL,

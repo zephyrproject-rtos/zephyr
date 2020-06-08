@@ -251,35 +251,39 @@ void main(void)
 	int i, on = 1;
 	int cnt = 1;
 
-	led0 = device_get_binding(DT_ALIAS_LED0_GPIOS_CONTROLLER);
-	gpio_pin_configure(led0, DT_ALIAS_LED0_GPIOS_PIN, GPIO_DIR_OUT);
+	led0 = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(led0), gpios));
+	gpio_pin_configure(led0, DT_GPIO_PIN(DT_ALIAS(led0), gpios),
+			   GPIO_OUTPUT_ACTIVE |
+			   DT_GPIO_FLAGS(DT_ALIAS(led0), gpios));
 
-	led1 = device_get_binding(DT_ALIAS_LED1_GPIOS_CONTROLLER);
-	gpio_pin_configure(led1, DT_ALIAS_LED1_GPIOS_PIN, GPIO_DIR_OUT);
+	led1 = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(led1), gpios));
+	gpio_pin_configure(led1, DT_GPIO_PIN(DT_ALIAS(led1), gpios),
+			   GPIO_OUTPUT_INACTIVE |
+			   DT_GPIO_FLAGS(DT_ALIAS(led1), gpios));
 
 	for (i = 0; i < 6; i++) {
-		gpio_pin_write(led0, DT_ALIAS_LED0_GPIOS_PIN, on);
-		gpio_pin_write(led1, DT_ALIAS_LED1_GPIOS_PIN, !on);
+		gpio_pin_set(led0, DT_GPIO_PIN(DT_ALIAS(led0), gpios), on);
+		gpio_pin_set(led1, DT_GPIO_PIN(DT_ALIAS(led1), gpios), !on);
 		k_sleep(K_MSEC(100));
 		on = (on == 1) ? 0 : 1;
 	}
 
-	gpio_pin_write(led0, DT_ALIAS_LED0_GPIOS_PIN, 0);
-	gpio_pin_write(led1, DT_ALIAS_LED1_GPIOS_PIN, 1);
+	gpio_pin_set(led0, DT_GPIO_PIN(DT_ALIAS(led0), gpios), 0);
+	gpio_pin_set(led1, DT_GPIO_PIN(DT_ALIAS(led1), gpios), 1);
 
 	printk("SensorTile.box test!!\n");
 
-	struct device *hts221 = device_get_binding(DT_INST_0_ST_HTS221_LABEL);
-	struct device *lis2dw12 = device_get_binding(DT_INST_0_ST_LIS2DW12_LABEL);
-	struct device *lps22hh = device_get_binding(DT_INST_0_ST_LPS22HH_LABEL);
-	struct device *lsm6dso = device_get_binding(DT_INST_0_ST_LSM6DSO_LABEL);
-	struct device *stts751 = device_get_binding(DT_INST_0_ST_STTS751_LABEL);
-	struct device *iis3dhhc = device_get_binding(DT_INST_0_ST_IIS3DHHC_LABEL);
-	struct device *lis2mdl = device_get_binding(DT_INST_0_ST_LIS2MDL_LABEL);
+	struct device *hts221 = device_get_binding(DT_LABEL(DT_INST(0, st_hts221)));
+	struct device *lis2dw12 = device_get_binding(DT_LABEL(DT_INST(0, st_lis2dw12)));
+	struct device *lps22hh = device_get_binding(DT_LABEL(DT_INST(0, st_lps22hh)));
+	struct device *lsm6dso = device_get_binding(DT_LABEL(DT_INST(0, st_lsm6dso)));
+	struct device *stts751 = device_get_binding(DT_LABEL(DT_INST(0, st_stts751)));
+	struct device *iis3dhhc = device_get_binding(DT_LABEL(DT_INST(0, st_iis3dhhc)));
+	struct device *lis2mdl = device_get_binding(DT_LABEL(DT_INST(0, st_lis2mdl)));
 
 	if (!hts221) {
 		printk("Could not get pointer to %s sensor\n",
-			DT_INST_0_ST_HTS221_LABEL);
+			DT_LABEL(DT_INST(0, st_hts221)));
 		return;
 	}
 
@@ -462,5 +466,3 @@ void main(void)
 		k_sleep(K_MSEC(2000));
 	}
 }
-
-

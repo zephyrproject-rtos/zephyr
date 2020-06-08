@@ -1,7 +1,7 @@
 .. _steval_fcu001v1:
 
-STM32 Flight Controller Unit
-############################
+ST STM32 Flight Controller Unit
+###############################
 
 Overview
 ********
@@ -158,4 +158,3 @@ You can debug an application in the usual way. Here is an example for the
 
 .. _STM32F401 reference manual:
     http://www.st.com/resource/en/reference_manual/dm00096844.pdf
-

@@ -9,6 +9,7 @@
  * @brief Test log message
  */
 
+#include <logging/log.h>
 #include <logging/log_output.h>
 
 #include <tc_util.h>

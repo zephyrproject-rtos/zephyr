@@ -13,26 +13,11 @@ if GPIO
 config GPIO_CMSDK_AHB
 	default y
 
-config GPIO_CMSDK_AHB_PORT0
-	default y
-
-config GPIO_CMSDK_AHB_PORT1
-	default y
-
-config GPIO_CMSDK_AHB_PORT2
-	default y
-
-config GPIO_CMSDK_AHB_PORT3
-	default y
-
 endif # GPIO
-
-if PINMUX
 
 config PINMUX_BEETLE
 	default y
-
-endif # PINMUX
+	depends on PINMUX
 
 if SERIAL
 
@@ -44,12 +29,9 @@ config UART_INTERRUPT_DRIVEN
 
 endif # SERIAL
 
-if WATCHDOG
-
 config WDOG_CMSDK_APB
 	default y
-
-endif # WATCHDOG
+	depends on WATCHDOG
 
 if COUNTER
 

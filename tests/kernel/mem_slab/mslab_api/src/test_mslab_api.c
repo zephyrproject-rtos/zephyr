@@ -75,7 +75,8 @@ static void tmslab_alloc_timeout(void *data)
 		      NULL);
 	/** TESTPOINT: -EAGAIN Waiting period timed out*/
 	tms = k_uptime_get();
-	zassert_equal(k_mem_slab_alloc(pslab, &block_fail, TIMEOUT), -EAGAIN,
+	zassert_equal(k_mem_slab_alloc(pslab, &block_fail, K_MSEC(TIMEOUT)),
+		      -EAGAIN,
 		      NULL);
 	/**
 	 * TESTPOINT: timeout Maximum time to wait for operation to
@@ -111,7 +112,8 @@ static void tmslab_used_get(void *data)
 	/* used get on allocation failure*/
 	zassert_equal(k_mem_slab_num_used_get(pslab), BLK_NUM, NULL);
 
-	zassert_equal(k_mem_slab_alloc(pslab, &block_fail, TIMEOUT), -EAGAIN,
+	zassert_equal(k_mem_slab_alloc(pslab, &block_fail, K_MSEC(TIMEOUT)),
+		      -EAGAIN,
 		      NULL);
 	zassert_equal(k_mem_slab_num_free_get(pslab), 0, NULL);
 	zassert_equal(k_mem_slab_num_used_get(pslab), BLK_NUM, NULL);

@@ -17,13 +17,19 @@
 extern "C" {
 #endif
 
+#ifndef __useconds_t_defined
 typedef unsigned long useconds_t;
+#endif
 
 /* time related attributes */
 #ifndef CONFIG_NEWLIB_LIBC
+#ifndef __clockid_t_defined
 typedef u32_t clockid_t;
+#endif
 #endif /*CONFIG_NEWLIB_LIBC */
+#ifndef __timer_t_defined
 typedef unsigned long timer_t;
+#endif
 
 #ifdef CONFIG_PTHREAD_IPC
 /* Thread attributes */

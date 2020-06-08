@@ -1,3 +1,4 @@
+# Copyright (c) 2019 Gerson Fernando Budke
 # Copyright (c) 2019 Benjamin Valentin
 # SPDX-License-Identifier: Apache-2.0
 identifier: atsamr21_xpro
@@ -14,5 +15,5 @@ supported:
   - gpio
   - spi
   - i2c
+  - ieee802154
   - usb_device
-  - hwinfo

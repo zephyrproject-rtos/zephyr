@@ -7,6 +7,23 @@
 /dts-v1/;
 
 #include "skeleton.dtsi"
+#include <mem.h>
+
+#ifndef ICCM_ADDR
+#define ICCM_ADDR 0
+#endif
+
+#ifndef ICCM_SIZE
+#define ICCM_SIZE DT_SIZE_K(512)
+#endif
+
+#ifndef DCCM_ADDR
+#define DCCM_ADDR 80000000
+#endif
+
+#ifndef DCCM_SIZE
+#define DCCM_SIZE DT_SIZE_K(512)
+#endif
 
 / {
 	cpus {
@@ -20,14 +37,16 @@
 		};
 	};
 
-	iccm0: iccm@0 {
+	iccm0: iccm@ICCM_ADDR {
+		device_type = "memory";
 		compatible = "arc,iccm";
-		reg = <0x0 0x80000>;
+		reg = <DT_ADDR(ICCM_ADDR) ICCM_SIZE>;
 	};
 
-	dccm0: dccm@80000000 {
+	dccm0: dccm@DCCM_ADDR {
 		compatible = "arc,dccm";
-		reg = <0x80000000 0x80000>;
+		device_type = "memory";
+		reg = <DT_ADDR(DCCM_ADDR) DCCM_SIZE>;
 	};
 
 	uart0: uart@f0000000 {

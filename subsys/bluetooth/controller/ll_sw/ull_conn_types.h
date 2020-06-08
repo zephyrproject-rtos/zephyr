@@ -140,7 +140,8 @@ struct ll_conn {
 	struct {
 		u8_t  req;
 		u8_t  ack;
-		u32_t features;
+		u32_t features_conn;
+		u32_t features_peer;
 	} llcp_feature;
 
 	struct {
@@ -222,6 +223,7 @@ struct ll_conn {
 #define LLCP_LENGTH_STATE_RESIZE              4
 #define LLCP_LENGTH_STATE_RESIZE_RSP          5
 #define LLCP_LENGTH_STATE_RESIZE_RSP_ACK_WAIT 6
+		u8_t  disabled:1;
 		u16_t rx_octets;
 		u16_t tx_octets;
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -251,6 +253,7 @@ struct ll_conn {
 		u8_t pause_tx:1;
 		u8_t flags:1;
 		u8_t cmd:1;
+		u8_t disabled:1;
 	} llcp_phy;
 
 	u8_t phy_pref_tx:3;
@@ -279,8 +282,7 @@ struct node_rx_cc {
 	u8_t  peer_addr[BDADDR_SIZE];
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	u8_t  peer_rpa[BDADDR_SIZE];
-	u8_t  own_addr_type;
-	u8_t  own_addr[BDADDR_SIZE];
+	u8_t  local_rpa[BDADDR_SIZE];
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 	u16_t interval;
 	u16_t latency;

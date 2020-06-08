@@ -12,6 +12,11 @@
 #include <dt-bindings/gpio/gpio.h>
 
 / {
+	chosen {
+		zephyr,entropy = &rng;
+		zephyr,flash-controller = &flash;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -28,8 +33,8 @@
 	};
 
 	soc {
-		flash-controller@40022000 {
-			compatible = "st,stm32l4-flash-controller";
+		flash: flash-controller@40022000 {
+			compatible = "st,stm32-flash-controller", "st,stm32l4-flash-controller";
 			label = "FLASH_CTRL";
 			reg = <0x40022000 0x400>;
 			interrupts = <4 0>;
@@ -166,7 +171,7 @@
 		};
 
 		spi1: spi@40013000 {
-			compatible = "st,stm32-spi-fifo";
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40013000 0x400>;
@@ -317,6 +322,7 @@
 			interrupts = <11 0 12 0 13 0 14 0 15 0 16 0 17 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x1>;
 			st,mem2mem;
+			dma-requests = <7>;
 			status = "disabled";
 			label = "DMA_1";
 		};
@@ -328,12 +334,13 @@
 			interrupts = <56 0 57 0 58 0 59 0 60 0 68 0 69 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x2>;
 			st,mem2mem;
+			dma-requests = <7>;
 			status = "disabled";
 			label = "DMA_2";
 		};
 
 		lptim1: timers@40007c00 {
-			compatible = "st,stm32-timers";
+			compatible = "st,stm32-lptim";
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -342,6 +349,14 @@
 			interrupt-names = "wakeup";
 			status = "disabled";
 			label = "LPTIM_1";
+		};
+
+		rng: rng@50060800 {
+			compatible = "st,stm32-rng";
+			reg = <0x50060800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00040000>;
+			status = "disabled";
+			label = "RNG";
 		};
 	};
 };

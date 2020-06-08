@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(net_coap, CONFIG_COAP_LOG_LEVEL);
 
 #include <zephyr/types.h>
 #include <sys/byteorder.h>
+#include <sys/math_extras.h>
 
 #include <net/net_ip.h>
 #include <net/net_core.h>
@@ -469,7 +470,9 @@ static int parse_option(u8_t *data, u16_t offset, u16_t *pos,
 			return -EINVAL;
 		}
 
-		*opt_len += hdr_len;
+		if (u16_add_overflow(*opt_len, hdr_len, opt_len)) {
+			return -EINVAL;
+		}
 	}
 
 	if (len > COAP_OPTION_NO_EXT) {
@@ -480,11 +483,15 @@ static int parse_option(u8_t *data, u16_t offset, u16_t *pos,
 			return -EINVAL;
 		}
 
-		*opt_len += hdr_len;
+		if (u16_add_overflow(*opt_len, hdr_len, opt_len)) {
+			return -EINVAL;
+		}
 	}
 
-	*opt_delta += delta;
-	*opt_len += len;
+	if (u16_add_overflow(*opt_delta, delta, opt_delta) ||
+	    u16_add_overflow(*opt_len, len, opt_len)) {
+		return -EINVAL;
+	}
 
 	if (r == 0) {
 		if (len == 0U) {
@@ -519,7 +526,10 @@ static int parse_option(u8_t *data, u16_t offset, u16_t *pos,
 			return -EINVAL;
 		}
 	} else {
-		*pos += len;
+		if (u16_add_overflow(*pos, len, pos)) {
+			return -EINVAL;
+		}
+
 		r = max_len - *pos;
 	}
 
@@ -1065,6 +1075,7 @@ int coap_pending_init(struct coap_pending *pending,
 
 	pending->data = request->data;
 	pending->len = request->offset;
+	pending->t0 = k_uptime_get_32();
 
 	return 0;
 }
@@ -1158,9 +1169,17 @@ struct coap_pending *coap_pending_next_to_expire(
 {
 	struct coap_pending *p, *found = NULL;
 	size_t i;
+	u32_t expiry, min_expiry;
 
 	for (i = 0, p = pendings; i < len; i++, p++) {
-		if (p->timeout && (!found || found->timeout < p->timeout)) {
+		if (!p->timeout) {
+			continue;
+		}
+
+		expiry = p->t0 + p->timeout;
+
+		if (!found || (s32_t)(expiry - min_expiry) < 0) {
+			min_expiry = expiry;
 			found = p;
 		}
 	}
@@ -1195,6 +1214,7 @@ bool coap_pending_cycle(struct coap_pending *pending)
 {
 	s32_t old = pending->timeout;
 
+	pending->t0 += pending->timeout;
 	pending->timeout = next_timeout(pending->timeout);
 
 	return (old != pending->timeout);
@@ -1204,6 +1224,16 @@ void coap_pending_clear(struct coap_pending *pending)
 {
 	pending->timeout = 0;
 	pending->data = NULL;
+}
+
+void coap_pendings_clear(struct coap_pending *pendings, size_t len)
+{
+	struct coap_pending *p;
+	size_t i;
+
+	for (i = 0, p = pendings; i < len; i++, p++) {
+		coap_pending_clear(p);
+	}
 }
 
 static int get_observe_option(const struct coap_packet *cpkt)
@@ -1296,6 +1326,16 @@ void coap_reply_init(struct coap_reply *reply,
 void coap_reply_clear(struct coap_reply *reply)
 {
 	(void)memset(reply, 0, sizeof(*reply));
+}
+
+void coap_replies_clear(struct coap_reply *replies, size_t len)
+{
+	struct coap_reply *r;
+	size_t i;
+
+	for (i = 0, r = replies; i < len; i++, r++) {
+		coap_reply_clear(r);
+	}
 }
 
 int coap_resource_notify(struct coap_resource *resource)

@@ -97,8 +97,6 @@ static const struct pipe_sequence wait_elements[] = {
 	{ PIPE_SIZE + 1, ALL_BYTES, PIPE_SIZE + 1, RETURN_SUCCESS },
 
 	{ PIPE_SIZE - 1, ATLEAST_1, PIPE_SIZE - 1, RETURN_SUCCESS },
-	{    PIPE_SIZE, ATLEAST_1,     PIPE_SIZE, RETURN_SUCCESS },
-	{ PIPE_SIZE + 1, ATLEAST_1, PIPE_SIZE + 1, RETURN_SUCCESS }
 };
 
 static const struct pipe_sequence timeout_elements[] = {
@@ -813,22 +811,66 @@ void test_pipe_get_timeout(void)
  * @ingroup kernel_pipe_tests
  * @see k_pipe_get()
  */
-#ifdef CONFIG_USERSPACE
-/* userspace invalid size */
 void test_pipe_get_invalid_size(void)
 {
 	size_t read;
+	int ret;
 
 	valid_fault = true;
-	k_pipe_get(&test_pipe, &rx_buffer,
+	ret = k_pipe_get(&test_pipe, &rx_buffer,
 		   0, &read,
 		   1, TIMEOUT_200MSEC);
 
-	zassert_unreachable("fault didn't occur for min_xfer <= bytes_to_read");
+	zassert_equal(ret, -EINVAL,
+		      "fault didn't occur for min_xfer <= bytes_to_read");
 }
-#else
-void test_pipe_get_invalid_size(void)
+
+/**
+ * @brief Test pipe get returns immediately if >= min_xfer is available
+ * @ingroup kernel_pipe_tests
+ * @see k_pipe_get()
+ */
+void test_pipe_get_min_xfer(void)
 {
-	ztest_test_skip();
+	int res;
+	size_t bytes_written = 0;
+	size_t bytes_read = 0;
+	char buf[8] = {};
+
+	res = k_pipe_put(&test_pipe, "Hi!", 3, &bytes_written,
+			 3 /* min_xfer */, K_FOREVER);
+	zassert_equal(res, 0, "did not write entire message");
+	zassert_equal(bytes_written, 3, "did not write entire message");
+
+	res = k_pipe_get(&test_pipe, buf, sizeof(buf), &bytes_read,
+			 1 /* min_xfer */, K_FOREVER);
+	zassert_equal(res, 0, "did not read at least one byte");
+	zassert_equal(bytes_read, 3, "did not read all bytes available");
 }
-#endif
+
+/**
+ * @brief Test pipe put returns immediately if >= min_xfer is available
+ * @ingroup kernel_pipe_tests
+ * @see k_pipe_put()
+ */
+void test_pipe_put_min_xfer(void)
+{
+	int res;
+	size_t bytes_written = 0;
+
+	/* write 6 bytes into the pipe, so that 2 bytes are still free */
+	for (size_t i = 0; i < 2; ++i) {
+		bytes_written = 0;
+		res = k_pipe_put(&test_pipe, "Hi!", 3, &bytes_written,
+				 3 /* min_xfer */, K_FOREVER);
+		zassert_equal(res, 0, "did not write entire message");
+		zassert_equal(bytes_written, 3, "did not write entire message");
+	}
+
+	/* attempt to write 3 bytes, but allow success if >= 1 byte */
+	bytes_written = 0;
+	res = k_pipe_put(&test_pipe, "Hi!", 3, &bytes_written,
+			 1 /* min_xfer */, K_FOREVER);
+	zassert_equal(res, 0, "did not write min_xfer");
+	zassert_true(bytes_written >= 1, "did not write min_xfer");
+}

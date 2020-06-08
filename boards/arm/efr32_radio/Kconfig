@@ -1,0 +1,18 @@
+# EFR32 radio board configuration
+
+# Copyright (c) 2020 Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_EFR32_RADIO
+	bool
+
+if BOARD_EFR32_RADIO
+
+config BOARD_INIT_PRIORITY
+	int
+	default KERNEL_INIT_PRIORITY_DEFAULT
+	help
+	  Board initialization priority. This must be bigger than
+	  GPIO_GECKO_COMMON_INIT_PRIORITY.
+
+endif # BOARD_EFR32_RADIO

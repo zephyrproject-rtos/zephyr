@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT silabs_gecko_i2c
+
 #include <errno.h>
 #include <drivers/i2c.h>
 #include <sys/util.h>
@@ -19,7 +21,7 @@ LOG_MODULE_REGISTER(i2c_gecko);
 #include "i2c-priv.h"
 
 #define DEV_CFG(dev) \
-	((struct i2c_gecko_config * const)(dev)->config->config_info)
+	((struct i2c_gecko_config * const)(dev)->config_info)
 #define DEV_DATA(dev) \
 	((struct i2c_gecko_data * const)(dev)->driver_data)
 #define DEV_BASE(dev) \
@@ -80,6 +82,9 @@ static int i2c_gecko_configure(struct device *dev, u32_t dev_config_raw)
 		baudrate = KHZ(100);
 		break;
 	case I2C_SPEED_FAST:
+		baudrate = KHZ(400);
+		break;
+	case I2C_SPEED_FAST_PLUS:
 		baudrate = MHZ(1);
 		break;
 	default:
@@ -183,70 +188,70 @@ static const struct i2c_driver_api i2c_gecko_driver_api = {
 	.transfer = i2c_gecko_transfer,
 };
 
-#ifdef DT_INST_0_SILABS_GECKO_I2C
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
 
-#define PIN_I2C_0_SDA {DT_INST_0_SILABS_GECKO_I2C_LOCATION_SDA_1, \
-		DT_INST_0_SILABS_GECKO_I2C_LOCATION_SDA_2, gpioModeWiredAnd, 1}
-#define PIN_I2C_0_SCL {DT_INST_0_SILABS_GECKO_I2C_LOCATION_SCL_1, \
-		DT_INST_0_SILABS_GECKO_I2C_LOCATION_SCL_2, gpioModeWiredAnd, 1}
+#define PIN_I2C_0_SDA {DT_INST_PROP_BY_IDX(0, location_sda, 1), \
+		DT_INST_PROP_BY_IDX(0, location_sda, 2), gpioModeWiredAnd, 1}
+#define PIN_I2C_0_SCL {DT_INST_PROP_BY_IDX(0, location_scl, 1), \
+		DT_INST_PROP_BY_IDX(0, location_scl, 2), gpioModeWiredAnd, 1}
 
 static struct i2c_gecko_config i2c_gecko_config_0 = {
-	.base = (I2C_TypeDef *)DT_INST_0_SILABS_GECKO_I2C_BASE_ADDRESS,
+	.base = (I2C_TypeDef *)DT_INST_REG_ADDR(0),
 	.clock = cmuClock_I2C0,
 	.i2cInit = I2C_INIT_DEFAULT,
 	.pin_sda = PIN_I2C_0_SDA,
 	.pin_scl = PIN_I2C_0_SCL,
 #ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
-	.loc_sda = DT_INST_0_SILABS_GECKO_I2C_LOCATION_SDA_0,
-	.loc_scl = DT_INST_0_SILABS_GECKO_I2C_LOCATION_SCL_0,
+	.loc_sda = DT_INST_PROP_BY_IDX(0, location_sda, 0),
+	.loc_scl = DT_INST_PROP_BY_IDX(0, location_scl, 0),
 #else
-#if DT_INST_0_SILABS_GECKO_I2C_LOCATION_SDA_0 \
-	!= DT_INST_0_SILABS_GECKO_I2C_LOCATION_SCL_0
+#if DT_INST_PROP_BY_IDX(0, location_sda, 0) \
+	!= DT_INST_PROP_BY_IDX(0, location_scl, 0)
 #error I2C_0 DTS location-* properties must have identical value
 #endif
-	.loc = DT_INST_0_SILABS_GECKO_I2C_LOCATION_SCL_0,
+	.loc = DT_INST_PROP_BY_IDX(0, location_scl, 0),
 #endif
-	.bitrate = DT_INST_0_SILABS_GECKO_I2C_CLOCK_FREQUENCY,
+	.bitrate = DT_INST_PROP(0, clock_frequency),
 };
 
 static struct i2c_gecko_data i2c_gecko_data_0;
 
-DEVICE_AND_API_INIT(i2c_gecko_0, DT_INST_0_SILABS_GECKO_I2C_LABEL,
+DEVICE_AND_API_INIT(i2c_gecko_0, DT_INST_LABEL(0),
 		    &i2c_gecko_init, &i2c_gecko_data_0, &i2c_gecko_config_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &i2c_gecko_driver_api);
-#endif /* DT_INST_0_SILABS_GECKO_I2C */
+#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
 
-#ifdef DT_INST_1_SILABS_GECKO_I2C
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
 
-#define PIN_I2C_1_SDA {DT_INST_1_SILABS_GECKO_I2C_LOCATION_SDA_1, \
-		DT_INST_1_SILABS_GECKO_I2C_LOCATION_SDA_2, gpioModeWiredAnd, 1}
-#define PIN_I2C_1_SCL {DT_INST_1_SILABS_GECKO_I2C_LOCATION_SCL_1, \
-		DT_INST_1_SILABS_GECKO_I2C_LOCATION_SCL_2, gpioModeWiredAnd, 1}
+#define PIN_I2C_1_SDA {DT_INST_PROP_BY_IDX(1, location_sda, 1), \
+		DT_INST_PROP_BY_IDX(1, location_sda, 2), gpioModeWiredAnd, 1}
+#define PIN_I2C_1_SCL {DT_INST_PROP_BY_IDX(1, location_scl, 1), \
+		DT_INST_PROP_BY_IDX(1, location_scl, 2), gpioModeWiredAnd, 1}
 
 static struct i2c_gecko_config i2c_gecko_config_1 = {
-	.base = (I2C_TypeDef *)DT_INST_1_SILABS_GECKO_I2C_BASE_ADDRESS,
+	.base = (I2C_TypeDef *)DT_INST_REG_ADDR(1),
 	.clock = cmuClock_I2C1,
 	.i2cInit = I2C_INIT_DEFAULT,
 	.pin_sda = PIN_I2C_1_SDA,
 	.pin_scl = PIN_I2C_1_SCL,
 #ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
-	.loc_sda = DT_INST_1_SILABS_GECKO_I2C_LOCATION_SDA_0,
-	.loc_scl = DT_INST_1_SILABS_GECKO_I2C_LOCATION_SCL_0,
+	.loc_sda = DT_INST_PROP_BY_IDX(1, location_sda, 0),
+	.loc_scl = DT_INST_PROP_BY_IDX(1, location_scl, 0),
 #else
-#if DT_INST_1_SILABS_GECKO_I2C_LOCATION_SDA_0 \
-	!= DT_INST_1_SILABS_GECKO_I2C_LOCATION_SCL_0
+#if DT_INST_PROP_BY_IDX(1, location_sda, 0) \
+	!= DT_INST_PROP_BY_IDX(1, location_scl, 0)
 #error I2C_1 DTS location-* properties must have identical value
 #endif
-	.loc = DT_INST_1_SILABS_GECKO_I2C_LOCATION_SCL_0,
+	.loc = DT_INST_PROP_BY_IDX(1, location_scl, 0),
 #endif
-	.bitrate = DT_INST_1_SILABS_GECKO_I2C_CLOCK_FREQUENCY,
+	.bitrate = DT_INST_PROP(1, clock_frequency),
 };
 
 static struct i2c_gecko_data i2c_gecko_data_1;
 
-DEVICE_AND_API_INIT(i2c_gecko_1, DT_INST_1_SILABS_GECKO_I2C_LABEL,
+DEVICE_AND_API_INIT(i2c_gecko_1, DT_INST_LABEL(1),
 		    &i2c_gecko_init, &i2c_gecko_data_1, &i2c_gecko_config_1,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &i2c_gecko_driver_api);
-#endif /* DT_INST_1_SILABS_GECKO_I2C */
+#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay) */

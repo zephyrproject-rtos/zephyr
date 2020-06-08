@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2020 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi1 {
+	compatible = "nordic,nrf-spis";
+	status = "okay";
+	sck-pin = <6>;
+	mosi-pin = <5>;
+	miso-pin = <4>;
+	csn-pin = <3>;
+	def-char = <0x00>;
+
+	bt-hci@0 {
+		compatible = "zephyr,bt-hci-spi-slave";
+		reg = <0>;
+		irq-gpios = <&gpio0 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+	};
+};

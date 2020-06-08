@@ -3,13 +3,13 @@
 # List all architectures, export the list in list_var
 function(list_archs list_var)
 
-  FILE(GLOB arch_contents RELATIVE $ENV{ZEPHYR_BASE}/arch $ENV{ZEPHYR_BASE}/arch/*)
+  FILE(GLOB arch_contents RELATIVE ${ZEPHYR_BASE}/arch ${ZEPHYR_BASE}/arch/*)
   set(_arch_list)
   foreach(f ${arch_contents})
     if ("${f}" STREQUAL "common")
       continue()
     endif()
-    if (IS_DIRECTORY "$ENV{ZEPHYR_BASE}/arch/${f}")
+    if (IS_DIRECTORY "${ZEPHYR_BASE}/arch/${f}")
       list(APPEND _arch_list "${f}")
     endif()
   endforeach()
@@ -34,7 +34,7 @@ function(list_boards arch list_var)
       )
 
     # The above gives a list like
-    # nrf51_blenano/nrf51_blenano_defconfig;nrf51_pca10028/nrf51_pca10028_defconfig
+    # nrf51_blenano/nrf51_blenano_defconfig;nrf51dk_nrf51422/nrf51dk_nrf51422_defconfig
     # we construct a list of board names by removing both the _defconfig
     # suffix and the path.
     foreach(defconfig_path ${defconfigs_for_${arch}})
@@ -95,18 +95,17 @@ if(CMAKE_SCRIPT_MODE_FILE AND NOT CMAKE_PARENT_LIST_FILE)
 # some other script
 
 # The options available are:
-# BOARD_ROOT_SPACE_SEPARATED: Space-separated board roots
+# BOARD_ROOT: Semi-colon separated board roots
 # FILE_OUT: Set to a file path to save the boards to a file. If not defined the
 #           the contents will be printed to stdout
-if(NOT DEFINED ENV{ZEPHYR_BASE})
-  message(FATAL_ERROR "ZEPHYR_BASE not set")
-endif()
+cmake_minimum_required(VERSION 3.13.1)
 
-if (NOT BOARD_ROOT_SPACE_SEPARATED)
-  message(FATAL_ERROR "BOARD_ROOT_SPACE_SEPARATED not defined")
-endif()
+set(NO_BOILERPLATE TRUE)
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
-string(REPLACE " " ";" BOARD_ROOT "${BOARD_ROOT_SPACE_SEPARATED}")
+# Appending Zephyr base to list of board roots, as this is also done in boilerplate.cmake.
+# But as this file was executed in script mode, it must also be done here, to give same output.
+list(APPEND BOARD_ROOT ${ZEPHYR_BASE})
 
 if (NOT FILE_OUT)
   set(FILE_OUT FALSE)

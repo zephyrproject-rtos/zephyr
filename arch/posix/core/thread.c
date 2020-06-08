@@ -32,17 +32,15 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 	char *stack_memory = Z_THREAD_STACK_BUFFER(stack);
 
-	Z_ASSERT_VALID_PRIO(priority, thread_func);
-
 	posix_thread_status_t *thread_status;
 
-	z_new_thread_init(thread, stack_memory, stack_size, priority, options);
+	z_new_thread_init(thread, stack_memory, stack_size);
 
 	/* We store it in the same place where normal archs store the
 	 * "initial stack frame"
 	 */
 	thread_status = (posix_thread_status_t *)
-		STACK_ROUND_DOWN(stack_memory + stack_size
+		Z_STACK_PTR_ALIGN(stack_memory + stack_size
 				- sizeof(*thread_status));
 
 	/* z_thread_entry() arguments */

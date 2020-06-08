@@ -6,6 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT st_stm32_watchdog
+
 #include <drivers/watchdog.h>
 #include <soc.h>
 #include <errno.h>
@@ -114,17 +116,20 @@ static int iwdg_stm32_install_timeout(struct device *dev,
 
 	tickstart = k_uptime_get_32();
 
-	while (LL_IWDG_IsReady(iwdg) == 0) {
-		/* Wait until WVU, RVU, PVU are reset before updating  */
+	LL_IWDG_EnableWriteAccess(iwdg);
+
+	LL_IWDG_SetPrescaler(iwdg, prescaler);
+	LL_IWDG_SetReloadCounter(iwdg, reload);
+
+	/* Wait for the update operation completed */
+	while (LL_IWDG_IsReady(iwdg) != 0) {
 		if ((k_uptime_get_32() - tickstart) > IWDG_DEFAULT_TIMEOUT) {
 			return -ENODEV;
 		}
 	}
 
-	LL_IWDG_EnableWriteAccess(iwdg);
-
-	LL_IWDG_SetPrescaler(iwdg, prescaler);
-	LL_IWDG_SetReloadCounter(iwdg, reload);
+	/* Reload counter just before leaving */
+	LL_IWDG_ReloadCounter(iwdg);
 
 	return 0;
 }
@@ -148,7 +153,7 @@ static const struct wdt_driver_api iwdg_stm32_api = {
 
 static int iwdg_stm32_init(struct device *dev)
 {
-#ifdef CONFIG_IWDG_STM32_START_AT_BOOT
+#ifndef CONFIG_WDT_DISABLE_AT_BOOT
 	IWDG_TypeDef *iwdg = IWDG_STM32_STRUCT(dev);
 	struct wdt_timeout_cfg config = {
 		.window.max = CONFIG_IWDG_STM32_TIMEOUT / USEC_PER_MSEC,
@@ -172,10 +177,10 @@ static int iwdg_stm32_init(struct device *dev)
 }
 
 static struct iwdg_stm32_data iwdg_stm32_dev_data = {
-	.Instance = (IWDG_TypeDef *)DT_INST_0_ST_STM32_WATCHDOG_BASE_ADDRESS
+	.Instance = (IWDG_TypeDef *)DT_INST_REG_ADDR(0)
 };
 
-DEVICE_AND_API_INIT(iwdg_stm32, DT_INST_0_ST_STM32_WATCHDOG_LABEL,
+DEVICE_AND_API_INIT(iwdg_stm32, DT_INST_LABEL(0),
 		    iwdg_stm32_init, &iwdg_stm32_dev_data, NULL,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &iwdg_stm32_api);

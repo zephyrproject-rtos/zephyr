@@ -15,3 +15,5 @@ zephyr_library_sources(
   intel64/thread.c
   intel64/fatal.c
 )
+
+zephyr_library_sources_ifdef(CONFIG_USERSPACE	intel64/userspace.S)

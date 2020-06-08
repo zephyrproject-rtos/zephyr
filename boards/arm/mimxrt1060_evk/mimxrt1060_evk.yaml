@@ -19,7 +19,8 @@ supported:
   - counter
   - display
   - gpio
-  - hwinfo
   - i2c
   - netif:eth
+  - sdhc
   - usb_device
+  - kscan:touch

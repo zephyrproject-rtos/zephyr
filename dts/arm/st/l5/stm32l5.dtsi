@@ -1,0 +1,198 @@
+/*
+ * Copyright (c) 2020 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
+#include <arm/armv8-m.dtsi>
+#include <dt-bindings/clock/stm32_clock.h>
+#include <dt-bindings/gpio/gpio.h>
+
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m33";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+				arm,num-mpu-regions = <8>;
+			};
+		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+	};
+
+	soc {
+		flash-controller@40022000 {
+			compatible = "st,stm32l5-flash-controller";
+			label = "FLASH_CTRL";
+			reg = <0x40022000 0x400>;
+			interrupts = <4 0>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@8000000 {
+				compatible = "soc-nv-flash";
+				label = "FLASH_STM32";
+			};
+		};
+
+		rcc: rcc@40021000 {
+			compatible = "st,stm32-rcc";
+			clocks-controller;
+			#clock-cells = <2>;
+			reg = <0x40021000 0x400>;
+			label = "STM32_CLK_RCC";
+		};
+
+		pinctrl: pin-controller@42020000 {
+			compatible = "st,stm32-pinmux";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x42020000 0x2000>;
+
+			gpioa: gpio@42020000 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x42020000 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000001>;
+				label = "GPIOA";
+			};
+
+			gpiob: gpio@42020400 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x42020400 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000002>;
+				label = "GPIOB";
+			};
+
+			gpioc: gpio@42020800 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x42020800 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000004>;
+				label = "GPIOC";
+			};
+
+			gpiod: gpio@42020c00 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x42020c00 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000008>;
+				label = "GPIOD";
+			};
+
+			gpioe: gpio@42021000 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x42021000 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000010>;
+				label = "GPIOE";
+			};
+
+			gpiof: gpio@42021400 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x42021400 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000020>;
+				label = "GPIOF";
+			};
+
+			gpiog: gpio@42021800 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x42021800 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000040>;
+				label = "GPIOG";
+			};
+
+			gpioh: gpio@42021c00 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x42021c00 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000080>;
+				label = "GPIOH";
+			};
+		};
+
+		usart1: serial@40013800 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40013800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00004000>;
+			interrupts = <61 0>;
+			status = "disabled";
+			label = "UART_1";
+		};
+
+		usart2: serial@40004400 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40004400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00020000>;
+			interrupts = <62 0>;
+			status = "disabled";
+			label = "UART_2";
+		};
+
+		usart3: serial@40004800 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40004800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00040000>;
+			interrupts = <63 0>;
+			status = "disabled";
+			label = "UART_3";
+		};
+
+		uart4: serial@40004c00 {
+			compatible = "st,stm32-uart";
+			reg = <0x40004c00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00080000>;
+			interrupts = <64 0>;
+			status = "disabled";
+			label = "UART_4";
+		};
+
+		uart5: serial@40005000 {
+			compatible = "st,stm32-uart";
+			reg = <0x40005000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00100000>;
+			interrupts = <65 0>;
+			status = "disabled";
+			label = "UART_5";
+		};
+
+		lpuart1: serial@40008000 {
+			compatible = "st,stm32-lpuart", "st,stm32-uart";
+			reg = <0x40008000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000001>;
+			interrupts = <66 0>;
+			status = "disabled";
+			label = "LPUART_1";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

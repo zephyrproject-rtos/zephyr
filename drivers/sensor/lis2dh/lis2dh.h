@@ -15,20 +15,23 @@
 #include <drivers/sensor.h>
 #include <string.h>
 
-#define LIS2DH_BUS_ADDRESS		DT_INST_0_ST_LIS2DH_BASE_ADDRESS
-#define LIS2DH_BUS_DEV_NAME		DT_INST_0_ST_LIS2DH_BUS_NAME
+#define LIS2DH_BUS_ADDRESS		DT_INST_REG_ADDR(0)
+#define LIS2DH_BUS_DEV_NAME		DT_INST_BUS_LABEL(0)
 
-#if defined(DT_ST_LIS2DH_BUS_SPI)
+#define LIS2DH_REG_WAI			0x0f
+#define LIS2DH_CHIP_ID			0x33
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 #include <drivers/spi.h>
 
 #define LIS2DH_SPI_READ_BIT		BIT(7)
-#define LIS2DH_SPI_AUTOINC_ADDR		BIT(6)
+#define LIS2DH_SPI_AUTOINC		BIT(6)
 #define LIS2DH_SPI_ADDR_MASK		BIT_MASK(6)
 
 /* LIS2DH supports only SPI mode 0, word size 8 bits, MSB first */
 #define LIS2DH_SPI_CFG			SPI_WORD_SET(8)
 
-#elif defined(DT_ST_LIS2DH_BUS_I2C)
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 #include <drivers/i2c.h>
 #else
 #error "define bus type (I2C/SPI)"
@@ -171,16 +174,19 @@
 /* sample buffer size includes status register */
 #define LIS2DH_BUF_SZ			7
 
-#if defined(DT_INST_0_ST_LIS2DH_IRQ_GPIOS_CONTROLLER_1)
+#if DT_INST_PROP_HAS_IDX(0, irq_gpios, 1)
 /* INT1 and INT2 are configured */
-#define DT_LIS2DH_INT1_GPIOS_PIN		DT_INST_0_ST_LIS2DH_IRQ_GPIOS_PIN_0
-#define DT_LIS2DH_INT1_GPIO_DEV_NAME	DT_INST_0_ST_LIS2DH_IRQ_GPIOS_CONTROLLER_0
-#define DT_LIS2DH_INT2_GPIOS_PIN		DT_INST_0_ST_LIS2DH_IRQ_GPIOS_PIN_1
-#define DT_LIS2DH_INT2_GPIO_DEV_NAME	DT_INST_0_ST_LIS2DH_IRQ_GPIOS_CONTROLLER_1
+#define LIS2DH_INT1_GPIOS_PIN		DT_INST_GPIO_PIN_BY_IDX(0, irq_gpios, 0)
+#define LIS2DH_INT1_GPIOS_FLAGS		DT_INST_GPIO_FLAGS_BY_IDX(0, irq_gpios, 0)
+#define LIS2DH_INT1_GPIO_DEV_NAME	DT_INST_GPIO_LABEL_BY_IDX(0, irq_gpios, 0)
+#define LIS2DH_INT2_GPIOS_PIN		DT_INST_GPIO_PIN_BY_IDX(0, irq_gpios, 1)
+#define LIS2DH_INT2_GPIOS_FLAGS		DT_INST_GPIO_FLAGS_BY_IDX(0, irq_gpios, 1)
+#define LIS2DH_INT2_GPIO_DEV_NAME	DT_INST_GPIO_LABEL_BY_IDX(0, irq_gpios, 1)
 #else
 /* INT1 only */
-#define DT_LIS2DH_INT1_GPIOS_PIN		DT_INST_0_ST_LIS2DH_IRQ_GPIOS_PIN
-#define DT_LIS2DH_INT1_GPIO_DEV_NAME	DT_INST_0_ST_LIS2DH_IRQ_GPIOS_CONTROLLER
+#define LIS2DH_INT1_GPIOS_PIN		DT_INST_GPIO_PIN(0, irq_gpios)
+#define LIS2DH_INT1_GPIOS_FLAGS		DT_INST_GPIO_FLAGS(0, irq_gpios)
+#define LIS2DH_INT1_GPIO_DEV_NAME	DT_INST_GPIO_LABEL(0, irq_gpios)
 #endif
 
 union lis2dh_sample {
@@ -191,13 +197,38 @@ union lis2dh_sample {
 	} __packed;
 };
 
+struct lis2dh_config {
+	char *bus_name;
+	int (*bus_init)(struct device *dev);
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+	u16_t i2c_slv_addr;
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+	struct spi_config spi_conf;
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
+	const char *gpio_cs_port;
+	u8_t cs_gpio;
+#endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
+
+};
+
+struct lis2dh_transfer_function {
+	int (*read_data)(struct device *dev, u8_t reg_addr,
+			 u8_t *value, u8_t len);
+	int (*write_data)(struct device *dev, u8_t reg_addr,
+			  u8_t *value, u8_t len);
+	int (*read_reg)(struct device *dev, u8_t reg_addr,
+			u8_t *value);
+	int (*write_reg)(struct device *dev, u8_t reg_addr,
+			u8_t value);
+	int (*update_reg)(struct device *dev, u8_t reg_addr,
+			  u8_t mask, u8_t value);
+};
+
 struct lis2dh_data {
-#if defined(DT_ST_LIS2DH_BUS_SPI)
-	struct device *spi;
-	struct spi_config spi_cfg;
-#else
 	struct device *bus;
-#endif
+	const struct lis2dh_transfer_function *hw_tf;
+
 	union lis2dh_sample sample;
 	/* current scaling factor, in micro m/s^2 / lsb */
 	u32_t scale;
@@ -223,137 +254,15 @@ struct lis2dh_data {
 #endif
 
 #endif /* CONFIG_LIS2DH_TRIGGER */
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
+	struct spi_cs_control cs_ctrl;
+#endif /* DT_SPI_DEV_HAS_CS_GPIOS(DT_INST(0, st_lis2mdl)) */
 };
 
-#if defined(DT_ST_LIS2DH_BUS_SPI)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 int lis2dh_spi_access(struct lis2dh_data *ctx, u8_t cmd,
 		      void *data, size_t length);
 #endif
-
-static inline int lis2dh_bus_configure(struct device *dev)
-{
-	struct lis2dh_data *lis2dh = dev->driver_data;
-
-#if defined(DT_ST_LIS2DH_BUS_SPI)
-	lis2dh->spi = device_get_binding(LIS2DH_BUS_DEV_NAME);
-	if (lis2dh->spi == NULL) {
-		LOG_ERR("Could not get pointer to %s device",
-			    LIS2DH_BUS_DEV_NAME);
-		return -EINVAL;
-	}
-
-	lis2dh->spi_cfg.operation = LIS2DH_SPI_CFG;
-	lis2dh->spi_cfg.frequency = DT_INST_0_ST_LIS2DH_SPI_MAX_FREQUENCY;
-	lis2dh->spi_cfg.slave = LIS2DH_BUS_ADDRESS;
-
-	return 0;
-#elif defined(DT_ST_LIS2DH_BUS_I2C)
-	lis2dh->bus = device_get_binding(LIS2DH_BUS_DEV_NAME);
-	if (lis2dh->bus == NULL) {
-		LOG_ERR("Could not get pointer to %s device",
-			    LIS2DH_BUS_DEV_NAME);
-		return -EINVAL;
-	}
-
-	return 0;
-#else
-	return -ENODEV;
-#endif
-}
-
-static inline int lis2dh_burst_read(struct device *dev, u8_t start_addr,
-				    u8_t *buf, u8_t num_bytes)
-{
-	struct lis2dh_data *lis2dh = dev->driver_data;
-
-#if defined(DT_ST_LIS2DH_BUS_SPI)
-	start_addr |= LIS2DH_SPI_READ_BIT | LIS2DH_SPI_AUTOINC_ADDR;
-
-	return lis2dh_spi_access(lis2dh, start_addr, buf, num_bytes);
-#elif defined(DT_ST_LIS2DH_BUS_I2C)
-	u8_t addr = start_addr | LIS2DH_AUTOINCREMENT_ADDR;
-
-	return i2c_write_read(lis2dh->bus, LIS2DH_BUS_ADDRESS,
-			      &addr, sizeof(addr),
-			      buf, num_bytes);
-#else
-	return -ENODEV;
-#endif
-}
-
-static inline int lis2dh_reg_read_byte(struct device *dev, u8_t reg_addr,
-				       u8_t *value)
-{
-	struct lis2dh_data *lis2dh = dev->driver_data;
-
-#if defined(DT_ST_LIS2DH_BUS_SPI)
-	reg_addr |= LIS2DH_SPI_READ_BIT;
-
-	return lis2dh_spi_access(lis2dh, reg_addr, value, 1);
-#elif defined(DT_ST_LIS2DH_BUS_I2C)
-	return i2c_reg_read_byte(lis2dh->bus, LIS2DH_BUS_ADDRESS,
-				 reg_addr, value);
-#else
-	return -ENODEV;
-#endif
-}
-
-static inline int lis2dh_burst_write(struct device *dev, u8_t start_addr,
-				     u8_t *buf, u8_t num_bytes)
-{
-	struct lis2dh_data *lis2dh = dev->driver_data;
-
-#if defined(DT_ST_LIS2DH_BUS_SPI)
-	start_addr |= LIS2DH_SPI_AUTOINC_ADDR;
-
-	return lis2dh_spi_access(lis2dh, start_addr, buf, num_bytes);
-#elif defined(DT_ST_LIS2DH_BUS_I2C)
-	/* NRF TWIM is default and does not support burst write.  We
-	 * can't detect whether the I2C master uses TWI or TWIM, so
-	 * use a substitute implementation unconditionally on Nordic.
-	 *
-	 * See Zephyr issue #20154.
-	 */
-	if (IS_ENABLED(CONFIG_I2C_NRFX)) {
-		u8_t buffer[8];
-
-		/* Largest num_bytes used is 6 */
-		__ASSERT((1U + num_bytes) <= sizeof(buffer),
-			 "burst buffer too small");
-		buffer[0] = start_addr | LIS2DH_AUTOINCREMENT_ADDR;
-		memmove(buffer + 1, buf, num_bytes);
-		return i2c_write(lis2dh->bus, buffer, 1 + num_bytes,
-				 LIS2DH_BUS_ADDRESS);
-	}
-	return i2c_burst_write(lis2dh->bus, LIS2DH_BUS_ADDRESS,
-			       start_addr | LIS2DH_AUTOINCREMENT_ADDR,
-			       buf, num_bytes);
-#else
-	return -ENODEV;
-#endif
-}
-
-static inline int lis2dh_reg_write_byte(struct device *dev, u8_t reg_addr,
-					u8_t value)
-{
-	struct lis2dh_data *lis2dh = dev->driver_data;
-
-#if defined(DT_ST_LIS2DH_BUS_SPI)
-	reg_addr &= LIS2DH_SPI_ADDR_MASK;
-
-	return lis2dh_spi_access(lis2dh, reg_addr, &value, 1);
-#elif defined(DT_ST_LIS2DH_BUS_I2C)
-	u8_t tx_buf[2] = {reg_addr, value};
-
-	return i2c_write(lis2dh->bus, tx_buf, sizeof(tx_buf),
-			 LIS2DH_BUS_ADDRESS);
-#else
-	return -ENODEV;
-#endif
-}
-
-int lis2dh_reg_field_update(struct device *dev, u8_t reg_addr,
-			    u8_t pos, u8_t mask, u8_t val);
 
 #ifdef CONFIG_LIS2DH_TRIGGER
 int lis2dh_trigger_set(struct device *dev,
@@ -365,5 +274,9 @@ int lis2dh_init_interrupt(struct device *dev);
 int lis2dh_acc_slope_config(struct device *dev, enum sensor_attribute attr,
 			    const struct sensor_value *val);
 #endif
+
+int lis2dh_spi_init(struct device *dev);
+int lis2dh_i2c_init(struct device *dev);
+
 
 #endif /* __SENSOR_LIS2DH__ */

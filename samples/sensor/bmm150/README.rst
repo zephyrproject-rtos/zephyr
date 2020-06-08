@@ -22,7 +22,7 @@ Sensor has multiple pins so you need to connect according to connection diagram 
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/bmm150
-   :board: nrf52840_pca10056
+   :board: nrf52840dk_nrf52840
    :goals: flash
    :compact:
 

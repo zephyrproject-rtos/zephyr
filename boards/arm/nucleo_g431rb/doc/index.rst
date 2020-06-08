@@ -137,8 +137,8 @@ Default Zephyr Peripheral Mapping:
 
 - UART_1_TX : PC4
 - UART_1_RX : PC5
-- UART_2_TX : PA2
-- UART_2_RX : PA15
+- LPUART_1_TX : PA2
+- LPUART_1_RX : PA3
 - I2C_1_SCL : PB8
 - I2C_1_SDA : PB9
 - SPI_1_NSS : PB6
@@ -170,9 +170,11 @@ is selected.
 Serial Port
 -----------
 
-Nucleo G431RB board has 3 U(S)ARTs. The Zephyr console output is assigned to UART2.
+Nucleo G431RB board has 3 U(S)ARTs and one LPUART. The Zephyr console output is assigned to LPUART1.
 Default settings are 115200 8N1.
 
+Please note that LPUART1 baudrate is limited to 9600 if the MCU is clocked by LSE (32.768 kHz) in
+low power mode.
 
 Programming and Debugging
 *************************
@@ -184,14 +186,26 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-Nucleo G431RB board includes an ST-LINK/V3E embedded debug tool
-interface. This interface is not yet supported by the openocd version.
+Nucleo G431RB board includes an ST-LINK/V3E embedded debug tool interface.
+
+This interface is not yet supported by the openocd version included in the Zephyr SDK.
+
 Instead, support can be enabled on pyocd by adding "pack" support with
 the following pyocd command:
 
 .. code-block:: console
 
    $ pyocd pack --install stm32g431rb
+
+Note:
+To manually enable the openocd interface, You can still update, compile and install
+a 'local' openocd from the official openocd repo http://openocd.zylin.com .
+Then run the following openocd command where the '/usr/local/bin/openocd'is your path
+for the freshly installed openocd, given by "$ which openocd" :
+
+.. code-block:: console
+
+   $ west flash --openocd /usr/local/bin/openocd
 
 Flashing an application to Nucleo G431RB
 ----------------------------------------

@@ -173,12 +173,14 @@ typedef int (*i2c_api_slave_register_t)(struct device *dev,
 					struct i2c_slave_config *cfg);
 typedef int (*i2c_api_slave_unregister_t)(struct device *dev,
 					  struct i2c_slave_config *cfg);
+typedef int (*i2c_api_recover_bus_t)(struct device *dev);
 
-struct i2c_driver_api {
+__subsystem struct i2c_driver_api {
 	i2c_api_configure_t configure;
 	i2c_api_full_io_t transfer;
 	i2c_api_slave_register_t slave_register;
 	i2c_api_slave_unregister_t slave_unregister;
+	i2c_api_recover_bus_t recover_bus;
 };
 
 typedef int (*i2c_slave_api_register_t)(struct device *dev);
@@ -188,6 +190,7 @@ struct i2c_slave_driver_api {
 	i2c_slave_api_register_t driver_register;
 	i2c_slave_api_unregister_t driver_unregister;
 };
+
 /**
  * @endcond
  */
@@ -253,6 +256,31 @@ static inline int z_impl_i2c_transfer(struct device *dev,
 }
 
 /**
+ * @brief Recover the I2C bus
+ *
+ * Attempt to recover the I2C bus.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @retval 0 If successful
+ * @retval -EBUSY If bus is not clear after recovery attempt.
+ * @retval -EIO General input / output error.
+ * @retval -ENOTSUP If bus recovery is not supported
+ */
+__syscall int i2c_recover_bus(struct device *dev);
+
+static inline int z_impl_i2c_recover_bus(struct device *dev)
+{
+	const struct i2c_driver_api *api =
+		(const struct i2c_driver_api *)dev->driver_api;
+
+	if (api->recover_bus == NULL) {
+		return -ENOTSUP;
+	}
+
+	return api->recover_bus(dev);
+}
+
+/**
  * @brief Registers the provided config as Slave device
  *
  * Enable I2C slave mode for the 'dev' I2C bus driver using the provided
@@ -275,11 +303,8 @@ static inline int z_impl_i2c_transfer(struct device *dev,
  * @retval -EIO General input / output error.
  * @retval -ENOTSUP If slave mode is not supported
  */
-__syscall int i2c_slave_register(struct device *dev,
-				 struct i2c_slave_config *cfg);
-
-static inline int z_impl_i2c_slave_register(struct device *dev,
-					   struct i2c_slave_config *cfg)
+static inline int i2c_slave_register(struct device *dev,
+				     struct i2c_slave_config *cfg)
 {
 	const struct i2c_driver_api *api =
 		(const struct i2c_driver_api *)dev->driver_api;
@@ -306,11 +331,8 @@ static inline int z_impl_i2c_slave_register(struct device *dev,
  * @retval -EINVAL If parameters are invalid
  * @retval -ENOTSUP If slave mode is not supported
  */
-__syscall int i2c_slave_unregister(struct device *dev,
-				   struct i2c_slave_config *cfg);
-
-static inline int z_impl_i2c_slave_unregister(struct device *dev,
-					     struct i2c_slave_config *cfg)
+static inline int i2c_slave_unregister(struct device *dev,
+				       struct i2c_slave_config *cfg)
 {
 	const struct i2c_driver_api *api =
 		(const struct i2c_driver_api *)dev->driver_api;

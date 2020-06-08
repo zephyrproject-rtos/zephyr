@@ -1,0 +1,96 @@
+/*
+ * Copyright (c) 2020 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f4/stm32f407Xg.dtsi>
+
+/ {
+	model = "black_f407zg_pro board";
+	compatible = "st,stm32f407";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,shell-uart = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,ccm = &ccm0;
+		zephyr,can-primary = &can2;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led_1: led_1 {
+			gpios = <&gpiof 9 GPIO_ACTIVE_LOW>;
+			label = "User LD1";
+		};
+		green_led_2: led_2 {
+			gpios = <&gpiof 10 GPIO_ACTIVE_LOW>;
+			label = "User LD2";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_0: K0 {
+			label = "Key K0";
+			gpios = <&gpiob 9 GPIO_ACTIVE_LOW>;
+		};
+		user_button_1: K1 {
+			label = "Key K1";
+			gpios = <&gpiob 8 GPIO_ACTIVE_LOW>;
+		};
+		user_button_UP: K_UP {
+			label = "Key WK_UP";
+			gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led_1;
+		led1 = &green_led_2;
+		sw0 = &user_button_UP;
+	};
+};
+
+&usart1 {
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart2 {
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&timers2 {
+	status = "okay";
+
+	pwm2: pwm {
+		status = "okay";
+	};
+};
+
+&rtc {
+	status = "okay";
+};
+
+&usbotg_fs {
+	status = "okay";
+};
+
+&can1 {
+	bus-speed = <125000>;
+	status = "disabled";
+};
+
+&can2 {
+	bus-speed = <125000>;
+	status = "okay";
+};
+
+&spi2 {
+	status = "okay";
+};

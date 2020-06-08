@@ -12,14 +12,14 @@ LOG_MODULE_REGISTER(net_syslog, LOG_LEVEL_DBG);
 #include <net/net_core.h>
 #include <net/net_pkt.h>
 
-#define SLEEP_BETWEEN_PRINTS K_SECONDS(3)
+#define SLEEP_BETWEEN_PRINTS 3
 
 void main(void)
 {
-	int count = K_SECONDS(60) / SLEEP_BETWEEN_PRINTS;
+	int count = 60 / SLEEP_BETWEEN_PRINTS;
 
 	/* Allow some setup time before starting to send data */
-	k_sleep(SLEEP_BETWEEN_PRINTS);
+	k_sleep(K_SECONDS(SLEEP_BETWEEN_PRINTS));
 
 	LOG_DBG("Starting");
 
@@ -29,7 +29,7 @@ void main(void)
 		LOG_INF("Info message");
 		LOG_DBG("Debug message");
 
-		k_sleep(SLEEP_BETWEEN_PRINTS);
+		k_sleep(K_SECONDS(SLEEP_BETWEEN_PRINTS));
 
 	} while (count--);
 

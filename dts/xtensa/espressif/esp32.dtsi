@@ -8,6 +8,10 @@
 #include <dt-bindings/i2c/i2c.h>
 
 / {
+	chosen {
+		zephyr,entropy = &trng0;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -68,6 +72,7 @@
 			#gpio-cells = <2>;
 			reg = <0x3ff44000 0x800>;
 			label = "GPIO_0";
+			ngpios = <32>;   /* 0..31 */
 		};
 
 		gpio1: gpio@3ff44800 {
@@ -76,6 +81,7 @@
 			#gpio-cells = <2>;
 			reg = <0x3ff44800 0x800>;
 			label = "GPIO_1";
+			ngpios = <8>;   /* 32..39 */
 		};
 
 		i2c0: i2c@3ff53000 {

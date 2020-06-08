@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT ti_cc13xx_cc26xx_trng
+
 #include <kernel.h>
 #include <device.h>
 #include <drivers/entropy.h>
@@ -146,11 +148,11 @@ static int entropy_cc13xx_cc26xx_init(struct device *dev)
 	TRNGEnable();
 	TRNGIntEnable(TRNG_NUMBER_READY | TRNG_FRO_SHUTDOWN);
 
-	IRQ_CONNECT(DT_INST_0_TI_CC13XX_CC26XX_TRNG_IRQ_0,
-		    DT_INST_0_TI_CC13XX_CC26XX_TRNG_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
 		    entropy_cc13xx_cc26xx_isr,
 		    DEVICE_GET(entropy_cc13xx_cc26xx), 0);
-	irq_enable(DT_INST_0_TI_CC13XX_CC26XX_TRNG_IRQ_0);
+	irq_enable(DT_INST_IRQN(0));
 
 	return 0;
 }
@@ -164,7 +166,7 @@ static struct entropy_cc13xx_cc26xx_data entropy_cc13xx_cc26xx_data = {
 	.sync = Z_SEM_INITIALIZER(entropy_cc13xx_cc26xx_data.sync, 0, 1),
 };
 
-DEVICE_AND_API_INIT(entropy_cc13xx_cc26xx, DT_INST_0_TI_CC13XX_CC26XX_TRNG_LABEL,
+DEVICE_AND_API_INIT(entropy_cc13xx_cc26xx, DT_INST_LABEL(0),
 		    entropy_cc13xx_cc26xx_init, &entropy_cc13xx_cc26xx_data,
 		    NULL, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &entropy_cc13xx_cc26xx_driver_api);

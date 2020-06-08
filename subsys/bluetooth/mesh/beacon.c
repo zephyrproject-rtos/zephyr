@@ -105,8 +105,8 @@ void bt_mesh_beacon_create(struct bt_mesh_subnet *sub,
 }
 
 /* If the interval has passed or is within 5 seconds from now send a beacon */
-#define BEACON_THRESHOLD(sub) (K_SECONDS(10 * ((sub)->beacons_last + 1)) - \
-			       K_SECONDS(5))
+#define BEACON_THRESHOLD(sub) \
+	((10 * ((sub)->beacons_last + 1)) * MSEC_PER_SEC - (5 * MSEC_PER_SEC))
 
 static int secure_beacon_send(void)
 {
@@ -128,7 +128,7 @@ static int secure_beacon_send(void)
 		}
 
 		time_diff = now - sub->beacon_sent;
-		if (time_diff < K_SECONDS(600) &&
+		if (time_diff < (600 * MSEC_PER_SEC) &&
 		    time_diff < BEACON_THRESHOLD(sub)) {
 			continue;
 		}

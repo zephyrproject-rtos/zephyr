@@ -4,16 +4,14 @@
 # Copyright (c) 2017 RnDity Sp. z o.o.
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_FAMILY_STM32
-
 menuconfig CLOCK_CONTROL_STM32_CUBE
 	bool "STM32 Reset & Clock Control"
+	depends on SOC_FAMILY_STM32
 	select USE_STM32_LL_UTILS
 	select USE_STM32_LL_RCC if SOC_SERIES_STM32MP1X
 	help
 	  Enable driver for Reset & Clock Control subsystem found
 	  in STM32 family of MCUs
-
 
 if CLOCK_CONTROL_STM32_CUBE
 
@@ -41,7 +39,7 @@ config CLOCK_STM32_SYSCLK_SRC_HSI
 
 config CLOCK_STM32_SYSCLK_SRC_MSI
 	bool "MSI"
-	depends on SOC_SERIES_STM32L0X || SOC_SERIES_STM32L4X || SOC_SERIES_STM32WBX
+	depends on SOC_SERIES_STM32L0X || SOC_SERIES_STM32L4X || SOC_SERIES_STM32L5X || SOC_SERIES_STM32WBX
 	help
 	  Use MSI as source of SYSCLK
 
@@ -67,7 +65,7 @@ config CLOCK_STM32_HSE_CLOCK
 
 config CLOCK_STM32_MSI_RANGE
 	int "MSI frequency range"
-	depends on CLOCK_STM32_SYSCLK_SRC_MSI
+	depends on CLOCK_STM32_SYSCLK_SRC_MSI || CLOCK_STM32_PLL_SRC_MSI
 	default 8
 	help
 	  Frequency range of MSI when MSI range is provided in RCC_CR register
@@ -91,7 +89,7 @@ choice
 
 config CLOCK_STM32_PLL_SRC_MSI
 	bool "MSI"
-	depends on SOC_SERIES_STM32L0X || SOC_SERIES_STM32L4X || SOC_SERIES_STM32WBX
+	depends on SOC_SERIES_STM32L0X || SOC_SERIES_STM32L4X || SOC_SERIES_STM32L5X || SOC_SERIES_STM32WBX
 	help
 	  Use MSI as source of PLL
 
@@ -122,7 +120,7 @@ source "drivers/clock_control/Kconfig.stm32f1"
 source "drivers/clock_control/Kconfig.stm32f2_f4_f7"
 source "drivers/clock_control/Kconfig.stm32h7"
 source "drivers/clock_control/Kconfig.stm32l0_l1"
-source "drivers/clock_control/Kconfig.stm32l4_wb"
+source "drivers/clock_control/Kconfig.stm32l4_l5_wb"
 source "drivers/clock_control/Kconfig.stm32g0"
 source "drivers/clock_control/Kconfig.stm32g4"
 
@@ -274,4 +272,3 @@ config CLOCK_STM32_MCO2_DIV
 	  allowed values: 1, 2, 3, 4, 5
 
 endif # CLOCK_CONTROL_STM32_CUBE
-endif # SOC_FAMILY_STM32

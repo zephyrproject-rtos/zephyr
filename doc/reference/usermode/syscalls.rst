@@ -26,9 +26,10 @@ Components
 
 All system calls have the following components:
 
-* A **C prototype** for the API, declared in some header under ``include/`` and
-  prefixed with :c:macro:`__syscall`.  This prototype is never implemented
-  manually, instead it gets created by the ``scripts/gen_syscalls.py`` script.
+* A **C prototype** prefixed with :c:macro:`__syscall` for the API. It
+  will be declared in some header under ``include/`` or in another
+  ``SYSCALL_INCLUDE_DIRS`` directory. This prototype is never implemented
+  manually, instead it gets created by the :ref:`gen_syscalls.py` script.
   What gets generated is an inline function which either calls the
   implementation function directly (if called from supervisor mode) or goes
   through privilege elevation and validation steps (if called from user
@@ -57,8 +58,8 @@ supervisor mode. For example, to initialize a semaphore:
 
 The :c:macro:`__syscall` attribute is very special. To the C compiler, it
 simply expands to 'static inline'. However to the post-build
-``parse_syscalls.py`` script, it indicates that this API is a system call.
-The ``parse_syscalls.py`` script does some parsing of the function prototype,
+:ref:`parse_syscalls.py` script, it indicates that this API is a system call.
+The :ref:`parse_syscalls.py` script does some parsing of the function prototype,
 to determine the data types of its return value and arguments, and has some
 limitations:
 
@@ -72,12 +73,12 @@ limitations:
 
 * :c:macro:`__syscall` must be the first thing in the prototype.
 
-The preprocessor is intentionally not used when determining the set of
-system calls to generate. However, any generated system calls that don't
-actually have a handler function defined (because the related feature is not
-enabled in the kernel configuration) will instead point to a special handler
-for unimplemented system calls. Data type definitions for APIs should not
-have conditional visibility to the compiler.
+The preprocessor is intentionally not used when determining the set of system
+calls to generate. However, any generated system calls that don't actually have
+a verification function defined (because the related feature is not enabled in
+the kernel configuration) will instead point to a special verification for
+unimplemented system calls. Data type definitions for APIs should not have
+conditional visibility to the compiler.
 
 Any header file that declares system calls must include a special generated
 header at the very bottom of the header file. This header follows the
@@ -87,6 +88,15 @@ bottom of ``include/sensor.h``:
 .. code-block:: c
 
     #include <syscalls/sensor.h>
+
+C prototype functions must be declared in one of the directories
+listed in the CMake variable ``SYSCALL_INCLUDE_DIRS``. This list
+always contains ``${ZEPHYR_BASE}/include``, but will also contain
+``APPLICATION_SOURCE_DIR`` when ``CONFIG_APPLICATION_DEFINED_SYSCALL``
+is set, or ``${ZEPHYR_BASE}/subsys/testsuite/ztest/include`` when
+``CONFIG_ZTEST`` is set. Additional paths can be added to the list
+through the CMake command line or in CMake code that is run before
+``${ZEPHYR_BASE}/cmake/app/boilerplate.cmake`` is run.
 
 Invocation Context
 ==================
@@ -118,7 +128,7 @@ Implementation Details
 ======================
 
 Declaring an API with :c:macro:`__syscall` causes some code to be generated in
-C and header files by ``scripts/gen_syscalls.py``, all of which can be found in
+C and header files by the :ref:`gen_syscalls.py` script, all of which can be found in
 the project out directory under ``include/generated/``:
 
 * The system call is added to the enumerated type of system call IDs,
@@ -128,11 +138,11 @@ the project out directory under ``include/generated/``:
 * An entry for the system call is created in the dispatch table
   ``_k_sycall_table``, expressed in ``include/generated/syscall_dispatch.c``
 
-* A weak handler function is declared, which is just an alias of the
-  'unimplemented system call' handler. This is necessary since the real
-  handler function may or may not be built depending on the kernel
+* A weak verification function is declared, which is just an alias of the
+  'unimplemented system call' verifier. This is necessary since the real
+  verification function may or may not be built depending on the kernel
   configuration. For example, if a user thread makes a sensor subsystem
-  API call, but the sensor subsystem is not enabled, the weak handler
+  API call, but the sensor subsystem is not enabled, the weak verifier
   will be invoked instead.
 
 * An unmarshalling function is defined in ``include/generated/<name>_mrsh.c``
@@ -181,7 +191,7 @@ Some system calls may have more than six arguments. The number of
 arguments passed via registers is limited to six for all
 architectures. Additional arguments will need to be passed in an array
 in the source memory space, which needs to be treated as untrusted
-memory in the handler function. This code (packing, unpacking and
+memory in the verification function. This code (packing, unpacking and
 validation) is generated automatically as needed in the stub above and
 in the unmarshalling function.
 
@@ -205,20 +215,21 @@ declared in the same header as the API as a static inline function or
 declared in some C file. There is no prototype needed for implementation
 functions, these are automatically generated.
 
-Handler Function
-****************
+Verification Function
+*********************
 
-The handler function runs on the kernel side when a user thread makes
+The verification function runs on the kernel side when a user thread makes
 a system call. When the user thread makes a software interrupt to elevate to
 supervisor mode, the common system call entry point uses the system call ID
-provided by the user to look up the appropriate handler function for that
-system call and jump into it.
+provided by the user to look up the appropriate unmarshalling function for that
+system call and jump into it. This in turn calls the verification function.
 
-Handler functions only run when system call APIs are invoked from user mode.
-If an API is invoked from supervisor mode, the implementation is simply called.
+Verification and unmarshalling functions only run when system call APIs are
+invoked from user mode. If an API is invoked from supervisor mode, the
+implementation is simply called and there is no software trap.
 
-The purpose of the handler function is to validate all the arguments passed in.
-This includes:
+The purpose of the verification function is to validate all the arguments
+passed in.  This includes:
 
 * Any kernel object pointers provided. For example, the semaphore APIs must
   ensure that the semaphore object passed in is a valid semaphore and that
@@ -229,9 +240,9 @@ This includes:
 
 * Any other arguments that have a limited range of valid values.
 
-Handler functions involve a great deal of boilerplate code which has been
+Verification functions involve a great deal of boilerplate code which has been
 made simpler by some macros in ``kernel/include/syscall_handlers.h``.
-Handler functions should be declared using these macros.
+Verification functions should be declared using these macros.
 
 Argument Validation
 ===================
@@ -244,7 +255,7 @@ Several macros exist to validate arguments:
 
 * :c:macro:`Z_SYSCALL_OBJ_INIT()` is the same as
   :c:macro:`Z_SYSCALL_OBJ()`, except that the provided object may be
-  uninitialized. This is useful for handlers of object init functions.
+  uninitialized. This is useful for verifiers of object init functions.
 
 * :c:macro:`Z_SYSCALL_OBJ_NEVER_INIT()` is the same as
   :c:macro:`Z_SYSCALL_OBJ()`, except that the provided object must be
@@ -284,10 +295,10 @@ Several macros exist to validate arguments:
 * :c:macro:`Z_SYSCALL_SPECIFIC_DRIVER()` is a runtime check to verify that
   a provided pointer is a valid instance of a specific device driver, that
   the calling thread has permissions on it, and that the driver has been
-  initialized. It does this by checking the init function pointer that
+  initialized. It does this by checking the API structure pointer that
   is stored within the driver instance and ensuring that it matches the
   provided value, which should be the address of the specific driver's
-  init function.
+  API structure.
 
 If any check fails, the macros will return a nonzero value. The macro
 :c:macro:`Z_OOPS()` can be used to induce a kernel oops which will kill the
@@ -321,6 +332,261 @@ For example:
     }
     #include <syscalls/k_sem_take_mrsh.c>
 
+
+Verification Memory Access Policies
+===================================
+
+Parameters passed to system calls by reference require special handling,
+because the value of these parameters can be changed at any time by any
+user thread that has access to the memory that parameter points to. If the
+kernel makes any logical decisions based on the contents of this memory, this
+can open up the kernel to attacks even if checking is done. This is a class
+of exploits known as TOCTOU (Time Of Check to Time Of Use).
+
+The proper procedure to mitigate these attacks is to make a copies in the
+verification function, and only perform parameter checks on the copies, which
+user threads will never have access to. The implementation functions get passed
+the copy and not the original data sent by the user. The
+:c:func:`z_user_to_copy()` and :c:func:`z_user_from_copy()` APIs exist for
+this purpose.
+
+There is one exception in place, with respect to large data buffers which are
+only used to provide a memory area that is either only written to, or whose
+contents are never used for any validation or control flow. Further
+discussion of this later in this section.
+
+As a first example, consider a parameter which is used as an output parameter
+for some integral value:
+
+
+.. code-block:: c
+
+    int z_vrfy_some_syscall(int *out_param)
+    {
+        int local_out_param;
+        int ret;
+
+        ret = z_impl_some_syscall(&local_out_param);
+        Z_OOPS(z_user_to_copy(out_param, &local_out_param, sizeof(*out_param)));
+        return ret;
+    }
+
+Here we have allocated ``local_out_param`` on the stack, passed its address to
+the implementation function, and then used :c:func:`z_user_to_copy()` to fill
+in the memory passed in by the caller.
+
+It might be tempting to do something more concise:
+
+.. code-block:: c
+
+    int z_vrfy_some_syscall(int *out_param)
+    {
+        Z_OOPS(Z_SYSCALL_MEMORY_WRITE(out_param, sizeof(*out_param)));
+        return z_impl_some_syscall(out_param);
+    }
+
+However, this is unsafe if the implementation ever does any reads to this
+memory as part of its logic. For example, it could be used to store some
+counter value, and this could be meddled with by user threads that have access
+to its memory. It is by far safest for small integral values to do the copying
+as shown in the first example.
+
+Some parameters may be input/output. For instance, it's not uncommon to see APIs
+which pass in a pointer to some ``size_t`` which is a maximum allowable size,
+which is then updated by the implementation to reflect the actual number of
+bytes processed. This too should use a stack copy:
+
+.. code-block:: c
+
+    int z_vrfy_in_out_syscall(size_t *size_ptr)
+    {
+        size_t size;
+        int ret;
+
+        Z_OOPS(z_user_from_copy(&size, size_ptr, sizeof(size));
+        ret = z_impl_in_out_syscall(&size);
+        *size_ptr = size;
+        return ret;
+    }
+
+Many system calls pass in structs, or even linked data structures. All should
+be copied. Typically this is done by allocating copies on the stack:
+
+.. code-block:: c
+
+    struct bar {
+        ...
+    };
+
+    struct foo {
+        ...
+        struct bar *bar_left;
+        struct bar *bar_right;
+    };
+
+    int z_vrfy_must_alloc(struct foo *foo)
+    {
+        int ret;
+        struct foo foo_copy;
+        struct bar bar_right_copy;
+        struct bar bar_left_copy;
+
+        Z_OOPS(z_user_from_copy(&foo_copy, foo, sizeof(*foo)));
+        Z_OOPS(z_user_from_copy(&bar_right_copy, foo_copy.bar_right,
+                                sizeof(struct bar)));
+        foo_copy.bar_right = &bar_right_copy;
+        Z_OOPS(z_user_from_copy(&bar_left_copy, foo_copy.bar_left,
+                                sizeof(struct bar)));
+        foo_copy.bar_left = &bar_left_copy;
+
+        return z_impl_must_alloc(&foo_copy);
+    }
+
+In some cases the amount of data isn't known at compile time or may be too
+large to allocate on the stack. In this scenario, it may be necessary to draw
+memory from the caller's resource pool via :c:func:`z_thread_malloc()`. This
+should always be a method of last resort. Functional safety programming
+guidelines heavily discourge the use of heaps, the fact that a resource pool is
+used must be clearly documented, and any issue with allocations must be
+propaged to the caller with a ``-ENOMEM`` return value, never a ``Z_OOPS()``.
+
+.. code-block:: c
+
+    struct bar {
+        ...
+    };
+
+    struct foo {
+        size_t count;
+        struct bar *bar_list; /* array of struct bar of size count */
+    };
+
+    int z_vrfy_must_alloc(struct foo *foo)
+    {
+        int ret;
+        struct foo foo_copy;
+        struct bar *bar_list_copy;
+        size_t bar_list_bytes;
+
+        /* Safely copy foo into foo_copy */
+        Z_OOPS(z_user_from_copy(&foo_copy, foo, sizeof(*foo)));
+
+        /* Bounds check the count member, in the copy we made */
+        if (foo_copy.count > 32) {
+            return -EINVAL;
+        }
+
+        /* Allocate RAM for the bar_list, replace the pointer in
+         * foo_copy */
+        bar_list_bytes = foo_copy.count * sizeof(struct_bar);
+        bar_list_copy = z_thread_malloc(bar_list_bytes);
+        if (bar_list_copy == NULL) {
+            return -ENOMEM;
+        }
+        Z_OOPS(z_user_from_copy(bar_list_copy, foo_copy.bar_list,
+                                bar_list_bytes));
+        foo_copy.bar_list = bar_list_copy;
+
+        ret = z_impl_must_alloc(&foo_copy);
+
+        /* All done with the memory, free it and return */
+        k_free(foo_copy.bar_list_copy);
+        return ret;
+    }
+
+Finally, we must consider large data buffers. These represent areas of user
+memory which either have data copied out of, or copied into. It is permitted
+to pass these pointers to the implementation function directly. The caller's
+access to the buffer still must be validated with ``Z_SYSCALL_MEMORY`` APIs.
+The following constraints need to be met:
+
+ * If the buffer is used by the implementation function to write data, such
+   as data captured from some MMIO region, the implementation function must
+   only write this data, and never read it.
+
+ * If the buffer is used by the implementation function to read data, such
+   as a block of memory to write to some hardware destination, this data
+   must be read without any processing. No conditional logic can be implemented
+   due to the data buffer's contents. If such logic is required a copy must be
+   made.
+
+ * The buffer must only be used synchronously with the call. The implementation
+   must not ever save the buffer address and use it asynchronously, such as
+   when an interrupt fires.
+
+.. code-block:: c
+
+    int z_vrfy_get_data_from_kernel(void *buf, size_t size)
+    {
+        Z_OOPS(Z_SYSCALL_MEMORY_WRITE(buf, size));
+        return z_impl_get_data_from_kernel(buf, size);
+    }
+
+Verification Return Value Policies
+==================================
+
+When verifying system calls, it's important to note which kinds of verification
+failures should propagate a return value to the caller, and which should
+simply invoke :c:macro:`Z_OOPS()` which kills the calling thread. The current
+coventions are as follows:
+
+#. For system calls that are defined but not compiled, invocations of these
+   missing system calls are routed to :c:func:`handler_no_syscall()` which
+   invokes :c:macro:`Z_OOPS()`.
+
+#. Any invalid access to memory found by the set of ``Z_SYSCALL_MEMORY`` APIs,
+   :c:func:`z_user_from_copy()`, :c:func:`z_user_to_copy()`
+   should trigger a :c:macro:`Z_OOPS`. This happens when the caller doesn't have
+   appropriate permissions on the memory buffer or some size calculation
+   overflowed.
+
+#. Most system calls take kernel object pointers as an argument, checked either
+   with one of the ``Z_SYSCALL_OBJ`` functions,  ``Z_SYSCALL_DRIVER_nnnnn``, or
+   manually using :c:func:`z_object_validate()`. These can fail for a variety
+   of reasons: missing driver API, bad kernel object pointer, wrong kernel
+   object type, or improper initialization state. These issues should always
+   invoke :c:macro:`Z_OOPS()`.
+
+#. Any error resulting from a failed memory heap allocation, often from
+   invoking :c:func:`z_thread_malloc()`, should propagate ``-ENOMEM`` to the
+   caller.
+
+#. General parameter checks should be done in the implementation function,
+   in most cases using ``CHECKIF()``.
+
+   * The behavior of ``CHECKIF()`` depends on the kernel configuration, but if
+     user mode is enabled, :option:`CONFIG_RUNTIME_ERROR_CHECKS` is enforced,
+     which guarantees that these checks will be made and a return value
+     propagated.
+
+#. It is totally forbidden for any kind of kernel mode callback function to
+   be registered from user mode. APIs which simply install callbacks shall not
+   be exposed as system calls. Some driver subsystem APIs may take optional
+   function callback pointers. User mode verification functions for these APIs
+   must enforce that these are NULL and should invoke :c:macro:`Z_OOPS()` if
+   not.
+
+#. Some parameter checks are enforced only from user mode. These should be
+   checked in the verification function and propagate a return value to the
+   caller if possible.
+
+There are some known exceptions to these policies currently in Zephyr:
+
+* :c:func:`k_thread_join()` and :c:func:`k_thread_abort()` are no-ops if
+  the thread object isn't initialized. This is because for threads, the
+  initialization bit pulls double-duty to indicate whether a thread is
+  running, cleared upon exit. See #23030.
+
+* :c:func:`k_thread_create()` invokes :c:macro:`Z_OOPS()` for parameter
+  checks, due to a great deal of existing code ignoring the return value.
+  This will also be addressed by #23030.
+
+* :c:func:`k_thread_abort()` invokes :c:macro:`Z_OOPS()` if an essential
+  thread is aborted, as the function has no return value.
+
+* Various system calls related to logging invoke :c:macro:`Z_OOPS()`
+  when bad parameters are passed in as they do not propagate errors.
+
 Configuration Options
 *********************
 
@@ -331,7 +597,7 @@ Related configuration options:
 APIs
 ****
 
-Helper macros for creating system call handlers are provided in
+Helper macros for creating system call verification functions are provided in
 :zephyr_file:`kernel/include/syscall_handler.h`:
 
 * :c:macro:`Z_SYSCALL_OBJ()`
@@ -355,4 +621,3 @@ Functions for invoking system calls are defined in
 * :c:func:`_arch_syscall_invoke4`
 * :c:func:`_arch_syscall_invoke5`
 * :c:func:`_arch_syscall_invoke6`
-

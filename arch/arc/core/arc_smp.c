@@ -24,7 +24,7 @@
 #define ARCV2_ICI_IRQ_PRIORITY 1
 
 volatile struct {
-	void (*fn)(int, void*);
+	arch_cpustart_t fn;
 	void *arg;
 } arc_cpu_init[CONFIG_MP_NUM_CPUS];
 
@@ -46,7 +46,7 @@ volatile _cpu_t *_curr_cpu[CONFIG_MP_NUM_CPUS];
 
 /* Called from Zephyr initialization */
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
-		    void (*fn)(int, void *), void *arg)
+		    arch_cpustart_t fn, void *arg)
 {
 	_curr_cpu[cpu_num] = &(_kernel.cpus[cpu_num]);
 	arc_cpu_init[cpu_num].fn = fn;
@@ -69,7 +69,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 /* the C entry of slave cores */
 void z_arc_slave_start(int cpu_num)
 {
-	void (*fn)(int, void*);
+	arch_cpustart_t fn;
 
 #ifdef CONFIG_SMP
 	z_icache_setup();
@@ -82,7 +82,7 @@ void z_arc_slave_start(int cpu_num)
 	/* call the function set by arch_start_cpu */
 	fn = arc_cpu_init[cpu_num].fn;
 
-	fn(cpu_num, arc_cpu_init[cpu_num].arg);
+	fn(arc_cpu_init[cpu_num].arg);
 }
 
 #ifdef CONFIG_SMP
@@ -93,37 +93,6 @@ static void sched_ipi_handler(void *unused)
 
 	z_arc_connect_ici_clear();
 	z_sched_ipi();
-}
-
-/**
- * @brief Check whether need to do thread switch in isr context
- *
- * @details u64_t is used to let compiler use (r0, r1) as return register.
- *  use register r0 and register r1 as return value, r0 has
- *  new thread, r1 has old thread. If r0 == 0, it means no thread switch.
- */
-u64_t z_arc_smp_switch_in_isr(void)
-{
-	u64_t ret = 0;
-	u32_t new_thread;
-	u32_t old_thread;
-
-	old_thread = (u32_t)_current;
-
-	new_thread = (u32_t)z_get_next_ready_thread();
-
-	if (new_thread != old_thread) {
-#ifdef CONFIG_TIMESLICING
-		z_reset_time_slice();
-#endif
-		_current_cpu->swap_ok = 0;
-		((struct k_thread *)new_thread)->base.cpu =
-				arch_curr_cpu()->id;
-		_current = (struct k_thread *) new_thread;
-		ret = new_thread | ((u64_t)(old_thread) << 32);
-	}
-
-	return ret;
 }
 
 /* arch implementation of sched_ipi */
@@ -145,9 +114,6 @@ static int arc_smp_init(struct device *dev)
 	struct arc_connect_bcr bcr;
 
 	/* necessary master core init */
-	_kernel.cpus[0].id = 0;
-	_kernel.cpus[0].irq_stack = Z_THREAD_STACK_BUFFER(_interrupt_stack)
-		+ CONFIG_ISR_STACK_SIZE;
 	_curr_cpu[0] = &(_kernel.cpus[0]);
 
 	bcr.val = z_arc_v2_aux_reg_read(_ARC_V2_CONNECT_BCR);

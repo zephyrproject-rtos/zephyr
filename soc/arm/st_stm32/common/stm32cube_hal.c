@@ -33,5 +33,5 @@ uint32_t HAL_GetTick(void)
  */
 void HAL_Delay(__IO uint32_t Delay)
 {
-	k_sleep(Delay);
+	k_msleep(Delay);
 }

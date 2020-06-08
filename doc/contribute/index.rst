@@ -33,7 +33,7 @@ this, check out articles such as `Why choose Apache 2.0 licensing`_ and
 `Top 10 Apache License Questions Answered`_).
 
 .. _Why choose Apache 2.0 licensing:
-   https://www.zephyrproject.org/about/#faq
+   https://www.zephyrproject.org/faqs/#1571346989065-9216c551-f523
 
 .. _Top 10 Apache License Questions Answered:
    https://www.whitesourcesoftware.com/whitesource-blog/top-10-apache-license-questions-answered/
@@ -694,7 +694,7 @@ other than the Apache 2.0 license needs to be fully understood in
 context and approved by the `Zephyr governing board`_.
 
 .. _Zephyr governing board:
-   https://www.zephyrproject.org/about/organization
+   https://www.zephyrproject.org/governance/
 
 By carefully reviewing potential contributions and also enforcing a
 :ref:`DCO` for contributed code, we ensure that
@@ -766,6 +766,11 @@ Code component README template
 Contribution Roles and Responsibilities
 ***************************************
 
+.. toctree::
+   :maxdepth: 1
+
+   project_roles.rst
+
 The Zephyr project defines a development process workflow using GitHub
 **Issues** to track feature, enhancement, and bug reports together with GitHub
 **Pull Requests** (PRs) for submitting and reviewing changes.  Zephyr
@@ -780,3 +785,6 @@ submissions and for followup questions and clarifications.  Read about the
 project's :ref:`development processes and tools <dev-environment-and-tools>`
 and specifics about :ref:`review timelines <review_time>` to learn about the
 project's goals and guidelines for our active developer community.
+
+:ref:`project_roles` describes in detail the Zephyr project roles and associated permissions
+with respect to the development process workflow.

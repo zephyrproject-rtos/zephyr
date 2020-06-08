@@ -30,9 +30,9 @@ osMemoryPoolId_t osMemoryPoolNew(uint32_t block_count, uint32_t block_size,
 {
 	struct cv2_mslab *mslab;
 
-	BUILD_ASSERT_MSG(CONFIG_HEAP_MEM_POOL_SIZE >=
-			 CONFIG_CMSIS_V2_MEM_SLAB_MAX_DYNAMIC_SIZE,
-			 "heap must be configured to be at least the max dynamic size");
+	BUILD_ASSERT(CONFIG_HEAP_MEM_POOL_SIZE >=
+		     CONFIG_CMSIS_V2_MEM_SLAB_MAX_DYNAMIC_SIZE,
+		     "heap must be configured to be at least the max dynamic size");
 
 	if (k_is_in_isr()) {
 		return NULL;
@@ -109,7 +109,7 @@ void *osMemoryPoolAlloc(osMemoryPoolId_t mp_id, uint32_t timeout)
 	} else {
 		retval = k_mem_slab_alloc(
 			(struct k_mem_slab *)(&mslab->z_mslab),
-			(void **)&ptr, k_ticks_to_ms_floor64(timeout));
+			(void **)&ptr, K_TICKS(timeout));
 	}
 
 	if (retval == 0) {

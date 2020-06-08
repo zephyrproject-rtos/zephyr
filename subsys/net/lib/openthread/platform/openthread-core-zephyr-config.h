@@ -13,7 +13,7 @@
 #ifndef OPENTHREAD_CORE_ZEPHYR_CONFIG_H_
 #define OPENTHREAD_CORE_ZEPHYR_CONFIG_H_
 
-#include <generated_dts_board.h>
+#include <devicetree.h>
 
 /**
  * @def OPENTHREAD_CONFIG_NUM_MESSAGE_BUFFERS
@@ -85,7 +85,8 @@
  * is set in your SOC dts file.
  *
  */
-#define SETTINGS_CONFIG_PAGE_SIZE          DT_FLASH_ERASE_BLOCK_SIZE
+#define SETTINGS_CONFIG_PAGE_SIZE \
+	DT_PROP(DT_CHOSEN(zephyr_flash), erase_block_size)
 
 /**
  * @def SETTINGS_CONFIG_PAGE_NUM
@@ -141,5 +142,13 @@
  *
  */
 #define RADIO_CONFIG_SRC_MATCH_EXT_ENTRY_NUM 0
+
+/**
+ * @def OPENTHREAD_CONFIG_NCP_BUFFER_SIZE
+ *
+ * The size of the NCP buffers.
+ *
+ */
+#define OPENTHREAD_CONFIG_NCP_BUFFER_SIZE 2048
 
 #endif  /* OPENTHREAD_CORE_NRF52840_CONFIG_H_ */

@@ -63,7 +63,7 @@ static bool audio_io_started;
 
 K_THREAD_DEFINE(audio_drv_thread_id, AUDIO_DRIVER_THREAD_STACKSIZE,
 		audio_drv_thread, NULL, NULL, NULL,
-		AUDIO_DRIVER_THREAD_PRIORITY, 0, K_NO_WAIT);
+		AUDIO_DRIVER_THREAD_PRIORITY, 0, 0);
 
 static void audio_driver_process_audio_input(void)
 {
@@ -73,7 +73,7 @@ static void audio_driver_process_audio_input(void)
 	int ret;
 
 	/* read capture input buffer */
-	ret = dmic_read(dmic_device, 0, (void **)&mic_in_buf, &size, K_FOREVER);
+	ret = dmic_read(dmic_device, 0, (void **)&mic_in_buf, &size, SYS_FOREVER_MS);
 	if (ret) {
 		LOG_ERR("dmic_device read failed %d", ret);
 		return;
@@ -224,7 +224,7 @@ static void audio_driver_config_host_streams(void)
 	i2s_cfg.frame_clk_freq = AUDIO_SAMPLE_FREQ;
 	i2s_cfg.block_size = HOST_FRAME_BYTES;
 	i2s_cfg.mem_slab = &host_inout_mem_slab;
-	i2s_cfg.timeout = K_NO_WAIT;
+	i2s_cfg.timeout = 0;
 
 	k_mem_slab_init(&host_inout_mem_slab, &audio_buffers.host_inout[0][0],
 			HOST_FRAME_BYTES, HOST_INOUT_BUF_COUNT);
@@ -251,7 +251,7 @@ static void audio_driver_config_periph_streams(void)
 				I2S_OPT_BIT_CLK_SLAVE,
 			.frame_clk_freq	= AUDIO_SAMPLE_FREQ,
 			.block_size	= SPK_FRAME_BYTES,
-			.timeout	= K_NO_WAIT,
+			.timeout	= 0,
 		},
 	};
 	struct pcm_stream_cfg stream = {
@@ -304,9 +304,9 @@ static void audio_driver_config_periph_streams(void)
 		return;
 	}
 
-	codec_dev = device_get_binding(DT_INST_0_TI_TLV320DAC_LABEL);
+	codec_dev = device_get_binding(DT_LABEL(DT_INST(0, ti_tlv320dac)));
 	if (!codec_dev) {
-		LOG_ERR("unable to find device %s", DT_INST_0_TI_TLV320DAC_LABEL);
+		LOG_ERR("unable to find device %s", DT_LABEL(DT_INST(0, ti_tlv320dac)));
 		return;
 	}
 
@@ -318,7 +318,7 @@ static void audio_driver_config_periph_streams(void)
 	i2s_cfg.frame_clk_freq = AUDIO_SAMPLE_FREQ;
 	i2s_cfg.block_size = SPK_FRAME_BYTES;
 	i2s_cfg.mem_slab = &spk_out_mem_slab;
-	i2s_cfg.timeout = K_NO_WAIT;
+	i2s_cfg.timeout = 0;
 	k_mem_slab_init(&spk_out_mem_slab, &audio_buffers.spk_out[0][0],
 			SPK_FRAME_BYTES, SPK_OUT_BUF_COUNT);
 

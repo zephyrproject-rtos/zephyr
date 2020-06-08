@@ -1,5 +1,5 @@
 identifier: nucleo_f746zg
-name: NUCLEO-F746ZG
+name: ST Nucleo F746ZG
 type: mcu
 arch: arm
 toolchain:

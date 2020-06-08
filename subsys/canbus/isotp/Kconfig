@@ -1,0 +1,130 @@
+# ISO-TP configuration options
+
+# Copyright (c) 2019 Alexander Wachter
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ISOTP
+	bool "ISO-TP Transport [EXPERIMENTAL]"
+	select NET_BUF
+	select POLL
+	help
+	  Enable ISO TP support for CAN
+
+if ISOTP
+
+module = ISOTP
+module-str = ISOTP
+source "subsys/logging/Kconfig.template.log_config"
+
+config ISOTP_WFTMAX
+	int "WFTmax (Max WAIT frames before aborting)."
+	default 10
+	range 0 254
+	help
+	  This value defines the maximum number of WAIT frames before the transmission
+	  is aborted.
+
+config ISOTP_BS_TIMEOUT
+	int "Bs timeout [ms] (timeout for receiving the frame control)"
+	default 1000
+	range 200 10000
+	help
+	  Timeout for the reception of the next FC frame. ISO 15765-2: 1000ms
+
+config ISOTP_A_TIMEOUT
+	int "Ar and As timeout [ms] (sending and receiving timeout)"
+	default 1000
+	range 200 10000
+	help
+	  As (sender transmit timeout) and Ar (receiver transmit timeout).
+	  ISO 15765-2: 1000ms
+
+config ISOTP_CR_TIMEOUT
+	int "Cr timeout [ms] (timeout for consecutive frames)"
+	default 1000
+	range 200 10000
+	help
+	  Cr (receiver consecutive frame) timeout.
+	  ISO 15765-2: 1000ms
+
+config ISOTP_WORKQUEUE_PRIO
+	int "Priority level of the RX and TX work queue"
+	default 2
+	help
+	  This value defines the priority level of the work queue thread that
+	  handles flow control, consecutive sending, receiving and callbacks.
+
+config ISOTP_WORKQ_STACK_SIZE
+	int "Work queue stack size"
+	default 256
+	help
+	  This value defines the stack size of the work queue thread that
+	  handles flow control, consecutive sending, receiving and callbacks.
+
+config ISOTP_RX_BUF_COUNT
+	int "Number of data buffers for receiving data"
+	default 4
+	help
+	  Each data buffer will occupy ISOTP_RX_BUF_SIZE + smallish
+	  header (sizeof(struct net_buf)) amount of data.
+
+config ISOTP_RX_BUF_SIZE
+	int "Size of one buffer data block"
+	default 56
+	help
+	  This value defines the size of a single block in the pool. The number of
+	  blocks is given by ISOTP_RX_BUF_COUNT. To be efficient use a multiple of
+	  CAN_DL - 1 (for classic can : 8 - 1 = 7).
+
+config ISOTP_RX_SF_FF_BUF_COUNT
+	int "Number of SF and FF data buffers for receiving data"
+	default 4
+	help
+	  This buffer is used for first and single frames. It is extra because the
+	  buffer has to be ready for the first reception in isr context and therefor
+	  is allocated when binding.
+	  Each buffer will occupy CAN_DL - 1 byte + header (sizeof(struct net_buf))
+	  amount of data.
+
+config ISOTP_USE_TX_BUF
+	bool "Buffer tx writes"
+	default n
+	help
+	  Copy the outgoing data to a net buffer so that the calling function
+	  can discard the data.
+
+if ISOTP_USE_TX_BUF
+
+config ISOTP_TX_BUF_COUNT
+	int "Number of data buffers for sending data"
+	default 4
+	help
+	  Each data buffer will occupy CONFIG_NET_BUF_DATA_SIZE + smallish
+	  header (sizeof(struct net_buf)) amount of data. If context buffers
+	  are used, use the same size here.
+
+config ISOTP_BUF_TX_DATA_POOL_SIZE
+	int "Size of the memory pool where buffers are allocated from"
+	default 256
+	help
+	  This value defines the size of the memory pool where the buffers
+	  for sending are allocated from.
+
+endif # ISOTP_USE_TX_BUF
+
+config ISOTP_ENABLE_CONTEXT_BUFFERS
+	bool "Enable buffered tx contexts"
+	default y
+	help
+	  This option enables buffered sending contexts. This makes send and
+	  forget possible. A memory slab is used to buffer the context.
+
+config ISOTP_TX_CONTEXT_BUF_COUNT
+	int "Amount of context buffers for sending data"
+	default 4
+	depends on ISOTP_ENABLE_CONTEXT_BUFFERS
+	help
+	  This defines the size of the memory slab where the buffers are
+	  allocated from.
+
+endif # ISOTP

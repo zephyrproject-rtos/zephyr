@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_DEPRECATED
+config BOARD_DEPRECATED_RELEASE
 	string
 	help
 	  This hidden option is set in the board configuration and indicates
@@ -23,8 +23,20 @@ source "$(BOARD_DIR)/Kconfig.board"
 
 endchoice
 
+# Parse shields references
+# Don't do it as a menuconfig, as shield selection is a CMake feature.
+rsource "shields/*/Kconfig.shield"
 
 menu "Board Options"
+config QEMU_ICOUNT
+	bool "QEMU icount mode"
+	depends on QEMU_TARGET
+	default y if !NETWORKING
+	help
+	  Enable QEMU virtual instruction counter. The virtual cpu will
+	  execute one instruction every 2^N ns of virtual time. This will
+	  give deterministic execution times from the guest point of view.
+
 # There might not be any board options, hence the optional source
 osource "$(BOARD_DIR)/Kconfig"
 endmenu

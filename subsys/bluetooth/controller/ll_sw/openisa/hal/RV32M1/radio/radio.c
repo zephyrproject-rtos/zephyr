@@ -1,15 +1,20 @@
 /*
  * Copyright (c) 2016 - 2019 Nordic Semiconductor ASA
  * Copyright (c) 2016 Vinayak Kariappa Chettimada
- * Copyright 2019 NXP
+ * Copyright 2019 - 2020 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <string.h>
 #include <sys/printk.h>
 #include <sys/dlist.h>
 #include <sys/mempool_base.h>
+#include <sys/byteorder.h>
+#include <bluetooth/addr.h>
 #include <toolchain.h>
+#include <irq.h>
+#include <errno.h>
 
 #include "util/mem.h"
 #include "hal/ccm.h"
@@ -17,24 +22,33 @@
 #include "ll_sw/pdu.h"
 
 #include "fsl_xcvr.h"
-#include "irq.h"
 #include "hal/cntr.h"
 #include "hal/ticker.h"
 #include "hal/swi.h"
+#include "fsl_cau3_ble.h"	/* must be after irq.h */
 
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
+#define LOG_MODULE_NAME bt_openisa_radio
+#include "common/log.h"
+#include <soc.h>
+#include "hal/debug.h"
 
 static radio_isr_cb_t isr_cb;
 static void *isr_cb_param;
 
+#define RADIO_AESCCM_HDR_MASK 0xE3 /* AES-CCM: NESN, SN, MD bits masked to 0 */
 #define RADIO_PDU_LEN_MAX (BIT(8) - 1)
+#define BYTES_TO_USEC(bytes, bits_per_usec)	\
+		((bytes) * 8 >> (__builtin_ffs(bits_per_usec) - 1))
 
 /* us values */
 #define MIN_CMD_TIME 10		/* Minimum interval for a delayed radio cmd */
 #define RX_MARGIN 8
 #define TX_MARGIN 0
 #define RX_WTMRK 5		/* (AA + PDU header) - 1 */
-#define AA_OVHD 27		/* AA playback overhead, depends on PHY type */
-#define Rx_OVHD 32		/* Rx overhead, depends on PHY type */
+#define AA_OVHD_1MBPS 27	/* AA playback overhead for 1 Mbps PHY */
+#define AA_OVHD_2MBPS 10	/* AA playback overhead for 2 Mbps PHY */
+#define RX_OVHD 32		/* Rx overhead */
 
 #define PB_RX 544	/* half of PB (packet buffer) */
 
@@ -43,6 +57,35 @@ static void *isr_cb_param;
 #define PB_TX_PDU 2		/* Tx PDU offset (in halfwords) in packet
 				 * buffer
 				 */
+
+#define RADIO_ACTIVE_MASK 0x1fff
+#define RADIO_DISABLE_TMR 4		/* us */
+
+/* Delay needed in order to enter Manual DSM.
+ * Must be at least 4 ticks ahead of DSM_TIMER (from RM).
+ */
+#define DSM_ENTER_DELAY_TICKS 6
+
+/* Delay needed in order to exit Manual DSM.
+ * Should be after radio_tmr_start() (2 ticks after lll_clk_on()).
+ * But less that 1.5ms (EVENT_OVERHEAD_XTAL_US) (ULL to LLL time offset).
+ * Must be at least 4 ticks ahead of DSM_TIMER (from RM).
+ */
+#define DSM_EXIT_DELAY_TICKS 30
+
+/* Mask to determine the state of DSM machine */
+#define MAN_DSM_ON (RSIM_DSM_CONTROL_MAN_DEEP_SLEEP_STATUS_MASK \
+		| RSIM_DSM_CONTROL_DSM_MAN_READY_MASK \
+		| RSIM_DSM_CONTROL_MAN_SLEEP_REQUEST_MASK) \
+
+static u32_t dsm_ref; /* DSM reference counter */
+
+static u8_t delayed_radio_start;
+static u8_t delayed_trx;
+static u32_t delayed_ticks_start;
+static u32_t delayed_remainder;
+static u8_t delayed_radio_stop;
+static u32_t delayed_hcto;
 
 static u32_t rtc_start;
 static u32_t rtc_diff_start_us;
@@ -56,6 +99,14 @@ static u32_t tmr_tifs;
 
 static u32_t rx_wu;
 static u32_t tx_wu;
+
+static u8_t phy_mode;		/* Current PHY mode (DR_1MBPS or DR_2MBPS) */
+static u8_t bits_per_usec;	/* This saves the # of bits per usec,
+				 * depending on the PHY mode
+				 */
+static u8_t phy_aa_ovhd;	/* This saves the AA overhead, depending on the
+				 * PHY mode
+				 */
 
 static u32_t isr_tmr_aa;
 static u32_t isr_tmr_end;
@@ -77,6 +128,23 @@ static u8_t MALIGN(4) _pkt_scratch[
 
 static s8_t rssi;
 
+static struct {
+	union {
+		u64_t counter;
+		u8_t bytes[CAU3_AES_BLOCK_SIZE - 1 - 2];
+	} nonce;	/* used by the B0 format but not in-situ */
+	struct pdu_data *rx_pkt_out;
+	struct pdu_data *rx_pkt_in;
+	u8_t auth_mic_valid;
+	u8_t empty_pdu_rxed;
+} ctx_ccm;
+
+#define RPA_NO_IRK_MATCH 0xFF	/* No IRK match in AR table */
+
+static struct {
+	u8_t ar_enable;
+	u32_t irk_idx;
+} radio_ar_ctx = {0U, RPA_NO_IRK_MATCH};
 
 static void tmp_cb(void *param)
 {
@@ -103,6 +171,58 @@ static void get_isr_latency(void)
 	irq_disable(LL_RADIO_IRQn_2nd_lvl);
 }
 
+static u32_t radio_tmr_start_hlp(u8_t trx, u32_t ticks_start, u32_t remainder);
+static void radio_tmr_hcto_configure_hlp(u32_t hcto);
+static void radio_config_after_wake(void)
+{
+	if (!delayed_radio_start) {
+		delayed_radio_stop = 0;
+		return;
+	}
+
+	delayed_radio_start = 0;
+	radio_tmr_start_hlp(delayed_trx, delayed_ticks_start,
+				delayed_remainder);
+
+	if (delayed_radio_stop) {
+		delayed_radio_stop = 0;
+
+		/* Adjust time out as remainder was in radio_tmr_start_hlp() */
+		delayed_hcto += rtc_diff_start_us;
+		radio_tmr_hcto_configure_hlp(delayed_hcto);
+	}
+}
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+static void ar_execute(void *pkt)
+{
+	struct pdu_adv *pdu_adv = (struct pdu_adv *)pkt;
+	bt_addr_t *rpa = (bt_addr_t *)&pdu_adv->payload[0];
+
+	/* Perform address resolution when TxAdd=1 and address is resolvable */
+	if (pdu_adv->tx_addr && BT_ADDR_IS_RPA(rpa)) {
+		u32_t *hash, *prand;
+		status_t status;
+
+		/* Use pointers to avoid breaking strict aliasing */
+		hash = (u32_t *)(&rpa->val[0]);
+		prand = (u32_t *)(&rpa->val[3]);
+
+		/* CAUv3 needs hash & prand in le format, right-justified */
+		status = CAU3_RPAtableSearch(CAU3, (*prand & 0xFFFFFF),
+					(*hash & 0xFFFFFF),
+					&radio_ar_ctx.irk_idx,
+					kCAU3_TaskDoneEvent);
+		if (status != kStatus_Success) {
+			radio_ar_ctx.irk_idx = RPA_NO_IRK_MATCH;
+			BT_ERR("CAUv3 RPA table search failed %d", status);
+			return;
+		}
+	}
+
+	radio_ar_ctx.ar_enable = 0U;
+}
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
 static void pkt_rx(void)
 {
@@ -131,7 +251,7 @@ static void pkt_rx(void)
 	len += 2;
 
 	/* Add to AA time, PDU + CRC time */
-	isr_tmr_end = isr_tmr_aa + (len + 3) * 8;
+	isr_tmr_end = isr_tmr_aa + BYTES_TO_USEC(len + 3, bits_per_usec);
 
 	/* If not enough time for warmup after we copy the PDU from
 	 * packet buffer, send delayed command now
@@ -139,15 +259,24 @@ static void pkt_rx(void)
 	if (next_radio_cmd) {
 		/* Start Rx/Tx in TIFS */
 		idx = isr_tmr_end + tmr_tifs - next_wu;
+		GENFSK->XCVR_CTRL = next_radio_cmd;
 		GENFSK->T1_CMP = GENFSK_T1_CMP_T1_CMP(idx) |
 				 GENFSK_T1_CMP_T1_CMP_EN(1);
-		GENFSK->XCVR_CTRL = next_radio_cmd;
 		next_radio_cmd = 0;
 	}
 
 	/* Can't rely on data read from packet buffer while in Rx */
 	/* Wait for Rx to finish */
 	while (*sts & GENFSK_XCVR_STS_RX_IN_PROGRESS_MASK) {
+	}
+
+	if (ctx_ccm.rx_pkt_out) {
+		*(u16_t *)ctx_ccm.rx_pkt_out = pb[0];
+		if (len < CAU3_BLE_MIC_SIZE) {
+			ctx_ccm.rx_pkt_out = 0;
+			ctx_ccm.rx_pkt_in = 0;
+			ctx_ccm.empty_pdu_rxed = 1;
+		}
 	}
 
 	/* Copy the PDU */
@@ -161,20 +290,48 @@ static void pkt_rx(void)
 		rx_pkt_ptr[len - 1] =  ((u8_t *)&tmp)[0];
 	}
 
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	/* Perform address resolution on this Rx */
+	if (radio_ar_ctx.ar_enable) {
+		ar_execute(rxb);
+	}
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+
 	force_bad_crc = 0;
 }
 
 #define IRQ_MASK ~(GENFSK_IRQ_CTRL_T2_IRQ_MASK | \
 		   GENFSK_IRQ_CTRL_RX_WATERMARK_IRQ_MASK | \
-		   GENFSK_IRQ_CTRL_TX_IRQ_MASK)
+		   GENFSK_IRQ_CTRL_TX_IRQ_MASK | \
+		   GENFSK_IRQ_CTRL_WAKE_IRQ_MASK)
 void isr_radio(void *arg)
 {
 	ARG_UNUSED(arg);
 
 	u32_t tmr = GENFSK->EVENT_TMR & GENFSK_EVENT_TMR_EVENT_TMR_MASK;
 	u32_t irq = GENFSK->IRQ_CTRL;
+	u32_t valid = 0;
+	/* We need to check for a valid IRQ source.
+	 * In theory, we could get to this ISR after the IRQ source was cleared.
+	 * This could happen due to the way LLL interacts with IRQs
+	 * (radio_isr_set(), radio_disable()) and their propagation path:
+	 * GENFSK -> INTMUX(does not latch pending source interrupts)
+	 * INTMUX -> EVENT_UNIT
+	 */
+
+	if (irq & GENFSK_IRQ_CTRL_WAKE_IRQ_MASK) {
+		/* Clear pending interrupts */
+		GENFSK->IRQ_CTRL &= 0xffffffff;
+
+		/* Disable DSM_TIMER */
+		RSIM->DSM_CONTROL &= ~RSIM_DSM_CONTROL_DSM_TIMER_EN(1);
+
+		radio_config_after_wake();
+		return;
+	}
 
 	if (irq & GENFSK_IRQ_CTRL_TX_IRQ_MASK) {
+		valid = 1;
 		GENFSK->IRQ_CTRL &= (IRQ_MASK | GENFSK_IRQ_CTRL_TX_IRQ_MASK);
 		GENFSK->T1_CMP &= ~GENFSK_T1_CMP_T1_CMP_EN_MASK;
 
@@ -186,6 +343,7 @@ void isr_radio(void *arg)
 	}
 
 	if (irq & GENFSK_IRQ_CTRL_RX_WATERMARK_IRQ_MASK) {
+		valid = 1;
 		/* Disable Rx timeout */
 		/* 0b1010..RX Cancel -- Cancels pending RX events but do not
 		 *			abort a RX-in-progress
@@ -198,7 +356,8 @@ void isr_radio(void *arg)
 		GENFSK->T1_CMP &= ~GENFSK_T1_CMP_T1_CMP_EN_MASK;
 
 		/* Fix reported AA time */
-		isr_tmr_aa = GENFSK->TIMESTAMP - AA_OVHD;
+		isr_tmr_aa = GENFSK->TIMESTAMP - phy_aa_ovhd;
+
 		if (tmr_aa_save) {
 			tmr_aa = isr_tmr_aa;
 		}
@@ -213,6 +372,7 @@ void isr_radio(void *arg)
 	}
 
 	if (irq & GENFSK_IRQ_CTRL_T2_IRQ_MASK) {
+		valid = 1;
 		GENFSK->IRQ_CTRL &= (IRQ_MASK | GENFSK_IRQ_CTRL_T2_IRQ_MASK);
 		/* Disable both comparators */
 		GENFSK->T1_CMP &= ~GENFSK_T1_CMP_T1_CMP_EN_MASK;
@@ -222,24 +382,30 @@ void isr_radio(void *arg)
 	if (radio_trx && next_radio_cmd) {
 		/* Start Rx/Tx in TIFS */
 		tmr = isr_tmr_end + tmr_tifs - next_wu;
+		GENFSK->XCVR_CTRL = next_radio_cmd;
 		GENFSK->T1_CMP = GENFSK_T1_CMP_T1_CMP(tmr) |
 				 GENFSK_T1_CMP_T1_CMP_EN(1);
-		GENFSK->XCVR_CTRL = next_radio_cmd;
 		next_radio_cmd = 0;
 	}
 
-	isr_cb(isr_cb_param);
+	if (valid) {
+		isr_cb(isr_cb_param);
+	}
 }
 
 void radio_isr_set(radio_isr_cb_t cb, void *param)
 {
 	irq_disable(LL_RADIO_IRQn_2nd_lvl);
+	irq_disable(LL_RADIO_IRQn);
 
 	isr_cb_param = param;
 	isr_cb = cb;
 
 	/* Clear pending interrupts */
 	GENFSK->IRQ_CTRL &= 0xffffffff;
+	EVENT_UNIT->INTPTPENDCLEAR = (u32_t)(1U << LL_RADIO_IRQn);
+
+	irq_enable(LL_RADIO_IRQn);
 	irq_enable(LL_RADIO_IRQn_2nd_lvl);
 }
 
@@ -318,6 +484,12 @@ static void hpmcal_disable(void)
 
 void radio_setup(void)
 {
+	XCVR_Reset();
+
+#if defined(CONFIG_BT_CTLR_PRIVACY) || defined(CONFIG_BT_CTLR_LE_ENC)
+	CAU3_Init(CAU3);
+#endif /* CONFIG_BT_CTLR_PRIVACY || CONFIG_BT_CTLR_LE_ENC */
+
 	XCVR_Init(GFSK_BT_0p5_h_0p5, DR_1MBPS);
 	XCVR_SetXtalTrim(41);
 
@@ -325,13 +497,18 @@ void radio_setup(void)
 	hpmcal_disable();
 #endif
 
-	/* enable the CRC as it is disabled by default after reset */
+	/* Enable Deep Sleep Mode for GENFSK */
+	XCVR_MISC->XCVR_CTRL |= XCVR_CTRL_XCVR_CTRL_MAN_DSM_SEL(2);
+
+	/* Enable the CRC as it is disabled by default after reset */
 	XCVR_MISC->CRCW_CFG |= XCVR_CTRL_CRCW_CFG_CRCW_EN(1);
 
 	/* Assign Radio #0 Interrupt to GENERIC_FSK */
 	XCVR_MISC->XCVR_CTRL |= XCVR_CTRL_XCVR_CTRL_RADIO0_IRQ_SEL(3);
 
-	GENFSK->BITRATE = DR_1MBPS;
+	phy_mode = GENFSK->BITRATE = DR_1MBPS;
+	bits_per_usec = 1;
+	phy_aa_ovhd = AA_OVHD_1MBPS;
 
 	/*
 	 * Split the buffer in equal parts: first half for Tx,
@@ -351,13 +528,27 @@ void radio_setup(void)
 	GENFSK->IRQ_CTRL = GENFSK_IRQ_CTRL_GENERIC_FSK_IRQ_EN(1) |
 			   GENFSK_IRQ_CTRL_RX_WATERMARK_IRQ_EN(1) |
 			   GENFSK_IRQ_CTRL_TX_IRQ_EN(1) |
-			   GENFSK_IRQ_CTRL_T2_IRQ_EN(1);
+			   GENFSK_IRQ_CTRL_T2_IRQ_EN(1) |
+			   GENFSK_IRQ_CTRL_WAKE_IRQ_EN(1);
 
 	/* Disable Rx recycle */
 	GENFSK->IRQ_CTRL |= GENFSK_IRQ_CTRL_CRC_IGNORE(1);
 	GENFSK->WHITEN_SZ_THR |= GENFSK_WHITEN_SZ_THR_REC_BAD_PKT(1);
 
+	/* Turn radio on to measure ISR latency */
+	if (radio_is_off()) {
+		dsm_ref = 0;
+		radio_wake();
+		while (radio_is_off()) {
+		}
+	} else {
+		dsm_ref = 1;
+	}
+
 	get_isr_latency();
+
+	/* Turn radio off */
+	radio_sleep();
 }
 
 void radio_reset(void)
@@ -368,19 +559,50 @@ void radio_reset(void)
 
 void radio_phy_set(u8_t phy, u8_t flags)
 {
-	ARG_UNUSED(phy);
+	int err = 0;
 	ARG_UNUSED(flags);
 
-	/* This function should set one of three modes:
+	/* This function sets one of two modes:
 	 * - BLE 1 Mbps
 	 * - BLE 2 Mbps
-	 * - Coded BLE
-	 * We set this on radio_setup() function. There radio is
-	 * setup for DataRate of 1 Mbps.
-	 * For now this function does nothing. In the future it
-	 * may have to reset the radio
-	 * to the 2 Mbps (the only other mode supported by Vega radio).
+	 * Coded BLE is not supported by VEGA
 	 */
+	switch (phy) {
+	case BIT(0):
+	default:
+		if (phy_mode == DR_1MBPS) {
+			break;
+		}
+
+		err = XCVR_ChangeMode(GFSK_BT_0p5_h_0p5, DR_1MBPS);
+		if (err) {
+			BT_ERR("Failed to change PHY to 1 Mbps");
+			BT_ASSERT(0);
+		}
+
+		phy_mode = GENFSK->BITRATE = DR_1MBPS;
+		bits_per_usec = 1;
+		phy_aa_ovhd = AA_OVHD_1MBPS;
+
+		break;
+
+	case BIT(1):
+		if (phy_mode == DR_2MBPS) {
+			break;
+		}
+
+		err = XCVR_ChangeMode(GFSK_BT_0p5_h_0p5, DR_2MBPS);
+		if (err) {
+			BT_ERR("Failed to change PHY to 2 Mbps");
+			BT_ASSERT(0);
+		}
+
+		phy_mode = GENFSK->BITRATE = DR_2MBPS;
+		bits_per_usec = 2;
+		phy_aa_ovhd = AA_OVHD_2MBPS;
+
+		break;
+	}
 }
 
 void radio_tx_power_set(u32_t power)
@@ -563,15 +785,17 @@ u32_t radio_rx_chain_delay_get(u8_t phy, u8_t flags)
 {
 	/* RX_WTMRK = AA + PDU header, but AA time is already accounted for */
 	/* PDU header (assume 2 bytes) => 16us, depends on PHY type */
-	/* 2 * Rx_OVHD = RX_WATERMARK_IRQ time - TIMESTAMP - isr_latency */
+	/* 2 * RX_OVHD = RX_WATERMARK_IRQ time - TIMESTAMP - isr_latency */
 	/* The rest is Rx margin that for now isn't well defined */
-	return 16 + 2 * Rx_OVHD + RX_MARGIN + isr_latency + Rx_OVHD;
+	return BYTES_TO_USEC(2, bits_per_usec) + 2 * RX_OVHD +
+					RX_MARGIN + isr_latency +
+					RX_OVHD;
 }
 
 void radio_rx_enable(void)
 {
 	/* Wait for idle state */
-	while (GENFSK->XCVR_CTRL & GENFSK_XCVR_CTRL_XCVR_BUSY_MASK) {
+	while (GENFSK->XCVR_STS & RADIO_ACTIVE_MASK) {
 	}
 
 	/* 0b0101..RX Start Now */
@@ -581,7 +805,7 @@ void radio_rx_enable(void)
 void radio_tx_enable(void)
 {
 	/* Wait for idle state */
-	while (GENFSK->XCVR_CTRL & GENFSK_XCVR_CTRL_XCVR_BUSY_MASK) {
+	while (GENFSK->XCVR_STS & RADIO_ACTIVE_MASK) {
 	}
 
 	/* 0b0001..TX Start Now */
@@ -590,14 +814,29 @@ void radio_tx_enable(void)
 
 void radio_disable(void)
 {
+	/* Disable both comparators */
+	GENFSK->T1_CMP = 0;
+	GENFSK->T2_CMP = 0;
+
 	/*
 	 * 0b1011..Abort All - Cancels all pending events and abort any
 	 * sequence-in-progress
 	 */
 	GENFSK->XCVR_CTRL = GENFSK_XCVR_CTRL_SEQCMD(0xb);
 
+	/* Wait for idle state */
+	while (GENFSK->XCVR_STS & RADIO_ACTIVE_MASK) {
+	}
+
+	/* Clear pending interrupts */
+	GENFSK->IRQ_CTRL &= 0xffffffff;
+	EVENT_UNIT->INTPTPENDCLEAR = (u32_t)(1U << LL_RADIO_IRQn);
+
+	next_radio_cmd = 0;
+	radio_trx = 0;
+
 	/* generate T2 interrupt to get into isr_radio() */
-	u32_t tmr = GENFSK->EVENT_TMR + 8;
+	u32_t tmr = GENFSK->EVENT_TMR + RADIO_DISABLE_TMR;
 
 	GENFSK->T2_CMP = GENFSK_T2_CMP_T2_CMP(tmr) | GENFSK_T2_CMP_T2_CMP_EN(1);
 }
@@ -725,7 +964,7 @@ u32_t radio_rssi_is_ready(void)
 void radio_filter_configure(u8_t bitmask_enable, u8_t bitmask_addr_type,
 			    u8_t *bdaddr)
 {
-	printk("%s\n", __func__);
+	/* printk("%s\n", __func__); */
 }
 
 void radio_filter_disable(void)
@@ -781,6 +1020,10 @@ void radio_tmr_tifs_set(u32_t tifs)
 static u32_t radio_tmr_start_hlp(u8_t trx, u32_t ticks_start, u32_t remainder)
 {
 	u32_t radio_start_now_cmd = 0;
+
+	/* Disable both comparators */
+	GENFSK->T1_CMP = 0;
+	GENFSK->T2_CMP = 0;
 
 	/* Save it for later */
 	rtc_start = ticks_start;
@@ -856,6 +1099,15 @@ u32_t radio_tmr_start(u8_t trx, u32_t ticks_start, u32_t remainder)
 	}
 	remainder /= 1000000UL;
 
+	if (radio_is_off()) {
+		delayed_radio_start = 1;
+		delayed_trx = trx;
+		delayed_ticks_start = ticks_start;
+		delayed_remainder = remainder;
+		return remainder;
+	}
+
+	delayed_radio_start = 0;
 	return radio_tmr_start_hlp(trx, ticks_start, remainder);
 }
 
@@ -885,21 +1137,33 @@ u32_t radio_tmr_start_get(void)
 
 void radio_tmr_stop(void)
 {
-	/* Deep Sleep Mode (DSM)? */
 }
 
-void radio_tmr_hcto_configure(u32_t hcto)
+static void radio_tmr_hcto_configure_hlp(u32_t hcto)
 {
 	if (skip_hcto) {
 		skip_hcto = 0;
 		return;
 	}
 
+	/* 0b1001..RX Stop @ T2 Timer Compare Match (EVENT_TMR = T2_CMP) */
+	GENFSK->XCVR_CTRL = GENFSK_XCVR_CTRL_SEQCMD(0x9);
 	GENFSK->T2_CMP = GENFSK_T2_CMP_T2_CMP(hcto) |
 			 GENFSK_T2_CMP_T2_CMP_EN(1);
 
-	/* 0b1001..RX Stop @ T2 Timer Compare Match (EVENT_TMR = T2_CMP) */
-	GENFSK->XCVR_CTRL = GENFSK_XCVR_CTRL_SEQCMD(0x9);
+}
+
+/* Header completion time out */
+void radio_tmr_hcto_configure(u32_t hcto)
+{
+	if (delayed_radio_start) {
+		delayed_radio_stop = 1;
+		delayed_hcto = hcto;
+		return;
+	}
+
+	delayed_radio_stop = 0;
+	radio_tmr_hcto_configure_hlp(hcto);
 }
 
 void radio_tmr_aa_capture(void)
@@ -955,48 +1219,394 @@ u32_t radio_tmr_sample_get(void)
 	return 0;
 }
 
+void *radio_ccm_rx_pkt_set_ut(struct ccm *ccm, u8_t phy, void *pkt)
+{
+	/* Saved by LL as MSO to LSO in the ccm->key
+	 * SK (LSO to MSO)
+	 * :0x66:0xC6:0xC2:0x27:0x8E:0x3B:0x8E:0x05
+	 * :0x3E:0x7E:0xA3:0x26:0x52:0x1B:0xAD:0x99
+	 */
+	u8_t key_local[16] __aligned(4) = {
+		0x99, 0xad, 0x1b, 0x52, 0x26, 0xa3, 0x7e, 0x3e,
+		0x05, 0x8e, 0x3b, 0x8e, 0x27, 0xc2, 0xc6, 0x66
+	};
+	void *result;
+
+	/* ccm.key[16] is stored in MSO format, as retrieved from e function */
+	memcpy(ccm->key, key_local, sizeof(key_local));
+
+	/* Input std sample data, vol 6, part C, ch 1 */
+	_pkt_scratch[0] = 0x0f;
+	_pkt_scratch[1] = 0x05;
+	_pkt_scratch[2] = 0x9f; /* cleartext = 0x06*/
+	_pkt_scratch[3] = 0xcd;
+	_pkt_scratch[4] = 0xa7;
+	_pkt_scratch[5] = 0xf4;
+	_pkt_scratch[6] = 0x48;
+
+	/* IV std sample data, vol 6, part C, ch 1, stored in LL in LSO format
+	 * IV (LSO to MSO)      :0x24:0xAB:0xDC:0xBA:0xBE:0xBA:0xAF:0xDE
+	 */
+	ccm->iv[0] = 0x24;
+	ccm->iv[1] = 0xAB;
+	ccm->iv[2] = 0xDC;
+	ccm->iv[3] = 0xBA;
+	ccm->iv[4] = 0xBE;
+	ccm->iv[5] = 0xBA;
+	ccm->iv[6] = 0xAF;
+	ccm->iv[7] = 0xDE;
+
+	result = radio_ccm_rx_pkt_set(ccm, phy, pkt);
+	radio_ccm_is_done();
+
+	if (ctx_ccm.auth_mic_valid == 1 && ((u8_t *)pkt)[2] == 0x06) {
+		BT_INFO("Passed decrypt\n");
+	} else {
+		BT_INFO("Failed decrypt\n");
+	}
+
+	return result;
+}
+
 void *radio_ccm_rx_pkt_set(struct ccm *ccm, u8_t phy, void *pkt)
 {
-	printk("%s\n", __func__);
-	return NULL;
+	u8_t key_local[16] __aligned(4);
+	status_t status;
+	cau3_handle_t handle = {
+			.keySlot = kCAU3_KeySlot2,
+			.taskDone = kCAU3_TaskDonePoll
+	};
+	ARG_UNUSED(phy);
+
+	/* ccm.key[16] is stored in MSO format, as retrieved from e function */
+	memcpy(key_local, ccm->key, sizeof(key_local));
+	ctx_ccm.auth_mic_valid = 0;
+	ctx_ccm.empty_pdu_rxed = 0;
+	ctx_ccm.rx_pkt_in = (struct pdu_data *)_pkt_scratch;
+	ctx_ccm.rx_pkt_out = (struct pdu_data *)pkt;
+	ctx_ccm.nonce.counter = ccm->counter;	/* LSO to MSO, counter is LE */
+	/* The directionBit set to 1 for Data Physical Chan PDUs sent by
+	 * the master and set to 0 for Data Physical Chan PDUs sent by the slave
+	 */
+	ctx_ccm.nonce.bytes[4] |= ccm->direction << 7;
+	memcpy(&ctx_ccm.nonce.bytes[5], ccm->iv, 8); /* LSO to MSO */
+
+	/* Loads the key into CAU3's DMEM and expands the AES key schedule. */
+	status = CAU3_AES_SetKey(CAU3, &handle, key_local, 16);
+	if (status != kStatus_Success) {
+		BT_ERR("CAUv3 AES key set failed %d", status);
+		return NULL;
+	}
+
+	return _pkt_scratch;
+}
+
+void *radio_ccm_tx_pkt_set_ut(struct ccm *ccm, void *pkt)
+{
+	/* Clear:
+	 * 06 1b 17 00 37 36 35 34 33 32 31 30 41 42 43
+	 * 44 45 46 47 48 49 4a 4b 4c 4d 4e 4f 50 51
+	 */
+	u8_t data_in[29] = {
+		0x06, 0x1b, 0x17, 0x00, 0x37, 0x36, 0x35, 0x34,
+		0x33, 0x32, 0x31, 0x30, 0x41, 0x42, 0x43, 0x44,
+		0x45, 0x46, 0x47, 0x48, 0x49, 0x4a, 0x4b, 0x4c,
+		0x4d, 0x4e, 0x4f, 0x50, 0x51
+	};
+	/* LL_DATA2:
+	 * 06 1f f3 88 81 e7 bd 94 c9 c3 69 b9 a6 68 46
+	 * dd 47 86 aa 8c 39 ce 54 0d 0d ae 3a dc df 89 b9 60 88
+	 */
+	u8_t data_ref_out[33] = {
+		0x06, 0x1f, 0xf3, 0x88, 0x81, 0xe7, 0xbd, 0x94,
+		0xc9, 0xc3, 0x69, 0xb9, 0xa6, 0x68, 0x46, 0xdd,
+		0x47, 0x86, 0xaa, 0x8c, 0x39, 0xce, 0x54, 0x0d,
+		0x0d, 0xae, 0x3a, 0xdc, 0xdf,
+		0x89, 0xb9, 0x60, 0x88
+	};
+	/* Saved by LL as MSO to LSO in the ccm->key
+	 * SK (LSO to MSO)
+	 * :0x66:0xC6:0xC2:0x27:0x8E:0x3B:0x8E:0x05
+	 * :0x3E:0x7E:0xA3:0x26:0x52:0x1B:0xAD:0x99
+	 */
+	u8_t key_local[16] __aligned(4) = {
+		0x99, 0xad, 0x1b, 0x52, 0x26, 0xa3, 0x7e, 0x3e,
+		0x05, 0x8e, 0x3b, 0x8e, 0x27, 0xc2, 0xc6, 0x66
+	};
+	void *result;
+
+	/* ccm.key[16] is stored in MSO format, as retrieved from e function */
+	memcpy(ccm->key, key_local, sizeof(key_local));
+	memcpy(pkt, data_in, sizeof(data_in));
+	/* IV std sample data, vol 6, part C, ch 1, stored in LL in LSO format
+	 * IV (LSO to MSO)      :0x24:0xAB:0xDC:0xBA:0xBE:0xBA:0xAF:0xDE
+	 */
+	ccm->iv[0] = 0x24;
+	ccm->iv[1] = 0xAB;
+	ccm->iv[2] = 0xDC;
+	ccm->iv[3] = 0xBA;
+	ccm->iv[4] = 0xBE;
+	ccm->iv[5] = 0xBA;
+	ccm->iv[6] = 0xAF;
+	ccm->iv[7] = 0xDE;
+	/* 4. Data packet2 (packet 1, S --> M) */
+	ccm->counter = 1;
+	ccm->direction = 0;
+
+	result = radio_ccm_tx_pkt_set(ccm, pkt);
+
+	if (memcmp(result, data_ref_out, sizeof(data_ref_out))) {
+		BT_INFO("Failed encrypt\n");
+	} else {
+		BT_INFO("Passed encrypt\n");
+	}
+
+	return result;
 }
 
 void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt)
 {
-	printk("%s\n", __func__);
-	return NULL;
+	u8_t key_local[16] __aligned(4);
+	u8_t aad;
+	u8_t *auth_mic;
+	status_t status;
+	cau3_handle_t handle = {
+			.keySlot = kCAU3_KeySlot2,
+			.taskDone = kCAU3_TaskDonePoll
+	};
+
+	/* Test for Empty PDU and bypass encryption */
+	if (((struct pdu_data *)pkt)->len == 0) {
+		return pkt;
+	}
+
+	/* ccm.key[16] is stored in MSO format, as retrieved from e function */
+	memcpy(key_local, ccm->key, sizeof(key_local));
+	ctx_ccm.nonce.counter = ccm->counter;	/* LSO to MSO, counter is LE */
+	/* The directionBit set to 1 for Data Physical Chan PDUs sent by
+	 * the master and set to 0 for Data Physical Chan PDUs sent by the slave
+	 */
+	ctx_ccm.nonce.bytes[4] |= ccm->direction << 7;
+	memcpy(&ctx_ccm.nonce.bytes[5], ccm->iv, 8); /* LSO to MSO */
+
+	/* Loads the key into CAU3's DMEM and expands the AES key schedule. */
+	status = CAU3_AES_SetKey(CAU3, &handle, key_local, 16);
+	if (status != kStatus_Success) {
+		BT_ERR("CAUv3 AES key set failed %d", status);
+		return NULL;
+	}
+
+	auth_mic = _pkt_scratch + 2 + ((struct pdu_data *)pkt)->len;
+	aad = *(u8_t *)pkt & RADIO_AESCCM_HDR_MASK;
+
+	status = CAU3_AES_CCM_EncryptTag(CAU3, &handle,
+				 (u8_t *)pkt + 2, ((struct pdu_data *)pkt)->len,
+				 _pkt_scratch + 2,
+				 ctx_ccm.nonce.bytes, 13,
+				 &aad, 1, auth_mic, CAU3_BLE_MIC_SIZE);
+	if (status != kStatus_Success) {
+		BT_ERR("CAUv3 AES CCM decrypt failed %d", status);
+		return 0;
+	}
+
+	_pkt_scratch[0] = *(u8_t *)pkt;
+	_pkt_scratch[1] = ((struct pdu_data *)pkt)->len + CAU3_BLE_MIC_SIZE;
+
+	return _pkt_scratch;
 }
 
 u32_t radio_ccm_is_done(void)
 {
-	printk("%s\n", __func__);
-	return 0;
+	status_t status;
+	u8_t *auth_mic;
+	u8_t aad;
+	cau3_handle_t handle = {
+			.keySlot = kCAU3_KeySlot2,
+			.taskDone = kCAU3_TaskDonePoll
+	};
+
+	if (ctx_ccm.rx_pkt_in->len > CAU3_BLE_MIC_SIZE) {
+		auth_mic = (u8_t *)ctx_ccm.rx_pkt_in + 2 +
+				ctx_ccm.rx_pkt_in->len - CAU3_BLE_MIC_SIZE;
+		aad = *(u8_t *)ctx_ccm.rx_pkt_in & RADIO_AESCCM_HDR_MASK;
+		status = CAU3_AES_CCM_DecryptTag(CAU3, &handle,
+				(u8_t *)ctx_ccm.rx_pkt_in + 2,
+				(u8_t *)ctx_ccm.rx_pkt_out + 2,
+				ctx_ccm.rx_pkt_in->len - CAU3_BLE_MIC_SIZE,
+				ctx_ccm.nonce.bytes, 13,
+				&aad, 1, auth_mic, CAU3_BLE_MIC_SIZE);
+		if (status != kStatus_Success) {
+			BT_ERR("CAUv3 AES CCM decrypt failed %d", status);
+			return 0;
+		}
+
+		ctx_ccm.auth_mic_valid = handle.micPassed;
+		ctx_ccm.rx_pkt_out->len -= 4;
+
+	} else if (ctx_ccm.rx_pkt_in->len == 0) {
+		/* Just copy input into output */
+		*ctx_ccm.rx_pkt_out = *ctx_ccm.rx_pkt_in;
+		ctx_ccm.auth_mic_valid = 1;
+		ctx_ccm.empty_pdu_rxed = 1;
+	} else {
+		return 0;   /* length only allowed 0, not 1,2,3,4 */
+	}
+
+	return 1;
 }
 
 u32_t radio_ccm_mic_is_valid(void)
 {
-	printk("%s\n", __func__);
-	return 0;
+	return ctx_ccm.auth_mic_valid;
+}
+
+u32_t radio_ccm_is_available(void)
+{
+	return ctx_ccm.empty_pdu_rxed;
 }
 
 void radio_ar_configure(u32_t nirk, void *irk)
 {
-	printk("%s\n", __func__);
+	status_t status;
+	u8_t pirk[16];
+
+	/* Initialize CAUv3 RPA table */
+	status = CAU3_RPAtableInit(CAU3, kCAU3_TaskDoneEvent);
+	if (kStatus_Success != status) {
+		BT_ERR("CAUv3 RPA table init failed");
+		return;
+	}
+
+	/* CAUv3 RPA table is limited to CONFIG_BT_CTLR_RL_SIZE entries */
+	if (nirk > CONFIG_BT_CTLR_RL_SIZE) {
+		BT_WARN("Max CAUv3 RPA table size is %d",
+			CONFIG_BT_CTLR_RL_SIZE);
+		nirk = CONFIG_BT_CTLR_RL_SIZE;
+	}
+
+	/* Insert RPA keys(IRK) in table */
+	for (int i = 0; i < nirk; i++) {
+		/* CAUv3 needs IRK in le format */
+		sys_memcpy_swap(pirk, (u8_t *)irk + i * 16, 16);
+		status = CAU3_RPAtableInsertKey(CAU3, (uint32_t *)&pirk,
+						kCAU3_TaskDoneEvent);
+		if (kStatus_Success != status) {
+			BT_ERR("CAUv3 RPA table insert failed");
+			return;
+		}
+	}
+
+	/* RPA Table was configured, it can be used for next Rx */
+	radio_ar_ctx.ar_enable = 1U;
 }
 
 u32_t radio_ar_match_get(void)
 {
-	/* printk("%s\n", __func__); */
-	return 0;
+	return radio_ar_ctx.irk_idx;
 }
 
 void radio_ar_status_reset(void)
 {
-	/* printk("%s\n", __func__); */
+	radio_ar_ctx.ar_enable = 0U;
+	radio_ar_ctx.irk_idx = RPA_NO_IRK_MATCH;
 }
 
 u32_t radio_ar_has_match(void)
 {
-	/* printk("%s\n", __func__); */
+	return (radio_ar_ctx.irk_idx != RPA_NO_IRK_MATCH);
+}
+
+u32_t radio_sleep(void)
+{
+
+	if (dsm_ref == 0) {
+		return -EALREADY;
+	}
+
+	u32_t localref = --dsm_ref;
+#if (CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_HIGH_PRIO) && \
+	(CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
+	/* TODO:
+	 * These operations (decrement, check) should be atomic/critical section
+	 * since we turn radio on/off from different contexts/ISRs (LLL, radio).
+	 * It's fine for now as all the contexts have the same priority and
+	 * don't preempt each other.
+	 */
+#else
+#error "Missing atomic operation in radio_sleep()"
+#endif
+	if (localref == 0) {
+
+		u32_t status = (RSIM->DSM_CONTROL & MAN_DSM_ON);
+
+		if (status) {
+			/* Already in sleep mode */
+			return 0;
+		}
+
+		/* Disable DSM_TIMER */
+		RSIM->DSM_CONTROL &= ~RSIM_DSM_CONTROL_DSM_TIMER_EN(1);
+
+		/* Get current DSM_TIMER value */
+		u32_t dsm_timer = RSIM->DSM_TIMER;
+
+		/* Set Sleep time after DSM_ENTER_DELAY */
+		RSIM->MAN_SLEEP = RSIM_MAN_SLEEP_MAN_SLEEP_TIME(dsm_timer +
+				DSM_ENTER_DELAY_TICKS);
+
+		/* Set Wake time to max, we use DSM early exit */
+		RSIM->MAN_WAKE = RSIM_MAN_WAKE_MAN_WAKE_TIME(dsm_timer - 1);
+
+		/* MAN wakeup request enable */
+		RSIM->DSM_CONTROL |= RSIM_DSM_CONTROL_MAN_WAKEUP_REQUEST_EN(1);
+
+		/* Enable DSM, sending a sleep request */
+		GENFSK->DSM_CTRL |= GENFSK_DSM_CTRL_GEN_SLEEP_REQUEST(1);
+
+		/* Enable DSM_TIMER */
+		RSIM->DSM_CONTROL |= RSIM_DSM_CONTROL_DSM_TIMER_EN(1);
+	}
+
 	return 0;
+}
+
+u32_t radio_wake(void)
+{
+	u32_t localref = ++dsm_ref;
+#if (CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_HIGH_PRIO) && \
+	(CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
+	/* TODO:
+	 * These operations (increment, check) should be atomic/critical section
+	 * since we turn radio on/off from different contexts/ISRs (LLL, radio).
+	 * It's fine for now as all the contexts have the same priority and
+	 * don't preempt each other.
+	 */
+#else
+#error "Missing atomic operation in radio_wake()"
+#endif
+	if (localref == 1) {
+
+		u32_t status = (RSIM->DSM_CONTROL & MAN_DSM_ON);
+
+		if (!status) {
+			/* Not in sleep mode */
+			return 0;
+		}
+
+		/* Get current DSM_TIMER value */
+		u32_t dsm_timer = RSIM->DSM_TIMER;
+
+		/* Set Wake time after DSM_ENTER_DELAY */
+		RSIM->MAN_WAKE = RSIM_MAN_WAKE_MAN_WAKE_TIME(dsm_timer +
+				DSM_EXIT_DELAY_TICKS);
+	}
+
+	return 0;
+}
+
+u32_t radio_is_off(void)
+{
+	u32_t status = (RSIM->DSM_CONTROL & MAN_DSM_ON);
+
+	return status;
 }

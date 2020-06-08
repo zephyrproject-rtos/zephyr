@@ -7,79 +7,24 @@ config BOARD
 	default "rv32m1_vega_ri5cy" if SOC_OPENISA_RV32M1_RI5CY
 	default "rv32m1_vega_zero_riscy" if SOC_OPENISA_RV32M1_ZERO_RISCY
 
-if UART_RV32M1_LPUART
-
-config UART_RV32M1_LPUART_0
-	default y if UART_CONSOLE
-
-endif # UART_RV32M1
-
-if PINMUX_RV32M1
-
-config PINMUX_RV32M1_PORTA
-	default y
-
-config PINMUX_RV32M1_PORTB
-	default y
-
-config PINMUX_RV32M1_PORTC
-	default y
-
-config PINMUX_RV32M1_PORTD
-	default y
-
-config PINMUX_RV32M1_PORTE
-	default y if RV32M1_INTMUX
-
-endif # PINMUX_RV32M1
-
-if GPIO_RV32M1
-
-config GPIO_RV32M1_PORTA
-	default y
-
-config GPIO_RV32M1_PORTB
-	default y if RV32M1_INTMUX
-
-config GPIO_RV32M1_PORTC
-	default y if RV32M1_INTMUX
-
-config GPIO_RV32M1_PORTD
-	default y if RV32M1_INTMUX
-
-config GPIO_RV32M1_PORTE
-	default y if RV32M1_INTMUX
-
-endif # GPIO_RV32M1
-
-if SERIAL
-
 config UART_RV32M1_LPUART
 	default y
-
-endif # SERIAL
-
-if I2C
-
-config I2C_0
-	default y
-
-config I2C_3
-	default y if RV32M1_INTMUX
-
-endif # I2C
-
-if SPI
-
-config SPI_1
-	default y
-
-endif # SPI
+	depends on SERIAL
 
 if BT
 
 config BT_CTLR
 	default y
+
+#TODO: Resolve the complete non-BLE support for crypto CAU3 firmware/driver
+#config HAS_RV32M1_CAU3
+#	bool
+#	default y if BT_CTLR_CRYPTO && !BT_CTLR_LE_ENC_SUPPORT
+
+config HAS_RV32M1_CAU3_BLE
+	bool
+	default y if BT_CTLR_CRYPTO && \
+		(BT_CTLR_LE_ENC_SUPPORT || BT_CTLR_PRIVACY_SUPPORT)
 
 config RV32M1_INTMUX_CHANNEL_2
 	default n

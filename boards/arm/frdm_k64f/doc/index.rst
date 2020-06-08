@@ -96,6 +96,8 @@ The frdm_k64f board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | CAN       | on-chip    | can                                 |
 +-----------+------------+-------------------------------------+
+| RTC       | on-chip    | rtc                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 

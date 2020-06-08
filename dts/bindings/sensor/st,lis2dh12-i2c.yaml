@@ -1,10 +1,7 @@
 # Copyright (c) 2019 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-title: STMicroelectronics MEMS sensors LIS2DH12
-
-description: |
-    This binding gives a base representation of LIS2DH12 3-axis accelerometer
+description: STMicroelectronics LIS2DH12 3-axis accelerometer
 
 compatible: "st,lis2dh12"
 

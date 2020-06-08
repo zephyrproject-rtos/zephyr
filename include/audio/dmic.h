@@ -7,8 +7,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Public API header file for Digital Microphones
+ *
+ * This file contains the Digital Microphone APIs
+ */
+
 #ifndef ZEPHYR_INCLUDE_AUDIO_DMIC_H_
 #define ZEPHYR_INCLUDE_AUDIO_DMIC_H_
+
+/**
+ * @brief Abstraction for digital microphones
+ *
+ * @defgroup audio_dmic_interface Digital Microphone Interface
+ * @{
+ */
 
 #include <kernel.h>
 #include <device.h>
@@ -225,7 +239,8 @@ static inline u32_t dmic_build_clk_skew_map(u8_t pdm, u8_t skew)
  */
 static inline int dmic_configure(struct device *dev, struct dmic_cfg *cfg)
 {
-	const struct _dmic_ops *api = dev->driver_api;
+	const struct _dmic_ops *api =
+		(const struct _dmic_ops *)dev->driver_api;
 
 	return api->configure(dev, cfg);
 }
@@ -242,7 +257,8 @@ static inline int dmic_configure(struct device *dev, struct dmic_cfg *cfg)
  */
 static inline int dmic_trigger(struct device *dev, enum dmic_trigger cmd)
 {
-	const struct _dmic_ops *api = dev->driver_api;
+	const struct _dmic_ops *api =
+		(const struct _dmic_ops *)dev->driver_api;
 
 	return api->trigger(dev, cmd);
 }
@@ -257,14 +273,16 @@ static inline int dmic_trigger(struct device *dev, enum dmic_trigger cmd)
  * @param stream Stream identifier
  * @param buffer Pointer to the received buffer address
  * @param size Pointer to the received buffer size
- * @param timeout Timeout value to wait in case audio is not yet received
+ * @param timeout Timeout in milliseconds to wait in case audio is not yet
+ * 		  received, or @ref SYS_FOREVER_MS
  *
  * @return 0 on success, a negative error code on failure
  */
 static inline int dmic_read(struct device *dev, u8_t stream, void **buffer,
 		size_t *size, s32_t timeout)
 {
-	const struct _dmic_ops *api = dev->driver_api;
+	const struct _dmic_ops *api =
+		(const struct _dmic_ops *)dev->driver_api;
 
 	return api->read(dev, stream, buffer, size, timeout);
 }
@@ -272,5 +290,9 @@ static inline int dmic_read(struct device *dev, u8_t stream, void **buffer,
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_AUDIO_DMIC_H_ */

@@ -7,4 +7,4 @@ set(SOURCES
   dlist.c
   sflist.c
   )
-include($ENV{ZEPHYR_BASE}/subsys/testsuite/unittest.cmake)
+find_package(ZephyrUnittest HINTS $ENV{ZEPHYR_BASE})

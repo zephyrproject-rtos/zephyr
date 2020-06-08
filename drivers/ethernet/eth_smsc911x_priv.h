@@ -176,7 +176,7 @@ __IO	uint32_t  E2P_DATA;
 #define SMSC9220_PHY_CS         31
 
 #ifndef SMSC9220_BASE
-#define SMSC9220_BASE           DT_INST_0_SMSC_LAN9220_BASE_ADDRESS
+#define SMSC9220_BASE           DT_INST_REG_ADDR(0)
 #endif
 
 #define SMSC9220                ((volatile SMSC9220_TypeDef *)SMSC9220_BASE)

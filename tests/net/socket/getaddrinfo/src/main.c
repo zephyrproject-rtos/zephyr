@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #define MAX_BUF_SIZE 128
 #define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define THREAD_PRIORITY K_PRIO_COOP(8)
-#define WAIT_TIME 250
+#define WAIT_TIME K_MSEC(250)
 
 static u8_t recv_buf[MAX_BUF_SIZE];
 
@@ -165,7 +165,7 @@ static int process_dns(void)
 
 K_THREAD_DEFINE(dns_server_thread_id, STACK_SIZE,
 		process_dns, NULL, NULL, NULL,
-		THREAD_PRIORITY, 0, K_FOREVER);
+		THREAD_PRIORITY, 0, -1);
 
 void test_getaddrinfo_setup(void)
 {

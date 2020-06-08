@@ -1,26 +1,10 @@
 # Copyright (c) 2019 Derek Hageman <hageman@inthat.cloud>
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig COUNTER_SAM0_TC32
+config COUNTER_SAM0_TC32
 	bool "SAM0 series 32-bit basic timer driver"
 	default y
 	depends on SOC_FAMILY_SAM0
 	help
 	  Enable the SAM0 series timer counter (TC) driver in 32-bit wide
 	  mode.
-
-if COUNTER_SAM0_TC32
-
-index = 0
-source "drivers/counter/Kconfig.template.sam0_tc32"
-
-index = 2
-source "drivers/counter/Kconfig.template.sam0_tc32"
-
-index = 4
-source "drivers/counter/Kconfig.template.sam0_tc32"
-
-index = 6
-source "drivers/counter/Kconfig.template.sam0_tc32"
-
-endif # COUNTER_SAM0_TC32

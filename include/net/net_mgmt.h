@@ -244,8 +244,7 @@ static inline void net_mgmt_event_notify(u32_t mgmt_event, struct net_if *iface)
  *        event might bring along. NULL otherwise.
  * @param info_length tells how long the info memory area is. Only valid if
  *        the info is not NULL.
- * @param timeout a delay in milliseconds. K_FOREVER can be used to wait
- *        indefinitely.
+ * @param timeout A timeout delay. K_FOREVER can be used to wait indefinitely.
  *
  * @return 0 on success, a negative error code otherwise. -ETIMEDOUT will
  *         be specifically returned if the timeout kick-in instead of an
@@ -257,14 +256,14 @@ int net_mgmt_event_wait(u32_t mgmt_event_mask,
 			struct net_if **iface,
 			const void **info,
 			size_t *info_length,
-			int timeout);
+			k_timeout_t timeout);
 #else
 static inline int net_mgmt_event_wait(u32_t mgmt_event_mask,
 				      u32_t *raised_event,
 				      struct net_if **iface,
 				      const void **info,
 				      size_t *info_length,
-				      int timeout)
+				      k_timeout_t timeout)
 {
 	return 0;
 }
@@ -283,8 +282,7 @@ static inline int net_mgmt_event_wait(u32_t mgmt_event_mask,
  *        event might bring along. NULL otherwise.
  * @param info_length tells how long the info memory area is. Only valid if
  *        the info is not NULL.
- * @param timeout a delay in milliseconds. K_FOREVER can be used to wait
- *        indefinitely.
+ * @param timeout A timeout delay. K_FOREVER can be used to wait indefinitely.
  *
  * @return 0 on success, a negative error code otherwise. -ETIMEDOUT will
  *         be specifically returned if the timeout kick-in instead of an
@@ -296,14 +294,14 @@ int net_mgmt_event_wait_on_iface(struct net_if *iface,
 				 u32_t *raised_event,
 				 const void **info,
 				 size_t *info_length,
-				 int timeout);
+				 k_timeout_t timeout);
 #else
 static inline int net_mgmt_event_wait_on_iface(struct net_if *iface,
 					       u32_t mgmt_event_mask,
 					       u32_t *raised_event,
 					       const void **info,
 					       size_t *info_length,
-					       int timeout)
+					       k_timeout_t timeout)
 {
 	return 0;
 }

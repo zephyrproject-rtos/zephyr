@@ -71,7 +71,7 @@ west commands wrap).
 
 If you want to use these build system targets but do not want to
 install west on your system using ``pip``, it is possible to do so
-by manually creating a :term:`west installation`:
+by manually creating a :term:`west workspace`:
 
 .. code-block:: console
 

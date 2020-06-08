@@ -23,6 +23,8 @@
 
 #include <shell/shell.h>
 
+#include <bluetooth/hci.h>
+#include <bluetooth/bluetooth.h>
 #include <bluetooth/services/hrs.h>
 
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
@@ -30,21 +32,41 @@
 #if defined(CONFIG_BT_GATT_HRS)
 static bool hrs_simulate;
 
+static const struct bt_data ad[] = {
+	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+	BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0x0d, 0x18, 0x0f, 0x18, 0x0a, 0x18),
+};
+
 static int cmd_hrs_simulate(const struct shell *shell,
 			    size_t argc, char *argv[])
 {
-	if (!strcmp(argv[1], "on")) {
-		static bool hrs_registered;
+	static bool hrs_registered;
+	int err;
 
+	if (!strcmp(argv[1], "on")) {
 		if (!hrs_registered) {
 			shell_print(shell, "Registering HRS Service");
 			hrs_registered = true;
+			err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad,
+					      ARRAY_SIZE(ad), NULL, 0);
+			if (err) {
+				shell_error(shell, "Advertising failed to start"
+					    " (err %d)\n", err);
+				return -ENOEXEC;
+			}
+
+			printk("Advertising successfully started\n");
 		}
 
 		shell_print(shell, "Start HRS simulation");
 		hrs_simulate = true;
 	} else if (!strcmp(argv[1], "off")) {
 		shell_print(shell, "Stop HRS simulation");
+
+		if (hrs_registered) {
+			bt_le_adv_stop();
+		}
+
 		hrs_simulate = false;
 	} else {
 		shell_print(shell, "Incorrect value: %s", argv[1]);
@@ -61,7 +83,7 @@ static int cmd_hrs_simulate(const struct shell *shell,
 
 SHELL_STATIC_SUBCMD_SET_CREATE(hrs_cmds,
 #if defined(CONFIG_BT_GATT_HRS)
-	SHELL_CMD_ARG(hrs-simulate, NULL,
+	SHELL_CMD_ARG(simulate, NULL,
 		"register and simulate Heart Rate Service <value: on, off>",
 		cmd_hrs_simulate, 2, 0),
 #endif /* CONFIG_BT_GATT_HRS*/
@@ -100,7 +122,7 @@ void main(void)
 	       " the stack.\n");
 
 	while (1) {
-		k_sleep(MSEC_PER_SEC);
+		k_sleep(K_SECONDS(1));
 
 #if defined(CONFIG_BT_GATT_HRS)
 		/* Heartrate measurements simulation */

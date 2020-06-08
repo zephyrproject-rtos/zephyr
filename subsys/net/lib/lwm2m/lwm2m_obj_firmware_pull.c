@@ -468,3 +468,13 @@ int lwm2m_firmware_start_transfer(char *package_uri)
 
 	return 0;
 }
+
+/**
+ * @brief Get the block context of the current firmware block.
+ *
+ * @return A pointer to the firmware block context
+ */
+struct coap_block_context *lwm2m_firmware_get_block_context()
+{
+	return &firmware_block_ctx;
+}

@@ -40,9 +40,11 @@ command is supported.
 	|       | 2    | Read Chip Temperature                      |
 	|       | 3    | Read Host Stack Commands                   |
 	|       | 4    | Set Scan Request Reports                   |
-	|       | 5    | Reserved                                   |
-	|       | 6    | Reserved                                   |
-	|       | 7    | Reserved                                   |
+	|       | 5    | Write Tx Power Level (per Role/Connection) |
+	|       | 6    | Read Tx Power Level (per Role/Connection)  |
+	|       | 7    | Read USB Supported Transport Modes         |
+	+-------+------+--------------------------------------------+
+	| 2     | 0    | Set USB Transport Mode                     |
 	+-------+------+--------------------------------------------+
 
 Only Read_Version_Information and Read_Supported_Commands commands are
@@ -799,6 +801,267 @@ advertising sets, this shall not generate any vendor events.
 When the Set_Scan_Request_Reports command has completed, a Command Complete
 event shall be generated.
 
+
+Zephyr Write Tx Power Level (per Role/Connection) Command
+=========================================================
+
+This command dynamically modifies BLE Tx power level given a handle and a
+handle type (advertiser, scanner, connection).
+
++--------------------------+-------+--------------------+--------------------+
+| Command                  | OCF   | Command            | Return             |
+|                          |       | Parameters         | Parameters         |
++--------------------------+-------+--------------------+--------------------+
+| Write_Tx_Power_Level     | 0x00E | Handle_Type,       | Status,            |
+|                          |       | Handle,            | Handle_Type,       |
+|                          |       | Tx_Power_Level     | Handle,            |
+|                          |       |                    | Selected_Tx_Power  |
++--------------------------+-------+--------------------+--------------------+
+
+The Tx power of the BLE radio interface is modified for any low-level link by
+the controller with a high degree of flexibility. The BLE link whose power is
+set is identified based on a handle type (advertiser, scanner, connection) and
+handle pair.
+
+The role/state defining input parameter is the Handle_Type, whereas its
+corresponding handle is provided by the Handle input parameter. Note that
+for Advertisements, the Handle input parameter is ignored in the case that
+Advertising Extensions are not configured, whereas Advertising Sets are to be
+identified by their corresponding Handle in case Advertising Extensions are
+enabled.
+
+The desired transmitter power level for the selected link instance is inputted
+as Tx_Power_Level. The power setup and control can be performed dynamically
+without the need of restarting the advertiser and scanner role/states. In case
+of connections, the Tx power changes take effect only if the connections are
+in a connected state.
+
+The inputs Handle_Type and Handle are passed through as outputs to aid the
+asynchronous service of the command as well. In addition, the command returns
+also with the Selected_Tx_Power by the controller which addresses and corrects
+the possible mismatches between the desired Tx_Power_Level and the achievable
+Tx powers given each individual controller capabilities.
+
+	Handle_Type:                                    Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | Handle of type Advertiser (Adv)      |
+	| 0x01               | Handle of type Scanner (Scan)        |
+	| 0x02               | Handle of type Connection (Conn)     |
+	| 0x03-0xFF          | Reserved (HCI command error)         |
+	+--------------------+--------------------------------------+
+
+	Handle:                                        Size: 2 Octets
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	|                    | Handle of the selected Handle_Type   |
+	|                    | that identifies the instance to set  |
+	|                    | the power of. See below for a        |
+	|                    | description corresponding to each    |
+	|                    | Handle_Type                          |
+	|                    |                                      |
+	|                    | Handle_Type_Adv:                     |
+	| 0x0000 - 0xFFFF    |     Legacy Advertisement Handle      |
+	|                    |     (Handle value is ignored)        |
+	| 0x0000 - 0x00EF    |     Advertisement Extensions (AE)    |
+	|                    |     enabled Advertisement set        |
+	|                    |     Handle                           |
+	|                    |                                      |
+	|                    | Handle_Type_Scan:                    |
+	| 0x0000 - 0xFFFF    |     Scanner Handle (Handle value is  |
+	|                    |     ignored)                         |
+	|                    |                                      |
+	|                    | Handle_Type_Conn:                    |
+	| 0x0000 - 0x0EFF    |     Connection Handle                |
+	+--------------------+--------------------------------------+
+
+	Tx_Power_Level:                                 Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| -127 <= N <= 126   | The desired Tx_Power_Level in signed |
+	|                    | 1 octet integer format to be set to  |
+	|                    | the Handle_Type and Handle pair. The |
+	|                    | controller  shall choose a power     |
+	|                    | level lower than or equal to the one |
+	|                    | specified by the host unless the host|
+	|                    | desired power is lower than the      |
+	|                    | minimum supported Tx power of the    |
+	|                    | controller, in which case the        |
+	|                    | controller shall use its minimum Tx  |
+	|                    | power.                               |
+	|                    | Units: dBm                           |
+	|                    |                                      |
+	| 127                | No preference for the Tx_Power_Level,|
+	|                    | the controller shall revert to using |
+	|                    | its default setting for Tx power.    |
+	+--------------------+--------------------------------------+
+
+	Status:                                         Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | Command succeeded                    |
+	| 0x01-0xFF          | Command failed                       |
+	+--------------------+--------------------------------------+
+
+	Selected_Tx_Power:                              Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| -127 <= N <= 126   | The controller selected Tx power to  |
+	|                    | set for the given Handle_Type and    |
+	|                    | and pair formatted as a 1 octet      |
+	|                    | signed integer. The controller shall |
+	|                    | not modify this transmit power unless|
+	|                    | it is directed to do so by the Host. |
+	|                    | Units: dBm                           |
+	+--------------------+--------------------------------------+
+
+When the Write_Tx_Power_Level command has completed, a Command Complete
+event shall be generated.
+
+
+Zephyr Read Tx Power Level (per Role/Connection) Command
+========================================================
+
+This command reads the BLE Tx power level. In contrast to the standardized HCI
+command, i.e. Read_Transmit_Power_Level, which returns the transmitted power
+level only for a specified connection handle, this command operates for both
+connected and unconnected states. It gets the BLE Tx power level for any given
+handle type (advertiser, scanner, connection) and handle.
+
++--------------------------+-------+--------------------+--------------------+
+| Command                  | OCF   | Command            | Return             |
+|                          |       | Parameters         | Parameters         |
++--------------------------+-------+--------------------+--------------------+
+| Read_Tx_Power_Level      | 0x00F | Handle_Type,       | Status,            |
+|                          |       | Handle             | Handle_Type,       |
+|                          |       |                    | Handle,            |
+|                          |       |                    | Tx_Power_Level     |
++--------------------------+-------+--------------------+--------------------+
+
+The Tx power of the BLE radio interface used for a low-level link identified
+by a pair of Handle_Type and Handle is retrieved from the controller.
+
+The role/state defining input parameter is the Handle_Type, whereas its
+corresponding handle is provided by the Handle input parameter. Note that
+for Advertisements, the Handle input parameter is ignored in the case that
+Advertising Extensions are not configured, whereas Advertising Sets are to be
+identified by their corresponding Handle in case Advertising Extensions are
+enabled.
+
+The command returns with an operational Status, and the replicated Handle_Type
+and Handle input parameters supplemented by the current Tx_Power_Level in use
+by the controller for the requested Handle_Type and Handle.
+
+	Handle_Type:                                    Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | Handle of type Advertiser (Adv)      |
+	| 0x01               | Handle of type Scanner (Scan)        |
+	| 0x02               | Handle of type Connection (Conn)     |
+	| 0x03-0xFF          | Reserved (HCI command error)         |
+	+--------------------+--------------------------------------+
+
+	Handle:                                        Size: 2 Octets
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	|                    | Handle of the selected Handle_Type   |
+	|                    | that identifies the instance to read |
+	|                    | the power of. See below for a        |
+	|                    | description corresponding to each    |
+	|                    | Handle_Type                          |
+	|                    |                                      |
+	|                    | Handle_Type_Adv:                     |
+	| 0x0000 - 0xFFFF    |     Legacy Advertisement Handle      |
+	|                    |     (Handle value is ignored)        |
+	| 0x0000 - 0x00EF    |     Advertisement Extensions (AE)    |
+	|                    |     enabled Advertisement set        |
+	|                    |     Handle                           |
+	|                    |                                      |
+	|                    | Handle_Type_Scan:                    |
+	| 0x0000 - 0xFFFF    |     Scanner Handle (Handle value is  |
+	|                    |     ignored)                         |
+	|                    |                                      |
+	|                    |                                      |
+	|                    | Handle_Type_Conn:                    |
+	| 0x0000 - 0x0EFF    |     Connection Handle                |
+	+--------------------+--------------------------------------+
+
+	Status:                                         Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | Command succeeded                    |
+	| 0x01-0xFF          | Command failed                       |
+	+--------------------+--------------------------------------+
+
+	Tx_Power_Level:                                 Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| -127 <= N <= 126   | The current Tx_Power_Level formatted |
+	|                    | as a 1 octet signed integer at which |
+	|                    | the controller is operating the      |
+	|                    | low-level link identified by the     |
+	|                    | Handle_Type and Handle pair.         |
+	|                    | Units: dBm                           |
+	+--------------------+--------------------------------------+
+
+When the Read_Tx_Power_Level command has completed, a Command Complete
+event shall be generated.
+
+Zephyr Read Supported USB Transport Modes Command
+=================================================
+
+This command read the supported USB transport modes.
+
++--------------------------+-------+--------------------+--------------------+
+| Command                  | OCF   | Command            | Return             |
+|                          |       | Parameters         | Parameters         |
++--------------------------+-------+--------------------+--------------------+
+| Read_USB_Transport_Modes | 0x010 |                    | Status             |
+|                          |       |                    | Num_Supported_Modes|
+|                          |       |                    | Supported_Mode[i]  |
++--------------------------+-------+--------------------+--------------------+
+
+	Supported_Mode:                                 Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | USB standard (H:2) transport mode.   |
+	|                    | Standard mode which use dedicated    |
+	|                    | endpoints for commands, events and   |
+	|                    | data.                                |
+	| 0x01               | Serial (H:4) transport mode.         |
+	|                    | Serialize all traffic into bulk      |
+	|                    | endpoints.                           |
+	| All other values   | Reserved for future use              |
+	+--------------------+--------------------------------------+
+
+When the Read_USB_Transport_Mode command has completed, a Command Complete
+event shall be generated.
+
+Zephyr Set USB Transport Mode Command
+=====================================
+
+This command set the host transport mode and reset the controller states like
+an HCI Reset command.
+
++--------------------------+-------+--------------------+--------------------+
+| Command                  | OCF   | Command            | Return             |
+|                          |       | Parameters         | Parameters         |
++--------------------------+-------+--------------------+--------------------+
+| Set_USB_Transport_Mode   | 0x011 | Mode               | Status             |
++--------------------------+-------+--------------------+--------------------+
+
+When the Set_USB_Transport_Mode command has completed, a Command Complete
+event shall be generated.
 
 Zephyr Vendor Events
 ====================

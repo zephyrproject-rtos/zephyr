@@ -153,7 +153,7 @@ static int start_timer(struct ipso_timer_data *timer)
 	lwm2m_engine_set_bool(path, true);
 
 	float2ms(&timer->delay_duration, &temp);
-	k_delayed_work_submit(&timer->timer_work, temp);
+	k_delayed_work_submit(&timer->timer_work, K_MSEC(temp));
 
 	return 0;
 }

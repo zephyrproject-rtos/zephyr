@@ -23,10 +23,10 @@
 #include <irq.h>
 #include <sw_isr_table.h>
 #include <soc.h>
-#include <generated_dts_board.h>
+#include <devicetree.h>
 
 /* stacks, for RISCV architecture stack should be 16byte-aligned */
-#define STACK_ALIGN  16
+#define ARCH_STACK_PTR_ALIGN  16
 
 #ifdef CONFIG_64BIT
 #define RV_OP_LOADREG ld
@@ -40,6 +40,35 @@
 #define RV_REGSHIFT 2
 #endif
 
+#ifdef CONFIG_CPU_HAS_FPU_DOUBLE_PRECISION
+#define RV_OP_LOADFPREG fld
+#define RV_OP_STOREFPREG fsd
+#else
+#define RV_OP_LOADFPREG flw
+#define RV_OP_STOREFPREG fsw
+#endif
+
+/* Common mstatus bits. All supported cores today have the same
+ * layouts.
+ */
+
+#define MSTATUS_IEN     (1UL << 3)
+#define MSTATUS_MPP_M   (3UL << 11)
+#define MSTATUS_MPIE_EN (1UL << 7)
+#define MSTATUS_FS_INIT (1UL << 13)
+#define MSTATUS_FS_MASK ((1UL << 13) | (1UL << 14))
+
+
+/* This comes from openisa_rv32m1, but doesn't seem to hurt on other
+ * platforms:
+ * - Preserve machine privileges in MPP. If you see any documentation
+ *   telling you that MPP is read-only on this SoC, don't believe its
+ *   lies.
+ * - Enable interrupts when exiting from exception into a new thread
+ *   by setting MPIE now, so it will be copied into IE on mret.
+ */
+#define MSTATUS_DEF_RESTORE (MSTATUS_MPP_M | MSTATUS_MPIE_EN)
+
 #ifndef _ASMLANGUAGE
 #include <sys/util.h>
 
@@ -47,8 +76,7 @@
 extern "C" {
 #endif
 
-#define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN)
-#define STACK_ROUND_DOWN(x) ROUND_DOWN(x, STACK_ALIGN)
+#define STACK_ROUND_UP(x) ROUND_UP(x, ARCH_STACK_PTR_ALIGN)
 
 /* macros convert value of its argument to a string */
 #define DO_TOSTR(s) #s
@@ -72,17 +100,15 @@ void z_irq_spurious(void *unused);
 
 #if defined(CONFIG_RISCV_HAS_PLIC)
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
-({ \
+{ \
 	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
 	arch_irq_priority_set(irq_p, priority_p); \
-	irq_p; \
-})
+}
 #else
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
-({ \
+{ \
 	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
-	irq_p; \
-})
+}
 #endif
 
 /*
@@ -96,10 +122,10 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 
 	__asm__ volatile ("csrrc %0, mstatus, %1"
 			  : "=r" (mstatus)
-			  : "r" (SOC_MSTATUS_IEN)
+			  : "r" (MSTATUS_IEN)
 			  : "memory");
 
-	key = (mstatus & SOC_MSTATUS_IEN);
+	key = (mstatus & MSTATUS_IEN);
 	return key;
 }
 
@@ -113,7 +139,7 @@ static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 
 	__asm__ volatile ("csrrs %0, mstatus, %1"
 			  : "=r" (mstatus)
-			  : "r" (key & SOC_MSTATUS_IEN)
+			  : "r" (key & MSTATUS_IEN)
 			  : "memory");
 }
 
@@ -126,7 +152,7 @@ static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 	 * that something elseswhere might try to set a bit?  Do it
 	 * the safe way for now.
 	 */
-	return (key & SOC_MSTATUS_IEN) == SOC_MSTATUS_IEN;
+	return (key & MSTATUS_IEN) == MSTATUS_IEN;
 }
 
 static ALWAYS_INLINE void arch_nop(void)

@@ -55,13 +55,6 @@ static K_FIFO_DEFINE(adv_queue);
 static struct k_thread adv_thread_data;
 static K_THREAD_STACK_DEFINE(adv_thread_stack, ADV_STACK_SIZE);
 
-static const u8_t adv_type[] = {
-	[BT_MESH_ADV_PROV]   = BT_DATA_MESH_PROV,
-	[BT_MESH_ADV_DATA]   = BT_DATA_MESH_MESSAGE,
-	[BT_MESH_ADV_BEACON] = BT_DATA_MESH_BEACON,
-	[BT_MESH_ADV_URI]    = BT_DATA_URI,
-};
-
 NET_BUF_POOL_DEFINE(adv_buf_pool, CONFIG_BT_MESH_ADV_BUF_COUNT,
 		    BT_MESH_ADV_DATA_SIZE, BT_MESH_ADV_USER_DATA_SIZE, NULL);
 
@@ -91,11 +84,17 @@ static inline void adv_send_end(int err, const struct bt_mesh_send_cb *cb,
 
 static inline void adv_send(struct net_buf *buf)
 {
+	static const u8_t adv_type[] = {
+		[BT_MESH_ADV_PROV]   = BT_DATA_MESH_PROV,
+		[BT_MESH_ADV_DATA]   = BT_DATA_MESH_MESSAGE,
+		[BT_MESH_ADV_BEACON] = BT_DATA_MESH_BEACON,
+		[BT_MESH_ADV_URI]    = BT_DATA_URI,
+	};
 	const s32_t adv_int_min = ((bt_dev.hci_version >= BT_HCI_VERSION_5_0) ?
 				   ADV_INT_FAST_MS : ADV_INT_DEFAULT_MS);
 	const struct bt_mesh_send_cb *cb = BT_MESH_ADV(buf)->cb;
 	void *cb_data = BT_MESH_ADV(buf)->cb_data;
-	struct bt_le_adv_param param;
+	struct bt_le_adv_param param = {};
 	u16_t duration, adv_int;
 	struct bt_data ad;
 	int err;
@@ -148,14 +147,6 @@ static inline void adv_send(struct net_buf *buf)
 	BT_DBG("Advertising stopped");
 }
 
-static void adv_stack_dump(const struct k_thread *thread, void *user_data)
-{
-#if defined(CONFIG_THREAD_STACK_INFO)
-	stack_analyze((char *)user_data, (char *)thread->stack_info.start,
-						thread->stack_info.size);
-#endif
-}
-
 static void adv_thread(void *p1, void *p2, void *p3)
 {
 	BT_DBG("started");
@@ -166,11 +157,11 @@ static void adv_thread(void *p1, void *p2, void *p3)
 		if (IS_ENABLED(CONFIG_BT_MESH_PROXY)) {
 			buf = net_buf_get(&adv_queue, K_NO_WAIT);
 			while (!buf) {
-				s32_t timeout;
+				k_timeout_t timeout;
 
 				timeout = bt_mesh_proxy_adv_start();
-				BT_DBG("Proxy Advertising up to %d ms",
-				       timeout);
+				BT_DBG("Proxy Advertising");
+
 				buf = net_buf_get(&adv_queue, timeout);
 				bt_mesh_proxy_adv_stop();
 			}
@@ -190,9 +181,6 @@ static void adv_thread(void *p1, void *p2, void *p3)
 			net_buf_unref(buf);
 		}
 
-		STACK_ANALYZE("adv stack", adv_thread_stack);
-		k_thread_foreach(adv_stack_dump, "BT_MESH");
-
 		/* Give other threads a chance to run */
 		k_yield();
 	}
@@ -208,7 +196,7 @@ void bt_mesh_adv_update(void)
 struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
 					     bt_mesh_adv_alloc_t get_id,
 					     enum bt_mesh_adv_type type,
-					     u8_t xmit, s32_t timeout)
+					     u8_t xmit, k_timeout_t timeout)
 {
 	struct bt_mesh_adv *adv;
 	struct net_buf *buf;
@@ -235,7 +223,7 @@ struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
 }
 
 struct net_buf *bt_mesh_adv_create(enum bt_mesh_adv_type type, u8_t xmit,
-				   s32_t timeout)
+				   k_timeout_t timeout)
 {
 	return bt_mesh_adv_create_from_pool(&adv_buf_pool, adv_alloc, type,
 					    xmit, timeout);
@@ -257,7 +245,7 @@ void bt_mesh_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
 static void bt_mesh_scan_cb(const bt_addr_le_t *addr, s8_t rssi,
 			    u8_t adv_type, struct net_buf_simple *buf)
 {
-	if (adv_type != BT_LE_ADV_NONCONN_IND) {
+	if (adv_type != BT_GAP_ADV_TYPE_ADV_NONCONN_IND) {
 		return;
 	}
 
@@ -317,7 +305,7 @@ int bt_mesh_scan_enable(void)
 {
 	struct bt_le_scan_param scan_param = {
 			.type       = BT_HCI_LE_SCAN_PASSIVE,
-			.filter_dup = BT_HCI_LE_SCAN_FILTER_DUP_DISABLE,
+			.filter_dup = BT_LE_SCAN_OPT_NONE,
 			.interval   = MESH_SCAN_INTERVAL,
 			.window     = MESH_SCAN_WINDOW };
 	int err;

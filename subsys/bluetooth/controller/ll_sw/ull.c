@@ -32,6 +32,7 @@
 #include "pdu.h"
 #include "ll.h"
 #include "ll_feat.h"
+#include "ll_settings.h"
 #include "lll.h"
 #include "lll_adv.h"
 #include "lll_scan.h"
@@ -97,11 +98,18 @@
 #define FLASH_TICKER_USER_APP_OPS 0
 #endif
 
+#if defined(CONFIG_BT_CTLR_USER_EXT)
+#define USER_TICKER_NODES         CONFIG_BT_CTLR_USER_TICKER_ID_RANGE
+#else
+#define USER_TICKER_NODES         0
+#endif
+
 #define TICKER_NODES              (TICKER_ID_ULL_BASE + \
 				   BT_ADV_TICKER_NODES + \
 				   BT_SCAN_TICKER_NODES + \
 				   BT_CONN_TICKER_NODES + \
-				   FLASH_TICKER_NODES)
+				   FLASH_TICKER_NODES + \
+				   USER_TICKER_NODES)
 #define TICKER_USER_APP_OPS       (TICKER_USER_THREAD_OPS + \
 				   FLASH_TICKER_USER_APP_OPS)
 #define TICKER_USER_OPS           (TICKER_USER_LLL_OPS + \
@@ -548,6 +556,7 @@ void ll_rx_dequeue(void)
 
 				conn_lll = lll->conn;
 				LL_ASSERT(conn_lll);
+				lll->conn = NULL;
 
 				LL_ASSERT(!conn_lll->link_tx_free);
 				link = memq_deinit(&conn_lll->memq_tx.head,
@@ -557,8 +566,6 @@ void ll_rx_dequeue(void)
 
 				conn = (void *)HDR_LLL2EVT(conn_lll);
 				ll_conn_release(conn);
-
-				lll->conn = NULL;
 			} else {
 				/* Release un-utilized node rx */
 				if (adv->node_rx_cc_free) {
@@ -567,7 +574,7 @@ void ll_rx_dequeue(void)
 					rx_free = adv->node_rx_cc_free;
 					adv->node_rx_cc_free = NULL;
 
-					ll_rx_release(rx_free);
+					mem_release(rx_free, &mem_pdu_rx.free);
 				}
 			}
 
@@ -631,9 +638,9 @@ void ll_rx_dequeue(void)
 	case NODE_RX_TYPE_PHY_UPDATE:
 #endif /* CONFIG_BT_CTLR_PHY */
 
-#if defined(CONFIG_BT_CTLR_CONN_RSSI)
+#if defined(CONFIG_BT_CTLR_CONN_RSSI_EVENT)
 	case NODE_RX_TYPE_RSSI:
-#endif /* CONFIG_BT_CTLR_CONN_RSSI */
+#endif /* CONFIG_BT_CTLR_CONN_RSSI_EVENT */
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR)
@@ -706,22 +713,31 @@ void ll_rx_mem_release(void **node_rx)
 		switch (rx_free->type) {
 #if defined(CONFIG_BT_CONN)
 		case NODE_RX_TYPE_CONNECTION:
-#if defined(CONFIG_BT_CENTRAL)
 		{
-			struct node_rx_pdu *rx = (void *)rx_free;
+			struct node_rx_cc *cc =
+				(void *)((struct node_rx_pdu *)rx_free)->pdu;
 
-			if (*((u8_t *)rx->pdu) ==
-			    BT_HCI_ERR_UNKNOWN_CONN_ID) {
+			if (0) {
+
+#if defined(CONFIG_BT_PERIPHERAL)
+			} else if (cc->status == BT_HCI_ERR_ADV_TIMEOUT) {
+				mem_release(rx_free, &mem_pdu_rx.free);
+
+				break;
+#endif /* !CONFIG_BT_PERIPHERAL */
+
+#if defined(CONFIG_BT_CENTRAL)
+			} else if (cc->status == BT_HCI_ERR_UNKNOWN_CONN_ID) {
+				struct node_rx_ftr *ftr = &rx_free->rx_ftr;
+				struct ll_scan_set *scan =
+					(void *)HDR_LLL2EVT(ftr->param);
 				struct lll_conn *conn_lll;
-				struct ll_scan_set *scan;
 				struct ll_conn *conn;
 				memq_link_t *link;
 
-				scan = ull_scan_is_enabled_get(0);
-				LL_ASSERT(scan);
-
 				conn_lll = scan->lll.conn;
 				LL_ASSERT(conn_lll);
+				scan->lll.conn = NULL;
 
 				LL_ASSERT(!conn_lll->link_tx_free);
 				link = memq_deinit(&conn_lll->memq_tx.head,
@@ -734,20 +750,22 @@ void ll_rx_mem_release(void **node_rx)
 
 				scan->is_enabled = 0U;
 
-				scan->lll.conn = NULL;
-
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 #if defined(CONFIG_BT_BROADCASTER)
 				if (!ull_adv_is_enabled_get(0))
-#endif
+#endif /* CONFIG_BT_BROADCASTER */
 				{
 					ull_filter_adv_scan_state_cb(0);
 				}
-#endif
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 				break;
+#endif /* CONFIG_BT_CENTRAL */
+
+			} else {
+				LL_ASSERT(!cc->status);
 			}
 		}
-#endif /* CONFIG_BT_CENTRAL */
+
 		/* passthrough */
 		case NODE_RX_TYPE_DC_PDU:
 #endif /* CONFIG_BT_CONN */
@@ -779,9 +797,9 @@ void ll_rx_mem_release(void **node_rx)
 		case NODE_RX_TYPE_PHY_UPDATE:
 #endif /* CONFIG_BT_CTLR_PHY */
 
-#if defined(CONFIG_BT_CTLR_CONN_RSSI)
+#if defined(CONFIG_BT_CTLR_CONN_RSSI_EVENT)
 		case NODE_RX_TYPE_RSSI:
-#endif /* CONFIG_BT_CTLR_CONN_RSSI */
+#endif /* CONFIG_BT_CTLR_CONN_RSSI_EVENT */
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR)
@@ -1012,13 +1030,18 @@ int ull_disable(void *lll)
 	u32_t ret;
 
 	hdr = HDR_ULL(((struct lll_hdr *)lll)->parent);
-	if (!hdr || !hdr->ref) {
+	if (!hdr) {
 		return ULL_STATUS_SUCCESS;
 	}
 
 	k_sem_init(&sem, 0, 1);
+
 	hdr->disabled_param = &sem;
 	hdr->disabled_cb = disabled_cb;
+
+	if (!hdr->ref) {
+		return ULL_STATUS_SUCCESS;
+	}
 
 	mfy.param = lll;
 	ret = mayfly_enqueue(TICKER_USER_ID_THREAD, TICKER_USER_ID_LLL, 0,

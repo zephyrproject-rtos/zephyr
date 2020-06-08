@@ -1,4 +1,3 @@
-
 .. _modules:
 
 Modules (External projects)
@@ -83,6 +82,26 @@ Each project in the ``west list`` output is tested like this:
        cmake: .
        kconfig: Kconfig
 
+- To execute both tests and samples available in modules, the Zephyr test runner
+  (sanitycheck) should be pointed to the directories containing those samples and
+  tests. This can be done by specifying the path to both samples and tests in the
+  :file:`zephyr/module.yml` file.  Additionally, if a module defines out of tree
+  boards, the module file can point sanitycheck to the path where those files
+  are maintained in the module. For example:
+
+
+  .. code-block:: yaml
+
+      build:
+        cmake: .
+      samples:
+        - samples
+      tests:
+        - tests
+      boards:
+        - boards
+
+
 - Otherwise (i.e. if the project has no :file:`zephyr/module.yml`), the
   build system looks for :file:`zephyr/CMakeLists.txt` and
   :file:`zephyr/Kconfig` files in the project. If both are present, the project
@@ -112,10 +131,10 @@ section.
    .. code-block:: cmake
 
       set(ZEPHYR_MODULES <path-to-module1> <path-to-module2> [...])
-      include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
+      find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
-   If you choose this option, make sure to set the variable **before** including
-   the boilerplate file, as shown above.
+   If you choose this option, make sure to set the variable **before**  calling
+   ``find_package(Zephyr ...)``, as shown above.
 
 #. In a separate CMake script which is pre-loaded to populate the CMake cache,
    like this:

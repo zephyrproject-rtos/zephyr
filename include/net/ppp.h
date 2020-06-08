@@ -175,6 +175,20 @@ enum ipcp_option_type {
 
 	/** IP Address */
 	IPCP_OPTION_IP_ADDRESS = 3,
+
+	/* RFC 1877 */
+
+	/** Primary DNS Server Address */
+	IPCP_OPTION_DNS1 = 129,
+
+	/** Primary NBNS Server Address */
+	IPCP_OPTION_NBNS1 = 130,
+
+	/** Secondary DNS Server Address */
+	IPCP_OPTION_DNS2 = 131,
+
+	/** Secondary NBNS Server Address */
+	IPCP_OPTION_NBNS2 = 132,
 } __packed;
 
 /**
@@ -358,6 +372,8 @@ struct lcp_options {
 struct ipcp_options {
 	/** IPv4 address */
 	struct in_addr address;
+	struct in_addr dns1_address;
+	struct in_addr dns2_address;
 };
 
 struct ipv6cp_options {
@@ -595,7 +611,8 @@ static inline void ppp_mgmt_raise_carrier_off_event(struct net_if *iface)
  * @brief Send PPP Echo-Request to peer. We expect to receive Echo-Reply back.
  *
  * @param idx PPP network interface index
- * @param timeout Amount of time to wait Echo-Reply.
+ * @param timeout Amount of time to wait Echo-Reply. The value is in
+ * milliseconds.
  *
  * @return 0 if Echo-Reply was received, < 0 if there is a timeout or network
  * index is not a valid PPP network index.

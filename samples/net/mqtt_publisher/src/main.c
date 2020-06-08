@@ -113,13 +113,18 @@ static void clear_fds(void)
 	nfds = 0;
 }
 
-static void wait(int timeout)
+static int wait(int timeout)
 {
+	int ret = 0;
+
 	if (nfds > 0) {
-		if (poll(fds, nfds, timeout) < 0) {
+		ret = poll(fds, nfds, timeout);
+		if (ret < 0) {
 			LOG_ERR("poll error: %d", errno);
 		}
 	}
+
+	return ret;
 }
 
 void mqtt_evt_handler(struct mqtt_client *const client,
@@ -185,6 +190,10 @@ void mqtt_evt_handler(struct mqtt_client *const client,
 		LOG_INF("PUBCOMP packet id: %u",
 			evt->param.pubcomp.message_id);
 
+		break;
+
+	case MQTT_EVT_PINGRESP:
+		LOG_INF("PINGRESP packet");
 		break;
 
 	default:
@@ -304,7 +313,7 @@ static void client_init(struct mqtt_client *client)
 
 	struct mqtt_sec_config *tls_config = &client->transport.tls.config;
 
-	tls_config->peer_verify = 2;
+	tls_config->peer_verify = TLS_PEER_VERIFY_REQUIRED;
 	tls_config->cipher_list = NULL;
 	tls_config->sec_tag_list = m_sec_tags;
 	tls_config->sec_tag_count = ARRAY_SIZE(m_sec_tags);
@@ -328,7 +337,7 @@ static void client_init(struct mqtt_client *client)
 	client->transport.websocket.config.tmp_buf = temp_ws_rx_buf;
 	client->transport.websocket.config.tmp_buf_len =
 						sizeof(temp_ws_rx_buf);
-	client->transport.websocket.timeout = K_SECONDS(5);
+	client->transport.websocket.timeout = 5 * MSEC_PER_SEC;
 #endif
 
 #if defined(CONFIG_SOCKS)
@@ -351,14 +360,15 @@ static int try_to_connect(struct mqtt_client *client)
 		rc = mqtt_connect(client);
 		if (rc != 0) {
 			PRINT_RESULT("mqtt_connect", rc);
-			k_sleep(APP_SLEEP_MSECS);
+			k_sleep(K_MSEC(APP_SLEEP_MSECS));
 			continue;
 		}
 
 		prepare_fds(client);
 
-		wait(APP_SLEEP_MSECS);
-		mqtt_input(client);
+		if (wait(APP_SLEEP_MSECS)) {
+			mqtt_input(client);
+		}
 
 		if (!connected) {
 			mqtt_abort(client);
@@ -379,18 +389,24 @@ static int process_mqtt_and_sleep(struct mqtt_client *client, int timeout)
 	int rc;
 
 	while (remaining > 0 && connected) {
-		wait(remaining);
-
-		rc = mqtt_live(client);
-		if (rc != 0) {
-			PRINT_RESULT("mqtt_live", rc);
-			return rc;
+		if (wait(remaining)) {
+			rc = mqtt_input(client);
+			if (rc != 0) {
+				PRINT_RESULT("mqtt_input", rc);
+				return rc;
+			}
 		}
 
-		rc = mqtt_input(client);
-		if (rc != 0) {
-			PRINT_RESULT("mqtt_input", rc);
+		rc = mqtt_live(client);
+		if (rc != 0 && rc != -EAGAIN) {
+			PRINT_RESULT("mqtt_live", rc);
 			return rc;
+		} else if (rc == 0) {
+			rc = mqtt_input(client);
+			if (rc != 0) {
+				PRINT_RESULT("mqtt_input", rc);
+				return rc;
+			}
 		}
 
 		remaining = timeout + start_time - k_uptime_get();
@@ -399,12 +415,12 @@ static int process_mqtt_and_sleep(struct mqtt_client *client, int timeout)
 	return 0;
 }
 
-#define SUCCESS_OR_EXIT(rc) { if (rc != 0) { return; } }
+#define SUCCESS_OR_EXIT(rc) { if (rc != 0) { return 1; } }
 #define SUCCESS_OR_BREAK(rc) { if (rc != 0) { break; } }
 
-static void publisher(void)
+static int publisher(void)
 {
-	int i, rc;
+	int i, rc, r = 0;
 
 	LOG_INF("attempting to connect: ");
 	rc = try_to_connect(&client_ctx);
@@ -412,7 +428,9 @@ static void publisher(void)
 	SUCCESS_OR_EXIT(rc);
 
 	i = 0;
-	while (i++ < APP_MAX_ITERATIONS && connected) {
+	while (i++ < CONFIG_NET_SAMPLE_APP_MAX_ITERATIONS && connected) {
+		r = -1;
+
 		rc = mqtt_ping(&client_ctx);
 		PRINT_RESULT("mqtt_ping", rc);
 		SUCCESS_OR_BREAK(rc);
@@ -440,20 +458,21 @@ static void publisher(void)
 
 		rc = process_mqtt_and_sleep(&client_ctx, APP_SLEEP_MSECS);
 		SUCCESS_OR_BREAK(rc);
+
+		r = 0;
 	}
 
 	rc = mqtt_disconnect(&client_ctx);
 	PRINT_RESULT("mqtt_disconnect", rc);
 
-	wait(APP_SLEEP_MSECS);
-	rc = mqtt_input(&client_ctx);
-	PRINT_RESULT("mqtt_input", rc);
-
 	LOG_INF("Bye!");
+
+	return r;
 }
 
 void main(void)
 {
+	int r = 0, i = 0;
 #if defined(CONFIG_MQTT_LIB_TLS)
 	int rc;
 
@@ -461,8 +480,14 @@ void main(void)
 	PRINT_RESULT("tls_init", rc);
 #endif
 
-	while (1) {
-		publisher();
-		k_sleep(K_MSEC(5000));
+	while (!CONFIG_NET_SAMPLE_APP_MAX_CONNECTIONS ||
+	       i++ < CONFIG_NET_SAMPLE_APP_MAX_CONNECTIONS) {
+		r = publisher();
+
+		if (!CONFIG_NET_SAMPLE_APP_MAX_CONNECTIONS) {
+			k_sleep(K_MSEC(5000));
+		}
 	}
+
+	exit(r);
 }

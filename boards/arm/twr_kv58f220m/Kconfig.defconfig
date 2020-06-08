@@ -20,32 +20,6 @@ config MCG_VDIV0
 config MCG_FCRDIV
 	default 1
 
-if GPIO_MCUX
-
-config GPIO_MCUX_PORTA
-	default y
-
-config GPIO_MCUX_PORTB
-	default y
-
-config GPIO_MCUX_PORTC
-	default y
-
-config GPIO_MCUX_PORTD
-	default y
-
-config GPIO_MCUX_PORTE
-	default y
-
-endif # GPIO_MCUX
-
-if I2C
-
-config I2C_1
-	default y
-
-endif # I2C
-
 if PINMUX_MCUX
 
 config PINMUX_MCUX_PORTA
@@ -64,12 +38,5 @@ config PINMUX_MCUX_PORTE
 	default y
 
 endif # PINMUX_MCUX
-
-if UART_MCUX
-
-config UART_MCUX_0
-	default y if UART_CONSOLE
-
-endif # UART_MCUX
 
 endif # BOARD_TWR_KV58F220M

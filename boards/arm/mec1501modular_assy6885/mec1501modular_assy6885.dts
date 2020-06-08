@@ -21,6 +21,11 @@
 
 	aliases {
 		pwm-0 = &pwm0;
+		peci-0 = &peci0;
+
+		i2c0 = &i2c_smb_0;
+		i2c1 = &i2c_smb_1;
+		kscan0 = &kscan0;
 	};
 };
 
@@ -33,19 +38,16 @@
 	status = "okay";
 };
 
-&i2c0 {
+&i2c_smb_0 {
 	status = "okay";
+	label = "I2C0";
 	port_sel = <0>;
 };
 
-&i2c1 {
+&i2c_smb_1 {
 	status = "okay";
+	label = "I2C1";
 	port_sel = <1>;
-};
-
-&i2c2 {
-	status = "okay";
-	port_sel = <7>;
 };
 
 &espi0 {
@@ -64,5 +66,17 @@
 };
 
 &pwm0 {
+	status = "okay";
+};
+
+&kscan0 {
+	status = "okay";
+};
+
+&peci0 {
+	status = "okay";
+};
+
+&tach0 {
 	status = "okay";
 };

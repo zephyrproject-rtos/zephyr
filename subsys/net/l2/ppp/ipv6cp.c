@@ -156,7 +156,7 @@ static int ipv6cp_config_info_req(struct ppp_fsm *fsm,
 
 			nack_buf = ppp_get_net_buf(buf, nack_options[i].len);
 			if (!nack_buf) {
-				goto out_of_mem;
+				goto bail_out;
 			}
 
 			if (!buf) {
@@ -166,13 +166,13 @@ static int ipv6cp_config_info_req(struct ppp_fsm *fsm,
 			added = append_to_buf(nack_buf,
 					      &nack_options[i].type.ipv6cp, 1);
 			if (!added) {
-				goto out_of_mem;
+				goto bail_out;
 			}
 
 			added = append_to_buf(nack_buf, &nack_options[i].len,
 					      1);
 			if (!added) {
-				goto out_of_mem;
+				goto bail_out;
 			}
 
 			/* If there is some data, copy it to result buf */
@@ -181,18 +181,9 @@ static int ipv6cp_config_info_req(struct ppp_fsm *fsm,
 						nack_options[i].value.pos,
 						nack_options[i].len - 1 - 1);
 				if (!added) {
-					goto out_of_mem;
+					goto bail_out;
 				}
 			}
-
-			continue;
-
-		out_of_mem:
-			if (nack_buf) {
-				net_buf_unref(nack_buf);
-			}
-
-			goto bail_out;
 		}
 	} else {
 		u8_t iface_id[PPP_INTERFACE_IDENTIFIER_LEN];
@@ -483,6 +474,7 @@ static void ipv6cp_down(struct ppp_fsm *fsm)
 	}
 
 	ctx->is_network_up = false;
+	ctx->is_ipv6cp_up = false;
 
 	ppp_network_down(ctx, PPP_IPV6);
 

@@ -1,5 +1,3 @@
-title: ARM MPS2 FPGA GPIO
-
 description: GPIO controller on ARM MPS2 FPGA
 
 compatible: "arm,mps2-fpgaio-gpio"

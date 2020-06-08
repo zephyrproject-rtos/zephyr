@@ -27,16 +27,6 @@ extern void z_thread_single_abort(struct k_thread *thread);
 #if !defined(CONFIG_ARCH_HAS_THREAD_ABORT)
 void z_impl_k_thread_abort(k_tid_t thread)
 {
-	/* We aren't trying to synchronize data access here (these
-	 * APIs are internally synchronized).  The original lock seems
-	 * to have been in place to prevent the thread from waking up
-	 * due to a delivered interrupt.  Leave a dummy spinlock in
-	 * place to do that.  This API should be revisted though, it
-	 * doesn't look SMP-safe as it stands.
-	 */
-	struct k_spinlock lock = {};
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
 	__ASSERT((thread->base.user_options & K_ESSENTIAL) == 0U,
 		 "essential thread aborted");
 
@@ -44,17 +34,13 @@ void z_impl_k_thread_abort(k_tid_t thread)
 	z_thread_monitor_exit(thread);
 
 	if (thread == _current && !arch_is_in_isr()) {
-		z_swap(&lock, key);
-	} else {
-		/* Really, there's no good reason for this to be a
-		 * scheduling point if we aren't aborting _current (by
-		 * definition, no higher priority thread is runnable,
-		 * because we're running!).  But it always has been
-		 * and is thus part of our API, and we have tests that
-		 * rely on k_thread_abort() scheduling out of
-		 * cooperative threads.
+		/* Direct use of swap: reschedule doesn't have a test
+		 * for "is _current dead" and we don't want one for
+		 * performance reasons.
 		 */
-		z_reschedule(&lock, key);
+		z_swap_unlocked();
+	} else {
+		z_reschedule_unlocked();
 	}
 }
 #endif

@@ -118,4 +118,3 @@ API Reference
 
 .. doxygengroup:: atomic_apis
    :project: Zephyr
-

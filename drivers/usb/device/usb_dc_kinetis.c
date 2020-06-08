@@ -6,6 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_kinetis_usbd
+
 #include <soc.h>
 #include <string.h>
 #include <stdio.h>
@@ -18,7 +20,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(usb_dc_kinetis);
 
-#define NUM_OF_EP_MAX		DT_USBD_KINETIS_NUM_BIDIR_EP
+#define NUM_OF_EP_MAX		DT_INST_PROP(0, num_bidir_endpoints)
 
 #define BD_OWN_MASK		(1 << 5)
 #define BD_DATA01_MASK		(1 << 4)
@@ -177,10 +179,10 @@ static int kinetis_usb_init(void)
 			K_PRIO_COOP(2), 0, K_NO_WAIT);
 
 	/* Connect and enable USB interrupt */
-	IRQ_CONNECT(DT_USBD_KINETIS_IRQ, DT_USBD_KINETIS_IRQ_PRI,
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    usb_kinetis_isr_handler, 0, 0);
 
-	irq_enable(DT_USBD_KINETIS_IRQ);
+	irq_enable(DT_INST_IRQN(0));
 
 	LOG_DBG("");
 
@@ -341,7 +343,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg)
 	if (ep_idx && (dev_data.ep_ctrl[ep_idx].status.in_enabled ||
 	    dev_data.ep_ctrl[ep_idx].status.out_enabled)) {
 		LOG_WRN("endpoint already configured");
-		return -EBUSY;
+		return -EALREADY;
 	}
 
 	LOG_DBG("ep %x, mps %d, type %d", cfg->ep_addr, cfg->ep_mps,
@@ -531,7 +533,7 @@ int usb_dc_ep_enable(const u8_t ep)
 	if (ep_idx && (dev_data.ep_ctrl[ep_idx].status.in_enabled ||
 	    dev_data.ep_ctrl[ep_idx].status.out_enabled)) {
 		LOG_WRN("endpoint 0x%x already enabled", ep);
-		return -EBUSY;
+		return -EALREADY;
 	}
 
 	if (EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
@@ -1042,4 +1044,3 @@ static void usb_kinetis_thread_main(void *arg1, void *unused1, void *unused2)
 		}
 	}
 }
-

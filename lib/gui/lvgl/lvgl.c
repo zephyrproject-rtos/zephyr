@@ -11,6 +11,9 @@
 #ifdef CONFIG_LVGL_FILESYSTEM
 #include "lvgl_fs.h"
 #endif
+#ifdef CONFIG_LVGL_POINTER_KSCAN
+#include <drivers/kscan.h>
+#endif
 #include LV_MEM_CUSTOM_INCLUDE
 
 #define LOG_LEVEL CONFIG_LVGL_LOG_LEVEL
@@ -146,6 +149,75 @@ static int lvgl_allocate_rendering_buffers(lv_disp_drv_t *disp_drv)
 }
 #endif /* CONFIG_LVGL_BUFFER_ALLOC_STATIC */
 
+#ifdef CONFIG_LVGL_POINTER_KSCAN
+K_MSGQ_DEFINE(kscan_msgq, sizeof(lv_indev_data_t),
+	      CONFIG_LVGL_POINTER_KSCAN_MSGQ_COUNT, 4);
+
+static void lvgl_pointer_kscan_callback(struct device *dev, u32_t row,
+					u32_t col, bool pressed)
+{
+	lv_indev_data_t data = {
+		.point.x = col,
+		.point.y = row,
+		.state = pressed ? LV_INDEV_STATE_PR : LV_INDEV_STATE_REL,
+	};
+
+	if (k_msgq_put(&kscan_msgq, &data, K_NO_WAIT) != 0) {
+		LOG_ERR("Could put input data into queue");
+	}
+}
+
+static bool lvgl_pointer_kscan_read(lv_indev_drv_t *drv, lv_indev_data_t *data)
+{
+	static lv_indev_data_t prev = {
+		.point.x = 0,
+		.point.y = 0,
+		.state = LV_INDEV_STATE_REL,
+	};
+
+	lv_indev_data_t curr;
+
+	if (k_msgq_get(&kscan_msgq, &curr, K_NO_WAIT) == 0) {
+		prev = curr;
+	}
+
+	*data = prev;
+
+	return k_msgq_num_used_get(&kscan_msgq) > 0;
+}
+
+static int lvgl_pointer_kscan_init(void)
+{
+	struct device *kscan_dev =
+		device_get_binding(CONFIG_LVGL_POINTER_KSCAN_DEV_NAME);
+
+	lv_indev_drv_t indev_drv;
+
+	if (kscan_dev == NULL) {
+		LOG_ERR("Keyboard scan device not found.");
+		return -ENODEV;
+	}
+
+	if (kscan_config(kscan_dev, lvgl_pointer_kscan_callback) < 0) {
+		LOG_ERR("Could not configure keyboard scan device.");
+		return -ENODEV;
+	}
+
+	lv_indev_drv_init(&indev_drv);
+	indev_drv.type = LV_INDEV_TYPE_POINTER;
+	indev_drv.read_cb = lvgl_pointer_kscan_read;
+
+	if (lv_indev_drv_register(&indev_drv) == NULL) {
+		LOG_ERR("Failed to register input device.");
+		return -EPERM;
+	}
+
+	kscan_enable_callback(kscan_dev);
+
+	return 0;
+}
+#endif /* CONFIG_LVGL_POINTER_KSCAN */
+
 static int lvgl_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -183,6 +255,10 @@ static int lvgl_init(struct device *dev)
 		LOG_ERR("Failed to register display device.");
 		return -EPERM;
 	}
+
+#ifdef CONFIG_LVGL_POINTER_KSCAN
+	lvgl_pointer_kscan_init();
+#endif /* CONFIG_LVGL_POINTER_KSCAN */
 
 	return 0;
 }

@@ -314,7 +314,7 @@ static int output_string(const char *str)
 	struct mesh_out_string_action_ev *ev;
 	struct net_buf_simple *buf = NET_BUF_SIMPLE(BTP_DATA_MAX_SIZE);
 
-	LOG_DBG("str %s", str);
+	LOG_DBG("str %s", log_strdup(str));
 
 	net_buf_simple_init(buf, 0);
 

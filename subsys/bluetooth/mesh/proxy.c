@@ -612,7 +612,7 @@ static void prov_ccc_changed(const struct bt_gatt_attr *attr, u16_t value)
 	BT_DBG("value 0x%04x", value);
 }
 
-static bool prov_ccc_write(struct bt_conn *conn,
+static ssize_t prov_ccc_write(struct bt_conn *conn,
 			   const struct bt_gatt_attr *attr, u16_t value)
 {
 	struct bt_mesh_proxy_client *client;
@@ -621,7 +621,7 @@ static bool prov_ccc_write(struct bt_conn *conn,
 
 	if (value != BT_GATT_CCC_NOTIFY) {
 		BT_WARN("Client wrote 0x%04x instead enabling notify", value);
-		return false;
+		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 	}
 
 	/* If a connection exists there must be a client */
@@ -633,7 +633,7 @@ static bool prov_ccc_write(struct bt_conn *conn,
 		bt_mesh_pb_gatt_open(conn);
 	}
 
-	return true;
+	return sizeof(value);
 }
 
 /* Mesh Provisioning Service Declaration */
@@ -731,8 +731,8 @@ static void proxy_ccc_changed(const struct bt_gatt_attr *attr, u16_t value)
 	BT_DBG("value 0x%04x", value);
 }
 
-static bool proxy_ccc_write(struct bt_conn *conn,
-			    const struct bt_gatt_attr *attr, u16_t value)
+static ssize_t proxy_ccc_write(struct bt_conn *conn,
+			       const struct bt_gatt_attr *attr, u16_t value)
 {
 	struct bt_mesh_proxy_client *client;
 
@@ -740,7 +740,7 @@ static bool proxy_ccc_write(struct bt_conn *conn,
 
 	if (value != BT_GATT_CCC_NOTIFY) {
 		BT_WARN("Client wrote 0x%04x instead enabling notify", value);
-		return false;
+		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 	}
 
 	/* If a connection exists there must be a client */
@@ -752,7 +752,7 @@ static bool proxy_ccc_write(struct bt_conn *conn,
 		k_work_submit(&client->send_beacons);
 	}
 
-	return true;
+	return sizeof(value);
 }
 
 /* Mesh Proxy Service Declaration */
@@ -1010,7 +1010,7 @@ static const struct bt_data prov_ad[] = {
 #define NODE_ID_LEN  19
 #define NET_ID_LEN   11
 
-#define NODE_ID_TIMEOUT K_SECONDS(CONFIG_BT_MESH_NODE_ID_TIMEOUT)
+#define NODE_ID_TIMEOUT (CONFIG_BT_MESH_NODE_ID_TIMEOUT * MSEC_PER_SEC)
 
 static u8_t proxy_svc_data[NODE_ID_LEN] = { 0x28, 0x18, };
 
@@ -1095,7 +1095,7 @@ static bool advertise_subnet(struct bt_mesh_subnet *sub)
 	}
 
 	return (sub->node_id == BT_MESH_NODE_IDENTITY_RUNNING ||
-		bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED);
+		bt_mesh_gatt_proxy_get() != BT_MESH_GATT_PROXY_NOT_SUPPORTED);
 }
 
 static struct bt_mesh_subnet *next_sub(void)
@@ -1130,21 +1130,21 @@ static int sub_count(void)
 	return count;
 }
 
-static s32_t gatt_proxy_advertise(struct bt_mesh_subnet *sub)
+static k_timeout_t gatt_proxy_advertise(struct bt_mesh_subnet *sub)
 {
-	s32_t remaining = K_FOREVER;
+	s32_t remaining = SYS_FOREVER_MS;
 	int subnet_count;
 
 	BT_DBG("");
 
 	if (conn_count == CONFIG_BT_MAX_CONN) {
 		BT_DBG("Connectable advertising deferred (max connections)");
-		return remaining;
+		return K_FOREVER;
 	}
 
 	if (!sub) {
 		BT_WARN("No subnets to advertise on");
-		return remaining;
+		return K_FOREVER;
 	}
 
 	if (sub->node_id == BT_MESH_NODE_IDENTITY_RUNNING) {
@@ -1162,11 +1162,7 @@ static s32_t gatt_proxy_advertise(struct bt_mesh_subnet *sub)
 	}
 
 	if (sub->node_id == BT_MESH_NODE_IDENTITY_STOPPED) {
-		if (bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED) {
-			net_id_adv(sub);
-		} else {
-			return gatt_proxy_advertise(next_sub());
-		}
+		net_id_adv(sub);
 	}
 
 	subnet_count = sub_count();
@@ -1180,16 +1176,16 @@ static s32_t gatt_proxy_advertise(struct bt_mesh_subnet *sub)
 		 * second long (to avoid excessive rotation).
 		 */
 		max_timeout = NODE_ID_TIMEOUT / MAX(subnet_count, 6);
-		max_timeout = MAX(max_timeout, K_SECONDS(1));
+		max_timeout = MAX(max_timeout, 1 * MSEC_PER_SEC);
 
-		if (remaining > max_timeout || remaining < 0) {
+		if (remaining > max_timeout || remaining == SYS_FOREVER_MS) {
 			remaining = max_timeout;
 		}
 	}
 
 	BT_DBG("Advertising %d ms for net_idx 0x%04x", remaining, sub->net_idx);
 
-	return remaining;
+	return SYS_TIMEOUT_MS(remaining);
 }
 #endif /* GATT_PROXY */
 
@@ -1239,7 +1235,7 @@ static size_t gatt_prov_adv_create(struct bt_data prov_sd[2])
 }
 #endif /* CONFIG_BT_MESH_PB_GATT */
 
-s32_t bt_mesh_proxy_adv_start(void)
+k_timeout_t bt_mesh_proxy_adv_start(void)
 {
 	BT_DBG("");
 

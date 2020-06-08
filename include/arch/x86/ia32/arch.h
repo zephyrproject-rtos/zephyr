@@ -15,7 +15,6 @@
 #define ZEPHYR_INCLUDE_ARCH_X86_IA32_ARCH_H_
 
 #include "sys_io.h"
-#include <drivers/interrupt_controller/sysapic.h>
 #include <stdbool.h>
 #include <kernel_structs.h>
 #include <arch/common/ffs.h>
@@ -178,7 +177,7 @@ typedef struct s_isrList {
  * between the vector and the IRQ line as well as triggering flags
  */
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
-({ \
+{ \
 	__asm__ __volatile__(							\
 		".pushsection .intList\n\t" \
 		".long %c[isr]_irq%c[irq]_stub\n\t"	/* ISR_LIST.fnc */ \
@@ -203,16 +202,22 @@ typedef struct s_isrList {
 		  [irq] "i" (irq_p)); \
 	z_irq_controller_irq_config(Z_IRQ_TO_INTERRUPT_VECTOR(irq_p), (irq_p), \
 				   (flags_p)); \
-	Z_IRQ_TO_INTERRUPT_VECTOR(irq_p); \
-})
+}
 
+/* Direct interrupts won't work as expected with KPTI turned on, because
+ * all non-user accessible pages in the page table are marked non-present.
+ * It's likely possible to add logic to ARCH_ISR_DIRECT_HEADER/FOOTER to do
+ * the necessary trampolining to switch page tables / stacks, but this
+ * probably loses all the latency benefits that direct interrupts provide
+ * and one might as well use a regular interrupt anyway.
+ */
+#ifndef CONFIG_X86_KPTI
 #define ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
-({ \
+{ \
 	NANO_CPU_INT_REGISTER(isr_p, irq_p, priority_p, -1, 0); \
 	z_irq_controller_irq_config(Z_IRQ_TO_INTERRUPT_VECTOR(irq_p), (irq_p), \
 				   (flags_p)); \
-	Z_IRQ_TO_INTERRUPT_VECTOR(irq_p); \
-})
+}
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 /*
@@ -239,7 +244,9 @@ static inline void arch_irq_direct_pm(void)
 #define ARCH_ISR_DIRECT_HEADER() arch_isr_direct_header()
 #define ARCH_ISR_DIRECT_FOOTER(swap) arch_isr_direct_footer(swap)
 
-/* FIXME: debug/tracing.h cannot be included here due to circular dependency */
+/* FIXME:
+ * tracing/tracing.h cannot be included here due to circular dependency
+ */
 #if defined(CONFIG_TRACING)
 extern void sys_trace_isr_enter(void);
 extern void sys_trace_isr_exit(void);
@@ -254,7 +261,7 @@ static inline void arch_isr_direct_header(void)
 	/* We're not going to unlock IRQs, but we still need to increment this
 	 * so that arch_is_in_isr() works
 	 */
-	++_kernel.nested;
+	++_kernel.cpus[0].nested;
 }
 
 /*
@@ -270,7 +277,7 @@ static inline void arch_isr_direct_footer(int swap)
 #if defined(CONFIG_TRACING)
 	sys_trace_isr_exit();
 #endif
-	--_kernel.nested;
+	--_kernel.cpus[0].nested;
 
 	/* Call swap if all the following is true:
 	 *
@@ -278,7 +285,7 @@ static inline void arch_isr_direct_footer(int swap)
 	 * 2) We are not in a nested interrupt
 	 * 3) Next thread to run in the ready queue is not this thread
 	 */
-	if (swap != 0 && _kernel.nested == 0 &&
+	if (swap != 0 && _kernel.cpus[0].nested == 0 &&
 	    _kernel.ready_q.cache != _current) {
 		unsigned int flags;
 
@@ -306,6 +313,7 @@ static inline void arch_isr_direct_footer(int swap)
 		ISR_DIRECT_FOOTER(check_reschedule); \
 	} \
 	static inline int name##_body(void)
+#endif /* !CONFIG_X86_KPTI */
 
 /**
  * @brief Exception Stack Frame
@@ -410,17 +418,15 @@ extern void k_float_enable(struct k_thread *thread, unsigned int options);
 extern struct task_state_segment _main_tss;
 #endif
 
-#if CONFIG_X86_KERNEL_OOPS
 #define ARCH_EXCEPT(reason_p) do { \
 	__asm__ volatile( \
 		"push %[reason]\n\t" \
 		"int %[vector]\n\t" \
 		: \
-		: [vector] "i" (CONFIG_X86_KERNEL_OOPS_VECTOR), \
+		: [vector] "i" (Z_X86_OOPS_VECTOR), \
 		  [reason] "i" (reason_p)); \
 	CODE_UNREACHABLE; \
 } while (false)
-#endif
 
 #ifdef __cplusplus
 }

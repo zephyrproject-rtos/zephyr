@@ -5,14 +5,18 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """
-Script to scan Zephyr include directories and emit system call metadata
+Script to scan Zephyr include directories and emit system call and subsystem metadata
 
 System calls require a great deal of boilerplate code in order to implement
 completely. This script is the first step in the build system's process of
 auto-generating this code by doing a text scan of directories containing
-header files, and building up a database of system calls and their
+C or header files, and building up a database of system calls and their
 function call prototypes. This information is emitted to a generated
 JSON file for further processing.
+
+This script also scans for struct definitions such as __subsystem and
+__net_socket, emitting a JSON dictionary mapping tags to all the struct
+declarations found that were tagged with them.
 
 If the output JSON file already exists, its contents are checked against
 what information this script would have outputted; if the result is that the
@@ -26,17 +30,37 @@ import argparse
 import os
 import json
 
-api_regex = re.compile(r'''
+regex_flags = re.MULTILINE | re.VERBOSE
+
+syscall_regex = re.compile(r'''
 __syscall\s+                    # __syscall attribute, must be first
 ([^(]+)                         # type and name of system call (split later)
 [(]                             # Function opening parenthesis
 ([^)]*)                         # Arg list (split later)
 [)]                             # Closing parenthesis
-''', re.MULTILINE | re.VERBOSE)
+''', regex_flags)
+
+struct_tags = ["__subsystem", "__net_socket"]
+
+tagged_struct_decl_template = r'''
+%s\s+                           # tag, must be first
+struct\s+                       # struct keyword is next
+([^{]+)                         # name of subsystem
+[{]                             # Open curly bracket
+'''
+
+def tagged_struct_update(target_list, tag, contents):
+    regex = re.compile(tagged_struct_decl_template % tag, regex_flags)
+    items = [mo.groups()[0].strip() for mo in regex.finditer(contents)]
+    target_list.extend(items)
 
 
 def analyze_headers(multiple_directories):
-    ret = []
+    syscall_ret = []
+    tagged_ret = {}
+
+    for tag in struct_tags:
+        tagged_ret[tag] = []
 
     for base_path in multiple_directories:
         for root, dirs, files in os.walk(base_path, topdown=True):
@@ -44,23 +68,42 @@ def analyze_headers(multiple_directories):
             files.sort()
             for fn in files:
 
-                # toolchain/common.h has the definition of __syscall which we
+                # toolchain/common.h has the definitions of these tagswhich we
                 # don't want to trip over
                 path = os.path.join(root, fn)
-                if not fn.endswith(".h") or path.endswith(os.path.join(os.sep, 'toolchain', 'common.h')):
+                if (not (path.endswith(".h") or path.endswith(".c")) or
+                        path.endswith(os.path.join(os.sep, 'toolchain',
+                                                   'common.h'))):
                     continue
 
                 with open(path, "r", encoding="utf-8") as fp:
-                    try:
-                        result = [(mo.groups(), fn)
-                                  for mo in api_regex.finditer(fp.read())]
-                    except Exception:
-                        sys.stderr.write("While parsing %s\n" % fn)
-                        raise
+                    contents = fp.read()
 
-                    ret.extend(result)
+                try:
+                    syscall_result = [(mo.groups(), fn)
+                                      for mo in syscall_regex.finditer(contents)]
+                    for tag in struct_tags:
+                        tagged_struct_update(tagged_ret[tag], tag, contents)
+                except Exception:
+                    sys.stderr.write("While parsing %s\n" % fn)
+                    raise
 
-    return ret
+                syscall_ret.extend(syscall_result)
+
+    return syscall_ret, tagged_ret
+
+
+def update_file_if_changed(path, new):
+    if os.path.exists(path):
+        with open(path, 'r') as fp:
+            old = fp.read()
+
+        if new != old:
+            with open(path, 'w') as fp:
+                fp.write(new)
+    else:
+        with open(path, 'w') as fp:
+            fp.write(new)
 
 
 def parse_args():
@@ -76,34 +119,34 @@ def parse_args():
     parser.add_argument(
         "-j", "--json-file", required=True,
         help="Write system call prototype information as json to file")
+    parser.add_argument(
+        "-t", "--tag-struct-file", required=True,
+        help="Write tagged struct name information as json to file")
+
     args = parser.parse_args()
 
 
 def main():
     parse_args()
 
-    syscalls = analyze_headers(args.include)
+    syscalls, tagged = analyze_headers(args.include)
+
+    # Only write json files if they don't exist or have changes since
+    # they will force an incremental rebuild.
 
     syscalls_in_json = json.dumps(
         syscalls,
         indent=4,
         sort_keys=True
     )
+    update_file_if_changed(args.json_file, syscalls_in_json)
 
-    # Check if the file already exists, and if there are no changes,
-    # don't touch it since that will force an incremental rebuild
-    path = args.json_file
-    new = syscalls_in_json
-    if os.path.exists(path):
-        with open(path, 'r') as fp:
-            old = fp.read()
-
-        if new != old:
-            with open(path, 'w') as fp:
-                fp.write(new)
-    else:
-        with open(path, 'w') as fp:
-            fp.write(new)
+    tagged_struct_in_json = json.dumps(
+        tagged,
+        indent=4,
+        sort_keys=True
+    )
+    update_file_if_changed(args.tag_struct_file, tagged_struct_in_json)
 
 
 if __name__ == "__main__":

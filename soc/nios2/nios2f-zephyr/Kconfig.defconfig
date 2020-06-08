@@ -11,39 +11,16 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config ALTERA_AVALON_SYSID
 	def_bool y
 
-if SOC_FLASH_NIOS2_QSPI
-
 config ALTERA_AVALON_QSPI
 	def_bool y
-
-endif # SOC_FLASH_NIOS2_QSPI
-
-if I2C_NIOS2
+	depends on SOC_FLASH_NIOS2_QSPI
 
 config ALTERA_AVALON_I2C
 	def_bool y
-
-endif # I2C_NIOS2
-
-if DMA_NIOS2_MSGDMA
+	depends on I2C_NIOS2
 
 config ALTERA_AVALON_MSGDMA
 	def_bool y
-
-endif # DMA_NIOS2_MSGDMA
-
-if UART_NS16550
-
-config UART_NS16550_PORT_0
-	default y
-
-if UART_NS16550_PORT_0
-
-config UART_NS16550_PORT_0_OPTIONS
-	default 0
-
-endif # UART_NS16550_PORT_0
-
-endif # UART_NS16550
+	depends on DMA_NIOS2_MSGDMA
 
 endif # SOC_NIOS2F_ZEPHYR

@@ -11,6 +11,7 @@ zephyr_library_sources_if_kconfig(uart_sifive.c)
 zephyr_library_sources_if_kconfig(uart_gecko.c)
 zephyr_library_sources_if_kconfig(leuart_gecko.c)
 zephyr_library_sources_if_kconfig(uart_mcux.c)
+zephyr_library_sources_if_kconfig(uart_mcux_flexcomm.c)
 zephyr_library_sources_if_kconfig(uart_mcux_lpuart.c)
 zephyr_library_sources_if_kconfig(uart_mcux_lpsci.c)
 zephyr_library_sources_if_kconfig(uart_miv.c)
@@ -23,26 +24,24 @@ zephyr_library_sources_if_kconfig(usart_sam.c)
 zephyr_library_sources_if_kconfig(uart_stellaris.c)
 zephyr_library_sources_if_kconfig(uart_stm32.c)
 zephyr_library_sources_if_kconfig(uart_sam0.c)
-zephyr_library_sources_if_kconfig(usart_mcux_lpc.c)
 zephyr_library_sources_if_kconfig(uart_psoc6.c)
 zephyr_library_sources_if_kconfig(uart_pl011.c)
 zephyr_library_sources_if_kconfig(uart_rv32m1_lpuart.c)
 zephyr_library_sources_if_kconfig(uart_liteuart.c)
 zephyr_library_sources_ifdef(CONFIG_UART_RTT_DRIVER uart_rtt.c)
 zephyr_library_sources_if_kconfig(uart_xlnx_ps.c)
+zephyr_library_sources_if_kconfig(uart_xmc4xxx.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE   uart_handlers.c)
 
 if(CONFIG_UART_NS16550)
   zephyr_library_sources(uart_ns16550.c)
   foreach(NUM RANGE 0 3)
-    if (CONFIG_UART_NS16550_PORT_${NUM})
-      configure_file(
-        uart_ns16550_port_x.h
-        ${PROJECT_BINARY_DIR}/include/generated/uart_ns16550_port_${NUM}.h
-        @ONLY
-        )
-    endif()
+    configure_file(
+      uart_ns16550_port_x.h
+      ${PROJECT_BINARY_DIR}/include/generated/uart_ns16550_port_${NUM}.h
+      @ONLY
+      )
   endforeach(NUM)
 endif()
 

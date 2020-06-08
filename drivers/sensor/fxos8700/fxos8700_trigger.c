@@ -21,7 +21,8 @@ static void fxos8700_gpio_callback(struct device *dev,
 		return;
 	}
 
-	gpio_pin_disable_callback(dev, data->gpio_pin);
+	gpio_pin_interrupt_configure(data->gpio, data->gpio_pin,
+				     GPIO_INT_DISABLE);
 
 #if defined(CONFIG_FXOS8700_TRIGGER_OWN_THREAD)
 	k_sem_give(&data->trig_sem);
@@ -49,7 +50,7 @@ static int fxos8700_handle_drdy_int(struct device *dev)
 #ifdef CONFIG_FXOS8700_PULSE
 static int fxos8700_handle_pulse_int(struct device *dev)
 {
-	const struct fxos8700_config *config = dev->config->config_info;
+	const struct fxos8700_config *config = dev->config_info;
 	struct fxos8700_data *data = dev->driver_data;
 	sensor_trigger_handler_t handler = NULL;
 	u8_t pulse_source;
@@ -87,7 +88,7 @@ static int fxos8700_handle_pulse_int(struct device *dev)
 #ifdef CONFIG_FXOS8700_MOTION
 static int fxos8700_handle_motion_int(struct device *dev)
 {
-	const struct fxos8700_config *config = dev->config->config_info;
+	const struct fxos8700_config *config = dev->config_info;
 	struct fxos8700_data *data = dev->driver_data;
 	sensor_trigger_handler_t handler = data->motion_handler;
 	u8_t motion_source;
@@ -118,7 +119,7 @@ static int fxos8700_handle_motion_int(struct device *dev)
 static void fxos8700_handle_int(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	const struct fxos8700_config *config = dev->config->config_info;
+	const struct fxos8700_config *config = dev->config_info;
 	struct fxos8700_data *data = dev->driver_data;
 	u8_t int_source;
 
@@ -147,7 +148,8 @@ static void fxos8700_handle_int(void *arg)
 	}
 #endif
 
-	gpio_pin_enable_callback(data->gpio, config->gpio_pin);
+	gpio_pin_interrupt_configure(data->gpio, config->gpio_pin,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 }
 
 #ifdef CONFIG_FXOS8700_TRIGGER_OWN_THREAD
@@ -180,7 +182,7 @@ int fxos8700_trigger_set(struct device *dev,
 			 const struct sensor_trigger *trig,
 			 sensor_trigger_handler_t handler)
 {
-	const struct fxos8700_config *config = dev->config->config_info;
+	const struct fxos8700_config *config = dev->config_info;
 	struct fxos8700_data *data = dev->driver_data;
 	enum fxos8700_power power = FXOS8700_POWER_STANDBY;
 	u8_t mask;
@@ -258,7 +260,7 @@ exit:
 #ifdef CONFIG_FXOS8700_PULSE
 static int fxos8700_pulse_init(struct device *dev)
 {
-	const struct fxos8700_config *config = dev->config->config_info;
+	const struct fxos8700_config *config = dev->config_info;
 	struct fxos8700_data *data = dev->driver_data;
 
 	if (i2c_reg_write_byte(data->i2c, config->i2c_address,
@@ -303,7 +305,7 @@ static int fxos8700_pulse_init(struct device *dev)
 #ifdef CONFIG_FXOS8700_MOTION
 static int fxos8700_motion_init(struct device *dev)
 {
-	const struct fxos8700_config *config = dev->config->config_info;
+	const struct fxos8700_config *config = dev->config_info;
 	struct fxos8700_data *data = dev->driver_data;
 
 	/* Set Mode 4, Motion detection with ELE = 1, OAE = 1 */
@@ -331,7 +333,7 @@ static int fxos8700_motion_init(struct device *dev)
 
 int fxos8700_trigger_init(struct device *dev)
 {
-	const struct fxos8700_config *config = dev->config->config_info;
+	const struct fxos8700_config *config = dev->config_info;
 	struct fxos8700_data *data = dev->driver_data;
 	u8_t ctrl_reg5;
 
@@ -387,15 +389,15 @@ int fxos8700_trigger_init(struct device *dev)
 	data->gpio_pin = config->gpio_pin;
 
 	gpio_pin_configure(data->gpio, config->gpio_pin,
-			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			   GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
+			   GPIO_INPUT | config->gpio_flags);
 
 	gpio_init_callback(&data->gpio_cb, fxos8700_gpio_callback,
 			   BIT(config->gpio_pin));
 
 	gpio_add_callback(data->gpio, &data->gpio_cb);
 
-	gpio_pin_enable_callback(data->gpio, config->gpio_pin);
+	gpio_pin_interrupt_configure(data->gpio, config->gpio_pin,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 
 	return 0;
 }

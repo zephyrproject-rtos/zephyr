@@ -20,6 +20,7 @@
 #include <stdbool.h>
 #include <net/buf.h>
 #include <bluetooth/buf.h>
+#include <bluetooth/hci_vs.h>
 #include <device.h>
 
 #ifdef __cplusplus
@@ -94,6 +95,15 @@ int bt_recv(struct net_buf *buf);
  * @return 0 on success or negative error number on failure.
  */
 int bt_recv_prio(struct net_buf *buf);
+
+/** @brief Read static addresses from the controller.
+ *
+ *  @param addrs  Random static address and Identity Root (IR) array.
+ *  @param size   Size of array.
+ *
+ *  @return Number of addresses read.
+ */
+u8_t bt_read_static_addr(struct bt_hci_vs_static_addr addrs[], u8_t size);
 
 /** Possible values for the 'bus' member of the bt_hci_driver struct */
 enum bt_hci_driver_bus {
@@ -183,6 +193,47 @@ int bt_hci_driver_register(const struct bt_hci_driver *drv);
  * @return 0 on success, negative error value on failure
  */
 int bt_hci_transport_setup(struct device *dev);
+
+/** Allocate an HCI event buffer.
+ *
+ * This function allocates a new buffer for an HCI event. It is given the
+ * avent code and the total length of the parameters. Upon successful return
+ * the buffer is ready to have the parameters encoded into it.
+ *
+ * @param evt        Event OpCode.
+ * @param len        Length of event parameters.
+ *
+ * @return Newly allocated buffer.
+ */
+struct net_buf *bt_hci_evt_create(u8_t evt, u8_t len);
+
+/** Allocate an HCI Command Complete event buffer.
+ *
+ * This function allocates a new buffer for HCI Command Complete event.
+ * It is given the OpCode (encoded e.g. using the BT_OP macro) and the total
+ * length of the parameters. Upon successful return the buffer is ready to have
+ * the parameters encoded into it.
+ *
+ * @param op         Command OpCode.
+ * @param plen       Length of command parameters.
+ *
+ * @return Newly allocated buffer.
+ */
+struct net_buf *bt_hci_cmd_complete_create(u16_t op, u8_t plen);
+
+/** Allocate an HCI Command Status event buffer.
+ *
+ * This function allocates a new buffer for HCI Command Status event.
+ * It is given the OpCode (encoded e.g. using the BT_OP macro) and the status
+ * code. Upon successful return the buffer is ready to have the parameters
+ * encoded into it.
+ *
+ * @param op         Command OpCode.
+ * @param status     Status code.
+ *
+ * @return Newly allocated buffer.
+ */
+struct net_buf *bt_hci_cmd_status_create(u16_t op, u8_t status);
 
 #ifdef __cplusplus
 }

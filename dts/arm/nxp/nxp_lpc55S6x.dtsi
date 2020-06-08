@@ -7,108 +7,22 @@
 #include <mem.h>
 #include <arm/armv8-m.dtsi>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/i2c/i2c.h>
 
 / {
-	cpus {
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		cpu@0 {
-			compatible = "arm,cortex-m33f";
-			reg = <0>;
-		};
-		cpu@1 {
-			compatible = "arm,cortex-m33";
-			reg = <1>;
-		};
-	};
-
-	sram0:memory@30000000 {
-		compatible = "mmio-sram";
-		reg = <0x30000000 DT_SIZE_K(64)>;
-	};
-
-	sram1:memory@30010000 {
-		compatible = "mmio-sram";
-		reg = <0x30010000 DT_SIZE_K(64)>;
-	};
-
-	sram2:memory@30020000 {
-		compatible = "mmio-sram";
-		reg = <0x30020000 DT_SIZE_K(64)>;
-	};
-
-	sram3:memory@30030000 {
-		compatible = "mmio-sram";
-		reg = <0x30030000 DT_SIZE_K(64)>;
-	};
-
-	sramx:memory@14000000{
-		compatible = "mmio-sram";
-		reg = <0x14000000 DT_SIZE_K(32)>;
-	};
-
 	soc {
-
-		flash0:flash@10000000 {
-			compatible = "soc-nv-flash";
-			reg = <0x10000000 DT_SIZE_K(630)>;
+		sram: sram@14000000 {
+			ranges = <0x4000000 0x14000000 0x20000000>;
 		};
 
-		usart0:usart@50086000 {
-			compatible = "nxp,lpc-usart";
-			reg = <0x50086000 0xE44>;
-			interrupts = <14 0>;
-			label = "USART_0";
-			status = "disabled";
-		};
+		peripheral: peripheral@50000000 {
+			ranges = <0x0 0x50000000 0x10000000>;
 
-		gpio0:gpio@0 {
-			compatible = "nxp,lpc-gpio";
-			reg = <0x5008c000 0x2488>;
-			interrupts = <4 2>,<5 2>,<6 2>,<7 2>;
-			label = "GPIO_0";
-			gpio-controller;
-			#gpio-cells = <2>;
-		};
-
-		gpio1:gpio@1 {
-			compatible = "nxp,lpc-gpio";
-			reg = <0x5008c000 0x2488>;
-			interrupts = <32 2>,<33 2>,<34 2>,<35 2>;
-			label = "GPIO_1";
-			gpio-controller;
-			#gpio-cells = <2>;
-		};
-
-		gpio2:gpio@2 {
-			compatible = "nxp,lpc-gpio";
-			reg = <0x5008c000 0x2488>;
-			label = "GPIO_2";
-			gpio-controller;
-			#gpio-cells = <2>;
-		};
-
-		gpio3:gpio@3 {
-			compatible = "nxp,lpc-gpio";
-			reg = <0x5008c000 0x2488>;
-			label = "GPIO_3";
-			gpio-controller;
-			#gpio-cells = <2>;
-		};
-
-		spi8: spi@5009f000 {
-			compatible = "nxp,lpc-spi";
-			reg = <0x5009f000 0x1000>;
-			interrupts = <59 0>;
-			label = "SPI_8";
-			status = "disabled";
-			#address-cells = <1>;
-			#size-cells = <0>;
+			iap: flash-controller@34000 {
+				ranges = <0x0 0x10000000 0x3020000>;
+			};
 		};
 	};
 };
 
-&nvic {
-	arm,num-irq-priority-bits = <3>;
-};
+#include "nxp_lpc55S6x_common.dtsi"

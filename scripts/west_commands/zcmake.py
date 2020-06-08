@@ -122,6 +122,7 @@ class CMakeCacheEntry:
     STRING        str OR list of str (if ';' is in the value)
     BOOL          bool
     INTERNAL      str OR list of str (if ';' is in the value)
+    STATIC        str OR list of str (if ';' is in the value)
     ----------    -------------------------------------------
     '''
 
@@ -133,9 +134,9 @@ class CMakeCacheEntry:
     # the first colon (':'). This breaks if the variable name has a
     # colon inside, but it's good enough.
     CACHE_ENTRY = re.compile(
-        r'''(?P<name>.*?)                               # name
-         :(?P<type>FILEPATH|PATH|STRING|BOOL|INTERNAL)  # type
-         =(?P<value>.*)                                 # value
+        r'''(?P<name>.*?)                                      # name
+         :(?P<type>FILEPATH|PATH|STRING|BOOL|INTERNAL|STATIC)  # type
+         =(?P<value>.*)                                        # value
         ''', re.X)
 
     @classmethod
@@ -186,7 +187,7 @@ class CMakeCacheEntry:
             except ValueError as exc:
                 args = exc.args + ('on line {}: {}'.format(line_no, line),)
                 raise ValueError(args) from exc
-        elif type_ in {'STRING', 'INTERNAL'}:
+        elif type_ in {'STRING', 'INTERNAL', 'STATIC'}:
             # If the value is a CMake list (i.e. is a string which
             # contains a ';'), convert to a Python list.
             if ';' in value:

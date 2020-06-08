@@ -1,0 +1,18 @@
+# Copyright (c) 2020, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 Random Number Generator
+
+compatible: "st,stm32-rng"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    label:
+      required: true
+
+    clocks:
+      required: true

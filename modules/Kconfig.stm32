@@ -3,6 +3,9 @@
 # Copyright (c) 2016 Linaro Limited.
 # SPDX-License-Identifier: Apache-2.0
 
+config HAS_STM32LIB
+	bool
+
 config HAS_STM32CUBE
 	bool
 	select HAS_CMSIS_CORE
@@ -126,6 +129,11 @@ config USE_STM32_HAL_ETH
 	bool
 	help
 	  Enable STM32Cube Ethernet (ETH) HAL module driver
+
+config USE_STM32_HAL_ETH_EX
+	bool
+	help
+	  Enable STM32Cube Extended Ethernet (ETH) HAL module driver
 
 config USE_STM32_HAL_EXTI
 	bool
@@ -341,6 +349,12 @@ config USE_STM32_HAL_PCD_EX
 	help
 	  Enable STM32Cube Extended USB Peripheral Controller (PCD) HAL module
 	  driver
+
+config USE_STM32_HAL_PSSI
+	bool
+	help
+	  Enable STM32Cube Parallel Synchronous Slave Interface (PSSI)
+	  HAL module driver
 
 config USE_STM32_HAL_PWR
 	bool

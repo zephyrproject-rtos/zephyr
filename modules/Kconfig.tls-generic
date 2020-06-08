@@ -4,25 +4,30 @@
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if MBEDTLS
-
 menu "TLS configuration"
+	depends on MBEDTLS_BUILTIN && MBEDTLS_CFG_FILE = "config-tls-generic.h"
 
 menu "Supported TLS version"
 
 config MBEDTLS_TLS_VERSION_1_0
 	bool "Enable support for TLS 1.0"
+	select MBEDTLS_CIPHER
 	select MBEDTLS_MAC_MD5_ENABLED
 	select MBEDTLS_MAC_SHA1_ENABLED
+	select MBEDTLS_MD
 
 config MBEDTLS_TLS_VERSION_1_1
 	bool "Enable support for TLS 1.1 (DTLS 1.0)"
+	select MBEDTLS_CIPHER
 	select MBEDTLS_MAC_MD5_ENABLED
 	select MBEDTLS_MAC_SHA1_ENABLED
+	select MBEDTLS_MD
 
 config MBEDTLS_TLS_VERSION_1_2
 	bool "Enable support for TLS 1.2 (DTLS 1.2)"
-	default y
+	default y if !NET_L2_OPENTHREAD
+	select MBEDTLS_CIPHER
+	select MBEDTLS_MD
 
 config MBEDTLS_DTLS
 	bool "Enable support for DTLS"
@@ -171,9 +176,10 @@ config MBEDTLS_CIPHER_ALL_ENABLED
 	select MBEDTLS_CIPHER_CHACHA20_ENABLED
 	select MBEDTLS_CIPHER_BLOWFISH_ENABLED
 	select MBEDTLS_CIPHER_CCM_ENABLED
+	select MBEDTLS_CIPHER_GCM_ENABLED
 	select MBEDTLS_CIPHER_MODE_XTS_ENABLED
-	select MBEDTLS_CIPHER_MODE_GCM_ENABLED
-	select MBEDTLS_CIPHER_CBC_ENABLED
+	select MBEDTLS_CIPHER_MODE_CBC_ENABLED
+	select MBEDTLS_CIPHER_MODE_CTR_ENABLED
 	select MBEDTLS_CHACHAPOLY_AEAD_ENABLED
 
 config MBEDTLS_CIPHER_AES_ENABLED
@@ -205,17 +211,20 @@ config MBEDTLS_CIPHER_CCM_ENABLED
 	bool "Enable the Counter with CBC-MAC (CCM) mode for 128-bit block cipher"
 	depends on MBEDTLS_CIPHER_AES_ENABLED || MBEDTLS_CIPHER_CAMELLIA_ENABLED
 
+config MBEDTLS_CIPHER_GCM_ENABLED
+	bool "Enable the Galois/Counter Mode (GCM) for AES"
+	depends on MBEDTLS_CIPHER_AES_ENABLED || MBEDTLS_CIPHER_CAMELLIA_ENABLED
+
 config MBEDTLS_CIPHER_MODE_XTS_ENABLED
 	bool "Enable Xor-encrypt-xor with ciphertext stealing mode (XTS) for AES"
 	depends on MBEDTLS_CIPHER_AES_ENABLED || MBEDTLS_CIPHER_CAMELLIA_ENABLED
 
-config MBEDTLS_CIPHER_MODE_GCM_ENABLED
-	bool "Enable the Galois/Counter Mode (GCM) for AES"
-	depends on MBEDTLS_CIPHER_AES_ENABLED || MBEDTLS_CIPHER_CAMELLIA_ENABLED
-
-config MBEDTLS_CIPHER_CBC_ENABLED
+config MBEDTLS_CIPHER_MODE_CBC_ENABLED
 	bool "Enable Cipher Block Chaining mode (CBC) for symmetric ciphers"
 	default y if !NET_L2_OPENTHREAD
+
+config MBEDTLS_CIPHER_MODE_CTR_ENABLED
+	bool "Enable Counter Block Cipher mode (CTR) for symmetric ciphers."
 
 config MBEDTLS_CHACHAPOLY_AEAD_ENABLED
 	bool "Enable the ChaCha20-Poly1305 AEAD algorithm"
@@ -277,8 +286,15 @@ config MBEDTLS_CTR_DRBG_ENABLED
 
 config MBEDTLS_HMAC_DRBG_ENABLED
 	bool "Enable the HMAC_DRBG random generator"
+	select MBEDTLS_MD
 
 comment "Other configurations"
+
+config MBEDTLS_CIPHER
+	bool "Enable the generic cipher layer."
+
+config MBEDTLS_MD
+	bool "Enable the generic message digest layer."
 
 config MBEDTLS_GENPRIME_ENABLED
 	bool "Enable the prime-number generation code."
@@ -325,5 +341,3 @@ config MBEDTLS_USER_CONFIG_FILE
 	  covered by the generic config file.
 
 endmenu
-
-endif # MBEDTLS

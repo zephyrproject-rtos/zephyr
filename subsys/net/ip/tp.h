@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 Intel Corporation
+ * Copyright (c) 2018-2020 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@ extern "C" {
 #include <sys/types.h>
 #include <data/json.h>
 #include <net/net_pkt.h>
+#include "connection.h"
 
 #if IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)
 
@@ -105,16 +106,21 @@ static const struct json_obj_descr tp_new_dsc[] = {
 				 tp_entry_dsc, ARRAY_SIZE(tp_entry_dsc)),
 };
 
-bool tp_input(struct net_pkt *pkt);
+enum net_verdict tp_input(struct net_conn *net_conn,
+			  struct net_pkt *pkt,
+			  union net_ip_header *ip,
+			  union net_proto_header *proto,
+			  void *user_data);
 
 char *tp_basename(char *path);
 const char *tp_hex_to_str(void *data, size_t len);
 size_t tp_str_to_hex(void *buf, size_t bufsize, const char *s);
 
-void _tp_output(struct net_if *iface, void *data, size_t data_len,
-		const char *file, int line);
-#define tp_output(_iface, _data, _data_len) \
-	_tp_output(_iface, _data, _data_len, tp_basename(__FILE__), __LINE__)
+void _tp_output(sa_family_t af, struct net_if *iface, void *data,
+		size_t data_len, const char *file, int line);
+#define tp_output(_af, _iface, _data, _data_len)	\
+	_tp_output(_af, _iface, _data, _data_len,	\
+		   tp_basename(__FILE__), __LINE__)
 
 void tp_pkt_adj(struct net_pkt *pkt, int req_len);
 
@@ -128,11 +134,14 @@ void tp_mem_stat(void);
 
 struct net_buf *tp_nbuf_alloc(struct net_buf_pool *pool, size_t len,
 				const char *file, int line, const char *func);
+struct net_buf *tp_nbuf_clone(struct net_buf *buf, const char *file, int line,
+				const char *func);
 void tp_nbuf_unref(struct net_buf *nbuf, const char *file, int line,
 			const char *func);
 void tp_nbuf_stat(void);
+void tp_pkt_alloc(struct net_pkt *pkt,
+		  const char *file, int line);
 
-struct net_pkt *tp_pkt_alloc(size_t len, const char *file, int line);
 struct net_pkt *tp_pkt_clone(struct net_pkt *pkt, const char *file, int line);
 void tp_pkt_unref(struct net_pkt *pkt, const char *file, int line);
 void tp_pkt_stat(void);
@@ -148,8 +157,8 @@ void tp_encode(struct tp *tp, void *data, size_t *data_len);
 void tp_new_to_json(struct tp_new *tp, void *data, size_t *data_len);
 void tp_new_find_and_apply(struct tp_new *tp, const char *key, void *value,
 				int type);
-void tp_out(struct net_if *iface, const char *msg, const char *key,
-		const char *value);
+void tp_out(sa_family_t af, struct net_if *iface, const char *msg,
+	    const char *key, const char *value);
 
 bool tp_tap_input(struct net_pkt *pkt);
 

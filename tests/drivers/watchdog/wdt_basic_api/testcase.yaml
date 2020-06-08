@@ -3,9 +3,14 @@ tests:
     depends_on: watchdog
     tags: drivers watchdog
     filter: not CONFIG_WDT_SAM
-    platform_exclude: nucleo_l496zg nucleo_f401re
+    platform_exclude: nucleo_l496zg nucleo_f401re mec15xxevb_assy6853
   drivers.watchdog.nucleo_l496zg:
     depends_on: watchdog
     tags: drivers watchdog
     extra_args: CONF_FILE="prj.conf;nucleo_l496zg.conf"
     platform_whitelist: nucleo_l496zg
+  drivers.watchdog.mec15xxevb_assy6853:
+    depends_on: watchdog
+    tags: drivers watchdog
+    build_only: true
+    platform_whitelist: mec15xxevb_assy6853

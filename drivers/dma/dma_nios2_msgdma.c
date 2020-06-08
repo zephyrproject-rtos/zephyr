@@ -30,9 +30,9 @@ struct nios2_msgdma_dev_cfg {
 			     int error_code);
 };
 
-#define DEV_NAME(dev) ((dev)->config->name)
+#define DEV_NAME(dev) ((dev)->name)
 #define DEV_CFG(dev) \
-	((struct nios2_msgdma_dev_cfg *)(dev)->config->config_info)
+	((struct nios2_msgdma_dev_cfg *)(dev)->config_info)
 
 static void nios2_msgdma_isr(void *arg)
 {

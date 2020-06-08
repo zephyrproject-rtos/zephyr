@@ -1,0 +1,8 @@
+# SAM E54 Xplained Pro Board configuration
+#
+# Copyright (c) 2019 Benjamin Valentin
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ATSAME54_XPRO
+	bool "SAM E54 Xplained Pro"
+	depends on SOC_PART_NUMBER_SAME54P20A

@@ -59,7 +59,7 @@ extern int z_clock_device_ctrl(struct device *device, u32_t ctrl_command,
  * treated identically: it simply indicates the kernel would like the
  * next tick announcement as soon as possible.
  *
- * Note that ticks can also be passed the special value K_FOREVER,
+ * Note that ticks can also be passed the special value K_TICKS_FOREVER,
  * indicating that no future timer interrupts are expected or required
  * and that the system is permitted to enter an indefinite sleep even
  * if this could cause rollover of the internal counter (i.e. the

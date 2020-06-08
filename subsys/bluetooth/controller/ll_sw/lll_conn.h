@@ -105,17 +105,24 @@ struct lll_conn {
 
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
 	u8_t  rssi_latest;
+#if defined(CONFIG_BT_CTLR_CONN_RSSI_EVENT)
 	u8_t  rssi_reported;
 	u8_t  rssi_sample_count;
+#endif /* CONFIG_BT_CTLR_CONN_RSSI_EVENT */
 #endif /* CONFIG_BT_CTLR_CONN_RSSI */
 
 #if defined(CONFIG_BT_CTLR_CONN_META)
 	struct lll_conn_meta conn_meta;
 #endif /* CONFIG_BT_CTLR_CONN_META */
+
+#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
+	s8_t tx_pwr_lvl;
+#endif
 };
 
 int lll_conn_init(void);
 int lll_conn_reset(void);
+
 u8_t lll_conn_sca_local_get(void);
 u32_t lll_conn_ppm_local_get(void);
 u32_t lll_conn_ppm_get(u8_t sca);
@@ -129,7 +136,7 @@ void lll_conn_isr_abort(void *param);
 void lll_conn_rx_pkt_set(struct lll_conn *lll);
 void lll_conn_tx_pkt_set(struct lll_conn *lll, struct pdu_data *pdu_data_tx);
 void lll_conn_pdu_tx_prep(struct lll_conn *lll, struct pdu_data **pdu_data_tx);
-void lll_conn_flush(struct lll_conn *lll);
+void lll_conn_flush(u16_t handle, struct lll_conn *lll);
 
 extern void ull_conn_lll_ack_enqueue(u16_t handle, struct node_tx *tx);
 extern u16_t ull_conn_lll_max_tx_octets_get(struct lll_conn *lll);

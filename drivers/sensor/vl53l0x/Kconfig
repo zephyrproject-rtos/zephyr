@@ -10,12 +10,9 @@ menuconfig VL53L0X
 	help
 	  Enable driver for VL53L0X I2C-based time of flight sensor.
 
-if VL53L0X
-
 config VL53L0X_PROXIMITY_THRESHOLD
 	int "Proximity threshold in millimeters"
 	default 100
+	depends on VL53L0X
 	help
 	  Threshold used for proximity detection when sensor is used with SENSOR_CHAN_PROX.
-
-endif # VL53L0X

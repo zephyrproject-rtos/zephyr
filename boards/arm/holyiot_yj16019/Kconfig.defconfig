@@ -14,19 +14,9 @@ config GPIO_AS_PINRESET
 config UART_NRFX
 	default n
 
-if PWM
-
-config PWM_0
-	default y
-
-endif # PWM
-
-if IEEE802154
-
 config IEEE802154_NRF5
 	default y
-
-endif # IEEE802154
+	depends on IEEE802154
 
 config BT_CTLR
 	default BT

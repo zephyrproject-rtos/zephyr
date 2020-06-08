@@ -41,7 +41,7 @@ void main(void)
 	}
 
 	LOG_INF("Sending SNTP IPv4 request...");
-	rv = sntp_query(&ctx, K_SECONDS(4), &sntp_time);
+	rv = sntp_query(&ctx, 4 * MSEC_PER_SEC, &sntp_time);
 	if (rv < 0) {
 		LOG_ERR("SNTP IPv4 request failed: %d", rv);
 		goto end;
@@ -69,7 +69,7 @@ void main(void)
 
 	LOG_INF("Sending SNTP IPv6 request...");
 	/* With such a timeout, this is expected to fail. */
-	rv = sntp_query(&ctx, K_NO_WAIT, &sntp_time);
+	rv = sntp_query(&ctx, 0, &sntp_time);
 	if (rv < 0) {
 		LOG_ERR("SNTP IPv6 request: %d", rv);
 		goto end;

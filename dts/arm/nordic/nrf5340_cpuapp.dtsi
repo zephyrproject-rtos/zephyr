@@ -34,6 +34,8 @@
 		rtc-1 = &rtc1;
 		uart-0 = &uart0;
 		uart-1 = &uart1;
+		uart-2 = &uart2;
+		uart-3 = &uart3;
 		adc-0 = &adc;
 		egu-0 = &egu0;
 		egu-1 = &egu1;
@@ -46,22 +48,32 @@
 		gpiote-0 = &gpiote;
 		i2c-0 = &i2c0;
 		i2c-1 = &i2c1;
+		i2c-2 = &i2c2;
+		i2c-3 = &i2c3;
 		ipc-0 = &ipc;
 		pdm-0 = &pdm0;
 		spi-0 = &spi0;
 		spi-1 = &spi1;
 		spi-2 = &spi2;
+		spi-3 = &spi3;
+		spi-4 = &spi4;
 		pwm-0 = &pwm0;
 		pwm-1 = &pwm1;
 		pwm-2 = &pwm2;
+		pwm-3 = &pwm3;
 		wdt-0 = &wdt;
 		timer-0 = &timer0;
 		timer-1 = &timer1;
 		timer-2 = &timer2;
 	};
 
+	chosen {
+		zephyr,flash-controller = &flash_controller;
+	};
+
 	soc {
 		sram0: memory@20000000 {
+			device_type = "memory";
 			compatible = "mmio-sram";
 		};
 
@@ -77,6 +89,21 @@
 		};
 
 		/* Additional Secure peripherals */
+		cryptocell: crypto@50844000 {
+			compatible = "nordic,nrf-cc312";
+			reg = <0x50844000 0x1000>;
+			label = "CRYPTOCELL";
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			cryptocell312: crypto@50845000 {
+				compatible = "arm,cryptocell-312";
+				reg = <0x50845000 0x1000>;
+				interrupts = <68 1>;
+				label = "CRYPTOCELL312";
+			};
+		};
+
 		gpiote: gpiote@5000d000 {
 			compatible = "nordic,nrf-gpiote";
 			reg = <0x5000d000 0x1000>;

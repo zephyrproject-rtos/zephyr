@@ -3,9 +3,6 @@
 # Copyright (c) 2018 Henrik Brix Andersen <henrik@brixandersen.dk>
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_ADAFRUIT_FEATHER_M0_BASIC_PROTO
-
 config BOARD
 	default "adafruit_feather_m0_basic_proto"
-
-endif
+	depends on BOARD_ADAFRUIT_FEATHER_M0_BASIC_PROTO

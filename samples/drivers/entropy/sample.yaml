@@ -2,7 +2,7 @@ sample:
   name: Sample for the entropy gathering driver
 tests:
   sample.drivers.entropy:
-    tags: crypto
+    tags: crypto entropy
     filter: CONFIG_ENTROPY_HAS_DRIVER
     harness: console
     harness_config:
@@ -11,4 +11,4 @@ tests:
       regex:
         - "Entropy Example! (.*)"
         - "entropy device is (.*), name is (.*)"
-        - "(  0x([0-9a-f]){2}){9}"
+        - "(\\s*0x([0-9a-f]){2}){9}"

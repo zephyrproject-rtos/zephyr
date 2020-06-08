@@ -97,7 +97,6 @@ struct bt_mesh_friend {
 	u8_t  fsn:1,
 	      send_last:1,
 	      pending_req:1,
-	      sec_update:1,
 	      pending_buf:1,
 	      valid:1,
 	      established:1;
@@ -223,7 +222,6 @@ enum {
 	BT_MESH_CFG_PENDING,
 	BT_MESH_MOD_PENDING,
 	BT_MESH_VA_PENDING,
-	BT_MESH_NODES_PENDING,
 
 	/* Don't touch - intentionally last */
 	BT_MESH_FLAG_COUNT,
@@ -255,10 +253,6 @@ struct bt_mesh_net {
 	struct k_delayed_work ivu_timer;
 
 	u8_t dev_key[16];
-
-#if defined(CONFIG_BT_MESH_PROVISIONER)
-	struct bt_mesh_node nodes[CONFIG_BT_MESH_NODE_COUNT];
-#endif
 
 	struct bt_mesh_app_key app_keys[CONFIG_BT_MESH_APP_KEY_COUNT];
 
@@ -341,10 +335,6 @@ int bt_mesh_net_encode(struct bt_mesh_net_tx *tx, struct net_buf_simple *buf,
 
 int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 		     const struct bt_mesh_send_cb *cb, void *cb_data);
-
-int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
-		       bool new_key, const struct bt_mesh_send_cb *cb,
-		       void *cb_data);
 
 int bt_mesh_net_decode(struct net_buf_simple *data, enum bt_mesh_net_if net_if,
 		       struct bt_mesh_net_rx *rx, struct net_buf_simple *buf);

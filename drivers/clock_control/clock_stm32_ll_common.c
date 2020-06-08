@@ -9,7 +9,7 @@
 #include <soc.h>
 #include <drivers/clock_control.h>
 #include <sys/util.h>
-#include <clock_control/stm32_clock_control.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 #include "clock_stm32_ll_common.h"
 
 /* Macros to fill up prescaler values */
@@ -88,6 +88,7 @@ static inline int stm32_clock_control_on(struct device *dev,
 		LL_AHB1_GRP1_EnableClock(pclken->enr);
 		break;
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32F4X) || \
 	defined(CONFIG_SOC_SERIES_STM32F7X) || \
 	defined(CONFIG_SOC_SERIES_STM32F2X) || \
@@ -96,26 +97,24 @@ static inline int stm32_clock_control_on(struct device *dev,
 	case STM32_CLOCK_BUS_AHB2:
 		LL_AHB2_GRP1_EnableClock(pclken->enr);
 		break;
-#endif /* CONFIG_SOC_SERIES_STM32L4X || CONFIG_SOC_SERIES_STM32F4X ||
-		CONFIG_SOC_SERIES_STM32F7X || CONFIG_SOC_SERIES_STM32F2X ||
-		CONFIG_SOC_SERIES_STM32WBX || CONFIG_SOC_SERIES_STM32G4X */
+#endif /* CONFIG_SOC_SERIES_STM32_* */
 	case STM32_CLOCK_BUS_APB1:
 		LL_APB1_GRP1_EnableClock(pclken->enr);
 		break;
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X)
 	case STM32_CLOCK_BUS_APB1_2:
 		LL_APB1_GRP2_EnableClock(pclken->enr);
 		break;
-#endif /* CONFIG_SOC_SERIES_STM32L4X || CONFIG_SOC_SERIES_STM32F0X ||
-		CONFIG_SOC_SERIES_STM32WBX || CONFIG_SOC_SERIES_STM32G4X */
-#if !defined (CONFIG_SOC_SERIES_STM32F0X) && !defined (CONFIG_SOC_SERIES_STM32G0X)
+#endif /* CONFIG_SOC_SERIES_STM32_* */
+#if !defined(CONFIG_SOC_SERIES_STM32F0X)
 	case STM32_CLOCK_BUS_APB2:
 		LL_APB2_GRP1_EnableClock(pclken->enr);
 		break;
-#endif /* CONFIG_SOC_SERIES_STM32F0X && CONFIG_SOC_SERIES_STM32G0X */
+#endif /* CONFIG_SOC_SERIES_STM32F0X */
 #if defined (CONFIG_SOC_SERIES_STM32L0X) || defined (CONFIG_SOC_SERIES_STM32G0X)
 	case STM32_CLOCK_BUS_IOP:
 		LL_IOP_GRP1_EnableClock(pclken->enr);
@@ -141,6 +140,7 @@ static inline int stm32_clock_control_off(struct device *dev,
 		LL_AHB1_GRP1_DisableClock(pclken->enr);
 		break;
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32F4X) || \
 	defined(CONFIG_SOC_SERIES_STM32F7X) || \
 	defined(CONFIG_SOC_SERIES_STM32F2X) || \
@@ -148,25 +148,24 @@ static inline int stm32_clock_control_off(struct device *dev,
 	case STM32_CLOCK_BUS_AHB2:
 		LL_AHB2_GRP1_DisableClock(pclken->enr);
 		break;
-#endif /* CONFIG_SOC_SERIES_STM32L4X || CONFIG_SOC_SERIES_STM32F4X ||
-		CONFIG_SOC_SERIES_STM32F7X || CONFIG_SOC_SERIES_STM32G4X */
+#endif /* CONFIG_SOC_SERIES_STM32_* */
 	case STM32_CLOCK_BUS_APB1:
 		LL_APB1_GRP1_DisableClock(pclken->enr);
 		break;
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X)
 	case STM32_CLOCK_BUS_APB1_2:
 		LL_APB1_GRP2_DisableClock(pclken->enr);
 		break;
-#endif /* CONFIG_SOC_SERIES_STM32L4X || CONFIG_SOC_SERIES_STM32F0X ||
-		CONFIG_SOC_SERIES_STM32WBX || CONFIG_SOC_SERIES_STM32G4X */
-#if !defined (CONFIG_SOC_SERIES_STM32F0X) && !defined (CONFIG_SOC_SERIES_STM32G0X)
+#endif /* CONFIG_SOC_SERIES_STM32_* */
+#if !defined(CONFIG_SOC_SERIES_STM32F0X)
 	case STM32_CLOCK_BUS_APB2:
 		LL_APB2_GRP1_DisableClock(pclken->enr);
 		break;
-#endif /* CONFIG_SOC_SERIES_STM32F0X && CONFIG_SOC_SERIES_STM32G0X */
+#endif /* CONFIG_SOC_SERIES_STM32F0X */
 #ifdef CONFIG_SOC_SERIES_STM32L0X
 	case STM32_CLOCK_BUS_IOP:
 		LL_IOP_GRP1_DisableClock(pclken->enr);
@@ -211,11 +210,19 @@ static int stm32_clock_control_get_subsys_rate(struct device *clock,
 		break;
 	case STM32_CLOCK_BUS_APB1:
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X)
 	case STM32_CLOCK_BUS_APB1_2:
-#endif
+#endif /* CONFIG_SOC_SERIES_STM32_* */
+#if defined(CONFIG_SOC_SERIES_STM32G0X)
+	case STM32_CLOCK_BUS_APB2:
+		/*
+		 * STM32G0x only has one APB, but two reset/clock enable
+		 * registers for peripherals, so return the APB1 clock rate here
+		 */
+#endif /* CONFIG_SOC_SERIES_STM32G0X */
 		*rate = apb1_clock;
 		break;
 #if !defined (CONFIG_SOC_SERIES_STM32F0X) && !defined (CONFIG_SOC_SERIES_STM32G0X)
@@ -322,6 +329,12 @@ static int stm32_clock_control_init(struct device *dev)
 
 #ifdef CONFIG_CLOCK_STM32_PLL_SRC_MSI
 
+	/* Set MSI Range */
+	LL_RCC_MSI_EnableRangeSelection();
+	LL_RCC_MSI_SetRange(CONFIG_CLOCK_STM32_MSI_RANGE
+							<< RCC_CR_MSIRANGE_Pos);
+	LL_RCC_MSI_SetCalibTrimming(0);
+
 #ifdef CONFIG_CLOCK_STM32_MSI_PLL_MODE
 	/* Enable MSI hardware auto calibration */
 	LL_RCC_MSI_EnablePLLMode();
@@ -343,11 +356,13 @@ static int stm32_clock_control_init(struct device *dev)
 	LL_RCC_MSI_Disable();
 
 #elif CONFIG_CLOCK_STM32_PLL_SRC_HSE
-	int hse_bypass = LL_UTILS_HSEBYPASS_OFF;
+	int hse_bypass;
 
-#ifdef CONFIG_CLOCK_STM32_HSE_BYPASS
-	hse_bypass = LL_UTILS_HSEBYPASS_ON;
-#endif /* CONFIG_CLOCK_STM32_HSE_BYPASS */
+	if (IS_ENABLED(CONFIG_CLOCK_STM32_HSE_BYPASS)) {
+		hse_bypass = LL_UTILS_HSEBYPASS_ON;
+	} else {
+		hse_bypass = LL_UTILS_HSEBYPASS_OFF;
+	}
 
 	/* Switch to PLL with HSE as clock source */
 	LL_PLL_ConfigSystemClock_HSE(
@@ -369,11 +384,11 @@ static int stm32_clock_control_init(struct device *dev)
 	/* Enable HSE if not enabled */
 	if (LL_RCC_HSE_IsReady() != 1) {
 		/* Check if need to enable HSE bypass feature or not */
-#ifdef CONFIG_CLOCK_STM32_HSE_BYPASS
-		LL_RCC_HSE_EnableBypass();
-#else
-		LL_RCC_HSE_DisableBypass();
-#endif /* CONFIG_CLOCK_STM32_HSE_BYPASS */
+		if (IS_ENABLED(CONFIG_CLOCK_STM32_HSE_BYPASS)) {
+			LL_RCC_HSE_EnableBypass();
+		} else {
+			LL_RCC_HSE_DisableBypass();
+		}
 
 		/* Enable HSE */
 		LL_RCC_HSE_Enable();

@@ -9,13 +9,6 @@ config BOARD
 	default "lpcxpresso55S69_cpu0" if BOARD_LPCXPRESSO55S69_CPU0
 	default "lpcxpresso55S69_cpu1" if BOARD_LPCXPRESSO55S69_CPU1
 
-if USART_MCUX_LPC
-
-config USART_MCUX_LPC_0
-	default y if UART_CONSOLE
-
-endif # USART_MCUX_LPC
-
 if PINMUX_MCUX_LPC
 
 config PINMUX_MCUX_LPC_PORT0
@@ -36,11 +29,12 @@ config GPIO_MCUX_LPC_PORT1
 
 endif # GPIO_MCUX_LPC
 
-if SPI
-
 config SPI_8
 	default y
+	depends on SPI
 
-endif # SPI
+config FXOS8700_DRDY_INT1
+	default y
+	depends on FXOS8700_TRIGGER
 
 endif # BOARD_LPCXPRESSO55S69_CPU0 || BOARD_LPCXPRESSO55S69_CPU1

@@ -4,4 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <atmel/samd5xx20.dtsi>
+#include <mem.h>
+#include <atmel/same5x.dtsi>
+
+/ {
+	soc {
+		nvmctrl@41004000 {
+			flash0: flash@0 {
+				reg = <0x0 DT_SIZE_K(1024)>;
+			};
+		};
+
+		sram0: memory@20000000 {
+			reg = <0x20000000 DT_SIZE_K(256)>;
+		};
+	};
+};

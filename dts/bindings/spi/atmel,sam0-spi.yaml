@@ -1,10 +1,7 @@
 # Copyright (c) 2018, Google LLC.
 # SPDX-License-Identifier: Apache-2.0
 
-title: Atmel SAM0 SERCOM SPI driver
-
-description: |
-    This binding gives a base representation of the Atmel SAM0 SERCOM SPI controller
+description: Atmel SAM0 SERCOM SPI controller
 
 compatible: "atmel,sam0-spi"
 
@@ -12,6 +9,12 @@ include: spi-controller.yaml
 
 properties:
     reg:
+      required: true
+
+    clocks:
+      required: true
+
+    clock-names:
       required: true
 
     dipo:
@@ -24,12 +27,19 @@ properties:
       required: true
       description: Data Out Pinout
 
-    rxdma:
-      type: int
-      required: false
-      description: Receive DMA channel
+    dmas:
+      description: |
+        Optional TX & RX dma specifiers.  Each specifier will have a phandle
+        reference to the dmac controller, the channel number, and peripheral
+        trigger source.
 
-    txdma:
-      type: int
-      required: false
-      description: Transmit DMA channel
+        For example dmas for TX, RX on SERCOM3
+           dmas = <&dmac 0 0xb>, <&dmac 1 0xa>;
+
+    dma-names:
+      description: |
+        Required if the dmas property exists.  This should be "tx" and "rx"
+        to match the dmas property.
+
+        For example
+           dma-names = "tx", "rx";

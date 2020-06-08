@@ -18,6 +18,28 @@ config LVGL_DISPLAY_DEV_NAME
 	help
 	  Name of the display device to use for rendering.
 
+config LVGL_POINTER_KSCAN
+	bool "Keyboard scan pointer input"
+	depends on KSCAN
+	help
+	  Enable keyboard scan pointer input
+
+if LVGL_POINTER_KSCAN
+
+config LVGL_POINTER_KSCAN_DEV_NAME
+	string "Keyboard scan device name for pointer input"
+	default "KSCAN"
+	help
+	  Name of the keyboard scan device to use for pointer input.
+
+config LVGL_POINTER_KSCAN_MSGQ_COUNT
+	int "Keyboard scan message queue count maximum"
+	default 10
+	help
+	  Maximum number of items in the keyboard scan message queue.
+
+endif # LVGL_POINTER_KSCAN
+
 config LVGL_HOR_RES
 	int "Horizontal Screen Resolution"
 	default 320
@@ -64,23 +86,17 @@ config LVGL_BITS_PER_PIXEL
 	help
 	  Number of bits per pixel.
 
-if LVGL_COLOR_DEPTH_16
-
 config LVGL_COLOR_16_SWAP
 	bool "RGB565 byte swap"
+	depends on LVGL_COLOR_DEPTH_16
 	help
 	  Swap the 2 bytes of a RGB565 pixel.
 
-endif
-
-if LVGL_COLOR_DEPTH_32
-
 config LVGL_COLOR_SCREEN_TRANSP
 	bool "Transparency support"
+	depends on LVGL_COLOR_DEPTH_32
 	help
 	  Enable screen transparency. Useful for OSD or other overlapping GUISs.
-
-endif
 
 choice
 	prompt "Chroma key color"
@@ -310,11 +326,10 @@ config LVGL_TEXT_USE_BIDI
 	  Unicode Bidirectional Algorithm:
 	  https://www.w3.org/International/articles/inline-bidi-markup/uba-basics*/
 
-if LVGL_TEXT_USE_BIDI
-
 choice LVGL_TEXT_BIDI_MODE
 	prompt "Bidirectional text processing direction"
 	default LVGL_TEXT_BIDI_DIR_AUTO
+	depends on LVGL_TEXT_USE_BIDI
 	help
 	  Direction of bidirectional text processing
 
@@ -328,8 +343,6 @@ choice LVGL_TEXT_BIDI_MODE
 		bool "Right-to-left"
 
 endchoice
-
-endif
 
 config LVGL_ANTIALIAS
 	bool "Enable anti-aliasing"

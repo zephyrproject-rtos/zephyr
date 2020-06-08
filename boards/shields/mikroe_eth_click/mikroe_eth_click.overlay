@@ -1,0 +1,18 @@
+/* Copyright (c) 2020 Linaro Limited.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&mikrobus_spi {
+	status = "okay";
+	cs-gpios = <&mikrobus_header 2 0>; /* CS */
+
+	eth_click@0 {
+		compatible = "microchip,enc28j60";
+		local-mac-address = [00 00 00 01 02 03];
+		/* Errata B7/1 specifies min 8Mhz, 20MHz max according to RM */
+		spi-max-frequency = <10000000>;
+		int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;	/* INT */
+		label = "ETH_0";
+		reg = <0>;
+	};
+};

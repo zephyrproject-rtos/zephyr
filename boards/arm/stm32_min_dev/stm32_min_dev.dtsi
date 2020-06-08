@@ -21,7 +21,7 @@
 	leds {
 		compatible = "gpio-leds";
 		led: led {
-			gpios = <&gpiob 12 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiob 12 GPIO_ACTIVE_HIGH>;
 			label = "LD";
 		};
 	};
@@ -67,11 +67,15 @@
 &timers1 {
 	status = "okay";
 
-	pwm {
+	pwm1: pwm {
 		status = "okay";
 	};
 };
 
 &usb {
+	status = "okay";
+};
+
+&adc1 {
 	status = "okay";
 };

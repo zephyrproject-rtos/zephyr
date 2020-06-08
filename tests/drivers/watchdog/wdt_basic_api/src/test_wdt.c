@@ -62,14 +62,34 @@
 #include <ztest.h>
 #include "test_wdt.h"
 
-#ifdef DT_ALIAS_WATCHDOG0_LABEL
-#define WDT_DEV_NAME DT_ALIAS_WATCHDOG0_LABEL
-#else
-#ifdef CONFIG_WWDG_STM32
-#define WDT_DEV_NAME DT_WWDT_0_NAME
-#else
-#define WDT_DEV_NAME DT_WDT_0_NAME
+/*
+ * To use this test, either the devicetree's /aliases must have a
+ * 'watchdog0' property, or one of the following watchdog compatibles
+ * must have an enabled node.
+ */
+#if DT_NODE_HAS_STATUS(DT_ALIAS(watchdog0), okay)
+#define WDT_NODE DT_ALIAS(watchdog0)
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_window_watchdog)
+#define WDT_NODE DT_INST(0, st_stm32_window_watchdog)
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_watchdog)
+#define WDT_NODE DT_INST(0, st_stm32_watchdog)
+#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_watchdog)
+#define WDT_NODE DT_INST(0, nordic_nrf_watchdog)
+#elif DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_watchdog)
+#define WDT_NODE DT_INST(0, espressif_esp32_watchdog)
+#elif DT_HAS_COMPAT_STATUS_OKAY(silabs_gecko_wdog)
+#define WDT_NODE DT_INST(0, silabs_gecko_wdog)
+#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_kinetis_wdog32)
+#define WDT_NODE DT_INST(0, nxp_kinetis_wdog32)
+#elif DT_HAS_COMPAT_STATUS_OKAY(microchip_xec_watchdog)
+#define WDT_NODE DT_INST(0, microchip_xec_watchdog)
 #endif
+
+#ifdef WDT_NODE
+#define WDT_DEV_NAME DT_LABEL(WDT_NODE)
+#else
+#define WDT_DEV_NAME ""
+#error "Unsupported SoC and no watchdog0 alias in zephyr.dts"
 #endif
 
 #define WDT_TEST_STATE_IDLE        0

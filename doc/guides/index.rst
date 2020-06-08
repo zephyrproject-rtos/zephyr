@@ -9,25 +9,27 @@ User and Developer Guides
    getting-help.rst
    beyond-GSG.rst
    bluetooth/index.rst
+   build/index
    c_library
    ../README.rst
+   documentation/index
    coccinelle.rst
    code-relocation.rst
    crypto/index
    debugging/index
    device_mgmt/index
    device_mgmt/dfu
-   documentation/index
    dts/index
    env_vars.rst
    coverage.rst
    kconfig/index
    modules.rst
    networking/index
+   platformio/index.rst
    portability/index.rst
    porting/index
    test/index
    tracing/index
    west/index
    optimizations/index
-   build/index
+   zephyr_cmake_package.rst

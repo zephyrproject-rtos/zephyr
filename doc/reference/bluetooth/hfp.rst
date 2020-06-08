@@ -9,3 +9,4 @@ API Reference
 
 .. doxygengroup:: bt_hfp
    :project: Zephyr
+   :members:

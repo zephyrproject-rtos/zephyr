@@ -2,4 +2,4 @@
 
 project(math_extras)
 set(SOURCES main.c portable.c)
-include($ENV{ZEPHYR_BASE}/subsys/testsuite/unittest.cmake)
+find_package(ZephyrUnittest HINTS $ENV{ZEPHYR_BASE})

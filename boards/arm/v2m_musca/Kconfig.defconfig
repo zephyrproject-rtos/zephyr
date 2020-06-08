@@ -12,9 +12,6 @@ if GPIO
 config GPIO_CMSDK_AHB
 	default y
 
-config GPIO_CMSDK_AHB_PORT0
-	default y
-
 endif
 
 if SERIAL
@@ -42,5 +39,12 @@ config TIMER_DTMR_CMSDK_APB
 	default y
 
 endif # COUNTER
+
+if IPM
+
+config IPM_MHU
+	default y
+
+endif # IPM
 
 endif

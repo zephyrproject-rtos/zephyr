@@ -16,7 +16,7 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
-#include <bluetooth/hci_driver.h>
+#include <drivers/bluetooth/hci_driver.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_L2CAP)
 #define LOG_MODULE_NAME bt_l2cap_br
@@ -226,7 +226,7 @@ static u8_t l2cap_br_get_ident(void)
 }
 
 static void l2cap_br_chan_send_req(struct bt_l2cap_br_chan *chan,
-				   struct net_buf *buf, s32_t timeout)
+				   struct net_buf *buf, k_timeout_t timeout)
 {
 	/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part A] page 126:
 	 *
@@ -237,11 +237,7 @@ static void l2cap_br_chan_send_req(struct bt_l2cap_br_chan *chan,
 	 * final expiration, when the response is received, or the physical
 	 * link is lost.
 	 */
-	if (timeout) {
-		k_delayed_work_submit(&chan->chan.rtx_work, timeout);
-	} else {
-		k_delayed_work_cancel(&chan->chan.rtx_work);
-	}
+	k_delayed_work_submit(&chan->chan.rtx_work, timeout);
 
 	bt_l2cap_send(chan->chan.conn, BT_L2CAP_CID_BR_SIG, buf);
 }
@@ -1515,7 +1511,7 @@ void bt_l2cap_br_recv(struct bt_conn *conn, struct net_buf *buf)
 static int l2cap_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 {
 	int i;
-	static struct bt_l2cap_chan_ops ops = {
+	static const struct bt_l2cap_chan_ops ops = {
 		.connected = l2cap_br_connected,
 		.disconnected = l2cap_br_disconnected,
 		.recv = l2cap_br_recv,

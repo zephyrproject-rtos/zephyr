@@ -13,23 +13,14 @@
 	compatible = "nxp,mimxrt1052";
 
 	aliases {
-		gpio-1= &gpio1;
-		gpio-2= &gpio2;
-		gpio-3= &gpio3;
-		gpio-4= &gpio4;
-		gpio-5= &gpio5;
-		i2c-1 = &i2c1;
-		uart-1 = &uart1;
-		uart-3 = &uart3;
 		led0 = &green_led;
 		sw0 = &user_button;
-		spi-3 = &spi3;
-		eth = &eth;
+		kscan0 = &touch_controller;
 	};
 
 	chosen {
-		zephyr,console = &uart1;
-		zephyr,shell-uart = &uart1;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
 	};
 
 	sdram0: memory@80000000 {
@@ -42,7 +33,7 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led: led_0 {
-			gpios = <&gpio1 9 0>;
+			gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
 		};
 	};
@@ -51,7 +42,7 @@
 		compatible = "gpio-keys";
 		user_button: button_0 {
 			label = "User SW8";
-			gpios = <&gpio5 0 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio5 0 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -94,9 +85,9 @@
 	};
 };
 
-arduino_serial: &uart3 {};
+arduino_serial: &lpuart3 {};
 
-&flexspi0 {
+&flexspi {
 	reg = <0x402a8000 0x4000>, <0x60000000 0x4000000>;
 	hyperflash0: hyperflash@0 {
 		compatible = "cypress,s26ks512s";
@@ -105,7 +96,7 @@ arduino_serial: &uart3 {};
 	};
 };
 
-&lcdif1 {
+&lcdif {
 	status = "okay";
 	port {
 		lcd_panel_out: endpoint {
@@ -114,7 +105,7 @@ arduino_serial: &uart3 {};
 	};
 };
 
-&i2c1 {
+&lpi2c1 {
 	status = "okay";
 
 	fxos8700@1f {
@@ -127,33 +118,40 @@ arduino_serial: &uart3 {};
 		 * Note that if you populate them, they conflict with LCD and
 		 * Ethernet interrupt gpios.
 		 */
-		int1-gpios = <&gpio1 10 0>;
-		int2-gpios = <&gpio1 11 0>;
+		int1-gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
+	};
+
+	touch_controller: ft5336@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		label = "FT5336";
+		int-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
 	};
 };
 
-&uart1 {
+&lpuart1 {
 	status = "okay";
 	current-speed = <115200>;
 };
 
-&spi3 {
+&lpspi3 {
 	status = "okay";
 };
 
-&eth {
+&enet {
 	status = "okay";
 	ptp {
 		status = "okay";
 	};
 };
 
-&usbd1 {
+&usb1 {
 	status = "okay";
 };
 
 &usdhc1 {
 	status = "okay";
-	pwr-gpios = <&gpio1 5 0>;
-	cd-gpios = <&gpio2 28 0>;
+	pwr-gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
+	cd-gpios = <&gpio2 28 GPIO_ACTIVE_LOW>;
 };

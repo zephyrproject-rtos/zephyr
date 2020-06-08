@@ -1,0 +1,79 @@
+/*
+ * Copyright (c) 2019, MADMACHINE LIMITED
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_rt.dtsi>
+
+/ {
+	model = "MM MM-SWIFTIO board";
+	compatible = "nxp,mimxrt1052";
+
+	aliases {
+		led0 = &green_led;
+		led1 = &red_led;
+		led2 = &blue_led;
+	};
+
+	chosen {
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+	};
+
+	sdram0: memory@80000000 {
+		/* Micron MT48LC16M16A2B4-6AIT:G */
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x80000000 0x2000000>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_0 {
+			gpios = <&gpio1 9 0>;
+			label = "RGB R";
+		};
+
+		green_led: led_1 {
+			gpios = <&gpio1 10 0>;
+			label = "RGB G";
+		};
+
+		blue_led: led_2 {
+			gpios = <&gpio1 11 0>;
+			label = "RGB B";
+		};
+	};
+};
+
+
+&flexspi {
+	reg = <0x402a8000 0x4000>, <0x60000000 0x800000>;
+	is25wp064: is25wp064@0 {
+		compatible = "issi,is25wp064", "jedec,spi-nor";
+		size = <67108864>;
+		label = "IS25WP064";
+		reg = <0>;
+		spi-max-frequency = <133000000>;
+		status = "okay";
+		jedec-id = [9d 70 17];
+	};
+};
+
+&lpuart1 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&usb1 {
+	status = "okay";
+};
+
+&usdhc1 {
+	status = "okay";
+	pwr-gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
+	cd-gpios = <&gpio2 28 GPIO_ACTIVE_LOW>;
+};

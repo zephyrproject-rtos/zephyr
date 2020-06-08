@@ -179,13 +179,12 @@
 
 struct bmg160_device_config {
 	const char *i2c_port;
-#ifdef CONFIG_BMG160_TRIGGER
-	const char *gpio_port;
-#endif
 	u16_t i2c_addr;
 	u8_t i2c_speed;
 #ifdef CONFIG_BMG160_TRIGGER
-	u8_t int_pin;
+	gpio_pin_t int_pin;
+	gpio_dt_flags_t int_flags;
+	const char *gpio_port;
 #endif
 };
 

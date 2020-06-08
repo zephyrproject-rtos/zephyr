@@ -11,21 +11,21 @@
 #include <string.h>
 #include <assert.h>
 
-BUILD_ASSERT_MSG((sizeof(struct log_msg_ids) == sizeof(u16_t)),
-		  "Structure must fit in 2 bytes");
+BUILD_ASSERT((sizeof(struct log_msg_ids) == sizeof(u16_t)),
+	     "Structure must fit in 2 bytes");
 
-BUILD_ASSERT_MSG((sizeof(struct log_msg_generic_hdr) == sizeof(u16_t)),
-		 "Structure must fit in 2 bytes");
+BUILD_ASSERT((sizeof(struct log_msg_generic_hdr) == sizeof(u16_t)),
+	     "Structure must fit in 2 bytes");
 
-BUILD_ASSERT_MSG((sizeof(struct log_msg_std_hdr) == sizeof(u16_t)),
-		 "Structure must fit in 2 bytes");
+BUILD_ASSERT((sizeof(struct log_msg_std_hdr) == sizeof(u16_t)),
+	     "Structure must fit in 2 bytes");
 
-BUILD_ASSERT_MSG((sizeof(struct log_msg_hexdump_hdr) == sizeof(u16_t)),
-		 "Structure must fit in 2 bytes");
+BUILD_ASSERT((sizeof(struct log_msg_hexdump_hdr) == sizeof(u16_t)),
+	     "Structure must fit in 2 bytes");
 
-BUILD_ASSERT_MSG((sizeof(union log_msg_head_data) ==
-		  sizeof(struct log_msg_ext_head_data)),
-		  "Structure must be same size");
+BUILD_ASSERT((sizeof(union log_msg_head_data) ==
+	      sizeof(struct log_msg_ext_head_data)),
+	     "Structure must be same size");
 
 #ifndef CONFIG_LOG_BUFFER_SIZE
 #define CONFIG_LOG_BUFFER_SIZE 0
@@ -49,8 +49,8 @@ void log_msg_pool_init(void)
 	k_mem_slab_init(&log_msg_pool, log_msg_pool_buf, MSG_SIZE, NUM_OF_MSGS);
 }
 
-/* Return true if interrupts were locked in the context of this call. */
-static bool is_irq_locked(void)
+/* Return true if interrupts were unlocked in the context of this call. */
+static bool is_irq_unlocked(void)
 {
 	unsigned int key = arch_irq_lock();
 	bool ret = arch_irq_unlocked(key);
@@ -68,15 +68,16 @@ static bool block_on_alloc(void)
 		return false;
 	}
 
-	return (!k_is_in_isr() && !is_irq_locked());
+	return (!k_is_in_isr() && is_irq_unlocked());
 }
 
 union log_msg_chunk *log_msg_chunk_alloc(void)
 {
 	union log_msg_chunk *msg = NULL;
 	int err = k_mem_slab_alloc(&log_msg_pool, (void **)&msg,
-			block_on_alloc() ?
-			CONFIG_LOG_BLOCK_IN_THREAD_TIMEOUT_MS : K_NO_WAIT);
+		   block_on_alloc()
+		   ? K_MSEC(CONFIG_LOG_BLOCK_IN_THREAD_TIMEOUT_MS)
+		   : K_NO_WAIT);
 
 	if (err != 0) {
 		msg = log_msg_no_space_handle();
@@ -103,17 +104,38 @@ static void cont_free(struct log_msg_cont *cont)
 
 static void msg_free(struct log_msg *msg)
 {
-	u32_t nargs = msg->hdr.params.std.nargs;
+	u32_t nargs = log_msg_nargs_get(msg);
 
 	/* Free any transient string found in arguments. */
 	if (log_msg_is_std(msg) && nargs) {
-		int i;
+		u32_t i;
+		u32_t smask = 0;
 
 		for (i = 0; i < nargs; i++) {
 			void *buf = (void *)log_msg_arg_get(msg, i);
 
 			if (log_is_strdup(buf)) {
-				log_free(buf);
+				if (smask == 0) {
+					/* Do string arguments scan only when
+					 * string duplication candidate detected
+					 * since it is time consuming and free
+					 * can be called from any context when
+					 * log message is being dropped.
+					 */
+					smask = z_log_get_s_mask(
+							log_msg_str_get(msg),
+							nargs);
+					if (smask == 0) {
+						/* if no string argument is
+						 * detected then stop searching
+						 * for candidates.
+						 */
+						break;
+					}
+				}
+				if (smask & BIT(i)) {
+					log_free(buf);
+				}
 			}
 		}
 	} else if (IS_ENABLED(CONFIG_USERSPACE) &&

@@ -36,12 +36,16 @@ MALLOC_BSS static unsigned char __aligned(CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE)
 #define USED_RAM_END_ADDR   POINTER_TO_UINT(&_end)
 
 #if CONFIG_X86
-#define USED_RAM_SIZE  (USED_RAM_END_ADDR - DT_PHYS_RAM_ADDR)
-#define MAX_HEAP_SIZE ((KB(DT_RAM_SIZE)) - USED_RAM_SIZE)
+#define PHYS_RAM_ADDR DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#define PHYS_RAM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
+#define USED_RAM_SIZE (USED_RAM_END_ADDR - PHYS_RAM_ADDR)
+#define MAX_HEAP_SIZE (PHYS_RAM_SIZE - USED_RAM_SIZE)
 #elif CONFIG_NIOS2
 #include <layout.h>
-#define USED_RAM_SIZE  (USED_RAM_END_ADDR - _RAM_ADDR)
-#define MAX_HEAP_SIZE (_RAM_SIZE - USED_RAM_SIZE)
+#define RAM_ADDR DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#define RAM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
+#define USED_RAM_SIZE  (USED_RAM_END_ADDR - RAM_ADDR)
+#define MAX_HEAP_SIZE (RAM_SIZE - USED_RAM_SIZE)
 #elif CONFIG_RISCV
 #include <soc.h>
 #define USED_RAM_SIZE  (USED_RAM_END_ADDR - RISCV_RAM_BASE)
@@ -174,7 +178,7 @@ int _read(int fd, char *buf, int nbytes)
 
 	return z_impl_zephyr_read_stdin(buf, nbytes);
 }
-FUNC_ALIAS(_read, read, int);
+__weak FUNC_ALIAS(_read, read, int);
 
 int _write(int fd, const void *buf, int nbytes)
 {
@@ -182,25 +186,25 @@ int _write(int fd, const void *buf, int nbytes)
 
 	return z_impl_zephyr_write_stdout(buf, nbytes);
 }
-FUNC_ALIAS(_write, write, int);
+__weak FUNC_ALIAS(_write, write, int);
 
 int _open(const char *name, int mode)
 {
 	return -1;
 }
-FUNC_ALIAS(_open, open, int);
+__weak FUNC_ALIAS(_open, open, int);
 
 int _close(int file)
 {
 	return -1;
 }
-FUNC_ALIAS(_close, close, int);
+__weak FUNC_ALIAS(_close, close, int);
 
 int _lseek(int file, int ptr, int dir)
 {
 	return 0;
 }
-FUNC_ALIAS(_lseek, lseek, int);
+__weak FUNC_ALIAS(_lseek, lseek, int);
 #else
 extern ssize_t write(int file, const char *buffer, size_t count);
 #define _write	write
@@ -210,28 +214,28 @@ int _isatty(int file)
 {
 	return 1;
 }
-FUNC_ALIAS(_isatty, isatty, int);
+__weak FUNC_ALIAS(_isatty, isatty, int);
 
 int _kill(int i, int j)
 {
 	return 0;
 }
-FUNC_ALIAS(_kill, kill, int);
+__weak FUNC_ALIAS(_kill, kill, int);
 
 int _getpid(void)
 {
 	return 0;
 }
-FUNC_ALIAS(_getpid, getpid, int);
+__weak FUNC_ALIAS(_getpid, getpid, int);
 
 int _fstat(int file, struct stat *st)
 {
 	st->st_mode = S_IFCHR;
 	return 0;
 }
-FUNC_ALIAS(_fstat, fstat, int);
+__weak FUNC_ALIAS(_fstat, fstat, int);
 
-void _exit(int status)
+__weak void _exit(int status)
 {
 	_write(1, "exit\n", 5);
 	while (1) {
@@ -264,9 +268,107 @@ void *_sbrk(int count)
 
 	return ret;
 }
-FUNC_ALIAS(_sbrk, sbrk, void *);
+__weak FUNC_ALIAS(_sbrk, sbrk, void *);
 
-int *__errno(void)
+__weak int *__errno(void)
 {
 	return z_errno();
+}
+
+#if CONFIG_XTENSA
+extern int _read(int fd, char *buf, int nbytes);
+extern int _open(const char *name, int mode);
+extern int _close(int file);
+extern int _lseek(int file, int ptr, int dir);
+
+/* The Newlib in xtensa toolchain has a few missing functions for the
+ * reentrant versions of the syscalls.
+ */
+_ssize_t _read_r(struct _reent *r, int fd, void *buf, size_t nbytes)
+{
+	ARG_UNUSED(r);
+
+	return _read(fd, (char *)buf, nbytes);
+}
+
+_ssize_t _write_r(struct _reent *r, int fd, const void *buf, size_t nbytes)
+{
+	ARG_UNUSED(r);
+
+	return _write(fd, buf, nbytes);
+}
+
+int _open_r(struct _reent *r, const char *name, int flags, int mode)
+{
+	ARG_UNUSED(r);
+	ARG_UNUSED(flags);
+
+	return _open(name, mode);
+}
+
+int _close_r(struct _reent *r, int file)
+{
+	ARG_UNUSED(r);
+
+	return _close(file);
+}
+
+_off_t _lseek_r(struct _reent *r, int file, _off_t ptr, int dir)
+{
+	ARG_UNUSED(r);
+
+	return _lseek(file, ptr, dir);
+}
+
+int _isatty_r(struct _reent *r, int file)
+{
+	ARG_UNUSED(r);
+
+	return _isatty(file);
+}
+
+int _kill_r(struct _reent *r, int i, int j)
+{
+	ARG_UNUSED(r);
+
+	return _kill(i, j);
+}
+
+int _getpid_r(struct _reent *r)
+{
+	ARG_UNUSED(r);
+
+	return _getpid();
+}
+
+int _fstat_r(struct _reent *r, int file, struct stat *st)
+{
+	ARG_UNUSED(r);
+
+	return _fstat(file, st);
+}
+
+void _exit_r(struct _reent *r, int status)
+{
+	ARG_UNUSED(r);
+
+	_exit(status);
+}
+
+void *_sbrk_r(struct _reent *r, int count)
+{
+	ARG_UNUSED(r);
+
+	return _sbrk(count);
+}
+#endif /* CONFIG_XTENSA */
+
+struct timeval;
+
+int _gettimeofday(struct timeval *__tp, void *__tzp)
+{
+	ARG_UNUSED(__tp);
+	ARG_UNUSED(__tzp);
+
+	return -1;
 }

@@ -46,12 +46,9 @@ config MAIN_STACK_SIZE
 config IDLE_STACK_SIZE
 	default 2048
 
-if ZTEST
-
 config ZTEST_STACKSIZE
 	default 2048
-
-endif # ZTEST
+	depends on ZTEST
 
 endif # ARC_MPU_VER
 

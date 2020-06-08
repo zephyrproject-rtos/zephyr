@@ -23,6 +23,10 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH_FRIEND friend.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_PROV prov.c)
 
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_PB_ADV pb_adv.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_PB_GATT pb_gatt.c)
+
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_PROXY proxy.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_CFG_CLI cfg_cli.c)
@@ -33,5 +37,4 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH_SELF_TEST test.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL shell.c)
 
-zephyr_library_sources_ifdef(CONFIG_BT_MESH_PROVISIONER nodes.c)
-
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_CDB cdb.c)

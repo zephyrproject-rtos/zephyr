@@ -238,7 +238,7 @@ static void irq_raising_from_hw_now(void)
 }
 
 /**
- * Set/Raise an interrupt inmediately.
+ * Set/Raise an interrupt immediately.
  * Like hw_irq_ctrl_set_irq() but awake immediately the CPU instead of in
  * 1 delta cycle
  *
@@ -269,5 +269,3 @@ void hw_irq_ctrl_timer_triggered(void)
 	irq_ctrl_timer = NEVER;
 	irq_raising_from_hw_now();
 }
-
-

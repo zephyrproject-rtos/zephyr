@@ -109,7 +109,15 @@ static struct k_thread mass_thread_data;
 static struct k_sem disk_wait_sem;
 static volatile u32_t defered_wr_sz;
 
-static u8_t page[BLOCK_SIZE];
+/*
+ * Keep block buffer larger than BLOCK_SIZE for the case
+ * the dCBWDataTransferLength is multiple of the BLOCK_SIZE and
+ * the length of the transferred data is not aligned to the BLOCK_SIZE.
+ *
+ * Align for cases where the underlying disk access requires word-aligned
+ * addresses.
+ */
+static u8_t __aligned(4) page[BLOCK_SIZE + CONFIG_MASS_STORAGE_BULK_EP_MPS];
 
 /* Initialized during mass_storage_init() */
 static u32_t memory_size;
@@ -350,17 +358,10 @@ static bool readFormatCapacity(void)
 
 static bool readCapacity(void)
 {
-	u8_t capacity[] = {
-		(u8_t)(((block_count - 1) >> 24) & 0xff),
-		(u8_t)(((block_count - 1) >> 16) & 0xff),
-		(u8_t)(((block_count - 1) >> 8) & 0xff),
-		(u8_t)(((block_count - 1) >> 0) & 0xff),
+	u8_t capacity[8];
 
-		(u8_t)((BLOCK_SIZE >> 24) & 0xff),
-		(u8_t)((BLOCK_SIZE >> 16) & 0xff),
-		(u8_t)((BLOCK_SIZE >> 8) & 0xff),
-		(u8_t)((BLOCK_SIZE >> 0) & 0xff),
-	};
+	sys_put_be32(block_count - 1, &capacity[0]);
+	sys_put_be32(BLOCK_SIZE, &capacity[4]);
 
 	return write(capacity, sizeof(capacity));
 }
@@ -424,15 +425,37 @@ static void memoryRead(void)
 	}
 }
 
+static bool check_cbw_data_length(void)
+{
+	if (!cbw.DataLength) {
+		LOG_WRN("Zero length in CBW");
+		csw.Status = CSW_FAILED;
+		sendCSW();
+		return false;
+	}
+
+	return true;
+}
+
 static bool infoTransfer(void)
 {
 	u32_t n;
 
+	if (!check_cbw_data_length()) {
+		return false;
+	}
+
 	/* Logical Block Address of First Block */
-	n = (cbw.CB[2] << 24) | (cbw.CB[3] << 16) | (cbw.CB[4] <<  8) |
-				 (cbw.CB[5] <<  0);
+	n = sys_get_be32(&cbw.CB[2]);
 
 	LOG_DBG("LBA (block) : 0x%x ", n);
+	if ((n * BLOCK_SIZE) >= memory_size) {
+		LOG_ERR("LBA out of range");
+		csw.Status = CSW_FAILED;
+		sendCSW();
+		return false;
+	}
+
 	addr = n * BLOCK_SIZE;
 
 	/* Number of Blocks to transfer */
@@ -440,25 +463,17 @@ static bool infoTransfer(void)
 	case READ10:
 	case WRITE10:
 	case VERIFY10:
-		n = (cbw.CB[7] <<  8) | (cbw.CB[8] <<  0);
+		n = sys_get_be16(&cbw.CB[7]);
 		break;
 
 	case READ12:
 	case WRITE12:
-		n = (cbw.CB[6] << 24) | (cbw.CB[7] << 16) |
-			(cbw.CB[8] <<  8) | (cbw.CB[9] <<  0);
+		n = sys_get_be32(&cbw.CB[6]);
 		break;
 	}
 
 	LOG_DBG("Size (block) : 0x%x ", n);
 	length = n * BLOCK_SIZE;
-
-	if (!cbw.DataLength) {              /* host requests no data*/
-		LOG_WRN("Zero length in CBW");
-		csw.Status = CSW_FAILED;
-		sendCSW();
-		return false;
-	}
 
 	if (cbw.DataLength != length) {
 		if ((cbw.Flags & 0x80) != 0U) {
@@ -479,6 +494,11 @@ static bool infoTransfer(void)
 
 static void fail(void)
 {
+	if (cbw.DataLength) {
+		/* Stall data stage */
+		usb_ep_set_stall(mass_ep_data[MSD_IN_EP_IDX].ep_addr);
+	}
+
 	csw.Status = CSW_FAILED;
 	sendCSW();
 }
@@ -510,23 +530,33 @@ static void CBWDecode(u8_t *buf, u16_t size)
 			break;
 		case REQUEST_SENSE:
 			LOG_DBG(">> REQ_SENSE");
-			requestSense();
+			if (check_cbw_data_length()) {
+				requestSense();
+			}
 			break;
 		case INQUIRY:
 			LOG_DBG(">> INQ");
-			inquiryRequest();
+			if (check_cbw_data_length()) {
+				inquiryRequest();
+			}
 			break;
 		case MODE_SENSE6:
 			LOG_DBG(">> MODE_SENSE6");
-			modeSense6();
+			if (check_cbw_data_length()) {
+				modeSense6();
+			}
 			break;
 		case READ_FORMAT_CAPACITIES:
 			LOG_DBG(">> READ_FORMAT_CAPACITY");
-			readFormatCapacity();
+			if (check_cbw_data_length()) {
+				readFormatCapacity();
+			}
 			break;
 		case READ_CAPACITY:
 			LOG_DBG(">> READ_CAPACITY");
-			readCapacity();
+			if (check_cbw_data_length()) {
+				readCapacity();
+			}
 			break;
 		case READ10:
 		case READ12:
@@ -648,7 +678,7 @@ static void memoryWrite(u8_t *buf, u16_t size)
 	}
 
 	/* if the array is filled, write it in memory */
-	if (!((addr + size) % BLOCK_SIZE)) {
+	if ((addr % BLOCK_SIZE) + size >= BLOCK_SIZE) {
 		if (!(disk_access_status(disk_pdrv) &
 					DISK_STATUS_WR_PROTECT)) {
 			LOG_DBG("Disk WRITE Qd %d", (addr/BLOCK_SIZE));
@@ -726,6 +756,11 @@ static void mass_storage_bulk_out(u8_t ep,
 static void thread_memory_write_done(void)
 {
 	u32_t size = defered_wr_sz;
+	size_t overflowed_len = (addr + size) % CONFIG_MASS_STORAGE_BULK_EP_MPS;
+
+	if (overflowed_len) {
+		memmove(page, &page[BLOCK_SIZE], overflowed_len);
+	}
 
 	addr += size;
 	length -= size;

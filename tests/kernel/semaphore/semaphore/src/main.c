@@ -18,6 +18,8 @@
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define TOTAL_THREADS_WAITING (5)
 
+#define SEC2MS(s) ((s) * 1000)
+
 struct timeout_info {
 	u32_t timeout;
 	struct k_sem *sema;
@@ -151,8 +153,11 @@ void sem_take_multiple_high_prio_helper(void *p1, void *p2, void *p3)
  */
 void test_sema_thread2thread(void)
 {
+	int ret;
 	/**TESTPOINT: test k_sem_init sema*/
-	k_sem_init(&sema, SEM_INIT_VAL, SEM_MAX_VAL);
+	ret = k_sem_init(&sema, SEM_INIT_VAL, SEM_MAX_VAL);
+
+	zassert_equal(ret, 0, NULL);
 
 	tsema_thread_thread(&sema);
 
@@ -166,8 +171,11 @@ void test_sema_thread2thread(void)
  */
 void test_sema_thread2isr(void)
 {
+	int ret;
 	/**TESTPOINT: test k_sem_init sema*/
-	k_sem_init(&sema, SEM_INIT_VAL, SEM_MAX_VAL);
+	ret = k_sem_init(&sema, SEM_INIT_VAL, SEM_MAX_VAL);
+
+	zassert_equal(ret, 0, NULL);
 	tsema_thread_isr(&sema);
 
 	/**TESTPOINT: test K_SEM_DEFINE sema*/
@@ -175,12 +183,38 @@ void test_sema_thread2isr(void)
 }
 
 /**
+ * @brief Test k_sem_init() API
+ *
+ */
+void test_k_sema_init(void)
+{
+	int ret;
+
+	ret = k_sem_init(&sema, SEM_INIT_VAL, SEM_MAX_VAL);
+	zassert_equal(ret, 0, NULL);
+
+	k_sem_reset(&sema);
+
+	ret = k_sem_init(&sema, SEM_INIT_VAL, 0);
+	zassert_equal(ret, -EINVAL, NULL);
+
+	ret = k_sem_init(&sema, SEM_MAX_VAL + 1, SEM_MAX_VAL);
+	zassert_equal(ret, -EINVAL, NULL);
+
+}
+
+
+/**
  * @brief Test k_sem_reset() API
  * @see k_sem_reset()
  */
 void test_sema_reset(void)
 {
-	k_sem_init(&sema, SEM_INIT_VAL, SEM_MAX_VAL);
+	int ret;
+
+	ret = k_sem_init(&sema, SEM_INIT_VAL, SEM_MAX_VAL);
+	zassert_equal(ret, 0, NULL);
+
 	k_sem_give(&sema);
 	k_sem_reset(&sema);
 	zassert_false(k_sem_count_get(&sema), NULL);
@@ -198,7 +232,11 @@ void test_sema_reset(void)
  */
 void test_sema_count_get(void)
 {
-	k_sem_init(&sema, SEM_INIT_VAL, SEM_MAX_VAL);
+	int ret;
+
+	ret = k_sem_init(&sema, SEM_INIT_VAL, SEM_MAX_VAL);
+	zassert_equal(ret, 0, NULL);
+
 	/**TESTPOINT: sem count get upon init*/
 	zassert_equal(k_sem_count_get(&sema), SEM_INIT_VAL, NULL);
 	k_sem_give(&sema);
@@ -646,9 +684,9 @@ void test_sem_measure_timeouts(void)
 
 	zassert_true(ret_value == -EAGAIN, "k_sem_take failed");
 
-	zassert_true((end_ticks - start_ticks >= K_SECONDS(1)),
+	zassert_true((end_ticks - start_ticks >= SEC2MS(1)),
 		     "time missmatch expected %d, got %d",
-		     K_SECONDS(1), end_ticks - start_ticks);
+		     SEC2MS(1), end_ticks - start_ticks);
 
 	/* With 0 as the timeout */
 	start_ticks = k_uptime_get();
@@ -708,9 +746,9 @@ void test_sem_measure_timeout_from_thread(void)
 
 	zassert_true(ret_value == 0, "k_sem_take failed");
 
-	zassert_true((end_ticks - start_ticks <= K_SECONDS(1)),
+	zassert_true((end_ticks - start_ticks <= SEC2MS(1)),
 		     "time missmatch. expected less than%d ,got %d",
-		     K_SECONDS(1), end_ticks - start_ticks);
+		     SEC2MS(1), end_ticks - start_ticks);
 
 }
 
@@ -722,7 +760,7 @@ void sem_multiple_take_and_timeouts_helper(void *p1, void *p2, void *p3)
 
 	start_ticks = k_uptime_get();
 
-	k_sem_take(&simple_sem, timeout);
+	k_sem_take(&simple_sem, K_MSEC(timeout));
 
 	end_ticks = k_uptime_get();
 
@@ -755,14 +793,14 @@ void test_sem_multiple_take_and_timeouts(void)
 		k_thread_create(&multiple_tid[i],
 				multiple_stack[i], STACK_SIZE,
 				sem_multiple_take_and_timeouts_helper,
-				INT_TO_POINTER(K_SECONDS(i + 1)), NULL, NULL,
+				INT_TO_POINTER(SEC2MS(i + 1)), NULL, NULL,
 				K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
 	}
 
 	for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
 		k_pipe_get(&timeout_info_pipe, &timeout, sizeof(int),
 			   &bytes_read, sizeof(int), K_FOREVER);
-		zassert_true(timeout == K_SECONDS(i + 1),
+		zassert_true(timeout == SEC2MS(i + 1),
 			     "timeout didn't occur properly");
 	}
 
@@ -787,7 +825,7 @@ void sem_multi_take_timeout_diff_sem_helper(void *p1, void *p2, void *p3)
 
 	start_ticks = k_uptime_get();
 
-	ret_value = k_sem_take(sema, timeout);
+	ret_value = k_sem_take(sema, K_MSEC(timeout));
 
 	end_ticks = k_uptime_get();
 
@@ -810,11 +848,11 @@ void test_sem_multi_take_timeout_diff_sem(void)
 {
 	size_t bytes_read;
 	struct timeout_info seq_info[] = {
-		{ K_SECONDS(2), &simple_sem },
-		{ K_SECONDS(1), &multiple_thread_sem },
-		{ K_SECONDS(3), &simple_sem },
-		{ K_SECONDS(5), &multiple_thread_sem },
-		{ K_SECONDS(4), &simple_sem },
+		{ SEC2MS(2), &simple_sem },
+		{ SEC2MS(1), &multiple_thread_sem },
+		{ SEC2MS(3), &simple_sem },
+		{ SEC2MS(5), &multiple_thread_sem },
+		{ SEC2MS(4), &simple_sem },
 	};
 
 	struct timeout_info retrieved_info;
@@ -844,7 +882,7 @@ void test_sem_multi_take_timeout_diff_sem(void)
 			   K_FOREVER);
 
 
-		zassert_true(retrieved_info.timeout == K_SECONDS(i + 1),
+		zassert_true(retrieved_info.timeout == SEC2MS(i + 1),
 			     "timeout didn't occur properly");
 	}
 
@@ -861,6 +899,7 @@ void test_main(void)
 			      &tstack, &tdata);
 
 	ztest_test_suite(test_semaphore,
+			 ztest_user_unit_test(test_k_sema_init),
 			 ztest_user_unit_test(test_sema_thread2thread),
 			 ztest_unit_test(test_sema_thread2isr),
 			 ztest_user_unit_test(test_sema_reset),

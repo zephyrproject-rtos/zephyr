@@ -151,4 +151,13 @@ config KINETIS_FLASH_CONFIG_FDPROT
 
 endif # KINETIS_FLASH_CONFIG
 
+config WDOG_INIT
+	bool
+	default !BOOTLOADER_MCUBOOT
+	help
+	  This processor enables the watchdog timer with a short
+	  window for configuration upon reset. Therefore, this
+	  requires that the watchdog be configured during reset
+	  handling.
+
 endif # SOC_FAMILY_KINETIS

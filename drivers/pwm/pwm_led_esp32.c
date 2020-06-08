@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT espressif_esp32_gpio
+
 /* Include esp-idf headers first to avoid redefining BIT() macro */
 #include <esp_intr_alloc.h>
 #include <soc/dport_reg.h>
@@ -92,14 +94,14 @@ static const char *esp32_get_gpio_for_pin(int pin)
 {
 	if (pin < 32) {
 #if defined(CONFIG_GPIO_ESP32_0)
-		return DT_INST_0_ESPRESSIF_ESP32_GPIO_LABEL;
+		return DT_INST_LABEL(0);
 #else
 		return NULL;
 #endif /* CONFIG_GPIO_ESP32_0 */
 	}
 
 #if defined(CONFIG_GPIO_ESP32_1)
-	return DT_INST_1_ESPRESSIF_ESP32_GPIO_LABEL;
+	return DT_INST_LABEL(1);
 #else
 	return NULL;
 #endif /* CONFIG_GPIO_ESP32_1 */
@@ -208,7 +210,7 @@ static void pwm_led_esp32_bind_channel_timer(int speed_mode,
 static int pwm_led_esp32_channel_set(int pin, bool speed_mode, int channel,
 				     int duty, int timer)
 {
-	const int pin_mode = GPIO_DIR_OUT;
+	const int pin_mode = GPIO_OUTPUT;
 
 	const char *device_name;
 	struct device *gpio;
@@ -311,16 +313,21 @@ static int pwm_led_esp32_timer_set(int speed_mode, int timer,
 /* period_cycles is not used, set frequency on menuconfig instead. */
 static int pwm_led_esp32_pin_set_cycles(struct device *dev,
 					u32_t pwm, u32_t period_cycles,
-					u32_t pulse_cycles)
+					u32_t pulse_cycles, pwm_flags_t flags)
 {
 	int speed_mode;
 	int channel;
 	int timer;
 	int ret;
 	const struct pwm_led_esp32_config * const config =
-		(struct pwm_led_esp32_config *) dev->config->config_info;
+		(const struct pwm_led_esp32_config *) dev->config_info;
 
 	ARG_UNUSED(period_cycles);
+
+	if (flags) {
+		/* PWM polarity not supported (yet?) */
+		return -ENOTSUP;
+	}
 
 	channel = pwm_led_esp32_get_gpio_config(pwm, config->ch_cfg);
 	if (channel < 0) {
@@ -366,7 +373,7 @@ static int pwm_led_esp32_get_cycles_per_sec(struct device *dev, u32_t pwm,
 	int timer;
 	int speed_mode;
 
-	config = (struct pwm_led_esp32_config *) dev->config->config_info;
+	config = (const struct pwm_led_esp32_config *) dev->config_info;
 
 	channel = pwm_led_esp32_get_gpio_config(pwm, config->ch_cfg);
 	if (channel < 0) {

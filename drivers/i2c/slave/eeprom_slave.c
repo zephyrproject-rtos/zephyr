@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT atmel_at24
+
 #include <sys/util.h>
 #include <kernel.h>
 #include <errno.h>
@@ -34,7 +36,7 @@ struct i2c_eeprom_slave_config {
 /* convenience defines */
 #define DEV_CFG(dev)							\
 	((const struct i2c_eeprom_slave_config * const)			\
-		(dev)->config->config_info)
+		(dev)->config_info)
 #define DEV_DATA(dev)							\
 	((struct i2c_eeprom_slave_data * const)(dev)->driver_data)
 
@@ -203,44 +205,28 @@ static int i2c_eeprom_slave_init(struct device *dev)
 	return 0;
 }
 
-#ifdef DT_INST_0_ATMEL_AT24
+#define I2C_EEPROM_INIT(inst)						\
+	static struct i2c_eeprom_slave_data				\
+		i2c_eeprom_slave_##inst##_dev_data;			\
+									\
+	static u8_t							\
+	i2c_eeprom_slave_##inst##_buffer[(DT_INST_PROP(inst, size))];	\
+									\
+	static const struct i2c_eeprom_slave_config			\
+		i2c_eeprom_slave_##inst##_cfg = {			\
+		.controller_dev_name = DT_INST_BUS_LABEL(inst),		\
+		.address = DT_INST_REG_ADDR(inst),			\
+		.buffer_size = DT_INST_PROP(inst, size),		\
+		.buffer = i2c_eeprom_slave_##inst##_buffer		\
+	};								\
+									\
+	DEVICE_AND_API_INIT(i2c_eeprom_slave_##inst,			\
+			    DT_INST_LABEL(inst),			\
+			    &i2c_eeprom_slave_init,			\
+			    &i2c_eeprom_slave_##inst##_dev_data,	\
+			    &i2c_eeprom_slave_##inst##_cfg,		\
+			    POST_KERNEL,				\
+			    CONFIG_I2C_SLAVE_INIT_PRIORITY,		\
+			    &api_funcs);
 
-static struct i2c_eeprom_slave_data i2c_eeprom_slave_0_dev_data;
-
-static u8_t i2c_eeprom_slave_0_buffer[(DT_INST_0_ATMEL_AT24_SIZE)];
-
-static const struct i2c_eeprom_slave_config i2c_eeprom_slave_0_cfg = {
-	.controller_dev_name = DT_INST_0_ATMEL_AT24_BUS_NAME,
-	.address = DT_INST_0_ATMEL_AT24_BASE_ADDRESS,
-	.buffer_size = (DT_INST_0_ATMEL_AT24_SIZE * 1024),
-	.buffer = i2c_eeprom_slave_0_buffer
-};
-
-DEVICE_AND_API_INIT(i2c_eeprom_slave_0, DT_INST_0_ATMEL_AT24_LABEL,
-		    &i2c_eeprom_slave_init,
-		    &i2c_eeprom_slave_0_dev_data, &i2c_eeprom_slave_0_cfg,
-		    POST_KERNEL, CONFIG_I2C_SLAVE_INIT_PRIORITY,
-		    &api_funcs);
-
-#endif /* DT_INST_0_ATMEL_AT24 */
-
-#ifdef DT_INST_1_ATMEL_AT24
-
-static struct i2c_eeprom_slave_data i2c_eeprom_slave_1_dev_data;
-
-static u8_t i2c_eeprom_slave_1_buffer[(DT_INST_1_ATMEL_AT24_SIZE)];
-
-static const struct i2c_eeprom_slave_config i2c_eeprom_slave_1_cfg = {
-	.controller_dev_name = DT_INST_1_ATMEL_AT24_BUS_NAME,
-	.address = DT_INST_1_ATMEL_AT24_BASE_ADDRESS,
-	.buffer_size = (DT_INST_1_ATMEL_AT24_SIZE * 1024),
-	.buffer = i2c_eeprom_slave_1_buffer
-};
-
-DEVICE_AND_API_INIT(i2c_eeprom_slave_1, DT_INST_1_ATMEL_AT24_LABEL,
-		    &i2c_eeprom_slave_init,
-		    &i2c_eeprom_slave_1_dev_data, &i2c_eeprom_slave_1_cfg,
-		    POST_KERNEL, CONFIG_I2C_SLAVE_INIT_PRIORITY,
-		    &api_funcs);
-
-#endif /* DT_INST_1_ATMEL_AT24 */
+DT_INST_FOREACH_STATUS_OKAY(I2C_EEPROM_INIT)

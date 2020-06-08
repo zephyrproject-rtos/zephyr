@@ -255,4 +255,3 @@ void app_a_entry(void *p1, void *p2, void *p3)
 	 */
 	k_thread_user_mode_enter(monitor_entry, NULL, NULL, NULL);
 }
-

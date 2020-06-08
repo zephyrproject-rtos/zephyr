@@ -8,8 +8,10 @@
  * https://www.st.com/resource/en/datasheet/lps22hh.pdf
  */
 
+#define DT_DRV_COMPAT st_lps22hh
+
 #include <kernel.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <drivers/gpio.h>
 #include <logging/log.h>
 
@@ -69,7 +71,7 @@ static void lps22hh_handle_interrupt(void *arg)
 {
 	struct device *dev = arg;
 	struct lps22hh_data *lps22hh = dev->driver_data;
-	const struct lps22hh_config *cfg = dev->config->config_info;
+	const struct lps22hh_config *cfg = dev->config_info;
 	struct sensor_trigger drdy_trigger = {
 		.type = SENSOR_TRIG_DATA_READY,
 	};
@@ -78,19 +80,21 @@ static void lps22hh_handle_interrupt(void *arg)
 		lps22hh->handler_drdy(dev, &drdy_trigger);
 	}
 
-	gpio_pin_enable_callback(lps22hh->gpio, cfg->drdy_pin);
+	gpio_pin_interrupt_configure(lps22hh->gpio, cfg->drdy_pin,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 }
 
 static void lps22hh_gpio_callback(struct device *dev,
 				  struct gpio_callback *cb, u32_t pins)
 {
-	const struct lps22hh_config *cfg = dev->config->config_info;
+	const struct lps22hh_config *cfg = dev->config_info;
 	struct lps22hh_data *lps22hh =
 		CONTAINER_OF(cb, struct lps22hh_data, gpio_cb);
 
 	ARG_UNUSED(pins);
 
-	gpio_pin_disable_callback(dev, cfg->drdy_pin);
+	gpio_pin_interrupt_configure(lps22hh->gpio, cfg->drdy_pin,
+				     GPIO_INT_DISABLE);
 
 #if defined(CONFIG_LPS22HH_TRIGGER_OWN_THREAD)
 	k_sem_give(&lps22hh->gpio_sem);
@@ -127,7 +131,7 @@ static void lps22hh_work_cb(struct k_work *work)
 int lps22hh_init_interrupt(struct device *dev)
 {
 	struct lps22hh_data *lps22hh = dev->driver_data;
-	const struct lps22hh_config *cfg = dev->config->config_info;
+	const struct lps22hh_config *cfg = dev->config_info;
 	int ret;
 
 	/* setup data ready gpio interrupt */
@@ -151,8 +155,7 @@ int lps22hh_init_interrupt(struct device *dev)
 #endif /* CONFIG_LPS22HH_TRIGGER_OWN_THREAD */
 
 	ret = gpio_pin_configure(lps22hh->gpio, cfg->drdy_pin,
-				 GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-				 GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE);
+				 GPIO_INPUT | cfg->drdy_flags);
 	if (ret < 0) {
 		LOG_DBG("Could not configure gpio");
 		return ret;
@@ -166,16 +169,12 @@ int lps22hh_init_interrupt(struct device *dev)
 		return -EIO;
 	}
 
-	/* configure interrupt active high */
-	if (lps22hh_pin_polarity_set(lps22hh->ctx, LPS22HH_ACTIVE_HIGH) < 0) {
-		return -EIO;
-	}
-
 	/* enable interrupt in pulse mode */
 	if (lps22hh_int_notification_set(lps22hh->ctx,
 					 LPS22HH_INT_PULSED) < 0) {
 		return -EIO;
 	}
 
-	return gpio_pin_enable_callback(lps22hh->gpio, cfg->drdy_pin);
+	return gpio_pin_interrupt_configure(lps22hh->gpio, cfg->drdy_pin,
+					    GPIO_INT_EDGE_TO_ACTIVE);
 }

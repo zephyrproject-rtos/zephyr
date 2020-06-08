@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_kinetis_wdog
+
 #include <drivers/watchdog.h>
 #include <drivers/clock_control.h>
 #include <fsl_wdog.h>
@@ -30,7 +32,7 @@ struct mcux_wdog_data {
 
 static int mcux_wdog_setup(struct device *dev, u8_t options)
 {
-	const struct mcux_wdog_config *config = dev->config->config_info;
+	const struct mcux_wdog_config *config = dev->config_info;
 	struct mcux_wdog_data *data = dev->driver_data;
 	WDOG_Type *base = config->base;
 
@@ -53,7 +55,7 @@ static int mcux_wdog_setup(struct device *dev, u8_t options)
 
 static int mcux_wdog_disable(struct device *dev)
 {
-	const struct mcux_wdog_config *config = dev->config->config_info;
+	const struct mcux_wdog_config *config = dev->config_info;
 	struct mcux_wdog_data *data = dev->driver_data;
 	WDOG_Type *base = config->base;
 
@@ -67,7 +69,7 @@ static int mcux_wdog_disable(struct device *dev)
 static int mcux_wdog_install_timeout(struct device *dev,
 				     const struct wdt_timeout_cfg *cfg)
 {
-	const struct mcux_wdog_config *config = dev->config->config_info;
+	const struct mcux_wdog_config *config = dev->config_info;
 	struct mcux_wdog_data *data = dev->driver_data;
 	struct device *clock_dev;
 	u32_t clock_freq;
@@ -116,7 +118,7 @@ static int mcux_wdog_install_timeout(struct device *dev,
 
 static int mcux_wdog_feed(struct device *dev, int channel_id)
 {
-	const struct mcux_wdog_config *config = dev->config->config_info;
+	const struct mcux_wdog_config *config = dev->config_info;
 	WDOG_Type *base = config->base;
 
 	if (channel_id != 0) {
@@ -133,7 +135,7 @@ static int mcux_wdog_feed(struct device *dev, int channel_id)
 static void mcux_wdog_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	const struct mcux_wdog_config *config = dev->config->config_info;
+	const struct mcux_wdog_config *config = dev->config_info;
 	struct mcux_wdog_data *data = dev->driver_data;
 	WDOG_Type *base = config->base;
 	u32_t flags;
@@ -148,7 +150,7 @@ static void mcux_wdog_isr(void *arg)
 
 static int mcux_wdog_init(struct device *dev)
 {
-	const struct mcux_wdog_config *config = dev->config->config_info;
+	const struct mcux_wdog_config *config = dev->config_info;
 
 	config->irq_config_func(dev);
 
@@ -165,15 +167,16 @@ static const struct wdt_driver_api mcux_wdog_api = {
 static void mcux_wdog_config_func_0(struct device *dev);
 
 static const struct mcux_wdog_config mcux_wdog_config_0 = {
-	.base = (WDOG_Type *) DT_WDT_0_BASE_ADDRESS,
-	.clock_name = DT_WDT_0_CLOCK_NAME,
-	.clock_subsys = (clock_control_subsys_t) DT_WDT_0_CLOCK_SUBSYS,
+	.base = (WDOG_Type *) DT_INST_REG_ADDR(0),
+	.clock_name = DT_INST_CLOCKS_LABEL(0),
+	.clock_subsys = (clock_control_subsys_t)
+		DT_INST_CLOCKS_CELL(0, name),
 	.irq_config_func = mcux_wdog_config_func_0,
 };
 
 static struct mcux_wdog_data mcux_wdog_data_0;
 
-DEVICE_AND_API_INIT(mcux_wdog_0, DT_INST_0_NXP_KINETIS_WDOG_LABEL,
+DEVICE_AND_API_INIT(mcux_wdog_0, DT_INST_LABEL(0),
 		    &mcux_wdog_init,
 		    &mcux_wdog_data_0, &mcux_wdog_config_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -181,8 +184,9 @@ DEVICE_AND_API_INIT(mcux_wdog_0, DT_INST_0_NXP_KINETIS_WDOG_LABEL,
 
 static void mcux_wdog_config_func_0(struct device *dev)
 {
-	IRQ_CONNECT(DT_WDT_0_IRQ, DT_WDT_0_IRQ_PRI,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
 		    mcux_wdog_isr, DEVICE_GET(mcux_wdog_0), 0);
 
-	irq_enable(DT_WDT_0_IRQ);
+	irq_enable(DT_INST_IRQN(0));
 }

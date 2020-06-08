@@ -78,6 +78,10 @@ config HAS_HW_NRF_MWU
 config HAS_HW_NRF_NFCT
 	bool
 
+# NVMC supports partial erase
+config HAS_HW_NRF_NVMC_PE
+	bool
+
 config HAS_HW_NRF_PDM
 	bool
 
@@ -145,6 +149,9 @@ config HAS_HW_NRF_SPIM2
 	bool
 
 config HAS_HW_NRF_SPIM3
+	bool
+
+config HAS_HW_NRF_SPIM4
 	bool
 
 config HAS_HW_NRF_SPIS0
@@ -244,6 +251,9 @@ config HAS_HW_NRF_UARTE3
 	bool
 
 config HAS_HW_NRF_USBD
+	bool
+
+config HAS_HW_NRF_USBREG
 	bool
 
 config HAS_HW_NRF_WDT

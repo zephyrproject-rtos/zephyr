@@ -329,16 +329,21 @@ static void test_log_from_declared_module(void)
 static void test_log_strdup_gc(void)
 {
 	char test_str[] = "test string";
+	char *dstr;
 
 	log_setup(false);
 
-	BUILD_ASSERT_MSG(CONFIG_LOG_STRDUP_BUF_COUNT == 1,
-			"Test assumes certain configuration");
-
+	BUILD_ASSERT(CONFIG_LOG_STRDUP_BUF_COUNT == 1,
+		     "Test assumes certain configuration");
+	backend1_cb.check_strdup = true;
 	backend1_cb.exp_strdup[0] = true;
 	backend1_cb.exp_strdup[1] = false;
 
-	LOG_INF("%s", log_strdup(test_str));
+	dstr = log_strdup(test_str);
+	/* test if message freeing is not fooled by using value within strdup
+	 * buffer pool but with different format specifier.
+	 */
+	LOG_INF("%s %p", dstr, dstr + 1);
 	LOG_INF("%s", log_strdup(test_str));
 
 	while (log_process(false)) {
@@ -414,8 +419,8 @@ static void test_strdup_trimming(void)
 {
 	char test_str[] = "123456789";
 
-	BUILD_ASSERT_MSG(CONFIG_LOG_STRDUP_MAX_STRING == 8,
-			"Test assumes certain configuration");
+	BUILD_ASSERT(CONFIG_LOG_STRDUP_MAX_STRING == 8,
+		     "Test assumes certain configuration");
 
 	log_setup(false);
 
@@ -442,7 +447,8 @@ static void log_n_messages(u32_t n_msg, u32_t exp_dropped)
 	}
 
 	zassert_equal(backend1_cb.total_drops, exp_dropped,
-			"Unexpected log msg dropped");
+			"Unexpected log msg dropped %d (expected %d)",
+			backend1_cb.total_drops, exp_dropped);
 
 }
 
@@ -471,6 +477,22 @@ static void test_log_msg_dropped_notification(void)
 	k_sched_unlock();
 }
 
+static void test_single_z_log_get_s_mask(const char *str, u32_t nargs,
+					 u32_t exp_mask)
+{
+	u32_t mask = z_log_get_s_mask(str, nargs);
+
+	zassert_equal(mask, exp_mask, "Unexpected mask %x (expected %x)",
+								mask, exp_mask);
+}
+
+static void test_z_log_get_s_mask(void)
+{
+	test_single_z_log_get_s_mask("%d%%%-10s%p%x", 4, 0x2);
+	test_single_z_log_get_s_mask("%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d"
+				     "%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%s",
+				     32, 0x80000000);
+}
 /*
  * Test checks if panic is correctly executed. On panic logger should flush all
  * messages and process logs in place (not in deferred way).
@@ -516,6 +538,7 @@ void test_main(void)
 			 ztest_unit_test(test_log_strdup_detect_miss),
 			 ztest_unit_test(test_strdup_trimming),
 			 ztest_unit_test(test_log_msg_dropped_notification),
+			 ztest_unit_test(test_z_log_get_s_mask),
 			 ztest_unit_test(test_log_panic));
 	ztest_run_test_suite(test_log_list);
 }

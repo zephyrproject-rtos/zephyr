@@ -15,6 +15,7 @@ config SOC_NRF52810
 	select HAS_HW_NRF_EGU1
 	select HAS_HW_NRF_GPIO0
 	select HAS_HW_NRF_GPIOTE
+	select HAS_HW_NRF_NVMC_PE
 	select HAS_HW_NRF_PDM
 	select HAS_HW_NRF_POWER
 	select HAS_HW_NRF_PPI
@@ -56,6 +57,7 @@ config SOC_NRF52811
 	select HAS_HW_NRF_EGU1
 	select HAS_HW_NRF_GPIO0
 	select HAS_HW_NRF_GPIOTE
+	select HAS_HW_NRF_NVMC_PE
 	select HAS_HW_NRF_PDM
 	select HAS_HW_NRF_POWER
 	select HAS_HW_NRF_PPI
@@ -90,10 +92,61 @@ config SOC_NRF52811
 	select HAS_HW_NRF_UARTE0
 	select HAS_HW_NRF_WDT
 
+config SOC_NRF52820
+	depends on SOC_SERIES_NRF52X
+	bool
+	select HAS_HW_NRF_ACL
+	select HAS_HW_NRF_CCM
+	select HAS_HW_NRF_CLOCK
+	select HAS_HW_NRF_COMP
+	select HAS_HW_NRF_ECB
+	select HAS_HW_NRF_EGU0
+	select HAS_HW_NRF_EGU1
+	select HAS_HW_NRF_EGU2
+	select HAS_HW_NRF_EGU3
+	select HAS_HW_NRF_EGU4
+	select HAS_HW_NRF_EGU5
+	select HAS_HW_NRF_GPIO0
+	select HAS_HW_NRF_GPIOTE
+	select HAS_HW_NRF_POWER
+	select HAS_HW_NRF_PPI
+	select HAS_HW_NRF_QDEC
+	select HAS_HW_NRF_RADIO_BLE_CODED
+	select HAS_HW_NRF_RNG
+	select HAS_HW_NRF_RTC0
+	select HAS_HW_NRF_RTC1
+	select HAS_HW_NRF_SPI0
+	select HAS_HW_NRF_SPI1
+	select HAS_HW_NRF_SPIM0
+	select HAS_HW_NRF_SPIM1
+	select HAS_HW_NRF_SPIS0
+	select HAS_HW_NRF_SPIS1
+	select HAS_HW_NRF_SWI0
+	select HAS_HW_NRF_SWI1
+	select HAS_HW_NRF_SWI2
+	select HAS_HW_NRF_SWI3
+	select HAS_HW_NRF_SWI4
+	select HAS_HW_NRF_SWI5
+	select HAS_HW_NRF_TEMP
+	select HAS_HW_NRF_TIMER0
+	select HAS_HW_NRF_TIMER1
+	select HAS_HW_NRF_TIMER2
+	select HAS_HW_NRF_TWI0
+	select HAS_HW_NRF_TWI1
+	select HAS_HW_NRF_TWIM0
+	select HAS_HW_NRF_TWIM1
+	select HAS_HW_NRF_TWIS0
+	select HAS_HW_NRF_TWIS1
+	select HAS_HW_NRF_UART0
+	select HAS_HW_NRF_UARTE0
+	select HAS_HW_NRF_USBD
+	select HAS_HW_NRF_WDT
+
 config SOC_NRF52832
 	depends on SOC_SERIES_NRF52X
 	bool
 	select SOC_COMPATIBLE_NRF52832
+	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_FPU
 	select HAS_HW_NRF_BPROT
 	select HAS_HW_NRF_CCM
@@ -158,6 +211,7 @@ config SOC_NRF52832
 config SOC_NRF52833
 	depends on SOC_SERIES_NRF52X
 	bool
+	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_FPU
 	select HAS_HW_NRF_ACL
 	select HAS_HW_NRF_CCM
@@ -177,6 +231,7 @@ config SOC_NRF52833
 	select HAS_HW_NRF_LPCOMP
 	select HAS_HW_NRF_MWU
 	select HAS_HW_NRF_NFCT
+	select HAS_HW_NRF_NVMC_PE
 	select HAS_HW_NRF_PDM
 	select HAS_HW_NRF_POWER
 	select HAS_HW_NRF_PPI
@@ -229,6 +284,7 @@ config SOC_NRF52833
 config SOC_NRF52840
 	depends on SOC_SERIES_NRF52X
 	bool
+	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_FPU
 	select HAS_HW_NRF_ACL
 	select HAS_HW_NRF_CC310
@@ -249,6 +305,7 @@ config SOC_NRF52840
 	select HAS_HW_NRF_LPCOMP
 	select HAS_HW_NRF_MWU
 	select HAS_HW_NRF_NFCT
+	select HAS_HW_NRF_NVMC_PE
 	select HAS_HW_NRF_PDM
 	select HAS_HW_NRF_POWER
 	select HAS_HW_NRF_PPI
@@ -311,6 +368,10 @@ config SOC_NRF52811_QFAA
 	bool "NRF52811_QFAA"
 	select SOC_NRF52811
 
+config SOC_NRF52820_QDAA
+	bool "NRF52820_QDAA"
+	select SOC_NRF52820
+
 config SOC_NRF52832_CIAA
 	bool "NRF52832_CIAA"
 	select SOC_NRF52832
@@ -358,3 +419,21 @@ config NRF_ENABLE_ICACHE
 	bool "Enable the instruction cache (I-Cache)"
 	depends on SOC_NRF52832 || SOC_NRF52833 || SOC_NRF52840
 	default y
+
+config NRF52_ANOMALY_132_DELAY_US
+	int "Anomaly 132 workaround delay (microseconds)"
+	default 330
+	range 0 330
+	depends on NRF52_ANOMALY_132_WORKAROUND
+	help
+	  Due to Anomaly 132 LF RC source may not start if restarted in certain
+	  window after stopping (230 us to 330 us). Software reset also stops the
+	  clock so if clock is initiated in certain window, the clock may also fail
+	  to start at reboot. A delay is added before starting LF clock to ensure
+	  that anomaly conditions are not met. Delay should be long enough to ensure
+	  that clock is started later than 330 us after reset. If crystal oscillator
+	  (XO) is used then low frequency clock initially starts with RC and then
+	  seamlessly switches to XO which has much longer startup time thus,
+	  depending on application, workaround may also need to be applied.
+	  Additional drivers initialization increases initialization time and delay
+	  may be shortened. Workaround is disabled by setting delay to 0.

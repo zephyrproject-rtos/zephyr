@@ -6,7 +6,10 @@
 
 #include "test_fat.h"
 #include <ff.h>
+#include "test_common.h"
 #include "test_fs_shell.h"
+#include "test_fat.h"
+#include "test_fat_priv.h"
 
 /* for mount using FS api */
 #if !defined(CONFIG_FILE_SYSTEM_SHELL)

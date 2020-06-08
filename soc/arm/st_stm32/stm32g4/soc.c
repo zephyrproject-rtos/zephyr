@@ -12,7 +12,7 @@
 #include <device.h>
 #include <init.h>
 #include <arch/cpu.h>
-#include <arch/arm/cortex_m/cmsis.h>
+#include <arch/arm/aarch32/cortex_m/cmsis.h>
 
 /**
  * @brief Perform basic hardware initialization at boot.
@@ -40,6 +40,9 @@ static int stm32g4_init(struct device *arg)
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
 	/* At reset, system core clock is set to 16 MHz from HSI */
 	SystemCoreClock = 16000000;
+
+	/* allow reflashing board */
+	LL_DBGMCU_EnableDBGSleepMode();
 
 	return 0;
 }

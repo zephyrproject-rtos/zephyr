@@ -84,7 +84,7 @@ void z_sys_mem_pool_base_init(struct sys_mem_pool_base *p)
 	p->max_inline_level = -1;
 
 	for (i = 0; i < p->n_levels; i++) {
-		int nblocks = buflen / sz;
+		size_t nblocks = buflen / sz;
 
 		sys_dlist_init(&p->levels[i].free_list);
 
@@ -300,7 +300,7 @@ void z_sys_mem_pool_block_free(struct sys_mem_pool_base *p, u32_t level,
 			      u32_t block)
 {
 	size_t lsizes[LVL_ARRAY_SZ(p->n_levels)];
-	int i;
+	u32_t i;
 
 	/* As in z_sys_mem_pool_block_alloc(), we build a table of level sizes
 	 * to avoid having to store it in precious RAM bytes.

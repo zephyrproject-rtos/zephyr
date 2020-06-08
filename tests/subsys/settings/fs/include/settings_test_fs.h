@@ -15,7 +15,7 @@
 #include "settings/settings.h"
 
 #ifdef __cplusplus
-#extern "C" {
+extern "C" {
 #endif
 
 extern u8_t val8;

@@ -59,7 +59,7 @@ def src_deps(zephyr_base, src_file, dest, src_root):
     # Load the file's contents, bailing on decode errors.
     try:
         with open(src_file, encoding="utf-8") as f:
-            content = [x.strip() for x in f.readlines()]
+            content = f.read()
     except UnicodeDecodeError as e:
         # pylint: disable=unsubscriptable-object
         sys.stderr.write(
@@ -83,14 +83,10 @@ def src_deps(zephyr_base, src_file, dest, src_root):
     # argument, which is a (relative) path to the additional
     # dependency file.
     directives = "|".join(DIRECTIVES)
-    pattern = re.compile(r"\.\.\s+(?P<directive>%s)::\s+(?P<dep_rel>.*)" %
+    pattern = re.compile(r"\.\.\s+(?P<directive>%s)::\s+(?P<dep_rel>[^\s]+)" %
                          directives)
     deps = []
-    for l in content:
-        m = pattern.match(l)
-        if not m:
-            continue
-
+    for m in pattern.finditer(content):
         dep_rel = m.group('dep_rel')  # relative to src_dir or absolute
         dep_src = path.abspath(path.join(src_dir, dep_rel))
         if path.isabs(dep_rel):

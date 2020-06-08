@@ -127,6 +127,16 @@ config LOG_IMMEDIATE
 	  flawlessly in that mode because one log operation can be interrupted
 	  by another one in the higher priority context.
 
+config LOG_IMMEDIATE_CLEAN_OUTPUT
+	bool "Enable clean log output"
+	depends on LOG_IMMEDIATE
+	help
+	  If enabled, interrupts are locked during whole log message processing.
+	  As a result, processing on one log message cannot be interrupted by
+	  another one and output is clean, not interleaved. However, enabling
+	  this option is causing interrupts locking for significant amount of
+	  time (up to multiple milliseconds).
+
 config LOG_ENABLE_FANCY_OUTPUT_FORMATTING
 	depends on MINIMAL_LIBC
 	bool "Format strings with minimal libc _prf() instead of _vprintk()"
@@ -155,19 +165,16 @@ config LOG_BLOCK_IN_THREAD
 	  When enabled logger will block (if in the thread context) when
 	  internal logger buffer is full and new message cannot be allocated.
 
-if LOG_BLOCK_IN_THREAD
-
 config LOG_BLOCK_IN_THREAD_TIMEOUT_MS
 	int "Maximum time (in milliseconds) thread can be blocked"
 	default 1000
 	range -1 10000
+	depends on LOG_BLOCK_IN_THREAD
 	help
 	  If new buffer for a log message cannot be allocated in that time, log
 	  message is dropped. Forever blocking (-1) is possible however may lead
 	  to the logger deadlock if logging is enabled in threads used for
 	  logging (e.g. logger or shell thread).
-
-endif # LOG_BLOCK_IN_THREAD
 
 config LOG_PROCESS_TRIGGER_THRESHOLD
 	int "Amount of buffered logs which triggers processing thread."
@@ -203,6 +210,7 @@ config LOG_PROCESS_THREAD_STACK_SIZE
 	default 1024 if NO_OPTIMIZATIONS
 	default 1024 if XTENSA
 	default 4096 if (X86 && X86_64)
+	default 4096 if ARM64
 	default 768
 	help
 	  Set the internal stack size for log processing thread.
@@ -354,16 +362,13 @@ config LOG_BACKEND_RTT_SYST_ENABLE
 
 endchoice
 
-if LOG_BACKEND_RTT_MODE_DROP
-
 config LOG_BACKEND_RTT_MESSAGE_SIZE
 	int "Size of internal buffer for storing messages."
 	range 32 256
 	default 128
+	depends on LOG_BACKEND_RTT_MODE_DROP
 	help
 	  This option defines maximum message size transferable to up-buffer.
-
-endif # LOG_BACKEND_RTT_MODE_DROP
 
 if LOG_BACKEND_RTT_MODE_BLOCK
 
@@ -401,16 +406,12 @@ config LOG_BACKEND_RTT_BUFFER
 	  Select index of up-buffer used for logger output, by default it uses
 	  terminal up-buffer and its settings.
 
-if LOG_BACKEND_RTT_BUFFER > 0
-
 config LOG_BACKEND_RTT_BUFFER_SIZE
 	int "Size of reserved up-buffer for logger output."
 	default 1024
+	depends on LOG_BACKEND_RTT_BUFFER > 0
 	help
 	  Specify reserved size of up-buffer used for logger output.
-
-endif # LOG_BACKEND_RTT_BUFFER
-
 
 # Enable processing of printk calls using log if terminal buffer is used.
 # Same buffer is used by RTT console. If printk would go through RTT console
@@ -418,7 +419,7 @@ endif # LOG_BACKEND_RTT_BUFFER
 # interrupted by an interrupt.
 config LOG_BACKEND_RTT_FORCE_PRINTK
 	bool
-	default y if LOG_BACKEND_RTT_BUFFER = 0
+	default y if LOG_BACKEND_RTT_BUFFER = 0 && RTT_CONSOLE
 	select LOG_PRINTK
 
 endif # LOG_BACKEND_RTT
@@ -431,7 +432,7 @@ config LOG_BACKEND_NATIVE_POSIX
 
 config LOG_BACKEND_XTENSA_SIM
 	bool "Enable xtensa simulator backend"
-	depends on SOC_XTENSA_SAMPLE_CONTROLLER
+	depends on SOC_XTENSA_SAMPLE_CONTROLLER || SOC_INTEL_APL_ADSP
 	help
 	  Enable backend in xtensa simulator
 
@@ -495,6 +496,34 @@ config LOG_BACKEND_NET_SYST_ENABLE
 	  When enabled backend is using networking to output syst format logs.
 
 endif # LOG_BACKEND_NET
+
+config LOG_BACKEND_RB
+	bool "Enable memory ring buffer backend"
+	select RING_BUFFER
+	help
+	  Enable backend in memory using ring buffer to keep messages.
+
+if LOG_BACKEND_RB
+
+config LOG_BACKEND_RB_MEM_BASE
+	hex "Ring buffer memory base address"
+	help
+	  Address of the ring buffer in the memory.
+
+config LOG_BACKEND_RB_MEM_SIZE
+	int "Size of the ring buffer"
+	help
+	  Size of the ring buffer. Must be multiply of the message slot
+	  size.
+
+config LOG_BACKEND_RB_SLOT_SIZE
+	int "Size of the message slot"
+	default 64
+	help
+	  Size of the message slot inside ring buffer. All log messages
+	  are split to similar sized logging slots.
+
+endif # LOG_BACKEND_RB
 
 config LOG_BACKEND_SHOW_COLOR
 	bool "Enable colors in the backend"

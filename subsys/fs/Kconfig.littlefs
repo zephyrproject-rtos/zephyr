@@ -89,4 +89,3 @@ config FS_LITTLEFS_FC_MEM_POOL_NUM_BLOCKS
 endif # FS_LITTLEFS_FC_MEM_POOL
 
 endmenu
-

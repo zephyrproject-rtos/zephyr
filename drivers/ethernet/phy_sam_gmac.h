@@ -53,6 +53,14 @@ int phy_sam_gmac_auto_negotiate(const struct phy_sam_gmac_dev *phy,
  */
 u32_t phy_sam_gmac_id_get(const struct phy_sam_gmac_dev *phy);
 
+/**
+ * @brief Get PHY link status.
+ *
+ * @param phy PHY instance
+ * @return link status
+ */
+bool phy_sam_gmac_link_status_get(const struct phy_sam_gmac_dev *phy);
+
 #ifdef __cplusplus
 }
 #endif

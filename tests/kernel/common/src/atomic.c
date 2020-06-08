@@ -26,18 +26,31 @@ void test_atomic(void)
 	int i;
 
 	atomic_t target, orig;
+	atomic_ptr_t ptr_target;
 	atomic_val_t value;
 	atomic_val_t oldvalue;
+	void *ptr_value, *old_ptr_value;
 
 	target = 4;
 	value = 5;
 	oldvalue = 6;
 
 	/* atomic_cas() */
-	zassert_true((atomic_cas(&target, oldvalue, value) == 0), "atomic_cas");
+	zassert_false(atomic_cas(&target, oldvalue, value), "atomic_cas");
 	target = 6;
-	zassert_true((atomic_cas(&target, oldvalue, value) == 1), "atomic_cas");
+	zassert_true(atomic_cas(&target, oldvalue, value), "atomic_cas");
 	zassert_true((target == value), "atomic_cas");
+
+	/* atomic_ptr_cas() */
+	ptr_target = (atomic_ptr_t)4;
+	ptr_value = (void *)5;
+	old_ptr_value = (void *)6;
+	zassert_false(atomic_ptr_cas(&ptr_target, old_ptr_value, ptr_value),
+		      "atomic_ptr_cas");
+	ptr_target = (void *)6;
+	zassert_true(atomic_ptr_cas(&ptr_target, old_ptr_value, ptr_value),
+		     "atomic_ptr_cas");
+	zassert_true((ptr_target == ptr_value), "atomic_ptr_cas");
 
 	/* atomic_add() */
 	target = 1;
@@ -65,16 +78,34 @@ void test_atomic(void)
 	target = 50;
 	zassert_true((atomic_get(&target) == 50), "atomic_get");
 
+	/* atomic_ptr_get() */
+	ptr_target = (atomic_ptr_t)50;
+	zassert_true((atomic_ptr_get(&ptr_target) == (void *)50),
+		     "atomic_ptr_get");
+
 	/* atomic_set() */
 	target = 42;
 	value = 77;
 	zassert_true((atomic_set(&target, value) == 42), "atomic_set");
 	zassert_true((target == value), "atomic_set");
 
+	/* atomic_ptr_set() */
+	ptr_target = (atomic_ptr_t)42;
+	ptr_value = (void *)77;
+	zassert_true((atomic_ptr_set(&ptr_target, ptr_value) == (void *)42),
+		     "atomic_ptr_set");
+	zassert_true((ptr_target == ptr_value), "atomic_ptr_set");
+
 	/* atomic_clear() */
 	target = 100;
 	zassert_true((atomic_clear(&target) == 100), "atomic_clear");
 	zassert_true((target == 0), "atomic_clear");
+
+	/* atomic_ptr_clear() */
+	ptr_target = (atomic_ptr_t)100;
+	zassert_true((atomic_ptr_clear(&ptr_target) == (void *)100),
+		     "atomic_ptr_clear");
+	zassert_true((ptr_target == NULL), "atomic_ptr_clear");
 
 	/* atomic_or() */
 	target = 0xFF00;

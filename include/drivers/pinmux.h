@@ -34,6 +34,14 @@ extern "C" {
 #define PINMUX_FUNC_F		5
 #define PINMUX_FUNC_G		6
 #define PINMUX_FUNC_H		7
+#define PINMUX_FUNC_I		8
+#define PINMUX_FUNC_J		9
+#define PINMUX_FUNC_K		10
+#define PINMUX_FUNC_L		11
+#define PINMUX_FUNC_M		12
+#define PINMUX_FUNC_N		13
+#define PINMUX_FUNC_O		14
+#define PINMUX_FUNC_P		15
 
 #define PINMUX_PULLUP_ENABLE	(0x1)
 #define PINMUX_PULLUP_DISABLE	(0x0)
@@ -66,7 +74,7 @@ typedef int (*pmux_pullup)(struct device *dev, u32_t pin, u8_t func);
  */
 typedef int (*pmux_input)(struct device *dev, u32_t pin, u8_t func);
 
-struct pinmux_driver_api {
+__subsystem struct pinmux_driver_api {
 	pmux_set set;
 	pmux_get get;
 	pmux_pullup pullup;

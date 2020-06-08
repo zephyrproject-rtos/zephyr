@@ -342,7 +342,7 @@ static inline void net_stats_update_rx_time(struct net_if *iface,
 	u32_t diff = end_time - start_time;
 
 	UPDATE_STAT(iface, stats.rx_time.sum +=
-		    SYS_CLOCK_HW_CYCLES_TO_NS64(diff) / NSEC_PER_USEC);
+		    k_cyc_to_ns_floor64(diff) / 1000);
 	UPDATE_STAT(iface, stats.rx_time.count += 1);
 }
 #else
@@ -398,7 +398,7 @@ static inline void net_stats_update_tc_rx_time(struct net_if *iface,
 	u32_t diff = end_time - start_time;
 
 	UPDATE_STAT(iface, stats.tc.recv[tc].rx_time.sum +=
-		    SYS_CLOCK_HW_CYCLES_TO_NS64(diff) / NSEC_PER_USEC);
+		    k_cyc_to_ns_floor64(diff) / 1000);
 	UPDATE_STAT(iface, stats.tc.recv[tc].rx_time.count += 1);
 
 	net_stats_update_rx_time(iface, start_time, end_time);
@@ -462,6 +462,30 @@ static inline void net_stats_update_tc_rx_time(struct net_if *iface,
 #define net_stats_update_tc_rx_time(iface, priority, start_time, end_time)
 #endif /* NET_PKT_RXTIME_STATS && NET_STATISTICS */
 #endif /* NET_TC_COUNT > 1 */
+
+#if defined(CONFIG_NET_STATISTICS_POWER_MANAGEMENT)	\
+	&& defined(CONFIG_NET_STATISTICS) && defined(CONFIG_NET_NATIVE)
+static inline void net_stats_add_suspend_start_time(struct net_if *iface,
+						    u32_t time)
+{
+	UPDATE_STAT(iface, stats.pm.start_time = time);
+}
+
+static inline void net_stats_add_suspend_end_time(struct net_if *iface,
+						  u32_t time)
+{
+	u32_t diff_time =
+		k_cyc_to_ms_floor32(time - GET_STAT(iface, pm.start_time));
+
+	UPDATE_STAT(iface, stats.pm.start_time = 0);
+	UPDATE_STAT(iface, stats.pm.last_suspend_time = diff_time);
+	UPDATE_STAT(iface, stats.pm.suspend_count++);
+	UPDATE_STAT(iface, stats.pm.overall_suspend_time += diff_time);
+}
+#else
+#define net_stats_add_suspend_start_time(iface, time)
+#define net_stats_add_suspend_end_time(iface, time)
+#endif
 
 #if defined(CONFIG_NET_STATISTICS_PERIODIC_OUTPUT) \
 	&& defined(CONFIG_NET_NATIVE)

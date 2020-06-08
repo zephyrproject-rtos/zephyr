@@ -260,7 +260,7 @@ static int tls_init(struct device *unused)
 	struct device *dev = NULL;
 
 #if defined(CONFIG_ENTROPY_HAS_DRIVER)
-	dev = device_get_binding(CONFIG_ENTROPY_NAME);
+	dev = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
 
 	if (!dev) {
 		NET_ERR("Failed to obtain entropy device");
@@ -475,13 +475,15 @@ static int dtls_tx(void *ctx, const unsigned char *buf, size_t len)
 	return sent;
 }
 
-static int dtls_rx(void *ctx, unsigned char *buf, size_t len, uint32_t timeout)
+static int dtls_rx(void *ctx, unsigned char *buf, size_t len,
+		   uint32_t dtls_timeout)
 {
 	struct net_context *net_ctx = ctx;
 	bool is_block = !((net_ctx->tls->flags & ZSOCK_MSG_DONTWAIT) ||
 			  sock_is_nonblock(net_ctx));
-	int remaining_time = (timeout == 0U) ? K_FOREVER : timeout;
-	u32_t entry_time = k_uptime_get_32();
+	k_timeout_t timeout = (dtls_timeout == 0U) ? K_FOREVER :
+						     K_MSEC(dtls_timeout);
+	u64_t end = z_timeout_end_calc(timeout);
 	socklen_t addrlen = sizeof(struct sockaddr);
 	struct sockaddr addr;
 	int err;
@@ -501,7 +503,7 @@ static int dtls_rx(void *ctx, unsigned char *buf, size_t len, uint32_t timeout)
 			pev.mode = K_POLL_MODE_NOTIFY_ONLY;
 			pev.state = K_POLL_STATE_NOT_READY;
 
-			if (k_poll(&pev, 1, remaining_time) == -EAGAIN) {
+			if (k_poll(&pev, 1, timeout) == -EAGAIN) {
 				return MBEDTLS_ERR_SSL_TIMEOUT;
 			}
 		}
@@ -539,12 +541,15 @@ static int dtls_rx(void *ctx, unsigned char *buf, size_t len, uint32_t timeout)
 			/* Received data from different peer, ignore it. */
 			retry = true;
 
-			if (remaining_time != K_FOREVER) {
+			if (!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
 				/* Recalculate the timeout value. */
-				remaining_time = time_left(entry_time, timeout);
-				if (remaining_time <= 0) {
+				s64_t remaining = end - z_tick_get();
+
+				if (remaining <= 0) {
 					return MBEDTLS_ERR_SSL_TIMEOUT;
 				}
+
+				timeout = Z_TIMEOUT_TICKS(remaining);
 			}
 		}
 	} while (retry);
@@ -841,6 +846,13 @@ static int tls_mbedtls_init(struct net_context *context, bool is_server)
 		 */
 		return -ENOMEM;
 	}
+
+#if defined(MBEDTLS_SSL_RENEGOTIATION)
+	mbedtls_ssl_conf_legacy_renegotiation(&context->tls->config,
+					   MBEDTLS_SSL_LEGACY_BREAK_HANDSHAKE);
+	mbedtls_ssl_conf_renegotiation(&context->tls->config,
+				       MBEDTLS_SSL_RENEGOTIATION_ENABLED);
+#endif
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 	if (type == MBEDTLS_SSL_TRANSPORT_DATAGRAM) {
@@ -1147,13 +1159,6 @@ static int ztls_socket(int family, int type, int proto)
 	/* recv_q and accept_q are in union */
 	k_fifo_init(&ctx->recv_q);
 
-#ifdef CONFIG_USERSPACE
-	/* Set net context object as initialized and grant access to the
-	 * calling thread (and only the calling thread)
-	 */
-	z_object_recycle(ctx);
-#endif
-
 	if (tls_proto != 0) {
 		/* If TLS protocol is used, allocate TLS context */
 		ctx->tls = tls_alloc();
@@ -1165,6 +1170,10 @@ static int ztls_socket(int family, int type, int proto)
 		}
 
 		ctx->tls->tls_version = tls_proto;
+	}
+
+	if (proto == IPPROTO_TCP) {
+		net_context_ref(ctx);
 	}
 
 	z_finalize_fd(
@@ -1269,10 +1278,6 @@ int ztls_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 
 	child = k_fifo_get(&parent->accept_q, K_FOREVER);
 
-	#ifdef CONFIG_USERSPACE
-		z_object_recycle(child);
-	#endif
-
 	if (addr != NULL && addrlen != NULL) {
 		int len = MIN(*addrlen, sizeof(child->remote));
 
@@ -1289,6 +1294,9 @@ int ztls_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 			goto error;
 		}
 	}
+
+	net_context_set_accepting(child, false);
+	net_context_ref(child);
 
 	z_finalize_fd(
 		fd, child, (const struct fd_op_vtable *)&tls_sock_fd_op_vtable);
@@ -1690,8 +1698,7 @@ static int ztls_poll_prepare_ctx(struct net_context *ctx,
 
 	if (pfd->events & ZSOCK_POLLIN) {
 		if (*pev == pev_end) {
-			errno = ENOMEM;
-			return -1;
+			return -ENOMEM;
 		}
 
 		/* DTLS client should wait for the handshake to complete before
@@ -1716,8 +1723,7 @@ static int ztls_poll_prepare_ctx(struct net_context *ctx,
 		 * immediately, so we tell poll() to short-circuit wait.
 		 */
 		if (sock_is_eof(ctx)) {
-			errno = EALREADY;
-			return -1;
+			return -EALREADY;
 		}
 
 		/* If there already is mbedTLS data to read, there is no
@@ -1726,8 +1732,7 @@ static int ztls_poll_prepare_ctx(struct net_context *ctx,
 		 */
 		if (!IS_LISTENING(ctx)) {
 			if (mbedtls_ssl_get_bytes_avail(&ctx->tls->ssl) > 0) {
-				errno = EALREADY;
-				return -1;
+				return -EALREADY;
 			}
 		}
 	}
@@ -1820,8 +1825,7 @@ next:
 
 again:
 	(*pev)++;
-	errno = EAGAIN;
-	return -1;
+	return -EAGAIN;
 }
 
 int ztls_getsockopt_ctx(struct net_context *ctx, int level, int optname,

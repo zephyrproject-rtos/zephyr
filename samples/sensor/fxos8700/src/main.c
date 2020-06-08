@@ -31,7 +31,7 @@ static void trigger_handler(struct device *dev, struct sensor_trigger *trigger)
 void main(void)
 {
 	struct sensor_value accel[3];
-	struct device *dev = device_get_binding(DT_INST_0_NXP_FXOS8700_LABEL);
+	struct device *dev = device_get_binding(DT_LABEL(DT_INST(0, nxp_fxos8700)));
 
 	if (dev == NULL) {
 		printf("Could not get fxos8700 device\n");
@@ -77,6 +77,7 @@ void main(void)
 
 	while (1) {
 #ifdef CONFIG_FXOS8700_TRIGGER_NONE
+		k_sleep(K_MSEC(160));
 		sensor_sample_fetch(dev);
 #else
 		k_sem_take(&sem, K_FOREVER);

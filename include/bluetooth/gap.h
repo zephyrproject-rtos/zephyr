@@ -15,10 +15,17 @@
 extern "C" {
 #endif
 
-/* Company Identifiers (see Bluetooth Assigned Numbers) */
+/**
+ * @brief Bluetooth Generic Access Profile defines and Assigned Numbers.
+ * @defgroup bt_gap_defines Defines and Assigned Numbers
+ * @ingroup bluetooth
+ * @{
+ */
+
+/** Company Identifiers (see Bluetooth Assigned Numbers) */
 #define BT_COMP_ID_LF           0x05f1 /* The Linux Foundation */
 
-/* EIR/AD data type definitions */
+/** EIR/AD data type definitions */
 #define BT_DATA_FLAGS                   0x01 /* AD flags */
 #define BT_DATA_UUID16_SOME             0x02 /* 16-bit UUID, more available */
 #define BT_DATA_UUID16_ALL              0x03 /* 16-bit UUID, all listed */
@@ -68,6 +75,75 @@ extern "C" {
 #define BT_GAP_ADV_SLOW_INT_MAX                 0x0780  /* 1.2 s    */
 #define BT_GAP_INIT_CONN_INT_MIN                0x0018  /* 30 ms    */
 #define BT_GAP_INIT_CONN_INT_MAX                0x0028  /* 50 ms    */
+
+/** LE PHY types */
+enum {
+	/** LE 1M PHY */
+	BT_GAP_LE_PHY_1M                      = BIT(0),
+	 /** LE 2M PHY */
+	BT_GAP_LE_PHY_2M                      = BIT(1),
+	/** LE Coded PHY */
+	BT_GAP_LE_PHY_CODED                   = BIT(2),
+};
+
+/** Advertising PDU types */
+enum {
+	/** Scannable and connectable advertising. */
+	BT_GAP_ADV_TYPE_ADV_IND               = 0x00,
+	/** Directed connectable advertising. */
+	BT_GAP_ADV_TYPE_ADV_DIRECT_IND        = 0x01,
+	/** Non-connectable and scannable advertising. */
+	BT_GAP_ADV_TYPE_ADV_SCAN_IND          = 0x02,
+	/** Non-connectable and non-scannable advertising. */
+	BT_GAP_ADV_TYPE_ADV_NONCONN_IND       = 0x03,
+	/** Additional advertising data requested by an active scanner. */
+	BT_GAP_ADV_TYPE_SCAN_RSP              = 0x04,
+	/** Extended advertising, see advertising properties. */
+	BT_GAP_ADV_TYPE_EXT_ADV               = 0x05,
+};
+
+/** Advertising PDU properties */
+enum {
+	/** Connectable advertising. */
+	BT_GAP_ADV_PROP_CONNECTABLE           = BIT(0),
+	/** Scannable advertising. */
+	BT_GAP_ADV_PROP_SCANNABLE             = BIT(1),
+	/** Directed advertising. */
+	BT_GAP_ADV_PROP_DIRECTED              = BIT(2),
+	/** Additional advertising data requested by an active scanner. */
+	BT_GAP_ADV_PROP_SCAN_RESPONSE         = BIT(3),
+	/** Extended advertising. */
+	BT_GAP_ADV_PROP_EXT_ADV               = BIT(4),
+};
+
+/** Maximum advertising data length. */
+#define BT_GAP_ADV_MAX_ADV_DATA_LEN             31
+/** Maximum extended advertising data length.
+ *
+ *  @note The maximum advertising data length that can be sent by an extended
+ *        advertiser is defined by the controller.
+ */
+#define BT_GAP_ADV_MAX_EXT_ADV_DATA_LEN         1650
+
+#define BT_GAP_TX_POWER_INVALID                 0x7f
+#define BT_GAP_RSSI_INVALID                     0x7f
+#define BT_GAP_SID_INVALID                      0xff
+#define BT_GAP_NO_TIMEOUT                       0x0000
+
+/* The maximum allowed high duty cycle directed advertising timeout, 1.28
+ * seconds in 10 ms unit.
+ */
+#define BT_GAP_ADV_HIGH_DUTY_CYCLE_MAX_TIMEOUT  128
+
+#define BT_GAP_DATA_LEN_DEFAULT                 0x001b /* 27 bytes */
+#define BT_GAP_DATA_LEN_MAX                     0x00fb /* 251 bytes */
+
+#define BT_GAP_DATA_TIME_DEFAULT                0x0148 /* 328 us */
+#define BT_GAP_DATA_TIME_MAX                    0x4290 /* 17040 us */
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

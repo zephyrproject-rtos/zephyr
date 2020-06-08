@@ -63,7 +63,7 @@ Hardware
 +-------+-----------------------+---------------------------+
 | D1    | TX                    | Ext. header only          |
 +-------+-----------------------+---------------------------+
-| D2    | GPIO_INT_ACTIVE_LOW   | MCP2515 - INT             |
+| D2    | GPIO_ACTIVE_LOW       | MCP2515 - INT             |
 +-------+-----------------------+---------------------------+
 | D3    | None                  |                           |
 +-------+-----------------------+---------------------------+
@@ -120,7 +120,7 @@ Zephyr application. For example:
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/CAN
    :tool: all
-   :board: nrf52_pca10040
+   :board: nrf52dk_nrf52832
    :shield: dfrobot_can_bus_v2_0
    :conf: prj.mcp2515.conf
    :goals: build flash

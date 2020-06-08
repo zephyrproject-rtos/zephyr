@@ -226,17 +226,17 @@ static u32_t ipv4_autoconf_get_timeout(struct net_if_ipv4_autoconf *ipv4auto)
 	case NET_IPV4_AUTOCONF_PROBE:
 		if (ipv4auto->conflict_cnt >= IPV4_AUTOCONF_MAX_CONFLICTS) {
 			NET_DBG("Rate limiting");
-			return K_SECONDS(IPV4_AUTOCONF_RATE_LIMIT_INTERVAL);
+			return MSEC_PER_SEC * IPV4_AUTOCONF_RATE_LIMIT_INTERVAL;
 
 		} else if (ipv4auto->probe_cnt == IPV4_AUTOCONF_PROBE_NUM) {
-			return K_SECONDS(IPV4_AUTOCONF_ANNOUNCE_INTERVAL);
+			return MSEC_PER_SEC * IPV4_AUTOCONF_ANNOUNCE_INTERVAL;
 		}
 
 		return IPV4_AUTOCONF_PROBE_WAIT * MSEC_PER_SEC +
 			(sys_rand32_get() % MSEC_PER_SEC);
 
 	case NET_IPV4_AUTOCONF_ANNOUNCE:
-		return K_SECONDS(IPV4_AUTOCONF_ANNOUNCE_INTERVAL);
+		return MSEC_PER_SEC * IPV4_AUTOCONF_ANNOUNCE_INTERVAL;
 
 	default:
 		break;
@@ -250,7 +250,7 @@ static void ipv4_autoconf_submit_work(u32_t timeout)
 	if (!k_delayed_work_remaining_get(&ipv4auto_timer) ||
 	    timeout < k_delayed_work_remaining_get(&ipv4auto_timer)) {
 		k_delayed_work_cancel(&ipv4auto_timer);
-		k_delayed_work_submit(&ipv4auto_timer, timeout);
+		k_delayed_work_submit(&ipv4auto_timer, K_MSEC(timeout));
 
 		NET_DBG("Next wakeup in %d ms",
 			k_delayed_work_remaining_get(&ipv4auto_timer));
@@ -313,7 +313,7 @@ static void ipv4_autoconf_timeout(struct k_work *work)
 	if (timeout_update != UINT32_MAX && timeout_update > 0) {
 		NET_DBG("Waiting for %u ms", timeout_update);
 
-		k_delayed_work_submit(&ipv4auto_timer, timeout_update);
+		k_delayed_work_submit(&ipv4auto_timer, K_MSEC(timeout_update));
 	}
 }
 
@@ -323,7 +323,7 @@ static void ipv4_autoconf_start_timer(struct net_if *iface,
 	sys_slist_append(&ipv4auto_ifaces, &ipv4auto->node);
 
 	ipv4auto->timer_start = k_uptime_get();
-	ipv4auto->timer_timeout = K_SECONDS(IPV4_AUTOCONF_START_DELAY);
+	ipv4auto->timer_timeout = MSEC_PER_SEC * IPV4_AUTOCONF_START_DELAY;
 	ipv4auto->iface = iface;
 
 	ipv4_autoconf_submit_work(ipv4auto->timer_timeout);

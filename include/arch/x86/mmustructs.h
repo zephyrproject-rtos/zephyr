@@ -329,6 +329,14 @@ static inline u64_t *z_x86_get_pte(struct x86_page_tables *ptables,
 }
 
 /**
+ * Dump out page table entries for a particular memory address
+ *
+ * For the provided memory address, dump out the P, W, XD, US flags
+ * at each paging level to the error log.
+ */
+void z_x86_dump_mmu_flags(struct x86_page_tables *ptables, uintptr_t addr);
+
+/**
  * Debug function for dumping out page tables
  *
  * Iterates through the entire linked set of page table structures,
@@ -411,6 +419,9 @@ void z_x86_mmu_set_flags(struct x86_page_tables *ptables, void *ptr,
 
 int z_x86_mmu_validate(struct x86_page_tables *ptables, void *addr, size_t size,
 		       bool write);
+
+void z_x86_add_mmu_region(uintptr_t addr, size_t size, u64_t flags);
+
 #endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_ARCH_X86_MMUSTRUCTS_H_ */

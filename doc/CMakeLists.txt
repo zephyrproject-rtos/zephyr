@@ -3,6 +3,9 @@
 cmake_minimum_required(VERSION 3.13.1)
 project(Zephyr-Kernel-Doc LANGUAGES)
 
+set(NO_BOILERPLATE TRUE)
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE} ..)
+
 # Find west to (optionally) process modules for Kconfig
 find_program(
   WEST
@@ -12,16 +15,18 @@ if(${WEST} STREQUAL WEST-NOTFOUND)
   unset(WEST)
 endif()
 
-file(TO_CMAKE_PATH "$ENV{ZEPHYR_BASE}" ZEPHYR_BASE)
+file(TO_CMAKE_PATH "${ZEPHYR_BASE}" ZEPHYR_BASE)
 
 message(STATUS "Zephyr base: ${ZEPHYR_BASE}")
 if(DEFINED WEST)
-  message(STATUS "West: ${WEST}")
+  execute_process(COMMAND west --version
+    OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE WEST_VERSION)
+  message(STATUS "West: ${WEST} (west --version: \"${WEST_VERSION}\")")
 else()
   message(STATUS "West: not found")
 endif()
 
-find_package(PythonInterp 3.4)
+include(${ZEPHYR_BASE}/cmake/python.cmake)
 set(DOXYGEN_SKIP_DOT True)
 find_package(Doxygen REQUIRED)
 find_package(LATEX)
@@ -206,6 +211,7 @@ add_custom_target(
   KCONFIG_TURBO_MODE=${KCONFIG_TURBO_MODE}
   KCONFIG_DOC_MODE=1
     ${PYTHON_EXECUTABLE} scripts/genrest.py ${RST_OUT}/doc/reference/kconfig/
+      --separate-all-index
       --keep-module-paths
       --modules Architecture,arch,${ZEPHYR_BASE}/arch
                 Driver,drivers,${ZEPHYR_BASE}/drivers
@@ -340,6 +346,12 @@ add_custom_target(
   htmldocs
 )
 add_dependencies(htmldocs html)
+
+
+add_custom_target(
+  doxygen
+)
+add_dependencies(doxygen doxy_real_modified_times)
 
 add_dependencies(latex content doxy_real_modified_times kconfig)
 

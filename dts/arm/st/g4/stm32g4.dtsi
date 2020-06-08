@@ -11,6 +11,11 @@
 #include <dt-bindings/gpio/gpio.h>
 
 / {
+	chosen {
+		zephyr,entropy = &rng;
+		zephyr,flash-controller = &flash;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -27,8 +32,31 @@
 	};
 
 	soc {
-		flash-controller@40022000 {
-			compatible = "st,stm32g4-flash-controller";
+		/*
+		 * Both adc instances cannot be used in parallel right now.
+		 */
+		adc1: adc@50000000 {
+			compatible = "st,stm32-adc";
+			reg = <0x50000000 0x100>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00002000>;
+			interrupts = <18 0>;
+			status = "disabled";
+			label = "ADC_1";
+			#io-channel-cells = <1>;
+		};
+
+		adc2: adc@50000100 {
+			compatible = "st,stm32-adc";
+			reg = <0x50000100 0x100>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00002000>;
+			interrupts = <18 0>;
+			status = "disabled";
+			label = "ADC_2";
+			#io-channel-cells = <1>;
+		};
+
+		flash: flash-controller@40022000 {
+			compatible = "st,stm32-flash-controller", "st,stm32g4-flash-controller";
 			label = "FLASH_CTRL";
 			reg = <0x40022000 0x400>;
 			interrupts = <3 0>;
@@ -223,7 +251,7 @@
 		};
 
 		spi1: spi@40013000 {
-			compatible = "st,stm32-spi-fifo";
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40013000 0x400>;
@@ -234,7 +262,7 @@
 		};
 
 		spi2: spi@40003800 {
-			compatible = "st,stm32-spi-fifo";
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003800 0x400>;
@@ -245,7 +273,7 @@
 		};
 
 		spi3: spi@40003c00 {
-			compatible = "st,stm32-spi-fifo";
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003c00 0x400>;
@@ -423,6 +451,14 @@
 			prescaler = <32768>;
 			status = "disabled";
 			label = "RTC_0";
+		};
+
+		rng: rng@50060800 {
+			compatible = "st,stm32-rng";
+			reg = <0x50060800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x04000000>;
+			status = "disabled";
+			label = "RNG";
 		};
 
 		usb: usb@40005c00 {

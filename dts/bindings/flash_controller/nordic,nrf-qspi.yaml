@@ -1,0 +1,39 @@
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Properties defining the interface for the Nordic QSPI peripheral.
+
+compatible: "nordic,nrf-qspi"
+
+include: flash-controller.yaml
+
+bus: qspi
+
+properties:
+  "#address-cells":
+    required: true
+    const: 1
+
+  "#size-cells":
+    required: true
+    const: 0
+
+  interrupts:
+    required: true
+
+  sck-pin:
+    type: int
+    required: true
+    description: |
+      Pin number associated with serial clock pin
+  io-pins:
+    type: array
+    required: true
+    description: |
+      Pin numbers associated with IO0 through IO3 signals
+  csn-pins:
+    type: array
+    required: true
+    description: |
+      Pin numbers associated with chip-select signals

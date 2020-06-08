@@ -88,6 +88,10 @@ void main(void)
 		return;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		settings_load();
+	}
+
 	settings_runtime_load();
 
 	printk("Bluetooth initialized\n");

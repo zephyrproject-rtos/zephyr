@@ -8,7 +8,7 @@
 
 / {
 	aliases {
-		can-0 = &can0;
-		can-1 = &can1;
+		can-0 = &flexcan0;
+		can-1 = &flexcan1;
 	};
 };

@@ -18,14 +18,14 @@ static int uart_ns16550_init(struct device *dev)
 	/* On ARC EM Starter kit board,
 	 * send the UART the command to clear the interrupt
 	 */
-#ifdef CONFIG_UART_NS16550_PORT_0
-	sys_write32(0, DT_UART_NS16550_PORT_0_BASE_ADDR+0x4);
-	sys_write32(0, DT_UART_NS16550_PORT_0_BASE_ADDR+0x10);
-#endif /* CONFIG_UART_NS16550_PORT_0 */
-#ifdef CONFIG_UART_NS16550_PORT_1
-	sys_write32(0, DT_UART_NS16550_PORT_1_BASE_ADDR+0x4);
-	sys_write32(0, DT_UART_NS16550_PORT_1_BASE_ADDR+0x10);
-#endif /* CONFIG_UART_NS16550_PORT_1 */
+#if DT_NODE_HAS_STATUS(DT_INST(0, ns16550), okay)
+	sys_write32(0, DT_REG_ADDR(DT_INST(0, ns16550))+0x4);
+	sys_write32(0, DT_REG_ADDR(DT_INST(0, ns16550))+0x10);
+#endif /* DT_NODE_HAS_STATUS(DT_INST(0, ns16550), okay) */
+#if DT_NODE_HAS_STATUS(DT_INST(1, ns16550), okay)
+	sys_write32(0, DT_REG_ADDR(DT_INST(1, ns16550))+0x4);
+	sys_write32(0, DT_REG_ADDR(DT_INST(1, ns16550))+0x10);
+#endif /* DT_NODE_HAS_STATUS(DT_INST(1, ns16550), okay) */
 
 	return 0;
 }

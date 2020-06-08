@@ -6,7 +6,7 @@
  */
 
 #ifdef CONFIG_BT_CTLR_DEBUG_PINS
-#if defined(CONFIG_BOARD_NRF52840_PCA10056)
+#if defined(CONFIG_BOARD_NRF52840DK_NRF52840)
 #define DEBUG_PORT       NRF_P1
 #define DEBUG_PIN0       BIT(1)
 #define DEBUG_PIN1       BIT(2)
@@ -18,8 +18,8 @@
 #define DEBUG_PIN7       BIT(8)
 #define DEBUG_PIN8       BIT(10)
 #define DEBUG_PIN9       BIT(11)
-#elif defined(CONFIG_BOARD_NRF52_PCA10040) || \
-	defined(CONFIG_BOARD_NRF52810_PCA10040)
+#elif defined(CONFIG_BOARD_NRF52DK_NRF52832) || \
+	defined(CONFIG_BOARD_NRF52DK_NRF52810)
 #define DEBUG_PORT       NRF_GPIO
 #define DEBUG_PIN0       BIT(11)
 #define DEBUG_PIN1       BIT(12)
@@ -31,7 +31,7 @@
 #define DEBUG_PIN7       BIT(18)
 #define DEBUG_PIN8       BIT(19)
 #define DEBUG_PIN9       BIT(20)
-#elif defined(CONFIG_BOARD_NRF51_PCA10028)
+#elif defined(CONFIG_BOARD_NRF51DK_NRF51422)
 #define DEBUG_PORT       NRF_GPIO
 #define DEBUG_PIN0       BIT(12)
 #define DEBUG_PIN1       BIT(13)

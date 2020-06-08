@@ -1,0 +1,11 @@
+# STM32L552ZE Q Nucleo board configuration
+
+# Copyright (c) 2020 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NUCLEO_L552ZE_Q
+
+config BOARD
+	default "nucleo_l552ze_q"
+
+endif # BOARD_NUCLEO_L552ZE_Q

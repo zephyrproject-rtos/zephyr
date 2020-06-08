@@ -11,4 +11,18 @@ config SOC
 config NUM_IRQS
 	default 69
 
+config NRF5340_CPUAPP_ERRATUM19
+	bool "Include workarounds for Erratum 19"
+	default y
+	depends on !TRUSTED_EXECUTION_NONSECURE
+	help
+	  This anomaly applies to IC Rev. Engineering A, build codes QKAA-AB0.
+	  This config MUST be enabled if there is a chance the code will be run
+	  on nRF5340 Engineering A. Enabling this config is safe on other
+	  nRF5340 variants, but might increase flash size.
+	  The workaround involves adding run-time checks when using the SPU,
+	  and aligning regions on 32 KiB instead of 16 KiB if they are to be
+	  locked with the SPU.
+	  More info: https://infocenter.nordicsemi.com/topic/errata_nRF5340_EngA/ERR/nRF5340/EngineeringA/latest/anomaly_340_19.html?cp=3_0_1_0_1_15
+
 endif # SOC_NRF5340_CPUAPP_QKAA

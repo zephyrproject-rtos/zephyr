@@ -7,7 +7,7 @@
 
 #include "fcb_test.h"
 
-void fcb_test_multi_scratch(void)
+void test_fcb_multi_scratch(void)
 {
 	struct fcb *fcb;
 	int rc;

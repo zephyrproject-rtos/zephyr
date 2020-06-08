@@ -8,7 +8,7 @@
 
 #include <logging/log_msg.h>
 #include <logging/log_output.h>
-#include <irq.h>
+#include <kernel.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -76,7 +76,7 @@ log_backend_std_sync_string(const struct log_output *const log_output,
 			    u32_t flags, struct log_msg_ids src_level,
 			    u32_t timestamp, const char *fmt, va_list ap)
 {
-	u32_t key;
+	int key;
 
 	flags |= LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_TIMESTAMP;
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_SHOW_COLOR)) {
@@ -87,16 +87,20 @@ log_backend_std_sync_string(const struct log_output *const log_output,
 		flags |= LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
 	}
 
-	key = irq_lock();
-	/* Even though interrupts are locked here there are still cases when
-	 * it may lead to failure. Log output is not re-entrant and irq_lock
-	 * does not prevent NMI or ZLI (Zero latency interrupts). If context
-	 * is interrupted by NMI it usually means fault scenario and best that
-	 * can be done is to flush the output and process new data.
-	 */
-	log_output_flush(log_output);
+	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE) &&
+		IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT)) {
+		/* In order to ensure that one log processing is not interrupted
+		 * by another one, lock context for whole log processing.
+		 */
+		key = irq_lock();
+	}
+
 	log_output_string(log_output, src_level, timestamp, fmt, ap, flags);
-	irq_unlock(key);
+
+	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE) &&
+		IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT)) {
+		irq_unlock(key);
+	}
 }
 
 /** @brief Synchronously process hexdump message by a standard logger backend.
@@ -115,7 +119,7 @@ log_backend_std_sync_hexdump(const struct log_output *const log_output,
 			     u32_t timestamp, const char *metadata,
 			     const u8_t *data, u32_t length)
 {
-	u32_t key;
+	int key;
 
 	flags |= LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_TIMESTAMP;
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_SHOW_COLOR)) {
@@ -126,17 +130,21 @@ log_backend_std_sync_hexdump(const struct log_output *const log_output,
 		flags |= LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
 	}
 
-	key = irq_lock();
-	/* Even though interrupts are locked here there are still cases when
-	 * it may lead to failure. Log output is not re-entrant and irq_lock
-	 * does not prevent NMI or ZLI (Zero latency interrupts). If context
-	 * is interrupted by NMI it usually means fault scenario and best that
-	 * can be done is to flush the output and process new data.
-	 */
-	log_output_flush(log_output);
+	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE) &&
+		IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT)) {
+		/* In order to ensure that one log processing is not interrupted
+		 * by another one, lock context for whole log processing.
+		 */
+		key = irq_lock();
+	}
+
 	log_output_hexdump(log_output, src_level, timestamp,
 			metadata, data, length, flags);
-	irq_unlock(key);
+
+	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE) &&
+		IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT)) {
+		irq_unlock(key);
+	}
 }
 
 #ifdef __cplusplus

@@ -7,6 +7,10 @@
 #include <st/f4/stm32f401.dtsi>
 
 / {
+	chosen {
+		zephyr,entropy = &rng;
+	};
+
 	soc {
 		pinctrl: pin-controller@40020000 {
 			reg = <0x40020000 0x2400>;
@@ -163,7 +167,7 @@
 		};
 
 		usbotg_hs: usb@40040000 {
-			compatible = "st,stm32-otghs", "st,stm32-otgfs";
+			compatible = "st,stm32-otghs";
 			reg = <0x40040000 0x40000>;
 			interrupts = <77 0>, <74 0>, <75 0>;
 			interrupt-names = "otghs", "ep1_out", "ep1_in";
@@ -193,6 +197,31 @@
 			phase-seg2 = <6>;
 		};
 
+		can2: can@40006800 {
+			compatible = "st,stm32-can";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40006800 0x400>;
+			interrupts = <63 0>, <64 0>, <65 0>, <66 0>;
+			interrupt-names = "TX", "RX0", "RX1", "SCE";
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x06000000>;
+			master-can-reg = <0x40006400>;
+			status = "disabled";
+			label = "CAN_2";
+			bus-speed = <125000>;
+			sjw = <1>;
+			prop-seg = <0>;
+			phase-seg1 = <5>;
+			phase-seg2 = <6>;
+		};
+
+		rng: rng@50060800 {
+			compatible = "st,stm32-rng";
+			reg = <0x50060800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000040>;
+			status = "disabled";
+			label = "RNG";
+		};
 	};
 
 	otghs_fs_phy: otghs_fs_phy {

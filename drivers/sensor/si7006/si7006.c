@@ -4,7 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sensor.h>
+#define DT_DRV_COMPAT silabs_si7006
+
+#include <drivers/sensor.h>
 #include <kernel.h>
 #include <device.h>
 #include <init.h>
@@ -37,7 +39,7 @@ static int si7006_get_humidity(struct device *i2c_dev,
 	int retval;
 	u8_t hum[2];
 
-	retval = i2c_burst_read(i2c_dev, DT_INST_0_SILABS_SI7006_BASE_ADDRESS,
+	retval = i2c_burst_read(i2c_dev, DT_INST_REG_ADDR(0),
 		SI7006_MEAS_REL_HUMIDITY_MASTER_MODE, hum, sizeof(hum));
 
 	if (retval == 0) {
@@ -52,17 +54,20 @@ static int si7006_get_humidity(struct device *i2c_dev,
 /**
  * @brief function to get temperature
  *
+ * Note that si7006_get_humidity must be called before calling
+ * si7006_get_old_temperature.
+ *
  * @return int 0 on success
  */
 
-static int si7006_get_temperature(struct device *i2c_dev,
-				  struct si7006_data *si_data)
+static int si7006_get_old_temperature(struct device *i2c_dev,
+				      struct si7006_data *si_data)
 {
 	u8_t temp[2];
 	int retval;
 
-	retval = i2c_burst_read(i2c_dev, DT_INST_0_SILABS_SI7006_BASE_ADDRESS,
-		SI7006_MEAS_TEMP_MASTER_MODE, temp, sizeof(temp));
+	retval = i2c_burst_read(i2c_dev, DT_INST_REG_ADDR(0),
+		SI7006_READ_OLD_TEMP, temp, sizeof(temp));
 
 	if (retval == 0) {
 		si_data->temperature = (temp[0] << 8) | temp[1];
@@ -83,9 +88,9 @@ static int si7006_sample_fetch(struct device *dev, enum sensor_channel chan)
 	int retval;
 	struct si7006_data *si_data = dev->driver_data;
 
-	retval = si7006_get_temperature(si_data->i2c_dev, si_data);
+	retval = si7006_get_humidity(si_data->i2c_dev, si_data);
 	if (retval == 0) {
-		retval = si7006_get_humidity(si_data->i2c_dev, si_data);
+		retval = si7006_get_old_temperature(si_data->i2c_dev, si_data);
 	}
 
 	return retval;
@@ -103,8 +108,8 @@ static int si7006_channel_get(struct device *dev, enum sensor_channel chan,
 
 	if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
 
-		s32_t temp_ucelcius = ((17572 * (s32_t)si_data->temperature)
-				       / 65536) * 10000;
+		s32_t temp_ucelcius = (((17572 * (s32_t)si_data->temperature)
+					/ 65536) - 4685) * 10000;
 
 		val->val1 = temp_ucelcius / 1000000;
 		val->val2 = temp_ucelcius % 1000000;
@@ -144,7 +149,7 @@ static int si7006_init(struct device *dev)
 	struct si7006_data *drv_data = dev->driver_data;
 
 	drv_data->i2c_dev = device_get_binding(
-		DT_INST_0_SILABS_SI7006_BUS_NAME);
+		DT_INST_BUS_LABEL(0));
 
 	if (!drv_data->i2c_dev) {
 		LOG_ERR("i2c master not found.");
@@ -158,5 +163,5 @@ static int si7006_init(struct device *dev)
 
 static struct si7006_data si_data;
 
-DEVICE_AND_API_INIT(si7006, DT_INST_0_SILABS_SI7006_LABEL, si7006_init,
+DEVICE_AND_API_INIT(si7006, DT_INST_LABEL(0), si7006_init,
 	&si_data, NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &si7006_api);

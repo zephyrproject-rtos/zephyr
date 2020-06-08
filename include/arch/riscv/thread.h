@@ -22,6 +22,14 @@
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
 
+#if !defined(RV_FP_TYPE) && defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+#ifdef CONFIG_CPU_HAS_FPU_DOUBLE_PRECISION
+#define RV_FP_TYPE u64_t
+#else
+#define RV_FP_TYPE u32_t
+#endif
+#endif
+
 /*
  * The following structure defines the list of registers that need to be
  * saved/restored when a cooperative context switch occurs.
@@ -41,6 +49,22 @@ struct _callee_saved {
 	ulong_t s9;	/* saved register */
 	ulong_t s10;	/* saved register */
 	ulong_t s11;	/* saved register */
+
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+	u32_t fcsr;		/* Control and status register */
+	RV_FP_TYPE fs0;		/* saved floating-point register */
+	RV_FP_TYPE fs1;		/* saved floating-point register */
+	RV_FP_TYPE fs2;		/* saved floating-point register */
+	RV_FP_TYPE fs3;		/* saved floating-point register */
+	RV_FP_TYPE fs4;		/* saved floating-point register */
+	RV_FP_TYPE fs5;		/* saved floating-point register */
+	RV_FP_TYPE fs6;		/* saved floating-point register */
+	RV_FP_TYPE fs7;		/* saved floating-point register */
+	RV_FP_TYPE fs8;		/* saved floating-point register */
+	RV_FP_TYPE fs9;		/* saved floating-point register */
+	RV_FP_TYPE fs10;	/* saved floating-point register */
+	RV_FP_TYPE fs11;	/* saved floating-point register */
+#endif
 };
 typedef struct _callee_saved _callee_saved_t;
 

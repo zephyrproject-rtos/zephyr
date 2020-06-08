@@ -1,0 +1,83 @@
+/*
+ * Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &sramx;
+		zephyr,console = &flexcomm0;
+		zephyr,shell-uart = &flexcomm0;
+		zephyr,entropy = &rng;
+	};
+
+	aliases{
+		led0 = &red_led;
+		led1 = &green_led;
+		led2 = &blue_led;
+		sw0 = &btn_wk;
+		sw1 = &btn_usr;
+		sw2 = &btn_isp;
+		usart-0 = &flexcomm0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_0 {
+			gpios = <&gpio1 4 0>;
+			label = "Red LED";
+		};
+		green_led: led_1 {
+			gpios = <&gpio1 7 0>;
+			label = "Green LED";
+		};
+		blue_led: led_2 {
+			gpios = <&gpio1 6 0>;
+			label = "Blue LED";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		btn_wk: button_0 {
+			label = "Wakeup button";
+			gpios = <&gpio1 18 GPIO_ACTIVE_LOW>;
+		};
+		btn_usr: button_1 {
+			label = "USR button";
+			gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
+		};
+		btn_isp: button_2 {
+			label = "ISP button";
+			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&flexcomm0 {
+	status = "okay";
+	compatible = "nxp,lpc-usart";
+	current-speed = <115200>;
+};
+
+arduino_i2c: &flexcomm4 {
+	status = "okay";
+	compatible = "nxp,lpc-i2c";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	fxos8700@1e {
+		compatible = "nxp,fxos8700";
+		reg = <0x1e>;
+		label = "FXOS8700";
+		int1-gpios = <&gpio1 26 GPIO_ACTIVE_LOW>;
+	};
+};
+
+arduino_spi: &hs_lspi {
+	status = "okay";
+};

@@ -73,6 +73,13 @@ config NETWORKING
 
 if NETWORKING
 
+# Such option should not be configured manually but by device drivers
+# which supports PM properly.
+config NET_POWER_MANAGEMENT
+	bool
+	default n
+	depends on DEVICE_POWER_MANAGEMENT
+
 source "subsys/net/Kconfig.hostname"
 
 source "subsys/net/l2/Kconfig"

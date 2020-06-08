@@ -37,7 +37,8 @@ extern const struct socket_op_vtable sock_fd_op_vtable;
 
 static const struct socket_op_vtable can_sock_fd_op_vtable;
 
-static inline int k_fifo_wait_non_empty(struct k_fifo *fifo, int32_t timeout)
+static inline int k_fifo_wait_non_empty(struct k_fifo *fifo,
+					k_timeout_t timeout)
 {
 	struct k_poll_event events[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
@@ -69,13 +70,6 @@ int zcan_socket(int family, int type, int proto)
 	ctx->user_data = NULL;
 
 	k_fifo_init(&ctx->recv_q);
-
-#ifdef CONFIG_USERSPACE
-	/* Set net context object as initialized and grant access to the
-	 * calling thread (and only the calling thread)
-	 */
-	z_object_recycle(ctx);
-#endif
 
 	z_finalize_fd(fd, ctx,
 		      (const struct fd_op_vtable *)&can_sock_fd_op_vtable);
@@ -214,7 +208,7 @@ ssize_t zcan_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 {
 	struct sockaddr_can can_addr;
 	struct zcan_frame zframe;
-	s32_t timeout = K_FOREVER;
+	k_timeout_t timeout = K_FOREVER;
 	int ret;
 
 	/* Setting destination address does not probably make sense here so
@@ -263,7 +257,7 @@ static ssize_t zcan_recvfrom_ctx(struct net_context *ctx, void *buf,
 {
 	struct zcan_frame zframe;
 	size_t recv_len = 0;
-	s32_t timeout = K_FOREVER;
+	k_timeout_t timeout = K_FOREVER;
 	struct net_pkt *pkt;
 
 	if ((flags & ZSOCK_MSG_DONTWAIT) || sock_is_nonblock(ctx)) {

@@ -8,7 +8,7 @@
 #include <string.h>
 #include "net/buf.h"
 #include "mgmt/buf.h"
-#include "compilersupport_p.h"
+#include <tinycbor/compilersupport_p.h>
 
 NET_BUF_POOL_DEFINE(pkt_pool, CONFIG_MCUMGR_BUF_COUNT, CONFIG_MCUMGR_BUF_SIZE,
 		    CONFIG_MCUMGR_BUF_USER_DATA_SIZE, NULL);
@@ -117,16 +117,6 @@ cbor_nb_reader_cpy(struct cbor_decoder_reader *d, char *dst, int offset,
 	return (uintptr_t)memcpy(dst, cnr->nb->data + offset, len);
 }
 
-static uintptr_t
-cbor_nb_get_string_chunk(struct cbor_decoder_reader *d, int offset,
-			 size_t *len)
-{
-	struct cbor_nb_reader *cnr;
-
-	cnr = (struct cbor_nb_reader *) d;
-	return (uintptr_t)cnr->nb->data + offset;
-}
-
 void
 cbor_nb_reader_init(struct cbor_nb_reader *cnr,
 		    struct net_buf *nb)
@@ -137,7 +127,6 @@ cbor_nb_reader_init(struct cbor_nb_reader *cnr,
 	cnr->r.get64 = &cbor_nb_reader_get64;
 	cnr->r.cmp = &cbor_nb_reader_cmp;
 	cnr->r.cpy = &cbor_nb_reader_cpy;
-	cnr->r.get_string_chunk = &cbor_nb_get_string_chunk;
 
 	cnr->nb = nb;
 	cnr->r.message_size = nb->len;

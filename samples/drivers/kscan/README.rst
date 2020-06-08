@@ -6,7 +6,7 @@ KSCAN Interface
 Overview
 ********
 
-This sample demonstrates how to use the :ref:`KSCAN API <kscan>`.
+This sample demonstrates how to use the :ref:`KSCAN API <kscan_api>`.
 Callbacks are registered that will write to the console indicating KSCAN events.
 These events indicate key presses and releases.
 

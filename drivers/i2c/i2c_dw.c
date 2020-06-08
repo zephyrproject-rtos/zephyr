@@ -600,7 +600,7 @@ static const struct i2c_driver_api funcs = {
 
 static int i2c_dw_initialize(struct device *dev)
 {
-	const struct i2c_dw_rom_config * const rom = dev->config->config_info;
+	const struct i2c_dw_rom_config * const rom = dev->config_info;
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
 	volatile struct i2c_dw_registers *regs;
 
@@ -654,34 +654,34 @@ static int i2c_dw_initialize(struct device *dev)
 	return 0;
 }
 
-#if CONFIG_I2C_0
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
 #include <i2c_dw_port_0.h>
 #endif
 
-#if CONFIG_I2C_1
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
 #include <i2c_dw_port_1.h>
 #endif
 
-#if CONFIG_I2C_2
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(2), okay)
 #include <i2c_dw_port_2.h>
 #endif
 
-#if CONFIG_I2C_3
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(3), okay)
 #include <i2c_dw_port_3.h>
 #endif
 
-#if CONFIG_I2C_4
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(4), okay)
 #include <i2c_dw_port_4.h>
 #endif
 
-#if CONFIG_I2C_5
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(5), okay)
 #include <i2c_dw_port_5.h>
 #endif
 
-#if CONFIG_I2C_6
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(6), okay)
 #include <i2c_dw_port_6.h>
 #endif
 
-#if CONFIG_I2C_7
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(7), okay)
 #include <i2c_dw_port_7.h>
 #endif

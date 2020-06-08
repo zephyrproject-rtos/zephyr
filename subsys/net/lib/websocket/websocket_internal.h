@@ -10,6 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <toolchain/common.h>
+
 #define WS_SHA1_OUTPUT_LEN 20
 
 /* Min Websocket header length */
@@ -24,7 +26,7 @@
 /**
  * Websocket connection information
  */
-struct websocket_context {
+__net_socket struct websocket_context {
 	union {
 		/** User data.
 		 */
@@ -67,23 +69,16 @@ struct websocket_context {
 	 */
 	size_t tmp_buf_len;
 
+	/** Current reading position in the tmp_buf
+	 */
+	size_t tmp_buf_pos;
+
 	/** The real TCP socket to use when sending Websocket data to peer.
 	 */
 	int real_sock;
 
 	/** Websocket connection masking value */
 	u32_t masking_value;
-
-	/** Timeout for Websocket operations.
-	 */
-	s32_t timeout;
-
-	/** Internal buffer for Websocket header when reading data.
-	 */
-	struct {
-		u8_t header[MAX_HEADER_LEN];
-		u8_t pos;
-	};
 
 	/** Amount of data received. */
 	u64_t total_read;

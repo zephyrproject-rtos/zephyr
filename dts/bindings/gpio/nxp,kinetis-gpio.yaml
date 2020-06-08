@@ -1,7 +1,4 @@
-title: Kinetis GPIO
-
-description: |
-    This is a representation of the Kinetis GPIO nodes
+description: Kinetis GPIO node
 
 compatible: "nxp,kinetis-gpio"
 
@@ -16,6 +13,13 @@ properties:
 
     "#gpio-cells":
       const: 2
+
+    nxp,kinetis-port:
+      required: true
+      type: phandle
+      description: |
+        A phandle reference to the device tree node that contains the pinmux
+        port associated with this GPIO controller.
 
 gpio-cells:
   - pin

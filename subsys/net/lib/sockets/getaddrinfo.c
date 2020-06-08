@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(net_sock_addr, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <kernel.h>
 #include <net/socket.h>
+#include <net/socket_offload.h>
 #include <syscall_handler.h>
 
 #define AI_ARR_MAX	2
@@ -215,8 +216,8 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 		 * we do not need to start to cancel any pending DNS queries.
 		 */
 		int ret = k_sem_take(&ai_state.sem,
-				     CONFIG_NET_SOCKETS_DNS_TIMEOUT +
-				     K_MSEC(100));
+				     K_MSEC(CONFIG_NET_SOCKETS_DNS_TIMEOUT +
+					    100));
 		if (ret == -EAGAIN) {
 			return DNS_EAI_AGAIN;
 		}
@@ -242,9 +243,9 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 	if (family == AF_UNSPEC && IS_ENABLED(CONFIG_NET_IPV6)) {
 		ret = exec_query(host, AF_INET6, &ai_state);
 		if (ret == 0) {
-			int ret = k_sem_take(&ai_state.sem,
-					     CONFIG_NET_SOCKETS_DNS_TIMEOUT +
-					     K_MSEC(100));
+			int ret = k_sem_take(
+				&ai_state.sem,
+				K_MSEC(CONFIG_NET_SOCKETS_DNS_TIMEOUT + 100));
 			if (ret == -EAGAIN) {
 				return DNS_EAI_AGAIN;
 			}
@@ -320,10 +321,17 @@ out:
 #include <syscalls/z_zsock_getaddrinfo_internal_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
+#endif /* defined(CONFIG_DNS_RESOLVER) */
+
 int zsock_getaddrinfo(const char *host, const char *service,
 		      const struct zsock_addrinfo *hints,
 		      struct zsock_addrinfo **res)
 {
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_OFFLOAD)) {
+		return socket_offload_getaddrinfo(host, service, hints, res);
+	}
+
+#if defined(CONFIG_DNS_RESOLVER)
 	int ret;
 
 	*res = calloc(AI_ARR_MAX, sizeof(struct zsock_addrinfo));
@@ -336,6 +344,18 @@ int zsock_getaddrinfo(const char *host, const char *service,
 		*res = NULL;
 	}
 	return ret;
+#endif
+
+	return DNS_EAI_FAIL;
+}
+
+void zsock_freeaddrinfo(struct zsock_addrinfo *ai)
+{
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_OFFLOAD)) {
+		return socket_offload_freeaddrinfo(ai);
+	}
+
+	free(ai);
 }
 
 #define ERR(e) case DNS_ ## e: return #e
@@ -356,5 +376,3 @@ const char *zsock_gai_strerror(int errcode)
 	}
 }
 #undef ERR
-
-#endif

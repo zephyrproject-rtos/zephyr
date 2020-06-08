@@ -13,9 +13,9 @@
 LOG_MODULE_REGISTER(shell_uart);
 
 #ifdef CONFIG_SHELL_BACKEND_SERIAL_RX_POLL_PERIOD
-#define RX_POLL_PERIOD CONFIG_SHELL_BACKEND_SERIAL_RX_POLL_PERIOD
+#define RX_POLL_PERIOD K_MSEC(CONFIG_SHELL_BACKEND_SERIAL_RX_POLL_PERIOD)
 #else
-#define RX_POLL_PERIOD 0
+#define RX_POLL_PERIOD K_NO_WAIT
 #endif
 
 SHELL_UART_DEFINE(shell_transport_uart,
@@ -273,6 +273,10 @@ static int enable_shell_uart(struct device *arg)
 	u32_t level =
 		(CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL > LOG_LEVEL_DBG) ?
 		CONFIG_LOG_MAX_LEVEL : CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL;
+
+	if (dev == NULL) {
+		return -ENODEV;
+	}
 
 	shell_init(&shell_uart, dev, true, log_backend, level);
 

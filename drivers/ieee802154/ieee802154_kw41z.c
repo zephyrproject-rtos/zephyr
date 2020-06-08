@@ -612,14 +612,19 @@ out:
 	net_pkt_unref(ack_pkt);
 }
 
-static int kw41z_tx(struct device *dev, struct net_pkt *pkt,
-		    struct net_buf *frag)
+static int kw41z_tx(struct device *dev, enum ieee802154_tx_mode mode,
+		    struct net_pkt *pkt, struct net_buf *frag)
 {
 	struct kw41z_context *kw41z = dev->driver_data;
 	u8_t payload_len = frag->len;
 	u32_t tx_timeout;
 	u8_t xcvseq;
 	int key;
+
+	if (mode != IEEE802154_TX_MODE_DIRECT) {
+		NET_ERR("TX mode %d not supported", mode);
+		return -ENOTSUP;
+	}
 
 	/*
 	 * The transmit requests are preceded by the CCA request. On
@@ -1108,6 +1113,7 @@ NET_DEVICE_INIT(
 	kw41z,                              /* Device Name */
 	CONFIG_IEEE802154_KW41Z_DRV_NAME,   /* Driver Name */
 	kw41z_init,                         /* Initialization Function */
+	device_pm_control_nop,              /* No PM API support */
 	&kw41z_context_data,                /* Context data */
 	NULL,                               /* Configuration info */
 	CONFIG_IEEE802154_KW41Z_INIT_PRIO,  /* Initial priority */

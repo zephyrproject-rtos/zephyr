@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT solomon_ssd16xxfb
+
 #define LOG_LEVEL CONFIG_DISPLAY_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(ssd16xx);
@@ -23,21 +25,24 @@ LOG_MODULE_REGISTER(ssd16xx);
  * SSD1673, SSD1608 compatible EPD controller driver.
  */
 
-#define SSD16XX_SPI_FREQ DT_INST_0_SOLOMON_SSD16XXFB_SPI_MAX_FREQUENCY
-#define SSD16XX_BUS_NAME DT_INST_0_SOLOMON_SSD16XXFB_BUS_NAME
-#define SSD16XX_DC_PIN DT_INST_0_SOLOMON_SSD16XXFB_DC_GPIOS_PIN
-#define SSD16XX_DC_CNTRL DT_INST_0_SOLOMON_SSD16XXFB_DC_GPIOS_CONTROLLER
-#define SSD16XX_CS_PIN DT_INST_0_SOLOMON_SSD16XXFB_CS_GPIOS_PIN
-#if defined(DT_INST_0_SOLOMON_SSD16XXFB_CS_GPIOS_CONTROLLER)
-#define SSD16XX_CS_CNTRL DT_INST_0_SOLOMON_SSD16XXFB_CS_GPIOS_CONTROLLER
+#define SSD16XX_SPI_FREQ DT_INST_PROP(0, spi_max_frequency)
+#define SSD16XX_BUS_NAME DT_INST_BUS_LABEL(0)
+#define SSD16XX_DC_PIN DT_INST_GPIO_PIN(0, dc_gpios)
+#define SSD16XX_DC_FLAGS DT_INST_GPIO_FLAGS(0, dc_gpios)
+#define SSD16XX_DC_CNTRL DT_INST_GPIO_LABEL(0, dc_gpios)
+#define SSD16XX_CS_PIN DT_INST_SPI_DEV_CS_GPIOS_PIN(0)
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
+#define SSD16XX_CS_CNTRL DT_INST_SPI_DEV_CS_GPIOS_LABEL(0)
 #endif
-#define SSD16XX_BUSY_PIN DT_INST_0_SOLOMON_SSD16XXFB_BUSY_GPIOS_PIN
-#define SSD16XX_BUSY_CNTRL DT_INST_0_SOLOMON_SSD16XXFB_BUSY_GPIOS_CONTROLLER
-#define SSD16XX_RESET_PIN DT_INST_0_SOLOMON_SSD16XXFB_RESET_GPIOS_PIN
-#define SSD16XX_RESET_CNTRL DT_INST_0_SOLOMON_SSD16XXFB_RESET_GPIOS_CONTROLLER
+#define SSD16XX_BUSY_PIN DT_INST_GPIO_PIN(0, busy_gpios)
+#define SSD16XX_BUSY_CNTRL DT_INST_GPIO_LABEL(0, busy_gpios)
+#define SSD16XX_BUSY_FLAGS DT_INST_GPIO_FLAGS(0, busy_gpios)
+#define SSD16XX_RESET_PIN DT_INST_GPIO_PIN(0, reset_gpios)
+#define SSD16XX_RESET_CNTRL DT_INST_GPIO_LABEL(0, reset_gpios)
+#define SSD16XX_RESET_FLAGS DT_INST_GPIO_FLAGS(0, reset_gpios)
 
-#define EPD_PANEL_WIDTH			DT_INST_0_SOLOMON_SSD16XXFB_WIDTH
-#define EPD_PANEL_HEIGHT		DT_INST_0_SOLOMON_SSD16XXFB_HEIGHT
+#define EPD_PANEL_WIDTH			DT_INST_PROP(0, width)
+#define EPD_PANEL_HEIGHT		DT_INST_PROP(0, height)
 #define EPD_PANEL_NUMOF_COLUMS		EPD_PANEL_WIDTH
 #define EPD_PANEL_NUMOF_ROWS_PER_PAGE	8
 #define EPD_PANEL_NUMOF_PAGES		(EPD_PANEL_HEIGHT / \
@@ -62,19 +67,19 @@ struct ssd16xx_data {
 	u8_t scan_mode;
 };
 
-static u8_t ssd16xx_lut_initial[] = DT_INST_0_SOLOMON_SSD16XXFB_LUT_INITIAL;
-static u8_t ssd16xx_lut_default[] = DT_INST_0_SOLOMON_SSD16XXFB_LUT_DEFAULT;
-#if defined(DT_INST_0_SOLOMON_SSD16XXFB_SOFTSTART)
-static u8_t ssd16xx_softstart[] = DT_INST_0_SOLOMON_SSD16XXFB_SOFTSTART;
+static u8_t ssd16xx_lut_initial[] = DT_INST_PROP(0, lut_initial);
+static u8_t ssd16xx_lut_default[] = DT_INST_PROP(0, lut_default);
+#if DT_INST_NODE_HAS_PROP(0, softstart)
+static u8_t ssd16xx_softstart[] = DT_INST_PROP(0, softstart);
 #endif
-static u8_t ssd16xx_gdv[] = DT_INST_0_SOLOMON_SSD16XXFB_GDV;
-static u8_t ssd16xx_sdv[] = DT_INST_0_SOLOMON_SSD16XXFB_SDV;
+static u8_t ssd16xx_gdv[] = DT_INST_PROP(0, gdv);
+static u8_t ssd16xx_sdv[] = DT_INST_PROP(0, sdv);
 
-#ifndef DT_INST_0_SOLOMON_SSD16XXFB_LUT_INITIAL
+#if !DT_INST_NODE_HAS_PROP(0, lut_initial)
 #error "No initial waveform look up table (LUT) selected!"
 #endif
 
-#ifndef DT_INST_0_SOLOMON_SSD16XXFB_LUT_DEFAULT
+#if !DT_INST_NODE_HAS_PROP(0, lut_default)
 #error "No default waveform look up table (LUT) selected!"
 #endif
 
@@ -85,7 +90,7 @@ static inline int ssd16xx_write_cmd(struct ssd16xx_data *driver,
 	struct spi_buf buf = {.buf = &cmd, .len = sizeof(cmd)};
 	struct spi_buf_set buf_set = {.buffers = &buf, .count = 1};
 
-	gpio_pin_write(driver->dc, SSD16XX_DC_PIN, 0);
+	gpio_pin_set(driver->dc, SSD16XX_DC_PIN, 1);
 	err = spi_write(driver->spi_dev, &driver->spi_config, &buf_set);
 	if (err < 0) {
 		return err;
@@ -94,7 +99,7 @@ static inline int ssd16xx_write_cmd(struct ssd16xx_data *driver,
 	if (data != NULL) {
 		buf.buf = data;
 		buf.len = len;
-		gpio_pin_write(driver->dc, SSD16XX_DC_PIN, 1);
+		gpio_pin_set(driver->dc, SSD16XX_DC_PIN, 0);
 		err = spi_write(driver->spi_dev, &driver->spi_config, &buf_set);
 		if (err < 0) {
 			return err;
@@ -106,38 +111,38 @@ static inline int ssd16xx_write_cmd(struct ssd16xx_data *driver,
 
 static inline void ssd16xx_busy_wait(struct ssd16xx_data *driver)
 {
-	u32_t val = 0U;
+	int pin = gpio_pin_get(driver->busy, SSD16XX_BUSY_PIN);
 
-	gpio_pin_read(driver->busy, SSD16XX_BUSY_PIN, &val);
-	while (val) {
-		k_sleep(SSD16XX_BUSY_DELAY);
-		gpio_pin_read(driver->busy, SSD16XX_BUSY_PIN, &val);
+	while (pin > 0) {
+		__ASSERT(pin >= 0, "Failed to get pin level");
+		k_msleep(SSD16XX_BUSY_DELAY);
+		pin = gpio_pin_get(driver->busy, SSD16XX_BUSY_PIN);
 	}
 }
 
 static inline size_t push_x_param(u8_t *data, u16_t x)
 {
-#if DT_INST_0_SOLOMON_SSD16XXFB_PP_WIDTH_BITS == 8
+#if DT_INST_PROP(0, pp_width_bits) == 8
 	data[0] = (u8_t)x;
 	return 1;
-#elif DT_INST_0_SOLOMON_SSD16XXFB_PP_WIDTH_BITS == 16
+#elif DT_INST_PROP(0, pp_width_bits) == 16
 	sys_put_le16(sys_cpu_to_le16(x), data);
 	return 2;
 #else
-#error Unsupported DT_INST_0_SOLOMON_SSD16XXFB_PP_WIDTH_BITS value
+#error Unsupported pp_width_bits value for solomon,ssd16xxfb DTS instance 0
 #endif
 }
 
 static inline size_t push_y_param(u8_t *data, u16_t y)
 {
-#if DT_INST_0_SOLOMON_SSD16XXFB_PP_HEIGHT_BITS == 8
+#if DT_INST_PROP(0, pp_height_bits) == 8
 	data[0] = (u8_t)y;
 	return 1;
-#elif DT_INST_0_SOLOMON_SSD16XXFB_PP_HEIGHT_BITS == 16
+#elif DT_INST_PROP(0, pp_height_bits) == 16
 	sys_put_le16(sys_cpu_to_le16(y), data);
 	return 2;
 #else
-#error Unsupported DT_INST_0_SOLOMON_SSD16XXFB_PP_HEIGHT_BITS value
+#error Unsupported pp_height_bits value for solomon,ssd16xxfb DTS instance 0
 #endif
 }
 
@@ -186,7 +191,7 @@ static inline int ssd16xx_set_ram_ptr(struct ssd16xx_data *driver,
 static void ssd16xx_set_orientation_internall(struct ssd16xx_data *driver)
 
 {
-#if DT_INST_0_SOLOMON_SSD16XXFB_ORIENTATION_FLIPPED == 1
+#if DT_INST_PROP(0, orientation_flipped) == 1
 	driver->scan_mode = SSD16XX_DATA_ENTRY_XIYDY;
 #else
 	driver->scan_mode = SSD16XX_DATA_ENTRY_XDYIY;
@@ -231,17 +236,21 @@ static int ssd16xx_write(const struct device *dev, const u16_t x,
 {
 	struct ssd16xx_data *driver = dev->driver_data;
 	int err;
+	size_t buf_len;
 	u16_t x_start;
 	u16_t x_end;
 	u16_t y_start;
 	u16_t y_end;
+	u16_t panel_h = EPD_PANEL_HEIGHT -
+			EPD_PANEL_HEIGHT % EPD_PANEL_NUMOF_ROWS_PER_PAGE;
 
 	if (desc->pitch < desc->width) {
 		LOG_ERR("Pitch is smaller than width");
 		return -EINVAL;
 	}
 
-	if (buf == NULL || desc->buf_size == 0U) {
+	buf_len = MIN(desc->buf_size, desc->height * desc->width / 8);
+	if (buf == NULL || buf_len == 0U) {
 		LOG_ERR("Display buffer is not available");
 		return -EINVAL;
 	}
@@ -251,7 +260,7 @@ static int ssd16xx_write(const struct device *dev, const u16_t x,
 		return -ENOTSUP;
 	}
 
-	if ((y + desc->height) > EPD_PANEL_HEIGHT) {
+	if ((y + desc->height) > panel_h) {
 		LOG_ERR("Buffer out of bounds (height)");
 		return -EINVAL;
 	}
@@ -282,8 +291,8 @@ static int ssd16xx_write(const struct device *dev, const u16_t x,
 		break;
 
 	case SSD16XX_DATA_ENTRY_XDYIY:
-		x_start = (EPD_PANEL_HEIGHT - 1 - y) / SSD16XX_PIXELS_PER_BYTE;
-		x_end = (EPD_PANEL_HEIGHT - 1 - (y + desc->height - 1)) /
+		x_start = (panel_h - 1 - y) / SSD16XX_PIXELS_PER_BYTE;
+		x_end = (panel_h - 1 - (y + desc->height - 1)) /
 			SSD16XX_PIXELS_PER_BYTE;
 		y_start = x;
 		y_end = (x + desc->width - 1);
@@ -311,7 +320,7 @@ static int ssd16xx_write(const struct device *dev, const u16_t x,
 	}
 
 	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_WRITE_RAM, (u8_t *)buf,
-				desc->buf_size);
+				buf_len);
 	if (err < 0) {
 		return err;
 	}
@@ -352,7 +361,8 @@ static void ssd16xx_get_capabilities(const struct device *dev,
 {
 	memset(caps, 0, sizeof(struct display_capabilities));
 	caps->x_resolution = EPD_PANEL_WIDTH;
-	caps->y_resolution = EPD_PANEL_HEIGHT;
+	caps->y_resolution = EPD_PANEL_HEIGHT -
+			     EPD_PANEL_HEIGHT % EPD_PANEL_NUMOF_ROWS_PER_PAGE;
 	caps->supported_pixel_formats = PIXEL_FORMAT_MONO10;
 	caps->current_pixel_format = PIXEL_FORMAT_MONO10;
 	caps->screen_info = SCREEN_INFO_MONO_VTILED |
@@ -380,55 +390,45 @@ static int ssd16xx_set_pixel_format(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static int ssd16xx_clear_and_write_buffer(struct device *dev, u8_t ram_cmd,
-					  bool update)
+static int ssd16xx_clear_cntlr_mem(struct device *dev, u8_t ram_cmd,
+				   bool update)
 {
-	int err;
-	u8_t clear_page[EPD_PANEL_WIDTH];
-	u8_t page;
-	struct spi_buf sbuf;
-	struct spi_buf_set buf_set = {.buffers = &sbuf, .count = 1};
 	struct ssd16xx_data *driver = dev->driver_data;
-	u8_t tmp;
+	u8_t clear_page[EPD_PANEL_WIDTH];
+	u16_t panel_h = EPD_PANEL_HEIGHT /
+			EPD_PANEL_NUMOF_ROWS_PER_PAGE;
+	u8_t scan_mode = SSD16XX_DATA_ENTRY_XIYDY;
 
-	tmp = SSD16XX_DATA_ENTRY_XIYDY;
-	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_ENTRY_MODE, &tmp, 1);
-	if (err < 0) {
-		return err;
+	/*
+	 * Clear unusable memory area when the resolution of the panel is not
+	 * multiple of an octet.
+	 */
+	if (EPD_PANEL_HEIGHT % EPD_PANEL_NUMOF_ROWS_PER_PAGE) {
+		panel_h += 1;
 	}
 
-	err = ssd16xx_set_ram_param(driver, SSD16XX_PANEL_FIRST_PAGE,
-				SSD16XX_PANEL_LAST_PAGE + 1,
-				SSD16XX_PANEL_LAST_GATE,
-				SSD16XX_PANEL_FIRST_GATE);
-	if (err < 0) {
-		return err;
+	if (ssd16xx_write_cmd(driver, SSD16XX_CMD_ENTRY_MODE, &scan_mode, 1)) {
+		return -EIO;
 	}
 
-	err = ssd16xx_set_ram_ptr(driver, SSD16XX_PANEL_FIRST_PAGE,
-				SSD16XX_PANEL_LAST_GATE);
-	if (err < 0) {
-		return err;
+	if (ssd16xx_set_ram_param(driver, SSD16XX_PANEL_FIRST_PAGE,
+				  panel_h - 1,
+				  SSD16XX_PANEL_LAST_GATE,
+				  SSD16XX_PANEL_FIRST_GATE)) {
+		return -EIO;
 	}
 
-	gpio_pin_write(driver->dc, SSD16XX_DC_PIN, 0);
-
-	sbuf.buf = &ram_cmd;
-	sbuf.len = 1;
-	err = spi_write(driver->spi_dev, &driver->spi_config, &buf_set);
-	if (err < 0) {
-		return err;
+	if (ssd16xx_set_ram_ptr(driver, SSD16XX_PANEL_FIRST_PAGE,
+				SSD16XX_PANEL_LAST_GATE)) {
+		return -EIO;
 	}
 
-	gpio_pin_write(driver->dc, SSD16XX_DC_PIN, 1);
 
 	memset(clear_page, 0xff, sizeof(clear_page));
-	sbuf.buf = clear_page;
-	sbuf.len = sizeof(clear_page);
-	for (page = 0U; page <= (SSD16XX_PANEL_LAST_PAGE + 1); ++page) {
-		err = spi_write(driver->spi_dev, &driver->spi_config, &buf_set);
-		if (err < 0) {
-			return err;
+	for (int i = 0; i < panel_h; i++) {
+		if (ssd16xx_write_cmd(driver, ram_cmd, clear_page,
+				      sizeof(clear_page))) {
+			return -EIO;
 		}
 	}
 
@@ -448,10 +448,10 @@ static int ssd16xx_controller_init(struct device *dev)
 
 	LOG_DBG("");
 
-	gpio_pin_write(driver->reset, SSD16XX_RESET_PIN, 0);
-	k_sleep(SSD16XX_RESET_DELAY);
-	gpio_pin_write(driver->reset, SSD16XX_RESET_PIN, 1);
-	k_sleep(SSD16XX_RESET_DELAY);
+	gpio_pin_set(driver->reset, SSD16XX_RESET_PIN, 1);
+	k_msleep(SSD16XX_RESET_DELAY);
+	gpio_pin_set(driver->reset, SSD16XX_RESET_PIN, 0);
+	k_msleep(SSD16XX_RESET_DELAY);
 	ssd16xx_busy_wait(driver);
 
 	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_SW_RESET, NULL, 0);
@@ -467,7 +467,7 @@ static int ssd16xx_controller_init(struct device *dev)
 		return err;
 	}
 
-#if defined(DT_INST_0_SOLOMON_SSD16XXFB_SOFTSTART)
+#if DT_INST_NODE_HAS_PROP(0, softstart)
 	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_SOFTSTART,
 				ssd16xx_softstart, sizeof(ssd16xx_softstart));
 	if (err < 0) {
@@ -487,7 +487,7 @@ static int ssd16xx_controller_init(struct device *dev)
 		return err;
 	}
 
-	tmp[0] = DT_INST_0_SOLOMON_SSD16XXFB_VCOM;
+	tmp[0] = DT_INST_PROP(0, vcom);
 	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_VCOM_VOLTAGE, tmp, 1);
 	if (err < 0) {
 		return err;
@@ -505,7 +505,7 @@ static int ssd16xx_controller_init(struct device *dev)
 		return err;
 	}
 
-	tmp[0] = DT_INST_0_SOLOMON_SSD16XXFB_BORDER_WAVEFORM;
+	tmp[0] = DT_INST_PROP(0, border_waveform);
 	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_BWF_CTRL, tmp, 1);
 	if (err < 0) {
 		return err;
@@ -520,14 +520,14 @@ static int ssd16xx_controller_init(struct device *dev)
 		return err;
 	}
 
-	err = ssd16xx_clear_and_write_buffer(dev, SSD16XX_CMD_WRITE_RAM, true);
+	err = ssd16xx_clear_cntlr_mem(dev, SSD16XX_CMD_WRITE_RAM, true);
 	if (err < 0) {
 		return err;
 	}
 
 	ssd16xx_busy_wait(driver);
 
-	err = ssd16xx_clear_and_write_buffer(dev, SSD16XX_CMD_WRITE_RED_RAM,
+	err = ssd16xx_clear_cntlr_mem(dev, SSD16XX_CMD_WRITE_RED_RAM,
 					     false);
 	if (err < 0) {
 		return err;
@@ -542,7 +542,7 @@ static int ssd16xx_controller_init(struct device *dev)
 		return err;
 	}
 
-	return ssd16xx_clear_and_write_buffer(dev, SSD16XX_CMD_WRITE_RAM, true);
+	return ssd16xx_clear_cntlr_mem(dev, SSD16XX_CMD_WRITE_RAM, true);
 }
 
 static int ssd16xx_init(struct device *dev)
@@ -559,7 +559,7 @@ static int ssd16xx_init(struct device *dev)
 
 	driver->spi_config.frequency = SSD16XX_SPI_FREQ;
 	driver->spi_config.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8);
-	driver->spi_config.slave = DT_INST_0_SOLOMON_SSD16XXFB_BASE_ADDRESS;
+	driver->spi_config.slave = DT_INST_REG_ADDR(0);
 	driver->spi_config.cs = NULL;
 
 	driver->reset = device_get_binding(SSD16XX_RESET_CNTRL);
@@ -569,7 +569,7 @@ static int ssd16xx_init(struct device *dev)
 	}
 
 	gpio_pin_configure(driver->reset, SSD16XX_RESET_PIN,
-			   GPIO_DIR_OUT);
+			   GPIO_OUTPUT_INACTIVE | SSD16XX_RESET_FLAGS);
 
 	driver->dc = device_get_binding(SSD16XX_DC_CNTRL);
 	if (driver->dc == NULL) {
@@ -578,7 +578,7 @@ static int ssd16xx_init(struct device *dev)
 	}
 
 	gpio_pin_configure(driver->dc, SSD16XX_DC_PIN,
-			   GPIO_DIR_OUT);
+			   GPIO_OUTPUT_INACTIVE | SSD16XX_DC_FLAGS);
 
 	driver->busy = device_get_binding(SSD16XX_BUSY_CNTRL);
 	if (driver->busy == NULL) {
@@ -587,7 +587,7 @@ static int ssd16xx_init(struct device *dev)
 	}
 
 	gpio_pin_configure(driver->busy, SSD16XX_BUSY_PIN,
-			   GPIO_DIR_IN);
+			   GPIO_INPUT | SSD16XX_BUSY_FLAGS);
 
 #if defined(SSD16XX_CS_CNTRL)
 	driver->cs_ctrl.gpio_dev = device_get_binding(SSD16XX_CS_CNTRL);
@@ -620,7 +620,7 @@ static struct display_driver_api ssd16xx_driver_api = {
 };
 
 
-DEVICE_AND_API_INIT(ssd16xx, DT_INST_0_SOLOMON_SSD16XXFB_LABEL, ssd16xx_init,
+DEVICE_AND_API_INIT(ssd16xx, DT_INST_LABEL(0), ssd16xx_init,
 		    &ssd16xx_driver, NULL,
 		    POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY,
 		    &ssd16xx_driver_api);

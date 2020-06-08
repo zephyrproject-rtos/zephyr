@@ -24,9 +24,9 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(neural_net);
 
-#define DEV_NAME(dev) ((dev)->config->name)
+#define DEV_NAME(dev) ((dev)->name)
 #define DEV_CFG(dev) \
-	((struct intel_gna_config *const)(dev)->config->config_info)
+	((const struct intel_gna_config *const)(dev)->config_info)
 #define DEV_DATA(dev) \
 	((struct intel_gna_data *const)(dev)->driver_data)
 
@@ -130,8 +130,8 @@ static int intel_gna_setup_page_table(void *physical, size_t size,
 
 	LOG_DBG("physical %p size %u virtual %p", physical, size, virtual);
 
-	if (((phys_addr + size - DT_L2_SRAM_BASE) > DT_L2_SRAM_SIZE) ||
-			(phys_addr < DT_L2_SRAM_BASE)) {
+	if (((phys_addr + size - L2_SRAM_BASE) > L2_SRAM_SIZE) ||
+			(phys_addr < L2_SRAM_BASE)) {
 		LOG_ERR("model at %p of size %u exceeds L2 SRAM space",
 				physical, size);
 		return -EINVAL;
@@ -221,7 +221,7 @@ static int intel_gna_initialize(struct device *dev)
 
 static int intel_gna_configure(struct device *dev, struct gna_config *cfg)
 {
-	struct intel_gna_config *const dev_cfg = DEV_CFG(dev);
+	const struct intel_gna_config *const dev_cfg = DEV_CFG(dev);
 	struct intel_gna_data *const gna = DEV_DATA(dev);
 	volatile struct intel_gna_regs *regs = gna->regs;
 

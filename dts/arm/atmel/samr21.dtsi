@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <atmel/samd.dtsi>
+#include <atmel/samd2x.dtsi>
 
 / {
 	aliases {
@@ -22,11 +22,12 @@
 			label = "USB0";
 		};
 
-		dma: dmac@41004800 {
+		dmac: dmac@41004800 {
 			compatible = "atmel,sam0-dmac";
 			reg = <0x41004800 0x50>;
 			interrupts = <6 0>;
 			label = "DMA_0";
+			#dma-cells = <2>;
 		};
 
 		portc: gpio@41004500 {
@@ -47,32 +48,48 @@
 
 &sercom0 {
 	interrupts = <9 0>;
+	clocks = <&gclk 0x14>, <&pm 0x20 2>;
+	clock-names = "GCLK", "PM";
 };
 
 &sercom1 {
 	interrupts = <10 0>;
+	clocks = <&gclk 0x15>, <&pm 0x20 3>;
+	clock-names = "GCLK", "PM";
 };
 
 &sercom2 {
 	interrupts = <11 0>;
+	clocks = <&gclk 0x16>, <&pm 0x20 4>;
+	clock-names = "GCLK", "PM";
 };
 
 &sercom3 {
 	interrupts = <12 0>;
+	clocks = <&gclk 0x17>, <&pm 0x20 5>;
+	clock-names = "GCLK", "PM";
 };
 
 &sercom4 {
 	interrupts = <13 0>;
+	clocks = <&gclk 0x18>, <&pm 0x20 6>;
+	clock-names = "GCLK", "PM";
 };
 
 &sercom5 {
 	interrupts = <14 0>;
+	clocks = <&gclk 0x19>, <&pm 0x20 7>;
+	clock-names = "GCLK", "PM";
 };
 
 &tc4 {
 	interrupts = <19 0>;
+	clocks = <&gclk 0x1c>, <&pm 0x20 12>;
+	clock-names = "GCLK", "PM";
 };
 
 &adc {
+	clocks = <&gclk 0x1e>, <&pm 0x20 16>;
+	clock-names = "GCLK", "PM";
 	interrupts = <23 0>;
 };

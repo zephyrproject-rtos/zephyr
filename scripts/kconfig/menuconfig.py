@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (c) 2018-2019, Nordic Semiconductor ASA and Ulf Magnusson
 # SPDX-License-Identifier: ISC
@@ -137,12 +137,15 @@ If there's an error in the style definition or if a missing style is assigned
 to, the assignment will be ignored, along with a warning being printed on
 stderr.
 
-The 'default' theme is always implicitly parsed first (or the 'monochrome'
-theme if the terminal lacks colors), so the following two settings have the
-same effect:
+The 'default' theme is always implicitly parsed first, so the following two
+settings have the same effect:
 
     MENUCONFIG_STYLE="selection=fg:white,bg:red"
     MENUCONFIG_STYLE="default selection=fg:white,bg:red"
+
+If the terminal doesn't support colors, the 'monochrome' theme is used, and
+MENUCONFIG_STYLE is ignored. The assumption is that the environment is broken
+somehow, and that the important thing is to get something usable.
 
 
 Other features
@@ -182,12 +185,15 @@ See the https://github.com/zephyrproject-rtos/windows-curses repository.
 """
 from __future__ import print_function
 
+import os
 import sys
+
+_IS_WINDOWS = os.name == "nt"  # Are we running on Windows?
 
 try:
     import curses
 except ImportError as e:
-    if sys.platform != "win32":
+    if not _IS_WINDOWS:
         raise
     sys.exit("""\
 menuconfig failed to import the standard Python 'curses' library. Try
@@ -206,7 +212,6 @@ Exception:
 
 import errno
 import locale
-import os
 import re
 import textwrap
 
@@ -312,19 +317,18 @@ _STYLES = {
     text=
     """,
 
-    # Blue tinted style loosely resembling lxdialog
+    # Blue-tinted style loosely resembling lxdialog
     "aquatic": """
-    path=fg:cyan,bg:blue,bold
-    separator=fg:white,bg:cyan,bold
+    path=fg:white,bg:blue
+    separator=fg:white,bg:cyan
     help=path
-    frame=fg:white,bg:cyan,bold
-    body=fg:brightwhite,bg:blue
+    frame=fg:white,bg:cyan
+    body=fg:white,bg:blue
     edit=fg:black,bg:white
     """
 }
 
-# Standard colors definition
-_STYLE_STD_COLORS = {
+_NAMED_COLORS = {
     # Basic colors
     "black":         curses.COLOR_BLACK,
     "red":           curses.COLOR_RED,
@@ -550,9 +554,6 @@ def _style_to_curses(style_def):
     def parse_color(color_def):
         color_def = color_def.split(":", 1)[1]
 
-        if color_def in _STYLE_STD_COLORS:
-            return _color_from_num(_STYLE_STD_COLORS[color_def])
-
         # HTML format, #RRGGBB
         if re.match("#[A-Fa-f0-9]{6}", color_def):
             return _color_from_rgb((
@@ -560,19 +561,20 @@ def _style_to_curses(style_def):
                 int(color_def[3:5], 16),
                 int(color_def[5:7], 16)))
 
-        try:
-            color_num = _color_from_num(int(color_def, 0))
-        except ValueError:
-            _warn("Ignoring color ", color_def, "that's neither predefined "
-                  "nor a number")
-
-            return -1
+        if color_def in _NAMED_COLORS:
+            color_num = _color_from_num(_NAMED_COLORS[color_def])
+        else:
+            try:
+                color_num = _color_from_num(int(color_def, 0))
+            except ValueError:
+                _warn("Ignoring color", color_def, "that's neither "
+                      "predefined nor a number")
+                return -1
 
         if not -1 <= color_num < curses.COLORS:
             _warn("Ignoring color {}, which is outside the range "
                   "-1..curses.COLORS-1 (-1..{})"
                   .format(color_def, curses.COLORS - 1))
-
             return -1
 
         return color_num
@@ -605,15 +607,26 @@ def _style_to_curses(style_def):
 
 def _init_styles():
     if curses.has_colors():
-        curses.use_default_colors()
+        try:
+            curses.use_default_colors()
+        except curses.error:
+            # Ignore errors on funky terminals that support colors but not
+            # using default colors. Worst it can do is break transparency and
+            # the like. Ran across this with the MSYS2/winpty setup in
+            # https://github.com/msys2/MINGW-packages/issues/5823, though there
+            # seems to be a lot of general brokenness there.
+            pass
 
-    # Use the 'monochrome' style template as the base on terminals without
-    # color
-    _parse_style("default" if curses.has_colors() else "monochrome", True)
-
-    # Add any user-defined style from the environment
-    if "MENUCONFIG_STYLE" in os.environ:
-        _parse_style(os.environ["MENUCONFIG_STYLE"], False)
+        # Use the 'default' theme as the base, and add any user-defined style
+        # settings from the environment
+        _parse_style("default", True)
+        if "MENUCONFIG_STYLE" in os.environ:
+            _parse_style(os.environ["MENUCONFIG_STYLE"], False)
+    else:
+        # Force the 'monochrome' theme if the terminal doesn't support colors.
+        # MENUCONFIG_STYLE is likely to mess things up here (though any colors
+        # would be ignored), so ignore it.
+        _parse_style("monochrome", True)
 
 
 # color_attribs holds the color pairs we've already created, indexed by a
@@ -1085,8 +1098,7 @@ def _enter_menu(menu):
     global _menu_scroll
 
     if not menu.is_menuconfig:
-        # Not a menu
-        return False
+        return False  # Not a menu
 
     shown_sub = _shown_nodes(menu)
     # Never enter empty menus. We depend on having a current node.
@@ -1327,7 +1339,6 @@ def _draw_main():
 
     term_width = _width(_stdscr)
 
-
     #
     # Update the separator row below the menu path
     #
@@ -1374,7 +1385,6 @@ def _draw_main():
 
     _menu_win.noutrefresh()
 
-
     #
     # Update the bottom separator window
     #
@@ -1399,7 +1409,6 @@ def _draw_main():
 
     _bot_sep_win.noutrefresh()
 
-
     #
     # Update the help window, which shows either key bindings or help texts
     #
@@ -1419,7 +1428,6 @@ def _draw_main():
             _safe_addstr(_help_win, i, 0, line)
 
     _help_win.noutrefresh()
-
 
     #
     # Update the top row with the menu path.
@@ -2280,7 +2288,6 @@ def _draw_jump_to_dialog(edit_box, matches_win, bot_sep_win, help_win,
 
     edit_width = _width(edit_box) - 2
 
-
     #
     # Update list of matches
     #
@@ -2311,7 +2318,6 @@ def _draw_jump_to_dialog(edit_box, matches_win, bot_sep_win, help_win,
 
     matches_win.noutrefresh()
 
-
     #
     # Update bottom separator line
     #
@@ -2324,7 +2330,6 @@ def _draw_jump_to_dialog(edit_box, matches_win, bot_sep_win, help_win,
 
     bot_sep_win.noutrefresh()
 
-
     #
     # Update help window at bottom
     #
@@ -2335,7 +2340,6 @@ def _draw_jump_to_dialog(edit_box, matches_win, bot_sep_win, help_win,
         _safe_addstr(help_win, i, 0, line)
 
     help_win.noutrefresh()
-
 
     #
     # Update edit box. We do this last since it makes it handy to position the
@@ -2426,12 +2430,10 @@ def _info_dialog(node, from_jump_to_dialog):
             # Support starting a search from within the information dialog
 
             if from_jump_to_dialog:
-                # Avoid recursion
-                return
+                return  # Avoid recursion
 
             if _jump_to_dialog():
-                # Jumped to a symbol. Cancel the information dialog.
-                return
+                return  # Jumped to a symbol. Cancel the information dialog.
 
             # Stay in the information dialog if the jump-to dialog was
             # canceled. Resize it in case the terminal was resized while the
@@ -2478,7 +2480,6 @@ def _draw_info_dialog(node, lines, scroll, top_line_win, text_win,
 
     text_win_height, text_win_width = text_win.getmaxyx()
 
-
     # Note: The top row is deliberately updated last. See _draw_main().
 
     #
@@ -2492,7 +2493,6 @@ def _draw_info_dialog(node, lines, scroll, top_line_win, text_win,
 
     text_win.noutrefresh()
 
-
     #
     # Update bottom separator line
     #
@@ -2505,7 +2505,6 @@ def _draw_info_dialog(node, lines, scroll, top_line_win, text_win,
 
     bot_sep_win.noutrefresh()
 
-
     #
     # Update help window at bottom
     #
@@ -2516,7 +2515,6 @@ def _draw_info_dialog(node, lines, scroll, top_line_win, text_win,
         _safe_addstr(help_win, i, 0, line)
 
     help_win.noutrefresh()
-
 
     #
     # Update top row
@@ -2576,8 +2574,7 @@ def _info_str(node):
             _kconfig_def_info(choice)
         )
 
-    # node.item in (MENU, COMMENT)
-    return _kconfig_def_info(node)
+    return _kconfig_def_info(node)  # node.item in (MENU, COMMENT)
 
 
 def _name_info(sc):
@@ -2934,7 +2931,6 @@ def _edit_text(c, s, i, hscroll, width):
         max_scroll = max(len(s) - width + 1, 0)
         hscroll = min(i - width + _SCROLL_OFFSET + 1, max_scroll)
 
-
     return s, i, hscroll
 
 
@@ -3084,8 +3080,7 @@ def _check_valid(sym, s):
     # Otherwise, displays an error and returns False.
 
     if sym.orig_type not in (INT, HEX):
-        # Anything goes for non-int/hex symbols
-        return True
+        return True  # Anything goes for non-int/hex symbols
 
     base = 10 if sym.orig_type == INT else 16
     try:
@@ -3142,12 +3137,17 @@ def _is_num(name):
 
 
 def _getch_compat(win):
-    # Uses get_wch() if available (Python 3.3+) and getch() otherwise. Also
-    # handles a PDCurses resizing quirk.
+    # Uses get_wch() if available (Python 3.3+) and getch() otherwise.
+    #
+    # Also falls back on getch() if get_wch() raises curses.error, to work
+    # around an issue when resizing the terminal on at least macOS Catalina.
+    # See https://github.com/ulfalizer/Kconfiglib/issues/84.
+    #
+    # Also handles a PDCurses resizing quirk.
 
-    if hasattr(win, "get_wch"):
+    try:
         c = win.get_wch()
-    else:
+    except (AttributeError, curses.error):
         c = win.getch()
         if 0 <= c <= 255:
             c = chr(c)
@@ -3273,9 +3273,6 @@ def _change_c_lc_ctype_to_utf8():
                 # LC_CTYPE successfully changed
                 return
 
-
-# Are we running on Windows?
-_IS_WINDOWS = os.name == "nt"
 
 if __name__ == "__main__":
     _main()

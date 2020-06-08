@@ -230,7 +230,7 @@ static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan)
 	return net_buf_alloc(&data_pool, K_FOREVER);
 }
 
-static struct bt_l2cap_chan_ops l2cap_ops = {
+static const struct bt_l2cap_chan_ops l2cap_ops = {
 	.alloc_buf	= l2cap_alloc_buf,
 	.recv		= l2cap_recv,
 	.connected	= l2cap_connected,

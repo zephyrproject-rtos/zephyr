@@ -11,6 +11,16 @@
 #include <drivers/interrupt_controller/loapic.h>
 #include <arch/cpu.h>
 
+.macro read_tsc var_name
+	push %rax
+	push %rdx
+	rdtsc
+	mov %eax,\var_name
+	mov %edx,\var_name+4
+	pop %rdx
+	pop %rax
+.endm
+
 .section .locore,"ax"
 .code32
 
@@ -41,7 +51,6 @@ x86_ap_start:
 	movw %ax, %es
 	movw %ax, %ss
 	movw %ax, %fs
-	movw %ax, %gs
 
 	/*
 	 * Now, reverse-map our local APIC ID to our logical CPU ID
@@ -116,9 +125,9 @@ go64:	movl %cr4, %eax			/* enable PAE and SSE */
 #endif
 	movl %eax, %cr3
 
-	movl $X86_EFER_MSR, %ecx	/* enable long mode and no-execute */
+	movl $X86_EFER_MSR, %ecx  /* enable long mode, no-execute, syscall */
 	rdmsr
-	orl $(X86_EFER_MSR_LME | X86_EFER_MSR_NXE), %eax
+	orl $(X86_EFER_MSR_LME | X86_EFER_MSR_NXE | X86_EFER_MSR_SCE), %eax
 	wrmsr
 
 	movl %cr0, %eax			/* enable paging */
@@ -135,16 +144,24 @@ go64:	movl %cr4, %eax			/* enable PAE and SSE */
 
 	movw __x86_cpuboot_t_tr_OFFSET(%rbp), %ax
 	ltr %ax
-	movw __x86_cpuboot_t_gs_OFFSET(%rbp), %ax
-	movw %ax, %gs
+
+	/* Set up MSRs for GS / KERNEL_GS base */
+	movq __x86_cpuboot_t_gs_base_OFFSET(%rbp), %rax
+	movq %rax, %rdx
+	shrq $32, %rdx
+	/* X86_KERNEL_GS_BASE and X86_GS_BASE are swapped by the 'swapgs'
+	 * instruction.
+	 */
+	movl $X86_KERNEL_GS_BASE, %ecx
+	wrmsr
+	/* X86_GS_BASE shadows base fields of %gs, effectively setting %gs */
+	movl $X86_GS_BASE, %ecx
+	wrmsr
 
 	movq __x86_cpuboot_t_sp_OFFSET(%rbp), %rsp
 	movq %rsp, %gs:__x86_tss64_t_ist1_OFFSET
 
-	/*
-	 * finally, complete environment for the C runtime and go.
-	 */
-
+	/* finally, complete environment for the C runtime and go. */
 	cld	/* GCC presumes a clear direction flag */
 
 #ifdef CONFIG_INIT_STACKS
@@ -155,18 +172,9 @@ go64:	movl %cr4, %eax			/* enable PAE and SSE */
 	rep stosq
 #endif
 
-	xorl %edi, %edi
-	call x86_sse_init
-
-#ifdef CONFIG_LOAPIC
-	call z_loapic_enable
-#endif
-
-	/* don't replace CALL with JMP; honor the ABI stack alignment! */
-
-	incl __x86_cpuboot_t_ready_OFFSET(%rbp)
-	movq __x86_cpuboot_t_arg_OFFSET(%rbp), %rsi
-	call *__x86_cpuboot_t_fn_OFFSET(%rbp) /* enter kernel; never return */
+	/* Enter C domain now that we have a stack set up, never to return */
+	movq %rbp, %rdi
+	call z_x86_cpu_init
 
 /*
  * void x86_sse_init(struct k_thread *thread);
@@ -198,6 +206,10 @@ mxcsr:	.long X86_MXCSR_SANE
 
 .globl z_x86_switch
 z_x86_switch:
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	read_tsc arch_timing_swap_start
+#endif
+
 	/* RSI contains the switch_handle field to which we are
 	 * notionally supposed to store.  Offset it to get back to the
 	 * thread handle instead.
@@ -208,6 +220,9 @@ z_x86_switch:
 
 	popq %rax
 	movq %rax, _thread_offset_to_rip(%rsi)
+	pushfq
+	popq %rax
+	movq %rax, _thread_offset_to_rflags(%rsi)
 	movq %rsp, _thread_offset_to_rsp(%rsi)
 	movq %rbx, _thread_offset_to_rbx(%rsi)
 	movq %rbp, _thread_offset_to_rbp(%rsi)
@@ -215,6 +230,19 @@ z_x86_switch:
 	movq %r13, _thread_offset_to_r13(%rsi)
 	movq %r14, _thread_offset_to_r14(%rsi)
 	movq %r15, _thread_offset_to_r15(%rsi)
+#ifdef CONFIG_USERSPACE
+	/* We're always in supervisor mode if we get here, the other case
+	 * is when __resume is invoked from irq_dispatch
+	 */
+	movq $X86_KERNEL_CS, _thread_offset_to_cs(%rsi)
+	movq $X86_KERNEL_DS, _thread_offset_to_ss(%rsi)
+#endif
+	/* Store the handle (i.e. our thread struct address) into the
+	 * switch handle field, this is a synchronization signal that
+	 * must occur after the last data from the old context is
+	 * saved.
+	 */
+	movq %rsi, ___thread_t_switch_handle_OFFSET(%rsi)
 
 	movq %gs:__x86_tss64_t_ist1_OFFSET, %rsp
 
@@ -227,11 +255,40 @@ z_x86_switch:
  */
 
 __resume:
+#ifdef CONFIG_USERSPACE
+#ifndef CONFIG_X86_KPTI
+	/* If KPTI is enabled we're always on the kernel's page tables in
+	 * this context and the appropriate page table switch takes place
+	 * when trampolining back to user mode
+	 */
+	pushq %rdi	/* Caller-saved, stash it */
+	call z_x86_swap_update_page_tables
+	popq %rdi
+#endif /* CONFIG_X86_KPTI */
+
+	/* Set up exception return stack frame */
+	pushq _thread_offset_to_ss(%rdi)	/* SS */
+#else
 	pushq $X86_KERNEL_DS			/* SS */
+#endif /* CONFIG_USERSPACE */
 	pushq _thread_offset_to_rsp(%rdi)	/* RSP */
 	pushq _thread_offset_to_rflags(%rdi)	/* RFLAGS */
+#ifdef CONFIG_USERSPACE
+	pushq _thread_offset_to_cs(%rdi)	/* CS */
+#else
 	pushq $X86_KERNEL_CS			/* CS */
+#endif
 	pushq _thread_offset_to_rip(%rdi)	/* RIP */
+
+#ifdef CONFIG_ASSERT
+	/* Poison the old thread's saved RIP pointer with a
+	 * recognizable value near NULL, to easily catch reuse of the
+	 * thread object across CPUs in SMP.  Strictly speaking this
+	 * is not an assertion, but it's very cheap and worth having
+	 * on during routine testing.
+	 */
+	movq $0xB9, _thread_offset_to_rip(%rdi)
+#endif
 
 	movq _thread_offset_to_rbx(%rdi), %rbx
 	movq _thread_offset_to_rbp(%rdi), %rbp
@@ -239,6 +296,13 @@ __resume:
 	movq _thread_offset_to_r13(%rdi), %r13
 	movq _thread_offset_to_r14(%rdi), %r14
 	movq _thread_offset_to_r15(%rdi), %r15
+#ifdef CONFIG_USERSPACE
+	/* Set correct privilege elevation stack to manually switch to in
+	 * z_x86_syscall_entry_stub()
+	 */
+	movq _thread_offset_to_psp(%rdi), %rax
+	movq %rax, %gs:__x86_tss64_t_psp_OFFSET
+#endif
 
 	testb $X86_THREAD_FLAG_ALL, _thread_offset_to_flags(%rdi)
 	jz 1f
@@ -254,7 +318,33 @@ __resume:
 	movq _thread_offset_to_r11(%rdi), %r11
 	movq _thread_offset_to_rdi(%rdi), %rdi  /* do last :-) */
 
-1:	iretq
+#ifdef CONFIG_USERSPACE
+	/* Swap GS register values if we are returning to user mode */
+	testb $0x3, 8(%rsp)
+	jz 1f
+#ifdef CONFIG_X86_KPTI
+	jmp z_x86_trampoline_to_user
+#else
+	swapgs
+#endif /* CONFIG_X86_KPTI */
+#endif /* CONFIG_USERSPACE */
+1:
+#ifdef CONFIG_X86_BOUNDS_CHECK_BYPASS_MITIGATION
+	/* swapgs variant of Spectre V1. Disable speculation past this point */
+	lfence
+#endif /* CONFIG_X86_BOUNDS_CHECK_BYPASS_MITIGATION */
+
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	cmp $0x1,arch_timing_value_swap_end
+	jne time_read_not_needed
+	movw $0x2,arch_timing_value_swap_end
+	read_tsc arch_timing_value_swap_common
+	pushq arch_timing_swap_start
+	popq arch_timing_value_swap_temp
+time_read_not_needed:
+#endif
+
+	iretq
 
 
 
@@ -262,31 +352,133 @@ __resume:
 #define EXCEPT_CODE(nr) vector_ ## nr: pushq $nr; jmp except
 #define EXCEPT(nr)	vector_ ## nr: pushq $0; pushq $nr; jmp except
 
+/*
+ * When we arrive at 'except' from one of the EXCEPT(X) stubs,
+ * we're on the exception stack with irqs unlocked (or the trampoline stack
+ * with irqs locked if KPTI is enabled) and it contains:
+ *
+ *   SS
+ *   RSP
+ *   RFLAGS
+ *   CS
+ *   RIP
+ *   Error Code if pushed by CPU, else 0
+ *   Vector number <- RSP points here
+ *
+ */
+
 except: /*
 	 * finish struct NANO_ESF on stack. 'vector' .. 'ss' are
 	 * already there from hardware trap and EXCEPT_*() stub.
 	 */
 
-	pushq %r15
-	pushq %r14
-	pushq %r13
-	pushq %r12
 	pushq %r11
+
+#ifdef CONFIG_USERSPACE
+	/* Swap GS register values and page tables if we came from user mode */
+	testb $0x3, 32(%rsp)
+	jz 1f
+	swapgs
+#ifdef CONFIG_X86_KPTI
+	/* Load kernel's page table */
+	movq $z_x86_kernel_ptables, %r11
+	movq %r11, %cr3
+#endif /* CONFIG_X86_KPTI */
+1:
+#ifdef CONFIG_X86_BOUNDS_CHECK_BYPASS_MITIGATION
+	/* swapgs variant of Spectre V1. Disable speculation past this point */
+	lfence
+#endif /* CONFIG_X86_BOUNDS_CHECK_BYPASS_MITIGATION */
+#ifdef CONFIG_X86_KPTI
+	/* Save old trampoline stack pointer in R11 */
+	movq %rsp, %r11
+
+	/* Switch to the exception stack */
+	movq %gs:__x86_tss64_t_ist7_OFFSET, %rsp
+
+	/* Transplant trampoline stack contents */
+	pushq 56(%r11)	/* SS */
+	pushq 48(%r11)	/* RSP */
+	pushq 40(%r11)	/* RFLAGS */
+	pushq 32(%r11)	/* CS */
+	pushq 24(%r11)	/* RIP */
+	pushq 16(%r11)	/* Error code */
+	pushq 8(%r11)	/* Vector */
+	pushq (%r11)	/* Stashed R15 */
+	movq $0, (%r11) /* Cover our tracks */
+
+	/* We're done, it's safe to re-enable interrupts. */
+	sti
+#endif /* CONFIG_X86_KPTI */
+#endif /* CONFIG_USERSPACE */
+
+	/* In addition to r11, push the rest of the caller-saved regs */
+	/* Positioning of this fxsave is important, RSP must be 16-byte
+	 * aligned
+	 */
+	subq $X86_FXSAVE_SIZE, %rsp
+	fxsave (%rsp)
 	pushq %r10
 	pushq %r9
 	pushq %r8
 	pushq %rdi
 	pushq %rsi
-	pushq %rbp
 	pushq %rdx
 	pushq %rcx
-	pushq %rbx
 	pushq %rax
-
+#ifdef CONFIG_EXCEPTION_DEBUG
+	/* Callee saved regs */
+	pushq %r15
+	pushq %r14
+	pushq %r13
+	pushq %r12
+	pushq %rbp
+	pushq %rbx
+#endif /* CONFIG_EXCEPTION_DEBUG */
 	movq %rsp, %rdi
+
 	call z_x86_exception
 
-	hlt /* should not return, but just in case .. */
+	/* If we returned, the exception was handled successfully and the
+	 * thread may resume (the pushed RIP may have been modified)
+	 */
+#ifdef CONFIG_EXCEPTION_DEBUG
+	popq %rbx
+	popq %rbp
+	popq %r12
+	popq %r13
+	popq %r14
+	popq %r15
+#endif /* CONFIG_EXCEPTION_DEBUG */
+	popq %rax
+	popq %rcx
+	popq %rdx
+	popq %rsi
+	popq %rdi
+	popq %r8
+	popq %r9
+	popq %r10
+	fxrstor (%rsp)
+	addq $X86_FXSAVE_SIZE, %rsp
+	popq %r11
+
+	/* Drop the vector/err code pushed by the HW or EXCEPT_*() stub */
+	add $16, %rsp
+
+#ifdef CONFIG_USERSPACE
+	/* Swap GS register values if we are returning to user mode */
+	testb $0x3, 8(%rsp)
+	jz 1f
+	cli
+#ifdef CONFIG_X86_KPTI
+	jmp z_x86_trampoline_to_user
+#else
+	swapgs
+#endif /* CONFIG_X86_KPTI */
+1:
+#endif /* CONFIG_USERSPACE */
+
+	iretq
 
 EXCEPT      ( 0); EXCEPT      ( 1); EXCEPT      ( 2); EXCEPT      ( 3)
 EXCEPT      ( 4); EXCEPT      ( 5); EXCEPT      ( 6); EXCEPT      ( 7)
@@ -297,9 +489,15 @@ EXCEPT      (20); EXCEPT      (21); EXCEPT      (22); EXCEPT      (23)
 EXCEPT      (24); EXCEPT      (25); EXCEPT      (26); EXCEPT      (27)
 EXCEPT      (28); EXCEPT      (29); EXCEPT      (30); EXCEPT      (31)
 
+/* Vector reserved for handling a kernel oops; treat as an exception
+ * and not an interrupt
+ */
+EXCEPT(Z_X86_OOPS_VECTOR);
+
 /*
  * When we arrive at 'irq' from one of the IRQ(X) stubs,
- * we're on the "freshest" IRQ stack and it contains:
+ * we're on the "freshest" IRQ stack (or the trampoline stack if we came from
+ * user mode and KPTI is enabled) and it contains:
  *
  *   SS
  *   RSP
@@ -307,14 +505,52 @@ EXCEPT      (28); EXCEPT      (29); EXCEPT      (30); EXCEPT      (31)
  *   CS
  *   RIP
  *   (vector number - IV_IRQS) <-- RSP points here
- *   RSI <-- we push this on entry
  */
 
 .globl x86_irq_funcs	/* see irq_manage.c .. */
 .globl x86_irq_args	/* .. for these definitions */
 
 irq:
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	read_tsc arch_timing_irq_start
+#endif
+
 	pushq %rsi
+
+#ifdef CONFIG_USERSPACE
+	/* Swap GS register values if we came in from user mode */
+	testb $0x3, 24(%rsp)
+	jz 1f
+	swapgs
+#ifdef CONFIG_X86_KPTI
+	/* Load kernel's page table */
+	movq $z_x86_kernel_ptables, %rsi
+	movq %rsi, %cr3
+#endif /* CONFIG_X86_KPTI */
+1:
+#ifdef CONFIG_X86_BOUNDS_CHECK_BYPASS_MITIGATION
+	/* swapgs variant of Spectre V1. Disable speculation past this point */
+	lfence
+#endif /* CONFIG_X86_BOUNDS_CHECK_BYPASS_MITIGATION */
+#ifdef CONFIG_X86_KPTI
+	/* Save old trampoline stack pointer in RSI */
+	movq %rsp, %rsi
+
+	/* Switch to the interrupt stack stack */
+	movq %gs:__x86_tss64_t_ist1_OFFSET, %rsp
+
+	/* Transplant trampoline stack contents */
+	pushq 48(%rsi)	/* SS */
+	pushq 40(%rsi)	/* RSP */
+	pushq 32(%rsi)	/* RFLAGS */
+	pushq 24(%rsi)	/* CS */
+	pushq 16(%rsi)	/* RIP */
+	pushq 8(%rsi)	/* Vector */
+	pushq (%rsi)	/* Stashed RSI value */
+	movq $0, (%rsi) /* Cover our tracks, stashed RSI might be sensitive */
+#endif /* CONFIG_X86_KPTI */
+#endif /* CONFIG_USERSPACE */
+
 	movq %gs:__x86_tss64_t_cpu_OFFSET, %rsi
 
 	/*
@@ -380,14 +616,24 @@ irq_enter_unnested: /* Not nested: dump state to thread struct for __resume */
 	popq %rcx /* vector number */
 	popq %rax /* RIP */
 	movq %rax, _thread_offset_to_rip(%rsi)
-	popq %rax /* CS: discard */
+	popq %rax /* CS */
+#ifdef CONFIG_USERSPACE
+	movq %rax, _thread_offset_to_cs(%rsi)
+#endif
 	popq %rax /* RFLAGS */
 	movq %rax, _thread_offset_to_rflags(%rsi)
 	popq %rax /* RSP */
 	movq %rax, _thread_offset_to_rsp(%rsi)
-	popq %rax /* SS: discard */
+	popq %rax /* SS */
+#ifdef CONFIG_USERSPACE
+	movq %rax, _thread_offset_to_ss(%rsi)
+#endif
 
 irq_dispatch:
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	read_tsc arch_timing_irq_end
+#endif
+
 	movq x86_irq_funcs(,%rcx,8), %rbx
 	movq x86_irq_args(,%rcx,8), %rdi
 	call *%rbx
@@ -402,6 +648,7 @@ irq_dispatch:
 #endif
 
 	movq %gs:__x86_tss64_t_cpu_OFFSET, %rsi
+
 	cli
 	addq $CONFIG_ISR_SUBSTACK_SIZE, %gs:__x86_tss64_t_ist1_OFFSET
 	decl ___cpu_t_nested_OFFSET(%rsi)
@@ -430,7 +677,7 @@ irq_exit_nested:
 
 #define IRQ(nr) vector_ ## nr: pushq $(nr - IV_IRQS); jmp irq
 
-IRQ( 32); IRQ( 33); IRQ( 34); IRQ( 35); IRQ( 36); IRQ( 37); IRQ( 38); IRQ( 39)
+IRQ( 33); IRQ( 34); IRQ( 35); IRQ( 36); IRQ( 37); IRQ( 38); IRQ( 39)
 IRQ( 40); IRQ( 41); IRQ( 42); IRQ( 43); IRQ( 44); IRQ( 45); IRQ( 46); IRQ( 47)
 IRQ( 48); IRQ( 49); IRQ( 50); IRQ( 51); IRQ( 52); IRQ( 53); IRQ( 54); IRQ( 55)
 IRQ( 56); IRQ( 57); IRQ( 58); IRQ( 59); IRQ( 60); IRQ( 61); IRQ( 62); IRQ( 63)
@@ -465,81 +712,178 @@ IRQ(248); IRQ(249); IRQ(250); IRQ(251); IRQ(252); IRQ(253); IRQ(254); IRQ(255)
  * IDT.
  */
 
-#define TRAP 0x8f
-#define INTR 0x8e
+/* Descriptor type. Traps don't implicitly disable interrupts. User variants
+ * can be invoked by software running in user mode (ring 3).
+ *
+ * For KPTI everything lands on the trampoline stack and we must get off of
+ * it before re-enabling interrupts; use interrupt gates for everything.
+ */
+#define INTR		0x8e
+#define USER_INTR	0xee
+#ifdef CONFIG_X86_KPTI
+#define TRAP		INTR
+#define USER_TRAP	UINTR
+#else
+#define TRAP		0x8f
+#define USER_TRAP	0xef
+#endif
 
 #define IDT(nr, type, ist) \
 	.word vector_ ## nr, X86_KERNEL_CS; \
 	.byte ist, type; \
 	.word 0, 0, 0, 0, 0
 
+/* Which IST entry in TSS to use for automatic stack switching, or 0 if
+ * no automatic switch is to take place. Stack page must be present in
+ * the current page tables, if KPTI is on only the trampoline stack and
+ * the current user stack can be accessed.
+ */
+#ifdef CONFIG_X86_KPTI
+/* Everything lands on ist2, which is set to the trampoline stack.
+ * Interrupt/exception entry updates page tables and manually switches to
+ * the irq/exception stacks stored in ist1/ist7
+ */
+#define	IRQ_STACK	2
+#define EXC_STACK	2
+#define BAD_STACK	2
+#else
+#define	IRQ_STACK	1
+#define EXC_STACK	7
+#define BAD_STACK	7 /* Horrible things: NMIs, double faults, MCEs */
+#endif
+
 .align 16
 idt:
-    IDT(  0, TRAP, 7); IDT(  1, TRAP, 7); IDT(  2, TRAP, 7); IDT(  3, TRAP, 7)
-    IDT(  4, TRAP, 7); IDT(  5, TRAP, 7); IDT(  6, TRAP, 7); IDT(  7, TRAP, 7)
-    IDT(  8, TRAP, 7); IDT(  9, TRAP, 7); IDT( 10, TRAP, 7); IDT( 11, TRAP, 7)
-    IDT( 12, TRAP, 7); IDT( 13, TRAP, 7); IDT( 14, TRAP, 7); IDT( 15, TRAP, 7)
-    IDT( 16, TRAP, 7); IDT( 17, TRAP, 7); IDT( 18, TRAP, 7); IDT( 19, TRAP, 7)
-    IDT( 20, TRAP, 7); IDT( 21, TRAP, 7); IDT( 22, TRAP, 7); IDT( 23, TRAP, 7)
-    IDT( 24, TRAP, 7); IDT( 25, TRAP, 7); IDT( 26, TRAP, 7); IDT( 27, TRAP, 7)
-    IDT( 28, TRAP, 7); IDT( 29, TRAP, 7); IDT( 30, TRAP, 7); IDT( 31, TRAP, 7)
+	IDT(  0, TRAP, EXC_STACK); IDT(  1, TRAP, EXC_STACK)
+	IDT(  2, TRAP, BAD_STACK); IDT(  3, TRAP, EXC_STACK)
+	IDT(  4, TRAP, EXC_STACK); IDT(  5, TRAP, EXC_STACK)
+	IDT(  6, TRAP, EXC_STACK); IDT(  7, TRAP, EXC_STACK)
+	IDT(  8, TRAP, BAD_STACK); IDT(  9, TRAP, EXC_STACK)
+	IDT( 10, TRAP, EXC_STACK); IDT( 11, TRAP, EXC_STACK)
+	IDT( 12, TRAP, EXC_STACK); IDT( 13, TRAP, EXC_STACK)
+	IDT( 14, TRAP, EXC_STACK); IDT( 15, TRAP, EXC_STACK)
+	IDT( 16, TRAP, EXC_STACK); IDT( 17, TRAP, EXC_STACK)
+	IDT( 18, TRAP, BAD_STACK); IDT( 19, TRAP, EXC_STACK)
+	IDT( 20, TRAP, EXC_STACK); IDT( 21, TRAP, EXC_STACK)
+	IDT( 22, TRAP, EXC_STACK); IDT( 23, TRAP, EXC_STACK)
+	IDT( 24, TRAP, EXC_STACK); IDT( 25, TRAP, EXC_STACK)
+	IDT( 26, TRAP, EXC_STACK); IDT( 27, TRAP, EXC_STACK)
+	IDT( 28, TRAP, EXC_STACK); IDT( 29, TRAP, EXC_STACK)
+	IDT( 30, TRAP, EXC_STACK); IDT( 31, TRAP, EXC_STACK)
 
-    IDT( 32, INTR, 1); IDT( 33, INTR, 1); IDT( 34, INTR, 1); IDT( 35, INTR, 1)
-    IDT( 36, INTR, 1); IDT( 37, INTR, 1); IDT( 38, INTR, 1); IDT( 39, INTR, 1)
-    IDT( 40, INTR, 1); IDT( 41, INTR, 1); IDT( 42, INTR, 1); IDT( 43, INTR, 1)
-    IDT( 44, INTR, 1); IDT( 45, INTR, 1); IDT( 46, INTR, 1); IDT( 47, INTR, 1)
-    IDT( 48, INTR, 1); IDT( 49, INTR, 1); IDT( 50, INTR, 1); IDT( 51, INTR, 1)
-    IDT( 52, INTR, 1); IDT( 53, INTR, 1); IDT( 54, INTR, 1); IDT( 55, INTR, 1)
-    IDT( 56, INTR, 1); IDT( 57, INTR, 1); IDT( 58, INTR, 1); IDT( 59, INTR, 1)
-    IDT( 60, INTR, 1); IDT( 61, INTR, 1); IDT( 62, INTR, 1); IDT( 63, INTR, 1)
-    IDT( 64, INTR, 1); IDT( 65, INTR, 1); IDT( 66, INTR, 1); IDT( 67, INTR, 1)
-    IDT( 68, INTR, 1); IDT( 69, INTR, 1); IDT( 70, INTR, 1); IDT( 71, INTR, 1)
-    IDT( 72, INTR, 1); IDT( 73, INTR, 1); IDT( 74, INTR, 1); IDT( 75, INTR, 1)
-    IDT( 76, INTR, 1); IDT( 77, INTR, 1); IDT( 78, INTR, 1); IDT( 79, INTR, 1)
-    IDT( 80, INTR, 1); IDT( 81, INTR, 1); IDT( 82, INTR, 1); IDT( 83, INTR, 1)
-    IDT( 84, INTR, 1); IDT( 85, INTR, 1); IDT( 86, INTR, 1); IDT( 87, INTR, 1)
-    IDT( 88, INTR, 1); IDT( 89, INTR, 1); IDT( 90, INTR, 1); IDT( 91, INTR, 1)
-    IDT( 92, INTR, 1); IDT( 93, INTR, 1); IDT( 94, INTR, 1); IDT( 95, INTR, 1)
-    IDT( 96, INTR, 1); IDT( 97, INTR, 1); IDT( 98, INTR, 1); IDT( 99, INTR, 1)
-    IDT(100, INTR, 1); IDT(101, INTR, 1); IDT(102, INTR, 1); IDT(103, INTR, 1)
-    IDT(104, INTR, 1); IDT(105, INTR, 1); IDT(106, INTR, 1); IDT(107, INTR, 1)
-    IDT(108, INTR, 1); IDT(109, INTR, 1); IDT(110, INTR, 1); IDT(111, INTR, 1)
-    IDT(112, INTR, 1); IDT(113, INTR, 1); IDT(114, INTR, 1); IDT(115, INTR, 1)
-    IDT(116, INTR, 1); IDT(117, INTR, 1); IDT(118, INTR, 1); IDT(119, INTR, 1)
-    IDT(120, INTR, 1); IDT(121, INTR, 1); IDT(122, INTR, 1); IDT(123, INTR, 1)
-    IDT(124, INTR, 1); IDT(125, INTR, 1); IDT(126, INTR, 1); IDT(127, INTR, 1)
-    IDT(128, INTR, 1); IDT(129, INTR, 1); IDT(130, INTR, 1); IDT(131, INTR, 1)
-    IDT(132, INTR, 1); IDT(133, INTR, 1); IDT(134, INTR, 1); IDT(135, INTR, 1)
-    IDT(136, INTR, 1); IDT(137, INTR, 1); IDT(138, INTR, 1); IDT(139, INTR, 1)
-    IDT(140, INTR, 1); IDT(141, INTR, 1); IDT(142, INTR, 1); IDT(143, INTR, 1)
-    IDT(144, INTR, 1); IDT(145, INTR, 1); IDT(146, INTR, 1); IDT(147, INTR, 1)
-    IDT(148, INTR, 1); IDT(149, INTR, 1); IDT(150, INTR, 1); IDT(151, INTR, 1)
-    IDT(152, INTR, 1); IDT(153, INTR, 1); IDT(154, INTR, 1); IDT(155, INTR, 1)
-    IDT(156, INTR, 1); IDT(157, INTR, 1); IDT(158, INTR, 1); IDT(159, INTR, 1)
-    IDT(160, INTR, 1); IDT(161, INTR, 1); IDT(162, INTR, 1); IDT(163, INTR, 1)
-    IDT(164, INTR, 1); IDT(165, INTR, 1); IDT(166, INTR, 1); IDT(167, INTR, 1)
-    IDT(168, INTR, 1); IDT(169, INTR, 1); IDT(170, INTR, 1); IDT(171, INTR, 1)
-    IDT(172, INTR, 1); IDT(173, INTR, 1); IDT(174, INTR, 1); IDT(175, INTR, 1)
-    IDT(176, INTR, 1); IDT(177, INTR, 1); IDT(178, INTR, 1); IDT(179, INTR, 1)
-    IDT(180, INTR, 1); IDT(181, INTR, 1); IDT(182, INTR, 1); IDT(183, INTR, 1)
-    IDT(184, INTR, 1); IDT(185, INTR, 1); IDT(186, INTR, 1); IDT(187, INTR, 1)
-    IDT(188, INTR, 1); IDT(189, INTR, 1); IDT(190, INTR, 1); IDT(191, INTR, 1)
-    IDT(192, INTR, 1); IDT(193, INTR, 1); IDT(194, INTR, 1); IDT(195, INTR, 1)
-    IDT(196, INTR, 1); IDT(197, INTR, 1); IDT(198, INTR, 1); IDT(199, INTR, 1)
-    IDT(200, INTR, 1); IDT(201, INTR, 1); IDT(202, INTR, 1); IDT(203, INTR, 1)
-    IDT(204, INTR, 1); IDT(205, INTR, 1); IDT(206, INTR, 1); IDT(207, INTR, 1)
-    IDT(208, INTR, 1); IDT(209, INTR, 1); IDT(210, INTR, 1); IDT(211, INTR, 1)
-    IDT(212, INTR, 1); IDT(213, INTR, 1); IDT(214, INTR, 1); IDT(215, INTR, 1)
-    IDT(216, INTR, 1); IDT(217, INTR, 1); IDT(218, INTR, 1); IDT(219, INTR, 1)
-    IDT(220, INTR, 1); IDT(221, INTR, 1); IDT(222, INTR, 1); IDT(223, INTR, 1)
-    IDT(224, INTR, 1); IDT(225, INTR, 1); IDT(226, INTR, 1); IDT(227, INTR, 1)
-    IDT(228, INTR, 1); IDT(229, INTR, 1); IDT(230, INTR, 1); IDT(231, INTR, 1)
-    IDT(232, INTR, 1); IDT(233, INTR, 1); IDT(234, INTR, 1); IDT(235, INTR, 1)
-    IDT(236, INTR, 1); IDT(237, INTR, 1); IDT(238, INTR, 1); IDT(239, INTR, 1)
-    IDT(240, INTR, 1); IDT(241, INTR, 1); IDT(242, INTR, 1); IDT(243, INTR, 1)
-    IDT(244, INTR, 1); IDT(245, INTR, 1); IDT(246, INTR, 1); IDT(247, INTR, 1)
-    IDT(248, INTR, 1); IDT(249, INTR, 1); IDT(250, INTR, 1); IDT(251, INTR, 1)
-    IDT(252, INTR, 1); IDT(253, INTR, 1); IDT(254, INTR, 1); IDT(255, INTR, 1)
+	/* Oops vector can be invoked from Ring 3 and runs on exception stack */
+	IDT(Z_X86_OOPS_VECTOR, USER_INTR, EXC_STACK); IDT( 33, INTR, IRQ_STACK)
+	IDT( 34, INTR, IRQ_STACK); IDT( 35, INTR, IRQ_STACK)
+	IDT( 36, INTR, IRQ_STACK); IDT( 37, INTR, IRQ_STACK)
+	IDT( 38, INTR, IRQ_STACK); IDT( 39, INTR, IRQ_STACK)
+	IDT( 40, INTR, IRQ_STACK); IDT( 41, INTR, IRQ_STACK)
+	IDT( 42, INTR, IRQ_STACK); IDT( 43, INTR, IRQ_STACK)
+	IDT( 44, INTR, IRQ_STACK); IDT( 45, INTR, IRQ_STACK)
+	IDT( 46, INTR, IRQ_STACK); IDT( 47, INTR, IRQ_STACK)
+	IDT( 48, INTR, IRQ_STACK); IDT( 49, INTR, IRQ_STACK)
+	IDT( 50, INTR, IRQ_STACK); IDT( 51, INTR, IRQ_STACK)
+	IDT( 52, INTR, IRQ_STACK); IDT( 53, INTR, IRQ_STACK)
+	IDT( 54, INTR, IRQ_STACK); IDT( 55, INTR, IRQ_STACK)
+	IDT( 56, INTR, IRQ_STACK); IDT( 57, INTR, IRQ_STACK)
+	IDT( 58, INTR, IRQ_STACK); IDT( 59, INTR, IRQ_STACK)
+	IDT( 60, INTR, IRQ_STACK); IDT( 61, INTR, IRQ_STACK)
+	IDT( 62, INTR, IRQ_STACK); IDT( 63, INTR, IRQ_STACK)
+	IDT( 64, INTR, IRQ_STACK); IDT( 65, INTR, IRQ_STACK)
+	IDT( 66, INTR, IRQ_STACK); IDT( 67, INTR, IRQ_STACK)
+	IDT( 68, INTR, IRQ_STACK); IDT( 69, INTR, IRQ_STACK)
+	IDT( 70, INTR, IRQ_STACK); IDT( 71, INTR, IRQ_STACK)
+	IDT( 72, INTR, IRQ_STACK); IDT( 73, INTR, IRQ_STACK)
+	IDT( 74, INTR, IRQ_STACK); IDT( 75, INTR, IRQ_STACK)
+	IDT( 76, INTR, IRQ_STACK); IDT( 77, INTR, IRQ_STACK)
+	IDT( 78, INTR, IRQ_STACK); IDT( 79, INTR, IRQ_STACK)
+	IDT( 80, INTR, IRQ_STACK); IDT( 81, INTR, IRQ_STACK)
+	IDT( 82, INTR, IRQ_STACK); IDT( 83, INTR, IRQ_STACK)
+	IDT( 84, INTR, IRQ_STACK); IDT( 85, INTR, IRQ_STACK)
+	IDT( 86, INTR, IRQ_STACK); IDT( 87, INTR, IRQ_STACK)
+	IDT( 88, INTR, IRQ_STACK); IDT( 89, INTR, IRQ_STACK)
+	IDT( 90, INTR, IRQ_STACK); IDT( 91, INTR, IRQ_STACK)
+	IDT( 92, INTR, IRQ_STACK); IDT( 93, INTR, IRQ_STACK)
+	IDT( 94, INTR, IRQ_STACK); IDT( 95, INTR, IRQ_STACK)
+	IDT( 96, INTR, IRQ_STACK); IDT( 97, INTR, IRQ_STACK)
+	IDT( 98, INTR, IRQ_STACK); IDT( 99, INTR, IRQ_STACK)
+	IDT(100, INTR, IRQ_STACK); IDT(101, INTR, IRQ_STACK)
+	IDT(102, INTR, IRQ_STACK); IDT(103, INTR, IRQ_STACK)
+	IDT(104, INTR, IRQ_STACK); IDT(105, INTR, IRQ_STACK)
+	IDT(106, INTR, IRQ_STACK); IDT(107, INTR, IRQ_STACK)
+	IDT(108, INTR, IRQ_STACK); IDT(109, INTR, IRQ_STACK)
+	IDT(110, INTR, IRQ_STACK); IDT(111, INTR, IRQ_STACK)
+	IDT(112, INTR, IRQ_STACK); IDT(113, INTR, IRQ_STACK)
+	IDT(114, INTR, IRQ_STACK); IDT(115, INTR, IRQ_STACK)
+	IDT(116, INTR, IRQ_STACK); IDT(117, INTR, IRQ_STACK)
+	IDT(118, INTR, IRQ_STACK); IDT(119, INTR, IRQ_STACK)
+	IDT(120, INTR, IRQ_STACK); IDT(121, INTR, IRQ_STACK)
+	IDT(122, INTR, IRQ_STACK); IDT(123, INTR, IRQ_STACK)
+	IDT(124, INTR, IRQ_STACK); IDT(125, INTR, IRQ_STACK)
+	IDT(126, INTR, IRQ_STACK); IDT(127, INTR, IRQ_STACK)
+	IDT(128, INTR, IRQ_STACK); IDT(129, INTR, IRQ_STACK)
+	IDT(130, INTR, IRQ_STACK); IDT(131, INTR, IRQ_STACK)
+	IDT(132, INTR, IRQ_STACK); IDT(133, INTR, IRQ_STACK)
+	IDT(134, INTR, IRQ_STACK); IDT(135, INTR, IRQ_STACK)
+	IDT(136, INTR, IRQ_STACK); IDT(137, INTR, IRQ_STACK)
+	IDT(138, INTR, IRQ_STACK); IDT(139, INTR, IRQ_STACK)
+	IDT(140, INTR, IRQ_STACK); IDT(141, INTR, IRQ_STACK)
+	IDT(142, INTR, IRQ_STACK); IDT(143, INTR, IRQ_STACK)
+	IDT(144, INTR, IRQ_STACK); IDT(145, INTR, IRQ_STACK)
+	IDT(146, INTR, IRQ_STACK); IDT(147, INTR, IRQ_STACK)
+	IDT(148, INTR, IRQ_STACK); IDT(149, INTR, IRQ_STACK)
+	IDT(150, INTR, IRQ_STACK); IDT(151, INTR, IRQ_STACK)
+	IDT(152, INTR, IRQ_STACK); IDT(153, INTR, IRQ_STACK)
+	IDT(154, INTR, IRQ_STACK); IDT(155, INTR, IRQ_STACK)
+	IDT(156, INTR, IRQ_STACK); IDT(157, INTR, IRQ_STACK)
+	IDT(158, INTR, IRQ_STACK); IDT(159, INTR, IRQ_STACK)
+	IDT(160, INTR, IRQ_STACK); IDT(161, INTR, IRQ_STACK)
+	IDT(162, INTR, IRQ_STACK); IDT(163, INTR, IRQ_STACK)
+	IDT(164, INTR, IRQ_STACK); IDT(165, INTR, IRQ_STACK)
+	IDT(166, INTR, IRQ_STACK); IDT(167, INTR, IRQ_STACK)
+	IDT(168, INTR, IRQ_STACK); IDT(169, INTR, IRQ_STACK)
+	IDT(170, INTR, IRQ_STACK); IDT(171, INTR, IRQ_STACK)
+	IDT(172, INTR, IRQ_STACK); IDT(173, INTR, IRQ_STACK)
+	IDT(174, INTR, IRQ_STACK); IDT(175, INTR, IRQ_STACK)
+	IDT(176, INTR, IRQ_STACK); IDT(177, INTR, IRQ_STACK)
+	IDT(178, INTR, IRQ_STACK); IDT(179, INTR, IRQ_STACK)
+	IDT(180, INTR, IRQ_STACK); IDT(181, INTR, IRQ_STACK)
+	IDT(182, INTR, IRQ_STACK); IDT(183, INTR, IRQ_STACK)
+	IDT(184, INTR, IRQ_STACK); IDT(185, INTR, IRQ_STACK)
+	IDT(186, INTR, IRQ_STACK); IDT(187, INTR, IRQ_STACK)
+	IDT(188, INTR, IRQ_STACK); IDT(189, INTR, IRQ_STACK)
+	IDT(190, INTR, IRQ_STACK); IDT(191, INTR, IRQ_STACK)
+	IDT(192, INTR, IRQ_STACK); IDT(193, INTR, IRQ_STACK)
+	IDT(194, INTR, IRQ_STACK); IDT(195, INTR, IRQ_STACK)
+	IDT(196, INTR, IRQ_STACK); IDT(197, INTR, IRQ_STACK)
+	IDT(198, INTR, IRQ_STACK); IDT(199, INTR, IRQ_STACK)
+	IDT(200, INTR, IRQ_STACK); IDT(201, INTR, IRQ_STACK)
+	IDT(202, INTR, IRQ_STACK); IDT(203, INTR, IRQ_STACK)
+	IDT(204, INTR, IRQ_STACK); IDT(205, INTR, IRQ_STACK)
+	IDT(206, INTR, IRQ_STACK); IDT(207, INTR, IRQ_STACK)
+	IDT(208, INTR, IRQ_STACK); IDT(209, INTR, IRQ_STACK)
+	IDT(210, INTR, IRQ_STACK); IDT(211, INTR, IRQ_STACK)
+	IDT(212, INTR, IRQ_STACK); IDT(213, INTR, IRQ_STACK)
+	IDT(214, INTR, IRQ_STACK); IDT(215, INTR, IRQ_STACK)
+	IDT(216, INTR, IRQ_STACK); IDT(217, INTR, IRQ_STACK)
+	IDT(218, INTR, IRQ_STACK); IDT(219, INTR, IRQ_STACK)
+	IDT(220, INTR, IRQ_STACK); IDT(221, INTR, IRQ_STACK)
+	IDT(222, INTR, IRQ_STACK); IDT(223, INTR, IRQ_STACK)
+	IDT(224, INTR, IRQ_STACK); IDT(225, INTR, IRQ_STACK)
+	IDT(226, INTR, IRQ_STACK); IDT(227, INTR, IRQ_STACK)
+	IDT(228, INTR, IRQ_STACK); IDT(229, INTR, IRQ_STACK)
+	IDT(230, INTR, IRQ_STACK); IDT(231, INTR, IRQ_STACK)
+	IDT(232, INTR, IRQ_STACK); IDT(233, INTR, IRQ_STACK)
+	IDT(234, INTR, IRQ_STACK); IDT(235, INTR, IRQ_STACK)
+	IDT(236, INTR, IRQ_STACK); IDT(237, INTR, IRQ_STACK)
+	IDT(238, INTR, IRQ_STACK); IDT(239, INTR, IRQ_STACK)
+	IDT(240, INTR, IRQ_STACK); IDT(241, INTR, IRQ_STACK)
+	IDT(242, INTR, IRQ_STACK); IDT(243, INTR, IRQ_STACK)
+	IDT(244, INTR, IRQ_STACK); IDT(245, INTR, IRQ_STACK)
+	IDT(246, INTR, IRQ_STACK); IDT(247, INTR, IRQ_STACK)
+	IDT(248, INTR, IRQ_STACK); IDT(249, INTR, IRQ_STACK)
+	IDT(250, INTR, IRQ_STACK); IDT(251, INTR, IRQ_STACK)
+	IDT(252, INTR, IRQ_STACK); IDT(253, INTR, IRQ_STACK)
+	IDT(254, INTR, IRQ_STACK); IDT(255, INTR, IRQ_STACK)
 
 idt48:
 	.word (idt48 - idt - 1)
@@ -568,34 +912,32 @@ pdp:	.long 0x00000083		/* 0x83 = 1GB, R/W, P */
 	.long 0
 	.fill 4064, 1, 0
 
-.section .lodata,"ad"
+.section .gdt,"ad"
 
 /*
  * GDT - a single GDT is shared by all threads (and, eventually, all CPUs).
- * This layout must agree with the selectors in intel64/kernel_arch_data.h.
+ * This layout must agree with the selectors in
+ * include/arch/x86/intel64/thread.h.
+ *
+ * The 64-bit kernel code and data segment descriptors must be in sequence as
+ * required by 'syscall'
+ *
+ * The 32-bit user code, 64-bit user code, and 64-bit user data segment
+ * descriptors must be in sequence as required by 'sysret'
  */
-
 .align 8
 
 gdt:
-	.word 0, 0, 0, 0		/* 0x00: null descriptor */
+	.word 0,      0, 0,      0	/* 0x00: null descriptor */
 	.word 0xFFFF, 0, 0x9A00, 0x00CF	/* 0x08: 32-bit kernel code */
 	.word 0xFFFF, 0, 0x9200, 0x00CF	/* 0x10: 32-bit kernel data */
-	.word 0, 0, 0x9800, 0x0020	/* 0x18: 64-bit kernel code */
-	.word 0, 0, 0x9200, 0x0000	/* 0x20: 64-bit kernel data */
+	.word 0,      0, 0x9800, 0x0020	/* 0x18: 64-bit kernel code */
+	.word 0,      0, 0x9200, 0x0000	/* 0x20: 64-bit kernel data */
+	.word 0xFFFF, 0, 0xFA00, 0x00CF /* 0x28: 32-bit user code (unused) */
+	.word 0,      0, 0xF200, 0x0000	/* 0x30: 64-bit user data */
+	.word 0,      0, 0xF800, 0x0020	/* 0x38: 64-bit user code */
 
-	.word 0, 0, 0, 0		/* 0x28: unused */
-
-	/*
-	 * CPU 0 task state segment descriptors
-	 */
-
-	.word 0				/* 0x30: 64-bit TSS data (for GS) */
-	.word tss0
-	.word 0x9200
-	.word 0
-
-	.word 0, 0, 0, 0		/* 0x38: unused */
+	/* Remaining entries are TSS for each enabled CPU */
 
 	.word __X86_TSS64_SIZEOF-1	/* 0x40: 64-bit TSS (16-byte entry) */
 	.word tss0
@@ -603,54 +945,21 @@ gdt:
 	.word 0, 0, 0, 0, 0
 
 #if CONFIG_MP_NUM_CPUS > 1
-	/*
-	 * CPU 1 task state segment descriptors
-	 */
-
-	.word 0				/* 0x50: 64-bit TSS data (for GS) */
-	.word tss1
-	.word 0x9200
-	.word 0
-
-	.word 0, 0, 0, 0		/* 0x58: unused */
-
-	.word __X86_TSS64_SIZEOF-1	/* 0x60: 64-bit TSS (16-byte entry) */
+	.word __X86_TSS64_SIZEOF-1	/* 0x50: 64-bit TSS (16-byte entry) */
 	.word tss1
 	.word 0x8900
 	.word 0, 0, 0, 0, 0
 #endif
 
 #if CONFIG_MP_NUM_CPUS > 2
-	/*
-	 * CPU 2 task state segment descriptors
-	 */
-
-	.word 0				/* 0x70: 64-bit TSS data (for GS) */
-	.word tss2
-	.word 0x9200
-	.word 0
-
-	.word 0, 0, 0, 0		/* 0x78: unused */
-
-	.word __X86_TSS64_SIZEOF-1	/* 0x80: 64-bit TSS (16-byte entry) */
+	.word __X86_TSS64_SIZEOF-1	/* 0x60: 64-bit TSS (16-byte entry) */
 	.word tss2
 	.word 0x8900
 	.word 0, 0, 0, 0, 0
 #endif
 
 #if CONFIG_MP_NUM_CPUS > 3
-	/*
-	 * CPU 3 task state segment descriptors
-	 */
-
-	.word 0				/* 0x90: 64-bit TSS data (for GS) */
-	.word tss3
-	.word 0x9200
-	.word 0
-
-	.word 0, 0, 0, 0		/* 0x98: unused */
-
-	.word __X86_TSS64_SIZEOF-1	/* 0xA0: 64-bit TSS (16-byte entry) */
+	.word __X86_TSS64_SIZEOF-1	/* 0x70: 64-bit TSS (16-byte entry) */
 	.word tss3
 	.word 0x8900
 	.word 0, 0, 0, 0, 0
@@ -659,6 +968,8 @@ gdt:
 gdt48:
 	.word (gdt48 - gdt - 1)
 	.long gdt
+
+.section .lodata,"ad"
 
 /*
  * Known-good stack for handling CPU exceptions.
@@ -689,3 +1000,33 @@ _exception_stack2:
 _exception_stack3:
 	.fill CONFIG_EXCEPTION_STACK_SIZE, 1, 0xAA
 #endif
+
+#ifdef CONFIG_X86_KPTI
+.section .trampolines,"ad"
+
+.global z_x86_trampoline_stack
+.align 16
+z_x86_trampoline_stack:
+	.fill Z_X86_TRAMPOLINE_STACK_SIZE, 1, 0xAA
+
+#if CONFIG_MP_NUM_CPUS > 1
+.global z_x86_trampoline_stack1
+.align 16
+z_x86_trampoline_stack1:
+	.fill Z_X86_TRAMPOLINE_STACK_SIZE, 1, 0xAA
+#endif
+
+#if CONFIG_MP_NUM_CPUS > 2
+.global z_x86_trampoline_stack2
+.align 16
+z_x86_trampoline_stack2:
+	.fill Z_X86_TRAMPOLINE_STACK_SIZE, 1, 0xAA
+#endif
+
+#if CONFIG_MP_NUM_CPUS > 3
+.global z_x86_trampoline_stack3
+.align 16
+z_x86_trampoline_stack3:
+	.fill Z_X86_TRAMPOLINE_STACK_SIZE, 1, 0xAA
+#endif
+#endif /* CONFIG_X86_KPTI */

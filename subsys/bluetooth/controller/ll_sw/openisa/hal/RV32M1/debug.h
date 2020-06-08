@@ -81,73 +81,73 @@ extern struct device *vega_debug_portd;
  */
 #define DEBUG_INIT() \
 	do { \
-		vega_debug_portb = device_get_binding(DT_ALIAS_GPIO_B_LABEL); \
-		vega_debug_portc = device_get_binding(DT_ALIAS_GPIO_C_LABEL); \
-		vega_debug_portd = device_get_binding(DT_ALIAS_GPIO_D_LABEL); \
+		vega_debug_portb = device_get_binding(DT_LABEL(DT_NODELABEL(gpiob))); \
+		vega_debug_portc = device_get_binding(DT_LABEL(DT_NODELABEL(gpioc))); \
+		vega_debug_portd = device_get_binding(DT_LABEL(DT_NODELABEL(gpiod))); \
 		\
-		gpio_pin_write(DEBUG0_PORT, DEBUG0_PIN, 1); \
-		gpio_pin_write(DEBUG0_PORT, DEBUG0_PIN, 0); \
+		gpio_pin_set(DEBUG0_PORT, DEBUG0_PIN, 1); \
+		gpio_pin_set(DEBUG0_PORT, DEBUG0_PIN, 0); \
 	} while (0)
 
-#define DEBUG_CPU_SLEEP(flag) gpio_pin_write(DEBUG0_PORT, DEBUG0_PIN, flag)
+#define DEBUG_CPU_SLEEP(flag) gpio_pin_set(DEBUG0_PORT, DEBUG0_PIN, flag)
 
-#define DEBUG_TICKER_ISR(flag) gpio_pin_write(DEBUG1_PORT, DEBUG1_PIN, flag)
+#define DEBUG_TICKER_ISR(flag) gpio_pin_set(DEBUG1_PORT, DEBUG1_PIN, flag)
 
-#define DEBUG_TICKER_TASK(flag) gpio_pin_write(DEBUG1_PORT, DEBUG1_PIN, flag)
+#define DEBUG_TICKER_TASK(flag) gpio_pin_set(DEBUG1_PORT, DEBUG1_PIN, flag)
 
-#define DEBUG_TICKER_JOB(flag) gpio_pin_write(DEBUG2_PORT, DEBUG2_PIN, flag)
+#define DEBUG_TICKER_JOB(flag) gpio_pin_set(DEBUG2_PORT, DEBUG2_PIN, flag)
 
-#define DEBUG_RADIO_ISR(flag) gpio_pin_write(DEBUG7_PORT, DEBUG7_PIN, flag)
+#define DEBUG_RADIO_ISR(flag) gpio_pin_set(DEBUG7_PORT, DEBUG7_PIN, flag)
 
-#define DEBUG_RADIO_XTAL(flag) gpio_pin_write(DEBUG8_PORT, DEBUG8_PIN, flag)
+#define DEBUG_RADIO_XTAL(flag) gpio_pin_set(DEBUG8_PORT, DEBUG8_PIN, flag)
 
-#define DEBUG_RADIO_ACTIVE(flag) gpio_pin_write(DEBUG9_PORT, DEBUG9_PIN, flag)
+#define DEBUG_RADIO_ACTIVE(flag) gpio_pin_set(DEBUG9_PORT, DEBUG9_PIN, flag)
 
 #define DEBUG_RADIO_CLOSE(flag) \
 	do { \
 		if (!flag) { \
-			gpio_pin_write(DEBUG3_PORT, DEBUG3_PIN, flag); \
-			gpio_pin_write(DEBUG4_PORT, DEBUG4_PIN, flag); \
-			gpio_pin_write(DEBUG5_PORT, DEBUG5_PIN, flag); \
-			gpio_pin_write(DEBUG6_PORT, DEBUG6_PIN, flag); \
+			gpio_pin_set(DEBUG3_PORT, DEBUG3_PIN, flag); \
+			gpio_pin_set(DEBUG4_PORT, DEBUG4_PIN, flag); \
+			gpio_pin_set(DEBUG5_PORT, DEBUG5_PIN, flag); \
+			gpio_pin_set(DEBUG6_PORT, DEBUG6_PIN, flag); \
 		} \
 	} while (0)
 
 #define DEBUG_RADIO_PREPARE_A(flag) \
-		gpio_pin_write(DEBUG3_PORT, DEBUG3_PIN, flag)
+		gpio_pin_set(DEBUG3_PORT, DEBUG3_PIN, flag)
 
 #define DEBUG_RADIO_START_A(flag) \
-		gpio_pin_write(DEBUG3_PORT, DEBUG3_PIN, flag)
+		gpio_pin_set(DEBUG3_PORT, DEBUG3_PIN, flag)
 
 #define DEBUG_RADIO_CLOSE_A(flag) \
-		gpio_pin_write(DEBUG3_PORT, DEBUG3_PIN, flag)
+		gpio_pin_set(DEBUG3_PORT, DEBUG3_PIN, flag)
 
 #define DEBUG_RADIO_PREPARE_S(flag) \
-		gpio_pin_write(DEBUG4_PORT, DEBUG4_PIN, flag)
+		gpio_pin_set(DEBUG4_PORT, DEBUG4_PIN, flag)
 
 #define DEBUG_RADIO_START_S(flag) \
-		gpio_pin_write(DEBUG4_PORT, DEBUG4_PIN, flag)
+		gpio_pin_set(DEBUG4_PORT, DEBUG4_PIN, flag)
 
 #define DEBUG_RADIO_CLOSE_S(flag) \
-		gpio_pin_write(DEBUG4_PORT, DEBUG4_PIN, flag)
+		gpio_pin_set(DEBUG4_PORT, DEBUG4_PIN, flag)
 
 #define DEBUG_RADIO_PREPARE_O(flag) \
-		gpio_pin_write(DEBUG5_PORT, DEBUG5_PIN, flag)
+		gpio_pin_set(DEBUG5_PORT, DEBUG5_PIN, flag)
 
 #define DEBUG_RADIO_START_O(flag) \
-		gpio_pin_write(DEBUG5_PORT, DEBUG5_PIN, flag)
+		gpio_pin_set(DEBUG5_PORT, DEBUG5_PIN, flag)
 
 #define DEBUG_RADIO_CLOSE_O(flag) \
-		gpio_pin_write(DEBUG5_PORT, DEBUG5_PIN, flag)
+		gpio_pin_set(DEBUG5_PORT, DEBUG5_PIN, flag)
 
 #define DEBUG_RADIO_PREPARE_M(flag) \
-		gpio_pin_write(DEBUG6_PORT, DEBUG6_PIN, flag)
+		gpio_pin_set(DEBUG6_PORT, DEBUG6_PIN, flag)
 
 #define DEBUG_RADIO_START_M(flag) \
-		gpio_pin_write(DEBUG6_PORT, DEBUG6_PIN, flag)
+		gpio_pin_set(DEBUG6_PORT, DEBUG6_PIN, flag)
 
 #define DEBUG_RADIO_CLOSE_M(flag) \
-		gpio_pin_write(DEBUG6_PORT, DEBUG6_PIN, flag)
+		gpio_pin_set(DEBUG6_PORT, DEBUG6_PIN, flag)
 
 #else
 

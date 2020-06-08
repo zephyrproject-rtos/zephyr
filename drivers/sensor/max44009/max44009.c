@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT maxim_max44009
+
 #include <device.h>
 #include <drivers/i2c.h>
 #include <drivers/sensor.h>
@@ -171,10 +173,10 @@ int max44009_init(struct device *dev)
 {
 	struct max44009_data *drv_data = dev->driver_data;
 
-	drv_data->i2c = device_get_binding(DT_INST_0_MAXIM_MAX44009_BUS_NAME);
+	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (drv_data->i2c == NULL) {
 		LOG_DBG("Failed to get pointer to %s device!",
-			    DT_INST_0_MAXIM_MAX44009_BUS_NAME);
+			    DT_INST_BUS_LABEL(0));
 		return -EINVAL;
 	}
 
@@ -183,6 +185,6 @@ int max44009_init(struct device *dev)
 
 static struct max44009_data max44009_drv_data;
 
-DEVICE_AND_API_INIT(max44009, DT_INST_0_MAXIM_MAX44009_LABEL, max44009_init,
+DEVICE_AND_API_INIT(max44009, DT_INST_LABEL(0), max44009_init,
 	    &max44009_drv_data, NULL, POST_KERNEL,
 	    CONFIG_SENSOR_INIT_PRIORITY, &max44009_driver_api);

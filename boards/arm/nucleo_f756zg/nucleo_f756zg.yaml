@@ -1,5 +1,5 @@
 identifier: nucleo_f756zg
-name: NUCLEO-F756ZG
+name: ST Nucleo F756ZG
 type: mcu
 arch: arm
 toolchain:

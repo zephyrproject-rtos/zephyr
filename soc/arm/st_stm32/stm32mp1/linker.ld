@@ -7,13 +7,13 @@
  */
 
 
-#include <arch/arm/cortex_m/scripts/linker.ld>
+#include <arch/arm/aarch32/cortex_m/scripts/linker.ld>
 
 SECTIONS
     {
 
 #include <linker/rel-sections.ld>
-#ifdef CONFIG_RPROC_RSC_TABLE
+#ifdef CONFIG_OPENAMP_RSC_TABLE
 
 	SECTION_PROLOGUE(.resource_table,, SUBALIGN(4))
 	{

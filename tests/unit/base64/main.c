@@ -137,4 +137,3 @@ void test_main(void)
 
 	ztest_run_test_suite(lib_base64_test);
 }
-

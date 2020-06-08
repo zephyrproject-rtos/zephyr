@@ -77,7 +77,7 @@ osStatus_t osSemaphoreAcquire(osSemaphoreId_t semaphore_id, uint32_t timeout)
 		status = k_sem_take(&semaphore->z_semaphore, K_NO_WAIT);
 	} else {
 		status = k_sem_take(&semaphore->z_semaphore,
-				    k_ticks_to_ms_floor64(timeout));
+				    K_TICKS(timeout));
 	}
 
 	if (status == -EBUSY) {

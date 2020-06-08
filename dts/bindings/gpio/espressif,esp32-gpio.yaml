@@ -1,7 +1,6 @@
 # Copyright (c) 2019, Yannis Damigos
 # SPDX-License-Identifier: Apache-2.0
 
-title: ESP32 GPIO controller
 description: ESP32 GPIO controller
 
 compatible: "espressif,esp32-gpio"

@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT ti_cc32xx_uart
+
 #include <kernel.h>
 #include <arch/cpu.h>
 #include <drivers/uart.h>
@@ -23,7 +25,7 @@ struct uart_cc32xx_dev_data_t {
 };
 
 #define DEV_CFG(dev) \
-	((const struct uart_device_config * const)(dev)->config->config_info)
+	((const struct uart_device_config * const)(dev)->config_info)
 #define DEV_DATA(dev) \
 	((struct uart_cc32xx_dev_data_t * const)(dev)->driver_data)
 
@@ -37,8 +39,8 @@ static void uart_cc32xx_isr(void *arg);
 #endif
 
 static const struct uart_device_config uart_cc32xx_dev_cfg_0 = {
-	.base = (void *)DT_TI_CC32XX_UART_4000C000_BASE_ADDRESS,
-	.sys_clk_freq = DT_TI_CC32XX_UART_4000C000_CLOCKS_CLOCK_FREQUENCY,
+	.base = (void *)DT_INST_REG_ADDR(0),
+	.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(0, clocks, clock_frequency)
 };
 
 static struct uart_cc32xx_dev_data_t uart_cc32xx_dev_data_0 = {
@@ -63,7 +65,7 @@ static int uart_cc32xx_init(struct device *dev)
 	/* This also calls MAP_UARTEnable() to enable the FIFOs: */
 	MAP_UARTConfigSetExpClk((unsigned long)config->base,
 				MAP_PRCMPeripheralClockGet(PRCM_UARTA0),
-				DT_TI_CC32XX_UART_4000C000_CURRENT_SPEED,
+				DT_INST_PROP(0, current_speed),
 				(UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE
 				 | UART_CONFIG_PAR_NONE));
 	MAP_UARTFlowControlSet((unsigned long)config->base,
@@ -75,11 +77,11 @@ static int uart_cc32xx_init(struct device *dev)
 	/* Clear any pending UART RX interrupts: */
 	MAP_UARTIntClear((unsigned long)config->base, UART_INT_RX);
 
-	IRQ_CONNECT(DT_TI_CC32XX_UART_4000C000_IRQ_0,
-		    DT_TI_CC32XX_UART_4000C000_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
 		    uart_cc32xx_isr, DEVICE_GET(uart_cc32xx_0),
 		    0);
-	irq_enable(DT_TI_CC32XX_UART_4000C000_IRQ_0);
+	irq_enable(DT_INST_IRQN(0));
 
 	/* Fill the tx fifo, so Zephyr console & shell subsystems get "primed"
 	 * with first tx fifo empty interrupt when they first call
@@ -314,7 +316,7 @@ static const struct uart_driver_api uart_cc32xx_driver_api = {
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
-DEVICE_AND_API_INIT(uart_cc32xx_0, DT_UART_CC32XX_NAME,
+DEVICE_AND_API_INIT(uart_cc32xx_0, DT_INST_LABEL(0),
 		    uart_cc32xx_init, &uart_cc32xx_dev_data_0,
 		    &uart_cc32xx_dev_cfg_0,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,

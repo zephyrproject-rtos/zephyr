@@ -8,61 +8,14 @@ if BOARD_DISCO_L475_IOT1
 config BOARD
 	default "disco_l475_iot1"
 
-if STM32_LPTIM_TIMER
-
 choice STM32_LPTIM_CLOCK
 	default STM32_LPTIM_CLOCK_LSE
-
+	depends on STM32_LPTIM_TIMER
 endchoice
-
-endif #STM32_LPTIM_TIMER
-
-if UART_CONSOLE
-
-config UART_1
-	default y
-
-endif # UART_CONSOLE
-
-if SERIAL
-
-config UART_4
-	default y
-
-endif # SERIAL
-
-if I2C
-
-config I2C_1
-	default y
-
-config I2C_2
-	default y
-
-config I2C_3
-	default y
-
-endif # I2C
-
-if SPI
 
 config SPI_STM32_INTERRUPT
 	default y
-
-config SPI_1
-	default y
-
-config SPI_3
-	default y
-
-endif # SPI
-
-if PWM
-
-config PWM_STM32_2
-	default y
-
-endif # PWM
+	depends on SPI
 
 choice LIS3MDL_TRIGGER_MODE
 	default LIS3MDL_TRIGGER_NONE
@@ -72,14 +25,10 @@ choice HTS221_TRIGGER_MODE
 	default HTS221_TRIGGER_NONE
 endchoice
 
-
-if LSM6DSL
-
 choice LSM6DSL_TRIGGER_MODE
 	default LSM6DSL_TRIGGER_GLOBAL_THREAD
+	depends on LSM6DSL
 endchoice
-
-endif # LSM6DSL
 
 if BT
 

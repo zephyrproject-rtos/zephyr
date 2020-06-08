@@ -79,4 +79,3 @@ void test_user_k_is_preempt(void)
 	twp = thread_was_preempt;
 	zassert_true(twp, "unexpected return value");
 }
-

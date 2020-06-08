@@ -46,4 +46,6 @@ source "drivers/watchdog/Kconfig.mcux"
 
 source "drivers/watchdog/Kconfig.xec"
 
+source "drivers/watchdog/Kconfig.gecko"
+
 endif

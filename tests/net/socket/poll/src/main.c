@@ -11,6 +11,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <ztest_assert.h>
 
 #include <net/socket.h>
+#include <sys/fdtable.h>
 
 #include "../../socket_helpers.h"
 
@@ -31,9 +32,12 @@ void test_poll(void)
 	int res;
 	int c_sock;
 	int s_sock;
+	int c_sock_tcp;
+	int s_sock_tcp;
 	struct sockaddr_in6 c_addr;
 	struct sockaddr_in6 s_addr;
 	struct pollfd pollfds[2];
+	struct pollfd pollout[1];
 	u32_t tstamp;
 	ssize_t len;
 	char buf[10];
@@ -42,6 +46,10 @@ void test_poll(void)
 			    &c_sock, &c_addr);
 	prepare_sock_udp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, SERVER_PORT,
 			    &s_sock, &s_addr);
+	prepare_sock_tcp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, CLIENT_PORT,
+			    &c_sock_tcp, &c_addr);
+	prepare_sock_tcp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, SERVER_PORT,
+			    &s_sock_tcp, &s_addr);
 
 	res = bind(s_sock, (struct sockaddr *)&s_addr, sizeof(s_addr));
 	zassert_equal(res, 0, "bind failed");
@@ -106,6 +114,48 @@ void test_poll(void)
 	zassert_equal(res, 0, "");
 	zassert_equal(pollfds[1].revents, 0, "");
 
+	/* Make sure that POLLOUT does not wait if not really needed */
+	memset(pollout, 0, sizeof(pollout));
+	pollout[0].fd = c_sock;
+	pollout[0].events = POLLOUT;
+
+	res = connect(c_sock, (const struct sockaddr *)&s_addr,
+		      sizeof(s_addr));
+	zassert_equal(res, 0, "");
+
+	tstamp = k_uptime_get_32();
+	res = poll(pollout, ARRAY_SIZE(pollout), 200);
+	zassert_true(k_uptime_get_32() - tstamp < 100, "");
+	zassert_equal(res, 1, "");
+	zassert_equal(pollout[0].revents, POLLOUT, "");
+
+	/* First test that TCP POLLOUT will not wait if there is enough
+	 * room in TCP window
+	 */
+	memset(pollout, 0, sizeof(pollout));
+	pollout[0].fd = c_sock_tcp;
+	pollout[0].events = POLLOUT;
+
+	res = bind(s_sock_tcp, (struct sockaddr *)&s_addr, sizeof(s_addr));
+	zassert_equal(res, 0, "");
+	res = listen(s_sock_tcp, 0);
+	zassert_equal(res, 0, "");
+
+	res = connect(c_sock_tcp, (const struct sockaddr *)&s_addr,
+		      sizeof(s_addr));
+	zassert_equal(res, 0, "");
+
+	tstamp = k_uptime_get_32();
+	res = poll(pollout, ARRAY_SIZE(pollout), 200);
+	zassert_true(k_uptime_get_32() - tstamp < 100, "");
+	zassert_equal(res, 1, "");
+	zassert_equal(pollout[0].revents, POLLOUT, "");
+
+	res = close(c_sock_tcp);
+	zassert_equal(res, 0, "close failed");
+
+	res = close(s_sock_tcp);
+	zassert_equal(res, 0, "close failed");
 
 	/* Close one socket and ensure POLLNVAL happens */
 	res = close(c_sock);

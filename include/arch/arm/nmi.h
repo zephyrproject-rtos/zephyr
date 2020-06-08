@@ -1,11 +1,5 @@
-/**
- * @file
- *
- * @brief NMI routines for ARM Cortex M series
- */
-
 /*
- * Copyright (c) 2015 Intel Corporation
+ * Copyright (c) 2019 Carlo Caione <ccaione@baylibre.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,13 +7,10 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_NMI_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM_NMI_H_
 
-#ifndef _ASMLANGUAGE
-#ifdef CONFIG_RUNTIME_NMI
-extern void z_arm_nmi_init(void);
-#define NMI_INIT() z_arm_nmi_init()
-#else
-#define NMI_INIT()
+#ifndef CONFIG_COMPAT_INCLUDES
+#warning "This header file has moved, include <arch/arm/aarch32/nmi.h> instead."
 #endif
-#endif
+
+#include <arch/arm/aarch32/nmi.h>
 
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM_NMI_H_ */

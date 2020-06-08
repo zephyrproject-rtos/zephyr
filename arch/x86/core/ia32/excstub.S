@@ -25,7 +25,7 @@
 	GTEXT(_kernel_oops_handler)
 
 	/* externs (internal APIs) */
-	GTEXT(z_do_kernel_oops)
+	GTEXT(z_x86_do_kernel_oops)
 
 /**
  *
@@ -124,7 +124,7 @@ SECTION_FUNC(TEXT, _exception_enter)
 #endif
 	/* ESP is pointing to the ESF at this point */
 
-#if defined(CONFIG_LAZY_FP_SHARING)
+#if defined(CONFIG_LAZY_FPU_SHARING)
 
 	movl	_kernel + _kernel_offset_to_current, %edx
 
@@ -141,7 +141,7 @@ SECTION_FUNC(TEXT, _exception_enter)
 
 	orb	$X86_THREAD_FLAG_EXC, _thread_offset_to_flags(%edx)
 
-#endif /* CONFIG_LAZY_FP_SHARING */
+#endif /* CONFIG_LAZY_FPU_SHARING */
 
 	/*
 	 * restore interrupt enable state, then call the handler
@@ -161,10 +161,10 @@ SECTION_FUNC(TEXT, _exception_enter)
 
 allDone:
 	pushl	%esp			/* push z_arch_esf_t * parameter */
-	INDIRECT_CALL(%ecx)		/* call exception handler */
+	call	*%ecx			/* call exception handler */
 	addl	$0x4, %esp
 
-#if defined(CONFIG_LAZY_FP_SHARING)
+#if defined(CONFIG_LAZY_FPU_SHARING)
 
 	movl	_kernel + _kernel_offset_to_current, %ecx
 
@@ -194,7 +194,7 @@ allDone:
 	andb	$~X86_THREAD_FLAG_EXC, _thread_offset_to_flags(%ecx)
 
 nestedException:
-#endif /* CONFIG_LAZY_FP_SHARING */
+#endif /* CONFIG_LAZY_FPU_SHARING */
 
 	/*
 	 * Pop the non-volatile registers from the stack.
@@ -219,9 +219,7 @@ nestedException:
 	/* Pop of EFLAGS will re-enable interrupts and restore direction flag */
 	KPTI_IRET
 
-#if CONFIG_X86_KERNEL_OOPS
 SECTION_FUNC(TEXT, _kernel_oops_handler)
 	push $0 /* dummy error code */
-	push $z_do_kernel_oops
+	push $z_x86_do_kernel_oops
 	jmp _exception_enter
-#endif

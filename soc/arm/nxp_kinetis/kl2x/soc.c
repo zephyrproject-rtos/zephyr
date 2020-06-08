@@ -63,12 +63,12 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetInternalRefClkConfig(kMCG_IrclkEnable, kMCG_IrcSlow, 0);
 	CLOCK_SetSimConfig(&simConfig);
 
-#ifdef CONFIG_UART_MCUX_LPSCI_0
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay)
 	CLOCK_SetLpsci0Clock(LPSCI0SRC_MCGFLLCLK);
 #endif
 #if CONFIG_USB_KINETIS
 	CLOCK_EnableUsbfs0Clock(kCLOCK_UsbSrcPll0,
-				DT_ARM_CORTEX_M0PLUS_0_CLOCK_FREQUENCY);
+				DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency));
 #endif
 }
 
@@ -80,9 +80,6 @@ static int kl2x_init(struct device *arg)
 
 	/* disable interrupts */
 	oldLevel = irq_lock();
-
-	/* Disable the watchdog */
-	SIM->COPC = 0;
 
 	/* Initialize system clock to 48 MHz */
 	clock_init();
@@ -96,6 +93,12 @@ static int kl2x_init(struct device *arg)
 	/* restore interrupt state */
 	irq_unlock(oldLevel);
 	return 0;
+}
+
+void z_arm_watchdog_init(void)
+{
+	/* Disable the watchdog */
+	SIM->COPC = 0;
 }
 
 SYS_INIT(kl2x_init, PRE_KERNEL_1, 0);

@@ -1,0 +1,34 @@
+# Copyright (C) 2019 Peter Bigot Consulting, LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    ADC channels exposed on Arduino Uno (R3) headers.
+
+    The Arduino Uno layout provides a 6-pin Analog Input header.  This
+    has analog input signals labeled from A0 at the top through A5 at
+    the bottom.
+
+    This binding provides a nexus mapping for these pins where parent
+    pins 0 through 5 correspond to A0 through A5.
+
+compatible: "arduino,uno-adc"
+
+include: base.yaml
+
+properties:
+    io-channel-map:
+      type: compound
+      required: true
+
+    io-channel-map-mask:
+      type: compound
+      required: false
+
+    io-channel-map-pass-thru:
+      type: compound
+      required: false
+
+    "#io-channel-cells":
+      type: int
+      required: true
+      description: Number of items to expect in an ADC specifier

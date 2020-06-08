@@ -9,10 +9,15 @@
 #include <device.h>
 
 /* configuration derived from DT */
-#define FLASH_SIMULATOR_BASE_OFFSET DT_FLASH_SIM_BASE_ADDRESS
-#define FLASH_SIMULATOR_ERASE_UNIT DT_FLASH_SIM_ERASE_BLOCK_SIZE
-#define FLASH_SIMULATOR_PROG_UNIT DT_FLASH_SIM_WRITE_BLOCK_SIZE
-#define FLASH_SIMULATOR_FLASH_SIZE DT_FLASH_SIM_SIZE
+#ifdef CONFIG_ARCH_POSIX
+#define SOC_NV_FLASH_NODE DT_CHILD(DT_INST(0, zephyr_sim_flash), flash_0)
+#else
+#define SOC_NV_FLASH_NODE DT_CHILD(DT_INST(0, zephyr_sim_flash), flash_sim_0)
+#endif /* CONFIG_ARCH_POSIX */
+#define FLASH_SIMULATOR_BASE_OFFSET DT_REG_ADDR(SOC_NV_FLASH_NODE)
+#define FLASH_SIMULATOR_ERASE_UNIT DT_PROP(SOC_NV_FLASH_NODE, erase_block_size)
+#define FLASH_SIMULATOR_PROG_UNIT DT_PROP(SOC_NV_FLASH_NODE, write_block_size)
+#define FLASH_SIMULATOR_FLASH_SIZE DT_REG_SIZE(SOC_NV_FLASH_NODE)
 
 /* Offset between pages */
 #define TEST_SIM_FLASH_SIZE FLASH_SIMULATOR_FLASH_SIZE
@@ -63,7 +68,8 @@ static void test_int(void)
 	int rc;
 	off_t i;
 
-	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
+	flash_dev =
+		device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 
 	zassert_true(flash_dev != NULL,
 		     "Simulated flash driver was not found!");

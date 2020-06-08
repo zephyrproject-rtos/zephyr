@@ -5,14 +5,14 @@
  *
  * This file is based on:
  *
- * - include/arch/arm/cortex_m/scripts/linker.ld
+ * - include/arch/arm/aarch32/cortex_m/scripts/linker.ld
  * - include/arch/riscv/common/linker.ld
  * - include/arch/riscv/pulpino/linker.ld
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <generated_dts_board.h>
+#include <devicetree.h>
 #include <autoconf.h>
 
 #include <linker/sections.h>
@@ -26,22 +26,22 @@
 #define ROMABLE_REGION              ROM
 #define RAMABLE_REGION              RAM
 
-#define VECTOR_SIZE CONFIG_RISCV_RV32M1_VECTOR_SIZE
+#define VECTOR_SIZE 0x100
 
 #ifdef CONFIG_USE_DT_CODE_PARTITION
 
 #ifdef CONFIG_BOOTLOADER_MCUBOOT
 
 
-#define ROM_BASE (DT_CODE_PARTITION_OFFSET)
-#define ROM_SIZE (DT_CODE_PARTITION_SIZE)
+#define ROM_BASE (DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition)))
+#define ROM_SIZE (DT_REG_SIZE(DT_CHOSEN(zephyr_code_partition)))
 
 #define VECTOR_BASE (ROM_BASE + CONFIG_TEXT_SECTION_OFFSET)
 
 #else
 
-#define ROM_BASE DT_CODE_PARTITION_OFFSET
-#define ROM_SIZE (DT_CODE_PARTITION_SIZE - VECTOR_SIZE)
+#define ROM_BASE (DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition)))
+#define ROM_SIZE (DT_REG_SIZE(DT_CHOSEN(zephyr_code_partition)) - VECTOR_BASE)
 
 #define VECTOR_BASE (ROM_BASE + ROM_SIZE)
 
@@ -49,15 +49,15 @@
 
 #else
 
-#define ROM_BASE DT_FLASH_BASE_ADDRESS
-#define ROM_SIZE (KB(DT_FLASH_SIZE) - VECTOR_SIZE)
+#define ROM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_flash))
+#define ROM_SIZE (DT_REG_SIZE(DT_CHOSEN(zephyr_flash)) - VECTOR_SIZE)
 
 #define VECTOR_BASE (ROM_BASE + ROM_SIZE)
 
 #endif
 
-#define RAM_BASE DT_SRAM_BASE_ADDRESS
-#define RAM_SIZE KB(DT_SRAM_SIZE)
+#define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
+#define RAM_SIZE KB(CONFIG_SRAM_SIZE)
 
 MEMORY
     {
@@ -103,36 +103,15 @@ SECTIONS
 
     SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
-	. = CONFIG_TEXT_SECTION_OFFSET;
-	. = ALIGN(4);
 
-	/*
-	 * Respect for CONFIG_TEXT_SECTION_OFFSET is mandatory
-	 * for MCUboot support, so .reset.* and .exception.*
-	 * must come after that offset from ROM_BASE.
-	 */
-
-#ifdef CONFIG_BOOTLOADER_MCUBOOT
-	/*
-	 * For CONFIG_BOOTLOADER_MCUBOOT, the vector table is located at the
-	 * end of the image header of the MCUboot. After the tagert image is
-	 * boot, the register Machine Trap-Vector Base Address (MTVEC) is
-	 * set with the value of _vector_start in the reset handler.
-	 */
-	_vector_start = .;
-	KEEP(*(.vectors.*))
-	_vector_end = .;
-	. = ALIGN(4);
-#endif
-
-	KEEP(*(.reset.*))
-	KEEP(*(".exception.entry.*")) /* contains __irq_wrapper */
-	*(".exception.other.*")
-
-	KEEP(*(.openocd_debug))
-	KEEP(*(".openocd_debug.*"))
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(ROM_START ...). This typically contains the vector
+ * table and debug information.
+ */
+#include <snippets-rom-start.ld>
 
 	_image_text_start = .;
+
 	*(.text .text.*)
 	*(.gnu.linkonce.t.*)
 	*(.eh_frame)

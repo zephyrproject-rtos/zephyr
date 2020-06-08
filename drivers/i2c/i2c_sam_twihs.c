@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT atmel_sam_i2c_twihs
+
 /** @file
  * @brief I2C bus (TWIHS) driver for Atmel SAM MCU family.
  *
@@ -64,9 +66,9 @@ struct i2c_sam_twihs_dev_data {
 	struct twihs_msg msg;
 };
 
-#define DEV_NAME(dev) ((dev)->config->name)
+#define DEV_NAME(dev) ((dev)->name)
 #define DEV_CFG(dev) \
-	((const struct i2c_sam_twihs_dev_cfg *const)(dev)->config->config_info)
+	((const struct i2c_sam_twihs_dev_cfg *const)(dev)->config_info)
 #define DEV_DATA(dev) \
 	((struct i2c_sam_twihs_dev_data *const)(dev)->driver_data)
 
@@ -323,92 +325,35 @@ static const struct i2c_driver_api i2c_sam_twihs_driver_api = {
 	.transfer = i2c_sam_twihs_transfer,
 };
 
-/* I2C0 */
+#define I2C_TWIHS_SAM_INIT(n)						\
+	static struct device DEVICE_NAME_GET(i2c##n##_sam);		\
+									\
+	static void i2c##n##_sam_irq_config(void)			\
+	{								\
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
+			    i2c_sam_twihs_isr,				\
+			    DEVICE_GET(i2c##n##_sam), 0);		\
+	}								\
+									\
+	static const struct soc_gpio_pin pins_twihs##n[] =		\
+		{ATMEL_SAM_DT_PIN(n, 0), ATMEL_SAM_DT_PIN(n, 1)};	\
+									\
+	static const struct i2c_sam_twihs_dev_cfg i2c##n##_sam_config = {\
+		.regs = (Twihs *)DT_INST_REG_ADDR(n),			\
+		.irq_config = i2c##n##_sam_irq_config,			\
+		.periph_id = DT_INST_PROP(n, peripheral_id),		\
+		.irq_id = DT_INST_IRQN(n),				\
+		.pin_list = pins_twihs##n,				\
+		.pin_list_size = ARRAY_SIZE(pins_twihs##n),		\
+		.bitrate = DT_INST_PROP(n, clock_frequency),		\
+	};								\
+									\
+	static struct i2c_sam_twihs_dev_data i2c##n##_sam_data;		\
+									\
+	DEVICE_AND_API_INIT(i2c##n##_sam, DT_INST_LABEL(n),		\
+			    &i2c_sam_twihs_initialize,			\
+			    &i2c##n##_sam_data, &i2c##n##_sam_config,	\
+			    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,	\
+			    &i2c_sam_twihs_driver_api);
 
-#ifdef CONFIG_I2C_0
-static struct device DEVICE_NAME_GET(i2c0_sam);
-
-static void i2c0_sam_irq_config(void)
-{
-	IRQ_CONNECT(DT_I2C_0_IRQ, DT_I2C_0_IRQ_PRI, i2c_sam_twihs_isr,
-		    DEVICE_GET(i2c0_sam), 0);
-}
-
-static const struct soc_gpio_pin pins_twihs0[] = PINS_TWIHS0;
-
-static const struct i2c_sam_twihs_dev_cfg i2c0_sam_config = {
-	.regs = (Twihs *)DT_I2C_0_BASE_ADDRESS,
-	.irq_config = i2c0_sam_irq_config,
-	.periph_id = DT_I2C_0_PERIPHERAL_ID,
-	.irq_id = DT_I2C_0_IRQ,
-	.pin_list = pins_twihs0,
-	.pin_list_size = ARRAY_SIZE(pins_twihs0),
-	.bitrate = DT_I2C_0_BITRATE,
-};
-
-static struct i2c_sam_twihs_dev_data i2c0_sam_data;
-
-DEVICE_AND_API_INIT(i2c0_sam, DT_I2C_0_NAME, &i2c_sam_twihs_initialize,
-		    &i2c0_sam_data, &i2c0_sam_config, POST_KERNEL,
-		    CONFIG_I2C_INIT_PRIORITY, &i2c_sam_twihs_driver_api);
-#endif
-
-/* I2C1 */
-
-#ifdef CONFIG_I2C_1
-static struct device DEVICE_NAME_GET(i2c1_sam);
-
-static void i2c1_sam_irq_config(void)
-{
-	IRQ_CONNECT(DT_I2C_1_IRQ, DT_I2C_1_IRQ_PRI, i2c_sam_twihs_isr,
-		    DEVICE_GET(i2c1_sam), 0);
-}
-
-static const struct soc_gpio_pin pins_twihs1[] = PINS_TWIHS1;
-
-static const struct i2c_sam_twihs_dev_cfg i2c1_sam_config = {
-	.regs = (Twihs *)DT_I2C_1_BASE_ADDRESS,
-	.irq_config = i2c1_sam_irq_config,
-	.periph_id = DT_I2C_1_PERIPHERAL_ID,
-	.irq_id = DT_I2C_1_IRQ,
-	.pin_list = pins_twihs1,
-	.pin_list_size = ARRAY_SIZE(pins_twihs1),
-	.bitrate = DT_I2C_1_BITRATE,
-};
-
-static struct i2c_sam_twihs_dev_data i2c1_sam_data;
-
-DEVICE_AND_API_INIT(i2c1_sam, DT_I2C_1_NAME, &i2c_sam_twihs_initialize,
-		    &i2c1_sam_data, &i2c1_sam_config, POST_KERNEL,
-		    CONFIG_I2C_INIT_PRIORITY, &i2c_sam_twihs_driver_api);
-#endif
-
-/* I2C2 */
-
-#ifdef CONFIG_I2C_2
-static struct device DEVICE_NAME_GET(i2c2_sam);
-
-static void i2c2_sam_irq_config(void)
-{
-	IRQ_CONNECT(DT_I2C_2_IRQ, DT_I2C_2_IRQ_PRI, i2c_sam_twihs_isr,
-		    DEVICE_GET(i2c2_sam), 0);
-}
-
-static const struct soc_gpio_pin pins_twihs2[] = PINS_TWIHS2;
-
-static const struct i2c_sam_twihs_dev_cfg i2c2_sam_config = {
-	.regs = (Twihs *)DT_I2C_2_BASE_ADDRESS,
-	.irq_config = i2c2_sam_irq_config,
-	.periph_id = DT_I2C_2_PERIPHERAL_ID,
-	.irq_id = DT_I2C_2_IRQ,
-	.pin_list = pins_twihs2,
-	.pin_list_size = ARRAY_SIZE(pins_twihs2),
-	.bitrate = DT_I2C_2_BITRATE,
-};
-
-static struct i2c_sam_twihs_dev_data i2c2_sam_data;
-
-DEVICE_AND_API_INIT(i2c2_sam, DT_I2C_2_NAME, &i2c_sam_twihs_initialize,
-		    &i2c2_sam_data, &i2c2_sam_config, POST_KERNEL,
-		    CONFIG_I2C_INIT_PRIORITY, &i2c_sam_twihs_driver_api);
-#endif
+DT_INST_FOREACH_STATUS_OKAY(I2C_TWIHS_SAM_INIT)

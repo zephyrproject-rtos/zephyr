@@ -9,6 +9,7 @@
 #include <logging/log_msg.h>
 #include <sys/util.h>
 #include <stdarg.h>
+#include <sys/atomic.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -66,7 +67,7 @@ typedef int (*log_output_func_t)(u8_t *buf, size_t size, void *ctx);
 
 /* @brief Control block structure for log_output instance.  */
 struct log_output_control_block {
-	size_t offset;
+	atomic_t offset;
 	void *ctx;
 	const char *hostname;
 };

@@ -16,3 +16,5 @@ tests:
     extra_configs:
       - CONFIG_NET_SOCKETS_POSIX_NAMES=n
       - CONFIG_POSIX_API=y
+  sample.net.sockets.big_http_download.ci:
+    extra_args: OVERLAY_CONFIG=overlay-ci.conf

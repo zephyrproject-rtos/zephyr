@@ -69,6 +69,8 @@ features:
 +-----------+------------+-------------------------------------+
 | RTC       | on-chip    | rtc                                 |
 +-----------+------------+-------------------------------------+
+| EEPROM    | on-chip    | eeprom                              |
++-----------+------------+-------------------------------------+
 
 The default board configuration can be found in the defconfig file:
 
@@ -121,16 +123,6 @@ The default SPI mapping is:
 Programming and Debugging
 *************************
 
-Building
-========
-
-Here is an example for building the :ref:`hello_world` application.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: 96b_wistrio
-   :goals: build
-
 Flashing
 ========
 
@@ -159,13 +151,12 @@ More detailed information on activating the ROM bootloader can be found in
 Chapter 29 of Application note `AN2606`_. The ROM bootloader supports flashing
 via UART, and I2C protocols.
 
-For flashing, `stm32flash`_ command line utility can be used. The following
-command will flash the ``zephyr.bin`` binary to the WisTrio board using UART
-and starts its execution:
+Here is an example for building and flashing the :ref:`hello_world` application using `stm32flash`_ command line utility:
 
-.. code-block:: console
-
-   $ stm32flash -w zephyr.bin -v -g 0x08000000 -e 255 /dev/ttyUSB0
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: 96b_wistrio
+   :goals: build flash
 
 Using SWD debugger:
 -------------------

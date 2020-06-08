@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT ti_tmp007
+
 #include <device.h>
 #include <drivers/gpio.h>
 #include <sys/util.h>
@@ -16,6 +18,18 @@ extern struct tmp007_data tmp007_driver;
 
 #include <logging/log.h>
 LOG_MODULE_DECLARE(TMP007, CONFIG_SENSOR_LOG_LEVEL);
+
+static inline void setup_int(struct device *dev,
+			     bool enable)
+{
+	struct tmp007_data *data = dev->driver_data;
+
+	gpio_pin_interrupt_configure(data->gpio,
+				     DT_INST_GPIO_PIN(0, int_gpios),
+				     enable
+				     ? GPIO_INT_LEVEL_ACTIVE
+				     : GPIO_INT_DISABLE);
+}
 
 int tmp007_attr_set(struct device *dev,
 		    enum sensor_channel chan,
@@ -55,7 +69,7 @@ static void tmp007_gpio_callback(struct device *dev,
 	struct tmp007_data *drv_data =
 		CONTAINER_OF(cb, struct tmp007_data, gpio_cb);
 
-	gpio_pin_disable_callback(dev, DT_INST_0_TI_TMP007_INT_GPIOS_PIN);
+	setup_int(drv_data->dev, false);
 
 #if defined(CONFIG_TMP007_TRIGGER_OWN_THREAD)
 	k_sem_give(&drv_data->gpio_sem);
@@ -84,7 +98,7 @@ static void tmp007_thread_cb(void *arg)
 		drv_data->th_handler(dev, &drv_data->th_trigger);
 	}
 
-	gpio_pin_enable_callback(drv_data->gpio, DT_INST_0_TI_TMP007_INT_GPIOS_PIN);
+	setup_int(dev, true);
 }
 
 #ifdef CONFIG_TMP007_TRIGGER_OWN_THREAD
@@ -118,7 +132,7 @@ int tmp007_trigger_set(struct device *dev,
 {
 	struct tmp007_data *drv_data = dev->driver_data;
 
-	gpio_pin_disable_callback(drv_data->gpio, DT_INST_0_TI_TMP007_INT_GPIOS_PIN);
+	setup_int(dev, false);
 
 	if (trig->type == SENSOR_TRIG_DATA_READY) {
 		drv_data->drdy_handler = handler;
@@ -128,7 +142,7 @@ int tmp007_trigger_set(struct device *dev,
 		drv_data->th_trigger = *trig;
 	}
 
-	gpio_pin_enable_callback(drv_data->gpio, DT_INST_0_TI_TMP007_INT_GPIOS_PIN);
+	setup_int(dev, true);
 
 	return 0;
 }
@@ -143,21 +157,23 @@ int tmp007_init_interrupt(struct device *dev)
 		return -EIO;
 	}
 
+	drv_data->dev = dev;
+
 	/* setup gpio interrupt */
-	drv_data->gpio = device_get_binding(DT_INST_0_TI_TMP007_INT_GPIOS_CONTROLLER);
+	drv_data->gpio = device_get_binding(DT_INST_GPIO_LABEL(0, int_gpios));
 	if (drv_data->gpio == NULL) {
 		LOG_DBG("Failed to get pointer to %s device!",
-		    DT_INST_0_TI_TMP007_INT_GPIOS_CONTROLLER);
+		    DT_INST_GPIO_LABEL(0, int_gpios));
 		return -EINVAL;
 	}
 
-	gpio_pin_configure(drv_data->gpio, DT_INST_0_TI_TMP007_INT_GPIOS_PIN,
-			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_LEVEL |
-			   GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE);
+	gpio_pin_configure(drv_data->gpio, DT_INST_GPIO_PIN(0, int_gpios),
+			   DT_INST_GPIO_FLAGS(0, int_gpios)
+			   | GPIO_INT_LEVEL_ACTIVE);
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   tmp007_gpio_callback,
-			   BIT(DT_INST_0_TI_TMP007_INT_GPIOS_PIN));
+			   BIT(DT_INST_GPIO_PIN(0, int_gpios)));
 
 	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
 		LOG_DBG("Failed to set gpio callback!");
@@ -174,7 +190,6 @@ int tmp007_init_interrupt(struct device *dev)
 			0, K_NO_WAIT);
 #elif defined(CONFIG_TMP007_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = tmp007_work_cb;
-	drv_data->dev = dev;
 #endif
 
 	return 0;

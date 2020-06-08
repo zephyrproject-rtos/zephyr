@@ -133,6 +133,8 @@ The Zephyr B-L072Z-LRWAN1 Discovery board configuration supports the following h
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| RTC       | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -156,7 +158,7 @@ Default Zephyr Peripheral Mapping:
 
 - UART_1_TX/RX: PA9/PA10 (Arduino Serial)
 - UART_2_TX/RX: PA2/PA3 (ST-Link Virtual COM Port)
-- SPI1 NSS/SCK/MISO/MOSI: PA4/PA5/PA6/PA7 (Semtech SX1276 LoRa* Transceiver)
+- SPI1 NSS/SCK/MISO/MOSI: PA15/PB3/PA6/PA7 (Semtech SX1276 LoRa* Transceiver)
 - SPI2 NSS/SCK/MISO/MOSI: PB12/PB13/PB14/PB15 (Arduino SPI)
 - I2C1 SCL/SDA : PB8/PB9 (Arduino I2C)
 

@@ -1,13 +1,16 @@
 # SPDX-License-Identifier: Apache-2.0
-if(NOT DEFINED ENV{ZEPHYR_BASE})
+if(NOT DEFINED ZEPHYR_BASE)
   message(FATAL_ERROR "ZEPHYR_BASE not set")
 endif()
 
-include ($ENV{ZEPHYR_BASE}/cmake/boards.cmake)
+include (${ZEPHYR_BASE}/cmake/boards.cmake)
 
-# TODO: Set to make when make is used as a generator
-set(CMAKE_MAKE_PROGRAM ninja)
 get_filename_component(generator ${CMAKE_MAKE_PROGRAM} NAME)
+if(${generator} STREQUAL ninja)
+  set(verbose "-v")
+else()
+  set(verbose "VERBOSE=1")
+endif()
 
 string(REPLACE " " ";" BOARD_ROOT "${BOARD_ROOT_SPACE_SEPARATED}")
 string(REPLACE " " ";" SHIELD_LIST "${SHIELD_LIST_SPACE_SEPARATED}")
@@ -52,7 +55,7 @@ endforeach()
 message("")
 message("Build flags:")
 message("")
-message("  ${generator} VERBOSE=1 [targets] verbose build")
+message("  ${generator} ${verbose} [targets] verbose build")
 message("  cmake -DW=n   Enable extra gcc checks, n=1,2,3 where")
 message("   1: warnings which may be relevant and do not occur too often")
 message("   2: warnings which occur quite often but may still be relevant")

@@ -1,4 +1,5 @@
 # Copyright (c) 2019 Lexmark International, Inc.
+# Copyright (c) 2019 Stephanos Ioannidis <root@stephanos.io>
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_XILINX_ZYNQMP
@@ -6,22 +7,17 @@ if SOC_XILINX_ZYNQMP
 config SOC
 	default "xilinx_zynqmp"
 
+if SOC_XILINX_ZYNQMP_RPU
+
 config NUM_IRQS
 	# must be >= the highest interrupt number used
 	# - include the UART interrupts
 	default 220
 
-config 2ND_LVL_ISR_TBL_OFFSET
-	default 1
-
-config MAX_IRQ_PER_AGGREGATOR
-	default 219
-
-config NUM_2ND_LEVEL_AGGREGATORS
-	default 1
-
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 12000000
+
+endif # SOC_XILINX_ZYNQMP_RPU
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash
@@ -32,4 +28,4 @@ config FLASH_SIZE
 config FLASH_BASE_ADDRESS
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
-endif
+endif # SOC_XILINX_ZYNQMP

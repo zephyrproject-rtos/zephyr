@@ -22,7 +22,7 @@ extern "C" {
 
 /* Common defines for the gPTP stack. */
 #define GPTP_THREAD_WAIT_TIMEOUT_MS 1
-#define GPTP_MULTIPLE_PDELAY_RESP_WAIT K_MINUTES(5)
+#define GPTP_MULTIPLE_PDELAY_RESP_WAIT (5 * 60 * MSEC_PER_SEC)
 
 #if defined(CONFIG_NET_GPTP_STATISTICS)
 #define GPTP_STATS_INC(port, var) (GPTP_PORT_PARAM_DS(port)->var++)

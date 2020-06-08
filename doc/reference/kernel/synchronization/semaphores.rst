@@ -130,4 +130,3 @@ API Reference
 
 .. doxygengroup:: semaphore_apis
    :project: Zephyr
-

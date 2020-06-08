@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <atmel/samd5x.dtsi>
+
+/ {
+	soc {
+		gmac: ethernet@42000800 {
+			compatible = "atmel,sam-gmac";
+			reg = <0x42000800 0x400>;
+			interrupts = <84 0>;
+			interrupt-names = "gmac";
+			num-queues = <1>;
+			local-mac-address = [00 00 00 00 00 00];
+			label = "GMAC";
+			status = "disabled";
+		};
+	};
+};

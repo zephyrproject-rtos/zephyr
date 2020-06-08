@@ -1,0 +1,3 @@
+tests:
+  libraries.data_structures:
+    tags: notify

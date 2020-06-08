@@ -100,7 +100,7 @@ static struct dummy_api loopback_api = {
 };
 
 NET_DEVICE_INIT(loopback, "lo",
-		loopback_dev_init, NULL, NULL,
+		loopback_dev_init, device_pm_control_nop, NULL, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&loopback_api, DUMMY_L2,
 		NET_L2_GET_CTX_TYPE(DUMMY_L2), 536);

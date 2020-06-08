@@ -85,12 +85,4 @@ config KV5X_FLASH_CLOCK_DIVIDER
 	  This option specifies the divide value for the KV5X flash clock from the
 	  system clock.
 
-config WDOG_INIT
-	def_bool y
-	help
-	  This processor enables the watchdog timer with a short
-	  window for configuration upon reset. Therefore, this
-	  requires that the watchdog be configured during reset
-	  handling.
-
 endif # SOC_SERIES_KINETIS_KV5X

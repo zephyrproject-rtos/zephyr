@@ -14,14 +14,14 @@
 
 static struct z_futex_data *k_futex_find_data(struct k_futex *futex)
 {
-	struct _k_object *obj;
+	struct z_object *obj;
 
 	obj = z_object_find(futex);
 	if (obj == NULL || obj->type != K_OBJ_FUTEX) {
 		return NULL;
 	}
 
-	return (struct z_futex_data *)obj->data;
+	return obj->data.futex_data;
 }
 
 int z_impl_k_futex_wake(struct k_futex *futex, bool wake_all)
@@ -62,7 +62,8 @@ static inline int z_vrfy_k_futex_wake(struct k_futex *futex, bool wake_all)
 }
 #include <syscalls/k_futex_wake_mrsh.c>
 
-int z_impl_k_futex_wait(struct k_futex *futex, int expected, s32_t timeout)
+int z_impl_k_futex_wait(struct k_futex *futex, int expected,
+			k_timeout_t timeout)
 {
 	int ret;
 	k_spinlock_key_t key;
@@ -90,7 +91,7 @@ int z_impl_k_futex_wait(struct k_futex *futex, int expected, s32_t timeout)
 }
 
 static inline int z_vrfy_k_futex_wait(struct k_futex *futex, int expected,
-				      s32_t timeout)
+				      k_timeout_t timeout)
 {
 	if (Z_SYSCALL_MEMORY_WRITE(futex, sizeof(struct k_futex)) != 0) {
 		return -EACCES;

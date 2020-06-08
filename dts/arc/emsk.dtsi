@@ -28,14 +28,6 @@
 		};
 	};
 
-	iccm0: iccm@0 {
-		compatible = "arc,iccm";
-	};
-
-	dccm0: dccm@80000000 {
-		compatible = "arc,dccm";
-	};
-
 	sysclk: system-clock {
 		compatible = "fixed-clock";
 		clock-frequency = <DT_APB_CLK_HZ>;

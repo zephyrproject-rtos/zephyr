@@ -6,6 +6,18 @@
 #include <dt-bindings/i2c/i2c.h>
 
 / {
+	aliases {
+		adc-0 = &adc0;
+		i2c-0 = &i2c0;
+		i2c-1 = &i2c1;
+		uart-0 = &uart0;
+		usbd-0 = &usbotg;
+	};
+
+	chosen {
+		zephyr,flash-controller = &ftfa;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -23,7 +35,7 @@
 	};
 
 	soc {
-		flash-controller@40020000 {
+		ftfa: flash-controller@40020000 {
 			compatible = "nxp,kinetis-ftfa";
 			label = "FLASH_CTRL";
 			reg = <0x40020000 0x14>;
@@ -92,49 +104,89 @@
 			#io-channel-cells = <1>;
 		};
 
+		porta: pinmux@40049000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x40049000 0xd0>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 9>;
+		};
+
+		portb: pinmux@4004a000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x4004a000 0xd0>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 10>;
+		};
+
+		portc: pinmux@4004b000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x4004b000 0xd0>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 11>;
+		};
+
+		portd: pinmux@4004c000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x4004c000 0xd0>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 12>;
+		};
+
+		porte: pinmux@4004d000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x4004d000 0xd0>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 13>;
+		};
+
 		gpioa: gpio@400ff000 {
 			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
 			reg = <0x400ff000 0x40>;
 			interrupts = <30 2>;
 			label = "GPIO_0";
 			gpio-controller;
 			#gpio-cells = <2>;
+			nxp,kinetis-port = <&porta>;
 		};
 
 		gpiob: gpio@400ff040 {
 			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
 			reg = <0x400ff040 0x40>;
 			label = "GPIO_1";
 			gpio-controller;
 			#gpio-cells = <2>;
+			nxp,kinetis-port = <&portb>;
 		};
 
 		gpioc: gpio@400ff080 {
 			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
 			reg = <0x400ff080 0x40>;
 			label = "GPIO_2";
 			gpio-controller;
 			#gpio-cells = <2>;
+			nxp,kinetis-port = <&portc>;
 		};
 
 		gpiod: gpio@400ff0c0 {
 			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
 			reg = <0x400ff0c0 0x40>;
 			interrupts = <31 2>;
 			label = "GPIO_3";
 			gpio-controller;
 			#gpio-cells = <2>;
+			nxp,kinetis-port = <&portd>;
 		};
 
 		gpioe: gpio@400ff100 {
 			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
 			reg = <0x400ff100 0x40>;
 			label = "GPIO_4";
 			gpio-controller;
 			#gpio-cells = <2>;
+			nxp,kinetis-port = <&porte>;
 		};
 
-		usbd: usbd@40072000 {
+		usbotg: usbd@40072000 {
 			compatible = "nxp,kinetis-usbd";
 			reg = <0x40072000 0x1000>;
 			interrupts = <24 1>;

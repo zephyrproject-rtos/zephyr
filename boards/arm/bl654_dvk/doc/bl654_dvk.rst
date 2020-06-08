@@ -1,13 +1,13 @@
 .. _bl654_dvk:
 
-BL654 DVK
-#################
+Laird Connectivity BL654 DVK
+############################
 
 Overview
 ********
 
 The BL654 Development Kit hardware provides
-support for the Laird BL654 module powered by a Nordic Semiconductor nRF52840 ARM Cortex-M4F CPU.
+support for the Laird Connectivity BL654 module powered by a Nordic Semiconductor nRF52840 ARM Cortex-M4F CPU.
 
 This development kit has the following features:
 
@@ -186,4 +186,3 @@ References
 
 .. _BL654 website: https://connectivity.lairdtech.com/wireless-modules/bluetooth-modules/bluetooth-5-modules/bl654-series
 .. _J-Link Software and documentation pack: https://www.segger.com/jlink-software.html
-

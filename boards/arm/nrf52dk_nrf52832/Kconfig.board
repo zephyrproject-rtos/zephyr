@@ -1,0 +1,8 @@
+# nRF52 DK NRF52832 board configuration
+
+# Copyright (c) 2016 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NRF52DK_NRF52832
+	bool "nRF52 DK NRF52832"
+	depends on SOC_NRF52832_QFAA

@@ -246,6 +246,7 @@
 		phandle-refs = < &{/props/ctrl-1} &{/props/ctrl-2} >;
 		phandle-array-foos = < &{/props/ctrl-1} 1 &{/props/ctrl-2} 2 3 >;
 		foo-gpios = < &{/props/ctrl-1} 1 >;
+		path = &{/props/ctrl-1};
 
 		ctrl-1 {
 			compatible = "phandle-array-controller-1";
@@ -294,16 +295,44 @@
 	};
 
 	//
-	// For testing 'child-bus:' and 'parent-bus:'
+	// For testing EDT.compat2enabled
+	//
+
+	compat2enabled {
+		foo-1 {
+			status = "okay";
+			compatible = "compat2enabled";
+		};
+		foo-disabled {
+			status = "disabled";
+			compatible = "compat2enabled";
+		};
+		foo-2 {
+			// No 'status', which is also treated as enabled
+			compatible = "compat2enabled";
+		};
+		// Should not create an entry in compat2enabled, since all nodes
+		// with the compatible are disabled
+		bar {
+			status = "disabled";
+			compatible = "compat2enabled-disabled";
+		};
+	};
+
+	//
+	// For testing 'bus:' and 'on-bus:'
 	//
 
 	buses {
-		// The nodes below will map to different bindings since they
-		// appear on different buses
+		// The 'node' nodes below will map to different bindings since
+		// they appear on different buses
 		foo-bus {
 			compatible = "foo-bus";
 			node {
 				compatible = "on-bus";
+				nested {
+					compatible = "on-bus";
+				};
 			};
 		};
 		bar-bus {

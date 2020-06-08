@@ -11,4 +11,3 @@
 void sdl_handle_events(void);
 
 #endif /* ZEPHYR_BOARD_POSIX_NATIVE_POSIX_SDL_EVENTS_H */
-

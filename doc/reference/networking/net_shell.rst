@@ -6,7 +6,7 @@ Network Shell
 Network shell provides helpers for figuring out network status,
 enabling/disabling features, and issuing commands like ping or DNS resolving.
 Note that ``net-shell`` should probably not be used in production code
-as it will require extra memory. See also :ref:`generic shell <shell_label>`
+as it will require extra memory. See also :ref:`generic shell <shell_api>`
 for detailed shell information.
 
 The following net-shell commands are implemented:

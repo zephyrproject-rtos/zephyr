@@ -1310,7 +1310,7 @@ static int dmic_initialize_device(struct device *dev)
 	/* Set state, note there is no playback direction support */
 	dmic_private.state = DMIC_STATE_INITIALIZED;
 
-	LOG_DBG("Device %s Initialized", dev->config->name);
+	LOG_DBG("Device %s Initialized", dev->name);
 
 	return 0;
 }
@@ -1346,7 +1346,7 @@ static int dmic_read_device(struct device *dev, u8_t stream,
 
 	/* retrieve buffer from out queue */
 	ret = k_msgq_get(&dmic_private.streams[stream].out_queue,
-			buffer, timeout);
+			buffer, K_MSEC(timeout));
 	if (ret) {
 		LOG_ERR("No buffers in stream %u out_queue", stream);
 	} else {

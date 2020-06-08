@@ -21,7 +21,7 @@
 
 #if defined(CONFIG_BT_SETTINGS_USE_PRINTK)
 void bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
-			    bt_addr_le_t *addr, const char *key)
+			    const bt_addr_le_t *addr, const char *key)
 {
 	if (key) {
 		snprintk(path, path_size,
@@ -41,7 +41,7 @@ void bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
 }
 #else
 void bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
-			    bt_addr_le_t *addr, const char *key)
+			    const bt_addr_le_t *addr, const char *key)
 {
 	size_t len = 3;
 
@@ -137,7 +137,7 @@ static int set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		if (len < sizeof(bt_dev.id_addr[0])) {
 			if (len < 0) {
 				BT_ERR("Failed to read ID address from storage"
-				       " (err %zu)", len);
+				       " (err %zd)", len);
 			} else {
 				BT_ERR("Invalid length ID address in storage");
 				BT_HEXDUMP_DBG(&bt_dev.id_addr, len,
@@ -164,7 +164,7 @@ static int set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		len = read_cb(cb_arg, &bt_dev.name, sizeof(bt_dev.name) - 1);
 		if (len < 0) {
 			BT_ERR("Failed to read device name from storage"
-			       " (err %zu)", len);
+			       " (err %zd)", len);
 		} else {
 			bt_dev.name[len] = '\0';
 
@@ -180,7 +180,7 @@ static int set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		if (len < sizeof(bt_dev.irk[0])) {
 			if (len < 0) {
 				BT_ERR("Failed to read IRK from storage"
-				       " (err %zu)", len);
+				       " (err %zd)", len);
 			} else {
 				BT_ERR("Invalid length IRK in storage");
 				(void)memset(bt_dev.irk, 0, sizeof(bt_dev.irk));
@@ -239,23 +239,29 @@ static int commit(void)
 	}
 #endif
 	if (!bt_dev.id_count) {
+		bt_setup_public_id_addr();
+	}
+
+	if (!bt_dev.id_count) {
 		int err;
 
-		err = bt_setup_id_addr();
+		err = bt_setup_random_id_addr();
 		if (err) {
 			BT_ERR("Unable to setup an identity address");
 			return err;
 		}
 	}
 
-	/* Make sure that the identities created by bt_id_create after
-	 * bt_enable is saved to persistent storage. */
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_PRESET_ID)) {
-		bt_settings_save_id();
-	}
-
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		bt_finalize_init();
+	}
+
+	/* If any part of the Identity Information of the device has been
+	 * generated this Identity needs to be saved persistently.
+	 */
+	if (atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_STORE_ID)) {
+		BT_DBG("Storing Identity Information");
+		bt_settings_save_id();
 	}
 
 	return 0;

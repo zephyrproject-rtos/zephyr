@@ -6,7 +6,7 @@
 
 #include "test_fifo.h"
 
-#define TIMEOUT 100
+#define TIMEOUT K_MSEC(100)
 
 /**
  * @addtogroup kernel_fifo_tests

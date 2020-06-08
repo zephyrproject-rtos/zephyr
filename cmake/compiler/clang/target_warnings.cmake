@@ -27,9 +27,9 @@ macro(toolchain_cc_warning_dw_1)
     -Wno-unused-parameter
     -Wmissing-declarations
     -Wmissing-format-attribute
-    -Wold-style-definition
     )
   zephyr_cc_option(
+    -Wold-style-definition
     -Wmissing-prototypes
     -Wmissing-include-dirs
     -Wunused-but-set-variable
@@ -115,3 +115,10 @@ endmacro()
 macro(toolchain_cc_cpp_warning_error_misra_sane dest_var_name)
   set_ifndef(${dest_var_name} "-Werror=vla")
 endmacro()
+
+# List the warnings that are not supported for C++ compilations
+
+list(APPEND CXX_EXCLUDED_OPTIONS
+  -Werror=implicit-int
+  -Wold-style-definition
+  )

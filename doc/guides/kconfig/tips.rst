@@ -25,14 +25,17 @@ When deciding whether something belongs in Kconfig, it helps to distinguish
 between symbols that have prompts and symbols that don't.
 
 If a symbol has a prompt (e.g. ``bool "Enable foo"``), then the user can change
-the symbol's value in the ``menuconfig`` interface (or by manually editing
-configuration files). Therefore, only put a prompt on a symbol if it makes
-sense for the user to change its value.
+the symbol's value in the ``menuconfig`` or ``guiconfig`` interface (see
+:ref:`menuconfig`), or by manually editing configuration files. Conversely, a
+symbol without a prompt can never be changed directly by the user, not even by
+manually editing configuration files.
 
-In Zephyr, Kconfig configuration is done after selecting a machine, so in
-general, it does not make sense to put a prompt on a symbol that corresponds to
-a fixed machine-specific setting. Usually, such settings should be handled via
-devicetree (``.dts``) files instead.
+Only put a prompt on a symbol if it makes sense for the user to change its
+value.
+
+Symbols without prompts are called *hidden* or *invisible* symbols, because
+they don't show up in ``menuconfig`` and ``guiconfig``. Symbols that have
+prompts can also be invisible, when their dependencies are not satisfied.
 
 Symbols without prompts can't be configured directly by the user (they derive
 their value from other symbols), so less restrictions apply to them. If some
@@ -43,6 +46,52 @@ without prompts in mind.
 See the `optional prompts`_ section for a way to deal with settings that are
 fixed on some machines and configurable on other machines.
 
+What not to turn into Kconfig options
+*************************************
+
+In Zephyr, Kconfig configuration is done after selecting a target board. In
+general, it does not make sense to use Kconfig for a value that corresponds to
+a fixed machine-specific setting. Usually, such settings should be handled via
+:ref:`devicetree <dt-guide>` instead.
+
+In particular, avoid adding new Kconfig options of the following types:
+
+Options enabling individual devices
+===================================
+
+Existing examples like :option:`CONFIG_SPI_0` and :option:`CONFIG_I2C_1` were
+introduced before Zephyr supported devicetree, and new cases are discouraged.
+See :ref:`dt-create-devices` for details on how to do this with devicetree
+instead.
+
+Options that specify a device in the system by name
+===================================================
+
+For example, if you are writing an I2C device driver, avoid creating an option
+named ``MY_DEVICE_I2C_BUS_NAME`` for specifying the bus node your device is
+controlled by. See :ref:`dt-drivers-that-depend` for alternatives.
+
+Similarly, if your application depends on a hardware-specific PWM device to
+control an RGB LED, avoid creating an option like ``MY_PWM_DEVICE_NAME``. See
+:ref:`dt-apps-that-depend` for alternatives.
+
+Options that specify fixed hardware configuration
+=================================================
+
+For example, avoid Kconfig options specifying a GPIO pin.
+
+An alternative applicable to device drivers is to define a GPIO specifier with
+type phandle-array in the device binding, and using the
+:ref:`devicetree-gpio-api` devicetree API from C. Similar advice applies to
+other cases where devicetree.h provides :ref:`devicetree-hw-api` for referring
+to other nodes in the system. Search the source code for drivers using these
+APIs for examples.
+
+An application-specific devicetree :ref:`binding <dt-bindings>` to identify
+board specific properties may be appropriate. See
+:zephyr_file:`tests/drivers/gpio/gpio_basic_api` for an example.
+
+For applications, see :ref:`blinky-sample` for a devicetree-based alternative.
 
 ``select`` statements
 *********************
@@ -221,7 +270,7 @@ way, without having to look for particular architectures:
 
 .. code-block:: none
 
-   config FLOAT
+   config FPU
    	bool "Support floating point operations"
    	depends on CPU_HAS_FPU
 
@@ -230,7 +279,7 @@ duplicated in several spots:
 
 .. code-block:: none
 
-   config FLOAT
+   config FPU
    	bool "Support floating point operations"
    	depends on SOC_FOO || SOC_BAR || ...
 
@@ -324,6 +373,132 @@ error-prone, since it can be hard to spot that the same dependency is added
 twice.
 
 
+"Stuck" symbols in menuconfig and guiconfig
+*******************************************
+
+There is a common subtle gotcha related to interdependent configuration symbols
+with prompts. Consider these symbols:
+
+.. code-block:: none
+
+   config FOO
+   	bool "Foo"
+
+   config STACK_SIZE
+   	hex "Stack size"
+   	default 0x200 if FOO
+   	default 0x100
+
+Assume that the intention here is to use a larger stack whenever ``FOO`` is
+enabled, and that the configuration initially has ``FOO`` disabled. Also,
+remember that Zephyr creates an initial configuration in :file:`zephyr/.config`
+in the build directory by merging configuration files (including e.g.
+:file:`prj.conf`). This configuration file exists before
+``menuconfig`` or ``guiconfig`` is run.
+
+When first entering the configuration interface, the value of ``STACK_SIZE`` is
+0x100, as expected. After enabling ``FOO``, you might reasonably expect the
+value of ``STACK_SIZE`` to change to 0x200, but it stays as 0x100.
+
+To understand what's going on, remember that ``STACK_SIZE`` has a prompt,
+meaning it is user-configurable, and consider that all Kconfig has to go on
+from the initial configuration is this:
+
+.. code-block:: none
+
+   CONFIG_STACK_SIZE=0x100
+
+Since Kconfig can't know if the 0x100 value came from a ``default`` or was
+typed in by the user, it has to assume that it came from the user. Since
+``STACK_SIZE`` is user-configurable, the value from the configuration file is
+respected, and any symbol defaults are ignored. This is why the value of
+``STACK_SIZE`` appears to be "frozen" at 0x100 when toggling ``FOO``.
+
+The right fix depends on what the intention is. Here's some different scenarios
+with suggestions:
+
+- If ``STACK_SIZE`` can always be derived automatically and does not need to be
+  user-configurable, then just remove the prompt:
+
+  .. code-block:: none
+
+     config STACK_SIZE
+     	hex
+     	default 0x200 if FOO
+     	default 0x100
+
+  Symbols without prompts ignore any value from the saved configuration.
+
+- If ``STACK_SIZE`` should usually be user-configurable, but needs to be set to
+  0x200 when ``FOO`` is enabled, then disable its prompt when ``FOO`` is
+  enabled, as described in `optional prompts`_:
+
+  .. code-block:: none
+
+     config STACK_SIZE
+     	hex "Stack size" if !FOO
+     	default 0x200 if FOO
+     	default 0x100
+
+- If ``STACK_SIZE`` should usually be derived automatically, but needs to be
+  set to a custom value in rare circumstances, then add another option for
+  making ``STACK_SIZE`` user-configurable:
+
+  .. code-block:: none
+
+     config CUSTOM_STACK_SIZE
+     	bool "Use a custom stack size"
+     	help
+     	  Enable this if you need to use a custom stack size. When disabled, a
+     	  suitable stack size is calculated automatically.
+
+     config STACK_SIZE
+     	hex "Stack size" if CUSTOM_STACK_SIZE
+     	default 0x200 if FOO
+     	default 0x100
+
+  As long as ``CUSTOM_STACK_SIZE`` is disabled, ``STACK_SIZE`` will ignore the
+  value from the saved configuration.
+
+It is a good idea to try out changes in the ``menuconfig`` or ``guiconfig``
+interface, to make sure that things behave the way you expect. This is
+especially true when making moderately complex changes like these.
+
+
+Assignments to promptless symbols in configuration files
+********************************************************
+
+Assignments to hidden (promptless, also called *invisible*) symbols in
+configuration files are always ignored. Hidden symbols get their value
+indirectly from other symbols, via e.g. ``default`` and ``select``.
+
+A common source of confusion is opening the output configuration file
+(:file:`zephyr/.config`), seeing a bunch of assignments to hidden symbols,
+and assuming that those assignments must be respected when the configuration is
+read back in by Kconfig. In reality, all assignments to hidden symbols in
+:file:`zephyr/.config` are ignored by Kconfig, like for other configuration
+files.
+
+To understand why :file:`zephyr/.config` still includes assignments to hidden
+symbols, it helps to realize that :file:`zephyr/.config` serves two separate
+purposes:
+
+1. It holds the saved configuration, and
+
+2. it holds configuration output. :file:`zephyr/.config` is parsed by the CMake
+   files to let them query configuration settings, for example.
+
+The assignments to hidden symbols in :file:`zephyr/.config` are just
+configuration output. Kconfig itself ignores assignments to hidden symbols when
+calculating symbol values.
+
+.. note::
+
+   A *minimal configuration*, which can be generated from within the
+   :ref:`menuconfig and guiconfig interfaces <menuconfig>`, could be considered
+   closer to just a saved configuration, without the full configuration output.
+
+
 ``depends on`` and ``string``/``int``/``hex`` symbols
 *****************************************************
 
@@ -343,10 +518,10 @@ disable any configuration output for it when ``FOO_DEVICE`` is disabled.
    	depends on FOO_DEVICE
 
 In general, it's a good idea to check that only relevant symbols are ever shown
-in the ``menuconfig`` interface. Having ``FOO_DEVICE_FREQUENCY`` show up when
-``FOO_DEVICE`` is disabled (and possibly hidden) makes the relationship between
-the symbols harder to understand, even if code never looks at
-``FOO_DEVICE_FREQUENCY`` when ``FOO_DEVICE`` is disabled.
+in the ``menuconfig``/``guiconfig`` interface. Having ``FOO_DEVICE_FREQUENCY``
+show up when ``FOO_DEVICE`` is disabled (and possibly hidden) makes the
+relationship between the symbols harder to understand, even if code never looks
+at ``FOO_DEVICE_FREQUENCY`` when ``FOO_DEVICE`` is disabled.
 
 
 ``menuconfig`` symbols
@@ -426,13 +601,13 @@ invisible:
    [*] All my children are invisible  ----
 
 
-Checking changes in ``menuconfig``
-**********************************
+Checking changes in menuconfig/guiconfig
+****************************************
 
 When adding new symbols or making other changes to Kconfig files, it is a good
-idea to look up the symbols in the :ref:`menuconfig <menuconfig>` interface
-afterwards. To get to a symbol quickly, use the menuconfig's jump-to feature
-(press :kbd:`/`).
+idea to look up the symbols in :ref:`menuconfig or guiconfig <menuconfig>`
+afterwards. To get to a symbol quickly, use the jump-to feature (press
+:kbd:`/`).
 
 Here are some things to check:
 
@@ -441,8 +616,9 @@ Here are some things to check:
 
   If one symbol depends on another, then it's often a good idea to place it
   right after the symbol it depends on. It will then be shown indented relative
-  to the symbol it depends on in the ``menuconfig`` interface. This also works
-  if several symbols are placed after the symbol they depend on.
+  to the symbol it depends on in the ``menuconfig`` interface, and in a
+  separate menu rooted at the symbol in ``guiconfig``. This also works if
+  several symbols are placed after the symbol they depend on.
 
 * Is it easy to guess what the symbols do from their prompts?
 
@@ -672,6 +848,10 @@ A few formatting nits, to help keep things consistent:
 
 - Put a blank line before/after each top-level ``if`` and ``endif``
 
+- Use a single tab for each indentation
+
+- Indent help text with two extra spaces
+
 
 Lesser-known/used Kconfig features
 **********************************
@@ -751,9 +931,9 @@ toggled off to select none of the symbols:
 
    endchoice
 
-In the menuconfig interface, this will be displayed e.g. as ``[*] Use legacy
-protocol (Legacy protocol 1) --->``, where the choice can be toggled off to
-enable neither of the symbols.
+In the ``menuconfig`` interface, this will be displayed e.g. as
+``[*] Use legacy protocol (Legacy protocol 1) --->``, where the choice can be
+toggled off to enable neither of the symbols.
 
 
 ``visible if`` conditions

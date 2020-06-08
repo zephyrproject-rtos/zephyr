@@ -92,6 +92,8 @@ The Zephyr nucleo_l053r8 board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi controller                      |
 +-----------+------------+-------------------------------------+
+| EEPROM    | on-chip    | eeprom                              |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.
 

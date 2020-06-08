@@ -1,4 +1,4 @@
-.. _pwm_interface:
+.. _pwm_api:
 
 PWM
 ###

@@ -1,0 +1,22 @@
+# Private config options for PSA level 1 application
+
+# Copyright (c) 2019,2020 Linaro
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "PSA level 1 sample application"
+
+menu "Application configuration"
+
+module = PSA
+module-str = psa
+source "subsys/logging/Kconfig.template.log_config"
+
+endmenu
+
+config PSA_SHELL
+	bool "Enable the 'psa' shell command"
+	depends on SHELL
+	help
+	  Enabling this option will make the 'psa' shell command available.
+
+source "Kconfig.zephyr"

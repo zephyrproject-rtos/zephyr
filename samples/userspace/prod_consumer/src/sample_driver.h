@@ -23,7 +23,7 @@ typedef int (*sample_driver_set_callback_t)(struct device *dev,
 
 typedef int (*sample_driver_state_set_t)(struct device *dev, bool active);
 
-struct sample_driver_api {
+__subsystem struct sample_driver_api {
 	sample_driver_write_t write;
 	sample_driver_set_callback_t set_callback;
 	sample_driver_state_set_t state_set;

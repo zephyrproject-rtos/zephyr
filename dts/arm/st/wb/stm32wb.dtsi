@@ -11,6 +11,10 @@
 #include <dt-bindings/i2c/i2c.h>
 
 / {
+	chosen {
+		zephyr,flash-controller = &flash;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -27,8 +31,8 @@
 	};
 
 	soc {
-		flash-controller@58004000 {
-			compatible = "st,stm32wb-flash-controller";
+		flash: flash-controller@58004000 {
+			compatible = "st,stm32-flash-controller", "st,stm32wb-flash-controller";
 			label = "FLASH_CTRL";
 			reg = <0x58004000 0x400>;
 			interrupts = <4 0>;
@@ -168,7 +172,7 @@
 		};
 
 		spi1: spi@40013000 {
-			compatible = "st,stm32-spi-fifo";
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40013000 0x400>;
@@ -179,7 +183,7 @@
 		};
 
 		spi2: spi@40003800 {
-			compatible = "st,stm32-spi-fifo";
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003800 0x400>;
@@ -279,7 +283,7 @@
 		};
 
 		lptim1: timers@40007c00 {
-			compatible = "st,stm32-timers";
+			compatible = "st,stm32-lptim";
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -289,6 +293,62 @@
 			status = "disabled";
 			label = "LPTIM_1";
 		};
+
+		dma1: dma@40020000 {
+			compatible = "st,stm32-dma";
+			#dma-cells = <4>;
+			reg = <0x40020000 0x400>;
+			interrupts = <11 0 12 0 13 0 14 0 15 0 16 0 17 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x1>;
+			st,mem2mem;
+			dma-requests = <7>;
+			status = "disabled";
+			label = "DMA_1";
+		};
+
+		dma2: dma@40020400 {
+			compatible = "st,stm32-dma";
+			#dma-cells = <4>;
+			reg = <0x40020400 0x400>;
+			interrupts = <55 0 56 0 57 0 58 0 59 0 60 0 61 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x2>;
+			st,mem2mem;
+			dma-requests = <7>;
+			status = "disabled";
+			label = "DMA_2";
+		};
+
+		dmamux1: dmamux@40020800 {
+			compatible = "st,stm32-dmamux";
+			#dma-cells = <4>;
+			reg = <0x40020800 0x400>;
+			interrupts = <62 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x4>;
+			dma-channels = <14>;
+			dma-generators = <4>;
+			dma-requests= <36>;
+			status = "disabled";
+			label = "DMAMUX_1";
+		};
+
+		usb: usb@40006800 {
+			compatible = "st,stm32-usb";
+			reg = <0x40006800 0x400>;
+			interrupts = <20 0>, <19 0>;
+			interrupt-names = "usb", "usbhp";
+			num-bidir-endpoints = <8>;
+			ram-size = <1024>;
+			phys = <&usb_fs_phy>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>;
+			status = "disabled";
+			label = "USB";
+		};
+	};
+
+	usb_fs_phy: usbphy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
+		label = "USB_FS_PHY";
 	};
 };
 

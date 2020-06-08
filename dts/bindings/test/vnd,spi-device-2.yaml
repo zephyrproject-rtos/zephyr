@@ -1,0 +1,8 @@
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test SPI device 2
+
+compatible: "vnd,spi-device-2"
+
+include: spi-device.yaml

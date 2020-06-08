@@ -15,7 +15,7 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for bossac.'''
 
     def __init__(self, cfg, bossac='bossac', port=DEFAULT_BOSSAC_PORT,
-            offset=0):
+            offset=None):
         super(BossacBinaryRunner, self).__init__(cfg)
         self.bossac = bossac
         self.port = port
@@ -33,7 +33,7 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
     def do_add_parser(cls, parser):
         parser.add_argument('--bossac', default='bossac',
                             help='path to bossac, default is bossac')
-        parser.add_argument('--offset', default=0,
+        parser.add_argument('--offset', default=None,
                             help='start erase/write/read/verify operation '
                                  'at flash OFFSET; OFFSET must be aligned '
                                  ' to a flash page boundary')
@@ -46,18 +46,23 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
                                   port=args.bossac_port, offset=args.offset)
 
     def do_run(self, command, **kwargs):
-        if platform.system() != 'Linux':
-            msg = 'CAUTION: No flash tool for your host system found!'
+        if platform.system() == 'Windows':
+            msg = 'CAUTION: BOSSAC runner not support on Windows!'
             raise NotImplementedError(msg)
 
-        self.require('stty')
         self.require(self.bossac)
-        cmd_stty = ['stty', '-F', self.port, 'raw', 'ispeed', '1200',
-                    'ospeed', '1200', 'cs8', '-cstopb', 'ignpar', 'eol', '255',
-                    'eof', '255']
+
+        if platform.system() == 'Linux':
+            self.require('stty')
+            cmd_stty = ['stty', '-F', self.port, 'raw', 'ispeed', '1200',
+                        'ospeed', '1200', 'cs8', '-cstopb', 'ignpar', 'eol', '255',
+                        'eof', '255']
+            self.check_call(cmd_stty)
+
         cmd_flash = [self.bossac, '-p', self.port, '-R', '-e', '-w', '-v',
-                     '-o', '%s' % self.offset,
                      '-b', self.cfg.bin_file]
 
-        self.check_call(cmd_stty)
+        if self.offset is not None:
+            cmd_flash += ['-o', '%s' % self.offset]
+
         self.check_call(cmd_flash)

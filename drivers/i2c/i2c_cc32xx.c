@@ -6,6 +6,8 @@
 
 /* The logic here is adapted from SimpleLink SDK's I2CCC32XX.c module. */
 
+#define DT_DRV_COMPAT ti_cc32xx_i2c
+
 #include <kernel.h>
 #include <errno.h>
 #include <drivers/i2c.h>
@@ -37,7 +39,7 @@ LOG_MODULE_REGISTER(i2c_cc32xx);
 #define IS_I2C_MSG_WRITE(flags) ((flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE)
 
 #define DEV_CFG(dev) \
-	((const struct i2c_cc32xx_config *const)(dev)->config->config_info)
+	((const struct i2c_cc32xx_config *const)(dev)->config_info)
 #define DEV_DATA(dev) \
 	((struct i2c_cc32xx_data *const)(dev)->driver_data)
 #define DEV_BASE(dev) \
@@ -79,6 +81,7 @@ struct i2c_cc32xx_data {
 
 static void configure_i2c_irq(const struct i2c_cc32xx_config *config);
 
+#define I2C_CLK_FREQ(n) DT_PROP(DT_INST_PHANDLE(n, clocks), clock_frequency)
 static int i2c_cc32xx_configure(struct device *dev, u32_t dev_config_raw)
 {
 	u32_t base = DEV_BASE(dev);
@@ -103,8 +106,7 @@ static int i2c_cc32xx_configure(struct device *dev, u32_t dev_config_raw)
 		return -EINVAL;
 	}
 
-	MAP_I2CMasterInitExpClk(base, DT_I2C_0_CLOCK_FREQUENCY,
-				bitrate_id);
+	MAP_I2CMasterInitExpClk(base, I2C_CLK_FREQ(0), bitrate_id);
 
 	return 0;
 }
@@ -372,22 +374,22 @@ static const struct i2c_driver_api i2c_cc32xx_driver_api = {
 
 
 static const struct i2c_cc32xx_config i2c_cc32xx_config = {
-	.base = DT_I2C_0_BASE_ADDRESS,
-	.bitrate = DT_I2C_0_BITRATE,
-	.irq_no = DT_I2C_0_IRQ,
+	.base = DT_INST_REG_ADDR(0),
+	.bitrate = DT_INST_PROP(0, clock_frequency),
+	.irq_no = DT_INST_IRQN(0),
 };
 
 static struct i2c_cc32xx_data i2c_cc32xx_data;
 
-DEVICE_AND_API_INIT(i2c_cc32xx, DT_I2C_0_LABEL, &i2c_cc32xx_init,
+DEVICE_AND_API_INIT(i2c_cc32xx, DT_INST_LABEL(0), &i2c_cc32xx_init,
 		    &i2c_cc32xx_data, &i2c_cc32xx_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &i2c_cc32xx_driver_api);
 
 static void configure_i2c_irq(const struct i2c_cc32xx_config *config)
 {
-	IRQ_CONNECT(DT_I2C_0_IRQ,
-		    DT_I2C_0_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
 		    i2c_cc32xx_isr, DEVICE_GET(i2c_cc32xx), 0);
 
 	irq_enable(config->irq_no);

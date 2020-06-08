@@ -53,7 +53,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_rd_client.h"
 #endif
 
-#define ENGINE_UPDATE_INTERVAL K_MSEC(500)
+#define ENGINE_UPDATE_INTERVAL_MS 500
 
 #define WELL_KNOWN_CORE_PATH	"</.well-known/core>"
 
@@ -116,8 +116,8 @@ static struct observe_node observe_node_data[CONFIG_LWM2M_ENGINE_MAX_OBSERVER];
 struct service_node {
 	sys_snode_t node;
 	k_work_handler_t service_work;
-	u32_t min_call_period;
-	u64_t last_timestamp;
+	u32_t min_call_period; /* ms */
+	u64_t last_timestamp; /* ms */
 };
 
 static struct service_node service_node_data[MAX_PERIODIC_SERVICE];
@@ -140,7 +140,7 @@ static int sock_nfds;
 #define NUM_BLOCK1_CONTEXT	CONFIG_LWM2M_NUM_BLOCK1_CONTEXT
 
 /* TODO: figure out what's correct value */
-#define TIMEOUT_BLOCKWISE_TRANSFER K_SECONDS(30)
+#define TIMEOUT_BLOCKWISE_TRANSFER_MS (MSEC_PER_SEC * 30)
 
 #define GET_BLOCK_NUM(v)	((v) >> 4)
 #define GET_BLOCK_SIZE(v)	(((v) & 0x7))
@@ -262,7 +262,7 @@ init_block_ctx(const u8_t *token, u8_t tkl, struct block_context **ctx)
 		}
 
 		if (timestamp - block1_contexts[i].timestamp >
-		    TIMEOUT_BLOCKWISE_TRANSFER) {
+		    TIMEOUT_BLOCKWISE_TRANSFER_MS) {
 			*ctx = &block1_contexts[i];
 			/* TODO: notify application for block
 			 * transfer timeout
@@ -1037,15 +1037,23 @@ int lwm2m_send_message(struct lwm2m_message *msg)
 	}
 
 	if (msg->type == COAP_TYPE_CON) {
-		/* don't re-queue the retransmit work on retransmits */
-		if (msg->send_attempts > 1) {
-			return 0;
-		}
+		s32_t remaining = k_delayed_work_remaining_get(
+					&msg->ctx->retransmit_work);
 
-		k_delayed_work_submit(&msg->ctx->retransmit_work,
-				      msg->pending->timeout);
+		/* If the item is already pending and its timeout is smaller
+		 * than the new one, skip the submission.
+		 */
+		if (remaining == 0 || remaining > msg->pending->timeout) {
+			k_delayed_work_submit(&msg->ctx->retransmit_work,
+					      K_MSEC(msg->pending->timeout));
+		}
 	} else {
 		lwm2m_reset_message(msg, true);
+	}
+
+	if (IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT) &&
+	    IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED)) {
+		engine_update_tx_time();
 	}
 
 	return 0;
@@ -1851,6 +1859,16 @@ int lwm2m_engine_get_resource(char *pathstr, struct lwm2m_engine_res **res)
 	return path_to_objs(&path, NULL, NULL, res, NULL);
 }
 
+void lwm2m_engine_get_binding(char *binding)
+{
+	if (IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED)) {
+		strcpy(binding, "UQ");
+	} else {
+		/* Defaults to UDP. */
+		strcpy(binding, "U");
+	}
+}
+
 int lwm2m_engine_create_res_inst(char *pathstr)
 {
 	int ret, i;
@@ -2091,8 +2109,10 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst,
 
 		switch (obj_field->data_type) {
 
-		/* do nothing for OPAQUE (probably has a callback) */
 		case LWM2M_RES_TYPE_OPAQUE:
+			engine_put_opaque(&msg->out, &msg->path,
+					  (u8_t *)data_ptr,
+					  data_len);
 			break;
 
 		case LWM2M_RES_TYPE_STRING:
@@ -3691,7 +3711,7 @@ static void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx,
 			lwm2m_reset_message(msg, true);
 		}
 	} else {
-		LOG_ERR("No handler for response");
+		LOG_DBG("No handler for response");
 	}
 }
 
@@ -3700,6 +3720,7 @@ static void retransmit_request(struct k_work *work)
 	struct lwm2m_ctx *client_ctx;
 	struct lwm2m_message *msg;
 	struct coap_pending *pending;
+	s32_t remaining;
 
 	client_ctx = CONTAINER_OF(work, struct lwm2m_ctx, retransmit_work);
 	pending = coap_pending_next_to_expire(client_ctx->pendings,
@@ -3708,10 +3729,19 @@ static void retransmit_request(struct k_work *work)
 		return;
 	}
 
+	remaining = pending->t0 + pending->timeout - k_uptime_get_32();
+	if (remaining > 0) {
+		/* First message to expire was removed from the list,
+		 * schedule next.
+		 */
+		goto next;
+	}
+
 	msg = find_msg(pending, NULL);
 	if (!msg) {
 		LOG_ERR("pending has no valid LwM2M message!");
-		return;
+		coap_pending_clear(pending);
+		goto next;
 	}
 
 	if (!coap_pending_cycle(pending)) {
@@ -3725,7 +3755,7 @@ static void retransmit_request(struct k_work *work)
 		 * which balances the ref we made in coap_pending_cycle()
 		 */
 		lwm2m_reset_message(msg, true);
-		return;
+		goto next;
 	}
 
 	LOG_INF("Resending message: %p", msg);
@@ -3735,7 +3765,19 @@ static void retransmit_request(struct k_work *work)
 		/* don't error here, retry until timeout */
 	}
 
-	k_delayed_work_submit(&client_ctx->retransmit_work, pending->timeout);
+next:
+	pending = coap_pending_next_to_expire(client_ctx->pendings,
+					      CONFIG_LWM2M_ENGINE_MAX_PENDING);
+	if (!pending) {
+		return;
+	}
+
+	remaining = pending->t0 + pending->timeout - k_uptime_get_32();
+	if (remaining < 0) {
+		remaining = 0;
+	}
+
+	k_delayed_work_submit(&client_ctx->retransmit_work, K_MSEC(remaining));
 }
 
 static int notify_message_reply_cb(const struct coap_packet *response,
@@ -3864,8 +3906,7 @@ s32_t engine_next_service_timeout_ms(u32_t max_timeout)
 	u32_t timeout = max_timeout;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&engine_service_list, srv, node) {
-		time_left_ms = srv->last_timestamp +
-				  K_MSEC(srv->min_call_period);
+		time_left_ms = srv->last_timestamp + srv->min_call_period;
 
 		/* service is due */
 		if (time_left_ms < timestamp) {
@@ -3928,7 +3969,7 @@ static int lwm2m_engine_service(void)
 		 */
 		if (obs->event_timestamp > obs->last_timestamp &&
 		    timestamp > obs->last_timestamp +
-				K_SECONDS(obs->min_period_sec)) {
+				MSEC_PER_SEC * obs->min_period_sec) {
 			obs->last_timestamp = k_uptime_get();
 			generate_notify_message(obs, true);
 
@@ -3937,7 +3978,7 @@ static int lwm2m_engine_service(void)
 		 * - current timestamp > last_timestamp + max_period_sec
 		 */
 		} else if (timestamp > obs->last_timestamp +
-				K_SECONDS(obs->max_period_sec)) {
+				MSEC_PER_SEC * obs->max_period_sec) {
 			obs->last_timestamp = k_uptime_get();
 			generate_notify_message(obs, false);
 		}
@@ -3947,7 +3988,7 @@ static int lwm2m_engine_service(void)
 	timestamp = k_uptime_get();
 	SYS_SLIST_FOR_EACH_CONTAINER(&engine_service_list, srv, node) {
 		service_due_timestamp = srv->last_timestamp +
-					K_MSEC(srv->min_call_period);
+					srv->min_call_period;
 		/* service is due */
 		if (timestamp >= service_due_timestamp) {
 			srv->last_timestamp = k_uptime_get();
@@ -3956,7 +3997,7 @@ static int lwm2m_engine_service(void)
 	}
 
 	/* calculate how long to sleep till the next service */
-	return engine_next_service_timeout_ms(ENGINE_UPDATE_INTERVAL);
+	return engine_next_service_timeout_ms(ENGINE_UPDATE_INTERVAL_MS);
 }
 
 int lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx)
@@ -3964,6 +4005,8 @@ int lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx)
 	struct observe_node *obs, *tmp;
 	sys_snode_t *prev_node = NULL;
 	int sock_fd = client_ctx->sock_fd;
+	struct lwm2m_message *msg;
+	size_t i;
 
 	/* Cancel pending retransmit work */
 	k_delayed_work_cancel(&client_ctx->retransmit_work);
@@ -3979,6 +4022,16 @@ int lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx)
 			prev_node = &obs->node;
 		}
 	}
+
+	for (i = 0, msg = messages; i < CONFIG_LWM2M_ENGINE_MAX_MESSAGES;
+	     i++, msg++) {
+		memset(msg, 0, sizeof(struct lwm2m_message));
+	}
+
+	coap_pendings_clear(client_ctx->pendings,
+			    CONFIG_LWM2M_ENGINE_MAX_PENDING);
+	coap_replies_clear(client_ctx->replies,
+			   CONFIG_LWM2M_ENGINE_MAX_REPLIES);
 
 	lwm2m_socket_del(client_ctx);
 	client_ctx->sock_fd = -1;
@@ -4045,7 +4098,7 @@ static void socket_receive_loop(void)
 	while (1) {
 		/* wait for sockets */
 		if (sock_nfds < 1) {
-			k_sleep(lwm2m_engine_service());
+			k_msleep(lwm2m_engine_service());
 			continue;
 		}
 
@@ -4056,14 +4109,19 @@ static void socket_receive_loop(void)
 		if (poll(sock_fds, sock_nfds, lwm2m_engine_service()) < 0) {
 			LOG_ERR("Error in poll:%d", errno);
 			errno = 0;
-			k_sleep(ENGINE_UPDATE_INTERVAL);
+			k_msleep(ENGINE_UPDATE_INTERVAL_MS);
 			continue;
 		}
 
 		for (i = 0; i < sock_nfds; i++) {
-			if (sock_fds[i].revents & POLLERR) {
-				LOG_ERR("Error in poll.. waiting a moment.");
-				k_sleep(ENGINE_UPDATE_INTERVAL);
+			if ((sock_fds[i].revents & POLLERR) ||
+			    (sock_fds[i].revents & POLLNVAL) ||
+			    (sock_fds[i].revents & POLLHUP)) {
+				LOG_ERR("Poll reported a socket error, %02x.",
+					sock_fds[i].revents);
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
+				engine_trigger_restart();
+#endif
 				continue;
 			}
 
@@ -4080,6 +4138,9 @@ static void socket_receive_loop(void)
 
 			if (len < 0) {
 				LOG_ERR("Error reading response: %d", errno);
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
+				engine_trigger_restart();
+#endif
 				continue;
 			}
 

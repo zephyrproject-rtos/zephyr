@@ -24,7 +24,7 @@
 #include <stm32wbxx.h>
 
 /* Add include for DTS generated information */
-#include <generated_dts_board.h>
+#include <devicetree.h>
 
 #ifdef CONFIG_GPIO_STM32
 #include <stm32wbxx_ll_gpio.h>
@@ -49,9 +49,9 @@
 #include <stm32wbxx_ll_system.h>
 #endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 
-#ifdef CONFIG_FLASH
+#if defined(CONFIG_FLASH) || defined(CONFIG_USB)
 #include <stm32wbxx_ll_hsem.h>
-#endif /* CONFIG_FLASH */
+#endif /* CONFIG_FLASH || CONFIG_USB */
 
 #ifdef CONFIG_I2C_STM32
 #include <stm32wbxx_ll_i2c.h>
@@ -76,6 +76,14 @@
 #ifdef CONFIG_STM32_LPTIM_TIMER
 #include <stm32wbxx_ll_lptim.h>
 #include <stm32wbxx_ll_system.h>
+#endif
+
+#ifdef CONFIG_DMA_STM32
+#include <stm32wbxx_ll_dma.h>
+#endif
+
+#ifdef CONFIG_DMAMUX_STM32
+#include <stm32wbxx_ll_dmamux.h>
 #endif
 
 #endif /* !_ASMLANGUAGE */

@@ -32,6 +32,14 @@ extern u32_t _irq_vector_table[];
 #define ISR5_OFFSET	4
 #define ISR6_OFFSET	5
 
+#if defined(CONFIG_SOC_ARC_EMSDP)
+/* ARC EMSDP' console will use irq 108 / irq 107, will conflict
+ * with isr used here, so add a workaround
+ */
+#undef CONFIG_NUM_IRQS
+#define CONFIG_NUM_IRQS 105
+#endif
+
 #define IRQ_LINE(offset)	(CONFIG_NUM_IRQS - ((offset) + 1))
 #define TABLE_INDEX(offset)	(IRQ_TABLE_SIZE - ((offset) + 1))
 #define TRIG_CHECK_SIZE         6
@@ -45,7 +53,7 @@ extern u32_t _irq_vector_table[];
 static volatile int trigger_check[TRIG_CHECK_SIZE];
 
 #if defined(CONFIG_CPU_CORTEX_M)
-#include <arch/arm/cortex_m/cmsis.h>
+#include <arch/arm/aarch32/cortex_m/cmsis.h>
 
 void trigger_irq(int irq)
 {

@@ -55,4 +55,3 @@ static int z_vrfy_magic_syscall(unsigned int *cookie)
 }
 
 #include <syscalls/magic_syscall_mrsh.c>
-

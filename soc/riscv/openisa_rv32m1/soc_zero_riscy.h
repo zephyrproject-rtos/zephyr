@@ -38,13 +38,6 @@
  */
 
 /*
- * MSTATUS CSR number. (Note this is the standard value in the RISC-V
- * privileged ISA v1.10).
- */
-#define SOC_MSTATUS_REG ZERO_RISCY_MSTATUS
-/* MSTATUS's interrupt enable mask. This is also standard. */
-#define SOC_MSTATUS_IEN (1U << 3)
-/*
  * Exception code mask. Use of the bottom five bits is a subset of
  * what the standard allocates (which is XLEN-1 bits).
  */
@@ -58,19 +51,5 @@
 #define SOC_ERET mret
 /* The ecall exception number. This is a standard value. */
 #define SOC_MCAUSE_ECALL_EXP 11
-/*
- * Default MSTATUS value to write when scheduling in a new thread for
- * the first time.
- *
- * - Preserve machine privileges in MPP. If you see any documentation
- *   telling you that MPP is read-only on this SoC, don't believe its
- *   lies.
- * - Enable interrupts when exiting from exception into a new thread
- *   by setting MPIE now, so it will be copied into IE on mret.
- */
-#define ZERO_RISCY_MSTATUS_MPP_M     (0x3U << 11)
-#define ZERO_RISCY_MSTATUS_MPIE_EN   (1U << 7)
-#define SOC_MSTATUS_DEF_RESTORE (ZERO_RISCY_MSTATUS_MPP_M |	\
-				 ZERO_RISCY_MSTATUS_MPIE_EN)
 
 #endif /* SOC_RISCV32_OPENISA_RV32M1_SOC_ZERO_RISCY_H_ */

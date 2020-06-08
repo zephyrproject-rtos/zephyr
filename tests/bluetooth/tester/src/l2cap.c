@@ -66,6 +66,10 @@ static void connected_cb(struct bt_l2cap_chan *l2cap_chan)
 	if (!bt_conn_get_info(l2cap_chan->conn, &info)) {
 		switch (info.type) {
 		case BT_CONN_TYPE_LE:
+			ev.mtu_remote = sys_cpu_to_le16(chan->le.tx.mtu);
+			ev.mps_remote = sys_cpu_to_le16(chan->le.tx.mps);
+			ev.mtu_local = sys_cpu_to_le16(chan->le.rx.mtu);
+			ev.mps_local = sys_cpu_to_le16(chan->le.rx.mps);
 			ev.address_type = info.le.dst->type;
 			memcpy(ev.address, info.le.dst->a.val,
 			       sizeof(ev.address));
@@ -110,7 +114,7 @@ static void disconnected_cb(struct bt_l2cap_chan *l2cap_chan)
 		    CONTROLLER_INDEX, (u8_t *) &ev, sizeof(ev));
 }
 
-static struct bt_l2cap_chan_ops l2cap_ops = {
+static const struct bt_l2cap_chan_ops l2cap_ops = {
 	.alloc_buf	= alloc_buf_cb,
 	.recv		= recv_cb,
 	.connected	= connected_cb,
@@ -139,10 +143,16 @@ static struct channel *get_free_channel()
 static void connect(u8_t *data, u16_t len)
 {
 	const struct l2cap_connect_cmd *cmd = (void *) data;
-	struct l2cap_connect_rp rp;
+	struct l2cap_connect_rp *rp;
 	struct bt_conn *conn;
 	struct channel *chan;
+	u16_t mtu = sys_le16_to_cpu(cmd->mtu);
+	u8_t buf[sizeof(*rp) + 1];
 	int err;
+
+	if (cmd->num > 1 || mtu > DATA_MTU) {
+		goto fail;
+	}
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
@@ -155,17 +165,19 @@ static void connect(u8_t *data, u16_t len)
 	}
 
 	chan->le.chan.ops = &l2cap_ops;
-	chan->le.rx.mtu = DATA_MTU;
+	chan->le.rx.mtu = mtu;
 
 	err = bt_l2cap_chan_connect(conn, &chan->le.chan, cmd->psm);
 	if (err < 0) {
 		goto fail;
 	}
 
-	rp.chan_id = chan->chan_id;
+	rp = (void *)buf;
+	rp->num = 1U;
+	rp->chan_id[0] = chan->chan_id;
 
 	tester_send(BTP_SERVICE_ID_L2CAP, L2CAP_CONNECT, CONTROLLER_INDEX,
-		    (u8_t *) &rp, sizeof(rp));
+		    (u8_t *)rp, sizeof(buf));
 
 	return;
 

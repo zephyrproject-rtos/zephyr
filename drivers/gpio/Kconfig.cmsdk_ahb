@@ -3,98 +3,10 @@
 # Copyright (c) 2016 Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig GPIO_CMSDK_AHB
+config GPIO_CMSDK_AHB
 	bool "ARM CMSDK (Cortex-M System Design Kit) AHB GPIO Controllers"
-	depends on SOC_SERIES_BEETLE
+	depends on SOC_FAMILY_ARM
 	help
 	  Enable config options to support the ARM CMSDK GPIO controllers.
 
 	  Says n if not sure.
-
-if GPIO_CMSDK_AHB
-
-# ---------- Port 0 ----------
-
-config GPIO_CMSDK_AHB_PORT0
-	bool "Enable driver for GPIO Port 0"
-	help
-	  Build the driver to utilize GPIO controller Port 0.
-
-config GPIO_CMSDK_AHB_PORT0_DEV_NAME
-	string "Device name for Port 0"
-	depends on GPIO_CMSDK_AHB_PORT0
-	default "GPIO_0"
-	help
-	  Device name for Port 0.
-
-config GPIO_CMSDK_AHB_PORT0_IRQ_PRI
-	int "Interrupt Priority for Port 0"
-	depends on GPIO_CMSDK_AHB_PORT0
-	default 3
-	help
-	  Interrupt priority for Port 0.
-
-# ---------- Port 1 ----------
-
-config GPIO_CMSDK_AHB_PORT1
-	bool "Enable driver for GPIO Port 1"
-	help
-	  Build the driver to utilize GPIO controller Port 1.
-
-config GPIO_CMSDK_AHB_PORT1_DEV_NAME
-	string "Device name for Port 1"
-	depends on GPIO_CMSDK_AHB_PORT1
-	default "GPIO_1"
-	help
-	  Device name for Port 1.
-
-config GPIO_CMSDK_AHB_PORT1_IRQ_PRI
-	int "Interrupt Priority for Port 1"
-	depends on GPIO_CMSDK_AHB_PORT1
-	default 3
-	help
-	  Interrupt priority for Port 1.
-
-# ---------- Port 2 ----------
-
-config GPIO_CMSDK_AHB_PORT2
-	bool "Enable driver for GPIO Port 2"
-	help
-	  Build the driver to utilize GPIO controller Port 2.
-
-config GPIO_CMSDK_AHB_PORT2_DEV_NAME
-	string "Device name for Port 2"
-	depends on GPIO_CMSDK_AHB_PORT2
-	default "GPIO_2"
-	help
-	  Device name for Port 2.
-
-config GPIO_CMSDK_AHB_PORT2_IRQ_PRI
-	int "Interrupt Priority for Port 2"
-	depends on GPIO_CMSDK_AHB_PORT2
-	default 3
-	help
-	  Interrupt priority for Port 2.
-
-# ---------- Port 3 ----------
-
-config GPIO_CMSDK_AHB_PORT3
-	bool "Enable driver for GPIO Port 3"
-	help
-	  Build the driver to utilize GPIO controller Port 3.
-
-config GPIO_CMSDK_AHB_PORT3_DEV_NAME
-	string "Device name for Port 3"
-	depends on GPIO_CMSDK_AHB_PORT3
-	default "GPIO_3"
-	help
-	  Device name for Port 3.
-
-config GPIO_CMSDK_AHB_PORT3_IRQ_PRI
-	int "Interrupt Priority for Port 3"
-	depends on GPIO_CMSDK_AHB_PORT3
-	default 3
-	help
-	  Interrupt priority for Port 3.
-
-endif # GPIO_CMSDK_AHB

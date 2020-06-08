@@ -50,11 +50,11 @@ static void trigger_handler(struct device *dev,
 
 void main(void)
 {
-	struct device *sensor = device_get_binding(DT_INST_0_ST_LIS2DH_LABEL);
+	struct device *sensor = device_get_binding(DT_LABEL(DT_INST(0, st_lis2dh)));
 
 	if (sensor == NULL) {
 		printf("Could not get %s device\n",
-		       DT_INST_0_ST_LIS2DH_LABEL);
+		       DT_LABEL(DT_INST(0, st_lis2dh)));
 		return;
 	}
 

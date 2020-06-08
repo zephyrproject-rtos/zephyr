@@ -19,7 +19,7 @@ LOG_MODULE_DECLARE(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 #define BUF_ALLOC_TIMEOUT K_MSEC(100)
 
 /* This timeout is in milliseconds */
-#define FSM_TIMEOUT CONFIG_NET_L2_PPP_TIMEOUT
+#define FSM_TIMEOUT K_MSEC(CONFIG_NET_L2_PPP_TIMEOUT)
 
 #define MAX_NACK_LOOPS CONFIG_NET_L2_PPP_MAX_NACK_LOOPS
 
@@ -118,8 +118,7 @@ static void ppp_fsm_timeout(struct k_work *work)
 
 			fsm->retransmits--;
 
-			(void)k_delayed_work_submit(&fsm->timer,
-						    FSM_TIMEOUT);
+			(void)k_delayed_work_submit(&fsm->timer, FSM_TIMEOUT);
 		}
 
 		break;
@@ -359,14 +358,14 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 	if (!iface) {
 		struct ppp_context *ctx;
 
-		if (fsm->protocol == PPP_LCP) {
+		if (fsm && fsm->protocol == PPP_LCP) {
 			ctx = CONTAINER_OF(fsm, struct ppp_context, lcp.fsm);
 #if defined(CONFIG_NET_IPV4)
-		} else if (fsm->protocol == PPP_IPCP) {
+		} else if (fsm && fsm->protocol == PPP_IPCP) {
 			ctx = CONTAINER_OF(fsm, struct ppp_context, ipcp.fsm);
 #endif
 #if defined(CONFIG_NET_IPV6)
-		} else if (fsm->protocol == PPP_IPV6CP) {
+		} else if (fsm && fsm->protocol == PPP_IPV6CP) {
 			ctx = CONTAINER_OF(fsm, struct ppp_context,
 					   ipv6cp.fsm);
 #endif
@@ -396,26 +395,24 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 		/* 2 + 1 + 1 (configure-[req|ack|nack|rej]) +
 		 * data_len (options)
 		 */
-		len = sizeof(u16_t) + sizeof(u8_t) + sizeof(u8_t) + data_len;
+		len = sizeof(ppp) + data_len;
 		break;
 
 	case PPP_DISCARD_REQ:
 		break;
 
 	case PPP_ECHO_REQ:
-		len = sizeof(u16_t) + sizeof(u8_t) + sizeof(u8_t) +
-			sizeof(u32_t) + data_len;
+		len = sizeof(ppp) + sizeof(u32_t) + data_len;
 		break;
 
 	case PPP_ECHO_REPLY:
-		len = sizeof(u16_t) + sizeof(u8_t) + sizeof(u8_t) +
-			net_pkt_remaining_data(req_pkt);
+		len = sizeof(ppp) + net_pkt_remaining_data(req_pkt);
 		break;
 
 	case PPP_PROTOCOL_REJ:
-		len = sizeof(u8_t) + sizeof(u8_t) + sizeof(u16_t) +
-			sizeof(u16_t) + net_pkt_remaining_data(req_pkt);
-		protocol = data_len;
+		len = sizeof(ppp) + sizeof(u16_t) +
+			net_pkt_remaining_data(req_pkt);
+		protocol = PPP_LCP;
 		break;
 
 	case PPP_TERMINATE_REQ:
@@ -502,9 +499,9 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 		fsm ? fsm->name : "?", fsm, net_pkt_get_len(pkt), pkt,
 		data_len);
 
-	if (fsm) {
-		net_pkt_set_ppp(pkt, true);
+	net_pkt_set_ppp(pkt, true);
 
+	if (fsm) {
 		/* Do not call net_send_data() directly in order to make this
 		 * thread run before the sending happens. If we call the
 		 * net_send_data() from this thread, then in fast link (like
@@ -519,7 +516,7 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 		 * in that case.
 		 */
 		(void)k_delayed_work_submit(&fsm->sender.work,
-				IS_ENABLED(CONFIG_NET_TEST) ? K_MSEC(1) : 0);
+			  IS_ENABLED(CONFIG_NET_TEST) ? K_MSEC(1) : K_NO_WAIT);
 	} else {
 		ret = net_send_data(pkt);
 		if (ret < 0) {
@@ -1134,8 +1131,6 @@ enum net_verdict ppp_fsm_recv_discard_req(struct ppp_fsm *fsm,
 	NET_DBG("[%s/%p] Current state %s (%d)", fsm->name, fsm,
 		ppp_state_str(fsm->state), fsm->state);
 
-	net_pkt_unref(pkt);
-
 	return NET_OK;
 }
 
@@ -1155,7 +1150,7 @@ void ppp_send_proto_rej(struct net_if *iface, struct net_pkt *pkt,
 		goto quit;
 	}
 
-	(void)ppp_send_pkt(NULL, iface, PPP_PROTOCOL_REJ, id, pkt, protocol);
+	(void)ppp_send_pkt(NULL, iface, PPP_PROTOCOL_REJ, id, pkt, 0);
 
 quit:
 	return;

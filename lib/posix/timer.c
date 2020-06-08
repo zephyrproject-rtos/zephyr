@@ -174,7 +174,7 @@ int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,
 	}
 
 	timer->status = ACTIVE;
-	k_timer_start(&timer->ztimer, duration, timer->reload);
+	k_timer_start(&timer->ztimer, K_MSEC(duration), K_MSEC(timer->reload));
 	return 0;
 }
 
@@ -201,4 +201,3 @@ int timer_delete(timer_t timerid)
 
 	return 0;
 }
-

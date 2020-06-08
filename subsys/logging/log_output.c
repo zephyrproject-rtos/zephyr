@@ -102,15 +102,22 @@ static int out_func(int c, void *ctx)
 {
 	const struct log_output *out_ctx =
 					(const struct log_output *)ctx;
+	int idx;
 
-	out_ctx->buf[out_ctx->control_block->offset] = (u8_t)c;
-	out_ctx->control_block->offset++;
-
-	__ASSERT_NO_MSG(out_ctx->control_block->offset <= out_ctx->size);
+	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
+		/* Backend must be thread safe in synchronous operation. */
+		out_ctx->func((u8_t *)&c, 1, out_ctx->control_block->ctx);
+		return 0;
+	}
 
 	if (out_ctx->control_block->offset == out_ctx->size) {
 		log_output_flush(out_ctx);
 	}
+
+	idx = atomic_inc(&out_ctx->control_block->offset);
+	out_ctx->buf[idx] = (u8_t)c;
+
+	__ASSERT_NO_MSG(out_ctx->control_block->offset <= out_ctx->size);
 
 	return 0;
 }
@@ -144,6 +151,7 @@ static void buffer_write(log_output_func_t outf, u8_t *buf, size_t len,
 		buf += processed;
 	} while (len != 0);
 }
+
 
 void log_output_flush(const struct log_output *log_output)
 {
@@ -651,7 +659,7 @@ void log_output_dropped_process(const struct log_output *log_output, u32_t cnt)
 	struct device *dev = (struct device *)log_output->control_block->ctx;
 
 	cnt = MIN(cnt, 9999);
-	len = snprintf(buf, sizeof(buf), "%d", cnt);
+	len = snprintk(buf, sizeof(buf), "%d", cnt);
 
 	buffer_write(outf, (u8_t *)prefix, sizeof(prefix) - 1, dev);
 	buffer_write(outf, buf, len, dev);

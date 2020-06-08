@@ -1,0 +1,11 @@
+sample:
+  name: ISO-TP lib sample
+tests:
+  sample.subsys.canbus.isotp:
+    tags: CAN
+    depends_on: can
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "(.*)Got 248 bytes in total"

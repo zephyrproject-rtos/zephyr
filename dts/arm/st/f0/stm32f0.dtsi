@@ -11,6 +11,10 @@
 #include <dt-bindings/gpio/gpio.h>
 
 / {
+	chosen {
+		zephyr,flash-controller = &flash;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -27,8 +31,8 @@
 	};
 
 	soc {
-		flash-controller@40022000 {
-			compatible = "st,stm32f0-flash-controller";
+		flash: flash-controller@40022000 {
+			compatible = "st,stm32-flash-controller", "st,stm32f0-flash-controller";
 			label = "FLASH_CTRL";
 			reg = <0x40022000 0x400>;
 			interrupts = <3 0>;
@@ -148,7 +152,7 @@
 		};
 
 		spi1: spi@40013000 {
-			compatible = "st,stm32-spi-fifo";
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40013000 0x400>;
@@ -317,7 +321,6 @@
 			reg = <0x40020000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x1>;
 			interrupts = <9 0 10 0 10 0 11 0 11 0>;
-			st,mem2mem;
 			status = "disabled";
 			label = "DMA_1";
 		};

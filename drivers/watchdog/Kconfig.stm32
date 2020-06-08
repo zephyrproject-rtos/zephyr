@@ -11,15 +11,6 @@ menuconfig IWDG_STM32
 	help
 	  Enable IWDG driver for STM32 line of MCUs
 
-config IWDG_STM32_START_AT_BOOT
-	bool "Start IWDG during boot"
-	depends on IWDG_STM32
-	help
-	  Enable this setting to allow IWDG to be automatically started
-	  during device initialization. Note that once IWDG is started
-	  it must be reloaded before the counter reaches 0, otherwise
-	  the MCU will be reset.
-
 config IWDG_STM32_TIMEOUT
 	int "Value for IWDG timeout in [us]"
 	depends on IWDG_STM32

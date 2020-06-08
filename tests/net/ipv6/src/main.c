@@ -179,7 +179,7 @@ static void prepare_ra_message(struct net_pkt *pkt)
 	pkt->buffer = NULL;
 
 	net_pkt_alloc_buffer(pkt, sizeof(struct net_eth_hdr) +
-			     sizeof(icmpv6_ra), AF_UNSPEC, 0);
+			     sizeof(icmpv6_ra), AF_UNSPEC, K_NO_WAIT);
 	net_pkt_cursor_init(pkt);
 
 	hdr.type = htons(NET_ETH_PTYPE_IPV6);
@@ -283,7 +283,7 @@ static const struct ethernet_api net_test_if_api = {
 #define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(ETHERNET_L2)
 
 NET_DEVICE_INIT(net_test_ipv6, "net_test_ipv6",
-		net_test_dev_init, &net_test_data, NULL,
+		net_test_dev_init, device_pm_control_nop, &net_test_data, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&net_test_if_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE,
 		127);
@@ -488,7 +488,7 @@ static void test_send_ns_extra_options(void)
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(icmpv6_ns_invalid),
 					AF_UNSPEC, 0, K_FOREVER);
 
-	NET_ASSERT_INFO(pkt, "Out of TX packets");
+	NET_ASSERT(pkt, "Out of TX packets");
 
 	net_pkt_write(pkt, icmpv6_ns_invalid, sizeof(icmpv6_ns_invalid));
 	net_pkt_lladdr_clear(pkt);
@@ -511,7 +511,7 @@ static void test_send_ns_no_options(void)
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(icmpv6_ns_no_sllao),
 					AF_UNSPEC, 0, K_FOREVER);
 
-	NET_ASSERT_INFO(pkt, "Out of TX packets");
+	NET_ASSERT(pkt, "Out of TX packets");
 
 	net_pkt_write(pkt, icmpv6_ns_no_sllao, sizeof(icmpv6_ns_no_sllao));
 	net_pkt_lladdr_clear(pkt);
@@ -538,7 +538,7 @@ static void test_prefix_timeout(void)
 	net_if_ipv6_prefix_set_lf(prefix, false);
 	net_if_ipv6_prefix_set_timer(prefix, lifetime);
 
-	k_sleep((lifetime * 2U) * MSEC_PER_SEC);
+	k_sleep(K_SECONDS(lifetime * 2U));
 
 	prefix = net_if_ipv6_prefix_lookup(net_if_get_default(),
 					   &addr, len);
@@ -565,7 +565,7 @@ static void test_prefix_timeout_long(void)
 	zassert_equal(ifprefix->lifetime.wrap_counter, 2000,
 		      "Wrap counter wrong (%d)",
 		      ifprefix->lifetime.wrap_counter);
-	remaining = K_SECONDS((u64_t)lifetime) -
+	remaining = MSEC_PER_SEC * (u64_t)lifetime -
 		NET_TIMEOUT_MAX_VALUE * (u64_t)ifprefix->lifetime.wrap_counter;
 
 	zassert_equal(remaining, ifprefix->lifetime.timer_timeout,
@@ -627,7 +627,7 @@ static void test_hbho_message(void)
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(ipv6_hbho),
 					AF_UNSPEC, 0, K_FOREVER);
 
-	NET_ASSERT_INFO(pkt, "Out of TX packets");
+	NET_ASSERT(pkt, "Out of TX packets");
 
 	net_pkt_write(pkt, ipv6_hbho, sizeof(ipv6_hbho));
 	net_pkt_lladdr_clear(pkt);
@@ -678,7 +678,7 @@ static void test_hbho_message_1(void)
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(ipv6_hbho_1),
 					AF_UNSPEC, 0, K_FOREVER);
 
-	NET_ASSERT_INFO(pkt, "Out of TX packets");
+	NET_ASSERT(pkt, "Out of TX packets");
 
 	net_pkt_write(pkt, ipv6_hbho_1, sizeof(ipv6_hbho_1));
 
@@ -738,7 +738,7 @@ static void test_hbho_message_2(void)
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(ipv6_hbho_2),
 					AF_UNSPEC, 0, K_FOREVER);
 
-	NET_ASSERT_INFO(pkt, "Out of TX packets");
+	NET_ASSERT(pkt, "Out of TX packets");
 
 
 	net_pkt_write(pkt, ipv6_hbho_2, sizeof(ipv6_hbho_2));
@@ -901,7 +901,7 @@ static void test_hbho_message_3(void)
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(ipv6_hbho_3),
 					AF_UNSPEC, 0, K_FOREVER);
 
-	NET_ASSERT_INFO(pkt, "Out of TX packets");
+	NET_ASSERT(pkt, "Out of TX packets");
 
 	net_pkt_write(pkt, ipv6_hbho_3, sizeof(ipv6_hbho_3));
 	net_pkt_lladdr_clear(pkt);
@@ -925,7 +925,7 @@ static void test_address_lifetime(void)
 				     0, 0, 0, 0, 0, 0, 0x20, 0x1 } } };
 	struct net_if *iface = net_if_get_default();
 	u32_t vlifetime = 0xffff;
-	u64_t timeout = K_SECONDS((u64_t)vlifetime);
+	u64_t timeout = (u64_t)vlifetime * MSEC_PER_SEC;
 	struct net_if_addr *ifaddr;
 	u64_t remaining;
 	bool ret;
@@ -953,7 +953,7 @@ static void test_address_lifetime(void)
 
 	zassert_equal(ifaddr->lifetime.wrap_counter, 2,
 		      "Wrap counter wrong (%d)", ifaddr->lifetime.wrap_counter);
-	remaining = K_SECONDS((u64_t)vlifetime) -
+	remaining = MSEC_PER_SEC * (u64_t)vlifetime -
 		NET_TIMEOUT_MAX_VALUE * (u64_t)ifaddr->lifetime.wrap_counter;
 
 	zassert_equal(remaining, ifaddr->lifetime.timer_timeout,
@@ -966,8 +966,8 @@ static void test_address_lifetime(void)
 	zassert_equal(ifaddr->lifetime.wrap_counter, 2,
 		      "Wrap counter wrong (%d)", ifaddr->lifetime.wrap_counter);
 
-	ifaddr->lifetime.timer_timeout = K_MSEC(10);
-	ifaddr->lifetime.timer_start = k_uptime_get_32() - K_MSEC(10);
+	ifaddr->lifetime.timer_timeout = 10;
+	ifaddr->lifetime.timer_start = k_uptime_get_32() - 10;
 	ifaddr->lifetime.wrap_counter = 0;
 
 	net_address_lifetime_timeout();
@@ -1258,7 +1258,7 @@ static void net_ctx_recv(struct net_context *ctx)
 {
 	int ret;
 
-	ret = net_context_recv(ctx, recv_cb, 0, NULL);
+	ret = net_context_recv(ctx, recv_cb, K_NO_WAIT, NULL);
 	zassert_equal(ret, 0, "Context recv IPv6 UDP failed");
 }
 
@@ -1338,7 +1338,7 @@ static void test_dst_iface_scope_mcast_send(void)
 		      "Interface local scope multicast packet was dropped (%d)",
 		      ret);
 
-	k_sem_take(&wait_data, WAIT_TIME);
+	k_sem_take(&wait_data, K_MSEC(WAIT_TIME));
 
 	zassert_true(recv_cb_called, "No data received on time, "
 		     "IPv6 recv test failed");

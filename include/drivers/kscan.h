@@ -41,7 +41,7 @@ extern "C" {
  * @param row	Describes row change.
  * @param pressed Describes the kind of key event.
  */
-typedef void (*kscan_callback_t)(struct device *dev, u8_t row, u8_t column,
+typedef void (*kscan_callback_t)(struct device *dev, u32_t row, u32_t column,
 				 bool pressed);
 
 /**
@@ -56,7 +56,7 @@ typedef int (*kscan_config_t)(struct device *dev,
 typedef int (*kscan_disable_callback_t)(struct device *dev);
 typedef int (*kscan_enable_callback_t)(struct device *dev);
 
-struct kscan_driver_api {
+__subsystem struct kscan_driver_api {
 	kscan_config_t config;
 	kscan_disable_callback_t disable_callback;
 	kscan_enable_callback_t enable_callback;

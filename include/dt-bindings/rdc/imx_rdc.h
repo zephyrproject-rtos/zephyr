@@ -18,4 +18,6 @@
 
 #define RDC_DOMAIN_PERM(domain, perm) (perm << (domain * 2))
 
+#define RDC_DT_VAL(nodelabel) DT_PROP(DT_NODELABEL(nodelabel), rdc)
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_RDC_IMX_RDC_H_ */

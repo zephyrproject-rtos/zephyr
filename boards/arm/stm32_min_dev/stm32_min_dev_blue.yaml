@@ -1,5 +1,5 @@
 identifier: stm32_min_dev_blue
-name: STM32 Minimum Development Board (Blue)
+name: STM32 Minimum Development Board
 type: mcu
 arch: arm
 toolchain:
@@ -11,3 +11,4 @@ supported:
   - i2c
   - pwm
   - spi
+  - adc

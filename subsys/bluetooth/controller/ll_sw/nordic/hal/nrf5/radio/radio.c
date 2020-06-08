@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 - 2019 Nordic Semiconductor ASA
+ * Copyright (c) 2016 - 2020 Nordic Semiconductor ASA
  * Copyright (c) 2016 Vinayak Kariappa Chettimada
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -9,22 +9,17 @@
 #include <sys/mempool_base.h>
 #include <toolchain.h>
 
+#include <nrfx/hal/nrf_radio.h>
+#include <nrfx/hal/nrf_rtc.h>
+#include <nrfx/hal/nrf_timer.h>
+#include <nrfx/hal/nrf_ccm.h>
+
 #include "util/mem.h"
 #include "hal/ccm.h"
 #include "hal/radio.h"
 #include "hal/ticker.h"
 #include "ll_sw/pdu.h"
 #include "radio_nrf5.h"
-
-#include <nrfx/hal/nrf_radio.h>
-#include <nrfx/hal/nrf_rtc.h>
-#include <nrfx/hal/nrf_ccm.h>
-
-#if defined(CONFIG_SOC_SERIES_NRF51X)
-#define RADIO_PDU_LEN_MAX (BIT(5) - 1)
-#else
-#define RADIO_PDU_LEN_MAX (BIT(8) - 1)
-#endif
 
 #if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
 #if ((CONFIG_BT_CTLR_GPIO_PA_PIN) > 31)
@@ -140,15 +135,30 @@ void radio_phy_set(u8_t phy, u8_t flags)
 #endif /* CONFIG_BT_CTLR_RADIO_ENABLE_FAST */
 }
 
-void radio_tx_power_set(u32_t power)
+void radio_tx_power_set(s8_t power)
 {
 	/* NOTE: valid value range is passed by Kconfig define. */
-	NRF_RADIO->TXPOWER = power;
+	NRF_RADIO->TXPOWER = (u32_t)power;
 }
 
 void radio_tx_power_max_set(void)
 {
 	NRF_RADIO->TXPOWER = hal_radio_tx_power_max_get();
+}
+
+s8_t radio_tx_power_min_get(void)
+{
+	return (s8_t)hal_radio_tx_power_min_get();
+}
+
+s8_t radio_tx_power_max_get(void)
+{
+	return (s8_t)hal_radio_tx_power_max_get();
+}
+
+s8_t radio_tx_power_floor(s8_t power)
+{
+	return (s8_t)hal_radio_tx_power_floor(power);
 }
 
 void radio_freq_chan_set(u32_t chan)
@@ -372,9 +382,10 @@ u32_t radio_crc_is_valid(void)
 }
 
 static u8_t MALIGN(4) _pkt_empty[PDU_EM_SIZE_MAX];
-static u8_t MALIGN(4) _pkt_scratch[
-			((RADIO_PDU_LEN_MAX + 3) > PDU_AC_SIZE_MAX) ?
-			(RADIO_PDU_LEN_MAX + 3) : PDU_AC_SIZE_MAX];
+static u8_t MALIGN(4) _pkt_scratch[((HAL_RADIO_PDU_LEN_MAX + 3) >
+				    PDU_AC_SIZE_MAX) ?
+				   (HAL_RADIO_PDU_LEN_MAX + 3) :
+				   PDU_AC_SIZE_MAX];
 
 void *radio_pkt_empty_get(void)
 {
@@ -385,6 +396,20 @@ void *radio_pkt_scratch_get(void)
 {
 	return _pkt_scratch;
 }
+
+#if defined(CONFIG_SOC_COMPATIBLE_NRF52832) && \
+	defined(CONFIG_BT_CTLR_LE_ENC) && \
+	(!defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX) || \
+	 (CONFIG_BT_CTLR_DATA_LENGTH_MAX < (HAL_RADIO_PDU_LEN_MAX - 4)))
+static u8_t MALIGN(4) _pkt_decrypt[((HAL_RADIO_PDU_LEN_MAX + 3) >
+				    PDU_AC_SIZE_MAX) ?
+				   (HAL_RADIO_PDU_LEN_MAX + 3) :
+				   PDU_AC_SIZE_MAX];
+void *radio_pkt_decrypt_get(void)
+{
+	return _pkt_decrypt;
+}
+#endif
 
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 static u8_t sw_tifs_toggle;
@@ -455,8 +480,7 @@ static void sw_switch(u8_t dir, u8_t phy_curr, u8_t flags_curr, u8_t phy_next,
 		/* RX */
 		delay = HAL_RADIO_NS2US_CEIL(
 			hal_radio_rx_ready_delay_ns_get(phy_next, flags_next) -
-			hal_radio_tx_chain_delay_ns_get(phy_curr, flags_curr)) +
-			4; /* 4us as +/- active jitter */
+			hal_radio_tx_chain_delay_ns_get(phy_curr, flags_curr));
 
 		hal_radio_rxen_on_sw_switch(ppi);
 
@@ -954,11 +978,10 @@ void radio_gpio_pa_lna_disable(void)
 }
 #endif /* CONFIG_BT_CTLR_GPIO_PA_PIN || CONFIG_BT_CTLR_GPIO_LNA_PIN */
 
-static u8_t MALIGN(4) _ccm_scratch[(RADIO_PDU_LEN_MAX - 4) + 16];
+static u8_t MALIGN(4) _ccm_scratch[(HAL_RADIO_PDU_LEN_MAX - 4) + 16];
 
 void *radio_ccm_rx_pkt_set(struct ccm *ccm, u8_t phy, void *pkt)
 {
-
 	u32_t mode;
 
 	NRF_CCM->ENABLE = CCM_ENABLE_ENABLE_Disabled;
@@ -1005,6 +1028,15 @@ void *radio_ccm_rx_pkt_set(struct ccm *ccm, u8_t phy, void *pkt)
 #endif /* CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 	}
+
+#if !defined(CONFIG_SOC_COMPATIBLE_NRF52832) && \
+	(!defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX) || \
+	 (CONFIG_BT_CTLR_DATA_LENGTH_MAX < ((HAL_RADIO_PDU_LEN_MAX) - 4)))
+	u8_t max_len = (NRF_RADIO->PCNF1 & RADIO_PCNF1_MAXLEN_Msk) >>
+			RADIO_PCNF1_MAXLEN_Pos;
+
+	NRF_CCM->MAXPACKETSIZE = max_len;
+#endif
 #endif /* !CONFIG_SOC_SERIES_NRF51X */
 
 	NRF_CCM->MODE = mode;

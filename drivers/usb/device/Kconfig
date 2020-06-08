@@ -14,12 +14,6 @@ config USB_DW
 	help
 	  Designware USB Device Controller Driver.
 
-config USB_DW_IRQ_PRI
-	int "DesignWare USB Driver Interrupt priority"
-	depends on USB_DW
-	help
-	  USB interrupt priority.
-
 config USB_DW_USB_2_0
 	bool "DesignWare Controller and PHY support for USB specification 2.0"
 	depends on USB_DW
@@ -30,7 +24,7 @@ config USB_DC_STM32
 	bool "USB device controller driver for STM32 devices"
 	depends on SOC_FAMILY_STM32
 	select USB_DEVICE_DRIVER
-	select USE_STM32_LL_USB if !SOC_SERIES_STM32F0X && !SOC_SERIES_STM32F3X && !SOC_SERIES_STM32L0X
+	select USE_STM32_LL_USB
 	select USE_STM32_HAL_PCD
 	select USE_STM32_HAL_PCD_EX
 	help
@@ -47,7 +41,8 @@ config USB_DC_SAM0
 
 config USB_DC_SAM
 	bool "SAM series USB HS Device Controller driver"
-	depends on SOC_SERIES_SAME70
+	depends on SOC_SERIES_SAME70 || \
+		   SOC_SERIES_SAMV71
 	select USB_DEVICE_DRIVER
 	help
 	  SAM family USB HS device controller Driver.

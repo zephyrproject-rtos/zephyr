@@ -13,7 +13,7 @@ static void test_size(void)
 	struct device *eeprom;
 	size_t size;
 
-	eeprom = device_get_binding(DT_ALIAS_EEPROM_0_LABEL);
+	eeprom = device_get_binding(DT_LABEL(DT_ALIAS(eeprom_0)));
 
 	size = eeprom_get_size(eeprom);
 	zassert_not_equal(0, size, "Unexpected size of zero bytes");
@@ -26,7 +26,7 @@ static void test_out_of_bounds(void)
 	size_t size;
 	int rc;
 
-	eeprom = device_get_binding(DT_ALIAS_EEPROM_0_LABEL);
+	eeprom = device_get_binding(DT_LABEL(DT_ALIAS(eeprom_0)));
 	size = eeprom_get_size(eeprom);
 
 	rc = eeprom_write(eeprom, size - 1, data, sizeof(data));
@@ -41,7 +41,7 @@ static void test_write_and_verify(void)
 	struct device *eeprom;
 	int rc;
 
-	eeprom = device_get_binding(DT_ALIAS_EEPROM_0_LABEL);
+	eeprom = device_get_binding(DT_LABEL(DT_ALIAS(eeprom_0)));
 
 	rc = eeprom_write(eeprom, 0, wr_buf1, sizeof(wr_buf1));
 	zassert_equal(0, rc, "Unexpected error code (%d)", rc);
@@ -70,7 +70,7 @@ static void test_zero_length_write(void)
 	struct device *eeprom;
 	int rc;
 
-	eeprom = device_get_binding(DT_ALIAS_EEPROM_0_LABEL);
+	eeprom = device_get_binding(DT_LABEL(DT_ALIAS(eeprom_0)));
 
 	rc = eeprom_write(eeprom, 0, wr_buf1, sizeof(wr_buf1));
 	zassert_equal(0, rc, "Unexpected error code (%d)", rc);
@@ -95,7 +95,7 @@ void test_main(void)
 {
 	static struct device *eeprom;
 
-	eeprom = device_get_binding(DT_ALIAS_EEPROM_0_LABEL);
+	eeprom = device_get_binding(DT_LABEL(DT_ALIAS(eeprom_0)));
 	zassert_not_null(eeprom, "Unable to get EEPROM device");
 
 	k_object_access_grant(eeprom, k_current_get());

@@ -1,0 +1,7 @@
+sample:
+  name: USB audio Headphones Microphone sample
+tests:
+  sample.usb.audio.headphones_microphone:
+    depends_on: usb_device
+    tags: usb
+    platform_whitelist: nrf52840dk_nrf52840

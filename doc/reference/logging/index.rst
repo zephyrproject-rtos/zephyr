@@ -1,4 +1,4 @@
-.. _logger:
+.. _logging_api:
 
 Logging
 #######
@@ -556,4 +556,3 @@ Logger output formatting
 
 .. doxygengroup:: log_output
    :project: Zephyr
-

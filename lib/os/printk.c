@@ -37,6 +37,7 @@ static void _printk_hex_ulong(out_func_t out, void *ctx,
 			      const unsigned long long num, enum pad_type padding,
 			      int min_width);
 
+#ifdef CONFIG_PRINTK
 /**
  * @brief Default character output routine that does nothing
  * @param c Character to swallow
@@ -84,6 +85,7 @@ void *__printk_get_hook(void)
 {
 	return _char_out;
 }
+#endif /* CONFIG_PRINTK */
 
 static void print_err(out_func_t out, void *ctx)
 {
@@ -285,6 +287,7 @@ still_might_format:
 	}
 }
 
+#ifdef CONFIG_PRINTK
 #ifdef CONFIG_USERSPACE
 struct buf_out_context {
 	int count;
@@ -348,11 +351,11 @@ void vprintk(const char *fmt, va_list ap)
 
 	z_vprintk(char_out, &ctx, fmt, ap);
 }
-#endif
+#endif /* CONFIG_USERSPACE */
 
 void z_impl_k_str_out(char *c, size_t n)
 {
-	int i;
+	size_t i;
 
 	for (i = 0; i < n; i++) {
 		_char_out(c[i]);
@@ -366,7 +369,7 @@ static inline void z_vrfy_k_str_out(char *c, size_t n)
 	z_impl_k_str_out((char *)c, n);
 }
 #include <syscalls/k_str_out_mrsh.c>
-#endif
+#endif /* CONFIG_USERSPACE */
 
 /**
  * @brief Output a string
@@ -403,6 +406,7 @@ void printk(const char *fmt, ...)
 	}
 	va_end(ap);
 }
+#endif /* CONFIG_PRINTK */
 
 /**
  * @brief Output an unsigned long long in hex format

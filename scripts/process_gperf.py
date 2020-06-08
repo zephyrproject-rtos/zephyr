@@ -49,8 +49,8 @@ def reformat_str(match_obj):
 
     # Nip quotes
     addr_str = addr_str[1:-1]
-    addr_vals = [0, 0, 0, 0]
-    ctr = 3
+    addr_vals = [0, 0, 0, 0, 0, 0, 0 , 0]
+    ctr = 7
     i = 0
 
     while True:
@@ -74,7 +74,7 @@ def reformat_str(match_obj):
 
         ctr -= 1
 
-    return "(char *)0x%02x%02x%02x%02x" % tuple(addr_vals)
+    return "(char *)0x%02x%02x%02x%02x%02x%02x%02x%02x" % tuple(addr_vals)
 
 
 def process_line(line, fp):
@@ -83,7 +83,7 @@ def process_line(line, fp):
         return
 
     # Set the lookup function to static inline so it gets rolled into
-    # _k_object_find(), nothing else will use it
+    # z_object_find(), nothing else will use it
     if re.search(args.pattern + " [*]$", line):
         fp.write("static inline " + line)
         return
@@ -97,9 +97,9 @@ def process_line(line, fp):
             warn("gperf %s is not tested, versions %s through %s supported" %
                  (v, v_lo, v_hi))
 
-    # Replace length lookups with constant len of 4 since we're always
+    # Replace length lookups with constant len since we're always
     # looking at pointers
-    line = re.sub(r'lengthtable\[key\]', r'4', line)
+    line = re.sub(r'lengthtable\[key\]', r'sizeof(void *)', line)
 
     # Empty wordlist entries to have NULLs instead of ""
     line = re.sub(r'[{]["]["][}]', r'{}', line)

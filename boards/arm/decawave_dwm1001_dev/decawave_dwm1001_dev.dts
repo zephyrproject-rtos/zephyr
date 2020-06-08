@@ -9,8 +9,7 @@
 
 / {
 	model = "Decawave DWM1001-DEV";
-	compatible = "decawave,dwm1001", "nordic,nrf52832-qfaa",
-		     "nordic,nrf52832";
+	compatible = "decawave,dwm1001";
 
 	chosen {
 		zephyr,console        = &uart0;
@@ -26,27 +25,35 @@
 	leds {
 		compatible = "gpio-leds";
 		led0_red: led_0 {
-			gpios = <&gpio0 14 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 			label = "Red LED 0";
 		};
 		led1_green: led_1 {
-			gpios = <&gpio0 30 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio0 30 GPIO_ACTIVE_LOW>;
 			label = "Green LED 1";
 		};
 		led2_red: led_2 {
-			gpios = <&gpio0 22 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
 			label = "Red LED 2";
 		};
 		led3_blue: led_3 {
-			gpios = <&gpio0 31 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
 			label = "Blue LED 3";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led0_red: pwm_led_0 {
+			pwms = <&pwm0 22>;
+			label = "Red PWM LED";
 		};
 	};
 
 	buttons {
 		compatible = "gpio-keys";
 		button0: button_0 {
-			gpios = <&gpio0 2 GPIO_PUD_PULL_UP>;
+			gpios = <&gpio0 2 GPIO_PULL_UP>;
 			label = "Push button switch 0";
 		};
 	};
@@ -62,6 +69,7 @@
 		led1-green = &led1_green;
 		led2-red   = &led2_red;
 		led3-blue  = &led3_blue;
+		pwm-led0   = &pwm_led0_red;
 	};
 
 };
@@ -87,12 +95,19 @@
 };
 
 &i2c0 {
-	compatible = "nordic,nrf-twi";
+	compatible = "nordic,nrf-twim";
 	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
 	sda-pin = <29>;
 	scl-pin = <28>;
-};
 
+	lis2dh12: lis2dh12@19 {
+		compatible = "st,lis2dh12", "st,lis2dh";
+		reg = <0x19>;
+		irq-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
+		label = "LIS2DH12-ACCEL";
+	};
+};
 
 &spi1 {
 	compatible = "nordic,nrf-spi";
@@ -110,6 +125,16 @@
 	mosi-pin = <20>;
 	miso-pin = <18>;
 	cs-gpios = <&gpio0 17 0>;
+
+	dw1000@0 {
+		compatible = "decawave,dw1000";
+		spi-max-frequency = <8000000>;
+		int-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;	/* P0.19 */
+		reset-gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;	/* P0.24 */
+		status = "okay";
+		label = "DW1000";
+		reg = <0>;
+	};
 };
 
 &pwm0 {
@@ -117,7 +142,6 @@
 	ch0-pin = <22>;
 	ch0-inverted;
 };
-
 
 &flash0 {
 	/*

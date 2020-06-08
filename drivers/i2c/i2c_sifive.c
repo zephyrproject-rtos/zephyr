@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT sifive_i2c0
+
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(i2c_sifive);
@@ -67,7 +69,7 @@ struct i2c_sifive_cfg {
 
 static inline bool i2c_sifive_busy(struct device *dev)
 {
-	const struct i2c_sifive_cfg *config = dev->config->config_info;
+	const struct i2c_sifive_cfg *config = dev->config_info;
 
 	return IS_SET(config, REG_STATUS, SF_STATUS_TIP);
 }
@@ -76,7 +78,7 @@ static int i2c_sifive_send_addr(struct device *dev,
 				u16_t addr,
 				u16_t rw_flag)
 {
-	const struct i2c_sifive_cfg *config = dev->config->config_info;
+	const struct i2c_sifive_cfg *config = dev->config_info;
 	u8_t command = 0U;
 
 	/* Wait for a previous transfer to complete */
@@ -107,7 +109,7 @@ static int i2c_sifive_write_msg(struct device *dev,
 				struct i2c_msg *msg,
 				u16_t addr)
 {
-	const struct i2c_sifive_cfg *config = dev->config->config_info;
+	const struct i2c_sifive_cfg *config = dev->config_info;
 	int rc = 0;
 	u8_t command = 0U;
 
@@ -156,7 +158,7 @@ static int i2c_sifive_read_msg(struct device *dev,
 			       struct i2c_msg *msg,
 			       u16_t addr)
 {
-	const struct i2c_sifive_cfg *config = dev->config->config_info;
+	const struct i2c_sifive_cfg *config = dev->config_info;
 	u8_t command = 0U;
 
 	i2c_sifive_send_addr(dev, addr, SF_TX_READ);
@@ -206,12 +208,7 @@ static int i2c_sifive_configure(struct device *dev, u32_t dev_config)
 		LOG_ERR("Device handle is NULL");
 		return -EINVAL;
 	}
-	if (dev->config == NULL) {
-		LOG_ERR("Device handle config is NULL");
-		return -EINVAL;
-	}
-
-	config = dev->config->config_info;
+	config = dev->config_info;
 	if (config == NULL) {
 		LOG_ERR("Device config is NULL");
 		return -EINVAL;
@@ -277,11 +274,7 @@ static int i2c_sifive_transfer(struct device *dev,
 		LOG_ERR("Device handle is NULL");
 		return -EINVAL;
 	}
-	if (dev->config == NULL) {
-		LOG_ERR("Device handle config is NULL");
-		return -EINVAL;
-	}
-	if (dev->config->config_info == NULL) {
+	if (dev->config_info == NULL) {
 		LOG_ERR("Device config is NULL");
 		return -EINVAL;
 	}
@@ -307,7 +300,7 @@ static int i2c_sifive_transfer(struct device *dev,
 
 static int i2c_sifive_init(struct device *dev)
 {
-	const struct i2c_sifive_cfg *config = dev->config->config_info;
+	const struct i2c_sifive_cfg *config = dev->config_info;
 	u32_t dev_config = 0U;
 	int rc = 0;
 
@@ -332,19 +325,17 @@ static struct i2c_driver_api i2c_sifive_api = {
 
 #define I2C_SIFIVE_INIT(n) \
 	static struct i2c_sifive_cfg i2c_sifive_cfg_##n = { \
-		.base = DT_INST_##n##_SIFIVE_I2C0_BASE_ADDRESS, \
-		.f_sys = DT_INST_##n##_SIFIVE_I2C0_INPUT_FREQUENCY, \
-		.f_bus = DT_INST_##n##_SIFIVE_I2C0_CLOCK_FREQUENCY, \
+		.base = DT_INST_REG_ADDR(n), \
+		.f_sys = DT_INST_PROP(n, input_frequency), \
+		.f_bus = DT_INST_PROP(n, clock_frequency), \
 	}; \
 	DEVICE_AND_API_INIT(i2c_##n, \
-			    DT_INST_##n##_SIFIVE_I2C0_LABEL, \
+			    DT_INST_LABEL(n), \
 			    i2c_sifive_init, \
 			    NULL, \
 			    &i2c_sifive_cfg_##n, \
 			    POST_KERNEL, \
 			    CONFIG_I2C_INIT_PRIORITY, \
-			    &i2c_sifive_api)
+			    &i2c_sifive_api);
 
-#ifdef DT_INST_0_SIFIVE_I2C0
-I2C_SIFIVE_INIT(0);
-#endif
+DT_INST_FOREACH_STATUS_OKAY(I2C_SIFIVE_INIT)

@@ -123,16 +123,23 @@ static bool any_other_channel_is_active(u8_t channel,
 }
 
 static int pwm_nrfx_pin_set(struct device *dev, u32_t pwm,
-			    u32_t period_cycles, u32_t pulse_cycles)
+			    u32_t period_cycles, u32_t pulse_cycles,
+			    pwm_flags_t flags)
 {
 	/* We assume here that period_cycles will always be 16MHz
 	 * peripheral clock. Since pwm_nrfx_get_cycles_per_sec() function might
 	 * be removed, see ISSUE #6958.
 	 * TODO: Remove this comment when issue has been resolved.
 	 */
-	const struct pwm_nrfx_config *config = dev->config->config_info;
+	const struct pwm_nrfx_config *config = dev->config_info;
 	struct pwm_nrfx_data *data = dev->driver_data;
 	u8_t channel;
+	bool was_stopped;
+
+	if (flags) {
+		/* PWM polarity not supported (yet?) */
+		return -ENOTSUP;
+	}
 
 	/* Check if PWM pin is one of the predefiend DTS config pins.
 	 * Return its array index (channel number),
@@ -144,6 +151,14 @@ static int pwm_nrfx_pin_set(struct device *dev, u32_t pwm,
 			pwm);
 		return -EINVAL;
 	}
+
+	/* Check if nrfx_pwm_stop function was called in previous
+	 * pwm_nrfx_pin_set call. Relying only on state returned by
+	 * nrfx_pwm_is_stopped may cause race condition if the pwm_nrfx_pin_set
+	 * is called multiple times in quick succession.
+	 */
+	was_stopped = !pwm_channel_is_active(channel, data) &&
+		      !any_other_channel_is_active(channel, data);
 
 	/* If this PWM is in center-aligned mode, pulse and period lengths
 	 * are effectively doubled by the up-down count, so halve them here
@@ -217,11 +232,16 @@ static int pwm_nrfx_pin_set(struct device *dev, u32_t pwm,
 		 * playing. The new channel values will be used
 		 * immediately when they are written into the seq array.
 		 */
-		if (nrfx_pwm_is_stopped(&config->pwm)) {
+		if (was_stopped) {
+			/* Wait until PWM will be stopped and then start the
+			 * sequence.
+			 */
+			while (!nrfx_pwm_is_stopped(&config->pwm)) {
+			};
 			nrfx_pwm_simple_playback(&config->pwm,
-				&config->seq,
-				1,
-				NRFX_PWM_FLAG_LOOP);
+						 &config->seq,
+						 1,
+						 NRFX_PWM_FLAG_LOOP);
 		}
 	}
 
@@ -247,14 +267,14 @@ static const struct pwm_driver_api pwm_nrfx_drv_api_funcs = {
 
 static int pwm_nrfx_init(struct device *dev)
 {
-	const struct pwm_nrfx_config *config = dev->config->config_info;
+	const struct pwm_nrfx_config *config = dev->config_info;
 
 	nrfx_err_t result = nrfx_pwm_init(&config->pwm,
 					  &config->initial_config,
 					  NULL,
 					  NULL);
 	if (result != NRFX_SUCCESS) {
-		LOG_ERR("Failed to initialize device: %s", dev->config->name);
+		LOG_ERR("Failed to initialize device: %s", dev->name);
 		return -EBUSY;
 	}
 
@@ -265,7 +285,7 @@ static int pwm_nrfx_init(struct device *dev)
 
 static void pwm_nrfx_uninit(struct device *dev)
 {
-	const struct pwm_nrfx_config *config = dev->config->config_info;
+	const struct pwm_nrfx_config *config = dev->config_info;
 
 	nrfx_pwm_uninit(&config->pwm);
 }
@@ -289,7 +309,7 @@ static int pwm_nrfx_set_power_state(u32_t new_state,
 		}
 		break;
 	default:
-		assert(false);
+		__ASSERT_NO_MSG(false);
 		break;
 	}
 	return err;
@@ -314,7 +334,7 @@ static int pwm_nrfx_pm_control(struct device *dev,
 			}
 		}
 	} else {
-		assert(ctrl_command == DEVICE_PM_GET_POWER_STATE);
+		__ASSERT_NO_MSG(ctrl_command == DEVICE_PM_GET_POWER_STATE);
 		*((u32_t *)context) = (*current_state);
 	}
 
@@ -343,11 +363,19 @@ static int pwm_nrfx_pm_control(struct device *dev,
 
 #endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
 
-#define PWM_NRFX_IS_INVERTED(dev_idx, ch_idx)				      \
-	IS_ENABLED(DT_NORDIC_NRF_PWM_PWM_##dev_idx##_CH##ch_idx##_INVERTED)
+#define PWM(dev_idx) DT_NODELABEL(pwm##dev_idx)
+#define PWM_PROP(dev_idx, prop) DT_PROP(PWM(dev_idx), prop)
+
+#define PWM_NRFX_IS_INVERTED(dev_idx, ch_idx) \
+	PWM_PROP(dev_idx, ch##ch_idx##_inverted)
+
+#define PWM_NRFX_CH_PIN(dev_idx, ch_idx)				      \
+	COND_CODE_1(DT_NODE_HAS_PROP(PWM(dev_idx), ch##ch_idx##_pin),	      \
+		    (PWM_PROP(dev_idx, ch##ch_idx##_pin)),		      \
+		    (NRFX_PWM_PIN_NOT_USED))
 
 #define PWM_NRFX_OUTPUT_PIN(dev_idx, ch_idx)				      \
-	(DT_NORDIC_NRF_PWM_PWM_##dev_idx##_CH##ch_idx##_PIN |		      \
+	(PWM_NRFX_CH_PIN(dev_idx, ch_idx) |				      \
 	 (PWM_NRFX_IS_INVERTED(dev_idx, ch_idx) ? NRFX_PWM_PIN_INVERTED : 0))
 
 #define PWM_NRFX_DEFAULT_VALUE(dev_idx, ch_idx)				      \
@@ -355,7 +383,7 @@ static int pwm_nrfx_pm_control(struct device *dev,
 	 PWM_NRFX_CH_VALUE_INVERTED : PWM_NRFX_CH_VALUE_NORMAL)
 
 #define PWM_NRFX_COUNT_MODE(dev_idx)                                          \
-	(IS_ENABLED(DT_NORDIC_NRF_PWM_PWM_##dev_idx##_CENTER_ALIGNED) ?	      \
+	(PWM_PROP(dev_idx, center_aligned) ?				      \
 	 NRF_PWM_MODE_UP_AND_DOWN : NRF_PWM_MODE_UP)
 
 #define PWM_NRFX_DEVICE(idx)						      \
@@ -387,73 +415,25 @@ static int pwm_nrfx_pm_control(struct device *dev,
 	};								      \
 	PWM_NRFX_PM_CONTROL(idx)					      \
 	DEVICE_DEFINE(pwm_nrfx_##idx,					      \
-		      DT_NORDIC_NRF_PWM_PWM_##idx##_LABEL,		      \
+		      DT_LABEL(PWM(idx)),				      \
 		      pwm_nrfx_init, pwm_##idx##_nrfx_pm_control,	      \
 		      &pwm_nrfx_##idx##_data,				      \
 		      &pwm_nrfx_##idx##config,				      \
 		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	      \
 		      &pwm_nrfx_drv_api_funcs)
 
-#ifdef CONFIG_PWM_0
-#ifndef DT_NORDIC_NRF_PWM_PWM_0_CH0_PIN
-#define DT_NORDIC_NRF_PWM_PWM_0_CH0_PIN NRFX_PWM_PIN_NOT_USED
-#endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_0_CH1_PIN
-#define DT_NORDIC_NRF_PWM_PWM_0_CH1_PIN NRFX_PWM_PIN_NOT_USED
-#endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_0_CH2_PIN
-#define DT_NORDIC_NRF_PWM_PWM_0_CH2_PIN NRFX_PWM_PIN_NOT_USED
-#endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_0_CH3_PIN
-#define DT_NORDIC_NRF_PWM_PWM_0_CH3_PIN NRFX_PWM_PIN_NOT_USED
-#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm0), okay)
 PWM_NRFX_DEVICE(0);
 #endif
 
-#ifdef CONFIG_PWM_1
-#ifndef DT_NORDIC_NRF_PWM_PWM_1_CH0_PIN
-#define DT_NORDIC_NRF_PWM_PWM_1_CH0_PIN NRFX_PWM_PIN_NOT_USED
-#endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_1_CH1_PIN
-#define DT_NORDIC_NRF_PWM_PWM_1_CH1_PIN NRFX_PWM_PIN_NOT_USED
-#endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_1_CH2_PIN
-#define DT_NORDIC_NRF_PWM_PWM_1_CH2_PIN NRFX_PWM_PIN_NOT_USED
-#endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_1_CH3_PIN
-#define DT_NORDIC_NRF_PWM_PWM_1_CH3_PIN NRFX_PWM_PIN_NOT_USED
-#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm1), okay)
 PWM_NRFX_DEVICE(1);
 #endif
 
-#ifdef CONFIG_PWM_2
-#ifndef DT_NORDIC_NRF_PWM_PWM_2_CH0_PIN
-#define DT_NORDIC_NRF_PWM_PWM_2_CH0_PIN NRFX_PWM_PIN_NOT_USED
-#endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_2_CH1_PIN
-#define DT_NORDIC_NRF_PWM_PWM_2_CH1_PIN NRFX_PWM_PIN_NOT_USED
-#endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_2_CH2_PIN
-#define DT_NORDIC_NRF_PWM_PWM_2_CH2_PIN NRFX_PWM_PIN_NOT_USED
-#endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_2_CH3_PIN
-#define DT_NORDIC_NRF_PWM_PWM_2_CH3_PIN NRFX_PWM_PIN_NOT_USED
-#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm2), okay)
 PWM_NRFX_DEVICE(2);
 #endif
 
-#ifdef CONFIG_PWM_3
-#ifndef DT_NORDIC_NRF_PWM_PWM_3_CH0_PIN
-#define DT_NORDIC_NRF_PWM_PWM_3_CH0_PIN NRFX_PWM_PIN_NOT_USED
-#endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_3_CH1_PIN
-#define DT_NORDIC_NRF_PWM_PWM_3_CH1_PIN NRFX_PWM_PIN_NOT_USED
-#endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_3_CH2_PIN
-#define DT_NORDIC_NRF_PWM_PWM_3_CH2_PIN NRFX_PWM_PIN_NOT_USED
-#endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_3_CH3_PIN
-#define DT_NORDIC_NRF_PWM_PWM_3_CH3_PIN NRFX_PWM_PIN_NOT_USED
-#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm3), okay)
 PWM_NRFX_DEVICE(3);
 #endif

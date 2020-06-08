@@ -56,6 +56,9 @@ Current supported displays
 | Good Display | E029A01         | IL3820 /     | waveshare_epaper_gdeh029a1   |
 | GDEH029A1    |                 | ssd16xx      |                              |
 +--------------+-----------------+--------------+------------------------------+
+| Good Display | WFT0583CZ61     | GD7965 /     | waveshare_epaper_gdew075t7   |
+| GDEW075T7    |                 | gd7965       |                              |
++--------------+-----------------+--------------+------------------------------+
 
 
 Requirements
@@ -74,7 +77,7 @@ For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/gui/lvgl
-   :board: nrf52840_pca10056
+   :board: nrf52840dk_nrf52840
    :shield: waveshare_epaper_gdeh0213b1
    :goals: build
 
@@ -85,4 +88,3 @@ References
 
 .. _Universal e-Paper Raw Panel Driver Shield website:
    https://www.waveshare.com/e-paper-shield.htm
-

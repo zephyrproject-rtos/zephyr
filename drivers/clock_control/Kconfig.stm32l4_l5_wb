@@ -1,0 +1,62 @@
+# STM32L4, STM32L5 and STM32WB PLL configuration options
+
+# Copyright (c) 2019 Linaro
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_STM32L4X || SOC_SERIES_STM32L5X || SOC_SERIES_STM32WBX
+
+config CLOCK_STM32_PLL_M_DIVISOR
+	int "PLL divisor"
+	depends on CLOCK_STM32_SYSCLK_SRC_PLL
+	default 1
+	range 1 8
+	help
+	  PLL divisor, allowed values: 1-8. With this ensure that the PLL
+	  VCO input frequency ranges from 4 to 16MHz.
+
+config CLOCK_STM32_PLL_N_MULTIPLIER
+	int "PLL multiplier"
+	depends on CLOCK_STM32_SYSCLK_SRC_PLL
+	default 20
+	range 8 86
+	help
+	  PLL multiplier, allowed values: 2-16. PLL output must not
+	  exceed 344MHz.
+
+config CLOCK_STM32_PLL_P_DIVISOR
+	int "PLL P Divisor"
+	depends on CLOCK_STM32_SYSCLK_SRC_PLL
+	default 7
+	range 0 17
+	help
+	  PLL P Output divisor, allowed values: 0, 7, 17.
+
+config CLOCK_STM32_PLL_Q_DIVISOR
+	int "PLL Q Divisor"
+	depends on CLOCK_STM32_SYSCLK_SRC_PLL
+	default 2
+	range 0 8
+	help
+	  PLL Q Output divisor, allowed values: 0, 2, 4, 6, 8.
+
+config CLOCK_STM32_PLL_R_DIVISOR
+	int "PLL R Divisor"
+	depends on CLOCK_STM32_SYSCLK_SRC_PLL
+	default 4
+	range 0 8
+	help
+	  PLL R Output divisor, allowed values: 0, 2, 4, 6, 8.
+
+config CLOCK_STM32_LSE
+	bool "Low-speed external clock"
+	help
+	  Enable the low-speed external (LSE) clock supplied with a 32.768 kHz
+	  crystal resonator oscillator.
+
+config CLOCK_STM32_MSI_PLL_MODE
+	bool "MSI PLL MODE"
+	depends on CLOCK_STM32_LSE
+	help
+	  Enable hardware auto-calibration with LSE.
+
+endif # SOC_SERIES_STM32L4X || SOC_SERIES_STM32L5X || SOC_SERIES_STM32WBX

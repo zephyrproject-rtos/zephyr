@@ -117,6 +117,15 @@ static bool dhcpv4_add_req_ipaddr(struct net_pkt *pkt,
 					      4, addr->s4_addr);
 }
 
+#if defined(CONFIG_NET_HOSTNAME_ENABLE)
+static bool dhcpv4_add_hostname(struct net_pkt *pkt,
+				 const char *hostname, const size_t size)
+{
+	return dhcpv4_add_option_length_value(pkt, DHCPV4_OPTIONS_HOST_NAME,
+					      size, hostname);
+}
+#endif
+
 /* Add DHCPv4 Options end, rest of the message can be padded wit zeros */
 static inline bool dhcpv4_add_end(struct net_pkt *pkt)
 {
@@ -159,6 +168,10 @@ static struct net_pkt *dhcpv4_create_message(struct net_if *iface, u8_t type,
 	size_t size = DHCPV4_MESSAGE_SIZE;
 	struct net_pkt *pkt;
 	struct dhcp_msg *msg;
+#if defined(CONFIG_NET_HOSTNAME_ENABLE)
+	const char *hostname = net_hostname_get();
+	const size_t hostname_size = strlen(hostname);
+#endif
 
 	if (src_addr == NULL) {
 		addr = net_ipv4_unspecified_address();
@@ -177,6 +190,12 @@ static struct net_pkt *dhcpv4_create_message(struct net_if *iface, u8_t type,
 	if (type == DHCPV4_MSG_TYPE_DISCOVER) {
 		size +=  DHCPV4_OLV_MSG_REQ_LIST;
 	}
+
+#if defined(CONFIG_NET_HOSTNAME_ENABLE)
+	if (hostname_size > 0) {
+		size += DHCPV4_OLV_MSG_HOST_NAME + hostname_size;
+	}
+#endif
 
 	pkt = net_pkt_alloc_with_buffer(iface, size, AF_INET,
 					IPPROTO_UDP, K_FOREVER);
@@ -232,6 +251,13 @@ static struct net_pkt *dhcpv4_create_message(struct net_if *iface, u8_t type,
 		goto fail;
 	}
 
+#if defined(CONFIG_NET_HOSTNAME_ENABLE)
+	if (hostname_size > 0 &&
+	     !dhcpv4_add_hostname(pkt, hostname, hostname_size)) {
+		goto fail;
+	}
+#endif
+
 	if (!dhcpv4_add_end(pkt)) {
 		goto fail;
 	}
@@ -268,8 +294,8 @@ static u32_t dhcpv4_send_request(struct net_if *iface)
 	case NET_DHCPV4_SELECTING:
 	case NET_DHCPV4_BOUND:
 		/* Not possible */
-		NET_ASSERT_INFO(0, "Invalid state %s",
-			net_dhcpv4_state_name(iface->config.dhcpv4.state));
+		NET_ASSERT(0, "Invalid state %s",
+			   net_dhcpv4_state_name(iface->config.dhcpv4.state));
 		break;
 	case NET_DHCPV4_REQUESTING:
 		with_server_id = true;
@@ -379,7 +405,7 @@ fail:
 static void dhcpv4_update_timeout_work(u32_t timeout)
 {
 	if (!k_delayed_work_remaining_get(&timeout_work) ||
-	    K_SECONDS(timeout) <
+	    (MSEC_PER_SEC * timeout) <
 	    k_delayed_work_remaining_get(&timeout_work)) {
 		k_delayed_work_cancel(&timeout_work);
 		k_delayed_work_submit(&timeout_work, K_SECONDS(timeout));
@@ -401,7 +427,7 @@ static void dhcpv4_enter_selecting(struct net_if *iface)
 
 static bool dhcpv4_check_timeout(s64_t start, u32_t time, s64_t timeout)
 {
-	start += K_SECONDS(time);
+	start += MSEC_PER_SEC * time;
 	if (start < 0) {
 		start = -start;
 	}

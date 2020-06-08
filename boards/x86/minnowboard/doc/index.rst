@@ -184,9 +184,13 @@ Booting Zephyr on the MinnowBoard
 
 The MinnowBoard by default will be running a 64bit firmware. To boot Zephyr, you
 will need to replace the 64bit firmware with the 32bit variant. Please follow
-the instructions for flashing and updating the firmware documented at the
-`MinnowBoard firmware`_ website.
+the instructions for updating the firmware documented at the
+`MinnowBoard firmware`_ website. Look for the Firmware Download section and find
+Firmware Flash Images release. The ZIP file will contain the binary images,
+update utilities, and instructions. Extract the files and prepare a bootable USB.
+Follow the release instructions on Flash Update. You can also check out the
+`MinnowBoard firmware development`_ website for more information.
 
-
-.. _MinnowBoard: https://minnowboard.org/
-.. _MinnowBoard firmware: https://minnowboard.org/tutorials/updating-the-firmware
+.. _MinnowBoard: https://github.com/MinnowBoard-org
+.. _MinnowBoard firmware: https://software.intel.com/en-us/articles/minnowboard-maxturbot-uefi-firmware
+.. _Minnowboard firmware development: https://github.com/tianocore/edk2-platforms/blob/master/Platform/Intel/Vlv2TbltDevicePkg/Readme.md

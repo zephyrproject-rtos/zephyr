@@ -6,6 +6,11 @@
 #include "nrf5_common.dtsi"
 
 / {
+	chosen {
+		zephyr,entropy = &rng;
+		zephyr,flash-controller = &flash_controller;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -36,7 +41,7 @@
 
 	soc {
 
-		flash-controller@4001e000 {
+		flash_controller: flash-controller@4001e000 {
 			compatible = "nordic,nrf52-flash-controller";
 			reg = <0x4001e000 0x1000>;
 
@@ -134,6 +139,14 @@
 			label = "QDEC";
 		};
 
+		rng: random@4000d000 {
+			compatible = "nordic,nrf-rng";
+			reg = <0x4000d000 0x1000>;
+			interrupts = <13 1>;
+			status = "okay";
+			label = "RNG";
+		};
+
 		spi0: spi@40004000 {
 			/*
 			 * This spi node can be SPI, SPIM, or SPIS,
@@ -205,7 +218,7 @@
 			label = "TEMP_0";
 		};
 
-		wdt: watchdog@40010000 {
+		wdt: wdt0: watchdog@40010000 {
 			compatible = "nordic,nrf-watchdog";
 			reg = <0x40010000 0x1000>;
 			interrupts = <16 1>;

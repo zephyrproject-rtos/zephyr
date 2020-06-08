@@ -6,7 +6,6 @@ menuconfig ETH_SMSC911X
 	help
 	  Enable driver for SMSC/LAN911x/9220 family of chips.
 
-# Hidden option
 config ETH_NIC_MODEL
 	string
 	default "lan9118"

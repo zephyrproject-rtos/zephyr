@@ -7,15 +7,15 @@
 #ifndef _STM32F7_SOC_H_
 #define _STM32F7_SOC_H_
 
+#include <sys/util.h>
+
 #ifndef _ASMLANGUAGE
 
+#include <autoconf.h>
 #include <stm32h7xx.h>
 
-/* ARM CMSIS definitions must be included before kernel_includes.h.
- * Therefore, it is essential to include kernel_includes.h after including
- * core SOC-specific headers.
- */
-#include <kernel_includes.h>
+/* Add include for DTS generated information */
+#include <devicetree.h>
 
 #ifdef CONFIG_STM32H7_DUAL_CORE
 
@@ -59,6 +59,24 @@
 #ifdef CONFIG_SERIAL_HAS_DRIVER
 #include <stm32h7xx_ll_usart.h>
 #endif /* CONFIG_SERIAL_HAS_DRIVER */
+
+#ifdef CONFIG_HWINFO_STM32
+#include <stm32h7xx_ll_utils.h>
+#endif
+
+#ifdef CONFIG_COUNTER_RTC_STM32
+#include <stm32h7xx_ll_rtc.h>
+#include <stm32h7xx_ll_exti.h>
+#include <stm32h7xx_ll_pwr.h>
+#endif /* CONFIG_COUNTER_RTC_STM32 */
+
+#ifdef CONFIG_I2C_STM32
+#include <stm32h7xx_ll_i2c.h>
+#endif /* CONFIG_I2C_STM32 */
+
+#ifdef CONFIG_ADC_STM32
+#include <stm32h7xx_ll_adc.h>
+#endif /* CONFIG_ADC_STM32 */
 
 #endif /* !_ASMLANGUAGE */
 

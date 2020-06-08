@@ -8,11 +8,12 @@
 #include <drivers/pwm.h>
 
 static inline int z_vrfy_pwm_pin_set_cycles(struct device *dev, u32_t pwm,
-					   u32_t period, u32_t pulse)
+					    u32_t period, u32_t pulse,
+					    pwm_flags_t flags)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_PWM(dev, pin_set));
 	return z_impl_pwm_pin_set_cycles((struct device *)dev, pwm, period,
-					pulse);
+					 pulse, flags);
 }
 #include <syscalls/pwm_pin_set_cycles_mrsh.c>
 

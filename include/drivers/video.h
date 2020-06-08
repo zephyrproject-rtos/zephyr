@@ -165,7 +165,8 @@ typedef int (*video_api_enqueue_t)(struct device *dev,
  */
 typedef int (*video_api_dequeue_t)(struct device *dev,
 				   enum video_endpoint_id ep,
-				   struct video_buffer **buf, u32_t timeout);
+				   struct video_buffer **buf,
+				   k_timeout_t timeout);
 
 /**
  * @typedef video_api_flush_t
@@ -326,7 +327,7 @@ static inline int video_enqueue(struct device *dev, enum video_endpoint_id ep,
  * @param dev Pointer to the device structure for the driver instance.
  * @param ep Endpoint ID.
  * @param buf Pointer a video buffer pointer.
- * @param timeout Timeout in milliseconds.
+ * @param timeout Timeout
  *
  * @retval 0 Is successful.
  * @retval -EINVAL If parameters are invalid.
@@ -334,7 +335,7 @@ static inline int video_enqueue(struct device *dev, enum video_endpoint_id ep,
  */
 static inline int video_dequeue(struct device *dev, enum video_endpoint_id ep,
 				struct video_buffer **buf,
-				u32_t timeout)
+				k_timeout_t timeout)
 {
 	const struct video_driver_api *api =
 		(const struct video_driver_api *)dev->driver_api;

@@ -23,10 +23,10 @@ find_program(CMAKE_CXX_COMPILER ${cplusplus_compiler}     CACHE INTERNAL " " FOR
 # that is currently not needed. See comments in compiler/gcc/target.cmake
 if (CONFIG_X86)
   # Convert to list as cmake Modules/*.cmake do it
-  STRING(REGEX REPLACE " +" ";" PRINT_LIBGCC_ARGS ${CMAKE_C_FLAGS})
+  STRING(REGEX REPLACE " +" ";" PRINT_LIBGCC_ARGS "${CMAKE_C_FLAGS}")
   # This libgcc code is partially duplicated in compiler/*/target.cmake
   execute_process(
-    COMMAND ${CMAKE_C_COMPILER} ${PRINT_LIBGCC_ARGS} --print-libgcc-file-name
+    COMMAND ${CMAKE_C_COMPILER} "${PRINT_LIBGCC_ARGS}" --print-libgcc-file-name
     OUTPUT_VARIABLE LIBGCC_FILE_NAME
     OUTPUT_STRIP_TRAILING_WHITESPACE
     )

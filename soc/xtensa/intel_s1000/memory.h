@@ -11,12 +11,15 @@
 /* L2 HP SRAM */
 #define L2_VECTOR_SIZE				0x1000
 
+#define L2_SRAM_BASE				(DT_REG_ADDR(DT_NODELABEL(sram0)))
+#define L2_SRAM_SIZE				(DT_REG_SIZE(DT_NODELABEL(sram0)))
+
 #ifdef CONFIG_BOOTLOADER_MCUBOOT
-#define SRAM_BASE (DT_L2_SRAM_BASE + CONFIG_BOOTLOADER_SRAM_SIZE * 1K)
-#define SRAM_SIZE (DT_L2_SRAM_SIZE - CONFIG_BOOTLOADER_SRAM_SIZE * 1K)
+#define SRAM_BASE (L2_SRAM_BASE + CONFIG_BOOTLOADER_SRAM_SIZE * 1K)
+#define SRAM_SIZE (L2_SRAM_SIZE - CONFIG_BOOTLOADER_SRAM_SIZE * 1K)
 #else
-#define SRAM_BASE (DT_L2_SRAM_BASE)
-#define SRAM_SIZE (DT_L2_SRAM_SIZE)
+#define SRAM_BASE (L2_SRAM_BASE)
+#define SRAM_SIZE (L2_SRAM_SIZE)
 #endif
 
 /* The reset vector address in SRAM and its size */
@@ -47,9 +50,6 @@
 #define MEM_VECT_SIZE				(MEM_VECT_TEXT_SIZE +\
 						MEM_VECT_LIT_SIZE)
 
-/* The memerror vector address is copied as is from core-isa.h */
-#define XCHAL_MEMERROR_VECTOR_PADDR		0xBEFE0400
-
 #define MEM_ERROR_TEXT_SIZE			0x180
 #define MEM_ERROR_LIT_SIZE			0x8
 
@@ -69,7 +69,10 @@
 #define IDT_SIZE				0x2000
 
 /* low power ram where DMA buffers are typically placed */
-#define LPRAM_BASE				(DT_LP_SRAM_BASE)
-#define LPRAM_SIZE				(DT_LP_SRAM_SIZE)
+#define LPRAM_BASE				(DT_REG_ADDR(DT_NODELABEL(sram1)))
+#define LPRAM_SIZE				(DT_REG_SIZE(DT_NODELABEL(sram1)))
+
+/* Boot vector resideing in LP-SRAM for core #1 */
+#define LPSRAM_BOOT_VECTOR_ADDR			(LPRAM_BASE + 0x08)
 
 #endif /* __INC_MEMORY_H */

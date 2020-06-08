@@ -11,6 +11,7 @@
 #include <display/cfb.h>
 #include <sys/printk.h>
 #include <drivers/flash.h>
+#include <storage/flash_map.h>
 #include <drivers/sensor.h>
 
 #include <string.h>
@@ -47,14 +48,6 @@ struct font_info {
 
 #define STAT_COUNT 128
 
-#define EDGE (GPIO_INT_EDGE | GPIO_INT_DOUBLE_EDGE)
-
-#ifdef DT_ALIAS_SW0_GPIOS_FLAGS
-#define PULL_UP DT_ALIAS_SW0_GPIOS_FLAGS
-#else
-#define PULL_UP 0
-#endif
-
 static struct device *epd_dev;
 static bool pressed;
 static u8_t screen_id = SCREEN_MAIN;
@@ -66,11 +59,18 @@ static char str_buf[256];
 static struct {
 	struct device *dev;
 	const char *name;
-	u32_t pin;
+	gpio_pin_t pin;
+	gpio_flags_t flags;
 } leds[] = {
-	{ .name = DT_ALIAS_LED0_GPIOS_CONTROLLER, .pin = DT_ALIAS_LED0_GPIOS_PIN, },
-	{ .name = DT_ALIAS_LED1_GPIOS_CONTROLLER, .pin = DT_ALIAS_LED1_GPIOS_PIN, },
-	{ .name = DT_ALIAS_LED2_GPIOS_CONTROLLER, .pin = DT_ALIAS_LED2_GPIOS_PIN, },
+	{ .name = DT_GPIO_LABEL(DT_ALIAS(led0), gpios),
+	  .pin = DT_GPIO_PIN(DT_ALIAS(led0), gpios),
+	  .flags = DT_GPIO_FLAGS(DT_ALIAS(led0), gpios)},
+	{ .name = DT_GPIO_LABEL(DT_ALIAS(led1), gpios),
+	  .pin = DT_GPIO_PIN(DT_ALIAS(led1), gpios),
+	  .flags = DT_GPIO_FLAGS(DT_ALIAS(led1), gpios)},
+	{ .name = DT_GPIO_LABEL(DT_ALIAS(led2), gpios),
+	  .pin = DT_GPIO_PIN(DT_ALIAS(led2), gpios),
+	  .flags = DT_GPIO_FLAGS(DT_ALIAS(led2), gpios)}
 };
 
 struct k_delayed_work led_timer;
@@ -136,7 +136,7 @@ void board_blink_leds(void)
 	k_delayed_work_submit(&led_timer, K_MSEC(100));
 }
 
-void board_show_text(const char *text, bool center, s32_t duration)
+void board_show_text(const char *text, bool center, k_timeout_t duration)
 {
 	int i;
 
@@ -162,7 +162,7 @@ void board_show_text(const char *text, bool center, s32_t duration)
 
 	cfb_framebuffer_finalize(epd_dev);
 
-	if (duration != K_FOREVER) {
+	if (!K_TIMEOUT_EQ(duration, K_FOREVER)) {
 		k_delayed_work_submit(&epd_work, duration);
 	}
 }
@@ -342,7 +342,7 @@ static void show_statistics(void)
 	cfb_framebuffer_finalize(epd_dev);
 }
 
-static void show_sensors_data(s32_t interval)
+static void show_sensors_data(k_timeout_t interval)
 {
 	struct sensor_value val[3];
 	u8_t line = 0U;
@@ -444,11 +444,7 @@ static void long_press(struct k_work *work)
 
 static bool button_is_pressed(void)
 {
-	u32_t val;
-
-	gpio_pin_read(gpio, DT_ALIAS_SW0_GPIOS_PIN, &val);
-
-	return !val;
+	return gpio_pin_get(gpio, DT_GPIO_PIN(DT_ALIAS(sw0), gpios)) > 0;
 }
 
 static void button_interrupt(struct device *dev, struct gpio_callback *cb,
@@ -478,7 +474,7 @@ static void button_interrupt(struct device *dev, struct gpio_callback *cb,
 	case SCREEN_STATS:
 		return;
 	case SCREEN_MAIN:
-		if (pins & BIT(DT_ALIAS_SW0_GPIOS_PIN)) {
+		if (pins & BIT(DT_GPIO_PIN(DT_ALIAS(sw0), gpios))) {
 			u32_t uptime = k_uptime_get_32();
 			static u32_t bad_count, press_ts;
 
@@ -511,20 +507,28 @@ static int configure_button(void)
 {
 	static struct gpio_callback button_cb;
 
-	gpio = device_get_binding(DT_ALIAS_SW0_GPIOS_CONTROLLER);
+	gpio = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(sw0), gpios));
 	if (!gpio) {
 		return -ENODEV;
 	}
 
-	gpio_pin_configure(gpio, DT_ALIAS_SW0_GPIOS_PIN,
-			   (GPIO_DIR_IN | GPIO_INT |  PULL_UP | EDGE));
+	gpio_pin_configure(gpio, DT_GPIO_PIN(DT_ALIAS(sw0), gpios),
+			   GPIO_INPUT | DT_GPIO_FLAGS(DT_ALIAS(sw0), gpios));
 
-	gpio_init_callback(&button_cb, button_interrupt, BIT(DT_ALIAS_SW0_GPIOS_PIN));
+	gpio_pin_interrupt_configure(gpio, DT_GPIO_PIN(DT_ALIAS(sw0), gpios),
+				     GPIO_INT_EDGE_BOTH);
+
+	gpio_init_callback(&button_cb, button_interrupt,
+			   BIT(DT_GPIO_PIN(DT_ALIAS(sw0), gpios)));
+
 	gpio_add_callback(gpio, &button_cb);
 
-	gpio_pin_enable_callback(gpio, DT_ALIAS_SW0_GPIOS_PIN);
-
 	return 0;
+}
+
+int set_led_state(u8_t id, bool state)
+{
+	return gpio_pin_set(leds[id].dev, leds[id].pin, state);
 }
 
 static void led_timeout(struct k_work *work)
@@ -534,7 +538,7 @@ static void led_timeout(struct k_work *work)
 
 	/* Disable all LEDs */
 	for (i = 0; i < ARRAY_SIZE(leds); i++) {
-		gpio_pin_write(leds[i].dev, leds[i].pin, 1);
+		set_led_state(i, 0);
 	}
 
 	/* Stop after 5 iterations */
@@ -545,7 +549,7 @@ static void led_timeout(struct k_work *work)
 
 	/* Select and enable current LED */
 	i = led_cntr++ % ARRAY_SIZE(leds);
-	gpio_pin_write(leds[i].dev, leds[i].pin, 0);
+	set_led_state(i, 1);
 
 	k_delayed_work_submit(&led_timer, K_MSEC(100));
 }
@@ -561,9 +565,9 @@ static int configure_leds(void)
 			return -ENODEV;
 		}
 
-		gpio_pin_configure(leds[i].dev, leds[i].pin, GPIO_DIR_OUT);
-		gpio_pin_write(leds[i].dev, leds[i].pin, 1);
-
+		gpio_pin_configure(leds[i].dev, leds[i].pin,
+				   leds[i].flags |
+				   GPIO_OUTPUT_INACTIVE);
 	}
 
 	k_delayed_work_init(&led_timer, led_timeout);
@@ -574,10 +578,10 @@ static int erase_storage(void)
 {
 	struct device *dev;
 
-	dev = device_get_binding(DT_FLASH_DEV_NAME);
+	dev = device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 
-	return flash_erase(dev, DT_FLASH_AREA_STORAGE_OFFSET,
-			   DT_FLASH_AREA_STORAGE_SIZE);
+	return flash_erase(dev, FLASH_AREA_OFFSET(storage),
+			   FLASH_AREA_SIZE(storage));
 }
 
 void board_refresh_display(void)
@@ -587,7 +591,7 @@ void board_refresh_display(void)
 
 int board_init(void)
 {
-	epd_dev = device_get_binding(DT_INST_0_SOLOMON_SSD16XXFB_LABEL);
+	epd_dev = device_get_binding(DT_LABEL(DT_INST(0, solomon_ssd16xxfb)));
 	if (epd_dev == NULL) {
 		printk("SSD16XX device not found\n");
 		return -ENODEV;

@@ -1,0 +1,14 @@
+# STMicroelectronics STM32G474RE MCU
+
+# Copyright (c) 2019 STMicroelectronics.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32G474XX
+
+config SOC
+	default "stm32g474xx"
+
+config NUM_IRQS
+	default 102
+
+endif # SOC_STM32G474XX

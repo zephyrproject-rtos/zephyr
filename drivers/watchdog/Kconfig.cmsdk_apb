@@ -3,10 +3,9 @@
 # Copyright (c) 2016 Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_FAMILY_ARM
-
 config WDOG_CMSDK_APB
 	bool "CMSDK APB Watchdog Driver for ARM family of MCUs"
+	depends on SOC_FAMILY_ARM
 	depends on RUNTIME_NMI
 	help
 	  Enable CMSDK APB Watchdog (WDOG_CMSDK_APB) Driver for ARM
@@ -20,5 +19,3 @@ config WDOG_CMSDK_APB_START_AT_BOOT
 	  during device initialization. Note that once WDOG is started
 	  it must be reloaded before the counter reaches 0, otherwise
 	  the MCU will be reset.
-
-endif # SOC_FAMILY_ARM

@@ -36,8 +36,6 @@ extern "C" {
 static ALWAYS_INLINE void arch_kernel_init(void)
 {
 	z_irq_setup();
-	_current_cpu->irq_stack =
-		Z_THREAD_STACK_BUFFER(_interrupt_stack) + CONFIG_ISR_STACK_SIZE;
 }
 
 
@@ -64,7 +62,8 @@ extern void z_thread_entry_wrapper(void);
 extern void z_user_thread_entry_wrapper(void);
 
 extern void z_arc_userspace_enter(k_thread_entry_t user_entry, void *p1,
-		 void *p2, void *p3, u32_t stack, u32_t size);
+		 void *p2, void *p3, u32_t stack, u32_t size,
+		 struct k_thread *thread);
 
 
 extern void arch_switch(void *switch_to, void **switched_from);

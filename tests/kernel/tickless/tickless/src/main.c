@@ -120,13 +120,13 @@ void ticklessTestThread(void)
 		 * Do a single tick sleep to get us as close to a tick boundary
 		 * as we can.
 		 */
-		k_sleep(TICKS_TO_MS);
+		k_msleep(TICKS_TO_MS);
 		start_time = k_uptime_get_32();
 		start_tsc = _TIMESTAMP_READ();
 		/* FIXME: one tick less to account for
 		 * one  extra tick for _TICK_ALIGN in k_sleep
 		 */
-		k_sleep((SLEEP_TICKS - 1) * TICKS_TO_MS);
+		k_msleep((SLEEP_TICKS - 1) * TICKS_TO_MS);
 		end_tsc = _TIMESTAMP_READ();
 		end_time = k_uptime_get_32();
 		cal_tsc += end_tsc - start_tsc;
@@ -155,13 +155,13 @@ void ticklessTestThread(void)
 		 * Do a single tick sleep to get us as close to a tick boundary
 		 * as we can.
 		 */
-		k_sleep(TICKS_TO_MS);
+		k_msleep(TICKS_TO_MS);
 		start_time = k_uptime_get_32();
 		start_tsc = _TIMESTAMP_READ();
 		/* FIXME: one tick less to account for
 		 * one  extra tick for _TICK_ALIGN in k_sleep
 		 */
-		k_sleep((SLEEP_TICKS - 1) * TICKS_TO_MS);
+		k_msleep((SLEEP_TICKS - 1) * TICKS_TO_MS);
 		end_tsc = _TIMESTAMP_READ();
 		end_time = k_uptime_get_32();
 		diff_tsc += end_tsc - start_tsc;

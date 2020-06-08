@@ -1,7 +1,4 @@
-title: Atmel SERCOM binding
-
-description: |
-    Binding for the Atmel SAM0 multi-protocol (UART, SPI, I2C) SERCOM unit.
+description: Atmel SAM0 multi-protocol (UART, SPI, I2C) SERCOM unit
 
 compatible: "atmel,sam0-sercom"
 
@@ -12,4 +9,7 @@ properties:
       required: true
 
     interrupts:
+      required: true
+
+    clocks:
       required: true

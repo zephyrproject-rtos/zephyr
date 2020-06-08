@@ -52,7 +52,8 @@ void z_timer_expiration_handler(struct _timeout *t)
 	 * if the timer is periodic, start it again; don't add _TICK_ALIGN
 	 * since we're already aligned to a tick boundary
 	 */
-	if (timer->period > 0) {
+	if (!K_TIMEOUT_EQ(timer->period, K_NO_WAIT) &&
+	    !K_TIMEOUT_EQ(timer->period, K_FOREVER)) {
 		z_add_timeout(&timer->timeout, z_timer_expiration_handler,
 			     timer->period);
 	}
@@ -105,29 +106,51 @@ void k_timer_init(struct k_timer *timer,
 }
 
 
-void z_impl_k_timer_start(struct k_timer *timer, s32_t duration, s32_t period)
+void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
+			  k_timeout_t period)
 {
-	__ASSERT(duration >= 0 && period >= 0 &&
-		 (duration != 0 || period != 0), "invalid parameters\n");
+	if (K_TIMEOUT_EQ(duration, K_FOREVER)) {
+		return;
+	}
 
-	volatile s32_t period_in_ticks, duration_in_ticks;
-
-	period_in_ticks = k_ms_to_ticks_ceil32(period);
-	duration_in_ticks = k_ms_to_ticks_ceil32(duration);
+#ifdef CONFIG_LEGACY_TIMEOUT_API
+	duration = k_ms_to_ticks_ceil32(duration);
+	period = k_ms_to_ticks_ceil32(period);
+#else
+	/* z_add_timeout() always adds one to the incoming tick count
+	 * to round up to the next tick (by convention it waits for
+	 * "at least as long as the specified timeout"), but the
+	 * period interval is always guaranteed to be reset from
+	 * within the timer ISR, so no round up is desired.  Subtract
+	 * one.
+	 *
+	 * Note that the duration (!) value gets the same treatment
+	 * for backwards compatibility.  This is unfortunate
+	 * (i.e. k_timer_start() doesn't treat its initial sleep
+	 * argument the same way k_sleep() does), but historical.  The
+	 * timer_api test relies on this behavior.
+	 */
+	if (period.ticks != 0 && Z_TICK_ABS(period.ticks) < 0) {
+		period.ticks = MAX(period.ticks - 1, 1);
+	}
+	if (Z_TICK_ABS(duration.ticks) < 0) {
+		duration.ticks = MAX(duration.ticks - 1, 0);
+	}
+#endif
 
 	(void)z_abort_timeout(&timer->timeout);
-	timer->period = period_in_ticks;
+	timer->period = period;
 	timer->status = 0U;
+
 	z_add_timeout(&timer->timeout, z_timer_expiration_handler,
-		     duration_in_ticks);
+		     duration);
 }
 
 #ifdef CONFIG_USERSPACE
 static inline void z_vrfy_k_timer_start(struct k_timer *timer,
-					s32_t duration, s32_t period)
+					k_timeout_t duration,
+					k_timeout_t period)
 {
-	Z_OOPS(Z_SYSCALL_VERIFY(duration >= 0 && period >= 0 &&
-				(duration != 0 || period != 0)));
 	Z_OOPS(Z_SYSCALL_OBJ(timer, K_OBJ_TIMER));
 	z_impl_k_timer_start(timer, duration, period);
 }
@@ -219,12 +242,19 @@ static inline u32_t z_vrfy_k_timer_status_sync(struct k_timer *timer)
 }
 #include <syscalls/k_timer_status_sync_mrsh.c>
 
-static inline u32_t z_vrfy_k_timer_remaining_get(struct k_timer *timer)
+static inline k_ticks_t z_vrfy_k_timer_remaining_ticks(struct k_timer *timer)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(timer, K_OBJ_TIMER));
-	return z_impl_k_timer_remaining_get(timer);
+	return z_impl_k_timer_remaining_ticks(timer);
 }
-#include <syscalls/k_timer_remaining_get_mrsh.c>
+#include <syscalls/k_timer_remaining_ticks_mrsh.c>
+
+static inline k_ticks_t z_vrfy_k_timer_expires_ticks(struct k_timer *timer)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(timer, K_OBJ_TIMER));
+	return z_impl_k_timer_expires_ticks(timer);
+}
+#include <syscalls/k_timer_expires_ticks_mrsh.c>
 
 static inline void *z_vrfy_k_timer_user_data_get(struct k_timer *timer)
 {

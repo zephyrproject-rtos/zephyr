@@ -282,7 +282,7 @@ struct adxl372_data {
 	struct device *bus;
 #ifdef CONFIG_ADXL372_SPI
 	struct spi_config spi_cfg;
-#if defined(DT_INST_0_ADI_ADXL372_CS_GPIOS_CONTROLLER)
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	struct spi_cs_control adxl372_cs_ctrl;
 #endif
 #endif
@@ -318,14 +318,15 @@ struct adxl372_dev_config {
 	const char *spi_port;
 	u16_t spi_slave;
 	u32_t spi_max_frequency;
-#if defined(DT_INST_0_ADI_ADXL372_CS_GPIOS_CONTROLLER)
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	const char *gpio_cs_port;
-	u8_t cs_gpio;
+	gpio_pin_t cs_gpio;
 #endif
 #endif /* CONFIG_ADXL372_SPI */
 #ifdef CONFIG_ADXL372_TRIGGER
 	const char *gpio_port;
-	u8_t int_gpio;
+	gpio_pin_t int_gpio;
+	gpio_dt_flags_t int_flags;
 #endif
 	bool max_peak_detect_mode;
 

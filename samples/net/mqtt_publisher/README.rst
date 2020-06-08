@@ -63,12 +63,6 @@ Max number of connection tries:
 
 	#define APP_CONNECT_TRIES	10
 
-Max number of MQTT PUBLISH iterations:
-
-.. code-block:: c
-
-	#define APP_MAX_ITERATIONS	5
-
 MQTT Client Identifier:
 
 .. code-block:: c
@@ -92,6 +86,12 @@ following macros to specify those values:
 	#define BLUEMIX_DEVID		"carbon"
 	#define BLUEMIX_EVENT		"status"
 	#define BLUEMIX_FORMAT		"json"
+
+Max number of MQTT PUBLISH iterations is defined in Kconfig:
+
+.. code-block:: c
+
+	CONFIG_NET_SAMPLE_APP_MAX_ITERATIONS	5
 
 On your Linux host computer, open a terminal window, locate the source code
 of this sample application (i.e., :zephyr_file:`samples/net/mqtt_publisher`) and type:
@@ -209,7 +209,7 @@ This is the output from the FRDM UART console, with:
 
 .. code-block:: c
 
-	#define APP_MAX_ITERATIONS     5
+	CONFIG_NET_SAMPLE_APP_MAX_ITERATIONS     5
 
 .. code-block:: console
 

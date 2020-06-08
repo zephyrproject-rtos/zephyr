@@ -6,9 +6,7 @@
 #include <drivers/timer/system_timer.h>
 #include <sys_clock.h>
 #include <spinlock.h>
-#include <arch/arm/cortex_m/cmsis.h>
-
-void z_arm_exc_exit(void);
+#include <arch/arm/aarch32/cortex_m/cmsis.h>
 
 #define COUNTER_MAX 0x00ffffff
 #define TIMER_STOPPED 0xff000000
@@ -148,7 +146,7 @@ void z_clock_isr(void *arg)
 	} else {
 		z_clock_announce(1);
 	}
-	z_arm_exc_exit();
+	z_arm_int_exit();
 }
 
 int z_clock_driver_init(struct device *device)
@@ -172,7 +170,8 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	 * the counter. (Note: we can assume if idle==true that
 	 * interrupts are already disabled)
 	 */
-	if (IS_ENABLED(CONFIG_TICKLESS_IDLE) && idle && ticks == K_FOREVER) {
+	if (IS_ENABLED(CONFIG_TICKLESS_IDLE) && idle
+	    && ticks == K_TICKS_FOREVER) {
 		SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
 		last_load = TIMER_STOPPED;
 		return;
@@ -181,7 +180,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 #if defined(CONFIG_TICKLESS_KERNEL)
 	u32_t delay;
 
-	ticks = (ticks == K_FOREVER) ? MAX_TICKS : ticks;
+	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
 	ticks = MAX(MIN(ticks - 1, (s32_t)MAX_TICKS), 0);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);

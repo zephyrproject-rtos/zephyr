@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <sys/printk.h>
-#include <ps2.h>
+#include <drivers/ps2.h>
 #include <soc.h>
 #define LOG_LEVEL LOG_LEVEL_DBG
 #include <logging/log.h>
@@ -26,7 +26,7 @@ static void saturate_ps2(struct k_timer *timer);
 static bool host_blocked;
 
 K_THREAD_DEFINE(aux_thread_id, TASK_STACK_SIZE, to_port_60_thread,
-		NULL, NULL, NULL, PRIORITY, 0, K_NO_WAIT);
+		NULL, NULL, NULL, PRIORITY, 0, 0);
 K_SEM_DEFINE(p60_sem, 0, 1);
 K_MSGQ_DEFINE(aux_to_host_queue, sizeof(u8_t), 8, 4);
 
@@ -74,109 +74,109 @@ void initialize_mouse(void)
 {
 	LOG_DBG("mouse->f4\n");
 	ps2_write(ps2_0_dev, 0xf4);
-	k_sleep(MS_BETWEEN_REGULAR_CALLS);
+	k_msleep(MS_BETWEEN_REGULAR_CALLS);
 	LOG_DBG("Reset mouse->ff\n");
 	ps2_write(ps2_0_dev, 0xff);
-	k_sleep(MS_BETWEEN_RESET_CALLS);
+	k_msleep(MS_BETWEEN_RESET_CALLS);
 	LOG_DBG("Reset mouse->ff\n");
 	ps2_write(ps2_0_dev, 0xff);
-	k_sleep(MS_BETWEEN_RESET_CALLS);
+	k_msleep(MS_BETWEEN_RESET_CALLS);
 	LOG_DBG("Read ID mouse->f2\n");
 	ps2_write(ps2_0_dev, 0xf2);
-	k_sleep(MS_BETWEEN_REGULAR_CALLS);
+	k_msleep(MS_BETWEEN_REGULAR_CALLS);
 	LOG_DBG("Set resolution mouse->e8\n");
 	ps2_write(ps2_0_dev, 0xe8);
-	k_sleep(MS_BETWEEN_REGULAR_CALLS);
+	k_msleep(MS_BETWEEN_REGULAR_CALLS);
 	LOG_DBG("mouse->00\n");
 	ps2_write(ps2_0_dev, 0x00);
-	k_sleep(MS_BETWEEN_REGULAR_CALLS);
+	k_msleep(MS_BETWEEN_REGULAR_CALLS);
 	LOG_DBG("Set scaling 1:1 mouse->e6\n");
 	ps2_write(ps2_0_dev, 0xe6);
-	k_sleep(MS_BETWEEN_REGULAR_CALLS);
+	k_msleep(MS_BETWEEN_REGULAR_CALLS);
 	LOG_DBG("Set scaling 1:1 mouse->e6\n");
 	ps2_write(ps2_0_dev, 0xe6);
-	k_sleep(MS_BETWEEN_REGULAR_CALLS);
+	k_msleep(MS_BETWEEN_REGULAR_CALLS);
 	LOG_DBG("Set scaling 1:1 mouse->e6\n");
 	ps2_write(ps2_0_dev, 0xe6);
-	k_sleep(MS_BETWEEN_REGULAR_CALLS);
+	k_msleep(MS_BETWEEN_REGULAR_CALLS);
 	LOG_DBG("mouse->e9\n");
 	ps2_write(ps2_0_dev, 0xe9);
-	k_sleep(MS_BETWEEN_REGULAR_CALLS);
+	k_msleep(MS_BETWEEN_REGULAR_CALLS);
 	LOG_DBG("Set resolution mouse->e8\n");
 	ps2_write(ps2_0_dev, 0xe8);
-	k_sleep(MS_BETWEEN_REGULAR_CALLS);
+	k_msleep(MS_BETWEEN_REGULAR_CALLS);
 	LOG_DBG("8 Counts/mm mouse->0x03\n");
 	ps2_write(ps2_0_dev, 0x03);
-	k_sleep(MS_BETWEEN_REGULAR_CALLS);
+	k_msleep(MS_BETWEEN_REGULAR_CALLS);
 	LOG_DBG("Set sample rate mouse->0xF3\n");
 	ps2_write(ps2_0_dev, 0xf3);
-	k_sleep(MS_BETWEEN_REGULAR_CALLS);
+	k_msleep(MS_BETWEEN_REGULAR_CALLS);
 	LOG_DBG("decimal 200 ->0xc8\n");
 	ps2_write(ps2_0_dev, 0xc8);
-	k_sleep(MS_BETWEEN_REGULAR_CALLS);
+	k_msleep(MS_BETWEEN_REGULAR_CALLS);
 	LOG_DBG("Set sample rate mouse->0xF3\n");
 	ps2_write(ps2_0_dev, 0xf3);
-	k_sleep(MS_BETWEEN_REGULAR_CALLS);
+	k_msleep(MS_BETWEEN_REGULAR_CALLS);
 	LOG_DBG("decimal 100 ->0x64\n");
 	ps2_write(ps2_0_dev, 0x64);
 	LOG_DBG("Set sample rate mouse->0xF3\n");
 	ps2_write(ps2_0_dev, 0xf3);
-	k_sleep(MS_BETWEEN_REGULAR_CALLS);
+	k_msleep(MS_BETWEEN_REGULAR_CALLS);
 	LOG_DBG("decimal 80 ->0x50\n");
 	ps2_write(ps2_0_dev, 0x50);
-	k_sleep(MS_BETWEEN_REGULAR_CALLS);
+	k_msleep(MS_BETWEEN_REGULAR_CALLS);
 	LOG_DBG("Read device type->0xf2\n");
 	ps2_write(ps2_0_dev, 0xf2);
-	k_sleep(MS_BETWEEN_REGULAR_CALLS);
+	k_msleep(MS_BETWEEN_REGULAR_CALLS);
 	LOG_DBG("Set sample rate mouse->0xF3\n");
 	ps2_write(ps2_0_dev, 0xf3);
-	k_sleep(MS_BETWEEN_REGULAR_CALLS);
+	k_msleep(MS_BETWEEN_REGULAR_CALLS);
 	LOG_DBG("decimal 200 ->0xc8\n");
 	ps2_write(ps2_0_dev, 0xc8);
-	k_sleep(MS_BETWEEN_REGULAR_CALLS);
+	k_msleep(MS_BETWEEN_REGULAR_CALLS);
 	LOG_DBG("Set sample rate mouse->0xF3\n");
 	ps2_write(ps2_0_dev, 0xf3);
-	k_sleep(MS_BETWEEN_REGULAR_CALLS);
+	k_msleep(MS_BETWEEN_REGULAR_CALLS);
 	LOG_DBG("decimal 200 ->0xc8\n");
 	ps2_write(ps2_0_dev, 0xc8);
-	k_sleep(MS_BETWEEN_REGULAR_CALLS);
+	k_msleep(MS_BETWEEN_REGULAR_CALLS);
 	LOG_DBG("Set sample rate mouse->0xF3\n");
 	ps2_write(ps2_0_dev, 0xf3);
-	k_sleep(MS_BETWEEN_REGULAR_CALLS);
+	k_msleep(MS_BETWEEN_REGULAR_CALLS);
 	LOG_DBG("decimal 80 ->0x50\n");
 	ps2_write(ps2_0_dev, 0x50);
-	k_sleep(MS_BETWEEN_REGULAR_CALLS);
+	k_msleep(MS_BETWEEN_REGULAR_CALLS);
 	LOG_DBG("Read device type->0xf2\n");
 	ps2_write(ps2_0_dev, 0xf2);
-	k_sleep(MS_BETWEEN_REGULAR_CALLS);
+	k_msleep(MS_BETWEEN_REGULAR_CALLS);
 	LOG_DBG("Set sample rate mouse->0xF3\n");
 	ps2_write(ps2_0_dev, 0xf3);
-	k_sleep(MS_BETWEEN_REGULAR_CALLS);
+	k_msleep(MS_BETWEEN_REGULAR_CALLS);
 	LOG_DBG("decimal 100 ->0x64\n");
 	ps2_write(ps2_0_dev, 0x64);
-	k_sleep(MS_BETWEEN_REGULAR_CALLS);
+	k_msleep(MS_BETWEEN_REGULAR_CALLS);
 	LOG_DBG("Set resolution mouse->e8\n");
 	ps2_write(ps2_0_dev, 0xe8);
-	k_sleep(MS_BETWEEN_REGULAR_CALLS);
+	k_msleep(MS_BETWEEN_REGULAR_CALLS);
 	LOG_DBG("8 Counts/mm mouse->0x03\n");
 	ps2_write(ps2_0_dev, 0x03);
-	k_sleep(MS_BETWEEN_REGULAR_CALLS);
+	k_msleep(MS_BETWEEN_REGULAR_CALLS);
 	LOG_DBG("mouse->f4\n");
 	ps2_write(ps2_0_dev, 0xf4);
-	k_sleep(MS_BETWEEN_REGULAR_CALLS);
+	k_msleep(MS_BETWEEN_REGULAR_CALLS);
 }
 
 void main(void)
 {
 	printk("PS/2 test with mouse\n");
 	/* Wait for the PS/2 BAT to finish */
-	k_sleep(MS_BETWEEN_RESET_CALLS);
+	k_msleep(MS_BETWEEN_RESET_CALLS);
 
 	/* The ps2 blocks are generic, therefore, it is allowed to swap
 	 * keybaord and mouse as deired
 	 */
-#ifdef CONFIG_PS2_XEC_0
-	ps2_0_dev = device_get_binding(DT_PS2_XEC_0_LABEL);
+#if DT_NODE_HAS_STATUS(DT_INST(0, microchip_xec_ps2), okay)
+	ps2_0_dev = device_get_binding(DT_LABEL(DT_INST(0, microchip_xec_ps2)));
 	ps2_config(ps2_0_dev, mb_callback);
 	/*Make sure there is a PS/2 device connected */
 	initialize_mouse();

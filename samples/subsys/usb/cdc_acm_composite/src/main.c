@@ -19,6 +19,7 @@
 #include <zephyr.h>
 #include <sys/ring_buffer.h>
 
+#include <usb/usb_device.h>
 #include <logging/log.h>
 LOG_MODULE_REGISTER(cdc_acm_composite, LOG_LEVEL_INF);
 
@@ -111,6 +112,8 @@ static void uart_line_set(struct device *dev)
 
 void main(void)
 {
+	int ret;
+
 	struct serial_data *dev_data0 = &peers[0];
 	struct serial_data *dev_data1 = &peers[1];
 	struct device *dev0, *dev1;
@@ -125,6 +128,12 @@ void main(void)
 	dev1 = device_get_binding("CDC_ACM_1");
 	if (!dev1) {
 		LOG_DBG("CDC_ACM_1 device not found");
+		return;
+	}
+
+	ret = usb_enable(NULL);
+	if (ret != 0) {
+		LOG_ERR("Failed to enable USB");
 		return;
 	}
 

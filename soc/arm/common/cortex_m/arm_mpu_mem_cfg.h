@@ -6,7 +6,7 @@
 #ifndef _ARM_CORTEX_M_MPU_MEM_CFG_H_
 #define _ARM_CORTEX_M_MPU_MEM_CFG_H_
 
-#include <arch/arm/cortex_m/mpu/arm_mpu.h>
+#include <arch/arm/aarch32/cortex_m/mpu/arm_mpu.h>
 
 #if !defined(CONFIG_ARMV8_M_BASELINE) && !defined(CONFIG_ARMV8_M_MAINLINE)
 
@@ -32,7 +32,7 @@
 #elif CONFIG_FLASH_SIZE <= 65536
 #define REGION_FLASH_SIZE REGION_64M
 #else
-#error "Unsupported configuration"
+#error "Unsupported flash size configuration"
 #endif
 
 /* SRAM Region Definitions */
@@ -57,7 +57,7 @@
 #elif CONFIG_SRAM_SIZE == 32768
 #define REGION_SRAM_SIZE REGION_32M
 #else
-#error "Unsupported configuration"
+#error "Unsupported sram size configuration"
 #endif
 
 #endif /* !ARMV8_M_BASELINE && !ARMV8_M_MAINLINE */

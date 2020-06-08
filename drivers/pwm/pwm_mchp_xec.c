@@ -1,5 +1,7 @@
 /* pwm_mchp_xec.c - Microchip XEC PWM driver */
 
+#define DT_DRV_COMPAT microchip_xec_pwm
+
 /*
  * Copyright (c) 2019 Intel Corporation
  *
@@ -7,9 +9,9 @@
  */
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(counter_mchp_xec, CONFIG_PWM_LOG_LEVEL);
+LOG_MODULE_REGISTER(pwm_mchp_xec, CONFIG_PWM_LOG_LEVEL);
 
-#include <pwm.h>
+#include <drivers/pwm.h>
 #include <soc.h>
 #include <errno.h>
 
@@ -47,11 +49,11 @@ struct pwm_xec_config {
 #define PWM_XEC_REG_BASE(_dev)				\
 	((PWM_Type *)			\
 	 ((const struct pwm_xec_config * const)		\
-	  _dev->config->config_info)->base_address)
+	  _dev->config_info)->base_address)
 
 #define PWM_XEC_CONFIG(_dev)				\
 	(((const struct pwm_xec_config * const)		\
-	  _dev->config->config_info))
+	  _dev->config_info))
 
 struct xec_params {
 	u32_t on;
@@ -305,7 +307,8 @@ done:
 }
 
 static int pwm_xec_pin_set(struct device *dev, u32_t pwm,
-			   u32_t period_cycles, u32_t pulse_cycles)
+			   u32_t period_cycles, u32_t pulse_cycles,
+			   pwm_flags_t flags)
 {
 	PWM_Type *pwm_regs = PWM_XEC_REG_BASE(dev);
 	u32_t target_freq;
@@ -317,6 +320,11 @@ static int pwm_xec_pin_set(struct device *dev, u32_t pwm,
 
 	if (pulse_cycles > period_cycles) {
 		return -EINVAL;
+	}
+
+	if (flags) {
+		/* PWM polarity not supported (yet?) */
+		return -ENOTSUP;
 	}
 
 	on = pulse_cycles;
@@ -374,119 +382,18 @@ static struct pwm_driver_api pwm_xec_api = {
 	.get_cycles_per_sec = pwm_xec_get_cycles_per_sec
 };
 
-#if defined(DT_INST_0_MICROCHIP_XEC_PWM)
+#define XEC_INST_INIT(inst)						\
+	static struct pwm_xec_config pwm_xec_dev_config_##inst = {	\
+		.base_address = DT_INST_REG_ADDR(inst)			\
+	};								\
+									\
+	DEVICE_AND_API_INIT(pwm_xec_##inst,				\
+			    DT_INST_LABEL(inst),			\
+			    pwm_xec_init,				\
+			    NULL,					\
+			    &pwm_xec_dev_config_##inst,			\
+			    POST_KERNEL,				\
+			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    &pwm_xec_api);
 
-static struct pwm_xec_config pwm_xec_dev_config_0 = {
-	.base_address = DT_INST_0_MICROCHIP_XEC_PWM_BASE_ADDRESS
-};
-
-DEVICE_AND_API_INIT(pwm_xec_0, DT_INST_0_MICROCHIP_XEC_PWM_LABEL,
-		    pwm_xec_init, NULL, &pwm_xec_dev_config_0,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &pwm_xec_api);
-
-#endif /* DT_INST_0_MICROCHIP_XEC_PWM */
-
-#if defined(DT_INST_1_MICROCHIP_XEC_PWM)
-
-static struct pwm_xec_config pwm_xec_dev_config_1 = {
-	.base_address = DT_INST_1_MICROCHIP_XEC_PWM_BASE_ADDRESS
-};
-
-DEVICE_AND_API_INIT(pwm_xec_1, DT_INST_1_MICROCHIP_XEC_PWM_LABEL,
-		    pwm_xec_init, NULL, &pwm_xec_dev_config_1,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &pwm_xec_api);
-
-#endif /* DT_INST_1_MICROCHIP_XEC_PWM */
-
-#if defined(DT_INST_2_MICROCHIP_XEC_PWM)
-
-static struct pwm_xec_config pwm_xec_dev_config_2 = {
-	.base_address = DT_INST_2_MICROCHIP_XEC_PWM_BASE_ADDRESS
-};
-
-DEVICE_AND_API_INIT(pwm_xec_2, DT_INST_2_MICROCHIP_XEC_PWM_LABEL,
-		    pwm_xec_init, NULL, &pwm_xec_dev_config_2,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &pwm_xec_api);
-
-#endif /* DT_INST_2_MICROCHIP_XEC_PWM */
-
-#if defined(DT_INST_3_MICROCHIP_XEC_PWM)
-
-static struct pwm_xec_config pwm_xec_dev_config_3 = {
-	.base_address = DT_INST_3_MICROCHIP_XEC_PWM_BASE_ADDRESS
-};
-
-DEVICE_AND_API_INIT(pwm_xec_3, DT_INST_3_MICROCHIP_XEC_PWM_LABEL,
-		    pwm_xec_init, NULL, &pwm_xec_dev_config_3,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &pwm_xec_api);
-
-#endif /* DT_INST_3_MICROCHIP_XEC_PWM */
-
-#if defined(DT_INST_4_MICROCHIP_XEC_PWM)
-
-static struct pwm_xec_config pwm_xec_dev_config_4 = {
-	.base_address = DT_INST_4_MICROCHIP_XEC_PWM_BASE_ADDRESS
-};
-
-DEVICE_AND_API_INIT(pwm_xec_4, DT_INST_4_MICROCHIP_XEC_PWM_LABEL,
-		    pwm_xec_init, NULL, &pwm_xec_dev_config_4,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &pwm_xec_api);
-
-#endif /* DT_INST_4_MICROCHIP_XEC_PWM */
-
-#if defined(DT_INST_5_MICROCHIP_XEC_PWM)
-
-static struct pwm_xec_config pwm_xec_dev_config_5 = {
-	.base_address = DT_INST_5_MICROCHIP_XEC_PWM_BASE_ADDRESS
-};
-
-DEVICE_AND_API_INIT(pwm_xec_5, DT_INST_5_MICROCHIP_XEC_PWM_LABEL,
-		    pwm_xec_init, NULL, &pwm_xec_dev_config_5,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &pwm_xec_api);
-
-#endif /* DT_INST_5_MICROCHIP_XEC_PWM */
-
-#if defined(DT_INST_6_MICROCHIP_XEC_PWM)
-
-static struct pwm_xec_config pwm_xec_dev_config_6 = {
-	.base_address = DT_INST_6_MICROCHIP_XEC_PWM_BASE_ADDRESS
-};
-
-DEVICE_AND_API_INIT(pwm_xec_6, DT_INST_6_MICROCHIP_XEC_PWM_LABEL,
-		    pwm_xec_init, NULL, &pwm_xec_dev_config_6,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &pwm_xec_api);
-
-#endif /* DT_INST_6_MICROCHIP_XEC_PWM */
-
-#if defined(DT_INST_7_MICROCHIP_XEC_PWM)
-
-static struct pwm_xec_config pwm_xec_dev_config_7 = {
-	.base_address = DT_INST_7_MICROCHIP_XEC_PWM_BASE_ADDRESS
-};
-
-DEVICE_AND_API_INIT(pwm_xec_7, DT_INST_7_MICROCHIP_XEC_PWM_LABEL,
-		    pwm_xec_init, NULL, &pwm_xec_dev_config_7,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &pwm_xec_api);
-
-#endif /* DT_INST_7_MICROCHIP_XEC_PWM */
-
-#if defined(DT_INST_8_MICROCHIP_XEC_PWM)
-
-static struct pwm_xec_config pwm_xec_dev_config_8 = {
-	.base_address = DT_INST_8_MICROCHIP_XEC_PWM_BASE_ADDRESS
-};
-
-DEVICE_AND_API_INIT(pwm_xec_8, DT_INST_8_MICROCHIP_XEC_PWM_LABEL,
-		    pwm_xec_init, NULL, &pwm_xec_dev_config_8,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &pwm_xec_api);
-
-#endif /* DT_INST_8_MICROCHIP_XEC_PWM */
+DT_INST_FOREACH_STATUS_OKAY(XEC_INST_INIT)

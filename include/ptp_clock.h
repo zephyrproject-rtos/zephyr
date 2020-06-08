@@ -22,7 +22,7 @@ extern "C" {
 #define PTP_CLOCK_NAME "PTP_CLOCK"
 #endif
 
-struct ptp_clock_driver_api {
+__subsystem struct ptp_clock_driver_api {
 	int (*set)(struct device *dev, struct net_ptp_time *tm);
 	int (*get)(struct device *dev, struct net_ptp_time *tm);
 	int (*adjust)(struct device *dev, int increment);
@@ -39,7 +39,8 @@ struct ptp_clock_driver_api {
  */
 static inline int ptp_clock_set(struct device *dev, struct net_ptp_time *tm)
 {
-	const struct ptp_clock_driver_api *api = dev->driver_api;
+	const struct ptp_clock_driver_api *api =
+		(const struct ptp_clock_driver_api *)dev->driver_api;
 
 	return api->set(dev, tm);
 }
@@ -57,7 +58,8 @@ __syscall int ptp_clock_get(struct device *dev, struct net_ptp_time *tm);
 static inline int z_impl_ptp_clock_get(struct device *dev,
 				       struct net_ptp_time *tm)
 {
-	const struct ptp_clock_driver_api *api = dev->driver_api;
+	const struct ptp_clock_driver_api *api =
+		(const struct ptp_clock_driver_api *)dev->driver_api;
 
 	return api->get(dev, tm);
 }
@@ -72,7 +74,8 @@ static inline int z_impl_ptp_clock_get(struct device *dev,
  */
 static inline int ptp_clock_adjust(struct device *dev, int increment)
 {
-	const struct ptp_clock_driver_api *api = dev->driver_api;
+	const struct ptp_clock_driver_api *api =
+		(const struct ptp_clock_driver_api *)dev->driver_api;
 
 	return api->adjust(dev, increment);
 }
@@ -87,7 +90,8 @@ static inline int ptp_clock_adjust(struct device *dev, int increment)
  */
 static inline int ptp_clock_rate_adjust(struct device *dev, float rate)
 {
-	const struct ptp_clock_driver_api *api = dev->driver_api;
+	const struct ptp_clock_driver_api *api =
+		(const struct ptp_clock_driver_api *)dev->driver_api;
 
 	return api->rate_adjust(dev, rate);
 }

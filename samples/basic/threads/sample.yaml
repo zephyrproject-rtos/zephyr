@@ -13,5 +13,5 @@ tests:
       type: multi_line
       ordered: false
       regex:
-        - "Toggle USR0 LED(.*)"
-        - "Toggle USR1 LED(.*)"
+        - "Toggled led0; counter=(.*)"
+        - "Toggled led1; counter=(.*)"

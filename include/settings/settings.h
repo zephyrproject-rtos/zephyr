@@ -17,8 +17,15 @@
 extern "C" {
 #endif
 
+
 /**
- * @defgroup settings Settings subsystem
+ * @defgroup file_system_storage File System Storage
+ * @{
+ * @}
+ */
+
+/**
+ * @defgroup settings Settings
  * @ingroup file_system_storage
  * @{
  */
@@ -67,6 +74,8 @@ struct settings_handler {
 	 *    handler registration
 	 *  - val[out] buffer to receive value.
 	 *  - val_len_max[in] size of that buffer.
+	 *
+	 * Return: length of data read on success, negative on failure.
 	 */
 
 	int (*h_set)(const char *key, size_t len, settings_read_cb read_cb,
@@ -80,11 +89,15 @@ struct settings_handler {
 	 *  - read_cb[in] function provided to read the data from the backend.
 	 *  - cb_arg[in] arguments for the read function provided by the
 	 *    backend.
+	 *
+	 *  Return: 0 on success, non-zero on failure.
 	 */
 
 	int (*h_commit)(void);
 	/**< This handler gets called after settings has been loaded in full.
 	 * User might use it to apply setting to the application.
+	 *
+	 * Return: 0 on success, non-zero on failure.
 	 */
 
 	int (*h_export)(int (*export_func)(const char *name, const void *val,
@@ -101,6 +114,8 @@ struct settings_handler {
 	 * @remarks The User might limit a implementations of handler to serving
 	 * only one keyword at one call - what will impose limit to get/set
 	 * values using full subtree/key name.
+	 *
+	 * Return: 0 on success, non-zero on failure.
 	 */
 
 	sys_snode_t node;
@@ -125,6 +140,8 @@ struct settings_handler_static {
 	 *    handler registration
 	 *  - val[out] buffer to receive value.
 	 *  - val_len_max[in] size of that buffer.
+	 *
+	 * Return: length of data read on success, negative on failure.
 	 */
 
 	int (*h_set)(const char *key, size_t len, settings_read_cb read_cb,
@@ -138,6 +155,8 @@ struct settings_handler_static {
 	 *  - read_cb[in] function provided to read the data from the backend.
 	 *  - cb_arg[in] arguments for the read function provided by the
 	 *    backend.
+	 *
+	 * Return: 0 on success, non-zero on failure.
 	 */
 
 	int (*h_commit)(void);
@@ -159,6 +178,8 @@ struct settings_handler_static {
 	 * @remarks The User might limit a implementations of handler to serving
 	 * only one keyword at one call - what will impose limit to get/set
 	 * values using full subtree/key name.
+	 *
+	 * Return: 0 on success, non-zero on failure.
 	 */
 };
 
@@ -191,7 +212,7 @@ struct settings_handler_static {
  * Initialization of settings and backend
  *
  * Can be called at application startup.
- * In case the backend is NFFS Remember to call it after FS was mounted.
+ * In case the backend is a FS Remember to call it after the FS was mounted.
  * For FCB backend it can be called without such a restriction.
  *
  * @return 0 on success, non-zero on failure.
@@ -335,6 +356,12 @@ int settings_commit_subtree(const char *subtree);
  */
 
 
+/**
+ * @defgroup settings_backend Settings backend interface
+ * @ingroup settings
+ * @{
+ */
+
 /*
  * API for config storage
  */
@@ -474,8 +501,15 @@ int settings_call_set_handler(const char *name,
 			      settings_read_cb read_cb,
 			      void *read_cb_arg,
 			      const struct settings_load_arg *load_arg);
-/*
- * API for const name processing
+/**
+ * @}
+ */
+
+/**
+ * @defgroup settings_name_proc Settings name processing
+ * @brief API for const name processing
+ * @ingroup settings
+ * @{
  */
 
 /**
@@ -511,12 +545,18 @@ int settings_name_steq(const char *name, const char *key, const char **next);
  *
  */
 int settings_name_next(const char *name, const char **next);
-
-/*
- * API for runtime settings
+/**
+ * @}
  */
 
 #ifdef CONFIG_SETTINGS_RUNTIME
+
+/**
+ * @defgroup settings_rt Settings subsystem runtime
+ * @brief API for runtime settings
+ * @ingroup settings
+ * @{
+ */
 
 /**
  * Set a value with a specific key to a module handler.
@@ -527,16 +567,16 @@ int settings_name_next(const char *name, const char **next);
  *
  * @return 0 on success, non-zero on failure.
  */
-int settings_runtime_set(const char *name, void *data, size_t len);
+int settings_runtime_set(const char *name, const void *data, size_t len);
 
 /**
  * Get a value corresponding to a key from a module handler.
  *
  * @param name Key in string format.
  * @param data Returned binary value.
- * @param len Returned value length in bytes.
+ * @param len requested value length in bytes.
  *
- * @return 0 on success, non-zero on failure.
+ * @return length of data read on success, negative on failure.
  */
 int settings_runtime_get(const char *name, void *data, size_t len);
 
@@ -548,6 +588,9 @@ int settings_runtime_get(const char *name, void *data, size_t len);
  * @return 0 on success, non-zero on failure.
  */
 int settings_runtime_commit(const char *name);
+/**
+ * @}
+ */
 
 #endif /* CONFIG_SETTINGS_RUNTIME */
 

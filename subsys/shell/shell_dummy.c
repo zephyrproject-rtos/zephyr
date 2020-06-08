@@ -1,4 +1,6 @@
 /*
+ * Shell backend used for testing
+ *
  * Copyright (c) 2018 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -55,13 +57,22 @@ static int write(const struct shell_transport *transport,
 		 const void *data, size_t length, size_t *cnt)
 {
 	struct shell_dummy *sh_dummy = (struct shell_dummy *)transport->ctx;
+	size_t store_cnt;
 
 	if (!sh_dummy->initialized) {
 		*cnt = 0;
 		return -ENODEV;
 	}
 
+	store_cnt = length;
+	if (sh_dummy->len + store_cnt >= sizeof(sh_dummy->buf)) {
+		store_cnt = sizeof(sh_dummy->buf) - sh_dummy->len - 1;
+	}
+	memcpy(sh_dummy->buf + sh_dummy->len, data, store_cnt);
+	sh_dummy->len += store_cnt;
+
 	*cnt = length;
+
 	return 0;
 }
 
@@ -98,4 +109,17 @@ SYS_INIT(enable_shell_dummy, POST_KERNEL, 0);
 const struct shell *shell_backend_dummy_get_ptr(void)
 {
 	return &shell_dummy;
+}
+
+const char *shell_backend_dummy_get_output(const struct shell *shell,
+					   size_t *sizep)
+{
+	struct shell_dummy *sh_dummy;
+
+	sh_dummy = (struct shell_dummy *)shell->iface->ctx;
+	sh_dummy->buf[sh_dummy->len] = '\0';
+	*sizep = sh_dummy->len;
+	sh_dummy->len = 0;
+
+	return sh_dummy->buf;
 }

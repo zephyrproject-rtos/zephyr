@@ -1,6 +1,6 @@
 common:
   depends_on: netif
 tests:
-  net.socket.udp:
+  net.socket.poll:
     min_ram: 21
-    tags: net socket
+    tags: net socket poll

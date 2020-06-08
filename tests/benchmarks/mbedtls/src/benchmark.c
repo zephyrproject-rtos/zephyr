@@ -288,7 +288,7 @@ typedef struct {
 	     havege, ctr_drbg, hmac_drbg, rsa, dhm, ecdsa, ecdh;
 } todo_list;
 
-int main(int argc, char *argv[])
+void main(void)
 {
 	mbedtls_ssl_config conf;
 	unsigned char tmp[200];
@@ -1062,6 +1062,4 @@ int main(int argc, char *argv[])
 	}
 #endif
 	mbedtls_printf("\n       Done\n");
-
-	return 0;
 }

@@ -61,11 +61,11 @@
 	#define MS5607_TEMP_OVER_DEFAULT 2048
 #endif
 
-#ifdef DT_MEAS_MS5607_BUS_SPI
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 int ms5607_spi_init(struct device *dev);
 #else
 /* I2c Interface not implemented yet */
-BUILD_ASSERT_MSG(1, "I2c interface not implemented yet");
+BUILD_ASSERT(1, "I2c interface not implemented yet");
 #endif
 
 struct ms5607_config {

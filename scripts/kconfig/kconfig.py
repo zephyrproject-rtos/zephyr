@@ -1,61 +1,66 @@
 #!/usr/bin/env python3
 
+# Writes/updates the zephyr/.config configuration file by merging configuration
+# files passed as arguments, e.g. board *_defconfig and application prj.conf
+# files.
+#
+# When fragments haven't changed, zephyr/.config is both the input and the
+# output, which just updates it. This is handled in the CMake files.
+#
+# Also does various checks (most via Kconfiglib warnings).
+
 import argparse
 import os
 import sys
 import textwrap
 
-from kconfiglib import Kconfig, BOOL, TRISTATE, TRI_TO_STR
-
-
-# Warnings that won't be turned into errors (but that will still be printed),
-# identified by a substring of the warning. The warning texts from Kconfiglib
-# are guaranteed to not change.
-WARNING_WHITELIST = (
-    # Warning generated when a symbol with unsatisfied dependencies is being
-    # selected. These should be investigated, but whitelist them for now.
-    "y-selected",
-)
-
-
-def fatal(warning):
-    # Returns True if 'warning' is not whitelisted and should be turned into an
-    # error
-
-    return not any(wl_warning in warning for wl_warning in WARNING_WHITELIST)
+# Zephyr doesn't use tristate symbols. They're supported here just to make the
+# script a bit more generic.
+from kconfiglib import Kconfig, split_expr, expr_value, expr_str, BOOL, \
+                       TRISTATE, TRI_TO_STR, AND
 
 
 def main():
     args = parse_args()
 
-    print("Parsing Kconfig tree in " + args.kconfig_root)
-    kconf = Kconfig(args.kconfig_root, warn_to_stderr=False)
+    if args.zephyr_base:
+        os.environ['ZEPHYR_BASE'] = args.zephyr_base
 
-    # Warn for assignments to undefined symbols
-    kconf.warn_assign_undef = True
+    print("Parsing " + args.kconfig_file)
+    kconf = Kconfig(args.kconfig_file, warn_to_stderr=False,
+                    suppress_traceback=True)
 
-    # prj.conf may override settings from the board configuration, so disable
-    # warnings about symbols being assigned more than once
-    kconf.warn_assign_override = False
-    kconf.warn_assign_redun = False
+    if args.handwritten_input_configs:
+        # Warn for assignments to undefined symbols, but only for handwritten
+        # fragments, to avoid warnings-turned-errors when using an old
+        # configuration file together with updated Kconfig files
+        kconf.warn_assign_undef = True
 
-    print(kconf.load_config(args.conf_fragments[0]))
-    for config in args.conf_fragments[1:]:
+        # prj.conf may override settings from the board configuration, so
+        # disable warnings about symbols being assigned more than once
+        kconf.warn_assign_override = False
+        kconf.warn_assign_redun = False
+
+    # Load configuration files
+    print(kconf.load_config(args.configs_in[0]))
+    for config in args.configs_in[1:]:
         # replace=False creates a merged configuration
         print(kconf.load_config(config, replace=False))
 
-    # Print warnings for symbols whose actual value doesn't match the assigned
-    # value
-    for sym in kconf.unique_defined_syms:
-        # Was the symbol assigned to? Choice symbols are checked separately.
-        if sym.user_value is not None and not sym.choice:
-            verify_assigned_sym_value(sym)
+    if args.handwritten_input_configs:
+        # Check that there are no assignments to promptless symbols, which
+        # have no effect.
+        #
+        # This only makes sense when loading handwritten fragments and not when
+        # loading zephyr/.config, because zephyr/.config is configuration
+        # output and also assigns promptless symbols.
+        check_no_promptless_assign(kconf)
 
-    # Print warnings for choices whose actual selection doesn't match the user
-    # selection
-    for choice in kconf.unique_choices:
-        if choice.user_selection:
-            verify_assigned_choice_value(choice)
+        # Print warnings for symbols that didn't get the assigned value. Only
+        # do this for handwritten input too, to avoid likely unhelpful warnings
+        # when using an old configuration and updating Kconfig files.
+        check_assigned_sym_values(kconf)
+        check_assigned_choice_values(kconf)
 
     # Hack: Force all symbols to be evaluated, to catch warnings generated
     # during evaluation. Wait till the end to write the actual output files, so
@@ -65,105 +70,136 @@ def main():
     # fast.
     kconf.write_config(os.devnull)
 
-    # Print warnings ourselves so that we can put a blank line between them for
-    # readability. We could roll this into the loop below, but it's nice to
-    # always print all warnings, even if one of them turns out to be fatal.
-    for warning in kconf.warnings:
-        print("\n" + warning, file=sys.stderr)
+    if kconf.warnings:
+        # Put a blank line between warnings to make them easier to read
+        for warning in kconf.warnings:
+            print("\n" + warning, file=sys.stderr)
 
-    # Turn all warnings except for explicitly whitelisted ones into errors. In
-    # particular, this will turn assignments to undefined Kconfig variables
-    # into errors.
-    #
-    # A warning is generated by this script whenever a symbol gets a different
-    # value than the one it was assigned. Keep that one as just a warning for
-    # now as well.
-    for warning in kconf.warnings:
-        if fatal(warning):
-            sys.exit("\n" + textwrap.fill(
-                "Error: Aborting due to non-whitelisted Kconfig "
-                "warning '{}'.\nNote: If this warning doesn't point "
-                "to an actual problem, you can add it to the "
-                "whitelist at the top of {}."
-                .format(warning, sys.argv[0]),
-                100) + "\n")
+        # Turn all warnings into errors, so that e.g. assignments to undefined
+        # Kconfig symbols become errors.
+        #
+        # A warning is generated by this script whenever a symbol gets a
+        # different value than the one it was assigned. Keep that one as just a
+        # warning for now.
+        err("Aborting due to Kconfig warnings")
 
     # Write the merged configuration and the C header
-    print(kconf.write_config(args.dotconfig))
-    kconf.write_autoconf(args.autoconf)
+    print(kconf.write_config(args.config_out))
+    print(kconf.write_autoconf(args.header_out))
 
-    # Write the list of processed Kconfig sources to a file
-    write_kconfig_filenames(kconf.kconfig_filenames, kconf.srctree, args.sources)
+    # Write the list of parsed Kconfig files to a file
+    write_kconfig_filenames(kconf, args.kconfig_list_out)
 
 
-# Message printed when a promptless symbol is assigned (and doesn't get the
-# assigned value)
-PROMPTLESS_HINT = """
-This symbol has no prompt, meaning assignments in configuration files have no
-effect on it. It can only be set indirectly, via Kconfig defaults (e.g. in a
-Kconfig.defconfig file) or through being 'select'ed or 'imply'd (note: try to
-avoid Kconfig 'select's except for trivial promptless "helper" symbols without
-dependencies, as it ignores dependencies and forces symbols on)."""
+def check_no_promptless_assign(kconf):
+    # Checks that no promptless symbols are assigned
 
-# Message about where to look up symbol information
-SYM_INFO_HINT = """
-You can check symbol information (including dependencies) in the 'menuconfig'
-interface (see the Application Development Primer section of the manual), or in
-the Kconfig reference at
-http://docs.zephyrproject.org/latest/reference/kconfig/CONFIG_{}.html (which is
-updated regularly from the master branch). See the 'Setting configuration
-values' section of the Board Porting Guide as well."""
+    for sym in kconf.unique_defined_syms:
+        if sym.user_value is not None and promptless(sym):
+            err(f"""\
+{sym.name_and_loc} is assigned in a configuration file, but is not directly
+user-configurable (has no prompt). It gets its value indirectly from other
+symbols. """ + SYM_INFO_HINT.format(sym))
 
-PROMPTLESS_HINT_EXTRA = """
-It covers Kconfig.defconfig files."""
 
-def verify_assigned_sym_value(sym):
-    # Verifies that the value assigned to 'sym' "took" (matches the value the
-    # symbol actually got), printing a warning otherwise
+def check_assigned_sym_values(kconf):
+    # Verifies that the values assigned to symbols "took" (matches the value
+    # the symbols actually got), printing warnings otherwise. Choice symbols
+    # are checked separately, in check_assigned_choice_values().
 
-    # Tristate values are represented as 0, 1, 2. Having them as
-    # "n", "m", "y" is more convenient here, so convert.
-    if sym.type in (BOOL, TRISTATE):
-        user_value = TRI_TO_STR[sym.user_value]
-    else:
+    for sym in kconf.unique_defined_syms:
+        if sym.choice:
+            continue
+
         user_value = sym.user_value
+        if user_value is None:
+            continue
 
-    if user_value != sym.str_value:
-        msg = "warning: {} was assigned the value '{}' but got the " \
-              "value '{}'." \
-              .format(sym.name_and_loc, user_value, sym.str_value)
+        # Tristate values are represented as 0, 1, 2. Having them as "n", "m",
+        # "y" is more convenient here, so convert.
+        if sym.type in (BOOL, TRISTATE):
+            user_value = TRI_TO_STR[user_value]
 
-        if promptless(sym): msg += PROMPTLESS_HINT
-        msg += SYM_INFO_HINT.format(sym.name)
-        if promptless(sym): msg += PROMPTLESS_HINT_EXTRA
+        if user_value != sym.str_value:
+            msg = f"{sym.name_and_loc} was assigned the value '{user_value}'" \
+                  f" but got the value '{sym.str_value}'. "
 
-        # Use a large fill() width to try to avoid linebreaks in the symbol
-        # reference link
-        print("\n" + textwrap.fill(msg, 100), file=sys.stderr)
+            # List any unsatisfied 'depends on' dependencies in the warning
+            mdeps = missing_deps(sym)
+            if mdeps:
+                expr_strs = []
+                for expr in mdeps:
+                    estr = expr_str(expr)
+                    if isinstance(expr, tuple):
+                        # Add () around dependencies that aren't plain symbols.
+                        # Gives '(FOO || BAR) (=n)' instead of
+                        # 'FOO || BAR (=n)', which might be clearer.
+                        estr = f"({estr})"
+                    expr_strs.append(f"{estr} "
+                                     f"(={TRI_TO_STR[expr_value(expr)]})")
+
+                msg += "Check these unsatisfied dependencies: " + \
+                    ", ".join(expr_strs) + ". "
+
+            warn(msg + SYM_INFO_HINT.format(sym))
 
 
-def verify_assigned_choice_value(choice):
-    # Verifies that the choice symbol that was selected (by setting it to y)
-    # ended up as the selection, printing a warning otherwise.
+def missing_deps(sym):
+    # check_assigned_sym_values() helper for finding unsatisfied dependencies.
+    #
+    # Given direct dependencies
+    #
+    #     depends on <expr> && <expr> && ... && <expr>
+    #
+    # on 'sym' (which can also come from e.g. a surrounding 'if'), returns a
+    # list of all <expr>s with a value less than the value 'sym' was assigned
+    # ("less" instead of "not equal" just to be general and handle tristates,
+    # even though Zephyr doesn't use them).
+    #
+    # For string/int/hex symbols, just looks for <expr> = n.
+    #
+    # Note that <expr>s can be something more complicated than just a symbol,
+    # like 'FOO || BAR' or 'FOO = "string"'.
+
+    deps = split_expr(sym.direct_dep, AND)
+
+    if sym.type in (BOOL, TRISTATE):
+        return [dep for dep in deps if expr_value(dep) < sym.user_value]
+    # string/int/hex
+    return [dep for dep in deps if expr_value(dep) == 0]
+
+
+def check_assigned_choice_values(kconf):
+    # Verifies that any choice symbols that were selected (by setting them to
+    # y) ended up as the selection, printing warnings otherwise.
     #
     # We check choice symbols separately to avoid warnings when two different
     # choice symbols within the same choice are set to y. This might happen if
-    # a choice selection from a board defconfig is overridden in a prj.conf, for
-    # example. The last choice symbol set to y becomes the selection (and all
-    # other choice symbols get the value n).
+    # a choice selection from a board defconfig is overridden in a prj.conf,
+    # for example. The last choice symbol set to y becomes the selection (and
+    # all other choice symbols get the value n).
     #
     # Without special-casing choices, we'd detect that the first symbol set to
     # y ended up as n, and print a spurious warning.
 
-    if choice.user_selection is not choice.selection:
-        msg = "warning: the choice symbol {} was selected (set =y), but {} " \
-              "ended up as the choice selection. {}" \
-              .format(choice.user_selection.name_and_loc,
-                      choice.selection.name_and_loc if choice.selection
-                          else "no symbol",
-                      SYM_INFO_HINT.format(choice.user_selection.name))
+    for choice in kconf.unique_choices:
+        if choice.user_selection and \
+           choice.user_selection is not choice.selection:
 
-        print("\n" + textwrap.fill(msg, 100), file=sys.stderr)
+            warn(f"""\
+The choice symbol {choice.user_selection.name_and_loc} was selected (set =y),
+but {choice.selection.name_and_loc if choice.selection else "no symbol"} ended
+up as the choice selection. """ + SYM_INFO_HINT.format(choice.user_selection))
+
+
+# Hint on where to find symbol information. Used like
+# SYM_INFO_HINT.format(sym).
+SYM_INFO_HINT = """\
+See http://docs.zephyrproject.org/latest/reference/kconfig/CONFIG_{0.name}.html
+and/or look up {0.name} in the menuconfig/guiconfig interface. The Application
+Development Primer, Setting Configuration Values, and Kconfig - Tips and Best
+Practices sections of the manual might be helpful too.\
+"""
 
 
 def promptless(sym):
@@ -173,39 +209,55 @@ def promptless(sym):
     return not any(node.prompt for node in sym.nodes)
 
 
-def write_kconfig_filenames(paths, root_path, output_file_path):
-    # 'paths' is a list of paths. The list has duplicates and the
-    # paths are either absolute or relative to 'root_path'.
+def write_kconfig_filenames(kconf, kconfig_list_path):
+    # Writes a sorted list with the absolute paths of all parsed Kconfig files
+    # to 'kconfig_list_path'. The paths are realpath()'d, and duplicates are
+    # removed. This file is used by CMake to look for changed Kconfig files. It
+    # needs to be deterministic.
 
-    # We need to write this list, in a format that CMake can easily
-    # parse, to the output file at 'output_file_path'.
-
-    # The written list has sorted real (absolute) paths, and it does not have
-    # duplicates. The list is sorted to be deterministic. It is realpath()'d
-    # to ensure that different representations of the same path does not end
-    # up with two entries, as that could cause the build system to fail.
-
-    paths_uniq = sorted({os.path.realpath(os.path.join(root_path, path)) for path in paths})
-
-    with open(output_file_path, 'w') as out:
-        for path in paths_uniq:
-            # Assert that the file exists, since it was sourced, it
-            # must surely also exist.
-            assert os.path.isfile(path), "Internal error: '{}' does not exist".format(path)
-
-            out.write("{}\n".format(path))
+    with open(kconfig_list_path, 'w') as out:
+        for path in sorted({os.path.realpath(os.path.join(kconf.srctree, path))
+                            for path in kconf.kconfig_filenames}):
+            print(path, file=out)
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("kconfig_root")
-    parser.add_argument("dotconfig")
-    parser.add_argument("autoconf")
-    parser.add_argument("sources")
-    parser.add_argument("conf_fragments", nargs='+')
+    parser.add_argument("--handwritten-input-configs",
+                        action="store_true",
+                        help="Assume the input configuration fragments are "
+                             "handwritten fragments and do additional checks "
+                             "on them, like no promptless symbols being "
+                             "assigned")
+    parser.add_argument("--zephyr-base",
+                        help="Path to current Zephyr installation")
+    parser.add_argument("kconfig_file",
+                        help="Top-level Kconfig file")
+    parser.add_argument("config_out",
+                        help="Output configuration file")
+    parser.add_argument("header_out",
+                        help="Output header file")
+    parser.add_argument("kconfig_list_out",
+                        help="Output file for list of parsed Kconfig files")
+    parser.add_argument("configs_in",
+                        nargs="+",
+                        help="Input configuration fragments. Will be merged "
+                             "together.")
 
     return parser.parse_args()
+
+
+def warn(msg):
+    # Use a large fill() width to try to avoid linebreaks in the symbol
+    # reference link, and add some extra newlines to set the message off from
+    # surrounding text (this usually gets printed as part of spammy CMake
+    # output)
+    print("\n" + textwrap.fill("warning: " + msg, 100) + "\n", file=sys.stderr)
+
+
+def err(msg):
+    sys.exit("\n" + textwrap.fill("error: " + msg, 100) + "\n")
 
 
 if __name__ == "__main__":

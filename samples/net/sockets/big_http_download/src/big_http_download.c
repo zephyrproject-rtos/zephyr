@@ -29,17 +29,21 @@
 #include "ca_certificate.h"
 #endif
 
-#define sleep(x) k_sleep(x * 1000)
+#define sleep(x) k_sleep(K_MSEC((x) * MSEC_PER_SEC))
 
 #endif
 
 /* This URL is parsed in-place, so buffer must be non-const. */
 static char download_url[] =
+#if defined(CONFIG_SAMPLE_BIG_HTTP_DL_URL)
+    CONFIG_SAMPLE_BIG_HTTP_DL_URL;
+#else
 #if !defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
     "http://archive.ubuntu.com/ubuntu/dists/xenial/main/installer-amd64/current/images/hd-media/vmlinuz";
 #else
     "https://www.7-zip.org/a/7z1805.exe";
 #endif /* !defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
+#endif /* defined(CONFIG_SAMPLE_BIG_HTTP_DL_URL) */
 /* Quick testing. */
 /*    "http://google.com/foo";*/
 
@@ -214,7 +218,7 @@ error:
 	(void)close(sock);
 }
 
-int main(void)
+void main(void)
 {
 	static struct addrinfo hints;
 	struct addrinfo *res;
@@ -223,6 +227,7 @@ int main(void)
 	unsigned int total_bytes = 0U;
 	int resolve_attempts = 10;
 	bool is_tls = false;
+	int num_iterations = CONFIG_SAMPLE_BIG_HTTP_DL_NUM_ITER;
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 	tls_credential_add(CA_CERTIFICATE_TAG, TLS_CREDENTIAL_CA_CERTIFICATE,
@@ -304,16 +309,16 @@ int main(void)
 		fatal("Can't setup mbedTLS hash engine");
 	}
 
-	while (1) {
+	do {
 		download(res, is_tls);
 
 		total_bytes += cur_bytes;
 		printf("Total downloaded so far: %uMB\n", total_bytes / (1024 * 1024));
 
 		sleep(3);
-	}
+	} while (--num_iterations != 0);
+
+	printf("Finished downloading.\n");
 
 	mbedtls_md_free(&hash_ctx);
-
-	return 0;
 }

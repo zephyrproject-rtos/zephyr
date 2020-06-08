@@ -8,17 +8,17 @@
 #include <kernel.h>
 #include <device.h>
 #include <init.h>
-#include <pinmux.h>
+#include <drivers/pinmux.h>
 #include <sys/sys_io.h>
 
 #include <pinmux/stm32/pinmux_stm32.h>
 
 /* pin assignments for NUCLEO-G071RB board */
 static const struct pin_config pinconf[] = {
-#ifdef CONFIG_UART_2
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usart2), okay) && CONFIG_SERIAL
 	{STM32_PIN_PA2, STM32G0_PINMUX_FUNC_PA2_USART2_TX},
 	{STM32_PIN_PA3, STM32G0_PINMUX_FUNC_PA3_USART2_RX},
-#endif	/* CONFIG_UART_2 */
+#endif
 };
 
 static int pinmux_stm32_init(struct device *port)

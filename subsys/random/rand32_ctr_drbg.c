@@ -6,7 +6,7 @@
 
 #include <init.h>
 #include <device.h>
-#include <entropy.h>
+#include <drivers/entropy.h>
 #include <kernel.h>
 #include <string.h>
 
@@ -54,12 +54,12 @@ static int ctr_drbg_initialize(void)
 	/* Only one entropy device exists, so this is safe even
 	 * if the whole operation isn't atomic.
 	 */
-	entropy_driver = device_get_binding(CONFIG_ENTROPY_NAME);
+	entropy_driver = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
 	if (!entropy_driver) {
 		__ASSERT((entropy_driver != NULL),
-			"Device driver for %s (CONFIG_ENTROPY_NAME) not found. "
+			"Device driver for %s (DT_CHOSEN_ZEPHYR_ENTROPY_LABEL) not found. "
 			"Check your build configuration!",
-			CONFIG_ENTROPY_NAME);
+			DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
 		return -EINVAL;
 	}
 
@@ -82,7 +82,11 @@ static int ctr_drbg_initialize(void)
 
 	u8_t entropy[TC_AES_KEY_SIZE + TC_AES_BLOCK_SIZE];
 
-	entropy_get_entropy(entropy_driver, (void *)&entropy, sizeof(entropy));
+	ret = entropy_get_entropy(entropy_driver, (void *)&entropy,
+				  sizeof(entropy));
+	if (ret != 0) {
+		return -EIO;
+	}
 
 	ret = tc_ctr_prng_init(&ctr_ctx,
 			       (uint8_t *)&entropy,

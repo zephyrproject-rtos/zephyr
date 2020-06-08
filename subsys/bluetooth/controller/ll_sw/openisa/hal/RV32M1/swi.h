@@ -44,4 +44,3 @@ static inline void hal_swi_job_pend(void)
 {
 	SetPendingIRQ(HAL_SWI_JOB_IRQ);
 }
-

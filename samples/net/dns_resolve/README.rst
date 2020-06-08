@@ -153,4 +153,3 @@ Open a terminal window and type:
 Use 'dmesg' to find the right USB device.
 
 Once the binary is loaded into the FRDM board, press the RESET button.
-

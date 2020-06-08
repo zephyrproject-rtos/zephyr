@@ -1,0 +1,208 @@
+# Debug configuration options
+
+# Copyright (c) 2015 Wind River Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+DT_CHOSEN_Z_CONSOLE := zephyr,console
+
+config TRACING
+	bool "Enabling Tracing"
+	imply THREAD_NAME
+	imply THREAD_STACK_INFO
+	imply THREAD_MONITOR
+	help
+	  Enable system tracing. This requires a backend such as SEGGER
+	  Systemview to be enabled as well.
+
+if TRACING
+
+config TRACING_CORE
+	bool
+	help
+	  Automatically selected by formats that require the core
+	  tracing infrastructure.
+
+choice
+	prompt "Tracing Format"
+	default TRACING_NONE
+
+config TRACING_NONE
+	bool "No tracing format selected"
+	help
+	  None of the available tracing formats is selected.
+
+config SEGGER_SYSTEMVIEW
+	bool "Segger SystemView support"
+	select CONSOLE
+	select RTT_CONSOLE
+	select USE_SEGGER_RTT
+
+config TRACING_CTF
+	bool "Tracing via Common Trace Format support"
+	select TRACING_CORE
+	help
+	  Enable tracing to a Common Trace Format stream.
+
+config TRACING_CPU_STATS
+	bool "Enable CPU usage tracing"
+	select TRACING_CORE
+	help
+	  Module provides information about percent of CPU usage based on
+	  tracing hooks for threads switching in and out, interrupts enters
+	  and exits (only distinguishes between idle thread, non idle thread
+	  and scheduler). Use provided API or enable automatic logging to
+	  get values.
+
+config TRACING_TEST
+	bool "Tracing for test usage"
+	select TRACING_CORE
+	help
+	  Enable tracing for testing kinds of format purpose. It must
+	  implement the tracing hooks defined in tracing_test.h
+
+endchoice
+
+
+config TRACING_CTF_TIMESTAMP
+	bool "Enable CTF internal timestamp"
+	default y
+	depends on TRACING_CTF
+	help
+	  Timestamp prefix will be added to the beginning of CTF
+	  event internally.
+
+config TRACING_CPU_STATS_LOG
+	bool "Enable current CPU usage logging"
+	depends on TRACING_CPU_STATS
+	help
+	  Periodically displays information about CPU usage.
+
+config TRACING_CPU_STATS_INTERVAL
+	int "Logging interval for CPU measurements [ms]"
+	default 2000
+	depends on TRACING_CPU_STATS_LOG
+	help
+	  Time period of displaying information about CPU usage.
+
+
+choice
+	prompt "Tracing Method"
+	default TRACING_ASYNC
+
+config TRACING_SYNC
+	bool "Synchronous Tracing"
+	select RING_BUFFER
+	help
+	  Enable synchronous tracing. This requires the backend to be
+	  very low-latency.
+
+config TRACING_ASYNC
+	bool "Asynchronous Tracing"
+	select RING_BUFFER
+	help
+	  Enable asynchronous tracing. This will buffer all the tracing
+	  packets to the ring buffer first, tracing thread will try to
+	  output as much data as possible from the buffer when tracing
+	  thread get scheduled.
+
+endchoice
+
+config TRACING_THREAD_STACK_SIZE
+	int "Stack size of tracing thread"
+	default 1024
+	depends on TRACING_ASYNC
+	help
+	  Stack size of tracing thread.
+
+config TRACING_THREAD_WAIT_THRESHOLD
+	int "Tracing thread waiting threshold"
+	default 100
+	depends on TRACING_ASYNC
+	help
+	  Tracing thread waiting period given in milliseconds after
+	  every first packet put to tracing buffer.
+
+config TRACING_BUFFER_SIZE
+	int "Size of tracing buffer"
+	default 2048 if TRACING_ASYNC
+	default TRACING_PACKET_MAX_SIZE if TRACING_SYNC
+	range 32 65536
+	help
+	  Size of tracing buffer. If TRACING_ASYNC is enabled, tracing buffer
+	  is used as a ring buffer to buffer data packet and string packet. If
+	  TRACING_SYNC is enabled, the buffer is used to hold the formated data.
+
+config TRACING_PACKET_MAX_SIZE
+	int "Max size of one tracing packet"
+	default 32
+	help
+	  Max size of one tracing packet.
+
+choice
+	prompt "Tracing Backend"
+	default TRACING_BACKEND_UART
+
+config TRACING_BACKEND_UART
+	bool "Enable UART backend"
+	depends on UART_CONSOLE
+	depends on TRACING_ASYNC
+	help
+	  Use UART to output tracing data.
+
+config TRACING_BACKEND_USB
+	bool "Enable USB backend"
+	depends on USB
+	depends on TRACING_ASYNC
+	help
+	  Use USB to output tracing data.
+
+config TRACING_BACKEND_POSIX
+	bool "Enable posix architecture (native) backend"
+	depends on TRACING_SYNC
+	depends on ARCH_POSIX
+	help
+	  Use posix architecture to output tracing data to file system.
+
+endchoice
+
+config TRACING_BACKEND_UART_NAME
+	string "Device Name of UART Device for UART backend"
+	default "$(dt_chosen_label,$(DT_CHOSEN_Z_CONSOLE))" if HAS_DTS
+	default "UART_0"
+	depends on TRACING_BACKEND_UART
+	help
+	  This option specifies the name of UART device to be used for
+	  tracing backend.
+
+config TRACING_USB_MPS
+	int "USB backend max packet size"
+	default 64
+	depends on TRACING_BACKEND_USB
+	help
+	  USB tracing backend max packet size(endpoint MPS).
+
+config TRACING_HANDLE_HOST_CMD
+	bool "Enable host command handle"
+	select UART_INTERRUPT_DRIVEN if TRACING_BACKEND_UART
+	help
+	  When enabled tracing will handle cmd from host to dynamically
+	  enable and disable tracing to have host capture tracing stream
+	  data conveniently.
+
+config TRACING_CMD_BUFFER_SIZE
+	int "Size of tracing command buffer"
+	default 32
+	range 32 128
+	help
+	  Size of tracing command buffer.
+
+config TRACING_ISR
+	bool "Enable tracing ISRs"
+	default y
+	help
+	  Enable tracing ISRs. This requires the backend to be
+	  very low-latency.
+
+endif
+
+source "subsys/tracing/sysview/Kconfig"

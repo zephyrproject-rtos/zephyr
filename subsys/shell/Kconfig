@@ -47,6 +47,16 @@ config SHELL_PRINTF_BUFF_SIZE
 	  It is working like stdio buffering in Linux systems
 	  to limit number of peripheral access calls.
 
+config SHELL_DEFAULT_TERMINAL_WIDTH
+	int "Default terminal width"
+	default 80
+	help
+	  Default terminal width is used to break lines.
+
+config SHELL_DEFAULT_TERMINAL_HEIGHT
+	int "Default terminal height"
+	default 24
+
 config SHELL_ARGC_MAX
 	int "Maximum arguments in shell command"
 	default 12
@@ -101,15 +111,12 @@ config SHELL_HISTORY
 	  Enable commands history. History can be accessed using up and down
 	  arrows.
 
-if SHELL_HISTORY
-
 config SHELL_HISTORY_BUFFER
 	int "History buffer in bytes"
 	default 512
+	depends on SHELL_HISTORY
 	help
 	  Number of bytes dedicated for storing executed commands.
-
-endif # SHELL_HISTORY
 
 config SHELL_STATS
 	bool "Enable shell statistics"

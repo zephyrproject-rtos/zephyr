@@ -164,10 +164,8 @@ your terminal:
 References
 **********
 
+.. target-notes::
+
 .. [1] https://wiki.odroid.com/odroid_go/odroid_go
 .. _`toolchain`: https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html#get-started-setup-toolchain
 .. _`SDK`: https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html#get-started-get-esp-idf
-
-
-.. target-notes::
-

@@ -45,9 +45,67 @@ extern "C" {
  */
 #define BT_ID_DEFAULT 0
 
-/**
- * @typedef bt_ready_cb_t
- * @brief Callback for notifying that Bluetooth has been enabled.
+/** Opaque type representing an advertiser. */
+struct bt_le_ext_adv;
+
+/* Don't require everyone to include conn.h */
+struct bt_conn;
+
+struct bt_le_ext_adv_sent_info {
+	/** The number of advertising events completed. */
+	u8_t num_sent;
+};
+
+struct bt_le_ext_adv_connected_info {
+	/** Connection object of the new connection */
+	struct bt_conn *conn;
+};
+
+struct bt_le_ext_adv_scanned_info {
+	/** Active scanner LE address and type */
+	bt_addr_le_t *addr;
+};
+
+struct bt_le_ext_adv_cb {
+	/** @brief The advertising set has finished sending adv data.
+	 *
+	 *  This callback notifies the application that the advertising set has
+	 *  finished sending advertising data.
+	 *  The advertising set can either have been stopped by a timeout or
+	 *  because the specified number of advertising events has been reached.
+	 *
+	 *  @param adv  The advertising set object.
+	 *  @param info Information about the sent event.
+	 */
+	void (*sent)(struct bt_le_ext_adv *adv,
+		     struct bt_le_ext_adv_sent_info *info);
+
+	/** @brief The advertising set has accepted a new connection.
+	 *
+	 *  This callback notifies the application that the advertising set has
+	 *  accepted a new connection.
+	 *
+	 *  @param adv  The advertising set object.
+	 *  @param info Information about the connected event.
+	 */
+	void (*connected)(struct bt_le_ext_adv *adv,
+			  struct bt_le_ext_adv_connected_info *info);
+
+	/** @brief The advertising set has sent scan response data.
+	 *
+	 *  This callback notifies the application that the advertising set has
+	 *  has received a Scan Request packet, and has sent a Scan Response
+	 *  packet.
+	 *
+	 *  @param adv  The advertising set object.
+	 *  @param addr Information about the scanned event.
+	 */
+	void (*scanned)(struct bt_le_ext_adv *adv,
+			struct bt_le_ext_adv_scanned_info *info);
+};
+
+/** @typedef bt_ready_cb_t
+ *  @brief Callback for notifying that Bluetooth has been enabled.
  *
  *  @param err zero on success or (negative) error code otherwise.
  */
@@ -106,7 +164,7 @@ int bt_set_id_addr(const bt_addr_le_t *addr);
  *  identifier that some APIs expect (such as advertising parameters) is
  *  simply the index of the identity in the @a addrs array.
  *
- *  Note: Deleted identities may show up as BT_LE_ADDR_ANY in the returned
+ *  @note Deleted identities may show up as BT_LE_ADDR_ANY in the returned
  *  array.
  *
  *  @param addrs Array where to store the configured identities.
@@ -145,8 +203,8 @@ void bt_id_get(bt_addr_le_t *addrs, size_t *count);
  *              identity. If set to all zeroes or NULL, the stack will
  *              generate a random IRK for the identity and copy it back
  *              to the parameter upon return from this function (in case
- *              the parameter was non-NULL). If privacy support
- *              (CONFIG_BT_PRIVACY) is not enabled this parameter must
+ *              the parameter was non-NULL). If privacy
+ *              :option:`CONFIG_BT_PRIVACY` is not enabled this parameter must
  *              be NULL.
  *
  *  @return Identity identifier (>= 0) in case of success, or a negative
@@ -165,7 +223,7 @@ int bt_id_create(bt_addr_le_t *addr, u8_t *irk);
  *  a new identity in the same slot, based on the @a addr and @a irk
  *  parameters.
  *
- *  Note: the default identity (BT_ID_DEFAULT) cannot be reset, i.e. this
+ *  @note the default identity (BT_ID_DEFAULT) cannot be reset, i.e. this
  *  API will return an error if asked to do that.
  *
  *  @param id   Existing identity identifier.
@@ -178,8 +236,8 @@ int bt_id_create(bt_addr_le_t *addr, u8_t *irk);
  *              identity. If set to all zeroes or NULL, the stack will
  *              generate a random IRK for the identity and copy it back
  *              to the parameter upon return from this function (in case
- *              the parameter was non-NULL). If privacy support
- *              (CONFIG_BT_PRIVACY) is not enabled this parameter must
+ *              the parameter was non-NULL). If privacy
+ *              :option:`CONFIG_BT_PRIVACY` is not enabled this parameter must
  *              be NULL.
  *
  *  @return Identity identifier (>= 0) in case of success, or a negative
@@ -195,7 +253,7 @@ int bt_id_reset(u8_t id, bt_addr_le_t *addr, u8_t *irk);
  *  operations. To take back into use the slot the identity was occupying the
  *  bt_id_reset() API needs to be used.
  *
- *  Note: the default identity (BT_ID_DEFAULT) cannot be deleted, i.e. this
+ *  @note the default identity (BT_ID_DEFAULT) cannot be deleted, i.e. this
  *  API will return an error if asked to do that.
  *
  *  @param id   Existing identity identifier.
@@ -204,12 +262,12 @@ int bt_id_reset(u8_t id, bt_addr_le_t *addr, u8_t *irk);
  */
 int bt_id_delete(u8_t id);
 
-/* Advertising API */
-
-/** Description of different data types that can be encoded into
-  * advertising data. Used to form arrays that are passed to the
-  * bt_le_adv_start() function.
-  */
+/** @brief Bluetooth data.
+ *
+ *  Description of different data types that can be encoded into
+ *  advertising data. Used to form arrays that are passed to the
+ *  bt_le_adv_start() function.
+ */
 struct bt_data {
 	u8_t type;
 	u8_t data_len;
@@ -219,7 +277,7 @@ struct bt_data {
 /** @brief Helper to declare elements of bt_data arrays
  *
  *  This macro is mainly for creating an array of struct bt_data
- *  elements which is then passed to bt_le_adv_start().
+ *  elements which is then passed to e.g. @ref bt_le_adv_start().
  *
  *  @param _type Type of advertising data field
  *  @param _data Pointer to the data field payload
@@ -235,7 +293,7 @@ struct bt_data {
 /** @brief Helper to declare elements of bt_data arrays
  *
  *  This macro is mainly for creating an array of struct bt_data
- *  elements which is then passed to bt_le_adv_start().
+ *  elements which is then passed to e.g. @ref bt_le_adv_start().
  *
  *  @param _type Type of advertising data field
  *  @param _bytes Variable number of single-byte parameters
@@ -249,38 +307,56 @@ enum {
 	/** Convenience value when no options are specified. */
 	BT_LE_ADV_OPT_NONE = 0,
 
-	/** Advertise as connectable. Type of advertising is determined by
-	 * providing SCAN_RSP data and/or enabling local privacy support.
+	/** @brief Advertise as connectable.
+	 *
+	 *  Advertise as connectable. If not connectable then the type of
+	 *  advertising is determined by providing scan response data.
+	 *  The advertiser address is determined by the type of advertising
+	 *  and/or enabling privacy :option:`CONFIG_BT_PRIVACY`.
 	 */
 	BT_LE_ADV_OPT_CONNECTABLE = BIT(0),
 
-	/** Don't try to resume connectable advertising after a connection.
+	/** @brief Advertise one time.
+	 *
+	 *  Don't try to resume connectable advertising after a connection.
 	 *  This option is only meaningful when used together with
 	 *  BT_LE_ADV_OPT_CONNECTABLE. If set the advertising will be stopped
 	 *  when bt_le_adv_stop() is called or when an incoming (slave)
 	 *  connection happens. If this option is not set the stack will
 	 *  take care of keeping advertising enabled even as connections
 	 *  occur.
+	 *  If Advertising directed or the advertiser was started with
+	 *  @ref bt_le_ext_adv_start then this behavior is the default behavior
+	 *  and this flag has no effect.
 	 */
 	BT_LE_ADV_OPT_ONE_TIME = BIT(1),
 
-	/** Advertise using the identity address as the own address.
+	/** @brief Advertise using identity address.
+	 *
+	 *  Advertise using the identity address as the advertiser address.
 	 *  @warning This will compromise the privacy of the device, so care
 	 *           must be taken when using this option.
+	 *  @note The address used for advertising will not be the same as
+	 *         returned by @ref bt_le_oob_get_local, instead @ref bt_id_get
+	 *         should be used to get the LE address.
 	 */
 	BT_LE_ADV_OPT_USE_IDENTITY = BIT(2),
 
 	/** Advertise using GAP device name */
 	BT_LE_ADV_OPT_USE_NAME = BIT(3),
 
-	/** Use low duty directed advertising mode, otherwise high duty mode
-	 *  will be used. This option is only effective when used with
-	 *  bt_conn_create_slave_le().
+	/** @brief Low duty cycle directed advertising.
+	 *
+	 *  Use low duty directed advertising mode, otherwise high duty mode
+	 *  will be used.
 	 */
 	BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY = BIT(4),
 
-	/** Enable use of Resolvable Private Address (RPA) as the target address
-	 *  in directed advertisements when CONFIG_BT_PRIVACY is not enabled.
+	/** @brief Directed advertising to privacy-enabled peer.
+	 *
+	 *  Enable use of Resolvable Private Address (RPA) as the target address
+	 *  in directed advertisements when :option:`CONFIG_BT_PRIVACY` is not
+	 *  enabled.
 	 *  This is required if the remote device is privacy-enabled and
 	 *  supports address resolution of the target address in directed
 	 *  advertisement.
@@ -290,71 +366,207 @@ enum {
 	 */
 	BT_LE_ADV_OPT_DIR_ADDR_RPA = BIT(5),
 
-	/** Use whitelist to filter devices that can request scan response
-	 *  data.
+	/** Use whitelist to filter devices that can request scan response data.
 	 */
 	BT_LE_ADV_OPT_FILTER_SCAN_REQ = BIT(6),
 
 	/** Use whitelist to filter devices that can connect. */
 	BT_LE_ADV_OPT_FILTER_CONN = BIT(7),
+
+	/** Notify the application when a scan response data has been sent to an
+	 *  active scanner.
+	 */
+	BT_LE_ADV_OPT_NOTIFY_SCAN_REQ = BIT(8),
+
+	/** @brief Support scan response data.
+	 *
+	 *  When used together with @ref BT_LE_ADV_OPT_EXT_ADV then this option
+	 *  cannot be used together with the @ref BT_LE_ADV_OPT_CONNECTABLE
+	 *  option.
+	 *  When used together with @ref BT_LE_ADV_OPT_EXT_ADV then scan
+	 *  response data must be set.
+	 */
+	BT_LE_ADV_OPT_SCANNABLE = BIT(9),
+
+	/** @brief Advertise with extended advertising.
+	 *
+	 *  This options enables extended advertising in the advertising set.
+	 *  In extended advertising the advertising set will send a small header
+	 *  packet on the three primary advertising channels. This small header
+	 *  points to the advertising data packet that will be sent on one of
+	 *  the 37 secondary advertising channels.
+	 *  The advertiser will send primary advertising on LE 1M PHY, and
+	 *  secondary advertising on LE 2M PHY.
+	 *  Connections will be established on LE 2M PHY.
+	 *
+	 *  Without this option the advertiser will send advertising data on the
+	 *  three primary advertising channels.
+	 *
+	 *  @note Enabling this option requires extended advertising support in
+	 *        the peer devices scanning for advertisement packets.
+	 */
+	BT_LE_ADV_OPT_EXT_ADV = BIT(10),
+
+	/** @brief Disable use of LE 2M PHY on the secondary advertising
+	 *  channel.
+	 *
+	 *  Disabling the use of LE 2M PHY could be necessary if scanners don't
+	 *  support the LE 2M PHY.
+	 *  The advertiser will send primary advertising on LE 1M PHY, and
+	 *  secondary advertising on LE 1M PHY.
+	 *  Connections will be established on LE 1M PHY.
+	 *
+	 *  @note Cannot be set if BT_LE_ADV_OPT_CODED is set.
+	 *
+	 *  @note Requires @ref BT_LE_ADV_OPT_EXT_ADV.
+	 */
+	BT_LE_ADV_OPT_NO_2M = BIT(11),
+
+	/** @brief Advertise on the LE Coded PHY (Long Range).
+	 *
+	 *  The advertiser will send both primary and secondary advertising
+	 *  on the LE Coded PHY. This gives the advertiser increased range with
+	 *  the trade-off of lower data rate and higher power consumption.
+	 *  Connections will be established on LE Coded PHY.
+	 *
+	 *  @note Requires @ref BT_LE_ADV_OPT_EXT_ADV
+	 */
+	BT_LE_ADV_OPT_CODED = BIT(12),
+
+	/** @brief Advertise without a device address (identity or RPA).
+	 *
+	 *  @note Requires @ref BT_LE_ADV_OPT_EXT_ADV
+	 */
+	BT_LE_ADV_OPT_ANONYMOUS = BIT(13),
+
+	/** @brief Advertise with transmit power.
+	 *
+	 *  @note Requires @ref BT_LE_ADV_OPT_EXT_ADV
+	 */
+	BT_LE_ADV_OPT_USE_TX_POWER = BIT(14),
 };
 
 /** LE Advertising Parameters. */
 struct bt_le_adv_param {
-	/** Local identity */
+	/** @brief Local identity.
+	 *
+	 *  @note When extended advertising :option:`CONFIG_BT_EXT_ADV` is not
+	 *        enabled or not supported by the controller it is not possible
+	 *        to scan and advertise simultaneously using two different
+	 *        random addresses.
+	 *
+	 *  @note It is not possible to have multiple connectable advertising
+	 *        sets advertising simultaneously using different identities.
+	 */
 	u8_t  id;
 
+	/** @brief Advertising Set Identifier, valid range 0x00 - 0x0f.
+	 *
+	 *  @note Requires @ref BT_LE_ADV_OPT_EXT_ADV
+	 **/
+	u8_t  sid;
+
+	/** @brief Secondary channel maximum skip count.
+	 *
+	 *  Maximum advertising events the advertiser can skip before it must
+	 *  send advertising data on the secondary advertising channel.
+	 *
+	 *  @note Requires @ref BT_LE_ADV_OPT_EXT_ADV
+	 */
+	u8_t  secondary_max_skip;
+
 	/** Bit-field of advertising options */
-	u8_t  options;
+	u32_t options;
 
 	/** Minimum Advertising Interval (N * 0.625) */
-	u16_t interval_min;
+	u32_t interval_min;
 
 	/** Maximum Advertising Interval (N * 0.625) */
-	u16_t interval_max;
+	u32_t interval_max;
+
+	/** @brief Directed advertising to peer
+	 *
+	 *  When this parameter is set the advertiser will send directed
+	 *  advertising to the remote device.
+	 *
+	 *  The advertising type will either be high duty cycle, or low duty
+	 *  cycle if the BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY option is enabled.
+	 *
+	 *  In case of connectable high duty cycle if the connection could not
+	 *  be established within the timeout the connected() callback will be
+	 *  called with the status set to @ref BT_HCI_ERR_ADV_TIMEOUT.
+	 */
+	const bt_addr_le_t *peer;
 };
 
-/** Helper to declare advertising parameters inline
-  *
-  * @param _options   Advertising Options
-  * @param _int_min   Minimum advertising interval
-  * @param _int_max   Maximum advertising interval
-  */
-#define BT_LE_ADV_PARAM(_options, _int_min, _int_max) \
-		(&(struct bt_le_adv_param) { \
-			.options = (_options), \
-			.interval_min = (_int_min), \
-			.interval_max = (_int_max), \
-		 })
+/** @brief Initialize advertising parameters
+ *
+ *  @param _options   Advertising Options
+ *  @param _int_min   Minimum advertising interval
+ *  @param _int_max   Maximum advertising interval
+ *  @param _peer      Peer address, set to NULL for undirected advertising or
+ *                    address of peer for directed advertising.
+ */
+#define BT_LE_ADV_PARAM_INIT(_options, _int_min, _int_max, _peer) \
+{ \
+	.id = BT_ID_DEFAULT, \
+	.sid = 0, \
+	.secondary_max_skip = 0, \
+	.options = (_options), \
+	.interval_min = (_int_min), \
+	.interval_max = (_int_max), \
+	.peer = (_peer), \
+}
+
+/** @brief Helper to declare advertising parameters inline
+ *
+ *  @param _options   Advertising Options
+ *  @param _int_min   Minimum advertising interval
+ *  @param _int_max   Maximum advertising interval
+ *  @param _peer      Peer address, set to NULL for undirected advertising or
+ *                    address of peer for directed advertising.
+ */
+#define BT_LE_ADV_PARAM(_options, _int_min, _int_max, _peer) \
+	((struct bt_le_adv_param[]) { \
+		BT_LE_ADV_PARAM_INIT(_options, _int_min, _int_max, _peer) \
+	 })
+
+#define BT_LE_ADV_CONN_DIR(_peer) BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE |  \
+						  BT_LE_ADV_OPT_ONE_TIME, 0, 0,\
+						  _peer)
+
 
 #define BT_LE_ADV_CONN BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE, \
 				       BT_GAP_ADV_FAST_INT_MIN_2, \
-				       BT_GAP_ADV_FAST_INT_MAX_2)
+				       BT_GAP_ADV_FAST_INT_MAX_2, NULL)
 
 #define BT_LE_ADV_CONN_NAME BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE | \
 					    BT_LE_ADV_OPT_USE_NAME, \
 					    BT_GAP_ADV_FAST_INT_MIN_2, \
-					    BT_GAP_ADV_FAST_INT_MAX_2)
+					    BT_GAP_ADV_FAST_INT_MAX_2, NULL)
 
-#define BT_LE_ADV_CONN_DIR_LOW_DUTY \
+#define BT_LE_ADV_CONN_DIR_LOW_DUTY(_peer) \
 	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_ONE_TIME | \
 			BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY, \
-			BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2)
-
-#define BT_LE_ADV_CONN_DIR BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE | \
-					   BT_LE_ADV_OPT_ONE_TIME, 0, 0)
+			BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, \
+			_peer)
 
 #define BT_LE_ADV_NCONN BT_LE_ADV_PARAM(0, BT_GAP_ADV_FAST_INT_MIN_2, \
-					BT_GAP_ADV_FAST_INT_MAX_2)
+					BT_GAP_ADV_FAST_INT_MAX_2, NULL)
 
 #define BT_LE_ADV_NCONN_NAME BT_LE_ADV_PARAM(BT_LE_ADV_OPT_USE_NAME, \
 					     BT_GAP_ADV_FAST_INT_MIN_2, \
-					     BT_GAP_ADV_FAST_INT_MAX_2)
+					     BT_GAP_ADV_FAST_INT_MAX_2, NULL)
 
 /** @brief Start advertising
  *
  *  Set advertisement data, scan response data, advertisement parameters
  *  and start advertising.
+ *
+ *  When the advertisement parameter peer address has been set the advertising
+ *  will be directed to the peer. In this case advertisement data and scan
+ *  response data parameters are ignored. If the mode is high duty cycle
+ *  the timeout will be @ref BT_GAP_ADV_HIGH_DUTY_CYCLE_MAX_TIMEOUT.
  *
  *  @param param Advertising parameters.
  *  @param ad Data to be used in advertisement packets.
@@ -363,11 +575,14 @@ struct bt_le_adv_param {
  *  @param sd_len Number of elements in sd
  *
  *  @return Zero on success or (negative) error code otherwise.
+ *  @return -ENOMEM No free connection objects available for connectable
+ *                  advertiser.
  *  @return -ECONNREFUSED When connectable advertising is requested and there
- *			  is already maximum number of connections established.
- *			  This error code is only guaranteed when using Zephyr
- *			  controller, for other controllers code returned in
- *			  this case may be -EIO.
+ *                        is already maximum number of connections established
+ *                        in the controller.
+ *                        This error code is only guaranteed when using Zephyr
+ *                        controller, for other controllers code returned in
+ *                        this case may be -EIO.
  */
 int bt_le_adv_start(const struct bt_le_adv_param *param,
 		    const struct bt_data *ad, size_t ad_len,
@@ -395,6 +610,157 @@ int bt_le_adv_update_data(const struct bt_data *ad, size_t ad_len,
  */
 int bt_le_adv_stop(void);
 
+/** @brief Create advertising set.
+ *
+ *  Create a new advertising set and set advertising parameters.
+ *  Advertising parameters can be updated with @ref bt_le_ext_adv_update_param.
+ *
+ *  @param[in] param Advertising parameters.
+ *  @param[in] cb    Callback struct to notify about advertiser activity. Can be
+ *                   NULL. Must point to valid memory during the lifetime of the
+ *                   advertising set.
+ *  @param[out] adv  Valid advertising set object on success.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_le_ext_adv_create(const struct bt_le_adv_param *param,
+			 const struct bt_le_ext_adv_cb *cb,
+			 struct bt_le_ext_adv **adv);
+
+struct bt_le_ext_adv_start_param {
+	/** @brief Advertiser timeout (N * 10 ms).
+	 *
+	 *  Application will be notified by the advertiser sent callback.
+	 *  Set to zero for no timeout.
+	 *
+	 *  When using high duty cycle directed connectable advertising then
+	 *  this parameters must be set to a non-zero value less than or equal
+	 *  to the maximum of @ref BT_GAP_ADV_HIGH_DUTY_CYCLE_MAX_TIMEOUT.
+	 *
+	 *  If privacy :option:`CONFIG_BT_PRIVACY` is enabled then the timeout
+	 *  must be less than :option:`CONFIG_BT_RPA_TIMEOUT`.
+	 */
+	u16_t timeout;
+	/** @brief Number of advertising events.
+	 *
+	 *  Application will be notified by the advertiser sent callback.
+	 *  Set to zero for no limit.
+	 */
+	u8_t  num_events;
+};
+
+/** @brief Start advertising with the given advertising set
+ *
+ *  If the advertiser is limited by either the timeout or number of advertising
+ *  events the application will be notified by the advertiser sent callback once
+ *  the limit is reached.
+ *  If the advertiser is limited by both the timeout and the number of
+ *  advertising events then the limit that is reached first will stop the
+ *  advertiser.
+ *
+ *  @param adv    Advertising set object.
+ *  @param param  Advertise start parameters.
+ */
+int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
+			struct bt_le_ext_adv_start_param *param);
+
+/** @brief Stop advertising with the given advertising set
+ *
+ *  Stop advertising with a specific advertising set. When using this function
+ *  the advertising sent callback will not be called.
+ *
+ *  @param adv Advertising set object.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_le_ext_adv_stop(struct bt_le_ext_adv *adv);
+
+/** @brief Set an advertising set's advertising or scan response data.
+ *
+ *  Set advertisement data or scan response data. If the advertising set is
+ *  currently advertising then the advertising data will be updated in
+ *  subsequent advertising events.
+ *
+ *  If the advertising set has been configured to send advertising data on the
+ *  primary advertising channels then the maximum data length is
+ *  @ref BT_GAP_ADV_MAX_ADV_DATA_LEN bytes.
+ *  If the advertising set has been configured for extended advertising,
+ *  then the maximum data length is defined by the controller with the maximum
+ *  possible of @ref BT_GAP_ADV_MAX_EXT_ADV_DATA_LEN bytes.
+ *
+ *  @note Not all scanners support extended data length advertising data.
+ *
+ *  @note When updating the advertising data while advertising the advertising
+ *        data and scan response data length must be smaller or equal to what
+ *        can be fit in a single advertising packet. Otherwise the
+ *        advertiser must be stopped.
+ *
+ *  @param adv     Advertising set object.
+ *  @param ad      Data to be used in advertisement packets.
+ *  @param ad_len  Number of elements in ad
+ *  @param sd      Data to be used in scan response packets.
+ *  @param sd_len  Number of elements in sd
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_le_ext_adv_set_data(struct bt_le_ext_adv *adv,
+			   const struct bt_data *ad, size_t ad_len,
+			   const struct bt_data *sd, size_t sd_len);
+
+/** @brief Update advertising parameters.
+ *
+ *  Update the advertising parameters. The function will return an error if the
+ *  advertiser set is currently advertising. Stop the advertising set before
+ *  calling this function.
+ *
+ *  @param adv   Advertising set object.
+ *  @param param Advertising parameters.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_le_ext_adv_update_param(struct bt_le_ext_adv *adv,
+			       const struct bt_le_adv_param *param);
+
+/** @brief Delete advertising set.
+ *
+ *  Delete advertising set. This will free up the advertising set and make it
+ *  possible to create a new advertising set.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_le_ext_adv_delete(struct bt_le_ext_adv *adv);
+
+/** @brief Get array index of an advertising set.
+ *
+ *  This function is used to map bt_adv to index of an array of
+ *  advertising sets. The array has CONFIG_BT_EXT_ADV_MAX_ADV_SET elements.
+ *
+ *  @param adv Advertising set.
+ *
+ *  @return Index of the advertising set object.
+ *  The range of the returned value is 0..CONFIG_BT_EXT_ADV_MAX_ADV_SET-1
+ */
+u8_t bt_le_ext_adv_get_index(struct bt_le_ext_adv *adv);
+
+/** @brief Advertising set info structure. */
+struct bt_le_ext_adv_info {
+	/* Local identity */
+	u8_t                    id;
+
+	/** Currently selected Transmit Power (dBM). */
+	s8_t                     tx_power;
+};
+
+/** @brief Get advertising set info
+ *
+ *  @param adv Advertising set object
+ *  @param info Advertising set info object
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ */
+int bt_le_ext_adv_get_info(const struct bt_le_ext_adv *adv,
+			   struct bt_le_ext_adv_info *info);
+
 /** @typedef bt_le_scan_cb_t
  *  @brief Callback type for reporting LE scan results.
  *
@@ -410,21 +776,35 @@ typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, s8_t rssi,
 			     u8_t adv_type, struct net_buf_simple *buf);
 
 enum {
-	/* Filter duplicates. */
-	BT_LE_SCAN_FILTER_DUPLICATE = BIT(0),
+	/** Convenience value when no options are specified. */
+	BT_LE_SCAN_OPT_NONE = 0,
 
-	/* Filter using whitelist. */
-	BT_LE_SCAN_FILTER_WHITELIST = BIT(1),
+	/** Filter duplicates. */
+	BT_LE_SCAN_OPT_FILTER_DUPLICATE = BIT(0),
 
-	/* Filter using extended filter policies. */
-	BT_LE_SCAN_FILTER_EXTENDED = BIT(2),
+	/** Filter using whitelist. */
+	BT_LE_SCAN_OPT_FILTER_WHITELIST = BIT(1),
+
+	/** Enable scan on coded PHY (Long Range).*/
+	BT_LE_SCAN_OPT_CODED = BIT(2),
+
+	/** @brief Disable scan on 1M phy.
+	 *
+	 *  @note Requires @ref BT_LE_SCAN_OPT_CODED.
+	 */
+	BT_LE_SCAN_OPT_NO_1M = BIT(3),
+
+	BT_LE_SCAN_FILTER_DUPLICATE __deprecated =
+		BT_LE_SCAN_OPT_FILTER_DUPLICATE,
+	BT_LE_SCAN_FILTER_WHITELIST __deprecated =
+		BT_LE_SCAN_OPT_FILTER_WHITELIST,
 };
 
 enum {
-	/* Scan without requesting additional information from advertisers. */
+	/** Scan without requesting additional information from advertisers. */
 	BT_LE_SCAN_TYPE_PASSIVE = 0x00,
 
-	/* Scan and request additional information from advertisers. */
+	/** Scan and request additional information from advertisers. */
 	BT_LE_SCAN_TYPE_ACTIVE = 0x01,
 };
 
@@ -433,45 +813,133 @@ struct bt_le_scan_param {
 	/** Scan type (BT_LE_SCAN_TYPE_ACTIVE or BT_LE_SCAN_TYPE_PASSIVE) */
 	u8_t  type;
 
-	/** Bit-field of scanning filter options. */
-	u8_t  filter_dup;
+	union {
+		/** Bit-field of scanning filter options. */
+		u32_t filter_dup __deprecated;
+
+		/** Bit-field of scanning options. */
+		u32_t options;
+	};
 
 	/** Scan interval (N * 0.625 ms) */
 	u16_t interval;
 
 	/** Scan window (N * 0.625 ms) */
 	u16_t window;
+
+	/** @brief Scan timeout (N * 10 ms)
+	 *
+	 *  Application will be notified by the scan timeout callback.
+	 *  Set zero to disable timeout.
+	 */
+	u16_t timeout;
+
+	/** @brief Scan interval LE Coded PHY (N * 0.625 MS)
+	 *
+	 *  Set zero to use same as LE 1M PHY scan interval.
+	 */
+	u16_t interval_coded;
+
+	/** @brief Scan window LE Coded PHY (N * 0.625 MS)
+	 *
+	 *  Set zero to use same as LE 1M PHY scan window.
+	 */
+	u16_t window_coded;
 };
 
-/** Helper to declare scan parameters inline
-  *
-  * @param _type     Scan Type, BT_LE_SCAN_TYPE_ACTIVE or
-  *                  BT_LE_SCAN_TYPE_PASSIVE.
-  * @param _filter   Filter options
-  * @param _interval Scan Interval (N * 0.625 ms)
-  * @param _window   Scan Window (N * 0.625 ms)
-  */
-#define BT_LE_SCAN_PARAM(_type, _filter, _interval, _window) \
-		(&(struct bt_le_scan_param) { \
-			.type = (_type), \
-			.filter_dup = (_filter), \
-			.interval = (_interval), \
-			.window = (_window), \
-		 })
+/** LE advertisement packet information */
+struct bt_le_scan_recv_info {
+	/** @brief Advertiser LE address and type.
+	 *
+	 *  If advertiser is anonymous then this address will be
+	 *  @ref BT_ADDR_LE_ANY.
+	 */
+	const bt_addr_le_t *addr;
+
+	/** Advertising Set Identifier. */
+	u8_t sid;
+
+	/** Strength of advertiser signal. */
+	s8_t rssi;
+
+	/** Transmit power of the advertiser. */
+	s8_t tx_power;
+
+	/** Advertising packet type. */
+	u8_t adv_type;
+
+	/** Advertising packet properties. */
+	u16_t adv_props;
+
+	/** Primary advertising channel PHY. */
+	u8_t primary_phy;
+
+	/** Secondary advertising channel PHY. */
+	u8_t secondary_phy;
+};
+
+/** Listener context for (LE) scanning. */
+struct bt_le_scan_cb {
+
+	/** @brief Advertisement packet received callback.
+	 *
+	 *  @param info Advertiser packet information.
+	 *  @param buf  Buffer containing advertiser data.
+	 */
+	void (*recv)(const struct bt_le_scan_recv_info *info,
+		     struct net_buf_simple *buf);
+
+	/** @brief The scanner has stopped scanning after scan timeout. */
+	void (*timeout)(void);
+
+	sys_snode_t node;
+};
+
+/** @brief Initialize scan parameters
+ *
+ *  @param _type     Scan Type, BT_LE_SCAN_TYPE_ACTIVE or
+ *                   BT_LE_SCAN_TYPE_PASSIVE.
+ *  @param _options  Scan options
+ *  @param _interval Scan Interval (N * 0.625 ms)
+ *  @param _window   Scan Window (N * 0.625 ms)
+ */
+#define BT_LE_SCAN_PARAM_INIT(_type, _options, _interval, _window) \
+{ \
+	.type = (_type), \
+	.options = (_options), \
+	.interval = (_interval), \
+	.window = (_window), \
+	.timeout = 0, \
+	.interval_coded = 0, \
+	.window_coded = 0, \
+}
+
+/** @brief Helper to declare scan parameters inline
+ *
+ *  @param _type     Scan Type, BT_LE_SCAN_TYPE_ACTIVE or
+ *                   BT_LE_SCAN_TYPE_PASSIVE.
+ *  @param _options  Scan options
+ *  @param _interval Scan Interval (N * 0.625 ms)
+ *  @param _window   Scan Window (N * 0.625 ms)
+ */
+#define BT_LE_SCAN_PARAM(_type, _options, _interval, _window) \
+	((struct bt_le_scan_param[]) { \
+		BT_LE_SCAN_PARAM_INIT(_type, _options, _interval, _window) \
+	 })
 
 /** Helper macro to enable active scanning to discover new devices. */
 #define BT_LE_SCAN_ACTIVE BT_LE_SCAN_PARAM(BT_LE_SCAN_TYPE_ACTIVE, \
-					   BT_LE_SCAN_FILTER_DUPLICATE, \
+					   BT_LE_SCAN_OPT_FILTER_DUPLICATE, \
 					   BT_GAP_SCAN_FAST_INTERVAL, \
 					   BT_GAP_SCAN_FAST_WINDOW)
 
-/** Helper macro to enable passive scanning to discover new devices.
+/** @brief Helper macro to enable passive scanning to discover new devices.
  *
- * This macro should be used if information required for device identification
- * (e.g., UUID) are known to be placed in Advertising Data.
+ *  This macro should be used if information required for device identification
+ *  (e.g., UUID) are known to be placed in Advertising Data.
  */
 #define BT_LE_SCAN_PASSIVE BT_LE_SCAN_PARAM(BT_LE_SCAN_TYPE_PASSIVE, \
-					    BT_LE_SCAN_FILTER_DUPLICATE, \
+					    BT_LE_SCAN_OPT_FILTER_DUPLICATE, \
 					    BT_GAP_SCAN_FAST_INTERVAL, \
 					    BT_GAP_SCAN_FAST_WINDOW)
 
@@ -480,11 +948,19 @@ struct bt_le_scan_param {
  *  Start LE scanning with given parameters and provide results through
  *  the specified callback.
  *
- *  @param param Scan parameters.
- *  @param cb Callback to notify scan results.
+ *  @note The LE scanner by default does not use the Identity Address of the
+ *        local device when :option:`CONFIG_BT_PRIVACY` is disabled. This is to
+ *        prevent the active scanner from disclosing the identity information
+ *        when requesting additional information from advertisers.
+ *        In order to enable directed advertiser reports then
+ *        :option:`CONFIG_BT_SCAN_WITH_IDENTITY` must be enabled.
  *
- *  @return Zero on success or error code otherwise, positive in case
- *  of protocol error or negative (POSIX) in case of stack internal error
+ *  @param param Scan parameters.
+ *  @param cb Callback to notify scan results. May be NULL if callback
+ *            registration through @ref bt_le_scan_cb_register is preferred.
+ *
+ *  @return Zero on success or error code otherwise, positive in case of
+ *          protocol error or negative (POSIX) in case of stack internal error.
  */
 int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb);
 
@@ -492,10 +968,22 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb);
  *
  *  Stops ongoing LE scanning.
  *
- *  @return Zero on success or error code otherwise, positive in case
- *  of protocol error or negative (POSIX) in case of stack internal error
+ *  @return Zero on success or error code otherwise, positive in case of
+ *          protocol error or negative (POSIX) in case of stack internal error.
  */
 int bt_le_scan_stop(void);
+
+/** @brief Register scanner packet callbacks.
+ *
+ *  Adds the callback structure to the list of callback structures that monitors
+ *  scanner activity.
+ *
+ *  This callback will be called for all scanner activity, regardless of what
+ *  API was used to start the scanner.
+ *
+ *  @param cb Callback struct. Must point to static memory.
+ */
+void bt_le_scan_cb_register(struct bt_le_scan_cb *cb);
 
 /** @brief Add device (LE) to whitelist.
  *
@@ -507,8 +995,8 @@ int bt_le_scan_stop(void);
  *
  *  @param addr Bluetooth LE identity address.
  *
- *  @return Zero on success or error code otherwise, positive in case
- *  of protocol error or negative (POSIX) in case of stack internal error.
+ *  @return Zero on success or error code otherwise, positive in case of
+ *          protocol error or negative (POSIX) in case of stack internal error.
  */
 int bt_le_whitelist_add(const bt_addr_le_t *addr);
 
@@ -522,8 +1010,8 @@ int bt_le_whitelist_add(const bt_addr_le_t *addr);
  *
  *  @param addr Bluetooth LE identity address.
  *
- *  @return Zero on success or error code otherwise, positive in case
- *  of protocol error or negative (POSIX) in case of stack internal error.
+ *  @return Zero on success or error code otherwise, positive in case of
+ *          protocol error or negative (POSIX) in case of stack internal error.
  */
 int bt_le_whitelist_rem(const bt_addr_le_t *addr);
 
@@ -535,8 +1023,8 @@ int bt_le_whitelist_rem(const bt_addr_le_t *addr);
  *  the whitelist, i.e advertiser or scanner using a whitelist or automatic
  *  connecting to devices using whitelist.
  *
- *  @return Zero on success or error code otherwise, positive in case
- *  of protocol error or negative (POSIX) in case of stack internal error.
+ *  @return Zero on success or error code otherwise, positive in case of
+ *          protocol error or negative (POSIX) in case of stack internal error.
  */
 int bt_le_whitelist_clear(void);
 
@@ -544,8 +1032,8 @@ int bt_le_whitelist_clear(void);
  *
  * @param chan_map Channel map.
  *
- *  @return Zero on success or error code otherwise, positive in case
- *  of protocol error or negative (POSIX) in case of stack internal error
+ *  @return Zero on success or error code otherwise, positive in case of
+ *          protocol error or negative (POSIX) in case of stack internal error.
  */
 int bt_le_set_chan_map(u8_t chan_map[5]);
 
@@ -566,7 +1054,7 @@ void bt_data_parse(struct net_buf_simple *ad,
 		   bool (*func)(struct bt_data *data, void *user_data),
 		   void *user_data);
 
-/** OOB data that is specific for LE SC pairing method. */
+/** LE Secure Connections pairing Out of Band data. */
 struct bt_le_oob_sc_data {
 	/** Random Number. */
 	u8_t r[16];
@@ -575,34 +1063,71 @@ struct bt_le_oob_sc_data {
 	u8_t c[16];
 };
 
-/** General OOB data. */
+/** LE Out of Band information. */
 struct bt_le_oob {
-	/** LE address. If local privacy is enabled this is Resolvable Private
+	/** LE address. If privacy is enabled this is a Resolvable Private
 	 *  Address.
 	 */
 	bt_addr_le_t addr;
 
-	/** OOB data that are relevant for LESC pairing. */
+	/** LE Secure Connections pairing Out of Band data. */
 	struct bt_le_oob_sc_data le_sc_data;
 };
 
-/**
- * @brief Get LE local Out Of Band information
+/** @brief Get local LE Out of Band (OOB) information.
  *
- * This function allows to get local information that are useful for Out Of Band
- * pairing or connection creation process.
+ *  This function allows to get local information that are useful for
+ *  Out of Band pairing or connection creation.
  *
- * If privacy is enabled this will result in generating new Resolvable Private
- * Address that is valid for CONFIG_BT_RPA_TIMEOUT seconds. This address
- * will be used for advertising, active scanning and connection creation.
+ *  If privacy :option:`CONFIG_BT_PRIVACY` is enabled this will result in
+ *  generating new Resolvable Private Address (RPA) that is valid for
+ *  :option:`CONFIG_BT_RPA_TIMEOUT` seconds. This address will be used for
+ *  advertising started by @ref bt_le_adv_start, active scanning and
+ *  connection creation.
  *
- * @param id  Local identity, in most cases BT_ID_DEFAULT.
- * @param oob LE related information
+ *  @note If privacy is enabled the RPA cannot be refreshed in the following
+ *        cases:
+ *        - Creating a connection in progress, wait for the connected callback.
+ *       In addition when extended advertising :option:`CONFIG_BT_EXT_ADV` is
+ *       not enabled or not supported by the controller:
+ *        - Advertiser is enabled using a Random Static Identity Address for a
+ *          different local identity.
+ *        - The local identity conflicts with the local identity used by other
+ *          roles.
  *
- *  @return Zero on success or error code otherwise, positive in case
- *  of protocol error or negative (POSIX) in case of stack internal error
+ *  @param[in]  id  Local identity, in most cases BT_ID_DEFAULT.
+ *  @param[out] oob LE OOB information
+ *
+ *  @return Zero on success or error code otherwise, positive in case of
+ *          protocol error or negative (POSIX) in case of stack internal error.
  */
 int bt_le_oob_get_local(u8_t id, struct bt_le_oob *oob);
+
+/** @brief Get local LE Out of Band (OOB) information.
+ *
+ *  This function allows to get local information that are useful for
+ *  Out of Band pairing or connection creation.
+ *
+ *  If privacy :option:`CONFIG_BT_PRIVACY` is enabled this will result in
+ *  generating new Resolvable Private Address (RPA) that is valid for
+ *  :option:`CONFIG_BT_RPA_TIMEOUT` seconds. This address will be used by the
+ *  advertising set.
+ *
+ *  @note When generating OOB information for multiple advertising set all
+ *        OOB information needs to be generated at the same time.
+ *
+ *  @note If privacy is enabled the RPA cannot be refreshed in the following
+ *        cases:
+ *        - Creating a connection in progress, wait for the connected callback.
+ *
+ *  @param[in]  adv The advertising set object
+ *  @param[out] oob LE OOB information
+ *
+ *  @return Zero on success or error code otherwise, positive in case
+ *  of protocol error or negative (POSIX) in case of stack internal error.
+ */
+int bt_le_ext_adv_oob_get_local(struct bt_le_ext_adv *adv,
+				struct bt_le_oob *oob);
 
 /** @brief BR/EDR discovery result structure */
 struct bt_br_discovery_result {
@@ -672,8 +1197,8 @@ int bt_br_discovery_start(const struct bt_br_discovery_param *param,
  *  Stops ongoing BR/EDR discovery. If discovery was stopped by this call
  *  results won't be reported
  *
- *  @return Zero on success or error code otherwise, positive in case
- *  of protocol error or negative (POSIX) in case of stack internal error
+ *  @return Zero on success or error code otherwise, positive in case of
+ *          protocol error or negative (POSIX) in case of stack internal error.
  */
 int bt_br_discovery_stop(void);
 
@@ -682,13 +1207,12 @@ struct bt_br_oob {
 	bt_addr_t addr;
 };
 
-/**
- * @brief Get BR/EDR local Out Of Band information
+/** @brief Get BR/EDR local Out Of Band information
  *
- * This function allows to get local controller information that are useful
- * for Out Of Band pairing or connection creation process.
+ *  This function allows to get local controller information that are useful
+ *  for Out Of Band pairing or connection creation process.
  *
- * @param oob Out Of Band information
+ *  @param oob Out Of Band information
  */
 int bt_br_oob_get_local(struct bt_br_oob *oob);
 
@@ -767,22 +1291,21 @@ static inline int bt_addr_le_to_str(const bt_addr_le_t *addr, char *str,
 			addr->a.val[2], addr->a.val[1], addr->a.val[0], type);
 }
 
-/**
- * @brief Convert Bluetooth address from string to binary.
+/** @brief Convert Bluetooth address from string to binary.
  *
- * @param[in]  str   The string representation of a Bluetooth address.
- * @param[out] addr  Address of buffer to store the Bluetooth address
+ *  @param[in]  str   The string representation of a Bluetooth address.
+ *  @param[out] addr  Address of buffer to store the Bluetooth address
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
 int bt_addr_from_str(const char *str, bt_addr_t *addr);
 
-/**
- * @brief Convert LE Bluetooth address from string to binary.
+/** @brief Convert LE Bluetooth address from string to binary.
  *
- * @param[in]  str   The string representation of an LE Bluetooth address.
- * @param[in]  type  The string representation of the LE Bluetooth address type.
- * @param[out] addr  Address of buffer to store the LE Bluetooth address
+ *  @param[in]  str   The string representation of an LE Bluetooth address.
+ *  @param[in]  type  The string representation of the LE Bluetooth address
+ *                    type.
+ *  @param[out] addr  Address of buffer to store the LE Bluetooth address
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
@@ -797,7 +1320,7 @@ int bt_addr_le_from_str(const char *str, const char *type, bt_addr_le_t *addr);
  *  @param enable Value allowing/disallowing controller to become discoverable.
  *
  *  @return Negative if fail set to requested state or requested state has been
- *  already set. Zero if done successfully.
+ *          already set. Zero if done successfully.
  */
 int bt_br_set_discoverable(bool enable);
 
@@ -810,18 +1333,18 @@ int bt_br_set_discoverable(bool enable);
  *  @param enable Value allowing/disallowing controller to be connectable.
  *
  *  @return Negative if fail set to requested state or requested state has been
- *  already set. Zero if done successfully.
+ *          already set. Zero if done successfully.
  */
 int bt_br_set_connectable(bool enable);
 
-/** Clear pairing information.
-  *
-  * @param id    Local identity (mostly just BT_ID_DEFAULT).
-  * @param addr  Remote address, NULL or BT_ADDR_LE_ANY to clear all remote
-  *              devices.
-  *
-  * @return 0 on success or negative error value on failure.
-  */
+/** @brief Clear pairing information.
+ *
+ *  @param id    Local identity (mostly just BT_ID_DEFAULT).
+ *  @param addr  Remote address, NULL or BT_ADDR_LE_ANY to clear all remote
+ *               devices.
+ *
+ *  @return 0 on success or negative error value on failure.
+ */
 int bt_unpair(u8_t id, const bt_addr_le_t *addr);
 
 /** Information about a bond with a remote device. */
@@ -830,12 +1353,12 @@ struct bt_bond_info {
 	bt_addr_le_t addr;
 };
 
-/** Iterate through all existing bonds.
-  *
-  * @param id         Local identity (mostly just BT_ID_DEFAULT).
-  * @param func       Function to call for each bond.
-  * @param user_data  Data to pass to the callback function.
-  */
+/** @brief Iterate through all existing bonds.
+ *
+ *  @param id         Local identity (mostly just BT_ID_DEFAULT).
+ *  @param func       Function to call for each bond.
+ *  @param user_data  Data to pass to the callback function.
+ */
 void bt_foreach_bond(u8_t id, void (*func)(const struct bt_bond_info *info,
 					   void *user_data),
 		     void *user_data);

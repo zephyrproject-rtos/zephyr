@@ -145,4 +145,3 @@ void main(void)
 
 	printf("\nExample end\n");
 }
-

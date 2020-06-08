@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT ti_opt3001
+
 #include <device.h>
 #include <drivers/i2c.h>
 #include <drivers/sensor.h>
@@ -19,7 +21,7 @@ static int opt3001_reg_read(struct opt3001_data *drv_data, u8_t reg,
 {
 	u8_t value[2];
 
-	if (i2c_burst_read(drv_data->i2c, DT_INST_0_TI_OPT3001_BASE_ADDRESS,
+	if (i2c_burst_read(drv_data->i2c, DT_INST_REG_ADDR(0),
 		reg, value, 2) != 0) {
 		return -EIO;
 	}
@@ -40,7 +42,7 @@ static int opt3001_reg_write(struct opt3001_data *drv_data, u8_t reg,
 	u8_t tx_buf[3] = { reg, new_value[0], new_value[1] };
 
 	return i2c_write(drv_data->i2c, tx_buf, sizeof(tx_buf),
-			 DT_INST_0_TI_OPT3001_BASE_ADDRESS);
+			 DT_INST_REG_ADDR(0));
 }
 
 static int opt3001_reg_update(struct opt3001_data *drv_data, u8_t reg,
@@ -113,10 +115,10 @@ static int opt3001_chip_init(struct device *dev)
 	struct opt3001_data *drv_data = dev->driver_data;
 	u16_t value;
 
-	drv_data->i2c = device_get_binding(DT_INST_0_TI_OPT3001_BUS_NAME);
+	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (drv_data->i2c == NULL) {
 		LOG_ERR("Failed to get pointer to %s device!",
-			DT_INST_0_TI_OPT3001_BUS_NAME);
+			DT_INST_BUS_LABEL(0));
 		return -EINVAL;
 	}
 
@@ -161,6 +163,6 @@ int opt3001_init(struct device *dev)
 
 static struct opt3001_data opt3001_drv_data;
 
-DEVICE_AND_API_INIT(opt3001, DT_INST_0_TI_OPT3001_LABEL, opt3001_init,
+DEVICE_AND_API_INIT(opt3001, DT_INST_LABEL(0), opt3001_init,
 		    &opt3001_drv_data, NULL, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &opt3001_driver_api);

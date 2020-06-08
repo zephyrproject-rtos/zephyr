@@ -6,49 +6,14 @@
 menuconfig GPIO_STM32
 	bool "GPIO Driver for STM32 family of MCUs"
 	depends on SOC_FAMILY_STM32
-	select HAS_DTS_GPIO
 	help
 	  Enable GPIO driver for STM32 line of MCUs
 
 if GPIO_STM32
 
-config GPIO_STM32_PORTA
-	bool "Enable GPIO port A support"
-
-config GPIO_STM32_PORTB
-	bool "Enable GPIO port B support"
-
-config GPIO_STM32_PORTC
-	bool "Enable GPIO port C support"
-
-config GPIO_STM32_PORTD
-	bool "Enable GPIO port D support"
-
-config GPIO_STM32_PORTE
-	bool "Enable GPIO port E support"
-
-config GPIO_STM32_PORTF
-	bool "Enable GPIO port F support"
-
-config GPIO_STM32_PORTG
-	bool "Enable GPIO port G support"
-
-config GPIO_STM32_PORTH
-	bool "Enable GPIO port H support"
-
-config GPIO_STM32_PORTI
-	bool "Enable GPIO port I support"
-
-config GPIO_STM32_PORTJ
-	bool "Enable GPIO port J support"
-
-config GPIO_STM32_PORTK
-	bool "Enable GPIO port K support"
-
-if SOC_SERIES_STM32F1X
-
 choice GPIO_STM32_SWJ
 	prompt "Serial wire JTAG configuration"
+	depends on SOC_SERIES_STM32F1X
 
 config GPIO_STM32_SWJ_ENABLE
 	depends on !(SOC_STM32F103XE && SPI_3)
@@ -65,7 +30,5 @@ config GPIO_STM32_SWJ_DISABLE
 	bool "JTAG-DP Disabled and SW-DP Disabled"
 
 endchoice
-
-endif # SOC_SERIES_STM32F1X
 
 endif # GPIO_STM32

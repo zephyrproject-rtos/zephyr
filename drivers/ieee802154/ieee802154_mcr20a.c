@@ -1,5 +1,7 @@
 /* ieee802154_mcr20a.c - NXP MCR20A driver */
 
+#define DT_DRV_COMPAT nxp_mcr20a
+
 /*
  * Copyright (c) 2017 PHYTEC Messtechnik GmbH
  *
@@ -16,6 +18,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <kernel.h>
 #include <arch/cpu.h>
+#include <debug/stack.h>
 
 #include <device.h>
 #include <init.h>
@@ -25,6 +28,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <sys/byteorder.h>
 #include <string.h>
 #include <random/rand32.h>
+#include <debug/stack.h>
 
 #include <drivers/gpio.h>
 
@@ -578,9 +582,7 @@ static inline void mcr20a_rx(struct mcr20a_context *mcr20a, u8_t len)
 		goto out;
 	}
 
-	net_analyze_stack("MCR20A Rx Fiber stack",
-			  Z_THREAD_STACK_BUFFER(mcr20a->mcr20a_rx_stack),
-			  K_THREAD_STACK_SIZEOF(mcr20a->mcr20a_rx_stack));
+	log_stack_usage(&mcr20a->mcr20a_rx_thread);
 	return;
 out:
 	if (pkt) {
@@ -792,31 +794,23 @@ static inline void irqb_int_handler(struct device *port,
 	k_sem_give(&mcr20a->isr_sem);
 }
 
-static inline void set_reset(struct device *dev, u32_t value)
-{
-	struct mcr20a_context *mcr20a = dev->driver_data;
-
-	gpio_pin_write(mcr20a->reset_gpio,
-		       DT_INST_0_NXP_MCR20A_RESET_GPIOS_PIN, value);
-}
-
 static void enable_irqb_interrupt(struct mcr20a_context *mcr20a,
 				 bool enable)
 {
-	if (enable) {
-		gpio_pin_enable_callback(mcr20a->irq_gpio,
-					 DT_INST_0_NXP_MCR20A_IRQB_GPIOS_PIN);
-	} else {
-		gpio_pin_disable_callback(mcr20a->irq_gpio,
-					  DT_INST_0_NXP_MCR20A_IRQB_GPIOS_PIN);
-	}
+	gpio_flags_t flags = enable
+		? GPIO_INT_EDGE_TO_ACTIVE
+		: GPIO_INT_DISABLE;
+
+	gpio_pin_interrupt_configure(mcr20a->irq_gpio,
+				     DT_INST_GPIO_PIN(0, irqb_gpios),
+				     flags);
 }
 
 static inline void setup_gpio_callbacks(struct mcr20a_context *mcr20a)
 {
 	gpio_init_callback(&mcr20a->irqb_cb,
 			   irqb_int_handler,
-			   BIT(DT_INST_0_NXP_MCR20A_IRQB_GPIOS_PIN));
+			   BIT(DT_INST_GPIO_PIN(0, irqb_gpios)));
 	gpio_add_callback(mcr20a->irq_gpio, &mcr20a->irqb_cb);
 }
 
@@ -878,7 +872,8 @@ static int mcr20a_cca(struct device *dev)
 	}
 
 	k_mutex_unlock(&mcr20a->phy_mutex);
-	retval = k_sem_take(&mcr20a->seq_sync, MCR20A_SEQ_SYNC_TIMEOUT);
+	retval = k_sem_take(&mcr20a->seq_sync,
+			    K_MSEC(MCR20A_SEQ_SYNC_TIMEOUT));
 	if (retval) {
 		LOG_ERR("Timeout occurred, %d", retval);
 		return retval;
@@ -1088,6 +1083,7 @@ static inline bool write_txfifo_content(struct mcr20a_context *dev,
 }
 
 static int mcr20a_tx(struct device *dev,
+		     enum ieee802154_tx_mode mode,
 		     struct net_pkt *pkt,
 		     struct net_buf *frag)
 {
@@ -1095,6 +1091,11 @@ static int mcr20a_tx(struct device *dev,
 	u8_t seq = ieee802154_is_ar_flag_set(frag) ? MCR20A_XCVSEQ_TX_RX :
 						     MCR20A_XCVSEQ_TX;
 	int retval;
+
+	if (mode != IEEE802154_TX_MODE_DIRECT) {
+		NET_ERR("TX mode %d not supported", mode);
+		return -ENOTSUP;
+	}
 
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
 
@@ -1128,7 +1129,8 @@ static int mcr20a_tx(struct device *dev,
 	}
 
 	k_mutex_unlock(&mcr20a->phy_mutex);
-	retval = k_sem_take(&mcr20a->seq_sync, MCR20A_SEQ_SYNC_TIMEOUT);
+	retval = k_sem_take(&mcr20a->seq_sync,
+			    K_MSEC(MCR20A_SEQ_SYNC_TIMEOUT));
 	if (retval) {
 		LOG_ERR("Timeout occurred, %d", retval);
 		return retval;
@@ -1269,22 +1271,24 @@ static int power_on_and_setup(struct device *dev)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
 	u8_t timeout = 6U;
-	u32_t status;
+	int pin;
 	u8_t tmp = 0U;
 
 	if (!PART_OF_KW2XD_SIP) {
-		set_reset(dev, 0);
+		gpio_pin_set(mcr20a->reset_gpio,
+			     DT_INST_GPIO_PIN(0, reset_gpios), 1);
 		z_usleep(150);
-		set_reset(dev, 1);
+		gpio_pin_set(mcr20a->reset_gpio,
+			     DT_INST_GPIO_PIN(0, reset_gpios), 0);
 
 		do {
 			z_usleep(50);
 			timeout--;
-			gpio_pin_read(mcr20a->irq_gpio,
-				      DT_INST_0_NXP_MCR20A_IRQB_GPIOS_PIN, &status);
-		} while (status && timeout);
+			pin = gpio_pin_get(mcr20a->irq_gpio,
+					   DT_INST_GPIO_PIN(0, irqb_gpios));
+		} while (pin > 0 && timeout);
 
-		if (status) {
+		if (pin) {
 			LOG_ERR("Timeout, failed to get WAKE IRQ");
 			return -EIO;
 		}
@@ -1335,34 +1339,32 @@ static inline int configure_gpios(struct device *dev)
 
 	/* setup gpio for the modem interrupt */
 	mcr20a->irq_gpio =
-		device_get_binding(DT_INST_0_NXP_MCR20A_IRQB_GPIOS_CONTROLLER);
+		device_get_binding(DT_INST_GPIO_LABEL(0, irqb_gpios));
 	if (mcr20a->irq_gpio == NULL) {
 		LOG_ERR("Failed to get pointer to %s device",
-			DT_INST_0_NXP_MCR20A_IRQB_GPIOS_CONTROLLER);
+			DT_INST_GPIO_LABEL(0, irqb_gpios));
 		return -EINVAL;
 	}
 
 	gpio_pin_configure(mcr20a->irq_gpio,
-			   DT_INST_0_NXP_MCR20A_IRQB_GPIOS_PIN,
-			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			   GPIO_PUD_PULL_UP |
-			   GPIO_INT_ACTIVE_LOW);
+			   DT_INST_GPIO_PIN(0, irqb_gpios),
+			   GPIO_INPUT | DT_INST_GPIO_FLAGS(0, irqb_gpios));
 
 	if (!PART_OF_KW2XD_SIP) {
 		/* setup gpio for the modems reset */
 		mcr20a->reset_gpio =
 			device_get_binding(
-				DT_INST_0_NXP_MCR20A_RESET_GPIOS_CONTROLLER);
+				DT_INST_GPIO_LABEL(0, reset_gpios));
 		if (mcr20a->reset_gpio == NULL) {
 			LOG_ERR("Failed to get pointer to %s device",
-				DT_INST_0_NXP_MCR20A_RESET_GPIOS_CONTROLLER);
+				DT_INST_GPIO_LABEL(0, reset_gpios));
 			return -EINVAL;
 		}
 
 		gpio_pin_configure(mcr20a->reset_gpio,
-				   DT_INST_0_NXP_MCR20A_RESET_GPIOS_PIN,
-				   GPIO_DIR_OUT);
-		set_reset(dev, 0);
+				   DT_INST_GPIO_PIN(0, reset_gpios),
+				   GPIO_OUTPUT_ACTIVE |
+				   DT_INST_GPIO_FLAGS(0, reset_gpios));
 	}
 
 	return 0;
@@ -1372,37 +1374,37 @@ static inline int configure_spi(struct device *dev)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
 
-	mcr20a->spi = device_get_binding(DT_INST_0_NXP_MCR20A_BUS_NAME);
+	mcr20a->spi = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (!mcr20a->spi) {
 		LOG_ERR("Unable to get SPI device");
 		return -ENODEV;
 	}
 
-#if defined(DT_NXP_MCR20A_0_CS_GPIOS_CONTROLLER)
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	mcr20a->cs_ctrl.gpio_dev = device_get_binding(
-		DT_NXP_MCR20A_0_CS_GPIOS_CONTROLLER);
+		DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
 	if (!mcr20a->cs_ctrl.gpio_dev) {
 		LOG_ERR("Unable to get GPIO SPI CS device");
 		return -ENODEV;
 	}
 
-	mcr20a->cs_ctrl.gpio_pin = DT_NXP_MCR20A_0_CS_GPIOS_PIN;
+	mcr20a->cs_ctrl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
 	mcr20a->cs_ctrl.delay = 0U;
 
 	mcr20a->spi_cfg.cs = &mcr20a->cs_ctrl;
 
 	LOG_DBG("SPI GPIO CS configured on %s:%u",
-		DT_NXP_MCR20A_0_CS_GPIOS_CONTROLLER,
-		DT_NXP_MCR20A_0_CS_GPIOS_PIN);
-#endif /* DT_NXP_MCR20A_0_CS_GPIOS_CONTROLLER */
+		DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
+		DT_INST_SPI_DEV_CS_GPIOS_PIN(0));
+#endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
 
-	mcr20a->spi_cfg.frequency = DT_INST_0_NXP_MCR20A_SPI_MAX_FREQUENCY;
+	mcr20a->spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
 	mcr20a->spi_cfg.operation = SPI_WORD_SET(8);
-	mcr20a->spi_cfg.slave = DT_INST_0_NXP_MCR20A_BASE_ADDRESS;
+	mcr20a->spi_cfg.slave = DT_INST_REG_ADDR(0);
 
 	LOG_DBG("SPI configured %s, %d",
-		DT_INST_0_NXP_MCR20A_BUS_NAME,
-		DT_INST_0_NXP_MCR20A_BASE_ADDRESS);
+		DT_INST_BUS_LABEL(0),
+		DT_INST_REG_ADDR(0));
 
 	return 0;
 }
@@ -1437,6 +1439,7 @@ static int mcr20a_init(struct device *dev)
 			CONFIG_IEEE802154_MCR20A_RX_STACK_SIZE,
 			(k_thread_entry_t)mcr20a_thread_main,
 			dev, NULL, NULL, K_PRIO_COOP(2), 0, K_NO_WAIT);
+	k_thread_name_set(&mcr20a->mcr20a_rx_thread, "mcr20a_rx");
 
 	return 0;
 }
@@ -1478,7 +1481,7 @@ DEVICE_AND_API_INIT(mcr20a, CONFIG_IEEE802154_MCR20A_DRV_NAME,
 		    &mcr20a_radio_api);
 #else
 NET_DEVICE_INIT(mcr20a, CONFIG_IEEE802154_MCR20A_DRV_NAME,
-		mcr20a_init, &mcr20a_context_data, NULL,
+		mcr20a_init, device_pm_control_nop, &mcr20a_context_data, NULL,
 		CONFIG_IEEE802154_MCR20A_INIT_PRIO,
 		&mcr20a_radio_api, IEEE802154_L2,
 		NET_L2_GET_CTX_TYPE(IEEE802154_L2),

@@ -136,7 +136,7 @@ next time the device reboots, the model's
 :cpp:var:`bt_mesh_model_cb::settings_set()` callback must be populated. This
 callback gets called when model specific data is found in the persistent
 storage. The model can retrieve the data by calling the ``read_cb`` passed as
-a parameter to the callback. See the :ref:`settings` module documentation for
+a parameter to the callback. See the :ref:`settings_api` module documentation for
 details.
 
 API reference

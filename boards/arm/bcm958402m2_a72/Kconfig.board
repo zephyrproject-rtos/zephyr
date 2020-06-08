@@ -1,0 +1,6 @@
+# Copyright 2020 Broadcom
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_BCM958402M2_A72
+	bool "Broadcom Viper BCM958402M2_A72"
+	depends on SOC_BCM58402_A72

@@ -164,6 +164,10 @@ _restore_context:
 	l32i a0, a1, BSA_LCOUNT_OFF
 	wsr.LCOUNT a0
 #endif
+#if XCHAL_HAVE_S32C1I
+	l32i a0, a1, BSA_SCOMPARE1_OFF
+	wsr.SCOMPARE1 a0
+#endif
 	rsync
 
 	l32i a0, a1, BSA_A0_OFF

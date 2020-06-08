@@ -9,6 +9,8 @@ source "subsys/net/lib/dns/Kconfig"
 
 source "subsys/net/lib/mqtt/Kconfig"
 
+source "subsys/net/lib/tftp/Kconfig"
+
 source "subsys/net/lib/http/Kconfig"
 
 source "subsys/net/lib/websocket/Kconfig"

@@ -29,11 +29,11 @@ static void threads_suspend_resume(int prio)
 				      create_prio, K_USER, K_NO_WAIT);
 	/* checkpoint: suspend current thread */
 	k_thread_suspend(tid);
-	k_sleep(K_MSEC(100));
+	k_msleep(100);
 	/* checkpoint: created thread shouldn't be executed after suspend */
 	zassert_false(last_prio == create_prio, NULL);
 	k_thread_resume(tid);
-	k_sleep(K_MSEC(100));
+	k_msleep(100);
 	/* checkpoint: created thread should be executed after resume */
 	zassert_true(last_prio == create_prio, NULL);
 }
@@ -100,7 +100,7 @@ void test_threads_suspend(void)
 	/* Give the thread a chance to start and verify that it
 	 * stopped executing after suspending itself.
 	 */
-	k_sleep(K_MSEC(100));
+	k_msleep(100);
 	zassert_false(after_suspend, "thread woke up unexpectedly");
 
 	k_thread_abort(tid);
@@ -115,7 +115,7 @@ void sleep_suspended(void *arg0, void *arg1, void *arg2)
 	/* Sleep a half second, then set the flag after we wake up.
 	 * If we are suspended, the wakeup should not occur
 	 */
-	k_sleep(K_MSEC(100));
+	k_msleep(100);
 	after_suspend = true;
 }
 
@@ -134,14 +134,14 @@ void test_threads_suspend_timeout(void)
 				      sleep_suspended, NULL, NULL, NULL,
 				      0, K_USER, K_NO_WAIT);
 
-	k_sleep(K_MSEC(50));
+	k_msleep(50);
 	k_thread_suspend(tid);
 
 	/* Give the timer long enough to expire, and verify that it
 	 * has not (i.e. that the thread didn't wake up, because it
 	 * has been suspended)
 	 */
-	k_sleep(K_MSEC(200));
+	k_msleep(200);
 	zassert_false(after_suspend, "thread woke up unexpectedly");
 
 	k_thread_abort(tid);

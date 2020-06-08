@@ -24,6 +24,17 @@
 #include <sys/util.h>
 #include <offsets.h>
 
+/* We need to dummy out DT_NODE_HAS_STATUS when building the unittests.
+ * Including devicetree.h would require generating dummy header files
+ * to match what gen_defines creates, so it's easier to just dummy out
+ * DT_NODE_HAS_STATUS.
+ */
+#ifdef ZTEST_UNITTEST
+#define DT_NODE_HAS_STATUS(node, status) 0
+#else
+#include <devicetree.h>
+#endif
+
 #ifdef _LINKER
 
 
@@ -34,7 +45,7 @@
  */
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 #define DEVICE_COUNT \
-	((__device_init_end - __device_init_start) / _DEVICE_STRUCT_SIZEOF)
+	((__device_end - __device_start) / _DEVICE_STRUCT_SIZEOF)
 #define DEV_BUSY_SZ	(((DEVICE_COUNT + 31) / 32) * 4)
 #define DEVICE_BUSY_BITFIELD()			\
 		FILL(0x00) ;			\
@@ -46,35 +57,52 @@
 #endif
 
 /*
- * generate a symbol to mark the start of the device initialization objects for
- * the specified level, then link all of those objects (sorted by priority);
- * ensure the objects aren't discarded if there is no direct reference to them
+ * generate a symbol to mark the start of the objects array for
+ * the specified object and level, then link all of those objects
+ * (sorted by priority). Ensure the objects aren't discarded if there is
+ * no direct reference to them
  */
-
-#define DEVICE_INIT_LEVEL(level)				\
-		__device_##level##_start = .;			\
-		KEEP(*(SORT(.init_##level[0-9])));		\
-		KEEP(*(SORT(.init_##level[1-9][0-9])));	\
+#define CREATE_OBJ_LEVEL(object, level)				\
+		__##object##_##level##_start = .;		\
+		KEEP(*(SORT(.##object##_##level[0-9])));	\
+		KEEP(*(SORT(.##object##_##level[1-9][0-9])));	\
 
 /*
- * link in device initialization objects for all devices that are automatically
+ * link in initialization objects for all objects that are automatically
  * initialized by the kernel; the objects are sorted in the order they will be
  * initialized (i.e. ordered by level, sorted by priority within a level)
  */
 
-#define	DEVICE_INIT_SECTIONS()			\
-		__device_init_start = .;	\
-		DEVICE_INIT_LEVEL(PRE_KERNEL_1)	\
-		DEVICE_INIT_LEVEL(PRE_KERNEL_2)	\
-		DEVICE_INIT_LEVEL(POST_KERNEL)	\
-		DEVICE_INIT_LEVEL(APPLICATION)	\
-		__device_init_end = .;		\
-		DEVICE_BUSY_BITFIELD()		\
+#define	INIT_SECTIONS()					\
+		__init_start = .;			\
+		CREATE_OBJ_LEVEL(init, PRE_KERNEL_1)	\
+		CREATE_OBJ_LEVEL(init, PRE_KERNEL_2)	\
+		CREATE_OBJ_LEVEL(init, POST_KERNEL)	\
+		CREATE_OBJ_LEVEL(init, APPLICATION)	\
+		CREATE_OBJ_LEVEL(init, SMP)		\
+		__init_end = .;				\
 
 
 /* define a section for undefined device initialization levels */
-#define DEVICE_INIT_UNDEFINED_SECTION()		\
+#define INIT_UNDEFINED_SECTION()		\
 		KEEP(*(SORT(.init_[_A-Z0-9]*)))	\
+
+
+/*
+ * link in devices objects, which are tied to the init ones;
+ * the objects are thus sorted the same way as their init object parent
+ * see include/device.h
+ */
+#define	DEVICE_SECTIONS()				\
+		__device_start = .;			\
+		CREATE_OBJ_LEVEL(device, PRE_KERNEL_1)	\
+		CREATE_OBJ_LEVEL(device, PRE_KERNEL_2)	\
+		CREATE_OBJ_LEVEL(device, POST_KERNEL)	\
+		CREATE_OBJ_LEVEL(device, APPLICATION)	\
+		CREATE_OBJ_LEVEL(device, SMP)		\
+		__device_end = .;			\
+		DEVICE_BUSY_BITFIELD()			\
+
 
 /*
  * link in shell initialization objects for all modules that use shell and
@@ -204,7 +232,7 @@ extern char __gcov_bss_size[];
 /* end address of image, used by newlib for the heap */
 extern char _end[];
 
-#ifdef DT_CCM_BASE_ADDRESS
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ccm), okay)
 extern char __ccm_data_rom_start[];
 extern char __ccm_start[];
 extern char __ccm_data_start[];
@@ -214,9 +242,9 @@ extern char __ccm_bss_end[];
 extern char __ccm_noinit_start[];
 extern char __ccm_noinit_end[];
 extern char __ccm_end[];
-#endif /* DT_CCM_BASE_ADDRESS */
+#endif
 
-#ifdef DT_DTCM_BASE_ADDRESS
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
 extern char __dtcm_data_start[];
 extern char __dtcm_data_end[];
 extern char __dtcm_bss_start[];
@@ -226,7 +254,7 @@ extern char __dtcm_noinit_end[];
 extern char __dtcm_data_rom_start[];
 extern char __dtcm_start[];
 extern char __dtcm_end[];
-#endif /* DT_DTCM_BASE_ADDRESS */
+#endif
 
 /* Used by the Security Attribution Unit to configure the
  * Non-Secure Callable region.

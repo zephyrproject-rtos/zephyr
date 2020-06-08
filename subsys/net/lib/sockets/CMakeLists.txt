@@ -2,12 +2,15 @@
 
 zephyr_include_directories(.)
 
-if(NOT CONFIG_NET_SOCKETS_OFFLOAD)
 zephyr_sources(
   getaddrinfo.c
-  getnameinfo.c
   sockets.c
+)
+
+if(NOT CONFIG_NET_SOCKETS_OFFLOAD)
+zephyr_sources(
   sockets_select.c
+  getnameinfo.c
   sockets_misc.c
   )
 zephyr_sources_ifdef(CONFIG_NET_SOCKETS_SOCKOPT_TLS sockets_tls.c)
@@ -24,5 +27,7 @@ endif()
 if(CONFIG_SOCKS)
   zephyr_include_directories(${ZEPHYR_BASE}/subsys/net/lib/socks)
 endif()
+
+zephyr_sources_ifdef(CONFIG_NET_SOCKETPAIR socketpair.c)
 
 zephyr_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)

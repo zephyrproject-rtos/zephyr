@@ -46,7 +46,7 @@ typedef int (*entropy_get_entropy_isr_t)(struct device *dev,
 					 u8_t *buffer,
 					 u16_t length,
 					 u32_t flags);
-struct entropy_driver_api {
+__subsystem struct entropy_driver_api {
 	entropy_get_entropy_t     get_entropy;
 	entropy_get_entropy_isr_t get_entropy_isr;
 };

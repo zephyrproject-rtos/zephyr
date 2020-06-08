@@ -14,17 +14,17 @@
 
 /* pin assignments for STEVAL-FCU001V1 */
 static const struct pin_config pinconf[] = {
-#ifdef CONFIG_UART_1
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usart1), okay) && CONFIG_SERIAL
 	{STM32_PIN_PA9, STM32F4_PINMUX_FUNC_PA9_USART1_TX},
 	{STM32_PIN_PA10, STM32F4_PINMUX_FUNC_PA10_USART1_RX},
-#endif	/* CONFIG_UART_1 */
-#ifdef CONFIG_PWM_STM32_2
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm2), okay) && CONFIG_PWM
 	{STM32_PIN_PA0, STM32F4_PINMUX_FUNC_PA0_PWM2_CH1},
-#endif	/* CONFIG_PWM_STM32_2 */
-#ifdef CONFIG_I2C_2
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c2), okay) && CONFIG_I2C
 	{STM32_PIN_PB3, STM32F4_PINMUX_FUNC_PB3_I2C2_SDA},
 	{STM32_PIN_PB10, STM32F4_PINMUX_FUNC_PB10_I2C2_SCL},
-#endif	/* CONFIG_I2C_2	*/
+#endif
 };
 
 static int pinmux_stm32_init(struct device *port)

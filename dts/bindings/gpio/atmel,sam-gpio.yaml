@@ -1,7 +1,4 @@
-title: Atmel SAM GPIO PORT driver
-
-description: |
-    This is a representation of the SAM GPIO PORT nodes
+description: SAM GPIO PORT node
 
 compatible: "atmel,sam-gpio"
 
@@ -25,6 +22,17 @@ properties:
     "#gpio-cells":
       const: 2
 
+    "#atmel,pin-cells":
+      type: int
+      required: true
+      const: 2
+      description: Number of items to expect in a atmel,pins specifier
+
+
 gpio-cells:
   - pin
   - flags
+
+atmel,pin-cells:
+  - pin
+  - peripheral

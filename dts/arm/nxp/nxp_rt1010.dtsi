@@ -1,0 +1,97 @@
+/*
+ * Copyright (c) 2019, Linaro
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/nxp_rt.dtsi>
+
+&sysclk {
+	clock-frequency = <500000000>;
+};
+
+/* i.MX rt1010 default FlexRAM partition:
+ * ITCM: 32KB
+ * DTCM: 32KB
+ * OCRAM: 64KB
+ */
+&itcm {
+	reg = <0x00000000 0x8000>;
+};
+
+&dtcm {
+	reg = <0x20000000 0x8000>;
+};
+
+&ocram {
+	reg = <0x20200000 0x10000>;
+};
+
+&gpio1 {
+	interrupts = <70 0>, <71 0>;
+};
+
+&gpio5 {
+	interrupts = <73 0>;
+};
+
+&gpt1 {
+	interrupts = <30 0>;
+};
+
+&gpt2 {
+	interrupts = <31 0>;
+};
+
+&usb1 {
+	interrupts = <25 0>;
+};
+
+&flexspi {
+	interrupts = <26 0>;
+};
+
+&flexpwm1_pwm0 {
+	interrupts = <34 0>;
+};
+
+&flexpwm1_pwm1 {
+	interrupts = <35 0>;
+};
+
+&flexpwm1_pwm2 {
+	interrupts = <36 0>;
+};
+
+&flexpwm1_pwm3 {
+	interrupts = <37 0>;
+};
+
+&flexpwm1 {
+	interrupts = <38 0>;
+};
+
+/ {
+	aliases {
+		/delete-property/ gpio-3;
+		/delete-property/ gpio-4;
+	};
+
+	soc {
+		/* Fixup GPIO2 its a different location on RT1010 */
+		/delete-node/ gpio@401bc000;
+
+		gpio2: gpio@42000000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x42000000 0x4000>;
+			interrupts = <72 0>;
+			label = "GPIO_2";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		/* Remove GPIO3 & GPIO4, they dont exist on RT1010 */
+		/delete-node/ gpio@401c0000;
+		/delete-node/ gpio@401c4000;
+	};
+};

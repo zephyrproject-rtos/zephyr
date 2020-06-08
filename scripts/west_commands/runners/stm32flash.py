@@ -95,7 +95,6 @@ class Stm32flashBinaryRunner(ZephyrBinaryRunner):
             '-m', self.serial_mode]
 
         action = self.action.lower()
-        msg_text = "something went wrong"
 
         if action == 'info':
             # show device information and exit

@@ -6,8 +6,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Public Clock Control APIs
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_H_
 #define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_H_
+
+/**
+ * @brief Clock Control Interface
+ * @defgroup clock_control_interface Clock Control Interface
+ * @ingroup io_interfaces
+ * @{
+ */
 
 #include <zephyr/types.h>
 #include <stddef.h>
@@ -34,7 +46,6 @@ enum clock_control_status {
 	CLOCK_CONTROL_STATUS_UNKNOWN
 };
 
-typedef void (*clock_control_cb_t)(struct device *dev, void *user_data);
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -47,6 +58,23 @@ typedef void (*clock_control_cb_t)(struct device *dev, void *user_data);
 /**
  * INTERNAL_HIDDEN @endcond
  */
+
+/**
+ * clock_control_subsys_t is a type to identify a clock controller sub-system.
+ * Such data pointed is opaque and relevant only to the clock controller
+ * driver instance being used.
+ */
+typedef void *clock_control_subsys_t;
+
+/** @brief Callback called on clock started.
+ *
+ * @param dev		Device structure whose driver controls the clock.
+ * @param subsys	Opaque data representing the clock.
+ * @param user_data	User data.
+ */
+typedef void (*clock_control_cb_t)(struct device *dev,
+				   clock_control_subsys_t subsys,
+				   void *user_data);
 
 /**
  * Define and initialize clock_control async data.
@@ -71,13 +99,6 @@ struct clock_control_async_data {
 	clock_control_cb_t cb;
 	void *user_data;
 };
-
-/**
- * clock_control_subsys_t is a type to identify a clock controller sub-system.
- * Such data pointed is opaque and relevant only to the clock controller
- * driver instance being used.
- */
-typedef void *clock_control_subsys_t;
 
 typedef int (*clock_control)(struct device *dev, clock_control_subsys_t sys);
 
@@ -211,7 +232,7 @@ static inline int clock_control_get_rate(struct device *dev,
 		(const struct clock_control_driver_api *)dev->driver_api;
 
 	__ASSERT(api->get_rate != NULL, "%s not implemented for device %s",
-		__func__, dev->config->name);
+		__func__, dev->name);
 
 	return api->get_rate(dev, sys, rate);
 }
@@ -219,5 +240,9 @@ static inline int clock_control_get_rate(struct device *dev,
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_H_ */

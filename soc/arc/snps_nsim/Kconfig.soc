@@ -3,3 +3,4 @@
 
 config SOC_NSIM
 	bool "Synopsys nSIM simulator for ARC cores"
+	select ARC

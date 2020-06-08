@@ -57,4 +57,3 @@ performs a simulation of the enigma machine to produce cypher text(CT).
 The CT is copied to a shared memory partition connecting to the third
 thread. The third thread prints the CT to the console with a banner
 denoting the content as CYPHER TEXT.
-

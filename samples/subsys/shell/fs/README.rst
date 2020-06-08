@@ -6,12 +6,12 @@ File system shell example
 Overview
 ********
 
-This example provides shell access to a NFFS file system partition in flash.
+This example provides shell access to a LittleFS file system partition in flash.
 
 Requirements
 ************
 
-A board with NFFS file system support and UART console
+A board with LittleFS file system support and UART console
 
 Building
 ********
@@ -62,11 +62,11 @@ Running
 Once the board has booted, you will be presented with a shell prompt.
 All file system related commands are available as sub-commands of fs.
 
-Begin by mounting the NFSS file system.
+Begin by mounting the LittleFS file system.
 
 .. code-block:: console
 
-  fs mount nffs /nffs
+  fs mount littlefs /lfs
 
 Files System Shell Commands
 ===========================
@@ -78,7 +78,7 @@ Mount a file system partition to a given mount point
 
 .. code-block:: console
 
-  fs mount (nffs|fat) <path>
+  fs mount (littlefs|fat) <path>
 
 Ls
 --
@@ -161,5 +161,3 @@ Linux system.
 
 By default the flash partitions are accessible through the directory *flash*
 relative to the directory where the build is started.
-
-

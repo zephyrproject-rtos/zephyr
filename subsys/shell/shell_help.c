@@ -148,50 +148,28 @@ static void help_item_print(const struct shell *shell, const char *item_name,
 void shell_help_subcmd_print(const struct shell *shell)
 {
 	const struct shell_static_entry *entry = NULL;
-	struct shell_static_entry static_entry;
-	u16_t longest_syntax = 0U;
-	size_t cmd_idx = 0;
-
-	/* Checking if there are any subcommands available. */
-	if (!shell->ctx->active_cmd.subcmd) {
-		return;
-	}
+	const struct shell_static_entry *parent = &shell->ctx->active_cmd;
+	struct shell_static_entry dloc;
+	u16_t longest = 0U;
+	size_t idx = 0;
 
 	/* Searching for the longest subcommand to print. */
-	do {
-		shell_cmd_get(shell, shell->ctx->active_cmd.subcmd,
-			      !SHELL_CMD_ROOT_LVL,
-			      cmd_idx++, &entry, &static_entry);
+	while ((entry = shell_cmd_get(parent, idx++, &dloc)) != NULL) {
+		longest = Z_MAX(longest, shell_strlen(entry->syntax));
+	};
 
-		if (!entry) {
-			break;
-		}
-
-		u16_t len = shell_strlen(entry->syntax);
-
-		longest_syntax = longest_syntax > len ? longest_syntax : len;
-	} while (cmd_idx != 0); /* too many commands */
-
-	if (cmd_idx == 1) {
+	/* No help to print */
+	if (longest == 0) {
 		return;
 	}
 
 	shell_internal_fprintf(shell, SHELL_NORMAL, "Subcommands:\n");
 
 	/* Printing subcommands and help string (if exists). */
-	cmd_idx = 0;
+	idx = 0;
 
-	while (true) {
-		shell_cmd_get(shell, shell->ctx->active_cmd.subcmd,
-			      !SHELL_CMD_ROOT_LVL,
-			      cmd_idx++, &entry, &static_entry);
-
-		if (entry == NULL) {
-			break;
-		}
-
-		help_item_print(shell, entry->syntax, longest_syntax,
-				entry->help);
+	while ((entry = shell_cmd_get(parent, idx++, &dloc)) != NULL) {
+		help_item_print(shell, entry->syntax, longest, entry->help);
 	}
 }
 
@@ -208,4 +186,3 @@ void shell_help_cmd_print(const struct shell *shell)
 	formatted_text_print(shell, shell->ctx->active_cmd.help,
 			     field_width, false);
 }
-

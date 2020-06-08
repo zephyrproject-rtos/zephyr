@@ -6,8 +6,7 @@
 
 / {
 	model = "Actinius Icarus IoT Dev Board";
-	compatible = "actinius,icarus", "nordic,nrf9160-sica",
-			 "nordic,nrf9160";
+	compatible = "actinius,icarus";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -19,18 +18,37 @@
 		compatible = "gpio-leds";
 
 		red_led: led_0 {
-			gpios = <&gpio0 10 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 			label = "Red LED";
 		};
 
 		green_led: led_1 {
-			gpios = <&gpio0 11 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 			label = "Green LED";
 		};
 
 		blue_led: led_2 {
-			gpios = <&gpio0 12 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 			label = "Blue LED";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		red_pwm_led: led_pwm_0 {
+			pwms = <&pwm0 10>;
+			label = "Red PWM LED";
+		};
+
+		green_pwm_led: led_pwm_1 {
+			pwms = <&pwm0 11>;
+			label = "Green PWM LED";
+		};
+
+		blue_pwm_led: led_pwm_2 {
+			pwms = <&pwm0 12>;
+			label = "Blue PWM LED";
 		};
 	};
 
@@ -38,7 +56,7 @@
 		compatible = "gpio-keys";
 
 		button0: button_0 {
-			gpios = <&gpio0 5 (GPIO_PUD_PULL_UP | GPIO_INT_ACTIVE_LOW)>;
+			gpios = <&gpio0 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push Button 1";
 		};
 	};
@@ -47,7 +65,12 @@
 		led0 = &red_led;
 		led1 = &green_led;
 		led2 = &blue_led;
-		rgb-pwm = &pwm0;
+		pwm-led0 = &red_pwm_led;
+		pwm-led1 = &green_pwm_led;
+		pwm-led2 = &blue_pwm_led;
+		red-pwm-led = &red_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
 		sw0 = &button0;
 	};
 };
@@ -99,7 +122,8 @@
 	lis2dh12-accel@19 {
 		compatible = "st,lis2dh";
 		reg = <0x19>;
-		irq-gpios = <&gpio0 28 0>, <&gpio0 29 0>;
+		irq-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>,
+			  <&gpio0 29 GPIO_ACTIVE_HIGH>;
 		label = "LIS2DH12-ACCEL";
 	};
 };

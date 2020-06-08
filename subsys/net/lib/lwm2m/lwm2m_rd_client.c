@@ -62,10 +62,13 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define LWM2M_RD_CLIENT_URI "rd"
 
 #define SECONDS_TO_UPDATE_EARLY	6
-#define STATE_MACHINE_UPDATE_INTERVAL K_MSEC(500)
+#define STATE_MACHINE_UPDATE_INTERVAL_MS 500
 
 /* Leave room for 32 hexadeciaml digits (UUID) + NULL */
 #define CLIENT_EP_LEN		33
+
+/* Up to 3 characters + NULL */
+#define CLIENT_BINDING_LEN sizeof("UQS")
 
 /* The states for the RD client state machine */
 /*
@@ -84,6 +87,7 @@ enum sm_engine_state {
 	ENGINE_DO_REGISTRATION,
 	ENGINE_REGISTRATION_SENT,
 	ENGINE_REGISTRATION_DONE,
+	ENGINE_REGISTRATION_DONE_RX_OFF,
 	ENGINE_UPDATE_SENT,
 	ENGINE_DEREGISTER,
 	ENGINE_DEREGISTER_SENT,
@@ -99,6 +103,7 @@ struct lwm2m_rd_client_info {
 	u8_t trigger_update;
 
 	s64_t last_update;
+	s64_t last_tx;
 
 	char ep_name[CLIENT_EP_LEN];
 	char server_ep[CLIENT_EP_LEN];
@@ -109,6 +114,11 @@ struct lwm2m_rd_client_info {
 /* buffers */
 static char query_buffer[64]; /* allocate some data for queries and updates */
 static u8_t client_data[256]; /* allocate some data for the RD */
+
+void engine_update_tx_time(void)
+{
+	client.last_tx = k_uptime_get();
+}
 
 static void set_sm_state(u8_t sm_state)
 {
@@ -127,6 +137,8 @@ static void set_sm_state(u8_t sm_state)
 		event = LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE;
 	} else if (sm_state == ENGINE_REGISTRATION_DONE) {
 		event = LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE;
+	} else if (sm_state == ENGINE_REGISTRATION_DONE_RX_OFF) {
+		event = LWM2M_RD_CLIENT_EVENT_QUEUE_MODE_RX_OFF;
 	} else if ((sm_state == ENGINE_INIT ||
 		    sm_state == ENGINE_DEREGISTERED) &&
 		   (client.engine_state >= ENGINE_DO_REGISTRATION &&
@@ -179,6 +191,18 @@ static void sm_handle_timeout_state(struct lwm2m_message *msg,
 	if (event > LWM2M_RD_CLIENT_EVENT_NONE && client.event_cb) {
 		client.event_cb(client.ctx, event);
 	}
+}
+
+/* force state machine restart */
+void engine_trigger_restart(void)
+{
+	lwm2m_engine_context_close(client.ctx);
+
+	/* Jump directly to the registration phase. In case there is no valid
+	 * security object for the LWM2M server, it will fall back to the
+	 * bootstrap procedure.
+	 */
+	set_sm_state(ENGINE_DO_REGISTRATION);
 }
 
 /* force re-update with remote peer */
@@ -579,6 +603,7 @@ static int sm_send_registration(bool send_obj_support_data,
 	struct lwm2m_message *msg;
 	u16_t client_data_len;
 	int ret;
+	char binding[CLIENT_BINDING_LEN];
 
 	msg = lwm2m_get_message(client.ctx);
 	if (!msg) {
@@ -633,7 +658,15 @@ static int sm_send_registration(bool send_obj_support_data,
 	coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_QUERY,
 				  query_buffer, strlen(query_buffer));
 
-	/* TODO: add supported binding query string */
+	lwm2m_engine_get_binding(binding);
+	/* UDP is a default binding, no need to add option if UDP is used. */
+	if (strcmp(binding, "U") != 0) {
+		snprintk(query_buffer, sizeof(query_buffer) - 1,
+			 "b=%s", binding);
+		/* TODO: handle return error */
+		coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_QUERY,
+					  query_buffer, strlen(query_buffer));
+	}
 
 	if (send_obj_support_data) {
 		ret = coap_packet_append_payload_marker(&msg->cpkt);
@@ -742,6 +775,13 @@ static int sm_registration_done(void)
 		}
 	}
 
+	if (IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED) &&
+	    (client.engine_state != ENGINE_REGISTRATION_DONE_RX_OFF) &&
+	    (((k_uptime_get() - client.last_tx) / 1000) >=
+	     CONFIG_LWM2M_QUEUE_MODE_UPTIME)) {
+		set_sm_state(ENGINE_REGISTRATION_DONE_RX_OFF);
+	}
+
 	return ret;
 }
 
@@ -830,6 +870,7 @@ static void lwm2m_rd_client_service(struct k_work *work)
 			break;
 
 		case ENGINE_REGISTRATION_DONE:
+		case ENGINE_REGISTRATION_DONE_RX_OFF:
 			sm_registration_done();
 			break;
 
@@ -862,6 +903,7 @@ void lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
 			   lwm2m_ctx_event_cb_t event_cb)
 {
 	client.ctx = client_ctx;
+	client.ctx->sock_fd = -1;
 	client.event_cb = event_cb;
 
 	set_sm_state(ENGINE_INIT);
@@ -882,7 +924,7 @@ void lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
 static int lwm2m_rd_client_init(struct device *dev)
 {
 	return lwm2m_engine_add_service(lwm2m_rd_client_service,
-					STATE_MACHINE_UPDATE_INTERVAL);
+					STATE_MACHINE_UPDATE_INTERVAL_MS);
 }
 
 SYS_INIT(lwm2m_rd_client_init, APPLICATION,

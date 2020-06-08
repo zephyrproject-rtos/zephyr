@@ -1,5 +1,5 @@
 identifier: nucleo_l053r8
-name: NUCLEO-L053R8
+name: ST Nucleo L053R8
 type: mcu
 arch: arm
 toolchain:
@@ -13,5 +13,6 @@ supported:
   - gpio
   - i2c
   - spi
+  - eeprom
 ram: 8
 flash: 64

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2019 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,7 @@
 #include "util/memq.h"
 
 #include "lll.h"
+#include "lll_clock.h"
 #include "lll_internal.h"
 
 #include "ll_test.h"
@@ -172,7 +173,7 @@ static u32_t init(u8_t chan, u8_t phy, void (*isr)(void *))
 	cntr_start();
 
 	/* Setup resources required by Radio */
-	err = lll_clk_on_wait();
+	err = lll_hfclock_on_wait();
 
 	/* Reset Radio h/w */
 	radio_reset();
@@ -334,7 +335,7 @@ u32_t ll_test_end(u16_t *num_rx)
 	radio_tmr_stop();
 
 	/* Release resources acquired for Radio */
-	err = lll_clk_off();
+	err = lll_hfclock_off();
 	LL_ASSERT(!err || err == -EBUSY);
 
 	/* Stop coarse timer */

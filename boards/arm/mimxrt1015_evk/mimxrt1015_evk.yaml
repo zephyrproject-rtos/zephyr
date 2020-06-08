@@ -18,6 +18,5 @@ supported:
   - arduino_gpio
   - counter
   - gpio
-  - hwinfo
   - i2c
   - usb_device

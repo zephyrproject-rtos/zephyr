@@ -12,6 +12,8 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(adc_nrfx_saadc);
 
+#define DT_DRV_COMPAT nordic_nrf_saadc
+
 struct driver_data {
 	struct adc_context ctx;
 
@@ -397,10 +399,9 @@ static int init_saadc(struct device *dev)
 	nrf_saadc_event_clear(NRF_SAADC, NRF_SAADC_EVENT_CALIBRATEDONE);
 	nrf_saadc_int_enable(NRF_SAADC,
 			     NRF_SAADC_INT_END | NRF_SAADC_INT_CALIBRATEDONE);
-	NRFX_IRQ_ENABLE(DT_NORDIC_NRF_SAADC_ADC_0_IRQ_0);
+	NRFX_IRQ_ENABLE(DT_INST_IRQN(0));
 
-	IRQ_CONNECT(DT_NORDIC_NRF_SAADC_ADC_0_IRQ_0,
-		    DT_NORDIC_NRF_SAADC_ADC_0_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    saadc_irq_handler, DEVICE_GET(adc_0), 0);
 
 	adc_context_unlock_unconditionally(&m_data.ctx);
@@ -417,9 +418,25 @@ static const struct adc_driver_api adc_nrfx_driver_api = {
 	.ref_internal  = 600,
 };
 
-#ifdef CONFIG_ADC_0
-DEVICE_AND_API_INIT(adc_0, DT_NORDIC_NRF_SAADC_ADC_0_LABEL,
-		    init_saadc, NULL, NULL,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &adc_nrfx_driver_api);
-#endif /* CONFIG_ADC_0 */
+/*
+ * There is only one instance on supported SoCs, so inst is guaranteed
+ * to be 0 if any instance is okay. (We use adc_0 above, so the driver
+ * is relying on the numeric instance value in a way that happens to
+ * be safe.)
+ *
+ * Just in case that assumption becomes invalid in the future, we use
+ * a BUILD_ASSERT().
+ */
+#define SAADC_INIT(inst)						\
+	BUILD_ASSERT((inst) == 0,					\
+		     "multiple instances not supported");		\
+	DEVICE_AND_API_INIT(adc_0,					\
+			    DT_INST_LABEL(0),				\
+			    init_saadc,					\
+			    NULL,					\
+			    NULL,					\
+			    POST_KERNEL,				\
+			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    &adc_nrfx_driver_api);
+
+DT_INST_FOREACH_STATUS_OKAY(SAADC_INIT)

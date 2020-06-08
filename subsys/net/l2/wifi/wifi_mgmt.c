@@ -26,10 +26,9 @@ static int wifi_connect(u32_t mgmt_request, struct net_if *iface,
 		return -ENOTSUP;
 	}
 
-	NET_DBG("%s %u %u %u %s %u",
-		params->ssid, params->ssid_length,
-		params->channel, params->security,
-		params->psk, params->psk_length);
+	LOG_HEXDUMP_DBG(params->ssid, params->ssid_length, "ssid");
+	LOG_HEXDUMP_DBG(params->psk, params->psk_length, "psk");
+	NET_DBG("ch %u sec %u", params->channel, params->security);
 
 	if ((params->security > WIFI_SECURITY_TYPE_PSK) ||
 	    (params->ssid_length > WIFI_SSID_MAX_LEN) ||

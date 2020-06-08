@@ -11,37 +11,29 @@ source "modules/Kconfig"
 
 endmenu
 
-# Include these first so that any properties (e.g. defaults) below can be
-# overridden in *.defconfig files (by defining symbols in multiple locations).
-# After merging all the symbol definitions, Kconfig picks the first property
-# (e.g. the first default) with a satisfied condition.
+# Include Kconfig.defconfig files first so that they can override defaults and
+# other symbol/choice properties by adding extra symbol/choice definitions.
+# After merging all definitions for a symbol/choice, Kconfig picks the first
+# property (e.g. the first default) with a satisfied condition.
 #
-# Board defaults should be parsed before SoC defaults, because boards usually
-# overrides SoC values.
+# Shield defaults should have precedence over board defaults, which should have
+# precedence over SoC defaults, so include them in that order.
 #
-# Note: $ARCH and $BOARD_DIR might be glob patterns.
+# $ARCH and $BOARD_DIR will be glob patterns when building documentation.
+source "boards/shields/*/Kconfig.defconfig"
 source "$(BOARD_DIR)/Kconfig.defconfig"
-
 source "$(SOC_DIR)/$(ARCH)/*/Kconfig.defconfig"
 
 source "boards/Kconfig"
-
 source "$(SOC_DIR)/Kconfig"
-
 source "arch/Kconfig"
-
 source "kernel/Kconfig"
-
 source "dts/Kconfig"
-
 source "drivers/Kconfig"
-
 source "lib/Kconfig"
-
 source "subsys/Kconfig"
 
-source "ext/Kconfig"
-
+osource "$(TOOLCHAIN_KCONFIG_DIR)/Kconfig"
 
 menu "Build and Link Features"
 
@@ -254,6 +246,28 @@ config COMPILER_OPT
 
 endmenu
 
+choice
+	prompt "Error checking behavior for CHECK macro"
+	default RUNTIME_ERROR_CHECKS
+
+config ASSERT_ON_ERRORS
+	bool "Assert on all errors"
+	help
+	  Assert on errors covered with the CHECK macro.
+
+config NO_RUNTIME_CHECKS
+	bool "No runtime error checks"
+	help
+	  Do not do any runtime checks or asserts when using the CHECK macro.
+
+config RUNTIME_ERROR_CHECKS
+	bool "Enable runtime error checks"
+	help
+	  Always perform runtime checks covered with the CHECK macro. This
+	  option is the default and the only option used during testing.
+
+endchoice
+
 menu "Build Options"
 
 config KERNEL_BIN_NAME
@@ -273,6 +287,14 @@ config OUTPUT_DISASSEMBLY
 	default y
 	help
 	  Create an .lst file with the assembly listing of the firmware.
+
+config OUTPUT_DISASSEMBLE_ALL
+	bool "Disassemble all sections with source. Fill zeros."
+	default n
+	depends on OUTPUT_DISASSEMBLY
+	help
+	  The .lst file will contain complete disassembly of the firmware
+	  not just those expected to contain instructions including zeros
 
 config OUTPUT_PRINT_MEMORY_USAGE
 	bool "Print memory usage to stdout"
@@ -315,7 +337,6 @@ config BUILD_OUTPUT_S19
 
 config BUILD_NO_GAP_FILL
 	bool "Don't fill gaps in generated hex/bin/s19 files."
-	depends on BUILD_OUTPUT_HEX || BUILD_OUTPUT_BIN || BUILD_OUTPUT_S19
 
 config BUILD_OUTPUT_STRIPPED
 	bool "Build a stripped binary"
@@ -328,6 +349,19 @@ config APPLICATION_DEFINED_SYSCALL
 	help
 	  Scan additional folders inside application source folder
 	  for application defined syscalls.
+
+config MAKEFILE_EXPORTS
+	bool "Generate build metadata files named Makefile.exports"
+	help
+	  Generates a file with build information that can be read by
+	  third party Makefile-based build systems.
+
+config LEGACY_DEVICETREE_MACROS
+	bool "Allow use of legacy devicetree macros"
+	help
+	  Allows use of legacy devicetree macros which were used in
+	  Zephyr 2.2 and previous versions, rather than the devicetree.h
+	  API introduced during the Zephyr 2.3 development cycle.
 
 endmenu
 endmenu
@@ -369,8 +403,6 @@ config BOOTLOADER_MCUBOOT
 	      for the MCUboot image header
 	    * Activating SW_VECTOR_RELAY on Cortex-M0 (or Armv8-M baseline)
 	      targets with no built-in vector relocation mechanisms
-	    * Including dts/common/mcuboot.overlay when building the Device
-	      Tree in order to place and link the image at the slot0 offset
 
 config BOOTLOADER_ESP_IDF
 	bool "ESP-IDF bootloader support"
@@ -411,5 +443,16 @@ config MISRA_SANE
 	  disallows some otherwise-permitted features of the C
 	  standard for safety reasons.  Specifically variable length
 	  arrays are not permitted (and gcc will enforce this).
+
+endmenu
+
+menu "Compatibility"
+
+config COMPAT_INCLUDES
+	bool "Suppress warnings when using header shims"
+	default y
+	help
+	  Suppress any warnings from the pre-processor when including
+	  deprecated header files.
 
 endmenu

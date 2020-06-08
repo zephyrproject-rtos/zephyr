@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2015 Intel Corporation.
  *
@@ -7,8 +6,6 @@
 
 #ifndef ZEPHYR_INCLUDE_DEVICE_H_
 #define ZEPHYR_INCLUDE_DEVICE_H_
-
-#include <kernel.h>
 
 /**
  * @brief Device Driver APIs
@@ -22,13 +19,34 @@
  * @{
  */
 
-#include <zephyr/types.h>
+#include <init.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #define Z_DEVICE_MAX_NAME_LEN	48
+
+
+/**
+ * @def SYS_DEVICE_DEFINE
+ *
+ * @brief Run an initialization function at boot at specified priority,
+ * and define device PM control function.
+ *
+ * @details This macro lets you run a function at system boot.
+ *
+ * @param drv_name Name of this system device
+ * @param init_fn Pointer to the boot function to run
+ * @param pm_control_fn Pointer to device_pm_control function.
+ * Can be empty function (device_pm_control_nop) if not implemented.
+ * @param level The initialization level, See Z_INIT_ENTRY_DEFINE for details.
+ * @param prio Priority within the selected initialization level. See
+ * Z_INIT_ENTRY_DEFINE for details.
+ */
+#define SYS_DEVICE_DEFINE(drv_name, init_fn, pm_control_fn, level, prio) \
+	DEVICE_DEFINE(Z_SYS_NAME(init_fn), drv_name, init_fn, pm_control_fn, \
+		      NULL, NULL, level, prio, NULL)
 
 /**
  * @def DEVICE_INIT
@@ -49,42 +67,19 @@ extern "C" {
  *
  * @param init_fn Address to the init function of the driver.
  *
- * @param data Pointer to the device's configuration data.
+ * @param data Pointer to the device's private data.
  *
  * @param cfg_info The address to the structure containing the
  * configuration information for this instance of the driver.
  *
- * @param level The initialization level at which configuration occurs.
- * Must be one of the following symbols, which are listed in the order
- * they are performed by the kernel:
- * \n
- * \li PRE_KERNEL_1: Used for devices that have no dependencies, such as those
- * that rely solely on hardware present in the processor/SOC. These devices
- * cannot use any kernel services during configuration, since they are not
- * yet available.
- * \n
- * \li PRE_KERNEL_2: Used for devices that rely on the initialization of devices
- * initialized as part of the PRE_KERNEL_1 level. These devices cannot use any
- * kernel services during configuration, since they are not yet available.
- * \n
- * \li POST_KERNEL: Used for devices that require kernel services during
- * configuration.
- * \n
- * \li APPLICATION: Used for application components (i.e. non-kernel components)
- * that need automatic configuration. These devices can use all services
- * provided by the kernel during configuration.
+ * @param level The initialization level, See Z_INIT_ENTRY_DEFINE for details.
  *
- * @param prio The initialization priority of the device, relative to
- * other devices of the same initialization level. Specified as an integer
- * value in the range 0 to 99; lower values indicate earlier initialization.
- * Must be a decimal integer literal without leading zeroes or sign (e.g. 32),
- * or an equivalent symbolic name (e.g. \#define MY_INIT_PRIO 32); symbolic
- * expressions are *not* permitted
- * (e.g. CONFIG_KERNEL_INIT_PRIORITY_DEFAULT + 5).
+ * @param prio Priority within the selected initialization level. See
+ * Z_INIT_ENTRY_DEFINE for details.
  */
 #define DEVICE_INIT(dev_name, drv_name, init_fn, data, cfg_info, level, prio) \
-	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn,\
-	data, cfg_info, level, prio, NULL)
+	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn,		\
+			    data, cfg_info, level, prio, NULL)
 
 
 /**
@@ -100,19 +95,18 @@ extern "C" {
  * during initialization.
  */
 #ifndef CONFIG_DEVICE_POWER_MANAGEMENT
-#define DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info,  \
-			    level, prio, api)				  \
-	static struct device_config _CONCAT(__config_, dev_name) __used	  \
-	__attribute__((__section__(".devconfig.init"))) = {		  \
-		.name = drv_name, .init = (init_fn),			  \
-		.config_info = (cfg_info)				  \
-	};								  \
-	static Z_DECL_ALIGN(struct device) _CONCAT(__device_, dev_name) __used \
-	__attribute__((__section__(".init_" #level STRINGIFY(prio)))) = { \
-		.config = &_CONCAT(__config_, dev_name),		  \
-		.driver_api = api,					  \
-		.driver_data = data					  \
-	}
+#define DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info, \
+			    level, prio, api)				\
+	static Z_DECL_ALIGN(struct device)				\
+		_CONCAT(__device_, dev_name) __used			\
+	__attribute__((__section__(".device_" #level STRINGIFY(prio)))) = { \
+		.name = drv_name,					\
+		.config_info = (cfg_info),				\
+		.driver_api = (api),					\
+		.driver_data = (data),					\
+	};								\
+	Z_INIT_ENTRY_DEFINE(_CONCAT(__device_, dev_name), init_fn,	\
+			    (&_CONCAT(__device_, dev_name)), level, prio)
 #else
 /*
  * Use the default device_pm_control for devices that do not call the
@@ -144,32 +138,32 @@ extern "C" {
 	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info, \
 			    level, prio, api)
 #else
-#define DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_control_fn,	  \
-		      data, cfg_info, level, prio, api)			  \
-	static struct device_pm _CONCAT(__pm_, dev_name) __used           \
-							= {               \
-		.usage = ATOMIC_INIT(0),                                  \
-		.lock = Z_SEM_INITIALIZER(                               \
-				_CONCAT(__pm_, dev_name).lock, 1, 1),     \
-		.signal = K_POLL_SIGNAL_INITIALIZER(                      \
-				_CONCAT(__pm_, dev_name).signal),         \
-		.event = K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,     \
-				K_POLL_MODE_NOTIFY_ONLY,                  \
-				&_CONCAT(__pm_, dev_name).signal),        \
-	};								  \
-	static struct device_config _CONCAT(__config_, dev_name) __used	  \
-	__attribute__((__section__(".devconfig.init"))) = {		  \
-		.name = drv_name, .init = (init_fn),			  \
-		.device_pm_control = (pm_control_fn),			  \
-		.pm  = &_CONCAT(__pm_, dev_name),                         \
-		.config_info = (cfg_info)				  \
-	};								  \
-	static Z_DECL_ALIGN(struct device) _CONCAT(__device_, dev_name) __used \
-	__attribute__((__section__(".init_" #level STRINGIFY(prio)))) = { \
-		.config = &_CONCAT(__config_, dev_name),		  \
-		.driver_api = api,					  \
-		.driver_data = data,					  \
-	}
+#define DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_control_fn,	\
+		      data, cfg_info, level, prio, api)			\
+	static struct device_pm _CONCAT(__pm_, dev_name) __used  = {	\
+		.usage = ATOMIC_INIT(0),				\
+		.lock = Z_SEM_INITIALIZER(				\
+			_CONCAT(__pm_, dev_name).lock, 1, 1),		\
+		.signal = K_POLL_SIGNAL_INITIALIZER(			\
+			_CONCAT(__pm_, dev_name).signal),		\
+		.event = K_POLL_EVENT_INITIALIZER(			\
+			K_POLL_TYPE_SIGNAL,				\
+			K_POLL_MODE_NOTIFY_ONLY,			\
+			&_CONCAT(__pm_, dev_name).signal),		\
+	};								\
+	static Z_DECL_ALIGN(struct device)				\
+		_CONCAT(__device_, dev_name) __used			\
+	__attribute__((__section__(".device_" #level STRINGIFY(prio)))) = { \
+		.name = drv_name,					\
+		.config_info = (cfg_info),				\
+		.driver_api = (api),					\
+		.driver_data = (data),					\
+		.device_pm_control = (pm_control_fn),			\
+		.pm  = &_CONCAT(__pm_, dev_name),			\
+	};								\
+	Z_INIT_ENTRY_DEFINE(_CONCAT(__device_, dev_name), init_fn,	\
+			    (&_CONCAT(__device_, dev_name)), level, prio)
+
 #endif
 
 /**
@@ -220,8 +214,6 @@ extern "C" {
  */
 #define DEVICE_DECLARE(name) static struct device DEVICE_NAME_GET(name)
 
-struct device;
-
 typedef void (*device_pm_cb)(struct device *dev,
 			     int status, void *context, void *arg);
 
@@ -248,37 +240,27 @@ struct device_pm {
 };
 
 /**
- * @brief Static device information (In ROM) Per driver instance
+ * @brief Runtime device structure (in memory) per driver instance
  *
  * @param name name of the device
  * @param init init function for the driver
  * @param config_info address of driver instance config information
- */
-struct device_config {
-	const char *name;
-	int (*init)(struct device *device);
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	int (*device_pm_control)(struct device *device, u32_t command,
-				 void *context, device_pm_cb cb, void *arg);
-	struct device_pm *pm;
-#endif
-	const void *config_info;
-};
-
-/**
- * @brief Runtime device structure (In memory) Per driver instance
  * @param device_config Build time config information
  * @param driver_api pointer to structure containing the API functions for
- * the device type. This pointer is filled in by the driver at init time.
+ * the device type.
  * @param driver_data driver instance data. For driver use only
  */
 struct device {
-	struct device_config *config;
+	const char *name;
+	const void *config_info;
 	const void *driver_api;
-	void *driver_data;
+	void * const driver_data;
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	int (*device_pm_control)(struct device *device, u32_t command,
+				 void *context, device_pm_cb cb, void *arg);
+	struct device_pm * const pm;
+#endif
 };
-
-void z_sys_device_do_config_level(s32_t level);
 
 /**
  * @brief Retrieve the device structure for a driver by name
@@ -363,6 +345,13 @@ __syscall struct device *device_get_binding(const char *name);
 #endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
 
 /**
+ * @brief Get name of device PM state
+ *
+ * @param state State id which name should be returned
+ */
+const char *device_pm_state_str(u32_t state);
+
+/**
  * @brief Indicate that the device is in the middle of a transaction
  *
  * Called by a device driver to indicate that it is in the middle of a
@@ -398,7 +387,7 @@ void device_busy_clear(struct device *busy_dev);
  * @param cb Unused
  * @param unused_arg Unused
  *
- * @retval 0 Always returns 0
+ * @retval -ENOTSUP for all operations.
  */
 int device_pm_control_nop(struct device *unused_device,
 			  u32_t unused_ctrl_command,
@@ -423,9 +412,9 @@ static inline int device_set_power_state(struct device *device,
 					 u32_t device_power_state,
 					 device_pm_cb cb, void *arg)
 {
-	return device->config->device_pm_control(device,
-						 DEVICE_PM_SET_POWER_STATE,
-						 &device_power_state, cb, arg);
+	return device->device_pm_control(device,
+					 DEVICE_PM_SET_POWER_STATE,
+					 &device_power_state, cb, arg);
 }
 
 /**
@@ -444,10 +433,10 @@ static inline int device_set_power_state(struct device *device,
 static inline int device_get_power_state(struct device *device,
 					 u32_t *device_power_state)
 {
-	return device->config->device_pm_control(device,
-						 DEVICE_PM_GET_POWER_STATE,
-						 device_power_state,
-						 NULL, NULL);
+	return device->device_pm_control(device,
+					 DEVICE_PM_GET_POWER_STATE,
+					 device_power_state,
+					 NULL, NULL);
 }
 
 /**
@@ -589,7 +578,8 @@ static inline int device_pm_get_sync(struct device *dev) { return -ENOTSUP; }
 static inline int device_pm_put(struct device *dev) { return -ENOTSUP; }
 static inline int device_pm_put_sync(struct device *dev) { return -ENOTSUP; }
 #endif
-
+#else
+#define device_pm_control_nop(...) NULL
 #endif
 
 /**

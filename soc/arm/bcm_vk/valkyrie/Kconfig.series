@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright 2020 Broadcom.
+#
+
+config SOC_SERIES_VALKYRIE
+	bool "Broadcom Valkyrie Series"
+	select ARM
+	select CPU_CORTEX_M7
+	select SOC_FAMILY_BCMVK
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_HAS_ARM_MPU
+	help
+	  Enable support for Broadcom Valkyrie Series

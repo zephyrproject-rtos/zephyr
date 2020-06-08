@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT ti_tlv320dac
+
 #include <errno.h>
 
 #include <sys/util.h>
@@ -22,9 +24,6 @@ LOG_MODULE_REGISTER(tlv320dac310x);
 #define CODEC_OUTPUT_VOLUME_MAX		0
 #define CODEC_OUTPUT_VOLUME_MIN		(-78 * 2)
 
-#define CODEC_RESET_PIN_ASSERT		0
-#define CODEC_RESET_PIN_DEASSERT	1
-
 struct codec_driver_config {
 	struct device	*i2c_device;
 	const char	*i2c_dev_name;
@@ -41,18 +40,18 @@ struct codec_driver_data {
 
 static struct codec_driver_config codec_device_config = {
 	.i2c_device	= NULL,
-	.i2c_dev_name	= DT_INST_0_TI_TLV320DAC_BUS_NAME,
-	.i2c_address	= DT_INST_0_TI_TLV320DAC_BASE_ADDRESS,
+	.i2c_dev_name	= DT_INST_BUS_LABEL(0),
+	.i2c_address	= DT_INST_REG_ADDR(0),
 	.gpio_device	= NULL,
-	.gpio_dev_name	= DT_INST_0_TI_TLV320DAC_RESET_GPIOS_CONTROLLER,
-	.gpio_pin	= DT_INST_0_TI_TLV320DAC_RESET_GPIOS_PIN,
-	.gpio_flags	= DT_INST_0_TI_TLV320DAC_RESET_GPIOS_FLAGS,
+	.gpio_dev_name	= DT_INST_GPIO_LABEL(0, reset_gpios),
+	.gpio_pin	= DT_INST_GPIO_PIN(0, reset_gpios),
+	.gpio_flags	= DT_INST_GPIO_FLAGS(0, reset_gpios),
 };
 
 static struct codec_driver_data codec_device_data;
 
 #define DEV_CFG(dev) \
-	((struct codec_driver_config *const)(dev)->config->config_info)
+	((struct codec_driver_config *const)(dev)->config_info)
 #define DEV_DATA(dev) \
 	((struct codec_driver_data *const)(dev)->driver_data)
 
@@ -108,12 +107,11 @@ static int codec_configure(struct device *dev,
 		return -EINVAL;
 	}
 
-	/* configure reset GPIO */
+	/* Configure reset GPIO, and set the line to inactive, which will also
+	 * de-assert the reset line and thus enable the codec.
+	 */
 	gpio_pin_configure(dev_cfg->gpio_device, dev_cfg->gpio_pin,
-				     dev_cfg->gpio_flags | GPIO_DIR_OUT);
-	/* de-assert reset */
-	gpio_pin_write(dev_cfg->gpio_device, dev_cfg->gpio_pin,
-				 CODEC_RESET_PIN_DEASSERT);
+			   dev_cfg->gpio_flags | GPIO_OUTPUT_INACTIVE);
 
 	codec_soft_reset(dev);
 
@@ -538,6 +536,6 @@ static const struct audio_codec_api codec_driver_api = {
 	.apply_properties	= codec_apply_properties,
 };
 
-DEVICE_AND_API_INIT(tlv320dac310x, DT_INST_0_TI_TLV320DAC_LABEL, codec_initialize,
+DEVICE_AND_API_INIT(tlv320dac310x, DT_INST_LABEL(0), codec_initialize,
 		&codec_device_data, &codec_device_config, POST_KERNEL,
 		CONFIG_AUDIO_CODEC_INIT_PRIORITY, &codec_driver_api);

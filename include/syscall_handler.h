@@ -26,6 +26,38 @@ enum _obj_init_check {
 };
 
 /**
+ * Return true if we are currently handling a system call from user mode
+ *
+ * Inside z_vrfy functions, we always know that we are handling
+ * a system call invoked from user context.
+ *
+ * However, some checks that are only relevant to user mode must
+ * instead be placed deeper within the implementation. This
+ * API is useful to conditionally make these checks.
+ *
+ * For performance reasons, whenever possible, checks should be placed
+ * in the relevant z_vrfy function since these are completely skipped
+ * when a syscall is invoked.
+ *
+ * This will return true only if we are handling a syscall for a
+ * user thread. If the system call was invoked from supervisor mode,
+ * or we are not handling a system call, this will return false.
+ *
+ * @return whether the current context is handling a syscall for a user
+ *         mode thread
+ */
+static inline bool z_is_in_user_syscall(void)
+{
+	/* This gets set on entry to the syscall's generasted z_mrsh
+	 * function and then cleared on exit. This code path is only
+	 * encountered when a syscall is made from user mode, system
+	 * calls from supervisor mode bypass everything directly to
+	 * the implementation function.
+	 */
+	return !k_is_in_isr() && _current->syscall_frame != NULL;
+}
+
+/**
  * Ensure a system object is a valid object of the expected type
  *
  * Searches for the object and ensures that it is indeed an object
@@ -46,19 +78,19 @@ enum _obj_init_check {
  *         -EPERM If the caller does not have permissions
  *         -EINVAL Object is not initialized
  */
-int z_object_validate(struct _k_object *ko, enum k_objects otype,
-		       enum _obj_init_check init);
+int z_object_validate(struct z_object *ko, enum k_objects otype,
+		      enum _obj_init_check init);
 
 /**
  * Dump out error information on failed z_object_validate() call
  *
  * @param retval Return value from z_object_validate()
  * @param obj Kernel object we were trying to verify
- * @param ko If retval=-EPERM, struct _k_object * that was looked up, or NULL
+ * @param ko If retval=-EPERM, struct z_object * that was looked up, or NULL
  * @param otype Expected type of the kernel object
  */
-extern void z_dump_object_error(int retval, void *obj, struct _k_object *ko,
-			enum k_objects otype);
+extern void z_dump_object_error(int retval, void *obj, struct z_object *ko,
+				enum k_objects otype);
 
 /**
  * Kernel object validation function
@@ -70,14 +102,14 @@ extern void z_dump_object_error(int retval, void *obj, struct _k_object *ko,
  * @return Kernel object's metadata, or NULL if the parameter wasn't the
  * memory address of a kernel object
  */
-extern struct _k_object *z_object_find(void *obj);
+extern struct z_object *z_object_find(void *obj);
 
-typedef void (*_wordlist_cb_func_t)(struct _k_object *ko, void *context);
+typedef void (*_wordlist_cb_func_t)(struct z_object *ko, void *context);
 
 /**
  * Iterate over all the kernel object metadata in the system
  *
- * @param func function to run on each struct _k_object
+ * @param func function to run on each struct z_object
  * @param context Context pointer to pass to each invocation
  */
 extern void z_object_wordlist_foreach(_wordlist_cb_func_t func, void *context);
@@ -97,7 +129,7 @@ extern void z_thread_perms_inherit(struct k_thread *parent,
  * @param ko Kernel object metadata to update
  * @param thread The thread to grant permission
  */
-extern void z_thread_perms_set(struct _k_object *ko, struct k_thread *thread);
+extern void z_thread_perms_set(struct z_object *ko, struct k_thread *thread);
 
 /**
  * Revoke a thread's permission to a kernel object
@@ -105,7 +137,7 @@ extern void z_thread_perms_set(struct _k_object *ko, struct k_thread *thread);
  * @param ko Kernel object metadata to update
  * @param thread The thread to grant permission
  */
-extern void z_thread_perms_clear(struct _k_object *ko, struct k_thread *thread);
+extern void z_thread_perms_clear(struct z_object *ko, struct k_thread *thread);
 
 /*
  * Revoke access to all objects for the provided thread
@@ -259,7 +291,7 @@ extern int z_user_string_copy(char *dst, const char *src, size_t maxlen);
 #define Z_OOPS(expr) \
 	do { \
 		if (expr) { \
-			arch_syscall_oops(_current_cpu->syscall_frame); \
+			arch_syscall_oops(_current->syscall_frame); \
 		} \
 	} while (false)
 
@@ -316,8 +348,8 @@ extern int z_user_string_copy(char *dst, const char *src, size_t maxlen);
 #define Z_SYSCALL_MEMORY(ptr, size, write) \
 	Z_SYSCALL_VERIFY_MSG(arch_buffer_validate((void *)ptr, size, write) \
 			     == 0, \
-			     "Memory region %p (size %u) %s access denied", \
-			     (void *)(ptr), (u32_t)(size), \
+			     "Memory region %p (size %zu) %s access denied", \
+			     (void *)(ptr), (size_t)(size), \
 			     write ? "write" : "read")
 
 /**
@@ -354,12 +386,12 @@ extern int z_user_string_copy(char *dst, const char *src, size_t maxlen);
 
 #define Z_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, write) \
 	({ \
-		u32_t product; \
-		Z_SYSCALL_VERIFY_MSG(!u32_mul_overflow((u32_t)(nmemb), \
-						       (u32_t)(size), \
-						       &product), \
-				     "%ux%u array is too large", \
-				     (u32_t)(nmemb), (u32_t)(size)) ||  \
+		size_t product; \
+		Z_SYSCALL_VERIFY_MSG(!size_mul_overflow((size_t)(nmemb), \
+							(size_t)(size), \
+							&product), \
+				     "%zux%zu array is too large", \
+				     (size_t)(nmemb), (size_t)(size)) ||  \
 			Z_SYSCALL_MEMORY(ptr, product, write); \
 	})
 
@@ -393,10 +425,10 @@ extern int z_user_string_copy(char *dst, const char *src, size_t maxlen);
 #define Z_SYSCALL_MEMORY_ARRAY_WRITE(ptr, nmemb, size) \
 	Z_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, 1)
 
-static inline int z_obj_validation_check(struct _k_object *ko,
-					void *obj,
-					enum k_objects otype,
-					enum _obj_init_check init)
+static inline int z_obj_validation_check(struct z_object *ko,
+					 void *obj,
+					 enum k_objects otype,
+					 enum _obj_init_check init)
 {
 	int ret;
 
@@ -442,9 +474,8 @@ static inline int z_obj_validation_check(struct _k_object *ko,
  *
  * Checks that the driver object passed in is initialized, the caller has
  * correct permissions, and that it belongs to the specified driver
- * subsystems. Additionally, all devices store a function pointer to the
- * driver's init function. If this doesn't match the value provided, the
- * check will fail.
+ * subsystems. Additionally, all devices store a structure pointer of the
+ * driver's API. If this doesn't match the value provided, the check will fail.
  *
  * This provides an easy way to determine if a device object not only
  * belongs to a particular subsystem, but is of a specific device driver
@@ -453,15 +484,15 @@ static inline int z_obj_validation_check(struct _k_object *ko,
  *
  * @param _device Untrusted device pointer
  * @param _dtype Expected kernel object type for the provided device pointer
- * @param _init_fn Expected init function memory address
+ * @param _api Expected driver API structure memory address
  * @return 0 on success, nonzero on failure
  */
-#define Z_SYSCALL_SPECIFIC_DRIVER(_device, _dtype, _init_fn) \
+#define Z_SYSCALL_SPECIFIC_DRIVER(_device, _dtype, _api) \
 	({ \
 		struct device *_dev = (struct device *)_device; \
 		Z_SYSCALL_OBJ(_dev, _dtype) || \
-			Z_SYSCALL_VERIFY_MSG(_dev->config->init == _init_fn, \
-					     "init function mismatch"); \
+			Z_SYSCALL_VERIFY_MSG(_dev->driver_api == _api, \
+					     "API structure mismatch"); \
 	})
 
 /**

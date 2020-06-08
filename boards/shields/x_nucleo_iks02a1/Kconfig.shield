@@ -1,0 +1,5 @@
+# Copyright (c) 2020 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_X_NUCLEO_IKS02A1
+	def_bool $(shields_list_contains,x_nucleo_iks02a1)

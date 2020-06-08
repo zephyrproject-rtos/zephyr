@@ -38,7 +38,7 @@ Requirements
 ************
 
 This sample has been tested on the Nordic nRF52840-PDK board, but would
-likely also run on the nrf52_pca10040 board.
+likely also run on the nrf52dk_nrf52832 board.
 
 Building and Running
 ********************
@@ -50,7 +50,7 @@ The following commands build the application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/nrf/mesh/onoff-app
-   :board: nrf52840_pca10056
+   :board: nrf52840dk_nrf52840
    :goals: build flash
    :compact:
 

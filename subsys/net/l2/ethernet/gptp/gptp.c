@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(net_gptp, CONFIG_NET_GPTP_LOG_LEVEL);
 #error Maximum number of ports exceeded. (Max is 32).
 #endif
 
-NET_STACK_DEFINE(GPTP, gptp_stack, NET_GPTP_STACK_SIZE, NET_GPTP_STACK_SIZE);
+K_THREAD_STACK_DEFINE(gptp_stack, NET_GPTP_STACK_SIZE);
 K_FIFO_DEFINE(gptp_rx_queue);
 
 static k_tid_t tid;
@@ -735,7 +735,7 @@ void gptp_update_pdelay_req_interval(int port, s8_t log_val)
 		new_itv = 1;
 	}
 
-	k_timer_start(&state_pdelay->pdelay_timer, new_itv, K_NO_WAIT);
+	k_timer_start(&state_pdelay->pdelay_timer, K_MSEC(new_itv), K_NO_WAIT);
 }
 
 void gptp_update_sync_interval(int port, s8_t log_val)
@@ -785,7 +785,8 @@ void gptp_update_sync_interval(int port, s8_t log_val)
 		new_itv = 1;
 	}
 
-	k_timer_start(&state_pss_send->half_sync_itv_timer, new_itv, period);
+	k_timer_start(&state_pss_send->half_sync_itv_timer, K_MSEC(new_itv),
+		      K_MSEC(period));
 }
 
 void gptp_update_announce_interval(int port, s8_t log_val)
@@ -814,7 +815,8 @@ void gptp_update_announce_interval(int port, s8_t log_val)
 		new_itv = 1;
 	}
 
-	k_timer_start(&state_ann->ann_send_periodic_timer, new_itv, K_NO_WAIT);
+	k_timer_start(&state_ann->ann_send_periodic_timer, K_MSEC(new_itv),
+		      K_NO_WAIT);
 }
 
 struct port_user_data {

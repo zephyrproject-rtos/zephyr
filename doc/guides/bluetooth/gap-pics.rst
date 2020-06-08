@@ -792,4 +792,3 @@ TSPC_GAP_45_1	False (*)	Simultaneous BR/EDR and LE Transports - BR/EDR
 TSPC_GAP_45_2	False (*)	Simultaneous BR/EDR and LE Transports - BR/EDR
 				Master to the same device (C.1)
 ==============	==============	=======================================
-

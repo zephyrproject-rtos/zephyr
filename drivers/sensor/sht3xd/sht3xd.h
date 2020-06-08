@@ -51,7 +51,8 @@ struct sht3xd_config {
 
 	u8_t base_address;
 #ifdef CONFIG_SHT3XD_TRIGGER
-	s8_t alert_pin;
+	u8_t alert_pin;
+	u8_t alert_flags;
 #endif /* CONFIG_SHT3XD_TRIGGER */
 };
 
@@ -87,7 +88,7 @@ struct sht3xd_data {
 
 static inline u8_t sht3xd_i2c_address(struct device *dev)
 {
-	const struct sht3xd_config *dcp = dev->config->config_info;
+	const struct sht3xd_config *dcp = dev->config_info;
 
 	return dcp->base_address;
 }

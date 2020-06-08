@@ -8,6 +8,8 @@
  * https://www.st.com/resource/en/datasheet/lis2mdl.pdf
  */
 
+#define DT_DRV_COMPAT st_lis2mdl
+
 #include <kernel.h>
 #include <drivers/sensor.h>
 #include <drivers/gpio.h>
@@ -53,7 +55,7 @@ static void lis2mdl_handle_interrupt(void *arg)
 	struct device *dev = arg;
 	struct lis2mdl_data *lis2mdl = dev->driver_data;
 	const struct lis2mdl_config *const config =
-						dev->config->config_info;
+						dev->config_info;
 	struct sensor_trigger drdy_trigger = {
 		.type = SENSOR_TRIG_DATA_READY,
 	};
@@ -62,7 +64,8 @@ static void lis2mdl_handle_interrupt(void *arg)
 		lis2mdl->handler_drdy(dev, &drdy_trigger);
 	}
 
-	gpio_pin_enable_callback(lis2mdl->gpio, config->gpio_pin);
+	gpio_pin_interrupt_configure(lis2mdl->gpio, config->gpio_pin,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 }
 
 static void lis2mdl_gpio_callback(struct device *dev,
@@ -70,11 +73,11 @@ static void lis2mdl_gpio_callback(struct device *dev,
 {
 	struct lis2mdl_data *lis2mdl =
 		CONTAINER_OF(cb, struct lis2mdl_data, gpio_cb);
-	const struct lis2mdl_config *const config = dev->config->config_info;
+	const struct lis2mdl_config *const config = dev->config_info;
 
 	ARG_UNUSED(pins);
 
-	gpio_pin_disable_callback(dev, config->gpio_pin);
+	gpio_pin_interrupt_configure(dev, config->gpio_pin, GPIO_INT_DISABLE);
 
 #if defined(CONFIG_LIS2MDL_TRIGGER_OWN_THREAD)
 	k_sem_give(&lis2mdl->gpio_sem);
@@ -111,7 +114,7 @@ static void lis2mdl_work_cb(struct k_work *work)
 int lis2mdl_init_interrupt(struct device *dev)
 {
 	struct lis2mdl_data *lis2mdl = dev->driver_data;
-	const struct lis2mdl_config *const config = dev->config->config_info;
+	const struct lis2mdl_config *const config = dev->config_info;
 
 	/* setup data ready gpio interrupt */
 	lis2mdl->gpio = device_get_binding(config->gpio_name);
@@ -134,8 +137,7 @@ int lis2mdl_init_interrupt(struct device *dev)
 #endif
 
 	gpio_pin_configure(lis2mdl->gpio, config->gpio_pin,
-			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			   GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE);
+			   GPIO_INPUT | config->gpio_flags);
 
 	gpio_init_callback(&lis2mdl->gpio_cb,
 			   lis2mdl_gpio_callback,
@@ -146,5 +148,6 @@ int lis2mdl_init_interrupt(struct device *dev)
 		return -EIO;
 	}
 
-	return gpio_pin_enable_callback(lis2mdl->gpio, config->gpio_pin);
+	return gpio_pin_interrupt_configure(lis2mdl->gpio, config->gpio_pin,
+					    GPIO_INT_EDGE_TO_ACTIVE);
 }

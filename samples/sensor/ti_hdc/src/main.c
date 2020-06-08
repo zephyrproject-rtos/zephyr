@@ -15,11 +15,11 @@
 void main(void)
 {
 	printk("Running on %s!\n", CONFIG_ARCH);
-	struct device *dev = device_get_binding(DT_INST_0_TI_HDC_LABEL);
+	struct device *dev = device_get_binding(DT_LABEL(DT_INST(0, ti_hdc)));
 
 	__ASSERT(dev != NULL, "Failed to get device binding");
 
-	printk("Dev %p name %s is ready!\n", dev, dev->config->name);
+	printk("Dev %p name %s is ready!\n", dev, dev->name);
 
 	struct sensor_value temp, humidity;
 

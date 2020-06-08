@@ -18,40 +18,34 @@
 
 int modem_pin_read(struct modem_context *ctx, u32_t pin)
 {
-	int ret = 0;
-	u32_t value = 0;
-
-	if (pin < 0 || pin >= ctx->pins_len) {
+	if (pin >= ctx->pins_len) {
 		return -ENODEV;
 	}
 
-	ret = gpio_pin_read(ctx->pins[pin].gpio_port_dev, ctx->pins[pin].pin,
-			    &value);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return (int)value;
+	return gpio_pin_get(ctx->pins[pin].gpio_port_dev,
+				ctx->pins[pin].pin);
 }
 
 int modem_pin_write(struct modem_context *ctx, u32_t pin, u32_t value)
 {
-	if (pin < 0 || pin >= ctx->pins_len) {
+	if (pin >= ctx->pins_len) {
 		return -ENODEV;
 	}
 
-	return gpio_pin_write(ctx->pins[pin].gpio_port_dev, ctx->pins[pin].pin,
-			      value);
+	return gpio_pin_set(ctx->pins[pin].gpio_port_dev,
+				ctx->pins[pin].pin, value);
 }
 
-int modem_pin_config(struct modem_context *ctx, u32_t pin, int flags)
+int modem_pin_config(struct modem_context *ctx, u32_t pin, bool enable)
 {
-	if (pin < 0 || pin >= ctx->pins_len) {
+	if (pin >= ctx->pins_len) {
 		return -ENODEV;
 	}
 
 	return gpio_pin_configure(ctx->pins[pin].gpio_port_dev,
-				  ctx->pins[pin].pin, flags);
+				  ctx->pins[pin].pin,
+				  enable ? ctx->pins[pin].init_flags :
+					   GPIO_INPUT);
 }
 
 int modem_pin_init(struct modem_context *ctx)
@@ -66,9 +60,7 @@ int modem_pin_init(struct modem_context *ctx)
 			return -ENODEV;
 		}
 
-		ret = gpio_pin_configure(ctx->pins[i].gpio_port_dev,
-					 ctx->pins[i].pin,
-					 ctx->pins[i].init_flags);
+		ret = modem_pin_config(ctx, i, true);
 		if (ret < 0) {
 			return ret;
 		}

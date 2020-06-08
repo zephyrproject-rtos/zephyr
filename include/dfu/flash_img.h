@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_INCLUDE_DFU_FLASH_IMG_H_
 #define ZEPHYR_INCLUDE_DFU_FLASH_IMG_H_
 
-#include <storage/flash_map.h>
+#include <storage/stream_flash.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,12 +17,18 @@ extern "C" {
 struct flash_img_context {
 	u8_t buf[CONFIG_IMG_BLOCK_BUF_SIZE];
 	const struct flash_area *flash_area;
-	size_t bytes_written;
-	u16_t buf_bytes;
-#ifdef CONFIG_IMG_ERASE_PROGRESSIVELY
-	off_t off_last;
-#endif
+	struct stream_flash_ctx stream;
 };
+
+/**
+ * @brief Initialize context needed for writing the image to the flash.
+ *
+ * @param ctx     context to be initialized
+ * @param area_id flash area id of partition where the image should be written
+ *
+ * @return  0 on success, negative errno code on fail
+ */
+int flash_img_init_id(struct flash_img_context *ctx, u8_t area_id);
 
 /**
  * @brief Initialize context needed for writing the image to the flash.

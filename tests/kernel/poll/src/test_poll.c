@@ -21,6 +21,7 @@ struct fifo_msg {
 static struct k_sem no_wait_sem;
 static struct k_fifo no_wait_fifo;
 static struct k_poll_signal no_wait_signal;
+static struct k_sem zero_events_sem;
 static struct k_thread test_thread;
 static struct k_thread test_loprio_thread;
 K_THREAD_STACK_DEFINE(test_stack, STACK_SIZE);
@@ -78,9 +79,11 @@ void test_poll_no_wait(void)
 	 * implementation
 	 */
 
-	zassert_equal(k_poll(events, 0, K_NO_WAIT), -EINVAL, NULL);
 	zassert_equal(k_poll(events, INT_MAX, K_NO_WAIT), -EINVAL, NULL);
 	zassert_equal(k_poll(events, 4096, K_NO_WAIT), -ENOMEM, NULL);
+
+	/* Allow zero events */
+	zassert_equal(k_poll(events, 0, K_NO_WAIT), -EAGAIN, NULL);
 
 	struct k_poll_event bad_events[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SEM_AVAILABLE,
@@ -111,7 +114,7 @@ void test_poll_no_wait(void)
 	zassert_equal(k_sem_take(&no_wait_sem, K_NO_WAIT), 0, "");
 
 	zassert_equal(events[1].state, K_POLL_STATE_FIFO_DATA_AVAILABLE, "");
-	msg_ptr = k_fifo_get(&no_wait_fifo, 0);
+	msg_ptr = k_fifo_get(&no_wait_fifo, K_NO_WAIT);
 	zassert_not_null(msg_ptr, "");
 	zassert_equal(msg_ptr, &msg, "");
 	zassert_equal(msg_ptr->msg, FIFO_MSG_VALUE, "");
@@ -138,7 +141,7 @@ void test_poll_no_wait(void)
 	zassert_equal(events[3].state, K_POLL_STATE_NOT_READY, "");
 
 	zassert_not_equal(k_sem_take(&no_wait_sem, K_NO_WAIT), 0, "");
-	zassert_is_null(k_fifo_get(&no_wait_fifo, 0), "");
+	zassert_is_null(k_fifo_get(&no_wait_fifo, K_NO_WAIT), "");
 }
 
 /* verify k_poll() that has to wait */
@@ -225,7 +228,7 @@ void test_poll_wait(void)
 
 	zassert_equal(wait_events[1].state,
 		      K_POLL_STATE_FIFO_DATA_AVAILABLE, "");
-	msg_ptr = k_fifo_get(&wait_fifo, 0);
+	msg_ptr = k_fifo_get(&wait_fifo, K_NO_WAIT);
 	zassert_not_null(msg_ptr, "");
 	zassert_equal(msg_ptr, &wait_msg, "");
 	zassert_equal(msg_ptr->msg, FIFO_MSG_VALUE, "");
@@ -621,4 +624,16 @@ void test_poll_grant_access(void)
 			      &cancel_fifo, &non_cancel_fifo,
 			      &wait_signal, &test_thread,
 			      &test_stack, &multi_sem, &multi_reply)
+}
+
+void test_poll_zero_events(void)
+{
+	struct k_poll_event event;
+
+	k_sem_init(&zero_events_sem, 1, 1);
+
+	k_poll_event_init(&event, K_POLL_TYPE_SEM_AVAILABLE,
+			  K_POLL_MODE_NOTIFY_ONLY, &zero_events_sem);
+
+	zassert_equal(k_poll(&event, 0, K_MSEC(50)), -EAGAIN, NULL);
 }

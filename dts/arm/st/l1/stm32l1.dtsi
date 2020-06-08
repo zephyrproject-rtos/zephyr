@@ -11,6 +11,10 @@
 #include <dt-bindings/i2c/i2c.h>
 
 / {
+	chosen {
+		zephyr,flash-controller = &flash;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -53,6 +57,24 @@
 			interrupts = <39 0>;
 			status = "disabled";
 			label = "UART_3";
+		};
+
+		uart4: serial@40004c00 {
+			compatible = "st,stm32-uart";
+			reg = <0x40004c00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00080000>;
+			interrupts = <48 0>;
+			status = "disabled";
+			label = "UART_4";
+		};
+
+		uart5: serial@40005000 {
+			compatible = "st,stm32-uart";
+			reg = <0x40005000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00100000>;
+			interrupts = <49 0>;
+			status = "disabled";
+			label = "UART_5";
 		};
 
 		i2c1: i2c@40005400 {
@@ -110,6 +132,16 @@
 			interrupts = <37 0>;
 			status = "disabled";
 			label = "UART_1";
+		};
+
+		adc1: adc@40012400 {
+			compatible = "st,stm32-adc";
+			reg = <0x40012400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000200>;
+			interrupts = <18 0>;
+			status = "disabled";
+			label = "ADC_1";
+			#io-channel-cells = <1>;
 		};
 
 		pinctrl: pin-controller@40020000 {
@@ -173,6 +205,13 @@
 			};
 		};
 
+		iwdg: watchdog@40003000 {
+			compatible = "st,stm32-watchdog";
+			reg = <0x40003000 0x400>;
+			label = "IWDG";
+			status = "disabled";
+		};
+
 		wwdg: watchdog@40002c00 {
 			compatible = "st,stm32-window-watchdog";
 			reg = <0x40002C00 0x400>;
@@ -189,8 +228,8 @@
 			label = "STM32_CLK_RCC";
 		};
 
-		flash-controller@40023c00 {
-			compatible = "st,stm32l1-flash-controller";
+		flash: flash-controller@40023c00 {
+			compatible = "st,stm32-flash-controller", "st,stm32l1-flash-controller";
 			label = "FLASH_CTRL";
 			reg = <0x40023c00 0x400>;
 			interrupts = <4 0>;
@@ -204,6 +243,13 @@
 
 				write-block-size = <4>;
 			};
+		};
+
+		eeprom: eeprom@8080000{
+			compatible = "st,stm32-eeprom";
+			reg = <0x08080000 DT_SIZE_K(4)>;
+			status = "disabled";
+			label = "EEPROM_0";
 		};
 	};
 };

@@ -14,25 +14,25 @@ config ARCH
 #
 
 config CPU_ATOM
-	bool # hidden
+	bool
 	select CPU_HAS_FPU
 	select ARCH_HAS_STACK_PROTECTION if X86_MMU
-	select ARCH_HAS_USERSPACE if X86_MMU && !X86_64
+	select ARCH_HAS_USERSPACE if X86_MMU
 	help
 	  This option signifies the use of a CPU from the Atom family.
 
 config CPU_MINUTEIA
-	bool # hidden
+	bool
 	select ARCH_HAS_STACK_PROTECTION if X86_MMU
-	select ARCH_HAS_USERSPACE if X86_MMU && !X86_64
+	select ARCH_HAS_USERSPACE if X86_MMU
 	help
 	  This option signifies the use of a CPU from the Minute IA family.
 
 config CPU_APOLLO_LAKE
-	bool # hidden
+	bool
 	select CPU_HAS_FPU
 	select ARCH_HAS_STACK_PROTECTION if X86_MMU
-	select ARCH_HAS_USERSPACE if X86_MMU && !X86_64
+	select ARCH_HAS_USERSPACE if X86_MMU
 	help
 	  This option signifies the use of a CPU from the Apollo Lake family.
 
@@ -58,7 +58,7 @@ config MAX_IRQ_LINES
 
 config IRQ_OFFLOAD_VECTOR
 	int "IDT vector to use for IRQ offload"
-	default 32
+	default 33
 	range 32 255
 	depends on IRQ_OFFLOAD
 
@@ -188,8 +188,9 @@ config X86_NO_SPECTRE_V1
 	bool
 	help
 	  This hidden option should be set on a per-SOC basis to indicate that
-	  a particular SOC is not vulnerable to the Spectre V1, V1.1, and V1.2
-	  CPU vulnerabilities as described in CVE-2017-5753 and CVE-2018-3693.
+	  a particular SOC is not vulnerable to the Spectre V1, V1.1, V1.2, and
+	  swapgs CPU vulnerabilities as described in CVE-2017-5753,
+	  CVE-2018-3693, and CVE-2019-1125.
 
 config X86_NO_SPECTRE_V2
 	bool
@@ -224,6 +225,56 @@ config X86_NO_SPECULATIVE_VULNERABILITIES
 	  a particular SOC does not perform any kind of speculative execution,
 	  or is a newer chip which is immune to the class of vulnerabilities
 	  which exploit speculative execution side channel attacks.
+
+config DISABLE_SSBD
+	bool "Disable Speculative Store Bypass"
+	depends on USERSPACE
+	default y if !X86_NO_SPECTRE_V4
+	help
+	  This option will disable Speculative Store Bypass in order to
+	  mitigate against certain kinds of side channel attacks.  Quoting
+	  the "Speculative Execution Side Channels" document, version 2.0:
+
+	      When SSBD is set, loads will not execute speculatively
+	      until the addresses of all older stores are known.  This
+	      ensure s that a load does not speculatively consume stale
+	      data values due to bypassing an older store on the same
+	      logical processor.
+
+	  If enabled, this applies to all threads in the system.
+
+	  Even if enabled, will have no effect on CPUs that do not
+	  require this feature.
+
+config ENABLE_EXTENDED_IBRS
+	bool "Enable Extended IBRS"
+	depends on USERSPACE
+	default y if !X86_NO_SPECTRE_V2
+	help
+	  This option will enable the Extended Indirect Branch Restricted
+	  Speculation 'always on' feature. This mitigates Indirect Branch
+	  Control vulnerabilities (aka Spectre V2).
+
+config X86_BOUNDS_CHECK_BYPASS_MITIGATION
+	bool
+	depends on USERSPACE
+	default y if !X86_NO_SPECTRE_V1
+	select BOUNDS_CHECK_BYPASS_MITIGATION
+	help
+	  Hidden config to select arch-independent option to enable
+	  Spectre V1 mitigations by default if the CPU is not known
+	  to be immune to it.
+
+config X86_KPTI
+	bool "Enable kernel page table isolation"
+	default y
+	depends on USERSPACE
+	depends on !X86_NO_MELTDOWN
+	help
+	  Implements kernel page table isolation to mitigate Meltdown exploits
+	  to read Kernel RAM. Incurs a significant performance cost for
+	  user thread interrupts and system calls, and significant footprint
+	  increase for additional page tables and trampoline stacks.
 
 source "arch/x86/core/Kconfig.ia32"
 source "arch/x86/core/Kconfig.intel64"

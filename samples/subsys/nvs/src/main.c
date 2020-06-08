@@ -43,6 +43,7 @@
 #include <device.h>
 #include <string.h>
 #include <drivers/flash.h>
+#include <storage/flash_map.h>
 #include <fs/nvs.h>
 
 static struct nvs_fs fs;
@@ -71,18 +72,19 @@ void main(void)
 	/* define the nvs file system by settings with:
 	 *	sector_size equal to the pagesize,
 	 *	3 sectors
-	 *	starting at DT_FLASH_AREA_STORAGE_OFFSET
+	 *	starting at FLASH_AREA_OFFSET(storage)
 	 */
-	fs.offset = DT_FLASH_AREA_STORAGE_OFFSET;
-	rc = flash_get_page_info_by_offs(device_get_binding(DT_FLASH_DEV_NAME),
-					 fs.offset, &info);
+	fs.offset = FLASH_AREA_OFFSET(storage);
+	rc = flash_get_page_info_by_offs(
+		device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL),
+		fs.offset, &info);
 	if (rc) {
 		printk("Unable to get page info");
 	}
 	fs.sector_size = info.size;
 	fs.sector_count = 3U;
 
-	rc = nvs_init(&fs, DT_FLASH_DEV_NAME);
+	rc = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 	if (rc) {
 		printk("Flash Init failed\n");
 	}
@@ -98,7 +100,7 @@ void main(void)
 		strcpy(buf, "192.168.1.1");
 		printk("No address found, adding %s at id %d\n", buf,
 		       ADDRESS_ID);
-		nvs_write(&fs, ADDRESS_ID, &buf, strlen(buf)+1);
+		(void)nvs_write(&fs, ADDRESS_ID, &buf, strlen(buf)+1);
 	}
 	/* KEY_ID is used to store a key, lets see if we can read it from flash
 	 */
@@ -119,7 +121,7 @@ void main(void)
 		key[5] = 0xFA;
 		key[6] = 0xF9;
 		key[7] = 0xF8;
-		nvs_write(&fs, KEY_ID, &key, sizeof(key));
+		(void)nvs_write(&fs, KEY_ID, &key, sizeof(key));
 	}
 	/* RBT_CNT_ID is used to store the reboot counter, lets see
 	 * if we can read it from flash
@@ -131,7 +133,7 @@ void main(void)
 	} else   {/* item was not found, add it */
 		printk("No Reboot counter found, adding it at id %d\n",
 		       RBT_CNT_ID);
-		nvs_write(&fs, RBT_CNT_ID, &reboot_counter,
+		(void)nvs_write(&fs, RBT_CNT_ID, &reboot_counter,
 			  sizeof(reboot_counter));
 	}
 	/* STRING_ID is used to store data that will be deleted,lets see
@@ -145,7 +147,7 @@ void main(void)
 			STRING_ID, buf);
 		/* remove the item if reboot_counter = 10 */
 		if (reboot_counter == 10U) {
-			nvs_delete(&fs, STRING_ID);
+			(void)nvs_delete(&fs, STRING_ID);
 		}
 	} else   {
 		/* entry was not found, add it if reboot_counter = 0*/
@@ -153,7 +155,7 @@ void main(void)
 			printk("Id: %d not found, adding it\n",
 			STRING_ID);
 			strcpy(buf, "DATA");
-			nvs_write(&fs, STRING_ID, &buf, strlen(buf) + 1);
+			(void)nvs_write(&fs, STRING_ID, &buf, strlen(buf) + 1);
 		}
 	}
 
@@ -176,13 +178,14 @@ void main(void)
 			for (int n = 0; n < sizeof(longarray); n++) {
 				longarray[n] = n;
 			}
-			nvs_write(&fs, LONG_ID, &longarray, sizeof(longarray));
+			(void)nvs_write(
+				&fs, LONG_ID, &longarray, sizeof(longarray));
 		}
 	}
 
 	cnt = 5;
 	while (1) {
-		k_sleep(SLEEP_TIME);
+		k_msleep(SLEEP_TIME);
 		if (reboot_counter < MAX_REBOOT) {
 			if (cnt == 5) {
 				/* print some history information about
@@ -215,7 +218,7 @@ void main(void)
 			if (cnt == 0) {
 				printk("\n");
 				reboot_counter++;
-				nvs_write(
+				(void)nvs_write(
 					&fs, RBT_CNT_ID, &reboot_counter,
 					sizeof(reboot_counter));
 				if (reboot_counter == MAX_REBOOT) {
@@ -227,7 +230,7 @@ void main(void)
 			printk("Reboot counter reached max value.\n");
 			printk("Reset to 0 and exit test.\n");
 			reboot_counter = 0U;
-			nvs_write(&fs, RBT_CNT_ID, &reboot_counter,
+			(void)nvs_write(&fs, RBT_CNT_ID, &reboot_counter,
 			  sizeof(reboot_counter));
 			break;
 		}

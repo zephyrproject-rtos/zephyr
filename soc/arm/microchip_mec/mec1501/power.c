@@ -40,8 +40,6 @@
  */
 static void z_power_soc_deep_sleep(void)
 {
-	u32_t base_pri;
-
 	/* Mask all exceptions and interrupts except NMI and HardFault */
 	__set_PRIMASK(1);
 
@@ -55,28 +53,33 @@ static void z_power_soc_deep_sleep(void)
 	/*
 	 * Unmask all interrupts in BASEPRI. PRIMASK is used above to
 	 * prevent entering an ISR after unmasking in BASEPRI.
-	 * We clear PRIMASK in exit post ops.
 	 */
-	base_pri = __get_BASEPRI();
 	__set_BASEPRI(0);
 	__DSB();
 	__WFI();	/* triggers sleep hardware */
 	__NOP();
 	__NOP();
 
-	if (base_pri != 0) {
-		__set_BASEPRI(base_pri);
-	}
-
 	soc_deep_sleep_disable();
 
 	soc_deep_sleep_non_wake_dis();
 
+	/* Wait for PLL to lock */
+	while ((PCR_REGS->OSC_ID & MCHP_PCR_OSC_ID_PLL_LOCK) == 0) {
+	};
+
 	soc_deep_sleep_periph_restore();
 
+	/*
+	 * _sys_pm_power_state_exit_post_ops() is not being called
+	 * after exiting deep sleep, so need to unmask exceptions
+	 * and interrupts here.
+	 */
+	__set_PRIMASK(0);
 }
-
 #endif
+
+#ifdef CONFIG_SYS_POWER_SLEEP_STATES
 
 /*
  * Light Sleep
@@ -97,6 +100,7 @@ static void z_power_soc_sleep(void)
 	__NOP();
 	__NOP();
 }
+#endif
 
 /*
  * Called from _sys_suspend(s32_t ticks) in subsys/power.c
@@ -138,4 +142,3 @@ void _sys_pm_power_state_exit_post_ops(enum power_states state)
 		break;
 	}
 }
-

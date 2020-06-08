@@ -10,7 +10,7 @@
 
 / {
 	model = "QEMU Cortex-M0";
-	compatible = "nordic,nrf51822-qfaa", "nordic,nrf51822";
+	compatible = "bbc,qemu-microbit";
 
 	chosen {
 		zephyr,console = &uart0;

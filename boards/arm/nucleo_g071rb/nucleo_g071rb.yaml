@@ -1,5 +1,5 @@
 identifier: nucleo_g071rb
-name: NUCLEO-G071RB
+name: ST Nucleo G071RB
 type: mcu
 arch: arm
 toolchain:
@@ -12,3 +12,4 @@ supported:
   - arduino_gpio
   - uart
   - gpio
+  - watchdog

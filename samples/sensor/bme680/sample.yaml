@@ -4,4 +4,4 @@ tests:
   sample.sensor.bme680:
     harness: sensor
     tags: samples sensor
-    depends_on: i2c bme680
+    platform_whitelist: nrf52840dk_nrf52840

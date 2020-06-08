@@ -25,6 +25,14 @@ void test_mpool_alloc_size_roundup(void)
 {
 	struct k_mem_block block[BLK_NUM_MAX], block_fail;
 
+	/* This test is written to assume specific heap layout, in
+	 * fact the sys_heap backend can routinely see more than "min
+	 * blocks" allocated.
+	 */
+	if (IS_ENABLED(CONFIG_MEM_POOL_HEAP_BACKEND)) {
+		ztest_test_skip();
+	}
+
 	/**
 	 * TESTPOINT: When an application issues a request for a memory block,
 	 * the memory pool first determines the size of the smallest block that

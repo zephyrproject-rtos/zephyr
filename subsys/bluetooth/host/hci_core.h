@@ -30,24 +30,22 @@ enum {
 	BT_DEV_ENABLE,
 	BT_DEV_READY,
 	BT_DEV_PRESET_ID,
-	BT_DEV_USER_ID_ADDR,
 	BT_DEV_HAS_PUB_KEY,
 	BT_DEV_PUB_KEY_BUSY,
 
-	BT_DEV_ADVERTISING,
-	BT_DEV_ADVERTISING_NAME,
-	BT_DEV_ADVERTISING_CONNECTABLE,
-	BT_DEV_KEEP_ADVERTISING,
 	BT_DEV_SCANNING,
 	BT_DEV_EXPLICIT_SCAN,
 	BT_DEV_ACTIVE_SCAN,
 	BT_DEV_SCAN_FILTER_DUP,
 	BT_DEV_SCAN_WL,
-	BT_DEV_AUTO_CONN,
+	BT_DEV_SCAN_LIMITED,
+	BT_DEV_INITIATING,
 
 	BT_DEV_RPA_VALID,
+	BT_DEV_RPA_TIMEOUT_SET,
 
 	BT_DEV_ID_PENDING,
+	BT_DEV_STORE_ID,
 
 #if defined(CONFIG_BT_BREDR)
 	BT_DEV_ISCAN,
@@ -61,8 +59,72 @@ enum {
 
 /* Flags which should not be cleared upon HCI_Reset */
 #define BT_DEV_PERSISTENT_FLAGS (BIT(BT_DEV_ENABLE) | \
-				 BIT(BT_DEV_PRESET_ID) | \
-				 BIT(BT_DEV_USER_ID_ADDR))
+				 BIT(BT_DEV_PRESET_ID))
+
+enum {
+	/* Advertising set has been created in the host. */
+	BT_ADV_CREATED,
+	/* Advertising parameters has been set in the controller.
+	 * This implies that the advertising set has been created in the
+	 * controller.
+	 */
+	BT_ADV_PARAMS_SET,
+	/* Advertising data has been set in the controller. */
+	BT_ADV_DATA_SET,
+	/* Advertising random address pending to be set in the controller. */
+	BT_ADV_RANDOM_ADDR_PENDING,
+	/* The private random address of the advertiser is valid for this cycle
+	 * of the RPA timeout.
+	 */
+	BT_ADV_RPA_VALID,
+	/* The advertiser set is limited by a timeout, or number of advertising
+	 * events, or both.
+	 */
+	BT_ADV_LIMITED,
+	/* Advertiser set is currently advertising in the controller. */
+	BT_ADV_ENABLED,
+	/* Advertiser should include name in advertising data */
+	BT_ADV_INCLUDE_NAME,
+	/* Advertiser set is connectable */
+	BT_ADV_CONNECTABLE,
+	/* Advertiser set is scannable */
+	BT_ADV_SCANNABLE,
+	/* Advertiser set has disabled the use of private addresses and is using
+	 * the identity address instead.
+	 */
+	BT_ADV_USE_IDENTITY,
+	/* Advertiser has been configured to keep advertising after a connection
+	 * has been established as long as there are connections available.
+	 */
+	BT_ADV_PERSIST,
+	/* Advertiser has been temporarily disabled. */
+	BT_ADV_PAUSED,
+
+	BT_ADV_NUM_FLAGS,
+};
+
+struct bt_le_ext_adv {
+	/* ID Address used for advertising */
+	u8_t                    id;
+
+	/* Advertising handle */
+	u16_t			handle;
+
+	/* Current local Random Address */
+	bt_addr_le_t		random_addr;
+
+	/* Current target address */
+	bt_addr_le_t            target_addr;
+
+	ATOMIC_DEFINE(flags, BT_ADV_NUM_FLAGS);
+
+#if defined(CONFIG_BT_EXT_ADV)
+	const struct bt_le_ext_adv_cb *cb;
+
+	/* TX Power in use by the controller */
+	s8_t                    tx_power;
+#endif /* defined(CONFIG_BT_EXT_ADV) */
+};
 
 struct bt_dev_le {
 	/* LE features */
@@ -106,14 +168,21 @@ struct bt_dev_br {
 /* State tracking for the local Bluetooth controller */
 struct bt_dev {
 	/* Local Identity Address(es) */
-	bt_addr_le_t		id_addr[CONFIG_BT_ID_MAX];
+	bt_addr_le_t            id_addr[CONFIG_BT_ID_MAX];
 	u8_t                    id_count;
 
-	/* ID Address used for advertising */
-	u8_t                    adv_id;
+	struct bt_conn_le_create_param create_param;
 
+#if !defined(CONFIG_BT_EXT_ADV)
+	/* Legacy advertiser */
+	struct bt_le_ext_adv    adv;
+#else
+	/* Pointer to reserved advertising set */
+	struct bt_le_ext_adv    *adv;
+#endif
 	/* Current local Random Address */
-	bt_addr_le_t		random_addr;
+	bt_addr_le_t            random_addr;
+	u8_t                    adv_conn_id;
 
 	/* Controller version & manufacturer information */
 	u8_t			hci_version;
@@ -182,12 +251,16 @@ extern struct bt_dev bt_dev;
 extern const struct bt_conn_auth_cb *bt_auth;
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
 
+int bt_hci_disconnect(u16_t handle, u8_t reason);
+
 bool bt_le_conn_params_valid(const struct bt_le_conn_param *param);
+int bt_le_set_data_len(struct bt_conn *conn, u16_t tx_octets, u16_t tx_time);
+int bt_le_set_phy(struct bt_conn *conn, u8_t tx_phy, u8_t rx_phy);
 
 int bt_le_scan_update(bool fast_scan);
 
-int bt_le_auto_conn(const struct bt_le_conn_param *conn_param);
-int bt_le_auto_conn_cancel(void);
+int bt_le_create_conn(const struct bt_conn *conn);
+int bt_le_create_conn_cancel(void);
 
 bool bt_addr_le_is_bonded(u8_t id, const bt_addr_le_t *addr);
 const bt_addr_le_t *bt_lookup_id_addr(u8_t id, const bt_addr_le_t *addr);
@@ -199,10 +272,15 @@ struct bt_keys;
 void bt_id_add(struct bt_keys *keys);
 void bt_id_del(struct bt_keys *keys);
 
-int bt_setup_id_addr(void);
+int bt_setup_random_id_addr(void);
+void bt_setup_public_id_addr(void);
+
 void bt_finalize_init(void);
 
 int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
 			     const struct bt_data *ad, size_t ad_len,
 			     const struct bt_data *sd, size_t sd_len,
 			     const bt_addr_le_t *peer);
+
+void bt_le_adv_resume(void);
+bool bt_le_scan_random_addr_check(void);

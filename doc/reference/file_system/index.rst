@@ -1,10 +1,10 @@
-.. _file_system:
+.. _file_system_api:
 
 File Systems
 ############
 
 Zephyr RTOS Virtual Filesystem Switch (VFS) allows applications to mount multiple
-file systems at different mount points (e.g., ``/fatfs`` and ``/nffs``). The
+file systems at different mount points (e.g., ``/fatfs`` and ``/lfs``). The
 mount point data structure contains all the necessary information required
 to instantiate, mount, and operate on a file system. The File system Switch
 decouples the applications from directly accessing an individual file system's
@@ -36,15 +36,10 @@ A file system is declared as:
 
 where
 
-- ``FS_FATFS`` is the file system type like FATFS or NFFS.
+- ``FS_FATFS`` is the file system type like FATFS or LittleFS.
 - ``FATFS_MNTP`` is the mount point where the file system will be mounted.
 - ``fat_fs`` is the file system data which will be used by fs_mount() API.
 
-Known Limitations
-*****************
-
-NFFS supports only one instance of file system due to the library's internal
-implementation limitation.
 
 
 Sample

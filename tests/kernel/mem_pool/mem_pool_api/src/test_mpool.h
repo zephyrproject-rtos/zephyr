@@ -7,7 +7,8 @@
 #ifndef __TEST_MPOOL_H__
 #define __TEST_MPOOL_H__
 
-#define TIMEOUT 100
+#define TIMEOUT_MS 100
+#define TIMEOUT K_MSEC(TIMEOUT_MS)
 #define BLK_SIZE_MIN 16
 #define BLK_SIZE_MAX 256
 #define BLK_NUM_MIN 32

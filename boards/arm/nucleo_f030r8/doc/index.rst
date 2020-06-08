@@ -65,9 +65,10 @@ Nucleo F030R8 provides the following hardware components:
   - ARM Keil
   - GCC-based IDEs
 
-More information about STM32F030R8 can be found in the
-`STM32F030 reference manual`_
+More information about STM32F030R8 can be found here:
 
+- `STM32F030 reference manual`_
+- `STM32F030 data sheet`_
 
 Supported Features
 ==================
@@ -174,10 +175,13 @@ References
 .. target-notes::
 
 .. _Nucleo F030R8 website:
-   http://www.st.com/content/st_com/en/products/microcontrollers/stm32-32-bit-arm-cortex-mcus/stm32-mainstream-mcus/stm32f0-series/stm32f0x0-value-line/stm32f030r8.html
+   https://www.st.com/en/evaluation-tools/nucleo-f030r8.html
 
 .. _STM32F030 reference manual:
-   http://www.st.com/resource/en/reference_manual/dm00091010.pdf
+   https://www.st.com/resource/en/reference_manual/dm00091010.pdf
+
+.. _STM32F030 data sheet:
+   https://www.st.com/resource/en/datasheet/stm32f030r8.pdf
 
 .. _STM32 Nucleo-64 board User Manual:
-   http://www.st.com/resource/en/user_manual/dm00105823.pdf
+   https://www.st.com/resource/en/user_manual/dm00105823.pdf

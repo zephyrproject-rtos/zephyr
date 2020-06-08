@@ -1,1 +1,0 @@
-zephyr_sources(altera_avalon_uart_lwhal_putchar.c)

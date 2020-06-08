@@ -6,6 +6,7 @@
 menuconfig USB_DEVICE_STACK
 	bool "USB device stack"
 	depends on USB_DEVICE_DRIVER || ARCH_POSIX
+	select HWINFO
 	help
 	  Enable USB device stack.
 
@@ -42,11 +43,12 @@ config USB_DEVICE_PRODUCT
 	  USB device Product string. MUST be configured by vendor.
 
 config USB_DEVICE_SN
-	string "USB serial number"
-	default "ABCDEF012345" if USB_MASS_STORAGE
-	default "0.01"
+	string "USB device Serial Number String"
+	default "0123456789ABCDEF"
 	help
-	  USB device SerialNumber string. MUST be configured by vendor.
+	  Placeholder for USB device Serial Number String.
+	  Serial Number String will be derived from
+	  Hardware Information Driver (HWINFO).
 
 config USB_COMPOSITE_DEVICE
 	bool "Enable composite device driver"
@@ -70,6 +72,7 @@ config USB_NUMOF_EP_WRITE_RETRIES
 
 config USB_DEVICE_SOF
 	bool "Enable Start of Frame processing in events"
+	default y if (USB_DEVICE_AUDIO && NRFX_USBD)
 
 config USB_DEVICE_REMOTE_WAKEUP
 	bool "Enable support for remote wakeup"
@@ -88,29 +91,20 @@ config USB_DEVICE_BOS
 config USB_DEVICE_OS_DESC
 	bool "Enable MS OS Descriptors support"
 
-menuconfig USB_VBUS_GPIO
-	bool "Control VBUS via GPIO pin"
-	depends on GPIO
+config USB_SELF_POWERED
+	bool "Set Self-powered characteristic"
+	default y
 	help
-	  The USB VBUS signal is connected via a GPIO pin.
+	  Set Self-powered characteristic in bmAttributes to indicate
+	  self powered USB device.
 
-if USB_VBUS_GPIO
-
-config USB_VBUS_GPIO_DEV_NAME
-	string "GPIO Device"
-	default "GPIO_0"
+config USB_MAX_POWER
+	int "Set bMaxPower value"
+	default 50
+	range 0 250
 	help
-	  The device name of the GPIO device to which the USB_VBUS_EN signal is
-	  connected.
-
-config USB_VBUS_GPIO_PIN_NUM
-	int "GPIO pin number"
-	default 0
-	help
-	  The number of the GPIO pin to which the USB_VBUS_EN signal is
-	  connected.
-
-endif # USB_VBUS_GPIO
+	  Set bMaxPower value in the Standard Configuration Descriptor,
+	  the result is 2mA times the value provided.
 
 source "subsys/usb/class/Kconfig"
 

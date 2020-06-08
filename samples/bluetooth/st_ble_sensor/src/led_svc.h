@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-void led_on_off(u32_t led_state);
+void led_on_off(bool led_state);
 int led_init(void);
 
 #ifdef __cplusplus

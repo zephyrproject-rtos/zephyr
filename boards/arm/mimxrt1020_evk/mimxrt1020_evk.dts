@@ -13,22 +13,13 @@
 	compatible = "nxp,mimxrt1021";
 
 	aliases {
-		gpio-1= &gpio1;
-		gpio-2= &gpio2;
-		gpio-3= &gpio3;
-		gpio-4= &gpio4;
-		gpio-5= &gpio5;
-		i2c-1 = &i2c1;
-		i2c-4 = &i2c4;
-		uart-1 = &uart1;
 		led0 = &green_led;
 		sw0 = &user_button;
-		eth = &eth;
 	};
 
 	chosen {
-		zephyr,console = &uart1;
-		zephyr,shell-uart = &uart1;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
 	};
 
 	sdram0: memory@80000000 {
@@ -41,7 +32,7 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led: led-1 {
-			gpios = <&gpio1 5 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
 		};
 	};
@@ -49,8 +40,8 @@
 	gpio_keys {
 		compatible = "gpio-keys";
 		user_button: button-1 {
-			label = "User SW8";
-			gpios = <&gpio5 0 GPIO_INT_ACTIVE_LOW>;
+			label = "User SW4";
+			gpios = <&gpio5 0 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -84,9 +75,9 @@
 	};
 };
 
-arduino_serial: &uart2 {};
+arduino_serial: &lpuart2 {};
 
-&flexspi0 {
+&flexspi {
 	reg = <0x402a8000 0x4000>, <0x60000000 0x800000>;
 	is25wp064: is25wp064@0 {
 		compatible = "issi,is25wp064", "jedec,spi-nor";
@@ -99,26 +90,26 @@ arduino_serial: &uart2 {};
 	};
 };
 
-&i2c1 {
+&lpi2c1 {
 	status = "okay";
 };
 
-&i2c4 {
+&lpi2c4 {
 	status = "okay";
 };
 
-&uart1 {
+&lpuart1 {
 	status = "okay";
 	current-speed = <115200>;
 };
 
-&eth {
+&enet {
 	status = "okay";
 	ptp {
 		status = "okay";
 	};
 };
 
-&usbd1 {
+&usb1 {
 	status = "okay";
 };

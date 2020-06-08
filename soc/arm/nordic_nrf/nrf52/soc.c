@@ -14,7 +14,7 @@
 
 #include <kernel.h>
 #include <init.h>
-#include <arch/arm/cortex_m/cmsis.h>
+#include <arch/arm/aarch32/cortex_m/cmsis.h>
 #include <hal/nrf_power.h>
 #include <soc/nrfx_coredep.h>
 #include <logging/log.h>
@@ -30,6 +30,8 @@ extern void z_arm_nmi_init(void);
 #include <system_nrf52810.h>
 #elif defined(CONFIG_SOC_NRF52811)
 #include <system_nrf52811.h>
+#elif defined(CONFIG_SOC_NRF52820)
+#include <system_nrf52820.h>
 #elif defined(CONFIG_SOC_NRF52832)
 #include <system_nrf52.h>
 #elif defined(CONFIG_SOC_NRF52833)

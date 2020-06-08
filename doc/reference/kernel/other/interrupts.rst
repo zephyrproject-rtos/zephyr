@@ -57,6 +57,8 @@ nesting support is enabled.
     alter its behavior depending on whether it is executing as part of
     a thread or as part of an ISR.
 
+.. _multi_level_interrupts:
+
 Multi-level Interrupt handling
 ==============================
 
@@ -151,6 +153,32 @@ The IRQ must be subsequently **enabled** to permit the ISR to execute.
 .. important::
     Disabling an IRQ prevents *all* threads in the system from being preempted
     by the associated ISR, not just the thread that disabled the IRQ.
+
+Zero Latency Interrupts
+-----------------------
+
+Preventing interruptions by applying an IRQ lock may increase the observed
+interrupt latency. A high interrupt latency, however, may not be acceptable
+for certain low-latency use-cases.
+
+The kernel addresses such use-cases by allowing interrupts with critical
+latency constraints to execute at a priority level that cannot be blocked
+by interrupt locking. These interrupts are defined as
+*zero-latency interrupts*. The support for zero-latency interrupts requires
+:option:`CONFIG_ZERO_LATENCY_IRQS` to be enabled.
+
+Zero-latency interrupts are expected to be used to manage hardware events
+directly, and not to interoperate with the kernel code at all. They should
+treat all kernel APIs as undefined behavior (i.e. an application that uses the
+APIs inside a zero-latency interrupt context is responsible for directly
+verifying correct behavior). Zero-latency interrupts may not modify any data
+inspected by kernel APIs invoked from normal Zephyr contexts and shall not
+generate exceptions that need to be handled synchronously (e.g. kernel panic).
+
+.. important::
+    Zero-latency interrupts are supported on an architecture-specific basis.
+    The feature is currently implemented in the ARM Cortex-M architecture
+    variant.
 
 Offloading ISR Work
 ===================
@@ -282,7 +310,10 @@ The following code demonstrates a direct ISR:
        ...
     }
 
-Installation of dynamic direct interrupts is currently unsupported.
+Installation of dynamic direct interrupts is supported on an
+architecture-specific basis. (The feature is currently implemented in
+ARM Cortex-M architecture variant. Dynamic direct interrupts feature is
+exposed to the user via an ARM-only API.)
 
 Implementation Details
 ======================
@@ -380,12 +411,12 @@ x86 Details
 The x86 architecture has a special type of vector table called the Interrupt
 Descriptor Table (IDT) which must be laid out in a certain way per the x86
 processor documentation.  It is still fundamentally a vector table, and the
-gen_idt tool uses the .intList section to create it. However, on APIC-based
+:ref:`gen_idt.py` tool uses the .intList section to create it. However, on APIC-based
 systems the indexes in the vector table do not correspond to the IRQ line. The
 first 32 vectors are reserved for CPU exceptions, and all remaining vectors (up
 to index 255) correspond to the priority level, in groups of 16. In this
 scheme, interrupts of priority level 0 will be placed in vectors 32-47, level 1
-48-63, and so forth. When the gen_idt tool is constructing the IDT, when it
+48-63, and so forth. When the :ref:`gen_idt.py` tool is constructing the IDT, when it
 configures an interrupt it will look for a free vector in the appropriate range
 for the requested priority level and set the handler there.
 
@@ -400,7 +431,7 @@ ISR is placed directly in the IDT.
 
 On systems where the position in the vector table corresponds to the
 interrupt's priority level, the interrupt controller needs to know at
-runtime what vector is associated with an IRQ line. gen_idt additionally
+runtime what vector is associated with an IRQ line. :ref:`gen_idt.py` additionally
 creates an _irq_to_interrupt_vector array which maps an IRQ line to its
 configured vector in the IDT. This is used at runtime by :c:macro:`IRQ_CONNECT`
 to program the IRQ-to-vector association in the interrupt controller.

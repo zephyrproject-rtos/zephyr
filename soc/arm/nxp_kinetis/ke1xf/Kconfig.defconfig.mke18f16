@@ -8,11 +8,8 @@ if SOC_MKE18F16
 config SOC
 	default "mke18f16"
 
-if CAN
-
 config CAN_MCUX_FLEXCAN
 	default y
-
-endif # CAN
+	depends on CAN
 
 endif # SOC_MKE18F16

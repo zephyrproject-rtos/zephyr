@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2020 Intel Corporation
  * Copyright (c) 2017 Nordic Semiconductor ASA
  * Copyright (c) 2015 Runtime Inc
  *
@@ -14,7 +15,7 @@ static const u8_t crc8_ccitt_small_table[16] = {
 
 u8_t crc8_ccitt(u8_t val, const void *buf, size_t cnt)
 {
-	int i;
+	size_t i;
 	const u8_t *p = buf;
 
 	for (i = 0; i < cnt; i++) {
@@ -23,4 +24,33 @@ u8_t crc8_ccitt(u8_t val, const void *buf, size_t cnt)
 		val = (val << 4) ^ crc8_ccitt_small_table[val >> 4];
 	}
 	return val;
+}
+
+u8_t crc8(const u8_t *src, size_t len, u8_t polynomial, u8_t initial_value,
+	  bool reversed)
+{
+	u8_t crc = initial_value;
+	size_t i, j;
+
+	for (i = 0; i < len; i++) {
+		crc ^= src[i];
+
+		for (j = 0; j < 8; j++) {
+			if (reversed) {
+				if (crc & 0x01) {
+					crc = (crc >> 1) ^ polynomial;
+				} else {
+					crc >>= 1;
+				}
+			} else {
+				if (crc & 0x80) {
+					crc = (crc << 1) ^ polynomial;
+				} else {
+					crc <<= 1;
+				}
+			}
+		}
+	}
+
+	return crc;
 }

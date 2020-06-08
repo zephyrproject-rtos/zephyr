@@ -3,4 +3,5 @@
 
 config SOC_ARC_HSDK
 	bool "Synopsys ARC HSDK SoC"
+	select ARC
 	select CPU_HAS_FPU

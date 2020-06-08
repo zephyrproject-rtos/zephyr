@@ -1,6 +1,6 @@
 # Bluetooth LE stack configuration options
 
-# Copyright (c) 2016-2017 Nordic Semiconductor ASA
+# Copyright (c) 2016-2020 Nordic Semiconductor ASA
 # Copyright (c) 2015-2016 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
@@ -22,6 +22,7 @@ config BT_HCI_CMD_COUNT
 
 config BT_RX_BUF_COUNT
 	int "Number of HCI RX buffers"
+	default NET_BUF_RX_COUNT if NET_L2_BT
 	default 3 if BT_RECV_IS_RX_THREAD
 	default 20 if (BT_MESH && !(BT_DISCARDABLE_BUF_COUNT > 0))
 	default 10
@@ -33,6 +34,7 @@ config BT_RX_BUF_COUNT
 config BT_RX_BUF_LEN
 	int "Maximum supported HCI RX buffer length"
 	default 264 if BT_BREDR
+	default 258 if BT_EXT_ADV
 	default 77 if BT_MESH_PROXY
 	default 76
 	range 73 2000
@@ -59,6 +61,16 @@ config BT_DISCARDABLE_BUF_COUNT
 	  it will not cause the allocation for other critical events to
 	  block and may even eliminate deadlocks in some cases.
 
+config BT_DISCARDABLE_BUF_SIZE
+	int "Size of discardable event buffers"
+	range 45 257
+	default 257 if BT_BREDR || BT_EXT_ADV
+	default 45
+	help
+	  Size of buffers in the separate discardable event buffer pool.
+	  The minimum size is set based on the Advertising Report. Setting
+	  the buffer size different than BT_RX_BUF_LEN can save memory.
+
 config BT_HCI_TX_STACK_SIZE
 	# NOTE: This value is derived from other symbols and should only be
 	# changed if required by architecture
@@ -67,9 +79,9 @@ config BT_HCI_TX_STACK_SIZE
 	default 512 if BT_H4
 	default 512 if BT_H5
 	default 416 if BT_SPI
-	default 940 if BT_CTLR && (BT_LL_SW_LEGACY || BT_LL_SW_SPLIT) && NO_OPTIMIZATIONS
-	default 1024 if BT_CTLR && (BT_LL_SW_LEGACY || BT_LL_SW_SPLIT) && BT_CENTRAL
-	default 640 if BT_CTLR && (BT_LL_SW_LEGACY || BT_LL_SW_SPLIT)
+	default 940 if BT_CTLR && BT_LL_SW_SPLIT && NO_OPTIMIZATIONS
+	default 1024 if BT_CTLR && BT_LL_SW_SPLIT && BT_CENTRAL
+	default 640 if BT_CTLR && BT_LL_SW_SPLIT
 	default 512 if BT_USERCHAN
 	default 640 if BT_STM32_IPM
 	# Even if no driver is selected the following default is still
@@ -102,6 +114,7 @@ config BT_HCI_RESERVE
 	int
 	default 0 if BT_H4
 	default 1 if BT_H5
+	default 1 if BT_RPMSG
 	default 1 if BT_SPI
 	default 1 if BT_STM32_IPM
 	default 1 if BT_USERCHAN
@@ -229,15 +242,15 @@ config BT_WHITELIST
 
 if BT_CONN
 
-if BT_HCI_ACL_FLOW_CONTROL
 config BT_ACL_RX_COUNT
 	int "Number of incoming ACL data buffers"
 	default BT_CTLR_RX_BUFFERS if BT_CTLR
+	default NET_BUF_RX_COUNT if NET_L2_BT
 	default 6
 	range 1 64
+	depends on BT_HCI_ACL_FLOW_CONTROL
 	help
 	  Number of buffers available for incoming ACL data.
-endif # BT_HCI_ACL_FLOW_CONTROL
 
 config BT_CONN_TX_MAX
 	int "Maximum number of pending TX buffers with a callback"
@@ -248,16 +261,61 @@ config BT_CONN_TX_MAX
 	  callback. Normally this can be left to the default value, which
 	  is equal to the number of TX buffers in the stack-internal pool.
 
+config BT_USER_PHY_UPDATE
+	bool "User control of PHY Update Procedure"
+	depends on BT_PHY_UPDATE
+	help
+	  Enable application access to initiate the PHY Update Procedure.
+	  The application can also register a callback to be notified about PHY
+	  changes on the connection. The current PHY info is available in the
+	  connection info.
+
 config BT_AUTO_PHY_UPDATE
 	bool "Auto-initiate PHY Update Procedure"
 	depends on BT_PHY_UPDATE
-	default y
+	default y if !BT_USER_PHY_UPDATE
 	help
 	  Initiate PHY Update Procedure on connection establishment.
 
-	  Disable this if you want PHY Update Procedure feature supported but
-	  want to rely on remote device to initiate the procedure at its
-	  discretion.
+	  Disable this if you want the PHY Update Procedure feature supported
+	  but want to rely on the remote device to initiate the procedure at its
+	  discretion or want to initiate manually.
+
+config BT_USER_DATA_LEN_UPDATE
+	bool "User control of Data Length Update Procedure"
+	depends on BT_DATA_LEN_UPDATE
+	help
+	  Enable application access to initiate the Data Length Update
+	  Procedure. The application can also a register callback to be notified
+	  about Data Length changes on the connection. The current Data Length
+	  info is available in the connection info.
+
+config BT_AUTO_DATA_LEN_UPDATE
+	bool "Auto-initiate Data Length Update procedure"
+	depends on BT_DATA_LEN_UPDATE
+	default y if !BT_USER_DATA_LEN_UPDATE
+	help
+	  Initiate Data Length Update Procedure on connection establishment.
+
+	  Disable this if you want the Data Length Update Procedure feature
+	  supported but want to rely on the remote device to initiate the
+	  procedure at its discretion or want to initiate manually.
+
+config BT_REMOTE_INFO
+	bool "Enable application access to remote information"
+	help
+	  Enable application access to the remote information available in the
+	  stack. The remote information is retrieved once a connection has been
+	  established and the application will be notified when this information
+	  is available through the remote_version_available connection callback.
+
+config BT_REMOTE_VERSION
+	bool "Enable remote version information"
+	depends on BT_REMOTE_INFO
+	help
+	  Enable this to get access to the remote version through
+	  the remote_version_available callback. The host will automatically ask
+	  the remote device after the connection has been established.
 
 config BT_SMP
 	bool "Security Manager Protocol support"
@@ -265,7 +323,6 @@ config BT_SMP
 	select TINYCRYPT_AES
 	select TINYCRYPT_AES_CMAC
 	select BT_RPA
-	select BT_ECC
 	help
 	  This option enables support for the Security Manager Protocol
 	  (SMP), making it possible to pair devices over LE.
@@ -292,6 +349,16 @@ config BT_SIGNING
 	  This option enables data signing which is used for transferring
 	  authenticated data in an unencrypted connection.
 
+config BT_SMP_APP_PAIRING_ACCEPT
+	bool "Accept or reject pairing initiative"
+	help
+	  When receiving pairing request or pairing response query the
+	  application whether to accept to proceed with pairing or not. This is
+	  for pairing over SMP and does not affect SSP, which will continue
+	  pairing without querying the application.
+	  The application can return an error code, which is translated into
+	  a SMP return value if the pairing is not allowed.
+
 config BT_SMP_SC_PAIR_ONLY
 	bool "Disable legacy pairing"
 	help
@@ -311,6 +378,20 @@ config BT_SMP_SC_ONLY
 	  Security Mode 1 Level 4 stands for authenticated LE Secure Connections
 	  pairing with encryption. Enabling this option disables legacy pairing.
 
+config BT_SMP_OOB_LEGACY_PAIR_ONLY
+	bool "Force Out Of Band Legacy pairing"
+	depends on !(BT_SMP_SC_PAIR_ONLY || BT_SMP_SC_ONLY)
+	help
+	  This option disables Legacy and LE SC pairing and forces legacy OOB.
+
+config BT_SMP_DISABLE_LEGACY_JW_PASSKEY
+	bool "Forbid usage of insecure legacy pairing methods"
+	depends on !(BT_SMP_SC_PAIR_ONLY || BT_SMP_SC_ONLY || \
+		     BT_SMP_OOB_LEGACY_PAIR_ONLY)
+	help
+	  This option disables Just Works and Passkey legacy pairing methods to
+	  increase security.
+
 config BT_SMP_ALLOW_UNAUTH_OVERWRITE
 	bool "Allow unauthenticated pairing for paired device"
 	help
@@ -321,6 +402,19 @@ config BT_SMP_ALLOW_UNAUTH_OVERWRITE
 	  to replace the existing bond. When this option is disabled in order
 	  to create a new bond the old bond has to be explicitly deleted with
 	  bt_unpair.
+
+config BT_SMP_USB_HCI_CTLR_WORKAROUND
+	bool "Workaround for USB HCI controller out-of-order events"
+	depends on BT_TESTING
+	help
+	  This option enables support for USB HCI controllers that sometimes
+	  send out-of-order HCI events and ACL Data due to using different USB
+	  endpoints.
+	  Enabling this option will make the master role not require the
+	  encryption-change event to be received before accepting key-distribution
+	  data.
+	  It opens up for a potential vulnerability as the master cannot detect
+	  if the keys are distributed over an encrypted link.
 
 config BT_FIXED_PASSKEY
 	bool "Use a fixed passkey for pairing"
@@ -412,7 +506,8 @@ config BT_MAX_PAIRED
 config BT_CREATE_CONN_TIMEOUT
 	int "Timeout for pending LE Create Connection command in seconds"
 	default 3
-	range 1 65535
+	range 1 BT_RPA_TIMEOUT if BT_PRIVACY && (BT_RPA_TIMEOUT < 655)
+	range 1 655
 
 config BT_CONN_PARAM_UPDATE_TIMEOUT
 	int "Peripheral connection parameter update timeout in milliseconds"
@@ -445,8 +540,10 @@ config BT_SCAN_WITH_IDENTITY
 	  Enable this if you want to perform active scanning using the local
 	  identity address as the scanner address. By default the stack will
 	  always use a non-resolvable private address (NRPA) in order to avoid
-	  disclosing local identity information. However, if the use case
-	  requires disclosing it then enable this option.
+	  disclosing local identity information. By not scanning with the
+	  identity address the scanner will receive directed advertise reports
+	  for for the local identity. If this use case is required, then enable
+	  this option.
 
 config BT_DEVICE_NAME_DYNAMIC
 	bool "Allow to set Bluetooth device name on runtime"
@@ -491,6 +588,7 @@ endif # BT_HCI_HOST
 
 config BT_ECC
 	bool "Enable ECDH key generation support"
+	default y if BT_MESH_PROV || (BT_SMP && !BT_SMP_OOB_LEGACY_PAIR_ONLY)
 	help
 	  This option adds support for ECDH HCI commands.
 
@@ -511,6 +609,13 @@ config BT_TINYCRYPT_ECC
 	  Connections so that Hosts can make use of those. The option defaults
 	  to enabled for a combined build with Zephyr's own controller, since it
 	  does not have any special ECC support itself (at least not currently).
+
+config BT_HOST_CCM
+	bool "Enable host side AES-CCM module"
+	help
+	  Enables the software based AES-CCM engine in the host. Will use the
+	  controller's AES encryption functions if available, or BT_HOST_CRYPTO
+	  otherwise.
 
 if BT_DEBUG
 config BT_DEBUG_SETTINGS

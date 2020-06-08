@@ -5,13 +5,14 @@
 
 config SOC_SERIES_SAME70
 	bool "Atmel SAME70 MCU"
+	select ARM
 	select CPU_CORTEX_M7
 	select SOC_FAMILY_SAM
 	select CPU_HAS_FPU_DOUBLE_PRECISION
+	select CPU_CORTEX_M_HAS_DWT
 	select ASF
 	select XIP
 	select CPU_HAS_ARM_MPU
-	select ARM_MPU
 	select HAS_SWO
 	help
 	  Enable support for Atmel SAM E70 ARM Cortex-M7 Microcontrollers.

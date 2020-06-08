@@ -6,6 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT isil_isl29035
+
 #include <kernel.h>
 #include <init.h>
 #include <drivers/i2c.h>
@@ -74,7 +76,7 @@ static int isl29035_init(struct device *dev)
 {
 	struct isl29035_driver_data *drv_data = dev->driver_data;
 
-	drv_data->i2c = device_get_binding(DT_INST_0_ISIL_ISL29035_BUS_NAME);
+	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (drv_data->i2c == NULL) {
 		LOG_DBG("Failed to get I2C device.");
 		return -EINVAL;
@@ -141,6 +143,6 @@ static int isl29035_init(struct device *dev)
 
 struct isl29035_driver_data isl29035_data;
 
-DEVICE_AND_API_INIT(isl29035_dev, DT_INST_0_ISIL_ISL29035_LABEL, &isl29035_init,
+DEVICE_AND_API_INIT(isl29035_dev, DT_INST_LABEL(0), &isl29035_init,
 		    &isl29035_data, NULL, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &isl29035_api);

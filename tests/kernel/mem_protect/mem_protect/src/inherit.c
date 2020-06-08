@@ -39,7 +39,7 @@ struct k_mem_partition *inherit_memory_partition_array[] = {
 struct k_mem_domain inherit_mem_domain;
 
 /* generic function to do check the access permissions. */
-void access_test(void)
+static void access_test(void)
 {
 	u32_t msg_q_data = 0xA5A5;
 
@@ -52,16 +52,15 @@ void access_test(void)
 	inherit_buf[10] = 0xA5;
 }
 
-void test_thread_1_for_user(void *p1, void *p2, void *p3)
+static void test_thread_1_for_user(void *p1, void *p2, void *p3)
 {
 	access_test();
 	ztest_test_pass();
 }
 
-void test_thread_1_for_SU(void *p1, void *p2, void *p3)
+static void test_thread_1_for_SU(void *p1, void *p2, void *p3)
 {
-	valid_fault = false;
-	USERSPACE_BARRIER;
+	set_fault_valid(false);
 
 	access_test();
 
@@ -99,5 +98,5 @@ void test_permission_inheritance(void *p1, void *p2, void *p3)
 			NULL, NULL, NULL,
 			0, K_INHERIT_PERMS, K_NO_WAIT);
 
-	k_sem_take(&sync_sem, SYNC_SEM_TIMEOUT);
+	k_thread_join(&test_1_tid, K_FOREVER);
 }

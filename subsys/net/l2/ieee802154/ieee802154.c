@@ -81,7 +81,8 @@ static inline void ieee802154_acknowledge(struct net_if *iface,
 	}
 
 	if (ieee802154_create_ack_frame(iface, pkt, mpdu->mhr.fs->sequence)) {
-		ieee802154_tx(iface, pkt, pkt->buffer);
+		ieee802154_tx(iface, IEEE802154_TX_MODE_DIRECT,
+			      pkt, pkt->buffer);
 	}
 
 	net_pkt_unref(pkt);
@@ -276,7 +277,8 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 		if (IS_ENABLED(CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA) &&
 		    ieee802154_get_hw_capabilities(iface) &
 		    IEEE802154_HW_CSMA) {
-			ret = ieee802154_tx(iface, pkt, &frame_buf);
+			ret = ieee802154_tx(iface, IEEE802154_TX_MODE_CSMA_CA,
+					    pkt, &frame_buf);
 		} else {
 			ret = ieee802154_radio_send(iface, pkt, &frame_buf);
 		}

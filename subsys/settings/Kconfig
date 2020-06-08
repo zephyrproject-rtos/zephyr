@@ -34,10 +34,12 @@ config SETTINGS_ENCODE_LEN
 	bool
 
 config SETTINGS_USE_BASE64
-	bool "encoding value using base64"
+	bool "encoding value using base64 (deprecated)"
 	depends on SETTINGS
 	select BASE64
 	help
+	  This option has been deprecated and will not be supported
+	  in future releases.
 	  Enables values encoding using Base64.
 
 choice

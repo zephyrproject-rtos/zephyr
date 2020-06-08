@@ -19,4 +19,3 @@ int check_file_dir_exists(const char *path)
 
 	return !res;
 }
-

@@ -20,6 +20,7 @@ struct data {
 		struct k_delayed_work transmit;
 		u32_t expecting;
 		u32_t counter;
+		u32_t mtu;
 	} udp;
 
 	struct {

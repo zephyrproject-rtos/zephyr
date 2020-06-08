@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(net_sock_mgmt, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #define MSG_ALLOC_TIMEOUT K_MSEC(100)
 
-struct net_mgmt_socket {
+__net_socket struct net_mgmt_socket {
 	/* Network interface related to this socket */
 	struct net_if *iface;
 
@@ -34,10 +34,10 @@ struct net_mgmt_socket {
 	u32_t mask;
 
 	/* Message allocation timeout */
-	s32_t alloc_timeout;
+	k_timeout_t alloc_timeout;
 
 	/* net_mgmt event timeout */
-	s32_t wait_timeout;
+	k_timeout_t wait_timeout;
 
 	/* Socket protocol */
 	int proto;
@@ -79,13 +79,6 @@ int znet_mgmt_socket(int family, int type, int proto)
 	mgmt->proto = proto;
 	mgmt->alloc_timeout = MSG_ALLOC_TIMEOUT;
 	mgmt->wait_timeout = K_FOREVER;
-
-#if defined(CONFIG_USERSPACE)
-	/* Set net context object as initialized and grant access to the
-	 * calling thread (and only the calling thread)
-	 */
-	z_object_recycle(mgmt);
-#endif
 
 	z_finalize_fd(fd, mgmt,
 		     (const struct fd_op_vtable *)&net_mgmt_sock_fd_op_vtable);
@@ -151,7 +144,7 @@ static ssize_t znet_mgmt_recvfrom(struct net_mgmt_socket *mgmt, void *buf,
 				  socklen_t *addrlen)
 {
 	struct sockaddr_nm *nm_addr = (struct sockaddr_nm *)src_addr;
-	s32_t timeout = mgmt->wait_timeout;
+	k_timeout_t timeout = mgmt->wait_timeout;
 	u32_t raised_event = 0;
 	u8_t *copy_to = buf;
 	struct net_mgmt_msghdr hdr;
@@ -190,7 +183,7 @@ again:
 	}
 
 	if ((mgmt->mask & raised_event) != raised_event) {
-		if (timeout == K_FOREVER) {
+		if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
 			goto again;
 		}
 

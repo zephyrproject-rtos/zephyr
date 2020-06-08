@@ -22,9 +22,9 @@ GNU ARM Embedded
 
    .. warning::
 
-	  The GNU ARM Embedded Toolchain for Windows, version **8-2018-q4-major**
-	  has a `critical bug <https://github.com/zephyrproject-rtos/zephyr/issues/12257>`_
-	  and should not be used. Toolchain version **7-2018-q2-update** is known to work.
+      On macOS Catalina or later you might need to :ref:`change a security
+      policy <mac-gatekeeper>` for the toolchain to be able to run from the
+      terminal.
 
 #. :ref:`Set these environment variables <env_vars>`:
 

@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2020 Moonkwun Jung
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/h7/stm32h7.dtsi>
+
+/ {
+	cpus {
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4f";
+			reg = <1>;
+		};
+	};
+};

@@ -1,0 +1,32 @@
+# Copyright (c) 2019, STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for DMAMUX controllers
+
+include: base.yaml
+
+bus: dmamux
+
+properties:
+    label:
+      required: true
+
+    "#dma-cells":
+      type: int
+      required: true
+      description: Number of items to expect in a DMA specifier
+
+    dma-channels:
+      type: int
+      required: true
+      description: Number of DMAMUX output request channels supported by the controller
+
+    dma-generators:
+      type: int
+      required: false
+      description: Number of DMAMUX Request generator supported by the controller
+
+    dma-requests:
+      type: int
+      required: true
+      description: Number of DMAMUX Peripheral Request Line inputs supported by the controller

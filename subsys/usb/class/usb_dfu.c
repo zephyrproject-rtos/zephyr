@@ -60,8 +60,8 @@ LOG_MODULE_REGISTER(usb_dfu);
 
 #define USB_DFU_MAX_XFER_SIZE		CONFIG_USB_REQUEST_BUFFER_SIZE
 
-#define FIRMWARE_IMAGE_0_LABEL "image-1"
-#define FIRMWARE_IMAGE_1_LABEL "image-0"
+#define FIRMWARE_IMAGE_0_LABEL "image-0"
+#define FIRMWARE_IMAGE_1_LABEL "image-1"
 
 /* MCUBoot waits for CONFIG_USB_DFU_WAIT_DELAY_MS time in total to let DFU to
  * be commenced. It intermittently checks every INTERMITTENT_CHECK_DELAY
@@ -156,7 +156,7 @@ struct dev_dfu_mode_descriptor dfu_mode_desc = {
 		.bConfigurationValue = 1,
 		.iConfiguration = 0,
 		.bmAttributes = USB_CONFIGURATION_ATTRIBUTES,
-		.bMaxPower = MAX_LOW_POWER,
+		.bMaxPower = CONFIG_USB_MAX_POWER,
 	},
 	.sec_dfu_cfg = {
 		/* Interface descriptor */
@@ -300,7 +300,7 @@ struct dfu_data_t {
 static struct dfu_data_t dfu_data = {
 	.state = appIDLE,
 	.status = statusOK,
-	.flash_area_id = DT_FLASH_AREA_IMAGE_1_ID,
+	.flash_area_id = FLASH_AREA_ID(image_1),
 	.alt_setting = 0,
 	.bwPollTimeout = CONFIG_USB_DFU_DEFAULT_POLLTIMEOUT,
 };
@@ -444,7 +444,7 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 			k_poll_signal_reset(&dfu_signal);
 
 			if (dfu_data.flash_area_id !=
-			    DT_FLASH_AREA_IMAGE_1_ID) {
+			    FLASH_AREA_ID(image_1)) {
 				dfu_data.status = errWRITE;
 				dfu_data.state = dfuERROR;
 				LOG_ERR("This area can not be overwritten");
@@ -507,6 +507,15 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 				len = bytes_left;
 			} else {
 				len = pSetup->wLength;
+			}
+
+			if (len > USB_DFU_MAX_XFER_SIZE) {
+				/*
+				 * The host could requests more data as stated
+				 * in wTransferSize. Limit upload length to the
+				 * size of the request-buffer.
+				 */
+				len = USB_DFU_MAX_XFER_SIZE;
 			}
 
 			if (len) {
@@ -660,11 +669,11 @@ static int dfu_custom_handle_req(struct usb_setup_packet *pSetup,
 			switch (pSetup->wValue) {
 			case 0:
 				dfu_data.flash_area_id =
-				    DT_FLASH_AREA_IMAGE_0_ID;
+				    FLASH_AREA_ID(image_0);
 				break;
 			case 1:
 				dfu_data.flash_area_id =
-				    DT_FLASH_AREA_IMAGE_1_ID;
+				    FLASH_AREA_ID(image_1);
 				break;
 			default:
 				LOG_WRN("Invalid DFU alternate setting");
@@ -685,7 +694,7 @@ static int dfu_custom_handle_req(struct usb_setup_packet *pSetup,
 	}
 
 	/* Not handled by us */
-	return -ENOTSUP;
+	return -EINVAL;
 }
 
 static void dfu_interface_config(struct usb_desc_header *head,
@@ -736,7 +745,7 @@ static void dfu_work_handler(struct k_work *item)
  * image collection, so not erase whole bank at DFU beginning
  */
 #ifndef CONFIG_IMG_ERASE_PROGRESSIVELY
-		if (boot_erase_img_bank(DT_FLASH_AREA_IMAGE_1_ID)) {
+		if (boot_erase_img_bank(FLASH_AREA_ID(image_1))) {
 			dfu_data.state = dfuERROR;
 			dfu_data.status = errERASE;
 			break;
@@ -812,7 +821,7 @@ void wait_for_usb_dfu(void)
 			break;
 		}
 
-		k_sleep(INTERMITTENT_CHECK_DELAY);
+		k_msleep(INTERMITTENT_CHECK_DELAY);
 	}
 }
 

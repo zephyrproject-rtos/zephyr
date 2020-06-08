@@ -12,13 +12,13 @@
 #include <zephyr/types.h>
 #include <drivers/gpio.h>
 
-#define BMA280_I2C_ADDRESS		CONFIG_BMA280_I2C_ADDR
+#define BMA280_I2C_ADDRESS		DT_INST_REG_ADDR(0)
 
 #define BMA280_REG_CHIP_ID		0x00
-#if CONFIG_BMA280_CHIP_BMA280
-	#define BMA280_CHIP_ID		0xFB
-#elif CONFIG_BMA280_CHIP_BMC150_ACCEL
+#if DT_INST_PROP(0, is_bmc150)
 	#define BMA280_CHIP_ID		0xFA
+#else
+	#define BMA280_CHIP_ID		0xFB
 #endif
 
 #define BMA280_REG_PMU_BW		0x10
@@ -96,12 +96,12 @@
 #define BMA280_REG_ACCEL_Y_LSB		0x4
 #define BMA280_REG_ACCEL_Z_LSB		0x6
 
-#if CONFIG_BMA280_CHIP_BMA280
-	#define BMA280_ACCEL_LSB_BITS	6
-	#define BMA280_ACCEL_LSB_SHIFT	2
-#elif CONFIG_BMA280_CHIP_BMC150_ACCEL
+#if DT_INST_PROP(0, is_bmc150)
 	#define BMA280_ACCEL_LSB_BITS	4
 	#define BMA280_ACCEL_LSB_SHIFT	4
+#else
+	#define BMA280_ACCEL_LSB_BITS	6
+	#define BMA280_ACCEL_LSB_SHIFT	2
 #endif
 #define BMA280_ACCEL_LSB_MASK		\
 		(BIT_MASK(BMA280_ACCEL_LSB_BITS) << BMA280_ACCEL_LSB_SHIFT)
@@ -121,6 +121,7 @@ struct bma280_data {
 	s8_t temp_sample;
 
 #ifdef CONFIG_BMA280_TRIGGER
+	struct device *dev;
 	struct device *gpio;
 	struct gpio_callback gpio_cb;
 
@@ -136,7 +137,6 @@ struct bma280_data {
 	struct k_sem gpio_sem;
 #elif defined(CONFIG_BMA280_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	struct device *dev;
 #endif
 
 #endif /* CONFIG_BMA280_TRIGGER */

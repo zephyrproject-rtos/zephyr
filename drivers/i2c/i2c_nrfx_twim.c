@@ -9,10 +9,8 @@
 #include <dt-bindings/i2c/i2c.h>
 #include <nrfx_twim.h>
 
-#define LOG_DOMAIN "i2c_nrfx_twim"
-#define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(i2c_nrfx_twim);
+LOG_MODULE_REGISTER(i2c_nrfx_twim, CONFIG_I2C_LOG_LEVEL);
 
 struct i2c_nrfx_twim_data {
 	struct k_sem transfer_sync;
@@ -37,7 +35,7 @@ static inline struct i2c_nrfx_twim_data *get_dev_data(struct device *dev)
 static inline
 const struct i2c_nrfx_twim_config *get_dev_config(struct device *dev)
 {
-	return dev->config->config_info;
+	return dev->config_info;
 }
 
 static int i2c_nrfx_twim_transfer(struct device *dev, struct i2c_msg *msgs,
@@ -151,7 +149,7 @@ static int init_twim(struct device *dev)
 					   dev);
 	if (result != NRFX_SUCCESS) {
 		LOG_ERR("Failed to initialize device: %s",
-			dev->config->name);
+			dev->name);
 		return -EBUSY;
 	}
 
@@ -167,11 +165,12 @@ static int twim_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 				void *context, device_pm_cb cb, void *arg)
 {
 	int ret = 0;
+	u32_t pm_current_state = get_dev_data(dev)->pm_state;
 
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
 		u32_t new_state = *((const u32_t *)context);
 
-		if (new_state != get_dev_data(dev)->pm_state) {
+		if (new_state != pm_current_state) {
 			switch (new_state) {
 			case DEVICE_PM_ACTIVE_STATE:
 				init_twim(dev);
@@ -185,6 +184,9 @@ static int twim_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 			case DEVICE_PM_LOW_POWER_STATE:
 			case DEVICE_PM_SUSPEND_STATE:
 			case DEVICE_PM_OFF_STATE:
+				if (pm_current_state != DEVICE_PM_ACTIVE_STATE) {
+					break;
+				}
 				nrfx_twim_uninit(&get_dev_config(dev)->twim);
 				break;
 
@@ -196,7 +198,7 @@ static int twim_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 			}
 		}
 	} else {
-		assert(ctrl_command == DEVICE_PM_GET_POWER_STATE);
+		__ASSERT_NO_MSG(ctrl_command == DEVICE_PM_GET_POWER_STATE);
 		*((u32_t *)context) = get_dev_data(dev)->pm_state;
 	}
 
@@ -215,16 +217,17 @@ static int twim_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 	: bitrate == I2C_BITRATE_FAST     ? NRF_TWIM_FREQ_400K		       \
 					  : I2C_NRFX_TWIM_INVALID_FREQUENCY)
 
+#define I2C(idx) DT_NODELABEL(i2c##idx)
+#define I2C_FREQUENCY(idx)						       \
+	I2C_NRFX_TWIM_FREQUENCY(DT_PROP(I2C(idx), clock_frequency))
+
 #define I2C_NRFX_TWIM_DEVICE(idx)					       \
-	BUILD_ASSERT_MSG(						       \
-		I2C_NRFX_TWIM_FREQUENCY(				       \
-			DT_NORDIC_NRF_TWIM_I2C_##idx##_CLOCK_FREQUENCY)	       \
-		!= I2C_NRFX_TWIM_INVALID_FREQUENCY,			       \
-		"Wrong I2C " #idx " frequency setting in dts");		       \
+	BUILD_ASSERT(I2C_FREQUENCY(idx) !=				       \
+		     I2C_NRFX_TWIM_INVALID_FREQUENCY,			       \
+		     "Wrong I2C " #idx " frequency setting in dts");	       \
 	static int twim_##idx##_init(struct device *dev)		       \
 	{								       \
-		IRQ_CONNECT(DT_NORDIC_NRF_TWIM_I2C_##idx##_IRQ_0,	       \
-			    DT_NORDIC_NRF_TWIM_I2C_##idx##_IRQ_0_PRIORITY,     \
+		IRQ_CONNECT(DT_IRQN(I2C(idx)), DT_IRQ(I2C(idx), priority),     \
 			    nrfx_isr, nrfx_twim_##idx##_irq_handler, 0);       \
 		return init_twim(dev);					       \
 	}								       \
@@ -237,14 +240,13 @@ static int twim_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 	static const struct i2c_nrfx_twim_config twim_##idx##z_config = {      \
 		.twim = NRFX_TWIM_INSTANCE(idx),			       \
 		.config = {						       \
-			.scl       = DT_NORDIC_NRF_TWIM_I2C_##idx##_SCL_PIN,   \
-			.sda       = DT_NORDIC_NRF_TWIM_I2C_##idx##_SDA_PIN,   \
-			.frequency = I2C_NRFX_TWIM_FREQUENCY(		       \
-				DT_NORDIC_NRF_TWIM_I2C_##idx##_CLOCK_FREQUENCY)\
+			.scl       = DT_PROP(I2C(idx), scl_pin),	       \
+			.sda       = DT_PROP(I2C(idx), sda_pin),	       \
+			.frequency = I2C_FREQUENCY(idx),		       \
 		}							       \
 	};								       \
 	DEVICE_DEFINE(twim_##idx,					       \
-		      DT_NORDIC_NRF_TWIM_I2C_##idx##_LABEL,		       \
+		      DT_LABEL(I2C(idx)),				       \
 		      twim_##idx##_init,				       \
 		      twim_nrfx_pm_control,				       \
 		      &twim_##idx##_data,				       \

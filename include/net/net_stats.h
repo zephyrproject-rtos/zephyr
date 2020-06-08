@@ -237,6 +237,18 @@ struct net_stats_tc {
 	} recv[NET_TC_RX_COUNT];
 };
 
+
+/**
+ * @brief Power management statistics
+ */
+struct net_stats_pm {
+	u64_t overall_suspend_time;
+	net_stats_t suspend_count;
+	u32_t last_suspend_time;
+	u32_t start_time;
+};
+
+
 /**
  * @brief All network statistics in one struct.
  */
@@ -307,6 +319,10 @@ struct net_stats {
 #if defined(CONFIG_NET_PKT_RXTIME_STATS)
 	/** Network packet RX time statistics */
 	struct net_stats_rx_time rx_time;
+#endif
+
+#if defined(CONFIG_NET_STATISTICS_POWER_MANAGEMENT)
+	struct net_stats_pm pm;
 #endif
 };
 
@@ -432,6 +448,7 @@ enum net_request_stats_cmd {
 	NET_REQUEST_STATS_CMD_GET_TCP,
 	NET_REQUEST_STATS_CMD_GET_ETHERNET,
 	NET_REQUEST_STATS_CMD_GET_PPP,
+	NET_REQUEST_STATS_CMD_GET_PM
 };
 
 #define NET_REQUEST_STATS_GET_ALL				\
@@ -511,6 +528,13 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_PPP);
 #endif /* CONFIG_NET_STATISTICS_PPP */
 
 #endif /* CONFIG_NET_STATISTICS_USER_API */
+
+#if defined(CONFIG_NET_STATISTICS_POWER_MANAGEMENT)
+#define NET_REQUEST_STATS_GET_PM				\
+	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_PM)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_PM);
+#endif /* CONFIG_NET_STATISTICS_POWER_MANAGEMENT */
 
 /**
  * @}

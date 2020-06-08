@@ -10,6 +10,11 @@
 #include <soc.h>
 #include <hal/nrf_rng.h>
 
+#define DT_DRV_COMPAT	nordic_nrf_rng
+
+#define IRQN		DT_INST_IRQN(0)
+#define IRQ_PRIO	DT_INST_IRQ(0, priority)
+
 /*
  * The nRF5 RNG HW has several characteristics that need to be taken
  * into account by the driver to achieve energy efficient generation
@@ -74,13 +79,13 @@ struct rng_pool {
 
 #define RNG_POOL_DEFINE(name, len) u8_t name[sizeof(struct rng_pool) + (len)]
 
-BUILD_ASSERT_MSG((CONFIG_ENTROPY_NRF5_ISR_POOL_SIZE &
-		 (CONFIG_ENTROPY_NRF5_ISR_POOL_SIZE - 1)) == 0,
-		 "The CONFIG_ENTROPY_NRF5_ISR_POOL_SIZE must be a power of 2!");
+BUILD_ASSERT((CONFIG_ENTROPY_NRF5_ISR_POOL_SIZE &
+	      (CONFIG_ENTROPY_NRF5_ISR_POOL_SIZE - 1)) == 0,
+	     "The CONFIG_ENTROPY_NRF5_ISR_POOL_SIZE must be a power of 2!");
 
-BUILD_ASSERT_MSG((CONFIG_ENTROPY_NRF5_THR_POOL_SIZE &
-		 (CONFIG_ENTROPY_NRF5_THR_POOL_SIZE - 1)) == 0,
-		 "The CONFIG_ENTROPY_NRF5_THR_POOL_SIZE must be a power of 2!");
+BUILD_ASSERT((CONFIG_ENTROPY_NRF5_THR_POOL_SIZE &
+	      (CONFIG_ENTROPY_NRF5_THR_POOL_SIZE - 1)) == 0,
+	     "The CONFIG_ENTROPY_NRF5_THR_POOL_SIZE must be a power of 2!");
 
 struct entropy_nrf5_dev_data {
 	struct k_sem sem_lock;
@@ -266,8 +271,8 @@ static int entropy_nrf5_get_entropy_isr(struct device *dev, u8_t *buf, u16_t len
 		int irq_enabled;
 
 		key = irq_lock();
-		irq_enabled = irq_is_enabled(RNG_IRQn);
-		irq_disable(RNG_IRQn);
+		irq_enabled = irq_is_enabled(IRQN);
+		irq_disable(IRQN);
 		irq_unlock(key);
 
 		nrf_rng_event_clear(NRF_RNG, NRF_RNG_EVENT_VALRDY);
@@ -284,7 +289,7 @@ static int entropy_nrf5_get_entropy_isr(struct device *dev, u8_t *buf, u16_t len
 			}
 
 			byte = random_byte_get();
-			NVIC_ClearPendingIRQ(RNG_IRQn);
+			NVIC_ClearPendingIRQ(IRQN);
 
 			if (byte < 0) {
 				continue;
@@ -294,7 +299,7 @@ static int entropy_nrf5_get_entropy_isr(struct device *dev, u8_t *buf, u16_t len
 		} while (len);
 
 		if (irq_enabled) {
-			irq_enable(RNG_IRQn);
+			irq_enable(IRQN);
 		}
 	}
 
@@ -308,7 +313,7 @@ static const struct entropy_driver_api entropy_nrf5_api_funcs = {
 	.get_entropy_isr = entropy_nrf5_get_entropy_isr
 };
 
-DEVICE_AND_API_INIT(entropy_nrf5, CONFIG_ENTROPY_NAME,
+DEVICE_AND_API_INIT(entropy_nrf5, DT_INST_LABEL(0),
 		    entropy_nrf5_init, &entropy_nrf5_data, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &entropy_nrf5_api_funcs);
@@ -342,9 +347,8 @@ static int entropy_nrf5_init(struct device *device)
 	nrf_rng_int_enable(NRF_RNG, NRF_RNG_INT_VALRDY_MASK);
 	nrf_rng_task_trigger(NRF_RNG, NRF_RNG_TASK_START);
 
-	IRQ_CONNECT(RNG_IRQn, CONFIG_ENTROPY_NRF5_PRI, isr,
-		    &entropy_nrf5_data, 0);
-	irq_enable(RNG_IRQn);
+	IRQ_CONNECT(IRQN, IRQ_PRIO, isr, &entropy_nrf5_data, 0);
+	irq_enable(IRQN);
 
 	return 0;
 }

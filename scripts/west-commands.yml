@@ -36,3 +36,8 @@ west-commands:
       - name: attach
         class: Attach
         help: interactively debug a board
+  - file: scripts/west_commands/export.py
+    commands:
+      - name: zephyr-export
+        class: ZephyrExport
+        help: export Zephyr installation as a CMake config package

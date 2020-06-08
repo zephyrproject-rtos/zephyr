@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT atmel_sam0_dmac
+
 #include <device.h>
 #include <soc.h>
 #include <drivers/dma.h>
@@ -11,7 +13,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(dma_sam0, CONFIG_DMA_LOG_LEVEL);
 
-#define DMA_REGS	((Dmac *)DT_INST_0_ATMEL_SAM0_DMAC_BASE_ADDRESS)
+#define DMA_REGS	((Dmac *)DT_INST_REG_ADDR(0))
 
 typedef void (*dma_callback)(void *callback_arg, u32_t channel,
 			     int error_code);
@@ -149,7 +151,7 @@ static int dma_sam0_config(struct device *dev, u32_t channel,
 				     DMAC_CHCTRLA_TRIGSRC(config->dma_slot);
 	} else {
 		/* One peripheral trigger per beat */
-		chcfg->CHCTRLA.reg = DMAC_CHCTRLA_TRIGACT_BLOCK |
+		chcfg->CHCTRLA.reg = DMAC_CHCTRLA_TRIGACT_BURST |
 				     DMAC_CHCTRLA_TRIGSRC(config->dma_slot);
 	}
 
@@ -160,6 +162,22 @@ static int dma_sam0_config(struct device *dev, u32_t channel,
 	}
 
 	chcfg->CHPRILVL.bit.PRILVL = config->channel_priority;
+
+	/* Set the burst length */
+	if (config->source_burst_length != config->dest_burst_length) {
+		LOG_ERR("Source and destination burst lengths must be equal");
+		goto inval;
+	}
+
+	if (config->source_burst_length > 16U) {
+		LOG_ERR("Invalid burst length");
+		goto inval;
+	}
+
+	if (config->source_burst_length > 0U) {
+		chcfg->CHCTRLA.reg |= DMAC_CHCTRLA_BURSTLEN(
+			config->source_burst_length - 1U);
+	}
 
 	/* Enable the interrupts */
 	chcfg->CHINTENSET.reg = DMAC_CHINTENSET_TCMPL;
@@ -381,10 +399,10 @@ DEVICE_DECLARE(dma_sam0_0);
 
 #define DMA_SAM0_IRQ_CONNECT(n)						 \
 	do {								 \
-		IRQ_CONNECT(DT_INST_0_ATMEL_SAM0_DMAC_IRQ_ ## n,		 \
-			    DT_INST_0_ATMEL_SAM0_DMAC_IRQ_ ## n ## _PRIORITY, \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, n, irq),		 \
+			    DT_INST_IRQ_BY_IDX(0, n, priority),		 \
 			    dma_sam0_isr, DEVICE_GET(dma_sam0_0), 0);	 \
-		irq_enable(DT_INST_0_ATMEL_SAM0_DMAC_IRQ_ ## n);		 \
+		irq_enable(DT_INST_IRQ_BY_IDX(0, n, irq));		 \
 	} while (0)
 
 static int dma_sam0_init(struct device *dev)
@@ -411,19 +429,19 @@ static int dma_sam0_init(struct device *dev)
 	/* Enable the unit and enable all priorities */
 	DMA_REGS->CTRL.reg = DMAC_CTRL_DMAENABLE | DMAC_CTRL_LVLEN(0x0F);
 
-#ifdef DT_INST_0_ATMEL_SAM0_DMAC_IRQ_0
+#if DT_INST_IRQ_HAS_CELL(0, irq)
 	DMA_SAM0_IRQ_CONNECT(0);
 #endif
-#ifdef DT_INST_0_ATMEL_SAM0_DMAC_IRQ_1
+#if DT_INST_IRQ_HAS_IDX(0, 1)
 	DMA_SAM0_IRQ_CONNECT(1);
 #endif
-#ifdef DT_INST_0_ATMEL_SAM0_DMAC_IRQ_2
+#if DT_INST_IRQ_HAS_IDX(0, 2)
 	DMA_SAM0_IRQ_CONNECT(2);
 #endif
-#ifdef DT_INST_0_ATMEL_SAM0_DMAC_IRQ_3
+#if DT_INST_IRQ_HAS_IDX(0, 3)
 	DMA_SAM0_IRQ_CONNECT(3);
 #endif
-#ifdef DT_INST_0_ATMEL_SAM0_DMAC_IRQ_4
+#if DT_INST_IRQ_HAS_IDX(0, 4)
 	DMA_SAM0_IRQ_CONNECT(4);
 #endif
 
@@ -440,6 +458,6 @@ static const struct dma_driver_api dma_sam0_api = {
 	.get_status = dma_sam0_get_status,
 };
 
-DEVICE_AND_API_INIT(dma_sam0_0, CONFIG_DMA_0_NAME, &dma_sam0_init,
+DEVICE_AND_API_INIT(dma_sam0_0, DT_INST_LABEL(0), &dma_sam0_init,
 		    &dmac_data, NULL, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &dma_sam0_api);

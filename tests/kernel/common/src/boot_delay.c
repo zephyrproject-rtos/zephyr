@@ -30,4 +30,3 @@ void test_verify_bootdelay(void)
 /**
  * @}
  */
-

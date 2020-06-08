@@ -18,7 +18,7 @@
 #include <soc.h>
 #include <drivers/pinmux.h>
 #include <gpio/gpio_stm32.h>
-#include <clock_control/stm32_clock_control.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 #include <pinmux/stm32/pinmux_stm32.h>
 
 #ifdef CONFIG_SOC_SERIES_STM32MP1X

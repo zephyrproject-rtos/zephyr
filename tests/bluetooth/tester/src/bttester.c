@@ -14,7 +14,7 @@
 #include <toolchain.h>
 #include <bluetooth/bluetooth.h>
 #include <sys/byteorder.h>
-#include <console/uart_pipe.h>
+#include <drivers/console/uart_pipe.h>
 
 #include <logging/log.h>
 #define LOG_MODULE_NAME bttester
@@ -104,6 +104,7 @@ static void register_service(u8_t *data, u16_t len)
 		break;
 #endif /* CONFIG_BT_MESH */
 	default:
+		LOG_WRN("unknown id: 0x%02x", cmd->id);
 		status = BTP_STATUS_FAILED;
 		break;
 	}
@@ -136,6 +137,7 @@ static void unregister_service(u8_t *data, u16_t len)
 		break;
 #endif /* CONFIG_BT_MESH */
 	default:
+		LOG_WRN("unknown id: 0x%x", cmd->id);
 		status = BTP_STATUS_FAILED;
 		break;
 	}
@@ -148,6 +150,7 @@ static void handle_core(u8_t opcode, u8_t index, u8_t *data,
 			u16_t len)
 {
 	if (index != BTP_INDEX_NONE) {
+		LOG_WRN("index != BTP_INDEX_NONE: 0x%x", index);
 		tester_rsp(BTP_SERVICE_ID_CORE, opcode, index, BTP_STATUS_FAILED);
 		return;
 	}
@@ -166,6 +169,7 @@ static void handle_core(u8_t opcode, u8_t index, u8_t *data,
 		unregister_service(data, len);
 		return;
 	default:
+		LOG_WRN("unknown opcode: 0x%x", opcode);
 		tester_rsp(BTP_SERVICE_ID_CORE, opcode, BTP_INDEX_NONE,
 			   BTP_STATUS_UNKNOWN_CMD);
 		return;
@@ -212,6 +216,7 @@ static void cmd_handler(void *p1, void *p2, void *p3)
 			break;
 #endif /* CONFIG_BT_MESH */
 		default:
+			LOG_WRN("unknown service: 0x%x", cmd->hdr.service);
 			tester_rsp(cmd->hdr.service, cmd->hdr.opcode,
 				   cmd->hdr.index, BTP_STATUS_FAILED);
 			break;
@@ -259,6 +264,8 @@ void tester_init(void)
 {
 	int i;
 	struct btp_buf *buf;
+
+	LOG_DBG("Initializing tester");
 
 	for (i = 0; i < CMD_QUEUED; i++) {
 		k_fifo_put(&avail_queue, &cmd_buf[i]);

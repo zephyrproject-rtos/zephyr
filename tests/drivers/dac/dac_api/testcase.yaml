@@ -1,0 +1,6 @@
+common:
+  tags: dac drivers userspace
+tests:
+  drivers.dac:
+    platform_whitelist: frdm_k64f nucleo_l073rz twr_ke18f
+    depends_on: dac

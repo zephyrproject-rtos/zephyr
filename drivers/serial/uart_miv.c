@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT microsemi_coreuart
+
 #include <kernel.h>
 #include <arch/cpu.h>
 #include <drivers/uart.h>
@@ -144,7 +146,7 @@ struct uart_miv_data {
 
 #define DEV_CFG(dev)						\
 	((const struct uart_miv_device_config * const)		\
-	 (dev)->config->config_info)
+	 (dev)->config_info)
 #define DEV_UART(dev)						\
 	((struct uart_miv_regs_t *)(DEV_CFG(dev))->uart_addr)
 #define DEV_DATA(dev)						\
@@ -379,7 +381,11 @@ static const struct uart_driver_api uart_miv_driver_api = {
 #endif
 };
 
-#ifdef CONFIG_UART_MIV_PORT_0
+/* This driver is single-instance. */
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1,
+	     "unsupported uart_miv instance");
+
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
 
 static struct uart_miv_data uart_miv_data_0;
 
@@ -388,16 +394,16 @@ static void uart_miv_irq_cfg_func_0(struct device *dev);
 #endif
 
 static const struct uart_miv_device_config uart_miv_dev_cfg_0 = {
-	.uart_addr    = DT_MIV_UART_0_BASE_ADDR,
-	.sys_clk_freq = DT_MIV_UART_0_CLOCK_FREQUENCY,
+	.uart_addr    = DT_INST_REG_ADDR(0),
+	.sys_clk_freq = DT_INST_PROP(0, clock_frequency),
 	.line_config  = MIV_UART_0_LINECFG,
-	.baud_rate    = DT_MIV_UART_0_BAUD_RATE,
+	.baud_rate    = DT_INST_PROP(0, current_speed),
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.cfg_func     = uart_miv_irq_cfg_func_0,
 #endif
 };
 
-DEVICE_AND_API_INIT(uart_miv_0, DT_MIV_UART_0_NAME,
+DEVICE_AND_API_INIT(uart_miv_0, DT_INST_LABEL(0),
 		    uart_miv_init, &uart_miv_data_0, &uart_miv_dev_cfg_0,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    (void *)&uart_miv_driver_api);
@@ -412,4 +418,4 @@ static void uart_miv_irq_cfg_func_0(struct device *dev)
 }
 #endif
 
-#endif /* CONFIG_UART_MIV_PORT_0 */
+#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */

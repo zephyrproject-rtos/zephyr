@@ -8,8 +8,6 @@
 
 import collections
 
-from operator import attrgetter
-
 class Graph:
     """
     Represent a directed graph with edtlib Node objects as nodes.
@@ -76,10 +74,11 @@ class Graph:
         self.__tarjan_low_link = {}
         for v in self.__nodes:
             self.__tarjan_index[v] = None
-        roots = self.roots()
+        roots = sorted(self.roots(), key=node_key)
         if self.__nodes and not roots:
             raise Exception('TARJAN: No roots found in graph with {} nodes'.format(len(self.__nodes)))
-        for r in sorted(roots, key=attrgetter('path')):
+
+        for r in roots:
             self._tarjan_root(r)
 
         # Assign ordinals for edtlib
@@ -103,7 +102,7 @@ class Graph:
         self.__index += 1
         self.__stack.append(v)
         source = v
-        for target in sorted(self.__edge_map[source], key=attrgetter('path')):
+        for target in sorted(self.__edge_map[source], key=node_key):
             if self.__tarjan_index[target] is None:
                 self._tarjan_root(target)
                 self.__tarjan_low_link[v] = min(self.__tarjan_low_link[v], self.__tarjan_low_link[target])
@@ -135,8 +134,28 @@ class Graph:
 
     def depends_on(self, node):
         """Get the nodes that 'node' directly depends on."""
-        return sorted(self.__edge_map[node], key=attrgetter('path'))
+        return sorted(self.__edge_map[node], key=node_key)
 
     def required_by(self, node):
         """Get the nodes that directly depend on 'node'."""
-        return sorted(self.__reverse_map[node], key=attrgetter('path'))
+        return sorted(self.__reverse_map[node], key=node_key)
+
+def node_key(node):
+    # This sort key ensures that sibling nodes with the same name will
+    # use unit addresses as tiebreakers. That in turn ensures ordinals
+    # for otherwise indistinguishable siblings are in increasing order
+    # by unit address, which is convenient for displaying output.
+
+    if node.parent:
+        parent_path = node.parent.path
+    else:
+        parent_path = '/'
+
+    if node.unit_addr is not None:
+        name = node.name.rsplit('@', 1)[0]
+        unit_addr = node.unit_addr
+    else:
+        name = node.name
+        unit_addr = -1
+
+    return (parent_path, name, unit_addr)

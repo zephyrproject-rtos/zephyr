@@ -1,10 +1,7 @@
 # Copyright (c) 2019, Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-title: Microchip XEC PS/2
-
-description: |
-    This is a representation of the Microchip XEC PS/2 controller
+description: Microchip XEC PS/2 controller
 
 compatible: "microchip,xec-ps2"
 
@@ -16,4 +13,13 @@ properties:
 
     interrupts:
       required: true
-...
+
+    girq:
+      type: int
+      required: true
+      description: GIRQ for this device
+
+    girq-bit:
+      type: int
+      required: true
+      description: Bit position in GIRQ for this device

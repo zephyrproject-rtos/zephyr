@@ -18,10 +18,11 @@
  * (originally from x86's atomic.c)
  */
 
-#include <sys/atomic.h>
 #include <toolchain.h>
 #include <arch/cpu.h>
 #include <spinlock.h>
+#include <sys/atomic.h>
+#include <kernel_structs.h>
 
 /* Single global spinlock for atomic operations.  This is fallback
  * code, not performance sensitive.  At least by not using irq_lock()
@@ -63,10 +64,10 @@ static struct k_spinlock lock;
  *
  * This routine provides the compare-and-set operator. If the original value at
  * <target> equals <oldValue>, then <newValue> is stored at <target> and the
- * function returns 1.
+ * function returns true.
  *
  * If the original value at <target> does not equal <oldValue>, then the store
- * is not done and the function returns 0.
+ * is not done and the function returns false.
  *
  * The reading of the original value at <target>, the comparison,
  * and the write of the new value (if it occurs) all happen atomically with
@@ -75,19 +76,19 @@ static struct k_spinlock lock;
  * @param target address to be tested
  * @param old_value value to compare against
  * @param new_value value to compare against
- * @return Returns 1 if <new_value> is written, 0 otherwise.
+ * @return Returns true if <new_value> is written, false otherwise.
  */
-int z_impl_atomic_cas(atomic_t *target, atomic_val_t old_value,
-		      atomic_val_t new_value)
+bool z_impl_atomic_cas(atomic_t *target, atomic_val_t old_value,
+		       atomic_val_t new_value)
 {
 	k_spinlock_key_t key;
-	int ret = 0;
+	int ret = false;
 
 	key = k_spin_lock(&lock);
 
 	if (*target == old_value) {
 		*target = new_value;
-		ret = 1;
+		ret = true;
 	}
 
 	k_spin_unlock(&lock, key);
@@ -96,14 +97,43 @@ int z_impl_atomic_cas(atomic_t *target, atomic_val_t old_value,
 }
 
 #ifdef CONFIG_USERSPACE
-int z_vrfy_atomic_cas(atomic_t *target, atomic_val_t old_value,
-		      atomic_val_t new_value)
+bool z_vrfy_atomic_cas(atomic_t *target, atomic_val_t old_value,
+		       atomic_val_t new_value)
 {
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(target, sizeof(atomic_t)));
 
 	return z_impl_atomic_cas((atomic_t *)target, old_value, new_value);
 }
 #include <syscalls/atomic_cas_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+bool z_impl_atomic_ptr_cas(atomic_ptr_t *target, void *old_value,
+			   void *new_value)
+{
+	k_spinlock_key_t key;
+	int ret = false;
+
+	key = k_spin_lock(&lock);
+
+	if (*target == old_value) {
+		*target = new_value;
+		ret = true;
+	}
+
+	k_spin_unlock(&lock, key);
+
+	return ret;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline bool z_vrfy_atomic_ptr_cas(atomic_ptr_t *target, void *old_value,
+					 void *new_value)
+{
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(target, sizeof(atomic_ptr_t)));
+
+	return z_impl_atomic_ptr_cas(target, old_value, new_value);
+}
+#include <syscalls/atomic_ptr_cas_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 /**
@@ -183,6 +213,11 @@ atomic_val_t atomic_get(const atomic_t *target)
 	return *target;
 }
 
+void *atomic_ptr_get(const atomic_ptr_t *target)
+{
+	return *target;
+}
+
 /**
  *
  * @brief Atomic get-and-set primitive
@@ -211,6 +246,31 @@ atomic_val_t z_impl_atomic_set(atomic_t *target, atomic_val_t value)
 }
 
 ATOMIC_SYSCALL_HANDLER_TARGET_VALUE(atomic_set);
+
+void *z_impl_atomic_ptr_set(atomic_ptr_t *target, void *value)
+{
+	k_spinlock_key_t key;
+	void *ret;
+
+	key = k_spin_lock(&lock);
+
+	ret = *target;
+	*target = value;
+
+	k_spin_unlock(&lock, key);
+
+	return ret;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline void *z_vrfy_atomic_ptr_set(atomic_ptr_t *target, void *value)
+{
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(target, sizeof(atomic_ptr_t)));
+
+	return z_impl_atomic_ptr_set(target, value);
+}
+#include <syscalls/atomic_ptr_set_mrsh.c>
+#endif /* CONFIG_USERSPACE */
 
 /**
  *

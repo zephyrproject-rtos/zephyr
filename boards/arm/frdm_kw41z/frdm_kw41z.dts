@@ -9,22 +9,17 @@
 	compatible = "nxp,kw41z", "nxp,mkw41z4";
 
 	aliases {
-		adc-0 = &adc0;
-		lpuart-0 = &lpuart0;
-		pinmux-a = &pinmux_a;
-		pinmux-b = &pinmux_b;
-		pinmux-c = &pinmux_c;
-		gpio-a = &gpioa;
-		gpio-b = &gpiob;
-		gpio-c = &gpioc;
-		i2c-0 = &i2c0;
-		i2c-1 = &i2c1;
 		led0 = &green_led;
 		led1 = &blue_led;
 		led2 = &red_led;
 		sw0 = &user_button_3;
 		sw1 = &user_button_4;
-		rtc-0 = &rtc0;
+		pwm-led0 = &blue_pwm_led;
+		pwm-led1 = &green_pwm_led;
+		pwm-led2 = &red_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		red-pwm-led = &red_pwm_led;
 	};
 
 	chosen {
@@ -37,16 +32,32 @@
 	leds {
 		compatible = "gpio-leds";
 		red_led: led_0 {
-			gpios = <&gpioc 1 0>;
+			gpios = <&gpioc 1 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
 		};
 		green_led: led_1 {
-			gpios = <&gpioa 19 0>;
+			gpios = <&gpioa 19 GPIO_ACTIVE_LOW>;
 			label = "User LD2";
 		};
 		blue_led: led_2 {
-			gpios = <&gpioa 18 0>;
+			gpios = <&gpioa 18 GPIO_ACTIVE_LOW>;
 			label = "User LD3";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		blue_pwm_led: pwm_led_0 {
+			pwms = <&tpm2 0 0 0>;
+			label = "User PWM LD1";
+		};
+		green_pwm_led: pwm_led_1 {
+			pwms = <&tpm2 1 0 0>;
+			label = "User PWM LD2";
+		};
+		red_pwm_led: pwm_led_2 {
+			pwms = <&tpm0 2 0 0>;
+			label = "User PWM LD3";
 		};
 	};
 
@@ -54,11 +65,11 @@
 		compatible = "gpio-keys";
 		user_button_3: button_0 {
 			label = "User SW3";
-			gpios = <&gpioc 4 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpioc 4 GPIO_ACTIVE_LOW>;
 		};
 		user_button_4: button_1 {
 			label = "User SW4";
-			gpios = <&gpioc 5 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpioc 5 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -102,11 +113,31 @@
 		compatible = "nxp,fxos8700";
 		reg = <0x1f>;
 		label = "FXOS8700";
-		int1-gpios = <&gpioc 1 0>;
+		int1-gpios = <&gpioc 1 GPIO_ACTIVE_LOW>;
 	};
 };
 
 &lpuart0 {
 	status = "okay";
 	current-speed = <115200>;
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&tpm0 {
+	status = "okay";
+};
+
+&tpm1 {
+	status = "disabled";
+};
+
+&tpm2 {
+	status = "okay";
 };

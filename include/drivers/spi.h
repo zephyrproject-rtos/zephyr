@@ -223,7 +223,7 @@ typedef int (*spi_api_release)(struct device *dev,
  * @brief SPI driver API
  * This is the mandatory API any SPI driver needs to expose.
  */
-struct spi_driver_api {
+__subsystem struct spi_driver_api {
 	spi_api_io transceive;
 #ifdef CONFIG_SPI_ASYNC
 	spi_api_io_async transceive_async;

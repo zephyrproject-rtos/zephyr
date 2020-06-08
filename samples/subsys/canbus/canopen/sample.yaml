@@ -1,0 +1,12 @@
+sample:
+  name: CANopen sample
+tests:
+  sample.subsys.canbus.canopen:
+    tags: CAN
+    depends_on: can
+    platform_whitelist: twr_ke18f frdm_k64f
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "(.*)CANopen stack initialized"

@@ -68,7 +68,7 @@ source "drivers/serial/Kconfig.ns16550"
 
 source "drivers/serial/Kconfig.mcux"
 
-source "drivers/serial/Kconfig.mcux_lpc_usart"
+source "drivers/serial/Kconfig.mcux_flexcomm"
 
 source "drivers/serial/Kconfig.mcux_lpsci"
 
@@ -123,5 +123,7 @@ source "drivers/serial/Kconfig.litex"
 source "drivers/serial/Kconfig.rtt"
 
 source "drivers/serial/Kconfig.xlnx"
+
+source "drivers/serial/Kconfig.xmc4xxx"
 
 endif # SERIAL

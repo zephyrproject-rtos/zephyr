@@ -32,6 +32,15 @@
  * All the Push and Pop operations happen in ISR Context.
  */
 
+
+/**
+ * @brief Tests for Kernel stack objects
+ * @defgroup kernel_stack_tests Stacks
+ * @ingroup all_tests
+ * @{
+ * @}
+ */
+
 #include <ztest.h>
 #include <irq_offload.h>
 

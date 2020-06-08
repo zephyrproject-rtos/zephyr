@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT microchip_enc28j60
+
 #define LOG_MODULE_NAME eth_enc28j60
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
 
@@ -347,7 +349,7 @@ static void eth_enc28j60_init_buffers(struct device *dev)
 
 static void eth_enc28j60_init_mac(struct device *dev)
 {
-	const struct eth_enc28j60_config *config = dev->config->config_info;
+	const struct eth_enc28j60_config *config = dev->config_info;
 	struct eth_enc28j60_runtime *context = dev->driver_data;
 	u8_t data_macon;
 
@@ -397,7 +399,7 @@ static void eth_enc28j60_init_mac(struct device *dev)
 
 static void eth_enc28j60_init_phy(struct device *dev)
 {
-	const struct eth_enc28j60_config *config = dev->config->config_info;
+	const struct eth_enc28j60_config *config = dev->config_info;
 
 	if (config->full_duplex) {
 		eth_enc28j60_write_phy(dev, ENC28J60_PHY_PHCON1,
@@ -408,6 +410,25 @@ static void eth_enc28j60_init_phy(struct device *dev)
 		eth_enc28j60_write_phy(dev, ENC28J60_PHY_PHCON2,
 				       ENC28J60_BIT_PHCON2_HDLDIS);
 	}
+}
+
+static struct net_if *get_iface(struct eth_enc28j60_runtime *ctx,
+				u16_t vlan_tag)
+{
+#if defined(CONFIG_NET_VLAN)
+	struct net_if *iface;
+
+	iface = net_eth_get_vlan_iface(ctx->iface, vlan_tag);
+	if (!iface) {
+		return ctx->iface;
+	}
+
+	return iface;
+#else
+	ARG_UNUSED(vlan_tag);
+
+	return ctx->iface;
+#endif
 }
 
 static int eth_enc28j60_tx(struct device *dev, struct net_pkt *pkt)
@@ -483,9 +504,9 @@ static int eth_enc28j60_tx(struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static int eth_enc28j60_rx(struct device *dev)
+static int eth_enc28j60_rx(struct device *dev, u16_t *vlan_tag)
 {
-	const struct eth_enc28j60_config *config = dev->config->config_info;
+	const struct eth_enc28j60_config *config = dev->config_info;
 	struct eth_enc28j60_runtime *context = dev->driver_data;
 	u16_t lengthfr;
 	u8_t counter;
@@ -541,12 +562,13 @@ static int eth_enc28j60_rx(struct device *dev)
 		lengthfr = frm_len;
 
 		/* Get the frame from the buffer */
-		pkt = net_pkt_rx_alloc_with_buffer(context->iface, frm_len,
-						   AF_UNSPEC, 0,
-						   config->timeout);
+		pkt = net_pkt_rx_alloc_with_buffer(
+			get_iface(context, *vlan_tag), frm_len,
+			AF_UNSPEC, 0, K_MSEC(config->timeout));
 		if (!pkt) {
 			LOG_ERR("Could not allocate rx buffer");
-			eth_stats_update_errors_rx(context->iface);
+			eth_stats_update_errors_rx(get_iface(context,
+							     *vlan_tag));
 			goto done;
 		}
 
@@ -587,9 +609,32 @@ static int eth_enc28j60_rx(struct device *dev)
 			eth_enc28j60_read_mem(dev, NULL, 1);
 		}
 
+#if defined(CONFIG_NET_VLAN)
+		struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
+
+		if (ntohs(hdr->type) == NET_ETH_PTYPE_VLAN) {
+			struct net_eth_vlan_hdr *hdr_vlan =
+				(struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
+
+			net_pkt_set_vlan_tci(pkt, ntohs(hdr_vlan->vlan.tci));
+			*vlan_tag = net_pkt_vlan_tag(pkt);
+
+#if CONFIG_NET_TC_RX_COUNT > 1
+			enum net_priority prio;
+
+			prio = net_vlan2priority(net_pkt_vlan_priority(pkt));
+			net_pkt_set_priority(pkt, prio);
+#endif
+		} else {
+			net_pkt_set_iface(pkt, context->iface);
+		}
+#else /* CONFIG_NET_VLAN */
+		net_pkt_set_iface(pkt, context->iface);
+#endif /* CONFIG_NET_VLAN */
+
 		/* Feed buffer frame to IP stack */
 		LOG_DBG("Received packet of length %u", lengthfr);
-		if (net_recv_data(context->iface, pkt) < 0) {
+		if (net_recv_data(net_pkt_iface(pkt), pkt) < 0) {
 			net_pkt_unref(pkt);
 		}
 done:
@@ -615,6 +660,7 @@ done:
 static void eth_enc28j60_rx_thread(struct device *dev)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
+	u16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	u8_t int_stat;
 
 	while (true) {
@@ -622,7 +668,7 @@ static void eth_enc28j60_rx_thread(struct device *dev)
 
 		eth_enc28j60_read_reg(dev, ENC28J60_REG_EIR, &int_stat);
 		if (int_stat & ENC28J60_BIT_EIR_PKTIF) {
-			eth_enc28j60_rx(dev);
+			eth_enc28j60_rx(dev, &vlan_tag);
 			/* Clear rx interruption flag */
 			eth_enc28j60_clear_eth_reg(dev, ENC28J60_REG_EIR,
 						   ENC28J60_BIT_EIR_PKTIF
@@ -635,7 +681,11 @@ static enum ethernet_hw_caps eth_enc28j60_get_capabilities(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_LINK_10BASE_T;
+	return ETHERNET_LINK_10BASE_T
+#if defined(CONFIG_NET_VLAN)
+		| ETHERNET_HW_VLAN
+#endif
+		;
 }
 
 static void eth_enc28j60_iface_init(struct net_if *iface)
@@ -646,7 +696,15 @@ static void eth_enc28j60_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, context->mac_address,
 			     sizeof(context->mac_address),
 			     NET_LINK_ETHERNET);
-	context->iface = iface;
+
+	/* For VLAN, this value is only used to get the correct L2 driver.
+	 * The iface pointer in context should contain the main interface
+	 * if the VLANs are enabled.
+	 */
+	if (context->iface == NULL) {
+		context->iface = iface;
+	}
+
 	ethernet_init(iface);
 }
 
@@ -659,7 +717,7 @@ static const struct ethernet_api api_funcs = {
 
 static int eth_enc28j60_init(struct device *dev)
 {
-	const struct eth_enc28j60_config *config = dev->config->config_info;
+	const struct eth_enc28j60_config *config = dev->config_info;
 	struct eth_enc28j60_runtime *context = dev->driver_data;
 
 	/* SPI config */
@@ -674,7 +732,7 @@ static int eth_enc28j60_init(struct device *dev)
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_ETH_ENC28J60_0_GPIO_SPI_CS
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	context->spi_cs.gpio_dev =
 		device_get_binding((char *)config->spi_cs_port);
 	if (!context->spi_cs.gpio_dev) {
@@ -684,7 +742,7 @@ static int eth_enc28j60_init(struct device *dev)
 
 	context->spi_cs.gpio_pin = config->spi_cs_pin;
 	context->spi_cfg.cs = &context->spi_cs;
-#endif /* CONFIG_ETH_ENC28J60_0_GPIO_SPI_CS */
+#endif
 
 	/* Initialize GPIO */
 	context->gpio = device_get_binding((char *)config->gpio_port);
@@ -694,10 +752,8 @@ static int eth_enc28j60_init(struct device *dev)
 	}
 
 	if (gpio_pin_configure(context->gpio, config->gpio_pin,
-			       (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE
-			       | GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE))) {
-		LOG_ERR("Unable to configure GPIO pin %u",
-			    config->gpio_pin);
+			       GPIO_INPUT | config->gpio_flags)) {
+		LOG_ERR("Unable to configure GPIO pin %u", config->gpio_pin);
 		return -EINVAL;
 	}
 
@@ -708,9 +764,9 @@ static int eth_enc28j60_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	if (gpio_pin_enable_callback(context->gpio, config->gpio_pin)) {
-		return -EINVAL;
-	}
+	gpio_pin_interrupt_configure(context->gpio,
+				     config->gpio_pin,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 
 	if (eth_enc28j60_soft_reset(dev)) {
 		LOG_ERR("Soft-reset failed");
@@ -753,7 +809,7 @@ static int eth_enc28j60_init(struct device *dev)
 #ifdef CONFIG_ETH_ENC28J60_0
 
 static struct eth_enc28j60_runtime eth_enc28j60_0_runtime = {
-	.mac_address = DT_INST_0_MICROCHIP_ENC28J60_LOCAL_MAC_ADDRESS,
+	.mac_address = DT_INST_PROP(0, local_mac_address),
 	.tx_rx_sem = Z_SEM_INITIALIZER(eth_enc28j60_0_runtime.tx_rx_sem,
 					1,  UINT_MAX),
 	.int_sem  = Z_SEM_INITIALIZER(eth_enc28j60_0_runtime.int_sem,
@@ -761,23 +817,23 @@ static struct eth_enc28j60_runtime eth_enc28j60_0_runtime = {
 };
 
 static const struct eth_enc28j60_config eth_enc28j60_0_config = {
-	.gpio_port = DT_INST_0_MICROCHIP_ENC28J60_INT_GPIOS_CONTROLLER,
-	.gpio_pin = DT_INST_0_MICROCHIP_ENC28J60_INT_GPIOS_PIN,
-	.spi_port = DT_INST_0_MICROCHIP_ENC28J60_BUS_NAME,
-	.spi_freq  = DT_INST_0_MICROCHIP_ENC28J60_SPI_MAX_FREQUENCY,
-	.spi_slave = DT_INST_0_MICROCHIP_ENC28J60_BASE_ADDRESS,
-#ifdef CONFIG_ETH_ENC28J60_0_GPIO_SPI_CS
-	.spi_cs_port = DT_INST_0_MICROCHIP_ENC28J60_CS_GPIOS_CONTROLLER,
-	.spi_cs_pin = DT_INST_0_MICROCHIP_ENC28J60_CS_GPIOS_PIN,
-#endif /* CONFIG_ETH_ENC28J60_0_GPIO_SPI_CS */
+	.gpio_port = DT_INST_GPIO_LABEL(0, int_gpios),
+	.gpio_pin = DT_INST_GPIO_PIN(0, int_gpios),
+	.gpio_flags = DT_INST_GPIO_FLAGS(0, int_gpios),
+	.spi_port = DT_INST_BUS_LABEL(0),
+	.spi_freq  = DT_INST_PROP(0, spi_max_frequency),
+	.spi_slave = DT_INST_REG_ADDR(0),
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
+	.spi_cs_port = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
+	.spi_cs_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
+#endif
 	.full_duplex = IS_ENABLED(CONFIG_ETH_ENC28J60_0_FULL_DUPLEX),
 	.timeout = CONFIG_ETH_ENC28J60_TIMEOUT,
 };
 
-NET_DEVICE_INIT(enc28j60_0, DT_INST_0_MICROCHIP_ENC28J60_LABEL,
-		eth_enc28j60_init, &eth_enc28j60_0_runtime,
-		&eth_enc28j60_0_config, CONFIG_ETH_INIT_PRIORITY, &api_funcs,
-		ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2),
-		NET_ETH_MTU);
+ETH_NET_DEVICE_INIT(enc28j60_0, DT_INST_LABEL(0),
+		    eth_enc28j60_init, device_pm_control_nop,
+		    &eth_enc28j60_0_runtime, &eth_enc28j60_0_config,
+		    CONFIG_ETH_INIT_PRIORITY, &api_funcs, NET_ETH_MTU);
 
 #endif /* CONFIG_ETH_ENC28J60_0 */

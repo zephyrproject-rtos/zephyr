@@ -6,6 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT microchip_enc424j600
+
 #include <zephyr.h>
 #include <device.h>
 #include <string.h>
@@ -342,7 +344,7 @@ static int enc424j600_tx(struct device *dev, struct net_pkt *pkt)
 static int enc424j600_rx(struct device *dev)
 {
 	struct enc424j600_runtime *context = dev->driver_data;
-	const struct enc424j600_config *config = dev->config->config_info;
+	const struct enc424j600_config *config = dev->config_info;
 	u8_t info[ENC424J600_RSV_SIZE + ENC424J600_PTR_NXP_PKT_SIZE];
 	struct net_buf *pkt_buf = NULL;
 	struct net_pkt *pkt;
@@ -383,7 +385,7 @@ static int enc424j600_rx(struct device *dev)
 	/* Get the frame from the buffer */
 	pkt = net_pkt_rx_alloc_with_buffer(context->iface, frm_len,
 					   AF_UNSPEC, 0,
-					   config->timeout);
+					   K_MSEC(config->timeout));
 	if (!pkt) {
 		LOG_ERR("Could not allocate rx buffer");
 		eth_stats_update_errors_rx(context->iface);
@@ -594,7 +596,7 @@ static const struct ethernet_api api_funcs = {
 
 static int enc424j600_init(struct device *dev)
 {
-	const struct enc424j600_config *config = dev->config->config_info;
+	const struct enc424j600_config *config = dev->config_info;
 	struct enc424j600_runtime *context = dev->driver_data;
 	u8_t retries = ENC424J600_DEFAULT_NUMOF_RETRIES;
 	u16_t tmp;
@@ -610,7 +612,7 @@ static int enc424j600_init(struct device *dev)
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_ETH_ENC424J600_0_GPIO_SPI_CS
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	context->spi_cs.gpio_dev =
 		device_get_binding((char *)config->spi_cs_port);
 	if (!context->spi_cs.gpio_dev) {
@@ -620,7 +622,7 @@ static int enc424j600_init(struct device *dev)
 
 	context->spi_cs.gpio_pin = config->spi_cs_pin;
 	context->spi_cfg.cs = &context->spi_cs;
-#endif /* CONFIG_ETH_ENC424J600_0_GPIO_SPI_CS */
+#endif
 
 	/* Initialize GPIO */
 	context->gpio = device_get_binding((char *)config->gpio_port);
@@ -630,10 +632,8 @@ static int enc424j600_init(struct device *dev)
 	}
 
 	if (gpio_pin_configure(context->gpio, config->gpio_pin,
-			       (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE
-			       | GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE))) {
-		LOG_ERR("Unable to configure GPIO pin %u",
-			    config->gpio_pin);
+			       GPIO_INPUT | config->gpio_flags)) {
+		LOG_ERR("Unable to configure GPIO pin %u", config->gpio_pin);
 		return -EINVAL;
 	}
 
@@ -644,9 +644,9 @@ static int enc424j600_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	if (gpio_pin_enable_callback(context->gpio, config->gpio_pin)) {
-		return -EINVAL;
-	}
+	gpio_pin_interrupt_configure(context->gpio,
+				     config->gpio_pin,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 
 	/* Check SPI connection */
 	do {
@@ -754,19 +754,20 @@ static struct enc424j600_runtime enc424j600_0_runtime = {
 };
 
 static const struct enc424j600_config enc424j600_0_config = {
-	.gpio_port = DT_INST_0_MICROCHIP_ENC424J600_INT_GPIOS_CONTROLLER,
-	.gpio_pin = DT_INST_0_MICROCHIP_ENC424J600_INT_GPIOS_PIN,
-	.spi_port = DT_INST_0_MICROCHIP_ENC424J600_BUS_NAME,
-	.spi_freq  = DT_INST_0_MICROCHIP_ENC424J600_SPI_MAX_FREQUENCY,
-	.spi_slave = DT_INST_0_MICROCHIP_ENC424J600_BASE_ADDRESS,
-#ifdef CONFIG_ETH_ENC424J600_0_GPIO_SPI_CS
-	.spi_cs_port = DT_INST_0_MICROCHIP_ENC424J600_CS_GPIOS_CONTROLLER,
-	.spi_cs_pin = DT_INST_0_MICROCHIP_ENC424J600_CS_GPIOS_PIN,
-#endif /* CONFIG_ETH_ENC424J600_0_GPIO_SPI_CS */
+	.gpio_port = DT_INST_GPIO_LABEL(0, int_gpios),
+	.gpio_pin = DT_INST_GPIO_PIN(0, int_gpios),
+	.gpio_flags = DT_INST_GPIO_FLAGS(0, int_gpios),
+	.spi_port = DT_INST_BUS_LABEL(0),
+	.spi_freq  = DT_INST_PROP(0, spi_max_frequency),
+	.spi_slave = DT_INST_REG_ADDR(0),
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
+	.spi_cs_port = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
+	.spi_cs_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
+#endif
 	.timeout = CONFIG_ETH_ENC424J600_TIMEOUT,
 };
 
-ETH_NET_DEVICE_INIT(enc424j600_0, DT_INST_0_MICROCHIP_ENC424J600_LABEL,
-		    enc424j600_init, &enc424j600_0_runtime,
-		    &enc424j600_0_config, CONFIG_ETH_INIT_PRIORITY, &api_funcs,
-		    NET_ETH_MTU);
+ETH_NET_DEVICE_INIT(enc424j600_0, DT_INST_LABEL(0),
+		    enc424j600_init, device_pm_control_nop,
+		    &enc424j600_0_runtime, &enc424j600_0_config,
+		    CONFIG_ETH_INIT_PRIORITY, &api_funcs, NET_ETH_MTU);

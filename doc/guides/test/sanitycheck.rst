@@ -1,4 +1,3 @@
-
 .. _sanitycheck_script:
 
 Sanity Tests
@@ -13,7 +12,7 @@ boards and will run in an emulated environment if available for the
 architecture or configuration being tested.
 
 In normal use, sanitycheck runs a limited set of kernel tests (inside
-an emulator).  Because of its limited text execution coverage, sanitycheck
+an emulator).  Because of its limited test execution coverage, sanitycheck
 cannot guarantee local changes will succeed in the full build
 environment, but it does sufficient testing by building samples and
 tests for different boards and different configurations to help keep the
@@ -92,7 +91,6 @@ required for best test coverage for this specific board:
     - gpio
     - usb_device
     - watchdog
-    - hwinfo
     - can
     - pwm
   testing:
@@ -105,9 +103,9 @@ identifier:
   ``cmake``::
 
      # with west
-     west build -b tinytile
+     west build -b reel_board
      # with cmake
-     cmake -DBOARD=tinytile ..
+     cmake -DBOARD=reel_board ..
 
 name:
   The actual name of the board as it appears in marketing material.
@@ -356,8 +354,9 @@ harness_config: <harness configuration options>
         specific test setup and board selection logic to pick the particular
         board(s) out of multiple boards that fulfill the dependency in an
         automation setup based on "fixture" keyword. Some sample fixture names
-        are fixture_i2c_hts221, fixture_i2c_bme280, fixture_i2c_FRAM,
-        fixture_ble_fw and fixture_gpio_loop.
+        are i2c_hts221, i2c_bme280, i2c_FRAM, ble_fw and gpio_loop.
+
+        Only one fixture can be defined per testcase.
 
     The following is an example yaml file with a few harness_config options.
 
@@ -374,7 +373,7 @@ harness_config: <harness configuration options>
              regex:
                - "Temperature:(.*)C"
                - "Relative Humidity:(.*)%"
-             fixture: fixture_i2c_hts221
+             fixture: i2c_hts221
          tests:
            test:
              tags: sensors
@@ -513,7 +512,7 @@ devices, for example::
 Any options marked as 'unknown' need to be changed and set with the correct
 values, in the above example both the platform names and the runners need to be
 replaced with the correct values corresponding to the connected hardware. In
-this example we are using a reel_board and an nrf52840_pca10056::
+this example we are using a reel_board and an nrf52840dk_nrf52840::
 
   - available: true
     id: OSHW000032254e4500128002ab98002784d1000097969900
@@ -523,7 +522,7 @@ this example we are using a reel_board and an nrf52840_pca10056::
     serial: /dev/cu.usbmodem146114202
   - available: true
     id: 000683759358
-    platform: nrf52840_pca10056
+    platform: nrf52840dk_nrf52840
     product: J-Link
     runner: nrfjprog
     serial: /dev/cu.usbmodem0006837593581
@@ -547,6 +546,30 @@ on those platforms.
   with the hardware map features. Boards that require other runners to flash the
   Zephyr binary are still work in progress.
 
-To produce test reports, use the ``--detailed-report FILENAME`` option which will
-generate an XML file using the JUNIT syntax. This file can be used to generate
-other reports, for example using ``junit2html`` which can be installed via PIP.
+Fixtures
++++++++++
+
+Some tests require additional setup or special wiring specific to the test.
+Running the tests without this setup or test fixture may fail. A testcase can
+specify the fixture it needs which can then be matched with hardware capability
+of a board and the fixtures it supports via the command line or using the hardware
+map file.
+
+Fixtures are defined in the hardware map file as a list::
+
+      - available: true
+        connected: true
+        fixtures:
+          - gpio_loopback
+        id: 0240000026334e450015400f5e0e000b4eb1000097969900
+        platform: frdm_k64f
+        product: DAPLink CMSIS-DAP
+        runner: pyocd
+        serial: /dev/ttyACM9
+
+When running `sanitycheck` with ``--device-testing``, the configured fixture
+in the hardware map file will be matched to testcases requesting the same fixtures
+and these tests will be executed on the boards that provide this fixture.
+
+.. figure:: fixtures.svg
+   :figclass: align-center

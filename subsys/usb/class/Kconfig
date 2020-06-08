@@ -91,21 +91,23 @@ config USB_DEVICE_BLUETOOTH
 	help
 	  USB Bluetooth device class driver
 
-config BLUETOOTH_INT_EP_MPS
-	int "Bluetooth device class interrupt endpoint size"
+config USB_DEVICE_BLUETOOTH_VS_H4
+	bool "Enable USB Bluetooth H4 vendor command"
 	depends on USB_DEVICE_BLUETOOTH
-	default 16
-	range 8 64
+	select BT_HCI_RAW_H4
+	select BT_HCI_RAW_CMD_EXT
 	help
-	  Bluetooth device class interrupt endpoint size
+	  Enables vendor command to switch to H:4 transport using the bulk
+	  endpoint.
 
-config BLUETOOTH_BULK_EP_MPS
-	int
-	depends on USB_DEVICE_BLUETOOTH
-	default 64
-	range 8 64
+config USB_DEVICE_BT_H4
+	bool "USB Bluetooth H4 Device Class Driver"
+	select BT
+	select BT_HCI_RAW
+	select BT_HCI_RAW_H4
+	select BT_HCI_RAW_H4_ENABLE
 	help
-	  Bluetooth device class bulk endpoint size
+	  USB Bluetooth H4 device class driver
 
 config USB_DEVICE_LOOPBACK
 	bool "USB Loopback Function Driver"
@@ -122,6 +124,8 @@ config LOOPBACK_BULK_EP_MPS
 source "subsys/usb/class/netusb/Kconfig"
 
 source "subsys/usb/class/hid/Kconfig"
+
+source "subsys/usb/class/audio/Kconfig"
 
 config USB_DFU_CLASS
 	bool "USB DFU Class Driver"

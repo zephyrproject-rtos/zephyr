@@ -33,11 +33,11 @@ static int board_reel_board_init(struct device *dev)
 	 * (High-Impedance state of pin B from Dual-Supply Bus Transceiver).
 	 */
 	gpio = NRF_P0;
-	gpio->PIN_CNF[DT_INST_0_NORDIC_NRF_UART_RX_PIN] =
+	gpio->PIN_CNF[DT_PROP(DT_INST(0, nordic_nrf_uart), rx_pin)] =
 		(GPIO_PIN_CNF_INPUT_Disconnect << GPIO_PIN_CNF_INPUT_Pos) |
 		(GPIO_PIN_CNF_PULL_Pullup << GPIO_PIN_CNF_PULL_Pos) |
 		(GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos);
-	gpio->PIN_CNF[DT_INST_0_NORDIC_NRF_UART_TX_PIN] =
+	gpio->PIN_CNF[DT_PROP(DT_INST(0, nordic_nrf_uart), tx_pin)] =
 		(GPIO_PIN_CNF_INPUT_Disconnect << GPIO_PIN_CNF_INPUT_Pos) |
 		(GPIO_PIN_CNF_PULL_Pullup << GPIO_PIN_CNF_PULL_Pos) |
 		(GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos);

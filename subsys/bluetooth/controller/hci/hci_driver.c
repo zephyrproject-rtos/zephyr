@@ -62,11 +62,6 @@ static K_THREAD_STACK_DEFINE(prio_recv_thread_stack,
 struct k_thread recv_thread_data;
 static K_THREAD_STACK_DEFINE(recv_thread_stack, CONFIG_BT_RX_STACK_SIZE);
 
-#if defined(CONFIG_INIT_STACKS)
-static u32_t prio_ts;
-static u32_t rx_ts;
-#endif
-
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 static struct k_poll_signal hbuf_signal =
 		K_POLL_SIGNAL_INITIALIZER(hbuf_signal);
@@ -76,27 +71,7 @@ static s32_t hbuf_count;
 
 static struct net_buf *process_prio_evt(struct node_rx_pdu *node_rx)
 {
-/* Currently the only event processed */
-#if defined(CONFIG_BT_REMOTE_VERSION)
-	struct pdu_data *pdu_data = PDU_DATA(node_rx);
-	struct net_buf *buf;
-	u16_t handle;
-
-	/* Avoid using hci_get_class() to speed things up */
-	if (node_rx->hdr.user_meta == HCI_CLASS_EVT_LLCP) {
-
-		handle = node_rx->hdr.handle;
-		if (pdu_data->llctrl.opcode ==
-		    PDU_DATA_LLCTRL_TYPE_VERSION_IND) {
-
-			buf = bt_buf_get_evt(BT_HCI_EVT_REMOTE_VERSION_INFO,
-					     false, K_FOREVER);
-			hci_remote_version_info_encode(buf, pdu_data, handle);
-			return buf;
-		}
-	}
-
-#endif /* CONFIG_BT_CONN */
+	/* Currently there are no events processed */
 	return NULL;
 }
 
@@ -140,6 +115,10 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 
 			buf = process_prio_evt(node_rx);
 			if (buf) {
+
+				node_rx->hdr.next = NULL;
+				ll_rx_mem_release((void **)&node_rx);
+
 				BT_DBG("Priority event");
 				bt_recv_prio(buf);
 			} else {
@@ -166,14 +145,6 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 		k_sem_take(&sem_prio_recv, K_FOREVER);
 		/* Now, ULL mayfly has something to give to us */
 		BT_DBG("sem taken");
-
-#if defined(CONFIG_INIT_STACKS)
-		if (k_uptime_get_32() - prio_ts > K_SECONDS(5)) {
-			STACK_ANALYZE("prio recv thread stack",
-				      prio_recv_thread_stack);
-			prio_ts = k_uptime_get_32();
-		}
-#endif
 	}
 }
 
@@ -209,14 +180,6 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 		LL_ASSERT(0);
 		break;
 	}
-
-#if defined(CONFIG_BT_LL_SW_LEGACY)
-	{
-		extern u8_t radio_rx_fc_set(u16_t handle, u8_t fc);
-
-		radio_rx_fc_set(node_rx->hdr.handle, 0);
-	}
-#endif /* CONFIG_BT_LL_SW_LEGACY */
 
 	node_rx->hdr.next = NULL;
 	ll_rx_mem_release((void **)&node_rx);
@@ -385,7 +348,7 @@ static void recv_thread(void *p1, void *p2, void *p3)
 			events[0].signal->signaled = 0U;
 		} else if (events[1].state ==
 			   K_POLL_STATE_FIFO_DATA_AVAILABLE) {
-			node_rx = k_fifo_get(events[1].fifo, 0);
+			node_rx = k_fifo_get(events[1].fifo, K_NO_WAIT);
 		}
 
 		events[0].state = K_POLL_STATE_NOT_READY;
@@ -415,13 +378,6 @@ static void recv_thread(void *p1, void *p2, void *p3)
 		}
 
 		k_yield();
-
-#if defined(CONFIG_INIT_STACKS)
-		if (k_uptime_get_32() - rx_ts > K_SECONDS(5)) {
-			STACK_ANALYZE("recv thread stack", recv_thread_stack);
-			rx_ts = k_uptime_get_32();
-		}
-#endif
 	}
 }
 

@@ -8,10 +8,13 @@ menuconfig NET_PPP
 	bool "Point-to-point (PPP) UART based driver"
 	depends on NET_L2_PPP
 	depends on NET_NATIVE
-	select UART_PIPE
-	select UART_INTERRUPT_DRIVEN
+	select UART_MUX if GSM_MUX
 
 if NET_PPP
+
+config NET_PPP_UART_NAME
+	string "UART device name the PPP is connected to"
+	depends on !MODEM_GSM_PPP
 
 config NET_PPP_DRV_NAME
 	string "PPP Driver name"
@@ -19,12 +22,31 @@ config NET_PPP_DRV_NAME
 	help
 	  This option sets the driver name
 
-config NET_PPP_UART_PIPE_BUF_LEN
+config NET_PPP_UART_BUF_LEN
 	int "Buffer length when reading from UART"
 	default 8
 	help
-	  This options sets the size of the UART pipe buffer where data
+	  This options sets the size of the UART buffer where data
 	  is being read to.
+
+config NET_PPP_RINGBUF_SIZE
+	int "PPP ring buffer size"
+	default 256
+	help
+	  PPP ring buffer size when passing data from RX ISR to worker
+	  thread that will pass the data to IP stack.
+
+config NET_PPP_RX_STACK_SIZE
+	int "Size of the stack allocated for receiving data from modem"
+	default 768
+	help
+	  Sets the stack size which will be used by the PPP RX workqueue.
+
+config NET_PPP_RX_PRIORITY
+	int "RX workqueue thread priority"
+	default 7
+	help
+	  Sets the priority of the RX workqueue thread.
 
 config NET_PPP_VERIFY_FCS
 	bool "Verify that received FCS is valid"
@@ -42,6 +64,12 @@ config PPP_MAC_ADDR
 	  aa:33:cc:22:e2:c0).  The default is an empty string, which
 	  means the code will make 00:00:5E:00:53:XX, where XX will be
 	  random.
+
+config PPP_CLIENT_CLIENTSERVER
+	bool "Reply to the request CLIENT with CLIENTSERVER"
+	help
+	  This is only necessary if a ppp connection should be
+	  established with a Microsoft Windows PC.
 
 module = NET_PPP
 module-dep = LOG

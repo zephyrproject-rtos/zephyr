@@ -16,6 +16,7 @@
 #include <stdint.h>
 
 #include <openthread/instance.h>
+#include <net/net_pkt.h>
 
 /**
  * This function initializes the alarm service used by OpenThread.
@@ -46,6 +47,14 @@ void platformRadioInit(void);
 void platformRadioProcess(otInstance *aInstance);
 
 /**
+ * This function performs UART driver processing.
+ *
+ * @param[in]  aInstance  The OpenThread instance structure.
+ *
+ */
+void platformUartProcess(otInstance *aInstance);
+
+/**
  * Get current channel from radio driver.
  *
  * @param[in]  aInstance  The OpenThread instance structure.
@@ -66,5 +75,11 @@ void platformRandomInit(void);
  *  Initialize platform Shell driver.
  */
 void platformShellInit(otInstance *aInstance);
+
+
+/**
+ * Notify OpenThread task about new rx message.
+ */
+int notify_new_rx_frame(struct net_pkt *pkt);
 
 #endif  /* PLATFORM_POSIX_H_ */

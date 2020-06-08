@@ -17,12 +17,13 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,ccm = &ccm0;
+		zephyr,can-primary = &can1;
 	};
 
 	leds {
 		compatible = "gpio-leds";
 		green_led_1: led_1 {
-			gpios = <&gpioc 12 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpioc 12 GPIO_ACTIVE_HIGH>;
 			label = "LED1";
 		};
 	};
@@ -31,7 +32,7 @@
 		compatible = "gpio-keys";
 		user_button: button {
 			label = "Key";
-			gpios = <&gpioa 0 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -52,5 +53,9 @@
 
 &can1 {
 	bus-speed = <125000>;
+	status = "okay";
+};
+
+&rng {
 	status = "okay";
 };

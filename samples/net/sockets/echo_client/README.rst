@@ -59,15 +59,33 @@ Build echo-client sample application like this:
    :goals: build
    :compact:
 
-Example building for the nRF52840_pca10056 with OpenThread support:
+Example building for the nrf52840dk_nrf52840 with OpenThread support:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/sockets/echo_client
    :host-os: unix
-   :board: nrf52840_pca10056
+   :board: nrf52840dk_nrf52840
    :conf: "prj.conf overlay-ot.conf"
    :goals: run
    :compact:
+
+Example building for the IEEE 802.15.4 RF2XX transceiver:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/sockets/echo_client
+   :host-os: unix
+   :board: [atsamr21_xpro | sam4s_xplained | sam_v71_xult]
+   :gen-args: -DOVERLAY_CONFIG=overlay-802154.conf
+   :goals: build flash
+   :compact:
+
+In a terminal window you can check if communication is happen:
+
+.. code-block:: console
+
+    $ minicom -D /dev/ttyACM1
+
+
 
 Enabling TLS support
 ====================

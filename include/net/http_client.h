@@ -174,7 +174,7 @@ struct http_client_internal_data {
 	int sock;
 
 	/** Request timeout */
-	s32_t timeout;
+	k_timeout_t timeout;
 };
 
 /**
@@ -238,7 +238,9 @@ struct http_request {
 	/** Payload, may be NULL */
 	const char *payload;
 
-	/** Payload length, may be 0. Only used if payload field is not NULL */
+	/** Payload length is used to calculate Content-Length. Set to 0
+	 * for chunked transfers.
+	 */
 	size_t payload_len;
 
 	/** User supplied callback function to call when optional headers need
@@ -271,6 +273,7 @@ struct http_request {
  * @param req HTTP request information
  * @param timeout Max timeout to wait for the data. The timeout value cannot be
  *        0 as there would be no time to receive the data.
+ *        The timeout value is in milliseconds.
  * @param user_data User specified data that is passed to the callback.
  *
  * @return <0 if error, >=0 amount of data sent to the server

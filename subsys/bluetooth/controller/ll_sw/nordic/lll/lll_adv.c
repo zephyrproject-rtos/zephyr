@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 Nordic Semiconductor ASA
+ * Copyright (c) 2018-2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,7 @@
 
 #include "lll.h"
 #include "lll_vendor.h"
+#include "lll_clock.h"
 #include "lll_adv.h"
 #include "lll_conn.h"
 #include "lll_chan.h"
@@ -105,7 +106,7 @@ void lll_adv_prepare(void *param)
 	struct lll_prepare_param *p = param;
 	int err;
 
-	err = lll_clk_on();
+	err = lll_hfclock_on();
 	LL_ASSERT(!err || err == -EINPROGRESS);
 
 	err = lll_prepare(is_abort_cb, abort_cb, prepare_cb, 0, p);
@@ -120,7 +121,7 @@ static int init_reset(void)
 static int prepare_cb(struct lll_prepare_param *prepare_param)
 {
 	struct lll_adv *lll = prepare_param->param;
-	u32_t aa = sys_cpu_to_le32(0x8e89bed6);
+	u32_t aa = sys_cpu_to_le32(PDU_AC_ACCESS_ADDR);
 	u32_t ticks_at_event, ticks_at_start;
 	struct evt_hdr *evt;
 	u32_t remainder_us;
@@ -134,7 +135,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	if (lll_is_stop(lll)) {
 		int err;
 
-		err = lll_clk_off();
+		err = lll_hfclock_off();
 		LL_ASSERT(!err || err == -EBUSY);
 
 		lll_done(NULL);
@@ -144,8 +145,11 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	}
 
 	radio_reset();
-	/* TODO: other Tx Power settings */
+#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
+	radio_tx_power_set(lll->tx_pwr_lvl);
+#else
 	radio_tx_power_set(RADIO_TXP_DEFAULT);
+#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	/* TODO: if coded we use S8? */
@@ -267,7 +271,7 @@ static int is_abort_cb(void *next, int prio, void *curr,
 			*resume_prio = 0; /* TODO: */
 
 			/* Retain HF clk */
-			err = lll_clk_on();
+			err = lll_hfclock_on();
 			LL_ASSERT(!err || err == -EINPROGRESS);
 
 			return -EAGAIN;
@@ -305,7 +309,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	/* NOTE: Else clean the top half preparations of the aborted event
 	 * currently in preparation pipeline.
 	 */
-	err = lll_clk_off();
+	err = lll_hfclock_off();
 	LL_ASSERT(!err || err == -EBUSY);
 
 	lll_done(param);
@@ -316,7 +320,6 @@ static void isr_tx(void *param)
 	u32_t hcto;
 
 	/* TODO: MOVE to a common interface, isr_lll_radio_status? */
-
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_latency_capture();
 	}
@@ -331,17 +334,19 @@ static void isr_tx(void *param)
 	}
 	/* TODO: MOVE ^^ */
 
-	radio_isr_set(isr_rx, param);
+	/* setup tIFS switching */
 	radio_tmr_tifs_set(EVENT_IFS_US);
 	radio_switch_complete_and_tx(0, 0, 0, 0);
-	radio_pkt_rx_set(radio_pkt_scratch_get());
 
+	radio_pkt_rx_set(radio_pkt_scratch_get());
 	/* assert if radio packet ptr is not set and radio started rx */
 	LL_ASSERT(!radio_is_ready());
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_cputime_capture();
 	}
+
+	radio_isr_set(isr_rx, param);
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (ull_filter_lll_rl_enabled()) {
@@ -570,9 +575,13 @@ static void isr_cleanup(void *param)
 	int err;
 
 	radio_isr_set(isr_race, param);
+	if (!radio_is_idle()) {
+		radio_disable();
+	}
+
 	radio_tmr_stop();
 
-	err = lll_clk_off();
+	err = lll_hfclock_off();
 	LL_ASSERT(!err || err == -EBUSY);
 
 	lll_done(NULL);
@@ -593,6 +602,7 @@ static void chan_prepare(struct lll_adv *lll)
 
 	pdu = lll_adv_data_latest_get(lll, &upd);
 	scan_pdu = lll_adv_scan_rsp_latest_get(lll, &upd);
+
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (upd) {
 		/* Copy the address from the adv packet we will send into the

@@ -1,0 +1,14 @@
+# nRF51 DK NRF51422 board configuration
+
+# Copyright (c) 2016 Linaro Limited.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NRF51DK_NRF51422
+
+config BOARD
+	default "nrf51dk_nrf51422"
+
+config BT_CTLR
+	default BT
+
+endif # BOARD_NRF51DK_NRF51422

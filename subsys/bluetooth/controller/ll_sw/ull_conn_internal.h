@@ -7,15 +7,52 @@
 /* Macro to convert time in us to connection interval units */
 #define RADIO_CONN_EVENTS(x, y) ((u16_t)(((x) + (y) - 1) / (y)))
 
-/* Macro to return PDU time */
+/*
+ * Macros to return correct Data Channel PDU time
+ * Note: formula is valid for 1M, 2M and Coded S8
+ * see BT spec Version 5.1 Vol 6. Part B, chapters 2.1 and 2.2
+ * for packet formats and thus lengths
+ *
+ * Payload overhead size is the Data Channel PDU Header + the MIC
+ */
+#define PAYLOAD_OVERHEAD_SIZE (2 + 4)
+
+#define PHY_1M BIT(0)
+#define PHY_2M BIT(1)
+#define PHY_CODED BIT(2)
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-#define PKT_US(octets, phy) \
-	(((phy) & BIT(2)) ? \
-	 (80 + 256 + 16 + 24 + ((((2 + (octets) + 4) * 8) + 24 + 3) * 8)) : \
-	 (((octets) + 14) * 8 / BIT(((phy) & 0x03) >> 1)))
+#define CODED_PHY_PREAMBLE_TIME_US (80)
+#define CODED_PHY_ACCESS_ADDRESS_TIME_US (256)
+#define CODED_PHY_CI_TIME_US (16)
+#define CODED_PHY_TERM1_TIME_US (24)
+#define CODED_PHY_CRC_SIZE (24)
+#define CODED_PHY_TERM2_SIZE (3)
+
+#define FEC_BLOCK1_TIME_US (CODED_PHY_ACCESS_ADDRESS_TIME_US + \
+			    CODED_PHY_CI_TIME_US + \
+			    CODED_PHY_TERM1_TIME_US)
+#define FEC_BLOCK2_TIME_US(octets) ((((PAYLOAD_OVERHEAD_SIZE + \
+				       (octets)) * 8) + \
+				     CODED_PHY_CRC_SIZE + \
+				     CODED_PHY_TERM2_SIZE) * 8)
+
+#define PKT_US(octets, phy) (((phy) & PHY_CODED) ?		   \
+			     (CODED_PHY_PREAMBLE_TIME_US + \
+			      FEC_BLOCK1_TIME_US + \
+			      FEC_BLOCK2_TIME_US(octets)) : \
+			     (((PREAMBLE_SIZE(phy) + \
+				ACCESS_ADDR_SIZE + \
+				PAYLOAD_OVERHEAD_SIZE + \
+				(octets) + \
+				CRC_SIZE) * 8) / \
+			      BIT(((phy) & 0x03) >> 1)))
 #else /* !CONFIG_BT_CTLR_PHY_CODED */
-#define PKT_US(octets, phy) \
-	(((octets) + 14) * 8 / BIT(((phy) & 0x03) >> 1))
+#define PKT_US(octets, phy) ((((PREAMBLE_SIZE(phy)) +	\
+			       ACCESS_ADDR_SIZE + \
+			       PAYLOAD_OVERHEAD_SIZE + \
+			       (octets) + \
+			       CRC_SIZE) * 8) / \
+			      BIT(((phy) & 0x03) >> 1))
 #endif /* !CONFIG_BT_CTLR_PHY_CODED */
 
 struct ll_conn *ll_conn_acquire(void);

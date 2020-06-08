@@ -52,7 +52,7 @@ static inline u64_t rotl(const u64_t x, int k)
 
 static int xoroshiro128_initialize(struct device *dev)
 {
-	dev = device_get_binding(CONFIG_ENTROPY_NAME);
+	dev = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
 	if (!dev) {
 		return -EINVAL;
 	}
@@ -107,7 +107,7 @@ void sys_rand_get(void *dst, size_t outlen)
 		ret = xoroshiro128_next();
 		if ((outlen-len) < sizeof(ret)) {
 			blocksize = len;
-			(void *)memcpy(udst, &ret, blocksize);
+			(void)memcpy(udst, &ret, blocksize);
 		} else {
 			(*udst++) = ret;
 		}

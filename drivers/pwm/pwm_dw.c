@@ -73,7 +73,7 @@ struct pwm_dw_config {
 static inline int pwm_dw_timer_base_addr(struct device *dev, u32_t timer)
 {
 	const struct pwm_dw_config * const cfg =
-	    (struct pwm_dw_config *)dev->config->config_info;
+	    (const struct pwm_dw_config *)dev->config_info;
 
 	return (cfg->addr + (timer * REG_OFFSET));
 }
@@ -89,7 +89,7 @@ static inline int pwm_dw_timer_base_addr(struct device *dev, u32_t timer)
 static inline int pwm_dw_timer_ldcnt2_addr(struct device *dev, u32_t timer)
 {
 	const struct pwm_dw_config * const cfg =
-	    (struct pwm_dw_config *)dev->config->config_info;
+	    (const struct pwm_dw_config *)dev->config_info;
 
 	return (cfg->addr + REG_TMR_LOAD_CNT2 + (timer * REG_OFFSET_LOAD_CNT2));
 }
@@ -135,20 +135,27 @@ static int __set_one_port(struct device *dev, u32_t pwm,
  * @param pwm Which PWM pin to set
  * @param period_cycles Period in clock cycles of the pwm.
  * @param pulse_cycles PWM width in clock cycles
+ * @param flags Flags for pin configuration (polarity).
  *
  * @return 0
  */
 static int pwm_dw_pin_set_cycles(struct device *dev,
-			     u32_t pwm, u32_t period_cycles, u32_t pulse_cycles)
+				 u32_t pwm, u32_t period_cycles,
+				 u32_t pulse_cycles, pwm_flags_t flags)
 {
 	const struct pwm_dw_config * const cfg =
-	    (struct pwm_dw_config *)dev->config->config_info;
+	    (const struct pwm_dw_config *)dev->config_info;
 	int i;
 	u32_t on, off;
 
 	/* make sure the PWM port exists */
 	if (pwm >= cfg->num_ports) {
 		return -EIO;
+	}
+
+	if (flags) {
+		/* PWM polarity not supported (yet?) */
+		return -ENOTSUP;
 	}
 
 	if (period_cycles == 0U || pulse_cycles > period_cycles) {

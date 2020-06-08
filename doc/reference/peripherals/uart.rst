@@ -1,4 +1,4 @@
-.. _uart_interface:
+.. _uart_api:
 
 UART
 ####

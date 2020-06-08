@@ -5,45 +5,9 @@ simulation: qemu
 arch: arm
 toolchain:
   - zephyr
-  - gccarmemb
+  - gnuarmemb
   - xtools
-ram: 64
-flash: 256
+ram: 65536
+flash: 32768
 testing:
-  default: false
-  ignore_tags:
-    - base64
-    - benchmark
-    - clib
-    - cmsis_rtos_v1
-    - cmsis_rtos_v1_philosopher
-    - cmsis_rtos_v1_synchronization
-    - cmsis_rtos_v2
-    - cmsis_rtos_v2_philosopher
-    - cmsis_rtos_v2_synchronization
-    - cpp
-    - crypto
-    - drivers
-    - external
-    - fdtable
-    - gen_inc_file
-    - interrupt
-    - introduction
-    - json
-    - libc
-    - logging
-    - kernel
-    - memory_protection
-    - net
-    - posix
-    - rbtree
-    - ring_buffer
-    - shell
-    - sleep
-    - test_framework
-    - timeutils
-    - timer
-    - userspace
-    - util
-    - xip
-    - tracing
+  default: true

@@ -327,6 +327,20 @@ static enum net_verdict ipv6_route_packet(struct net_pkt *pkt,
 			return NET_OK;
 		}
 	} else {
+		struct net_if *iface = NULL;
+		int ret;
+
+		if (net_if_ipv6_addr_onlink(&iface, &hdr->dst)) {
+			ret = net_route_packet_if(pkt, iface);
+			if (ret < 0) {
+				NET_DBG("Cannot re-route pkt %p "
+					"at iface %p (%d)",
+					pkt, net_pkt_iface(pkt), ret);
+			} else {
+				return NET_OK;
+			}
+		}
+
 		NET_DBG("No route to %s pkt %p dropped",
 			log_strdup(net_sprint_ipv6_addr(&hdr->dst)), pkt);
 	}
@@ -417,6 +431,7 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 	net_pkt_set_ipv6_ext_len(pkt, 0);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 	net_pkt_set_ipv6_hop_limit(pkt, NET_IPV6_HDR(pkt)->hop_limit);
+	net_pkt_set_family(pkt, PF_INET6);
 
 	if (!net_ipv6_is_my_addr(&hdr->dst) &&
 	    !net_ipv6_is_my_maddr(&hdr->dst) &&
@@ -520,7 +535,6 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 	}
 
 	net_pkt_set_ipv6_ext_len(pkt, ext_len);
-	net_pkt_set_family(pkt, PF_INET6);
 
 	switch (nexthdr) {
 	case IPPROTO_ICMPV6:

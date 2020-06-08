@@ -56,11 +56,11 @@ void main(void)
 	struct device *strip;
 	size_t i, time;
 
-	strip = device_get_binding(DT_INST_0_APA_APA102_LABEL);
+	strip = device_get_binding(DT_LABEL(DT_INST(0, apa_apa102)));
 	if (strip) {
-		LOG_INF("Found LED strip device %s", DT_INST_0_APA_APA102_LABEL);
+		LOG_INF("Found LED strip device %s", DT_LABEL(DT_INST(0, apa_apa102)));
 	} else {
-		LOG_ERR("LED strip device %s not found", DT_INST_0_APA_APA102_LABEL);
+		LOG_ERR("LED strip device %s not found", DT_LABEL(DT_INST(0, apa_apa102)));
 		return;
 	}
 

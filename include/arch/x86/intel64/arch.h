@@ -13,7 +13,7 @@
 #error "Check ISR stack configuration (CONFIG_ISR_*)"
 #endif
 
-#if CONFIG_ISR_SUBSTACK_SIZE % STACK_ALIGN
+#if CONFIG_ISR_SUBSTACK_SIZE % ARCH_STACK_PTR_ALIGN
 #error "CONFIG_ISR_SUBSTACK_SIZE must be a multiple of 16"
 #endif
 
@@ -32,21 +32,32 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
  */
 
 struct x86_esf {
-	unsigned long rax;
+#ifdef CONFIG_EXCEPTION_DEBUG
+	/* callee-saved */
 	unsigned long rbx;
+	unsigned long rbp;
+	unsigned long r12;
+	unsigned long r13;
+	unsigned long r14;
+	unsigned long r15;
+#endif /* CONFIG_EXCEPTION_DEBUG */
+
+	/* Caller-saved regs */
+	unsigned long rax;
 	unsigned long rcx;
 	unsigned long rdx;
-	unsigned long rbp;
 	unsigned long rsi;
 	unsigned long rdi;
 	unsigned long r8;
 	unsigned long r9;
 	unsigned long r10;
+	/* Must be aligned 16 bytes from the end of this struct due to
+	 * requirements of 'fxsave (%rsp)'
+	 */
+	char fxsave[X86_FXSAVE_SIZE];
 	unsigned long r11;
-	unsigned long r12;
-	unsigned long r13;
-	unsigned long r14;
-	unsigned long r15;
+
+	/* Pushed by CPU or assembly stub */
 	unsigned long vector;
 	unsigned long code;
 	unsigned long rip;
@@ -57,6 +68,28 @@ struct x86_esf {
 };
 
 typedef struct x86_esf z_arch_esf_t;
+
+struct x86_ssf {
+	unsigned long rip;
+	unsigned long rflags;
+	unsigned long r10;
+	unsigned long r9;
+	unsigned long r8;
+	unsigned long rdx;
+	unsigned long rsi;
+	char fxsave[X86_FXSAVE_SIZE];
+	unsigned long rdi;
+	unsigned long rsp;
+};
+
+#define ARCH_EXCEPT(reason_p) do { \
+	__asm__ volatile( \
+		"movq %[reason], %%rax\n\t" \
+		"int $32\n\t" \
+		: \
+		: [reason] "i" (reason_p)); \
+	CODE_UNREACHABLE; \
+} while (false)
 
 #endif /* _ASMLANGUAGE */
 

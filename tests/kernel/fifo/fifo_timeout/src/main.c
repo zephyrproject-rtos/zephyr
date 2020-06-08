@@ -112,7 +112,7 @@ static void test_thread_put_timeout(void *p1, void *p2, void *p3)
 {
 	u32_t timeout = *((u32_t *)p2);
 
-	k_sleep(timeout);
+	k_msleep(timeout);
 	k_fifo_put((struct k_fifo *)p1, get_scratch_packet());
 }
 
@@ -123,10 +123,10 @@ static void test_thread_pend_and_timeout(void *p1, void *p2, void *p3)
 	u32_t start_time;
 	void *packet;
 
-	k_sleep(K_MSEC(1)); /* Align to ticks */
+	k_msleep(1); /* Align to ticks */
 
 	start_time = k_cycle_get_32();
-	packet = k_fifo_get(d->fifo, d->timeout);
+	packet = k_fifo_get(d->fifo, K_MSEC(d->timeout));
 	zassert_true(packet == NULL, NULL);
 	zassert_true(is_timeout_in_range(start_time, d->timeout), NULL);
 
@@ -200,7 +200,7 @@ static void test_thread_pend_and_get_data(void *p1, void *p2, void *p3)
 	struct timeout_order_data *d = (struct timeout_order_data *)p1;
 	void *packet;
 
-	packet = k_fifo_get(d->fifo, d->timeout);
+	packet = k_fifo_get(d->fifo, K_MSEC(d->timeout));
 	zassert_true(packet != NULL, NULL);
 
 	put_scratch_packet(packet);
@@ -300,12 +300,12 @@ static void test_timeout_empty_fifo(void)
 	void *packet;
 	u32_t start_time, timeout;
 
-	k_sleep(K_MSEC(1)); /* Align to ticks */
+	k_msleep(1); /* Align to ticks */
 
 	/* Test empty fifo with timeout */
 	timeout = 10U;
 	start_time = k_cycle_get_32();
-	packet = k_fifo_get(&fifo_timeout[0], timeout);
+	packet = k_fifo_get(&fifo_timeout[0], K_MSEC(timeout));
 	zassert_true(packet == NULL, NULL);
 	zassert_true(is_timeout_in_range(start_time, timeout), NULL);
 
@@ -353,7 +353,7 @@ static void test_timeout_fifo_thread(void)
 	struct reply_packet reply_packet;
 	u32_t start_time, timeout;
 
-	k_sleep(K_MSEC(1)); /* Align to ticks */
+	k_msleep(1); /* Align to ticks */
 
 	/*
 	 * Test fifo with some timeout and child thread that puts
@@ -367,7 +367,7 @@ static void test_timeout_fifo_thread(void)
 				&timeout, NULL,
 				FIFO_THREAD_PRIO, K_INHERIT_PERMS, K_NO_WAIT);
 
-	packet = k_fifo_get(&fifo_timeout[0], timeout + 10);
+	packet = k_fifo_get(&fifo_timeout[0], K_MSEC(timeout + 10));
 	zassert_true(packet != NULL, NULL);
 	zassert_true(is_timeout_in_range(start_time, timeout), NULL);
 	put_scratch_packet(packet);

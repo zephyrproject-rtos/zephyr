@@ -12,6 +12,7 @@ menuconfig NET_L2_OPENTHREAD
 	depends on FLASH_PAGE_LAYOUT
 	depends on CPLUSPLUS
 	depends on REBOOT
+	depends on SETTINGS
 	select OPENTHREAD_PLAT
 	select MBEDTLS
 	select MBEDTLS_ENABLE_HEAP
@@ -19,6 +20,9 @@ menuconfig NET_L2_OPENTHREAD
 	select MBEDTLS_CIPHER_CCM_ENABLED
 	select MBEDTLS_MAC_SHA256_ENABLED
 	select MBEDTLS_ENTROPY_ENABLED
+	select MBEDTLS_MAC_CMAC_ENABLED
+	select MBEDTLS_CIPHER
+	select MBEDTLS_MD
 
 if NET_L2_OPENTHREAD
 
@@ -30,7 +34,6 @@ config OPENTHREAD_DTLS
 	select MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
 	select MBEDTLS_ECP_DP_SECP256R1_ENABLED
 	select MBEDTLS_ECP_NIST_OPTIM
-	select MBEDTLS_MAC_CMAC_ENABLED
 	select MBEDTLS_SSL_EXPORT_KEYS
 	select MBEDTLS_CTR_DRBG_ENABLED
 	select MBEDTLS_HMAC_DRBG_ENABLED
@@ -40,40 +43,37 @@ config OPENTHREAD_PLAT
 	help
 	  This option enables OpenThread platform
 
-if OPENTHREAD_PLAT
-
 menuconfig OPENTHREAD_DEBUG
 	bool "OpenThread stack log support"
+	depends on OPENTHREAD_PLAT
 	help
 	  This option enables log support for OpenThread
 
-if OPENTHREAD_DEBUG
-
 choice
 	prompt "OpenThread stack log level"
+	depends on OPENTHREAD_DEBUG
 	help
 	  This option selects log level for OpenThread stack.
 
-config OPENTHREAD_LOG_LEVEL_ERROR
-	bool "Error"
-config OPENTHREAD_LOG_LEVEL_WARNING
+config OPENTHREAD_LOG_LEVEL_CRIT
+	bool "Critical"
+config OPENTHREAD_LOG_LEVEL_WARN
 	bool "Warning"
+config OPENTHREAD_LOG_LEVEL_NOTE
+	bool "Notice"
 config OPENTHREAD_LOG_LEVEL_INFO
-	bool "Info"
-config OPENTHREAD_LOG_LEVEL_DEBUG
+	bool "Informational"
+config OPENTHREAD_LOG_LEVEL_DEBG
 	bool "Debug"
 endchoice
 
-endif
-
-endif
-
 config OPENTHREAD_LOG_LEVEL
 	int
-	default 1 if OPENTHREAD_LOG_LEVEL_ERROR
-	default 2 if OPENTHREAD_LOG_LEVEL_WARNING
-	default 3 if OPENTHREAD_LOG_LEVEL_INFO
-	default 4 if OPENTHREAD_LOG_LEVEL_DEBUG
+	default 1 if OPENTHREAD_LOG_LEVEL_CRIT
+	default 2 if OPENTHREAD_LOG_LEVEL_WARN
+	default 3 if OPENTHREAD_LOG_LEVEL_NOTE
+	default 4 if OPENTHREAD_LOG_LEVEL_INFO
+	default 5 if OPENTHREAD_LOG_LEVEL_DEBG
 	default 0
 
 menuconfig OPENTHREAD_L2_DEBUG
@@ -82,6 +82,7 @@ menuconfig OPENTHREAD_L2_DEBUG
 	  This option enables log support for OpenThread
 
 if OPENTHREAD_L2_DEBUG
+
 config OPENTHREAD_L2_DEBUG_DUMP_15_4
 	bool "Dump 802.15.4 packets"
 	help
@@ -113,6 +114,19 @@ config OPENTHREAD_PKT_LIST_SIZE
 	int "List size for Ip6 packet buffering"
 	default 10
 
+config OPENTHREAD_MANUAL_START
+	bool "Start OpenThread stack manually"
+	help
+	  If enabled, OpenThread stack will have to be configured and
+	  started manually, with respective API calls or CLI/NCP commands.
+	  Otherwise, OpenThread will configure the network parametrs and try to
+	  join the Thread network automatically during initialization (using
+	  credentials stored in persistend storage, obtained during
+	  commissioning or pre-commissioned with other Kconfig options,
+	  depending on configuration used).
+
+if !OPENTHREAD_MANUAL_START
+
 config OPENTHREAD_PANID
 	int "Default PAN ID"
 	default 43981
@@ -133,6 +147,8 @@ config OPENTHREAD_XPANID
 	help
 	  Extended PAN ID for OpenThread with
 	  format "de:ad:00:be:ef:00:ca:fe"
+
+endif
 
 choice
 	prompt "OpenThread device type"
@@ -185,6 +201,7 @@ config OPENTHREAD_JOINER
 config OPENTHREAD_JOINER_AUTOSTART
 	bool "Support for automatic joiner start"
 	depends on OPENTHREAD_JOINER
+	depends on !OPENTHREAD_MANUAL_START
 	help
 	  Enable automatic joiner start
 
@@ -204,6 +221,75 @@ config OPENTHREAD_DHCP6_SERVER
 	bool "DHCPv6 server support"
 	help
 	  Enable DHCPv6 server capability in OpenThread stack
+
+config OPENTHREAD_SLAAC
+	bool "SLAAC support"
+	help
+	  Enable SLAAC capability in OpenThread stack
+
+config OPENTHREAD_ENABLE_SERVICE
+	bool "Service support"
+	help
+	  Enable service capability in OpenThread stack
+
+config OPENTHREAD_RAW
+	bool "Raw Link support"
+	help
+	  Enable raw link support in OpenThread stack
+
+config OPENTHREAD_BORDER_AGENT
+	bool "Border Agent support"
+	help
+	  Enable border agent support in OpenThread stack
+
+config OPENTHREAD_BORDER_ROUTER
+	bool "Border Router support"
+	help
+	  Enable border router support in OpenThread stack
+
+config OPENTHREAD_COAP
+	bool "OpenThread CoAP support"
+	help
+	  Enable CoAP api for the application communicates with use of OpenThread stack
+
+config OPENTHREAD_NCP
+	bool "Network Co-Processor"
+	select OPENTHREAD_MANUAL_START
+	select RING_BUFFER
+	select UART_INTERRUPT_DRIVEN
+	help
+	  Enable NCP in OpenThread stack
+
+config OPENTHREAD_NCP_RADIO
+	bool "Network Co-Processor as Radio"
+	depends on OPENTHREAD_NCP
+	help
+	  Enable NCP in OpenThread stack as radio-only
+
+config OPENTHREAD_NCP_SPINEL_ON_UART_DEV_NAME
+	string "UART device to use for NCP SPINEL"
+	default "UART_0"
+	depends on OPENTHREAD_NCP
+	help
+	  UART device to use for NCP SPINEL
+
+config OPENTHREAD_NCP_UART_RING_BUFFER_SIZE
+	int "Set NCP UART ring buffer size"
+	default 4096
+	depends on OPENTHREAD_NCP
+	help
+	  TX buffer size for the OpenThread NCP UART
+
+config OPENTHREAD_NCP_SPINEL_ON_UART_ACM
+	bool "Run SPINEL over USB-ACM"
+	depends on OPENTHREAD_NCP && USB_CDC_ACM
+	help
+	  Is the SPINEL device a USB-CDC-ACM device
+
+config OPENTHREAD_UDP_FORWARD
+	bool "UDP forward support"
+	help
+	  Enable UDP forward support in OpenThread stack
 
 config OPENTHREAD_PLATFORM_INFO
 	string "Platform information for OpenThread"

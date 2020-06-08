@@ -318,14 +318,14 @@ struct in6_addr *net_ipv6_nbr_lookup_by_index(struct net_if *iface,
  */
 #if defined(CONFIG_NET_IPV6_NBR_CACHE) && defined(CONFIG_NET_NATIVE_IPV6)
 struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
-				 struct in6_addr *addr,
-				 struct net_linkaddr *lladdr,
+				 const struct in6_addr *addr,
+				 const struct net_linkaddr *lladdr,
 				 bool is_router,
 				 enum net_ipv6_nbr_state state);
 #else
 static inline struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
-					       struct in6_addr *addr,
-					       struct net_linkaddr *lladdr,
+					       const struct in6_addr *addr,
+					       const struct net_linkaddr *lladdr,
 					       bool is_router,
 					       enum net_ipv6_nbr_state state)
 {

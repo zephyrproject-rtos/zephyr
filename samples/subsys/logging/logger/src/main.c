@@ -313,4 +313,4 @@ static void log_demo_supervisor(void *p1, void *p2, void *p3)
 
 K_THREAD_DEFINE(log_demo_thread_id, STACKSIZE, log_demo_supervisor,
 		NULL, NULL, NULL,
-		K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_MSEC(1));
+		K_LOWEST_APPLICATION_THREAD_PRIO, 0, 1);

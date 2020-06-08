@@ -3,6 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#define DT_DRV_COMPAT nxp_imx_csi
+
 #include <zephyr.h>
 
 #include <fsl_csi.h>
@@ -47,10 +50,10 @@ static void __frame_done_cb(CSI_Type *base, csi_handle_t *handle,
 			    status_t status, void *user_data)
 {
 	struct device *dev = user_data;
-	const struct video_mcux_csi_config *config = dev->config->config_info;
+	const struct video_mcux_csi_config *config = dev->config_info;
 	struct video_mcux_csi_data *data = dev->driver_data;
 	enum video_signal_result result = VIDEO_BUF_DONE;
-	struct video_buffer *vbuf;
+	struct video_buffer *vbuf, *vbuf_first = NULL;
 	u32_t buffer_addr;
 
 	/* IRQ context */
@@ -72,10 +75,19 @@ static void __frame_done_cb(CSI_Type *base, csi_handle_t *handle,
 			break;
 		}
 
-		/* should never happen on ordered stream, requeue and break */
+		/* should never happen on ordered stream, except on capture
+		 * start/restart, requeue the frame and continue looking for
+		 * the right buffer.
+		 */
 		k_fifo_put(&data->fifo_in, vbuf);
-		vbuf = NULL;
-		break;
+
+		/* prevent infinite loop */
+		if (vbuf_first == NULL) {
+			vbuf_first = vbuf;
+		} else if (vbuf_first == vbuf) {
+			vbuf = NULL;
+			break;
+		}
 	}
 
 	if (vbuf == NULL) {
@@ -93,15 +105,17 @@ static void __frame_done_cb(CSI_Type *base, csi_handle_t *handle,
 
 done:
 	/* Trigger Event */
-	if (data->signal) {
+	if (IS_ENABLED(CONFIG_POLL) && data->signal) {
 		k_poll_signal_raise(data->signal, result);
 	}
+
+	return;
 }
 
 static int video_mcux_csi_set_fmt(struct device *dev, enum video_endpoint_id ep,
 				  struct video_format *fmt)
 {
-	const struct video_mcux_csi_config *config = dev->config->config_info;
+	const struct video_mcux_csi_config *config = dev->config_info;
 	struct video_mcux_csi_data *data = dev->driver_data;
 	unsigned int bpp = video_pix_fmt_bpp(fmt->pixelformat);
 	status_t ret;
@@ -162,7 +176,7 @@ static int video_mcux_csi_get_fmt(struct device *dev, enum video_endpoint_id ep,
 
 static int video_mcux_csi_stream_start(struct device *dev)
 {
-	const struct video_mcux_csi_config *config = dev->config->config_info;
+	const struct video_mcux_csi_config *config = dev->config_info;
 	struct video_mcux_csi_data *data = dev->driver_data;
 	status_t ret;
 
@@ -180,7 +194,7 @@ static int video_mcux_csi_stream_start(struct device *dev)
 
 static int video_mcux_csi_stream_stop(struct device *dev)
 {
-	const struct video_mcux_csi_config *config = dev->config->config_info;
+	const struct video_mcux_csi_config *config = dev->config_info;
 	struct video_mcux_csi_data *data = dev->driver_data;
 	status_t ret;
 
@@ -200,7 +214,7 @@ static int video_mcux_csi_stream_stop(struct device *dev)
 static int video_mcux_csi_flush(struct device *dev, enum video_endpoint_id ep,
 				bool cancel)
 {
-	const struct video_mcux_csi_config *config = dev->config->config_info;
+	const struct video_mcux_csi_config *config = dev->config_info;
 	struct video_mcux_csi_data *data = dev->driver_data;
 	struct video_buf *vbuf;
 	u32_t buffer_addr;
@@ -221,7 +235,7 @@ static int video_mcux_csi_flush(struct device *dev, enum video_endpoint_id ep,
 
 		while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT))) {
 			k_fifo_put(&data->fifo_out, vbuf);
-			if (data->signal) {
+			if (IS_ENABLED(CONFIG_POLL) && data->signal) {
 				k_poll_signal_raise(data->signal,
 						    VIDEO_BUF_ABORTED);
 			}
@@ -234,7 +248,7 @@ static int video_mcux_csi_flush(struct device *dev, enum video_endpoint_id ep,
 static int video_mcux_csi_enqueue(struct device *dev, enum video_endpoint_id ep,
 				  struct video_buffer *vbuf)
 {
-	const struct video_mcux_csi_config *config = dev->config->config_info;
+	const struct video_mcux_csi_config *config = dev->config_info;
 	struct video_mcux_csi_data *data = dev->driver_data;
 	unsigned int to_read;
 	status_t ret;
@@ -259,7 +273,7 @@ static int video_mcux_csi_enqueue(struct device *dev, enum video_endpoint_id ep,
 
 static int video_mcux_csi_dequeue(struct device *dev, enum video_endpoint_id ep,
 				  struct video_buffer **vbuf,
-				  u32_t timeout)
+				  k_timeout_t timeout)
 {
 	struct video_mcux_csi_data *data = dev->driver_data;
 
@@ -335,7 +349,7 @@ static void video_mcux_csi_isr(void *p)
 
 static int video_mcux_csi_init(struct device *dev)
 {
-	const struct video_mcux_csi_config *config = dev->config->config_info;
+	const struct video_mcux_csi_config *config = dev->config_info;
 	struct video_mcux_csi_data *data = dev->driver_data;
 
 	k_fifo_init(&data->fifo_in);
@@ -354,6 +368,7 @@ static int video_mcux_csi_init(struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_POLL
 static int video_mcux_csi_set_signal(struct device *dev,
 				     enum video_endpoint_id ep,
 				     struct k_poll_signal *signal)
@@ -368,6 +383,7 @@ static int video_mcux_csi_set_signal(struct device *dev,
 
 	return 0;
 }
+#endif
 
 static const struct video_driver_api video_mcux_csi_driver_api = {
 	.set_format = video_mcux_csi_set_fmt,
@@ -380,32 +396,32 @@ static const struct video_driver_api video_mcux_csi_driver_api = {
 	.set_ctrl = video_mcux_csi_set_ctrl,
 	.get_ctrl = video_mcux_csi_get_ctrl,
 	.get_caps = video_mcux_csi_get_caps,
+#ifdef CONFIG_POLL
 	.set_signal = video_mcux_csi_set_signal,
+#endif
 };
 
 #if 1 /* Unique Instance */
 static const struct video_mcux_csi_config video_mcux_csi_config_0 = {
-	.base = (CSI_Type *)DT_VIDEO_MCUX_CSI_BASE_ADDRESS,
-	.sensor_label = DT_VIDEO_MCUX_CSI_SENSOR_NAME,
+	.base = (CSI_Type *)DT_INST_REG_ADDR(0),
+	.sensor_label = DT_INST_PROP(0, sensor_label),
 };
 
 static struct video_mcux_csi_data video_mcux_csi_data_0;
 
 static int video_mcux_csi_init_0(struct device *dev)
 {
-	IRQ_CONNECT(DT_VIDEO_MCUX_CSI_IRQ, DT_VIDEO_MCUX_CSI_IRQ_PRI,
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    video_mcux_csi_isr, NULL, 0);
 
-	irq_enable(DT_VIDEO_MCUX_CSI_IRQ);
+	irq_enable(DT_INST_IRQN(0));
 
-	video_mcux_csi_init(dev);
-
-	return 0;
+	return video_mcux_csi_init(dev);
 }
 
-DEVICE_AND_API_INIT(video_mcux_csi, DT_VIDEO_MCUX_CSI_NAME,
+DEVICE_AND_API_INIT(video_mcux_csi, DT_INST_LABEL(0),
 		    &video_mcux_csi_init_0, &video_mcux_csi_data_0,
 		    &video_mcux_csi_config_0,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,
 		    &video_mcux_csi_driver_api);
 #endif

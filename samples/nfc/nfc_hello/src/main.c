@@ -69,6 +69,6 @@ void main(void)
 	uart_fifo_fill(uart1_dev, tx_buf, sizeof(u32_t) + sizeof(nci_reset));
 
 	while (1) {
-		k_sleep(SLEEP_TIME);
+		k_msleep(SLEEP_TIME);
 	}
 }

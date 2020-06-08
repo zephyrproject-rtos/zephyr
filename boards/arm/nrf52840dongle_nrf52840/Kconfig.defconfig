@@ -1,0 +1,44 @@
+# nRF52840 Dongle NRF52840 board configuration
+#
+# Copyright (c) 2018 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NRF52840DONGLE_NRF52840
+
+config BOARD
+	default "nrf52840dongle_nrf52840"
+
+# To let the nRF5 bootloader load an application, the application
+# must be linked after Nordic MBR, that is factory-programmed on the board.
+
+# Nordic nRF5 booatloader exists outside of the partitions specified in the
+# DTS file, so we manually override FLASH_LOAD_OFFEST to link the application
+# correctly, after Nordic MBR.
+
+# When building MCUBoot, MCUBoot itself will select USE_DT_CODE_PARTITION
+# which will make it link into the correct partition specified in DTS file,
+# so no override is necessary.
+
+config FLASH_LOAD_OFFSET
+	default 0x1000
+	depends on BOARD_HAS_NRF5_BOOTLOADER && !USE_DT_CODE_PARTITION
+
+if USB
+
+config USB_NRFX
+	default y
+
+config USB_DEVICE_STACK
+	default y
+
+endif # USB
+
+config IEEE802154_NRF5
+	default y
+	depends on IEEE802154
+
+config BT_CTLR
+	default BT
+
+endif # BOARD_NRF52840DONGLE_NRF52840

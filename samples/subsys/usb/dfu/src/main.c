@@ -9,12 +9,18 @@
 
 #include <zephyr.h>
 #include <logging/log.h>
+#include <usb/usb_device.h>
 LOG_MODULE_REGISTER(main);
 
 void main(void)
 {
-	/* Nothing to be done other than the selecting appropriate build
-	 * config options. Use dfu-util to update the device.
-	 */
+	int ret;
+
+	ret = usb_enable(NULL);
+	if (ret != 0) {
+		LOG_ERR("Failed to enable USB");
+		return;
+	}
+
 	LOG_INF("This device supports USB DFU class.\n");
 }

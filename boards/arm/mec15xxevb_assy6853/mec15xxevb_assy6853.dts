@@ -19,7 +19,40 @@
 	};
 
 	aliases {
+		led0 = &led2;
+		led1 = &led3;
+		led2 = &led4;
 		pwm-0 = &pwm0;
+		peci-0 = &peci0;
+		i2c0 = &i2c_smb_0;
+		i2c1 = &i2c_smb_1;
+		i2c7 = &i2c_smb_2;
+		kscan0 = &kscan0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led2: led_0 {
+			/* GPIO156/LED0 on schematic,
+			 * LED2 on silkscreen.
+			 */
+			gpios = <&gpio_140_176 14 GPIO_ACTIVE_LOW>;
+			label = "LED 2";
+		};
+		led3: led_1 {
+			/* GPIO157/LED1 on schematic,
+			 * LED3 on silkscreen.
+			 */
+			gpios = <&gpio_140_176 15 GPIO_ACTIVE_LOW>;
+			label = "LED 3";
+		};
+		led4: led_2 {
+			/* GPIO153/LED2 on schematic,
+			 * LED4 on silkscreen.
+			 */
+			gpios = <&gpio_140_176 11 GPIO_ACTIVE_LOW>;
+			label = "LED 4";
+		};
 	};
 };
 
@@ -32,18 +65,38 @@
 	status = "okay";
 };
 
-&i2c0 {
+&i2c_smb_0 {
 	status = "okay";
+	label = "I2C0";
 	port_sel = <0>;
+
+	pca9555@26 {
+		compatible = "nxp,pca95xx";
+		label = "GPIO_P0";
+
+		/* Depends on JP53 for device address.
+		 * Pin 1-2 = A2, pin 3-4 = A1, pin 5-6 = A0.
+		 * Address is: 0100<A2><A1><A0>b.
+		 *
+		 * Default has pin 1-2 on JP53 connected,
+		 * resulting in device address 0x26.
+		 */
+		reg = <0x26>;
+
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
 };
 
-&i2c1 {
+&i2c_smb_1 {
 	status = "okay";
+	label = "I2C1";
 	port_sel = <1>;
 };
 
-&i2c2 {
+&i2c_smb_2 {
 	status = "okay";
+	label = "I2C7";
 	port_sel = <7>;
 };
 
@@ -74,9 +127,17 @@
 	status = "okay";
 };
 
+&peci0 {
+	status = "okay";
+};
+
 &spi0 {
 	status = "okay";
 	port_sel = <0>;
 	chip_select = <0>;
 	lines = <1>;
+};
+
+&tach0 {
+	status = "okay";
 };

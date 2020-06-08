@@ -260,7 +260,8 @@ static int tx(struct net_pkt *pkt)
 	LOG_DBG("len %d seq %u", buf->len, seq);
 
 	do {
-		ret = radio_api->tx(ieee802154_dev, pkt, buf);
+		ret = radio_api->tx(ieee802154_dev, IEEE802154_TX_MODE_DIRECT,
+				    pkt, buf);
 	} while (ret && retries--);
 
 	if (ret) {
@@ -401,6 +402,7 @@ out:
 
 void main(void)
 {
+	int ret;
 	LOG_INF("Starting wpanusb");
 
 	ieee802154_dev = device_get_binding(CONFIG_NET_CONFIG_IEEE802154_DEV_NAME);
@@ -417,6 +419,11 @@ void main(void)
 
 	radio_api = (struct ieee802154_radio_api *)ieee802154_dev->driver_api;
 
+	ret = usb_enable(NULL);
+	if (ret != 0) {
+		LOG_ERR("Failed to enable USB");
+		return;
+	}
 	/* TODO: Initialize more */
 
 	LOG_DBG("radio_api %p initialized", radio_api);

@@ -1,4 +1,4 @@
-.. _flash_map_flash_area:
+.. _flash_map_api:
 
 Flash map (flash_map)
 ##########################
@@ -6,7 +6,7 @@ Flash map (flash_map)
 Flash map is a way for storing flash partitioning information in one central
 location in flash_area structures array form.
 
-Flash map is generated from DTS based on content of :ref:`flash_partitions`
+Flash map is generated from DTS based on content of :ref:`legacy_flash_partitions`
 nodes.
 The flash_area API provides a way to access data in the flash map.
 The flash_area_open() API is the interface for obtaining the flash partitions
@@ -34,4 +34,3 @@ flash_area API
 
 .. doxygengroup:: flash_area_api
    :project: Zephyr
-

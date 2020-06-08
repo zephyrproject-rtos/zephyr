@@ -12,7 +12,7 @@
 
 #define DEV_DATA(dev) ((struct can_stm32_data *const)(dev)->driver_data)
 #define DEV_CFG(dev) \
-	((const struct can_stm32_config *const)(dev)->config->config_info)
+	((const struct can_stm32_config *const)(dev)->config_info)
 
 #define BIT_SEG_LENGTH(cfg) ((cfg)->prop_ts1 + (cfg)->ts2 + 1)
 
@@ -69,6 +69,7 @@ struct can_stm32_data {
 
 struct can_stm32_config {
 	CAN_TypeDef *can;   /*!< CAN Registers*/
+	CAN_TypeDef *master_can;   /*!< CAN Registers for shared filter */
 	u32_t bus_speed;
 	u8_t sjw;
 	u8_t prop_ts1;

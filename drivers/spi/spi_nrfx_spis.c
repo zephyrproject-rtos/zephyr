@@ -30,7 +30,7 @@ static inline struct spi_nrfx_data *get_dev_data(struct device *dev)
 
 static inline const struct spi_nrfx_config *get_dev_config(struct device *dev)
 {
-	return dev->config->config_info;
+	return dev->config_info;
 }
 
 static inline nrf_spis_mode_t get_nrf_spis_mode(u16_t operation)
@@ -71,7 +71,7 @@ static int configure(struct device *dev,
 
 	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_MASTER) {
 		LOG_ERR("Master mode is not supported on %s",
-			    dev->config->name);
+			    dev->name);
 		return -EINVAL;
 	}
 
@@ -144,10 +144,14 @@ static void prepare_for_transfer(struct device *dev)
 static int transceive(struct device *dev,
 		      const struct spi_config *spi_cfg,
 		      const struct spi_buf_set *tx_bufs,
-		      const struct spi_buf_set *rx_bufs)
+		      const struct spi_buf_set *rx_bufs,
+		      bool asynchronous,
+		      struct k_poll_signal *signal)
 {
 	struct spi_nrfx_data *dev_data = get_dev_data(dev);
 	int error;
+
+	spi_context_lock(&dev_data->ctx, asynchronous, signal);
 
 	error = configure(dev, spi_cfg);
 	if (error != 0) {
@@ -178,8 +182,7 @@ static int spi_nrfx_transceive(struct device *dev,
 			       const struct spi_buf_set *tx_bufs,
 			       const struct spi_buf_set *rx_bufs)
 {
-	spi_context_lock(&get_dev_data(dev)->ctx, false, NULL);
-	return transceive(dev, spi_cfg, tx_bufs, rx_bufs);
+	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL);
 }
 
 #ifdef CONFIG_SPI_ASYNC
@@ -189,8 +192,7 @@ static int spi_nrfx_transceive_async(struct device *dev,
 				     const struct spi_buf_set *rx_bufs,
 				     struct k_poll_signal *async)
 {
-	spi_context_lock(&get_dev_data(dev)->ctx, true, async);
-	return transceive(dev, spi_cfg, tx_bufs, rx_bufs);
+	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, true, async);
 }
 #endif /* CONFIG_SPI_ASYNC */
 
@@ -238,7 +240,7 @@ static int init_spis(struct device *dev, const nrfx_spis_config_t *config)
 					   dev);
 	if (result != NRFX_SUCCESS) {
 		LOG_ERR("Failed to initialize device: %s",
-			    dev->config->name);
+			    dev->name);
 		return -EBUSY;
 	}
 
@@ -247,23 +249,33 @@ static int init_spis(struct device *dev, const nrfx_spis_config_t *config)
 	return 0;
 }
 
+/*
+ * Current factors requiring use of DT_NODELABEL:
+ *
+ * - NRFX_SPIS_INSTANCE() requires an SoC instance number
+ * - soc-instance-numbered kconfig enables
+ * - ORC is a SoC-instance-numbered kconfig option instead of a DT property
+ */
+
+#define SPIS(idx) DT_NODELABEL(spi##idx)
+#define SPIS_PROP(idx, prop) DT_PROP(SPIS(idx), prop)
+
 #define SPI_NRFX_SPIS_DEVICE(idx)					       \
 	static int spi_##idx##_init(struct device *dev)			       \
 	{								       \
-		IRQ_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_SPIS##idx),		       \
-			    DT_NORDIC_NRF_SPIS_SPI_##idx##_IRQ_0_PRIORITY,     \
+		IRQ_CONNECT(DT_IRQN(SPIS(idx)), DT_IRQ(SPIS(idx), priority),   \
 			    nrfx_isr, nrfx_spis_##idx##_irq_handler, 0);       \
 		const nrfx_spis_config_t config = {			       \
-			.sck_pin    = DT_NORDIC_NRF_SPIS_SPI_##idx##_SCK_PIN,  \
-			.mosi_pin   = DT_NORDIC_NRF_SPIS_SPI_##idx##_MOSI_PIN, \
-			.miso_pin   = DT_NORDIC_NRF_SPIS_SPI_##idx##_MISO_PIN, \
-			.csn_pin    = DT_NORDIC_NRF_SPIS_SPI_##idx##_CSN_PIN,  \
+			.sck_pin    = SPIS_PROP(idx, sck_pin),		       \
+			.mosi_pin   = SPIS_PROP(idx, mosi_pin),		       \
+			.miso_pin   = SPIS_PROP(idx, miso_pin),		       \
+			.csn_pin    = SPIS_PROP(idx, csn_pin),		       \
 			.mode       = NRF_SPIS_MODE_0,			       \
 			.bit_order  = NRF_SPIS_BIT_ORDER_MSB_FIRST,	       \
 			.csn_pullup = NRF_GPIO_PIN_NOPULL,		       \
 			.miso_drive = NRF_GPIO_PIN_S0S1,		       \
 			.orc        = CONFIG_SPI_##idx##_NRF_ORC,	       \
-			.def        = DT_NORDIC_NRF_SPIS_SPI_##idx##_DEF_CHAR, \
+			.def        = SPIS_PROP(idx, def_char),		       \
 		};							       \
 		return init_spis(dev, &config);				       \
 	}								       \
@@ -276,7 +288,7 @@ static int init_spis(struct device *dev, const nrfx_spis_config_t *config)
 		.max_buf_len = (1 << SPIS##idx##_EASYDMA_MAXCNT_SIZE) - 1,     \
 	};								       \
 	DEVICE_AND_API_INIT(spi_##idx,					       \
-			    DT_NORDIC_NRF_SPIS_SPI_##idx##_LABEL,	       \
+			    DT_LABEL(SPIS(idx)),			       \
 			    spi_##idx##_init,				       \
 			    &spi_##idx##_data,				       \
 			    &spi_##idx##z_config,			       \

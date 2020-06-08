@@ -28,7 +28,7 @@
 	};
 };
 
-&flash_controller {
+&ftfa {
 	flash0: flash@0 {
 		compatible = "soc-nv-flash";
 		label = "MCUX_FLASH";

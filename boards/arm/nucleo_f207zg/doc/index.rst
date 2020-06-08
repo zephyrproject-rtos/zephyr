@@ -30,9 +30,7 @@ some highlights of the Nucleo F207ZG board:
 - Two push-buttons: USER and RESET
 
 .. image:: img/nucleo_f207zg.png
-   :width: 720px
    :align: center
-   :height: 720px
    :alt: Nucleo F207ZG
 
 More information about the board can be found at the `Nucleo F207ZG website`_.

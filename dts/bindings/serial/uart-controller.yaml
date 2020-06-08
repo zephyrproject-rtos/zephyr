@@ -2,7 +2,7 @@
 
 include: base.yaml
 
-child-bus: uart
+bus: uart
 
 properties:
     clock-frequency:

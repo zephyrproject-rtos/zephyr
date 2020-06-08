@@ -167,6 +167,7 @@ void test_time_conversions(void)
 		test_conversion(&tests[i], 1);
 		test_conversion(&tests[i], 0x7fffffff);
 		test_conversion(&tests[i], 0x80000000);
+		test_conversion(&tests[i], 0xfffffff0);
 		if (tests[i].precision == 64) {
 			test_conversion(&tests[i], 0xffffffff);
 			test_conversion(&tests[i], 0x100000000ULL);

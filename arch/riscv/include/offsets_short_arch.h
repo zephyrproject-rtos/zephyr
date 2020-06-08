@@ -59,6 +59,49 @@
 #define _thread_offset_to_swap_return_value \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_swap_return_value_OFFSET)
 
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+
+#define _thread_offset_to_fcsr \
+	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_fcsr_OFFSET)
+
+#define _thread_offset_to_fs0 \
+	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_fs0_OFFSET)
+
+#define _thread_offset_to_fs1 \
+	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_fs1_OFFSET)
+
+#define _thread_offset_to_fs2 \
+	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_fs2_OFFSET)
+
+#define _thread_offset_to_fs3 \
+	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_fs3_OFFSET)
+
+#define _thread_offset_to_fs4 \
+	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_fs4_OFFSET)
+
+#define _thread_offset_to_fs5 \
+	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_fs5_OFFSET)
+
+#define _thread_offset_to_fs6 \
+	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_fs6_OFFSET)
+
+#define _thread_offset_to_fs7 \
+	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_fs7_OFFSET)
+
+#define _thread_offset_to_fs8 \
+	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_fs8_OFFSET)
+
+#define _thread_offset_to_fs9 \
+	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_fs9_OFFSET)
+
+#define _thread_offset_to_fs10 \
+	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_fs10_OFFSET)
+
+#define _thread_offset_to_fs11 \
+	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_fs11_OFFSET)
+
+#endif /* defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) */
+
 /* end - threads */
 
 #endif /* ZEPHYR_ARCH_RISCV_INCLUDE_OFFSETS_SHORT_ARCH_H_ */

@@ -22,10 +22,21 @@
 /**
  * USB endpoint direction and number.
  */
-
 #define USB_EP_DIR_MASK		0x80
 #define USB_EP_DIR_IN		0x80
 #define USB_EP_DIR_OUT		0x00
+
+/**
+ * USB endpoint Transfer Type mask.
+ */
+#define USB_EP_TRANSFER_TYPE_MASK 0x3
+
+/**
+ * USB endpoint Synchronization Type mask.
+ *
+ * @note Valid only for Isochronous Endpoints
+ */
+#define USB_EP_SYNCHRONIZATION_TYPE_MASK (0x3 << 2U)
 
 /**
  * @brief USB Device Controller API
@@ -80,9 +91,9 @@ enum usb_dc_ep_cb_status_code {
 };
 
 /**
- * @brief USB Endpoint type
+ * @brief USB Endpoint Transfer Type
  */
-enum usb_dc_ep_type {
+enum usb_dc_ep_transfer_type {
 	/** Control type endpoint */
 	USB_DC_EP_CONTROL = 0,
 	/** Isochronous type endpoint */
@@ -91,6 +102,22 @@ enum usb_dc_ep_type {
 	USB_DC_EP_BULK,
 	/** Interrupt type endpoint  */
 	USB_DC_EP_INTERRUPT
+};
+
+/**
+ * @brief USB Endpoint Synchronization Type
+ *
+ * @note Valid only for Isochronous Endpoints
+ */
+enum usb_dc_ep_synchronozation_type {
+	/** No Synchronization */
+	USB_DC_EP_NO_SYNCHRONIZATION = (0U << 2U),
+	/** Asynchronous */
+	USB_DC_EP_ASYNCHRONOUS = (1U << 2U),
+	/** Adaptive */
+	USB_DC_EP_ADAPTIVE = (2U << 2U),
+	/** Synchronous*/
+	USB_DC_EP_SYNCHRONOUS = (3U << 2U)
 };
 
 /**
@@ -107,10 +134,10 @@ struct usb_dc_ep_cfg_data {
 	u8_t ep_addr;
 	/** Endpoint max packet size */
 	u16_t ep_mps;
-	/** Endpoint type. May be Bulk, Interrupt or Control. Isochronous
-	 *  endpoints are not supported for now.
+	/** Endpoint Transfer Type.
+	 * May be Bulk, Interrupt, Control or Isochronous
 	 */
-	enum usb_dc_ep_type ep_type;
+	enum usb_dc_ep_transfer_type ep_type;
 };
 
 /**

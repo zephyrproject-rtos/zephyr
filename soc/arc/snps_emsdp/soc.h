@@ -24,16 +24,8 @@
 
 #ifndef _ASMLANGUAGE
 
-
 #include <sys/util.h>
 #include <random/rand32.h>
-
-/*
- * UARTs: UART0 & UART1 & UART2
- */
-#define DT_UART_NS16550_PORT_0_IRQ_FLAGS	0 /* Default */
-
-
 
 #endif /* !_ASMLANGUAGE */
 

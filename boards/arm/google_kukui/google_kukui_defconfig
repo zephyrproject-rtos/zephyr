@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# Zephyr Kernel Configuration
+CONFIG_SOC_SERIES_STM32F0X=y
+
+# Platform Configuration
+CONFIG_SOC_STM32F098XX=y
+CONFIG_BOARD_GOOGLE_KUKUI=y
+
+# Serial Drivers
+CONFIG_SERIAL=y
+CONFIG_UART_INTERRUPT_DRIVEN=y
+
+# I2C support
+CONFIG_I2C=y
+
+# Enable console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# Pinmux Driver
+CONFIG_PINMUX=y
+
+# GPIO Controller
+CONFIG_GPIO=y
+
+# Clock configuration
+CONFIG_CLOCK_CONTROL=y
+
+# Ideally, we would use HSI48, but this is not supported in
+# Zephyr. Use "basic" HSI (8 MHz).
+CONFIG_CORTEX_M_SYSTICK=y
+CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=8000000
+
+# SYSCLK selection
+CONFIG_CLOCK_STM32_SYSCLK_SRC_HSI=y

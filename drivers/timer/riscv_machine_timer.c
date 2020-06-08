@@ -14,14 +14,16 @@
 #define MAX_TICKS ((MAX_CYC - CYC_PER_TICK) / CYC_PER_TICK)
 #define MIN_DELAY 1000
 
-#define TICKLESS (IS_ENABLED(CONFIG_TICKLESS_KERNEL) &&		\
-		  !IS_ENABLED(CONFIG_QEMU_TICKLESS_WORKAROUND))
+#define TICKLESS IS_ENABLED(CONFIG_TICKLESS_KERNEL)
 
 static struct k_spinlock lock;
 static u64_t last_count;
 
 static void set_mtimecmp(u64_t time)
 {
+#ifdef CONFIG_64BIT
+	*(volatile u64_t *)RISCV_MTIMECMP_BASE = time;
+#else
 	volatile u32_t *r = (u32_t *)RISCV_MTIMECMP_BASE;
 
 	/* Per spec, the RISC-V MTIME/MTIMECMP registers are 64 bit,
@@ -33,10 +35,14 @@ static void set_mtimecmp(u64_t time)
 	r[1] = 0xffffffff;
 	r[0] = (u32_t)time;
 	r[1] = (u32_t)(time >> 32);
+#endif
 }
 
 static u64_t mtime(void)
 {
+#ifdef CONFIG_64BIT
+	return *(volatile u64_t *)RISCV_MTIME_BASE;
+#else
 	volatile u32_t *r = (u32_t *)RISCV_MTIME_BASE;
 	u32_t lo, hi;
 
@@ -47,6 +53,7 @@ static u64_t mtime(void)
 	} while (r[1] != hi);
 
 	return (((u64_t)hi) << 32) | lo;
+#endif
 }
 
 static void timer_isr(void *arg)
@@ -75,7 +82,8 @@ static void timer_isr(void *arg)
 int z_clock_driver_init(struct device *device)
 {
 	IRQ_CONNECT(RISCV_MACHINE_TIMER_IRQ, 0, timer_isr, NULL, 0);
-	set_mtimecmp(mtime() + CYC_PER_TICK);
+	last_count = mtime();
+	set_mtimecmp(last_count + CYC_PER_TICK);
 	irq_enable(RISCV_MACHINE_TIMER_IRQ);
 	return 0;
 }
@@ -84,7 +92,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
-#if defined(CONFIG_TICKLESS_KERNEL) && !defined(CONFIG_QEMU_TICKLESS_WORKAROUND)
+#if defined(CONFIG_TICKLESS_KERNEL)
 	/* RISCV has no idle handler yet, so if we try to spin on the
 	 * logic below to reset the comparator, we'll always bump it
 	 * forward to the "next tick" due to MIN_DELAY handling and
@@ -95,7 +103,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 		return;
 	}
 
-	ticks = ticks == K_FOREVER ? MAX_TICKS : ticks;
+	ticks = ticks == K_TICKS_FOREVER ? MAX_TICKS : ticks;
 	ticks = MAX(MIN(ticks - 1, (s32_t)MAX_TICKS), 0);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);

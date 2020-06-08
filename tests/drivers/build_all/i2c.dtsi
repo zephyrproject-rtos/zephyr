@@ -1,0 +1,531 @@
+/*
+ * Copyright (c) 2020, Linaro Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for i2c devices
+ */
+
+test_i2c_adt7420: adt7420@0 {
+	compatible = "adi,adt7420";
+	label = "ADT7420";
+	reg = <0x0>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_adxl345: adxl345@1 {
+	compatible = "adi,adxl345";
+	label = "ADXL345";
+	reg = <0x1>;
+};
+
+test_i2c_adxl372: adxl372@2 {
+	compatible = "adi,adxl372";
+	label = "ADXL372";
+	reg = <0x2>;
+	int1-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_ccs811: ccs811@3 {
+	compatible = "ams,ccs811";
+	label = "CCS811";
+	reg = <0x3>;
+	wake-gpios = <&test_gpio 0 0>;
+	reset-gpios = <&test_gpio 0 0>;
+	irq-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_ens210: ens210@4 {
+	compatible = "ams,ens210";
+	label = "ENS210";
+	reg = <0x4>;
+};
+
+test_i2c_iaqcore: iaqcore@5 {
+	compatible = "ams,iaqcore";
+	label = "IAQCORE";
+	reg = <0x5>;
+};
+
+test_i2c_mt9m114: mt9m114@6 {
+	compatible = "aptina,mt9m114";
+	label = "MT9M114";
+	reg = <0x6>;
+};
+
+test_i2c_bme280: bme280@7 {
+	compatible = "bosch,bme280";
+	label = "BME280";
+	reg = <0x7>;
+};
+
+test_i2c_at24: at24@8 {
+	compatible = "atmel,at24";
+	label = "AT24";
+	reg = <0x8>;
+	size = <0>;
+	pagesize = <0>;
+	address-width = <0>;
+	timeout = <0>;
+	wp-gpios = <&test_gpio 0 0>;
+	/* read-only; */
+};
+
+test_i2c_apds9960: apds9960@9 {
+	compatible = "avago,apds9960";
+	label = "APDS9960";
+	reg = <0x9>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_bma280: bma280@a {
+	compatible = "bosch,bma280";
+	label = "BMA280";
+	reg = <0xa>;
+	int1-gpios = <&test_gpio 0 0>;
+	/* is-bmc150; */
+};
+
+test_i2c_bmc150_magn: bmc150_magn@b {
+	compatible = "bosch,bmc150_magn";
+	label = "BMC150_MAGN";
+	reg = <0xb>;
+	drdy-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_ak8975: ak8975@c {
+	compatible = "asahi-kasei,ak8975";
+	label = "AK8975";
+	reg = <0xc>;
+};
+
+test_i2c_bme680: bme680@d {
+	compatible = "bosch,bme680";
+	label = "BME680";
+	reg = <0xd>;
+};
+
+test_i2c_bmg160: bmg160@e {
+	compatible = "bosch,bmg160";
+	label = "BMG160";
+	reg = <0xe>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_bmm150: bmm150@f {
+	compatible = "bosch,bmm150";
+	label = "BMM150";
+	reg = <0xf>;
+};
+
+test_i2c_ft5336: ft5336@10 {
+	compatible = "focaltech,ft5336";
+	label = "FT5336";
+	reg = <0x10>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_ht16k33: ht16k33@11 {
+	compatible = "holtek,ht16k33";
+	label = "HT16K33";
+	reg = <0x11>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	irq-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_hmc5883l: hmc5883l@12 {
+	compatible = "honeywell,hmc5883l";
+	label = "HMC5883L";
+	reg = <0x12>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_hp206c: hp206c@13 {
+	compatible = "hoperf,hp206c";
+	label = "HP206C";
+	reg = <0x13>;
+};
+
+test_i2c_th02: th02@14 {
+	compatible = "hoperf,th02";
+	label = "TH02";
+	reg = <0x14>;
+};
+
+test_i2c_mpu6050: mpu6050@15 {
+	compatible = "invensense,mpu6050";
+	label = "MPU6050";
+	reg = <0x15>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_mpu9150: mpu9150@16 {
+	compatible = "invensense,mpu9150";
+	label = "MPU9150";
+	reg = <0x16>;
+};
+
+test_i2c_isl29035: isl29035@17 {
+	compatible = "isil,isl29035";
+	label = "ISL29035";
+	reg = <0x17>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_max30101: max30101@18 {
+	compatible = "max,max30101";
+	label = "MAX30101";
+	reg = <0x18>;
+};
+
+test_i2c_max44009: max44009@19 {
+	compatible = "maxim,max44009";
+	label = "MAX44009";
+	reg = <0x19>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_ms5837: ms5837@1a {
+	compatible = "meas,ms5837";
+	label = "MS5837";
+	reg = <0x1a>;
+};
+
+test_i2c_mcp9808: mcp9808@1b {
+	compatible = "microchip,mcp9808";
+	label = "MCP9808";
+	reg = <0x1b>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_fxas21002: fxas21002@1c {
+	compatible = "nxp,fxas21002";
+	label = "FXAS21002";
+	reg = <0x1c>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_fxos8700: fxos8700@1d {
+	compatible = "nxp,fxos8700";
+	label = "FXOS8700";
+	reg = <0x1d>;
+	reset-gpios = <&test_gpio 0 0>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_pca95xx: pca95xx@1e {
+	compatible = "nxp,pca95xx";
+	label = "PCA95XX";
+	reg = <0x1e>;
+	/* has-pud; */
+	#gpio-cells = <2>;
+	gpio-controller;
+};
+
+test_i2c_pca9633: pca9633@1f {
+	compatible = "nxp,pca9633";
+	label = "PCA9633";
+	reg = <0x1f>;
+};
+
+test_i2c_amg88xx: amg88xx@20 {
+	compatible = "panasonic,amg88xx";
+	label = "AMG88XX";
+	reg = <0x20>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_sx1509b: sx1509b@21 {
+	compatible = "semtech,sx1509b";
+	label = "SX1509B";
+	reg = <0x21>;
+	#gpio-cells = <2>;
+	ngpios = <16>;
+	gpio-controller;
+};
+
+test_i2c_sx9500: sx9500@22 {
+	compatible = "semtech,sx9500";
+	label = "SX9500";
+	reg = <0x22>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_sht3xd: sht3xd@23 {
+	compatible = "sensirion,sht3xd";
+	label = "SHT3XD";
+	reg = <0x23>;
+	alert-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_si7006: si7006@24 {
+	compatible = "silabs,si7006";
+	label = "SI7006";
+	reg = <0x24>;
+};
+
+test_i2c_si7060: si7060@25 {
+	compatible = "silabs,si7060";
+	label = "SI7060";
+	reg = <0x25>;
+};
+
+test_i2c_ssd1306fb: ssd1306fb@26 {
+	compatible = "solomon,ssd1306fb";
+	label = "SSD1306FB";
+	reg = <0x26>;
+	height = <0>;
+	width = <0>;
+	segment-offset = <0>;
+	page-offset = <0>;
+	display-offset = <0>;
+	multiplex-ratio = <0>;
+	/* segment-remap; */
+	/* com-invdir; */
+	/* com-sequential; */
+	prechargep = <0>;
+	reset-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_hts221: hts221@27 {
+	compatible = "st,hts221";
+	label = "HTS221";
+	reg = <0x27>;
+	drdy-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_iis2dlpc: iis2dlpc@28 {
+	compatible = "st,iis2dlpc";
+	label = "IIS2DLPC";
+	reg = <0x28>;
+	drdy-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_iis2mdc: iis2mdc@29 {
+	compatible = "st,iis2mdc";
+	label = "IIS2MDC";
+	reg = <0x29>;
+	drdy-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_ism330dhcx: ism330dhcx@2a {
+	compatible = "st,ism330dhcx";
+	label = "ISM330DHCX";
+	reg = <0x2a>;
+	drdy-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_lis2dh: lis2dh@2b {
+	compatible = "st,lis2dh";
+	label = "LIS2DH";
+	reg = <0x2b>;
+	irq-gpios = <&test_gpio 0 0>;
+	/* disconnect-sdo-sa0-pull-up; */
+};
+
+test_i2c_lis2dh12: lis2dh12@2c {
+	compatible = "st,lis2dh12";
+	label = "LIS2DH12";
+	reg = <0x2c>;
+	irq-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_lis2ds12: lis2ds12@2d {
+	compatible = "st,lis2ds12";
+	label = "LIS2DS12";
+	reg = <0x2d>;
+	irq-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_lis2dw12: lis2dw12@2e {
+	compatible = "st,lis2dw12";
+	label = "LIS2DW12";
+	reg = <0x2e>;
+	irq-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_lis2mdl: lis2mdl@2f {
+	compatible = "st,lis2mdl";
+	label = "LIS2MDL";
+	reg = <0x2f>;
+	irq-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_lis3dh: lis3dh@30 {
+	compatible = "st,lis3dh";
+	label = "LIS3DH";
+	reg = <0x30>;
+	irq-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_lis3mdl_magn: lis3mdl-magn@31 {
+	compatible = "st,lis3mdl-magn";
+	label = "LIS3MDL-MAGN";
+	reg = <0x31>;
+	irq-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_lps22hb_press: lps22hb-press@32 {
+	compatible = "st,lps22hb-press";
+	label = "LPS22HB-PRESS";
+	reg = <0x32>;
+};
+
+test_i2c_lps22hh: lps22hh@33 {
+	compatible = "st,lps22hh";
+	label = "LPS22HH";
+	reg = <0x33>;
+	drdy-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_lps25hb_press: lps25hb-press@34 {
+	compatible = "st,lps25hb-press";
+	label = "LPS25HB-PRESS";
+	reg = <0x34>;
+};
+
+test_i2c_lsm303agr_accel: lsm303agr-accel@35 {
+	compatible = "st,lsm303agr-accel";
+	label = "LSM303AGR-ACCEL";
+	reg = <0x35>;
+	irq-gpios = <&test_gpio 0 0>;
+	/* disconnect-sdo-sa0-pull-up; */
+};
+
+test_i2c_lsm303dlhc_accel: lsm303dlhc-accel@36 {
+	compatible = "st,lsm303dlhc-accel";
+	label = "LSM303DLHC-ACCEL";
+	reg = <0x36>;
+	irq-gpios = <&test_gpio 0 0>;
+	/* disconnect-sdo-sa0-pull-up; */
+};
+
+test_i2c_lsm303dlhc_magn: lsm303dlhc-magn@37 {
+	compatible = "st,lsm303dlhc-magn";
+	label = "LSM303DLHC-MAGN";
+	reg = <0x37>;
+};
+
+test_i2c_lsm6ds0: lsm6ds0@38 {
+	compatible = "st,lsm6ds0";
+	label = "LSM6DS0";
+	reg = <0x38>;
+};
+
+test_i2c_lsm6dsl: lsm6dsl@39 {
+	compatible = "st,lsm6dsl";
+	label = "LSM6DSL";
+	reg = <0x39>;
+	irq-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_lsm6dso: lsm6dso@3a {
+	compatible = "st,lsm6dso";
+	label = "LSM6DSO";
+	reg = <0x3a>;
+	irq-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_lsm9ds0_gyro: lsm9ds0-gyro@3b {
+	compatible = "st,lsm9ds0-gyro";
+	label = "LSM9DS0-GYRO";
+	reg = <0x3b>;
+	irq-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_lsm9ds0_mfd: lsm9ds0-mfd@3c {
+	compatible = "st,lsm9ds0-mfd";
+	label = "LSM9DS0-MFD";
+	reg = <0x3c>;
+	irq-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_stts751: stts751@3d {
+	compatible = "st,stts751";
+	label = "STTS751";
+	reg = <0x3d>;
+	drdy-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_vl53l0x: vl53l0x@3e {
+	compatible = "st,vl53l0x";
+	label = "VL53L0X";
+	reg = <0x3e>;
+	xshut-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_hdc: hdc@3f {
+	compatible = "ti,hdc";
+	label = "HDC";
+	reg = <0x3f>;
+	drdy-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_lp3943: lp3943@40 {
+	compatible = "ti,lp3943";
+	label = "LP3943";
+	reg = <0x40>;
+};
+
+test_i2c_lp5562: lp5562@41 {
+	compatible = "ti,lp5562";
+	label = "LP5562";
+	reg = <0x41>;
+};
+
+test_i2c_opt3001: opt3001@42 {
+	compatible = "ti,opt3001";
+	label = "OPT3001";
+	reg = <0x42>;
+};
+
+test_i2c_tlv320dac: tlv320dac@43 {
+	compatible = "ti,tlv320dac";
+	label = "TLV320DAC";
+	reg = <0x43>;
+	reset-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_tmp007: tmp007@44 {
+	compatible = "ti,tmp007";
+	label = "TMP007";
+	reg = <0x44>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_tmp112: tmp112@45 {
+	compatible = "ti,tmp112";
+	label = "TMP112";
+	reg = <0x45>;
+};
+
+test_i2c_tmp116: tmp116@46 {
+	compatible = "ti,tmp116";
+	label = "TMP116";
+	reg = <0x46>;
+};
+
+test_i2c_bq274xx: bq27xx@47 {
+	compatible = "ti,bq274xx";
+	label = "BQ274XX";
+	reg = <0x47>;
+	design-voltage = <3700>;
+	design-capacity = <1800>;
+	taper-current = <45>;
+	terminate-voltage = <3000>;
+};
+
+test_i2c_mpr: mpr@18 {
+	compatible = "honeywell,mpr";
+	label = "MPR";
+	reg = <0x18>;
+};
+
+test_i2c_dps310: dps310@48 {
+		compatible = "infineon,dps310";
+		label = "DPS310";
+		reg = <0x48>;
+};

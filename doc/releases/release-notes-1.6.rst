@@ -370,5 +370,3 @@ Known Issues
 
 * :jira:`ZEP-1405` - function l2cap_br_conn_req in /subsys/bluetooth/host/l2cap_br.c
   references uninitialized pointer
-
-

@@ -24,12 +24,19 @@ import os.path
 
 from sphinx.builders.html import StandaloneHTMLBuilder
 
-REDIRECT_TEMPLATE = """
+REDIRECT_TEMPLATE = r"""
 <html>
   <head>
     <meta http-equiv="refresh" content="0; url=$NEWURL" />
     <script>
-      window.location.href = "$NEWURL"
+     var id=window.location.href.split("#")[1];
+
+     if (id && (/^[a-zA-Z\:\/0-9\_\-\.]+$/.test(id))) {
+        window.location.href = "$NEWURL"+"#"+id;
+        }
+     else {
+        window.location.href = "$NEWURL";
+     };
     </script>
   </head>
   <body>
@@ -58,7 +65,6 @@ def create_redirect_pages(app, docname):
     for (old_url, new_url) in app.config.html_redirect_pages:
         if old_url.startswith('/'):
             old_url = old_url[1:]
-        print("Creating redirect: %s.html to %s.html" % (old_url, new_url))
 
         new_url = app.builder.get_relative_uri(old_url, new_url)
         out_file = app.builder.get_outfilename(old_url)

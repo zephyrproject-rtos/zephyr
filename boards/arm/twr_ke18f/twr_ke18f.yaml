@@ -12,7 +12,7 @@ supported:
   - adc
   - can
   - counter
-  - hwinfo
+  - dac
   - i2c
   - pwm
   - spi

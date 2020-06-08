@@ -12,6 +12,10 @@
 #include <net/mii.h>
 #include "phy_sam_gmac.h"
 
+#ifdef CONFIG_SOC_FAMILY_SAM0
+#include "eth_sam0_gmac.h"
+#endif
+
 #define LOG_MODULE_NAME eth_sam_phy
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
 
@@ -185,6 +189,22 @@ u32_t phy_sam_gmac_id_get(const struct phy_sam_gmac_dev *phy)
 	mdio_bus_disable(gmac);
 
 	return phy_id;
+}
+
+bool phy_sam_gmac_link_status_get(const struct phy_sam_gmac_dev *phy)
+{
+	Gmac * const gmac = phy->regs;
+	u32_t bmsr;
+
+	mdio_bus_enable(gmac);
+
+	if (phy_read(phy, MII_BMSR, &bmsr) < 0) {
+		return false;
+	}
+
+	mdio_bus_disable(gmac);
+
+	return (bmsr & MII_BMSR_LINK_STATUS) != 0;
 }
 
 int phy_sam_gmac_auto_negotiate(const struct phy_sam_gmac_dev *phy,

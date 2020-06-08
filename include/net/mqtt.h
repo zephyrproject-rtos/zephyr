@@ -75,7 +75,10 @@ enum mqtt_evt_type {
 	MQTT_EVT_SUBACK,
 
 	/** Acknowledgment to a unsubscribe request. */
-	MQTT_EVT_UNSUBACK
+	MQTT_EVT_UNSUBACK,
+
+	/** Ping Response from server. */
+	MQTT_EVT_PINGRESP,
 };
 
 /** @brief MQTT version protocol level. */
@@ -150,6 +153,18 @@ struct mqtt_utf8 {
 	u8_t *utf8;             /**< Pointer to UTF-8 string. */
 	u32_t size;             /**< Size of UTF string, in bytes. */
 };
+
+/**
+ * @brief Initialize UTF-8 encoded string from C literal string.
+ *
+ * Use it as follows:
+ *
+ * struct mqtt_utf8 password = MQTT_UTF8_LITERAL("my_pass");
+ *
+ * @param[in] literal Literal string from which to generate mqtt_utf8 object.
+ */
+#define MQTT_UTF8_LITERAL(literal)				\
+	((struct mqtt_utf8) {literal, sizeof(literal) - 1})
 
 /** @brief Abstracts binary strings. */
 struct mqtt_binstr {
@@ -338,7 +353,7 @@ struct mqtt_sec_config {
 	/** Peer hostname for ceritificate verification.
 	 *  May be NULL to skip hostname verification.
 	 */
-	char *hostname;
+	const char *hostname;
 };
 
 /** @brief MQTT transport type. */
@@ -404,7 +419,7 @@ struct mqtt_transport {
 		/** Socket descriptor */
 		int sock;
 
-		/** Websocket timeout */
+		/** Websocket timeout, in milliseconds. */
 		s32_t timeout;
 	} websocket;
 #endif
@@ -498,6 +513,9 @@ struct mqtt_client {
 
 	/** MQTT protocol version. */
 	u8_t protocol_version;
+
+	/** Unanswered PINGREQ count on this connection. */
+	s8_t unacked_ping;
 
 	/** Will retain flag, 1 if will message shall be retained persistently.
 	 */
@@ -703,6 +721,18 @@ int mqtt_abort(struct mqtt_client *client);
  * @return 0 or a negative error code (errno.h) indicating reason of failure.
  */
 int mqtt_live(struct mqtt_client *client);
+
+/**
+ * @brief Helper function to determine when next keep alive message should be
+ *        sent. Can be used for instance as a source for `poll` timeout.
+ *
+ * @param[in] client Client instance for which the procedure is requested.
+ *
+ * @return Time in milliseconds until next keep alive message is expected to
+ *         be sent. Function will return UINT32_MAX if keep alive messages are
+ *         not enabled.
+ */
+u32_t mqtt_keepalive_time_left(const struct mqtt_client *client);
 
 /**
  * @brief Receive an incoming MQTT packet. The registered callback will be

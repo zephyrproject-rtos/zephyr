@@ -25,7 +25,7 @@ specific for that device, and optimized for working together.
 
 Currently, there are L2 layers for :ref:`Ethernet <ethernet_interface>`,
 :ref:`IEEE 802.15.4 Soft-MAC <ieee802154_interface>`,
-:ref:`Bluetooth IPSP <bluetooth-ipsp-sample>`, :ref:`CANBUS <can_interface>`,
+:ref:`Bluetooth IPSP <bluetooth-ipsp-sample>`, :ref:`CANBUS <can_api>`,
 :ref:`OpenThread <thread_protocol_interface>`, Wi-Fi, and a dummy layer
 example that can be used as a template for writing a new one.
 
@@ -65,7 +65,7 @@ Network Device drivers
 **********************
 
 Network device drivers fully follows Zephyr device driver model as a
-basis. Please refer to :ref:`device_drivers`.
+basis. Please refer to :ref:`device_model_api`.
 
 There are, however, two differences:
 

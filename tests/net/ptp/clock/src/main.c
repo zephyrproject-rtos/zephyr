@@ -155,16 +155,16 @@ static int eth_init(struct device *dev)
 	return 0;
 }
 
-ETH_NET_DEVICE_INIT(eth_test_1, "eth_test_1", eth_init, &eth_context_1, NULL,
-		    CONFIG_ETH_INIT_PRIORITY, &api_funcs,
+ETH_NET_DEVICE_INIT(eth_test_1, "eth_test_1", eth_init, device_pm_control_nop,
+		    &eth_context_1, NULL, CONFIG_ETH_INIT_PRIORITY, &api_funcs,
 		    NET_ETH_MTU);
 
-ETH_NET_DEVICE_INIT(eth_test_2, "eth_test_2", eth_init, &eth_context_2, NULL,
-		    CONFIG_ETH_INIT_PRIORITY, &api_funcs,
+ETH_NET_DEVICE_INIT(eth_test_2, "eth_test_2", eth_init, device_pm_control_nop,
+		    &eth_context_2, NULL, CONFIG_ETH_INIT_PRIORITY, &api_funcs,
 		    NET_ETH_MTU);
 
-ETH_NET_DEVICE_INIT(eth_test_3, "eth_test_3", eth_init, &eth_context_3, NULL,
-		    CONFIG_ETH_INIT_PRIORITY, &api_funcs,
+ETH_NET_DEVICE_INIT(eth_test_3, "eth_test_3", eth_init, device_pm_control_nop,
+		    &eth_context_3, NULL, CONFIG_ETH_INIT_PRIORITY, &api_funcs,
 		    NET_ETH_MTU);
 
 static u64_t timestamp_to_nsec(struct net_ptp_time *ts)
@@ -313,7 +313,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	ud->total_if_count++;
 }
 
-static void check_interfaces(void)
+static void test_check_interfaces(void)
 {
 	struct user_data ud = { 0 };
 
@@ -333,7 +333,7 @@ static void check_interfaces(void)
  * relevant for this testing. Anyway, set the IP addresses to the interfaces so
  * we have a real life scenario.
  */
-static void address_setup(void)
+static void test_address_setup(void)
 {
 	struct net_if_addr *ifaddr;
 	struct net_if *iface1, *iface2, *iface3;
@@ -556,8 +556,8 @@ void test_main(void)
 	}
 
 	ztest_test_suite(ptp_clock_test,
-			 ztest_unit_test(check_interfaces),
-			 ztest_unit_test(address_setup),
+			 ztest_unit_test(test_check_interfaces),
+			 ztest_unit_test(test_address_setup),
 			 ztest_unit_test(test_ptp_clock_interfaces),
 			 ztest_unit_test(test_ptp_clock_iface_1),
 			 ztest_unit_test(test_ptp_clock_iface_2),

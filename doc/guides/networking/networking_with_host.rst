@@ -11,6 +11,8 @@ Networking with the host system
    qemu_eth_setup.rst
    qemu_setup.rst
    usbnet_setup.rst
+   qemu_user_setup.rst
+   networking_with_multiple_instances.rst
 
 While developing networking software, it is usually necessary to connect and
 exchange data with the host system like a Linux desktop computer.
@@ -30,6 +32,15 @@ possible:
     in some cases, you might need to use the SLIP method for host connectivity.
     See :ref:`networking_with_eth_qemu` for details.
 
+* QEMU using SLIRP (Qemu User Networking).
+
+  * QEMU User Networking is implemented using "slirp", which provides a full TCP/IP
+    stack within QEMU and uses that stack to implement a virtual NAT'd network. As
+    this support is built into QEMU, it can be used with any model and requires no
+    admin privileges on the host machine, unlike TAP. However, it has several
+    limitations including performance which makes it less valuable for practical
+    purposes. See :ref:`networking_with_user_qemu` for details.
+
 * native_posix board.
 
   * The Zephyr instance can be executed as a user space process in the host
@@ -44,3 +55,9 @@ possible:
   * Here, the Zephyr instance is run on a real board and the connectivity to
     the host system is done via USB.
     See :ref:`usb_device_networking_setup` for details.
+
+* Connecting multiple Zephyr instances together.
+
+  * If you have multiple Zephyr instances, either QEMU or native_posix ones,
+    and want to create a connection between them, see
+    :ref:`networking_with_multiple_instances` for details.

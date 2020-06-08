@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT sifive_pwm0
+
 #include <logging/log.h>
 
 LOG_MODULE_REGISTER(pwm_sifive, CONFIG_PWM_LOG_LEVEL);
@@ -68,7 +70,7 @@ static inline void sys_set_mask(mem_addr_t addr, u32_t mask, u32_t value)
 
 static int pwm_sifive_init(struct device *dev)
 {
-	const struct pwm_sifive_cfg *config = dev->config->config_info;
+	const struct pwm_sifive_cfg *config = dev->config_info;
 
 	/* When pwms == pwmcmp0, reset the counter */
 	sys_set_bit(PWM_REG(config, REG_PWMCFG), SF_PWMZEROCMP);
@@ -96,7 +98,8 @@ static int pwm_sifive_init(struct device *dev)
 static int pwm_sifive_pin_set(struct device *dev,
 			      u32_t pwm,
 			      u32_t period_cycles,
-			      u32_t pulse_cycles)
+			      u32_t pulse_cycles,
+			      pwm_flags_t flags)
 {
 	const struct pwm_sifive_cfg *config = NULL;
 	u32_t count_max = 0U;
@@ -107,12 +110,13 @@ static int pwm_sifive_pin_set(struct device *dev,
 		LOG_ERR("The device instance pointer was NULL\n");
 		return -EFAULT;
 	}
-	if (dev->config == NULL) {
-		LOG_ERR("The device config pointer was NULL\n");
-		return -EFAULT;
+
+	if (flags) {
+		/* PWM polarity not supported (yet?) */
+		return -ENOTSUP;
 	}
 
-	config = dev->config->config_info;
+	config = dev->config_info;
 	if (config == NULL) {
 		LOG_ERR("The device configuration is NULL\n");
 		return -EFAULT;
@@ -194,12 +198,8 @@ static int pwm_sifive_get_cycles_per_sec(struct device *dev,
 		LOG_ERR("The device instance pointer was NULL\n");
 		return -EFAULT;
 	}
-	if (dev->config == NULL) {
-		LOG_ERR("The device config pointer was NULL\n");
-		return -EFAULT;
-	}
 
-	config = dev->config->config_info;
+	config = dev->config_info;
 	if (config == NULL) {
 		LOG_ERR("The device configuration is NULL\n");
 		return -EFAULT;
@@ -225,28 +225,17 @@ static const struct pwm_driver_api pwm_sifive_api = {
 #define PWM_SIFIVE_INIT(n)	\
 	static struct pwm_sifive_data pwm_sifive_data_##n;	\
 	static const struct pwm_sifive_cfg pwm_sifive_cfg_##n = {	\
-			.base = DT_INST_##n##_SIFIVE_PWM0_BASE_ADDRESS,	\
-			.f_sys = DT_INST_##n##_SIFIVE_PWM0_CLOCK_FREQUENCY,  \
-			.cmpwidth = DT_INST_##n##_SIFIVE_PWM0_SIFIVE_COMPARE_WIDTH, \
+			.base = DT_INST_REG_ADDR(n),	\
+			.f_sys = DT_INST_PROP(n, clock_frequency),  \
+			.cmpwidth = DT_INST_PROP(n, sifive_compare_width), \
 		};	\
 	DEVICE_AND_API_INIT(pwm_##n,	\
-			    DT_INST_##n##_SIFIVE_PWM0_LABEL,	\
+			    DT_INST_LABEL(n),	\
 			    pwm_sifive_init,	\
 			    &pwm_sifive_data_##n,	\
 			    &pwm_sifive_cfg_##n,	\
 			    POST_KERNEL,	\
 			    CONFIG_PWM_SIFIVE_INIT_PRIORITY,	\
-			    &pwm_sifive_api)
+			    &pwm_sifive_api);
 
-#ifdef DT_INST_0_SIFIVE_PWM0_LABEL
-PWM_SIFIVE_INIT(0);
-#endif /* DT_INST_0_SIFIVE_PWM0_LABEL */
-
-#ifdef DT_INST_1_SIFIVE_PWM0_LABEL
-PWM_SIFIVE_INIT(1);
-#endif /* DT_INST_1_SIFIVE_PWM0_LABEL */
-
-#ifdef DT_INST_2_SIFIVE_PWM0_LABEL
-PWM_SIFIVE_INIT(2);
-#endif /* DT_INST_2_SIFIVE_PWM0_LABEL */
-
+DT_INST_FOREACH_STATUS_OKAY(PWM_SIFIVE_INIT)

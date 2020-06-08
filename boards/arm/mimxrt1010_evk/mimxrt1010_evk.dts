@@ -1,0 +1,68 @@
+/*
+ * Copyright (c) 2019, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_rt1010.dtsi>
+
+/ {
+	model = "NXP MIMXRT1010-EVK board";
+	compatible = "nxp,mimxrt1010";
+
+	aliases {
+		led0 = &green_led;
+		sw0 = &user_button;
+	};
+
+	chosen {
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led-1 {
+			gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
+			label = "User LD1";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button-1 {
+			label = "User SW4";
+			gpios = <&gpio2 5 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+arduino_serial: &lpuart1 {};
+
+&flexspi {
+	reg = <0x402a8000 0x4000>, <0x60000000 0x1000000>;
+	at25sf128a: at25sf128a@0 {
+		compatible = "adesto,at25sf128a", "jedec,spi-nor";
+		size = <134217728>;
+		label = "AT25SF128A";
+		reg = <0>;
+		spi-max-frequency = <133000000>;
+		status = "okay";
+		jedec-id = [1f 89 01];
+	};
+};
+
+&lpi2c1 {
+	status = "okay";
+};
+
+&lpuart1 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&usb1 {
+	status = "okay";
+};

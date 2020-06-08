@@ -61,6 +61,12 @@ config NET_L2_PPP_OPTION_MRU_NEG
 	help
 	  Try to negotiate with peer for MRU (MTU) for the link.
 
+config NET_L2_PPP_OPTION_DNS_USE
+	bool "Use negotiated DNS servers"
+	depends on DNS_RESOLVER
+	help
+	  Use the DNS servers negotiated in the IPCP configuration.
+
 module = NET_L2_PPP
 module-dep = NET_LOG
 module-str = Log level for ppp L2 layer

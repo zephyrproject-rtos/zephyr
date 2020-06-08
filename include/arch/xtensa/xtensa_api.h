@@ -65,4 +65,3 @@ static inline void _xt_set_intclear(unsigned int arg)
 }
 
 #endif /* ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_API_H_ */
-

@@ -98,7 +98,7 @@ static const char example_data[] = "0123456789"
 				   "abcdefghijklmnopqrstuvxyz"
 				   "!#¤%&/()=?";
 
-static void net_buf_test_1(void)
+static void test_net_buf_1(void)
 {
 	struct net_buf *bufs[bufs_pool.buf_count];
 	struct net_buf *buf;
@@ -118,7 +118,7 @@ static void net_buf_test_1(void)
 		     "Incorrect destroy callback count");
 }
 
-static void net_buf_test_2(void)
+static void test_net_buf_2(void)
 {
 	struct net_buf *frag, *head;
 	struct k_fifo fifo;
@@ -165,7 +165,7 @@ static void test_3_thread(void *arg1, void *arg2, void *arg3)
 
 static K_THREAD_STACK_DEFINE(test_3_thread_stack, 1024);
 
-static void net_buf_test_3(void)
+static void test_net_buf_3(void)
 {
 	static struct k_thread test_3_thread_data;
 	struct net_buf *frag, *head;
@@ -200,7 +200,7 @@ static void net_buf_test_3(void)
 		    "Timeout while waiting for semaphore");
 }
 
-static void net_buf_test_4(void)
+static void test_net_buf_4(void)
 {
 	struct net_buf *frags[bufs_pool.buf_count - 1];
 	struct net_buf *buf, *frag;
@@ -310,7 +310,7 @@ static void net_buf_test_4(void)
 		     "Incorrect frag destroy callback count");
 }
 
-static void net_buf_test_big_buf(void)
+static void test_net_buf_big_buf(void)
 {
 	struct net_buf *big_frags[bufs_pool.buf_count];
 	struct net_buf *buf, *frag;
@@ -348,7 +348,7 @@ static void net_buf_test_big_buf(void)
 	zassert_equal(destroy_called, 2, "Incorrect destroy callback count");
 }
 
-static void net_buf_test_multi_frags(void)
+static void test_net_buf_multi_frags(void)
 {
 	struct net_buf *frags[bufs_pool.buf_count];
 	struct net_buf *buf;
@@ -401,7 +401,7 @@ static void net_buf_test_multi_frags(void)
 		     "Incorrect frag destroy callback count");
 }
 
-static void net_buf_test_clone(void)
+static void test_net_buf_clone(void)
 {
 	struct net_buf *buf, *clone;
 
@@ -420,7 +420,7 @@ static void net_buf_test_clone(void)
 	zassert_equal(destroy_called, 2, "Incorrect destroy callback count");
 }
 
-static void net_buf_test_fixed_pool(void)
+static void test_net_buf_fixed_pool(void)
 {
 	struct net_buf *buf;
 
@@ -434,7 +434,7 @@ static void net_buf_test_fixed_pool(void)
 	zassert_equal(destroy_called, 1, "Incorrect destroy callback count");
 }
 
-static void net_buf_test_var_pool(void)
+static void test_net_buf_var_pool(void)
 {
 	struct net_buf *buf1, *buf2, *buf3;
 
@@ -457,7 +457,7 @@ static void net_buf_test_var_pool(void)
 	zassert_equal(destroy_called, 3, "Incorrect destroy callback count");
 }
 
-static void net_buf_test_byte_order(void)
+static void test_net_buf_byte_order(void)
 {
 	struct net_buf *buf;
 	u8_t le16[2] = { 0x02, 0x01 };
@@ -484,6 +484,8 @@ static void net_buf_test_byte_order(void)
 	zassert_equal(u16, net_buf_pull_be16(buf),
 		      "Invalid 16 bits byte order");
 
+	net_buf_reset(buf);
+
 	net_buf_add_le16(buf, u16);
 	net_buf_add_be16(buf, u16);
 
@@ -492,12 +494,16 @@ static void net_buf_test_byte_order(void)
 	zassert_mem_equal(be16, net_buf_pull_mem(buf, sizeof(be16)),
 			  sizeof(be16), "Invalid 16 bits byte order");
 
+	net_buf_reset(buf);
+
 	net_buf_add_mem(buf, &le24, sizeof(le24));
 	net_buf_add_mem(buf, &be24, sizeof(be24));
 
 	u32 = net_buf_pull_le24(buf);
 	zassert_equal(u32, net_buf_pull_be24(buf),
 		      "Invalid 24 bits byte order");
+
+	net_buf_reset(buf);
 
 	net_buf_add_le24(buf, u32);
 	net_buf_add_be24(buf, u32);
@@ -507,12 +513,16 @@ static void net_buf_test_byte_order(void)
 	zassert_mem_equal(be24, net_buf_pull_mem(buf, sizeof(be24)),
 			  sizeof(be24), "Invalid 24 bits byte order");
 
+	net_buf_reset(buf);
+
 	net_buf_add_mem(buf, &le32, sizeof(le32));
 	net_buf_add_mem(buf, &be32, sizeof(be32));
 
 	u32 = net_buf_pull_le32(buf);
 	zassert_equal(u32, net_buf_pull_be32(buf),
 		      "Invalid 32 bits byte order");
+
+	net_buf_reset(buf);
 
 	net_buf_add_le32(buf, u32);
 	net_buf_add_be32(buf, u32);
@@ -522,12 +532,16 @@ static void net_buf_test_byte_order(void)
 	zassert_mem_equal(be32, net_buf_pull_mem(buf, sizeof(be32)),
 			  sizeof(be32), "Invalid 32 bits byte order");
 
+	net_buf_reset(buf);
+
 	net_buf_add_mem(buf, &le48, sizeof(le48));
 	net_buf_add_mem(buf, &be48, sizeof(be48));
 
 	u64 = net_buf_pull_le48(buf);
 	zassert_equal(u64, net_buf_pull_be48(buf),
 		      "Invalid 48 bits byte order");
+
+	net_buf_reset(buf);
 
 	net_buf_add_le48(buf, u64);
 	net_buf_add_be48(buf, u64);
@@ -537,12 +551,16 @@ static void net_buf_test_byte_order(void)
 	zassert_mem_equal(be48, net_buf_pull_mem(buf, sizeof(be48)),
 			  sizeof(be48), "Invalid 48 bits byte order");
 
+	net_buf_reset(buf);
+
 	net_buf_add_mem(buf, &le64, sizeof(le64));
 	net_buf_add_mem(buf, &be64, sizeof(be64));
 
 	u64 = net_buf_pull_le64(buf);
 	zassert_equal(u64, net_buf_pull_be64(buf),
 		      "Invalid 64 bits byte order");
+
+	net_buf_reset(buf);
 
 	net_buf_add_le64(buf, u64);
 	net_buf_add_be64(buf, u64);
@@ -557,18 +575,18 @@ static void net_buf_test_byte_order(void)
 
 void test_main(void)
 {
-	ztest_test_suite(net_buf_test,
-			 ztest_unit_test(net_buf_test_1),
-			 ztest_unit_test(net_buf_test_2),
-			 ztest_unit_test(net_buf_test_3),
-			 ztest_unit_test(net_buf_test_4),
-			 ztest_unit_test(net_buf_test_big_buf),
-			 ztest_unit_test(net_buf_test_multi_frags),
-			 ztest_unit_test(net_buf_test_clone),
-			 ztest_unit_test(net_buf_test_fixed_pool),
-			 ztest_unit_test(net_buf_test_var_pool),
-			 ztest_unit_test(net_buf_test_byte_order)
+	ztest_test_suite(test_net_buf,
+			 ztest_unit_test(test_net_buf_1),
+			 ztest_unit_test(test_net_buf_2),
+			 ztest_unit_test(test_net_buf_3),
+			 ztest_unit_test(test_net_buf_4),
+			 ztest_unit_test(test_net_buf_big_buf),
+			 ztest_unit_test(test_net_buf_multi_frags),
+			 ztest_unit_test(test_net_buf_clone),
+			 ztest_unit_test(test_net_buf_fixed_pool),
+			 ztest_unit_test(test_net_buf_var_pool),
+			 ztest_unit_test(test_net_buf_byte_order)
 			 );
 
-	ztest_run_test_suite(net_buf_test);
+	ztest_run_test_suite(test_net_buf);
 }

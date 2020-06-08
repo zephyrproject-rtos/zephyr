@@ -37,7 +37,6 @@
 #define EXT_PORTC      0x58
 #define EXT_PORTD      0x5c
 #define INT_CLOCK_SYNC 0x60 /* alias LS_SYNC */
-#define INT_BOTHEDGE   0x68
 #define VER_ID_CODE    0x6c
 #define CONFIG_REG2    0x70
 #define CONFIG_REG1    0x74

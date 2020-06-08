@@ -16,7 +16,7 @@
 #include <em_emu.h>
 #include <em_chip.h>
 #include <arch/cpu.h>
-#include <arch/arm/cortex_m/cmsis.h>
+#include <arch/arm/aarch32/cortex_m/cmsis.h>
 
 #include <logging/log.h>
 
@@ -60,9 +60,18 @@ static ALWAYS_INLINE void clock_init(void)
 	CMU_OscillatorEnable(cmuOsc_HFRCO, false, false);
 #elif (defined CONFIG_CMU_HFCLK_HFRCO)
 	/*
-	 * This is the default clock, the controller starts with, so nothing to
-	 * do here.
+	 * This is the default clock, the controller starts with
 	 */
+
+#ifdef CONFIG_SOC_GECKO_HAS_HFRCO_FREQRANGE
+	if (CONFIG_CMU_HFRCO_FREQ) {
+		/* Setting system HFRCO frequency */
+		CMU_HFRCOBandSet(CONFIG_CMU_HFRCO_FREQ);
+
+		/* Using HFRCO as high frequency clock, HFCLK */
+		CMU_ClockSelectSet(cmuClock_HF, cmuSelect_HFRCO);
+	}
+#endif
 #else
 #error "Unsupported clock source for HFCLK selected"
 #endif
@@ -107,9 +116,9 @@ static void swo_init(void)
 	GPIO->ROUTEPEN |= GPIO_ROUTEPEN_SWVPEN;
 	/* Set SWO location */
 	GPIO->ROUTELOC0 =
-		DT_GPIO_GECKO_SWO_LOCATION << _GPIO_ROUTELOC0_SWVLOC_SHIFT;
+		SWO_LOCATION << _GPIO_ROUTELOC0_SWVLOC_SHIFT;
 #else
-	GPIO->ROUTE = GPIO_ROUTE_SWOPEN | (DT_GPIO_GECKO_SWO_LOCATION << 8);
+	GPIO->ROUTE = GPIO_ROUTE_SWOPEN | (SWO_LOCATION << 8);
 #endif
 	soc_gpio_configure(&pin_swo);
 }

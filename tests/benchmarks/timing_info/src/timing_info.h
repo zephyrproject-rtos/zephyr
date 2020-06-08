@@ -33,7 +33,7 @@
  *
  * NOTE: Needed only when reading value from end of swap operation
  */
-#ifdef CONFIG_NRF_RTC_TIMER
+#if defined(CONFIG_NRF_RTC_TIMER)
 
 /* To get current count of timer, first 1 need to be written into
  * Capture Register and Current Count will be copied into corresponding
@@ -44,25 +44,31 @@
 #define TIMING_INFO_GET_TIMER_VALUE() (TIMING_INFO_OS_GET_TIME())
 #define SUBTRACT_CLOCK_CYCLES(val)    (val)
 
-#elif CONFIG_X86
+#elif defined(CONFIG_SOC_SERIES_MEC1501X)
+#define TIMING_INFO_PRE_READ()
+#define TIMING_INFO_OS_GET_TIME()     (B32TMR1_REGS->CNT)
+#define TIMING_INFO_GET_TIMER_VALUE() (TIMING_INFO_OS_GET_TIME())
+#define SUBTRACT_CLOCK_CYCLES(val)    (val)
+
+#elif defined(CONFIG_X86)
 #define TIMING_INFO_PRE_READ()
 #define TIMING_INFO_OS_GET_TIME()      (z_tsc_read())
 #define TIMING_INFO_GET_TIMER_VALUE()  (TIMING_INFO_OS_GET_TIME())
 #define SUBTRACT_CLOCK_CYCLES(val)     (val)
 
-#elif CONFIG_ARM
+#elif defined(CONFIG_CPU_CORTEX_M)
 #define TIMING_INFO_PRE_READ()
 #define TIMING_INFO_OS_GET_TIME()      (k_cycle_get_32())
 #define TIMING_INFO_GET_TIMER_VALUE()  (SysTick->VAL)
 #define SUBTRACT_CLOCK_CYCLES(val)     (SysTick->LOAD - (u32_t)val)
 
-#elif CONFIG_ARC
+#elif defined(CONFIG_ARC)
 #define TIMING_INFO_PRE_READ()
 #define TIMING_INFO_OS_GET_TIME()     (k_cycle_get_32())
 #define TIMING_INFO_GET_TIMER_VALUE() (z_arc_v2_aux_reg_read(_ARC_V2_TMR0_COUNT))
 #define SUBTRACT_CLOCK_CYCLES(val)    ((u32_t)val)
 
-#elif CONFIG_NIOS2
+#elif defined(CONFIG_NIOS2)
 #include "altera_avalon_timer_regs.h"
 #define TIMING_INFO_PRE_READ()         \
 	(IOWR_ALTERA_AVALON_TIMER_SNAPL(TIMER_0_BASE, 10))
@@ -92,7 +98,7 @@
 /* NRF RTC TIMER runs ar very slow rate (32KHz), So in order to measure
  * Kernel starts a dedicated timer to measure kernel stats.
  */
-#ifdef CONFIG_NRF_RTC_TIMER
+#if defined(CONFIG_NRF_RTC_TIMER)
 #define NANOSECS_PER_SEC (1000000000)
 #define CYCLES_PER_SEC   (16000000/(1 << NRF_TIMER2->PRESCALER))
 
@@ -126,6 +132,65 @@ static inline u32_t get_core_freq_MHz(void)
 {
 	return SystemCoreClock/1000000;
 }
+
+#elif defined(CONFIG_SOC_SERIES_MEC1501X)
+
+#define NANOSECS_PER_SEC	(1000000000)
+#define CYCLES_PER_SEC		(48000000)
+#define CYCLES_TO_NS(x)		((x) * (NANOSECS_PER_SEC/CYCLES_PER_SEC))
+#define PRINT_STATS(x, y, z)   PRINT_F(x, y, z)
+
+/* Configure Timer parameters */
+static inline void benchmark_timer_init(void)
+{
+	/* Setup counter */
+	B32TMR1_REGS->CTRL =
+		MCHP_BTMR_CTRL_ENABLE |
+		MCHP_BTMR_CTRL_AUTO_RESTART |
+		MCHP_BTMR_CTRL_COUNT_UP;
+
+	B32TMR1_REGS->PRLD = 0;		/* Preload */
+	B32TMR1_REGS->CNT = 0;		/* Counter value */
+
+	B32TMR1_REGS->IEN = 0;		/* Disable interrupt */
+	B32TMR1_REGS->STS = 1;		/* Clear interrupt */
+}
+
+/* Stop the timer */
+static inline void benchmark_timer_stop(void)
+{
+	B32TMR1_REGS->CTRL &= ~MCHP_BTMR_CTRL_START;
+}
+
+/* Start the timer */
+static inline void benchmark_timer_start(void)
+{
+	B32TMR1_REGS->CTRL |= MCHP_BTMR_CTRL_START;
+}
+
+/* 48MHz counter frequency */
+static inline u32_t get_core_freq_MHz(void)
+{
+	return CYCLES_PER_SEC;
+}
+
+#elif defined(CONFIG_X86)
+
+static inline void benchmark_timer_init(void)  {       }
+static inline void benchmark_timer_stop(void)  {       }
+static inline void benchmark_timer_start(void) {       }
+
+extern u32_t x86_cyc_to_ns_floor64(u64_t cyc);
+extern u32_t x86_get_timer_freq_MHz(void);
+
+#define CYCLES_TO_NS(x) x86_cyc_to_ns_floor64(x)
+
+static inline u32_t get_core_freq_MHz(void)
+{
+	return x86_get_timer_freq_MHz();
+}
+
+#define PRINT_STATS(x, y, z)   PRINT_F(x, y, z)
 
 #else  /* All other architectures */
 /* Done because weak attribute doesn't work on static inline. */
