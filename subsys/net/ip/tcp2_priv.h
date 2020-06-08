@@ -201,6 +201,8 @@ struct tcp { /* TCP connection */
 	size_t send_retries;
 	struct k_delayed_work timewait_timer;
 	struct net_if *iface;
+	struct k_sem connect_sem; /* semaphore for blocking connect */
+	bool in_connect;
 	net_tcp_accept_cb_t accept_cb;
 	atomic_t ref_count;
 };

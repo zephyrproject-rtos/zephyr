@@ -281,10 +281,19 @@ static void tcp_send_queue_flush(struct tcp *conn)
 
 static int tcp_conn_unref(struct tcp *conn)
 {
-	int ref_count = atomic_dec(&conn->ref_count) - 1;
-	int key;
+	int key, ref_count = atomic_get(&conn->ref_count);
 
 	NET_DBG("conn: %p, ref_count=%d", conn, ref_count);
+
+#if !defined(CONFIG_NET_TEST_PROTOCOL)
+	if (conn->in_connect) {
+		NET_DBG("conn: %p is waiting on connect semaphore", conn);
+		tcp_send_queue_flush(conn);
+		goto out;
+	}
+#endif /* CONFIG_NET_TEST_PROTOCOL */
+
+	ref_count = atomic_dec(&conn->ref_count) - 1;
 
 	if (ref_count) {
 		tp_out(net_context_get_family(conn->context), conn->iface,
@@ -871,6 +880,9 @@ static struct tcp *tcp_conn_alloc(void)
 	conn->send_data = tcp_pkt_alloc(conn, 0);
 	k_delayed_work_init(&conn->send_data_timer, tcp_resend_data);
 
+	k_sem_init(&conn->connect_sem, 0, UINT_MAX);
+	conn->in_connect = false;
+
 	tcp_conn_ref(conn);
 
 	sys_slist_append(&tcp_conns, (sys_snode_t *)conn);
@@ -1140,6 +1152,7 @@ next_state:
 				}
 				conn_ack(conn, + len);
 			}
+			k_sem_give(&conn->connect_sem);
 			next = TCP_ESTABLISHED;
 			net_context_set_state(conn->context,
 					      NET_CONTEXT_CONNECTED);
@@ -1376,8 +1389,6 @@ int net_tcp_connect(struct net_context *context,
 	struct tcp *conn;
 	int ret = 0;
 
-	ARG_UNUSED(timeout);
-
 	NET_DBG("context: %p, local: %s, remote: %s", context,
 		log_strdup(net_sprint_addr(
 			    local_addr->sa_family,
@@ -1460,6 +1471,18 @@ int net_tcp_connect(struct net_context *context,
 	 */
 	tcp_in(conn, NULL);
 
+	if (!IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)) {
+		conn->in_connect = true;
+
+		if (k_sem_take(&conn->connect_sem, timeout) != 0 &&
+		    conn->state != TCP_ESTABLISHED) {
+			conn->in_connect = false;
+			tcp_conn_unref(conn);
+			ret = -ETIMEDOUT;
+			goto out;
+		}
+		conn->in_connect = false;
+	}
  out:
 	NET_DBG("conn: %p, ret=%d", conn, ret);
 
