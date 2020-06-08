@@ -26,3 +26,6 @@ doc/*
 scripts/ci/sanitycheck_ignore.txt
 scripts/ci/what_changed.py
 scripts/requirements*
+.github/workflows/compliance.yml
+scripts/ci/check_compliance.py
+scripts/ci/pylintrc

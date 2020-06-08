@@ -1,0 +1,114 @@
+name: Compliance
+
+on: pull_request
+
+jobs:
+  compliance_job:
+    runs-on: ubuntu-latest
+    name: Run compliance checks on patch series (PR)
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v1
+
+    - name: cache-pip
+      uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-doc-pip
+
+    - name: Install python dependencies
+      run: |
+        pip3 install setuptools
+        pip3 install wheel
+        pip3 install python-magic junitparser gitlint pylint pykwalify
+        pip3 install west
+
+    - name: Run Compliance Tests
+      id: compliance
+      env:
+        BASE_REF: ${{ github.base_ref }}
+      run: |
+        export PATH=$PATH:~/.local/bin
+        export ZEPHYR_BASE=$PWD
+        git config --global user.email "you@example.com"
+        git config --global user.name "Your Name"
+        git rebase origin/${BASE_REF}
+        ./scripts/ci/check_compliance.py -m Codeowners -m Devicetree -m Gitlint -m Identity -m Nits -m pylint -m checkpatch -m Kconfig -c origin/${BASE_REF}.. || true
+
+    - name: upload-results
+      uses: actions/upload-artifact@master
+      continue-on-error: True
+      with:
+        name: compliance.xml
+        path: compliance.xml
+
+    - name: check-warns
+      run: |
+        if [ -s Nits.txt ]; then
+           errors=$(cat Nits.txt)
+           errors="${errors//'%'/'%25'}"
+           errors="${errors//$'\n'/'%0A'}"
+           errors="${errors//$'\r'/'%0D'}"
+           echo "::error file=Nits.txt::$errors"
+           exit=1
+        fi
+        if [ -s checkpatch.txt ]; then
+           errors=$(cat checkpatch.txt)
+           errors="${errors//'%'/'%25'}"
+           errors="${errors//$'\n'/'%0A'}"
+           errors="${errors//$'\r'/'%0D'}"
+           echo "::error file=Checkpatch.txt::$errors"
+           exit=1
+        fi
+        if [ -s Identity.txt ]; then
+           errors=$(cat Identity.txt)
+           errors="${errors//'%'/'%25'}"
+           errors="${errors//$'\n'/'%0A'}"
+           errors="${errors//$'\r'/'%0D'}"
+           echo "::error file=Identity.txt::$errors"
+           exit=1
+        fi
+        if [ -s Gitlint.txt ]; then
+           errors=$(cat Gitlint.txt)
+           errors="${errors//'%'/'%25'}"
+           errors="${errors//$'\n'/'%0A'}"
+           errors="${errors//$'\r'/'%0D'}"
+           echo "::error file=Gitlint.txt::$errors"
+           exit=1
+        fi
+        if [ -s pylint.txt ]; then
+           errors=$(cat pylint.txt)
+           errors="${errors//'%'/'%25'}"
+           errors="${errors//$'\n'/'%0A'}"
+           errors="${errors//$'\r'/'%0D'}"
+           echo "::error file=pylint.txt::$errors"
+           exit=1
+        fi
+        if [ -s Devicetree.txt ]; then
+           errors=$(cat Devicetree.txt)
+           errors="${errors//'%'/'%25'}"
+           errors="${errors//$'\n'/'%0A'}"
+           errors="${errors//$'\r'/'%0D'}"
+           echo "::error file=Devicetree.txt::$errors"
+           exit=1
+        fi
+        if [ -s Kconfig.txt ]; then
+           errors=$(cat Kconfig.txt)
+           errors="${errors//'%'/'%25'}"
+           errors="${errors//$'\n'/'%0A'}"
+           errors="${errors//$'\r'/'%0D'}"
+           echo "::error file=Kconfig.txt::$errors"
+           exit=1
+        fi
+        if [ -s Codeowners.txt ]; then
+           errors=$(cat Codeowners.txt)
+           errors="${errors//'%'/'%25'}"
+           errors="${errors//$'\n'/'%0A'}"
+           errors="${errors//$'\r'/'%0D'}"
+           echo "::error file=Codeowners.txt::$errors"
+           exit=1
+        fi
+
+        if [ ${exit} == 1 ]; then
+          exit 1;
+        fi
