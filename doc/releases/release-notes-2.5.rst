@@ -29,6 +29,9 @@ interface and listing all issues with the `bug label
 API Changes
 ***********
 
+* Removed SETTINGS_USE_BASE64 support as its been deprecated for more than
+  two releases.
+
 Deprecated in this release
 ==========================
 
