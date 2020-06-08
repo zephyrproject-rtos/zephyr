@@ -49,14 +49,15 @@ static inline void zperf_upload_decode_stat(const struct shell *shell,
 		return;
 	}
 
-	results->nb_packets_rcvd = ntohl(stat->datagrams);
-	results->nb_packets_lost = ntohl(stat->error_cnt);
-	results->nb_packets_outorder = ntohl(stat->outorder_cnt);
-	results->nb_bytes_sent = ntohl(stat->total_len2);
-	results->time_in_us = ntohl(stat->stop_usec) +
-		ntohl(stat->stop_sec) * USEC_PER_SEC;
-	results->jitter_in_us = ntohl(stat->jitter2) +
-		ntohl(stat->jitter1) * USEC_PER_SEC;
+	results->nb_packets_rcvd = ntohl(UNALIGNED_GET(&stat->datagrams));
+	results->nb_packets_lost = ntohl(UNALIGNED_GET(&stat->error_cnt));
+	results->nb_packets_outorder =
+		ntohl(UNALIGNED_GET(&stat->outorder_cnt));
+	results->nb_bytes_sent = ntohl(UNALIGNED_GET(&stat->total_len2));
+	results->time_in_us = ntohl(UNALIGNED_GET(&stat->stop_usec)) +
+		ntohl(UNALIGNED_GET(&stat->stop_sec)) * USEC_PER_SEC;
+	results->jitter_in_us = ntohl(UNALIGNED_GET(&stat->jitter2)) +
+		ntohl(UNALIGNED_GET(&stat->jitter1)) * USEC_PER_SEC;
 }
 
 static void stat_received(struct net_context *context,
