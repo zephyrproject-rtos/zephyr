@@ -6,6 +6,7 @@ import argparse
 import os
 import pathlib
 import shlex
+import sys
 
 from west import log
 from west.configuration import config
@@ -404,7 +405,8 @@ class Build(Forceable):
         # to Just Work:
         #
         # west build -- -DOVERLAY_CONFIG=relative-path.conf
-        final_cmake_args = ['-B{}'.format(self.build_dir),
+        final_cmake_args = ['-DWEST_PYTHON={}'.format(sys.executable),
+                            '-B{}'.format(self.build_dir),
                             '-S{}'.format(self.source_dir),
                             '-G{}'.format(config_get('generator',
                                                      DEFAULT_CMAKE_GENERATOR))]

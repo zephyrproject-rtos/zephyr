@@ -45,6 +45,7 @@ def run_cmake(args, cwd=None, capture_output=False, dry_run=False):
     _ensure_min_version(cmake, dry_run)
 
     cmd = [cmake] + args
+
     kwargs = dict()
     if capture_output:
         kwargs['stdout'] = subprocess.PIPE
