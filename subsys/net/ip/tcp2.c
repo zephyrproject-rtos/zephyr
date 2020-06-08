@@ -1284,7 +1284,7 @@ int net_tcp_put(struct net_context *context)
 
 	NET_DBG("%s", conn ? log_strdup(tcp_conn_state(conn, NULL)) : "");
 
-	if (conn) {
+	if (conn && conn->state == TCP_ESTABLISHED) {
 		k_mutex_lock(&conn->lock, K_FOREVER);
 
 		tcp_out(conn, FIN | ACK);
