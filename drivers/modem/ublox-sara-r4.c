@@ -176,7 +176,7 @@ static struct modem_data mdata;
 static struct modem_context mctx;
 
 #if defined(CONFIG_DNS_RESOLVER)
-static struct addrinfo result;
+static struct zsock_addrinfo result;
 static struct sockaddr result_addr;
 static char result_canonname[DNS_MAX_NAME_SIZE + 1];
 #endif
@@ -1308,7 +1308,7 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 }
 
 /* support for POLLIN only for now. */
-static int offload_poll(struct pollfd *fds, int nfds, int msecs)
+static int offload_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 {
 	int i;
 	void *obj;
@@ -1350,7 +1350,7 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
 		return -1;
 	}
 
-	if (flags & MSG_PEEK) {
+	if (flags & ZSOCK_MSG_PEEK) {
 		errno = ENOTSUP;
 		return -1;
 	}
@@ -1358,7 +1358,7 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
 	next_packet_size = modem_socket_next_packet_size(&mdata.socket_config,
 							 sock);
 	if (!next_packet_size) {
-		if (flags & MSG_DONTWAIT) {
+		if (flags & ZSOCK_MSG_DONTWAIT) {
 			errno = EAGAIN;
 			return -1;
 		}
@@ -1560,8 +1560,8 @@ NET_SOCKET_REGISTER(ublox_sara_r4, AF_UNSPEC, offload_is_supported,
  * Later, we can add additional handling if it makes sense.
  */
 static int offload_getaddrinfo(const char *node, const char *service,
-			       const struct addrinfo *hints,
-			       struct addrinfo **res)
+			       const struct zsock_addrinfo *hints,
+			       struct zsock_addrinfo **res)
 {
 	struct modem_cmd cmd = MODEM_CMD("+UDNSRN: ", on_cmd_dns, 1U, ",");
 	uint32_t port = 0U;
@@ -1583,7 +1583,7 @@ static int offload_getaddrinfo(const char *node, const char *service,
 	if (service) {
 		port = ATOI(service, 0U, "port");
 		if (port < 1 || port > USHRT_MAX) {
-			return EAI_SERVICE;
+			return DNS_EAI_SERVICE;
 		}
 	}
 
@@ -1604,7 +1604,7 @@ static int offload_getaddrinfo(const char *node, const char *service,
 
 	/* user flagged node as numeric host, but we failed net_addr_pton */
 	if (hints && hints->ai_flags & AI_NUMERICHOST) {
-		return EAI_NONAME;
+		return DNS_EAI_NONAME;
 	}
 
 	snprintk(sendbuf, sizeof(sendbuf), "AT+UDNSRN=0,\"%s\"", node);
@@ -1620,11 +1620,11 @@ static int offload_getaddrinfo(const char *node, const char *service,
 					 &net_sin(&result_addr)->sin_addr,
 					 sendbuf, NET_IPV4_ADDR_LEN)));
 
-	*res = (struct addrinfo *)&result;
+	*res = (struct zsock_addrinfo *)&result;
 	return 0;
 }
 
-static void offload_freeaddrinfo(struct addrinfo *res)
+static void offload_freeaddrinfo(struct zsock_addrinfo *res)
 {
 	/* using static result from offload_getaddrinfo() -- no need to free */
 	res = NULL;

@@ -257,7 +257,7 @@ void modem_socket_put(struct modem_socket_config *cfg, int sock_fd)
  * initial implementation, but this should be improved in the future.
  */
 int modem_socket_poll(struct modem_socket_config *cfg,
-		      struct pollfd *fds, int nfds, int msecs)
+		      struct zsock_pollfd *fds, int nfds, int msecs)
 {
 	struct modem_socket *sock;
 	int ret, i;
@@ -274,10 +274,10 @@ int modem_socket_poll(struct modem_socket_config *cfg,
 			 * Handle user check for POLLOUT events:
 			 * we consider the socket to always be writeable.
 			 */
-			if (fds[i].events & POLLOUT) {
-				fds[i].revents |= POLLOUT;
+			if (fds[i].events & ZSOCK_POLLOUT) {
+				fds[i].revents |= ZSOCK_POLLOUT;
 				found_count++;
-			} else if (fds[i].events & POLLIN) {
+			} else if (fds[i].events & ZSOCK_POLLIN) {
 				sock->is_polled = true;
 			}
 		}
@@ -296,8 +296,9 @@ int modem_socket_poll(struct modem_socket_config *cfg,
 			continue;
 		}
 
-		if (fds[i].events & POLLIN && sock->packet_sizes[0] > 0U) {
-			fds[i].revents |= POLLIN;
+		if ((fds[i].events & ZSOCK_POLLIN) &&
+		    (sock->packet_sizes[0] > 0U)) {
+			fds[i].revents |= ZSOCK_POLLIN;
 			found_count++;
 		}
 
