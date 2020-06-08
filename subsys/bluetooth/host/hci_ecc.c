@@ -287,6 +287,8 @@ static void le_p256_pub_key(struct net_buf *buf)
 
 int bt_hci_ecc_send(struct net_buf *buf)
 {
+	int err;
+
 	if (bt_buf_get_type(buf) == BT_BUF_CMD) {
 		struct bt_hci_cmd_hdr *chdr = (void *)buf->data;
 
@@ -307,7 +309,11 @@ int bt_hci_ecc_send(struct net_buf *buf)
 		}
 	}
 
-	return bt_dev.drv->send(buf);
+	BT_SEND_LOCK();
+	err = bt_dev.drv->send(buf);
+	BT_SEND_UNLOCK();
+
+	return err;
 }
 
 int default_CSPRNG(uint8_t *dst, unsigned int len)

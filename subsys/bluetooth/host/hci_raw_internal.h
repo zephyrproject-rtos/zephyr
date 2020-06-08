@@ -17,6 +17,10 @@ struct bt_dev_raw {
 
 extern struct bt_dev_raw bt_dev;
 
+#define BT_SEND_LOCK_INIT()
+#define BT_SEND_LOCK()
+#define BT_SEND_UNLOCK()
+
 #ifdef __cplusplus
 }
 #endif

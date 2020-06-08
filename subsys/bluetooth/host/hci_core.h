@@ -226,6 +226,11 @@ struct bt_dev {
 	struct k_fifo		rx_queue;
 #endif
 
+#if defined(CONFIG_BT_CONN) && !defined(CONFIG_BT_HCI_RAW)
+	/* Lock for calling the driver send */
+	struct k_sem            tx_lock;
+#endif
+
 	/* Queue for outgoing HCI commands */
 	struct k_fifo		cmd_tx_queue;
 
@@ -245,6 +250,16 @@ struct bt_dev {
 	char			name[CONFIG_BT_DEVICE_NAME_MAX + 1];
 #endif
 };
+
+#if defined(CONFIG_BT_CONN) && !defined(CONFIG_BT_HCI_RAW)
+#define BT_SEND_LOCK_INIT() k_sem_init(&bt_dev.tx_lock, 1, 1)
+#define BT_SEND_LOCK()      k_sem_take(&bt_dev.tx_lock, K_FOREVER)
+#define BT_SEND_UNLOCK()    k_sem_give(&bt_dev.tx_lock)
+#else
+#define BT_SEND_LOCK_INIT()
+#define BT_SEND_LOCK()
+#define BT_SEND_UNLOCK()
+#endif /* defined(CONFIG_BT_CONN) && !defined(CONFIG_BT_HCI_RAW) */
 
 extern struct bt_dev bt_dev;
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)

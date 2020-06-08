@@ -63,8 +63,13 @@
 static struct k_thread rx_thread_data;
 static K_THREAD_STACK_DEFINE(rx_thread_stack, CONFIG_BT_RX_STACK_SIZE);
 #endif
-static struct k_thread tx_thread_data;
-static K_THREAD_STACK_DEFINE(tx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
+
+#if defined(CONFIG_BT_CONN)
+static struct k_thread acl_tx_thread_data;
+static K_THREAD_STACK_DEFINE(acl_tx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
+#endif
+static struct k_thread cmd_tx_thread_data;
+static K_THREAD_STACK_DEFINE(cmd_tx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
 
 static void init_work(struct k_work *work);
 
@@ -5250,7 +5255,7 @@ static void send_cmd(void)
 
 	/* Get next command */
 	BT_DBG("calling net_buf_get");
-	buf = net_buf_get(&bt_dev.cmd_tx_queue, K_NO_WAIT);
+	buf = net_buf_get(&bt_dev.cmd_tx_queue, K_FOREVER);
 	BT_ASSERT(buf);
 
 	/* Wait until ncmd > 0 */
@@ -5280,6 +5285,7 @@ static void send_cmd(void)
 	}
 }
 
+#if defined(CONFIG_BT_CONN)
 static void process_events(struct k_poll_event *ev, int count)
 {
 	BT_DBG("count %d", count);
@@ -5291,9 +5297,7 @@ static void process_events(struct k_poll_event *ev, int count)
 		case K_POLL_STATE_SIGNALED:
 			break;
 		case K_POLL_STATE_FIFO_DATA_AVAILABLE:
-			if (ev->tag == BT_EVENT_CMD_TX) {
-				send_cmd();
-			} else if (IS_ENABLED(CONFIG_BT_CONN)) {
+			{
 				struct bt_conn *conn;
 
 				if (ev->tag == BT_EVENT_CONN_TX_QUEUE) {
@@ -5313,34 +5317,18 @@ static void process_events(struct k_poll_event *ev, int count)
 	}
 }
 
-#if defined(CONFIG_BT_CONN)
-/* command FIFO + conn_change signal + MAX_CONN */
-#define EV_COUNT (2 + CONFIG_BT_MAX_CONN)
-#else
-/* command FIFO */
-#define EV_COUNT 1
-#endif
-
-static void hci_tx_thread(void *p1, void *p2, void *p3)
+/* conn_change signal + MAX_CONN */
+#define EV_COUNT (1 + CONFIG_BT_MAX_CONN)
+static void hci_acl_tx_thread(void *p1, void *p2, void *p3)
 {
-	static struct k_poll_event events[EV_COUNT] = {
-		K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
-						K_POLL_MODE_NOTIFY_ONLY,
-						&bt_dev.cmd_tx_queue,
-						BT_EVENT_CMD_TX),
-	};
+	static struct k_poll_event events[EV_COUNT];
 
 	BT_DBG("Started");
 
 	while (1) {
-		int ev_count, err;
+		int ev_count = 0, err;
 
-		events[0].state = K_POLL_STATE_NOT_READY;
-		ev_count = 1;
-
-		if (IS_ENABLED(CONFIG_BT_CONN)) {
-			ev_count += bt_conn_prepare_events(&events[1]);
-		}
+		ev_count += bt_conn_prepare_events(events);
 
 		BT_DBG("Calling k_poll with %d events", ev_count);
 
@@ -5351,6 +5339,21 @@ static void hci_tx_thread(void *p1, void *p2, void *p3)
 
 		/* Make sure we don't hog the CPU if there's all the time
 		 * some ready events.
+		 */
+		k_yield();
+	}
+}
+#endif
+
+static void hci_cmd_tx_thread(void *p1, void *p2, void *p3)
+{
+	BT_DBG("Started");
+
+	while (1) {
+		send_cmd();
+
+		/* Make sure we don't hog the CPU if there's all the time
+		 * some commands to send.
 		 */
 		k_yield();
 	}
@@ -5486,6 +5489,8 @@ static int common_init(void)
 {
 	struct net_buf *rsp;
 	int err;
+
+	BT_SEND_LOCK_INIT();
 
 	if (!(bt_dev.drv->quirks & BT_QUIRK_NO_RESET)) {
 		/* Send HCI_RESET */
@@ -6327,6 +6332,8 @@ static int hci_init(void)
 
 int bt_send(struct net_buf *buf)
 {
+	int err;
+
 	BT_DBG("buf %p len %u type %u", buf, buf->len, bt_buf_get_type(buf));
 
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
@@ -6335,7 +6342,11 @@ int bt_send(struct net_buf *buf)
 		return bt_hci_ecc_send(buf);
 	}
 
-	return bt_dev.drv->send(buf);
+	BT_SEND_LOCK();
+	err = bt_dev.drv->send(buf);
+	BT_SEND_UNLOCK();
+
+	return err;
 }
 
 int bt_recv(struct net_buf *buf)
@@ -6537,13 +6548,23 @@ int bt_enable(bt_ready_cb_t cb)
 
 	ready_cb = cb;
 
-	/* TX thread */
-	k_thread_create(&tx_thread_data, tx_thread_stack,
-			K_THREAD_STACK_SIZEOF(tx_thread_stack),
-			hci_tx_thread, NULL, NULL, NULL,
+	/* CMD TX thread */
+	k_thread_create(&cmd_tx_thread_data, cmd_tx_thread_stack,
+			K_THREAD_STACK_SIZEOF(cmd_tx_thread_stack),
+			hci_cmd_tx_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_HCI_TX_PRIO),
 			0, K_NO_WAIT);
-	k_thread_name_set(&tx_thread_data, "BT TX");
+	k_thread_name_set(&cmd_tx_thread_data, "BT CMD TX");
+
+#if defined(CONFIG_BT_CONN)
+	/* ACL TX thread */
+	k_thread_create(&acl_tx_thread_data, acl_tx_thread_stack,
+			K_THREAD_STACK_SIZEOF(acl_tx_thread_stack),
+			hci_acl_tx_thread, NULL, NULL, NULL,
+			K_PRIO_COOP(CONFIG_BT_HCI_TX_PRIO),
+			0, K_NO_WAIT);
+	k_thread_name_set(&acl_tx_thread_data, "BT ACL TX");
+#endif
 
 #if !defined(CONFIG_BT_RECV_IS_RX_THREAD)
 	/* RX thread */
