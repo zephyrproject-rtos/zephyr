@@ -74,7 +74,7 @@ struct modem_socket *modem_socket_from_id(struct modem_socket_config *cfg,
 struct modem_socket *modem_socket_from_newid(struct modem_socket_config *cfg);
 void modem_socket_put(struct modem_socket_config *cfg, int sock_fd);
 int modem_socket_poll(struct modem_socket_config *cfg,
-		      struct pollfd *fds, int nfds, int msecs);
+		      struct zsock_pollfd *fds, int nfds, int msecs);
 void modem_socket_wait_data(struct modem_socket_config *cfg,
 			    struct modem_socket *sock);
 void modem_socket_data_ready(struct modem_socket_config *cfg,
