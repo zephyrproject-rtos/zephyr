@@ -152,8 +152,8 @@ static struct node_update cdb_node_updates[CONFIG_BT_MESH_CDB_NODE_COUNT];
 static struct key_update cdb_key_updates[CONFIG_BT_MESH_CDB_SUBNET_COUNT +
 					 CONFIG_BT_MESH_CDB_APP_KEY_COUNT];
 #else
-static struct node_update cdb_node_updates[0];
-static struct key_update cdb_key_updates[0];
+static struct node_update cdb_node_updates[];
+static struct key_update cdb_key_updates[];
 #endif
 
 /* We need this so we don't overwrite app-hardcoded values in case FCB

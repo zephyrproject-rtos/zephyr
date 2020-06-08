@@ -29,7 +29,7 @@ struct btp_hdr {
 	uint8_t  opcode;
 	uint8_t  index;
 	uint16_t len;
-	uint8_t  data[0];
+	uint8_t  data[];
 } __packed;
 
 #define BTP_STATUS			0x00
@@ -40,12 +40,12 @@ struct btp_status {
 /* Core Service */
 #define CORE_READ_SUPPORTED_COMMANDS	0x01
 struct core_read_supported_commands_rp {
-	uint8_t data[0];
+	uint8_t data[];
 } __packed;
 
 #define CORE_READ_SUPPORTED_SERVICES	0x02
 struct core_read_supported_services_rp {
-	uint8_t data[0];
+	uint8_t data[];
 } __packed;
 
 #define CORE_REGISTER_SERVICE		0x03
@@ -65,13 +65,13 @@ struct core_unregister_service_cmd {
 /* commands */
 #define GAP_READ_SUPPORTED_COMMANDS	0x01
 struct gap_read_supported_commands_rp {
-	uint8_t data[0];
+	uint8_t data[];
 } __packed;
 
 #define GAP_READ_CONTROLLER_INDEX_LIST	0x02
 struct gap_read_controller_index_list_rp {
 	uint8_t num;
-	uint8_t index[0];
+	uint8_t index[];
 } __packed;
 
 #define GAP_SETTINGS_POWERED		0
@@ -154,8 +154,8 @@ struct gap_set_bondable_rp {
 struct gap_start_advertising_cmd {
 	uint8_t adv_data_len;
 	uint8_t scan_rsp_len;
-	uint8_t adv_data[0];
-	uint8_t scan_rsp[0];
+	uint8_t adv_data[];
+	uint8_t scan_rsp[];
 } __packed;
 struct gap_start_advertising_rp {
 	uint32_t current_settings;
@@ -296,7 +296,7 @@ struct gap_device_found_ev {
 	int8_t   rssi;
 	uint8_t  flags;
 	uint16_t eir_data_len;
-	uint8_t  eir_data[0];
+	uint8_t  eir_data[];
 } __packed;
 
 #define GAP_EV_DEVICE_CONNECTED		0x82
@@ -372,7 +372,7 @@ struct gap_pairing_consent_req_ev {
 /* commands */
 #define GATT_READ_SUPPORTED_COMMANDS	0x01
 struct gatt_read_supported_commands_rp {
-	uint8_t data[0];
+	uint8_t data[];
 } __packed;
 
 #define GATT_SERVICE_PRIMARY		0x00
@@ -382,7 +382,7 @@ struct gatt_read_supported_commands_rp {
 struct gatt_add_service_cmd {
 	uint8_t type;
 	uint8_t uuid_length;
-	uint8_t uuid[0];
+	uint8_t uuid[];
 } __packed;
 struct gatt_add_service_rp {
 	uint16_t svc_id;
@@ -394,7 +394,7 @@ struct gatt_add_characteristic_cmd {
 	uint8_t properties;
 	uint8_t permissions;
 	uint8_t uuid_length;
-	uint8_t uuid[0];
+	uint8_t uuid[];
 } __packed;
 struct gatt_add_characteristic_rp {
 	uint16_t char_id;
@@ -405,7 +405,7 @@ struct gatt_add_descriptor_cmd {
 	uint16_t char_id;
 	uint8_t permissions;
 	uint8_t uuid_length;
-	uint8_t uuid[0];
+	uint8_t uuid[];
 } __packed;
 struct gatt_add_descriptor_rp {
 	uint16_t desc_id;
@@ -423,7 +423,7 @@ struct gatt_add_included_service_rp {
 	struct gatt_set_value_cmd {
 	uint16_t attr_id;
 	uint16_t len;
-	uint8_t value[0];
+	uint8_t value[];
 } __packed;
 
 #define GATT_START_SERVER		0x07
@@ -445,7 +445,7 @@ struct gatt_service {
 	uint16_t start_handle;
 	uint16_t end_handle;
 	uint8_t uuid_length;
-	uint8_t uuid[0];
+	uint8_t uuid[];
 } __packed;
 
 struct gatt_included {
@@ -458,13 +458,13 @@ struct gatt_characteristic {
 	uint16_t value_handle;
 	uint8_t properties;
 	uint8_t uuid_length;
-	uint8_t uuid[0];
+	uint8_t uuid[];
 } __packed;
 
 struct gatt_descriptor {
 	uint16_t descriptor_handle;
 	uint8_t uuid_length;
-	uint8_t uuid[0];
+	uint8_t uuid[];
 } __packed;
 
 #define GATT_EXCHANGE_MTU		0x0a
@@ -480,7 +480,7 @@ struct gatt_disc_all_prim_cmd {
 } __packed;
 struct gatt_disc_all_prim_rp {
 	uint8_t services_count;
-	struct gatt_service services[0];
+	struct gatt_service services[];
 } __packed;
 
 #define GATT_DISC_PRIM_UUID		0x0c
@@ -488,11 +488,11 @@ struct gatt_disc_prim_uuid_cmd {
 	uint8_t address_type;
 	uint8_t address[6];
 	uint8_t uuid_length;
-	uint8_t uuid[0];
+	uint8_t uuid[];
 } __packed;
 struct gatt_disc_prim_rp {
 	uint8_t services_count;
-	struct gatt_service services[0];
+	struct gatt_service services[];
 } __packed;
 
 #define GATT_FIND_INCLUDED		0x0d
@@ -504,7 +504,7 @@ struct gatt_find_included_cmd {
 } __packed;
 struct gatt_find_included_rp {
 	uint8_t services_count;
-	struct gatt_included included[0];
+	struct gatt_included included[];
 } __packed;
 
 #define GATT_DISC_ALL_CHRC		0x0e
@@ -516,7 +516,7 @@ struct gatt_disc_all_chrc_cmd {
 } __packed;
 struct gatt_disc_chrc_rp {
 	uint8_t characteristics_count;
-	struct gatt_characteristic characteristics[0];
+	struct gatt_characteristic characteristics[];
 } __packed;
 
 #define GATT_DISC_CHRC_UUID		0x0f
@@ -526,7 +526,7 @@ struct gatt_disc_chrc_uuid_cmd {
 	uint16_t start_handle;
 	uint16_t end_handle;
 	uint8_t uuid_length;
-	uint8_t uuid[0];
+	uint8_t uuid[];
 } __packed;
 
 #define GATT_DISC_ALL_DESC		0x10
@@ -538,7 +538,7 @@ struct gatt_disc_all_desc_cmd {
 } __packed;
 struct gatt_disc_all_desc_rp {
 	uint8_t descriptors_count;
-	struct gatt_descriptor descriptors[0];
+	struct gatt_descriptor descriptors[];
 } __packed;
 
 #define GATT_READ			0x11
@@ -550,7 +550,7 @@ struct gatt_read_cmd {
 struct gatt_read_rp {
 	uint8_t att_response;
 	uint16_t data_length;
-	uint8_t data[0];
+	uint8_t data[];
 } __packed;
 
 #define GATT_READ_UUID			0x12
@@ -560,12 +560,12 @@ struct gatt_read_uuid_cmd {
 	uint16_t start_handle;
 	uint16_t end_handle;
 	uint8_t uuid_length;
-	uint8_t uuid[0];
+	uint8_t uuid[];
 } __packed;
 struct gatt_read_uuid_rp {
 	uint8_t att_response;
 	uint16_t data_length;
-	uint8_t data[0];
+	uint8_t data[];
 } __packed;
 
 #define GATT_READ_LONG			0x13
@@ -578,7 +578,7 @@ struct gatt_read_long_cmd {
 struct gatt_read_long_rp {
 	uint8_t att_response;
 	uint16_t data_length;
-	uint8_t data[0];
+	uint8_t data[];
 } __packed;
 
 #define GATT_READ_MULTIPLE		0x14
@@ -586,12 +586,12 @@ struct gatt_read_multiple_cmd {
 	uint8_t address_type;
 	uint8_t address[6];
 	uint8_t handles_count;
-	uint16_t handles[0];
+	uint16_t handles[];
 } __packed;
 struct gatt_read_multiple_rp {
 	uint8_t att_response;
 	uint16_t data_length;
-	uint8_t data[0];
+	uint8_t data[];
 } __packed;
 
 #define GATT_WRITE_WITHOUT_RSP		0x15
@@ -600,7 +600,7 @@ struct gatt_write_without_rsp_cmd {
 	uint8_t address[6];
 	uint16_t handle;
 	uint16_t data_length;
-	uint8_t data[0];
+	uint8_t data[];
 } __packed;
 
 #define GATT_SIGNED_WRITE_WITHOUT_RSP	0x16
@@ -609,7 +609,7 @@ struct gatt_signed_write_without_rsp_cmd {
 	uint8_t address[6];
 	uint16_t handle;
 	uint16_t data_length;
-	uint8_t data[0];
+	uint8_t data[];
 } __packed;
 
 #define GATT_WRITE			0x17
@@ -618,7 +618,7 @@ struct gatt_write_cmd {
 	uint8_t address[6];
 	uint16_t handle;
 	uint16_t data_length;
-	uint8_t data[0];
+	uint8_t data[];
 } __packed;
 struct gatt_write_rp {
 	uint8_t att_response;
@@ -631,7 +631,7 @@ struct gatt_write_long_cmd {
 	uint16_t handle;
 	uint16_t offset;
 	uint16_t data_length;
-	uint8_t data[0];
+	uint8_t data[];
 } __packed;
 struct gatt_write_long_rp {
 	uint8_t att_response;
@@ -644,7 +644,7 @@ struct gatt_reliable_write_cmd {
 	uint16_t handle;
 	uint16_t offset;
 	uint16_t data_length;
-	uint8_t data[0];
+	uint8_t data[];
 } __packed;
 struct gatt_reliable_write_rp {
 	uint8_t att_response;
@@ -664,17 +664,17 @@ struct gatt_get_attributes_cmd {
 	uint16_t start_handle;
 	uint16_t end_handle;
 	uint8_t type_length;
-	uint8_t type[0];
+	uint8_t type[];
 } __packed;
 struct gatt_get_attributes_rp {
 	uint8_t attrs_count;
-	uint8_t attrs[0];
+	uint8_t attrs[];
 } __packed;
 struct gatt_attr {
 	uint16_t handle;
 	uint8_t permission;
 	uint8_t type_length;
-	uint8_t type[0];
+	uint8_t type[];
 } __packed;
 
 #define GATT_GET_ATTRIBUTE_VALUE	0x1d
@@ -686,7 +686,7 @@ struct gatt_get_attribute_value_cmd {
 struct gatt_get_attribute_value_rp {
 	uint8_t att_response;
 	uint16_t value_length;
-	uint8_t value[0];
+	uint8_t value[];
 } __packed;
 
 #define GATT_CHANGE_DB			0x1e
@@ -703,14 +703,14 @@ struct gatt_notification_ev {
 	uint8_t type;
 	uint16_t handle;
 	uint16_t data_length;
-	uint8_t data[0];
+	uint8_t data[];
 } __packed;
 
 #define GATT_EV_ATTR_VALUE_CHANGED	0x81
 struct gatt_attr_value_changed_ev {
 	uint16_t handle;
 	uint16_t data_length;
-	uint8_t data[0];
+	uint8_t data[];
 } __packed;
 
 static inline void tester_set_bit(uint8_t *addr, unsigned int bit)
@@ -731,7 +731,7 @@ static inline uint8_t tester_test_bit(const uint8_t *addr, unsigned int bit)
 /* commands */
 #define L2CAP_READ_SUPPORTED_COMMANDS	0x01
 struct l2cap_read_supported_commands_rp {
-	uint8_t data[0];
+	uint8_t data[];
 } __packed;
 
 #define L2CAP_CONNECT			0x02
@@ -744,7 +744,7 @@ struct l2cap_connect_cmd {
 } __packed;
 struct l2cap_connect_rp {
 	uint8_t num;
-	uint8_t chan_id[0];
+	uint8_t chan_id[];
 } __packed;
 
 #define L2CAP_DISCONNECT		0x03
@@ -810,14 +810,14 @@ struct l2cap_disconnected_ev {
 struct l2cap_data_received_ev {
 	uint8_t chan_id;
 	uint16_t data_length;
-	uint8_t data[0];
+	uint8_t data[];
 } __packed;
 
 /* MESH Service */
 /* commands */
 #define MESH_READ_SUPPORTED_COMMANDS	0x01
 struct mesh_read_supported_commands_rp {
-	uint8_t data[0];
+	uint8_t data[];
 } __packed;
 
 #define MESH_OUT_BLINK			BIT(0)
@@ -862,7 +862,7 @@ struct mesh_input_number_cmd {
 #define MESH_INPUT_STRING		0x07
 struct mesh_input_string_cmd {
 	uint8_t string_len;
-	uint8_t string[0];
+	uint8_t string[];
 } __packed;
 
 #define MESH_IVU_TEST_MODE		0x08
@@ -878,7 +878,7 @@ struct mesh_net_send_cmd {
 	uint16_t src;
 	uint16_t dst;
 	uint8_t payload_len;
-	uint8_t payload[0];
+	uint8_t payload[];
 } __packed;
 
 #define MESH_HEALTH_GENERATE_FAULTS	0x0b
@@ -886,8 +886,8 @@ struct mesh_health_generate_faults_rp {
 	uint8_t test_id;
 	uint8_t cur_faults_count;
 	uint8_t reg_faults_count;
-	uint8_t current_faults[0];
-	uint8_t registered_faults[0];
+	uint8_t current_faults[];
+	uint8_t registered_faults[];
 } __packed;
 
 #define MESH_HEALTH_CLEAR_FAULTS	0x0c
@@ -904,7 +904,7 @@ struct mesh_model_send_cmd {
 	uint16_t src;
 	uint16_t dst;
 	uint8_t payload_len;
-	uint8_t payload[0];
+	uint8_t payload[];
 } __packed;
 
 #define MESH_LPN_SUBSCRIBE		0x10
@@ -930,7 +930,7 @@ struct mesh_out_number_action_ev {
 #define MESH_EV_OUT_STRING_ACTION	0x81
 struct mesh_out_string_action_ev {
 	uint8_t string_len;
-	uint8_t string[0];
+	uint8_t string[];
 } __packed;
 
 #define MESH_EV_IN_ACTION		0x82
@@ -960,7 +960,7 @@ struct mesh_net_recv_ev {
 	uint16_t src;
 	uint16_t dst;
 	uint8_t payload_len;
-	uint8_t payload[0];
+	uint8_t payload[];
 } __packed;
 
 #define MESH_EV_INVALID_BEARER		0x87

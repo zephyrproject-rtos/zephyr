@@ -27,7 +27,7 @@ struct hci_evt_prop {
 
 struct hci_evt_prop_report {
 	uint8_t  data_len;
-	uint8_t  data[0];
+	uint8_t  data[];
 } __packed;
 
 /* Command handler structure for cmd_handle(). */

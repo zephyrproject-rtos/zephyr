@@ -75,7 +75,7 @@ struct gcov_fn_info {
 	unsigned int ident;              /* unique ident of function */
 	unsigned int lineno_checksum;    /* function lineo_checksum */
 	unsigned int cfg_checksum;       /* function cfg checksum */
-	struct gcov_ctr_info ctrs[0];    /* instrumented counters */
+	struct gcov_ctr_info ctrs[];    /* instrumented counters */
 };
 
 /** Profiling data per object file

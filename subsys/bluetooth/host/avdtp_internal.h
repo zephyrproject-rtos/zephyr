@@ -122,13 +122,13 @@ struct bt_avdtp_ind_cb {
 struct bt_avdtp_cap {
 	uint8_t cat;
 	uint8_t len;
-	uint8_t data[0];
+	uint8_t data[];
 };
 
 struct bt_avdtp_sep {
 	uint8_t seid;
 	uint8_t len;
-	struct bt_avdtp_cap caps[0];
+	struct bt_avdtp_cap caps[];
 };
 
 struct bt_avdtp_discover_params {

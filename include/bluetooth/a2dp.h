@@ -40,7 +40,7 @@ struct bt_a2dp_preset {
 	/** Length of preset */
 	uint8_t len;
 	/** Preset */
-	uint8_t preset[0];
+	uint8_t preset[];
 };
 
 /** @brief Stream End Point */
