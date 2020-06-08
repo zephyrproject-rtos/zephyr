@@ -67,6 +67,48 @@ static struct net_pkt rf2xx_ack_pkt = {
 };
 #endif /* CONFIG_NET_L2_OPENTHREAD */
 
+/**
+ * RF output power for RF2xx
+ *
+ * The table below is exact for RF233. For RF231/2 the TX power might
+ * be a bit off, but good enough.
+ *
+ * RF233: http://ww1.microchip.com/downloads/en/devicedoc/atmel-8351-mcu_wireless-at86rf233_datasheet.pdf
+ * 9.2.5 Register Description Register 0x05 (PHY_TX_PWR)
+ * 0x0 = 4dBm .. 0xF = -17dBm
+ *
+ * RF232: http://ww1.microchip.com/downloads/en/DeviceDoc/doc8321.pdf
+ * 9.2.5 Register Description Register 0x05 (PHY_TX_PWR)
+ * 0x0 = 3dBm .. 0xF = -17dBm
+ *
+ * RF231: http://ww1.microchip.com/downloads/en/DeviceDoc/doc8111.pdf
+ * 9.2.5 Register Description Register 0x05 (PHY_TX_PWR)
+ * 0x0 = 3dBm .. 0xF = -17dBm
+ */
+
+#define RF2XX_OUTPUT_POWER_MAX		4
+#define RF2XX_OUTPUT_POWER_MIN		(-17)
+
+/* Lookup table for PHY_TX_PWR register for RF233 */
+static const uint8_t phy_tx_pwr_lt[] = {
+	0xf,                     /* -17  dBm: -17 */
+	0xe, 0xe, 0xe, 0xe, 0xe, /* -12  dBm: -16, -15, -14, -13, -12 */
+	0xd, 0xd, 0xd, 0xd,      /* -8   dBm: -11, -10, -9, -8 */
+	0xc, 0xc,                /* -6   dBm: -7, -6 */
+	0xb, 0xb,                /* -4   dBm: -5, -4 */
+	0xa,                     /* -3   dBm: -3 */
+	0x9,                     /* -2   dBm: -2 */
+	0x8,                     /* -1   dBm: -1 */
+	0x7,                     /*  0.0 dBm:  0 */
+	0x6,                     /*  1   dBm:  1 */
+	0x5,                     /*  2   dBm:  2 */
+	/* 0x4, */               /*  2.5 dBm */
+	0x3,                     /*  3   dBm:  3 */
+	/* 0x2, */               /*  3.4 dBm */
+	/* 0x1, */               /*  3.7 dBm */
+	0x0                      /*  4   dBm: 4 */
+};
+
 /* Radio Transceiver ISR */
 static inline void trx_isr_handler(struct device *port,
 				   struct gpio_callback *cb,
@@ -363,15 +405,22 @@ static int rf2xx_set_channel(struct device *dev, uint16_t channel)
 
 static int rf2xx_set_txpower(struct device *dev, int16_t dbm)
 {
-	uint8_t reg;
+	if (dbm < RF2XX_OUTPUT_POWER_MIN) {
+		LOG_INF("TX-power %d dBm below min of %d dBm, using %d dBm",
+			dbm,
+			RF2XX_OUTPUT_POWER_MIN,
+			RF2XX_OUTPUT_POWER_MAX);
+		dbm = RF2XX_OUTPUT_POWER_MIN;
+	} else if (dbm > RF2XX_OUTPUT_POWER_MAX) {
+		LOG_INF("TX-power %d dBm above max of %d dBm, using %d dBm",
+			dbm,
+			RF2XX_OUTPUT_POWER_MIN,
+			RF2XX_OUTPUT_POWER_MAX);
+		dbm = RF2XX_OUTPUT_POWER_MAX;
+	}
 
-	ARG_UNUSED(dbm);
-
-	/* TODO: Add look-up table
-	 * Now will max power
-	 */
-	reg = rf2xx_iface_reg_read(dev, RF2XX_PHY_TX_PWR_REG) & ~0x0f;
-	rf2xx_iface_reg_write(dev, RF2XX_PHY_TX_PWR_REG, reg);
+	rf2xx_iface_reg_write(dev, RF2XX_PHY_TX_PWR_REG,
+		phy_tx_pwr_lt[dbm - RF2XX_OUTPUT_POWER_MIN]);
 
 	return 0;
 }
@@ -399,6 +448,7 @@ static int rf2xx_set_ieee_addr(struct device *dev, bool set,
 
 	return 0;
 }
+
 static int rf2xx_set_short_addr(struct device *dev, bool set,
 				uint16_t short_addr)
 {
@@ -418,6 +468,7 @@ static int rf2xx_set_short_addr(struct device *dev, bool set,
 
 	return 0;
 }
+
 static int rf2xx_set_pan_id(struct device *dev, bool set, uint16_t pan_id)
 {
 	uint8_t pan_id_le[2] = { 0xFF, 0xFF };
