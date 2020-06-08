@@ -75,14 +75,19 @@ static struct usb_ep_cfg_data device_ep[] = {
 	},
 };
 
+static struct usb_if_descriptor const *const device_if[] = {
+	&dev_desc.if0,
+};
+
 USBD_CFG_DATA_DEFINE(primary, device) struct usb_cfg_data device_config = {
-	.interface_descriptor = &dev_desc.if0,
 	.cb_usb_status = status_cb,
 	.interface = {
 		.vendor_handler = NULL,
 		.class_handler = NULL,
 		.custom_handler = NULL,
 	},
+	.num_of_interfaces = ARRAY_SIZE(device_if),
+	.list_of_interfaces = device_if,
 	.num_endpoints = ARRAY_SIZE(device_ep),
 	.endpoint = device_ep,
 };

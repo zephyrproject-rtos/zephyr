@@ -283,7 +283,7 @@ static int hid_on_set_protocol(struct hid_device_info *dev_data,
 
 static void usb_set_hid_report_size(const struct usb_cfg_data *cfg, uint16_t size)
 {
-	struct usb_if_descriptor *if_desc = (void *)cfg->interface_descriptor;
+	const struct usb_if_descriptor *const if_desc = cfg->list_of_interfaces[0];
 	struct usb_hid_config *desc =
 			CONTAINER_OF(if_desc, struct usb_hid_config, if0);
 
@@ -506,6 +506,7 @@ static int hid_custom_handle_req(struct usb_setup_packet *setup,
 		struct usb_dev_data *common;
 		const struct usb_cfg_data *cfg;
 		const struct usb_hid_config *hid_desc;
+		const struct usb_if_descriptor *if_desc;
 
 		common = usb_get_dev_data_by_iface(&usb_hid_devlist, iface_num);
 		if (common == NULL) {
@@ -519,7 +520,9 @@ static int hid_custom_handle_req(struct usb_setup_packet *setup,
 		switch (value) {
 		case HID_CLASS_DESCRIPTOR_HID:
 			cfg = common->dev->config_info;
-			hid_desc = cfg->interface_descriptor;
+			if_desc = cfg->list_of_interfaces[0];
+			hid_desc = CONTAINER_OF(if_desc,
+						struct usb_hid_config, if0);
 
 			LOG_DBG("Return HID Descriptor");
 
@@ -630,15 +633,20 @@ static void hid_interface_config(struct usb_desc_header *head,
 }
 
 #define DEFINE_HID_CFG_DATA(x, _)					\
+	static const struct usb_if_descriptor *const			\
+	hid_if_data_##x[] = {						\
+		&hid_cfg_##x.if0,					\
+	};								\
 	USBD_CFG_DATA_DEFINE(primary, hid)				\
 	struct usb_cfg_data hid_config_##x = {				\
 		.interface_config = hid_interface_config,		\
-		.interface_descriptor = &hid_cfg_##x.if0,		\
 		.cb_usb_status = hid_status_cb,				\
 		.interface = {						\
 			.class_handler = hid_class_handle_req,		\
 			.custom_handler = hid_custom_handle_req,	\
 		},							\
+		.list_of_interfaces = hid_if_data_##x,			\
+		.num_of_interfaces = ARRAY_SIZE(hid_if_data_##x),	\
 		.num_endpoints = ARRAY_SIZE(hid_ep_data_##x),		\
 		.endpoint = hid_ep_data_##x,				\
 	};

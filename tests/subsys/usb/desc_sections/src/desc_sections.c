@@ -89,17 +89,24 @@ struct usb_test_config {
 		INITIALIZER_EP_DATA(NULL, AUTO_EP_IN),		\
 	};
 
+#define DEFINE_TEST_IFACE_CFG(x, _)			\
+	static const struct usb_if_descriptor *const	\
+	iface_cfg_##x[] = {				\
+		&test_cfg_##x.if0,			\
+	};
+
 #define DEFINE_TEST_CFG_DATA(x, _)				\
 	USBD_CFG_DATA_DEFINE(primary, test_##x)			\
 	struct usb_cfg_data test_config_##x = {			\
 	.interface_config = interface_config,			\
-	.interface_descriptor = &test_cfg_##x.if0,		\
 	.cb_usb_status = NULL,					\
 	.interface = {						\
 		.class_handler = NULL,				\
 		.custom_handler = NULL,				\
 		.vendor_handler = NULL,				\
 	},							\
+	.num_of_interfaces = ARRAY_SIZE(iface_cfg_##x),		\
+	.list_of_interfaces = iface_cfg_##x,			\
 	.num_endpoints = ARRAY_SIZE(ep_cfg_##x),		\
 	.endpoint = ep_cfg_##x,					\
 	};
@@ -118,15 +125,21 @@ static void interface_config(struct usb_desc_header *head,
 
 UTIL_LISTIFY(NUM_INSTANCES, DEFINE_TEST_DESC, _)
 UTIL_LISTIFY(NUM_INSTANCES, DEFINE_TEST_EP_CFG, _)
+UTIL_LISTIFY(NUM_INSTANCES, DEFINE_TEST_IFACE_CFG, _)
 UTIL_LISTIFY(NUM_INSTANCES, DEFINE_TEST_CFG_DATA, _)
 
 static struct usb_cfg_data *usb_get_cfg_data(struct usb_if_descriptor *iface)
 {
 	size_t length = (__usb_data_end - __usb_data_start);
+	struct usb_cfg_data *cfg = NULL;
 
 	for (size_t i = 0; i < length; i++) {
-		if (__usb_data_start[i].interface_descriptor == iface) {
-			return &__usb_data_start[i];
+		cfg = &__usb_data_start[i];
+
+		for (size_t j = 0; j < cfg->num_of_interfaces; j++) {
+			if (cfg->list_of_interfaces[j] == iface) {
+				return cfg;
+			}
 		}
 	}
 

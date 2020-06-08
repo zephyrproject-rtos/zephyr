@@ -81,6 +81,10 @@ static struct usb_ep_cfg_data wpanusb_ep[] = {
 	},
 };
 
+static const struct usb_if_descriptor *const wpanusb_if[] = {
+	&wpanusb_desc.if0,
+};
+
 static void wpanusb_status_cb(struct usb_cfg_data *cfg,
 			      enum usb_dc_status_code status,
 			      const uint8_t *param)
@@ -151,13 +155,14 @@ static int wpanusb_vendor_handler(struct usb_setup_packet *setup,
 }
 
 USBD_CFG_DATA_DEFINE(primary, wpanusb) struct usb_cfg_data wpanusb_config = {
-	.interface_descriptor = &wpanusb_desc.if0,
 	.cb_usb_status = wpanusb_status_cb,
 	.interface = {
 		.vendor_handler = wpanusb_vendor_handler,
 		.class_handler = NULL,
 		.custom_handler = NULL,
 	},
+	.num_of_interfaces = ARRAY_SIZE(wpanusb_if),
+	.list_of_interfaces = wpanusb_if,
 	.num_endpoints = ARRAY_SIZE(wpanusb_ep),
 	.endpoint = wpanusb_ep,
 };

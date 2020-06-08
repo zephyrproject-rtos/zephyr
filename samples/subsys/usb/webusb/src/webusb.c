@@ -211,14 +211,19 @@ static struct usb_ep_cfg_data webusb_ep_data[] = {
 	}
 };
 
+static const struct usb_if_descriptor *const webusb_if_data[] = {
+	&webusb_desc.if0,
+};
+
 USBD_CFG_DATA_DEFINE(primary, webusb) struct usb_cfg_data webusb_config = {
-	.interface_descriptor = &webusb_desc.if0,
 	.cb_usb_status = webusb_dev_status_cb,
 	.interface = {
 		.class_handler = NULL,
 		.custom_handler = webusb_custom_handle_req,
 		.vendor_handler = webusb_vendor_handle_req,
 	},
+	.num_of_interfaces = ARRAY_SIZE(webusb_if_data),
+	.list_of_interfaces = webusb_if_data,
 	.num_endpoints = ARRAY_SIZE(webusb_ep_data),
 	.endpoint = webusb_ep_data
 };

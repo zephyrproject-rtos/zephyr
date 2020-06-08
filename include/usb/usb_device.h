@@ -174,8 +174,6 @@ struct usb_interface_cfg_data {
  * may only be updated after calls to usb_deconfig
  */
 struct usb_cfg_data {
-	/** Pointer to interface descriptor */
-	const void *interface_descriptor;
 	/** Function for interface runtime configuration */
 	usb_interface_config interface_config;
 	/** Callback to be notified on USB connection status change */
@@ -184,6 +182,10 @@ struct usb_cfg_data {
 			      const uint8_t *param);
 	/** USB interface (Class) handler and storage space */
 	struct usb_interface_cfg_data interface;
+	/* Number of interfaces for this function */
+	const uint8_t num_of_interfaces;
+	/* Pointer to list of interfaces pointers for this function */
+	const struct usb_if_descriptor *const *const list_of_interfaces;
 	/** Number of individual endpoints in the device configuration */
 	uint8_t num_endpoints;
 	/**

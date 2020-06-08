@@ -820,7 +820,10 @@ static bool usb_handle_std_interface_req(struct usb_setup_packet *setup,
 		return false;
 
 	case REQ_GET_INTERFACE:
-		/* there is only one interface, return n-1 (= 0) */
+		/* Interfaces that have alternates are handled by classes code.
+		 * Zero must be returned for all interfaces that do not have
+		 * alternate settings.
+		 */
 		data[0] = 0U;
 		*len = 1;
 		break;
@@ -1200,8 +1203,6 @@ int usb_wakeup_request(void)
  * go through the interfaces one after the other and compare the
  * bInterfaceNumber with the wIndex and and then call the appropriate
  * callback of the USB function.
- * Note, a USB function can have more than one interface and the
- * request does not have to be directed to the first interface (unlikely).
  * These functions can be simplified and moved to usb_handle_request()
  * when legacy initialization throgh the usb_set_config() and
  * usb_enable() is no longer needed.
@@ -1212,25 +1213,29 @@ static int class_handler(struct usb_setup_packet *pSetup,
 {
 	size_t size = (__usb_data_end - __usb_data_start);
 	const struct usb_if_descriptor *if_descr;
-	struct usb_interface_cfg_data *iface;
+	const struct usb_interface_cfg_data *iface;
+	const struct usb_cfg_data *cfg = NULL;
+	uint8_t interface_number = (uint8_t)sys_le16_to_cpu(pSetup->wIndex);
 
 	LOG_DBG("bRequest 0x%02x, wIndex 0x%04x",
 		pSetup->bRequest, pSetup->wIndex);
 
 	for (size_t i = 0; i < size; i++) {
-		iface = &(__usb_data_start[i].interface);
-		if_descr = __usb_data_start[i].interface_descriptor;
-		/*
-		 * Wind forward until it is within the range
-		 * of the current descriptor.
-		 */
-		if ((uint8_t *)if_descr < usb_dev.descriptors) {
-			continue;
-		}
+		cfg = &__usb_data_start[i];
+		iface = &cfg->interface;
 
-		if (iface->class_handler &&
-		    if_descr->bInterfaceNumber == (pSetup->wIndex & 0xFF)) {
-			return iface->class_handler(pSetup, len, data);
+		/* Check if handler exist, if no there is no point
+		 * to search through interfaces
+		 */
+		if (iface->class_handler) {
+			for (int j = 0; j < cfg->num_of_interfaces; j++) {
+				if_descr = cfg->list_of_interfaces[j];
+				if (if_descr->bInterfaceNumber ==
+					interface_number) {
+					return iface->class_handler(pSetup,
+								len, data);
+				}
+			}
 		}
 	}
 
@@ -1242,29 +1247,29 @@ static int custom_handler(struct usb_setup_packet *pSetup,
 {
 	size_t size = (__usb_data_end - __usb_data_start);
 	const struct usb_if_descriptor *if_descr;
-	struct usb_interface_cfg_data *iface;
+	const struct usb_interface_cfg_data *iface;
+	const struct usb_cfg_data *cfg = NULL;
+	uint8_t interface_number = (uint8_t)sys_le16_to_cpu(pSetup->wIndex);
 
 	LOG_DBG("bRequest 0x%02x, wIndex 0x%04x",
 		pSetup->bRequest, pSetup->wIndex);
 
 	for (size_t i = 0; i < size; i++) {
-		iface = &(__usb_data_start[i].interface);
-		if_descr = __usb_data_start[i].interface_descriptor;
-		/*
-		 * Wind forward until it is within the range
-		 * of the current descriptor.
-		 */
-		if ((uint8_t *)if_descr < usb_dev.descriptors) {
-			continue;
-		}
+		cfg = &__usb_data_start[i];
+		iface = &cfg->interface;
 
-		/* An exception for AUDIO_CLASS is temporary and shall not be
-		 * considered as valid solution for other classes.
+		/* Check if handler exist, if no there is no point
+		 * to search through interfaces
 		 */
-		if (iface->custom_handler &&
-		    (if_descr->bInterfaceNumber == (pSetup->wIndex & 0xFF) ||
-		     if_descr->bInterfaceClass == AUDIO_CLASS)) {
-			return iface->custom_handler(pSetup, len, data);
+		if (iface->custom_handler) {
+			for (int j = 0; j < cfg->num_of_interfaces; j++) {
+				if_descr = cfg->list_of_interfaces[j];
+				if (if_descr->bInterfaceNumber ==
+					interface_number) {
+					return iface->custom_handler(pSetup,
+								len, data);
+				}
+			}
 		}
 	}
 

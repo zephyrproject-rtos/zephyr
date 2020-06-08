@@ -92,6 +92,10 @@ static struct usb_ep_cfg_data bt_h4_ep_data[] = {
 	},
 };
 
+static const struct usb_if_descriptor *const bt_h4_if_data[] = {
+	&bt_h4_cfg.if0,
+};
+
 static void bt_h4_read(uint8_t ep, int size, void *priv)
 {
 	static uint8_t data[BT_H4_BULK_EP_MPS];
@@ -209,13 +213,14 @@ static void bt_h4_interface_config(struct usb_desc_header *head,
 
 USBD_CFG_DATA_DEFINE(primary, hci_h4) struct usb_cfg_data bt_h4_config = {
 	.interface_config = bt_h4_interface_config,
-	.interface_descriptor = &bt_h4_cfg.if0,
 	.cb_usb_status = bt_h4_status_cb,
 	.interface = {
 		.class_handler = NULL,
 		.custom_handler = NULL,
 		.vendor_handler = bt_h4_vendor_handler,
 	},
+	.num_of_interfaces = ARRAY_SIZE(bt_h4_if_data),
+	.list_of_interfaces = bt_h4_if_data,
 	.num_endpoints = ARRAY_SIZE(bt_h4_ep_data),
 	.endpoint = bt_h4_ep_data,
 };

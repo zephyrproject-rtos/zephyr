@@ -273,6 +273,11 @@ static struct usb_ep_cfg_data rndis_ep_data[] = {
 	},
 };
 
+static const struct usb_if_descriptor *const rndis_if_data[] = {
+	&rndis_cfg.if0,
+	&rndis_cfg.if1,
+};
+
 static int parse_rndis_header(const uint8_t *buffer, uint32_t buf_len)
 {
 	struct rndis_payload_packet *hdr = (void *)buffer;
@@ -1168,13 +1173,14 @@ static void netusb_interface_config(struct usb_desc_header *head,
 
 USBD_CFG_DATA_DEFINE(primary, netusb) struct usb_cfg_data netusb_config = {
 	.interface_config = netusb_interface_config,
-	.interface_descriptor = &rndis_cfg.if0,
 	.cb_usb_status = rndis_status_cb,
 	.interface = {
 		.class_handler = rndis_class_handler,
 		.custom_handler = NULL,
 		.vendor_handler = NULL,
 	},
+	.num_of_interfaces = ARRAY_SIZE(rndis_if_data),
+	.list_of_interfaces = rndis_if_data,
 	.num_endpoints = ARRAY_SIZE(rndis_ep_data),
 	.endpoint = rndis_ep_data,
 };

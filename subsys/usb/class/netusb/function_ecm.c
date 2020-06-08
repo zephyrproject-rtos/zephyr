@@ -192,6 +192,12 @@ static struct usb_ep_cfg_data ecm_ep_data[] = {
 	},
 };
 
+static const struct usb_if_descriptor *const ecm_if_data[] = {
+	&cdc_ecm_cfg.if0,
+	&cdc_ecm_cfg.if1_0,
+	&cdc_ecm_cfg.if1_1,
+};
+
 static int ecm_class_handler(struct usb_setup_packet *setup, int32_t *len,
 			     uint8_t **data)
 {
@@ -430,13 +436,14 @@ static void ecm_interface_config(struct usb_desc_header *head,
 
 USBD_CFG_DATA_DEFINE(primary, netusb) struct usb_cfg_data netusb_config = {
 	.interface_config = ecm_interface_config,
-	.interface_descriptor = &cdc_ecm_cfg.if0,
 	.cb_usb_status = ecm_status_cb,
 	.interface = {
 		.class_handler = ecm_class_handler,
 		.custom_handler = NULL,
 		.vendor_handler = NULL,
 	},
+	.num_of_interfaces  = ARRAY_SIZE(ecm_if_data),
+	.list_of_interfaces = ecm_if_data,
 	.num_endpoints = ARRAY_SIZE(ecm_ep_data),
 	.endpoint = ecm_ep_data,
 };

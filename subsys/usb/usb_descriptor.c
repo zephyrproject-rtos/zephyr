@@ -285,10 +285,15 @@ static int usb_validate_ep_cfg_data(struct usb_ep_descriptor * const ep_descr,
 static struct usb_cfg_data *usb_get_cfg_data(struct usb_if_descriptor *iface)
 {
 	size_t length = (__usb_data_end - __usb_data_start);
+	struct usb_cfg_data *cfg = NULL;
 
 	for (size_t i = 0; i < length; i++) {
-		if (__usb_data_start[i].interface_descriptor == iface) {
-			return &__usb_data_start[i];
+		cfg = &__usb_data_start[i];
+
+		for (size_t j = 0; j < cfg->num_of_interfaces; j++) {
+			if (cfg->list_of_interfaces[j] == iface) {
+				return cfg;
+			}
 		}
 	}
 
@@ -505,11 +510,13 @@ struct usb_dev_data *usb_get_dev_data_by_iface(sys_slist_t *list,
 	SYS_SLIST_FOR_EACH_CONTAINER(list, dev_data, node) {
 		struct device *dev = dev_data->dev;
 		const struct usb_cfg_data *cfg = dev->config_info;
-		const struct usb_if_descriptor *if_desc =
-						cfg->interface_descriptor;
+		const struct usb_if_descriptor *if_desc = NULL;
 
-		if (if_desc->bInterfaceNumber == iface_num) {
-			return dev_data;
+		for (int i = 0; i < cfg->num_of_interfaces; i++) {
+			if_desc = cfg->list_of_interfaces[i];
+			if (if_desc->bInterfaceNumber == iface_num) {
+				return dev_data;
+			}
 		}
 	}
 
