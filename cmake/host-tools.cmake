@@ -22,8 +22,20 @@ else()
     RESULT_VARIABLE west_version_output_result
     )
 
+  if(WEST_PYTHON)
+    if(NOT (${WEST_PYTHON} STREQUAL ${PYTHON_EXECUTABLE}))
+      set(PYTHON_EXECUTABLE_OUT_OF_SYNC "\nNote:\n\
+  The Python version used by west is:  ${WEST_PYTHON}\n\
+  The Python version used by CMake is: ${PYTHON_EXECUTABLE}\n\
+  This might be correct, but please verify your installation.\n")
+    endif()
+  endif()
+
   if(west_version_output_result)
-    message(FATAL_ERROR "Unable to import west.version from '${PYTHON_EXECUTABLE}'")
+    message(FATAL_ERROR "Unable to import west.version from '${PYTHON_EXECUTABLE}'\n\
+  Please install with:\n\
+      ${PYTHON_EXECUTABLE} -m pip install west\
+  ${PYTHON_EXECUTABLE_OUT_OF_SYNC}")
   endif()
 
   if(${west_version} VERSION_LESS ${MIN_WEST_VERSION})
@@ -32,18 +44,21 @@ else()
     ${item}\n\
   But the minimum supported version is ${MIN_WEST_VERSION}\n\
   Please upgrade with:\n\
-      pip3 install --upgrade west")
+      ${PYTHON_EXECUTABLE} -m pip install --upgrade west\
+  ${PYTHON_EXECUTABLE_OUT_OF_SYNC}")
   endif()
+
   # Just output information for a single version. This will still work
   # even after output is one line.
   message(STATUS "Found west: ${WEST} (found suitable version \"${west_version}\", minimum required is \"${MIN_WEST_VERSION}\")")
 
-    execute_process(
-      COMMAND ${WEST}  topdir
-      OUTPUT_VARIABLE  WEST_TOPDIR
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-      WORKING_DIRECTORY ${ZEPHYR_BASE}
-      )
+  execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} -c
+    "from west.util import west_topdir; print(west_topdir())"
+    OUTPUT_VARIABLE  WEST_TOPDIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    WORKING_DIRECTORY ${ZEPHYR_BASE}
+    )
 endif()
 
 # dtc is an optional dependency
