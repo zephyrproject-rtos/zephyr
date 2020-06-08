@@ -11,6 +11,17 @@
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_ACCESS_H_
 
 #include <settings/settings.h>
+#include <sys/util.h>
+
+/* Internal macros used to initialize array members */
+#define BT_MESH_KEY_UNUSED_ELT_(IDX, _) BT_MESH_KEY_UNUSED,
+#define BT_MESH_ADDR_UNASSIGNED_ELT_(IDX, _) BT_MESH_ADDR_UNASSIGNED,
+#define BT_MESH_MODEL_KEYS_UNUSED			\
+	{ UTIL_LISTIFY(CONFIG_BT_MESH_MODEL_KEY_COUNT,	\
+		       BT_MESH_KEY_UNUSED_ELT_) }
+#define BT_MESH_MODEL_GROUPS_UNASSIGNED				\
+	{ UTIL_LISTIFY(CONFIG_BT_MESH_MODEL_GROUP_COUNT,	\
+		       BT_MESH_ADDR_UNASSIGNED_ELT_) }
 
 /**
  * @brief Bluetooth Mesh Access Layer
@@ -257,14 +268,12 @@ struct bt_mesh_model_op {
 #define BT_MESH_MODEL_CB(_id, _op, _pub, _user_data, _cb)                    \
 {                                                                            \
 	.id = (_id),                                                         \
-	.op = _op,                                                           \
-	.keys = { [0 ... (CONFIG_BT_MESH_MODEL_KEY_COUNT - 1)] =             \
-			BT_MESH_KEY_UNUSED },                                \
 	.pub = _pub,                                                         \
-	.groups = { [0 ... (CONFIG_BT_MESH_MODEL_GROUP_COUNT - 1)] =         \
-			BT_MESH_ADDR_UNASSIGNED },                           \
-	.user_data = _user_data,                                             \
+	.keys = BT_MESH_MODEL_KEYS_UNUSED,                                   \
+	.groups = BT_MESH_MODEL_GROUPS_UNASSIGNED,                           \
+	.op = _op,                                                           \
 	.cb = _cb,                                                           \
+	.user_data = _user_data,                                             \
 }
 
 /** @def BT_MESH_MODEL_VND_CB
@@ -284,10 +293,8 @@ struct bt_mesh_model_op {
 	.vnd.id = (_id),                                                     \
 	.op = _op,                                                           \
 	.pub = _pub,                                                         \
-	.keys = { [0 ... (CONFIG_BT_MESH_MODEL_KEY_COUNT - 1)] =             \
-			BT_MESH_KEY_UNUSED },                                \
-	.groups = { [0 ... (CONFIG_BT_MESH_MODEL_GROUP_COUNT - 1)] =         \
-			BT_MESH_ADDR_UNASSIGNED },                           \
+	.keys = BT_MESH_MODEL_KEYS_UNUSED,                                   \
+	.groups = BT_MESH_MODEL_GROUPS_UNASSIGNED,                           \
 	.user_data = _user_data,                                             \
 	.cb = _cb,                                                           \
 }
