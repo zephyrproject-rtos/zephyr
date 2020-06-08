@@ -130,6 +130,22 @@ to add the sign-off you can also amend a previous commit with the sign-off by
 running ``git commit --amend -s``. If you've pushed your changes to GitHub
 already you'll need to force push your branch after this with ``git push -f``.
 
+Notes
+=====
+
+Any contributions made as part of submitted pull requests are considered free
+for the Project to use. Developers are permitted to cherry-pick patches that
+are included in pull requests submitted by other contributors. It is expected
+that
+
+* the content of the patches will not be substantially modified,
+* the cherry-picked commits or portions of a commit shall preserve the original
+  sign-off messages and the author identity.
+
+:ref:`modifying_contributions` describes additional recommended policies
+around working with contributions submitted by other developers.
+
+
 Prerequisites
 *************
 
@@ -769,6 +785,7 @@ Contribution Roles and Responsibilities
 .. toctree::
    :maxdepth: 1
 
+   modifying_contributions.rst
    project_roles.rst
 
 The Zephyr project defines a development process workflow using GitHub
