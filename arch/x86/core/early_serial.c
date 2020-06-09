@@ -19,6 +19,12 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define UART_PCIE_ID	(DT_REG_SIZE(DT_CHOSEN(zephyr_console)))
 #endif
 
+#define UART_BAUD_RATE	(DT_PROP(DT_CHOSEN(zephyr_console), current_speed))
+#define UART_CLK	(DT_PROP(DT_CHOSEN(zephyr_console), clock_frequency))
+
+#define DIVISOR		\
+	(((UART_CLK + (UART_BAUD_RATE << 3)) / UART_BAUD_RATE) >> 4)
+
 /* Super-primitive 8250/16550 serial output-only driver, 115200 8n1 */
 #define REG_OFFSET_THR		0x00	/* Transmitter holding reg.       */
 #define REG_OFFSET_IER		0x01	/* Interrupt enable reg.          */
@@ -128,8 +134,8 @@ void z_x86_early_serial_init(void)
 
 	OUTBYTE(REG_IER(base), IER_DISABLE);	/* Disable interrupts */
 	OUTBYTE(REG_LCR(base), LCR_DLAB_SELECT);/* DLAB select */
-	OUTBYTE(REG_BRDL(base), 1);		/* Baud divisor = 1 */
-	OUTBYTE(REG_BRDH(base), 0);
+	OUTBYTE(REG_BRDL(base), (DIVISOR & 0xFF));
+	OUTBYTE(REG_BRDH(base), ((DIVISOR >> 8) & 0xFF));
 	OUTBYTE(REG_LCR(base), LCR_8N1);	/* LCR = 8n1 + DLAB off */
 	OUTBYTE(REG_MCR(base), MCR_DTR | MCR_RTS);
 
