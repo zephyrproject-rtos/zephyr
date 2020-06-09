@@ -280,12 +280,13 @@ static const struct wdt_driver_api wdt_gecko_driver_api = {
 	};								\
 	static struct wdt_gecko_data wdt_gecko_data_##index;		\
 									\
-	DEVICE_AND_API_INIT(wdt_##index,				\
-				DT_INST_LABEL(index),\
-				&wdt_gecko_init, &wdt_gecko_data_##index,\
-				&wdt_gecko_cfg_##index, POST_KERNEL,	\
-				CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
-				&wdt_gecko_driver_api);			\
+	DEVICE_DEFINE(wdt_##index,					\
+		      DT_INST_LABEL(index),				\
+		      &wdt_gecko_init, device_pm_control_nop,		\
+		      &wdt_gecko_data_##index,				\
+		      &wdt_gecko_cfg_##index, POST_KERNEL,		\
+		      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,		\
+		      &wdt_gecko_driver_api);				\
 									\
 	static void wdt_gecko_cfg_func_##index(void)			\
 	{								\

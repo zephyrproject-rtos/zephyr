@@ -251,12 +251,12 @@ static const struct wdt_driver_api wdt_api = {
 		.connect_irq = wdt_esp32_connect_irq_func##idx						   \
 	};												   \
 													   \
-	DEVICE_AND_API_INIT(wdt_esp32_##idx, DT_INST_LABEL(idx),		   \
-			    wdt_esp32_init,								   \
-			    &wdt##idx##_data,								   \
-			    &wdt_esp32_config##idx,							   \
-			    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,				   \
-			    &wdt_api)
+	DEVICE_DEFINE(wdt_esp32_##idx, DT_INST_LABEL(idx),						   \
+		      wdt_esp32_init, device_pm_control_nop,						   \
+		      &wdt##idx##_data,									   \
+		      &wdt_esp32_config##idx,								   \
+		      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,					   \
+		      &wdt_api)
 
 static void wdt_esp32_isr(struct device *dev)
 {

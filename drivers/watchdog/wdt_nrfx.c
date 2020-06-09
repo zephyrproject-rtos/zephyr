@@ -182,13 +182,14 @@ static void wdt_event_handler(struct device *dev)
 			.reload_value  = 2000,				       \
 		}							       \
 	};								       \
-	DEVICE_AND_API_INIT(wdt_##idx,					       \
-			    DT_LABEL(WDT(idx)),				       \
-			    wdt_##idx##_init,				       \
-			    &wdt_##idx##_data,				       \
-			    &wdt_##idx##z_config,			       \
-			    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,  \
-			    &wdt_nrfx_driver_api)
+	DEVICE_DEFINE(wdt_##idx,					       \
+		      DT_LABEL(WDT(idx)),				       \
+		      wdt_##idx##_init,					       \
+		      device_pm_control_nop,				       \
+		      &wdt_##idx##_data,				       \
+		      &wdt_##idx##z_config,				       \
+		      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	       \
+		      &wdt_nrfx_driver_api)
 
 #ifdef CONFIG_NRFX_WDT0
 WDT_NRFX_WDT_DEVICE(0);
