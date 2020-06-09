@@ -107,6 +107,14 @@ static int console_out(int c)
 
 extern void __printk_hook_install(int (*fn)(int));
 
+void __weak z_x86_early_serial_pre_init(void)
+{
+}
+
+void __weak z_x86_early_serial_post_init(void)
+{
+}
+
 void z_x86_early_serial_init(void)
 {
 #ifdef UART_NS16550_PCIE_ENABLED

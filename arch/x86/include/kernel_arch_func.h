@@ -42,6 +42,8 @@ extern FUNC_NORETURN void z_x86_prep_c(void *arg);
 #ifdef CONFIG_X86_VERY_EARLY_CONSOLE
 /* Setup ultra-minimal serial driver for printk() */
 void z_x86_early_serial_init(void);
+void z_x86_early_serial_pre_init(void);
+void z_x86_early_serial_post_init(void);
 #endif /* CONFIG_X86_VERY_EARLY_CONSOLE */
 
 #ifdef CONFIG_X86_MMU
