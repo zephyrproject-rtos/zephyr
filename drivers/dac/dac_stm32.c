@@ -142,10 +142,11 @@ static struct dac_stm32_data dac_stm32_data_##index = {			\
 	.channel_count = STM32_CHANNEL_COUNT				\
 };									\
 									\
-DEVICE_AND_API_INIT(dac_##index, DT_INST_LABEL(index),			\
-		    &dac_stm32_init, &dac_stm32_data_##index,		\
-		    &dac_stm32_cfg_##index, POST_KERNEL,		\
-		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,		\
-		    &api_stm32_driver_api);
+DEVICE_DEFINE(dac_##index, DT_INST_LABEL(index),			\
+	      &dac_stm32_init, device_pm_control_nop,			\
+	      &dac_stm32_data_##index,					\
+	      &dac_stm32_cfg_##index, POST_KERNEL,			\
+	      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,			\
+	      &api_stm32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_DAC_INIT)
