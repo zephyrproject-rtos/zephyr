@@ -31,6 +31,7 @@ LOG_MODULE_REGISTER(usb_ecm);
 
 
 static uint8_t tx_buf[NET_ETH_MAX_FRAME_SIZE], rx_buf[NET_ETH_MAX_FRAME_SIZE];
+static uint8_t alternate_setting;
 
 struct usb_cdc_ecm_config {
 #ifdef CONFIG_USB_COMPOSITE_DEVICE
@@ -163,11 +164,6 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_cdc_ecm_config cdc_ecm_cfg = {
 		.bInterval = 0x00,
 	},
 };
-
-static uint8_t ecm_get_first_iface_number(void)
-{
-	return cdc_ecm_cfg.if0.bInterfaceNumber;
-}
 
 static void ecm_int_in(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
@@ -345,21 +341,46 @@ static struct netusb_function ecm_function = {
 	.send_pkt = ecm_send,
 };
 
-static inline void ecm_status_interface(const uint8_t *desc)
+static int ecm_custom_handler(struct usb_setup_packet *setup, int32_t *len,
+			      uint8_t **data)
 {
-	const struct usb_if_descriptor *if_desc = (void *)desc;
-	uint8_t iface_num = if_desc->bInterfaceNumber;
-	uint8_t alt_set = if_desc->bAlternateSetting;
+	uint8_t iface = (uint8_t)setup->wIndex;
+	uint8_t alt = (uint8_t)setup->wValue;
 
-	LOG_DBG("iface %u alt_set %u", iface_num, if_desc->bAlternateSetting);
-
-	/* First interface is CDC Comm interface */
-	if (iface_num != ecm_get_first_iface_number() + 1 || !alt_set) {
-		LOG_DBG("Skip iface_num %u alt_set %u", iface_num, alt_set);
-		return;
+	/* Second interface for ecm function has alternate.
+	 * Check if the request addressed this interface, if no
+	 * immediately return as this request is not directed
+	 * to this function.
+	 */
+	if (iface != ecm_if_data[1]->bInterfaceNumber) {
+		return -ENOTSUP;
 	}
 
-	netusb_enable(&ecm_function);
+	if (REQTYPE_GET_RECIP(setup->bmRequestType) ==
+	    REQTYPE_RECIP_INTERFACE) {
+		switch (setup->bRequest) {
+		case REQ_SET_INTERFACE:
+			/* Check if proper alternate setting is requested */
+			if (alt == ecm_if_data[1]->bAlternateSetting) {
+				alternate_setting = alt;
+			} else if (alt == ecm_if_data[2]->bAlternateSetting) {
+				alternate_setting = alt;
+				netusb_enable(&ecm_function);
+			} else {
+				return -ENOTSUP;
+			}
+			LOG_DBG("Set interface iface: %d, alt: %d", iface, alt);
+			return -EINVAL;
+		case REQ_GET_INTERFACE:
+			*data[0] = alternate_setting;
+			LOG_DBG("Get interface iface: %d", iface);
+			return 0;
+		default:
+			break;
+		}
+	}
+
+	return -ENOTSUP;
 }
 
 static void ecm_status_cb(struct usb_cfg_data *cfg,
@@ -377,7 +398,6 @@ static void ecm_status_cb(struct usb_cfg_data *cfg,
 
 	case USB_DC_INTERFACE:
 		LOG_DBG("USB interface selected");
-		ecm_status_interface(param);
 		break;
 
 	case USB_DC_ERROR:
@@ -439,7 +459,7 @@ USBD_CFG_DATA_DEFINE(primary, netusb) struct usb_cfg_data netusb_config = {
 	.cb_usb_status = ecm_status_cb,
 	.interface = {
 		.class_handler = ecm_class_handler,
-		.custom_handler = NULL,
+		.custom_handler = ecm_custom_handler,
 		.vendor_handler = NULL,
 	},
 	.num_of_interfaces  = ARRAY_SIZE(ecm_if_data),
