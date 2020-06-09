@@ -233,11 +233,12 @@ static const struct led_strip_driver_api ws2812_gpio_api = {
 		.has_white = WS2812_GPIO_HAS_WHITE(idx),		\
 	};								\
 									\
-	DEVICE_AND_API_INIT(ws2812_gpio_##idx, WS2812_GPIO_LABEL(idx),	\
-			    ws2812_gpio_##idx##_init,			\
-			    &ws2812_gpio_##idx##_data,			\
-			    &ws2812_gpio_##idx##_cfg, POST_KERNEL,	\
-			    CONFIG_LED_STRIP_INIT_PRIORITY,		\
-			    &ws2812_gpio_api);
+	DEVICE_DEFINE(ws2812_gpio_##idx, WS2812_GPIO_LABEL(idx),	\
+		      ws2812_gpio_##idx##_init,				\
+		      device_pm_control_nop,				\
+		      &ws2812_gpio_##idx##_data,			\
+		      &ws2812_gpio_##idx##_cfg, POST_KERNEL,		\
+		      CONFIG_LED_STRIP_INIT_PRIORITY,			\
+		      &ws2812_gpio_api);
 
 DT_INST_FOREACH_STATUS_OKAY(WS2812_GPIO_DEVICE)

@@ -221,13 +221,14 @@ static const struct led_strip_driver_api ws2812_spi_api = {
 		return 0;						\
 	}								\
 									\
-	DEVICE_AND_API_INIT(ws2812_spi_##idx,				\
-			    WS2812_SPI_LABEL(idx),			\
-			    ws2812_spi_##idx##_init,			\
-			    &ws2812_spi_##idx##_data,			\
-			    &ws2812_spi_##idx##_cfg,			\
-			    POST_KERNEL,				\
-			    CONFIG_LED_STRIP_INIT_PRIORITY,		\
-			    &ws2812_spi_api);
+	DEVICE_DEFINE(ws2812_spi_##idx,					\
+		      WS2812_SPI_LABEL(idx),				\
+		      ws2812_spi_##idx##_init,				\
+		      device_pm_control_nop,				\
+		      &ws2812_spi_##idx##_data,				\
+		      &ws2812_spi_##idx##_cfg,				\
+		      POST_KERNEL,					\
+		      CONFIG_LED_STRIP_INIT_PRIORITY,			\
+		      &ws2812_spi_api);
 
 DT_INST_FOREACH_STATUS_OKAY(WS2812_SPI_DEVICE)
