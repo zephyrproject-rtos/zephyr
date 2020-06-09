@@ -359,10 +359,3 @@ pwm-cells:
 gpio-cells:
     - pin
     - flags
-
-# This older syntax is deprecated and will generate a warning when used. It
-# works as a catch-all, where the name of the referencing 'phandle-array'
-# property doesn't matter.
-"#cells":
-    - pin
-    - flags
