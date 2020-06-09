@@ -905,11 +905,12 @@ static struct i2s_stm32_data i2s_stm32_data_##index = {			\
 	UTIL_AND(DT_DMAS_HAS_NAME(DT_NODELABEL(i2s##index), tx),	\
 		I2S_DMA_CHANNEL_INIT(index, tx, TX, MEMORY, PERIPHERAL)),\
 };									\
-DEVICE_AND_API_INIT(i2s_stm32_##index,					\
-		    DT_LABEL(DT_NODELABEL(i2s##index)),			\
-		    &i2s_stm32_initialize, &i2s_stm32_data_##index,	\
-		    &i2s_stm32_config_##index, POST_KERNEL,		\
-		    CONFIG_I2S_INIT_PRIORITY, &i2s_stm32_driver_api);	\
+DEVICE_DEFINE(i2s_stm32_##index,					\
+	      DT_LABEL(DT_NODELABEL(i2s##index)),			\
+	      &i2s_stm32_initialize, device_pm_control_nop,		\
+	      &i2s_stm32_data_##index,					\
+	      &i2s_stm32_config_##index, POST_KERNEL,			\
+	      CONFIG_I2S_INIT_PRIORITY, &i2s_stm32_driver_api);		\
 									\
 static void i2s_stm32_irq_config_func_##index(struct device *dev)	\
 {									\

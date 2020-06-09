@@ -92,14 +92,15 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 	}
 
 #define I2S_DEVICE_AND_API_INIT(i2s_id)				\
-	DEVICE_AND_API_INIT(I2S_DEVICE_NAME(i2s_id),		\
-			CONFIG_I2S_CAVS_##i2s_id##_NAME,	\
-			i2s_cavs_initialize,			\
-			&I2S_DEVICE_DATA_NAME(i2s_id),		\
-			&I2S_DEVICE_CONFIG_NAME(i2s_id),	\
-			POST_KERNEL,				\
-			CONFIG_I2S_INIT_PRIORITY,		\
-			&i2s_cavs_driver_api)
+	DEVICE_DEFINE(I2S_DEVICE_NAME(i2s_id),			\
+		      CONFIG_I2S_CAVS_##i2s_id##_NAME,		\
+		      i2s_cavs_initialize,			\
+		      device_pm_control_nop,			\
+		      &I2S_DEVICE_DATA_NAME(i2s_id),		\
+		      &I2S_DEVICE_CONFIG_NAME(i2s_id),		\
+		      POST_KERNEL,				\
+		      CONFIG_I2S_INIT_PRIORITY,			\
+		      &i2s_cavs_driver_api)
 
 /* length of the buffer queue */
 #define I2S_CAVS_BUF_Q_LEN			2
