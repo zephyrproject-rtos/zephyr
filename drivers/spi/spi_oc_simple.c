@@ -213,13 +213,14 @@ int spi_oc_simple_init(struct device *dev)
 		SPI_CONTEXT_INIT_SYNC(spi_oc_simple_data_##inst, ctx),	\
 	};								\
 									\
-	DEVICE_AND_API_INIT(spi_oc_simple_##inst,			\
-			    DT_INST_LABEL(inst),			\
-			    spi_oc_simple_init,				\
-			    &spi_oc_simple_data_##inst,			\
-			    &spi_oc_simple_cfg_##inst,			\
-			    POST_KERNEL,				\
-			    CONFIG_SPI_INIT_PRIORITY,			\
-			    &spi_oc_simple_api);
+	DEVICE_DEFINE(spi_oc_simple_##inst,				\
+		      DT_INST_LABEL(inst),				\
+		      spi_oc_simple_init,				\
+		      device_pm_control_nop,				\
+		      &spi_oc_simple_data_##inst,			\
+		      &spi_oc_simple_cfg_##inst,			\
+		      POST_KERNEL,					\
+		      CONFIG_SPI_INIT_PRIORITY,				\
+		      &spi_oc_simple_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_OC_INIT)

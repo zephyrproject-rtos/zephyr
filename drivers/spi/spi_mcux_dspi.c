@@ -290,14 +290,15 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 		SPI_CONTEXT_INIT_LOCK(spi_mcux_data_##id, ctx),		\
 		SPI_CONTEXT_INIT_SYNC(spi_mcux_data_##id, ctx),		\
 	};								\
-	DEVICE_AND_API_INIT(spi_mcux_##id,				\
-			    DT_INST_LABEL(id),				\
-			    &spi_mcux_init,				\
-			    &spi_mcux_data_##id,			\
-			    &spi_mcux_config_##id,			\
-			    POST_KERNEL,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-			    &spi_mcux_driver_api);			\
+	DEVICE_DEFINE(spi_mcux_##id,					\
+		      DT_INST_LABEL(id),				\
+		      &spi_mcux_init,					\
+		      device_pm_control_nop,				\
+		      &spi_mcux_data_##id,				\
+		      &spi_mcux_config_##id,				\
+		      POST_KERNEL,					\
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+		      &spi_mcux_driver_api);				\
 	static void spi_mcux_config_func_##id(struct device *dev)	\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(id),				\

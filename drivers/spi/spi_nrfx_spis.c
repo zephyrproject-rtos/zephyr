@@ -287,14 +287,15 @@ static int init_spis(struct device *dev, const nrfx_spis_config_t *config)
 		.spis = NRFX_SPIS_INSTANCE(idx),			       \
 		.max_buf_len = (1 << SPIS##idx##_EASYDMA_MAXCNT_SIZE) - 1,     \
 	};								       \
-	DEVICE_AND_API_INIT(spi_##idx,					       \
-			    DT_LABEL(SPIS(idx)),			       \
-			    spi_##idx##_init,				       \
-			    &spi_##idx##_data,				       \
-			    &spi_##idx##z_config,			       \
-			    POST_KERNEL,				       \
-			    CONFIG_SPI_INIT_PRIORITY,			       \
-			    &spi_nrfx_driver_api)
+	DEVICE_DEFINE(spi_##idx,					       \
+		      DT_LABEL(SPIS(idx)),				       \
+		      spi_##idx##_init,					       \
+		      device_pm_control_nop,				       \
+		      &spi_##idx##_data,				       \
+		      &spi_##idx##z_config,				       \
+		      POST_KERNEL,					       \
+		      CONFIG_SPI_INIT_PRIORITY,				       \
+		      &spi_nrfx_driver_api)
 
 #ifdef CONFIG_SPI_0_NRF_SPIS
 SPI_NRFX_SPIS_DEVICE(0);

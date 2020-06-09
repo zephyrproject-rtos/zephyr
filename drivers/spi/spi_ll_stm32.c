@@ -911,11 +911,11 @@ static struct spi_stm32_data spi_stm32_dev_data_##id = {		\
 	SPI_DMA_CHANNEL(id, tx, TX, MEMORY, PERIPHERAL)			\
 };									\
 									\
-DEVICE_AND_API_INIT(spi_stm32_##id, DT_INST_LABEL(id),			\
-		    &spi_stm32_init,					\
-		    &spi_stm32_dev_data_##id, &spi_stm32_cfg_##id,	\
-		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,		\
-		    &api_funcs);					\
+DEVICE_DEFINE(spi_stm32_##id, DT_INST_LABEL(id),			\
+	      &spi_stm32_init, device_pm_control_nop,			\
+	      &spi_stm32_dev_data_##id, &spi_stm32_cfg_##id,		\
+	      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,			\
+	      &api_funcs);						\
 									\
 STM32_SPI_IRQ_HANDLER(id)
 

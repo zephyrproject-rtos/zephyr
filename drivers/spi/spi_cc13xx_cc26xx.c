@@ -342,8 +342,9 @@ static const struct spi_driver_api spi_cc13xx_cc26xx_driver_api = {
 	} while (0)
 #else
 #define SPI_CC13XX_CC26XX_DEVICE_INIT(n)				    \
-	DEVICE_AND_API_INIT(spi_cc13xx_cc26xx_##n, DT_INST_LABEL(n),	    \
-		    spi_cc13xx_cc26xx_init_##n, &spi_cc13xx_cc26xx_data_##n,\
+	DEVICE_DEFINE(spi_cc13xx_cc26xx_##n, DT_INST_LABEL(n),		    \
+		    spi_cc13xx_cc26xx_init_##n, device_pm_control_nop,	    \
+		    &spi_cc13xx_cc26xx_data_##n,			    \
 		    &spi_cc13xx_cc26xx_config_##n, POST_KERNEL,		    \
 		    CONFIG_SPI_INIT_PRIORITY,				    \
 		    &spi_cc13xx_cc26xx_driver_api)

@@ -246,14 +246,15 @@ static struct spi_driver_api spi_sifive_api = {
 		.base = DT_INST_REG_ADDR_BY_NAME(n, control), \
 		.f_sys = DT_INST_PROP(n, clock_frequency), \
 	}; \
-	DEVICE_AND_API_INIT(spi_##n, \
-			DT_INST_LABEL(n), \
-			spi_sifive_init, \
-			&spi_sifive_data_##n, \
-			&spi_sifive_cfg_##n, \
-			POST_KERNEL, \
-			CONFIG_SPI_INIT_PRIORITY, \
-			&spi_sifive_api)
+	DEVICE_DEFINE(spi_##n, \
+		      DT_INST_LABEL(n), \
+		      spi_sifive_init, \
+		      device_pm_control_nop, \
+		      &spi_sifive_data_##n, \
+		      &spi_sifive_cfg_##n, \
+		      POST_KERNEL, \
+		      CONFIG_SPI_INIT_PRIORITY, \
+		      &spi_sifive_api)
 
 #ifndef CONFIG_SIFIVE_SPI_0_ROM
 #if DT_INST_NODE_HAS_PROP(0, label)
