@@ -24,11 +24,12 @@ static struct i2c_dw_dev_config i2c_@NUM@_runtime = {
 		DT_INST_REG_ADDR(@NUM@)
 };
 
-DEVICE_AND_API_INIT(i2c_@NUM@, DT_INST_LABEL(@NUM@),
-		    &i2c_dw_initialize,
-		    &i2c_@NUM@_runtime, &i2c_config_dw_@NUM@,
-		    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
-		    &funcs);
+DEVICE_DEFINE(i2c_@NUM@, DT_INST_LABEL(@NUM@),
+	      &i2c_dw_initialize,
+	      device_pm_control_nop,
+	      &i2c_@NUM@_runtime, &i2c_config_dw_@NUM@,
+	      POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
+	      &funcs);
 
 #if DT_INST_IRQ_HAS_CELL(@NUM@, sense)
 #define INST_@NUM@_IRQ_FLAGS  DT_INST_IRQ(@NUM@, sense)

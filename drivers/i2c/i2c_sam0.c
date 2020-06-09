@@ -795,13 +795,14 @@ static const struct i2c_sam0_dev_config i2c_sam0_dev_config_##n = {	\
 	static void i2c_sam0_irq_config_##n(struct device *dev);	\
 	I2C_SAM0_CONFIG(n);						\
 	static struct i2c_sam0_dev_data i2c_sam0_dev_data_##n;		\
-	DEVICE_AND_API_INIT(i2c_sam0_##n,				\
-			    DT_INST_LABEL(n),				\
-			    &i2c_sam0_initialize,			\
-			    &i2c_sam0_dev_data_##n,			\
-			    &i2c_sam0_dev_config_##n, POST_KERNEL,	\
-			    CONFIG_I2C_INIT_PRIORITY,			\
-			    &i2c_sam0_driver_api);			\
+	DEVICE_DEFINE(i2c_sam0_##n,					\
+		      DT_INST_LABEL(n),					\
+		      &i2c_sam0_initialize,				\
+		      device_pm_control_nop,				\
+		      &i2c_sam0_dev_data_##n,				\
+		      &i2c_sam0_dev_config_##n, POST_KERNEL,		\
+		      CONFIG_I2C_INIT_PRIORITY,				\
+		      &i2c_sam0_driver_api);				\
 	I2C_SAM0_IRQ_HANDLER(n)
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_SAM0_DEVICE)

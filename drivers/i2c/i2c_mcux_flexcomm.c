@@ -207,14 +207,15 @@ static const struct i2c_driver_api mcux_flexcomm_driver_api = {
 		.bitrate = DT_INST_PROP(id, clock_frequency),		\
 	};								\
 	static struct mcux_flexcomm_data mcux_flexcomm_data_##id;	\
-	DEVICE_AND_API_INIT(mcux_flexcomm_##id,				\
-			    DT_INST_LABEL(id),				\
-			    &mcux_flexcomm_init,			\
-			    &mcux_flexcomm_data_##id,			\
-			    &mcux_flexcomm_config_##id,			\
-			    POST_KERNEL,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-			    &mcux_flexcomm_driver_api);			\
+	DEVICE_DEFINE(mcux_flexcomm_##id,				\
+		      DT_INST_LABEL(id),				\
+		      &mcux_flexcomm_init,				\
+		      device_pm_control_nop,				\
+		      &mcux_flexcomm_data_##id,				\
+		      &mcux_flexcomm_config_##id,			\
+		      POST_KERNEL,					\
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+		      &mcux_flexcomm_driver_api);			\
 	static void mcux_flexcomm_config_func_##id(struct device *dev)	\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(id),				\

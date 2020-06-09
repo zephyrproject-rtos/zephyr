@@ -329,13 +329,14 @@ static struct i2c_driver_api i2c_sifive_api = {
 		.f_sys = DT_INST_PROP(n, input_frequency), \
 		.f_bus = DT_INST_PROP(n, clock_frequency), \
 	}; \
-	DEVICE_AND_API_INIT(i2c_##n, \
-			    DT_INST_LABEL(n), \
-			    i2c_sifive_init, \
-			    NULL, \
-			    &i2c_sifive_cfg_##n, \
-			    POST_KERNEL, \
-			    CONFIG_I2C_INIT_PRIORITY, \
-			    &i2c_sifive_api);
+	DEVICE_DEFINE(i2c_##n, \
+		      DT_INST_LABEL(n), \
+		      i2c_sifive_init, \
+		      device_pm_control_nop, \
+		      NULL, \
+		      &i2c_sifive_cfg_##n, \
+		      POST_KERNEL, \
+		      CONFIG_I2C_INIT_PRIORITY, \
+		      &i2c_sifive_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_SIFIVE_INIT)

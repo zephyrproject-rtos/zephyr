@@ -350,10 +350,10 @@ static const struct i2c_driver_api i2c_sam_twihs_driver_api = {
 									\
 	static struct i2c_sam_twihs_dev_data i2c##n##_sam_data;		\
 									\
-	DEVICE_AND_API_INIT(i2c##n##_sam, DT_INST_LABEL(n),		\
-			    &i2c_sam_twihs_initialize,			\
-			    &i2c##n##_sam_data, &i2c##n##_sam_config,	\
-			    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,	\
-			    &i2c_sam_twihs_driver_api);
+	DEVICE_DEFINE(i2c##n##_sam, DT_INST_LABEL(n),			\
+		      &i2c_sam_twihs_initialize, device_pm_control_nop,	\
+		      &i2c##n##_sam_data, &i2c##n##_sam_config,		\
+		      POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,		\
+		      &i2c_sam_twihs_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_TWIHS_SAM_INIT)

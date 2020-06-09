@@ -220,13 +220,14 @@ static int i2c_eeprom_slave_init(struct device *dev)
 		.buffer = i2c_eeprom_slave_##inst##_buffer		\
 	};								\
 									\
-	DEVICE_AND_API_INIT(i2c_eeprom_slave_##inst,			\
-			    DT_INST_LABEL(inst),			\
-			    &i2c_eeprom_slave_init,			\
-			    &i2c_eeprom_slave_##inst##_dev_data,	\
-			    &i2c_eeprom_slave_##inst##_cfg,		\
-			    POST_KERNEL,				\
-			    CONFIG_I2C_SLAVE_INIT_PRIORITY,		\
-			    &api_funcs);
+	DEVICE_DEFINE(i2c_eeprom_slave_##inst,				\
+		      DT_INST_LABEL(inst),				\
+		      &i2c_eeprom_slave_init,				\
+		      device_pm_control_nop,				\
+		      &i2c_eeprom_slave_##inst##_dev_data,		\
+		      &i2c_eeprom_slave_##inst##_cfg,			\
+		      POST_KERNEL,					\
+		      CONFIG_I2C_SLAVE_INIT_PRIORITY,			\
+		      &api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_EEPROM_INIT)

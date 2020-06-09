@@ -280,13 +280,14 @@ static const struct i2c_driver_api rv32m1_lpi2c_driver_api = {
 		.completion_sync = Z_SEM_INITIALIZER(                          \
 			rv32m1_lpi2c_##id##_data.completion_sync, 0, 1),       \
 	};                                                                     \
-	DEVICE_AND_API_INIT(rv32m1_lpi2c_##id,                                 \
-			    DT_INST_LABEL(id),                                 \
-			    &rv32m1_lpi2c_init,                                \
-			    &rv32m1_lpi2c_##id##_data,                         \
-			    &rv32m1_lpi2c_##id##_config,                       \
-			    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,             \
-			    &rv32m1_lpi2c_driver_api);	                       \
+	DEVICE_DEFINE(rv32m1_lpi2c_##id,				       \
+		      DT_INST_LABEL(id),				       \
+		      &rv32m1_lpi2c_init,				       \
+		      device_pm_control_nop,				       \
+		      &rv32m1_lpi2c_##id##_data,			       \
+		      &rv32m1_lpi2c_##id##_config,			       \
+		      POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,		       \
+		      &rv32m1_lpi2c_driver_api);			       \
 	static void rv32m1_lpi2c_irq_config_func_##id(struct device *dev)      \
 	{                                                                      \
 		IRQ_CONNECT(DT_INST_IRQN(id),                                  \

@@ -423,9 +423,10 @@ static int i2c_xec_init(struct device *dev)
 			DT_INST_REG_ADDR(n),	\
 		.port_sel = DT_INST_PROP(n, port_sel),	\
 	};								\
-	DEVICE_AND_API_INIT(i2c_xec_##n,				\
-		DT_INST_LABEL(n),			\
-		&i2c_xec_init, &i2c_xec_data_##n, &i2c_xec_config_##n,	\
+	DEVICE_DEFINE(i2c_xec_##n,					\
+		DT_INST_LABEL(n),					\
+		&i2c_xec_init, device_pm_control_nop,			\
+		&i2c_xec_data_##n, &i2c_xec_config_##n,			\
 		POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,			\
 		&i2c_xec_driver_api);
 
