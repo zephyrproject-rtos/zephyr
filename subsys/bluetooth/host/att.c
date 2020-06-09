@@ -196,14 +196,8 @@ static int process_queue(struct bt_att_chan *chan, struct k_fifo *queue)
 	struct net_buf *buf;
 	int err;
 
-	while ((buf = net_buf_get(queue, K_NO_WAIT))) {
-		/* Check if the queued buf is a request */
-		if (chan->req && chan->req->buf == buf) {
-			/* Save request state so it can be resent */
-			net_buf_simple_save(&chan->req->buf->b,
-					    &chan->req->state);
-		}
-
+	buf = net_buf_get(queue, K_NO_WAIT);
+	if (buf) {
 		err = chan_send(chan, buf, NULL);
 		if (err) {
 			/* Push it back if it could not be send */
@@ -215,6 +209,33 @@ static int process_queue(struct bt_att_chan *chan, struct k_fifo *queue)
 	}
 
 	return -ENOENT;
+}
+
+/* Send requests without taking tx_sem */
+static int chan_req_send(struct bt_att_chan *chan, struct bt_att_req *req)
+{
+	int err;
+
+	if (chan->chan.tx.mtu < net_buf_frags_len(req->buf)) {
+		return -EMSGSIZE;
+	}
+
+	BT_DBG("chan %p req %p len %zu", chan, req,
+	       net_buf_frags_len(req->buf));
+
+	chan->req = req;
+
+	/* Save request state so it can be resent */
+	net_buf_simple_save(&req->buf->b, &req->state);
+
+	/* Keep a reference for resending in case of an error */
+	err = chan_send(chan, net_buf_ref(req->buf), NULL);
+	if (err < 0) {
+		net_buf_unref(req->buf);
+		chan->req = NULL;
+	}
+
+	return err;
 }
 
 static void bt_att_sent(struct bt_l2cap_chan *ch)
@@ -231,7 +252,23 @@ static void bt_att_sent(struct bt_l2cap_chan *ch)
 
 	atomic_clear_bit(chan->flags, ATT_PENDING_SENT);
 
-	/* Process channel queue first */
+	/* Process pending requests first since they require a response they
+	 * can only be processed one at time while if other queues were
+	 * processed before they may always contain a buffer starving the
+	 * request queue.
+	 */
+	if (!chan->req && !sys_slist_is_empty(&att->reqs)) {
+		sys_snode_t *node = sys_slist_get(&att->reqs);
+
+		if (chan_req_send(chan, ATT_REQ(node)) >= 0) {
+			return;
+		}
+
+		/* Prepend back to the list as it could not be sent */
+		sys_slist_prepend(&att->reqs, node);
+	}
+
+	/* Process channel queue */
 	err = process_queue(chan, &chan->tx_queue);
 	if (!err) {
 		return;
@@ -448,29 +485,13 @@ static int bt_att_chan_req_send(struct bt_att_chan *chan,
 
 	BT_DBG("req %p", req);
 
-	if (chan->chan.tx.mtu < net_buf_frags_len(req->buf)) {
-		return -EMSGSIZE;
-	}
-
 	if (k_sem_take(&chan->tx_sem, K_NO_WAIT) < 0) {
 		return -EAGAIN;
 	}
 
-	BT_DBG("chan %p req %p len %zu", chan, req,
-	       net_buf_frags_len(req->buf));
-
-	chan->req = req;
-
-	/* Save request state so it can be resent */
-	net_buf_simple_save(&req->buf->b, &req->state);
-
-	/* Keep a reference for resending in case of an error */
-	err = chan_send(chan, net_buf_ref(req->buf), NULL);
+	err = chan_req_send(chan, req);
 	if (err < 0) {
-		net_buf_unref(req->buf);
-		req->buf = NULL;
 		k_sem_give(&chan->tx_sem);
-		chan->req = NULL;
 	}
 
 	return err;
