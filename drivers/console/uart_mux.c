@@ -821,15 +821,16 @@ void uart_mux_foreach(uart_mux_cb_t cb, void *user_data)
 		.rx_ringbuf = &rx_ringbuf_##x,				  \
 	};
 
-#define DEFINE_UART_MUX_DEVICE(x, _)					  \
-	DEVICE_AND_API_INIT(uart_mux_##x,				  \
-			    CONFIG_UART_MUX_DEVICE_NAME "_" #x,		  \
-			    &uart_mux_init,				  \
-			    &uart_mux_dev_data_##x,			  \
-			    &uart_mux_config_##x,			  \
-			    POST_KERNEL,				  \
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		  \
-			    &uart_mux_driver_api);
+#define DEFINE_UART_MUX_DEVICE(x, _)					\
+	DEVICE_DEFINE(uart_mux_##x,					\
+		      CONFIG_UART_MUX_DEVICE_NAME "_" #x,		\
+		      &uart_mux_init,					\
+		      device_pm_control_nop,				\
+		      &uart_mux_dev_data_##x,				\
+		      &uart_mux_config_##x,				\
+		      POST_KERNEL,					\
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+		      &uart_mux_driver_api);
 
 UTIL_LISTIFY(CONFIG_UART_MUX_DEVICE_COUNT, DEFINE_UART_MUX_CFG_DATA, _)
 UTIL_LISTIFY(CONFIG_UART_MUX_DEVICE_COUNT, DEFINE_UART_MUX_DEV_DATA, _)
