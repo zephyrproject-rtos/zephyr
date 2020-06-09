@@ -168,10 +168,11 @@ static const struct pwm_driver_api mcux_ftm_driver_api = {
 		.mode = kFTM_EdgeAlignedPwm, \
 	}; \
 	static struct mcux_ftm_data mcux_ftm_data_##n; \
-	DEVICE_AND_API_INIT(mcux_ftm_##n, DT_INST_LABEL(n), \
-			    &mcux_ftm_init, &mcux_ftm_data_##n, \
-			    &mcux_ftm_config_##n, \
-			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
-			    &mcux_ftm_driver_api);
+	DEVICE_DEFINE(mcux_ftm_##n, DT_INST_LABEL(n), \
+		      &mcux_ftm_init, device_pm_control_nop, \
+		      &mcux_ftm_data_##n, \
+		      &mcux_ftm_config_##n, \
+		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+		      &mcux_ftm_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(FTM_DEVICE)

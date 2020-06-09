@@ -387,13 +387,14 @@ static struct pwm_driver_api pwm_xec_api = {
 		.base_address = DT_INST_REG_ADDR(inst)			\
 	};								\
 									\
-	DEVICE_AND_API_INIT(pwm_xec_##inst,				\
-			    DT_INST_LABEL(inst),			\
-			    pwm_xec_init,				\
-			    NULL,					\
-			    &pwm_xec_dev_config_##inst,			\
-			    POST_KERNEL,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-			    &pwm_xec_api);
+	DEVICE_DEFINE(pwm_xec_##inst,					\
+		      DT_INST_LABEL(inst),				\
+		      pwm_xec_init,					\
+		      device_pm_control_nop,				\
+		      NULL,						\
+		      &pwm_xec_dev_config_##inst,			\
+		      POST_KERNEL,					\
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+		      &pwm_xec_api);
 
 DT_INST_FOREACH_STATUS_OKAY(XEC_INST_INIT)

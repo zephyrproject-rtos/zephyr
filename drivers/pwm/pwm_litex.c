@@ -103,14 +103,15 @@ static const struct pwm_driver_api pwm_litex_driver_api = {
 		.reg_period_size = DT_INST_REG_SIZE_BY_NAME(n, period) / 4,    \
 	};								       \
 									       \
-	DEVICE_AND_API_INIT(pwm_##n,					       \
-			    DT_INST_LABEL(n),		       \
-			    pwm_litex_init,				       \
-			    NULL,					       \
-			    &pwm_litex_cfg_##n,				       \
-			    POST_KERNEL,				       \
-			    CONFIG_PWM_LITEX_INIT_PRIORITY,		       \
-			    &pwm_litex_driver_api			       \
-			   );
+	DEVICE_DEFINE(pwm_##n,						       \
+		      DT_INST_LABEL(n),					       \
+		      pwm_litex_init,					       \
+		      device_pm_control_nop,				       \
+		      NULL,						       \
+		      &pwm_litex_cfg_##n,				       \
+		      POST_KERNEL,					       \
+		      CONFIG_PWM_LITEX_INIT_PRIORITY,			       \
+		      &pwm_litex_driver_api				       \
+		);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_LITEX_INIT)

@@ -194,11 +194,12 @@ static const struct pwm_driver_api mcux_tpm_driver_api = {
 		.mode = kTPM_EdgeAlignedPwm, \
 	}; \
 	static struct mcux_tpm_data mcux_tpm_data_##n; \
-	DEVICE_AND_API_INIT(mcux_tpm_##n, \
-			    DT_INST_LABEL(n), \
-			    &mcux_tpm_init, &mcux_tpm_data_##n, \
-			    &mcux_tpm_config_##n, \
-			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
-			    &mcux_tpm_driver_api);
+	DEVICE_DEFINE(mcux_tpm_##n, \
+		      DT_INST_LABEL(n), \
+		      &mcux_tpm_init, device_pm_control_nop,\
+		      &mcux_tpm_data_##n, \
+		      &mcux_tpm_config_##n, \
+		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+		      &mcux_tpm_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TPM_DEVICE)

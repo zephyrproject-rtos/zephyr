@@ -166,11 +166,12 @@ static const struct pwm_driver_api imx_pwm_driver_api = {
 									\
 	static struct imx_pwm_data imx_pwm_data_##n;			\
 									\
-	DEVICE_AND_API_INIT(imx_pwm_##n, DT_INST_LABEL(n),		\
-			    &imx_pwm_init, &imx_pwm_data_##n,		\
-			    &imx_pwm_config_##n, POST_KERNEL,		\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-			    &imx_pwm_driver_api);
+	DEVICE_DEFINE(imx_pwm_##n, DT_INST_LABEL(n),			\
+		      &imx_pwm_init, device_pm_control_nop,		\
+		      &imx_pwm_data_##n,				\
+		      &imx_pwm_config_##n, POST_KERNEL,			\
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+		      &imx_pwm_driver_api);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(fsl_imx7d_pwm)
 #define DT_DRV_COMPAT fsl_imx7d_pwm
