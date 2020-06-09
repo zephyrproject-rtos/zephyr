@@ -143,6 +143,11 @@ class Test(Harness):
             if self.FAULT in line:
                 self.fault = True
 
+        if self.state == "passed":
+            self.tests[self.id] = "PASS"
+        else:
+            self.tests[self.id] = "FAIL"
+
         if self.GCOV_START in line:
             self.capture_coverage = True
         elif self.GCOV_END in line:
