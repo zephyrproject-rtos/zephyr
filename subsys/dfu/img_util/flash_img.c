@@ -50,9 +50,6 @@ int flash_img_buffered_write(struct flash_img_context *ctx, uint8_t *data,
 	}
 #endif
 
-	flash_area_close(ctx->flash_area);
-	ctx->flash_area = NULL;
-
 	return rc;
 }
 
