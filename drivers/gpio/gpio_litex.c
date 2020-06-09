@@ -229,14 +229,15 @@ static const struct gpio_driver_api gpio_litex_driver_api = {
 	}; \
 	static struct gpio_litex_data gpio_litex_data_##n; \
 \
-	DEVICE_AND_API_INIT(litex_gpio_##n, \
-			    DT_INST_LABEL(n), \
-			    gpio_litex_init, \
-			    &gpio_litex_data_##n, \
-			    &gpio_litex_cfg_##n, \
-			    POST_KERNEL, \
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
-			    &gpio_litex_driver_api \
-			   );
+	DEVICE_DEFINE(litex_gpio_##n, \
+		      DT_INST_LABEL(n), \
+		      gpio_litex_init, \
+		      device_pm_control_nop, \
+		      &gpio_litex_data_##n, \
+		      &gpio_litex_cfg_##n, \
+		      POST_KERNEL, \
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+		      &gpio_litex_driver_api \
+		);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_LITEX_INIT)

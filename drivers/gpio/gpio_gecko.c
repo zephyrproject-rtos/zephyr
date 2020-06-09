@@ -347,13 +347,14 @@ static const struct gpio_gecko_config gpio_gecko_port##idx##_config = { \
 \
 static struct gpio_gecko_data gpio_gecko_port##idx##_data; \
 \
-DEVICE_AND_API_INIT(gpio_gecko_port##idx, \
-		    DT_INST_LABEL(idx), \
-		    gpio_gecko_port##idx##_init, \
-		    &gpio_gecko_port##idx##_data, \
-		    &gpio_gecko_port##idx##_config, \
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, \
-		    &gpio_gecko_driver_api); \
+DEVICE_DEFINE(gpio_gecko_port##idx, \
+	      DT_INST_LABEL(idx), \
+	      gpio_gecko_port##idx##_init, \
+	      device_pm_control_nop, \
+	      &gpio_gecko_port##idx##_data, \
+	      &gpio_gecko_port##idx##_config, \
+	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, \
+	      &gpio_gecko_driver_api); \
 \
 static int gpio_gecko_port##idx##_init(struct device *dev) \
 { \

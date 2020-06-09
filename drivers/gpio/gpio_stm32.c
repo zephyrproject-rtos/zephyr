@@ -581,14 +581,15 @@ static int gpio_stm32_init(struct device *device)
 		.pclken = { .bus = __bus, .enr = __cenr }		       \
 	};								       \
 	static struct gpio_stm32_data gpio_stm32_data_## __suffix;	       \
-	DEVICE_AND_API_INIT(gpio_stm32_## __suffix,			       \
-			    __name,					       \
-			    gpio_stm32_init,				       \
-			    &gpio_stm32_data_## __suffix,		       \
-			    &gpio_stm32_cfg_## __suffix,		       \
-			    POST_KERNEL,				       \
-			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	       \
-			    &gpio_stm32_driver)
+	DEVICE_DEFINE(gpio_stm32_## __suffix,				\
+		      __name,						\
+		      gpio_stm32_init,					\
+		      device_pm_control_nop,				\
+		      &gpio_stm32_data_## __suffix,			\
+		      &gpio_stm32_cfg_## __suffix,			\
+		      POST_KERNEL,					\
+		      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,		\
+		      &gpio_stm32_driver)
 
 #define GPIO_DEVICE_INIT_STM32(__suffix, __SUFFIX)			\
 	GPIO_DEVICE_INIT(DT_LABEL(DT_NODELABEL(gpio##__suffix)),	\

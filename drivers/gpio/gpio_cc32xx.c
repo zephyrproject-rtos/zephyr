@@ -290,11 +290,12 @@ static const struct gpio_driver_api api_funcs = {
 	}
 
 #define GPIO_CC32XX_DEVICE_INIT(n)					     \
-	DEVICE_AND_API_INIT(gpio_cc32xx_a##n, DT_INST_LABEL(n),		     \
-			&gpio_cc32xx_a##n##_init, &gpio_cc32xx_a##n##_data,  \
-			&gpio_cc32xx_a##n##_config,			     \
-			POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,     \
-			&api_funcs)
+	DEVICE_DEFINE(gpio_cc32xx_a##n, DT_INST_LABEL(n),		     \
+		      &gpio_cc32xx_a##n##_init, device_pm_control_nop,	     \
+		      &gpio_cc32xx_a##n##_data,				     \
+		      &gpio_cc32xx_a##n##_config,			     \
+		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	     \
+		      &api_funcs)
 
 #define GPIO_CC32XX_INIT(n)						     \
 	static const struct gpio_cc32xx_config gpio_cc32xx_a##n##_config = { \

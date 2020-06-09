@@ -303,13 +303,14 @@ static const struct gpio_driver_api gpio_mcux_driver_api = {
 									\
 	static struct gpio_mcux_data gpio_mcux_port## n ##_data;	\
 									\
-	DEVICE_AND_API_INIT(gpio_mcux_port## n, DT_INST_LABEL(n),	\
-			    gpio_mcux_port## n ##_init,			\
-			    &gpio_mcux_port## n ##_data,		\
-			    &gpio_mcux_port## n##_config,		\
-			    POST_KERNEL,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
-			    &gpio_mcux_driver_api);			\
+	DEVICE_DEFINE(gpio_mcux_port## n, DT_INST_LABEL(n),		\
+		      gpio_mcux_port## n ##_init,			\
+		      device_pm_control_nop,				\
+		      &gpio_mcux_port## n ##_data,			\
+		      &gpio_mcux_port## n##_config,			\
+		      POST_KERNEL,					\
+		      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,		\
+		      &gpio_mcux_driver_api);				\
 									\
 	static int gpio_mcux_port## n ##_init(struct device *dev)	\
 	{								\

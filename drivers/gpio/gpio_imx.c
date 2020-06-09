@@ -250,13 +250,14 @@ static const struct gpio_driver_api imx_gpio_driver_api = {
 									\
 	static struct imx_gpio_data imx_gpio_##n##_data;		\
 									\
-	DEVICE_AND_API_INIT(imx_gpio_##n, DT_INST_LABEL(n),		\
-			    imx_gpio_##n##_init,			\
-			    &imx_gpio_##n##_data,			\
-			    &imx_gpio_##n##_config,			\
-			    POST_KERNEL,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
-			    &imx_gpio_driver_api);			\
+	DEVICEDEFINE(imx_gpio_##n, DT_INST_LABEL(n),			\
+		     imx_gpio_##n##_init,				\
+		     device_pm_control_nop,				\
+		     &imx_gpio_##n##_data,				\
+		     &imx_gpio_##n##_config,				\
+		     POST_KERNEL,					\
+		     CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,		\
+		     &imx_gpio_driver_api);				\
 									\
 	static int imx_gpio_##n##_init(struct device *port)		\
 	{								\

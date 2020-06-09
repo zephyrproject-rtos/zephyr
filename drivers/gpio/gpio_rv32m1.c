@@ -343,13 +343,14 @@ static const struct gpio_driver_api gpio_rv32m1_driver_api = {
 									\
 	static struct gpio_rv32m1_data gpio_rv32m1_##n##_data;		\
 									\
-	DEVICE_AND_API_INIT(gpio_rv32m1_##n, DT_INST_LABEL(n),		\
-			    gpio_rv32m1_init,				\
-			    &gpio_rv32m1_##n##_data,			\
-			    &gpio_rv32m1_##n##_config,			\
-			    POST_KERNEL,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
-			    &gpio_rv32m1_driver_api);			\
+	DEVICE_DEFINE(gpio_rv32m1_##n, DT_INST_LABEL(n),		\
+		      gpio_rv32m1_init,					\
+		      device_pm_control_nop,				\
+		      &gpio_rv32m1_##n##_data,				\
+		      &gpio_rv32m1_##n##_config,			\
+		      POST_KERNEL,					\
+		      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,		\
+		      &gpio_rv32m1_driver_api);				\
 									\
 	static int gpio_rv32m1_##n##_init(struct device *dev)		\
 	{								\

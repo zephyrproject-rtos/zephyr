@@ -269,13 +269,14 @@ static const struct gpio_driver_api gpio_stellaris_driver_api = {
 		.config_func = port_## n ##_stellaris_config_func,			\
 	};										\
 											\
-	DEVICE_AND_API_INIT(gpio_stellaris_port_## n,					\
-			    DT_INST_LABEL(n),						\
-			    gpio_stellaris_init,					\
-			    &port_## n ##_stellaris_runtime,				\
-			    &gpio_stellaris_port_## n ##_config,			\
-			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,		\
-			    &gpio_stellaris_driver_api);				\
+	DEVICE_DEFINE(gpio_stellaris_port_## n,				\
+		      DT_INST_LABEL(n),					\
+		      gpio_stellaris_init,				\
+		      device_pm_control_nop,				\
+		      &port_## n ##_stellaris_runtime,			\
+		      &gpio_stellaris_port_## n ##_config,		\
+		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
+		      &gpio_stellaris_driver_api);			\
 											\
 	static void port_## n ##_stellaris_config_func(struct device *dev)		\
 	{										\

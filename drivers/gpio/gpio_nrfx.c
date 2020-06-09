@@ -531,14 +531,15 @@ static int gpio_nrfx_init(struct device *port)
 									\
 	static struct gpio_nrfx_data gpio_nrfx_p##id##_data;		\
 									\
-	DEVICE_AND_API_INIT(gpio_nrfx_p##id,				\
-			    DT_LABEL(GPIO(id)),				\
-			    gpio_nrfx_init,				\
-			    &gpio_nrfx_p##id##_data,			\
-			    &gpio_nrfx_p##id##_cfg,			\
-			    POST_KERNEL,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
-			    &gpio_nrfx_drv_api_funcs)
+	DEVICE_DEFINE(gpio_nrfx_p##id,					\
+		      DT_LABEL(GPIO(id)),				\
+		      gpio_nrfx_init,					\
+		      device_pm_control_nop,				\
+		      &gpio_nrfx_p##id##_data,				\
+		      &gpio_nrfx_p##id##_cfg,				\
+		      POST_KERNEL,					\
+		      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,		\
+		      &gpio_nrfx_drv_api_funcs)
 
 #ifdef CONFIG_GPIO_NRF_P0
 GPIO_NRF_DEVICE(0);

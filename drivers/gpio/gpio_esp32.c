@@ -365,13 +365,14 @@ static struct gpio_esp32_data gpio_1_data = { /* 32..39 */
 	static struct gpio_driver_config gpio_##_id##_cfg = { \
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(_id),  \
 	}; \
-	DEVICE_AND_API_INIT(gpio_esp32_##_id,				\
-			    DT_INST_LABEL(_id),	\
-			    gpio_esp32_init,				\
-			    &gpio_##_id##_data, &gpio_##_id##_cfg,	\
-			    POST_KERNEL,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-			    &gpio_esp32_driver)
+	DEVICE_(gpio_esp32_##_id,					\
+		DT_INST_LABEL(_id),					\
+		gpio_esp32_init,					\
+		device_pm_control_nop,					\
+		&gpio_##_id##_data, &gpio_##_id##_cfg,			\
+		POST_KERNEL,						\
+		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
+		&gpio_esp32_driver)
 
 /* GPIOs are divided in two groups for ESP32 because the callback
  * API works with 32-bit bitmasks to manage interrupt callbacks,

@@ -603,13 +603,14 @@ static const struct gpio_intel_apl_config				\
 									\
 static struct gpio_intel_apl_data gpio_intel_apl_data_##n;		\
 									\
-DEVICE_AND_API_INIT(gpio_intel_apl_##n,					\
-		    DT_INST_LABEL(n),					\
-		    gpio_intel_apl_init,				\
-		    &gpio_intel_apl_data_##n,				\
-		    &gpio_intel_apl_cfg_##n,				\
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
-		    &gpio_intel_apl_api);
+DEVICE_DEFINE(gpio_intel_apl_##n,					\
+	      DT_INST_LABEL(n),						\
+	      gpio_intel_apl_init,					\
+	      device_pm_control_nop,					\
+	      &gpio_intel_apl_data_##n,					\
+	      &gpio_intel_apl_cfg_##n,					\
+	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+	      &gpio_intel_apl_api);
 
 /* "sub" devices.  no more than GPIO_INTEL_APL_NR_SUBDEVS of these! */
 DT_INST_FOREACH_STATUS_OKAY(GPIO_INTEL_APL_DEV_CFG_DATA)
