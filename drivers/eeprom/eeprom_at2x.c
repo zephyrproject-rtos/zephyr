@@ -589,12 +589,13 @@ static const struct eeprom_driver_api eeprom_at2x_api = {
 		.write_fn = eeprom_at##t##_write, \
 	}; \
 	static struct eeprom_at2x_data eeprom_at##t##_data_##n; \
-	DEVICE_AND_API_INIT(eeprom_at##t##_##n, \
-			    DT_LABEL(INST_DT_AT2X(n, t)), \
-			    &eeprom_at2x_init, &eeprom_at##t##_data_##n, \
-			    &eeprom_at##t##_config_##n, POST_KERNEL, \
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
-			    &eeprom_at2x_api)
+	DEVICE_DEFINE(eeprom_at##t##_##n, \
+		      DT_LABEL(INST_DT_AT2X(n, t)), \
+		      &eeprom_at2x_init, device_pm_control_nop, \
+		      &eeprom_at##t##_data_##n, \
+		      &eeprom_at##t##_config_##n, POST_KERNEL, \
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+		      &eeprom_at2x_api)
 
 #define EEPROM_AT24_DEVICE(n) EEPROM_AT2X_DEVICE(n, 24)
 #define EEPROM_AT25_DEVICE(n) EEPROM_AT2X_DEVICE(n, 25)
