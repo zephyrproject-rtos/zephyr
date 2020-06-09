@@ -297,9 +297,9 @@ steps:
 
         #. Update the version variables in the :zephyr_file:`VERSION` file
            located in the root of the Git repository. Set ``EXTRAVERSION``
-           variable to zero to indicate final release::
+           variable to an empty string to indicate final release::
 
-            EXTRAVERSION = 0
+            EXTRAVERSION =
 
         #. Post a PR with the updated :zephyr_file:`VERSION` file using
            ``release: Zephyr 1.11.0`` as the commit subject. Merge
