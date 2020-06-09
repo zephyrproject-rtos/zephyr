@@ -217,6 +217,34 @@ static int process_queue(struct bt_att_chan *chan, struct k_fifo *queue)
 	return -ENOENT;
 }
 
+/* Send requests without taking tx_sem */
+static int chan_req_send(struct bt_att_chan *chan, struct bt_att_req *req)
+{
+	int err;
+
+	if (chan->chan.tx.mtu < net_buf_frags_len(req->buf)) {
+		return -EMSGSIZE;
+	}
+
+	BT_DBG("chan %p req %p len %zu", chan, req,
+	       net_buf_frags_len(req->buf));
+
+	chan->req = req;
+
+	/* Save request state so it can be resent */
+	net_buf_simple_save(&req->buf->b, &req->state);
+
+	/* Keep a reference for resending in case of an error */
+	err = chan_send(chan, net_buf_ref(req->buf), NULL);
+	if (err < 0) {
+		net_buf_unref(req->buf);
+		req->buf = NULL;
+		chan->req = NULL;
+	}
+
+	return err;
+}
+
 static void bt_att_sent(struct bt_l2cap_chan *ch)
 {
 	struct bt_att_chan *chan = ATT_CHAN(ch);
@@ -241,6 +269,18 @@ static void bt_att_sent(struct bt_l2cap_chan *ch)
 	err = process_queue(chan, &att->tx_queue);
 	if (!err) {
 		return;
+	}
+
+	/* Process pending requests */
+	if (!chan->req && !sys_slist_is_empty(&att->reqs)) {
+		sys_snode_t *node = sys_slist_get(&att->reqs);
+
+		if (chan_req_send(chan, ATT_REQ(node)) >= 0) {
+			return;
+		}
+
+		/* Prepend back to the list as it could not be sent */
+		sys_slist_prepend(&att->reqs, node);
 	}
 
 	k_sem_give(&chan->tx_sem);
@@ -448,29 +488,13 @@ static int bt_att_chan_req_send(struct bt_att_chan *chan,
 
 	BT_DBG("req %p", req);
 
-	if (chan->chan.tx.mtu < net_buf_frags_len(req->buf)) {
-		return -EMSGSIZE;
-	}
-
 	if (k_sem_take(&chan->tx_sem, K_NO_WAIT) < 0) {
 		return -EAGAIN;
 	}
 
-	BT_DBG("chan %p req %p len %zu", chan, req,
-	       net_buf_frags_len(req->buf));
-
-	chan->req = req;
-
-	/* Save request state so it can be resent */
-	net_buf_simple_save(&req->buf->b, &req->state);
-
-	/* Keep a reference for resending in case of an error */
-	err = chan_send(chan, net_buf_ref(req->buf), NULL);
+	err = chan_req_send(chan, req);
 	if (err < 0) {
-		net_buf_unref(req->buf);
-		req->buf = NULL;
 		k_sem_give(&chan->tx_sem);
-		chan->req = NULL;
 	}
 
 	return err;
