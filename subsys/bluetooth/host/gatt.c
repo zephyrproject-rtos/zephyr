@@ -417,14 +417,12 @@ enum {
 
 #define CF_BIT_ROBUST_CACHING	0
 #define CF_BIT_EATT		1
-#define CF_BIT_NOTIFY_MULTI	2
-#define CF_BIT_LAST		CF_BIT_NOTIFY_MULTI
+#define CF_BIT_LAST		CF_BIT_EATT
 
 #define CF_BYTE_LAST		(CF_BIT_LAST % 8)
 
 #define CF_ROBUST_CACHING(_cfg) (_cfg->data[0] & BIT(CF_BIT_ROBUST_CACHING))
 #define CF_EATT(_cfg) (_cfg->data[0] & BIT(CF_BIT_EATT))
-#define CF_NOTIFY_MULTI(_cfg) (_cfg->data[0] & BIT(CF_BIT_NOTIFY_MULTI))
 
 struct gatt_cf_cfg {
 	u8_t                    id;
@@ -505,7 +503,7 @@ static bool cf_set_value(struct gatt_cf_cfg *cfg, const u8_t *value, u16_t len)
 
 	/* Set the bits for each octect */
 	for (i = 0U; i < len && i < last_byte; i++) {
-		cfg->data[i] |= value[i] & (BIT(last_bit + 1) - 1);
+		cfg->data[i] |= value[i] & ((1 << last_bit) - 1);
 		BT_DBG("byte %u: data 0x%02x value 0x%02x", i, cfg->data[i],
 		       value[i]);
 	}
@@ -1636,113 +1634,6 @@ struct notify_data {
 	};
 };
 
-#if defined(CONFIG_BT_GATT_NOTIFY_MULTIPLE)
-
-struct nfy_mult_data {
-	bt_gatt_complete_func_t func;
-	void *user_data;
-};
-
-#define nfy_mult_user_data(buf) \
-	((struct nfy_mult_data *)net_buf_user_data(buf))
-#define nfy_mult_data_match(buf, _func, _user_data) \
-	((nfy_mult_user_data(buf)->func == _func) && \
-	(nfy_mult_user_data(buf)->user_data == _user_data))
-
-static struct net_buf *nfy_mult[CONFIG_BT_MAX_CONN];
-
-static int gatt_notify_mult_send(struct bt_conn *conn, struct net_buf **buf)
-{
-	struct nfy_mult_data *data = nfy_mult_user_data(*buf);
-	int ret;
-
-	ret = bt_att_send(conn, *buf, data->func, data->user_data);
-	if (ret < 0) {
-		net_buf_unref(*buf);
-	}
-
-	*buf = NULL;
-
-	return ret;
-}
-
-static void notify_mult_process(struct k_work *work)
-{
-	int i;
-
-	/* Send to any connection with an allocated buffer */
-	for (i = 0; i < ARRAY_SIZE(nfy_mult); i++) {
-		struct net_buf **buf = &nfy_mult[i];
-
-		if (*buf) {
-			struct bt_conn *conn = bt_conn_lookup_index(i);
-
-			gatt_notify_mult_send(conn, buf);
-			bt_conn_unref(conn);
-		}
-	}
-}
-
-K_WORK_DEFINE(nfy_mult_work, notify_mult_process);
-
-static bool gatt_cf_notify_multi(struct bt_conn *conn)
-{
-	struct gatt_cf_cfg *cfg;
-
-	cfg = find_cf_cfg(conn);
-	if (!cfg) {
-		return false;
-	}
-
-	return CF_NOTIFY_MULTI(cfg);
-}
-
-static int gatt_notify_mult(struct bt_conn *conn, u16_t handle,
-			    struct bt_gatt_notify_params *params)
-{
-	struct net_buf **buf = &nfy_mult[bt_conn_index(conn)];
-	struct bt_att_notify_mult *nfy;
-
-	/* Check if we can fit more data into it, in case it doesn't fit send
-	 * the existing buffer and proceed to create a new one
-	 */
-	if (*buf && ((net_buf_tailroom(*buf) < sizeof(*nfy) + params->len) ||
-	    !nfy_mult_data_match(*buf, params->func, params->user_data))) {
-		int ret;
-
-		ret = gatt_notify_mult_send(conn, buf);
-		if (ret < 0) {
-			return ret;
-		}
-	}
-
-	if (!*buf) {
-		*buf = bt_att_create_pdu(conn, BT_ATT_OP_NOTIFY_MULT,
-					 sizeof(*nfy) + params->len);
-		if (!*buf) {
-			BT_WARN("No buffer available to send notification");
-			return -ENOMEM;
-		}
-		/* Set user_data so it can be restored when sending */
-		nfy_mult_user_data(*buf)->func = params->func;
-		nfy_mult_user_data(*buf)->user_data = params->user_data;
-	}
-
-	BT_DBG("handle 0x%04x len %u", handle, params->len);
-
-	nfy = net_buf_add(*buf, sizeof(*nfy));
-	nfy->handle = sys_cpu_to_le16(handle);
-	nfy->len = sys_cpu_to_le16(params->len);
-
-	net_buf_add(*buf, params->len);
-	memcpy(nfy->value, params->data, params->len);
-
-	k_work_submit(&nfy_mult_work);
-
-	return 0;
-}
-#endif /* CONFIG_BT_GATT_NOTIFY_MULTIPLE */
-
 static int gatt_notify(struct bt_conn *conn, u16_t handle,
 		       struct bt_gatt_notify_params *params)
 {
@@ -1759,12 +1650,6 @@ static int gatt_notify(struct bt_conn *conn, u16_t handle,
 		return -EAGAIN;
 	}
 #endif
-
-#if defined(CONFIG_BT_GATT_NOTIFY_MULTIPLE)
-	if (gatt_cf_notify_multi(conn)) {
-		return gatt_notify_mult(conn, handle, params);
-	}
-#endif /* CONFIG_BT_GATT_NOTIFY_MULTIPLE */
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_NOTIFY,
 				sizeof(*nfy) + params->len);
@@ -2030,27 +1915,6 @@ int bt_gatt_notify_cb(struct bt_conn *conn,
 
 	return data.err;
 }
-
-#if defined(CONFIG_BT_GATT_NOTIFY_MULTIPLE)
-int bt_gatt_notify_multiple(struct bt_conn *conn, u16_t num_params,
-			    struct bt_gatt_notify_params *params)
-{
-	int i, ret;
-
-	__ASSERT(params, "invalid parameters\n");
-	__ASSERT(num_params, "invalid parameters\n");
-	__ASSERT(params->attr, "invalid parameters\n");
-
-	for (i = 0; i < num_params; i++) {
-		ret = bt_gatt_notify_cb(conn, &params[i]);
-		if (ret < 0) {
-			return ret;
-		}
-	}
-
-	return 0;
-}
-#endif /* CONFIG_BT_GATT_NOTIFY_MULTIPLE */
 
 int bt_gatt_indicate(struct bt_conn *conn,
 		     struct bt_gatt_indicate_params *params)
@@ -2489,55 +2353,6 @@ void bt_gatt_notification(struct bt_conn *conn, u16_t handle,
 		    BT_GATT_ITER_STOP) {
 			bt_gatt_unsubscribe(conn, params);
 		}
-	}
-}
-
-void bt_gatt_mult_notification(struct bt_conn *conn, const void *data,
-			       u16_t length)
-{
-	struct bt_gatt_subscribe_params *params, *tmp;
-	const struct bt_att_notify_mult *nfy;
-	struct net_buf_simple buf;
-	struct gatt_sub *sub;
-
-	BT_DBG("length %u", length);
-
-	sub = gatt_sub_find(conn);
-	if (!sub) {
-		return;
-	}
-
-	/* This is fine since there no write operation to the buffer.  */
-	net_buf_simple_init_with_data(&buf, (void *)data, length);
-
-	while (buf.len > sizeof(*nfy)) {
-		u16_t handle;
-		u16_t len;
-
-		nfy = net_buf_simple_pull_mem(&buf, sizeof(*nfy));
-		handle = sys_cpu_to_le16(nfy->handle);
-		len = sys_cpu_to_le16(nfy->len);
-
-		BT_DBG("handle 0x%02x len %u", handle, len);
-
-		if (len > buf.len) {
-			BT_ERR("Invalid data len %u > %u", len, length);
-			return;
-		}
-
-		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sub->list, params, tmp,
-						  node) {
-			if (handle != params->value_handle) {
-				continue;
-			}
-
-			if (params->notify(conn, params, nfy->value, len) ==
-			    BT_GATT_ITER_STOP) {
-				bt_gatt_unsubscribe(conn, params);
-			}
-		}
-
-		net_buf_simple_pull_mem(&buf, len);
 	}
 }
 
@@ -3531,79 +3346,8 @@ static int gatt_read_mult(struct bt_conn *conn,
 
 	return gatt_send(conn, buf, gatt_read_mult_rsp, params, NULL);
 }
-
-#if defined(CONFIG_BT_EATT)
-static void gatt_read_mult_vl_rsp(struct bt_conn *conn, u8_t err,
-				  const void *pdu, u16_t length,
-				  void *user_data)
-{
-	struct bt_gatt_read_params *params = user_data;
-	const struct bt_att_read_mult_vl_rsp *rsp;
-	struct net_buf_simple buf;
-
-	BT_DBG("err 0x%02x", err);
-
-	if (err || !length) {
-		if (err == BT_ATT_ERR_NOT_SUPPORTED) {
-			gatt_read_mult(conn, params);
-		}
-		params->func(conn, err, params, NULL, 0);
-		return;
-	}
-
-	net_buf_simple_init_with_data(&buf, (void *)pdu, length);
-
-	while (buf.len >= sizeof(*rsp)) {
-		u16_t len;
-
-		rsp = net_buf_simple_pull_mem(&buf, sizeof(*rsp));
-		len = sys_le16_to_cpu(rsp->len);
-
-		/* If a Length Value Tuple is truncated, then the amount of
-		 * Attribute Value will be less than the value of the Value
-		 * Length field.
-		 */
-		if (len > buf.len) {
-			len = buf.len;
-		}
-
-		params->func(conn, 0, params, rsp->value, len);
-
-		net_buf_simple_pull_mem(&buf, len);
-	}
-
-	/* mark read as complete since read multiple is single response */
-	params->func(conn, 0, params, NULL, 0);
-}
-
-static int gatt_read_mult_vl(struct bt_conn *conn,
-			      struct bt_gatt_read_params *params)
-{
-	struct net_buf *buf;
-	u8_t i;
-
-	buf = bt_att_create_pdu(conn, BT_ATT_OP_READ_MULT_VL_REQ,
-				params->handle_count * sizeof(u16_t));
-	if (!buf) {
-		return -ENOMEM;
-	}
-
-	for (i = 0U; i < params->handle_count; i++) {
-		net_buf_add_le16(buf, params->handles[i]);
-	}
-
-	return gatt_send(conn, buf, gatt_read_mult_vl_rsp, params, NULL);
-}
-#endif /* CONFIG_BT_EATT */
-
 #else
 static int gatt_read_mult(struct bt_conn *conn,
-			      struct bt_gatt_read_params *params)
-{
-	return -ENOTSUP;
-}
-
-static int gatt_read_mult_vl(struct bt_conn *conn,
 			      struct bt_gatt_read_params *params)
 {
 	return -ENOTSUP;
@@ -3627,11 +3371,7 @@ int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
 	}
 
 	if (params->handle_count > 1) {
-#if defined(CONFIG_BT_EATT)
-		return gatt_read_mult_vl(conn, params);
-#else
 		return gatt_read_mult(conn, params);
-#endif /* CONFIG_BT_EATT */
 	}
 
 	if (params->single.offset) {

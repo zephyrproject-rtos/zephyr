@@ -1239,94 +1239,6 @@ static u8_t att_read_mult_req(struct bt_att_chan *chan, struct net_buf *buf)
 
 	return 0;
 }
-
-#if defined(CONFIG_BT_EATT)
-static u8_t read_vl_cb(const struct bt_gatt_attr *attr, void *user_data)
-{
-	struct read_data *data = user_data;
-	struct bt_att_chan *chan = data->chan;
-	struct bt_conn *conn = chan->chan.chan.conn;
-	struct bt_att_read_mult_vl_rsp *rsp;
-	int read;
-
-	BT_DBG("handle 0x%04x", attr->handle);
-
-	data->rsp = net_buf_add(data->buf, sizeof(*data->rsp));
-
-	/*
-	 * If any attribute is founded in handle range it means that error
-	 * should be changed from pre-set: invalid handle error to no error.
-	 */
-	data->err = 0x00;
-
-	/* Check attribute permissions */
-	data->err = bt_gatt_check_perm(conn, attr, BT_GATT_PERM_READ_MASK);
-	if (data->err) {
-		return BT_GATT_ITER_STOP;
-	}
-
-	/* The Length Value Tuple List may be truncated within the first two
-	 * octets of a tuple due to the size limits of the current ATT_MTU.
-	 */
-	if (chan->chan.tx.mtu - data->buf->len < 2) {
-		return BT_GATT_ITER_STOP;
-	}
-
-	rsp = net_buf_add(data->buf, sizeof(*rsp));
-
-	read = att_chan_read(chan, attr, data->buf, data->offset, NULL, NULL);
-	if (read < 0) {
-		data->err = err_to_att(read);
-		return BT_GATT_ITER_STOP;
-	}
-
-	rsp->len = read;
-
-	return BT_GATT_ITER_CONTINUE;
-}
-
-static u8_t att_read_mult_vl_req(struct bt_att_chan *chan, struct net_buf *buf)
-{
-	struct bt_conn *conn = chan->chan.chan.conn;
-	struct read_data data;
-	u16_t handle;
-
-	(void)memset(&data, 0, sizeof(data));
-
-	data.buf = bt_att_create_pdu(conn, BT_ATT_OP_READ_MULT_VL_RSP, 0);
-	if (!data.buf) {
-		return BT_ATT_ERR_UNLIKELY;
-	}
-
-	data.chan = chan;
-
-	while (buf->len >= sizeof(u16_t)) {
-		handle = net_buf_pull_le16(buf);
-
-		BT_DBG("handle 0x%04x ", handle);
-
-		/* If handle is not valid then return invalid handle error.
-		 * If handle is found error will be cleared by read_cb.
-		 */
-		data.err = BT_ATT_ERR_INVALID_HANDLE;
-
-		bt_gatt_foreach_attr(handle, handle, read_vl_cb, &data);
-
-		/* Stop reading in case of error */
-		if (data.err) {
-			net_buf_unref(data.buf);
-			/* Respond here since handle is set */
-			send_err_rsp(chan, BT_ATT_OP_READ_MULT_VL_REQ, handle,
-				     data.err);
-			return 0;
-		}
-	}
-
-	(void)bt_att_chan_send(chan, data.buf, chan_rsp_sent);
-
-	return 0;
-}
-#endif /* CONFIG_BT_EATT */
 #endif /* CONFIG_BT_GATT_READ_MULTIPLE */
 
 struct read_group_data {
@@ -1982,16 +1894,6 @@ static u8_t att_handle_read_mult_rsp(struct bt_att_chan *chan,
 
 	return att_handle_rsp(chan, buf->data, buf->len, 0);
 }
-
-#if defined(CONFIG_BT_EATT)
-static u8_t att_handle_read_mult_vl_rsp(struct bt_att_chan *chan,
-					struct net_buf *buf)
-{
-	BT_DBG("");
-
-	return att_handle_rsp(chan, buf->data, buf->len, 0);
-}
-#endif /* CONFIG_BT_EATT */
 #endif /* CONFIG_BT_GATT_READ_MULTIPLE */
 
 static u8_t att_handle_read_group_rsp(struct bt_att_chan *chan,
@@ -2058,15 +1960,6 @@ static u8_t att_indicate(struct bt_att_chan *chan, struct net_buf *buf)
 
 	return 0;
 }
-
-static u8_t att_notify_mult(struct bt_att_chan *chan, struct net_buf *buf)
-{
-	BT_DBG("chan %p", chan);
-
-	bt_gatt_mult_notification(chan->att->conn, buf->data, buf->len);
-
-	return 0;
-}
 #endif /* CONFIG_BT_GATT_CLIENT */
 
 static u8_t att_confirm(struct bt_att_chan *chan, struct net_buf *buf)
@@ -2111,12 +2004,6 @@ static const struct att_handler {
 		BT_ATT_READ_MULT_MIN_LEN_REQ,
 		ATT_REQUEST,
 		att_read_mult_req },
-#if defined(CONFIG_BT_EATT)
-	{ BT_ATT_OP_READ_MULT_VL_REQ,
-		BT_ATT_READ_MULT_MIN_LEN_REQ,
-		ATT_REQUEST,
-		att_read_mult_vl_req },
-#endif /* CONFIG_BT_EATT */
 #endif /* CONFIG_BT_GATT_READ_MULTIPLE */
 	{ BT_ATT_OP_READ_GROUP_REQ,
 		sizeof(struct bt_att_read_group_req),
@@ -2183,12 +2070,6 @@ static const struct att_handler {
 		sizeof(struct bt_att_read_mult_rsp),
 		ATT_RESPONSE,
 		att_handle_read_mult_rsp },
-#if defined(CONFIG_BT_EATT)
-	{ BT_ATT_OP_READ_MULT_VL_RSP,
-		sizeof(struct bt_att_read_mult_vl_rsp),
-		ATT_RESPONSE,
-		att_handle_read_mult_vl_rsp },
-#endif /* CONFIG_BT_EATT */
 #endif /* CONFIG_BT_GATT_READ_MULTIPLE */
 	{ BT_ATT_OP_READ_GROUP_RSP,
 		sizeof(struct bt_att_read_group_rsp),
@@ -2214,10 +2095,6 @@ static const struct att_handler {
 		sizeof(struct bt_att_indicate),
 		ATT_INDICATION,
 		att_indicate },
-	{ BT_ATT_OP_NOTIFY_MULT,
-		sizeof(struct bt_att_notify_mult),
-		ATT_NOTIFICATION,
-		att_notify_mult },
 #endif /* CONFIG_BT_GATT_CLIENT */
 };
 

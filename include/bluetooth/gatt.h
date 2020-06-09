@@ -876,7 +876,7 @@ int bt_gatt_notify_cb(struct bt_conn *conn,
  *
  *  @param conn Connection object.
  *  @param num_params Number of notification parameters.
- *  @param params Array of notification parameters.
+ *  @param params Notification parameters.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
