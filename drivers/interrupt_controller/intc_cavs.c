@@ -139,11 +139,12 @@ static const struct irq_next_level_api cavs_apis = {
 	static struct cavs_ictl_runtime cavs_##n##_runtime = {		\
 		.base_addr = DT_INST_REG_ADDR(n),			\
 	};								\
-	DEVICE_AND_API_INIT(cavs_ictl_##n, DT_INST_LABEL(n),		\
-			    cavs_ictl_##n##_initialize,			\
-			    &cavs_##n##_runtime, &cavs_config_##n,	\
-			    PRE_KERNEL_1,				\
-			    CONFIG_CAVS_ICTL_INIT_PRIORITY, &cavs_apis);\
+	DEVICE_DEFINE(cavs_ictl_##n, DT_INST_LABEL(n),			\
+		      cavs_ictl_##n##_initialize,			\
+		      device_pm_control_nop,				\
+		      &cavs_##n##_runtime, &cavs_config_##n,		\
+		      PRE_KERNEL_1,					\
+		      CONFIG_CAVS_ICTL_INIT_PRIORITY, &cavs_apis);	\
 									\
 	static void cavs_config_##n##_irq(struct device *port)		\
 	{								\
