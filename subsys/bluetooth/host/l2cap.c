@@ -512,9 +512,10 @@ static int l2cap_ecred_conn_req(struct bt_l2cap_chan **chan, int channels)
 
 static void l2cap_le_encrypt_change(struct bt_l2cap_chan *chan, u8_t status)
 {
-	/* Skip channels that are not pending waiting for encryption */
-	if (!atomic_test_and_clear_bit(chan->status,
-				       BT_L2CAP_STATUS_ENCRYPT_PENDING)) {
+	/* Skip channels already connected or there is an ongoing request */
+	if (chan->state != BT_L2CAP_CONNECT ||
+	    k_work_pending(&chan->rtx_work.work) ||
+	    k_delayed_work_remaining_get(&chan->rtx_work)) {
 		return;
 	}
 
@@ -1301,13 +1302,6 @@ static void le_disconn_req(struct bt_l2cap *l2cap, u8_t ident,
 
 static int l2cap_change_security(struct bt_l2cap_le_chan *chan, u16_t err)
 {
-	int ret;
-
-	if (atomic_test_bit(chan->chan.status,
-			    BT_L2CAP_STATUS_ENCRYPT_PENDING)) {
-		return -EINPROGRESS;
-	}
-
 	switch (err) {
 	case BT_L2CAP_LE_ERR_ENCRYPTION:
 		if (chan->chan.required_sec_level >= BT_SECURITY_L2) {
@@ -1330,15 +1324,8 @@ static int l2cap_change_security(struct bt_l2cap_le_chan *chan, u16_t err)
 		return -EINVAL;
 	}
 
-	ret = bt_conn_set_security(chan->chan.conn,
-				   chan->chan.required_sec_level);
-	if (ret < 0) {
-		return ret;
-	}
-
-	atomic_set_bit(chan->chan.status, BT_L2CAP_STATUS_ENCRYPT_PENDING);
-
-	return 0;
+	return bt_conn_set_security(chan->chan.conn,
+				    chan->chan.required_sec_level);
 }
 
 static void le_ecred_conn_rsp(struct bt_l2cap *l2cap, u8_t ident,
