@@ -163,11 +163,11 @@ static const struct imx_epit_config imx_epit_##idx##z_config = {	       \
 	.prescaler = DT_INST_PROP(idx, prescaler),			       \
 };									       \
 static struct imx_epit_data imx_epit_##idx##_data;			       \
-DEVICE_AND_API_INIT(epit_##idx, DT_INST_LABEL(idx),			       \
-		    &imx_epit_config_func_##idx,			       \
-		    &imx_epit_##idx##_data, &imx_epit_##idx##z_config.info,    \
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	       \
-		    &imx_epit_driver_api);				       \
+DEVICE_DEFINE(epit_##idx, DT_INST_LABEL(idx),				       \
+	      &imx_epit_config_func_##idx, device_pm_control_nop,	       \
+	      &imx_epit_##idx##_data, &imx_epit_##idx##z_config.info,	       \
+	      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	       \
+	      &imx_epit_driver_api);					       \
 static int imx_epit_config_func_##idx(struct device *dev)		       \
 {									       \
 	imx_epit_init(dev);						       \

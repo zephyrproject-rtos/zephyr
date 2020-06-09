@@ -186,13 +186,14 @@ static int tmr_cmsdk_apb_init(struct device *dev)
 		.load = UINT32_MAX,					\
 	};								\
 									\
-	DEVICE_AND_API_INIT(tmr_cmsdk_apb_##inst,			\
-			    DT_INST_LABEL(inst),			\
-			    tmr_cmsdk_apb_init,				\
-			    &tmr_cmsdk_apb_dev_data_##inst,		\
-			    &tmr_cmsdk_apb_cfg_##inst, POST_KERNEL,	\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-			    &tmr_cmsdk_apb_api);			\
+	DEVICE_DEFINE(tmr_cmsdk_apb_##inst,				\
+		      DT_INST_LABEL(inst),				\
+		      tmr_cmsdk_apb_init,				\
+		      device_pm_control_nop,				\
+		      &tmr_cmsdk_apb_dev_data_##inst,			\
+		      &tmr_cmsdk_apb_cfg_##inst, POST_KERNEL,		\
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+		      &tmr_cmsdk_apb_api);				\
 									\
 	static void timer_cmsdk_apb_config_##inst(struct device *dev)	\
 	{								\

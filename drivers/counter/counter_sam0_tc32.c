@@ -439,14 +439,15 @@ static const struct counter_driver_api counter_sam0_tc32_driver_api = {
 									\
 	static struct counter_sam0_tc32_data counter_sam0_tc32_dev_data_##n;\
 									\
-	DEVICE_AND_API_INIT(counter_sam0_tc32_##n,			\
-			    DT_INST_LABEL(n),				\
-			    &counter_sam0_tc32_initialize,		\
-			    &counter_sam0_tc32_dev_data_##n,		\
-			    &counter_sam0_tc32_dev_config_##n,		\
-			    PRE_KERNEL_1,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-			    &counter_sam0_tc32_driver_api);		\
+	DEVICE_DEFINE(counter_sam0_tc32_##n,				\
+		      DT_INST_LABEL(n),					\
+		      &counter_sam0_tc32_initialize,			\
+		      device_pm_control_nop,				\
+		      &counter_sam0_tc32_dev_data_##n,			\
+		      &counter_sam0_tc32_dev_config_##n,		\
+		      PRE_KERNEL_1,					\
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+		      &counter_sam0_tc32_driver_api);			\
 									\
 	static void counter_sam0_tc32_config_##n(struct device *dev)	\
 	{								\

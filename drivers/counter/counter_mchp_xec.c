@@ -330,13 +330,14 @@ static int counter_xec_init(struct device *dev)
 		.girq_bit = DT_INST_PROP(inst, girq_bit),		\
 	};								\
 									\
-	DEVICE_AND_API_INIT(counter_xec_##inst, DT_INST_LABEL(inst),	\
-			    counter_xec_init,				\
-			    &counter_xec_dev_data_##inst,		\
-			    &counter_xec_dev_config_##inst,		\
-			    POST_KERNEL,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-			    &counter_xec_api);				\
+	DEVICE_DEFINE(counter_xec_##inst, DT_INST_LABEL(inst),		\
+		      counter_xec_init,					\
+		      device_pm_control_nop,				\
+		      &counter_xec_dev_data_##inst,			\
+		      &counter_xec_dev_config_##inst,			\
+		      POST_KERNEL,					\
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+		      &counter_xec_api);				\
 									\
 	static void counter_xec_irq_config_##inst(void)			\
 	{								\

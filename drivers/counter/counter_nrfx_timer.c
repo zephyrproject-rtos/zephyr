@@ -426,13 +426,14 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 		.timer = (NRF_TIMER_Type *)DT_REG_ADDR(TIMER(idx)),	       \
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, idx)	       \
 	};								       \
-	DEVICE_AND_API_INIT(timer_##idx,				       \
-			    DT_LABEL(TIMER(idx)),			       \
-			    counter_##idx##_init,			       \
-			    &counter_##idx##_data,			       \
-			    &nrfx_counter_##idx##_config.info,		       \
-			    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,  \
-			    &counter_nrfx_driver_api)
+	DEVICE_DEFINE(timer_##idx,					       \
+		      DT_LABEL(TIMER(idx)),				       \
+		      counter_##idx##_init,				       \
+		      device_pm_control_nop,				       \
+		      &counter_##idx##_data,				       \
+		      &nrfx_counter_##idx##_config.info,		       \
+		      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	       \
+		      &counter_nrfx_driver_api)
 
 #ifdef CONFIG_COUNTER_TIMER0
 COUNTER_NRFX_TIMER_DEVICE(0);

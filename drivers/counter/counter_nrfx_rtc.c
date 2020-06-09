@@ -695,13 +695,14 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 			   (.fixed_top = RTC_PROP(idx, fixed_top),))	       \
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, idx)	       \
 	};								       \
-	DEVICE_AND_API_INIT(rtc_##idx,					       \
-			    DT_LABEL(RTC(idx)),				       \
-			    counter_##idx##_init,			       \
-			    &counter_##idx##_data,			       \
-			    &nrfx_counter_##idx##_config.info,		       \
-			    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,  \
-			    &counter_nrfx_driver_api)
+	DEVICE_DEFINE(rtc_##idx,					       \
+		      DT_LABEL(RTC(idx)),				       \
+		      counter_##idx##_init,				       \
+		      device_pm_control_nop,				       \
+		      &counter_##idx##_data,				       \
+		      &nrfx_counter_##idx##_config.info,		       \
+		      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	       \
+		      &counter_nrfx_driver_api)
 
 #ifdef CONFIG_COUNTER_RTC0
 COUNTER_NRF_RTC_DEVICE(0);
