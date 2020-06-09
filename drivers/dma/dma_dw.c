@@ -409,12 +409,12 @@ static const struct dma_driver_api dw_dma_driver_api = {
 		.channel_data = &dmac##inst,				\
 	};								\
 									\
-	DEVICE_AND_API_INIT(dw_dma##inst, DT_INST_LABEL(inst),		\
-			    &dw_dma_init,				\
-			    &dw_dma##inst##_data,			\
-			    &dw_dma##inst##_config, POST_KERNEL,	\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-			    &dw_dma_driver_api);			\
+	DEVICE_DEFINE(dw_dma##inst, DT_INST_LABEL(inst),		\
+		      &dw_dma_init, device_pm_control_nop,		\
+		      &dw_dma##inst##_data,				\
+		      &dw_dma##inst##_config, POST_KERNEL,		\
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+		      &dw_dma_driver_api);				\
 									\
 	static void dw_dma##inst##_irq_config(void)			\
 	{								\
