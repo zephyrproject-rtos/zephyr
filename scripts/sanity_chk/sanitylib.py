@@ -2483,6 +2483,10 @@ class TestSuite(DisablePyTestCollectionMixin):
         if toolchain == "gccarmemb":
             # Remove this translation when gccarmemb is no longer supported.
             toolchain = "gnuarmemb"
+        elif toolchain == "zephyr-tools":
+            # Map 'zephyr-tools' toolchain type to 'zephyr' since they are
+            # functionally equivalent
+            toolchain = "zephyr"
 
         try:
             if not toolchain:
