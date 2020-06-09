@@ -21,6 +21,7 @@ echo ""
 echo "--- ccache stats at start"
 ccache -s
 
+ls -lsa .git
 if [ -n "${BUILDKITE_PULL_REQUEST_BASE_BRANCH}" ]; then
    ./scripts/ci/run_ci.sh  -c -b ${BUILDKITE_PULL_REQUEST_BASE_BRANCH} -r origin \
 	   -m ${JOB_NUM} -M ${BUILDKITE_PARALLEL_JOB_COUNT} -p ${BUILDKITE_PULL_REQUEST}
