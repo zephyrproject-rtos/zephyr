@@ -174,7 +174,6 @@ struct bt_l2cap_le_conn_req {
 #define BT_L2CAP_LE_ERR_INVALID_SCID	0x0009
 #define BT_L2CAP_LE_ERR_SCID_IN_USE	0x000A
 #define BT_L2CAP_LE_ERR_UNACCEPT_PARAMS	0x000B
-#define BT_L2CAP_LE_ERR_INVALID_PARAMS	0x000C
 
 #define BT_L2CAP_LE_CONN_RSP		0x15
 struct bt_l2cap_le_conn_rsp {
@@ -189,40 +188,6 @@ struct bt_l2cap_le_conn_rsp {
 struct bt_l2cap_le_credits {
 	u16_t cid;
 	u16_t credits;
-} __packed;
-
-#define BT_L2CAP_ECRED_CONN_REQ		0x17
-struct bt_l2cap_ecred_conn_req {
-	u16_t psm;
-	u16_t mtu;
-	u16_t mps;
-	u16_t credits;
-	u16_t scid[0];
-} __packed;
-
-#define BT_L2CAP_ECRED_CONN_RSP		0x18
-struct bt_l2cap_ecred_conn_rsp {
-	u16_t mtu;
-	u16_t mps;
-	u16_t credits;
-	u16_t result;
-	u16_t dcid[0];
-} __packed;
-
-#define BT_L2CAP_ECRED_RECONF_REQ	0x19
-struct bt_l2cap_ecred_reconf_req {
-	u16_t mtu;
-	u16_t mps;
-	u16_t scid[0];
-} __packed;
-
-#define BT_L2CAP_RECONF_SUCCESS		0x0000
-#define BT_L2CAP_RECONF_INVALID_MTU	0x0001
-#define BT_L2CAP_RECONF_INVALID_MPS	0x0002
-
-#define BT_L2CAP_ECRED_RECONF_RSP	0x1a
-struct bt_l2cap_ecred_reconf_rsp {
-	u16_t result;
 } __packed;
 
 #define BT_L2CAP_SDU_HDR_LEN		2
