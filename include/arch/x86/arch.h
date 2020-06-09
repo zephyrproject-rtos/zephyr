@@ -23,6 +23,10 @@
 #include <arch/x86/mmustructs.h>
 #include <arch/x86/thread_stack.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 {
 	if ((key & 0x00000200U) != 0U) { /* 'IF' bit */
@@ -204,6 +208,10 @@ extern unsigned char _irq_to_interrupt_vector[];
 
 #endif /* _ASMLANGUAGE */
 
+#ifdef __cplusplus
+}
+#endif
+
 #include <drivers/interrupt_controller/sysapic.h>
 
 #ifdef CONFIG_X86_64
@@ -213,6 +221,10 @@ extern unsigned char _irq_to_interrupt_vector[];
 #endif
 
 #include <arch/common/ffs.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef _ASMLANGUAGE
 
@@ -281,5 +293,9 @@ static ALWAYS_INLINE void arch_nop(void)
 }
 
 #endif /* _ASMLANGUAGE */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_ARCH_X86_ARCH_H_ */
