@@ -354,7 +354,23 @@ class EDT:
                            "valid YAML: {}".format(binding_path, e))
                 continue
 
-            binding_compat = self._binding_compat(binding, binding_path)
+
+            # Returns the string listed in 'compatible:' in 'binding', or None if
+            # no compatible is found.
+
+            if binding is None or "compatible" not in binding:
+                # Empty file, binding fragment, spurious file, or old-style
+                # compat
+                binding_compat = None
+            else:
+                binding_compat = binding["compatible"]
+                if not isinstance(binding_compat, str):
+                    _err("malformed 'compatible: {}' field in {} - "
+                         "should be a string, not {}"
+                         .format(binding_compat, binding_path,
+                                 type(binding_compat).__name__))
+
+
             if binding_compat not in dt_compats:
                 # Either not a binding (binding_compat is None -- might be a
                 # binding fragment or a spurious file), or a binding whose
@@ -382,31 +398,6 @@ class EDT:
                 _err(msg)
 
             self._compat2binding[binding_compat, on_bus] = (binding, binding_path)
-
-    def _binding_compat(self, binding, binding_path):
-        # Returns the string listed in 'compatible:' in 'binding', or None if
-        # no compatible is found. Only takes 'self' for the sake of
-        # self._warn().
-        #
-        # Also searches for legacy compatibles on the form
-        #
-        #   properties:
-        #       compatible:
-        #           constraint: <string>
-
-        if binding is None or "compatible" not in binding:
-            # Empty file, binding fragment, spurious file, or old-style
-            # compat
-            return None
-
-        compatible = binding["compatible"]
-        if not isinstance(compatible, str):
-            _err("malformed 'compatible: {}' field in {} - "
-                 "should be a string, not {}"
-                 .format(compatible, binding_path,
-                         type(compatible).__name__))
-
-        return compatible
 
     def _merge_included_bindings(self, binding, binding_path):
         # Merges any bindings listed in the 'include:' section of 'binding'
