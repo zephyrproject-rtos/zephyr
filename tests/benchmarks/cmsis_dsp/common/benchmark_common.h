@@ -13,7 +13,7 @@
 #if defined(CONFIG_CPU_CORTEX_M_HAS_DWT)
 /* Use cycle counting on the Cortex-M devices that support DWT */
 
-#include <arch/arm/cortex_m/cmsis.h>
+#include <arch/arm/aarch32/cortex_m/cmsis.h>
 
 static ALWAYS_INLINE void benchmark_begin(uint32_t *irq_key, uint32_t *timestamp)
 {

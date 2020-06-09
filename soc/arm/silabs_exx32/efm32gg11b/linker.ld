@@ -14,4 +14,4 @@
 
 #include <autoconf.h>
 
-#include <arch/arm/cortex_m/scripts/linker.ld>
+#include <arch/arm/aarch32/cortex_m/scripts/linker.ld>
