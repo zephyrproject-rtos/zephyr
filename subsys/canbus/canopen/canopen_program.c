@@ -120,9 +120,14 @@ static CO_SDO_abortCode_t canopen_odf_1f50(CO_ODF_arg_t *odf_arg)
 	}
 
 	if (odf_arg->lastSegment) {
+		int align = flash_area_align(ctx.flash_img_ctx.flash_area);
+		int total_align = ((ctx.total % align) == 0) ?
+			ctx.total : ctx.total + align - (ctx.total % align);
+
 		/* ctx.total is zero if not provided by download process */
 		if (ctx.total != 0 &&
-		    ctx.total != flash_img_bytes_written(&ctx.flash_img_ctx)) {
+		    (total_align !=
+		     flash_img_bytes_written(&ctx.flash_img_ctx))) {
 			LOG_WRN("premature end of program download");
 			ctx.flash_status = FLASH_STATUS_DATA_FORMAT_ERROR;
 		} else {
