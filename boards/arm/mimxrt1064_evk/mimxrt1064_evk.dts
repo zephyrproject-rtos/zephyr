@@ -112,7 +112,7 @@ arduino_i2c: &lpi2c1 {};
 &lpi2c1 {
 	status = "okay";
 
-	mt9m114@48 {
+	sensor: mt9m114@48 {
 		compatible = "aptina,mt9m114";
 		reg = <0x48>;
 		label = "MT9M114";
@@ -151,7 +151,7 @@ arduino_i2c: &lpi2c1 {};
 
 &csi {
 	status = "okay";
-	sensor-label = "MT9M114";
+	sensor = <&sensor>;
 
 	port {
 		csi_ep_in: endpoint {

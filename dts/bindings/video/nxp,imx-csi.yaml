@@ -17,7 +17,7 @@ properties:
     label:
       required: true
 
-    sensor-label:
-      required: true
-      type: string
+    sensor:
+      required: false
+      type: phandle
       description: label of connected sensor device

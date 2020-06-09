@@ -404,7 +404,9 @@ static const struct video_driver_api video_mcux_csi_driver_api = {
 #if 1 /* Unique Instance */
 static const struct video_mcux_csi_config video_mcux_csi_config_0 = {
 	.base = (CSI_Type *)DT_INST_REG_ADDR(0),
-	.sensor_label = DT_INST_PROP(0, sensor_label),
+#if DT_INST_NODE_HAS_PROP(0, sensor)
+	.sensor_label = DT_LABEL(DT_INST_PHANDLE(0, sensor)),
+#endif
 };
 
 static struct video_mcux_csi_data video_mcux_csi_data_0;
