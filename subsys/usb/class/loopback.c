@@ -166,14 +166,14 @@ static void loopback_interface_config(struct usb_desc_header *head,
 USBD_CFG_DATA_DEFINE(primary, loopback) struct usb_cfg_data loopback_config = {
 	.interface_config = loopback_interface_config,
 	.cb_usb_status = loopback_status_cb,
-	.interface = {
+	.request_handlers = {
 		.class_handler = NULL,
 		.custom_handler = NULL,
 		.vendor_handler = loopback_vendor_handler,
 	},
-	.num_of_interfaces = ARRAY_SIZE(iface),
-	.list_of_interfaces = iface,
+	.num_interfaces = ARRAY_SIZE(iface),
+	.interfaces = iface,
 	.num_endpoints = ARRAY_SIZE(ep_cfg),
-	.endpoint = ep_cfg,
+	.endpoints = ep_cfg,
 };
 /* usb.rst device config data end */

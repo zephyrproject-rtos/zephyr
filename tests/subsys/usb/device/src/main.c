@@ -81,15 +81,15 @@ static struct usb_if_descriptor const *const device_if[] = {
 
 USBD_CFG_DATA_DEFINE(primary, device) struct usb_cfg_data device_config = {
 	.cb_usb_status = status_cb,
-	.interface = {
+	.request_handlers = {
 		.vendor_handler = NULL,
 		.class_handler = NULL,
 		.custom_handler = NULL,
 	},
-	.num_of_interfaces = ARRAY_SIZE(device_if),
-	.list_of_interfaces = device_if,
+	.num_interfaces = ARRAY_SIZE(device_if),
+	.interfaces = device_if,
 	.num_endpoints = ARRAY_SIZE(device_ep),
-	.endpoint = device_ep,
+	.endpoints = device_ep,
 };
 
 static void test_usb_disable(void)

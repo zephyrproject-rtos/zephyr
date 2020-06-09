@@ -993,7 +993,7 @@ static int foreach_ep(int (* endpoint_callback)(const struct usb_ep_cfg_data *))
 
 	for (size_t i = 0; i < size; i++) {
 		struct usb_cfg_data *cfg = &__usb_data_start[i];
-		struct usb_ep_cfg_data *ep_data = cfg->endpoint;
+		struct usb_ep_cfg_data *ep_data = cfg->endpoints;
 
 		for (uint8_t n = 0; n < cfg->num_endpoints; n++) {
 			int ret;
@@ -1213,26 +1213,25 @@ static int class_handler(struct usb_setup_packet *pSetup,
 {
 	size_t size = (__usb_data_end - __usb_data_start);
 	const struct usb_if_descriptor *if_descr;
-	const struct usb_interface_cfg_data *iface;
+	const struct usb_interface_cfg_data *handlers;
 	const struct usb_cfg_data *cfg = NULL;
-	uint8_t interface_number = (uint8_t)sys_le16_to_cpu(pSetup->wIndex);
+	uint8_t interface_number = (uint8_t)pSetup->wIndex;
 
 	LOG_DBG("bRequest 0x%02x, wIndex 0x%04x",
 		pSetup->bRequest, pSetup->wIndex);
 
 	for (size_t i = 0; i < size; i++) {
 		cfg = &__usb_data_start[i];
-		iface = &cfg->interface;
-
+		handlers = &cfg->request_handlers;
 		/* Check if handler exist, if no there is no point
 		 * to search through interfaces
 		 */
-		if (iface->class_handler) {
-			for (int j = 0; j < cfg->num_of_interfaces; j++) {
-				if_descr = cfg->list_of_interfaces[j];
+		if (handlers->class_handler) {
+			for (int j = 0; j < cfg->num_interfaces; j++) {
+				if_descr = cfg->interfaces[j];
 				if (if_descr->bInterfaceNumber ==
 					interface_number) {
-					return iface->class_handler(pSetup,
+					return handlers->class_handler(pSetup,
 								len, data);
 				}
 			}
@@ -1247,26 +1246,25 @@ static int custom_handler(struct usb_setup_packet *pSetup,
 {
 	size_t size = (__usb_data_end - __usb_data_start);
 	const struct usb_if_descriptor *if_descr;
-	const struct usb_interface_cfg_data *iface;
+	const struct usb_interface_cfg_data *handlers;
 	const struct usb_cfg_data *cfg = NULL;
-	uint8_t interface_number = (uint8_t)sys_le16_to_cpu(pSetup->wIndex);
+	uint8_t interface_number = (uint8_t)pSetup->wIndex;
 
 	LOG_DBG("bRequest 0x%02x, wIndex 0x%04x",
 		pSetup->bRequest, pSetup->wIndex);
 
 	for (size_t i = 0; i < size; i++) {
 		cfg = &__usb_data_start[i];
-		iface = &cfg->interface;
-
+		handlers = &cfg->request_handlers;
 		/* Check if handler exist, if no there is no point
 		 * to search through interfaces
 		 */
-		if (iface->custom_handler) {
-			for (int j = 0; j < cfg->num_of_interfaces; j++) {
-				if_descr = cfg->list_of_interfaces[j];
+		if (handlers->custom_handler) {
+			for (int j = 0; j < cfg->num_interfaces; j++) {
+				if_descr = cfg->interfaces[j];
 				if (if_descr->bInterfaceNumber ==
 					interface_number) {
-					return iface->custom_handler(pSetup,
+					return handlers->custom_handler(pSetup,
 								len, data);
 				}
 			}
@@ -1280,7 +1278,7 @@ static int vendor_handler(struct usb_setup_packet *pSetup,
 			  int32_t *len, uint8_t **data)
 {
 	size_t size = (__usb_data_end - __usb_data_start);
-	struct usb_interface_cfg_data *iface;
+	struct usb_interface_cfg_data *handlers;
 
 	LOG_DBG("bRequest 0x%02x, wIndex 0x%04x",
 		pSetup->bRequest, pSetup->wIndex);
@@ -1292,9 +1290,9 @@ static int vendor_handler(struct usb_setup_packet *pSetup,
 	}
 
 	for (size_t i = 0; i < size; i++) {
-		iface = &(__usb_data_start[i].interface);
-		if (iface->vendor_handler) {
-			if (!iface->vendor_handler(pSetup, len, data)) {
+		handlers = &(__usb_data_start[i].request_handlers);
+		if (handlers->vendor_handler) {
+			if (!handlers->vendor_handler(pSetup, len, data)) {
 				return 0;
 			}
 		}
@@ -1309,7 +1307,7 @@ static int composite_setup_ep_cb(void)
 	struct usb_ep_cfg_data *ep_data;
 
 	for (size_t i = 0; i < size; i++) {
-		ep_data = __usb_data_start[i].endpoint;
+		ep_data = __usb_data_start[i].endpoints;
 		for (uint8_t n = 0; n < __usb_data_start[i].num_endpoints; n++) {
 			LOG_DBG("set cb, ep: 0x%x", ep_data[n].ep_addr);
 			if (usb_dc_ep_set_callback(ep_data[n].ep_addr,

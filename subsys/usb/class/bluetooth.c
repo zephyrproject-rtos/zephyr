@@ -326,15 +326,15 @@ static void bluetooth_interface_config(struct usb_desc_header *head,
 USBD_CFG_DATA_DEFINE(primary, hci) struct usb_cfg_data bluetooth_config = {
 	.interface_config = bluetooth_interface_config,
 	.cb_usb_status = bluetooth_status_cb,
-	.interface = {
+	.request_handlers = {
 		.class_handler = bluetooth_class_handler,
 		.custom_handler = NULL,
 		.vendor_handler = NULL,
 	},
-	.list_of_interfaces = bluetooth_interfaces,
-	.num_of_interfaces = ARRAY_SIZE(bluetooth_interfaces),
+	.num_interfaces = ARRAY_SIZE(bluetooth_interfaces),
+	.interfaces = bluetooth_interfaces,
 	.num_endpoints = ARRAY_SIZE(bluetooth_ep_data),
-	.endpoint = bluetooth_ep_data,
+	.endpoints = bluetooth_ep_data,
 };
 
 static int bluetooth_init(struct device *dev)

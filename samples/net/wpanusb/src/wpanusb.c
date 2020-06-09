@@ -156,15 +156,15 @@ static int wpanusb_vendor_handler(struct usb_setup_packet *setup,
 
 USBD_CFG_DATA_DEFINE(primary, wpanusb) struct usb_cfg_data wpanusb_config = {
 	.cb_usb_status = wpanusb_status_cb,
-	.interface = {
+	.request_handlers = {
 		.vendor_handler = wpanusb_vendor_handler,
 		.class_handler = NULL,
 		.custom_handler = NULL,
 	},
-	.num_of_interfaces = ARRAY_SIZE(wpanusb_if),
-	.list_of_interfaces = wpanusb_if,
+	.num_interfaces = ARRAY_SIZE(wpanusb_if),
+	.interfaces = wpanusb_if,
 	.num_endpoints = ARRAY_SIZE(wpanusb_ep),
-	.endpoint = wpanusb_ep,
+	.endpoints = wpanusb_ep,
 };
 
 /* Decode wpanusb commands */
@@ -255,7 +255,7 @@ static int stop(void)
 
 static int tx(struct net_pkt *pkt)
 {
-	uint8_t ep = wpanusb_config.endpoint[WPANUSB_IN_EP_IDX].ep_addr;
+	uint8_t ep = wpanusb_config.endpoints[WPANUSB_IN_EP_IDX].ep_addr;
 	struct net_buf *buf = net_buf_frag_last(pkt->buffer);
 	uint8_t seq = net_buf_pull_u8(buf);
 	int retries = 3;
@@ -389,7 +389,7 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 	 */
 	*p = net_pkt_ieee802154_lqi(pkt);
 
-	ep = wpanusb_config.endpoint[WPANUSB_IN_EP_IDX].ep_addr;
+	ep = wpanusb_config.endpoints[WPANUSB_IN_EP_IDX].ep_addr;
 
 	ret = usb_transfer_sync(ep, tx_buf, len + 2,
 				USB_TRANS_WRITE | USB_TRANS_NO_ZLP);

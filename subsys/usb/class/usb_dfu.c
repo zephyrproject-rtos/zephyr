@@ -717,12 +717,12 @@ static void dfu_interface_config(struct usb_desc_header *head,
 USBD_CFG_DATA_DEFINE(primary, dfu) struct usb_cfg_data dfu_config = {
 	.interface_config = dfu_interface_config,
 	.cb_usb_status = dfu_status_cb,
-	.interface = {
+	.request_handlers = {
 		.class_handler = dfu_class_handle_req,
 		.custom_handler = dfu_custom_handle_req,
 	},
-	.num_of_interfaces = ARRAY_SIZE(dfu_cfg_ifs),
-	.list_of_interfaces = dfu_cfg_ifs,
+	.num_interfaces = ARRAY_SIZE(dfu_cfg_ifs),
+	.interfaces = dfu_cfg_ifs,
 	.num_endpoints = 0,
 };
 
@@ -733,12 +733,12 @@ USBD_CFG_DATA_DEFINE(primary, dfu) struct usb_cfg_data dfu_config = {
 USBD_CFG_DATA_DEFINE(secondary, dfu) struct usb_cfg_data dfu_mode_config = {
 	.interface_config = NULL,
 	.cb_usb_status = dfu_status_cb,
-	.interface = {
+	.request_handlers = {
 		.class_handler = dfu_class_handle_req,
 		.custom_handler = dfu_custom_handle_req,
 	},
-	.num_of_interfaces = ARRAY_SIZE(dfu_mode_desc_ifs),
-	.list_of_interfaces = dfu_mode_desc_ifs,
+	.num_interfaces = ARRAY_SIZE(dfu_mode_desc_ifs),
+	.interfaces = dfu_mode_desc_ifs,
 	.num_endpoints = 0,
 };
 

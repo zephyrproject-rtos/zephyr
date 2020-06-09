@@ -146,7 +146,7 @@ static void webusb_read_cb(uint8_t ep, int size, void *priv)
 		goto done;
 	}
 
-	usb_transfer(cfg->endpoint[WEBUSB_IN_EP_IDX].ep_addr, rx_buf, size,
+	usb_transfer(cfg->endpoints[WEBUSB_IN_EP_IDX].ep_addr, rx_buf, size,
 		     USB_TRANS_WRITE, webusb_write_cb, cfg);
 done:
 	usb_transfer(ep, rx_buf, sizeof(rx_buf), USB_TRANS_READ,
@@ -180,7 +180,7 @@ static void webusb_dev_status_cb(struct usb_cfg_data *cfg,
 		break;
 	case USB_DC_CONFIGURED:
 		LOG_DBG("USB device configured");
-		webusb_read_cb(cfg->endpoint[WEBUSB_OUT_EP_IDX].ep_addr,
+		webusb_read_cb(cfg->endpoints[WEBUSB_OUT_EP_IDX].ep_addr,
 			       0, cfg);
 		break;
 	case USB_DC_DISCONNECTED:
@@ -217,13 +217,13 @@ static const struct usb_if_descriptor *const webusb_if_data[] = {
 
 USBD_CFG_DATA_DEFINE(primary, webusb) struct usb_cfg_data webusb_config = {
 	.cb_usb_status = webusb_dev_status_cb,
-	.interface = {
+	.request_handlers = {
 		.class_handler = NULL,
 		.custom_handler = webusb_custom_handle_req,
 		.vendor_handler = webusb_vendor_handle_req,
 	},
-	.num_of_interfaces = ARRAY_SIZE(webusb_if_data),
-	.list_of_interfaces = webusb_if_data,
+	.num_interfaces = ARRAY_SIZE(webusb_if_data),
+	.interfaces = webusb_if_data,
 	.num_endpoints = ARRAY_SIZE(webusb_ep_data),
-	.endpoint = webusb_ep_data
+	.endpoints = webusb_ep_data
 };

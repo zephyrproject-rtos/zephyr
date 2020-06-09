@@ -100,15 +100,15 @@ struct usb_test_config {
 	struct usb_cfg_data test_config_##x = {			\
 	.interface_config = interface_config,			\
 	.cb_usb_status = NULL,					\
-	.interface = {						\
+	.request_handlers = {					\
 		.class_handler = NULL,				\
 		.custom_handler = NULL,				\
 		.vendor_handler = NULL,				\
 	},							\
-	.num_of_interfaces = ARRAY_SIZE(iface_cfg_##x),		\
-	.list_of_interfaces = iface_cfg_##x,			\
+	.num_interfaces = ARRAY_SIZE(iface_cfg_##x),		\
+	.interfaces = iface_cfg_##x,				\
 	.num_endpoints = ARRAY_SIZE(ep_cfg_##x),		\
-	.endpoint = ep_cfg_##x,					\
+	.endpoints = ep_cfg_##x,				\
 	};
 
 #define NUM_INSTANCES 2
@@ -136,8 +136,8 @@ static struct usb_cfg_data *usb_get_cfg_data(struct usb_if_descriptor *iface)
 	for (size_t i = 0; i < length; i++) {
 		cfg = &__usb_data_start[i];
 
-		for (size_t j = 0; j < cfg->num_of_interfaces; j++) {
-			if (cfg->list_of_interfaces[j] == iface) {
+		for (size_t j = 0; j < cfg->num_interfaces; j++) {
+			if (cfg->interfaces[j] == iface) {
 				return cfg;
 			}
 		}
@@ -151,7 +151,7 @@ static bool find_cfg_data_ep(const struct usb_ep_descriptor * const ep_descr,
 			     uint8_t ep_count)
 {
 	for (int i = 0; i < cfg_data->num_endpoints; i++) {
-		if (cfg_data->endpoint[i].ep_addr ==
+		if (cfg_data->endpoints[i].ep_addr ==
 				ep_descr->bEndpointAddress) {
 			LOG_DBG("found ep[%d] %x", i,
 				ep_descr->bEndpointAddress);

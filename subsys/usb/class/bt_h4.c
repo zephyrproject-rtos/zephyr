@@ -214,15 +214,15 @@ static void bt_h4_interface_config(struct usb_desc_header *head,
 USBD_CFG_DATA_DEFINE(primary, hci_h4) struct usb_cfg_data bt_h4_config = {
 	.interface_config = bt_h4_interface_config,
 	.cb_usb_status = bt_h4_status_cb,
-	.interface = {
+	.request_handlers = {
 		.class_handler = NULL,
 		.custom_handler = NULL,
 		.vendor_handler = bt_h4_vendor_handler,
 	},
-	.num_of_interfaces = ARRAY_SIZE(bt_h4_if_data),
-	.list_of_interfaces = bt_h4_if_data,
+	.num_interfaces = ARRAY_SIZE(bt_h4_if_data),
+	.interfaces = bt_h4_if_data,
 	.num_endpoints = ARRAY_SIZE(bt_h4_ep_data),
-	.endpoint = bt_h4_ep_data,
+	.endpoints = bt_h4_ep_data,
 };
 
 static int bt_h4_init(struct device *dev)

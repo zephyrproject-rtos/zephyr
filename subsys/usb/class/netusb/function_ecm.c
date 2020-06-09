@@ -457,13 +457,13 @@ static void ecm_interface_config(struct usb_desc_header *head,
 USBD_CFG_DATA_DEFINE(primary, netusb) struct usb_cfg_data netusb_config = {
 	.interface_config = ecm_interface_config,
 	.cb_usb_status = ecm_status_cb,
-	.interface = {
+	.request_handlers = {
 		.class_handler = ecm_class_handler,
 		.custom_handler = ecm_custom_handler,
 		.vendor_handler = NULL,
 	},
-	.num_of_interfaces  = ARRAY_SIZE(ecm_if_data),
-	.list_of_interfaces = ecm_if_data,
+	.num_interfaces  = ARRAY_SIZE(ecm_if_data),
+	.interfaces = ecm_if_data,
 	.num_endpoints = ARRAY_SIZE(ecm_ep_data),
-	.endpoint = ecm_ep_data,
+	.endpoints = ecm_ep_data,
 };

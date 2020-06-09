@@ -181,11 +181,11 @@ struct usb_cfg_data {
 			      enum usb_dc_status_code cb_status,
 			      const uint8_t *param);
 	/** USB interface (Class) handler and storage space */
-	struct usb_interface_cfg_data interface;
+	struct usb_interface_cfg_data request_handlers;
 	/* Number of interfaces for this function */
-	const uint8_t num_of_interfaces;
+	const uint8_t num_interfaces;
 	/* Pointer to list of interfaces pointers for this function */
-	const struct usb_if_descriptor *const *const list_of_interfaces;
+	const struct usb_if_descriptor *const *const interfaces;
 	/** Number of individual endpoints in the device configuration */
 	uint8_t num_endpoints;
 	/**
@@ -193,7 +193,7 @@ struct usb_cfg_data {
 	 * number of EP associated with the device description,
 	 * not including control endpoints
 	 */
-	struct usb_ep_cfg_data *endpoint;
+	struct usb_ep_cfg_data *endpoints;
 };
 
 /**

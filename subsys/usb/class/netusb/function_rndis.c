@@ -1174,15 +1174,15 @@ static void netusb_interface_config(struct usb_desc_header *head,
 USBD_CFG_DATA_DEFINE(primary, netusb) struct usb_cfg_data netusb_config = {
 	.interface_config = netusb_interface_config,
 	.cb_usb_status = rndis_status_cb,
-	.interface = {
+	.request_handlers = {
 		.class_handler = rndis_class_handler,
 		.custom_handler = NULL,
 		.vendor_handler = NULL,
 	},
-	.num_of_interfaces = ARRAY_SIZE(rndis_if_data),
-	.list_of_interfaces = rndis_if_data,
+	.num_interfaces = ARRAY_SIZE(rndis_if_data),
+	.interfaces = rndis_if_data,
 	.num_endpoints = ARRAY_SIZE(rndis_ep_data),
-	.endpoint = rndis_ep_data,
+	.endpoints = rndis_ep_data,
 };
 
 /* Initialize this before eth_netusb device init */
