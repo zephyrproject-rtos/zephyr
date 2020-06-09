@@ -292,8 +292,9 @@ static const struct gpio_driver_api gpio_cc13xx_cc26xx_driver_api = {
 	.get_pending_int = gpio_cc13xx_cc26xx_get_pending_int
 };
 
-DEVICE_AND_API_INIT(gpio_cc13xx_cc26xx, DT_INST_LABEL(0),
-		    gpio_cc13xx_cc26xx_init, &gpio_cc13xx_cc26xx_data_0,
+DEVICE_DEFINE(gpio_cc13xx_cc26xx, DT_INST_LABEL(0),
+		    gpio_cc13xx_cc26xx_init, device_pm_control_nop,
+		    &gpio_cc13xx_cc26xx_data_0,
 		    &gpio_cc13xx_cc26xx_cfg_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &gpio_cc13xx_cc26xx_driver_api);

@@ -680,8 +680,9 @@ static const struct mcux_flexcan_config mcux_flexcan_config_0 = {
 static struct mcux_flexcan_data mcux_flexcan_data_0 = {
 };
 
-DEVICE_AND_API_INIT(can_mcux_flexcan_0, DT_INST_LABEL(0),
-		    &mcux_flexcan_init, &mcux_flexcan_data_0,
+DEVICE_DEFINE(can_mcux_flexcan_0, DT_INST_LABEL(0),
+		    &mcux_flexcan_init, device_pm_control_nop,
+		    &mcux_flexcan_data_0,
 		    &mcux_flexcan_config_0, POST_KERNEL,
 		    CONFIG_CAN_INIT_PRIORITY, &mcux_flexcan_driver_api);
 
@@ -782,8 +783,9 @@ static const struct mcux_flexcan_config mcux_flexcan_config_1 = {
 static struct mcux_flexcan_data mcux_flexcan_data_1 = {
 };
 
-DEVICE_AND_API_INIT(can_mcux_flexcan_1, DT_INST_LABEL(1),
-		    &mcux_flexcan_init, &mcux_flexcan_data_1,
+DEVICE_DEFINE(can_mcux_flexcan_1, DT_INST_LABEL(1),
+		    &mcux_flexcan_init, device_pm_control_nop,
+		    &mcux_flexcan_data_1,
 		    &mcux_flexcan_config_1, POST_KERNEL,
 		    CONFIG_CAN_INIT_PRIORITY, &mcux_flexcan_driver_api);
 

@@ -136,6 +136,7 @@ int sx9500_init(struct device *dev)
 
 struct sx9500_data sx9500_data;
 
-DEVICE_AND_API_INIT(sx9500, DT_INST_LABEL(0), sx9500_init, &sx9500_data,
+DEVICE_DEFINE(sx9500, DT_INST_LABEL(0), sx9500_init, device_pm_control_nop,
+		    &sx9500_data,
 		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &sx9500_api_funcs);

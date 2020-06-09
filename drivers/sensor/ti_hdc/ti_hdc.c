@@ -179,6 +179,7 @@ static int ti_hdc_init(struct device *dev)
 
 static struct ti_hdc_data ti_hdc_data;
 
-DEVICE_AND_API_INIT(ti_hdc, DT_INST_LABEL(0), ti_hdc_init, &ti_hdc_data,
+DEVICE_DEFINE(ti_hdc, DT_INST_LABEL(0), ti_hdc_init, device_pm_control_nop,
+		    &ti_hdc_data,
 		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &ti_hdc_driver_api);

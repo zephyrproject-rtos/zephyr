@@ -482,10 +482,10 @@ static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_0 = {
 			.device = DT_INST_REG_ADDR(0),},
 };
 
-DEVICE_AND_API_INIT(uart_cmsdk_apb_0,
+DEVICE_DEFINE(uart_cmsdk_apb_0,
 		    DT_INST_LABEL(0),
 		    &uart_cmsdk_apb_init,
-		    &uart_cmsdk_apb_dev_data_0,
+		    device_pm_control_nop, &uart_cmsdk_apb_dev_data_0,
 		    &uart_cmsdk_apb_dev_cfg_0, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_cmsdk_apb_driver_api);
@@ -547,10 +547,10 @@ static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_1 = {
 			.device = DT_INST_REG_ADDR(1),},
 };
 
-DEVICE_AND_API_INIT(uart_cmsdk_apb_1,
+DEVICE_DEFINE(uart_cmsdk_apb_1,
 		    DT_INST_LABEL(1),
 		    &uart_cmsdk_apb_init,
-		    &uart_cmsdk_apb_dev_data_1,
+		    device_pm_control_nop, &uart_cmsdk_apb_dev_data_1,
 		    &uart_cmsdk_apb_dev_cfg_1, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_cmsdk_apb_driver_api);
@@ -612,10 +612,10 @@ static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_2 = {
 			.device = DT_INST_REG_ADDR(2),},
 };
 
-DEVICE_AND_API_INIT(uart_cmsdk_apb_2,
+DEVICE_DEFINE(uart_cmsdk_apb_2,
 		    DT_INST_LABEL(2),
 		    &uart_cmsdk_apb_init,
-		    &uart_cmsdk_apb_dev_data_2,
+		    device_pm_control_nop, &uart_cmsdk_apb_dev_data_2,
 		    &uart_cmsdk_apb_dev_cfg_2, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_cmsdk_apb_driver_api);
@@ -677,10 +677,10 @@ static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_3 = {
 			.device = DT_INST_REG_ADDR(3),},
 };
 
-DEVICE_AND_API_INIT(uart_cmsdk_apb_3,
+DEVICE_DEFINE(uart_cmsdk_apb_3,
 		    DT_INST_LABEL(3),
 		    &uart_cmsdk_apb_init,
-		    &uart_cmsdk_apb_dev_data_3,
+		    device_pm_control_nop, &uart_cmsdk_apb_dev_data_3,
 		    &uart_cmsdk_apb_dev_cfg_3, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_cmsdk_apb_driver_api);
@@ -742,10 +742,10 @@ static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_4 = {
 			.device = DT_INST_REG_ADDR(4),},
 };
 
-DEVICE_AND_API_INIT(uart_cmsdk_apb_4,
+DEVICE_DEFINE(uart_cmsdk_apb_4,
 		    DT_INST_LABEL(4),
 		    &uart_cmsdk_apb_init,
-		    &uart_cmsdk_apb_dev_data_4,
+		    device_pm_control_nop, &uart_cmsdk_apb_dev_data_4,
 		    &uart_cmsdk_apb_dev_cfg_4, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_cmsdk_apb_driver_api);

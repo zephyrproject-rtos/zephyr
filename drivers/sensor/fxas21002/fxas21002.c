@@ -306,7 +306,7 @@ static const struct fxas21002_config fxas21002_config = {
 
 static struct fxas21002_data fxas21002_data;
 
-DEVICE_AND_API_INIT(fxas21002, DT_INST_LABEL(0), fxas21002_init,
-		    &fxas21002_data, &fxas21002_config,
+DEVICE_DEFINE(fxas21002, DT_INST_LABEL(0), fxas21002_init,
+		    device_pm_control_nop, &fxas21002_data, &fxas21002_config,
 		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &fxas21002_driver_api);

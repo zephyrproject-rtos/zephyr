@@ -414,6 +414,6 @@ static int sam0_eic_init(struct device *dev)
 }
 
 static struct sam0_eic_data eic_data;
-DEVICE_INIT(sam0_eic, DT_INST_LABEL(0), sam0_eic_init,
-	    &eic_data, NULL,
-	    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+DEVICE_DEFINE(sam0_eic, DT_INST_LABEL(0), sam0_eic_init,
+	    device_pm_control_nop, &eic_data, NULL,
+	    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, api);

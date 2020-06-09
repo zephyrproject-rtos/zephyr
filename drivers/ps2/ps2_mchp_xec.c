@@ -199,9 +199,10 @@ static const struct ps2_xec_config ps2_xec_config_0 = {
 
 static struct ps2_xec_data ps2_xec_port_data_0;
 
-DEVICE_AND_API_INIT(ps2_xec_0, DT_INST_LABEL(0),
+DEVICE_DEFINE(ps2_xec_0, DT_INST_LABEL(0),
 		    &ps2_xec_init_0,
-		    &ps2_xec_port_data_0, &ps2_xec_config_0,
+		    device_pm_control_nop, &ps2_xec_port_data_0,
+		    &ps2_xec_config_0,
 		    POST_KERNEL, CONFIG_PS2_INIT_PRIORITY,
 		    &ps2_xec_driver_api);
 
@@ -237,9 +238,10 @@ static const struct ps2_xec_config ps2_xec_config_1 = {
 
 static struct ps2_xec_data ps2_xec_port_data_1;
 
-DEVICE_AND_API_INIT(ps2_xec_1, DT_INST_LABEL(1),
+DEVICE_DEFINE(ps2_xec_1, DT_INST_LABEL(1),
 		    &ps2_xec_init_1,
-		    &ps2_xec_port_data_1, &ps2_xec_config_1,
+		    device_pm_control_nop, &ps2_xec_port_data_1,
+		    &ps2_xec_config_1,
 		    POST_KERNEL, CONFIG_PS2_INIT_PRIORITY,
 		    &ps2_xec_driver_api);
 

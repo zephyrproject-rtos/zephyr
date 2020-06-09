@@ -58,8 +58,8 @@ static const struct entropy_driver_api entropy_mcux_rnga_api_funcs = {
 
 static int entropy_mcux_rnga_init(struct device *);
 
-DEVICE_AND_API_INIT(entropy_mcux_rnga, DT_INST_LABEL(0),
-		    entropy_mcux_rnga_init, NULL, NULL,
+DEVICE_DEFINE(entropy_mcux_rnga, DT_INST_LABEL(0),
+		    entropy_mcux_rnga_init, device_pm_control_nop, NULL, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &entropy_mcux_rnga_api_funcs);
 

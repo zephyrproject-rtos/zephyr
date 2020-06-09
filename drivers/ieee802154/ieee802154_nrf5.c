@@ -708,8 +708,9 @@ NET_DEVICE_INIT(nrf5_154_radio, CONFIG_IEEE802154_NRF5_DRV_NAME,
 		&nrf5_radio_api, L2,
 		L2_CTX_TYPE, MTU);
 #else
-DEVICE_AND_API_INIT(nrf5_154_radio, CONFIG_IEEE802154_NRF5_DRV_NAME,
-		    nrf5_init, &nrf5_data, &nrf5_radio_cfg,
+DEVICE_DEFINE(nrf5_154_radio, CONFIG_IEEE802154_NRF5_DRV_NAME,
+		    nrf5_init, device_pm_control_nop, &nrf5_data,
+		    &nrf5_radio_cfg,
 		    POST_KERNEL, CONFIG_IEEE802154_NRF5_INIT_PRIO,
 		    &nrf5_radio_api);
 #endif

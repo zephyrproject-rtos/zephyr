@@ -383,7 +383,8 @@ static const struct counter_gecko_config counter_gecko_0_config = {
 
 static struct counter_gecko_data counter_gecko_0_data;
 
-DEVICE_AND_API_INIT(counter_gecko_0, DT_INST_LABEL(0),
-	counter_gecko_init, &counter_gecko_0_data, &counter_gecko_0_config,
+DEVICE_DEFINE(counter_gecko_0, DT_INST_LABEL(0),
+	counter_gecko_init, device_pm_control_nop, &counter_gecko_0_data,
+	&counter_gecko_0_config,
 	PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 	&counter_gecko_driver_api);

@@ -897,8 +897,8 @@ static int disk_spi_sdhc_init(struct device *dev)
 
 static struct sdhc_spi_data sdhc_spi_data_0;
 
-DEVICE_AND_API_INIT(sdhc_spi_0,
+DEVICE_DEFINE(sdhc_spi_0,
 	DT_LABEL(DT_INST(0, zephyr_mmc_spi_slot)),
-	sdhc_spi_init, &sdhc_spi_data_0, NULL,
+	sdhc_spi_init, device_pm_control_nop, &sdhc_spi_data_0, NULL,
 	APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 #endif

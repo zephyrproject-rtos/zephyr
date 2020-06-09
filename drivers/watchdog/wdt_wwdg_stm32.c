@@ -267,8 +267,9 @@ static struct wwdg_stm32_config wwdg_stm32_dev_config = {
 	.Instance = (WWDG_TypeDef *)DT_INST_REG_ADDR(0),
 };
 
-DEVICE_AND_API_INIT(wwdg_stm32, DT_INST_LABEL(0),
-		    wwdg_stm32_init, &wwdg_stm32_dev_data, &wwdg_stm32_dev_config,
+DEVICE_DEFINE(wwdg_stm32, DT_INST_LABEL(0),
+		    wwdg_stm32_init, device_pm_control_nop,
+		    &wwdg_stm32_dev_data, &wwdg_stm32_dev_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &wwdg_stm32_api);
 

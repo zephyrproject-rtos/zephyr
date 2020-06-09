@@ -477,8 +477,9 @@ DEVICE_DEFINE(i2c_cc13xx_cc26xx, DT_INST_LABEL(0),
 		POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
 		&i2c_cc13xx_cc26xx_driver_api);
 #else
-DEVICE_AND_API_INIT(i2c_cc13xx_cc26xx, DT_INST_LABEL(0),
-		    i2c_cc13xx_cc26xx_init, &i2c_cc13xx_cc26xx_data,
+DEVICE_DEFINE(i2c_cc13xx_cc26xx, DT_INST_LABEL(0),
+		    i2c_cc13xx_cc26xx_init, device_pm_control_nop,
+		    &i2c_cc13xx_cc26xx_data,
 		    &i2c_cc13xx_cc26xx_config, POST_KERNEL,
 		    CONFIG_I2C_INIT_PRIORITY, &i2c_cc13xx_cc26xx_driver_api);
 #endif

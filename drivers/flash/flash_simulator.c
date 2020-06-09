@@ -423,8 +423,9 @@ static int flash_init(struct device *dev)
 	return flash_mock_init(dev);
 }
 
-DEVICE_AND_API_INIT(flash_simulator, FLASH_SIMULATOR_DEV_NAME, flash_init,
-		    NULL, NULL, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+DEVICE_DEFINE(flash_simulator, FLASH_SIMULATOR_DEV_NAME, flash_init,
+		    device_pm_control_nop, NULL, NULL, POST_KERNEL,
+		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &flash_sim_api);
 
 #ifdef CONFIG_ARCH_POSIX

@@ -825,6 +825,7 @@ static int lsm6dso_init(struct device *dev)
 
 static struct lsm6dso_data lsm6dso_data;
 
-DEVICE_AND_API_INIT(lsm6dso, DT_INST_LABEL(0), lsm6dso_init,
-		    &lsm6dso_data, &lsm6dso_config, POST_KERNEL,
+DEVICE_DEFINE(lsm6dso, DT_INST_LABEL(0), lsm6dso_init,
+		    device_pm_control_nop, &lsm6dso_data, &lsm6dso_config,
+		    POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &lsm6dso_api_funcs);

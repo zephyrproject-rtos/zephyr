@@ -140,6 +140,7 @@ static int th02_init(struct device *dev)
 
 static struct th02_data th02_driver;
 
-DEVICE_AND_API_INIT(th02, DT_INST_LABEL(0), th02_init, &th02_driver,
+DEVICE_DEFINE(th02, DT_INST_LABEL(0), th02_init, device_pm_control_nop,
+		    &th02_driver,
 		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &th02_driver_api);

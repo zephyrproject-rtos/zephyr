@@ -381,8 +381,9 @@ static const struct i2c_cc32xx_config i2c_cc32xx_config = {
 
 static struct i2c_cc32xx_data i2c_cc32xx_data;
 
-DEVICE_AND_API_INIT(i2c_cc32xx, DT_INST_LABEL(0), &i2c_cc32xx_init,
-		    &i2c_cc32xx_data, &i2c_cc32xx_config,
+DEVICE_DEFINE(i2c_cc32xx, DT_INST_LABEL(0), &i2c_cc32xx_init,
+		    device_pm_control_nop, &i2c_cc32xx_data,
+		    &i2c_cc32xx_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &i2c_cc32xx_driver_api);
 

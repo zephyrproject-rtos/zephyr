@@ -94,5 +94,6 @@ static int pinmux_init(struct device *device)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(pinmux, CONFIG_PINMUX_NAME, &pinmux_init, NULL, NULL,
+DEVICE_DEFINE(pinmux, CONFIG_PINMUX_NAME, &pinmux_init, device_pm_control_nop,
+	      NULL, NULL,
 		    PRE_KERNEL_1, CONFIG_PINMUX_INIT_PRIORITY, &apis);

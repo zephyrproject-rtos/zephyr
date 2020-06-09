@@ -198,8 +198,8 @@ static struct pwm_dw_config pwm_dw_cfg = {
 	.num_ports = PWM_DW_NUM_PORTS,
 };
 
-DEVICE_AND_API_INIT(pwm_dw_0, CONFIG_PWM_DW_0_DRV_NAME, pwm_dw_init,
-		    NULL, &pwm_dw_cfg,
+DEVICE_DEFINE(pwm_dw_0, CONFIG_PWM_DW_0_DRV_NAME, pwm_dw_init,
+		    device_pm_control_nop, NULL, &pwm_dw_cfg,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &pwm_dw_drv_api_funcs);
 

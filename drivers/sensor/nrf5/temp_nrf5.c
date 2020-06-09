@@ -132,10 +132,10 @@ static int temp_nrf5_init(struct device *dev)
 
 static struct temp_nrf5_data temp_nrf5_driver;
 
-DEVICE_AND_API_INIT(temp_nrf5,
+DEVICE_DEFINE(temp_nrf5,
 		    DT_INST_LABEL(0),
 		    temp_nrf5_init,
-		    &temp_nrf5_driver,
+		    device_pm_control_nop, &temp_nrf5_driver,
 		    NULL,
 		    POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY,

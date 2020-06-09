@@ -103,6 +103,6 @@ static const struct led_strip_driver_api apa102_api = {
 	.update_channels = apa102_update_channels,
 };
 
-DEVICE_AND_API_INIT(apa102_0, DT_INST_LABEL(0), apa102_init,
-		    &apa102_data_0, NULL, POST_KERNEL,
+DEVICE_DEFINE(apa102_0, DT_INST_LABEL(0), apa102_init,
+		    device_pm_control_nop, &apa102_data_0, NULL, POST_KERNEL,
 		    CONFIG_LED_STRIP_INIT_PRIORITY, &apa102_api);

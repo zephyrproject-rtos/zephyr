@@ -132,6 +132,7 @@ static const struct mpr_config mpr_cfg = {
 	.i2c_addr = DT_INST_REG_ADDR(0),
 };
 
-DEVICE_AND_API_INIT(mpr, DT_INST_LABEL(0), mpr_init, &mpr_data,
+DEVICE_DEFINE(mpr, DT_INST_LABEL(0), mpr_init, device_pm_control_nop,
+			&mpr_data,
 			&mpr_cfg, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 			&mpr_api_funcs);

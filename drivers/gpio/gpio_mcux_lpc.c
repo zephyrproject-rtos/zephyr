@@ -366,8 +366,9 @@ static const struct gpio_mcux_lpc_config gpio_mcux_lpc_port0_config = {
 
 static struct gpio_mcux_lpc_data gpio_mcux_lpc_port0_data;
 
-DEVICE_AND_API_INIT(gpio_mcux_lpc_port0, DT_INST_LABEL(0),
-		    lpc_gpio_0_init, &gpio_mcux_lpc_port0_data,
+DEVICE_DEFINE(gpio_mcux_lpc_port0, DT_INST_LABEL(0),
+		    lpc_gpio_0_init, device_pm_control_nop,
+		    &gpio_mcux_lpc_port0_data,
 		    &gpio_mcux_lpc_port0_config, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_mcux_lpc_driver_api);
@@ -436,8 +437,9 @@ static const struct gpio_mcux_lpc_config gpio_mcux_lpc_port1_config = {
 
 static struct gpio_mcux_lpc_data gpio_mcux_lpc_port1_data;
 
-DEVICE_AND_API_INIT(gpio_mcux_lpc_port1, DT_INST_LABEL(1),
-		    lpc_gpio_1_init, &gpio_mcux_lpc_port1_data,
+DEVICE_DEFINE(gpio_mcux_lpc_port1, DT_INST_LABEL(1),
+		    lpc_gpio_1_init, device_pm_control_nop,
+		    &gpio_mcux_lpc_port1_data,
 		    &gpio_mcux_lpc_port1_config, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &gpio_mcux_lpc_driver_api);

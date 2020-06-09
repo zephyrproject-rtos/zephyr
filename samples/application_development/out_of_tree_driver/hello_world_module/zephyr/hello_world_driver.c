@@ -30,7 +30,7 @@ static void print_impl(struct device *dev)
 	__ASSERT(data.foo == 5, "Device was not initialized!");
 }
 
-DEVICE_AND_API_INIT(hello_world, "CUSTOM_DRIVER",
-		    init, &data, NULL,
+DEVICE_DEFINE(hello_world, "CUSTOM_DRIVER",
+		    init, device_pm_control_nop, &data, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &((struct hello_world_driver_api){ .print = print_impl }));

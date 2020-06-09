@@ -246,7 +246,7 @@ static struct max30101_config max30101_config = {
 
 static struct max30101_data max30101_data;
 
-DEVICE_AND_API_INIT(max30101, DT_INST_LABEL(0), max30101_init,
-		    &max30101_data, &max30101_config,
+DEVICE_DEFINE(max30101, DT_INST_LABEL(0), max30101_init,
+		    device_pm_control_nop, &max30101_data, &max30101_config,
 		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &max30101_driver_api);

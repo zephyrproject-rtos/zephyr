@@ -278,8 +278,9 @@ static struct mcux_rtc_config mcux_rtc_config_0 = {
 	},
 };
 
-DEVICE_AND_API_INIT(rtc, DT_INST_LABEL(0), &mcux_rtc_init,
-		    &mcux_rtc_data_0, &mcux_rtc_config_0.info,
+DEVICE_DEFINE(rtc, DT_INST_LABEL(0), &mcux_rtc_init,
+		    device_pm_control_nop, &mcux_rtc_data_0,
+		    &mcux_rtc_config_0.info,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mcux_rtc_driver_api);
 

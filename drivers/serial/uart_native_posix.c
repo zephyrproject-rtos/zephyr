@@ -338,16 +338,16 @@ static int np_uart_tty_poll_in(struct device *dev, unsigned char *p_char)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(uart_native_posix0,
+DEVICE_DEFINE(uart_native_posix0,
 	    DT_INST_LABEL(0), &np_uart_0_init,
-	    (void *)&native_uart_status_0, NULL,
+	    device_pm_control_nop, (void *)&native_uart_status_0, NULL,
 	    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 	    &np_uart_driver_api_0);
 
 #if defined(CONFIG_UART_NATIVE_POSIX_PORT_1_ENABLE)
-DEVICE_AND_API_INIT(uart_native_posix1,
+DEVICE_DEFINE(uart_native_posix1,
 	    CONFIG_UART_NATIVE_POSIX_PORT_1_NAME, &np_uart_1_init,
-	    (void *)&native_uart_status_1, NULL,
+	    device_pm_control_nop, (void *)&native_uart_status_1, NULL,
 	    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 	    &np_uart_driver_api_1);
 #endif /* CONFIG_UART_NATIVE_POSIX_PORT_1_ENABLE */

@@ -310,9 +310,10 @@ static const struct gpio_gecko_common_config gpio_gecko_common_config = {
 
 static struct gpio_gecko_common_data gpio_gecko_common_data;
 
-DEVICE_AND_API_INIT(gpio_gecko_common, DT_LABEL(DT_INST(0, silabs_gecko_gpio)),
+DEVICE_DEFINE(gpio_gecko_common, DT_LABEL(DT_INST(0, silabs_gecko_gpio)),
 		    gpio_gecko_common_init,
-		    &gpio_gecko_common_data, &gpio_gecko_common_config,
+		    device_pm_control_nop, &gpio_gecko_common_data,
+		    &gpio_gecko_common_config,
 		    POST_KERNEL, CONFIG_GPIO_GECKO_COMMON_INIT_PRIORITY,
 		    &gpio_gecko_common_driver_api);
 

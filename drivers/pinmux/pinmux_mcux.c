@@ -67,9 +67,9 @@ static const struct pinmux_mcux_config pinmux_mcux_porta_config = {
 	.clock_ip_name = kCLOCK_PortA,
 };
 
-DEVICE_AND_API_INIT(pinmux_porta, CONFIG_PINMUX_MCUX_PORTA_NAME,
+DEVICE_DEFINE(pinmux_porta, CONFIG_PINMUX_MCUX_PORTA_NAME,
 		    &pinmux_mcux_init,
-		    NULL, &pinmux_mcux_porta_config,
+		    device_pm_control_nop, NULL, &pinmux_mcux_porta_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &pinmux_mcux_driver_api);
 #endif
@@ -80,9 +80,9 @@ static const struct pinmux_mcux_config pinmux_mcux_portb_config = {
 	.clock_ip_name = kCLOCK_PortB,
 };
 
-DEVICE_AND_API_INIT(pinmux_portb, CONFIG_PINMUX_MCUX_PORTB_NAME,
+DEVICE_DEFINE(pinmux_portb, CONFIG_PINMUX_MCUX_PORTB_NAME,
 		    &pinmux_mcux_init,
-		    NULL, &pinmux_mcux_portb_config,
+		    device_pm_control_nop, NULL, &pinmux_mcux_portb_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &pinmux_mcux_driver_api);
 #endif
@@ -93,9 +93,9 @@ static const struct pinmux_mcux_config pinmux_mcux_portc_config = {
 	.clock_ip_name = kCLOCK_PortC,
 };
 
-DEVICE_AND_API_INIT(pinmux_portc, CONFIG_PINMUX_MCUX_PORTC_NAME,
+DEVICE_DEFINE(pinmux_portc, CONFIG_PINMUX_MCUX_PORTC_NAME,
 		    &pinmux_mcux_init,
-		    NULL, &pinmux_mcux_portc_config,
+		    device_pm_control_nop, NULL, &pinmux_mcux_portc_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &pinmux_mcux_driver_api);
 #endif
@@ -106,9 +106,9 @@ static const struct pinmux_mcux_config pinmux_mcux_portd_config = {
 	.clock_ip_name = kCLOCK_PortD,
 };
 
-DEVICE_AND_API_INIT(pinmux_portd, CONFIG_PINMUX_MCUX_PORTD_NAME,
+DEVICE_DEFINE(pinmux_portd, CONFIG_PINMUX_MCUX_PORTD_NAME,
 		    &pinmux_mcux_init,
-		    NULL, &pinmux_mcux_portd_config,
+		    device_pm_control_nop, NULL, &pinmux_mcux_portd_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &pinmux_mcux_driver_api);
 #endif
@@ -119,9 +119,9 @@ static const struct pinmux_mcux_config pinmux_mcux_porte_config = {
 	.clock_ip_name = kCLOCK_PortE,
 };
 
-DEVICE_AND_API_INIT(pinmux_porte, CONFIG_PINMUX_MCUX_PORTE_NAME,
+DEVICE_DEFINE(pinmux_porte, CONFIG_PINMUX_MCUX_PORTE_NAME,
 		    &pinmux_mcux_init,
-		    NULL, &pinmux_mcux_porte_config,
+		    device_pm_control_nop, NULL, &pinmux_mcux_porte_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &pinmux_mcux_driver_api);
 #endif

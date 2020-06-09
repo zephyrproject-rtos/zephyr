@@ -1434,8 +1434,9 @@ static int ptp_mcux_init(struct device *port)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(mcux_ptp_clock_0, PTP_CLOCK_NAME, ptp_mcux_init,
-		    &ptp_mcux_0_context, NULL, POST_KERNEL,
+DEVICE_DEFINE(mcux_ptp_clock_0, PTP_CLOCK_NAME, ptp_mcux_init,
+		    device_pm_control_nop, &ptp_mcux_0_context, NULL,
+		    POST_KERNEL,
 		    CONFIG_APPLICATION_INIT_PRIORITY, &api);
 
 #endif /* CONFIG_PTP_CLOCK_MCUX */

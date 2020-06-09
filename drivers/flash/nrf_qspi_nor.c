@@ -709,7 +709,8 @@ static const struct qspi_nor_config flash_id = {
 	.size = INST_0_BYTES,
 };
 
-DEVICE_AND_API_INIT(qspi_flash_memory, DT_INST_LABEL(0),
-		    &qspi_nor_init, &qspi_nor_memory_data,
+DEVICE_DEFINE(qspi_flash_memory, DT_INST_LABEL(0),
+		    &qspi_nor_init, device_pm_control_nop,
+		    &qspi_nor_memory_data,
 		    &flash_id, POST_KERNEL, CONFIG_NORDIC_QSPI_NOR_INIT_PRIORITY,
 		    &qspi_nor_api);

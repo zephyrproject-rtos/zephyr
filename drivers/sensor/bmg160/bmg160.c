@@ -340,7 +340,7 @@ const struct bmg160_device_config bmg160_config = {
 #endif
 };
 
-DEVICE_AND_API_INIT(bmg160, DT_INST_LABEL(0), bmg160_init,
-		    &bmg160_data,
+DEVICE_DEFINE(bmg160, DT_INST_LABEL(0), bmg160_init,
+		    device_pm_control_nop, &bmg160_data,
 		    &bmg160_config, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &bmg160_api);

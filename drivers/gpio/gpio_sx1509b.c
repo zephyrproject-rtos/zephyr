@@ -692,7 +692,8 @@ static struct sx1509b_drv_data sx1509b_drvdata = {
 	.lock = Z_SEM_INITIALIZER(sx1509b_drvdata.lock, 1, 1),
 };
 
-DEVICE_AND_API_INIT(sx1509b, DT_INST_LABEL(0),
-		    sx1509b_init, &sx1509b_drvdata, &sx1509b_cfg,
+DEVICE_DEFINE(sx1509b, DT_INST_LABEL(0),
+		    sx1509b_init, device_pm_control_nop, &sx1509b_drvdata,
+		    &sx1509b_cfg,
 		    POST_KERNEL, CONFIG_GPIO_SX1509B_INIT_PRIORITY,
 		    &api_table);

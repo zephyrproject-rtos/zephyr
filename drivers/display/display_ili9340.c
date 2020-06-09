@@ -301,6 +301,6 @@ static const struct display_driver_api ili9340_api = {
 
 static struct ili9340_data ili9340_data;
 
-DEVICE_AND_API_INIT(ili9340, DT_INST_LABEL(0), &ili9340_init,
-		    &ili9340_data, NULL, APPLICATION,
+DEVICE_DEFINE(ili9340, DT_INST_LABEL(0), &ili9340_init,
+		    device_pm_control_nop, &ili9340_data, NULL, APPLICATION,
 		    CONFIG_APPLICATION_INIT_PRIORITY, &ili9340_api);

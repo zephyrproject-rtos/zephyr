@@ -348,8 +348,9 @@ static const struct nrf_clock_control_config config = {
 	}
 };
 
-DEVICE_AND_API_INIT(clock_nrf, DT_INST_LABEL(0),
-		    clk_init, &data, &config, PRE_KERNEL_1,
+DEVICE_DEFINE(clock_nrf, DT_INST_LABEL(0),
+		    clk_init, device_pm_control_nop, &data, &config,
+		    PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &clock_control_api);
 

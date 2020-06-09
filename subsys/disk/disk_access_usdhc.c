@@ -2877,9 +2877,9 @@ static int disk_usdhc_init(struct device *dev)
 #ifdef CONFIG_DISK_ACCESS_USDHC1
 static struct usdhc_priv usdhc_priv_1;
 #if DT_NODE_HAS_STATUS(DT_INST(0, nxp_imx_usdhc), okay)
-DEVICE_AND_API_INIT(usdhc_dev1,
+DEVICE_DEFINE(usdhc_dev1,
 		DT_LABEL(DT_INST(0, nxp_imx_usdhc)), disk_usdhc_init,
-		&usdhc_priv_1, NULL, APPLICATION,
+		device_pm_control_nop, &usdhc_priv_1, NULL, APPLICATION,
 		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		NULL);
 #else
@@ -2890,9 +2890,9 @@ DEVICE_AND_API_INIT(usdhc_dev1,
 #ifdef CONFIG_DISK_ACCESS_USDHC2
 static struct usdhc_priv usdhc_priv_2;
 #if DT_NODE_HAS_STATUS(DT_INST(1, nxp_imx_usdhc), okay)
-DEVICE_AND_API_INIT(usdhc_dev2,
+DEVICE_DEFINE(usdhc_dev2,
 		DT_LABEL(DT_INST(1, nxp_imx_usdhc)), disk_usdhc_init,
-		usdhc_priv_2, NULL, APPLICATION,
+		device_pm_control_nop, usdhc_priv_2, NULL, APPLICATION,
 		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		NULL);
 #else

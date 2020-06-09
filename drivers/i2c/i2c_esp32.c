@@ -608,8 +608,9 @@ static const struct i2c_esp32_config i2c_esp32_config_0 = {
 
 static struct i2c_esp32_data i2c_esp32_data_0;
 
-DEVICE_AND_API_INIT(i2c_esp32_0, DT_INST_LABEL(0), &i2c_esp32_init,
-		    &i2c_esp32_data_0, &i2c_esp32_config_0,
+DEVICE_DEFINE(i2c_esp32_0, DT_INST_LABEL(0), &i2c_esp32_init,
+		    device_pm_control_nop, &i2c_esp32_data_0,
+		    &i2c_esp32_config_0,
 		    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
 		    &i2c_esp32_driver_api);
 #endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
@@ -656,8 +657,9 @@ static const struct i2c_esp32_config i2c_esp32_config_1 = {
 
 static struct i2c_esp32_data i2c_esp32_data_1;
 
-DEVICE_AND_API_INIT(i2c_esp32_1, DT_INST_LABEL(1), &i2c_esp32_init,
-		    &i2c_esp32_data_1, &i2c_esp32_config_1,
+DEVICE_DEFINE(i2c_esp32_1, DT_INST_LABEL(1), &i2c_esp32_init,
+		    device_pm_control_nop, &i2c_esp32_data_1,
+		    &i2c_esp32_config_1,
 		    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
 		    &i2c_esp32_driver_api);
 #endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay) */

@@ -262,10 +262,10 @@ static const struct pwm_config pwm_nrf5_sw_0_config = {
 
 static struct pwm_data pwm_nrf5_sw_0_data;
 
-DEVICE_AND_API_INIT(pwm_nrf5_sw_0,
+DEVICE_DEFINE(pwm_nrf5_sw_0,
 		    DT_INST_LABEL(0),
 		    pwm_nrf5_sw_init,
-		    &pwm_nrf5_sw_0_data,
+		    device_pm_control_nop, &pwm_nrf5_sw_0_data,
 		    &pwm_nrf5_sw_0_config,
 		    POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,

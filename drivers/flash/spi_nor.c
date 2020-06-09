@@ -589,7 +589,8 @@ static const struct spi_nor_config flash_id = {
 
 static struct spi_nor_data spi_nor_memory_data;
 
-DEVICE_AND_API_INIT(spi_flash_memory, DT_INST_LABEL(0),
-		    &spi_nor_init, &spi_nor_memory_data,
+DEVICE_DEFINE(spi_flash_memory, DT_INST_LABEL(0),
+		    &spi_nor_init, device_pm_control_nop,
+		    &spi_nor_memory_data,
 		    &flash_id, POST_KERNEL, CONFIG_SPI_NOR_INIT_PRIORITY,
 		    &spi_nor_api);

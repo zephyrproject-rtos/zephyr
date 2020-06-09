@@ -361,6 +361,7 @@ static int lis2mdl_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(lis2mdl, DT_INST_LABEL(0), lis2mdl_init,
-		     &lis2mdl_data, &lis2mdl_dev_config, POST_KERNEL,
+DEVICE_DEFINE(lis2mdl, DT_INST_LABEL(0), lis2mdl_init,
+		     device_pm_control_nop, &lis2mdl_data,
+		     &lis2mdl_dev_config, POST_KERNEL,
 		     CONFIG_SENSOR_INIT_PRIORITY, &lis2mdl_driver_api);

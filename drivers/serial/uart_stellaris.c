@@ -647,9 +647,10 @@ static struct uart_stellaris_dev_data_t uart_stellaris_dev_data_0 = {
 	.baud_rate = DT_INST_PROP(0, current_speed),
 };
 
-DEVICE_AND_API_INIT(uart_stellaris0, DT_INST_LABEL(0),
+DEVICE_DEFINE(uart_stellaris0, DT_INST_LABEL(0),
 		    &uart_stellaris_init,
-		    &uart_stellaris_dev_data_0, &uart_stellaris_dev_cfg_0,
+		    device_pm_control_nop, &uart_stellaris_dev_data_0,
+		    &uart_stellaris_dev_cfg_0,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_stellaris_driver_api);
 
@@ -685,9 +686,10 @@ static struct uart_stellaris_dev_data_t uart_stellaris_dev_data_1 = {
 	.baud_rate = DT_INST_PROP(1, current_speed),
 };
 
-DEVICE_AND_API_INIT(uart_stellaris1, DT_INST_LABEL(1),
+DEVICE_DEFINE(uart_stellaris1, DT_INST_LABEL(1),
 		    &uart_stellaris_init,
-		    &uart_stellaris_dev_data_1, &uart_stellaris_dev_cfg_1,
+		    device_pm_control_nop, &uart_stellaris_dev_data_1,
+		    &uart_stellaris_dev_cfg_1,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_stellaris_driver_api);
 
@@ -723,9 +725,10 @@ static struct uart_stellaris_dev_data_t uart_stellaris_dev_data_2 = {
 	.baud_rate = DT_INST_PROP(2, current_speed),
 };
 
-DEVICE_AND_API_INIT(uart_stellaris2, DT_INST_LABEL(2),
+DEVICE_DEFINE(uart_stellaris2, DT_INST_LABEL(2),
 		    &uart_stellaris_init,
-		    &uart_stellaris_dev_data_2, &uart_stellaris_dev_cfg_2,
+		    device_pm_control_nop, &uart_stellaris_dev_data_2,
+		    &uart_stellaris_dev_cfg_2,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_stellaris_driver_api);
 

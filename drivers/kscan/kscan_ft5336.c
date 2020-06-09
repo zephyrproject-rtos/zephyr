@@ -227,7 +227,7 @@ static const struct ft5336_config ft5336_config = {
 
 static struct ft5336_data ft5336_data;
 
-DEVICE_AND_API_INIT(ft5336, DT_INST_LABEL(0), ft5336_init,
-		    &ft5336_data, &ft5336_config,
+DEVICE_DEFINE(ft5336, DT_INST_LABEL(0), ft5336_init,
+		    device_pm_control_nop, &ft5336_data, &ft5336_config,
 		    POST_KERNEL, CONFIG_KSCAN_INIT_PRIORITY,
 		    &ft5336_driver_api);

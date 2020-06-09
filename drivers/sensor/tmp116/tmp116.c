@@ -142,6 +142,7 @@ static const struct tmp116_dev_config tmp116_config = {
 	.i2c_addr = DT_INST_REG_ADDR(0),
 };
 
-DEVICE_AND_API_INIT(hdc1080, DT_INST_LABEL(0), tmp116_init,
-		    &tmp116_data, &tmp116_config, POST_KERNEL,
+DEVICE_DEFINE(hdc1080, DT_INST_LABEL(0), tmp116_init,
+		    device_pm_control_nop, &tmp116_data, &tmp116_config,
+		    POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &tmp116_driver_api);

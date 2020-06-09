@@ -519,7 +519,8 @@ static struct intel_gna_data intel_gna_driver_data = {
 	.regs = (volatile struct intel_gna_regs *)INTEL_GNA_BASE_ADDR,
 };
 
-DEVICE_AND_API_INIT(gna, CONFIG_INTEL_GNA_NAME, intel_gna_initialize,
-		    (void *)&intel_gna_driver_data, &intel_gna_config,
+DEVICE_DEFINE(gna, CONFIG_INTEL_GNA_NAME, intel_gna_initialize,
+		    device_pm_control_nop, (void *)&intel_gna_driver_data,
+		    &intel_gna_config,
 		    POST_KERNEL, CONFIG_INTEL_GNA_INIT_PRIORITY,
 		    &gna_driver_api);

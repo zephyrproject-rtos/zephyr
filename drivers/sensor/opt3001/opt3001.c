@@ -163,6 +163,7 @@ int opt3001_init(struct device *dev)
 
 static struct opt3001_data opt3001_drv_data;
 
-DEVICE_AND_API_INIT(opt3001, DT_INST_LABEL(0), opt3001_init,
-		    &opt3001_drv_data, NULL, POST_KERNEL,
+DEVICE_DEFINE(opt3001, DT_INST_LABEL(0), opt3001_init,
+		    device_pm_control_nop, &opt3001_drv_data, NULL,
+		    POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &opt3001_driver_api);

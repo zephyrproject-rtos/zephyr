@@ -152,7 +152,7 @@ static const struct amg88xx_config amg88xx_config = {
 #endif
 };
 
-DEVICE_AND_API_INIT(amg88xx, DT_INST_LABEL(0), amg88xx_init,
-		    &amg88xx_driver, &amg88xx_config,
+DEVICE_DEFINE(amg88xx, DT_INST_LABEL(0), amg88xx_init,
+		    device_pm_control_nop, &amg88xx_driver, &amg88xx_config,
 		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &amg88xx_driver_api);

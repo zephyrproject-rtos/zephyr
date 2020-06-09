@@ -241,8 +241,9 @@ static int ptp_test_1_init(struct device *port)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(ptp_clock_1, PTP_CLOCK_NAME, ptp_test_1_init,
-		    &ptp_test_1_context, NULL, POST_KERNEL,
+DEVICE_DEFINE(ptp_clock_1, PTP_CLOCK_NAME, ptp_test_1_init,
+		    device_pm_control_nop, &ptp_test_1_context, NULL,
+		    POST_KERNEL,
 		    CONFIG_APPLICATION_INIT_PRIORITY, &api);
 
 static int ptp_test_2_init(struct device *port)
@@ -257,8 +258,9 @@ static int ptp_test_2_init(struct device *port)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(ptp_clock_2, PTP_CLOCK_NAME, ptp_test_2_init,
-		    &ptp_test_2_context, NULL, POST_KERNEL,
+DEVICE_DEFINE(ptp_clock_2, PTP_CLOCK_NAME, ptp_test_2_init,
+		    device_pm_control_nop, &ptp_test_2_context, NULL,
+		    POST_KERNEL,
 		    CONFIG_APPLICATION_INIT_PRIORITY, &api);
 
 struct user_data {

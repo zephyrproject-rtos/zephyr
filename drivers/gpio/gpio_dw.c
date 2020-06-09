@@ -612,8 +612,9 @@ DEVICE_DEFINE(gpio_dw_0, DT_INST_LABEL(0),
 	      &gpio_config_0, POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
 	      &api_funcs);
 #else
-DEVICE_AND_API_INIT(gpio_dw_0, DT_INST_LABEL(0),
-		    gpio_dw_initialize, &gpio_0_runtime, &gpio_config_0,
+DEVICE_DEFINE(gpio_dw_0, DT_INST_LABEL(0),
+		    gpio_dw_initialize, device_pm_control_nop,
+		    &gpio_0_runtime, &gpio_config_0,
 		    POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
 		    &api_funcs);
 #endif
@@ -681,8 +682,9 @@ DEVICE_DEFINE(gpio_dw_1, DT_INST_LABEL(1),
 	      &gpio_dw_config_1, POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
 	      &api_funcs);
 #else
-DEVICE_AND_API_INIT(gpio_dw_1, DT_INST_LABEL(1),
-		    gpio_dw_initialize, &gpio_1_runtime, &gpio_dw_config_1,
+DEVICE_DEFINE(gpio_dw_1, DT_INST_LABEL(1),
+		    gpio_dw_initialize, device_pm_control_nop,
+		    &gpio_1_runtime, &gpio_dw_config_1,
 		    POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
 		    &api_funcs);
 #endif
@@ -750,8 +752,9 @@ DEVICE_DEFINE(gpio_dw_2, DT_INST_LABEL(2),
 	      &gpio_dw_config_2, POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
 	      &api_funcs);
 #else
-DEVICE_AND_API_INIT(gpio_dw_2, DT_INST_LABEL(2),
-		    gpio_dw_initialize, &gpio_2_runtime, &gpio_dw_config_2,
+DEVICE_DEFINE(gpio_dw_2, DT_INST_LABEL(2),
+		    gpio_dw_initialize, device_pm_control_nop,
+		    &gpio_2_runtime, &gpio_dw_config_2,
 		    POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
 		    &api_funcs);
 #endif
@@ -818,8 +821,9 @@ DEVICE_DEFINE(gpio_dw_3, DT_INST_LABEL(3),
 	      &gpio_dw_config_3, POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
 	      &api_funcs);
 #else
-DEVICE_AND_API_INIT(gpio_dw_3, DT_INST_LABEL(3),
-		    gpio_dw_initialize, &gpio_3_runtime, &gpio_dw_config_3,
+DEVICE_DEFINE(gpio_dw_3, DT_INST_LABEL(3),
+		    gpio_dw_initialize, device_pm_control_nop,
+		    &gpio_3_runtime, &gpio_dw_config_3,
 		    POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
 		    &api_funcs);
 #endif

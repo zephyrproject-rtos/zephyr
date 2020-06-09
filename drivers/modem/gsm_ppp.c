@@ -627,5 +627,6 @@ static int gsm_init(struct device *device)
 	return 0;
 }
 
-DEVICE_INIT(gsm_ppp, "modem_gsm", gsm_init, &gsm, NULL, POST_KERNEL,
-	    CONFIG_MODEM_GSM_INIT_PRIORITY);
+DEVICE_DEFINE(gsm_ppp, "modem_gsm", gsm_init, device_pm_control_nop, &gsm,
+	      NULL, POST_KERNEL,
+	      CONFIG_MODEM_GSM_INIT_PRIORITY, api);

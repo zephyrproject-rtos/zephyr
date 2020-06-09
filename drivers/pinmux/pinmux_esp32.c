@@ -180,7 +180,7 @@ static int pinmux_initialize(struct device *device)
 /* Initialize using PRE_KERNEL_1 priority so that GPIO can use the pin
  * mux driver.
  */
-DEVICE_AND_API_INIT(pmux_dev, CONFIG_PINMUX_NAME,
-		    &pinmux_initialize, NULL, NULL,
+DEVICE_DEFINE(pmux_dev, CONFIG_PINMUX_NAME,
+		    &pinmux_initialize, device_pm_control_nop, NULL, NULL,
 		    PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &api_funcs);

@@ -79,7 +79,8 @@ static const struct uart_driver_api uart_rtt_driver_api = {
 
 #if CONFIG_UART_RTT_0
 
-DEVICE_AND_API_INIT(uart_rtt0, "RTT_0", uart_rtt_init, NULL, NULL,
+DEVICE_DEFINE(uart_rtt0, "RTT_0", uart_rtt_init, device_pm_control_nop, NULL,
+		    NULL,
 		    /* Initialize UART device after RTT init. */
 		    PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_rtt_driver_api);

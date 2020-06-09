@@ -1441,5 +1441,6 @@ static struct _dmic_ops dmic_ops = {
 	.read = dmic_read_device,
 };
 
-DEVICE_AND_API_INIT(dmic, "PDM", &dmic_initialize_device, NULL, NULL,
+DEVICE_DEFINE(dmic, "PDM", &dmic_initialize_device, device_pm_control_nop,
+	      NULL, NULL,
 		POST_KERNEL, CONFIG_AUDIO_DMIC_INIT_PRIORITY, &dmic_ops);

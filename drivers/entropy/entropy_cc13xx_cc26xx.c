@@ -166,7 +166,8 @@ static struct entropy_cc13xx_cc26xx_data entropy_cc13xx_cc26xx_data = {
 	.sync = Z_SEM_INITIALIZER(entropy_cc13xx_cc26xx_data.sync, 0, 1),
 };
 
-DEVICE_AND_API_INIT(entropy_cc13xx_cc26xx, DT_INST_LABEL(0),
-		    entropy_cc13xx_cc26xx_init, &entropy_cc13xx_cc26xx_data,
+DEVICE_DEFINE(entropy_cc13xx_cc26xx, DT_INST_LABEL(0),
+		    entropy_cc13xx_cc26xx_init, device_pm_control_nop,
+		    &entropy_cc13xx_cc26xx_data,
 		    NULL, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &entropy_cc13xx_cc26xx_driver_api);

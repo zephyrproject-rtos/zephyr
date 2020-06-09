@@ -368,9 +368,9 @@ static const struct kscan_driver_api kscan_xec_driver_api = {
 
 static int kscan_xec_init(struct device *dev);
 
-DEVICE_AND_API_INIT(kscan_xec, DT_INST_LABEL(0),
+DEVICE_DEFINE(kscan_xec, DT_INST_LABEL(0),
 		    &kscan_xec_init,
-		    NULL, NULL,
+		    device_pm_control_nop, NULL, NULL,
 		    POST_KERNEL, CONFIG_KSCAN_INIT_PRIORITY,
 		    &kscan_xec_driver_api);
 

@@ -186,10 +186,10 @@ static struct ipm_mhu_data ipm_mhu_data_0 = {
 	.callback_ctx = NULL,
 };
 
-DEVICE_AND_API_INIT(mhu_0,
+DEVICE_DEFINE(mhu_0,
 			DT_INST_LABEL(0),
 			&ipm_mhu_init,
-			&ipm_mhu_data_0,
+			device_pm_control_nop, &ipm_mhu_data_0,
 			&ipm_mhu_cfg_0, PRE_KERNEL_1,
 			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 			&ipm_mhu_driver_api);
@@ -217,10 +217,10 @@ static struct ipm_mhu_data ipm_mhu_data_1 = {
 	.callback_ctx = NULL,
 };
 
-DEVICE_AND_API_INIT(mhu_1,
+DEVICE_DEFINE(mhu_1,
 			DT_INST_LABEL(1),
 			&ipm_mhu_init,
-			&ipm_mhu_data_1,
+			device_pm_control_nop, &ipm_mhu_data_1,
 			&ipm_mhu_cfg_1, PRE_KERNEL_1,
 			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 			&ipm_mhu_driver_api);

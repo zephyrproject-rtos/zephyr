@@ -220,9 +220,10 @@ static const struct ipm_driver_api cavs_idc_driver_api = {
 	.set_enabled = cavs_idc_set_enabled,
 };
 
-DEVICE_AND_API_INIT(IPM_CAVS_IDC_DEV_NAME,
+DEVICE_DEFINE(IPM_CAVS_IDC_DEV_NAME,
 		    DT_INST_LABEL(0),
-		    &cavs_idc_init, &cavs_idc_device_data, NULL,
+		    &cavs_idc_init, device_pm_control_nop,
+		    &cavs_idc_device_data, NULL,
 		    PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &cavs_idc_driver_api);
 

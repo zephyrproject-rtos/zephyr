@@ -274,9 +274,9 @@ static int can_loopback_init(struct device *dev)
 
 static struct can_loopback_data can_loopback_dev_data_1;
 
-DEVICE_AND_API_INIT(can_loopback_1, CONFIG_CAN_LOOPBACK_DEV_NAME,
+DEVICE_DEFINE(can_loopback_1, CONFIG_CAN_LOOPBACK_DEV_NAME,
 		    &can_loopback_init,
-		    &can_loopback_dev_data_1, NULL,
+		    device_pm_control_nop, &can_loopback_dev_data_1, NULL,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &can_api_funcs);
 

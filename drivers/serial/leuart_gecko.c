@@ -351,8 +351,9 @@ static const struct leuart_gecko_config leuart_gecko_0_config = {
 
 static struct leuart_gecko_data leuart_gecko_0_data;
 
-DEVICE_AND_API_INIT(leuart_0, DT_INST_LABEL(0),
-		    &leuart_gecko_init, &leuart_gecko_0_data,
+DEVICE_DEFINE(leuart_0, DT_INST_LABEL(0),
+		    &leuart_gecko_init, device_pm_control_nop,
+		    &leuart_gecko_0_data,
 		    &leuart_gecko_0_config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &leuart_gecko_driver_api);
@@ -404,8 +405,9 @@ static const struct leuart_gecko_config leuart_gecko_1_config = {
 
 static struct leuart_gecko_data leuart_gecko_1_data;
 
-DEVICE_AND_API_INIT(leuart_1, DT_INST_LABEL(1),
-		    &leuart_gecko_init, &leuart_gecko_1_data,
+DEVICE_DEFINE(leuart_1, DT_INST_LABEL(1),
+		    &leuart_gecko_init, device_pm_control_nop,
+		    &leuart_gecko_1_data,
 		    &leuart_gecko_1_config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &leuart_gecko_driver_api);

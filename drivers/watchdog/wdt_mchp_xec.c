@@ -179,7 +179,8 @@ static int wdt_xec_init(struct device *dev)
 
 static struct wdt_xec_data wdt_xec_dev_data;
 
-DEVICE_AND_API_INIT(wdt_xec, DT_INST_LABEL(0),
-		    wdt_xec_init, &wdt_xec_dev_data, NULL,
+DEVICE_DEFINE(wdt_xec, DT_INST_LABEL(0),
+		    wdt_xec_init, device_pm_control_nop, &wdt_xec_dev_data,
+		    NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &wdt_xec_api);

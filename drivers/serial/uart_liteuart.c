@@ -318,9 +318,10 @@ static const struct uart_liteuart_device_config uart_liteuart_dev_cfg_0 = {
 	.baud_rate	= DT_INST_PROP(0, current_speed)
 };
 
-DEVICE_AND_API_INIT(uart_liteuart_0, DT_INST_LABEL(0),
+DEVICE_DEFINE(uart_liteuart_0, DT_INST_LABEL(0),
 		uart_liteuart_init,
-		&uart_liteuart_data_0, &uart_liteuart_dev_cfg_0,
+		device_pm_control_nop, &uart_liteuart_data_0,
+		&uart_liteuart_dev_cfg_0,
 		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		(void *)&uart_liteuart_driver_api);
 

@@ -426,10 +426,10 @@ static struct pl011_data pl011_data_port_0 = {
 	.baud_rate = DT_INST_PROP(0, current_speed),
 };
 
-DEVICE_AND_API_INIT(pl011_port_0,
+DEVICE_DEFINE(pl011_port_0,
 		    DT_INST_LABEL(0),
 		    &pl011_init,
-		    &pl011_data_port_0,
+		    device_pm_control_nop, &pl011_data_port_0,
 		    &pl011_cfg_port_0, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &pl011_driver_api);
@@ -489,10 +489,10 @@ static struct pl011_data pl011_data_port_1 = {
 	.baud_rate = DT_INST_PROP(1, current_speed),
 };
 
-DEVICE_AND_API_INIT(pl011_port_1,
+DEVICE_DEFINE(pl011_port_1,
 		    DT_INST_LABEL(1),
 		    &pl011_init,
-		    &pl011_data_port_1,
+		    device_pm_control_nop, &pl011_data_port_1,
 		    &pl011_cfg_port_1, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &pl011_driver_api);

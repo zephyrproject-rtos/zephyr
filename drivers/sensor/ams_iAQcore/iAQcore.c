@@ -113,6 +113,7 @@ static int iaq_core_init(struct device *dev)
 
 static struct iaq_core_data iaq_core_driver;
 
-DEVICE_AND_API_INIT(iaq_core, DT_INST_LABEL(0), iaq_core_init,
-		    &iaq_core_driver, NULL, POST_KERNEL,
+DEVICE_DEFINE(iaq_core, DT_INST_LABEL(0), iaq_core_init,
+		    device_pm_control_nop, &iaq_core_driver, NULL,
+		    POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &iaq_core_driver_api);

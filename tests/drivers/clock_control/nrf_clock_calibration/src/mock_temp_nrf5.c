@@ -43,10 +43,10 @@ static const struct sensor_driver_api mock_temp_nrf5_driver_api = {
 	.channel_get = mock_temp_nrf5_channel_get,
 };
 
-DEVICE_AND_API_INIT(mock_temp_nrf5,
+DEVICE_DEFINE(mock_temp_nrf5,
 		    DT_LABEL(DT_INST(0, nordic_nrf_temp)),
 		    mock_temp_nrf5_init,
-		    NULL,
+		    device_pm_control_nop, NULL,
 		    NULL,
 		    POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY,

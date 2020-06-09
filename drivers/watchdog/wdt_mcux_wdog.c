@@ -176,9 +176,10 @@ static const struct mcux_wdog_config mcux_wdog_config_0 = {
 
 static struct mcux_wdog_data mcux_wdog_data_0;
 
-DEVICE_AND_API_INIT(mcux_wdog_0, DT_INST_LABEL(0),
+DEVICE_DEFINE(mcux_wdog_0, DT_INST_LABEL(0),
 		    &mcux_wdog_init,
-		    &mcux_wdog_data_0, &mcux_wdog_config_0,
+		    device_pm_control_nop, &mcux_wdog_data_0,
+		    &mcux_wdog_config_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mcux_wdog_api);
 

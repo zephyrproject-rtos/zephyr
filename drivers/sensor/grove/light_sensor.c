@@ -119,6 +119,7 @@ static const struct gls_config gls_cfg = {
 	.adc_channel = DT_INST_IO_CHANNELS_INPUT(0),
 };
 
-DEVICE_AND_API_INIT(gls_dev, DT_INST_LABEL(0), &gls_init,
-		&gls_data, &gls_cfg, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
+DEVICE_DEFINE(gls_dev, DT_INST_LABEL(0), &gls_init,
+		device_pm_control_nop, &gls_data, &gls_cfg, POST_KERNEL,
+		CONFIG_SENSOR_INIT_PRIORITY,
 		&gls_api);

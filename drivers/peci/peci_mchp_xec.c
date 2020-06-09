@@ -355,8 +355,8 @@ static int peci_xec_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(peci_xec, DT_INST_LABEL(0),
+DEVICE_DEFINE(peci_xec, DT_INST_LABEL(0),
 		    &peci_xec_init,
-		    NULL, NULL,
+		    device_pm_control_nop, NULL, NULL,
 		    POST_KERNEL, CONFIG_PECI_INIT_PRIORITY,
 		    &peci_xec_driver_api);

@@ -361,6 +361,7 @@ static int iis2mdc_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(iis2mdc, DT_INST_LABEL(0), iis2mdc_init,
-		     &iis2mdc_data, &iis2mdc_dev_config, POST_KERNEL,
+DEVICE_DEFINE(iis2mdc, DT_INST_LABEL(0), iis2mdc_init,
+		     device_pm_control_nop, &iis2mdc_data,
+		     &iis2mdc_dev_config, POST_KERNEL,
 		     CONFIG_SENSOR_INIT_PRIORITY, &iis2mdc_driver_api);

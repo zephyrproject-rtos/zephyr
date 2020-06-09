@@ -251,6 +251,7 @@ static int wdt_sam_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(wdt_sam, DT_INST_LABEL(0), wdt_sam_init,
-		    &wdt_sam_data, &wdt_sam_cfg, PRE_KERNEL_1,
+DEVICE_DEFINE(wdt_sam, DT_INST_LABEL(0), wdt_sam_init,
+		    device_pm_control_nop, &wdt_sam_data, &wdt_sam_cfg,
+		    PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wdt_sam_api);

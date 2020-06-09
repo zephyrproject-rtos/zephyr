@@ -30,8 +30,8 @@ extern struct ipm_driver_api ipm_dummy_api;
 
 /* Set up the dummy IPM driver */
 struct ipm_dummy_driver_data ipm_dummy0_driver_data;
-DEVICE_AND_API_INIT(ipm_dummy0, "ipm_dummy0", ipm_dummy_init,
-	    &ipm_dummy0_driver_data, NULL,
+DEVICE_DEFINE(ipm_dummy0, "ipm_dummy0", ipm_dummy_init,
+	    device_pm_control_nop, &ipm_dummy0_driver_data, NULL,
 	    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &ipm_dummy_api);
 
 /* Sending side of the console IPM driver, will forward anything sent
@@ -41,9 +41,9 @@ static struct ipm_console_sender_config_info sender_config = {
 	.bind_to = "ipm_dummy0",
 	.flags = SOURCE
 };
-DEVICE_INIT(ipm_console_send0, "ipm_send0", ipm_console_sender_init,
-	    NULL, &sender_config,
-	    APPLICATION, INIT_PRIO_IPM_SEND);
+DEVICE_DEFINE(ipm_console_send0, "ipm_send0", ipm_console_sender_init,
+	    device_pm_control_nop, NULL, &sender_config,
+	    APPLICATION, INIT_PRIO_IPM_SEND, api);
 
 /* Receiving side of the console IPM driver. These numbers are
  * more or less arbitrary
@@ -67,9 +67,9 @@ static struct ipm_console_receiver_config_info receiver_config = {
 };
 
 struct ipm_console_receiver_runtime_data receiver_data;
-DEVICE_INIT(ipm_console_recv0, "ipm_recv0", ipm_console_receiver_init,
-	    &receiver_data, &receiver_config,
-	    APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+DEVICE_DEFINE(ipm_console_recv0, "ipm_recv0", ipm_console_receiver_init,
+	    device_pm_control_nop, &receiver_data, &receiver_config,
+	    APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, api);
 
 static const char thestr[] = "everything is awesome\n";
 

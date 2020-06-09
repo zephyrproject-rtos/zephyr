@@ -134,8 +134,9 @@ const struct shared_irq_config shared_irq_config_0 = {
 
 struct shared_irq_runtime shared_irq_0_runtime;
 
-DEVICE_AND_API_INIT(shared_irq_0, DT_INST_LABEL(0),
-		shared_irq_initialize, &shared_irq_0_runtime,
+DEVICE_DEFINE(shared_irq_0, DT_INST_LABEL(0),
+		shared_irq_initialize, device_pm_control_nop,
+		&shared_irq_0_runtime,
 		&shared_irq_config_0, POST_KERNEL,
 		CONFIG_SHARED_IRQ_INIT_PRIORITY, &api_funcs);
 
@@ -160,8 +161,9 @@ const struct shared_irq_config shared_irq_config_1 = {
 
 struct shared_irq_runtime shared_irq_1_runtime;
 
-DEVICE_AND_API_INIT(shared_irq_1, DT_INST_LABEL(1),
-		shared_irq_initialize, &shared_irq_1_runtime,
+DEVICE_DEFINE(shared_irq_1, DT_INST_LABEL(1),
+		shared_irq_initialize, device_pm_control_nop,
+		&shared_irq_1_runtime,
 		&shared_irq_config_1, POST_KERNEL,
 		CONFIG_SHARED_IRQ_INIT_PRIORITY, &api_funcs);
 

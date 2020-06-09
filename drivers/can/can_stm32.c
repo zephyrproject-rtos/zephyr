@@ -1066,8 +1066,9 @@ static const struct can_stm32_config can_stm32_cfg_1 = {
 
 static struct can_stm32_data can_stm32_dev_data_1;
 
-DEVICE_AND_API_INIT(can_stm32_1, DT_LABEL(DT_NODELABEL(can1)), &can_stm32_init,
-		    &can_stm32_dev_data_1, &can_stm32_cfg_1,
+DEVICE_DEFINE(can_stm32_1, DT_LABEL(DT_NODELABEL(can1)), &can_stm32_init,
+		    device_pm_control_nop, &can_stm32_dev_data_1,
+		    &can_stm32_cfg_1,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &can_api_funcs);
 
@@ -1156,8 +1157,9 @@ static const struct can_stm32_config can_stm32_cfg_2 = {
 
 static struct can_stm32_data can_stm32_dev_data_2;
 
-DEVICE_AND_API_INIT(can_stm32_2, DT_LABEL(DT_NODELABEL(can2)), &can_stm32_init,
-		    &can_stm32_dev_data_2, &can_stm32_cfg_2,
+DEVICE_DEFINE(can_stm32_2, DT_LABEL(DT_NODELABEL(can2)), &can_stm32_init,
+		    device_pm_control_nop, &can_stm32_dev_data_2,
+		    &can_stm32_cfg_2,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &can_api_funcs);
 

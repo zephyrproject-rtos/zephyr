@@ -1019,6 +1019,7 @@ static struct i2s_sam_dev_data i2s0_sam_data = {
 	},
 };
 
-DEVICE_AND_API_INIT(i2s0_sam, DT_INST_LABEL(0), &i2s_sam_initialize,
-		    &i2s0_sam_data, &i2s0_sam_config, POST_KERNEL,
+DEVICE_DEFINE(i2s0_sam, DT_INST_LABEL(0), &i2s_sam_initialize,
+		    device_pm_control_nop, &i2s0_sam_data, &i2s0_sam_config,
+		    POST_KERNEL,
 		    CONFIG_I2S_INIT_PRIORITY, &i2s_sam_driver_api);

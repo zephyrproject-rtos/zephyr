@@ -282,6 +282,7 @@ static int vl53l0x_init(struct device *dev)
 
 static struct vl53l0x_data vl53l0x_driver;
 
-DEVICE_AND_API_INIT(vl53l0x, DT_INST_LABEL(0), vl53l0x_init, &vl53l0x_driver,
+DEVICE_DEFINE(vl53l0x, DT_INST_LABEL(0), vl53l0x_init, device_pm_control_nop,
+		    &vl53l0x_driver,
 		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &vl53l0x_api_funcs);
