@@ -33,14 +33,14 @@ extern "C" {
  * @brief Expands to the full name of a global device object
  *
  * @details Return the full name of a device object symbol created by
- * DEVICE_INIT(), using the dev_name provided to DEVICE_INIT().
+ * DEVICE_DEFINE(), using the dev_name provided to DEVICE_DEFINE().
  *
  * It is meant to be used for declaring extern symbols pointing on device
  * objects before using the DEVICE_GET macro to get the device object.
  *
- * @param name The same as dev_name provided to DEVICE_INIT()
+ * @param name The same as dev_name provided to DEVICE_DEFINE()
  *
- * @return The expanded name of the device object created by DEVICE_INIT()
+ * @return The expanded name of the device object created by DEVICE_DEFINE()
  */
 #define DEVICE_NAME_GET(name) (_CONCAT(__device_, name))
 
@@ -50,24 +50,46 @@ extern "C" {
  * @brief Run an initialization function at boot at specified priority,
  * and define device PM control function.
  *
- * @details This macro lets you run a function at system boot.
- *
- * @param drv_name Name of this system device
- * @param init_fn Pointer to the boot function to run
- * @param pm_control_fn Pointer to device_pm_control function.
- * Can be empty function (device_pm_control_nop) if not implemented.
- * @param level The initialization level, See Z_INIT_ENTRY_DEFINE for details.
- * @param prio Priority within the selected initialization level. See
- * Z_INIT_ENTRY_DEFINE for details.
+ * @details Invokes DEVICE_DEFINE() with no power management support
+ * (@p pm_control_fn), no API (@p api), and a device name derived from
+ * the @p init_fn name (@p dev_name).
  */
 #define SYS_DEVICE_DEFINE(drv_name, init_fn, pm_control_fn, level, prio) \
-	DEVICE_DEFINE(Z_SYS_NAME(init_fn), drv_name, init_fn, pm_control_fn, \
+	DEVICE_DEFINE(Z_SYS_NAME(init_fn), drv_name, init_fn,		\
+		      pm_control_fn,					\
 		      NULL, NULL, level, prio, NULL)
 
 /**
  * @def DEVICE_INIT
  *
- * @brief Create device object and set it up for boot time initialization.
+ * @brief Invoke DEVICE_DEFINE() with no power management support (@p
+ * pm_control_fn) and no API (@p api).
+ */
+#define DEVICE_INIT(dev_name, drv_name, init_fn,			\
+		    data, cfg_info, level, prio)			\
+	DEVICE_DEFINE(dev_name, drv_name, init_fn,			\
+		      device_pm_control_nop,				\
+		      data, cfg_info, level, prio, NULL)
+
+/**
+ * @def DEVICE_AND_API_INIT
+ *
+ * @brief Invoke DEVICE_DEFINE() with no power management support (@p
+ * pm_control_fn).
+ */
+#define DEVICE_AND_API_INIT(dev_name, drv_name, init_fn,		\
+			    data, cfg_info, level, prio, api)		\
+	DEVICE_DEFINE(dev_name, drv_name, init_fn,			\
+		      device_pm_control_nop,				\
+		      data, cfg_info, level, prio, api)
+
+/**
+ * @def DEVICE_DEFINE
+ *
+ * @brief Create device object and set it up for boot time initialization,
+ * with the option to device_pm_control. In case of Device Idle Power
+ * Management is enabled, make sure the device is in suspended state after
+ * initialization.
  *
  * @details This macro defines a device object that is automatically
  * configured by the kernel during system initialization. Note that
@@ -83,90 +105,26 @@ extern "C" {
  *
  * @param init_fn Address to the init function of the driver.
  *
+ * @param pm_control_fn Pointer to device_pm_control function.
+ * Can be empty function (device_pm_control_nop) if not implemented.
+ *
  * @param data Pointer to the device's private data.
  *
  * @param cfg_info The address to the structure containing the
  * configuration information for this instance of the driver.
  *
- * @param level The initialization level, See Z_INIT_ENTRY_DEFINE for details.
+ * @param level The initialization level.  See SYS_INIT() for
+ * details.
  *
  * @param prio Priority within the selected initialization level. See
- * Z_INIT_ENTRY_DEFINE for details.
- */
-#define DEVICE_INIT(dev_name, drv_name, init_fn, data, cfg_info, level, prio) \
-	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn,		\
-			    data, cfg_info, level, prio, NULL)
-
-
-/**
- * @def DEVICE_AND_API_INIT
+ * SYS_INIT() for details.
  *
- * @brief Create device object and set it up for boot time initialization,
- * with the option to set driver_api.
- *
- * @copydetails DEVICE_INIT
  * @param api Provides an initial pointer to the API function struct
  * used by the driver. Can be NULL.
- * @details The driver api is also set here, eliminating the need to do that
- * during initialization.
  */
-#ifndef CONFIG_DEVICE_POWER_MANAGEMENT
-#define DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info, \
-			    level, prio, api)				\
-	static Z_DECL_ALIGN(struct device)				\
-		DEVICE_NAME_GET(dev_name) __used			\
-	__attribute__((__section__(".device_" #level STRINGIFY(prio)))) = { \
-		.name = drv_name,					\
-		.config_info = (cfg_info),				\
-		.driver_api = (api),					\
-		.driver_data = (data),					\
-	};								\
-	Z_INIT_ENTRY_DEFINE(_CONCAT(__device_, dev_name), init_fn,	\
-			    (&_CONCAT(__device_, dev_name)), level, prio)
-#else
-/*
- * Use the default device_pm_control for devices that do not call the
- * DEVICE_DEFINE macro so that caller of hook functions
- * need not check device_pm_control != NULL.
- */
-#define DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info, \
-			    level, prio, api)				 \
-	DEVICE_DEFINE(dev_name, drv_name, init_fn,			 \
-		      device_pm_control_nop, data, cfg_info, level,	 \
-		      prio, api)
-#endif
-
-/**
- * @def DEVICE_DEFINE
- *
- * @brief Create device object and set it up for boot time initialization,
- * with the option to device_pm_control. In case of Device Idle Power
- * Management is enabled, make sure the device is in suspended state after
- * initialization.
- *
- * @copydetails DEVICE_AND_API_INIT
- * @param pm_control_fn Pointer to device_pm_control function.
- * Can be empty function (device_pm_control_nop) if not implemented.
- */
-#ifndef CONFIG_DEVICE_POWER_MANAGEMENT
-#define DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_control_fn,	 \
-		      data, cfg_info, level, prio, api)			 \
-	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info, \
-			    level, prio, api)
-#else
 #define DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_control_fn,	\
 		      data, cfg_info, level, prio, api)			\
-	static struct device_pm _CONCAT(__pm_, dev_name) __used  = {	\
-		.usage = ATOMIC_INIT(0),				\
-		.lock = Z_SEM_INITIALIZER(				\
-			_CONCAT(__pm_, dev_name).lock, 1, 1),		\
-		.signal = K_POLL_SIGNAL_INITIALIZER(			\
-			_CONCAT(__pm_, dev_name).signal),		\
-		.event = K_POLL_EVENT_INITIALIZER(			\
-			K_POLL_TYPE_SIGNAL,				\
-			K_POLL_MODE_NOTIFY_ONLY,			\
-			&_CONCAT(__pm_, dev_name).signal),		\
-	};								\
+	Z_DEVICE_DEFINE_PM(dev_name)					\
 	static Z_DECL_ALIGN(struct device)				\
 		DEVICE_NAME_GET(dev_name) __used			\
 	__attribute__((__section__(".device_" #level STRINGIFY(prio)))) = { \
@@ -174,13 +132,10 @@ extern "C" {
 		.config_info = (cfg_info),				\
 		.driver_api = (api),					\
 		.driver_data = (data),					\
-		.device_pm_control = (pm_control_fn),			\
-		.pm  = &_CONCAT(__pm_, dev_name),			\
+		Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)	\
 	};								\
 	Z_INIT_ENTRY_DEFINE(_CONCAT(__device_, dev_name), init_fn,	\
 			    (&_CONCAT(__device_, dev_name)), level, prio)
-
-#endif
 
 /**
  * @def DEVICE_GET
@@ -584,6 +539,27 @@ static inline int device_pm_put_sync(struct device *dev) { return -ENOTSUP; }
 /**
  * @}
  */
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#define Z_DEVICE_DEFINE_PM(dev_name)					\
+	static struct device_pm _CONCAT(__pm_, dev_name) __used  = {	\
+		.usage = ATOMIC_INIT(0),				\
+		.lock = Z_SEM_INITIALIZER(				\
+			_CONCAT(__pm_, dev_name).lock, 1, 1),		\
+		.signal = K_POLL_SIGNAL_INITIALIZER(			\
+			_CONCAT(__pm_, dev_name).signal),		\
+		.event = K_POLL_EVENT_INITIALIZER(			\
+			K_POLL_TYPE_SIGNAL,				\
+			K_POLL_MODE_NOTIFY_ONLY,			\
+			&_CONCAT(__pm_, dev_name).signal),		\
+	};
+#define Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)		\
+	.device_pm_control = (pm_control_fn),				\
+	.pm  = &_CONCAT(__pm_, dev_name),
+#else
+#define Z_DEVICE_DEFINE_PM(dev_name)
+#define Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)
+#endif
 
 #ifdef __cplusplus
 }
