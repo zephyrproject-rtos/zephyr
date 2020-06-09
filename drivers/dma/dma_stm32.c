@@ -83,6 +83,7 @@ static void dma_stm32_irq_handler(void *arg)
 		stream->busy = false;
 	}
 
+	printk("DMA\n");
 	/* the dma stream id is in range from STREAM_OFFSET..<dma-requests> */
 	if (func_ll_is_active_tc[id](dma)) {
 		func_ll_clear_tc[id](dma);
