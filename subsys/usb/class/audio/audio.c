@@ -936,13 +936,14 @@ void usb_audio_register(struct device *dev,
 		.num_endpoints = ARRAY_SIZE(dev##_usb_audio_ep_data_##i), \
 		.endpoint = dev##_usb_audio_ep_data_##i,		  \
 	};								  \
-	DEVICE_AND_API_INIT(dev##_usb_audio_device_##i,			  \
-			    DT_LABEL(DT_INST(i, COMPAT_##dev)),		  \
-			    &usb_audio_device_init,			  \
-			    &dev##_audio_dev_data_##i,			  \
-			    &dev##_audio_config_##i, APPLICATION,	  \
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		  \
-			    DUMMY_API)
+	DEVICE_DEFINE(dev##_usb_audio_device_##i,			  \
+		      DT_LABEL(DT_INST(i, COMPAT_##dev)),		  \
+		      &usb_audio_device_init,				  \
+		      device_pm_control_nop,				  \
+		      &dev##_audio_dev_data_##i,			  \
+		      &dev##_audio_config_##i, APPLICATION,		  \
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		  \
+		      DUMMY_API)
 
 #define DEFINE_BUF_POOL(name, size) \
 	NET_BUF_POOL_FIXED_DEFINE(name, 5, size, net_buf_destroy)

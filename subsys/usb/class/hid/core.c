@@ -711,13 +711,14 @@ static int usb_hid_device_init(struct device *dev)
 	struct hid_device_info usb_hid_dev_data_##x;
 
 #define DEFINE_HID_DEVICE(x, _)						\
-	DEVICE_AND_API_INIT(usb_hid_device_##x,				\
-			    CONFIG_USB_HID_DEVICE_NAME "_" #x,		\
-			    &usb_hid_device_init,			\
-			    &usb_hid_dev_data_##x,			\
-			    &hid_config_##x, POST_KERNEL,		\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
-			    &hid_api);
+	DEVICE_DEFINE(usb_hid_device_##x,				\
+		      CONFIG_USB_HID_DEVICE_NAME "_" #x,		\
+		      &usb_hid_device_init,				\
+		      device_pm_control_nop,				\
+		      &usb_hid_dev_data_##x,				\
+		      &hid_config_##x, POST_KERNEL,			\
+		      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,		\
+		      &hid_api);
 
 UTIL_LISTIFY(CONFIG_USB_HID_DEVICE_COUNT, DEFINE_HID_DESCR, _)
 UTIL_LISTIFY(CONFIG_USB_HID_DEVICE_COUNT, DEFINE_HID_EP, _)
