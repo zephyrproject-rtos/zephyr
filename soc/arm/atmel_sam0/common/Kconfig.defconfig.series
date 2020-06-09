@@ -38,4 +38,11 @@ config USB_DC_SAM0
 config WDT_SAM0
 	default WATCHDOG
 
+if USB
+
+config HEAP_MEM_POOL_SIZE
+	default 1024
+
+endif # USB
+
 endif # SOC_FAMILY_SAM0
