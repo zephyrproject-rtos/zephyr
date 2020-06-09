@@ -290,10 +290,10 @@ static const struct adc_driver_api adc_nrfx_driver_api = {
 #define ADC_INIT(inst)							\
 	BUILD_ASSERT((inst) == 0,					\
 		     "multiple instances not supported");		\
-	DEVICE_AND_API_INIT(adc_0, DT_INST_LABEL(0),			\
-			    init_adc, NULL, NULL,			\
-			    POST_KERNEL,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-			    &adc_nrfx_driver_api);
+	DEVICE_DEFINE(adc_0, DT_INST_LABEL(0),				\
+		      init_adc, device_pm_control_nop, NULL, NULL,	\
+		      POST_KERNEL,					\
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+		      &adc_nrfx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_INIT)

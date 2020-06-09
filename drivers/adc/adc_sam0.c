@@ -602,11 +602,12 @@ do {									\
 		ADC_CONTEXT_INIT_LOCK(adc_sam_data_##n, ctx),		\
 		ADC_CONTEXT_INIT_SYNC(adc_sam_data_##n, ctx),		\
 	};								\
-	DEVICE_AND_API_INIT(adc0_sam_##n, DT_INST_LABEL(n),		\
-			    adc_sam0_init, &adc_sam_data_##n,		\
-			    &adc_sam_cfg_##n, POST_KERNEL,		\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-			    &adc_sam0_api);				\
+	DEVICE_DEFINE(adc0_sam_##n, DT_INST_LABEL(n),			\
+		      adc_sam0_init, device_pm_control_nop,		\
+		      &adc_sam_data_##n,				\
+		      &adc_sam_cfg_##n, POST_KERNEL,			\
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+		      &adc_sam0_api);					\
 	static void adc_sam0_config_##n(struct device *dev)		\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\

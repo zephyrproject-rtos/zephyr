@@ -365,11 +365,12 @@ static void adc_sam_isr(void *arg)
 		ADC_CONTEXT_INIT_SYNC(adc##n##_sam_data, ctx),		\
 	};								\
 									\
-	DEVICE_AND_API_INIT(adc##n##_sam, DT_INST_LABEL(n),		\
-			    adc_sam_init, &adc##n##_sam_data,		\
-			    &adc##n##_sam_cfg, POST_KERNEL,		\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-			    &adc_sam_api);				\
+	DEVICE_DEFINE(adc##n##_sam, DT_INST_LABEL(n),			\
+		      adc_sam_init, device_pm_control_nop,		\
+		      &adc##n##_sam_data,				\
+		      &adc##n##_sam_cfg, POST_KERNEL,			\
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+		      &adc_sam_api);					\
 									\
 	static void adc##n##_sam_cfg_func(struct device *dev)		\
 	{								\

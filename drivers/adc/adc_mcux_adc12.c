@@ -284,11 +284,12 @@ static const struct adc_driver_api mcux_adc12_driver_api = {
 		ADC_CONTEXT_INIT_SYNC(mcux_adc12_data_##n, ctx),	\
 	};								\
 									\
-	DEVICE_AND_API_INIT(mcux_adc12_##n, DT_INST_LABEL(n),		\
-			    &mcux_adc12_init, &mcux_adc12_data_##n,	\
-			    &mcux_adc12_config_##n, POST_KERNEL,	\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-			    &mcux_adc12_driver_api);			\
+	DEVICE_DEFINE(mcux_adc12_##n, DT_INST_LABEL(n),			\
+		      &mcux_adc12_init, device_pm_control_nop,		\
+		      &mcux_adc12_data_##n,				\
+		      &mcux_adc12_config_##n, POST_KERNEL,		\
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+		      &mcux_adc12_driver_api);				\
 									\
 	static void mcux_adc12_config_func_##n(struct device *dev)	\
 	{								\
