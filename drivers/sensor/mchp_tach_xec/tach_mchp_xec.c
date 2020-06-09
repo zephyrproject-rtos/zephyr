@@ -124,13 +124,14 @@ static const struct sensor_driver_api tach_xec_driver_api = {
 									\
 	static struct tach_xec_data tach_xec_dev_data##id;		\
 									\
-	DEVICE_AND_API_INIT(tach##id,					\
-			    DT_INST_LABEL(id),	\
-			    tach_xec_init,				\
-			    &tach_xec_dev_data##id,			\
-			    &tach_xec_dev_config##id,			\
-			    POST_KERNEL,				\
-			    CONFIG_SENSOR_INIT_PRIORITY,		\
-			    &tach_xec_driver_api);
+	DEVICE_DEFINE(tach##id,						\
+		      DT_INST_LABEL(id),				\
+		      tach_xec_init,					\
+		      device_pm_control_nop,				\
+		      &tach_xec_dev_data##id,				\
+		      &tach_xec_dev_config##id,				\
+		      POST_KERNEL,					\
+		      CONFIG_SENSOR_INIT_PRIORITY,			\
+		      &tach_xec_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TACH_XEC_DEVICE)

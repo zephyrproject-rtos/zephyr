@@ -588,14 +588,15 @@ done:
  */
 
 #define BME280_DEVICE_INIT(inst)					\
-	DEVICE_AND_API_INIT(bme280_##inst,				\
-			    DT_INST_LABEL(inst),			\
-			    bme280_init,				\
-			    &bme280_data_##inst,			\
-			    &bme280_config_##inst,			\
-			    POST_KERNEL,				\
-			    CONFIG_SENSOR_INIT_PRIORITY,		\
-			    &bme280_api_funcs);
+	DEVICE_DEFINE(bme280_##inst,					\
+		      DT_INST_LABEL(inst),				\
+		      bme280_init,					\
+		      device_pm_control_nop,				\
+		      &bme280_data_##inst,				\
+		      &bme280_config_##inst,				\
+		      POST_KERNEL,					\
+		      CONFIG_SENSOR_INIT_PRIORITY,			\
+		      &bme280_api_funcs);
 
 /*
  * Instantiation macros used when a device is on a SPI bus.

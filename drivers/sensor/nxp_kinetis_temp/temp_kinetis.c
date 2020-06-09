@@ -215,10 +215,11 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1,
 		},							\
 	};								\
 									\
-	DEVICE_AND_API_INIT(temp_kinetis, DT_INST_LABEL(inst),		\
-			    temp_kinetis_init, &temp_kinetis_data_0,	\
-			    &temp_kinetis_config_0, POST_KERNEL,	\
-			    CONFIG_SENSOR_INIT_PRIORITY,		\
-			    &temp_kinetis_driver_api);
+	DEVICE_DEFINE(temp_kinetis, DT_INST_LABEL(inst),		\
+		      temp_kinetis_init, device_pm_control_nop,		\
+		      &temp_kinetis_data_0,				\
+		      &temp_kinetis_config_0, POST_KERNEL,		\
+		      CONFIG_SENSOR_INIT_PRIORITY,			\
+		      &temp_kinetis_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TEMP_KINETIS_INIT)
