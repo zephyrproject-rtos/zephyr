@@ -239,16 +239,14 @@ void bt_l2cap_chan_set_state(struct bt_l2cap_chan *chan,
 
 void bt_l2cap_chan_del(struct bt_l2cap_chan *chan)
 {
-	const struct bt_l2cap_chan_ops *ops = chan->ops;
-
 	BT_DBG("conn %p chan %p", chan->conn, chan);
 
 	if (!chan->conn) {
 		goto destroy;
 	}
 
-	if (ops->disconnected) {
-		ops->disconnected(chan);
+	if (chan->ops->disconnected) {
+		chan->ops->disconnected(chan);
 	}
 
 	chan->conn = NULL;
@@ -259,12 +257,9 @@ destroy:
 	bt_l2cap_chan_set_state(chan, BT_L2CAP_DISCONNECTED);
 	chan->psm = 0U;
 #endif
+
 	if (chan->destroy) {
 		chan->destroy(chan);
-	}
-
-	if (ops->released) {
-		ops->released(chan);
 	}
 }
 

@@ -257,13 +257,6 @@ struct bt_l2cap_chan_ops {
 	 *  @param status The channel status
 	 */
 	void (*status)(struct bt_l2cap_chan *chan, atomic_t *status);
-
-	/* @brief Channel released callback
-	 *
-	 * If this callback is set it is called when the stack has release all
-	 * references to the channel object.
-	 */
-	void (*released)(struct bt_l2cap_chan *chan);
 };
 
 /** @def BT_L2CAP_CHAN_SEND_RESERVE
