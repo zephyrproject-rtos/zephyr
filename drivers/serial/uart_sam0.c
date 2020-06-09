@@ -1129,11 +1129,12 @@ static const struct uart_sam0_dev_cfg uart_sam0_config_##n = {		\
 static struct uart_sam0_dev_data uart_sam0_data_##n;			\
 UART_SAM0_IRQ_HANDLER_DECL(n);						\
 UART_SAM0_CONFIG_DEFN(n);						\
-DEVICE_AND_API_INIT(uart_sam0_##n, DT_INST_LABEL(n),			\
-		    uart_sam0_init, &uart_sam0_data_##n,		\
-		    &uart_sam0_config_##n, PRE_KERNEL_1,		\
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
-		    &uart_sam0_driver_api);				\
+DEVICE_DEFINE(uart_sam0_##n, DT_INST_LABEL(n),				\
+	      uart_sam0_init, device_pm_control_nop,			\
+	      &uart_sam0_data_##n,					\
+	      &uart_sam0_config_##n, PRE_KERNEL_1,			\
+	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
+	      &uart_sam0_driver_api);					\
 UART_SAM0_IRQ_HANDLER(n)
 
 DT_INST_FOREACH_STATUS_OKAY(UART_SAM0_DEVICE_INIT)

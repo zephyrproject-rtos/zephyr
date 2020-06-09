@@ -323,13 +323,14 @@ static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config = {	\
 									\
 	static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config;\
 									\
-	DEVICE_AND_API_INIT(uart_##n, DT_INST_LABEL(n),			\
-			    &mcux_flexcomm_init,			\
-			    &mcux_flexcomm_##n##_data,			\
-			    &mcux_flexcomm_##n##_config,		\
-			    PRE_KERNEL_1,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-			    &mcux_flexcomm_driver_api);			\
+	DEVICE_DEFINE(uart_##n, DT_INST_LABEL(n),			\
+		      &mcux_flexcomm_init,				\
+		      device_pm_control_nop,				\
+		      &mcux_flexcomm_##n##_data,			\
+		      &mcux_flexcomm_##n##_config,			\
+		      PRE_KERNEL_1,					\
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+		      &mcux_flexcomm_driver_api);			\
 									\
 	UART_MCUX_FLEXCOMM_CONFIG_FUNC(n)				\
 									\

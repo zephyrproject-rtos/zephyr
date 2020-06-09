@@ -73,10 +73,11 @@ static const struct uart_device_config xmc4xxx_config_##index = {	\
 	.base = (void *)DT_INST_REG_ADDR(index),			\
 };									\
 									\
-	DEVICE_AND_API_INIT(uart_xmc4xxx_##index, DT_INST_LABEL(index),	\
-			    &uart_xmc4xxx_init, &xmc4xxx_data_##index,	\
-			    &xmc4xxx_config_##index, PRE_KERNEL_1,	\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-			    &uart_xmc4xxx_driver_api);
+	DEVICE_DEFINE(uart_xmc4xxx_##index, DT_INST_LABEL(index),	\
+		      &uart_xmc4xxx_init, device_pm_control_nop,	\
+		      &xmc4xxx_data_##index,				\
+		      &xmc4xxx_config_##index, PRE_KERNEL_1,		\
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+		      &uart_xmc4xxx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(XMC4XXX_INIT)

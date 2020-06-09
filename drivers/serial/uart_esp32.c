@@ -528,14 +528,15 @@ static struct uart_esp32_data uart_esp32_data_##idx = {			       \
 	}								       \
 };									       \
 									       \
-DEVICE_AND_API_INIT(uart_esp32_##idx,					       \
-		    DT_INST_LABEL(idx),		       \
-		    uart_esp32_init,					       \
-		    &uart_esp32_data_##idx,				       \
-		    &uart_esp32_cfg_port_##idx,				       \
-		    PRE_KERNEL_1,					       \
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			       \
-		    &uart_esp32_api);					       \
+DEVICE_DEFINE(uart_esp32_##idx,						       \
+	      DT_INST_LABEL(idx),					       \
+	      uart_esp32_init,						       \
+	      device_pm_control_nop,					       \
+	      &uart_esp32_data_##idx,					       \
+	      &uart_esp32_cfg_port_##idx,				       \
+	      PRE_KERNEL_1,						       \
+	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			       \
+	      &uart_esp32_api);						       \
 									       \
 ESP32_UART_IRQ_HANDLER(idx)
 

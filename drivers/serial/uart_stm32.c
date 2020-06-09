@@ -770,11 +770,11 @@ static struct uart_stm32_data uart_stm32_data_##index = {		\
 	.baud_rate = DT_INST_PROP(index, current_speed)	\
 };									\
 									\
-DEVICE_AND_API_INIT(uart_stm32_##index, DT_INST_LABEL(index),\
-		    &uart_stm32_init,					\
-		    &uart_stm32_data_##index, &uart_stm32_cfg_##index,	\
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
-		    &uart_stm32_driver_api);				\
+DEVICE_DEFINE(uart_stm32_##index, DT_INST_LABEL(index),			\
+	      &uart_stm32_init, device_pm_control_nop,			\
+	      &uart_stm32_data_##index, &uart_stm32_cfg_##index,	\
+	      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+	      &uart_stm32_driver_api);					\
 									\
 STM32_UART_IRQ_HANDLER(index)
 

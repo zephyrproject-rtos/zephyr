@@ -103,10 +103,11 @@ DEVICE_DEFINE(uart_rtt0, "RTT_0", uart_rtt_init, device_pm_control_nop, NULL,
 		.down_size = sizeof(uart_rtt##n##_rx_buffer),                  \
 	};                                                                     \
 									       \
-	DEVICE_AND_API_INIT(uart_rtt##n, uart_rtt##n##_name, uart_rtt_init,    \
-			    NULL, &uart_rtt##n##_config, PRE_KERNEL_2,         \
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                \
-			    &uart_rtt_driver_api)
+	DEVICE_DEFINE(uart_rtt##n, uart_rtt##n##_name, uart_rtt_init,	       \
+		      device_pm_control_nop,				       \
+		      NULL, &uart_rtt##n##_config, PRE_KERNEL_2,	       \
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		       \
+		      &uart_rtt_driver_api)
 
 #if CONFIG_UART_RTT_1
 UART_RTT_CHANNEL(1);

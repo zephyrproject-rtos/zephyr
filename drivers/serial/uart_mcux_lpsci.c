@@ -320,13 +320,14 @@ static const struct mcux_lpsci_config mcux_lpsci_##n##_config = {	\
 									\
 	static const struct mcux_lpsci_config mcux_lpsci_##n##_config;	\
 									\
-	DEVICE_AND_API_INIT(uart_##n, DT_INST_LABEL(n),			\
-			    &mcux_lpsci_init,				\
-			    &mcux_lpsci_##n##_data,			\
-			    &mcux_lpsci_##n##_config,			\
-			    PRE_KERNEL_1,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-			    &mcux_lpsci_driver_api);			\
+	DEVICE_DEFINE(uart_##n, DT_INST_LABEL(n),			\
+		      &mcux_lpsci_init,					\
+		      device_pm_control_nop,				\
+		      &mcux_lpsci_##n##_data,				\
+		      &mcux_lpsci_##n##_config,				\
+		      PRE_KERNEL_1,					\
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+		      &mcux_lpsci_driver_api);				\
 									\
 	MCUX_LPSCI_CONFIG_FUNC(n)					\
 									\

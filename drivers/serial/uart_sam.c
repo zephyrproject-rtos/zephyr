@@ -361,11 +361,12 @@ static const struct uart_driver_api uart_sam_driver_api = {
 									\
 	static const struct uart_sam_dev_cfg uart##n##_sam_config;	\
 									\
-	DEVICE_AND_API_INIT(uart##n##_sam, DT_INST_LABEL(n),		\
-			    &uart_sam_init, &uart##n##_sam_data,	\
-			    &uart##n##_sam_config, PRE_KERNEL_1,	\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-			    &uart_sam_driver_api);			\
+	DEVICE_DEFINE(uart##n##_sam, DT_INST_LABEL(n),			\
+		      &uart_sam_init, device_pm_control_nop,		\
+		      &uart##n##_sam_data,				\
+		      &uart##n##_sam_config, PRE_KERNEL_1,		\
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+		      &uart_sam_driver_api);				\
 									\
 	UART_SAM_CONFIG_FUNC(n)						\
 									\

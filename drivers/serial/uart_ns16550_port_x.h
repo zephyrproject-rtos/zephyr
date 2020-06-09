@@ -49,11 +49,11 @@ static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_@NUM@ = {
 #endif
 };
 
-DEVICE_AND_API_INIT(uart_ns16550_@NUM@, DT_INST_LABEL(@NUM@),
-		    &uart_ns16550_init,
-		    &uart_ns16550_dev_data_@NUM@, &uart_ns16550_dev_cfg_@NUM@,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &uart_ns16550_driver_api);
+DEVICE_DEFINE(uart_ns16550_@NUM@, DT_INST_LABEL(@NUM@),
+	      &uart_ns16550_init, device_pm_control_nop,
+	      &uart_ns16550_dev_data_@NUM@, &uart_ns16550_dev_cfg_@NUM@,
+	      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+	      &uart_ns16550_driver_api);
 
 #if DT_INST_IRQ_HAS_CELL(@NUM@, sense)
 #define INST_@NUM@_IRQ_FLAGS  DT_INST_IRQ(@NUM@, sense)

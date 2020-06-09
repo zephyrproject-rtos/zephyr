@@ -328,13 +328,14 @@ static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {	\
 									\
 	static const struct mcux_lpuart_config mcux_lpuart_##n##_config;\
 									\
-	DEVICE_AND_API_INIT(uart_##n, DT_INST_LABEL(n),			\
-			    &mcux_lpuart_init,				\
-			    &mcux_lpuart_##n##_data,			\
-			    &mcux_lpuart_##n##_config,			\
-			    PRE_KERNEL_1,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-			    &mcux_lpuart_driver_api);			\
+	DEVICE_DEFINE(uart_##n, DT_INST_LABEL(n),			\
+		      &mcux_lpuart_init,				\
+		      device_pm_control_nop,				\
+		      &mcux_lpuart_##n##_data,				\
+		      &mcux_lpuart_##n##_config,			\
+		      PRE_KERNEL_1,					\
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+		      &mcux_lpuart_driver_api);				\
 									\
 	LPUART_MCUX_CONFIG_FUNC(n)					\
 									\

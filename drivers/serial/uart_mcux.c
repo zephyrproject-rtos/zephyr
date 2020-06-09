@@ -328,13 +328,14 @@ static const struct uart_mcux_config uart_mcux_##n##_config = {		\
 									\
 	static const struct uart_mcux_config uart_mcux_##n##_config;	\
 									\
-	DEVICE_AND_API_INIT(uart_##n, DT_INST_LABEL(n),			\
-			    &uart_mcux_init,				\
-			    &uart_mcux_##n##_data,			\
-			    &uart_mcux_##n##_config,			\
-			    PRE_KERNEL_1,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-			    &uart_mcux_driver_api);			\
+	DEVICE_DEFINE(uart_##n, DT_INST_LABEL(n),			\
+		      &uart_mcux_init,					\
+		      device_pm_control_nop,				\
+		      &uart_mcux_##n##_data,				\
+		      &uart_mcux_##n##_config,				\
+		      PRE_KERNEL_1,					\
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+		      &uart_mcux_driver_api);				\
 									\
 	UART_MCUX_CONFIG_FUNC(n)					\
 									\
