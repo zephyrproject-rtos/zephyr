@@ -71,7 +71,6 @@ struct gatt_sub {
 #endif /* CONFIG_BT_GATT_CLIENT */
 
 static struct gatt_sub subscriptions[SUB_MAX];
-
 static const u16_t gap_appearance = CONFIG_BT_DEVICE_APPEARANCE;
 
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB)
@@ -415,14 +414,7 @@ enum {
 	CF_NUM_FLAGS,
 };
 
-#define CF_BIT_ROBUST_CACHING	0
-#define CF_BIT_EATT		1
-#define CF_BIT_LAST		CF_BIT_EATT
-
-#define CF_BYTE_LAST		(CF_BIT_LAST % 8)
-
-#define CF_ROBUST_CACHING(_cfg) (_cfg->data[0] & BIT(CF_BIT_ROBUST_CACHING))
-#define CF_EATT(_cfg) (_cfg->data[0] & BIT(CF_BIT_EATT))
+#define CF_ROBUST_CACHING(_cfg) (_cfg->data[0] & BIT(0))
 
 struct gatt_cf_cfg {
 	u8_t                    id;
@@ -484,15 +476,15 @@ static ssize_t cf_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 static bool cf_set_value(struct gatt_cf_cfg *cfg, const u8_t *value, u16_t len)
 {
 	u16_t i;
-	u8_t last_byte = CF_BYTE_LAST;
-	u8_t last_bit = CF_BIT_LAST;
+	u8_t last_byte = 1U;
+	u8_t last_bit = 1U;
 
 	/* Validate the bits */
-	for (i = 0U; i < len && i <= last_byte; i++) {
+	for (i = 0U; i < len && i < last_byte; i++) {
 		u8_t chg_bits = value[i] ^ cfg->data[i];
 		u8_t bit;
 
-		for (bit = 0U; bit <= last_bit; bit++) {
+		for (bit = 0U; bit < last_bit; bit++) {
 			/* A client shall never clear a bit it has set */
 			if ((BIT(bit) & chg_bits) &&
 			    (BIT(bit) & cfg->data[i])) {
@@ -737,20 +729,6 @@ static void remove_cf_cfg(struct bt_conn *conn)
 		atomic_clear_bit(cfg->flags, CF_OUT_OF_SYNC);
 	}
 }
-
-#if defined(CONFIG_BT_EATT)
-#define SF_BIT_EATT	0
-#define SF_BIT_LAST	SF_BIT_EATT
-
-static ssize_t sf_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		       void *buf, u16_t len, u16_t offset)
-{
-	u8_t value = BIT(SF_BIT_EATT);
-
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, &value,
-				 sizeof(value));
-}
-#endif /* CONFIG_BT_EATT */
 #endif /* CONFIG_BT_GATT_CACHING */
 
 BT_GATT_SERVICE_DEFINE(_1_gatt_svc,
@@ -772,11 +750,6 @@ BT_GATT_SERVICE_DEFINE(_1_gatt_svc,
 	BT_GATT_CHARACTERISTIC(BT_UUID_GATT_DB_HASH,
 			       BT_GATT_CHRC_READ, BT_GATT_PERM_READ,
 			       db_hash_read, NULL, NULL),
-#if defined(CONFIG_BT_EATT)
-	BT_GATT_CHARACTERISTIC(BT_UUID_GATT_SERVER_FEATURES,
-			       BT_GATT_CHRC_READ, BT_GATT_PERM_READ,
-			       sf_read, NULL, NULL),
-#endif /* CONFIG_BT_EATT */
 #endif /* CONFIG_BT_GATT_CACHING */
 #endif /* CONFIG_BT_GATT_SERVICE_CHANGED */
 );
@@ -3310,8 +3283,9 @@ static int gatt_read_uuid(struct bt_conn *conn,
 }
 
 #if defined(CONFIG_BT_GATT_READ_MULTIPLE)
-static void gatt_read_mult_rsp(struct bt_conn *conn, u8_t err, const void *pdu,
-			       u16_t length, void *user_data)
+static void gatt_read_multiple_rsp(struct bt_conn *conn, u8_t err,
+				   const void *pdu, u16_t length,
+				   void *user_data)
 {
 	struct bt_gatt_read_params *params = user_data;
 
@@ -3328,8 +3302,8 @@ static void gatt_read_mult_rsp(struct bt_conn *conn, u8_t err, const void *pdu,
 	params->func(conn, 0, params, NULL, 0);
 }
 
-static int gatt_read_mult(struct bt_conn *conn,
-			  struct bt_gatt_read_params *params)
+static int gatt_read_multiple(struct bt_conn *conn,
+			      struct bt_gatt_read_params *params)
 {
 	struct net_buf *buf;
 	u8_t i;
@@ -3344,10 +3318,10 @@ static int gatt_read_mult(struct bt_conn *conn,
 		net_buf_add_le16(buf, params->handles[i]);
 	}
 
-	return gatt_send(conn, buf, gatt_read_mult_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_read_multiple_rsp, params, NULL);
 }
 #else
-static int gatt_read_mult(struct bt_conn *conn,
+static int gatt_read_multiple(struct bt_conn *conn,
 			      struct bt_gatt_read_params *params)
 {
 	return -ENOTSUP;
@@ -3371,7 +3345,7 @@ int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
 	}
 
 	if (params->handle_count > 1) {
-		return gatt_read_mult(conn, params);
+		return gatt_read_multiple(conn, params);
 	}
 
 	if (params->single.offset) {
@@ -3408,7 +3382,6 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, u16_t handle,
 {
 	struct net_buf *buf;
 	struct bt_att_write_cmd *cmd;
-	size_t write;
 
 	__ASSERT(conn, "invalid parameters\n");
 	__ASSERT(handle, "invalid parameters\n");
@@ -3437,14 +3410,8 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, u16_t handle,
 
 	cmd = net_buf_add(buf, sizeof(*cmd));
 	cmd->handle = sys_cpu_to_le16(handle);
-
-	write = net_buf_append_bytes(buf, length, data, K_NO_WAIT, NULL, NULL);
-	if (write != length) {
-		BT_WARN("Unable to allocate length %u: only %zu written",
-			length, write);
-		net_buf_unref(buf);
-		return -ENOMEM;
-	}
+	memcpy(cmd->value, data, length);
+	net_buf_add(buf, length);
 
 	BT_DBG("handle 0x%04x length %u", handle, length);
 
@@ -3501,7 +3468,6 @@ static int gatt_prepare_write(struct bt_conn *conn,
 	struct net_buf *buf;
 	struct bt_att_prepare_write_req *req;
 	u16_t len;
-	size_t write;
 
 	len = MIN(params->length, bt_att_get_mtu(conn) - sizeof(*req) - 1);
 
@@ -3514,15 +3480,13 @@ static int gatt_prepare_write(struct bt_conn *conn,
 	req = net_buf_add(buf, sizeof(*req));
 	req->handle = sys_cpu_to_le16(params->handle);
 	req->offset = sys_cpu_to_le16(params->offset);
-
-	/* Append as much as possible */
-	write = net_buf_append_bytes(buf, len, params->data, K_NO_WAIT,
-				     NULL, NULL);
+	memcpy(req->value, params->data, len);
+	net_buf_add(buf, len);
 
 	/* Update params */
-	params->offset += write;
+	params->offset += len;
 	params->data = (const u8_t *)params->data + len;
-	params->length -= write;
+	params->length -= len;
 
 	BT_DBG("handle 0x%04x offset %u len %u", params->handle, params->offset,
 	       params->length);
@@ -3534,7 +3498,6 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params)
 {
 	struct net_buf *buf;
 	struct bt_att_write_req *req;
-	size_t write;
 
 	__ASSERT(conn, "invalid parameters\n");
 	__ASSERT(params && params->func, "invalid parameters\n");
@@ -3558,13 +3521,8 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params)
 
 	req = net_buf_add(buf, sizeof(*req));
 	req->handle = sys_cpu_to_le16(params->handle);
-
-	write = net_buf_append_bytes(buf, params->length, params->data,
-				     K_NO_WAIT, NULL, NULL);
-	if (write != params->length) {
-		net_buf_unref(buf);
-		return -ENOMEM;
-	}
+	memcpy(req->value, params->data, params->length);
+	net_buf_add(buf, params->length);
 
 	BT_DBG("handle 0x%04x length %u", params->handle, params->length);
 

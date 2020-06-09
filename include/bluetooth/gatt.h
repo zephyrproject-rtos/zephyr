@@ -872,17 +872,6 @@ struct bt_gatt_notify_params {
 int bt_gatt_notify_cb(struct bt_conn *conn,
 		      struct bt_gatt_notify_params *params);
 
-/** @brief Notify multiple attribute value change.
- *
- *  @param conn Connection object.
- *  @param num_params Number of notification parameters.
- *  @param params Notification parameters.
- *
- *  @return 0 in case of success or negative value in case of error.
- */
-int bt_gatt_notify_multiple(struct bt_conn *conn, u16_t num_params,
-			    struct bt_gatt_notify_params *params);
-
 /** @brief Notify attribute value change.
  *
  *  Send notification of attribute value change, if connection is NULL notify
