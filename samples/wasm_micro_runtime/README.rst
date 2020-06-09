@@ -6,8 +6,7 @@ WebAssembly Micro Runtime
 Overview
 ********
 The sample project illustrates how to run WebAssembly application with
-WebAssembly Micro Runtime (WAMR). More samples can be found on:
-  https://github.com/bytecodealliance/wasm-micro-runtime/tree/master/samples
+WebAssembly Micro Runtime (WAMR).
 
 Building and Running
 ********************
@@ -49,4 +48,8 @@ To build and run the wasm app in other targets:
              -DCONF_FILE=target_configs/prj_qemu_cortex_a53.conf \
              -DWAMR_BUILD_TARGET=AARCH64
   west build -t run
+
+
+More samples can be found on:
+  https://github.com/bytecodealliance/wasm-micro-runtime/tree/master/samples
 
