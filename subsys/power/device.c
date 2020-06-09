@@ -45,7 +45,7 @@ static const char *const core_devices[] = {
 static const char *const core_devices[] = {
 	"",
 };
-#elif defined(CONFIG_SOC_SERIES_STM32L4X)
+#elif defined(CONFIG_SOC_SERIES_STM32L4X) || defined(CONFIG_SOC_SERIES_STM32WBX)
 #define MAX_PM_DEVICES	1
 static const char *const core_devices[] = {
 	"sys_clock",
