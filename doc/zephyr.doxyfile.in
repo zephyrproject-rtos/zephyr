@@ -1988,6 +1988,7 @@ PREDEFINED             = "CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT" \
                          "CONFIG_THREAD_STACK_INFO" \
                          "CONFIG_UART_DRV_CMD" \
                          "CONFIG_UART_INTERRUPT_DRIVEN" \
+                         "CONFIG_UART_ASYNC_API" \
                          "CONFIG_USERSPACE" \
                          "CONFIG_USE_SWITCH" \
                          "NET_MGMT_DEFINE_REQUEST_HANDLER(x)=" \
