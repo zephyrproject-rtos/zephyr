@@ -747,6 +747,10 @@ static int audio_custom_handler(struct usb_setup_packet *pSetup, int32_t *len,
 			} else {
 				audio_dev_data->rx_enable = pSetup->wValue;
 			}
+			/* This request needs further processing in the core
+			 * USB stack, hence -EINVAL is returned. Refer to
+			 * documentation for custom_handler in the usb_device.h
+			 */
 			return -EINVAL;
 		case REQ_GET_INTERFACE:
 			if (ep_desc->bEndpointAddress & USB_EP_DIR_MASK) {

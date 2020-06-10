@@ -370,6 +370,10 @@ static int ecm_custom_handler(struct usb_setup_packet *setup, int32_t *len,
 				return -ENOTSUP;
 			}
 			LOG_DBG("Set interface iface: %d, alt: %d", iface, alt);
+			/* This request needs further processing in the core
+			 * USB stack, hence -EINVAL is returned. Refer to
+			 * documentation for custom_handler in the usb_device.h
+			 */
 			return -EINVAL;
 		case REQ_GET_INTERFACE:
 			*data[0] = alternate_setting;
