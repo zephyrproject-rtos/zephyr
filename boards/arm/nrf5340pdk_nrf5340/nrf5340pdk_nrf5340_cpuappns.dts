@@ -6,9 +6,12 @@
 
 /dts-v1/;
 #include <nordic/nrf5340_cpuappns_qkaa_eng_a.dtsi>
-#include "nrf5340pdk_nrf5340_cpuapp_common.dts"
+#include "nrf5340_cpuapp_common.dts"
 
 / {
+	model = "Nordic NRF5340 PDK NRF5340 Application";
+	compatible = "nordic,nrf5340-pdk-nrf5340-cpuapp";
+
 	chosen {
 		zephyr,sram = &sram0_ns;
 		zephyr,flash = &flash0;
