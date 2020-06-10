@@ -1094,6 +1094,8 @@ static int rndis_init(struct device *arg)
 			(k_thread_entry_t)cmd_thread,
 			NULL, NULL, NULL, K_PRIO_COOP(8), 0, K_NO_WAIT);
 
+	k_thread_name_set(&cmd_thread_data, "usb_rndis");
+
 	return 0;
 }
 

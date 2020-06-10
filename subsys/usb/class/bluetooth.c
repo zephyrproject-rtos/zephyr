@@ -354,10 +354,14 @@ static int bluetooth_init(struct device *dev)
 			(k_thread_entry_t)hci_rx_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(8), 0, K_NO_WAIT);
 
+	k_thread_name_set(&rx_thread_data, "usb_bt_rx");
+
 	k_thread_create(&tx_thread_data, tx_thread_stack,
 			K_THREAD_STACK_SIZEOF(tx_thread_stack),
 			(k_thread_entry_t)hci_tx_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(8), 0, K_NO_WAIT);
+
+	k_thread_name_set(&tx_thread_data, "usb_bt_tx");
 
 	return 0;
 }
