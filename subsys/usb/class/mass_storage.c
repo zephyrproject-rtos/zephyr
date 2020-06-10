@@ -992,6 +992,8 @@ static int mass_storage_init(struct device *dev)
 			(k_thread_entry_t)mass_thread_main, NULL, NULL, NULL,
 			DISK_THREAD_PRIO, 0, K_NO_WAIT);
 
+	k_thread_name_set(&mass_thread_data, "usb_mass");
+
 	return 0;
 }
 
