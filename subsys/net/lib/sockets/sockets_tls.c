@@ -1277,6 +1277,14 @@ int ztls_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 	}
 
 	child = k_fifo_get(&parent->accept_q, K_FOREVER);
+	if (child == NULL) {
+		z_free_fd(fd);
+		/* Return EINVAL which is the same error code used under Linux
+		 * when calling shutdown on a blocked accept call
+		 */
+		errno = EINVAL;
+		return -1;
+	}
 
 	if (addr != NULL && addrlen != NULL) {
 		int len = MIN(*addrlen, sizeof(child->remote));
