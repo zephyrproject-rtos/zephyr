@@ -60,7 +60,7 @@ int pkt_list_add(struct openthread_context *context, struct net_pkt *pkt)
 
 void pkt_list_remove_first(struct openthread_context *context)
 {
-	u16_t idx = context->pkt_list_in_idx;
+	uint16_t idx = context->pkt_list_in_idx;
 
 	if (idx == 0U) {
 		idx = CONFIG_OPENTHREAD_PKT_LIST_SIZE - 1;
