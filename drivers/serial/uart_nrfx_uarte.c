@@ -1476,7 +1476,7 @@ static int uarte_nrfx_pm_control(struct device *dev, uint32_t ctrl_command,
 #define UARTE_IRQ_CONFIGURE(idx, isr_handler)				       \
 	do {								       \
 		IRQ_CONNECT(DT_IRQN(UARTE(idx)), DT_IRQ(UARTE(idx), priority), \
-			    isr_handler, DEVICE_GET(uart_nrfx_uarte##idx), 0); \
+			    isr_handler, DT_DEVICE_GET(UARTE(idx)), 0); \
 		irq_enable(DT_IRQN(UARTE(idx)));			       \
 	} while (0)
 
@@ -1489,7 +1489,7 @@ static int uarte_nrfx_pm_control(struct device *dev, uint32_t ctrl_command,
 
 #define UART_NRF_UARTE_DEVICE(idx)					       \
 	HWFC_CONFIG_CHECK(idx);						       \
-	DEVICE_DECLARE(uart_nrfx_uarte##idx);				       \
+	DT_DEVICE_DECLARE(UARTE(idx));					       \
 	UARTE_INT_DRIVEN(idx);						       \
 	UARTE_ASYNC(idx);						       \
 	static struct uarte_nrfx_data uarte_##idx##_data = {		       \
@@ -1526,8 +1526,7 @@ static int uarte_nrfx_pm_control(struct device *dev, uint32_t ctrl_command,
 			&init_config,					       \
 			IS_ENABLED(CONFIG_UART_##idx##_INTERRUPT_DRIVEN));     \
 	}								       \
-	DEVICE_DEFINE(uart_nrfx_uarte##idx,				       \
-		      DT_LABEL(UARTE(idx)),				       \
+	DT_DEVICE_DEFINE(UARTE(idx),					       \
 		      uarte_##idx##_init,				       \
 		      uarte_nrfx_pm_control,				       \
 		      &uarte_##idx##_data,				       \

@@ -932,7 +932,7 @@ static void uart_nrfx_isr(void *arg)
 }
 #endif /* CONFIG_UART_0_INTERRUPT_DRIVEN */
 
-DEVICE_DECLARE(uart_nrfx_uart0);
+DT_DEVICE_DECLARE(DT_DRV_INST(0));
 
 /**
  * @brief Initialize UART channel
@@ -1004,7 +1004,7 @@ static int uart_nrfx_init(struct device *dev)
 	IRQ_CONNECT(IRQN,
 		    IRQ_PRIO,
 		    uart_nrfx_isr,
-		    DEVICE_GET(uart_nrfx_uart0),
+		    DT_DEVICE_GET(DT_DRV_INST(0)),
 		    0);
 	irq_enable(IRQN);
 #endif
@@ -1155,8 +1155,7 @@ static struct uart_nrfx_data uart_nrfx_uart0_data = {
 	}
 };
 
-DEVICE_DEFINE(uart_nrfx_uart0,
-	      DT_INST_LABEL(0),
+DT_DEVICE_DEFINE(DT_DRV_INST(0),
 	      uart_nrfx_init,
 	      uart_nrfx_pm_control,
 	      &uart_nrfx_uart0_data,
