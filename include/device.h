@@ -137,6 +137,25 @@ extern "C" {
 	Z_INIT_ENTRY_DEFINE(_CONCAT(__device_, dev_name), init_fn,	\
 			    (&_CONCAT(__device_, dev_name)), level, prio)
 
+#define DT_DEVICE_INIT(node_id, init_fn,			\
+		       data, cfg_info, level, prio)		\
+	DEVICE_INIT(node_id, DT_LABEL(node_id), init_fn,	\
+		    data, cfg_info, level, prio)
+
+#define DT_DEVICE_AND_API_INIT(node_id, init_fn,			\
+			       data, cfg_info, level, prio, api)	\
+	DEVICE_AND_API_INIT(node_id, DT_LABEL(node_id), init_fn,	\
+			    data, cfg_info, level, prio, api)
+
+#define DT_DEVICE_DEFINE(node_id, init_fn, pm_control_fn,		\
+			 data, cfg_info, level, prio, api)		\
+	DEVICE_DEFINE(node_id, DT_LABEL(node_id), init_fn, pm_control_fn, \
+		data, cfg_info, level, prio, api)
+
+#define DT_DEVICE_NAME_GET(node_id) DEVICE_NAME_GET(node_id)
+#define DT_DEVICE_GET(node_id) (&DT_DEVICE_NAME_GET(node_id))
+#define DT_DEVICE_DECLARE(node_id) static struct device DT_DEVICE_NAME_GET(node_id)
+
 /**
  * @def DEVICE_GET
  *
