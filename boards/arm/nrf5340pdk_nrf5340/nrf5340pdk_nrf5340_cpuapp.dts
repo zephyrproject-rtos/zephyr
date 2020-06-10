@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <nordic/nrf5340_cpuapp_qkaa.dtsi>
+#include <nordic/nrf5340_cpuapp_qkaa_eng_a.dtsi>
 #include "nrf5340pdk_nrf5340_cpuapp_common.dts"
 
 / {
