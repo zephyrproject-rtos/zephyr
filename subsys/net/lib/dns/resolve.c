@@ -406,6 +406,14 @@ static int dns_read(struct dns_resolve_context *ctx,
 		goto quit;
 	}
 
+	/* We might receive a query while we are waiting for a response, in that
+	 * case we just ignore the query instead of making the resolving fail.
+	 */
+	if (dns_header_qr(dns_msg.msg) == DNS_QUERY) {
+		ret = 0;
+		goto quit;
+	}
+
 	ret = dns_unpack_response_header(&dns_msg, *dns_id);
 	if (ret < 0) {
 		ret = DNS_EAI_FAIL;
