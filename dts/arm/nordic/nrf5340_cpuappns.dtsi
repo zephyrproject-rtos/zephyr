@@ -48,7 +48,7 @@
 			/* Common nRF5340 Application MCU
 			 * peripheral description
 			 */
-			#include "nrf5340_cpuapp_common.dtsi"
+			#include "nrf5340_cpuapp_peripherals.dtsi"
 		};
 
 		/* Additional Non-Secure peripherals */
