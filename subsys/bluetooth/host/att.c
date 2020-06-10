@@ -2902,8 +2902,8 @@ int bt_att_send(struct bt_conn *conn, struct net_buf *buf, bt_conn_tx_cb_t cb,
 	 * cannot be used with a custom user_data.
 	 */
 	if (cb) {
-		bt_l2cap_send_cb(conn, BT_L2CAP_CID_ATT, buf, cb, user_data);
-		return 0;
+		return bt_l2cap_send_cb(conn, BT_L2CAP_CID_ATT, buf, cb,
+					user_data);
 	}
 
 	ret = 0;
