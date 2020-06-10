@@ -50,6 +50,7 @@ struct net_eth_addr {
 
 #define NET_ETH_PTYPE_ARP		0x0806
 #define NET_ETH_PTYPE_IP		0x0800
+#define NET_ETH_PTYPE_TSN		0x22f0 /* TSN (IEEE 1722) packet */
 #define NET_ETH_PTYPE_IPV6		0x86dd
 #define NET_ETH_PTYPE_VLAN		0x8100
 #define NET_ETH_PTYPE_PTP		0x88f7
@@ -70,6 +71,9 @@ struct net_eth_addr {
 #endif
 #if !defined(ETH_P_8021Q)
 #define ETH_P_8021Q	NET_ETH_PTYPE_VLAN
+#endif
+#if !defined(ETH_P_TSN)
+#define ETH_P_TSN	NET_ETH_PTYPE_TSN
 #endif
 
 #define NET_ETH_MINIMAL_FRAME_SIZE	60
