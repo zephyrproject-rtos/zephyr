@@ -1,0 +1,17 @@
+tests:
+  tracing.transport:
+    platform_whitelist: native_posix
+    extra_args: CONF_FILE="prj.conf"
+    tags: tracing_disable
+  tracing.transport.uart:
+    platform_whitelist: qemu_x86
+    extra_args: CONF_FILE="prj_uart.conf"
+    tags: tracing_uart
+  tracing.transport.native_posix:
+    platform_whitelist: native_posix
+    extra_args: CONF_FILE="prj_native_posix.conf"
+    tags: tracing_native
+  tracing.transport.posix.ctf:
+    platform_whitelist: native_posix
+    extra_args: CONF_FILE="prj_native_posix_ctf.conf"
+    tags: tracing_native_ctf
