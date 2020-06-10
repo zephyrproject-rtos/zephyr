@@ -5,8 +5,6 @@
  */
 
 / {
-	model = "Nordic NRF5340 PDK NRF5340 Application";
-	compatible = "nordic,nrf5340-pdk-nrf5340-cpuapp";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -185,4 +183,4 @@
 };
 
 /* Include partition configuration file */
-#include "nrf5340pdk_nrf5340_cpuapp_partition_conf.dts"
+#include "nrf5340_cpuapp_partition_conf.dts"
