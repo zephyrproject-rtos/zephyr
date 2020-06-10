@@ -139,6 +139,96 @@ extern "C" {
 			    (&_CONCAT(__device_, dev_name)), level, prio)
 
 /**
+ * @def DEVICE_DT_DEFINE
+ *
+ * @brief Like DEVICE_DEFINE but taking metadata from a devicetree node
+ *
+ * @details This macro defines a device object that is automatically
+ * configured by the kernel during system initialization.  The device
+ * object name is derived from the node identifier (encoding the
+ * devicetree path to the node), and the driver name is from the @p
+ * label property of the devicetree node.
+ *
+ * Device objects defined through this API can be obtained directly
+ * through DEVICE_DT_GET() using @p node_id.
+ *
+ * @param node_id The devicetree node identifier.
+ *
+ * @param init_fn Address to the init function of the driver.
+ *
+ * @param pm_control_fn Pointer to device_pm_control function.
+ * Can be empty function (device_pm_control_nop) if not implemented.
+ *
+ * @param data_ptr Pointer to the device's private data.
+ *
+ * @param cfg_ptr The address to the structure containing the
+ * configuration information for this instance of the driver.
+ *
+ * @param level The initialization level.  See SYS_INIT() for
+ * details.
+ *
+ * @param prio Priority within the selected initialization level. See
+ * SYS_INIT() for details.
+ *
+ * @param api_ptr Provides an initial pointer to the API function struct
+ * used by the driver. Can be NULL.
+ */
+#define DEVICE_DT_DEFINE(node_id, init_fn, pm_control_fn,		\
+			 data_ptr, cfg_ptr, level, prio, api_ptr)	\
+	DEVICE_DEFINE(node_id, DT_LABEL(node_id), init_fn, pm_control_fn, \
+		      data_ptr, cfg_ptr, level, prio, api_ptr)
+
+/**
+ * @def DEVICE_DT_NAME_GET
+ *
+ * @brief The name of the struct device object for @p node_id
+ *
+ * @details Return the full name of a device object symbol created by
+ * DEVICE_DT_DEFINE(), using the dev_name derived from @p node_id
+ *
+ * It is meant to be used for declaring extern symbols pointing on device
+ * objects before using the DEVICE_DT_GET macro to get the device object.
+ *
+ * @param node_id The same as node_id provided to DEVICE_DT_DEFINE()
+ *
+ * @return The expanded name of the device object created by
+ * DEVICE_DT_DEFINE()
+ */
+#define DEVICE_DT_NAME_GET(node_id) DEVICE_NAME_GET(node_id)
+
+/**
+ * @def DEVICE_DT_GET
+ *
+ * @brief Obtain a pointer to a device object by @p node_id
+ *
+ * @details Return the address of a device object created by
+ * DEVICE_DT_INIT(), using the dev_name derived from @p node_id
+ *
+ * @param node_id The same as node_id provided to DEVICE_DT_DEFINE()
+ *
+ * @return A pointer to the device object created by DEVICE_DT_DEFINE()
+ */
+#define DEVICE_DT_GET(node_id) (&DEVICE_DT_NAME_GET(node_id))
+
+/** @def DEVICE_DT_DECLARE
+ *
+ * @brief Declare a device object associated with @p node_id
+ *
+ * This macro can be used at the top-level to declare a device, such
+ * that DEVICE_DT_GET() may be used before the full declaration in
+ * DEVICE_DT_DEFINE().
+ *
+ * This is often useful when configuring interrupts statically in a
+ * device's init or per-instance config function, as the init function
+ * itself is required by DEVICE_DT_DEFINE() and use of DEVICE_DT_GET()
+ * inside it creates a circular dependency.
+ *
+ * @param node_id The same as node_id provided to DEVICE_DT_DEFINE()
+ */
+#define DEVICE_DT_DECLARE(node_id)				\
+	static const struct device DEVICE_DT_NAME_GET(node_id)
+
+/**
  * @def DEVICE_GET
  *
  * @brief Obtain a pointer to a device object by name
