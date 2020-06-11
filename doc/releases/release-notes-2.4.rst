@@ -37,6 +37,10 @@ API Changes
 * Moved to using C99 integer types and deprecate Zephyr integer types.  The
   Zephyr types can be enabled by Kconfig DEPRECATED_ZEPHYR_INT_TYPES option.
 
+* The ``<sys/util.h>`` header has been promoted to a documented API with
+  :ref:`experimental stability <api_lifecycle>`. See :ref:`util_api` for an API
+  reference.
+
 Deprecated in this release
 ==========================
 
