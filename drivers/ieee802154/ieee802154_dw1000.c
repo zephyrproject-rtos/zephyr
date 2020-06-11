@@ -84,6 +84,9 @@ struct dwt_phy_config {
 	uint8_t tx_shr_code;	/* TX SHR preamble code */
 	uint32_t tx_shr_nsync;	/* PLEN index, e.g. DWT_PLEN_64 */
 
+	bool phr_mode_ext;	/* Extended PHR mode: long frame 1024 Byte */
+	bool smart_power_en;	/* Enable/Disable smart power */
+
 	float t_shr;
 	float t_phr;
 	float t_dsym;
@@ -159,6 +162,9 @@ static struct dwt_context dwt_0_context = {
 
 		.tx_shr_code = 10,
 		.tx_shr_nsync = DWT_PLEN_128,
+
+		.phr_mode_ext = false,
+		.smart_power_en = true,
 	},
 };
 
@@ -429,7 +435,12 @@ static inline void dwt_irq_handle_rx(struct dwt_context *ctx, uint32_t sys_stat)
 	flags_to_clear = sys_stat & DWT_SYS_STATUS_ALL_RX_GOOD;
 
 	rx_finfo = dwt_reg_read_u32(ctx, DWT_RX_FINFO_ID, DWT_RX_FINFO_OFFSET);
-	pkt_len = rx_finfo & DWT_RX_FINFO_RXFLEN_MASK;
+
+	if (ctx->rf_cfg.phr_mode_ext) {
+		pkt_len = rx_finfo & DWT_RX_FINFO_RXFL_MASK_1023;
+	} else {
+		pkt_len = rx_finfo & DWT_RX_FINFO_RXFLEN_MASK;
+	}
 	rx_pacc = (rx_finfo & DWT_RX_FINFO_RXPACC_MASK) >>
 		   DWT_RX_FINFO_RXPACC_SHIFT;
 
@@ -1308,6 +1319,16 @@ static int dwt_configure_rf_phy(struct dwt_context *ctx)
 
 	/* Set IEEE 802.15.4 compliant mode */
 	sys_cfg &= ~DWT_SYS_CFG_PHR_MODE_11;
+
+	if (rf_cfg->phr_mode_ext) {
+		/* Long frame mode that is not IEEE802.15.4 standard */
+		sys_cfg |= DWT_SYS_CFG_PHR_MODE_11;
+	}
+
+	if (!rf_cfg->smart_power_en && rf_cfg->dr == DWT_BR_6M8) {
+		/* Disable TX smart power for 6M8 rate */
+		sys_cfg |= DWT_SYS_CFG_DIS_STXP;
+	}
 
 	if (rf_cfg->dr == DWT_BR_110K) {
 		/* Set Receiver Mode 110 kbps data rate */
