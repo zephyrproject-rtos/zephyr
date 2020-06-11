@@ -139,4 +139,17 @@
 
 #define GET_EL(_mode)		(((_mode) >> MODE_EL_SHIFT) & MODE_EL_MASK)
 
+/* mpidr */
+#define MPIDR_AFFLVL_MASK	0xff
+
+#define MPIDR_AFF0_SHIFT	0
+#define MPIDR_AFF1_SHIFT	8
+#define MPIDR_AFF2_SHIFT	16
+#define MPIDR_AFF3_SHIFT	32
+
+#define MPIDR_AFFLVL(mpidr, aff_level) \
+		(((mpidr) >> MPIDR_AFF##aff_level##_SHIFT) & MPIDR_AFFLVL_MASK)
+
+#define GET_MPIDR()		read_sysreg(mpidr_el1)
+#define MPIDR_TO_CORE(mpidr)	MPIDR_AFFLVL(mpidr, 0)
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_CPU_H_ */
