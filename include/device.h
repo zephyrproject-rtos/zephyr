@@ -204,6 +204,7 @@ struct device_pm {
  * @param driver_data driver instance data. For driver use only
  */
 struct device {
+	int init_res;
 	const char *name;
 	const void *config_info;
 	const void *driver_api;
