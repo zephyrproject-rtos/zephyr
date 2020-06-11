@@ -278,6 +278,13 @@ static int entropy_nrf5_get_entropy_isr(struct device *dev, uint8_t *buf, uint16
 		nrf_rng_event_clear(NRF_RNG, NRF_RNG_EVENT_VALRDY);
 		nrf_rng_task_trigger(NRF_RNG, NRF_RNG_TASK_START);
 
+		/* Clear NVIC pending bit. This ensures that a subsequent
+		 * RNG event will set the Cortex-M single-bit event register
+		 * to 1 (the bit is set when NVIC pending IRQ status is
+		 * changed from 0 to 1)
+		 */
+		NVIC_ClearPendingIRQ(IRQN);
+
 		do {
 			int byte;
 
