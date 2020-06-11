@@ -20,6 +20,10 @@ Host qualifications
      - Link
      - Qualifying Company
 
+   * - 2.2.x
+     - `QDID 151074 <https://launchstudio.bluetooth.com/ListingDetails/109287>`_
+     - Demant A/S
+
    * - 1.14.x
      - `QDID 139258 <https://launchstudio.bluetooth.com/ListingDetails/95152>`__
      - The Linux Foundation
