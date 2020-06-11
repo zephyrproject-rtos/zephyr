@@ -1,7 +1,7 @@
 .. _secure code:
 
-Secure Coding Guidelines
-########################
+Secure Coding
+#############
 
 Traditionally, microcontroller-based systems have not placed much
 emphasis on security.
@@ -15,7 +15,7 @@ uncontrolled access can be devastating [#attackf]_.
 
 This document describes the requirements and process for ensuring
 security is addressed within the Zephyr project.  All code submitted
-should comply with these guidelines.
+should comply with these principles.
 
 Much of this document comes from [CIIBPB]_.
 
@@ -49,8 +49,8 @@ project.
 Finally, the document covers how changes are to be made to this
 document.
 
-Secure Coding Guidelines
-************************
+Secure Coding
+*************
 
 Designing an open software system such as Zephyr to be secure requires
 adhering to a defined set of design standards. In [SALT75]_, the following,
