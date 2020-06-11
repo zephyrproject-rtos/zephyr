@@ -1,0 +1,9 @@
+common:
+  depends_on: netif
+  min_ram: 32
+  tags: net socket userspace
+tests:
+  net.socket.tcp_rw.posix:
+    extra_configs:
+      - CONFIG_POSIX_API=y
+    arch_exclude: posix
