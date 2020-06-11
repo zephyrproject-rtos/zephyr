@@ -142,18 +142,18 @@ static void mcux_flexcomm_irq_tx_disable(struct device *dev)
 static int mcux_flexcomm_irq_tx_complete(struct device *dev)
 {
 	const struct mcux_flexcomm_config *config = dev->config_info;
-	uint32_t flags = USART_GetStatusFlags(config->base);
 
-	return (flags & kUSART_TxFifoEmptyFlag) != 0U;
+	return (config->base->STAT & USART_STAT_TXIDLE_MASK) != 0;
 }
 
 static int mcux_flexcomm_irq_tx_ready(struct device *dev)
 {
 	const struct mcux_flexcomm_config *config = dev->config_info;
 	uint32_t mask = kUSART_TxLevelInterruptEnable;
+	uint32_t flags = USART_GetStatusFlags(config->base);
 
 	return (USART_GetEnabledInterrupts(config->base) & mask)
-		&& mcux_flexcomm_irq_tx_complete(dev);
+		&& (flags & kUSART_TxFifoEmptyFlag);
 }
 
 static void mcux_flexcomm_irq_rx_enable(struct device *dev)

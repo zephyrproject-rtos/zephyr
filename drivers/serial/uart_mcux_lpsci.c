@@ -134,16 +134,17 @@ static int mcux_lpsci_irq_tx_complete(struct device *dev)
 	const struct mcux_lpsci_config *config = dev->config_info;
 	uint32_t flags = LPSCI_GetStatusFlags(config->base);
 
-	return (flags & kLPSCI_TxDataRegEmptyFlag) != 0U;
+	return (flags & kLPSCI_TransmissionCompleteFlag) != 0U;
 }
 
 static int mcux_lpsci_irq_tx_ready(struct device *dev)
 {
 	const struct mcux_lpsci_config *config = dev->config_info;
 	uint32_t mask = kLPSCI_TxDataRegEmptyInterruptEnable;
+	uint32_t flags = LPSCI_GetStatusFlags(config->base);
 
 	return (LPSCI_GetEnabledInterrupts(config->base) & mask)
-		&& mcux_lpsci_irq_tx_complete(dev);
+		&& (flags & kLPSCI_TxDataRegEmptyFlag);
 }
 
 static void mcux_lpsci_irq_rx_enable(struct device *dev)
