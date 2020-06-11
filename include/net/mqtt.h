@@ -150,7 +150,7 @@ enum mqtt_suback_return_code {
 
 /** @brief Abstracts UTF-8 encoded strings. */
 struct mqtt_utf8 {
-	uint8_t *utf8;             /**< Pointer to UTF-8 string. */
+	const uint8_t *utf8;       /**< Pointer to UTF-8 string. */
 	uint32_t size;             /**< Size of UTF string, in bytes. */
 };
 
