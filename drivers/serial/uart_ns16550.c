@@ -272,7 +272,7 @@ struct uart_ns16550_device_config {
 /** Device data structure */
 struct uart_ns16550_dev_data_t {
 #ifdef UART_NS16550_PCIE_ENABLED
-	struct uart_device_config devconf;
+	uint64_t pcimem;
 #endif
 	struct uart_config uart_config;
 	struct k_spinlock lock;
@@ -290,11 +290,11 @@ struct uart_ns16550_dev_data_t {
 
 static const struct uart_driver_api uart_ns16550_driver_api;
 
-static inline uint32_t get_port(struct device *dev)
+static inline uintptr_t get_port(struct device *dev)
 {
 #ifdef UART_NS16550_PCIE_ENABLED
 	if (DEV_CFG(dev)->pcie) {
-		return DEV_DATA(dev)->devconf.port;
+		return (uintptr_t) DEV_DATA(dev)->pcimem;
 	}
 #endif /* UART_NS16550_PCIE_ENABLED */
 
@@ -352,7 +352,7 @@ static int uart_ns16550_configure(struct device *dev,
 			goto out;
 		}
 
-		dev_data->devconf.port = pcie_get_mbar(dev_cfg->pcie_bdf, 0);
+		dev_data->pcimem = pcie_get_mbar(dev_cfg->pcie_bdf, 0);
 		pcie_set_cmd(dev_cfg->pcie_bdf, PCIE_CONF_CMDSTAT_MEM, true);
 	}
 #endif
