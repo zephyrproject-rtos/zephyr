@@ -9,8 +9,7 @@
 
 / {
 	model = "Nordic NRF5340 PDK NRF5340 Network";
-	compatible = "nordic,nrf5340-pdk-nrf5340-cpunet",
-		"nordic,nrf5340-cpunet-qkaa", "nordic,nrf5340-cpunet";
+	compatible = "nordic,nrf5340-pdk-nrf5340-cpunet";
 
 	chosen {
 		zephyr,console = &uart0;
