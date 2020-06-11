@@ -558,7 +558,6 @@ uint8_t u8_to_dec(char *buf, uint8_t buflen, uint8_t value);
 #define UTIL_AND(a, b) COND_CODE_1(UTIL_BOOL(a), (b), (0))
 
 #define UTIL_EAT(...)
-#define UTIL_EXPAND(...) __VA_ARGS__
 #define UTIL_WHEN(c) UTIL_IF(c)(UTIL_EXPAND, UTIL_EAT)
 
 #define UTIL_REPEAT(count, macro, ...)			    \
