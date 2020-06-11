@@ -19,9 +19,9 @@ LOG_MODULE_REGISTER(i2c_mcux);
 #include "i2c-priv.h"
 
 #define DEV_CFG(dev) \
-	((const struct i2c_mcux_config * const)(dev)->config_info)
+	((const struct i2c_mcux_config * const)(dev)->fixed->config_info)
 #define DEV_DATA(dev) \
-	((struct i2c_mcux_data * const)(dev)->driver_data)
+	((struct i2c_mcux_data * const)(dev)->fixed->driver_data)
 #define DEV_BASE(dev) \
 	((I2C_Type *)(DEV_CFG(dev))->base)
 

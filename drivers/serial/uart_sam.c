@@ -44,9 +44,9 @@ struct uart_sam_dev_data {
 };
 
 #define DEV_CFG(dev) \
-	((const struct uart_sam_dev_cfg *const)(dev)->config_info)
+	((const struct uart_sam_dev_cfg *const)(dev)->fixed->config_info)
 #define DEV_DATA(dev) \
-	((struct uart_sam_dev_data *const)(dev)->driver_data)
+	((struct uart_sam_dev_data *const)(dev)->fixed->driver_data)
 
 
 static int baudrate_set(Uart *const uart, uint32_t baudrate,

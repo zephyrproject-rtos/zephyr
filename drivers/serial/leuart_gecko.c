@@ -19,9 +19,9 @@
 #define CLOCK_LEUART(id) CLOCK_ID_PRFX(LEUART_PREFIX, id)
 
 #define DEV_CFG(dev) \
-	((const struct leuart_gecko_config * const)(dev)->config_info)
+	((const struct leuart_gecko_config * const)(dev)->fixed->config_info)
 #define DEV_DATA(dev) \
-	((struct leuart_gecko_data * const)(dev)->driver_data)
+	((struct leuart_gecko_data * const)(dev)->fixed->driver_data)
 #define DEV_BASE(dev) \
 	((LEUART_TypeDef *)(DEV_CFG(dev))->base)
 

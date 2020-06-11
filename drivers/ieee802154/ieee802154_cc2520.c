@@ -1250,7 +1250,7 @@ static int insert_crypto_parameters(struct cipher_ctx *ctx,
 				    struct cipher_aead_pkt *apkt,
 				    uint8_t *ccm_nonce, uint8_t *auth_crypt)
 {
-	struct cc2520_context *cc2520 = ctx->device->driver_data;
+	struct cc2520_context *cc2520 = ctx->device->fixed->driver_data;
 	uint8_t data[128];
 	uint8_t *in_buf;
 	uint8_t in_len;
@@ -1341,7 +1341,7 @@ static int cc2520_crypto_ccm(struct cipher_ctx *ctx,
 			      struct cipher_aead_pkt *apkt,
 			      uint8_t *ccm_nonce)
 {
-	struct cc2520_context *cc2520 = ctx->device->driver_data;
+	struct cc2520_context *cc2520 = ctx->device->fixed->driver_data;
 	uint8_t auth_crypt;
 	int m;
 
@@ -1386,7 +1386,7 @@ static int cc2520_crypto_uccm(struct cipher_ctx *ctx,
 			       struct cipher_aead_pkt *apkt,
 			       uint8_t *ccm_nonce)
 {
-	struct cc2520_context *cc2520 = ctx->device->driver_data;
+	struct cc2520_context *cc2520 = ctx->device->fixed->driver_data;
 	uint8_t auth_crypt;
 	int m;
 

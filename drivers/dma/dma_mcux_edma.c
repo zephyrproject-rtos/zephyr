@@ -49,8 +49,8 @@ struct dma_mcux_edma_data {
 };
 
 #define DEV_CFG(dev)                                                           \
-	((const struct dma_mcux_edma_config *const)dev->config_info)
-#define DEV_DATA(dev) ((struct dma_mcux_edma_data *)dev->driver_data)
+	((const struct dma_mcux_edma_config *const)dev->fixed->config_info)
+#define DEV_DATA(dev) ((struct dma_mcux_edma_data *)dev->fixed->driver_data)
 #define DEV_BASE(dev) ((DMA_Type *)DEV_CFG(dev)->base)
 
 #define DEV_DMAMUX_BASE(dev) ((DMAMUX_Type *)DEV_CFG(dev)->dmamux_base)

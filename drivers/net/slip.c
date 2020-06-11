@@ -391,7 +391,7 @@ static inline struct net_linkaddr *slip_get_mac(struct slip_context *slip)
 
 static void slip_iface_init(struct net_if *iface)
 {
-	struct slip_context *slip = net_if_get_device(iface)->driver_data;
+	struct slip_context *slip = net_if_get_device(iface)->fixed->driver_data;
 	struct net_linkaddr *ll_addr;
 
 #if defined(CONFIG_NET_L2_ETHERNET)

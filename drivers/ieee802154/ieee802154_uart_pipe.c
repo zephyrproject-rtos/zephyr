@@ -52,7 +52,7 @@ static struct device *upipe_dev;
 
 static bool received_dest_addr_matched(uint8_t *rx_buffer)
 {
-	struct upipe_context *upipe = upipe_dev->driver_data;
+	struct upipe_context *upipe = upipe_dev->fixed->driver_data;
 
 	/* Check destination PAN Id */
 	if (memcmp(&rx_buffer[PAN_ID_OFFSET],
@@ -107,7 +107,7 @@ static uint8_t *upipe_rx(uint8_t *buf, size_t *off)
 		goto done;
 	}
 
-	upipe = upipe_dev->driver_data;
+	upipe = upipe_dev->fixed->driver_data;
 	if (!upipe->rx && *buf == UART_PIPE_RADIO_15_4_FRAME_TYPE) {
 		upipe->rx = true;
 		goto done;

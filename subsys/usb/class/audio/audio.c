@@ -789,7 +789,7 @@ static void audio_write_cb(uint8_t ep, int size, void *priv)
 	struct net_buf *buffer = priv;
 
 	dev_data = usb_get_dev_data_by_ep(&usb_audio_data_devlist, ep);
-	audio_dev_data = dev_data->dev->driver_data;
+	audio_dev_data = dev_data->dev->fixed->driver_data;
 
 	LOG_DBG("Written %d bytes on ep 0x%02x, *audio_dev_data %p",
 		size, ep, audio_dev_data);

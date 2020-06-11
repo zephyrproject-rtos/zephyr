@@ -49,7 +49,7 @@
 
 
 #define DEV_CFG(dev) \
-	((const struct uart_device_config * const)(dev)->config_info)
+	((const struct uart_device_config * const)(dev)->fixed->config_info)
 
 
 #define UART_REG_SET(u, r, v) ((*(uint8_t *)(u + r)) = v)

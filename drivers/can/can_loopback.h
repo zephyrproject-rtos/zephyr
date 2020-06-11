@@ -10,9 +10,9 @@
 
 #include <drivers/can.h>
 
-#define DEV_DATA(dev) ((struct can_loopback_data *const)(dev)->driver_data)
+#define DEV_DATA(dev) ((struct can_loopback_data *const)(dev)->fixed->driver_data)
 #define DEV_CFG(dev) \
-	((const struct can_loopback_config *const)(dev)->config_info)
+	((const struct can_loopback_config *const)(dev)->fixed->config_info)
 
 struct can_loopback_filter {
 	can_rx_callback_t rx_cb;

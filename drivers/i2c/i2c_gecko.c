@@ -21,9 +21,9 @@ LOG_MODULE_REGISTER(i2c_gecko);
 #include "i2c-priv.h"
 
 #define DEV_CFG(dev) \
-	((struct i2c_gecko_config * const)(dev)->config_info)
+	((struct i2c_gecko_config * const)(dev)->fixed->config_info)
 #define DEV_DATA(dev) \
-	((struct i2c_gecko_data * const)(dev)->driver_data)
+	((struct i2c_gecko_data * const)(dev)->fixed->driver_data)
 #define DEV_BASE(dev) \
 	((I2C_TypeDef *)(DEV_CFG(dev))->base)
 

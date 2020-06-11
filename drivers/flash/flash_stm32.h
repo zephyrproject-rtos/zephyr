@@ -32,7 +32,7 @@ struct flash_stm32_priv {
 	struct k_sem sem;
 };
 
-#define FLASH_STM32_PRIV(dev) ((struct flash_stm32_priv *)((dev)->driver_data))
+#define FLASH_STM32_PRIV(dev) ((struct flash_stm32_priv *)((dev)->fixed->driver_data))
 #define FLASH_STM32_REGS(dev) (FLASH_STM32_PRIV(dev)->regs)
 
 #ifdef CONFIG_FLASH_PAGE_LAYOUT

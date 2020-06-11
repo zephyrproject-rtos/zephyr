@@ -64,7 +64,7 @@ void hts_init(void)
 	}
 
 	printk("temp device is %p, name is %s\n", temp_dev,
-	       temp_dev->name);
+	       temp_dev->fixed->name);
 }
 
 void hts_indicate(void)

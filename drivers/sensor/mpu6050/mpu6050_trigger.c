@@ -46,7 +46,7 @@ static void mpu6050_gpio_callback(struct device *dev,
 {
 	struct mpu6050_data *drv_data =
 		CONTAINER_OF(cb, struct mpu6050_data, gpio_cb);
-	const struct mpu6050_config *cfg = drv_data->dev->config_info;
+	const struct mpu6050_config *cfg = drv_data->dev->fixed->config_info;
 
 	ARG_UNUSED(pins);
 

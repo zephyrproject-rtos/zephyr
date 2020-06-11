@@ -53,9 +53,9 @@ struct rtc_stm32_data {
 };
 
 
-#define DEV_DATA(dev) ((struct rtc_stm32_data *)(dev)->driver_data)
+#define DEV_DATA(dev) ((struct rtc_stm32_data *)(dev)->fixed->driver_data)
 #define DEV_CFG(dev)	\
-((const struct rtc_stm32_config * const)(dev)->config_info)
+((const struct rtc_stm32_config * const)(dev)->fixed->config_info)
 
 
 static void rtc_stm32_irq_config(struct device *dev);

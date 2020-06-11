@@ -206,13 +206,13 @@ struct testfs_bcmd {
 }
 
 #define TESTFS_BCMD_IS_ENTER_DIR(cp) (((cp)->type == FS_DIR_ENTRY_DIR) \
-				      && ((cp)->name != NULL))
+				      && ((cp)->fixed->name != NULL))
 #define TESTFS_BCMD_IS_EXIT_DIR(cp) (((cp)->type == FS_DIR_ENTRY_DIR) \
-				     && ((cp)->name == NULL))
+				     && ((cp)->fixed->name == NULL))
 #define TESTFS_BCMD_IS_FILE(cp) (((cp)->type == FS_DIR_ENTRY_FILE) \
-				 && ((cp)->name != NULL))
+				 && ((cp)->fixed->name != NULL))
 #define TESTFS_BCMD_IS_END(cp) (((cp)->type == FS_DIR_ENTRY_FILE) \
-				&& ((cp)->name == NULL))
+				&& ((cp)->fixed->name == NULL))
 
 /** Create a file system hierarchy.
  *

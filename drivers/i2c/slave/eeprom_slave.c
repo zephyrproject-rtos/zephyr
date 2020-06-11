@@ -36,9 +36,9 @@ struct i2c_eeprom_slave_config {
 /* convenience defines */
 #define DEV_CFG(dev)							\
 	((const struct i2c_eeprom_slave_config * const)			\
-		(dev)->config_info)
+		(dev)->fixed->config_info)
 #define DEV_DATA(dev)							\
-	((struct i2c_eeprom_slave_data * const)(dev)->driver_data)
+	((struct i2c_eeprom_slave_data * const)(dev)->fixed->driver_data)
 
 int eeprom_slave_program(struct device *dev, uint8_t *eeprom_data,
 			 unsigned int length)

@@ -394,7 +394,7 @@ static void create_rx_handler(struct eth_context *ctx)
 
 static void eth_iface_init(struct net_if *iface)
 {
-	struct eth_context *ctx = net_if_get_device(iface)->driver_data;
+	struct eth_context *ctx = net_if_get_device(iface)->fixed->driver_data;
 	struct net_linkaddr *ll_addr = eth_get_mac(ctx);
 
 	/* The iface pointer in context should contain the main interface

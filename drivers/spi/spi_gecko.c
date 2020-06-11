@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(spi_gecko);
 
 #define SPI_WORD_SIZE 8
 
-#define DEV_DATA(dev) ((struct spi_gecko_data *) ((dev)->driver_data))
+#define DEV_DATA(dev) ((struct spi_gecko_data *) ((dev)->fixed->driver_data))
 
 /* Structure Declarations */
 

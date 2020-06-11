@@ -186,7 +186,7 @@ DEVICE_DECLARE(eth_e1000);
 
 static void e1000_init(struct net_if *iface)
 {
-	struct e1000_dev *dev = net_if_get_device(iface)->driver_data;
+	struct e1000_dev *dev = net_if_get_device(iface)->fixed->driver_data;
 	uint32_t ral, rah;
 
 	dev->iface = iface;

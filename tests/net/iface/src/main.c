@@ -288,7 +288,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
 		const struct ethernet_api *api =
-			net_if_get_device(iface)->driver_api;
+			net_if_get_device(iface)->fixed->driver_api;
 
 		/* As native_posix board will introduce another ethernet
 		 * interface, make sure that we only use our own in this test.
@@ -327,15 +327,15 @@ static void test_iface_setup(void)
 
 	idx = net_if_get_by_iface(iface1);
 	((struct net_if_test *)
-	 net_if_get_device(iface1)->driver_data)->idx = idx;
+	 net_if_get_device(iface1)->fixed->driver_data)->idx = idx;
 
 	idx = net_if_get_by_iface(iface2);
 	((struct net_if_test *)
-	 net_if_get_device(iface2)->driver_data)->idx = idx;
+	 net_if_get_device(iface2)->fixed->driver_data)->idx = idx;
 
 	idx = net_if_get_by_iface(iface3);
 	((struct net_if_test *)
-	 net_if_get_device(iface3)->driver_data)->idx = idx;
+	 net_if_get_device(iface3)->fixed->driver_data)->idx = idx;
 
 	DBG("Interfaces: [%d] iface1 %p, [%d] iface2 %p, [%d] iface3 %p\n",
 	    net_if_get_by_iface(iface1), iface1,

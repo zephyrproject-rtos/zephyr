@@ -28,7 +28,7 @@ struct sam0_eic_data {
 };
 
 #define DEV_DATA(dev) \
-	((struct sam0_eic_data *const)(dev)->driver_data)
+	((struct sam0_eic_data *const)(dev)->fixed->driver_data)
 
 DEVICE_DECLARE(sam0_eic);
 

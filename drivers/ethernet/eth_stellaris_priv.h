@@ -9,9 +9,9 @@
 #define ETH_STELLARIS_PRIV_H_
 
 #define DEV_DATA(dev) \
-	((struct eth_stellaris_runtime *)(dev)->driver_data)
+	((struct eth_stellaris_runtime *)(dev)->fixed->driver_data)
 #define DEV_CFG(dev) \
-	((const struct eth_stellaris_config *const)(dev)->config_info)
+	((const struct eth_stellaris_config *const)(dev)->fixed->config_info)
 /*
  *  Register mapping
  */

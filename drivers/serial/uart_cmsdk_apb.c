@@ -77,9 +77,9 @@ struct uart_cmsdk_apb_dev_data {
 
 /* convenience defines */
 #define DEV_CFG(dev) \
-	((const struct uart_device_config * const)(dev)->config_info)
+	((const struct uart_device_config * const)(dev)->fixed->config_info)
 #define DEV_DATA(dev) \
-	((struct uart_cmsdk_apb_dev_data * const)(dev)->driver_data)
+	((struct uart_cmsdk_apb_dev_data * const)(dev)->fixed->driver_data)
 #define UART_STRUCT(dev) \
 	((volatile struct uart_cmsdk_apb *)(DEV_CFG(dev))->base)
 

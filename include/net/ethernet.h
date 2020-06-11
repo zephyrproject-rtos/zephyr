@@ -492,7 +492,7 @@ static inline
 enum ethernet_hw_caps net_eth_get_hw_capabilities(struct net_if *iface)
 {
 	const struct ethernet_api *eth =
-		(struct ethernet_api *)net_if_get_device(iface)->driver_api;
+		(struct ethernet_api *)net_if_get_device(iface)->fixed->driver_api;
 
 	if (!eth->get_capabilities) {
 		return (enum ethernet_hw_caps)0;

@@ -102,7 +102,7 @@ static int _sys_pm_devices(uint32_t state)
 		rc = device_set_power_state(dev, state, NULL, NULL);
 		if ((rc != -ENOTSUP) && (rc != 0)) {
 			LOG_DBG("%s did not enter %s state: %d",
-				dev->name, device_pm_state_str(state), rc);
+				dev->fixed->name, device_pm_state_str(state), rc);
 			return rc;
 		}
 
@@ -164,7 +164,7 @@ void sys_pm_create_device_list(void)
 		const struct device *dev = &all_devices[pmi];
 
 		/* Ignore "device"s that don't support PM */
-		if (dev->device_pm_control == device_pm_control_nop) {
+		if (dev->fixed->device_pm_control == device_pm_control_nop) {
 			continue;
 		}
 
@@ -172,7 +172,7 @@ void sys_pm_create_device_list(void)
 		 * reserved slot.
 		 */
 		while (cdi < ARRAY_SIZE(core_devices)) {
-			if (strcmp(dev->name, core_devices[cdi]) == 0) {
+			if (strcmp(dev->fixed->name, core_devices[cdi]) == 0) {
 				pm_devices[cdi] = pmi;
 				break;
 			}

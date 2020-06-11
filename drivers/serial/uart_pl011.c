@@ -141,9 +141,9 @@ struct pl011_data {
 		PL011_IMSC_RTIM)
 
 #define DEV_CFG(dev) \
-	((const struct uart_device_config * const)(dev)->config_info)
+	((const struct uart_device_config * const)(dev)->fixed->config_info)
 #define DEV_DATA(dev) \
-	((struct pl011_data *)(dev)->driver_data)
+	((struct pl011_data *)(dev)->fixed->driver_data)
 #define PL011_REGS(dev) \
 	((volatile struct pl011_regs  *)(DEV_CFG(dev))->base)
 

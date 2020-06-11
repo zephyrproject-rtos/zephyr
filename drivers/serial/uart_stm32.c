@@ -34,9 +34,9 @@ LOG_MODULE_REGISTER(uart_stm32);
 
 /* convenience defines */
 #define DEV_CFG(dev)							\
-	((const struct uart_stm32_config * const)(dev)->config_info)
+	((const struct uart_stm32_config * const)(dev)->fixed->config_info)
 #define DEV_DATA(dev)							\
-	((struct uart_stm32_data * const)(dev)->driver_data)
+	((struct uart_stm32_data * const)(dev)->fixed->driver_data)
 #define UART_STRUCT(dev)					\
 	((USART_TypeDef *)(DEV_CFG(dev))->uconf.base)
 

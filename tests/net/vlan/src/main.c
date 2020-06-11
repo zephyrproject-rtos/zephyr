@@ -741,7 +741,7 @@ static void test_vlan_send_data(void)
 	zassert_equal(ret, 0, "Context bind failure test failed");
 
 	iface = eth_interfaces[1]; /* This is the VLAN interface */
-	ctx = net_if_get_device(iface)->driver_data;
+	ctx = net_if_get_device(iface)->fixed->driver_data;
 	eth_ctx = net_if_l2_data(iface);
 	ret = net_eth_is_vlan_enabled(eth_ctx, iface);
 	zassert_equal(ret, true, "VLAN disabled for interface 1");
@@ -749,7 +749,7 @@ static void test_vlan_send_data(void)
 	ctx->expecting_tag = VLAN_TAG_1;
 
 	iface = eth_interfaces[3]; /* This is also VLAN interface */
-	ctx = net_if_get_device(iface)->driver_data;
+	ctx = net_if_get_device(iface)->fixed->driver_data;
 	eth_ctx = net_if_l2_data(iface);
 	ret = net_eth_is_vlan_enabled(eth_ctx, iface);
 	zassert_equal(ret, true, "VLAN disabled for interface 1");

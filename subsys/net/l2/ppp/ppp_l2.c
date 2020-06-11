@@ -155,7 +155,7 @@ static enum net_verdict ppp_recv(struct net_if *iface,
 
 static int ppp_send(struct net_if *iface, struct net_pkt *pkt)
 {
-	const struct ppp_api *api = net_if_get_device(iface)->driver_api;
+	const struct ppp_api *api = net_if_get_device(iface)->fixed->driver_api;
 	struct ppp_context *ctx = net_if_l2_data(iface);
 	int ret;
 
@@ -213,7 +213,7 @@ static void start_ppp(struct ppp_context *ctx)
 static int ppp_enable(struct net_if *iface, bool state)
 {
 	const struct ppp_api *ppp =
-		net_if_get_device(iface)->driver_api;
+		net_if_get_device(iface)->fixed->driver_api;
 	struct ppp_context *ctx = net_if_l2_data(iface);
 
 	if (!ctx->is_init) {

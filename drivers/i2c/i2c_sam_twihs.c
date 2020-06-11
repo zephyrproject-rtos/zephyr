@@ -66,11 +66,11 @@ struct i2c_sam_twihs_dev_data {
 	struct twihs_msg msg;
 };
 
-#define DEV_NAME(dev) ((dev)->name)
+#define DEV_NAME(dev) ((dev)->fixed->name)
 #define DEV_CFG(dev) \
-	((const struct i2c_sam_twihs_dev_cfg *const)(dev)->config_info)
+	((const struct i2c_sam_twihs_dev_cfg *const)(dev)->fixed->config_info)
 #define DEV_DATA(dev) \
-	((struct i2c_sam_twihs_dev_data *const)(dev)->driver_data)
+	((struct i2c_sam_twihs_dev_data *const)(dev)->fixed->driver_data)
 
 static int i2c_clk_set(Twihs *const twihs, uint32_t speed)
 {

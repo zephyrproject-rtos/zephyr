@@ -16,9 +16,9 @@ struct uart_xmc4xxx_data {
 };
 
 #define DEV_CFG(dev) \
-	((const struct uart_device_config * const)(dev)->config_info)
+	((const struct uart_device_config * const)(dev)->fixed->config_info)
 #define DEV_DATA(dev) \
-	((struct uart_xmc4xxx_data * const)(dev)->driver_data)
+	((struct uart_xmc4xxx_data * const)(dev)->fixed->driver_data)
 
 static int uart_xmc4xxx_poll_in(struct device *dev, unsigned char *c)
 {

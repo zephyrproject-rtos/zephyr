@@ -24,9 +24,9 @@ struct flash_gecko_data {
 	struct k_sem mutex;
 };
 
-#define DEV_NAME(dev) ((dev)->name)
+#define DEV_NAME(dev) ((dev)->fixed->name)
 #define DEV_DATA(dev) \
-	((struct flash_gecko_data *const)(dev)->driver_data)
+	((struct flash_gecko_data *const)(dev)->fixed->driver_data)
 
 static bool write_range_is_valid(off_t offset, uint32_t size);
 static bool read_range_is_valid(off_t offset, uint32_t size);

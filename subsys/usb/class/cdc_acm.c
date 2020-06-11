@@ -59,7 +59,7 @@
 LOG_MODULE_REGISTER(usb_cdc_acm);
 
 #define DEV_DATA(dev)						\
-	((struct cdc_acm_dev_data_t * const)(dev)->driver_data)
+	((struct cdc_acm_dev_data_t * const)(dev)->fixed->driver_data)
 
 /* 115200bps, no parity, 1 stop bit, 8bit char */
 #define CDC_ACM_DEFAULT_BAUDRATE {sys_cpu_to_le32(115200), 0, 0, 8}

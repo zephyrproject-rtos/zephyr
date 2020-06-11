@@ -29,9 +29,9 @@ struct uart_msp432p4xx_dev_data_t {
 };
 
 #define DEV_CFG(dev) \
-	((const struct uart_device_config * const)(dev)->config_info)
+	((const struct uart_device_config * const)(dev)->fixed->config_info)
 #define DEV_DATA(dev) \
-	((struct uart_msp432p4xx_dev_data_t * const)(dev)->driver_data)
+	((struct uart_msp432p4xx_dev_data_t * const)(dev)->fixed->driver_data)
 
 DEVICE_DECLARE(uart_msp432p4xx_0);
 

@@ -33,14 +33,14 @@ struct modem_shell_user_data {
 #define ms_send(ctx_, buf_, size_) \
 			(ctx_->iface.write(&ctx_->iface, buf_, size_))
 #define ms_context_from_id	modem_context_from_id
-#define UART_DEV_NAME(ctx)	(ctx->iface.dev->name)
+#define UART_DEV_NAME(ctx)	(ctx->iface.dev->fixed->name)
 #elif defined(CONFIG_MODEM_RECEIVER)
 #include "modem_receiver.h"
 #define ms_context		mdm_receiver_context
 #define ms_max_context		CONFIG_MODEM_RECEIVER_MAX_CONTEXTS
 #define ms_send			mdm_receiver_send
 #define ms_context_from_id	mdm_receiver_context_from_id
-#define UART_DEV_NAME(ctx_)	(ctx_->uart_dev->name)
+#define UART_DEV_NAME(ctx_)	(ctx_->uart_dev->fixed->name)
 #else
 #error "MODEM_CONTEXT or MODEM_RECEIVER need to be enabled"
 #endif

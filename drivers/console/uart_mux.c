@@ -88,7 +88,7 @@ struct uart_mux_config {
 };
 
 #define DEV_DATA(dev) \
-	((struct uart_mux_dev_data *)(dev)->driver_data)
+	((struct uart_mux_dev_data *)(dev)->fixed->driver_data)
 
 struct uart_mux_dev_data {
 	sys_snode_t node;
@@ -209,7 +209,7 @@ static void uart_mux_tx_work(struct k_work *work)
 			 sizeof(CONFIG_UART_MUX_DEVICE_NAME)];
 
 		snprintk(tmp, sizeof(tmp), "SEND %s",
-			 dev_data->dev->name);
+			 dev_data->dev->fixed->name);
 		LOG_HEXDUMP_DBG(data, len, log_strdup(tmp));
 	}
 
@@ -289,7 +289,7 @@ static void dlci_created_cb(struct gsm_dlci *dlci, bool connected,
 		dev_data->status = UART_MUX_DISCONNECTED;
 	}
 
-	LOG_DBG("%s %s", dev_data->dev->name,
+	LOG_DBG("%s %s", dev_data->dev->fixed->name,
 		dev_data->status == UART_MUX_CONNECTED ? "connected" :
 							 "disconnected");
 
@@ -773,7 +773,7 @@ int uart_mux_recv(struct device *mux, struct gsm_dlci *dlci, uint8_t *data,
 			 sizeof(CONFIG_UART_MUX_DEVICE_NAME)];
 
 		snprintk(tmp, sizeof(tmp), "RECV %s",
-			 dev_data->dev->name);
+			 dev_data->dev->fixed->name);
 		LOG_HEXDUMP_DBG(data, len, log_strdup(tmp));
 	}
 

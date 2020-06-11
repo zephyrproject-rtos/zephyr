@@ -32,9 +32,9 @@ struct gpio_sam_runtime {
 };
 
 #define DEV_CFG(dev) \
-	((const struct gpio_sam_config * const)(dev)->config_info)
+	((const struct gpio_sam_config * const)(dev)->fixed->config_info)
 #define DEV_DATA(dev) \
-	((struct gpio_sam_runtime * const)(dev)->driver_data)
+	((struct gpio_sam_runtime * const)(dev)->fixed->driver_data)
 
 #define GPIO_SAM_ALL_PINS    0xFFFFFFFF
 

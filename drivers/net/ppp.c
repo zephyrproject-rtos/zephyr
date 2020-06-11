@@ -649,7 +649,7 @@ static void ppp_isr_cb_work(struct k_work *work)
 
 	/* This will print too much data, enable only if really needed */
 	if (0) {
-		LOG_HEXDUMP_DBG(data, len, ppp->dev->name);
+		LOG_HEXDUMP_DBG(data, len, ppp->dev->fixed->name);
 	}
 
 	tmp = len;
@@ -706,7 +706,7 @@ static inline struct net_linkaddr *ppp_get_mac(struct ppp_driver_context *ppp)
 
 static void ppp_iface_init(struct net_if *iface)
 {
-	struct ppp_driver_context *ppp = net_if_get_device(iface)->driver_data;
+	struct ppp_driver_context *ppp = net_if_get_device(iface)->fixed->driver_data;
 	struct net_linkaddr *ll_addr;
 
 	LOG_DBG("[%p] iface %p", ppp, iface);

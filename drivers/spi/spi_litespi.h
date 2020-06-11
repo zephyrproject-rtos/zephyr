@@ -27,7 +27,7 @@
 
 #define SPI_ENABLE 0x1
 
-#define SPI_DATA(dev) ((struct spi_litespi_data *) ((dev)->driver_data))
+#define SPI_DATA(dev) ((struct spi_litespi_data *) ((dev)->fixed->driver_data))
 
 /* Structure Declarations */
 

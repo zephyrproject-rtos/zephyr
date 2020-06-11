@@ -228,7 +228,7 @@ static void test_iface_setup(void)
 
 	idx = net_if_get_by_iface(iface1);
 	((struct net_if_test *)
-	 net_if_get_device(iface1)->driver_data)->idx = idx;
+	 net_if_get_device(iface1)->fixed->driver_data)->idx = idx;
 
 	DBG("Interfaces: [%d] iface1 %p\n",
 	    net_if_get_by_iface(iface1), iface1);

@@ -23,7 +23,7 @@ struct sam_pwm_config {
 };
 
 #define DEV_CFG(dev) \
-	((const struct sam_pwm_config * const)(dev)->config_info)
+	((const struct sam_pwm_config * const)(dev)->fixed->config_info)
 
 static int sam_pwm_get_cycles_per_sec(struct device *dev, uint32_t pwm,
 				      uint64_t *cycles)

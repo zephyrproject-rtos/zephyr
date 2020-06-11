@@ -18,7 +18,7 @@
 
 #if defined(CONFIG_MULTITHREADING)
 #define SYNC_INIT() k_sem_init( \
-		&((struct spi_flash_data *)dev->driver_data)->sem, 1, UINT_MAX)
+		&((struct spi_flash_data *)dev->fixed->driver_data)->sem, 1, UINT_MAX)
 #define SYNC_LOCK() k_sem_take(&driver_data->sem, K_FOREVER)
 #define SYNC_UNLOCK() k_sem_give(&driver_data->sem)
 #else

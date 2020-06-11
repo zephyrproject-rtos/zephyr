@@ -39,11 +39,11 @@ struct counter_gecko_data {
 	void *top_user_data;
 };
 
-#define DEV_NAME(dev) ((dev)->name)
+#define DEV_NAME(dev) ((dev)->fixed->name)
 #define DEV_CFG(dev) \
-	((const struct counter_gecko_config * const)(dev)->config_info)
+	((const struct counter_gecko_config * const)(dev)->fixed->config_info)
 #define DEV_DATA(dev) \
-	((struct counter_gecko_data *const)(dev)->driver_data)
+	((struct counter_gecko_data *const)(dev)->fixed->driver_data)
 
 #ifdef CONFIG_SOC_GECKO_HAS_ERRATA_RTCC_E201
 #define ERRATA_RTCC_E201_MESSAGE \

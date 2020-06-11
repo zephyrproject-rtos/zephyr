@@ -45,11 +45,11 @@ struct sam_xdmac_dev_data {
 	struct sam_xdmac_channel_cfg dma_channels[DMA_CHANNELS_NO];
 };
 
-#define DEV_NAME(dev) ((dev)->name)
+#define DEV_NAME(dev) ((dev)->fixed->name)
 #define DEV_CFG(dev) \
-	((const struct sam_xdmac_dev_cfg *const)(dev)->config_info)
+	((const struct sam_xdmac_dev_cfg *const)(dev)->fixed->config_info)
 #define DEV_DATA(dev) \
-	((struct sam_xdmac_dev_data *const)(dev)->driver_data)
+	((struct sam_xdmac_dev_data *const)(dev)->fixed->driver_data)
 
 static void sam_xdmac_isr(void *arg)
 {

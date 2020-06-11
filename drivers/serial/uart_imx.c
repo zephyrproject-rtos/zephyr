@@ -22,7 +22,7 @@
 #include <uart_imx.h>
 
 #define DEV_CFG(dev) \
-	((const struct imx_uart_config *const)(dev)->config_info)
+	((const struct imx_uart_config *const)(dev)->fixed->config_info)
 #define UART_STRUCT(dev) \
 	((UART_Type *)(DEV_CFG(dev))->base)
 

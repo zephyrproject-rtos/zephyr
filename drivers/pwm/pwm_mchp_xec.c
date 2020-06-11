@@ -49,11 +49,11 @@ struct pwm_xec_config {
 #define PWM_XEC_REG_BASE(_dev)				\
 	((PWM_Type *)			\
 	 ((const struct pwm_xec_config * const)		\
-	  _dev->config_info)->base_address)
+	  _dev->fixed->config_info)->base_address)
 
 #define PWM_XEC_CONFIG(_dev)				\
 	(((const struct pwm_xec_config * const)		\
-	  _dev->config_info))
+	  _dev->fixed->config_info))
 
 struct xec_params {
 	uint32_t on;

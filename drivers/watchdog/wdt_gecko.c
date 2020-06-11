@@ -32,11 +32,11 @@ struct wdt_gecko_data {
 	bool timeout_installed;
 };
 
-#define DEV_NAME(dev) ((dev)->name)
+#define DEV_NAME(dev) ((dev)->fixed->name)
 #define DEV_DATA(dev) \
-	((struct wdt_gecko_data *)(dev)->driver_data)
+	((struct wdt_gecko_data *)(dev)->fixed->driver_data)
 #define DEV_CFG(dev) \
-	((const struct wdt_gecko_cfg *)(dev)->config_info)
+	((const struct wdt_gecko_cfg *)(dev)->fixed->config_info)
 
 static uint32_t wdt_gecko_get_timeout_from_persel(int perSel)
 {

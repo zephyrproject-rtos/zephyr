@@ -146,11 +146,11 @@ struct uart_miv_data {
 
 #define DEV_CFG(dev)						\
 	((const struct uart_miv_device_config * const)		\
-	 (dev)->config_info)
+	 (dev)->fixed->config_info)
 #define DEV_UART(dev)						\
 	((struct uart_miv_regs_t *)(DEV_CFG(dev))->uart_addr)
 #define DEV_DATA(dev)						\
-	((struct uart_miv_data * const)(dev)->driver_data)
+	((struct uart_miv_data * const)(dev)->fixed->driver_data)
 
 static void uart_miv_poll_out(struct device *dev,
 				       unsigned char c)

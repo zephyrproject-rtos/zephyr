@@ -10,9 +10,9 @@
 
 #include <drivers/can.h>
 
-#define DEV_DATA(dev) ((struct can_stm32_data *const)(dev)->driver_data)
+#define DEV_DATA(dev) ((struct can_stm32_data *const)(dev)->fixed->driver_data)
 #define DEV_CFG(dev) \
-	((const struct can_stm32_config *const)(dev)->config_info)
+	((const struct can_stm32_config *const)(dev)->fixed->config_info)
 
 #define BIT_SEG_LENGTH(cfg) ((cfg)->prop_ts1 + (cfg)->ts2 + 1)
 

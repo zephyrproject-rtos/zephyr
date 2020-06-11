@@ -1444,9 +1444,9 @@ static void test_setup(void)
 	iface1 = net_if_get_by_index(1);
 	iface2 = net_if_get_by_index(2);
 
-	((struct net_if_test *)net_if_get_device(iface1)->driver_data)->idx =
+	((struct net_if_test *)net_if_get_device(iface1)->fixed->driver_data)->idx =
 		net_if_get_by_iface(iface1);
-	((struct net_if_test *)net_if_get_device(iface2)->driver_data)->idx =
+	((struct net_if_test *)net_if_get_device(iface2)->fixed->driver_data)->idx =
 		net_if_get_by_iface(iface2);
 
 	idx = net_if_get_by_iface(iface1);

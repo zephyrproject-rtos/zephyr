@@ -516,7 +516,7 @@ static int hid_custom_handle_req(struct usb_setup_packet *setup,
 
 		switch (value) {
 		case HID_CLASS_DESCRIPTOR_HID:
-			cfg = common->dev->config_info;
+			cfg = common->dev->fixed->config_info;
 			hid_desc = cfg->interface_descriptor;
 
 			LOG_DBG("Return HID Descriptor");

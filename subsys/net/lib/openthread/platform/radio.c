@@ -185,7 +185,7 @@ void platformRadioInit(void)
 	radio_dev = device_get_binding(CONFIG_NET_CONFIG_IEEE802154_DEV_NAME);
 	__ASSERT_NO_MSG(radio_dev != NULL);
 
-	radio_api = (struct ieee802154_radio_api *)radio_dev->driver_api;
+	radio_api = (struct ieee802154_radio_api *)radio_dev->fixed->driver_api;
 	if (!radio_api) {
 		return;
 	}

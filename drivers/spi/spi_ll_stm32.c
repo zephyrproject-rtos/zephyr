@@ -26,10 +26,10 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include "spi_ll_stm32.h"
 
 #define DEV_CFG(dev)						\
-(const struct spi_stm32_config * const)(dev->config_info)
+(const struct spi_stm32_config * const)(dev->fixed->config_info)
 
 #define DEV_DATA(dev)					\
-(struct spi_stm32_data * const)(dev->driver_data)
+(struct spi_stm32_data * const)(dev->fixed->driver_data)
 
 /*
  * Check for SPI_SR_FRE to determine support for TI mode frame format

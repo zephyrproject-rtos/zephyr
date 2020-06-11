@@ -74,7 +74,7 @@ static enum net_verdict net_bt_recv(struct net_if *iface, struct net_pkt *pkt)
 
 static struct bt_if_conn *net_bt_get_conn(struct net_if *iface)
 {
-	struct bt_context *ctxt = net_if_get_device(iface)->driver_data;
+	struct bt_context *ctxt = net_if_get_device(iface)->fixed->driver_data;
 	int i;
 
 	for (i = 0; i < CONFIG_BT_MAX_CONN; i++) {
@@ -272,7 +272,7 @@ static struct bt_context bt_context_data = {
 
 static void bt_iface_init(struct net_if *iface)
 {
-	struct bt_context *ctxt = net_if_get_device(iface)->driver_data;
+	struct bt_context *ctxt = net_if_get_device(iface)->fixed->driver_data;
 	struct bt_if_conn *conn = NULL;
 	int i;
 

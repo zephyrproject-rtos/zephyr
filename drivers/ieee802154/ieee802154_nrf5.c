@@ -55,10 +55,10 @@ static struct nrf5_802154_data nrf5_data;
 
 /* Convenience defines for RADIO */
 #define NRF5_802154_DATA(dev) \
-	((struct nrf5_802154_data * const)(dev)->driver_data)
+	((struct nrf5_802154_data * const)(dev)->fixed->driver_data)
 
 #define NRF5_802154_CFG(dev) \
-	((const struct nrf5_802154_config * const)(dev)->config_info)
+	((const struct nrf5_802154_config * const)(dev)->fixed->config_info)
 
 static void nrf5_get_eui64(uint8_t *mac)
 {

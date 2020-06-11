@@ -146,7 +146,7 @@ A subsystem API definition typically looks like this:
   {
         struct subsystem_api *api;
 
-        api = (struct subsystem_api *)device->driver_api;
+        api = (struct subsystem_api *)device->fixed->driver_api;
         return api->do_this(device, foo, bar);
   }
 
@@ -154,7 +154,7 @@ A subsystem API definition typically looks like this:
   {
         struct subsystem_api *api;
 
-        api = (struct subsystem_api *)device->driver_api;
+        api = (struct subsystem_api *)device->fixed->driver_api;
         api->do_that(device, foo, bar);
   }
 
@@ -300,7 +300,7 @@ In the implementation of the common init function:
 
   int my_driver_init(struct device *device)
   {
-        const struct my_driver_config *config = device->config_info;
+        const struct my_driver_config *config = device->fixed->config_info;
 
         /* Do other initialization stuff */
         ...

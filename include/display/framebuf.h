@@ -18,6 +18,6 @@ struct framebuf_dev_data {
 	uint16_t			  height;
 };
 
-#define FRAMEBUF_DATA(dev) ((struct framebuf_dev_data *) ((dev)->driver_data))
+#define FRAMEBUF_DATA(dev) ((struct framebuf_dev_data *) ((dev)->fixed->driver_data))
 
 #endif /* ZEPHYR_INCLUDE_DISPLAY_FRAMEBUF_H_ */

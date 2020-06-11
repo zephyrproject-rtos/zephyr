@@ -24,11 +24,11 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(neural_net);
 
-#define DEV_NAME(dev) ((dev)->name)
+#define DEV_NAME(dev) ((dev)->fixed->name)
 #define DEV_CFG(dev) \
-	((const struct intel_gna_config *const)(dev)->config_info)
+	((const struct intel_gna_config *const)(dev)->fixed->config_info)
 #define DEV_DATA(dev) \
-	((struct intel_gna_data *const)(dev)->driver_data)
+	((struct intel_gna_data *const)(dev)->fixed->driver_data)
 
 #if LOG_LEVEL >= LOG_LEVEL_DBG
 static void intel_gna_regs_dump(struct device *dev);
