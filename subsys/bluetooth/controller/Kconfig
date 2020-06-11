@@ -445,7 +445,7 @@ config BT_CTLR_CHAN_SEL_2
 	  the Controller.
 
 config BT_CTLR_ADV_EXT
-	bool "LE Advertising Extensions [EXPERIMENTAL]"
+	bool "LE Advertising Extensions" if !BT_LL_SW_SPLIT
 	depends on BT_CTLR_ADV_EXT_SUPPORT
 	select BT_CTLR_SCAN_REQ_NOTIFY
 	default y if BT_EXT_ADV
@@ -453,52 +453,34 @@ config BT_CTLR_ADV_EXT
 	  Enable support for Bluetooth 5.0 LE Advertising Extensions in the
 	  Controller.
 
+config BT_CTLR_ADV_EXT
+	prompt "LE Advertising Extensions [EXPERIMENTAL]" if BT_LL_SW_SPLIT
+
+if BT_CTLR_ADV_EXT
+
 config BT_CTLR_ADV_SET
 	int "LE Advertising Extensions Sets"
-	depends on BT_CTLR_ADV_EXT
+	depends on BT_BROADCASTER
 	range 1 64
 	default BT_EXT_ADV_MAX_ADV_SET if BT_EXT_ADV
 	help
 	  Maximum supported advertising sets.
 
-config BT_CTLR_ADV_AUX_SET
-	int "LE Advertising Extensions Auxiliary Sets"
-	depends on BT_CTLR_ADV_EXT
-	range 1 BT_CTLR_ADV_SET if BT_CTLR_ADV_PERIODIC
-	range 0 BT_CTLR_ADV_SET
-	default 1 if BT_CTLR_ADV_PERIODIC
-	default BT_CTLR_ADV_SET
-	help
-	  Maximum supported advertising auxiliary channel sets.
-
 config BT_CTLR_ADV_PERIODIC
 	bool "LE Periodic Advertising"
-	depends on BT_CTLR_ADV_EXT
+	depends on BT_BROADCASTER && BT_CTLR_ADV_PERIODIC_SUPPORT
 	select BT_CTLR_CHAN_SEL_2
 	help
 	  Enable support for Bluetooth 5.0 LE Periodic Advertising in the
 	  Controller.
 
-config BT_CTLR_ADV_SYNC_SET
-	int "LE Periodic Advertising Sets"
-	depends on BT_CTLR_ADV_PERIODIC
-	range 1 BT_CTLR_ADV_AUX_SET
-	help
-	  Maximum supported periodic advertising sets.
-
 config BT_CTLR_ADV_DATA_LEN_MAX
 	int "Maximum Advertising Data Length"
-	depends on BT_CTLR_ADV_EXT
 	range 31 1650
 	help
 	  Maximum Extended Advertising Data Length.
 
-config BT_CTLR_SCAN_AUX_SET
-	int "Auxiliary Channel Scan Sets"
-	depends on BT_OBSERVER && BT_CTLR_ADV_EXT
-	range 1 64
-	help
-	  Maximum supported auxiliary channel scan sets.
+endif # BT_CTLR_ADV_EXT
 
 config BT_CTLR_DTM
 	bool
@@ -577,6 +559,32 @@ config BT_CTLR_PHY_2M_NRF
 	help
 	  Enable support for Nordic Semiconductor proprietary 2Mbps PHY in the
 	  Controller. Encrypted connections are not supported.
+
+config BT_CTLR_ADV_AUX_SET
+	int "LE Extended Advertising Auxiliary Sets"
+	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
+	range 1 BT_CTLR_ADV_SET if BT_CTLR_ADV_PERIODIC
+	range 0 BT_CTLR_ADV_SET
+	default 1 if BT_CTLR_ADV_PERIODIC
+	default BT_CTLR_ADV_SET
+	help
+	  Maximum supported advertising auxiliary channel sets.
+
+config BT_CTLR_ADV_SYNC_SET
+	int "LE Periodic Advertising Sets"
+	depends on BT_CTLR_ADV_PERIODIC
+	range 1 BT_CTLR_ADV_AUX_SET
+	default 1
+	help
+	  Maximum supported periodic advertising sets.
+
+config BT_CTLR_SCAN_AUX_SET
+	int "LE Extended Scanning Auxiliary Sets"
+	depends on BT_OBSERVER && BT_CTLR_ADV_EXT
+	range 1 64
+	default 1
+	help
+	  Maximum supported auxiliary channel scan sets.
 
 config BT_CTLR_ZLI
 	bool "Use Zero Latency IRQs"
