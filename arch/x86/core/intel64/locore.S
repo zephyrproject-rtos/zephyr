@@ -891,7 +891,7 @@ idt48:
 
 /*
  * Page tables. Long mode requires them, but we don't implement any memory
- * protection yet, so these simply identity-map the first 4GB w/ 1GB pages.
+ * protection yet, so these simply identity-map the first 8GB w/ 1GB pages.
  */
 
 .align 4096
@@ -910,7 +910,15 @@ pdp:	.long 0x00000083		/* 0x83 = 1GB, R/W, P */
 	.long 0
 	.long 0xC0000083
 	.long 0
-	.fill 4064, 1, 0
+	.long 0x00000083
+	.long 1
+	.long 0x40000083
+	.long 1
+	.long 0x80000083
+	.long 1
+	.long 0xC0000083
+	.long 1
+	.fill (4096 - 8*8), 1, 0
 
 .section .gdt,"ad"
 
