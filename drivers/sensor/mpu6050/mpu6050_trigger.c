@@ -18,8 +18,8 @@ int mpu6050_trigger_set(struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
-	struct mpu6050_data *drv_data = dev->driver_data;
-	const struct mpu6050_config *cfg = dev->config_info;
+	struct mpu6050_data *drv_data = dev->fixed->driver_data;
+	const struct mpu6050_config *cfg = dev->fixed->config_info;
 
 	if (trig->type != SENSOR_TRIG_DATA_READY) {
 		return -ENOTSUP;
@@ -63,8 +63,8 @@ static void mpu6050_gpio_callback(struct device *dev,
 static void mpu6050_thread_cb(void *arg)
 {
 	struct device *dev = arg;
-	struct mpu6050_data *drv_data = dev->driver_data;
-	const struct mpu6050_config *cfg = dev->config_info;
+	struct mpu6050_data *drv_data = dev->fixed->driver_data;
+	const struct mpu6050_config *cfg = dev->fixed->config_info;
 
 	if (drv_data->data_ready_handler != NULL) {
 		drv_data->data_ready_handler(dev,
@@ -80,7 +80,7 @@ static void mpu6050_thread_cb(void *arg)
 static void mpu6050_thread(int dev_ptr, int unused)
 {
 	struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct mpu6050_data *drv_data = dev->driver_data;
+	struct mpu6050_data *drv_data = dev->fixed->driver_data;
 
 	ARG_UNUSED(unused);
 
@@ -103,8 +103,8 @@ static void mpu6050_work_cb(struct k_work *work)
 
 int mpu6050_init_interrupt(struct device *dev)
 {
-	struct mpu6050_data *drv_data = dev->driver_data;
-	const struct mpu6050_config *cfg = dev->config_info;
+	struct mpu6050_data *drv_data = dev->fixed->driver_data;
+	const struct mpu6050_config *cfg = dev->fixed->config_info;
 
 	/* setup data ready gpio interrupt */
 	drv_data->gpio = device_get_binding(cfg->int_label);

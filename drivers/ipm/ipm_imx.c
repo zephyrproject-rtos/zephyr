@@ -34,9 +34,9 @@ struct imx_mu_data {
 static void imx_mu_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	const struct imx_mu_config *config = dev->config_info;
+	const struct imx_mu_config *config = dev->fixed->config_info;
 	MU_Type *base = MU(config);
-	struct imx_mu_data *data = dev->driver_data;
+	struct imx_mu_data *data = dev->fixed->driver_data;
 	uint32_t data32[IMX_IPM_DATA_REGS];
 	uint32_t status_reg;
 	int32_t id;
@@ -90,7 +90,7 @@ static void imx_mu_isr(void *arg)
 static int imx_mu_ipm_send(struct device *dev, int wait, uint32_t id,
 			   const void *data, int size)
 {
-	const struct imx_mu_config *config = dev->config_info;
+	const struct imx_mu_config *config = dev->fixed->config_info;
 	MU_Type *base = MU(config);
 	uint32_t data32[IMX_IPM_DATA_REGS];
 	mu_status_t status;
@@ -142,7 +142,7 @@ static void imx_mu_ipm_register_callback(struct device *dev,
 					 ipm_callback_t cb,
 					 void *context)
 {
-	struct imx_mu_data *driver_data = dev->driver_data;
+	struct imx_mu_data *driver_data = dev->fixed->driver_data;
 
 	driver_data->callback = cb;
 	driver_data->callback_ctx = context;
@@ -150,7 +150,7 @@ static void imx_mu_ipm_register_callback(struct device *dev,
 
 static int imx_mu_ipm_set_enabled(struct device *dev, int enable)
 {
-	const struct imx_mu_config *config = dev->config_info;
+	const struct imx_mu_config *config = dev->fixed->config_info;
 	MU_Type *base = MU(config);
 
 #if CONFIG_IPM_IMX_MAX_DATA_SIZE_4
@@ -188,7 +188,7 @@ static int imx_mu_ipm_set_enabled(struct device *dev, int enable)
 
 static int imx_mu_init(struct device *dev)
 {
-	const struct imx_mu_config *config = dev->config_info;
+	const struct imx_mu_config *config = dev->fixed->config_info;
 
 	MU_Init(MU(config));
 	config->irq_config_func(dev);

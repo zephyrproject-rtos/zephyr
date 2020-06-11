@@ -17,7 +17,7 @@ struct apa102_data {
 
 static int apa102_update(struct device *dev, void *buf, size_t size)
 {
-	struct apa102_data *data = dev->driver_data;
+	struct apa102_data *data = dev->fixed->driver_data;
 	static const uint8_t zeros[] = {0, 0, 0, 0};
 	static const uint8_t ones[] = {0xFF, 0xFF, 0xFF, 0xFF};
 	const struct spi_buf tx_bufs[] = {
@@ -81,7 +81,7 @@ static int apa102_update_channels(struct device *dev, uint8_t *channels,
 
 static int apa102_init(struct device *dev)
 {
-	struct apa102_data *data = dev->driver_data;
+	struct apa102_data *data = dev->fixed->driver_data;
 
 	data->spi = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (!data->spi) {

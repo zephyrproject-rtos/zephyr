@@ -19,7 +19,7 @@ void main(void)
 
 	__ASSERT(dev != NULL, "Failed to get device binding");
 
-	printk("Dev %p name %s is ready!\n", dev, dev->name);
+	printk("Dev %p name %s is ready!\n", dev, dev->fixed->name);
 
 	struct sensor_value temp, humidity;
 

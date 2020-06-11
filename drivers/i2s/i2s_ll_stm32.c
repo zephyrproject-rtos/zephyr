@@ -681,7 +681,7 @@ static int i2s_stm32_initialize(struct device *dev)
 		return -ENODEV;
 	}
 
-	LOG_INF("%s inited", dev->name);
+	LOG_INF("%s inited", dev->fixed->name);
 
 	return 0;
 }

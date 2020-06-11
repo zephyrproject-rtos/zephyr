@@ -46,13 +46,13 @@ struct i2c_cc13xx_cc26xx_config {
 
 static inline struct i2c_cc13xx_cc26xx_data *get_dev_data(struct device *dev)
 {
-	return dev->driver_data;
+	return dev->fixed->driver_data;
 }
 
 static inline const struct i2c_cc13xx_cc26xx_config *
 get_dev_config(struct device *dev)
 {
-	return dev->config_info;
+	return dev->fixed->config_info;
 }
 
 static int i2c_cc13xx_cc26xx_transmit(struct device *dev, const uint8_t *buf,

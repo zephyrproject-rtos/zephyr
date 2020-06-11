@@ -24,14 +24,14 @@ static void device_pm_callback(struct device *dev,
 
 	/* Set the fsm_state */
 	if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
-		atomic_set(&dev->pm->fsm_state,
+		atomic_set(&dev->fixed->pm->fsm_state,
 			   DEVICE_PM_FSM_STATE_ACTIVE);
 	} else {
-		atomic_set(&dev->pm->fsm_state,
+		atomic_set(&dev->fixed->pm->fsm_state,
 			   DEVICE_PM_FSM_STATE_SUSPENDED);
 	}
 
-	k_work_submit(&dev->pm->work);
+	k_work_submit(&dev->fixed->pm->work);
 }
 
 static void pm_work_handler(struct k_work *work)
@@ -42,11 +42,11 @@ static void pm_work_handler(struct k_work *work)
 	int ret = 0;
 	uint8_t pm_state;
 
-	switch (atomic_get(&dev->pm->fsm_state)) {
+	switch (atomic_get(&dev->fixed->pm->fsm_state)) {
 	case DEVICE_PM_FSM_STATE_ACTIVE:
-		if ((atomic_get(&dev->pm->usage) == 0) &&
-					dev->pm->enable) {
-			atomic_set(&dev->pm->fsm_state,
+		if ((atomic_get(&dev->fixed->pm->usage) == 0) &&
+					dev->fixed->pm->enable) {
+			atomic_set(&dev->fixed->pm->fsm_state,
 				   DEVICE_PM_FSM_STATE_SUSPENDING);
 			ret = device_set_power_state(dev,
 						DEVICE_PM_SUSPEND_STATE,
@@ -57,9 +57,9 @@ static void pm_work_handler(struct k_work *work)
 		}
 		break;
 	case DEVICE_PM_FSM_STATE_SUSPENDED:
-		if ((atomic_get(&dev->pm->usage) > 0) ||
-					!dev->pm->enable) {
-			atomic_set(&dev->pm->fsm_state,
+		if ((atomic_get(&dev->fixed->pm->usage) > 0) ||
+					!dev->fixed->pm->enable) {
+			atomic_set(&dev->fixed->pm->fsm_state,
 				   DEVICE_PM_FSM_STATE_RESUMING);
 			ret = device_set_power_state(dev,
 						DEVICE_PM_ACTIVE_STATE,
@@ -82,7 +82,7 @@ static void pm_work_handler(struct k_work *work)
 	return;
 
 fsm_out:
-	k_poll_signal_raise(&dev->pm->signal, pm_state);
+	k_poll_signal_raise(&dev->fixed->pm->signal, pm_state);
 }
 
 static int device_pm_request(struct device *dev,
@@ -95,16 +95,16 @@ static int device_pm_request(struct device *dev,
 			"Invalid device PM state requested");
 
 	if (target_state == DEVICE_PM_ACTIVE_STATE) {
-		if (atomic_inc(&dev->pm->usage) < 0) {
+		if (atomic_inc(&dev->fixed->pm->usage) < 0) {
 			return 0;
 		}
 	} else {
-		if (atomic_dec(&dev->pm->usage) > 1) {
+		if (atomic_dec(&dev->fixed->pm->usage) > 1) {
 			return 0;
 		}
 	}
 
-	k_work_submit(&dev->pm->work);
+	k_work_submit(&dev->fixed->pm->work);
 
 	/* Return in case of Async request */
 	if (pm_flags & DEVICE_PM_ASYNC) {
@@ -113,13 +113,13 @@ static int device_pm_request(struct device *dev,
 
 	/* Incase of Sync request wait for completion event */
 	do {
-		(void)k_poll(&dev->pm->event, 1, K_FOREVER);
-		k_poll_signal_check(&dev->pm->signal,
+		(void)k_poll(&dev->fixed->pm->event, 1, K_FOREVER);
+		k_poll_signal_check(&dev->fixed->pm->signal,
 						&signaled, &result);
 	} while (!signaled);
 
-	dev->pm->event.state = K_POLL_STATE_NOT_READY;
-	k_poll_signal_reset(&dev->pm->signal);
+	dev->fixed->pm->event.state = K_POLL_STATE_NOT_READY;
+	k_poll_signal_reset(&dev->fixed->pm->signal);
 
 
 	return result == target_state ? 0 : -EIO;
@@ -149,29 +149,29 @@ int device_pm_put_sync(struct device *dev)
 
 void device_pm_enable(struct device *dev)
 {
-	k_sem_take(&dev->pm->lock, K_FOREVER);
-	dev->pm->enable = true;
+	k_sem_take(&dev->fixed->pm->lock, K_FOREVER);
+	dev->fixed->pm->enable = true;
 
 	/* During the driver init, device can set the
 	 * PM state accordingly. For later cases we need
 	 * to check the usage and set the device PM state.
 	 */
-	if (!dev->pm->dev) {
-		dev->pm->dev = dev;
-		atomic_set(&dev->pm->fsm_state,
+	if (!dev->fixed->pm->dev) {
+		dev->fixed->pm->dev = dev;
+		atomic_set(&dev->fixed->pm->fsm_state,
 			   DEVICE_PM_FSM_STATE_SUSPENDED);
-		k_work_init(&dev->pm->work, pm_work_handler);
+		k_work_init(&dev->fixed->pm->work, pm_work_handler);
 	} else {
-		k_work_submit(&dev->pm->work);
+		k_work_submit(&dev->fixed->pm->work);
 	}
-	k_sem_give(&dev->pm->lock);
+	k_sem_give(&dev->fixed->pm->lock);
 }
 
 void device_pm_disable(struct device *dev)
 {
-	k_sem_take(&dev->pm->lock, K_FOREVER);
-	dev->pm->enable = false;
+	k_sem_take(&dev->fixed->pm->lock, K_FOREVER);
+	dev->fixed->pm->enable = false;
 	/* Bring up the device before disabling the Idle PM */
-	k_work_submit(&dev->pm->work);
-	k_sem_give(&dev->pm->lock);
+	k_work_submit(&dev->fixed->pm->work);
+	k_sem_give(&dev->fixed->pm->lock);
 }

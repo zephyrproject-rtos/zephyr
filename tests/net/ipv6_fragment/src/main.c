@@ -932,7 +932,7 @@ static int net_iface_dev_init(struct device *dev)
 
 static uint8_t *net_iface_get_mac(struct device *dev)
 {
-	struct net_if_test *data = dev->driver_data;
+	struct net_if_test *data = dev->fixed->driver_data;
 
 	if (data->mac_addr[2] == 0x00) {
 		/* 00-00-5E-00-53-xx Documentation RFC 7042 */

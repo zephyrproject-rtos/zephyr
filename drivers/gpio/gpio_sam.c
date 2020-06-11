@@ -265,7 +265,7 @@ static void gpio_sam_isr(void *arg)
 	struct device *dev = (struct device *)arg;
 	const struct gpio_sam_config * const cfg = DEV_CFG(dev);
 	Pio * const pio = cfg->regs;
-	struct gpio_sam_runtime *context = dev->driver_data;
+	struct gpio_sam_runtime *context = dev->fixed->driver_data;
 	uint32_t int_stat;
 
 	int_stat = pio->PIO_ISR;
@@ -277,7 +277,7 @@ static int gpio_sam_manage_callback(struct device *port,
 				    struct gpio_callback *callback,
 				    bool set)
 {
-	struct gpio_sam_runtime *context = port->driver_data;
+	struct gpio_sam_runtime *context = port->fixed->driver_data;
 
 	return gpio_manage_callback(&context->cb, callback, set);
 }

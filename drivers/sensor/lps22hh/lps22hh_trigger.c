@@ -24,7 +24,7 @@ LOG_MODULE_DECLARE(LPS22HH, CONFIG_SENSOR_LOG_LEVEL);
  */
 static int lps22hh_enable_int(struct device *dev, int enable)
 {
-	struct lps22hh_data *lps22hh = dev->driver_data;
+	struct lps22hh_data *lps22hh = dev->fixed->driver_data;
 	lps22hh_reg_t int_route;
 
 	/* set interrupt */
@@ -42,7 +42,7 @@ int lps22hh_trigger_set(struct device *dev,
 			  const struct sensor_trigger *trig,
 			  sensor_trigger_handler_t handler)
 {
-	struct lps22hh_data *lps22hh = dev->driver_data;
+	struct lps22hh_data *lps22hh = dev->fixed->driver_data;
 	union axis1bit32_t raw_press;
 
 	if (trig->chan == SENSOR_CHAN_ALL) {
@@ -70,8 +70,8 @@ int lps22hh_trigger_set(struct device *dev,
 static void lps22hh_handle_interrupt(void *arg)
 {
 	struct device *dev = arg;
-	struct lps22hh_data *lps22hh = dev->driver_data;
-	const struct lps22hh_config *cfg = dev->config_info;
+	struct lps22hh_data *lps22hh = dev->fixed->driver_data;
+	const struct lps22hh_config *cfg = dev->fixed->config_info;
 	struct sensor_trigger drdy_trigger = {
 		.type = SENSOR_TRIG_DATA_READY,
 	};
@@ -87,7 +87,7 @@ static void lps22hh_handle_interrupt(void *arg)
 static void lps22hh_gpio_callback(struct device *dev,
 				  struct gpio_callback *cb, uint32_t pins)
 {
-	const struct lps22hh_config *cfg = dev->config_info;
+	const struct lps22hh_config *cfg = dev->fixed->config_info;
 	struct lps22hh_data *lps22hh =
 		CONTAINER_OF(cb, struct lps22hh_data, gpio_cb);
 
@@ -107,7 +107,7 @@ static void lps22hh_gpio_callback(struct device *dev,
 static void lps22hh_thread(int dev_ptr, int unused)
 {
 	struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct lps22hh_data *lps22hh = dev->driver_data;
+	struct lps22hh_data *lps22hh = dev->fixed->driver_data;
 
 	ARG_UNUSED(unused);
 
@@ -130,8 +130,8 @@ static void lps22hh_work_cb(struct k_work *work)
 
 int lps22hh_init_interrupt(struct device *dev)
 {
-	struct lps22hh_data *lps22hh = dev->driver_data;
-	const struct lps22hh_config *cfg = dev->config_info;
+	struct lps22hh_data *lps22hh = dev->fixed->driver_data;
+	const struct lps22hh_config *cfg = dev->fixed->config_info;
 	int ret;
 
 	/* setup data ready gpio interrupt */

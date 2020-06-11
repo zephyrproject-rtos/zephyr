@@ -258,7 +258,7 @@ static inline int z_impl_spi_transceive(struct device *dev,
 				       const struct spi_buf_set *rx_bufs)
 {
 	const struct spi_driver_api *api =
-		(const struct spi_driver_api *)dev->driver_api;
+		(const struct spi_driver_api *)dev->fixed->driver_api;
 
 	return api->transceive(dev, config, tx_bufs, rx_bufs);
 }
@@ -331,7 +331,7 @@ static inline int spi_transceive_async(struct device *dev,
 				       struct k_poll_signal *async)
 {
 	const struct spi_driver_api *api =
-		(const struct spi_driver_api *)dev->driver_api;
+		(const struct spi_driver_api *)dev->fixed->driver_api;
 
 	return api->transceive_async(dev, config, tx_bufs, rx_bufs, async);
 }
@@ -407,7 +407,7 @@ static inline int z_impl_spi_release(struct device *dev,
 				    const struct spi_config *config)
 {
 	const struct spi_driver_api *api =
-		(const struct spi_driver_api *)dev->driver_api;
+		(const struct spi_driver_api *)dev->fixed->driver_api;
 
 	return api->release(dev, config);
 }

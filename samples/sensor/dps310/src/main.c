@@ -19,7 +19,7 @@ void main(void)
 		return;
 	}
 
-	printk("dev %p name %s\n", dev, dev->name);
+	printk("dev %p name %s\n", dev, dev->fixed->name);
 
 	while (1) {
 		struct sensor_value temp, press;

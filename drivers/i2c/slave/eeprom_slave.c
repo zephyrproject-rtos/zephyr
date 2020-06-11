@@ -43,7 +43,7 @@ struct i2c_eeprom_slave_config {
 int eeprom_slave_program(struct device *dev, uint8_t *eeprom_data,
 			 unsigned int length)
 {
-	struct i2c_eeprom_slave_data *data = dev->driver_data;
+	struct i2c_eeprom_slave_data *data = dev->fixed->driver_data;
 
 	if (length > data->buffer_size) {
 		return -EINVAL;
@@ -57,7 +57,7 @@ int eeprom_slave_program(struct device *dev, uint8_t *eeprom_data,
 int eeprom_slave_read(struct device *dev, uint8_t *eeprom_data,
 		      unsigned int offset)
 {
-	struct i2c_eeprom_slave_data *data = dev->driver_data;
+	struct i2c_eeprom_slave_data *data = dev->fixed->driver_data;
 
 	if (!data || offset >= data->buffer_size) {
 		return -EINVAL;
@@ -159,14 +159,14 @@ static int eeprom_slave_stop(struct i2c_slave_config *config)
 
 static int eeprom_slave_register(struct device *dev)
 {
-	struct i2c_eeprom_slave_data *data = dev->driver_data;
+	struct i2c_eeprom_slave_data *data = dev->fixed->driver_data;
 
 	return i2c_slave_register(data->i2c_controller, &data->config);
 }
 
 static int eeprom_slave_unregister(struct device *dev)
 {
-	struct i2c_eeprom_slave_data *data = dev->driver_data;
+	struct i2c_eeprom_slave_data *data = dev->fixed->driver_data;
 
 	return i2c_slave_unregister(data->i2c_controller, &data->config);
 }

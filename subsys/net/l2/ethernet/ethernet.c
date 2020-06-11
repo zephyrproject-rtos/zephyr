@@ -145,7 +145,7 @@ static void ethernet_update_rx_stats(struct net_if *iface,
 static inline bool eth_is_vlan_tag_stripped(struct net_if *iface)
 {
 	struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api = dev->driver_api;
+	const struct ethernet_api *api = dev->fixed->driver_api;
 
 	return (api->get_capabilities(dev) & ETHERNET_HW_VLAN_TAG_STRIP);
 }
@@ -1024,7 +1024,7 @@ void net_eth_carrier_off(struct net_if *iface)
 struct device *net_eth_get_ptp_clock(struct net_if *iface)
 {
 	struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api = dev->driver_api;
+	const struct ethernet_api *api = dev->fixed->driver_api;
 
 	if (!api) {
 		return NULL;

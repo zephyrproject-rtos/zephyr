@@ -46,7 +46,7 @@ static int eth_fake_send(struct device *dev, struct net_pkt *pkt)
 static void eth_fake_iface_init(struct net_if *iface)
 {
 	struct device *dev = net_if_get_device(iface);
-	struct eth_fake_context *ctx = dev->driver_data;
+	struct eth_fake_context *ctx = dev->fixed->driver_data;
 
 	ctx->iface = iface;
 

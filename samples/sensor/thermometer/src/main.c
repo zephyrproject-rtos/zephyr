@@ -21,7 +21,7 @@ void main(void)
 	}
 
 	printf("temp device is %p, name is %s\n",
-	       temp_dev, temp_dev->name);
+	       temp_dev, temp_dev->fixed->name);
 
 	while (1) {
 		int r;

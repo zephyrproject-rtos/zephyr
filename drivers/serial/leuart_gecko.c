@@ -225,7 +225,7 @@ static void leuart_gecko_irq_callback_set(struct device *dev,
 					  uart_irq_callback_user_data_t cb,
 					  void *cb_data)
 {
-	struct leuart_gecko_data *data = dev->driver_data;
+	struct leuart_gecko_data *data = dev->fixed->driver_data;
 
 	data->callback = cb;
 	data->cb_data = cb_data;
@@ -234,7 +234,7 @@ static void leuart_gecko_irq_callback_set(struct device *dev,
 static void leuart_gecko_isr(void *arg)
 {
 	struct device *dev = arg;
-	struct leuart_gecko_data *data = dev->driver_data;
+	struct leuart_gecko_data *data = dev->fixed->driver_data;
 
 	if (data->callback) {
 		data->callback(data->cb_data);

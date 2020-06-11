@@ -31,7 +31,7 @@
 static void gpio_stm32_isr(int line, void *arg)
 {
 	struct device *dev = arg;
-	struct gpio_stm32_data *data = dev->driver_data;
+	struct gpio_stm32_data *data = dev->fixed->driver_data;
 
 	if ((BIT(line) & data->cb_pins) != 0) {
 		gpio_fire_callbacks(&data->cb, dev, BIT(line));
@@ -311,7 +311,7 @@ static int gpio_stm32_enable_int(int port, int pin)
 
 static int gpio_stm32_port_get_raw(struct device *dev, uint32_t *value)
 {
-	const struct gpio_stm32_config *cfg = dev->config_info;
+	const struct gpio_stm32_config *cfg = dev->fixed->config_info;
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
 
 	*value = LL_GPIO_ReadInputPort(gpio);
@@ -323,7 +323,7 @@ static int gpio_stm32_port_set_masked_raw(struct device *dev,
 					  gpio_port_pins_t mask,
 					  gpio_port_value_t value)
 {
-	const struct gpio_stm32_config *cfg = dev->config_info;
+	const struct gpio_stm32_config *cfg = dev->fixed->config_info;
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
 	uint32_t port_value;
 
@@ -336,7 +336,7 @@ static int gpio_stm32_port_set_masked_raw(struct device *dev,
 static int gpio_stm32_port_set_bits_raw(struct device *dev,
 					gpio_port_pins_t pins)
 {
-	const struct gpio_stm32_config *cfg = dev->config_info;
+	const struct gpio_stm32_config *cfg = dev->fixed->config_info;
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
 
 	/*
@@ -351,7 +351,7 @@ static int gpio_stm32_port_set_bits_raw(struct device *dev,
 static int gpio_stm32_port_clear_bits_raw(struct device *dev,
 					  gpio_port_pins_t pins)
 {
-	const struct gpio_stm32_config *cfg = dev->config_info;
+	const struct gpio_stm32_config *cfg = dev->fixed->config_info;
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
 
 #ifdef CONFIG_SOC_SERIES_STM32F1X
@@ -371,7 +371,7 @@ static int gpio_stm32_port_clear_bits_raw(struct device *dev,
 static int gpio_stm32_port_toggle_bits(struct device *dev,
 				       gpio_port_pins_t pins)
 {
-	const struct gpio_stm32_config *cfg = dev->config_info;
+	const struct gpio_stm32_config *cfg = dev->fixed->config_info;
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
 
 	/*
@@ -389,7 +389,7 @@ static int gpio_stm32_port_toggle_bits(struct device *dev,
 static int gpio_stm32_config(struct device *dev,
 			     gpio_pin_t pin, gpio_flags_t flags)
 {
-	const struct gpio_stm32_config *cfg = dev->config_info;
+	const struct gpio_stm32_config *cfg = dev->fixed->config_info;
 	int err = 0;
 	int pincfg;
 
@@ -428,8 +428,8 @@ static int gpio_stm32_pin_interrupt_configure(struct device *dev,
 		gpio_pin_t pin, enum gpio_int_mode mode,
 		enum gpio_int_trig trig)
 {
-	const struct gpio_stm32_config *cfg = dev->config_info;
-	struct gpio_stm32_data *data = dev->driver_data;
+	const struct gpio_stm32_config *cfg = dev->fixed->config_info;
+	struct gpio_stm32_data *data = dev->fixed->driver_data;
 	int edge = 0;
 	int err = 0;
 
@@ -492,7 +492,7 @@ static int gpio_stm32_manage_callback(struct device *dev,
 				      struct gpio_callback *callback,
 				      bool set)
 {
-	struct gpio_stm32_data *data = dev->driver_data;
+	struct gpio_stm32_data *data = dev->fixed->driver_data;
 
 	return gpio_manage_callback(&data->cb, callback, set);
 }
@@ -500,7 +500,7 @@ static int gpio_stm32_manage_callback(struct device *dev,
 static int gpio_stm32_enable_callback(struct device *dev,
 				      gpio_pin_t pin)
 {
-	struct gpio_stm32_data *data = dev->driver_data;
+	struct gpio_stm32_data *data = dev->fixed->driver_data;
 
 	data->cb_pins |= BIT(pin);
 
@@ -510,7 +510,7 @@ static int gpio_stm32_enable_callback(struct device *dev,
 static int gpio_stm32_disable_callback(struct device *dev,
 				       gpio_pin_t pin)
 {
-	struct gpio_stm32_data *data = dev->driver_data;
+	struct gpio_stm32_data *data = dev->fixed->driver_data;
 
 	data->cb_pins &= ~BIT(pin);
 
@@ -543,7 +543,7 @@ static const struct gpio_driver_api gpio_stm32_driver = {
  */
 static int gpio_stm32_init(struct device *device)
 {
-	const struct gpio_stm32_config *cfg = device->config_info;
+	const struct gpio_stm32_config *cfg = device->fixed->config_info;
 
 	/* enable clock for subsystem */
 	struct device *clk =

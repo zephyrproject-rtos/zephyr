@@ -43,8 +43,8 @@ static int mcux_tpm_pin_set(struct device *dev, uint32_t pwm,
 			      uint32_t period_cycles, uint32_t pulse_cycles,
 			      pwm_flags_t flags)
 {
-	const struct mcux_tpm_config *config = dev->config_info;
-	struct mcux_tpm_data *data = dev->driver_data;
+	const struct mcux_tpm_config *config = dev->fixed->config_info;
+	struct mcux_tpm_data *data = dev->fixed->driver_data;
 	uint8_t duty_cycle;
 
 	if ((period_cycles == 0U) || (pulse_cycles > period_cycles)) {
@@ -79,7 +79,7 @@ static int mcux_tpm_pin_set(struct device *dev, uint32_t pwm,
 			LOG_WRN("Changing period cycles from %d to %d"
 				" affects all %d channels in %s",
 				data->period_cycles, period_cycles,
-				config->channel_count, dev->name);
+				config->channel_count, dev->fixed->name);
 		}
 
 		data->period_cycles = period_cycles;
@@ -119,8 +119,8 @@ static int mcux_tpm_pin_set(struct device *dev, uint32_t pwm,
 static int mcux_tpm_get_cycles_per_sec(struct device *dev, uint32_t pwm,
 					 uint64_t *cycles)
 {
-	const struct mcux_tpm_config *config = dev->config_info;
-	struct mcux_tpm_data *data = dev->driver_data;
+	const struct mcux_tpm_config *config = dev->fixed->config_info;
+	struct mcux_tpm_data *data = dev->fixed->driver_data;
 
 	*cycles = data->clock_freq >> config->prescale;
 
@@ -129,8 +129,8 @@ static int mcux_tpm_get_cycles_per_sec(struct device *dev, uint32_t pwm,
 
 static int mcux_tpm_init(struct device *dev)
 {
-	const struct mcux_tpm_config *config = dev->config_info;
-	struct mcux_tpm_data *data = dev->driver_data;
+	const struct mcux_tpm_config *config = dev->fixed->config_info;
+	struct mcux_tpm_data *data = dev->fixed->driver_data;
 	tpm_chnl_pwm_signal_param_t *channel = data->channel;
 	struct device *clock_dev;
 	tpm_config_t tpm_config;

@@ -24,12 +24,12 @@ struct wdt_nrfx_config {
 
 static inline struct wdt_nrfx_data *get_dev_data(struct device *dev)
 {
-	return dev->driver_data;
+	return dev->fixed->driver_data;
 }
 
 static inline const struct wdt_nrfx_config *get_dev_config(struct device *dev)
 {
-	return dev->config_info;
+	return dev->fixed->config_info;
 }
 
 

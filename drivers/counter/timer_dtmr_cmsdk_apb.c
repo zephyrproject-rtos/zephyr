@@ -38,8 +38,8 @@ struct dtmr_cmsdk_apb_dev_data {
 static int dtmr_cmsdk_apb_start(struct device *dev)
 {
 	const struct dtmr_cmsdk_apb_cfg * const cfg =
-						dev->config_info;
-	struct dtmr_cmsdk_apb_dev_data *data = dev->driver_data;
+						dev->fixed->config_info;
+	struct dtmr_cmsdk_apb_dev_data *data = dev->fixed->driver_data;
 
 	/* Set the timer reload to count */
 	cfg->dtimer->timer1load = data->load;
@@ -53,7 +53,7 @@ static int dtmr_cmsdk_apb_start(struct device *dev)
 static int dtmr_cmsdk_apb_stop(struct device *dev)
 {
 	const struct dtmr_cmsdk_apb_cfg * const cfg =
-						dev->config_info;
+						dev->fixed->config_info;
 
 	/* Disable the dualtimer */
 	cfg->dtimer->timer1ctrl = 0x0;
@@ -64,8 +64,8 @@ static int dtmr_cmsdk_apb_stop(struct device *dev)
 static int dtmr_cmsdk_apb_get_value(struct device *dev, uint32_t *ticks)
 {
 	const struct dtmr_cmsdk_apb_cfg * const cfg =
-						dev->config_info;
-	struct dtmr_cmsdk_apb_dev_data *data = dev->driver_data;
+						dev->fixed->config_info;
+	struct dtmr_cmsdk_apb_dev_data *data = dev->fixed->driver_data;
 
 	*ticks = data->load - cfg->dtimer->timer1value;
 	return 0;
@@ -75,8 +75,8 @@ static int dtmr_cmsdk_apb_set_top_value(struct device *dev,
 					const struct counter_top_cfg *top_cfg)
 {
 	const struct dtmr_cmsdk_apb_cfg * const cfg =
-						dev->config_info;
-	struct dtmr_cmsdk_apb_dev_data *data = dev->driver_data;
+						dev->fixed->config_info;
+	struct dtmr_cmsdk_apb_dev_data *data = dev->fixed->driver_data;
 
 	data->top_callback = top_cfg->callback;
 	data->top_user_data = top_cfg->user_data;
@@ -108,7 +108,7 @@ static int dtmr_cmsdk_apb_set_top_value(struct device *dev,
 
 static uint32_t dtmr_cmsdk_apb_get_top_value(struct device *dev)
 {
-	struct dtmr_cmsdk_apb_dev_data *data = dev->driver_data;
+	struct dtmr_cmsdk_apb_dev_data *data = dev->fixed->driver_data;
 
 	uint32_t ticks = data->load;
 
@@ -118,7 +118,7 @@ static uint32_t dtmr_cmsdk_apb_get_top_value(struct device *dev)
 static uint32_t dtmr_cmsdk_apb_get_pending_int(struct device *dev)
 {
 	const struct dtmr_cmsdk_apb_cfg * const cfg =
-						dev->config_info;
+						dev->fixed->config_info;
 
 	return cfg->dtimer->timer1ris;
 }
@@ -135,9 +135,9 @@ static const struct counter_driver_api dtmr_cmsdk_apb_api = {
 static void dtmr_cmsdk_apb_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	struct dtmr_cmsdk_apb_dev_data *data = dev->driver_data;
+	struct dtmr_cmsdk_apb_dev_data *data = dev->fixed->driver_data;
 	const struct dtmr_cmsdk_apb_cfg * const cfg =
-						dev->config_info;
+						dev->fixed->config_info;
 
 	cfg->dtimer->timer1intclr = DUALTIMER_INTCLR;
 	if (data->top_callback) {
@@ -148,7 +148,7 @@ static void dtmr_cmsdk_apb_isr(void *arg)
 static int dtmr_cmsdk_apb_init(struct device *dev)
 {
 	const struct dtmr_cmsdk_apb_cfg * const cfg =
-						dev->config_info;
+						dev->fixed->config_info;
 
 #ifdef CONFIG_CLOCK_CONTROL
 	/* Enable clock for subsystem */

@@ -63,14 +63,14 @@ static const struct flash_pages_layout flash_sam0_pages_layout = {
 
 static inline void flash_sam0_sem_take(struct device *dev)
 {
-	struct flash_sam0_data *ctx = dev->driver_data;
+	struct flash_sam0_data *ctx = dev->fixed->driver_data;
 
 	k_sem_take(&ctx->sem, K_FOREVER);
 }
 
 static inline void flash_sam0_sem_give(struct device *dev)
 {
-	struct flash_sam0_data *ctx = dev->driver_data;
+	struct flash_sam0_data *ctx = dev->fixed->driver_data;
 
 	k_sem_give(&ctx->sem);
 }
@@ -184,7 +184,7 @@ static int flash_sam0_erase_row(struct device *dev, off_t offset)
 
 static int flash_sam0_commit(struct device *dev)
 {
-	struct flash_sam0_data *ctx = dev->driver_data;
+	struct flash_sam0_data *ctx = dev->fixed->driver_data;
 	int err;
 	int page;
 	off_t offset = ctx->offset;
@@ -215,7 +215,7 @@ static int flash_sam0_commit(struct device *dev)
 static int flash_sam0_write(struct device *dev, off_t offset,
 			    const void *data, size_t len)
 {
-	struct flash_sam0_data *ctx = dev->driver_data;
+	struct flash_sam0_data *ctx = dev->fixed->driver_data;
 	const uint8_t *pdata = data;
 	off_t addr;
 	int err;
@@ -390,7 +390,7 @@ void flash_sam0_page_layout(struct device *dev,
 
 static int flash_sam0_init(struct device *dev)
 {
-	struct flash_sam0_data *ctx = dev->driver_data;
+	struct flash_sam0_data *ctx = dev->fixed->driver_data;
 
 	k_sem_init(&ctx->sem, 1, 1);
 

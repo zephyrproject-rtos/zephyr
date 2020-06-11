@@ -604,7 +604,7 @@ static struct bt_conn_cb conn_callbacks = {
 
 static int net_bt_init(struct device *dev)
 {
-	NET_DBG("dev %p driver_data %p", dev, dev->driver_data);
+	NET_DBG("dev %p driver_data %p", dev, dev->fixed->driver_data);
 
 #if defined(CONFIG_NET_L2_BT_MGMT)
 	bt_conn_cb_register(&conn_callbacks);

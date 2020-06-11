@@ -210,7 +210,7 @@ __syscall int i2c_configure(struct device *dev, uint32_t dev_config);
 static inline int z_impl_i2c_configure(struct device *dev, uint32_t dev_config)
 {
 	const struct i2c_driver_api *api =
-		(const struct i2c_driver_api *)dev->driver_api;
+		(const struct i2c_driver_api *)dev->fixed->driver_api;
 
 	return api->configure(dev, dev_config);
 }
@@ -250,7 +250,7 @@ static inline int z_impl_i2c_transfer(struct device *dev,
 				     uint16_t addr)
 {
 	const struct i2c_driver_api *api =
-		(const struct i2c_driver_api *)dev->driver_api;
+		(const struct i2c_driver_api *)dev->fixed->driver_api;
 
 	return api->transfer(dev, msgs, num_msgs, addr);
 }
@@ -271,7 +271,7 @@ __syscall int i2c_recover_bus(struct device *dev);
 static inline int z_impl_i2c_recover_bus(struct device *dev)
 {
 	const struct i2c_driver_api *api =
-		(const struct i2c_driver_api *)dev->driver_api;
+		(const struct i2c_driver_api *)dev->fixed->driver_api;
 
 	if (api->recover_bus == NULL) {
 		return -ENOTSUP;
@@ -307,7 +307,7 @@ static inline int i2c_slave_register(struct device *dev,
 				     struct i2c_slave_config *cfg)
 {
 	const struct i2c_driver_api *api =
-		(const struct i2c_driver_api *)dev->driver_api;
+		(const struct i2c_driver_api *)dev->fixed->driver_api;
 
 	if (api->slave_register == NULL) {
 		return -ENOTSUP;
@@ -335,7 +335,7 @@ static inline int i2c_slave_unregister(struct device *dev,
 				       struct i2c_slave_config *cfg)
 {
 	const struct i2c_driver_api *api =
-		(const struct i2c_driver_api *)dev->driver_api;
+		(const struct i2c_driver_api *)dev->fixed->driver_api;
 
 	if (api->slave_unregister == NULL) {
 		return -ENOTSUP;
@@ -361,7 +361,7 @@ __syscall int i2c_slave_driver_register(struct device *dev);
 static inline int z_impl_i2c_slave_driver_register(struct device *dev)
 {
 	const struct i2c_slave_driver_api *api =
-		(const struct i2c_slave_driver_api *)dev->driver_api;
+		(const struct i2c_slave_driver_api *)dev->fixed->driver_api;
 
 	return api->driver_register(dev);
 }
@@ -383,7 +383,7 @@ __syscall int i2c_slave_driver_unregister(struct device *dev);
 static inline int z_impl_i2c_slave_driver_unregister(struct device *dev)
 {
 	const struct i2c_slave_driver_api *api =
-		(const struct i2c_slave_driver_api *)dev->driver_api;
+		(const struct i2c_slave_driver_api *)dev->fixed->driver_api;
 
 	return api->driver_unregister(dev);
 }

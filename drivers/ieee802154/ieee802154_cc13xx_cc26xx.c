@@ -48,7 +48,7 @@ static HwiP_Struct RF_hwiCpe0Obj;
 static inline struct ieee802154_cc13xx_cc26xx_data *
 get_dev_data(struct device *dev)
 {
-	return dev->driver_data;
+	return dev->fixed->driver_data;
 }
 
 static enum ieee802154_hw_caps

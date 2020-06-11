@@ -172,9 +172,9 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 
 	for (dev = __device_start; dev != __device_end; dev++) {
 		if ((dev->init_res == 0) &&
-		    strcmp(dev->name, "") && (dev->name != NULL)) {
+		    strcmp(dev->fixed->name, "") && (dev->fixed->name != NULL)) {
 			if (idx == device_idx) {
-				entry->syntax = dev->name;
+				entry->syntax = dev->fixed->name;
 				break;
 			}
 			device_idx++;

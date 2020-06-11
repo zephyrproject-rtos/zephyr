@@ -25,12 +25,12 @@ struct spi_nrfx_config {
 
 static inline struct spi_nrfx_data *get_dev_data(struct device *dev)
 {
-	return dev->driver_data;
+	return dev->fixed->driver_data;
 }
 
 static inline const struct spi_nrfx_config *get_dev_config(struct device *dev)
 {
-	return dev->config_info;
+	return dev->fixed->config_info;
 }
 
 static inline nrf_spis_mode_t get_nrf_spis_mode(uint16_t operation)
@@ -71,7 +71,7 @@ static int configure(struct device *dev,
 
 	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_MASTER) {
 		LOG_ERR("Master mode is not supported on %s",
-			    dev->name);
+			    dev->fixed->name);
 		return -EINVAL;
 	}
 
@@ -240,7 +240,7 @@ static int init_spis(struct device *dev, const nrfx_spis_config_t *config)
 					   dev);
 	if (result != NRFX_SUCCESS) {
 		LOG_ERR("Failed to initialize device: %s",
-			    dev->name);
+			    dev->fixed->name);
 		return -EBUSY;
 	}
 

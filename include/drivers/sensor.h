@@ -377,7 +377,7 @@ static inline int z_impl_sensor_attr_set(struct device *dev,
 					const struct sensor_value *val)
 {
 	const struct sensor_driver_api *api =
-		(const struct sensor_driver_api *)dev->driver_api;
+		(const struct sensor_driver_api *)dev->fixed->driver_api;
 
 	if (api->attr_set == NULL) {
 		return -ENOTSUP;
@@ -408,7 +408,7 @@ static inline int sensor_trigger_set(struct device *dev,
 				     sensor_trigger_handler_t handler)
 {
 	const struct sensor_driver_api *api =
-		(const struct sensor_driver_api *)dev->driver_api;
+		(const struct sensor_driver_api *)dev->fixed->driver_api;
 
 	if (api->trigger_set == NULL) {
 		return -ENOTSUP;
@@ -438,7 +438,7 @@ __syscall int sensor_sample_fetch(struct device *dev);
 static inline int z_impl_sensor_sample_fetch(struct device *dev)
 {
 	const struct sensor_driver_api *api =
-		(const struct sensor_driver_api *)dev->driver_api;
+		(const struct sensor_driver_api *)dev->fixed->driver_api;
 
 	return api->sample_fetch(dev, SENSOR_CHAN_ALL);
 }
@@ -469,7 +469,7 @@ static inline int z_impl_sensor_sample_fetch_chan(struct device *dev,
 						 enum sensor_channel type)
 {
 	const struct sensor_driver_api *api =
-		(const struct sensor_driver_api *)dev->driver_api;
+		(const struct sensor_driver_api *)dev->fixed->driver_api;
 
 	return api->sample_fetch(dev, type);
 }
@@ -504,7 +504,7 @@ static inline int z_impl_sensor_channel_get(struct device *dev,
 					   struct sensor_value *val)
 {
 	const struct sensor_driver_api *api =
-		(const struct sensor_driver_api *)dev->driver_api;
+		(const struct sensor_driver_api *)dev->fixed->driver_api;
 
 	return api->channel_get(dev, chan, val);
 }

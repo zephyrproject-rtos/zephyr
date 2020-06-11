@@ -98,7 +98,7 @@ int can_loopback_send(struct device *dev, const struct zcan_frame *frame,
 	struct k_sem tx_sem;
 
 	LOG_DBG("Sending %d bytes on %s. Id: 0x%x, ID type: %s %s",
-		frame->dlc, dev->name,
+		frame->dlc, dev->fixed->name,
 		frame->id_type == CAN_STANDARD_IDENTIFIER ?
 				  frame->std_id : frame->ext_id,
 		frame->id_type == CAN_STANDARD_IDENTIFIER ?
@@ -267,7 +267,7 @@ static int can_loopback_init(struct device *dev)
 		return -1;
 	}
 
-	LOG_INF("Init of %s done", dev->name);
+	LOG_INF("Init of %s done", dev->fixed->name);
 
 	return 0;
 }
@@ -288,10 +288,10 @@ DEVICE_AND_API_INIT(can_loopback_1, CONFIG_CAN_LOOPBACK_DEV_NAME,
 static int socket_can_init_1(struct device *dev)
 {
 	struct device *can_dev = DEVICE_GET(can_loopback_1);
-	struct socket_can_context *socket_context = dev->driver_data;
+	struct socket_can_context *socket_context = dev->fixed->driver_data;
 
 	LOG_DBG("Init socket CAN device %p (%s) for dev %p (%s)",
-		dev, dev->name, can_dev, can_dev->name);
+		dev, dev->fixed->name, can_dev, can_dev->fixed->name);
 
 	socket_context->can_dev = can_dev;
 	socket_context->msgq = &socket_can_msgq;

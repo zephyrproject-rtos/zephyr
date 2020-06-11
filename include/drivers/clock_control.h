@@ -139,7 +139,7 @@ static inline int clock_control_on(struct device *dev,
 				   clock_control_subsys_t sys)
 {
 	const struct clock_control_driver_api *api =
-		(const struct clock_control_driver_api *)dev->driver_api;
+		(const struct clock_control_driver_api *)dev->fixed->driver_api;
 
 	return api->on(dev, sys);
 }
@@ -158,7 +158,7 @@ static inline int clock_control_off(struct device *dev,
 				    clock_control_subsys_t sys)
 {
 	const struct clock_control_driver_api *api =
-		(const struct clock_control_driver_api *)dev->driver_api;
+		(const struct clock_control_driver_api *)dev->fixed->driver_api;
 
 	return api->off(dev, sys);
 }
@@ -186,7 +186,7 @@ static inline int clock_control_async_on(struct device *dev,
 					 struct clock_control_async_data *data)
 {
 	const struct clock_control_driver_api *api =
-		(const struct clock_control_driver_api *)dev->driver_api;
+		(const struct clock_control_driver_api *)dev->fixed->driver_api;
 
 	if (!api->async_on) {
 		return -ENOTSUP;
@@ -208,7 +208,7 @@ static inline enum clock_control_status clock_control_get_status(
 						clock_control_subsys_t sys)
 {
 	const struct clock_control_driver_api *api =
-		(const struct clock_control_driver_api *)dev->driver_api;
+		(const struct clock_control_driver_api *)dev->fixed->driver_api;
 
 	if (!api->get_status) {
 		return CLOCK_CONTROL_STATUS_UNKNOWN;
@@ -229,10 +229,10 @@ static inline int clock_control_get_rate(struct device *dev,
 					 uint32_t *rate)
 {
 	const struct clock_control_driver_api *api =
-		(const struct clock_control_driver_api *)dev->driver_api;
+		(const struct clock_control_driver_api *)dev->fixed->driver_api;
 
 	__ASSERT(api->get_rate != NULL, "%s not implemented for device %s",
-		__func__, dev->name);
+		__func__, dev->fixed->name);
 
 	return api->get_rate(dev, sys, rate);
 }

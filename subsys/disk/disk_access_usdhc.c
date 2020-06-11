@@ -2699,14 +2699,14 @@ static int usdhc_board_access_init(struct usdhc_priv *priv)
 
 static int usdhc_access_init(const struct device *dev)
 {
-	struct usdhc_priv *priv = dev->driver_data;
+	struct usdhc_priv *priv = dev->fixed->driver_data;
 	int ret;
 
 	(void)k_mutex_lock(&z_usdhc_init_lock, K_FOREVER);
 
 	memset((char *)priv, 0, sizeof(struct usdhc_priv));
 #if DT_NODE_HAS_STATUS(DT_INST(0, nxp_imx_usdhc), okay)
-	if (!strcmp(dev->name, DT_LABEL(DT_INST(0, nxp_imx_usdhc)))) {
+	if (!strcmp(dev->fixed->name, DT_LABEL(DT_INST(0, nxp_imx_usdhc)))) {
 		priv->host_config.base =
 			(USDHC_Type *)DT_REG_ADDR(DT_INST(0, nxp_imx_usdhc));
 		priv->nusdhc = 0;
@@ -2722,7 +2722,7 @@ static int usdhc_access_init(const struct device *dev)
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_INST(1, nxp_imx_usdhc), okay)
-	if (!strcmp(dev->name, DT_LABEL(DT_INST(1, nxp_imx_usdhc)))) {
+	if (!strcmp(dev->fixed->name, DT_LABEL(DT_INST(1, nxp_imx_usdhc)))) {
 		priv->host_config.base =
 			(USDHC_Type *)DT_REG_ADDR(DT_INST(1, nxp_imx_usdhc));
 		priv->nusdhc = 1;
@@ -2780,7 +2780,7 @@ static int usdhc_access_init(const struct device *dev)
 static int disk_usdhc_access_status(struct disk_info *disk)
 {
 	struct device *dev = disk->dev;
-	struct usdhc_priv *priv = dev->driver_data;
+	struct usdhc_priv *priv = dev->fixed->driver_data;
 
 	return priv->status;
 }
@@ -2789,7 +2789,7 @@ static int disk_usdhc_access_read(struct disk_info *disk, uint8_t *buf,
 				 uint32_t sector, uint32_t count)
 {
 	struct device *dev = disk->dev;
-	struct usdhc_priv *priv = dev->driver_data;
+	struct usdhc_priv *priv = dev->fixed->driver_data;
 
 	LOG_DBG("sector=%u count=%u", sector, count);
 
@@ -2800,7 +2800,7 @@ static int disk_usdhc_access_write(struct disk_info *disk, const uint8_t *buf,
 				  uint32_t sector, uint32_t count)
 {
 	struct device *dev = disk->dev;
-	struct usdhc_priv *priv = dev->driver_data;
+	struct usdhc_priv *priv = dev->fixed->driver_data;
 
 	LOG_DBG("sector=%u count=%u", sector, count);
 
@@ -2810,7 +2810,7 @@ static int disk_usdhc_access_write(struct disk_info *disk, const uint8_t *buf,
 static int disk_usdhc_access_ioctl(struct disk_info *disk, uint8_t cmd, void *buf)
 {
 	struct device *dev = disk->dev;
-	struct usdhc_priv *priv = dev->driver_data;
+	struct usdhc_priv *priv = dev->fixed->driver_data;
 	int err;
 
 	err = sdhc_map_disk_status(priv->status);
@@ -2840,7 +2840,7 @@ static int disk_usdhc_access_ioctl(struct disk_info *disk, uint8_t cmd, void *bu
 static int disk_usdhc_access_init(struct disk_info *disk)
 {
 	struct device *dev = disk->dev;
-	struct usdhc_priv *priv = dev->driver_data;
+	struct usdhc_priv *priv = dev->fixed->driver_data;
 
 	if (priv->status == DISK_STATUS_OK) {
 		/* Called twice, don't re-init. */
@@ -2865,7 +2865,7 @@ static struct disk_info usdhc_disk = {
 
 static int disk_usdhc_init(struct device *dev)
 {
-	struct usdhc_priv *priv = dev->driver_data;
+	struct usdhc_priv *priv = dev->fixed->driver_data;
 
 	priv->status = DISK_STATUS_UNINIT;
 

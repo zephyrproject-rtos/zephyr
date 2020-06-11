@@ -251,7 +251,7 @@ static void set_ppp_carrier_on(struct gsm_modem *gsm)
 		return;
 	}
 
-	api = (const struct ppp_api *)ppp_dev->driver_api;
+	api = (const struct ppp_api *)ppp_dev->fixed->driver_api;
 	api->start(ppp_dev);
 }
 
@@ -395,7 +395,7 @@ static void mux_setup_next(struct gsm_modem *gsm)
 static void mux_attach_cb(struct device *mux, int dlci_address,
 			  bool connected, void *user_data)
 {
-	LOG_DBG("DLCI %d to %s %s", dlci_address, mux->name,
+	LOG_DBG("DLCI %d to %s %s", dlci_address, mux->fixed->name,
 		connected ? "connected" : "disconnected");
 
 	if (connected) {
@@ -561,7 +561,7 @@ static void gsm_configure(struct k_work *work)
 
 static int gsm_init(struct device *device)
 {
-	struct gsm_modem *gsm = device->driver_data;
+	struct gsm_modem *gsm = device->fixed->driver_data;
 	int r;
 
 	LOG_DBG("Generic GSM modem (%p)", gsm);

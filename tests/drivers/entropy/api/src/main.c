@@ -78,7 +78,7 @@ static int get_entropy(void)
 	}
 
 	TC_PRINT("random device is %p, name is %s\n",
-		 dev, dev->name);
+		 dev, dev->fixed->name);
 
 	ret = random_entropy(dev, buffer, 0);
 

@@ -176,7 +176,7 @@ static void update_gptp(struct net_if *iface, struct net_pkt *pkt,
 
 static int eth_send(struct device *dev, struct net_pkt *pkt)
 {
-	struct eth_context *ctx = dev->driver_data;
+	struct eth_context *ctx = dev->fixed->driver_data;
 	int count = net_pkt_get_len(pkt);
 	int ret;
 
@@ -479,7 +479,7 @@ enum ethernet_hw_caps eth_posix_native_get_capabilities(struct device *dev)
 #if defined(CONFIG_ETH_NATIVE_POSIX_PTP_CLOCK)
 static struct device *eth_get_ptp_clock(struct device *dev)
 {
-	struct eth_context *context = dev->driver_data;
+	struct eth_context *context = dev->fixed->driver_data;
 
 	return context->ptp_clock;
 }
@@ -488,7 +488,7 @@ static struct device *eth_get_ptp_clock(struct device *dev)
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 static struct net_stats_eth *get_stats(struct device *dev)
 {
-	struct eth_context *context = dev->driver_data;
+	struct eth_context *context = dev->fixed->driver_data;
 
 	return &(context->stats);
 }
@@ -502,7 +502,7 @@ static int set_config(struct device *dev,
 
 	if (IS_ENABLED(CONFIG_NET_PROMISCUOUS_MODE) &&
 	    type == ETHERNET_CONFIG_TYPE_PROMISC_MODE) {
-		struct eth_context *context = dev->driver_data;
+		struct eth_context *context = dev->fixed->driver_data;
 
 		if (config->promisc_mode) {
 			if (context->promisc_mode) {
@@ -541,7 +541,7 @@ static int vlan_setup(struct device *dev, struct net_if *iface,
 
 static int eth_start_device(struct device *dev)
 {
-	struct eth_context *context = dev->driver_data;
+	struct eth_context *context = dev->fixed->driver_data;
 	int ret;
 
 	context->status = true;
@@ -555,7 +555,7 @@ static int eth_start_device(struct device *dev)
 
 static int eth_stop_device(struct device *dev)
 {
-	struct eth_context *context = dev->driver_data;
+	struct eth_context *context = dev->fixed->driver_data;
 
 	context->status = false;
 
@@ -652,8 +652,8 @@ static const struct ptp_clock_driver_api api = {
 static int ptp_init(struct device *port)
 {
 	struct device *eth_dev = DEVICE_GET(eth_native_posix);
-	struct eth_context *context = eth_dev->driver_data;
-	struct ptp_context *ptp_context = port->driver_data;
+	struct eth_context *context = eth_dev->fixed->driver_data;
+	struct ptp_context *ptp_context = port->fixed->driver_data;
 
 	context->ptp_clock = port;
 	ptp_context->eth_context = context;

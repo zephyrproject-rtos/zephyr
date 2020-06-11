@@ -1819,7 +1819,7 @@ static struct net_offload offload_funcs = {
 
 static inline uint8_t *wncm14a2a_get_mac(struct device *dev)
 {
-	struct wncm14a2a_iface_ctx *ctx = dev->driver_data;
+	struct wncm14a2a_iface_ctx *ctx = dev->fixed->driver_data;
 
 	ctx->mac_addr[0] = 0x00;
 	ctx->mac_addr[1] = 0x10;
@@ -1833,7 +1833,7 @@ static inline uint8_t *wncm14a2a_get_mac(struct device *dev)
 static void offload_iface_init(struct net_if *iface)
 {
 	struct device *dev = net_if_get_device(iface);
-	struct wncm14a2a_iface_ctx *ctx = dev->driver_data;
+	struct wncm14a2a_iface_ctx *ctx = dev->fixed->driver_data;
 
 	iface->if_dev->offload = &offload_funcs;
 	net_if_set_link_addr(iface, wncm14a2a_get_mac(dev),

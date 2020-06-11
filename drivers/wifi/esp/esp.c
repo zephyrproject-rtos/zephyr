@@ -87,7 +87,7 @@ MODEM_CMD_DEFINE(on_cmd_error)
 /* RX thread */
 static void esp_rx(struct device *dev)
 {
-	struct esp_data *data = dev->driver_data;
+	struct esp_data *data = dev->fixed->driver_data;
 
 	while (true) {
 		/* wait for incoming data */
@@ -529,7 +529,7 @@ static void esp_mgmt_scan_work(struct k_work *work)
 
 static int esp_mgmt_scan(struct device *dev, scan_result_cb_t cb)
 {
-	struct esp_data *data = dev->driver_data;
+	struct esp_data *data = dev->fixed->driver_data;
 
 	if (data->scan_cb != NULL) {
 		return -EINPROGRESS;
@@ -593,7 +593,7 @@ static void esp_mgmt_connect_work(struct k_work *work)
 static int esp_mgmt_connect(struct device *dev,
 			    struct wifi_connect_req_params *params)
 {
-	struct esp_data *data = dev->driver_data;
+	struct esp_data *data = dev->fixed->driver_data;
 	int len;
 
 	if (!net_if_is_up(data->net_iface)) {
@@ -629,7 +629,7 @@ static int esp_mgmt_connect(struct device *dev,
 
 static int esp_mgmt_disconnect(struct device *dev)
 {
-	struct esp_data *data = dev->driver_data;
+	struct esp_data *data = dev->fixed->driver_data;
 	int ret;
 
 	ret = modem_cmd_send(&data->mctx.iface, &data->mctx.cmd_handler,
@@ -644,7 +644,7 @@ static int esp_mgmt_ap_enable(struct device *dev,
 {
 	char cmd[sizeof("AT+"_CWSAP"=\"\",\"\",xx,x") + WIFI_SSID_MAX_LEN +
 		 WIFI_PSK_MAX_LEN];
-	struct esp_data *data = dev->driver_data;
+	struct esp_data *data = dev->fixed->driver_data;
 	int ecn = 0, len, ret;
 
 	ret = modem_cmd_send(&data->mctx.iface, &data->mctx.cmd_handler,
@@ -680,7 +680,7 @@ static int esp_mgmt_ap_enable(struct device *dev,
 
 static int esp_mgmt_ap_disable(struct device *dev)
 {
-	struct esp_data *data = dev->driver_data;
+	struct esp_data *data = dev->fixed->driver_data;
 	int ret;
 
 	ret = modem_cmd_send(&data->mctx.iface, &data->mctx.cmd_handler,
@@ -777,7 +777,7 @@ static void esp_reset(struct esp_data *dev)
 static void esp_iface_init(struct net_if *iface)
 {
 	struct device *dev = net_if_get_device(iface);
-	struct esp_data *data = dev->driver_data;
+	struct esp_data *data = dev->fixed->driver_data;
 
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
 	data->net_iface = iface;
@@ -796,7 +796,7 @@ static const struct net_wifi_mgmt_offload esp_api = {
 
 static int esp_init(struct device *dev)
 {
-	struct esp_data *data = dev->driver_data;
+	struct esp_data *data = dev->fixed->driver_data;
 	int ret = 0;
 
 	k_sem_init(&data->sem_tx_ready, 0, 1);

@@ -267,7 +267,7 @@ static void uart_liteuart_irq_callback_set(struct device *dev,
 {
 	struct uart_liteuart_data *data;
 
-	data = (struct uart_liteuart_data *)dev->driver_data;
+	data = (struct uart_liteuart_data *)dev->fixed->driver_data;
 	data->callback = cb;
 	data->cb_data = cb_data;
 }

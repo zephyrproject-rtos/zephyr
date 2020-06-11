@@ -33,8 +33,8 @@ struct spi_mcux_data {
 
 static int spi_mcux_transfer_next_packet(struct device *dev)
 {
-	const struct spi_mcux_config *config = dev->config_info;
-	struct spi_mcux_data *data = dev->driver_data;
+	const struct spi_mcux_config *config = dev->fixed->config_info;
+	struct spi_mcux_data *data = dev->fixed->driver_data;
 	SPI_Type *base = config->base;
 	struct spi_context *ctx = &data->ctx;
 	dspi_transfer_t transfer;
@@ -103,8 +103,8 @@ static int spi_mcux_transfer_next_packet(struct device *dev)
 static void spi_mcux_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	const struct spi_mcux_config *config = dev->config_info;
-	struct spi_mcux_data *data = dev->driver_data;
+	const struct spi_mcux_config *config = dev->fixed->config_info;
+	struct spi_mcux_data *data = dev->fixed->driver_data;
 	SPI_Type *base = config->base;
 
 	DSPI_MasterTransferHandleIRQ(base, &data->handle);
@@ -114,7 +114,7 @@ static void spi_mcux_master_transfer_callback(SPI_Type *base,
 		dspi_master_handle_t *handle, status_t status, void *userData)
 {
 	struct device *dev = userData;
-	struct spi_mcux_data *data = dev->driver_data;
+	struct spi_mcux_data *data = dev->fixed->driver_data;
 
 	spi_context_update_tx(&data->ctx, 1, data->transfer_len);
 	spi_context_update_rx(&data->ctx, 1, data->transfer_len);
@@ -125,8 +125,8 @@ static void spi_mcux_master_transfer_callback(SPI_Type *base,
 static int spi_mcux_configure(struct device *dev,
 			      const struct spi_config *spi_cfg)
 {
-	const struct spi_mcux_config *config = dev->config_info;
-	struct spi_mcux_data *data = dev->driver_data;
+	const struct spi_mcux_config *config = dev->fixed->config_info;
+	struct spi_mcux_data *data = dev->fixed->driver_data;
 	SPI_Type *base = config->base;
 	dspi_master_config_t master_config;
 	struct device *clock_dev;
@@ -202,7 +202,7 @@ static int transceive(struct device *dev,
 		      bool asynchronous,
 		      struct k_poll_signal *signal)
 {
-	struct spi_mcux_data *data = dev->driver_data;
+	struct spi_mcux_data *data = dev->fixed->driver_data;
 	int ret;
 
 	spi_context_lock(&data->ctx, asynchronous, signal);
@@ -250,7 +250,7 @@ static int spi_mcux_transceive_async(struct device *dev,
 static int spi_mcux_release(struct device *dev,
 		      const struct spi_config *spi_cfg)
 {
-	struct spi_mcux_data *data = dev->driver_data;
+	struct spi_mcux_data *data = dev->fixed->driver_data;
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
@@ -259,8 +259,8 @@ static int spi_mcux_release(struct device *dev,
 
 static int spi_mcux_init(struct device *dev)
 {
-	const struct spi_mcux_config *config = dev->config_info;
-	struct spi_mcux_data *data = dev->driver_data;
+	const struct spi_mcux_config *config = dev->fixed->config_info;
+	struct spi_mcux_data *data = dev->fixed->driver_data;
 
 	config->irq_config_func(dev);
 

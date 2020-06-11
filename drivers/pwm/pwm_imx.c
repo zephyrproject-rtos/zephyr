@@ -128,7 +128,7 @@ static int imx_pwm_pin_set(struct device *dev, uint32_t pwm,
 	if (data->period_cycles != period_cycles) {
 		LOG_WRN("Changing period cycles from %d to %d in %s",
 			    data->period_cycles, period_cycles,
-			    dev->name);
+			    dev->fixed->name);
 
 		data->period_cycles = period_cycles;
 		PWM_PWMPR_REG(base) = period_cycles;

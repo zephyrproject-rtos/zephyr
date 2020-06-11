@@ -58,7 +58,8 @@ void main(void)
 
 	dev = sensor_search_for_magnetometer();
 	if (dev) {
-		printk("Found device is %p, name is %s\n", dev, dev->name);
+		printk("Found device is %p, name is %s\n", dev,
+		       dev->fixed->name);
 		do_main(dev);
 	} else {
 		printk("There is no available magnetometer device.\n");

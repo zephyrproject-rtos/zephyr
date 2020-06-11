@@ -42,7 +42,8 @@ static bool device_get_config_level(const struct shell *shell, int level)
 		if (dev->init_res == 0) {
 			devices = true;
 
-			shell_fprintf(shell, SHELL_NORMAL, "- %s\n", dev->name);
+			shell_fprintf(shell, SHELL_NORMAL, "- %s\n",
+				      dev->fixed->name);
 		}
 	}
 	return devices;
@@ -96,7 +97,7 @@ static int cmd_device_list(const struct shell *shell,
 			continue;
 		}
 
-		shell_fprintf(shell, SHELL_NORMAL, "- %s", dev->name);
+		shell_fprintf(shell, SHELL_NORMAL, "- %s", dev->fixed->name);
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 		uint32_t state = DEVICE_PM_ACTIVE_STATE;

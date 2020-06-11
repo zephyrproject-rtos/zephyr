@@ -85,7 +85,7 @@ static struct eth_context eth_context_3;
 static void eth_iface_init(struct net_if *iface)
 {
 	struct device *dev = net_if_get_device(iface);
-	struct eth_context *context = dev->driver_data;
+	struct eth_context *context = dev->fixed->driver_data;
 
 	net_if_set_link_addr(iface, context->mac_addr,
 			     sizeof(context->mac_addr),
@@ -96,7 +96,7 @@ static void eth_iface_init(struct net_if *iface)
 
 static int eth_tx(struct device *dev, struct net_pkt *pkt)
 {
-	struct eth_context *context = dev->driver_data;
+	struct eth_context *context = dev->fixed->driver_data;
 
 	if (&eth_context_1 != context && &eth_context_2 != context) {
 		zassert_true(false, "Context pointers do not match\n");
@@ -122,7 +122,7 @@ static enum ethernet_hw_caps eth_capabilities(struct device *dev)
 
 static struct device *eth_get_ptp_clock(struct device *dev)
 {
-	struct eth_context *context = dev->driver_data;
+	struct eth_context *context = dev->fixed->driver_data;
 
 	return context->ptp_clock;
 }
@@ -148,7 +148,7 @@ static void generate_mac(uint8_t *mac_addr)
 
 static int eth_init(struct device *dev)
 {
-	struct eth_context *context = dev->driver_data;
+	struct eth_context *context = dev->fixed->driver_data;
 
 	generate_mac(context->mac_addr);
 
@@ -182,7 +182,7 @@ struct ptp_context {
 
 static int my_ptp_clock_set(struct device *dev, struct net_ptp_time *tm)
 {
-	struct ptp_context *ptp_ctx = dev->driver_data;
+	struct ptp_context *ptp_ctx = dev->fixed->driver_data;
 	struct eth_context *eth_ctx = ptp_ctx->eth_context;
 
 	if (&eth_context_1 != eth_ctx && &eth_context_2 != eth_ctx) {
@@ -196,7 +196,7 @@ static int my_ptp_clock_set(struct device *dev, struct net_ptp_time *tm)
 
 static int my_ptp_clock_get(struct device *dev, struct net_ptp_time *tm)
 {
-	struct ptp_context *ptp_ctx = dev->driver_data;
+	struct ptp_context *ptp_ctx = dev->fixed->driver_data;
 	struct eth_context *eth_ctx = ptp_ctx->eth_context;
 
 	memcpy(tm, &eth_ctx->time, sizeof(struct net_ptp_time));
@@ -206,7 +206,7 @@ static int my_ptp_clock_get(struct device *dev, struct net_ptp_time *tm)
 
 static int my_ptp_clock_adjust(struct device *dev, int increment)
 {
-	struct ptp_context *ptp_ctx = dev->driver_data;
+	struct ptp_context *ptp_ctx = dev->fixed->driver_data;
 	struct eth_context *eth_ctx = ptp_ctx->eth_context;
 
 	eth_ctx->time.nanosecond += increment;
@@ -232,8 +232,8 @@ static const struct ptp_clock_driver_api api = {
 static int ptp_test_1_init(struct device *port)
 {
 	struct device *eth_dev = DEVICE_GET(eth_test_1);
-	struct eth_context *context = eth_dev->driver_data;
-	struct ptp_context *ptp_context = port->driver_data;
+	struct eth_context *context = eth_dev->fixed->driver_data;
+	struct ptp_context *ptp_context = port->fixed->driver_data;
 
 	context->ptp_clock = port;
 	ptp_context->eth_context = context;
@@ -248,8 +248,8 @@ DEVICE_AND_API_INIT(ptp_clock_1, PTP_CLOCK_NAME, ptp_test_1_init,
 static int ptp_test_2_init(struct device *port)
 {
 	struct device *eth_dev = DEVICE_GET(eth_test_2);
-	struct eth_context *context = eth_dev->driver_data;
-	struct ptp_context *ptp_context = port->driver_data;
+	struct eth_context *context = eth_dev->fixed->driver_data;
+	struct ptp_context *ptp_context = port->fixed->driver_data;
 
 	context->ptp_clock = port;
 	ptp_context->eth_context = context;

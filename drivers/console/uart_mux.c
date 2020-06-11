@@ -234,7 +234,7 @@ static int uart_mux_init(struct device *dev)
 	k_work_init(&dev_data->cb_work, uart_mux_cb_work);
 
 	LOG_DBG("Device %s dev %p dev_data %p cfg %p created",
-		dev->name, dev, dev_data, dev->config_info);
+		dev->fixed->name, dev, dev_data, dev->fixed->config_info);
 
 	return 0;
 }
@@ -509,7 +509,7 @@ static int uart_mux_fifo_read(struct device *dev, uint8_t *rx_data, const int si
 	}
 
 	LOG_DBG("%s size %d rx_ringbuf space %u",
-		dev->name, size,
+		dev->fixed->name, size,
 		ring_buf_space_get(dev_data->rx_ringbuf));
 
 	len = ring_buf_get(dev_data->rx_ringbuf, rx_data, size);
@@ -765,7 +765,7 @@ int uart_mux_recv(struct device *mux, struct gsm_dlci *dlci, uint8_t *data,
 	struct uart_mux_dev_data *dev_data = DEV_DATA(mux);
 	size_t wrote = 0;
 
-	LOG_DBG("%s: dlci %p data %p len %zd", mux->name, dlci,
+	LOG_DBG("%s: dlci %p data %p len %zd", mux->fixed->name, dlci,
 		data, len);
 
 	if (IS_ENABLED(CONFIG_UART_MUX_VERBOSE_DEBUG)) {

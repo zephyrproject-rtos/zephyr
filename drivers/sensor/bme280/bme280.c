@@ -112,12 +112,12 @@ struct bme280_reg_io {
 
 static inline struct bme280_data *to_data(struct device *dev)
 {
-	return dev->driver_data;
+	return dev->fixed->driver_data;
 }
 
 static inline const struct bme280_config *to_config(struct device *dev)
 {
-	return dev->config_info;
+	return dev->fixed->config_info;
 }
 
 static inline struct device *to_bus(struct device *dev)
@@ -543,7 +543,7 @@ static inline int bme280_spi_init(struct device *dev)
 
 int bme280_init(struct device *dev)
 {
-	const char *name = dev->name;
+	const char *name = dev->fixed->name;
 	struct bme280_data *data = to_data(dev);
 	const struct bme280_config *config = to_config(dev);
 	int rc;

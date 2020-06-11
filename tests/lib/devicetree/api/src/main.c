@@ -1212,7 +1212,7 @@ struct test_gpio_data {
 
 static int test_gpio_init(struct device *dev)
 {
-	struct test_gpio_data *data = dev->driver_data;
+	struct test_gpio_data *data = dev->fixed->driver_data;
 
 	data->init_called = 1;
 	return 0;
@@ -1246,12 +1246,12 @@ DT_INST_FOREACH_STATUS_OKAY(TEST_GPIO_INIT)
 
 static inline struct test_gpio_data *to_data(struct device *dev)
 {
-	return (struct test_gpio_data *)dev->driver_data;
+	return (struct test_gpio_data *)dev->fixed->driver_data;
 }
 
 static inline const struct test_gpio_info *to_info(struct device *dev)
 {
-	return (const struct test_gpio_info *)dev->config_info;
+	return (const struct test_gpio_info *)dev->fixed->config_info;
 }
 
 static void test_devices(void)

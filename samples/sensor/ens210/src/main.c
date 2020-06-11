@@ -20,7 +20,7 @@ void main(void)
 		return;
 	}
 
-	printk("device is %p, name is %s\n", dev, dev->name);
+	printk("device is %p, name is %s\n", dev, dev->fixed->name);
 
 	while (1) {
 		sensor_sample_fetch(dev);

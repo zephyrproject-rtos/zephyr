@@ -88,7 +88,7 @@ static int e1000_tx(struct e1000_dev *dev, void *buf, size_t len)
 
 static int e1000_send(struct device *device, struct net_pkt *pkt)
 {
-	struct e1000_dev *dev = device->driver_data;
+	struct e1000_dev *dev = device->fixed->driver_data;
 	size_t len = net_pkt_get_len(pkt);
 
 	if (net_pkt_read(pkt, dev->txb, len)) {
@@ -140,7 +140,7 @@ out:
 
 static void e1000_isr(struct device *device)
 {
-	struct e1000_dev *dev = device->driver_data;
+	struct e1000_dev *dev = device->fixed->driver_data;
 	uint32_t icr = ior32(dev, ICR); /* Cleared upon read */
 
 	icr &= ~(ICR_TXDW | ICR_TXQE);
@@ -168,7 +168,7 @@ static void e1000_isr(struct device *device)
 int e1000_probe(struct device *device)
 {
 	const pcie_bdf_t bdf = PCIE_BDF(0, 3, 0);
-	struct e1000_dev *dev = device->driver_data;
+	struct e1000_dev *dev = device->fixed->driver_data;
 	int retval = -ENODEV;
 
 	if (pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,

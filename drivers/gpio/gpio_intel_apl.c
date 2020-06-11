@@ -132,8 +132,8 @@ struct gpio_intel_apl_data {
  */
 static bool check_perm(struct device *dev, uint32_t raw_pin)
 {
-	const struct gpio_intel_apl_config *cfg = dev->config_info;
-	struct gpio_intel_apl_data *data = dev->driver_data;
+	const struct gpio_intel_apl_config *cfg = dev->fixed->config_info;
+	struct gpio_intel_apl_data *data = dev->fixed->driver_data;
 	uint32_t offset, val;
 
 	/* First is to establish that host software owns the pin */
@@ -184,8 +184,8 @@ static void gpio_intel_apl_isr(void *arg)
 
 	for (isr_dev = 0; isr_dev < nr_isr_devs; ++isr_dev) {
 		dev = isr_devs[isr_dev];
-		cfg = dev->config_info;
-		data = dev->driver_data;
+		cfg = dev->fixed->config_info;
+		data = dev->fixed->driver_data;
 
 		reg = cfg->reg_base + REG_GPI_INT_STS_BASE
 			+ ((cfg->pin_offset >> 5) << 2);
@@ -209,8 +209,8 @@ static void gpio_intel_apl_isr(void *arg)
 static int gpio_intel_apl_config(struct device *dev,
 				 gpio_pin_t pin, gpio_flags_t flags)
 {
-	const struct gpio_intel_apl_config *cfg = dev->config_info;
-	struct gpio_intel_apl_data *data = dev->driver_data;
+	const struct gpio_intel_apl_config *cfg = dev->fixed->config_info;
+	struct gpio_intel_apl_data *data = dev->fixed->driver_data;
 	uint32_t raw_pin, reg, cfg0, cfg1;
 
 	/* Only support push-pull mode */
@@ -284,8 +284,8 @@ static int gpio_intel_apl_pin_interrupt_configure(struct device *dev,
 		gpio_pin_t pin, enum gpio_int_mode mode,
 		enum gpio_int_trig trig)
 {
-	const struct gpio_intel_apl_config *cfg = dev->config_info;
-	struct gpio_intel_apl_data *data = dev->driver_data;
+	const struct gpio_intel_apl_config *cfg = dev->fixed->config_info;
+	struct gpio_intel_apl_data *data = dev->fixed->driver_data;
 	uint32_t raw_pin, cfg0, cfg1;
 	uint32_t reg, reg_en, reg_sts;
 
@@ -375,7 +375,7 @@ static int gpio_intel_apl_manage_callback(struct device *dev,
 					  struct gpio_callback *callback,
 					  bool set)
 {
-	struct gpio_intel_apl_data *data = dev->driver_data;
+	struct gpio_intel_apl_data *data = dev->fixed->driver_data;
 
 	return gpio_manage_callback(&data->cb, callback, set);
 }
@@ -383,7 +383,7 @@ static int gpio_intel_apl_manage_callback(struct device *dev,
 static int gpio_intel_apl_enable_callback(struct device *dev,
 					  gpio_pin_t pin)
 {
-	const struct gpio_intel_apl_config *cfg = dev->config_info;
+	const struct gpio_intel_apl_config *cfg = dev->fixed->config_info;
 	uint32_t raw_pin, reg;
 
 	pin = k_array_index_sanitize(pin, cfg->num_pins + 1);
@@ -408,7 +408,7 @@ static int gpio_intel_apl_enable_callback(struct device *dev,
 static int gpio_intel_apl_disable_callback(struct device *dev,
 					   gpio_pin_t pin)
 {
-	const struct gpio_intel_apl_config *cfg = dev->config_info;
+	const struct gpio_intel_apl_config *cfg = dev->fixed->config_info;
 	uint32_t raw_pin, reg;
 
 	pin = k_array_index_sanitize(pin, cfg->num_pins + 1);
@@ -429,8 +429,8 @@ static int gpio_intel_apl_disable_callback(struct device *dev,
 static int port_get_raw(struct device *dev, uint32_t mask, uint32_t *value,
 			bool read_tx)
 {
-	const struct gpio_intel_apl_config *cfg = dev->config_info;
-	struct gpio_intel_apl_data *data = dev->driver_data;
+	const struct gpio_intel_apl_config *cfg = dev->fixed->config_info;
+	struct gpio_intel_apl_data *data = dev->fixed->driver_data;
 	uint32_t pin, raw_pin, reg_addr, reg_val, cmp;
 
 	if (read_tx) {
@@ -468,8 +468,8 @@ static int port_get_raw(struct device *dev, uint32_t mask, uint32_t *value,
 
 static int port_set_raw(struct device *dev, uint32_t mask, uint32_t value)
 {
-	const struct gpio_intel_apl_config *cfg = dev->config_info;
-	struct gpio_intel_apl_data *data = dev->driver_data;
+	const struct gpio_intel_apl_config *cfg = dev->fixed->config_info;
+	struct gpio_intel_apl_data *data = dev->fixed->driver_data;
 	uint32_t pin, raw_pin, reg_addr, reg_val;
 
 	while (mask != 0) {
@@ -559,8 +559,8 @@ static const struct gpio_driver_api gpio_intel_apl_api = {
 
 int gpio_intel_apl_init(struct device *dev)
 {
-	const struct gpio_intel_apl_config *cfg = dev->config_info;
-	struct gpio_intel_apl_data *data = dev->driver_data;
+	const struct gpio_intel_apl_config *cfg = dev->fixed->config_info;
+	struct gpio_intel_apl_data *data = dev->fixed->driver_data;
 
 	data->pad_base = sys_read32(cfg->reg_base + REG_PAD_BASE_ADDR);
 

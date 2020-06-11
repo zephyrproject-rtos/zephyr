@@ -373,7 +373,7 @@ static inline int device_set_power_state(struct device *device,
 					 uint32_t device_power_state,
 					 device_pm_cb cb, void *arg)
 {
-	return device->device_pm_control(device,
+	return device->fixed->device_pm_control(device,
 					 DEVICE_PM_SET_POWER_STATE,
 					 &device_power_state, cb, arg);
 }
@@ -394,7 +394,7 @@ static inline int device_set_power_state(struct device *device,
 static inline int device_get_power_state(struct device *device,
 					 uint32_t *device_power_state)
 {
-	return device->device_pm_control(device,
+	return device->fixed->device_pm_control(device,
 					 DEVICE_PM_GET_POWER_STATE,
 					 device_power_state,
 					 NULL, NULL);

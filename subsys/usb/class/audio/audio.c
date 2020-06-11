@@ -777,7 +777,7 @@ static int audio_class_handle_req(struct usb_setup_packet *pSetup,
 
 static int usb_audio_device_init(struct device *dev)
 {
-	LOG_DBG("Init Audio Device: dev %p (%s)", dev, dev->name);
+	LOG_DBG("Init Audio Device: dev %p (%s)", dev, dev->fixed->name);
 
 	return 0;
 }
@@ -810,8 +810,8 @@ static void audio_write_cb(uint8_t ep, int size, void *priv)
 int usb_audio_send(const struct device *dev, struct net_buf *buffer,
 		   size_t len)
 {
-	struct usb_audio_dev_data *audio_dev_data = dev->driver_data;
-	struct usb_cfg_data *cfg = (void *)dev->config_info;
+	struct usb_audio_dev_data *audio_dev_data = dev->fixed->driver_data;
+	struct usb_cfg_data *cfg = (void *)dev->fixed->config_info;
 	/* EP ISO IN is always placed first in the endpoint table */
 	uint8_t ep = cfg->endpoint[0].ep_addr;
 
@@ -840,7 +840,7 @@ int usb_audio_send(const struct device *dev, struct net_buf *buffer,
 
 size_t usb_audio_get_in_frame_size(const struct device *dev)
 {
-	struct usb_audio_dev_data *audio_dev_data = dev->driver_data;
+	struct usb_audio_dev_data *audio_dev_data = dev->fixed->driver_data;
 
 	return audio_dev_data->in_frame_size;
 }
@@ -900,8 +900,8 @@ static void audio_receive_cb(uint8_t ep, enum usb_dc_ep_cb_status_code status)
 void usb_audio_register(struct device *dev,
 			const struct usb_audio_ops *ops)
 {
-	struct usb_audio_dev_data *audio_dev_data = dev->driver_data;
-	const struct usb_cfg_data *cfg = dev->config_info;
+	struct usb_audio_dev_data *audio_dev_data = dev->fixed->driver_data;
+	const struct usb_cfg_data *cfg = dev->fixed->config_info;
 	const struct std_if_descriptor *iface_descr =
 		cfg->interface_descriptor;
 	const struct cs_ac_if_descriptor *header =
@@ -917,7 +917,7 @@ void usb_audio_register(struct device *dev,
 	sys_slist_append(&usb_audio_data_devlist, &audio_dev_data->common.node);
 
 	LOG_DBG("Device dev %p dev_data %p cfg %p added to devlist %p",
-		dev, audio_dev_data, dev->config_info,
+		dev, audio_dev_data, dev->fixed->config_info,
 		&usb_audio_data_devlist);
 }
 

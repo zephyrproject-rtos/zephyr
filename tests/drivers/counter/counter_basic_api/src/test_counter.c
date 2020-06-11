@@ -152,7 +152,7 @@ static bool set_top_value_capable(const char *dev_name)
 static void top_handler(struct device *dev, void *user_data)
 {
 	zassert_true(user_data == exp_user_data,
-			"%s: Unexpected callback", dev->name);
+			"%s: Unexpected callback", dev->fixed->name);
 	k_sem_give(&top_cnt_sem);
 }
 
@@ -265,7 +265,7 @@ static void alarm_handler(struct device *dev, uint8_t chan_id, uint32_t counter,
 
 	err = counter_get_value(dev, &now);
 	zassert_true(err == 0, "%s: Counter read failed (err: %d)",
-		     dev->name, err);
+		     dev->fixed->name, err);
 
 	top = counter_get_top_value(dev);
 	if (counter_is_counting_up(dev)) {
@@ -284,11 +284,11 @@ static void alarm_handler(struct device *dev, uint8_t chan_id, uint32_t counter,
 
 	if (user_data) {
 		zassert_true(&alarm_cfg == user_data,
-			"%s: Unexpected callback", dev->name);
+			"%s: Unexpected callback", dev->fixed->name);
 	}
 
 	zassert_true(k_is_in_isr(), "%s: Expected interrupt context",
-			dev->name);
+			dev->fixed->name);
 	k_sem_give(&alarm_cnt_sem);
 }
 

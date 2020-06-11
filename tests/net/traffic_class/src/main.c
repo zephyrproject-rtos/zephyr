@@ -106,7 +106,7 @@ static struct eth_context eth_context;
 static void eth_iface_init(struct net_if *iface)
 {
 	struct device *dev = net_if_get_device(iface);
-	struct eth_context *context = dev->driver_data;
+	struct eth_context *context = dev->fixed->driver_data;
 
 	net_if_set_link_addr(iface, context->mac_addr,
 			     sizeof(context->mac_addr),
@@ -254,7 +254,7 @@ static void generate_mac(uint8_t *mac_addr)
 
 static int eth_init(struct device *dev)
 {
-	struct eth_context *context = dev->driver_data;
+	struct eth_context *context = dev->fixed->driver_data;
 
 	generate_mac(context->mac_addr);
 

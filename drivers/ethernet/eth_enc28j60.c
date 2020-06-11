@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 static int eth_enc28j60_soft_reset(struct device *dev)
 {
-	struct eth_enc28j60_runtime *context = dev->driver_data;
+	struct eth_enc28j60_runtime *context = dev->fixed->driver_data;
 	uint8_t buf[2] = { ENC28J60_SPI_SC, 0xFF };
 	const struct spi_buf tx_buf = {
 		.buf = buf,
@@ -46,7 +46,7 @@ static int eth_enc28j60_soft_reset(struct device *dev)
 
 static void eth_enc28j60_set_bank(struct device *dev, uint16_t reg_addr)
 {
-	struct eth_enc28j60_runtime *context = dev->driver_data;
+	struct eth_enc28j60_runtime *context = dev->fixed->driver_data;
 	uint8_t buf[2];
 	const struct spi_buf tx_buf = {
 		.buf = buf,
@@ -81,7 +81,7 @@ static void eth_enc28j60_set_bank(struct device *dev, uint16_t reg_addr)
 static void eth_enc28j60_write_reg(struct device *dev, uint16_t reg_addr,
 				   uint8_t value)
 {
-	struct eth_enc28j60_runtime *context = dev->driver_data;
+	struct eth_enc28j60_runtime *context = dev->fixed->driver_data;
 	uint8_t buf[2];
 	const struct spi_buf tx_buf = {
 		.buf = buf,
@@ -101,7 +101,7 @@ static void eth_enc28j60_write_reg(struct device *dev, uint16_t reg_addr,
 static void eth_enc28j60_read_reg(struct device *dev, uint16_t reg_addr,
 				  uint8_t *value)
 {
-	struct eth_enc28j60_runtime *context = dev->driver_data;
+	struct eth_enc28j60_runtime *context = dev->fixed->driver_data;
 	uint8_t buf[3];
 	const struct spi_buf tx_buf = {
 		.buf = buf,
@@ -140,7 +140,7 @@ static void eth_enc28j60_read_reg(struct device *dev, uint16_t reg_addr,
 static void eth_enc28j60_set_eth_reg(struct device *dev, uint16_t reg_addr,
 				     uint8_t value)
 {
-	struct eth_enc28j60_runtime *context = dev->driver_data;
+	struct eth_enc28j60_runtime *context = dev->fixed->driver_data;
 	uint8_t buf[2];
 	const struct spi_buf tx_buf = {
 		.buf = buf,
@@ -161,7 +161,7 @@ static void eth_enc28j60_set_eth_reg(struct device *dev, uint16_t reg_addr,
 static void eth_enc28j60_clear_eth_reg(struct device *dev, uint16_t reg_addr,
 				       uint8_t value)
 {
-	struct eth_enc28j60_runtime *context = dev->driver_data;
+	struct eth_enc28j60_runtime *context = dev->fixed->driver_data;
 	uint8_t buf[2];
 	const struct spi_buf tx_buf = {
 		.buf = buf,
@@ -181,7 +181,7 @@ static void eth_enc28j60_clear_eth_reg(struct device *dev, uint16_t reg_addr,
 static void eth_enc28j60_write_mem(struct device *dev, uint8_t *data_buffer,
 				   uint16_t buf_len)
 {
-	struct eth_enc28j60_runtime *context = dev->driver_data;
+	struct eth_enc28j60_runtime *context = dev->fixed->driver_data;
 	uint8_t buf[1] = { ENC28J60_SPI_WBM };
 	struct spi_buf tx_buf[2] = {
 		{
@@ -223,7 +223,7 @@ static void eth_enc28j60_write_mem(struct device *dev, uint8_t *data_buffer,
 static void eth_enc28j60_read_mem(struct device *dev, uint8_t *data_buffer,
 				  uint16_t buf_len)
 {
-	struct eth_enc28j60_runtime *context = dev->driver_data;
+	struct eth_enc28j60_runtime *context = dev->fixed->driver_data;
 	uint8_t buf[1] = { ENC28J60_SPI_RBM };
 	const struct spi_buf tx_buf = {
 		.buf = buf,
@@ -349,8 +349,8 @@ static void eth_enc28j60_init_buffers(struct device *dev)
 
 static void eth_enc28j60_init_mac(struct device *dev)
 {
-	const struct eth_enc28j60_config *config = dev->config_info;
-	struct eth_enc28j60_runtime *context = dev->driver_data;
+	const struct eth_enc28j60_config *config = dev->fixed->config_info;
+	struct eth_enc28j60_runtime *context = dev->fixed->driver_data;
 	uint8_t data_macon;
 
 	eth_enc28j60_set_bank(dev, ENC28J60_REG_MACON1);
@@ -399,7 +399,7 @@ static void eth_enc28j60_init_mac(struct device *dev)
 
 static void eth_enc28j60_init_phy(struct device *dev)
 {
-	const struct eth_enc28j60_config *config = dev->config_info;
+	const struct eth_enc28j60_config *config = dev->fixed->config_info;
 
 	if (config->full_duplex) {
 		eth_enc28j60_write_phy(dev, ENC28J60_PHY_PHCON1,
@@ -433,7 +433,7 @@ static struct net_if *get_iface(struct eth_enc28j60_runtime *ctx,
 
 static int eth_enc28j60_tx(struct device *dev, struct net_pkt *pkt)
 {
-	struct eth_enc28j60_runtime *context = dev->driver_data;
+	struct eth_enc28j60_runtime *context = dev->fixed->driver_data;
 	uint16_t tx_bufaddr = ENC28J60_TXSTART;
 	uint16_t len = net_pkt_get_len(pkt);
 	uint8_t per_packet_control;
@@ -506,8 +506,8 @@ static int eth_enc28j60_tx(struct device *dev, struct net_pkt *pkt)
 
 static int eth_enc28j60_rx(struct device *dev, uint16_t *vlan_tag)
 {
-	const struct eth_enc28j60_config *config = dev->config_info;
-	struct eth_enc28j60_runtime *context = dev->driver_data;
+	const struct eth_enc28j60_config *config = dev->fixed->config_info;
+	struct eth_enc28j60_runtime *context = dev->fixed->driver_data;
 	uint16_t lengthfr;
 	uint8_t counter;
 
@@ -659,7 +659,7 @@ done:
 
 static void eth_enc28j60_rx_thread(struct device *dev)
 {
-	struct eth_enc28j60_runtime *context = dev->driver_data;
+	struct eth_enc28j60_runtime *context = dev->fixed->driver_data;
 	uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	uint8_t int_stat;
 
@@ -691,7 +691,7 @@ static enum ethernet_hw_caps eth_enc28j60_get_capabilities(struct device *dev)
 static void eth_enc28j60_iface_init(struct net_if *iface)
 {
 	struct device *dev = net_if_get_device(iface);
-	struct eth_enc28j60_runtime *context = dev->driver_data;
+	struct eth_enc28j60_runtime *context = dev->fixed->driver_data;
 
 	net_if_set_link_addr(iface, context->mac_address,
 			     sizeof(context->mac_address),
@@ -717,8 +717,8 @@ static const struct ethernet_api api_funcs = {
 
 static int eth_enc28j60_init(struct device *dev)
 {
-	const struct eth_enc28j60_config *config = dev->config_info;
-	struct eth_enc28j60_runtime *context = dev->driver_data;
+	const struct eth_enc28j60_config *config = dev->fixed->config_info;
+	struct eth_enc28j60_runtime *context = dev->fixed->driver_data;
 
 	/* SPI config */
 	context->spi_cfg.operation = SPI_WORD_SET(8);

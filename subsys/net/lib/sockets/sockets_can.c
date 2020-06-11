@@ -364,7 +364,7 @@ static int close_socket(struct net_context *ctx)
 
 	iface = net_context_get_iface(ctx);
 	dev = net_if_get_device(iface);
-	api = dev->driver_api;
+	api = dev->fixed->driver_api;
 
 	if (!api || !api->close) {
 		return -ENOTSUP;
@@ -484,7 +484,7 @@ static int can_sock_getsockopt_vmeth(void *obj, int level, int optname,
 
 		iface = net_context_get_iface(obj);
 		dev = net_if_get_device(iface);
-		api = dev->driver_api;
+		api = dev->fixed->driver_api;
 
 		if (!api || !api->getsockopt) {
 			errno = ENOTSUP;
@@ -606,7 +606,7 @@ static int can_sock_setsockopt_vmeth(void *obj, int level, int optname,
 
 	iface = net_context_get_iface(obj);
 	dev = net_if_get_device(iface);
-	api = dev->driver_api;
+	api = dev->fixed->driver_api;
 
 	if (!api || !api->setsockopt) {
 		errno = ENOTSUP;

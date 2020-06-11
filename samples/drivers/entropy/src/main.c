@@ -21,7 +21,7 @@ void main(void)
 	}
 
 	printf("entropy device is %p, name is %s\n",
-	       dev, dev->name);
+	       dev, dev->fixed->name);
 
 	while (1) {
 #define BUFFER_LENGTH 10

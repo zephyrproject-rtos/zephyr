@@ -217,7 +217,7 @@ void stm32_exti_trigger(int line, int trigger)
 static void __stm32_exti_isr(int min, int max, void *arg)
 {
 	struct device *dev = arg;
-	struct stm32_exti_data *data = dev->driver_data;
+	struct stm32_exti_data *data = dev->fixed->driver_data;
 	int line;
 
 	/* see which bits are set */
@@ -405,7 +405,7 @@ DEVICE_INIT(exti_stm32, STM32_EXTI_NAME, stm32_exti_init,
 int stm32_exti_set_callback(int line, stm32_exti_callback_t cb, void *arg)
 {
 	struct device *dev = DEVICE_GET(exti_stm32);
-	struct stm32_exti_data *data = dev->driver_data;
+	struct stm32_exti_data *data = dev->fixed->driver_data;
 
 	if (data->cb[line].cb) {
 		return -EBUSY;
@@ -420,7 +420,7 @@ int stm32_exti_set_callback(int line, stm32_exti_callback_t cb, void *arg)
 void stm32_exti_unset_callback(int line)
 {
 	struct device *dev = DEVICE_GET(exti_stm32);
-	struct stm32_exti_data *data = dev->driver_data;
+	struct stm32_exti_data *data = dev->fixed->driver_data;
 
 	data->cb[line].cb = NULL;
 	data->cb[line].data = NULL;

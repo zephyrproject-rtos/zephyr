@@ -136,7 +136,7 @@ static void rf2xx_trx_set_rx_state(struct device *dev)
 
 static void rf2xx_trx_rx(struct device *dev)
 {
-	struct rf2xx_context *ctx = dev->driver_data;
+	struct rf2xx_context *ctx = dev->fixed->driver_data;
 	struct net_pkt *pkt = NULL;
 	uint8_t rx_buf[RX2XX_MAX_FRAME_SIZE];
 	uint8_t pkt_len;
@@ -214,7 +214,7 @@ static void rf2xx_trx_rx(struct device *dev)
 
 static void rf2xx_process_rx_frame(struct device *dev)
 {
-	struct rf2xx_context *ctx = dev->driver_data;
+	struct rf2xx_context *ctx = dev->fixed->driver_data;
 
 	if (ctx->trx_model != RF2XX_TRX_MODEL_231) {
 		rf2xx_trx_rx(dev);
@@ -238,7 +238,7 @@ static void rf2xx_process_rx_frame(struct device *dev)
 
 static void rf2xx_process_tx_frame(struct device *dev)
 {
-	struct rf2xx_context *ctx = dev->driver_data;
+	struct rf2xx_context *ctx = dev->fixed->driver_data;
 
 	ctx->trx_trac = (rf2xx_iface_reg_read(dev, RF2XX_TRX_STATE_REG) >>
 			 RF2XX_TRAC_STATUS) & 7;
@@ -261,7 +261,7 @@ static void rf2xx_process_trx_end(struct device *dev)
 static void rf2xx_thread_main(void *arg)
 {
 	struct device *dev = INT_TO_POINTER(arg);
-	struct rf2xx_context *ctx = dev->driver_data;
+	struct rf2xx_context *ctx = dev->fixed->driver_data;
 	uint8_t isr_status;
 
 	while (true) {
@@ -307,8 +307,8 @@ static void rf2xx_thread_main(void *arg)
 
 static inline uint8_t *get_mac(struct device *dev)
 {
-	const struct rf2xx_config *conf = dev->config_info;
-	struct rf2xx_context *ctx = dev->driver_data;
+	const struct rf2xx_config *conf = dev->fixed->config_info;
+	struct rf2xx_context *ctx = dev->fixed->driver_data;
 	uint32_t *ptr = (uint32_t *)(ctx->mac_addr);
 
 	if (!conf->has_mac) {
@@ -482,7 +482,7 @@ static int rf2xx_tx(struct device *dev,
 {
 	ARG_UNUSED(pkt);
 
-	struct rf2xx_context *ctx = dev->driver_data;
+	struct rf2xx_context *ctx = dev->fixed->driver_data;
 	int response = 0;
 
 	if (mode != IEEE802154_TX_MODE_CSMA_CA) {
@@ -534,8 +534,8 @@ static int rf2xx_tx(struct device *dev,
 
 static int rf2xx_start(struct device *dev)
 {
-	const struct rf2xx_config *conf = dev->config_info;
-	struct rf2xx_context *ctx = dev->driver_data;
+	const struct rf2xx_config *conf = dev->fixed->config_info;
+	struct rf2xx_context *ctx = dev->fixed->driver_data;
 
 	rf2xx_trx_set_state(dev, RF2XX_TRX_PHY_STATE_CMD_TRX_OFF);
 	rf2xx_iface_reg_read(dev, RF2XX_IRQ_STATUS_REG);
@@ -548,8 +548,8 @@ static int rf2xx_start(struct device *dev)
 
 static int rf2xx_stop(struct device *dev)
 {
-	const struct rf2xx_config *conf = dev->config_info;
-	struct rf2xx_context *ctx = dev->driver_data;
+	const struct rf2xx_config *conf = dev->fixed->config_info;
+	struct rf2xx_context *ctx = dev->fixed->driver_data;
 
 	gpio_pin_interrupt_configure(ctx->irq_gpio, conf->irq.pin,
 				     GPIO_INT_DISABLE);
@@ -571,8 +571,8 @@ int rf2xx_configure(struct device *dev, enum ieee802154_config_type type,
 
 static int power_on_and_setup(struct device *dev)
 {
-	const struct rf2xx_config *conf = dev->config_info;
-	struct rf2xx_context *ctx = dev->driver_data;
+	const struct rf2xx_config *conf = dev->fixed->config_info;
+	struct rf2xx_context *ctx = dev->fixed->driver_data;
 	uint8_t config;
 
 	rf2xx_iface_phy_rst(dev);
@@ -641,8 +641,8 @@ static int power_on_and_setup(struct device *dev)
 
 static inline int configure_gpios(struct device *dev)
 {
-	const struct rf2xx_config *conf = dev->config_info;
-	struct rf2xx_context *ctx = dev->driver_data;
+	const struct rf2xx_config *conf = dev->fixed->config_info;
+	struct rf2xx_context *ctx = dev->fixed->driver_data;
 
 	/* Chip IRQ line */
 	ctx->irq_gpio = device_get_binding(conf->irq.devname);
@@ -701,8 +701,8 @@ static inline int configure_gpios(struct device *dev)
 
 static inline int configure_spi(struct device *dev)
 {
-	struct rf2xx_context *ctx = dev->driver_data;
-	const struct rf2xx_config *conf = dev->config_info;
+	struct rf2xx_context *ctx = dev->fixed->driver_data;
+	const struct rf2xx_config *conf = dev->fixed->config_info;
 
 	/* Get SPI Driver Instance*/
 	ctx->spi = device_get_binding(conf->spi.devname);
@@ -743,8 +743,8 @@ static inline int configure_spi(struct device *dev)
 
 static int rf2xx_init(struct device *dev)
 {
-	struct rf2xx_context *ctx = dev->driver_data;
-	const struct rf2xx_config *conf = dev->config_info;
+	struct rf2xx_context *ctx = dev->fixed->driver_data;
+	const struct rf2xx_config *conf = dev->fixed->config_info;
 	char thread_name[20];
 
 	LOG_DBG("\nInitialize RF2XX Transceiver\n");
@@ -786,7 +786,7 @@ static int rf2xx_init(struct device *dev)
 static void rf2xx_iface_init(struct net_if *iface)
 {
 	struct device *dev = net_if_get_device(iface);
-	struct rf2xx_context *ctx = dev->driver_data;
+	struct rf2xx_context *ctx = dev->fixed->driver_data;
 	uint8_t *mac = get_mac(dev);
 
 	net_if_set_link_addr(iface, mac, 8, NET_LINK_IEEE802154);

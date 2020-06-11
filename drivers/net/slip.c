@@ -364,7 +364,7 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 
 static int slip_init(struct device *dev)
 {
-	struct slip_context *slip = dev->driver_data;
+	struct slip_context *slip = dev->fixed->driver_data;
 
 	LOG_DBG("[%p] dev %p", slip, dev);
 

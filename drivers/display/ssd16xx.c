@@ -210,7 +210,7 @@ static int ssd16xx_blanking_on(const struct device *dev)
 
 static int ssd16xx_update_display(const struct device *dev)
 {
-	struct ssd16xx_data *driver = dev->driver_data;
+	struct ssd16xx_data *driver = dev->fixed->driver_data;
 	uint8_t tmp;
 	int err;
 
@@ -234,7 +234,7 @@ static int ssd16xx_write(const struct device *dev, const uint16_t x,
 			 const struct display_buffer_descriptor *desc,
 			 const void *buf)
 {
-	struct ssd16xx_data *driver = dev->driver_data;
+	struct ssd16xx_data *driver = dev->fixed->driver_data;
 	int err;
 	size_t buf_len;
 	uint16_t x_start;
@@ -393,7 +393,7 @@ static int ssd16xx_set_pixel_format(const struct device *dev,
 static int ssd16xx_clear_cntlr_mem(struct device *dev, uint8_t ram_cmd,
 				   bool update)
 {
-	struct ssd16xx_data *driver = dev->driver_data;
+	struct ssd16xx_data *driver = dev->fixed->driver_data;
 	uint8_t clear_page[EPD_PANEL_WIDTH];
 	uint16_t panel_h = EPD_PANEL_HEIGHT /
 			EPD_PANEL_NUMOF_ROWS_PER_PAGE;
@@ -444,7 +444,7 @@ static int ssd16xx_controller_init(struct device *dev)
 	int err;
 	uint8_t tmp[3];
 	size_t len;
-	struct ssd16xx_data *driver = dev->driver_data;
+	struct ssd16xx_data *driver = dev->fixed->driver_data;
 
 	LOG_DBG("");
 
@@ -547,7 +547,7 @@ static int ssd16xx_controller_init(struct device *dev)
 
 static int ssd16xx_init(struct device *dev)
 {
-	struct ssd16xx_data *driver = dev->driver_data;
+	struct ssd16xx_data *driver = dev->fixed->driver_data;
 
 	LOG_DBG("");
 

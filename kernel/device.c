@@ -81,14 +81,14 @@ struct device *z_impl_device_get_binding(const char *name)
 	 */
 	for (dev = __device_start; dev != __device_end; dev++) {
 		if ((dev->init_res == 0) &&
-		    (dev->name == name)) {
+		    (dev->fixed->name == name)) {
 			return dev;
 		}
 	}
 
 	for (dev = __device_start; dev != __device_end; dev++) {
 		if ((dev->init_res == 0) &&
-		    (strcmp(name, dev->name) == 0)) {
+		    (strcmp(name, dev->fixed->name) == 0)) {
 			return dev;
 		}
 	}

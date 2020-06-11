@@ -233,11 +233,11 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 	entry->subcmd = &dsub_device_name;
 
 	for (dev = __device_start; dev != __device_end; dev++) {
-		if ((dev->init_res == 0) && (dev->name != NULL) &&
-		    strstr(dev->name, I2C_DEVICE_PREFIX) != NULL &&
-		    strcmp(dev->name, "")) {
+		if ((dev->init_res == 0) && (dev->fixed->name != NULL) &&
+		    strstr(dev->fixed->name, I2C_DEVICE_PREFIX) != NULL &&
+		    strcmp(dev->fixed->name, "")) {
 			if (idx == device_idx) {
-				entry->syntax = dev->name;
+				entry->syntax = dev->fixed->name;
 				break;
 			}
 			device_idx++;

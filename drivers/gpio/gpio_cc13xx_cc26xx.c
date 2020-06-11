@@ -152,7 +152,7 @@ static int gpio_cc13xx_cc26xx_pin_interrupt_configure(struct device *port,
 		gpio_pin_t pin, enum gpio_int_mode mode,
 		enum gpio_int_trig trig)
 {
-	struct gpio_cc13xx_cc26xx_data *data = port->driver_data;
+	struct gpio_cc13xx_cc26xx_data *data = port->fixed->driver_data;
 	uint32_t config = 0;
 
 	if (mode != GPIO_INT_MODE_DISABLED) {
@@ -186,7 +186,7 @@ static int gpio_cc13xx_cc26xx_manage_callback(struct device *port,
 					      struct gpio_callback *callback,
 					      bool set)
 {
-	struct gpio_cc13xx_cc26xx_data *data = port->driver_data;
+	struct gpio_cc13xx_cc26xx_data *data = port->fixed->driver_data;
 
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
@@ -194,7 +194,7 @@ static int gpio_cc13xx_cc26xx_manage_callback(struct device *port,
 static int gpio_cc13xx_cc26xx_enable_callback(struct device *port,
 					      gpio_pin_t pin)
 {
-	struct gpio_cc13xx_cc26xx_data *data = port->driver_data;
+	struct gpio_cc13xx_cc26xx_data *data = port->fixed->driver_data;
 
 	__ASSERT_NO_MSG(pin < NUM_IO_MAX);
 	data->pin_callback_enables |= (1 << pin);
@@ -205,7 +205,7 @@ static int gpio_cc13xx_cc26xx_enable_callback(struct device *port,
 static int gpio_cc13xx_cc26xx_disable_callback(struct device *port,
 					       gpio_pin_t pin)
 {
-	struct gpio_cc13xx_cc26xx_data *data = port->driver_data;
+	struct gpio_cc13xx_cc26xx_data *data = port->fixed->driver_data;
 
 	__ASSERT_NO_MSG(pin < NUM_IO_MAX);
 	data->pin_callback_enables &= ~(1 << pin);
@@ -223,7 +223,7 @@ DEVICE_DECLARE(gpio_cc13xx_cc26xx);
 static void gpio_cc13xx_cc26xx_isr(void *arg)
 {
 	struct device *dev = arg;
-	struct gpio_cc13xx_cc26xx_data *data = dev->driver_data;
+	struct gpio_cc13xx_cc26xx_data *data = dev->fixed->driver_data;
 
 	uint32_t status = GPIO_getEventMultiDio(GPIO_DIO_ALL_MASK);
 	uint32_t enabled = status & data->pin_callback_enables;
@@ -235,7 +235,7 @@ static void gpio_cc13xx_cc26xx_isr(void *arg)
 
 static int gpio_cc13xx_cc26xx_init(struct device *dev)
 {
-	struct gpio_cc13xx_cc26xx_data *data = dev->driver_data;
+	struct gpio_cc13xx_cc26xx_data *data = dev->fixed->driver_data;
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 	/* Set dependency on gpio resource to turn on power domains */

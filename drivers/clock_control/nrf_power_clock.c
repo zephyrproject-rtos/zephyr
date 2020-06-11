@@ -103,7 +103,7 @@ static void clock_irqs_enable(void)
 static struct nrf_clock_control_sub_data *get_sub_data(struct device *dev,
 					      enum clock_control_nrf_type type)
 {
-	struct nrf_clock_control_data *data = dev->driver_data;
+	struct nrf_clock_control_data *data = dev->fixed->driver_data;
 
 	return &data->subsys[type];
 }
@@ -113,7 +113,7 @@ static const struct nrf_clock_control_sub_config *get_sub_config(
 					enum clock_control_nrf_type type)
 {
 	const struct nrf_clock_control_config *config =
-						dev->config_info;
+						dev->fixed->config_info;
 
 	return &config->subsys[type];
 }

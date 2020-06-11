@@ -49,8 +49,8 @@ struct ft5336_data {
 
 static int ft5336_read(struct device *dev)
 {
-	const struct ft5336_config *config = dev->config_info;
-	struct ft5336_data *data = dev->driver_data;
+	const struct ft5336_config *config = dev->fixed->config_info;
+	struct ft5336_data *data = dev->fixed->driver_data;
 	uint8_t buffer[FT5406_DATA_SIZE];
 	uint8_t event;
 	uint16_t row, column;
@@ -102,7 +102,7 @@ static void ft5336_work_handler(struct k_work *work)
 static void ft5336_isr_handler(struct device *dev, struct gpio_callback *cb,
 		    uint32_t pins)
 {
-	const struct ft5336_config *config = dev->config_info;
+	const struct ft5336_config *config = dev->fixed->config_info;
 	struct ft5336_data *drv_data =
 		CONTAINER_OF(cb, struct ft5336_data, int_gpio_cb);
 
@@ -115,7 +115,7 @@ static void ft5336_isr_handler(struct device *dev, struct gpio_callback *cb,
 
 static int ft5336_configure(struct device *dev, kscan_callback_t callback)
 {
-	struct ft5336_data *data = dev->driver_data;
+	struct ft5336_data *data = dev->fixed->driver_data;
 
 	if (!callback) {
 		return -EINVAL;
@@ -128,7 +128,7 @@ static int ft5336_configure(struct device *dev, kscan_callback_t callback)
 
 static int ft5336_enable_callback(struct device *dev)
 {
-	struct ft5336_data *data = dev->driver_data;
+	struct ft5336_data *data = dev->fixed->driver_data;
 
 #ifdef CONFIG_KSCAN_FT5336_INTERRUPT
 	gpio_add_callback(data->int_gpio_dev, &data->int_gpio_cb);
@@ -142,7 +142,7 @@ static int ft5336_enable_callback(struct device *dev)
 
 static int ft5336_disable_callback(struct device *dev)
 {
-	struct ft5336_data *data = dev->driver_data;
+	struct ft5336_data *data = dev->fixed->driver_data;
 
 #ifdef CONFIG_KSCAN_FT5336_INTERRUPT
 	gpio_remove_callback(data->int_gpio_dev, &data->int_gpio_cb);
@@ -155,8 +155,8 @@ static int ft5336_disable_callback(struct device *dev)
 
 static int ft5336_init(struct device *dev)
 {
-	const struct ft5336_config *config = dev->config_info;
-	struct ft5336_data *data = dev->driver_data;
+	const struct ft5336_config *config = dev->fixed->config_info;
+	struct ft5336_data *data = dev->fixed->driver_data;
 
 	data->i2c = device_get_binding(config->i2c_name);
 	if (data->i2c == NULL) {

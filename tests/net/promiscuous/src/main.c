@@ -77,7 +77,7 @@ static struct eth_fake_context eth_fake_data2;
 static void eth_fake_iface_init(struct net_if *iface)
 {
 	struct device *dev = net_if_get_device(iface);
-	struct eth_fake_context *ctx = dev->driver_data;
+	struct eth_fake_context *ctx = dev->fixed->driver_data;
 
 	ctx->iface = iface;
 
@@ -106,7 +106,7 @@ static int eth_fake_set_config(struct device *dev,
 			       enum ethernet_config_type type,
 			       const struct ethernet_config *config)
 {
-	struct eth_fake_context *ctx = dev->driver_data;
+	struct eth_fake_context *ctx = dev->fixed->driver_data;
 
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
@@ -135,7 +135,7 @@ static struct ethernet_api eth_fake_api_funcs = {
 
 static int eth_fake_init(struct device *dev)
 {
-	struct eth_fake_context *ctx = dev->driver_data;
+	struct eth_fake_context *ctx = dev->fixed->driver_data;
 
 	ctx->promisc_mode = false;
 

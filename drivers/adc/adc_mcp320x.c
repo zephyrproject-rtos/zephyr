@@ -51,8 +51,8 @@ struct mcp320x_data {
 static int mcp320x_channel_setup(struct device *dev,
 				 const struct adc_channel_cfg *channel_cfg)
 {
-	const struct mcp320x_config *config = dev->config_info;
-	struct mcp320x_data *data = dev->driver_data;
+	const struct mcp320x_config *config = dev->fixed->config_info;
+	struct mcp320x_data *data = dev->fixed->driver_data;
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
 		LOG_ERR("unsupported channel gain '%d'", channel_cfg->gain);
@@ -85,7 +85,7 @@ static int mcp320x_channel_setup(struct device *dev,
 static int mcp320x_validate_buffer_size(struct device *dev,
 					const struct adc_sequence *sequence)
 {
-	const struct mcp320x_config *config = dev->config_info;
+	const struct mcp320x_config *config = dev->fixed->config_info;
 	uint8_t channels = 0;
 	size_t needed;
 	uint32_t mask;
@@ -111,8 +111,8 @@ static int mcp320x_validate_buffer_size(struct device *dev,
 static int mcp320x_start_read(struct device *dev,
 			      const struct adc_sequence *sequence)
 {
-	const struct mcp320x_config *config = dev->config_info;
-	struct mcp320x_data *data = dev->driver_data;
+	const struct mcp320x_config *config = dev->fixed->config_info;
+	struct mcp320x_data *data = dev->fixed->driver_data;
 	int err;
 
 	if (sequence->resolution != MCP320X_RESOLUTION) {
@@ -142,7 +142,7 @@ static int mcp320x_read_async(struct device *dev,
 			      const struct adc_sequence *sequence,
 			      struct k_poll_signal *async)
 {
-	struct mcp320x_data *data = dev->driver_data;
+	struct mcp320x_data *data = dev->fixed->driver_data;
 	int err;
 
 	adc_context_lock(&data->ctx, async ? true : false, async);
@@ -180,8 +180,8 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 
 static int mcp320x_read_channel(struct device *dev, uint8_t channel, uint16_t *result)
 {
-	const struct mcp320x_config *config = dev->config_info;
-	struct mcp320x_data *data = dev->driver_data;
+	const struct mcp320x_config *config = dev->fixed->config_info;
+	struct mcp320x_data *data = dev->fixed->driver_data;
 	uint8_t tx_bytes[2];
 	uint8_t rx_bytes[2];
 	int err;
@@ -238,7 +238,7 @@ static int mcp320x_read_channel(struct device *dev, uint8_t channel, uint16_t *r
 
 static void mcp320x_acquisition_thread(struct device *dev)
 {
-	struct mcp320x_data *data = dev->driver_data;
+	struct mcp320x_data *data = dev->fixed->driver_data;
 	uint16_t result = 0;
 	uint8_t channel;
 	int err;
@@ -272,8 +272,8 @@ static void mcp320x_acquisition_thread(struct device *dev)
 
 static int mcp320x_init(struct device *dev)
 {
-	const struct mcp320x_config *config = dev->config_info;
-	struct mcp320x_data *data = dev->driver_data;
+	const struct mcp320x_config *config = dev->fixed->config_info;
+	struct mcp320x_data *data = dev->fixed->driver_data;
 
 	k_sem_init(&data->sem, 0, 1);
 	data->spi_dev = device_get_binding(config->spi_dev_name);

@@ -240,7 +240,7 @@ static inline uint32_t dmic_build_clk_skew_map(uint8_t pdm, uint8_t skew)
 static inline int dmic_configure(struct device *dev, struct dmic_cfg *cfg)
 {
 	const struct _dmic_ops *api =
-		(const struct _dmic_ops *)dev->driver_api;
+		(const struct _dmic_ops *)dev->fixed->driver_api;
 
 	return api->configure(dev, cfg);
 }
@@ -258,7 +258,7 @@ static inline int dmic_configure(struct device *dev, struct dmic_cfg *cfg)
 static inline int dmic_trigger(struct device *dev, enum dmic_trigger cmd)
 {
 	const struct _dmic_ops *api =
-		(const struct _dmic_ops *)dev->driver_api;
+		(const struct _dmic_ops *)dev->fixed->driver_api;
 
 	return api->trigger(dev, cmd);
 }
@@ -282,7 +282,7 @@ static inline int dmic_read(struct device *dev, uint8_t stream, void **buffer,
 		size_t *size, int32_t timeout)
 {
 	const struct _dmic_ops *api =
-		(const struct _dmic_ops *)dev->driver_api;
+		(const struct _dmic_ops *)dev->fixed->driver_api;
 
 	return api->read(dev, stream, buffer, size, timeout);
 }
