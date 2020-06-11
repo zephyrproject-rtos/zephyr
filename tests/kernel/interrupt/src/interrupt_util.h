@@ -74,8 +74,12 @@ static inline void trigger_irq(int irq)
 	 * Generate a software generated interrupt and forward it to the
 	 * requesting CPU.
 	 */
+#if CONFIG_GIC_VER <= 2
 	sys_write32(GICD_SGIR_TGTFILT_REQONLY | GICD_SGIR_SGIINTID(irq),
 		    GICD_SGIR);
+#else
+	gic_raise_sgi(irq, GET_MPIDR(), BIT(MPIDR_TO_CORE(GET_MPIDR())));
+#endif
 }
 
 #elif defined(CONFIG_CPU_ARCV2)
