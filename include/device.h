@@ -124,14 +124,17 @@ extern "C" {
 #define DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_control_fn,	\
 		      data, cfg_info, level, prio, api)			\
 	Z_DEVICE_DEFINE_PM(dev_name)					\
-	static Z_DECL_ALIGN(struct device)				\
-		DEVICE_NAME_GET(dev_name) __used			\
-	__attribute__((__section__(".device_" #level STRINGIFY(prio)))) = { \
+	static const struct device_fixed _CONCAT(__devfixed_, dev_name) = { \
 		.name = drv_name,					\
 		.config_info = (cfg_info),				\
 		.driver_api = (api),					\
 		.driver_data = (data),					\
 		Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)	\
+	};								\
+	static Z_DECL_ALIGN(struct device)				\
+		DEVICE_NAME_GET(dev_name) __used			\
+	__attribute__((__section__(".device_" #level STRINGIFY(prio)))) = { \
+		.fixed = &_CONCAT(__devfixed_, dev_name),		\
 	};								\
 	Z_INIT_ENTRY_DEFINE(_CONCAT(__device_, dev_name), init_fn,	\
 			    (&_CONCAT(__device_, dev_name)), level, prio)
@@ -192,6 +195,18 @@ struct device_pm {
 	struct k_poll_signal signal;
 };
 
+struct device_fixed {
+	const char *name;
+	const void *config_info;
+	const void *driver_api;
+	void * const driver_data;
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	int (*device_pm_control)(struct device *device, uint32_t command,
+				 void *context, device_pm_cb cb, void *arg);
+	struct device_pm * const pm;
+#endif
+};
+
 /**
  * @brief Runtime device structure (in memory) per driver instance
  *
@@ -205,15 +220,7 @@ struct device_pm {
  */
 struct device {
 	int init_res;
-	const char *name;
-	const void *config_info;
-	const void *driver_api;
-	void * const driver_data;
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	int (*device_pm_control)(struct device *device, uint32_t command,
-				 void *context, device_pm_cb cb, void *arg);
-	struct device_pm * const pm;
-#endif
+	const struct device_fixed * const fixed;
 };
 
 /**
