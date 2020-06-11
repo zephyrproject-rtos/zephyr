@@ -80,14 +80,14 @@ struct device *z_impl_device_get_binding(const char *name)
 	 * performed. Reserve string comparisons for a fallback.
 	 */
 	for (dev = __device_start; dev != __device_end; dev++) {
-		if ((dev->driver_api != NULL) &&
+		if ((dev->init_res == 0) &&
 		    (dev->name == name)) {
 			return dev;
 		}
 	}
 
 	for (dev = __device_start; dev != __device_end; dev++) {
-		if ((dev->driver_api != NULL) &&
+		if ((dev->init_res == 0) &&
 		    (strcmp(name, dev->name) == 0)) {
 			return dev;
 		}
