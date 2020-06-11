@@ -526,7 +526,7 @@ exit:
 
 static const struct socket_op_vtable simplelink_socket_fd_op_vtable;
 
-static int simplelink_poll(struct pollfd *fds, int nfds, int msecs)
+static int simplelink_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 {
 	int max_sd = 0;
 	struct SlTimeval_t tv, *ptv;
@@ -987,18 +987,18 @@ static int simplelink_getaddrinfo(const char *node, const char *service,
 
 	/* Check args: */
 	if (!node) {
-		retval = EAI_NONAME;
+		retval = DNS_EAI_NONAME;
 		goto exit;
 	}
 	if (service) {
 		port = strtol(service, NULL, 10);
 		if (port < 1 || port > USHRT_MAX) {
-			retval = EAI_SERVICE;
+			retval = DNS_EAI_SERVICE;
 			goto exit;
 		}
 	}
 	if (!res) {
-		retval = EAI_NONAME;
+		retval = DNS_EAI_NONAME;
 		goto exit;
 	}
 
@@ -1018,7 +1018,7 @@ static int simplelink_getaddrinfo(const char *node, const char *service,
 	if (retval < 0) {
 		LOG_ERR("Could not resolve name: %s, retval: %d",
 			    node, retval);
-		retval = EAI_NONAME;
+		retval = DNS_EAI_NONAME;
 		goto exit;
 	}
 
@@ -1026,13 +1026,13 @@ static int simplelink_getaddrinfo(const char *node, const char *service,
 	*res = calloc(1, sizeof(struct zsock_addrinfo));
 	ai = *res;
 	if (!ai) {
-		retval = EAI_MEMORY;
+		retval = DNS_EAI_MEMORY;
 		goto exit;
 	} else {
 		/* Now, alloc the embedded sockaddr struct: */
 		ai_addr = calloc(1, sizeof(struct sockaddr));
 		if (!ai_addr) {
-			retval = EAI_MEMORY;
+			retval = DNS_EAI_MEMORY;
 			free(*res);
 			goto exit;
 		}
