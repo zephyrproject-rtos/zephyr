@@ -35,8 +35,35 @@
 #include <drivers/uart.h>
 #include <sys/sys_io.h>
 #include <spinlock.h>
+#include <drivers/pcie/pcie.h>
 
 #include "uart_ns16550.h"
+
+/* Workaround: our UART and PCI subsystems aren't 64 bit clean, and
+ * some systems have firmware that maps the default UART above 4G,
+ * killing console output.
+ *
+ * When set, the 64 bit (!) BAR 0 of the PCI device identified below
+ * will be remapped to the address specified.  Make sure the device is
+ * identified correctly and the address does not collide with any
+ * other memory or devices on the system.
+ */
+#define CONFIG_UART_PCI_REMAP 1
+
+#ifdef CONFIG_UART_PCI_REMAP
+#define PCI_UART_REMAP_BDF PCIE_BDF(0, 0x18, 0)
+#define PCI_UART_REMAP_ADDR 0xa0000000
+
+MMU_BOOT_REGION(PCI_UART_REMAP_ADDR, 0x1000, MMU_ENTRY_WRITE|MMU_ENTRY_READ);
+
+void pci_uart_remap_init(void)
+{
+	pcie_bdf_t bdf = PCI_UART_REMAP_BDF;
+	uint64_t addr = PCI_UART_REMAP_ADDR;
+	pcie_conf_write(bdf, 4, (uint32_t) addr);
+	pcie_conf_write(bdf, 5, (uint32_t)(addr >> 32));
+}
+#endif
 
 /*
  * If PCP is set for any of the ports, enable support.

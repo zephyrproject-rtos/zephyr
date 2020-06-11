@@ -20,6 +20,12 @@ FUNC_NORETURN void z_x86_prep_c(void *arg)
 
 	_kernel.cpus[0].nested = 0;
 
+#ifdef CONFIG_UART_PCI_REMAP
+	extern void pci_uart_remap_init(void);
+
+	pci_uart_remap_init();
+#endif
+
 #ifdef CONFIG_X86_VERY_EARLY_CONSOLE
 	z_x86_early_serial_init();
 #endif

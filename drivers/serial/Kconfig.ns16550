@@ -40,3 +40,10 @@ config UART_NS16550_ACCESS_WORD_ONLY
 	  In some case, e.g. ARC HS Development kit, the peripheral space of ns
 	  16550 (DesignWare UART) only allows word access, byte access will raise
 	  exception.
+
+config UART_PCI_REMAP
+	bool "Remap UART MMIO region before initialization"
+	default y
+	help
+	  Debug workaround to remap PCI BAR regions to 32 bit
+	  addresses before UART initialization.  See comments in code.
