@@ -282,7 +282,7 @@ struct z_object *z_dynamic_object_create(size_t size)
 void *z_impl_k_object_alloc(enum k_objects otype)
 {
 	struct z_object *zo;
-	uintptr_t tidx;
+	uintptr_t tidx = 0;
 
 	if (otype <= K_OBJ_ANY || otype >= K_OBJ_LAST) {
 		LOG_ERR("bad object type %d requested", otype);
