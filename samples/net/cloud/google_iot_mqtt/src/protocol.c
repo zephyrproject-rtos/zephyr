@@ -38,11 +38,6 @@ extern unsigned int zepfull_private_der_len;
 #include "globalsign.inc"
 
 static uint8_t client_id[] = CONFIG_CLOUD_CLIENT_ID;
-#ifdef CONFIG_CLOUD_SUBSCRIBE_CONFIG
-static uint8_t subs_topic_str[] = CONFIG_CLOUD_SUBSCRIBE_CONFIG;
-static struct mqtt_topic subs_topic;
-static struct mqtt_subscription_list subs_list;
-#endif
 static uint8_t client_username[] = "none";
 static uint8_t pub_topic[] = CONFIG_CLOUD_PUBLISH_TOPIC;
 
@@ -95,12 +90,35 @@ time_t my_k_time(time_t *ptr)
 	return now;
 }
 
+void mqtt_subscribe_config(struct mqtt_client *const client)
+{
+#ifdef CONFIG_CLOUD_SUBSCRIBE_CONFIG
+	/* subscribe to config information */
+	struct mqtt_topic subs_topic = {
+		.topic = {
+			.utf8 = CONFIG_CLOUD_SUBSCRIBE_CONFIG,
+			.size = strlen(CONFIG_CLOUD_SUBSCRIBE_CONFIG)
+		},
+		.qos = MQTT_QOS_1_AT_LEAST_ONCE
+	};
+	const struct mqtt_subscription_list subs_list = {
+		.list = &subs_topic,
+		.list_count = 1U,
+		.message_id = 1U
+	};
+	int err;
+
+	err = mqtt_subscribe(client, &subs_list);
+	if (err) {
+		LOG_ERR("Failed to subscribe to %s item, error %d",
+			subs_topic.topic.utf8, err);
+	}
+#endif
+}
 
 void mqtt_evt_handler(struct mqtt_client *const client,
 		      const struct mqtt_evt *evt)
 {
-	struct mqtt_puback_param puback;
-
 	switch (evt->type) {
 	case MQTT_EVT_SUBACK:
 		LOG_INF("SUBACK packet id: %u", evt->param.suback.message_id);
@@ -120,6 +138,8 @@ void mqtt_evt_handler(struct mqtt_client *const client,
 		connected = true;
 		LOG_INF("MQTT client connected!");
 
+		mqtt_subscribe_config(client);
+
 		break;
 
 	case MQTT_EVT_DISCONNECT:
@@ -130,39 +150,45 @@ void mqtt_evt_handler(struct mqtt_client *const client,
 		break;
 
 #ifdef CONFIG_CLOUD_SUBSCRIBE_CONFIG
-	case MQTT_EVT_PUBLISH:
-		{
-			uint8_t d[33];
-			int len = evt->param.publish.message.payload.len;
-			int bytes_read;
+	case MQTT_EVT_PUBLISH: {
+		const struct mqtt_publish_param *pub = &evt->param.publish;
+		uint8_t d[33];
+		int len = pub->message.payload.len;
+		int bytes_read;
 
-			LOG_INF("MQTT publish received %d, %d bytes",
-				evt->result, len);
-			LOG_INF("   id: %d, qos: %d",
-				evt->param.publish.message_id,
-				evt->param.publish.message.topic.qos);
-			LOG_INF("   item: %s",
-				log_strdup(CONFIG_CLOUD_SUBSCRIBE_CONFIG));
+		LOG_INF("MQTT publish received %d, %d bytes",
+			evt->result, len);
+		LOG_INF("   id: %d, qos: %d",
+			pub->message_id,
+			pub->message.topic.qos);
+		LOG_INF("   item: %s",
+			log_strdup(pub->message.topic.topic.utf8));
 
-			/* assuming the config message is textual */
-			while (len) {
-				bytes_read = mqtt_read_publish_payload(
-					&client_ctx, d,
-					len >= 32 ? 32 : len);
-				if (bytes_read < 0 && bytes_read != -EAGAIN) {
-					LOG_ERR("failure to read payload");
-					break;
-				}
-
-				d[bytes_read] = '\0';
-				LOG_INF("   payload: %s",
-					log_strdup(d));
-				len -= bytes_read;
+		/* assuming the config message is textual */
+		while (len) {
+			bytes_read = mqtt_read_publish_payload(
+				client, d,
+				len >= 32 ? 32 : len);
+			if (bytes_read < 0 && bytes_read != -EAGAIN) {
+				LOG_ERR("failure to read payload");
+				break;
 			}
+
+			d[bytes_read] = '\0';
+			LOG_INF("   payload: %s", log_strdup(d));
+			len -= bytes_read;
 		}
-		puback.message_id = evt->param.publish.message_id;
-		mqtt_publish_qos1_ack(&client_ctx, &puback);
+
+		/* for MQTT_QOS_0_AT_MOST_ONCE no acknowledgment needed */
+		if (pub->message.topic.qos == MQTT_QOS_1_AT_LEAST_ONCE) {
+			struct mqtt_puback_param puback = {
+				.message_id = pub->message_id
+			};
+
+			mqtt_publish_qos1_ack(client, &puback);
+		}
 		break;
+	}
 #endif
 
 	case MQTT_EVT_PUBACK:
@@ -344,20 +370,6 @@ void mqtt_startup(char *hostname, int port)
 		LOG_ERR("Failed to connect to client, aborting");
 		return;
 	}
-
-#ifdef CONFIG_CLOUD_SUBSCRIBE_CONFIG
-	/* subscribe to config information */
-	subs_topic.topic.utf8 = subs_topic_str;
-	subs_topic.topic.size = strlen(subs_topic_str);
-	subs_list.list = &subs_topic;
-	subs_list.list_count = 1U;
-	subs_list.message_id = 1U;
-
-	err = mqtt_subscribe(client, &subs_list);
-	if (err) {
-		LOG_ERR("Failed to subscribe to %s item", subs_topic_str);
-	}
-#endif
 
 	/* initialize publish structure */
 	pub_data.message.topic.topic.utf8 = pub_topic;
