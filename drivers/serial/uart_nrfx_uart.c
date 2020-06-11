@@ -82,7 +82,7 @@ static struct {
 	size_t tx_buffer_length;
 	volatile size_t tx_counter;
 #if HW_FLOW_CONTROL_AVAILABLE
-	s32_t tx_timeout;
+	int32_t tx_timeout;
 	struct k_delayed_work tx_timeout_work;
 #endif
 } uart0_cb;
