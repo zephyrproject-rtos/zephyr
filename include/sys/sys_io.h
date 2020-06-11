@@ -17,7 +17,7 @@ extern "C" {
 #endif
 
 typedef uint32_t io_port_t;
-typedef uint32_t mm_reg_t;
+typedef uintptr_t mm_reg_t;
 typedef uintptr_t mem_addr_t;
 
 /* Port I/O functions */
