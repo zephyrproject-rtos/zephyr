@@ -948,28 +948,43 @@ idt80:  /* LIDT descriptor for 64 bit mode */
 	.word (idt_end - idt - 1)
 	.quad idt
 
-/*
- * Page tables. Long mode requires them, but we don't implement any memory
- * protection yet, so these simply identity-map the first 4GB w/ 1GB pages.
+/* Initial page tables for long mode entry.  This generates a second
+ * level page full of 512 1G PTE entries of the form:
+ *
+ * 0x000000nnn0000083
+ *
+ * Where nnn is an identity-mapped 1G page index in the range
+ * 0x000-0x1ff, and 0x83 marks a present, 1G, read/write page
+ * entry. It's split up somewhat awkwardly to get around gas's
+ * recursion limits in macro expansion.
+ *
+ * This maps the first 512GB of memory space by default, which will
+ * hopefully be enough to reach everything we need before we can
+ * bootstrap the real page tables later.
  */
+.macro populate_ptable base, count=64
+	.long 0x00000083
+	.long 64 - \count + \base
+	.long 0x40000083
+	.long 64 - \count + \base
+	.long 0x80000083
+	.long 64 - \count + \base
+	.long 0xC0000083
+	.long 64 - \count + \base
+.if \count > 1
+	populate_ptable \base, (\count - 1)
+.endif
+.endm
 
 .align 4096
-
 .globl z_x86_flat_ptables
 z_x86_flat_ptables:
 	.long pdp + 0x03		/* 0x03 = R/W, P */
 	.long 0
 	.fill 4088, 1, 0
-
-pdp:	.long 0x00000083		/* 0x83 = 1GB, R/W, P */
-	.long 0
-	.long 0x40000083
-	.long 0
-	.long 0x80000083
-	.long 0
-	.long 0xC0000083
-	.long 0
-	.fill 4064, 1, 0
+pdp:
+	populate_ptable 0
+	populate_ptable 64
 
 .section .gdt,"ad"
 
