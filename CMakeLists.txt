@@ -1112,7 +1112,7 @@ set(post_build_byproducts "")
 list(APPEND
   post_build_commands
   COMMAND
-  cmake -E rename ${logical_target_for_zephyr_elf}.map ${KERNEL_MAP_NAME}
+  ${CMAKE_COMMAND} -E rename ${logical_target_for_zephyr_elf}.map ${KERNEL_MAP_NAME}
 )
 
 if(NOT CONFIG_BUILD_NO_GAP_FILL)
