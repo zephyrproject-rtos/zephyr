@@ -412,7 +412,7 @@ unlock:
 	return idx;
 }
 
-static int eswifi_socket_poll(struct pollfd *fds, int nfds, int msecs)
+static int eswifi_socket_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 {
 	struct eswifi_off_socket *socket;
 	int sock, ret;
