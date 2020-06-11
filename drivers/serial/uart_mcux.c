@@ -132,16 +132,17 @@ static int uart_mcux_irq_tx_complete(struct device *dev)
 	const struct uart_mcux_config *config = dev->config_info;
 	uint32_t flags = UART_GetStatusFlags(config->base);
 
-	return (flags & kUART_TxDataRegEmptyFlag) != 0U;
+	return (flags & kUART_TransmissionCompleteFlag) != 0U;
 }
 
 static int uart_mcux_irq_tx_ready(struct device *dev)
 {
 	const struct uart_mcux_config *config = dev->config_info;
 	uint32_t mask = kUART_TxDataRegEmptyInterruptEnable;
+	uint32_t flags = UART_GetStatusFlags(config->base);
 
 	return (UART_GetEnabledInterrupts(config->base) & mask)
-		&& uart_mcux_irq_tx_complete(dev);
+		&& (flags & kUART_TxDataRegEmptyFlag);
 }
 
 static void uart_mcux_irq_rx_enable(struct device *dev)
