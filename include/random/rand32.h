@@ -20,13 +20,16 @@
 #ifndef ZEPHYR_INCLUDE_RANDOM_RAND32_H_
 #define ZEPHYR_INCLUDE_RANDOM_RAND32_H_
 
+#include <kernel.h>
 #include <zephyr/types.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern u32_t sys_rand32_get(void);
+__syscall u32_t sys_rand32_get(void);
+
+#include <syscalls/rand32.h>
 
 #ifdef __cplusplus
 }

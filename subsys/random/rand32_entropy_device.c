@@ -10,7 +10,7 @@
 
 static atomic_t entropy_driver;
 
-u32_t sys_rand32_get(void)
+u32_t z_impl_sys_rand32_get(void)
 {
 	struct device *dev = (struct device *)atomic_get(&entropy_driver);
 	u32_t random_num;
