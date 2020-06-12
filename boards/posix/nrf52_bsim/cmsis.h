@@ -16,8 +16,16 @@
 extern "C" {
 #endif
 
-/* Implement ARM Data Synchronization Barrier instruction as no-op. */
+/* Implement the following ARM intrinsics as no-op:
+ * - ARM Data Synchronization Barrier
+ * - ARM Data Memory Synchronization Barrier
+ * - ARM Instruction Synchronization Barrier
+ * - ARM No Operation
+ */
+static inline void __DMB(void) {}
 static inline void __DSB(void) {}
+static inline void __ISB(void) {}
+static inline void __NOP(void) {}
 
 #ifdef __cplusplus
 }
