@@ -39,6 +39,10 @@
 #define ATMEL_SAM0_DT_SERCOM_CHECK(n, compat) \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(sercom##n), compat, okay)
 
+/* Use to check if TCC 'n' is enabled for a given 'compat' */
+#define ATMEL_SAM0_DT_TCC_CHECK(n, compat) \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(tcc##n), compat, okay)
+
 /* Common macro for use to set HCLK_FREQ_HZ */
 #define ATMEL_SAM0_DT_CPU_CLK_FREQ_HZ \
 	DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
