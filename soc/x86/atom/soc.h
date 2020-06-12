@@ -25,7 +25,7 @@
 /*
  * UART
  */
-#define UART_NS16550_ACCESS_IOPORT
+#define UART_NS16550_ACCESS_IOPORT 0x3f8
 
 
 /* PCI definitions */
