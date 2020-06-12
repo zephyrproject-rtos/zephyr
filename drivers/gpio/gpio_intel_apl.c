@@ -585,8 +585,6 @@ int gpio_intel_apl_init(struct device *dev)
 	sys_bitfield_clear_bit(cfg->reg_base + REG_MISCCFG,
 			       MISCCFG_IRQ_ROUTE_POS);
 
-	dev->driver_api = &gpio_intel_apl_api;
-
 	return 0;
 }
 
