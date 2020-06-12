@@ -8,8 +8,21 @@
 import os
 import shlex
 import sys
+try:
+    from intelhex import IntelHex
+except ImportError:
+    IntelHex = None
 
 from runners.core import ZephyrBinaryRunner, RunnerCaps
+
+# Helper function for inspecting hex files.
+# returns whether the hex file has any contents in a specific region
+# region filter is a callable that takes an address as argument and
+# returns True if that address is in the region in question
+def has_region(region_filter, hex_file):
+    if IntelHex is None:
+        raise RuntimeError('intelhex missing; please "pip3 install intelhex"')
+    return any(region_filter(addr) for addr in IntelHex(hex_file).addresses())
 
 
 class NrfJprogBinaryRunner(ZephyrBinaryRunner):
@@ -132,8 +145,18 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
                 program_cmd
             ])
         else:
+            is_uicr = {
+                'NRF51': lambda addr: False,
+                'NRF52': lambda addr: (0x10001000 <= addr < 0x10002000),
+                'NRF53': lambda addr: (0x00FF8000 <= addr < 0x00FF9000) or (0x01FF8000 <= addr < 0x01FF8800),
+                'NRF91': lambda addr: (0x00FF8000 <= addr < 0x00FF9000),
+            }[self.family]
+
             if self.family == 'NRF52':
                 commands.append(program_cmd + ['--sectoranduicrerase'])
+            elif has_region(is_uicr, hex_file):
+                # Hex file has UICR contents.
+                commands.append(program_cmd + ['--chiperase'])
             else:
                 commands.append(program_cmd + ['--sectorerase'])
 
