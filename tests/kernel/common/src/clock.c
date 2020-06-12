@@ -22,7 +22,6 @@
 	} while (0)
 #endif
 
-#ifndef CONFIG_BOARD_QEMU_CORTEX_M0
 struct timer_data {
 	int duration_count;
 	int stop_count;
@@ -37,7 +36,6 @@ static ZTEST_BMEM struct timer_data tdata;
 
 #define DURATION 100
 #define LESS_DURATION 80
-#endif
 
 /**
  * @addtogroup kernel_common_tests
@@ -127,13 +125,6 @@ void test_clock_cycle(void)
 	}
 }
 
-#ifdef CONFIG_BOARD_QEMU_CORTEX_M0
-void test_ms_time_duration(void)
-{
-	ztest_test_skip();
-}
-
-#else
 
 /*
  *help function
@@ -188,7 +179,6 @@ void test_ms_time_duration(void)
 	/** cleanup environemtn */
 	k_timer_stop(&ktimer);
 }
-#endif
 /**
  * @}
  */

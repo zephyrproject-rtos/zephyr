@@ -13,13 +13,7 @@
  * @ingroup all_tests
  * @{
  */
-/* FIXEME: remove this once issue is fixed */
-#if CONFIG_BOARD_QEMU_CORTEX_M0
-void test_bootdelay(void)
-{
-	ztest_test_skip();
-}
-#else
+
 /**
  * @brief This module verifies the delay specified during boot.
  */
@@ -34,7 +28,6 @@ void test_bootdelay(void)
 			(uint32_t)k_cyc_to_ns_floor64(current_cycles),
 			(NSEC_PER_MSEC * CONFIG_BOOT_DELAY));
 }
-#endif
 
 /**
  * @}
