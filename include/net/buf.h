@@ -15,6 +15,10 @@
 #include <sys/util.h>
 #include <zephyr.h>
 
+#ifndef CONFIG_NET_BUF_USER_DATA_SIZE
+#define CONFIG_NET_BUF_USER_DATA_SIZE 0
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
