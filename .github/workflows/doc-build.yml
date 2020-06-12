@@ -32,7 +32,7 @@ jobs:
         pip3 install setuptools
         pip3 install -r scripts/requirements-doc.txt
         pip3 install west>=0.6.2
-        pip3 install pyelftools canopen progress
+        pip3 install pyelftools canopen progress intelhex
 
     - name: west setup
       run: |

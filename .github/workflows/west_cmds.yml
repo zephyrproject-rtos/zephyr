@@ -55,7 +55,7 @@ jobs:
     - name: install pytest
       run: |
         pip3 install wheel
-        pip3 install pytest west pyelftools canopen progress mypy
+        pip3 install pytest west pyelftools canopen progress mypy intelhex
     - name: run pytest-win
       if: runner.os == 'Windows'
       run: |
