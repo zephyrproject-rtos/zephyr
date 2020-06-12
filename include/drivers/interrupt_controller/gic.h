@@ -210,6 +210,19 @@
 
 #endif /* CONFIG_GIC_VER <= 2 */
 
+#if defined(CONFIG_GIC_V3)
+/**
+ * @brief raise SGI to target cores
+ *
+ * @param sgi_id      SGI ID 0 to 15
+ * @param target_aff  target affinity in mpidr form.
+ *                    Aff level 1 2 3 will be extracted by api.
+ * @param target_list bitmask of target cores
+ */
+void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
+		   uint16_t target_list);
+#endif
+
 /* GICD_ICFGR */
 #define GICD_ICFGR_MASK			BIT_MASK(2)
 #define GICD_ICFGR_TYPE			BIT(1)
@@ -220,6 +233,12 @@
 /*
  * Common Helper Constants
  */
+#define GIC_SGI_INT_BASE		0
+#define GIC_PPI_INT_BASE		16
+
+#define GIC_IS_SGI(intid)		(((intid) >= GIC_SGI_INT_BASE) && \
+					 ((intid) < GIC_PPI_INT_BASE))
+
 
 #define GIC_SPI_INT_BASE		32
 
