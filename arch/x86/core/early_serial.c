@@ -4,19 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <devicetree.h>
 #include <kernel.h>
 #include <sys/util.h>
+#include <drivers/pcie/pcie.h>
 
 #include <soc.h>
 
-#if DT_PROP(DT_CHOSEN(zephyr_console), pcie)
-BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
-#define UART_NS16550_PCIE_ENABLED
-#include <drivers/pcie/pcie.h>
-
-#define UART_PCIE_BDF	(DT_REG_ADDR(DT_CHOSEN(zephyr_console)))
-#define UART_PCIE_ID	(DT_REG_SIZE(DT_CHOSEN(zephyr_console)))
+#if defined(X86_SOC_EARLY_SERIAL_PCIDEV)
+#define UART_PCIE_BDF X86_SOC_EARLY_SERIAL_PCIDEV
+#define UART_NS16550_PCIE_ENABLED 1
+#elif defined(UART_NS16550_ACCESS_IOPORT)
+#undef UART_NS16550_PCIE_ENABLED
+#else
+#error "Incomplete x86 SoC early serial config"
 #endif
 
 /* Super-primitive 8250/16550 serial output-only driver, 115200 8n1 */
@@ -51,37 +51,19 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define REG_BRDL(x)		(x + REG_OFFSET_BRDL * UART_REG_ADDR_INTERVAL)
 #define REG_BRDH(x)		(x + REG_OFFSET_BRDH * UART_REG_ADDR_INTERVAL)
 
-#if DT_NODE_HAS_PROP(DT_CHOSEN(zephyr_console), reg_shift)
-#define UART_REG_ADDR_INTERVAL \
-	(1 << DT_PROP(DT_CHOSEN(zephyr_console), reg_shift))
-#endif
-
 #ifdef UART_NS16550_ACCESS_IOPORT
-#define PORT		((io_port_t)DT_REG_ADDR(DT_CHOSEN(zephyr_console)))
 #define INBYTE(x)	sys_in8(x)
-#define INWORD(x)	sys_in32(x)
 #define OUTBYTE(x, d)	sys_out8(d, x)
-#define OUTWORD(x, d)	sys_out32(d, x)
 #ifndef UART_REG_ADDR_INTERVAL
 #define UART_REG_ADDR_INTERVAL 1 /* address diff of adjacent regs. */
 #endif /* UART_REG_ADDR_INTERVAL */
 #else
-#define PORT		((mm_reg_t)DT_REG_ADDR(DT_CHOSEN(zephyr_console)))
 #define INBYTE(x)	sys_read8(x)
-#define INWORD(x)	sys_read32(x)
 #define OUTBYTE(x, d)	sys_write8(d, x)
-#define OUTWORD(x, d)	sys_write32(d, x)
 #ifndef UART_REG_ADDR_INTERVAL
 #define UART_REG_ADDR_INTERVAL 4 /* address diff of adjacent regs. */
 #endif
 #endif /* UART_NS16550_ACCESS_IOPORT */
-
-#ifdef CONFIG_UART_NS16550_ACCESS_WORD_ONLY
-#undef INBYTE
-#define INBYTE(x) INWORD(x)
-#undef OUTBYTE
-#define OUTBYTE(x, d) OUTWORD(x, d)
-#endif
 
 #ifdef UART_NS16550_PCIE_ENABLED
 static mm_reg_t base;
@@ -110,10 +92,6 @@ extern void __printk_hook_install(int (*fn)(int));
 void z_x86_early_serial_init(void)
 {
 #ifdef UART_NS16550_PCIE_ENABLED
-	if (!pcie_probe(UART_PCIE_BDF, UART_PCIE_ID)) {
-		return;
-	}
-
 	base = pcie_get_mbar(UART_PCIE_BDF, 0);
 	pcie_set_cmd(UART_PCIE_BDF, PCIE_CONF_CMDSTAT_MEM, true);
 #endif
