@@ -10,11 +10,14 @@
 #include <spinlock.h>
 #include <irq.h>
 
+#include <dt-bindings/interrupt-controller/intel-ioapic.h>
+
 #define HPET_REG32(off) (*(volatile uint32_t *)(long)			\
 		       (DT_INST_REG_ADDR(0) + (off)))
 
 #define CLK_PERIOD_REG        HPET_REG32(0x04) /* High dword of caps reg */
 #define GENERAL_CONF_REG      HPET_REG32(0x10)
+#define INTR_STATUS_REG       HPET_REG32(0x20)
 #define MAIN_COUNTER_REG      HPET_REG32(0xf0)
 #define TIMER0_CONF_REG       HPET_REG32(0x100)
 #define TIMER0_COMPARATOR_REG HPET_REG32(0x108)
@@ -23,7 +26,11 @@
 #define GCONF_ENABLE BIT(0)
 #define GCONF_LR     BIT(1) /* legacy interrupt routing, disables PIT */
 
+/* INTR_STATUS_REG bits */
+#define TIMER0_INT_STS   BIT(0)
+
 /* TIMERn_CONF_REG bits */
+#define TCONF_INT_LEVEL  BIT(1)
 #define TCONF_INT_ENABLE BIT(2)
 #define TCONF_PERIODIC   BIT(3)
 #define TCONF_VAL_SET    BIT(6)
@@ -48,6 +55,15 @@ static void hpet_isr(void *arg)
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	uint32_t now = MAIN_COUNTER_REG;
+
+#if ((DT_INST_IRQ(0, sense) & IRQ_TYPE_LEVEL) == IRQ_TYPE_LEVEL)
+	/*
+	 * Clear interrupt only if level trigger is selected.
+	 * When edge trigger is selected, spec says only 0 can
+	 * be written.
+	 */
+	INTR_STATUS_REG = TIMER0_INT_STS;
+#endif
 
 	if (IS_ENABLED(CONFIG_SMP) &&
 	    IS_ENABLED(CONFIG_QEMU_TARGET)) {
@@ -89,6 +105,11 @@ static void set_timer0_irq(unsigned int irq)
 	/* 5-bit IRQ field starting at bit 9 */
 	uint32_t val = (TIMER0_CONF_REG & ~(0x1f << 9)) | ((irq & 0x1f) << 9);
 
+#if ((DT_INST_IRQ(0, sense) & IRQ_TYPE_LEVEL) == IRQ_TYPE_LEVEL)
+	/* Level trigger */
+	val |= TCONF_INT_LEVEL;
+#endif
+
 	TIMER0_CONF_REG = val;
 }
 
@@ -99,7 +120,7 @@ int z_clock_driver_init(struct device *device)
 
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
-		    hpet_isr, 0, 0);
+		    hpet_isr, 0, DT_INST_IRQ(0, sense));
 	set_timer0_irq(DT_INST_IRQN(0));
 	irq_enable(DT_INST_IRQN(0));
 
