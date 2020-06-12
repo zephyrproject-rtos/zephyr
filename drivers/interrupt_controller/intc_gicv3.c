@@ -54,15 +54,17 @@ void arm_gic_irq_set_priority(unsigned int intid,
 	sys_write8(prio & GIC_PRI_MASK, IPRIORITYR(base, intid));
 
 	/* Interrupt type config */
-	idx = intid / GIC_NUM_CFG_PER_REG;
-	shift = (intid & (GIC_NUM_CFG_PER_REG - 1)) * 2;
+	if (!GIC_IS_SGI(intid)) {
+		idx = intid / GIC_NUM_CFG_PER_REG;
+		shift = (intid & (GIC_NUM_CFG_PER_REG - 1)) * 2;
 
-	val = sys_read32(ICFGR(base, idx));
-	val &= ~(GICD_ICFGR_MASK << shift);
-	if (flags & IRQ_TYPE_EDGE) {
-		val |= (GICD_ICFGR_TYPE << shift);
+		val = sys_read32(ICFGR(base, idx));
+		val &= ~(GICD_ICFGR_MASK << shift);
+		if (flags & IRQ_TYPE_EDGE) {
+			val |= (GICD_ICFGR_TYPE << shift);
+		}
+		sys_write32(val, ICFGR(base, idx));
 	}
-	sys_write32(val, ICFGR(base, idx));
 }
 
 void arm_gic_irq_enable(unsigned int intid)
