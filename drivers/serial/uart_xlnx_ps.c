@@ -455,7 +455,7 @@ static inline bool uart_xlnx_ps_cfg2ll_parity(
  *                 the stop bit configuration shall be added.
  * @param stopbits Enumeration value to be converted to a bit mask.
  *
- * @return Indication of success or failure in case of an unspported
+ * @return Indication of success or failure in case of an unsupported
  *         stop bit configuration being provided by the caller.
  */
 static inline bool uart_xlnx_ps_cfg2ll_stopbits(
@@ -505,7 +505,7 @@ static inline bool uart_xlnx_ps_cfg2ll_stopbits(
  *                 the data bit configuration shall be added.
  * @param databits Enumeration value to be converted to a bit mask.
  *
- * @return Indication of success or failure in case of an unspported
+ * @return Indication of success or failure in case of an unsupported
  *         data bit configuration being provided by the caller.
  */
 static inline bool uart_xlnx_ps_cfg2ll_databits(
@@ -557,7 +557,7 @@ static inline bool uart_xlnx_ps_cfg2ll_databits(
  *                    be added.
  * @param hwctrl Enumeration value to be converted to a bit mask.
  *
- * @return Indication of success or failure in case of an unspported
+ * @return Indication of success or failure in case of an unsupported
  *         flow control configuration being provided by the caller.
  */
 static inline bool uart_xlnx_ps_cfg2ll_hwctrl(
