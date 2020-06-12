@@ -45,6 +45,8 @@ features:
 +-----------+------------+------------------------------------------+
 | GPIO      | on-chip    | I/O ports                                |
 +-----------+------------+------------------------------------------+
+| PWM       | on-chip    | Pulse Width Modulation                   |
++-----------+------------+------------------------------------------+
 | USART     | on-chip    | Serial ports                             |
 +-----------+------------+------------------------------------------+
 | SPI       | on-chip    | Serial Peripheral Interface ports        |
@@ -77,6 +79,13 @@ Serial Port
 The SAMD21 MCU has 6 SERCOM based USARTs. One of the USARTs
 (SERCOM5) is connected to the onboard Atmel Embedded Debugger (EDBG).
 SERCOM0 is available on the D0/D1 pins.
+
+PWM
+===
+
+The SAMD21 MCU has 3 TCC based PWM units with up to 4 outputs each and a period
+of 24 bits or 16 bits.  If :code:`CONFIG_PWM_SAM0_TCC` is enabled then LED0 is
+driven by TCC2 instead of by GPIO.
 
 SPI Port
 ========
