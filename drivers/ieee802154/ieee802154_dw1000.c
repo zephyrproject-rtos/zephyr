@@ -27,6 +27,7 @@ LOG_MODULE_REGISTER(dw1000, LOG_LEVEL_INF);
 
 #include <net/ieee802154_radio.h>
 #include "ieee802154_dw1000_regs.h"
+#include "ieee802154_dw1000_priv.h"
 
 #define DT_DRV_COMPAT decawave_dw1000
 
@@ -68,29 +69,6 @@ LOG_MODULE_REGISTER(dw1000, LOG_LEVEL_INF);
 static struct k_work_q dwt_work_queue;
 static K_THREAD_STACK_DEFINE(dwt_work_queue_stack,
 			     DWT_WORK_QUEUE_STACK_SIZE);
-
-struct dwt_phy_config {
-	uint8_t channel;	/* Channel 1, 2, 3, 4, 5, 7 */
-	uint8_t dr;	/* Data rate DWT_BR_110K, DWT_BR_850K, DWT_BR_6M8 */
-	uint8_t prf;	/* PRF DWT_PRF_16M or DWT_PRF_64M */
-
-	uint8_t rx_pac_l;		/* DWT_PAC8..DWT_PAC64 */
-	uint8_t rx_shr_code;	/* RX SHR preamble code */
-	uint8_t rx_ns_sfd;		/* non-standard SFD */
-	uint16_t rx_sfd_to;	/* SFD timeout value (in symbols)
-				 * (tx_shr_nsync + 1 + SFD_length - rx_pac_l)
-				 */
-
-	uint8_t tx_shr_code;	/* TX SHR preamble code */
-	uint32_t tx_shr_nsync;	/* PLEN index, e.g. DWT_PLEN_64 */
-
-	bool phr_mode_ext;	/* Extended PHR mode: long frame 1024 Byte */
-	bool smart_power_en;	/* Enable/Disable smart power */
-
-	float t_shr;
-	float t_phr;
-	float t_dsym;
-};
 
 struct dwt_hi_cfg {
 	const char *irq_port;
