@@ -14,6 +14,7 @@
 
 / {
 	chosen {
+		zephyr,entropy = &rng;
 		zephyr,flash-controller = &flash;
 	};
 
@@ -566,6 +567,14 @@
 			status = "disabled";
 			label = "ADC_3";
 			#io-channel-cells = <1>;
+		};
+
+		rng: rng@48021800 {
+			compatible = "st,stm32-rng";
+			reg = <0x48021800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000040>;
+			status = "disabled";
+			label = "RNG";
 		};
 	};
 };
