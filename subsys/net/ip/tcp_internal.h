@@ -14,6 +14,7 @@
 #define __TCP_INTERNAL_H
 
 #include <zephyr/types.h>
+#include <random/rand32.h>
 
 #include <net/net_core.h>
 #include <net/net_ip.h>

@@ -11,6 +11,7 @@ LOG_MODULE_REGISTER(net_ieee802154_csma, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 #include <net/net_if.h>
 
 #include <sys/util.h>
+#include <random/rand32.h>
 
 #include <stdlib.h>
 #include <errno.h>

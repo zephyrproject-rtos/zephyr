@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <drivers/gpio.h>
 #include <device.h>
 #include <init.h>
+#include <random/rand32.h>
 
 #include <net/net_context.h>
 #include <net/net_if.h>

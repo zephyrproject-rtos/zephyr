@@ -26,6 +26,7 @@
 #include <stdbool.h>
 #include <irq_offload.h>
 #include <sys/check.h>
+#include <random/rand32.h>
 
 #ifdef CONFIG_THREAD_MONITOR
 /* This lock protects the linked list of active threads; i.e. the

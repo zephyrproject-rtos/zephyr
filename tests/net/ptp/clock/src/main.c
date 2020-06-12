@@ -29,6 +29,8 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <net/net_ip.h>
 #include <net/net_l2.h>
 
+#include <random/rand32.h>
+
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
 

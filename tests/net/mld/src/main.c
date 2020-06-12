@@ -27,6 +27,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 #include <net/net_mgmt.h>
 #include <net/net_event.h>
 
+#include <random/rand32.h>
+
 #include "icmpv6.h"
 #include "ipv6.h"
 

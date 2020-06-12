@@ -11,6 +11,7 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 #include <stdio.h>
 #include <stdlib.h>
 #include <zephyr.h>
+#include <random/rand32.h>
 #include <net/net_pkt.h>
 #include <net/net_context.h>
 #include <net/udp.h>
