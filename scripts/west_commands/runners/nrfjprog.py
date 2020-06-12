@@ -24,6 +24,40 @@ def has_region(region_filter, hex_file):
         raise RuntimeError('intelhex missing; please "pip3 install intelhex"')
     return any(region_filter(addr) for addr in IntelHex(hex_file).addresses())
 
+# Helper function for nRF53
+def is_cpunet(addr):
+    return 0x01000000 <= addr < 0x10000000
+
+# Helper function for nRF53
+def has_cpunet_region(hex_file):
+    return has_region(is_cpunet, hex_file)
+
+# Helper function for nRF53
+def has_cpuapp_region(hex_file):
+    return has_region(lambda addr: not is_cpunet(addr), hex_file)
+
+# Helper function for nRF53
+# Generates 2 new hex files where cpunet flash contents are in one,
+# and all other flash contents are in the other.
+def split_hex_file(hex_file):
+    hex_file_dir = os.path.dirname(hex_file)
+    cpuapp_hex = os.path.join(hex_file_dir, "nrf53_cpuapp.hex")
+    cpunet_hex = os.path.join(hex_file_dir, "nrf53_cpunet.hex")
+
+    if IntelHex is None:
+        raise RuntimeError('intelhex missing; please "pip3 install intelhex"')
+    hex_file_dict = IntelHex(hex_file).todict()
+
+    ih_cpuapp = IntelHex()
+    ih_cpuapp.fromdict({k:v for k,v in hex_file_dict.items() if not is_cpunet(k)})
+    ih_cpuapp.write_hex_file(cpuapp_hex)
+
+    ih_cpunet = IntelHex()
+    ih_cpunet.fromdict({k:v for k,v in hex_file_dict.items() if is_cpunet(k)})
+    ih_cpunet.write_hex_file(cpunet_hex)
+
+    return (cpuapp_hex, cpunet_hex)
+
 
 class NrfJprogBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for nrfjprog.'''
@@ -124,7 +158,6 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
 
         self.ensure_snr()
 
-        commands = []
         board_snr = self.snr.lstrip("0")
 
         if not os.path.isfile(self.hex_):
@@ -132,10 +165,36 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
                              format(self.hex_) +
                              'Try enabling CONFIG_BUILD_OUTPUT_HEX.')
 
-        program_cmd = ['nrfjprog', '--program', self.hex_, '-f', self.family,
-                    '--snr', board_snr] + self.tool_opt
+        if self.family != "NRF53":
+            self.do_flash(self.hex_, self.tool_opt, board_snr)
+        else:
+            # self.family == "NRF53"
 
-        self.logger.info('Flashing file: {}'.format(self.hex_))
+            def flash_app(hex_file, reset=True):
+                self.do_flash(hex_file, self.tool_opt + ['--coprocessor', 'CP_APPLICATION'], board_snr, reset=reset)
+
+            def flash_net(hex_file, reset=True):
+                self.do_flash(hex_file, self.tool_opt + ['--coprocessor', 'CP_NETWORK'], board_snr, reset=reset)
+
+            if has_cpuapp_region(self.hex_) and has_cpunet_region(self.hex_):
+                (cpuapp_hex, cpunet_hex) = split_hex_file(self.hex_)
+                self.logger.info(f'hex file ({self.hex_}) was split into app ({cpuapp_hex}) and net ({cpunet_hex})')
+                flash_app(cpuapp_hex, reset=False) # Don't reset until everything is flashed.
+                flash_net(cpunet_hex)
+            elif has_cpuapp_region(self.hex_):
+                flash_app(self.hex_)
+            elif has_cpunet_region(self.hex_):
+                flash_net(self.hex_)
+            else:
+                assert False, "Invalid hex file."
+
+    def do_flash(self, hex_file, tool_opt, board_snr, reset=True):
+        commands = []
+        program_cmd = ['nrfjprog', '--program', hex_file, '-f', self.family,
+                    '--snr', board_snr] + tool_opt
+
+        self.logger.info('Flashing file: {}'.format(hex_file))
+
         if self.erase:
             commands.extend([
                 ['nrfjprog',
@@ -167,12 +226,13 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
                  '--snr', board_snr],
             ])
 
-        if self.softreset:
-            commands.append(['nrfjprog', '--reset', '-f', self.family,
-                             '--snr', board_snr])
-        else:
-            commands.append(['nrfjprog', '--pinreset', '-f', self.family,
-                             '--snr', board_snr])
+        if reset:
+            if self.softreset:
+                commands.append(['nrfjprog', '--reset', '-f', self.family,
+                                '--snr', board_snr])
+            else:
+                commands.append(['nrfjprog', '--pinreset', '-f', self.family,
+                                '--snr', board_snr])
 
         for cmd in commands:
             self.check_call(cmd)
