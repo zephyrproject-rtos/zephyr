@@ -569,6 +569,28 @@
 			#io-channel-cells = <1>;
 		};
 
+		dma1: dma@40020000 {
+			compatible = "st,stm32-dma";
+			#dma-cells = <4>;
+			reg = <0x40020000 0x400>;
+			interrupts = <11 0>, <12 0>, <13 0>, <14 0>, <15 0>, <16 0>,
+						 <17 0>, <47 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000020>;
+			status = "disabled";
+			label = "DMA_1";
+		};
+
+		dma2: dma@40020400 {
+			compatible = "st,stm32-dma";
+			#dma-cells = <4>;
+			reg = <0x40020400 0x400>;
+			interrupts = <11 0>, <12 0>, <13 0>, <14 0>, <15 0>, <16 0>,
+						 <17 0>, <47 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000020>;
+			status = "disabled";
+			label = "DMA_2";
+		};
+
 		rng: rng@48021800 {
 			compatible = "st,stm32-rng";
 			reg = <0x48021800 0x400>;
