@@ -31,6 +31,13 @@
 
 #define MIN_DELAY 1000
 
+#ifdef CONFIG_HPET_TIMER_COUNTER_CLK_PERIOD_UNIT_IN_PICOSECONDS
+#define COUNTER_CLK_PERIOD_BASE	1000000000000ull
+#else
+/* Femptoseconds is default as specified in specification */
+#define COUNTER_CLK_PERIOD_BASE	1000000000000000ull
+#endif
+
 static struct k_spinlock lock;
 static unsigned int max_ticks;
 static unsigned int cyc_per_tick;
@@ -104,7 +111,7 @@ int z_clock_driver_init(struct device *device)
 	irq_enable(DT_INST_IRQN(0));
 
 	/* CLK_PERIOD_REG is in femtoseconds (1e-15 sec) */
-	hz = (uint32_t)(1000000000000000ull / CLK_PERIOD_REG);
+	hz = (uint32_t)(COUNTER_CLK_PERIOD_BASE / CLK_PERIOD_REG);
 	z_clock_hw_cycles_per_sec = hz;
 	cyc_per_tick = hz / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 

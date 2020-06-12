@@ -64,6 +64,26 @@ config HPET_TIMER
 	  This option selects High Precision Event Timer (HPET) as a
 	  system timer.
 
+choice HPET_TIMER_COUNTER_CLK_PERIOD_UNIT
+	prompt "Time Unit of HPET Counter Clock Period"
+	depends on HPET_TIMER
+	default HPET_TIMER_COUNTER_CLK_PERIOD_UNIT_IN_FEMPTOSECONDS
+
+	config HPET_TIMER_COUNTER_CLK_PERIOD_UNIT_IN_FEMPTOSECONDS
+	bool "Femptoseconds"
+	help
+	  The COUNTER_CLK_ERIOD in general capabilities register
+	  uses femptoseconds (10^-15 seconds) to indicate the time
+	  between counter increments.
+
+	config HPET_TIMER_COUNTER_CLK_PERIOD_UNIT_IN_PICOSECONDS
+	bool "Picoseconds"
+	help
+	  The COUNTER_CLK_ERIOD in general capabilities register
+	  uses picoseconds (10^-12 seconds) to indicate the time
+	  between counter increments.
+endchoice
+
 config LOAPIC_TIMER
 	bool "LOAPIC timer"
 	depends on LOAPIC && X86
