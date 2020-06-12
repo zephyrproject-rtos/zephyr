@@ -903,9 +903,39 @@ static void dwt_set_frame_filter(struct dwt_context *ctx,
 	dwt_reg_write_u8(ctx, DWT_SYS_CFG_ID, 0, (uint8_t)sys_cfg_ff);
 }
 
+static int dwt_set_phy_cfg(struct device *dev, const void *data, size_t size)
+{
+	const struct dwt_phy_config *phy_cfg;
+	struct dwt_context *ctx = dev->driver_data;
+	struct dwt_phy_config *rf_cfg = &ctx->rf_cfg;
+
+	if (size != sizeof(ctx->rf_cfg)) {
+		return -EINVAL;
+	}
+
+	phy_cfg = data;
+
+	memcpy(rf_cfg, phy_cfg, sizeof(ctx->rf_cfg));
+	LOG_INF("Set new phy config for channel = %u", rf_cfg->channel);
+
+	k_sem_take(&ctx->dev_lock, K_FOREVER);
+
+	dwt_disable_txrx(ctx);
+	dwt_configure_rf_phy(ctx);
+
+	if (atomic_test_bit(&ctx->state, DWT_STATE_RX_DEF_ON)) {
+		dwt_enable_rx(ctx, 0);
+	}
+
+	k_sem_give(&ctx->dev_lock);
+
+	return 0;
+}
+
 static int dwt_configure(struct device *dev, enum ieee802154_config_type type,
 			 const struct ieee802154_config *config)
 {
+	int ret;
 	struct dwt_context *ctx = dev->driver_data;
 
 	LOG_DBG("API configure %p", ctx);
@@ -929,6 +959,12 @@ static int dwt_configure(struct device *dev, enum ieee802154_config_type type,
 
 	case IEEE802154_CONFIG_EVENT_HANDLER:
 		LOG_DBG("IEEE802154_CONFIG_EVENT_HANDLER");
+		break;
+
+	case IEEE802154_CONFIG_CHANNEL_SETTINGS:
+		LOG_DBG("IEEE802154_CONFIG_CHANNEL_SETTINGS");
+		ret = dwt_set_phy_cfg(dev, config->ch_cfg.data,
+				      config->ch_cfg.size);
 		break;
 
 	default:
