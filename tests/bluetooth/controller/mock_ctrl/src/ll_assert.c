@@ -14,4 +14,5 @@
 void bt_ctlr_assert_handle(char *file, u32_t line)
 {
 	printf("Assertion failed in %s:%d\n", file, line);
+	exit(-1);
 }
