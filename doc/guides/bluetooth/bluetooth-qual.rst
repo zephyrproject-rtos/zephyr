@@ -30,7 +30,7 @@ Host qualifications
 
    * - 1.13
      - `QDID 119517 <https://launchstudio.bluetooth.com/ListingDetails/70189>`__
-     - Nordic
+     - Nordic Semiconductor
 
 Mesh qualifications
 ===================
@@ -59,12 +59,12 @@ Controller qualifications
 
    * - 1.14.x
      - `QDID 135679 <https://launchstudio.bluetooth.com/ListingDetails/90777>`__
-     - Nordic
+     - Nordic Semiconductor
      - nRF52x
 
    * - 1.9 to 1.13
      - `QDID 101395 <https://launchstudio.bluetooth.com/ListingDetails/25166>`__
-     - Nordic
+     - Nordic Semiconductor
      - nRF52x
 
 ICS Features
