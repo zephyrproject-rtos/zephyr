@@ -159,7 +159,7 @@ static void uart_mux_cb(struct device *uart, struct device *dev,
 
 	shell_fprintf(shell, SHELL_NORMAL,
 		      "%s\t\t%s\t\t%d (%s)\n",
-		      uart->name, dev->name, dlci_address, ch);
+		      uart->fixed->name, dev->fixed->name, dlci_address, ch);
 }
 #endif
 

@@ -462,7 +462,7 @@ static inline int z_obj_validation_check(struct z_object *ko,
 #define Z_SYSCALL_DRIVER_OP(ptr, api_name, op) \
 	({ \
 		struct api_name *__device__ = (struct api_name *) \
-			((struct device *)ptr)->driver_api; \
+			((struct device *)ptr)->fixed->driver_api; \
 		Z_SYSCALL_VERIFY_MSG(__device__->op != NULL, \
 				    "Operation %s not defined for driver " \
 				    "instance %p", \
