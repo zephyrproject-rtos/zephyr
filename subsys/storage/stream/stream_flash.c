@@ -165,9 +165,12 @@ int stream_flash_buffered_write(struct stream_flash_ctx *ctx, const uint8_t *dat
 
 			memset(ctx->buf + ctx->buf_bytes, filler, fill_length);
 			ctx->buf_bytes += fill_length;
+		} else {
+			fill_length = 0;
 		}
 
 		rc = flash_sync(ctx);
+		ctx->bytes_written -= fill_length;
 	}
 
 	return rc;
