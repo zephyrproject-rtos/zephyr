@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <sys/util.h>
 #include <net/net_context.h>
 #include <net/socket.h>
+#include <random/rand32.h>
 #include <syscall_handler.h>
 #include <sys/fdtable.h>
 

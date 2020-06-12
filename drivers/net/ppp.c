@@ -31,6 +31,7 @@ LOG_MODULE_REGISTER(net_ppp, LOG_LEVEL);
 #include <sys/crc.h>
 #include <drivers/uart.h>
 #include <drivers/console/uart_mux.h>
+#include <random/rand32.h>
 
 #include "../../subsys/net/ip/net_stats.h"
 #include "../../subsys/net/ip/net_private.h"

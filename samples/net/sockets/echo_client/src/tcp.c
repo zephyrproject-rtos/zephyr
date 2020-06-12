@@ -16,6 +16,7 @@ LOG_MODULE_DECLARE(net_echo_client_sample, LOG_LEVEL_DBG);
 
 #include <net/socket.h>
 #include <net/tls_credentials.h>
+#include <random/rand32.h>
 
 #include "common.h"
 #include "ca_certificate.h"

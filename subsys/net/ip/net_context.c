@@ -14,6 +14,7 @@
 LOG_MODULE_REGISTER(net_ctx, CONFIG_NET_CONTEXT_LOG_LEVEL);
 
 #include <kernel.h>
+#include <random/rand32.h>
 #include <string.h>
 #include <errno.h>
 #include <stdbool.h>

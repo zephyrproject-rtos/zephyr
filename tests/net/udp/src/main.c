@@ -29,6 +29,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <net/ethernet.h>
 #include <net/dummy.h>
 #include <net/udp.h>
+#include <random/rand32.h>
 
 #include "ipv4.h"
 #include "ipv6.h"

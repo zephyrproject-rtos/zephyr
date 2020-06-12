@@ -9,6 +9,7 @@
 #include <zephyr.h>
 #include <linker/sections.h>
 #include <ztest.h>
+#include <random/rand32.h>
 
 #include <net/ethernet.h>
 #include <net/dummy.h>

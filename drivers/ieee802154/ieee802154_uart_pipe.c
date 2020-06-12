@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <init.h>
 #include <net/net_if.h>
 #include <net/net_pkt.h>
+#include <random/rand32.h>
 
 #include <drivers/console/uart_pipe.h>
 #include <net/ieee802154_radio.h>

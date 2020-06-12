@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(net_trickle, CONFIG_NET_TRICKLE_LOG_LEVEL);
 
 #include <errno.h>
 #include <sys/util.h>
+#include <random/rand32.h>
 
 #include <net/net_core.h>
 #include <net/trickle.h>

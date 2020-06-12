@@ -17,6 +17,7 @@ LOG_MODULE_DECLARE(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 #include <net/net_stats.h>
 #include <net/net_context.h>
 #include <net/net_mgmt.h>
+#include <random/rand32.h>
 #include "net_private.h"
 #include "connection.h"
 #include "icmpv6.h"

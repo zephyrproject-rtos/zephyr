@@ -11,6 +11,7 @@ LOG_MODULE_REGISTER(net_websocket_client_sample, LOG_LEVEL_DBG);
 #include <net/socket.h>
 #include <net/tls_credentials.h>
 #include <net/websocket.h>
+#include <random/rand32.h>
 #include <shell/shell.h>
 
 #include "ca_certificate.h"

@@ -14,6 +14,8 @@ LOG_MODULE_REGISTER(net_test, LOG_LEVEL_WRN);
 #include <string.h>
 #include <errno.h>
 
+#include <random/rand32.h>
+
 #include "config.h"
 
 /* This is mqtt payload message. */

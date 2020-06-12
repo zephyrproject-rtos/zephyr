@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 #include <string.h>
 #include <errno.h>
 #include <sys/printk.h>
+#include <random/rand32.h>
 
 #include <ztest.h>
 

@@ -12,6 +12,7 @@ LOG_MODULE_REGISTER(mqtt_azure, LOG_LEVEL_DBG);
 #include <net/mqtt.h>
 
 #include <sys/printk.h>
+#include <random/rand32.h>
 #include <string.h>
 #include <errno.h>
 

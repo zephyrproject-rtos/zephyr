@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(net_ethernet, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 #include <net/ethernet.h>
 #include <net/ethernet_mgmt.h>
 #include <net/gptp.h>
+#include <random/rand32.h>
 
 #if defined(CONFIG_NET_LLDP)
 #include <net/lldp.h>

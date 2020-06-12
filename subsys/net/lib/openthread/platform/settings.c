@@ -7,6 +7,7 @@
 #include <kernel.h>
 #include <logging/log.h>
 #include <settings/settings.h>
+#include <random/rand32.h>
 
 #include <openthread/platform/settings.h>
 

@@ -11,6 +11,7 @@ LOG_MODULE_DECLARE(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 #include <net/net_pkt.h>
 
 #include <net/ppp.h>
+#include <random/rand32.h>
 
 #include "net_private.h"
 
