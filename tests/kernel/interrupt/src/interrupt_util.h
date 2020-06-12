@@ -62,6 +62,7 @@ static inline void trigger_irq(int irq)
 
 #elif defined(CONFIG_GIC)
 #include <drivers/interrupt_controller/gic.h>
+#include <dt-bindings/interrupt-controller/arm-gic.h>
 
 static inline void trigger_irq(int irq)
 {
