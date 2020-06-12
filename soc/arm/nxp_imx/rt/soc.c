@@ -78,7 +78,7 @@ const clock_video_pll_config_t videoPllConfig = {
 #ifdef CONFIG_NXP_IMX_RT_BOOT_HEADER
 const __imx_boot_data_section BOOT_DATA_T boot_data = {
 	.start = CONFIG_FLASH_BASE_ADDRESS,
-	.size = CONFIG_FLASH_SIZE,
+	.size = KB(CONFIG_FLASH_SIZE),
 	.plugin = PLUGIN_FLAG,
 	.placeholder = 0xFFFFFFFF,
 };
