@@ -123,6 +123,27 @@ void arm_gic_eoi(unsigned int intid)
 	write_sysreg(intid, ICC_EOIR1_EL1);
 }
 
+void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
+		   uint16_t target_list)
+{
+	uint32_t aff3, aff2, aff1;
+	uint64_t sgi_val;
+
+	assert(GIC_IS_SGI(sgi_id));
+
+	/* Extract affinity fields from target */
+	aff1 = MPIDR_AFFLVL(target_aff, 1);
+	aff2 = MPIDR_AFFLVL(target_aff, 2);
+	aff3 = MPIDR_AFFLVL(target_aff, 3);
+
+	sgi_val = GICV3_SGIR_VALUE(aff3, aff2, aff1, sgi_id,
+				   SGIR_IRM_TO_AFF, target_list);
+
+	__DSB();
+	write_sysreg(sgi_val, ICC_SGI1R);
+	__ISB();
+}
+
 /*
  * Wake up GIC redistributor.
  * clear ProcessorSleep and wait till ChildAsleep is cleared.
