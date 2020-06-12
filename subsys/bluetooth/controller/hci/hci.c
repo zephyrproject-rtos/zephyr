@@ -1750,7 +1750,7 @@ static void le_set_ext_adv_enable(struct net_buf *buf, struct net_buf **evt)
 
 	s = (void *) cmd->s;
 	enable = cmd->enable;
-	while (set_num--) {
+	do {
 		/* TODO: duration and events parameter use. */
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 		status = ll_adv_enable(s->handle, cmd->enable, 0, 0, 0, 0, 0);
@@ -1765,7 +1765,7 @@ static void le_set_ext_adv_enable(struct net_buf *buf, struct net_buf **evt)
 		}
 
 		s++;
-	}
+	} while (--set_num);
 
 	ccst = hci_cmd_complete(evt, sizeof(*ccst));
 	ccst->status = status;
