@@ -90,7 +90,7 @@ int stream_flash_init(struct stream_flash_ctx *ctx, struct device *fdev,
  *
  * @param ctx context
  *
- * @return Number of bytes written to flash.
+ * @return Number of payload bytes written to flash.
  */
 size_t stream_flash_bytes_written(struct stream_flash_ctx *ctx);
 
@@ -105,6 +105,9 @@ size_t stream_flash_bytes_written(struct stream_flash_ctx *ctx);
  * @param data data to write
  * @param len Number of bytes to write
  * @param flush when true this forces any buffered data to be written to flash
+ *        A flush write should be the last write operation in a sequence of
+ *        write operations for given context (although this is not mandatory
+ *        if the total data size is a multiple of the buffer size).
  *
  * @return non-negative on success, negative errno code on fail
  */
