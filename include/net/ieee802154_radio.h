@@ -122,7 +122,10 @@ enum ieee802154_config_type {
 	/** Specifies new radio event handler. Specifying NULL as a handler
 	 *  will disable radio events notification.
 	 */
-	IEEE802154_CONFIG_EVENT_HANDLER
+	IEEE802154_CONFIG_EVENT_HANDLER,
+
+	/** channel settings */
+	IEEE802154_CONFIG_CHANNEL_SETTINGS,
 };
 
 /** IEEE802.15.4 driver configuration data. */
@@ -150,6 +153,12 @@ struct ieee802154_config {
 
 		/** ``IEEE802154_CONFIG_EVENT_HANDLER`` */
 		ieee802154_event_cb_t event_handler;
+
+		/** ``IEEE802154_CONFIG_CHANNEL_SETTINGS`` */
+		struct {
+			const void *data;
+			size_t size;
+		} ch_cfg;
 	};
 };
 
