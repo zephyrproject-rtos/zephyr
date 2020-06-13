@@ -141,6 +141,17 @@ void test_sensor_handle_triggers(void)
 				&trigger_elements[i].data),
 				RETURN_SUCCESS, "fail to set attributes");
 
+		/* read-back attributes for trigger */
+		zassert_equal(sensor_attr_get(dev,
+				trigger_elements[i].trig.chan,
+				trigger_elements[i].attr,
+				&data),
+				RETURN_SUCCESS, "fail to get attributes");
+		zassert_equal(trigger_elements[i].data.val1,
+			      data.val1, "read-back returned wrong val1");
+		zassert_equal(trigger_elements[i].data.val2,
+			      data.val2, "read-back returned wrong val2");
+
 		/* setting a sensor’s trigger and handler */
 		zassert_equal(sensor_trigger_set(dev,
 				&trigger_elements[i].trig,
