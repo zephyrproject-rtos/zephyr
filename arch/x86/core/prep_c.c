@@ -30,10 +30,6 @@ FUNC_NORETURN void z_x86_prep_c(void *arg)
 	ARG_UNUSED(info);
 #endif
 
-#ifdef CONFIG_ACPI
-	z_acpi_init();
-#endif
-
 #ifdef CONFIG_X86_MMU
 	z_x86_paging_init();
 #endif
