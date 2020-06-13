@@ -380,52 +380,6 @@ static int gpio_intel_apl_manage_callback(struct device *dev,
 	return gpio_manage_callback(&data->cb, callback, set);
 }
 
-static int gpio_intel_apl_enable_callback(struct device *dev,
-					  gpio_pin_t pin)
-{
-	const struct gpio_intel_apl_config *cfg = dev->config_info;
-	uint32_t raw_pin, reg;
-
-	pin = k_array_index_sanitize(pin, cfg->num_pins + 1);
-
-	raw_pin = cfg->pin_offset + pin;
-
-	if (!check_perm(dev, raw_pin)) {
-		return -EINVAL;
-	}
-
-	/* clear (by setting) interrupt status bit */
-	reg = cfg->reg_base + REG_GPI_INT_STS_BASE;
-	sys_bitfield_set_bit(reg, raw_pin);
-
-	/* enable interrupt bit */
-	reg = cfg->reg_base + REG_GPI_INT_EN_BASE;
-	sys_bitfield_set_bit(reg, raw_pin);
-
-	return 0;
-}
-
-static int gpio_intel_apl_disable_callback(struct device *dev,
-					   gpio_pin_t pin)
-{
-	const struct gpio_intel_apl_config *cfg = dev->config_info;
-	uint32_t raw_pin, reg;
-
-	pin = k_array_index_sanitize(pin, cfg->num_pins + 1);
-
-	raw_pin = cfg->pin_offset + pin;
-
-	if (!check_perm(dev, raw_pin)) {
-		return -EINVAL;
-	}
-
-	/* disable interrupt bit */
-	reg = cfg->reg_base + REG_GPI_INT_EN_BASE;
-	sys_bitfield_clear_bit(reg, raw_pin);
-
-	return 0;
-}
-
 static int port_get_raw(struct device *dev, uint32_t mask, uint32_t *value,
 			bool read_tx)
 {
@@ -547,8 +501,6 @@ static int gpio_intel_apl_port_get_raw(struct device *dev, uint32_t *value)
 static const struct gpio_driver_api gpio_intel_apl_api = {
 	.pin_configure = gpio_intel_apl_config,
 	.manage_callback = gpio_intel_apl_manage_callback,
-	.enable_callback = gpio_intel_apl_enable_callback,
-	.disable_callback = gpio_intel_apl_disable_callback,
 	.port_get_raw = gpio_intel_apl_port_get_raw,
 	.port_set_masked_raw = gpio_intel_apl_port_set_masked_raw,
 	.port_set_bits_raw = gpio_intel_apl_port_set_bits_raw,

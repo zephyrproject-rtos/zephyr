@@ -138,20 +138,6 @@ static int gpio_ht16k33_manage_callback(struct device *dev,
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
-static int gpio_ht16k33_enable_callback(struct device *dev,
-					gpio_pin_t pin)
-{
-	/* All callbacks are always enabled */
-	return 0;
-}
-
-static int gpio_ht16k33_disable_callback(struct device *dev,
-					gpio_pin_t pin)
-{
-	/* Individual callbacks can not be disabled */
-	return -ENOTSUP;
-}
-
 static uint32_t gpio_ht16k33_get_pending_int(struct device *dev)
 {
 	struct gpio_ht16k33_data *data = dev->driver_data;
@@ -191,8 +177,6 @@ static const struct gpio_driver_api gpio_ht16k33_api = {
 	.port_toggle_bits = gpio_ht16k33_port_toggle_bits,
 	.pin_interrupt_configure = gpio_ht16k33_pin_interrupt_configure,
 	.manage_callback = gpio_ht16k33_manage_callback,
-	.enable_callback = gpio_ht16k33_enable_callback,
-	.disable_callback = gpio_ht16k33_disable_callback,
 	.get_pending_int = gpio_ht16k33_get_pending_int,
 };
 

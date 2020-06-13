@@ -53,7 +53,6 @@ struct gpio_esp32_data {
 		int pin_offset;
 	} port;
 
-	uint32_t cb_pins;
 	sys_slist_t cb;
 };
 
@@ -230,12 +229,6 @@ static int gpio_esp32_pin_interrupt_configure(struct device *port,
 		return intr_trig_mode;
 	}
 
-	if (mode == GPIO_INT_MODE_DISABLED) {
-		data->cb_pins &= ~BIT(pin);
-	} else {
-		data->cb_pins |= BIT(pin);
-	}
-
 	key = irq_lock();
 
 	reg_val = *reg;
@@ -260,35 +253,14 @@ static int gpio_esp32_manage_callback(struct device *dev,
 	return gpio_manage_callback(&data->cb, callback, set);
 }
 
-static int gpio_esp32_enable_callback(struct device *dev,
-				      gpio_pin_t pin)
-{
-	struct gpio_esp32_data *data = dev->driver_data;
-
-	data->cb_pins |= BIT(pin);
-
-	return 0;
-}
-
-static int gpio_esp32_disable_callback(struct device *dev,
-				       gpio_pin_t pin)
-{
-	struct gpio_esp32_data *data = dev->driver_data;
-
-	data->cb_pins &= ~BIT(pin);
-
-	return 0;
-}
-
 static void gpio_esp32_fire_callbacks(struct device *device)
 {
 	struct gpio_esp32_data *data = device->driver_data;
-	uint32_t values = *data->port.irq_status_reg;
+	uint32_t irq_status = *data->port.irq_status_reg;
 
-	*data->port.irq_ack_reg = values;
-	if (values & data->cb_pins) {
-		gpio_fire_callbacks(&data->cb, device, values);
-	}
+	*data->port.irq_ack_reg = irq_status;
+
+	gpio_fire_callbacks(&data->cb, device, irq_status);
 }
 
 static void gpio_esp32_isr(void *param);
@@ -329,8 +301,6 @@ static const struct gpio_driver_api gpio_esp32_driver = {
 	.port_toggle_bits = gpio_esp32_port_toggle_bits,
 	.pin_interrupt_configure = gpio_esp32_pin_interrupt_configure,
 	.manage_callback = gpio_esp32_manage_callback,
-	.enable_callback = gpio_esp32_enable_callback,
-	.disable_callback = gpio_esp32_disable_callback,
 };
 
 #if defined(CONFIG_GPIO_ESP32_0)

@@ -73,8 +73,6 @@ struct sx1509b_drv_data {
 	struct device *dev;
 	/* user ISR cb */
 	sys_slist_t cb;
-	/* Enabled INT pins generating a cb */
-	uint16_t cb_pins;
 #endif /* CONFIG_GPIO_SX1509B_INTERRUPT */
 
 };
@@ -203,8 +201,7 @@ static int sx1509b_handle_interrupt(void *arg)
 out:
 	k_sem_give(&drv_data->lock);
 
-	if ((ret == 0)
-	    && ((int_source & drv_data->cb_pins) != 0)) {
+	if (ret == 0) {
 		gpio_fire_callbacks(&drv_data->cb, dev, int_source);
 	}
 
@@ -499,10 +496,8 @@ static int pin_interrupt_configure(struct device *dev,
 
 	irq->interrupt_sense &= ~(SX1509B_EDGE_BOTH << (pin * 2));
 	if (mode == GPIO_INT_MODE_DISABLED) {
-		drv_data->cb_pins &= ~BIT(pin);
 		irq->interrupt_mask |= BIT(pin);
 	} else { /* GPIO_INT_MODE_EDGE */
-		drv_data->cb_pins |= BIT(pin);
 		irq->interrupt_mask &= ~BIT(pin);
 		if (trig == GPIO_INT_TRIG_BOTH) {
 			irq->interrupt_sense |= (SX1509B_EDGE_BOTH <<
@@ -567,7 +562,6 @@ static int sx1509b_init(struct device *dev)
 	gpio_init_callback(&drv_data->gpio_cb, sx1509_int_cb,
 			   BIT(cfg->gpio_pin));
 	gpio_add_callback(drv_data->gpio_int, &drv_data->gpio_cb);
-	gpio_enable_callback(drv_data->gpio_int, cfg->gpio_pin);
 
 	drv_data->irq_state = (struct sx1509b_irq_state) {
 		.interrupt_mask = ALL_PINS,
@@ -638,26 +632,6 @@ static int gpio_sx1509b_manage_callback(struct device *dev,
 
 	return gpio_manage_callback(&data->cb, callback, set);
 }
-
-static int gpio_sx1509b_enable_callback(struct device *dev,
-					  gpio_pin_t pin)
-{
-	struct sx1509b_drv_data *data = dev->driver_data;
-
-	data->cb_pins |= BIT(pin);
-
-	return 0;
-}
-
-static int gpio_sx1509b_disable_callback(struct device *dev,
-					   gpio_pin_t pin)
-{
-	struct sx1509b_drv_data *data = dev->driver_data;
-
-	data->cb_pins &= ~BIT(pin);
-
-	return 0;
-}
 #endif
 
 static const struct gpio_driver_api api_table = {
@@ -670,8 +644,6 @@ static const struct gpio_driver_api api_table = {
 	.pin_interrupt_configure = pin_interrupt_configure,
 #ifdef CONFIG_GPIO_SX1509B_INTERRUPT
 	.manage_callback = gpio_sx1509b_manage_callback,
-	.enable_callback = gpio_sx1509b_enable_callback,
-	.disable_callback = gpio_sx1509b_disable_callback,
 #endif
 };
 

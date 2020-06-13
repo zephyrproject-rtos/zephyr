@@ -57,8 +57,6 @@ struct gpio_cc32xx_data {
 	struct gpio_driver_data common;
 	/* list of registered callbacks */
 	sys_slist_t callbacks;
-	/* callback enable pin bitmask */
-	uint32_t pin_callback_enables;
 };
 
 #define DEV_CFG(dev) \
@@ -165,7 +163,6 @@ static int gpio_cc32xx_pin_interrupt_configure(struct device *port,
 		enum gpio_int_trig trig)
 {
 	const struct gpio_cc32xx_config *gpio_config = DEV_CFG(port);
-	struct gpio_cc32xx_data *data = DEV_DATA(port);
 	unsigned long port_base = gpio_config->port_base;
 	unsigned long int_type;
 
@@ -198,9 +195,6 @@ static int gpio_cc32xx_pin_interrupt_configure(struct device *port,
 		MAP_GPIOIntTypeSet(port_base, (1 << pin), int_type);
 		MAP_GPIOIntClear(port_base, (1 << pin));
 		MAP_GPIOIntEnable(port_base, (1 << pin));
-
-		WRITE_BIT(data->pin_callback_enables, pin,
-			mode != GPIO_INT_MODE_DISABLED);
 	}
 
 	return 0;
@@ -214,50 +208,21 @@ static int gpio_cc32xx_manage_callback(struct device *dev,
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
-
-static int gpio_cc32xx_enable_callback(struct device *dev,
-				    gpio_pin_t pin)
-{
-	struct gpio_cc32xx_data *data = DEV_DATA(dev);
-
-	__ASSERT(pin < 8, "Invalid pin number - only 8 pins per port");
-
-	data->pin_callback_enables |= (1 << pin);
-
-	return 0;
-}
-
-
-static int gpio_cc32xx_disable_callback(struct device *dev,
-				     gpio_pin_t pin)
-{
-	struct gpio_cc32xx_data *data = DEV_DATA(dev);
-
-	__ASSERT(pin < 8, "Invalid pin number - only 8 pins per port");
-
-	data->pin_callback_enables &= ~(1 << pin);
-
-	return 0;
-}
-
 static void gpio_cc32xx_port_isr(void *arg)
 {
 	struct device *dev = arg;
 	const struct gpio_cc32xx_config *config = DEV_CFG(dev);
 	struct gpio_cc32xx_data *data = DEV_DATA(dev);
-	uint32_t enabled_int, int_status;
+	uint32_t int_status;
 
 	/* See which interrupts triggered: */
-	int_status  = (uint32_t)MAP_GPIOIntStatus(config->port_base, 1);
-
-	enabled_int = int_status & data->pin_callback_enables;
+	int_status = (uint32_t)MAP_GPIOIntStatus(config->port_base, 1);
 
 	/* Clear GPIO Interrupt */
 	MAP_GPIOIntClear(config->port_base, int_status);
 
 	/* Call the registered callbacks */
-	gpio_fire_callbacks(&data->callbacks, (struct device *)dev,
-			     enabled_int);
+	gpio_fire_callbacks(&data->callbacks, dev, int_status);
 }
 
 static const struct gpio_driver_api api_funcs = {
@@ -269,9 +234,6 @@ static const struct gpio_driver_api api_funcs = {
 	.port_toggle_bits = gpio_cc32xx_port_toggle_bits,
 	.pin_interrupt_configure = gpio_cc32xx_pin_interrupt_configure,
 	.manage_callback = gpio_cc32xx_manage_callback,
-	.enable_callback = gpio_cc32xx_enable_callback,
-	.disable_callback = gpio_cc32xx_disable_callback,
-
 };
 
 #define GPIO_CC32XX_INIT_FUNC(n)					     \

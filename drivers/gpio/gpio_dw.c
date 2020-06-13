@@ -421,39 +421,6 @@ static inline int gpio_dw_manage_callback(struct device *port,
 	return gpio_manage_callback(&context->callbacks, callback, set);
 }
 
-static inline int gpio_dw_enable_callback(struct device *port,
-					  gpio_pin_t pin)
-{
-	struct gpio_dw_runtime *context = port->driver_data;
-	uint32_t base_addr = dw_base_to_block_base(context->base_addr);
-	uint32_t data_port = dw_get_data_port(context->base_addr);
-
-	if (data_port != SWPORTA_DR) {
-		return -ENOTSUP;
-	}
-
-	dw_write(base_addr, PORTA_EOI, BIT(pin));
-	dw_set_bit(base_addr, INTMASK, pin, 0);
-
-	return 0;
-}
-
-static inline int gpio_dw_disable_callback(struct device *port,
-					   gpio_pin_t pin)
-{
-	struct gpio_dw_runtime *context = port->driver_data;
-	uint32_t base_addr = dw_base_to_block_base(context->base_addr);
-	uint32_t data_port = dw_get_data_port(context->base_addr);
-
-	if (data_port != SWPORTA_DR) {
-		return -ENOTSUP;
-	}
-
-	dw_set_bit(base_addr, INTMASK, pin, 1);
-
-	return 0;
-}
-
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 static void gpio_dw_set_power_state(struct device *port, uint32_t power_state)
 {
@@ -548,8 +515,6 @@ static const struct gpio_driver_api api_funcs = {
 	.port_toggle_bits = gpio_dw_port_toggle_bits,
 	.pin_interrupt_configure = gpio_dw_pin_interrupt_configure,
 	.manage_callback = gpio_dw_manage_callback,
-	.enable_callback = gpio_dw_enable_callback,
-	.disable_callback = gpio_dw_disable_callback,
 };
 
 static int gpio_dw_initialize(struct device *port)

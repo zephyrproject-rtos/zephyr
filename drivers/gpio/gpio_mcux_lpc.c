@@ -48,8 +48,6 @@ struct gpio_mcux_lpc_data {
 	struct gpio_driver_data common;
 	/* port ISR callback routine address */
 	sys_slist_t callbacks;
-	/* pin callback routine enable flags, by pin number */
-	uint32_t pin_callback_enables;
 	/* pin association with PINT id */
 	pint_pin_int_t pint_id[32];
 	/* ISR allocated in device tree to this port */
@@ -169,8 +167,7 @@ static void gpio_mcux_lpc_port_isr(void *arg)
 		if (data->pint_id[pin] != NO_PINT_INT) {
 			int_flags = PINT_PinInterruptGetStatus(
 				config->pint_base, data->pint_id[pin]);
-			enabled_int =
-				(int_flags << pin) & data->pin_callback_enables;
+			enabled_int = int_flags << pin;
 
 			PINT_PinInterruptClrStatus(config->pint_base,
 						   data->pint_id[pin]);
@@ -287,8 +284,6 @@ static int gpio_mcux_lpc_pin_interrupt_configure(struct device *dev,
 		interruptMode,
 		(pint_cb_t)gpio_mcux_lpc_port_isr);
 
-	WRITE_BIT(data->pin_callback_enables, pin, mode != GPIO_INT_DISABLE);
-
 	return 0;
 }
 
@@ -298,26 +293,6 @@ static int gpio_mcux_lpc_manage_cb(struct device *port,
 	struct gpio_mcux_lpc_data *data = port->driver_data;
 
 	return gpio_manage_callback(&data->callbacks, callback, set);
-}
-
-static int gpio_mcux_lpc_enable_cb(struct device *port,
-				   gpio_pin_t pin)
-{
-	struct gpio_mcux_lpc_data *data = port->driver_data;
-
-	data->pin_callback_enables |= BIT(pin);
-
-	return 0;
-}
-
-static int gpio_mcux_lpc_disable_cb(struct device *port,
-				    gpio_pin_t pin)
-{
-	struct gpio_mcux_lpc_data *data = port->driver_data;
-
-	data->pin_callback_enables &= ~BIT(pin);
-
-	return 0;
 }
 
 static int gpio_mcux_lpc_init(struct device *dev)
@@ -346,8 +321,6 @@ static const struct gpio_driver_api gpio_mcux_lpc_driver_api = {
 	.port_toggle_bits = gpio_mcux_lpc_port_toggle_bits,
 	.pin_interrupt_configure = gpio_mcux_lpc_pin_interrupt_configure,
 	.manage_callback = gpio_mcux_lpc_manage_cb,
-	.enable_callback = gpio_mcux_lpc_enable_cb,
-	.disable_callback = gpio_mcux_lpc_disable_cb,
 };
 
 #ifdef CONFIG_GPIO_MCUX_LPC_PORT0

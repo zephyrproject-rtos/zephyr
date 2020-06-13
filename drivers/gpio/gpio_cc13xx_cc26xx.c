@@ -34,7 +34,6 @@ struct gpio_cc13xx_cc26xx_data {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_data common;
 	sys_slist_t callbacks;
-	uint32_t pin_callback_enables;
 };
 
 static struct gpio_cc13xx_cc26xx_data gpio_cc13xx_cc26xx_data_0;
@@ -152,7 +151,6 @@ static int gpio_cc13xx_cc26xx_pin_interrupt_configure(struct device *port,
 		gpio_pin_t pin, enum gpio_int_mode mode,
 		enum gpio_int_trig trig)
 {
-	struct gpio_cc13xx_cc26xx_data *data = port->driver_data;
 	uint32_t config = 0;
 
 	if (mode != GPIO_INT_MODE_DISABLED) {
@@ -176,9 +174,6 @@ static int gpio_cc13xx_cc26xx_pin_interrupt_configure(struct device *port,
 	config |= IOCPortConfigureGet(pin) & IOCFG_GEN_MASK;
 	IOCPortConfigureSet(pin, IOC_PORT_GPIO, config);
 
-	WRITE_BIT(data->pin_callback_enables, pin,
-		mode != GPIO_INT_MODE_DISABLED);
-
 	return 0;
 }
 
@@ -189,28 +184,6 @@ static int gpio_cc13xx_cc26xx_manage_callback(struct device *port,
 	struct gpio_cc13xx_cc26xx_data *data = port->driver_data;
 
 	return gpio_manage_callback(&data->callbacks, callback, set);
-}
-
-static int gpio_cc13xx_cc26xx_enable_callback(struct device *port,
-					      gpio_pin_t pin)
-{
-	struct gpio_cc13xx_cc26xx_data *data = port->driver_data;
-
-	__ASSERT_NO_MSG(pin < NUM_IO_MAX);
-	data->pin_callback_enables |= (1 << pin);
-
-	return 0;
-}
-
-static int gpio_cc13xx_cc26xx_disable_callback(struct device *port,
-					       gpio_pin_t pin)
-{
-	struct gpio_cc13xx_cc26xx_data *data = port->driver_data;
-
-	__ASSERT_NO_MSG(pin < NUM_IO_MAX);
-	data->pin_callback_enables &= ~(1 << pin);
-
-	return 0;
 }
 
 static uint32_t gpio_cc13xx_cc26xx_get_pending_int(struct device *dev)
@@ -226,17 +199,14 @@ static void gpio_cc13xx_cc26xx_isr(void *arg)
 	struct gpio_cc13xx_cc26xx_data *data = dev->driver_data;
 
 	uint32_t status = GPIO_getEventMultiDio(GPIO_DIO_ALL_MASK);
-	uint32_t enabled = status & data->pin_callback_enables;
 
 	GPIO_clearEventMultiDio(status);
 
-	gpio_fire_callbacks(&data->callbacks, dev, enabled);
+	gpio_fire_callbacks(&data->callbacks, dev, status);
 }
 
 static int gpio_cc13xx_cc26xx_init(struct device *dev)
 {
-	struct gpio_cc13xx_cc26xx_data *data = dev->driver_data;
-
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 	/* Set dependency on gpio resource to turn on power domains */
 	Power_setDependency(PowerCC26XX_PERIPH_GPIO);
@@ -266,9 +236,6 @@ static int gpio_cc13xx_cc26xx_init(struct device *dev)
 		    gpio_cc13xx_cc26xx_isr, DEVICE_GET(gpio_cc13xx_cc26xx), 0);
 	irq_enable(DT_INST_IRQN(0));
 
-	/* Disable callbacks */
-	data->pin_callback_enables = 0;
-
 	/* Peripheral should not be accessed until power domain is on. */
 	while (PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH) !=
 	       PRCM_DOMAIN_POWER_ON) {
@@ -287,8 +254,6 @@ static const struct gpio_driver_api gpio_cc13xx_cc26xx_driver_api = {
 	.port_toggle_bits = gpio_cc13xx_cc26xx_port_toggle_bits,
 	.pin_interrupt_configure = gpio_cc13xx_cc26xx_pin_interrupt_configure,
 	.manage_callback = gpio_cc13xx_cc26xx_manage_callback,
-	.enable_callback = gpio_cc13xx_cc26xx_enable_callback,
-	.disable_callback = gpio_cc13xx_cc26xx_disable_callback,
 	.get_pending_int = gpio_cc13xx_cc26xx_get_pending_int
 };
 
