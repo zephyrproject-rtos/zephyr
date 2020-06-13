@@ -484,6 +484,21 @@ config CPU_HAS_MMU
 	  This hidden option is selected when the CPU has a Memory Management Unit
 	  (MMU).
 
+config MMU
+	bool
+	depends on CPU_HAS_MMU
+	help
+	  This option is enabled when the CPU's memory management unit is active
+	  and the arch_mem_map() API is available.
+
+config MMU_PAGE_SIZE
+	hex "Size of smallest granularity MMU page"
+	depends on MMU
+	default 0x1000
+	help
+	  Size of memory pages. Varies per MMU but 4K is common. For MMUs that
+	  support multiple page sizes, put the smallest one here.
+
 config MEMORY_PROTECTION
 	bool
 	help
