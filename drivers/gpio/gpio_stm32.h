@@ -218,8 +218,6 @@ struct gpio_stm32_config {
 struct gpio_stm32_data {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_data common;
-	/* Enabled INT pins generating a cb */
-	uint32_t cb_pins;
 	/* user ISR cb */
 	sys_slist_t cb;
 };

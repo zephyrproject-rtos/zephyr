@@ -282,28 +282,6 @@ static int gpio_sam_manage_callback(struct device *port,
 	return gpio_manage_callback(&context->cb, callback, set);
 }
 
-static int gpio_sam_enable_callback(struct device *port,
-				    gpio_pin_t pin)
-{
-	const struct gpio_sam_config * const cfg = DEV_CFG(port);
-	Pio * const pio = cfg->regs;
-
-	pio->PIO_IER |= BIT(pin);
-
-	return 0;
-}
-
-static int gpio_sam_disable_callback(struct device *port,
-				     gpio_pin_t pin)
-{
-	const struct gpio_sam_config * const cfg = DEV_CFG(port);
-	Pio * const pio = cfg->regs;
-
-	pio->PIO_IDR |= BIT(pin);
-
-	return 0;
-}
-
 static const struct gpio_driver_api gpio_sam_api = {
 	.pin_configure = gpio_sam_config,
 	.port_get_raw = gpio_sam_port_get_raw,
@@ -313,8 +291,6 @@ static const struct gpio_driver_api gpio_sam_api = {
 	.port_toggle_bits = gpio_sam_port_toggle_bits,
 	.pin_interrupt_configure = gpio_sam_pin_interrupt_configure,
 	.manage_callback = gpio_sam_manage_callback,
-	.enable_callback = gpio_sam_enable_callback,
-	.disable_callback = gpio_sam_disable_callback,
 };
 
 int gpio_sam_init(struct device *dev)

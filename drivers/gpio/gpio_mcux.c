@@ -29,8 +29,6 @@ struct gpio_mcux_data {
 	struct gpio_driver_data common;
 	/* port ISR callback routine address */
 	sys_slist_t callbacks;
-	/* pin callback routine enable flags, by pin number */
-	uint32_t pin_callback_enables;
 };
 
 static int gpio_mcux_configure(struct device *dev,
@@ -191,7 +189,6 @@ static int gpio_mcux_pin_interrupt_configure(struct device *dev,
 	const struct gpio_mcux_config *config = dev->config_info;
 	GPIO_Type *gpio_base = config->gpio_base;
 	PORT_Type *port_base = config->port_base;
-	struct gpio_mcux_data *data = dev->driver_data;
 
 	/* Check for an invalid pin number */
 	if (pin >= ARRAY_SIZE(port_base->PCR)) {
@@ -214,8 +211,6 @@ static int gpio_mcux_pin_interrupt_configure(struct device *dev,
 
 	port_base->PCR[pin] = (port_base->PCR[pin] & ~PORT_PCR_IRQC_MASK) | pcr;
 
-	WRITE_BIT(data->pin_callback_enables, pin, mode != GPIO_INT_DISABLE);
-
 	return 0;
 }
 
@@ -227,40 +222,19 @@ static int gpio_mcux_manage_callback(struct device *dev,
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
-static int gpio_mcux_enable_callback(struct device *dev,
-				     gpio_pin_t pin)
-{
-	struct gpio_mcux_data *data = dev->driver_data;
-
-	data->pin_callback_enables |= BIT(pin);
-
-	return 0;
-}
-
-static int gpio_mcux_disable_callback(struct device *dev,
-				      gpio_pin_t pin)
-{
-	struct gpio_mcux_data *data = dev->driver_data;
-
-	data->pin_callback_enables &= ~BIT(pin);
-
-	return 0;
-}
-
 static void gpio_mcux_port_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
 	const struct gpio_mcux_config *config = dev->config_info;
 	struct gpio_mcux_data *data = dev->driver_data;
-	uint32_t enabled_int, int_status;
+	uint32_t int_status;
 
 	int_status = config->port_base->ISFR;
-	enabled_int = int_status & data->pin_callback_enables;
 
 	/* Clear the port interrupts */
-	config->port_base->ISFR = enabled_int;
+	config->port_base->ISFR = int_status;
 
-	gpio_fire_callbacks(&data->callbacks, dev, enabled_int);
+	gpio_fire_callbacks(&data->callbacks, dev, int_status);
 }
 
 
@@ -273,8 +247,6 @@ static const struct gpio_driver_api gpio_mcux_driver_api = {
 	.port_toggle_bits = gpio_mcux_port_toggle_bits,
 	.pin_interrupt_configure = gpio_mcux_pin_interrupt_configure,
 	.manage_callback = gpio_mcux_manage_callback,
-	.enable_callback = gpio_mcux_enable_callback,
-	.disable_callback = gpio_mcux_disable_callback,
 };
 
 #define GPIO_MCUX_IRQ_INIT(n)						\

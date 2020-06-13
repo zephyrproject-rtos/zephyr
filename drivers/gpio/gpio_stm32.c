@@ -33,9 +33,7 @@ static void gpio_stm32_isr(int line, void *arg)
 	struct device *dev = arg;
 	struct gpio_stm32_data *data = dev->driver_data;
 
-	if ((BIT(line) & data->cb_pins) != 0) {
-		gpio_fire_callbacks(&data->cb, dev, BIT(line));
-	}
+	gpio_fire_callbacks(&data->cb, dev, BIT(line));
 }
 
 /**
@@ -429,7 +427,6 @@ static int gpio_stm32_pin_interrupt_configure(struct device *dev,
 		enum gpio_int_trig trig)
 {
 	const struct gpio_stm32_config *cfg = dev->config_info;
-	struct gpio_stm32_data *data = dev->driver_data;
 	int edge = 0;
 	int err = 0;
 
@@ -443,7 +440,6 @@ static int gpio_stm32_pin_interrupt_configure(struct device *dev,
 			stm32_exti_disable(pin);
 			stm32_exti_unset_callback(pin);
 			stm32_exti_trigger(pin, STM32_EXTI_TRIG_NONE);
-			data->cb_pins &= ~BIT(pin);
 		}
 		/* else: No irq source configured for pin. Nothing to disable */
 		goto release_lock;
@@ -459,8 +455,6 @@ static int gpio_stm32_pin_interrupt_configure(struct device *dev,
 		err = -EBUSY;
 		goto release_lock;
 	}
-
-	data->cb_pins |= BIT(pin);
 
 	gpio_stm32_enable_int(cfg->port, pin);
 
@@ -497,26 +491,6 @@ static int gpio_stm32_manage_callback(struct device *dev,
 	return gpio_manage_callback(&data->cb, callback, set);
 }
 
-static int gpio_stm32_enable_callback(struct device *dev,
-				      gpio_pin_t pin)
-{
-	struct gpio_stm32_data *data = dev->driver_data;
-
-	data->cb_pins |= BIT(pin);
-
-	return 0;
-}
-
-static int gpio_stm32_disable_callback(struct device *dev,
-				       gpio_pin_t pin)
-{
-	struct gpio_stm32_data *data = dev->driver_data;
-
-	data->cb_pins &= ~BIT(pin);
-
-	return 0;
-}
-
 static const struct gpio_driver_api gpio_stm32_driver = {
 	.pin_configure = gpio_stm32_config,
 	.port_get_raw = gpio_stm32_port_get_raw,
@@ -526,9 +500,6 @@ static const struct gpio_driver_api gpio_stm32_driver = {
 	.port_toggle_bits = gpio_stm32_port_toggle_bits,
 	.pin_interrupt_configure = gpio_stm32_pin_interrupt_configure,
 	.manage_callback = gpio_stm32_manage_callback,
-	.enable_callback = gpio_stm32_enable_callback,
-	.disable_callback = gpio_stm32_disable_callback,
-
 };
 
 /**

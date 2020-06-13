@@ -23,11 +23,6 @@ struct gpio_nrfx_data {
 	 */
 	uint32_t pin_int_en;
 
-	/* Mask holding information about which pins have enabled callbacks
-	 * using gpio_nrfx_enable_callback function.
-	 */
-	uint32_t int_en;
-
 	uint32_t int_active_level;
 	uint32_t trig_edge;
 	uint32_t double_edge;
@@ -110,10 +105,8 @@ static int gpiote_pin_int_cfg(struct device *port, uint32_t pin)
 	gpiote_pin_cleanup(&gpiote_alloc_mask, abs_pin);
 	nrf_gpio_cfg_sense_set(abs_pin, NRF_GPIO_PIN_NOSENSE);
 
-	/* Pins trigger interrupts only if pin has been configured to do so
-	 * and callback has been enabled for that pin.
-	 */
-	if ((data->pin_int_en & BIT(pin)) && (data->int_en & BIT(pin))) {
+	/* Pins trigger interrupts only if pin has been configured to do so */
+	if (data->pin_int_en & BIT(pin)) {
 		if (data->trig_edge & BIT(pin)) {
 		/* For edge triggering we use GPIOTE channels. */
 			nrf_gpiote_polarity_t pol;
@@ -279,7 +272,6 @@ static int gpio_nrfx_pin_interrupt_configure(struct device *port,
 	}
 
 	WRITE_BIT(data->pin_int_en, pin, mode != GPIO_INT_MODE_DISABLED);
-	WRITE_BIT(data->int_en, pin, mode != GPIO_INT_MODE_DISABLED);
 	WRITE_BIT(data->trig_edge, pin, mode == GPIO_INT_MODE_EDGE);
 	WRITE_BIT(data->double_edge, pin, trig == GPIO_INT_TRIG_BOTH);
 	WRITE_BIT(data->int_active_level, pin, trig == GPIO_INT_TRIG_HIGH);
@@ -295,29 +287,6 @@ static int gpio_nrfx_manage_callback(struct device *port,
 				     callback, set);
 }
 
-static int gpio_nrfx_pin_manage_callback(struct device *port,
-					 uint32_t pin,
-					 bool enable)
-{
-	struct gpio_nrfx_data *data = get_port_data(port);
-
-	WRITE_BIT(data->int_en, pin, enable);
-
-	return gpiote_pin_int_cfg(port, pin);
-}
-
-static inline int gpio_nrfx_pin_enable_callback(struct device *port,
-						gpio_pin_t pin)
-{
-	return gpio_nrfx_pin_manage_callback(port, pin, true);
-}
-
-static inline int gpio_nrfx_pin_disable_callback(struct device *port,
-						 gpio_pin_t pin)
-{
-	return gpio_nrfx_pin_manage_callback(port, pin, false);
-}
-
 static const struct gpio_driver_api gpio_nrfx_drv_api_funcs = {
 	.pin_configure = gpio_nrfx_config,
 	.port_get_raw = gpio_nrfx_port_get_raw,
@@ -327,8 +296,6 @@ static const struct gpio_driver_api gpio_nrfx_drv_api_funcs = {
 	.port_toggle_bits = gpio_nrfx_port_toggle_bits,
 	.pin_interrupt_configure = gpio_nrfx_pin_interrupt_configure,
 	.manage_callback = gpio_nrfx_manage_callback,
-	.enable_callback = gpio_nrfx_pin_enable_callback,
-	.disable_callback = gpio_nrfx_pin_disable_callback
 };
 
 static inline uint32_t get_level_pins(struct device *port)
@@ -336,9 +303,9 @@ static inline uint32_t get_level_pins(struct device *port)
 	struct gpio_nrfx_data *data = get_port_data(port);
 
 	/* Take into consideration only pins that were configured to
-	 * trigger interrupts and have callback enabled.
+	 * trigger interrupts.
 	 */
-	uint32_t out = data->int_en & data->pin_int_en;
+	uint32_t out = data->pin_int_en;
 
 	/* Exclude pins that trigger interrupts by edge. */
 	out &= ~data->trig_edge & ~data->double_edge;
@@ -418,23 +385,8 @@ static inline void fire_callbacks(struct device *port, uint32_t pins)
 {
 	struct gpio_nrfx_data *data = get_port_data(port);
 	sys_slist_t *list = &data->callbacks;
-	struct gpio_callback *cb, *tmp;
 
-	/* Instead of calling the common gpio_fire_callbacks() function,
-	 * iterate the list of callbacks locally, to be able to perform
-	 * additional masking of the pins and to call handlers only for
-	 * the currently enabled callbacks.
-	 */
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(list, cb, tmp, node) {
-		/* Check currently enabled callbacks (data->int_en) in each
-		 * iteration, as some callbacks may get disabled also in any
-		 * of the handlers called here.
-		 */
-		if ((cb->pin_mask & pins) & data->int_en) {
-			__ASSERT(cb->handler, "No callback handler!");
-			cb->handler(port, cb, cb->pin_mask & pins);
-		}
-	}
+	gpio_fire_callbacks(list, port, pins);
 }
 
 #ifdef CONFIG_GPIO_NRF_P0

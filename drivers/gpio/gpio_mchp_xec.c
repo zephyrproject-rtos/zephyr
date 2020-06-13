@@ -33,8 +33,6 @@ struct gpio_xec_data {
 	struct gpio_driver_data common;
 	/* port ISR callback routine address */
 	sys_slist_t callbacks;
-	/* pin callback routine enable flags, by pin number */
-	uint32_t pin_callback_enables;
 };
 
 struct gpio_xec_config {
@@ -133,7 +131,6 @@ static int gpio_xec_pin_interrupt_configure(struct device *dev,
 		enum gpio_int_trig trig)
 {
 	const struct gpio_xec_config *config = dev->config_info;
-	struct gpio_xec_data *drv_data = dev->driver_data;
 	__IO uint32_t *current_pcr1;
 	uint32_t pcr1 = 0U;
 	uint32_t mask = 0U;
@@ -194,12 +191,6 @@ static int gpio_xec_pin_interrupt_configure(struct device *dev,
 	 */
 	current_pcr1 = config->pcr1_base + pin;
 	*current_pcr1 = (*current_pcr1 & ~mask) | pcr1;
-
-	if (mode == GPIO_INT_MODE_DISABLED) {
-		drv_data->pin_callback_enables &= ~BIT(pin);
-	} else {
-		drv_data->pin_callback_enables |= BIT(pin);
-	}
 
 	if (mode != GPIO_INT_MODE_DISABLED) {
 		/* We enable the interrupts in the EC aggregator so that the
@@ -283,44 +274,22 @@ static int gpio_xec_manage_callback(struct device *dev,
 	return 0;
 }
 
-static int gpio_xec_enable_callback(struct device *dev,
-				    gpio_pin_t pin)
-{
-	struct gpio_xec_data *data = dev->driver_data;
-
-	data->pin_callback_enables |= BIT(pin);
-
-	return 0;
-}
-
-static int gpio_xec_disable_callback(struct device *dev,
-				     gpio_pin_t pin)
-{
-	struct gpio_xec_data *data = dev->driver_data;
-
-	data->pin_callback_enables &= ~BIT(pin);
-
-	return 0;
-}
-
 static void gpio_gpio_xec_port_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
 	const struct gpio_xec_config *config = dev->config_info;
 	struct gpio_xec_data *data = dev->driver_data;
 	uint32_t girq_result;
-	uint32_t enabled_int;
 
 	/* Figure out which interrupts have been triggered from the EC
 	 * aggregator result register
 	 */
 	girq_result = MCHP_GIRQ_RESULT(config->girq_id);
-	enabled_int = girq_result & data->pin_callback_enables;
 
 	/* Clear source register in aggregator before firing callbacks */
 	REG32(MCHP_GIRQ_SRC_ADDR(config->girq_id)) = girq_result;
 
-	gpio_fire_callbacks(&data->callbacks, dev, enabled_int);
+	gpio_fire_callbacks(&data->callbacks, dev, girq_result);
 }
 
 static const struct gpio_driver_api gpio_xec_driver_api = {
@@ -332,8 +301,6 @@ static const struct gpio_driver_api gpio_xec_driver_api = {
 	.port_toggle_bits = gpio_xec_port_toggle_bits,
 	.pin_interrupt_configure = gpio_xec_pin_interrupt_configure,
 	.manage_callback = gpio_xec_manage_callback,
-	.enable_callback = gpio_xec_enable_callback,
-	.disable_callback = gpio_xec_disable_callback,
 };
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio_000_036), okay)

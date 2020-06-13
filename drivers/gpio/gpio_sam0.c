@@ -260,20 +260,6 @@ static int gpio_sam0_manage_callback(struct device *dev,
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
-int gpio_sam0_enable_callback(struct device *dev, gpio_pin_t pin)
-{
-	const struct gpio_sam0_config *config = DEV_CFG(dev);
-
-	return sam0_eic_enable_interrupt(config->id, pin);
-}
-
-int gpio_sam0_disable_callback(struct device *dev, gpio_pin_t pin)
-{
-	const struct gpio_sam0_config *config = DEV_CFG(dev);
-
-	return sam0_eic_disable_interrupt(config->id, pin);
-}
-
 static uint32_t gpio_sam0_get_pending_int(struct device *dev)
 {
 	const struct gpio_sam0_config *config = DEV_CFG(dev);
@@ -293,8 +279,6 @@ static const struct gpio_driver_api gpio_sam0_api = {
 #ifdef CONFIG_SAM0_EIC
 	.pin_interrupt_configure = gpio_sam0_pin_interrupt_configure,
 	.manage_callback = gpio_sam0_manage_callback,
-	.enable_callback = gpio_sam0_enable_callback,
-	.disable_callback = gpio_sam0_disable_callback,
 	.get_pending_int = gpio_sam0_get_pending_int,
 #endif
 };

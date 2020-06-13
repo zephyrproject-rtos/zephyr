@@ -26,8 +26,6 @@ struct imx_gpio_data {
 	struct gpio_driver_data common;
 	/* port ISR callback routine address */
 	sys_slist_t callbacks;
-	/* pin callback routine enable flags, by pin number */
-	uint32_t pin_callback_enables;
 };
 
 static int imx_gpio_configure(struct device *port, gpio_pin_t pin,
@@ -129,7 +127,6 @@ static int imx_gpio_pin_interrupt_configure(struct device *port,
 					    enum gpio_int_trig trig)
 {
 	const struct imx_gpio_config *config = port->config_info;
-	struct imx_gpio_data *data = port->driver_data;
 	GPIO_Type *base = config->base;
 	volatile uint32_t *icr_reg;
 	unsigned int key;
@@ -171,8 +168,6 @@ static int imx_gpio_pin_interrupt_configure(struct device *port,
 	WRITE_BIT(base->EDGE_SEL, pin, trig == GPIO_INT_TRIG_BOTH);
 	WRITE_BIT(base->ISR, pin, mode != GPIO_INT_MODE_DISABLED);
 	WRITE_BIT(base->IMR, pin, mode != GPIO_INT_MODE_DISABLED);
-	WRITE_BIT(data->pin_callback_enables, pin,
-		  mode != GPIO_INT_MODE_DISABLED);
 
 	irq_unlock(key);
 
@@ -187,41 +182,18 @@ static int imx_gpio_manage_callback(struct device *port,
 	return gpio_manage_callback(&data->callbacks, cb, set);
 }
 
-static int imx_gpio_enable_callback(struct device *port,
-				    gpio_pin_t pin)
-{
-	const struct imx_gpio_config *config = port->config_info;
-	struct imx_gpio_data *data = port->driver_data;
-
-	data->pin_callback_enables |= BIT(pin);
-	GPIO_SetPinIntMode(config->base, pin, true);
-
-	return 0;
-}
-
-static int imx_gpio_disable_callback(struct device *port,
-				     gpio_pin_t pin)
-{
-	const struct imx_gpio_config *config = port->config_info;
-	struct imx_gpio_data *data = port->driver_data;
-
-	GPIO_SetPinIntMode(config->base, pin, false);
-	data->pin_callback_enables &= ~BIT(pin);
-
-	return 0;
-}
-
 static void imx_gpio_port_isr(void *arg)
 {
 	struct device *port = (struct device *)arg;
 	const struct imx_gpio_config *config = port->config_info;
 	struct imx_gpio_data *data = port->driver_data;
-	uint32_t enabled_int;
+	uint32_t int_status;
 
-	enabled_int = config->base->ISR & data->pin_callback_enables;
-	config->base->ISR = enabled_int;
+	int_status = config->base->ISR;
 
-	gpio_fire_callbacks(&data->callbacks, port, enabled_int);
+	config->base->ISR = int_status;
+
+	gpio_fire_callbacks(&data->callbacks, port, int_status);
 }
 
 static const struct gpio_driver_api imx_gpio_driver_api = {
@@ -233,8 +205,6 @@ static const struct gpio_driver_api imx_gpio_driver_api = {
 	.port_toggle_bits = imx_gpio_port_toggle_bits,
 	.pin_interrupt_configure = imx_gpio_pin_interrupt_configure,
 	.manage_callback = imx_gpio_manage_callback,
-	.enable_callback = imx_gpio_enable_callback,
-	.disable_callback = imx_gpio_disable_callback,
 };
 
 #define GPIO_IMX_INIT(n)						\
