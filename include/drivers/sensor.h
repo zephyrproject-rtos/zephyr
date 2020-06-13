@@ -320,6 +320,18 @@ typedef int (*sensor_attr_set_t)(struct device *dev,
 				 enum sensor_channel chan,
 				 enum sensor_attribute attr,
 				 const struct sensor_value *val);
+
+/**
+ * @typedef sensor_attr_get_t
+ * @brief Callback API upon getting a sensor's attributes
+ *
+ * See sensor_attr_get() for argument description
+ */
+typedef int (*sensor_attr_get_t)(struct device *dev,
+				 enum sensor_channel chan,
+				 enum sensor_attribute attr,
+				 struct sensor_value *val);
+
 /**
  * @typedef sensor_trigger_set_t
  * @brief Callback API for setting a sensor's trigger and handler
@@ -349,6 +361,7 @@ typedef int (*sensor_channel_get_t)(struct device *dev,
 
 __subsystem struct sensor_driver_api {
 	sensor_attr_set_t attr_set;
+	sensor_attr_get_t attr_get;
 	sensor_trigger_set_t trigger_set;
 	sensor_sample_fetch_t sample_fetch;
 	sensor_channel_get_t channel_get;
@@ -384,6 +397,38 @@ static inline int z_impl_sensor_attr_set(struct device *dev,
 	}
 
 	return api->attr_set(dev, chan, attr, val);
+}
+
+/**
+ * @brief Get an attribute for a sensor
+ *
+ * @param dev Pointer to the sensor device
+ * @param chan The channel the attribute belongs to, if any.  Some
+ * attributes may only be set for all channels of a device, depending on
+ * device capabilities.
+ * @param attr The attribute to get
+ * @param val Pointer to where to store the attribute
+ *
+ * @return 0 if successful, negative errno code if failure.
+ */
+__syscall int sensor_attr_get(struct device *dev,
+			      enum sensor_channel chan,
+			      enum sensor_attribute attr,
+			      struct sensor_value *val);
+
+static inline int z_impl_sensor_attr_get(struct device *dev,
+					enum sensor_channel chan,
+					enum sensor_attribute attr,
+					struct sensor_value *val)
+{
+	const struct sensor_driver_api *api =
+		(const struct sensor_driver_api *)dev->driver_api;
+
+	if (api->attr_get == NULL) {
+		return -ENOTSUP;
+	}
+
+	return api->attr_get(dev, chan, attr, val);
 }
 
 /**
