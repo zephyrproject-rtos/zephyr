@@ -15,6 +15,8 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(os);
 
+void z_pcie_add_mmu_regions(void);
+
 #define PHYS_RAM_ADDR DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
 #define PHYS_RAM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
 
@@ -849,6 +851,10 @@ void z_x86_paging_init(void)
 	}
 
 	z_x86_soc_add_mmu_regions();
+
+#ifdef CONFIG_PCIE_MMIO_CFG
+	z_pcie_add_mmu_regions();
+#endif
 
 	pages_free = (page_pos - page_pool) / MMU_PAGE_SIZE;
 
