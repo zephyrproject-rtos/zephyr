@@ -1,103 +1,115 @@
 /*
- * Copyright (c) 2019 Intel Corporation
+ * Copyright (c) 2020 Intel Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
-
 #include <kernel.h>
 #include <arch/x86/acpi.h>
 
-/*
- * Finding and walking the ACPI tables can be time consuming, so we do
- * it once, early, and then cache the "interesting" results for later.
- */
+struct acpi_rsdp {
+	char     sig[8];
+	uint8_t  csum;
+	char     oemid[6];
+	uint8_t  rev;
+	uint32_t rsdt_ptr;
+	uint32_t len;
+	uint64_t xsdt_ptr;
+	uint8_t  ext_csum;
+	uint8_t  _rsvd[3];
+} __packed;
 
-static struct acpi_madt *madt;
+struct acpi_rsdt {
+	struct acpi_sdt sdt;
+	uint32_t table_ptrs[];
+} __packed;
 
-/*
- * ACPI structures use a simple checksum, such that
- * summing all the bytes in the structure yields 0.
- */
+struct acpi_xsdt {
+	struct acpi_sdt sdt;
+	uint64_t table_ptrs[];
+} __packed;
 
-static bool validate_checksum(void *buf, int len)
+static bool check_sum(struct acpi_sdt *t)
 {
-	uint8_t *cp = buf;
-	uint8_t checksum = 0;
+	uint8_t sum = 0, *p = (uint8_t *)t;
 
-	while (len--) {
-		checksum += *(cp++);
+	for (int i = 0; i < t->len; i++) {
+		sum += p[i];
 	}
-
-	return (checksum == 0);
+	return sum == 0;
 }
 
-/*
- * Called very early during initialization to find ACPI tables of interest.
- * First, we find the RDSP, and if found, use that to find the RSDT, which
- * we then use to find the MADT. (This function is long, but easy to follow.)
- */
-
-void z_acpi_init(void)
+static struct acpi_rsdp *find_rsdp(void)
 {
-	/*
-	 * First, find the RSDP by probing "well-known" areas of memory.
+	uint64_t magic = 0x2052545020445352; /* == "RSD PTR " */
+
+	/* Physical (real mode!) address 0000:040e stores a (real
+	 * mode!!) segment descriptor pointing to the 1kb Extended
+	 * BIOS Data Area.  Look there first.
 	 */
+	uint64_t *search = (void *)(long)(((int)*(uint16_t *)0x040eL) << 4);
 
-	struct acpi_rsdp *rsdp = NULL;
+	for (int i = 0; i < 1024/8; i++) {
+		if (search[i] == magic) {
+			return (void *)&search[i];
+		}
+	}
 
-	static const struct {
-		uintptr_t base;
-		uintptr_t top;
-	} area[] = {
-		{ 0x000E0000, 0x00100000 },	/* BIOS ROM */
-		{ 0, 0 }
-	};
+	/* If it's not there, then look for it in the last 128kb of
+	 * real mode memory.
+	 */
+	search = (uint64_t *)0xe0000;
+	for (int i = 0; i < 128*1024/8; i++) {
+		if (search[i] == magic) {
+			return (void *)&search[i];
+		}
+	}
 
-	for (int i = 0; area[i].base && area[i].top && !rsdp; ++i) {
-		uintptr_t addr = area[i].base;
+	/* Now we're supposed to look in the UEFI system table, which
+	 * is passed as a function argument to the bootloader and long
+	 * forgotten by now...
+	 */
+	return NULL;
+}
 
-		while (addr < area[i].top) {
-			struct acpi_rsdp *probe = UINT_TO_POINTER(addr);
+void *z_acpi_find_table(uint32_t signature)
+{
+	struct acpi_rsdp *rsdp = find_rsdp();
 
-			if ((probe->signature == ACPI_RSDP_SIGNATURE) &&
-			    (validate_checksum(probe, sizeof(*probe)))) {
-				rsdp = probe;
-				break;
+	if (!rsdp) {
+		return NULL;
+	}
+
+	struct acpi_rsdt *rsdt = (void *)(long)rsdp->rsdt_ptr;
+
+	if (rsdt && check_sum(&rsdt->sdt)) {
+		uint32_t *end = (uint32_t *)((char *)rsdt + rsdt->sdt.len);
+
+		for (uint32_t *tp = &rsdt->table_ptrs[0]; tp < end; tp++) {
+			struct acpi_sdt *t = (void *)(long)*tp;
+
+			if (t->sig == signature && check_sum(t)) {
+				return t;
 			}
-
-			addr += 0x10;
 		}
 	}
 
-	if (rsdp == NULL) {
-		return;
+	if (rsdp->rev < 2) {
+		return NULL;
 	}
 
-	/*
-	 * Then, validate the RSDT fingered by the RSDP.
-	 */
+	struct acpi_xsdt *xsdt = (void *)(long)rsdp->xsdt_ptr;
 
-	struct acpi_rsdt *rsdt = UINT_TO_POINTER(rsdp->rsdt);
-	if ((rsdt->sdt.signature != ACPI_RSDT_SIGNATURE) ||
-	    !validate_checksum(rsdt, rsdt->sdt.length)) {
-		rsdt = NULL;
-		return;
-	}
+	if (xsdt && check_sum(&xsdt->sdt)) {
+		uint64_t *end = (uint64_t *)((char *)xsdt + xsdt->sdt.len);
 
-	/*
-	 * Finally, probe each SDT listed in the RSDT to find the MADT.
-	 * If it's valid, then remember it for later.
-	 */
+		for (uint64_t *tp = &xsdt->table_ptrs[0]; tp < end; tp++) {
+			struct acpi_sdt *t = (void *)(long)*tp;
 
-	int nr_sdts = (rsdt->sdt.length - sizeof(rsdt)) / sizeof(uint32_t);
-	for (int i = 0; i < nr_sdts; ++i) {
-		struct acpi_sdt *sdt = UINT_TO_POINTER(rsdt->sdts[i]);
-
-		if ((sdt->signature == ACPI_MADT_SIGNATURE)
-		    && validate_checksum(sdt, sdt->length)) {
-			madt = (struct acpi_madt *) sdt;
-			break;
+			if (t->sig == signature && check_sum(t)) {
+				return t;
+			}
 		}
 	}
+	return NULL;
 }
 
 /*
@@ -106,13 +118,14 @@ void z_acpi_init(void)
 
 struct acpi_cpu *z_acpi_get_cpu(int n)
 {
+	struct acpi_madt *madt = z_acpi_find_table(ACPI_MADT_SIGNATURE);
 	uintptr_t base = POINTER_TO_UINT(madt);
 	uintptr_t offset;
 
 	if (madt) {
 		offset = POINTER_TO_UINT(madt->entries) - base;
 
-		while (offset < madt->sdt.length) {
+		while (offset < madt->sdt.len) {
 			struct acpi_madt_entry *entry;
 
 			entry = (struct acpi_madt_entry *) (offset + base);
