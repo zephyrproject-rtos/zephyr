@@ -39,7 +39,7 @@
 		compatible = "gpio-keys";
 
 		button0: button_0 {
-			gpios = <&gpio0 31 GPIO_PUD_PULL_UP>;
+			gpios = <&gpio0 31 GPIO_PULL_UP>;
 			label = "Button 0";
 		};
 	};
@@ -102,7 +102,7 @@
 	hts221@5f {
 		compatible = "st,hts221";
 		reg = <0x5f>;
-		drdy-gpios = <&gpio0 3 GPIO_INT_ACTIVE_HIGH>;
+		drdy-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
 		label = "HTS221";
 	};
 
