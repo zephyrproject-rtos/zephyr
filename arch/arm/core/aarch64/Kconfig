@@ -91,6 +91,7 @@ config GEN_IRQ_VECTOR_TABLE
 config ARM_MMU
 	bool "ARM MMU Support"
 	default y
+	select MMU
 	help
 	  Memory Management Unit support.
 
