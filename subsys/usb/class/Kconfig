@@ -53,7 +53,7 @@ config CDC_ACM_IAD
 
 config CDC_ACM_DTE_RATE_CALLBACK_SUPPORT
 	bool "Support callbacks when the USB host changes the virtual baud rate"
-	default n
+	default BOOTLOADER_BOSSA
 	help
 	  If set, enables support for a callback that is invoked when the
 	  remote host changes the virtual baud rate. This is used
