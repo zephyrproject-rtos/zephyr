@@ -100,6 +100,14 @@ config ACPI
 	help
 	  Allow retrieval of platform configuration at runtime.
 
+config PCIE_MMIO_CFG
+	bool "Use MMIO PCI configuration space access"
+	select ACPI
+	help
+	  Selects the use of the memory-mapped PCI Express Extended
+	  Configuration Space instead of the traditional 0xCF8/0xCFC
+	  IO Port registers.
+
 config X86_MEMMAP_ENTRIES
 	int "Number of memory map entries"
 	range 1 256
