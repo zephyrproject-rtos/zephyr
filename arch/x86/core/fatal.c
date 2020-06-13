@@ -54,8 +54,9 @@ bool z_x86_check_stack_bounds(uintptr_t addr, size_t size, uint16_t cs)
 {
 	uintptr_t start, end;
 
-	if (arch_is_in_isr()) {
-		/* We were servicing an interrupt */
+	if (_current == NULL || arch_is_in_isr()) {
+		/* We were servicing an interrupt or in early boot environment
+		 * and are supposed to be on the interrupt stack */
 		int cpu_id;
 
 #ifdef CONFIG_SMP
