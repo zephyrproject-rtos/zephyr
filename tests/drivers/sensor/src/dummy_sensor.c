@@ -104,11 +104,31 @@ int dummy_sensor_attr_set(struct device *dev,
 {
 	struct dummy_sensor_data *data = dev->driver_data;
 
-	if (chan == SENSOR_CHAN_PROX) {
+	if (chan == SENSOR_CHAN_PROX &&
+	    attr == SENSOR_ATTR_UPPER_THRESH) {
 		data->val[4].val1 = val->val1;
 		data->val[4].val2 = val->val2;
+		return 0;
 	}
-	return 0;
+
+	return -ENOTSUP;
+}
+
+int dummy_sensor_attr_get(struct device *dev,
+		      enum sensor_channel chan,
+		      enum sensor_attribute attr,
+		      struct sensor_value *val)
+{
+	struct dummy_sensor_data *data = dev->driver_data;
+
+	if (chan == SENSOR_CHAN_PROX &&
+	    attr == SENSOR_ATTR_UPPER_THRESH) {
+		val->val1 = data->val[4].val1;
+		val->val2 = data->val[4].val2;
+		return 0;
+	}
+
+	return -ENOTSUP;
 }
 
 int dummy_sensor_trigger_set(struct device *dev,
@@ -140,6 +160,7 @@ static const struct sensor_driver_api dummy_sensor_api = {
 	.sample_fetch = &dummy_sensor_sample_fetch,
 	.channel_get = &dummy_sensor_channel_get,
 	.attr_set = dummy_sensor_attr_set,
+	.attr_get = dummy_sensor_attr_get,
 	.trigger_set = dummy_sensor_trigger_set,
 };
 
