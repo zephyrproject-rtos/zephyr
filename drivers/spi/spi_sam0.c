@@ -371,10 +371,6 @@ static bool spi_sam0_is_regular(const struct spi_buf_set *tx_bufs,
 		rx_count = rx_bufs->count;
 	}
 
-	if (!tx || !rx) {
-		return false;
-	}
-
 	while (tx_count != 0 && rx_count != 0) {
 		if (tx->len != rx->len) {
 			return false;
