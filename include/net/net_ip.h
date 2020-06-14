@@ -310,9 +310,11 @@ struct cmsghdr {
 
 #if defined(CONFIG_NET_IPV6)
 #undef NET_SOCKADDR_MAX_SIZE
-#undef NET_SOCKADDR_PTR_MAX_SIZE
 #define NET_SOCKADDR_MAX_SIZE (sizeof(struct sockaddr_in6))
+#if !defined(CONFIG_NET_SOCKETS_PACKET)
+#undef NET_SOCKADDR_PTR_MAX_SIZE
 #define NET_SOCKADDR_PTR_MAX_SIZE (sizeof(struct sockaddr_in6_ptr))
+#endif
 #endif
 
 #if !defined(CONFIG_NET_IPV4)
