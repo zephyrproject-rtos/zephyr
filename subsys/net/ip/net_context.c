@@ -166,7 +166,11 @@ int net_context_get(sa_family_t family,
 				}
 			}
 		} else {
-			if (family == AF_PACKET || family == AF_CAN) {
+			if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
+			    family == AF_PACKET && type == SOCK_DGRAM &&
+			    ip_proto > 0) {
+				goto check_context;
+			} else if (family == AF_PACKET || family == AF_CAN) {
 				NET_DBG("Invalid family");
 				return -EPROTOTYPE;
 			}
@@ -221,6 +225,7 @@ int net_context_get(sa_family_t family,
 			return -EOPNOTSUPP;
 		}
 
+	check_context:
 		if (!context) {
 			NET_DBG("Invalid context");
 			return -EINVAL;
@@ -443,7 +448,7 @@ static int bind_default(struct net_context *context)
 		}
 
 		ll_addr.sll_family = AF_PACKET;
-		ll_addr.sll_protocol = ETH_P_ALL;
+		ll_addr.sll_protocol = htons(ETH_P_ALL);
 		ll_addr.sll_ifindex = net_if_get_by_iface(net_if_get_default());
 
 		return net_context_bind(context, (struct sockaddr *)&ll_addr,
@@ -714,13 +719,15 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			ll_addr->sll_protocol;
 		net_sll_ptr(&context->local)->sll_addr =
 			net_if_get_link_addr(iface)->addr;
+		net_sll_ptr(&context->local)->sll_halen =
+			net_if_get_link_addr(iface)->len;
 
-		NET_DBG("Context %p binding to %d iface[%d] %p addr %s",
-			context, net_context_get_ip_proto(context),
+		NET_DBG("Context %p bind to type 0x%04x iface[%d] %p addr %s",
+			context, htons(net_context_get_ip_proto(context)),
 			ll_addr->sll_ifindex, iface,
 			log_strdup(net_sprint_ll_addr(
-					   net_if_get_link_addr(iface)->addr,
-					   net_if_get_link_addr(iface)->len)));
+				net_sll_ptr(&context->local)->sll_addr,
+				net_sll_ptr(&context->local)->sll_halen)));
 
 		return 0;
 	}
@@ -1454,6 +1461,21 @@ static int context_sendto(struct net_context *context,
 				ll_addr->sll_ifindex);
 			return -EDESTADDRREQ;
 		}
+
+		if (net_context_get_type(context) == SOCK_DGRAM) {
+			context->flags |= NET_CONTEXT_REMOTE_ADDR_SET;
+
+			/* The user must set the protocol in send call */
+
+			/* For sendmsg() call, we might have set ll_addr to
+			 * point to remote addr.
+			 */
+			if ((void *)&context->remote != (void *)ll_addr) {
+				memcpy((struct sockaddr_ll *)&context->remote,
+				       ll_addr, sizeof(struct sockaddr_ll));
+			}
+		}
+
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
 		   net_context_get_family(context) == AF_CAN) {
 		struct sockaddr_can *can_addr = (struct sockaddr_can *)dst_addr;
@@ -1935,9 +1957,12 @@ int net_context_recv(struct net_context *context,
 				net_sll_ptr(&context->local)->sll_ifindex;
 			addr.sll_protocol =
 				net_sll_ptr(&context->local)->sll_protocol;
+			addr.sll_halen =
+				net_sll_ptr(&context->local)->sll_halen;
+
 			memcpy(addr.sll_addr,
 			       net_sll_ptr(&context->local)->sll_addr,
-			       sizeof(addr.sll_addr));
+			       MIN(addr.sll_halen, sizeof(addr.sll_addr)));
 
 			ret = recv_raw(context, cb, timeout,
 				       (struct sockaddr *)&addr, user_data);
