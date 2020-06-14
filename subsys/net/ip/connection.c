@@ -512,6 +512,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 	struct net_if *pkt_iface = net_pkt_iface(pkt);
 	struct net_conn *best_match = NULL;
 	bool is_mcast_pkt = false, mcast_pkt_delivered = false;
+	bool raw_pkt_delivered = false;
 	int16_t best_rank = -1;
 	struct net_conn *conn;
 	uint16_t src_port;
@@ -524,7 +525,9 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 		src_port = proto_hdr->tcp->src_port;
 		dst_port = proto_hdr->tcp->dst_port;
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET)) {
-		if (net_pkt_family(pkt) != AF_PACKET || proto != ETH_P_ALL) {
+		if (net_pkt_family(pkt) != AF_PACKET ||
+		    (!IS_ENABLED(CONFIG_NET_SOCKETS_PACKET_DGRAM) &&
+		     proto != ETH_P_ALL)) {
 			return NET_DROP;
 		}
 
@@ -569,8 +572,19 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn_used, conn, node) {
-		if (conn->proto != proto) {
-			continue;
+		/* For packet socket data, the proto is set to ETH_P_ALL but
+		 * the listener might have a specific protocol set. This is ok
+		 * and let the packet pass this check in this case.
+		 */
+		if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET_DGRAM) ||
+		    IS_ENABLED(CONFIG_NET_SOCKETS_PACKET)) {
+			if ((conn->proto != proto) && (proto != ETH_P_ALL)) {
+				continue;
+			}
+		} else {
+			if ((conn->proto != proto)) {
+				continue;
+			}
 		}
 
 		if (conn->family != AF_UNSPEC &&
@@ -660,6 +674,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET)) {
 			if (conn->flags & NET_CONN_LOCAL_ADDR_SET) {
 				struct sockaddr_ll *local;
+				struct net_pkt *raw_pkt;
 
 				local = (struct sockaddr_ll *)&conn->local_addr;
 
@@ -668,15 +683,26 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 					continue;
 				}
 
-				if (best_rank < NET_CONN_RANK(conn->flags)) {
-					best_rank = NET_CONN_RANK(conn->flags);
-					best_match = conn;
+				NET_DBG("[%p] raw match found cb %p ud %p",
+					conn, conn->cb,	conn->user_data);
+
+				raw_pkt = net_pkt_clone(pkt, CLONE_TIMEOUT);
+				if (!raw_pkt) {
+					goto drop;
 				}
-			} else {
-				if (best_rank < NET_CONN_RANK(conn->flags)) {
-					best_rank = 0;
-					best_match = conn;
+
+				if (conn->cb(conn, raw_pkt, ip_hdr,
+					     proto_hdr, conn->user_data) ==
+								NET_DROP) {
+					net_stats_update_per_proto_drop(
+							pkt_iface, proto);
+					net_pkt_unref(raw_pkt);
+				} else {
+					net_stats_update_per_proto_recv(
+						pkt_iface, proto);
 				}
+
+				raw_pkt_delivered = true;
 			}
 		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN)) {
 			best_rank = 0;
@@ -684,9 +710,10 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 		}
 	}
 
-	if (is_mcast_pkt && mcast_pkt_delivered) {
-		/* As one or more multicast packets have already been delivered
-		 * in the loop above, we shall not call the callback again here
+	if ((is_mcast_pkt && mcast_pkt_delivered) || raw_pkt_delivered) {
+		/* As one or more multicast or raw socket packets have already
+		 * been delivered in the loop above, we shall not call the
+		 * callback again here.
 		 */
 
 		net_pkt_unref(pkt);

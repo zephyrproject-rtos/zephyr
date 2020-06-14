@@ -594,7 +594,28 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 		ptype = htons(NET_ETH_PTYPE_IPV6);
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
 		   net_pkt_family(pkt) == AF_PACKET) {
-		goto send;
+		struct net_context *context = net_pkt_context(pkt);
+
+		if (context && net_context_get_type(context) == SOCK_DGRAM) {
+			struct sockaddr_ll *dst_addr;
+			struct sockaddr_ll_ptr *src_addr;
+
+			/* The destination address is set in remote for this
+			 * socket type.
+			 */
+			dst_addr = (struct sockaddr_ll *)&context->remote;
+			src_addr = (struct sockaddr_ll_ptr *)&context->local;
+
+			net_pkt_lladdr_dst(pkt)->addr = dst_addr->sll_addr;
+			net_pkt_lladdr_dst(pkt)->len =
+						sizeof(struct net_eth_addr);
+			net_pkt_lladdr_src(pkt)->addr = src_addr->sll_addr;
+			net_pkt_lladdr_src(pkt)->len =
+						sizeof(struct net_eth_addr);
+			ptype = dst_addr->sll_protocol;
+		} else {
+			goto send;
+		}
 	} else if (IS_ENABLED(CONFIG_NET_GPTP) && net_pkt_is_gptp(pkt)) {
 		ptype = htons(NET_ETH_PTYPE_PTP);
 	} else if (IS_ENABLED(CONFIG_NET_LLDP) && net_pkt_is_lldp(pkt)) {

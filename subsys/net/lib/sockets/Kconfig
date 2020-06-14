@@ -124,6 +124,17 @@ config NET_SOCKETS_PACKET
 	  while sending. While receiving, packets (including all the headers)
 	  will be feed to sockets as it as from the driver.
 
+config NET_SOCKETS_PACKET_DGRAM
+	bool "Enable packet socket SOCK_DGRAM support"
+	depends on NET_SOCKETS_PACKET
+	default y
+	help
+	  For AF_PACKET sockets with SOCK_DGRAM type, the L2 header
+	  is removed before the packet is passed to the user.  Packets sent
+	  through a SOCK_DGRAM packet socket get a suitable L2 header based
+	  on the information in the sockaddr_ll destination address before
+	  they are queued.
+
 config NET_SOCKETS_CAN
 	bool "Enable socket CAN support [EXPERIMENTAL]"
 	select NET_L2_CANBUS_RAW
