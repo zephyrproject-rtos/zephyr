@@ -28,6 +28,7 @@ LOG_MODULE_REGISTER(dw1000, LOG_LEVEL_INF);
 #include <net/ieee802154_radio.h>
 #include "ieee802154_dw1000_regs.h"
 #include "ieee802154_dw1000_priv.h"
+#include "ieee802154_dw1000_consts.h"
 
 #define DT_DRV_COMPAT decawave_dw1000
 
