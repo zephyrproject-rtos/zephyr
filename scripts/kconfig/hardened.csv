@@ -49,6 +49,11 @@ BT_BREDR,n,experimental
 BT_H5,n,experimental,
 BT_HFP_HF,n,experimental
 BT_RFCOMM,n,experimental
+BT_DEBUG_SMP,n
+BT_OOB_DATA_FIXED,n
+BT_DEBUG_KEYS,n
+BT_USE_DEBUG_KEYS,n
+BT_STORE_DEBUG_KEYS,n
 CAN_NET,n,experimental
 CONSOLE_SUBSYS,n,experimental
 CRYPTO,n,experimental
