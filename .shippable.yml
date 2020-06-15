@@ -4,8 +4,8 @@ compiler: gcc
 
 env:
     global:
-        - ZEPHYR_SDK_INSTALL_DIR=/opt/sdk/zephyr-sdk-0.11.3
-        - ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+        - ZEPHYR_TOOLCHAIN_VARIANT="zephyr-tools"
+        - ZEPHYR_TOOLS_DEFAULT_TOOLCHAIN="arm-zephyr-eabi"
         - MATRIX_BUILDS="5"
     matrix:
         - MATRIX_BUILD="1"
@@ -25,6 +25,9 @@ build:
         options: "-e HOME=/home/buildslave --privileged=true --tty --net=bridge --user buildslave"
 
     ci:
+      - sudo add-apt-repository -yu ppa:zephyrproject-rtos/sdk
+      - sudo apt install zephyr-crosstool
+      - sudo apt install zephyr-qemu
       - export CCACHE_DIR=${SHIPPABLE_BUILD_DIR}/ccache/.ccache
       - >
         if [ "$IS_PULL_REQUEST" = "true" ]; then
