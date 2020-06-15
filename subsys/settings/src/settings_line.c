@@ -226,7 +226,7 @@ static int settings_line_raw_read_until(off_t seek, char *out, size_t len_req,
 	size_t exp_size, read_size;
 	uint8_t rbs = settings_io_cb.rwbs;
 	off_t off;
-	int rc;
+	int rc = -EINVAL;
 
 	if (len_req == 0) {
 		return -EINVAL;
@@ -428,7 +428,7 @@ int settings_line_name_read(char *out, size_t len_req, size_t *len_read,
 int settings_line_entry_copy(void *dst_ctx, off_t dst_off, void *src_ctx,
 			     off_t src_off, size_t len)
 {
-	int rc;
+	int rc = -EINVAL;
 	char buf[16];
 	size_t chunk_size;
 
@@ -474,7 +474,7 @@ static int settings_line_cmp(char const *val, size_t val_len,
 	size_t len_read, exp_len;
 	size_t rem;
 	char buf[16];
-	int rc;
+	int rc = -EINVAL;
 	off_t off = 0;
 
 	if (val_len == 0) {
