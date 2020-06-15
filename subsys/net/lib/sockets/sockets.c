@@ -465,7 +465,21 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 	ctx = k_fifo_get(&parent->accept_q, timeout);
 	if (ctx == NULL) {
 		z_free_fd(fd);
-		errno = EAGAIN;
+		if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+			/* For non-blocking sockets return EAGAIN because it
+			 * just means the fifo is empty at this time
+			 */
+			errno = EAGAIN;
+		} else {
+			/* For blocking sockets return EINVAL because it means
+			 * the socket was closed while we were waiting for
+			 * connections. This is the same error code returned
+			 * under Linux when calling shutdown on a blocked accept
+			 * call
+			 */
+			errno = EINVAL;
+		}
+
 		return -1;
 	}
 
