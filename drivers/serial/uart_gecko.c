@@ -14,10 +14,8 @@
 
 #define USART_PREFIX cmuClock_USART
 #define UART_PREFIX cmuClock_UART
-#define CLOCK_ID_PRFX2(prefix, suffix) prefix##suffix
-#define CLOCK_ID_PRFX(prefix, suffix) CLOCK_ID_PRFX2(prefix, suffix)
-#define CLOCK_USART(id) CLOCK_ID_PRFX(USART_PREFIX, id)
-#define CLOCK_UART(id) CLOCK_ID_PRFX(UART_PREFIX, id)
+#define CLOCK_USART(id) _CONCAT(USART_PREFIX, id)
+#define CLOCK_UART(id) _CONCAT(UART_PREFIX, id)
 
 /* Helper define to determine if SOC supports hardware flow control */
 #if ((_SILICON_LABS_32B_SERIES > 0) || \
