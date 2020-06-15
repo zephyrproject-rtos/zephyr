@@ -110,8 +110,8 @@ uint8_t ll_rssi_get(uint16_t handle, uint8_t *const rssi);
 uint8_t ll_tx_pwr_lvl_get(uint8_t handle_type,
 		       uint16_t handle, uint8_t type, int8_t *const tx_pwr_lvl);
 void ll_tx_pwr_get(int8_t *const min, int8_t *const max);
-uint8_t ll_tx_pwr_lvl_set(uint8_t handle_type,
-		       uint16_t handle, int8_t const *const tx_pwr_lvl);
+uint8_t ll_tx_pwr_lvl_set(uint8_t handle_type, uint16_t handle,
+			  int8_t *const tx_pwr_lvl);
 
 uint8_t ll_apto_get(uint16_t handle, uint16_t *const apto);
 uint8_t ll_apto_set(uint16_t handle, uint16_t apto);
