@@ -12,8 +12,9 @@
 #include "util/memq.h"
 #include "util/mayfly.h"
 
-#include "hal/ticker.h"
 #include "hal/ccm.h"
+#include "hal/radio.h"
+#include "hal/ticker.h"
 
 #include "ticker/ticker.h"
 

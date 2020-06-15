@@ -52,6 +52,10 @@ struct lll_scan_aux {
 	uint8_t phy:3;
 
 	uint32_t window_size_us;
+
+#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
+	int8_t tx_pwr_lvl;
+#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 };
 
 int lll_scan_init(void);
