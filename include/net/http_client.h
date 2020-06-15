@@ -227,6 +227,9 @@ struct http_request {
 	/** Hostname to be used in the request */
 	const char *host;
 
+	/** Port number to be used in the request */
+	const char *port;
+
 	/** User supplied callback function to call when payload
 	 * needs to be sent. This can be NULL in which case the payload field
 	 * in http_request is used. The idea of this payload callback is to
