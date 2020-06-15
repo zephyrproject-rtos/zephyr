@@ -913,6 +913,7 @@ function(zephyr_linker_sources location)
   # Set up the paths to the destination files. These files are #included inside
   # the global linker.ld.
   set(snippet_base      "${__build_dir}/include/generated")
+  set(memory_path       "${snippet_base}/snippets-memory.ld")
   set(sections_path     "${snippet_base}/snippets-sections.ld")
   set(ram_sections_path "${snippet_base}/snippets-ram-sections.ld")
   set(rom_start_path    "${snippet_base}/snippets-rom-start.ld")
@@ -923,6 +924,7 @@ function(zephyr_linker_sources location)
   # Clear destination files if this is the first time the function is called.
   get_property(cleared GLOBAL PROPERTY snippet_files_cleared)
   if (NOT DEFINED cleared)
+    file(WRITE ${memory_path} "")
     file(WRITE ${sections_path} "")
     file(WRITE ${ram_sections_path} "")
     file(WRITE ${rom_start_path} "")
@@ -933,7 +935,9 @@ function(zephyr_linker_sources location)
   endif()
 
   # Choose destination file, based on the <location> argument.
-  if ("${location}" STREQUAL "SECTIONS")
+  if ("${location}" STREQUAL "MEMORY")
+    set(snippet_path "${memory_path}")
+  elseif ("${location}" STREQUAL "SECTIONS")
     set(snippet_path "${sections_path}")
   elseif("${location}" STREQUAL "RAM_SECTIONS")
     set(snippet_path "${ram_sections_path}")

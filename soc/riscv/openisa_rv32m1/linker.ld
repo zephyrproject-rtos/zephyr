@@ -79,6 +79,9 @@ MEMORY
      * to generate interrupt tables. See include/linker/intlist.ld.
      */
     IDT_LIST (wx) : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
+
+#include <snippets-memory.ld>
+
     }
 
 ENTRY(CONFIG_KERNEL_ENTRY)

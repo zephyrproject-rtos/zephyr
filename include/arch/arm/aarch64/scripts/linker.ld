@@ -80,6 +80,9 @@ MEMORY
     SRAM      (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST  (wx) : ORIGIN = (RAM_ADDR + RAM_SIZE), LENGTH = 2K
+
+#include <snippets-memory.ld>
+
 }
 
 ENTRY(CONFIG_KERNEL_ENTRY)

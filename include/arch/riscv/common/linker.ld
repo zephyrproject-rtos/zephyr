@@ -51,6 +51,9 @@ MEMORY
     RAM (rwx) : ORIGIN = CONFIG_SRAM_BASE_ADDRESS, LENGTH = KB(CONFIG_SRAM_SIZE)
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST  (wx)      : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
+
+#include <snippets-memory.ld>
+
 }
 
 ENTRY(CONFIG_KERNEL_ENTRY)
