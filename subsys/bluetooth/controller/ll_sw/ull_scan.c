@@ -9,6 +9,7 @@
 #include <bluetooth/hci.h>
 
 #include "hal/ccm.h"
+#include "hal/radio.h"
 #include "hal/ticker.h"
 
 #include "util/util.h"
