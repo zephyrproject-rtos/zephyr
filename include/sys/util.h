@@ -725,19 +725,6 @@ uint8_t u8_to_dec(char *buf, uint8_t buflen, uint8_t value);
 	10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, ~)
 
 /**
- * Equivalent to FOR_EACH(F, (), ...).
- *
- * @deprecated Use FOR_EACH instead.
- *
- * @param F   Macro name to be used for argument processing Macro should have
- *	      following form: MACRO(argument).
- * @param ... Arguments to process.
- *
- * @return All arguments processed by given macro
- */
-#define MACRO_MAP(F, ...) __DEPRECATED_MACRO FOR_EACH(F, (), __VA_ARGS__)
-
-/**
  * @brief Mapping macro that pastes results together
  *
  * This is similar to FOR_EACH() in that it invokes a macro repeatedly
