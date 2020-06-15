@@ -48,6 +48,8 @@ OT_UART_DEFINE(ot_uart, CONFIG_OPENTHREAD_NCP_UART_RING_BUFFER_SIZE);
 
 #define RX_FIFO_SIZE 128
 
+static bool is_panic_mode;
+
 static void uart_rx_handle(void)
 {
 	uint8_t *data;
@@ -208,7 +210,14 @@ otError otPlatUartSend(const uint8_t *aBuf, uint16_t aBufLength)
 	size_t cnt = ring_buf_put(ot_uart.tx_ringbuf, aBuf, aBufLength);
 
 	if (atomic_set(&(ot_uart.tx_busy), 1) == 0) {
-		uart_irq_tx_enable(ot_uart.dev);
+		if (is_panic_mode) {
+			/* In panic mode all data have to be send immediately
+			 * without using interrupts
+			 */
+			otPlatUartFlush();
+		} else {
+			uart_irq_tx_enable(ot_uart.dev);
+		}
 	}
 
 	if (cnt == aBufLength) {
@@ -217,3 +226,38 @@ otError otPlatUartSend(const uint8_t *aBuf, uint16_t aBufLength)
 		return OT_ERROR_BUSY;
 	}
 };
+
+otError otPlatUartFlush(void)
+{
+	uint32_t len;
+	const uint8_t *data;
+	otError result = OT_ERROR_NONE;
+
+	do {
+		len = ring_buf_get_claim(ot_uart.tx_ringbuf, (uint8_t **)&data,
+					 ot_uart.tx_ringbuf->size);
+
+		if (len) {
+			for (size_t i = 0; i < len; i++) {
+				uart_poll_out(ot_uart.dev, data[i]);
+			}
+
+			ring_buf_get_finish(ot_uart.rx_ringbuf, len);
+		}
+	} while (len);
+
+	ot_uart.tx_busy = 0;
+	atomic_set(&(ot_uart.tx_finished), 1);
+	otSysEventSignalPending();
+	return result;
+}
+
+void platformUartPanic(void)
+{
+	is_panic_mode = true;
+	/* In panic mode data are send without using interrupts.
+	 * Reception in this mode is not supported.
+	 */
+	uart_irq_tx_disable(ot_uart.dev);
+	uart_irq_rx_disable(ot_uart.dev);
+}

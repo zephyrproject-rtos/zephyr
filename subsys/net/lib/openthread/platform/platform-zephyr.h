@@ -55,6 +55,12 @@ void platformRadioProcess(otInstance *aInstance);
 void platformUartProcess(otInstance *aInstance);
 
 /**
+ * Outer component calls this method to notify UART driver that it should
+ * switch to panic mode and work in synchronous way.
+ */
+void platformUartPanic(void);
+
+/**
  * Get current channel from radio driver.
  *
  * @param[in]  aInstance  The OpenThread instance structure.
