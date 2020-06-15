@@ -504,13 +504,27 @@ int http_client_req(int sock, struct http_request *req,
 
 	total_sent += ret;
 
-	ret = http_send_data(sock, send_buf, send_buf_max_len, &send_buf_pos,
-			     "Host", ": ", req->host, HTTP_CRLF, NULL);
-	if (ret < 0) {
-		goto out;
-	}
+	if (req->port) {
+		ret = http_send_data(sock, send_buf, send_buf_max_len,
+				     &send_buf_pos, "Host", ": ", req->host,
+				     ":", req->port, HTTP_CRLF, NULL);
 
-	total_sent += ret;
+		if (ret < 0) {
+			goto out;
+		}
+
+		total_sent += ret;
+	} else {
+		ret = http_send_data(sock, send_buf, send_buf_max_len,
+				     &send_buf_pos, "Host", ": ", req->host,
+				     HTTP_CRLF, NULL);
+
+		if (ret < 0) {
+			goto out;
+		}
+
+		total_sent += ret;
+	}
 
 	if (req->optional_headers_cb) {
 		ret = http_flush_data(sock, send_buf, send_buf_pos);
