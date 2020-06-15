@@ -69,13 +69,18 @@ if(NOT no_libgcc)
     OUTPUT_STRIP_TRAILING_WHITESPACE
     )
 
-  assert_exists(LIBGCC_FILE_NAME)
+  # The libgcc path queried above may not be accessible from the host system if
+  # the toolchain executable is running inside a sandboxed environment (e.g. as
+  # a Snap package); in this case, rely on the toolchain to properly resolve
+  # the relative libgcc path.
+  if(EXISTS ${LIBGCC_FILE_NAME})
+    get_filename_component(LIBGCC_DIR ${LIBGCC_FILE_NAME} DIRECTORY)
 
-  get_filename_component(LIBGCC_DIR ${LIBGCC_FILE_NAME} DIRECTORY)
+    assert_exists(LIBGCC_DIR)
 
-  assert_exists(LIBGCC_DIR)
+    LIST(APPEND LIB_INCLUDE_DIR "-L\"${LIBGCC_DIR}\"")
+  endif()
 
-  LIST(APPEND LIB_INCLUDE_DIR "-L\"${LIBGCC_DIR}\"")
   LIST(APPEND TOOLCHAIN_LIBS gcc)
 endif()
 
