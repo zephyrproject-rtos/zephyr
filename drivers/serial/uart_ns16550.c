@@ -511,19 +511,10 @@ static int uart_ns16550_poll_in(struct device *dev, unsigned char *c)
 	int ret = -1;
 	k_spinlock_key_t key = k_spin_lock(&DEV_DATA(dev)->lock);
 
-	while (1) {
-
-		if ((INBYTE(LSR(dev)) & LSR_RXRDY) != 0) {
-			/* got a character */
-			*c = INBYTE(RDR(dev));
-			ret = 0;
-		}
-
-		if ((INBYTE(LSR(dev)) & LSR_RXRDY) != 0) {
-			continue;
-		}
-
-		break;
+	if ((INBYTE(LSR(dev)) & LSR_RXRDY) != 0) {
+		/* got a character */
+		*c = INBYTE(RDR(dev));
+		ret = 0;
 	}
 
 	k_spin_unlock(&DEV_DATA(dev)->lock, key);
