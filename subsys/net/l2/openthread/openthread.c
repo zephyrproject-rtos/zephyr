@@ -98,6 +98,7 @@ K_THREAD_STACK_DEFINE(ot_stack_area, OT_STACK_SIZE);
 static struct k_thread ot_thread_data;
 static k_tid_t ot_tid;
 static struct net_linkaddr *ll_addr;
+static otStateChangedCallback state_changed_cb;
 
 static struct net_mgmt_event_callback ip6_addr_cb;
 
@@ -164,6 +165,10 @@ void ot_state_changed_handler(uint32_t flags, void *context)
 	if (flags & OT_CHANGED_IP6_MULTICAST_SUBSCRIBED) {
 		NET_DBG("Ipv6 multicast address added");
 		add_ipv6_maddr_to_zephyr(ot_context);
+	}
+
+	if (state_changed_cb) {
+		state_changed_cb(flags, context);
 	}
 }
 
@@ -502,6 +507,11 @@ struct otInstance *openthread_get_default_instance(void)
 		openthread_get_default_context();
 
 	return ot_context ? ot_context->instance : NULL;
+}
+
+void openthread_set_state_changed_cb(otStateChangedCallback cb)
+{
+	state_changed_cb = cb;
 }
 
 NET_L2_INIT(OPENTHREAD_L2, openthread_recv, openthread_send,
