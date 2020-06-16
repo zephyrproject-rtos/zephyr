@@ -312,15 +312,10 @@ int openthread_send(struct net_if *iface, struct net_pkt *pkt)
 	return len;
 }
 
-static void openthread_start(struct openthread_context *ot_context)
+void openthread_start(struct openthread_context *ot_context)
 {
 	otInstance *ot_instance = ot_context->instance;
 	otError error;
-
-	if (IS_ENABLED(CONFIG_OPENTHREAD_MANUAL_START)) {
-		NET_DBG("OpenThread manual start.");
-		return;
-	}
 
 	/* Sleepy End Device specific configuration. */
 	if (IS_ENABLED(CONFIG_OPENTHREAD_MTD_SED)) {
@@ -429,7 +424,11 @@ static int openthread_init(struct net_if *iface)
 				 OT_PRIORITY, 0, K_NO_WAIT);
 	k_thread_name_set(&ot_thread_data, "openthread");
 
-	openthread_start(ot_context);
+	if (IS_ENABLED(CONFIG_OPENTHREAD_MANUAL_START)) {
+		NET_DBG("OpenThread manual start.");
+	} else {
+		openthread_start(ot_context);
+	}
 
 	return 0;
 }
@@ -449,11 +448,10 @@ static enum net_l2_flags openthread_flags(struct net_if *iface)
 	return NET_L2_MULTICAST;
 }
 
-struct otInstance *openthread_get_default_instance(void)
+struct openthread_context *openthread_get_default_context(void)
 {
-	struct otInstance *instance = NULL;
 	struct net_if *iface;
-	struct openthread_context *ot_context;
+	struct openthread_context *ot_context = NULL;
 
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(OPENTHREAD));
 	if (!iface) {
@@ -467,10 +465,16 @@ struct otInstance *openthread_get_default_instance(void)
 		goto exit;
 	}
 
-	instance = ot_context->instance;
-
 exit:
-	return instance;
+	return ot_context;
+}
+
+struct otInstance *openthread_get_default_instance(void)
+{
+	struct openthread_context *ot_context =
+		openthread_get_default_context();
+
+	return ot_context ? ot_context->instance : NULL;
 }
 
 NET_L2_INIT(OPENTHREAD_L2, openthread_recv, openthread_send,
