@@ -382,18 +382,18 @@ static void eth_enc28j60_init_mac(struct device *dev)
 	}
 
 	/* Configure MAC address */
-	eth_enc28j60_set_bank(dev, ENC28J60_REG_MAADR0);
-	eth_enc28j60_write_reg(dev, ENC28J60_REG_MAADR0,
+	eth_enc28j60_set_bank(dev, ENC28J60_REG_MAADR1);
+	eth_enc28j60_write_reg(dev, ENC28J60_REG_MAADR6,
 			       context->mac_address[5]);
-	eth_enc28j60_write_reg(dev, ENC28J60_REG_MAADR1,
+	eth_enc28j60_write_reg(dev, ENC28J60_REG_MAADR5,
 			       context->mac_address[4]);
-	eth_enc28j60_write_reg(dev, ENC28J60_REG_MAADR2,
+	eth_enc28j60_write_reg(dev, ENC28J60_REG_MAADR4,
 			       context->mac_address[3]);
 	eth_enc28j60_write_reg(dev, ENC28J60_REG_MAADR3,
 			       context->mac_address[2]);
-	eth_enc28j60_write_reg(dev, ENC28J60_REG_MAADR4,
+	eth_enc28j60_write_reg(dev, ENC28J60_REG_MAADR2,
 			       context->mac_address[1]);
-	eth_enc28j60_write_reg(dev, ENC28J60_REG_MAADR5,
+	eth_enc28j60_write_reg(dev, ENC28J60_REG_MAADR1,
 			       context->mac_address[0]);
 }
 
@@ -510,6 +510,7 @@ static int eth_enc28j60_rx(struct device *dev, uint16_t *vlan_tag)
 	struct eth_enc28j60_runtime *context = dev->driver_data;
 	uint16_t lengthfr;
 	uint8_t counter;
+	uint8_t dummy[4];
 
 	/* Errata 6. The Receive Packet Pending Interrupt Flag (EIR.PKTIF)
 	 * does not reliably/accurately report the status of pending packet.
@@ -600,13 +601,13 @@ static int eth_enc28j60_rx(struct device *dev, uint16_t *vlan_tag)
 		} while (frm_len > 0);
 
 		/* Let's pop the useless CRC */
-		eth_enc28j60_read_mem(dev, NULL, 4);
+		eth_enc28j60_read_mem(dev, dummy, 4);
 
 		/* Pops one padding byte from spi circular buffer
 		 * introduced by the device when the frame length is odd
 		 */
 		if (lengthfr & 0x01) {
-			eth_enc28j60_read_mem(dev, NULL, 1);
+			eth_enc28j60_read_mem(dev, dummy, 1);
 		}
 
 #if defined(CONFIG_NET_VLAN)
