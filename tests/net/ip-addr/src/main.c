@@ -358,6 +358,11 @@ static void test_ipv6_addresses(void)
 			      "IPv6 wrong src ll address selected, iface %p\n",
 			      iface);
 	}
+
+	zassert_true(net_if_ipv6_addr_rm(net_if_get_default(), &addr6),
+		     "IPv6 removing address failed\n");
+	zassert_true(net_if_ipv6_addr_rm(net_if_get_default(), &addr6_pref2),
+		     "IPv6 removing address failed\n");
 }
 
 static void test_ipv4_addresses(void)
@@ -538,12 +543,65 @@ static void test_ipv4_addresses(void)
 	zassert_true(ret, "IPv4 address 3 is not broadcast address");
 }
 
+static void test_ipv6_mesh_addresses(void)
+{
+	struct net_if_addr *ifaddr;
+	const struct in6_addr *out;
+	struct in6_addr lla = { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0x54, 0xdb,
+				    0x88, 0x1c, 0x38, 0x45, 0x57, 0xf4 } } };
+	struct in6_addr ml_eid = { { { 0xfd, 0xe5, 0x8d, 0xba, 0x82, 0xe1, 0,
+				       0x01, 0x40, 0x16, 0x99, 0x3c, 0x83, 0x99,
+				       0x35, 0xab } } };
+	struct in6_addr ll_mcast = { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					 0, 0, 0, 0, 0x1 } } };
+	struct in6_addr ml_mcast = { { { 0xff, 0x03, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					 0, 0, 0, 0, 0x1 } } };
+	struct net_if *iface = net_if_get_default();
+
+	ifaddr = net_if_ipv6_addr_add(iface, &lla, NET_ADDR_AUTOCONF, 0);
+	zassert_not_null(ifaddr, "IPv6 ll address autoconf add failed");
+
+	ifaddr = net_if_ipv6_addr_add(iface, &ml_eid, NET_ADDR_AUTOCONF, 0);
+	zassert_not_null(ifaddr, "IPv6 ll address autoconf add failed");
+
+	ifaddr->is_mesh_local = true;
+
+	zassert_true(net_ipv6_is_addr_mcast_mesh(&ml_mcast),
+		     "IPv6 multicast mesh address check failed");
+
+	out = net_if_ipv6_select_src_addr(iface, &ll_mcast);
+	zassert_not_null(out, "IPv6 src addr selection failed\n");
+
+	DBG("IPv6: destination: %s - selected %s\n",
+	    net_sprint_ipv6_addr(&ll_mcast), net_sprint_ipv6_addr(out));
+
+	zassert_false(memcmp(out->s6_addr, &lla.s6_addr,
+			     sizeof(struct in6_addr)),
+		      "IPv6 wrong src address selected\n");
+
+	out = net_if_ipv6_select_src_addr(iface, &ml_mcast);
+	zassert_not_null(out, "IPv6 src addr selection failed\n");
+
+	DBG("IPv6: destination: %s - selected %s\n",
+	    net_sprint_ipv6_addr(&ml_mcast), net_sprint_ipv6_addr(out));
+
+	zassert_false(memcmp(out->s6_addr, &ml_eid.s6_addr,
+			     sizeof(struct in6_addr)),
+		      "IPv6 wrong src address selected\n");
+
+	zassert_true(net_if_ipv6_addr_rm(iface, &lla),
+		     "IPv6 removing address failed\n");
+	zassert_true(net_if_ipv6_addr_rm(iface, &ml_eid),
+		     "IPv6 removing address failed\n");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(test_ip_addr_fn,
 			 ztest_unit_test(test_ip_addresses),
 			 ztest_unit_test(test_ipv6_addresses),
-			 ztest_unit_test(test_ipv4_addresses)
+			 ztest_unit_test(test_ipv4_addresses),
+			 ztest_unit_test(test_ipv6_mesh_addresses)
 		);
 
 	ztest_run_test_suite(test_ip_addr_fn);
