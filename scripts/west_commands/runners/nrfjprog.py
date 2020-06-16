@@ -8,6 +8,7 @@
 import os
 import shlex
 import sys
+from hashlib import sha256
 try:
     from intelhex import IntelHex
 except ImportError:
@@ -43,9 +44,15 @@ def split_hex_file(hex_file):
     hex_file_dir = os.path.dirname(hex_file)
     cpuapp_hex = os.path.join(hex_file_dir, "nrf53_cpuapp.hex")
     cpunet_hex = os.path.join(hex_file_dir, "nrf53_cpunet.hex")
+    depfile = os.path.join(hex_file_dir, "nrf53_split.depfile")
 
     if IntelHex is None:
         raise RuntimeError('intelhex missing; please "pip3 install intelhex"')
+    with open(hex_file, 'rb') as f:
+        digest = sha256(f.read()).digest().hex()
+    if os.path.isfile(depfile) and os.access(depfile, os.R_OK) and open(depfile, 'r').read() == digest:
+        return (cpuapp_hex, cpunet_hex)
+
     hex_file_dict = IntelHex(hex_file).todict()
 
     ih_cpuapp = IntelHex()
@@ -55,6 +62,9 @@ def split_hex_file(hex_file):
     ih_cpunet = IntelHex()
     ih_cpunet.fromdict({k:v for k,v in hex_file_dict.items() if is_cpunet(k)})
     ih_cpunet.write_hex_file(cpunet_hex)
+
+    with open(depfile, 'w') as f:
+        f.write(digest)
 
     return (cpuapp_hex, cpunet_hex)
 
