@@ -10,6 +10,9 @@
 #include <drivers/interrupt_controller/sysapic.h>
 #include <drivers/interrupt_controller/loapic.h>
 #include <irq.h>
+#include <logging/log.h>
+
+LOG_MODULE_DECLARE(os);
 
 unsigned char _irq_to_interrupt_vector[CONFIG_MAX_IRQ_LINES];
 
@@ -17,16 +20,26 @@ unsigned char _irq_to_interrupt_vector[CONFIG_MAX_IRQ_LINES];
  * The low-level interrupt code consults these arrays to dispatch IRQs, so
  * so be sure to keep locore.S up to date with any changes. Note the indices:
  * use (vector - IV_IRQS), since exception vectors do not appear here.
- *
- * Entries which are NULL in x86_irq_funcs[] correspond to unassigned vectors.
- * The locore IRQ handler should (read: doesn't currently) raise an exception
- * rather than attempt to dispatch to a NULL x86_irq_func[]. FIXME.
  */
 
 #define NR_IRQ_VECTORS (IV_NR_VECTORS - IV_IRQS)  /* # vectors free for IRQs */
 
 void (*x86_irq_funcs[NR_IRQ_VECTORS])(void *);
 void *x86_irq_args[NR_IRQ_VECTORS];
+
+static void irq_spurious(void *arg)
+{
+	LOG_ERR("Spurious interrupt, vector %d\n", (uint32_t)(uint64_t)arg);
+	z_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
+}
+
+void x86_64_irq_init(void)
+{
+	for (int i = 0; i < NR_IRQ_VECTORS; i++) {
+		x86_irq_funcs[i] = irq_spurious;
+		x86_irq_args[i] = (void *)(long)(i + IV_IRQS);
+	}
+}
 
 /*
  * Find a free IRQ vector at the specified priority, or return -1 if none left.
@@ -55,7 +68,7 @@ static int allocate_vector(unsigned int priority)
 		if (vector == Z_X86_OOPS_VECTOR) {
 			continue;
 		}
-		if (x86_irq_funcs[vector - IV_IRQS] == NULL) {
+		if (x86_irq_funcs[vector - IV_IRQS] == irq_spurious) {
 			return vector;
 		}
 	}
