@@ -5,6 +5,7 @@
  */
 
 #include <logging/log.h>
+#include <logging/log_ctrl.h>
 LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 
 #include <net/net_core.h>
@@ -100,6 +101,16 @@ static k_tid_t ot_tid;
 static struct net_linkaddr *ll_addr;
 
 static struct net_mgmt_event_callback ip6_addr_cb;
+
+/* for rebooting after a period if join not successful */
+#include <power/reboot.h>
+
+static const char *joiner_pskd = OT_JOINER_PSKD;
+
+__weak void openthread_get_pskd(const char **pskd)
+{
+	*pskd = joiner_pskd;
+}
 
 k_tid_t openthread_thread_id_get(void)
 {
@@ -237,10 +248,38 @@ out:
 	otMessageFree(aMessage);
 }
 
+static struct openthread_context *ot_context_for_restarter;
+
+void ot_joiner_start_handler(otError error, void *context);
+
+static void ot_joiner_restarter(struct k_work *dummy)
+{
+	otError error = otJoinerStart(ot_context_for_restarter->instance,
+					joiner_pskd, NULL,
+					PACKAGE_NAME, OT_PLATFORM_INFO,
+					PACKAGE_VERSION, NULL,
+					&ot_joiner_start_handler,
+					ot_context_for_restarter);
+
+	if (error != OT_ERROR_NONE) {
+		NET_ERR("Failed to start joiner [%d]", error);
+	}
+}
+
+K_WORK_DEFINE(joiner_restart, ot_joiner_restarter);
+
+static void ot_joiner_restart_timer(struct k_timer *dummy)
+{
+	k_work_submit(&joiner_restart);
+}
+
+K_TIMER_DEFINE(joiner_restart_timer, ot_joiner_restart_timer, NULL);
+
 void ot_joiner_start_handler(otError error, void *context)
 {
 	struct openthread_context *ot_context = context;
-
+	static uint32_t restart_delay;
+	static uint32_t join_attempts;
 	switch (error) {
 	case OT_ERROR_NONE:
 		NET_INFO("Join success");
@@ -248,6 +287,35 @@ void ot_joiner_start_handler(otError error, void *context)
 		break;
 	default:
 		NET_ERR("Join failed [%d]", error);
+		if (IS_ENABLED(CONFIG_OPENTHREAD_JOINER_CONTINUOUS)) {
+			join_attempts++;
+
+			if (CONFIG_OPENTHREAD_JOINER_REBOOT != 0 &&
+			join_attempts >= CONFIG_OPENTHREAD_JOINER_REBOOT) {
+				log_panic();
+				NET_WARN("Joining failed %d times..."
+					"REBOOTING now!\n\n",
+					join_attempts);
+				sys_reboot(SYS_REBOOT_COLD);
+			}
+
+			if (CONFIG_OPENTHREAD_JOINER_TRIALS_MAX_DELAY != 0) {
+				if (join_attempts <=
+				CONFIG_OPENTHREAD_JOINER_TRIALS_MAX_DELAY) {
+					restart_delay +=
+					CONFIG_OPENTHREAD_JOINER_ADD_DELAY_MS;
+				}
+			} else {
+				restart_delay +=
+					CONFIG_OPENTHREAD_JOINER_ADD_DELAY_MS;
+			}
+
+			NET_WARN("Restarting joiner after %d seconds",
+				restart_delay/1000);
+
+			ot_context_for_restarter = context;
+			k_timer_start(&joiner_restart_timer, K_MSEC(restart_delay), K_NO_WAIT);
+		}
 		break;
 	}
 }
@@ -262,7 +330,6 @@ static void openthread_process(void *context, void *arg2, void *arg3)
 		}
 
 		otSysProcessDrivers(ot_context->instance);
-
 		k_sem_take(&ot_sem, K_FOREVER);
 	}
 }
@@ -371,7 +438,8 @@ static void openthread_start(struct openthread_context *ot_context)
 		/* No dataset - initiate network join procedure. */
 		NET_DBG("Starting OpenThread join procedure.");
 
-		error = otJoinerStart(ot_instance, OT_JOINER_PSKD, NULL,
+		openthread_get_pskd(&joiner_pskd);
+		error = otJoinerStart(ot_instance, joiner_pskd, NULL,
 				      PACKAGE_NAME, OT_PLATFORM_INFO,
 				      PACKAGE_VERSION, NULL,
 				      &ot_joiner_start_handler, ot_context);

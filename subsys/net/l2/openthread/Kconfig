@@ -216,6 +216,32 @@ config OPENTHREAD_JOINER_PSKD
 	help
 	  Pre Shared Key for the Device to start joiner
 
+config OPENTHREAD_JOINER_CONTINUOUS
+	bool "Retries joining till it is successful"
+	depends on OPENTHREAD_JOINER
+	help
+	  Retries joining till it is successful.
+
+config OPENTHREAD_JOINER_ADD_DELAY_MS
+	int "Added joining delay [ms] till next try"
+	default 0
+	help
+	  Added joining delay [ms] till next try.
+
+config OPENTHREAD_JOINER_TRIALS_MAX_DELAY
+	int "Number of joining trials till the maximum delay is reached"
+	default 0
+	help
+	  Number of joining trials till the maximum delay is reached. If
+	  it is configured with 0, there is no maxmium delay.
+
+config OPENTHREAD_JOINER_REBOOT
+	int "Reboots the device after a specified number of failed joining trials"
+	default 0
+	help
+	  Reboots the device after a specified number of failed joining trials. If
+	  it is configured with 0, it never reboots.
+
 config OPENTHREAD_DHCP6_CLIENT
 	bool "DHCPv6 client support"
 	help

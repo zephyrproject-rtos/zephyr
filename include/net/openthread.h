@@ -34,6 +34,8 @@ k_tid_t openthread_thread_id_get(void);
 
 struct otInstance *openthread_get_default_instance(void);
 
+void openthread_get_pskd(const char **pskd);
+
 #define OPENTHREAD_L2_CTX_TYPE struct openthread_context
 
 #ifdef __cplusplus
