@@ -299,42 +299,15 @@ static enum net_verdict openthread_recv(struct net_if *iface,
 
 int openthread_send(struct net_if *iface, struct net_pkt *pkt)
 {
-	struct openthread_context *ot_context = net_if_l2_data(iface);
 	int len = net_pkt_get_len(pkt);
-	struct net_buf *buf;
-	otMessage *message;
-	otMessageSettings settings;
-
-	NET_DBG("Sending Ip6 packet to ot stack");
-
-	settings.mPriority = OT_MESSAGE_PRIORITY_NORMAL;
-	settings.mLinkSecurityEnabled = true;
-	message = otIp6NewMessage(ot_context->instance, &settings);
-	if (message == NULL) {
-		goto exit;
-	}
-
-	for (buf = pkt->buffer; buf; buf = buf->frags) {
-		if (otMessageAppend(message, buf->data,
-				    buf->len) != OT_ERROR_NONE) {
-
-			NET_ERR("Error while appending to otMessage");
-			otMessageFree(message);
-			goto exit;
-		}
-	}
-
-	if (otIp6Send(ot_context->instance, message) != OT_ERROR_NONE) {
-		NET_ERR("Error while calling otIp6Send");
-		goto exit;
-	}
 
 	if (IS_ENABLED(CONFIG_OPENTHREAD_L2_DEBUG_DUMP_IPV6)) {
-		net_pkt_hexdump(pkt, "Sent IPv6 packet");
+		net_pkt_hexdump(pkt, "IPv6 packet to send");
 	}
 
-exit:
-	net_pkt_unref(pkt);
+	if (notify_new_tx_frame(pkt) != 0) {
+		net_pkt_unref(pkt);
+	}
 
 	return len;
 }
