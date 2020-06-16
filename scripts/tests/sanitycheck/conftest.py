@@ -11,7 +11,7 @@ import pytest
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/sanity_chk"))
-from sanitylib import TestSuite
+from sanitylib import TestSuite, TestInstance
 
 @pytest.fixture(name='test_data')
 def _test_data():
@@ -33,18 +33,34 @@ def testsuite_obj(test_data, testcases_dir, tmpdir_factory):
     suite = TestSuite(board_root, testcase_root, outdir)
     return suite
 
-@pytest.fixture
-def all_testcases_dict(class_testsuite):
-    """ Pytest fixture to call add_testcase function of Testsuite class and return the testcases in kernel"""
+@pytest.fixture(name='all_testcases_dict')
+def testcases_dict(class_testsuite):
+    """ Pytest fixture to call add_testcase function of
+	Testsuite class and return the dictionary of testcases"""
     class_testsuite.SAMPLE_FILENAME = 'test_sample_app.yaml'
     class_testsuite.TESTCASE_FILENAME = 'test_data.yaml'
     class_testsuite.add_testcases()
     return class_testsuite.testcases
 
-@pytest.fixture
-def platforms_list(test_data, class_testsuite):
-    """ Pytest fixture to call add_configurations function of Testsuite class and return the Platforms list"""
+@pytest.fixture(name='platforms_list')
+def all_platforms_list(test_data, class_testsuite):
+    """ Pytest fixture to call add_configurations function of
+	Testsuite class and return the Platforms list"""
     class_testsuite.board_roots = os.path.abspath(test_data + "board_config")
     suite = TestSuite(class_testsuite.board_roots, class_testsuite.roots, class_testsuite.outdir)
     suite.add_configurations()
     return suite.platforms
+
+@pytest.fixture
+def instances_fixture(class_testsuite, platforms_list, all_testcases_dict, tmpdir_factory):
+    """ Pytest fixture to call add_instances function of Testsuite class
+    and return the instances dictionary"""
+    class_testsuite.outdir = tmpdir_factory.mktemp("sanity_out_demo")
+    class_testsuite.platforms = platforms_list
+    platform = class_testsuite.get_platform("demo_board_2")
+    instance_list = []
+    for _, testcase in all_testcases_dict.items():
+        instance = TestInstance(testcase, platform, class_testsuite.outdir)
+        instance_list.append(instance)
+    class_testsuite.add_instances(instance_list)
+    return class_testsuite.instances
