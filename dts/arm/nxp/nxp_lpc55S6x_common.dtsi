@@ -192,6 +192,8 @@
 
 	hs_lspi: spi@9f000 {
 		compatible = "nxp,lpc-spi";
+		cs-gpios = <&gpio0 20 0>,<&gpio1 1 0>,<&gpio1 12 0>,
+			<&gpio1 26 0>;
 		reg = <0x9f000 0x1000>;
 		interrupts = <59 0>;
 		label = "HS_LSPI";
