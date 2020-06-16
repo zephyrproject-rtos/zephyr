@@ -17,23 +17,34 @@ LOG_MODULE_REGISTER(net_mqtt_publisher_sample, LOG_LEVEL_DBG);
 
 #include "config.h"
 
-/* Buffers for MQTT client. */
-static u8_t rx_buffer[APP_MQTT_BUFFER_SIZE];
-static u8_t tx_buffer[APP_MQTT_BUFFER_SIZE];
-
-/* The mqtt client struct */
-static struct mqtt_client client_ctx;
-
-/* MQTT Broker details. */
-static struct sockaddr_storage broker;
-#if defined(CONFIG_MQTT_LIB_SOCKS)
-static struct sockaddr_storage socks5_proxy;
+#if defined(CONFIG_USERSPACE)
+#include <app_memory/app_memdomain.h>
+K_APPMEM_PARTITION_DEFINE(app_partition);
+struct k_mem_domain app_domain;
+#define APP_BMEM K_APP_BMEM(app_partition)
+#define APP_DMEM K_APP_DMEM(app_partition)
+#else
+#define APP_BMEM
+#define APP_DMEM
 #endif
 
-static struct pollfd fds[1];
-static int nfds;
+/* Buffers for MQTT client. */
+static APP_BMEM u8_t rx_buffer[APP_MQTT_BUFFER_SIZE];
+static APP_BMEM u8_t tx_buffer[APP_MQTT_BUFFER_SIZE];
 
-static bool connected;
+/* The mqtt client struct */
+static APP_BMEM struct mqtt_client client_ctx;
+
+/* MQTT Broker details. */
+static APP_BMEM struct sockaddr_storage broker;
+#if defined(CONFIG_MQTT_LIB_SOCKS)
+static APP_BMEM struct sockaddr_storage socks5_proxy;
+#endif
+
+static APP_BMEM struct pollfd fds[1];
+static APP_BMEM int nfds;
+
+static APP_BMEM bool connected;
 
 #if defined(CONFIG_MQTT_LIB_TLS)
 
@@ -43,7 +54,7 @@ static bool connected;
 #define APP_CA_CERT_TAG 1
 #define APP_PSK_TAG 2
 
-static sec_tag_t m_sec_tags[] = {
+static APP_DMEM sec_tag_t m_sec_tags[] = {
 #if defined(MBEDTLS_X509_CRT_PARSE_C) || defined(CONFIG_NET_SOCKETS_OFFLOAD)
 		APP_CA_CERT_TAG,
 #endif
@@ -190,12 +201,12 @@ void mqtt_evt_handler(struct mqtt_client *const client,
 static char *get_mqtt_payload(enum mqtt_qos qos)
 {
 #if APP_BLUEMIX_TOPIC
-	static char payload[30];
+	static APP_BMEM char payload[30];
 
 	snprintk(payload, sizeof(payload), "{d:{temperature:%d}}",
 		 (u8_t)sys_rand32_get());
 #else
-	static char payload[] = "DOORS:OPEN_QoSx";
+	static APP_DMEM char payload[] = "DOORS:OPEN_QoSx";
 
 	payload[strlen(payload) - 1] = '0' + qos;
 #endif
@@ -430,6 +441,26 @@ static void publisher(void)
 	printk("\nBye!\n");
 }
 
+static void start_app(void)
+{
+	while (1) {
+		publisher();
+		k_sleep(5000);
+	}
+}
+
+#if defined(CONFIG_USERSPACE)
+#define STACK_SIZE 2048
+#define THREAD_PRIORITY K_PRIO_COOP(8)
+
+K_THREAD_DEFINE(app_thread, STACK_SIZE,
+		start_app, NULL, NULL, NULL,
+		THREAD_PRIORITY, K_USER, -1);
+
+static K_MEM_POOL_DEFINE(app_mem_pool, sizeof(uintptr_t), 1024,
+			 2, sizeof(uintptr_t));
+#endif
+
 void main(void)
 {
 #if defined(CONFIG_MQTT_LIB_TLS)
@@ -439,8 +470,20 @@ void main(void)
 	PRINT_RESULT("tls_init", rc);
 #endif
 
-	while (1) {
-		publisher();
-		k_sleep(5000);
-	}
+#if defined(CONFIG_USERSPACE)
+	struct k_mem_partition *parts[] = {
+#if Z_LIBC_PARTITION_EXISTS
+		&z_libc_partition,
+#endif
+		&app_partition
+	};
+
+	k_mem_domain_init(&app_domain, ARRAY_SIZE(parts), parts);
+	k_mem_domain_add_thread(&app_domain, app_thread);
+	k_thread_resource_pool_assign(app_thread, &app_mem_pool);
+
+	k_thread_start(app_thread);
+#else
+	start_app();
+#endif
 }
