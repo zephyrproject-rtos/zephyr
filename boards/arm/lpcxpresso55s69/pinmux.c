@@ -125,8 +125,12 @@ static int lpcxpresso_55s69_pinmux_init(struct device *dev)
 				  IOCON_PIO_SLEW_STANDARD |
 				  IOCON_PIO_OPENDRAIN_DI);
 
+	uint32_t pio_func = IOCON_PIO_FUNC5; /* Flexcomm controlled CS*/
+#if DT_NODE_HAS_PROP(DT_NODELABEL(hs_lspi), cs_gpios)
+	pio_func = IOCON_PIO_FUNC0; /* GPIO controlled CS*/
+#endif
 	/* PORT1 PIN1 is configured as HS_SPI_SSEL1 */
-	pinmux_pin_set(port1,  1, IOCON_PIO_FUNC5 |
+	pinmux_pin_set(port1,  1, pio_func |
 				  IOCON_PIO_MODE_PULLUP |
 				  IOCON_PIO_INV_DI |
 				  IOCON_PIO_DIGITAL_EN |
