@@ -27,10 +27,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #include <net/net_pkt.h>
 #include <sys/__assert.h>
 
+#include <openthread/ip6.h>
 #include <openthread-system.h>
 #include <openthread/instance.h>
 #include <openthread/platform/radio.h>
 #include <openthread/platform/diag.h>
+#include <openthread/message.h>
 
 #include "platform-zephyr.h"
 
@@ -46,6 +48,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #define OT_WORKER_PRIORITY   K_PRIO_COOP(CONFIG_OPENTHREAD_THREAD_PRIORITY)
 
 enum pending_events {
+	PENDING_EVENT_FRAME_TO_SEND, /* There is a tx frame to send  */
 	PENDING_EVENT_FRAME_RECEIVED, /* Radio has received new frame */
 	PENDING_EVENT_TX_STARTED, /* Radio has started transmitting */
 	PENDING_EVENT_TX_DONE, /* Radio transmission finished */
@@ -84,6 +87,7 @@ static struct k_work_q ot_work_q;
 static otError tx_result;
 
 K_FIFO_DEFINE(rx_pkt_fifo);
+K_FIFO_DEFINE(tx_pkt_fifo);
 
 static inline bool is_pending_event_set(enum pending_events event)
 {
@@ -302,10 +306,52 @@ static void openthread_handle_received_frame(otInstance *instance,
 	net_pkt_unref(pkt);
 }
 
+static void openthread_handle_frame_to_send(otInstance *instance,
+					    struct net_pkt *pkt)
+{
+	struct net_buf *buf;
+	otMessage *message;
+	otMessageSettings settings;
+
+	NET_DBG("Sending Ip6 packet to ot stack");
+
+	settings.mPriority = OT_MESSAGE_PRIORITY_NORMAL;
+	settings.mLinkSecurityEnabled = true;
+	message = otIp6NewMessage(instance, &settings);
+	if (message == NULL) {
+		goto exit;
+	}
+
+	for (buf = pkt->buffer; buf; buf = buf->frags) {
+		if (otMessageAppend(message, buf->data,
+				    buf->len) != OT_ERROR_NONE) {
+			NET_ERR("Error while appending to otMessage");
+			otMessageFree(message);
+			goto exit;
+		}
+	}
+
+	if (otIp6Send(instance, message) != OT_ERROR_NONE) {
+		NET_ERR("Error while calling otIp6Send");
+		goto exit;
+	}
+
+exit:
+	net_pkt_unref(pkt);
+}
+
 int notify_new_rx_frame(struct net_pkt *pkt)
 {
 	k_fifo_put(&rx_pkt_fifo, pkt);
 	set_pending_event(PENDING_EVENT_FRAME_RECEIVED);
+
+	return 0;
+}
+
+int notify_new_tx_frame(struct net_pkt *pkt)
+{
+	k_fifo_put(&tx_pkt_fifo, pkt);
+	set_pending_event(PENDING_EVENT_FRAME_TO_SEND);
 
 	return 0;
 }
@@ -330,6 +376,17 @@ static int run_tx_task(otInstance *aInstance)
 void platformRadioProcess(otInstance *aInstance)
 {
 	bool event_pending = false;
+
+	if (is_pending_event_set(PENDING_EVENT_FRAME_TO_SEND)) {
+		struct net_pkt *tx_pkt;
+
+		reset_pending_event(PENDING_EVENT_FRAME_TO_SEND);
+		while ((tx_pkt = (struct net_pkt *)k_fifo_get(&tx_pkt_fifo,
+							      K_NO_WAIT))
+		      != NULL) {
+			openthread_handle_frame_to_send(aInstance, tx_pkt);
+		}
+	}
 
 	if (is_pending_event_set(PENDING_EVENT_FRAME_RECEIVED)) {
 		struct net_pkt *rx_pkt;
