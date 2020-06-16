@@ -23,8 +23,6 @@ add_executable(bootloader
 
 add_dependencies(bootloader ${SYSCALL_LIST_H_TARGET})
 
-set(zephyr_sdk $ENV{ZEPHYR_SDK_INSTALL_DIR})
-
 target_include_directories(bootloader PUBLIC
   ./
   ${ZEPHYR_BASE}/include
@@ -39,9 +37,15 @@ set_source_files_properties(${ARCH_DIR}/${ARCH}/core/startup/reset-vector.S PROP
 target_compile_options(bootloader PUBLIC -fno-inline-functions -mlongcalls -mtext-section-literals -imacros${CMAKE_BINARY_DIR}/zephyr/include/generated/autoconf.h)
 
 target_link_libraries(bootloader PUBLIC -Wl,--no-check-sections -ucall_user_start -Wl,-static -nostdlib)
-target_link_libraries(bootloader PRIVATE -lhal -L${zephyr_sdk}/xtensa/intel_apl_adsp/xtensa-zephyr-elf/lib)
 target_link_libraries(bootloader PRIVATE -T${SOC_DIR}/${ARCH}/${SOC_FAMILY}/common/bootloader/boot_ldr.x)
 
 if(CONFIG_XTENSA_HAL)
+  # Use Xtensa HAL module if available
   target_link_libraries(bootloader PRIVATE XTENSA_HAL)
+  target_link_libraries(bootloader PRIVATE modules_xtensa_hal)
+else()
+  # Use toolchain-embedded Xtensa HAL otherwise
+  set(zephyr_sdk $ENV{ZEPHYR_SDK_INSTALL_DIR})
+
+  target_link_libraries(bootloader PRIVATE -lhal -L${zephyr_sdk}/xtensa/intel_apl_adsp/xtensa-zephyr-elf/lib)
 endif()
