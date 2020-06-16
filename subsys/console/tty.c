@@ -73,7 +73,9 @@ static int tty_putchar(struct tty_serial *tty, uint8_t c)
 	int tx_next;
 	int res;
 
-	res = k_sem_take(&tty->tx_sem, SYS_TIMEOUT_MS(tty->tx_timeout));
+	res = k_sem_take(&tty->tx_sem,
+			 k_is_in_isr() ? K_NO_WAIT :
+					 SYS_TIMEOUT_MS(tty->tx_timeout));
 	if (res < 0) {
 		return res;
 	}
