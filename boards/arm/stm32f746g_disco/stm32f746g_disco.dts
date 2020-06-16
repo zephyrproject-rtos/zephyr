@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/f7/stm32f746Xg.dtsi>
+#include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32F746G DISCOVERY board";
@@ -41,10 +42,6 @@
 		kscan0 = &touch_controller;
 	};
 };
-
-arduino_i2c: &i2c1 {};
-arduino_spi: &spi2 {};
-arduino_serial: &usart6 {};
 
 &i2c1 {
 	status = "okay";
