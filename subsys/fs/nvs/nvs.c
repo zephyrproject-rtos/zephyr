@@ -16,15 +16,16 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(fs_nvs, CONFIG_NVS_LOG_LEVEL);
 
-
 /* basic routines */
 /* nvs_al_size returns size aligned to fs->write_block_size */
 static inline size_t nvs_al_size(struct nvs_fs *fs, size_t len)
 {
-	if (fs->write_block_size <= 1U) {
+	uint8_t write_block_size = fs->flash_parameters->write_block_size;
+
+	if (write_block_size <= 1U) {
 		return len;
 	}
-	return (len + (fs->write_block_size - 1U)) & ~(fs->write_block_size - 1U);
+	return (len + (write_block_size - 1U)) & ~(write_block_size - 1U);
 }
 /* end basic routines */
 
@@ -53,7 +54,7 @@ static int nvs_flash_al_wrt(struct nvs_fs *fs, uint32_t addr, const void *data,
 		/* flash protection set error */
 		return rc;
 	}
-	blen = len & ~(fs->write_block_size - 1U);
+	blen = len & ~(fs->flash_parameters->write_block_size - 1U);
 	if (blen > 0) {
 		rc = flash_write(fs->flash_device, offset, data8, blen);
 		if (rc) {
@@ -67,10 +68,10 @@ static int nvs_flash_al_wrt(struct nvs_fs *fs, uint32_t addr, const void *data,
 	if (len) {
 		memcpy(buf, data8, len);
 		(void)memset(buf + len, fs->flash_parameters->erase_value,
-			fs->write_block_size - len);
+			fs->flash_parameters->write_block_size - len);
 
 		rc = flash_write(fs->flash_device, offset, buf,
-				 fs->write_block_size);
+				 fs->flash_parameters->write_block_size);
 		if (rc) {
 			/* flash write error */
 			goto end;
@@ -144,7 +145,9 @@ static int nvs_flash_block_cmp(struct nvs_fs *fs, uint32_t addr, const void *dat
 	size_t bytes_to_cmp, block_size;
 	uint8_t buf[NVS_BLOCK_SIZE];
 
-	block_size = NVS_BLOCK_SIZE & ~(fs->write_block_size - 1U);
+	block_size =
+		NVS_BLOCK_SIZE & ~(fs->flash_parameters->write_block_size - 1U);
+
 	while (len) {
 		bytes_to_cmp = MIN(block_size, len);
 		rc = nvs_flash_rd(fs, addr, buf, bytes_to_cmp);
@@ -173,7 +176,9 @@ static int nvs_flash_cmp_const(struct nvs_fs *fs, uint32_t addr, uint8_t value,
 	size_t bytes_to_cmp, block_size;
 	uint8_t cmp[NVS_BLOCK_SIZE];
 
-	block_size = NVS_BLOCK_SIZE & ~(fs->write_block_size - 1U);
+	block_size =
+		NVS_BLOCK_SIZE & ~(fs->flash_parameters->write_block_size - 1U);
+
 	(void)memset(cmp, value, block_size);
 	while (len) {
 		bytes_to_cmp = MIN(block_size, len);
@@ -196,7 +201,8 @@ static int nvs_flash_block_move(struct nvs_fs *fs, uint32_t addr, size_t len)
 	size_t bytes_to_copy, block_size;
 	uint8_t buf[NVS_BLOCK_SIZE];
 
-	block_size = NVS_BLOCK_SIZE & ~(fs->write_block_size - 1U);
+	block_size =
+		NVS_BLOCK_SIZE & ~(fs->flash_parameters->write_block_size - 1U);
 
 	while (len) {
 		bytes_to_copy = MIN(block_size, len);
@@ -644,7 +650,7 @@ static int nvs_startup(struct nvs_fs *fs)
 			break;
 		}
 
-		fs->data_wra += fs->write_block_size;
+		fs->data_wra += fs->flash_parameters->write_block_size;
 	}
 
 	/* if the sector after the write sector is not empty gc was interrupted
@@ -725,7 +731,6 @@ int nvs_init(struct nvs_fs *fs, const char *dev_name)
 		LOG_ERR("Unsupported write block size");
 		return -EINVAL;
 	}
-	fs->write_block_size = write_block_size;
 
 	/* check that sector size is a multiple of pagesize */
 	rc = flash_get_page_info_by_offs(fs->flash_device, fs->offset, &info);
