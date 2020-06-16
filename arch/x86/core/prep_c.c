@@ -10,6 +10,7 @@
 #include <arch/x86/multiboot.h>
 
 extern FUNC_NORETURN void z_cstart(void);
+extern void x86_64_irq_init(void);
 
 /* Early global initialization functions, C domain. This runs only on the first
  * CPU for SMP systems.
@@ -22,6 +23,10 @@ FUNC_NORETURN void z_x86_prep_c(void *arg)
 
 #ifdef CONFIG_X86_VERY_EARLY_CONSOLE
 	z_x86_early_serial_init();
+#endif
+
+#ifdef CONFIG_X86_64
+	x86_64_irq_init();
 #endif
 
 #ifdef CONFIG_MULTIBOOT_INFO
