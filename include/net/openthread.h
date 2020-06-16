@@ -30,6 +30,8 @@ struct openthread_context {
 	struct pkt_list_elem pkt_list[CONFIG_OPENTHREAD_PKT_LIST_SIZE];
 };
 
+void openthread_set_state_changed_cb(otStateChangedCallback cb);
+
 k_tid_t openthread_thread_id_get(void);
 
 struct openthread_context *openthread_get_default_context(void);
