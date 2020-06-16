@@ -1085,7 +1085,7 @@ static void buf_send_start(uint16_t duration, int err, void *user_data)
 	frnd->pending_buf = 0U;
 
 	/* Friend Offer doesn't follow the re-sending semantics */
-	if (!frnd->established) {
+	if (!frnd->established && frnd->last) {
 		net_buf_unref(frnd->last);
 		frnd->last = NULL;
 	}
