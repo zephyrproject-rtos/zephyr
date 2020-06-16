@@ -45,8 +45,8 @@ extern "C" {
 /* Network subsystem logging helpers */
 #ifdef CONFIG_THREAD_NAME
 #define NET_DBG(fmt, ...) LOG_DBG("(%s): " fmt,				\
-				  k_thread_name_get(k_current_get()),	\
-				  ##__VA_ARGS__)
+			log_strdup(k_thread_name_get(k_current_get())), \
+			##__VA_ARGS__)
 #else
 #define NET_DBG(fmt, ...) LOG_DBG("(%p): " fmt, k_current_get(),	\
 				  ##__VA_ARGS__)
