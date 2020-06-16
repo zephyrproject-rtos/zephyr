@@ -134,14 +134,21 @@ go64:	movl %cr4, %eax			/* enable PAE and SSE */
 	orl $(CR0_PG | CR0_WP), %eax
 	movl %eax, %cr0
 
-	jmpl $X86_KERNEL_CS, $1f
-.code64
-1:	movl $X86_KERNEL_DS, %eax
+	jmpl $X86_KERNEL_CS, $enter_code64
+
+	/* Long mode entry point.  Arrive here from the code
+	 * immediately above (shared between main CPU startup and AP
+	 * startup), or from EFI entry in __start64
+	 */
+	.code64
+enter_code64:
+	movl $X86_KERNEL_DS, %eax
 	movw %ax, %ds
 	movw %ax, %es
 	movw %ax, %ss
 	movw %ax, %fs
 
+	movq $x86_cpuboot, %rbp
 	movw __x86_cpuboot_t_tr_OFFSET(%rbp), %ax
 	ltr %ax
 
@@ -175,6 +182,53 @@ go64:	movl %cr4, %eax			/* enable PAE and SSE */
 	/* Enter C domain now that we have a stack set up, never to return */
 	movq %rbp, %rdi
 	call z_x86_cpu_init
+
+	/* 64 bit OS entry point, used by EFI support.  UEFI
+	 * guarantees an identity-mapped page table that covers
+	 * physical memory, and the loader stub already used it to
+	 * write all of the Zephyr image, so we know it works for what
+	 * we need.  Other things need fixups to match what multiboot
+	 * 32 bit startup does.
+	 */
+.globl __start64
+__start64:
+	/* Zero the TSC */
+	xorq %rax, %rax
+	xorq %rdx, %rdx
+	movq $X86_TIME_STAMP_COUNTER_MSR, %rcx
+	wrmsr
+
+	lidt idt80
+	lgdt gdt80
+
+	/* These state and flag settings really should be done later,
+	 * in the shared startup path, they aren't required for mode
+	 * transition and having them in the 32 bit stub means they
+	 * have to be duplicated here.
+	 */
+	movq %cr4, %rax
+	orq $(CR4_PAE | CR4_OSFXSR), %rax
+	movq %rax, %cr4
+	clts
+	movq $X86_EFER_MSR, %rcx
+	rdmsr
+	orq $(X86_EFER_MSR_NXE | X86_EFER_MSR_SCE), %rax
+	wrmsr
+	cld
+
+	/* Disable 8259 PIT.  Almost certainly not needed on modern
+	 * UEFI platforms taking this code path, but...
+	 */
+	movb $0xff, %al
+	outb %al, $0x21
+	outb %al, $0xA1
+
+	/* Far call into the Zephyr code segment */
+	mov jmpdesc, %rax
+	jmp *%rax
+jmpdesc:
+	.quad enter_code64
+	.short X86_KERNEL_CS
 
 /*
  * void x86_sse_init(struct k_thread *thread);
@@ -884,10 +938,15 @@ idt:
 	IDT(250, INTR, IRQ_STACK); IDT(251, INTR, IRQ_STACK)
 	IDT(252, INTR, IRQ_STACK); IDT(253, INTR, IRQ_STACK)
 	IDT(254, INTR, IRQ_STACK); IDT(255, INTR, IRQ_STACK)
+idt_end:
 
-idt48:
-	.word (idt48 - idt - 1)
+idt48:  /* LIDT descriptor for 32 bit mode */
+	.word (idt_end - idt - 1)
 	.long idt
+
+idt80:  /* LIDT descriptor for 64 bit mode */
+	.word (idt_end - idt - 1)
+	.quad idt
 
 /*
  * Page tables. Long mode requires them, but we don't implement any memory
@@ -965,10 +1024,15 @@ gdt:
 	.word 0, 0, 0, 0, 0
 #endif
 
-gdt48:
-	.word (gdt48 - gdt - 1)
+gdt_end:
+
+gdt48:  /* LGDT descriptor for 32 bit mode */
+	.word (gdt_end - gdt - 1)
 	.long gdt
 
+gdt80:  /* LGDT descriptor for long mode */
+	.word (gdt_end - gdt - 1)
+	.quad gdt
 .section .lodata,"ad"
 
 /*
