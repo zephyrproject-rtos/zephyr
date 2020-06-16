@@ -52,7 +52,6 @@ struct nvs_fs {
 				 * sector size should be multiple of pagesize
 				 */
 	uint16_t sector_count;	/* amount of sectors in the filesystem */
-	uint8_t write_block_size;  /* write block size for alignment */
 	bool ready;		/* is the filesystem initialized ? */
 
 	struct k_mutex nvs_lock;
