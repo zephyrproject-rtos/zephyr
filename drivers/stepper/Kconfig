@@ -1,0 +1,25 @@
+# Stepper controller driver configuration options
+
+# Copyright (c) 2020 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig STEPPER
+	bool "Stepper controller drivers [EXPERIMENTAL]"
+	help
+	  Enable options for stepper controller drivers (experimental).
+
+if STEPPER
+
+config STEPPER_ASYNC
+	bool "Enable asynchronous call support"
+	select POLL
+	help
+	  This option enables the asynchronous API calls.
+
+module = STEPPER
+module-str = STEPPER
+source "subsys/logging/Kconfig.template.log_config"
+
+rsource "Kconfig.stm32"
+
+endif # STEPPER

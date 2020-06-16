@@ -80,4 +80,11 @@ config HEAP_MEM_POOL_SIZE
 
 endif # DMA
 
+if STEPPER
+
+config STEPPER_STM32
+	default y
+
+endif # STEPPER
+
 endif # SOC_FAMILY_STM32

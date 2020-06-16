@@ -1,0 +1,10 @@
+# Copyright (c) 2020 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+config STEPPER_STM32
+	bool "STM32 stepper controller driver"
+	depends on SOC_FAMILY_STM32
+	select USE_STM32_LL_TIM
+	select USE_STM32_LL_RCC
+	help
+	  Enable stepper controller driver for STM32 SoCs

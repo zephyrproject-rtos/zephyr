@@ -1,0 +1,52 @@
+# Copyright (c) 2020, Teslabs Engineering S.L.
+
+description: STM32 Stepper Controller
+
+compatible: "st,stm32-stepperctl"
+
+include: base.yaml
+
+properties:
+    "#address-cells":
+        required: true
+        const: 1
+    "#size-cells":
+        required: true
+        const: 0
+    label:
+        required: true
+    master-timer:
+        type: phandle
+        required: true
+        description: Master timer
+    slave-timer:
+        type: phandle
+        required: true
+        description: Slave timer
+    itr:
+        type: int
+        required: true
+        description: |
+          Master/Slave trigger settings. Definitions are available from
+          dt-bindings/timers/stm32_timers_xx.h.
+
+child-binding:
+    description: Stepper motor
+    properties:
+        reg:
+            type: int
+            required: true
+            description: Master timer channel
+        microsteps:
+            type: int
+            required: true
+            default: 1
+            description: Microsteps
+        enable-gpios:
+            type: phandle-array
+            required: true
+            description: Enable pin
+        direction-gpios:
+            type: phandle-array
+            required: true
+            description: Direction pin
