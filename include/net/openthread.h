@@ -32,7 +32,11 @@ struct openthread_context {
 
 k_tid_t openthread_thread_id_get(void);
 
+struct openthread_context *openthread_get_default_context(void);
+
 struct otInstance *openthread_get_default_instance(void);
+
+void openthread_start(struct openthread_context *ot_context);
 
 #define OPENTHREAD_L2_CTX_TYPE struct openthread_context
 

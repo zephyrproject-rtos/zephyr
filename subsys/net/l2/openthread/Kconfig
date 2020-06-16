@@ -129,8 +129,6 @@ config OPENTHREAD_MANUAL_START
 	  commissioning or pre-commissioned with other Kconfig options,
 	  depending on configuration used).
 
-if !OPENTHREAD_MANUAL_START
-
 config OPENTHREAD_PANID
 	int "Default PAN ID"
 	default 43981
@@ -151,8 +149,6 @@ config OPENTHREAD_XPANID
 	help
 	  Extended PAN ID for OpenThread with
 	  format "de:ad:00:be:ef:00:ca:fe"
-
-endif
 
 choice
 	prompt "OpenThread device type"
