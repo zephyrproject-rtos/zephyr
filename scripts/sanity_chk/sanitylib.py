@@ -2906,7 +2906,7 @@ class TestSuite(DisablePyTestCollectionMixin):
     def discard_report(self, filename):
 
         try:
-            if self.discards is None:
+            if not self.discards:
                 raise SanityRuntimeError("apply_filters() hasn't been run!")
         except Exception as e:
             logger.error(str(e))
