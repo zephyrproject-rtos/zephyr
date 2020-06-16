@@ -1507,8 +1507,7 @@ static void queue_fin(struct net_context *ctx)
 int net_tcp_put(struct net_context *context)
 {
 	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
-		if ((net_context_get_state(context) == NET_CONTEXT_CONNECTED ||
-		     net_context_get_state(context) == NET_CONTEXT_LISTENING)
+		if (net_context_get_state(context) == NET_CONTEXT_CONNECTED
 		    && context->tcp
 		    && !context->tcp->fin_rcvd) {
 			NET_DBG("TCP connection in active close, not "
@@ -1516,6 +1515,18 @@ int net_tcp_put(struct net_context *context)
 			k_delayed_work_submit(&context->tcp->fin_timer,
 					      FIN_TIMEOUT);
 			queue_fin(context);
+			return 0;
+		}
+
+		/* A listening context is only used to establish connections.
+		 * Since once the connection is established it is not handled
+		 * directly by the listening context but rather by the child it
+		 * spawned, it is not needed to send FIN when closing such
+		 * contexts.
+		 */
+		if (context->tcp &&
+		    net_context_get_state(context) == NET_CONTEXT_LISTENING) {
+			net_context_unref(context);
 			return 0;
 		}
 
