@@ -513,7 +513,7 @@ static int handle_fu_mute_req(struct usb_audio_dev_data *audio_dev_data,
 			      struct usb_audio_fu_evt *evt,
 			      uint8_t device)
 {
-	uint8_t ch = sys_le16_to_cpu(pSetup->wValue) & 0xFF;
+	uint8_t ch = (uint8_t)(sys_le16_to_cpu(pSetup->wValue) & 0xFF);
 	uint8_t ch_cnt = audio_dev_data->ch_cnt[device];
 	uint8_t *controls = audio_dev_data->controls[device];
 	uint8_t *control_val = &controls[POS(MUTE, ch, ch_cnt)];
@@ -566,10 +566,10 @@ static int handle_feature_unit_req(struct usb_audio_dev_data *audio_dev_data,
 	uint8_t ch;
 	int ret;
 
-	fu_id = (sys_le16_to_cpu(pSetup->wIndex) >> 8) & 0xFF;
+	fu_id = (uint8_t)((sys_le16_to_cpu(pSetup->wIndex) >> 8) & 0xFF);
 	fu = get_feature_unit(audio_dev_data, &device, fu_id);
-	ch = sys_le16_to_cpu(pSetup->wValue) & 0xFF;
-	cs = (sys_le16_to_cpu(pSetup->wValue) >> 8) & 0xFF;
+	ch = (uint8_t)(sys_le16_to_cpu(pSetup->wValue) & 0xFF);
+	cs = (uint8_t)((sys_le16_to_cpu(pSetup->wValue) >> 8) & 0xFF);
 	ch_cnt = audio_dev_data->ch_cnt[device];
 
 	LOG_DBG("CS: %d, CN: %d, len: %d", cs, ch, *len);
@@ -631,12 +631,12 @@ static int handle_interface_req(struct usb_setup_packet *pSetup,
 	struct usb_audio_entity entity;
 
 	/* Extract entity ID from wIndex */
-	entity.id = (sys_le16_to_cpu(pSetup->wIndex) >> 8) & 0xFF;
+	entity.id = (uint8_t)((sys_le16_to_cpu(pSetup->wIndex) >> 8) & 0xFF);
 
 	/** Normally there should be a call to usb_get_dev_data_by_iface()
 	 * and addressed interface should be read from wIndex low byte.
 	 *
-	 * uint8_t iface = sys_le16_to_cpu(pSetup->wIndex) & 0xFF;
+	 * uint8_t iface = (uint8_t)(sys_le16_to_cpu(pSetup->wIndex) & 0xFF);
 	 *
 	 * However, Linux is using special form of Audio Requests
 	 * which always left wIndex low byte 0 no matter which device and
@@ -685,7 +685,8 @@ static int audio_custom_handler(struct usb_setup_packet *pSetup, int32_t *len,
 	const struct usb_if_descriptor *if_desc;
 	const struct usb_ep_descriptor *ep_desc;
 
-	uint8_t iface = sys_le16_to_cpu(pSetup->wIndex) & 0xFF;
+	uint8_t iface = (uint8_t)(sys_le16_to_cpu(pSetup->wIndex) & 0xFF);
+	uint8_t alt_if = (uint8_t)(sys_le16_to_cpu(pSetup->wValue) & 0xFF);
 
 	audio_dev_data = get_audio_dev_data_by_iface(iface);
 	if (audio_dev_data == NULL) {
@@ -727,16 +728,16 @@ static int audio_custom_handler(struct usb_setup_packet *pSetup, int32_t *len,
 		switch (pSetup->bRequest) {
 		case REQ_SET_INTERFACE:
 			if (ep_desc->bEndpointAddress & USB_EP_DIR_MASK) {
-				audio_dev_data->tx_enable = pSetup->wValue;
+				audio_dev_data->tx_enable = (bool)alt_if;
 			} else {
-				audio_dev_data->rx_enable = pSetup->wValue;
+				audio_dev_data->rx_enable = (bool)alt_if;
 			}
 			return -EINVAL;
 		case REQ_GET_INTERFACE:
 			if (ep_desc->bEndpointAddress & USB_EP_DIR_MASK) {
-				*data[0] = audio_dev_data->tx_enable;
+				*data[0] = (uint8_t)audio_dev_data->tx_enable;
 			} else {
-				*data[0] = audio_dev_data->rx_enable;
+				*data[0] = (uint8_t)audio_dev_data->rx_enable;
 			}
 			return 0;
 		default:
