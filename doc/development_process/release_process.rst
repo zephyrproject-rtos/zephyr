@@ -76,7 +76,8 @@ any time).
 As fixes make their way into the mainline, the patch rate will slow over time.
 The mainline release owner releases new -rc drops once or twice a week; a normal
 series will get up to somewhere between -rc4 and -rc6 before the code base is
-considered to be sufficiently stable and the final 0.4.x release is made.
+considered to be sufficiently stable and the quality metrics have been achieved
+at which point the final 0.4.x release is made.
 
 At that point, the whole process starts over again.
 
@@ -97,6 +98,25 @@ Here is the description of the various moderation levels:
 
   - Bug Fixes: P1 and P2
   - Documentation + Test Coverage
+
+Release Quality Criteria
+************************
+
+The current backlog of prioritized bugs shall be used as a quality metric to
+gate the final release. The following counts shall be used:
+
+.. csv-table:: Bug Count Release Thresholds
+   :header: "High", "Medium", "Low"
+   :widths: auto
+
+
+   "0","<20","<50"
+
+.. note::
+
+   The "low" bug count target of <50 will be a phased appoach starting with 150
+   for release 2.4.0, 100 for release 2.5.0, and 50 for release 2.6.0
+
 
 Releases
 *********
@@ -125,7 +145,6 @@ The following syntax should be used for releases and tags in Git:
     :width: 80%
 
     Zephyr Code and Releases
-
 
 Long Term Support (LTS)
 =======================
