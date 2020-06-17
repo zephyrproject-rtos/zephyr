@@ -417,6 +417,7 @@
 /scripts/gen_relocate_app.py              @wentongwu
 /scripts/requirements*.txt                @mbolivar @galak @nashif
 /scripts/tests/sanitycheck/               @aasthagr
+/scripts/tests/test_subfolder_list.py     @rmstoi
 /scripts/tracing/                         @wentongwu
 /scripts/sanity_chk/                      @nashif
 /scripts/sanitycheck                      @nashif
