@@ -616,9 +616,8 @@ static void uart_stm32_irq_callback_set(const struct device *dev,
 	data->user_data = cb_data;
 }
 
-static void uart_stm32_isr(void *arg)
+static void uart_stm32_isr(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct uart_stm32_data *data = DEV_DATA(dev);
 
 	if (data->user_cb) {

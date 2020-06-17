@@ -163,9 +163,8 @@ static int i2c_mcux_transfer(const struct device *dev, struct i2c_msg *msgs,
 	return 0;
 }
 
-static void i2c_mcux_isr(void *arg)
+static void i2c_mcux_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	I2C_Type *base = DEV_BASE(dev);
 	struct i2c_mcux_data *data = DEV_DATA(dev);
 

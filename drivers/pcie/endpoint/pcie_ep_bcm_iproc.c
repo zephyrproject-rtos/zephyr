@@ -304,9 +304,8 @@ static void iproc_pcie_hot_reset(void *arg)
 #endif
 
 #if DT_INST_IRQ_HAS_NAME(0, flr)
-static void iproc_pcie_flr(void *arg)
+static void iproc_pcie_flr(const struct device *dev)
 {
-	const struct device *dev = arg;
 	const struct iproc_pcie_ep_config *cfg = dev->config;
 	struct iproc_pcie_ep_ctx *ctx = dev->data;
 	void *reset_data;

@@ -264,9 +264,8 @@ static int gpio_sam_pin_interrupt_configure(const struct device *dev,
 	return gpio_sam_port_interrupt_configure(dev, BIT(pin), mode, trig);
 }
 
-static void gpio_sam_isr(void *arg)
+static void gpio_sam_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct gpio_sam_config * const cfg = DEV_CFG(dev);
 	Pio * const pio = cfg->regs;
 	struct gpio_sam_runtime *context = dev->data;

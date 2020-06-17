@@ -234,9 +234,8 @@ static int gpio_gecko_manage_callback(const struct device *dev,
 /**
  * Handler for both odd and even pin interrupts
  */
-static void gpio_gecko_common_isr(void *arg)
+static void gpio_gecko_common_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	struct gpio_gecko_common_data *data = dev->data;
 	uint32_t enabled_int, int_status;
 	const struct device *port_dev;

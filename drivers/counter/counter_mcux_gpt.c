@@ -100,9 +100,8 @@ static int mcux_gpt_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	return 0;
 }
 
-void mcux_gpt_isr(void *p)
+void mcux_gpt_isr(const struct device *dev)
 {
-	const struct device *dev = p;
 	const struct mcux_gpt_config *config = dev->config;
 	struct mcux_gpt_data *data = dev->data;
 	uint32_t current = GPT_GetCurrentTimerCount(config->base);

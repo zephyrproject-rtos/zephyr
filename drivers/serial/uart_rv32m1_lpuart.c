@@ -225,9 +225,8 @@ static void rv32m1_lpuart_irq_callback_set(const struct device *dev,
 	data->cb_data = cb_data;
 }
 
-static void rv32m1_lpuart_isr(void *arg)
+static void rv32m1_lpuart_isr(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct rv32m1_lpuart_data *data = dev->data;
 
 	if (data->callback) {

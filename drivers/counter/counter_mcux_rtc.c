@@ -189,9 +189,8 @@ static uint32_t mcux_rtc_get_max_relative_alarm(const struct device *dev)
 	return info->max_top_value;
 }
 
-static void mcux_rtc_isr(void *arg)
+static void mcux_rtc_isr(const struct device *dev)
 {
-	const struct device *dev = arg;
 	const struct counter_config_info *info = dev->config;
 	const struct mcux_rtc_config *config =
 		CONTAINER_OF(info, struct mcux_rtc_config, info);

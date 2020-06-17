@@ -127,9 +127,8 @@ static const struct counter_driver_api dtmr_cmsdk_apb_api = {
 	.get_top_value = dtmr_cmsdk_apb_get_top_value,
 };
 
-static void dtmr_cmsdk_apb_isr(void *arg)
+static void dtmr_cmsdk_apb_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	struct dtmr_cmsdk_apb_dev_data *data = dev->data;
 	const struct dtmr_cmsdk_apb_cfg * const cfg = dev->config;
 

@@ -198,7 +198,7 @@ static inline void program_max_cycles(void)
 }
 #endif
 
-void timer_int_handler(void *unused /* parameter is not used */
+void timer_int_handler(const void *unused /* parameter is not used */
 				 )
 {
 #ifdef CONFIG_EXECUTION_BENCHMARKING

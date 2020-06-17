@@ -386,9 +386,8 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 	}
 }
 
-static void adc_stm32_isr(void *arg)
+static void adc_stm32_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	struct adc_stm32_data *data = (struct adc_stm32_data *)dev->data;
 	const struct adc_stm32_cfg *config =
 		(const struct adc_stm32_cfg *)dev->config;

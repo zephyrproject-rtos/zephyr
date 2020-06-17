@@ -593,9 +593,8 @@ static void uart_stellaris_irq_callback_set(const struct device *dev,
  *
  * @return N/A
  */
-static void uart_stellaris_isr(void *arg)
+static void uart_stellaris_isr(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct uart_stellaris_dev_data_t * const dev_data = DEV_DATA(dev);
 
 	if (dev_data->cb) {

@@ -246,9 +246,8 @@ static int gpio_rv32m1_manage_callback(const struct device *dev,
 	return 0;
 }
 
-static void gpio_rv32m1_port_isr(void *arg)
+static void gpio_rv32m1_port_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct gpio_rv32m1_config *config = dev->config;
 	struct gpio_rv32m1_data *data = dev->data;
 	uint32_t int_status;

@@ -28,7 +28,7 @@
 #define TIMER_ENABLE	0x1
 #define UPDATE_TOTAL	0x1
 
-static void litex_timer_irq_handler(void *device)
+static void litex_timer_irq_handler(const void *device)
 {
 	ARG_UNUSED(device);
 	int key = irq_lock();

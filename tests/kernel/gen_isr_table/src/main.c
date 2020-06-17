@@ -123,14 +123,14 @@ ISR_DIRECT_DECLARE(isr2)
 }
 #endif
 
-void isr3(void *param)
+void isr3(const void *param)
 {
 	printk("%s ran with parameter %p\n", __func__, param);
 	trigger_check[ISR3_OFFSET]++;
 }
 
 #ifdef ISR4_OFFSET
-void isr4(void *param)
+void isr4(const void *param)
 {
 	printk("%s ran with parameter %p\n", __func__, param);
 	trigger_check[ISR4_OFFSET]++;

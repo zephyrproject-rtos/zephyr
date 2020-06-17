@@ -236,7 +236,7 @@ static int uart_nrfx_poll_in(const struct device *dev, unsigned char *c)
 }
 
 #ifdef CONFIG_UART_0_ASYNC
-static void uart_nrfx_isr(void *arg);
+static void uart_nrfx_isr(const struct device *dev);
 #endif
 
 /**
@@ -255,7 +255,7 @@ static void uart_nrfx_poll_out(const struct device *dev, unsigned char c)
 		 * busy wait until transmission is finished.
 		 */
 		if (k_is_in_isr()) {
-			uart_nrfx_isr((void *) dev);
+			uart_nrfx_isr(dev);
 		}
 	}
 	/* Use tx_buffer_length as lock, this way uart_nrfx_tx will
@@ -729,10 +729,8 @@ static void rxto_isr(const struct device *dev)
 	rx_disabled_evt(dev);
 }
 
-void uart_nrfx_isr(void *arg)
+void uart_nrfx_isr(const struct device *uart)
 {
-	const struct device *uart = (const struct device *) arg;
-
 	if (nrf_uart_int_enable_check(uart0_addr, NRF_UART_INT_MASK_ERROR) &&
 	    nrf_uart_event_check(uart0_addr, NRF_UART_EVENT_ERROR)) {
 		error_isr(uart);
@@ -940,10 +938,8 @@ static void uart_nrfx_irq_callback_set(const struct device *dev,
  *
  * @return N/A
  */
-static void uart_nrfx_isr(void *arg)
+static void uart_nrfx_isr(const struct device *dev)
 {
-	const struct device *dev = arg;
-
 	if (disable_tx_irq &&
 	    nrf_uart_event_check(uart0_addr, NRF_UART_EVENT_TXDRDY)) {
 		nrf_uart_int_disable(uart0_addr, NRF_UART_INT_MASK_TXDRDY);

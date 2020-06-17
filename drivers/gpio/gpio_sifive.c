@@ -112,9 +112,8 @@ static inline int gpio_sifive_plic_to_pin(unsigned int base_irq, int plic_irq)
 	return (plic_irq - base_irq);
 }
 
-static void gpio_sifive_irq_handler(void *arg)
+static void gpio_sifive_irq_handler(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	struct gpio_sifive_data *data = DEV_GPIO_DATA(dev);
 	volatile struct gpio_sifive_t *gpio = DEV_GPIO(dev);
 	const struct gpio_sifive_config *cfg = DEV_GPIO_CFG(dev);

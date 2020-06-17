@@ -245,9 +245,8 @@ static uint32_t rtc_stm32_get_max_relative_alarm(const struct device *dev)
 }
 
 
-void rtc_stm32_isr(void *arg)
+void rtc_stm32_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	struct rtc_stm32_data *data = DEV_DATA(dev);
 	counter_alarm_callback_t alarm_callback = data->callback;
 

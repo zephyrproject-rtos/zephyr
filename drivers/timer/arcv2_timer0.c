@@ -219,7 +219,7 @@ static uint32_t elapsed(void)
  *
  * @return N/A
  */
-static void timer_int_handler(void *unused)
+static void timer_int_handler(const void *unused)
 {
 	ARG_UNUSED(unused);
 	uint32_t dticks;

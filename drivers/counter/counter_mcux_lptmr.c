@@ -111,9 +111,8 @@ static uint32_t mcux_lptmr_get_max_relative_alarm(const struct device *dev)
 	return 0;
 }
 
-static void mcux_lptmr_isr(void *arg)
+static void mcux_lptmr_isr(const struct device *dev)
 {
-	const struct device *dev = arg;
 	const struct mcux_lptmr_config *config = dev->config;
 	struct mcux_lptmr_data *data = dev->data;
 	uint32_t flags;

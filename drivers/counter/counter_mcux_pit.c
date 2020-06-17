@@ -114,9 +114,8 @@ static uint32_t mcux_pit_get_max_relative_alarm(const struct device *dev)
 	return config->info.max_top_value;
 }
 
-static void mcux_pit_isr(void *arg)
+static void mcux_pit_isr(const struct device *dev)
 {
-	const struct device *dev = arg;
 	const struct mcux_pit_config *config = dev->config;
 	struct mcux_pit_data *data = dev->data;
 	uint32_t flags;

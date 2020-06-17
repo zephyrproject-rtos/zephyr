@@ -293,7 +293,7 @@ static int peci_xec_transfer(const struct device *dev, struct peci_msg *msg)
 }
 
 #ifdef CONFIG_PECI_INTERRUPT_DRIVEN
-static void peci_xec_isr(void *arg)
+static void peci_xec_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 	PECI_Type *base = peci_xec_config.base;

@@ -310,9 +310,8 @@ static uint32_t counter_sam0_tc32_get_max_relative_alarm(const struct device *de
 	return counter_sam0_tc32_get_top_value(dev) - 1;
 }
 
-static void counter_sam0_tc32_isr(void *arg)
+static void counter_sam0_tc32_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	struct counter_sam0_tc32_data *data = DEV_DATA(dev);
 	const struct counter_sam0_tc32_config *const cfg = DEV_CFG(dev);
 	TcCount32 *tc = cfg->regs;

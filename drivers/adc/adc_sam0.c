@@ -429,9 +429,8 @@ static int adc_sam0_read(const struct device *dev,
 	return error;
 }
 
-static void adc_sam0_isr(void *arg)
+static void adc_sam0_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	struct adc_sam0_data *data = DEV_DATA(dev);
 	const struct adc_sam0_cfg *const cfg = DEV_CFG(dev);
 	Adc *const adc = cfg->regs;

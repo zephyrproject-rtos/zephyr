@@ -269,9 +269,8 @@ finish:
 }
 
 
-static void i2c_imx_isr(void *arg)
+static void i2c_imx_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	I2C_Type *base = DEV_BASE(dev);
 	struct i2c_imx_data *data = DEV_DATA(dev);
 	struct i2c_master_transfer *transfer = &data->transfer;

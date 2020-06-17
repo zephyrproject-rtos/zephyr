@@ -638,7 +638,7 @@ static inline void usb_dw_int_oep_handler(void)
 	USB_DW->gintsts = USB_DW_GINTSTS_OEP_INT;
 }
 
-static void usb_dw_isr_handler(void *unused)
+static void usb_dw_isr_handler(const void *unused)
 {
 	uint32_t int_status;
 

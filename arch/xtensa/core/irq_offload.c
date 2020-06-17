@@ -17,7 +17,7 @@ static irq_offload_routine_t offload_routine;
 static const void *offload_param;
 
 /* Called by ISR dispatcher */
-void z_irq_do_offload(void *unused)
+void z_irq_do_offload(const void *unused)
 {
 	ARG_UNUSED(unused);
 	offload_routine(offload_param);

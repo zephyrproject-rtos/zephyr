@@ -22,7 +22,7 @@ static struct counter_alarm_cfg pending_alarm;
 static bool is_alarm_pending;
 static const struct device *device;
 
-static void counter_isr(void *arg)
+static void counter_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 	uint32_t current_value = hw_counter_get_value();

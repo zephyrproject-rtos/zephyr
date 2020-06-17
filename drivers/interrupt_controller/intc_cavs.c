@@ -48,9 +48,8 @@ static ALWAYS_INLINE void cavs_ictl_dispatch_child_isrs(uint32_t intr_status,
 	}
 }
 
-static void cavs_ictl_isr(void *arg)
+static void cavs_ictl_isr(const struct device *port)
 {
-	const struct device *port = (const struct device *)arg;
 	struct cavs_ictl_runtime *context = port->data;
 
 	const struct cavs_ictl_config *config = port->config;

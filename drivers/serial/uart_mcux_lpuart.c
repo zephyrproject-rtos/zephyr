@@ -222,9 +222,8 @@ static void mcux_lpuart_irq_callback_set(const struct device *dev,
 	data->cb_data = cb_data;
 }
 
-static void mcux_lpuart_isr(void *arg)
+static void mcux_lpuart_isr(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct mcux_lpuart_data *data = dev->data;
 
 	if (data->callback) {

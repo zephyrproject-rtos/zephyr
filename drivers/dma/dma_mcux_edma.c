@@ -135,9 +135,8 @@ static void channel_irq(edma_handle_t *handle)
 	}
 }
 
-static void dma_mcux_edma_irq_handler(void *arg)
+static void dma_mcux_edma_irq_handler(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	int i = 0;
 
 	LOG_DBG("IRQ CALLED");
@@ -165,11 +164,10 @@ static void dma_mcux_edma_irq_handler(void *arg)
 	}
 }
 
-static void dma_mcux_edma_error_irq_handler(void *arg)
+static void dma_mcux_edma_error_irq_handler(const struct device *dev)
 {
 	int i = 0;
 	uint32_t flag = 0;
-	const struct device *dev = (const struct device *)arg;
 
 	for (i = 0; i < DT_INST_PROP(0, dma_channels); i++) {
 		if (DEV_CHANNEL_DATA(dev, i)->busy) {

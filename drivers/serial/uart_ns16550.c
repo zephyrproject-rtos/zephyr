@@ -849,9 +849,8 @@ static void uart_ns16550_irq_callback_set(const struct device *dev,
  *
  * @return N/A
  */
-static void uart_ns16550_isr(void *arg)
+static void uart_ns16550_isr(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct uart_ns16550_dev_data_t * const dev_data = DEV_DATA(dev);
 
 	if (dev_data->cb) {

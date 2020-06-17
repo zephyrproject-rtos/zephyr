@@ -819,9 +819,8 @@ static int i2s_cavs_write(const struct device *dev, void *mem_block,
 }
 
 /* clear IRQ sources atm */
-static void i2s_cavs_isr(void *arg)
+static void i2s_cavs_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct i2s_cavs_config *const dev_cfg = DEV_CFG(dev);
 	volatile struct i2s_cavs_ssp *const ssp = dev_cfg->regs;
 	struct i2s_cavs_dev_data *const dev_data = DEV_DATA(dev);

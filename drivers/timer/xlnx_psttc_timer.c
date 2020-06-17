@@ -65,7 +65,7 @@ static void update_match(uint32_t cycles, uint32_t match)
 	sys_write32(match, TIMER_BASE_ADDR + XTTCPS_MATCH_0_OFFSET);
 }
 
-static void ttc_isr(void *arg)
+static void ttc_isr(const void *arg)
 {
 	uint32_t cycles;
 	uint32_t ticks;

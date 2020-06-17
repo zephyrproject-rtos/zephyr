@@ -263,7 +263,7 @@ static void gpio_esp32_fire_callbacks(const struct device *device)
 	gpio_fire_callbacks(&data->cb, device, irq_status);
 }
 
-static void gpio_esp32_isr(void *param);
+static void gpio_esp32_isr(const void *param);
 
 static int gpio_esp32_init(const struct device *device)
 {
@@ -355,7 +355,7 @@ GPIO_DEVICE_INIT(0);
 GPIO_DEVICE_INIT(1);
 #endif
 
-static void gpio_esp32_isr(void *param)
+static void gpio_esp32_isr(const void *param)
 {
 
 #if defined(CONFIG_GPIO_ESP32_0)

@@ -317,9 +317,8 @@ static void uart_sifive_irq_callback_set(const struct device *dev,
 	data->cb_data = cb_data;
 }
 
-static void uart_sifive_irq_handler(void *arg)
+static void uart_sifive_irq_handler(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	struct uart_sifive_data *data = DEV_DATA(dev);
 
 	if (data->callback)

@@ -381,7 +381,7 @@ static void ieee802154_cc13xx_cc26xx_cpe0_isr(void *arg)
 	}
 }
 
-static void ieee802154_cc13xx_cc26xx_cpe1_isr(void *arg)
+static void ieee802154_cc13xx_cc26xx_cpe1_isr(const void *arg)
 {
 	uint32_t flags;
 

@@ -282,9 +282,8 @@ static void xlnx_uartlite_irq_callback_set(const struct device *dev,
 	data->callback_data = user_data;
 }
 
-static __unused void xlnx_uartlite_isr(void *arg)
+static __unused void xlnx_uartlite_isr(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct xlnx_uartlite_data *data = dev->data;
 
 	if (data->callback) {

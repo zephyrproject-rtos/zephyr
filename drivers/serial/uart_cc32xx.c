@@ -35,7 +35,7 @@ struct uart_cc32xx_dev_data_t {
 DEVICE_DECLARE(uart_cc32xx_0);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void uart_cc32xx_isr(void *arg);
+static void uart_cc32xx_isr(const struct device *dev);
 #endif
 
 static const struct uart_device_config uart_cc32xx_dev_cfg_0 = {
@@ -273,9 +273,8 @@ static void uart_cc32xx_irq_callback_set(const struct device *dev,
  *
  * @return N/A
  */
-static void uart_cc32xx_isr(void *arg)
+static void uart_cc32xx_isr(const struct device *dev)
 {
-	const struct device *dev = arg;
 	const struct uart_device_config *config = DEV_CFG(dev);
 	struct uart_cc32xx_dev_data_t * const dev_data = DEV_DATA(dev);
 

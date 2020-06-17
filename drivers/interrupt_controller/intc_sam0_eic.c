@@ -53,9 +53,8 @@ static inline void set_eic_enable(bool on)
 #endif
 }
 
-static void sam0_eic_isr(void *arg)
+static void sam0_eic_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	struct sam0_eic_data *const dev_data = DEV_DATA(dev);
 	uint16_t bits = EIC->INTFLAG.reg;
 	uint32_t line_index;

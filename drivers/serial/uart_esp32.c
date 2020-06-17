@@ -431,9 +431,8 @@ static void uart_esp32_irq_callback_set(const struct device *dev,
 	DEV_DATA(dev)->irq_cb_data = cb_data;
 }
 
-void uart_esp32_isr(void *arg)
+void uart_esp32_isr(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct uart_esp32_data *data = DEV_DATA(dev);
 
 	/* Verify if the callback has been registered */

@@ -332,9 +332,8 @@ static void lpc11u6x_uart0_irq_callback_set(const struct device *dev,
 	data->cb_data = user_data;
 }
 
-static void lpc11u6x_uart0_isr(void *arg)
+static void lpc11u6x_uart0_isr(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct lpc11u6x_uart0_data *data = DEV_DATA(dev);
 
 	if (data->cb) {
@@ -770,9 +769,10 @@ static void lpc11u6x_uartx_isr(const struct device *dev)
 	}
 }
 
-static void lpc11u6x_uartx_shared_isr(void *arg)
+static void lpc11u6x_uartx_shared_isr(const void *arg)
 {
-	struct lpc11u6x_uartx_shared_irq *shared_irq = arg;
+	struct lpc11u6x_uartx_shared_irq *shared_irq =
+		(struct lpc11u6x_uartx_shared_irq *)arg;
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(shared_irq->devices); i++) {

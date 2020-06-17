@@ -306,9 +306,8 @@ static void uart_mcux_irq_callback_set(const struct device *dev,
 	data->cb_data = cb_data;
 }
 
-static void uart_mcux_isr(void *arg)
+static void uart_mcux_isr(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct uart_mcux_data *data = dev->data;
 
 	if (data->callback) {

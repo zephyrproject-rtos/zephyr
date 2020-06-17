@@ -124,9 +124,8 @@ static int ipm_mhu_init(const struct device *d)
 	return 0;
 }
 
-static void ipm_mhu_isr(void *arg)
+static void ipm_mhu_isr(const struct device *d)
 {
-	const struct device *d = arg;
 	struct ipm_mhu_data *driver_data = DEV_DATA(d);
 	enum ipm_mhu_cpu_id_t cpu_id;
 	uint32_t ipm_mhu_status;

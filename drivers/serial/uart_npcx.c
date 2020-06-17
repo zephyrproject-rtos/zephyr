@@ -253,9 +253,8 @@ static void uart_npcx_irq_callback_set(const struct device *dev,
 	data->user_data = cb_data;
 }
 
-static void uart_npcx_isr(void *arg)
+static void uart_npcx_isr(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct uart_npcx_data *data = DRV_DATA(dev);
 
 	if (data->user_cb) {

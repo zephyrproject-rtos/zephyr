@@ -31,9 +31,8 @@ struct imx_mu_data {
 	void *user_data;
 };
 
-static void imx_mu_isr(void *arg)
+static void imx_mu_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct imx_mu_config *config = dev->config;
 	MU_Type *base = MU(config);
 	struct imx_mu_data *data = dev->data;

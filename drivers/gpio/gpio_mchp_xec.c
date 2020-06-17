@@ -277,9 +277,8 @@ static int gpio_xec_manage_callback(const struct device *dev,
 	return 0;
 }
 
-static void gpio_gpio_xec_port_isr(void *arg)
+static void gpio_gpio_xec_port_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct gpio_xec_config *config = dev->config;
 	struct gpio_xec_data *data = dev->data;
 	uint32_t girq_result;

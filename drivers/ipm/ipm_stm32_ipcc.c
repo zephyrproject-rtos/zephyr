@@ -101,9 +101,8 @@ struct stm32_ipcc_mbx_data {
 
 static struct stm32_ipcc_mbx_data stm32_IPCC_data;
 
-static void stm32_ipcc_mailbox_rx_isr(void *arg)
+static void stm32_ipcc_mailbox_rx_isr(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct stm32_ipcc_mbx_data *data = DEV_DATA(dev);
 	const struct stm32_ipcc_mailbox_config *cfg = DEV_CFG(dev);
 	unsigned int value = 0;
@@ -130,9 +129,8 @@ static void stm32_ipcc_mailbox_rx_isr(void *arg)
 	}
 }
 
-static void stm32_ipcc_mailbox_tx_isr(void *arg)
+static void stm32_ipcc_mailbox_tx_isr(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct stm32_ipcc_mbx_data *data = DEV_DATA(dev);
 	const struct stm32_ipcc_mailbox_config *cfg = DEV_CFG(dev);
 	uint32_t mask, i;

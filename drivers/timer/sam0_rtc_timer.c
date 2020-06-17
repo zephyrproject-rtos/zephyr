@@ -138,7 +138,7 @@ static void rtc_reset(void)
 #endif
 }
 
-static void rtc_isr(void *arg)
+static void rtc_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 

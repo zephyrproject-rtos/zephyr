@@ -631,9 +631,8 @@ tx_disable:
 static uint32_t i2s_stm32_irq_count;
 static uint32_t i2s_stm32_irq_ovr_count;
 
-static void i2s_stm32_isr(void *arg)
+static void i2s_stm32_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *) arg;
 	const struct i2s_stm32_cfg *cfg = DEV_CFG(dev);
 	struct i2s_stm32_data *const dev_data = DEV_DATA(dev);
 	struct stream *stream = &dev_data->rx;

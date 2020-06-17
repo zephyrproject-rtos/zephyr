@@ -213,7 +213,7 @@ uint32_t z_clock_elapsed(void)
 	return ticks;
 }
 
-static void xec_rtos_timer_isr(void *arg)
+static void xec_rtos_timer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
@@ -259,7 +259,7 @@ static void xec_rtos_timer_isr(void *arg)
 
 /* Non-tickless kernel build. */
 
-static void xec_rtos_timer_isr(void *arg)
+static void xec_rtos_timer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 

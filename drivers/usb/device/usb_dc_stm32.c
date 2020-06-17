@@ -206,7 +206,7 @@ static struct usb_dc_stm32_ep_state *usb_dc_stm32_get_ep_state(uint8_t ep)
 	return ep_state_base + USB_EP_GET_IDX(ep);
 }
 
-static void usb_dc_stm32_isr(void *arg)
+static void usb_dc_stm32_isr(const void *arg)
 {
 	HAL_PCD_IRQHandler(&usb_dc_stm32_state.pcd);
 }

@@ -57,9 +57,8 @@ enum gpio_regs {
 	GPIO_ICR_OFFSET = 0x41C,
 };
 
-static void gpio_stellaris_isr(void *arg)
+static void gpio_stellaris_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct gpio_stellaris_config * const cfg = DEV_CFG(dev);
 	struct gpio_stellaris_runtime *context = DEV_DATA(dev);
 	uint32_t base = cfg->base;

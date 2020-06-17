@@ -383,9 +383,8 @@ static int xlnx_quadspi_release(const struct device *dev,
 	return 0;
 }
 
-static void xlnx_quadspi_isr(void *arg)
+static void xlnx_quadspi_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct xlnx_quadspi_config *config = dev->config;
 	struct xlnx_quadspi_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;

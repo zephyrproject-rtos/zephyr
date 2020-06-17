@@ -216,7 +216,7 @@ static void rng_pool_init(struct rng_pool *rngp, uint16_t size,
 	rngp->threshold	  = threshold;
 }
 
-static void stm32_rng_isr(void *arg)
+static void stm32_rng_isr(const void *arg)
 {
 	int byte, ret;
 

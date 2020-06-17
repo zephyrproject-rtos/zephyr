@@ -465,15 +465,13 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 	}
 }
 
-static void eth_isr(void *arg)
+static void eth_isr(const struct device *dev)
 {
-	const struct device *dev;
 	struct eth_stm32_hal_dev_data *dev_data;
 	ETH_HandleTypeDef *heth;
 
-	__ASSERT_NO_MSG(arg != NULL);
+	__ASSERT_NO_MSG(dev != NULL);
 
-	dev = (const struct device *)arg;
 	dev_data = DEV_DATA(dev);
 
 	__ASSERT_NO_MSG(dev_data != NULL);

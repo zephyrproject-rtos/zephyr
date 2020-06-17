@@ -36,7 +36,7 @@ uint32_t z_timer_cycle_get_32(void)
  * Interrupt handler for the timer interrupt
  * Announce to the kernel that a number of ticks have passed
  */
-static void np_timer_isr(void *arg)
+static void np_timer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 

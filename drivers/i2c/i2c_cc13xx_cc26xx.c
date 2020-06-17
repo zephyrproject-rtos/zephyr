@@ -284,7 +284,7 @@ static int i2c_cc13xx_cc26xx_configure(const struct device *dev,
 	return 0;
 }
 
-static void i2c_cc13xx_cc26xx_isr(void *arg)
+static void i2c_cc13xx_cc26xx_isr(const void *arg)
 {
 	const uint32_t base = get_dev_config(arg)->base;
 	struct i2c_cc13xx_cc26xx_data *data = get_dev_data(arg);

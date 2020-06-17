@@ -169,9 +169,8 @@ static int mcux_lpi2c_transfer(const struct device *dev, struct i2c_msg *msgs,
 	return 0;
 }
 
-static void mcux_lpi2c_isr(void *arg)
+static void mcux_lpi2c_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct mcux_lpi2c_config *config = dev->config;
 	struct mcux_lpi2c_data *data = dev->data;
 	LPI2C_Type *base = config->base;

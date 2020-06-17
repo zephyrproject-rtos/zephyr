@@ -53,9 +53,8 @@ static ALWAYS_INLINE uint32_t dw_read(uint32_t dma_base, uint32_t reg)
 	return *((volatile uint32_t*)(dma_base + reg));
 }
 
-static void dw_dma_isr(void *arg)
+static void dw_dma_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct dw_dma_dev_cfg *const dev_cfg = DEV_CFG(dev);
 	struct dw_dma_dev_data *const dev_data = DEV_DATA(dev);
 	struct dma_chan_data *chan_data;

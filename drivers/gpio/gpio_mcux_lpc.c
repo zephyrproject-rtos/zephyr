@@ -183,9 +183,8 @@ static int gpio_mcux_lpc_port_toggle_bits(const struct device *dev,
 	return 0;
 }
 
-static void gpio_mcux_lpc_port_isr(void *arg)
+static void gpio_mcux_lpc_port_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct gpio_mcux_lpc_config *config = dev->config;
 	struct gpio_mcux_lpc_data *data = dev->data;
 	uint32_t enabled_int;
@@ -251,7 +250,7 @@ static uint32_t attach_pin_to_isr(uint32_t port, uint32_t pin, uint32_t isr_no)
 	return pint_idx;
 }
 
-static void gpio_mcux_lpc_port_isr(void *arg);
+static void gpio_mcux_lpc_port_isr(const struct device *dev);
 
 
 static int gpio_mcux_lpc_pin_interrupt_configure(const struct device *dev,

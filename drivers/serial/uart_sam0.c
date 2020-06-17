@@ -661,9 +661,8 @@ static void uart_sam0_poll_out(const struct device *dev, unsigned char c)
 
 #if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API
 
-static void uart_sam0_isr(void *arg)
+static void uart_sam0_isr(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct uart_sam0_dev_data *const dev_data = DEV_DATA(dev);
 
 #if CONFIG_UART_INTERRUPT_DRIVEN

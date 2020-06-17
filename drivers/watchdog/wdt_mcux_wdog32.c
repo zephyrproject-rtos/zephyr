@@ -153,9 +153,8 @@ static int mcux_wdog32_feed(const struct device *dev, int channel_id)
 	return 0;
 }
 
-static void mcux_wdog32_isr(void *arg)
+static void mcux_wdog32_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct mcux_wdog32_config *config = dev->config;
 	struct mcux_wdog32_data *data = dev->data;
 	WDOG_Type *base = config->base;

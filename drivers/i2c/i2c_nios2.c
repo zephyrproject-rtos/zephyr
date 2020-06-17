@@ -141,9 +141,8 @@ i2c_transfer_err:
 	return rc;
 }
 
-static void i2c_nios2_isr(void *arg)
+static void i2c_nios2_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	struct i2c_nios2_config *config = DEV_CFG(dev);
 
 	/* Call Altera HAL driver ISR */

@@ -395,9 +395,8 @@ static int pl011_init(const struct device *dev)
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-void pl011_isr(void *arg)
+void pl011_isr(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct pl011_data *data = DEV_DATA(dev);
 
 	/* Verify if the callback has been registered */
