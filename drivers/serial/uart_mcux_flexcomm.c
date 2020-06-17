@@ -44,7 +44,7 @@ static int mcux_flexcomm_poll_in(struct device *dev, unsigned char *c)
 	uint32_t flags = USART_GetStatusFlags(config->base);
 	int ret = -1;
 
-	if (flags & kUSART_RxFifoFullFlag) {
+	if (flags & kUSART_RxFifoNotEmptyFlag) {
 		*c = USART_ReadByte(config->base);
 		ret = 0;
 	}
