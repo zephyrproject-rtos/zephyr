@@ -220,8 +220,13 @@ typedef void (*_timeout_func_t)(struct _timeout *t);
 
 struct _timeout {
 	sys_dnode_t node;
-	int32_t dticks;
 	_timeout_func_t fn;
+#ifdef CONFIG_TIMEOUT_64BIT
+	/* Can't use k_ticks_t for header dependency reasons */
+	uint64_t dticks;
+#else
+	uint32_t dticks;
+#endif
 };
 
 /* kernel spinlock type */
