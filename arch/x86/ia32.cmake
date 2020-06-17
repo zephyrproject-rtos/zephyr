@@ -65,29 +65,7 @@ add_subdirectory(core)
 get_property(OUTPUT_ARCH   GLOBAL PROPERTY PROPERTY_OUTPUT_ARCH)
 get_property(OUTPUT_FORMAT GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
 
-# Convert the .bin file argument to a .o file, create a wrapper
-# library for the .o file, and register the library as a generated
-# file that is to be linked in after the first link.
-function(add_bin_file_to_the_next_link target_dependency bin)
-  add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${bin}.o
-    COMMAND
-    ${CMAKE_OBJCOPY}
-    -I binary
-    -B ${OUTPUT_ARCH}
-    -O ${OUTPUT_FORMAT}
-    --rename-section .data=${bin},CONTENTS,ALLOC,LOAD,READONLY,DATA
-    ${bin}.bin
-    ${bin}.o
-    DEPENDS ${target_dependency} ${bin}.bin
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    )
-  add_custom_target(${bin}_o DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${bin}.o)
-  add_library(${bin} STATIC IMPORTED GLOBAL)
-  set_property(TARGET ${bin} PROPERTY IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/${bin}.o)
-  add_dependencies(${bin} ${bin}_o)
-  set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_OBJECT_FILES ${bin})
-endfunction()
+
 
 add_bin_file_to_the_next_link(gen_idt_output staticIdt)
 add_bin_file_to_the_next_link(gen_idt_output irq_int_vector_map)
