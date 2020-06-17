@@ -31,7 +31,7 @@ menu "Board Options"
 config QEMU_ICOUNT
 	bool "QEMU icount mode"
 	depends on QEMU_TARGET
-	default y if !NETWORKING
+	default y if !NETWORKING && !BT
 	help
 	  Enable QEMU virtual instruction counter. The virtual cpu will
 	  execute one instruction every 2^N ns of virtual time. This will
