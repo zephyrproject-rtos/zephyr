@@ -19,6 +19,8 @@ LOG_MODULE_REGISTER(net_ipv4_autoconf, CONFIG_NET_IPV4_AUTO_LOG_LEVEL);
 #include <net/net_core.h>
 #include <net/net_if.h>
 
+#include <random/rand32.h>
+
 #include "ipv4_autoconf_internal.h"
 
 /* Have only one timer in order to save memory */

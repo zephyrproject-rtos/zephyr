@@ -14,6 +14,7 @@
 #include <misc/printk.h>
 #include <misc/byteorder.h>
 #include <zephyr.h>
+#include <random/rand32.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>

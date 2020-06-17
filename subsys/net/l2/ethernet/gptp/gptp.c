@@ -11,6 +11,8 @@ LOG_MODULE_REGISTER(net_gptp, CONFIG_NET_GPTP_LOG_LEVEL);
 #include <ptp_clock.h>
 #include <net/ethernet_mgmt.h>
 
+#include <random/rand32.h>
+
 #include <net/gptp.h>
 
 #include "gptp_messages.h"

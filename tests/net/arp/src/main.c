@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_ARP_LOG_LEVEL);
 #include <net/net_ip.h>
 #include <net/dummy.h>
 #include <ztest.h>
+#include <random/rand32.h>
 
 #include "arp.h"
 

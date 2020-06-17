@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <stdbool.h>
 #include <errno.h>
 #include <stddef.h>
+#include <random/rand32.h>
 
 #include <net/net_pkt.h>
 #include <net/net_core.h>

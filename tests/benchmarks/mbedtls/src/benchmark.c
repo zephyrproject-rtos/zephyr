@@ -69,6 +69,7 @@
 
 #include <zephyr/types.h>
 #include <misc/byteorder.h>
+#include <random/rand32.h>
 
 #include "kernel.h"
 

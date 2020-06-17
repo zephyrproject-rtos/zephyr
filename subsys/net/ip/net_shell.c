@@ -23,6 +23,8 @@ LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 #include <net/dns_resolve.h>
 #include <misc/printk.h>
 
+#include <random/rand32.h>
+
 #include "route.h"
 #include "icmpv6.h"
 #include "icmpv4.h"

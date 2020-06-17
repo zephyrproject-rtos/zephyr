@@ -23,6 +23,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 #include <net/net_if.h>
 #include <net/dns_resolve.h>
 
+#include <random/rand32.h>
+
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
 

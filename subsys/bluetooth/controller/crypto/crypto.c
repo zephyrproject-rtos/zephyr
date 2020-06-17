@@ -12,6 +12,8 @@
 
 #include "hal/ecb.h"
 
+#include <random/rand32.h>
+
 int bt_rand(void *buf, size_t len)
 {
 	u8_t *buf8 = buf;

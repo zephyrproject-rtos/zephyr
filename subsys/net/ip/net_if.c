@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #include <net/net_if.h>
 #include <net/net_mgmt.h>
 #include <net/ethernet.h>
+#include <random/rand32.h>
 
 #include "net_private.h"
 #include "ipv6.h"

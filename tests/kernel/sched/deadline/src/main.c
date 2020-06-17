@@ -5,6 +5,7 @@
  */
 #include <zephyr.h>
 #include <ztest.h>
+#include <random/rand32.h>
 
 #define NUM_THREADS 8
 #define STACK_SIZE (256 + CONFIG_TEST_EXTRA_STACKSIZE)

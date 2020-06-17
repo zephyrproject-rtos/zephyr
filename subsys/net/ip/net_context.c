@@ -25,6 +25,8 @@ LOG_MODULE_REGISTER(net_ctx, CONFIG_NET_CONTEXT_LOG_LEVEL);
 #include <net/ethernet.h>
 #include <net/socket_can.h>
 
+#include <random/rand32.h>
+
 #include "connection.h"
 #include "net_private.h"
 

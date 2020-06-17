@@ -30,6 +30,7 @@
 #include <init.h>
 #include <tracing.h>
 #include <stdbool.h>
+#include <random/rand32.h>
 
 extern struct _static_thread_data _static_thread_data_list_start[];
 extern struct _static_thread_data _static_thread_data_list_end[];

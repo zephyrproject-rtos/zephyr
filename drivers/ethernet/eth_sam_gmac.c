@@ -28,6 +28,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <device.h>
 #include <misc/__assert.h>
 #include <misc/util.h>
+#include <random/rand32.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <net/net_pkt.h>
