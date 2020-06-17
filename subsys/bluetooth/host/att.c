@@ -130,6 +130,7 @@ static void att_req_destroy(struct bt_att_req *req)
 typedef void (*bt_att_chan_sent_t)(struct bt_att_chan *chan);
 
 static bt_att_chan_sent_t chan_cb(struct net_buf *buf);
+static bt_conn_tx_cb_t att_cb(bt_att_chan_sent_t cb);
 
 void att_sent(struct bt_conn *conn, void *user_data)
 {
@@ -151,17 +152,17 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf,
 
 	BT_DBG("code 0x%02x", hdr->code);
 
-	/* Check if sent is pending already, if it does it cannot be modified
-	 * so the operation will need to be queued.
-	 */
-	if (atomic_test_and_set_bit(chan->flags, ATT_PENDING_SENT)) {
-		return -EAGAIN;
-	}
-
-	chan->sent = cb ? cb : chan_cb(buf);
-
 	if (IS_ENABLED(CONFIG_BT_EATT) &&
 	    atomic_test_bit(chan->flags, ATT_ENHANCED)) {
+		/* Check if sent is pending already, if it does it cannot be
+		 * modified so the operation will need to be queued.
+		 */
+		if (atomic_test_and_set_bit(chan->flags, ATT_PENDING_SENT)) {
+			return -EAGAIN;
+		}
+
+		chan->sent = cb ? cb : chan_cb(buf);
+
 		if (hdr->code == BT_ATT_OP_SIGNED_WRITE_CMD) {
 			return -ENOTSUP;
 		}
@@ -187,8 +188,10 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf,
 		}
 	}
 
+	chan->sent = cb ? cb : chan_cb(buf);
+
 	return bt_l2cap_send_cb(chan->att->conn, BT_L2CAP_CID_ATT, buf,
-				att_sent, &chan->chan.chan);
+				att_cb(chan->sent), &chan->chan.chan);
 }
 
 static int process_queue(struct bt_att_chan *chan, struct k_fifo *queue)
@@ -323,6 +326,55 @@ static bt_att_chan_sent_t chan_cb(struct net_buf *buf)
 		return chan_req_sent;
 	default:
 		return NULL;
+	}
+}
+
+static void att_cfm_sent(struct bt_conn *conn, void *user_data)
+{
+	struct bt_l2cap_chan *ch = user_data;
+	struct bt_att_chan *chan = ATT_CHAN(ch);
+
+	BT_DBG("conn %p chan %p", conn, chan);
+
+	chan->sent = chan_cfm_sent;
+
+	att_sent(conn, user_data);
+}
+
+static void att_rsp_sent(struct bt_conn *conn, void *user_data)
+{
+	struct bt_l2cap_chan *ch = user_data;
+	struct bt_att_chan *chan = ATT_CHAN(ch);
+
+	BT_DBG("conn %p chan %p", conn, chan);
+
+	chan->sent = chan_rsp_sent;
+
+	att_sent(conn, user_data);
+}
+
+static void att_req_sent(struct bt_conn *conn, void *user_data)
+{
+	struct bt_l2cap_chan *ch = user_data;
+	struct bt_att_chan *chan = ATT_CHAN(ch);
+
+	BT_DBG("conn %p chan %p", conn, chan);
+
+	chan->sent = chan_req_sent;
+
+	att_sent(conn, user_data);
+}
+
+static bt_conn_tx_cb_t att_cb(bt_att_chan_sent_t cb)
+{
+	if (cb == chan_rsp_sent) {
+		return att_rsp_sent;
+	} else if (cb == chan_cfm_sent) {
+		return att_cfm_sent;
+	} else if (cb == chan_req_sent) {
+		return att_req_sent;
+	} else {
+		return att_sent;
 	}
 }
 
