@@ -340,11 +340,11 @@ SECTIONS
 	__data_ram_end = .;
 
 	/* All unused memory also owned by the kernel for heaps */
-	__kernel_ram_end = PHYS_RAM_ADDR + PHYS_RAM_SIZE;
+	__kernel_ram_end = KERNEL_BASE_ADDR + KERNEL_RAM_SIZE;
 	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
 
 	_image_ram_end = .;
-	_image_ram_all = (PHYS_RAM_ADDR + PHYS_RAM_SIZE) - _image_ram_start;
+	_image_ram_all = (KERNEL_BASE_ADDR + KERNEL_RAM_SIZE) - _image_ram_start;
 
 	_end = .; /* end of image */
 
