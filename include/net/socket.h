@@ -753,13 +753,19 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 #define SOL_SOCKET 1
 
 /* Socket options for SOL_SOCKET level */
-/** sockopt: Enable server address reuse (ignored, for compatibility) */
+/** sockopt: Enable server address reuse */
 #define SO_REUSEADDR 2
 /** sockopt: Async error (ignored, for compatibility) */
 #define SO_ERROR 4
 #define SO_RCVTIMEO 20
 #define SO_SNDTIMEO 21
 #define SO_BINDTODEVICE 25
+/** sockopt: disable all replies to unexpected traffics */
+#define SO_SILENCE_ALL 30
+/** sockopt: disable IPv4 ICMP replies */
+#define SO_IP_ECHO_REPLY 31
+/** sockopt: disable IPv6 ICMP replies */
+#define SO_IPV6_ECHO_REPLY 32
 
 /** sockopt: Timestamp TX packets */
 #define SO_TIMESTAMPING 37
