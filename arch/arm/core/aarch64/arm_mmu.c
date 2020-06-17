@@ -96,34 +96,28 @@ static uint64_t base_xlat_table[NUM_BASE_LEVEL_ENTRIES]
 static uint64_t xlat_tables[CONFIG_MAX_XLAT_TABLES][XLAT_TABLE_ENTRIES]
 		__aligned(XLAT_TABLE_ENTRIES * sizeof(uint64_t));
 
+#if (CONFIG_ARM64_PA_BITS == 48)
+#define TCR_PS_BITS TCR_PS_BITS_256TB
+#elif (CONFIG_ARM64_PA_BITS == 44)
+#define TCR_PS_BITS TCR_PS_BITS_16TB
+#elif (CONFIG_ARM64_PA_BITS == 42)
+#define TCR_PS_BITS TCR_PS_BITS_4TB
+#elif (CONFIG_ARM64_PA_BITS == 40)
+#define TCR_PS_BITS TCR_PS_BITS_1TB
+#elif (CONFIG_ARM64_PA_BITS == 36)
+#define TCR_PS_BITS TCR_PS_BITS_64GB
+#else
+#define TCR_PS_BITS TCR_PS_BITS_4GB
+#endif
+
 /* Translation table control register settings */
 static uint64_t get_tcr(int el)
 {
 	uint64_t tcr;
-	uint64_t pa_bits = CONFIG_ARM64_PA_BITS;
 	uint64_t va_bits = CONFIG_ARM64_VA_BITS;
 	uint64_t tcr_ps_bits;
 
-	switch (pa_bits) {
-	case 48:
-		tcr_ps_bits = TCR_PS_BITS_256TB;
-		break;
-	case 44:
-		tcr_ps_bits = TCR_PS_BITS_16TB;
-		break;
-	case 42:
-		tcr_ps_bits = TCR_PS_BITS_4TB;
-		break;
-	case 40:
-		tcr_ps_bits = TCR_PS_BITS_1TB;
-		break;
-	case 36:
-		tcr_ps_bits = TCR_PS_BITS_64GB;
-		break;
-	default:
-		tcr_ps_bits = TCR_PS_BITS_4GB;
-		break;
-	}
+	tcr_ps_bits = TCR_PS_BITS;
 
 	if (el == 1) {
 		tcr = (tcr_ps_bits << TCR_EL1_IPS_SHIFT);
