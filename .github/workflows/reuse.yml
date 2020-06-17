@@ -1,0 +1,24 @@
+name: REUSE Compliance Check
+
+on: [push, pull_request]
+
+jobs:
+  reuse:
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout
+      uses: actions/checkout@v2
+
+
+    - name: upload-build
+      uses: actions/upload-artifact@master
+      continue-on-error: True
+      with:
+        name: zephyr.spdx
+        path: zephyr.spdx
+
+    - name: REUSE Compliance Check
+      uses: fsfe/reuse-action@v1.1
+      with:
+        args: spdx --output zephyr.spdx
+
