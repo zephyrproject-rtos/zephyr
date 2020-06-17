@@ -14,6 +14,8 @@
 
 #include <inttypes.h>
 
+#include <random/rand32.h>
+
 #include "test_gpio.h"
 
 void test_gpio_pin_read_write(void)

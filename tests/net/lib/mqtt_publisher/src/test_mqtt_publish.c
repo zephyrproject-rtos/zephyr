@@ -10,6 +10,7 @@ LOG_MODULE_REGISTER(net_test, LOG_LEVEL_WRN);
 #include <net/mqtt.h>
 #include <net/socket.h>
 #include <ztest.h>
+#include <random/rand32.h>
 
 #include <string.h>
 #include <errno.h>

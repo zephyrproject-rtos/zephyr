@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(net_dns_resolve, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <random/rand32.h>
 
 #include <net/net_ip.h>
 #include <net/net_pkt.h>

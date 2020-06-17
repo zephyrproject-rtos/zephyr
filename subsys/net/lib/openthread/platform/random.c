@@ -7,6 +7,8 @@
 #include <kernel.h>
 #include <string.h>
 
+#include <random/rand32.h>
+
 #include <openthread/platform/random.h>
 
 #include "platform-zephyr.h"

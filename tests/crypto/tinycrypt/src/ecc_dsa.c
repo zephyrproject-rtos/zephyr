@@ -71,6 +71,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ztest.h>
+#include <random/rand32.h>
 
 /* Maximum size of message to be signed. */
 #define BUF_SIZE 256

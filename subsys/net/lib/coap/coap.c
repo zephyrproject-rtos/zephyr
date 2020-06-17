@@ -16,6 +16,8 @@ LOG_MODULE_REGISTER(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <zephyr/types.h>
 #include <misc/byteorder.h>
 
+#include <random/rand32.h>
+
 #include <net/net_ip.h>
 #include <net/net_core.h>
 #include <net/coap.h>

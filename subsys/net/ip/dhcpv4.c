@@ -26,6 +26,8 @@ LOG_MODULE_REGISTER(net_dhcpv4, CONFIG_NET_DHCPV4_LOG_LEVEL);
 #include <net/dhcpv4.h>
 #include <net/dns_resolve.h>
 
+#include <random/rand32.h>
+
 #include "dhcpv4.h"
 #include "ipv4.h"
 
