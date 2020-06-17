@@ -546,7 +546,7 @@ class DeviceHandler(Handler):
     def handle(self):
         out_state = "failed"
 
-        if self.suite.west_flash:
+        if self.suite.west_flash is not None:
             command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
             if self.suite.west_runner:
                 command.append("--runner")
