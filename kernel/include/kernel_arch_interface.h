@@ -219,6 +219,24 @@ static inline bool arch_is_in_isr(void);
  */
 
 /**
+ * Early boot console output hook
+ *
+ * Definition of this function is optional. If implemented, any invocation
+ * of printk() (or logging calls with CONFIG_LOG_MINIMAL which are backed by
+ * printk) will default to sending characters to this function. It is
+ * useful for early boot debugging before main serial or console drivers
+ * come up.
+ *
+ * This can be overridden at runtime with __printk_hook_install().
+ *
+ * The default __weak implementation of this does nothing.
+ *
+ * @param c Character to print
+ * @return The character printed
+ */
+int arch_printk_char_out(int c);
+
+/**
  * Architecture-specific kernel initialization hook
  *
  * This function is invoked near the top of _Cstart, for additional
