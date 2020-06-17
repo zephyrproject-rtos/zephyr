@@ -48,7 +48,8 @@
 	defined(CONFIG_BOARD_BL652_DVK) || \
 	defined(CONFIG_BOARD_BL654_DVK) || \
 	defined(CONFIG_BOARD_DEGU_EVK) || \
-	defined(CONFIG_BOARD_ADAFRUIT_FEATHER_NRF52840)
+	defined(CONFIG_BOARD_ADAFRUIT_FEATHER_NRF52840)	|| \
+	defined(CONFIG_BOARD_RUUVI_RUUVITAG)
 
 #include <hal/nrf_saadc.h>
 #define ADC_DEVICE_NAME		DT_LABEL(DT_INST(0, nordic_nrf_saadc))
