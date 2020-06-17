@@ -49,26 +49,20 @@
 #define OPENTHREAD_CONFIG_LOG_PREPEND_LEVEL                     0
 
 /**
- * @def OPENTHREAD_CONFIG_SOFTWARE_ACK_TIMEOUT_ENABLE
+ * @def OPENTHREAD_CONFIG_MAC_SOFTWARE_ACK_TIMEOUT_ENABLE
  *
  * Define to 1 to enable software ACK timeout logic.
  *
- * Applicable only if raw link layer API is enabled
- * (i.e., `OPENTHREAD_CONFIG_LINK_RAW_ENABLE` is set).
- *
  */
-#define OPENTHREAD_CONFIG_SOFTWARE_ACK_TIMEOUT_ENABLE           1
+#define OPENTHREAD_CONFIG_MAC_SOFTWARE_ACK_TIMEOUT_ENABLE       1
 
 /**
- * @def OPENTHREAD_CONFIG_SOFTWARE_RETRANSMIT_ENABLE
+ * @def OPENTHREAD_CONFIG_MAC_SOFTWARE_RETRANSMIT_ENABLE
  *
  * Define to 1 to enable software retransmission logic.
  *
- * Applicable only if raw link layer API is enabled
- * (i.e., `OPENTHREAD_CONFIG_LINK_RAW_ENABLE` is set).
- *
  */
-#define OPENTHREAD_CONFIG_SOFTWARE_RETRANSMIT_ENABLE            1
+#define OPENTHREAD_CONFIG_MAC_SOFTWARE_RETRANSMIT_ENABLE        1
 
 /**
  * @def SETTINGS_CONFIG_BASE_ADDRESS
