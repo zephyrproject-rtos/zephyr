@@ -50,7 +50,8 @@ request author is not able to do so).
 
 .. note::
   Developers should try to limit the above practice to pull requests identified
-  as *stale*.
+  as *stale*. Read about how to identify pull requests as stale in
+  :ref:`development processes and tools <dev-environment-and-tools>`
 
 If the original patches are substantially modified, the developer can either:
 
