@@ -103,6 +103,7 @@ kobjects = OrderedDict([
     ("z_thread_stack_element", (None, False, False)),
     ("device", (None, False, False)),
     ("NET_SOCKET", (None, False, False)),
+    ("net_if", (None, False, False)),
     ("sys_mutex", (None, True, False)),
     ("k_futex", (None, True, False))
 ])
