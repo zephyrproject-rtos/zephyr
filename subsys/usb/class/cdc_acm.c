@@ -215,10 +215,10 @@ int cdc_acm_class_handle_req(struct usb_setup_packet *pSetup,
 	struct usb_dev_data *common;
 
 	common = usb_get_dev_data_by_iface(&cdc_acm_data_devlist,
-					   sys_le16_to_cpu(pSetup->wIndex));
+					   (uint8_t)pSetup->wIndex);
 	if (common == NULL) {
 		LOG_WRN("Device data not found for interface %u",
-			sys_le16_to_cpu(pSetup->wIndex));
+			pSetup->wIndex);
 		return -ENODEV;
 	}
 
@@ -236,7 +236,7 @@ int cdc_acm_class_handle_req(struct usb_setup_packet *pSetup,
 		break;
 
 	case SET_CONTROL_LINE_STATE:
-		dev_data->line_state = (uint8_t)sys_le16_to_cpu(pSetup->wValue);
+		dev_data->line_state = (uint8_t)pSetup->wValue;
 		LOG_DBG("CDC_SET_CONTROL_LINE_STATE 0x%x",
 			dev_data->line_state);
 		break;

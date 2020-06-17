@@ -137,7 +137,7 @@ static int hid_on_get_idle(struct hid_device_info *dev_data,
 			   uint8_t **data)
 {
 #ifdef CONFIG_USB_DEVICE_SOF
-	uint8_t report_id = sys_le16_to_cpu(setup->wValue) & 0xFF;
+	uint8_t report_id = (uint8_t)setup->wValue;
 
 	if (report_id > CONFIG_USB_HID_REPORTS) {
 		LOG_ERR("Report id out of limit: %d", report_id);
@@ -194,8 +194,8 @@ static int hid_on_set_idle(struct hid_device_info *dev_data,
 			   uint8_t **data)
 {
 #ifdef CONFIG_USB_DEVICE_SOF
-	uint8_t rate = ((sys_le16_to_cpu(setup->wValue) & 0xFF00) >> 8);
-	uint8_t report_id = sys_le16_to_cpu(setup->wValue) & 0xFF;
+	uint8_t rate = (uint8_t)(setup->wValue >> 8);
+	uint8_t report_id = (uint8_t)setup->wValue;
 
 	if (report_id > CONFIG_USB_HID_REPORTS) {
 		LOG_ERR("Report id out of limit: %d", report_id);
@@ -258,7 +258,7 @@ static int hid_on_set_protocol(struct hid_device_info *dev_data,
 			       uint8_t **data)
 {
 #ifdef CONFIG_USB_HID_BOOT_PROTOCOL
-	uint16_t protocol = sys_le16_to_cpu(setup->wValue);
+	uint16_t protocol = (uint8_t)setup->wValue;
 
 	if (protocol > HID_PROTOCOL_REPORT) {
 		LOG_ERR("Unsupported protocol: %u", protocol);
@@ -404,14 +404,15 @@ static int hid_class_handle_req(struct usb_setup_packet *setup,
 	struct hid_device_info *dev_data;
 	struct usb_dev_data *common;
 
-	LOG_DBG("Class request: bRequest 0x%x bmRequestType 0x%x len %d",
+	LOG_DBG("Class request:"
+		"bRequest 0x%02x, bmRequestType 0x%02x len %d",
 		setup->bRequest, setup->bmRequestType, *len);
 
 	common = usb_get_dev_data_by_iface(&usb_hid_devlist,
-					   sys_le16_to_cpu(setup->wIndex));
+					   (uint8_t)setup->wIndex);
 	if (common == NULL) {
 		LOG_WRN("Device data not found for interface %u",
-			sys_le16_to_cpu(setup->wIndex));
+			setup->wIndex);
 		return -ENODEV;
 	}
 
@@ -447,7 +448,7 @@ static int hid_class_handle_req(struct usb_setup_packet *setup,
 			}
 			break;
 		default:
-			LOG_ERR("Unhandled request 0x%x", setup->bRequest);
+			LOG_ERR("Unhandled request 0x%02x", setup->bRequest);
 			break;
 		}
 	} else {
@@ -480,7 +481,7 @@ static int hid_class_handle_req(struct usb_setup_packet *setup,
 			}
 			break;
 		default:
-			LOG_ERR("Unhandled request 0x%x", setup->bRequest);
+			LOG_ERR("Unhandled request 0x%02x", setup->bRequest);
 			break;
 		}
 	}
@@ -491,15 +492,16 @@ static int hid_class_handle_req(struct usb_setup_packet *setup,
 static int hid_custom_handle_req(struct usb_setup_packet *setup,
 				 int32_t *len, uint8_t **data)
 {
-	LOG_DBG("Standard request: bRequest 0x%x bmRequestType 0x%x len %d",
+	LOG_DBG("Standard request:"
+		"bRequest 0x%02x, bmRequestType 0x%02x, len %d",
 		setup->bRequest, setup->bmRequestType, *len);
 
 	if (REQTYPE_GET_DIR(setup->bmRequestType) == REQTYPE_DIR_TO_HOST &&
 	    REQTYPE_GET_RECIP(setup->bmRequestType) ==
 					REQTYPE_RECIP_INTERFACE &&
 					setup->bRequest == REQ_GET_DESCRIPTOR) {
-		uint8_t value = sys_le16_to_cpu(setup->wValue) >> 8;
-		uint8_t iface_num = sys_le16_to_cpu(setup->wIndex);
+		uint8_t value = (uint8_t)(setup->wValue >> 8);
+		uint8_t iface_num = (uint8_t)setup->wIndex;
 		struct hid_device_info *dev_data;
 		struct usb_dev_data *common;
 		const struct usb_cfg_data *cfg;
@@ -508,7 +510,7 @@ static int hid_custom_handle_req(struct usb_setup_packet *setup,
 		common = usb_get_dev_data_by_iface(&usb_hid_devlist, iface_num);
 		if (common == NULL) {
 			LOG_WRN("Device data not found for interface %u",
-				sys_le16_to_cpu(setup->wIndex));
+				iface_num);
 			return -EINVAL;
 		}
 
