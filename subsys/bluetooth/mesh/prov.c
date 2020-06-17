@@ -613,7 +613,7 @@ int bt_mesh_input_string(const char *str)
 		return -EINVAL;
 	}
 
-	strncpy(link.auth, str, prov->input_size);
+	strncpy((char *)link.auth, str, prov->input_size);
 
 	send_input_complete();
 
