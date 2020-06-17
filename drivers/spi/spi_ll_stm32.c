@@ -409,9 +409,8 @@ static void spi_stm32_complete(struct spi_stm32_data *data, SPI_TypeDef *spi,
 }
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
-static void spi_stm32_isr(void *arg)
+static void spi_stm32_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *) arg;
 	const struct spi_stm32_config *cfg = dev->config;
 	struct spi_stm32_data *data = dev->data;
 	SPI_TypeDef *spi = cfg->spi;

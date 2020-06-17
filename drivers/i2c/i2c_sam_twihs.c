@@ -222,9 +222,8 @@ static int i2c_sam_twihs_transfer(const struct device *dev,
 	return 0;
 }
 
-static void i2c_sam_twihs_isr(void *arg)
+static void i2c_sam_twihs_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct i2c_sam_twihs_dev_cfg *const dev_cfg = DEV_CFG(dev);
 	struct i2c_sam_twihs_dev_data *const dev_data = DEV_DATA(dev);
 	Twihs *const twihs = dev_cfg->regs;

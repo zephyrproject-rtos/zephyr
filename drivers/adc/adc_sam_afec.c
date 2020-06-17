@@ -325,9 +325,8 @@ static const struct adc_driver_api adc_sam_api = {
 #endif
 };
 
-static void adc_sam_isr(void *arg)
+static void adc_sam_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	struct adc_sam_data *data = DEV_DATA(dev);
 	const struct adc_sam_cfg *const cfg = DEV_CFG(dev);
 	Afec *const afec = cfg->regs;

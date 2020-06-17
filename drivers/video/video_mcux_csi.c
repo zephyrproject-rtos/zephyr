@@ -349,7 +349,7 @@ static int video_mcux_csi_get_caps(const struct device *dev,
 }
 
 extern void CSI_DriverIRQHandler(void);
-static void video_mcux_csi_isr(void *p)
+static void video_mcux_csi_isr(const void *p)
 {
 	ARG_UNUSED(p);
 	CSI_DriverIRQHandler();

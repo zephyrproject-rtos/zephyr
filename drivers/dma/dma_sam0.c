@@ -31,9 +31,8 @@ struct dma_sam0_data {
 
 
 /* Handles DMA interrupts and dispatches to the individual channel */
-static void dma_sam0_isr(void *arg)
+static void dma_sam0_isr(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct dma_sam0_data *data = DEV_DATA(dev);
 	struct dma_sam0_channel *chdata;
 	uint16_t pend = DMA_REGS->INTPEND.reg;

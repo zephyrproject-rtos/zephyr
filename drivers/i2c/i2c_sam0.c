@@ -126,9 +126,8 @@ static bool i2c_sam0_terminate_on_error(const struct device *dev)
 	return true;
 }
 
-static void i2c_sam0_isr(void *arg)
+static void i2c_sam0_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
 	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
 	SercomI2cm *i2c = cfg->regs;

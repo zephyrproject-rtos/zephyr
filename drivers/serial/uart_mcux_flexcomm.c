@@ -231,9 +231,8 @@ static void mcux_flexcomm_irq_callback_set(const struct device *dev,
 	data->cb_data = cb_data;
 }
 
-static void mcux_flexcomm_isr(void *arg)
+static void mcux_flexcomm_isr(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct mcux_flexcomm_data *data = dev->data;
 
 	if (data->callback) {

@@ -34,9 +34,8 @@ struct mcux_mailbox_data {
 	void *callback_ctx;
 };
 
-static void mcux_mailbox_isr(void *arg)
+static void mcux_mailbox_isr(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct mcux_mailbox_data *data = dev->data;
 	const struct mcux_mailbox_config *config = dev->config;
 	mailbox_cpu_id_t cpu_id;

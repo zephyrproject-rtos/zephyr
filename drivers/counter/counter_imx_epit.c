@@ -29,9 +29,8 @@ static inline const struct imx_epit_config *get_epit_config(const struct device 
 			    info);
 }
 
-static void imx_epit_isr(void *arg)
+static void imx_epit_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	EPIT_Type *base = get_epit_config(dev)->base;
 	struct imx_epit_data *driver_data = dev->data;
 

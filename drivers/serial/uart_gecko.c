@@ -275,9 +275,8 @@ static void uart_gecko_irq_callback_set(struct device *dev,
 	data->cb_data = cb_data;
 }
 
-static void uart_gecko_isr(void *arg)
+static void uart_gecko_isr(const struct device *dev)
 {
-	struct device *dev = arg;
 	struct uart_gecko_data *data = dev->data;
 
 	if (data->callback) {

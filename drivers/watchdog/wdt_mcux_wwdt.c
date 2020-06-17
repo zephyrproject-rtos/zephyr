@@ -131,9 +131,8 @@ static int mcux_wwdt_feed(const struct device *dev, int channel_id)
 	return 0;
 }
 
-static void mcux_wwdt_isr(void *arg)
+static void mcux_wwdt_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct mcux_wwdt_config *config = dev->config;
 	struct mcux_wwdt_data *data = dev->data;
 	WWDT_Type *base = config->base;

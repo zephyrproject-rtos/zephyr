@@ -289,9 +289,8 @@ static void uart_sam_irq_callback_set(const struct device *dev,
 	dev_data->irq_cb_data = cb_data;
 }
 
-static void uart_sam_isr(void *arg)
+static void uart_sam_isr(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct uart_sam_dev_data *const dev_data = DEV_DATA(dev);
 
 	if (dev_data->irq_cb) {

@@ -18,7 +18,7 @@
 static struct k_spinlock lock;
 static volatile uint64_t last_cycle;
 
-static void arm_arch_timer_compare_isr(void *arg)
+static void arm_arch_timer_compare_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 

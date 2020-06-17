@@ -145,7 +145,7 @@ static bool read_keyboard_matrix(uint8_t *new_state)
 	return key_event != 0U ? true : false;
 }
 
-static void scan_matrix_xec_isr(void *arg)
+static void scan_matrix_xec_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 

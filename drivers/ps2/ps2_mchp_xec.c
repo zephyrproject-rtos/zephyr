@@ -149,9 +149,8 @@ static int ps2_xec_enable_interface(const struct device *dev)
 
 	return 0;
 }
-static void ps2_xec_isr(void *arg)
+static void ps2_xec_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct ps2_xec_config *config = dev->config;
 	struct ps2_xec_data *data = dev->data;
 	PS2_Type *base = config->base;

@@ -889,9 +889,8 @@ static int i2s_sam_write(const struct device *dev, void *mem_block,
 	return 0;
 }
 
-static void i2s_sam_isr(void *arg)
+static void i2s_sam_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct i2s_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
 	struct i2s_sam_dev_data *const dev_data = DEV_DATA(dev);
 	Ssc *const ssc = dev_cfg->regs;

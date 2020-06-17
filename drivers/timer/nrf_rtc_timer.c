@@ -166,7 +166,7 @@ static void set_protected_absolute_alarm(uint32_t cycles)
  * it by pointer at runtime, maybe?) so we don't have this leaky
  * symbol.
  */
-void rtc_nrf_isr(void *arg)
+void rtc_nrf_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 	event_clear();

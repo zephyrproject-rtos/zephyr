@@ -87,7 +87,7 @@ void z_arc_slave_start(int cpu_num)
 
 #ifdef CONFIG_SMP
 
-static void sched_ipi_handler(void *unused)
+static void sched_ipi_handler(const void *unused)
 {
 	ARG_UNUSED(unused);
 

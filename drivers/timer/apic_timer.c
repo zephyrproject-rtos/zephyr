@@ -132,7 +132,7 @@ uint32_t z_clock_elapsed(void)
 	return ticks;
 }
 
-static void isr(void *arg)
+static void isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
@@ -166,7 +166,7 @@ static void isr(void *arg)
 
 #else
 
-static void isr(void *arg)
+static void isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 

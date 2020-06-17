@@ -203,9 +203,8 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 	}
 }
 
-static void mcux_adc16_isr(void *arg)
+static void mcux_adc16_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct mcux_adc16_config *config = dev->config;
 	struct mcux_adc16_data *data = dev->data;
 	ADC_Type *base = config->base;

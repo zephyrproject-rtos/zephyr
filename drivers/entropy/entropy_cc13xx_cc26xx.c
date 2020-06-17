@@ -136,7 +136,7 @@ static int entropy_cc13xx_cc26xx_get_entropy(const struct device *dev,
 	return 0;
 }
 
-static void entropy_cc13xx_cc26xx_isr(void *arg)
+static void entropy_cc13xx_cc26xx_isr(const void *arg)
 {
 	struct entropy_cc13xx_cc26xx_data *data = get_dev_data(arg);
 	uint32_t src = 0;

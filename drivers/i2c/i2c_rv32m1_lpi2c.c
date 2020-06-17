@@ -200,9 +200,8 @@ out:
 	return ret;
 }
 
-static void rv32m1_lpi2c_isr(void *arg)
+static void rv32m1_lpi2c_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct rv32m1_lpi2c_config *config = dev->config;
 	struct rv32m1_lpi2c_data *data = dev->data;
 

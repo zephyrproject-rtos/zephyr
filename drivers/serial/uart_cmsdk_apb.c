@@ -84,7 +84,7 @@ struct uart_cmsdk_apb_dev_data {
 	((volatile struct uart_cmsdk_apb *)(DEV_CFG(dev))->base)
 
 static const struct uart_driver_api uart_cmsdk_apb_driver_api;
-static void uart_cmsdk_apb_isr(void *arg);
+static void uart_cmsdk_apb_isr(const struct device *dev);
 
 /**
  * @brief Set the baud rate
@@ -419,9 +419,8 @@ static void uart_cmsdk_apb_irq_callback_set(const struct device *dev,
  *
  * @return N/A
  */
-void uart_cmsdk_apb_isr(void *arg)
+void uart_cmsdk_apb_isr(const struct device *dev)
 {
-	const struct device *dev = arg;
 	volatile struct uart_cmsdk_apb *uart = UART_STRUCT(dev);
 	struct uart_cmsdk_apb_dev_data *data = DEV_DATA(dev);
 

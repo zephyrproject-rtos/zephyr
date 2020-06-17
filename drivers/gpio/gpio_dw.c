@@ -487,9 +487,8 @@ static int gpio_dw_device_ctrl(const struct device *port,
 
 #define gpio_dw_unmask_int(...)
 
-static void gpio_dw_isr(void *arg)
+static void gpio_dw_isr(const struct device *port)
 {
-	const struct device *port = (const struct device *)arg;
 	struct gpio_dw_runtime *context = port->data;
 	uint32_t base_addr = dw_base_to_block_base(context->base_addr);
 	uint32_t int_status;

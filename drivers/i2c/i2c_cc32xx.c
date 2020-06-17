@@ -261,9 +261,8 @@ static void i2c_cc32xx_isr_handle_read(uint32_t base,
 	}
 }
 
-static void i2c_cc32xx_isr(void *arg)
+static void i2c_cc32xx_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	uint32_t base = DEV_BASE(dev);
 	struct i2c_cc32xx_data *data = DEV_DATA(dev);
 	uint32_t err_status;

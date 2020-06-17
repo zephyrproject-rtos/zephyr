@@ -45,9 +45,8 @@ struct ipm_adsp_data {
 	void *user_data;
 };
 
-static void ipm_adsp_isr(void *arg)
+static void ipm_adsp_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct ipm_adsp_data *data = dev->data;
 	uint32_t dipcctl, dipcie, dipct;
 

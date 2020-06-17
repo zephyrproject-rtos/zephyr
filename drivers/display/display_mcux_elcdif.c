@@ -164,9 +164,8 @@ static void mcux_elcdif_get_capabilities(const struct device *dev,
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
 
-static void mcux_elcdif_isr(void *arg)
+static void mcux_elcdif_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct mcux_elcdif_config *config = dev->config;
 	struct mcux_elcdif_data *data = dev->data;
 	uint32_t status;

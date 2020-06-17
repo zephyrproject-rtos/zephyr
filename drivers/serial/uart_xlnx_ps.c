@@ -1134,9 +1134,8 @@ static void uart_xlnx_ps_irq_callback_set(const struct device *dev,
  *
  * @return N/A
  */
-static void uart_xlnx_ps_isr(void *arg)
+static void uart_xlnx_ps_isr(const struct device *dev)
 {
-	const struct device *dev = arg;
 	const struct uart_xlnx_ps_dev_data_t *data = DEV_DATA(dev);
 
 	if (data->user_cb) {

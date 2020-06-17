@@ -227,10 +227,8 @@ err_mem:
 	eth_stellaris_rx_error(iface);
 }
 
-static void eth_stellaris_isr(void *arg)
+static void eth_stellaris_isr(const struct device *dev)
 {
-	/* Read the interrupt status */
-	const struct device *dev = (const struct device *)arg;
 	struct eth_stellaris_runtime *dev_data = DEV_DATA(dev);
 	int isr_val = sys_read32(REG_MACRIS);
 	uint32_t lock;

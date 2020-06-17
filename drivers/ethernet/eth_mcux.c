@@ -1214,9 +1214,8 @@ static const struct ethernet_api api_funcs = {
 };
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
-static void eth_mcux_ptp_isr(void *p)
+static void eth_mcux_ptp_isr(const struct device *dev)
 {
-	const struct device *dev = p;
 	struct eth_context *context = dev->data;
 
 	ENET_Ptp1588TimerIRQHandler(context->base, &context->enet_handle);
@@ -1224,9 +1223,8 @@ static void eth_mcux_ptp_isr(void *p)
 #endif
 
 #if DT_INST_IRQ_HAS_NAME(0, common)
-static void eth_mcux_dispacher_isr(void *p)
+static void eth_mcux_dispacher_isr(const struct device *dev)
 {
-	const struct device *dev = p;
 	struct eth_context *context = dev->data;
 	uint32_t EIR = ENET_GetInterruptStatus(context->base);
 	int irq_lock_key = irq_lock();
@@ -1247,9 +1245,8 @@ static void eth_mcux_dispacher_isr(void *p)
 #endif
 
 #if DT_INST_IRQ_HAS_NAME(0, rx)
-static void eth_mcux_rx_isr(void *p)
+static void eth_mcux_rx_isr(const struct device *dev)
 {
-	const struct device *dev = p;
 	struct eth_context *context = dev->data;
 
 	ENET_ReceiveIRQHandler(context->base, &context->enet_handle);
@@ -1257,9 +1254,8 @@ static void eth_mcux_rx_isr(void *p)
 #endif
 
 #if DT_INST_IRQ_HAS_NAME(0, tx)
-static void eth_mcux_tx_isr(void *p)
+static void eth_mcux_tx_isr(const struct device *dev)
 {
-	const struct device *dev = p;
 	struct eth_context *context = dev->data;
 
 	ENET_TransmitIRQHandler(context->base, &context->enet_handle);
@@ -1267,9 +1263,8 @@ static void eth_mcux_tx_isr(void *p)
 #endif
 
 #if DT_INST_IRQ_HAS_NAME(0, err_misc)
-static void eth_mcux_error_isr(void *p)
+static void eth_mcux_error_isr(const struct device *dev)
 {
-	const struct device *dev = p;
 	struct eth_context *context = dev->data;
 	uint32_t pending = ENET_GetInterruptStatus(context->base);
 

@@ -22,7 +22,7 @@
 
 static bool CPU_will_be_awaken_from_WFE;
 
-typedef void (*normal_irq_f_ptr)(void *);
+typedef void (*normal_irq_f_ptr)(const void *);
 typedef int (*direct_irq_f_ptr)(void);
 
 static struct _isr_list irq_vector_table[NRF_HW_NBR_IRQs];

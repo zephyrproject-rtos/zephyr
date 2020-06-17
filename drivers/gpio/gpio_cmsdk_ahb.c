@@ -191,9 +191,8 @@ static int gpio_cmsdk_ahb_pin_interrupt_configure(const struct device *dev,
 	return 0;
 }
 
-static void gpio_cmsdk_ahb_isr(void *arg)
+static void gpio_cmsdk_ahb_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config;
 	struct gpio_cmsdk_ahb_dev_data *data = dev->data;
 	uint32_t int_stat;

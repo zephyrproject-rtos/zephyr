@@ -56,7 +56,7 @@ static uint64_t mtime(void)
 #endif
 }
 
-static void timer_isr(void *arg)
+static void timer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 

@@ -46,9 +46,8 @@ static int dw_ictl_initialize(const struct device *dev)
 	return 0;
 }
 
-static void dw_ictl_isr(void *arg)
+static void dw_ictl_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct dw_ictl_config *config = dev->config;
 	volatile struct dw_ictl_registers * const regs =
 			(struct dw_ictl_registers *)config->base_addr;

@@ -549,13 +549,12 @@ static int i2c_esp32_transfer(const struct device *dev, struct i2c_msg *msgs,
 	return ret;
 }
 
-static void i2c_esp32_isr(void *arg)
+static void i2c_esp32_isr(const struct device *device)
 {
 	const int fifo_give_mask = I2C_ACK_ERR_INT_ST |
 				   I2C_TIME_OUT_INT_ST |
 				   I2C_TRANS_COMPLETE_INT_ST |
 				   I2C_ARBITRATION_LOST_INT_ST;
-	const struct device *device = arg;
 	const struct i2c_esp32_config *config = device->config;
 
 	if (sys_read32(I2C_INT_STATUS_REG(config->index)) & fifo_give_mask) {

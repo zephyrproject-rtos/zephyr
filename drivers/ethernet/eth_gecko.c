@@ -367,9 +367,8 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 	}
 }
 
-static void eth_isr(void *arg)
+static void eth_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	struct eth_gecko_dev_data *const dev_data = DEV_DATA(dev);
 	const struct eth_gecko_dev_cfg *const cfg = DEV_CFG(dev);
 	ETH_TypeDef *eth = cfg->regs;
@@ -381,7 +380,6 @@ static void eth_isr(void *arg)
 				ETH_IENS_AMBAERR);
 	uint32_t rx_irq_mask = (ETH_IENS_RXCMPLT | ETH_IENS_RXUSEDBITREAD);
 
-	__ASSERT_NO_MSG(arg != NULL);
 	__ASSERT_NO_MSG(dev_data != NULL);
 	__ASSERT_NO_MSG(cfg != NULL);
 

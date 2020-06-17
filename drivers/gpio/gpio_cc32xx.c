@@ -217,9 +217,8 @@ static int gpio_cc32xx_manage_callback(const struct device *dev,
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
-static void gpio_cc32xx_port_isr(void *arg)
+static void gpio_cc32xx_port_isr(const struct device *dev)
 {
-	const struct device *dev = arg;
 	const struct gpio_cc32xx_config *config = DEV_CFG(dev);
 	struct gpio_cc32xx_data *data = DEV_DATA(dev);
 	uint32_t int_status;

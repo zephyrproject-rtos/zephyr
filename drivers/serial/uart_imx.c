@@ -250,9 +250,8 @@ static void uart_imx_irq_callback_set(const struct device *dev,
  *
  * @return N/A
  */
-void uart_imx_isr(void *arg)
+void uart_imx_isr(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct imx_uart_data *data = dev->data;
 
 	if (data->callback) {

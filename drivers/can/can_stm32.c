@@ -173,14 +173,12 @@ void can_stm32_tx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
 
 #ifdef CONFIG_SOC_SERIES_STM32F0X
 
-static void can_stm32_isr(void *arg)
+static void can_stm32_isr(const struct device *dev)
 {
-	const struct device *dev;
 	struct can_stm32_data *data;
 	const struct can_stm32_config *cfg;
 	CAN_TypeDef *can;
 
-	dev = (const struct device *)arg;
 	data = DEV_DATA(dev);
 	cfg = DEV_CFG(dev);
 	can = cfg->can;
@@ -195,14 +193,12 @@ static void can_stm32_isr(void *arg)
 
 #else
 
-static void can_stm32_rx_isr(void *arg)
+static void can_stm32_rx_isr(const struct device *dev)
 {
-	const struct device *dev;
 	struct can_stm32_data *data;
 	const struct can_stm32_config *cfg;
 	CAN_TypeDef *can;
 
-	dev = (const struct device *)arg;
 	data = DEV_DATA(dev);
 	cfg = DEV_CFG(dev);
 	can = cfg->can;
@@ -210,14 +206,12 @@ static void can_stm32_rx_isr(void *arg)
 	can_stm32_rx_isr_handler(can, data);
 }
 
-static void can_stm32_tx_isr(void *arg)
+static void can_stm32_tx_isr(const struct device *dev)
 {
-	const struct device *dev;
 	struct can_stm32_data *data;
 	const struct can_stm32_config *cfg;
 	CAN_TypeDef *can;
 
-	dev = (const struct device *)arg;
 	data = DEV_DATA(dev);
 	cfg = DEV_CFG(dev);
 	can = cfg->can;
@@ -225,14 +219,12 @@ static void can_stm32_tx_isr(void *arg)
 	can_stm32_tx_isr_handler(can, data);
 }
 
-static void can_stm32_state_change_isr(void *arg)
+static void can_stm32_state_change_isr(const struct device *dev)
 {
-	const struct device *dev;
 	struct can_stm32_data *data;
 	const struct can_stm32_config *cfg;
 	CAN_TypeDef *can;
 
-	dev = (const struct device *)arg;
 	data = DEV_DATA(dev);
 	cfg = DEV_CFG(dev);
 	can = cfg->can;

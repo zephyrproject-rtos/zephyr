@@ -51,9 +51,8 @@ struct sam_xdmac_dev_data {
 #define DEV_DATA(dev) \
 	((struct sam_xdmac_dev_data *const)(dev)->data)
 
-static void sam_xdmac_isr(void *arg)
+static void sam_xdmac_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct sam_xdmac_dev_cfg *const dev_cfg = DEV_CFG(dev);
 	struct sam_xdmac_dev_data *const dev_data = DEV_DATA(dev);
 	Xdmac *const xdmac = dev_cfg->regs;

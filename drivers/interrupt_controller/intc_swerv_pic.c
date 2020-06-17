@@ -114,7 +114,7 @@ int swerv_pic_get_irq(void)
 	return save_irq;
 }
 
-static void swerv_pic_irq_handler(void *arg)
+static void swerv_pic_irq_handler(const void *arg)
 {
 	uint32_t tmp;
 	uint32_t irq;

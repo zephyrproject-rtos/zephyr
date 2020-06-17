@@ -93,9 +93,8 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 	}
 }
 
-static void spi_mcux_isr(void *arg)
+static void spi_mcux_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
 	SPI_Type *base = config->base;

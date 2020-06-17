@@ -177,9 +177,8 @@ static int mcux_igpio_manage_callback(const struct device *dev,
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
-static void mcux_igpio_port_isr(void *arg)
+static void mcux_igpio_port_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct mcux_igpio_config *config = dev->config;
 	struct mcux_igpio_data *data = dev->data;
 	GPIO_Type *base = config->base;

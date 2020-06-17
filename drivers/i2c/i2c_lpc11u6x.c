@@ -192,7 +192,7 @@ static int lpc11u6x_i2c_slave_unregister(const struct device *dev,
 	return 0;
 }
 
-static void lpc11u6x_i2c_isr(void *arg)
+static void lpc11u6x_i2c_isr(const void *arg)
 {
 	struct lpc11u6x_i2c_data *data = DEV_DATA((const struct device *)arg);
 	struct lpc11u6x_i2c_regs *i2c = DEV_BASE((const struct device *) arg);

@@ -183,9 +183,8 @@ static int imx_gpio_manage_callback(const struct device *port,
 	return gpio_manage_callback(&data->callbacks, cb, set);
 }
 
-static void imx_gpio_port_isr(void *arg)
+static void imx_gpio_port_isr(const struct device *port)
 {
-	const struct device *port = (const struct device *)arg;
 	const struct imx_gpio_config *config = port->config;
 	struct imx_gpio_data *data = port->data;
 	uint32_t int_status;

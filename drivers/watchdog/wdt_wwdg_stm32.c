@@ -221,9 +221,8 @@ static int wwdg_stm32_feed(const struct device *dev, int channel_id)
 	return 0;
 }
 
-void wwdg_stm32_isr(void *arg)
+void wwdg_stm32_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	struct wwdg_stm32_data *data = WWDG_STM32_DATA(dev);
 	WWDG_TypeDef *wwdg = WWDG_STM32_STRUCT(dev);
 

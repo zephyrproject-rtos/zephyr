@@ -73,10 +73,8 @@ static void nxp_lpc_dma_callback(dma_handle_t *handle, void *param,
 }
 
 /* Handles DMA interrupts and dispatches to the individual channel */
-static void dma_mcux_lpc_irq_handler(void *arg)
+static void dma_mcux_lpc_irq_handler(const struct device *dev)
 {
-	const struct device *dev = arg;
-
 	DMA_IRQHandle(DEV_BASE(dev));
 /*
  * Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store

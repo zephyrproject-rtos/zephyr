@@ -198,9 +198,8 @@ static uint32_t gpio_cc13xx_cc26xx_get_pending_int(const struct device *dev)
 
 DEVICE_DECLARE(gpio_cc13xx_cc26xx);
 
-static void gpio_cc13xx_cc26xx_isr(void *arg)
+static void gpio_cc13xx_cc26xx_isr(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct gpio_cc13xx_cc26xx_data *data = dev->data;
 
 	uint32_t status = GPIO_getEventMultiDio(GPIO_DIO_ALL_MASK);

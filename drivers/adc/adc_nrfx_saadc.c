@@ -366,10 +366,8 @@ static int adc_nrfx_read_async(const struct device *dev,
 }
 #endif /* CONFIG_ADC_ASYNC */
 
-static void saadc_irq_handler(void *param)
+static void saadc_irq_handler(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)param;
-
 	if (nrf_saadc_event_check(NRF_SAADC, NRF_SAADC_EVENT_END)) {
 		nrf_saadc_event_clear(NRF_SAADC, NRF_SAADC_EVENT_END);
 

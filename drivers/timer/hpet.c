@@ -46,7 +46,7 @@ static unsigned int max_ticks;
 static unsigned int cyc_per_tick;
 static unsigned int last_count;
 
-static void hpet_isr(void *arg)
+static void hpet_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 

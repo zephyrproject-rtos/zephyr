@@ -611,9 +611,8 @@ static void mcux_flexcan_transfer_callback(CAN_Type *base,
 	}
 }
 
-static void mcux_flexcan_isr(void *arg)
+static void mcux_flexcan_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct mcux_flexcan_config *config = dev->config;
 	struct mcux_flexcan_data *data = dev->data;
 

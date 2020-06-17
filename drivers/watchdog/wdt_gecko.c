@@ -230,9 +230,8 @@ static int wdt_gecko_feed(const struct device *dev, int channel_id)
 	return 0;
 }
 
-static void wdt_gecko_isr(void *arg)
+static void wdt_gecko_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct wdt_gecko_cfg *config = DEV_CFG(dev);
 	struct wdt_gecko_data *data = DEV_DATA(dev);
 	WDOG_TypeDef *wdog = config->base;

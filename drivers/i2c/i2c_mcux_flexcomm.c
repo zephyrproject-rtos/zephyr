@@ -159,9 +159,8 @@ static int mcux_flexcomm_transfer(const struct device *dev,
 	return 0;
 }
 
-static void mcux_flexcomm_isr(void *arg)
+static void mcux_flexcomm_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct mcux_flexcomm_config *config = dev->config;
 	struct mcux_flexcomm_data *data = dev->data;
 	I2C_Type *base = config->base;
