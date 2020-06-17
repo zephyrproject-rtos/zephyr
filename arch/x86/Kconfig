@@ -47,6 +47,20 @@ config X86_64
 	select USE_SWITCH_SUPPORTED
 	select SCHED_IPI_SUPPORTED
 
+config X86_KERNEL_OFFSET
+	int "Kernel offset from beginning of RAM"
+	default 1048576
+	help
+	  A lot of x86 that resemble PCs have many reserved physical memory
+	  regions within the first megabyte. Specify an offset from the
+	  beginning of RAM to load the kernel in physical memory, avoiding these
+	  regions.
+
+	  Note that this does not include the "locore" which contains real mode
+	  bootstrap code within the first 64K of physical memory.
+
+	  This value normally need to be page-aligned.
+
 config MAX_IRQ_LINES
 	int "Number of IRQ lines"
 	default 128
