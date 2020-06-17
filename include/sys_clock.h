@@ -84,10 +84,18 @@ typedef struct {
 #define Z_TIMEOUT_NO_WAIT ((k_timeout_t) {})
 #define Z_TIMEOUT_TICKS(t) ((k_timeout_t) { .ticks = (t) })
 #define Z_FOREVER Z_TIMEOUT_TICKS(K_TICKS_FOREVER)
-#define Z_TIMEOUT_MS(t) Z_TIMEOUT_TICKS(k_ms_to_ticks_ceil32(MAX(t, 0)))
-#define Z_TIMEOUT_US(t) Z_TIMEOUT_TICKS(k_us_to_ticks_ceil32(MAX(t, 0)))
-#define Z_TIMEOUT_NS(t) Z_TIMEOUT_TICKS(k_ns_to_ticks_ceil32(MAX(t, 0)))
-#define Z_TIMEOUT_CYC(t) Z_TIMEOUT_TICKS(k_cyc_to_ticks_ceil32(MAX(t, 0)))
+
+#ifdef CONFIG_TIMEOUT_64BIT
+# define Z_TIMEOUT_MS(t) Z_TIMEOUT_TICKS(k_ms_to_ticks_ceil64(MAX(t, 0)))
+# define Z_TIMEOUT_US(t) Z_TIMEOUT_TICKS(k_us_to_ticks_ceil64(MAX(t, 0)))
+# define Z_TIMEOUT_NS(t) Z_TIMEOUT_TICKS(k_ns_to_ticks_ceil64(MAX(t, 0)))
+# define Z_TIMEOUT_CYC(t) Z_TIMEOUT_TICKS(k_cyc_to_ticks_ceil64(MAX(t, 0)))
+#else
+# define Z_TIMEOUT_MS(t) Z_TIMEOUT_TICKS(k_ms_to_ticks_ceil32(MAX(t, 0)))
+# define Z_TIMEOUT_US(t) Z_TIMEOUT_TICKS(k_us_to_ticks_ceil32(MAX(t, 0)))
+# define Z_TIMEOUT_NS(t) Z_TIMEOUT_TICKS(k_ns_to_ticks_ceil32(MAX(t, 0)))
+# define Z_TIMEOUT_CYC(t) Z_TIMEOUT_TICKS(k_cyc_to_ticks_ceil32(MAX(t, 0)))
+#endif
 
 /* Converts between absolute timeout expiration values (packed into
  * the negative space below K_TICKS_FOREVER) and (non-negative) delta
