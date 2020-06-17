@@ -14,6 +14,7 @@
 #include <net/net_pkt.h>
 
 #include <openthread/platform/radio.h>
+#include <openthread/message.h>
 #include <platform-zephyr.h>
 
 /**
@@ -36,6 +37,7 @@ energy_scan_done_cb_t scan_done_cb;
  * Should not be null to be sure it was properly passed.
  */
 otInstance *ot = (otInstance *)0xAAAA;
+otMessage *ip_msg = (otMessage *)0xBBBB;
 
 /* forward declarations */
 static int scan_mock(struct device *dev, uint16_t duration,
@@ -271,6 +273,35 @@ static int stop_mock(struct device *dev)
 struct device *device_get_binding_stub(const char *name)
 {
 	return &radio;
+}
+
+otError otIp6Send(otInstance *aInstance, otMessage *aMessage)
+{
+	zassert_equal(aInstance, ot, "Incorrect instance.");
+	ztest_check_expected_value(aMessage);
+	return ztest_get_return_value();
+}
+
+otMessage *otIp6NewMessage(otInstance *aInstance,
+			   const otMessageSettings *aSettings)
+{
+	zassert_equal(aInstance, ot, "Incorrect instance.");
+	return ip_msg;
+}
+
+otError otMessageAppend(otMessage *aMessage, const void *aBuf, uint16_t aLength)
+{
+	void *buf = (void *)aBuf;
+
+	ztest_check_expected_value(aMessage);
+	ztest_check_expected_value(aLength);
+	ztest_check_expected_data(buf, aLength);
+	return ztest_get_return_value();
+}
+
+void otMessageFree(otMessage *aMessage)
+{
+	ztest_check_expected_value(aMessage);
 }
 
 void otPlatRadioTxStarted(otInstance *aInstance, otRadioFrame *aFrame)
@@ -752,6 +783,31 @@ static void test_address_test(void)
 	otPlatRadioSetExtendedAddress(ot, &ieee_addr);
 }
 
+
+uint8_t alloc_pkt(struct net_pkt **out_packet, uint8_t buf_ct, uint8_t offset)
+{
+	struct net_pkt *packet;
+	struct net_buf *buf;
+	uint8_t len = 0;
+	uint8_t buf_num;
+
+	packet = net_pkt_alloc(K_NO_WAIT);
+	for (buf_num = 0; buf_num < buf_ct; buf_num++) {
+		buf = net_pkt_get_reserve_tx_data(K_NO_WAIT);
+		net_pkt_append_buffer(packet, buf);
+
+		for (int i = 0; i < buf->size; i++) {
+			buf->data[i] = (offset + i + buf_num) & 0xFF;
+		}
+
+		len = buf->size - 3;
+		buf->len = len;
+	}
+
+	*out_packet = packet;
+	return len;
+}
+
 /**
  * @brief Test received messages handling.
  * Tests if received frames are properly passed to the OpenThread
@@ -767,15 +823,8 @@ static void test_receive_test(void)
 	const int8_t rssi = -90;
 	uint8_t len;
 
-	packet = net_pkt_alloc(K_NO_WAIT);
-	buf = net_pkt_get_reserve_tx_data(K_NO_WAIT);
-	net_pkt_append_buffer(packet, buf);
-
-	for (int i = 0; i < buf->size; i++) {
-		buf->data[i] = ('a' + i) & 0xFF;
-	}
-	len = buf->size - 3;
-	buf->len = len;
+	len = alloc_pkt(&packet, 1, 'a');
+	buf = packet->buffer;
 
 	net_pkt_set_ieee802154_lqi(packet, lqi);
 	net_pkt_set_ieee802154_rssi(packet, rssi);
@@ -803,6 +852,92 @@ static void test_receive_test(void)
 	platformRadioProcess(ot);
 }
 
+/**
+ * @brief Test received messages handling.
+ * Tests if received frames are properly passed to the OpenThread
+ *
+ */
+static void test_net_pkt_transmit(void)
+{
+	struct net_pkt *packet;
+	struct net_buf *buf;
+	const uint8_t channel = 21;
+	const int8_t power = -5;
+	uint8_t len;
+
+	/* success */
+	len = alloc_pkt(&packet, 2, 'a');
+	buf = packet->buffer;
+	otPlatRadioSetTransmitPower(ot, power);
+
+	ztest_returns_value(set_channel_mock, 0);
+	ztest_expect_value(set_channel_mock, channel, channel);
+	ztest_expect_value(set_txpower_mock, dbm, power);
+	ztest_expect_value(start_mock, dev, &radio);
+	otPlatRadioReceive(ot, channel);
+
+	notify_new_tx_frame(packet);
+
+	make_sure_sem_set(Z_TIMEOUT_MS(100));
+
+	ztest_expect_value(otMessageAppend, aMessage, ip_msg);
+	ztest_expect_value(otMessageAppend, aLength, len);
+	ztest_expect_data(otMessageAppend, buf, buf->data);
+	ztest_returns_value(otMessageAppend, OT_ERROR_NONE);
+
+	buf = buf->frags;
+	ztest_expect_value(otMessageAppend, aMessage, ip_msg);
+	ztest_expect_value(otMessageAppend, aLength, len);
+	ztest_expect_data(otMessageAppend, buf, buf->data);
+	ztest_returns_value(otMessageAppend, OT_ERROR_NONE);
+
+	ztest_expect_value(otIp6Send, aMessage, ip_msg);
+	ztest_returns_value(otIp6Send, OT_ERROR_NONE);
+
+	/* Do not expect free in case of success */
+
+	platformRadioProcess(ot);
+
+	/* fail on append */
+	len = alloc_pkt(&packet, 2, 'b');
+	buf = packet->buffer;
+
+	notify_new_tx_frame(packet);
+
+	make_sure_sem_set(Z_TIMEOUT_MS(100));
+
+	ztest_expect_value(otMessageAppend, aMessage, ip_msg);
+	ztest_expect_value(otMessageAppend, aLength, len);
+	ztest_expect_data(otMessageAppend, buf, buf->data);
+	ztest_returns_value(otMessageAppend, OT_ERROR_NO_BUFS);
+
+	/* Expect free in case of failure in appending buffer*/
+	ztest_expect_value(otMessageFree, aMessage, ip_msg);
+
+	platformRadioProcess(ot);
+
+	/* fail on send */
+	len = alloc_pkt(&packet, 1, 'c');
+	buf = packet->buffer;
+
+	notify_new_tx_frame(packet);
+
+	make_sure_sem_set(Z_TIMEOUT_MS(100));
+
+	ztest_expect_value(otMessageAppend, aMessage, ip_msg);
+	ztest_expect_value(otMessageAppend, aLength, len);
+	ztest_expect_data(otMessageAppend, buf, buf->data);
+	ztest_returns_value(otMessageAppend, OT_ERROR_NONE);
+
+	ztest_expect_value(otIp6Send, aMessage, ip_msg);
+	ztest_returns_value(otIp6Send, OT_ERROR_BUSY);
+
+	/* Do not expect free in case of failure in send */
+
+	platformRadioProcess(ot);
+
+}
+
 void test_main(void)
 {
 	platformRadioInit();
@@ -819,7 +954,9 @@ void test_main(void)
 		ztest_unit_test(test_get_rssi_test),
 		ztest_unit_test(test_radio_state_test),
 		ztest_unit_test(test_address_test),
-		ztest_unit_test(test_receive_test));
+		ztest_unit_test(test_receive_test),
+		ztest_unit_test(test_net_pkt_transmit));
+
 
 	ztest_run_test_suite(openthread_radio);
 }
