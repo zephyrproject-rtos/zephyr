@@ -237,8 +237,8 @@ static bool write(uint8_t *buf, uint16_t size)
 static int mass_storage_class_handle_req(struct usb_setup_packet *pSetup,
 					 int32_t *len, uint8_t **data)
 {
-	if (sys_le16_to_cpu(pSetup->wIndex) != mass_cfg.if0.bInterfaceNumber ||
-	    sys_le16_to_cpu(pSetup->wValue) != 0) {
+	if (pSetup->wIndex != mass_cfg.if0.bInterfaceNumber ||
+	    pSetup->wValue != 0) {
 		LOG_WRN("Invalid setup parameters");
 		return -EINVAL;
 	}
@@ -247,7 +247,7 @@ static int mass_storage_class_handle_req(struct usb_setup_packet *pSetup,
 	case MSC_REQUEST_RESET:
 		LOG_DBG("MSC_REQUEST_RESET");
 
-		if (sys_le16_to_cpu(pSetup->wLength)) {
+		if (pSetup->wLength) {
 			LOG_WRN("Invalid length");
 			return -EINVAL;
 		}
@@ -258,7 +258,7 @@ static int mass_storage_class_handle_req(struct usb_setup_packet *pSetup,
 	case MSC_REQUEST_GET_MAX_LUN:
 		LOG_DBG("MSC_REQUEST_GET_MAX_LUN");
 
-		if (sys_le16_to_cpu(pSetup->wLength) != 1) {
+		if (pSetup->wLength != 1) {
 			LOG_WRN("Invalid length");
 			return -EINVAL;
 		}
@@ -269,7 +269,7 @@ static int mass_storage_class_handle_req(struct usb_setup_packet *pSetup,
 		break;
 
 	default:
-		LOG_WRN("Unknown request 0x%x, value 0x%x",
+		LOG_WRN("Unknown request 0x%02x, value 0x%02x",
 			pSetup->bRequest, pSetup->wValue);
 		return -EINVAL;
 	}
