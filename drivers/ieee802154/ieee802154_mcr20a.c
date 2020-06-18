@@ -1389,6 +1389,7 @@ static inline int configure_spi(struct device *dev)
 	}
 
 	mcr20a->cs_ctrl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
+	mcr20a->cs_ctrl.gpio_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0);
 	mcr20a->cs_ctrl.delay = 0U;
 
 	mcr20a->spi_cfg.cs = &mcr20a->cs_ctrl;
