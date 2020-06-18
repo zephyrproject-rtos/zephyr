@@ -74,6 +74,8 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40001000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000010>;
+			interrupts = <54 0>;
+			interrupt-names = "global";
 			status = "disabled";
 			label = "TIMERS_6";
 
@@ -90,6 +92,8 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40001400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000020>;
+			interrupts = <55 0>;
+			interrupt-names = "global";
 			status = "disabled";
 			label = "TIMERS_7";
 
@@ -106,6 +110,8 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40010400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000002>;
+			interrupts = <43 0>, <44 0>, <45 0>, <46 0>;
+			interrupt-names = "brk", "up", "trgcom", "cc";
 			status = "disabled";
 			label = "TIMERS_8";
 
@@ -122,6 +128,8 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40001800 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000040>;
+			interrupts = <43 0>;
+			interrupt-names = "global";
 			status = "disabled";
 			label = "TIMERS_12";
 
@@ -138,6 +146,8 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40001c00 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000080>;
+			interrupts = <44 0>;
+			interrupt-names = "global";
 			status = "disabled";
 			label = "TIMERS_13";
 
@@ -154,6 +164,8 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40002000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000100>;
+			interrupts = <45 0>;
+			interrupt-names = "global";
 			status = "disabled";
 			label = "TIMERS_14";
 
