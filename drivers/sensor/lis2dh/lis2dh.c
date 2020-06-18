@@ -360,6 +360,7 @@ static const struct lis2dh_config lis2dh_config = {
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	.gpio_cs_port	    = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
 	.cs_gpio	    = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
+	.cs_gpio_flags	    = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0),
 	.spi_conf.cs        =  &lis2dh_data.cs_ctrl,
 #else
 	.spi_conf.cs        = NULL,
