@@ -1,0 +1,19 @@
+# i.MX RT6XX series configuration options
+
+# Copyright (c) 2020, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_IMX_RT6XX
+
+config SOC_SERIES
+	default "rt6xx"
+
+config ROM_START_OFFSET
+	default 0x1200 if NXP_IMX_RT6XX_BOOT_HEADER
+
+config NUM_IRQS
+	default 60
+
+source "soc/arm/nxp_imx/rt6xx/Kconfig.defconfig.mimxrt6*"
+
+endif # SOC_SERIES_MIMXRT6XX
