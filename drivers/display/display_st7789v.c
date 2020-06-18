@@ -353,6 +353,7 @@ static int st7789v_init(struct device *dev)
 	data->cs_ctrl.gpio_dev = device_get_binding(
 			DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
 	data->cs_ctrl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
+	data->cs_ctrl.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0);
 	data->cs_ctrl.delay = 0U;
 	data->spi_config.cs = &(data->cs_ctrl);
 #else
