@@ -31,6 +31,7 @@ LOG_MODULE_REGISTER(ssd16xx);
 #define SSD16XX_DC_FLAGS DT_INST_GPIO_FLAGS(0, dc_gpios)
 #define SSD16XX_DC_CNTRL DT_INST_GPIO_LABEL(0, dc_gpios)
 #define SSD16XX_CS_PIN DT_INST_SPI_DEV_CS_GPIOS_PIN(0)
+#define SSD16XX_CS_FLAGS DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0)
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 #define SSD16XX_CS_CNTRL DT_INST_SPI_DEV_CS_GPIOS_LABEL(0)
 #endif
@@ -692,6 +693,7 @@ static int ssd16xx_init(struct device *dev)
 	}
 
 	driver->cs_ctrl.gpio_pin = SSD16XX_CS_PIN;
+	driver->cs_ctrl.gpio_dt_flags = SSD16XX_CS_FLAGS;
 	driver->cs_ctrl.delay = 0U;
 	driver->spi_config.cs = &driver->cs_ctrl;
 #endif
