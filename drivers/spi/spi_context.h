@@ -147,32 +147,27 @@ static inline void spi_context_complete(struct spi_context *ctx, int status)
 #endif /* CONFIG_SPI_ASYNC */
 }
 
-static inline int spi_context_cs_active_value(struct spi_context *ctx)
+static inline
+gpio_dt_flags_t spi_context_cs_active_level(struct spi_context *ctx)
 {
 	if (ctx->config->operation & SPI_CS_ACTIVE_HIGH) {
-		return 1;
+		return GPIO_ACTIVE_HIGH;
 	}
 
-	return 0;
-}
-
-static inline int spi_context_cs_inactive_value(struct spi_context *ctx)
-{
-	if (ctx->config->operation & SPI_CS_ACTIVE_HIGH) {
-		return 0;
-	}
-
-	return 1;
+	return GPIO_ACTIVE_LOW;
 }
 
 static inline void spi_context_cs_configure(struct spi_context *ctx)
 {
 	if (ctx->config->cs && ctx->config->cs->gpio_dev) {
+		/* Validate CS active levels are equivalent */
+		__ASSERT(spi_context_cs_active_level(ctx) ==
+			 (ctx->config->cs->gpio_dt_flags & GPIO_ACTIVE_LOW),
+			 "Devicetree and spi_context CS levels are not equal");
 		gpio_pin_configure(ctx->config->cs->gpio_dev,
-				   ctx->config->cs->gpio_pin, GPIO_OUTPUT);
-		gpio_pin_set(ctx->config->cs->gpio_dev,
-			     ctx->config->cs->gpio_pin,
-			     spi_context_cs_inactive_value(ctx));
+				   ctx->config->cs->gpio_pin,
+				   ctx->config->cs->gpio_dt_flags |
+				   GPIO_OUTPUT_INACTIVE);
 	} else {
 		LOG_INF("CS control inhibited (no GPIO device)");
 	}
@@ -184,8 +179,7 @@ static inline void _spi_context_cs_control(struct spi_context *ctx,
 	if (ctx->config && ctx->config->cs && ctx->config->cs->gpio_dev) {
 		if (on) {
 			gpio_pin_set(ctx->config->cs->gpio_dev,
-				     ctx->config->cs->gpio_pin,
-				     spi_context_cs_active_value(ctx));
+				     ctx->config->cs->gpio_pin, 1);
 			k_busy_wait(ctx->config->cs->delay);
 		} else {
 			if (!force_off &&
@@ -195,8 +189,7 @@ static inline void _spi_context_cs_control(struct spi_context *ctx,
 
 			k_busy_wait(ctx->config->cs->delay);
 			gpio_pin_set(ctx->config->cs->gpio_dev,
-				     ctx->config->cs->gpio_pin,
-				     spi_context_cs_inactive_value(ctx));
+				     ctx->config->cs->gpio_pin, 0);
 		}
 	}
 }
