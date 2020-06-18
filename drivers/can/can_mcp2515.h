@@ -60,6 +60,7 @@ struct mcp2515_config {
 	/* spi configuration */
 	const char *spi_port;
 	uint8_t spi_cs_pin;
+	uint8_t spi_cs_flags;
 	const char *spi_cs_port;
 	uint32_t spi_freq;
 	uint8_t spi_slave;
