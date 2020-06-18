@@ -22,31 +22,6 @@
 		};
 	};
 
-	aliases {
-		i2c-0 = &i2c0;
-		i2c-1 = &i2c1;
-		spi-0 = &spi0;
-		spi-1 = &spi1;
-		spi-2 = &spi2;
-		uart-0 = &uart0;
-		adc-0 = &adc;
-		gpio-0 = &gpio0;
-		gpiote-0 = &gpiote;
-		wdt-0 = &wdt;
-		pwm-0 = &pwm0;
-		pwm-1 = &pwm1;
-		pwm-2 = &pwm2;
-		qdec-0 = &qdec;
-		rtc-0 = &rtc0;
-		rtc-1 = &rtc1;
-		rtc-2 = &rtc2;
-		timer-0 = &timer0;
-		timer-1 = &timer1;
-		timer-2 = &timer2;
-		timer-3 = &timer3;
-		timer-4 = &timer4;
-	};
-
 	soc {
 
 		flash_controller: flash-controller@4001e000 {
