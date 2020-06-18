@@ -404,9 +404,60 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 	return err;
 }
 
+static struct write_stats {
+	uint32_t count;
+	uint32_t len;
+	uint32_t total;
+	uint32_t rate;
+} write_stats;
+
+static void update_write_stats(uint16_t len)
+{
+	static uint32_t cycle_stamp;
+	uint32_t delta;
+
+	delta = k_cycle_get_32() - cycle_stamp;
+	delta = (uint32_t)k_cyc_to_ns_floor64(delta);
+
+	if (!delta) {
+		delta = 1;
+	}
+
+	write_stats.count++;
+	write_stats.total += len;
+
+	/* if last data rx-ed was greater than 1 second in the past,
+	 * reset the metrics.
+	 */
+	if (delta > 1000000000) {
+		write_stats.len = 0U;
+		write_stats.rate = 0U;
+		cycle_stamp = k_cycle_get_32();
+	} else {
+		write_stats.len += len;
+		write_stats.rate = ((uint64_t)write_stats.len << 3) *
+				   1000000000U / delta;
+	}
+}
+
+static void reset_write_stats(void)
+{
+	memset(&write_stats, 0, sizeof(write_stats));
+}
+
+static void print_write_stats(void)
+{
+	shell_print(ctx_shell, "Write #%u: %u bytes (%u bps)",
+		    write_stats.count, write_stats.total, write_stats.rate);
+}
+
 static void write_without_rsp_cb(struct bt_conn *conn, void *user_data)
 {
-	shell_print(ctx_shell, "Write transmission complete");
+	uint16_t len = POINTER_TO_UINT(user_data);
+
+	update_write_stats(len);
+
+	print_write_stats();
 }
 
 static int cmd_write_without_rsp(const struct shell *shell,
@@ -428,6 +479,7 @@ static int cmd_write_without_rsp(const struct shell *shell,
 	if (!sign) {
 		if (!strcmp(argv[0], "write-without-response-cb")) {
 			func = write_without_rsp_cb;
+			reset_write_stats();
 		}
 	}
 
@@ -458,10 +510,14 @@ static int cmd_write_without_rsp(const struct shell *shell,
 	while (repeat--) {
 		err = bt_gatt_write_without_response_cb(default_conn, handle,
 							gatt_write_buf, len,
-							sign, func, NULL);
+							sign, func,
+							UINT_TO_POINTER(len));
 		if (err) {
 			break;
 		}
+
+		k_yield();
+
 	}
 
 	shell_print(shell, "Write Complete (err %d)", err);
@@ -844,17 +900,11 @@ static ssize_t read_met(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 value_len);
 }
 
-static uint32_t write_count;
-static uint32_t write_len;
-static uint32_t write_rate;
-
 static ssize_t write_met(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 const void *buf, uint16_t len, uint16_t offset,
 			 uint8_t flags)
 {
 	uint8_t *value = attr->user_data;
-	static uint32_t cycle_stamp;
-	uint32_t delta;
 
 	if (offset + len > sizeof(met_char_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -862,22 +912,7 @@ static ssize_t write_met(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 	memcpy(value + offset, buf, len);
 
-	delta = k_cycle_get_32() - cycle_stamp;
-	delta = (uint32_t)k_cyc_to_ns_floor64(delta);
-
-	/* if last data rx-ed was greater than 1 second in the past,
-	 * reset the metrics.
-	 */
-	if (delta > 1000000000) {
-		write_count = 0U;
-		write_len = 0U;
-		write_rate = 0U;
-		cycle_stamp = k_cycle_get_32();
-	} else {
-		write_count++;
-		write_len += len;
-		write_rate = ((uint64_t)write_len << 3) * 1000000000U / delta;
-	}
+	update_write_stats(len);
 
 	return len;
 }
@@ -898,10 +933,8 @@ static int cmd_metrics(const struct shell *shell, size_t argc, char *argv[])
 	int err = 0;
 
 	if (argc < 2) {
-		shell_print(shell, "Write: count= %u, len= %u, rate= %u bps.",
-		       write_count, write_len, write_rate);
-
-		return -ENOEXEC;
+		print_write_stats();
+		return 0;
 	}
 
 	if (!strcmp(argv[1], "on")) {
@@ -1063,9 +1096,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(gatt_cmds,
 	SHELL_CMD_ARG(set, NULL, "<handle> [data...]", cmd_set, 2, 255),
 	SHELL_CMD_ARG(show-db, NULL, "[uuid] [num_matches]", cmd_show_db, 1, 2),
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB)
-	SHELL_CMD_ARG(metrics, NULL,
-		      "register vendr char and measure rx <value: on, off>",
-		      cmd_metrics, 2, 0),
+	SHELL_CMD_ARG(metrics, NULL, "[value: on, off]", cmd_metrics, 1, 1),
 	SHELL_CMD_ARG(register, NULL,
 		      "register pre-predefined test service",
 		      cmd_register_test_svc, 1, 0),
