@@ -3231,7 +3231,6 @@ static inline bool k_work_pending(struct k_work *work)
  * @param options k_thread options to be used for work_q thread.
  *
  * @return N/A
- * @req K-WORK-001
  */
 extern void k_work_q_start_ex(struct k_work_q *work_q,
 				k_thread_stack_t *stack,
@@ -3252,7 +3251,6 @@ extern void k_work_q_start_ex(struct k_work_q *work_q,
  * @param prio Priority of the work queue's thread.
  *
  * @return N/A
- * @req K-WORK-001
  */
 static inline void k_work_q_start(struct k_work_q *work_q,
 				k_thread_stack_t *stack,
@@ -3282,7 +3280,6 @@ static inline void k_work_q_start(struct k_work_q *work_q,
  * creation.
  *
  * @return N/A
- * @req K-WORK-001
  */
 extern void k_work_q_user_start_ex(struct k_work_q *work_q, k_thread_stack_t *stack,
 				size_t stack_size, int prio, u32_t options);
