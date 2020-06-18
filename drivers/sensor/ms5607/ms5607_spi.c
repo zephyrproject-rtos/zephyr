@@ -181,6 +181,7 @@ int ms5607_spi_init(struct device *dev)
 	}
 
 	ms5607_cs_ctrl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
+	ms5607_cs_ctrl.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0);
 	ms5607_cs_ctrl.delay = 0U;
 
 	ms5607_spi_conf.cs = &ms5607_cs_ctrl;
