@@ -106,7 +106,7 @@ class Stm32flashBinaryRunner(ZephyrBinaryRunner):
             size_aligned = (int(bin_size) & 0xfffff000) + 4096
             msg_text = "erase {} bit starting at {}".format(size_aligned, self.start_addr)
             cmd_flash.extend([
-            '-S', self.start_addr + ":" + str(size_aligned), '-o'])
+            '-S', str(self.start_addr) + ":" + str(size_aligned), '-o'])
 
         elif action == 'start':
             # start execution
@@ -123,7 +123,7 @@ class Stm32flashBinaryRunner(ZephyrBinaryRunner):
             # flash binary file
             msg_text = "write {} bytes starting at {}".format(bin_size, self.start_addr)
             cmd_flash.extend([
-            '-S', self.start_addr + ":" + str(bin_size),
+            '-S', str(self.start_addr) + ":" + str(bin_size),
             '-w', bin_name])
 
             if self.exec_addr:
