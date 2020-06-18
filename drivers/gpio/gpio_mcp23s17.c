@@ -380,6 +380,7 @@ static int mcp23s17_init(struct device *dev)
 		}
 
 		drv_data->mcp23s17_cs_ctrl.gpio_pin = config->cs_pin;
+		drv_data->mcp23s17_cs_ctrl.gpio_dt_flags = config->cs_flags;
 		drv_data->mcp23s17_cs_ctrl.delay = 0;
 
 		drv_data->spi_cfg.cs = &drv_data->mcp23s17_cs_ctrl;
@@ -415,6 +416,9 @@ static int mcp23s17_init(struct device *dev)
 		IF_ENABLED(DT_INST_SPI_DEV_HAS_CS_GPIOS(inst),		\
 			   (.cs_pin =					\
 			    DT_INST_SPI_DEV_CS_GPIOS_PIN(inst),))	\
+		IF_ENABLED(DT_INST_SPI_DEV_HAS_CS_GPIOS(inst),		\
+			   (.cs_flags =					\
+			    DT_INST_SPI_DEV_CS_GPIOS_FLAGS(inst),))	\
 	};								\
 									\
 	static struct mcp23s17_drv_data mcp23s17_##inst##_drvdata = {	\
