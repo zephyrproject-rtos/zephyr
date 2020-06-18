@@ -692,7 +692,7 @@ int usb_dc_ep_mps(const uint8_t ep)
 	uint8_t for_in = ep & USB_EP_DIR_MASK;
 	uint8_t ep_num = ep & ~USB_EP_DIR_MASK;
 	UsbDeviceDescriptor *desc = &data->descriptors[ep_num];
-	UsbDeviceEndpoint *endpoint = &regs->DeviceEndpoint[ep];
+	UsbDeviceEndpoint *endpoint = &regs->DeviceEndpoint[ep_num];
 
 	if (ep_num >= USB_NUM_ENDPOINTS) {
 		LOG_ERR("endpoint index/address out of range");
