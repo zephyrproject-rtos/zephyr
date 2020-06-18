@@ -142,6 +142,7 @@ struct block_context {
 	struct coap_block_context ctx;
 	int64_t timestamp;
 	uint32_t remaining_len;
+	uint32_t expected;
 	uint8_t token[8];
 	uint8_t tkl;
 	uint8_t opaque_header_len;
@@ -277,6 +278,7 @@ init_block_ctx(const uint8_t *token, uint8_t tkl, struct block_context **ctx)
 	(*ctx)->timestamp = timestamp;
 	(*ctx)->remaining_len = 0;
 	(*ctx)->opaque_header_len = 0;
+	(*ctx)->expected = 0;
 	(*ctx)->last_block = false;
 
 	return 0;
@@ -300,7 +302,6 @@ get_block_ctx(const uint8_t *token, uint8_t tkl, struct block_context **ctx)
 	}
 
 	if (*ctx == NULL) {
-		LOG_ERR("Cannot find block context");
 		return -ENOENT;
 	}
 
@@ -3329,10 +3330,12 @@ static int handle_request(struct coap_packet *request,
 	uint16_t format = LWM2M_FORMAT_NONE, accept;
 	int observe = -1; /* default to -1, 0 = ENABLE, 1 = DISABLE */
 	bool well_known = false;
+	int block_opt, block_num;
 	struct block_context *block_ctx = NULL;
 	enum coap_block_size block_size;
 	uint16_t payload_len = 0U;
 	bool last_block = false;
+	bool ignore = false;
 
 	/* set CoAP request / message */
 	msg->in.in_cpkt = request;
@@ -3512,12 +3515,13 @@ static int handle_request(struct coap_packet *request,
 	coap_packet_get_payload(msg->in.in_cpkt, &payload_len);
 
 	/* Check for block transfer */
-	r = coap_get_option_int(msg->in.in_cpkt, COAP_OPTION_BLOCK1);
-	if (r > 0) {
-		last_block = !GET_MORE(r);
+
+	block_opt = coap_get_option_int(msg->in.in_cpkt, COAP_OPTION_BLOCK1);
+	if (block_opt > 0) {
+		last_block = !GET_MORE(block_opt);
 
 		/* RFC7252: 4.6. Message Size */
-		block_size = GET_BLOCK_SIZE(r);
+		block_size = GET_BLOCK_SIZE(block_opt);
 		if (!last_block &&
 		    coap_block_size_to_bytes(block_size) > payload_len) {
 			LOG_DBG("Trailing payload is discarded!");
@@ -3525,23 +3529,47 @@ static int handle_request(struct coap_packet *request,
 			goto error;
 		}
 
-		if (GET_BLOCK_NUM(r) == 0) {
+		block_num = GET_BLOCK_NUM(block_opt);
+
+		/* Try to retrieve existing block context. If one not exists,
+		 * and we've received first block, allocate new context.
+		 */
+		r = get_block_ctx(token, tkl, &block_ctx);
+		if (r < 0 && block_num == 0) {
 			r = init_block_ctx(token, tkl, &block_ctx);
+		}
+
+		if (r < 0) {
+			LOG_ERR("Cannot find block context");
+			goto error;
+		}
+
+		if (block_num < block_ctx->expected) {
+			LOG_WRN("Block already handled %d, expected %d",
+				block_num, block_ctx->expected);
+			ignore = true;
+		} else if (block_num > block_ctx->expected) {
+			LOG_WRN("Block out of order %d, expected %d",
+				block_num, block_ctx->expected);
+			r = -EFAULT;
+			goto error;
 		} else {
-			r = get_block_ctx(token, tkl, &block_ctx);
-		}
+			r = coap_update_from_block(msg->in.in_cpkt, &block_ctx->ctx);
+			if (r < 0) {
+				LOG_ERR("Error from block update: %d", r);
+				goto error;
+			}
 
-		if (r < 0) {
-			goto error;
-		}
+			block_ctx->last_block = last_block;
 
-		r = coap_update_from_block(msg->in.in_cpkt, &block_ctx->ctx);
-		if (r < 0) {
-			LOG_ERR("Error from block update: %d", r);
-			goto error;
+			/* Initial block sent by the server might be larger than
+			 * our block size therefore it is needed to take this
+			 * into account when calculating next expected block
+			 * number.
+			 */
+			block_ctx->expected += GET_BLOCK_SIZE(block_opt) -
+					       block_ctx->ctx.block_size + 1;
 		}
-
-		block_ctx->last_block = last_block;
 
 		/* Handle blockwise 1 (Part 1): Set response code */
 		if (!last_block) {
@@ -3555,70 +3583,74 @@ static int handle_request(struct coap_packet *request,
 		goto error;
 	}
 
-	switch (msg->operation) {
+	if (!ignore) {
 
-	case LWM2M_OP_READ:
-		if (observe == 0) {
-			/* add new observer */
-			if (msg->token) {
-				r = coap_append_option_int(msg->out.out_cpkt,
-							   COAP_OPTION_OBSERVE,
-							   1);
-				if (r < 0) {
-					LOG_ERR("OBSERVE option error: %d", r);
+		switch (msg->operation) {
+
+		case LWM2M_OP_READ:
+			if (observe == 0) {
+				/* add new observer */
+				if (msg->token) {
+					r = coap_append_option_int(
+						msg->out.out_cpkt,
+						COAP_OPTION_OBSERVE,
+						1);
+					if (r < 0) {
+						LOG_ERR("OBSERVE option error: %d", r);
+						goto error;
+					}
+
+					r = engine_add_observer(msg, token, tkl,
+								accept);
+					if (r < 0) {
+						LOG_ERR("add OBSERVE error: %d", r);
+						goto error;
+					}
+				} else {
+					LOG_ERR("OBSERVE request missing token");
+					r = -EINVAL;
 					goto error;
 				}
-
-				r = engine_add_observer(msg, token, tkl,
-							accept);
+			} else if (observe == 1) {
+				/* remove observer */
+				r = engine_remove_observer(token, tkl);
 				if (r < 0) {
-					LOG_ERR("add OBSERVE error: %d", r);
-					goto error;
+					LOG_ERR("remove observe error: %d", r);
 				}
-			} else {
-				LOG_ERR("OBSERVE request missing token");
-				r = -EINVAL;
-				goto error;
 			}
-		} else if (observe == 1) {
-			/* remove observer */
-			r = engine_remove_observer(token, tkl);
-			if (r < 0) {
-				LOG_ERR("remove observe error: %d", r);
-			}
+
+			r = do_read_op(msg, accept);
+			break;
+
+		case LWM2M_OP_DISCOVER:
+			r = do_discover_op(msg, well_known);
+			break;
+
+		case LWM2M_OP_WRITE:
+		case LWM2M_OP_CREATE:
+			r = do_write_op(msg, format);
+			break;
+
+		case LWM2M_OP_WRITE_ATTR:
+			r = lwm2m_write_attr_handler(obj, msg);
+			break;
+
+		case LWM2M_OP_EXECUTE:
+			r = lwm2m_exec_handler(msg);
+			break;
+
+		case LWM2M_OP_DELETE:
+			r = lwm2m_delete_handler(msg);
+			break;
+
+		default:
+			LOG_ERR("Unknown operation: %u", msg->operation);
+			r = -EINVAL;
 		}
 
-		r = do_read_op(msg, accept);
-		break;
-
-	case LWM2M_OP_DISCOVER:
-		r = do_discover_op(msg, well_known);
-		break;
-
-	case LWM2M_OP_WRITE:
-	case LWM2M_OP_CREATE:
-		r = do_write_op(msg, format);
-		break;
-
-	case LWM2M_OP_WRITE_ATTR:
-		r = lwm2m_write_attr_handler(obj, msg);
-		break;
-
-	case LWM2M_OP_EXECUTE:
-		r = lwm2m_exec_handler(msg);
-		break;
-
-	case LWM2M_OP_DELETE:
-		r = lwm2m_delete_handler(msg);
-		break;
-
-	default:
-		LOG_ERR("Unknown operation: %u", msg->operation);
-		r = -EINVAL;
-	}
-
-	if (r < 0) {
-		goto error;
+		if (r < 0) {
+			goto error;
+		}
 	}
 
 	/* Handle blockwise 1 (Part 2): Append BLOCK1 option / free context */
