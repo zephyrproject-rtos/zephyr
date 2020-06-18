@@ -770,6 +770,7 @@ static int configure_spi(struct device *dev)
 	}
 
 	cs_ctrl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
+	cs_ctrl.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0);
 	cs_ctrl.delay = 0U;
 
 	cc1200->spi_cfg.cs = &cs_ctrl;
