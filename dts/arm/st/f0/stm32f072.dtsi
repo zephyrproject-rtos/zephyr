@@ -30,6 +30,8 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40000000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000001>;
+			interrupts = <15 0>;
+			interrupt-names = "global";
 			status = "disabled";
 			label = "TIMERS_2";
 
