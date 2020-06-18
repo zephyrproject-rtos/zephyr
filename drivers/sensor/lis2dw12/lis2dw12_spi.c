@@ -114,6 +114,7 @@ int lis2dw12_spi_init(struct device *dev)
 	}
 
 	data->cs_ctrl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
+	data->cs_ctrl.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0);
 	data->cs_ctrl.delay = 0U;
 
 	lis2dw12_spi_conf.cs = &data->cs_ctrl;
