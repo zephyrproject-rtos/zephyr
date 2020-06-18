@@ -39,8 +39,8 @@ void z_work_q_main(void *work_q_ptr, void *p2, void *p3)
 	}
 }
 
-void k_work_q_user_start(struct k_work_q *work_q, k_thread_stack_t *stack,
-			 size_t stack_size, int prio)
+void k_work_q_user_start_ex(struct k_work_q *work_q, k_thread_stack_t *stack,
+			 size_t stack_size, int prio, u32_t options)
 {
 	k_queue_init(&work_q->queue);
 
@@ -48,7 +48,7 @@ void k_work_q_user_start(struct k_work_q *work_q, k_thread_stack_t *stack,
 	 * domain configuration of the caller
 	 */
 	k_thread_create(&work_q->thread, stack, stack_size, z_work_q_main,
-			work_q, 0, 0, prio, K_USER | K_INHERIT_PERMS,
+			work_q, 0, 0, prio, K_USER | K_INHERIT_PERMS | options,
 			K_FOREVER);
 	k_object_access_grant(&work_q->queue, &work_q->thread);
 	k_thread_name_set(&work_q->thread, WORKQUEUE_THREAD_NAME);

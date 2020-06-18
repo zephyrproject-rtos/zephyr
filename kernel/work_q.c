@@ -26,12 +26,12 @@ static struct k_spinlock lock;
 
 extern void z_work_q_main(void *work_q_ptr, void *p2, void *p3);
 
-void k_work_q_start(struct k_work_q *work_q, k_thread_stack_t *stack,
-		    size_t stack_size, int prio)
+void k_work_q_start_ex(struct k_work_q *work_q, k_thread_stack_t *stack,
+		    size_t stack_size, int prio, u32_t options)
 {
 	k_queue_init(&work_q->queue);
 	(void)k_thread_create(&work_q->thread, stack, stack_size, z_work_q_main,
-			work_q, NULL, NULL, prio, 0, K_NO_WAIT);
+			work_q, NULL, NULL, prio, options, K_NO_WAIT);
 
 	k_thread_name_set(&work_q->thread, WORKQUEUE_THREAD_NAME);
 }

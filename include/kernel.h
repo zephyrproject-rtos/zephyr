@@ -3216,6 +3216,28 @@ static inline bool k_work_pending(struct k_work *work)
 }
 
 /**
+ * @brief Start a workqueue with specified k_thread option flags.
+ *
+ * This routine starts workqueue @a work_q. The workqueue spawns its work
+ * processing thread with the provided options, which runs forever.
+ *
+ * @param work_q Address of workqueue.
+ * @param stack Pointer to work queue thread's stack space, as defined by
+ *		K_THREAD_STACK_DEFINE()
+ * @param stack_size Size of the work queue thread's stack (in bytes), which
+ *		should either be the same constant passed to
+ *		K_THREAD_STACK_DEFINE() or the value of K_THREAD_STACK_SIZEOF().
+ * @param prio Priority of the work queue's thread.
+ * @param options k_thread options to be used for work_q thread.
+ *
+ * @return N/A
+ * @req K-WORK-001
+ */
+extern void k_work_q_start_ex(struct k_work_q *work_q,
+				k_thread_stack_t *stack,
+				size_t stack_size, int prio, u32_t options);
+
+/**
  * @brief Start a workqueue.
  *
  * This routine starts workqueue @a work_q. The workqueue spawns its work
@@ -3230,19 +3252,24 @@ static inline bool k_work_pending(struct k_work *work)
  * @param prio Priority of the work queue's thread.
  *
  * @return N/A
+ * @req K-WORK-001
  */
-extern void k_work_q_start(struct k_work_q *work_q,
-			   k_thread_stack_t *stack,
-			   size_t stack_size, int prio);
+static inline void k_work_q_start(struct k_work_q *work_q,
+				k_thread_stack_t *stack,
+				size_t stack_size, int prio)
+{
+	k_work_q_start_ex(work_q, stack, stack_size, prio, 0);
+}
 
 /**
- * @brief Start a workqueue in user mode
+ * @brief Start a workqueue in user mode specifying k_thread options
  *
  * This works identically to k_work_q_start() except it is callable from user
  * mode, and the worker thread created will run in user mode.
  * The caller must have permissions granted on both the work_q parameter's
  * thread and queue objects, and the same restrictions on priority apply as
- * k_thread_create().
+ * k_thread_create(). Provided k_thread options will be applied to the thread
+ * created for use in this work_q.
  *
  * @param work_q Address of workqueue.
  * @param stack Pointer to work queue thread's stack space, as defined by
@@ -3251,12 +3278,14 @@ extern void k_work_q_start(struct k_work_q *work_q,
  *		should either be the same constant passed to
  *		K_THREAD_STACK_DEFINE() or the value of K_THREAD_STACK_SIZEOF().
  * @param prio Priority of the work queue's thread.
+ * @param options Option flags to be used in the resulting work_q k_thread's
+ * creation.
  *
  * @return N/A
+ * @req K-WORK-001
  */
-extern void k_work_q_user_start(struct k_work_q *work_q,
-				k_thread_stack_t *stack,
-				size_t stack_size, int prio);
+extern void k_work_q_user_start_ex(struct k_work_q *work_q, k_thread_stack_t *stack,
+				size_t stack_size, int prio, u32_t options);
 
 /**
  * @brief Initialize a delayed work item.
