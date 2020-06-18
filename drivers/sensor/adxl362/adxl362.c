@@ -745,6 +745,7 @@ static int adxl362_init(struct device *dev)
 	}
 
 	data->adxl362_cs_ctrl.gpio_pin = config->cs_gpio;
+	data->adxl362_cs_ctrl.gpio_dt_flags = config->cs_flags;
 	data->adxl362_cs_ctrl.delay = 0U;
 
 	data->spi_cfg.cs = &data->adxl362_cs_ctrl;
@@ -793,6 +794,7 @@ static const struct adxl362_config adxl362_config = {
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	.gpio_cs_port = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
 	.cs_gpio = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
+	.cs_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0),
 #endif
 #if defined(CONFIG_ADXL362_TRIGGER)
 	.gpio_port = DT_INST_GPIO_LABEL(0, int1_gpios),
