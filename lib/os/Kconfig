@@ -46,4 +46,14 @@ config SYS_HEAP_ALLOC_LOOPS
 	  keeps the maximum runtime at a tight bound so that the heap
 	  is useful in locked or ISR contexts.
 
+config SYS_HEAP_ALIGNED_ALLOC
+	bool "Enable sys_heap_aligned_alloc() API"
+	help
+	  When true, the sys_heap_aligned_alloc() API is available to
+	  guarantee alignment of returned heap blocks in an efficient
+	  way.  For technical reasons, this requires the use of the
+	  "big" 8 byte heap block header format, so it will moderately
+	  increase heap memory overhead on 32 bit platforms when using
+	  small (<256kb) heaps.
+
 endmenu

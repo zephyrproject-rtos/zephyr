@@ -88,6 +88,21 @@ void sys_heap_init(struct sys_heap *h, void *mem, size_t bytes);
  */
 void *sys_heap_alloc(struct sys_heap *h, size_t bytes);
 
+/** @brief Allocate aligned memory from a sys_heap
+ *
+ * Behaves in all ways like sys_heap_alloc(), except that the returned
+ * memory (if available) will have a starting address in memory which
+ * is a multiple of the specified power-of-two alignment value in
+ * bytes.  The resulting memory can be returned to the heap using
+ * sys_heap_free().
+ *
+ * @param h Heap from which to allocate
+ * @param align Alignment in bytes, must be a power of two
+ * @param bytes Number of bytes requested
+ * @return Pointer to memory the caller can now use
+ */
+void *sys_heap_aligned_alloc(struct sys_heap *h, size_t align, size_t bytes);
+
 /** @brief Free memory into a sys_heap
  *
  * De-allocates a pointer to memory previously returned from
