@@ -225,7 +225,7 @@ static int test_file_truncate(void)
 		}
 	}
 
-	return TC_PASS;
+	return res;
 }
 
 int test_file_close(void)
