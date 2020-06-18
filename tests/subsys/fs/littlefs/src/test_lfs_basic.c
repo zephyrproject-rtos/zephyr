@@ -82,7 +82,8 @@ static int create_write_hello(const struct fs_mount_t *mp)
 	zassert_equal(fs_open(&file,
 			      testfs_path_init(&path, mp,
 					       HELLO,
-					       TESTFS_PATH_END)),
+					       TESTFS_PATH_END),
+			      FS_O_CREATE | FS_O_RDWR),
 		      0,
 		      "open hello failed");
 
@@ -148,7 +149,8 @@ static int verify_hello(const struct fs_mount_t *mp)
 	zassert_equal(fs_open(&file,
 			      testfs_path_init(&path, mp,
 					       HELLO,
-					       TESTFS_PATH_END)),
+					       TESTFS_PATH_END),
+			      FS_O_CREATE | FS_O_RDWR),
 		      0,
 		      "verify hello open failed");
 
@@ -178,7 +180,8 @@ static int seek_within_hello(const struct fs_mount_t *mp)
 	zassert_equal(fs_open(&file,
 			      testfs_path_init(&path, mp,
 					       HELLO,
-					       TESTFS_PATH_END)),
+					       TESTFS_PATH_END),
+			      FS_O_CREATE | FS_O_RDWR),
 		      0,
 		      "verify hello open failed");
 
@@ -244,7 +247,8 @@ static int truncate_hello(const struct fs_mount_t *mp)
 	zassert_equal(fs_open(&file,
 			      testfs_path_init(&path, mp,
 					       HELLO,
-					       TESTFS_PATH_END)),
+					       TESTFS_PATH_END),
+			      FS_O_CREATE | FS_O_RDWR),
 		      0,
 		      "verify hello open failed");
 
@@ -333,7 +337,8 @@ static int sync_goodbye(const struct fs_mount_t *mp)
 	zassert_equal(fs_open(&file,
 			      testfs_path_init(&path, mp,
 					       GOODBYE,
-					       TESTFS_PATH_END)),
+					       TESTFS_PATH_END),
+			      FS_O_CREATE | FS_O_RDWR),
 		      0,
 		      "sync goodbye failed");
 
@@ -395,7 +400,8 @@ static int verify_goodbye(const struct fs_mount_t *mp)
 	zassert_equal(fs_open(&file,
 			      testfs_path_init(&path, mp,
 					       GOODBYE,
-					       TESTFS_PATH_END)),
+					       TESTFS_PATH_END),
+			      FS_O_CREATE | FS_O_RDWR),
 		      0,
 		      "verify goodbye failed");
 

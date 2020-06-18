@@ -66,7 +66,8 @@ static int check_mkdir(struct fs_mount_t *mp)
 			      testfs_path_extend(testfs_path_copy(&fpath,
 								  &dpath),
 						 "file",
-						 TESTFS_PATH_END)),
+						 TESTFS_PATH_END),
+			      FS_O_CREATE | FS_O_RDWR),
 		      0,
 		      "creat in dir failed");
 	zassert_equal(fs_close(&file), 0,

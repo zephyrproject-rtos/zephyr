@@ -39,7 +39,7 @@ int test_mkdir(const char *dir_path, const char *file)
 		return res;
 	}
 
-	res = fs_open(&filep, file_path);
+	res = fs_open(&filep, file_path, FS_O_CREATE | FS_O_RDWR);
 	if (res) {
 		TC_PRINT("Failed opening file [%d]\n", res);
 		return res;

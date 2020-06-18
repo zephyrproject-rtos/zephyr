@@ -151,7 +151,7 @@ int fsutil_read_file(const char *path, off_t offset, size_t len, void *dst,
 	int rc;
 	ssize_t r_len = 0;
 
-	rc = fs_open(&file, path);
+	rc = fs_open(&file, path, FS_O_CREATE | FS_O_RDWR);
 	if (rc != 0) {
 		return rc;
 	}
@@ -172,7 +172,7 @@ int fsutil_write_file(const char *path, const void *data, size_t len)
 	struct fs_file_t file;
 	int rc;
 
-	rc = fs_open(&file, path);
+	rc = fs_open(&file, path, FS_O_CREATE | FS_O_RDWR);
 	if (rc != 0) {
 		return rc;
 	}

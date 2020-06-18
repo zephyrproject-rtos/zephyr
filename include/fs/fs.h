@@ -113,7 +113,7 @@ struct fs_statvfs {
 /**
  * @brief File System interface structure
  *
- * @param open Opens an existing file or create a new one
+ * @param open Opens or creates a file, depending on flags given
  * @param read Reads items of data of size bytes long
  * @param write Writes items of data of size bytes long
  * @param lseek Moves the file position to a new location in the file
@@ -134,7 +134,8 @@ struct fs_statvfs {
  */
 struct fs_file_system_t {
 	/* File operations */
-	int (*open)(struct fs_file_t *filp, const char *fs_path);
+	int (*open)(struct fs_file_t *filp, const char *fs_path,
+		    fs_mode_t flags);
 	ssize_t (*read)(struct fs_file_t *filp, void *dest, size_t nbytes);
 	ssize_t (*write)(struct fs_file_t *filp,
 					const void *src, size_t nbytes);
@@ -160,6 +161,17 @@ struct fs_file_system_t {
 					struct fs_statvfs *stat);
 };
 
+#define FS_O_READ       0x01
+#define FS_O_WRITE      0x02
+#define FS_O_RDWR       (FS_O_READ | FS_O_WRITE)
+#define FS_O_MODE_MASK  0x03
+
+#define FS_O_CREATE     0x10
+#define FS_O_APPEND     0x20
+#define FS_O_FLAGS_MASK 0x30
+
+#define FS_O_MASK       (FS_O_MODE_MASK | FS_O_FLAGS_MASK)
+
 #ifndef FS_SEEK_SET
 #define FS_SEEK_SET	0	/* Seek from beginning of file. */
 #endif
@@ -170,20 +182,29 @@ struct fs_file_system_t {
 #define FS_SEEK_END	2	/* Seek from end of file.  */
 #endif
 
-
 /**
  * @brief File open
  *
- * Opens an existing file or create a new one and associates
- * a stream with it.
+ * Opens or creates, if does not exist, file depending on flags provided
+ * and associates a stream with it.
  *
  * @param zfp Pointer to file object
  * @param file_name The name of file to open
+ * @param flags The mode flags
+ *
+ * @p flags can be empty, or combination of one or more of following flags:
+ *   FS_O_READ    open for read
+ *   FS_O_WRITE   open for write
+ *   FS_O_RDWR    open for read/write (<tt>FS_O_READ | FS_O_WRITE</tt>)
+ *   FS_O_CREATE  create file if it does not exist
+ *   FS_O_APPEND  move to end of file before each write
  *
  * @retval 0 Success
- * @retval -ERRNO errno code if error
+ * @retval -EINVAL when bad file name is given
+ * @retval -NOENT when file path is not possible (bad mount point)
+ * @retval other negative error code, depending on file system back-end.
  */
-int fs_open(struct fs_file_t *zfp, const char *file_name);
+int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags);
 
 /**
  * @brief File close

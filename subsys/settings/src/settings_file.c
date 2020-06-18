@@ -123,7 +123,7 @@ static int settings_file_load_priv(struct settings_store *cs, line_load_cb cb,
 
 	lines = 0;
 
-	rc = fs_open(&file, cf->cf_name);
+	rc = fs_open(&file, cf->cf_name, FS_O_CREATE | FS_O_RDWR);
 	if (rc != 0) {
 		return -EINVAL;
 	}
@@ -207,7 +207,7 @@ static int settings_file_create_or_replace(struct fs_file_t *zfp,
 		}
 	}
 
-	return fs_open(zfp, file_name);
+	return fs_open(zfp, file_name, FS_O_CREATE | FS_O_RDWR);
 }
 
 /*
@@ -240,7 +240,7 @@ static int settings_file_save_and_compress(struct settings_file *cf,
 	size_t new_name_len;
 	size_t val1_off;
 
-	if (fs_open(&rf, cf->cf_name) != 0) {
+	if (fs_open(&rf, cf->cf_name, FS_O_CREATE | FS_O_RDWR) != 0) {
 		return -ENOEXEC;
 	}
 
@@ -380,7 +380,7 @@ static int settings_file_save_priv(struct settings_store *cs, const char *name,
 	/*
 	 * Open the file to add this one value.
 	 */
-	rc = fs_open(&file, cf->cf_name);
+	rc = fs_open(&file, cf->cf_name, FS_O_CREATE | FS_O_RDWR);
 	if (rc == 0) {
 		rc = fs_seek(&file, 0, FS_SEEK_END);
 		if (rc == 0) {
