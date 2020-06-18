@@ -772,6 +772,7 @@ static int mcp2515_init(struct device *dev)
 	}
 
 	dev_data->spi_cs_ctrl.gpio_pin = dev_cfg->spi_cs_pin;
+	dev_data->spi_cs_ctrl.gpio_dt_flags = dev_cfg->spi_cs_flags;
 	dev_data->spi_cs_ctrl.delay = 0U;
 
 	dev_data->spi_cfg.cs = &dev_data->spi_cs_ctrl;
@@ -851,6 +852,7 @@ static const struct mcp2515_config mcp2515_config_1 = {
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	.spi_cs_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
 	.spi_cs_port = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
+	.spi_cs_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0),
 #endif  /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
 	.tq_sjw = DT_INST_PROP(0, sjw),
 	.tq_prop = DT_INST_PROP(0, prop_seg),
