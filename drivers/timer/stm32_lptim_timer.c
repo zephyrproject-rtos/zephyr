@@ -166,6 +166,23 @@ int z_clock_driver_init(struct device *device)
 	return 0;
 }
 
+static inline uint32_t z_clock_lptim_getcounter(void)
+{
+	uint32_t lp_time;
+	uint32_t lp_time_prev_read;
+
+	/* It should be noted that to read reliably the content
+	 * of the LPTIM_CNT register, two successive read accesses
+	 * must be performed and compared
+	 */
+	lp_time = LL_LPTIM_GetCounter(LPTIM1);
+	do {
+		lp_time_prev_read = lp_time;
+		lp_time = LL_LPTIM_GetCounter(LPTIM1);
+	} while (lp_time != lp_time_prev_read);
+	return lp_time;
+}
+
 void z_clock_set_timeout(int32_t ticks, bool idle)
 {
 	/* new LPTIM1 AutoReload value to set (aligned on Kernel ticks) */
@@ -199,16 +216,7 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 
 	/* read current counter value (cannot exceed 16bit) */
 
-	volatile uint32_t lp_time = LL_LPTIM_GetCounter(LPTIM1);
-
-	/* It should be noted that to read reliably the content
-	 * of the LPTIM_CNT register, two successive read accesses
-	 * must be performed and compared
-	 */
-
-	while (lp_time != LL_LPTIM_GetCounter(LPTIM1)) {
-		lp_time = LL_LPTIM_GetCounter(LPTIM1);
-	}
+	uint32_t lp_time = z_clock_lptim_getcounter();
 
 	uint32_t autoreload = LL_LPTIM_GetAutoReload(LPTIM1);
 
@@ -263,16 +271,7 @@ uint32_t z_clock_elapsed(void)
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	volatile uint32_t lp_time = LL_LPTIM_GetCounter(LPTIM1);
-
-	/* It should be noted that to read reliably the content
-	 * of the LPTIM_CNT register, two successive read accesses
-	 * must be performed and compared
-	 */
-
-	while (lp_time != LL_LPTIM_GetCounter(LPTIM1)) {
-		lp_time = LL_LPTIM_GetCounter(LPTIM1);
-	}
+	uint32_t lp_time = z_clock_lptim_getcounter();
 
 	/* In case of counter roll-over, add this value,
 	 * even if the irq has not yet been handled
@@ -298,15 +297,7 @@ uint32_t z_timer_cycle_get_32(void)
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	volatile uint32_t lp_time = LL_LPTIM_GetCounter(LPTIM1);
-
-	/* It should be noted that to read reliably the content
-	 * of the LPTIM_CNT register, two successive read accesses
-	 * must be performed and compared
-	 */
-	while (lp_time != LL_LPTIM_GetCounter(LPTIM1)) {
-		lp_time = LL_LPTIM_GetCounter(LPTIM1);
-	}
+	uint32_t lp_time = z_clock_lptim_getcounter();
 
 	/* In case of counter roll-over, add this value,
 	 * even if the irq has not yet been handled
