@@ -45,6 +45,7 @@ struct lps22hh_config {
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	const char *gpio_cs_port;
 	uint8_t cs_gpio;
+	uint8_t cs_gpio_flags;
 #endif
 #endif
 };
