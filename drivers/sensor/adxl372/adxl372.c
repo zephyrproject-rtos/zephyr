@@ -909,6 +909,7 @@ static int adxl372_init(struct device *dev)
 	}
 
 	data->adxl372_cs_ctrl.gpio_pin = cfg->cs_gpio;
+	data->adxl372_cs_ctrl.gpio_dt_flags = cfg->cs_flags;
 	data->adxl372_cs_ctrl.delay = 0U;
 
 	data->spi_cfg.cs = &data->adxl372_cs_ctrl;
@@ -936,6 +937,7 @@ static const struct adxl372_dev_config adxl372_config = {
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	.gpio_cs_port = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
 	.cs_gpio = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
+	.cs_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0),
 #endif
 #endif
 #ifdef CONFIG_ADXL372_TRIGGER
