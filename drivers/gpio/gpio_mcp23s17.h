@@ -55,6 +55,7 @@ struct mcp23s17_config {
 	const uint32_t freq;
 	const char *const cs_dev;
 	const uint32_t cs_pin;
+	const uint8_t cs_flags;
 };
 
 /** Runtime driver data */
