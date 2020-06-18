@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <init.h>
 #include <fs/fs.h>
+#include <sys/stat.h>
 
 
 #define LOG_LEVEL CONFIG_FS_LOG_LEVEL
@@ -75,10 +76,13 @@ static int fs_get_mnt_point(struct fs_mount_t **mnt_pntp,
 }
 
 /* File operations */
-int fs_open(struct fs_file_t *zfp, const char *file_name)
+int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
 {
 	struct fs_mount_t *mp;
 	int rc = -EINVAL;
+
+	/* COpy flags to zfp for use with other fs_ API calls */
+	zfp->flags = flags;
 
 	if ((file_name == NULL) ||
 			(strlen(file_name) <= 1) || (file_name[0] != '/')) {
@@ -95,7 +99,7 @@ int fs_open(struct fs_file_t *zfp, const char *file_name)
 	zfp->mp = mp;
 
 	if (zfp->mp->fs->open != NULL) {
-		rc = zfp->mp->fs->open(zfp, file_name);
+		rc = zfp->mp->fs->open(zfp, file_name, flags);
 		if (rc < 0) {
 			LOG_ERR("file open error (%d)", rc);
 			return rc;

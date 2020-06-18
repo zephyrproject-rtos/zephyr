@@ -35,7 +35,7 @@ static int test_mkdir(void)
 		return res;
 	}
 
-	res = fs_open(&filep, TEST_DIR_FILE);
+	res = fs_open(&filep, TEST_DIR_FILE, FS_O_CREATE | FS_O_RDWR);
 	if (res) {
 		TC_PRINT("Failed opening file [%d]\n", res);
 		return res;

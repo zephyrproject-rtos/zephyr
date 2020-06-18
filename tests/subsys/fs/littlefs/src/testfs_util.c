@@ -235,7 +235,8 @@ int testfs_build(struct testfs_path *root,
 			rc = fs_open(&file,
 				     testfs_path_extend(root,
 							cp->name,
-							TESTFS_PATH_END));
+							TESTFS_PATH_END),
+				     FS_O_CREATE | FS_O_RDWR);
 			TC_PRINT("create at %s with %u from 0x%02x: %d\n",
 				 root->path, cp->size, cp->value, rc);
 			if (rc == 0) {
@@ -295,7 +296,7 @@ static int check_layout_entry(struct testfs_path *pp,
 	if (statp->type == FS_DIR_ENTRY_FILE) {
 		struct fs_file_t file;
 
-		rc = fs_open(&file, pp->path);
+		rc = fs_open(&file, pp->path, FS_O_CREATE | FS_O_RDWR);
 		if (rc < 0) {
 			TC_PRINT("%s: content check open failed: %d\n",
 				 pp->path, rc);

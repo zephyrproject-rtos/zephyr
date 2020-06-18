@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_INCLUDE_FS_FS_INTERFACE_H_
 #define ZEPHYR_INCLUDE_FS_FS_INTERFACE_H_
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -24,6 +26,9 @@ extern "C" {
 #define MAX_FILE_NAME 12
 #endif /* filesystem selection */
 
+/* Type for fs_open flags */
+typedef uint8_t fs_mode_t;
+
 struct fs_mount_t;
 
 /**
@@ -35,6 +40,7 @@ struct fs_mount_t;
 struct fs_file_t {
 	void *filep;
 	const struct fs_mount_t *mp;
+	fs_mode_t flags;
 };
 
 /**
