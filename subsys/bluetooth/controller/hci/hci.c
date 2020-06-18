@@ -1039,7 +1039,7 @@ static void le_set_adv_enable(struct net_buf *buf, struct net_buf **evt)
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	status = ll_adv_enable(0, cmd->enable, 0, 0, 0, 0, 0);
 #else /* !CONFIG_BT_HCI_MESH_EXT */
-	status = ll_adv_enable(0, cmd->enable);
+	status = ll_adv_enable(0, cmd->enable, 0, 0);
 #endif /* !CONFIG_BT_HCI_MESH_EXT */
 #else /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_HCI_MESH_EXT */
 	status = ll_adv_enable(cmd->enable);
@@ -1754,7 +1754,8 @@ static void le_set_ext_adv_enable(struct net_buf *buf, struct net_buf **evt)
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 		status = ll_adv_enable(s->handle, cmd->enable, 0, 0, 0, 0, 0);
 #else /* !CONFIG_BT_HCI_MESH_EXT */
-		status = ll_adv_enable(s->handle, cmd->enable);
+		status = ll_adv_enable(s->handle, cmd->enable,
+			s->duration, s->max_ext_adv_evts);
 #endif /* !CONFIG_BT_HCI_MESH_EXT */
 		if (status) {
 			/* TODO: how to handle succeeded ones before this
@@ -3590,6 +3591,26 @@ static void le_adv_ext_coded_report(struct pdu_data *pdu_data,
 {
 	le_adv_ext_report(pdu_data, node_rx, buf, BIT(2));
 }
+
+static void le_adv_ext_terminate(struct pdu_data *pdu_data,
+				    struct node_rx_pdu *node_rx,
+				    struct net_buf *buf)
+{
+	struct bt_hci_evt_le_adv_set_terminated *sep;
+
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_ADV_SET_TERMINATED)) {
+		return;
+	}
+
+	sep = meta_evt(buf, BT_HCI_EVT_LE_ADV_SET_TERMINATED, sizeof(*sep));
+	sep->status = ((uint32_t)node_rx->hdr.rx_ftr.extra >> 8) & 0xff;
+	sep->adv_handle = (node_rx->hdr.handle & 0xff);
+	sep->conn_handle =
+		sys_cpu_to_le16(*(uint16_t *)node_rx->hdr.rx_ftr.param);
+	sep->num_completed_ext_adv_evts =
+		(uint8_t)((uint32_t)node_rx->hdr.rx_ftr.extra & 0xff);
+}
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
 
@@ -3900,6 +3921,10 @@ static void encode_control(struct node_rx_pdu *node_rx,
 
 	case NODE_RX_TYPE_EXT_CODED_REPORT:
 		le_adv_ext_coded_report(pdu_data, node_rx, buf);
+		break;
+
+	case NODE_RX_TYPE_EXT_ADV_TERMINATE:
+		le_adv_ext_terminate(pdu_data, node_rx, buf);
 		break;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
@@ -4297,7 +4322,7 @@ uint8_t hci_get_class(struct node_rx_pdu *node_rx)
 		case NODE_RX_TYPE_REPORT:
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-			/* fallthrough */
+		/* fallthrough */
 		case NODE_RX_TYPE_EXT_1M_REPORT:
 		case NODE_RX_TYPE_EXT_2M_REPORT:
 		case NODE_RX_TYPE_EXT_CODED_REPORT:
@@ -4327,6 +4352,11 @@ uint8_t hci_get_class(struct node_rx_pdu *node_rx)
 		case NODE_RX_TYPE_MESH_ADV_CPLT:
 		case NODE_RX_TYPE_MESH_REPORT:
 #endif /* CONFIG_BT_HCI_MESH_EXT */
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		/* fallthrough */
+		case NODE_RX_TYPE_EXT_ADV_TERMINATE:
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CONN)
 		case NODE_RX_TYPE_CONNECTION:

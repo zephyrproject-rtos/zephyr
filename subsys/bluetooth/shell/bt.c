@@ -1116,7 +1116,7 @@ static int cmd_adv_start(const struct shell *shell, size_t argc, char *argv[])
 			timeout = strtoul(argv[argn], NULL, 16);
 		}
 
-		if (!strcmp(arg, "num_events")) {
+		if (!strcmp(arg, "num-events")) {
 			if (++argn == argc) {
 				goto fail_show_help;
 			}
@@ -2470,8 +2470,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(adv-data, NULL, "<data> [scan-response <data>] "
 				      "<type: discov, name, hex>", cmd_adv_data,
 		      1, 16),
-	SHELL_CMD_ARG(adv-start, NULL, "[timeout] [num_events]", cmd_adv_start,
-		      1, 4),
+	SHELL_CMD_ARG(adv-start, NULL,
+		"[timeout <timeout>] [num-events <num events>]",
+		cmd_adv_start, 1, 4),
 	SHELL_CMD_ARG(adv-stop, NULL, "", cmd_adv_stop, 1, 0),
 	SHELL_CMD_ARG(adv-delete, NULL, "", cmd_adv_delete, 1, 0),
 	SHELL_CMD_ARG(adv-select, NULL, "[adv]", cmd_adv_select, 1, 1),

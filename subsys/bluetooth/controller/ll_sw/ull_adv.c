@@ -55,13 +55,13 @@ inline uint16_t ull_adv_handle_get(struct ll_adv_set *adv);
 
 static int init_reset(void);
 static inline struct ll_adv_set *is_disabled_get(uint8_t handle);
-static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t lazy,
-		      void *param);
+static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
+		      uint16_t lazy, void *param);
 static void ticker_op_update_cb(uint32_t status, void *params);
 
 #if defined(CONFIG_BT_PERIPHERAL)
-static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t lazy,
-			   void *param);
+static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t remainder,
+			   uint16_t lazy, void *param);
 static void ticker_op_stop_cb(uint32_t status, void *params);
 static void disabled_cb(void *param);
 static void conn_release(struct ll_adv_set *adv);
@@ -477,7 +477,8 @@ uint8_t ll_adv_enable(uint8_t handle, uint8_t enable,
 		   uint8_t scan_window, uint8_t scan_delay)
 {
 #else /* !CONFIG_BT_HCI_MESH_EXT */
-uint8_t ll_adv_enable(uint8_t handle, uint8_t enable)
+uint8_t ll_adv_enable(uint8_t handle, uint8_t enable,
+		   uint16_t duration, uint8_t max_ext_adv_evts)
 {
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 	struct ll_adv_sync_set *sync = NULL;
@@ -815,10 +816,45 @@ uint8_t ll_adv_enable(uint8_t enable)
 			return BT_HCI_ERR_HW_FAILURE;
 		}
 	}
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	if (adv->is_created & ULL_ADV_CREATED_BITMASK_EXTENDED) {
+		struct node_rx_pdu *node_rx_adv_term;
+		void *link_adv_term;
+
+		/* The alloc here used for connection complete event */
+		link_adv_term = ll_rx_link_alloc();
+		if (!link_adv_term) {
+				/* TODO: figure out right return value */
+			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+		}
+
+		node_rx_adv_term = ll_rx_alloc();
+		if (!node_rx_adv_term) {
+			ll_rx_link_release(link_adv_term);
+
+			/* TODO: figure out right return value */
+			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+		}
+
+		node_rx_adv_term->hdr.link =
+			(memq_link_t *)link_adv_term;
+
+		adv->lll.node_rx_adv_term =
+			(struct node_rx_hdr *)node_rx_adv_term;
+	}
+#endif  /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	const uint8_t phy = lll->phy_p;
+	struct ull_hdr *ull;
+
+	ull = &adv->ull;
+	adv->max_events = max_ext_adv_evts;
+	adv->event_counter = 0;
+	/* duration unit is 10 ms, convert to units of 625 us */
+	adv->remain_duration = duration*16;
 #else
 	/* Legacy ADV only supports LE_1M PHY */
 	const uint8_t phy = 1;
@@ -1117,6 +1153,8 @@ uint8_t ll_adv_enable(uint8_t enable)
 #endif /* !CONFIG_BT_HCI_MESH_EXT */
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
+	adv->next_random_delay = 0;
+
 	return 0;
 
 failure_cleanup:
@@ -1371,6 +1409,12 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t laz
 	struct lll_adv *lll;
 	uint32_t ret;
 	uint8_t ref;
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	struct ull_hdr *ull;
+	uint32_t time_this_evt;
+	uint32_t time_this_and_next_evt;
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+	uint32_t curr_random_delay = 0;
 
 	DEBUG_RADIO_PREPARE_A(1);
 
@@ -1400,29 +1444,60 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t laz
 	if (!lll->is_hdcd)
 #endif /* CONFIG_BT_PERIPHERAL */
 	{
-		uint32_t random_delay;
 		uint32_t ret;
 
-		lll_rand_isr_get(&random_delay, sizeof(random_delay));
-		random_delay %= ULL_ADV_RANDOM_DELAY;
-		random_delay += 1;
+		curr_random_delay = adv->next_random_delay;
+		/* initialized to 0, so the first time, we generate a value */
+		if (curr_random_delay == 0) {
+			lll_rand_isr_get(&curr_random_delay,
+				sizeof(curr_random_delay));
+			curr_random_delay %= ULL_ADV_RANDOM_DELAY;
+			curr_random_delay += 1;
+		}
+
+		lll_rand_isr_get(&adv->next_random_delay,
+			sizeof(adv->next_random_delay));
+		adv->next_random_delay %= ULL_ADV_RANDOM_DELAY;
+		adv->next_random_delay += 1;
 
 		ret = ticker_update(TICKER_INSTANCE_ID_CTLR,
 				    TICKER_USER_ID_ULL_HIGH,
 				    (TICKER_ID_ADV_BASE +
 				     ull_adv_handle_get(adv)),
-				    random_delay,
+				    curr_random_delay,
 				    0, 0, 0, 0, 0,
 				    ticker_op_update_cb, adv);
 		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 			  (ret == TICKER_STATUS_BUSY));
 	}
 
-#if defined(CONFIG_BT_CTLR_ADV_EXT) && (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	ull = &adv->ull;
+
+	adv->event_counter += (lazy + 1);
+
+	time_this_evt =
+		(HAL_TICKER_TICKS_TO_US(curr_random_delay) / 625U)
+		+ adv->interval;
+	time_this_and_next_evt = (HAL_TICKER_TICKS_TO_US
+		(curr_random_delay + adv->next_random_delay) / 625U)
+		+ 2*adv->interval;
+
+	if (adv->remain_duration) {
+		if (adv->remain_duration >= time_this_and_next_evt) {
+			adv->remain_duration -= time_this_evt;
+		} else {
+			/* 1 means terminate adv set after this event*/
+			adv->remain_duration = 1;
+		}
+	}
+
+#if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 	if (adv->lll.aux) {
 		ull_adv_aux_offset_get(adv);
 	}
-#endif /* CONFIG_BT_CTLR_ADV_EXT && (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
+#endif /* CONFIG_BT_CTLR_ADV_AUX_SET > 0 */
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 	DEBUG_RADIO_PREPARE_A(1);
 }
@@ -1434,8 +1509,8 @@ static void ticker_op_update_cb(uint32_t status, void *param)
 }
 
 #if defined(CONFIG_BT_PERIPHERAL)
-static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t lazy,
-			   void *param)
+static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t remainder,
+			   uint16_t lazy, void *param)
 {
 	struct ll_adv_set *adv = param;
 	uint8_t handle;

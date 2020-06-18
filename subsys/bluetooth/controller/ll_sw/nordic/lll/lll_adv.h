@@ -90,6 +90,10 @@ struct lll_adv {
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 	int8_t tx_pwr_lvl;
 #endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	struct node_rx_hdr *node_rx_adv_term;
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 };
 
 int lll_adv_init(void);
