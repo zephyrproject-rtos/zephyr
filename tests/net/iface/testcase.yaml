@@ -1,11 +1,6 @@
 common:
   min_ram: 16
-  tags: net iface userspace
   depends_on: netif
 tests:
-  net.iface.with_userspace:
-    extra_configs:
-      - CONFIG_NET_IF_USERSPACE_ACCESS=y
-  net.iface.no_userspace_allowed:
-    extra_configs:
-      - CONFIG_NET_IF_USERSPACE_ACCESS=n
+  net.iface:
+    tags: net iface userspace

@@ -662,13 +662,14 @@ static void test_v4_addr_add_user(void)
 	bool ret;
 
 	ret = net_if_ipv4_addr_add_by_index(1, &my_addr, NET_ADDR_MANUAL, 0);
-	if (IS_ENABLED(CONFIG_NET_IF_USERSPACE_ACCESS)) {
-		zassert_true(ret, "Cannot add IPv4 address");
-	} else if (IS_ENABLED(CONFIG_USERSPACE)) {
-		zassert_false(ret, "Could add IPv4 address");
-	} else {
-		zassert_true(ret, "Cannot add IPv4 address");
-	}
+	zassert_true(ret, "Could not add IPv4 address");
+}
+
+static void test_v4_addr_add_user_from_userspace(void)
+{
+	k_thread_access_grant(k_current_get(), net_if_get_by_index(1));
+	k_thread_user_mode_enter((k_thread_entry_t)test_v4_addr_add_user, NULL,
+				 NULL, NULL);
 }
 
 static void test_v4_addr_lookup_user(void)
@@ -677,10 +678,8 @@ static void test_v4_addr_lookup_user(void)
 	struct in_addr unknown_addr = UNKNOWN_ADDR_V4_USER;
 	int ret;
 
-	if (IS_ENABLED(CONFIG_NET_IF_USERSPACE_ACCESS)) {
-		ret = net_if_ipv4_addr_lookup_by_index(&my_addr);
-		zassert_equal(ret, 1, "IPv4 address not found (%d)", ret);
-	}
+	ret = net_if_ipv4_addr_lookup_by_index(&my_addr);
+	zassert_equal(ret, 1, "IPv4 address not found (%d)", ret);
 
 	ret = net_if_ipv4_addr_lookup_by_index(&unknown_addr);
 	zassert_equal(ret, 0, "IPv4 address found");
@@ -691,10 +690,15 @@ static void test_v4_addr_rm_user(void)
 	struct in_addr my_addr = MY_ADDR_V4_USER;
 	bool ret;
 
-	if (IS_ENABLED(CONFIG_NET_IF_USERSPACE_ACCESS)) {
-		ret = net_if_ipv4_addr_rm_by_index(1, &my_addr);
-		zassert_true(ret, "Cannot remove IPv4 address");
-	}
+	ret = net_if_ipv4_addr_rm_by_index(1, &my_addr);
+	zassert_true(ret, "Cannot remove IPv4 address");
+}
+
+static void test_v4_addr_rm_user_from_userspace(void)
+{
+	k_thread_access_grant(k_current_get(), net_if_get_by_index(1));
+	k_thread_user_mode_enter((k_thread_entry_t)test_v4_addr_rm_user, NULL,
+				 NULL, NULL);
 }
 
 static
@@ -745,13 +749,14 @@ static void test_v6_addr_add_user(void)
 	bool ret;
 
 	ret = net_if_ipv6_addr_add_by_index(1, &my_addr, NET_ADDR_MANUAL, 0);
-	if (IS_ENABLED(CONFIG_NET_IF_USERSPACE_ACCESS)) {
-		zassert_true(ret, "Cannot add IPv6 address");
-	} else if (IS_ENABLED(CONFIG_USERSPACE)) {
-		zassert_false(ret, "Could add IPv6 address");
-	} else {
-		zassert_true(ret, "Cannot add IPv6 address");
-	}
+	zassert_true(ret, "Could not add IPv6 address");
+}
+
+static void test_v6_addr_add_user_from_userspace(void)
+{
+	k_thread_access_grant(k_current_get(), net_if_get_by_index(1));
+	k_thread_user_mode_enter((k_thread_entry_t)test_v6_addr_add_user, NULL,
+				 NULL, NULL);
 }
 
 static void test_v6_addr_lookup_user(void)
@@ -760,13 +765,11 @@ static void test_v6_addr_lookup_user(void)
 	struct in6_addr unknown_addr = UNKNOWN_ADDR_V6_USER;
 	int ret;
 
-	if (IS_ENABLED(CONFIG_NET_IF_USERSPACE_ACCESS)) {
-		ret = net_if_ipv6_addr_lookup_by_index(&my_addr);
-		zassert_equal(ret, 1, "IPv6 address not found (%d)", ret);
+	ret = net_if_ipv6_addr_lookup_by_index(&my_addr);
+	zassert_equal(ret, 1, "IPv6 address not found (%d)", ret);
 
-		ret = net_if_ipv6_addr_lookup_by_index(&unknown_addr);
-		zassert_equal(ret, 0, "IPv6 address found");
-	}
+	ret = net_if_ipv6_addr_lookup_by_index(&unknown_addr);
+	zassert_equal(ret, 0, "IPv6 address found");
 }
 
 static void test_v6_addr_rm_user(void)
@@ -777,10 +780,15 @@ static void test_v6_addr_rm_user(void)
 	/* Check also that add is enabled so that we can remove something
 	 * that was already added.
 	 */
-	if (IS_ENABLED(CONFIG_NET_IF_USERSPACE_ACCESS)) {
-		ret = net_if_ipv6_addr_rm_by_index(1, &my_addr);
-		zassert_true(ret, "Cannot remove IPv6 address");
-	}
+	ret = net_if_ipv6_addr_rm_by_index(1, &my_addr);
+	zassert_true(ret, "Cannot remove IPv6 address");
+}
+
+static void test_v6_addr_rm_user_from_userspace(void)
+{
+	k_thread_access_grant(k_current_get(), net_if_get_by_index(1));
+	k_thread_user_mode_enter((k_thread_entry_t)test_v6_addr_rm_user, NULL,
+				 NULL, NULL);
 }
 
 static void test_netmask_addr_add(void)
@@ -788,10 +796,15 @@ static void test_netmask_addr_add(void)
 	struct in_addr my_netmask = { { { 255, 255, 255, 0 } } };
 	bool ret;
 
-	if (IS_ENABLED(CONFIG_NET_IF_USERSPACE_ACCESS)) {
-		ret = net_if_ipv4_set_netmask_by_index(1, &my_netmask);
-		zassert_true(ret, "Cannot add IPv4 netmask");
-	}
+	ret = net_if_ipv4_set_netmask_by_index(1, &my_netmask);
+	zassert_true(ret, "Cannot add IPv4 netmask");
+}
+
+static void test_netmask_addr_add_from_userspace(void)
+{
+	k_thread_access_grant(k_current_get(), net_if_get_by_index(1));
+	k_thread_user_mode_enter((k_thread_entry_t)test_netmask_addr_add, NULL,
+				 NULL, NULL);
 }
 
 static void test_gw_addr_add(void)
@@ -799,10 +812,28 @@ static void test_gw_addr_add(void)
 	struct in_addr my_gw = { { { 192, 0, 2, 254 } } };
 	bool ret;
 
-	if (IS_ENABLED(CONFIG_NET_IF_USERSPACE_ACCESS)) {
-		ret = net_if_ipv4_set_gw_by_index(1, &my_gw);
-		zassert_true(ret, "Cannot add IPv4 gateway");
-	}
+	ret = net_if_ipv4_set_gw_by_index(1, &my_gw);
+	zassert_true(ret, "Cannot add IPv4 gateway");
+}
+
+static void test_gw_addr_add_from_userspace(void)
+{
+	k_thread_access_grant(k_current_get(), net_if_get_by_index(1));
+	k_thread_user_mode_enter((k_thread_entry_t)test_gw_addr_add, NULL,
+				 NULL, NULL);
+}
+
+static void test_get_by_index(void)
+{
+	zassert_not_null(net_if_get_by_index(1),
+			 "Cannot get interface at index 1");
+}
+
+static void test_get_by_index_from_userspace(void)
+{
+	k_thread_access_grant(k_current_get(), net_if_get_by_index(1));
+	k_thread_user_mode_enter((k_thread_entry_t)test_get_by_index, NULL,
+				 NULL, NULL);
 }
 
 void test_main(void)
@@ -824,19 +855,21 @@ void test_main(void)
 			 ztest_unit_test(test_v4_addr_add),
 			 ztest_unit_test(test_v4_addr_lookup),
 			 ztest_unit_test(test_v4_addr_rm),
-			 ztest_user_unit_test(test_v4_addr_add_user),
+			 ztest_unit_test(test_v4_addr_add_user_from_userspace),
 			 ztest_user_unit_test(test_v4_addr_lookup_user),
-			 ztest_user_unit_test(test_v4_addr_rm_user),
+			 ztest_unit_test(test_v4_addr_rm_user_from_userspace),
 			 ztest_unit_test(test_v6_addr_add),
 			 ztest_unit_test(test_v6_addr_lookup),
 			 ztest_unit_test(test_v6_addr_rm),
-			 ztest_user_unit_test(test_v6_addr_add_user),
+			 ztest_unit_test(test_v6_addr_add_user_from_userspace),
 			 ztest_user_unit_test(test_v6_addr_lookup_user),
-			 ztest_user_unit_test(test_v6_addr_rm_user),
+			 ztest_unit_test(test_v6_addr_rm_user_from_userspace),
 			 ztest_unit_test(test_netmask_addr_add),
-			 ztest_user_unit_test(test_netmask_addr_add),
+			 ztest_unit_test(test_netmask_addr_add_from_userspace),
 			 ztest_unit_test(test_gw_addr_add),
-			 ztest_user_unit_test(test_gw_addr_add)
+			 ztest_unit_test(test_gw_addr_add_from_userspace),
+			 ztest_unit_test(test_get_by_index),
+			 ztest_unit_test(test_get_by_index_from_userspace)
 		);
 
 	ztest_run_test_suite(net_iface_test);
