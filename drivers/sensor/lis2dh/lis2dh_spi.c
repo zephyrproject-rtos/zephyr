@@ -164,6 +164,7 @@ int lis2dh_spi_init(struct device *dev)
 	}
 
 	data->cs_ctrl.gpio_pin = cfg->cs_gpio;
+	data->cs_ctrl.gpio_dt_flags = cfg->cs_gpio_flags;
 	data->cs_ctrl.delay = 0;
 
 	LOG_DBG("SPI GPIO CS configured on %s:%u",
