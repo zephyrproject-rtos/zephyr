@@ -123,6 +123,46 @@ static sys_slist_t timestamp_callbacks;
 #define debug_check_packet(...)
 #endif /* CONFIG_NET_IF_LOG_LEVEL >= LOG_LEVEL_DBG */
 
+struct net_if *z_impl_net_if_get_by_index(int index)
+{
+	if (index <= 0) {
+		return NULL;
+	}
+
+	if (&_net_if_list_start[index - 1] >= _net_if_list_end) {
+		NET_DBG("Index %d is too large", index);
+		return NULL;
+	}
+
+	return &_net_if_list_start[index - 1];
+}
+
+#ifdef CONFIG_USERSPACE
+struct net_if *z_vrfy_net_if_get_by_index(int index)
+{
+	struct net_if *iface;
+	struct z_object *zo;
+	int ret;
+
+	iface = net_if_get_by_index(index);
+	if (!iface) {
+		return NULL;
+	}
+
+	zo = z_object_find(iface);
+
+	ret = z_object_validate(zo, K_OBJ_NET_IF, _OBJ_INIT_TRUE);
+	if (ret != 0) {
+		z_dump_object_error(ret, iface, zo, K_OBJ_NET_IF);
+		return NULL;
+	}
+
+	return iface;
+}
+
+#include <syscalls/net_if_get_by_index_mrsh.c>
+#endif
+
 static inline void net_context_send_cb(struct net_context *context,
 				       int status)
 {
@@ -1569,8 +1609,13 @@ bool z_vrfy_net_if_ipv6_addr_add_by_index(int index,
 					  enum net_addr_type addr_type,
 					  uint32_t vlifetime)
 {
-#if defined(CONFIG_NET_IF_USERSPACE_ACCESS)
 	struct in6_addr addr_v6;
+	struct net_if *iface;
+
+	iface = z_vrfy_net_if_get_by_index(index);
+	if (!iface) {
+		return false;
+	}
 
 	Z_OOPS(z_user_from_copy(&addr_v6, (void *)addr, sizeof(addr_v6)));
 
@@ -1578,10 +1623,8 @@ bool z_vrfy_net_if_ipv6_addr_add_by_index(int index,
 						    &addr_v6,
 						    addr_type,
 						    vlifetime);
-#else
-	return false;
-#endif /* CONFIG_NET_IF_USERSPACE_ACCESS */
 }
+
 #include <syscalls/net_if_ipv6_addr_add_by_index_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
@@ -1602,16 +1645,19 @@ bool z_impl_net_if_ipv6_addr_rm_by_index(int index,
 bool z_vrfy_net_if_ipv6_addr_rm_by_index(int index,
 					 const struct in6_addr *addr)
 {
-#if defined(CONFIG_NET_IF_USERSPACE_ACCESS)
 	struct in6_addr addr_v6;
+	struct net_if *iface;
+
+	iface = z_vrfy_net_if_get_by_index(index);
+	if (!iface) {
+		return false;
+	}
 
 	Z_OOPS(z_user_from_copy(&addr_v6, (void *)addr, sizeof(addr_v6)));
 
 	return z_impl_net_if_ipv6_addr_rm_by_index(index, &addr_v6);
-#else
-	return false;
-#endif /* CONFIG_NET_IF_USERSPACE_ACCESS */
 }
+
 #include <syscalls/net_if_ipv6_addr_rm_by_index_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
@@ -2903,17 +2949,20 @@ bool z_impl_net_if_ipv4_set_netmask_by_index(int index,
 bool z_vrfy_net_if_ipv4_set_netmask_by_index(int index,
 					     const struct in_addr *netmask)
 {
-#if defined(CONFIG_NET_IF_USERSPACE_ACCESS)
 	struct in_addr netmask_addr;
+	struct net_if *iface;
+
+	iface = z_vrfy_net_if_get_by_index(index);
+	if (!iface) {
+		return false;
+	}
 
 	Z_OOPS(z_user_from_copy(&netmask_addr, (void *)netmask,
 				sizeof(netmask_addr)));
 
 	return z_impl_net_if_ipv4_set_netmask_by_index(index, &netmask_addr);
-#else
-	return false;
-#endif
 }
+
 #include <syscalls/net_if_ipv4_set_netmask_by_index_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
@@ -2949,16 +2998,19 @@ bool z_impl_net_if_ipv4_set_gw_by_index(int index,
 bool z_vrfy_net_if_ipv4_set_gw_by_index(int index,
 					const struct in_addr *gw)
 {
-#if defined(CONFIG_NET_IF_USERSPACE_ACCESS)
 	struct in_addr gw_addr;
+	struct net_if *iface;
+
+	iface = z_vrfy_net_if_get_by_index(index);
+	if (!iface) {
+		return false;
+	}
 
 	Z_OOPS(z_user_from_copy(&gw_addr, (void *)gw, sizeof(gw_addr)));
 
 	return z_impl_net_if_ipv4_set_gw_by_index(index, &gw_addr);
-#else
-	return false;
-#endif
 }
+
 #include <syscalls/net_if_ipv4_set_gw_by_index_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
@@ -3108,8 +3160,13 @@ bool z_vrfy_net_if_ipv4_addr_add_by_index(int index,
 					  enum net_addr_type addr_type,
 					  uint32_t vlifetime)
 {
-#if defined(CONFIG_NET_IF_USERSPACE_ACCESS)
 	struct in_addr addr_v4;
+	struct net_if *iface;
+
+	iface = z_vrfy_net_if_get_by_index(index);
+	if (!iface) {
+		return false;
+	}
 
 	Z_OOPS(z_user_from_copy(&addr_v4, (void *)addr, sizeof(addr_v4)));
 
@@ -3117,10 +3174,8 @@ bool z_vrfy_net_if_ipv4_addr_add_by_index(int index,
 						    &addr_v4,
 						    addr_type,
 						    vlifetime);
-#else
-	return false;
-#endif /* CONFIG_NET_IF_USERSPACE_ACCESS */
 }
+
 #include <syscalls/net_if_ipv4_addr_add_by_index_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
@@ -3141,16 +3196,19 @@ bool z_impl_net_if_ipv4_addr_rm_by_index(int index,
 bool z_vrfy_net_if_ipv4_addr_rm_by_index(int index,
 					 const struct in_addr *addr)
 {
-#if defined(CONFIG_NET_IF_USERSPACE_ACCESS)
 	struct in_addr addr_v4;
+	struct net_if *iface;
+
+	iface = z_vrfy_net_if_get_by_index(index);
+	if (!iface) {
+		return false;
+	}
 
 	Z_OOPS(z_user_from_copy(&addr_v4, (void *)addr, sizeof(addr_v4)));
 
 	return (uint32_t)z_impl_net_if_ipv4_addr_rm_by_index(index, &addr_v4);
-#else
-	return false;
-#endif /* CONFIG_NET_IF_USERSPACE_ACCESS */
 }
+
 #include <syscalls/net_if_ipv4_addr_rm_by_index_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
@@ -3419,20 +3477,6 @@ bool net_if_need_calc_tx_checksum(struct net_if *iface)
 bool net_if_need_calc_rx_checksum(struct net_if *iface)
 {
 	return need_calc_checksum(iface, ETHERNET_HW_RX_CHKSUM_OFFLOAD);
-}
-
-struct net_if *net_if_get_by_index(int index)
-{
-	if (index <= 0) {
-		return NULL;
-	}
-
-	if (&_net_if_list_start[index - 1] >= _net_if_list_end) {
-		NET_DBG("Index %d is too large", index);
-		return NULL;
-	}
-
-	return &_net_if_list_start[index - 1];
 }
 
 int net_if_get_by_iface(struct net_if *iface)

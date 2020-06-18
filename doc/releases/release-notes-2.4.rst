@@ -57,6 +57,7 @@ Removed APIs in this release
 
   * The deprecated ``MACRO_MAP`` macro has been removed from the
     :ref:`util_api`. Use ``FOR_EACH`` instead.
+  * The CONFIG_NET_IF_USERSPACE_ACCESS is removed as it is no longer needed.
 
 Stable API changes in this release
 ==================================

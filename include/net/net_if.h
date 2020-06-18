@@ -1930,11 +1930,14 @@ bool net_if_need_calc_tx_checksum(struct net_if *iface);
 /**
  * @brief Get interface according to index
  *
+ * @details This is a syscall only to provide access to the object for purposes
+ *          of assigning permissions.
+ *
  * @param index Interface index
  *
  * @return Pointer to interface or NULL if not found.
  */
-struct net_if *net_if_get_by_index(int index);
+__syscall struct net_if *net_if_get_by_index(int index);
 
 /**
  * @brief Get interface index according to pointer
