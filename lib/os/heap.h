@@ -66,7 +66,8 @@ struct z_heap {
 
 static inline bool big_heap_chunks(size_t chunks)
 {
-	return sizeof(void *) > 4 || chunks > 0x7fff;
+	return IS_ENABLED(CONFIG_SYS_HEAP_ALIGNED_ALLOC)
+		|| sizeof(void *) > 4 || chunks > 0x7fff;
 }
 
 static inline bool big_heap_bytes(size_t bytes)

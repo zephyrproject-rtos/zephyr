@@ -21,9 +21,19 @@ static void *chunk_mem(struct z_heap *h, chunkid_t c)
 	return ret;
 }
 
+static inline bool solo_free_header(struct z_heap *h, chunkid_t c)
+{
+	return (IS_ENABLED(CONFIG_SYS_HEAP_ALIGNED_ALLOC)
+		&& chunk_size(h, c) == 1);
+}
+
 static void free_list_remove(struct z_heap *h, int bidx,
 			     chunkid_t c)
 {
+	if (solo_free_header(h, c)) {
+		return;
+	}
+
 	struct z_heap_bucket *b = &h->buckets[bidx];
 
 	CHECK(!chunk_used(h, c));
@@ -46,6 +56,10 @@ static void free_list_remove(struct z_heap *h, int bidx,
 
 static void free_list_add(struct z_heap *h, chunkid_t c)
 {
+	if (solo_free_header(h, c)) {
+		return;
+	}
+
 	int bi = bucket_idx(h, chunk_size(h, c));
 
 	if (h->buckets[bi].next == 0) {
@@ -229,6 +243,54 @@ void *sys_heap_alloc(struct sys_heap *heap, size_t bytes)
 	chunkid_t c = alloc_chunks(heap->heap, chunksz);
 
 	return chunk_mem(heap->heap, c);
+}
+
+void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
+{
+	struct z_heap *h = heap->heap;
+
+	CHECK((align & (align - 1)) == 0);
+	CHECK(big_heap(h));
+	if (bytes == 0) {
+		return NULL;
+	}
+
+	/* Find a free block that is guaranteed to fit */
+	size_t chunksz = bytes_to_chunksz(h, bytes);
+	size_t mask = (align / CHUNK_UNIT) - 1;
+	size_t padsz = MAX(CHUNK_UNIT, chunksz + mask);
+	chunkid_t c0 = alloc_chunks(h, padsz);
+
+	if (c0 == 0) {
+		return NULL;
+	}
+
+	/* Align within memory, using "chunk index" units.  Remember
+	 * the block we're aligning starts in the chunk AFTER the
+	 * header!
+	 */
+	size_t c0i = ((size_t) &chunk_buf(h)[c0 + 1]) / CHUNK_UNIT;
+	size_t ci = ((c0i + mask) & ~mask);
+	chunkid_t c = c0 + (ci - c0i);
+
+	CHECK(c >= c0 && c  < c0 + padsz);
+	CHECK((((size_t) chunk_mem(h, c)) & (align - 1)) == 0);
+
+	/* Split and free unused prefix */
+	if (c > c0) {
+		split_chunks(h, c0, c);
+		set_chunk_used(h, c, true);
+		free_chunks(h, c0);
+	}
+
+	/* Split and free unused suffix */
+	if (chunksz < chunk_size(h, c)) {
+		split_chunks(h, c, c + chunksz);
+		set_chunk_used(h, c, true);
+		free_chunks(h, c + chunksz);
+	}
+
+	return chunk_mem(h, c);
 }
 
 void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
