@@ -274,7 +274,7 @@ disable:
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	err = ll_adv_enable(handle, enable, 0, 0, 0, 0, 0);
 #else /* !CONFIG_BT_HCI_MESH_EXT */
-	err = ll_adv_enable(handle, enable);
+	err = ll_adv_enable(handle, enable, 0, 0);
 #endif /* !CONFIG_BT_HCI_MESH_EXT */
 	if (err) {
 		goto exit;

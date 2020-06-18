@@ -128,7 +128,7 @@ static void test_advx_main(void)
 	}
 
 	printk("enabling...");
-	err = ll_adv_enable(handle, 1);
+	err = ll_adv_enable(handle, 1, 0, 0);
 	if (err) {
 		goto exit;
 	}
@@ -137,7 +137,7 @@ static void test_advx_main(void)
 	k_sleep(K_MSEC(400));
 
 	printk("Disabling...");
-	err = ll_adv_enable(handle, 0);
+	err = ll_adv_enable(handle, 0, 0, 0);
 	if (err) {
 		goto exit;
 	}
@@ -153,7 +153,7 @@ static void test_advx_main(void)
 	}
 
 	printk("enabling...");
-	err = ll_adv_enable(handle, 1);
+	err = ll_adv_enable(handle, 1, 0, 0);
 	if (err) {
 		goto exit;
 	}
@@ -182,7 +182,7 @@ static void test_advx_main(void)
 	k_sleep(K_MSEC(400));
 
 	printk("Disabling...");
-	err = ll_adv_enable(handle, 0);
+	err = ll_adv_enable(handle, 0, 0, 0);
 	if (err) {
 		goto exit;
 	}
@@ -203,7 +203,7 @@ static void test_advx_main(void)
 	}
 
 	printk("enabling extended...");
-	err = ll_adv_enable(handle, 1);
+	err = ll_adv_enable(handle, 1, 0, 0);
 	if (err) {
 		goto exit;
 	}
@@ -235,7 +235,7 @@ static void test_advx_main(void)
 	k_sleep(K_MSEC(400));
 
 	printk("Disabling...");
-	err = ll_adv_enable(handle, 0);
+	err = ll_adv_enable(handle, 0, 0, 0);
 	if (err) {
 		goto exit;
 	}
