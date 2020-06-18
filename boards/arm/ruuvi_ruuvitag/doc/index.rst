@@ -1,6 +1,6 @@
 .. _ruuvi_ruuvitag:
 
-ruuvi-ruuvitag
+Ruuvi RuuviTag
 ##############
 
 Overview
