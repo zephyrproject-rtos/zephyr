@@ -1,0 +1,3 @@
+tests:
+  lib.heap_align:
+    tags: heap
