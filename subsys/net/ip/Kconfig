@@ -611,14 +611,6 @@ config NET_HEADERS_ALWAYS_CONTIGUOUS
 	  NET_BUF_FIXED_DATA_SIZE enabled and NET_BUF_DATA_SIZE of 128 for
 	  instance.
 
-config NET_IF_USERSPACE_ACCESS
-	bool "Allow userspace app to manipulate network interface"
-	depends on USERSPACE
-	help
-	  Only enable this if you want a userspace application to manipulate
-	  network interface. Currently this is limited to add or remove
-	  IP addresses. By default this is not allowed.
-
 choice
 	prompt "Default Network Interface"
 	default NET_DEFAULT_IF_FIRST
