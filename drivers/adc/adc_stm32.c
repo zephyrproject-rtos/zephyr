@@ -319,6 +319,10 @@ static int start_read(const struct device *dev,
 	}
 
 	uint32_t channels = sequence->channels;
+	if (channels > find_lsb_set(channels)) {
+		LOG_ERR("Only single channel supported");
+		return -ENOTSUP;
+	}
 
 	data->buffer = sequence->buffer;
 	uint8_t index;
