@@ -59,7 +59,7 @@ void main(void)
 		printk("Sector size %u\n", block_size);
 
 		memory_size_mb = (uint64_t)block_count * block_size;
-		printk("Memory Size(MB) %u\n", (uint32_t)memory_size_mb>>20);
+		printk("Memory Size(MB) %u\n", (uint32_t)(memory_size_mb>>20));
 	} while (0);
 
 	mp.mnt_point = disk_mount_pt;
