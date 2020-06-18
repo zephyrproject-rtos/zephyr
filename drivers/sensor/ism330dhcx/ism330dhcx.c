@@ -762,6 +762,7 @@ static const struct ism330dhcx_config ism330dhcx_config = {
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	.gpio_cs_port	    = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
 	.cs_gpio	    = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
+	.cs_gpio_flags	    = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0),
 
 	.spi_conf.cs        =  &ism330dhcx_data.cs_ctrl,
 #else
