@@ -542,6 +542,7 @@ UNDEF_KCONFIG_WHITELIST = {
     "SRAM2",  # Referenced in a comment in samples/application_development
     "STACK_SIZE",  # Used as an example in the Kconfig docs
     "STD_CPP",  # Referenced in CMake comment
+    "TAGOIO_HTTP_POST_LOG_LEVEL",  # Used as in samples/net/cloud/tagoio
     "TEST1",
     "TYPE_BOOLEAN",
     "USB_CONSOLE",

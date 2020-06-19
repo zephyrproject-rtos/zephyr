@@ -1,0 +1,49 @@
+#  Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+#  SPDX-License-Identifier: Apache-2.0
+
+mainmenu "TagoIO IoT Cloud Platform (HTTP Post) Client Configuration"
+
+menu "TagoIO IoT Cloud Configuration"
+
+config TAGOIO_MANUAL_SERVER
+	bool "Disable DNS lookup"
+
+config TAGOIO_API_SERVER_IP
+	string "TagoIO Main Server"
+	depends on TAGOIO_MANUAL_SERVER
+	default "75.2.65.153"
+
+config TAGOIO_DEVICE_TOKEN
+	string "The Device Identification Token"
+	default "device_token"
+
+config TAGOIO_HTTP_PUSH_INTERVAL
+	int "Configure data push interval in seconds"
+	range 1 512
+	default 10
+
+config TAGOIO_HTTP_CONN_TIMEOUT
+	int "Configure http request timeout in seconds"
+	range 1 120
+	default 10
+
+if WIFI
+
+config TAGOIO_HTTP_WIFI_SSID
+	string "WIFI SSID - Network name"
+	default "my_network"
+
+config TAGOIO_HTTP_WIFI_PSK
+	string "WIFI PSK - Network password key"
+	default "secret_passwd"
+
+endif # WIFI
+
+module = TAGOIO_HTTP_POST
+module-str = TagoIO IoT Cloud Platform
+module-help = Enables logging for TagoIO IoT Cloud Platform.
+source "subsys/logging/Kconfig.template.log_config"
+
+endmenu
+
+source "Kconfig.zephyr"

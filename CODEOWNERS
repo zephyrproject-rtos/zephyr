@@ -448,6 +448,7 @@
 /samples/drivers/counter/maxim_ds3231/    @pabigot
 /samples/lorawan/                         @Mani-Sadhasivam
 /samples/net/                             @jukkar @tbursztyka @pfalcon
+/samples/net/cloud/tagoio_http_post/      @nandojve
 /samples/net/dns_resolve/                 @jukkar @tbursztyka @pfalcon
 /samples/net/lwm2m_client/                @rlubos
 /samples/net/mqtt_publisher/              @jukkar @tbursztyka
