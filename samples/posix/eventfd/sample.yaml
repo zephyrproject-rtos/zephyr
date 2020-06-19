@@ -19,5 +19,5 @@ tests:
         -  "Writing 4 to efd"
         -  "Completed write loop"
         -  "About to read"
-        -  "Read 10 (0xa) from efd"
+        -  "Read 10 \\(0xa\\) from efd"
         -  "Finished"
