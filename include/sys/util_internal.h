@@ -64,11 +64,6 @@
 /* Used to remove brackets from around a single argument. */
 #define __DEBRACKET(...) __VA_ARGS__
 
-/* Used by IS_EMPTY() */
-#define Z_IS_EMPTY_(...) Z_IS_EMPTY__(__VA_ARGS__)
-#define Z_IS_EMPTY__(a, ...) Z_IS_EMPTY___(_ZZ##a##ZZ0, __VA_ARGS__)
-#define Z_IS_EMPTY___(...) GET_ARG_N(3, __VA_ARGS__)
-
 /* Used by LIST_DROP_EMPTY() */
 /* Adding ',' after each element would add empty element at the end of
  * list, which is hard to remove, so instead precede each element with ',',

@@ -28,6 +28,7 @@
 
 #ifndef _ASMLANGUAGE
 
+#include <../../modules/lib/p99/p99/p99_args.h>
 #include <zephyr/types.h>
 #include <stddef.h>
 
@@ -483,7 +484,7 @@ uint8_t u8_to_dec(char *buf, uint8_t buflen, uint8_t value);
  *
  * @param a macro to check for emptiness
  */
-#define IS_EMPTY(a) Z_IS_EMPTY_(a, true, false,)
+#define IS_EMPTY(a) P99_IS_EMPTY(a)
 
 /**
  * @brief Remove empty arguments from list.
