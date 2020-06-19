@@ -16,9 +16,9 @@ LOG_MODULE_REGISTER(sdhc_spi, CONFIG_DISK_LOG_LEVEL);
 #include "disk_access_sdhc.h"
 
 /* Clock speed used during initialisation */
-#define SDHC_SPI_INITIAL_SPEED 400000
+#define SDHC_SPI_INITIAL_SPEED KHZ(400)
 /* Clock speed used after initialisation */
-#define SDHC_SPI_SPEED 4000000
+#define SDHC_SPI_DEFAULT_SPEED MHZ(25)
 
 #if !DT_NODE_HAS_STATUS(DT_INST(0, zephyr_mmc_spi_slot), okay)
 #warning NO SDHC slot specified on board
@@ -796,7 +796,7 @@ static int sdhc_spi_init(struct device *dev)
 	};
 	/* SPI config for default speed */
 	data->spi_cfgs[SDHC_SPI_DEFAULT_SPEED_CFG] = (struct spi_config){
-		.frequency = SDHC_SPI_SPEED,
+		.frequency = SDHC_SPI_DEFAULT_SPEED,
 		.operation = SPI_WORD_SET(8) | SPI_HOLD_ON_CS,
 		.slave = DT_REG_ADDR(DT_INST(0, zephyr_mmc_spi_slot)),
 	};
