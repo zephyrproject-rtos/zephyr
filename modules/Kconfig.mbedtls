@@ -111,6 +111,7 @@ config MBEDTLS_ENABLE_HEAP
 
 config MBEDTLS_HEAP_SIZE
 	int "Heap size for mbed TLS"
+	default 10240 if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
 	default 512
 	depends on MBEDTLS_ENABLE_HEAP
 	help

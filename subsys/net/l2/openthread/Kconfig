@@ -8,12 +8,20 @@
 #
 menuconfig NET_L2_OPENTHREAD
 	bool "OpenThread L2"
-	depends on FLASH
-	depends on FLASH_PAGE_LAYOUT
-	depends on CPLUSPLUS
-	depends on REBOOT
-	depends on SETTINGS
+	depends on NETWORKING
+
+	select SETTINGS
+	select FLASH
+	select FLASH_PAGE_LAYOUT
+	select FLASH_MAP
+	select MPU_ALLOW_FLASH_WRITE
+	select NVS
+
 	select OPENTHREAD_PLAT
+	select CPLUSPLUS
+	select REBOOT
+	select ENTROPY_GENERATOR
+
 	select MBEDTLS
 	select MBEDTLS_ENABLE_HEAP
 	select MBEDTLS_CIPHER_AES_ENABLED
@@ -23,6 +31,10 @@ menuconfig NET_L2_OPENTHREAD
 	select MBEDTLS_MAC_CMAC_ENABLED
 	select MBEDTLS_CIPHER
 	select MBEDTLS_MD
+
+	imply NET_UDP
+	imply NET_IPV6
+	imply NET_CONFIG_NEED_IPV6
 
 if NET_L2_OPENTHREAD
 
@@ -187,7 +199,7 @@ config OPENTHREAD_COMMISSIONER
 	  Enable commissioner capability in OpenThread stack. Note, that DTLS
 	  handshake used in the commissioning procedure requires a larger
 	  mbedTLS heap than the default value. A minimum recommended value of
-	  CONFIG_MBEDTLS_HEAP_SIZE for the commissioning is 8KB.
+	  CONFIG_MBEDTLS_HEAP_SIZE for the commissioning is 10KB.
 
 config OPENTHREAD_JOINER
 	bool "Joiner functions support"
@@ -196,7 +208,7 @@ config OPENTHREAD_JOINER
 	  Enable joiner capability in OpenThread stack. Note, that DTLS
 	  handshake used in the commissioning procedure requires a larger
 	  mbedTLS heap than the default value. A minimum recommended value of
-	  CONFIG_MBEDTLS_HEAP_SIZE for the commissioning is 8KB.
+	  CONFIG_MBEDTLS_HEAP_SIZE for the commissioning is 10KB.
 
 config OPENTHREAD_JOINER_AUTOSTART
 	bool "Support for automatic joiner start"
