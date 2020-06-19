@@ -24,4 +24,7 @@ void test_lfs_dirops(void);
 /* Tests in test_lfs_perf */
 void test_lfs_perf(void);
 
+/* Test fs_open flags */
+void test_fs_open_flags_lfs(void);
+
 #endif /* _ZEPHYR_TESTS_SUBSYS_FS_LITTLEFS_TESTFS_TESTS_H_ */
