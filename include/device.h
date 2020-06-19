@@ -218,45 +218,43 @@ typedef void (*device_pm_cb)(struct device *dev,
 
 /**
  * @brief Device PM info
- *
- * @param dev pointer to device structure
- * @param lock lock to synchronize the get/put operations
- * @param enable device pm enable flag
- * @param usage device usage count
- * @param fsm_state device idle internal power state
- * @param event event object to listen to the sync request events
- * @param signal signal to notify the Async API callers
  */
 struct device_pm {
+	/** Pointer to the device */
 	struct device *dev;
+	/** Lock to synchronize the get/put operations */
 	struct k_sem lock;
+	/** Device pm enable flag */
 	bool enable;
+	/** Device usage count */
 	atomic_t usage;
+	/** Device idle internal power state */
 	atomic_t fsm_state;
+	/** Work object for asynchronous calls */
 	struct k_work work;
+	/** Event object to listen to the sync request events */
 	struct k_poll_event event;
+	/** Signal to notify the Async API callers */
 	struct k_poll_signal signal;
 };
 
 /**
  * @brief Runtime device structure (in memory) per driver instance
- *
- * @param name name of the device
- * @param init init function for the driver
- * @param config_info address of driver instance config information
- * @param device_config Build time config information
- * @param driver_api pointer to structure containing the API functions for
- * the device type.
- * @param driver_data driver instance data. For driver use only
  */
 struct device {
+	/** Name of the device instance */
 	const char *name;
+	/** Address of device instance config information */
 	const void *config_info;
+	/** Address of the API structure exposed by the device instance */
 	const void *driver_api;
+	/** Address of the device instance private data */
 	void * const driver_data;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	/** Power Management function */
 	int (*device_pm_control)(struct device *device, uint32_t command,
 				 void *context, device_pm_cb cb, void *arg);
+	/** Pointer to device instance power management data */
 	struct device_pm * const pm;
 #endif
 };
