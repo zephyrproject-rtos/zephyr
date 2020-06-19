@@ -23,13 +23,21 @@ LOG_MODULE_REGISTER(sdhc_spi, CONFIG_DISK_LOG_LEVEL);
 #if !DT_NODE_HAS_STATUS(DT_INST(0, zephyr_mmc_spi_slot), okay)
 #warning NO SDHC slot specified on board
 #else
+enum sdhc_spi_cfg {
+	SDHC_SPI_INIT_CFG,
+	SDHC_SPI_DEFAULT_SPEED_CFG,
+	/* --- */
+	SDHC_CFG_COUNT,
+};
+
 struct sdhc_spi_data {
 	struct device *spi;
-	struct spi_config cfg;
+	struct spi_config spi_cfgs[SDHC_CFG_COUNT];
 	struct device *cs;
 	uint32_t pin;
 	gpio_dt_flags_t flags;
 
+	enum sdhc_spi_cfg current_spi_cfg;
 	bool high_capacity;
 	uint32_t sector_count;
 	uint8_t status;
@@ -39,6 +47,17 @@ struct sdhc_spi_data {
 };
 
 DEVICE_DECLARE(sdhc_spi_0);
+
+static inline const struct spi_config *sdhc_get_spi_cfg(const struct sdhc_spi_data *data)
+{
+	return &data->spi_cfgs[data->current_spi_cfg];
+}
+
+static inline void sdhc_select_spi_cfg(struct sdhc_spi_data *data,
+				       enum sdhc_spi_cfg new_spi_cfg)
+{
+	data->current_spi_cfg = new_spi_cfg;
+}
 
 /* Traces card traffic for LOG_LEVEL_DBG */
 static int sdhc_spi_trace(struct sdhc_spi_data *data, int dir, int err,
@@ -103,7 +122,7 @@ static int sdhc_spi_rx_bytes(struct sdhc_spi_data *data, uint8_t *buf, int len)
 	};
 
 	return sdhc_spi_trace(data, -1,
-			  spi_transceive(data->spi, &data->cfg, &tx, &rx),
+			  spi_transceive(data->spi, sdhc_get_spi_cfg(data), &tx, &rx),
 			  buf, len);
 }
 
@@ -136,8 +155,8 @@ static int sdhc_spi_tx(struct sdhc_spi_data *data, const uint8_t *buf, int len)
 	};
 
 	return sdhc_spi_trace(data, 1,
-			spi_write(data->spi, &data->cfg, &tx), buf,
-			len);
+			spi_write(data->spi, sdhc_get_spi_cfg(data), &tx),
+			buf, len);
 }
 
 /* Transmits the command and payload */
@@ -399,7 +418,7 @@ static int sdhc_spi_rx_block(struct sdhc_spi_data *data,
 		};
 
 		err = sdhc_spi_trace(data, -1,
-				spi_transceive(data->spi, &data->cfg,
+				spi_transceive(data->spi, sdhc_get_spi_cfg(data),
 				&tx, &rx),
 				&buf[i], remain);
 		if (err != 0) {
@@ -509,7 +528,7 @@ static int sdhc_spi_detect(struct sdhc_spi_data *data)
 	uint8_t buf[SDHC_CSD_SIZE];
 	bool is_v2;
 
-	data->cfg.frequency = SDHC_SPI_INITIAL_SPEED;
+	sdhc_select_spi_cfg(data, SDHC_SPI_INIT_CFG);
 	data->status = DISK_STATUS_UNINIT;
 
 	sdhc_retry_init(&retry, SDHC_INIT_TIMEOUT, SDHC_RETRY_DELAY);
@@ -647,7 +666,7 @@ static int sdhc_spi_detect(struct sdhc_spi_data *data)
 		buf[7], buf[8], sys_get_be32(&buf[9]));
 
 	/* Initilisation complete */
-	data->cfg.frequency = SDHC_SPI_SPEED;
+	sdhc_select_spi_cfg(data, SDHC_SPI_DEFAULT_SPEED_CFG);
 	data->status = DISK_STATUS_OK;
 
 	return 0;
@@ -768,9 +787,20 @@ static int sdhc_spi_init(struct device *dev)
 
 	data->spi = device_get_binding(DT_BUS_LABEL(DT_INST(0, zephyr_mmc_spi_slot)));
 
-	data->cfg.frequency = SDHC_SPI_INITIAL_SPEED;
-	data->cfg.operation = SPI_WORD_SET(8) | SPI_HOLD_ON_CS;
-	data->cfg.slave = DT_REG_ADDR(DT_INST(0, zephyr_mmc_spi_slot));
+	/* SPI config for initialization (default) */
+	sdhc_select_spi_cfg(data, SDHC_SPI_INIT_CFG);
+	data->spi_cfgs[SDHC_SPI_INIT_CFG] = (struct spi_config){
+		.frequency = SDHC_SPI_INITIAL_SPEED,
+		.operation = SPI_WORD_SET(8) | SPI_HOLD_ON_CS,
+		.slave = DT_REG_ADDR(DT_INST(0, zephyr_mmc_spi_slot)),
+	};
+	/* SPI config for default speed */
+	data->spi_cfgs[SDHC_SPI_DEFAULT_SPEED_CFG] = (struct spi_config){
+		.frequency = SDHC_SPI_SPEED,
+		.operation = SPI_WORD_SET(8) | SPI_HOLD_ON_CS,
+		.slave = DT_REG_ADDR(DT_INST(0, zephyr_mmc_spi_slot)),
+	};
+
 	data->cs = device_get_binding(
 		DT_SPI_DEV_CS_GPIOS_LABEL(DT_INST(0, zephyr_mmc_spi_slot)));
 	__ASSERT_NO_MSG(data->cs != NULL);
