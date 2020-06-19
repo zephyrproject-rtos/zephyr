@@ -510,7 +510,6 @@ static int eth_enc28j60_rx(struct device *dev, uint16_t *vlan_tag)
 	struct eth_enc28j60_runtime *context = dev->driver_data;
 	uint16_t lengthfr;
 	uint8_t counter;
-	uint8_t dummy[4];
 
 	/* Errata 6. The Receive Packet Pending Interrupt Flag (EIR.PKTIF)
 	 * does not reliably/accurately report the status of pending packet.
@@ -601,13 +600,13 @@ static int eth_enc28j60_rx(struct device *dev, uint16_t *vlan_tag)
 		} while (frm_len > 0);
 
 		/* Let's pop the useless CRC */
-		eth_enc28j60_read_mem(dev, dummy, 4);
+		eth_enc28j60_read_mem(dev, NULL, 4);
 
 		/* Pops one padding byte from spi circular buffer
 		 * introduced by the device when the frame length is odd
 		 */
 		if (lengthfr & 0x01) {
-			eth_enc28j60_read_mem(dev, dummy, 1);
+			eth_enc28j60_read_mem(dev, NULL, 1);
 		}
 
 #if defined(CONFIG_NET_VLAN)
