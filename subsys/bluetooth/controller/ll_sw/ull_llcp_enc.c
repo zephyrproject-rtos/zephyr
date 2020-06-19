@@ -114,7 +114,7 @@ extern void ll_rx_enqueue(struct node_rx_pdu *rx);
  * LLCP Local Procedure Encryption FSM
  */
 
-static void lp_enc_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t opcode)
+static void lp_enc_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 {
 	struct node_tx *tx;
 	struct pdu_data *pdu;
@@ -166,7 +166,7 @@ static void lp_enc_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 	ll_rx_enqueue(ntf);
 }
 
-static void lp_enc_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void lp_enc_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	if (!ntf_alloc_is_available()) {
 		ctx->state = LP_ENC_STATE_WAIT_NTF;
@@ -177,7 +177,7 @@ static void lp_enc_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t
 	}
 }
 
-static void lp_enc_send_enc_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void lp_enc_send_enc_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	if (!tx_alloc_is_available()) {
 		ctx->state = LP_ENC_STATE_WAIT_TX_ENC_REQ;
@@ -188,7 +188,7 @@ static void lp_enc_send_enc_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, 
 	}
 }
 
-static void lp_enc_send_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void lp_enc_send_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	if (!tx_alloc_is_available()) {
 		ctx->state = LP_ENC_STATE_WAIT_TX_START_ENC_RSP;
@@ -205,7 +205,7 @@ static void lp_enc_send_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx 
 	}
 }
 
-static void lp_enc_st_idle(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void lp_enc_st_idle(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	/* TODO */
 	switch (evt) {
@@ -220,7 +220,7 @@ static void lp_enc_st_idle(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t 
 	}
 }
 
-static void lp_enc_st_wait_tx_enc_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void lp_enc_st_wait_tx_enc_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case LP_ENC_EVT_RUN:
@@ -232,7 +232,7 @@ static void lp_enc_st_wait_tx_enc_req(struct ull_cp_conn *conn, struct proc_ctx 
 	}
 }
 
-static void lp_enc_st_wait_rx_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void lp_enc_st_wait_rx_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	/* TODO */
 	switch (evt) {
@@ -246,7 +246,7 @@ static void lp_enc_st_wait_rx_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx 
 	}
 }
 
-static void lp_enc_st_wait_rx_start_enc_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void lp_enc_st_wait_rx_start_enc_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	/* TODO */
 	struct pdu_data *pdu = (struct pdu_data *) param;
@@ -265,7 +265,7 @@ static void lp_enc_st_wait_rx_start_enc_req(struct ull_cp_conn *conn, struct pro
 	}
 }
 
-static void lp_enc_st_wait_tx_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void lp_enc_st_wait_tx_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case LP_ENC_EVT_RUN:
@@ -277,7 +277,7 @@ static void lp_enc_st_wait_tx_start_enc_rsp(struct ull_cp_conn *conn, struct pro
 	}
 }
 
-static void lp_enc_st_wait_rx_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void lp_enc_st_wait_rx_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	/* TODO */
 	switch (evt) {
@@ -291,7 +291,7 @@ static void lp_enc_st_wait_rx_start_enc_rsp(struct ull_cp_conn *conn, struct pro
 	}
 }
 
-static void lp_enc_st_wait_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void lp_enc_st_wait_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	/* TODO */
 	switch (evt) {
@@ -304,7 +304,7 @@ static void lp_enc_st_wait_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx, u
 	}
 }
 
-static void lp_enc_execute_fsm(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void lp_enc_execute_fsm(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (ctx->state) {
 	case LP_ENC_STATE_IDLE:
@@ -371,7 +371,7 @@ void ull_cp_priv_lp_enc_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, void
  * LLCP Remote Procedure Encryption FSM
  */
 
-static void rp_enc_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t opcode)
+static void rp_enc_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 {
 	struct node_tx *tx;
 	struct pdu_data *pdu;
@@ -445,9 +445,9 @@ static void rp_enc_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 	ll_rx_enqueue(ntf);
 }
 
-static void rp_enc_send_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param);
+static void rp_enc_send_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param);
 
-static void rp_enc_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_enc_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	if (!ntf_alloc_is_available()) {
 		ctx->state = RP_ENC_STATE_WAIT_NTF;
@@ -457,7 +457,7 @@ static void rp_enc_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t
 	}
 }
 
-static void rp_enc_send_ltk_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_enc_send_ltk_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	if (!ntf_alloc_is_available()) {
 		ctx->state = RP_ENC_STATE_WAIT_NTF_LTK_REQ;
@@ -467,7 +467,7 @@ static void rp_enc_send_ltk_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx, 
 	}
 }
 
-static void rp_enc_send_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_enc_send_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	if (!tx_alloc_is_available()) {
 		ctx->state = RP_ENC_STATE_WAIT_TX_ENC_RSP;
@@ -477,7 +477,7 @@ static void rp_enc_send_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, 
 	}
 }
 
-static void rp_enc_send_start_enc_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_enc_send_start_enc_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	if (!tx_alloc_is_available()) {
 		ctx->state = RP_ENC_STATE_WAIT_TX_START_ENC_REQ;
@@ -491,7 +491,7 @@ static void rp_enc_send_start_enc_req(struct ull_cp_conn *conn, struct proc_ctx 
 	}
 }
 
-static void rp_enc_send_reject_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_enc_send_reject_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	if (!tx_alloc_is_available()) {
 		ctx->state = RP_ENC_STATE_WAIT_TX_REJECT_IND;
@@ -502,7 +502,7 @@ static void rp_enc_send_reject_ind(struct ull_cp_conn *conn, struct proc_ctx *ct
 	}
 }
 
-static void rp_enc_send_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_enc_send_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	if (!tx_alloc_is_available()) {
 		ctx->state = RP_ENC_STATE_WAIT_TX_START_ENC_RSP;
@@ -516,7 +516,7 @@ static void rp_enc_send_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx 
 	}
 }
 
-static void rp_enc_state_idle(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_enc_state_idle(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case RP_ENC_EVT_RUN:
@@ -528,7 +528,7 @@ static void rp_enc_state_idle(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8
 	}
 }
 
-static void rp_enc_state_wait_rx_enc_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_enc_state_wait_rx_enc_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	/* TODO */
 	switch (evt) {
@@ -541,7 +541,7 @@ static void rp_enc_state_wait_rx_enc_req(struct ull_cp_conn *conn, struct proc_c
 	}
 }
 
-static void rp_enc_state_wait_tx_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_enc_state_wait_tx_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	/* TODO */
 	switch (evt) {
@@ -554,7 +554,7 @@ static void rp_enc_state_wait_tx_enc_rsp(struct ull_cp_conn *conn, struct proc_c
 	}
 }
 
-static void rp_enc_state_wait_ntf_ltk_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_enc_state_wait_ntf_ltk_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	/* TODO */
 	switch (evt) {
@@ -567,7 +567,7 @@ static void rp_enc_state_wait_ntf_ltk_req(struct ull_cp_conn *conn, struct proc_
 	}
 }
 
-static void rp_enc_state_wait_ltk_reply(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_enc_state_wait_ltk_reply(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	/* TODO */
 	switch (evt) {
@@ -583,7 +583,7 @@ static void rp_enc_state_wait_ltk_reply(struct ull_cp_conn *conn, struct proc_ct
 	}
 }
 
-static void rp_enc_state_wait_tx_start_enc_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_enc_state_wait_tx_start_enc_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	/* TODO */
 	switch (evt) {
@@ -596,7 +596,7 @@ static void rp_enc_state_wait_tx_start_enc_req(struct ull_cp_conn *conn, struct 
 	}
 }
 
-static void rp_enc_state_wait_tx_reject_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_enc_state_wait_tx_reject_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	/* TODO */
 	switch (evt) {
@@ -610,7 +610,7 @@ static void rp_enc_state_wait_tx_reject_ind(struct ull_cp_conn *conn, struct pro
 }
 
 
-static void rp_enc_state_wait_rx_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_enc_state_wait_rx_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	/* TODO */
 	switch (evt) {
@@ -623,7 +623,7 @@ static void rp_enc_state_wait_rx_start_enc_rsp(struct ull_cp_conn *conn, struct 
 	}
 }
 
-static void rp_enc_state_wait_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_enc_state_wait_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	/* TODO */
 	switch (evt) {
@@ -636,7 +636,7 @@ static void rp_enc_state_wait_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx
 	}
 }
 
-static void rp_enc_state_wait_tx_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_enc_state_wait_tx_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	/* TODO */
 	switch (evt) {
@@ -649,7 +649,7 @@ static void rp_enc_state_wait_tx_start_enc_rsp(struct ull_cp_conn *conn, struct 
 	}
 }
 
-static void rp_enc_execute_fsm(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_enc_execute_fsm(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (ctx->state) {
 	case RP_ENC_STATE_IDLE:

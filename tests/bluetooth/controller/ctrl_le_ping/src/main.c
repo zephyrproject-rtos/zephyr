@@ -59,7 +59,7 @@ static void setup(void)
  */
 void test_ping_mas_loc(void)
 {
-	u8_t err;
+	uint8_t err;
 	struct node_tx *tx;
 
 	struct pdu_data_llctrl_ping_req local_ping_req = {
@@ -116,7 +116,7 @@ void test_ping_mas_loc(void)
  */
 void test_ping_sla_loc(void)
 {
-	u8_t err;
+	uint8_t err;
 	struct node_tx *tx;
 
 	struct pdu_data_llctrl_ping_req local_ping_req = {

@@ -58,7 +58,7 @@ void helper_pdu_encode_feature_req(struct pdu_data *pdu, void *param)
 		sizeof(struct pdu_data_llctrl_feature_req);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_REQ;
 	for (int counter = 0; counter < 8; counter++) {
-		u8_t expected_value = feature_req->features[counter];
+		uint8_t expected_value = feature_req->features[counter];
 		pdu->llctrl.feature_req.features[counter] = expected_value;
 	}
 }
@@ -72,7 +72,7 @@ void helper_pdu_encode_slave_feature_req(struct pdu_data *pdu, void *param)
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ;
 
 	for (int counter = 0 ; counter < 8; counter++)	{
-		u8_t expected_value = feature_req->features[counter];
+		uint8_t expected_value = feature_req->features[counter];
 		pdu->llctrl.feature_req.features[counter] = expected_value;
 	}
 }
@@ -86,7 +86,7 @@ void helper_pdu_encode_feature_rsp(struct pdu_data *pdu, void *param)
 		sizeof(struct pdu_data_llctrl_feature_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
 	for (int counter = 0; counter < 8; counter++) {
-		u8_t expected_value = feature_rsp->features[counter];
+		uint8_t expected_value = feature_rsp->features[counter];
 		pdu->llctrl.feature_req.features[counter] = expected_value;
 	}
 }
@@ -198,7 +198,7 @@ void helper_pdu_encode_unknown_rsp(struct pdu_data *pdu, void *param)
 	pdu->llctrl.unknown_rsp.type = p->type;
 }
 
-void helper_pdu_verify_version_ind(const char *file, u32_t line, struct pdu_data *pdu, void *param)
+void helper_pdu_verify_version_ind(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
 {
 	struct pdu_data_llctrl_version_ind *p = param;
 
@@ -209,20 +209,20 @@ void helper_pdu_verify_version_ind(const char *file, u32_t line, struct pdu_data
 	zassert_equal(pdu->llctrl.version_ind.sub_version_number, p->sub_version_number, "Wrong sub version number.\nCalled at %s:%d\n", file, line);
 }
 
-void helper_pdu_verify_ping_req(const char *file, u32_t line, struct pdu_data *pdu, void *param)
+void helper_pdu_verify_ping_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
 {
 	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_PING_REQ, "Not a LL_PING_REQ. Called at %s:%d\n", file, line);
 }
 
-void helper_pdu_verify_ping_rsp(const char *file, u32_t line, struct pdu_data *pdu, void *param)
+void helper_pdu_verify_ping_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
 {
 	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_PING_RSP, "Not a LL_PING_RSP.\nCalled at %s:%d\n", file, line);
 }
 
 
-void helper_pdu_verify_feature_req(const char *file, u32_t line,
+void helper_pdu_verify_feature_req(const char *file, uint32_t line,
 				   struct pdu_data *pdu, void *param)
 {
 	struct pdu_data_llctrl_feature_req *feature_req = param;
@@ -232,7 +232,7 @@ void helper_pdu_verify_feature_req(const char *file, u32_t line,
 		      "Wrong opcode.\nCalled at %s:%d\n", file, line);
 
 	for (int counter = 0; counter < 8; counter++) {
-		u8_t expected_value = feature_req->features[counter];
+		uint8_t expected_value = feature_req->features[counter];
 		zassert_equal(pdu->llctrl.feature_req.features[counter],
 			      expected_value,
 			      "Wrong feature exchange data.\nAt %s:%d\n",
@@ -240,7 +240,7 @@ void helper_pdu_verify_feature_req(const char *file, u32_t line,
 	}
 }
 
-void helper_pdu_verify_slave_feature_req(const char *file, u32_t line,
+void helper_pdu_verify_slave_feature_req(const char *file, uint32_t line,
 					 struct pdu_data *pdu, void *param)
 {
 	struct pdu_data_llctrl_feature_req *feature_req = param;
@@ -249,14 +249,14 @@ void helper_pdu_verify_slave_feature_req(const char *file, u32_t line,
 	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ, NULL);
 
 	for (int counter = 0; counter < 8; counter++) {
-		u8_t expected_value = feature_req->features[counter];
+		uint8_t expected_value = feature_req->features[counter];
 		zassert_equal(pdu->llctrl.feature_req.features[counter],
 			      expected_value,
 			      "Wrong feature data\nCalled at %s:%d\n",
 			      file, line);
 	}
 }
-void helper_pdu_verify_feature_rsp(const char *file, u32_t line,
+void helper_pdu_verify_feature_rsp(const char *file, uint32_t line,
 				   struct pdu_data *pdu, void *param)
 {
 	struct pdu_data_llctrl_feature_rsp *feature_rsp = param;
@@ -267,7 +267,7 @@ void helper_pdu_verify_feature_rsp(const char *file, u32_t line,
 		      pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_FEATURE_RSP);
 
 	for (int counter = 0; counter < 8; counter++) {
-		u8_t expected_value = feature_rsp->features[counter];
+		uint8_t expected_value = feature_rsp->features[counter];
 		zassert_equal(pdu->llctrl.feature_rsp.features[counter],
 			      expected_value,
 			      "Wrong feature data\nCalled at %s:%d\n",
@@ -275,7 +275,7 @@ void helper_pdu_verify_feature_rsp(const char *file, u32_t line,
 	}
 }
 
-void helper_pdu_verify_min_used_chans_ind(const char *file, u32_t line, struct pdu_data *pdu, void *param)
+void helper_pdu_verify_min_used_chans_ind(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
 {
 	struct pdu_data_llctrl_min_used_chans_ind *p = param;
 
@@ -285,31 +285,31 @@ void helper_pdu_verify_min_used_chans_ind(const char *file, u32_t line, struct p
 	zassert_equal(pdu->llctrl.min_used_chans_ind.min_used_chans, p->min_used_chans, "Channel count\nCalled at %s:%d\n", file, line);
 }
 
-void helper_pdu_verify_enc_req(const char *file, u32_t line, struct pdu_data *pdu, void *param)
+void helper_pdu_verify_enc_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
 {
 	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_ENC_REQ, "Not a LL_ENC_REQ. Called at %s:%d\n", file, line);
 }
 
-void helper_pdu_verify_enc_rsp(const char *file, u32_t line, struct pdu_data *pdu, void *param)
+void helper_pdu_verify_enc_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
 {
 	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_ENC_RSP, "Not a LL_ENC_RSP.\nCalled at %s:%d\n", file, line);
 }
 
-void helper_pdu_verify_start_enc_req(const char *file, u32_t line, struct pdu_data *pdu, void *param)
+void helper_pdu_verify_start_enc_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
 {
 	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_START_ENC_REQ, "Not a LL_START_ENC_REQ.\nCalled at %s:%d\n", file, line);
 }
 
-void helper_pdu_verify_start_enc_rsp(const char *file, u32_t line, struct pdu_data *pdu, void *param)
+void helper_pdu_verify_start_enc_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
 {
 	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_START_ENC_RSP, "Not a LL_START_ENC_RSP.\nCalled at %s:%d\n", file, line);
 }
 
-void helper_pdu_verify_reject_ind(const char *file, u32_t line, struct pdu_data *pdu, void *param)
+void helper_pdu_verify_reject_ind(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
 {
 	struct pdu_data_llctrl_reject_ind *p = param;
 
@@ -319,7 +319,7 @@ void helper_pdu_verify_reject_ind(const char *file, u32_t line, struct pdu_data 
 	zassert_equal(pdu->llctrl.reject_ind.error_code, p->error_code, "Error code mismatch.\nCalled at %s:%d\n", file, line);
 }
 
-void helper_pdu_verify_reject_ext_ind(const char *file, u32_t line, struct pdu_data *pdu, void *param)
+void helper_pdu_verify_reject_ext_ind(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
 {
 	struct pdu_data_llctrl_reject_ext_ind *p = param;
 
@@ -330,7 +330,7 @@ void helper_pdu_verify_reject_ext_ind(const char *file, u32_t line, struct pdu_d
 	zassert_equal(pdu->llctrl.reject_ext_ind.error_code, p->error_code, "Error code mismatch.\nCalled at %s:%d\n", file, line);
 }
 
-void helper_pdu_verify_phy_req(const char *file, u32_t line, struct pdu_data *pdu, void *param)
+void helper_pdu_verify_phy_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
 {
 	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, phy_req) + sizeof(struct pdu_data_llctrl_phy_req), "Wrong length.\nCalled at %s:%d\n", file, line);
@@ -338,7 +338,7 @@ void helper_pdu_verify_phy_req(const char *file, u32_t line, struct pdu_data *pd
 	/* TODO(thoh): Fill in correct data */
 }
 
-void helper_pdu_verify_phy_rsp(const char *file, u32_t line, struct pdu_data *pdu, void *param)
+void helper_pdu_verify_phy_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
 {
 	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, phy_rsp) + sizeof(struct pdu_data_llctrl_phy_rsp), "Wrong length.\nCalled at %s:%d\n", file, line);
@@ -346,7 +346,7 @@ void helper_pdu_verify_phy_rsp(const char *file, u32_t line, struct pdu_data *pd
 	/* TODO(thoh): Fill in correct data */
 }
 
-void helper_pdu_verify_phy_update_ind(const char *file, u32_t line, struct pdu_data *pdu, void *param)
+void helper_pdu_verify_phy_update_ind(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
 {
 	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, phy_upd_ind) + sizeof(struct pdu_data_llctrl_phy_upd_ind), "Wrong length.\nCalled at %s:%d\n", file, line);
@@ -354,7 +354,7 @@ void helper_pdu_verify_phy_update_ind(const char *file, u32_t line, struct pdu_d
 	/* TODO(thoh): Fill in correct data */
 }
 
-void helper_node_verify_phy_update(const char *file, u32_t line, struct node_rx_pdu *rx, void *param)
+void helper_node_verify_phy_update(const char *file, uint32_t line, struct node_rx_pdu *rx, void *param)
 {
 	struct node_rx_pu *pdu = (struct node_rx_pu *)rx->pdu;
 	struct node_rx_pu *p = param;
@@ -364,7 +364,7 @@ void helper_node_verify_phy_update(const char *file, u32_t line, struct node_rx_
 }
 
 
-void helper_pdu_verify_unknown_rsp(const char *file, u32_t line, struct pdu_data *pdu, void *param)
+void helper_pdu_verify_unknown_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
 {
 	struct pdu_data_llctrl_unknown_rsp *p = param;
 

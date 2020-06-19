@@ -172,7 +172,7 @@ static void lr_act_disconnect(struct ull_cp_conn *conn)
 	lr_dequeue(conn);
 }
 
-static void lr_st_disconnect(struct ull_cp_conn *conn, u8_t evt, void *param)
+static void lr_st_disconnect(struct ull_cp_conn *conn, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case LR_EVT_CONNECT:
@@ -185,7 +185,7 @@ static void lr_st_disconnect(struct ull_cp_conn *conn, u8_t evt, void *param)
 	}
 }
 
-static void lr_st_idle(struct ull_cp_conn *conn, u8_t evt, void *param)
+static void lr_st_idle(struct ull_cp_conn *conn, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case LR_EVT_RUN:
@@ -204,7 +204,7 @@ static void lr_st_idle(struct ull_cp_conn *conn, u8_t evt, void *param)
 	}
 }
 
-static void lr_st_active(struct ull_cp_conn *conn, u8_t evt, void *param)
+static void lr_st_active(struct ull_cp_conn *conn, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case LR_EVT_RUN:
@@ -226,7 +226,7 @@ static void lr_st_active(struct ull_cp_conn *conn, u8_t evt, void *param)
 	}
 }
 
-static void lr_execute_fsm(struct ull_cp_conn *conn, u8_t evt, void *param)
+static void lr_execute_fsm(struct ull_cp_conn *conn, uint8_t evt, void *param)
 {
 	switch (conn->llcp.local.state) {
 	case LR_STATE_DISCONNECT:

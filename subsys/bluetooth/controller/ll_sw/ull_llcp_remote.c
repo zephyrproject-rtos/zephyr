@@ -206,7 +206,7 @@ static void rr_act_run(struct ull_cp_conn *conn)
 	}
 }
 
-static void rr_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t opcode)
+static void rr_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 {
 	struct node_tx *tx;
 	struct pdu_data *pdu;
@@ -267,7 +267,7 @@ static void rr_act_disconnect(struct ull_cp_conn *conn)
 	rr_dequeue(conn);
 }
 
-static void rr_st_disconnect(struct ull_cp_conn *conn, u8_t evt, void *param)
+static void rr_st_disconnect(struct ull_cp_conn *conn, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case RR_EVT_CONNECT:
@@ -280,7 +280,7 @@ static void rr_st_disconnect(struct ull_cp_conn *conn, u8_t evt, void *param)
 	}
 }
 
-static void rr_st_idle(struct ull_cp_conn *conn, u8_t evt, void *param)
+static void rr_st_idle(struct ull_cp_conn *conn, uint8_t evt, void *param)
 {
 	struct proc_ctx *ctx;
 
@@ -347,13 +347,13 @@ static void rr_st_idle(struct ull_cp_conn *conn, u8_t evt, void *param)
 		break;
 	}
 }
-static void rr_st_reject(struct ull_cp_conn *conn, u8_t evt, void *param)
+static void rr_st_reject(struct ull_cp_conn *conn, uint8_t evt, void *param)
 {
 	/* TODO */
 	LL_ASSERT(0);
 }
 
-static void rr_st_active(struct ull_cp_conn *conn, u8_t evt, void *param)
+static void rr_st_active(struct ull_cp_conn *conn, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case RR_EVT_RUN:
@@ -375,7 +375,7 @@ static void rr_st_active(struct ull_cp_conn *conn, u8_t evt, void *param)
 	}
 }
 
-static void rr_execute_fsm(struct ull_cp_conn *conn, u8_t evt, void *param)
+static void rr_execute_fsm(struct ull_cp_conn *conn, uint8_t evt, void *param)
 {
 	switch (conn->llcp.remote.state) {
 	case RR_STATE_DISCONNECT:
@@ -434,7 +434,7 @@ void ull_cp_priv_rr_new(struct ull_cp_conn *conn, struct node_rx_pdu *rx)
 {
 	struct proc_ctx *ctx;
 	struct pdu_data *pdu;
-	u8_t proc;
+	uint8_t proc;
 
 	pdu = (struct pdu_data *) rx->pdu;
 

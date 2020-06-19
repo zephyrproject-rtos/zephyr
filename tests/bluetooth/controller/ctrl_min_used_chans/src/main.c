@@ -59,7 +59,7 @@ static void setup(void)
  */
 void test_min_used_chans_sla_loc(void)
 {
-	u8_t err;
+	uint8_t err;
 	struct node_tx *tx;
 
 	struct pdu_data_llctrl_min_used_chans_ind local_muc_ind = {
@@ -107,7 +107,7 @@ void test_min_used_chans_sla_loc(void)
 
 void test_min_used_chans_mas_loc(void)
 {
-	u8_t err;
+	uint8_t err;
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);

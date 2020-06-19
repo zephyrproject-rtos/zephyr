@@ -41,7 +41,7 @@ static void setup(void)
 	test_setup(&conn);
 }
 
-static bool is_instant_reached(struct ull_cp_conn *conn, u16_t instant)
+static bool is_instant_reached(struct ull_cp_conn *conn, uint16_t instant)
 {
 	return ((event_counter(conn) - instant) & 0xFFFF) <= 0x7FFF;
 }
@@ -53,11 +53,11 @@ static bool is_instant_reached(struct ull_cp_conn *conn, u16_t instant)
  */
 void test_phy_update_mas_loc(void)
 {
-	u8_t err;
+	uint8_t err;
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 	struct pdu_data *pdu;
-	u16_t instant;
+	uint16_t instant;
 
 	struct node_rx_pu pu = {
 		.status = BT_HCI_ERR_SUCCESS
@@ -140,7 +140,7 @@ void test_phy_update_mas_loc(void)
 
 void test_phy_update_mas_loc_unsupp_feat(void)
 {
-	u8_t err;
+	uint8_t err;
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
@@ -191,7 +191,7 @@ void test_phy_update_mas_rem(void)
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 	struct pdu_data *pdu;
-	u16_t instant;
+	uint16_t instant;
 
 	struct node_rx_pu pu = {
 		.status = BT_HCI_ERR_SUCCESS
@@ -263,10 +263,10 @@ void test_phy_update_mas_rem(void)
 
 void test_phy_update_sla_loc(void)
 {
-	u8_t err;
+	uint8_t err;
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
-	u16_t instant;
+	uint16_t instant;
 
 	struct node_rx_pu pu = {
 		.status = BT_HCI_ERR_SUCCESS
@@ -346,7 +346,7 @@ void test_phy_update_sla_rem(void)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
-	u16_t instant;
+	uint16_t instant;
 
 	struct node_rx_pu pu = {
 		.status = BT_HCI_ERR_SUCCESS
@@ -423,11 +423,11 @@ void test_phy_update_sla_rem(void)
 
 void test_phy_update_mas_loc_collision(void)
 {
-	u8_t err;
+	uint8_t err;
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 	struct pdu_data *pdu;
-	u16_t instant;
+	uint16_t instant;
 
 	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
 		.reject_opcode = PDU_DATA_LLCTRL_TYPE_PHY_REQ,
@@ -555,11 +555,11 @@ void test_phy_update_mas_loc_collision(void)
 
 void test_phy_update_mas_rem_collision(void)
 {
-	u8_t err;
+	uint8_t err;
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 	struct pdu_data *pdu;
-	u16_t instant;
+	uint16_t instant;
 
 	struct node_rx_pu pu = {
 		.status = BT_HCI_ERR_SUCCESS
@@ -698,10 +698,10 @@ void test_phy_update_mas_rem_collision(void)
 
 void test_phy_update_sla_loc_collision(void)
 {
-	u8_t err;
+	uint8_t err;
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
-	u16_t instant;
+	uint16_t instant;
 
 	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
 		.reject_opcode = PDU_DATA_LLCTRL_TYPE_PHY_REQ,
