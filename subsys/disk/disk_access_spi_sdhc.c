@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT zephyr_mmc_spi_slot
+
 #include <logging/log.h>
 
 LOG_MODULE_REGISTER(sdhc_spi, CONFIG_DISK_LOG_LEVEL);
@@ -784,6 +786,7 @@ static int disk_spi_sdhc_init(struct device *dev);
 static int sdhc_spi_init(struct device *dev)
 {
 	struct sdhc_spi_data *data = dev->driver_data;
+	uint32_t spi_max_frequency = DT_INST_PROP(0, spi_max_frequency);
 
 	data->spi = device_get_binding(DT_BUS_LABEL(DT_INST(0, zephyr_mmc_spi_slot)));
 
@@ -795,8 +798,12 @@ static int sdhc_spi_init(struct device *dev)
 		.slave = DT_REG_ADDR(DT_INST(0, zephyr_mmc_spi_slot)),
 	};
 	/* SPI config for default speed */
+	if (spi_max_frequency > SDHC_SPI_DEFAULT_SPEED) {
+		spi_max_frequency = SDHC_SPI_DEFAULT_SPEED;
+	}
+	LOG_DBG("Maximum SPI frequency: %u", spi_max_frequency);
 	data->spi_cfgs[SDHC_SPI_DEFAULT_SPEED_CFG] = (struct spi_config){
-		.frequency = SDHC_SPI_DEFAULT_SPEED,
+		.frequency = spi_max_frequency,
 		.operation = SPI_WORD_SET(8) | SPI_HOLD_ON_CS,
 		.slave = DT_REG_ADDR(DT_INST(0, zephyr_mmc_spi_slot)),
 	};
