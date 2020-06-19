@@ -5847,10 +5847,14 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			goto ull_conn_rx_unknown_rsp_send;
 		}
 
+		struct pdu_data_llctrl *llctrl = (void *)&pdu_rx->llctrl;
+
 		if (0) {
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-		} else if (conn->llcp_conn_param.ack !=
-			   conn->llcp_conn_param.req) {
+		} else if ((conn->llcp_conn_param.ack !=
+			    conn->llcp_conn_param.req) &&
+			   (llctrl->unknown_rsp.type ==
+			    PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ)) {
 			struct lll_conn *lll = &conn->lll;
 			struct node_rx_cu *cu;
 
@@ -5912,7 +5916,9 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-		} else if (conn->llcp_length.req != conn->llcp_length.ack) {
+		} else if ((conn->llcp_length.req != conn->llcp_length.ack) &&
+			   (llctrl->unknown_rsp.type ==
+			    PDU_DATA_LLCTRL_TYPE_LENGTH_REQ)) {
 			/* Mark length update as unsupported */
 			conn->llcp_length.disabled = 1U;
 
@@ -5925,8 +5931,9 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_PHY)
-		} else if (conn->llcp_phy.req !=
-			   conn->llcp_phy.ack) {
+		} else if ((conn->llcp_phy.req != conn->llcp_phy.ack) &&
+			   (llctrl->unknown_rsp.type ==
+			    PDU_DATA_LLCTRL_TYPE_PHY_REQ)) {
 			struct lll_conn *lll = &conn->lll;
 
 			/* Mark phy update as unsupported */
@@ -5957,9 +5964,6 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 #endif /* CONFIG_BT_CTLR_PHY */
 
 		} else {
-			struct pdu_data_llctrl *llctrl;
-
-			llctrl = (void *)&pdu_rx->llctrl;
 			switch (llctrl->unknown_rsp.type) {
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
