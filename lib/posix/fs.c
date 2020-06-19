@@ -11,6 +11,9 @@
 #include <posix/dirent.h>
 #include <string.h>
 #include <sys/fdtable.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <fs/fs.h>
 
 BUILD_ASSERT(PATH_MAX >= MAX_FILE_NAME, "PATH_MAX is less than MAX_FILE_NAME");
 
@@ -54,6 +57,29 @@ static inline void posix_fs_free_obj(struct posix_fs_desc *ptr)
 	ptr->used = false;
 }
 
+static int posix_mode_to_zephyr(int mf)
+{
+	int mode = (mf & O_CREAT) ? FS_O_CREATE : 0;
+
+	mode |= (mf & O_APPEND) ? FS_O_APPEND : 0;
+
+	switch (mf & O_ACCMODE) {
+	case O_RDONLY:
+		mode |= FS_O_READ;
+		break;
+	case O_WRONLY:
+		mode |= FS_O_WRITE;
+		break;
+	case O_RDWR:
+		mode |= FS_O_RDWR;
+		break;
+	default:
+		break;
+	}
+
+	return mode;
+}
+
 /**
  * @brief Open a file.
  *
@@ -63,8 +89,11 @@ int open(const char *name, int flags, ...)
 {
 	int rc, fd;
 	struct posix_fs_desc *ptr = NULL;
+	int zmode = posix_mode_to_zephyr(flags);
 
-	ARG_UNUSED(flags);
+	if (zmode < 0) {
+		return zmode;
+	}
 
 	fd = z_reserve_fd();
 	if (fd < 0) {
@@ -80,7 +109,8 @@ int open(const char *name, int flags, ...)
 
 	(void)memset(&ptr->file, 0, sizeof(ptr->file));
 
-	rc = fs_open(&ptr->file, name);
+	rc = fs_open(&ptr->file, name, zmode);
+
 	if (rc < 0) {
 		posix_fs_free_obj(ptr);
 		z_free_fd(fd);
