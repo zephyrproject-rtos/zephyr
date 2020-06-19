@@ -11,7 +11,7 @@
  * PDU fields sizes
  */
 
-#define PDU_PREAMBLE_SIZE(phy) (phy&0x3)
+#define PDU_PREAMBLE_SIZE(phy) ((((phy) & 0x3) >> 1) + 1)
 #define PDU_ACCESS_ADDR_SIZE   4
 #define PDU_HEADER_SIZE        2
 #define PDU_MIC_SIZE           4
