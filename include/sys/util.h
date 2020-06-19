@@ -466,6 +466,11 @@ uint8_t u8_to_dec(char *buf, uint8_t buflen, uint8_t value);
  * to replacement lists being empty or containing numbers or macro name
  * like tokens.
  *
+ * @note Not all arguments are accepted by this macro and compilation will fail
+ *	 if argument cannot be concatenated with literal constant. That will
+ *	 happen if argument does not start with letter or number. Example
+ *	 arguments that will fail during compilation: .arg, (arg), "arg", {arg}.
+ *
  * Example:
  *
  *	#define EMPTY
