@@ -193,6 +193,9 @@ static void rr_act_run(struct ull_cp_conn *conn)
 		case PROC_FEATURE_EXCHANGE:
 			rp_comm_run(conn, ctx, NULL);
 			break;
+		case PROC_MIN_USED_CHANS:
+			rp_comm_run(conn, ctx, NULL);
+			break;
 		case PROC_VERSION_EXCHANGE:
 			rp_comm_run(conn, ctx, NULL);
 			break;

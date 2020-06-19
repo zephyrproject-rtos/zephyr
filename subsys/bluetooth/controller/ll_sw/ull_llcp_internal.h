@@ -40,6 +40,9 @@ struct proc_ctx {
 	/* Procedure pause */
 	int pause;
 
+	/* TX node awaiting ack */
+	struct node_tx *tx_ack;
+
 	/*
 	 * This flag is set to 1 when we are finished with the control
 	 * procedure and it is safe to release the context ctx
@@ -696,4 +699,5 @@ bool lr_is_disconnected(struct ull_cp_conn *conn);
 bool lr_is_idle(struct ull_cp_conn *conn);
 bool rr_is_disconnected(struct ull_cp_conn *conn);
 bool rr_is_idle(struct ull_cp_conn *conn);
+int ctx_buffers_free(void);
 #endif
