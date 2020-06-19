@@ -41,7 +41,13 @@ struct device;
  * if the init entry is not used for a device driver but a service.
  */
 struct init_entry {
+	/** Initialization function for the init entry which will take
+	 * the dev attribute as parameter. See below.
+	 */
 	int (*init)(struct device *dev);
+	/** Pointer to a device driver instance structure. Can be NULL
+	 * if the init entry is not used for a device driver but a services.
+	 */
 	struct device *dev;
 };
 
