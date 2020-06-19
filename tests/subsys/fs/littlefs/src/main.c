@@ -9,6 +9,7 @@
 #include <string.h>
 #include <ztest.h>
 #include "testfs_tests.h"
+#include "testfs_lfs.h"
 
 void test_main(void)
 {
@@ -21,7 +22,8 @@ void test_main(void)
 			 ztest_unit_test(test_util_path_extend_overrun),
 			 ztest_unit_test(test_lfs_basic),
 			 ztest_unit_test(test_lfs_dirops),
-			 ztest_unit_test(test_lfs_perf)
+			 ztest_unit_test(test_lfs_perf),
+			 ztest_unit_test(test_fs_open_flags_lfs)
 			 );
 	ztest_run_test_suite(littlefs_test);
 }
