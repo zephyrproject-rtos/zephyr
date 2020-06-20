@@ -26,7 +26,7 @@
  */
 #define BT_UUID_VALUE_V13               BT_UUID_DECLARE_16(0xb00d)
 
-static u8_t   value_v13_value = 0x0D;
+static uint8_t   value_v13_value = 0x0D;
 
 /**
  * @brief Attribute read call back for the Value V13 attribute
@@ -42,9 +42,9 @@ static u8_t   value_v13_value = 0x0D;
  */
 static ssize_t read_value_v13(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, void *buf,
-			      u16_t len, u16_t offset)
+			      uint16_t len, uint16_t offset)
 {
-	const u8_t *value = attr->user_data;
+	const uint8_t *value = attr->user_data;
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 sizeof(value_v13_value));

@@ -1,0 +1,19 @@
+# Copyright (c) 2020 Ruuvi Innovations Ltd (Oy)
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_SOC_SERIES_NRF52X=y
+CONFIG_SOC_NRF52832_QFAA=y
+CONFIG_BOARD_RUUVI_RUUVITAG=y
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable RTT
+CONFIG_USE_SEGGER_RTT=y
+
+# Enable GPIO
+CONFIG_GPIO=y
+
+# additional board options
+# set y to disable R button
+CONFIG_GPIO_AS_PINRESET=n

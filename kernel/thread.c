@@ -115,19 +115,19 @@ bool z_is_thread_essential(void)
 }
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
-void z_impl_k_busy_wait(u32_t usec_to_wait)
+void z_impl_k_busy_wait(uint32_t usec_to_wait)
 {
 #if !defined(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT)
 	/* use 64-bit math to prevent overflow when multiplying */
-	u32_t cycles_to_wait = (u32_t)(
-		(u64_t)usec_to_wait *
-		(u64_t)sys_clock_hw_cycles_per_sec() /
-		(u64_t)USEC_PER_SEC
+	uint32_t cycles_to_wait = (uint32_t)(
+		(uint64_t)usec_to_wait *
+		(uint64_t)sys_clock_hw_cycles_per_sec() /
+		(uint64_t)USEC_PER_SEC
 	);
-	u32_t start_cycles = k_cycle_get_32();
+	uint32_t start_cycles = k_cycle_get_32();
 
 	for (;;) {
-		u32_t current_cycles = k_cycle_get_32();
+		uint32_t current_cycles = k_cycle_get_32();
 
 		/* this handles the rollover on an unsigned 32-bit value */
 		if ((current_cycles - start_cycles) >= cycles_to_wait) {
@@ -140,7 +140,7 @@ void z_impl_k_busy_wait(u32_t usec_to_wait)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline void z_vrfy_k_busy_wait(u32_t usec_to_wait)
+static inline void z_vrfy_k_busy_wait(uint32_t usec_to_wait)
 {
 	z_impl_k_busy_wait(usec_to_wait);
 }
@@ -358,13 +358,13 @@ static inline int z_vrfy_k_thread_name_copy(k_tid_t thread,
  */
 void z_check_stack_sentinel(void)
 {
-	u32_t *stack;
+	uint32_t *stack;
 
 	if ((_current->base.thread_state & _THREAD_DUMMY) != 0) {
 		return;
 	}
 
-	stack = (u32_t *)_current->stack_info.start;
+	stack = (uint32_t *)_current->stack_info.start;
 	if (*stack != STACK_SENTINEL) {
 		/* Restore it so further checks don't trigger this same error */
 		*stack = STACK_SENTINEL;
@@ -422,9 +422,9 @@ static inline size_t adjust_stack_size(size_t stack_size)
 	size_t random_val;
 
 	if (!z_stack_adjust_initialized) {
-		z_early_boot_rand_get((u8_t *)&random_val, sizeof(random_val));
+		z_early_boot_rand_get((uint8_t *)&random_val, sizeof(random_val));
 	} else {
-		sys_rand_get((u8_t *)&random_val, sizeof(random_val));
+		sys_rand_get((uint8_t *)&random_val, sizeof(random_val));
 	}
 
 	/* Don't need to worry about alignment of the size here,
@@ -457,7 +457,7 @@ void z_setup_new_thread(struct k_thread *new_thread,
 		       k_thread_stack_t *stack, size_t stack_size,
 		       k_thread_entry_t entry,
 		       void *p1, void *p2, void *p3,
-		       int prio, u32_t options, const char *name)
+		       int prio, uint32_t options, const char *name)
 {
 	Z_ASSERT_VALID_PRIO(prio, entry);
 
@@ -466,6 +466,7 @@ void z_setup_new_thread(struct k_thread *new_thread,
 	z_object_init(stack);
 	new_thread->stack_obj = stack;
 	new_thread->mem_domain_info.mem_domain = NULL;
+	new_thread->syscall_frame = NULL;
 
 	/* Any given thread has access to itself */
 	k_object_access_grant(new_thread, new_thread);
@@ -503,7 +504,7 @@ void z_setup_new_thread(struct k_thread *new_thread,
 	 * We periodically check that it's still present and kill the thread
 	 * if it isn't.
 	 */
-	*((u32_t *)new_thread->stack_info.start) = STACK_SENTINEL;
+	*((uint32_t *)new_thread->stack_info.start) = STACK_SENTINEL;
 #endif /* CONFIG_STACK_SENTINEL */
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 #ifndef CONFIG_THREAD_USERSPACE_LOCAL_DATA_ARCH_DEFER_SETUP
@@ -574,7 +575,7 @@ k_tid_t z_impl_k_thread_create(struct k_thread *new_thread,
 			      k_thread_stack_t *stack,
 			      size_t stack_size, k_thread_entry_t entry,
 			      void *p1, void *p2, void *p3,
-			      int prio, u32_t options, k_timeout_t delay)
+			      int prio, uint32_t options, k_timeout_t delay)
 {
 	__ASSERT(!arch_is_in_isr(), "Threads may not be created in ISRs");
 
@@ -601,7 +602,7 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 			       k_thread_stack_t *stack,
 			       size_t stack_size, k_thread_entry_t entry,
 			       void *p1, void *p2, void *p3,
-			       int prio, u32_t options, k_timeout_t delay)
+			       int prio, uint32_t options, k_timeout_t delay)
 {
 	size_t total_size, stack_obj_size;
 	struct z_object *stack_object;
@@ -719,12 +720,12 @@ void z_init_static_threads(void)
 #endif
 
 void z_init_thread_base(struct _thread_base *thread_base, int priority,
-		       u32_t initial_state, unsigned int options)
+		       uint32_t initial_state, unsigned int options)
 {
 	/* k_q_node is initialized upon first insertion in a list */
 
-	thread_base->user_options = (u8_t)options;
-	thread_base->thread_state = (u8_t)initial_state;
+	thread_base->user_options = (uint8_t)options;
+	thread_base->thread_state = (uint8_t)initial_state;
 
 	thread_base->prio = priority;
 
@@ -828,15 +829,15 @@ void irq_offload(irq_offload_routine_t routine, void *parameter)
 int z_impl_k_thread_stack_space_get(const struct k_thread *thread,
 				    size_t *unused_ptr)
 {
-	const u8_t *start = (u8_t *)thread->stack_info.start;
+	const uint8_t *start = (uint8_t *)thread->stack_info.start;
 	size_t size = thread->stack_info.size;
 	size_t unused = 0;
-	const u8_t *checked_stack = start;
+	const uint8_t *checked_stack = start;
 	/* Take the address of any local variable as a shallow bound for the
 	 * stack pointer.  Addresses above it are guaranteed to be
 	 * accessible.
 	 */
-	const u8_t *stack_pointer = (const u8_t *)&start;
+	const uint8_t *stack_pointer = (const uint8_t *)&start;
 
 	/* If we are currently running on the stack being analyzed, some
 	 * memory management hardware will generate an exception if we

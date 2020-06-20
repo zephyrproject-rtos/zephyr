@@ -20,7 +20,7 @@ BUILD_ASSERT(NUM_THREAD <= MAX_NUM_THREAD);
 /* a half timeslice*/
 #define HALF_SLICE_SIZE (SLICE_SIZE >> 1)
 #define HALF_SLICE_SIZE_CYCLES                                                 \
-	((u64_t)(HALF_SLICE_SIZE)*sys_clock_hw_cycles_per_sec() / 1000)
+	((uint64_t)(HALF_SLICE_SIZE)*sys_clock_hw_cycles_per_sec() / 1000)
 
 /* Task switch tolerance ... */
 #if CONFIG_SYS_CLOCK_TICKS_PER_SEC >= 1000
@@ -33,12 +33,12 @@ BUILD_ASSERT(NUM_THREAD <= MAX_NUM_THREAD);
 
 K_SEM_DEFINE(sema, 0, NUM_THREAD);
 /*elapsed_slice taken by last thread*/
-static u32_t elapsed_slice;
+static uint32_t elapsed_slice;
 static int thread_idx;
 
-static u32_t cycles_delta(u32_t *reftime)
+static uint32_t cycles_delta(uint32_t *reftime)
 {
-	u32_t now, delta;
+	uint32_t now, delta;
 
 	now = k_cycle_get_32();
 	delta = now - *reftime;
@@ -49,8 +49,8 @@ static u32_t cycles_delta(u32_t *reftime)
 
 static void thread_time_slice(void *p1, void *p2, void *p3)
 {
-	u32_t t = cycles_delta(&elapsed_slice);
-	u32_t expected_slice_min, expected_slice_max;
+	uint32_t t = cycles_delta(&elapsed_slice);
+	uint32_t expected_slice_min, expected_slice_max;
 
 	if (thread_idx == 0) {
 		/*
@@ -58,10 +58,10 @@ static void thread_time_slice(void *p1, void *p2, void *p3)
 		 * expected to switch in less than the switching tolerance.
 		 */
 		expected_slice_min =
-			(u64_t)(HALF_SLICE_SIZE - TASK_SWITCH_TOLERANCE) *
+			(uint64_t)(HALF_SLICE_SIZE - TASK_SWITCH_TOLERANCE) *
 			sys_clock_hw_cycles_per_sec() / 1000;
 		expected_slice_max =
-			(u64_t)(HALF_SLICE_SIZE + TASK_SWITCH_TOLERANCE) *
+			(uint64_t)(HALF_SLICE_SIZE + TASK_SWITCH_TOLERANCE) *
 			sys_clock_hw_cycles_per_sec() / 1000;
 	} else {
 		/*
@@ -119,7 +119,7 @@ static void thread_time_slice(void *p1, void *p2, void *p3)
  */
 void test_slice_reset(void)
 {
-	u32_t t32;
+	uint32_t t32;
 	k_tid_t tid[NUM_THREAD];
 	struct k_thread t[NUM_THREAD];
 	int old_prio = k_thread_priority_get(k_current_get());

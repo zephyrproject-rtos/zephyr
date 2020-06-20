@@ -43,18 +43,18 @@ BUILD_ASSERT((CYCLES_PER_SEC % TICKS_PER_SEC) == 0,
 	     "frequency");
 
 #ifdef CONFIG_TICKLESS_KERNEL
-static u32_t last_cycles;
+static uint32_t last_cycles;
 #endif
 
-static u32_t read_count(void)
+static uint32_t read_count(void)
 {
 	/* Read current counter value */
 	return sys_read32(TIMER_BASE_ADDR + XTTCPS_COUNT_VALUE_OFFSET);
 }
 
-static void update_match(u32_t cycles, u32_t match)
+static void update_match(uint32_t cycles, uint32_t match)
 {
-	u32_t delta = match - cycles;
+	uint32_t delta = match - cycles;
 
 	/* Ensure that the match value meets the minimum timing requirements */
 	if (delta < CYCLES_NEXT_MIN) {
@@ -67,8 +67,8 @@ static void update_match(u32_t cycles, u32_t match)
 
 static void ttc_isr(void *arg)
 {
-	u32_t cycles;
-	u32_t ticks;
+	uint32_t cycles;
+	uint32_t ticks;
 
 	ARG_UNUSED(arg);
 
@@ -98,7 +98,7 @@ static void ttc_isr(void *arg)
 
 int z_clock_driver_init(struct device *device)
 {
-	u32_t reg_val;
+	uint32_t reg_val;
 
 	/* Stop timer */
 	sys_write32(XTTCPS_CNT_CNTRL_DIS_MASK,
@@ -152,11 +152,11 @@ int z_clock_driver_init(struct device *device)
 	return 0;
 }
 
-void z_clock_set_timeout(s32_t ticks, bool idle)
+void z_clock_set_timeout(int32_t ticks, bool idle)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
-	u32_t cycles;
-	u32_t next_cycles;
+	uint32_t cycles;
+	uint32_t next_cycles;
 
 	/* Read counter value */
 	cycles = read_count();
@@ -165,7 +165,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	if (ticks == K_TICKS_FOREVER) {
 		next_cycles = cycles + CYCLES_NEXT_MAX;
 	} else {
-		next_cycles = cycles + ((u32_t)ticks * CYCLES_PER_TICK);
+		next_cycles = cycles + ((uint32_t)ticks * CYCLES_PER_TICK);
 	}
 
 	/* Set match value for the next interrupt */
@@ -173,10 +173,10 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 #endif
 }
 
-u32_t z_clock_elapsed(void)
+uint32_t z_clock_elapsed(void)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
-	u32_t cycles;
+	uint32_t cycles;
 
 	/* Read counter value */
 	cycles = read_count();
@@ -189,7 +189,7 @@ u32_t z_clock_elapsed(void)
 #endif
 }
 
-u32_t z_timer_cycle_get_32(void)
+uint32_t z_timer_cycle_get_32(void)
 {
 	/* Return the current counter value */
 	return read_count();

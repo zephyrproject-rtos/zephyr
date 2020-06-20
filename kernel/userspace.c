@@ -55,7 +55,7 @@ static struct k_spinlock obj_lock;         /* kobj struct data */
 #define MAX_THREAD_BITS		(CONFIG_MAX_THREAD_BYTES * 8)
 
 #ifdef CONFIG_DYNAMIC_OBJECTS
-extern u8_t _thread_idx_map[CONFIG_MAX_THREAD_BYTES];
+extern uint8_t _thread_idx_map[CONFIG_MAX_THREAD_BYTES];
 #endif
 
 static void clear_perms_cb(struct z_object *ko, void *ctx_ptr);
@@ -72,6 +72,9 @@ const char *otype_to_str(enum k_objects otype)
 	/* otype-to-str.h is generated automatically during build by
 	 * gen_kobject_list.py
 	 */
+	case K_OBJ_ANY:
+		ret = "generic";
+		break;
 #include <otype-to-str.h>
 	default:
 		ret = "?";
@@ -97,7 +100,7 @@ struct perm_ctx {
  */
 BUILD_ASSERT(CONFIG_PRIVILEGED_STACK_SIZE % Z_PRIVILEGE_STACK_ALIGN == 0);
 
-u8_t *z_priv_stack_find(k_thread_stack_t *stack)
+uint8_t *z_priv_stack_find(k_thread_stack_t *stack)
 {
 	struct z_object *obj = z_object_find(stack);
 
@@ -114,7 +117,7 @@ struct dyn_obj {
 	struct z_object kobj;
 	sys_dnode_t obj_list;
 	struct rbnode node; /* must be immediately before data member */
-	u8_t data[]; /* The object itself */
+	uint8_t data[]; /* The object itself */
 };
 
 extern struct z_object *z_object_gperf_find(void *obj);
@@ -252,43 +255,20 @@ static void thread_idx_free(uintptr_t tidx)
 	sys_bitfield_set_bit((mem_addr_t)_thread_idx_map, tidx);
 }
 
-void *z_impl_k_object_alloc(enum k_objects otype)
+struct z_object *z_dynamic_object_create(size_t size)
 {
 	struct dyn_obj *dyn_obj;
-	uintptr_t tidx;
 
-	/* Stacks are not supported, we don't yet have mem pool APIs
-	 * to request memory that is aligned
-	 */
-	__ASSERT(otype > K_OBJ_ANY && otype < K_OBJ_LAST &&
-		 otype != K_OBJ_THREAD_STACK_ELEMENT,
-		 "bad object type requested");
-
-	dyn_obj = z_thread_malloc(sizeof(*dyn_obj) + obj_size_get(otype));
+	dyn_obj = z_thread_malloc(sizeof(*dyn_obj) + size);
 	if (dyn_obj == NULL) {
-		LOG_WRN("could not allocate kernel object");
+		LOG_ERR("could not allocate kernel object, out of memory");
 		return NULL;
 	}
 
-	dyn_obj->kobj.name = (char *)&dyn_obj->data;
-	dyn_obj->kobj.type = otype;
-	dyn_obj->kobj.flags = K_OBJ_FLAG_ALLOC;
+	dyn_obj->kobj.name = &dyn_obj->data;
+	dyn_obj->kobj.type = K_OBJ_ANY;
+	dyn_obj->kobj.flags = 0;
 	(void)memset(dyn_obj->kobj.perms, 0, CONFIG_MAX_THREAD_BYTES);
-
-	/* Need to grab a new thread index for k_thread */
-	if (otype == K_OBJ_THREAD) {
-		if (!thread_idx_alloc(&tidx)) {
-			k_free(dyn_obj);
-			return NULL;
-		}
-
-		dyn_obj->kobj.data.thread_id = tidx;
-	}
-
-	/* The allocating thread implicitly gets permission on kernel objects
-	 * that it allocates
-	 */
-	z_thread_perms_set(&dyn_obj->kobj, _current);
 
 	k_spinlock_key_t key = k_spin_lock(&lists_lock);
 
@@ -296,7 +276,60 @@ void *z_impl_k_object_alloc(enum k_objects otype)
 	sys_dlist_append(&obj_list, &dyn_obj->obj_list);
 	k_spin_unlock(&lists_lock, key);
 
-	return dyn_obj->kobj.name;
+	return &dyn_obj->kobj;
+}
+
+void *z_impl_k_object_alloc(enum k_objects otype)
+{
+	struct z_object *zo;
+	uintptr_t tidx = 0;
+
+	if (otype <= K_OBJ_ANY || otype >= K_OBJ_LAST) {
+		LOG_ERR("bad object type %d requested", otype);
+		return NULL;
+	}
+
+	switch (otype) {
+	case K_OBJ_THREAD:
+		if (!thread_idx_alloc(&tidx)) {
+			LOG_ERR("out of free thread indexes");
+			return NULL;
+		}
+		break;
+	/* The following are currently not allowed at all */
+	case K_OBJ_FUTEX:			/* Lives in user memory */
+	case K_OBJ_SYS_MUTEX:			/* Lives in user memory */
+	case K_OBJ_THREAD_STACK_ELEMENT:	/* No aligned allocator */
+	case K_OBJ_NET_SOCKET:			/* Indeterminate size */
+		LOG_ERR("forbidden object type '%s' requested",
+			otype_to_str(otype));
+		return NULL;
+	default:
+		/* Remainder within bounds are permitted */
+		break;
+	}
+
+	zo = z_dynamic_object_create(obj_size_get(otype));
+	if (zo == NULL) {
+		return NULL;
+	}
+	zo->type = otype;
+
+	if (otype == K_OBJ_THREAD) {
+		zo->data.thread_id = tidx;
+	}
+
+	/* The allocating thread implicitly gets permission on kernel objects
+	 * that it allocates
+	 */
+	z_thread_perms_set(zo, _current);
+
+	/* Activates reference counting logic for automatic disposal when
+	 * all permissions have been revoked
+	 */
+	zo->flags |= K_OBJ_FLAG_ALLOC;
+
+	return zo->name;
 }
 
 void k_object_free(void *obj)
@@ -508,6 +541,12 @@ void z_dump_object_error(int retval, void *obj, struct z_object *ko,
 	switch (retval) {
 	case -EBADF:
 		LOG_ERR("%p is not a valid %s", obj, otype_to_str(otype));
+		if (ko == NULL) {
+			LOG_ERR("address is not a known kernel object");
+		} else {
+			LOG_ERR("address is actually a %s",
+				otype_to_str(ko->type));
+		}
 		break;
 	case -EPERM:
 		dump_permission_error(ko);
@@ -785,7 +824,7 @@ static uintptr_t handler_bad_syscall(uintptr_t bad_id, uintptr_t arg2,
 				     void *ssf)
 {
 	LOG_ERR("Bad system call id %" PRIuPTR " invoked", bad_id);
-	arch_syscall_oops(_current->syscall_frame);
+	arch_syscall_oops(ssf);
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
 
@@ -794,7 +833,7 @@ static uintptr_t handler_no_syscall(uintptr_t arg1, uintptr_t arg2,
 				    uintptr_t arg5, uintptr_t arg6, void *ssf)
 {
 	LOG_ERR("Unimplemented system call");
-	arch_syscall_oops(_current->syscall_frame);
+	arch_syscall_oops(ssf);
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
 

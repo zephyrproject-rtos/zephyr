@@ -15,7 +15,7 @@
  *
  * @return kernel version
  */
-u32_t sys_kernel_version_get(void)
+uint32_t sys_kernel_version_get(void)
 {
 	return KERNELVERSION;
 }

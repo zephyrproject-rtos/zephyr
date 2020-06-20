@@ -169,14 +169,14 @@ int eswifi_at_cmd(struct eswifi_dev *eswifi, char *cmd)
 	return eswifi_at_cmd_rsp(eswifi, cmd, NULL);
 }
 
-struct eswifi_dev *eswifi_by_iface_idx(u8_t iface)
+struct eswifi_dev *eswifi_by_iface_idx(uint8_t iface)
 {
 	/* only one instance */
 	LOG_DBG("%d", iface);
 	return &eswifi0;
 }
 
-static int __parse_ipv4_address(char *str, char *ssid, u8_t ip[4])
+static int __parse_ipv4_address(char *str, char *ssid, uint8_t ip[4])
 {
 	unsigned int byte = -1;
 
@@ -283,7 +283,7 @@ static int eswifi_connect(struct eswifi_dev *eswifi)
 
 	/* Any IP assigned ? (dhcp offload or manually) */
 	err = __parse_ipv4_address(rsp, eswifi->sta.ssid,
-				   (u8_t *)&addr.s4_addr);
+				   (uint8_t *)&addr.s4_addr);
 	if (err < 0) {
 		LOG_ERR("Unable to retrieve IP address");
 		goto error;
@@ -351,7 +351,7 @@ static void eswifi_request_work(struct k_work *item)
 	}
 }
 
-static int eswifi_get_mac_addr(struct eswifi_dev *eswifi, u8_t addr[6])
+static int eswifi_get_mac_addr(struct eswifi_dev *eswifi, uint8_t addr[6])
 {
 	char cmd[] = "Z5\r";
 	int ret, i, byte = 0;
@@ -378,7 +378,7 @@ static int eswifi_get_mac_addr(struct eswifi_dev *eswifi, u8_t addr[6])
 static void eswifi_iface_init(struct net_if *iface)
 {
 	struct eswifi_dev *eswifi = &eswifi0;
-	u8_t mac[6];
+	uint8_t mac[6];
 
 	LOG_DBG("");
 

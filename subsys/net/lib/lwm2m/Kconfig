@@ -83,6 +83,16 @@ config LWM2M_ENGINE_DEFAULT_LIFETIME
 	help
 	  Set the default lifetime (in seconds) for the LWM2M library engine
 
+config LWM2M_SECONDS_TO_UPDATE_EARLY
+	int "LWM2M Registration Update transmission time before timeout"
+	default 6
+	range 1 65535
+	help
+	  Time in seconds before the registration timeout, when the LWM2M
+	  Registration Update is sent by the engine. In networks with large
+	  round trip times (like NB-IoT), it might be needed to set this value
+	  higher, in order to allow the response to arrive before timeout.
+
 config LWM2M_QUEUE_MODE_ENABLED
 	bool "Enable Queue Mode UDP binding"
 	help
@@ -239,6 +249,14 @@ config LWM2M_DEVICE_ERROR_CODE_MAX
 	help
 	  This value sets the maximum number of error codes that the device
 	  object will store before ignoring new values.
+
+config LWM2M_DEVICE_EXT_DEV_INFO_MAX
+	int "Maximum # of device obj external device info to store"
+	default 5
+	range 1 20
+	help
+	  This value sets the maximum number of external device info that the
+	  device object will store before ignoring new values.
 
 config LWM2M_NUM_ATTR
 	int "Maximum # of LWM2M attributes"

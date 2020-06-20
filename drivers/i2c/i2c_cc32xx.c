@@ -64,8 +64,8 @@ enum i2c_cc32xx_state {
 };
 
 struct i2c_cc32xx_config {
-	u32_t base;
-	u32_t bitrate;
+	uint32_t base;
+	uint32_t bitrate;
 	unsigned int irq_no;
 };
 
@@ -76,16 +76,16 @@ struct i2c_cc32xx_data {
 	volatile enum i2c_cc32xx_state state;
 
 	struct i2c_msg msg; /* Cache msg for transfer state machine */
-	u16_t  slave_addr; /* Cache slave address for ISR use */
+	uint16_t  slave_addr; /* Cache slave address for ISR use */
 };
 
 static void configure_i2c_irq(const struct i2c_cc32xx_config *config);
 
 #define I2C_CLK_FREQ(n) DT_PROP(DT_INST_PHANDLE(n, clocks), clock_frequency)
-static int i2c_cc32xx_configure(struct device *dev, u32_t dev_config_raw)
+static int i2c_cc32xx_configure(struct device *dev, uint32_t dev_config_raw)
 {
-	u32_t base = DEV_BASE(dev);
-	u32_t bitrate_id;
+	uint32_t base = DEV_BASE(dev);
+	uint32_t bitrate_id;
 
 	if (!(dev_config_raw & I2C_MODE_MASTER)) {
 		return -EINVAL;
@@ -112,10 +112,10 @@ static int i2c_cc32xx_configure(struct device *dev, u32_t dev_config_raw)
 }
 
 static void i2c_cc32xx_prime_transfer(struct device *dev, struct i2c_msg *msg,
-				      u16_t addr)
+				      uint16_t addr)
 {
 	struct i2c_cc32xx_data *data = DEV_DATA(dev);
-	u32_t base = DEV_BASE(dev);
+	uint32_t base = DEV_BASE(dev);
 
 	/* Initialize internal counters and buf pointers: */
 	data->msg = *msg;
@@ -157,7 +157,7 @@ static void i2c_cc32xx_prime_transfer(struct device *dev, struct i2c_msg *msg,
 }
 
 static int i2c_cc32xx_transfer(struct device *dev, struct i2c_msg *msgs,
-			       u8_t num_msgs, u16_t addr)
+			       uint8_t num_msgs, uint16_t addr)
 {
 	struct i2c_cc32xx_data *data = DEV_DATA(dev);
 	int retval = 0;
@@ -190,7 +190,7 @@ static int i2c_cc32xx_transfer(struct device *dev, struct i2c_msg *msgs,
 	return retval;
 }
 
-static void i2c_cc32xx_isr_handle_write(u32_t base,
+static void i2c_cc32xx_isr_handle_write(uint32_t base,
 					 struct i2c_cc32xx_data *data)
 {
 	/* Decrement write Counter */
@@ -227,7 +227,7 @@ static void i2c_cc32xx_isr_handle_write(u32_t base,
 	}
 }
 
-static void i2c_cc32xx_isr_handle_read(u32_t base,
+static void i2c_cc32xx_isr_handle_read(uint32_t base,
 					struct i2c_cc32xx_data *data)
 {
 
@@ -262,10 +262,10 @@ static void i2c_cc32xx_isr_handle_read(u32_t base,
 static void i2c_cc32xx_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	u32_t base = DEV_BASE(dev);
+	uint32_t base = DEV_BASE(dev);
 	struct i2c_cc32xx_data *data = DEV_DATA(dev);
-	u32_t err_status;
-	u32_t int_status;
+	uint32_t err_status;
+	uint32_t int_status;
 
 	/* Get the error  status of the I2C controller */
 	err_status = MAP_I2CMasterErr(base);
@@ -324,12 +324,12 @@ static void i2c_cc32xx_isr(void *arg)
 
 static int i2c_cc32xx_init(struct device *dev)
 {
-	u32_t base = DEV_BASE(dev);
+	uint32_t base = DEV_BASE(dev);
 	const struct i2c_cc32xx_config *config = DEV_CFG(dev);
 	struct i2c_cc32xx_data *data = DEV_DATA(dev);
-	u32_t bitrate_cfg;
+	uint32_t bitrate_cfg;
 	int error;
-	u32_t regval;
+	uint32_t regval;
 
 	k_sem_init(&data->mutex, 1, UINT_MAX);
 	k_sem_init(&data->transfer_complete, 0, UINT_MAX);

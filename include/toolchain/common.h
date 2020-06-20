@@ -132,10 +132,16 @@
 #define __syscall
 #endif /* #ifndef ZTEST_UNITTEST */
 
-/* Used as a sentinel by parse_syscalls.py to identify what API structs
- * define driver subsystems.
+/* Definitions for struct declaration tags. These are sentinel values used by
+ * parse_syscalls.py to gather a list of names of struct declarations that
+ * have these tags applied for them.
  */
+
+/* Indicates this is a driver subsystem */
 #define __subsystem
+
+/* Indicates this is a network socket object */
+#define __net_socket
 
 #ifndef BUILD_ASSERT
 /* Compile-time assertion that makes the build to fail.

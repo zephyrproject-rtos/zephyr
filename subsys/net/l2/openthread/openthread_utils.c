@@ -27,7 +27,7 @@ static bool is_anycast_locator(const otNetifAddress *address)
 }
 
 static bool is_mesh_local(struct openthread_context *context,
-			  const u8_t *address)
+			  const uint8_t *address)
 {
 	const otMeshLocalPrefix *ml_prefix =
 				otThreadGetMeshLocalPrefix(context->instance);
@@ -37,7 +37,7 @@ static bool is_mesh_local(struct openthread_context *context,
 
 int pkt_list_add(struct openthread_context *context, struct net_pkt *pkt)
 {
-	u16_t i_idx = context->pkt_list_in_idx;
+	uint16_t i_idx = context->pkt_list_in_idx;
 
 	if (context->pkt_list_full) {
 		return -ENOMEM;
@@ -56,6 +56,22 @@ int pkt_list_add(struct openthread_context *context, struct net_pkt *pkt)
 	context->pkt_list_in_idx = i_idx;
 
 	return 0;
+}
+
+void pkt_list_remove_first(struct openthread_context *context)
+{
+	uint16_t idx = context->pkt_list_in_idx;
+
+	if (idx == 0U) {
+		idx = CONFIG_OPENTHREAD_PKT_LIST_SIZE - 1;
+	} else {
+		idx--;
+	}
+	context->pkt_list_in_idx = idx;
+
+	if (context->pkt_list_full) {
+		context->pkt_list_full = 0U;
+	}
 }
 
 struct net_pkt *pkt_list_peek(struct openthread_context *context)

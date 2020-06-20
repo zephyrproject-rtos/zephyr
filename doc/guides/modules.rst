@@ -131,10 +131,10 @@ section.
    .. code-block:: cmake
 
       set(ZEPHYR_MODULES <path-to-module1> <path-to-module2> [...])
-      include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
+      find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
-   If you choose this option, make sure to set the variable **before** including
-   the boilerplate file, as shown above.
+   If you choose this option, make sure to set the variable **before**  calling
+   ``find_package(Zephyr ...)``, as shown above.
 
 #. In a separate CMake script which is pre-loaded to populate the CMake cache,
    like this:

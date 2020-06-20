@@ -92,17 +92,17 @@
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 #include <power/power.h>
-u32_t ioapic_suspend_buf[SUSPEND_BITS_REQD / 32] = {0};
-static u32_t ioapic_device_power_state = DEVICE_PM_ACTIVE_STATE;
+uint32_t ioapic_suspend_buf[SUSPEND_BITS_REQD / 32] = {0};
+static uint32_t ioapic_device_power_state = DEVICE_PM_ACTIVE_STATE;
 #endif
 
-static u32_t __IoApicGet(s32_t offset);
-static void __IoApicSet(s32_t offset, u32_t value);
-static void ioApicRedSetHi(unsigned int irq, u32_t upper32);
-static void ioApicRedSetLo(unsigned int irq, u32_t lower32);
-static u32_t ioApicRedGetLo(unsigned int irq);
-static void IoApicRedUpdateLo(unsigned int irq, u32_t value,
-					u32_t mask);
+static uint32_t __IoApicGet(int32_t offset);
+static void __IoApicSet(int32_t offset, uint32_t value);
+static void ioApicRedSetHi(unsigned int irq, uint32_t upper32);
+static void ioApicRedSetLo(unsigned int irq, uint32_t lower32);
+static uint32_t ioApicRedGetLo(unsigned int irq);
+static void IoApicRedUpdateLo(unsigned int irq, uint32_t value,
+					uint32_t mask);
 
 /*
  * The functions irq_enable() and irq_disable() are implemented in the
@@ -122,8 +122,8 @@ int ioapic_init(struct device *unused)
 {
 	ARG_UNUSED(unused);
 #ifdef CONFIG_IOAPIC_MASK_RTE
-	s32_t ix;	/* redirection table index */
-	u32_t rteValue; /* value to copy into redirection table entry */
+	int32_t ix;	/* redirection table index */
+	uint32_t rteValue; /* value to copy into redirection table entry */
 
 	/*
 	 * The platform must set the Kconfig option IOAPIC_NUM_RTES to indicate
@@ -176,7 +176,7 @@ void z_ioapic_irq_disable(unsigned int irq)
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 
-void store_flags(unsigned int irq, u32_t flags)
+void store_flags(unsigned int irq, uint32_t flags)
 {
 	/* Currently only the following four flags are modified */
 	if (flags & IOAPIC_LOW) {
@@ -204,9 +204,9 @@ void store_flags(unsigned int irq, u32_t flags)
 	}
 }
 
-u32_t restore_flags(unsigned int irq)
+uint32_t restore_flags(unsigned int irq)
 {
-	u32_t flags = 0U;
+	uint32_t flags = 0U;
 
 	if (sys_bitfield_test_bit((mem_addr_t) ioapic_suspend_buf,
 		BIT_POS_FOR_IRQ_OPTION(irq, IOAPIC_BITFIELD_HI_LO))) {
@@ -235,7 +235,7 @@ u32_t restore_flags(unsigned int irq)
 int ioapic_suspend(struct device *port)
 {
 	int irq;
-	u32_t rte_lo;
+	uint32_t rte_lo;
 
 	ARG_UNUSED(port);
 	(void)memset(ioapic_suspend_buf, 0, (SUSPEND_BITS_REQD >> 3));
@@ -257,8 +257,8 @@ int ioapic_suspend(struct device *port)
 int ioapic_resume_from_suspend(struct device *port)
 {
 	int irq;
-	u32_t flags;
-	u32_t rteValue;
+	uint32_t flags;
+	uint32_t rteValue;
 
 	ARG_UNUSED(port);
 
@@ -288,19 +288,19 @@ int ioapic_resume_from_suspend(struct device *port)
 * Implements the driver control management functionality
 * the *context may include IN data or/and OUT data
 */
-static int ioapic_device_ctrl(struct device *device, u32_t ctrl_command,
+static int ioapic_device_ctrl(struct device *device, uint32_t ctrl_command,
 			      void *context, device_pm_cb cb, void *arg)
 {
 	int ret = 0;
 
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-		if (*((u32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
 			ret = ioapic_suspend(device);
-		} else if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 			ret = ioapic_resume_from_suspend(device);
 		}
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
-		*((u32_t *)context) = ioapic_device_power_state;
+		*((uint32_t *)context) = ioapic_device_power_state;
 	}
 
 	if (cb) {
@@ -324,9 +324,9 @@ static int ioapic_device_ctrl(struct device *device, u32_t ctrl_command,
  *
  * @return N/A
  */
-void z_ioapic_irq_set(unsigned int irq, unsigned int vector, u32_t flags)
+void z_ioapic_irq_set(unsigned int irq, unsigned int vector, uint32_t flags)
 {
-	u32_t rteValue;   /* value to copy into redirection table entry */
+	uint32_t rteValue;   /* value to copy into redirection table entry */
 
 	/* the delivery mode is determined by the flags passed from drivers */
 	rteValue = IOAPIC_INT_MASK | IOAPIC_LOGICAL |
@@ -360,17 +360,17 @@ void z_ioapic_int_vec_set(unsigned int irq, unsigned int vector)
  *
  * @return register value
  */
-static u32_t __IoApicGet(s32_t offset)
+static uint32_t __IoApicGet(int32_t offset)
 {
-	u32_t value; /* value */
+	uint32_t value; /* value */
 	unsigned int key;	/* interrupt lock level */
 
 	/* lock interrupts to ensure indirect addressing works "atomically" */
 
 	key = irq_lock();
 
-	*((volatile u32_t *) (IOAPIC_REG + IOAPIC_IND)) = (char)offset;
-	value = *((volatile u32_t *)(IOAPIC_REG + IOAPIC_DATA));
+	*((volatile uint32_t *) (IOAPIC_REG + IOAPIC_IND)) = (char)offset;
+	value = *((volatile uint32_t *)(IOAPIC_REG + IOAPIC_DATA));
 
 	irq_unlock(key);
 
@@ -387,7 +387,7 @@ static u32_t __IoApicGet(s32_t offset)
  * @param value Value to set the register
  * @return N/A
  */
-static void __IoApicSet(s32_t offset, u32_t value)
+static void __IoApicSet(int32_t offset, uint32_t value)
 {
 	unsigned int key; /* interrupt lock level */
 
@@ -395,8 +395,8 @@ static void __IoApicSet(s32_t offset, u32_t value)
 
 	key = irq_lock();
 
-	*(volatile u32_t *)(IOAPIC_REG + IOAPIC_IND) = (char)offset;
-	*((volatile u32_t *)(IOAPIC_REG + IOAPIC_DATA)) = value;
+	*(volatile uint32_t *)(IOAPIC_REG + IOAPIC_IND) = (char)offset;
+	*((volatile uint32_t *)(IOAPIC_REG + IOAPIC_DATA)) = value;
 
 	irq_unlock(key);
 }
@@ -410,9 +410,9 @@ static void __IoApicSet(s32_t offset, u32_t value)
  * @param irq INTIN number
  * @return 32 low-order bits
  */
-static u32_t ioApicRedGetLo(unsigned int irq)
+static uint32_t ioApicRedGetLo(unsigned int irq)
 {
-	s32_t offset = IOAPIC_REDTBL + (irq << 1); /* register offset */
+	int32_t offset = IOAPIC_REDTBL + (irq << 1); /* register offset */
 
 	return __IoApicGet(offset);
 }
@@ -427,9 +427,9 @@ static u32_t ioApicRedGetLo(unsigned int irq)
  * @param lower32 Value to be written
  * @return N/A
  */
-static void ioApicRedSetLo(unsigned int irq, u32_t lower32)
+static void ioApicRedSetLo(unsigned int irq, uint32_t lower32)
 {
-	s32_t offset = IOAPIC_REDTBL + (irq << 1); /* register offset */
+	int32_t offset = IOAPIC_REDTBL + (irq << 1); /* register offset */
 
 	__IoApicSet(offset, lower32);
 }
@@ -444,9 +444,9 @@ static void ioApicRedSetLo(unsigned int irq, u32_t lower32)
  * @param upper32 Value to be written
  * @return N/A
  */
-static void ioApicRedSetHi(unsigned int irq, u32_t upper32)
+static void ioApicRedSetHi(unsigned int irq, uint32_t upper32)
 {
-	s32_t offset = IOAPIC_REDTBL + (irq << 1) + 1; /* register offset */
+	int32_t offset = IOAPIC_REDTBL + (irq << 1) + 1; /* register offset */
 
 	__IoApicSet(offset, upper32);
 }
@@ -464,8 +464,8 @@ static void ioApicRedSetHi(unsigned int irq, u32_t upper32)
  * @return N/A
  */
 static void IoApicRedUpdateLo(unsigned int irq,
-				u32_t value,
-				u32_t mask)
+				uint32_t value,
+				uint32_t mask)
 {
 	ioApicRedSetLo(irq, (ioApicRedGetLo(irq) & ~mask) | (value & mask));
 }

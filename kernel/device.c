@@ -24,8 +24,8 @@ extern struct device __device_start[];
 extern struct device __device_end[];
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-extern u32_t __device_busy_start[];
-extern u32_t __device_busy_end[];
+extern uint32_t __device_busy_start[];
+extern uint32_t __device_busy_end[];
 #define DEVICE_BUSY_SIZE (__device_busy_end - __device_busy_start)
 #endif
 
@@ -40,7 +40,7 @@ extern u32_t __device_busy_end[];
  *
  * @param level init level to run.
  */
-void z_sys_init_run_level(s32_t level)
+void z_sys_init_run_level(int32_t level)
 {
 	static const struct init_entry *levels[] = {
 		__init_PRE_KERNEL_1_start,
@@ -119,7 +119,7 @@ static inline struct device *z_vrfy_device_get_binding(const char *name)
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 int device_pm_control_nop(struct device *unused_device,
-		       u32_t unused_ctrl_command,
+		       uint32_t unused_ctrl_command,
 		       void *unused_context,
 		       device_pm_cb cb,
 		       void *unused_arg)

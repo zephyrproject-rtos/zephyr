@@ -34,35 +34,35 @@
 #define SOCKS5_CMD_RESP_ATYP_NOT_SUPPORTED	0x08
 
 struct socks5_method_request_common {
-	u8_t ver;
-	u8_t nmethods;
+	uint8_t ver;
+	uint8_t nmethods;
 } __packed;
 
 struct socks5_method_request {
 	struct socks5_method_request_common r;
-	u8_t methods[255];
+	uint8_t methods[255];
 } __packed;
 
 struct socks5_method_response {
-	u8_t ver;
-	u8_t method;
+	uint8_t ver;
+	uint8_t method;
 } __packed;
 
 struct socks5_ipv4_addr {
-	u8_t addr[4];
-	u16_t port;
+	uint8_t addr[4];
+	uint16_t port;
 } __packed;
 
 struct socks5_ipv6_addr {
-	u8_t addr[16];
-	u16_t port;
+	uint8_t addr[16];
+	uint16_t port;
 } __packed;
 
 struct socks5_command_request_common {
-	u8_t ver;
-	u8_t cmd;
-	u8_t rsv;
-	u8_t atyp;
+	uint8_t ver;
+	uint8_t cmd;
+	uint8_t rsv;
+	uint8_t atyp;
 } __packed;
 
 struct socks5_command_request {
@@ -74,10 +74,10 @@ struct socks5_command_request {
 } __packed;
 
 struct socks5_command_response_common {
-	u8_t ver;
-	u8_t rep;
-	u8_t rsv;
-	u8_t atyp;
+	uint8_t ver;
+	uint8_t rep;
+	uint8_t rsv;
+	uint8_t atyp;
 } __packed;
 
 struct socks5_command_response {

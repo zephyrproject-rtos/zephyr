@@ -1,0 +1,23 @@
+identifier: b_l4s5i_iot01a
+name: ST B_L4S5I_IOT01A Discovery kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 640
+flash: 2048
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - i2c
+  - hts221
+  - lps22hb
+  - lsm6dsl
+  - pwm
+  - gpio
+  - ble
+  - spi
+  - vl53l0x
+  - watchdog

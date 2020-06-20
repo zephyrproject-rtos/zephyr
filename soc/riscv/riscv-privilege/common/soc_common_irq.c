@@ -13,7 +13,7 @@
 
 void arch_irq_enable(unsigned int irq)
 {
-	u32_t mie;
+	uint32_t mie;
 
 #if defined(CONFIG_RISCV_HAS_PLIC)
 	unsigned int level = irq_get_level(irq);
@@ -36,7 +36,7 @@ void arch_irq_enable(unsigned int irq)
 
 void arch_irq_disable(unsigned int irq)
 {
-	u32_t mie;
+	uint32_t mie;
 
 #if defined(CONFIG_RISCV_HAS_PLIC)
 	unsigned int level = irq_get_level(irq);
@@ -73,7 +73,7 @@ void arch_irq_priority_set(unsigned int irq, unsigned int prio)
 
 int arch_irq_is_enabled(unsigned int irq)
 {
-	u32_t mie;
+	uint32_t mie;
 
 #if defined(CONFIG_RISCV_HAS_PLIC)
 	unsigned int level = irq_get_level(irq);

@@ -12,3 +12,6 @@ config SHIELD_WAVESHARE_EPAPER_GDEH0213B72
 
 config SHIELD_WAVESHARE_EPAPER_GDEW075T7
 	def_bool $(shields_list_contains,waveshare_epaper_gdew075t7)
+
+config SHIELD_WAVESHARE_EPAPER_GDEH0154A07
+	def_bool $(shields_list_contains,waveshare_epaper_gdeh0154a07)

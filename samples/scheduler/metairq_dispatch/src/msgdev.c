@@ -20,11 +20,11 @@ static struct _timeout timeout;
  * the target thread should delay while "processing" the message, will
  * be a random number between zero and this value.
  */
-u32_t max_duty_cyc;
+uint32_t max_duty_cyc;
 
-u32_t msg_seq;
+uint32_t msg_seq;
 
-K_MSGQ_DEFINE(hw_msgs, sizeof(struct msg), 2, sizeof(u32_t));
+K_MSGQ_DEFINE(hw_msgs, sizeof(struct msg), 2, sizeof(uint32_t));
 
 static void timeout_reset(void);
 
@@ -33,17 +33,17 @@ static void timeout_reset(void);
  * inside the ISR and needs no locking for the otherwise non-atomic
  * state.
  */
-static u32_t rand32(void)
+static uint32_t rand32(void)
 {
-	static u64_t state;
+	static uint64_t state;
 
 	if (!state) {
-		state = ((u64_t)k_cycle_get_32()) << 16;
+		state = ((uint64_t)k_cycle_get_32()) << 16;
 	}
 
 	/* MMIX LCRNG parameters */
 	state = state * 6364136223846793005ULL + 1442695040888963407ULL;
-	return (u32_t)(state >> 32);
+	return (uint32_t)(state >> 32);
 }
 
 /* This acts as the "ISR" for our fake device.  It "reads from the
@@ -54,7 +54,7 @@ static u32_t rand32(void)
 static void dev_timer_expired(struct _timeout *t)
 {
 	__ASSERT_NO_MSG(t == &timeout);
-	u32_t timestamp = k_cycle_get_32();
+	uint32_t timestamp = k_cycle_get_32();
 	struct msg m;
 
 	m.seq = msg_seq++;
@@ -75,7 +75,7 @@ static void dev_timer_expired(struct _timeout *t)
 
 static void timeout_reset(void)
 {
-	u32_t ticks = rand32() % MAX_EVENT_DELAY_TICKS;
+	uint32_t ticks = rand32() % MAX_EVENT_DELAY_TICKS;
 
 #ifdef CONFIG_LEGACY_TIMEOUT_API
 	z_add_timeout(&timeout, dev_timer_expired, ticks);
@@ -91,9 +91,9 @@ void message_dev_init(void)
 	 * CPU.  We want the load to sometimes back up and require
 	 * queueing, but to be achievable over time.
 	 */
-	u64_t cyc_per_tick = k_ticks_to_cyc_near64(1);
-	u64_t avg_ticks_per_event = MAX_EVENT_DELAY_TICKS / 2;
-	u64_t avg_cyc_per_event = cyc_per_tick * avg_ticks_per_event;
+	uint64_t cyc_per_tick = k_ticks_to_cyc_near64(1);
+	uint64_t avg_ticks_per_event = MAX_EVENT_DELAY_TICKS / 2;
+	uint64_t avg_cyc_per_event = cyc_per_tick * avg_ticks_per_event;
 
 	max_duty_cyc = (2 * avg_cyc_per_event * AVERAGE_LOAD_TARGET_PCT) / 100;
 

@@ -32,8 +32,8 @@ LOG_MODULE_DECLARE(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
  */
 
 static atomic_t cal_process_in_progress;
-static s16_t prev_temperature; /* Previous temperature measurement. */
-static u8_t calib_skip_cnt; /* Counting down skipped calibrations. */
+static int16_t prev_temperature; /* Previous temperature measurement. */
+static uint8_t calib_skip_cnt; /* Counting down skipped calibrations. */
 static volatile int total_cnt; /* Total number of calibrations. */
 static volatile int total_skips_cnt; /* Total number of skipped calibrations. */
 
@@ -156,13 +156,13 @@ static void on_hw_cal_done(void)
 }
 
 /* Convert sensor value to 0.25'C units. */
-static inline s16_t sensor_value_to_temp_unit(struct sensor_value *val)
+static inline int16_t sensor_value_to_temp_unit(struct sensor_value *val)
 {
-	return (s16_t)(4 * val->val1 + val->val2 / 250000);
+	return (int16_t)(4 * val->val1 + val->val2 / 250000);
 }
 
 /* Function reads from temperature sensor and converts to 0.25'C units. */
-static int get_temperature(s16_t *tvp)
+static int get_temperature(int16_t *tvp)
 {
 	struct sensor_value sensor_val;
 	int rc = sensor_sample_fetch(temp_sensor);
@@ -183,8 +183,8 @@ static int get_temperature(s16_t *tvp)
  */
 static void measure_temperature(struct k_work *work)
 {
-	s16_t temperature = 0;
-	s16_t diff = 0;
+	int16_t temperature = 0;
+	int16_t diff = 0;
 	bool started = false;
 	int rc;
 
@@ -231,14 +231,21 @@ void z_nrf_clock_calibration_init(struct device *dev)
 	nrf_clock_event_clear(NRF_CLOCK, NRF_CLOCK_EVENT_DONE);
 	nrf_clock_int_enable(NRF_CLOCK, NRF_CLOCK_INT_DONE_MASK);
 
-	if (CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP != 0) {
-		temp_sensor = temp_device();
-	}
-
 	clk_dev = dev;
 	total_cnt = 0;
 	total_skips_cnt = 0;
 }
+
+#if CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP
+static int temp_sensor_init(struct device *arg)
+{
+	temp_sensor = temp_device();
+
+	return 0;
+}
+
+SYS_INIT(temp_sensor_init, APPLICATION, 0);
+#endif /* CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP */
 
 static void start_unconditional_cal_process(void)
 {

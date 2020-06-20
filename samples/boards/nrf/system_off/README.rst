@@ -10,9 +10,9 @@ This sample can be used for basic power measurement and as an example of
 deep sleep on Nordic platforms.  The functional behavior is:
 
 * Busy-wait for 2 seconds
-* Sleep for 2 seconds
-* Sleep for a duration that would, by policy, cause the system to power
-  off if the deep sleep state was not disabled
+* Sleep for 2 seconds without device power control
+* Sleep for 2 seconds after turning UART off, which reduces current draw
+  by a couple hundred uA
 * Turn the system off after enabling wakeup through a button press
 
 A power monitor will be able to distinguish among these states.
@@ -48,10 +48,11 @@ nRF52 core output
 
 .. code-block:: console
 
-   ***** Booting Zephyr OS build v2.1.0-rc1-158-gb642e1a96d17 *****
+   *** Booting Zephyr OS build v2.3.0-rc1-204-g5f2eb85f728d  ***
 
    nrf52dk_nrf52832 system off demo
    Busy-wait 2 s
+   Busy-wait 2 s with UART off
    Sleep 2 s
-   Sleep 60000 ms (deep sleep minimum)
+   Sleep 2 s with UART off
    Entering system off; press BUTTON1 to restart

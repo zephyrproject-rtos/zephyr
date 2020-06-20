@@ -23,10 +23,12 @@ extern "C" {
  */
 
 /**
- * @brief Get clock controller "name" (label property) at an index
+ * @brief Get a label property from the node referenced by a pwms
+ *        property at an index
  *
- * It's an error if the clock controller referenced by the phandle
- * in property "clocks" at index "idx" has no label property.
+ * It's an error if the clock controller node referenced by the
+ * phandle in node_id's clocks property at index "idx" has no label
+ * property.
  *
  * Example devicetree fragment:
  *
@@ -46,19 +48,20 @@ extern "C" {
  *
  *     DT_CLOCKS_LABEL_BY_IDX(DT_NODELABEL(n), 1) // "CLK_2"
  *
- * @param node_id node identifier
- * @param idx logical index into the property
- * @return the label property for the referenced node at index idx
+ * @param node_id node identifier for a node with a clocks property
+ * @param idx logical index into clocks property
+ * @return the label property of the node referenced at index "idx"
  * @see DT_PROP_BY_PHANDLE_IDX()
  */
 #define DT_CLOCKS_LABEL_BY_IDX(node_id, idx) \
 	DT_PROP_BY_PHANDLE_IDX(node_id, clocks, idx, label)
 
 /**
- * @brief Get clock controller "name" (label property) by name
+ * @brief Get a label property from a clocks property by name
  *
- * It's an error if the clock controller referenced by the phandle
- * in property "clocks" at index "idx" has no label property.
+ * It's an error if the clock controller node referenced by the
+ * phandle in node_id's clocks property at the element named "name"
+ * has no label property.
  *
  * Example devicetree fragment:
  *
@@ -79,9 +82,10 @@ extern "C" {
  *
  *     DT_CLOCKS_LABEL_BY_NAME(DT_NODELABEL(n), beta) // "CLK_2"
  *
- * @param node_id node identifier
- * @param name lowercase-and-underscores "clock" name
- * @return the label property for the referenced node by name
+ * @param node_id node identifier for a node with a clocks property
+ * @param name lowercase-and-underscores name of a clocks element
+ *             as defined by the node's clock-names property
+ * @return the label property of the node referenced at the named element
  * @see DT_PHANDLE_BY_NAME()
  */
 #define DT_CLOCKS_LABEL_BY_NAME(node_id, name) \
@@ -89,19 +93,19 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_CLOCKS_LABEL_BY_IDX(node_id, 0)
- * @param node_id node identifier
- * @return the label property for the named specifier at index 0
+ * @param node_id node identifier for a node with a clocks property
+ * @return the label property of the node referenced at index 0
  * @see DT_CLOCKS_LABEL_BY_IDX()
  */
 #define DT_CLOCKS_LABEL(node_id) DT_CLOCKS_LABEL_BY_IDX(node_id, 0)
 
 /**
- * @brief Get Clock controller "cell" value at an index
+ * @brief Get a clock specifier's cell value at an index
  *
  * Example devicetree fragment:
  *
  *     clk1: clock-controller@... {
- *             label = "CLK_1";
+ *             compatible = "vnd,clock";
  *             #clock-cells = < 2 >;
  *     };
  *
@@ -109,7 +113,7 @@ extern "C" {
  *             clocks = < &clk1 10 20 >, < &clk1 30 40 >;
  *     };
  *
- * Bindings fragment for the gpio0 node:
+ * Bindings fragment for the vnd,clock compatible:
  *
  *     clock-cells:
  *       - bus
@@ -117,25 +121,25 @@ extern "C" {
  *
  * Example usage:
  *
- *     DT_CLOCKS_CELL_BY_IDX(DT_NODELABEL(n), bus, 0) // 10
- *     DT_CLOCKS_CELL_BY_IDX(DT_NODELABEL(n), bits, 1) // 40
+ *     DT_CLOCKS_CELL_BY_IDX(DT_NODELABEL(n), 0, bus) // 10
+ *     DT_CLOCKS_CELL_BY_IDX(DT_NODELABEL(n), 1, bits) // 40
  *
- * @param node_id node identifier
- * @param cell binding's cell name within the specifier at index "idx"
- * @param idx logical index into the property
- * @return the value of the cell inside the specifier at index "idx"
- * @see DT_PHA_PHANDLE_IDX()
+ * @param node_id node identifier for a node with a clocks property
+ * @param idx logical index into clocks property
+ * @param cell lowercase-and-underscores cell name
+ * @return the cell value at index "idx"
+ * @see DT_PHA_BY_IDX()
  */
-#define DT_CLOCKS_CELL_BY_IDX(node_id, cell, idx) \
+#define DT_CLOCKS_CELL_BY_IDX(node_id, idx, cell) \
 	DT_PHA_BY_IDX(node_id, clocks, idx, cell)
 
 /**
- * @brief Get clock controller "cell" value by name
+ * @brief Get a clock specifier's cell value by name
  *
  * Example devicetree fragment:
  *
  *     clk1: clock-controller@... {
- *             label = "CLK_1";
+ *             compatible = "vnd,clock";
  *             #clock-cells = < 2 >;
  *     };
  *
@@ -144,7 +148,7 @@ extern "C" {
  *             clock-names = "alpha", "beta";
  *     };
  *
- * Bindings fragment for the clk1 node:
+ * Bindings fragment for the vnd,clock compatible:
  *
  *     clock-cells:
  *       - bus
@@ -155,81 +159,88 @@ extern "C" {
  *     DT_CLOCKS_CELL_BY_NAME(DT_NODELABEL(n), alpha, bus) // 10
  *     DT_CLOCKS_CELL_BY_NAME(DT_NODELABEL(n), beta, bits) // 40
  *
- * @param node_id node identifier
- * @param name lowercase-and-underscores specifier name
- * @param cell binding's cell name within the specifier referenced as "name"
- * @return the value of the cell inside the named specifier
- * @see DT_PHA_PHANDLE_IDX()
+ * @param node_id node identifier for a node with a clocks property
+ * @param name lowercase-and-underscores name of a clocks element
+ *             as defined by the node's clock-names property
+ * @param cell lowercase-and-underscores cell name
+ * @return the cell value in the specifier at the named element
+ * @see DT_PHA_BY_NAME()
  */
 #define DT_CLOCKS_CELL_BY_NAME(node_id, name, cell) \
 	DT_PHA_BY_NAME(node_id, clocks, name, cell)
 
 /**
- * @brief Equivalent to DT_CLOCKS_CELL_BY_IDX(node_id, cell, 0)
- * @param node_id node identifier
- * @param cell binding's cell name within the specifier at index 0
- * @return the value of the cell inside the specifier at index 0
+ * @brief Equivalent to DT_CLOCKS_CELL_BY_IDX(node_id, 0, cell)
+ * @param node_id node identifier for a node with a clocks property
+ * @param cell lowercase-and-underscores cell name
+ * @return the cell value at index 0
  * @see DT_CLOCKS_CELL_BY_IDX()
  */
-#define DT_CLOCKS_CELL(node_id, cell) DT_CLOCKS_CELL_BY_IDX(node_id, cell, 0)
+#define DT_CLOCKS_CELL(node_id, cell) DT_CLOCKS_CELL_BY_IDX(node_id, 0, cell)
 
 /**
- * @brief Get a DT_DRV_COMPAT clock controller "name" at an index
- * (see @ref DT_CLOCKS_LABEL_BY_IDX)
- * @param inst instance number
- * @param idx logical index into the property
- * @return the label property for the named specifier at index idx
+ * @brief Get a label property from a DT_DRV_COMPAT instance's clocks
+ *        property at an index
+ * @param inst DT_DRV_COMPAT instance number
+ * @param idx logical index into clocks property
+ * @return the label property of the node referenced at index "idx"
+ * @see DT_CLOCKS_LABEL_BY_IDX()
  */
 #define DT_INST_CLOCKS_LABEL_BY_IDX(inst, idx) \
 	DT_CLOCKS_LABEL_BY_IDX(DT_DRV_INST(inst), idx)
 
 /**
- * @brief Get a DT_DRV_COMPAT clock controller "name" (label property) by name
- * (see @ref DT_CLOCKS_LABEL_BY_NAME)
- * @param inst instance number
- * @param name lowercase-and-underscores specifier name
- * @return the label property for the named specifier by name
+ * @brief Get a label property from a DT_DRV_COMPAT instance's clocks
+ *        property by name
+ * @param inst DT_DRV_COMPAT instance number
+ * @param name lowercase-and-underscores name of a clocks element
+ *             as defined by the node's clock-names property
+ * @return the label property of the node referenced at the named element
+ * @see DT_CLOCKS_LABEL_BY_NAME()
  */
 #define DT_INST_CLOCKS_LABEL_BY_NAME(inst, name) \
 	DT_CLOCKS_LABEL_BY_NAME(DT_DRV_INST(inst), name)
 
 /**
- * @brief Get a DT_DRV_COMPAT clock controller "name"
- * (see @ref DT_CLOCKS_LABEL_BY_IDX)
- * @param inst instance number
- * @return the label property for the named specifier at index 0
+ * @brief Equivalent to DT_INST_CLOCKS_LABEL_BY_IDX(inst, 0)
+ * @param inst DT_DRV_COMPAT instance number
+ * @return the label property of the node referenced at index 0
+ * @see DT_CLOCKS_LABEL_BY_IDX()
  */
 #define DT_INST_CLOCKS_LABEL(inst) DT_INST_CLOCKS_LABEL_BY_IDX(inst, 0)
 
 /**
- * @brief Get a DT_DRV_COMPAT clock controller "cell" value at an index
- * @param inst instance number
- * @param cell binding's cell name within the specifier at index "idx"
- * @param idx logical index into the property
- * @return the value of the cell inside the specifier at index "idx"
+ * @brief Get a DT_DRV_COMPAT instance's clock specifier's cell value
+ *        at an index
+ * @param inst DT_DRV_COMPAT instance number
+ * @param idx logical index into clocks property
+ * @param cell lowercase-and-underscores cell name
+ * @return the cell value at index "idx"
+ * @see DT_CLOCKS_CELL_BY_IDX()
  */
-#define DT_INST_CLOCKS_CELL_BY_IDX(inst, cell, idx) \
-	DT_CLOCKS_CELL_BY_IDX(DT_DRV_INST(inst), cell, idx)
+#define DT_INST_CLOCKS_CELL_BY_IDX(inst, idx, cell) \
+	DT_CLOCKS_CELL_BY_IDX(DT_DRV_INST(inst), idx, cell)
 
 /**
- * @brief Get a DT_DRV_COMPAT clock controller "cell" value by name
- * (see @ref DT_CLOCKS_CELL_BY_NAME)
- * @param inst instance number
- * @param name lowercase-and-underscores specifier name
- * @param cell binding's cell name within the specifier referenced as "name"
- * @return the value of the cell inside the named specifier
+ * @brief Get a DT_DRV_COMPAT instance's clock specifier's cell value by name
+ * @param inst DT_DRV_COMPAT instance number
+ * @param name lowercase-and-underscores name of a clocks element
+ *             as defined by the node's clock-names property
+ * @param cell lowercase-and-underscores cell name
+ * @return the cell value in the specifier at the named element
+ * @see DT_CLOCKS_CELL_BY_NAME()
  */
 #define DT_INST_CLOCKS_CELL_BY_NAME(inst, name, cell) \
 	DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(inst), name, cell)
 
 /**
- * @brief Get a DT_DRV_COMPAT clock controller "cell" value at an index 0
- * @param inst instance number
- * @param cell binding's cell name within the specifier at index 0
+ * @brief Equivalent to DT_INST_CLOCKS_CELL_BY_IDX(inst, 0, cell)
+ * @param inst DT_DRV_COMPAT instance number
+ * @param cell lowercase-and-underscores cell name
  * @return the value of the cell inside the specifier at index 0
  */
 #define DT_INST_CLOCKS_CELL(inst, cell) \
-	DT_INST_CLOCKS_CELL_BY_IDX(inst, cell, 0)
+	DT_INST_CLOCKS_CELL_BY_IDX(inst, 0, cell)
 
 /**
  * @}
@@ -238,6 +249,5 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-
 
 #endif  /* ZEPHYR_INCLUDE_DEVICETREE_CLOCKS_H_ */

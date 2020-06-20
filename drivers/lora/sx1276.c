@@ -10,10 +10,10 @@
 #include <drivers/lora.h>
 #include <drivers/spi.h>
 #include <zephyr.h>
+#include "sx12xx_common.h"
 
 /* LoRaMac-node specific includes */
 #include <sx1276/sx1276.h>
-#include <timer.h>
 
 #define LOG_LEVEL CONFIG_LORA_LOG_LEVEL
 #include <logging/log.h>
@@ -27,7 +27,6 @@ LOG_MODULE_REGISTER(sx1276);
 #define SX1276_REG_PA_DAC			0x4d
 #define SX1276_REG_VERSION			0x42
 
-static u32_t saved_time;
 extern DioIrqHandler *DioIrq[];
 
 struct sx1276_dio {
@@ -51,19 +50,12 @@ static const struct sx1276_dio sx1276_dios[] = { SX1276_DIO_GPIO_INIT(0) };
 
 #define SX1276_MAX_DIO ARRAY_SIZE(sx1276_dios)
 
-struct sx1276_data {
+static struct sx1276_data {
 	struct device *reset;
 	struct device *spi;
 	struct spi_config spi_cfg;
 	struct device *dio_dev[SX1276_MAX_DIO];
 	struct k_work dio_work[SX1276_MAX_DIO];
-	struct k_sem data_sem;
-	struct k_timer timer;
-	RadioEvents_t sx1276_event;
-	u8_t *rx_buf;
-	u8_t rx_len;
-	s8_t snr;
-	s16_t rssi;
 } dev_data;
 
 bool SX1276CheckRfFrequency(uint32_t frequency)
@@ -77,12 +69,12 @@ void SX1276SetAntSwLowPower(bool status)
 	/* TODO */
 }
 
-void SX1276SetBoardTcxo(u8_t state)
+void SX1276SetBoardTcxo(uint8_t state)
 {
 	/* TODO */
 }
 
-void SX1276SetAntSw(u8_t opMode)
+void SX1276SetAntSw(uint8_t opMode)
 {
 	/* TODO */
 }
@@ -99,76 +91,6 @@ void SX1276Reset(void)
 	k_sleep(K_MSEC(6));
 }
 
-void BoardCriticalSectionBegin(uint32_t *mask)
-{
-	*mask = irq_lock();
-}
-
-void BoardCriticalSectionEnd(uint32_t *mask)
-{
-	irq_unlock(*mask);
-}
-
-u32_t RtcGetTimerValue(void)
-{
-	return k_uptime_get_32();
-}
-
-u32_t RtcGetTimerElapsedTime(void)
-{
-	return (k_uptime_get_32() - saved_time);
-}
-
-u32_t RtcGetMinimumTimeout(void)
-{
-	return 1;
-}
-
-void RtcStopAlarm(void)
-{
-	k_timer_stop(&dev_data.timer);
-}
-
-static void timer_callback(struct k_timer *_timer)
-{
-	ARG_UNUSED(_timer);
-
-	TimerIrqHandler();
-}
-
-void RtcSetAlarm(u32_t timeout)
-{
-	k_timer_start(&dev_data.timer, K_MSEC(timeout), K_NO_WAIT);
-}
-
-u32_t RtcSetTimerContext(void)
-{
-	saved_time = k_uptime_get_32();
-
-	return saved_time;
-}
-
-/* For us, 1 tick = 1 milli second. So no need to do any conversion here */
-u32_t RtcGetTimerContext(void)
-{
-	return saved_time;
-}
-
-void DelayMsMcu(u32_t ms)
-{
-	k_sleep(K_MSEC(ms));
-}
-
-u32_t RtcMs2Tick(uint32_t milliseconds)
-{
-	return milliseconds;
-}
-
-u32_t RtcTick2Ms(uint32_t tick)
-{
-	return tick;
-}
-
 static void sx1276_dio_work_handle(struct k_work *work)
 {
 	int dio = work - dev_data.dio_work;
@@ -177,7 +99,7 @@ static void sx1276_dio_work_handle(struct k_work *work)
 }
 
 static void sx1276_irq_callback(struct device *dev,
-				struct gpio_callback *cb, u32_t pins)
+				struct gpio_callback *cb, uint32_t pins)
 {
 	unsigned int i, pin;
 
@@ -230,7 +152,7 @@ void SX1276IoIrqInit(DioIrqHandler **irqHandlers)
 
 }
 
-static int sx1276_transceive(u8_t reg, bool write, void *data, size_t length)
+static int sx1276_transceive(uint8_t reg, bool write, void *data, size_t length)
 {
 	const struct spi_buf buf[2] = {
 		{
@@ -260,17 +182,17 @@ static int sx1276_transceive(u8_t reg, bool write, void *data, size_t length)
 	return spi_write(dev_data.spi, &dev_data.spi_cfg, &tx);
 }
 
-int sx1276_read(u8_t reg_addr, u8_t *data, u8_t len)
+int sx1276_read(uint8_t reg_addr, uint8_t *data, uint8_t len)
 {
 	return sx1276_transceive(reg_addr, false, data, len);
 }
 
-int sx1276_write(u8_t reg_addr, u8_t *data, u8_t len)
+int sx1276_write(uint8_t reg_addr, uint8_t *data, uint8_t len)
 {
 	return sx1276_transceive(reg_addr | BIT(7), true, data, len);
 }
 
-void SX1276WriteBuffer(u16_t addr, u8_t *buffer, u8_t size)
+void SX1276WriteBuffer(uint16_t addr, uint8_t *buffer, uint8_t size)
 {
 	int ret;
 
@@ -280,7 +202,7 @@ void SX1276WriteBuffer(u16_t addr, u8_t *buffer, u8_t size)
 	}
 }
 
-void SX1276ReadBuffer(u16_t addr, u8_t *buffer, u8_t size)
+void SX1276ReadBuffer(uint16_t addr, uint8_t *buffer, uint8_t size)
 {
 	int ret;
 
@@ -293,8 +215,8 @@ void SX1276ReadBuffer(u16_t addr, u8_t *buffer, u8_t size)
 void SX1276SetRfTxPower(int8_t power)
 {
 	int ret;
-	u8_t pa_config = 0;
-	u8_t pa_dac = 0;
+	uint8_t pa_config = 0;
+	uint8_t pa_dac = 0;
 
 	ret = sx1276_read(SX1276_REG_PA_CONFIG, &pa_config, 1);
 	if (ret < 0) {
@@ -362,97 +284,6 @@ void SX1276SetRfTxPower(int8_t power)
 	}
 }
 
-static int sx1276_lora_send(struct device *dev, u8_t *data, u32_t data_len)
-{
-	Radio.SetMaxPayloadLength(MODEM_LORA, data_len);
-
-	Radio.Send(data, data_len);
-
-	return 0;
-}
-
-static void sx1276_tx_done(void)
-{
-	Radio.Sleep();
-}
-
-static void sx1276_rx_done(u8_t *payload, u16_t size, int16_t rssi, int8_t snr)
-{
-	Radio.Sleep();
-
-	dev_data.rx_buf = payload;
-	dev_data.rx_len = size;
-	dev_data.rssi = rssi;
-	dev_data.snr = snr;
-
-	k_sem_give(&dev_data.data_sem);
-}
-
-static int sx1276_lora_recv(struct device *dev, u8_t *data, u8_t size,
-			    k_timeout_t timeout, s16_t *rssi, s8_t *snr)
-{
-	int ret;
-
-	Radio.SetMaxPayloadLength(MODEM_LORA, 255);
-	Radio.Rx(0);
-
-	ret = k_sem_take(&dev_data.data_sem, timeout);
-	if (ret < 0) {
-		LOG_ERR("Receive timeout!");
-		return ret;
-	}
-
-	/* Only copy the bytes that can fit the buffer, drop the rest */
-	if (dev_data.rx_len > size)
-		dev_data.rx_len = size;
-
-	/*
-	 * FIXME: We are copying the global buffer here, so it might get
-	 * overwritten inbetween when a new packet comes in. Use some
-	 * wise method to fix this!
-	 */
-	memcpy(data, dev_data.rx_buf, dev_data.rx_len);
-
-	if (rssi != NULL) {
-		*rssi = dev_data.rssi;
-	}
-
-	if (snr != NULL) {
-		*snr = dev_data.snr;
-	}
-
-	return dev_data.rx_len;
-}
-
-static int sx1276_lora_config(struct device *dev,
-			      struct lora_modem_config *config)
-{
-
-	Radio.SetChannel(config->frequency);
-
-	if (config->tx) {
-		Radio.SetTxConfig(MODEM_LORA, config->tx_power, 0,
-				  config->bandwidth, config->datarate,
-				  config->coding_rate, config->preamble_len,
-				  false, true, 0, 0, false, 4000);
-	} else {
-		/* TODO: Get symbol timeout value from config parameters */
-		Radio.SetRxConfig(MODEM_LORA, config->bandwidth,
-				  config->datarate, config->coding_rate,
-				  0, config->preamble_len, 10, false, 0,
-				  false, 0, 0, false, true);
-	}
-
-	return 0;
-}
-
-static int sx1276_lora_test_cw(struct device *dev, u32_t frequency,
-			       s8_t tx_power, u16_t duration)
-{
-	Radio.SetTxContinuousWave(frequency, tx_power, duration);
-	return 0;
-}
-
 /* Initialize Radio driver callbacks */
 const struct Radio_s Radio = {
 	.Init = SX1276Init,
@@ -480,9 +311,11 @@ const struct Radio_s Radio = {
 
 static int sx1276_lora_init(struct device *dev)
 {
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	static struct spi_cs_control spi_cs;
+#endif
 	int ret;
-	u8_t regval;
+	uint8_t regval;
 
 	dev_data.spi = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (!dev_data.spi) {
@@ -495,6 +328,7 @@ static int sx1276_lora_init(struct device *dev)
 	dev_data.spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
 	dev_data.spi_cfg.slave = DT_INST_REG_ADDR(0);
 
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	spi_cs.gpio_pin = GPIO_CS_PIN,
 	spi_cs.gpio_dev = device_get_binding(
 			DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
@@ -505,6 +339,7 @@ static int sx1276_lora_init(struct device *dev)
 	}
 
 	dev_data.spi_cfg.cs = &spi_cs;
+#endif
 
 	/* Setup Reset gpio */
 	dev_data.reset = device_get_binding(
@@ -529,24 +364,22 @@ static int sx1276_lora_init(struct device *dev)
 		return -EIO;
 	}
 
-	k_sem_init(&dev_data.data_sem, 0, UINT_MAX);
-
-	k_timer_init(&dev_data.timer, timer_callback, NULL);
-
-	dev_data.sx1276_event.TxDone = sx1276_tx_done;
-	dev_data.sx1276_event.RxDone = sx1276_rx_done;
-	Radio.Init(&dev_data.sx1276_event);
-
 	LOG_INF("SX1276 Version:%02x found", regval);
+
+	ret = sx12xx_init(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to initialize SX12xx common");
+		return ret;
+	}
 
 	return 0;
 }
 
 static const struct lora_driver_api sx1276_lora_api = {
-	.config = sx1276_lora_config,
-	.send = sx1276_lora_send,
-	.recv = sx1276_lora_recv,
-	.test_cw = sx1276_lora_test_cw,
+	.config = sx12xx_lora_config,
+	.send = sx12xx_lora_send,
+	.recv = sx12xx_lora_recv,
+	.test_cw = sx12xx_lora_test_cw,
 };
 
 DEVICE_AND_API_INIT(sx1276_lora, DT_INST_LABEL(0),

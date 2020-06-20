@@ -33,10 +33,10 @@ struct gptp_md_sync_info {
 	struct net_ptp_time precise_orig_ts;
 
 	/** Most recent followupCorrectionField from the PortSyncSync. */
-	s64_t follow_up_correction_field;
+	int64_t follow_up_correction_field;
 
 	/** Most recent upstreamTxTime from the PortSyncSync. */
-	u64_t upstream_tx_time;
+	uint64_t upstream_tx_time;
 
 	/* Frequency of the current grandmaster compared to the previous. */
 	double last_gm_freq_change;
@@ -48,10 +48,10 @@ struct gptp_md_sync_info {
 	struct gptp_port_identity src_port_id;
 
 	/* Time Base Indicator of the current Grand Master. */
-	u16_t gm_time_base_indicator;
+	uint16_t gm_time_base_indicator;
 
 	/** Current Log Sync Interval for this port. */
-	s8_t log_msg_interval;
+	int8_t log_msg_interval;
 };
 
 /**

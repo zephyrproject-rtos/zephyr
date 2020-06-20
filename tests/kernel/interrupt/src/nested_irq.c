@@ -62,11 +62,11 @@
 #endif
 
 #ifdef TEST_NESTED_ISR
-static u32_t irq_line_0;
-static u32_t irq_line_1;
+static uint32_t irq_line_0;
+static uint32_t irq_line_1;
 
-static u32_t isr0_result;
-static u32_t isr1_result;
+static uint32_t isr0_result;
+static uint32_t isr1_result;
 
 void isr1(void *param)
 {

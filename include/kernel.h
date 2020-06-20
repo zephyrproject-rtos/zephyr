@@ -78,7 +78,7 @@ extern "C" {
 
 #ifdef CONFIG_OBJECT_TRACING
 #define _OBJECT_TRACING_NEXT_PTR(type) struct type *__next;
-#define _OBJECT_TRACING_LINKED_FLAG u8_t __linked;
+#define _OBJECT_TRACING_LINKED_FLAG uint8_t __linked;
 #define _OBJECT_TRACING_INIT \
 	.__next = NULL,	     \
 	.__linked = 0,
@@ -153,7 +153,7 @@ struct z_stack_data {
 	size_t size;
 
 	/* Stack buffer for privilege mode elevations */
-	u8_t *priv;
+	uint8_t *priv;
 };
 #endif /* CONFIG_GEN_PRIV_STACKS */
 
@@ -184,9 +184,9 @@ union z_object_data {
  * z_object_find() */
 struct z_object {
 	void *name;
-	u8_t perms[CONFIG_MAX_THREAD_BYTES];
-	u8_t type;
-	u8_t flags;
+	uint8_t perms[CONFIG_MAX_THREAD_BYTES];
+	uint8_t type;
+	uint8_t flags;
 	union z_object_data data;
 } __packed __aligned(4);
 
@@ -353,6 +353,27 @@ __syscall void *k_object_alloc(enum k_objects otype);
 
 #ifdef CONFIG_DYNAMIC_OBJECTS
 /**
+ * Allocate memory and install as a generic kernel object
+ *
+ * This is a low-level function to allocate some memory, and register that
+ * allocated memory in the kernel object lookup tables with type K_OBJ_ANY.
+ * Initialization state and thread permissions will be cleared. The
+ * returned z_object's data value will be uninitialized.
+ *
+ * Most users will want to use k_object_alloc() instead.
+ *
+ * Memory allocated will be drawn from the calling thread's reasource pool
+ * and may be freed later by passing the actual object pointer (found
+ * in the returned z_object's 'name' member) to k_object_free().
+ *
+ * @param size Size of the allocated object
+ * @return NULL on insufficient memory
+ * @return A pointer to the associated z_object that is installed in the
+ *	kernel object tables
+ */
+struct z_object *z_dynamic_object_create(size_t size);
+
+/**
  * Free a kernel object previously allocated with k_object_alloc()
  *
  * This will return memory for a kernel object back to resource pool it was
@@ -370,12 +391,20 @@ static inline void *z_impl_k_object_alloc(enum k_objects otype)
 
 	return NULL;
 }
+
+static inline struct z_object *z_dynamic_object_create(size_t size)
+{
+	ARG_UNUSED(size);
+
+	return NULL;
+}
+
 /**
  * @brief Free an object
  *
  * @param obj
  */
-static inline void k_obj_free(void *obj)
+static inline void k_object_free(void *obj)
 {
 	ARG_UNUSED(obj);
 }
@@ -428,10 +457,10 @@ struct _thread_base {
 	_wait_q_t *pended_on;
 
 	/* user facing 'thread options'; values defined in include/kernel.h */
-	u8_t user_options;
+	uint8_t user_options;
 
 	/* thread state */
-	u8_t thread_state;
+	uint8_t thread_state;
 
 	/*
 	 * scheduler lock count and thread priority
@@ -450,37 +479,37 @@ struct _thread_base {
 	union {
 		struct {
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-			u8_t sched_locked;
-			s8_t prio;
+			uint8_t sched_locked;
+			int8_t prio;
 #else /* LITTLE and PDP */
-			s8_t prio;
-			u8_t sched_locked;
+			int8_t prio;
+			uint8_t sched_locked;
 #endif
 		};
-		u16_t preempt;
+		uint16_t preempt;
 	};
 
 #ifdef CONFIG_SCHED_DEADLINE
 	int prio_deadline;
 #endif
 
-	u32_t order_key;
+	uint32_t order_key;
 
 #ifdef CONFIG_SMP
 	/* True for the per-CPU idle threads */
-	u8_t is_idle;
+	uint8_t is_idle;
 
 	/* CPU index on which thread was last run */
-	u8_t cpu;
+	uint8_t cpu;
 
 	/* Recursive count of irq_lock() calls */
-	u8_t global_lock_count;
+	uint8_t global_lock_count;
 
 #endif
 
 #ifdef CONFIG_SCHED_CPU_MASK
 	/* "May run on" bits for each CPU */
-	u8_t cpu_mask;
+	uint8_t cpu_mask;
 #endif
 
 	/* data returned by APIs */
@@ -773,7 +802,7 @@ __syscall k_tid_t k_thread_create(struct k_thread *new_thread,
 				  size_t stack_size,
 				  k_thread_entry_t entry,
 				  void *p1, void *p2, void *p3,
-				  int prio, u32_t options, k_timeout_t delay);
+				  int prio, uint32_t options, k_timeout_t delay);
 
 /**
  * @brief Drop a thread's privileges permanently to user mode
@@ -801,7 +830,7 @@ extern FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
  * @param ... list of kernel object pointers
  */
 #define k_thread_access_grant(thread, ...) \
-	FOR_EACH_FIXED_ARG(k_object_access_grant, thread, __VA_ARGS__)
+	FOR_EACH_FIXED_ARG(k_object_access_grant, (;), thread, __VA_ARGS__)
 
 /**
  * @brief Assign a resource memory pool to a thread
@@ -894,7 +923,7 @@ __syscall int k_thread_join(struct k_thread *thread, k_timeout_t timeout);
  * @return Zero if the requested time has elapsed or the number of milliseconds
  * left to sleep, if thread was woken up by \ref k_wakeup call.
  */
-__syscall s32_t k_sleep(k_timeout_t timeout);
+__syscall int32_t k_sleep(k_timeout_t timeout);
 
 /**
  * @brief Put the current thread to sleep.
@@ -906,7 +935,7 @@ __syscall s32_t k_sleep(k_timeout_t timeout);
  * @return Zero if the requested time has elapsed or the number of milliseconds
  * left to sleep, if thread was woken up by \ref k_wakeup call.
  */
-static inline s32_t k_msleep(s32_t ms)
+static inline int32_t k_msleep(int32_t ms)
 {
 	return k_sleep(Z_TIMEOUT_MS(ms));
 }
@@ -925,7 +954,7 @@ static inline s32_t k_msleep(s32_t ms)
  * @return Zero if the requested time has elapsed or the number of microseconds
  * left to sleep, if thread was woken up by \ref k_wakeup call.
  */
-__syscall s32_t k_usleep(s32_t us);
+__syscall int32_t k_usleep(int32_t us);
 
 /**
  * @brief Cause the current thread to busy wait.
@@ -933,9 +962,15 @@ __syscall s32_t k_usleep(s32_t us);
  * This routine causes the current thread to execute a "do nothing" loop for
  * @a usec_to_wait microseconds.
  *
+ * @note The clock used for the microsecond-resolution delay here may
+ * be skewed relative to the clock used for system timeouts like
+ * k_sleep().  For example k_busy_wait(1000) may take slightly more or
+ * less time than k_sleep(K_MSEC(1)), with the offset dependent on
+ * clock tolerances.
+ *
  * @return N/A
  */
-__syscall void k_busy_wait(u32_t usec_to_wait);
+__syscall void k_busy_wait(uint32_t usec_to_wait);
 
 /**
  * @brief Yield the current thread.
@@ -1050,8 +1085,8 @@ struct _static_thread_data {
 	void *init_p2;
 	void *init_p3;
 	int init_prio;
-	u32_t init_options;
-	s32_t init_delay;
+	uint32_t init_options;
+	int32_t init_delay;
 	void (*init_abort)(void);
 	const char *init_name;
 };
@@ -1329,7 +1364,7 @@ __syscall void k_thread_resume(k_tid_t thread);
  *
  * @return N/A
  */
-extern void k_sched_time_slice_set(s32_t slice, int prio);
+extern void k_sched_time_slice_set(int32_t slice, int prio);
 
 /** @} */
 
@@ -1731,7 +1766,7 @@ struct k_timer {
 	k_timeout_t period;
 
 	/* timer status */
-	u32_t status;
+	uint32_t status;
 
 	/* user-specific data, also used to support legacy features */
 	void *user_data;
@@ -1875,7 +1910,7 @@ __syscall void k_timer_stop(struct k_timer *timer);
  *
  * @return Timer status.
  */
-__syscall u32_t k_timer_status_get(struct k_timer *timer);
+__syscall uint32_t k_timer_status_get(struct k_timer *timer);
 
 /**
  * @brief Synchronize thread to timer expiration.
@@ -1894,7 +1929,7 @@ __syscall u32_t k_timer_status_get(struct k_timer *timer);
  *
  * @return Timer status.
  */
-__syscall u32_t k_timer_status_sync(struct k_timer *timer);
+__syscall uint32_t k_timer_status_sync(struct k_timer *timer);
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 
@@ -1939,7 +1974,7 @@ static inline k_ticks_t z_impl_k_timer_remaining_ticks(struct k_timer *timer)
  *
  * @return Remaining time (in milliseconds).
  */
-static inline u32_t k_timer_remaining_get(struct k_timer *timer)
+static inline uint32_t k_timer_remaining_get(struct k_timer *timer)
 {
 	return k_ticks_to_ms_floor32(k_timer_remaining_ticks(timer));
 }
@@ -2001,7 +2036,7 @@ static inline void *z_impl_k_timer_user_data_get(struct k_timer *timer)
  *
  * @return Current uptime in ticks.
  */
-__syscall s64_t k_uptime_ticks(void);
+__syscall int64_t k_uptime_ticks(void);
 
 /**
  * @brief Get system uptime.
@@ -2018,7 +2053,7 @@ __syscall s64_t k_uptime_ticks(void);
  *
  * @return Current uptime in milliseconds.
  */
-static inline s64_t k_uptime_get(void)
+static inline int64_t k_uptime_get(void)
 {
 	return k_ticks_to_ms_floor64(k_uptime_ticks());
 }
@@ -2078,9 +2113,9 @@ __deprecated static inline void k_disable_sys_clock_always_on(void)
  *
  * @return The low 32 bits of the current uptime, in milliseconds.
  */
-static inline u32_t k_uptime_get_32(void)
+static inline uint32_t k_uptime_get_32(void)
 {
-	return (u32_t)k_uptime_get();
+	return (uint32_t)k_uptime_get();
 }
 
 /**
@@ -2094,9 +2129,9 @@ static inline u32_t k_uptime_get_32(void)
  *
  * @return Elapsed time.
  */
-static inline s64_t k_uptime_delta(s64_t *reftime)
+static inline int64_t k_uptime_delta(int64_t *reftime)
 {
-	s64_t uptime, delta;
+	int64_t uptime, delta;
 
 	uptime = k_uptime_get();
 	delta = uptime - *reftime;
@@ -2120,9 +2155,9 @@ static inline s64_t k_uptime_delta(s64_t *reftime)
  *
  * @deprecated in 2.3 release, replace with k_uptime_delta()
  */
-__deprecated static inline u32_t k_uptime_delta_32(s64_t *reftime)
+__deprecated static inline uint32_t k_uptime_delta_32(int64_t *reftime)
 {
-	return (u32_t)k_uptime_delta(reftime);
+	return (uint32_t)k_uptime_delta(reftime);
 }
 
 /**
@@ -2133,7 +2168,7 @@ __deprecated static inline u32_t k_uptime_delta_32(s64_t *reftime)
  *
  * @return Current hardware clock up-counter (in cycles).
  */
-static inline u32_t k_cycle_get_32(void)
+static inline uint32_t k_cycle_get_32(void)
 {
 	return arch_k_cycle_get_32();
 }
@@ -2149,12 +2184,9 @@ static inline u32_t k_cycle_get_32(void)
 struct k_queue {
 	sys_sflist_t data_q;
 	struct k_spinlock lock;
-	union {
-		_wait_q_t wait_q;
+	_wait_q_t wait_q;
 
-		_POLL_EVENT;
-	};
-
+	_POLL_EVENT;
 	_OBJECT_TRACING_NEXT_PTR(k_queue)
 	_OBJECT_TRACING_LINKED_FLAG
 };
@@ -2163,10 +2195,8 @@ struct k_queue {
 	{ \
 	.data_q = SYS_SLIST_STATIC_INIT(&obj.data_q), \
 	.lock = { }, \
-	{ \
-		.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
-		_POLL_EVENT_OBJ_INIT(obj) \
-	}, \
+	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q),	\
+	_POLL_EVENT_OBJ_INIT(obj)		\
 	_OBJECT_TRACING_INIT \
 	}
 
@@ -2244,7 +2274,7 @@ extern void k_queue_append(struct k_queue *queue, void *data);
  * @retval 0 on success
  * @retval -ENOMEM if there isn't sufficient RAM in the caller's resource pool
  */
-__syscall s32_t k_queue_alloc_append(struct k_queue *queue, void *data);
+__syscall int32_t k_queue_alloc_append(struct k_queue *queue, void *data);
 
 /**
  * @brief Prepend an element to a queue.
@@ -2278,7 +2308,7 @@ extern void k_queue_prepend(struct k_queue *queue, void *data);
  * @retval 0 on success
  * @retval -ENOMEM if there isn't sufficient RAM in the caller's resource pool
  */
-__syscall s32_t k_queue_alloc_prepend(struct k_queue *queue, void *data);
+__syscall int32_t k_queue_alloc_prepend(struct k_queue *queue, void *data);
 
 /**
  * @brief Inserts an element to a queue.
@@ -2857,7 +2887,7 @@ struct k_lifo {
 /**
  * @cond INTERNAL_HIDDEN
  */
-#define K_STACK_FLAG_ALLOC	((u8_t)1)	/* Buffer was allocated */
+#define K_STACK_FLAG_ALLOC	((uint8_t)1)	/* Buffer was allocated */
 
 typedef uintptr_t stack_data_t;
 
@@ -2868,7 +2898,7 @@ struct k_stack {
 
 	_OBJECT_TRACING_NEXT_PTR(k_stack)
 	_OBJECT_TRACING_LINKED_FLAG
-	u8_t flags;
+	uint8_t flags;
 };
 
 #define Z_STACK_INITIALIZER(obj, stack_buffer, stack_num_entries) \
@@ -2904,7 +2934,7 @@ struct k_stack {
  * @return N/A
  */
 void k_stack_init(struct k_stack *stack,
-		  stack_data_t *buffer, u32_t num_entries);
+		  stack_data_t *buffer, uint32_t num_entries);
 
 
 /**
@@ -2921,8 +2951,8 @@ void k_stack_init(struct k_stack *stack,
  * @return -ENOMEM if memory couldn't be allocated
  */
 
-__syscall s32_t k_stack_alloc_init(struct k_stack *stack,
-				   u32_t num_entries);
+__syscall int32_t k_stack_alloc_init(struct k_stack *stack,
+				   uint32_t num_entries);
 
 /**
  * @brief Release a stack's allocated buffer
@@ -2996,7 +3026,7 @@ struct k_work;
 struct k_work_poll;
 
 /* private, used by k_poll and k_work_poll */
-typedef int (*_poller_cb_t)(struct k_poll_event *event, u32_t state);
+typedef int (*_poller_cb_t)(struct k_poll_event *event, uint32_t state);
 struct _poller {
 	volatile bool is_polling;
 	struct k_thread *thread;
@@ -3406,7 +3436,7 @@ static inline k_ticks_t k_delayed_work_remaining_ticks(
  *
  * @return Remaining time (in milliseconds).
  */
-static inline s32_t k_delayed_work_remaining_get(struct k_delayed_work *work)
+static inline int32_t k_delayed_work_remaining_get(struct k_delayed_work *work)
 {
 	return k_ticks_to_ms_floor32(z_timeout_remaining(&work->timeout));
 }
@@ -3539,7 +3569,7 @@ struct k_mutex {
 	struct k_thread *owner;
 
 	/** Current lock count */
-	u32_t lock_count;
+	uint32_t lock_count;
 
 	/** Original thread priority */
 	int owner_orig_prio;
@@ -3604,6 +3634,8 @@ __syscall int k_mutex_init(struct k_mutex *mutex);
  * A thread is permitted to lock a mutex it has already locked. The operation
  * completes immediately and the lock count is increased by 1.
  *
+ * Mutexes may not be locked in ISRs.
+ *
  * @param mutex Address of the mutex.
  * @param timeout Waiting period to lock the mutex,
  *                or one of the special values K_NO_WAIT and
@@ -3625,6 +3657,9 @@ __syscall int k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout);
  * the calling thread as many times as it was previously locked by that
  * thread.
  *
+ * Mutexes may not be unlocked in ISRs, as mutexes must only be manipulated
+ * in thread context due to ownership and priority inheritance semantics.
+ *
  * @param mutex Address of the mutex.
  *
  * @retval 0 Mutex unlocked.
@@ -3644,8 +3679,8 @@ __syscall int k_mutex_unlock(struct k_mutex *mutex);
 
 struct k_sem {
 	_wait_q_t wait_q;
-	u32_t count;
-	u32_t limit;
+	uint32_t count;
+	uint32_t limit;
 	_POLL_EVENT;
 
 	_OBJECT_TRACING_NEXT_PTR(k_sem)
@@ -3794,7 +3829,7 @@ struct k_msgq {
 	/** Message size */
 	size_t msg_size;
 	/** Maximal number of messages */
-	u32_t max_msgs;
+	uint32_t max_msgs;
 	/** Start of message buffer */
 	char *buffer_start;
 	/** End of message buffer */
@@ -3804,13 +3839,13 @@ struct k_msgq {
 	/** Write pointer */
 	char *write_ptr;
 	/** Number of used messages */
-	u32_t used_msgs;
+	uint32_t used_msgs;
 
 	_OBJECT_TRACING_NEXT_PTR(k_msgq)
 	_OBJECT_TRACING_LINKED_FLAG
 
 	/** Message queue */
-	u8_t flags;
+	uint8_t flags;
 };
 /**
  * @cond INTERNAL_HIDDEN
@@ -3844,9 +3879,9 @@ struct k_msgq_attrs {
 	/** Message Size */
 	size_t msg_size;
 	/** Maximal number of messages */
-	u32_t max_msgs;
+	uint32_t max_msgs;
 	/** Used messages */
-	u32_t used_msgs;
+	uint32_t used_msgs;
 };
 
 
@@ -3896,7 +3931,7 @@ struct k_msgq_attrs {
  * @return N/A
  */
 void k_msgq_init(struct k_msgq *q, char *buffer, size_t msg_size,
-		 u32_t max_msgs);
+		 uint32_t max_msgs);
 
 /**
  * @brief Initialize a message queue.
@@ -3918,7 +3953,7 @@ void k_msgq_init(struct k_msgq *q, char *buffer, size_t msg_size,
  *	an integer overflow.
  */
 __syscall int k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size,
-				u32_t max_msgs);
+				uint32_t max_msgs);
 
 /**
  * @brief Release allocated buffer for a queue
@@ -4010,7 +4045,7 @@ __syscall void k_msgq_purge(struct k_msgq *msgq);
  *
  * @return Number of unused ring buffer entries.
  */
-__syscall u32_t k_msgq_num_free_get(struct k_msgq *msgq);
+__syscall uint32_t k_msgq_num_free_get(struct k_msgq *msgq);
 
 /**
  * @brief Get basic attributes of a message queue.
@@ -4026,7 +4061,7 @@ __syscall void  k_msgq_get_attrs(struct k_msgq *msgq,
 				 struct k_msgq_attrs *attrs);
 
 
-static inline u32_t z_impl_k_msgq_num_free_get(struct k_msgq *msgq)
+static inline uint32_t z_impl_k_msgq_num_free_get(struct k_msgq *msgq)
 {
 	return msgq->max_msgs - msgq->used_msgs;
 }
@@ -4040,9 +4075,9 @@ static inline u32_t z_impl_k_msgq_num_free_get(struct k_msgq *msgq)
  *
  * @return Number of messages.
  */
-__syscall u32_t k_msgq_num_used_get(struct k_msgq *msgq);
+__syscall uint32_t k_msgq_num_used_get(struct k_msgq *msgq);
 
-static inline u32_t z_impl_k_msgq_num_used_get(struct k_msgq *msgq)
+static inline uint32_t z_impl_k_msgq_num_used_get(struct k_msgq *msgq)
 {
 	return msgq->used_msgs;
 }
@@ -4061,11 +4096,11 @@ static inline u32_t z_impl_k_msgq_num_used_get(struct k_msgq *msgq)
  */
 struct k_mbox_msg {
 	/** internal use only - needed for legacy API support */
-	u32_t _mailbox;
+	uint32_t _mailbox;
 	/** size of message (in bytes) */
 	size_t size;
 	/** application-defined information value */
-	u32_t info;
+	uint32_t info;
 	/** sender's message data buffer */
 	void *tx_data;
 	/** internal use only - needed for legacy API support */
@@ -4274,7 +4309,7 @@ struct k_pipe {
 
 	_OBJECT_TRACING_NEXT_PTR(k_pipe)
 	_OBJECT_TRACING_LINKED_FLAG
-	u8_t	       flags;		/**< Flags */
+	uint8_t	       flags;		/**< Flags */
 };
 
 /**
@@ -4458,11 +4493,11 @@ __syscall size_t k_pipe_write_avail(struct k_pipe *pipe);
 
 struct k_mem_slab {
 	_wait_q_t wait_q;
-	u32_t num_blocks;
+	uint32_t num_blocks;
 	size_t block_size;
 	char *buffer;
 	char *free_list;
-	u32_t num_used;
+	uint32_t num_used;
 
 	_OBJECT_TRACING_NEXT_PTR(k_mem_slab)
 	_OBJECT_TRACING_LINKED_FLAG
@@ -4541,7 +4576,7 @@ struct k_mem_slab {
  *
  */
 extern int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
-			   size_t block_size, u32_t num_blocks);
+			   size_t block_size, uint32_t num_blocks);
 
 /**
  * @brief Allocate memory from a memory slab.
@@ -4586,7 +4621,7 @@ extern void k_mem_slab_free(struct k_mem_slab *slab, void **mem);
  *
  * @return Number of allocated memory blocks.
  */
-static inline u32_t k_mem_slab_num_used_get(struct k_mem_slab *slab)
+static inline uint32_t k_mem_slab_num_used_get(struct k_mem_slab *slab)
 {
 	return slab->num_used;
 }
@@ -4601,7 +4636,7 @@ static inline u32_t k_mem_slab_num_used_get(struct k_mem_slab *slab)
  *
  * @return Number of unallocated memory blocks.
  */
-static inline u32_t k_mem_slab_num_free_get(struct k_mem_slab *slab)
+static inline uint32_t k_mem_slab_num_free_get(struct k_mem_slab *slab)
 {
 	return slab->num_blocks - slab->num_used;
 }
@@ -4937,19 +4972,19 @@ struct k_poll_event {
 	struct _poller *poller;
 
 	/** optional user-specified tag, opaque, untouched by the API */
-	u32_t tag:8;
+	uint32_t tag:8;
 
 	/** bitfield of event types (bitwise-ORed K_POLL_TYPE_xxx values) */
-	u32_t type:_POLL_NUM_TYPES;
+	uint32_t type:_POLL_NUM_TYPES;
 
 	/** bitfield of event states (bitwise-ORed K_POLL_STATE_xxx values) */
-	u32_t state:_POLL_NUM_STATES;
+	uint32_t state:_POLL_NUM_STATES;
 
 	/** mode of operation, from enum k_poll_modes */
-	u32_t mode:1;
+	uint32_t mode:1;
 
 	/** unused bits in 32-bit word */
-	u32_t unused:_POLL_EVENT_NUM_UNUSED_BITS;
+	uint32_t unused:_POLL_EVENT_NUM_UNUSED_BITS;
 
 	/** per-type data */
 	union {
@@ -4999,7 +5034,7 @@ struct k_poll_event {
  * @return N/A
  */
 
-extern void k_poll_event_init(struct k_poll_event *event, u32_t type,
+extern void k_poll_event_init(struct k_poll_event *event, uint32_t type,
 			      int mode, void *obj);
 
 /**
@@ -5114,7 +5149,7 @@ __syscall int k_poll_signal_raise(struct k_poll_signal *signal, int result);
 /**
  * @internal
  */
-extern void z_handle_obj_poll_events(sys_dlist_t *events, u32_t state);
+extern void z_handle_obj_poll_events(sys_dlist_t *events, uint32_t state);
 
 /** @} */
 
@@ -5165,7 +5200,7 @@ static inline void k_cpu_atomic_idle(unsigned int key)
 /**
  * @internal
  */
-extern void z_sys_power_save_idle_exit(s32_t ticks);
+extern void z_sys_power_save_idle_exit(int32_t ticks);
 
 #ifdef ARCH_EXCEPT
 /* This architecture has direct support for triggering a CPU exception */
@@ -5223,7 +5258,7 @@ extern void z_sys_power_save_idle_exit(s32_t ticks);
  * @internal
  */
 extern void z_init_thread_base(struct _thread_base *thread_base,
-			      int priority, u32_t initial_state,
+			      int priority, uint32_t initial_state,
 			      unsigned int options);
 
 #ifdef CONFIG_MULTITHREADING
@@ -5292,7 +5327,7 @@ struct k_mem_domain {
 	/** domain q */
 	sys_dlist_t mem_domain_q;
 	/** number of partitions in the domain */
-	u8_t num_partitions;
+	uint8_t num_partitions;
 };
 
 
@@ -5309,7 +5344,7 @@ struct k_mem_domain {
  * @param parts An array of pointers to the memory partitions. Can be NULL
  *              if num_parts is zero.
  */
-extern void k_mem_domain_init(struct k_mem_domain *domain, u8_t num_parts,
+extern void k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
 			      struct k_mem_partition *parts[]);
 /**
  * @brief Destroy a memory domain.

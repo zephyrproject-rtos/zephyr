@@ -29,11 +29,11 @@ static struct spi_config lis2dw12_spi_conf = {
 	.cs        = NULL,
 };
 
-static int lis2dw12_spi_read(struct lis2dw12_data *ctx, u8_t reg,
-			    u8_t *data, u16_t len)
+static int lis2dw12_spi_read(struct lis2dw12_data *ctx, uint8_t reg,
+			    uint8_t *data, uint16_t len)
 {
 	struct spi_config *spi_cfg = &lis2dw12_spi_conf;
-	u8_t buffer_tx[2] = { reg | LIS2DW12_SPI_READ, 0 };
+	uint8_t buffer_tx[2] = { reg | LIS2DW12_SPI_READ, 0 };
 	const struct spi_buf tx_buf = {
 			.buf = buffer_tx,
 			.len = 2,
@@ -64,11 +64,11 @@ static int lis2dw12_spi_read(struct lis2dw12_data *ctx, u8_t reg,
 	return 0;
 }
 
-static int lis2dw12_spi_write(struct lis2dw12_data *ctx, u8_t reg,
-			     u8_t *data, u16_t len)
+static int lis2dw12_spi_write(struct lis2dw12_data *ctx, uint8_t reg,
+			     uint8_t *data, uint16_t len)
 {
 	struct spi_config *spi_cfg = &lis2dw12_spi_conf;
-	u8_t buffer_tx[1] = { reg & ~LIS2DW12_SPI_READ };
+	uint8_t buffer_tx[1] = { reg & ~LIS2DW12_SPI_READ };
 	const struct spi_buf tx_buf[2] = {
 		{
 			.buf = buffer_tx,

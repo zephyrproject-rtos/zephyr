@@ -11,6 +11,7 @@ supported:
   - adc
   - ble
   - counter
+  - gpio
   - i2c
   - nvs
   - pwm

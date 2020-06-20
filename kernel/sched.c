@@ -288,7 +288,7 @@ void z_reset_time_slice(void)
 	}
 }
 
-void k_sched_time_slice_set(s32_t slice, int prio)
+void k_sched_time_slice_set(int32_t slice, int prio)
 {
 	LOCKED(&sched_spinlock) {
 		_current_cpu->slice_ticks = 0;
@@ -506,7 +506,7 @@ void z_thread_single_abort(struct k_thread *thread)
 			}
 		}
 
-		u32_t mask = _THREAD_DEAD;
+		uint32_t mask = _THREAD_DEAD;
 
 		/* If the abort is happening in interrupt context,
 		 * that means that execution will never return to the
@@ -649,7 +649,7 @@ void z_thread_timeout(struct _timeout *timeout)
 }
 #endif
 
-int z_pend_curr_irqlock(u32_t key, _wait_q_t *wait_q, k_timeout_t timeout)
+int z_pend_curr_irqlock(uint32_t key, _wait_q_t *wait_q, k_timeout_t timeout)
 {
 	pend(_current, wait_q, timeout);
 
@@ -737,7 +737,7 @@ void z_thread_priority_set(struct k_thread *thread, int prio)
 	}
 }
 
-static inline int resched(u32_t key)
+static inline int resched(uint32_t key)
 {
 #ifdef CONFIG_SMP
 	_current_cpu->swap_ok = 0;
@@ -755,7 +755,7 @@ void z_reschedule(struct k_spinlock *lock, k_spinlock_key_t key)
 	}
 }
 
-void z_reschedule_irqlock(u32_t key)
+void z_reschedule_irqlock(uint32_t key)
 {
 	if (resched(key)) {
 		z_swap_irqlock(key);
@@ -1076,7 +1076,7 @@ static inline void z_vrfy_k_thread_priority_set(k_tid_t thread, int prio)
 	Z_OOPS(Z_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(_is_valid_prio(prio, NULL),
 				    "invalid thread priority %d", prio));
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG((s8_t)prio >= thread->base.prio,
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG((int8_t)prio >= thread->base.prio,
 				    "thread priority may only be downgraded (%d < %d)",
 				    prio, thread->base.prio));
 
@@ -1142,10 +1142,10 @@ static inline void z_vrfy_k_yield(void)
 #include <syscalls/k_yield_mrsh.c>
 #endif
 
-static s32_t z_tick_sleep(s32_t ticks)
+static int32_t z_tick_sleep(int32_t ticks)
 {
 #ifdef CONFIG_MULTITHREADING
-	u32_t expected_wakeup_time;
+	uint32_t expected_wakeup_time;
 
 	__ASSERT(!arch_is_in_isr(), "");
 
@@ -1195,7 +1195,7 @@ static s32_t z_tick_sleep(s32_t ticks)
 	return 0;
 }
 
-s32_t z_impl_k_sleep(k_timeout_t timeout)
+int32_t z_impl_k_sleep(k_timeout_t timeout)
 {
 	k_ticks_t ticks;
 
@@ -1203,7 +1203,7 @@ s32_t z_impl_k_sleep(k_timeout_t timeout)
 
 	if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
 		k_thread_suspend(_current);
-		return (s32_t) K_TICKS_FOREVER;
+		return (int32_t) K_TICKS_FOREVER;
 	}
 
 #ifdef CONFIG_LEGACY_TIMEOUT_API
@@ -1217,16 +1217,16 @@ s32_t z_impl_k_sleep(k_timeout_t timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline s32_t z_vrfy_k_sleep(k_timeout_t timeout)
+static inline int32_t z_vrfy_k_sleep(k_timeout_t timeout)
 {
 	return z_impl_k_sleep(timeout);
 }
 #include <syscalls/k_sleep_mrsh.c>
 #endif
 
-s32_t z_impl_k_usleep(int us)
+int32_t z_impl_k_usleep(int us)
 {
-	s32_t ticks;
+	int32_t ticks;
 
 	ticks = k_us_to_ticks_ceil64(us);
 	ticks = z_tick_sleep(ticks);
@@ -1234,7 +1234,7 @@ s32_t z_impl_k_usleep(int us)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline s32_t z_vrfy_k_usleep(int us)
+static inline int32_t z_vrfy_k_usleep(int us)
 {
 	return z_impl_k_usleep(us);
 }
@@ -1381,7 +1381,7 @@ BUILD_ASSERT(CONFIG_MP_NUM_CPUS <= 8, "Too many CPUs for mask word");
 # endif
 
 
-static int cpu_mask_mod(k_tid_t thread, u32_t enable_mask, u32_t disable_mask)
+static int cpu_mask_mod(k_tid_t thread, uint32_t enable_mask, uint32_t disable_mask)
 {
 	int ret = 0;
 

@@ -39,7 +39,7 @@ static inline uint32_t _data(Trng * const trng)
 #endif
 }
 
-static int entropy_sam_wait_ready(Trng * const trng, u32_t flags)
+static int entropy_sam_wait_ready(Trng * const trng, uint32_t flags)
 {
 	/* According to the reference manual, the generator provides
 	 * one 32-bit random value every 84 peripheral clock cycles.
@@ -72,14 +72,14 @@ static int entropy_sam_wait_ready(Trng * const trng, u32_t flags)
 	return 0;
 }
 
-static int entropy_sam_get_entropy_internal(struct device *dev, u8_t *buffer,
-				   u16_t length, u32_t flags)
+static int entropy_sam_get_entropy_internal(struct device *dev, uint8_t *buffer,
+				   uint16_t length, uint32_t flags)
 {
 	Trng *const trng = DEV_CFG(dev)->regs;
 
 	while (length > 0) {
 		size_t to_copy;
-		u32_t value;
+		uint32_t value;
 		int res;
 
 		res = entropy_sam_wait_ready(trng, flags);
@@ -98,16 +98,16 @@ static int entropy_sam_get_entropy_internal(struct device *dev, u8_t *buffer,
 	return 0;
 }
 
-static int entropy_sam_get_entropy(struct device *dev, u8_t *buffer,
-				   u16_t length)
+static int entropy_sam_get_entropy(struct device *dev, uint8_t *buffer,
+				   uint16_t length)
 {
 	return entropy_sam_get_entropy_internal(dev, buffer, length, 0);
 }
 
-static int entropy_sam_get_entropy_isr(struct device *dev, u8_t *buffer,
-				   u16_t length, u32_t flags)
+static int entropy_sam_get_entropy_isr(struct device *dev, uint8_t *buffer,
+				   uint16_t length, uint32_t flags)
 {
-	u16_t cnt = length;
+	uint16_t cnt = length;
 
 
 	if ((flags & ENTROPY_BUSYWAIT) == 0U) {
@@ -118,7 +118,7 @@ static int entropy_sam_get_entropy_isr(struct device *dev, u8_t *buffer,
 
 		do {
 			size_t to_copy;
-			u32_t value;
+			uint32_t value;
 
 			if (!_ready(trng)) {
 

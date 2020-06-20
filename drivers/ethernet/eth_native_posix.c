@@ -46,9 +46,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #endif
 
 struct eth_context {
-	u8_t recv[NET_ETH_MTU + ETH_HDR_LEN];
-	u8_t send[NET_ETH_MTU + ETH_HDR_LEN];
-	u8_t mac_addr[6];
+	uint8_t recv[NET_ETH_MTU + ETH_HDR_LEN];
+	uint8_t send[NET_ETH_MTU + ETH_HDR_LEN];
+	uint8_t mac_addr[6];
 	struct net_linkaddr ll_addr;
 	struct net_if *iface;
 	const char *if_name;
@@ -87,7 +87,7 @@ static struct gptp_hdr *check_gptp_msg(struct net_if *iface,
 				       struct net_pkt *pkt,
 				       bool is_tx)
 {
-	u8_t *msg_start = net_pkt_data(pkt);
+	uint8_t *msg_start = net_pkt_data(pkt);
 	struct gptp_hdr *gptp_hdr;
 	int eth_hlen;
 
@@ -212,7 +212,7 @@ static struct net_linkaddr *eth_get_mac(struct eth_context *ctx)
 }
 
 static inline struct net_if *get_iface(struct eth_context *ctx,
-				       u16_t vlan_tag)
+				       uint16_t vlan_tag)
 {
 #if defined(CONFIG_NET_VLAN)
 	struct net_if *iface;
@@ -232,11 +232,11 @@ static inline struct net_if *get_iface(struct eth_context *ctx,
 
 #if defined(CONFIG_NET_VLAN)
 static struct net_pkt *prepare_vlan_pkt(struct eth_context *ctx,
-					int count, u16_t *vlan_tag, int *status)
+					int count, uint16_t *vlan_tag, int *status)
 {
 	struct net_eth_vlan_hdr *hdr = (struct net_eth_vlan_hdr *)ctx->recv;
 	struct net_pkt *pkt;
-	u8_t pos;
+	uint8_t pos;
 
 	if (IS_ENABLED(CONFIG_ETH_NATIVE_POSIX_VLAN_TAG_STRIP)) {
 		count -= NET_ETH_VLAN_HDR_SIZE;
@@ -317,7 +317,7 @@ static struct net_pkt *prepare_non_vlan_pkt(struct eth_context *ctx,
 
 static int read_data(struct eth_context *ctx, int fd)
 {
-	u16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
+	uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	struct net_if *iface;
 	struct net_pkt *pkt = NULL;
 	int status;
@@ -527,7 +527,7 @@ static int set_config(struct device *dev,
 
 #if defined(CONFIG_NET_VLAN)
 static int vlan_setup(struct device *dev, struct net_if *iface,
-		      u16_t tag, bool enable)
+		      uint16_t tag, bool enable)
 {
 	if (enable) {
 		net_lldp_set_lldpdu(iface);

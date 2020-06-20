@@ -376,13 +376,6 @@ if(NOT EXISTS ${LINKER_SCRIPT})
   message(FATAL_ERROR "Could not find linker script: '${LINKER_SCRIPT}'. Corrupted configuration?")
 endif()
 
-# Custom section support in linker scripts requires that the application source
-# directory is in the preprocessor search path, in order to find the custom
-# linker script fragments.
-if(CONFIG_CUSTOM_RODATA_LD OR CONFIG_CUSTOM_RWDATA_LD OR CONFIG_CUSTOM_SECTIONS_LD)
-  zephyr_include_directories(${APPLICATION_SOURCE_DIR})
-endif()
-
 configure_file(version.h.in ${PROJECT_BINARY_DIR}/include/generated/version.h)
 
 # Error-out when the deprecated naming convention is found (until
@@ -495,9 +488,9 @@ if(EXISTS ${CMAKE_BINARY_DIR}/zephyr_modules.txt)
   set(ZEPHYR_CURRENT_MODULE_DIR)
 endif()
 
-set(syscall_list_h ${CMAKE_CURRENT_BINARY_DIR}/include/generated/syscall_list.h)
-set(syscalls_json  ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls.json)
-set(subsys_json    ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/subsystems.json)
+set(syscall_list_h   ${CMAKE_CURRENT_BINARY_DIR}/include/generated/syscall_list.h)
+set(syscalls_json    ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls.json)
+set(struct_tags_json ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/struct_tags.json)
 
 # The syscalls subdirs txt file is constructed by python containing a list of folders to use for
 # dependency handling, including empty folders.
@@ -589,20 +582,22 @@ endforeach()
 add_custom_command(
   OUTPUT
   ${syscalls_json}
-  ${subsys_json}
+  ${struct_tags_json}
   COMMAND
   ${PYTHON_EXECUTABLE}
   ${ZEPHYR_BASE}/scripts/parse_syscalls.py
    --include          ${ZEPHYR_BASE}/include        # Read files from this dir
+   --include          ${ZEPHYR_BASE}/drivers        # For net sockets
+   --include          ${ZEPHYR_BASE}/subsys/net     # More net sockets
   ${parse_syscalls_include_args}                    # Read files from these dirs also
   --json-file        ${syscalls_json}               # Write this file
-  --subsystem-file   ${subsys_json}                 # Write subsystem list to this file
+  --tag-struct-file  ${struct_tags_json}            # Write subsystem list to this file
   DEPENDS ${syscalls_subdirs_trigger} ${PARSE_SYSCALLS_HEADER_DEPENDS}
   )
 
 add_custom_target(${SYSCALL_LIST_H_TARGET} DEPENDS             ${syscall_list_h})
 add_custom_target(${PARSE_SYSCALLS_TARGET}
-	          DEPENDS ${syscalls_json} ${subsys_json})
+	          DEPENDS ${syscalls_json} ${struct_tags_json})
 
 # 64-bit systems do not require special handling of 64-bit system call
 # parameters or return values, indicate this to the system call boilerplate
@@ -632,7 +627,7 @@ add_custom_command(OUTPUT include/generated/syscall_dispatch.c ${syscall_list_h}
   )
 
 # This is passed into all calls to the gen_kobject_list.py script.
-set(gen_kobject_list_include_args --include ${subsys_json})
+set(gen_kobject_list_include_args --include ${struct_tags_json})
 
 set(DRV_VALIDATION ${PROJECT_BINARY_DIR}/include/generated/driver-validation.h)
 add_custom_command(
@@ -646,7 +641,7 @@ add_custom_command(
   DEPENDS
   ${ZEPHYR_BASE}/scripts/gen_kobject_list.py
   ${PARSE_SYSCALLS_TARGET}
-  ${subsys_json}
+  ${struct_tags_json}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
 add_custom_target(${DRIVER_VALIDATION_H_TARGET} DEPENDS ${DRV_VALIDATION})
@@ -1110,7 +1105,7 @@ set(post_build_byproducts "")
 list(APPEND
   post_build_commands
   COMMAND
-  cmake -E rename ${logical_target_for_zephyr_elf}.map ${KERNEL_MAP_NAME}
+  ${CMAKE_COMMAND} -E rename ${logical_target_for_zephyr_elf}.map ${KERNEL_MAP_NAME}
 )
 
 if(NOT CONFIG_BUILD_NO_GAP_FILL)

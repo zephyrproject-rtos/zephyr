@@ -1,0 +1,32 @@
+# Copyright (c) 2020 Synopsys, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_QEMU_ARC
+
+config SOC
+	string
+	default "snps_qemu"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 1000000
+
+config UART_CONSOLE_ON_DEV_NAME
+	string
+	default "UART_0"
+
+config RGF_NUM_BANKS
+	default 1
+
+config ARC_FIRQ
+	default n
+
+config NUM_IRQ_PRIO_LEVELS
+	default 15
+
+config NUM_IRQS
+	default 25
+
+source "soc/arc/snps_qemu/Kconfig.defconfig.em"
+
+endif

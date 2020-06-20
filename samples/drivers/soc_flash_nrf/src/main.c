@@ -30,16 +30,16 @@
 void main(void)
 {
 	struct device *flash_dev;
-	u32_t buf_array_1[4] = { TEST_DATA_WORD_0, TEST_DATA_WORD_1,
+	uint32_t buf_array_1[4] = { TEST_DATA_WORD_0, TEST_DATA_WORD_1,
 				    TEST_DATA_WORD_2, TEST_DATA_WORD_3 };
-	u32_t buf_array_2[4] = { TEST_DATA_WORD_3, TEST_DATA_WORD_1,
+	uint32_t buf_array_2[4] = { TEST_DATA_WORD_3, TEST_DATA_WORD_1,
 				    TEST_DATA_WORD_2, TEST_DATA_WORD_0 };
-	u32_t buf_array_3[8] = { TEST_DATA_WORD_0, TEST_DATA_WORD_1,
+	uint32_t buf_array_3[8] = { TEST_DATA_WORD_0, TEST_DATA_WORD_1,
 				    TEST_DATA_WORD_2, TEST_DATA_WORD_3,
 				    TEST_DATA_WORD_0, TEST_DATA_WORD_1,
 				    TEST_DATA_WORD_2, TEST_DATA_WORD_3 };
-	u32_t buf_word = 0U;
-	u32_t i, offset;
+	uint32_t buf_word = 0U;
+	uint32_t i, offset;
 
 	printf("\nNordic nRF5 Flash Testing\n");
 	printf("=========================\n");
@@ -67,13 +67,13 @@ void main(void)
 		printf("   Attempted to write %x at 0x%x\n", buf_array_1[i],
 				offset);
 		if (flash_write(flash_dev, offset, &buf_array_1[i],
-					sizeof(u32_t)) != 0) {
+					sizeof(uint32_t)) != 0) {
 			printf("   Flash write failed!\n");
 			return;
 		}
 		printf("   Attempted to read 0x%x\n", offset);
 		if (flash_read(flash_dev, offset, &buf_word,
-					sizeof(u32_t)) != 0) {
+					sizeof(uint32_t)) != 0) {
 			printf("   Flash read failed!\n");
 			return;
 		}
@@ -100,13 +100,13 @@ void main(void)
 		printf("   Attempted to write %x at 0x%x\n", buf_array_2[i],
 				offset);
 		if (flash_write(flash_dev, offset, &buf_array_2[i],
-					sizeof(u32_t)) != 0) {
+					sizeof(uint32_t)) != 0) {
 			printf("   Flash write failed!\n");
 			return;
 		}
 		printf("   Attempted to read 0x%x\n", offset);
 		if (flash_read(flash_dev, offset, &buf_word,
-					sizeof(u32_t)) != 0) {
+					sizeof(uint32_t)) != 0) {
 			printf("   Flash read failed!\n");
 			return;
 		}
@@ -132,13 +132,13 @@ void main(void)
 		printf("   Attempted to write %x at 0x%x\n", buf_array_3[i],
 				offset);
 		if (flash_write(flash_dev, offset, &buf_array_3[i],
-					sizeof(u32_t)) != 0) {
+					sizeof(uint32_t)) != 0) {
 			printf("   Flash write failed!\n");
 			return;
 		}
 		printf("   Attempted to read 0x%x\n", offset);
 		if (flash_read(flash_dev, offset, &buf_word,
-					sizeof(u32_t)) != 0) {
+					sizeof(uint32_t)) != 0) {
 			printf("   Flash read failed!\n");
 			return;
 		}

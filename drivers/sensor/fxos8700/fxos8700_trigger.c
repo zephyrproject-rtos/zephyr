@@ -12,7 +12,7 @@ LOG_MODULE_DECLARE(FXOS8700, CONFIG_SENSOR_LOG_LEVEL);
 
 static void fxos8700_gpio_callback(struct device *dev,
 				   struct gpio_callback *cb,
-				   u32_t pin_mask)
+				   uint32_t pin_mask)
 {
 	struct fxos8700_data *data =
 		CONTAINER_OF(cb, struct fxos8700_data, gpio_cb);
@@ -53,7 +53,7 @@ static int fxos8700_handle_pulse_int(struct device *dev)
 	const struct fxos8700_config *config = dev->config_info;
 	struct fxos8700_data *data = dev->driver_data;
 	sensor_trigger_handler_t handler = NULL;
-	u8_t pulse_source;
+	uint8_t pulse_source;
 
 	struct sensor_trigger pulse_trig = {
 		.chan = SENSOR_CHAN_ALL,
@@ -91,7 +91,7 @@ static int fxos8700_handle_motion_int(struct device *dev)
 	const struct fxos8700_config *config = dev->config_info;
 	struct fxos8700_data *data = dev->driver_data;
 	sensor_trigger_handler_t handler = data->motion_handler;
-	u8_t motion_source;
+	uint8_t motion_source;
 
 	struct sensor_trigger motion_trig = {
 		.chan = SENSOR_CHAN_ALL,
@@ -121,7 +121,7 @@ static void fxos8700_handle_int(void *arg)
 	struct device *dev = (struct device *)arg;
 	const struct fxos8700_config *config = dev->config_info;
 	struct fxos8700_data *data = dev->driver_data;
-	u8_t int_source;
+	uint8_t int_source;
 
 	k_sem_take(&data->sem, K_FOREVER);
 
@@ -185,7 +185,7 @@ int fxos8700_trigger_set(struct device *dev,
 	const struct fxos8700_config *config = dev->config_info;
 	struct fxos8700_data *data = dev->driver_data;
 	enum fxos8700_power power = FXOS8700_POWER_STANDBY;
-	u8_t mask;
+	uint8_t mask;
 	int ret = 0;
 
 	k_sem_take(&data->sem, K_FOREVER);
@@ -335,7 +335,7 @@ int fxos8700_trigger_init(struct device *dev)
 {
 	const struct fxos8700_config *config = dev->config_info;
 	struct fxos8700_data *data = dev->driver_data;
-	u8_t ctrl_reg5;
+	uint8_t ctrl_reg5;
 
 #if defined(CONFIG_FXOS8700_TRIGGER_OWN_THREAD)
 	k_sem_init(&data->trig_sem, 0, UINT_MAX);

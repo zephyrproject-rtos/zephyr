@@ -48,8 +48,8 @@
 union raw_double_u {
 	double d;
 	struct {
-		u32_t u1;       /* This part contains the exponent */
-		u32_t u2;       /* This part contains the fraction */
+		uint32_t u1;       /* This part contains the exponent */
+		uint32_t u2;       /* This part contains the fraction */
 	};
 };
 

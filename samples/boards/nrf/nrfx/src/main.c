@@ -78,7 +78,7 @@ void main(void)
 	LOG_INF("nrfx_gpiote initialized");
 
 	/* Initialize DPPI channel */
-	u8_t channel;
+	uint8_t channel;
 
 	err = nrfx_dppi_channel_alloc(&channel);
 	if (err != NRFX_SUCCESS) {

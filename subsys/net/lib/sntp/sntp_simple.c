@@ -8,14 +8,14 @@
 #include <net/sntp.h>
 #include <net/socketutils.h>
 
-int sntp_simple(const char *server, u32_t timeout, struct sntp_time *time)
+int sntp_simple(const char *server, uint32_t timeout, struct sntp_time *time)
 {
 	int res;
 	static struct addrinfo hints;
 	struct addrinfo *addr;
 	struct sntp_ctx sntp_ctx;
-	u64_t deadline;
-	u32_t iter_timeout;
+	uint64_t deadline;
+	uint32_t iter_timeout;
 
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_DGRAM;
@@ -37,9 +37,9 @@ int sntp_simple(const char *server, u32_t timeout, struct sntp_time *time)
 	}
 
 	if (timeout == SYS_FOREVER_MS) {
-		deadline = (u64_t)timeout;
+		deadline = (uint64_t)timeout;
 	} else {
-		deadline = k_uptime_get() + (u64_t)timeout;
+		deadline = k_uptime_get() + (uint64_t)timeout;
 	}
 
 	/* Timeout for current iteration */

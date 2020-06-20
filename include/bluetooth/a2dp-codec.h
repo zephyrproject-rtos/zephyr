@@ -59,11 +59,11 @@ extern "C" {
 /** @brief SBC Codec */
 struct bt_a2dp_codec_sbc_params {
 	/** First two octets of configuration */
-	u8_t config[2];
+	uint8_t config[2];
 	/** Minimum Bitpool Value */
-	u8_t min_bitpool;
+	uint8_t min_bitpool;
 	/** Maximum Bitpool Value */
-	u8_t max_bitpool;
+	uint8_t max_bitpool;
 } __packed;
 
 #ifdef __cplusplus

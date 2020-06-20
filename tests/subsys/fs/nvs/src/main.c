@@ -78,7 +78,7 @@ void test_nvs_init(void)
 	zassert_true(err == 0,  "nvs_init call failure: %d", err);
 }
 
-static void execute_long_pattern_write(u16_t id)
+static void execute_long_pattern_write(uint16_t id)
 {
 	char rd_buf[512];
 	char wr_buf[512];
@@ -117,8 +117,8 @@ static int flash_sim_write_calls_find(struct stats_hdr *hdr, void *arg,
 				      const char *name, uint16_t off)
 {
 	if (!strcmp(name, "flash_write_calls")) {
-		u32_t **flash_write_stat = (u32_t **) arg;
-		*flash_write_stat = (u32_t *)((u8_t *)hdr + off);
+		uint32_t **flash_write_stat = (uint32_t **) arg;
+		*flash_write_stat = (uint32_t *)((uint8_t *)hdr + off);
 	}
 
 	return 0;
@@ -128,8 +128,8 @@ static int flash_sim_max_write_calls_find(struct stats_hdr *hdr, void *arg,
 					  const char *name, uint16_t off)
 {
 	if (!strcmp(name, "max_write_calls")) {
-		u32_t **max_write_calls = (u32_t **) arg;
-		*max_write_calls = (u32_t *)((u8_t *)hdr + off);
+		uint32_t **max_write_calls = (uint32_t **) arg;
+		*max_write_calls = (uint32_t *)((uint8_t *)hdr + off);
 	}
 
 	return 0;
@@ -144,8 +144,8 @@ void test_nvs_corrupted_write(void)
 	char wr_buf_2[512];
 	char pattern_1[] = {0xDE, 0xAD, 0xBE, 0xEF};
 	char pattern_2[] = {0x03, 0xAA, 0x85, 0x6F};
-	u32_t *flash_write_stat;
-	u32_t *flash_max_write_calls;
+	uint32_t *flash_write_stat;
+	uint32_t *flash_max_write_calls;
 
 	err = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 	zassert_true(err == 0,  "nvs_init call failure: %d", err);
@@ -208,21 +208,21 @@ void test_nvs_gc(void)
 {
 	int err;
 	int len;
-	u8_t buf[32];
-	u8_t rd_buf[32];
+	uint8_t buf[32];
+	uint8_t rd_buf[32];
 
-	const u16_t max_id = 10;
+	const uint16_t max_id = 10;
 	/* 25th write will trigger GC. */
-	const u16_t max_writes = 26;
+	const uint16_t max_writes = 26;
 
 	fs.sector_count = 2;
 
 	err = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 	zassert_true(err == 0,  "nvs_init call failure: %d", err);
 
-	for (u16_t i = 0; i < max_writes; i++) {
-		u8_t id = (i % max_id);
-		u8_t id_data = id + max_id * (i / max_id);
+	for (uint16_t i = 0; i < max_writes; i++) {
+		uint8_t id = (i % max_id);
+		uint8_t id_data = id + max_id * (i / max_id);
 
 		memset(buf, id_data, sizeof(buf));
 
@@ -230,12 +230,12 @@ void test_nvs_gc(void)
 		zassert_true(len == sizeof(buf), "nvs_write failed: %d", len);
 	}
 
-	for (u16_t id = 0; id < max_id; id++) {
+	for (uint16_t id = 0; id < max_id; id++) {
 		len = nvs_read(&fs, id, rd_buf, sizeof(buf));
 		zassert_true(len == sizeof(rd_buf),
 			     "nvs_read unexpected failure: %d", len);
 
-		for (u16_t i = 0; i < sizeof(rd_buf); i++) {
+		for (uint16_t i = 0; i < sizeof(rd_buf); i++) {
 			rd_buf[i] = rd_buf[i] % max_id;
 			buf[i] = id;
 		}
@@ -247,12 +247,12 @@ void test_nvs_gc(void)
 	err = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 	zassert_true(err == 0,  "nvs_init call failure: %d", err);
 
-	for (u16_t id = 0; id < max_id; id++) {
+	for (uint16_t id = 0; id < max_id; id++) {
 		len = nvs_read(&fs, id, rd_buf, sizeof(buf));
 		zassert_true(len == sizeof(rd_buf),
 			     "nvs_read unexpected failure: %d", len);
 
-		for (u16_t i = 0; i < sizeof(rd_buf); i++) {
+		for (uint16_t i = 0; i < sizeof(rd_buf); i++) {
 			rd_buf[i] = rd_buf[i] % max_id;
 			buf[i] = id;
 		}
@@ -262,15 +262,15 @@ void test_nvs_gc(void)
 	}
 }
 
-static void write_content(u16_t max_id, u16_t begin, u16_t end,
+static void write_content(uint16_t max_id, uint16_t begin, uint16_t end,
 			     struct nvs_fs *fs)
 {
-	u8_t buf[32];
+	uint8_t buf[32];
 	ssize_t len;
 
-	for (u16_t i = begin; i < end; i++) {
-		u8_t id = (i % max_id);
-		u8_t id_data = id + max_id * (i / max_id);
+	for (uint16_t i = begin; i < end; i++) {
+		uint8_t id = (i % max_id);
+		uint8_t id_data = id + max_id * (i / max_id);
 
 		memset(buf, id_data, sizeof(buf));
 
@@ -279,18 +279,18 @@ static void write_content(u16_t max_id, u16_t begin, u16_t end,
 	}
 }
 
-static void check_content(u16_t max_id, struct nvs_fs *fs)
+static void check_content(uint16_t max_id, struct nvs_fs *fs)
 {
-	u8_t rd_buf[32];
-	u8_t buf[32];
+	uint8_t rd_buf[32];
+	uint8_t buf[32];
 	ssize_t len;
 
-	for (u16_t id = 0; id < max_id; id++) {
+	for (uint16_t id = 0; id < max_id; id++) {
 		len = nvs_read(fs, id, rd_buf, sizeof(buf));
 		zassert_true(len == sizeof(rd_buf),
 			     "nvs_read unexpected failure: %d", len);
 
-		for (u16_t i = 0; i < ARRAY_SIZE(rd_buf); i++) {
+		for (uint16_t i = 0; i < ARRAY_SIZE(rd_buf); i++) {
 			rd_buf[i] = rd_buf[i] % max_id;
 			buf[i] = id;
 		}
@@ -307,15 +307,15 @@ void test_nvs_gc_3sectors(void)
 {
 	int err;
 
-	const u16_t max_id = 10;
+	const uint16_t max_id = 10;
 	/* 50th write will trigger 1st GC. */
-	const u16_t max_writes = 51;
+	const uint16_t max_writes = 51;
 	/* 75th write will trigger 2st GC. */
-	const u16_t max_writes_2 = 51 + 25;
+	const uint16_t max_writes_2 = 51 + 25;
 	/* 100th write will trigger 3st GC. */
-	const u16_t max_writes_3 = 51 + 25 + 25;
+	const uint16_t max_writes_3 = 51 + 25 + 25;
 	/* 125th write will trigger 4st GC. */
-	const u16_t max_writes_4 = 51 + 25 + 25 + 25;
+	const uint16_t max_writes_4 = 51 + 25 + 25 + 25;
 
 	fs.sector_count = 3;
 
@@ -389,8 +389,8 @@ static int flash_sim_erase_calls_find(struct stats_hdr *hdr, void *arg,
 				      const char *name, uint16_t off)
 {
 	if (!strcmp(name, "flash_erase_calls")) {
-		u32_t **flash_erase_stat = (u32_t **) arg;
-		*flash_erase_stat = (u32_t *)((u8_t *)hdr + off);
+		uint32_t **flash_erase_stat = (uint32_t **) arg;
+		*flash_erase_stat = (uint32_t *)((uint8_t *)hdr + off);
 	}
 
 	return 0;
@@ -400,8 +400,8 @@ static int flash_sim_max_erase_calls_find(struct stats_hdr *hdr, void *arg,
 					  const char *name, uint16_t off)
 {
 	if (!strcmp(name, "max_erase_calls")) {
-		u32_t **max_erase_calls = (u32_t **) arg;
-		*max_erase_calls = (u32_t *)((u8_t *)hdr + off);
+		uint32_t **max_erase_calls = (uint32_t **) arg;
+		*max_erase_calls = (uint32_t *)((uint8_t *)hdr + off);
 	}
 
 	return 0;
@@ -411,8 +411,8 @@ static int flash_sim_max_len_find(struct stats_hdr *hdr, void *arg,
 				  const char *name, uint16_t off)
 {
 	if (!strcmp(name, "max_len")) {
-		u32_t **max_len = (u32_t **) arg;
-		*max_len = (u32_t *)((u8_t *)hdr + off);
+		uint32_t **max_len = (uint32_t **) arg;
+		*max_len = (uint32_t *)((uint8_t *)hdr + off);
 	}
 
 	return 0;
@@ -422,16 +422,16 @@ void test_nvs_corrupted_sector_close_operation(void)
 {
 	int err;
 	int len;
-	u8_t buf[32];
-	u32_t *flash_write_stat;
-	u32_t *flash_erase_stat;
-	u32_t *flash_max_write_calls;
-	u32_t *flash_max_erase_calls;
-	u32_t *flash_max_len;
+	uint8_t buf[32];
+	uint32_t *flash_write_stat;
+	uint32_t *flash_erase_stat;
+	uint32_t *flash_max_write_calls;
+	uint32_t *flash_max_erase_calls;
+	uint32_t *flash_max_len;
 
-	const u16_t max_id = 10;
+	const uint16_t max_id = 10;
 	/* 25th write will trigger GC. */
-	const u16_t max_writes = 26;
+	const uint16_t max_writes = 26;
 
 	/* Get the address of simulator parameters. */
 	stats_walk(sim_thresholds, flash_sim_max_write_calls_find,
@@ -446,9 +446,9 @@ void test_nvs_corrupted_sector_close_operation(void)
 	err = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 	zassert_true(err == 0,  "nvs_init call failure: %d", err);
 
-	for (u16_t i = 0; i < max_writes; i++) {
-		u8_t id = (i % max_id);
-		u8_t id_data = id + max_id * (i / max_id);
+	for (uint16_t i = 0; i < max_writes; i++) {
+		uint8_t id = (i % max_id);
+		uint8_t id_data = id + max_id * (i / max_id);
 
 		memset(buf, id_data, sizeof(buf));
 
@@ -491,8 +491,8 @@ void test_nvs_full_sector(void)
 {
 	int err;
 	ssize_t len;
-	u16_t filling_id = 0;
-	u16_t i, data_read;
+	uint16_t filling_id = 0;
+	uint16_t i, data_read;
 
 	fs.sector_count = 3;
 
@@ -542,8 +542,8 @@ void test_delete(void)
 {
 	int err;
 	ssize_t len;
-	u16_t filling_id, data_read;
-	u32_t ate_wra, data_wra;
+	uint16_t filling_id, data_read;
+	uint32_t ate_wra, data_wra;
 
 	fs.sector_count = 3;
 

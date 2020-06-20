@@ -34,11 +34,11 @@ struct wdt_sam_dev_cfg {
 	Wdt *regs;
 };
 
-static struct device DEVICE_NAME_GET(wdt_sam);
+DEVICE_DECLARE(wdt_sam);
 
 struct wdt_sam_dev_data {
 	wdt_callback_t cb;
-	u32_t mode;
+	uint32_t mode;
 	bool timeout_valid;
 	bool mode_set;
 };
@@ -50,7 +50,7 @@ static struct wdt_sam_dev_data wdt_sam_data = { 0 };
 
 static void wdt_sam_isr(struct device *dev)
 {
-	u32_t wdt_sr;
+	uint32_t wdt_sr;
 	Wdt *const wdt = DEV_CFG(dev)->regs;
 	struct wdt_sam_dev_data *data = dev->driver_data;
 
@@ -67,9 +67,9 @@ static void wdt_sam_isr(struct device *dev)
  * @param timeout Timeout value in milliseconds.
  * @param slow clock on board in Hz.
  */
-int wdt_sam_convert_timeout(u32_t timeout, u32_t sclk)
+int wdt_sam_convert_timeout(uint32_t timeout, uint32_t sclk)
 {
-	u32_t max, min;
+	uint32_t max, min;
 
 	timeout = timeout * 1000U;
 	min =  (SAM_PRESCALAR * 1000000) / sclk;
@@ -106,7 +106,7 @@ static int wdt_sam_disable(struct device *dev)
 	return 0;
 }
 
-static int wdt_sam_setup(struct device *dev, u8_t options)
+static int wdt_sam_setup(struct device *dev, uint8_t options)
 {
 
 	Wdt *const wdt = DEV_CFG(dev)->regs;
@@ -142,7 +142,7 @@ static int wdt_sam_setup(struct device *dev, u8_t options)
 static int wdt_sam_install_timeout(struct device *dev,
 				   const struct wdt_timeout_cfg *cfg)
 {
-	u32_t wdt_mode = 0U;
+	uint32_t wdt_mode = 0U;
 	int timeout_value;
 
 	struct wdt_sam_dev_data *data = dev->driver_data;
@@ -162,7 +162,7 @@ static int wdt_sam_install_timeout(struct device *dev,
 	 * in the max field of the timeout config.
 	 */
 	timeout_value = wdt_sam_convert_timeout(cfg->window.max,
-						(u32_t) CHIP_FREQ_XTAL_32K);
+						(uint32_t) CHIP_FREQ_XTAL_32K);
 
 	if (timeout_value < 0) {
 		return -EINVAL;

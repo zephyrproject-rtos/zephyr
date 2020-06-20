@@ -85,7 +85,7 @@ static void lps22hh_handle_interrupt(void *arg)
 }
 
 static void lps22hh_gpio_callback(struct device *dev,
-				  struct gpio_callback *cb, u32_t pins)
+				  struct gpio_callback *cb, uint32_t pins)
 {
 	const struct lps22hh_config *cfg = dev->config_info;
 	struct lps22hh_data *lps22hh =

@@ -241,7 +241,8 @@ steps:
     interface.  The GitHub release interface does not generate annotated tags (it
     generates 'lightweight' tags regardless of release or pre-release). You should
     also upload your gpg public key to your GitHub account, since the instructions
-    below involve creating signed tags.
+    below involve creating signed tags. However, if you do not have a gpg public
+    key you can opt to remove the ``-s`` option from the commands below.
 
 .. tabs::
 
@@ -265,7 +266,7 @@ steps:
         #. Tag and push the version, using an annotated tag::
 
             $ git pull
-            $ git tag -m "Zephyr 1.11.0-rc1" -s v1.11.0-rc1
+            $ git tag -s -m "Zephyr 1.11.0-rc1" v1.11.0-rc1
             $ git push git@github.com:zephyrproject-rtos/zephyr.git v1.11.0-rc1
 
         #. Create a shortlog of changes between the previous release (use
@@ -274,7 +275,7 @@ steps:
             $ git shortlog v1.10.0..v1.11.0-rc1
 
         #. Find the new tag at the top of the releases page and edit the release
-           with the ``Draft a new release`` button with the following:
+           with the ``Edit tag`` button with the following:
 
             * Name it ``Zephyr 1.11.0-rc1``
             * Copy the shortlog into the release notes textbox (*don't forget
@@ -297,9 +298,9 @@ steps:
 
         #. Update the version variables in the :zephyr_file:`VERSION` file
            located in the root of the Git repository. Set ``EXTRAVERSION``
-           variable to zero to indicate final release::
+           variable to an empty string to indicate final release::
 
-            EXTRAVERSION = 0
+            EXTRAVERSION =
 
         #. Post a PR with the updated :zephyr_file:`VERSION` file using
            ``release: Zephyr 1.11.0`` as the commit subject. Merge
@@ -307,14 +308,17 @@ steps:
         #. Tag and push the version, using two annotated tags::
 
             $ git pull
-            $ git tag -m "Zephyr 1.11.0" -s v1.11.0
+            $ git tag -s -m "Zephyr 1.11.0" v1.11.0
             $ git push git@github.com:zephyrproject-rtos/zephyr.git v1.11.0
 
-            $ git tag -m "Zephyr 1.11.0" -s zephyr-v1.11.0
+            # This is the tag that will represent the release on GitHub, so that
+            # the file you can download is named ``zephyr-v1.11.0.zip`` and not
+            # just ``v1.11.0.zip``
+            $ git tag -s -m "Zephyr 1.11.0" zephyr-v1.11.0
             $ git push git@github.com:zephyrproject-rtos/zephyr.git zephyr-v1.11.0
 
-        #. Find the new tag at the top of the releases page and edit the release
-           with the ``Draft a new release`` button with the following:
+        #. Find the new ``zephyr-v1.11.0`` tag at the top of the releases page
+           and edit the release with the ``Edit tag`` button with the following:
 
             * Name it ``Zephyr 1.11.0``
             * Copy the full content of ``docs/releases/release-notes-1.11.rst``

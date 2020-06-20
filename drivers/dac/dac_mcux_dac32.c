@@ -54,7 +54,7 @@ static int mcux_dac32_channel_setup(struct device *dev,
 	return 0;
 }
 
-static int mcux_dac32_write_value(struct device *dev, u8_t channel, u32_t value)
+static int mcux_dac32_write_value(struct device *dev, uint8_t channel, uint32_t value)
 {
 	const struct mcux_dac32_config *config = dev->config_info;
 	struct mcux_dac32_data *data = dev->driver_data;

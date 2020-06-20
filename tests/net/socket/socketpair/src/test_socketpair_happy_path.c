@@ -115,10 +115,10 @@ static void happy_path(
 
 		memset(actual_msg, 0, sizeof(actual_msg));
 
+		len = 0;
 		res = recvfrom(sv[(!i) & 1], actual_msg, sizeof(actual_msg), 0,
 			NULL, &len);
-
-		zassert_not_equal(res, -1, "recvfrom(2) failed: %d", errno);
+		zassert_true(res >= 0, "recvfrom(2) failed: %d", errno);
 		actual_msg_len = res;
 		zassert_equal(actual_msg_len, expected_msg_len,
 			      "wrong return value");
@@ -131,6 +131,7 @@ static void happy_path(
 		 * Test with sendmsg(2) / recv(2) - Zephyr lacks recvmsg atm
 		 */
 
+		memset(&msghdr, 0, sizeof(msghdr));
 		msghdr.msg_iov = &iovec;
 		msghdr.msg_iovlen = 1;
 		iovec.iov_base = (void *)expected_msg;

@@ -2,8 +2,8 @@
 
 cmake_minimum_required(VERSION 3.13.1)
 
-find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
-project(NONE)
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+project(google_iot_mqtt)
 
 if(NOT EXISTS ${APPLICATION_SOURCE_DIR}/src/private_info/key.c)
   message(FATAL_ERROR "!!!!!! Generate key file before continuing.  See README !!!!!")

@@ -111,7 +111,7 @@ static void rx(int *can_fd, int *do_close_period,
 	LOG_DBG("[%d] Waiting CAN data...", fd);
 
 	while (1) {
-		u8_t *data;
+		uint8_t *data;
 
 		memset(&frame, 0, sizeof(frame));
 		addr_len = sizeof(can_addr);
@@ -131,7 +131,7 @@ static void rx(int *can_fd, int *do_close_period,
 
 		if (!msg.rtr) {
 			if (msg.dlc > 8) {
-				data = (u8_t *)msg.data_32;
+				data = (uint8_t *)msg.data_32;
 			} else {
 				data = msg.data;
 			}

@@ -44,7 +44,7 @@
 #define CHECK_DT_REG(lbl, mdk_addr)					\
 	BUILD_ASSERT(							\
 		UTIL_OR(UTIL_NOT(DT_NODE_EXISTS(DT_NODELABEL(lbl))),	\
-			(DT_REG_ADDR(DT_NODELABEL(lbl)) == (u32_t)(mdk_addr))))
+			(DT_REG_ADDR(DT_NODELABEL(lbl)) == (uint32_t)(mdk_addr))))
 
 /**
  * If a node label "lbl" might have different addresses depending on

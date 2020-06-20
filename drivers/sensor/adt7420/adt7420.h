@@ -60,7 +60,7 @@
 
 struct adt7420_data {
 	struct device *i2c;
-	s16_t sample;
+	int16_t sample;
 #ifdef CONFIG_ADT7420_TRIGGER
 	struct device *gpio;
 	struct gpio_callback gpio_cb;
@@ -83,7 +83,7 @@ struct adt7420_data {
 
 struct adt7420_dev_config {
 	const char *i2c_port;
-	u16_t i2c_addr;
+	uint16_t i2c_addr;
 #ifdef CONFIG_ADT7420_TRIGGER
 	gpio_pin_t int_pin;
 	gpio_flags_t int_flags;

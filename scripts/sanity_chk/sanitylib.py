@@ -504,14 +504,19 @@ class DeviceHandler(Handler):
 
         log_out_fp.close()
 
-    def device_is_available(self, device):
+    def device_is_available(self, instance):
+        device = instance.platform.name
+        fixture = instance.testcase.harness_config.get("fixture")
         for i in self.suite.connected_hardware:
+            if fixture and fixture not in i.get('fixtures', []):
+                continue
             if i['platform'] == device and i['available'] and i['serial']:
                 return True
 
         return False
 
-    def get_available_device(self, device):
+    def get_available_device(self, instance):
+        device = instance.platform.name
         for i in self.suite.connected_hardware:
             if i['platform'] == device and i['available'] and i['serial']:
                 i['available'] = False
@@ -559,13 +564,14 @@ class DeviceHandler(Handler):
         else:
             command = [self.generator_cmd, "-C", self.build_dir, "flash"]
 
-        while not self.device_is_available(self.instance.platform.name):
+        while not self.device_is_available(self.instance):
             logger.debug("Waiting for device {} to become available".format(self.instance.platform.name))
             time.sleep(1)
 
-        hardware = self.get_available_device(self.instance.platform.name)
+        hardware = self.get_available_device(self.instance)
 
-        runner = hardware.get('runner', None)
+        if hardware:
+            runner = hardware.get('runner', None)
         if runner:
             board_id = hardware.get("probe_id", hardware.get("id", None))
             product = hardware.get("product", None)
@@ -1533,7 +1539,7 @@ class TestInstance(DisablePyTestCollectionMixin):
         return self.name < other.name
 
     # Global testsuite parameters
-    def check_build_or_run(self, build_only=False, enable_slow=False, device_testing=False, fixture=[]):
+    def check_build_or_run(self, build_only=False, enable_slow=False, device_testing=False, fixtures=[]):
 
         # right now we only support building on windows. running is still work
         # in progress.
@@ -1571,18 +1577,19 @@ class TestInstance(DisablePyTestCollectionMixin):
                 runnable = False
 
         # console harness allows us to run the test and capture data.
-        if self.testcase.harness == 'console':
+        if self.testcase.harness in [ 'console', 'ztest']:
 
             # if we have a fixture that is also being supplied on the
             # command-line, then we need to run the test, not just build it.
-            if "fixture" in self.testcase.harness_config:
-                fixture_cfg = self.testcase.harness_config['fixture']
-                if fixture_cfg in fixture:
+            fixture = self.testcase.harness_config.get('fixture')
+            if fixture:
+                if fixture in fixtures:
                     _build_only = False
                 else:
                     _build_only = True
             else:
                 _build_only = False
+
         elif self.testcase.harness:
             _build_only = True
         else:
@@ -1617,6 +1624,7 @@ class TestInstance(DisablePyTestCollectionMixin):
                     content = content + "\nCONFIG_ASAN=y"
 
             f.write(content)
+            return content
 
     def calculate_sizes(self):
         """Get the RAM/ROM sizes of a test case.
@@ -1969,6 +1977,8 @@ class ProjectBuilder(FilterBuilder):
                     logger.debug("filtering %s" % self.instance.name)
                     self.instance.status = "skipped"
                     self.instance.reason = "filter"
+                    for case in self.instance.testcase.cases:
+                        self.instance.results.update({case: 'SKIP'})
                     pipeline.put({"op": "report", "test": self.instance})
                 else:
                     pipeline.put({"op": "build", "test": self.instance})
@@ -2234,7 +2244,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.cleanup = False
         self.enable_slow = False
         self.device_testing = False
-        self.fixture = []
+        self.fixtures = []
         self.enable_coverage = False
         self.enable_lsan = False
         self.enable_asan = False
@@ -2580,7 +2590,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                         self.build_only,
                         self.enable_slow,
                         self.device_testing,
-                        self.fixture
+                        self.fixtures
                     )
                     instance.create_overlay(platform, self.enable_asan, self.enable_coverage, self.coverage_platform)
                     instance_list.append(instance)
@@ -2641,8 +2651,16 @@ class TestSuite(DisablePyTestCollectionMixin):
                     self.build_only,
                     self.enable_slow,
                     self.device_testing,
-                    self.fixture
+                    self.fixtures
                 )
+
+                if device_testing_filter:
+                    for h in self.connected_hardware:
+                        if h['platform'] == plat.name:
+                            if tc.harness_config.get('fixture') in h.get('fixtures', []):
+                                instance.build_only = False
+                                instance.run = True
+
                 if not force_platform and plat.name in exclude_platform:
                     discards[instance] = "Platform is excluded on command line."
                     continue
@@ -3017,7 +3035,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                             eleTestcase,
                             'skipped',
                             type="skipped",
-                            message="Skipped")
+                            message=instance.reason)
             else:
                 eleTestcase = ET.SubElement(eleTestsuite, 'testcase',
                     classname="%s:%s" % (instance.platform.name, instance.testcase.name),

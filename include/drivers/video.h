@@ -45,10 +45,10 @@ extern "C" {
  *    of the first pixel of the next row (>=width).
  */
 struct video_format {
-	u32_t pixelformat;
-	u32_t width;
-	u32_t height;
-	u32_t pitch;
+	uint32_t pixelformat;
+	uint32_t width;
+	uint32_t height;
+	uint32_t pitch;
 };
 
 /**
@@ -65,13 +65,13 @@ struct video_format {
  * @param height_step is the height step size.
  */
 struct video_format_cap {
-	u32_t pixelformat;
-	u32_t width_min;
-	u32_t width_max;
-	u32_t height_min;
-	u32_t height_max;
-	u16_t width_step;
-	u16_t height_step;
+	uint32_t pixelformat;
+	uint32_t width_min;
+	uint32_t width_max;
+	uint32_t height_min;
+	uint32_t height_max;
+	uint16_t width_step;
+	uint16_t height_step;
 };
 
 /**
@@ -85,7 +85,7 @@ struct video_format_cap {
  */
 struct video_caps {
 	const struct video_format_cap *format_caps;
-	u8_t min_vbuf_count;
+	uint8_t min_vbuf_count;
 };
 
 /**
@@ -104,10 +104,10 @@ struct video_caps {
  */
 struct video_buffer {
 	void *driver_data;
-	u8_t *buffer;
-	u32_t size;
-	u32_t bytesused;
-	u32_t timestamp;
+	uint8_t *buffer;
+	uint32_t size;
+	uint32_t bytesused;
+	uint32_t timestamp;
 };
 
 /**
@@ -545,7 +545,7 @@ void video_buffer_release(struct video_buffer *buf);
 
 /* fourcc - four-character-code */
 #define video_fourcc(a, b, c, d)\
-	((u32_t)(a) | ((u32_t)(b) << 8) | ((u32_t)(c) << 16) | ((u32_t)(d) << 24))
+	((uint32_t)(a) | ((uint32_t)(b) << 8) | ((uint32_t)(c) << 16) | ((uint32_t)(d) << 24))
 
 /* Raw bayer formats */
 #define VIDEO_PIX_FMT_BGGR8  video_fourcc('B', 'G', 'G', 'R') /*  8  BGBG.. GRGR.. */

@@ -18,8 +18,15 @@ FUNC_NORETURN void arch_system_halt(unsigned int reason)
 
 	/* Causes QEMU to exit. We passed the following on the command line:
 	 * -device isa-debug-exit,iobase=0xf4,iosize=0x04
+	 *
+	 * For any value of the first argument X, the return value of the
+	 * QEMU process is (X * 2) + 1.
+	 *
+	 * It has been observed that if the emulator exits for a triple-fault
+	 * (often due to bad page tables or other CPU structures) it will
+	 * terminate with 0 error code.
 	 */
-	sys_out32(0, 0xf4);
+	sys_out32(reason, 0xf4);
 	CODE_UNREACHABLE;
 }
 #endif
@@ -43,12 +50,13 @@ static inline uintptr_t esf_get_code(const z_arch_esf_t *esf)
 }
 
 #ifdef CONFIG_THREAD_STACK_INFO
-bool z_x86_check_stack_bounds(uintptr_t addr, size_t size, u16_t cs)
+bool z_x86_check_stack_bounds(uintptr_t addr, size_t size, uint16_t cs)
 {
 	uintptr_t start, end;
 
-	if (arch_is_in_isr()) {
-		/* We were servicing an interrupt */
+	if (_current == NULL || arch_is_in_isr()) {
+		/* We were servicing an interrupt or in early boot environment
+		 * and are supposed to be on the interrupt stack */
 		int cpu_id;
 
 #ifdef CONFIG_SMP
@@ -89,7 +97,7 @@ struct stack_frame {
 
 #define MAX_STACK_FRAMES 8
 
-static void unwind_stack(uintptr_t base_ptr, u16_t cs)
+static void unwind_stack(uintptr_t base_ptr, uint16_t cs)
 {
 	struct stack_frame *frame;
 	int i;
@@ -134,6 +142,21 @@ static void unwind_stack(uintptr_t base_ptr, u16_t cs)
 }
 #endif /* CONFIG_X86_EXCEPTION_STACK_TRACE */
 
+static inline struct x86_page_tables *get_ptables(const z_arch_esf_t *esf)
+{
+#if defined(CONFIG_USERSPACE) && defined(CONFIG_X86_KPTI)
+	/* If the interrupted thread was in user mode, we did a page table
+	 * switch when we took the exception via z_x86_trampoline_to_kernel
+	 */
+	if ((esf->cs & 0x3) != 0) {
+		return z_x86_thread_page_tables_get(_current);
+	}
+#else
+	ARG_UNUSED(esf);
+#endif
+	return z_x86_page_tables_get();
+}
+
 #ifdef CONFIG_X86_64
 static void dump_regs(const z_arch_esf_t *esf)
 {
@@ -146,7 +169,7 @@ static void dump_regs(const z_arch_esf_t *esf)
 	LOG_ERR("R12: 0x%016lx R13: 0x%016lx R14: 0x%016lx R15: 0x%016lx",
 		esf->r12, esf->r13, esf->r14, esf->r15);
 	LOG_ERR("RSP: 0x%016lx RFLAGS: 0x%016lx CS: 0x%04lx CR3: %p", esf->rsp,
-		esf->rflags, esf->cs & 0xFFFFU, z_x86_page_tables_get());
+		esf->rflags, esf->cs & 0xFFFFU, get_ptables(esf));
 
 #ifdef CONFIG_X86_EXCEPTION_STACK_TRACE
 	LOG_ERR("call trace:");
@@ -164,7 +187,7 @@ static void dump_regs(const z_arch_esf_t *esf)
 	LOG_ERR("ESI: 0x%08x, EDI: 0x%08x, EBP: 0x%08x, ESP: 0x%08x",
 		esf->esi, esf->edi, esf->ebp, esf->esp);
 	LOG_ERR("EFLAGS: 0x%08x CS: 0x%04x CR3: %p", esf->eflags,
-		esf->cs & 0xFFFFU, z_x86_page_tables_get());
+		esf->cs & 0xFFFFU, get_ptables(esf));
 
 #ifdef CONFIG_X86_EXCEPTION_STACK_TRACE
 	LOG_ERR("call trace:");
@@ -282,7 +305,7 @@ static void dump_page_fault(z_arch_esf_t *esf)
 	}
 
 #ifdef CONFIG_X86_MMU
-	z_x86_dump_mmu_flags(z_x86_thread_page_tables_get(_current), cr2);
+	z_x86_dump_mmu_flags(get_ptables(esf), cr2);
 #endif /* CONFIG_X86_MMU */
 }
 #endif /* CONFIG_EXCEPTION_DEBUG */
@@ -290,11 +313,21 @@ static void dump_page_fault(z_arch_esf_t *esf)
 FUNC_NORETURN void z_x86_fatal_error(unsigned int reason,
 				     const z_arch_esf_t *esf)
 {
-#ifdef CONFIG_EXCEPTION_DEBUG
 	if (esf != NULL) {
+#ifdef CONFIG_EXCEPTION_DEBUG
 		dump_regs(esf);
-	}
 #endif
+#if defined(CONFIG_ASSERT) && defined(CONFIG_X86_64)
+		if (esf->rip == 0xb9) {
+			/* See implementation of __resume in locore.S. This is
+			 * never a valid RIP value. Treat this as a kernel
+			 * panic.
+			 */
+			LOG_ERR("Attempt to resume un-suspended thread object");
+			reason = K_ERR_KERNEL_PANIC;
+		}
+#endif
+	}
 	z_fatal_error(reason, esf);
 	CODE_UNREACHABLE;
 }
@@ -327,7 +360,7 @@ void z_x86_page_fault_handler(z_arch_esf_t *esf)
 #ifdef CONFIG_X86_64
 		if ((void *)esf->rip >= exceptions[i].start &&
 		    (void *)esf->rip < exceptions[i].end) {
-			esf->rip = (u64_t)(exceptions[i].fixup);
+			esf->rip = (uint64_t)(exceptions[i].fixup);
 			return;
 		}
 #else

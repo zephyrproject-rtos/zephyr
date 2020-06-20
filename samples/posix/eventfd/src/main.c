@@ -76,5 +76,7 @@ int main(int argc, char *argv[])
 	writer();
 	reader();
 
+	printf("Finished\n");
+
 	return 0;
 }

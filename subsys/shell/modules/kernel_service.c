@@ -18,7 +18,7 @@
 static int cmd_kernel_version(const struct shell *shell,
 			      size_t argc, char **argv)
 {
-	u32_t version = sys_kernel_version_get();
+	uint32_t version = sys_kernel_version_get();
 
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
@@ -137,7 +137,7 @@ extern K_THREAD_STACK_ARRAY_DEFINE(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
 static int cmd_kernel_stacks(const struct shell *shell,
 			     size_t argc, char **argv)
 {
-	u8_t *buf;
+	uint8_t *buf;
 	size_t size, unused = 0;
 
 	ARG_UNUSED(argc);

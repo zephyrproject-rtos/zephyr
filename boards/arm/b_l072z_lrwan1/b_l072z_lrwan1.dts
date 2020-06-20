@@ -53,6 +53,7 @@
 		led2 = &blue_led;
 		led3 = &red_led;
 		sw0 = &user_button;
+		eeprom-0 = &eeprom;
 	};
 };
 
@@ -84,5 +85,17 @@ arduino_i2c: &i2c1 {};
 };
 
 &rtc {
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+&eeprom {
+	status = "okay";
+};
+
+&usb {
 	status = "okay";
 };

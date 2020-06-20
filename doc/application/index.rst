@@ -1136,7 +1136,7 @@ Make sure to follow these steps in order.
       find_package(Zephyr)
       project(my_zephyr_app)
 
-   .. note:: ``find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})`` can be used if
+   .. note:: ``find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})`` can be used if
              enforcing a specific Zephyr installation by explicitly
              setting the ``ZEPHYR_BASE`` environment variable should be
              supported. All samples in Zephyr supports the ``ZEPHYR_BASE``

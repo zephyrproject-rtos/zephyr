@@ -28,10 +28,10 @@ struct i2c_nios2_config {
 	struct k_sem		sem_lock;
 };
 
-static int i2c_nios2_configure(struct device *dev, u32_t dev_config)
+static int i2c_nios2_configure(struct device *dev, uint32_t dev_config)
 {
 	struct i2c_nios2_config *config = DEV_CFG(dev);
-	s32_t rc = 0;
+	int32_t rc = 0;
 
 	k_sem_take(&config->sem_lock, K_FOREVER);
 	if (!(I2C_MODE_MASTER & dev_config)) {
@@ -60,12 +60,12 @@ i2c_cfg_err:
 }
 
 static int i2c_nios2_transfer(struct device *dev, struct i2c_msg *msgs,
-			      u8_t num_msgs, u16_t addr)
+			      uint8_t num_msgs, uint16_t addr)
 {
 	struct i2c_nios2_config *config = DEV_CFG(dev);
 	ALT_AVALON_I2C_STATUS_CODE status;
-	u32_t restart, stop;
-	s32_t i, timeout, rc = 0;
+	uint32_t restart, stop;
+	int32_t i, timeout, rc = 0;
 
 	k_sem_take(&config->sem_lock, K_FOREVER);
 	/* register the optional interrupt callback */

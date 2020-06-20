@@ -21,6 +21,8 @@ menuconfig NET_L2_OPENTHREAD
 	select MBEDTLS_MAC_SHA256_ENABLED
 	select MBEDTLS_ENTROPY_ENABLED
 	select MBEDTLS_MAC_CMAC_ENABLED
+	select MBEDTLS_CIPHER
+	select MBEDTLS_MD
 
 if NET_L2_OPENTHREAD
 
@@ -53,22 +55,25 @@ choice
 	help
 	  This option selects log level for OpenThread stack.
 
-config OPENTHREAD_LOG_LEVEL_ERROR
-	bool "Error"
-config OPENTHREAD_LOG_LEVEL_WARNING
+config OPENTHREAD_LOG_LEVEL_CRIT
+	bool "Critical"
+config OPENTHREAD_LOG_LEVEL_WARN
 	bool "Warning"
+config OPENTHREAD_LOG_LEVEL_NOTE
+	bool "Notice"
 config OPENTHREAD_LOG_LEVEL_INFO
-	bool "Info"
-config OPENTHREAD_LOG_LEVEL_DEBUG
+	bool "Informational"
+config OPENTHREAD_LOG_LEVEL_DEBG
 	bool "Debug"
 endchoice
 
 config OPENTHREAD_LOG_LEVEL
 	int
-	default 1 if OPENTHREAD_LOG_LEVEL_ERROR
-	default 2 if OPENTHREAD_LOG_LEVEL_WARNING
-	default 3 if OPENTHREAD_LOG_LEVEL_INFO
-	default 4 if OPENTHREAD_LOG_LEVEL_DEBUG
+	default 1 if OPENTHREAD_LOG_LEVEL_CRIT
+	default 2 if OPENTHREAD_LOG_LEVEL_WARN
+	default 3 if OPENTHREAD_LOG_LEVEL_NOTE
+	default 4 if OPENTHREAD_LOG_LEVEL_INFO
+	default 5 if OPENTHREAD_LOG_LEVEL_DEBG
 	default 0
 
 menuconfig OPENTHREAD_L2_DEBUG
@@ -96,8 +101,12 @@ module-str = Log level for OpenThread driver
 module-help = Enables OpenThread driver to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
+config OPENTHREAD_THREAD_PREEMPTIVE
+	bool "Set Openthread thread to be preemptive"
+
 config OPENTHREAD_THREAD_PRIORITY
 	int "OpenThread thread priority"
+	default 0 if OPENTHREAD_THREAD_PREEMPTIVE
 	default 8
 
 config OPENTHREAD_THREAD_STACK_SIZE
@@ -302,5 +311,10 @@ config OT_PLAT_FLASH_PAGES_COUNT
 	default 4
 	help
 	  This option sets flash pages count used by OpenThread to store its settings. They are located at the end of flash.
+
+config OPENTHREAD_REFERENCE_DEVICE
+	bool "Reference device support"
+	help
+	  Enable Thread Certification reference device support in OpenThread stack
 
 endif

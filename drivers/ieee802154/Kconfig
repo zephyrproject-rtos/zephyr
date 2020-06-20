@@ -12,6 +12,19 @@ menuconfig IEEE802154
 
 if IEEE802154
 
+config IEEE802154_NET_IF_NO_AUTO_START
+	bool "Disable 802.15.4 interface auto-start"
+	help
+	  This option allows user to set any configuration and/or filter before
+	  the radio becomes operational. For instance, the EUI-64 value can be
+	  configured using net_if_set_link_addr(iface, mac, 8,
+	  NET_LINK_IEEE802154).
+	  When all configurations are done net_if_up() has to be invoked to
+	  bring the interface up.
+
+	  This option can be useful when using OpenThread or Zigbee. If you
+	  have any doubt about this option leave it as default value.
+
 config IEEE802154_RAW_MODE
 	bool "Use IEEE 802.15.4 driver without the MAC stack"
 	select NET_RAW_MODE

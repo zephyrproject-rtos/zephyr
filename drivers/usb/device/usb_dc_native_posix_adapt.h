@@ -5,29 +5,29 @@
  */
 
 struct op_common {
-	u16_t version;
-	u16_t code;
-	u32_t status;
+	uint16_t version;
+	uint16_t code;
+	uint32_t status;
 } __packed;
 
 struct devlist_device {
 	char path[256];
 	char busid[32];
 
-	u32_t busnum;
-	u32_t devnum;
-	u32_t speed;
+	uint32_t busnum;
+	uint32_t devnum;
+	uint32_t speed;
 
-	u16_t idVendor;
-	u16_t idProduct;
-	u16_t bcdDevice;
+	uint16_t idVendor;
+	uint16_t idProduct;
+	uint16_t bcdDevice;
 
-	u8_t bDeviceClass;
-	u8_t bDeviceSubClass;
-	u8_t bDeviceProtocol;
-	u8_t bConfigurationValue;
-	u8_t bNumConfigurations;
-	u8_t bNumInterfaces;
+	uint8_t bDeviceClass;
+	uint8_t bDeviceSubClass;
+	uint8_t bDeviceProtocol;
+	uint8_t bConfigurationValue;
+	uint8_t bNumConfigurations;
+	uint8_t bNumInterfaces;
 } __packed;
 
 #define OP_REQUEST		(0x80 << 8)
@@ -54,35 +54,35 @@ struct devlist_device {
 #define USBIP_DIR_IN		0x01
 
 struct usbip_header_common {
-	u32_t command;
-	u32_t seqnum;
-	u32_t devid;
-	u32_t direction;
-	u32_t ep;
+	uint32_t command;
+	uint32_t seqnum;
+	uint32_t devid;
+	uint32_t direction;
+	uint32_t ep;
 } __packed;
 
 struct usbip_submit {
-	u32_t transfer_flags;
-	s32_t transfer_buffer_length;
-	s32_t start_frame;
-	s32_t number_of_packets;
-	s32_t interval;
+	uint32_t transfer_flags;
+	int32_t transfer_buffer_length;
+	int32_t start_frame;
+	int32_t number_of_packets;
+	int32_t interval;
 } __packed;
 
 struct usbip_unlink {
-	u32_t seqnum;
+	uint32_t seqnum;
 } __packed;
 
 struct usbip_submit_rsp {
 	struct usbip_header_common common;
 
-	s32_t status;
-	s32_t actual_length;
-	s32_t start_frame;
-	s32_t number_of_packets;
-	s32_t error_count;
+	int32_t status;
+	int32_t actual_length;
+	int32_t start_frame;
+	int32_t number_of_packets;
+	int32_t error_count;
 
-	u64_t setup;
+	uint64_t setup;
 } __packed;
 
 struct usbip_header {
@@ -96,9 +96,9 @@ struct usbip_header {
 
 /* Function definitions */
 
-int usbip_recv(u8_t *buf, size_t len);
-bool usbip_send_common(u8_t ep, u32_t data_len);
-int usbip_send(u8_t ep, const u8_t *data, size_t len);
+int usbip_recv(uint8_t *buf, size_t len);
+bool usbip_send_common(uint8_t ep, uint32_t data_len);
+int usbip_send(uint8_t ep, const uint8_t *data, size_t len);
 
 void usbip_start(void);
 

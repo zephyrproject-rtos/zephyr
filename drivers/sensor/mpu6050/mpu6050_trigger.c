@@ -42,7 +42,7 @@ int mpu6050_trigger_set(struct device *dev,
 }
 
 static void mpu6050_gpio_callback(struct device *dev,
-				  struct gpio_callback *cb, u32_t pins)
+				  struct gpio_callback *cb, uint32_t pins)
 {
 	struct mpu6050_data *drv_data =
 		CONTAINER_OF(cb, struct mpu6050_data, gpio_cb);

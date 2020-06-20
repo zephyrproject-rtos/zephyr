@@ -50,10 +50,10 @@ struct ws2812_spi_data {
 
 struct ws2812_spi_cfg {
 	struct spi_config spi_cfg;
-	u8_t *px_buf;
+	uint8_t *px_buf;
 	size_t px_buf_size;
-	u8_t one_frame;
-	u8_t zero_frame;
+	uint8_t one_frame;
+	uint8_t zero_frame;
 	bool has_white;
 };
 
@@ -72,8 +72,8 @@ static const struct ws2812_spi_cfg *dev_cfg(struct device *dev)
  * of SPI frames, MSbit first, where a one bit becomes SPI frame
  * one_frame, and zero bit becomes zero_frame.
  */
-static inline void ws2812_spi_ser(u8_t buf[8], u8_t color,
-				  const u8_t one_frame, const u8_t zero_frame)
+static inline void ws2812_spi_ser(uint8_t buf[8], uint8_t color,
+				  const uint8_t one_frame, const uint8_t zero_frame)
 {
 	int i;
 
@@ -113,7 +113,7 @@ static int ws2812_strip_update_rgb(struct device *dev, struct led_rgb *pixels,
 				   size_t num_pixels)
 {
 	const struct ws2812_spi_cfg *cfg = dev_cfg(dev);
-	const u8_t one = cfg->one_frame, zero = cfg->zero_frame;
+	const uint8_t one = cfg->one_frame, zero = cfg->zero_frame;
 	struct spi_buf buf = {
 		.buf = cfg->px_buf,
 		.len = cfg->px_buf_size,
@@ -122,7 +122,7 @@ static int ws2812_strip_update_rgb(struct device *dev, struct led_rgb *pixels,
 		.buffers = &buf,
 		.count = 1
 	};
-	u8_t *px_buf = cfg->px_buf;
+	uint8_t *px_buf = cfg->px_buf;
 	size_t i;
 	int rc;
 
@@ -156,7 +156,7 @@ static int ws2812_strip_update_rgb(struct device *dev, struct led_rgb *pixels,
 	return rc;
 }
 
-static int ws2812_strip_update_channels(struct device *dev, u8_t *channels,
+static int ws2812_strip_update_channels(struct device *dev, uint8_t *channels,
 					size_t num_channels)
 {
 	LOG_ERR("update_channels not implemented");
@@ -191,7 +191,7 @@ static const struct led_strip_driver_api ws2812_spi_api = {
 									\
 	static struct ws2812_spi_data ws2812_spi_##idx##_data;		\
 									\
-	static u8_t ws2812_spi_##idx##_px_buf[WS2812_SPI_BUFSZ(idx)];	\
+	static uint8_t ws2812_spi_##idx##_px_buf[WS2812_SPI_BUFSZ(idx)];	\
 									\
 	static const struct ws2812_spi_cfg ws2812_spi_##idx##_cfg = {	\
 		.spi_cfg = {						\

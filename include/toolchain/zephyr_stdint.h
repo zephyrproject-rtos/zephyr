@@ -11,7 +11,7 @@
  * Some gcc versions and/or configurations as found in the Zephyr SDK
  * (questionably) define __INT32_TYPE__ and derrivatives as a long int
  * which makes the printf format checker to complain about long vs int
- * mismatch when %u is given a u32_t argument, and u32_t pointers not
+ * mismatch when %u is given a uint32_t argument, and uint32_t pointers not
  * being compatible with int pointers. Let's redefine them to follow
  * common expectations and usage.
  */
@@ -24,10 +24,14 @@
 #undef __UINT32_TYPE__
 #undef __INT_LEAST32_TYPE__
 #undef __UINT_LEAST32_TYPE__
+#undef __INT64_TYPE__
+#undef __UINT64_TYPE__
 #define __INT32_TYPE__ int
 #define __UINT32_TYPE__ unsigned int
 #define __INT_LEAST32_TYPE__ __INT32_TYPE__
 #define __UINT_LEAST32_TYPE__ __UINT32_TYPE__
+#define __INT64_TYPE__ long long int
+#define __UINT64_TYPE__ unsigned long long int
 
 /*
  * The confusion also exists with __INTPTR_TYPE__ which is either an int

@@ -83,11 +83,11 @@ extern "C" {
 
 /** setup packet definitions */
 struct usb_setup_packet {
-	u8_t bmRequestType;  /**< characteristics of the specific request */
-	u8_t bRequest;       /**< specific request */
-	u16_t wValue;        /**< request specific parameter */
-	u16_t wIndex;        /**< request specific parameter */
-	u16_t wLength;       /**< length of data transferred in data phase */
+	uint8_t bmRequestType;  /**< characteristics of the specific request */
+	uint8_t bRequest;       /**< specific request */
+	uint16_t wValue;        /**< request specific parameter */
+	uint16_t wIndex;        /**< request specific parameter */
+	uint16_t wLength;       /**< length of data transferred in data phase */
 };
 
 /**
@@ -99,7 +99,7 @@ struct usb_setup_packet {
 /**
  * @brief Callback function signature for the USB Endpoint status
  */
-typedef void (*usb_ep_callback)(u8_t ep,
+typedef void (*usb_ep_callback)(uint8_t ep,
 				enum usb_dc_ep_cb_status_code cb_status);
 
 /**
@@ -114,13 +114,13 @@ typedef void (*usb_ep_callback)(u8_t ep,
  * data to be transmitted buffer respectively.
  */
 typedef int (*usb_request_handler)(struct usb_setup_packet *setup,
-				   s32_t *transfer_len, u8_t **payload_data);
+				   int32_t *transfer_len, uint8_t **payload_data);
 
 /**
  * @brief Function for interface runtime configuration
  */
 typedef void (*usb_interface_config)(struct usb_desc_header *head,
-				     u8_t bInterfaceNumber);
+				     uint8_t bInterfaceNumber);
 
 /**
  * @brief USB Endpoint Configuration
@@ -140,7 +140,7 @@ struct usb_ep_cfg_data {
 	 *   IN  EP = 0x80 | \<endpoint number\>
 	 *   OUT EP = 0x00 | \<endpoint number\>
 	 */
-	u8_t ep_addr;
+	uint8_t ep_addr;
 };
 
 /**
@@ -178,7 +178,7 @@ struct usb_cfg_data {
 	 * USB device description, see
 	 * http://www.beyondlogic.org/usbnutshell/usb5.shtml#DeviceDescriptors
 	 */
-	const u8_t *usb_device_description;
+	const uint8_t *usb_device_description;
 	/** Pointer to interface descriptor */
 	const void *interface_descriptor;
 	/** Function for interface runtime configuration */
@@ -186,11 +186,11 @@ struct usb_cfg_data {
 	/** Callback to be notified on USB connection status change */
 	void (*cb_usb_status)(struct usb_cfg_data *cfg,
 			      enum usb_dc_status_code cb_status,
-			      const u8_t *param);
+			      const uint8_t *param);
 	/** USB interface (Class) handler and storage space */
 	struct usb_interface_cfg_data interface;
 	/** Number of individual endpoints in the device configuration */
-	u8_t num_endpoints;
+	uint8_t num_endpoints;
 	/**
 	 * Pointer to an array of endpoint structs of length equal to the
 	 * number of EP associated with the device description,
@@ -209,7 +209,7 @@ struct usb_cfg_data {
  *
  * @return 0 on success, negative errno code on fail
  */
-int usb_set_config(const u8_t *usb_descriptor);
+int usb_set_config(const uint8_t *usb_descriptor);
 
 /**
  * @brief Deconfigure USB controller
@@ -265,7 +265,7 @@ int usb_disable(void);
  *
  * @return 0 on success, negative errno code on fail
  */
-int usb_write(u8_t ep, const u8_t *data, u32_t data_len, u32_t *bytes_ret);
+int usb_write(uint8_t ep, const uint8_t *data, uint32_t data_len, uint32_t *bytes_ret);
 
 /**
  * @brief Read data from the specified endpoint
@@ -284,7 +284,7 @@ int usb_write(u8_t ep, const u8_t *data, u32_t data_len, u32_t *bytes_ret);
  *
  * @return  0 on success, negative errno code on fail
  */
-int usb_read(u8_t ep, u8_t *data, u32_t max_data_len, u32_t *ret_bytes);
+int usb_read(uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_t *ret_bytes);
 
 /**
  * @brief Set STALL condition on the specified endpoint
@@ -297,7 +297,7 @@ int usb_read(u8_t ep, u8_t *data, u32_t max_data_len, u32_t *ret_bytes);
  *
  * @return  0 on success, negative errno code on fail
  */
-int usb_ep_set_stall(u8_t ep);
+int usb_ep_set_stall(uint8_t ep);
 
 /**
  * @brief Clears STALL condition on the specified endpoint
@@ -310,7 +310,7 @@ int usb_ep_set_stall(u8_t ep);
  *
  * @return  0 on success, negative errno code on fail
  */
-int usb_ep_clear_stall(u8_t ep);
+int usb_ep_clear_stall(uint8_t ep);
 
 /**
  * @brief Read data from the specified endpoint
@@ -330,8 +330,8 @@ int usb_ep_clear_stall(u8_t ep);
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
-		     u32_t *read_bytes);
+int usb_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
+		     uint32_t *read_bytes);
 
 
 /**
@@ -347,12 +347,12 @@ int usb_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_ep_read_continue(u8_t ep);
+int usb_ep_read_continue(uint8_t ep);
 
 /**
  * Callback function signature for transfer completion.
  */
-typedef void (*usb_transfer_callback)(u8_t ep, int tsize, void *priv);
+typedef void (*usb_transfer_callback)(uint8_t ep, int tsize, void *priv);
 
 /* USB transfer flags */
 #define USB_TRANS_READ       BIT(0)   /** Read transfer flag */
@@ -365,7 +365,7 @@ typedef void (*usb_transfer_callback)(u8_t ep, int tsize, void *priv);
  * If a USB class driver wants to use high-level transfer functions, driver
  * needs to register this callback as usb endpoint callback.
  */
-void usb_transfer_ep_callback(u8_t ep, enum usb_dc_ep_cb_status_code);
+void usb_transfer_ep_callback(uint8_t ep, enum usb_dc_ep_cb_status_code);
 
 /**
  * @brief Start a transfer
@@ -384,7 +384,7 @@ void usb_transfer_ep_callback(u8_t ep, enum usb_dc_ep_cb_status_code);
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_transfer(u8_t ep, u8_t *data, size_t dlen, unsigned int flags,
+int usb_transfer(uint8_t ep, uint8_t *data, size_t dlen, unsigned int flags,
 		 usb_transfer_callback cb, void *priv);
 
 /**
@@ -401,7 +401,7 @@ int usb_transfer(u8_t ep, u8_t *data, size_t dlen, unsigned int flags,
  *
  * @return number of bytes transferred on success, negative errno code on fail.
  */
-int usb_transfer_sync(u8_t ep, u8_t *data, size_t dlen, unsigned int flags);
+int usb_transfer_sync(uint8_t ep, uint8_t *data, size_t dlen, unsigned int flags);
 
 /**
  * @brief Cancel any ongoing transfer on the specified endpoint
@@ -411,7 +411,7 @@ int usb_transfer_sync(u8_t ep, u8_t *data, size_t dlen, unsigned int flags);
  *
  * @return 0 on success, negative errno code on fail.
  */
-void usb_cancel_transfer(u8_t ep);
+void usb_cancel_transfer(uint8_t ep);
 
 /**
  * @brief Cancel all ongoing transfers
@@ -426,7 +426,7 @@ void usb_cancel_transfers(void);
  *
  * @return true if transfer is ongoing, false otherwise.
  */
-bool usb_transfer_is_busy(u8_t ep);
+bool usb_transfer_is_busy(uint8_t ep);
 
 /**
  * @brief Start the USB remote wakeup procedure

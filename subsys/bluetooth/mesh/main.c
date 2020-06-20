@@ -34,9 +34,9 @@
 #include "settings.h"
 #include "mesh.h"
 
-int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
-		      u8_t flags, u32_t iv_index, u16_t addr,
-		      const u8_t dev_key[16])
+int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
+		      uint8_t flags, uint32_t iv_index, uint16_t addr,
+		      const uint8_t dev_key[16])
 {
 	bool pb_gatt_enabled;
 	int err;
@@ -140,8 +140,8 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
 	return 0;
 }
 
-int bt_mesh_provision_adv(const u8_t uuid[16], u16_t net_idx, u16_t addr,
-			  u8_t attention_duration)
+int bt_mesh_provision_adv(const uint8_t uuid[16], uint16_t net_idx, uint16_t addr,
+			  uint8_t attention_duration)
 {
 	if (!atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
 		return -EINVAL;
@@ -180,7 +180,7 @@ void bt_mesh_reset(void)
 
 	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
 		if (IS_ENABLED(CONFIG_BT_MESH_LPN_SUB_ALL_NODES_ADDR)) {
-			u16_t group = BT_MESH_ADDR_ALL_NODES;
+			uint16_t group = BT_MESH_ADDR_ALL_NODES;
 
 			bt_mesh_lpn_group_del(&group, 1);
 		}
@@ -260,7 +260,7 @@ static void model_resume(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 			  bool vnd, bool primary, void *user_data)
 {
 	if (mod->pub && mod->pub->update) {
-		s32_t period_ms = bt_mesh_model_pub_period_get(mod);
+		int32_t period_ms = bt_mesh_model_pub_period_get(mod);
 
 		if (period_ms) {
 			k_delayed_work_submit(&mod->pub->timer,

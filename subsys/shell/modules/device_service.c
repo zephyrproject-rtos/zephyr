@@ -99,7 +99,7 @@ static int cmd_device_list(const struct shell *shell,
 		shell_fprintf(shell, SHELL_NORMAL, "- %s", dev->name);
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-		u32_t state = DEVICE_PM_ACTIVE_STATE;
+		uint32_t state = DEVICE_PM_ACTIVE_STATE;
 		int err;
 
 		err = device_get_power_state(dev, &state);

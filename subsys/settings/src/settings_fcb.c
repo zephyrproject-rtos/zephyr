@@ -201,7 +201,7 @@ static void settings_fcb_compress(struct settings_fcb *cf)
 	char name1[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN];
 	char name2[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN];
 	int copy;
-	u8_t rbs;
+	uint8_t rbs;
 
 	rc = fcb_append_to_scratch(&cf->cf_fcb);
 	if (rc) {
@@ -308,7 +308,7 @@ static int settings_fcb_save_priv(struct settings_store *cs, const char *name,
 	int len;
 	int rc;
 	int i;
-	u8_t wbs;
+	uint8_t wbs;
 
 	if (!name) {
 		return -EINVAL;
@@ -370,7 +370,7 @@ static int settings_fcb_save(struct settings_store *cs, const char *name,
 
 void settings_mount_fcb_backend(struct settings_fcb *cf)
 {
-	u8_t rbs;
+	uint8_t rbs;
 
 	rbs = cf->cf_fcb.f_align;
 
@@ -385,7 +385,7 @@ int settings_backend_init(void)
 		.cf_fcb.f_magic = CONFIG_SETTINGS_FCB_MAGIC,
 		.cf_fcb.f_sectors = settings_fcb_area,
 	};
-	u32_t cnt = sizeof(settings_fcb_area) /
+	uint32_t cnt = sizeof(settings_fcb_area) /
 		    sizeof(settings_fcb_area[0]);
 	int rc;
 	const struct flash_area *fap;

@@ -61,23 +61,23 @@ void futex_wake_from_isr(struct k_futex *futex)
 /* test futex wait, no futex wake */
 void futex_wait_task(void *p1, void *p2, void *p3)
 {
-	s32_t ret_value;
-	int time_val = *(int *)p1;
+	int32_t ret_value;
+	k_ticks_t time_val = *(int *)p1;
 
 	zassert_true(time_val >= (int)K_TICKS_FOREVER,
 		     "invalid timeout parameter");
 
 	ret_value = k_futex_wait(&simple_futex,
-			atomic_get(&simple_futex.val), time_val);
+			atomic_get(&simple_futex.val), K_TICKS(time_val));
 
 	switch (time_val) {
-	case K_FOREVER:
+	case K_TICKS_FOREVER:
 		zassert_true(ret_value == 0,
 		     "k_futex_wait failed when it shouldn't have");
 		zassert_false(ret_value == 0,
 		     "futex wait task wakeup when it shouldn't have");
 		break;
-	case K_NO_WAIT:
+	case 0:
 		zassert_true(ret_value == -ETIMEDOUT,
 		     "k_futex_wait failed when it shouldn't have");
 		atomic_sub(&simple_futex.val, 1);
@@ -92,7 +92,7 @@ void futex_wait_task(void *p1, void *p2, void *p3)
 
 void futex_wake_task(void *p1, void *p2, void *p3)
 {
-	s32_t ret_value;
+	int32_t ret_value;
 	int woken_num = *(int *)p1;
 
 	ret_value = k_futex_wake(&simple_futex,
@@ -103,20 +103,20 @@ void futex_wake_task(void *p1, void *p2, void *p3)
 
 void futex_wait_wake_task(void *p1, void *p2, void *p3)
 {
-	s32_t ret_value;
+	int32_t ret_value;
 	int time_val = *(int *)p1;
 
-	zassert_true(time_val >= (int)K_FOREVER, "invalid timeout parameter");
+	zassert_true(time_val >= (int)K_TICKS_FOREVER, "invalid timeout parameter");
 
 	ret_value = k_futex_wait(&simple_futex,
-			atomic_get(&simple_futex.val), time_val);
+			atomic_get(&simple_futex.val), K_TICKS(time_val));
 
 	switch (time_val) {
-	case K_FOREVER:
+	case K_TICKS_FOREVER:
 		zassert_true(ret_value == 0,
 		     "k_futex_wait failed when it shouldn't have");
 		break;
-	case K_NO_WAIT:
+	case 0:
 		zassert_true(ret_value == -ETIMEDOUT,
 		     "k_futex_wait failed when it shouldn't have");
 		break;
@@ -131,7 +131,7 @@ void futex_wait_wake_task(void *p1, void *p2, void *p3)
 
 void futex_multiple_wake_task(void *p1, void *p2, void *p3)
 {
-	s32_t ret_value;
+	int32_t ret_value;
 	int woken_num = *(int *)p1;
 	int idx = *(int *)p2;
 
@@ -145,14 +145,14 @@ void futex_multiple_wake_task(void *p1, void *p2, void *p3)
 
 void futex_multiple_wait_wake_task(void *p1, void *p2, void *p3)
 {
-	s32_t ret_value;
+	int32_t ret_value;
 	int time_val = *(int *)p1;
 	int idx = *(int *)p2;
 
-	zassert_true(time_val == (int)K_FOREVER, "invalid timeout parameter");
+	zassert_true(time_val == (int)K_TICKS_FOREVER, "invalid timeout parameter");
 
 	ret_value = k_futex_wait(&multiple_futex[idx],
-		atomic_get(&(multiple_futex[idx].val)), time_val);
+		atomic_get(&(multiple_futex[idx].val)), K_TICKS(time_val));
 	zassert_true(ret_value == 0,
 	     "k_futex_wait failed when it shouldn't have");
 
@@ -169,7 +169,7 @@ void futex_multiple_wait_wake_task(void *p1, void *p2, void *p3)
  */
 void test_futex_wait_forever(void)
 {
-	timeout = K_FOREVER;
+	timeout = K_TICKS_FOREVER;
 
 	atomic_set(&simple_futex.val, 1);
 
@@ -189,7 +189,7 @@ void test_futex_wait_forever(void)
 
 void test_futex_wait_timeout(void)
 {
-	timeout = K_MSEC(50);
+	timeout = k_ms_to_ticks_ceil32(50);
 
 	atomic_set(&simple_futex.val, 1);
 
@@ -209,7 +209,7 @@ void test_futex_wait_timeout(void)
 
 void test_futex_wait_nowait(void)
 {
-	timeout = K_NO_WAIT;
+	timeout = 0;
 
 	atomic_set(&simple_futex.val, 1);
 
@@ -232,7 +232,7 @@ void test_futex_wait_nowait(void)
 void test_futex_wait_forever_wake(void)
 {
 	woken = 1;
-	timeout = K_FOREVER;
+	timeout = K_TICKS_FOREVER;
 
 	atomic_set(&simple_futex.val, 1);
 
@@ -265,7 +265,7 @@ void test_futex_wait_forever_wake(void)
 void test_futex_wait_timeout_wake(void)
 {
 	woken = 1;
-	timeout = K_MSEC(100);
+	timeout = k_ms_to_ticks_ceil32(100);
 
 	atomic_set(&simple_futex.val, 1);
 
@@ -298,7 +298,7 @@ void test_futex_wait_timeout_wake(void)
 void test_futex_wait_nowait_wake(void)
 {
 	woken = 0;
-	timeout = K_NO_WAIT;
+	timeout = 0;
 
 	atomic_set(&simple_futex.val, 1);
 
@@ -324,7 +324,7 @@ void test_futex_wait_nowait_wake(void)
 
 void test_futex_wait_forever_wake_from_isr(void)
 {
-	timeout = K_FOREVER;
+	timeout = K_TICKS_FOREVER;
 
 	atomic_set(&simple_futex.val, 1);
 
@@ -349,7 +349,7 @@ void test_futex_wait_forever_wake_from_isr(void)
 
 void test_futex_multiple_threads_wait_wake(void)
 {
-	timeout = K_FOREVER;
+	timeout = K_TICKS_FOREVER;
 	woken = TOTAL_THREADS_WAITING;
 
 	atomic_clear(&simple_futex.val);
@@ -385,7 +385,7 @@ void test_futex_multiple_threads_wait_wake(void)
 void test_multiple_futex_wait_wake(void)
 {
 	woken = 1;
-	timeout = K_FOREVER;
+	timeout = K_TICKS_FOREVER;
 
 	for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
 		index[i] = i;

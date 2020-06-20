@@ -30,14 +30,14 @@ static inline size_t nvs_al_size(struct nvs_fs *fs, size_t len)
 
 /* flash routines */
 /* basic aligned flash write to nvs address */
-static int nvs_flash_al_wrt(struct nvs_fs *fs, u32_t addr, const void *data,
+static int nvs_flash_al_wrt(struct nvs_fs *fs, uint32_t addr, const void *data,
 			     size_t len)
 {
-	const u8_t *data8 = (const u8_t *)data;
+	const uint8_t *data8 = (const uint8_t *)data;
 	int rc = 0;
 	off_t offset;
 	size_t blen;
-	u8_t buf[NVS_BLOCK_SIZE];
+	uint8_t buf[NVS_BLOCK_SIZE];
 
 	if (!len) {
 		/* Nothing to write, avoid changing the flash protection */
@@ -81,7 +81,7 @@ end:
 }
 
 /* basic flash read from nvs address */
-static int nvs_flash_rd(struct nvs_fs *fs, u32_t addr, void *data,
+static int nvs_flash_rd(struct nvs_fs *fs, uint32_t addr, void *data,
 			 size_t len)
 {
 	int rc;
@@ -120,7 +120,7 @@ static int nvs_flash_data_wrt(struct nvs_fs *fs, const void *data, size_t len)
 }
 
 /* flash ate read */
-static int nvs_flash_ate_rd(struct nvs_fs *fs, u32_t addr,
+static int nvs_flash_ate_rd(struct nvs_fs *fs, uint32_t addr,
 			     struct nvs_ate *entry)
 {
 	return nvs_flash_rd(fs, addr, entry, sizeof(struct nvs_ate));
@@ -134,13 +134,13 @@ static int nvs_flash_ate_rd(struct nvs_fs *fs, u32_t addr,
  * in blocks of size NVS_BLOCK_SIZE aligned to fs->write_block_size
  * returns 0 if equal, 1 if not equal, errcode if error
  */
-static int nvs_flash_block_cmp(struct nvs_fs *fs, u32_t addr, const void *data,
+static int nvs_flash_block_cmp(struct nvs_fs *fs, uint32_t addr, const void *data,
 				size_t len)
 {
-	const u8_t *data8 = (const u8_t *)data;
+	const uint8_t *data8 = (const uint8_t *)data;
 	int rc;
 	size_t bytes_to_cmp, block_size;
-	u8_t buf[NVS_BLOCK_SIZE];
+	uint8_t buf[NVS_BLOCK_SIZE];
 
 	block_size = NVS_BLOCK_SIZE & ~(fs->write_block_size - 1U);
 	while (len) {
@@ -164,12 +164,12 @@ static int nvs_flash_block_cmp(struct nvs_fs *fs, u32_t addr, const void *data,
  * value. returns 0 if all data in flash is equal to value, 1 if not equal,
  * errcode if error
  */
-static int nvs_flash_cmp_const(struct nvs_fs *fs, u32_t addr, u8_t value,
+static int nvs_flash_cmp_const(struct nvs_fs *fs, uint32_t addr, uint8_t value,
 				size_t len)
 {
 	int rc;
 	size_t bytes_to_cmp, block_size;
-	u8_t cmp[NVS_BLOCK_SIZE];
+	uint8_t cmp[NVS_BLOCK_SIZE];
 
 	block_size = NVS_BLOCK_SIZE & ~(fs->write_block_size - 1U);
 	(void)memset(cmp, value, block_size);
@@ -188,11 +188,11 @@ static int nvs_flash_cmp_const(struct nvs_fs *fs, u32_t addr, u8_t value,
 /* flash block move: move a block at addr to the current data write location
  * and updates the data write location.
  */
-static int nvs_flash_block_move(struct nvs_fs *fs, u32_t addr, size_t len)
+static int nvs_flash_block_move(struct nvs_fs *fs, uint32_t addr, size_t len)
 {
 	int rc;
 	size_t bytes_to_copy, block_size;
-	u8_t buf[NVS_BLOCK_SIZE];
+	uint8_t buf[NVS_BLOCK_SIZE];
 
 	block_size = NVS_BLOCK_SIZE & ~(fs->write_block_size - 1U);
 
@@ -215,7 +215,7 @@ static int nvs_flash_block_move(struct nvs_fs *fs, u32_t addr, size_t len)
 /* erase a sector by first checking it is used and then erasing if required
  * return 0 if OK, errorcode on error.
  */
-static int nvs_flash_erase_sector(struct nvs_fs *fs, u32_t addr)
+static int nvs_flash_erase_sector(struct nvs_fs *fs, uint32_t addr)
 {
 	int rc;
 	off_t offset;
@@ -249,7 +249,7 @@ static int nvs_flash_erase_sector(struct nvs_fs *fs, u32_t addr)
 /* crc update on allocation entry */
 static void nvs_ate_crc8_update(struct nvs_ate *entry)
 {
-	u8_t crc8;
+	uint8_t crc8;
 
 	crc8 = crc8_ccitt(0xff, entry, offsetof(struct nvs_ate, crc8));
 	entry->crc8 = crc8;
@@ -260,7 +260,7 @@ static void nvs_ate_crc8_update(struct nvs_ate *entry)
  */
 static int nvs_ate_crc8_check(const struct nvs_ate *entry)
 {
-	u8_t crc8;
+	uint8_t crc8;
 
 	crc8 = crc8_ccitt(0xff, entry, offsetof(struct nvs_ate, crc8));
 	if (crc8 == entry->crc8) {
@@ -273,9 +273,9 @@ static int nvs_ate_crc8_check(const struct nvs_ate *entry)
  * the whole ATE is equal to value, 1 if not equal.
  */
 
-static int nvs_ate_cmp_const(const struct nvs_ate *entry, u8_t value)
+static int nvs_ate_cmp_const(const struct nvs_ate *entry, uint8_t value)
 {
-	const u8_t *data8 = (const u8_t *)entry;
+	const uint8_t *data8 = (const uint8_t *)entry;
 	int i;
 
 	for (i = 0; i < sizeof(struct nvs_ate); i++) {
@@ -288,7 +288,7 @@ static int nvs_ate_cmp_const(const struct nvs_ate *entry, u8_t value)
 }
 
 /* store an entry in flash */
-static int nvs_flash_wrt_entry(struct nvs_fs *fs, u16_t id, const void *data,
+static int nvs_flash_wrt_entry(struct nvs_fs *fs, uint16_t id, const void *data,
 				size_t len)
 {
 	int rc;
@@ -298,8 +298,8 @@ static int nvs_flash_wrt_entry(struct nvs_fs *fs, u16_t id, const void *data,
 	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
 
 	entry.id = id;
-	entry.offset = (u16_t)(fs->data_wra & ADDR_OFFS_MASK);
-	entry.len = (u16_t)len;
+	entry.offset = (uint16_t)(fs->data_wra & ADDR_OFFS_MASK);
+	entry.len = (uint16_t)len;
 	entry.part = 0xff;
 
 	nvs_ate_crc8_update(&entry);
@@ -320,11 +320,11 @@ static int nvs_flash_wrt_entry(struct nvs_fs *fs, u16_t id, const void *data,
 /* walking through allocation entry list, from newest to oldest entries
  * read ate from addr, modify addr to the previous ate
  */
-static int nvs_prev_ate(struct nvs_fs *fs, u32_t *addr, struct nvs_ate *ate)
+static int nvs_prev_ate(struct nvs_fs *fs, uint32_t *addr, struct nvs_ate *ate)
 {
 	int rc;
 	struct nvs_ate close_ate, end_ate;
-	u32_t data_end_addr, ate_end_addr;
+	uint32_t data_end_addr, ate_end_addr;
 	size_t ate_size;
 
 	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
@@ -397,7 +397,7 @@ static int nvs_prev_ate(struct nvs_fs *fs, u32_t *addr, struct nvs_ate *ate)
 	return 0;
 }
 
-static void nvs_sector_advance(struct nvs_fs *fs, u32_t *addr)
+static void nvs_sector_advance(struct nvs_fs *fs, uint32_t *addr)
 {
 	*addr += (1 << ADDR_SECT_SHIFT);
 	if ((*addr >> ADDR_SECT_SHIFT) == fs->sector_count) {
@@ -418,7 +418,7 @@ static int nvs_sector_close(struct nvs_fs *fs)
 
 	close_ate.id = 0xFFFF;
 	close_ate.len = 0U;
-	close_ate.offset = (u16_t)((fs->ate_wra + ate_size) & ADDR_OFFS_MASK);
+	close_ate.offset = (uint16_t)((fs->ate_wra + ate_size) & ADDR_OFFS_MASK);
 
 	fs->ate_wra &= ADDR_SECT_MASK;
 	fs->ate_wra += (fs->sector_size - ate_size);
@@ -443,7 +443,7 @@ static int nvs_gc(struct nvs_fs *fs)
 {
 	int rc;
 	struct nvs_ate close_ate, gc_ate, wlk_ate;
-	u32_t sec_addr, gc_addr, gc_prev_addr, wlk_addr, wlk_prev_addr,
+	uint32_t sec_addr, gc_addr, gc_prev_addr, wlk_addr, wlk_prev_addr,
 	      data_addr, stop_addr;
 	size_t ate_size;
 
@@ -507,7 +507,7 @@ static int nvs_gc(struct nvs_fs *fs)
 			data_addr = (gc_prev_addr & ADDR_SECT_MASK);
 			data_addr += gc_ate.offset;
 
-			gc_ate.offset = (u16_t)(fs->data_wra & ADDR_OFFS_MASK);
+			gc_ate.offset = (uint16_t)(fs->data_wra & ADDR_OFFS_MASK);
 			nvs_ate_crc8_update(&gc_ate);
 
 			rc = nvs_flash_block_move(fs, data_addr, gc_ate.len);
@@ -543,8 +543,8 @@ static int nvs_startup(struct nvs_fs *fs)
 	 * should never happen as this is verified in nvs_init() but both
 	 * Coverity and GCC believe the contrary.
 	 */
-	u32_t addr = 0U;
-	u16_t i, closed_sectors = 0;
+	uint32_t addr = 0U;
+	uint16_t i, closed_sectors = 0;
 
 	k_mutex_lock(&fs->nvs_lock, K_FOREVER);
 
@@ -554,7 +554,7 @@ static int nvs_startup(struct nvs_fs *fs)
 	 */
 	for (i = 0; i < fs->sector_count; i++) {
 		addr = (i << ADDR_SECT_SHIFT) +
-		       (u16_t)(fs->sector_size - ate_size);
+		       (uint16_t)(fs->sector_size - ate_size);
 		rc = nvs_flash_cmp_const(fs, addr, 0xff,
 					  sizeof(struct nvs_ate));
 		if (rc) {
@@ -674,14 +674,14 @@ end:
 int nvs_clear(struct nvs_fs *fs)
 {
 	int rc;
-	u32_t addr;
+	uint32_t addr;
 
 	if (!fs->ready) {
 		LOG_ERR("NVS not initialized");
 		return -EACCES;
 	}
 
-	for (u16_t i = 0; i < fs->sector_count; i++) {
+	for (uint16_t i = 0; i < fs->sector_count; i++) {
 		addr = i << ADDR_SECT_SHIFT;
 		rc = nvs_flash_erase_sector(fs, addr);
 		if (rc) {
@@ -696,6 +696,7 @@ int nvs_init(struct nvs_fs *fs, const char *dev_name)
 
 	int rc;
 	struct flash_pages_info info;
+	size_t write_block_size;
 
 	k_mutex_init(&fs->nvs_lock);
 
@@ -705,13 +706,14 @@ int nvs_init(struct nvs_fs *fs, const char *dev_name)
 		return -ENXIO;
 	}
 
-	fs->write_block_size = flash_get_write_block_size(fs->flash_device);
+	write_block_size = flash_get_write_block_size(fs->flash_device);
 
 	/* check that the write block size is supported */
-	if (fs->write_block_size > NVS_BLOCK_SIZE) {
+	if (write_block_size > NVS_BLOCK_SIZE || write_block_size == 0) {
 		LOG_ERR("Unsupported write block size");
 		return -EINVAL;
 	}
+	fs->write_block_size = write_block_size;
 
 	/* check that sector size is a multiple of pagesize */
 	rc = flash_get_page_info_by_offs(fs->flash_device, fs->offset, &info);
@@ -749,13 +751,13 @@ int nvs_init(struct nvs_fs *fs, const char *dev_name)
 	return 0;
 }
 
-ssize_t nvs_write(struct nvs_fs *fs, u16_t id, const void *data, size_t len)
+ssize_t nvs_write(struct nvs_fs *fs, uint16_t id, const void *data, size_t len)
 {
 	int rc, gc_count;
 	size_t ate_size, data_size;
 	struct nvs_ate wlk_ate;
-	u32_t wlk_addr, rd_addr;
-	u16_t required_space = 0U; /* no space, appropriate for delete ate */
+	uint32_t wlk_addr, rd_addr;
+	uint16_t required_space = 0U; /* no space, appropriate for delete ate */
 	bool prev_found = false;
 
 	if (!fs->ready) {
@@ -867,17 +869,17 @@ end:
 	return rc;
 }
 
-int nvs_delete(struct nvs_fs *fs, u16_t id)
+int nvs_delete(struct nvs_fs *fs, uint16_t id)
 {
 	return nvs_write(fs, id, NULL, 0);
 }
 
-ssize_t nvs_read_hist(struct nvs_fs *fs, u16_t id, void *data, size_t len,
-		      u16_t cnt)
+ssize_t nvs_read_hist(struct nvs_fs *fs, uint16_t id, void *data, size_t len,
+		      uint16_t cnt)
 {
 	int rc;
-	u32_t wlk_addr, rd_addr;
-	u16_t cnt_his;
+	uint32_t wlk_addr, rd_addr;
+	uint16_t cnt_his;
 	struct nvs_ate wlk_ate;
 	size_t ate_size;
 
@@ -929,7 +931,7 @@ err:
 	return rc;
 }
 
-ssize_t nvs_read(struct nvs_fs *fs, u16_t id, void *data, size_t len)
+ssize_t nvs_read(struct nvs_fs *fs, uint16_t id, void *data, size_t len)
 {
 	int rc;
 
@@ -942,7 +944,7 @@ ssize_t nvs_calc_free_space(struct nvs_fs *fs)
 
 	int rc;
 	struct nvs_ate step_ate, wlk_ate;
-	u32_t step_addr, wlk_addr;
+	uint32_t step_addr, wlk_addr;
 	size_t ate_size, free_space;
 
 	if (!fs->ready) {
@@ -953,7 +955,7 @@ ssize_t nvs_calc_free_space(struct nvs_fs *fs)
 	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
 
 	free_space = 0;
-	for (u16_t i = 1; i < fs->sector_count; i++) {
+	for (uint16_t i = 1; i < fs->sector_count; i++) {
 		free_space += (fs->sector_size - ate_size);
 	}
 

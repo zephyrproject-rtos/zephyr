@@ -63,7 +63,7 @@ void __attribute__((weak)) _sys_resume_from_deep_sleep(void)
  * @return N/A
  */
 #if !SMP_FALLBACK
-static void set_kernel_idle_time_in_ticks(s32_t ticks)
+static void set_kernel_idle_time_in_ticks(int32_t ticks)
 {
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 	_kernel.idle = ticks;
@@ -72,7 +72,7 @@ static void set_kernel_idle_time_in_ticks(s32_t ticks)
 
 static void sys_power_save_idle(void)
 {
-	s32_t ticks = z_get_next_timeout_expiry();
+	int32_t ticks = z_get_next_timeout_expiry();
 
 	/* The documented behavior of CONFIG_TICKLESS_IDLE_THRESH is
 	 * that the system should not enter a tickless idle for
@@ -113,7 +113,7 @@ static void sys_power_save_idle(void)
 }
 #endif
 
-void z_sys_power_save_idle_exit(s32_t ticks)
+void z_sys_power_save_idle_exit(int32_t ticks)
 {
 #if defined(CONFIG_SYS_POWER_SLEEP_STATES)
 	/* Some CPU low power states require notification at the ISR
@@ -146,7 +146,7 @@ void idle(void *unused1, void *unused2, void *unused3)
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 	/* record timestamp when idling begins */
 
-	extern u32_t z_timestamp_idle;
+	extern uint32_t z_timestamp_idle;
 
 	z_timestamp_idle = k_cycle_get_32();
 #endif

@@ -26,7 +26,7 @@
  */
 #define BT_UUID_VALUE_V7                BT_UUID_DECLARE_16(0xb007)
 
-static u8_t   value_v7_value = 0x07;
+static uint8_t   value_v7_value = 0x07;
 
 /**
  * @brief Attribute write call back for the Value V7 attribute
@@ -43,9 +43,9 @@ static u8_t   value_v7_value = 0x07;
  */
 static ssize_t write_value_v7(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, const void *buf,
-			      u16_t len, u16_t offset, u8_t flags)
+			      uint16_t len, uint16_t offset, uint8_t flags)
 {
-	u8_t *value = attr->user_data;
+	uint8_t *value = attr->user_data;
 
 	if (offset >= sizeof(value_v7_value))
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);

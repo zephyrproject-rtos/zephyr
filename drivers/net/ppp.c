@@ -59,12 +59,12 @@ struct ppp_driver_context {
 	size_t available;
 
 	/* ppp data is read into this buf */
-	u8_t buf[UART_BUF_LEN];
+	uint8_t buf[UART_BUF_LEN];
 
 	/* ppp buf use when sending data */
-	u8_t send_buf[UART_BUF_LEN];
+	uint8_t send_buf[UART_BUF_LEN];
 
-	u8_t mac_addr[6];
+	uint8_t mac_addr[6];
 	struct net_linkaddr ll_addr;
 
 	/* Flag that tells whether this instance is initialized or not */
@@ -72,7 +72,7 @@ struct ppp_driver_context {
 
 	/* Incoming data is routed via ring buffer */
 	struct ring_buf rx_ringbuf;
-	u8_t rx_buf[CONFIG_NET_PPP_RINGBUF_SIZE];
+	uint8_t rx_buf[CONFIG_NET_PPP_RINGBUF_SIZE];
 
 	/* ISR function callback worker */
 	struct k_work cb_work;
@@ -85,16 +85,16 @@ struct ppp_driver_context {
 
 #if defined(CONFIG_PPP_CLIENT_CLIENTSERVER)
 	/* correctly received CLIENT bytes */
-	u8_t client_index;
+	uint8_t client_index;
 #endif
 
-	u8_t init_done : 1;
-	u8_t next_escaped : 1;
+	uint8_t init_done : 1;
+	uint8_t next_escaped : 1;
 };
 
 static struct ppp_driver_context ppp_driver_context_data;
 
-static int ppp_save_byte(struct ppp_driver_context *ppp, u8_t byte)
+static int ppp_save_byte(struct ppp_driver_context *ppp, uint8_t byte)
 {
 	int ret;
 
@@ -194,7 +194,7 @@ static void ppp_change_state(struct ppp_driver_context *ctx,
 static int ppp_send_flush(struct ppp_driver_context *ppp, int off)
 {
 	if (!IS_ENABLED(CONFIG_NET_TEST)) {
-		u8_t *buf = ppp->send_buf;
+		uint8_t *buf = ppp->send_buf;
 
 		while (off--) {
 			uart_poll_out(ppp->dev, *buf++);
@@ -205,7 +205,7 @@ static int ppp_send_flush(struct ppp_driver_context *ppp, int off)
 }
 
 static int ppp_send_bytes(struct ppp_driver_context *ppp,
-			  const u8_t *data, int len, int off)
+			  const uint8_t *data, int len, int off)
 {
 	int i;
 
@@ -225,7 +225,7 @@ static int ppp_send_bytes(struct ppp_driver_context *ppp,
 #define CLIENT "CLIENT"
 #define CLIENTSERVER "CLIENTSERVER"
 
-static void ppp_handle_client(struct ppp_driver_context *ppp, u8_t byte)
+static void ppp_handle_client(struct ppp_driver_context *ppp, uint8_t byte)
 {
 	static const char *client = CLIENT;
 	static const char *clientserver = CLIENTSERVER;
@@ -254,7 +254,7 @@ static void ppp_handle_client(struct ppp_driver_context *ppp, u8_t byte)
 }
 #endif
 
-static int ppp_input_byte(struct ppp_driver_context *ppp, u8_t byte)
+static int ppp_input_byte(struct ppp_driver_context *ppp, uint8_t byte)
 {
 	int ret = -EAGAIN;
 
@@ -349,7 +349,7 @@ static int ppp_input_byte(struct ppp_driver_context *ppp, u8_t byte)
 static bool ppp_check_fcs(struct ppp_driver_context *ppp)
 {
 	struct net_buf *buf;
-	u16_t crc;
+	uint16_t crc;
 
 	buf = ppp->pkt->buffer;
 	if (!buf) {
@@ -393,7 +393,7 @@ static void ppp_process_msg(struct ppp_driver_context *ppp)
 		 * FCS fields (16-bit) as the PPP L2 layer does not need
 		 * those bytes.
 		 */
-		u16_t addr_and_ctrl = net_buf_pull_be16(ppp->pkt->buffer);
+		uint16_t addr_and_ctrl = net_buf_pull_be16(ppp->pkt->buffer);
 
 		/* Currently we do not support compressed Address and Control
 		 * fields so they must always be present.
@@ -424,7 +424,7 @@ static void ppp_process_msg(struct ppp_driver_context *ppp)
 }
 
 #if defined(CONFIG_NET_TEST)
-static u8_t *ppp_recv_cb(u8_t *buf, size_t *off)
+static uint8_t *ppp_recv_cb(uint8_t *buf, size_t *off)
 {
 	struct ppp_driver_context *ppp =
 		CONTAINER_OF(buf, struct ppp_driver_context, buf);
@@ -458,7 +458,7 @@ static u8_t *ppp_recv_cb(u8_t *buf, size_t *off)
 	return buf;
 }
 
-void ppp_driver_feed_data(u8_t *data, int data_len)
+void ppp_driver_feed_data(uint8_t *data, int data_len)
 {
 	struct ppp_driver_context *ppp = &ppp_driver_context_data;
 	size_t recv_off = 0;
@@ -492,11 +492,11 @@ void ppp_driver_feed_data(u8_t *data, int data_len)
 }
 #endif
 
-static bool calc_fcs(struct net_pkt *pkt, u16_t *fcs, u16_t protocol)
+static bool calc_fcs(struct net_pkt *pkt, uint16_t *fcs, uint16_t protocol)
 {
 	struct net_buf *buf;
-	u16_t crc;
-	u16_t c;
+	uint16_t crc;
+	uint16_t c;
 
 	buf = pkt->buffer;
 	if (!buf) {
@@ -506,10 +506,10 @@ static bool calc_fcs(struct net_pkt *pkt, u16_t *fcs, u16_t protocol)
 	/* HDLC Address and Control fields */
 	c = sys_cpu_to_be16(0xff << 8 | 0x03);
 
-	crc = crc16_ccitt(0xffff, (const u8_t *)&c, sizeof(c));
+	crc = crc16_ccitt(0xffff, (const uint8_t *)&c, sizeof(c));
 
 	if (protocol > 0) {
-		crc = crc16_ccitt(crc, (const u8_t *)&protocol,
+		crc = crc16_ccitt(crc, (const uint8_t *)&protocol,
 				  sizeof(protocol));
 	}
 
@@ -524,7 +524,7 @@ static bool calc_fcs(struct net_pkt *pkt, u16_t *fcs, u16_t protocol)
 	return true;
 }
 
-static u16_t ppp_escape_byte(u8_t byte, int *offset)
+static uint16_t ppp_escape_byte(uint8_t byte, int *offset)
 {
 	if (byte == 0x7e || byte == 0x7d || byte < 0x20) {
 		*offset = 0;
@@ -539,11 +539,11 @@ static int ppp_send(struct device *dev, struct net_pkt *pkt)
 {
 	struct ppp_driver_context *ppp = dev->driver_data;
 	struct net_buf *buf = pkt->buffer;
-	u16_t protocol = 0;
+	uint16_t protocol = 0;
 	int send_off = 0;
-	u32_t sync_addr_ctrl;
-	u16_t fcs, escaped;
-	u8_t byte;
+	uint32_t sync_addr_ctrl;
+	uint16_t fcs, escaped;
+	uint8_t byte;
 	int i, offset;
 
 #if defined(CONFIG_NET_TEST)
@@ -577,17 +577,17 @@ static int ppp_send(struct device *dev, struct net_pkt *pkt)
 	/* Sync, Address & Control fields */
 	sync_addr_ctrl = sys_cpu_to_be32(0x7e << 24 | 0xff << 16 |
 					 0x7d << 8 | 0x23);
-	send_off = ppp_send_bytes(ppp, (const u8_t *)&sync_addr_ctrl,
+	send_off = ppp_send_bytes(ppp, (const uint8_t *)&sync_addr_ctrl,
 				  sizeof(sync_addr_ctrl), send_off);
 
 	if (protocol > 0) {
 		escaped = htons(ppp_escape_byte(protocol, &offset));
-		send_off = ppp_send_bytes(ppp, (u8_t *)&escaped + offset,
+		send_off = ppp_send_bytes(ppp, (uint8_t *)&escaped + offset,
 					  offset ? 1 : 2,
 					  send_off);
 
 		escaped = htons(ppp_escape_byte(protocol >> 8, &offset));
-		send_off = ppp_send_bytes(ppp, (u8_t *)&escaped + offset,
+		send_off = ppp_send_bytes(ppp, (uint8_t *)&escaped + offset,
 					  offset ? 1 : 2,
 					  send_off);
 	}
@@ -605,7 +605,7 @@ static int ppp_send(struct device *dev, struct net_pkt *pkt)
 			/* Escape illegal bytes */
 			escaped = htons(ppp_escape_byte(buf->data[i], &offset));
 			send_off = ppp_send_bytes(ppp,
-						  (u8_t *)&escaped + offset,
+						  (uint8_t *)&escaped + offset,
 						  offset ? 1 : 2,
 						  send_off);
 		}
@@ -614,12 +614,12 @@ static int ppp_send(struct device *dev, struct net_pkt *pkt)
 	}
 
 	escaped = htons(ppp_escape_byte(fcs, &offset));
-	send_off = ppp_send_bytes(ppp, (u8_t *)&escaped + offset,
+	send_off = ppp_send_bytes(ppp, (uint8_t *)&escaped + offset,
 				  offset ? 1 : 2,
 				  send_off);
 
 	escaped = htons(ppp_escape_byte(fcs >> 8, &offset));
-	send_off = ppp_send_bytes(ppp, (u8_t *)&escaped + offset,
+	send_off = ppp_send_bytes(ppp, (uint8_t *)&escaped + offset,
 				  offset ? 1 : 2,
 				  send_off);
 
@@ -636,7 +636,7 @@ static void ppp_isr_cb_work(struct k_work *work)
 {
 	struct ppp_driver_context *ppp =
 		CONTAINER_OF(work, struct ppp_driver_context, cb_work);
-	u8_t *data;
+	uint8_t *data;
 	size_t len, tmp;
 	int ret;
 
@@ -766,7 +766,7 @@ static struct net_stats_ppp *ppp_get_stats(struct device *dev)
 #if !defined(CONFIG_NET_TEST)
 static void ppp_uart_flush(struct device *dev)
 {
-	u8_t c;
+	uint8_t c;
 
 	while (uart_fifo_read(dev, &c, 1) > 0) {
 		continue;

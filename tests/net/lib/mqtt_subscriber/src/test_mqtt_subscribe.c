@@ -18,8 +18,8 @@ LOG_MODULE_REGISTER(net_test, LOG_LEVEL_WRN);
 
 #define BUFFER_SIZE 128
 
-static u8_t rx_buffer[BUFFER_SIZE];
-static u8_t tx_buffer[BUFFER_SIZE];
+static uint8_t rx_buffer[BUFFER_SIZE];
+static uint8_t tx_buffer[BUFFER_SIZE];
 static struct mqtt_client client_ctx;
 static struct sockaddr broker;
 static struct pollfd fds[1];

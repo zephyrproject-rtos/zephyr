@@ -15,6 +15,7 @@ supported:
   - arduino_spi
   - ble
   - counter
+  - gpio
   - i2c
   - ieee802154
   - pwm
@@ -22,3 +23,4 @@ supported:
   - usb_cdc
   - usb_device
   - watchdog
+  - netif:openthread

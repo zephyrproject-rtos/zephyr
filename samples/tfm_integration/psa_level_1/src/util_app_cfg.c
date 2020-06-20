@@ -32,7 +32,7 @@ psa_status_t cfg_create_data(void)
 	psa_status_t status;
 
 	LOG_INF("app_cfg: Creating new config file with UID 0x%llX",
-		(u64_t)cfg_data_uid);
+		(uint64_t)cfg_data_uid);
 
 	/*
 	 * psa_ps_create can also be used here, which enables to the use of

@@ -13,7 +13,7 @@
 
 void test_posix_clock(void)
 {
-	s64_t nsecs_elapsed, secs_elapsed;
+	int64_t nsecs_elapsed, secs_elapsed;
 	struct timespec ts, te;
 
 	printk("POSIX clock APIs\n");
@@ -97,22 +97,22 @@ void test_posix_realtime(void)
 	 * catch all of the boundary conditions of the clock to make
 	 * sure there are no errors in the arithmetic.
 	 */
-	s64_t last_delta = 0;
+	int64_t last_delta = 0;
 	for (int i = 1; i <= 20; i++) {
 		usleep(USEC_PER_MSEC * 90U);
 		ret = clock_gettime(CLOCK_REALTIME, &rts);
 		zassert_equal(ret, 0, "Fail to read realitime clock");
 
-		s64_t delta =
-			((s64_t)rts.tv_sec * NSEC_PER_SEC -
-			 (s64_t)nts.tv_sec * NSEC_PER_SEC) +
-			((s64_t)rts.tv_nsec - (s64_t)nts.tv_nsec);
+		int64_t delta =
+			((int64_t)rts.tv_sec * NSEC_PER_SEC -
+			 (int64_t)nts.tv_sec * NSEC_PER_SEC) +
+			((int64_t)rts.tv_nsec - (int64_t)nts.tv_nsec);
 
 		/* Make the delta milliseconds. */
 		delta /= (NSEC_PER_SEC / 1000U);
 
 		zassert_true(delta > last_delta, "Clock moved backward");
-		s64_t error = delta - last_delta;
+		int64_t error = delta - last_delta;
 
 		/* printk("Delta %d: %lld\n", i, delta); */
 

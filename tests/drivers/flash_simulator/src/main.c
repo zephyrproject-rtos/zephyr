@@ -26,30 +26,30 @@
 			   FLASH_SIMULATOR_BASE_OFFSET)
 
 static struct device *flash_dev;
-static u8_t test_read_buf[TEST_SIM_FLASH_SIZE];
+static uint8_t test_read_buf[TEST_SIM_FLASH_SIZE];
 
-static u32_t p32_inc;
+static uint32_t p32_inc;
 
-void pattern32_ini(u32_t val)
+void pattern32_ini(uint32_t val)
 {
 	p32_inc = val;
 }
 
-static u32_t pattern32_inc(void)
+static uint32_t pattern32_inc(void)
 {
 	return p32_inc++;
 }
 
-static u32_t pattern32_flat(void)
+static uint32_t pattern32_flat(void)
 {
 	return p32_inc;
 }
 
-static void test_check_pattern32(off_t start, u32_t (*pattern_gen)(void),
+static void test_check_pattern32(off_t start, uint32_t (*pattern_gen)(void),
 				 size_t size)
 {
 	off_t off;
-	u32_t val32, r_val32;
+	uint32_t val32, r_val32;
 	int rc;
 
 	for (off = 0; off < size; off += 4) {
@@ -88,7 +88,7 @@ static void test_int(void)
 static void test_write_read(void)
 {
 	off_t off;
-	u32_t val32 = 0, r_val32;
+	uint32_t val32 = 0, r_val32;
 	int rc;
 
 	for (off = 0; off < TEST_SIM_FLASH_SIZE; off += 4) {
@@ -147,7 +147,7 @@ static void test_erase(void)
 
 static void test_access(void)
 {
-	u32_t data[2] = {0};
+	uint32_t data[2] = {0};
 	int rc;
 
 	rc = flash_write_protection_set(flash_dev, true);
@@ -165,7 +165,7 @@ static void test_access(void)
 static void test_out_of_bounds(void)
 {
 	int rc;
-	u8_t data[4] = {0};
+	uint8_t data[4] = {0};
 
 	rc = flash_write_protection_set(flash_dev, false);
 
@@ -223,7 +223,7 @@ static void test_out_of_bounds(void)
 static void test_align(void)
 {
 	int rc;
-	u8_t data[4] = {0};
+	uint8_t data[4] = {0};
 
 	rc = flash_read(flash_dev, FLASH_SIMULATOR_BASE_OFFSET + 1,
 				 data, 4);
@@ -251,7 +251,7 @@ static void test_align(void)
 static void test_double_write(void)
 {
 	int rc;
-	u8_t data[4] = {0};
+	uint8_t data[4] = {0};
 
 	rc = flash_erase(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
 			 FLASH_SIMULATOR_ERASE_UNIT);

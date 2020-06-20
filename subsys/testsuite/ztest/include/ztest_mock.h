@@ -134,7 +134,7 @@ void z_ztest_check_expected_value(const char *fn, const char *param,
 
 void z_ztest_expect_data(const char *fn, const char *name, void *val);
 void z_ztest_check_expected_data(const char *fn, const char *name, void *data,
-				 u32_t length);
+				 uint32_t length);
 
 void z_ztest_returns_value(const char *fn, uintptr_t value);
 uintptr_t z_ztest_get_return_value(const char *fn);

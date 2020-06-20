@@ -59,13 +59,13 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 struct eth_liteeth_dev_data {
 	struct net_if *iface;
-	u8_t mac_addr[6];
+	uint8_t mac_addr[6];
 
-	u8_t txslot;
-	u8_t rxslot;
+	uint8_t txslot;
+	uint8_t rxslot;
 
-	u8_t *tx_buf[2];
-	u8_t *rx_buf[2];
+	uint8_t *tx_buf[2];
+	uint8_t *rx_buf[2];
 };
 
 struct eth_liteeth_config {
@@ -84,7 +84,7 @@ static int eth_initialize(struct device *dev)
 static int eth_tx(struct device *dev, struct net_pkt *pkt)
 {
 	int key;
-	u16_t len;
+	uint16_t len;
 	struct eth_liteeth_dev_data *context = dev->driver_data;
 
 	key = irq_lock();
@@ -119,7 +119,7 @@ static void eth_rx(struct device *port)
 	struct eth_liteeth_dev_data *context = port->driver_data;
 
 	unsigned int key, r;
-	u16_t len = 0;
+	uint16_t len = 0;
 
 	key = irq_lock();
 
@@ -220,13 +220,13 @@ static void eth_iface_init(struct net_if *iface)
 
 	/* setup tx slots */
 	context->txslot = 0;
-	context->tx_buf[0] = (u8_t *)LITEETH_SLOT_TX0;
-	context->tx_buf[1] = (u8_t *)LITEETH_SLOT_TX1;
+	context->tx_buf[0] = (uint8_t *)LITEETH_SLOT_TX0;
+	context->tx_buf[1] = (uint8_t *)LITEETH_SLOT_TX1;
 
 	/* setup rx slots */
 	context->rxslot = 0;
-	context->rx_buf[0] = (u8_t *)LITEETH_SLOT_RX0;
-	context->rx_buf[1] = (u8_t *)LITEETH_SLOT_RX1;
+	context->rx_buf[0] = (uint8_t *)LITEETH_SLOT_RX0;
+	context->rx_buf[1] = (uint8_t *)LITEETH_SLOT_RX1;
 
 	init_done = true;
 }

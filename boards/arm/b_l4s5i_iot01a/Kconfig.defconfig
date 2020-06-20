@@ -1,0 +1,60 @@
+# B_L4S5I_IOT01A discovery kit board configuration
+
+# Copyright (c) 2020 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_B_L4S5I_IOT01A
+
+config BOARD
+	default "b_l4s5i_iot01a"
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+choice LIS3MDL_TRIGGER_MODE
+	default LIS3MDL_TRIGGER_NONE
+endchoice
+
+choice HTS221_TRIGGER_MODE
+	default HTS221_TRIGGER_NONE
+endchoice
+
+choice LSM6DSL_TRIGGER_MODE
+	default LSM6DSL_TRIGGER_GLOBAL_THREAD
+	depends on LSM6DSL
+endchoice
+
+if BT
+
+config SPI
+	default y
+
+choice BT_HCI_BUS_TYPE
+	default BT_SPI
+endchoice
+
+config BT_SPI_BLUENRG
+	default y
+
+config BT_BLUENRG_ACI
+	default y
+# Disable Flow control
+config BT_HCI_ACL_FLOW_CONTROL
+	default n
+config BT_HCI_VS_EXT
+	default n
+
+endif # BT
+
+if WIFI
+
+config SPI
+	default y
+
+config WIFI_ESWIFI
+	default y
+
+endif # WIFI
+
+endif # BOARD_B_L4S5I_IOT01A

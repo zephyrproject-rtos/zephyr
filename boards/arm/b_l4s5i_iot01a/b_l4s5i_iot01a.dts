@@ -1,0 +1,193 @@
+/*
+ * Copyright (c) 2020 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/l4/stm32l4s5Xi.dtsi>
+#include "arduino_r3_connector.dtsi"
+
+/ {
+	model = "STMicroelectronics B-L4S5I-IOT01A discovery kit";
+	compatible = "st,b-l4s5i-iot01a", "st,stm32l4s5";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led_1: led_1 {
+			gpios = <&gpioa 5 GPIO_ACTIVE_LOW>;
+			label = "User LD1";
+		};
+		green_led_2: led_2 {
+			gpios = <&gpiob 14 GPIO_ACTIVE_LOW>;
+			label = "User LD2";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User";
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led_1;
+		sw0 = &user_button;
+	};
+};
+
+&usart1 {
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c1 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c2 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	lis3mdl-magn@1e {
+		compatible = "st,lis3mdl-magn";
+		reg = <0x1e>;
+		label = "LIS3MDL";
+	};
+
+	hts221@5f {
+		compatible = "st,hts221";
+		reg = <0x5f>;
+		label = "HTS221";
+	};
+
+	lps22hb-press@5d {
+		compatible = "st,lps22hb-press";
+		reg = <0x5d>;
+		label = "LPS22HB";
+	};
+
+	lsm6dsl@6a {
+		compatible = "st,lsm6dsl";
+		reg = <0x6a>;
+		irq-gpios = <&gpiod 11 GPIO_ACTIVE_HIGH>;
+		label = "LSM6DSL";
+	};
+
+	vl53l0x@29 {
+		compatible = "st,vl53l0x";
+		reg = <0x29>;
+		label = "VL53L0X";
+		xshut-gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&spi1 {
+	status = "okay";
+};
+
+&spi3 {
+	status = "okay";
+
+	cs-gpios = <&gpiod 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+		   <&gpioe 0 GPIO_ACTIVE_HIGH>;
+
+	spbtle-rf@0 {
+		compatible = "zephyr,bt-hci-spi";
+		reg = <0>;
+		reset-gpios = <&gpioa 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		irq-gpios = <&gpioe 6 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		spi-max-frequency = <2000000>;
+		label = "SPBTLE-RF";
+	};
+
+	wifi0: ism43362@1 {
+		compatible = "inventek,eswifi";
+		spi-max-frequency = <2000000>;
+		reg = <1>;
+		resetn-gpios = <&gpioe 8 GPIO_ACTIVE_HIGH>;
+		boot0-gpios = <&gpiob 12 GPIO_ACTIVE_HIGH>;
+		wakeup-gpios = <&gpiob 13 GPIO_ACTIVE_HIGH>;
+		data-gpios = <&gpioe 1 GPIO_ACTIVE_HIGH>;
+		label = "ESWIFI0";
+	};
+};
+
+&flash0 {
+	/*
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00010000>;
+			read-only;
+		};
+
+		/*
+		 * The flash starting at offset 0x10000 and ending at
+		 * offset 0x1ffff is reserved for use by the application.
+		 */
+
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x00020000 0x0006C000>;
+		};
+		slot1_partition: partition@8c000 {
+			label = "image-1";
+			reg = <0x0008C000 0x0006C000>;
+		};
+		scratch_partition: partition@f8000 {
+			label = "image-scratch";
+			reg = <0x000F8000 0x00006000>;
+		};
+
+		storage_partition: partition@fc000 {
+			label = "storage";
+			reg = <0x000fc000 0x00004000>;
+		};
+	};
+};
+
+&timers2 {
+	status = "okay";
+
+	pwm2: pwm {
+		status = "okay";
+	};
+};
+
+&rtc {
+	status = "okay";
+};
+
+&lptim1 {
+	status = "okay";
+};
+
+&usbotg_fs {
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};

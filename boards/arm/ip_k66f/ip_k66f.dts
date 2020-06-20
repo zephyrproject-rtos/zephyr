@@ -15,6 +15,7 @@
 	aliases {
 		led0 = &red0_led;
 		led2 = &red2_led;
+		dsa-spi = &spi1;
 	};
 
 	chosen {
@@ -88,4 +89,26 @@
 			reg = <0x000e0000 0x00020000>;
 		};
 	};
+};
+
+&enet {
+	status = "okay";
+};
+
+&spi1 {
+	status = "okay";
+
+	clock-frequency = <44000000>;
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioe {
+	status = "okay";
 };

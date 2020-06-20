@@ -49,7 +49,7 @@ static K_FIFO_DEFINE(tx_queue);
  */
 #define H4_DISCARD_LEN 33
 
-static int h4_read(struct device *uart, u8_t *buf,
+static int h4_read(struct device *uart, uint8_t *buf,
 		   size_t len, size_t min)
 {
 	int total = 0;
@@ -77,7 +77,7 @@ static int h4_read(struct device *uart, u8_t *buf,
 
 static size_t h4_discard(struct device *uart, size_t len)
 {
-	u8_t buf[H4_DISCARD_LEN];
+	uint8_t buf[H4_DISCARD_LEN];
 
 	return uart_fifo_read(uart, buf, MIN(len, sizeof(buf)));
 }
@@ -133,7 +133,7 @@ static void bt_uart_isr(struct device *unused)
 
 		/* Beginning of a new packet */
 		if (!remaining) {
-			u8_t type;
+			uint8_t type;
 
 			/* Get packet type */
 			read = h4_read(hci_uart_dev, &type, sizeof(type), 0);
@@ -230,9 +230,9 @@ static int h4_send(struct net_buf *buf)
 }
 
 #if defined(CONFIG_BT_CTLR_ASSERT_HANDLER)
-void bt_ctlr_assert_handle(char *file, u32_t line)
+void bt_ctlr_assert_handle(char *file, uint32_t line)
 {
-	u32_t len = 0U, pos = 0U;
+	uint32_t len = 0U, pos = 0U;
 
 	/* Disable interrupts, this is unrecoverable */
 	(void)irq_lock();
@@ -316,7 +316,7 @@ void main(void)
 		int i;
 
 		const struct {
-			const u8_t h4;
+			const uint8_t h4;
 			const struct bt_hci_evt_hdr hdr;
 			const struct bt_hci_evt_cmd_complete cc;
 		} __packed cc_evt = {
@@ -333,7 +333,7 @@ void main(void)
 
 		for (i = 0; i < sizeof(cc_evt); i++) {
 			uart_poll_out(hci_uart_dev,
-				      *(((const u8_t *)&cc_evt)+i));
+				      *(((const uint8_t *)&cc_evt)+i));
 		}
 	}
 

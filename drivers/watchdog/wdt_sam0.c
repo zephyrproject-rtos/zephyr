@@ -31,7 +31,7 @@ struct wdt_sam0_dev_data {
 	bool timeout_valid;
 };
 
-static struct device DEVICE_NAME_GET(wdt_sam0);
+DEVICE_DECLARE(wdt_sam0);
 
 static struct wdt_sam0_dev_data wdt_sam0_data = { 0 };
 
@@ -64,10 +64,10 @@ static inline bool wdt_sam0_is_enabled(void)
 #endif
 }
 
-static u32_t wdt_sam0_timeout_to_wdt_period(u32_t timeout_ms)
+static uint32_t wdt_sam0_timeout_to_wdt_period(uint32_t timeout_ms)
 {
-	u32_t next_pow2;
-	u32_t cycles;
+	uint32_t next_pow2;
+	uint32_t cycles;
 
 	/* Calculate number of clock cycles @ 1.024 kHz input clock */
 	cycles = (timeout_ms * 1024U) / 1000;
@@ -93,7 +93,7 @@ static void wdt_sam0_isr(struct device *dev)
 	}
 }
 
-static int wdt_sam0_setup(struct device *dev, u8_t options)
+static int wdt_sam0_setup(struct device *dev, uint8_t options)
 {
 	struct wdt_sam0_dev_data *data = dev->driver_data;
 
@@ -140,7 +140,7 @@ static int wdt_sam0_install_timeout(struct device *dev,
 				const struct wdt_timeout_cfg *cfg)
 {
 	struct wdt_sam0_dev_data *data = dev->driver_data;
-	u32_t window, per;
+	uint32_t window, per;
 
 	/* CONFIG is enable protected, error out if already enabled */
 	if (wdt_sam0_is_enabled()) {

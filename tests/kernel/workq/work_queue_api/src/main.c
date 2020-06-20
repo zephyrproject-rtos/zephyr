@@ -124,8 +124,8 @@ static void tdelayed_work_submit_1(struct k_work_q *work_q,
 				   struct k_delayed_work *w,
 				   k_work_handler_t handler)
 {
-	s32_t time_remaining;
-	s32_t timeout_ticks;
+	int32_t time_remaining;
+	int32_t timeout_ticks;
 
 	/**TESTPOINT: init via k_delayed_work_init*/
 	k_delayed_work_init(w, handler);

@@ -122,9 +122,9 @@ extern "C" {
  * This is used by the Best Master Clock Algorithm.
  */
 struct gptp_clock_quality {
-	u8_t clock_class;
-	u8_t clock_accuracy;
-	u16_t offset_scaled_log_var;
+	uint8_t clock_class;
+	uint8_t clock_accuracy;
+	uint16_t offset_scaled_log_var;
 } __packed;
 
 /**
@@ -135,49 +135,49 @@ struct gptp_clock_quality {
  */
 struct gptp_root_system_identity {
 	/** Grand Master priority1 component. */
-	u8_t grand_master_prio1;
+	uint8_t grand_master_prio1;
 
 	/** Grand Master clock quality. */
 	struct gptp_clock_quality clk_quality;
 
 	/** Grand Master priority2 component. */
-	u8_t grand_master_prio2;
+	uint8_t grand_master_prio2;
 
 	/** Grand Master clock identity. */
-	u8_t grand_master_id[GPTP_CLOCK_ID_LEN];
+	uint8_t grand_master_id[GPTP_CLOCK_ID_LEN];
 } __packed;
 
 /* Definition of all message types as defined by IEEE802.1AS. */
 
 struct gptp_path_trace_tlv {
 	/** TLV type: 0x8. */
-	u16_t type;
+	uint16_t type;
 
 	/** Length. Number of TLVs * 8 bytes. */
-	u16_t len;
+	uint16_t len;
 
 	/** ClockIdentity array of the successive time-aware systems. */
-	u8_t  path_sequence[1][8];
+	uint8_t  path_sequence[1][8];
 } __packed;
 
 struct gptp_announce {
 	/** Reserved fields. */
-	u8_t reserved1[10];
+	uint8_t reserved1[10];
 
 	/** Current UTC offset. */
-	s16_t cur_utc_offset;
+	int16_t cur_utc_offset;
 
 	/** Reserved field. */
-	u8_t reserved2;
+	uint8_t reserved2;
 
 	/* gmPriorityVector priority 1 of the peer sending the message. */
 	struct gptp_root_system_identity root_system_id;
 
 	/** masterStepsRemoved of the peer sending the message. */
-	u16_t steps_removed;
+	uint16_t steps_removed;
 
 	/** timeSource of the peer sending the message. */
-	u8_t time_source;
+	uint8_t time_source;
 
 	/* Path Trace TLV. This field has a variable length. */
 	struct gptp_path_trace_tlv tlv;
@@ -185,46 +185,46 @@ struct gptp_announce {
 
 struct gptp_sync {
 	/** Reserved field. This field is used for PTPv2, unused in gPTP. */
-	u8_t reserved[10];
+	uint8_t reserved[10];
 } __packed;
 
 struct gptp_follow_up_tlv_hdr {
 	/** TLV type: 0x3. */
-	u16_t type;
+	uint16_t type;
 
 	/** Length: 28. */
-	u16_t len;
+	uint16_t len;
 } __packed;
 
 struct gptp_follow_up_tlv {
 	/** Organization Id: 00-80-C2. */
-	u8_t org_id[3];
+	uint8_t org_id[3];
 
 	/** Organization Sub Type: 1. */
-	u8_t org_sub_type[3];
+	uint8_t org_sub_type[3];
 
 	/** Rate ratio relative to the grand master of the peer. */
-	s32_t cumulative_scaled_rate_offset;
+	int32_t cumulative_scaled_rate_offset;
 
 	/** Time Base Indicator of the current Grand Master. */
-	u16_t gm_time_base_indicator;
+	uint16_t gm_time_base_indicator;
 
 	/** Difference of the time between the current GM and the previous. */
 	struct gptp_scaled_ns last_gm_phase_change;
 
 	/** Diff of the frequency between the current GM and the previous. */
-	s32_t scaled_last_gm_freq_change;
+	int32_t scaled_last_gm_freq_change;
 } __packed;
 
 struct gptp_follow_up {
 	/** Higher 16 bits of the seconds at which the sync was sent. */
-	u16_t prec_orig_ts_secs_high;
+	uint16_t prec_orig_ts_secs_high;
 
 	/** Lower 32 bits of the seconds at which the sync was sent. */
-	u32_t prec_orig_ts_secs_low;
+	uint32_t prec_orig_ts_secs_low;
 
 	/** Nanoseconds at which the sync was sent. */
-	u32_t prec_orig_ts_nsecs;
+	uint32_t prec_orig_ts_nsecs;
 
 	/** Follow up TLV. */
 	struct gptp_follow_up_tlv_hdr tlv_hdr;
@@ -233,21 +233,21 @@ struct gptp_follow_up {
 
 struct gptp_pdelay_req {
 	/** Reserved fields. */
-	u8_t reserved1[10];
+	uint8_t reserved1[10];
 
 	/** Reserved fields. */
-	u8_t reserved2[10];
+	uint8_t reserved2[10];
 } __packed;
 
 struct gptp_pdelay_resp {
 	/** Higher 16 bits of the seconds at which the request was received. */
-	u16_t req_receipt_ts_secs_high;
+	uint16_t req_receipt_ts_secs_high;
 
 	/** Lower 32 bits of the seconds at which the request was received. */
-	u32_t req_receipt_ts_secs_low;
+	uint32_t req_receipt_ts_secs_low;
 
 	/** Nanoseconds at which the pdelay request was received. */
-	u32_t req_receipt_ts_nsecs;
+	uint32_t req_receipt_ts_nsecs;
 
 	/** Source Port Id of the Path Delay Request. */
 	struct gptp_port_identity requesting_port_id;
@@ -255,13 +255,13 @@ struct gptp_pdelay_resp {
 
 struct gptp_pdelay_resp_follow_up {
 	/** Higher 16 bits of the seconds at which the response was sent. */
-	u16_t resp_orig_ts_secs_high;
+	uint16_t resp_orig_ts_secs_high;
 
 	/** Lower 32 bits of the seconds at which the response was sent. */
-	u32_t resp_orig_ts_secs_low;
+	uint32_t resp_orig_ts_secs_low;
 
 	/** Nanoseconds at which the response was received. */
-	u32_t resp_orig_ts_nsecs;
+	uint32_t resp_orig_ts_nsecs;
 
 	/** Source Port Id of the Path Delay Request. */
 	struct gptp_port_identity requesting_port_id;
@@ -269,36 +269,36 @@ struct gptp_pdelay_resp_follow_up {
 
 struct gptp_message_itv_req_tlv {
 	/** TLV type: 0x3. */
-	u16_t type;
+	uint16_t type;
 
 	/** Length field: 12. */
-	u16_t len;
+	uint16_t len;
 
 	/** Organization Id: 00-80-C2. */
-	u8_t org_id[3];
+	uint8_t org_id[3];
 
 	/** Organization sub type: 0x2. */
-	u8_t org_sub_type[3];
+	uint8_t org_sub_type[3];
 
 	/** Log to base 2 of the mean time interval between pdelay requests. */
-	s8_t link_delay_itv;
+	int8_t link_delay_itv;
 
 	/** Log to base 2 of the mean time interval between syncs. */
-	s8_t time_sync_itv;
+	int8_t time_sync_itv;
 
 	/** Log to base 2 of the mean time interval between announces. */
-	s8_t announce_itv;
+	int8_t announce_itv;
 
 	/** Flags (computeNeighborRateRatio and computeNeighborPropDelay). */
 	union {
 		struct {
-		    u8_t compute_neighbor_rate_ratio : 1;
-		    u8_t compute_neighbor_prop_delay : 1;
+		    uint8_t compute_neighbor_rate_ratio : 1;
+		    uint8_t compute_neighbor_prop_delay : 1;
 		};
-		u8_t flags;
+		uint8_t flags;
 	};
 	/** Reserved fields. */
-	u8_t reserved[2];
+	uint8_t reserved[2];
 } __packed;
 
 struct gptp_signaling {
@@ -316,9 +316,9 @@ struct gptp_signaling {
  *
  * @return Pointer to the start of the gPTP message inside the packet.
  */
-static inline u8_t *gptp_data(struct net_pkt *pkt)
+static inline uint8_t *gptp_data(struct net_pkt *pkt)
 {
-	return (u8_t *)GPTP_HDR(pkt) + sizeof(struct gptp_hdr);
+	return (uint8_t *)GPTP_HDR(pkt) + sizeof(struct gptp_hdr);
 }
 
 /* Functions to prepare messages. */

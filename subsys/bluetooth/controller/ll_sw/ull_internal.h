@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-static inline u8_t ull_ref_inc(struct ull_hdr *hdr)
+static inline uint8_t ull_ref_inc(struct ull_hdr *hdr)
 {
 	return ++hdr->ref;
 }
 
-static inline u8_t ull_ref_dec(struct ull_hdr *hdr)
+static inline uint8_t ull_ref_dec(struct ull_hdr *hdr)
 {
 	return hdr->ref--;
 }
@@ -23,13 +23,12 @@ void *ll_rx_link_alloc(void);
 void ll_rx_link_release(void *link);
 void *ll_rx_alloc(void);
 void ll_rx_release(void *node_rx);
-void *ll_pdu_rx_alloc_peek(u8_t count);
+void *ll_pdu_rx_alloc_peek(uint8_t count);
 void *ll_pdu_rx_alloc(void);
 void ll_rx_put(memq_link_t *link, void *rx);
 void ll_rx_sched(void);
-void ll_tx_ack_put(u16_t handle, struct node_tx *node_tx);
-void ull_ticker_status_give(u32_t status, void *param);
-u32_t ull_ticker_status_take(u32_t ret, u32_t volatile *ret_cb);
+void ull_ticker_status_give(uint32_t status, void *param);
+uint32_t ull_ticker_status_take(uint32_t ret, uint32_t volatile *ret_cb);
 void *ull_disable_mark(void *param);
 void *ull_disable_unmark(void *param);
 void *ull_disable_mark_get(void);

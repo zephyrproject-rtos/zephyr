@@ -12,4 +12,8 @@ source "soc/arm/st_stm32/stm32h7/Kconfig.defconfig.stm32h7*"
 config SOC_SERIES
 	default "stm32h7"
 
+config DMA_STM32_V1
+	default y
+	depends on DMA_STM32
+
 endif # SOC_SERIES_STM32H7X

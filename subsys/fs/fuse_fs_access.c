@@ -33,7 +33,7 @@
 #define DIR_END '\0'
 
 static struct fs_file_t files[NUMBER_OF_OPEN_FILES];
-static u8_t file_handles[NUMBER_OF_OPEN_FILES];
+static uint8_t file_handles[NUMBER_OF_OPEN_FILES];
 
 static pthread_t fuse_thread;
 

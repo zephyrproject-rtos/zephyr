@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(temp_nrf5, CONFIG_SENSOR_LOG_LEVEL);
 
 struct temp_nrf5_data {
 	struct k_sem device_sync_sem;
-	s32_t sample;
+	int32_t sample;
 	struct device *clk_dev;
 };
 
@@ -73,7 +73,7 @@ static int temp_nrf5_channel_get(struct device *dev,
 				struct sensor_value *val)
 {
 	struct temp_nrf5_data *data = dev->driver_data;
-	s32_t uval;
+	int32_t uval;
 
 
 	if (chan != SENSOR_CHAN_DIE_TEMP) {

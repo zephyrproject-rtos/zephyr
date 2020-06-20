@@ -555,8 +555,8 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 		goto out;
 	}
 	LOG_DBG("FS area %u at 0x%x for %u bytes",
-		area_id, (u32_t)fs->area->fa_off,
-		(u32_t)fs->area->fa_size);
+		area_id, (uint32_t)fs->area->fa_off,
+		(uint32_t)fs->area->fa_size);
 
 	dev = flash_area_get_device(fs->area);
 	if (dev == NULL) {
@@ -601,7 +601,7 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 		goto out;
 	}
 
-	s32_t block_cycles = lcp->block_cycles;
+	int32_t block_cycles = lcp->block_cycles;
 
 	if (block_cycles == 0) {
 		block_cycles = CONFIG_FS_LITTLEFS_BLOCK_CYCLES;
@@ -628,7 +628,7 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 	lfs_size_t block_count = fs->area->fa_size / block_size;
 
 	LOG_INF("FS at %s:0x%x is %u 0x%x-byte blocks with %u cycle",
-		dev->name, (u32_t)fs->area->fa_off,
+		dev->name, (uint32_t)fs->area->fa_off,
 		block_count, block_size, block_cycles);
 	LOG_INF("sizes: rd %u ; pr %u ; ca %u ; la %u",
 		read_size, prog_size, cache_size, lookahead_size);
@@ -734,4 +734,4 @@ static int littlefs_init(struct device *dev)
 	return fs_register(FS_LITTLEFS, &littlefs_fs);
 }
 
-SYS_INIT(littlefs_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(littlefs_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

@@ -18,7 +18,7 @@
 static ALWAYS_INLINE
 	void sys_io_set_bit(io_port_t port, unsigned int bit)
 {
-	u32_t reg = 0;
+	uint32_t reg = 0;
 
 	__asm__ volatile("inl	%w1, %0;\n\t"
 			 "btsl	%2, %0;\n\t"
@@ -30,7 +30,7 @@ static ALWAYS_INLINE
 static ALWAYS_INLINE
 	void sys_io_clear_bit(io_port_t port, unsigned int bit)
 {
-	u32_t reg = 0;
+	uint32_t reg = 0;
 
 	__asm__ volatile("inl	%w1, %0;\n\t"
 			 "btrl	%2, %0;\n\t"
@@ -42,7 +42,7 @@ static ALWAYS_INLINE
 static ALWAYS_INLINE
 	int sys_io_test_bit(io_port_t port, unsigned int bit)
 {
-	u32_t ret;
+	uint32_t ret;
 
 	__asm__ volatile("inl	%w1, %0\n\t"
 			 "btl	%2, %0\n\t"

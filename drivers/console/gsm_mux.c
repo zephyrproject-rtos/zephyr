@@ -88,23 +88,23 @@ struct gsm_mux {
 	enum gsm_mux_state state;
 
 	/* Control DLCI is not included in this list so -1 here */
-	u8_t dlci_to_create[CONFIG_GSM_MUX_DLCI_MAX - 1];
+	uint8_t dlci_to_create[CONFIG_GSM_MUX_DLCI_MAX - 1];
 
-	u16_t msg_len;     /* message length */
-	u16_t received;    /* bytes so far received */
+	uint16_t msg_len;     /* message length */
+	uint16_t received;    /* bytes so far received */
 
 	struct k_delayed_work t2_timer;
 	sys_slist_t pending_ctrls;
 
-	u16_t t1_timeout_value; /* T1 default value */
-	u16_t t2_timeout_value; /* T2 default value */
+	uint16_t t1_timeout_value; /* T1 default value */
+	uint16_t t2_timeout_value; /* T2 default value */
 
 	/* Information from currently read packet */
-	u8_t address;      /* dlci address (only one byte address supported) */
-	u8_t control;      /* type of the frame */
-	u8_t fcs;          /* calculated frame check sequence */
-	u8_t received_fcs; /* packet fcs */
-	u8_t retries;      /* N2 counter */
+	uint8_t address;      /* dlci address (only one byte address supported) */
+	uint8_t control;      /* type of the frame */
+	uint8_t fcs;          /* calculated frame check sequence */
+	uint8_t received_fcs; /* packet fcs */
+	uint8_t retries;      /* N2 counter */
 
 	bool in_use : 1;
 	bool is_initiator : 1;   /* Did we initiate the connection attempt */
@@ -140,8 +140,8 @@ struct gsm_dlci {
 	enum gsm_dlci_state state;
 	enum gsm_dlci_mode mode;
 	int num;
-	u32_t req_start;
-	u8_t retries;
+	uint32_t req_start;
+	uint8_t retries;
 	bool refuse_service : 1; /* Do not try to talk to this channel */
 	bool in_use : 1;
 };
@@ -149,8 +149,8 @@ struct gsm_dlci {
 struct gsm_control_msg {
 	sys_snode_t node;
 	struct net_buf *buf;
-	u32_t req_start;
-	u8_t cmd;
+	uint32_t req_start;
+	uint8_t cmd;
 	bool finished : 1;
 };
 
@@ -178,7 +178,7 @@ static sys_slist_t ctrls_free_entries;
 
 static bool gsm_mux_init_done;
 
-static const char *get_frame_type_str(u8_t frame_type)
+static const char *get_frame_type_str(uint8_t frame_type)
 {
 	switch (frame_type) {
 	case FT_RR:
@@ -204,8 +204,8 @@ static const char *get_frame_type_str(u8_t frame_type)
 	return NULL;
 }
 
-static void hexdump_packet(const char *header, u8_t address, bool cmd_rsp,
-			   u8_t control, const u8_t *data, size_t len)
+static void hexdump_packet(const char *header, uint8_t address, bool cmd_rsp,
+			   uint8_t control, const uint8_t *data, size_t len)
 {
 	const char *frame_type;
 	char out[128];
@@ -269,17 +269,17 @@ print:
 	}
 }
 
-static u8_t gsm_mux_fcs_add_buf(u8_t fcs, const u8_t *buf, size_t len)
+static uint8_t gsm_mux_fcs_add_buf(uint8_t fcs, const uint8_t *buf, size_t len)
 {
 	return crc8(buf, len, FCS_POLYNOMIAL, fcs, true);
 }
 
-static u8_t gsm_mux_fcs_add(u8_t fcs, u8_t recv_byte)
+static uint8_t gsm_mux_fcs_add(uint8_t fcs, uint8_t recv_byte)
 {
 	return gsm_mux_fcs_add_buf(fcs, &recv_byte, 1);
 }
 
-static bool gsm_mux_read_ea(int *value, u8_t recv_byte)
+static bool gsm_mux_read_ea(int *value, uint8_t recv_byte)
 {
 	/* As the value can be larger than one byte, collect the read
 	 * bytes to given variable.
@@ -291,7 +291,7 @@ static bool gsm_mux_read_ea(int *value, u8_t recv_byte)
 	return recv_byte & EA;
 }
 
-static bool gsm_mux_read_msg_len(struct gsm_mux *mux, u8_t recv_byte)
+static bool gsm_mux_read_msg_len(struct gsm_mux *mux, uint8_t recv_byte)
 {
 	int value = mux->msg_len;
 	bool ret;
@@ -345,7 +345,7 @@ static int gsm_dlci_process_data(struct gsm_dlci *dlci, bool cmd,
 	return len;
 }
 
-static struct gsm_dlci *gsm_dlci_get(struct gsm_mux *mux, u8_t dlci_address)
+static struct gsm_dlci *gsm_dlci_get(struct gsm_mux *mux, uint8_t dlci_address)
 {
 	int i;
 
@@ -360,7 +360,7 @@ static struct gsm_dlci *gsm_dlci_get(struct gsm_mux *mux, u8_t dlci_address)
 	return NULL;
 }
 
-static int gsm_mux_modem_send(struct gsm_mux *mux, const u8_t *buf, size_t size)
+static int gsm_mux_modem_send(struct gsm_mux *mux, const uint8_t *buf, size_t size)
 {
 	if (mux->uart == NULL) {
 		return -ENOENT;
@@ -374,15 +374,15 @@ static int gsm_mux_modem_send(struct gsm_mux *mux, const u8_t *buf, size_t size)
 }
 
 static int gsm_mux_send_data_msg(struct gsm_mux *mux, bool cmd,
-				 struct gsm_dlci *dlci, u8_t frame_type,
-				 const u8_t *buf, size_t size)
+				 struct gsm_dlci *dlci, uint8_t frame_type,
+				 const uint8_t *buf, size_t size)
 {
-	u8_t hdr[7];
+	uint8_t hdr[7];
 	int pos;
 	int ret;
 
 	hdr[0] = SOF_MARKER;
-	hdr[1] = (dlci->num << 2) | ((u8_t)cmd << 1) | EA;
+	hdr[1] = (dlci->num << 2) | ((uint8_t)cmd << 1) | EA;
 	hdr[2] = frame_type;
 
 	if (size < 128) {
@@ -422,12 +422,12 @@ static int gsm_mux_send_data_msg(struct gsm_mux *mux, bool cmd,
 }
 
 static int gsm_mux_send_control_msg(struct gsm_mux *mux, bool cmd,
-				    u8_t dlci_address, u8_t frame_type)
+				    uint8_t dlci_address, uint8_t frame_type)
 {
-	u8_t buf[6];
+	uint8_t buf[6];
 
 	buf[0] = SOF_MARKER;
-	buf[1] = (dlci_address << 2) | ((u8_t)cmd << 1) | EA;
+	buf[1] = (dlci_address << 2) | ((uint8_t)cmd << 1) | EA;
 	buf[2] = frame_type;
 	buf[3] = EA;
 	buf[4] = 0xFF - gsm_mux_fcs_add_buf(FCS_INIT_VALUE, buf + 1, 3);
@@ -439,22 +439,22 @@ static int gsm_mux_send_control_msg(struct gsm_mux *mux, bool cmd,
 	return gsm_mux_modem_send(mux, buf, sizeof(buf));
 }
 
-static int gsm_mux_send_command(struct gsm_mux *mux, u8_t dlci_address,
-				u8_t frame_type)
+static int gsm_mux_send_command(struct gsm_mux *mux, uint8_t dlci_address,
+				uint8_t frame_type)
 {
 	return gsm_mux_send_control_msg(mux, true, dlci_address, frame_type);
 }
 
-static int gsm_mux_send_response(struct gsm_mux *mux, u8_t dlci_address,
-				 u8_t frame_type)
+static int gsm_mux_send_response(struct gsm_mux *mux, uint8_t dlci_address,
+				 uint8_t frame_type)
 {
 	return gsm_mux_send_control_msg(mux, false, dlci_address, frame_type);
 }
 
-static void dlci_run_timer(u32_t current_time)
+static void dlci_run_timer(uint32_t current_time)
 {
 	struct gsm_dlci *dlci, *next;
-	u32_t new_timer = UINT_MAX;
+	uint32_t new_timer = UINT_MAX;
 
 	if (k_delayed_work_remaining_get(&t1_timer)) {
 		k_delayed_work_cancel(&t1_timer);
@@ -462,7 +462,7 @@ static void dlci_run_timer(u32_t current_time)
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&dlci_active_t1_timers,
 					  dlci, next, node) {
-		u32_t current_timer = dlci->req_start +
+		uint32_t current_timer = dlci->req_start +
 			dlci->mux->t1_timeout_value - current_time;
 
 		new_timer = MIN(current_timer, new_timer);
@@ -548,7 +548,7 @@ static bool handle_t1_timeout(struct gsm_dlci *dlci)
 
 static void dlci_t1_timeout(struct k_work *work)
 {
-	u32_t current_time = k_uptime_get_32();
+	uint32_t current_time = k_uptime_get_32();
 	struct gsm_dlci *entry, *next;
 	sys_snode_t *prev_node = NULL;
 
@@ -556,7 +556,7 @@ static void dlci_t1_timeout(struct k_work *work)
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&dlci_active_t1_timers,
 					  entry, next, node) {
-		if ((s32_t)(entry->req_start +
+		if ((int32_t)(entry->req_start +
 			    entry->mux->t1_timeout_value - current_time) > 0) {
 			prev_node = &entry->node;
 			break;
@@ -586,7 +586,7 @@ static struct gsm_control_msg *gsm_ctrl_msg_get_free(void)
 }
 
 static struct gsm_control_msg *gsm_mux_alloc_control_msg(struct net_buf *buf,
-							 u8_t cmd)
+							 uint8_t cmd)
 {
 	struct gsm_control_msg *msg;
 
@@ -615,12 +615,12 @@ static void ctrl_msg_cleanup(struct gsm_control_msg *entry, bool pending)
 static void gsm_mux_t2_timeout(struct k_work *work)
 {
 	struct gsm_mux *mux = CONTAINER_OF(work, struct gsm_mux, t2_timer);
-	u32_t current_time = k_uptime_get_32();
+	uint32_t current_time = k_uptime_get_32();
 	struct gsm_control_msg *entry, *next;
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&mux->pending_ctrls, entry, next,
 					  node) {
-		if ((s32_t)(entry->req_start + T2_MSEC - current_time) > 0) {
+		if ((int32_t)(entry->req_start + T2_MSEC - current_time) > 0) {
 			break;
 		}
 
@@ -639,8 +639,8 @@ static void gsm_mux_t2_timeout(struct k_work *work)
 	}
 }
 
-static int gsm_mux_send_control_message(struct gsm_mux *mux, u8_t dlci_address,
-					int cmd, u8_t *data, size_t data_len)
+static int gsm_mux_send_control_message(struct gsm_mux *mux, uint8_t dlci_address,
+					int cmd, uint8_t *data, size_t data_len)
 {
 	struct gsm_control_msg *ctrl;
 	struct net_buf *buf;
@@ -749,7 +749,7 @@ int gsm_mux_disconnect(struct gsm_mux *mux, k_timeout_t timeout)
 }
 
 static int gsm_mux_control_reply(struct gsm_dlci *dlci, bool sub_cr,
-				 u8_t sub_cmd, const u8_t *buf, size_t len)
+				 uint8_t sub_cmd, const uint8_t *buf, size_t len)
 {
 	/* As this is a reply to received command, set the value according
 	 * to initiator status. See GSM 07.10 page 17.
@@ -763,7 +763,7 @@ static int gsm_mux_control_reply(struct gsm_dlci *dlci, bool sub_cr,
 static bool get_field(struct net_buf *buf, int *ret_value)
 {
 	int value = 0;
-	u8_t recv_byte;
+	uint8_t recv_byte;
 
 	while (buf->len) {
 		recv_byte = net_buf_pull_u8(buf);
@@ -787,7 +787,7 @@ static bool get_field(struct net_buf *buf, int *ret_value)
 static int gsm_mux_msc_reply(struct gsm_dlci *dlci, bool cmd,
 			     struct net_buf *buf, size_t len)
 {
-	u32_t modem_sig = 0, break_sig = 0;
+	uint32_t modem_sig = 0, break_sig = 0;
 	int ret;
 
 	ret = get_field(buf, &modem_sig);
@@ -814,7 +814,7 @@ static int gsm_mux_msc_reply(struct gsm_dlci *dlci, bool cmd,
 
 static int gsm_mux_control_message(struct gsm_dlci *dlci, struct net_buf *buf)
 {
-	u32_t command = 0, len = 0;
+	uint32_t command = 0, len = 0;
 	int ret = 0;
 	bool cr;
 
@@ -940,7 +940,7 @@ static int gsm_dlci_process_command(struct gsm_dlci *dlci, bool cmd,
 	return ret;
 }
 
-static void gsm_dlci_free(struct gsm_mux *mux, u8_t address)
+static void gsm_dlci_free(struct gsm_mux *mux, uint8_t address)
 {
 	struct gsm_dlci *dlci;
 	int i;
@@ -976,7 +976,7 @@ static struct gsm_dlci *gsm_dlci_get_free(void)
 	return CONTAINER_OF(node, struct gsm_dlci, node);
 }
 
-static struct gsm_dlci *gsm_dlci_alloc(struct gsm_mux *mux, u8_t address,
+static struct gsm_dlci *gsm_dlci_alloc(struct gsm_mux *mux, uint8_t address,
 		struct device *uart, gsm_mux_dlci_created_cb_t dlci_created_cb,
 		void *user_data)
 {
@@ -1010,7 +1010,7 @@ static struct gsm_dlci *gsm_dlci_alloc(struct gsm_mux *mux, u8_t address,
 
 static int gsm_mux_process_pkt(struct gsm_mux *mux)
 {
-	u8_t dlci_address = mux->address >> 2;
+	uint8_t dlci_address = mux->address >> 2;
 	int ret = 0;
 	bool cmd;   /* C/R bit, command (true) / response (false) */
 	struct gsm_dlci *dlci;
@@ -1181,7 +1181,7 @@ const char *gsm_mux_state_str(enum gsm_mux_state state)
 static void validate_state_transition(enum gsm_mux_state current,
 				      enum gsm_mux_state new)
 {
-	static const u8_t valid_transitions[] = {
+	static const uint8_t valid_transitions[] = {
 		[GSM_MUX_SOF] = 1 << GSM_MUX_ADDRESS,
 		[GSM_MUX_ADDRESS] = 1 << GSM_MUX_CONTROL,
 		[GSM_MUX_CONTROL] = 1 << GSM_MUX_LEN_0,
@@ -1235,7 +1235,7 @@ void gsm_mux_change_state(struct gsm_mux *mux, enum gsm_mux_state new_state)
 	mux->state = new_state;
 }
 
-static void gsm_mux_process_data(struct gsm_mux *mux, u8_t recv_byte)
+static void gsm_mux_process_data(struct gsm_mux *mux, uint8_t recv_byte)
 {
 	size_t bytes_added;
 
@@ -1377,7 +1377,7 @@ static void gsm_mux_process_data(struct gsm_mux *mux, u8_t recv_byte)
 	}
 }
 
-void gsm_mux_recv_buf(struct gsm_mux *mux, u8_t *buf, int len)
+void gsm_mux_recv_buf(struct gsm_mux *mux, uint8_t *buf, int len)
 {
 	int i = 0;
 
@@ -1429,7 +1429,7 @@ fail:
 	return ret;
 }
 
-int gsm_dlci_send(struct gsm_dlci *dlci, const u8_t *buf, size_t size)
+int gsm_dlci_send(struct gsm_dlci *dlci, const uint8_t *buf, size_t size)
 {
 	/* Mux the data and send to UART */
 	return gsm_mux_send_data_msg(dlci->mux, true, dlci, FT_UIH, buf, size);
@@ -1487,8 +1487,8 @@ struct gsm_mux *gsm_mux_create(struct device *uart)
 	return mux;
 }
 
-int gsm_mux_send(struct gsm_mux *mux, u8_t dlci_address,
-		 const u8_t *buf, size_t size)
+int gsm_mux_send(struct gsm_mux *mux, uint8_t dlci_address,
+		 const uint8_t *buf, size_t size)
 {
 	struct gsm_dlci *dlci;
 

@@ -62,7 +62,7 @@ static void set_update_result_from_error(int error_code)
 }
 
 static int transfer_request(struct coap_block_context *ctx,
-			    u8_t *token, u8_t tkl,
+			    uint8_t *token, uint8_t tkl,
 			    coap_reply_t reply_cb)
 {
 	struct lwm2m_message *msg;
@@ -70,7 +70,7 @@ static int transfer_request(struct coap_block_context *ctx,
 	char *cursor;
 #if !defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
 	struct http_parser_url parser;
-	u16_t off, len;
+	uint16_t off, len;
 	char *next_slash;
 #endif
 
@@ -194,7 +194,7 @@ cleanup:
 	return ret;
 }
 
-static int transfer_empty_ack(u16_t mid)
+static int transfer_empty_ack(uint16_t mid)
 {
 	struct lwm2m_message *msg;
 	int ret;
@@ -234,14 +234,14 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 {
 	int ret;
 	bool last_block;
-	u8_t token[8];
-	u8_t tkl;
-	u16_t payload_len, payload_offset, len;
+	uint8_t token[8];
+	uint8_t tkl;
+	uint16_t payload_len, payload_offset, len;
 	struct coap_packet *check_response = (struct coap_packet *)response;
 	struct lwm2m_engine_res *res = NULL;
 	lwm2m_engine_set_data_cb_t write_cb;
 	size_t write_buflen;
-	u8_t resp_code, *write_buf;
+	uint8_t resp_code, *write_buf;
 	struct coap_block_context received_block_ctx;
 
 	/* token is used to determine a valid ACK vs a separated response */

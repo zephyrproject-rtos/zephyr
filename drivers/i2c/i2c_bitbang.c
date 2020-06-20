@@ -37,9 +37,9 @@
 #define T_BUF		T_LOW
 
 #define NS_TO_SYS_CLOCK_HW_CYCLES(ns) \
-	((u64_t)sys_clock_hw_cycles_per_sec() * (ns) / NSEC_PER_SEC + 1)
+	((uint64_t)sys_clock_hw_cycles_per_sec() * (ns) / NSEC_PER_SEC + 1)
 
-int i2c_bitbang_configure(struct i2c_bitbang *context, u32_t dev_config)
+int i2c_bitbang_configure(struct i2c_bitbang *context, uint32_t dev_config)
 {
 	/* Check for features we don't support */
 	if (I2C_ADDR_10_BITS & dev_config) {
@@ -80,7 +80,7 @@ static int i2c_get_sda(struct i2c_bitbang *context)
 
 static void i2c_delay(unsigned int cycles_to_wait)
 {
-	u32_t start = k_cycle_get_32();
+	uint32_t start = k_cycle_get_32();
 
 	/* Wait until the given number of cycles have passed */
 	while (k_cycle_get_32() - start < cycles_to_wait) {
@@ -156,9 +156,9 @@ static bool i2c_read_bit(struct i2c_bitbang *context)
 	return bit;
 }
 
-static bool i2c_write_byte(struct i2c_bitbang *context, u8_t byte)
+static bool i2c_write_byte(struct i2c_bitbang *context, uint8_t byte)
 {
-	u8_t mask = 1 << 7;
+	uint8_t mask = 1 << 7;
 
 	do {
 		i2c_write_bit(context, byte & mask);
@@ -168,7 +168,7 @@ static bool i2c_write_byte(struct i2c_bitbang *context, u8_t byte)
 	return !i2c_read_bit(context);
 }
 
-static u8_t i2c_read_byte(struct i2c_bitbang *context)
+static uint8_t i2c_read_byte(struct i2c_bitbang *context)
 {
 	unsigned int byte = 1U;
 
@@ -181,10 +181,10 @@ static u8_t i2c_read_byte(struct i2c_bitbang *context)
 }
 
 int i2c_bitbang_transfer(struct i2c_bitbang *context,
-			   struct i2c_msg *msgs, u8_t num_msgs,
-			   u16_t slave_address)
+			   struct i2c_msg *msgs, uint8_t num_msgs,
+			   uint16_t slave_address)
 {
-	u8_t *buf, *buf_end;
+	uint8_t *buf, *buf_end;
 	unsigned int flags;
 	int result = -EIO;
 

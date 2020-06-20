@@ -159,6 +159,16 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
             lines.append('r') # Reset and halt the target
 
         lines.append('g') # Start the CPU
+
+        # Reset the Debug Port CTRL/STAT register
+        # Under normal operation this is done automatically, but if other
+        # JLink tools are running, it is not performed.
+        # The J-Link scripting layer chains commands, meaning that writes are
+        # not actually performed until after the next operation. After writing
+        # the register, read it back to perform this flushing.
+        lines.append('writeDP 1 0')
+        lines.append('readDP 1')
+
         lines.append('q') # Close the connection and quit
 
         self.logger.debug('JLink commander script:')

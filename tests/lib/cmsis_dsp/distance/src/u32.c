@@ -30,7 +30,7 @@
 #define OP_YULE			(8)
 
 static void test_arm_distance(int op, const uint16_t *dims,
-	const u32_t *input1, const u32_t *input2, const u32_t *ref)
+	const uint32_t *input1, const uint32_t *input2, const uint32_t *ref)
 {
 	size_t index;
 	const size_t length = DIMS_IN;

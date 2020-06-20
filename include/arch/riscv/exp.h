@@ -43,9 +43,9 @@ struct soc_esf {
 
 #if !defined(RV_FP_TYPE) && defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 #ifdef CONFIG_CPU_HAS_FPU_DOUBLE_PRECISION
-#define RV_FP_TYPE u64_t
+#define RV_FP_TYPE uint64_t
 #else
-#define RV_FP_TYPE u32_t
+#define RV_FP_TYPE uint32_t
 #endif
 #endif
 

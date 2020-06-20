@@ -30,4 +30,5 @@ API Reference
    storage/index.rst
    usb/index.rst
    usermode/index.rst
+   util/index.rst
    settings/index.rst

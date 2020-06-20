@@ -15,7 +15,7 @@
 extern "C" {
 #endif
 
-static inline u32_t i2c_map_dt_bitrate(u32_t bitrate)
+static inline uint32_t i2c_map_dt_bitrate(uint32_t bitrate)
 {
 	switch (bitrate) {
 	case I2C_BITRATE_STANDARD:

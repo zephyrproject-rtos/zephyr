@@ -7,8 +7,8 @@
 #include <syscall_handler.h>
 #include <drivers/pwm.h>
 
-static inline int z_vrfy_pwm_pin_set_cycles(struct device *dev, u32_t pwm,
-					    u32_t period, u32_t pulse,
+static inline int z_vrfy_pwm_pin_set_cycles(struct device *dev, uint32_t pwm,
+					    uint32_t period, uint32_t pulse,
 					    pwm_flags_t flags)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_PWM(dev, pin_set));
@@ -17,12 +17,12 @@ static inline int z_vrfy_pwm_pin_set_cycles(struct device *dev, u32_t pwm,
 }
 #include <syscalls/pwm_pin_set_cycles_mrsh.c>
 
-static inline int z_vrfy_pwm_get_cycles_per_sec(struct device *dev, u32_t pwm,
-					       u64_t *cycles)
+static inline int z_vrfy_pwm_get_cycles_per_sec(struct device *dev, uint32_t pwm,
+					       uint64_t *cycles)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_PWM(dev, get_cycles_per_sec));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(cycles, sizeof(u64_t)));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(cycles, sizeof(uint64_t)));
 	return z_impl_pwm_get_cycles_per_sec((struct device *)dev,
-					    pwm, (u64_t *)cycles);
+					    pwm, (uint64_t *)cycles);
 }
 #include <syscalls/pwm_get_cycles_per_sec_mrsh.c>

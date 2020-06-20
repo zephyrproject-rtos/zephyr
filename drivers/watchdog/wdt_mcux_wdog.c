@@ -30,7 +30,7 @@ struct mcux_wdog_data {
 	bool timeout_valid;
 };
 
-static int mcux_wdog_setup(struct device *dev, u8_t options)
+static int mcux_wdog_setup(struct device *dev, uint8_t options)
 {
 	const struct mcux_wdog_config *config = dev->config_info;
 	struct mcux_wdog_data *data = dev->driver_data;
@@ -72,7 +72,7 @@ static int mcux_wdog_install_timeout(struct device *dev,
 	const struct mcux_wdog_config *config = dev->config_info;
 	struct mcux_wdog_data *data = dev->driver_data;
 	struct device *clock_dev;
-	u32_t clock_freq;
+	uint32_t clock_freq;
 
 	if (data->timeout_valid) {
 		LOG_ERR("No more timeouts can be installed");
@@ -138,7 +138,7 @@ static void mcux_wdog_isr(void *arg)
 	const struct mcux_wdog_config *config = dev->config_info;
 	struct mcux_wdog_data *data = dev->driver_data;
 	WDOG_Type *base = config->base;
-	u32_t flags;
+	uint32_t flags;
 
 	flags = WDOG_GetStatusFlags(base);
 	WDOG_ClearStatusFlags(base, flags);

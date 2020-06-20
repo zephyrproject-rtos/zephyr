@@ -98,10 +98,10 @@ error:
 	return -errno;
 }
 
-int mqtt_client_tls_write(struct mqtt_client *client, const u8_t *data,
-			  u32_t datalen)
+int mqtt_client_tls_write(struct mqtt_client *client, const uint8_t *data,
+			  uint32_t datalen)
 {
-	u32_t offset = 0U;
+	uint32_t offset = 0U;
 	int ret;
 
 	while (offset < datalen) {
@@ -130,7 +130,7 @@ int mqtt_client_tls_write_msg(struct mqtt_client *client,
 	return 0;
 }
 
-int mqtt_client_tls_read(struct mqtt_client *client, u8_t *data, u32_t buflen,
+int mqtt_client_tls_read(struct mqtt_client *client, uint8_t *data, uint32_t buflen,
 			 bool shall_block)
 {
 	int flags = 0;

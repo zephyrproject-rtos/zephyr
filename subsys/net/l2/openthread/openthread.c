@@ -38,7 +38,12 @@ LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #include "openthread_utils.h"
 
 #define OT_STACK_SIZE (CONFIG_OPENTHREAD_THREAD_STACK_SIZE)
+
+#if defined(CONFIG_OPENTHREAD_THREAD_PREEMPTIVE)
+#define OT_PRIORITY K_PRIO_PREEMPT(CONFIG_OPENTHREAD_THREAD_PRIORITY)
+#else
 #define OT_PRIORITY K_PRIO_COOP(CONFIG_OPENTHREAD_THREAD_PRIORITY)
+#endif
 
 #if defined(CONFIG_OPENTHREAD_NETWORK_NAME)
 #define OT_NETWORK_NAME CONFIG_OPENTHREAD_NETWORK_NAME
@@ -102,7 +107,7 @@ k_tid_t openthread_thread_id_get(void)
 }
 
 static void ipv6_addr_event_handler(struct net_mgmt_event_callback *cb,
-				    u32_t mgmt_event, struct net_if *iface)
+				    uint32_t mgmt_event, struct net_if *iface)
 {
 	struct openthread_context *ot_context = net_if_l2_data(iface);
 
@@ -166,8 +171,8 @@ void ot_receive_handler(otMessage *aMessage, void *context)
 {
 	struct openthread_context *ot_context = context;
 
-	u16_t offset = 0U;
-	u16_t read_len;
+	uint16_t offset = 0U;
+	uint16_t read_len;
 	struct net_pkt *pkt;
 	struct net_buf *pkt_buf;
 
@@ -209,12 +214,17 @@ void ot_receive_handler(otMessage *aMessage, void *context)
 	}
 
 	if (!pkt_list_is_full(ot_context)) {
-		if (net_recv_data(ot_context->iface, pkt) < 0) {
-			NET_ERR("net_recv_data failed");
+		if (pkt_list_add(ot_context, pkt) != 0) {
+			NET_ERR("pkt_list_add failed");
 			goto out;
 		}
 
-		pkt_list_add(ot_context, pkt);
+		if (net_recv_data(ot_context->iface, pkt) < 0) {
+			NET_ERR("net_recv_data failed");
+			pkt_list_remove_first(ot_context);
+			goto out;
+		}
+
 		pkt = NULL;
 	} else {
 		NET_INFO("Packet list is full");
@@ -289,42 +299,15 @@ static enum net_verdict openthread_recv(struct net_if *iface,
 
 int openthread_send(struct net_if *iface, struct net_pkt *pkt)
 {
-	struct openthread_context *ot_context = net_if_l2_data(iface);
 	int len = net_pkt_get_len(pkt);
-	struct net_buf *buf;
-	otMessage *message;
-	otMessageSettings settings;
-
-	NET_DBG("Sending Ip6 packet to ot stack");
-
-	settings.mPriority = OT_MESSAGE_PRIORITY_NORMAL;
-	settings.mLinkSecurityEnabled = true;
-	message = otIp6NewMessage(ot_context->instance, &settings);
-	if (message == NULL) {
-		goto exit;
-	}
-
-	for (buf = pkt->buffer; buf; buf = buf->frags) {
-		if (otMessageAppend(message, buf->data,
-				    buf->len) != OT_ERROR_NONE) {
-
-			NET_ERR("Error while appending to otMessage");
-			otMessageFree(message);
-			goto exit;
-		}
-	}
-
-	if (otIp6Send(ot_context->instance, message) != OT_ERROR_NONE) {
-		NET_ERR("Error while calling otIp6Send");
-		goto exit;
-	}
 
 	if (IS_ENABLED(CONFIG_OPENTHREAD_L2_DEBUG_DUMP_IPV6)) {
-		net_pkt_hexdump(pkt, "Sent IPv6 packet");
+		net_pkt_hexdump(pkt, "IPv6 packet to send");
 	}
 
-exit:
-	net_pkt_unref(pkt);
+	if (notify_new_tx_frame(pkt) != 0) {
+		net_pkt_unref(pkt);
+	}
 
 	return len;
 }
@@ -453,6 +436,11 @@ static int openthread_init(struct net_if *iface)
 
 void ieee802154_init(struct net_if *iface)
 {
+	if (IS_ENABLED(CONFIG_IEEE802154_NET_IF_NO_AUTO_START)) {
+		LOG_DBG("Interface auto start disabled.");
+		net_if_flag_set(iface, NET_IF_NO_AUTO_START);
+	}
+
 	openthread_init(iface);
 }
 

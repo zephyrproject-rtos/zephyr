@@ -22,8 +22,8 @@ LOG_MODULE_REGISTER(spi_sam);
 /* Device constant configuration parameters */
 struct spi_sam_config {
 	Spi *regs;
-	u32_t periph_id;
-	u32_t num_pins;
+	uint32_t periph_id;
+	uint32_t num_pins;
 	struct soc_gpio_pin pins[];
 };
 
@@ -54,7 +54,7 @@ static int spi_sam_configure(struct device *dev,
 	const struct spi_sam_config *cfg = dev->config_info;
 	struct spi_sam_data *data = dev->driver_data;
 	Spi *regs = cfg->regs;
-	u32_t spi_mr = 0U, spi_csr = 0U;
+	uint32_t spi_mr = 0U, spi_csr = 0U;
 	int div;
 
 	if (spi_context_configured(&data->ctx, config)) {
@@ -115,11 +115,11 @@ static bool spi_sam_transfer_ongoing(struct spi_sam_data *data)
 
 static void spi_sam_shift_master(Spi *regs, struct spi_sam_data *data)
 {
-	u8_t tx;
-	u8_t rx;
+	uint8_t tx;
+	uint8_t rx;
 
 	if (spi_context_tx_buf_on(&data->ctx)) {
-		tx = *(u8_t *)(data->ctx.tx_buf);
+		tx = *(uint8_t *)(data->ctx.tx_buf);
 	} else {
 		tx = 0U;
 	}
@@ -133,7 +133,7 @@ static void spi_sam_shift_master(Spi *regs, struct spi_sam_data *data)
 	while ((regs->SPI_SR & SPI_SR_RDRF) == 0) {
 	}
 
-	rx = (u8_t)regs->SPI_RDR;
+	rx = (uint8_t)regs->SPI_RDR;
 
 	if (spi_context_rx_buf_on(&data->ctx)) {
 		*data->ctx.rx_buf = rx;
@@ -155,9 +155,9 @@ static void spi_sam_finish(Spi *regs)
 /* Fast path that transmits a buf */
 static void spi_sam_fast_tx(Spi *regs, const struct spi_buf *tx_buf)
 {
-	const u8_t *p = tx_buf->buf;
-	const u8_t *pend = (u8_t *)tx_buf->buf + tx_buf->len;
-	u8_t ch;
+	const uint8_t *p = tx_buf->buf;
+	const uint8_t *pend = (uint8_t *)tx_buf->buf + tx_buf->len;
+	uint8_t ch;
 
 	while (p != pend) {
 		ch = *p++;
@@ -174,7 +174,7 @@ static void spi_sam_fast_tx(Spi *regs, const struct spi_buf *tx_buf)
 /* Fast path that reads into a buf */
 static void spi_sam_fast_rx(Spi *regs, const struct spi_buf *rx_buf)
 {
-	u8_t *rx = rx_buf->buf;
+	uint8_t *rx = rx_buf->buf;
 	int len = rx_buf->len;
 
 	if (len <= 0) {
@@ -199,14 +199,14 @@ static void spi_sam_fast_rx(Spi *regs, const struct spi_buf *rx_buf)
 		while ((regs->SPI_SR & SPI_SR_RDRF) == 0) {
 		}
 
-		*rx++ = (u8_t)regs->SPI_RDR;
+		*rx++ = (uint8_t)regs->SPI_RDR;
 	}
 
 	/* Read the final incoming byte */
 	while ((regs->SPI_SR & SPI_SR_RDRF) == 0) {
 	}
 
-	*rx = (u8_t)regs->SPI_RDR;
+	*rx = (uint8_t)regs->SPI_RDR;
 
 	spi_sam_finish(regs);
 }
@@ -216,9 +216,9 @@ static void spi_sam_fast_txrx(Spi *regs,
 			      const struct spi_buf *tx_buf,
 			      const struct spi_buf *rx_buf)
 {
-	const u8_t *tx = tx_buf->buf;
-	const u8_t *txend = (u8_t *)tx_buf->buf + tx_buf->len;
-	u8_t *rx = rx_buf->buf;
+	const uint8_t *tx = tx_buf->buf;
+	const uint8_t *txend = (uint8_t *)tx_buf->buf + tx_buf->len;
+	uint8_t *rx = rx_buf->buf;
 	size_t len = rx_buf->len;
 
 	if (len == 0) {
@@ -254,14 +254,14 @@ static void spi_sam_fast_txrx(Spi *regs,
 		while ((regs->SPI_SR & SPI_SR_RDRF) == 0) {
 		}
 
-		*rx++ = (u8_t)regs->SPI_RDR;
+		*rx++ = (uint8_t)regs->SPI_RDR;
 	}
 
 	/* Read the final incoming byte */
 	while ((regs->SPI_SR & SPI_SR_RDRF) == 0) {
 	}
 
-	*rx = (u8_t)regs->SPI_RDR;
+	*rx = (uint8_t)regs->SPI_RDR;
 
 	spi_sam_finish(regs);
 }

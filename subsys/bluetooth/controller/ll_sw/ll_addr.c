@@ -17,15 +17,18 @@
 #include "pdu.h"
 #include "lll.h"
 
+#include "lll_adv.h"
 #include "lll_scan.h"
+
+#include "ull_adv_types.h"
 #include "ull_scan_types.h"
 #include "ull_adv_internal.h"
 #include "ull_scan_internal.h"
 
-static u8_t pub_addr[BDADDR_SIZE];
-static u8_t rnd_addr[BDADDR_SIZE];
+static uint8_t pub_addr[BDADDR_SIZE];
+static uint8_t rnd_addr[BDADDR_SIZE];
 
-u8_t *ll_addr_get(u8_t addr_type, u8_t *bdaddr)
+uint8_t *ll_addr_get(uint8_t addr_type, uint8_t *bdaddr)
 {
 	if (addr_type > 1) {
 		return NULL;
@@ -46,11 +49,20 @@ u8_t *ll_addr_get(u8_t addr_type, u8_t *bdaddr)
 	return pub_addr;
 }
 
-u32_t ll_addr_set(u8_t addr_type, u8_t const *const bdaddr)
+uint32_t ll_addr_set(uint8_t addr_type, uint8_t const *const bdaddr)
 {
-	if (IS_ENABLED(CONFIG_BT_BROADCASTER) &&
-	    ull_adv_is_enabled(0)) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
+		uint32_t status = ull_adv_is_enabled(0);
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		if ((status & (ULL_ADV_ENABLED_BITMASK_ENABLED |
+			       ULL_ADV_ENABLED_BITMASK_EXTENDED)) ==
+		     ULL_ADV_ENABLED_BITMASK_ENABLED) {
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
+		if (status) {
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
 	}
 
 	if (IS_ENABLED(CONFIG_BT_OBSERVER) &&
@@ -67,7 +79,7 @@ u32_t ll_addr_set(u8_t addr_type, u8_t const *const bdaddr)
 	return 0;
 }
 
-void bt_ctlr_set_public_addr(const u8_t *addr)
+void bt_ctlr_set_public_addr(const uint8_t *addr)
 {
     (void)memcpy(pub_addr, addr, sizeof(pub_addr));
 }

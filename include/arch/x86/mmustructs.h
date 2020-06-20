@@ -15,8 +15,8 @@
 #define MMU_PAGE_SHIFT 12U
 #define PAGES(x) ((x) << (MMU_PAGE_SHIFT))
 #define MMU_ARE_IN_SAME_PAGE(a, b) \
-	(((u32_t)(a) & ~MMU_PAGE_MASK) == ((u32_t)(b) & ~MMU_PAGE_MASK))
-#define MMU_IS_ON_PAGE_BOUNDARY(a) (!((u32_t)(a) & MMU_PAGE_MASK))
+	(((uint32_t)(a) & ~MMU_PAGE_MASK) == ((uint32_t)(b) & ~MMU_PAGE_MASK))
+#define MMU_IS_ON_PAGE_BOUNDARY(a) (!((uint32_t)(a) & MMU_PAGE_MASK))
 
 /*
  * Common flags in the same bit position regardless of which structure level,
@@ -137,7 +137,7 @@
 struct mmu_region {
 	uintptr_t address; /*Start address of the memory region */
 	size_t size; /* Size of the memory region*/
-	u64_t flags; /* Permissions needed for this region*/
+	uint64_t flags; /* Permissions needed for this region*/
 };
 
 /* permission_flags are calculated using the macros
@@ -177,24 +177,24 @@ struct mmu_region {
 #define Z_X86_PD_AREA	(Z_X86_PT_AREA * Z_X86_NUM_PD_ENTRIES)
 #define Z_X86_PDPT_AREA (Z_X86_PD_AREA * Z_X86_NUM_PDPT_ENTRIES)
 
-typedef u64_t k_mem_partition_attr_t;
+typedef uint64_t k_mem_partition_attr_t;
 
 #ifdef CONFIG_X86_64
 struct x86_mmu_pml4 {
-	u64_t entry[Z_X86_NUM_PML4_ENTRIES];
+	uint64_t entry[Z_X86_NUM_PML4_ENTRIES];
 };
 #endif
 
 struct x86_mmu_pdpt {
-	u64_t entry[Z_X86_NUM_PDPT_ENTRIES];
+	uint64_t entry[Z_X86_NUM_PDPT_ENTRIES];
 };
 
 struct x86_mmu_pd {
-	u64_t entry[Z_X86_NUM_PD_ENTRIES];
+	uint64_t entry[Z_X86_NUM_PD_ENTRIES];
 };
 
 struct x86_mmu_pt {
-	u64_t entry[Z_X86_NUM_PT_ENTRIES];
+	uint64_t entry[Z_X86_NUM_PT_ENTRIES];
 };
 
 struct x86_page_tables {
@@ -209,7 +209,7 @@ struct x86_page_tables {
  * Inline functions for getting the next linked structure
  */
 #ifdef CONFIG_X86_64
-static inline u64_t *z_x86_pml4_get_pml4e(struct x86_mmu_pml4 *pml4,
+static inline uint64_t *z_x86_pml4_get_pml4e(struct x86_mmu_pml4 *pml4,
 					  uintptr_t addr)
 {
 	int index = (addr >> 39U) & (Z_X86_NUM_PML4_ENTRIES - 1);
@@ -217,7 +217,7 @@ static inline u64_t *z_x86_pml4_get_pml4e(struct x86_mmu_pml4 *pml4,
 	return &pml4->entry[index];
 }
 
-static inline struct x86_mmu_pdpt *z_x86_pml4e_get_pdpt(u64_t pml4e)
+static inline struct x86_mmu_pdpt *z_x86_pml4e_get_pdpt(uint64_t pml4e)
 {
 	uintptr_t addr = pml4e & Z_X86_MMU_PML4E_PDPT_MASK;
 
@@ -225,7 +225,7 @@ static inline struct x86_mmu_pdpt *z_x86_pml4e_get_pdpt(u64_t pml4e)
 }
 #endif
 
-static inline u64_t *z_x86_pdpt_get_pdpte(struct x86_mmu_pdpt *pdpt,
+static inline uint64_t *z_x86_pdpt_get_pdpte(struct x86_mmu_pdpt *pdpt,
 					  uintptr_t addr)
 {
 	int index = (addr >> 30U) & (Z_X86_NUM_PDPT_ENTRIES - 1);
@@ -233,7 +233,7 @@ static inline u64_t *z_x86_pdpt_get_pdpte(struct x86_mmu_pdpt *pdpt,
 	return &pdpt->entry[index];
 }
 
-static inline struct x86_mmu_pd *z_x86_pdpte_get_pd(u64_t pdpte)
+static inline struct x86_mmu_pd *z_x86_pdpte_get_pd(uint64_t pdpte)
 {
 	uintptr_t addr = pdpte & Z_X86_MMU_PDPTE_PD_MASK;
 
@@ -243,14 +243,14 @@ static inline struct x86_mmu_pd *z_x86_pdpte_get_pd(u64_t pdpte)
 	return (struct x86_mmu_pd *)addr;
 }
 
-static inline u64_t *z_x86_pd_get_pde(struct x86_mmu_pd *pd, uintptr_t addr)
+static inline uint64_t *z_x86_pd_get_pde(struct x86_mmu_pd *pd, uintptr_t addr)
 {
 	int index = (addr >> 21U) & (Z_X86_NUM_PD_ENTRIES - 1);
 
 	return &pd->entry[index];
 }
 
-static inline struct x86_mmu_pt *z_x86_pde_get_pt(u64_t pde)
+static inline struct x86_mmu_pt *z_x86_pde_get_pt(uint64_t pde)
 {
 	uintptr_t addr = pde & Z_X86_MMU_PDE_PT_MASK;
 
@@ -259,7 +259,7 @@ static inline struct x86_mmu_pt *z_x86_pde_get_pt(u64_t pde)
 	return (struct x86_mmu_pt *)addr;
 }
 
-static inline u64_t *z_x86_pt_get_pte(struct x86_mmu_pt *pt, uintptr_t addr)
+static inline uint64_t *z_x86_pt_get_pte(struct x86_mmu_pt *pt, uintptr_t addr)
 {
 	int index = (addr >> 12U) & (Z_X86_NUM_PT_ENTRIES - 1);
 
@@ -277,7 +277,7 @@ z_x86_get_pml4(struct x86_page_tables *ptables)
 	return &ptables->pml4;
 }
 
-static inline u64_t *z_x86_get_pml4e(struct x86_page_tables *ptables,
+static inline uint64_t *z_x86_get_pml4e(struct x86_page_tables *ptables,
 				     uintptr_t addr)
 {
 	return z_x86_pml4_get_pml4e(z_x86_get_pml4(ptables), addr);
@@ -298,7 +298,7 @@ z_x86_get_pdpt(struct x86_page_tables *ptables, uintptr_t addr)
 }
 #endif /* CONFIG_X86_64 */
 
-static inline u64_t *z_x86_get_pdpte(struct x86_page_tables *ptables,
+static inline uint64_t *z_x86_get_pdpte(struct x86_page_tables *ptables,
 				       uintptr_t addr)
 {
 	return z_x86_pdpt_get_pdpte(z_x86_get_pdpt(ptables, addr), addr);
@@ -310,7 +310,7 @@ z_x86_get_pd(struct x86_page_tables *ptables, uintptr_t addr)
 	return z_x86_pdpte_get_pd(*z_x86_get_pdpte(ptables, addr));
 }
 
-static inline u64_t *z_x86_get_pde(struct x86_page_tables *ptables,
+static inline uint64_t *z_x86_get_pde(struct x86_page_tables *ptables,
 				     uintptr_t addr)
 {
 	return z_x86_pd_get_pde(z_x86_get_pd(ptables, addr), addr);
@@ -322,7 +322,7 @@ z_x86_get_pt(struct x86_page_tables *ptables, uintptr_t addr)
 	return z_x86_pde_get_pt(*z_x86_get_pde(ptables, addr));
 }
 
-static inline u64_t *z_x86_get_pte(struct x86_page_tables *ptables,
+static inline uint64_t *z_x86_get_pte(struct x86_page_tables *ptables,
 				     uintptr_t addr)
 {
 	return z_x86_pt_get_pte(z_x86_get_pt(ptables, addr), addr);
@@ -397,7 +397,7 @@ extern struct x86_page_tables z_x86_user_ptables;
  * @param pte_flags Output parameter for page table entry flags
  */
 void z_x86_mmu_get_flags(struct x86_page_tables *ptables, void *addr,
-			 u64_t *pde_flags, u64_t *pte_flags);
+			 uint64_t *pde_flags, uint64_t *pte_flags);
 
 /**
  * @brief set flags in the MMU page tables
@@ -415,12 +415,12 @@ void z_x86_mmu_get_flags(struct x86_page_tables *ptables, void *addr,
  *              when modifying the active page tables
  */
 void z_x86_mmu_set_flags(struct x86_page_tables *ptables, void *ptr,
-			 size_t size, u64_t flags, u64_t mask, bool flush);
+			 size_t size, uint64_t flags, uint64_t mask, bool flush);
 
 int z_x86_mmu_validate(struct x86_page_tables *ptables, void *addr, size_t size,
 		       bool write);
 
-void z_x86_add_mmu_region(uintptr_t addr, size_t size, u64_t flags);
+void z_x86_add_mmu_region(uintptr_t addr, size_t size, uint64_t flags);
 
 #endif /* _ASMLANGUAGE */
 

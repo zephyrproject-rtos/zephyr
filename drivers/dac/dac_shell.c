@@ -14,10 +14,10 @@
 #include <stdlib.h>
 
 struct args_index {
-	u8_t device;
-	u8_t channel;
-	u8_t value;
-	u8_t resolution;
+	uint8_t device;
+	uint8_t channel;
+	uint8_t value;
+	uint8_t resolution;
 };
 
 static const struct args_index args_indx = {
@@ -54,8 +54,8 @@ static int cmd_setup(const struct shell *shell, size_t argc, char **argv)
 static int cmd_write_value(const struct shell *shell, size_t argc, char **argv)
 {
 	struct device *dac;
-	u8_t channel;
-	u32_t value;
+	uint8_t channel;
+	uint32_t value;
 	int err;
 
 	dac = device_get_binding(argv[args_indx.device]);

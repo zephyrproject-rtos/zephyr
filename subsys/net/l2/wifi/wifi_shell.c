@@ -36,15 +36,15 @@ static struct {
 	union {
 		struct {
 
-			u8_t connecting		: 1;
-			u8_t disconnecting	: 1;
-			u8_t _unused		: 6;
+			uint8_t connecting		: 1;
+			uint8_t disconnecting	: 1;
+			uint8_t _unused		: 6;
 		};
-		u8_t all;
+		uint8_t all;
 	};
 } context;
 
-static u32_t scan_result;
+static uint32_t scan_result;
 
 static struct net_mgmt_event_callback wifi_shell_mgmt_cb;
 
@@ -126,7 +126,7 @@ static void handle_wifi_disconnect_result(struct net_mgmt_event_callback *cb)
 }
 
 static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
-				    u32_t mgmt_event, struct net_if *iface)
+				    uint32_t mgmt_event, struct net_if *iface)
 {
 	switch (mgmt_event) {
 	case NET_EVENT_WIFI_SCAN_RESULT:
@@ -250,6 +250,8 @@ static int cmd_wifi_disconnect(const struct shell *shell, size_t argc,
 static int cmd_wifi_scan(const struct shell *shell, size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_default();
+
+	context.shell = shell;
 
 	if (net_mgmt(NET_REQUEST_WIFI_SCAN, iface, NULL, 0)) {
 		shell_fprintf(shell, SHELL_WARNING, "Scan request failed\n");

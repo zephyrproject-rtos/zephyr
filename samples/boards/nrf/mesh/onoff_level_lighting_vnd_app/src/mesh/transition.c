@@ -19,9 +19,9 @@ struct transition transition;
 
 void calculate_rt(struct transition *transition)
 {
-	u8_t steps, resolution;
-	s32_t duration_remainder;
-	s64_t now;
+	uint8_t steps, resolution;
+	int32_t duration_remainder;
+	int64_t now;
 
 	if (transition->type == MOVE) {
 		transition->rt = UNKNOWN_VALUE;
@@ -64,7 +64,7 @@ void calculate_rt(struct transition *transition)
 
 static bool set_transition_counter(struct transition *transition)
 {
-	u8_t steps_multiplier, resolution;
+	uint8_t steps_multiplier, resolution;
 
 	resolution = (transition->tt >> 6);
 	steps_multiplier = (transition->tt & 0x3F);
@@ -96,7 +96,7 @@ static bool set_transition_counter(struct transition *transition)
 	return true;
 }
 
-void set_transition_values(u8_t type)
+void set_transition_values(uint8_t type)
 {
 	if (!set_transition_counter(ctl->transition)) {
 		return;

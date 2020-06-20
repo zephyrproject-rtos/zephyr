@@ -36,8 +36,8 @@ struct spi_litespi_data {
 };
 
 struct spi_litespi_cfg {
-	u32_t base;
-	u32_t f_sys;
+	uint32_t base;
+	uint32_t f_sys;
 };
 
 #endif /* _SPI_LITESPI__H */

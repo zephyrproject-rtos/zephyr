@@ -24,7 +24,7 @@ static struct device *hdev;
 #define REPORT_TIMEOUT K_SECONDS(2)
 
 /* Some HID sample Report Descriptor */
-static const u8_t hid_report_desc[] = {
+static const uint8_t hid_report_desc[] = {
 	/* 0x05, 0x01,		USAGE_PAGE (Generic Desktop)		*/
 	HID_GI_USAGE_PAGE, USAGE_GEN_DESKTOP,
 	/* 0x09, 0x00,		USAGE (Undefined)			*/
@@ -61,7 +61,7 @@ static const u8_t hid_report_desc[] = {
 
 static void send_report(struct k_work *work)
 {
-	static u8_t report_1[2] = { REPORT_ID_1, 0x00 };
+	static uint8_t report_1[2] = { REPORT_ID_1, 0x00 };
 	int ret, wrote;
 
 	ret = hid_int_ep_write(hdev, report_1, sizeof(report_1), &wrote);
@@ -77,7 +77,7 @@ static void in_ready_cb(void)
 	k_delayed_work_submit(&delayed_report_send, REPORT_TIMEOUT);
 }
 
-static void status_cb(enum usb_dc_status_code status, const u8_t *param)
+static void status_cb(enum usb_dc_status_code status, const uint8_t *param)
 {
 	switch (status) {
 	case USB_DC_CONFIGURED:
@@ -91,9 +91,9 @@ static void status_cb(enum usb_dc_status_code status, const u8_t *param)
 	}
 }
 
-static void idle_cb(u16_t report_id)
+static void idle_cb(uint16_t report_id)
 {
-	static u8_t report_1[2] = { 0x00, 0xEB };
+	static uint8_t report_1[2] = { 0x00, 0xEB };
 	int ret, wrote;
 
 	ret = hid_int_ep_write(hdev, report_1, sizeof(report_1), &wrote);
@@ -101,7 +101,7 @@ static void idle_cb(u16_t report_id)
 	LOG_DBG("Idle callback: wrote %d bytes with ret %d", wrote, ret);
 }
 
-static void protocol_cb(u8_t protocol)
+static void protocol_cb(uint8_t protocol)
 {
 	LOG_DBG("New protocol: %s", protocol == HID_PROTOCOL_BOOT ?
 		"boot" : "report");

@@ -147,7 +147,7 @@ static const char core_m0[] = {
 /* This function is also called at deep sleep resume. */
 int _slave_init(struct device *arg)
 {
-	s32_t temp;
+	int32_t temp;
 
 	ARG_UNUSED(arg);
 

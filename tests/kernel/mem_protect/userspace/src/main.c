@@ -41,7 +41,7 @@ K_SEM_DEFINE(expect_fault_sem, 0, 1);
  * ztest and this test suite. part1 is for
  * subsequent test specifically for this new implementation.
  */
-FOR_EACH(K_APPMEM_PARTITION_DEFINE, part0, part1);
+FOR_EACH(K_APPMEM_PARTITION_DEFINE, (;), part0, part1);
 
 /*
  * Create memory domains. dom0 is for the ztest and this
@@ -273,7 +273,7 @@ static void test_write_kerntext(void)
 static int kernel_data;
 
 /**
- * @brief Testto read from kernel data section
+ * @brief Test to read from kernel data section
  *
  * @ingroup kernel_memprotect_tests
  */
@@ -309,7 +309,7 @@ static void test_write_kernel_data(void)
  */
 K_APP_DMEM(part0) volatile char *priv_stack_ptr;
 #if defined(CONFIG_ARC)
-K_APP_DMEM(part0) s32_t size = (0 - CONFIG_PRIVILEGED_STACK_SIZE -
+K_APP_DMEM(part0) int32_t size = (0 - CONFIG_PRIVILEGED_STACK_SIZE -
 			       STACK_GUARD_SIZE);
 #endif
 
@@ -659,7 +659,7 @@ static void test_access_other_memdomain(void)
 
 
 #if defined(CONFIG_ARM)
-extern u8_t *z_priv_stack_find(void *obj);
+extern uint8_t *z_priv_stack_find(void *obj);
 #endif
 extern k_thread_stack_t ztest_thread_stack[];
 
@@ -932,7 +932,7 @@ static inline int z_vrfy_check_perms(void *addr, size_t size, int write)
 void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 {
 	size_t stack_size, unused;
-	u8_t val;
+	uint8_t val;
 	char *stack_start, *stack_ptr, *stack_end, *obj_start, *obj_end;
 	volatile char *pos;
 	int ret, expected;
@@ -1045,7 +1045,7 @@ void stest_thread_entry(void *p1, void *p2, void *p3)
 	}
 }
 
-void stest_thread_launch(void *stack_obj, size_t obj_size, u32_t flags,
+void stest_thread_launch(void *stack_obj, size_t obj_size, uint32_t flags,
 			 bool drop)
 {
 	int ret;
@@ -1105,6 +1105,15 @@ void test_unimplemented_syscall(void)
 	missing_syscall();
 }
 
+/**
+ * @brief Test bad syscall handler
+ *
+ * @details When a system call handler decides to terminate the calling thread,
+ * the kernel will produce error which indicates the context, where the faulting
+ * system call was made from user code.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 void test_bad_syscall(void)
 {
 	expect_fault = true;
@@ -1224,6 +1233,43 @@ void test_tls_leakage(void)
 				 _current->userspace_local_data, NULL, NULL);
 }
 
+#define TLS_SIZE	4096
+struct k_thread tls_thread;
+K_THREAD_STACK_DEFINE(tls_stack, TLS_SIZE);
+
+void tls_entry(void *p1, void *p2, void *p3)
+{
+	printk("tls_entry\n");
+}
+
+void test_tls_pointer(void)
+{
+	k_thread_create(&tls_thread, tls_stack, TLS_SIZE, tls_entry,
+			NULL, NULL, NULL, 1, K_USER, K_FOREVER);
+
+	printk("tls pointer for thread %p: %p\n",
+	       &tls_thread, (void *)tls_thread.userspace_local_data);
+
+	printk("stack buffer reported bounds: [%p, %p)\n",
+	       (void *)tls_thread.stack_info.start,
+	       (void *)(tls_thread.stack_info.start +
+			tls_thread.stack_info.size));
+
+	printk("stack object bounds: [%p, %p)\n",
+	       tls_stack, tls_stack + sizeof(tls_stack));
+
+	uintptr_t tls_start = (uintptr_t)tls_thread.userspace_local_data;
+	uintptr_t tls_end = tls_start +
+		sizeof(struct _thread_userspace_local_data);
+
+	if ((tls_start < (uintptr_t)tls_stack) ||
+	    (tls_end > (uintptr_t)tls_stack + sizeof(tls_stack))) {
+		printk("tls area out of bounds\n");
+		ztest_test_fail();
+	}
+}
+
+
 void test_main(void)
 {
 	struct k_mem_partition *parts[] = {&part0, &part1,
@@ -1288,7 +1334,8 @@ void test_main(void)
 			 ztest_user_unit_test(test_oops_stackcheck),
 			 ztest_unit_test(test_object_recycle),
 			 ztest_user_unit_test(test_syscall_context),
-			 ztest_unit_test(test_tls_leakage)
+			 ztest_unit_test(test_tls_leakage),
+			 ztest_unit_test(test_tls_pointer)
 			 );
 	ztest_run_test_suite(userspace);
 }

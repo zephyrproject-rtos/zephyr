@@ -166,7 +166,7 @@ int net_fragment_dev_init(struct device *dev)
 
 static void net_fragment_iface_init(struct net_if *iface)
 {
-	static u8_t mac[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xbb};
+	static uint8_t mac[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xbb};
 
 	net_if_set_link_addr(iface, mac, 8, NET_LINK_IEEE802154);
 }
@@ -190,7 +190,7 @@ NET_DEVICE_INIT(net_fragment_test, "net_fragment_test",
 static bool compare_data(struct net_pkt *pkt, struct net_fragment_data *data)
 {
 	int remaining = data->len;
-	u32_t bytes, pos, compare, offset;
+	uint32_t bytes, pos, compare, offset;
 	struct net_buf *frag;
 
 	if (net_pkt_get_len(pkt) != (NET_IPV6UDPH_LEN + remaining)) {
@@ -202,7 +202,7 @@ static bool compare_data(struct net_pkt *pkt, struct net_fragment_data *data)
 
 	frag = pkt->frags;
 
-	if (memcmp(frag->data, (u8_t *)data, NET_IPV6UDPH_LEN)) {
+	if (memcmp(frag->data, (uint8_t *)data, NET_IPV6UDPH_LEN)) {
 		printk("mismatch headers\n");
 		return false;
 	}
@@ -230,11 +230,11 @@ static bool compare_data(struct net_pkt *pkt, struct net_fragment_data *data)
 
 static struct net_pkt *create_pkt(struct net_fragment_data *data)
 {
-	static u16_t dummy_short_addr;
+	static uint16_t dummy_short_addr;
 	struct net_pkt *pkt;
 	struct net_buf *buf;
-	u32_t bytes, pos;
-	u16_t len;
+	uint32_t bytes, pos;
+	uint16_t len;
 	int remaining;
 
 	pkt = net_pkt_alloc_on_iface(net_if_get_default(), K_FOREVER);
@@ -250,7 +250,7 @@ static struct net_pkt *create_pkt(struct net_fragment_data *data)
 		return NULL;
 	}
 
-	memcpy(buf->data, (u8_t *) data, NET_IPV6UDPH_LEN);
+	memcpy(buf->data, (uint8_t *) data, NET_IPV6UDPH_LEN);
 	net_buf_add(buf, NET_IPV6UDPH_LEN);
 
 	pos = 0U;
@@ -260,15 +260,15 @@ static struct net_pkt *create_pkt(struct net_fragment_data *data)
 	/* length is not set in net_fragment_data data pointer, calculate and set
 	 * in ipv6, udp and in data pointer too (it's required in comparison) */
 	buf->data[4] = len >> 8;
-	buf->data[5] = (u8_t) len;
+	buf->data[5] = (uint8_t) len;
 	buf->data[44] = len >> 8;
-	buf->data[45] = (u8_t) len;
+	buf->data[45] = (uint8_t) len;
 
 	data->ipv6.len = htons(len);
 	data->udp.len = htons(len);
 
 	while (remaining > 0) {
-		u8_t copy;
+		uint8_t copy;
 		bytes = net_buf_tailroom(buf);
 		copy = remaining > bytes ? bytes : remaining;
 		memcpy(net_buf_add(buf, copy), &user_data[pos], copy);
@@ -289,7 +289,7 @@ static struct net_pkt *create_pkt(struct net_fragment_data *data)
 	}
 
 	/* Setup link layer addresses. */
-	net_pkt_lladdr_dst(pkt)->addr = (u8_t *)&dummy_short_addr;
+	net_pkt_lladdr_dst(pkt)->addr = (uint8_t *)&dummy_short_addr;
 	net_pkt_lladdr_dst(pkt)->len = sizeof(dummy_short_addr);
 	net_pkt_lladdr_dst(pkt)->type = NET_LINK_IEEE802154;
 
@@ -436,7 +436,7 @@ static struct net_fragment_data test_data_8 = {
 	.iphc = false
 };
 
-static u8_t frame_buffer_data[IEEE802154_MTU - 2];
+static uint8_t frame_buffer_data[IEEE802154_MTU - 2];
 
 static struct net_buf frame_buf = {
 	.data = frame_buffer_data,

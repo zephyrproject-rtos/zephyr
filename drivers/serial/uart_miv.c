@@ -102,9 +102,9 @@
 #define UART_OVERFLOW_ERROR  0x02
 #define UART_FRAMING_ERROR   0x04
 
-#define BAUDVALUE_LSB ((u16_t)(0x00FF))
-#define BAUDVALUE_MSB ((u16_t)(0xFF00))
-#define BAUDVALUE_SHIFT ((u8_t)(5))
+#define BAUDVALUE_LSB ((uint16_t)(0x00FF))
+#define BAUDVALUE_MSB ((uint16_t)(0xFF00))
+#define BAUDVALUE_SHIFT ((uint8_t)(5))
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static struct k_thread rx_thread;
@@ -112,15 +112,15 @@ static K_THREAD_STACK_DEFINE(rx_stack, 512);
 #endif
 
 struct uart_miv_regs_t {
-	u8_t tx;
-	u8_t reserved0[3];
-	u8_t rx;
-	u8_t reserved1[3];
-	u8_t ctrlreg1;
-	u8_t reserved2[3];
-	u8_t ctrlreg2;
-	u8_t reserved3[3];
-	u8_t status;
+	uint8_t tx;
+	uint8_t reserved0[3];
+	uint8_t rx;
+	uint8_t reserved1[3];
+	uint8_t ctrlreg1;
+	uint8_t reserved2[3];
+	uint8_t ctrlreg2;
+	uint8_t reserved3[3];
+	uint8_t status;
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -128,10 +128,10 @@ typedef void (*irq_cfg_func_t)(struct device *dev);
 #endif
 
 struct uart_miv_device_config {
-	u32_t       uart_addr;
-	u32_t       sys_clk_freq;
-	u32_t       line_config;
-	u32_t       baud_rate;
+	uint32_t       uart_addr;
+	uint32_t       sys_clk_freq;
+	uint32_t       line_config;
+	uint32_t       baud_rate;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	irq_cfg_func_t cfg_func;
 #endif
@@ -178,7 +178,7 @@ static int uart_miv_poll_in(struct device *dev, unsigned char *c)
 static int uart_miv_err_check(struct device *dev)
 {
 	volatile struct uart_miv_regs_t *uart = DEV_UART(dev);
-	u32_t flags = uart->status;
+	uint32_t flags = uart->status;
 	int err = 0;
 
 	if (flags & STATUS_PARITYERR_MASK) {
@@ -200,7 +200,7 @@ static int uart_miv_err_check(struct device *dev)
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
 static int uart_miv_fifo_fill(struct device *dev,
-			      const u8_t *tx_data,
+			      const uint8_t *tx_data,
 			      int size)
 {
 	volatile struct uart_miv_regs_t *uart = DEV_UART(dev);
@@ -214,7 +214,7 @@ static int uart_miv_fifo_fill(struct device *dev,
 }
 
 static int uart_miv_fifo_read(struct device *dev,
-			      u8_t *rx_data,
+			      uint8_t *rx_data,
 			      const int size)
 {
 	volatile struct uart_miv_regs_t *uart = DEV_UART(dev);
@@ -318,7 +318,7 @@ void uart_miv_rx_thread(void *arg1, void *arg2, void *arg3)
 	/* Make it go to sleep for a period no longer than
 	 * time to receive next character.
 	 */
-	u32_t delay = 1000000 / cfg->baud_rate;
+	uint32_t delay = 1000000 / cfg->baud_rate;
 
 	while (1) {
 		if (uart->status & STATUS_RXFULL_MASK) {
@@ -345,12 +345,12 @@ static int uart_miv_init(struct device *dev)
 	const struct uart_miv_device_config *const cfg = DEV_CFG(dev);
 	volatile struct uart_miv_regs_t *uart = DEV_UART(dev);
 	/* Calculate divider value to set baudrate */
-	u16_t baud_value = (cfg->sys_clk_freq / (cfg->baud_rate * 16U)) - 1;
+	uint16_t baud_value = (cfg->sys_clk_freq / (cfg->baud_rate * 16U)) - 1;
 
 	/* Set baud rate */
-	uart->ctrlreg1 = (u8_t)(baud_value & BAUDVALUE_LSB);
-	uart->ctrlreg2 = (u8_t)(cfg->line_config) |
-			 (u8_t)((baud_value & BAUDVALUE_MSB) >> BAUDVALUE_SHIFT);
+	uart->ctrlreg1 = (uint8_t)(baud_value & BAUDVALUE_LSB);
+	uart->ctrlreg2 = (uint8_t)(cfg->line_config) |
+			 (uint8_t)((baud_value & BAUDVALUE_MSB) >> BAUDVALUE_SHIFT);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	/* Setup thread polling for data */

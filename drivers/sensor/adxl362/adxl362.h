@@ -172,8 +172,8 @@
 
 struct adxl362_config {
 	char *spi_name;
-	u32_t spi_max_frequency;
-	u16_t spi_slave;
+	uint32_t spi_max_frequency;
+	uint16_t spi_slave;
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	const char *gpio_cs_port;
 	gpio_pin_t cs_gpio;
@@ -182,8 +182,8 @@ struct adxl362_config {
 	const char *gpio_port;
 	gpio_pin_t int_gpio;
 	gpio_dt_flags_t int_flags;
-	u8_t int1_config;
-	u8_t int2_config;
+	uint8_t int1_config;
+	uint8_t int2_config;
 #endif
 };
 
@@ -193,11 +193,11 @@ struct adxl362_data {
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	struct spi_cs_control adxl362_cs_ctrl;
 #endif
-	s16_t acc_x;
-	s16_t acc_y;
-	s16_t acc_z;
-	s16_t temp;
-	u8_t selected_range;
+	int16_t acc_x;
+	int16_t acc_y;
+	int16_t acc_z;
+	int16_t temp;
+	uint8_t selected_range;
 
 #if defined(CONFIG_ADXL362_TRIGGER)
 	struct device *gpio;
@@ -246,9 +246,9 @@ struct adxl362_data {
 
 #ifdef CONFIG_ADXL362_TRIGGER
 int adxl362_reg_write_mask(struct device *dev,
-			   u8_t reg_addr, u8_t mask, u8_t data);
+			   uint8_t reg_addr, uint8_t mask, uint8_t data);
 
-int adxl362_get_status(struct device *dev, u8_t *status);
+int adxl362_get_status(struct device *dev, uint8_t *status);
 
 int adxl362_interrupt_activity_enable(struct device *dev);
 
@@ -258,7 +258,7 @@ int adxl362_trigger_set(struct device *dev,
 
 int adxl362_init_interrupt(struct device *dev);
 
-int adxl362_set_interrupt_mode(struct device *dev, u8_t mode);
+int adxl362_set_interrupt_mode(struct device *dev, uint8_t mode);
 
 int adxl362_clear_data_ready(struct device *dev);
 #endif /* CONFIG_ADT7420_TRIGGER */

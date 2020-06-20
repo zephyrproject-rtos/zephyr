@@ -11,10 +11,10 @@
 #include "settings_priv.h"
 #include <storage/flash_map.h>
 
-u8_t val8;
-u8_t val8_un;
-u32_t val32;
-u64_t val64;
+uint8_t val8;
+uint8_t val8_un;
+uint32_t val32;
+uint64_t val64;
 
 int test_get_called;
 int test_set_called;
@@ -345,7 +345,7 @@ void tests_settings_check_target(void)
 {
 	const struct flash_area *fap;
 	int rc;
-	u8_t wbs;
+	uint8_t wbs;
 
 	rc = flash_area_open(FLASH_AREA_ID(storage), &fap);
 	zassert_true(rc == 0, "Can't open storage flash area");

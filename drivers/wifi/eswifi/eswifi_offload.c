@@ -100,7 +100,7 @@ static int eswifi_off_connect(struct net_context *context,
 			      const struct sockaddr *addr,
 			      socklen_t addrlen,
 			      net_context_connect_cb_t cb,
-			      s32_t timeout,
+			      int32_t timeout,
 			      void *user_data)
 {
 	struct eswifi_off_socket *socket = context->offload_context;
@@ -150,7 +150,7 @@ static int eswifi_off_connect(struct net_context *context,
 }
 
 static int eswifi_off_accept(struct net_context *context,
-			     net_tcp_accept_cb_t cb, s32_t timeout,
+			     net_tcp_accept_cb_t cb, int32_t timeout,
 			     void *user_data)
 {
 	struct eswifi_off_socket *socket = context->offload_context;
@@ -248,7 +248,7 @@ static void eswifi_off_send_work(struct k_work *work)
 
 static int eswifi_off_send(struct net_pkt *pkt,
 			   net_context_send_cb_t cb,
-			   s32_t timeout,
+			   int32_t timeout,
 			   void *user_data)
 {
 	struct eswifi_off_socket *socket = pkt->context->offload_context;
@@ -297,7 +297,7 @@ static int eswifi_off_sendto(struct net_pkt *pkt,
 			     const struct sockaddr *dst_addr,
 			     socklen_t addrlen,
 			     net_context_send_cb_t cb,
-			     s32_t timeout,
+			     int32_t timeout,
 			     void *user_data)
 {
 	struct eswifi_off_socket *socket = pkt->context->offload_context;
@@ -351,7 +351,7 @@ static int eswifi_off_sendto(struct net_pkt *pkt,
 
 static int eswifi_off_recv(struct net_context *context,
 			   net_context_recv_cb_t cb,
-			   s32_t timeout,
+			   int32_t timeout,
 			   void *user_data)
 {
 	struct eswifi_off_socket *socket = context->offload_context;
@@ -447,8 +447,8 @@ void eswifi_offload_async_msg(struct eswifi_dev *eswifi, char *msg, size_t len)
 	if (!strncmp(msg, msg_tcp_accept, sizeof(msg_tcp_accept) - 1)) {
 		struct eswifi_off_socket *socket = NULL;
 		struct in_addr *sin_addr;
-		u8_t ip[4];
-		u16_t port = 0;
+		uint8_t ip[4];
+		uint16_t port = 0;
 		char *str;
 		int i = 0;
 
@@ -484,10 +484,18 @@ void eswifi_offload_async_msg(struct eswifi_dev *eswifi, char *msg, size_t len)
 			return;
 		}
 
-		sin_addr = &net_sin(&socket->peer_addr)->sin_addr;
+		struct sockaddr_in *peer = net_sin(&socket->peer_addr);
+
+		sin_addr = &peer->sin_addr;
 		memcpy(&sin_addr->s4_addr, ip, 4);
+		peer->sin_port = htons(port);
 		socket->state = ESWIFI_SOCKET_STATE_CONNECTED;
 		socket->usage++;
+
+		/* Save information about remote. */
+		socket->context->flags |= NET_CONTEXT_REMOTE_ADDR_SET;
+		memcpy(&socket->context->remote, &socket->peer_addr,
+		       sizeof(struct sockaddr));
 
 		LOG_DBG("%u.%u.%u.%u connected to port %u",
 			ip[0], ip[1], ip[2], ip[3], port);

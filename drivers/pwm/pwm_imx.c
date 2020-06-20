@@ -27,11 +27,11 @@ LOG_MODULE_REGISTER(pwm_imx);
 
 struct imx_pwm_config {
 	PWM_Type *base;
-	u16_t prescaler;
+	uint16_t prescaler;
 };
 
 struct imx_pwm_data {
-	u32_t period_cycles;
+	uint32_t period_cycles;
 };
 
 
@@ -40,8 +40,8 @@ static bool imx_pwm_is_enabled(PWM_Type *base)
 	return PWM_PWMCR_REG(base) & PWM_PWMCR_EN_MASK;
 }
 
-static int imx_pwm_get_cycles_per_sec(struct device *dev, u32_t pwm,
-				       u64_t *cycles)
+static int imx_pwm_get_cycles_per_sec(struct device *dev, uint32_t pwm,
+				       uint64_t *cycles)
 {
 	PWM_Type *base = DEV_BASE(dev);
 	const struct imx_pwm_config *config = DEV_CFG(dev);
@@ -51,8 +51,8 @@ static int imx_pwm_get_cycles_per_sec(struct device *dev, u32_t pwm,
 	return 0;
 }
 
-static int imx_pwm_pin_set(struct device *dev, u32_t pwm,
-			   u32_t period_cycles, u32_t pulse_cycles,
+static int imx_pwm_pin_set(struct device *dev, uint32_t pwm,
+			   uint32_t period_cycles, uint32_t pulse_cycles,
 			   pwm_flags_t flags)
 {
 	PWM_Type *base = DEV_BASE(dev);
@@ -61,7 +61,7 @@ static int imx_pwm_pin_set(struct device *dev, u32_t pwm,
 	unsigned int period_ms;
 	bool enabled = imx_pwm_is_enabled(base);
 	int wait_count = 0, fifoav;
-	u32_t cr, sr;
+	uint32_t cr, sr;
 
 
 	if ((period_cycles == 0U) || (pulse_cycles > period_cycles)) {

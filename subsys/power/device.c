@@ -40,12 +40,22 @@ static const char *const core_devices[] = {
 static const char *const core_devices[] = {
 	DT_LABEL(DT_INST(0, nxp_kinetis_ethernet)),
 };
+#elif defined(CONFIG_NET_TEST)
+#define MAX_PM_DEVICES		1
+static const char *const core_devices[] = {
+	"",
+};
+#elif defined(CONFIG_SOC_SERIES_STM32L4X)
+#define MAX_PM_DEVICES	1
+static const char *const core_devices[] = {
+	"sys_clock",
+};
 #else
 #error "Add SoC's core devices list for PM"
 #endif
 
 /* Ordinal of sufficient size to index available devices. */
-typedef u16_t device_idx_t;
+typedef uint16_t device_idx_t;
 
 /* The maximum value representable with a device_idx_t. */
 #define DEVICE_IDX_MAX ((device_idx_t)(-1))
@@ -64,7 +74,7 @@ static device_idx_t num_pm;
 /* Number of devices successfully suspended. */
 static device_idx_t num_susp;
 
-const char *device_pm_state_str(u32_t state)
+const char *device_pm_state_str(uint32_t state)
 {
 	switch (state) {
 	case DEVICE_PM_ACTIVE_STATE:
@@ -82,7 +92,7 @@ const char *device_pm_state_str(u32_t state)
 	}
 }
 
-static int _sys_pm_devices(u32_t state)
+static int _sys_pm_devices(uint32_t state)
 {
 	num_susp = 0;
 

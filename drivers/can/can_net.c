@@ -42,21 +42,21 @@ struct mcast_filter_mapping *can_get_mcast_filter(struct net_can_context *ctx,
 	return NULL;
 }
 
-static inline u8_t can_get_frame_datalength(struct zcan_frame *frame)
+static inline uint8_t can_get_frame_datalength(struct zcan_frame *frame)
 {
 	/* TODO: Needs update when CAN FD support is added */
 	return frame->dlc;
 }
 
-static inline u16_t can_get_lladdr_src(struct zcan_frame *frame)
+static inline uint16_t can_get_lladdr_src(struct zcan_frame *frame)
 {
 	return (frame->ext_id >> CAN_NET_IF_ADDR_SRC_POS) &
 	       CAN_NET_IF_ADDR_MASK;
 }
 
-static inline u16_t can_get_lladdr_dest(struct zcan_frame *frame)
+static inline uint16_t can_get_lladdr_dest(struct zcan_frame *frame)
 {
-	u16_t addr = (frame->ext_id >> CAN_NET_IF_ADDR_DEST_POS) &
+	uint16_t addr = (frame->ext_id >> CAN_NET_IF_ADDR_DEST_POS) &
 		     CAN_NET_IF_ADDR_MASK;
 
 	if (frame->ext_id & CAN_NET_IF_ADDR_MCAST_MASK) {
@@ -78,14 +78,14 @@ static inline void can_set_lladdr(struct net_pkt *pkt, struct zcan_frame *frame)
 	net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_canbus_lladdr);
 	net_pkt_lladdr_dst(pkt)->type = NET_LINK_CANBUS;
 	net_buf_add_be16(buf, can_get_lladdr_dest(frame));
-	net_buf_pull(buf, sizeof(u16_t));
+	net_buf_pull(buf, sizeof(uint16_t));
 
 	/* Do the same as above for the source address */
 	net_pkt_lladdr_src(pkt)->addr = buf->data;
 	net_pkt_lladdr_src(pkt)->len = sizeof(struct net_canbus_lladdr);
 	net_pkt_lladdr_src(pkt)->type = NET_LINK_CANBUS;
 	net_buf_add_be16(buf, can_get_lladdr_src(frame));
-	net_buf_pull(buf, sizeof(u16_t));
+	net_buf_pull(buf, sizeof(uint16_t));
 }
 
 static int net_can_send(struct device *dev, const struct zcan_frame *frame,
@@ -149,7 +149,7 @@ static inline int attach_mcast_filter(struct net_can_context *ctx,
 		.ext_id_mask = CAN_NET_IF_ADDR_MCAST_MASK |
 			       CAN_NET_IF_ADDR_DEST_MASK
 	};
-	const u16_t group =
+	const uint16_t group =
 		sys_be16_to_cpu(UNALIGNED_GET((&addr->s6_addr16[7])));
 	int filter_id;
 
@@ -243,8 +243,8 @@ static inline int can_attach_unicast_filter(struct net_can_context *ctx)
 		.rtr_mask = 1,
 		.ext_id_mask = CAN_NET_IF_ADDR_DEST_MASK
 	};
-	const u8_t *link_addr = net_if_get_link_addr(ctx->iface)->addr;
-	const u16_t dest = sys_be16_to_cpu(UNALIGNED_GET((u16_t *) link_addr));
+	const uint8_t *link_addr = net_if_get_link_addr(ctx->iface)->addr;
+	const uint16_t dest = sys_be16_to_cpu(UNALIGNED_GET((uint16_t *) link_addr));
 	int filter_id;
 
 	filter.ext_id = (dest << CAN_NET_IF_ADDR_DEST_POS);

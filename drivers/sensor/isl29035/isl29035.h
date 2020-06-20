@@ -112,7 +112,7 @@
 
 struct isl29035_driver_data {
 	struct device *i2c;
-	u16_t data_sample;
+	uint16_t data_sample;
 
 #if CONFIG_ISL29035_TRIGGER
 	struct device *gpio;

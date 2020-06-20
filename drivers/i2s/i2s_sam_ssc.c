@@ -36,9 +36,9 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #if __DCACHE_PRESENT == 1
 #define DCACHE_INVALIDATE(addr, size) \
-	SCB_InvalidateDCache_by_Addr((u32_t *)addr, size)
+	SCB_InvalidateDCache_by_Addr((uint32_t *)addr, size)
 #define DCACHE_CLEAN(addr, size) \
-	SCB_CleanDCache_by_Addr((u32_t *)addr, size)
+	SCB_CleanDCache_by_Addr((uint32_t *)addr, size)
 #else
 #define DCACHE_INVALIDATE(addr, size) {; }
 #define DCACHE_CLEAN(addr, size) {; }
@@ -57,9 +57,9 @@ struct queue_item {
 /* Minimal ring buffer implementation */
 struct ring_buf {
 	struct queue_item *buf;
-	u16_t len;
-	u16_t head;
-	u16_t tail;
+	uint16_t len;
+	uint16_t head;
+	uint16_t tail;
 };
 
 /* Device constant configuration parameters */
@@ -67,15 +67,15 @@ struct i2s_sam_dev_cfg {
 	Ssc *regs;
 	void (*irq_config)(void);
 	const struct soc_gpio_pin *pin_list;
-	u8_t pin_list_size;
-	u8_t periph_id;
-	u8_t irq_id;
+	uint8_t pin_list_size;
+	uint8_t periph_id;
+	uint8_t irq_id;
 };
 
 struct stream {
-	s32_t state;
+	int32_t state;
 	struct k_sem sem;
-	u32_t dma_channel;
+	uint32_t dma_channel;
 	struct dma_config dma_cfg;
 	struct i2s_config cfg;
 	struct ring_buf mem_block_queue;
@@ -103,9 +103,9 @@ struct i2s_sam_dev_data {
 
 #define MODULO_INC(val, max) { val = (++val < max) ? val : 0; }
 
-static struct device *get_dev_from_dma_channel(u32_t dma_channel);
-static void dma_rx_callback(void *, u32_t, int);
-static void dma_tx_callback(void *, u32_t, int);
+static struct device *get_dev_from_dma_channel(uint32_t dma_channel);
+static void dma_rx_callback(void *, uint32_t, int);
+static void dma_tx_callback(void *, uint32_t, int);
 static void rx_stream_disable(struct stream *, Ssc *const, struct device *);
 static void tx_stream_disable(struct stream *, Ssc *const, struct device *);
 
@@ -138,7 +138,7 @@ static int queue_get(struct ring_buf *rb, void **mem_block, size_t *size)
  */
 static int queue_put(struct ring_buf *rb, void *mem_block, size_t size)
 {
-	u16_t head_next;
+	uint16_t head_next;
 	unsigned int key;
 
 	key = irq_lock();
@@ -161,17 +161,17 @@ static int queue_put(struct ring_buf *rb, void *mem_block, size_t size)
 	return 0;
 }
 
-static int start_dma(struct device *dev_dma, u32_t channel,
+static int start_dma(struct device *dev_dma, uint32_t channel,
 		     struct dma_config *cfg, void *src, void *dst,
-		     u32_t blk_size)
+		     uint32_t blk_size)
 {
 	struct dma_block_config blk_cfg;
 	int ret;
 
 	(void)memset(&blk_cfg, 0, sizeof(blk_cfg));
 	blk_cfg.block_size = blk_size;
-	blk_cfg.source_address = (u32_t)src;
-	blk_cfg.dest_address = (u32_t)dst;
+	blk_cfg.source_address = (uint32_t)src;
+	blk_cfg.dest_address = (uint32_t)dst;
 
 	cfg->head_block = &blk_cfg;
 
@@ -186,7 +186,7 @@ static int start_dma(struct device *dev_dma, u32_t channel,
 }
 
 /* This function is executed in the interrupt context */
-static void dma_rx_callback(void *callback_arg, u32_t channel, int status)
+static void dma_rx_callback(void *callback_arg, uint32_t channel, int status)
 {
 	struct device *dev = get_dev_from_dma_channel(channel);
 	const struct i2s_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
@@ -245,7 +245,7 @@ rx_disable:
 }
 
 /* This function is executed in the interrupt context */
-static void dma_tx_callback(void *callback_arg, u32_t channel, int status)
+static void dma_tx_callback(void *callback_arg, uint32_t channel, int status)
 {
 	struct device *dev = get_dev_from_dma_channel(channel);
 	const struct i2s_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
@@ -310,11 +310,11 @@ static int set_rx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 	Ssc *const ssc = dev_cfg->regs;
 	const bool pin_rk_en = IS_ENABLED(CONFIG_I2S_SAM_SSC_0_PIN_RK_EN);
 	const bool pin_rf_en = IS_ENABLED(CONFIG_I2S_SAM_SSC_0_PIN_RF_EN);
-	u8_t word_size_bits = i2s_cfg->word_size;
-	u8_t num_words = i2s_cfg->channels;
-	u8_t fslen = 0U;
-	u32_t ssc_rcmr = 0U;
-	u32_t ssc_rfmr = 0U;
+	uint8_t word_size_bits = i2s_cfg->word_size;
+	uint8_t num_words = i2s_cfg->channels;
+	uint8_t fslen = 0U;
+	uint32_t ssc_rcmr = 0U;
+	uint32_t ssc_rfmr = 0U;
 	bool frame_clk_master = !(i2s_cfg->options & I2S_OPT_FRAME_CLK_SLAVE);
 
 	switch (i2s_cfg->format & I2S_FMT_DATA_FORMAT_MASK) {
@@ -401,11 +401,11 @@ static int set_tx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 			      struct i2s_config *i2s_cfg)
 {
 	Ssc *const ssc = dev_cfg->regs;
-	u8_t word_size_bits = i2s_cfg->word_size;
-	u8_t num_words = i2s_cfg->channels;
-	u8_t fslen = 0U;
-	u32_t ssc_tcmr = 0U;
-	u32_t ssc_tfmr = 0U;
+	uint8_t word_size_bits = i2s_cfg->word_size;
+	uint8_t num_words = i2s_cfg->channels;
+	uint8_t fslen = 0U;
+	uint32_t ssc_tcmr = 0U;
+	uint32_t ssc_tfmr = 0U;
 
 	switch (i2s_cfg->format & I2S_FMT_DATA_FORMAT_MASK) {
 
@@ -483,19 +483,19 @@ static int set_tx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 }
 
 /* Calculate number of bytes required to store a word of bit_size length */
-static u8_t get_word_size_bytes(u8_t bit_size)
+static uint8_t get_word_size_bytes(uint8_t bit_size)
 {
-	u8_t byte_size_min = (bit_size + 7) / 8U;
-	u8_t byte_size;
+	uint8_t byte_size_min = (bit_size + 7) / 8U;
+	uint8_t byte_size;
 
 	byte_size = (byte_size_min == 3U) ? 4 : byte_size_min;
 
 	return byte_size;
 }
 
-static int bit_clock_set(Ssc *const ssc, u32_t bit_clk_freq)
+static int bit_clock_set(Ssc *const ssc, uint32_t bit_clk_freq)
 {
-	u32_t clk_div = SOC_ATMEL_SAM_MCK_FREQ_HZ / bit_clk_freq / 2U;
+	uint32_t clk_div = SOC_ATMEL_SAM_MCK_FREQ_HZ / bit_clk_freq / 2U;
 
 	if (clk_div == 0U || clk_div >= (1 << 12)) {
 		LOG_ERR("Invalid bit clock frequency");
@@ -534,10 +534,10 @@ static int i2s_sam_configure(struct device *dev, enum i2s_dir dir,
 	const struct i2s_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
 	struct i2s_sam_dev_data *const dev_data = DEV_DATA(dev);
 	Ssc *const ssc = dev_cfg->regs;
-	u8_t num_words = i2s_cfg->channels;
-	u8_t word_size_bits = i2s_cfg->word_size;
-	u8_t word_size_bytes;
-	u32_t bit_clk_freq;
+	uint8_t num_words = i2s_cfg->channels;
+	uint8_t word_size_bits = i2s_cfg->word_size;
+	uint8_t word_size_bytes;
+	uint32_t bit_clk_freq;
 	struct stream *stream;
 	int ret;
 
@@ -887,7 +887,7 @@ static void i2s_sam_isr(void *arg)
 	const struct i2s_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
 	struct i2s_sam_dev_data *const dev_data = DEV_DATA(dev);
 	Ssc *const ssc = dev_cfg->regs;
-	u32_t isr_status;
+	uint32_t isr_status;
 
 	/* Retrieve interrupt status */
 	isr_status = ssc->SSC_SR & ssc->SSC_IMR;
@@ -955,9 +955,9 @@ static const struct i2s_driver_api i2s_sam_driver_api = {
 
 /* I2S0 */
 
-static struct device DEVICE_NAME_GET(i2s0_sam);
+DEVICE_DECLARE(i2s0_sam);
 
-static struct device *get_dev_from_dma_channel(u32_t dma_channel)
+static struct device *get_dev_from_dma_channel(uint32_t dma_channel)
 {
 	return &DEVICE_NAME_GET(i2s0_sam);
 }

@@ -14,7 +14,7 @@
 
 void z_platform_init(void)
 {
-	u32_t temp;
+	uint32_t temp;
 
 	/* setup flash wait state */
 	temp = FLASH0->FCON;

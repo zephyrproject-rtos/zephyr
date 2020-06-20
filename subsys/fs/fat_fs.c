@@ -66,7 +66,7 @@ static int translate_error(int error)
 static int fatfs_open(struct fs_file_t *zfp, const char *file_name)
 {
 	FRESULT res;
-	u8_t fs_mode;
+	uint8_t fs_mode;
 	void *ptr;
 
 	if (k_mem_slab_alloc(&fatfs_filep_pool, &ptr, K_NO_WAIT) == 0) {
@@ -214,7 +214,7 @@ static int fatfs_truncate(struct fs_file_t *zfp, off_t length)
 		 * optimization.
 		 */
 		unsigned int bw;
-		u8_t c = 0U;
+		uint8_t c = 0U;
 
 		for (int i = cur_length; i < length; i++) {
 			res = f_write(zfp->filep, &c, 1, &bw);
@@ -340,7 +340,7 @@ static int fatfs_mount(struct fs_mount_t *mountp)
 
 	/* If no file system found then create one */
 	if (res == FR_NO_FILESYSTEM) {
-		u8_t work[_MAX_SS];
+		uint8_t work[_MAX_SS];
 
 		res = f_mkfs(&mountp->mnt_point[1],
 				(FM_FAT | FM_SFD), 0, work, sizeof(work));

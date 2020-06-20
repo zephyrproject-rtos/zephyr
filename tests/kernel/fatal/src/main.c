@@ -226,7 +226,7 @@ void user_priv_stack_hw_overflow(void)
 }
 #endif /* CONFIG_USERSPACE */
 
-void check_stack_overflow(void *handler, u32_t flags)
+void check_stack_overflow(void *handler, uint32_t flags)
 {
 #ifdef CONFIG_STACK_SENTINEL
 	/* When testing stack sentinel feature, the overflow stack is a

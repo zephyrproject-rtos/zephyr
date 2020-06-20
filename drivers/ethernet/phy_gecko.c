@@ -36,7 +36,7 @@ static void mdio_bus_disable(ETH_TypeDef *eth)
 /* Wait PHY operation complete. */
 static int mdio_bus_wait(ETH_TypeDef *eth)
 {
-	u32_t retries = 100U;  /* will wait up to 1 s */
+	uint32_t retries = 100U;  /* will wait up to 1 s */
 
 	while (!(eth->NETWORKSTATUS & ETH_NETWORKSTATUS_MANDONE)) {
 		if (retries-- == 0U) {
@@ -51,8 +51,8 @@ static int mdio_bus_wait(ETH_TypeDef *eth)
 }
 
 /* Send command to PHY over MDIO serial bus */
-static int mdio_bus_send(ETH_TypeDef *eth, u8_t phy_addr, u8_t reg_addr,
-			 u8_t rw, u16_t data)
+static int mdio_bus_send(ETH_TypeDef *eth, uint8_t phy_addr, uint8_t reg_addr,
+			 uint8_t rw, uint16_t data)
 {
 	int retval;
 
@@ -77,11 +77,11 @@ static int mdio_bus_send(ETH_TypeDef *eth, u8_t phy_addr, u8_t reg_addr,
 }
 
 /* Read PHY register. */
-static int phy_read(const struct phy_gecko_dev *phy, u8_t reg_addr,
-		    u32_t *value)
+static int phy_read(const struct phy_gecko_dev *phy, uint8_t reg_addr,
+		    uint32_t *value)
 {
 	ETH_TypeDef *const eth = phy->regs;
-	u8_t phy_addr = phy->address;
+	uint8_t phy_addr = phy->address;
 	int retval;
 
 	retval = mdio_bus_send(eth, phy_addr, reg_addr, 1, 0);
@@ -96,11 +96,11 @@ static int phy_read(const struct phy_gecko_dev *phy, u8_t reg_addr,
 }
 
 /* Write PHY register. */
-static int phy_write(const struct phy_gecko_dev *phy, u8_t reg_addr,
-		     u32_t value)
+static int phy_write(const struct phy_gecko_dev *phy, uint8_t reg_addr,
+		     uint32_t value)
 {
 	ETH_TypeDef *const eth = phy->regs;
-	u8_t phy_addr = phy->address;
+	uint8_t phy_addr = phy->address;
 
 	return mdio_bus_send(eth, phy_addr, reg_addr, 0, value);
 }
@@ -108,8 +108,8 @@ static int phy_write(const struct phy_gecko_dev *phy, u8_t reg_addr,
 /* Issue a PHY soft reset. */
 static int phy_soft_reset(const struct phy_gecko_dev *phy)
 {
-	u32_t phy_reg;
-	u32_t retries = 12U;
+	uint32_t phy_reg;
+	uint32_t retries = 12U;
 	int retval;
 
 	/* Issue a soft reset */
@@ -162,11 +162,11 @@ int phy_gecko_init(const struct phy_gecko_dev *phy)
 	return 0;
 }
 
-u32_t phy_gecko_id_get(const struct phy_gecko_dev *phy)
+uint32_t phy_gecko_id_get(const struct phy_gecko_dev *phy)
 {
 	ETH_TypeDef *const eth = phy->regs;
-	u32_t phy_reg;
-	u32_t phy_id;
+	uint32_t phy_reg;
+	uint32_t phy_id;
 
 	mdio_bus_enable(eth);
 
@@ -188,13 +188,13 @@ u32_t phy_gecko_id_get(const struct phy_gecko_dev *phy)
 }
 
 int phy_gecko_auto_negotiate(const struct phy_gecko_dev *phy,
-				u32_t *status)
+				uint32_t *status)
 {
 	ETH_TypeDef *const eth = phy->regs;
-	u32_t val;
-	u32_t ability_adv;
-	u32_t ability_rcvd;
-	u32_t retries = PHY_AUTONEG_TIMEOUT_MS / 100;
+	uint32_t val;
+	uint32_t ability_adv;
+	uint32_t ability_rcvd;
+	uint32_t retries = PHY_AUTONEG_TIMEOUT_MS / 100;
 	int retval;
 
 	mdio_bus_enable(eth);
@@ -267,7 +267,7 @@ auto_negotiate_exit:
 bool phy_gecko_is_linked(const struct phy_gecko_dev *phy)
 {
 	ETH_TypeDef *const eth = phy->regs;
-	u32_t phy_reg;
+	uint32_t phy_reg;
 	bool phy_linked = false;
 
 	mdio_bus_enable(eth);

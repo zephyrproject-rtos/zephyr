@@ -60,8 +60,8 @@ static struct updatehub_context {
 	struct flash_img_context flash_ctx;
 	struct tc_sha256_state_struct sha256sum;
 	enum updatehub_response code_status;
-	u8_t uri_path[MAX_PATH_SIZE];
-	u8_t payload[MAX_PAYLOAD_SIZE];
+	uint8_t uri_path[MAX_PATH_SIZE];
+	uint8_t payload[MAX_PAYLOAD_SIZE];
 	int downloaded_size;
 	struct pollfd fds[1];
 	int sock;
@@ -76,7 +76,7 @@ static struct update_info {
 
 static struct k_delayed_work updatehub_work_handle;
 
-static int bin2hex_str(u8_t *bin, size_t bin_len, char *str, size_t str_buf_len)
+static int bin2hex_str(uint8_t *bin, size_t bin_len, char *str, size_t str_buf_len)
 {
 	if (bin == NULL || str == NULL) {
 		return -1;
@@ -229,8 +229,8 @@ static int send_request(enum coap_msgtype msgtype, enum coap_method method,
 {
 	struct coap_packet request_packet;
 	int ret = -1;
-	u8_t content_application_json = 50;
-	u8_t *data = k_malloc(MAX_PAYLOAD_SIZE);
+	uint8_t content_application_json = 50;
+	uint8_t *data = k_malloc(MAX_PAYLOAD_SIZE);
 
 	if (data == NULL) {
 		LOG_ERR("Could not alloc data memory");
@@ -339,7 +339,7 @@ error:
 
 static bool install_update_cb_sha256(void)
 {
-	u8_t hash[TC_SHA256_DIGEST_SIZE];
+	uint8_t hash[TC_SHA256_DIGEST_SIZE];
 	char sha256[SHA256_HEX_DIGEST_SIZE];
 
 	if (tc_sha256_final(hash, &ctx.sha256sum) < 1) {
@@ -366,7 +366,7 @@ static bool install_update_cb_sha256(void)
 static void install_update_cb(void)
 {
 	struct coap_packet response_packet;
-	u8_t *data = k_malloc(MAX_DOWNLOAD_DATA);
+	uint8_t *data = k_malloc(MAX_DOWNLOAD_DATA);
 	int rcvd = -1;
 
 	if (data == NULL) {
@@ -753,7 +753,7 @@ enum updatehub_response updatehub_probe(void)
 		}
 
 		sha256size = strlen(
-			metadata_any_boards.objects[1].objects.sha256sum) + 1;
+			metadata_some_boards.objects[1].objects.sha256sum) + 1;
 
 		if (sha256size != SHA256_HEX_DIGEST_SIZE) {
 			LOG_ERR("SHA256 size is invalid");

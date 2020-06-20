@@ -16,8 +16,8 @@ LOG_MODULE_REGISTER(cache_test);
 #define CACHE_TEST_BUFFER_SIZE	256
 
 struct test_buffer {
-	u8_t	flush[CACHE_TEST_BUFFER_SIZE];
-	u8_t	invalidate[CACHE_TEST_BUFFER_SIZE];
+	uint8_t	flush[CACHE_TEST_BUFFER_SIZE];
+	uint8_t	invalidate[CACHE_TEST_BUFFER_SIZE];
 };
 
 static struct test_buffer *cached_buffer = (struct test_buffer *)LP_SRAM_BASE;
@@ -25,7 +25,7 @@ static struct test_buffer *cached_buffer = (struct test_buffer *)LP_SRAM_BASE;
 static struct test_buffer *mem_buffer =
 	(struct test_buffer *)LP_SRAM_BASE_UNCACHED;
 
-static void buffer_fill_sequence(u8_t *buffer, bool inv_seq)
+static void buffer_fill_sequence(uint8_t *buffer, bool inv_seq)
 {
 	int byte;
 

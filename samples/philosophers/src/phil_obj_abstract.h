@@ -78,15 +78,15 @@
 	#else
 		typedef struct {
 			struct k_stack stack;
-			u32_t stack_mem[1];
+			uint32_t stack_mem[1];
 		} fork_obj_t;
 		#define fork_init(x) do { \
-			k_stack_init(x, (u32_t *)((x) + 1), 1); \
+			k_stack_init(x, (uint32_t *)((x) + 1), 1); \
 			k_stack_push(x, MAGIC); \
 		} while ((0))
 	#endif
 	#define take(x) do { \
-		u32_t data; k_stack_pop(x, &data, K_FOREVER); \
+		uint32_t data; k_stack_pop(x, &data, K_FOREVER); \
 		__ASSERT(data == MAGIC, "data was %x\n", data); \
 	} while ((0))
 	#define drop(x) k_stack_push(x, MAGIC)

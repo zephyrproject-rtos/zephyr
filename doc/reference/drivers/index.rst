@@ -173,8 +173,7 @@ of these APIs, and populate an instance of subsystem_api structure:
   };
 
 The driver would then pass ``my_driver_api_funcs`` as the ``api`` argument to
-``DEVICE_AND_API_INIT()``, or manually assign it to ``device->driver_api``
-in the driver init function.
+``DEVICE_AND_API_INIT()``.
 
 .. note::
 
@@ -279,7 +278,7 @@ with a different interrupt line. In ``drivers/subsystem/subsystem_my_driver.h``:
   typedef void (*my_driver_config_irq_t)(struct device *device);
 
   struct my_driver_config {
-        u32_t base_addr;
+        uint32_t base_addr;
         my_driver_config_irq_t config_func;
   };
 

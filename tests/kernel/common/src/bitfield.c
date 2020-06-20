@@ -29,7 +29,7 @@
  */
 void test_bitfield(void)
 {
-	u32_t b1 = 0U;
+	uint32_t b1 = 0U;
 	unsigned char b2[BITFIELD_SIZE >> 3] = { 0 };
 	unsigned int bit;
 	int ret;

@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2020 Alexander Kozhinov
+ * AlexanderKozhinov@yandex.com
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/h7/stm32h7_dualcore.dtsi>
+
+/ {
+	/*
+	* The RAM memories placed here can be used by both cores M4/M7
+	* For more information see reference manual and datasheet to STM32H745
+	*/
+
+	/* system data RAM accessible over over AXI bus */
+	sram0: memory@24000000 {
+		reg = <0x24000000 DT_SIZE_K(512)>;
+		compatible = "mmio-sram";
+	};
+
+	/* system data RAM accessible over over AHB bus */
+	sram1: memory@30000000 {
+		reg = <0x30000000 DT_SIZE_K(288)>;
+		compatible = "mmio-sram";
+	};
+
+	/* system data RAM accessible over over AHB bus */
+	sram4: memory@38000000 {
+		reg = <0x38000000 DT_SIZE_K(64)>;
+		compatible = "mmio-sram";
+	};
+};

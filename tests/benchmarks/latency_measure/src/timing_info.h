@@ -105,13 +105,13 @@ static inline void benchmark_timer_init(void)  {       }
 static inline void benchmark_timer_stop(void)  {       }
 static inline void benchmark_timer_start(void) {       }
 
-#define CYCLES_TO_NS(x) ((u32_t)k_cyc_to_ns_floor64(x))
+#define CYCLES_TO_NS(x) ((uint32_t)k_cyc_to_ns_floor64(x))
 #define CYCLES_TO_NS_AVG(x, NCYCLES) \
-	((u32_t)(k_cyc_to_ns_floor64(x) / NCYCLES))
+	((uint32_t)(k_cyc_to_ns_floor64(x) / NCYCLES))
 
 #endif /* CONFIG_NRF_RTC_TIMER */
 
-static inline u32_t TIMING_INFO_GET_DELTA(u32_t start, u32_t end)
+static inline uint32_t TIMING_INFO_GET_DELTA(uint32_t start, uint32_t end)
 {
 	return (end >= start) ? (end - start) : (ULONG_MAX - start + end);
 }

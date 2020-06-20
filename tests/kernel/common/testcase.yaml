@@ -3,11 +3,9 @@ tests:
     tags: kernel userspace
     build_on_all: true
     min_flash: 33
-    min_ram: 32
   kernel.common.misra:
     tags: kernel userspace
     min_flash: 33
-    min_ram: 32
     # Some configurations are known-incompliant and won't build
     filter: not ((CONFIG_I2C or CONFIG_SPI) and CONFIG_USERSPACE)
     extra_configs:

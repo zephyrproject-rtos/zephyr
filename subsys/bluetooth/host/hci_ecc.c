@@ -39,13 +39,13 @@ static struct k_thread ecc_thread_data;
 static K_THREAD_STACK_DEFINE(ecc_thread_stack, CONFIG_BT_HCI_ECC_STACK_SIZE);
 
 /* based on Core Specification 4.2 Vol 3. Part H 2.3.5.6.1 */
-static const u32_t debug_private_key[8] = {
+static const uint32_t debug_private_key[8] = {
 	0xcd3c1abd, 0x5899b8a6, 0xeb40b799, 0x4aff607b, 0xd2103f50, 0x74c9b3e3,
 	0xa3c55f38, 0x3f49f6d4
 };
 
 #if defined(CONFIG_BT_USE_DEBUG_KEYS)
-static const u8_t debug_public_key[64] = {
+static const uint8_t debug_public_key[64] = {
 	0xe6, 0x9d, 0x35, 0x0e, 0x48, 0x01, 0x03, 0xcc, 0xdb, 0xfd, 0xf4, 0xac,
 	0x11, 0x91, 0xf4, 0xef, 0xb9, 0xa5, 0xf9, 0xe9, 0xa7, 0x83, 0x2c, 0x5e,
 	0x2c, 0xbe, 0x97, 0xf2, 0xd2, 0x03, 0xb0, 0x20, 0x8b, 0xd2, 0x89, 0x15,
@@ -68,15 +68,15 @@ static ATOMIC_DEFINE(flags, NUM_FLAGS);
 static K_SEM_DEFINE(cmd_sem, 0, 1);
 
 static struct {
-	u8_t private_key[32];
+	uint8_t private_key[32];
 
 	union {
-		u8_t pk[64];
-		u8_t dhkey[32];
+		uint8_t pk[64];
+		uint8_t dhkey[32];
 	};
 } ecc;
 
-static void send_cmd_status(u16_t opcode, u8_t status)
+static void send_cmd_status(uint16_t opcode, uint8_t status)
 {
 	struct bt_hci_evt_cmd_status *evt;
 	struct bt_hci_evt_hdr *hdr;
@@ -99,7 +99,7 @@ static void send_cmd_status(u16_t opcode, u8_t status)
 	bt_recv_prio(buf);
 }
 
-static u8_t generate_keys(void)
+static uint8_t generate_keys(void)
 {
 #if !defined(CONFIG_BT_USE_DEBUG_KEYS)
 	do {
@@ -127,7 +127,7 @@ static void emulate_le_p256_public_key_cmd(void)
 	struct bt_hci_evt_le_meta_event *meta;
 	struct bt_hci_evt_hdr *hdr;
 	struct net_buf *buf;
-	u8_t status;
+	uint8_t status;
 
 	BT_DBG("");
 
@@ -236,7 +236,7 @@ static void clear_ecc_events(struct net_buf *buf)
 static void le_gen_dhkey(struct net_buf *buf)
 {
 	struct bt_hci_cp_le_generate_dhkey *cmd;
-	u8_t status;
+	uint8_t status;
 
 	if (atomic_test_bit(flags, PENDING_PUB_KEY)) {
 		status = BT_HCI_ERR_CMD_DISALLOWED;
@@ -269,7 +269,7 @@ send_status:
 
 static void le_p256_pub_key(struct net_buf *buf)
 {
-	u8_t status;
+	uint8_t status;
 
 	net_buf_unref(buf);
 
@@ -310,7 +310,7 @@ int bt_hci_ecc_send(struct net_buf *buf)
 	return bt_dev.drv->send(buf);
 }
 
-int default_CSPRNG(u8_t *dst, unsigned int len)
+int default_CSPRNG(uint8_t *dst, unsigned int len)
 {
 	return !bt_rand(dst, len);
 }

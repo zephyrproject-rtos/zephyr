@@ -59,17 +59,26 @@ if(DTC)
     COMMAND
     ${DTC} --version
     OUTPUT_VARIABLE dtc_version_output
+    ERROR_VARIABLE  dtc_error_output
+    RESULT_VARIABLE dtc_status
     )
-  string(REGEX MATCH "Version: DTC ([0-9]+[.][0-9]+[.][0-9]+).*" out_var ${dtc_version_output})
 
-  # Since it is optional, an outdated version is not an error. If an
-  # outdated version is discovered, print a warning and proceed as if
-  # DTC were not installed.
-  if(${CMAKE_MATCH_1} VERSION_GREATER ${MIN_DTC_VERSION})
-    message(STATUS "Found dtc: ${DTC} (found suitable version \"${CMAKE_MATCH_1}\", minimum required is \"${MIN_DTC_VERSION}\")")
+  if(${dtc_status} EQUAL 0)
+    string(REGEX MATCH "Version: DTC ([0-9]+[.][0-9]+[.][0-9]+).*" out_var ${dtc_version_output})
+
+    # Since it is optional, an outdated version is not an error. If an
+    # outdated version is discovered, print a warning and proceed as if
+    # DTC were not installed.
+    if(${CMAKE_MATCH_1} VERSION_GREATER ${MIN_DTC_VERSION})
+      message(STATUS "Found dtc: ${DTC} (found suitable version \"${CMAKE_MATCH_1}\", minimum required is \"${MIN_DTC_VERSION}\")")
+    else()
+      message(WARNING
+        "Could NOT find dtc: Found unsuitable version \"${CMAKE_MATCH_1}\", but required is at least \"${MIN_DTC_VERSION}\" (found ${DTC}). Optional devicetree error checking with dtc will not be performed.")
+      set(DTC DTC-NOTFOUND)
+    endif()
   else()
     message(WARNING
-      "Could NOT find dtc: Found unsuitable version \"${CMAKE_MATCH_1}\", but required is at least \"${MIN_DTC_VERSION}\" (found ${DTC}). Optional devicetree error checking with dtc will not be performed.")
+      "Could NOT find working dtc: Found dtc (${DTC}), but failed to load with:\n ${dtc_error_output}")
     set(DTC DTC-NOTFOUND)
   endif()
 endif()

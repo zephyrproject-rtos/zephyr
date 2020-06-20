@@ -51,7 +51,7 @@ do {                                                                       \
 #endif
 
 
-static const u8_t normal_url_char[32] = {
+static const uint8_t normal_url_char[32] = {
 /*   0 nul    1 soh    2 stx    3 etx    4 eot    5 enq    6 ack    7 bel  */
 	0    |   0    |   0    |   0    |   0    |   0    |   0    |   0,
 /*   8 bs     9 ht    10 nl    11 vt    12 np    13 cr    14 so    15 si   */
@@ -566,7 +566,7 @@ http_parser_parse_url(const char *buf, size_t buflen, int is_connect,
 			return 1;
 		}
 
-		u->port = (u16_t) v;
+		u->port = (uint16_t) v;
 	}
 
 	return 0;

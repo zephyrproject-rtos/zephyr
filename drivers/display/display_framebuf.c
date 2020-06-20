@@ -30,13 +30,13 @@ static void *framebuf_get_framebuffer(const struct device *dev)
 }
 
 static int framebuf_set_brightness(const struct device *dev,
-				   const u8_t brightness)
+				   const uint8_t brightness)
 {
 	return -ENOTSUP;
 }
 
 static int framebuf_set_contrast(const struct device *dev,
-				 const u8_t contrast)
+				 const uint8_t contrast)
 {
 	return -ENOTSUP;
 }
@@ -76,21 +76,21 @@ static void framebuf_get_capabilities(const struct device *dev,
 	caps->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
 
-static int framebuf_write(const struct device *dev, const u16_t x,
-			  const u16_t y,
+static int framebuf_write(const struct device *dev, const uint16_t x,
+			  const uint16_t y,
 			  const struct display_buffer_descriptor *desc,
 			  const void *buf)
 {
 	struct framebuf_dev_data *data = FRAMEBUF_DATA(dev);
-	u32_t *dst = data->buffer;
-	const u32_t *src = buf;
-	u32_t row;
+	uint32_t *dst = data->buffer;
+	const uint32_t *src = buf;
+	uint32_t row;
 
 	dst += x;
 	dst += (y * data->pitch);
 
 	for (row = 0; row < desc->height; ++row) {
-		(void) memcpy(dst, src, desc->width * sizeof(u32_t));
+		(void) memcpy(dst, src, desc->width * sizeof(uint32_t));
 		dst += data->pitch;
 		src += desc->pitch;
 	}
@@ -98,21 +98,21 @@ static int framebuf_write(const struct device *dev, const u16_t x,
 	return 0;
 }
 
-static int framebuf_read(const struct device *dev, const u16_t x,
-			 const u16_t y,
+static int framebuf_read(const struct device *dev, const uint16_t x,
+			 const uint16_t y,
 			 const struct display_buffer_descriptor *desc,
 			 void *buf)
 {
 	struct framebuf_dev_data *data = FRAMEBUF_DATA(dev);
-	u32_t *src = data->buffer;
-	u32_t *dst = buf;
-	u32_t row;
+	uint32_t *src = data->buffer;
+	uint32_t *dst = buf;
+	uint32_t row;
 
 	src += x;
 	src += (y * data->pitch);
 
 	for (row = 0; row < desc->height; ++row) {
-		(void) memcpy(dst, src, desc->width * sizeof(u32_t));
+		(void) memcpy(dst, src, desc->width * sizeof(uint32_t));
 		src += data->pitch;
 		dst += desc->pitch;
 	}

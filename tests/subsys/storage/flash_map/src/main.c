@@ -18,12 +18,12 @@ struct flash_sector fs_sectors[256];
 void test_flash_area_get_sectors(void)
 {
 	const struct flash_area *fa;
-	u32_t sec_cnt;
+	uint32_t sec_cnt;
 	int i;
 	int rc;
 	off_t off;
-	u8_t wd[256];
-	u8_t rd[256];
+	uint8_t wd[256];
+	uint8_t rd[256];
 	struct device *flash_dev;
 
 	rc = flash_area_open(FLASH_AREA_ID(image_1), &fa);

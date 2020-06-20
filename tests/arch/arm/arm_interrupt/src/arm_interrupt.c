@@ -56,6 +56,17 @@ void arm_isr_handler(void *args)
 		__ISB();
 #endif
 #endif
+	} else if (test_flag == 5) {
+#if defined(CONFIG_HW_STACK_PROTECTION)
+		/*
+		 * Verify that the Stack Overflow has been reported by the core
+		 * and the expected reason variable is reset.
+		 */
+		int reason = expected_reason;
+
+		zassert_equal(reason, -1,
+			"expected_reason has not been reset (%d)\n", reason);
+#endif
 	}
 }
 
@@ -165,6 +176,39 @@ void test_arm_interrupt(void)
 #endif
 #endif
 
+#if defined(CONFIG_HW_STACK_PROTECTION)
+	/*
+	 * Simulate a stacking error that is caused explicitly by the
+	 * exception entry context stacking, to verify that the CPU can
+	 * correctly report stacking errors that are not also Data
+	 * access violation errors.
+	 */
+	expected_reason = K_ERR_STACK_CHK_FAIL;
+
+	__disable_irq();
+
+	/* Trigger an interrupt to cause the stacking error */
+	NVIC_ClearPendingIRQ(i);
+	NVIC_EnableIRQ(i);
+	NVIC_SetPendingIRQ(i);
+
+	/* Set test flag so the IRQ handler executes the appropriate case. */
+	test_flag = 4;
+
+	/* Manually set PSP almost at the bottom of the stack. An exception
+	 * entry will make PSP descend below the limit and into the MPU guard
+	 * section (or beyond the address pointed by PSPLIM in ARMv8-M MCUs).
+	 */
+	__set_PSP(_current->stack_info.start + 0x10);
+
+	__enable_irq();
+	__DSB();
+	__ISB();
+
+	/* No stack variable access below this point.
+	 * The IRQ will handle the verification.
+	 */
+#endif /* CONFIG_HW_STACK_PROTECTION */
 }
 
 #if defined(CONFIG_USERSPACE)

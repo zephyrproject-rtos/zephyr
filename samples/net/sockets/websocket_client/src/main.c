@@ -58,16 +58,16 @@ static const char lorem_ipsum[] =
 
 const int ipsum_len = MAX_RECV_BUF_LEN;
 
-static u8_t recv_buf_ipv4[MAX_RECV_BUF_LEN];
-static u8_t recv_buf_ipv6[MAX_RECV_BUF_LEN];
+static uint8_t recv_buf_ipv4[MAX_RECV_BUF_LEN];
+static uint8_t recv_buf_ipv6[MAX_RECV_BUF_LEN];
 
 /* We need to allocate bigger buffer for the websocket data we receive so that
  * the websocket header fits into it.
  */
 #define EXTRA_BUF_SPACE 30
 
-static u8_t temp_recv_buf_ipv4[MAX_RECV_BUF_LEN + EXTRA_BUF_SPACE];
-static u8_t temp_recv_buf_ipv6[MAX_RECV_BUF_LEN + EXTRA_BUF_SPACE];
+static uint8_t temp_recv_buf_ipv4[MAX_RECV_BUF_LEN + EXTRA_BUF_SPACE];
+static uint8_t temp_recv_buf_ipv6[MAX_RECV_BUF_LEN + EXTRA_BUF_SPACE];
 
 static int setup_socket(sa_family_t family, const char *server, int port,
 			int *sock, struct sockaddr *addr, socklen_t addr_len)
@@ -183,12 +183,12 @@ static ssize_t sendall_with_bsd_api(int sock, const void *buf, size_t len)
 	return send(sock, buf, len, 0);
 }
 
-static void recv_data_wso_api(int sock, size_t amount, u8_t *buf,
+static void recv_data_wso_api(int sock, size_t amount, uint8_t *buf,
 			      size_t buf_len, const char *proto)
 {
-	u64_t remaining = ULLONG_MAX;
+	uint64_t remaining = ULLONG_MAX;
 	int total_read;
-	u32_t message_type;
+	uint32_t message_type;
 	int ret, read_pos;
 
 	read_pos = 0;
@@ -218,7 +218,7 @@ static void recv_data_wso_api(int sock, size_t amount, u8_t *buf,
 	if (remaining != 0 || total_read != amount ||
 	    /* Do not check the final \n at the end of the msg */
 	    memcmp(lorem_ipsum, buf, amount - 1) != 0) {
-		LOG_ERR("%s data recv failure %zd/%d bytes (remaining %lld)",
+		LOG_ERR("%s data recv failure %zd/%d bytes (remaining %" PRId64 ")",
 			proto, amount, total_read, remaining);
 		LOG_HEXDUMP_DBG(buf, total_read, "received ws buf");
 		LOG_HEXDUMP_DBG(lorem_ipsum, total_read, "sent ws buf");
@@ -227,7 +227,7 @@ static void recv_data_wso_api(int sock, size_t amount, u8_t *buf,
 	}
 }
 
-static void recv_data_bsd_api(int sock, size_t amount, u8_t *buf,
+static void recv_data_bsd_api(int sock, size_t amount, uint8_t *buf,
 			      size_t buf_len, const char *proto)
 {
 	int remaining;
@@ -266,7 +266,7 @@ static void recv_data_bsd_api(int sock, size_t amount, u8_t *buf,
 }
 
 static bool send_and_wait_msg(int sock, size_t amount, const char *proto,
-			      u8_t *buf, size_t buf_len)
+			      uint8_t *buf, size_t buf_len)
 {
 	static int count;
 	int ret;
@@ -326,7 +326,7 @@ void main(void)
 	};
 	int sock4 = -1, sock6 = -1;
 	int websock4 = -1, websock6 = -1;
-	s32_t timeout = 3 * MSEC_PER_SEC;
+	int32_t timeout = 3 * MSEC_PER_SEC;
 	struct sockaddr_in6 addr6;
 	struct sockaddr_in addr4;
 	size_t amount;

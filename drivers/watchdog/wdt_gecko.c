@@ -38,7 +38,7 @@ struct wdt_gecko_data {
 #define DEV_CFG(dev) \
 	((const struct wdt_gecko_cfg *)(dev)->config_info)
 
-static u32_t wdt_gecko_get_timeout_from_persel(int perSel)
+static uint32_t wdt_gecko_get_timeout_from_persel(int perSel)
 {
 	return (8 << perSel) + 1;
 }
@@ -46,7 +46,7 @@ static u32_t wdt_gecko_get_timeout_from_persel(int perSel)
 /* Find the rounded up value of cycles for supplied timeout. When using ULFRCO
  * (default), 1 cycle is 1 ms +/- 12%.
  */
-static int wdt_gecko_get_persel_from_timeout(u32_t timeout)
+static int wdt_gecko_get_persel_from_timeout(uint32_t timeout)
 {
 	int idx;
 
@@ -59,10 +59,10 @@ static int wdt_gecko_get_persel_from_timeout(u32_t timeout)
 	return idx;
 }
 
-static int wdt_gecko_convert_window(u32_t window, u32_t period)
+static int wdt_gecko_convert_window(uint32_t window, uint32_t period)
 {
 	int idx = 0;
-	u32_t incr_val, comp_val;
+	uint32_t incr_val, comp_val;
 
 	incr_val = period / 8;
 	comp_val = 0; /* Initially 0, disable */
@@ -83,7 +83,7 @@ static int wdt_gecko_convert_window(u32_t window, u32_t period)
 	return idx;
 }
 
-static int wdt_gecko_setup(struct device *dev, u8_t options)
+static int wdt_gecko_setup(struct device *dev, uint8_t options)
 {
 	const struct wdt_gecko_cfg *config = DEV_CFG(dev);
 	struct wdt_gecko_data *data = DEV_DATA(dev);
@@ -138,7 +138,7 @@ static int wdt_gecko_install_timeout(struct device *dev,
 {
 	struct wdt_gecko_data *data = DEV_DATA(dev);
 	data->wdog_config = (WDOG_Init_TypeDef)WDOG_INIT_DEFAULT;
-	u32_t installed_timeout;
+	uint32_t installed_timeout;
 
 	if (data->timeout_installed) {
 		LOG_ERR("No more timeouts can be installed");
@@ -228,7 +228,7 @@ static void wdt_gecko_isr(void *arg)
 	const struct wdt_gecko_cfg *config = DEV_CFG(dev);
 	struct wdt_gecko_data *data = DEV_DATA(dev);
 	WDOG_TypeDef *wdog = config->base;
-	u32_t flags;
+	uint32_t flags;
 
 	/* Clear IRQ flags */
 	flags = WDOGn_IntGet(wdog);

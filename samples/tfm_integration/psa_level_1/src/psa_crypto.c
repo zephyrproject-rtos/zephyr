@@ -22,7 +22,7 @@ LOG_MODULE_DECLARE(app, CONFIG_LOG_DEFAULT_LEVEL);
 void crp_test_rng(void)
 {
 	psa_status_t status;
-	u8_t outbuf[256] = { 0 };
+	uint8_t outbuf[256] = { 0 };
 	struct sf_hex_tbl_fmt fmt = {
 		.ascii = true,
 		.addr_label = true,
@@ -44,10 +44,10 @@ void crp_test_sha256(void)
 	static const char *const msg[] = { "This is my test message, ",
 					   "please generate a hash for this." };
 	const size_t msg_size[] = { 25, 32 };
-	u8_t hash_val[PSA_HASH_SIZE(PSA_ALG_SHA_256)] = { 0 };
+	uint8_t hash_val[PSA_HASH_SIZE(PSA_ALG_SHA_256)] = { 0 };
 	size_t hash_len;
-	const u32_t msg_num = ARRAY_SIZE(msg) / sizeof(msg[0]);
-	u32_t idx;
+	const uint32_t msg_num = ARRAY_SIZE(msg) / sizeof(msg[0]);
+	uint32_t idx;
 	psa_status_t status;
 	psa_hash_operation_t handle = psa_hash_operation_init();
 
@@ -65,7 +65,7 @@ void crp_test_sha256(void)
 		status = al_psa_status(
 			psa_hash_update(
 				&handle,
-				(const u8_t *)msg[idx], msg_size[idx]),
+				(const uint8_t *)msg[idx], msg_size[idx]),
 			__func__);
 		if (status != PSA_SUCCESS) {
 			goto err;

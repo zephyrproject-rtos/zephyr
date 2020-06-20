@@ -17,7 +17,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
@@ -113,7 +113,7 @@
 			};
 		};
 
-		dmac: dmac@4100A000 {
+		dmac: dmac@4100a000 {
 			compatible = "atmel,sam0-dmac";
 			reg = <0x4100A000 0x50>;
 			interrupts = <31 0>, <32 0>, <33 0>, <34 0>, <35 0>;
@@ -232,7 +232,7 @@
 			clock-names = "GCLK", "MCLK";
 		};
 
-		sercom7: sercom@43000C00 {
+		sercom7: sercom@43000c00 {
 			compatible = "atmel,sam0-sercom";
 			reg = <0x43000C00 0x40>;
 			interrupts = <74 0>, <75 0>, <76 0>, <77 0>;
@@ -300,7 +300,7 @@
 			label = "RTC";
 		};
 
-		adc0: adc@43001C00 {
+		adc0: adc@43001c00 {
 			compatible = "atmel,sam0-adc";
 			reg = <0x43001C00 0x4A>;
 			interrupts = <118 0>, <119 0>;
@@ -349,7 +349,7 @@
 			clock-names = "GCLK", "MCLK";
 		};
 
-		tc2: tc@4101A000 {
+		tc2: tc@4101a000 {
 			compatible = "atmel,sam0-tc32";
 			reg = <0x4101A000 0x34>;
 			interrupts = <109 0>;

@@ -15,7 +15,7 @@
 #define ONOFF
 #define GENERIC_LEVEL
 
-static u8_t tid;
+static uint8_t tid;
 
 void publish(struct k_work *work)
 {
@@ -211,7 +211,7 @@ void publish(struct k_work *work)
 	if (gpio_pin_get(button_device[0],
 			 DT_GPIO_PIN(DT_ALIAS(sw0), gpios)) == 1) {
 #if defined(ONOFF)
-		static u8_t state = STATE_ON;
+		static uint8_t state = STATE_ON;
 
 		bt_mesh_model_msg_init(root_models[3].pub->msg,
 				       BT_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK);

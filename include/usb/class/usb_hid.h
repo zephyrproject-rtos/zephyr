@@ -23,16 +23,16 @@ extern "C" {
 #endif
 
 struct usb_hid_class_subdescriptor {
-	u8_t bDescriptorType;
-	u16_t wDescriptorLength;
+	uint8_t bDescriptorType;
+	uint16_t wDescriptorLength;
 } __packed;
 
 struct usb_hid_descriptor {
-	u8_t bLength;
-	u8_t bDescriptorType;
-	u16_t bcdHID;
-	u8_t bCountryCode;
-	u8_t bNumDescriptors;
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint16_t bcdHID;
+	uint8_t bCountryCode;
+	uint8_t bNumDescriptors;
 
 	/*
 	 * Specification says at least one Class Descriptor needs to
@@ -57,11 +57,11 @@ struct usb_hid_descriptor {
 
 /* Public headers */
 
-typedef int (*hid_cb_t)(struct usb_setup_packet *setup, s32_t *len,
-			u8_t **data);
+typedef int (*hid_cb_t)(struct usb_setup_packet *setup, int32_t *len,
+			uint8_t **data);
 typedef void (*hid_int_ready_callback)(void);
-typedef void (*hid_protocol_cb_t)(u8_t protocol);
-typedef void (*hid_idle_cb_t)(u16_t report_id);
+typedef void (*hid_protocol_cb_t)(uint8_t protocol);
+typedef void (*hid_idle_cb_t)(uint16_t report_id);
 
 struct hid_ops {
 	hid_cb_t get_report;
@@ -431,16 +431,16 @@ enum hid_kbd_led {
 };
 
 /* Register HID device */
-void usb_hid_register_device(struct device *dev, const u8_t *desc, size_t size,
+void usb_hid_register_device(struct device *dev, const uint8_t *desc, size_t size,
 			     const struct hid_ops *op);
 
 /* Write to hid interrupt endpoint */
-int hid_int_ep_write(const struct device *dev, const u8_t *data, u32_t data_len,
-		     u32_t *bytes_ret);
+int hid_int_ep_write(const struct device *dev, const uint8_t *data, uint32_t data_len,
+		     uint32_t *bytes_ret);
 
 /* Read from hid interrupt endpoint */
-int hid_int_ep_read(const struct device *dev, u8_t *data, u32_t max_data_len,
-		    u32_t *ret_bytes);
+int hid_int_ep_read(const struct device *dev, uint8_t *data, uint32_t max_data_len,
+		    uint32_t *ret_bytes);
 
 /* Initialize USB HID */
 int usb_hid_init(const struct device *dev);

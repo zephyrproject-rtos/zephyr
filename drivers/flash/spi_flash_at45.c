@@ -55,7 +55,7 @@ struct spi_flash_at45_data {
 	struct spi_cs_control spi_cs;
 	struct k_sem lock;
 #if IS_ENABLED(CONFIG_DEVICE_POWER_MANAGEMENT)
-	u32_t pm_state;
+	uint32_t pm_state;
 #endif
 };
 
@@ -67,13 +67,13 @@ struct spi_flash_at45_config {
 #if IS_ENABLED(CONFIG_FLASH_PAGE_LAYOUT)
 	struct flash_pages_layout pages_layout;
 #endif
-	u32_t chip_size;
-	u16_t block_size;
-	u16_t page_size;
-	u16_t t_enter_dpd; /* in microseconds */
-	u16_t t_exit_dpd;  /* in microseconds */
+	uint32_t chip_size;
+	uint16_t block_size;
+	uint16_t page_size;
+	uint16_t t_enter_dpd; /* in microseconds */
+	uint16_t t_exit_dpd;  /* in microseconds */
 	bool use_udpd;
-	u8_t jedec_id[3];
+	uint8_t jedec_id[3];
 };
 
 static struct spi_flash_at45_data *get_dev_data(struct device *dev)
@@ -100,9 +100,9 @@ static int check_jedec_id(struct device *dev)
 {
 	const struct spi_flash_at45_config *cfg = get_dev_config(dev);
 	int err;
-	u8_t const *expected_id = cfg->jedec_id;
-	u8_t read_id[sizeof(cfg->jedec_id)];
-	const u8_t opcode = CMD_READ_ID;
+	uint8_t const *expected_id = cfg->jedec_id;
+	uint8_t read_id[sizeof(cfg->jedec_id)];
+	const uint8_t opcode = CMD_READ_ID;
 	const struct spi_buf tx_buf[] = {
 		{
 			.buf = (void *)&opcode,
@@ -147,10 +147,10 @@ static int check_jedec_id(struct device *dev)
  * - Byte 1 to MSB
  * of the pointed parameter.
  */
-static int read_status_register(struct device *dev, u16_t *status)
+static int read_status_register(struct device *dev, uint16_t *status)
 {
 	int err;
-	const u8_t opcode = CMD_READ_STATUS;
+	const uint8_t opcode = CMD_READ_STATUS;
 	const struct spi_buf tx_buf[] = {
 		{
 			.buf = (void *)&opcode,
@@ -163,7 +163,7 @@ static int read_status_register(struct device *dev, u16_t *status)
 		},
 		{
 			.buf = status,
-			.len = sizeof(u16_t),
+			.len = sizeof(uint16_t),
 		}
 	};
 	DEF_BUF_SET(tx_buf_set, tx_buf);
@@ -185,7 +185,7 @@ static int read_status_register(struct device *dev, u16_t *status)
 static int wait_until_ready(struct device *dev)
 {
 	int err;
-	u16_t status;
+	uint16_t status;
 
 	do {
 		err = read_status_register(dev, &status);
@@ -197,8 +197,8 @@ static int wait_until_ready(struct device *dev)
 static int configure_page_size(struct device *dev)
 {
 	int err;
-	u16_t status;
-	u8_t const conf_binary_page_size[] = CMD_BINARY_PAGE_SIZE;
+	uint16_t status;
+	uint8_t const conf_binary_page_size[] = CMD_BINARY_PAGE_SIZE;
 	const struct spi_buf tx_buf[] = {
 		{
 			.buf = (void *)conf_binary_page_size,
@@ -247,7 +247,7 @@ static int spi_flash_at45_read(struct device *dev, off_t offset,
 		return -ENODEV;
 	}
 
-	u8_t const op_and_addr[] = {
+	uint8_t const op_and_addr[] = {
 		CMD_READ,
 		(offset >> 16) & 0xFF,
 		(offset >> 8)  & 0xFF,
@@ -289,7 +289,7 @@ static int perform_write(struct device *dev, off_t offset,
 			 const void *data, size_t len)
 {
 	int err;
-	u8_t const op_and_addr[] = {
+	uint8_t const op_and_addr[] = {
 		IS_ENABLED(CONFIG_SPI_FLASH_AT45_USE_READ_MODIFY_WRITE)
 			? CMD_MODIFY
 			: CMD_WRITE,
@@ -361,7 +361,7 @@ static int spi_flash_at45_write(struct device *dev, off_t offset,
 static int perform_chip_erase(struct device *dev)
 {
 	int err;
-	u8_t const chip_erase_cmd[] = CMD_CHIP_ERASE;
+	uint8_t const chip_erase_cmd[] = CMD_CHIP_ERASE;
 	const struct spi_buf tx_buf[] = {
 		{
 			.buf = (void *)&chip_erase_cmd,
@@ -390,10 +390,10 @@ static bool is_erase_possible(size_t entity_size,
 		(offset & (entity_size - 1)) == 0);
 }
 
-static int perform_erase_op(struct device *dev, u8_t opcode, off_t offset)
+static int perform_erase_op(struct device *dev, uint8_t opcode, off_t offset)
 {
 	int err;
-	u8_t const op_and_addr[] = {
+	uint8_t const op_and_addr[] = {
 		opcode,
 		(offset >> 16) & 0xFF,
 		(offset >> 8)  & 0xFF,
@@ -427,6 +427,12 @@ static int spi_flash_at45_erase(struct device *dev, off_t offset, size_t size)
 
 	if (!is_valid_request(offset, size, cfg->chip_size)) {
 		return -ENODEV;
+	}
+
+	/* Diagnose region errors before starting to erase. */
+	if (((offset % cfg->page_size) != 0)
+	    || ((size % cfg->page_size) != 0)) {
+		return -EINVAL;
 	}
 
 	acquire(dev);
@@ -499,7 +505,7 @@ static void spi_flash_at45_pages_layout(
 }
 #endif /* IS_ENABLED(CONFIG_FLASH_PAGE_LAYOUT) */
 
-static int power_down_op(struct device *dev, u8_t opcode, u32_t delay)
+static int power_down_op(struct device *dev, uint8_t opcode, uint32_t delay)
 {
 	int err = 0;
 	const struct spi_buf tx_buf[] = {
@@ -569,7 +575,7 @@ static int spi_flash_at45_init(struct device *dev)
 }
 
 #if IS_ENABLED(CONFIG_DEVICE_POWER_MANAGEMENT)
-static int spi_flash_at45_pm_control(struct device *dev, u32_t ctrl_command,
+static int spi_flash_at45_pm_control(struct device *dev, uint32_t ctrl_command,
 				     void *context, device_pm_cb cb, void *arg)
 {
 	struct spi_flash_at45_data *dev_data = get_dev_data(dev);
@@ -577,7 +583,7 @@ static int spi_flash_at45_pm_control(struct device *dev, u32_t ctrl_command,
 	int err = 0;
 
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-		u32_t new_state = *((const u32_t *)context);
+		uint32_t new_state = *((const uint32_t *)context);
 
 		if (new_state != dev_data->pm_state) {
 			switch (new_state) {
@@ -607,7 +613,7 @@ static int spi_flash_at45_pm_control(struct device *dev, u32_t ctrl_command,
 		}
 	} else {
 		__ASSERT_NO_MSG(ctrl_command == DEVICE_PM_GET_POWER_STATE);
-		*((u32_t *)context) = dev_data->pm_state;
+		*((uint32_t *)context) = dev_data->pm_state;
 	}
 
 	if (cb) {

@@ -39,7 +39,7 @@
 		compatible = "gpio-keys";
 
 		button0: button_0 {
-			gpios = <&gpio0 31 GPIO_PUD_PULL_UP>;
+			gpios = <&gpio0 31 GPIO_PULL_UP>;
 			label = "Button 0";
 		};
 	};
@@ -102,7 +102,7 @@
 	hts221@5f {
 		compatible = "st,hts221";
 		reg = <0x5f>;
-		drdy-gpios = <&gpio0 3 GPIO_INT_ACTIVE_HIGH>;
+		drdy-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
 		label = "HTS221";
 	};
 
@@ -167,15 +167,15 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 0x10000>;
+			reg = <0x00000000 0xc000>;
 		};
-		slot0_partition: partition@10000 {
+		slot0_partition: partition@c000 {
 			label = "image-0";
 		};
-		slot0_ns_partition: partition@40000 {
+		slot0_ns_partition: partition@3e000 {
 			label = "image-0-nonsecure";
 		};
-		slot1_partition: partition@80000 {
+		slot1_partition: partition@7e000 {
 			label = "image-1";
 		};
 		slot1_ns_partition: partition@b0000 {

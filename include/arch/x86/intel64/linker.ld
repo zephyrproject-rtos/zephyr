@@ -105,10 +105,6 @@ SECTIONS
 
 	#include <snippets-rodata.ld>
 
-	#ifdef CONFIG_CUSTOM_RODATA_LD
-	#include <custom-rodata.ld>
-	#endif /* CONFIG_CUSTOM_RODATA_LD */
-
 #ifdef CONFIG_X86_MMU
 	. = ALIGN(8);
 	_mmu_region_list_start = .;
@@ -165,18 +161,12 @@ SECTIONS
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 
 #include <snippets-sections.ld>
-#ifdef CONFIG_CUSTOM_SECTIONS_LD
-#include <custom-sections.ld>
-#endif /* CONFIG_CUSTOM_SECTIONS_LD */
 
 	SECTION_PROLOGUE(_DATA_SECTION_NAME,,ALIGN(16))
 	{
 	*(.data)
 	*(.data.*)
 	#include <snippets-rwdata.ld>
-	#ifdef CONFIG_CUSTOM_RWDATA_LD
-	#include <custom-rwdata.ld>
-	#endif /* CONFIG_CUSTOM_RWDATA_LD */
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 #include <snippets-ram-sections.ld>
@@ -190,7 +180,7 @@ SECTIONS
 	_end = .;
 
 	/* All unused memory also owned by the kernel for heaps */
-	__kernel_ram_end = PHYS_RAM_ADDR + PHYS_RAM_SIZE;
+	__kernel_ram_end = KERNEL_BASE_ADDR + KERNEL_RAM_SIZE;
 	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
 
 #include <linker/debug-sections.ld>

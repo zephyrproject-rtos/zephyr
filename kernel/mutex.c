@@ -93,7 +93,7 @@ static inline int z_vrfy_k_mutex_init(struct k_mutex *mutex)
 #include <syscalls/k_mutex_init_mrsh.c>
 #endif
 
-static s32_t new_prio_for_inheritance(s32_t target, s32_t limit)
+static int32_t new_prio_for_inheritance(int32_t target, int32_t limit)
 {
 	int new_prio = z_is_prio_higher(target, limit) ? target : limit;
 
@@ -102,7 +102,7 @@ static s32_t new_prio_for_inheritance(s32_t target, s32_t limit)
 	return new_prio;
 }
 
-static bool adjust_owner_prio(struct k_mutex *mutex, s32_t new_prio)
+static bool adjust_owner_prio(struct k_mutex *mutex, int32_t new_prio)
 {
 	if (mutex->owner->base.prio != new_prio) {
 
@@ -121,6 +121,8 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 	int new_prio;
 	k_spinlock_key_t key;
 	bool resched = false;
+
+	__ASSERT(!arch_is_in_isr(), "mutexes cannot be used inside ISRs");
 
 	sys_trace_void(SYS_TRACE_ID_MUTEX_LOCK);
 	key = k_spin_lock(&lock);
@@ -210,6 +212,8 @@ static inline int z_vrfy_k_mutex_lock(struct k_mutex *mutex,
 int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 {
 	struct k_thread *new_owner;
+
+	__ASSERT(!arch_is_in_isr(), "mutexes cannot be used inside ISRs");
 
 	CHECKIF(mutex->owner == NULL) {
 		return -EINVAL;

@@ -26,7 +26,7 @@ static int cmd_i2c_scan(const struct shell *shell,
 			size_t argc, char **argv)
 {
 	struct device *dev;
-	u8_t cnt = 0, first = 0x04, last = 0x77;
+	uint8_t cnt = 0, first = 0x04, last = 0x77;
 
 	dev = device_get_binding(argv[1]);
 
@@ -38,16 +38,16 @@ static int cmd_i2c_scan(const struct shell *shell,
 
 	shell_print(shell,
 		    "     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f");
-	for (u8_t i = 0; i <= last; i += 16) {
+	for (uint8_t i = 0; i <= last; i += 16) {
 		shell_fprintf(shell, SHELL_NORMAL, "%02x: ", i);
-		for (u8_t j = 0; j < 16; j++) {
+		for (uint8_t j = 0; j < 16; j++) {
 			if (i + j < first || i + j > last) {
 				shell_fprintf(shell, SHELL_NORMAL, "   ");
 				continue;
 			}
 
 			struct i2c_msg msgs[1];
-			u8_t dst;
+			uint8_t dst;
 
 			/* Send the address to read from */
 			msgs[0].buf = &dst;
@@ -94,7 +94,7 @@ static int cmd_i2c_recover(const struct shell *shell,
 /* i2c write <device> <dev_addr> [<byte1>, ...] */
 static int cmd_i2c_write(const struct shell *shell, size_t argc, char **argv)
 {
-	u8_t buf[MAX_I2C_BYTES];
+	uint8_t buf[MAX_I2C_BYTES];
 	struct device *dev;
 	int num_bytes;
 	int reg_addr;
@@ -161,7 +161,7 @@ static int cmd_i2c_read_byte(const struct shell *shell,
 	struct device *dev;
 	int reg_addr;
 	int dev_addr;
-	u8_t out;
+	uint8_t out;
 
 	dev = device_get_binding(argv[1]);
 	if (!dev) {
@@ -186,7 +186,7 @@ static int cmd_i2c_read_byte(const struct shell *shell,
 /* i2c read <device> <dev_addr> [<numbytes>] */
 static int cmd_i2c_read(const struct shell *shell, size_t argc, char **argv)
 {
-	u8_t buf[MAX_I2C_BYTES];
+	uint8_t buf[MAX_I2C_BYTES];
 	struct device *dev;
 	int num_bytes;
 	int reg_addr;
@@ -233,9 +233,9 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 	entry->subcmd = &dsub_device_name;
 
 	for (dev = __device_start; dev != __device_end; dev++) {
-		if ((dev->driver_api != NULL) &&
+		if ((dev->driver_api != NULL) && (dev->name != NULL) &&
 		    strstr(dev->name, I2C_DEVICE_PREFIX) != NULL &&
-		    strcmp(dev->name, "") && (dev->name != NULL)) {
+		    strcmp(dev->name, "")) {
 			if (idx == device_idx) {
 				entry->syntax = dev->name;
 				break;

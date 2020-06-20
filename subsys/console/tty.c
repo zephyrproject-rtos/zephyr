@@ -9,8 +9,8 @@
 #include <sys/printk.h>
 #include <console/tty.h>
 
-static int tty_irq_input_hook(struct tty_serial *tty, u8_t c);
-static int tty_putchar(struct tty_serial *tty, u8_t c);
+static int tty_irq_input_hook(struct tty_serial *tty, uint8_t c);
+static int tty_putchar(struct tty_serial *tty, uint8_t c);
 
 static void tty_uart_isr(void *user_data)
 {
@@ -20,7 +20,7 @@ static void tty_uart_isr(void *user_data)
 	uart_irq_update(dev);
 
 	if (uart_irq_rx_ready(dev)) {
-		u8_t c;
+		uint8_t c;
 
 		while (1) {
 			if (uart_fifo_read(dev, &c, 1) == 0) {
@@ -46,7 +46,7 @@ static void tty_uart_isr(void *user_data)
 	}
 }
 
-static int tty_irq_input_hook(struct tty_serial *tty, u8_t c)
+static int tty_irq_input_hook(struct tty_serial *tty, uint8_t c)
 {
 	int rx_next = tty->rx_put + 1;
 
@@ -67,13 +67,15 @@ static int tty_irq_input_hook(struct tty_serial *tty, u8_t c)
 	return 1;
 }
 
-static int tty_putchar(struct tty_serial *tty, u8_t c)
+static int tty_putchar(struct tty_serial *tty, uint8_t c)
 {
 	unsigned int key;
 	int tx_next;
 	int res;
 
-	res = k_sem_take(&tty->tx_sem, SYS_TIMEOUT_MS(tty->tx_timeout));
+	res = k_sem_take(&tty->tx_sem,
+			 k_is_in_isr() ? K_NO_WAIT :
+					 SYS_TIMEOUT_MS(tty->tx_timeout));
 	if (res < 0) {
 		return res;
 	}
@@ -98,7 +100,7 @@ static int tty_putchar(struct tty_serial *tty, u8_t c)
 
 ssize_t tty_write(struct tty_serial *tty, const void *buf, size_t size)
 {
-	const u8_t *p = buf;
+	const uint8_t *p = buf;
 	size_t out_size = 0;
 	int res = 0;
 
@@ -140,7 +142,7 @@ ssize_t tty_write(struct tty_serial *tty, const void *buf, size_t size)
 static int tty_getchar(struct tty_serial *tty)
 {
 	unsigned int key;
-	u8_t c;
+	uint8_t c;
 	int res;
 
 	res = k_sem_take(&tty->rx_sem, SYS_TIMEOUT_MS(tty->rx_timeout));
@@ -160,13 +162,13 @@ static int tty_getchar(struct tty_serial *tty)
 
 static ssize_t tty_read_unbuf(struct tty_serial *tty, void *buf, size_t size)
 {
-	u8_t *p = buf;
+	uint8_t *p = buf;
 	size_t out_size = 0;
 	int res = 0;
-	u32_t timeout = tty->rx_timeout;
+	uint32_t timeout = tty->rx_timeout;
 
 	while (size) {
-		u8_t c;
+		uint8_t c;
 		res = uart_poll_in(tty->uart_dev, &c);
 		if (res <= -2) {
 			/* Error occurred, best we can do is to return
@@ -204,7 +206,7 @@ static ssize_t tty_read_unbuf(struct tty_serial *tty, void *buf, size_t size)
 
 ssize_t tty_read(struct tty_serial *tty, void *buf, size_t size)
 {
-	u8_t *p = buf;
+	uint8_t *p = buf;
 	size_t out_size = 0;
 	int res = 0;
 
@@ -230,7 +232,7 @@ ssize_t tty_read(struct tty_serial *tty, void *buf, size_t size)
 			return out_size;
 		}
 
-		*p++ = (u8_t)res;
+		*p++ = (uint8_t)res;
 		out_size++;
 	}
 

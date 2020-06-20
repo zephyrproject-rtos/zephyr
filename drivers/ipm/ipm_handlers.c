@@ -7,7 +7,7 @@
 #include <syscall_handler.h>
 #include <drivers/ipm.h>
 
-static inline int z_vrfy_ipm_send(struct device *dev, int wait, u32_t id,
+static inline int z_vrfy_ipm_send(struct device *dev, int wait, uint32_t id,
 			   const void *data, int size)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_IPM(dev, send));
@@ -24,7 +24,7 @@ static inline int z_vrfy_ipm_max_data_size_get(struct device *dev)
 }
 #include <syscalls/ipm_max_data_size_get_mrsh.c>
 
-static inline u32_t z_vrfy_ipm_max_id_val_get(struct device *dev)
+static inline uint32_t z_vrfy_ipm_max_id_val_get(struct device *dev)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_IPM(dev, max_id_val_get));
 	return z_impl_ipm_max_id_val_get((struct device *)dev);

@@ -17,7 +17,7 @@
 #define REL_ERROR_THRESH	(5.0e-5)
 
 static void test_arm_add_f32(
-	const u32_t *input1, const u32_t *input2, const u32_t *ref,
+	const uint32_t *input1, const uint32_t *input2, const uint32_t *ref,
 	size_t length)
 {
 	float32_t *output;
@@ -49,7 +49,7 @@ DEFINE_TEST_VARIANT4(arm_add_f32, 8, in_com1, in_com2, ref_add, 8);
 DEFINE_TEST_VARIANT4(arm_add_f32, 11, in_com1, in_com2, ref_add, 11);
 
 static void test_arm_sub_f32(
-	const u32_t *input1, const u32_t *input2, const u32_t *ref,
+	const uint32_t *input1, const uint32_t *input2, const uint32_t *ref,
 	size_t length)
 {
 	float32_t *output;
@@ -81,7 +81,7 @@ DEFINE_TEST_VARIANT4(arm_sub_f32, 8, in_com1, in_com2, ref_sub, 8);
 DEFINE_TEST_VARIANT4(arm_sub_f32, 11, in_com1, in_com2, ref_sub, 11);
 
 static void test_arm_mult_f32(
-	const u32_t *input1, const u32_t *input2, const u32_t *ref,
+	const uint32_t *input1, const uint32_t *input2, const uint32_t *ref,
 	size_t length)
 {
 	float32_t *output;
@@ -113,7 +113,7 @@ DEFINE_TEST_VARIANT4(arm_mult_f32, 8, in_com1, in_com2, ref_mult, 8);
 DEFINE_TEST_VARIANT4(arm_mult_f32, 11, in_com1, in_com2, ref_mult, 11);
 
 static void test_arm_negate_f32(
-	const u32_t *input1, const u32_t *ref, size_t length)
+	const uint32_t *input1, const uint32_t *ref, size_t length)
 {
 	float32_t *output;
 
@@ -144,7 +144,7 @@ DEFINE_TEST_VARIANT3(arm_negate_f32, 8, in_com1, ref_negate, 8);
 DEFINE_TEST_VARIANT3(arm_negate_f32, 11, in_com1, ref_negate, 11);
 
 static void test_arm_offset_f32(
-	const u32_t *input1, float32_t scalar, const u32_t *ref,
+	const uint32_t *input1, float32_t scalar, const uint32_t *ref,
 	size_t length)
 {
 	float32_t *output;
@@ -176,7 +176,7 @@ DEFINE_TEST_VARIANT4(arm_offset_f32, 0p5_8, in_com1, 0.5f, ref_offset, 8);
 DEFINE_TEST_VARIANT4(arm_offset_f32, 0p5_11, in_com1, 0.5f, ref_offset, 11);
 
 static void test_arm_scale_f32(
-	const u32_t *input1, float32_t scalar, const u32_t *ref,
+	const uint32_t *input1, float32_t scalar, const uint32_t *ref,
 	size_t length)
 {
 	float32_t *output;
@@ -208,7 +208,7 @@ DEFINE_TEST_VARIANT4(arm_scale_f32, 0p5_8, in_com1, 0.5f, ref_scale, 8);
 DEFINE_TEST_VARIANT4(arm_scale_f32, 0p5_11, in_com1, 0.5f, ref_scale, 11);
 
 static void test_arm_dot_prod_f32(
-	const u32_t *input1, const u32_t *input2, const u32_t *ref,
+	const uint32_t *input1, const uint32_t *input2, const uint32_t *ref,
 	size_t length)
 {
 	float32_t *output;
@@ -241,7 +241,7 @@ DEFINE_TEST_VARIANT4(arm_dot_prod_f32, 8, in_com1, in_com2, ref_dot_prod_4, 8);
 DEFINE_TEST_VARIANT4(arm_dot_prod_f32, 11, in_com1, in_com2, ref_dot_prod_4n1, 11);
 
 static void test_arm_abs_f32(
-	const u32_t *input1, const u32_t *ref, size_t length)
+	const uint32_t *input1, const uint32_t *ref, size_t length)
 {
 	float32_t *output;
 

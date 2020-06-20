@@ -23,11 +23,11 @@ The board will be detected as shown by the Linux dmesg command:
 .. code-block:: console
 
    usb 1-1.5.4: new full-speed USB device number 28 using ehci-pci
-   usb 1-1.5.4: New USB device found, idVendor=2fe3, idProduct=0100
+   usb 1-1.5.4: New USB device found, idVendor=2fe3, idProduct=0002, bcdDevice= 2.03
    usb 1-1.5.4: New USB device strings: Mfr=1, Product=2, SerialNumber=3
-   usb 1-1.5.4: Product: Zephyr CDC ACM sample
+   usb 1-1.5.4: Product: Zephyr CDC ACM Composite sample
    usb 1-1.5.4: Manufacturer: ZEPHYR
-   usb 1-1.5.4: SerialNumber: 0.01
+   usb 1-1.5.4: SerialNumber: 86FE679A598AC47A
    cdc_acm 1-1.5.4:1.0: ttyACM1: USB ACM device
    cdc_acm 1-1.5.4:1.2: ttyACM2: USB ACM device
 

@@ -55,7 +55,7 @@ void sys_arch_reboot(int type)
 
 static int nordicsemi_nrf52_init(struct device *arg)
 {
-	u32_t key;
+	uint32_t key;
 
 	ARG_UNUSED(arg);
 
@@ -80,7 +80,7 @@ static int nordicsemi_nrf52_init(struct device *arg)
 	return 0;
 }
 
-void arch_busy_wait(u32_t time_us)
+void arch_busy_wait(uint32_t time_us)
 {
 	nrfx_coredep_delay_us(time_us);
 }

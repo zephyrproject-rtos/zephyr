@@ -26,7 +26,7 @@ static int out_func(int c, void *ctx)
 		(void)out_func('\r', ctx);
 	}
 
-	sh_fprintf->buffer[sh_fprintf->ctrl_blk->buffer_cnt] = (u8_t)c;
+	sh_fprintf->buffer[sh_fprintf->ctrl_blk->buffer_cnt] = (uint8_t)c;
 	sh_fprintf->ctrl_blk->buffer_cnt++;
 
 	if (sh_fprintf->ctrl_blk->buffer_cnt == sh_fprintf->buffer_size) {

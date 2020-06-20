@@ -39,11 +39,11 @@ LOG_MODULE_REGISTER(mpu);
  * memory area, where dynamic memory regions may be programmed at run-time.
  */
 #if defined(CONFIG_USERSPACE)
-#define _MPU_DYNAMIC_REGIONS_AREA_START ((u32_t)&_app_smem_start)
+#define _MPU_DYNAMIC_REGIONS_AREA_START ((uint32_t)&_app_smem_start)
 #else
-#define _MPU_DYNAMIC_REGIONS_AREA_START ((u32_t)&__kernel_ram_start)
+#define _MPU_DYNAMIC_REGIONS_AREA_START ((uint32_t)&__kernel_ram_start)
 #endif /* CONFIG_USERSPACE */
-#define _MPU_DYNAMIC_REGIONS_AREA_SIZE ((u32_t)&__kernel_ram_end - \
+#define _MPU_DYNAMIC_REGIONS_AREA_SIZE ((uint32_t)&__kernel_ram_end - \
 		_MPU_DYNAMIC_REGIONS_AREA_START)
 
 /**
@@ -64,24 +64,24 @@ void z_arm_configure_static_mpu_regions(void)
 #if defined(CONFIG_COVERAGE_GCOV) && defined(CONFIG_USERSPACE)
 		const struct k_mem_partition gcov_region =
 		{
-		.start = (u32_t)&__gcov_bss_start,
-		.size = (u32_t)&__gcov_bss_size,
+		.start = (uint32_t)&__gcov_bss_start,
+		.size = (uint32_t)&__gcov_bss_size,
 		.attr = K_MEM_PARTITION_P_RW_U_RW,
 		};
 #endif /* CONFIG_COVERAGE_GCOV && CONFIG_USERSPACE */
 #if defined(CONFIG_NOCACHE_MEMORY)
 		const struct k_mem_partition nocache_region =
 		{
-		.start = (u32_t)&_nocache_ram_start,
-		.size = (u32_t)&_nocache_ram_size,
+		.start = (uint32_t)&_nocache_ram_start,
+		.size = (uint32_t)&_nocache_ram_size,
 		.attr = K_MEM_PARTITION_P_RW_U_NA_NOCACHE,
 		};
 #endif /* CONFIG_NOCACHE_MEMORY */
 #if defined(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT)
 		const struct k_mem_partition ramfunc_region =
 		{
-		.start = (u32_t)&_ramfunc_ram_start,
-		.size = (u32_t)&_ramfunc_ram_size,
+		.start = (uint32_t)&_ramfunc_ram_start,
+		.size = (uint32_t)&_ramfunc_ram_size,
 		.attr = K_MEM_PARTITION_P_RX_U_RX,
 		};
 #endif /* CONFIG_ARCH_HAS_RAMFUNC_SUPPORT */
@@ -109,8 +109,8 @@ void z_arm_configure_static_mpu_regions(void)
 	 */
 	arm_core_mpu_configure_static_mpu_regions(static_regions,
 		ARRAY_SIZE(static_regions),
-		(u32_t)&_image_ram_start,
-		(u32_t)&__kernel_ram_end);
+		(uint32_t)&_image_ram_start,
+		(uint32_t)&__kernel_ram_end);
 
 #if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
 	/* Define a constant array of k_mem_partition objects that holds the
@@ -151,7 +151,7 @@ void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread)
 	 */
 	struct k_mem_partition *dynamic_regions[_MAX_DYNAMIC_MPU_REGIONS_NUM];
 
-	u8_t region_num = 0U;
+	uint8_t region_num = 0U;
 
 #if defined(CONFIG_USERSPACE)
 	struct k_mem_partition thread_stack;
@@ -162,7 +162,7 @@ void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread)
 
 	if (mem_domain) {
 		LOG_DBG("configure domain: %p", mem_domain);
-		u32_t num_partitions = mem_domain->num_partitions;
+		uint32_t num_partitions = mem_domain->num_partitions;
 		struct k_mem_partition partition;
 		int i;
 
@@ -193,8 +193,8 @@ void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread)
 	/* Thread user stack */
 	LOG_DBG("configure user thread %p's context", thread);
 	if (thread->arch.priv_stack_start) {
-		u32_t base = (u32_t)thread->stack_obj;
-		u32_t size = thread->stack_info.size +
+		uint32_t base = (uint32_t)thread->stack_obj;
+		uint32_t size = thread->stack_info.size +
 			(thread->stack_info.start - base);
 
 		__ASSERT(region_num < _MAX_DYNAMIC_MPU_REGIONS_NUM,
@@ -212,8 +212,8 @@ void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread)
 	struct k_mem_partition guard;
 
 	/* Privileged stack guard */
-	u32_t guard_start;
-	u32_t guard_size = MPU_GUARD_ALIGN_AND_SIZE;
+	uint32_t guard_start;
+	uint32_t guard_size = MPU_GUARD_ALIGN_AND_SIZE;
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	if ((thread->base.user_options & K_FP_REGS) != 0) {
@@ -225,15 +225,15 @@ void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread)
 	if (thread->arch.priv_stack_start) {
 		guard_start = thread->arch.priv_stack_start - guard_size;
 
-		__ASSERT((u32_t)&z_priv_stacks_ram_start <= guard_start,
+		__ASSERT((uint32_t)&z_priv_stacks_ram_start <= guard_start,
 		"Guard start: (0x%x) below privilege stacks boundary: (0x%x)",
-		guard_start, (u32_t)&z_priv_stacks_ram_start);
+		guard_start, (uint32_t)&z_priv_stacks_ram_start);
 	} else {
 		guard_start = thread->stack_info.start - guard_size;
 
-		__ASSERT((u32_t)thread->stack_obj == guard_start,
+		__ASSERT((uint32_t)thread->stack_obj == guard_start,
 		"Guard start (0x%x) not beginning at stack object (0x%x)\n",
-		guard_start, (u32_t)thread->stack_obj);
+		guard_start, (uint32_t)thread->stack_obj);
 	}
 #else
 	guard_start = thread->stack_info.start - guard_size;
@@ -318,7 +318,7 @@ void arch_mem_domain_destroy(struct k_mem_domain *domain)
 }
 
 void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
-				      u32_t partition_id)
+				      uint32_t partition_id)
 {
 	/* Request to remove a partition from a memory domain.
 	 * This resets the access permissions of the partition
@@ -335,7 +335,7 @@ void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 }
 
 void arch_mem_domain_partition_add(struct k_mem_domain *domain,
-				   u32_t partition_id)
+				   uint32_t partition_id)
 {
 	/* No-op on this architecture */
 }

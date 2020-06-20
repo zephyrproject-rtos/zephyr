@@ -7,47 +7,47 @@
 #include "shell_utils.h"
 #include "shell_wildcard.h"
 
-extern const struct shell_cmd_entry __shell_root_cmds_start[0];
-extern const struct shell_cmd_entry __shell_root_cmds_end[0];
+extern const struct shell_cmd_entry __shell_root_cmds_start[];
+extern const struct shell_cmd_entry __shell_root_cmds_end[];
 
-static inline const struct shell_cmd_entry *shell_root_cmd_get(u32_t id)
+static inline const struct shell_cmd_entry *shell_root_cmd_get(uint32_t id)
 {
 	return &__shell_root_cmds_start[id];
 }
 
 /* Calculates relative line number of given position in buffer */
-static u32_t line_num_with_buffer_offset_get(struct shell_multiline_cons *cons,
-					     u16_t buffer_pos)
+static uint32_t line_num_with_buffer_offset_get(struct shell_multiline_cons *cons,
+					     uint16_t buffer_pos)
 {
 	return ((buffer_pos + cons->name_len) / cons->terminal_wid);
 }
 
 /* Calculates column number of given position in buffer */
-static u32_t col_num_with_buffer_offset_get(struct shell_multiline_cons *cons,
-					    u16_t buffer_pos)
+static uint32_t col_num_with_buffer_offset_get(struct shell_multiline_cons *cons,
+					    uint16_t buffer_pos)
 {
 	/* columns are counted from 1 */
 	return (1 + ((buffer_pos + cons->name_len) % cons->terminal_wid));
 }
 
-s32_t column_span_with_buffer_offsets_get(struct shell_multiline_cons *cons,
-					  u16_t offset1,
-					  u16_t offset2)
+int32_t column_span_with_buffer_offsets_get(struct shell_multiline_cons *cons,
+					  uint16_t offset1,
+					  uint16_t offset2)
 {
 	return col_num_with_buffer_offset_get(cons, offset2)
 			- col_num_with_buffer_offset_get(cons, offset1);
 }
 
-s32_t row_span_with_buffer_offsets_get(struct shell_multiline_cons *cons,
-				       u16_t offset1,
-				       u16_t offset2)
+int32_t row_span_with_buffer_offsets_get(struct shell_multiline_cons *cons,
+				       uint16_t offset1,
+				       uint16_t offset2)
 {
 	return line_num_with_buffer_offset_get(cons, offset2)
 		- line_num_with_buffer_offset_get(cons, offset1);
 }
 
 void shell_multiline_data_calc(struct shell_multiline_cons *cons,
-			       u16_t buff_pos, u16_t buff_len)
+			       uint16_t buff_pos, uint16_t buff_len)
 {
 	/* Current cursor position in command.
 	 * +1 -> because home position is (1, 1)
@@ -60,7 +60,7 @@ void shell_multiline_data_calc(struct shell_multiline_cons *cons,
 	cons->cur_x_end = (buff_len + cons->name_len) % cons->terminal_wid + 1;
 }
 
-static char make_argv(char **ppcmd, u8_t c)
+static char make_argv(char **ppcmd, uint8_t c)
 {
 	char *cmd = *ppcmd;
 	char quote = 0;
@@ -108,8 +108,8 @@ static char make_argv(char **ppcmd, u8_t c)
 			}
 
 			if (t == '0') {
-				u8_t i;
-				u8_t v = 0U;
+				uint8_t i;
+				uint8_t v = 0U;
 
 				for (i = 2U; i < (2 + 3); i++) {
 					t = *(cmd + i);
@@ -130,8 +130,8 @@ static char make_argv(char **ppcmd, u8_t c)
 			}
 
 			if (t == 'x') {
-				u8_t i;
-				u8_t v = 0U;
+				uint8_t i;
+				uint8_t v = 0U;
 
 				for (i = 2U; i < (2 + 2); i++) {
 					t = *(cmd + i);
@@ -169,7 +169,7 @@ static char make_argv(char **ppcmd, u8_t c)
 }
 
 
-char shell_make_argv(size_t *argc, const char **argv, char *cmd, u8_t max_argc)
+char shell_make_argv(size_t *argc, const char **argv, char *cmd, uint8_t max_argc)
 {
 	char quote = 0;
 	char c;
@@ -198,11 +198,11 @@ char shell_make_argv(size_t *argc, const char **argv, char *cmd, u8_t max_argc)
 	return quote;
 }
 
-void shell_pattern_remove(char *buff, u16_t *buff_len, const char *pattern)
+void shell_pattern_remove(char *buff, uint16_t *buff_len, const char *pattern)
 {
 	char *pattern_addr = strstr(buff, pattern);
-	u16_t shift;
-	u16_t pattern_len = shell_strlen(pattern);
+	uint16_t shift;
+	uint16_t pattern_len = shell_strlen(pattern);
 
 	if (!pattern_addr) {
 		return;
@@ -221,10 +221,10 @@ void shell_pattern_remove(char *buff, u16_t *buff_len, const char *pattern)
 	memmove(pattern_addr, pattern_addr + pattern_len, shift);
 }
 
-static inline u32_t shell_root_cmd_count(void)
+static inline uint32_t shell_root_cmd_count(void)
 {
-	return ((u8_t *)__shell_root_cmds_end -
-			(u8_t *)__shell_root_cmds_start)/
+	return ((uint8_t *)__shell_root_cmds_end -
+			(uint8_t *)__shell_root_cmds_start)/
 				sizeof(struct shell_cmd_entry);
 }
 
@@ -357,12 +357,12 @@ int shell_set_root_cmd(const char *cmd)
 	return 0;
 }
 
-int shell_command_add(char *buff, u16_t *buff_len,
+int shell_command_add(char *buff, uint16_t *buff_len,
 		      const char *new_cmd, const char *pattern)
 {
-	u16_t cmd_len = shell_strlen(new_cmd);
+	uint16_t cmd_len = shell_strlen(new_cmd);
 	char *cmd_source_addr;
-	u16_t shift;
+	uint16_t shift;
 
 	/* +1 for space */
 	if ((*buff_len + cmd_len + 1) > CONFIG_SHELL_CMD_BUFF_SIZE) {
@@ -389,16 +389,16 @@ int shell_command_add(char *buff, u16_t *buff_len,
 
 void shell_spaces_trim(char *str)
 {
-	u16_t len = shell_strlen(str);
-	u16_t shift = 0U;
+	uint16_t len = shell_strlen(str);
+	uint16_t shift = 0U;
 
 	if (!str) {
 		return;
 	}
 
-	for (u16_t i = 0; i < len - 1; i++) {
+	for (uint16_t i = 0; i < len - 1; i++) {
 		if (isspace((int)str[i])) {
-			for (u16_t j = i + 1; j < len; j++) {
+			for (uint16_t j = i + 1; j < len; j++) {
 				if (isspace((int)str[j])) {
 					shift++;
 					continue;
@@ -422,9 +422,9 @@ void shell_spaces_trim(char *str)
 /** @brief Remove white chars from beginning and end of command buffer.
  *
  */
-static void buffer_trim(char *buff, u16_t *buff_len)
+static void buffer_trim(char *buff, uint16_t *buff_len)
 {
-	u16_t i = 0U;
+	uint16_t i = 0U;
 
 	/* no command in the buffer */
 	if (buff[0] == '\0') {

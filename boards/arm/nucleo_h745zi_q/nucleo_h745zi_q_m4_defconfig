@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_SOC_SERIES_STM32H7X=y
+CONFIG_SOC_STM32H745XX=y
+# SYS_CLOCK_M4 = SYS_CLOCK_M7 / CLOCK_STM32_HPRE
+CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=240000000
+
+# Board config should be specified since there are 2 possible targets
+CONFIG_BOARD_NUCLEO_H745ZI_Q_M4=y
+
+# Enable Pinmux
+CONFIG_PINMUX=y
+
+# Enable GPIO
+CONFIG_GPIO=y
+
+# Clock Configuration
+CONFIG_CLOCK_CONTROL=y
+
+# By default SERIAL peripherals are assigned to m7
+
+# Enable uart driver
+#CONFIG_SERIAL=y
+
+# Console
+#CONFIG_CONSOLE=y
+#CONFIG_UART_CONSOLE=y

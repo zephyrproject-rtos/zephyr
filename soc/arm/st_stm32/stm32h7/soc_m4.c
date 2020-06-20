@@ -61,7 +61,7 @@ void stm32h7_m4_boot_stop(void)
  */
 static int stm32h7_m4_init(struct device *arg)
 {
-	u32_t key;
+	uint32_t key;
 
 	key = irq_lock();
 

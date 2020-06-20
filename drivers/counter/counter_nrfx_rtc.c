@@ -39,12 +39,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_COUNTER_LOG_LEVEL);
 struct counter_nrfx_data {
 	counter_top_callback_t top_cb;
 	void *top_user_data;
-	u32_t top;
-	u32_t guard_period;
+	uint32_t top;
+	uint32_t guard_period;
 	/* Store channel interrupt pending and CC adjusted flags. */
 	atomic_t ipend_adj;
 #if CONFIG_COUNTER_RTC_WITH_PPI_WRAP
-	u8_t ppi_ch;
+	uint8_t ppi_ch;
 #endif
 };
 
@@ -92,19 +92,19 @@ static int stop(struct device *dev)
 	return 0;
 }
 
-static u32_t read(struct device *dev)
+static uint32_t read(struct device *dev)
 {
 	return nrf_rtc_counter_get(get_nrfx_config(dev)->rtc);
 }
 
-static int get_value(struct device *dev, u32_t *ticks)
+static int get_value(struct device *dev, uint32_t *ticks)
 {
 	*ticks = read(dev);
 	return 0;
 }
 
 /* Return true if value equals 2^n - 1 */
-static inline bool is_bit_mask(u32_t val)
+static inline bool is_bit_mask(uint32_t val)
 {
 	return !(val & (val + 1));
 }
@@ -112,7 +112,7 @@ static inline bool is_bit_mask(u32_t val)
 /* Function calculates distance between to values assuming that one first
  * argument is in front and that values wrap.
  */
-static u32_t ticks_sub(struct device *dev, u32_t val, u32_t old, u32_t top)
+static uint32_t ticks_sub(struct device *dev, uint32_t val, uint32_t old, uint32_t top)
 {
 	if (IS_FIXED_TOP(dev)) {
 		return (val - old) & COUNTER_MAX_TOP_VALUE;
@@ -125,7 +125,7 @@ static u32_t ticks_sub(struct device *dev, u32_t val, u32_t old, u32_t top)
 
 }
 
-static u32_t skip_zero_on_custom_top(u32_t val, u32_t top)
+static uint32_t skip_zero_on_custom_top(uint32_t val, uint32_t top)
 {
 	/* From Product Specification: If a CC register value is 0 when
 	 * a CLEAR task is set, this will not trigger a COMPARE event.
@@ -137,9 +137,9 @@ static u32_t skip_zero_on_custom_top(u32_t val, u32_t top)
 	return val;
 }
 
-static u32_t ticks_add(struct device *dev, u32_t val1, u32_t val2, u32_t top)
+static uint32_t ticks_add(struct device *dev, uint32_t val1, uint32_t val2, uint32_t top)
 {
-	u32_t sum = val1 + val2;
+	uint32_t sum = val1 + val2;
 
 	if (IS_FIXED_TOP(dev)) {
 		ARG_UNUSED(top);
@@ -154,7 +154,7 @@ static u32_t ticks_add(struct device *dev, u32_t val1, u32_t val2, u32_t top)
 	return skip_zero_on_custom_top(sum, top);
 }
 
-static void set_cc_int_pending(struct device *dev, u8_t chan)
+static void set_cc_int_pending(struct device *dev, uint8_t chan)
 {
 	atomic_or(&get_dev_data(dev)->ipend_adj, BIT(chan));
 	NRFX_IRQ_PENDING_SET(NRFX_IRQ_NUMBER_GET(get_nrfx_config(dev)->rtc));
@@ -173,8 +173,8 @@ static void set_cc_int_pending(struct device *dev, u8_t chan)
  * is used in the callback to return original CC value which was requested by
  * the user.
  */
-static void handle_next_tick_case(struct device *dev, u8_t chan,
-				  u32_t now, u32_t val)
+static void handle_next_tick_case(struct device *dev, uint8_t chan,
+				  uint32_t now, uint32_t val)
 {
 	val = ticks_add(dev, val, 1, get_dev_data(dev)->top);
 	nrf_rtc_cc_set(get_nrfx_config(dev)->rtc, chan, val);
@@ -215,19 +215,19 @@ static void handle_next_tick_case(struct device *dev, u8_t chan,
  *		  enabled.
  *
  */
-static int set_cc(struct device *dev, u8_t chan, u32_t val, u32_t flags)
+static int set_cc(struct device *dev, uint8_t chan, uint32_t val, uint32_t flags)
 {
 	__ASSERT_NO_MSG(get_dev_data(dev)->guard_period <
 			get_dev_data(dev)->top);
 	NRF_RTC_Type  *rtc = get_nrfx_config(dev)->rtc;
 	nrf_rtc_event_t evt;
-	u32_t prev_val;
-	u32_t top;
-	u32_t now;
-	u32_t diff;
-	u32_t int_mask = RTC_CHANNEL_INT_MASK(chan);
+	uint32_t prev_val;
+	uint32_t top;
+	uint32_t now;
+	uint32_t diff;
+	uint32_t int_mask = RTC_CHANNEL_INT_MASK(chan);
 	int err = 0;
-	u32_t max_rel_val;
+	uint32_t max_rel_val;
 	bool absolute = flags & COUNTER_ALARM_CFG_ABSOLUTE;
 	bool irq_on_late;
 
@@ -321,7 +321,7 @@ static int set_cc(struct device *dev, u8_t chan, u32_t val, u32_t flags)
 	return err;
 }
 
-static int set_channel_alarm(struct device *dev, u8_t chan,
+static int set_channel_alarm(struct device *dev, uint8_t chan,
 			     const struct counter_alarm_cfg *alarm_cfg)
 {
 	const struct counter_nrfx_config *nrfx_config = get_nrfx_config(dev);
@@ -342,7 +342,7 @@ static int set_channel_alarm(struct device *dev, u8_t chan,
 	return set_cc(dev, chan, alarm_cfg->ticks, alarm_cfg->flags);
 }
 
-static void disable(struct device *dev, u8_t chan)
+static void disable(struct device *dev, uint8_t chan)
 {
 	const struct counter_nrfx_config *config = get_nrfx_config(dev);
 	NRF_RTC_Type *rtc = config->rtc;
@@ -354,14 +354,14 @@ static void disable(struct device *dev, u8_t chan)
 	config->ch_data[chan].callback = NULL;
 }
 
-static int cancel_alarm(struct device *dev, u8_t chan_id)
+static int cancel_alarm(struct device *dev, uint8_t chan_id)
 {
 	disable(dev, chan_id);
 
 	return 0;
 }
 
-static int ppi_setup(struct device *dev, u8_t chan)
+static int ppi_setup(struct device *dev, uint8_t chan)
 {
 #if CONFIG_COUNTER_RTC_WITH_PPI_WRAP
 	const struct counter_nrfx_config *nrfx_config = get_nrfx_config(dev);
@@ -386,8 +386,8 @@ static int ppi_setup(struct device *dev, u8_t chan)
 	nrf_rtc_publish_set(rtc->p_reg, evt, data->ppi_ch);
 	(void)nrfx_dppi_channel_enable(data->ppi_ch);
 #else /* DPPI_PRESENT */
-	u32_t evt_addr;
-	u32_t task_addr;
+	uint32_t evt_addr;
+	uint32_t task_addr;
 
 	evt_addr = nrf_rtc_event_address_get(rtc, evt);
 	task_addr = nrf_rtc_task_address_get(rtc, NRF_RTC_TASK_CLEAR);
@@ -404,11 +404,11 @@ static int ppi_setup(struct device *dev, u8_t chan)
 	return 0;
 }
 
-static void ppi_free(struct device *dev, u8_t chan)
+static void ppi_free(struct device *dev, uint8_t chan)
 {
 #if CONFIG_COUNTER_RTC_WITH_PPI_WRAP
 	const struct counter_nrfx_config *nrfx_config = get_nrfx_config(dev);
-	u8_t ppi_ch = get_dev_data(dev)->ppi_ch;
+	uint8_t ppi_ch = get_dev_data(dev)->ppi_ch;
 	NRF_RTC_Type *rtc = nrfx_config->rtc;
 
 	if (!nrfx_config->use_ppi) {
@@ -468,7 +468,7 @@ static int set_top_value(struct device *dev, const struct counter_top_cfg *cfg)
 	const struct counter_nrfx_config *nrfx_config = get_nrfx_config(dev);
 	NRF_RTC_Type *rtc = nrfx_config->rtc;
 	struct counter_nrfx_data *dev_data = get_dev_data(dev);
-	u32_t top_ch = COUNTER_GET_TOP_CH(dev);
+	uint32_t top_ch = COUNTER_GET_TOP_CH(dev);
 	int err = 0;
 
 	if (IS_FIXED_TOP(dev)) {
@@ -517,12 +517,12 @@ static int set_top_value(struct device *dev, const struct counter_top_cfg *cfg)
 	return err;
 }
 
-static u32_t get_pending_int(struct device *dev)
+static uint32_t get_pending_int(struct device *dev)
 {
 	return 0;
 }
 
-static int init_rtc(struct device *dev, u32_t prescaler)
+static int init_rtc(struct device *dev, uint32_t prescaler)
 {
 	struct device *clock;
 	const struct counter_nrfx_config *nrfx_config = get_nrfx_config(dev);
@@ -550,22 +550,22 @@ static int init_rtc(struct device *dev, u32_t prescaler)
 	return err;
 }
 
-static u32_t get_top_value(struct device *dev)
+static uint32_t get_top_value(struct device *dev)
 {
 	return get_dev_data(dev)->top;
 }
 
-static u32_t get_max_relative_alarm(struct device *dev)
+static uint32_t get_max_relative_alarm(struct device *dev)
 {
 	return get_dev_data(dev)->top;
 }
 
-static u32_t get_guard_period(struct device *dev, u32_t flags)
+static uint32_t get_guard_period(struct device *dev, uint32_t flags)
 {
 	return get_dev_data(dev)->guard_period;
 }
 
-static int set_guard_period(struct device *dev, u32_t guard, u32_t flags)
+static int set_guard_period(struct device *dev, uint32_t guard, uint32_t flags)
 {
 	get_dev_data(dev)->guard_period = guard;
 	return 0;
@@ -597,11 +597,11 @@ static void top_irq_handle(struct device *dev)
 	}
 }
 
-static void alarm_irq_handle(struct device *dev, u32_t chan)
+static void alarm_irq_handle(struct device *dev, uint32_t chan)
 {
 	NRF_RTC_Type *rtc = get_nrfx_config(dev)->rtc;
 	nrf_rtc_event_t evt = RTC_CHANNEL_EVENT_ADDR(chan);
-	u32_t int_mask = RTC_CHANNEL_INT_MASK(chan);
+	uint32_t int_mask = RTC_CHANNEL_INT_MASK(chan);
 	bool hw_irq_pending = nrf_rtc_event_check(rtc, evt) &&
 			      nrf_rtc_int_enable_check(rtc, int_mask);
 	bool sw_irq_pending = get_dev_data(dev)->ipend_adj & BIT(chan);
@@ -619,7 +619,7 @@ static void alarm_irq_handle(struct device *dev, u32_t chan)
 		chdata->callback = NULL;
 
 		if (cb) {
-			u32_t cc = nrf_rtc_cc_get(rtc, chan);
+			uint32_t cc = nrf_rtc_cc_get(rtc, chan);
 
 			if (get_dev_data(dev)->ipend_adj & CC_ADJ_MASK(chan)) {
 				cc = ticks_sub(dev, cc, 1,
@@ -635,7 +635,7 @@ static void irq_handler(struct device *dev)
 {
 	top_irq_handle(dev);
 
-	for (u32_t i = 0; i < counter_get_num_of_channels(dev); i++) {
+	for (uint32_t i = 0; i < counter_get_num_of_channels(dev); i++) {
 		alarm_irq_handle(dev, i);
 	}
 }

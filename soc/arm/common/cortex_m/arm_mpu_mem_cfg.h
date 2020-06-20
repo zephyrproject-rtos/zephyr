@@ -32,7 +32,7 @@
 #elif CONFIG_FLASH_SIZE <= 65536
 #define REGION_FLASH_SIZE REGION_64M
 #else
-#error "Unsupported configuration"
+#error "Unsupported flash size configuration"
 #endif
 
 /* SRAM Region Definitions */
@@ -57,7 +57,7 @@
 #elif CONFIG_SRAM_SIZE == 32768
 #define REGION_SRAM_SIZE REGION_32M
 #else
-#error "Unsupported configuration"
+#error "Unsupported sram size configuration"
 #endif
 
 #endif /* !ARMV8_M_BASELINE && !ARMV8_M_MAINLINE */

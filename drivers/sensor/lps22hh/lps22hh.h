@@ -21,13 +21,13 @@
 #include "lps22hh_reg.h"
 
 union axis1bit32_t {
-	s32_t i32bit;
-	u8_t u8bit[4];
+	int32_t i32bit;
+	uint8_t u8bit[4];
 };
 
 union axis1bit16_t {
-	s16_t i16bit;
-	u8_t u8bit[2];
+	int16_t i16bit;
+	uint8_t u8bit[2];
 };
 
 struct lps22hh_config {
@@ -35,24 +35,24 @@ struct lps22hh_config {
 	int (*bus_init)(struct device *dev);
 #ifdef CONFIG_LPS22HH_TRIGGER
 	const char *drdy_port;
-	u8_t drdy_pin;
-	u8_t drdy_flags;
+	uint8_t drdy_pin;
+	uint8_t drdy_flags;
 #endif
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	u16_t i2c_slv_addr;
+	uint16_t i2c_slv_addr;
 #elif DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	struct spi_config spi_conf;
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	const char *gpio_cs_port;
-	u8_t cs_gpio;
+	uint8_t cs_gpio;
 #endif
 #endif
 };
 
 struct lps22hh_data {
 	struct device *bus;
-	s32_t sample_press;
-	s16_t sample_temp;
+	int32_t sample_press;
+	int16_t sample_temp;
 
 	stmdev_ctx_t *ctx;
 
@@ -64,7 +64,7 @@ struct lps22hh_data {
 
 #ifdef CONFIG_LPS22HH_TRIGGER
 	struct device *gpio;
-	u32_t pin;
+	uint32_t pin;
 	struct gpio_callback gpio_cb;
 
 	struct sensor_trigger data_ready_trigger;

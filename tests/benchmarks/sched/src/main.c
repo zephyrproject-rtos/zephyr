@@ -56,11 +56,11 @@ enum {
 	NUM_STAMP_STATES
 };
 
-u32_t stamps[NUM_STAMP_STATES];
+uint32_t stamps[NUM_STAMP_STATES];
 
 static inline int _stamp(int state)
 {
-	u32_t t;
+	uint32_t t;
 
 	/* In theory the TSC has much lower overhead and higher
 	 * precision.  In practice it's VERY jittery in recent qemu
@@ -110,8 +110,8 @@ void main(void)
 	/* Let it start running and pend */
 	k_sleep(K_MSEC(100));
 
-	u64_t tot = 0U;
-	u32_t runs = 0U;
+	uint64_t tot = 0U;
+	uint32_t runs = 0U;
 
 	for (int i = 0; i < N_RUNS + N_SETTLE; i++) {
 		stamp(UNPENDING);
@@ -129,7 +129,7 @@ void main(void)
 		k_yield();
 		stamp(YIELDED);
 
-		u32_t avg, whole = stamps[4] - stamps[0];
+		uint32_t avg, whole = stamps[4] - stamps[0];
 
 		if (++runs > N_SETTLE) {
 			/* Only compute averages after the first ~10

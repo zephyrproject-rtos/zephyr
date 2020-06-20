@@ -24,9 +24,9 @@ struct pkt_list_elem {
 struct openthread_context {
 	otInstance *instance;
 	struct net_if *iface;
-	u16_t pkt_list_in_idx;
-	u16_t pkt_list_out_idx;
-	u8_t pkt_list_full;
+	uint16_t pkt_list_in_idx;
+	uint16_t pkt_list_out_idx;
+	uint8_t pkt_list_full;
 	struct pkt_list_elem pkt_list[CONFIG_OPENTHREAD_PKT_LIST_SIZE];
 };
 

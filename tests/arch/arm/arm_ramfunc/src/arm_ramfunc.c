@@ -26,14 +26,14 @@ void test_arm_ramfunc(void)
 	 * inside SRAM, and that arm_ram_function(.) is located inside
 	 * the .ramfunc section.
 	 */
-	zassert_true((u32_t)&_ramfunc_ram_size != 0,
+	zassert_true((uint32_t)&_ramfunc_ram_size != 0,
 		".ramfunc linker section is empty");
-	zassert_true(((u32_t)&_ramfunc_ram_start >= (u32_t)&_image_ram_start)
-			&& ((u32_t)&_ramfunc_ram_end < (u32_t)&_image_ram_end),
+	zassert_true(((uint32_t)&_ramfunc_ram_start >= (uint32_t)&_image_ram_start)
+			&& ((uint32_t)&_ramfunc_ram_end < (uint32_t)&_image_ram_end),
 			".ramfunc linker section not in RAM");
 	zassert_true(
-		(((u32_t)&_ramfunc_ram_start) <= (u32_t)arm_ram_function) &&
-		(((u32_t)&_ramfunc_ram_end) > (u32_t)arm_ram_function),
+		(((uint32_t)&_ramfunc_ram_start) <= (uint32_t)arm_ram_function) &&
+		(((uint32_t)&_ramfunc_ram_end) > (uint32_t)arm_ram_function),
 		"arm_ram_function not loaded into .ramfunc");
 
 	/* If we build with User Mode support, verify that the

@@ -24,8 +24,8 @@ extern "C" {
  */
 bool edtt_start(void);
 bool edtt_stop(void);
-int edtt_read(u8_t *ptr, size_t size, int flags);
-int edtt_write(u8_t *ptr, size_t size, int flags);
+int edtt_read(uint8_t *ptr, size_t size, int flags);
+int edtt_write(uint8_t *ptr, size_t size, int flags);
 
 #if defined(CONFIG_ARCH_POSIX)
 /**

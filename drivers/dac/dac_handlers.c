@@ -23,7 +23,7 @@ static inline int z_vrfy_dac_channel_setup(struct device *dev,
 #include <syscalls/dac_channel_setup_mrsh.c>
 
 static inline int z_vrfy_dac_write_value(struct device *dev,
-					u8_t channel, u32_t value)
+					uint8_t channel, uint32_t value)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_DAC(dev, write_value));
 

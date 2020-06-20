@@ -18,8 +18,8 @@ LOG_MODULE_REGISTER(net_lldp_sample, LOG_LEVEL_DBG);
 #include <net/ethernet.h>
 
 static struct lldp_system_name_tlv {
-	u16_t type_length;
-	u8_t name[4];
+	uint16_t type_length;
+	uint8_t name[4];
 } __packed tlv = {
 	.name = { 't', 'e', 's', 't' },
 };
@@ -29,9 +29,9 @@ static void set_optional_tlv(struct net_if *iface)
 	NET_DBG("");
 
 	tlv.type_length = htons((LLDP_TLV_SYSTEM_NAME << 9) |
-				((sizeof(tlv) - sizeof(u16_t)) & 0x01ff));
+				((sizeof(tlv) - sizeof(uint16_t)) & 0x01ff));
 
-	net_lldp_config_optional(iface, (u8_t *)&tlv, sizeof(tlv));
+	net_lldp_config_optional(iface, (uint8_t *)&tlv, sizeof(tlv));
 }
 
 /* User data for the interface callback */
@@ -66,7 +66,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 }
 
 static int setup_iface(struct net_if *iface, const char *ipv6_addr,
-		       const char *ipv4_addr, u16_t vlan_tag)
+		       const char *ipv4_addr, uint16_t vlan_tag)
 {
 	struct net_if_addr *ifaddr;
 	struct in_addr addr4;
@@ -152,9 +152,9 @@ static enum net_verdict parse_lldp(struct net_if *iface, struct net_pkt *pkt)
 	net_pkt_cursor_init(pkt);
 
 	while (1) {
-		u16_t type_length;
-		u16_t length;
-		u8_t type;
+		uint16_t type_length;
+		uint16_t length;
+		uint8_t type;
 
 		if (net_pkt_read_be16(pkt, &type_length)) {
 			LOG_DBG("End LLDP DU TLV");
@@ -162,7 +162,7 @@ static enum net_verdict parse_lldp(struct net_if *iface, struct net_pkt *pkt)
 		}
 
 		length = type_length & 0x1FF;
-		type = (u8_t)(type_length >> 9);
+		type = (uint8_t)(type_length >> 9);
 
 		/* Skip for now data */
 		if (net_pkt_skip(pkt, length)) {

@@ -99,7 +99,7 @@ static void wait_send(struct k_work *work)
 static void send_packet(void)
 {
 	struct sockaddr_ll dst;
-	u8_t send = 100U;
+	uint8_t send = 100U;
 	int ret;
 
 	dst.sll_ifindex = net_if_get_by_iface(net_if_get_default());

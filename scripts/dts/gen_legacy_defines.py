@@ -18,6 +18,13 @@ import sys
 
 import edtlib
 
+# Set this to True to generated deprecated macro warnings. Since this
+# entire file is deprecated and must be explicitly enabled with
+# CONFIG_LEGACY_DEVICETREE_MACROS, this was turned off by default
+# shortly before the v2.3 release (this was the least impactful way to
+# do it, which resulted in the smallest and least-risky patch).
+DEPRECATION_MESSAGES = False
+
 def main():
     global header_file
     global flash_area_num
@@ -768,7 +775,8 @@ def out_define(ident, val, deprecation_msg, out_file):
     # 'deprecation_msg'.
 
     s = f"#define DT_{ident:40}"
-    if deprecation_msg:
+
+    if DEPRECATION_MESSAGES and deprecation_msg:
         s += fr' __WARN("{deprecation_msg}")'
     s += f" {val}"
     print(s, file=out_file)

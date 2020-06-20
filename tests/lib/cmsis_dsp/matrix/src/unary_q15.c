@@ -28,9 +28,9 @@
 static void test_op2(int op, const q15_t *ref, size_t length)
 {
 	size_t index;
-	u16_t *dims = (u16_t *)in_dims;
+	uint16_t *dims = (uint16_t *)in_dims;
 	q15_t *tmp1, *tmp2, *output;
-	u16_t rows, columns;
+	uint16_t rows, columns;
 
 	arm_matrix_instance_q15 mat_in1;
 	arm_matrix_instance_q15 mat_in2;
@@ -103,9 +103,9 @@ DEFINE_TEST_VARIANT3(op2, arm_mat_sub_q15, OP2_SUB,
 static void test_op1(int op, const q15_t *ref, size_t length, bool transpose)
 {
 	size_t index;
-	u16_t *dims = (u16_t *)in_dims;
+	uint16_t *dims = (uint16_t *)in_dims;
 	q15_t *tmp1, *output;
-	u16_t rows, columns;
+	uint16_t rows, columns;
 
 	arm_matrix_instance_q15 mat_in1;
 	arm_matrix_instance_q15 mat_out;

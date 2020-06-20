@@ -23,18 +23,18 @@ LOG_MODULE_REGISTER(main);
 
 #define TEST_DATA_SIZE	20
 
-static u8_t eeprom_0_data[TEST_DATA_SIZE] = "0123456789abcdefghij";
-static u8_t eeprom_1_data[TEST_DATA_SIZE] = "jihgfedcba9876543210";
-static u8_t i2c_buffer[TEST_DATA_SIZE];
+static uint8_t eeprom_0_data[TEST_DATA_SIZE] = "0123456789abcdefghij";
+static uint8_t eeprom_1_data[TEST_DATA_SIZE] = "jihgfedcba9876543210";
+static uint8_t i2c_buffer[TEST_DATA_SIZE];
 
 /*
  * We need 5x(buffer size) + 1 to print a comma-separated list of each
  * byte in hex, plus a null.
  */
-u8_t buffer_print_eeprom[TEST_DATA_SIZE * 5 + 1];
-u8_t buffer_print_i2c[TEST_DATA_SIZE * 5 + 1];
+uint8_t buffer_print_eeprom[TEST_DATA_SIZE * 5 + 1];
+uint8_t buffer_print_i2c[TEST_DATA_SIZE * 5 + 1];
 
-static void to_display_format(const u8_t *src, size_t size, char *dst)
+static void to_display_format(const uint8_t *src, size_t size, char *dst)
 {
 	size_t i;
 
@@ -43,7 +43,7 @@ static void to_display_format(const u8_t *src, size_t size, char *dst)
 	}
 }
 
-static void run_full_read(struct device *i2c, u8_t addr, u8_t *comp_buffer)
+static void run_full_read(struct device *i2c, uint8_t addr, uint8_t *comp_buffer)
 {
 	int ret;
 
@@ -69,7 +69,7 @@ static void run_full_read(struct device *i2c, u8_t addr, u8_t *comp_buffer)
 	}
 }
 
-static void run_partial_read(struct device *i2c, u8_t addr, u8_t *comp_buffer,
+static void run_partial_read(struct device *i2c, uint8_t addr, uint8_t *comp_buffer,
 			     unsigned int offset)
 {
 	int ret;
@@ -95,7 +95,7 @@ static void run_partial_read(struct device *i2c, u8_t addr, u8_t *comp_buffer,
 	}
 }
 
-static void run_program_read(struct device *i2c, u8_t addr, unsigned int offset)
+static void run_program_read(struct device *i2c, uint8_t addr, unsigned int offset)
 {
 	int ret, i;
 

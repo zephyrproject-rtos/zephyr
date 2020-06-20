@@ -15,9 +15,9 @@
 
 #include "legacy_api.h"
 
-static u32_t accumulated_cycle_count;
+static uint32_t accumulated_cycle_count;
 
-static s32_t _sys_idle_elapsed_ticks = 1;
+static int32_t _sys_idle_elapsed_ticks = 1;
 
 static void timer_irq_handler(void *unused)
 {
@@ -59,7 +59,7 @@ int z_clock_driver_init(struct device *device)
 	return 0;
 }
 
-u32_t z_timer_cycle_get_32(void)
+uint32_t z_timer_cycle_get_32(void)
 {
 	/* Per the Altera Embedded IP Peripherals guide, you cannot
 	 * use a timer instance for both the system clock and timestamps

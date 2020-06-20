@@ -23,7 +23,7 @@
 /* Region definition data structure */
 struct arm_mpu_region {
 	/* Region Base Address */
-	u32_t base;
+	uint32_t base;
 	/* Region Name */
 	const char *name;
 	/* Region Attributes */
@@ -33,7 +33,7 @@ struct arm_mpu_region {
 /* MPU configuration data structure */
 struct arm_mpu_config {
 	/* Number of regions */
-	u32_t num_regions;
+	uint32_t num_regions;
 	/* Regions */
 	const struct arm_mpu_region *mpu_regions;
 };

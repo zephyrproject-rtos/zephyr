@@ -32,15 +32,15 @@ extern "C" {
 /**
  * @brief Provides a type to hold PWM configuration flags.
  */
-typedef u8_t pwm_flags_t;
+typedef uint8_t pwm_flags_t;
 
 /**
  * @typedef pwm_pin_set_t
  * @brief Callback API upon setting the pin
  * See @a pwm_pin_set_cycles() for argument description
  */
-typedef int (*pwm_pin_set_t)(struct device *dev, u32_t pwm,
-			     u32_t period_cycles, u32_t pulse_cycles,
+typedef int (*pwm_pin_set_t)(struct device *dev, uint32_t pwm,
+			     uint32_t period_cycles, uint32_t pulse_cycles,
 			     pwm_flags_t flags);
 
 /**
@@ -48,8 +48,8 @@ typedef int (*pwm_pin_set_t)(struct device *dev, u32_t pwm,
  * @brief Callback API upon getting cycles per second
  * See @a pwm_get_cycles_per_sec() for argument description
  */
-typedef int (*pwm_get_cycles_per_sec_t)(struct device *dev, u32_t pwm,
-					u64_t *cycles);
+typedef int (*pwm_get_cycles_per_sec_t)(struct device *dev, uint32_t pwm,
+					uint64_t *cycles);
 
 /** @brief PWM driver API definition. */
 __subsystem struct pwm_driver_api {
@@ -60,10 +60,10 @@ __subsystem struct pwm_driver_api {
 /**
  * @brief Set the period and pulse width for a single PWM output.
  *
- * Passing 0 to the @param pulse will cause the pin to be driven to a constant
+ * Passing 0 as @p pulse will cause the pin to be driven to a constant
  * inactive level.
- * Passing a @param pulse equal @param period will cause the pin to be driven
- * to a constant active level.
+ * Passing a non-zero @p pulse equal to @p period will cause the pin
+ * to be driven to a constant active level.
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param pwm PWM pin.
@@ -74,11 +74,11 @@ __subsystem struct pwm_driver_api {
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-__syscall int pwm_pin_set_cycles(struct device *dev, u32_t pwm,
-				 u32_t period, u32_t pulse, pwm_flags_t flags);
+__syscall int pwm_pin_set_cycles(struct device *dev, uint32_t pwm,
+				 uint32_t period, uint32_t pulse, pwm_flags_t flags);
 
-static inline int z_impl_pwm_pin_set_cycles(struct device *dev, u32_t pwm,
-					    u32_t period, u32_t pulse,
+static inline int z_impl_pwm_pin_set_cycles(struct device *dev, uint32_t pwm,
+					    uint32_t period, uint32_t pulse,
 					    pwm_flags_t flags)
 {
 	struct pwm_driver_api *api;
@@ -99,11 +99,11 @@ static inline int z_impl_pwm_pin_set_cycles(struct device *dev, u32_t pwm,
  * @retval Negative errno code if failure.
  */
 
-__syscall int pwm_get_cycles_per_sec(struct device *dev, u32_t pwm,
-				     u64_t *cycles);
+__syscall int pwm_get_cycles_per_sec(struct device *dev, uint32_t pwm,
+				     uint64_t *cycles);
 
-static inline int z_impl_pwm_get_cycles_per_sec(struct device *dev, u32_t pwm,
-					       u64_t *cycles)
+static inline int z_impl_pwm_get_cycles_per_sec(struct device *dev, uint32_t pwm,
+					       uint64_t *cycles)
 {
 	struct pwm_driver_api *api;
 
@@ -123,28 +123,28 @@ static inline int z_impl_pwm_get_cycles_per_sec(struct device *dev, u32_t pwm,
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int pwm_pin_set_usec(struct device *dev, u32_t pwm,
-				   u32_t period, u32_t pulse,
+static inline int pwm_pin_set_usec(struct device *dev, uint32_t pwm,
+				   uint32_t period, uint32_t pulse,
 				   pwm_flags_t flags)
 {
-	u64_t period_cycles, pulse_cycles, cycles_per_sec;
+	uint64_t period_cycles, pulse_cycles, cycles_per_sec;
 
 	if (pwm_get_cycles_per_sec(dev, pwm, &cycles_per_sec) != 0) {
 		return -EIO;
 	}
 
 	period_cycles = (period * cycles_per_sec) / USEC_PER_SEC;
-	if (period_cycles >= ((u64_t)1 << 32)) {
+	if (period_cycles >= ((uint64_t)1 << 32)) {
 		return -ENOTSUP;
 	}
 
 	pulse_cycles = (pulse * cycles_per_sec) / USEC_PER_SEC;
-	if (pulse_cycles >= ((u64_t)1 << 32)) {
+	if (pulse_cycles >= ((uint64_t)1 << 32)) {
 		return -ENOTSUP;
 	}
 
-	return pwm_pin_set_cycles(dev, pwm, (u32_t)period_cycles,
-				  (u32_t)pulse_cycles, flags);
+	return pwm_pin_set_cycles(dev, pwm, (uint32_t)period_cycles,
+				  (uint32_t)pulse_cycles, flags);
 }
 
 /**
@@ -159,28 +159,28 @@ static inline int pwm_pin_set_usec(struct device *dev, u32_t pwm,
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int pwm_pin_set_nsec(struct device *dev, u32_t pwm,
-				   u32_t period, u32_t pulse,
+static inline int pwm_pin_set_nsec(struct device *dev, uint32_t pwm,
+				   uint32_t period, uint32_t pulse,
 				   pwm_flags_t flags)
 {
-	u64_t period_cycles, pulse_cycles, cycles_per_sec;
+	uint64_t period_cycles, pulse_cycles, cycles_per_sec;
 
 	if (pwm_get_cycles_per_sec(dev, pwm, &cycles_per_sec) != 0) {
 		return -EIO;
 	}
 
 	period_cycles = (period * cycles_per_sec) / NSEC_PER_SEC;
-	if (period_cycles >= ((u64_t)1 << 32)) {
+	if (period_cycles >= ((uint64_t)1 << 32)) {
 		return -ENOTSUP;
 	}
 
 	pulse_cycles = (pulse * cycles_per_sec) / NSEC_PER_SEC;
-	if (pulse_cycles >= ((u64_t)1 << 32)) {
+	if (pulse_cycles >= ((uint64_t)1 << 32)) {
 		return -ENOTSUP;
 	}
 
-	return pwm_pin_set_cycles(dev, pwm, (u32_t)period_cycles,
-				  (u32_t)pulse_cycles, flags);
+	return pwm_pin_set_cycles(dev, pwm, (uint32_t)period_cycles,
+				  (uint32_t)pulse_cycles, flags);
 }
 
 #ifdef __cplusplus

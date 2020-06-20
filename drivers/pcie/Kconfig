@@ -5,7 +5,6 @@
 
 menuconfig PCIE
 	bool "Enable new PCI/PCIe support"
-	depends on X86
 	help
 	  This option enables support for new PCI(e) drivers.
 
@@ -24,5 +23,7 @@ config PCIE_SHELL
 	depends on SHELL
 	help
 	  Enable commands for debugging PCI(e) using the built-in shell.
+
+source "drivers/pcie/endpoint/Kconfig"
 
 endif # PCIE

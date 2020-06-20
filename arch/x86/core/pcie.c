@@ -32,7 +32,7 @@
  * Helper function for exported configuration functions. Configuration access
  * ain't atomic, so spinlock to keep drivers from clobbering each other.
  */
-static void pcie_conf(pcie_bdf_t bdf, unsigned int reg, bool write, u32_t *data)
+static void pcie_conf(pcie_bdf_t bdf, unsigned int reg, bool write, uint32_t *data)
 {
 	static struct k_spinlock lock;
 	k_spinlock_key_t k;
@@ -56,15 +56,15 @@ static void pcie_conf(pcie_bdf_t bdf, unsigned int reg, bool write, u32_t *data)
 
 /* these functions are explained in include/drivers/pcie/pcie.h */
 
-u32_t pcie_conf_read(pcie_bdf_t bdf, unsigned int reg)
+uint32_t pcie_conf_read(pcie_bdf_t bdf, unsigned int reg)
 {
-	u32_t data;
+	uint32_t data;
 
 	pcie_conf(bdf, reg, false, &data);
 	return data;
 }
 
-void pcie_conf_write(pcie_bdf_t bdf, unsigned int reg, u32_t data)
+void pcie_conf_write(pcie_bdf_t bdf, unsigned int reg, uint32_t data)
 {
 	pcie_conf(bdf, reg, true, &data);
 }
@@ -73,13 +73,13 @@ void pcie_conf_write(pcie_bdf_t bdf, unsigned int reg, u32_t data)
 
 /* these functions are explained in include/drivers/pcie/msi.h */
 
-u32_t pcie_msi_map(unsigned int irq)
+uint32_t pcie_msi_map(unsigned int irq)
 {
 	ARG_UNUSED(irq);
 	return 0xFEE00000U;  /* standard delivery to BSP local APIC */
 }
 
-u16_t pcie_msi_mdr(unsigned int irq)
+uint16_t pcie_msi_mdr(unsigned int irq)
 {
 	unsigned char vector = Z_IRQ_TO_INTERRUPT_VECTOR(irq);
 

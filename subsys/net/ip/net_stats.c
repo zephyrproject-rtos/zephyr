@@ -59,16 +59,16 @@ static const char *priority2str(enum net_priority priority)
 }
 #endif
 
-static inline s64_t cmp_val(u64_t val1, u64_t val2)
+static inline int64_t cmp_val(uint64_t val1, uint64_t val2)
 {
-	return (s64_t)(val1 - val2);
+	return (int64_t)(val1 - val2);
 }
 
 static inline void stats(struct net_if *iface)
 {
-	static u64_t next_print;
-	u64_t curr = k_uptime_get();
-	s64_t cmp = cmp_val(curr, next_print);
+	static uint64_t next_print;
+	uint64_t curr = k_uptime_get();
+	int64_t cmp = cmp_val(curr, next_print);
 	int i;
 
 	if (!next_print || (abs(cmp) > PRINT_STATISTICS_INTERVAL)) {
@@ -198,7 +198,7 @@ static inline void stats(struct net_if *iface)
 		NET_INFO("Got suspended %d times",
 			 GET_STAT(iface, pm.suspend_count));
 		NET_INFO("Average suspend time: %u ms",
-			 (u32_t)(GET_STAT(iface, pm.overall_suspend_time) /
+			 (uint32_t)(GET_STAT(iface, pm.overall_suspend_time) /
 				 GET_STAT(iface, pm.suspend_count)));
 		NET_INFO("Total suspended time: %llu ms",
 			 GET_STAT(iface, pm.overall_suspend_time));
@@ -234,7 +234,7 @@ void net_print_statistics(void)
 
 #if defined(CONFIG_NET_STATISTICS_USER_API)
 
-static int net_stats_get(u32_t mgmt_request, struct net_if *iface,
+static int net_stats_get(uint32_t mgmt_request, struct net_if *iface,
 			 void *data, size_t len)
 {
 	size_t len_chk = 0;

@@ -32,7 +32,7 @@ static inline void ieee802154_mgmt_init(struct net_if *iface)
 
 enum net_verdict ieee802154_handle_beacon(struct net_if *iface,
 					  struct ieee802154_mpdu *mpdu,
-					  u8_t lqi);
+					  uint8_t lqi);
 
 enum net_verdict ieee802154_handle_mac_command(struct net_if *iface,
 					       struct ieee802154_mpdu *mpdu);

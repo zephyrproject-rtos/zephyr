@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(counter_gecko, CONFIG_COUNTER_LOG_LEVEL);
 struct counter_gecko_config {
 	struct counter_config_info info;
 	void (*irq_config)(void);
-	u32_t prescaler;
+	uint32_t prescaler;
 };
 
 struct counter_gecko_alarm_data {
@@ -52,9 +52,9 @@ struct counter_gecko_data {
 #endif
 
 /* Map channel id to CC channel provided by the RTCC module */
-static u8_t chan_id2cc_idx(u8_t chan_id)
+static uint8_t chan_id2cc_idx(uint8_t chan_id)
 {
-	u8_t cc_idx;
+	uint8_t cc_idx;
 
 	switch (chan_id) {
 	case 0:
@@ -85,7 +85,7 @@ static int counter_gecko_stop(struct device *dev)
 	return 0;
 }
 
-static int counter_gecko_get_value(struct device *dev, u32_t *ticks)
+static int counter_gecko_get_value(struct device *dev, uint32_t *ticks)
 {
 	ARG_UNUSED(dev);
 
@@ -97,8 +97,8 @@ static int counter_gecko_set_top_value(struct device *dev,
 				       const struct counter_top_cfg *cfg)
 {
 	struct counter_gecko_data *const dev_data = DEV_DATA(dev);
-	u32_t ticks;
-	u32_t flags;
+	uint32_t ticks;
+	uint32_t flags;
 	int err = 0;
 
 #ifdef CONFIG_SOC_GECKO_HAS_ERRATA_RTCC_E201
@@ -146,27 +146,27 @@ static int counter_gecko_set_top_value(struct device *dev,
 	return err;
 }
 
-static u32_t counter_gecko_get_top_value(struct device *dev)
+static uint32_t counter_gecko_get_top_value(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	return RTCC_ChannelCCVGet(1);
 }
 
-static u32_t counter_gecko_get_max_relative_alarm(struct device *dev)
+static uint32_t counter_gecko_get_max_relative_alarm(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	return RTCC_ChannelCCVGet(1);
 }
 
-static int counter_gecko_set_alarm(struct device *dev, u8_t chan_id,
+static int counter_gecko_set_alarm(struct device *dev, uint8_t chan_id,
 				   const struct counter_alarm_cfg *alarm_cfg)
 {
-	u32_t count = RTCC_CounterGet();
+	uint32_t count = RTCC_CounterGet();
 	struct counter_gecko_data *const dev_data = DEV_DATA(dev);
-	u32_t top_value = counter_gecko_get_top_value(dev);
-	u32_t ccv;
+	uint32_t top_value = counter_gecko_get_top_value(dev);
+	uint32_t ccv;
 
 	if ((top_value != 0) && (alarm_cfg->ticks > top_value)) {
 		return -EINVAL;
@@ -181,13 +181,13 @@ static int counter_gecko_set_alarm(struct device *dev, u8_t chan_id,
 		if (top_value == 0) {
 			ccv = count + alarm_cfg->ticks;
 		} else {
-			u64_t ccv64 = count + alarm_cfg->ticks;
+			uint64_t ccv64 = count + alarm_cfg->ticks;
 
-			ccv = (u32_t)(ccv64 % top_value);
+			ccv = (uint32_t)(ccv64 % top_value);
 		}
 	}
 
-	u8_t cc_idx = chan_id2cc_idx(chan_id);
+	uint8_t cc_idx = chan_id2cc_idx(chan_id);
 
 	RTCC_IntClear(RTCC_IF_CC0 << cc_idx);
 
@@ -204,11 +204,11 @@ static int counter_gecko_set_alarm(struct device *dev, u8_t chan_id,
 	return 0;
 }
 
-static int counter_gecko_cancel_alarm(struct device *dev, u8_t chan_id)
+static int counter_gecko_cancel_alarm(struct device *dev, uint8_t chan_id)
 {
 	struct counter_gecko_data *const dev_data = DEV_DATA(dev);
 
-	u8_t cc_idx = chan_id2cc_idx(chan_id);
+	uint8_t cc_idx = chan_id2cc_idx(chan_id);
 
 	/* Disable the compare interrupt */
 	RTCC_IntDisable(RTCC_IF_CC0 << cc_idx);
@@ -224,7 +224,7 @@ static int counter_gecko_cancel_alarm(struct device *dev, u8_t chan_id)
 	return 0;
 }
 
-static u32_t counter_gecko_get_pending_int(struct device *dev)
+static uint32_t counter_gecko_get_pending_int(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -323,15 +323,15 @@ static const struct counter_driver_api counter_gecko_driver_api = {
 
 /* RTCC0 */
 
-static struct device DEVICE_NAME_GET(counter_gecko_0);
+DEVICE_DECLARE(counter_gecko_0);
 
 ISR_DIRECT_DECLARE(counter_gecko_isr_0)
 {
 	struct device *const dev = DEVICE_GET(counter_gecko_0);
 	struct counter_gecko_data *const dev_data = DEV_DATA(dev);
 	counter_alarm_callback_t alarm_callback;
-	u32_t count = RTCC_CounterGet();
-	u32_t flags = RTCC_IntGetEnabled();
+	uint32_t count = RTCC_CounterGet();
+	uint32_t flags = RTCC_IntGetEnabled();
 
 	RTCC_IntClear(flags);
 
@@ -341,7 +341,7 @@ ISR_DIRECT_DECLARE(counter_gecko_isr_0)
 		}
 	}
 	for (int i = 0; i < RTCC_ALARM_NUM; i++) {
-		u8_t cc_idx = chan_id2cc_idx(i);
+		uint8_t cc_idx = chan_id2cc_idx(i);
 
 		if (flags & (RTCC_IF_CC0 << cc_idx)) {
 			if (dev_data->alarm[i].callback) {

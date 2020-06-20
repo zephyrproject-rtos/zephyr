@@ -28,7 +28,7 @@ struct mcr20a_context {
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	struct spi_cs_control cs_ctrl;
 #endif
-	u8_t mac_addr[8];
+	uint8_t mac_addr[8];
 	struct k_mutex phy_mutex;
 	struct k_sem isr_sem;
 	/*********TX + CCA*********/
@@ -42,23 +42,23 @@ struct mcr20a_context {
 
 #include "ieee802154_mcr20a_regs.h"
 
-u8_t z_mcr20a_read_reg(struct mcr20a_context *dev, bool dreg, u8_t addr);
-bool z_mcr20a_write_reg(struct mcr20a_context *dev, bool dreg, u8_t addr,
-		       u8_t value);
-bool z_mcr20a_write_burst(struct mcr20a_context *dev, bool dreg, u16_t addr,
-			 u8_t *data_buf, u8_t len);
-bool z_mcr20a_read_burst(struct mcr20a_context *dev, bool dreg, u16_t addr,
-			u8_t *data_buf, u8_t len);
+uint8_t z_mcr20a_read_reg(struct mcr20a_context *dev, bool dreg, uint8_t addr);
+bool z_mcr20a_write_reg(struct mcr20a_context *dev, bool dreg, uint8_t addr,
+		       uint8_t value);
+bool z_mcr20a_write_burst(struct mcr20a_context *dev, bool dreg, uint16_t addr,
+			 uint8_t *data_buf, uint8_t len);
+bool z_mcr20a_read_burst(struct mcr20a_context *dev, bool dreg, uint16_t addr,
+			uint8_t *data_buf, uint8_t len);
 
 #define DEFINE_REG_READ(__reg_name, __reg_addr, __dreg)			\
-	static inline u8_t read_reg_##__reg_name(struct mcr20a_context *dev) \
+	static inline uint8_t read_reg_##__reg_name(struct mcr20a_context *dev) \
 	{								\
 		return z_mcr20a_read_reg(dev, __dreg, __reg_addr);	\
 	}
 
 #define DEFINE_REG_WRITE(__reg_name, __reg_addr, __dreg)		\
 	static inline bool write_reg_##__reg_name(struct mcr20a_context *dev, \
-						  u8_t value)		\
+						  uint8_t value)		\
 	{								\
 		return z_mcr20a_write_reg(dev, __dreg, __reg_addr, value); \
 	}
@@ -135,7 +135,7 @@ DEFINE_IREG_WRITE(rx_byte_count, MCR20A_RX_BYTE_COUNT)
 DEFINE_IREG_WRITE(rx_wtr_mark, MCR20A_RX_WTR_MARK)
 
 #define DEFINE_BITS_SET(__reg_name, __reg_addr, __nibble)		\
-	static inline u8_t set_bits_##__reg_name(u8_t value)	\
+	static inline uint8_t set_bits_##__reg_name(uint8_t value)	\
 	{								\
 		value = (value << __reg_addr##__nibble##_SHIFT) &	\
 			 __reg_addr##__nibble##_MASK;			\
@@ -151,14 +151,14 @@ DEFINE_BITS_SET(clk_out_div, MCR20A_CLK_OUT, _DIV)
 
 #define DEFINE_BURST_WRITE(__reg_addr, __addr, __sz, __dreg)		\
 	static inline bool write_burst_##__reg_addr(			\
-		struct mcr20a_context *dev, u8_t *buf)			\
+		struct mcr20a_context *dev, uint8_t *buf)			\
 	{								\
 		return z_mcr20a_write_burst(dev, __dreg, __addr, buf, __sz); \
 	}
 
 #define DEFINE_BURST_READ(__reg_addr, __addr, __sz, __dreg)		    \
 	static inline bool read_burst_##__reg_addr(struct mcr20a_context *dev, \
-						   u8_t *buf)		\
+						   uint8_t *buf)		\
 	{								    \
 		return z_mcr20a_read_burst(dev, __dreg, __addr, buf, __sz);  \
 	}

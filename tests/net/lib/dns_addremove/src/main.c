@@ -74,8 +74,8 @@ static struct dns_resolve_context resv_ipv6_2;
 #define WAIT_TIME K_MSEC((DNS_TIMEOUT + 300) * 3)
 
 struct net_if_test {
-	u8_t idx;
-	u8_t mac_addr[sizeof(struct net_eth_addr)];
+	uint8_t idx;
+	uint8_t mac_addr[sizeof(struct net_eth_addr)];
 };
 
 static int net_iface_dev_init(struct device *dev)
@@ -83,7 +83,7 @@ static int net_iface_dev_init(struct device *dev)
 	return 0;
 }
 
-static u8_t *net_iface_get_mac(struct device *dev)
+static uint8_t *net_iface_get_mac(struct device *dev)
 {
 	struct net_if_test *data = dev->driver_data;
 
@@ -102,7 +102,7 @@ static u8_t *net_iface_get_mac(struct device *dev)
 
 static void net_iface_init(struct net_if *iface)
 {
-	u8_t *mac = net_iface_get_mac(net_if_get_device(iface));
+	uint8_t *mac = net_iface_get_mac(net_if_get_device(iface));
 
 	net_if_set_link_addr(iface, mac, sizeof(struct net_eth_addr),
 			     NET_LINK_ETHERNET);
@@ -142,7 +142,7 @@ NET_DEVICE_INIT_INSTANCE(net_iface1_test,
 			 127);
 
 static void dns_evt_handler(struct net_mgmt_event_callback *cb,
-			      u32_t mgmt_event, struct net_if *iface)
+			      uint32_t mgmt_event, struct net_if *iface)
 {
 	if (mgmt_event == NET_EVENT_DNS_SERVER_ADD) {
 		k_sem_give(&dns_added);

@@ -31,7 +31,7 @@ struct k_mem_slab *_trace_list_k_mem_slab;
  */
 static int create_free_list(struct k_mem_slab *slab)
 {
-	u32_t j;
+	uint32_t j;
 	char *p;
 
 	/* blocks must be word aligned */
@@ -80,7 +80,7 @@ SYS_INIT(init_mem_slab_module, PRE_KERNEL_1,
 	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
-		    size_t block_size, u32_t num_blocks)
+		    size_t block_size, uint32_t num_blocks)
 {
 	int rc = 0;
 

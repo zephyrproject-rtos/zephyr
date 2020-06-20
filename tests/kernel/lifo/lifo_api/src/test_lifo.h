@@ -12,6 +12,6 @@
 
 typedef struct ldata {
 	sys_snode_t snode;
-	u32_t data;
+	uint32_t data;
 } ldata_t;
 #endif

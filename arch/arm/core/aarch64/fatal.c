@@ -17,9 +17,9 @@
 
 LOG_MODULE_DECLARE(os);
 
-static void print_EC_cause(u64_t esr)
+static void print_EC_cause(uint64_t esr)
 {
-	u32_t EC = (u32_t)esr >> 26;
+	uint32_t EC = (uint32_t)esr >> 26;
 
 	switch (EC) {
 	case 0b000000:
@@ -157,7 +157,7 @@ static void esf_dump(const z_arch_esf_t *esf)
 
 void z_arm64_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 {
-	u64_t el, esr, elr, far;
+	uint64_t el, esr, elr, far;
 
 	if (reason != K_ERR_SPURIOUS_IRQ) {
 		__asm__ volatile("mrs %0, CurrentEL" : "=r" (el));

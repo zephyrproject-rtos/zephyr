@@ -54,10 +54,10 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 
 #ifdef CONFIG_SPI_STM32_DMA
 /* dummy value used for transferring NOP when tx buf is null */
-u32_t nop_tx;
+uint32_t nop_tx;
 
 /* This function is executed in the interrupt context */
-static void dma_callback(void *arg, u32_t channel, int status)
+static void dma_callback(void *arg, uint32_t channel, int status)
 {
 	/* callback_arg directly holds the client data */
 	struct spi_stm32_data *data = arg;
@@ -84,7 +84,7 @@ static void dma_callback(void *arg, u32_t channel, int status)
 	}
 }
 
-static int spi_stm32_dma_tx_load(struct device *dev, const u8_t *buf,
+static int spi_stm32_dma_tx_load(struct device *dev, const uint8_t *buf,
 				 size_t len)
 {
 	const struct spi_stm32_config *cfg = DEV_CFG(dev);
@@ -103,10 +103,10 @@ static int spi_stm32_dma_tx_load(struct device *dev, const u8_t *buf,
 	if (buf == NULL) {
 		nop_tx = 0;
 		/* if tx buff is null, then sends NOP on the line. */
-		blk_cfg.source_address = (u32_t)&nop_tx;
+		blk_cfg.source_address = (uint32_t)&nop_tx;
 		blk_cfg.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 	} else {
-		blk_cfg.source_address = (u32_t)buf;
+		blk_cfg.source_address = (uint32_t)buf;
 		if (data->dma_tx.src_addr_increment) {
 			blk_cfg.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
 		} else {
@@ -114,7 +114,7 @@ static int spi_stm32_dma_tx_load(struct device *dev, const u8_t *buf,
 		}
 	}
 
-	blk_cfg.dest_address = (u32_t)LL_SPI_DMA_GetRegAddr(cfg->spi);
+	blk_cfg.dest_address = (uint32_t)LL_SPI_DMA_GetRegAddr(cfg->spi);
 	/* fifo mode NOT USED there */
 	if (data->dma_tx.dst_addr_increment) {
 		blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
@@ -144,7 +144,7 @@ static int spi_stm32_dma_tx_load(struct device *dev, const u8_t *buf,
 	return dma_start(data->dev_dma_tx, data->dma_tx.channel);
 }
 
-static int spi_stm32_dma_rx_load(struct device *dev, u8_t *buf, size_t len)
+static int spi_stm32_dma_rx_load(struct device *dev, uint8_t *buf, size_t len)
 {
 	const struct spi_stm32_config *cfg = DEV_CFG(dev);
 	struct spi_stm32_data *data = DEV_DATA(dev);
@@ -159,8 +159,8 @@ static int spi_stm32_dma_rx_load(struct device *dev, u8_t *buf, size_t len)
 	blk_cfg.block_size = len;
 
 	/* rx direction has periph as source and mem as dest. */
-	blk_cfg.dest_address = (buf != NULL) ? (u32_t)buf : (u32_t)NULL;
-	blk_cfg.source_address = (u32_t)LL_SPI_DMA_GetRegAddr(cfg->spi);
+	blk_cfg.dest_address = (buf != NULL) ? (uint32_t)buf : (uint32_t)NULL;
+	blk_cfg.source_address = (uint32_t)LL_SPI_DMA_GetRegAddr(cfg->spi);
 	if (data->dma_rx.src_addr_increment) {
 		blk_cfg.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
 	} else {
@@ -243,11 +243,11 @@ static bool spi_stm32_transfer_ongoing(struct spi_stm32_data *data)
 
 static int spi_stm32_get_err(SPI_TypeDef *spi)
 {
-	u32_t sr = LL_SPI_ReadReg(spi, SR);
+	uint32_t sr = LL_SPI_ReadReg(spi, SR);
 
 	if (sr & SPI_STM32_ERR_MSK) {
 		LOG_ERR("%s: err=%d", __func__,
-			    sr & (u32_t)SPI_STM32_ERR_MSK);
+			    sr & (uint32_t)SPI_STM32_ERR_MSK);
 
 		/* OVR error must be explicitly cleared */
 		if (LL_SPI_IsActiveFlag_OVR(spi)) {
@@ -263,8 +263,8 @@ static int spi_stm32_get_err(SPI_TypeDef *spi)
 /* Shift a SPI frame as master. */
 static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
-	u16_t tx_frame = SPI_STM32_TX_NOP;
-	u16_t rx_frame;
+	uint16_t tx_frame = SPI_STM32_TX_NOP;
+	uint16_t rx_frame;
 
 	while (!ll_func_tx_is_empty(spi)) {
 		/* NOP */
@@ -284,14 +284,14 @@ static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 
 	if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
 		if (spi_context_tx_buf_on(&data->ctx)) {
-			tx_frame = UNALIGNED_GET((u8_t *)(data->ctx.tx_buf));
+			tx_frame = UNALIGNED_GET((uint8_t *)(data->ctx.tx_buf));
 		}
 		LL_SPI_TransmitData8(spi, tx_frame);
 		/* The update is ignored if TX is off. */
 		spi_context_update_tx(&data->ctx, 1, 1);
 	} else {
 		if (spi_context_tx_buf_on(&data->ctx)) {
-			tx_frame = UNALIGNED_GET((u16_t *)(data->ctx.tx_buf));
+			tx_frame = UNALIGNED_GET((uint16_t *)(data->ctx.tx_buf));
 		}
 		LL_SPI_TransmitData16(spi, tx_frame);
 		/* The update is ignored if TX is off. */
@@ -305,13 +305,13 @@ static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 	if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
 		rx_frame = LL_SPI_ReceiveData8(spi);
 		if (spi_context_rx_buf_on(&data->ctx)) {
-			UNALIGNED_PUT(rx_frame, (u8_t *)data->ctx.rx_buf);
+			UNALIGNED_PUT(rx_frame, (uint8_t *)data->ctx.rx_buf);
 		}
 		spi_context_update_rx(&data->ctx, 1, 1);
 	} else {
 		rx_frame = LL_SPI_ReceiveData16(spi);
 		if (spi_context_rx_buf_on(&data->ctx)) {
-			UNALIGNED_PUT(rx_frame, (u16_t *)data->ctx.rx_buf);
+			UNALIGNED_PUT(rx_frame, (uint16_t *)data->ctx.rx_buf);
 		}
 		spi_context_update_rx(&data->ctx, 2, 1);
 	}
@@ -321,14 +321,14 @@ static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
 	if (ll_func_tx_is_empty(spi) && spi_context_tx_on(&data->ctx)) {
-		u16_t tx_frame;
+		uint16_t tx_frame;
 
 		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
-			tx_frame = UNALIGNED_GET((u8_t *)(data->ctx.tx_buf));
+			tx_frame = UNALIGNED_GET((uint8_t *)(data->ctx.tx_buf));
 			LL_SPI_TransmitData8(spi, tx_frame);
 			spi_context_update_tx(&data->ctx, 1, 1);
 		} else {
-			tx_frame = UNALIGNED_GET((u16_t *)(data->ctx.tx_buf));
+			tx_frame = UNALIGNED_GET((uint16_t *)(data->ctx.tx_buf));
 			LL_SPI_TransmitData16(spi, tx_frame);
 			spi_context_update_tx(&data->ctx, 2, 1);
 		}
@@ -338,15 +338,15 @@ static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
 
 	if (ll_func_rx_is_not_empty(spi) &&
 	    spi_context_rx_buf_on(&data->ctx)) {
-		u16_t rx_frame;
+		uint16_t rx_frame;
 
 		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
 			rx_frame = LL_SPI_ReceiveData8(spi);
-			UNALIGNED_PUT(rx_frame, (u8_t *)data->ctx.rx_buf);
+			UNALIGNED_PUT(rx_frame, (uint8_t *)data->ctx.rx_buf);
 			spi_context_update_rx(&data->ctx, 1, 1);
 		} else {
 			rx_frame = LL_SPI_ReceiveData16(spi);
-			UNALIGNED_PUT(rx_frame, (u16_t *)data->ctx.rx_buf);
+			UNALIGNED_PUT(rx_frame, (uint16_t *)data->ctx.rx_buf);
 			spi_context_update_rx(&data->ctx, 2, 1);
 		}
 	}
@@ -360,7 +360,7 @@ static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
  */
 static int spi_stm32_shift_frames(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
-	u16_t operation = data->ctx.config->operation;
+	uint16_t operation = data->ctx.config->operation;
 
 	if (SPI_OP_MODE_GET(operation) == SPI_OP_MODE_MASTER) {
 		spi_stm32_shift_m(spi, data);
@@ -436,7 +436,7 @@ static int spi_stm32_configure(struct device *dev,
 {
 	const struct spi_stm32_config *cfg = DEV_CFG(dev);
 	struct spi_stm32_data *data = DEV_DATA(dev);
-	const u32_t scaler[] = {
+	const uint32_t scaler[] = {
 		LL_SPI_BAUDRATEPRESCALER_DIV2,
 		LL_SPI_BAUDRATEPRESCALER_DIV4,
 		LL_SPI_BAUDRATEPRESCALER_DIV8,
@@ -447,7 +447,7 @@ static int spi_stm32_configure(struct device *dev,
 		LL_SPI_BAUDRATEPRESCALER_DIV256
 	};
 	SPI_TypeDef *spi = cfg->spi;
-	u32_t clock;
+	uint32_t clock;
 	int br;
 
 	if (spi_context_configured(&data->ctx, config)) {
@@ -467,7 +467,7 @@ static int spi_stm32_configure(struct device *dev,
 	}
 
 	for (br = 1 ; br <= ARRAY_SIZE(scaler) ; ++br) {
-		u32_t clk = clock >> br;
+		uint32_t clk = clock >> br;
 
 		if (clk <= config->frequency) {
 			break;
@@ -687,7 +687,7 @@ static int transceive_dma(struct device *dev,
 	LL_SPI_Enable(spi);
 
 	/* store spi peripheral address */
-	u32_t periph_addr = data->dma_tx.dma_cfg.head_block->dest_address;
+	uint32_t periph_addr = data->dma_tx.dma_cfg.head_block->dest_address;
 
 	for (; ;) {
 		/* wait for SPI busy flag */
@@ -715,7 +715,7 @@ static int transceive_dma(struct device *dev,
 			/* and reload dma with a new source (memory) buffer */
 			dma_reload(data->dev_dma_tx,
 				data->dma_tx.channel,
-				(u32_t)data->ctx.tx_buf,
+				(uint32_t)data->ctx.tx_buf,
 				periph_addr,
 				data->ctx.tx_len);
 		}
@@ -733,7 +733,7 @@ static int transceive_dma(struct device *dev,
 			dma_reload(data->dev_dma_rx,
 				data->dma_rx.channel,
 				periph_addr,
-				(u32_t)data->ctx.rx_buf,
+				(uint32_t)data->ctx.rx_buf,
 				data->ctx.rx_len);
 		}
 		LL_SPI_EnableDMAReq_RX(spi);
@@ -886,7 +886,7 @@ static void spi_stm32_irq_config_func_##id(struct device *dev)		\
 .dma_##dir = {								\
 	 COND_CODE_1(DT_INST_DMAS_HAS_NAME(id, dir),			\
 		     (SPI_DMA_CHANNEL_INIT(id, dir, DIR, src, dest)),	\
-		     NULL)						\
+		     (NULL))						\
 	     },
 #else
 #define SPI_DMA_CHANNEL(id, dir, DIR, src, dest)

@@ -50,7 +50,7 @@ enum ieee802154_event {
 	IEEE802154_EVENT_TX_STARTED /* Data transmission started */
 };
 
-typedef void (*energy_scan_done_cb_t)(struct device *dev, s16_t max_ed);
+typedef void (*energy_scan_done_cb_t)(struct device *dev, int16_t max_ed);
 
 typedef void (*ieee802154_event_cb_t)(struct device *dev,
 				      enum ieee802154_event evt,
@@ -59,9 +59,9 @@ typedef void (*ieee802154_event_cb_t)(struct device *dev,
 struct ieee802154_filter {
 /** @cond ignore */
 	union {
-		u8_t *ieee_addr;
-		u16_t short_addr;
-		u16_t pan_id;
+		uint8_t *ieee_addr;
+		uint16_t short_addr;
+		uint16_t pan_id;
 	};
 /* @endcond */
 };
@@ -137,7 +137,7 @@ struct ieee802154_config {
 
 		/** ``IEEE802154_CONFIG_ACK_FPB`` */
 		struct {
-			u8_t *addr;
+			uint8_t *addr;
 			bool extended;
 			bool enabled;
 		} ack_fpb;
@@ -173,7 +173,7 @@ struct ieee802154_radio_api {
 	int (*cca)(struct device *dev);
 
 	/** Set current channel */
-	int (*set_channel)(struct device *dev, u16_t channel);
+	int (*set_channel)(struct device *dev, uint16_t channel);
 
 	/** Set/Unset filters (for IEEE802154_HW_FILTER ) */
 	int (*filter)(struct device *dev,
@@ -182,7 +182,7 @@ struct ieee802154_radio_api {
 		      const struct ieee802154_filter *filter);
 
 	/** Set TX power level in dbm */
-	int (*set_txpower)(struct device *dev, s16_t dbm);
+	int (*set_txpower)(struct device *dev, int16_t dbm);
 
 	/** Transmit a packet fragment */
 	int (*tx)(struct device *dev, enum ieee802154_tx_mode mode,
@@ -201,7 +201,7 @@ struct ieee802154_radio_api {
 
 #ifdef CONFIG_NET_L2_IEEE802154_SUB_GHZ
 	/** Get the available amount of Sub-GHz channels */
-	u16_t (*get_subg_channel_count)(struct device *dev);
+	uint16_t (*get_subg_channel_count)(struct device *dev);
 #endif /* CONFIG_NET_L2_IEEE802154_SUB_GHZ */
 
 	/** Run an energy detection scan.
@@ -209,7 +209,7 @@ struct ieee802154_radio_api {
 	 *  duration parameter is in ms.
 	 */
 	int (*ed_scan)(struct device *dev,
-		       u16_t duration,
+		       uint16_t duration,
 		       energy_scan_done_cb_t done_cb);
 };
 

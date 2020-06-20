@@ -14,15 +14,15 @@
 #define TIMER_DELAY_ms 500
 #define BUSY_WAIT_ms 100
 
-static volatile u32_t na;
+static volatile uint32_t na;
 
 static void handler(struct k_timer *timer)
 {
 	++na;
 }
 
-static u32_t iters;
-static u32_t now;
+static uint32_t iters;
+static uint32_t now;
 
 static const char *tag(void)
 {
@@ -37,9 +37,9 @@ static void test_starve(void)
 {
 	static struct k_timer tmr;
 	static struct k_spinlock lock;
-	u32_t stamp = 0;
-	u32_t last_now = 0;
-	u64_t last_ticks = 0;
+	uint32_t stamp = 0;
+	uint32_t last_now = 0;
+	uint64_t last_ticks = 0;
 	k_spinlock_key_t key;
 
 	TC_PRINT("Cycle clock runs at %u Hz\n",
@@ -63,7 +63,7 @@ static void test_starve(void)
 			stamp += STAMP_INTERVAL_s * MSEC_PER_SEC;
 		}
 
-		s32_t now_diff = now - last_now;
+		int32_t now_diff = now - last_now;
 
 		zassert_true(now_diff > 0,
 			     "%sTime went backwards by %d: was %u.%03u\n",
@@ -72,15 +72,15 @@ static void test_starve(void)
 		last_now = now;
 
 		/* Assume tick delta fits in printable 32 bits */
-		u64_t ticks = z_tick_get();
-		s64_t ticks_diff = ticks - last_ticks;
+		uint64_t ticks = z_tick_get();
+		int64_t ticks_diff = ticks - last_ticks;
 
 		zassert_true(ticks_diff > 0,
 			     "%sTicks went backwards by %d\n",
-			     tag(), -(s32_t)ticks_diff);
+			     tag(), -(int32_t)ticks_diff);
 		last_ticks = ticks;
 
-		u32_t na_capture = na;
+		uint32_t na_capture = na;
 
 		zassert_equal(na_capture, 0,
 			      "%sTimer alarm fired: %u\n",

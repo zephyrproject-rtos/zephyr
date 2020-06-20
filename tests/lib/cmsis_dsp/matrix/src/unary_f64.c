@@ -24,10 +24,10 @@ static void test_arm_mat_inverse_f64(void)
 {
 	size_t index;
 	size_t length = ARRAY_SIZE(ref_inv);
-	u16_t *dims = (u16_t *)in_inv_dims;
+	uint16_t *dims = (uint16_t *)in_inv_dims;
 	float64_t *input, *tmp1, *output;
 	arm_status status;
-	u16_t rows, columns;
+	uint16_t rows, columns;
 
 	arm_matrix_instance_f64 mat_in1;
 	arm_matrix_instance_f64 mat_out;

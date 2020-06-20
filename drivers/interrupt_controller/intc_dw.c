@@ -18,10 +18,10 @@
 #include "intc_dw.h"
 #include <soc.h>
 
-static ALWAYS_INLINE void dw_ictl_dispatch_child_isrs(u32_t intr_status,
-						      u32_t isr_base_offset)
+static ALWAYS_INLINE void dw_ictl_dispatch_child_isrs(uint32_t intr_status,
+						      uint32_t isr_base_offset)
 {
-	u32_t intr_bitpos, intr_offset;
+	uint32_t intr_bitpos, intr_offset;
 
 	/* Dispatch lower level ISRs depending upon the bit set */
 	while (intr_status) {

@@ -1,0 +1,54 @@
+# Copyright (c) 2020, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP MCUX EDMA controller
+
+compatible: "nxp,mcux-edma"
+
+include: dma-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    dma-channels:
+      required: true
+
+    dma-requests:
+      required: true
+
+    nxp,mem2mem:
+      type: boolean
+      description: If the DMA controller supports memory to memory transfer
+
+    nxp,a_on:
+      type: boolean
+      description: If the DMA controller supports always on
+
+    "#dma-cells":
+      type: int
+      required: true
+      description: Number of items to expect in a DMAMUX specifier
+
+# Parameter syntax of NXP follows the dmamux client dts syntax
+# in the Linux kernel declared in
+# https://git.kernel.org/pub/scm/linux/kernel/git/devicetree/devicetree-rebasing.git/tree/Bindings/dma/fsl-edma.txt
+#
+#- #dma-cells : Must be <2>.
+#  The 1st cell specifies the DMAMUX(0 for DMAMUX0 and 1 for DMAMUX1).
+#    Specific request source can only be multiplexed by specific channels
+#    group called DMAMUX.
+#  The 2nd cell specifies the request source(slot) ID.
+#    See the SoC's reference manual for all the supported request sources.
+# * DMA clients
+# DMA client drivers that uses the DMA function must use the format described
+# in the dma.txt file, using a two-cell specifier for each channel: the 1st
+# specifies the channel group(DMAMUX) in which this request can be multiplexed,
+# and the 2nd specifies the request source.
+
+dma-cells:
+  - mux
+  - source

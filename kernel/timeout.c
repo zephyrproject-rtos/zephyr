@@ -17,7 +17,7 @@
 			__i.key == 0;					\
 			k_spin_unlock(lck, __key), __i.key = 1)
 
-static u64_t curr_tick;
+static uint64_t curr_tick;
 
 static sys_dlist_t timeout_list = SYS_DLIST_STATIC_INIT(&timeout_list);
 
@@ -64,16 +64,16 @@ static void remove_timeout(struct _timeout *t)
 	sys_dlist_remove(&t->node);
 }
 
-static s32_t elapsed(void)
+static int32_t elapsed(void)
 {
 	return announce_remaining == 0 ? z_clock_elapsed() : 0;
 }
 
-static s32_t next_timeout(void)
+static int32_t next_timeout(void)
 {
 	struct _timeout *to = first();
-	s32_t ticks_elapsed = elapsed();
-	s32_t ret = to == NULL ? MAX_WAIT : MAX(0, to->dticks - ticks_elapsed);
+	int32_t ticks_elapsed = elapsed();
+	int32_t ret = to == NULL ? MAX_WAIT : MAX(0, to->dticks - ticks_elapsed);
 
 #ifdef CONFIG_TIMESLICING
 	if (_current_cpu->slice_ticks && _current_cpu->slice_ticks < ret) {
@@ -184,9 +184,9 @@ k_ticks_t z_timeout_expires(struct _timeout *timeout)
 	return ticks;
 }
 
-s32_t z_get_next_timeout_expiry(void)
+int32_t z_get_next_timeout_expiry(void)
 {
-	s32_t ret = (s32_t) K_TICKS_FOREVER;
+	int32_t ret = (int32_t) K_TICKS_FOREVER;
 
 	LOCKED(&timeout_lock) {
 		ret = next_timeout();
@@ -194,7 +194,7 @@ s32_t z_get_next_timeout_expiry(void)
 	return ret;
 }
 
-void z_set_timeout_expiry(s32_t ticks, bool idle)
+void z_set_timeout_expiry(int32_t ticks, bool idle)
 {
 	LOCKED(&timeout_lock) {
 		int next = next_timeout();
@@ -217,7 +217,7 @@ void z_set_timeout_expiry(s32_t ticks, bool idle)
 	}
 }
 
-void z_clock_announce(s32_t ticks)
+void z_clock_announce(int32_t ticks)
 {
 #ifdef CONFIG_TIMESLICING
 	z_time_slice(ticks);
@@ -253,9 +253,9 @@ void z_clock_announce(s32_t ticks)
 	k_spin_unlock(&timeout_lock, key);
 }
 
-s64_t z_tick_get(void)
+int64_t z_tick_get(void)
 {
-	u64_t t = 0U;
+	uint64_t t = 0U;
 
 	LOCKED(&timeout_lock) {
 		t = curr_tick + z_clock_elapsed();
@@ -263,22 +263,22 @@ s64_t z_tick_get(void)
 	return t;
 }
 
-u32_t z_tick_get_32(void)
+uint32_t z_tick_get_32(void)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
-	return (u32_t)z_tick_get();
+	return (uint32_t)z_tick_get();
 #else
-	return (u32_t)curr_tick;
+	return (uint32_t)curr_tick;
 #endif
 }
 
-s64_t z_impl_k_uptime_ticks(void)
+int64_t z_impl_k_uptime_ticks(void)
 {
 	return z_tick_get();
 }
 
 #ifdef CONFIG_USERSPACE
-static inline s64_t z_vrfy_k_uptime_ticks(void)
+static inline int64_t z_vrfy_k_uptime_ticks(void)
 {
 	return z_impl_k_uptime_ticks();
 }
@@ -290,7 +290,7 @@ static inline s64_t z_vrfy_k_uptime_ticks(void)
  * synchronously with the user passing a new timeout value.  It should
  * not be used iteratively to adjust a timeout.
  */
-u64_t z_timeout_end_calc(k_timeout_t timeout)
+uint64_t z_timeout_end_calc(k_timeout_t timeout)
 {
 	k_ticks_t dt;
 

@@ -13,9 +13,9 @@
 #if defined(CONFIG_CPU_CORTEX_M_HAS_DWT)
 /* Use cycle counting on the Cortex-M devices that support DWT */
 
-#include <arch/arm/cortex_m/cmsis.h>
+#include <arch/arm/aarch32/cortex_m/cmsis.h>
 
-static ALWAYS_INLINE void benchmark_begin(u32_t *irq_key, u32_t *timestamp)
+static ALWAYS_INLINE void benchmark_begin(uint32_t *irq_key, uint32_t *timestamp)
 {
 	ARG_UNUSED(timestamp);
 
@@ -27,7 +27,7 @@ static ALWAYS_INLINE void benchmark_begin(u32_t *irq_key, u32_t *timestamp)
 	DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 }
 
-static ALWAYS_INLINE u32_t benchmark_end(u32_t irq_key, u32_t timestamp)
+static ALWAYS_INLINE uint32_t benchmark_end(uint32_t irq_key, uint32_t timestamp)
 {
 	/* Stop DWT cycle counter */
 	DWT->CTRL &= ~DWT_CTRL_CYCCNTENA_Msk;
@@ -44,9 +44,9 @@ static ALWAYS_INLINE u32_t benchmark_end(u32_t irq_key, u32_t timestamp)
 #else
 /* Use system timer clock on other systems */
 
-static ALWAYS_INLINE void benchmark_begin(u32_t *irq_key, u32_t *timestamp)
+static ALWAYS_INLINE void benchmark_begin(uint32_t *irq_key, uint32_t *timestamp)
 {
-	volatile u32_t now;
+	volatile uint32_t now;
 
 	/* Lock interrupts to prevent preemption */
 	*irq_key = irq_lock();
@@ -58,9 +58,9 @@ static ALWAYS_INLINE void benchmark_begin(u32_t *irq_key, u32_t *timestamp)
 	*timestamp = now;
 }
 
-static ALWAYS_INLINE u32_t benchmark_end(u32_t irq_key, u32_t timestamp)
+static ALWAYS_INLINE uint32_t benchmark_end(uint32_t irq_key, uint32_t timestamp)
 {
-	volatile u32_t now;
+	volatile uint32_t now;
 
 	/* Read timestamp for the end of benchmark */
 	now = k_cycle_get_32();

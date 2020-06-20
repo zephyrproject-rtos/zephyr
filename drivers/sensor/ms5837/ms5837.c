@@ -19,10 +19,10 @@
 LOG_MODULE_REGISTER(MS5837, CONFIG_SENSOR_LOG_LEVEL);
 
 static int ms5837_get_measurement(struct device *i2c_master,
-				  const u8_t i2c_address, u32_t *val,
-				  u8_t cmd, const u8_t delay)
+				  const uint8_t i2c_address, uint32_t *val,
+				  uint8_t cmd, const uint8_t delay)
 {
-	u8_t adc_read_cmd = MS5837_CMD_CONV_READ_ADC;
+	uint8_t adc_read_cmd = MS5837_CMD_CONV_READ_ADC;
 	int err;
 
 	*val = 0U;
@@ -35,7 +35,7 @@ static int ms5837_get_measurement(struct device *i2c_master,
 	k_msleep(delay);
 
 	err = i2c_burst_read(i2c_master, i2c_address, adc_read_cmd,
-			((u8_t *)val) + 1, 3);
+			((uint8_t *)val) + 1, 3);
 	if (err < 0) {
 		return err;
 	}
@@ -46,26 +46,26 @@ static int ms5837_get_measurement(struct device *i2c_master,
 }
 
 static void ms5837_compensate(struct ms5837_data *data,
-			      const s32_t adc_temperature,
-			      const s32_t adc_pressure)
+			      const int32_t adc_temperature,
+			      const int32_t adc_pressure)
 {
-	s64_t dT;
-	s64_t OFF;
-	s64_t SENS;
-	s64_t temp_sq;
-	s32_t Ti;
-	s32_t OFFi;
-	s32_t SENSi;
+	int64_t dT;
+	int64_t OFF;
+	int64_t SENS;
+	int64_t temp_sq;
+	int32_t Ti;
+	int32_t OFFi;
+	int32_t SENSi;
 
 	/* first order compensation as per datasheet
 	 * (https://www.te.com/usa-en/product-CAT-BLPS0017.html) section
 	 * PRESSURE AND TEMPERATURE CALCULATION
 	 */
 
-	dT = adc_temperature - ((u32_t)(data->t_ref) << 8);
+	dT = adc_temperature - ((uint32_t)(data->t_ref) << 8);
 	data->temperature = 2000 + (dT * data->tempsens) / (1ll << 23);
-	OFF = ((s64_t)(data->off_t1) << 16) + (dT * data->tco) / (1ll << 7);
-	SENS = ((s64_t)(data->sens_t1) << 15) + (dT * data->tcs) / (1ll << 8);
+	OFF = ((int64_t)(data->off_t1) << 16) + (dT * data->tco) / (1ll << 7);
+	SENS = ((int64_t)(data->sens_t1) << 15) + (dT * data->tcs) / (1ll << 8);
 
 	/* Second order compensation as per datasheet
 	 * (https://www.te.com/usa-en/product-CAT-BLPS0017.html) section
@@ -102,8 +102,8 @@ static int ms5837_sample_fetch(struct device *dev, enum sensor_channel channel)
 	struct ms5837_data *data = dev->driver_data;
 	const struct ms5837_config *cfg = dev->config_info;
 	int err;
-	u32_t adc_pressure;
-	u32_t adc_temperature;
+	uint32_t adc_pressure;
+	uint32_t adc_temperature;
 
 	__ASSERT_NO_MSG(channel == SENSOR_CHAN_ALL);
 
@@ -154,9 +154,9 @@ static int ms5837_attr_set(struct device *dev, enum sensor_channel chan,
 			   const struct sensor_value *val)
 {
 	struct ms5837_data *data = dev->driver_data;
-	u8_t p_conv_cmd;
-	u8_t t_conv_cmd;
-	u8_t conv_delay;
+	uint8_t p_conv_cmd;
+	uint8_t t_conv_cmd;
+	uint8_t conv_delay;
 
 	if (attr == SENSOR_ATTR_OVERSAMPLING) {
 
@@ -228,12 +228,12 @@ static const struct sensor_driver_api ms5837_api_funcs = {
 	.channel_get = ms5837_channel_get,
 };
 
-static int ms5837_read_prom(struct device *i2c_master, const u8_t i2c_address,
-		const u8_t cmd, u16_t *val)
+static int ms5837_read_prom(struct device *i2c_master, const uint8_t i2c_address,
+		const uint8_t cmd, uint16_t *val)
 {
 	int err;
 
-	err = i2c_burst_read(i2c_master, i2c_address, cmd, (u8_t *)val, 2);
+	err = i2c_burst_read(i2c_master, i2c_address, cmd, (uint8_t *)val, 2);
 	if (err < 0) {
 		return err;
 	}
@@ -248,7 +248,7 @@ static int ms5837_init(struct device *dev)
 	struct ms5837_data *data = dev->driver_data;
 	const struct ms5837_config *cfg = dev->config_info;
 	int err;
-	u8_t cmd;
+	uint8_t cmd;
 
 	data->pressure = 0;
 	data->temperature = 0;

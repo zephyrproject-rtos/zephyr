@@ -675,7 +675,7 @@ static void recv_cb_timeout(struct net_context *context,
 void timeout_thread(struct net_context *ctx, void *param2, void *param3)
 {
 	int family = POINTER_TO_INT(param2);
-	s32_t timeout = POINTER_TO_INT(param3);
+	int32_t timeout = POINTER_TO_INT(param3);
 	int ret;
 
 	ret = net_context_recv(ctx, recv_cb_timeout, K_MSEC(timeout),
@@ -698,7 +698,7 @@ void timeout_thread(struct net_context *ctx, void *param2, void *param3)
 	k_sem_give(&wait_data);
 }
 
-static k_tid_t start_timeout_v6_thread(s32_t timeout)
+static k_tid_t start_timeout_v6_thread(int32_t timeout)
 {
 	return k_thread_create(&thread_data, thread_stack, STACKSIZE,
 			       (k_thread_entry_t)timeout_thread,
@@ -707,7 +707,7 @@ static k_tid_t start_timeout_v6_thread(s32_t timeout)
 			       K_PRIO_COOP(7), 0, K_NO_WAIT);
 }
 
-static k_tid_t start_timeout_v4_thread(s32_t timeout)
+static k_tid_t start_timeout_v4_thread(int32_t timeout)
 {
 	return k_thread_create(&thread_data, thread_stack, STACKSIZE,
 			       (k_thread_entry_t)timeout_thread,
@@ -852,7 +852,7 @@ static void test_net_ctx_put(void)
 }
 
 struct net_context_test {
-	u8_t mac_addr[sizeof(struct net_eth_addr)];
+	uint8_t mac_addr[sizeof(struct net_eth_addr)];
 	struct net_linkaddr ll_addr;
 };
 
@@ -861,7 +861,7 @@ int net_context_dev_init(struct device *dev)
 	return 0;
 }
 
-static u8_t *net_context_get_mac(struct device *dev)
+static uint8_t *net_context_get_mac(struct device *dev)
 {
 	struct net_context_test *context = dev->driver_data;
 
@@ -880,7 +880,7 @@ static u8_t *net_context_get_mac(struct device *dev)
 
 static void net_context_iface_init(struct net_if *iface)
 {
-	u8_t *mac = net_context_get_mac(net_if_get_device(iface));
+	uint8_t *mac = net_context_get_mac(net_if_get_device(iface));
 
 	net_if_set_link_addr(iface, mac, sizeof(struct net_eth_addr),
 			     NET_LINK_ETHERNET);
@@ -908,7 +908,7 @@ static int tester_send(struct device *dev, struct net_pkt *pkt)
 		/* We need to swap the IP addresses because otherwise
 		 * the packet will be dropped.
 		 */
-		u16_t port;
+		uint16_t port;
 
 		if (net_pkt_family(pkt) == AF_INET6) {
 			struct in6_addr addr;

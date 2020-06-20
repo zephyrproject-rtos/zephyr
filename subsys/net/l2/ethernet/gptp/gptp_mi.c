@@ -277,7 +277,7 @@ void gptp_mi_init_state_machine(void)
 	gptp_mi_init_clock_master_sync_rcv_sm();
 }
 
-u64_t gptp_get_current_time_nanosecond(int port)
+uint64_t gptp_get_current_time_nanosecond(int port)
 {
 	struct device *clk;
 
@@ -301,7 +301,7 @@ use_uptime:
 	return k_uptime_get() * 1000000;
 }
 
-u64_t gptp_get_current_master_time_nanosecond(void)
+uint64_t gptp_get_current_master_time_nanosecond(void)
 {
 	int port;
 	enum gptp_port_state *port_role;
@@ -589,7 +589,7 @@ static void gptp_mi_site_ss_send_to_pss(void)
 static void gptp_mi_site_sync_sync_state_machine(void)
 {
 	bool gm_present;
-	u16_t local_port_number;
+	uint16_t local_port_number;
 	struct gptp_site_sync_sync_state *state;
 	struct gptp_clk_slave_sync_state *clk_ss;
 
@@ -643,7 +643,7 @@ static void gptp_mi_clk_slave_sync_compute(void)
 	struct gptp_global_ds *global_ds;
 	struct gptp_md_sync_info *pss;
 	struct gptp_port_ds *port_ds;
-	u64_t sync_receipt_time;
+	uint64_t sync_receipt_time;
 
 	state = &GPTP_STATE()->clk_slave_sync;
 	offset_state = &GPTP_STATE()->clk_master_sync_offset;
@@ -686,8 +686,8 @@ static void gptp_update_local_port_clock(void)
 	struct gptp_global_ds *global_ds;
 	struct gptp_port_ds *port_ds;
 	int port;
-	s64_t nanosecond_diff;
-	s64_t second_diff;
+	int64_t nanosecond_diff;
+	int64_t second_diff;
 	struct device *clk;
 	struct net_ptp_time tm;
 	int key;
@@ -864,7 +864,7 @@ static inline void gptp_mi_setup_sync_send_time(void)
 {
 	struct gptp_clk_master_sync_snd_state *state;
 	struct gptp_global_ds *global_ds;
-	u64_t time_helper;
+	uint64_t time_helper;
 
 	state = &GPTP_STATE()->clk_master_sync_send;
 	global_ds = GPTP_GLOBAL_DS();
@@ -887,7 +887,7 @@ static void gptp_mi_set_ps_sync_cmss(void)
 	struct gptp_clk_master_sync_snd_state *state;
 	struct gptp_global_ds *global_ds;
 	struct gptp_md_sync_info *sync_info;
-	u64_t current_time;
+	uint64_t current_time;
 
 	global_ds = GPTP_GLOBAL_DS();
 	state = &GPTP_STATE()->clk_master_sync_send;
@@ -948,7 +948,7 @@ static void gptp_mi_clk_master_sync_snd_state_machine(void)
 {
 	struct gptp_clk_master_sync_snd_state *state;
 	struct gptp_global_ds *global_ds;
-	u64_t current_time;
+	uint64_t current_time;
 
 	state = &GPTP_STATE()->clk_master_sync_send;
 	global_ds = GPTP_GLOBAL_DS();
@@ -1082,7 +1082,7 @@ static void gptp_mi_clk_master_sync_rcv_state_machine(void)
 
 #ifdef CONFIG_NET_GPTP_PROBE_CLOCK_SOURCE_ON_DEMAND
 	struct gptp_clk_src_time_invoke_params invoke_args = {};
-	u64_t cur = gptp_get_current_master_time_nanosecond();
+	uint64_t cur = gptp_get_current_master_time_nanosecond();
 
 	invoke_args.src_time.second = cur / NSEC_PER_SEC;
 	cur -= (invoke_args.src_time.second * NSEC_PER_SEC);
@@ -1163,7 +1163,7 @@ static void copy_path_trace(struct gptp_announce *announce)
 	       len);
 
 	/* Append local clockIdentity. */
-	memcpy((u8_t *)sys_path_trace->path_sequence + len,
+	memcpy((uint8_t *)sys_path_trace->path_sequence + len,
 	       GPTP_DEFAULT_DS()->clk_id, GPTP_CLOCK_ID_LEN);
 }
 
@@ -1172,7 +1172,7 @@ static bool gptp_mi_qualify_announce(int port, struct net_pkt *announce_msg)
 	struct gptp_announce *announce;
 	struct gptp_hdr *hdr;
 	int i;
-	u16_t len;
+	uint16_t len;
 
 	hdr = GPTP_HDR(announce_msg);
 	announce = GPTP_ANNOUNCE(announce_msg);
@@ -1269,7 +1269,7 @@ static enum gptp_received_info compare_priority_vectors(
 	rsi_cmp = memcmp(&announce->root_system_id,
 			 &vector->root_system_id,
 			 sizeof(struct gptp_root_system_identity) +
-			 sizeof(u16_t));
+			 sizeof(uint16_t));
 	if (rsi_cmp < 0) {
 		/* Better rootSystemIdentity. */
 		return GPTP_RCVD_INFO_SUPERIOR_MASTER_INFO;
@@ -1354,7 +1354,7 @@ static void copy_priority_vector(struct gptp_priority_vector *vector,
 	announce = GPTP_ANNOUNCE(pkt);
 
 	memcpy(&vector->root_system_id, &announce->root_system_id,
-	       sizeof(struct gptp_root_system_identity) + sizeof(u16_t));
+	       sizeof(struct gptp_root_system_identity) + sizeof(uint16_t));
 
 	memcpy(&vector->src_port_id, &hdr->port_id,
 	       sizeof(struct gptp_port_identity));

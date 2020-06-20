@@ -14,19 +14,19 @@
 #include "f32.pat"
 
 #define DECLARE_COMMON_VARS(in_dims, in_param) \
-	const s16_t *dims = in_dims; \
+	const int16_t *dims = in_dims; \
 	const float32_t *params = (const float32_t *)in_param; \
-	const s32_t classes[2] = { dims[1], dims[2] }; \
-	const u16_t sample_count = dims[3]; \
-	const u16_t vec_dims = dims[4]; \
-	const u16_t svec_count = dims[5]; \
+	const int32_t classes[2] = { dims[1], dims[2] }; \
+	const uint16_t sample_count = dims[3]; \
+	const uint16_t vec_dims = dims[4]; \
+	const uint16_t svec_count = dims[5]; \
 	const float32_t intercept = \
 		params[svec_count + (vec_dims * svec_count)]; \
 	const float32_t *svec = params; \
 	const float32_t *dual_coeff = params + (vec_dims * svec_count)
 
 #define DECLARE_POLY_VARS() \
-	const u16_t degree = dims[6]; \
+	const uint16_t degree = dims[6]; \
 	const float32_t coeff0 = \
 		params[svec_count + (vec_dims * svec_count) + 1]; \
 	const float32_t gamma = \
@@ -50,14 +50,14 @@ static void test_arm_svm_linear_predict_f32(void)
 	size_t index;
 	const size_t length = ARRAY_SIZE(ref_linear);
 	const float32_t *input = (const float32_t *)in_linear_val;
-	s32_t *output, *output_buf;
+	int32_t *output, *output_buf;
 
 	/* Initialise instance */
 	arm_svm_linear_init_f32(&inst, svec_count, vec_dims,
 		intercept, dual_coeff, svec, classes);
 
 	/* Allocate output buffer */
-	output_buf = malloc(length * sizeof(s32_t));
+	output_buf = malloc(length * sizeof(int32_t));
 	zassert_not_null(output_buf, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	output = output_buf;
@@ -90,7 +90,7 @@ static void test_arm_svm_polynomial_predict_f32(void)
 	size_t index;
 	const size_t length = ARRAY_SIZE(ref_polynomial);
 	const float32_t *input = (const float32_t *)in_polynomial_val;
-	s32_t *output, *output_buf;
+	int32_t *output, *output_buf;
 
 	/* Initialise instance */
 	arm_svm_polynomial_init_f32(
@@ -99,7 +99,7 @@ static void test_arm_svm_polynomial_predict_f32(void)
 		degree, coeff0, gamma);
 
 	/* Allocate output buffer */
-	output_buf = malloc(length * sizeof(s32_t));
+	output_buf = malloc(length * sizeof(int32_t));
 	zassert_not_null(output_buf, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	output = output_buf;
@@ -132,7 +132,7 @@ static void test_arm_svm_rbf_predict_f32(void)
 	size_t index;
 	const size_t length = ARRAY_SIZE(ref_rbf);
 	const float32_t *input = (const float32_t *)in_rbf_val;
-	s32_t *output, *output_buf;
+	int32_t *output, *output_buf;
 
 	/* Initialise instance */
 	arm_svm_rbf_init_f32(
@@ -140,7 +140,7 @@ static void test_arm_svm_rbf_predict_f32(void)
 		intercept, dual_coeff, svec, classes, gamma);
 
 	/* Allocate output buffer */
-	output_buf = malloc(length * sizeof(s32_t));
+	output_buf = malloc(length * sizeof(int32_t));
 	zassert_not_null(output_buf, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	output = output_buf;
@@ -173,7 +173,7 @@ static void test_arm_svm_sigmoid_predict_f32(void)
 	size_t index;
 	const size_t length = ARRAY_SIZE(ref_sigmoid);
 	const float32_t *input = (const float32_t *)in_sigmoid_val;
-	s32_t *output, *output_buf;
+	int32_t *output, *output_buf;
 
 	/* Initialise instance */
 	arm_svm_sigmoid_init_f32(
@@ -181,7 +181,7 @@ static void test_arm_svm_sigmoid_predict_f32(void)
 		intercept, dual_coeff, svec, classes, coeff0, gamma);
 
 	/* Allocate output buffer */
-	output_buf = malloc(length * sizeof(s32_t));
+	output_buf = malloc(length * sizeof(int32_t));
 	zassert_not_null(output_buf, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	output = output_buf;
@@ -214,7 +214,7 @@ static void test_arm_svm_oneclass_predict_f32(void)
 	size_t index;
 	const size_t length = ARRAY_SIZE(ref_oneclass);
 	const float32_t *input = (const float32_t *)in_oneclass_val;
-	s32_t *output, *output_buf;
+	int32_t *output, *output_buf;
 
 	/* Initialise instance */
 	arm_svm_rbf_init_f32(
@@ -222,7 +222,7 @@ static void test_arm_svm_oneclass_predict_f32(void)
 		intercept, dual_coeff, svec, classes, gamma);
 
 	/* Allocate output buffer */
-	output_buf = malloc(length * sizeof(s32_t));
+	output_buf = malloc(length * sizeof(int32_t));
 	zassert_not_null(output_buf, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	output = output_buf;

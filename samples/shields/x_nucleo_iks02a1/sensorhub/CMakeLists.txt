@@ -10,7 +10,7 @@ set(SHIELD x_nucleo_iks02a1_shub)
 # IKS02A1 board configured in sensorhub mode
 set(CONF_FILE shub.conf)
 
-find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(x_nucleo_iks02a1)
 
 FILE(GLOB app_sources src/*.c)

@@ -122,7 +122,7 @@ static const unsigned char ipv6_hbho[] = {
 };
 
 static bool expecting_ra;
-static u32_t dad_time[3];
+static uint32_t dad_time[3];
 static bool test_failed;
 static struct k_sem wait_data;
 static bool recv_cb_called;
@@ -134,7 +134,7 @@ static bool recv_cb_called;
 #define PEER_PORT 16233
 
 struct net_test_ipv6 {
-	u8_t mac_addr[sizeof(struct net_eth_addr)];
+	uint8_t mac_addr[sizeof(struct net_eth_addr)];
 	struct net_linkaddr ll_addr;
 };
 
@@ -143,7 +143,7 @@ int net_test_dev_init(struct device *dev)
 	return 0;
 }
 
-static u8_t *net_test_get_mac(struct device *dev)
+static uint8_t *net_test_get_mac(struct device *dev)
 {
 	struct net_test_ipv6 *context = dev->driver_data;
 
@@ -162,7 +162,7 @@ static u8_t *net_test_get_mac(struct device *dev)
 
 static void net_test_iface_init(struct net_if *iface)
 {
-	u8_t *mac = net_test_get_mac(net_if_get_device(iface));
+	uint8_t *mac = net_test_get_mac(net_if_get_device(iface));
 
 	net_if_set_link_addr(iface, mac, sizeof(struct net_eth_addr),
 			     NET_LINK_ETHERNET);
@@ -354,36 +354,36 @@ static void test_cmp_prefix(void)
 	struct in6_addr prefix2 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x2 } } };
 
-	st = net_ipv6_is_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 64);
+	st = net_ipv6_is_prefix((uint8_t *)&prefix1, (uint8_t *)&prefix2, 64);
 	zassert_true(st, "Prefix /64  compare failed");
 
-	st = net_ipv6_is_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
+	st = net_ipv6_is_prefix((uint8_t *)&prefix1, (uint8_t *)&prefix2, 65);
 	zassert_true(st, "Prefix /65 compare failed");
 
 	/* Set one extra bit in the other prefix for testing /65 */
 	prefix1.s6_addr[8] = 0x80;
 
-	st = net_ipv6_is_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
+	st = net_ipv6_is_prefix((uint8_t *)&prefix1, (uint8_t *)&prefix2, 65);
 	zassert_false(st, "Prefix /65 compare should have failed");
 
 	/* Set two bits in prefix2, it is now /66 */
 	prefix2.s6_addr[8] = 0xc0;
 
-	st = net_ipv6_is_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
+	st = net_ipv6_is_prefix((uint8_t *)&prefix1, (uint8_t *)&prefix2, 65);
 	zassert_true(st, "Prefix /65 compare failed");
 
 	/* Set all remaining bits in prefix2, it is now /128 */
 	(void)memset(&prefix2.s6_addr[8], 0xff, 8);
 
-	st = net_ipv6_is_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
+	st = net_ipv6_is_prefix((uint8_t *)&prefix1, (uint8_t *)&prefix2, 65);
 	zassert_true(st, "Prefix /65 compare failed");
 
 	/* Comparing /64 should be still ok */
-	st = net_ipv6_is_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 64);
+	st = net_ipv6_is_prefix((uint8_t *)&prefix1, (uint8_t *)&prefix2, 64);
 	zassert_true(st, "Prefix /64 compare failed");
 
 	/* But comparing /66 should should fail */
-	st = net_ipv6_is_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 66);
+	st = net_ipv6_is_prefix((uint8_t *)&prefix1, (uint8_t *)&prefix2, 66);
 	zassert_false(st, "Prefix /66 compare should have failed");
 
 }
@@ -424,7 +424,7 @@ static void test_add_max_neighbors(void)
 	struct net_nbr *nbr;
 	struct net_linkaddr_storage llstorage;
 	struct net_linkaddr lladdr;
-	u8_t i;
+	uint8_t i;
 
 	llstorage.addr[0] = 0x01;
 	llstorage.addr[1] = 0x02;
@@ -528,7 +528,7 @@ static void test_prefix_timeout(void)
 	struct net_if_ipv6_prefix *prefix;
 	struct in6_addr addr = { { { 0x20, 1, 0x0d, 0xb8, 42, 0, 0, 0,
 				     0, 0, 0, 0, 0, 0, 0, 0 } } };
-	u32_t lifetime = 1U;
+	uint32_t lifetime = 1U;
 	int len = 64;
 
 	prefix = net_if_ipv6_prefix_add(net_if_get_default(),
@@ -551,9 +551,9 @@ static void test_prefix_timeout_long(void)
 	struct net_if_ipv6_prefix *ifprefix;
 	struct in6_addr prefix = { { { 0x20, 1, 0x0d, 0xb8, 43, 0, 0, 0,
 				     0, 0, 0, 0, 0, 0, 0, 0 } } };
-	u32_t lifetime = 0xfffffffe;
+	uint32_t lifetime = 0xfffffffe;
 	int len = 64;
-	u64_t remaining;
+	uint64_t remaining;
 	int ret;
 
 	ifprefix = net_if_ipv6_prefix_add(net_if_get_default(),
@@ -565,8 +565,8 @@ static void test_prefix_timeout_long(void)
 	zassert_equal(ifprefix->lifetime.wrap_counter, 2000,
 		      "Wrap counter wrong (%d)",
 		      ifprefix->lifetime.wrap_counter);
-	remaining = MSEC_PER_SEC * (u64_t)lifetime -
-		NET_TIMEOUT_MAX_VALUE * (u64_t)ifprefix->lifetime.wrap_counter;
+	remaining = MSEC_PER_SEC * (uint64_t)lifetime -
+		NET_TIMEOUT_MAX_VALUE * (uint64_t)ifprefix->lifetime.wrap_counter;
 
 	zassert_equal(remaining, ifprefix->lifetime.timer_timeout,
 		     "Remaining time wrong (%llu vs %d)", remaining,
@@ -924,10 +924,10 @@ static void test_address_lifetime(void)
 	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 				     0, 0, 0, 0, 0, 0, 0x20, 0x1 } } };
 	struct net_if *iface = net_if_get_default();
-	u32_t vlifetime = 0xffff;
-	u64_t timeout = (u64_t)vlifetime * MSEC_PER_SEC;
+	uint32_t vlifetime = 0xffff;
+	uint64_t timeout = (uint64_t)vlifetime * MSEC_PER_SEC;
 	struct net_if_addr *ifaddr;
-	u64_t remaining;
+	uint64_t remaining;
 	bool ret;
 
 	ifaddr = net_if_ipv6_addr_add(iface, &addr, NET_ADDR_AUTOCONF,
@@ -953,8 +953,8 @@ static void test_address_lifetime(void)
 
 	zassert_equal(ifaddr->lifetime.wrap_counter, 2,
 		      "Wrap counter wrong (%d)", ifaddr->lifetime.wrap_counter);
-	remaining = MSEC_PER_SEC * (u64_t)vlifetime -
-		NET_TIMEOUT_MAX_VALUE * (u64_t)ifaddr->lifetime.wrap_counter;
+	remaining = MSEC_PER_SEC * (uint64_t)vlifetime -
+		NET_TIMEOUT_MAX_VALUE * (uint64_t)ifaddr->lifetime.wrap_counter;
 
 	zassert_equal(remaining, ifaddr->lifetime.timer_timeout,
 		     "Remaining time wrong (%llu vs %d)", remaining,
@@ -988,13 +988,13 @@ static void test_address_lifetime(void)
  */
 static void test_change_ll_addr(void)
 {
-	static u8_t new_mac[] = { 00, 01, 02, 03, 04, 05 };
+	static uint8_t new_mac[] = { 00, 01, 02, 03, 04, 05 };
 	struct net_linkaddr_storage *ll;
 	struct net_linkaddr *ll_iface;
 	struct in6_addr dst;
 	struct net_if *iface;
 	struct net_nbr *nbr;
-	u32_t flags;
+	uint32_t flags;
 	int ret;
 
 	net_ipv6_addr_create(&dst, 0xff02, 0, 0, 0, 0, 0, 0, 1);
@@ -1078,8 +1078,8 @@ static void test_dad_timeout(void)
 static struct net_pkt *setup_ipv6_udp(struct net_if *iface,
 				      struct in6_addr *local_addr,
 				      struct in6_addr *remote_addr,
-				      u16_t local_port,
-				      u16_t remote_port)
+				      uint16_t local_port,
+				      uint16_t remote_port)
 {
 	static const char payload[] = "foobar";
 	struct net_pkt *pkt;
@@ -1100,7 +1100,7 @@ static struct net_pkt *setup_ipv6_udp(struct net_if *iface,
 		zassert_true(0, "exiting");
 	}
 
-	if (net_pkt_write(pkt, (u8_t *)payload, strlen(payload))) {
+	if (net_pkt_write(pkt, (uint8_t *)payload, strlen(payload))) {
 		printk("Cannot write IPv6 ext header pkt %p", pkt);
 		zassert_true(0, "exiting");
 	}

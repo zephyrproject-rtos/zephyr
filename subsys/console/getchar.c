@@ -12,8 +12,8 @@
 
 static struct tty_serial console_serial;
 
-static u8_t console_rxbuf[CONFIG_CONSOLE_GETCHAR_BUFSIZE];
-static u8_t console_txbuf[CONFIG_CONSOLE_PUTCHAR_BUFSIZE];
+static uint8_t console_rxbuf[CONFIG_CONSOLE_GETCHAR_BUFSIZE];
+static uint8_t console_txbuf[CONFIG_CONSOLE_PUTCHAR_BUFSIZE];
 
 ssize_t console_write(void *dummy, const void *buf, size_t size)
 {
@@ -36,7 +36,7 @@ int console_putchar(char c)
 
 int console_getchar(void)
 {
-	u8_t c;
+	uint8_t c;
 	int res;
 
 	res = tty_read(&console_serial, &c, 1);

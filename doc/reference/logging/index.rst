@@ -111,17 +111,17 @@ it is not set or set lower than the override value.
 :option:`CONFIG_LOG_MAX_LEVEL`: Maximal (lowest severity) level which is
 compiled in.
 
-:option:`CONFIG_LOG_FUNC_NAME_PREFIX_ERR`: Prepend ERROR log messages with
-function name.
+:option:`CONFIG_LOG_FUNC_NAME_PREFIX_ERR`: Prepend standard ERROR log messages
+with function name. Hexdump messages are not prepended.
 
-:option:`CONFIG_LOG_FUNC_NAME_PREFIX_WRN`: Prepend WARNING log messages with
-function name.
+:option:`CONFIG_LOG_FUNC_NAME_PREFIX_WRN`: Prepend standard WARNING log messages
+with function name. Hexdump messages are not prepended.
 
-:option:`CONFIG_LOG_FUNC_NAME_PREFIX_INF`: Prepend INFO log messages with
-function name.
+:option:`CONFIG_LOG_FUNC_NAME_PREFIX_INF`: Prepend standard INFO log messages
+with function name. Hexdump messages are not prepended.
 
-:option:`CONFIG_LOG_FUNC_NAME_PREFIX_DBG`: Prepend DEBUG log messages with
-function name.
+:option:`CONFIG_LOG_FUNC_NAME_PREFIX_DBG`: Prepend standard DEBUG log messages
+with function name. Hexdump messages are not prepended.
 
 :option:`CONFIG_LOG_PRINTK`: Redirect printk calls to the logger.
 
@@ -247,7 +247,7 @@ In order to use instance level filtering following steps must be performed:
 
    struct foo_object {
    	LOG_INSTANCE_PTR_DECLARE(log);
-   	u32_t id;
+   	uint32_t id;
    }
 
 - module must provide macro for instantiation. In that macro, logger instance

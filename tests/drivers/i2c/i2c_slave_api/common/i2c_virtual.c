@@ -21,13 +21,13 @@ struct i2c_virtual_data {
 	sys_slist_t slaves;
 };
 
-int i2c_virtual_runtime_configure(struct device *dev, u32_t config)
+int i2c_virtual_runtime_configure(struct device *dev, uint32_t config)
 {
 	return 0;
 }
 
 static struct i2c_slave_config *find_address(struct i2c_virtual_data *data,
-					     u16_t address, bool is_10bit)
+					     uint16_t address, bool is_10bit)
 {
 	struct i2c_slave_config *cfg = NULL;
 	sys_snode_t *node;
@@ -89,7 +89,7 @@ static int i2c_virtual_msg_write(struct device *dev, struct i2c_msg *msg,
 				 bool prev_write)
 {
 	unsigned int len = 0U;
-	u8_t *buf = msg->buf;
+	uint8_t *buf = msg->buf;
 	int ret;
 
 	if (!prev_write) {
@@ -122,7 +122,7 @@ static int i2c_virtual_msg_read(struct device *dev, struct i2c_msg *msg,
 				struct i2c_slave_config *config)
 {
 	unsigned int len = msg->len;
-	u8_t *buf = msg->buf;
+	uint8_t *buf = msg->buf;
 
 	if (!msg->len) {
 		return 0;
@@ -148,7 +148,7 @@ static int i2c_virtual_msg_read(struct device *dev, struct i2c_msg *msg,
 #define OPERATION(msg) (((struct i2c_msg *) msg)->flags & I2C_MSG_RW_MASK)
 
 static int i2c_virtual_transfer(struct device *dev, struct i2c_msg *msg,
-			      u8_t num_msgs, u16_t slave)
+			      uint8_t num_msgs, uint16_t slave)
 {
 	struct i2c_virtual_data *data = DEV_DATA(dev);
 	struct i2c_msg *current, *next;

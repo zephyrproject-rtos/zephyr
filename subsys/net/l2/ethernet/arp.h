@@ -26,11 +26,11 @@ extern "C" {
 #define NET_ARP_HDR(pkt) ((struct net_arp_hdr *)net_pkt_data(pkt))
 
 struct net_arp_hdr {
-	u16_t hwtype;		/* HTYPE */
-	u16_t protocol;		/* PTYPE */
-	u8_t hwlen;			/* HLEN */
-	u8_t protolen;		/* PLEN */
-	u16_t opcode;
+	uint16_t hwtype;		/* HTYPE */
+	uint16_t protocol;		/* PTYPE */
+	uint8_t hwlen;			/* HLEN */
+	uint8_t protolen;		/* PLEN */
+	uint16_t opcode;
 	struct net_eth_addr src_hwaddr;	/* SHA */
 	struct in_addr src_ipaddr;	/* SPA */
 	struct net_eth_addr dst_hwaddr;	/* THA */
@@ -51,7 +51,7 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 
 struct arp_entry {
 	sys_snode_t node;
-	u32_t req_start;
+	uint32_t req_start;
 	struct net_if *iface;
 	struct in_addr ip;
 	union {

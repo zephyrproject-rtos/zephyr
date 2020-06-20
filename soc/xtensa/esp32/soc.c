@@ -25,12 +25,12 @@ extern void z_cstart(void);
  */
 void __attribute__((section(".iram1"))) __start(void)
 {
-	volatile u32_t *wdt_rtc_reg = (u32_t *)RTC_CNTL_WDTCONFIG0_REG;
-	volatile u32_t *wdt_timg_reg = (u32_t *)TIMG_WDTCONFIG0_REG(0);
-	volatile u32_t *app_cpu_config_reg = (u32_t *)DPORT_APPCPU_CTRL_B_REG;
-	extern u32_t _init_start;
-	extern u32_t _bss_start;
-	extern u32_t _bss_end;
+	volatile uint32_t *wdt_rtc_reg = (uint32_t *)RTC_CNTL_WDTCONFIG0_REG;
+	volatile uint32_t *wdt_timg_reg = (uint32_t *)TIMG_WDTCONFIG0_REG(0);
+	volatile uint32_t *app_cpu_config_reg = (uint32_t *)DPORT_APPCPU_CTRL_B_REG;
+	extern uint32_t _init_start;
+	extern uint32_t _bss_start;
+	extern uint32_t _bss_end;
 
 	/* Move the exception vector table to IRAM. */
 	__asm__ __volatile__ (

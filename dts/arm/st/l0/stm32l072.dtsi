@@ -7,6 +7,10 @@
 #include <st/l0/stm32l0.dtsi>
 
 / {
+	chosen {
+		zephyr,entropy = &rng;
+	};
+
 	soc {
 		pinctrl: pin-controller@50000000 {
 
@@ -68,6 +72,14 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00800000>;
 			status = "disabled";
 			label= "USB";
+		};
+
+		rng: rng@40025000 {
+			compatible = "st,stm32-rng";
+			reg = <0x40025000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00100000>;
+			status = "disabled";
+			label = "RNG";
 		};
 
 		eeprom: eeprom@8080000{

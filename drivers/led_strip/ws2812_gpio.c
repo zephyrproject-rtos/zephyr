@@ -28,7 +28,7 @@ struct ws2812_gpio_data {
 };
 
 struct ws2812_gpio_cfg {
-	u8_t pin;
+	uint8_t pin;
 	bool has_white;
 };
 
@@ -99,10 +99,10 @@ static const struct ws2812_gpio_cfg *dev_cfg(struct device *dev)
 			[r] "l" (base),		\
 			[p] "l" (pin)); } while (0)
 
-static int send_buf(struct device *dev, u8_t *buf, size_t len)
+static int send_buf(struct device *dev, uint8_t *buf, size_t len)
 {
-	volatile u32_t *base = (u32_t *)&NRF_GPIO->OUTSET;
-	const u32_t val = BIT(dev_cfg(dev)->pin);
+	volatile uint32_t *base = (uint32_t *)&NRF_GPIO->OUTSET;
+	const uint32_t val = BIT(dev_cfg(dev)->pin);
 	struct device *clk = dev_data(dev)->clk;
 	unsigned int key;
 	int rc;
@@ -115,8 +115,8 @@ static int send_buf(struct device *dev, u8_t *buf, size_t len)
 	key = irq_lock();
 
 	while (len--) {
-		u32_t b = *buf++;
-		s32_t i;
+		uint32_t b = *buf++;
+		int32_t i;
 
 		/*
 		 * Generate signal out of the bits, MSbit first.
@@ -150,14 +150,14 @@ static int ws2812_gpio_update_rgb(struct device *dev, struct led_rgb *pixels,
 {
 	const struct ws2812_gpio_cfg *config = dev->config_info;
 	const bool has_white = config->has_white;
-	u8_t *ptr = (u8_t *)pixels;
+	uint8_t *ptr = (uint8_t *)pixels;
 	size_t i;
 
 	/* Convert from RGB to on-wire format (GRB or GRBW) */
 	for (i = 0; i < num_pixels; i++) {
-		u8_t r = pixels[i].r;
-		u8_t g = pixels[i].g;
-		u8_t b = pixels[i].b;
+		uint8_t r = pixels[i].r;
+		uint8_t g = pixels[i].g;
+		uint8_t b = pixels[i].b;
 
 		*ptr++ = g;
 		*ptr++ = r;
@@ -167,10 +167,10 @@ static int ws2812_gpio_update_rgb(struct device *dev, struct led_rgb *pixels,
 		}
 	}
 
-	return send_buf(dev, (u8_t *)pixels, num_pixels * (has_white ? 4 : 3));
+	return send_buf(dev, (uint8_t *)pixels, num_pixels * (has_white ? 4 : 3));
 }
 
-static int ws2812_gpio_update_channels(struct device *dev, u8_t *channels,
+static int ws2812_gpio_update_channels(struct device *dev, uint8_t *channels,
 				       size_t num_channels)
 {
 	LOG_ERR("update_channels not implemented");

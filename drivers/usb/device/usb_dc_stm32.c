@@ -110,6 +110,8 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
  */
 #ifdef USB
 
+#define CFG_HW_RCC_CRRCR_CCIPR_SEMID	5
+
 #define EP0_MPS 64U
 #define EP_MPS 64U
 
@@ -164,13 +166,13 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 
 /* Endpoint state */
 struct usb_dc_stm32_ep_state {
-	u16_t ep_mps;		/** Endpoint max packet size */
-	u16_t ep_pma_buf_len;	/** Previously allocated buffer size */
-	u8_t ep_type;		/** Endpoint type (STM32 HAL enum) */
-	u8_t ep_stalled;	/** Endpoint stall flag */
+	uint16_t ep_mps;		/** Endpoint max packet size */
+	uint16_t ep_pma_buf_len;	/** Previously allocated buffer size */
+	uint8_t ep_type;		/** Endpoint type (STM32 HAL enum) */
+	uint8_t ep_stalled;	/** Endpoint stall flag */
 	usb_dc_ep_callback cb;	/** Endpoint callback function */
-	u32_t read_count;	/** Number of bytes in read buffer  */
-	u32_t read_offset;	/** Current offset in read buffer */
+	uint32_t read_count;	/** Number of bytes in read buffer  */
+	uint32_t read_offset;	/** Current offset in read buffer */
 	struct k_sem write_sem;	/** Write boolean semaphore */
 };
 
@@ -180,10 +182,10 @@ struct usb_dc_stm32_state {
 	usb_dc_status_callback status_cb; /* Status callback */
 	struct usb_dc_stm32_ep_state out_ep_state[USB_NUM_BIDIR_ENDPOINTS];
 	struct usb_dc_stm32_ep_state in_ep_state[USB_NUM_BIDIR_ENDPOINTS];
-	u8_t ep_buf[USB_NUM_BIDIR_ENDPOINTS][EP_MPS];
+	uint8_t ep_buf[USB_NUM_BIDIR_ENDPOINTS][EP_MPS];
 
 #ifdef USB
-	u32_t pma_offset;
+	uint32_t pma_offset;
 #endif /* USB */
 };
 
@@ -191,7 +193,7 @@ static struct usb_dc_stm32_state usb_dc_stm32_state;
 
 /* Internal functions */
 
-static struct usb_dc_stm32_ep_state *usb_dc_stm32_get_ep_state(u8_t ep)
+static struct usb_dc_stm32_ep_state *usb_dc_stm32_get_ep_state(uint8_t ep)
 {
 	struct usb_dc_stm32_ep_state *ep_state_base;
 
@@ -253,6 +255,11 @@ static int usb_dc_stm32_clock_enable(void)
 	}
 #endif /* CONFIG_SOC_SERIES_STM32L0X */
 
+#ifdef CONFIG_SOC_SERIES_STM32WBX
+	while (LL_HSEM_1StepLock(HSEM, CFG_HW_RCC_CRRCR_CCIPR_SEMID)) {
+	}
+#endif /* CONFIG_SOC_SERIES_STM32WBX */
+
 	LL_RCC_HSI48_Enable();
 	while (!LL_RCC_HSI48_IsReady()) {
 		/* Wait for HSI48 to become ready */
@@ -304,16 +311,16 @@ static int usb_dc_stm32_clock_enable(void)
 }
 
 #if defined(USB_OTG_FS) || defined(USB_OTG_HS)
-static u32_t usb_dc_stm32_get_maximum_speed(void)
+static uint32_t usb_dc_stm32_get_maximum_speed(void)
 {
 	/*
 	 * If max-speed is not passed via DT, set it to USB controller's
 	 * maximum hardware capability.
 	 */
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
-	u32_t speed = USB_OTG_SPEED_HIGH;
+	uint32_t speed = USB_OTG_SPEED_HIGH;
 #else
-	u32_t speed = USB_OTG_SPEED_FULL;
+	uint32_t speed = USB_OTG_SPEED_FULL;
 #endif
 
 #ifdef USB_MAXIMUM_SPEED
@@ -485,7 +492,7 @@ int usb_dc_attach(void)
 	return 0;
 }
 
-int usb_dc_ep_set_callback(const u8_t ep, const usb_dc_ep_callback cb)
+int usb_dc_ep_set_callback(const uint8_t ep, const usb_dc_ep_callback cb)
 {
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 
@@ -507,7 +514,7 @@ void usb_dc_set_status_callback(const usb_dc_status_callback cb)
 	usb_dc_stm32_state.status_cb = cb;
 }
 
-int usb_dc_set_address(const u8_t addr)
+int usb_dc_set_address(const uint8_t addr)
 {
 	HAL_StatusTypeDef status;
 
@@ -523,7 +530,7 @@ int usb_dc_set_address(const u8_t addr)
 	return 0;
 }
 
-int usb_dc_ep_start_read(u8_t ep, u8_t *data, u32_t max_data_len)
+int usb_dc_ep_start_read(uint8_t ep, uint8_t *data, uint32_t max_data_len)
 {
 	HAL_StatusTypeDef status;
 
@@ -551,7 +558,7 @@ int usb_dc_ep_start_read(u8_t ep, u8_t *data, u32_t max_data_len)
 	return 0;
 }
 
-int usb_dc_ep_get_read_count(u8_t ep, u32_t *read_bytes)
+int usb_dc_ep_get_read_count(uint8_t ep, uint32_t *read_bytes)
 {
 	if (!EP_IS_OUT(ep) || !read_bytes) {
 		LOG_ERR("invalid ep 0x%02x", ep);
@@ -565,7 +572,7 @@ int usb_dc_ep_get_read_count(u8_t ep, u32_t *read_bytes)
 
 int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 {
-	u8_t ep_idx = EP_IDX(cfg->ep_addr);
+	uint8_t ep_idx = EP_IDX(cfg->ep_addr);
 
 	LOG_DBG("ep %x, mps %d, type %d", cfg->ep_addr, cfg->ep_mps,
 		cfg->ep_type);
@@ -585,7 +592,7 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 
 int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const ep_cfg)
 {
-	u8_t ep = ep_cfg->ep_addr;
+	uint8_t ep = ep_cfg->ep_addr;
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 
 	LOG_DBG("ep 0x%02x, previous ep_mps %u, ep_mps %u, ep_type %u",
@@ -630,7 +637,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const ep_cfg)
 	return 0;
 }
 
-int usb_dc_ep_set_stall(const u8_t ep)
+int usb_dc_ep_set_stall(const uint8_t ep)
 {
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 	HAL_StatusTypeDef status;
@@ -653,7 +660,7 @@ int usb_dc_ep_set_stall(const u8_t ep)
 	return 0;
 }
 
-int usb_dc_ep_clear_stall(const u8_t ep)
+int usb_dc_ep_clear_stall(const uint8_t ep)
 {
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 	HAL_StatusTypeDef status;
@@ -677,7 +684,7 @@ int usb_dc_ep_clear_stall(const u8_t ep)
 	return 0;
 }
 
-int usb_dc_ep_is_stalled(const u8_t ep, u8_t *const stalled)
+int usb_dc_ep_is_stalled(const uint8_t ep, uint8_t *const stalled)
 {
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 
@@ -692,7 +699,7 @@ int usb_dc_ep_is_stalled(const u8_t ep, u8_t *const stalled)
 	return 0;
 }
 
-int usb_dc_ep_enable(const u8_t ep)
+int usb_dc_ep_enable(const uint8_t ep)
 {
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 	HAL_StatusTypeDef status;
@@ -723,7 +730,7 @@ int usb_dc_ep_enable(const u8_t ep)
 	return 0;
 }
 
-int usb_dc_ep_disable(const u8_t ep)
+int usb_dc_ep_disable(const uint8_t ep)
 {
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 	HAL_StatusTypeDef status;
@@ -744,12 +751,12 @@ int usb_dc_ep_disable(const u8_t ep)
 	return 0;
 }
 
-int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
-		    const u32_t data_len, u32_t * const ret_bytes)
+int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
+		    const uint32_t data_len, uint32_t * const ret_bytes)
 {
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 	HAL_StatusTypeDef status;
-	u32_t len = data_len;
+	uint32_t len = data_len;
 	int ret = 0;
 
 	LOG_DBG("ep 0x%02x, len %u", ep, data_len);
@@ -800,11 +807,11 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 	return ret;
 }
 
-int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
-			u32_t *read_bytes)
+int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
+			uint32_t *read_bytes)
 {
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
-	u32_t read_count;
+	uint32_t read_count;
 
 	if (!ep_state) {
 		LOG_ERR("Invalid Endpoint %x", ep);
@@ -842,7 +849,7 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 	return 0;
 }
 
-int usb_dc_ep_read_continue(u8_t ep)
+int usb_dc_ep_read_continue(uint8_t ep)
 {
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 
@@ -862,8 +869,8 @@ int usb_dc_ep_read_continue(u8_t ep)
 	return 0;
 }
 
-int usb_dc_ep_read(const u8_t ep, u8_t *const data, const u32_t max_data_len,
-		   u32_t * const read_bytes)
+int usb_dc_ep_read(const uint8_t ep, uint8_t *const data, const uint32_t max_data_len,
+		   uint32_t * const read_bytes)
 {
 	if (usb_dc_ep_read_wait(ep, data, max_data_len, read_bytes) != 0) {
 		return -EINVAL;
@@ -876,12 +883,12 @@ int usb_dc_ep_read(const u8_t ep, u8_t *const data, const u32_t max_data_len,
 	return 0;
 }
 
-int usb_dc_ep_halt(const u8_t ep)
+int usb_dc_ep_halt(const uint8_t ep)
 {
 	return usb_dc_ep_set_stall(ep);
 }
 
-int usb_dc_ep_flush(const u8_t ep)
+int usb_dc_ep_flush(const uint8_t ep)
 {
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 
@@ -894,7 +901,7 @@ int usb_dc_ep_flush(const u8_t ep)
 	return 0;
 }
 
-int usb_dc_ep_mps(const u8_t ep)
+int usb_dc_ep_mps(const uint8_t ep)
 {
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 
@@ -908,6 +915,16 @@ int usb_dc_ep_mps(const u8_t ep)
 int usb_dc_detach(void)
 {
 	LOG_ERR("Not implemented");
+
+#ifdef CONFIG_SOC_SERIES_STM32WBX
+	LL_HSEM_ReleaseLock(HSEM, CFG_HW_RCC_CRRCR_CCIPR_SEMID, 0);
+	/*
+	 * TODO: AN5289 notes a process of locking Sem0, with possible waits
+	 * via interrupts before switching off CLK48, but lacking any actual
+	 * examples of that, that remains to be implemented.  See
+	 * https://github.com/zephyrproject-rtos/zephyr/pull/25850
+	 */
+#endif /* CONFIG_SOC_SERIES_STM32WBX */
 
 	return 0;
 }
@@ -1007,10 +1024,10 @@ void HAL_PCD_SetupStageCallback(PCD_HandleTypeDef *hpcd)
 	}
 }
 
-void HAL_PCD_DataOutStageCallback(PCD_HandleTypeDef *hpcd, u8_t epnum)
+void HAL_PCD_DataOutStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 {
-	u8_t ep_idx = EP_IDX(epnum);
-	u8_t ep = ep_idx | USB_EP_DIR_OUT;
+	uint8_t ep_idx = EP_IDX(epnum);
+	uint8_t ep = ep_idx | USB_EP_DIR_OUT;
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 
 	LOG_DBG("epnum 0x%02x, rx_count %u", epnum,
@@ -1027,10 +1044,10 @@ void HAL_PCD_DataOutStageCallback(PCD_HandleTypeDef *hpcd, u8_t epnum)
 	}
 }
 
-void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, u8_t epnum)
+void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 {
-	u8_t ep_idx = EP_IDX(epnum);
-	u8_t ep = ep_idx | USB_EP_DIR_IN;
+	uint8_t ep_idx = EP_IDX(epnum);
+	uint8_t ep = ep_idx | USB_EP_DIR_IN;
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 
 	LOG_DBG("epnum 0x%02x", epnum);

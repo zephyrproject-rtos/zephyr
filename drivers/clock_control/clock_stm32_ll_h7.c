@@ -56,7 +56,7 @@ static void config_bus_prescalers(void)
 }
 #endif /* CONFIG_CPU_CORTEX_M4 */
 
-static u32_t get_bus_clock(u32_t clock, u32_t prescaler)
+static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
 {
 	return clock / prescaler;
 }
@@ -153,7 +153,7 @@ static inline int stm32_clock_control_off(struct device *dev,
 
 static int stm32_clock_control_get_subsys_rate(struct device *clock,
 					clock_control_subsys_t sub_system,
-						u32_t *rate)
+						uint32_t *rate)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
 	/*
@@ -163,18 +163,18 @@ static int stm32_clock_control_get_subsys_rate(struct device *clock,
 	 * more likely to contain actual clock speed
 	 */
 #if defined(CONFIG_CPU_CORTEX_M4)
-	u32_t ahb_clock = SystemCoreClock;
+	uint32_t ahb_clock = SystemCoreClock;
 #else
-	u32_t ahb_clock = get_bus_clock(SystemCoreClock,
+	uint32_t ahb_clock = get_bus_clock(SystemCoreClock,
 				CONFIG_CLOCK_STM32_HPRE);
 #endif
-	u32_t apb1_clock = get_bus_clock(ahb_clock,
+	uint32_t apb1_clock = get_bus_clock(ahb_clock,
 				CONFIG_CLOCK_STM32_D2PPRE1);
-	u32_t apb2_clock = get_bus_clock(ahb_clock,
+	uint32_t apb2_clock = get_bus_clock(ahb_clock,
 				CONFIG_CLOCK_STM32_D2PPRE2);
-	u32_t apb3_clock = get_bus_clock(ahb_clock,
+	uint32_t apb3_clock = get_bus_clock(ahb_clock,
 				CONFIG_CLOCK_STM32_D1PPRE);
-	u32_t apb4_clock = get_bus_clock(ahb_clock,
+	uint32_t apb4_clock = get_bus_clock(ahb_clock,
 				CONFIG_CLOCK_STM32_D3PPRE);
 
 	ARG_UNUSED(clock);

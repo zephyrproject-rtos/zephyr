@@ -42,10 +42,10 @@ struct mcp2515_data {
 	/* tx data */
 	struct k_sem tx_sem;
 	struct mcp2515_tx_cb tx_cb[MCP2515_TX_CNT];
-	u8_t tx_busy_map;
+	uint8_t tx_busy_map;
 
 	/* filter data */
-	u32_t filter_usage;
+	uint32_t filter_usage;
 	can_rx_callback_t rx_cb[CONFIG_CAN_MCP2515_MAX_FILTER];
 	void *cb_arg[CONFIG_CAN_MCP2515_MAX_FILTER];
 	struct zcan_filter filter[CONFIG_CAN_MCP2515_MAX_FILTER];
@@ -59,24 +59,24 @@ struct mcp2515_data {
 struct mcp2515_config {
 	/* spi configuration */
 	const char *spi_port;
-	u8_t spi_cs_pin;
+	uint8_t spi_cs_pin;
 	const char *spi_cs_port;
-	u32_t spi_freq;
-	u8_t spi_slave;
+	uint32_t spi_freq;
+	uint8_t spi_slave;
 
 	/* interrupt configuration */
-	u8_t int_pin;
+	uint8_t int_pin;
 	const char *int_port;
 	size_t int_thread_stack_size;
 	int int_thread_priority;
 
 	/* CAN timing */
-	u8_t tq_sjw;
-	u8_t tq_prop;
-	u8_t tq_bs1;
-	u8_t tq_bs2;
-	u32_t bus_speed;
-	u32_t osc_freq;
+	uint8_t tq_sjw;
+	uint8_t tq_prop;
+	uint8_t tq_bs1;
+	uint8_t tq_bs2;
+	uint32_t bus_speed;
+	uint32_t osc_freq;
 };
 
 /* MCP2515 Opcodes */

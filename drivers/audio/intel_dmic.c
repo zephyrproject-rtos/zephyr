@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(audio_dmic);
 /*
  * Maximum number of PDM controller instances supported by this driver
  * configuration data types are selected based on this max.
- * For example, u32_t is selected when a config parameter is 4bits wide
+ * For example, uint32_t is selected when a config parameter is 4bits wide
  * and 8 instances fit within a 32 bit type
  */
 #define MAX_PDM_CONTROLLERS_SUPPORTED	8
@@ -42,17 +42,17 @@ LOG_MODULE_REGISTER(audio_dmic);
 #define DMIC_FIR_PIPELINE_OVERHEAD 5
 
 struct decim_modes {
-	s16_t clkdiv[DMIC_MAX_MODES];
-	s16_t mcic[DMIC_MAX_MODES];
-	s16_t mfir[DMIC_MAX_MODES];
+	int16_t clkdiv[DMIC_MAX_MODES];
+	int16_t mcic[DMIC_MAX_MODES];
+	int16_t mfir[DMIC_MAX_MODES];
 	int num_of_modes;
 };
 
 struct matched_modes {
-	s16_t clkdiv[DMIC_MAX_MODES];
-	s16_t mcic[DMIC_MAX_MODES];
-	s16_t mfir_a[DMIC_MAX_MODES];
-	s16_t mfir_b[DMIC_MAX_MODES];
+	int16_t clkdiv[DMIC_MAX_MODES];
+	int16_t mcic[DMIC_MAX_MODES];
+	int16_t mfir_a[DMIC_MAX_MODES];
+	int16_t mfir_b[DMIC_MAX_MODES];
 	int num_of_modes;
 };
 
@@ -68,8 +68,8 @@ struct dmic_configuration {
 	int fir_b_shift;
 	int fir_a_length;
 	int fir_b_length;
-	s32_t fir_a_scale;
-	s32_t fir_b_scale;
+	int32_t fir_a_scale;
+	int32_t fir_b_scale;
 };
 
 /* Minimum OSR is always applied for 48 kHz and less sample rates */
@@ -85,11 +85,11 @@ struct dmic_configuration {
 #define DMIC_HW_FIR_COEF_MAX ((1 << (DMIC_HW_BITS_FIR_COEF - 1)) - 1)
 #define DMIC_HW_FIR_COEF_Q (DMIC_HW_BITS_FIR_COEF - 1)
 
-/* Internal precision in gains computation, e.g. Q4.28 in s32_t */
+/* Internal precision in gains computation, e.g. Q4.28 in int32_t */
 #define DMIC_FIR_SCALE_Q 28
 
 /* Fractional multiplication with shift and round
- * Note that the parameters px and py must be cast to (s64_t) if other type.
+ * Note that the parameters px and py must be cast to (int64_t) if other type.
  */
 #define Q_MULTSR_32X32(px, py, qx, qy, qp) \
 	((((px) * (py) >> ((qx)+(qy)-(qp)-1)) + 1) >> 1)
@@ -109,9 +109,9 @@ struct dmic_configuration {
 /* queue size to hold buffers in process */
 #define DMIC_BUF_Q_LEN		2
 
-#define DMIC_REG_RD(reg)	(*((volatile u32_t *)(PDM_BASE + (reg))))
+#define DMIC_REG_RD(reg)	(*((volatile uint32_t *)(PDM_BASE + (reg))))
 #define DMIC_REG_WR(reg, val)	\
-	(*((volatile u32_t *)(PDM_BASE + (reg))) = (val))
+	(*((volatile uint32_t *)(PDM_BASE + (reg))) = (val))
 #define DMIC_REG_UPD(reg, mask, val)		\
 	DMIC_REG_WR((reg), (DMIC_REG_RD((reg)) & ~(mask)) | ((val) & (mask)))
 
@@ -127,18 +127,18 @@ struct _stream_data {
 /* DMIC private data */
 static struct _dmic_pdata {
 	enum dmic_state state;
-	u16_t fifo_a;
-	u16_t fifo_b;
-	u16_t mic_en_mask;
-	u8_t num_streams;
-	u8_t reserved;
+	uint16_t fifo_a;
+	uint16_t fifo_b;
+	uint16_t mic_en_mask;
+	uint8_t num_streams;
+	uint8_t reserved;
 	struct _stream_data streams[DMIC_MAX_STREAMS];
 	struct device *dma_dev;
 } dmic_private;
 
-static inline void dmic_parse_channel_map(u32_t channel_map_lo,
-		u32_t channel_map_hi, u8_t channel, u8_t *pdm, enum pdm_lr *lr);
-static inline u8_t dmic_parse_clk_skew_map(u32_t skew_map, u8_t pdm);
+static inline void dmic_parse_channel_map(uint32_t channel_map_lo,
+		uint32_t channel_map_hi, uint8_t channel, uint8_t *pdm, enum pdm_lr *lr);
+static inline uint8_t dmic_parse_clk_skew_map(uint32_t skew_map, uint8_t pdm);
 static void dmic_stop(void);
 
 /* This function searches from vec[] (of length vec_length) integer values
@@ -148,7 +148,7 @@ static void dmic_stop(void);
  * to 1 to receive only the first match in ascending order. It avoids need
  * for an array for idx.
  */
-int find_equal_int16(s16_t idx[], s16_t vec[], int n, int vec_length,
+int find_equal_int16(int16_t idx[], int16_t vec[], int n, int vec_length,
 	int max_results)
 {
 	int nresults = 0;
@@ -167,7 +167,7 @@ int find_equal_int16(s16_t idx[], s16_t vec[], int n, int vec_length,
 }
 
 /* Return the smallest value found in the vector */
-s16_t find_min_int16(s16_t vec[], int vec_length)
+int16_t find_min_int16(int16_t vec[], int vec_length)
 {
 	int i;
 	int min = vec[0];
@@ -180,12 +180,12 @@ s16_t find_min_int16(s16_t vec[], int vec_length)
 }
 
 /* Return the largest absolute value found in the vector. Note that
- * smallest negative value need to be saturated to preset as s32_t.
+ * smallest negative value need to be saturated to preset as int32_t.
  */
-s32_t find_max_abs_int32(s32_t vec[], int vec_length)
+int32_t find_max_abs_int32(int32_t vec[], int vec_length)
 {
 	int i;
-	s64_t amax = (vec[0] > 0) ? vec[0] : -vec[0];
+	int64_t amax = (vec[0] > 0) ? vec[0] : -vec[0];
 
 	for (i = 1; i < vec_length; i++) {
 		amax = (vec[i] > amax) ? vec[i] : amax;
@@ -198,7 +198,7 @@ s32_t find_max_abs_int32(s32_t vec[], int vec_length)
 /* Count the left shift amount to normalize a 32 bit signed integer value
  * without causing overflow. Input value 0 will result to 31.
  */
-int norm_int32(s32_t val)
+int norm_int32(int32_t val)
 {
 	if (val == 0) {
 		return 31;
@@ -218,7 +218,7 @@ int norm_int32(s32_t val)
  * used microphone component datasheet.
  */
 static void find_modes(struct decim_modes *modes,
-		struct dmic_cfg *config, u32_t fs)
+		struct dmic_cfg *config, uint32_t fs)
 {
 	int clkdiv_min;
 	int clkdiv_max;
@@ -353,7 +353,7 @@ static void find_modes(struct decim_modes *modes,
 static void match_modes(struct matched_modes *c, struct decim_modes *a,
 		struct decim_modes *b)
 {
-	s16_t idx[DMIC_MAX_MODES];
+	int16_t idx[DMIC_MAX_MODES];
 	int idx_length;
 	int i;
 	int n;
@@ -452,23 +452,23 @@ static struct pdm_decim *get_fir(struct dmic_configuration *cfg, int mfir)
 /* Calculate scale and shift to use for FIR coefficients. Scale is applied
  * before write to HW coef RAM. Shift will be programmed to HW register.
  */
-static int fir_coef_scale(s32_t *fir_scale, int *fir_shift, int add_shift,
-	const s32_t coef[], int coef_length, s32_t gain)
+static int fir_coef_scale(int32_t *fir_scale, int *fir_shift, int add_shift,
+	const int32_t coef[], int coef_length, int32_t gain)
 {
-	s32_t amax;
-	s32_t new_amax;
-	s32_t fir_gain;
+	int32_t amax;
+	int32_t new_amax;
+	int32_t fir_gain;
 	int shift;
 
 	/* Multiply gain passed from CIC with output full scale. */
-	fir_gain = Q_MULTSR_32X32((s64_t)gain, DMIC_HW_SENS_Q28,
+	fir_gain = Q_MULTSR_32X32((int64_t)gain, DMIC_HW_SENS_Q28,
 		DMIC_FIR_SCALE_Q, 28, DMIC_FIR_SCALE_Q);
 
 	/* Find the largest FIR coefficient value. */
-	amax = find_max_abs_int32((s32_t *)coef, coef_length);
+	amax = find_max_abs_int32((int32_t *)coef, coef_length);
 
 	/* Scale max. tap value with FIR gain. */
-	new_amax = Q_MULTSR_32X32((s64_t)amax, fir_gain, 31,
+	new_amax = Q_MULTSR_32X32((int64_t)amax, fir_gain, 31,
 		DMIC_FIR_SCALE_Q, DMIC_FIR_SCALE_Q);
 	if (new_amax <= 0) {
 		return -EINVAL;
@@ -518,12 +518,12 @@ static int fir_coef_scale(s32_t *fir_scale, int *fir_shift, int add_shift,
 static int select_mode(struct dmic_configuration *cfg,
 	struct matched_modes *modes)
 {
-	s32_t g_cic;
-	s32_t fir_in_max;
-	s32_t cic_out_max;
-	s32_t gain_to_fir;
-	s16_t idx[DMIC_MAX_MODES];
-	s16_t *mfir;
+	int32_t g_cic;
+	int32_t fir_in_max;
+	int32_t cic_out_max;
+	int32_t gain_to_fir;
+	int16_t idx[DMIC_MAX_MODES];
+	int16_t *mfir;
 	int n = 1;
 	int mmin;
 	int count;
@@ -612,7 +612,7 @@ static int select_mode(struct dmic_configuration *cfg,
 		cic_out_max = g_cic << -cfg->cic_shift;
 	}
 
-	gain_to_fir = (s32_t)((((s64_t)fir_in_max) << DMIC_FIR_SCALE_Q) /
+	gain_to_fir = (int32_t)((((int64_t)fir_in_max) << DMIC_FIR_SCALE_Q) /
 		cic_out_max);
 
 	/* Calculate FIR scale and shift */
@@ -651,13 +651,13 @@ static int select_mode(struct dmic_configuration *cfg,
 	return 0;
 }
 
-static int source_ipm_helper(struct pdm_chan_cfg *config, u32_t *source_mask,
-		u8_t *controller_mask, u8_t *stereo_mask, u8_t *swap_mask)
+static int source_ipm_helper(struct pdm_chan_cfg *config, uint32_t *source_mask,
+		uint8_t *controller_mask, uint8_t *stereo_mask, uint8_t *swap_mask)
 {
-	u8_t pdm_ix;
-	u8_t chan_ix;
+	uint8_t pdm_ix;
+	uint8_t chan_ix;
 	enum pdm_lr lr;
-	u16_t pdm_lr_mask = 0U;
+	uint16_t pdm_lr_mask = 0U;
 	int ipm = 0;
 
 	/* clear outputs */
@@ -717,15 +717,15 @@ static int source_ipm_helper(struct pdm_chan_cfg *config, u32_t *source_mask,
 static int configure_registers(struct device *dev,
 		struct dmic_configuration *hw_cfg, struct dmic_cfg *config)
 {
-	u8_t skew;
-	u8_t swap_mask;
-	u8_t edge_mask;
-	u8_t stereo_mask;
-	u8_t controller_mask;
-	u32_t val;
-	s32_t ci;
-	u32_t cu;
-	u32_t coeff_ix;
+	uint8_t skew;
+	uint8_t swap_mask;
+	uint8_t edge_mask;
+	uint8_t stereo_mask;
+	uint8_t controller_mask;
+	uint32_t val;
+	int32_t ci;
+	uint32_t cu;
+	uint32_t coeff_ix;
 	int ipm;
 	int of0;
 	int of1;
@@ -754,7 +754,7 @@ static int configure_registers(struct device *dev,
 	fir_start_a = 0;
 	fir_start_b = 0;
 
-	u32_t source_mask;
+	uint32_t source_mask;
 
 	/* OUTCONTROL0 and OUTCONTROL1 */
 	of0 = (config->streams[0].pcm_width == 32U) ? 2 : 0;
@@ -919,7 +919,7 @@ static int configure_registers(struct device *dev,
 	/* Write coef RAM A with scaled coefficient in reverse order */
 	length = hw_cfg->fir_a_length;
 	for (j = 0; j < length; j++) {
-		ci = (s32_t)Q_MULTSR_32X32((s64_t)hw_cfg->fir_a->coef[j],
+		ci = (int32_t)Q_MULTSR_32X32((int64_t)hw_cfg->fir_a->coef[j],
 				hw_cfg->fir_a_scale, 31, DMIC_FIR_SCALE_Q,
 				DMIC_HW_FIR_COEF_Q);
 		cu = FIR_COEF_A(ci);
@@ -932,7 +932,7 @@ static int configure_registers(struct device *dev,
 	/* Write coef RAM B with scaled coefficient in reverse order */
 	length = hw_cfg->fir_b_length;
 	for (j = 0; j < length; j++) {
-		ci = (s32_t)Q_MULTSR_32X32((s64_t)hw_cfg->fir_b->coef[j],
+		ci = (int32_t)Q_MULTSR_32X32((int64_t)hw_cfg->fir_b->coef[j],
 				hw_cfg->fir_b_scale, 31, DMIC_FIR_SCALE_Q,
 				DMIC_HW_FIR_COEF_Q);
 		cu = FIR_COEF_B(ci);
@@ -949,7 +949,7 @@ static int configure_registers(struct device *dev,
 	return 0;
 }
 
-static void dmic_dma_callback(void *arg, u32_t chan, int err_code)
+static void dmic_dma_callback(void *arg, uint32_t chan, int err_code)
 {
 	void *buffer;
 	size_t size;
@@ -1287,9 +1287,9 @@ static int dmic_trigger_device(struct device *dev, enum dmic_trigger cmd)
 	return 0;
 }
 
-static inline u8_t dmic_parse_clk_skew_map(u32_t skew_map, u8_t pdm)
+static inline uint8_t dmic_parse_clk_skew_map(uint32_t skew_map, uint8_t pdm)
 {
-	return (u8_t)((skew_map >> ((pdm & BIT_MASK(3)) * 4U)) & BIT_MASK(4));
+	return (uint8_t)((skew_map >> ((pdm & BIT_MASK(3)) * 4U)) & BIT_MASK(4));
 }
 
 static int dmic_initialize_device(struct device *dev)
@@ -1333,8 +1333,8 @@ static int dmic_configure_device(struct device *dev, struct dmic_cfg *config)
 	return ret;
 }
 
-static int dmic_read_device(struct device *dev, u8_t stream,
-		void **buffer, size_t *size, s32_t timeout)
+static int dmic_read_device(struct device *dev, uint8_t stream,
+		void **buffer, size_t *size, int32_t timeout)
 {
 	int ret;
 
@@ -1357,11 +1357,11 @@ static int dmic_read_device(struct device *dev, u8_t stream,
 	return ret;
 }
 
-int dmic_configure_dma(struct pcm_stream_cfg *config, u8_t num_streams)
+int dmic_configure_dma(struct pcm_stream_cfg *config, uint8_t num_streams)
 {
 	int ret = 0;
 	int stream;
-	u32_t channel;
+	uint32_t channel;
 	struct dma_block_config dma_block;
 	struct dma_config dma_cfg = {
 		.dma_slot		= DMA_HANDSHAKE_DMIC_RXA,
@@ -1397,8 +1397,8 @@ int dmic_configure_dma(struct pcm_stream_cfg *config, u8_t num_streams)
 		LOG_DBG("Configuring stream %u DMA ch%u handshake %u", stream,
 				channel, dma_cfg.dma_slot);
 
-		dma_block.source_address = (u32_t)NULL;
-		dma_block.dest_address = (u32_t)NULL;
+		dma_block.source_address = (uint32_t)NULL;
+		dma_block.dest_address = (uint32_t)NULL;
 		dma_block.block_size = 0U;
 		dma_block.next_block = NULL;
 
@@ -1411,25 +1411,25 @@ int dmic_configure_dma(struct pcm_stream_cfg *config, u8_t num_streams)
 	return ret;
 }
 
-int dmic_reload_dma(u32_t channel, void *buffer, size_t size)
+int dmic_reload_dma(uint32_t channel, void *buffer, size_t size)
 {
-	u32_t source;
+	uint32_t source;
 
 	source = (channel == DMA_CHANNEL_DMIC_RXA) ? OUTDATA0 : OUTDATA1;
 
 	LOG_DBG("Loading buffer %p size %u to channel %u", buffer, size,
 			channel);
 	return dma_reload(dmic_private.dma_dev, channel,
-			PDM_BASE + source, (u32_t)buffer, size);
+			PDM_BASE + source, (uint32_t)buffer, size);
 }
 
-int dmic_start_dma(u32_t channel)
+int dmic_start_dma(uint32_t channel)
 {
 	LOG_DBG("Starting DMA channel %u", channel);
 	return dma_start(dmic_private.dma_dev, channel);
 }
 
-int dmic_stop_dma(u32_t channel)
+int dmic_stop_dma(uint32_t channel)
 {
 	LOG_DBG("Stopping DMA channel %u", channel);
 	return dma_stop(dmic_private.dma_dev, channel);

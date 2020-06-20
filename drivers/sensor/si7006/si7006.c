@@ -24,8 +24,8 @@ LOG_MODULE_REGISTER(si7006, CONFIG_SENSOR_LOG_LEVEL);
 
 struct si7006_data {
 	struct device *i2c_dev;
-	u16_t temperature;
-	u16_t humidity;
+	uint16_t temperature;
+	uint16_t humidity;
 };
 
 /**
@@ -37,7 +37,7 @@ static int si7006_get_humidity(struct device *i2c_dev,
 			       struct si7006_data *si_data)
 {
 	int retval;
-	u8_t hum[2];
+	uint8_t hum[2];
 
 	retval = i2c_burst_read(i2c_dev, DT_INST_REG_ADDR(0),
 		SI7006_MEAS_REL_HUMIDITY_MASTER_MODE, hum, sizeof(hum));
@@ -63,7 +63,7 @@ static int si7006_get_humidity(struct device *i2c_dev,
 static int si7006_get_old_temperature(struct device *i2c_dev,
 				      struct si7006_data *si_data)
 {
-	u8_t temp[2];
+	uint8_t temp[2];
 	int retval;
 
 	retval = i2c_burst_read(i2c_dev, DT_INST_REG_ADDR(0),
@@ -108,7 +108,7 @@ static int si7006_channel_get(struct device *dev, enum sensor_channel chan,
 
 	if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
 
-		s32_t temp_ucelcius = (((17572 * (s32_t)si_data->temperature)
+		int32_t temp_ucelcius = (((17572 * (int32_t)si_data->temperature)
 					/ 65536) - 4685) * 10000;
 
 		val->val1 = temp_ucelcius / 1000000;
@@ -119,7 +119,7 @@ static int si7006_channel_get(struct device *dev, enum sensor_channel chan,
 		return 0;
 	} else if (chan == SENSOR_CHAN_HUMIDITY) {
 
-		s32_t relative_humidity = (((125 * (s32_t)si_data->humidity)
+		int32_t relative_humidity = (((125 * (int32_t)si_data->humidity)
 					    / 65536) - 6) * 1000000;
 
 		val->val1 = relative_humidity / 1000000;

@@ -64,11 +64,11 @@ struct disk_info {
 struct disk_operations {
 	int (*init)(struct disk_info *disk);
 	int (*status)(struct disk_info *disk);
-	int (*read)(struct disk_info *disk, u8_t *data_buf,
-		    u32_t start_sector, u32_t num_sector);
-	int (*write)(struct disk_info *disk, const u8_t *data_buf,
-		     u32_t start_sector, u32_t num_sector);
-	int (*ioctl)(struct disk_info *disk, u8_t cmd, void *buff);
+	int (*read)(struct disk_info *disk, uint8_t *data_buf,
+		    uint32_t start_sector, uint32_t num_sector);
+	int (*write)(struct disk_info *disk, const uint8_t *data_buf,
+		     uint32_t start_sector, uint32_t num_sector);
+	int (*ioctl)(struct disk_info *disk, uint8_t cmd, void *buff);
 };
 
 /*
@@ -101,8 +101,8 @@ int disk_access_status(const char *pdrv);
  *
  * @return 0 on success, negative errno code on fail
  */
-int disk_access_read(const char *pdrv, u8_t *data_buf,
-		     u32_t start_sector, u32_t num_sector);
+int disk_access_read(const char *pdrv, uint8_t *data_buf,
+		     uint32_t start_sector, uint32_t num_sector);
 
 /*
  * @brief write data to disk
@@ -115,8 +115,8 @@ int disk_access_read(const char *pdrv, u8_t *data_buf,
  *
  * @return 0 on success, negative errno code on fail
  */
-int disk_access_write(const char *pdrv, const u8_t *data_buf,
-		      u32_t start_sector, u32_t num_sector);
+int disk_access_write(const char *pdrv, const uint8_t *data_buf,
+		      uint32_t start_sector, uint32_t num_sector);
 
 /*
  * @brief Get/Configure disk parameters
@@ -127,7 +127,7 @@ int disk_access_write(const char *pdrv, const u8_t *data_buf,
  *
  * @return 0 on success, negative errno code on fail
  */
-int disk_access_ioctl(const char *pdrv, u8_t cmd, void *buff);
+int disk_access_ioctl(const char *pdrv, uint8_t cmd, void *buff);
 
 int disk_access_register(struct disk_info *disk);
 

@@ -44,18 +44,18 @@ tstrNmBusCapabilities egstrNmBusCapabilities = {
 /** Number of times to try to send packet if failed. */
 #define I2C_TIMEOUT		100
 
-static s8_t nm_i2c_write(u8_t *b, u16_t sz)
+static int8_t nm_i2c_write(uint8_t *b, uint16_t sz)
 {
 	/* Not implemented */
 }
 
-static s8_t nm_i2c_read(u8_t *rb, u16_t sz)
+static int8_t nm_i2c_read(uint8_t *rb, uint16_t sz)
 {
 	/* Not implemented */
 }
 
-static s8_t nm_i2c_write_special(u8_t *wb1, u16_t sz1,
-				 u8_t *wb2, u16_t sz2)
+static int8_t nm_i2c_write_special(uint8_t *wb1, uint16_t sz1,
+				 uint8_t *wb2, uint16_t sz2)
 {
 	/* Not implemented */
 }
@@ -67,7 +67,7 @@ static s8_t nm_i2c_write_special(u8_t *wb1, u16_t sz1,
 struct spi_cs_control cs_ctrl;
 #endif
 
-static s8_t spi_rw(u8_t *mosi, u8_t *miso, u16_t size)
+static int8_t spi_rw(uint8_t *mosi, uint8_t *miso, uint16_t size)
 {
 	const struct spi_buf buf_tx = {
 		.buf = mosi,
@@ -127,7 +127,7 @@ struct winc1500_gpio_configuration *winc1500_configure_gpios(void)
 	return winc1500_gpios;
 }
 
-s8_t nm_bus_init(void *pvinit)
+int8_t nm_bus_init(void *pvinit)
 {
 	/* configure GPIOs */
 	winc1500.gpios = winc1500_configure_gpios();
@@ -174,7 +174,7 @@ s8_t nm_bus_init(void *pvinit)
 	return 0;
 }
 
-s8_t nm_bus_ioctl(u8_t cmd, void *parameter)
+int8_t nm_bus_ioctl(uint8_t cmd, void *parameter)
 {
 	sint8 ret = 0;
 
@@ -219,12 +219,12 @@ s8_t nm_bus_ioctl(u8_t cmd, void *parameter)
 	return ret;
 }
 
-s8_t nm_bus_deinit(void)
+int8_t nm_bus_deinit(void)
 {
 	return M2M_SUCCESS;
 }
 
-s8_t nm_bus_reinit(void *config)
+int8_t nm_bus_reinit(void *config)
 {
 	return 0;
 }

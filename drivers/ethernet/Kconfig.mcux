@@ -22,6 +22,12 @@ config ETH_MCUX_PROMISCUOUS_MODE
 	  Place the Ethernet receiver in promiscuous mode. This may be useful
 	  for debugging and not needed for normal work.
 
+config ETH_MCUX_RMII_EXT_CLK
+	bool "Enable RMII clock from external sources"
+	help
+	  Setting this option will configure MCUX clock block to feed RMII
+	  reference clock from external source (ENET_1588_CLKIN)
+
 config ETH_MCUX_PHY_TICK_MS
 	int "PHY poll period (ms)"
 	default 1000

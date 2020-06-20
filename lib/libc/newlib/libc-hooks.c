@@ -84,7 +84,7 @@ static int malloc_prepare(struct device *unused)
 	ARG_UNUSED(unused);
 
 #if CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE
-	z_malloc_partition.start = (u32_t)heap_base;
+	z_malloc_partition.start = (uint32_t)heap_base;
 #else
 	z_malloc_partition.start = HEAP_BASE;
 #endif
@@ -273,6 +273,18 @@ __weak FUNC_ALIAS(_sbrk, sbrk, void *);
 __weak int *__errno(void)
 {
 	return z_errno();
+}
+
+/* This function gets called if static buffer overflow detection is enabled
+ * on stdlib side (Newlib here), in case such an overflow is detected. Newlib
+ * provides an implementation not suitable for us, so we override it here.
+ */
+__weak FUNC_NORETURN void __chk_fail(void)
+{
+	static const char chk_fail_msg[] = "* buffer overflow detected *\n";
+	_write(2, chk_fail_msg, sizeof(chk_fail_msg) - 1);
+	k_oops();
+	CODE_UNREACHABLE;
 }
 
 #if CONFIG_XTENSA

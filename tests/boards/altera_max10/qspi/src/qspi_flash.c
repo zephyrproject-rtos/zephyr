@@ -18,9 +18,9 @@
 void test_qspi_flash(void)
 {
 	struct device *flash_dev;
-	u32_t i, offset, rd_val, wr_val;
-	u8_t wr_buf[4] = {0xAA, 0xBB, 0xCC, 0xDD};
-	u8_t rd_buf[2];
+	uint32_t i, offset, rd_val, wr_val;
+	uint8_t wr_buf[4] = {0xAA, 0xBB, 0xCC, 0xDD};
+	uint8_t rd_buf[2];
 
 	flash_dev = device_get_binding(CONFIG_SOC_FLASH_NIOS2_QSPI_DEV_NAME);
 	zassert_equal(!flash_dev, TC_PASS, "Flash device not found!");

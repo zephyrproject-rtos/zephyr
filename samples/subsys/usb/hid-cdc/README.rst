@@ -53,11 +53,11 @@ and two HID devices will be detected:
 .. code-block:: console
 
 	usb 2-2: new full-speed USB device number 3 using ohci-pci
-	usb 2-2: New USB device found, idVendor=2fe3, idProduct=0100
+	usb 2-2: New USB device found, idVendor=2fe3, idProduct=0003, bcdDevice= 2.03
 	usb 2-2: New USB device strings: Mfr=1, Product=2, SerialNumber=3
 	usb 2-2: Product: Zephyr HID and CDC ACM sample
 	usb 2-2: Manufacturer: ZEPHYR
-	usb 2-2: SerialNumber: 0.01
+	usb 2-2: SerialNumber: 86FE679A598AC47A
 	cdc_acm 2-2:1.0: ttyACM1: USB ACM device
 	input: ZEPHYR Zephyr HID and CDC ACM sample as /devices/pci0000:00/0000:00:06.0/usb2/2-2/2-2:1.2/0003:2FE3:0100.0002/input/input8
 	hid-generic 0003:2FE3:0100.0002: input,hidraw1: USB HID v1.10 Mouse [ZEPHYR Zephyr HID and CDC ACM sample] on usb-0000:00:06.0-2/input2

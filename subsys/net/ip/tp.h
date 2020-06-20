@@ -146,7 +146,7 @@ struct net_pkt *tp_pkt_clone(struct net_pkt *pkt, const char *file, int line);
 void tp_pkt_unref(struct net_pkt *pkt, const char *file, int line);
 void tp_pkt_stat(void);
 
-u32_t tp_seq_track(int kind, u32_t *pvalue, int req,
+uint32_t tp_seq_track(int kind, uint32_t *pvalue, int req,
 			const char *file, int line, const char *func);
 void tp_seq_stat(void);
 

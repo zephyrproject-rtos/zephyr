@@ -78,9 +78,9 @@ enum usbd_event_type {
  */
 struct nrf_usbd_ep_cfg {
 	usb_dc_ep_callback cb;
-	u32_t max_sz;
+	uint32_t max_sz;
 	bool en;
-	u8_t addr;
+	uint8_t addr;
 	enum usb_dc_ep_transfer_type type;
 
 };
@@ -94,10 +94,10 @@ struct nrf_usbd_ep_cfg {
  * @param curr	 Pointer to the current offset in the endpoint buffer.
  */
 struct nrf_usbd_ep_buf {
-	u32_t len;
+	uint32_t len;
 	struct k_mem_block block;
-	u8_t *data;
-	u8_t *curr;
+	uint8_t *data;
+	uint8_t *curr;
 };
 
 /**
@@ -260,7 +260,7 @@ struct nrf_usbd_ctx {
 
 	struct nrf_usbd_ep_ctx ep_ctx[CFG_EP_CNT];
 
-	u16_t ctrl_read_len;
+	uint16_t ctrl_read_len;
 };
 
 
@@ -310,9 +310,9 @@ static inline uint8_t nrfx_addr_to_ep(nrfx_usbd_ep_t ep)
 	return (uint8_t)ep;
 }
 
-static inline bool ep_is_valid(const u8_t ep)
+static inline bool ep_is_valid(const uint8_t ep)
 {
-	u8_t ep_num = ep & ~USB_EP_DIR_MASK;
+	uint8_t ep_num = ep & ~USB_EP_DIR_MASK;
 
 	if (NRF_USBD_EPIN_CHECK(ep)) {
 		if (unlikely(ep_num == NRF_USBD_EPISO_FIRST)) {
@@ -339,10 +339,10 @@ static inline bool ep_is_valid(const u8_t ep)
 	return true;
 }
 
-static struct nrf_usbd_ep_ctx *endpoint_ctx(const u8_t ep)
+static struct nrf_usbd_ep_ctx *endpoint_ctx(const uint8_t ep)
 {
 	struct nrf_usbd_ctx *ctx;
-	u8_t ep_num;
+	uint8_t ep_num;
 
 	if (!ep_is_valid(ep)) {
 		return NULL;
@@ -370,12 +370,12 @@ static struct nrf_usbd_ep_ctx *endpoint_ctx(const u8_t ep)
 	return NULL;
 }
 
-static struct nrf_usbd_ep_ctx *in_endpoint_ctx(const u8_t ep)
+static struct nrf_usbd_ep_ctx *in_endpoint_ctx(const uint8_t ep)
 {
 	return endpoint_ctx(NRF_USBD_EPIN(ep));
 }
 
-static struct nrf_usbd_ep_ctx *out_endpoint_ctx(const u8_t ep)
+static struct nrf_usbd_ep_ctx *out_endpoint_ctx(const uint8_t ep)
 {
 	return endpoint_ctx(NRF_USBD_EPOUT(ep));
 }
@@ -658,7 +658,7 @@ static int eps_ctx_init(void)
 {
 	struct nrf_usbd_ep_ctx *ep_ctx;
 	int err;
-	u32_t i;
+	uint32_t i;
 
 	for (i = 0U; i < CFG_EPIN_CNT; i++) {
 		ep_ctx = in_endpoint_ctx(i);
@@ -732,7 +732,7 @@ static int eps_ctx_init(void)
 static void eps_ctx_uninit(void)
 {
 	struct nrf_usbd_ep_ctx *ep_ctx;
-	u32_t i;
+	uint32_t i;
 
 	for (i = 0U; i < CFG_EPIN_CNT; i++) {
 		ep_ctx = in_endpoint_ctx(i);
@@ -848,11 +848,11 @@ static inline void usbd_work_process_setup(struct nrf_usbd_ep_ctx *ep_ctx)
 	ep_ctx->buf.len = sizeof(struct usb_setup_packet);
 
 	LOG_DBG("SETUP: bR:0x%02x bmRT:0x%02x wV:0x%04x wI:0x%04x wL:%d",
-		(u32_t)usbd_setup->bRequest,
-		(u32_t)usbd_setup->bmRequestType,
-		(u32_t)usbd_setup->wValue,
-		(u32_t)usbd_setup->wIndex,
-		(u32_t)usbd_setup->wLength);
+		(uint32_t)usbd_setup->bRequest,
+		(uint32_t)usbd_setup->bmRequestType,
+		(uint32_t)usbd_setup->wValue,
+		(uint32_t)usbd_setup->wIndex,
+		(uint32_t)usbd_setup->wLength);
 
 	/* Inform the stack. */
 	ep_ctx->cfg.cb(ep_ctx->cfg.addr, USB_DC_EP_SETUP);
@@ -1050,7 +1050,7 @@ static void usbd_event_transfer_data(nrfx_usbd_evt_t const *const p_event)
 			}
 
 			LOG_DBG("write complete, ep 0x%02x",
-				(u32_t)p_event->data.eptransfer.ep);
+				(uint32_t)p_event->data.eptransfer.ep);
 
 			ep_ctx->write_in_progress = false;
 			ev->evt_type = USBD_EVT_EP;
@@ -1085,7 +1085,7 @@ static void usbd_event_transfer_data(nrfx_usbd_evt_t const *const p_event)
 			}
 
 			LOG_DBG("read request, ep 0x%02x",
-				(u32_t)p_event->data.eptransfer.ep);
+				(uint32_t)p_event->data.eptransfer.ep);
 
 			ep_ctx->read_pending = true;
 			ev->evt_type = USBD_EVT_EP;
@@ -1108,7 +1108,7 @@ static void usbd_event_transfer_data(nrfx_usbd_evt_t const *const p_event)
 				p_event->data.eptransfer.ep);
 
 			LOG_DBG("read complete, ep 0x%02x, len %d",
-				(u32_t)p_event->data.eptransfer.ep,
+				(uint32_t)p_event->data.eptransfer.ep,
 				ep_ctx->buf.len);
 
 			ev->evt_type = USBD_EVT_EP;
@@ -1241,7 +1241,7 @@ static inline void usbd_reinit(void)
 	err = nrfx_usbd_init(usbd_event_handler);
 
 	if (err != NRFX_SUCCESS) {
-		LOG_DBG("nRF USBD driver reinit failed. Code: %d", (u32_t)err);
+		LOG_DBG("nRF USBD driver reinit failed. Code: %d", (uint32_t)err);
 		__ASSERT_NO_MSG(0);
 	}
 }
@@ -1305,7 +1305,7 @@ static void usbd_work_handler(struct k_work *item)
 		case USBD_EVT_EP:
 			if (!ctx->attached) {
 				LOG_ERR("not attached, EP 0x%02x event dropped",
-					(u32_t)ev->evt.ep_evt.ep->cfg.addr);
+					(uint32_t)ev->evt.ep_evt.ep->cfg.addr);
 			}
 			usbd_work_process_ep_events(&ev->evt.ep_evt);
 			break;
@@ -1370,7 +1370,7 @@ int usb_dc_attach(void)
 	err = nrfx_usbd_init(usbd_event_handler);
 
 	if (err != NRFX_SUCCESS) {
-		LOG_DBG("nRF USBD driver init failed. Code: %d", (u32_t)err);
+		LOG_DBG("nRF USBD driver init failed. Code: %d", (uint32_t)err);
 		return -EIO;
 	}
 	nrf5_power_usb_power_int_enable(true);
@@ -1447,7 +1447,7 @@ int usb_dc_reset(void)
 	return 0;
 }
 
-int usb_dc_set_address(const u8_t addr)
+int usb_dc_set_address(const uint8_t addr)
 {
 	struct nrf_usbd_ctx *ctx;
 
@@ -1459,7 +1459,7 @@ int usb_dc_set_address(const u8_t addr)
 	 * Nothing to do here. The USBD HW already takes care of initiating
 	 * STATUS stage. Just double check the address for sanity.
 	 */
-	__ASSERT(addr == (u8_t)NRF_USBD->USBADDR, "USB Address incorrect!");
+	__ASSERT(addr == (uint8_t)NRF_USBD->USBADDR, "USB Address incorrect!");
 
 	ctx = get_usbd_ctx();
 
@@ -1471,7 +1471,7 @@ int usb_dc_set_address(const u8_t addr)
 
 int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data *const ep_cfg)
 {
-	u8_t ep_idx = NRF_USBD_EP_NR_GET(ep_cfg->ep_addr);
+	uint8_t ep_idx = NRF_USBD_EP_NR_GET(ep_cfg->ep_addr);
 
 	LOG_DBG("ep 0x%02x, mps %d, type %d", ep_cfg->ep_addr, ep_cfg->ep_mps,
 		ep_cfg->ep_type);
@@ -1535,7 +1535,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const ep_cfg)
 	return 0;
 }
 
-int usb_dc_ep_set_stall(const u8_t ep)
+int usb_dc_ep_set_stall(const uint8_t ep)
 {
 	struct nrf_usbd_ep_ctx *ep_ctx;
 
@@ -1569,7 +1569,7 @@ int usb_dc_ep_set_stall(const u8_t ep)
 	return 0;
 }
 
-int usb_dc_ep_clear_stall(const u8_t ep)
+int usb_dc_ep_clear_stall(const uint8_t ep)
 {
 
 	struct nrf_usbd_ep_ctx *ep_ctx;
@@ -1590,12 +1590,12 @@ int usb_dc_ep_clear_stall(const u8_t ep)
 	return 0;
 }
 
-int usb_dc_ep_halt(const u8_t ep)
+int usb_dc_ep_halt(const uint8_t ep)
 {
 	return usb_dc_ep_set_stall(ep);
 }
 
-int usb_dc_ep_is_stalled(const u8_t ep, u8_t *const stalled)
+int usb_dc_ep_is_stalled(const uint8_t ep, uint8_t *const stalled)
 {
 	struct nrf_usbd_ep_ctx *ep_ctx;
 
@@ -1612,12 +1612,12 @@ int usb_dc_ep_is_stalled(const u8_t ep, u8_t *const stalled)
 		return -EINVAL;
 	}
 
-	*stalled = (u8_t) nrfx_usbd_ep_stall_check(ep_addr_to_nrfx(ep));
+	*stalled = (uint8_t) nrfx_usbd_ep_stall_check(ep_addr_to_nrfx(ep));
 
 	return 0;
 }
 
-int usb_dc_ep_enable(const u8_t ep)
+int usb_dc_ep_enable(const uint8_t ep)
 {
 	struct nrf_usbd_ep_ctx *ep_ctx;
 
@@ -1647,7 +1647,7 @@ int usb_dc_ep_enable(const u8_t ep)
 	return 0;
 }
 
-int usb_dc_ep_disable(const u8_t ep)
+int usb_dc_ep_disable(const uint8_t ep)
 {
 	struct nrf_usbd_ep_ctx *ep_ctx;
 
@@ -1672,7 +1672,7 @@ int usb_dc_ep_disable(const u8_t ep)
 	return 0;
 }
 
-int usb_dc_ep_flush(const u8_t ep)
+int usb_dc_ep_flush(const uint8_t ep)
 {
 	struct nrf_usbd_ep_ctx *ep_ctx;
 
@@ -1693,13 +1693,13 @@ int usb_dc_ep_flush(const u8_t ep)
 	return 0;
 }
 
-int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
-		    const u32_t data_len, u32_t *const ret_bytes)
+int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
+		    const uint32_t data_len, uint32_t *const ret_bytes)
 {
 	LOG_DBG("ep_write: ep 0x%02x, len %d", ep, data_len);
 	struct nrf_usbd_ctx *ctx = get_usbd_ctx();
 	struct nrf_usbd_ep_ctx *ep_ctx;
-	u32_t bytes_to_copy;
+	uint32_t bytes_to_copy;
 	int result = 0;
 
 	if (!dev_attached() || !dev_ready()) {
@@ -1770,19 +1770,19 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 	if (err != NRFX_SUCCESS) {
 		ep_ctx->write_in_progress = false;
 		result = -EIO;
-		LOG_ERR("nRF USBD write error: %d", (u32_t)err);
+		LOG_ERR("nRF USBD write error: %d", (uint32_t)err);
 	}
 
 	k_mutex_unlock(&ctx->drv_lock);
 	return result;
 }
 
-int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
-			u32_t *read_bytes)
+int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
+			uint32_t *read_bytes)
 {
 	struct nrf_usbd_ep_ctx *ep_ctx;
 	struct nrf_usbd_ctx *ctx = get_usbd_ctx();
-	u32_t bytes_to_copy;
+	uint32_t bytes_to_copy;
 
 	if (!dev_attached() || !dev_ready()) {
 		return -ENODEV;
@@ -1830,7 +1830,7 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 	return 0;
 }
 
-int usb_dc_ep_read_continue(u8_t ep)
+int usb_dc_ep_read_continue(uint8_t ep)
 {
 	struct nrf_usbd_ep_ctx *ep_ctx;
 	struct nrf_usbd_ctx *ctx = get_usbd_ctx();
@@ -1878,8 +1878,8 @@ int usb_dc_ep_read_continue(u8_t ep)
 	return 0;
 }
 
-int usb_dc_ep_read(const u8_t ep, u8_t *const data,
-		   const u32_t max_data_len, u32_t *const read_bytes)
+int usb_dc_ep_read(const uint8_t ep, uint8_t *const data,
+		   const uint32_t max_data_len, uint32_t *const read_bytes)
 {
 	LOG_DBG("ep_read: ep 0x%02x, maxlen %d", ep, max_data_len);
 	int ret;
@@ -1897,7 +1897,7 @@ int usb_dc_ep_read(const u8_t ep, u8_t *const data,
 	return ret;
 }
 
-int usb_dc_ep_set_callback(const u8_t ep, const usb_dc_ep_callback cb)
+int usb_dc_ep_set_callback(const uint8_t ep, const usb_dc_ep_callback cb)
 {
 	struct nrf_usbd_ep_ctx *ep_ctx;
 
@@ -1920,7 +1920,7 @@ void usb_dc_set_status_callback(const usb_dc_status_callback cb)
 	get_usbd_ctx()->status_cb = cb;
 }
 
-int usb_dc_ep_mps(const u8_t ep)
+int usb_dc_ep_mps(const uint8_t ep)
 {
 	struct nrf_usbd_ep_ctx *ep_ctx;
 

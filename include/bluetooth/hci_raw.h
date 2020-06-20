@@ -74,7 +74,7 @@ enum {
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int bt_hci_raw_set_mode(u8_t mode);
+int bt_hci_raw_set_mode(uint8_t mode);
 
 /** @brief Get Bluetooth RAW channel mode
  *
@@ -82,7 +82,7 @@ int bt_hci_raw_set_mode(u8_t mode);
  *
  *  @return Access mode.
  */
-u8_t bt_hci_raw_get_mode(void);
+uint8_t bt_hci_raw_get_mode(void);
 
 #define BT_HCI_ERR_EXT_HANDLED  0xff
 
@@ -101,7 +101,7 @@ u8_t bt_hci_raw_get_mode(void);
 
 struct bt_hci_raw_cmd_ext {
 	/** Opcode of the command */
-	u16_t  op;
+	uint16_t  op;
 
 	/** Minimal length of the command */
 	size_t min_len;
@@ -117,7 +117,7 @@ struct bt_hci_raw_cmd_ext {
 	 *  BT_HCI_ERR_SUCCESS which just indicates that the command can be
 	 *  sent to the controller to be processed.
 	 */
-	u8_t   (*func)(struct net_buf *buf);
+	uint8_t   (*func)(struct net_buf *buf);
 };
 
 /** @brief Register Bluetooth RAW command extension table

@@ -8,7 +8,7 @@
 #include "settings_test.h"
 #include "settings/settings_file.h"
 
-static int test_config_save_one_byte_value(const char *name, u8_t val)
+static int test_config_save_one_byte_value(const char *name, uint8_t val)
 {
 	return settings_save_one(name, &val, 1);
 }

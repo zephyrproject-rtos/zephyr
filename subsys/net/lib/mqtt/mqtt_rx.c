@@ -17,8 +17,8 @@ LOG_MODULE_REGISTER(net_mqtt_rx, CONFIG_MQTT_LOG_LEVEL);
  */
 
 static int mqtt_handle_packet(struct mqtt_client *client,
-			      u8_t type_and_flags,
-			      u32_t var_length,
+			      uint8_t type_and_flags,
+			      uint32_t var_length,
 			      struct buf_ctx *buf)
 {
 	int err_code = 0;
@@ -144,9 +144,9 @@ static int mqtt_handle_packet(struct mqtt_client *client,
 }
 
 static int mqtt_read_message_chunk(struct mqtt_client *client,
-				   struct buf_ctx *buf, u32_t length)
+				   struct buf_ctx *buf, uint32_t length)
 {
-	u32_t remaining;
+	uint32_t remaining;
 	int len;
 
 	/* In case all data requested has already been buffered, return. */
@@ -190,15 +190,15 @@ static int mqtt_read_message_chunk(struct mqtt_client *client,
 }
 
 static int mqtt_read_publish_var_header(struct mqtt_client *client,
-					u8_t type_and_flags,
+					uint8_t type_and_flags,
 					struct buf_ctx *buf)
 {
-	u8_t qos = (type_and_flags & MQTT_HEADER_QOS_MASK) >> 1;
+	uint8_t qos = (type_and_flags & MQTT_HEADER_QOS_MASK) >> 1;
 	int err_code;
-	u32_t variable_header_length;
+	uint32_t variable_header_length;
 
 	/* Read topic length field. */
-	err_code = mqtt_read_message_chunk(client, buf, sizeof(u16_t));
+	err_code = mqtt_read_message_chunk(client, buf, sizeof(uint16_t));
 	if (err_code < 0) {
 		return err_code;
 	}
@@ -207,11 +207,11 @@ static int mqtt_read_publish_var_header(struct mqtt_client *client,
 	variable_header_length |= *(buf->cur + 1); /* LSB */
 
 	/* Add two bytes for topic length field. */
-	variable_header_length += sizeof(u16_t);
+	variable_header_length += sizeof(uint16_t);
 
 	/* Add two bytes for message_id, if needed. */
 	if (qos > MQTT_QOS_0_AT_MOST_ONCE) {
-		variable_header_length += sizeof(u16_t);
+		variable_header_length += sizeof(uint16_t);
 	}
 
 	/* Now we can read the whole header. */
@@ -225,12 +225,12 @@ static int mqtt_read_publish_var_header(struct mqtt_client *client,
 }
 
 static int mqtt_read_and_parse_fixed_header(struct mqtt_client *client,
-					    u8_t *type_and_flags,
-					    u32_t *var_length,
+					    uint8_t *type_and_flags,
+					    uint32_t *var_length,
 					    struct buf_ctx *buf)
 {
 	/* Read the mandatory part of the fixed header in first iteration. */
-	u8_t chunk_size = MQTT_FIXED_HEADER_MIN_SIZE;
+	uint8_t chunk_size = MQTT_FIXED_HEADER_MIN_SIZE;
 	int err_code;
 
 	do {
@@ -252,8 +252,8 @@ static int mqtt_read_and_parse_fixed_header(struct mqtt_client *client,
 int mqtt_handle_rx(struct mqtt_client *client)
 {
 	int err_code;
-	u8_t type_and_flags;
-	u32_t var_length;
+	uint8_t type_and_flags;
+	uint32_t var_length;
 	struct buf_ctx buf;
 
 	buf.cur = client->rx_buf;

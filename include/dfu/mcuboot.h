@@ -49,10 +49,10 @@ extern "C" {
  * represents the information it contains.
  */
 struct mcuboot_img_sem_ver {
-	u8_t major;
-	u8_t minor;
-	u16_t revision;
-	u32_t build_num;
+	uint8_t major;
+	uint8_t minor;
+	uint16_t revision;
+	uint32_t build_num;
 };
 
 /**
@@ -66,7 +66,7 @@ struct mcuboot_img_sem_ver {
  */
 struct mcuboot_img_header_v1 {
 	/** The size of the image, in bytes. */
-	u32_t image_size;
+	uint32_t image_size;
 	/** The image version. */
 	struct mcuboot_img_sem_ver sem_ver;
 };
@@ -88,7 +88,7 @@ struct mcuboot_img_header {
 	 *
 	 * The value 1 corresponds to MCUboot versions 1.x.y.
 	 */
-	u32_t mcuboot_version;
+	uint32_t mcuboot_version;
 	/**
 	 * The header information. It is only valid to access fields
 	 * in the union member corresponding to the mcuboot_version
@@ -114,7 +114,7 @@ struct mcuboot_img_header {
  *                    necessary information, an error is returned.
  * @return Zero on success, a negative value on error.
  */
-int boot_read_bank_header(u8_t area_id,
+int boot_read_bank_header(uint8_t area_id,
 			  struct mcuboot_img_header *header,
 			  size_t header_size);
 
@@ -179,7 +179,7 @@ int boot_request_upgrade(int permanent);
  * @param area_id flash_area ID of image bank to be erased.
  * @return 0 on success, negative errno code on fail.
  */
-int boot_erase_img_bank(u8_t area_id);
+int boot_erase_img_bank(uint8_t area_id);
 
 #ifdef __cplusplus
 }

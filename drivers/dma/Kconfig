@@ -48,4 +48,6 @@ source "drivers/dma/Kconfig.nios2_msgdma"
 
 source "drivers/dma/Kconfig.sam0"
 
+source "drivers/dma/Kconfig.mcux_edma"
+
 endif # DMA

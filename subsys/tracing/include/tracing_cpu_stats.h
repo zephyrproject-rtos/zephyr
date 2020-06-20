@@ -15,9 +15,9 @@ extern "C" {
 #endif
 
 struct cpu_stats {
-	u64_t idle;
-	u64_t non_idle;
-	u64_t sched;
+	uint64_t idle;
+	uint64_t non_idle;
+	uint64_t sched;
 };
 
 void sys_trace_thread_switched_in(void);
@@ -27,7 +27,7 @@ void sys_trace_isr_exit(void);
 void sys_trace_idle(void);
 
 void cpu_stats_get_ns(struct cpu_stats *cpu_stats_ns);
-u32_t cpu_stats_non_idle_and_sched_get_percent(void);
+uint32_t cpu_stats_non_idle_and_sched_get_percent(void);
 void cpu_stats_reset_counters(void);
 
 #define sys_trace_isr_exit_to_scheduler()

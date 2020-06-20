@@ -26,11 +26,11 @@
 
 struct tmp116_data {
 	struct device *i2c;
-	u16_t sample;
+	uint16_t sample;
 };
 
 struct tmp116_dev_config {
-	u16_t i2c_addr;
+	uint16_t i2c_addr;
 };
 
 #endif /*  ZEPHYR_DRIVERS_SENSOR_TMP116_TMP116_H_ */

@@ -24,10 +24,10 @@ LOG_MODULE_REGISTER(ADXL362, CONFIG_SENSOR_LOG_LEVEL);
 
 static struct adxl362_data adxl362_data;
 
-static int adxl362_reg_access(struct adxl362_data *ctx, u8_t cmd,
-			      u8_t reg_addr, void *data, size_t length)
+static int adxl362_reg_access(struct adxl362_data *ctx, uint8_t cmd,
+			      uint8_t reg_addr, void *data, size_t length)
 {
-	u8_t access[2] = { cmd, reg_addr };
+	uint8_t access[2] = { cmd, reg_addr };
 	const struct spi_buf buf[2] = {
 		{
 			.buf = access,
@@ -58,8 +58,8 @@ static int adxl362_reg_access(struct adxl362_data *ctx, u8_t cmd,
 	return spi_write(ctx->spi, &ctx->spi_cfg, &tx);
 }
 
-static inline int adxl362_set_reg(struct device *dev, u16_t register_value,
-				  u8_t register_address, u8_t count)
+static inline int adxl362_set_reg(struct device *dev, uint16_t register_value,
+				  uint8_t register_address, uint8_t count)
 {
 	struct adxl362_data *adxl362_data = dev->driver_data;
 
@@ -70,11 +70,11 @@ static inline int adxl362_set_reg(struct device *dev, u16_t register_value,
 				  count);
 }
 
-int adxl362_reg_write_mask(struct device *dev, u8_t register_address,
-			   u8_t mask, u8_t data)
+int adxl362_reg_write_mask(struct device *dev, uint8_t register_address,
+			   uint8_t mask, uint8_t data)
 {
 	int ret;
-	u8_t tmp;
+	uint8_t tmp;
 	struct adxl362_data *adxl362_data = dev->driver_data;
 
 	ret = adxl362_reg_access(adxl362_data,
@@ -97,8 +97,8 @@ int adxl362_reg_write_mask(struct device *dev, u8_t register_address,
 				  1);
 }
 
-static inline int adxl362_get_reg(struct device *dev, u8_t *read_buf,
-				  u8_t register_address, u8_t count)
+static inline int adxl362_get_reg(struct device *dev, uint8_t *read_buf,
+				  uint8_t register_address, uint8_t count)
 {
 	struct adxl362_data *adxl362_data = dev->driver_data;
 
@@ -110,8 +110,8 @@ static inline int adxl362_get_reg(struct device *dev, u8_t *read_buf,
 
 #if defined(CONFIG_ADXL362_TRIGGER)
 static int adxl362_interrupt_config(struct device *dev,
-				 u8_t int1,
-				 u8_t int2)
+				 uint8_t int1,
+				 uint8_t int2)
 {
 	int ret;
 	struct adxl362_data *adxl362_data = dev->driver_data;
@@ -133,14 +133,14 @@ static int adxl362_interrupt_config(struct device *dev,
 					1);
 }
 
-int adxl362_get_status(struct device *dev, u8_t *status)
+int adxl362_get_status(struct device *dev, uint8_t *status)
 {
 	return adxl362_get_reg(dev, status, ADXL362_REG_STATUS, 1);
 }
 
 int adxl362_clear_data_ready(struct device *dev)
 {
-	u8_t buf;
+	uint8_t buf;
 	/* Reading any data register clears the data ready interrupt */
 	return adxl362_get_reg(dev, &buf, ADXL362_REG_XDATA, 1);
 }
@@ -152,10 +152,10 @@ static int adxl362_software_reset(struct device *dev)
 			       ADXL362_REG_SOFT_RESET, 1);
 }
 
-static int adxl362_set_power_mode(struct device *dev, u8_t mode)
+static int adxl362_set_power_mode(struct device *dev, uint8_t mode)
 {
-	u8_t old_power_ctl;
-	u8_t new_power_ctl;
+	uint8_t old_power_ctl;
+	uint8_t new_power_ctl;
 	int ret;
 
 	ret = adxl362_get_reg(dev, &old_power_ctl, ADXL362_REG_POWER_CTL, 1);
@@ -174,12 +174,12 @@ static int adxl362_set_power_mode(struct device *dev, u8_t mode)
  * Output data rate map with allowed frequencies:
  * freq = freq_int + freq_milli / 1000
  *
- * Since we don't need a finer frequency resolution than milliHz, use u16_t
+ * Since we don't need a finer frequency resolution than milliHz, use uint16_t
  * to save some flash.
  */
 static const struct {
-	u16_t freq_int;
-	u16_t freq_milli; /* User should convert to uHz before setting the
+	uint16_t freq_int;
+	uint16_t freq_milli; /* User should convert to uHz before setting the
 			      * SENSOR_ATTR_SAMPLING_FREQUENCY attribute.
 			      */
 } adxl362_odr_map[] = {
@@ -191,7 +191,7 @@ static const struct {
 	{ 400, 0 },
 };
 
-static int adxl362_freq_to_odr_val(u16_t freq_int, u16_t freq_milli)
+static int adxl362_freq_to_odr_val(uint16_t freq_int, uint16_t freq_milli)
 {
 	size_t i;
 
@@ -212,15 +212,15 @@ static int adxl362_freq_to_odr_val(u16_t freq_int, u16_t freq_milli)
 }
 
 static const struct adxl362_range {
-	u16_t range;
-	u8_t reg_val;
+	uint16_t range;
+	uint8_t reg_val;
 } adxl362_acc_range_map[] = {
 	{2,	ADXL362_RANGE_2G},
 	{4,	ADXL362_RANGE_4G},
 	{8,	ADXL362_RANGE_8G},
 };
 
-static s32_t adxl362_range_to_reg_val(u16_t range)
+static int32_t adxl362_range_to_reg_val(uint16_t range)
 {
 	int i;
 
@@ -233,11 +233,11 @@ static s32_t adxl362_range_to_reg_val(u16_t range)
 	return -EINVAL;
 }
 
-static int adxl362_set_range(struct device *dev, u8_t range)
+static int adxl362_set_range(struct device *dev, uint8_t range)
 {
 	struct adxl362_data *adxl362_data = dev->driver_data;
-	u8_t old_filter_ctl;
-	u8_t new_filter_ctl;
+	uint8_t old_filter_ctl;
+	uint8_t new_filter_ctl;
 	int ret;
 
 	ret = adxl362_get_reg(dev, &old_filter_ctl, ADXL362_REG_FILTER_CTL, 1);
@@ -256,10 +256,10 @@ static int adxl362_set_range(struct device *dev, u8_t range)
 	return 0;
 }
 
-static int adxl362_set_output_rate(struct device *dev, u8_t out_rate)
+static int adxl362_set_output_rate(struct device *dev, uint8_t out_rate)
 {
-	u8_t old_filter_ctl;
-	u8_t new_filter_ctl;
+	uint8_t old_filter_ctl;
+	uint8_t new_filter_ctl;
 
 	adxl362_get_reg(dev, &old_filter_ctl, ADXL362_REG_FILTER_CTL, 1);
 	new_filter_ctl = old_filter_ctl & ~ADXL362_FILTER_CTL_ODR(0x7);
@@ -318,8 +318,8 @@ static int adxl362_attr_set_thresh(struct device *dev, enum sensor_channel chan,
 			    enum sensor_attribute attr,
 			    const struct sensor_value *val)
 {
-	u8_t reg;
-	u16_t threshold = val->val1;
+	uint8_t reg;
+	uint16_t threshold = val->val1;
 	size_t ret;
 
 	if (chan != SENSOR_CHAN_ACCEL_X &&
@@ -370,10 +370,10 @@ static int adxl362_attr_set(struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static int adxl362_fifo_setup(struct device *dev, u8_t mode,
-			      u16_t water_mark_lvl, u8_t en_temp_read)
+static int adxl362_fifo_setup(struct device *dev, uint8_t mode,
+			      uint16_t water_mark_lvl, uint8_t en_temp_read)
 {
-	u8_t write_val;
+	uint8_t write_val;
 	int ret;
 
 	write_val = ADXL362_FIFO_CTL_FIFO_MODE(mode) |
@@ -393,12 +393,12 @@ static int adxl362_fifo_setup(struct device *dev, u8_t mode,
 }
 
 static int adxl362_setup_activity_detection(struct device *dev,
-					    u8_t ref_or_abs,
-					    u16_t threshold,
-					    u8_t time)
+					    uint8_t ref_or_abs,
+					    uint16_t threshold,
+					    uint8_t time)
 {
-	u8_t old_act_inact_reg;
-	u8_t new_act_inact_reg;
+	uint8_t old_act_inact_reg;
+	uint8_t new_act_inact_reg;
 	int ret;
 
 	/**
@@ -451,12 +451,12 @@ static int adxl362_setup_activity_detection(struct device *dev,
 }
 
 static int adxl362_setup_inactivity_detection(struct device *dev,
-					      u8_t ref_or_abs,
-					      u16_t threshold,
-					      u16_t time)
+					      uint8_t ref_or_abs,
+					      uint16_t threshold,
+					      uint16_t time)
 {
-	u8_t old_act_inact_reg;
-	u8_t new_act_inact_reg;
+	uint8_t old_act_inact_reg;
+	uint8_t new_act_inact_reg;
 	int ret;
 
 	/* Configure motion threshold and inactivity timer. */
@@ -493,10 +493,10 @@ static int adxl362_setup_inactivity_detection(struct device *dev,
 	return 0;
 }
 
-int adxl362_set_interrupt_mode(struct device *dev, u8_t mode)
+int adxl362_set_interrupt_mode(struct device *dev, uint8_t mode)
 {
-	u8_t old_act_inact_reg;
-	u8_t new_act_inact_reg;
+	uint8_t old_act_inact_reg;
+	uint8_t new_act_inact_reg;
 	int ret;
 
 	LOG_DBG("Mode: %d", mode);
@@ -533,12 +533,12 @@ int adxl362_set_interrupt_mode(struct device *dev, u8_t mode)
 static int adxl362_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct adxl362_data *data = dev->driver_data;
-	s16_t buf[4];
+	int16_t buf[4];
 	int ret;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
-	ret = adxl362_get_reg(dev, (u8_t *)buf, ADXL362_REG_XDATA_L,
+	ret = adxl362_get_reg(dev, (uint8_t *)buf, ADXL362_REG_XDATA_L,
 			      sizeof(buf));
 	if (ret) {
 		return ret;
@@ -723,7 +723,7 @@ static int adxl362_init(struct device *dev)
 {
 	const struct adxl362_config *config = dev->config_info;
 	struct adxl362_data *data = dev->driver_data;
-	u8_t value;
+	uint8_t value;
 	int err;
 
 	data->spi = device_get_binding(config->spi_name);

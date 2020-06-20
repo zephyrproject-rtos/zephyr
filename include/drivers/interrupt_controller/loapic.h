@@ -64,7 +64,7 @@ extern void z_loapic_irq_disable(unsigned int irq);
  *
  * @param reg the LOAPIC register number to read (LOAPIC_*)
  */
-static inline u64_t x86_read_x2apic(unsigned int reg)
+static inline uint64_t x86_read_x2apic(unsigned int reg)
 {
 	reg >>= 4;
 	return z_x86_msr_read(X86_X2APIC_BASE_MSR + reg);
@@ -75,7 +75,7 @@ static inline u64_t x86_read_x2apic(unsigned int reg)
  *
  * @param reg the LOAPIC register number to read (LOAPIC_*)
  */
-static inline u32_t x86_read_xapic(unsigned int reg)
+static inline uint32_t x86_read_xapic(unsigned int reg)
 {
 	return sys_read32(CONFIG_LOAPIC_BASE_ADDRESS + reg);
 }
@@ -90,7 +90,7 @@ static inline u32_t x86_read_xapic(unsigned int reg)
  *
  * @param reg the LOAPIC register number to read (LOAPIC_*)
  */
-static inline u32_t x86_read_loapic(unsigned int reg)
+static inline uint32_t x86_read_loapic(unsigned int reg)
 {
 #ifdef CONFIG_X2APIC
 	return x86_read_x2apic(reg);
@@ -105,7 +105,7 @@ static inline u32_t x86_read_loapic(unsigned int reg)
  * @param reg the LOAPIC register number to write (one of LOAPIC_*)
  * @param val 64-bit value to write
  */
-static inline void x86_write_x2apic(unsigned int reg, u64_t val)
+static inline void x86_write_x2apic(unsigned int reg, uint64_t val)
 {
 	reg >>= 4;
 	z_x86_msr_write(X86_X2APIC_BASE_MSR + reg, val);
@@ -117,7 +117,7 @@ static inline void x86_write_x2apic(unsigned int reg, u64_t val)
  * @param reg the LOAPIC register number to write (one of LOAPIC_*)
  * @param val 32-bit value to write
  */
-static inline void x86_write_xapic(unsigned int reg, u32_t val)
+static inline void x86_write_xapic(unsigned int reg, uint32_t val)
 {
 	sys_write32(val, CONFIG_LOAPIC_BASE_ADDRESS + reg);
 }
@@ -133,7 +133,7 @@ static inline void x86_write_xapic(unsigned int reg, u32_t val)
  * @param reg the LOAPIC register number to write (one of LOAPIC_*)
  * @param val 32-bit value to write
  */
-static inline void x86_write_loapic(unsigned int reg, u32_t val)
+static inline void x86_write_loapic(unsigned int reg, uint32_t val)
 {
 #ifdef CONFIG_X2APIC
 	x86_write_x2apic(reg, val);
@@ -149,7 +149,7 @@ static inline void x86_write_loapic(unsigned int reg, u32_t val)
  * @param ipi Type of IPI: one of the LOAPIC_ICR_IPI_* constants.
  * @param vector If applicable, the target vector (0 otherwise).
  */
-static inline void z_loapic_ipi(u8_t apic_id, u32_t ipi, u8_t vector)
+static inline void z_loapic_ipi(uint8_t apic_id, uint32_t ipi, uint8_t vector)
 {
 	ipi |= vector;
 
@@ -168,7 +168,7 @@ static inline void z_loapic_ipi(u8_t apic_id, u32_t ipi, u8_t vector)
 	 * x2APIC mode is greatly simplified: one write, no delivery status.
 	 */
 
-	x86_write_x2apic(LOAPIC_ICRLO, (((u64_t) apic_id) << 32) | ipi);
+	x86_write_x2apic(LOAPIC_ICRLO, (((uint64_t) apic_id) << 32) | ipi);
 #endif
 }
 

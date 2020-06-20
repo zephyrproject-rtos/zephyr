@@ -54,7 +54,7 @@ const struct isotp_msg_id tx_addr = {
 
 struct isotp_recv_ctx recv_ctx;
 struct isotp_send_ctx send_ctx;
-u8_t data_buf[128];
+uint8_t data_buf[128];
 
 void send_complette_cb(int error_nr, void *arg)
 {
@@ -90,7 +90,7 @@ static void get_sf_net(struct isotp_recv_ctx *recv_ctx)
 static void get_sf(struct isotp_recv_ctx *recv_ctx)
 {
 	int ret;
-	u8_t *data_buf_ptr = data_buf;
+	uint8_t *data_buf_ptr = data_buf;
 
 	memset(data_buf, 0, sizeof(data_buf));
 	ret = isotp_recv(recv_ctx, data_buf_ptr++, 1, K_MSEC(1000));
@@ -103,14 +103,14 @@ static void get_sf(struct isotp_recv_ctx *recv_ctx)
 	zassert_equal(ret, 0, "received data differ");
 }
 
-void print_hex(const u8_t *ptr, size_t len)
+void print_hex(const uint8_t *ptr, size_t len)
 {
 	while (len--) {
 		printk("%02x", *ptr++);
 	}
 }
 
-static void send_test_data(struct device *can_dev, const u8_t *data, size_t len)
+static void send_test_data(struct device *can_dev, const uint8_t *data, size_t len)
 {
 	int ret;
 
@@ -119,7 +119,7 @@ static void send_test_data(struct device *can_dev, const u8_t *data, size_t len)
 	zassert_equal(ret, 0, "Send returned %d", ret);
 }
 
-static const u8_t *check_frag(struct net_buf *frag, const u8_t *data)
+static const uint8_t *check_frag(struct net_buf *frag, const uint8_t *data)
 {
 	int ret;
 
@@ -136,11 +136,11 @@ static const u8_t *check_frag(struct net_buf *frag, const u8_t *data)
 }
 
 static void receive_test_data_net(struct isotp_recv_ctx *recv_ctx,
-				 const u8_t *data, size_t len, s32_t delay)
+				 const uint8_t *data, size_t len, int32_t delay)
 {
 	int remaining_len;
 	size_t received_len = 0;
-	const u8_t *data_ptr = data;
+	const uint8_t *data_ptr = data;
 	struct net_buf *buf;
 
 	do {
@@ -165,7 +165,7 @@ static void receive_test_data_net(struct isotp_recv_ctx *recv_ctx,
 		      "Expected timeout but got %d", remaining_len);
 }
 
-static void check_data(const u8_t *recv_data, const u8_t *send_data, size_t len)
+static void check_data(const uint8_t *recv_data, const uint8_t *send_data, size_t len)
 {
 	int ret;
 
@@ -181,11 +181,11 @@ static void check_data(const u8_t *recv_data, const u8_t *send_data, size_t len)
 }
 
 static void receive_test_data(struct isotp_recv_ctx *recv_ctx,
-			      const u8_t *data, size_t len, s32_t delay)
+			      const uint8_t *data, size_t len, int32_t delay)
 {
 	size_t remaining_len = len;
 	int ret;
-	const u8_t *data_ptr = data;
+	const uint8_t *data_ptr = data;
 
 	do {
 		memset(data_buf, 0, sizeof(data_buf));
@@ -281,7 +281,7 @@ static void test_send_receive_net_single_blocks(void)
 	int ret, i;
 	size_t buf_len;
 	struct net_buf *buf, *frag;
-	const u8_t *data_ptr;
+	const uint8_t *data_ptr;
 
 	ret = isotp_bind(&recv_ctx, can_dev, &rx_addr, &tx_addr,
 			 &fc_opts_single, K_NO_WAIT);

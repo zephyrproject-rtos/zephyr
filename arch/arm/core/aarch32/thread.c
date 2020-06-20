@@ -36,7 +36,17 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	char *pStackMem = Z_THREAD_STACK_BUFFER(stack);
 	char *stackEnd;
 	/* Offset between the top of stack and the high end of stack area. */
-	u32_t top_of_stack_offset = 0U;
+	uint32_t top_of_stack_offset = 0U;
+
+#if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT) \
+	&& defined(CONFIG_USERSPACE)
+	/* This is required to work-around the case where the thread
+	 * is created without using K_THREAD_STACK_SIZEOF() macro in
+	 * k_thread_create(). If K_THREAD_STACK_SIZEOF() is used, the
+	 * Guard size has already been take out of stackSize.
+	 */
+	stackSize -= MPU_GUARD_ALIGN_AND_SIZE;
+#endif
 
 #if defined(CONFIG_USERSPACE)
 	/* Truncate the stack size to align with the MPU region granularity.
@@ -48,28 +58,18 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 	/* Reserve space on top of stack for local data. */
-	u32_t p_local_data = Z_STACK_PTR_ALIGN(pStackMem + stackSize
+	uint32_t p_local_data = Z_STACK_PTR_ALIGN(pStackMem + stackSize
 		- sizeof(*thread->userspace_local_data));
 
 	thread->userspace_local_data =
 		(struct _thread_userspace_local_data *)(p_local_data);
 
 	/* Top of actual stack must be moved below the user local data. */
-	top_of_stack_offset = (u32_t)
+	top_of_stack_offset = (uint32_t)
 		(pStackMem + stackSize - ((char *)p_local_data));
 
 #endif /* CONFIG_THREAD_USERSPACE_LOCAL_DATA */
 #endif /* CONFIG_USERSPACE */
-
-#if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT) \
-	&& defined(CONFIG_USERSPACE)
-	/* This is required to work-around the case where the thread
-	 * is created without using K_THREAD_STACK_SIZEOF() macro in
-	 * k_thread_create(). If K_THREAD_STACK_SIZEOF() is used, the
-	 * Guard size has already been take out of stackSize.
-	 */
-	stackSize -= MPU_GUARD_ALIGN_AND_SIZE;
-#endif
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) \
 	&& defined(CONFIG_MPU_STACK_GUARD)
@@ -105,12 +105,12 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 #if defined(CONFIG_USERSPACE)
 	if ((options & K_USER) != 0) {
-		pInitCtx->basic.pc = (u32_t)arch_user_mode_enter;
+		pInitCtx->basic.pc = (uint32_t)arch_user_mode_enter;
 	} else {
-		pInitCtx->basic.pc = (u32_t)z_thread_entry;
+		pInitCtx->basic.pc = (uint32_t)z_thread_entry;
 	}
 #else
-	pInitCtx->basic.pc = (u32_t)z_thread_entry;
+	pInitCtx->basic.pc = (uint32_t)z_thread_entry;
 #endif
 
 #if defined(CONFIG_CPU_CORTEX_M)
@@ -118,10 +118,10 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	pInitCtx->basic.pc &= 0xfffffffe;
 #endif
 
-	pInitCtx->basic.a1 = (u32_t)pEntry;
-	pInitCtx->basic.a2 = (u32_t)parameter1;
-	pInitCtx->basic.a3 = (u32_t)parameter2;
-	pInitCtx->basic.a4 = (u32_t)parameter3;
+	pInitCtx->basic.a1 = (uint32_t)pEntry;
+	pInitCtx->basic.a2 = (uint32_t)parameter1;
+	pInitCtx->basic.a3 = (uint32_t)parameter2;
+	pInitCtx->basic.a4 = (uint32_t)parameter3;
 
 #if defined(CONFIG_CPU_CORTEX_M)
 	pInitCtx->basic.xpsr =
@@ -133,7 +133,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #endif /* CONFIG_COMPILER_ISA_THUMB2 */
 #endif /* CONFIG_CPU_CORTEX_M */
 
-	thread->callee_saved.psp = (u32_t)pInitCtx;
+	thread->callee_saved.psp = (uint32_t)pInitCtx;
 
 	thread->arch.basepri = 0;
 
@@ -160,7 +160,7 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 
 	/* Set up privileged stack before entering user mode */
 	_current->arch.priv_stack_start =
-		(u32_t)z_priv_stack_find(_current->stack_obj);
+		(uint32_t)z_priv_stack_find(_current->stack_obj);
 #if defined(CONFIG_MPU_STACK_GUARD)
 	/* Stack guard area reserved at the bottom of the thread's
 	 * privileged stack. Adjust the available (writable) stack
@@ -176,7 +176,7 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 #endif /* CONFIG_MPU_STACK_GUARD */
 
 	z_arm_userspace_enter(user_entry, p1, p2, p3,
-			     (u32_t)_current->stack_info.start,
+			     (uint32_t)_current->stack_info.start,
 			     _current->stack_info.size);
 	CODE_UNREACHABLE;
 }
@@ -211,17 +211,17 @@ void configure_builtin_stack_guard(struct k_thread *thread)
 	 * thread privileged stack being allocated in higher memory area
 	 * than the default thread stack (ensured by design).
 	 */
-	u32_t guard_start =
+	uint32_t guard_start =
 		((thread->arch.priv_stack_start) &&
 			(__get_PSP() >= thread->arch.priv_stack_start)) ?
-		(u32_t)thread->arch.priv_stack_start :
-		(u32_t)thread->stack_obj;
+		(uint32_t)thread->arch.priv_stack_start :
+		(uint32_t)thread->stack_obj;
 
-	__ASSERT(thread->stack_info.start == ((u32_t)thread->stack_obj),
+	__ASSERT(thread->stack_info.start == ((uint32_t)thread->stack_obj),
 		"stack_info.start does not point to the start of the"
 		"thread allocated area.");
 #else
-	u32_t guard_start = thread->stack_info.start;
+	uint32_t guard_start = thread->stack_info.start;
 #endif
 #if defined(CONFIG_CPU_CORTEX_M_HAS_SPLIM)
 	__set_PSPLIM(guard_start);
@@ -234,7 +234,7 @@ void configure_builtin_stack_guard(struct k_thread *thread)
 #if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)
 
 #define IS_MPU_GUARD_VIOLATION(guard_start, guard_len, fault_addr, stack_ptr) \
-	((fault_addr == -EINVAL) ? \
+	((fault_addr != -EINVAL) ? \
 	((fault_addr >= guard_start) && \
 	(fault_addr < (guard_start + guard_len)) && \
 	(stack_ptr < (guard_start + guard_len))) \
@@ -277,7 +277,7 @@ void configure_builtin_stack_guard(struct k_thread *thread)
  * @return The lowest allowed stack frame pointer, if error is a
  *         thread stack corruption, otherwise return 0.
  */
-u32_t z_check_thread_stack_fail(const u32_t fault_addr, const u32_t psp)
+uint32_t z_check_thread_stack_fail(const uint32_t fault_addr, const uint32_t psp)
 {
 	const struct k_thread *thread = _current;
 
@@ -286,10 +286,10 @@ u32_t z_check_thread_stack_fail(const u32_t fault_addr, const u32_t psp)
 	}
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	u32_t guard_len = (thread->base.user_options & K_FP_REGS) ?
+	uint32_t guard_len = (thread->base.user_options & K_FP_REGS) ?
 		MPU_GUARD_ALIGN_AND_SIZE_FLOAT : MPU_GUARD_ALIGN_AND_SIZE;
 #else
-	u32_t guard_len = MPU_GUARD_ALIGN_AND_SIZE;
+	uint32_t guard_len = MPU_GUARD_ALIGN_AND_SIZE;
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
 #if defined(CONFIG_USERSPACE)
@@ -305,9 +305,9 @@ u32_t z_check_thread_stack_fail(const u32_t fault_addr, const u32_t psp)
 				return thread->arch.priv_stack_start;
 			}
 		} else {
-			if (psp < (u32_t)thread->stack_obj) {
+			if (psp < (uint32_t)thread->stack_obj) {
 				/* Thread's user stack corruption */
-				return (u32_t)thread->stack_obj;
+				return (uint32_t)thread->stack_obj;
 			}
 		}
 	} else {
@@ -421,7 +421,7 @@ void arch_switch_to_main_thread(struct k_thread *main_thread,
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
 	/* Set PSPLIM register for built-in stack guarding of main thread. */
 #if defined(CONFIG_CPU_CORTEX_M_HAS_SPLIM)
-	__set_PSPLIM((u32_t)main_stack);
+	__set_PSPLIM((uint32_t)main_stack);
 #else
 #error "Built-in PSP limit checks not supported by HW"
 #endif

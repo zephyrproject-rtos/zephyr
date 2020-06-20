@@ -27,7 +27,7 @@ struct shell_fprintf_control_block {
  * @brief fprintf context
  */
 struct shell_fprintf {
-	u8_t *buffer;
+	uint8_t *buffer;
 	size_t buffer_size;
 	shell_fprintf_fwrite fwrite;
 	const void *user_ctx;

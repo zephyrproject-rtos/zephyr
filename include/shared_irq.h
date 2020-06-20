@@ -35,15 +35,15 @@ extern int shared_irq_initialize(struct device *port);
 typedef void (*shared_irq_config_irq_t)(void);
 
 struct shared_irq_config {
-	u32_t irq_num;
+	uint32_t irq_num;
 	shared_irq_config_irq_t config;
-	u32_t client_count;
+	uint32_t client_count;
 };
 
 struct shared_irq_client {
 	struct device *isr_dev;
 	isr_t isr_func;
-	u32_t enabled;
+	uint32_t enabled;
 };
 
 struct shared_irq_runtime {

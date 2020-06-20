@@ -42,19 +42,19 @@
 /* The "messages" dispatched by our MetaIRQ thread */
 struct msg {
 	/* Sequence number */
-	u32_t seq;
+	uint32_t seq;
 
 	/* Cycle time when the message was "received" */
-	u32_t timestamp;
+	uint32_t timestamp;
 
 	/* Thread to which the message is targeted */
-	u32_t target;
+	uint32_t target;
 
 	/* Cycles of processing the message requires */
-	u32_t proc_cyc;
+	uint32_t proc_cyc;
 
 	/* Cycles of latency before the MetaIRQ thread received the message */
-	u32_t metairq_latency;
+	uint32_t metairq_latency;
 };
 
 /* Initialize the fake "message" device, after this messages will

@@ -78,6 +78,10 @@
 #include <stm32h7xx_ll_adc.h>
 #endif /* CONFIG_ADC_STM32 */
 
+#ifdef CONFIG_PWM_STM32
+#include <stm32h7xx_ll_tim.h>
+#endif /* CONFIG_PWM_STM32 */
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32F7_SOC_H7_ */

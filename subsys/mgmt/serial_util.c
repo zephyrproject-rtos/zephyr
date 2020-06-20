@@ -23,14 +23,14 @@ static void mcumgr_serial_free_rx_ctxt(struct mcumgr_serial_rx_ctxt *rx_ctxt)
 	}
 }
 
-static u16_t mcumgr_serial_calc_crc(const u8_t *data, int len)
+static uint16_t mcumgr_serial_calc_crc(const uint8_t *data, int len)
 {
 	return crc16(data, len, 0x1021, 0, true);
 }
 
-static int mcumgr_serial_parse_op(const u8_t *buf, int len)
+static int mcumgr_serial_parse_op(const uint8_t *buf, int len)
 {
-	u16_t op;
+	uint16_t op;
 
 	if (len < sizeof(op)) {
 		return -EINVAL;
@@ -57,7 +57,7 @@ static int mcumgr_serial_extract_len(struct mcumgr_serial_rx_ctxt *rx_ctxt)
 }
 
 static int mcumgr_serial_decode_frag(struct mcumgr_serial_rx_ctxt *rx_ctxt,
-				     const u8_t *frag, int frag_len)
+				     const uint8_t *frag, int frag_len)
 {
 	size_t dec_len;
 	int rc;
@@ -83,11 +83,11 @@ static int mcumgr_serial_decode_frag(struct mcumgr_serial_rx_ctxt *rx_ctxt,
  */
 struct net_buf *mcumgr_serial_process_frag(
 	struct mcumgr_serial_rx_ctxt *rx_ctxt,
-	const u8_t *frag, int frag_len)
+	const uint8_t *frag, int frag_len)
 {
 	struct net_buf *nb;
-	u16_t crc;
-	u16_t op;
+	uint16_t crc;
+	uint16_t op;
 	int rc;
 
 	if (rx_ctxt->nb == NULL) {
@@ -162,7 +162,7 @@ struct net_buf *mcumgr_serial_process_frag(
 static int mcumgr_serial_tx_small(const void *data, int len,
 				  mcumgr_serial_tx_cb cb, void *arg)
 {
-	u8_t b64[4 + 1]; /* +1 required for null terminator. */
+	uint8_t b64[4 + 1]; /* +1 required for null terminator. */
 	size_t dst_len;
 	int rc;
 
@@ -190,12 +190,12 @@ static int mcumgr_serial_tx_small(const void *data, int len,
  *
  * @return                      0 on success; negative error code on failure.
  */
-int mcumgr_serial_tx_frame(const u8_t *data, bool first, int len,
-			   u16_t crc, mcumgr_serial_tx_cb cb, void *arg,
+int mcumgr_serial_tx_frame(const uint8_t *data, bool first, int len,
+			   uint16_t crc, mcumgr_serial_tx_cb cb, void *arg,
 			   int *out_data_bytes_txed)
 {
-	u8_t raw[3];
-	u16_t u16;
+	uint8_t raw[3];
+	uint16_t u16;
 	int dst_off;
 	int src_off;
 	int rem;
@@ -302,10 +302,10 @@ int mcumgr_serial_tx_frame(const u8_t *data, bool first, int len,
 	return 0;
 }
 
-int mcumgr_serial_tx_pkt(const u8_t *data, int len, mcumgr_serial_tx_cb cb,
+int mcumgr_serial_tx_pkt(const uint8_t *data, int len, mcumgr_serial_tx_cb cb,
 			 void *arg)
 {
-	u16_t crc;
+	uint16_t crc;
 	int data_bytes_txed;
 	int src_off;
 	int rc;

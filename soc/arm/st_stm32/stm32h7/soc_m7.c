@@ -62,7 +62,7 @@ static int stm32h7_m4_wakeup(struct device *arg)
  */
 static int stm32h7_init(struct device *arg)
 {
-	u32_t key;
+	uint32_t key;
 
 	ARG_UNUSED(arg);
 

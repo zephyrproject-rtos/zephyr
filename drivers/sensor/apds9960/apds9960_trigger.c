@@ -44,7 +44,7 @@ int apds9960_attr_set(struct device *dev,
 			if (i2c_reg_write_byte(data->i2c,
 					       config->i2c_address,
 					       APDS9960_PIHT_REG,
-					       (u8_t)val->val1)) {
+					       (uint8_t)val->val1)) {
 				return -EIO;
 			}
 
@@ -54,7 +54,7 @@ int apds9960_attr_set(struct device *dev,
 			if (i2c_reg_write_byte(data->i2c,
 					       config->i2c_address,
 					       APDS9960_PILT_REG,
-					       (u8_t)val->val1)) {
+					       (uint8_t)val->val1)) {
 				return -EIO;
 			}
 

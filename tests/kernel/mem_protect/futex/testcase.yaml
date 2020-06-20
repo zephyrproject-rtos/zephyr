@@ -1,5 +1,4 @@
 tests:
   kernel.futex:
     filter: CONFIG_ARCH_HAS_USERSPACE
-    min_ram: 36
     tags: kernel userspace

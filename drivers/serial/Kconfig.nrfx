@@ -55,12 +55,6 @@ config UART_0_NRF_PARITY_BIT
 	help
 	  Enable parity bit.
 
-config UART_0_NRF_FLOW_CONTROL
-	bool "Enable flow control"
-	help
-	  Enable flow control. If selected, additionally two pins, RTS and CTS
-	  have to be configured.
-
 config UART_0_NRF_TX_BUFFER_SIZE
 	int "Size of RAM buffer"
 	depends on UART_0_NRF_UARTE
@@ -124,12 +118,6 @@ config UART_1_NRF_PARITY_BIT
 	help
 	  Enable parity bit.
 
-config UART_1_NRF_FLOW_CONTROL
-	bool "Enable flow control"
-	help
-	  Enable flow control. If selected, additionally two pins, RTS and CTS
-	  have to be configured.
-
 config UART_1_NRF_TX_BUFFER_SIZE
 	int "Size of RAM buffer"
 	depends on UART_INTERRUPT_DRIVEN
@@ -192,12 +180,6 @@ config UART_2_NRF_PARITY_BIT
 	help
 	  Enable parity bit.
 
-config UART_2_NRF_FLOW_CONTROL
-	bool "Enable flow control"
-	help
-	  Enable flow control. If selected, additionally two pins, RTS and CTS
-	  have to be configured.
-
 config UART_2_NRF_TX_BUFFER_SIZE
 	int "Size of RAM buffer"
 	range 1 65535
@@ -258,12 +240,6 @@ config UART_3_NRF_PARITY_BIT
 	bool "Enable parity bit"
 	help
 	  Enable parity bit.
-
-config UART_3_NRF_FLOW_CONTROL
-	bool "Enable flow control"
-	help
-	  Enable flow control. If selected, additionally two pins, RTS and CTS
-	  have to be configured.
 
 config UART_3_NRF_TX_BUFFER_SIZE
 	int "Size of RAM buffer"

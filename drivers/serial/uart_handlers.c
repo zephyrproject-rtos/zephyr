@@ -68,8 +68,8 @@ static inline int z_vrfy_uart_configure(struct device *dev,
  * rx_buf_rsp() excluded as it's designed to be called from ISR callbacks
  */
 
-static inline int z_vrfy_uart_tx(struct device *dev, const u8_t *buf,
-				 size_t len, s32_t timeout)
+static inline int z_vrfy_uart_tx(struct device *dev, const uint8_t *buf,
+				 size_t len, int32_t timeout)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, tx));
 	Z_OOPS(Z_SYSCALL_MEMORY_READ(buf, len));
@@ -80,8 +80,8 @@ static inline int z_vrfy_uart_tx(struct device *dev, const u8_t *buf,
 UART_SIMPLE(tx_abort);
 #include <syscalls/uart_tx_abort_mrsh.c>
 
-static inline int z_vrfy_uart_rx_enable(struct device *dev, u8_t *buf,
-					size_t len, s32_t timeout)
+static inline int z_vrfy_uart_rx_enable(struct device *dev, uint8_t *buf,
+					size_t len, int32_t timeout)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, rx_enable));
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(buf, len));
@@ -114,7 +114,7 @@ UART_SIMPLE(irq_update)
 
 #ifdef CONFIG_UART_LINE_CTRL
 static inline int z_vrfy_uart_line_ctrl_set(struct device *dev,
-					    u32_t ctrl, u32_t val)
+					    uint32_t ctrl, uint32_t val)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, line_ctrl_set));
 	return z_impl_uart_line_ctrl_set((struct device *)dev, ctrl, val);
@@ -122,18 +122,18 @@ static inline int z_vrfy_uart_line_ctrl_set(struct device *dev,
 #include <syscalls/uart_line_ctrl_set_mrsh.c>
 
 static inline int z_vrfy_uart_line_ctrl_get(struct device *dev,
-					    u32_t ctrl, u32_t *val)
+					    uint32_t ctrl, uint32_t *val)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, line_ctrl_get));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(val, sizeof(u32_t)));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(val, sizeof(uint32_t)));
 	return z_impl_uart_line_ctrl_get((struct device *)dev, ctrl,
-					(u32_t *)val);
+					(uint32_t *)val);
 }
 #include <syscalls/uart_line_ctrl_get_mrsh.c>
 #endif /* CONFIG_UART_LINE_CTRL */
 
 #ifdef CONFIG_UART_DRV_CMD
-static inline int z_vrfy_uart_drv_cmd(struct device *dev, u32_t cmd, u32_t p)
+static inline int z_vrfy_uart_drv_cmd(struct device *dev, uint32_t cmd, uint32_t p)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, drv_cmd));
 	return z_impl_uart_drv_cmd((struct device *)dev, cmd, p);

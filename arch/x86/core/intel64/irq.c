@@ -70,9 +70,9 @@ static int allocate_vector(unsigned int priority)
  */
 
 int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-		void (*func)(void *arg), void *arg, u32_t flags)
+		void (*func)(void *arg), void *arg, uint32_t flags)
 {
-	u32_t key;
+	uint32_t key;
 	int vector;
 
 	__ASSERT(irq <= CONFIG_MAX_IRQ_LINES, "IRQ %u out of range", irq);

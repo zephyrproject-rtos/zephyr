@@ -329,9 +329,9 @@ struct _isr_list which is placed in a special .intList section:
 
     struct _isr_list {
         /** IRQ line number */
-        s32_t irq;
+        int32_t irq;
         /** Flags for this IRQ, see ISR_FLAG_* definitions */
-        s32_t flags;
+        int32_t flags;
         /** ISR to call */
         void *func;
         /** Parameter for non-direct IRQs */
@@ -347,8 +347,8 @@ the .intList section preceded by a header:
     struct {
         void *spurious_irq_handler;
         void *sw_irq_handler;
-        u32_t num_isrs;
-        u32_t num_vectors;
+        uint32_t num_isrs;
+        uint32_t num_vectors;
         struct _isr_list isrs[];  <- of size num_isrs
     };
 

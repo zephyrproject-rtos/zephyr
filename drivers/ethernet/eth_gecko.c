@@ -31,21 +31,21 @@ LOG_MODULE_REGISTER(eth_gecko, CONFIG_ETHERNET_LOG_LEVEL);
 
 #include "eth.h"
 
-static u8_t dma_tx_buffer[ETH_TX_BUF_COUNT][ETH_TX_BUF_SIZE]
+static uint8_t dma_tx_buffer[ETH_TX_BUF_COUNT][ETH_TX_BUF_SIZE]
 __aligned(ETH_BUF_ALIGNMENT);
-static u8_t dma_rx_buffer[ETH_RX_BUF_COUNT][ETH_RX_BUF_SIZE]
+static uint8_t dma_rx_buffer[ETH_RX_BUF_COUNT][ETH_RX_BUF_SIZE]
 __aligned(ETH_BUF_ALIGNMENT);
 static struct eth_buf_desc dma_tx_desc_tab[ETH_TX_BUF_COUNT]
 __aligned(ETH_DESC_ALIGNMENT);
 static struct eth_buf_desc dma_rx_desc_tab[ETH_RX_BUF_COUNT]
 __aligned(ETH_DESC_ALIGNMENT);
-static u32_t tx_buf_idx;
-static u32_t rx_buf_idx;
+static uint32_t tx_buf_idx;
+static uint32_t rx_buf_idx;
 
 
-static void link_configure(ETH_TypeDef *eth, u32_t flags)
+static void link_configure(ETH_TypeDef *eth, uint32_t flags)
 {
-	u32_t val;
+	uint32_t val;
 
 	__ASSERT_NO_MSG(eth != NULL);
 
@@ -67,7 +67,7 @@ static void eth_gecko_setup_mac(struct device *dev)
 {
 	const struct eth_gecko_dev_cfg *const cfg = DEV_CFG(dev);
 	ETH_TypeDef *eth = cfg->regs;
-	u32_t link_status;
+	uint32_t link_status;
 	int result;
 
 	/* PHY auto-negotiate link parameters */
@@ -88,12 +88,12 @@ static void eth_gecko_setup_mac(struct device *dev)
 
 static void eth_init_tx_buf_desc(void)
 {
-	u32_t address;
+	uint32_t address;
 	int i;
 
 	/* Initialize TX buffer descriptors */
 	for (i = 0; i < ETH_TX_BUF_COUNT; i++) {
-		address = (u32_t) dma_tx_buffer[i];
+		address = (uint32_t) dma_tx_buffer[i];
 		dma_tx_desc_tab[i].address = address;
 		dma_tx_desc_tab[i].status = ETH_TX_USED;
 	}
@@ -105,11 +105,11 @@ static void eth_init_tx_buf_desc(void)
 
 static void eth_init_rx_buf_desc(void)
 {
-	u32_t address;
+	uint32_t address;
 	int i;
 
 	for (i = 0; i < ETH_RX_BUF_COUNT; i++) {
-		address = (u32_t) dma_rx_buffer[i];
+		address = (uint32_t) dma_rx_buffer[i];
 		dma_rx_desc_tab[i].address = address & ETH_RX_ADDRESS;
 		dma_rx_desc_tab[i].status = 0;
 	}
@@ -128,7 +128,7 @@ static void rx_error_handler(ETH_TypeDef *eth)
 
 	/* Reset RX buffer descriptor list */
 	eth_init_rx_buf_desc();
-	eth->RXQPTR = (u32_t)dma_rx_desc_tab;
+	eth->RXQPTR = (uint32_t)dma_rx_desc_tab;
 
 	/* Restart reception */
 	ETH_RX_ENABLE(eth);
@@ -140,9 +140,9 @@ static struct net_pkt *frame_get(struct device *dev)
 	const struct eth_gecko_dev_cfg *const cfg = DEV_CFG(dev);
 	ETH_TypeDef *eth = cfg->regs;
 	struct net_pkt *rx_frame = NULL;
-	u16_t frag_len, total_len;
-	u32_t sofIdx, eofIdx;
-	u32_t i, j;
+	uint16_t frag_len, total_len;
+	uint32_t sofIdx, eofIdx;
+	uint32_t i, j;
 
 	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(dev_data != NULL);
@@ -197,7 +197,7 @@ static struct net_pkt *frame_get(struct device *dev)
 			LOG_ERR("Failed to obtain RX buffer");
 			ETH_RX_DISABLE(eth);
 			eth_init_rx_buf_desc();
-			eth->RXQPTR = (u32_t)dma_rx_desc_tab;
+			eth->RXQPTR = (uint32_t)dma_rx_desc_tab;
 			ETH_RX_ENABLE(eth);
 			return rx_frame;
 		}
@@ -265,8 +265,8 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 	struct eth_gecko_dev_data *const dev_data = DEV_DATA(dev);
 	const struct eth_gecko_dev_cfg *const cfg = DEV_CFG(dev);
 	ETH_TypeDef *eth = cfg->regs;
-	u16_t total_len;
-	u8_t *dma_buffer;
+	uint16_t total_len;
+	uint8_t *dma_buffer;
 	int res = 0;
 
 	__ASSERT_NO_MSG(dev != NULL);
@@ -297,7 +297,7 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 		goto error;
 	}
 
-	dma_buffer = (u8_t *)dma_tx_desc_tab[tx_buf_idx].address;
+	dma_buffer = (uint8_t *)dma_tx_desc_tab[tx_buf_idx].address;
 	if (net_pkt_read(pkt, dma_buffer, total_len)) {
 		LOG_ERR("Failed to read packet into buffer");
 		res = -EIO;
@@ -373,13 +373,13 @@ static void eth_isr(void *arg)
 	struct eth_gecko_dev_data *const dev_data = DEV_DATA(dev);
 	const struct eth_gecko_dev_cfg *const cfg = DEV_CFG(dev);
 	ETH_TypeDef *eth = cfg->regs;
-	u32_t int_clr = 0;
-	u32_t int_stat = eth->IFCR;
-	u32_t tx_irq_mask = (ETH_IENS_TXCMPLT | ETH_IENS_TXUNDERRUN |
+	uint32_t int_clr = 0;
+	uint32_t int_stat = eth->IFCR;
+	uint32_t tx_irq_mask = (ETH_IENS_TXCMPLT | ETH_IENS_TXUNDERRUN |
 				ETH_IENS_RTRYLMTORLATECOL |
 				ETH_IENS_TXUSEDBITREAD |
 				ETH_IENS_AMBAERR);
-	u32_t rx_irq_mask = (ETH_IENS_RXCMPLT | ETH_IENS_RXUSEDBITREAD);
+	uint32_t rx_irq_mask = (ETH_IENS_RXCMPLT | ETH_IENS_RXUSEDBITREAD);
 
 	__ASSERT_NO_MSG(arg != NULL);
 	__ASSERT_NO_MSG(dev_data != NULL);
@@ -433,7 +433,7 @@ static void eth_init_pins(struct device *dev)
 {
 	const struct eth_gecko_dev_cfg *const cfg = DEV_CFG(dev);
 	ETH_TypeDef *eth = cfg->regs;
-	u32_t idx;
+	uint32_t idx;
 
 	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(cfg != NULL);
@@ -488,7 +488,7 @@ static int eth_init(struct device *dev)
 	return 0;
 }
 
-static void generate_mac(u8_t mac_addr[6])
+static void generate_mac(uint8_t mac_addr[6])
 {
 #if DT_INST_PROP(0, zephyr_random_mac_address)
 	gen_random_mac(mac_addr, SILABS_OUI_B0, SILABS_OUI_B1, SILABS_OUI_B2);
@@ -555,8 +555,8 @@ static void eth_iface_init(struct net_if *iface)
 	eth_init_rx_buf_desc();
 
 	/* Point to locations of TX/RX DMA descriptor lists */
-	eth->TXQPTR = (u32_t)dma_tx_desc_tab;
-	eth->RXQPTR = (u32_t)dma_rx_desc_tab;
+	eth->TXQPTR = (uint32_t)dma_tx_desc_tab;
+	eth->RXQPTR = (uint32_t)dma_rx_desc_tab;
 
 	/* DMA RX size configuration */
 	eth->DMACFG = (eth->DMACFG & ~_ETH_DMACFG_RXBUFSIZE_MASK) |
@@ -631,7 +631,7 @@ static const struct ethernet_api eth_api = {
 	.send = eth_tx,
 };
 
-static struct device DEVICE_NAME_GET(eth_gecko);
+DEVICE_DECLARE(eth_gecko);
 
 static void eth0_irq_config(void)
 {

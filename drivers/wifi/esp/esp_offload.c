@@ -121,7 +121,7 @@ static int esp_connect(struct net_context *context,
 		       const struct sockaddr *addr,
 		       socklen_t addrlen,
 		       net_context_connect_cb_t cb,
-		       s32_t timeout,
+		       int32_t timeout,
 		       void *user_data)
 {
 	struct esp_socket *sock;
@@ -164,7 +164,7 @@ static int esp_connect(struct net_context *context,
 }
 
 static int esp_accept(struct net_context *context,
-			     net_tcp_accept_cb_t cb, s32_t timeout,
+			     net_tcp_accept_cb_t cb, int32_t timeout,
 			     void *user_data)
 {
 	return -ENOTSUP;
@@ -325,7 +325,7 @@ static int esp_sendto(struct net_pkt *pkt,
 		      const struct sockaddr *dst_addr,
 		      socklen_t addrlen,
 		      net_context_send_cb_t cb,
-		      s32_t timeout,
+		      int32_t timeout,
 		      void *user_data)
 {
 	struct net_context *context;
@@ -406,7 +406,7 @@ static int esp_sendto(struct net_pkt *pkt,
 
 static int esp_send(struct net_pkt *pkt,
 		    net_context_send_cb_t cb,
-		    s32_t timeout,
+		    int32_t timeout,
 		    void *user_data)
 {
 	return esp_sendto(pkt, NULL, 0, cb, timeout, user_data);
@@ -565,7 +565,7 @@ static void esp_recv_work(struct k_work *work)
 
 static int esp_recv(struct net_context *context,
 		    net_context_recv_cb_t cb,
-		    s32_t timeout,
+		    int32_t timeout,
 		    void *user_data)
 {
 	struct esp_socket *sock;

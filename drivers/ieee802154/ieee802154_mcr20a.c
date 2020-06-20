@@ -113,7 +113,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define MCR20A_OUTPUT_POWER_MIN	(-35)
 
 /* Lookup table for the Power Control register */
-static const u8_t pow_lt[44] = {
+static const uint8_t pow_lt[44] = {
 	3, 4, 5, 6,
 	6, 7, 7, 8,
 	8, 9, 9, 10,
@@ -135,14 +135,14 @@ static const u8_t pow_lt[44] = {
  * F = ((PLL_INT0 + 64) + (PLL_FRAC0/65536))32MHz
  *
  */
-static const u8_t pll_int_lt[16] = {
+static const uint8_t pll_int_lt[16] = {
 	11, 11, 11, 11,
 	11, 11, 12, 12,
 	12, 12, 12, 12,
 	13, 13, 13, 13
 };
 
-static const u16_t pll_frac_lt[16] = {
+static const uint16_t pll_frac_lt[16] = {
 	10240, 20480, 30720, 40960,
 	51200, 61440, 6144, 16384,
 	26624, 36864, 47104, 57344,
@@ -152,15 +152,15 @@ static const u16_t pll_frac_lt[16] = {
 #define z_usleep(usec) k_busy_wait(usec)
 
 /* Read direct (dreg is true) or indirect register (dreg is false) */
-u8_t z_mcr20a_read_reg(struct mcr20a_context *dev, bool dreg, u8_t addr)
+uint8_t z_mcr20a_read_reg(struct mcr20a_context *dev, bool dreg, uint8_t addr)
 {
-	u8_t cmd_buf[3] = {
+	uint8_t cmd_buf[3] = {
 		dreg ? (MCR20A_REG_READ | addr) :
 		(MCR20A_IAR_INDEX | MCR20A_REG_WRITE),
 		dreg ? 0 : (addr | MCR20A_REG_READ),
 		0
 	};
-	u8_t len = dreg ? 2 : 3;
+	uint8_t len = dreg ? 2 : 3;
 	const struct spi_buf buf = {
 		.buf = cmd_buf,
 		.len = len
@@ -184,10 +184,10 @@ u8_t z_mcr20a_read_reg(struct mcr20a_context *dev, bool dreg, u8_t addr)
 }
 
 /* Write direct (dreg is true) or indirect register (dreg is false) */
-bool z_mcr20a_write_reg(struct mcr20a_context *dev, bool dreg, u8_t addr,
-		       u8_t value)
+bool z_mcr20a_write_reg(struct mcr20a_context *dev, bool dreg, uint8_t addr,
+		       uint8_t value)
 {
-	u8_t cmd_buf[3] = {
+	uint8_t cmd_buf[3] = {
 		dreg ? (MCR20A_REG_WRITE | addr) :
 		(MCR20A_IAR_INDEX | MCR20A_REG_WRITE),
 		dreg ? value : (addr | MCR20A_REG_WRITE),
@@ -206,10 +206,10 @@ bool z_mcr20a_write_reg(struct mcr20a_context *dev, bool dreg, u8_t addr,
 }
 
 /* Write multiple bytes to direct or indirect register */
-bool z_mcr20a_write_burst(struct mcr20a_context *dev, bool dreg, u16_t addr,
-			 u8_t *data_buf, u8_t len)
+bool z_mcr20a_write_burst(struct mcr20a_context *dev, bool dreg, uint16_t addr,
+			 uint8_t *data_buf, uint8_t len)
 {
-	u8_t cmd_buf[2] = {
+	uint8_t cmd_buf[2] = {
 		dreg ? MCR20A_REG_WRITE | addr :
 		MCR20A_IAR_INDEX | MCR20A_REG_WRITE,
 		dreg ? 0 : addr | MCR20A_REG_WRITE
@@ -233,10 +233,10 @@ bool z_mcr20a_write_burst(struct mcr20a_context *dev, bool dreg, u16_t addr,
 }
 
 /* Read multiple bytes from direct or indirect register */
-bool z_mcr20a_read_burst(struct mcr20a_context *dev, bool dreg, u16_t addr,
-			u8_t *data_buf, u8_t len)
+bool z_mcr20a_read_burst(struct mcr20a_context *dev, bool dreg, uint16_t addr,
+			uint8_t *data_buf, uint8_t len)
 {
-	u8_t cmd_buf[2] = {
+	uint8_t cmd_buf[2] = {
 		dreg ? MCR20A_REG_READ | addr :
 		MCR20A_IAR_INDEX | MCR20A_REG_WRITE,
 		dreg ? 0 : addr | MCR20A_REG_READ
@@ -266,7 +266,7 @@ bool z_mcr20a_read_burst(struct mcr20a_context *dev, bool dreg, u16_t addr,
 /* Mask (msk is true) or unmask all interrupts from asserting IRQ_B */
 static bool mcr20a_mask_irqb(struct mcr20a_context *dev, bool msk)
 {
-	u8_t ctrl4 = read_reg_phy_ctrl4(dev);
+	uint8_t ctrl4 = read_reg_phy_ctrl4(dev);
 
 	if (msk) {
 		ctrl4 |= MCR20A_PHY_CTRL4_TRCV_MSK;
@@ -279,14 +279,14 @@ static bool mcr20a_mask_irqb(struct mcr20a_context *dev, bool msk)
 
 /** Set an timeout value for the given compare register */
 static int mcr20a_timer_set(struct mcr20a_context *mcr20a,
-			    u8_t cmp_reg,
-			    u32_t timeout)
+			    uint8_t cmp_reg,
+			    uint32_t timeout)
 {
-	u32_t now = 0U;
-	u32_t next;
+	uint32_t now = 0U;
+	uint32_t next;
 	bool retval;
 
-	if (!read_burst_event_timer(mcr20a, (u8_t *)&now)) {
+	if (!read_burst_event_timer(mcr20a, (uint8_t *)&now)) {
 		goto error;
 	}
 
@@ -297,16 +297,16 @@ static int mcr20a_timer_set(struct mcr20a_context *mcr20a,
 
 	switch (cmp_reg) {
 	case 1:
-		retval = write_burst_t1cmp(mcr20a, (u8_t *)&next);
+		retval = write_burst_t1cmp(mcr20a, (uint8_t *)&next);
 		break;
 	case 2:
-		retval = write_burst_t2cmp(mcr20a, (u8_t *)&next);
+		retval = write_burst_t2cmp(mcr20a, (uint8_t *)&next);
 		break;
 	case 3:
-		retval = write_burst_t3cmp(mcr20a, (u8_t *)&next);
+		retval = write_burst_t3cmp(mcr20a, (uint8_t *)&next);
 		break;
 	case 4:
-		retval = write_burst_t4cmp(mcr20a, (u8_t *)&next);
+		retval = write_burst_t4cmp(mcr20a, (uint8_t *)&next);
 		break;
 	default:
 		goto error;
@@ -323,11 +323,11 @@ error:
 	return -EIO;
 }
 
-static int mcr20a_timer_init(struct device *dev, u8_t tb)
+static int mcr20a_timer_init(struct device *dev, uint8_t tb)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
-	u8_t buf[3] = {0, 0, 0};
-	u8_t ctrl4;
+	uint8_t buf[3] = {0, 0, 0};
+	uint8_t ctrl4;
 
 	if (!write_reg_tmr_prescale(mcr20a,
 				    set_bits_tmr_prescale(tb))) {
@@ -354,10 +354,10 @@ error:
 
 /* Set Timer Comparator 4 */
 static int mcr20a_t4cmp_set(struct mcr20a_context *mcr20a,
-			    u32_t timeout)
+			    uint32_t timeout)
 {
-	u8_t irqsts3;
-	u8_t ctrl3;
+	uint8_t irqsts3;
+	uint8_t ctrl3;
 
 	if (mcr20a_timer_set(mcr20a, 4, timeout)) {
 		goto error;
@@ -387,8 +387,8 @@ error:
 /* Clear Timer Comparator 4 */
 static int mcr20a_t4cmp_clear(struct mcr20a_context *mcr20a)
 {
-	u8_t irqsts3;
-	u8_t ctrl3;
+	uint8_t irqsts3;
+	uint8_t ctrl3;
 
 	ctrl3 = read_reg_phy_ctrl3(mcr20a);
 	ctrl3 &= ~MCR20A_PHY_CTRL3_TMR4CMP_EN;
@@ -411,8 +411,8 @@ error:
 
 static inline void xcvseq_wait_until_idle(struct mcr20a_context *mcr20a)
 {
-	u8_t state;
-	u8_t retries = MCR20A_GET_SEQ_STATE_RETRIES;
+	uint8_t state;
+	uint8_t retries = MCR20A_GET_SEQ_STATE_RETRIES;
 
 	do {
 		state = read_reg_seq_state(mcr20a);
@@ -427,7 +427,7 @@ static inline void xcvseq_wait_until_idle(struct mcr20a_context *mcr20a)
 static inline int mcr20a_abort_sequence(struct mcr20a_context *mcr20a,
 					bool force)
 {
-	u8_t ctrl1;
+	uint8_t ctrl1;
 
 	ctrl1 = read_reg_phy_ctrl1(mcr20a);
 	LOG_DBG("CTRL1 0x%02x", ctrl1);
@@ -457,9 +457,9 @@ static inline int mcr20a_abort_sequence(struct mcr20a_context *mcr20a,
 
 /* Initiate a (new) Transceiver Sequence */
 static inline int mcr20a_set_sequence(struct mcr20a_context *mcr20a,
-				      u8_t seq)
+				      uint8_t seq)
 {
-	u8_t ctrl1 = 0U;
+	uint8_t ctrl1 = 0U;
 
 	seq = set_bits_phy_ctrl1_xcvseq(seq);
 	ctrl1 = read_reg_phy_ctrl1(mcr20a);
@@ -480,7 +480,7 @@ static inline int mcr20a_set_sequence(struct mcr20a_context *mcr20a,
 	return 0;
 }
 
-static inline u32_t mcr20a_get_rssi(u32_t lqi)
+static inline uint32_t mcr20a_get_rssi(uint32_t lqi)
 {
 	/* Get rssi (Received Signal Strength Indicator, unit is dBm)
 	 * from lqi (Link Quality Indicator) value.
@@ -493,19 +493,19 @@ static inline u32_t mcr20a_get_rssi(u32_t lqi)
 	 * -RF * 65536 = (LQI / 2.84 - 295.4 / 2.84) * 65536
 	 * RF * 65536 = (295.4 * 65536 / 2.84) - (LQI * 65536 / 2.84)
 	 */
-	u32_t a = (u32_t)(295.4 * 65536 / 2.84);
-	u32_t b = (u32_t)(65536 / 2.84);
+	uint32_t a = (uint32_t)(295.4 * 65536 / 2.84);
+	uint32_t b = (uint32_t)(65536 / 2.84);
 
 	return (a - (b * lqi)) >> 16;
 }
 
-static inline u8_t *get_mac(struct device *dev)
+static inline uint8_t *get_mac(struct device *dev)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
-	u32_t *ptr = (u32_t *)(mcr20a->mac_addr);
+	uint32_t *ptr = (uint32_t *)(mcr20a->mac_addr);
 
 	UNALIGNED_PUT(sys_rand32_get(), ptr);
-	ptr = (u32_t *)(mcr20a->mac_addr + 4);
+	ptr = (uint32_t *)(mcr20a->mac_addr + 4);
 	UNALIGNED_PUT(sys_rand32_get(), ptr);
 
 	mcr20a->mac_addr[0] = (mcr20a->mac_addr[0] & ~0x01) | 0x02;
@@ -514,9 +514,9 @@ static inline u8_t *get_mac(struct device *dev)
 }
 
 static inline bool read_rxfifo_content(struct mcr20a_context *dev,
-				       struct net_buf *buf, u8_t len)
+				       struct net_buf *buf, uint8_t len)
 {
-	u8_t cmd = MCR20A_BUF_READ;
+	uint8_t cmd = MCR20A_BUF_READ;
 	struct spi_buf bufs[2] = {
 		{
 			.buf = &cmd,
@@ -545,10 +545,10 @@ static inline bool read_rxfifo_content(struct mcr20a_context *dev,
 	return true;
 }
 
-static inline void mcr20a_rx(struct mcr20a_context *mcr20a, u8_t len)
+static inline void mcr20a_rx(struct mcr20a_context *mcr20a, uint8_t len)
 {
 	struct net_pkt *pkt = NULL;
-	u8_t pkt_len;
+	uint8_t pkt_len;
 
 	pkt_len = len - MCR20A_FCS_LENGTH;
 
@@ -597,10 +597,10 @@ out:
  * when a sequence has been completed.
  */
 static inline bool irqsts1_event(struct mcr20a_context *mcr20a,
-				  u8_t *dregs)
+				  uint8_t *dregs)
 {
-	u8_t seq = dregs[MCR20A_PHY_CTRL1] & MCR20A_PHY_CTRL1_XCVSEQ_MASK;
-	u8_t new_seq = MCR20A_XCVSEQ_RECEIVE;
+	uint8_t seq = dregs[MCR20A_PHY_CTRL1] & MCR20A_PHY_CTRL1_XCVSEQ_MASK;
+	uint8_t new_seq = MCR20A_XCVSEQ_RECEIVE;
 	bool retval = false;
 
 	switch (seq) {
@@ -684,7 +684,7 @@ static inline bool irqsts1_event(struct mcr20a_context *mcr20a,
  * usually the TR.
  */
 static inline bool irqsts3_event(struct mcr20a_context *mcr20a,
-				  u8_t *dregs)
+				  uint8_t *dregs)
 {
 	bool retval = false;
 
@@ -714,9 +714,9 @@ static void mcr20a_thread_main(void *arg)
 {
 	struct device *dev = (struct device *)arg;
 	struct mcr20a_context *mcr20a = dev->driver_data;
-	u8_t dregs[MCR20A_PHY_CTRL4 + 1];
+	uint8_t dregs[MCR20A_PHY_CTRL4 + 1];
 	bool set_new_seq;
-	u8_t ctrl1 = 0U;
+	uint8_t ctrl1 = 0U;
 
 	while (true) {
 		k_sem_take(&mcr20a->isr_sem, K_FOREVER);
@@ -786,7 +786,7 @@ unmask_irqb:
 }
 
 static inline void irqb_int_handler(struct device *port,
-				    struct gpio_callback *cb, u32_t pins)
+				    struct gpio_callback *cb, uint32_t pins)
 {
 	struct mcr20a_context *mcr20a = CONTAINER_OF(cb,
 						     struct mcr20a_context,
@@ -814,10 +814,10 @@ static inline void setup_gpio_callbacks(struct mcr20a_context *mcr20a)
 	gpio_add_callback(mcr20a->irq_gpio, &mcr20a->irqb_cb);
 }
 
-static int mcr20a_set_cca_mode(struct device *dev, u8_t mode)
+static int mcr20a_set_cca_mode(struct device *dev, uint8_t mode)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
-	u8_t ctrl4;
+	uint8_t ctrl4;
 
 	ctrl4 = read_reg_phy_ctrl4(mcr20a);
 	ctrl4 &= ~MCR20A_PHY_CTRL4_CCATYPE_MASK;
@@ -888,11 +888,11 @@ error:
 	return -EIO;
 }
 
-static int mcr20a_set_channel(struct device *dev, u16_t channel)
+static int mcr20a_set_channel(struct device *dev, uint16_t channel)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
-	u8_t buf[3];
-	u8_t ctrl1;
+	uint8_t buf[3];
+	uint8_t ctrl1;
 	int retval = -EIO;
 
 	if (channel < 11 || channel > 26) {
@@ -917,8 +917,8 @@ static int mcr20a_set_channel(struct device *dev, u16_t channel)
 	LOG_DBG("%u", channel);
 	channel -= 11U;
 	buf[0] = set_bits_pll_int0_val(pll_int_lt[channel]);
-	buf[1] = (u8_t)pll_frac_lt[channel];
-	buf[2] = (u8_t)(pll_frac_lt[channel] >> 8);
+	buf[1] = (uint8_t)pll_frac_lt[channel];
+	buf[2] = (uint8_t)(pll_frac_lt[channel] >> 8);
 
 	if (!write_burst_pll_int0(mcr20a, buf)) {
 		LOG_ERR("Failed to set PLL");
@@ -943,14 +943,14 @@ out:
 	return retval;
 }
 
-static int mcr20a_set_pan_id(struct device *dev, u16_t pan_id)
+static int mcr20a_set_pan_id(struct device *dev, uint16_t pan_id)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
 
 	pan_id = sys_le16_to_cpu(pan_id);
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
 
-	if (!write_burst_pan_id(mcr20a, (u8_t *) &pan_id)) {
+	if (!write_burst_pan_id(mcr20a, (uint8_t *) &pan_id)) {
 		LOG_ERR("Failed");
 		k_mutex_unlock(&mcr20a->phy_mutex);
 		return -EIO;
@@ -962,14 +962,14 @@ static int mcr20a_set_pan_id(struct device *dev, u16_t pan_id)
 	return 0;
 }
 
-static int mcr20a_set_short_addr(struct device *dev, u16_t short_addr)
+static int mcr20a_set_short_addr(struct device *dev, uint16_t short_addr)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
 
 	short_addr = sys_le16_to_cpu(short_addr);
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
 
-	if (!write_burst_short_addr(mcr20a, (u8_t *) &short_addr)) {
+	if (!write_burst_short_addr(mcr20a, (uint8_t *) &short_addr)) {
 		LOG_ERR("Failed");
 		k_mutex_unlock(&mcr20a->phy_mutex);
 		return -EIO;
@@ -981,7 +981,7 @@ static int mcr20a_set_short_addr(struct device *dev, u16_t short_addr)
 	return 0;
 }
 
-static int mcr20a_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
+static int mcr20a_set_ieee_addr(struct device *dev, const uint8_t *ieee_addr)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
 
@@ -1023,10 +1023,10 @@ static int mcr20a_filter(struct device *dev,
 	return -ENOTSUP;
 }
 
-static int mcr20a_set_txpower(struct device *dev, s16_t dbm)
+static int mcr20a_set_txpower(struct device *dev, int16_t dbm)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
-	u8_t pwr;
+	uint8_t pwr;
 
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
 	LOG_DBG("%d", dbm);
@@ -1055,7 +1055,7 @@ static inline bool write_txfifo_content(struct mcr20a_context *dev,
 					struct net_buf *frag)
 {
 	size_t payload_len = frag->len;
-	u8_t cmd_buf[2] = {
+	uint8_t cmd_buf[2] = {
 		MCR20A_BUF_WRITE,
 		payload_len + MCR20A_FCS_LENGTH
 	};
@@ -1088,7 +1088,7 @@ static int mcr20a_tx(struct device *dev,
 		     struct net_buf *frag)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
-	u8_t seq = ieee802154_is_ar_flag_set(frag) ? MCR20A_XCVSEQ_TX_RX :
+	uint8_t seq = ieee802154_is_ar_flag_set(frag) ? MCR20A_XCVSEQ_TX_RX :
 						     MCR20A_XCVSEQ_TX;
 	int retval;
 
@@ -1148,8 +1148,8 @@ error:
 static int mcr20a_start(struct device *dev)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
-	u8_t timeout = 6U;
-	u8_t status;
+	uint8_t timeout = 6U;
+	uint8_t status;
 
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
 	enable_irqb_interrupt(mcr20a, false);
@@ -1206,7 +1206,7 @@ error:
 static int mcr20a_stop(struct device *dev)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
-	u8_t power_mode;
+	uint8_t power_mode;
 
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
 
@@ -1249,7 +1249,7 @@ static int mcr20a_update_overwrites(struct mcr20a_context *dev)
 		goto error;
 	}
 
-	for (u8_t i = 0;
+	for (uint8_t i = 0;
 	     i < sizeof(overwrites_indirect) / sizeof(overwrites_t);
 	     i++) {
 
@@ -1270,9 +1270,9 @@ error:
 static int power_on_and_setup(struct device *dev)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
-	u8_t timeout = 6U;
+	uint8_t timeout = 6U;
 	int pin;
-	u8_t tmp = 0U;
+	uint8_t tmp = 0U;
 
 	if (!PART_OF_KW2XD_SIP) {
 		gpio_pin_set(mcr20a->reset_gpio,
@@ -1448,7 +1448,7 @@ static void mcr20a_iface_init(struct net_if *iface)
 {
 	struct device *dev = net_if_get_device(iface);
 	struct mcr20a_context *mcr20a = dev->driver_data;
-	u8_t *mac = get_mac(dev);
+	uint8_t *mac = get_mac(dev);
 
 	net_if_set_link_addr(iface, mac, 8, NET_LINK_IEEE802154);
 

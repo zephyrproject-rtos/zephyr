@@ -90,7 +90,7 @@ enum dns_query_type {
 struct dns_addrinfo {
 	struct sockaddr ai_addr;
 	socklen_t       ai_addrlen;
-	u8_t            ai_family;
+	uint8_t            ai_family;
 	char            ai_canonname[DNS_MAX_NAME_SIZE + 1];
 };
 
@@ -169,10 +169,10 @@ struct dns_resolve_context {
 		struct net_context *net_ctx;
 
 		/** Is this server mDNS one */
-		u8_t is_mdns : 1;
+		uint8_t is_mdns : 1;
 
 		/** Is this server LLMNR one */
-		u8_t is_llmnr : 1;
+		uint8_t is_llmnr : 1;
 	} servers[CONFIG_DNS_RESOLVER_MAX_SERVERS + DNS_MAX_MCAST_SERVERS];
 
 	/** This timeout is also used when a buffer is required from the
@@ -207,7 +207,7 @@ struct dns_resolve_context {
 		enum dns_query_type query_type;
 
 		/** DNS id of this query */
-		u16_t id;
+		uint16_t id;
 
 		/** Hash of the DNS name + query type we are querying.
 		 * This hash is calculated so we can match the response that
@@ -215,7 +215,7 @@ struct dns_resolve_context {
 		 * setting the DNS id to 0, which means that the id alone
 		 * cannot be used to find correct pending query.
 		 */
-		u16_t query_hash;
+		uint16_t query_hash;
 	} queries[CONFIG_DNS_NUM_CONCUR_QUERIES];
 
 	/** Is this context in use */
@@ -276,7 +276,7 @@ int dns_resolve_close(struct dns_resolve_context *ctx);
  * @return 0 if ok, <0 if error.
  */
 int dns_resolve_cancel(struct dns_resolve_context *ctx,
-		       u16_t dns_id);
+		       uint16_t dns_id);
 
 /**
  * @brief Cancel a pending DNS query using id, name and type.
@@ -291,7 +291,7 @@ int dns_resolve_cancel(struct dns_resolve_context *ctx,
  * @return 0 if ok, <0 if error.
  */
 int dns_resolve_cancel_with_name(struct dns_resolve_context *ctx,
-				 u16_t dns_id,
+				 uint16_t dns_id,
 				 const char *query_name,
 				 enum dns_query_type query_type);
 
@@ -325,10 +325,10 @@ int dns_resolve_cancel_with_name(struct dns_resolve_context *ctx,
 int dns_resolve_name(struct dns_resolve_context *ctx,
 		     const char *query,
 		     enum dns_query_type type,
-		     u16_t *dns_id,
+		     uint16_t *dns_id,
 		     dns_resolve_cb_t cb,
 		     void *user_data,
-		     s32_t timeout);
+		     int32_t timeout);
 
 /**
  * @brief Get default DNS context.
@@ -371,10 +371,10 @@ struct dns_resolve_context *dns_resolve_get_default(void);
  */
 static inline int dns_get_addr_info(const char *query,
 				    enum dns_query_type type,
-				    u16_t *dns_id,
+				    uint16_t *dns_id,
 				    dns_resolve_cb_t cb,
 				    void *user_data,
-				    s32_t timeout)
+				    int32_t timeout)
 {
 	return dns_resolve_name(dns_resolve_get_default(),
 				query,
@@ -394,7 +394,7 @@ static inline int dns_get_addr_info(const char *query,
  *
  * @return 0 if ok, <0 if error.
  */
-static inline int dns_cancel_addr_info(u16_t dns_id)
+static inline int dns_cancel_addr_info(uint16_t dns_id)
 {
 	return dns_resolve_cancel(dns_resolve_get_default(), dns_id);
 }

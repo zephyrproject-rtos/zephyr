@@ -12,9 +12,15 @@ sequence:
       "id":
         type: str
         required: true
+      "notes":
+        type: str
+        required: false
       "platform":
         type: str
         required: true
+      "probe_id":
+        type: str
+        required: false
       "product":
         type: str
         required: true
@@ -33,3 +39,8 @@ sequence:
       "pre_script":
         type: str
         required: false
+      "fixtures":
+        type: seq
+        required: no
+        sequence:
+          - type: str

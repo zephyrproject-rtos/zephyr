@@ -108,7 +108,7 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
 	unsigned int key = arch_irq_lock();
-	u32_t dt, start_ms = k_uptime_get_32();
+	uint32_t dt, start_ms = k_uptime_get_32();
 
 	k_sem_give(&cpuhold_sem);
 
@@ -426,10 +426,10 @@ void main(void)
 	end_report();
 	if (IS_ENABLED(CONFIG_ZTEST_RETEST_IF_PASSED)) {
 		static __noinit struct {
-			u32_t magic;
-			u32_t boots;
+			uint32_t magic;
+			uint32_t boots;
 		} state;
-		const u32_t magic = 0x152ac523;
+		const uint32_t magic = 0x152ac523;
 
 		if (state.magic != magic) {
 			state.magic = magic;

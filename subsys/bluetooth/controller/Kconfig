@@ -35,6 +35,10 @@ config BT_CTLR_PHY_UPDATE_SUPPORT
 config BT_CTLR_ADV_EXT_SUPPORT
 	bool
 
+config BT_CTLR_ADV_PERIODIC_SUPPORT
+	depends on BT_CTLR_ADV_EXT_SUPPORT
+	bool
+
 config BT_CTLR_CHAN_SEL_2_SUPPORT
 	bool
 
@@ -95,6 +99,7 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_CTLR_PHY_UPDATE_SUPPORT if !SOC_SERIES_NRF51X || \
 					      BT_CTLR_PHY_2M_NRF
 	select BT_CTLR_ADV_EXT_SUPPORT
+	select BT_CTLR_ADV_PERIODIC_SUPPORT
 	select BT_CTLR_CHAN_SEL_2_SUPPORT
 	select BT_CTLR_MIN_USED_CHAN_SUPPORT
 	select BT_CTLR_DTM_HCI_SUPPORT
@@ -207,7 +212,7 @@ config BT_CTLR_TX_BUFFER_SIZE
 	  then controller will perform fragmentation before transmitting on the
 	  the packet on air.
 	  Maximum is set to 251 due to implementation limitations (use of
-	  u8_t for length field in PDU buffer structure).
+	  uint8_t for length field in PDU buffer structure).
 
 choice
 	prompt "Tx Power"
@@ -433,27 +438,50 @@ endif # BT_CONN
 
 config BT_CTLR_CHAN_SEL_2
 	bool "Channel Selection Algorithm #2"
-	depends on (BT_CONN || BT_CTLR_ADV_EXT) && BT_CTLR_CHAN_SEL_2_SUPPORT
+	depends on (BT_CONN || BT_CTLR_ADV_PERIODIC) && BT_CTLR_CHAN_SEL_2_SUPPORT
 	default y
 	help
 	  Enable support for Bluetooth 5.0 LE Channel Selection Algorithm #2 in
 	  the Controller.
 
 config BT_CTLR_ADV_EXT
-	bool "LE Advertising Extensions"
+	bool "LE Advertising Extensions" if !BT_LL_SW_SPLIT
 	depends on BT_CTLR_ADV_EXT_SUPPORT
 	select BT_CTLR_SCAN_REQ_NOTIFY
-	select BT_CTLR_CHAN_SEL_2
+	# Uncomment when "LE Advertising Set Terminated event" is implemented
+	# default y if BT_EXT_ADV
 	help
 	  Enable support for Bluetooth 5.0 LE Advertising Extensions in the
 	  Controller.
 
-config BT_ADV_SET
+config BT_CTLR_ADV_EXT
+	prompt "LE Advertising Extensions [EXPERIMENTAL]" if BT_LL_SW_SPLIT
+
+if BT_CTLR_ADV_EXT
+
+config BT_CTLR_ADV_SET
 	int "LE Advertising Extensions Sets"
-	depends on BT_CTLR_ADV_EXT
-	default 1
+	depends on BT_BROADCASTER
+	range 1 64
+	default BT_EXT_ADV_MAX_ADV_SET if BT_EXT_ADV
 	help
 	  Maximum supported advertising sets.
+
+config BT_CTLR_ADV_PERIODIC
+	bool "LE Periodic Advertising"
+	depends on BT_BROADCASTER && BT_CTLR_ADV_PERIODIC_SUPPORT
+	select BT_CTLR_CHAN_SEL_2
+	help
+	  Enable support for Bluetooth 5.0 LE Periodic Advertising in the
+	  Controller.
+
+config BT_CTLR_ADV_DATA_LEN_MAX
+	int "Maximum Advertising Data Length"
+	range 31 1650
+	help
+	  Maximum Extended Advertising Data Length.
+
+endif # BT_CTLR_ADV_EXT
 
 config BT_CTLR_DTM
 	bool
@@ -532,6 +560,32 @@ config BT_CTLR_PHY_2M_NRF
 	help
 	  Enable support for Nordic Semiconductor proprietary 2Mbps PHY in the
 	  Controller. Encrypted connections are not supported.
+
+config BT_CTLR_ADV_AUX_SET
+	int "LE Extended Advertising Auxiliary Sets"
+	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
+	range 1 BT_CTLR_ADV_SET if BT_CTLR_ADV_PERIODIC
+	range 0 BT_CTLR_ADV_SET
+	default 1 if BT_CTLR_ADV_PERIODIC
+	default BT_CTLR_ADV_SET
+	help
+	  Maximum supported advertising auxiliary channel sets.
+
+config BT_CTLR_ADV_SYNC_SET
+	int "LE Periodic Advertising Sets"
+	depends on BT_CTLR_ADV_PERIODIC
+	range 1 BT_CTLR_ADV_AUX_SET
+	default 1
+	help
+	  Maximum supported periodic advertising sets.
+
+config BT_CTLR_SCAN_AUX_SET
+	int "LE Extended Scanning Auxiliary Sets"
+	depends on BT_OBSERVER && BT_CTLR_ADV_EXT
+	range 1 64
+	default 1
+	help
+	  Maximum supported auxiliary channel scan sets.
 
 config BT_CTLR_ZLI
 	bool "Use Zero Latency IRQs"
@@ -932,7 +986,7 @@ config BT_CTLR_PROFILE_ISR
 
 config BT_CTLR_DEBUG_PINS
 	bool "Bluetooth Controller Debug Pins"
-	depends on BOARD_NRF51DK_NRF51422 || BOARD_NRF52DK_NRF52832 || BOARD_NRF52DK_NRF52810 || BOARD_NRF52840DK_NRF52840 || BOARD_RV32M1_VEGA
+	depends on BOARD_NRF51DK_NRF51422 || BOARD_NRF52DK_NRF52832 || BOARD_NRF52DK_NRF52810 || BOARD_NRF52840DK_NRF52840 || BOARD_NRF5340PDK_NRF5340_CPUNET || BOARD_RV32M1_VEGA
 	help
 	  Turn on debug GPIO toggling for the BLE Controller. This is useful
 	  when debugging with a logic analyzer or profiling certain sections of
@@ -950,3 +1004,11 @@ config BT_CTLR_ASSERT_HANDLER
 	  an unrecoverable error.
 
 endif # BT_CTLR
+
+config BT_CTLR_DEBUG_PINS_CPUAPP
+	bool "Bluetooth Controller Debug Pins"
+	depends on BOARD_NRF5340PDK_NRF5340_CPUAPP
+	help
+	  Route debug GPIO toggling for the BLE Controller. Enable this when
+	  using Bluetooth Controller Debug Pins in co-processor and the main
+	  processor needs to setup and/or route the signals.

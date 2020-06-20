@@ -36,19 +36,19 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 	    DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
 static ETH_DMADescTypeDef dma_rx_desc_tab[ETH_RXBUFNB] __dtcm_noinit_section;
 static ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TXBUFNB] __dtcm_noinit_section;
-static u8_t dma_rx_buffer[ETH_RXBUFNB][ETH_RX_BUF_SIZE] __dtcm_noinit_section;
-static u8_t dma_tx_buffer[ETH_TXBUFNB][ETH_TX_BUF_SIZE] __dtcm_noinit_section;
+static uint8_t dma_rx_buffer[ETH_RXBUFNB][ETH_RX_BUF_SIZE] __dtcm_noinit_section;
+static uint8_t dma_tx_buffer[ETH_TXBUFNB][ETH_TX_BUF_SIZE] __dtcm_noinit_section;
 #else
 static ETH_DMADescTypeDef dma_rx_desc_tab[ETH_RXBUFNB] __aligned(4);
 static ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TXBUFNB] __aligned(4);
-static u8_t dma_rx_buffer[ETH_RXBUFNB][ETH_RX_BUF_SIZE] __aligned(4);
-static u8_t dma_tx_buffer[ETH_TXBUFNB][ETH_TX_BUF_SIZE] __aligned(4);
+static uint8_t dma_rx_buffer[ETH_RXBUFNB][ETH_RX_BUF_SIZE] __aligned(4);
+static uint8_t dma_tx_buffer[ETH_TXBUFNB][ETH_TX_BUF_SIZE] __aligned(4);
 #endif /* CONFIG_ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER */
 
 #if defined(CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR)
 #include <net/can.h>
 
-static void set_mac_to_translator_addr(u8_t *mac_addr)
+static void set_mac_to_translator_addr(uint8_t *mac_addr)
 {
 	/* Set the last 14 bit to the translator  link layer address to avoid
 	 * address collissions with the 6LoCAN address range
@@ -58,7 +58,7 @@ static void set_mac_to_translator_addr(u8_t *mac_addr)
 }
 
 static void enable_canbus_eth_translator_filter(ETH_HandleTypeDef *heth,
-						u8_t *mac_addr)
+						uint8_t *mac_addr)
 {
 	heth->Instance->MACA1LR = (mac_addr[3] << 24U) | (mac_addr[2] << 16U) |
 				  (mac_addr[1] << 8U) | mac_addr[0];
@@ -72,7 +72,7 @@ static inline void disable_mcast_filter(ETH_HandleTypeDef *heth)
 {
 	__ASSERT_NO_MSG(heth != NULL);
 
-	u32_t tmp = heth->Instance->MACFFR;
+	uint32_t tmp = heth->Instance->MACFFR;
 
 	/* disable multicast filtering */
 	tmp &= ~(ETH_MULTICASTFRAMESFILTER_PERFECTHASHTABLE |
@@ -96,9 +96,9 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 {
 	struct eth_stm32_hal_dev_data *dev_data = DEV_DATA(dev);
 	ETH_HandleTypeDef *heth;
-	u8_t *dma_buffer;
+	uint8_t *dma_buffer;
 	int res;
-	u16_t total_len;
+	uint16_t total_len;
 	__IO ETH_DMADescTypeDef *dma_tx_desc;
 
 	__ASSERT_NO_MSG(pkt != NULL);
@@ -118,11 +118,11 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 	}
 
 	dma_tx_desc = heth->TxDesc;
-	while ((dma_tx_desc->Status & ETH_DMATXDESC_OWN) != (u32_t)RESET) {
+	while ((dma_tx_desc->Status & ETH_DMATXDESC_OWN) != (uint32_t)RESET) {
 		k_yield();
 	}
 
-	dma_buffer = (u8_t *)(dma_tx_desc->Buffer1Addr);
+	dma_buffer = (uint8_t *)(dma_tx_desc->Buffer1Addr);
 
 	if (net_pkt_read(pkt, dma_buffer, total_len)) {
 		res = -EIO;
@@ -138,7 +138,7 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 	/* When Transmit Underflow flag is set, clear it and issue a
 	 * Transmit Poll Demand to resume transmission.
 	 */
-	if ((heth->Instance->DMASR & ETH_DMASR_TUS) != (u32_t)RESET) {
+	if ((heth->Instance->DMASR & ETH_DMASR_TUS) != (uint32_t)RESET) {
 		/* Clear TUS ETHERNET DMA flag */
 		heth->Instance->DMASR = ETH_DMASR_TUS;
 		/* Resume DMA transmission*/
@@ -155,7 +155,7 @@ error:
 }
 
 static struct net_if *get_iface(struct eth_stm32_hal_dev_data *ctx,
-				u16_t vlan_tag)
+				uint16_t vlan_tag)
 {
 #if defined(CONFIG_NET_VLAN)
 	struct net_if *iface;
@@ -173,14 +173,14 @@ static struct net_if *get_iface(struct eth_stm32_hal_dev_data *ctx,
 #endif
 }
 
-static struct net_pkt *eth_rx(struct device *dev, u16_t *vlan_tag)
+static struct net_pkt *eth_rx(struct device *dev, uint16_t *vlan_tag)
 {
 	struct eth_stm32_hal_dev_data *dev_data;
 	ETH_HandleTypeDef *heth;
 	__IO ETH_DMADescTypeDef *dma_rx_desc;
 	struct net_pkt *pkt;
-	u16_t total_len;
-	u8_t *dma_buffer;
+	uint16_t total_len;
+	uint8_t *dma_buffer;
 	int i;
 
 	__ASSERT_NO_MSG(dev != NULL);
@@ -197,7 +197,7 @@ static struct net_pkt *eth_rx(struct device *dev, u16_t *vlan_tag)
 	}
 
 	total_len = heth->RxFrameInfos.length;
-	dma_buffer = (u8_t *)heth->RxFrameInfos.buffer;
+	dma_buffer = (uint8_t *)heth->RxFrameInfos.buffer;
 
 	pkt = net_pkt_rx_alloc_with_buffer(get_iface(dev_data, *vlan_tag),
 					   total_len, AF_UNSPEC, 0, K_NO_WAIT);
@@ -230,7 +230,7 @@ release_desc:
 	/* When Rx Buffer unavailable flag is set: clear it
 	 * and resume reception.
 	 */
-	if ((heth->Instance->DMASR & ETH_DMASR_RBUS) != (u32_t)RESET) {
+	if ((heth->Instance->DMASR & ETH_DMASR_RBUS) != (uint32_t)RESET) {
 		/* Clear RBUS ETHERNET DMA flag */
 		heth->Instance->DMASR = ETH_DMASR_RBUS;
 		/* Resume DMA reception */
@@ -267,12 +267,12 @@ release_desc:
 
 static void rx_thread(void *arg1, void *unused1, void *unused2)
 {
-	u16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
+	uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	struct device *dev;
 	struct eth_stm32_hal_dev_data *dev_data;
 	struct net_pkt *pkt;
 	int res;
-	u32_t status;
+	uint32_t status;
 
 	__ASSERT_NO_MSG(arg1 != NULL);
 	ARG_UNUSED(unused1);
@@ -361,7 +361,7 @@ void HAL_ETH_RxCpltCallback(ETH_HandleTypeDef *heth_handle)
 }
 
 #if defined(CONFIG_ETH_STM32_HAL_RANDOM_MAC)
-static void generate_mac(u8_t *mac_addr)
+static void generate_mac(uint8_t *mac_addr)
 {
 	gen_random_mac(mac_addr, ST_OUI_B0, ST_OUI_B1, ST_OUI_B2);
 }
@@ -372,7 +372,7 @@ static int eth_initialize(struct device *dev)
 	struct eth_stm32_hal_dev_data *dev_data;
 	const struct eth_stm32_hal_dev_cfg *cfg;
 	ETH_HandleTypeDef *heth;
-	u8_t hal_ret;
+	uint8_t hal_ret;
 	int ret = 0;
 
 	__ASSERT_NO_MSG(dev != NULL);
@@ -538,7 +538,7 @@ static const struct ethernet_api eth_api = {
 	.send = eth_tx,
 };
 
-static struct device DEVICE_NAME_GET(eth0_stm32_hal);
+DEVICE_DECLARE(eth0_stm32_hal);
 
 static void eth0_irq_config(void)
 {

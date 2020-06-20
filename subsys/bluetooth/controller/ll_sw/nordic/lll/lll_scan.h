@@ -10,36 +10,51 @@ struct lll_scan {
 #if defined(CONFIG_BT_CENTRAL)
 	/* NOTE: conn context has to be after lll_hdr */
 	struct lll_conn *conn;
-	u32_t conn_ticks_slot;
-	u32_t conn_win_offset_us;
-	u16_t conn_timeout;
+	uint32_t conn_ticks_slot;
+	uint32_t conn_win_offset_us;
+	uint16_t conn_timeout;
 #endif /* CONFIG_BT_CENTRAL */
 
-	u8_t  state:1;
-	u8_t  chan:2;
-	u8_t  filter_policy:2;
-	u8_t  adv_addr_type:1;
-	u8_t  init_addr_type:1;
-	u8_t  type:1;
+	uint8_t  state:1;
+	uint8_t  chan:2;
+	uint8_t  filter_policy:2;
+	uint8_t  adv_addr_type:1;
+	uint8_t  init_addr_type:1;
+	uint8_t  type:1;
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-	u8_t  phy:3;
+	uint8_t  phy:3;
+	uint8_t  is_adv_ind:1;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	u8_t  rpa_gen:1;
+	uint8_t  rpa_gen:1;
 	/* initiator only */
-	u8_t rl_idx;
+	uint8_t rl_idx;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-	u8_t  init_addr[BDADDR_SIZE];
-	u8_t  adv_addr[BDADDR_SIZE];
+	uint8_t  init_addr[BDADDR_SIZE];
+	uint8_t  adv_addr[BDADDR_SIZE];
 
-	u16_t interval;
-	u32_t ticks_window;
+	uint16_t interval;
+	uint32_t ticks_window;
 
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
-	s8_t tx_pwr_lvl;
+	int8_t tx_pwr_lvl;
+#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
+};
+
+struct lll_scan_aux {
+	struct lll_hdr hdr;
+
+	uint8_t chan:6;
+
+	uint8_t phy:3;
+
+	uint32_t window_size_us;
+
+#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
+	int8_t tx_pwr_lvl;
 #endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 };
 
@@ -48,4 +63,4 @@ int lll_scan_reset(void);
 
 void lll_scan_prepare(void *param);
 
-extern u16_t ull_scan_lll_handle_get(struct lll_scan *lll);
+extern uint8_t ull_scan_lll_handle_get(struct lll_scan *lll);

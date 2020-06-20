@@ -12,14 +12,14 @@
 #include <Global.h>
 #include "SEGGER_SYSVIEW_Zephyr.h"
 
-static u32_t interrupt;
+static uint32_t interrupt;
 
-u32_t sysview_get_timestamp(void)
+uint32_t sysview_get_timestamp(void)
 {
 	return k_cycle_get_32();
 }
 
-u32_t sysview_get_interrupt(void)
+uint32_t sysview_get_interrupt(void)
 {
 	return interrupt;
 }
@@ -33,7 +33,7 @@ void sys_trace_thread_switched_in(void)
 	if (z_is_idle_thread_object(thread)) {
 		SEGGER_SYSVIEW_OnIdle();
 	} else {
-		SEGGER_SYSVIEW_OnTaskStartExec((u32_t)(uintptr_t)thread);
+		SEGGER_SYSVIEW_OnTaskStartExec((uint32_t)(uintptr_t)thread);
 	}
 }
 
@@ -76,7 +76,7 @@ static void send_task_list_cb(void)
 
 		snprintk(name, sizeof(name), "T%pE%p", thread, &thread->entry);
 		SEGGER_SYSVIEW_SendTaskInfo(&(SEGGER_SYSVIEW_TASKINFO) {
-			.TaskID = (u32_t)(uintptr_t)thread,
+			.TaskID = (uint32_t)(uintptr_t)thread,
 		      .sName = tname?tname:name,
 			.StackSize = thread->stack_info.size,
 			.StackBase = thread->stack_info.start,

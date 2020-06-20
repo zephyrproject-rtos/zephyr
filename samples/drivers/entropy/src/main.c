@@ -25,7 +25,7 @@ void main(void)
 
 	while (1) {
 #define BUFFER_LENGTH 10
-		u8_t buffer[BUFFER_LENGTH] = {0};
+		uint8_t buffer[BUFFER_LENGTH] = {0};
 		int r;
 
 		/* The BUFFER_LENGTH-1 is used so the driver will not

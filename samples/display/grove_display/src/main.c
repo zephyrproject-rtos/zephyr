@@ -20,7 +20,7 @@
 /* sleep time in msec */
 #define SLEEPTIME  100
 
-u8_t clamp_rgb(int val)
+uint8_t clamp_rgb(int val)
 {
 	if (val > 255) {
 		return 255;
@@ -36,9 +36,9 @@ void main(void)
 	struct device *glcd;
 	char str[20];
 	int rgb[] = { 0x0, 0x0, 0x0 };
-	u8_t rgb_chg[3];
-	const u8_t rgb_step = 16U;
-	u8_t set_config;
+	uint8_t rgb_chg[3];
+	const uint8_t rgb_step = 16U;
+	uint8_t set_config;
 	int i, j, m;
 	int cnt;
 

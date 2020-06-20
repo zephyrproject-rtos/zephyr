@@ -25,14 +25,14 @@
 void wakeup_cpu1(void)
 {
 	/* Set the Initial Secure Reset Vector Register for CPU 1 */
-	*(u32_t *)(SSE_200_SYSTEM_CTRL_INITSVTOR1) =
+	*(uint32_t *)(SSE_200_SYSTEM_CTRL_INITSVTOR1) =
 					CONFIG_FLASH_BASE_ADDRESS +
 					NON_SECURE_FLASH_ADDRESS +
 					NON_SECURE_IMAGE_HEADER -
 					NON_SECURE_FLASH_OFFSET;
 
 	/* Set the CPU Boot wait control after reset */
-	*(u32_t *)(SSE_200_SYSTEM_CTRL_CPU_WAIT) = 0;
+	*(uint32_t *)(SSE_200_SYSTEM_CTRL_CPU_WAIT) = 0;
 }
 
 /**
@@ -40,11 +40,11 @@ void wakeup_cpu1(void)
  *
  * @return Current CPU ID
  */
-u32_t sse_200_platform_get_cpu_id(void)
+uint32_t sse_200_platform_get_cpu_id(void)
 {
-	volatile u32_t *p_cpu_id = (volatile u32_t *)SSE_200_CPU_ID_UNIT_BASE;
+	volatile uint32_t *p_cpu_id = (volatile uint32_t *)SSE_200_CPU_ID_UNIT_BASE;
 
-	return (u32_t)*p_cpu_id;
+	return (uint32_t)*p_cpu_id;
 }
 
 /**

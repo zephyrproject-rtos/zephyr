@@ -68,7 +68,7 @@ void z_x86_swap_update_page_tables(struct k_thread *incoming)
 FUNC_NORETURN static void drop_to_user(k_thread_entry_t user_entry,
 				       void *p1, void *p2, void *p3)
 {
-	u32_t stack_end;
+	uint32_t stack_end;
 
 	/* Transition will reset stack pointer to initial, discarding
 	 * any old context since this is a one-way operation

@@ -104,7 +104,7 @@ a node identifier and pass it to ``DT_LABEL`` to get the right string to pass
 to ``device_get_binding()``.
 
 If you're having trouble, see :ref:`dt-trouble`. The first thing to check is
-that the node is has ``status = "okay"`` and has a matching binding, like this:
+that the node has ``status = "okay"``, like this:
 
 .. code-block:: c
 
@@ -113,11 +113,13 @@ that the node is has ``status = "okay"`` and has a matching binding, like this:
    #if DT_NODE_HAS_STATUS(MY_SERIAL, okay)
    struct device *uart_dev = device_get_binding(DT_LABEL(MY_SERIAL));
    #else
-   #error "Node is disabled, has no matching binding, or initialization failed"
+   #error "Node is disabled"
    #endif
 
-If you see the ``#error`` output, either something is wrong with either your
-devicetree or bindings, or the device's initialization function failed.
+If you see the ``#error`` output, make sure to enable the node in your
+devicetree. If you don't see the ``#error`` but ``uart_dev`` is NULL, then
+there's likely either a Kconfig issue preventing the device driver from
+creating the device, or the device's initialization function failed.
 
 .. _dts-find-binding:
 
@@ -168,9 +170,9 @@ Set devicetree overlays
 ***********************
 
 Devicetree overlays are explained in :ref:`devicetree-intro`. The CMake
-variable :makevar:`DTC_OVERLAY_FILE` contains a space- or colon-separated list
-of overlays. If :makevar:`DTC_OVERLAY_FILE` specifies multiple files, they are
-included in that order by the C preprocessor.
+variable :makevar:`DTC_OVERLAY_FILE` contains a space- or semicolon-separated
+list of overlays. If :makevar:`DTC_OVERLAY_FILE` specifies multiple files, they
+are included in that order by the C preprocessor.
 
 Here are some ways to set it:
 
@@ -368,13 +370,13 @@ device-specific configuration and data structures and API functions, like this:
    	/* per-device values to store in RAM */
    };
    struct my_dev_cfg {
-   	u32_t freq; /* Just an example: initial clock frequency in Hz */
+   	uint32_t freq; /* Just an example: initial clock frequency in Hz */
    	/* other configuration to store in ROM */
    };
 
    /* Implement driver API functions (drivers/some_api.h callbacks): */
-   static int my_driver_api_func1(struct device *dev, u32_t *foo) { /* ... */ }
-   static int my_driver_api_func2(struct device *dev, u64_t bar) { /* ... */ }
+   static int my_driver_api_func1(struct device *dev, uint32_t *foo) { /* ... */ }
+   static int my_driver_api_func2(struct device *dev, uint64_t bar) { /* ... */ }
    static struct some_api my_api_funcs = {
    	.func1 = my_driver_api_func1,
    	.func2 = my_driver_api_func2,
@@ -564,6 +566,218 @@ done in the :ref:`blinky-sample`. The application can then be configured in
 :ref:`BOARD.dts <devicetree-in-out-files>` files or via :ref:`devicetree
 overlays <use-dt-overlays>`.
 
+.. _dt-migrate-legacy:
+
+Migrate from the legacy macros
+******************************
+
+This section shows how to migrate from the :ref:`dt-legacy-macros` to the
+:ref:`devicetree.h API <dt-from-c>`. (Please feel free to :ref:`ask for help
+<help>` if a use case you need is missing here and existing documentation is
+not enough to figure out what to do.)
+
+This DTS is used for examples:
+
+.. literalinclude:: ../../../tests/lib/devicetree/legacy_api/app.overlay
+   :language: DTS
+   :start-after: start-after-here
+   :end-before: end-before-here
+
+The following shows equivalent ways to access this devicetree, using legacy
+macros and the new devicetree.h API.
+
+.. warning::
+
+   The INST numbers below were carefully chosen to work. Instance numbering
+   properties have changed in the devicetree.h API compared to the legacy
+   macros, and are not guaranteed to be the same in all cases. See
+   :c:func:`DT_INST` for details.
+
+.. code-block:: c
+
+   /*
+    * label
+    *
+    * These use the label property in /migration/gpio@1000.
+    * They all expand to "MGR_GPIO".
+    */
+
+   /* Legacy: */
+   DT_VND_GPIO_1000_LABEL
+   DT_INST_0_VND_GPIO_LABEL
+   DT_ALIAS_MGR_GPIO_LABEL
+
+   /* Use these instead: */
+   DT_LABEL(DT_PATH(migration, gpio_1000))
+   DT_LABEL(DT_INST(0, vnd_gpio))
+   DT_LABEL(DT_ALIAS(mgr_gpio))
+   DT_LABEL(DT_NODELABEL(migration_gpio))
+
+   /*
+    * reg base addresses and sizes
+    *
+    * These use the reg property in /migration/gpio@1000.
+    * The base addresses all expand to 0x1000, and sizes to 0x2000.
+    */
+
+   /* Legacy addresses: */
+   DT_VND_GPIO_1000_BASE_ADDRESS
+   DT_INST_0_VND_GPIO_BASE_ADDRESS
+   DT_ALIAS_MGR_GPIO_BASE_ADDRESS
+
+   /* Use these instead: */
+   DT_REG_ADDR(DT_PATH(migration, gpio_1000))
+   DT_REG_ADDR(DT_INST(0, vnd_gpio))
+   DT_REG_ADDR(DT_ALIAS(mgr_gpio))
+   DT_REG_ADDR(DT_NODELABEL(migration_gpio))
+
+   /* Legacy sizes: */
+   DT_VND_GPIO_1000_SIZE
+   DT_INST_0_VND_GPIO_SIZE
+   DT_ALIAS_MGR_GPIO_SIZE
+
+   /* Use these instead: */
+   DT_REG_SIZE(DT_PATH(migration, gpio_1000))
+   DT_REG_SIZE(DT_INST(0, vnd_gpio))
+   DT_REG_SIZE(DT_ALIAS(mgr_gpio))
+   DT_REG_SIZE(DT_NODELABEL(migration_gpio))
+
+   /*
+    * interrupts IRQ numbers and priorities
+    *
+    * These use the interrupts property in /migration/gpio@1000.
+    * The interrupt number is 0, and the priority is 1.
+    */
+
+   /* Legacy interrupt numbers: */
+   DT_VND_GPIO_1000_IRQ_0
+   DT_INST_0_VND_GPIO_IRQ_0
+   DT_ALIAS_MGR_GPIO_IRQ_0
+
+   /* Use these instead: */
+   DT_IRQN(DT_PATH(migration, gpio_1000))
+   DT_IRQN(DT_INST(0, vnd_gpio))
+   DT_IRQN(DT_ALIAS(mgr_gpio))
+   DT_IRQN(DT_NODELABEL(migration_gpio))
+
+   /* Legacy priorities: */
+   DT_VND_GPIO_1000_IRQ_0_PRIORITY,
+   DT_INST_0_VND_GPIO_IRQ_0_PRIORITY,
+   DT_ALIAS_MGR_GPIO_IRQ_0_PRIORITY,
+
+   /* Use these instead: */
+   DT_IRQ(DT_PATH(migration, gpio_1000), priority)
+   DT_IRQ(DT_INST(0, vnd_gpio), priority)
+   DT_IRQ(DT_ALIAS(mgr_gpio), priority)
+   DT_IRQ(DT_NODELABEL(migration_gpio), priority)
+
+   /*
+    * Other property access
+    *
+    * These use the baud-rate property in /migration/serial@3000.
+    * They all expand to 115200.
+    */
+
+   /* Legacy: */
+   DT_VND_SERIAL_3000_BAUD_RATE
+   DT_ALIAS_MGR_SERIAL_BAUD_RATE
+   DT_INST_0_VND_SERIAL_BAUD_RATE
+
+   /* Use these instead: */
+   DT_PROP(DT_PATH(migration, serial_3000), baud_rate)
+   DT_PROP(DT_ALIAS(mgr_serial), baud_rate)
+   DT_PROP(DT_NODELABEL(migration_serial), baud_rate)
+   DT_PROP(DT_INST(0, vnd_serial), baud_rate)
+
+   /*
+    * I2C bus controller label access for an I2C peripheral device.
+    *
+    * These are different ways to get the bus controller label property
+    * from the peripheral device /migration/i2c@1000/i2c-dev-10.
+    *
+    * They all expand to "MGR_I2C".
+    */
+
+   /* Legacy: */
+   DT_VND_I2C_10000_VND_I2C_DEVICE_10_BUS_NAME
+   DT_ALIAS_MGR_I2C_DEV_BUS_NAME
+   DT_INST_0_VND_I2C_DEVICE_BUS_NAME
+
+   /* Use these instead (the extra #defines are just for readability): */
+   #define I2C_DEV_PATH		DT_PATH(migration, i2c_10000, i2c_dev_10)
+   #define I2C_DEV_ALIAS		DT_ALIAS(mgr_i2c_dev)
+   #define I2C_DEV_NODELABEL	DT_NODELABEL(mgr_i2c_device)
+   #define I2C_DEV_INST		DT_INST(0, vnd_i2c_device)
+
+   DT_LABEL(DT_BUS(I2C_DEV_PATH))
+   DT_LABEL(DT_BUS(I2C_DEV_ALIAS)))
+   DT_LABEL(DT_BUS(I2C_DEV_NODELABEL)))
+   DT_LABEL(DT_BUS(I2C_DEV_INST)))
+
+   /*
+    * SPI device chip-select controller.
+    *
+    * These use /migration/spi@2000/spi-dev@0. They all expand to
+    * "MGR_GPIO", which is the label property of /migration/gpio@1000,
+    * which is the SPI device's chip select pin GPIO controller. This is
+    * taken from the parent node's cs-gpios property.
+    */
+
+   /* Legacy */
+   DT_VND_SPI_20000_VND_SPI_DEVICE_0_CS_GPIOS_CONTROLLER
+   DT_ALIAS_MGR_SPI_DEV_CS_GPIOS_CONTROLLER
+   DT_INST_0_VND_SPI_DEVICE_CS_GPIOS_CONTROLLER
+
+   /* Use these instead (extra #defines just for readability): */
+   #define SPI_DEV_PATH		DT_PATH(migration, spi_20000, migration_spi_dev_0)
+   #define SPI_DEV_ALIAS		DT_ALIAS(mgr_spi_dev)
+   #define SPI_DEV_NODELABEL	DT_NODELABEL(mgr_spi_device)
+   #define SPI_DEV_INST		DT_INST(0, vnd_spi_device)
+
+   DT_SPI_DEV_CS_GPIOS_LABEL(SPI_DEV_PATH)
+   DT_SPI_DEV_CS_GPIOS_LABEL(SPI_DEV_ALIAS)
+   DT_SPI_DEV_CS_GPIOS_LABEL(SPI_DEV_NODELABEL)
+   DT_SPI_DEV_CS_GPIOS_LABEL(SPI_DEV_INST)
+
+   /*
+    * SPI device chip-select pin.
+    *
+    * These use /migration/spi@2000/spi-dev@0.
+    * They all expand to 17, which is also from cs-gpios.
+    */
+
+   /* Legacy: */
+   DT_VND_SPI_20000_VND_SPI_DEVICE_0_CS_GPIOS_PIN
+   DT_ALIAS_MGR_SPI_DEV_CS_GPIOS_PIN
+   DT_ALIAS_MGR_SPI_DEV_CS_GPIOS_PIN
+   DT_INST_0_VND_SPI_DEVICE_CS_GPIOS_PIN
+
+   /* Use these instead (extra #defines from above): */
+   DT_SPI_DEV_CS_GPIOS_PIN(SPI_DEV_PATH)
+   DT_SPI_DEV_CS_GPIOS_PIN(SPI_DEV_ALIAS)
+   DT_SPI_DEV_CS_GPIOS_PIN(SPI_DEV_NODEPIN)
+   DT_SPI_DEV_CS_GPIOS_PIN(SPI_DEV_INST)
+
+   /*
+    * SPI device chip-select pin's flags for the gpio.h API.
+    *
+    * These use /migration/spi@2000/spi-dev@0. They all expand to
+    * GPIO_ACTIVE_LOW (technically, its numeric value after
+    * preprocessing), which is also from cs-gpios.
+    */
+
+   /* Legacy: */
+   DT_VND_SPI_20000_VND_SPI_DEVICE_0_CS_GPIOS_FLAGS
+   DT_ALIAS_MGR_SPI_DEV_CS_GPIOS_FLAGS
+   DT_ALIAS_MGR_SPI_DEV_CS_GPIOS_FLAGS
+   DT_INST_0_VND_SPI_DEVICE_CS_GPIOS_FLAGS
+
+   /* Use these instead (extra #defines from above): */
+   DT_SPI_DEV_CS_GPIOS_FLAGS(SPI_DEV_PATH)
+   DT_SPI_DEV_CS_GPIOS_FLAGS(SPI_DEV_ALIAS)
+   DT_SPI_DEV_CS_GPIOS_FLAGS(SPI_DEV_NODEFLAGS)
+   DT_SPI_DEV_CS_GPIOS_FLAGS(SPI_DEV_INST)
+
 .. _dt-trouble:
 
 Troubleshoot devicetree issues
@@ -664,7 +878,7 @@ If you see the "whoops" error message when you rebuild, the node identifier
 isn't referring to a valid node. :ref:`get-devicetree-outputs` and debug from
 there.
 
-Some hints:
+Some hints for what to check next if you don't see the "whoops" error message:
 
 - did you :ref:`dt-use-the-right-names`?
 - does the :ref:`property exist <dt-checking-property-exists>`?
@@ -676,7 +890,7 @@ Check for missing bindings
 ==========================
 
 If the build fails to :ref:`dts-find-binding` for a node, then either the
-node's ``compatible`` property is missing, or its value has no matching
+node's ``compatible`` property is not defined, or its value has no matching
 binding. If the property is set, check for typos in its name. In a devicetree
 source file, ``compatible`` should look like ``"vnd,some-device"`` --
 :ref:`dt-use-the-right-names`.

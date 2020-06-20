@@ -194,4 +194,9 @@ config HAS_MCUX_TPM
 	help
 	  Set if the Timer/PWM Module is present in the SoC
 
+config HAS_MCUX_EDMA
+	bool
+	help
+	  Set if the EDMA module is present on the SoC.
+
 endif # HAS_MCUX

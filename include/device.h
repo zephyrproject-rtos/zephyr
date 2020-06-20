@@ -27,6 +27,22 @@ extern "C" {
 
 #define Z_DEVICE_MAX_NAME_LEN	48
 
+/**
+ * @def DEVICE_NAME_GET
+ *
+ * @brief Expands to the full name of a global device object
+ *
+ * @details Return the full name of a device object symbol created by
+ * DEVICE_INIT(), using the dev_name provided to DEVICE_INIT().
+ *
+ * It is meant to be used for declaring extern symbols pointing on device
+ * objects before using the DEVICE_GET macro to get the device object.
+ *
+ * @param name The same as dev_name provided to DEVICE_INIT()
+ *
+ * @return The expanded name of the device object created by DEVICE_INIT()
+ */
+#define DEVICE_NAME_GET(name) (_CONCAT(__device_, name))
 
 /**
  * @def SYS_DEVICE_DEFINE
@@ -67,7 +83,7 @@ extern "C" {
  *
  * @param init_fn Address to the init function of the driver.
  *
- * @param data Pointer to the device's configuration data.
+ * @param data Pointer to the device's private data.
  *
  * @param cfg_info The address to the structure containing the
  * configuration information for this instance of the driver.
@@ -98,7 +114,7 @@ extern "C" {
 #define DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info, \
 			    level, prio, api)				\
 	static Z_DECL_ALIGN(struct device)				\
-		_CONCAT(__device_, dev_name) __used			\
+		DEVICE_NAME_GET(dev_name) __used			\
 	__attribute__((__section__(".device_" #level STRINGIFY(prio)))) = { \
 		.name = drv_name,					\
 		.config_info = (cfg_info),				\
@@ -152,7 +168,7 @@ extern "C" {
 			&_CONCAT(__pm_, dev_name).signal),		\
 	};								\
 	static Z_DECL_ALIGN(struct device)				\
-		_CONCAT(__device_, dev_name) __used			\
+		DEVICE_NAME_GET(dev_name) __used			\
 	__attribute__((__section__(".device_" #level STRINGIFY(prio)))) = { \
 		.name = drv_name,					\
 		.config_info = (cfg_info),				\
@@ -165,23 +181,6 @@ extern "C" {
 			    (&_CONCAT(__device_, dev_name)), level, prio)
 
 #endif
-
-/**
- * @def DEVICE_NAME_GET
- *
- * @brief Expands to the full name of a global device object
- *
- * @details Return the full name of a device object symbol created by
- * DEVICE_INIT(), using the dev_name provided to DEVICE_INIT().
- *
- * It is meant to be used for declaring extern symbols pointing on device
- * objects before using the DEVICE_GET macro to get the device object.
- *
- * @param name The same as dev_name provided to DEVICE_INIT()
- *
- * @return The expanded name of the device object created by DEVICE_INIT()
- */
-#define DEVICE_NAME_GET(name) (_CONCAT(__device_, name))
 
 /**
  * @def DEVICE_GET
@@ -256,7 +255,7 @@ struct device {
 	const void *driver_api;
 	void * const driver_data;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	int (*device_pm_control)(struct device *device, u32_t command,
+	int (*device_pm_control)(struct device *device, uint32_t command,
 				 void *context, device_pm_cb cb, void *arg);
 	struct device_pm * const pm;
 #endif
@@ -349,7 +348,7 @@ __syscall struct device *device_get_binding(const char *name);
  *
  * @param state State id which name should be returned
  */
-const char *device_pm_state_str(u32_t state);
+const char *device_pm_state_str(uint32_t state);
 
 /**
  * @brief Indicate that the device is in the middle of a transaction
@@ -390,7 +389,7 @@ void device_busy_clear(struct device *busy_dev);
  * @retval -ENOTSUP for all operations.
  */
 int device_pm_control_nop(struct device *unused_device,
-			  u32_t unused_ctrl_command,
+			  uint32_t unused_ctrl_command,
 			  void *unused_context,
 			  device_pm_cb cb,
 			  void *unused_arg);
@@ -409,7 +408,7 @@ int device_pm_control_nop(struct device *unused_device,
  * @retval Errno Negative errno code if failure. Callback will not be called.
  */
 static inline int device_set_power_state(struct device *device,
-					 u32_t device_power_state,
+					 uint32_t device_power_state,
 					 device_pm_cb cb, void *arg)
 {
 	return device->device_pm_control(device,
@@ -431,7 +430,7 @@ static inline int device_set_power_state(struct device *device,
  * @retval Errno Negative errno code if failure.
  */
 static inline int device_get_power_state(struct device *device,
-					 u32_t *device_power_state)
+					 uint32_t *device_power_state)
 {
 	return device->device_pm_control(device,
 					 DEVICE_PM_GET_POWER_STATE,

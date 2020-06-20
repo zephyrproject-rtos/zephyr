@@ -13,7 +13,7 @@
 
 struct pwr_ctrl_cfg {
 	const char *port;
-	u32_t pin;
+	uint32_t pin;
 };
 
 static int pwr_ctrl_init(struct device *dev)

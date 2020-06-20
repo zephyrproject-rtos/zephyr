@@ -10,11 +10,14 @@
 
 #define PHYS_RAM_ADDR		DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
 #define PHYS_RAM_SIZE		DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
-#define PHYS_LOAD_ADDR		PHYS_RAM_ADDR
+
+#define KERNEL_BASE_ADDR    (PHYS_RAM_ADDR + CONFIG_X86_KERNEL_OFFSET)
+#define KERNEL_RAM_SIZE     (PHYS_RAM_SIZE - CONFIG_X86_KERNEL_OFFSET)
+#define PHYS_LOAD_ADDR		KERNEL_BASE_ADDR
 
 MEMORY
     {
-    RAM (wx)        : ORIGIN = PHYS_RAM_ADDR, LENGTH = PHYS_RAM_SIZE
+    RAM (wx)        : ORIGIN = KERNEL_BASE_ADDR, LENGTH = KERNEL_RAM_SIZE
 
     /*
      * It doesn't matter where this region goes as it is stripped from the

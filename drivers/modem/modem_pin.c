@@ -16,7 +16,7 @@
 
 #include "modem_context.h"
 
-int modem_pin_read(struct modem_context *ctx, u32_t pin)
+int modem_pin_read(struct modem_context *ctx, uint32_t pin)
 {
 	if (pin >= ctx->pins_len) {
 		return -ENODEV;
@@ -26,7 +26,7 @@ int modem_pin_read(struct modem_context *ctx, u32_t pin)
 				ctx->pins[pin].pin);
 }
 
-int modem_pin_write(struct modem_context *ctx, u32_t pin, u32_t value)
+int modem_pin_write(struct modem_context *ctx, uint32_t pin, uint32_t value)
 {
 	if (pin >= ctx->pins_len) {
 		return -ENODEV;
@@ -36,7 +36,7 @@ int modem_pin_write(struct modem_context *ctx, u32_t pin, u32_t value)
 				ctx->pins[pin].pin, value);
 }
 
-int modem_pin_config(struct modem_context *ctx, u32_t pin, bool enable)
+int modem_pin_config(struct modem_context *ctx, uint32_t pin, bool enable)
 {
 	if (pin >= ctx->pins_len) {
 		return -ENODEV;

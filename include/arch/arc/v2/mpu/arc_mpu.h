@@ -87,10 +87,10 @@ struct arc_mpu_region {
 	/* Region Name */
 	const char *name;
 	/* Region Base Address */
-	u32_t base;
-	u32_t size;
+	uint32_t base;
+	uint32_t size;
 	/* Region Attributes */
-	u32_t attr;
+	uint32_t attr;
 };
 
 #define MPU_REGION_ENTRY(_name, _base, _size, _attr) \
@@ -104,7 +104,7 @@ struct arc_mpu_region {
 /* MPU configuration data structure */
 struct arc_mpu_config {
 	/* Number of regions */
-	u32_t num_regions;
+	uint32_t num_regions;
 	/* Regions */
 	struct arc_mpu_region *mpu_regions;
 };

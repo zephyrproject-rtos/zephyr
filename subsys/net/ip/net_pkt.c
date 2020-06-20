@@ -138,9 +138,9 @@ struct net_pkt_alloc {
 	};
 	const char *func_alloc;
 	const char *func_free;
-	u16_t line_alloc;
-	u16_t line_free;
-	u8_t in_use;
+	uint16_t line_alloc;
+	uint16_t line_free;
+	uint8_t in_use;
 	bool is_pkt;
 };
 
@@ -283,7 +283,7 @@ const char *net_pkt_pool2str(struct net_buf_pool *pool)
 
 #if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC) || \
 	CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
-static inline s16_t get_frees(struct net_buf_pool *pool)
+static inline int16_t get_frees(struct net_buf_pool *pool)
 {
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
 	return pool->avail_count;
@@ -303,7 +303,7 @@ static inline const char *get_name(struct net_buf_pool *pool)
 #endif
 }
 
-static inline s16_t get_size(struct net_buf_pool *pool)
+static inline int16_t get_size(struct net_buf_pool *pool)
 {
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
 	return pool->pool_size;
@@ -857,7 +857,7 @@ static struct net_buf *pkt_alloc_buffer(struct net_buf_pool *pool,
 					size_t size, k_timeout_t timeout)
 #endif
 {
-	u64_t end = z_timeout_end_calc(timeout);
+	uint64_t end = z_timeout_end_calc(timeout);
 	struct net_buf *first = NULL;
 	struct net_buf *current = NULL;
 
@@ -884,7 +884,7 @@ static struct net_buf *pkt_alloc_buffer(struct net_buf_pool *pool,
 
 		if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
 		    !K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-			s64_t remaining = end - z_tick_get();
+			int64_t remaining = end - z_tick_get();
 
 			if (remaining <= 0) {
 				break;
@@ -1103,7 +1103,7 @@ int net_pkt_alloc_buffer(struct net_pkt *pkt,
 			 k_timeout_t timeout)
 #endif
 {
-	u64_t end = z_timeout_end_calc(timeout);
+	uint64_t end = z_timeout_end_calc(timeout);
 	struct net_buf_pool *pool = NULL;
 	size_t alloc_len = 0;
 	size_t hdr_len = 0;
@@ -1144,7 +1144,7 @@ int net_pkt_alloc_buffer(struct net_pkt *pkt,
 
 	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
 	    !K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-		s64_t remaining = end - z_tick_get();
+		int64_t remaining = end - z_tick_get();
 
 		if (remaining <= 0) {
 			timeout = K_NO_WAIT;
@@ -1363,7 +1363,7 @@ pkt_alloc_with_buffer(struct k_mem_slab *slab,
 		      k_timeout_t timeout)
 #endif
 {
-	u64_t end = z_timeout_end_calc(timeout);
+	uint64_t end = z_timeout_end_calc(timeout);
 	struct net_pkt *pkt;
 	int ret;
 
@@ -1383,7 +1383,7 @@ pkt_alloc_with_buffer(struct k_mem_slab *slab,
 
 	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
 	    !K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-		s64_t remaining = end - z_tick_get();
+		int64_t remaining = end - z_tick_get();
 
 		if (remaining <= 0) {
 			timeout = K_NO_WAIT;
@@ -1581,7 +1581,7 @@ static int net_pkt_cursor_operate(struct net_pkt *pkt,
 		pkt_cursor_update(pkt, len, write);
 
 		if (copy && data) {
-			data = (u8_t *) data + len;
+			data = (uint8_t *) data + len;
 		}
 
 		length -= len;
@@ -1616,36 +1616,36 @@ int net_pkt_read(struct net_pkt *pkt, void *data, size_t length)
 	return net_pkt_cursor_operate(pkt, data, length, true, false);
 }
 
-int net_pkt_read_be16(struct net_pkt *pkt, u16_t *data)
+int net_pkt_read_be16(struct net_pkt *pkt, uint16_t *data)
 {
-	u8_t d16[2];
+	uint8_t d16[2];
 	int ret;
 
-	ret = net_pkt_read(pkt, d16, sizeof(u16_t));
+	ret = net_pkt_read(pkt, d16, sizeof(uint16_t));
 
 	*data = d16[0] << 8 | d16[1];
 
 	return ret;
 }
 
-int net_pkt_read_le16(struct net_pkt *pkt, u16_t *data)
+int net_pkt_read_le16(struct net_pkt *pkt, uint16_t *data)
 {
-	u8_t d16[2];
+	uint8_t d16[2];
 	int ret;
 
-	ret = net_pkt_read(pkt, d16, sizeof(u16_t));
+	ret = net_pkt_read(pkt, d16, sizeof(uint16_t));
 
 	*data = d16[1] << 8 | d16[0];
 
 	return ret;
 }
 
-int net_pkt_read_be32(struct net_pkt *pkt, u32_t *data)
+int net_pkt_read_be32(struct net_pkt *pkt, uint32_t *data)
 {
-	u8_t d32[4];
+	uint8_t d32[4];
 	int ret;
 
-	ret = net_pkt_read(pkt, d32, sizeof(u32_t));
+	ret = net_pkt_read(pkt, d32, sizeof(uint32_t));
 
 	*data = d32[0] << 24 | d32[1] << 16 | d32[2] << 8 | d32[3];
 
@@ -1921,10 +1921,10 @@ int net_pkt_pull(struct net_pkt *pkt, size_t length)
 	return 0;
 }
 
-u16_t net_pkt_get_current_offset(struct net_pkt *pkt)
+uint16_t net_pkt_get_current_offset(struct net_pkt *pkt)
 {
 	struct net_buf *buf = pkt->buffer;
-	u16_t offset;
+	uint16_t offset;
 
 	if (!pkt->cursor.buf || !pkt->cursor.pos) {
 		return 0;

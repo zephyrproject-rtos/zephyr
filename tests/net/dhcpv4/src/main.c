@@ -150,8 +150,8 @@ static const struct in_addr client_addr = { { { 255, 255, 255, 255 } } };
 #define REQUEST		3
 
 struct dhcp_msg {
-	u32_t xid;
-	u8_t type;
+	uint32_t xid;
+	uint8_t type;
 };
 
 static struct k_sem test_lock;
@@ -159,7 +159,7 @@ static struct k_sem test_lock;
 #define WAIT_TIME K_SECONDS(CONFIG_NET_DHCPV4_INITIAL_DELAY_MAX + 1)
 
 struct net_dhcpv4_context {
-	u8_t mac_addr[sizeof(struct net_eth_addr)];
+	uint8_t mac_addr[sizeof(struct net_eth_addr)];
 	struct net_linkaddr ll_addr;
 };
 
@@ -172,7 +172,7 @@ static int net_dhcpv4_dev_init(struct device *dev)
 	return 0;
 }
 
-static u8_t *net_dhcpv4_get_mac(struct device *dev)
+static uint8_t *net_dhcpv4_get_mac(struct device *dev)
 {
 	struct net_dhcpv4_context *context = dev->driver_data;
 
@@ -191,12 +191,12 @@ static u8_t *net_dhcpv4_get_mac(struct device *dev)
 
 static void net_dhcpv4_iface_init(struct net_if *iface)
 {
-	u8_t *mac = net_dhcpv4_get_mac(net_if_get_device(iface));
+	uint8_t *mac = net_dhcpv4_get_mac(net_if_get_device(iface));
 
 	net_if_set_link_addr(iface, mac, 6, NET_LINK_ETHERNET);
 }
 
-struct net_pkt *prepare_dhcp_offer(struct net_if *iface, u32_t xid)
+struct net_pkt *prepare_dhcp_offer(struct net_if *iface, uint32_t xid)
 {
 	struct net_pkt *pkt;
 
@@ -237,7 +237,7 @@ fail:
 	return NULL;
 }
 
-struct net_pkt *prepare_dhcp_ack(struct net_if *iface, u32_t xid)
+struct net_pkt *prepare_dhcp_ack(struct net_if *iface, uint32_t xid)
 {
 	struct net_pkt *pkt;
 
@@ -300,8 +300,8 @@ static int parse_dhcp_message(struct net_pkt *pkt, struct dhcp_msg *msg)
 	}
 
 	while (1) {
-		u8_t length = 0U;
-		u8_t type;
+		uint8_t length = 0U;
+		uint8_t type;
 
 		if (net_pkt_read_u8(pkt, &type)) {
 			return 0;
@@ -391,7 +391,7 @@ static struct net_mgmt_event_callback dns_cb;
 static int event_count;
 
 static void receiver_cb(struct net_mgmt_event_callback *cb,
-			u32_t nm_event, struct net_if *iface)
+			uint32_t nm_event, struct net_if *iface)
 {
 	if (nm_event != NET_EVENT_IPV4_ADDR_ADD &&
 	    nm_event != NET_EVENT_DNS_SERVER_ADD &&

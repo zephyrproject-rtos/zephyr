@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(kscan_mchp_xec);
 
 /* Poll period/debouncing rely onthe 32KHz clock with 30 usec clock cycles */
 #define CLOCK_32K_HW_CYCLES_TO_US(X) \
-	(u32_t)((((u64_t)(X) * 1000000U) / sys_clock_hw_cycles_per_sec()))
+	(uint32_t)((((uint64_t)(X) * 1000000U) / sys_clock_hw_cycles_per_sec()))
 /* Milliseconds in microseconds */
 #define MSEC_PER_MS 1000U
 /* Number of tracked scan times */
@@ -35,21 +35,21 @@ LOG_MODULE_REGISTER(kscan_mchp_xec);
 
 struct kscan_xec_data {
 	/* variables in usec units */
-	u32_t deb_time_press;
-	u32_t deb_time_rel;
-	s64_t poll_timeout;
-	u32_t poll_period;
-	u8_t matrix_stable_state[MAX_MATRIX_KEY_COLS];
-	u8_t matrix_unstable_state[MAX_MATRIX_KEY_COLS];
-	u8_t matrix_previous_state[MAX_MATRIX_KEY_COLS];
+	uint32_t deb_time_press;
+	uint32_t deb_time_rel;
+	int64_t poll_timeout;
+	uint32_t poll_period;
+	uint8_t matrix_stable_state[MAX_MATRIX_KEY_COLS];
+	uint8_t matrix_unstable_state[MAX_MATRIX_KEY_COLS];
+	uint8_t matrix_previous_state[MAX_MATRIX_KEY_COLS];
 	/* Index in to the scan_clock_cycle to indicate start of debouncing */
-	u8_t scan_cycle_idx[MAX_MATRIX_KEY_COLS][MAX_MATRIX_KEY_ROWS];
+	uint8_t scan_cycle_idx[MAX_MATRIX_KEY_COLS][MAX_MATRIX_KEY_ROWS];
 	/* Track previous "elapsed clock cycles" per matrix scan. This
 	 * is used to calculate the debouncing time for every key
 	 */
-	u8_t scan_clk_cycle[SCAN_OCURRENCES];
+	uint8_t scan_clk_cycle[SCAN_OCURRENCES];
 	struct k_sem poll_lock;
-	u8_t scan_cycles_idx;
+	uint8_t scan_cycles_idx;
 	kscan_callback_t callback;
 	struct k_thread thread;
 	atomic_t enable_scan;
@@ -78,7 +78,7 @@ static void drive_keyboard_column(int data)
 	}
 }
 
-static u8_t read_keyboard_row(void)
+static uint8_t read_keyboard_row(void)
 {
 	/* In this implementation a 1 means key pressed */
 	return ~(base->KSI_IN & 0xFF);
@@ -113,7 +113,7 @@ static bool is_matrix_ghosting(const uint8_t *state)
 			 * now we or the colums using z&(z-1) which is
 			 * non-zero only if z has more than one bit set.
 			 */
-			u8_t common_row_bits = state[c] & state[c_n];
+			uint8_t common_row_bits = state[c] & state[c_n];
 
 			if (common_row_bits & (common_row_bits - 1))
 				return true;
@@ -123,10 +123,10 @@ static bool is_matrix_ghosting(const uint8_t *state)
 	return false;
 }
 
-static bool read_keyboard_matrix(u8_t *new_state)
+static bool read_keyboard_matrix(uint8_t *new_state)
 {
-	u8_t row;
-	u8_t key_event = 0U;
+	uint8_t row;
+	uint8_t key_event = 0U;
 
 	for (int col = 0; col < MAX_MATRIX_KEY_COLS; col++) {
 		drive_keyboard_column(col);
@@ -155,9 +155,9 @@ static void scan_matrix_xec_isr(void *arg)
 
 static bool check_key_events(void *dev)
 {
-	u8_t matrix_new_state[MAX_MATRIX_KEY_COLS] = {0U};
+	uint8_t matrix_new_state[MAX_MATRIX_KEY_COLS] = {0U};
 	bool key_pressed = false;
-	u32_t cycles_now  = k_cycle_get_32();
+	uint32_t cycles_now  = k_cycle_get_32();
 
 	if (++kbd_data.scan_cycles_idx >= SCAN_OCURRENCES)
 		kbd_data.scan_cycles_idx = 0U;
@@ -172,8 +172,8 @@ static bool check_key_events(void *dev)
 		return false;
 	}
 
-	u8_t row_changed = 0U;
-	u8_t deb_col;
+	uint8_t row_changed = 0U;
+	uint8_t deb_col;
 
 	/* The intent of this loop is to gather information related to key
 	 * changes.
@@ -207,15 +207,15 @@ static bool check_key_events(void *dev)
 
 		/* Debouncing for each row key occurs here */
 		for (int r = 0; r < MAX_MATRIX_KEY_ROWS; r++) {
-			u8_t mask = BIT(r);
-			u8_t row_bit = matrix_new_state[c] & mask;
+			uint8_t mask = BIT(r);
+			uint8_t row_bit = matrix_new_state[c] & mask;
 
 			/* Continue if we already debounce a key */
 			if (!(deb_col & mask))
 				continue;
 
 			/* Convert the clock cycle differences to usec */
-			u32_t debt = CLOCK_32K_HW_CYCLES_TO_US(cycles_now -
+			uint32_t debt = CLOCK_32K_HW_CYCLES_TO_US(cycles_now -
 			kbd_data.scan_clk_cycle[kbd_data.scan_cycle_idx[c][r]]);
 
 			/* Does the key requires more time to be debounced? */
@@ -250,11 +250,11 @@ static bool check_key_events(void *dev)
 	return key_pressed;
 }
 
-static bool poll_expired(u32_t start_cycles, s64_t *timeout)
+static bool poll_expired(uint32_t start_cycles, int64_t *timeout)
 {
-	u32_t stop_cycles;
-	u32_t cycles_spent;
-	u32_t microsecs_spent;
+	uint32_t stop_cycles;
+	uint32_t cycles_spent;
+	uint32_t microsecs_spent;
 
 	stop_cycles = k_cycle_get_32();
 	cycles_spent =  stop_cycles - start_cycles;
@@ -269,10 +269,10 @@ static bool poll_expired(u32_t start_cycles, s64_t *timeout)
 
 void polling_task(void *dev, void *dummy2, void *dummy3)
 {
-	u32_t current_cycles;
-	u32_t cycles_diff;
-	u32_t wait_period;
-	s64_t local_poll_timeout = kbd_data.poll_timeout;
+	uint32_t current_cycles;
+	uint32_t cycles_diff;
+	uint32_t wait_period;
+	int64_t local_poll_timeout = kbd_data.poll_timeout;
 
 	while (true) {
 		base->KSI_STS = MCHP_KSCAN_KSO_SEL_REG_MASK;
@@ -284,10 +284,10 @@ void polling_task(void *dev, void *dummy2, void *dummy3)
 		drive_keyboard_column(KEYBOARD_COLUMN_DRIVE_ALL);
 		k_sem_take(&kbd_data.poll_lock, K_FOREVER);
 
-		u32_t start_poll_cycles = k_cycle_get_32();
+		uint32_t start_poll_cycles = k_cycle_get_32();
 
 		while (atomic_get(&kbd_data.enable_scan) == 1U) {
-			u32_t start_period_cycles = k_cycle_get_32();
+			uint32_t start_period_cycles = k_cycle_get_32();
 
 			if (check_key_events(dev)) {
 				local_poll_timeout = kbd_data.poll_timeout;
@@ -386,11 +386,11 @@ static int kscan_xec_init(struct device *dev)
 	base->KSI_IEN = MCHP_KSCAN_KSI_IEN_REG_MASK;
 
 	/* Time figures are transformed from msec to usec */
-	kbd_data.deb_time_press = (u32_t)
+	kbd_data.deb_time_press = (uint32_t)
 		(CONFIG_KSCAN_XEC_DEBOUNCE_DOWN * MSEC_PER_MS);
-	kbd_data.deb_time_rel = (u32_t)
+	kbd_data.deb_time_rel = (uint32_t)
 		(CONFIG_KSCAN_XEC_DEBOUNCE_UP * MSEC_PER_MS);
-	kbd_data.poll_period = (u32_t)
+	kbd_data.poll_period = (uint32_t)
 		(CONFIG_KSCAN_XEC_POLL_PERIOD * MSEC_PER_MS);
 	kbd_data.poll_timeout = 100 * MSEC_PER_MS;
 

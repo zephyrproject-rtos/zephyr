@@ -68,22 +68,22 @@ struct pdm_io_cfg {
 	/* parameters global to all PDM controllers */
 
 	/* minimum clock frequency supported by the mic */
-	u32_t	min_pdm_clk_freq;
+	uint32_t	min_pdm_clk_freq;
 	/* maximum clock frequency supported by the mic */
-	u32_t	max_pdm_clk_freq;
+	uint32_t	max_pdm_clk_freq;
 	/* minimum duty cycle in % supported by the mic */
-	u8_t	min_pdm_clk_dc;
+	uint8_t	min_pdm_clk_dc;
 	/* maximum duty cycle in % supported by the mic */
-	u8_t	max_pdm_clk_dc;
+	uint8_t	max_pdm_clk_dc;
 
 	/* parameters unique to each PDM controller */
 
 	/* Bit mask to optionally invert PDM clock */
-	u8_t	pdm_clk_pol;
+	uint8_t	pdm_clk_pol;
 	/* Bit mask to optionally invert mic data */
-	u8_t	pdm_data_pol;
+	uint8_t	pdm_data_pol;
 	/* Collection of clock skew values for each PDM port */
-	u32_t	pdm_clk_skew;
+	uint32_t	pdm_clk_skew;
 };
 
 /**
@@ -96,11 +96,11 @@ struct pcm_stream_cfg {
 	 */
 
 	/* PCM sample rate of stream */
-	u32_t			pcm_rate;
+	uint32_t			pcm_rate;
 	/* PCM sample width of stream */
-	u8_t			pcm_width;
+	uint8_t			pcm_width;
 	/* PCM sample block size per transfer */
-	u16_t			block_size;
+	uint16_t			block_size;
 	/* SLAB for DMIC driver to allocate buffers for stream */
 	struct k_mem_slab	*mem_slab;
 };
@@ -127,19 +127,19 @@ struct pdm_chan_cfg {
 	 * to be adjacent to each other.
 	 */
 	/* Requested channel map */
-	u32_t	req_chan_map_lo;	/* Channels 0 to 7 */
-	u32_t	req_chan_map_hi;	/* Channels 8 to 15 */
+	uint32_t	req_chan_map_lo;	/* Channels 0 to 7 */
+	uint32_t	req_chan_map_hi;	/* Channels 8 to 15 */
 	/* Actual channel map that the driver could configure */
-	u32_t	act_chan_map_lo;	/* Channels 0 to 7 */
-	u32_t	act_chan_map_hi;	/* Channels 8 to 15 */
+	uint32_t	act_chan_map_lo;	/* Channels 0 to 7 */
+	uint32_t	act_chan_map_hi;	/* Channels 8 to 15 */
 	/* requested number of channels */
-	u8_t	req_num_chan;
+	uint8_t	req_num_chan;
 	/* Actual number of channels that the driver could configure */
-	u8_t	act_num_chan;
+	uint8_t	act_num_chan;
 	/* requested number of streams for each channel */
-	u8_t	req_num_streams;
+	uint8_t	req_num_streams;
 	/* Actual number of streams that the driver could configure */
-	u8_t	act_num_streams;
+	uint8_t	act_num_streams;
 };
 
 /**
@@ -161,8 +161,8 @@ struct dmic_cfg {
 struct _dmic_ops {
 	int (*configure)(struct device *dev, struct dmic_cfg *config);
 	int (*trigger)(struct device *dev, enum dmic_trigger cmd);
-	int (*read)(struct device *dev, u8_t stream, void **buffer,
-			size_t *size, s32_t timeout);
+	int (*read)(struct device *dev, uint8_t stream, void **buffer,
+			size_t *size, int32_t timeout);
 };
 
 /**
@@ -177,7 +177,7 @@ struct _dmic_ops {
  *
  * @return Bit-map containing the PDM and L/R channel information
  */
-static inline u32_t dmic_build_channel_map(u8_t channel, u8_t pdm,
+static inline uint32_t dmic_build_channel_map(uint8_t channel, uint8_t pdm,
 		enum pdm_lr lr)
 {
 	return ((((pdm & BIT_MASK(3)) << 1) | lr) <<
@@ -198,10 +198,10 @@ static inline u32_t dmic_build_channel_map(u8_t channel, u8_t pdm,
  *
  * @return none
  */
-static inline void dmic_parse_channel_map(u32_t channel_map_lo,
-		u32_t channel_map_hi, u8_t channel, u8_t *pdm, enum pdm_lr *lr)
+static inline void dmic_parse_channel_map(uint32_t channel_map_lo,
+		uint32_t channel_map_hi, uint8_t channel, uint8_t *pdm, enum pdm_lr *lr)
 {
-	u32_t channel_map;
+	uint32_t channel_map;
 
 	channel_map = (channel < 8) ? channel_map_lo : channel_map_hi;
 	channel_map >>= ((channel & BIT_MASK(3)) * 4U);
@@ -221,7 +221,7 @@ static inline void dmic_parse_channel_map(u32_t channel_map_lo,
  *
  * @return Bit-map containing the clock skew information
  */
-static inline u32_t dmic_build_clk_skew_map(u8_t pdm, u8_t skew)
+static inline uint32_t dmic_build_clk_skew_map(uint8_t pdm, uint8_t skew)
 {
 	return ((skew & BIT_MASK(4)) << ((pdm & BIT_MASK(3)) * 4U));
 }
@@ -278,8 +278,8 @@ static inline int dmic_trigger(struct device *dev, enum dmic_trigger cmd)
  *
  * @return 0 on success, a negative error code on failure
  */
-static inline int dmic_read(struct device *dev, u8_t stream, void **buffer,
-		size_t *size, s32_t timeout)
+static inline int dmic_read(struct device *dev, uint8_t stream, void **buffer,
+		size_t *size, int32_t timeout)
 {
 	const struct _dmic_ops *api =
 		(const struct _dmic_ops *)dev->driver_api;

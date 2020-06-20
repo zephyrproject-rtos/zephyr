@@ -71,14 +71,14 @@ extern int z_prf(int (*func)(), void *dest,
 
 static void monitor_send(const void *data, size_t len)
 {
-	const u8_t *buf = data;
+	const uint8_t *buf = data;
 
 	while (len--) {
 		uart_poll_out(monitor_dev, *buf++);
 	}
 }
 
-static void encode_drops(struct bt_monitor_hdr *hdr, u8_t type,
+static void encode_drops(struct bt_monitor_hdr *hdr, uint8_t type,
 			 atomic_t *val)
 {
 	atomic_val_t count;
@@ -90,14 +90,14 @@ static void encode_drops(struct bt_monitor_hdr *hdr, u8_t type,
 	}
 }
 
-static u32_t monitor_ts_get(void)
+static uint32_t monitor_ts_get(void)
 {
 	return (k_cycle_get_32() /
 		(sys_clock_hw_cycles_per_sec() / MONITOR_TS_FREQ));
 }
 
-static inline void encode_hdr(struct bt_monitor_hdr *hdr, u32_t timestamp,
-			      u16_t opcode, u16_t len)
+static inline void encode_hdr(struct bt_monitor_hdr *hdr, uint32_t timestamp,
+			      uint16_t opcode, uint16_t len)
 {
 	struct bt_monitor_ts32 *ts;
 
@@ -122,7 +122,7 @@ static inline void encode_hdr(struct bt_monitor_hdr *hdr, u32_t timestamp,
 	hdr->data_len = sys_cpu_to_le16(4 + hdr->hdr_len + len);
 }
 
-static void drop_add(u16_t opcode)
+static void drop_add(uint16_t opcode)
 {
 	switch (opcode) {
 	case BT_MONITOR_COMMAND_PKT:
@@ -151,7 +151,7 @@ static void drop_add(u16_t opcode)
 	}
 }
 
-void bt_monitor_send(u16_t opcode, const void *data, size_t len)
+void bt_monitor_send(uint16_t opcode, const void *data, size_t len)
 {
 	struct bt_monitor_hdr hdr;
 
@@ -168,7 +168,7 @@ void bt_monitor_send(u16_t opcode, const void *data, size_t len)
 	atomic_clear_bit(&flags, BT_LOG_BUSY);
 }
 
-void bt_monitor_new_index(u8_t type, u8_t bus, bt_addr_t *addr,
+void bt_monitor_new_index(uint8_t type, uint8_t bus, bt_addr_t *addr,
 			  const char *name)
 {
 	struct bt_monitor_new_index pkt;
@@ -222,7 +222,7 @@ struct monitor_log_ctx {
 	char msg[MONITOR_MSG_MAX];
 };
 
-static int monitor_log_out(u8_t *data, size_t length, void *user_data)
+static int monitor_log_out(uint8_t *data, size_t length, void *user_data)
 {
 	struct monitor_log_ctx *ctx = user_data;
 	size_t i;
@@ -242,13 +242,13 @@ static int monitor_log_out(u8_t *data, size_t length, void *user_data)
 	return length;
 }
 
-static u8_t buf;
+static uint8_t buf;
 
 LOG_OUTPUT_DEFINE(monitor_log_output, monitor_log_out, &buf, 1);
 
-static inline u8_t monitor_priority_get(u8_t log_level)
+static inline uint8_t monitor_priority_get(uint8_t log_level)
 {
-	static const u8_t prios[] = {
+	static const uint8_t prios[] = {
 		[LOG_LEVEL_NONE]  = 0,
 		[LOG_LEVEL_ERR]   = BT_LOG_ERR,
 		[LOG_LEVEL_WRN]   = BT_LOG_WARN,
@@ -327,6 +327,8 @@ static int bt_monitor_init(struct device *d)
 	ARG_UNUSED(d);
 
 	monitor_dev = device_get_binding(CONFIG_BT_MONITOR_ON_DEV_NAME);
+
+	__ASSERT_NO_MSG(monitor_dev);
 
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN)
 	uart_irq_rx_disable(monitor_dev);

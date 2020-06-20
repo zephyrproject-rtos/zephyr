@@ -60,14 +60,14 @@ static struct net_if *iface2;
 #define WAIT_TIME 250
 
 struct net_if_test {
-	u8_t idx;
-	u8_t mac_addr[sizeof(struct net_eth_addr)];
+	uint8_t idx;
+	uint8_t mac_addr[sizeof(struct net_eth_addr)];
 	struct net_linkaddr ll_addr;
 };
 
 struct eth_fake_context {
 	struct net_if *iface;
-	u8_t mac_address[6];
+	uint8_t mac_address[6];
 	bool promisc_mode;
 };
 
@@ -346,7 +346,7 @@ static void test_set_promisc_mode_off(void)
 
 static void _recv_data(struct net_if *iface, struct net_pkt **pkt)
 {
-	static u8_t data[] = { 't', 'e', 's', 't', '\0' };
+	static uint8_t data[] = { 't', 'e', 's', 't', '\0' };
 	int ret;
 
 	*pkt = net_pkt_rx_alloc_with_buffer(iface, sizeof(data),

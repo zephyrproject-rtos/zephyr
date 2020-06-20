@@ -267,7 +267,7 @@ static void test_time32_epochm1(void)
 
 static void test_time32_underflow(void)
 {
-	const s64_t unix64 = -2147483649;
+	const int64_t unix64 = -2147483649;
 	const struct timeutil_test_data *tp = &(const struct timeutil_test_data){
 		.civil = "1901-12-13 20:45:51 Fri 347",
 		.tm = {
@@ -296,7 +296,7 @@ static void test_time32_underflow(void)
 
 static void test_time32_overflow(void)
 {
-	const s64_t unix64 = 2147483648;
+	const int64_t unix64 = 2147483648;
 	const struct timeutil_test_data *tp = &(const struct timeutil_test_data){
 		.civil = "2038-01-19 03:14:08 Tue 019",
 		.tm = {

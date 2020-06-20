@@ -59,15 +59,15 @@ int fcb_test_empty_walk_cb(struct fcb_entry_ctx *entry_ctx, void *arg)
 	return 0;
 }
 
-u8_t fcb_test_append_data(int msg_len, int off)
+uint8_t fcb_test_append_data(int msg_len, int off)
 {
 	return (msg_len ^ off);
 }
 
 int fcb_test_data_walk_cb(struct fcb_entry_ctx *entry_ctx, void *arg)
 {
-	u16_t len;
-	u8_t test_data[128];
+	uint16_t len;
+	uint8_t test_data[128];
 	int rc;
 	int i;
 	int *var_cnt = (int *)arg;

@@ -25,6 +25,7 @@ import pykwalify.core
 import subprocess
 import re
 from pathlib import Path, PurePath
+from collections import namedtuple
 
 METADATA_SCHEMA = '''
 ## A pykwalify schema for basic validation of the structure of a
@@ -44,6 +45,11 @@ mapping:
       kconfig:
         required: false
         type: str
+      depends:
+        required: false
+        type: seq
+        sequence:
+          - type: str
   tests:
     required: false
     type: seq
@@ -215,6 +221,14 @@ def main():
     cmake = ""
     sanitycheck = ""
 
+    Module = namedtuple('Module', ['project', 'meta', 'depends'])
+    # dep_modules is a list of all modules that has an unresolved dependency
+    dep_modules = []
+    # start_modules is a list modules with no depends left (no incoming edge)
+    start_modules = []
+    # sorted_modules is a topological sorted list of the modules
+    sorted_modules = []
+
     for project in projects:
         # Avoid including Zephyr base project as module.
         if project == os.environ.get('ZEPHYR_BASE'):
@@ -222,12 +236,44 @@ def main():
 
         meta = process_module(project)
         if meta:
-            kconfig += process_kconfig(project, meta)
-            cmake += process_cmake(project, meta)
-            sanitycheck += process_sanitycheck(project, meta)
+            section = meta.get('build', dict())
+            deps = section.get('depends', [])
+            if not deps:
+                start_modules.append(Module(project, meta, []))
+            else:
+                dep_modules.append(Module(project, meta, deps))
         elif project in extra_modules:
             sys.exit(f'{project}, given in ZEPHYR_EXTRA_MODULES, '
                      'is not a valid zephyr module')
+
+    # This will do a topological sort to ensure the modules are ordered
+    # according to dependency settings.
+    while start_modules:
+        node = start_modules.pop(0)
+        sorted_modules.append(node)
+        node_name = PurePath(node.project).name
+        to_remove = []
+        for module in dep_modules:
+            if node_name in module.depends:
+                module.depends.remove(node_name)
+                if not module.depends:
+                    start_modules.append(module)
+                    to_remove.append(module)
+        for module in to_remove:
+            dep_modules.remove(module)
+
+    if dep_modules:
+        # If there are any modules with unresolved dependencies, then the
+        # modules contains unmet or cyclic dependencies. Error out.
+        error = 'Unmet or cyclic dependencies in modules:\n'
+        for module in dep_modules:
+            error += f'{module.project} depends on: {module.depends}\n'
+        sys.exit(error)
+
+    for module in sorted_modules:
+        kconfig += process_kconfig(module.project, module.meta)
+        cmake += process_cmake(module.project, module.meta)
+        sanitycheck += process_sanitycheck(module.project, module.meta)
 
     if args.kconfig_out:
         with open(args.kconfig_out, 'w', encoding="utf-8") as fp:

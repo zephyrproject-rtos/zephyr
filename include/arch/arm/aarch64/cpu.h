@@ -118,7 +118,7 @@
 #ifndef _ASMLANGUAGE
 /* Core sysreg macros */
 #define read_sysreg(reg) ({					\
-	u64_t val;						\
+	uint64_t val;						\
 	__asm__ volatile("mrs %0, " STRINGIFY(reg) : "=r" (val));\
 	val;							\
 })

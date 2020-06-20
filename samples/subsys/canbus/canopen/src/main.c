@@ -47,7 +47,7 @@ struct led_indicator {
 
 static struct led_indicator led_green;
 static struct led_indicator led_red;
-static u32_t counter;
+static uint32_t counter;
 
 /**
  * @brief Callback for setting LED indicator state.
@@ -113,7 +113,7 @@ static void config_leds(CO_NMT_t *nmt)
  */
 static CO_SDO_abortCode_t odf_2102(CO_ODF_arg_t *odf_arg)
 {
-	u32_t value;
+	uint32_t value;
 
 	value = CO_getUint32(odf_arg->data);
 
@@ -127,7 +127,7 @@ static CO_SDO_abortCode_t odf_2102(CO_ODF_arg_t *odf_arg)
 
 	if (value != 0) {
 		/* Preserve old value */
-		memcpy(odf_arg->data, odf_arg->ODdataStorage, sizeof(u32_t));
+		memcpy(odf_arg->data, odf_arg->ODdataStorage, sizeof(uint32_t));
 		return CO_SDO_AB_DATA_TRANSF;
 	}
 
@@ -146,7 +146,7 @@ static CO_SDO_abortCode_t odf_2102(CO_ODF_arg_t *odf_arg)
  */
 #ifdef BUTTON_PORT
 static void button_isr_callback(struct device *port, struct gpio_callback *cb,
-				u32_t pins)
+				uint32_t pins)
 {
 	counter++;
 }
@@ -202,9 +202,9 @@ void main(void)
 	CO_NMT_reset_cmd_t reset = CO_RESET_NOT;
 	CO_ReturnError_t err;
 	struct device *can;
-	u16_t timeout;
-	u32_t elapsed;
-	s64_t timestamp;
+	uint16_t timeout;
+	uint32_t elapsed;
+	int64_t timestamp;
 	int ret;
 
 	can = device_get_binding(CAN_INTERFACE);
@@ -278,7 +278,7 @@ void main(void)
 				 * exact time elapsed.
 				 */
 				k_sleep(K_MSEC(timeout));
-				elapsed = (u32_t)k_uptime_delta(&timestamp);
+				elapsed = (uint32_t)k_uptime_delta(&timestamp);
 			} else {
 				/*
 				 * Do not sleep, more processing to be

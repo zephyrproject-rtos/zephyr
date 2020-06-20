@@ -39,10 +39,10 @@ static struct bt_uuid_128 vnd_auth_uuid = BT_UUID_INIT_128(
 	0xf2, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
 	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
 
-static u8_t vnd_value[] = { 'V', 'e', 'n', 'd', 'o', 'r' };
+static uint8_t vnd_value[] = { 'V', 'e', 'n', 'd', 'o', 'r' };
 
 static ssize_t read_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			void *buf, u16_t len, u16_t offset)
+			void *buf, uint16_t len, uint16_t offset)
 {
 	const char *value = attr->user_data;
 
@@ -51,10 +51,10 @@ static ssize_t read_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 }
 
 static ssize_t write_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			 const void *buf, u16_t len, u16_t offset,
-			 u8_t flags)
+			 const void *buf, uint16_t len, uint16_t offset,
+			 uint8_t flags)
 {
-	u8_t *value = attr->user_data;
+	uint8_t *value = attr->user_data;
 
 	if (offset + len > sizeof(vnd_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -65,24 +65,24 @@ static ssize_t write_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return len;
 }
 
-static u8_t simulate_vnd;
-static u8_t indicating;
+static uint8_t simulate_vnd;
+static uint8_t indicating;
 static struct bt_gatt_indicate_params ind_params;
 
-static void vnd_ccc_cfg_changed(const struct bt_gatt_attr *attr, u16_t value)
+static void vnd_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	simulate_vnd = (value == BT_GATT_CCC_INDICATE) ? 1 : 0;
 }
 
 static void indicate_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			u8_t err)
+			uint8_t err)
 {
 	printk("Indication %s\n", err != 0U ? "fail" : "success");
 	indicating = 0U;
 }
 
 #define MAX_DATA 74
-static u8_t vnd_long_value[] = {
+static uint8_t vnd_long_value[] = {
 		  'V', 'e', 'n', 'd', 'o', 'r', ' ', 'd', 'a', 't', 'a', '1',
 		  'V', 'e', 'n', 'd', 'o', 'r', ' ', 'd', 'a', 't', 'a', '2',
 		  'V', 'e', 'n', 'd', 'o', 'r', ' ', 'd', 'a', 't', 'a', '3',
@@ -93,7 +93,7 @@ static u8_t vnd_long_value[] = {
 
 static ssize_t read_long_vnd(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
-			     u16_t len, u16_t offset)
+			     uint16_t len, uint16_t offset)
 {
 	const char *value = attr->user_data;
 
@@ -103,9 +103,9 @@ static ssize_t read_long_vnd(struct bt_conn *conn,
 
 static ssize_t write_long_vnd(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, const void *buf,
-			      u16_t len, u16_t offset, u8_t flags)
+			      uint16_t len, uint16_t offset, uint8_t flags)
 {
-	u8_t *value = attr->user_data;
+	uint8_t *value = attr->user_data;
 
 	if (flags & BT_GATT_WRITE_FLAG_PREPARE) {
 		return 0;
@@ -131,7 +131,7 @@ static struct bt_gatt_cep vnd_long_cep = {
 static int signed_value;
 
 static ssize_t read_signed(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			   void *buf, u16_t len, u16_t offset)
+			   void *buf, uint16_t len, uint16_t offset)
 {
 	const char *value = attr->user_data;
 
@@ -140,10 +140,10 @@ static ssize_t read_signed(struct bt_conn *conn, const struct bt_gatt_attr *attr
 }
 
 static ssize_t write_signed(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			    const void *buf, u16_t len, u16_t offset,
-			    u8_t flags)
+			    const void *buf, uint16_t len, uint16_t offset,
+			    uint8_t flags)
 {
-	u8_t *value = attr->user_data;
+	uint8_t *value = attr->user_data;
 
 	if (offset + len > sizeof(signed_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -164,10 +164,10 @@ static const struct bt_uuid_128 vnd_write_cmd_uuid = BT_UUID_INIT_128(
 
 static ssize_t write_without_rsp_vnd(struct bt_conn *conn,
 				     const struct bt_gatt_attr *attr,
-				     const void *buf, u16_t len, u16_t offset,
-				     u8_t flags)
+				     const void *buf, uint16_t len, uint16_t offset,
+				     uint8_t flags)
 {
-	u8_t *value = attr->user_data;
+	uint8_t *value = attr->user_data;
 
 	/* Write request received. Reject it since this char only accepts
 	 * Write Commands.
@@ -226,7 +226,7 @@ static const struct bt_data ad[] = {
 		      0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12),
 };
 
-static void connected(struct bt_conn *conn, u8_t err)
+static void connected(struct bt_conn *conn, uint8_t err)
 {
 	if (err) {
 		printk("Connection failed (err 0x%02x)\n", err);
@@ -235,7 +235,7 @@ static void connected(struct bt_conn *conn, u8_t err)
 	}
 }
 
-static void disconnected(struct bt_conn *conn, u8_t reason)
+static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	printk("Disconnected (reason 0x%02x)\n", reason);
 }
@@ -292,7 +292,7 @@ static struct bt_conn_auth_cb auth_cb_display = {
 
 static void bas_notify(void)
 {
-	u8_t battery_level = bt_gatt_bas_get_battery_level();
+	uint8_t battery_level = bt_gatt_bas_get_battery_level();
 
 	battery_level--;
 
@@ -305,7 +305,7 @@ static void bas_notify(void)
 
 static void hrs_notify(void)
 {
-	static u8_t heartrate = 90U;
+	static uint8_t heartrate = 90U;
 
 	/* Heartrate measurements simulation */
 	heartrate++;

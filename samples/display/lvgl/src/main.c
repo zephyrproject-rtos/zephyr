@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(app);
 
 void main(void)
 {
-	u32_t count = 0U;
+	uint32_t count = 0U;
 	char count_str[11] = {0};
 	struct device *display_dev;
 	lv_obj_t *hello_world_label;

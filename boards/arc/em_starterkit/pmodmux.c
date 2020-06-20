@@ -126,7 +126,7 @@
 
 static int pmod_mux_init(struct device *device)
 {
-	volatile u32_t *mux_regs = (u32_t *)(PMODMUX_BASE_ADDR);
+	volatile uint32_t *mux_regs = (uint32_t *)(PMODMUX_BASE_ADDR);
 
 	mux_regs[SPI_MAP_CTRL] =  SPI_MAP_CTRL_DEFAULT;
 	mux_regs[UART_MAP_CTRL] = UART_MAP_CTRL_DEFAULT;

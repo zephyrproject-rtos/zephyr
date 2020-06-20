@@ -15,6 +15,7 @@
 LOG_MODULE_REGISTER(main);
 
 #if CONFIG_DISK_ACCESS_FLASH
+#include <storage/flash_map.h>
 #if CONFIG_FAT_FILESYSTEM_ELM
 #include <fs/fs.h>
 #include <ff.h>
@@ -25,12 +26,12 @@ static FATFS fat_fs;
 static struct fs_mount_t fs_mnt = {
 	.type = FS_FATFS,
 	.mnt_point = FATFS_MNTP,
+	.storage_dev = (void *)FLASH_AREA_ID(storage),
 	.fs_data = &fat_fs,
 };
 #elif CONFIG_FILE_SYSTEM_LITTLEFS
 #include <fs/fs.h>
 #include <fs/littlefs.h>
-#include <storage/flash_map.h>
 
 FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(storage);
 static struct fs_mount_t fs_mnt = {

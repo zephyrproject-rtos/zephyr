@@ -31,8 +31,8 @@ LOG_MODULE_REGISTER(net_http_client_sample, LOG_LEVEL_DBG);
 
 #define MAX_RECV_BUF_LEN 512
 
-static u8_t recv_buf_ipv4[MAX_RECV_BUF_LEN];
-static u8_t recv_buf_ipv6[MAX_RECV_BUF_LEN];
+static uint8_t recv_buf_ipv4[MAX_RECV_BUF_LEN];
+static uint8_t recv_buf_ipv6[MAX_RECV_BUF_LEN];
 
 static int setup_socket(sa_family_t family, const char *server, int port,
 			int *sock, struct sockaddr *addr, socklen_t addr_len)
@@ -152,7 +152,7 @@ void main(void)
 	struct sockaddr_in6 addr6;
 	struct sockaddr_in addr4;
 	int sock4 = -1, sock6 = -1;
-	s32_t timeout = 3 * MSEC_PER_SEC;
+	int32_t timeout = 3 * MSEC_PER_SEC;
 	int ret;
 	int port = HTTP_PORT;
 

@@ -72,7 +72,7 @@ static void usbip_header_dump(struct usbip_header *hdr)
 #define usbip_header_dump(x)
 #endif
 
-void get_interface(u8_t *descriptors)
+void get_interface(uint8_t *descriptors)
 {
 	while (descriptors[0]) {
 		if (descriptors[1] == USB_INTERFACE_DESC) {
@@ -84,13 +84,13 @@ void get_interface(u8_t *descriptors)
 	}
 }
 
-static int send_interfaces(const u8_t *descriptors, int connfd)
+static int send_interfaces(const uint8_t *descriptors, int connfd)
 {
 	struct devlist_interface {
-		u8_t bInterfaceClass;
-		u8_t bInterfaceSubClass;
-		u8_t bInterfaceProtocol;
-		u8_t padding;	/* alignment */
+		uint8_t bInterfaceClass;
+		uint8_t bInterfaceSubClass;
+		uint8_t bInterfaceProtocol;
+		uint8_t padding;	/* alignment */
 	} __packed iface;
 
 	while (descriptors[0]) {
@@ -116,7 +116,7 @@ static int send_interfaces(const u8_t *descriptors, int connfd)
 	return 0;
 }
 
-static void fill_device(struct devlist_device *dev, const u8_t *desc)
+static void fill_device(struct devlist_device *dev, const uint8_t *desc)
 {
 	struct usb_device_descriptor *dev_dsc = (void *)desc;
 	struct usb_cfg_descriptor *cfg =
@@ -143,7 +143,7 @@ static void fill_device(struct devlist_device *dev, const u8_t *desc)
 	dev->bNumInterfaces = cfg->bNumInterfaces;
 }
 
-static int send_device(const u8_t *desc, int connfd)
+static int send_device(const uint8_t *desc, int connfd)
 {
 	struct devlist_device dev;
 
@@ -157,7 +157,7 @@ static int send_device(const u8_t *desc, int connfd)
 	return 0;
 }
 
-static int handle_device_list(const u8_t *desc, int connfd)
+static int handle_device_list(const uint8_t *desc, int connfd)
 {
 	struct op_common header = {
 		.version = htons(USBIP_VERSION),
@@ -173,7 +173,7 @@ static int handle_device_list(const u8_t *desc, int connfd)
 	}
 
 	/* Send number of devices */
-	u32_t ndev = htonl(1);
+	uint32_t ndev = htonl(1);
 
 	if (send(connfd, &ndev, sizeof(ndev), 0) != sizeof(ndev)) {
 		LOG_ERR("send() ndev failed: %s", strerror(errno));
@@ -211,7 +211,7 @@ static void handle_usbip_submit(int connfd, struct usbip_header *hdr)
 
 bool usbip_skip_setup(void)
 {
-	u64_t setup;
+	uint64_t setup;
 
 	LOG_DBG("Skip 8 bytes");
 
@@ -246,7 +246,7 @@ static void handle_usbip_unlink(int connfd, struct usbip_header *hdr)
 	/* TODO: unlink */
 }
 
-static int handle_import(const u8_t *desc, int connfd)
+static int handle_import(const uint8_t *desc, int connfd)
 {
 	struct op_common header = {
 		.version = htons(USBIP_VERSION),
@@ -279,7 +279,7 @@ void usbip_start(void)
 	struct sockaddr_in srv;
 	unsigned char attached;
 	int listenfd, connfd;
-	const u8_t *desc;
+	const uint8_t *desc;
 	int reuse = 1;
 
 	LOG_DBG("Starting");
@@ -288,7 +288,7 @@ void usbip_start(void)
 	 * Do not use usb_get_device_descriptor();
 	 * to prevent double string fixing
 	 */
-	desc = (const u8_t *)__usb_descriptor_start;
+	desc = (const uint8_t *)__usb_descriptor_start;
 	if (!desc) {
 		LOG_ERR("Descriptors are not set");
 		posix_exit(EXIT_FAILURE);
@@ -371,7 +371,7 @@ void usbip_start(void)
 					break;
 				}
 
-				LOG_HEXDUMP_DBG((u8_t *)&req, sizeof(req),
+				LOG_HEXDUMP_DBG((uint8_t *)&req, sizeof(req),
 						"Got request");
 
 				LOG_DBG("Code: 0x%x", ntohs(req.code));
@@ -406,7 +406,7 @@ void usbip_start(void)
 				}
 			}
 
-			LOG_HEXDUMP_DBG((u8_t *)hdr, read, "Got cmd");
+			LOG_HEXDUMP_DBG((uint8_t *)hdr, read, "Got cmd");
 
 			if (read != sizeof(*hdr)) {
 				LOG_ERR("recv wrong length: %d", read);
@@ -438,17 +438,17 @@ void usbip_start(void)
 	}
 }
 
-int usbip_recv(u8_t *buf, size_t len)
+int usbip_recv(uint8_t *buf, size_t len)
 {
 	return recv(connfd_global, buf, len, 0);
 }
 
-int usbip_send(u8_t ep, const u8_t *data, size_t len)
+int usbip_send(uint8_t ep, const uint8_t *data, size_t len)
 {
 	return send(connfd_global, data, len, 0);
 }
 
-bool usbip_send_common(u8_t ep, u32_t data_len)
+bool usbip_send_common(uint8_t ep, uint32_t data_len)
 {
 	struct usbip_submit_rsp rsp;
 
@@ -466,7 +466,7 @@ bool usbip_send_common(u8_t ep, u32_t data_len)
 
 	rsp.setup = htonl(0);
 
-	if (usbip_send(ep, (u8_t *)&rsp, sizeof(rsp)) == sizeof(rsp)) {
+	if (usbip_send(ep, (uint8_t *)&rsp, sizeof(rsp)) == sizeof(rsp)) {
 		return true;
 	}
 

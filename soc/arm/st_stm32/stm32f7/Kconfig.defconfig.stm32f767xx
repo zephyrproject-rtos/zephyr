@@ -11,4 +11,11 @@ config SOC
 config NUM_IRQS
 	default 110
 
+if ENTROPY_GENERATOR
+
+config ENTROPY_STM32_RNG
+	default y
+
+endif # ENTROPY_GENERATOR
+
 endif # SOC_STM32F767XX

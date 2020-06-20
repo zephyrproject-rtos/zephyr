@@ -129,10 +129,10 @@ static bool ot_setting_exists(const char *path)
 
 struct ot_setting_read_ctx {
 	/* Buffer for the setting. */
-	u8_t *value;
+	uint8_t *value;
 
 	/* Buffer length on input, setting length read on output. */
-	u16_t *length;
+	uint16_t *length;
 
 	/* Current entry index, used to iterate over multiple setting
 	 * instances.
@@ -210,7 +210,7 @@ otError otPlatSettingsGet(otInstance *aInstance, uint16_t aKey, int aIndex,
 	char path[OT_SETTINGS_MAX_PATH_LEN];
 	struct ot_setting_read_ctx read_ctx = {
 		.value = aValue,
-		.length = (u16_t *)aValueLength,
+		.length = (uint16_t *)aValueLength,
 		.status = -ENOENT,
 		.target_index = aIndex
 	};

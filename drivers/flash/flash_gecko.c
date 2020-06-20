@@ -28,8 +28,8 @@ struct flash_gecko_data {
 #define DEV_DATA(dev) \
 	((struct flash_gecko_data *const)(dev)->driver_data)
 
-static bool write_range_is_valid(off_t offset, u32_t size);
-static bool read_range_is_valid(off_t offset, u32_t size);
+static bool write_range_is_valid(off_t offset, uint32_t size);
+static bool read_range_is_valid(off_t offset, uint32_t size);
 static int erase_flash_block(off_t offset, size_t size);
 
 static int flash_gecko_read(struct device *dev, off_t offset, void *data,
@@ -43,7 +43,7 @@ static int flash_gecko_read(struct device *dev, off_t offset, void *data,
 		return 0;
 	}
 
-	memcpy(data, (u8_t *)CONFIG_FLASH_BASE_ADDRESS + offset, size);
+	memcpy(data, (uint8_t *)CONFIG_FLASH_BASE_ADDRESS + offset, size);
 
 	return 0;
 }
@@ -66,7 +66,7 @@ static int flash_gecko_write(struct device *dev, off_t offset,
 
 	k_sem_take(&dev_data->mutex, K_FOREVER);
 
-	address = (u8_t *)CONFIG_FLASH_BASE_ADDRESS + offset;
+	address = (uint8_t *)CONFIG_FLASH_BASE_ADDRESS + offset;
 	msc_ret = MSC_WriteWord(address, data, size);
 	if (msc_ret < 0) {
 		ret = -EIO;
@@ -132,14 +132,14 @@ static int flash_gecko_write_protection(struct device *dev, bool enable)
  * - A flash address to write to must be aligned to words.
  * - Number of bytes to write must be divisible by 4.
  */
-static bool write_range_is_valid(off_t offset, u32_t size)
+static bool write_range_is_valid(off_t offset, uint32_t size)
 {
 	return read_range_is_valid(offset, size)
-		&& (offset % sizeof(u32_t) == 0)
+		&& (offset % sizeof(uint32_t) == 0)
 		&& (size % 4 == 0U);
 }
 
-static bool read_range_is_valid(off_t offset, u32_t size)
+static bool read_range_is_valid(off_t offset, uint32_t size)
 {
 	return (offset + size) <= (CONFIG_FLASH_SIZE * 1024);
 }
@@ -151,7 +151,7 @@ static int erase_flash_block(off_t offset, size_t size)
 	int ret = 0;
 
 	for (off_t tmp = offset; tmp < offset + size; tmp += FLASH_PAGE_SIZE) {
-		address = (u8_t *)CONFIG_FLASH_BASE_ADDRESS + tmp;
+		address = (uint8_t *)CONFIG_FLASH_BASE_ADDRESS + tmp;
 		msc_ret = MSC_ErasePage(address);
 		if (msc_ret < 0) {
 			ret = -EIO;

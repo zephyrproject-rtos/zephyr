@@ -224,76 +224,76 @@ enum sd_ocr_flag {
 #define SD_PRODUCT_NAME_BYTES (5U)
 
 struct sd_cid {
-	u8_t manufacturer;
+	uint8_t manufacturer;
 	/*!< Manufacturer ID [127:120] */
-	u16_t application;
+	uint16_t application;
 	/*!< OEM/Application ID [119:104] */
-	u8_t name[SD_PRODUCT_NAME_BYTES];
+	uint8_t name[SD_PRODUCT_NAME_BYTES];
 	/*!< Product name [103:64] */
-	u8_t version;
+	uint8_t version;
 	/*!< Product revision [63:56] */
-	u32_t ser_num;
+	uint32_t ser_num;
 	/*!< Product serial number [55:24] */
-	u16_t date;
+	uint16_t date;
 	/*!< Manufacturing date [19:8] */
 };
 
 struct sd_csd {
-	u8_t csd_structure;
+	uint8_t csd_structure;
 	/*!< CSD structure [127:126] */
-	u8_t read_time1;
+	uint8_t read_time1;
 	/*!< Data read access-time-1 [119:112] */
-	u8_t read_time2;
+	uint8_t read_time2;
 	/*!< Data read access-time-2 in clock cycles (NSAC*100) [111:104] */
-	u8_t xfer_rate;
+	uint8_t xfer_rate;
 	/*!< Maximum data transfer rate [103:96] */
-	u16_t cmd_class;
+	uint16_t cmd_class;
 	/*!< Card command classes [95:84] */
-	u8_t read_blk_len;
+	uint8_t read_blk_len;
 	/*!< Maximum read data block length [83:80] */
-	u16_t flags;
+	uint16_t flags;
 	/*!< Flags in _sd_csd_flag */
-	u32_t device_size;
+	uint32_t device_size;
 	/*!< Device size [73:62] */
-	u8_t read_current_min;
+	uint8_t read_current_min;
 	/*!< Maximum read current at VDD min [61:59] */
-	u8_t read_current_max;
+	uint8_t read_current_max;
 	/*!< Maximum read current at VDD max [58:56] */
-	u8_t write_current_min;
+	uint8_t write_current_min;
 	/*!< Maximum write current at VDD min [55:53] */
-	u8_t write_current_max;
+	uint8_t write_current_max;
 	/*!< Maximum write current at VDD max [52:50] */
-	u8_t dev_size_mul;
+	uint8_t dev_size_mul;
 	/*!< Device size multiplier [49:47] */
 
-	u8_t erase_size;
+	uint8_t erase_size;
 	/*!< Erase sector size [45:39] */
-	u8_t write_prtect_size;
+	uint8_t write_prtect_size;
 	/*!< Write protect group size [38:32] */
-	u8_t write_speed_factor;
+	uint8_t write_speed_factor;
 	/*!< Write speed factor [28:26] */
-	u8_t write_blk_len;
+	uint8_t write_blk_len;
 	/*!< Maximum write data block length [25:22] */
-	u8_t file_fmt;
+	uint8_t file_fmt;
 	/*!< File format [11:10] */
 };
 
 struct sd_scr {
-	u8_t scr_structure;
+	uint8_t scr_structure;
 	/*!< SCR Structure [63:60] */
-	u8_t sd_spec;
+	uint8_t sd_spec;
 	/*!< SD memory card specification version [59:56] */
-	u16_t flags;
+	uint16_t flags;
 	/*!< SCR flags in _sd_scr_flag */
-	u8_t sd_sec;
+	uint8_t sd_sec;
 	/*!< Security specification supported [54:52] */
-	u8_t sd_width;
+	uint8_t sd_width;
 	/*!< Data bus widths supported [51:48] */
-	u8_t sd_ext_sec;
+	uint8_t sd_ext_sec;
 	/*!< Extended security support [46:43] */
-	u8_t cmd_support;
+	uint8_t cmd_support;
 	/*!< Command support bits [33:32] 33-support CMD23, 32-support cmd20*/
-	u32_t rsvd;
+	uint32_t rsvd;
 	/*!< reserved for manufacturer usage [31:0] */
 };
 
@@ -336,10 +336,10 @@ enum sd_voltage {
 #define SDMMC_DEFAULT_BLOCK_SIZE (512U)
 
 struct sd_data_op {
-	u32_t start_block;
-	u32_t block_size;
-	u32_t block_count;
-	u32_t *buf;
+	uint32_t start_block;
+	uint32_t block_size;
+	uint32_t block_count;
+	uint32_t *buf;
 };
 
 enum sd_switch_arg {
@@ -436,20 +436,20 @@ enum sd_command_class {
 };
 
 struct sdhc_retry {
-	u32_t end;
-	s16_t tries;
-	u16_t sleep;
+	uint32_t end;
+	int16_t tries;
+	uint16_t sleep;
 };
 
 struct sdhc_flag_map {
-	u8_t mask;
-	u8_t err;
+	uint8_t mask;
+	uint8_t err;
 };
 
 /* The SD protocol requires sending ones while reading but Zephyr
  * defaults to writing zeros.
  */
-static const u8_t sdhc_ones[] = {
+static const uint8_t sdhc_ones[] = {
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -550,8 +550,8 @@ static inline int sdhc_map_data_status(int status)
 }
 
 /* Initialises a retry helper */
-static inline void sdhc_retry_init(struct sdhc_retry *retry, u32_t timeout,
-			    u16_t sleep)
+static inline void sdhc_retry_init(struct sdhc_retry *retry, uint32_t timeout,
+			    uint16_t sleep)
 {
 	retry->end = k_uptime_get_32() + timeout;
 	retry->tries = 0;
@@ -563,7 +563,7 @@ static inline void sdhc_retry_init(struct sdhc_retry *retry, u32_t timeout,
  */
 static inline bool sdhc_retry_ok(struct sdhc_retry *retry)
 {
-	s32_t remain = retry->end - k_uptime_get_32();
+	int32_t remain = retry->end - k_uptime_get_32();
 
 	if (retry->tries < SDHC_MIN_TRIES) {
 		retry->tries++;
@@ -588,21 +588,21 @@ static inline bool sdhc_retry_ok(struct sdhc_retry *retry)
 }
 
 static inline void sdhc_decode_csd(struct sd_csd *csd,
-	u32_t *raw_csd, u32_t *blk_cout, u32_t *blk_size)
+	uint32_t *raw_csd, uint32_t *blk_cout, uint32_t *blk_size)
 {
-	u32_t tmp_blk_cout, tmp_blk_size;
+	uint32_t tmp_blk_cout, tmp_blk_size;
 
-	csd->csd_structure = (u8_t)((raw_csd[3U] &
+	csd->csd_structure = (uint8_t)((raw_csd[3U] &
 		0xC0000000U) >> 30U);
-	csd->read_time1 = (u8_t)((raw_csd[3U] &
+	csd->read_time1 = (uint8_t)((raw_csd[3U] &
 		0xFF0000U) >> 16U);
-	csd->read_time2 = (u8_t)((raw_csd[3U] &
+	csd->read_time2 = (uint8_t)((raw_csd[3U] &
 		0xFF00U) >> 8U);
-	csd->xfer_rate = (u8_t)(raw_csd[3U] &
+	csd->xfer_rate = (uint8_t)(raw_csd[3U] &
 		0xFFU);
-	csd->cmd_class = (u16_t)((raw_csd[2U] &
+	csd->cmd_class = (uint16_t)((raw_csd[2U] &
 		0xFFF00000U) >> 20U);
-	csd->read_blk_len = (u8_t)((raw_csd[2U] &
+	csd->read_blk_len = (uint8_t)((raw_csd[2U] &
 		0xF0000U) >> 16U);
 	if (raw_csd[2U] & 0x8000U)
 		csd->flags |= SD_CSD_READ_BLK_PARTIAL_FLAG;
@@ -615,19 +615,19 @@ static inline void sdhc_decode_csd(struct sd_csd *csd,
 
 	switch (csd->csd_structure) {
 	case 0:
-		csd->device_size = (u32_t)((raw_csd[2U] &
+		csd->device_size = (uint32_t)((raw_csd[2U] &
 			0x3FFU) << 2U);
-		csd->device_size |= (u32_t)((raw_csd[1U] &
+		csd->device_size |= (uint32_t)((raw_csd[1U] &
 			0xC0000000U) >> 30U);
-		csd->read_current_min = (u8_t)((raw_csd[1U] &
+		csd->read_current_min = (uint8_t)((raw_csd[1U] &
 			0x38000000U) >> 27U);
-		csd->read_current_max = (u8_t)((raw_csd[1U] &
+		csd->read_current_max = (uint8_t)((raw_csd[1U] &
 			0x7000000U) >> 24U);
-		csd->write_current_min = (u8_t)((raw_csd[1U] &
+		csd->write_current_min = (uint8_t)((raw_csd[1U] &
 			0xE00000U) >> 20U);
-		csd->write_current_max = (u8_t)((raw_csd[1U] &
+		csd->write_current_max = (uint8_t)((raw_csd[1U] &
 			0x1C0000U) >> 18U);
-		csd->dev_size_mul = (u8_t)((raw_csd[1U] &
+		csd->dev_size_mul = (uint8_t)((raw_csd[1U] &
 			0x38000U) >> 15U);
 
 		/* Get card total block count and block size. */
@@ -647,9 +647,9 @@ static inline void sdhc_decode_csd(struct sd_csd *csd,
 	case 1:
 		tmp_blk_size = SDMMC_DEFAULT_BLOCK_SIZE;
 
-		csd->device_size = (u32_t)((raw_csd[2U] &
+		csd->device_size = (uint32_t)((raw_csd[2U] &
 			0x3FU) << 16U);
-		csd->device_size |= (u32_t)((raw_csd[1U] &
+		csd->device_size |= (uint32_t)((raw_csd[1U] &
 			0xFFFF0000U) >> 16U);
 
 		tmp_blk_cout = ((csd->device_size + 1U) * 1024U);
@@ -662,46 +662,46 @@ static inline void sdhc_decode_csd(struct sd_csd *csd,
 		break;
 	}
 
-	if ((u8_t)((raw_csd[1U] & 0x4000U) >> 14U))
+	if ((uint8_t)((raw_csd[1U] & 0x4000U) >> 14U))
 		csd->flags |= SD_CSD_ERASE_BLK_EN_FLAG;
-	csd->erase_size = (u8_t)((raw_csd[1U] &
+	csd->erase_size = (uint8_t)((raw_csd[1U] &
 		0x3F80U) >> 7U);
-	csd->write_prtect_size = (u8_t)(raw_csd[1U] &
+	csd->write_prtect_size = (uint8_t)(raw_csd[1U] &
 		0x7FU);
-	csd->write_speed_factor = (u8_t)((raw_csd[0U] &
+	csd->write_speed_factor = (uint8_t)((raw_csd[0U] &
 		0x1C000000U) >> 26U);
-	csd->write_blk_len = (u8_t)((raw_csd[0U] &
+	csd->write_blk_len = (uint8_t)((raw_csd[0U] &
 		0x3C00000U) >> 22U);
-	if ((u8_t)((raw_csd[0U] & 0x200000U) >> 21U))
+	if ((uint8_t)((raw_csd[0U] & 0x200000U) >> 21U))
 		csd->flags |= SD_CSD_WRITE_BLK_PARTIAL_FLAG;
-	if ((u8_t)((raw_csd[0U] & 0x8000U) >> 15U))
+	if ((uint8_t)((raw_csd[0U] & 0x8000U) >> 15U))
 		csd->flags |= SD_CSD_FILE_FMT_GRP_FLAG;
-	if ((u8_t)((raw_csd[0U] & 0x4000U) >> 14U))
+	if ((uint8_t)((raw_csd[0U] & 0x4000U) >> 14U))
 		csd->flags |= SD_CSD_COPY_FLAG;
-	if ((u8_t)((raw_csd[0U] & 0x2000U) >> 13U))
+	if ((uint8_t)((raw_csd[0U] & 0x2000U) >> 13U))
 		csd->flags |=
 			SD_CSD_PERMANENT_WRITE_PROTECT_FLAG;
-	if ((u8_t)((raw_csd[0U] & 0x1000U) >> 12U))
+	if ((uint8_t)((raw_csd[0U] & 0x1000U) >> 12U))
 		csd->flags |=
 			SD_CSD_TMP_WRITE_PROTECT_FLAG;
-	csd->file_fmt = (u8_t)((raw_csd[0U] & 0xC00U) >> 10U);
+	csd->file_fmt = (uint8_t)((raw_csd[0U] & 0xC00U) >> 10U);
 }
 
 static inline void sdhc_decode_scr(struct sd_scr *scr,
-	u32_t *raw_scr, u32_t *version)
+	uint32_t *raw_scr, uint32_t *version)
 {
-	u32_t tmp_version = 0;
+	uint32_t tmp_version = 0;
 
-	scr->scr_structure = (u8_t)((raw_scr[0U] & 0xF0000000U) >> 28U);
-	scr->sd_spec = (u8_t)((raw_scr[0U] & 0xF000000U) >> 24U);
-	if ((u8_t)((raw_scr[0U] & 0x800000U) >> 23U))
+	scr->scr_structure = (uint8_t)((raw_scr[0U] & 0xF0000000U) >> 28U);
+	scr->sd_spec = (uint8_t)((raw_scr[0U] & 0xF000000U) >> 24U);
+	if ((uint8_t)((raw_scr[0U] & 0x800000U) >> 23U))
 		scr->flags |= SD_SCR_DATA_STATUS_AFTER_ERASE;
-	scr->sd_sec = (u8_t)((raw_scr[0U] & 0x700000U) >> 20U);
-	scr->sd_width = (u8_t)((raw_scr[0U] & 0xF0000U) >> 16U);
-	if ((u8_t)((raw_scr[0U] & 0x8000U) >> 15U))
+	scr->sd_sec = (uint8_t)((raw_scr[0U] & 0x700000U) >> 20U);
+	scr->sd_width = (uint8_t)((raw_scr[0U] & 0xF0000U) >> 16U);
+	if ((uint8_t)((raw_scr[0U] & 0x8000U) >> 15U))
 		scr->flags |= SD_SCR_SPEC3;
-	scr->sd_ext_sec = (u8_t)((raw_scr[0U] & 0x7800U) >> 10U);
-	scr->cmd_support = (u8_t)(raw_scr[0U] & 0x3U);
+	scr->sd_ext_sec = (uint8_t)((raw_scr[0U] & 0x7800U) >> 10U);
+	scr->cmd_support = (uint8_t)(raw_scr[0U] & 0x3U);
 	scr->rsvd = raw_scr[1U];
 	/* Get specification version. */
 	switch (scr->sd_spec) {
@@ -726,23 +726,23 @@ static inline void sdhc_decode_scr(struct sd_scr *scr,
 }
 
 static inline void sdhc_decode_cid(struct sd_cid *cid,
-	u32_t *raw_cid)
+	uint32_t *raw_cid)
 {
-	cid->manufacturer = (u8_t)((raw_cid[3U] & 0xFF000000U) >> 24U);
-	cid->application = (u16_t)((raw_cid[3U] & 0xFFFF00U) >> 8U);
+	cid->manufacturer = (uint8_t)((raw_cid[3U] & 0xFF000000U) >> 24U);
+	cid->application = (uint16_t)((raw_cid[3U] & 0xFFFF00U) >> 8U);
 
-	cid->name[0U] = (u8_t)((raw_cid[3U] & 0xFFU));
-	cid->name[1U] = (u8_t)((raw_cid[2U] & 0xFF000000U) >> 24U);
-	cid->name[2U] = (u8_t)((raw_cid[2U] & 0xFF0000U) >> 16U);
-	cid->name[3U] = (u8_t)((raw_cid[2U] & 0xFF00U) >> 8U);
-	cid->name[4U] = (u8_t)((raw_cid[2U] & 0xFFU));
+	cid->name[0U] = (uint8_t)((raw_cid[3U] & 0xFFU));
+	cid->name[1U] = (uint8_t)((raw_cid[2U] & 0xFF000000U) >> 24U);
+	cid->name[2U] = (uint8_t)((raw_cid[2U] & 0xFF0000U) >> 16U);
+	cid->name[3U] = (uint8_t)((raw_cid[2U] & 0xFF00U) >> 8U);
+	cid->name[4U] = (uint8_t)((raw_cid[2U] & 0xFFU));
 
-	cid->version = (u8_t)((raw_cid[1U] & 0xFF000000U) >> 24U);
+	cid->version = (uint8_t)((raw_cid[1U] & 0xFF000000U) >> 24U);
 
-	cid->ser_num = (u32_t)((raw_cid[1U] & 0xFFFFFFU) << 8U);
-	cid->ser_num |= (u32_t)((raw_cid[0U] & 0xFF000000U) >> 24U);
+	cid->ser_num = (uint32_t)((raw_cid[1U] & 0xFFFFFFU) << 8U);
+	cid->ser_num |= (uint32_t)((raw_cid[0U] & 0xFF000000U) >> 24U);
 
-	cid->date = (u16_t)((raw_cid[0U] & 0xFFF00U) >> 8U);
+	cid->date = (uint16_t)((raw_cid[0U] & 0xFFF00U) >> 8U);
 }
 
 #endif /*ZEPHYR_INCLUDE_DISK_ACCESS_SDHC_H_*/

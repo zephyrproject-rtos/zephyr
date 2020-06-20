@@ -32,10 +32,10 @@ void otPlatSpiSlaveDisable(void)
 }
 
 otError otPlatSpiSlavePrepareTransaction(
-	u8_t *anOutputBuf,
-	u16_t anOutputBufLen,
-	u8_t *anInputBuf,
-	u16_t anInputBufLen,
+	uint8_t *anOutputBuf,
+	uint16_t anOutputBufLen,
+	uint8_t *anInputBuf,
+	uint16_t anInputBufLen,
 	bool aRequestTransactionFlag
 )
 {

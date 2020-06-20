@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(uart_pipe, CONFIG_UART_CONSOLE_LOG_LEVEL);
 
 static struct device *uart_pipe_dev;
 
-static u8_t *recv_buf;
+static uint8_t *recv_buf;
 static size_t recv_buf_len;
 static uart_pipe_recv_cb app_cb;
 static size_t recv_off;
@@ -64,7 +64,7 @@ static void uart_pipe_isr(struct device *dev)
 	}
 }
 
-int uart_pipe_send(const u8_t *data, int len)
+int uart_pipe_send(const uint8_t *data, int len)
 {
 	LOG_HEXDUMP_DBG(data, len, "TX");
 
@@ -77,7 +77,7 @@ int uart_pipe_send(const u8_t *data, int len)
 
 static void uart_pipe_setup(struct device *uart)
 {
-	u8_t c;
+	uint8_t c;
 
 	uart_irq_rx_disable(uart);
 	uart_irq_tx_disable(uart);
@@ -92,7 +92,7 @@ static void uart_pipe_setup(struct device *uart)
 	uart_irq_rx_enable(uart);
 }
 
-void uart_pipe_register(u8_t *buf, size_t len, uart_pipe_recv_cb cb)
+void uart_pipe_register(uint8_t *buf, size_t len, uart_pipe_recv_cb cb)
 {
 	recv_buf = buf;
 	recv_buf_len = len;

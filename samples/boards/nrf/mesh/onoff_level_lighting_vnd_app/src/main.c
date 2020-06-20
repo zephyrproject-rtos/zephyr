@@ -48,14 +48,14 @@ static void light_default_status_init(void)
 {
 	/* Retrieve Range of Lightness */
 	if (ctl->light->range) {
-		ctl->light->range_max = (u16_t) (ctl->light->range >> 16);
-		ctl->light->range_min = (u16_t) ctl->light->range;
+		ctl->light->range_max = (uint16_t) (ctl->light->range >> 16);
+		ctl->light->range_min = (uint16_t) ctl->light->range;
 	}
 
 	/* Retrieve Range of Temperature */
 	if (ctl->temp->range) {
-		ctl->temp->range_max = (u16_t) (ctl->temp->range >> 16);
-		ctl->temp->range_min = (u16_t) ctl->temp->range;
+		ctl->temp->range_max = (uint16_t) (ctl->temp->range >> 16);
+		ctl->temp->range_min = (uint16_t) ctl->temp->range;
 	}
 
 	ctl->light->last = constrain_lightness(ctl->light->last);
@@ -101,7 +101,7 @@ void update_vnd_led_gpio(void)
 
 void update_led_gpio(void)
 {
-	u8_t power, color;
+	uint8_t power, color;
 
 	power = 100 * ((float) ctl->light->current / 65535);
 	color = 100 * ((float) (ctl->temp->current - ctl->temp->range_min) /

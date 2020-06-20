@@ -4,9 +4,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig STM32_LPTIM_TIMER
-	bool "STM32 Low Power Timer"
+	bool "STM32 Low Power Timer [EXPERIMENTAL]"
 	depends on (SOC_SERIES_STM32L4X || SOC_SERIES_STM32WBX)
-	depends on CLOCK_CONTROL
+	depends on CLOCK_CONTROL && SYS_POWER_MANAGEMENT
 	select TICKLESS_CAPABLE
 	help
 	  This module implements a kernel device driver for the LowPower Timer
@@ -17,26 +17,26 @@ if STM32_LPTIM_TIMER
 choice STM32_LPTIM_CLOCK
 	prompt "LPTIM clock value configuration"
 
-config STM32_LPTIM_CLOCK_LSI
-	bool "LSI"
-	help
-	  Use LSI as LPTIM clock
-
 config STM32_LPTIM_CLOCK_LSE
 	bool "LSE"
 	help
 	  Use LSE as LPTIM clock
 
+config STM32_LPTIM_CLOCK_LSI
+	bool "LSI"
+	help
+	  Use LSI as LPTIM clock
+
 endchoice
 
 config STM32_LPTIM_CLOCK
 	int "LPTIM clock value"
-	default 32000 if STM32_LPTIM_CLOCK_LSI
 	default 32768 if STM32_LPTIM_CLOCK_LSE
+	default 32000 if STM32_LPTIM_CLOCK_LSI
 
 config STM32_LPTIM_TIMEBASE
 	hex "LPTIM AutoReload value"
-	default 0xF9FF if STM32_LPTIM_CLOCK_LSI
 	default 0xFFFF if STM32_LPTIM_CLOCK_LSE
+	default 0xF9FF if STM32_LPTIM_CLOCK_LSI
 
 endif # STM32_LPTIM_TIMER

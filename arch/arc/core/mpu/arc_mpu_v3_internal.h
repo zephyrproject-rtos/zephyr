@@ -62,14 +62,14 @@
  * memory areas where dynamic MPU programming is allowed.
  */
 struct dynamic_region_info {
-	u8_t index;
-	u32_t base;
-	u32_t size;
-	u32_t attr;
+	uint8_t index;
+	uint32_t base;
+	uint32_t size;
+	uint32_t attr;
 };
 
-static u8_t dynamic_regions_num;
-static u8_t dynamic_region_index;
+static uint8_t dynamic_regions_num;
+static uint8_t dynamic_region_index;
 
 /**
  * Global array, holding the MPU region index of
@@ -79,41 +79,41 @@ static u8_t dynamic_region_index;
 static struct dynamic_region_info dyn_reg_info[MPU_DYNAMIC_REGION_AREAS_NUM];
 #endif /* CONFIG_MPU_GAP_FILLING */
 
-static u8_t static_regions_num;
+static uint8_t static_regions_num;
 
 #ifdef CONFIG_ARC_NORMAL_FIRMWARE
 /* \todo through secure service to access mpu */
-static inline void _region_init(u32_t index, u32_t region_addr, u32_t size,
-				u32_t region_attr)
+static inline void _region_init(uint32_t index, uint32_t region_addr, uint32_t size,
+				uint32_t region_attr)
 {
 }
 
-static inline void _region_set_attr(u32_t index, u32_t attr)
+static inline void _region_set_attr(uint32_t index, uint32_t attr)
 {
 
 }
 
-static inline u32_t _region_get_attr(u32_t index)
-{
-	return 0;
-}
-
-static inline u32_t _region_get_start(u32_t index)
+static inline uint32_t _region_get_attr(uint32_t index)
 {
 	return 0;
 }
 
-static inline void _region_set_start(u32_t index, u32_t start)
-{
-
-}
-
-static inline u32_t _region_get_end(u32_t index)
+static inline uint32_t _region_get_start(uint32_t index)
 {
 	return 0;
 }
 
-static inline void _region_set_end(u32_t index, u32_t end)
+static inline void _region_set_start(uint32_t index, uint32_t start)
+{
+
+}
+
+static inline uint32_t _region_get_end(uint32_t index)
+{
+	return 0;
+}
+
+static inline void _region_set_end(uint32_t index, uint32_t end)
 {
 }
 
@@ -121,7 +121,7 @@ static inline void _region_set_end(u32_t index, u32_t end)
  * This internal function probes the given addr's MPU index.if not
  * in MPU, returns error
  */
-static inline int _mpu_probe(u32_t addr)
+static inline int _mpu_probe(uint32_t addr)
 {
 	return -EINVAL;
 }
@@ -129,7 +129,7 @@ static inline int _mpu_probe(u32_t addr)
 /**
  * This internal function checks if MPU region is enabled or not
  */
-static inline bool _is_enabled_region(u32_t r_index)
+static inline bool _is_enabled_region(uint32_t r_index)
 {
 	return false;
 }
@@ -137,14 +137,14 @@ static inline bool _is_enabled_region(u32_t r_index)
 /**
  * This internal function check if the region is user accessible or not
  */
-static inline bool _is_user_accessible_region(u32_t r_index, int write)
+static inline bool _is_user_accessible_region(uint32_t r_index, int write)
 {
 	return false;
 }
 #else /* CONFIG_ARC_NORMAL_FIRMWARE */
 /* the following functions are prepared for SECURE_FRIMWARE */
-static inline void _region_init(u32_t index, u32_t region_addr, u32_t size,
-				u32_t region_attr)
+static inline void _region_init(uint32_t index, uint32_t region_addr, uint32_t size,
+				uint32_t region_attr)
 {
 	if (size < (1 << ARC_FEATURE_MPU_ALIGNMENT_BITS)) {
 		size = (1 << ARC_FEATURE_MPU_ALIGNMENT_BITS);
@@ -162,34 +162,34 @@ static inline void _region_init(u32_t index, u32_t region_addr, u32_t size,
 	z_arc_v2_aux_reg_write(_ARC_V2_MPU_RPER, region_attr);
 }
 
-static inline void _region_set_attr(u32_t index, u32_t attr)
+static inline void _region_set_attr(uint32_t index, uint32_t attr)
 {
 	z_arc_v2_aux_reg_write(_ARC_V2_MPU_INDEX, index);
 	z_arc_v2_aux_reg_write(_ARC_V2_MPU_RPER, attr |
 				 AUX_MPU_RPER_VALID_MASK);
 }
 
-static inline u32_t _region_get_attr(u32_t index)
+static inline uint32_t _region_get_attr(uint32_t index)
 {
 	z_arc_v2_aux_reg_write(_ARC_V2_MPU_INDEX, index);
 
 	return z_arc_v2_aux_reg_read(_ARC_V2_MPU_RPER);
 }
 
-static inline u32_t _region_get_start(u32_t index)
+static inline uint32_t _region_get_start(uint32_t index)
 {
 	z_arc_v2_aux_reg_write(_ARC_V2_MPU_INDEX, index);
 
 	return z_arc_v2_aux_reg_read(_ARC_V2_MPU_RSTART);
 }
 
-static inline void _region_set_start(u32_t index, u32_t start)
+static inline void _region_set_start(uint32_t index, uint32_t start)
 {
 	z_arc_v2_aux_reg_write(_ARC_V2_MPU_INDEX, index);
 	z_arc_v2_aux_reg_write(_ARC_V2_MPU_RSTART, start);
 }
 
-static inline u32_t _region_get_end(u32_t index)
+static inline uint32_t _region_get_end(uint32_t index)
 {
 	z_arc_v2_aux_reg_write(_ARC_V2_MPU_INDEX, index);
 
@@ -197,7 +197,7 @@ static inline u32_t _region_get_end(u32_t index)
 		(1 << ARC_FEATURE_MPU_ALIGNMENT_BITS);
 }
 
-static inline void _region_set_end(u32_t index, u32_t end)
+static inline void _region_set_end(uint32_t index, uint32_t end)
 {
 	z_arc_v2_aux_reg_write(_ARC_V2_MPU_INDEX, index);
 	z_arc_v2_aux_reg_write(_ARC_V2_MPU_REND, end -
@@ -208,9 +208,9 @@ static inline void _region_set_end(u32_t index, u32_t end)
  * This internal function probes the given addr's MPU index.if not
  * in MPU, returns error
  */
-static inline int _mpu_probe(u32_t addr)
+static inline int _mpu_probe(uint32_t addr)
 {
-	u32_t val;
+	uint32_t val;
 
 	z_arc_v2_aux_reg_write(_ARC_V2_MPU_PROBE, addr);
 	val = z_arc_v2_aux_reg_read(_ARC_V2_MPU_INDEX);
@@ -226,7 +226,7 @@ static inline int _mpu_probe(u32_t addr)
 /**
  * This internal function checks if MPU region is enabled or not
  */
-static inline bool _is_enabled_region(u32_t r_index)
+static inline bool _is_enabled_region(uint32_t r_index)
 {
 	z_arc_v2_aux_reg_write(_ARC_V2_MPU_INDEX, r_index);
 	return ((z_arc_v2_aux_reg_read(_ARC_V2_MPU_RPER) &
@@ -236,9 +236,9 @@ static inline bool _is_enabled_region(u32_t r_index)
 /**
  * This internal function check if the region is user accessible or not
  */
-static inline bool _is_user_accessible_region(u32_t r_index, int write)
+static inline bool _is_user_accessible_region(uint32_t r_index, int write)
 {
-	u32_t r_ap;
+	uint32_t r_ap;
 
 	z_arc_v2_aux_reg_write(_ARC_V2_MPU_INDEX, r_index);
 	r_ap = z_arc_v2_aux_reg_read(_ARC_V2_MPU_RPER);
@@ -259,7 +259,7 @@ static inline bool _is_user_accessible_region(u32_t r_index, int write)
  * This internal function checks the area given by (start, size)
  * and returns the index if the area match one MPU entry
  */
-static inline int _get_region_index(u32_t start, u32_t size)
+static inline int _get_region_index(uint32_t start, uint32_t size)
 {
 	int index = _mpu_probe(start);
 
@@ -295,8 +295,8 @@ static inline int _dynamic_region_allocate_index(void)
  * @param attr region attribute
  * @return  <0 failure, >0  allocated dynamic region index
  */
-static int _dynamic_region_allocate_and_init(u32_t base, u32_t size,
-	 u32_t attr)
+static int _dynamic_region_allocate_and_init(uint32_t base, uint32_t size,
+	 uint32_t attr)
 {
 	int u_region_index = _get_region_index(base, size);
 	int region_index;
@@ -321,10 +321,10 @@ static int _dynamic_region_allocate_and_init(u32_t base, u32_t size,
 	 * region, possibly splitting the underlying region into two.
 	 */
 
-	u32_t u_region_start = _region_get_start(u_region_index);
-	u32_t u_region_end = _region_get_end(u_region_index);
-	u32_t u_region_attr = _region_get_attr(u_region_index);
-	u32_t end = base + size;
+	uint32_t u_region_start = _region_get_start(u_region_index);
+	uint32_t u_region_end = _region_get_end(u_region_index);
+	uint32_t u_region_attr = _region_get_attr(u_region_index);
+	uint32_t end = base + size;
 
 
 	if ((base == u_region_start) && (end == u_region_end)) {
@@ -397,8 +397,8 @@ static int _dynamic_region_allocate_and_init(u32_t base, u32_t size,
  */
 static void _mpu_reset_dynamic_regions(void)
 {
-	u32_t i;
-	u32_t num_regions = get_num_regions();
+	uint32_t i;
+	uint32_t num_regions = get_num_regions();
 
 	for (i = static_regions_num; i < num_regions; i++) {
 		_region_init(i, 0, 0, 0);
@@ -423,9 +423,9 @@ static void _mpu_reset_dynamic_regions(void)
  * @param   base    base address in RAM
  * @param   size    size of the region
  */
-static inline int _mpu_configure(u8_t type, u32_t base, u32_t size)
+static inline int _mpu_configure(uint8_t type, uint32_t base, uint32_t size)
 {
-	u32_t region_attr = get_region_attr_by_type(type);
+	uint32_t region_attr = get_region_attr_by_type(type);
 
 	return _dynamic_region_allocate_and_init(base, size, region_attr);
 }
@@ -434,7 +434,7 @@ static inline int _mpu_configure(u8_t type, u32_t base, u32_t size)
  * This internal function is utilized by the MPU driver to parse the intent
  * type (i.e. THREAD_STACK_REGION) and return the correct region index.
  */
-static inline int get_region_index_by_type(u32_t type)
+static inline int get_region_index_by_type(uint32_t type)
 {
 	/*
 	 * The new MPU regions are allocated per type after the statically
@@ -476,10 +476,10 @@ static inline int get_region_index_by_type(u32_t type)
  * @param   base    base address in RAM
  * @param   size    size of the region
  */
-static inline int _mpu_configure(u8_t type, u32_t base, u32_t size)
+static inline int _mpu_configure(uint8_t type, uint32_t base, uint32_t size)
 {
 	int region_index =  get_region_index_by_type(type);
-	u32_t region_attr = get_region_attr_by_type(type);
+	uint32_t region_attr = get_region_attr_by_type(type);
 
 	LOG_DBG("Region info: 0x%x 0x%x", base, size);
 
@@ -588,14 +588,14 @@ void arc_core_mpu_configure_thread(struct k_thread *thread)
 	if (thread->base.user_options & K_USER) {
 		LOG_DBG("configure user thread %p's stack", thread);
 		if (_mpu_configure(THREAD_STACK_USER_REGION,
-		(u32_t)thread->stack_obj, thread->stack_info.size) < 0) {
+		(uint32_t)thread->stack_obj, thread->stack_info.size) < 0) {
 			LOG_ERR("thread %p's stack failed", thread);
 			return;
 		}
 	}
 
 #if defined(CONFIG_MPU_GAP_FILLING)
-	u32_t num_partitions;
+	uint32_t num_partitions;
 	struct k_mem_partition *pparts;
 	struct k_mem_domain *mem_domain = thread->mem_domain_info.mem_domain;
 
@@ -610,7 +610,7 @@ void arc_core_mpu_configure_thread(struct k_thread *thread)
 		pparts = NULL;
 	}
 
-	for (u32_t i = 0; i < num_partitions; i++) {
+	for (uint32_t i = 0; i < num_partitions; i++) {
 		if (pparts->size) {
 			if (_dynamic_region_allocate_and_init(pparts->start,
 				pparts->size, pparts->attr) < 0) {
@@ -633,7 +633,7 @@ void arc_core_mpu_configure_thread(struct k_thread *thread)
  *
  * @param region_attr region attribute of default region
  */
-void arc_core_mpu_default(u32_t region_attr)
+void arc_core_mpu_default(uint32_t region_attr)
 {
 #ifdef CONFIG_ARC_NORMAL_FIRMWARE
 /* \todo through secure service to access mpu */
@@ -650,8 +650,8 @@ void arc_core_mpu_default(u32_t region_attr)
  * @param size  region size
  * @param region_attr region attribute
  */
-int arc_core_mpu_region(u32_t index, u32_t base, u32_t size,
-			 u32_t region_attr)
+int arc_core_mpu_region(uint32_t index, uint32_t base, uint32_t size,
+			 uint32_t region_attr)
 {
 	if (index >= get_num_regions()) {
 		return -EINVAL;
@@ -678,9 +678,9 @@ void arc_core_mpu_configure_mem_domain(struct k_thread *thread)
 #else
 void arc_core_mpu_configure_mem_domain(struct k_thread *thread)
 {
-	u32_t region_index;
-	u32_t num_partitions;
-	u32_t num_regions;
+	uint32_t region_index;
+	uint32_t num_partitions;
+	uint32_t num_regions;
 	struct k_mem_partition *pparts;
 	struct k_mem_domain *mem_domain = NULL;
 
@@ -728,7 +728,7 @@ void arc_core_mpu_configure_mem_domain(struct k_thread *thread)
  */
 void arc_core_mpu_remove_mem_domain(struct k_mem_domain *mem_domain)
 {
-	u32_t num_partitions;
+	uint32_t num_partitions;
 	struct k_mem_partition *pparts;
 	int index;
 
@@ -742,7 +742,7 @@ void arc_core_mpu_remove_mem_domain(struct k_mem_domain *mem_domain)
 		pparts = NULL;
 	}
 
-	for (u32_t i = 0; i < num_partitions; i++) {
+	for (uint32_t i = 0; i < num_partitions; i++) {
 		if (pparts->size) {
 			index = _get_region_index(pparts->start,
 			 pparts->size);
@@ -765,7 +765,7 @@ void arc_core_mpu_remove_mem_domain(struct k_mem_domain *mem_domain)
  * @param partition_id  memory partition id
  */
 void arc_core_mpu_remove_mem_partition(struct k_mem_domain *domain,
-			u32_t partition_id)
+			uint32_t partition_id)
 {
 	struct k_mem_partition *partition = &domain->partitions[partition_id];
 
@@ -811,9 +811,9 @@ int arc_core_mpu_buffer_validate(void *addr, size_t size, int write)
 	 * we can stop the iteration immediately once we find the
 	 * matched region that grants permission or denies access.
 	 */
-	r_index = _mpu_probe((u32_t)addr);
+	r_index = _mpu_probe((uint32_t)addr);
 	/*  match and the area is in one region */
-	if (r_index >= 0 && r_index == _mpu_probe((u32_t)addr + (size - 1))) {
+	if (r_index >= 0 && r_index == _mpu_probe((uint32_t)addr + (size - 1))) {
 		if (_is_user_accessible_region(r_index, write)) {
 			r_index = 0;
 		} else {
@@ -839,8 +839,8 @@ int arc_core_mpu_buffer_validate(void *addr, size_t size, int write)
 static int arc_mpu_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
-	u32_t num_regions;
-	u32_t i;
+	uint32_t num_regions;
+	uint32_t i;
 
 	num_regions = get_num_regions();
 

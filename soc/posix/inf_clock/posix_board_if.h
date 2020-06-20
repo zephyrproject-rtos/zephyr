@@ -23,7 +23,7 @@ extern "C" {
 
 void posix_irq_handler(void);
 void posix_exit(int exit_code);
-u64_t posix_get_hw_cycle(void);
+uint64_t posix_get_hw_cycle(void);
 
 #ifdef __cplusplus
 }
