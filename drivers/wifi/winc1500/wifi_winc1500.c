@@ -48,7 +48,7 @@ NMI_API sint8 listen(SOCKET sock, uint8 backlog);
 NMI_API sint8 accept(SOCKET sock, struct sockaddr *addr, uint8 *addrlen);
 NMI_API sint8 connect(SOCKET sock, struct sockaddr *pstrAddr, uint8 u8AddrLen);
 NMI_API sint16 recv(SOCKET sock, void *pvRecvBuf,
-		    uint16 u16BufLen, uint32 u32Timeoutmsec);
+		    uint16 u16BufLen, k_timeout_t u32Timeoutmsec);
 NMI_API sint16 send(SOCKET sock, void *pvSendBuffer,
 		    uint16 u16SendLength, uint16 u16Flags);
 NMI_API sint16 sendto(SOCKET sock, void *pvSendBuffer,
@@ -118,9 +118,9 @@ typedef struct {
 #define WINC1500_REGION		ASIA
 #endif
 
-#define WINC1500_BIND_TIMEOUT 500
-#define WINC1500_LISTEN_TIMEOUT 500
-#define WINC1500_BUF_TIMEOUT 100
+#define WINC1500_BIND_TIMEOUT K_MSEC(500)
+#define WINC1500_LISTEN_TIMEOUT K_MSEC(500)
+#define WINC1500_BUF_TIMEOUT K_MSEC(100)
 
 NET_BUF_POOL_DEFINE(winc1500_tx_pool, CONFIG_WIFI_WINC1500_BUF_CTR,
 		    CONFIG_WIFI_WINC1500_MAX_PACKET_SIZE, 0, NULL);
@@ -431,7 +431,7 @@ static int winc1500_accept(struct net_context *context,
 
 	if (timeout) {
 		if (k_sem_take(&w1500_data.socket_data[socket].wait_sem,
-			       timeout)) {
+			       K_MSEC(timeout))) {
 			return -ETIMEDOUT;
 		}
 	} else {
@@ -574,7 +574,7 @@ static int winc1500_recv(struct net_context *context,
 	w1500_data.socket_data[socket].recv_user_data = user_data;
 
 	ret = recv(socket, w1500_data.socket_data[socket].pkt_buf->data,
-		   CONFIG_WIFI_WINC1500_MAX_PACKET_SIZE, timeout);
+		   CONFIG_WIFI_WINC1500_MAX_PACKET_SIZE, K_MSEC(timeout));
 	if (ret) {
 		LOG_ERR("recv error %d %s!",
 			ret, socket_error_string(ret));
