@@ -65,3 +65,7 @@ indent_style = tab
 [*.{dts,dtsi,overlay}]
 indent_style = tab
 indent_size = 8
+
+# Git commit messages
+[COMMIT_EDITMSG]
+max_line_length = 72
