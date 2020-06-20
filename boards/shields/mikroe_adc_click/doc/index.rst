@@ -20,12 +20,8 @@ Requirements
 ************
 
 This shield can only be used with a development board that provides a
-configuration for Arduino connectors and defines a node alias for the
+configuration for mikroBUS connectors and defines a node alias for the mikroBUS
 SPI interface (see :ref:`shields` for more details).
-
-The mikroBUS connector pins on the ADC Click can either be connected
-to the Arduino headers of the development board using jumper wires or
-by using an `Arduino UNO Click Shield`_.
 
 For more information about interfacing the MCP3204 and the ADC Click,
 see the following documentation:
@@ -56,6 +52,3 @@ example:
 
 .. _ADC Click:
    https://www.mikroe.com/adc-click
-
-.. _Arduino UNO Click Shield:
-   https://www.mikroe.com/arduino-uno-click-shield
