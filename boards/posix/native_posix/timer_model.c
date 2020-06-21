@@ -213,7 +213,7 @@ static void hwtimer_tick_timer_reached(void)
 			requested_time.tv_nsec = (diff -
 						 requested_time.tv_sec*1e6)*1e3;
 
-			nanosleep(&requested_time, &remaining);
+			(void) nanosleep(&requested_time, &remaining);
 		}
 	}
 
