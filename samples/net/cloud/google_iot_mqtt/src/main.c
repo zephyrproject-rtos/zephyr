@@ -53,11 +53,6 @@ int do_sntp(void)
 }
 
 /*
- * TODO: These need to be configurable.
- */
-#define MBEDTLS_NETWORK_TIMEOUT 30000
-
-/*
  * Things that make sense in a demo app that would need to be more
  * robust in a real application:
  *
