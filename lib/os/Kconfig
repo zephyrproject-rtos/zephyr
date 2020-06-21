@@ -9,6 +9,16 @@ config JSON_LIBRARY
 	  Build a minimal JSON parsing/encoding library. Used by sample
 	  applications such as the NATS client.
 
+config JSON_LIBRARY_SENSOR_VALUE
+	bool "Build JSON with 'struct sensor_value' support"
+	depends on JSON_LIBRARY
+	help
+	  Build JSON library with support for parsing/encoding
+	  'struct sensor_value' type. Full precision of sent value can
+	  be preserved, without using with floating point arithmetic.
+	  This is very helpful for applications sending sensor
+	  measurements via HTTP REST API.
+
 config RING_BUFFER
 	bool "Enable ring buffers"
 	help

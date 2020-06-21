@@ -17,6 +17,10 @@
 
 #include <data/json.h>
 
+#ifdef CONFIG_JSON_LIBRARY_SENSOR_VALUE
+#include <drivers/sensor.h>
+#endif
+
 struct token {
 	enum json_tokens type;
 	char *start;
@@ -309,6 +313,9 @@ static int element_token(enum json_tokens token)
 	case JSON_TOK_LIST_START:
 	case JSON_TOK_STRING:
 	case JSON_TOK_NUMBER:
+#ifdef CONFIG_JSON_LIBRARY_SENSOR_VALUE
+	case JSON_TOK_SENSOR_VALUE:
+#endif
 	case JSON_TOK_TRUE:
 	case JSON_TOK_FALSE:
 		return 0;
@@ -415,11 +422,76 @@ static int decode_num(const struct token *token, int32_t *num)
 	return 0;
 }
 
+#ifdef CONFIG_JSON_LIBRARY_SENSOR_VALUE
+static int decode_sensor_value(const struct token *token,
+			       struct sensor_value *val)
+{
+	char *endptr;
+	char prev_end;
+	int mul;
+	int i;
+
+	prev_end = *token->end;
+	*token->end = '\0';
+
+	errno = 0;
+	val->val1 = strtol(token->start, &endptr, 10);
+	val->val2 = 0;
+
+	*token->end = prev_end;
+
+	if (errno != 0) {
+		return -errno;
+	}
+
+	if (endptr != token->end) {
+		if (*endptr != '.') {
+			return -EINVAL;
+		}
+
+		*token->end = '\0';
+
+		endptr++;
+		mul = 100000;
+		for (i = 0; i < 6; i++) {
+			int chr = *endptr;
+
+			if (!isdigit(chr)) {
+				break;
+			}
+
+			val->val2 += mul * (chr - '0');
+			mul /= 10;
+			endptr++;
+		}
+
+		*token->end = prev_end;
+
+		if (endptr != token->end) {
+			return -EINVAL;
+		}
+
+		if (val->val1 < 0) {
+			val->val2 = -val->val2;
+		}
+	}
+
+	return 0;
+}
+#endif
+
 static bool equivalent_types(enum json_tokens type1, enum json_tokens type2)
 {
 	if (type1 == JSON_TOK_TRUE || type1 == JSON_TOK_FALSE) {
 		return type2 == JSON_TOK_TRUE || type2 == JSON_TOK_FALSE;
 	}
+
+#ifdef CONFIG_JSON_LIBRARY_SENSOR_VALUE
+	if (type1 == JSON_TOK_NUMBER || type1 == JSON_TOK_SENSOR_VALUE) {
+		return type2 == JSON_TOK_NUMBER ||
+		       type2 == JSON_TOK_SENSOR_VALUE;
+	}
+#endif
 
 	return type1 == type2;
 }
@@ -461,6 +533,13 @@ static int decode_value(struct json_obj *obj,
 
 		return decode_num(value, num);
 	}
+#ifdef CONFIG_JSON_LIBRARY_SENSOR_VALUE
+	case JSON_TOK_SENSOR_VALUE: {
+		struct sensor_value *sensor_value = field;
+
+		return decode_sensor_value(value, sensor_value);
+	}
+#endif
 	case JSON_TOK_STRING: {
 		char **str = field;
 
@@ -479,6 +558,10 @@ static ptrdiff_t get_elem_size(const struct json_obj_descr *descr)
 	switch (descr->type) {
 	case JSON_TOK_NUMBER:
 		return sizeof(int32_t);
+#ifdef CONFIG_JSON_LIBRARY_SENSOR_VALUE
+	case JSON_TOK_SENSOR_VALUE:
+		return sizeof(struct sensor_value);
+#endif
 	case JSON_TOK_STRING:
 		return sizeof(char *);
 	case JSON_TOK_TRUE:
@@ -790,6 +873,41 @@ static int num_encode(const int32_t *num, json_append_bytes_t append_bytes,
 	return append_bytes(buf, (size_t)ret, data);
 }
 
+#ifdef CONFIG_JSON_LIBRARY_SENSOR_VALUE
+static int sensor_value_encode(const struct sensor_value *val,
+			       json_append_bytes_t append_bytes, void *data)
+{
+	char buf[3 * sizeof(int32_t) + 7];
+	char fmt[] = "%d.%06d";
+	char *fmt_c = &fmt[5];
+	int32_t val2 = abs(val->val2);
+	int ret;
+
+	if (val2 >= 1000000) {
+		return -EINVAL;
+	}
+
+	if (val2 == 0) {
+		ret = snprintk(buf, sizeof(buf), "%d", val->val1);
+	} else {
+		while (val2 % 10 == 0) {
+			val2 /= 10;
+			(*fmt_c)--;
+		}
+
+		ret = snprintk(buf, sizeof(buf), fmt, val->val1, val2);
+	}
+	if (ret < 0) {
+		return ret;
+	}
+	if (ret >= (int) sizeof(buf)) {
+		return -ENOMEM;
+	}
+
+	return append_bytes(buf, (size_t)ret, data);
+}
+#endif
+
 static int bool_encode(const bool *value, json_append_bytes_t append_bytes,
 		       void *data)
 {
@@ -820,6 +938,10 @@ static int encode(const struct json_obj_descr *descr, const void *val,
 				       ptr, append_bytes, data);
 	case JSON_TOK_NUMBER:
 		return num_encode(ptr, append_bytes, data);
+#ifdef CONFIG_JSON_LIBRARY_SENSOR_VALUE
+	case JSON_TOK_SENSOR_VALUE:
+		return sensor_value_encode(ptr, append_bytes, data);
+#endif
 	default:
 		return -EINVAL;
 	}

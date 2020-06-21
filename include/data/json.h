@@ -43,6 +43,9 @@ enum json_tokens {
 	JSON_TOK_COLON = ':',
 	JSON_TOK_COMMA = ',',
 	JSON_TOK_NUMBER = '0',
+#ifdef CONFIG_JSON_LIBRARY_SENSOR_VALUE
+	JSON_TOK_SENSOR_VALUE = '.',
+#endif
 	JSON_TOK_TRUE = 't',
 	JSON_TOK_FALSE = 'f',
 	JSON_TOK_NULL = 'n',
