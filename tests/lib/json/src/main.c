@@ -8,17 +8,21 @@
 #include <stdbool.h>
 #include <ztest.h>
 #include <data/json.h>
+#include <drivers/sensor.h>
 
 struct test_nested {
 	int nested_int;
 	bool nested_bool;
 	const char *nested_string;
+	struct sensor_value nested_sensor_value;
 };
 
 struct test_struct {
 	const char *some_string;
 	int some_int;
 	bool some_bool;
+	struct sensor_value some_sensor_value;
+	struct sensor_value another_sensor_value;
 	struct test_nested some_nested_struct;
 	int some_array[16];
 	size_t some_array_len;
@@ -44,12 +48,18 @@ static const struct json_obj_descr nested_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct test_nested, nested_bool, JSON_TOK_TRUE),
 	JSON_OBJ_DESCR_PRIM(struct test_nested, nested_string,
 			    JSON_TOK_STRING),
+	JSON_OBJ_DESCR_PRIM(struct test_nested, nested_sensor_value,
+			JSON_TOK_SENSOR_VALUE),
 };
 
 static const struct json_obj_descr test_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct test_struct, some_string, JSON_TOK_STRING),
 	JSON_OBJ_DESCR_PRIM(struct test_struct, some_int, JSON_TOK_NUMBER),
 	JSON_OBJ_DESCR_PRIM(struct test_struct, some_bool, JSON_TOK_TRUE),
+	JSON_OBJ_DESCR_PRIM(struct test_struct, some_sensor_value,
+			JSON_TOK_SENSOR_VALUE),
+	JSON_OBJ_DESCR_PRIM(struct test_struct, another_sensor_value,
+			JSON_TOK_SENSOR_VALUE),
 	JSON_OBJ_DESCR_OBJECT(struct test_struct, some_nested_struct,
 			      nested_descr),
 	JSON_OBJ_DESCR_ARRAY(struct test_struct, some_array,
@@ -100,11 +110,14 @@ static void test_json_encoding(void)
 	struct test_struct ts = {
 		.some_string = "zephyr 123\uABCD",
 		.some_int = 42,
+		.some_sensor_value = {-12, -34},
+		.another_sensor_value = {-12, -340000},
 		.some_bool = true,
 		.some_nested_struct = {
 			.nested_int = -1234,
 			.nested_bool = false,
-			.nested_string = "this should be escaped: \t"
+			.nested_string = "this should be escaped: \t",
+			.nested_sensor_value = {-12, 0},
 		},
 		.some_array[0] = 1,
 		.some_array[1] = 4,
@@ -123,20 +136,25 @@ static void test_json_encoding(void)
 			.nested_int = 1234,
 			.nested_bool = true,
 			.nested_string = "no escape necessary",
+			.nested_sensor_value = {12, 345670},
 		},
 	};
 	char encoded[] = "{\"some_string\":\"zephyr 123\uABCD\","
 		"\"some_int\":42,\"some_bool\":true,"
+		"\"some_sensor_value\":-12.000034,"
+		"\"another_sensor_value\":-12.34,"
 		"\"some_nested_struct\":{\"nested_int\":-1234,"
 		"\"nested_bool\":false,\"nested_string\":"
-		"\"this should be escaped: \\t\"},"
+		"\"this should be escaped: \\t\","
+		"\"nested_sensor_value\":-12},"
 		"\"some_array\":[1,4,8,16,32],"
 		"\"another_b!@l\":true,"
 		"\"if\":false,"
 		"\"another-array\":[2,3,5,7],"
 		"\"4nother_ne$+\":{\"nested_int\":1234,"
 		"\"nested_bool\":true,"
-		"\"nested_string\":\"no escape necessary\"}"
+		"\"nested_string\":\"no escape necessary\","
+		"\"nested_sensor_value\":12.34567}"
 		"}";
 	char buffer[sizeof(encoded)];
 	int ret;
@@ -161,18 +179,26 @@ static void test_json_decoding(void)
 		"\"some_bool\":true    \t  "
 		"\n"
 		"\r   ,"
+		"\"some_sensor_value\":-12.000034,"
+		"\"another_sensor_value\":-12.34"
 		"\"some_nested_struct\":{    "
 		"\"nested_int\":-1234,\n\n"
 		"\"nested_bool\":false,\t"
-		"\"nested_string\":\"this should be escaped: \\t\"},"
+		"\"nested_string\":\"this should be escaped: \\t\","
+		"\"nested_sensor_value\":-12.345678\n}"
 		"\"some_array\":[11,22, 33,\t45,\n299]"
 		"\"another_b!@l\":true,"
 		"\"if\":false,"
 		"\"another-array\":[2,3,5,7],"
 		"\"4nother_ne$+\":{\"nested_int\":1234,"
 		"\"nested_bool\":true,"
-		"\"nested_string\":\"no escape necessary\"}"
+		"\"nested_string\":\"no escape necessary\","
+		"\"nested_sensor_value\":12.345678}"
 		"}\n";
+	const struct sensor_value some_sensor_value = {-12, -34};
+	const struct sensor_value another_sensor_value = {-12, -340000};
+	const struct sensor_value nested_sensor_value = {-12, -345678};
+	const struct sensor_value nested_other_sensor_value = {12, 345678};
 	const int expected_array[] = { 11, 22, 33, 45, 299 };
 	const int expected_other_array[] = { 2, 3, 5, 7 };
 	int ret;
@@ -187,8 +213,18 @@ static void test_json_decoding(void)
 		    "String decoded correctly");
 	zassert_equal(ts.some_int, 42, "Positive integer decoded correctly");
 	zassert_equal(ts.some_bool, true, "Boolean decoded correctly");
+	zassert_true(!memcmp(&ts.some_sensor_value, &some_sensor_value,
+			     sizeof(some_sensor_value)),
+		     "Sensor value decoded correctly");
+	zassert_true(!memcmp(&ts.another_sensor_value, &another_sensor_value,
+			     sizeof(another_sensor_value)),
+		     "Another sensor value decoded correctly");
 	zassert_equal(ts.some_nested_struct.nested_int, -1234,
 		     "Nested negative integer decoded correctly");
+	zassert_true(!memcmp(&ts.some_nested_struct.nested_sensor_value,
+			     &nested_sensor_value,
+			     sizeof(nested_sensor_value)),
+		     "Nested negative sensor_value decoded correctly");
 	zassert_equal(ts.some_nested_struct.nested_bool, false,
 		     "Nested boolean value decoded correctly");
 	zassert_true(!strcmp(ts.some_nested_struct.nested_string,
@@ -209,6 +245,10 @@ static void test_json_decoding(void)
 		     "Decoded named array with expected values");
 	zassert_equal(ts.xnother_nexx.nested_int, 1234,
 		      "Named nested integer decoded correctly");
+	zassert_true(!memcmp(&ts.xnother_nexx.nested_sensor_value,
+			     &nested_other_sensor_value,
+			     sizeof(nested_other_sensor_value)),
+		      "Named nested sensor_value decoded correctly");
 	zassert_equal(ts.xnother_nexx.nested_bool, true,
 		      "Named nested boolean decoded correctly");
 	zassert_true(!strcmp(ts.xnother_nexx.nested_string,
