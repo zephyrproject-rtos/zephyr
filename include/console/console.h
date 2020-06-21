@@ -69,8 +69,7 @@ int console_getchar(void);
 
 /** @brief Output a char to console (buffered).
  *
- *  Puts a character into console output buffer. It will be sent
- *  to a console asynchronously, e.g. using an IRQ handler.
+ *  Puts a character into console output buffer.
  *
  *  @return <0 on error, otherwise 0.
  */

@@ -8,19 +8,40 @@ menuconfig CONSOLE_SUBSYS
 
 if CONSOLE_SUBSYS
 
+choice CONSOLE_RX_TYPE
+	prompt "Console RX type"
+
+config CONSOLE_RX_INTERRUPT_DRIVEN
+	bool "Console RX is interrupt driven"
+	depends on UART_CONSOLE && SERIAL_SUPPORT_INTERRUPT
+
+config CONSOLE_RX_POLLING
+	bool "Console RX is polling"
+	depends on UART_CONSOLE
+	select RING_BUFFER
+
+endchoice
+
+config CONSOLE_POLLING_RX_POLL_PERIOD
+	int "RX polling period (in milliseconds)"
+	default 10
+	depends on CONSOLE_RX_POLLING
+	help
+	  Determines how often UART is polled for RX byte.
+
 choice
 	prompt "Console 'get' function selection"
 	optional
-	depends on UART_CONSOLE && SERIAL_SUPPORT_INTERRUPT
+	depends on UART_CONSOLE
 
 config CONSOLE_GETCHAR
 	bool "Character by character input and output"
 	select UART_CONSOLE_DEBUG_SERVER_HOOKS
-	select CONSOLE_HANDLER
+	select CONSOLE_HANDLER if CONSOLE_RX_INTERRUPT_DRIVEN
 
 config CONSOLE_GETLINE
 	bool "Line by line input"
-	select CONSOLE_HANDLER
+	select CONSOLE_HANDLER if CONSOLE_RX_INTERRUPT_DRIVEN
 
 endchoice
 
