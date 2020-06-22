@@ -111,6 +111,6 @@ config CANOPEN_PROGRAM_DOWNLOAD
 	default y
 	help
 	  Enable support for program download over CANopen according
-	  to the CiA 303-2 (draft) specification.
+	  to the CiA 302-3 (draft) specification.
 
 endif # CANOPEN
