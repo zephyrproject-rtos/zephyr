@@ -11,6 +11,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <sys/mutex.h>
 #include <ztest_assert.h>
 
+#include <fcntl.h>
 #include <net/socket.h>
 #include <net/ethernet.h>
 
@@ -37,8 +38,19 @@ static struct eth_fake_context eth_fake_data2 = {
 
 static int eth_fake_send(struct device *dev, struct net_pkt *pkt)
 {
+	struct net_pkt *recv_pkt;
+	int ret;
+
 	ARG_UNUSED(dev);
 	ARG_UNUSED(pkt);
+
+	DBG("Sending data (%d bytes) to iface %d\n",
+	    net_pkt_get_len(pkt), net_if_get_by_iface(net_pkt_iface(pkt)));
+
+	recv_pkt = net_pkt_clone(pkt, K_NO_WAIT);
+
+	ret = net_recv_data(net_pkt_iface(recv_pkt), recv_pkt);
+	zassert_equal(ret, 0, "Cannot receive data (%d)", ret);
 
 	return 0;
 }
@@ -120,9 +132,30 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	ud->second = iface;
 }
 
+static void setblocking(int fd, bool val)
+{
+	int fl, res;
+
+	fl = fcntl(fd, F_GETFL, 0);
+	zassert_not_equal(fl, -1, "Fail to set fcntl");
+
+	if (val) {
+		fl &= ~O_NONBLOCK;
+	} else {
+		fl |= O_NONBLOCK;
+	}
+
+	res = fcntl(fd, F_SETFL, fl);
+	zassert_not_equal(fl, -1, "Fail to set fcntl");
+}
+
 static void test_packet_sockets(void)
 {
 	struct user_data ud = { 0 };
+	uint8_t data_to_send[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+	uint8_t data_to_receive[sizeof(data_to_send)];
+	struct sockaddr_ll dst, src;
+	socklen_t addrlen = sizeof(struct sockaddr_ll);
 	int ret, sock1, sock2;
 
 	net_if_foreach(iface_cb, &ud);
@@ -141,6 +174,45 @@ static void test_packet_sockets(void)
 
 	ret = bind_socket(sock2, ud.second);
 	zassert_equal(ret, 0, "Cannot bind 2nd socket (%d)", -errno);
+
+	memset(&dst, 0, sizeof(dst));
+	dst.sll_ifindex = net_if_get_by_iface(ud.first);
+	dst.sll_family = AF_PACKET;
+
+	ret = sendto(sock2, data_to_send, sizeof(data_to_send), 0,
+		     (const struct sockaddr *)&dst, sizeof(struct sockaddr_ll));
+	zassert_equal(ret, sizeof(data_to_send), "Cannot send all data (%d)",
+		      -errno);
+
+	memset(&src, 0, sizeof(src));
+	ret = recvfrom(sock2, data_to_receive, sizeof(data_to_receive), 0,
+		       (struct sockaddr *)&src, &addrlen);
+	zassert_equal(ret, sizeof(data_to_send), "Cannot receive all data (%d)",
+		      -errno);
+
+	/* Send to socket 2 but read from socket 1. There should not be any
+	 * data in socket 1
+	 */
+	ret = sendto(sock2, data_to_send, sizeof(data_to_send), 0,
+		     (const struct sockaddr *)&dst, sizeof(struct sockaddr_ll));
+	zassert_equal(ret, sizeof(data_to_send), "Cannot send all data (%d)",
+		      -errno);
+
+	k_msleep(10);
+
+	memset(&src, 0, sizeof(src));
+	setblocking(sock1, false);
+
+	ret = recvfrom(sock1, data_to_receive, sizeof(data_to_receive), 0,
+		       (struct sockaddr *)&src, &addrlen);
+	zassert_equal(ret, -1, "Received something (%d)", ret);
+	zassert_equal(errno, EAGAIN, "Wrong errno (%d)", errno);
+
+	memset(&src, 0, sizeof(src));
+	ret = recvfrom(sock2, data_to_receive, sizeof(data_to_receive), 0,
+		       (struct sockaddr *)&src, &addrlen);
+	zassert_equal(ret, sizeof(data_to_send), "Cannot receive all data (%d)",
+		      -errno);
 }
 
 void test_main(void)
