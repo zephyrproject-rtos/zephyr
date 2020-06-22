@@ -111,3 +111,6 @@ extern const struct prov_bearer pb_gatt;
 
 void pb_adv_init(void);
 void pb_gatt_init(void);
+
+void pb_adv_reset(void);
+void pb_gatt_reset(void);

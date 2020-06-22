@@ -189,11 +189,20 @@ static void reset_adv_link(void)
 
 	k_delayed_work_cancel(&link.prot_timer);
 
-	/* Clear everything except the retransmit and protocol timer
-	 * delayed work objects.
-	 */
-	(void)memset(&link, 0, offsetof(struct pb_adv, tx.retransmit));
-	link.rx.id = XACT_ID_NVAL;
+	if (atomic_test_bit(link.flags, PROVISIONER)) {
+		/* Clear everything except the retransmit and protocol timer
+		 * delayed work objects.
+		 */
+		(void)memset(&link, 0, offsetof(struct pb_adv, tx.retransmit));
+		link.rx.id = XACT_ID_NVAL;
+	} else {
+		/* Accept another provisioning attempt */
+		link.id = 0;
+		atomic_clear(link.flags);
+		link.rx.id = XACT_ID_MAX;
+		link.tx.id = XACT_ID_NVAL;
+	}
+
 	link.tx.pending_ack = XACT_ID_NVAL;
 	link.rx.buf = &rx_buf;
 	net_buf_simple_reset(link.rx.buf);
@@ -837,6 +846,11 @@ void pb_adv_init(void)
 {
 	k_delayed_work_init(&link.prot_timer, protocol_timeout);
 	k_delayed_work_init(&link.tx.retransmit, prov_retransmit);
+}
+
+void pb_adv_reset(void)
+{
+	reset_adv_link();
 }
 
 const struct prov_bearer pb_adv = {
