@@ -213,7 +213,8 @@ static int _sock_send(struct esp_data *dev, struct esp_socket *sock)
 	};
 
 	if (!esp_flag_is_set(dev, EDF_STA_CONNECTED)) {
-		return -ENETUNREACH;
+		ret = -ENETUNREACH;
+		goto free_pkt;
 	}
 
 	pkt_len = net_pkt_get_len(sock->tx_pkt);
@@ -290,6 +291,7 @@ clear_modem_cmds:
 					    NULL, 0U, false);
 	k_sem_give(&dev->cmd_handler_data.sem_tx_lock);
 
+free_pkt:
 	net_pkt_unref(sock->tx_pkt);
 	sock->tx_pkt = NULL;
 
