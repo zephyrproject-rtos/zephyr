@@ -340,4 +340,11 @@ config MBEDTLS_USER_CONFIG_FILE
 	  User config file that can contain mbedTLS configs that were not
 	  covered by the generic config file.
 
+config MBEDTLS_PKCS1_V21_ENABLED
+	bool "PKCS#1 v2.1 encoding"
+	select MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
+	help
+	  Enable PKCS#1 v2.1 encoding specified by RFC3447 utilizing RSAES-OAEP
+	  and RSASSA-PSS operations.
+
 endmenu
