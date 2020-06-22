@@ -77,7 +77,7 @@ struct net_l2 {
 };
 
 /** @cond INTERNAL_HIDDEN */
-#define NET_L2_GET_NAME(_name) __net_l2_##_name
+#define NET_L2_GET_NAME(_name) _net_l2_##_name
 #define NET_L2_DECLARE_PUBLIC(_name)					\
 	extern const struct net_l2 NET_L2_GET_NAME(_name)
 #define NET_L2_GET_CTX_TYPE(_name) _name##_CTX_TYPE
@@ -126,19 +126,18 @@ NET_L2_DECLARE_PUBLIC(CANBUS_L2);
 #endif /* CONFIG_NET_L2_CANBUS */
 
 #define NET_L2_INIT(_name, _recv_fn, _send_fn, _enable_fn, _get_flags_fn) \
-	const struct net_l2 (NET_L2_GET_NAME(_name)) __used		\
-	__attribute__((__section__(".net_l2.init"))) = {		\
+	const Z_STRUCT_SECTION_ITERABLE(net_l2,				\
+					NET_L2_GET_NAME(_name)) = {	\
 		.recv = (_recv_fn),					\
 		.send = (_send_fn),					\
 		.enable = (_enable_fn),					\
 		.get_flags = (_get_flags_fn),				\
 	}
 
-#define NET_L2_GET_DATA(name, sfx) (__net_l2_data_##name##sfx)
+#define NET_L2_GET_DATA(name, sfx) _net_l2_data_##name##sfx
 
 #define NET_L2_DATA_INIT(name, sfx, ctx_type)				\
-	static ctx_type NET_L2_GET_DATA(name, sfx) __used		\
-	__attribute__((__section__(".net_l2.data")));
+	static ctx_type NET_L2_GET_DATA(name, sfx) __used;
 
 /** @endcond */
 

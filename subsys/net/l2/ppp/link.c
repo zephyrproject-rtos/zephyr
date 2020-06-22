@@ -18,11 +18,7 @@ LOG_MODULE_DECLARE(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 
 static void lcp_up(struct ppp_context *ctx)
 {
-	struct ppp_protocol_handler *proto;
-
-	for (proto = __net_ppp_proto_start;
-	     proto != __net_ppp_proto_end;
-	     proto++) {
+	Z_STRUCT_SECTION_FOREACH(ppp_protocol_handler, proto) {
 		if (proto->protocol == PPP_LCP) {
 			continue;
 		}
@@ -35,13 +31,9 @@ static void lcp_up(struct ppp_context *ctx)
 
 static void do_network(struct ppp_context *ctx)
 {
-	const struct ppp_protocol_handler *proto;
-
 	ppp_change_phase(ctx, PPP_NETWORK);
 
-	for (proto = __net_ppp_proto_start;
-	     proto != __net_ppp_proto_end;
-	     proto++) {
+	Z_STRUCT_SECTION_FOREACH(ppp_protocol_handler, proto) {
 		if (proto->protocol == PPP_CCP || proto->protocol == PPP_ECP) {
 			if (proto->open) {
 				proto->open(ctx);
@@ -54,9 +46,7 @@ static void do_network(struct ppp_context *ctx)
 	 */
 	/* TODO possible encryption stuff here*/
 
-	for (proto = __net_ppp_proto_start;
-	     proto != __net_ppp_proto_end;
-	     proto++) {
+	Z_STRUCT_SECTION_FOREACH(ppp_protocol_handler, proto) {
 		if (proto->protocol == PPP_CCP || proto->protocol == PPP_ECP ||
 		    proto->protocol >= 0xC000) {
 			continue;
@@ -69,7 +59,8 @@ static void do_network(struct ppp_context *ctx)
 	}
 
 	if (ctx->network_protos_open == 0) {
-		proto = ppp_lcp_get();
+		const struct ppp_protocol_handler *proto = ppp_lcp_get();
+
 		if (proto) {
 			proto->close(ctx, "No network protocols open");
 		}

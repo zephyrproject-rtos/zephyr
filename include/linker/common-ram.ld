@@ -99,29 +99,11 @@
 		KEEP(*(SORT_BY_NAME("._net_buf_pool.static.*")))
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-	SECTION_DATA_PROLOGUE(net_if,,SUBALIGN(4))
-	{
-		__net_if_start = .;
-		*(".net_if.*")
-		KEEP(*(SORT_BY_NAME(".net_if.*")))
-		__net_if_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-	SECTION_DATA_PROLOGUE(net_if_dev,,SUBALIGN(4))
-	{
-		__net_if_dev_start = .;
-		*(".net_if_dev.*")
-		KEEP(*(SORT_BY_NAME(".net_if_dev.*")))
-		__net_if_dev_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-	SECTION_DATA_PROLOGUE(net_l2_data,,SUBALIGN(4))
-	{
-		__net_l2_data_start = .;
-		*(".net_l2.data")
-		KEEP(*(SORT_BY_NAME(".net_l2.data*")))
-		__net_l2_data_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#if defined(CONFIG_NETWORKING)
+	Z_ITERABLE_SECTION_RAM(net_if, 4)
+	Z_ITERABLE_SECTION_RAM(net_if_dev, 4)
+	Z_ITERABLE_SECTION_RAM(net_l2, 4)
+#endif /* NETWORKING */
 
 #if defined(CONFIG_UART_MUX)
 	SECTION_DATA_PROLOGUE(uart_mux,,SUBALIGN(4))
