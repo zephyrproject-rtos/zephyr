@@ -699,7 +699,7 @@ static void link_open(struct prov_rx *rx, struct net_buf_simple *buf)
 
 	if (atomic_test_bit(link.flags, LINK_ACTIVE)) {
 		/* Send another link ack if the provisioner missed the last */
-		if (link.id == rx->link_id && link.tx.id == 0x7F) {
+		if (link.id == rx->link_id) {
 			BT_DBG("Resending link ack");
 			bearer_ctl_send(LINK_ACK, NULL, 0, false);
 		} else {
