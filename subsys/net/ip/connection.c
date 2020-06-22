@@ -657,8 +657,28 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 
 				mcast_pkt_delivered = true;
 			}
-		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) ||
-			   IS_ENABLED(CONFIG_NET_SOCKETS_CAN)) {
+		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET)) {
+			if (conn->flags & NET_CONN_LOCAL_ADDR_SET) {
+				struct sockaddr_ll *local;
+
+				local = (struct sockaddr_ll *)&conn->local_addr;
+
+				if (local->sll_ifindex !=
+				    net_if_get_by_iface(net_pkt_iface(pkt))) {
+					continue;
+				}
+
+				if (best_rank < NET_CONN_RANK(conn->flags)) {
+					best_rank = NET_CONN_RANK(conn->flags);
+					best_match = conn;
+				}
+			} else {
+				if (best_rank < NET_CONN_RANK(conn->flags)) {
+					best_rank = 0;
+					best_match = conn;
+				}
+			}
+		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN)) {
 			best_rank = 0;
 			best_match = conn;
 		}
