@@ -240,6 +240,17 @@ __syscall struct device *device_get_binding(const char *name);
  */
 size_t z_device_get_all_static(struct device **devices);
 
+/** @brief Determine whether a device has been successfully initialized.
+ *
+ * @param dev pointer to the device in question.
+ *
+ * @return true if and only if the device is available for use.
+ */
+static inline bool z_device_ready(const struct device *dev)
+{
+	return dev->driver_api != NULL;
+}
+
 /**
  * @}
  */
