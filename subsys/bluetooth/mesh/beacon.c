@@ -334,6 +334,13 @@ static void secure_beacon_recv(struct net_buf_simple *buf)
 
 	cache_add(data, sub);
 
+	kr_change = bt_mesh_kr_update(sub, BT_MESH_KEY_REFRESH(flags), new_key);
+	if (kr_change) {
+		bt_mesh_net_beacon_update(sub);
+		/* Key Refresh without IV Update only impacts one subnet */
+		bt_mesh_net_sec_update(sub);
+	}
+
 	/* If we have NetKey0 accept initiation only from it */
 	if (bt_mesh_subnet_get(BT_MESH_KEY_PRIMARY) &&
 	    sub->net_idx != BT_MESH_KEY_PRIMARY) {
@@ -352,17 +359,9 @@ static void secure_beacon_recv(struct net_buf_simple *buf)
 
 	iv_change = bt_mesh_net_iv_update(iv_index, BT_MESH_IV_UPDATE(flags));
 
-	kr_change = bt_mesh_kr_update(sub, BT_MESH_KEY_REFRESH(flags), new_key);
-	if (kr_change) {
-		bt_mesh_net_beacon_update(sub);
-	}
-
 	if (iv_change) {
 		/* Update all subnets */
 		bt_mesh_net_sec_update(NULL);
-	} else if (kr_change) {
-		/* Key Refresh without IV Update only impacts one subnet */
-		bt_mesh_net_sec_update(sub);
 	}
 
 update_stats:
