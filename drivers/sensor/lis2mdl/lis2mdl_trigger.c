@@ -73,7 +73,7 @@ static void lis2mdl_gpio_callback(struct device *dev,
 {
 	struct lis2mdl_data *lis2mdl =
 		CONTAINER_OF(cb, struct lis2mdl_data, gpio_cb);
-	const struct lis2mdl_config *const config = dev->config_info;
+	const struct lis2mdl_config *const config = lis2mdl->dev->config_info;
 
 	ARG_UNUSED(pins);
 
@@ -123,6 +123,7 @@ int lis2mdl_init_interrupt(struct device *dev)
 			    config->gpio_name);
 		return -EINVAL;
 	}
+	lis2mdl->dev = dev;
 
 #if defined(CONFIG_LIS2MDL_TRIGGER_OWN_THREAD)
 	k_sem_init(&lis2mdl->gpio_sem, 0, UINT_MAX);
@@ -133,7 +134,6 @@ int lis2mdl_init_interrupt(struct device *dev)
 			0, K_NO_WAIT);
 #elif defined(CONFIG_LIS2MDL_TRIGGER_GLOBAL_THREAD)
 	lis2mdl->work.handler = lis2mdl_work_cb;
-	lis2mdl->dev = dev;
 #endif
 
 	gpio_pin_configure(lis2mdl->gpio, config->gpio_pin,

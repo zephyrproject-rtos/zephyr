@@ -84,7 +84,7 @@ static void iis3dhhc_gpio_callback(struct device *dev,
 {
 	struct iis3dhhc_data *iis3dhhc =
 		CONTAINER_OF(cb, struct iis3dhhc_data, gpio_cb);
-	const struct iis3dhhc_config *cfg = dev->config_info;
+	const struct iis3dhhc_config *cfg = iis3dhhc->dev->config_info;
 
 	ARG_UNUSED(pins);
 
@@ -135,6 +135,7 @@ int iis3dhhc_init_interrupt(struct device *dev)
 		LOG_DBG("Cannot get pointer to %s device", cfg->int_port);
 		return -EINVAL;
 	}
+	iis3dhhc->dev = dev;
 
 #if defined(CONFIG_IIS3DHHC_TRIGGER_OWN_THREAD)
 	k_sem_init(&iis3dhhc->gpio_sem, 0, UINT_MAX);
@@ -146,7 +147,6 @@ int iis3dhhc_init_interrupt(struct device *dev)
 		       0, K_NO_WAIT);
 #elif defined(CONFIG_IIS3DHHC_TRIGGER_GLOBAL_THREAD)
 	iis3dhhc->work.handler = iis3dhhc_work_cb;
-	iis3dhhc->dev = dev;
 #endif /* CONFIG_IIS3DHHC_TRIGGER_OWN_THREAD */
 
 	ret = gpio_pin_configure(iis3dhhc->gpio, cfg->int_pin,

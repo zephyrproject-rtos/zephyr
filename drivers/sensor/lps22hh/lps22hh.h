@@ -69,6 +69,7 @@ struct lps22hh_data {
 
 	struct sensor_trigger data_ready_trigger;
 	sensor_trigger_handler_t handler_drdy;
+	struct device *dev;
 
 #if defined(CONFIG_LPS22HH_TRIGGER_OWN_THREAD)
 	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_LPS22HH_THREAD_STACK_SIZE);
@@ -76,7 +77,6 @@ struct lps22hh_data {
 	struct k_sem gpio_sem;
 #elif defined(CONFIG_LPS22HH_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	struct device *dev;
 #endif
 
 #endif /* CONFIG_LPS22HH_TRIGGER */

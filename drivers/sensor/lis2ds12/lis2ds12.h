@@ -120,6 +120,7 @@ struct lis2ds12_data {
 
 	struct sensor_trigger data_ready_trigger;
 	sensor_trigger_handler_t data_ready_handler;
+	struct device *dev;
 
 #if defined(CONFIG_LIS2DS12_TRIGGER_OWN_THREAD)
 	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_LIS2DS12_THREAD_STACK_SIZE);
@@ -127,7 +128,6 @@ struct lis2ds12_data {
 	struct k_sem trig_sem;
 #elif defined(CONFIG_LIS2DS12_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	struct device *dev;
 #endif
 
 #endif /* CONFIG_LIS2DS12_TRIGGER */

@@ -209,7 +209,7 @@ static void ism330dhcx_gpio_callback(struct device *dev,
 {
 	struct ism330dhcx_data *ism330dhcx =
 		CONTAINER_OF(cb, struct ism330dhcx_data, gpio_cb);
-	const struct ism330dhcx_config *cfg = dev->config_info;
+	const struct ism330dhcx_config *cfg = ism330dhcx->dev->config_info;
 
 	ARG_UNUSED(pins);
 
@@ -260,6 +260,7 @@ int ism330dhcx_init_interrupt(struct device *dev)
 		LOG_ERR("Cannot get pointer to %s device", cfg->int_gpio_port);
 		return -EINVAL;
 	}
+	ism330dhcx->dev = dev;
 
 #if defined(CONFIG_ISM330DHCX_TRIGGER_OWN_THREAD)
 	k_sem_init(&ism330dhcx->gpio_sem, 0, UINT_MAX);
@@ -271,7 +272,6 @@ int ism330dhcx_init_interrupt(struct device *dev)
 			0, K_NO_WAIT);
 #elif defined(CONFIG_ISM330DHCX_TRIGGER_GLOBAL_THREAD)
 	ism330dhcx->work.handler = ism330dhcx_work_cb;
-	ism330dhcx->dev = dev;
 #endif /* CONFIG_ISM330DHCX_TRIGGER_OWN_THREAD */
 
 	ret = gpio_pin_configure(ism330dhcx->gpio, cfg->int_gpio_pin,

@@ -176,6 +176,7 @@ struct lsm6dso_data {
 	sensor_trigger_handler_t handler_drdy_acc;
 	sensor_trigger_handler_t handler_drdy_gyr;
 	sensor_trigger_handler_t handler_drdy_temp;
+	struct device *dev;
 
 #if defined(CONFIG_LSM6DSO_TRIGGER_OWN_THREAD)
 	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_LSM6DSO_THREAD_STACK_SIZE);
@@ -183,7 +184,6 @@ struct lsm6dso_data {
 	struct k_sem gpio_sem;
 #elif defined(CONFIG_LSM6DSO_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	struct device *dev;
 #endif
 #endif /* CONFIG_LSM6DSO_TRIGGER */
 

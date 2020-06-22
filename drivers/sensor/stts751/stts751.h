@@ -54,6 +54,7 @@ struct stts751_data {
 
 	struct sensor_trigger data_ready_trigger;
 	sensor_trigger_handler_t thsld_handler;
+	struct device *dev;
 
 #if defined(CONFIG_STTS751_TRIGGER_OWN_THREAD)
 	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_STTS751_THREAD_STACK_SIZE);
@@ -61,7 +62,6 @@ struct stts751_data {
 	struct k_sem gpio_sem;
 #elif defined(CONFIG_STTS751_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	struct device *dev;
 #endif
 
 #endif /* CONFIG_STTS751_TRIGGER */

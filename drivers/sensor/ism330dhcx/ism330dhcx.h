@@ -177,13 +177,14 @@ struct ism330dhcx_data {
 	sensor_trigger_handler_t handler_drdy_gyr;
 	sensor_trigger_handler_t handler_drdy_temp;
 
+	struct device *dev;
+
 #if defined(CONFIG_ISM330DHCX_TRIGGER_OWN_THREAD)
 	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_ISM330DHCX_THREAD_STACK_SIZE);
 	struct k_thread thread;
 	struct k_sem gpio_sem;
 #elif defined(CONFIG_ISM330DHCX_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	struct device *dev;
 #endif
 #endif /* CONFIG_ISM330DHCX_TRIGGER */
 

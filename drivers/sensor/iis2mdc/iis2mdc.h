@@ -66,6 +66,7 @@ struct iis2mdc_data {
 	struct gpio_callback gpio_cb;
 
 	sensor_trigger_handler_t handler_drdy;
+	struct device *dev;
 
 #if defined(CONFIG_IIS2MDC_TRIGGER_OWN_THREAD)
 	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_IIS2MDC_THREAD_STACK_SIZE);
@@ -73,7 +74,6 @@ struct iis2mdc_data {
 	struct k_sem gpio_sem;
 #elif defined(CONFIG_IIS2MDC_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	struct device *dev;
 #endif  /* CONFIG_IIS2MDC_TRIGGER_GLOBAL_THREAD */
 #endif  /* CONFIG_IIS2MDC_TRIGGER */
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
