@@ -224,25 +224,12 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
 static void device_name_get(size_t idx, struct shell_static_entry *entry)
 {
-	int device_idx = 0;
-	struct device *dev;
+	struct device *dev = shell_device_lookup(idx, I2C_DEVICE_PREFIX);
 
-	entry->syntax = NULL;
+	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;
 	entry->help = NULL;
 	entry->subcmd = &dsub_device_name;
-
-	for (dev = __device_start; dev != __device_end; dev++) {
-		if ((dev->driver_api != NULL) && (dev->name != NULL) &&
-		    strstr(dev->name, I2C_DEVICE_PREFIX) != NULL &&
-		    strcmp(dev->name, "")) {
-			if (idx == device_idx) {
-				entry->syntax = dev->name;
-				break;
-			}
-			device_idx++;
-		}
-	}
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_i2c_cmds,

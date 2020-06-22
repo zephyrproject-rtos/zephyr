@@ -105,6 +105,24 @@ struct shell_static_args {
 };
 
 /**
+ * @brief Get by index a device that matches .
+ *
+ * This can be used, for example, to identify I2C_1 as the second I2C
+ * device.
+ *
+ * Devices that failed to initialize or do not have a non-empty name
+ * are excluded from the candidates for a match.
+ *
+ * @param idx the device number starting from zero.
+ *
+ * @param prefix optional name prefix used to restrict candidate
+ * devices.  Indexing is done relative to devices with names that
+ * start with this text.  Pass null if no prefix match is required.
+ */
+struct device *shell_device_lookup(size_t idx,
+				   const char *prefix);
+
+/**
  * @brief Shell command handler prototype.
  *
  * @param shell Shell instance.
