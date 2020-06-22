@@ -14,4 +14,4 @@ child-binding:
        label:
           required: true
           type: string
-          description: Human readable string describing the device (used by Zephyr for API name)
+          description: Human readable string describing the device (used as device_get_binding() argument)
