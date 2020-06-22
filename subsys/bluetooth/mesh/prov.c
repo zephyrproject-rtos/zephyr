@@ -1247,6 +1247,16 @@ void bt_mesh_prov_complete(uint16_t net_idx, uint16_t addr)
 
 void bt_mesh_prov_reset(void)
 {
+	if (IS_ENABLED(CONFIG_BT_MESH_PB_ADV)) {
+		pb_adv_reset();
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT)) {
+		pb_gatt_reset();
+	}
+
+	reset_state();
+
 	if (prov->reset) {
 		prov->reset();
 	}

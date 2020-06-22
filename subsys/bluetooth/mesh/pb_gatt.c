@@ -141,6 +141,11 @@ void pb_gatt_init(void)
 	k_delayed_work_init(&link.prot_timer, protocol_timeout);
 }
 
+void pb_gatt_reset(void)
+{
+	reset_state();
+}
+
 const struct prov_bearer pb_gatt = {
 	.type = BT_MESH_PROV_GATT,
 	.link_accept = link_accept,
