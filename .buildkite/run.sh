@@ -32,7 +32,7 @@ fi;
 SANITY_EXIT_STATUS=$?
 
 # Rename sanitycheck junit xml for use with junit-annotate-buildkite-plugin
-mv sanity-out/sanitycheck.xml sanitycheck-${BUILDKITE_JOB_ID}.xml
+mv  ./scripts/sanity_chk/last_sanity.xml sanitycheck-${BUILDKITE_JOB_ID}.xml
 buildkite-agent artifact upload sanitycheck-${BUILDKITE_JOB_ID}.xml
 
 # ccache stats
