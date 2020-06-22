@@ -44,12 +44,6 @@ struct ppp_packet {
 /** Max number of IPV6CP options */
 #define MAX_IPV6CP_OPTIONS 1
 
-/*
- * Special alignment is needed for ppp_protocol_handler. This is the
- * same issue as in net_if. See net_if.h __net_if_align for explanation.
- */
-#define __ppp_proto_align __aligned(32)
-
 /** Protocol handler information. */
 struct ppp_protocol_handler {
 	/** Protocol init function */
@@ -74,7 +68,7 @@ struct ppp_protocol_handler {
 
 	/** PPP protocol number */
 	uint16_t protocol;
-} __ppp_proto_align;
+};
 
 #define PPP_PROTO_GET_NAME(proto_name)		\
 	(ppp_protocol_handler_##proto_name)

@@ -160,22 +160,6 @@ struct net_if_router {
 	uint8_t _unused : 5;
 };
 
-/*
- * Special alignment is needed for net_if which is stored in
- * a net_if linker section if there are more than one network
- * interface in the system. If there is only one network interface,
- * then this alignment is not needed, unfortunately this cannot be
- * known beforehand.
- *
- * The net_if struct needs to be aligned to 32 byte boundary,
- * otherwise the __net_if_end will point to wrong location and net_if
- * initialization done in net_if_init() will not find proper values
- * for the second interface.
- *
- * So this alignment is a workaround and should eventually be removed.
- */
-#define __net_if_align __aligned(32)
-
 enum net_if_flag {
 	/** Interface is up/ready to receive and transmit */
 	NET_IF_UP,
@@ -480,7 +464,7 @@ struct net_if {
 	 */
 	int tx_pending;
 #endif
-} __net_if_align;
+};
 
 /**
  * @brief Set a value in network interface flags
