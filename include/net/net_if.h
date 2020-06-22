@@ -2179,23 +2179,23 @@ struct net_if_api {
 		NET_IF_DHCPV4_INIT			\
 	}
 
-#define NET_IF_GET_NAME(dev_name, sfx) (__net_if_##dev_name##_##sfx)
-#define NET_IF_DEV_GET_NAME(dev_name, sfx) (__net_if_dev_##dev_name##_##sfx)
+#define NET_IF_GET_NAME(dev_name, sfx) __net_if_##dev_name##_##sfx
+#define NET_IF_DEV_GET_NAME(dev_name, sfx) __net_if_dev_##dev_name##_##sfx
 
 #define NET_IF_GET(dev_name, sfx)					\
 	((struct net_if *)&NET_IF_GET_NAME(dev_name, sfx))
 
 #define NET_IF_INIT(dev_name, sfx, _l2, _mtu, _num_configs)		\
-	static struct net_if_dev (NET_IF_DEV_GET_NAME(dev_name, sfx))	\
-	__used __attribute__((__section__(".net_if_dev.data"))) = {	\
+	static Z_STRUCT_SECTION_ITERABLE(net_if_dev,			\
+				NET_IF_DEV_GET_NAME(dev_name, sfx)) = { \
 		.dev = &(DEVICE_NAME_GET(dev_name)),			\
 		.l2 = &(NET_L2_GET_NAME(_l2)),				\
 		.l2_data = &(NET_L2_GET_DATA(dev_name, sfx)),		\
 		.mtu = _mtu,						\
 	};								\
-	static struct net_if						\
-	(NET_IF_GET_NAME(dev_name, sfx))[_num_configs] __used		\
-	__attribute__((__section__(".net_if.data"))) = {		\
+	static Z_DECL_ALIGN(struct net_if)				\
+		       NET_IF_GET_NAME(dev_name, sfx)[_num_configs]	\
+		       __used __in_section(_net_if, static, net_if) = {	\
 		[0 ... (_num_configs - 1)] = {				\
 			.if_dev = &(NET_IF_DEV_GET_NAME(dev_name, sfx)), \
 			NET_IF_CONFIG_INIT				\

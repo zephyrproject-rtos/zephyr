@@ -60,7 +60,6 @@ static enum net_verdict process_ppp_msg(struct net_if *iface,
 {
 	struct ppp_context *ctx = net_if_l2_data(iface);
 	enum net_verdict verdict = NET_DROP;
-	struct ppp_protocol_handler *proto;
 	uint16_t protocol;
 	int ret;
 
@@ -83,9 +82,7 @@ static enum net_verdict process_ppp_msg(struct net_if *iface,
 		return NET_CONTINUE;
 	}
 
-	for (proto = __net_ppp_proto_start;
-	     proto != __net_ppp_proto_end;
-	     proto++) {
+	Z_STRUCT_SECTION_FOREACH(ppp_protocol_handler, proto) {
 		if (proto->protocol != protocol) {
 			continue;
 		}
@@ -418,8 +415,7 @@ static void ppp_startup(struct k_work *work)
 {
 	struct ppp_context *ctx = CONTAINER_OF(work, struct ppp_context,
 					       startup);
-	const struct ppp_protocol_handler *proto;
-	int count;
+	int count = 0;
 
 	if (!ctx->is_init) {
 		return;
@@ -427,14 +423,13 @@ static void ppp_startup(struct k_work *work)
 
 	NET_DBG("PPP %p startup for interface %p", ctx, ctx->iface);
 
-	for (proto = __net_ppp_proto_start, count = 0;
-	     proto != __net_ppp_proto_end;
-	     proto++, count++) {
+	Z_STRUCT_SECTION_FOREACH(ppp_protocol_handler, proto) {
 		if (proto->protocol == PPP_LCP) {
 			ppp_lcp = proto;
 		}
 
 		proto->init(ctx);
+		count++;
 	}
 
 	if (count == 0) {

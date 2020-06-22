@@ -55,11 +55,7 @@ void ppp_network_done(struct ppp_context *ctx, int proto)
 
 void ppp_network_all_down(struct ppp_context *ctx)
 {
-	struct ppp_protocol_handler *proto;
-
-	for (proto = __net_ppp_proto_start;
-	     proto != __net_ppp_proto_end;
-	     proto++) {
+	Z_STRUCT_SECTION_FOREACH(ppp_protocol_handler, proto) {
 		if (proto->protocol != PPP_LCP && proto->lower_down) {
 			proto->lower_down(ctx);
 		}

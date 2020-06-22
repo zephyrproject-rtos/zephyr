@@ -82,9 +82,8 @@ struct ppp_protocol_handler {
 #define PPP_PROTOCOL_REGISTER(name, proto, init_func, proto_handler,	\
 			      proto_lower_up, proto_lower_down,		\
 			      proto_open, proto_close)			\
-	static const struct ppp_protocol_handler			\
-	(PPP_PROTO_GET_NAME(name)) __used				\
-	__attribute__((__section__(".net_ppp_proto.data"))) = {		\
+	static const Z_STRUCT_SECTION_ITERABLE(ppp_protocol_handler,	\
+					PPP_PROTO_GET_NAME(name)) = {	\
 		.protocol = proto,					\
 		.init = init_func,					\
 		.handler = proto_handler,				\
@@ -93,9 +92,6 @@ struct ppp_protocol_handler {
 		.open = proto_open,					\
 		.close = proto_close,					\
 	}
-
-extern struct ppp_protocol_handler __net_ppp_proto_start[];
-extern struct ppp_protocol_handler __net_ppp_proto_end[];
 
 const char *ppp_phase_str(enum ppp_phase phase);
 const char *ppp_state_str(enum ppp_state state);
