@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <ctype.h>
+#include <device.h>
 #include "shell_utils.h"
 #include "shell_wildcard.h"
 
@@ -458,4 +459,30 @@ void shell_cmd_trim(const struct shell *shell)
 {
 	buffer_trim(shell->ctx->cmd_buff, &shell->ctx->cmd_buff_len);
 	shell->ctx->cmd_buff_pos = shell->ctx->cmd_buff_len;
+}
+
+struct device *shell_device_lookup(size_t idx,
+				   const char *prefix)
+{
+	size_t match_idx = 0;
+	struct device *dev;
+	size_t len = z_device_get_all_static(&dev);
+	struct device *dev_end = dev + len;
+
+	while (dev < dev_end) {
+		if ((dev->driver_api != NULL)
+		    && (dev->name != NULL)
+		    && (strlen(dev->name) != 0)
+		    && ((prefix == NULL)
+			|| (strncmp(prefix, dev->name,
+				    strlen(prefix)) == 0))) {
+			if (match_idx == idx) {
+				return dev;
+			}
+			++match_idx;
+		}
+		++dev;
+	}
+
+	return NULL;
 }
