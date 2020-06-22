@@ -149,7 +149,7 @@ void sys_pm_resume_devices(void)
 
 void sys_pm_create_device_list(void)
 {
-	int count;
+	size_t count = z_device_get_all_static(&all_devices);
 	device_idx_t pmi;
 
 	/*
@@ -157,9 +157,8 @@ void sys_pm_create_device_list(void)
 	 * Ordering should be done based on dependencies. Devices
 	 * in the beginning of the list will be resumed first.
 	 */
-	device_list_get(&all_devices, &count);
 
-	__ASSERT_NO_MSG((0 <= count) && (count <= DEVICE_IDX_MAX));
+	__ASSERT_NO_MSG(count <= DEVICE_IDX_MAX);
 
 	/* Reserve initial slots for core devices. */
 	num_pm = ARRAY_SIZE(core_devices);

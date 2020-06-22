@@ -177,10 +177,9 @@ void test_pre_kernel_detection(void)
  */
 static void test_build_suspend_device_list(void)
 {
-	int devcount;
 	struct device *devices;
+	size_t devcount = z_device_get_all_static(&devices);
 
-	device_list_get(&devices, &devcount);
 	zassert_false((devcount == 0), NULL);
 }
 

@@ -230,6 +230,16 @@ struct device {
  */
 __syscall struct device *device_get_binding(const char *name);
 
+/** @brief Get access to the static array of static devices.
+ *
+ * @param devices where to store the pointer to the array of
+ * statically allocated devices.  The array must not be mutated
+ * through this pointer.
+ *
+ * @return the number of statically allocated devices.
+ */
+size_t z_device_get_all_static(struct device **devices);
+
 /**
  * @}
  */
@@ -403,8 +413,13 @@ static inline int device_get_power_state(struct device *device,
  *
  * @param device_list Pointer to receive the device list array
  * @param device_count Pointer to receive the device count
+ *
+ * @deprecated in 2.4 release, replace with z_device_get_all_static()
  */
-void device_list_get(struct device **device_list, int *device_count);
+__deprecated static inline void device_list_get(struct device **device_list, int *device_count)
+{
+	*device_count = z_device_get_all_static(device_list);
+}
 
 /**
  * @brief Check if any device is in the middle of a transaction
