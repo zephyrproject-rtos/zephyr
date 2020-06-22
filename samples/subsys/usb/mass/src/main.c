@@ -45,18 +45,8 @@ static struct fs_mount_t fs_mnt = {
 #endif  /* file system */
 #endif  /* CONFIG_DISK_ACCESS_FLASH */
 
-void main(void)
+static void setup_disk(void)
 {
-	int ret;
-
-	ret = usb_enable(NULL);
-	if (ret != 0) {
-		LOG_ERR("Failed to enable USB");
-		return;
-	}
-
-	LOG_INF("The device is put in USB mass storage mode.\n");
-
 #if CONFIG_DISK_ACCESS_FLASH
 	struct fs_mount_t *mp = &fs_mnt;
 	unsigned int id = (uintptr_t)mp->storage_dev;
@@ -124,4 +114,19 @@ void main(void)
 out:
 	flash_area_close(pfa);
 #endif
+}
+
+void main(void)
+{
+	int ret;
+
+	setup_disk();
+
+	ret = usb_enable(NULL);
+	if (ret != 0) {
+		LOG_ERR("Failed to enable USB");
+		return;
+	}
+
+	LOG_INF("The device is put in USB mass storage mode.\n");
 }
