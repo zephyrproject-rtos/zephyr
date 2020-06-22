@@ -470,7 +470,7 @@ struct device *shell_device_lookup(size_t idx,
 	struct device *dev_end = dev + len;
 
 	while (dev < dev_end) {
-		if ((dev->driver_api != NULL)
+		if (z_device_ready(dev)
 		    && (dev->name != NULL)
 		    && (strlen(dev->name) != 0)
 		    && ((prefix == NULL)
