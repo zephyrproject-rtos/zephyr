@@ -15,7 +15,7 @@ void __printk_hook_install(int (*fn)(int));
 void *__printk_get_hook(void);
 int (*_old_char_out)(int);
 
-#ifndef CONFIG_64BIT
+#ifndef CONFIG_PRINTK64
 
 char *expected = "22 113 10000 32768 40000 22\n"
 		 "p 112 -10000 -32768 -40000 -22\n"
@@ -101,7 +101,7 @@ void test_printk(void)
 	printk("%d %02d %04d %08d\n", -42, -42, -42, -42);
 	printk("%u %2u %4u %8u\n", 42, 42, 42, 42);
 	printk("%u %02u %04u %08u\n", 42, 42, 42, 42);
-	printk("%-8u%-6d%-4x%-2p%8d\n", 0xFF, 42, 0xABCDEF, (char *)42, 42);
+	printk("%-8u%-6d%-4x  %-2p%8d\n", 0xFF, 42, 0xABCDEF, (char *)42, 42);
 	printk("%lld %lld %llu %llx\n", 0xFFFFFFFFFULL, -1LL, -1ULL, -1ULL);
 
 	pk_console[pos] = '\0';
@@ -130,7 +130,7 @@ void test_printk(void)
 	count += snprintk(pk_console + count, sizeof(pk_console) - count,
 			  "%u %02u %04u %08u\n", 42, 42, 42, 42);
 	count += snprintk(pk_console + count, sizeof(pk_console) - count,
-			  "%-8u%-6d%-4x%-2p%8d\n",
+			  "%-8u%-6d%-4x  %-2p%8d\n",
 			  0xFF, 42, 0xABCDEF, (char *)42, 42);
 	count += snprintk(pk_console + count, sizeof(pk_console) - count,
 			  "%lld %lld %llu %llx\n",
