@@ -595,6 +595,7 @@ static int bearer_ctl_send(uint8_t op, const void *data, uint8_t data_len,
 	BT_DBG("op 0x%02x data_len %u", op, data_len);
 
 	prov_clear_tx();
+	k_delayed_work_submit(&link.prot_timer, PROTOCOL_TIMEOUT);
 
 	buf = adv_buf_create(reliable ? RETRANSMITS_RELIABLE :
 					RETRANSMITS_UNRELIABLE);
