@@ -57,6 +57,7 @@ struct iis3dhhc_data {
 	struct gpio_callback gpio_cb;
 
 	sensor_trigger_handler_t handler_drdy;
+	struct device *dev;
 
 #if defined(CONFIG_IIS3DHHC_TRIGGER_OWN_THREAD)
 	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_IIS3DHHC_THREAD_STACK_SIZE);
@@ -64,7 +65,6 @@ struct iis3dhhc_data {
 	struct k_sem gpio_sem;
 #elif defined(CONFIG_IIS3DHHC_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	struct device *dev;
 #endif
 
 #endif /* CONFIG_IIS3DHHC_TRIGGER */

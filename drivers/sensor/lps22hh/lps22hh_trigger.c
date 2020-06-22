@@ -87,11 +87,11 @@ static void lps22hh_handle_interrupt(void *arg)
 static void lps22hh_gpio_callback(struct device *dev,
 				  struct gpio_callback *cb, uint32_t pins)
 {
-	const struct lps22hh_config *cfg = dev->config_info;
 	struct lps22hh_data *lps22hh =
 		CONTAINER_OF(cb, struct lps22hh_data, gpio_cb);
 
 	ARG_UNUSED(pins);
+	const struct lps22hh_config *cfg = lps22hh->dev->config_info;
 
 	gpio_pin_interrupt_configure(lps22hh->gpio, cfg->drdy_pin,
 				     GPIO_INT_DISABLE);
@@ -140,6 +140,7 @@ int lps22hh_init_interrupt(struct device *dev)
 		LOG_DBG("Cannot get pointer to %s device", cfg->drdy_port);
 		return -EINVAL;
 	}
+	lps22hh->dev = dev;
 
 #if defined(CONFIG_LPS22HH_TRIGGER_OWN_THREAD)
 	k_sem_init(&lps22hh->gpio_sem, 0, UINT_MAX);
@@ -151,7 +152,6 @@ int lps22hh_init_interrupt(struct device *dev)
 		       0, K_NO_WAIT);
 #elif defined(CONFIG_LPS22HH_TRIGGER_GLOBAL_THREAD)
 	lps22hh->work.handler = lps22hh_work_cb;
-	lps22hh->dev = dev;
 #endif /* CONFIG_LPS22HH_TRIGGER_OWN_THREAD */
 
 	ret = gpio_pin_configure(lps22hh->gpio, cfg->drdy_pin,

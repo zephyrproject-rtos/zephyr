@@ -73,7 +73,7 @@ static void iis2mdc_gpio_callback(struct device *dev,
 {
 	struct iis2mdc_data *iis2mdc =
 		CONTAINER_OF(cb, struct iis2mdc_data, gpio_cb);
-	const struct iis2mdc_config *const config = dev->config_info;
+	const struct iis2mdc_config *const config = iis2mdc->dev->config_info;
 
 	ARG_UNUSED(pins);
 
@@ -123,6 +123,7 @@ int iis2mdc_init_interrupt(struct device *dev)
 			    config->drdy_port);
 		return -EINVAL;
 	}
+	iis2mdc->dev = dev;
 
 #if defined(CONFIG_IIS2MDC_TRIGGER_OWN_THREAD)
 	k_sem_init(&iis2mdc->gpio_sem, 0, UINT_MAX);
@@ -133,7 +134,6 @@ int iis2mdc_init_interrupt(struct device *dev)
 			0, K_NO_WAIT);
 #elif defined(CONFIG_IIS2MDC_TRIGGER_GLOBAL_THREAD)
 	iis2mdc->work.handler = iis2mdc_work_cb;
-	iis2mdc->dev = dev;
 #endif
 
 	gpio_pin_configure(iis2mdc->gpio, config->drdy_pin,

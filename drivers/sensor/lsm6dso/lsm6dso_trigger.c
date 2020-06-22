@@ -209,7 +209,7 @@ static void lsm6dso_gpio_callback(struct device *dev,
 {
 	struct lsm6dso_data *lsm6dso =
 		CONTAINER_OF(cb, struct lsm6dso_data, gpio_cb);
-	const struct lsm6dso_config *cfg = dev->config_info;
+	const struct lsm6dso_config *cfg = lsm6dso->dev->config_info;
 
 	ARG_UNUSED(pins);
 
@@ -261,6 +261,7 @@ int lsm6dso_init_interrupt(struct device *dev)
 			    cfg->int_gpio_port);
 		return -EINVAL;
 	}
+	lsm6dso->dev = dev;
 
 #if defined(CONFIG_LSM6DSO_TRIGGER_OWN_THREAD)
 	k_sem_init(&lsm6dso->gpio_sem, 0, UINT_MAX);
@@ -272,7 +273,6 @@ int lsm6dso_init_interrupt(struct device *dev)
 			0, K_NO_WAIT);
 #elif defined(CONFIG_LSM6DSO_TRIGGER_GLOBAL_THREAD)
 	lsm6dso->work.handler = lsm6dso_work_cb;
-	lsm6dso->dev = dev;
 #endif /* CONFIG_LSM6DSO_TRIGGER_OWN_THREAD */
 
 	ret = gpio_pin_configure(lsm6dso->gpio, cfg->int_gpio_pin,

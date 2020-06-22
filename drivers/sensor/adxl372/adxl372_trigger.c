@@ -56,7 +56,7 @@ static void adxl372_gpio_callback(struct device *dev,
 {
 	struct adxl372_data *drv_data =
 		CONTAINER_OF(cb, struct adxl372_data, gpio_cb);
-	const struct adxl372_dev_config *cfg = dev->config_info;
+	const struct adxl372_dev_config *cfg = drv_data->dev->config_info;
 
 	gpio_pin_interrupt_configure(drv_data->gpio, cfg->int_gpio,
 				     GPIO_INT_DISABLE);
@@ -161,6 +161,7 @@ int adxl372_init_interrupt(struct device *dev)
 		LOG_ERR("Failed to set gpio callback!");
 		return -EIO;
 	}
+	drv_data->dev = dev;
 
 #if defined(CONFIG_ADXL372_TRIGGER_OWN_THREAD)
 	k_sem_init(&drv_data->gpio_sem, 0, UINT_MAX);
@@ -172,7 +173,6 @@ int adxl372_init_interrupt(struct device *dev)
 			0, K_NO_WAIT);
 #elif defined(CONFIG_ADXL372_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = adxl372_work_cb;
-	drv_data->dev = dev;
 #endif
 
 	return 0;
