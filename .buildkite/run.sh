@@ -33,6 +33,10 @@ fi;
 SANITY_EXIT_STATUS=$?
 
 # Rename sanitycheck junit xml for use with junit-annotate-buildkite-plugin
+# create dummy file if sanitycheck did nothing
+if [ ! -f sanity-out/sanitycheck.xml ]; then
+   touch sanity-out/sanitycheck.xml
+fi
 mv sanity-out/sanitycheck.xml sanitycheck-${BUILDKITE_JOB_ID}.xml
 buildkite-agent artifact upload sanitycheck-${BUILDKITE_JOB_ID}.xml
 
