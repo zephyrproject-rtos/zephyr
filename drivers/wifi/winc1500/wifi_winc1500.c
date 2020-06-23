@@ -118,9 +118,9 @@ typedef struct {
 #define WINC1500_REGION		ASIA
 #endif
 
-#define WINC1500_BIND_TIMEOUT 500
-#define WINC1500_LISTEN_TIMEOUT 500
-#define WINC1500_BUF_TIMEOUT 100
+#define WINC1500_BIND_TIMEOUT K_MSEC(500)
+#define WINC1500_LISTEN_TIMEOUT K_MSEC(500)
+#define WINC1500_BUF_TIMEOUT K_MSEC(100)
 
 NET_BUF_POOL_DEFINE(winc1500_tx_pool, CONFIG_WIFI_WINC1500_BUF_CTR,
 		    CONFIG_WIFI_WINC1500_MAX_PACKET_SIZE, 0, NULL);
@@ -431,7 +431,7 @@ static int winc1500_accept(struct net_context *context,
 
 	if (timeout) {
 		if (k_sem_take(&w1500_data.socket_data[socket].wait_sem,
-			       timeout)) {
+			       K_MSEC(timeout))) {
 			return -ETIMEDOUT;
 		}
 	} else {
@@ -811,7 +811,7 @@ static bool handle_socket_msg_recv(SOCKET sock,
 	}
 
 	if (recv(sock, sd->pkt_buf->data,
-		 CONFIG_WIFI_WINC1500_MAX_PACKET_SIZE, K_NO_WAIT)) {
+		 CONFIG_WIFI_WINC1500_MAX_PACKET_SIZE, 0)) {
 		LOG_ERR("Could not receive packet in the buffer");
 		return false;
 	}
