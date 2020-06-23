@@ -17,7 +17,7 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
     def __init__(self, cfg, device, baud=921600, flash_size='detect',
                  flash_freq='40m', flash_mode='dio', espidf='espidf',
                  bootloader_bin=None, partition_table_bin=None):
-        super(Esp32BinaryRunner, self).__init__(cfg)
+        super().__init__(cfg)
         self.elf = cfg.elf_file
         self.device = device
         self.baud = baud

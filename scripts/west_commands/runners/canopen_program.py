@@ -47,7 +47,7 @@ class CANopenBinaryRunner(ZephyrBinaryRunner):
                                "see the getting started guide for details on "
                                "how to fix")
 
-        super(CANopenBinaryRunner, self).__init__(cfg)
+        super().__init__(cfg)
         self.bin_file = cfg.bin_file
         self.confirm = confirm
         self.confirm_only = confirm_only

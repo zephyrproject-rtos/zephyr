@@ -27,7 +27,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                  tcl_port=DEFAULT_OPENOCD_TCL_PORT,
                  telnet_port=DEFAULT_OPENOCD_TELNET_PORT,
                  gdb_port=DEFAULT_OPENOCD_GDB_PORT):
-        super(OpenOcdBinaryRunner, self).__init__(cfg)
+        super().__init__(cfg)
 
         if not config:
             default = path.join(cfg.board_dir, 'support', 'openocd.cfg')

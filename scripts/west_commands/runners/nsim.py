@@ -27,7 +27,7 @@ class NsimBinaryRunner(ZephyrBinaryRunner):
                  tui=False,
                  gdb_port=DEFAULT_ARC_GDB_PORT,
                  props=DEFAULT_PROPS_FILE):
-        super(NsimBinaryRunner, self).__init__(cfg)
+        super().__init__(cfg)
         self.gdb_cmd = [cfg.gdb] + (['-tui'] if tui else [])
         self.nsim_cmd = ['nsimdrv']
         self.gdb_port = gdb_port

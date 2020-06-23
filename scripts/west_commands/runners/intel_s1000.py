@@ -19,7 +19,7 @@ class IntelS1000BinaryRunner(ZephyrBinaryRunner):
     def __init__(self, cfg, xt_ocd_dir,
                  ocd_topology, ocd_jtag_instr, gdb_flash_file,
                  gdb_port=DEFAULT_XT_GDB_PORT):
-        super(IntelS1000BinaryRunner, self).__init__(cfg)
+        super().__init__(cfg)
         self.board_dir = cfg.board_dir
         self.elf_name = cfg.elf_file
         self.gdb_cmd = cfg.gdb
