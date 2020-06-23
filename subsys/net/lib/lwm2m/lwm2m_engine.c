@@ -4060,36 +4060,38 @@ void lwm2m_engine_context_init(struct lwm2m_ctx *client_ctx)
 
 int lwm2m_socket_add(struct lwm2m_ctx *ctx)
 {
-	int i;
-
-	if (sock_nfds < MAX_POLL_FD) {
-		i = sock_nfds++;
-	} else {
-		for (i = 0; i < MAX_POLL_FD; i++) {
-			if (sock_ctx[i] == NULL) {
-				goto found;
-			}
-		}
-
+	if (sock_nfds >= MAX_POLL_FD) {
 		return -ENOMEM;
 	}
 
-found:
-	sock_ctx[i] = ctx;
-	sock_fds[i].fd = ctx->sock_fd;
-	sock_fds[i].events = POLLIN;
+	sock_ctx[sock_nfds] = ctx;
+	sock_fds[sock_nfds].fd = ctx->sock_fd;
+	sock_fds[sock_nfds].events = POLLIN;
+	sock_nfds++;
+
 	return 0;
 }
 
 void lwm2m_socket_del(struct lwm2m_ctx *ctx)
 {
 	for (int i = 0; i < sock_nfds; i++) {
-		if (sock_ctx[i] == ctx) {
-			sock_ctx[i] = NULL;
-			sock_fds[i].fd = -1;
-			sock_nfds--;
-			break;
+		if (sock_ctx[i] != ctx) {
+			continue;
 		}
+
+		sock_nfds--;
+
+		/* If not last, overwrite the entry with the last one. */
+		if (i < sock_nfds) {
+			sock_ctx[i] = sock_ctx[sock_nfds];
+			sock_fds[i].fd = sock_fds[sock_nfds].fd;
+			sock_fds[i].events = sock_fds[sock_nfds].events;
+		}
+
+		/* Remove the last entry. */
+		sock_ctx[sock_nfds] = NULL;
+		sock_fds[sock_nfds].fd = -1;
+		break;
 	}
 }
 
