@@ -561,6 +561,16 @@ static int cmd_subscribe(const struct shell *shell, size_t argc, char *argv[])
 	subscribe_params.value = BT_GATT_CCC_NOTIFY;
 	subscribe_params.notify = notify_func;
 
+#if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC)
+	if (subscribe_params.ccc_handle == 0) {
+		static struct bt_gatt_discover_params disc_params;
+
+		subscribe_params.disc_params = &disc_params;
+		subscribe_params.end_handle = 0xFFFF;
+	}
+#endif /* CONFIG_BT_GATT_AUTO_DISCOVER_CCC */
+
+
 	if (argc > 3 && !strcmp(argv[3], "ind")) {
 		subscribe_params.value = BT_GATT_CCC_INDICATE;
 	}

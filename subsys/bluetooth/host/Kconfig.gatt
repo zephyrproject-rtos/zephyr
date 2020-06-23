@@ -137,6 +137,13 @@ config BT_GATT_READ_MULTIPLE
 	  This option enables support for the GATT Read Multiple Characteristic
 	  Values procedure.
 
+config BT_GATT_AUTO_DISCOVER_CCC
+	bool "Support to automatic discover the CCC handles of characteristics"
+	depends on BT_GATT_CLIENT
+	help
+	  This option enables support for GATT to initiate discovery for CCC
+	  handles if the CCC handle is unknown by the application.
+
 config BT_GAP_AUTO_UPDATE_CONN_PARAMS
 	bool "Automatic Update of Connection Parameters"
 	default y

@@ -3893,6 +3893,62 @@ static int gatt_write_ccc(struct bt_conn *conn, uint16_t handle, uint16_t value,
 	return gatt_send(conn, buf, func, params, NULL);
 }
 
+#if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC)
+static uint8_t gatt_ccc_discover_cb(struct bt_conn *conn,
+				    const struct bt_gatt_attr *attr,
+				    struct bt_gatt_discover_params *params)
+{
+	struct bt_gatt_subscribe_params *sub_params = params->sub_params;
+
+	if (!attr) {
+		memset(params, 0, sizeof(*params));
+		sub_params->notify(conn, sub_params, NULL, 0);
+		return BT_GATT_ITER_STOP;
+	}
+
+	if (params->type == BT_GATT_DISCOVER_DESCRIPTOR) {
+		memset(params, 0, sizeof(*params));
+		sub_params->ccc_handle = attr->handle;
+
+		if (bt_gatt_subscribe(conn, sub_params)) {
+			sub_params->notify(conn, sub_params, NULL, 0);
+		}
+		/* else if no error occurred, then `bt_gatt_subscribe` will
+		 * call the notify function once subscribed.
+		 */
+
+		return BT_GATT_ITER_STOP;
+	}
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+static int gatt_ccc_discover(struct bt_conn *conn,
+			     struct bt_gatt_subscribe_params *params)
+{
+	int err;
+	static struct bt_uuid_16 ccc_uuid = BT_UUID_INIT_16(0);
+
+	memcpy(&ccc_uuid, BT_UUID_GATT_CCC, sizeof(ccc_uuid));
+	memset(params->disc_params, 0, sizeof(*params->disc_params));
+
+	params->disc_params->sub_params = params;
+	params->disc_params->uuid = &ccc_uuid.uuid;
+	params->disc_params->type = BT_GATT_DISCOVER_DESCRIPTOR;
+	params->disc_params->start_handle = params->value_handle;
+	params->disc_params->end_handle = params->end_handle;
+	params->disc_params->func = gatt_ccc_discover_cb;
+
+	err = bt_gatt_discover(conn, params->disc_params);
+	if (err) {
+		BT_DBG("CCC Discovery failed (err %d)", err);
+		return err;
+	}
+	return 0;
+
+}
+#endif /* CONFIG_BT_GATT_AUTO_DISCOVER_CCC */
+
 int bt_gatt_subscribe(struct bt_conn *conn,
 		      struct bt_gatt_subscribe_params *params)
 {
@@ -3903,7 +3959,13 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 	__ASSERT(conn, "invalid parameters\n");
 	__ASSERT(params && params->notify,  "invalid parameters\n");
 	__ASSERT(params->value, "invalid parameters\n");
+#if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC)
+	__ASSERT(params->ccc_handle ||
+		 (params->end_handle && params->disc_params),
+		 "invalid parameters\n");
+#else
 	__ASSERT(params->ccc_handle, "invalid parameters\n");
+#endif
 
 	if (conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
@@ -3933,6 +3995,14 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 	if (!has_subscription) {
 		int err;
 
+#if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC)
+		if (!params->ccc_handle) {
+			err = gatt_ccc_discover(conn, params);
+			if (err) {
+				return err;
+			}
+		}
+#endif
 		err = gatt_write_ccc(conn, params->ccc_handle, params->value,
 				     gatt_write_ccc_rsp, params);
 		if (err) {
