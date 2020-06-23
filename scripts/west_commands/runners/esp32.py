@@ -63,7 +63,7 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
                             help='Partition table to flash')
 
     @classmethod
-    def create(cls, cfg, args):
+    def do_create(cls, cfg, args):
         if args.esp_tool:
             espidf = args.esp_tool
         else:

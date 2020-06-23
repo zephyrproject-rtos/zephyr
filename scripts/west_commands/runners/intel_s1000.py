@@ -53,7 +53,7 @@ class IntelS1000BinaryRunner(ZephyrBinaryRunner):
             help='xt-gdb port, defaults to 20000')
 
     @classmethod
-    def create(cls, cfg, args):
+    def do_create(cls, cfg, args):
         return IntelS1000BinaryRunner(
             cfg, args.xt_ocd_dir,
             args.ocd_topology, args.ocd_jtag_instr, args.gdb_flash_file,

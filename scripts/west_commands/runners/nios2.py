@@ -41,7 +41,7 @@ class Nios2BinaryRunner(ZephyrBinaryRunner):
                             help='if given, GDB uses -tui')
 
     @classmethod
-    def create(cls, cfg, args):
+    def do_create(cls, cfg, args):
         return Nios2BinaryRunner(cfg,
                                  quartus_py=args.quartus_flash,
                                  cpu_sof=args.cpu_sof,

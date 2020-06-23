@@ -79,7 +79,7 @@ class Stm32flashBinaryRunner(ZephyrBinaryRunner):
                             help='verify writes, default False')
 
     @classmethod
-    def create(cls, cfg, args):
+    def do_create(cls, cfg, args):
         return Stm32flashBinaryRunner(cfg, device=args.device, action=args.action,
             baud=args.baud_rate, force_binary=args.force_binary,
             start_addr=args.start_addr, exec_addr=args.execution_addr,

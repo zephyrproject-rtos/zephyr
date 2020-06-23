@@ -199,6 +199,16 @@ class RunnerCaps:
             self.commands, self.flash_addr)
 
 
+def _missing_cap(cls, option):
+    # Helper function that's called when an option was given on the
+    # command line that corresponds to a missing capability.
+    #
+    # 'cls' is a ZephyrBinaryRunner subclass; 'option' is an option
+    # that can't be supported due to missing capability.
+
+    raise ValueError(f"{cls.name()} doesn't support {option} option")
+
+
 class RunnerConfig:
     '''Runner execution-time configuration.
 
@@ -260,7 +270,9 @@ class _DTFlashAction(argparse.Action):
 class ZephyrBinaryRunner(abc.ABC):
     '''Abstract superclass for binary runners (flashers, debuggers).
 
-    **Note**: these APIs are still evolving, and will change!
+    **Note**: this class's API has changed relatively rarely since it
+    as added, but it is not considered a stable Zephyr API, and may change
+    without notice.
 
     With some exceptions, boards supported by Zephyr must provide
     generic means to be flashed (have a Zephyr firmware binary
@@ -389,13 +401,20 @@ class ZephyrBinaryRunner(abc.ABC):
 
         Runner-specific options are added through the do_add_parser()
         hook.'''
-        # Common options that depend on runner capabilities.
-        if cls.capabilities().flash_addr:
+        # Common options that depend on runner capabilities. If a
+        # capability is not supported, the option string or strings
+        # are added anyway, to prevent an individual runner class from
+        # using them to mean something else.
+        caps = cls.capabilities()
+
+        if caps.flash_addr:
             parser.add_argument('--dt-flash', default='n', choices=_YN_CHOICES,
                                 action=_DTFlashAction,
                                 help='''If 'yes', use configuration generated
                                 by device tree (DT) to compute flash
                                 addresses.''')
+        else:
+            parser.add_argument('--dt-flash', help=argparse.SUPPRESS)
 
         # Runner-specific options.
         cls.do_add_parser(parser)
@@ -406,13 +425,22 @@ class ZephyrBinaryRunner(abc.ABC):
         '''Hook for adding runner-specific options.'''
 
     @classmethod
-    @abc.abstractmethod
     def create(cls, cfg, args):
         '''Create an instance from command-line arguments.
 
         - ``cfg``: RunnerConfig instance (pass to superclass __init__)
         - ``args``: runner-specific argument namespace parsed from
           execution environment, as specified by ``add_parser()``.'''
+        caps = cls.capabilities()
+        if args.dt_flash and not caps.flash_addr:
+            _missing_cap(cls, '--dt-flash')
+
+        return cls.do_create(cfg, args)
+
+    @classmethod
+    @abc.abstractmethod
+    def do_create(cls, cfg, args):
+        '''Hook for instance creation from command line arguments.'''
 
     @classmethod
     def get_flash_address(cls, args, build_conf, default=0x0):

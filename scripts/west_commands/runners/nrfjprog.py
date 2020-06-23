@@ -53,7 +53,7 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
                             e.g. "--recover"''')
 
     @classmethod
-    def create(cls, cfg, args):
+    def do_create(cls, cfg, args):
         return NrfJprogBinaryRunner(cfg, args.nrf_family, args.softreset,
                                     args.snr, erase=args.erase,
                                     tool_opt=args.tool_opt)

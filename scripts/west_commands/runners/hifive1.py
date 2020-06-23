@@ -29,7 +29,7 @@ class HiFive1BinaryRunner(ZephyrBinaryRunner):
         pass
 
     @classmethod
-    def create(cls, cfg, args):
+    def do_create(cls, cfg, args):
         if cfg.gdb is None:
             raise ValueError('--gdb not provided at command line')
 

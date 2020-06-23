@@ -90,7 +90,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         parser.set_defaults(reset_after_load=False)
 
     @classmethod
-    def create(cls, cfg, args):
+    def do_create(cls, cfg, args):
         build_conf = BuildConfiguration(cfg.build_dir)
         flash_addr = cls.get_flash_address(args, build_conf)
         return JLinkBinaryRunner(cfg, args.device,

@@ -41,7 +41,7 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
                             help='serial port to use, default is /dev/ttyACM0')
 
     @classmethod
-    def create(cls, cfg, args):
+    def do_create(cls, cfg, args):
         return BossacBinaryRunner(cfg, bossac=args.bossac,
                                   port=args.bossac_port, offset=args.offset)
 

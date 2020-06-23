@@ -58,7 +58,7 @@ class MdbBinaryRunner(ZephyrBinaryRunner):
                              targets are connected''')
 
     @classmethod
-    def create(cls, cfg, args):
+    def do_create(cls, cfg, args):
         return MdbBinaryRunner(
             cfg,
             cores=args.cores,

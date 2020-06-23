@@ -27,7 +27,7 @@ class BlackMagicProbeRunner(ZephyrBinaryRunner):
         return RunnerCaps(commands={'flash', 'debug', 'attach'})
 
     @classmethod
-    def create(cls, cfg, args):
+    def do_create(cls, cfg, args):
         return BlackMagicProbeRunner(cfg, args.gdb_serial)
 
     @classmethod
