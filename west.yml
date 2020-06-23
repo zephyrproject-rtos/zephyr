@@ -36,7 +36,7 @@ manifest:
       path: modules/hal/altera
     - name: canopennode
       path: modules/lib/canopennode
-      revision: 5c6b0566d56264efd4bf23ed58bc7cb8b32fe063
+      revision: 468d350028a975b96563e58344de48281a0ab371
     - name: ci-tools
       revision: da9a2df574094f52d87a03f6393928bdc7dce17c
       path: tools/ci-tools
