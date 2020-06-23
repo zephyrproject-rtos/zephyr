@@ -51,7 +51,7 @@ LOG_MODULE_REGISTER(usb_msc);
 /* max USB packet size */
 #define MAX_PACKET	CONFIG_MASS_STORAGE_BULK_EP_MPS
 
-#define BLOCK_SIZE	512
+#define BLOCK_SIZE	1024
 #define DISK_THREAD_STACK_SZ	512
 #define DISK_THREAD_PRIO	-5
 
