@@ -1401,6 +1401,8 @@ enum {
 struct bt_gatt_subscribe_params {
 	/** Notification value callback */
 	bt_gatt_notify_func_t notify;
+	/** Subscribe CCC write request response callback */
+	bt_gatt_write_func_t write;
 	/** Subscribe value handle */
 	uint16_t value_handle;
 	/** Subscribe CCC handle */

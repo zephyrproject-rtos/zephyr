@@ -3929,6 +3929,10 @@ static void gatt_write_ccc_rsp(struct bt_conn *conn, uint8_t err,
 		/* Notify with NULL data to complete unsubscribe */
 		params->notify(conn, params, NULL, 0);
 	}
+
+	if (params->write) {
+		params->write(conn, err, NULL);
+	}
 }
 
 static int gatt_write_ccc(struct bt_conn *conn, uint16_t handle, uint16_t value,
