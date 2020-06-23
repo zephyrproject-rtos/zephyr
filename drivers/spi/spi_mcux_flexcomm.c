@@ -46,24 +46,22 @@ static void spi_mcux_transfer_next_packet(struct device *dev)
 		return;
 	}
 
+	transfer.configFlags = 0;
 	if (ctx->tx_len == 0) {
 		/* rx only, nothing to tx */
 		transfer.txData = NULL;
 		transfer.rxData = ctx->rx_buf;
 		transfer.dataSize = ctx->rx_len;
-		transfer.configFlags = kSPI_FrameAssert;
 	} else if (ctx->rx_len == 0) {
 		/* tx only, nothing to rx */
 		transfer.txData = (uint8_t *) ctx->tx_buf;
 		transfer.rxData = NULL;
 		transfer.dataSize = ctx->tx_len;
-		transfer.configFlags = kSPI_FrameAssert;
 	} else if (ctx->tx_len == ctx->rx_len) {
 		/* rx and tx are the same length */
 		transfer.txData = (uint8_t *) ctx->tx_buf;
 		transfer.rxData = ctx->rx_buf;
 		transfer.dataSize = ctx->tx_len;
-		transfer.configFlags = kSPI_FrameAssert;
 	} else if (ctx->tx_len > ctx->rx_len) {
 		/* Break up the tx into multiple transfers so we don't have to
 		 * rx into a longer intermediate buffer. Leave chip select
@@ -72,7 +70,6 @@ static void spi_mcux_transfer_next_packet(struct device *dev)
 		transfer.txData = (uint8_t *) ctx->tx_buf;
 		transfer.rxData = ctx->rx_buf;
 		transfer.dataSize = ctx->rx_len;
-		transfer.configFlags = 0;
 	} else {
 		/* Break up the rx into multiple transfers so we don't have to
 		 * tx from a longer intermediate buffer. Leave chip select
@@ -81,7 +78,6 @@ static void spi_mcux_transfer_next_packet(struct device *dev)
 		transfer.txData = (uint8_t *) ctx->tx_buf;
 		transfer.rxData = ctx->rx_buf;
 		transfer.dataSize = ctx->tx_len;
-		transfer.configFlags = 0;
 	}
 
 	if (ctx->tx_count <= 1 && ctx->rx_count <= 1) {
