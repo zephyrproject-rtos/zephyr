@@ -37,6 +37,18 @@ static const pthread_attr_t init_pthread_attrs = {
 static struct posix_thread posix_thread_pool[CONFIG_MAX_PTHREAD_COUNT];
 PTHREAD_MUTEX_DEFINE(pthread_pool_lock);
 
+#if defined(CONFIG_PTHREAD_DYNAMIC_STACK) \
+	&& CONFIG_PTHREAD_DYNAMIC_STACK_RESERVED_COUNT > 0
+
+/* statically allocated, dynamically assigned stacks */
+static K_THREAD_STACK_ARRAY_DEFINE(dstack,
+	CONFIG_PTHREAD_DYNAMIC_STACK_RESERVED_COUNT,
+	CONFIG_PTHREAD_DYNAMIC_STACK_SIZE);
+static pthread_attr_t dstack_attrs[CONFIG_PTHREAD_DYNAMIC_STACK_RESERVED_COUNT];
+static uint32_t dstack_in_use;
+
+#endif
+
 static bool is_posix_prio_valid(uint32_t priority, int policy)
 {
 	if (priority >= sched_get_priority_min(policy) &&
@@ -120,6 +132,121 @@ static void zephyr_thread_wrapper(void *arg1, void *arg2, void *arg3)
 	pthread_exit(NULL);
 }
 
+#if defined(CONFIG_PTHREAD_DYNAMIC_STACK)
+
+static pthread_attr_t *zephry_pthread_attr_new_static(void)
+{
+	pthread_attr_t *attr = NULL;
+
+#if CONFIG_PTHREAD_DYNAMIC_STACK_RESERVED_COUNT > 0
+	int ret;
+	/* position of available attribute */
+	uint8_t pos;
+	/* bitmap of in use attributes (copy of dstack_attrs) */
+	uint32_t in_use;
+
+	pthread_mutex_lock(&pthread_pool_lock);
+
+	/* count how many bits are set in dstack_in_use */
+	in_use = dstack_in_use;
+	if (__builtin_popcount(in_use) == CONFIG_PTHREAD_DYNAMIC_STACK_RESERVED_COUNT) {
+		goto out;
+	}
+
+	for (pos = 0; 1 == (in_use & 1); pos++, in_use >>= 1)
+		;
+
+	/* initialize the stack */
+	ret = pthread_attr_init(&dstack_attrs[pos]);
+	__ASSERT_NO_MSG(ret == 0);
+
+	ret = pthread_attr_setstack(&dstack_attrs[pos], &dstack[pos],
+		CONFIG_PTHREAD_DYNAMIC_STACK_SIZE);
+	__ASSERT_NO_MSG(ret == 0);
+
+	/* finally, mark the stack as in use and update the output */
+	dstack_in_use |= (1 << pos);
+
+	attr = &dstack_attrs[pos];
+
+out:
+	pthread_mutex_unlock(&pthread_pool_lock);
+
+#endif
+	return attr;
+}
+
+static inline pthread_attr_t *zephry_pthread_attr_new_dynamic(void)
+{
+	return NULL;
+}
+
+static pthread_attr_t *zephyr_pthread_attr_new(void)
+{
+	pthread_attr_t *attr;
+
+	attr = zephry_pthread_attr_new_static();
+	if (attr == NULL) {
+		attr = zephry_pthread_attr_new_dynamic();
+	}
+
+	return attr;
+}
+
+static bool zephry_pthread_attr_delete_static(pthread_attr_t *attr)
+{
+#if CONFIG_PTHREAD_DYNAMIC_STACK_RESERVED_COUNT > 0
+	bool ret = false;
+	size_t pos;
+
+	pthread_mutex_lock(&pthread_pool_lock);
+
+	for (pos = 0; pos < CONFIG_PTHREAD_DYNAMIC_STACK_RESERVED_COUNT; ++pos) {
+		if (&dstack_attrs[pos] == attr) {
+			dstack_in_use &= ~(1 << pos);
+			ret = true;
+			break;
+		}
+	}
+
+	pthread_mutex_unlock(&pthread_pool_lock);
+
+	return ret;
+#else
+	ARG_UNUSED(attr);
+	return false;
+#endif
+}
+
+static inline bool zephyr_pthread_attr_delete_dynamic(pthread_attr_t *attr)
+{
+	ARG_UNUSED(attr);
+	return false;
+}
+
+static bool zephyr_pthread_attr_delete(pthread_attr_t *attr)
+{
+	return
+		false
+		|| zephry_pthread_attr_delete_static(attr)
+		|| zephyr_pthread_attr_delete_dynamic(attr)
+		;
+}
+
+#else
+
+static inline pthread_attr_t *zephyr_pthread_attr_new(void)
+{
+	return NULL;
+}
+
+static inline bool zephyr_pthread_attr_delete(pthread_attr_t *attr)
+{
+	ARG_UNUSED(attr);
+	return false;
+}
+#endif
+
 /**
  * @brief Create a new thread.
  *
@@ -136,17 +263,24 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 	pthread_condattr_t cond_attr;
 	struct posix_thread *thread;
 
-	/*
-	 * FIXME: Pthread attribute must be non-null and it provides stack
-	 * pointer and stack size. So even though POSIX 1003.1 spec accepts
-	 * attrib as NULL but zephyr needs it initialized with valid stack.
-	 */
-	if ((attr == NULL) || (attr->initialized == 0U)
-	    || (attr->stack == NULL) || (attr->stacksize == 0)) {
+	if (attr != NULL && (attr->initialized == 0 || attr->stack == NULL
+	    || attr->stacksize == 0)) {
 		return EINVAL;
 	}
 
+	if (attr == NULL) {
+		if (IS_ENABLED(CONFIG_PTHREAD_DYNAMIC_STACK)) {
+			attr = zephyr_pthread_attr_new();
+			if (attr == NULL) {
+				return EAGAIN;
+			}
+		} else {
+			return EINVAL;
+		}
+	}
+
 	pthread_mutex_lock(&pthread_pool_lock);
+
 	for (pthread_num = 0;
 	    pthread_num < CONFIG_MAX_PTHREAD_COUNT; pthread_num++) {
 		thread = &posix_thread_pool[pthread_num];
@@ -158,6 +292,7 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 	pthread_mutex_unlock(&pthread_pool_lock);
 
 	if (pthread_num >= CONFIG_MAX_PTHREAD_COUNT) {
+		zephyr_pthread_attr_delete((pthread_attr_t *)attr);
 		return EAGAIN;
 	}
 

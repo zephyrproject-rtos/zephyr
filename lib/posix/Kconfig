@@ -39,6 +39,36 @@ config SEM_VALUE_MAX
 	help
 	  Maximum semaphore count in POSIX compliant Application.
 
+config PTHREAD_DYNAMIC_STACK
+	bool "Support for dynamic stacks"
+	default y
+	help
+	  POSIX 1003.1 allows a NULL pthread_attr_t* to be passed to
+	  pthread_create(3). However, Zephyr has traditionally required
+	  that the caller statically allocate a stack and pass it in via the
+	  pthread_attr_t*. With this option selected, NULL will be permitted
+	  and a suitable stack will be automatically allocated and assigned,
+	  inheriting permissions from the calling thread.
+
+if PTHREAD_DYNAMIC_STACK
+config PTHREAD_DYNAMIC_STACK_SIZE
+	int "Dynamic pthread stack size (in bytes)"
+	default 2048
+	range 1 4096
+	help
+	  Fix the size of dynamically-allocated stacks to be this many bytes.
+
+# May be zero in order to later facilitate exclusively heap-allocated stacks
+# API is currently in development
+config PTHREAD_DYNAMIC_STACK_RESERVED_COUNT
+	int "The number of statically allocated dynamically assignable stacks"
+	default 0
+	range 0 32
+	help
+	  Statically allocate this many stacks at compile-time.
+
+endif # PTHREAD_DYNAMIC_STACK
+
 endif # PTHREAD_IPC
 
 config POSIX_CLOCK
