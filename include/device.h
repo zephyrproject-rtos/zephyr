@@ -124,33 +124,25 @@ extern "C" {
  */
 #define DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_control_fn,	\
 		      data, cfg_info, level, prio, api)			\
-	Z_DEVICE_DEFINE_PM(dev_name)					\
-	static Z_DECL_ALIGN(struct device)				\
-		DEVICE_NAME_GET(dev_name) __used			\
-	__attribute__((__section__(".device_" #level STRINGIFY(prio)))) = { \
-		.name = drv_name,					\
-		.config_info = (cfg_info),				\
-		.driver_api = (api),					\
-		.driver_data = (data),					\
-		Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)	\
-	};								\
-	Z_INIT_ENTRY_DEFINE(_CONCAT(__device_, dev_name), init_fn,	\
-			    (&_CONCAT(__device_, dev_name)), level, prio)
+	Z_DEVICE_DEFINE(_, dev_name, drv_name, init_fn, pm_control_fn,	\
+			data, cfg_info, level, prio, api)
 
-#define DT_DEVICE_INIT(node_id, init_fn,			\
-		       data, cfg_info, level, prio)		\
-	DEVICE_INIT(node_id, DT_LABEL(node_id), init_fn,	\
-		    data, cfg_info, level, prio)
+#define DT_DEVICE_INIT(node_id, init_fn,				\
+		       data, cfg_info, level, prio)			\
+	Z_DEVICE_DEFINE(node_id, node_id, DT_LABEL(node_id), init_fn,	\
+			data, cfg_info, level, prio)
 
 #define DT_DEVICE_AND_API_INIT(node_id, init_fn,			\
 			       data, cfg_info, level, prio, api)	\
-	DEVICE_AND_API_INIT(node_id, DT_LABEL(node_id), init_fn,	\
-			    data, cfg_info, level, prio, api)
+	Z_DEVICE_DEFINE(node_id, node_id, DT_LABEL(node_id), init_fn,	\
+			pm_control_fn,					\
+			data, cfg_info, level, prio, api)
 
 #define DT_DEVICE_DEFINE(node_id, init_fn, pm_control_fn,		\
 			 data, cfg_info, level, prio, api)		\
-	DEVICE_DEFINE(node_id, DT_LABEL(node_id), init_fn, pm_control_fn, \
-		data, cfg_info, level, prio, api)
+	Z_DEVICE_DEFINE(node_id, node_id, DT_LABEL(node_id), init_fn,	\
+			pm_control_fn,					\
+			data, cfg_info, level, prio, api)
 
 #define DT_DEVICE_NAME_GET(node_id) DEVICE_NAME_GET(node_id)
 #define DT_DEVICE_GET(node_id) (&DT_DEVICE_NAME_GET(node_id))
@@ -584,6 +576,21 @@ static inline int device_pm_put_sync(struct device *dev) { return -ENOTSUP; }
 /**
  * @}
  */
+
+#define Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn, pm_control_fn, \
+			data, cfg_info, level, prio, api)		\
+	Z_DEVICE_DEFINE_PM(dev_name)					\
+	static Z_DECL_ALIGN(struct device)				\
+		DEVICE_NAME_GET(dev_name) __used			\
+	__attribute__((__section__(".device_" #level STRINGIFY(prio)))) = { \
+		.name = drv_name,					\
+		.config_info = (cfg_info),				\
+		.driver_api = (api),					\
+		.driver_data = (data),					\
+		Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)	\
+	};								\
+	Z_INIT_ENTRY_DEFINE(_CONCAT(__device_, dev_name), init_fn,	\
+			    (&_CONCAT(__device_, dev_name)), level, prio)
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 #define Z_DEVICE_DEFINE_PM(dev_name)					\
