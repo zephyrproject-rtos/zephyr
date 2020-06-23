@@ -52,6 +52,12 @@ typedef int16_t device_handle_t;
 /** @brief Flag value used to identify an unknown device. */
 #define DEVICE_HANDLE_NULL 0
 
+/* TBR how to generate these as unique identifiers and associate them
+ * with a data structure.
+ */
+#define DEVICE_HANDLE_SYSCLOCK 30000
+#define DEVICE_HANDLE_SYSCLOCK_BASIS 30001
+
 #define Z_DEVICE_MAX_NAME_LEN	48
 
 /**
