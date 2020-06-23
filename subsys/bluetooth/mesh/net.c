@@ -1214,11 +1214,6 @@ int bt_mesh_net_decode(struct net_buf_simple *data, enum bt_mesh_net_if net_if,
 		return -EBADMSG;
 	}
 
-	if (BT_MESH_ADDR_IS_RFU(rx->ctx.recv_dst)) {
-		BT_ERR("Destination address is RFU; dropping packet");
-		return -EBADMSG;
-	}
-
 	if (net_if != BT_MESH_NET_IF_LOCAL && bt_mesh_elem_find(rx->ctx.addr)) {
 		BT_DBG("Dropping locally originated packet");
 		return -EBADMSG;
