@@ -5,6 +5,8 @@
 
 echo "--- run $0"
 
+dh -h
+
 git log -n 5 --oneline --decorate --abbrev=12
 
 # Setup module cache

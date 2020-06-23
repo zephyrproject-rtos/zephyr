@@ -37,6 +37,11 @@ find -name index.lock -delete
 # git repo
 cd ${WORKDIR}
 
+df -h
+
 # Save off what images was there before and clean things out
 docker images --filter=reference='zephyrprojectrtos/ci' --format "{{.Repository}}:{{.Tag}}" > docker-images
 docker image prune --all --force
+docker images
+
+df -h
