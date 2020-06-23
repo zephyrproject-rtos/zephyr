@@ -233,6 +233,11 @@ Bluetooth
 
 * BLE split software Controller:
 
+* HCI Driver:
+
+  * bt_hci_evt_is_prio() removed, use bt_hci_evt_get_flags() instead when
+    CONFIG_BT_RECV_IS_RX_THREAD is defined and call bt_recv and bt_recv_prio
+    when their flag is set, otherwise always call bt_recv().
 
 Build and Infrastructure
 ************************
