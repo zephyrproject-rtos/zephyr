@@ -21,10 +21,36 @@
 
 #include <init.h>
 #include <sys/device_mmio.h>
+#include <sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/** @brief Type used to represent devices and functions.
+ *
+ * The extreme values and zero have special significance.  Negative
+ * values identify functionality that does not correspond to a Zephyr
+ * device, such as the system clock or a SYS_INIT() function.
+ */
+typedef int16_t device_handle_t;
+
+/** @brief Flag value used in lists of device handles to separate
+ * distinct groups.
+ *
+ * This is the minimum value for the device_handle_t type.
+ */
+#define DEVICE_HANDLE_SEP INT16_MIN
+
+/** @brief Flag value used in lists of device handles to indicate the
+ * end of the list.
+ *
+ * This is the maximum value for the device_handle_t type.
+ */
+#define DEVICE_HANDLE_ENDS INT16_MAX
+
+/** @brief Flag value used to identify an unknown device. */
+#define DEVICE_HANDLE_NULL 0
 
 #define Z_DEVICE_MAX_NAME_LEN	48
 
@@ -167,11 +193,13 @@ extern "C" {
  * used by the driver. Can be NULL.
  */
 #define DEVICE_DT_DEFINE(node_id, init_fn, pm_control_fn,		\
-			 data_ptr, cfg_ptr, level, prio, api_ptr)	\
+			 data_ptr, cfg_ptr, level, prio,		\
+			 api_ptr, ...)					\
 	Z_DEVICE_DEFINE(node_id, node_id,				\
 			DT_PROP_OR(node_id, label, NULL), init_fn,	\
 			pm_control_fn,					\
-			data_ptr, cfg_ptr, level, prio, api_ptr)
+			data_ptr, cfg_ptr, level, prio,			\
+			api_ptr, __VA_ARGS__)
 
 /**
  * @def DEVICE_DT_INST_DEFINE
@@ -287,7 +315,7 @@ struct device_pm {
 };
 
 /**
- * @brief Runtime device structure (in memory) per driver instance
+ * @brief Immutable device structure per driver instance
  */
 struct device {
 	/** Name of the device instance */
@@ -298,6 +326,14 @@ struct device {
 	const void *api;
 	/** Address of the device instance private data */
 	void * const data;
+	/** optional pointer to handles associated with the device.
+	 *
+	 * This encodes a sequence of sets of device handles that have
+	 * some relationship to this node.  The individual sets are
+	 * extracted with dedicated API, such as
+	 * device_get_requires_handles().
+	 */
+	const device_handle_t *const handles;
 #ifdef CONFIG_PM_DEVICE
 	/** Power Management function */
 	int (*device_pm_control)(const struct device *dev, uint32_t command,
@@ -306,6 +342,78 @@ struct device {
 	struct device_pm * const pm;
 #endif
 };
+
+/**
+ * @brief Get the handle for a given device
+ *
+ * @param dev the device for which a handle is desired.
+ *
+ * @return the handle for the device.
+ */
+static inline device_handle_t
+device_handle_get(const struct device *dev)
+{
+	extern const struct device __device_start[];
+
+	/* TODO: If/when devices can be constructed that are not part of the
+	 * fixed we'll need another solution.
+	 */
+	return (device_handle_t)(dev - __device_start);
+}
+
+/**
+ * @brief Get the device corresponding to a handle.
+ *
+ * @param dev_handle the device handle
+ *
+ * @return the device that has that handle, or a null pointer if @p
+ * dev_handle does not identify a device.
+ */
+static inline const struct device *
+device_from_handle(device_handle_t dev_handle)
+{
+	extern const struct device __device_start[];
+	extern const struct device __device_end[];
+	const struct device *dev = NULL;
+	size_t numdev = __device_end - __device_start;
+
+	if (dev_handle < numdev) {
+		dev = &__device_start[dev_handle];
+	}
+
+	return dev;
+}
+
+/**
+ * @brief Get the set of devices on which a given device depends
+ *
+ * @param dev the device for which dependencies are desired.
+ *
+ * @param count pointer to a place to store the number of devices provided at
+ * the returned pointer.  The value is not set if the call returns a null
+ * pointer.  The value may be set to zero.
+ *
+ * @return a pointer to a sequence of @p *count device handles, or a null
+ * pointer if @p dh does not provide dependency information.
+ */
+static inline const device_handle_t *
+device_get_requires_handles(const struct device *dev,
+			    size_t *count)
+{
+	const device_handle_t *rv = dev->handles;
+
+	if (rv != NULL) {
+		size_t i = 0;
+
+		while ((rv[i] != DEVICE_HANDLE_ENDS)
+		       && (rv[i] != DEVICE_HANDLE_SEP)) {
+			++i;
+		}
+		*count = i;
+	}
+
+	return rv;
+}
 
 /**
  * @brief Retrieve the device structure for a driver by name
@@ -688,10 +796,50 @@ static inline int device_pm_put_sync(const struct device *dev) { return -ENOTSUP
  * @}
  */
 
-#define Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn, pm_control_fn, \
-			data_ptr, cfg_ptr, level, prio, api_ptr)	\
+/** Synthesize the name of the object that holds device ordinal and
+ * dependency data.  If the object doesn't come from a devicetree
+ * node, use dev_name.
+ */
+#define Z_DEVICE_HANDLE_NAME(node_id, dev_name)				\
+	_CONCAT(__devicehdl_,						\
+		COND_CODE_1(DT_NODE_EXISTS(node_id),			\
+			    (node_id),					\
+			    (dev_name)))
+
+#define Z_DEVICE_EXTRA_HANDLES(...)				\
+	FOR_EACH_NONEMPTY_TERM(IDENTITY, (,), __VA_ARGS__)
+
+/* Construct objects that are referenced from struct device.  These
+ * include power management and dependency handles.
+ */
+#define Z_DEVICE_DEFINE_PRE(node_id, dev_name, ...)			\
 	Z_DEVICE_DEFINE_PM(dev_name)					\
-	COND_CODE_1(DT_NODE_EXISTS(dev_name), (), (static))		\
+	Z_DEVICE_DEFINE_HANDLES(node_id, dev_name, __VA_ARGS__)
+
+#define Z_DEVICE_DEFINE_HANDLES(node_id, dev_name, ...)			\
+	static const device_handle_t Z_DEVICE_HANDLE_NAME(node_id,dev_name)[] = { \
+	COND_CODE_1(DT_NODE_EXISTS(node_id), (				\
+			DT_DEP_ORD(node_id),				\
+			DT_REQUIRES_DEP_ORDS(node_id)			\
+		),(							\
+			DEVICE_HANDLE_NULL,				\
+		))							\
+			DEVICE_HANDLE_SEP,				\
+			Z_DEVICE_EXTRA_HANDLES(__VA_ARGS__)		\
+			DEVICE_HANDLE_ENDS,				\
+		};
+
+#define Z_DEVICE_DEFINE_INIT(node_id, dev_name, pm_control_fn)		\
+		.handles = Z_DEVICE_HANDLE_NAME(node_id, dev_name),	\
+		Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)
+
+/* Like DEVICE_DEFINE but takes a node_id AND a dev_name, and trailing
+ * dependency handles that come from outside devicetree.
+ */
+#define Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn, pm_control_fn, \
+			data_ptr, cfg_ptr, level, prio, api_ptr, ...)	\
+	Z_DEVICE_DEFINE_PRE(node_id, dev_name, __VA_ARGS__)		\
+	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))		\
 		const Z_DECL_ALIGN(struct device)			\
 		DEVICE_NAME_GET(dev_name) __used			\
 	__attribute__((__section__(".device_" #level STRINGIFY(prio)))) = { \
@@ -699,7 +847,7 @@ static inline int device_pm_put_sync(const struct device *dev) { return -ENOTSUP
 		.config = (cfg_ptr),					\
 		.api = (api_ptr),					\
 		.data = (data_ptr),					\
-		Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)	\
+		Z_DEVICE_DEFINE_INIT(node_id, dev_name, pm_control_fn)	\
 	};								\
 	Z_INIT_ENTRY_DEFINE(_CONCAT(__device_, dev_name), init_fn,	\
 			    (&_CONCAT(__device_, dev_name)), level, prio)
