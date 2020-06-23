@@ -12,8 +12,8 @@
 #define MIN3(_a, _b, _c) MIN((_a), MIN((_b), (_c)))
 #endif
 
-#define th_seq(_x) ntohl((_x)->th_seq)
-#define th_ack(_x) ntohl((_x)->th_ack)
+#define th_seq(_x) ntohl(UNALIGNED_GET(&(_x)->th_seq))
+#define th_ack(_x) ntohl(UNALIGNED_GET(&(_x)->th_ack))
 
 #define tcp_slist(_slist, _op, _type, _link)				\
 ({									\
@@ -211,8 +211,9 @@ struct tcp { /* TCP connection */
 ({									\
 	bool result = false;						\
 									\
-	if (*(_fl) && (_cond) && (*(_fl) _op (_mask))) {		\
-		*(_fl) &= ~(_mask);					\
+	if (UNALIGNED_GET(_fl) && (_cond) &&				\
+	    (UNALIGNED_GET(_fl) _op(_mask))) {				\
+		UNALIGNED_PUT(UNALIGNED_GET(_fl) & ~(_mask), _fl);	\
 		result = true;						\
 	}								\
 									\

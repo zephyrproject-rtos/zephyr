@@ -508,7 +508,8 @@ static bool tcp_options_check(struct tcp_options *recv_options,
 				goto end;
 			}
 
-			recv_options->mss = ntohs(*((uint16_t *)(options + 2)));
+			recv_options->mss =
+				ntohs(UNALIGNED_GET((uint16_t *)(options + 2)));
 			recv_options->mss_found = true;
 			NET_DBG("MSS=%hu", recv_options->mss);
 			break;
