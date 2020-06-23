@@ -12,6 +12,7 @@ supported:
   - i2c
   - counter
   - spi
+  - watchdog
   - usb_device
   - lsm303dlhc
   - nvs
