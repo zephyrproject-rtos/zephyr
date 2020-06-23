@@ -667,7 +667,8 @@ This will use your custom board configuration and will generate the
 Zephyr binary into your application directory.
 
 You can also define the ``BOARD_ROOT`` variable in the application
-:file:`CMakeLists.txt` file.
+:file:`CMakeLists.txt` file. Make sure to do so **before** pulling in the Zephyr
+boilerplate with ``find_package(Zephyr ...)``.
 
 
 SOC Definitions
@@ -724,7 +725,8 @@ This will use your custom platform configurations and will generate the
 Zephyr binary into your application directory.
 
 You can also define the ``SOC_ROOT`` variable in the application
-:file:`CMakeLists.txt` file.
+:file:`CMakeLists.txt` file. Make sure to do so **before** pulling in the
+Zephyr boilerplate with ``find_package(Zephyr ...)``.
 
 .. _dts_root:
 
@@ -755,8 +757,9 @@ its location through the ``DTS_ROOT`` CMake Cache variable:
    :goals: build
    :compact:
 
-You can also define the variable in the application
-:file:`CMakeLists.txt` file.
+You can also define the variable in the application :file:`CMakeLists.txt`
+file. Make sure to do so **before** pulling in the Zephyr boilerplate with
+``find_package(Zephyr ...)``.
 
 
 Application Debugging
