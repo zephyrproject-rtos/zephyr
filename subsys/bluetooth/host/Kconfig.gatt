@@ -107,7 +107,6 @@ if BT_GATT_CACHING
 config BT_GATT_NOTIFY_MULTIPLE
 	bool "GATT Notify Multiple Characteristic Values support"
 	depends on BT_GATT_CACHING
-	default y
 	help
 	  This option enables support for the GATT Notify Multiple
 	  Characteristic Values procedure.
