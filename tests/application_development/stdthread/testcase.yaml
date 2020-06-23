@@ -1,0 +1,13 @@
+tests:
+  application_development.cpp.stdthread:
+    platform_whitelist: native_posix native_posix_64
+    toolchain_exclude: xcc
+    min_flash: 54
+    tags: cpp
+  application_development.cpp.stdthread.exceptions:
+    platform_whitelist: native_posix native_posix_64
+    toolchain_exclude: xcc
+    min_flash: 54
+    tags: cpp
+    extra_configs:
+        - CONFIG_EXCEPTIONS=y
