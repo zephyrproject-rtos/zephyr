@@ -18,6 +18,7 @@
 #include <sys/util.h>
 #include <drivers/interrupt_controller/exti_stm32.h>
 
+#include "stm32_hsem.h"
 #include "gpio_stm32.h"
 #include "gpio_utils.h"
 
@@ -172,6 +173,7 @@ int gpio_stm32_configure(uint32_t *base_addr, int pin, int conf, int altf)
 	ospeed = conf & (STM32_OSPEEDR_MASK << STM32_OSPEEDR_SHIFT);
 	pupd = conf & (STM32_PUPDR_MASK << STM32_PUPDR_SHIFT);
 
+	z_stm32_hsem_lock(CFG_HW_GPIO_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 	LL_GPIO_SetPinMode(gpio, pin_ll, mode >> STM32_MODER_SHIFT);
 
 	if (STM32_MODER_ALT_MODE == mode) {
@@ -198,6 +200,7 @@ int gpio_stm32_configure(uint32_t *base_addr, int pin, int conf, int altf)
 
 	LL_GPIO_SetPinPull(gpio, pin_ll, pupd >> STM32_PUPDR_SHIFT);
 
+	z_stm32_hsem_unlock(CFG_HW_GPIO_SEMID);
 #endif  /* CONFIG_SOC_SERIES_STM32F1X */
 
 	return 0;
@@ -233,6 +236,8 @@ static void gpio_stm32_set_exti_source(int port, int pin)
 	}
 #endif
 
+	z_stm32_hsem_lock(CFG_HW_EXTI_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 	LL_GPIO_AF_SetEXTISource(port, line);
 #elif CONFIG_SOC_SERIES_STM32MP1X
@@ -243,6 +248,7 @@ static void gpio_stm32_set_exti_source(int port, int pin)
 #else
 	LL_SYSCFG_SetEXTISource(port, line);
 #endif
+	z_stm32_hsem_unlock(CFG_HW_EXTI_SEMID);
 }
 
 static int gpio_stm32_get_exti_source(int pin)
@@ -325,8 +331,12 @@ static int gpio_stm32_port_set_masked_raw(struct device *dev,
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
 	uint32_t port_value;
 
+	z_stm32_hsem_lock(CFG_HW_GPIO_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+
 	port_value = LL_GPIO_ReadOutputPort(gpio);
 	LL_GPIO_WriteOutputPort(gpio, (port_value & ~mask) | (mask & value));
+
+	z_stm32_hsem_unlock(CFG_HW_GPIO_SEMID);
 
 	return 0;
 }
@@ -376,7 +386,9 @@ static int gpio_stm32_port_toggle_bits(struct device *dev,
 	 * On F1 series, using LL API requires a costly pin mask translation.
 	 * Skip it and use CMSIS API directly. Valid also on other series.
 	 */
+	z_stm32_hsem_lock(CFG_HW_GPIO_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 	WRITE_REG(gpio->ODR, READ_REG(gpio->ODR) ^ pins);
+	z_stm32_hsem_unlock(CFG_HW_GPIO_SEMID);
 
 	return 0;
 }
@@ -391,17 +403,12 @@ static int gpio_stm32_config(struct device *dev,
 	int err = 0;
 	int pincfg;
 
-#if defined(CONFIG_STM32H7_DUAL_CORE)
-	while (LL_HSEM_1StepLock(HSEM, LL_HSEM_ID_1)) {
-	}
-#endif /* CONFIG_STM32H7_DUAL_CORE */
-
 	/* figure out if we can map the requested GPIO
 	 * configuration
 	 */
 	err = gpio_stm32_flags_to_conf(flags, &pincfg);
 	if (err != 0) {
-		goto release_lock;
+		goto exit;
 	}
 
 	if ((flags & GPIO_OUTPUT) != 0) {
@@ -414,11 +421,7 @@ static int gpio_stm32_config(struct device *dev,
 
 	gpio_stm32_configure(cfg->base, pin, pincfg, 0);
 
-release_lock:
-#if defined(CONFIG_STM32H7_DUAL_CORE)
-	LL_HSEM_ReleaseLock(HSEM, LL_HSEM_ID_1, 0);
-#endif /* CONFIG_STM32H7_DUAL_CORE */
-
+exit:
 	return err;
 }
 
@@ -430,11 +433,6 @@ static int gpio_stm32_pin_interrupt_configure(struct device *dev,
 	int edge = 0;
 	int err = 0;
 
-#if defined(CONFIG_STM32H7_DUAL_CORE)
-	while (LL_HSEM_1StepLock(HSEM, LL_HSEM_ID_1)) {
-	}
-#endif /* CONFIG_STM32H7_DUAL_CORE */
-
 	if (mode == GPIO_INT_MODE_DISABLED) {
 		if (gpio_stm32_get_exti_source(pin) == cfg->port) {
 			stm32_exti_disable(pin);
@@ -442,18 +440,18 @@ static int gpio_stm32_pin_interrupt_configure(struct device *dev,
 			stm32_exti_trigger(pin, STM32_EXTI_TRIG_NONE);
 		}
 		/* else: No irq source configured for pin. Nothing to disable */
-		goto release_lock;
+		goto exit;
 	}
 
 	/* Level trigger interrupts not supported */
 	if (mode == GPIO_INT_MODE_LEVEL) {
 		err = -ENOTSUP;
-		goto release_lock;
+		goto exit;
 	}
 
 	if (stm32_exti_set_callback(pin, gpio_stm32_isr, dev) != 0) {
 		err = -EBUSY;
-		goto release_lock;
+		goto exit;
 	}
 
 	gpio_stm32_enable_int(cfg->port, pin);
@@ -474,11 +472,7 @@ static int gpio_stm32_pin_interrupt_configure(struct device *dev,
 
 	stm32_exti_enable(pin);
 
-release_lock:
-#if defined(CONFIG_STM32H7_DUAL_CORE)
-	LL_HSEM_ReleaseLock(HSEM, LL_HSEM_ID_1, 0);
-#endif /* CONFIG_STM32H7_DUAL_CORE */
-
+exit:
 	return err;
 }
 
@@ -529,6 +523,7 @@ static int gpio_stm32_init(struct device *device)
 	if (cfg->port == STM32_PORTG) {
 		/* Port G[15:2] requires external power supply */
 		/* Cf: L4XX RM, §5.1 Power supplies */
+		z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 		if (LL_APB1_GRP1_IsEnabledClock(LL_APB1_GRP1_PERIPH_PWR)) {
 			LL_PWR_EnableVddIO2();
 		} else {
@@ -536,6 +531,7 @@ static int gpio_stm32_init(struct device *device)
 			LL_PWR_EnableVddIO2();
 			LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_PWR);
 		}
+		z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 	}
 #endif  /* PWR_CR2_IOSV */
 

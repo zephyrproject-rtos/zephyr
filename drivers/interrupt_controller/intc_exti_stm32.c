@@ -22,6 +22,8 @@
 #include <sys/__assert.h>
 #include <drivers/interrupt_controller/exti_stm32.h>
 
+#include "stm32_hsem.h"
+
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
     defined(CONFIG_SOC_SERIES_STM32L0X) || \
     defined(CONFIG_SOC_SERIES_STM32G0X)
@@ -118,6 +120,8 @@ void stm32_exti_enable(int line)
 
 void stm32_exti_disable(int line)
 {
+	z_stm32_hsem_lock(CFG_HW_EXTI_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+
 	if (line < 32) {
 #if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
 		LL_C2_EXTI_DisableIT_0_31(1 << line);
@@ -127,6 +131,7 @@ void stm32_exti_disable(int line)
 	} else {
 		__ASSERT_NO_MSG(line);
 	}
+	z_stm32_hsem_unlock(CFG_HW_EXTI_SEMID);
 }
 
 /**
@@ -183,6 +188,8 @@ void stm32_exti_trigger(int line, int trigger)
 		__ASSERT_NO_MSG(line);
 	}
 
+	z_stm32_hsem_lock(CFG_HW_EXTI_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+
 	switch (trigger) {
 	case STM32_EXTI_TRIG_NONE:
 		LL_EXTI_DisableRisingTrig_0_31(1 << line);
@@ -203,6 +210,7 @@ void stm32_exti_trigger(int line, int trigger)
 	default:
 		__ASSERT_NO_MSG(trigger);
 	}
+	z_stm32_hsem_unlock(CFG_HW_EXTI_SEMID);
 }
 
 /**
