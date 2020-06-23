@@ -20,6 +20,7 @@
  */
 
 #include <init.h>
+#include <sys/device_mmio.h>
 
 #ifdef __cplusplus
 extern "C" {
