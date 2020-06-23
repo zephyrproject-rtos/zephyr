@@ -125,18 +125,9 @@ extern "C" {
  */
 #define DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_control_fn,	\
 		      data_ptr, cfg_ptr, level, prio, api_ptr)		\
-	Z_DEVICE_DEFINE_PM(dev_name)					\
-	static const Z_DECL_ALIGN(struct device)			\
-		DEVICE_NAME_GET(dev_name) __used			\
-	__attribute__((__section__(".device_" #level STRINGIFY(prio)))) = { \
-		.name = drv_name,					\
-		.config = (cfg_ptr),					\
-		.api = (api_ptr),					\
-		.data = (data_ptr),					\
-		Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)	\
-	};								\
-	Z_INIT_ENTRY_DEFINE(_CONCAT(__device_, dev_name), init_fn,	\
-			    (&_CONCAT(__device_, dev_name)), level, prio)
+	Z_DEVICE_DEFINE(DT_INVALID_NODE, dev_name, drv_name, init_fn,	\
+			pm_control_fn,					\
+			data_ptr, cfg_ptr, level, prio, api_ptr)
 
 /**
  * @def DEVICE_DT_DEFINE
@@ -175,8 +166,9 @@ extern "C" {
  */
 #define DEVICE_DT_DEFINE(node_id, init_fn, pm_control_fn,		\
 			 data_ptr, cfg_ptr, level, prio, api_ptr)	\
-	DEVICE_DEFINE(node_id, DT_LABEL(node_id), init_fn, pm_control_fn, \
-		      data_ptr, cfg_ptr, level, prio, api_ptr)
+	Z_DEVICE_DEFINE(node_id, node_id, DT_LABEL(node_id), init_fn,	\
+			pm_control_fn,					\
+			data_ptr, cfg_ptr, level, prio, api_ptr)
 
 /**
  * @def DEVICE_DT_NAME_GET
@@ -663,6 +655,21 @@ static inline int device_pm_put_sync(const struct device *dev) { return -ENOTSUP
 /**
  * @}
  */
+
+#define Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn, pm_control_fn, \
+			data_ptr, cfg_ptr, level, prio, api_ptr)	\
+	Z_DEVICE_DEFINE_PM(dev_name)					\
+	static const Z_DECL_ALIGN(struct device)			\
+		DEVICE_NAME_GET(dev_name) __used			\
+	__attribute__((__section__(".device_" #level STRINGIFY(prio)))) = { \
+		.name = drv_name,					\
+		.config = (cfg_ptr),					\
+		.api = (api_ptr),					\
+		.data = (data_ptr),					\
+		Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)	\
+	};								\
+	Z_INIT_ENTRY_DEFINE(_CONCAT(__device_, dev_name), init_fn,	\
+			    (&_CONCAT(__device_, dev_name)), level, prio)
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 #define Z_DEVICE_DEFINE_PM(dev_name)					\
