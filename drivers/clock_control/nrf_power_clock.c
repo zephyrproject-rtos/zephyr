@@ -348,7 +348,7 @@ static const struct nrf_clock_control_config config = {
 	}
 };
 
-DEVICE_AND_API_INIT(clock_nrf, DT_INST_LABEL(0),
+DT_DEVICE_AND_API_INIT(DT_NODELABEL(clock),
 		    clk_init, &data, &config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &clock_control_api);
@@ -407,7 +407,7 @@ static void usb_power_isr(void)
 void nrf_power_clock_isr(void *arg)
 {
 	ARG_UNUSED(arg);
-	struct device *dev = DEVICE_GET(clock_nrf);
+	struct device *dev = DT_DEVICE_GET(DT_NODELABEL(clock));
 
 	if (clock_event_check_and_clean(NRF_CLOCK_EVENT_HFCLKSTARTED,
 					NRF_CLOCK_INT_HF_STARTED_MASK)) {
