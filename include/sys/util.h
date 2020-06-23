@@ -545,6 +545,16 @@ uint8_t u8_to_dec(char *buf, uint8_t buflen, uint8_t value);
 #define EMPTY
 
 /**
+ * @brief Macro that expands to its argument
+ *
+ * This is useful in macros like @c FOR_EACH() when there is no
+ * transformation required on the list elements.
+ *
+ * @param V any value
+ */
+#define IDENTITY(V) V
+
+/**
  * @brief Get nth argument from argument list.
  *
  * @param N Argument index to fetch. Counter from 1.
