@@ -30,7 +30,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                  iface='swd', speed='auto',
                  gdbserver='JLinkGDBServer', gdb_port=DEFAULT_JLINK_GDB_PORT,
                  tui=False, tool_opt=[]):
-        super(JLinkBinaryRunner, self).__init__(cfg)
+        super().__init__(cfg)
         self.bin_name = cfg.bin_file
         self.elf_name = cfg.elf_file
         self.gdb_cmd = [cfg.gdb] if cfg.gdb else None

@@ -22,7 +22,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                  gdb_port=DEFAULT_PYOCD_GDB_PORT,
                  telnet_port=DEFAULT_PYOCD_TELNET_PORT, tui=False,
                  board_id=None, daparg=None, frequency=None, tool_opt=None):
-        super(PyOcdBinaryRunner, self).__init__(cfg)
+        super().__init__(cfg)
 
         self.target_args = ['-t', target]
         self.pyocd = pyocd

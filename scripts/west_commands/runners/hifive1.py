@@ -13,7 +13,7 @@ class HiFive1BinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for the HiFive1 board, using openocd.'''
 
     def __init__(self, cfg):
-        super(HiFive1BinaryRunner, self).__init__(cfg)
+        super().__init__(cfg)
         self.openocd_config = path.join(cfg.board_dir, 'support', 'openocd.cfg')
 
     @classmethod
