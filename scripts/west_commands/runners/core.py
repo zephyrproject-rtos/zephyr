@@ -186,17 +186,30 @@ class RunnerCaps:
     - flash_addr: whether the runner supports flashing to an
       arbitrary address. Default is False. If true, the runner
       must honor the --dt-flash option.
+
+    - erase: whether the runner supports an --erase option, which
+      does a mass-erase of the entire addressable flash on the target
+      before flashing. On multi-core SoCs, this may only erase portions of
+      flash specific the actual target core. (This option can be useful for
+      things like clearing out old settings values or other subsystem state
+      that may affect the behavior of the zephyr image. It is also sometimes
+      needed by SoCs which have flash-like areas that can't be sector
+      erased by the underlying tool before flashing; UICR on nRF SoCs
+      is one example.)
     '''
 
     def __init__(self,
                  commands={'flash', 'debug', 'debugserver', 'attach'},
-                 flash_addr=False):
+                 flash_addr=False, erase=False):
         self.commands = commands
         self.flash_addr = bool(flash_addr)
+        self.erase = bool(erase)
 
     def __str__(self):
-        return 'RunnerCaps(commands={}, flash_addr={})'.format(
-            self.commands, self.flash_addr)
+        return (f'RunnerCaps(commands={self.commands}, '
+                f'flash_addr={self.flash_addr}, '
+                f'erase={self.erase}'
+                ')')
 
 
 def _missing_cap(cls, option):
@@ -416,6 +429,10 @@ class ZephyrBinaryRunner(abc.ABC):
         else:
             parser.add_argument('--dt-flash', help=argparse.SUPPRESS)
 
+        parser.add_argument('--erase', action='store_true',
+                            help=('if given, mass erase flash before loading'
+                                  if caps.erase else argparse.SUPPRESS))
+
         # Runner-specific options.
         cls.do_add_parser(parser)
 
@@ -434,6 +451,8 @@ class ZephyrBinaryRunner(abc.ABC):
         caps = cls.capabilities()
         if args.dt_flash and not caps.flash_addr:
             _missing_cap(cls, '--dt-flash')
+        if args.erase and not caps.erase:
+            _missing_cap(cls, '--erase')
 
         return cls.do_create(cfg, args)
 

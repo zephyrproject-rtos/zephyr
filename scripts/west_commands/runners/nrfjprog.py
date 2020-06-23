@@ -34,7 +34,7 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash'})
+        return RunnerCaps(commands={'flash'}, erase=True)
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -44,8 +44,6 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--softreset', required=False,
                             action='store_true',
                             help='use reset instead of pinreset')
-        parser.add_argument('--erase', action='store_true',
-                            help='if given, mass erase flash before loading')
         parser.add_argument('--snr', required=False,
                             help='serial number of board to use')
         parser.add_argument('--tool-opt', default=[], action='append',

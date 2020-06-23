@@ -56,7 +56,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def capabilities(cls):
         return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach'},
-                          flash_addr=True)
+                          flash_addr=True, erase=True)
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -80,8 +80,6 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                             e.g. \'-autoconnect 1\' ''')
         parser.add_argument('--commander', default=DEFAULT_JLINK_EXE,
                             help='J-Link Commander, default is JLinkExe')
-        parser.add_argument('--erase', default=False, action='store_true',
-                            help='if given, mass erase flash before loading')
         parser.add_argument('--reset-after-load', '--no-reset-after-load',
                             dest='reset_after_load', nargs=0,
                             action=ToggleAction,
