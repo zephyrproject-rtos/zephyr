@@ -18,6 +18,7 @@
 #include <logging/log.h>
 
 #include "flash_stm32.h"
+#include "stm32_hsem.h"
 
 LOG_MODULE_REGISTER(flash_stm32, CONFIG_FLASH_LOG_LEVEL);
 
@@ -58,8 +59,6 @@ LOG_MODULE_REGISTER(flash_stm32, CONFIG_FLASH_LOG_LEVEL);
  */
 #define STM32_FLASH_TIMEOUT	(2 * STM32_FLASH_MAX_ERASE_TIME)
 
-#define CFG_HW_FLASH_SEMID	2
-
 static const struct flash_parameters flash_stm32_parameters = {
 	.write_block_size = FLASH_STM32_WRITE_BLOCK_SIZE,
 	/* Some SoCs (L0/L1) use an EEPROM under the hood. Distinguish
@@ -79,24 +78,14 @@ static const struct flash_parameters flash_stm32_parameters = {
  */
 static inline void _flash_stm32_sem_take(struct device *dev)
 {
-
-#ifdef CONFIG_SOC_SERIES_STM32WBX
-	while (LL_HSEM_1StepLock(HSEM, CFG_HW_FLASH_SEMID)) {
-	}
-#endif /* CONFIG_SOC_SERIES_STM32WBX */
-
 	k_sem_take(&FLASH_STM32_PRIV(dev)->sem, K_FOREVER);
+	z_stm32_hsem_lock(CFG_HW_FLASH_SEMID, HSEM_LOCK_WAIT_FOREVER);
 }
 
 static inline void _flash_stm32_sem_give(struct device *dev)
 {
-
+	z_stm32_hsem_unlock(CFG_HW_FLASH_SEMID);
 	k_sem_give(&FLASH_STM32_PRIV(dev)->sem);
-
-#ifdef CONFIG_SOC_SERIES_STM32WBX
-	LL_HSEM_ReleaseLock(HSEM, CFG_HW_FLASH_SEMID, 0);
-#endif /* CONFIG_SOC_SERIES_STM32WBX */
-
 }
 
 #define flash_stm32_sem_init(dev) k_sem_init(&FLASH_STM32_PRIV(dev)->sem, 1, 1)

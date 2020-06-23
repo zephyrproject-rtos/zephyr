@@ -15,6 +15,7 @@
 #include <soc.h>
 #include <arch/cpu.h>
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include "stm32_hsem.h"
 
 #if defined(CONFIG_STM32H7_BOOT_CM4_CM7)
 void stm32h7_m4_boot_stop(void)
@@ -77,13 +78,13 @@ static int stm32h7_m4_init(struct device *arg)
 
 #if defined(CONFIG_STM32H7_BOOT_CM4_CM7)
 	/* Activate HSEM notification for Cortex-M4*/
-	LL_HSEM_EnableIT_C2IER(HSEM, LL_HSEM_MASK_0);
+	LL_HSEM_EnableIT_C2IER(HSEM, CFG_HW_ENTRY_STOP_MODE_MASK_SEMID);
 
 	/* Boot and enter stop mode */
 	stm32h7_m4_boot_stop();
 
 	/* Clear HSEM flag */
-	LL_HSEM_ClearFlag_C2ICR(HSEM, LL_HSEM_MASK_0);
+	LL_HSEM_ClearFlag_C2ICR(HSEM, CFG_HW_ENTRY_STOP_MODE_MASK_SEMID);
 #endif /* CONFIG_STM32H7_BOOT_CM4_CM7 */
 
 	return 0;

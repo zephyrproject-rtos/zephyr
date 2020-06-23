@@ -24,6 +24,8 @@
 /* Add include for DTS generated information */
 #include <devicetree.h>
 
+#include <stm32mp1xx_ll_hsem.h>
+
 #ifdef CONFIG_EXTI_STM32
 #include <stm32mp1xx_ll_exti.h>
 #endif

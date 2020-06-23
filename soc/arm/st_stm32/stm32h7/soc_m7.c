@@ -15,6 +15,7 @@
 #include <soc.h>
 #include <arch/cpu.h>
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include "stm32_hsem.h"
 
 #if defined(CONFIG_STM32H7_DUAL_CORE)
 static int stm32h7_m4_wakeup(struct device *arg)
@@ -32,9 +33,9 @@ static int stm32h7_m4_wakeup(struct device *arg)
 		 */
 
 		/*Take HSEM */
-		LL_HSEM_1StepLock(HSEM, LL_HSEM_ID_0);
+		LL_HSEM_1StepLock(HSEM, CFG_HW_ENTRY_STOP_MODE_SEMID);
 		/*Release HSEM in order to notify the CPU2(CM4)*/
-		LL_HSEM_ReleaseLock(HSEM, LL_HSEM_ID_0, 0);
+		LL_HSEM_ReleaseLock(HSEM, CFG_HW_ENTRY_STOP_MODE_SEMID, 0);
 
 		/* wait until CPU2 wakes up from stop mode */
 		timeout = 0xFFFF;
