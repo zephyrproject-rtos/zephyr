@@ -22,6 +22,7 @@
 #include <drivers/flash.h>
 #include <storage/flash_map.h>
 #include <stats/stats.h>
+#include <sys/crc.h>
 #include <fs/nvs.h>
 #include "nvs_priv.h"
 
@@ -596,6 +597,123 @@ void test_delete(void)
 		     " any footprint in the storage");
 }
 
+/*
+ * Test that garbage-collection can recover all ate's even when the last ate,
+ * ie close_ate, is corrupt. In this test the close_ate is set to point to the
+ * last ate at -5. A valid ate is however present at -6. Since the close_ate
+ * has an invalid crc8, the offset should not be used and a recover of the
+ * last ate should be done instead.
+ */
+void test_nvs_gc_corrupt_close_ate(void)
+{
+	struct nvs_ate ate, close_ate;
+	struct device *flash_dev;
+	uint32_t data;
+	ssize_t len;
+	int err;
+
+	flash_dev = device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
+	zassert_true(flash_dev != NULL,  "device_get_binding failure");
+
+	close_ate.id = 0xffff;
+	close_ate.offset = fs.sector_size - sizeof(struct nvs_ate) * 5;
+	close_ate.len = 0;
+	close_ate.crc8 = 0xff; /* Incorrect crc8 */
+
+	ate.id = 0x1;
+	ate.offset = 0;
+	ate.len = sizeof(data);
+	ate.crc8 = crc8_ccitt(0xff, &ate,
+			      offsetof(struct nvs_ate, crc8));
+
+	flash_write_protection_set(flash_dev, false);
+
+	/* Mark sector 0 as closed */
+	err = flash_write(flash_dev, fs.offset + fs.sector_size -
+			  sizeof(struct nvs_ate), &close_ate,
+			  sizeof(close_ate));
+	zassert_true(err == 0,  "flash_write failed: %d", err);
+
+	/* Write valid ate at -6 */
+	err = flash_write(flash_dev, fs.offset + fs.sector_size -
+			  sizeof(struct nvs_ate) * 6, &ate, sizeof(ate));
+	zassert_true(err == 0,  "flash_write failed: %d", err);
+
+	/* Write data for previous ate */
+	data = 0xaa55aa55;
+	err = flash_write(flash_dev, fs.offset, &data, sizeof(data));
+	zassert_true(err == 0,  "flash_write failed: %d", err);
+
+	/* Mark sector 1 as closed */
+	err = flash_write(flash_dev, fs.offset + (2 * fs.sector_size) -
+			  sizeof(struct nvs_ate), &close_ate,
+			  sizeof(close_ate));
+	zassert_true(err == 0,  "flash_write failed: %d", err);
+
+	flash_write_protection_set(flash_dev, true);
+
+	fs.sector_count = 3;
+
+	err = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
+	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+
+	data = 0;
+	len = nvs_read(&fs, 1, &data, sizeof(data));
+	zassert_true(len == sizeof(data),
+		     "nvs_read should have read %d bytes", sizeof(data));
+	zassert_true(data == 0xaa55aa55, "unexpected value %d", data);
+}
+
+/*
+ * Test that garbage-collection correctly handles corrupt ate's.
+ */
+void test_nvs_gc_corrupt_ate(void)
+{
+	struct nvs_ate corrupt_ate, close_ate;
+	struct device *flash_dev;
+	int err;
+
+	flash_dev = device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
+	zassert_true(flash_dev != NULL,  "device_get_binding failure");
+
+	close_ate.id = 0xffff;
+	close_ate.offset = fs.sector_size / 2;
+	close_ate.len = 0;
+	close_ate.crc8 = crc8_ccitt(0xff, &close_ate,
+				    offsetof(struct nvs_ate, crc8));
+
+	corrupt_ate.id = 0xdead;
+	corrupt_ate.offset = 0;
+	corrupt_ate.len = 20;
+	corrupt_ate.crc8 = 0xff; /* Incorrect crc8 */
+
+	flash_write_protection_set(flash_dev, false);
+
+	/* Mark sector 0 as closed */
+	err = flash_write(flash_dev, fs.offset + fs.sector_size -
+			  sizeof(struct nvs_ate), &close_ate,
+			  sizeof(close_ate));
+	zassert_true(err == 0,  "flash_write failed: %d", err);
+
+	/* Write a corrupt ate */
+	err = flash_write(flash_dev, fs.offset + (fs.sector_size / 2),
+			  &corrupt_ate, sizeof(corrupt_ate));
+	zassert_true(err == 0,  "flash_write failed: %d", err);
+
+	/* Mark sector 1 as closed */
+	err = flash_write(flash_dev, fs.offset + (2 * fs.sector_size) -
+			  sizeof(struct nvs_ate), &close_ate,
+			  sizeof(close_ate));
+	zassert_true(err == 0,  "flash_write failed: %d", err);
+
+	flash_write_protection_set(flash_dev, true);
+
+	fs.sector_count = 3;
+
+	err = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
+	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(test_nvs,
@@ -615,7 +733,11 @@ void test_main(void)
 			 ztest_unit_test_setup_teardown(test_nvs_full_sector,
 				 setup, teardown),
 			 ztest_unit_test_setup_teardown(test_delete, setup,
-				 teardown)
+				 teardown),
+			 ztest_unit_test_setup_teardown(
+				 test_nvs_gc_corrupt_close_ate, setup, teardown),
+			 ztest_unit_test_setup_teardown(
+				 test_nvs_gc_corrupt_ate, setup, teardown)
 			);
 
 	ztest_run_test_suite(test_nvs);
