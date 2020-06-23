@@ -87,7 +87,7 @@ class CANopenBinaryRunner(ZephyrBinaryRunner):
         parser.set_defaults(confirm=True)
 
     @classmethod
-    def create(cls, cfg, args):
+    def do_create(cls, cfg, args):
         return CANopenBinaryRunner(cfg, int(args.node_id),
                                    can_context=args.can_context,
                                    program_number=int(args.program_number),

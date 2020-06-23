@@ -74,7 +74,7 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
                             help='dfu-util executable; defaults to "dfu-util"')
 
     @classmethod
-    def create(cls, cfg, args):
+    def do_create(cls, cfg, args):
         if args.img is None:
             args.img = cfg.bin_file
 

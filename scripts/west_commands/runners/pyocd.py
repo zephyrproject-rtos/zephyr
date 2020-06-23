@@ -95,7 +95,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                             e.g. \'--script=user.py\' ''')
 
     @classmethod
-    def create(cls, cfg, args):
+    def do_create(cls, cfg, args):
         build_conf = BuildConfiguration(cfg.build_dir)
         flash_addr = cls.get_flash_address(args, build_conf)
 

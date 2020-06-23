@@ -40,7 +40,7 @@ class DediProgBinaryRunner(ZephyrBinaryRunner):
                             help='Number of retries (default 5)')
 
     @classmethod
-    def create(cls, cfg, args):
+    def do_create(cls, cfg, args):
         return DediProgBinaryRunner(cfg,
                                     spi_image=args.spi_image,
                                     vcc=args.vcc,

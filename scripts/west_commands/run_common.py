@@ -210,8 +210,8 @@ def do_run_common(command, user_args, user_runner_args):
     #
     # Use that RunnerConfig to create the ZephyrBinaryRunner instance
     # and call its run().
-    runner = runner_cls.create(runner_cfg_from_args(args, build_dir), args)
     try:
+        runner = runner_cls.create(runner_cfg_from_args(args, build_dir), args)
         runner.run(command_name)
     except ValueError as ve:
         log.err(str(ve), fatal=True)

@@ -43,7 +43,7 @@ class MiscFlasher(ZephyrBinaryRunner):
                             directory''')
 
     @classmethod
-    def create(cls, cfg, args):
+    def do_create(cls, cfg, args):
         return MiscFlasher(cfg, args.cmd, args.args)
 
     def do_run(self, *args, **kwargs):

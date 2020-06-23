@@ -98,7 +98,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                             help='openocd gdb port, defaults to 3333')
 
     @classmethod
-    def create(cls, cfg, args):
+    def do_create(cls, cfg, args):
         return OpenOcdBinaryRunner(
             cfg,
             pre_init=args.cmd_pre_init,
