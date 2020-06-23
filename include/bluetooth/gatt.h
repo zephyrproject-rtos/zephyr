@@ -1145,6 +1145,10 @@ struct bt_gatt_discover_params {
 	uint16_t end_handle;
 	/** Discover type */
 	uint8_t type;
+#if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC)
+	/** Only for stack-internal use, used for automatic discovery. */
+	struct bt_gatt_subscribe_params *sub_params;
+#endif /* defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC) */
 };
 
 /** @brief GATT Discover function
@@ -1400,6 +1404,12 @@ struct bt_gatt_subscribe_params {
 	uint16_t value_handle;
 	/** Subscribe CCC handle */
 	uint16_t ccc_handle;
+#if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC)
+	/** Subscribe End handle (for automatic discovery) */
+	uint16_t end_handle;
+	/** Discover parameters used when ccc_handle = 0 */
+	struct bt_gatt_discover_params *disc_params;
+#endif /* CONFIG_BT_GATT_AUTO_DISCOVER_CCC */
 	/** Subscribe value */
 	uint16_t value;
 	/** Subscription flags */
