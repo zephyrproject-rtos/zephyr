@@ -241,14 +241,14 @@ static int _sock_send(struct esp_data *dev, struct esp_socket *sock)
 			     ESP_CMD_TIMEOUT);
 	if (ret < 0) {
 		LOG_DBG("Failed to send command");
-		goto out;
+		goto clear_modem_cmds;
 	}
 
 	ret = modem_cmd_handler_update_cmds(&dev->cmd_handler_data,
 					    cmds, ARRAY_SIZE(cmds),
 					    true);
 	if (ret < 0) {
-		goto out;
+		goto clear_modem_cmds;
 	}
 
 	/*
@@ -261,7 +261,7 @@ static int _sock_send(struct esp_data *dev, struct esp_socket *sock)
 	ret = k_sem_take(&dev->sem_tx_ready, K_MSEC(5000));
 	if (ret < 0) {
 		LOG_DBG("Timeout waiting for tx");
-		goto out;
+		goto clear_modem_cmds;
 	}
 
 	frag = sock->tx_pkt->frags;
@@ -277,7 +277,7 @@ static int _sock_send(struct esp_data *dev, struct esp_socket *sock)
 	ret = k_sem_take(&dev->sem_response, ESP_CMD_TIMEOUT);
 	if (ret < 0) {
 		LOG_DBG("No send response");
-		goto out;
+		goto clear_modem_cmds;
 	}
 
 	ret = modem_cmd_handler_get_error(&dev->cmd_handler_data);
@@ -285,7 +285,7 @@ static int _sock_send(struct esp_data *dev, struct esp_socket *sock)
 		LOG_DBG("Failed to send data");
 	}
 
-out:
+clear_modem_cmds:
 	(void)modem_cmd_handler_update_cmds(&dev->cmd_handler_data,
 					    NULL, 0U, false);
 	k_sem_give(&dev->cmd_handler_data.sem_tx_lock);
