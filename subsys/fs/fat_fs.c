@@ -80,6 +80,11 @@ static int fatfs_open(struct fs_file_t *zfp, const char *file_name)
 
 	res = f_open(zfp->filep, &file_name[1], fs_mode);
 
+	if (res != FR_OK) {
+		k_mem_slab_free(&fatfs_filep_pool, &ptr);
+		zfp->filep = NULL;
+	}
+
 	return translate_error(res);
 }
 
@@ -91,6 +96,7 @@ static int fatfs_close(struct fs_file_t *zfp)
 
 	/* Free file ptr memory */
 	k_mem_slab_free(&fatfs_filep_pool, &zfp->filep);
+	zfp->filep = NULL;
 
 	return translate_error(res);
 }
@@ -257,8 +263,12 @@ static int fatfs_opendir(struct fs_dir_t *zdp, const char *path)
 		return -ENOMEM;
 	}
 
-
 	res = f_opendir(zdp->dirp, &path[1]);
+
+	if (res != FR_OK) {
+		k_mem_slab_free(&fatfs_dirp_pool, &ptr);
+		zdp->dirp = NULL;
+	}
 
 	return translate_error(res);
 }
