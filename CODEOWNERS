@@ -40,6 +40,7 @@
 /soc/arm/nxp*/                            @MaureenHelm
 /soc/arm/nordic_nrf/                      @ioannisg
 /soc/arm/nuvoton/                         @ssekar15
+/soc/arm/nuvoton_npcx/                    @MulinChao
 /soc/arm/qemu_cortex_a53/                 @carlocaione
 /soc/arm/silabs_exx32/efr32mg21/          @l-alfred
 /soc/arm/st_stm32/                        @erwango
