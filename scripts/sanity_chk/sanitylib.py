@@ -898,7 +898,10 @@ class QEMUHandler(Handler):
                     except ProcessLookupError:
                         pass
                     proc.wait()
-                    self.returncode = 0
+                    if harness.state == "passed":
+                        self.returncode = 0
+                    else:
+                        self.returncode = proc.returncode
                 else:
                     proc.terminate()
                     proc.kill()
