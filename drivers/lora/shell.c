@@ -71,21 +71,21 @@ static int parse_long_range(long *out, const struct shell *shell,
 static int parse_freq(uint32_t *out, const struct shell *shell, const char *arg)
 {
 	char *eptr;
-	long long llval;
+	unsigned long val;
 
-	llval = strtoll(arg, &eptr, 0);
+	val = strtoul(arg, &eptr, 0);
 	if (*eptr != '\0') {
 		shell_error(shell, "Invalid frequency, '%s' is not an integer",
 			    arg);
 		return -EINVAL;
 	}
 
-	if (llval < 0 || llval > UINT32_MAX) {
-		shell_error(shell, "Frequency %lli out of range", llval);
+	if (val == ULONG_MAX) {
+		shell_error(shell, "Frequency %s out of range", arg);
 		return -EINVAL;
 	}
 
-	*out = (uint32_t)llval;
+	*out = (uint32_t)val;
 	return 0;
 }
 
