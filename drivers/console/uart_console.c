@@ -88,10 +88,30 @@ static int console_out(int c)
 
 #endif  /* CONFIG_UART_CONSOLE_DEBUG_SERVER_HOOKS */
 
+#ifdef CONFIG_DEVICE_IDLE_PM
+	if (uart_console_dev->pm->enable) {
+		int rc = device_pm_get_sync(uart_console_dev);
+
+		if (rc < 0) {
+			/* Enabling the UART instance has failed but this
+			 * function MUST return the byte output.
+			 */
+			return c;
+		}
+	}
+#endif /* CONFIG_DEVICE_IDLE_PM */
+
 	if ('\n' == c) {
 		uart_poll_out(uart_console_dev, '\r');
 	}
 	uart_poll_out(uart_console_dev, c);
+
+#ifdef CONFIG_DEVICE_IDLE_PM
+	if (uart_console_dev->pm->enable) {
+		/* As errors cannot be returned, ignore the return value */
+		(void)device_pm_put_sync(uart_console_dev);
+	}
+#endif /* CONFIG_DEVICE_IDLE_PM */
 
 	return c;
 }
