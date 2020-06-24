@@ -27,15 +27,6 @@
  * It then iterates this many times, reporting timestamp latencies
  * between each numbered step and for the whole cycle, and a running
  * average for all cycles run.
- *
- * Note that because this involves no timer interaction (except, on
- * some architectures, k_cycle_get_32()), it works correctly when run
- * in qemu using the -icount argument, which can produce 100%
- * deterministic behavior (not cycle-exact hardware simulation, but
- * exactly N instructions per simulated nanosecond).  You can enable
- * for "make run" using an environment variable:
- *
- * export QEMU_EXTRA_FLAGS="-icount shift=0,align=off,sleep=off"
  */
 
 #define N_RUNS 1000
