@@ -1,0 +1,8 @@
+tests:
+  subsys.modbus.rtu:
+    tags: modbus
+    platform_allow: frdm_k64f
+  subsys.modbus.rtu.build_only:
+    build_only: true
+    tags: modbus
+    filter: CONFIG_UART_CONSOLE and CONFIG_UART_INTERRUPT_DRIVEN
