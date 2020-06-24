@@ -117,7 +117,7 @@ manifest:
       revision: 3e9a49d2672ec01435ffbf0d788db6d95ef28de0
     - name: littlefs
       path: modules/fs/littlefs
-      revision: 0aefdda69d236cb01f932117c1f32e9da09c0ec3
+      revision: 9e4498d1c73009acd84bb36036ee5e2869112a6c
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
       revision: 957d46bc3ce0d5f628f0d525196bb4db207672ee
