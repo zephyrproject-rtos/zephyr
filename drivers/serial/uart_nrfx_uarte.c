@@ -622,7 +622,7 @@ static void user_callback(struct device *dev, struct uart_event *evt)
 	struct uarte_nrfx_data *data = get_dev_data(dev);
 
 	if (data->async->user_callback) {
-		data->async->user_callback(evt, data->async->user_data);
+		data->async->user_callback(dev, evt, data->async->user_data);
 	}
 }
 
