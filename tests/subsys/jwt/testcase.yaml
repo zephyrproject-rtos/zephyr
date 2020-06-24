@@ -2,4 +2,5 @@ tests:
   libraries.encoding.jwt:
     min_ram: 96
     min_flash: 72
+    timeout: 120
     tags: jwt
