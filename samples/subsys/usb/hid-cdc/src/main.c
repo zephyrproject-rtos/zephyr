@@ -401,8 +401,10 @@ static void write_data(struct device *dev, const char *buf, int len)
 	uart_irq_tx_disable(dev);
 }
 
-static void cdc_mouse_int_handler(struct device *dev)
+static void cdc_mouse_int_handler(struct device *dev, void *user_data)
 {
+	ARG_UNUSED(user_data);
+
 	uart_irq_update(dev);
 
 	if (uart_irq_tx_ready(dev)) {
@@ -447,8 +449,10 @@ static void cdc_mouse_int_handler(struct device *dev)
 	}
 }
 
-static void cdc_kbd_int_handler(struct device *dev)
+static void cdc_kbd_int_handler(struct device *dev, void *user_data)
 {
+	ARG_UNUSED(user_data);
+
 	uart_irq_update(dev);
 
 	if (uart_irq_tx_ready(dev)) {

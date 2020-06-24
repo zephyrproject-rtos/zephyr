@@ -391,9 +391,10 @@ static inline void process_rx(void)
 	}
 }
 
-static void bt_uart_isr(struct device *unused)
+static void bt_uart_isr(struct device *unused, void *user_data)
 {
 	ARG_UNUSED(unused);
+	ARG_UNUSED(user_data);
 
 	while (uart_irq_update(h4_dev) && uart_irq_is_pending(h4_dev)) {
 		if (uart_irq_tx_ready(h4_dev)) {

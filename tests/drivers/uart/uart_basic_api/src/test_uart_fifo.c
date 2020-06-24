@@ -41,10 +41,12 @@ static const char fifo_data[] = "This is a FIFO test.\r\n";
 
 #define DATA_SIZE	(sizeof(fifo_data) - 1)
 
-static void uart_fifo_callback(struct device *dev)
+static void uart_fifo_callback(struct device *dev, void *user_data)
 {
 	uint8_t recvData;
 	static int tx_data_idx;
+
+	ARG_UNUSED(user_data);
 
 	/* Verify uart_irq_update() */
 	if (!uart_irq_update(dev)) {

@@ -434,9 +434,10 @@ static bool handle_mcumgr(struct console_input *cmd, uint8_t byte)
 
 #endif /* CONFIG_UART_CONSOLE_MCUMGR */
 
-static void uart_console_isr(struct device *unused)
+static void uart_console_isr(struct device *unused, void *user_data)
 {
 	ARG_UNUSED(unused);
+	ARG_UNUSED(user_data);
 
 	while (uart_irq_update(uart_console_dev) &&
 	       uart_irq_is_pending(uart_console_dev)) {

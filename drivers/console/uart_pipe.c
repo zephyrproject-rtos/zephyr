@@ -53,8 +53,10 @@ static void uart_pipe_rx(struct device *dev)
 	}
 }
 
-static void uart_pipe_isr(struct device *dev)
+static void uart_pipe_isr(struct device *dev, void *user_data)
 {
+	ARG_UNUSED(user_data);
+
 	uart_irq_update(dev);
 
 	if (uart_irq_is_pending(dev)) {
