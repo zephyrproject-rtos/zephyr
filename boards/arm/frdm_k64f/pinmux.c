@@ -7,6 +7,50 @@
 #include <init.h>
 #include <drivers/pinmux.h>
 #include <fsl_port.h>
+#include <fsl_uart.h>
+
+/** provide implementation of enable and disable uarts */
+void frdm_k64f_pinmux_enable_uart(void)
+{
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(portb), okay)
+	const struct device *portb =
+		DEVICE_DT_GET(DT_NODELABEL(portb));
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay) && CONFIG_SERIAL
+	pinmux_pin_set(portb, 16, PORT_PCR_MUX(kPORT_MuxAlt3));
+	pinmux_pin_set(portb, 17, PORT_PCR_MUX(kPORT_MuxAlt3));
+#endif
+}
+
+void frdm_k64f_pinmux_disable_uart(void)
+{
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay) && CONFIG_SERIAL
+	while (!(kUART_TransmissionCompleteFlag &
+		UART_GetStatusFlags((UART_Type *)UART0))) {
+	}
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(portb), okay)
+	const struct device *portb =
+		DEVICE_DT_GET(DT_NODELABEL(portb));
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay) && CONFIG_SERIAL
+	pinmux_pin_set(portb, 16, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
+	pinmux_pin_set(portb, 17, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
+#endif
+}
+
+/** provide functions needed by power module */
+void enable_uart(void)
+{
+	frdm_k64f_pinmux_enable_uart();
+}
+void disable_uart(void)
+{
+	frdm_k64f_pinmux_disable_uart();
+}
 
 static int frdm_k64f_pinmux_init(const struct device *dev)
 {

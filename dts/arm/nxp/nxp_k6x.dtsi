@@ -25,7 +25,15 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
+			cpu-power-states = <&state0>;
 		};
+
+		state0: state0 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			min-residency-us = <1>;
+		};
+
 	};
 
 	/* The on-chip SRAM is split into SRAM_L and SRAM_U regions that form a
