@@ -295,7 +295,7 @@ static void usart_sam_isr(void *arg)
 	struct usart_sam_dev_data *const dev_data = DEV_DATA(dev);
 
 	if (dev_data->irq_cb) {
-		dev_data->irq_cb(dev_data->cb_data);
+		dev_data->irq_cb(dev, dev_data->cb_data);
 	}
 }
 

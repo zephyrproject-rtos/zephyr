@@ -345,10 +345,11 @@ static void uart_cc13xx_cc26xx_irq_callback_set(
 
 static void uart_cc13xx_cc26xx_isr(void *arg)
 {
-	struct uart_cc13xx_cc26xx_data *data = get_dev_data(arg);
+	struct device *dev = (struct device *)arg;
+	struct uart_cc13xx_cc26xx_data *data = get_dev_data(dev);
 
 	if (data->callback) {
-		data->callback(data->user_data);
+		data->callback(dev, data->user_data);
 	}
 }
 

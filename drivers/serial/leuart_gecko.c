@@ -237,7 +237,7 @@ static void leuart_gecko_isr(void *arg)
 	struct leuart_gecko_data *data = dev->driver_data;
 
 	if (data->callback) {
-		data->callback(data->cb_data);
+		data->callback(dev, data->cb_data);
 	}
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */

@@ -282,7 +282,7 @@ static void uart_cc32xx_isr(void *arg)
 						    1);
 
 	if (dev_data->cb) {
-		dev_data->cb(dev_data->cb_data);
+		dev_data->cb(dev, dev_data->cb_data);
 	}
 	/*
 	 * RX/TX interrupt should have been implicitly cleared by Zephyr UART

@@ -300,7 +300,7 @@ static void uart_miv_irq_handler(void *arg)
 	struct uart_miv_data *data = DEV_DATA(dev);
 
 	if (data->callback) {
-		data->callback(data->cb_data);
+		data->callback(dev, data->cb_data);
 	}
 }
 

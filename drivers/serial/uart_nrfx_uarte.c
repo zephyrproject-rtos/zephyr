@@ -191,7 +191,7 @@ static void uarte_nrfx_isr_int(void *arg)
 	}
 
 	if (data->int_driven->cb) {
-		data->int_driven->cb(data->int_driven->cb_data);
+		data->int_driven->cb(dev, data->int_driven->cb_data);
 	}
 }
 #endif /* UARTE_INTERRUPT_DRIVEN */

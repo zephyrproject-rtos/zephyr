@@ -1139,7 +1139,7 @@ static void uart_xlnx_ps_isr(void *arg)
 	const struct uart_xlnx_ps_dev_data_t *data = DEV_DATA(dev);
 
 	if (data->user_cb) {
-		data->user_cb(data->user_data);
+		data->user_cb(dev, data->user_data);
 	}
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
