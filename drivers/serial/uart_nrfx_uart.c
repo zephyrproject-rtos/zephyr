@@ -950,7 +950,7 @@ static void uart_nrfx_isr(void *arg)
 	}
 
 	if (irq_callback) {
-		irq_callback(irq_cb_data);
+		irq_callback(dev, irq_cb_data);
 	}
 }
 #endif /* CONFIG_UART_0_INTERRUPT_DRIVEN */

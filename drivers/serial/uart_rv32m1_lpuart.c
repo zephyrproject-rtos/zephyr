@@ -230,7 +230,7 @@ static void rv32m1_lpuart_isr(void *arg)
 	struct rv32m1_lpuart_data *data = dev->driver_data;
 
 	if (data->callback) {
-		data->callback(data->cb_data);
+		data->callback(dev, data->cb_data);
 	}
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */

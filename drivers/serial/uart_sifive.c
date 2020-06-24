@@ -323,7 +323,7 @@ static void uart_sifive_irq_handler(void *arg)
 	struct uart_sifive_data *data = DEV_DATA(dev);
 
 	if (data->callback)
-		data->callback(data->cb_data);
+		data->callback(dev, data->cb_data);
 }
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */

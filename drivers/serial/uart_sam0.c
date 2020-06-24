@@ -662,7 +662,7 @@ static void uart_sam0_isr(void *arg)
 
 #if CONFIG_UART_INTERRUPT_DRIVEN
 	if (dev_data->cb) {
-		dev_data->cb(dev_data->cb_data);
+		dev_data->cb(dev, dev_data->cb_data);
 	}
 #endif
 

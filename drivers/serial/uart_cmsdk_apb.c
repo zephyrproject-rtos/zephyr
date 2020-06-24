@@ -430,7 +430,7 @@ void uart_cmsdk_apb_isr(void *arg)
 
 	/* Verify if the callback has been registered */
 	if (data->irq_cb) {
-		data->irq_cb(data->irq_cb_data);
+		data->irq_cb(dev, data->irq_cb_data);
 	}
 }
 

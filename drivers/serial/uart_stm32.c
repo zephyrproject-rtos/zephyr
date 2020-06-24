@@ -615,7 +615,7 @@ static void uart_stm32_isr(void *arg)
 	struct uart_stm32_data *data = DEV_DATA(dev);
 
 	if (data->user_cb) {
-		data->user_cb(data->user_data);
+		data->user_cb(dev, data->user_data);
 	}
 }
 

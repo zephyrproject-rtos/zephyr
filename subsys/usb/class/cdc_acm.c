@@ -519,7 +519,7 @@ static void cdc_acm_irq_callback_work_handler(struct k_work *work)
 
 	dev_data = CONTAINER_OF(work, struct cdc_acm_dev_data_t, cb_work);
 
-	dev_data->cb(dev_data->cb_data);
+	dev_data->cb(dev_data->common.dev, dev_data->cb_data);
 }
 
 /**

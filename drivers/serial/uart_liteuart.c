@@ -279,7 +279,7 @@ static void liteuart_uart_irq_handler(void *arg)
 	int key = irq_lock();
 
 	if (data->callback) {
-		data->callback(data->cb_data);
+		data->callback(dev, data->cb_data);
 	}
 
 	/* clear events */

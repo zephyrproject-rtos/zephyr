@@ -229,7 +229,7 @@ static void uart_gecko_isr(void *arg)
 	struct uart_gecko_data *data = dev->driver_data;
 
 	if (data->callback) {
-		data->callback(data->cb_data);
+		data->callback(dev, data->cb_data);
 	}
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */

@@ -294,7 +294,7 @@ static void uart_sam_isr(void *arg)
 	struct uart_sam_dev_data *const dev_data = DEV_DATA(dev);
 
 	if (dev_data->irq_cb) {
-		dev_data->irq_cb(dev_data->irq_cb_data);
+		dev_data->irq_cb(dev, dev_data->irq_cb_data);
 	}
 }
 

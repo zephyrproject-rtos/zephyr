@@ -329,7 +329,7 @@ static void uart_msp432p4xx_isr(void *arg)
 						(unsigned long)config->base);
 
 	if (dev_data->cb) {
-		dev_data->cb(dev_data->cb_data);
+		dev_data->cb(dev, dev_data->cb_data);
 	}
 	/*
 	 * Clear interrupts only after cb called, as Zephyr UART clients expect

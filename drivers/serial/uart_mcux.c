@@ -298,7 +298,7 @@ static void uart_mcux_isr(void *arg)
 	struct uart_mcux_data *data = dev->driver_data;
 
 	if (data->callback) {
-		data->callback(data->cb_data);
+		data->callback(dev, data->cb_data);
 	}
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
