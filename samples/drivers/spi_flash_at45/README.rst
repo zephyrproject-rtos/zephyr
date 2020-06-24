@@ -22,8 +22,8 @@ simply disabling the SPI_FLASH_AT45_USE_READ_MODIFY_WRITE option.
 Requirements
 ************
 
-This sample has been tested on the NordicSemiconductor nRF9160 DK
-(nrf9160_pca10090) board with the AT45DB321E chip connected.
+This sample has been tested on the Nordic Semiconductor nRF9160 DK
+(nrf9160dk_nrf9160) board with the AT45DB321E chip connected.
 It can be easily adjusted to be usable on other boards and with other
 AT45 family chips by just providing a corresponding overlay file.
 
@@ -36,7 +36,7 @@ To build and flash the application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/spi_flash_at45
-   :board: nrf9160_pca10090
+   :board: nrf9160dk_nrf9160
    :goals: build flash
    :compact:
 
@@ -45,7 +45,7 @@ Sample Output
 
 .. code-block:: console
 
-   DataFlash sample app on nrf9160_pca10090
+   DataFlash sample app on nrf9160dk_nrf9160
    Using DATAFLASH_1, chip size: 4194304 bytes (page: 512)
    Reading the first byte of the test region ... OK
    Preparing test content starting with 0x01.
