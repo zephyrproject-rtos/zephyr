@@ -6,6 +6,7 @@
 
 #include <drivers/flash.h>
 #include <drivers/spi.h>
+#include <sys/byteorder.h>
 #include <logging/log.h>
 
 LOG_MODULE_REGISTER(spi_flash_at45, CONFIG_FLASH_LOG_LEVEL);
@@ -650,7 +651,7 @@ static const struct flash_driver_api spi_flash_at45_api = {
 
 #define DT_DRV_COMPAT atmel_at45
 
-#define SPI_FLASH_AT45_INST(idx, _)					     \
+#define SPI_FLASH_AT45_INST(idx)					     \
 	enum {								     \
 		INST_##idx##_BYTES = (DT_INST_PROP(idx, size) / 8),	     \
 		INST_##idx##_PAGES = (INST_##idx##_BYTES /		     \
@@ -703,4 +704,4 @@ static const struct flash_driver_api spi_flash_at45_api = {
 		      POST_KERNEL, CONFIG_SPI_FLASH_AT45_INIT_PRIORITY,      \
 		      &spi_flash_at45_api);
 
-UTIL_LISTIFY(DT_NUM_INST(DT_DRV_COMPAT), SPI_FLASH_AT45_INST, _)
+DT_INST_FOREACH_STATUS_OKAY(SPI_FLASH_AT45_INST)
