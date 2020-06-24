@@ -17,9 +17,29 @@ static int char_out(uint8_t *data, size_t length, void *ctx)
 {
 	struct device *dev = (struct device *)ctx;
 
+#ifdef CONFIG_DEVICE_IDLE_PM
+	if (dev->pm->enable) {
+		int rc = device_pm_get_sync(dev);
+
+		if (rc < 0) {
+			/* Enabling the UART instance has failed but this
+			 * function MUST return the number of bytes consumed.
+			 */
+			return length;
+		}
+	}
+#endif /* CONFIG_DEVICE_IDLE_PM */
+
 	for (size_t i = 0; i < length; i++) {
 		uart_poll_out(dev, data[i]);
 	}
+
+#ifdef CONFIG_DEVICE_IDLE_PM
+	if (dev->pm->enable) {
+		/* As errors cannot be returned, ignore the return value */
+		(void)device_pm_put_sync(dev);
+	}
+#endif /* CONFIG_DEVICE_IDLE_PM */
 
 	return length;
 }
