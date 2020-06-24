@@ -110,12 +110,13 @@ static void h4_acl_recv(struct net_buf *buf, int *remaining)
 	LOG_DBG("len %u", *remaining);
 }
 
-static void bt_uart_isr(struct device *unused)
+static void bt_uart_isr(struct device *unused, void *user_data)
 {
 	static struct net_buf *buf;
 	static int remaining;
 
 	ARG_UNUSED(unused);
+	ARG_UNUSED(user_data);
 
 	while (uart_irq_update(hci_uart_dev) &&
 	       uart_irq_is_pending(hci_uart_dev)) {

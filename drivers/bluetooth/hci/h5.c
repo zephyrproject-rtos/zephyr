@@ -405,7 +405,7 @@ static inline struct net_buf *get_evt_buf(uint8_t evt)
 	return bt_buf_get_evt(evt, false, K_NO_WAIT);
 }
 
-static void bt_uart_isr(struct device *unused)
+static void bt_uart_isr(struct device *unused, void *user_data)
 {
 	static int remaining;
 	uint8_t byte;
@@ -413,6 +413,7 @@ static void bt_uart_isr(struct device *unused)
 	static uint8_t hdr[4];
 
 	ARG_UNUSED(unused);
+	ARG_UNUSED(user_data);
 
 	while (uart_irq_update(h5_dev) &&
 	       uart_irq_is_pending(h5_dev)) {

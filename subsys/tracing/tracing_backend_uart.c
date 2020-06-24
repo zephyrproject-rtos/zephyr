@@ -17,12 +17,14 @@
 static struct device *tracing_uart_dev;
 
 #ifdef CONFIG_TRACING_HANDLE_HOST_CMD
-static void uart_isr(struct device *dev)
+static void uart_isr(struct device *dev, void *user_data)
 {
 	int rx;
 	uint8_t byte;
 	static uint8_t *cmd;
 	static uint32_t length, cur;
+
+	ARG_UNUSED(user_data);
 
 	while (uart_irq_update(dev) && uart_irq_is_pending(dev)) {
 		if (!uart_irq_rx_ready(dev)) {
