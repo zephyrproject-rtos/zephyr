@@ -305,17 +305,19 @@ typedef void (*uart_irq_callback_user_data_t)(void *user_data);
  * @brief Define the application callback function signature for legacy
  * uart_irq_callback_set().
  *
- * @param port Device struct for the UART device.
+ * @param dev UART device structure.
  */
-typedef void (*uart_irq_callback_t)(struct device *port);
+typedef void (*uart_irq_callback_t)(struct device *dev);
 
 /**
  * @typedef uart_irq_config_func_t
  * @brief For configuring IRQ on each individual UART device.
  *
+ * @param dev UART device structure.
+ *
  * @internal
  */
-typedef void (*uart_irq_config_func_t)(struct device *port);
+typedef void (*uart_irq_config_func_t)(struct device *dev);
 
 /**
  * @brief UART device configuration.
