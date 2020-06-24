@@ -230,10 +230,12 @@ struct uart_event {
  * @brief Define the application callback function signature for
  * uart_callback_set() function.
  *
+ * @param dev       UART device structure.
  * @param evt	    Pointer to uart_event structure.
  * @param user_data Pointer to data specified by user.
  */
-typedef void (*uart_callback_t)(struct uart_event *evt, void *user_data);
+typedef void (*uart_callback_t)(struct device *dev,
+				struct uart_event *evt, void *user_data);
 
 /**
  * @brief UART controller configuration structure
