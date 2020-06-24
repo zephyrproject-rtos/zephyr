@@ -858,7 +858,7 @@ static inline bool isr_rx_ci_tgta_check(struct lll_adv *lll,
 					uint8_t rl_idx)
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	if (rl_idx != FILTER_IDX_NONE) {
+	if (rl_idx != FILTER_IDX_NONE && lll->rl_idx != FILTER_IDX_NONE) {
 		return rl_idx == lll->rl_idx;
 	}
 #endif /* CONFIG_BT_CTLR_PRIVACY */
