@@ -31,6 +31,7 @@
 #include <zephyr/linker/sections.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/pm/device_runtime.h>
 #ifdef CONFIG_UART_CONSOLE_MCUMGR
 #include <zephyr/mgmt/mcumgr/transport/serial.h>
 #endif
@@ -86,10 +87,24 @@ static int console_out(int c)
 
 #endif  /* CONFIG_UART_CONSOLE_DEBUG_SERVER_HOOKS */
 
+	if (pm_device_runtime_is_enabled(uart_console_dev)) {
+		if (pm_device_runtime_get(uart_console_dev) < 0) {
+			/* Enabling the UART instance has failed but this
+			 * function MUST return the byte output.
+			 */
+			return c;
+		}
+	}
+
 	if ('\n' == c) {
 		uart_poll_out(uart_console_dev, '\r');
 	}
 	uart_poll_out(uart_console_dev, c);
+
+	if (pm_device_runtime_is_enabled(uart_console_dev)) {
+		/* As errors cannot be returned, ignore the return value */
+		(void)pm_device_runtime_put(uart_console_dev);
+	}
 
 	return c;
 }
