@@ -225,6 +225,14 @@ config ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
 	  threads many not be context-switched-out while doing a Secure
 	  function call.
 
+config ARM_STORE_EXC_RETURN
+	bool
+	default y if FPU_SHARING || ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
+	help
+	  Store the EXC_RETURN value when switching threads.
+	  This is needed when switching between threads that differ in either
+	  FPU usage or security domain.
+
 choice
 	prompt "Floating point ABI"
 	default FP_HARDABI
