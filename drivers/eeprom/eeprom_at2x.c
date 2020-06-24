@@ -218,15 +218,16 @@ static int eeprom_at24_read(struct device *dev, off_t offset, void *buf,
 	 * until the current write cycle should be completed.
 	 */
 	timeout = k_uptime_get() + config->timeout;
-	do {
+	while (1) {
+		int64_t now = k_uptime_get();
 		err = i2c_write_read(data->bus_dev, config->bus_addr,
 				     addr, config->addr_width / 8,
 				     buf, len);
-		if (!err) {
+		if (!err || now > timeout) {
 			break;
 		}
 		k_sleep(K_MSEC(1));
-	} while (timeout > k_uptime_get());
+	}
 
 	return err;
 }
@@ -259,15 +260,15 @@ static int eeprom_at24_write(struct device *dev, off_t offset,
 	 * completed.
 	 */
 	timeout = k_uptime_get() + config->timeout;
-	do {
+	while (1) {
+		int64_t now = k_uptime_get();
 		err = i2c_write(data->bus_dev, block, sizeof(block),
 				config->bus_addr);
-		if (!err) {
+		if (!err || now > timeout) {
 			break;
 		}
-
 		k_sleep(K_MSEC(1));
-	} while (timeout > k_uptime_get());
+	}
 
 	if (err < 0) {
 		return err;
@@ -317,7 +318,8 @@ static int eeprom_at25_wait_for_idle(struct device *dev)
 	int err;
 
 	timeout = k_uptime_get() + config->timeout;
-	do {
+	while (1) {
+		int64_t now = k_uptime_get();
 		err = eeprom_at25_rdsr(dev, &status);
 		if (err) {
 			LOG_ERR("Could not read status register (err %d)", err);
@@ -327,8 +329,11 @@ static int eeprom_at25_wait_for_idle(struct device *dev)
 		if (!(status & EEPROM_AT25_STATUS_WIP)) {
 			return 0;
 		}
+		if (now > timeout) {
+			break;
+		}
 		k_sleep(K_MSEC(1));
-	} while (timeout > k_uptime_get());
+	}
 
 	return -EBUSY;
 }
