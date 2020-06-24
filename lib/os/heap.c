@@ -157,14 +157,19 @@ static void free_chunks(struct z_heap *h, chunkid_t c)
 	free_list_add(h, c);
 }
 
+static chunkid_t mem_to_chunkid(struct z_heap *h, void *p)
+{
+	uint8_t *mem = p, *base = (uint8_t *)chunk_buf(h);
+	return (mem - chunk_header_bytes(h) - base) / CHUNK_UNIT;
+}
+
 void sys_heap_free(struct sys_heap *heap, void *mem)
 {
 	if (mem == NULL) {
 		return; /* ISO C free() semantics */
 	}
 	struct z_heap *h = heap->heap;
-	chunkid_t c = ((uint8_t *)mem - chunk_header_bytes(h)
-		       - (uint8_t *)chunk_buf(h)) / CHUNK_UNIT;
+	chunkid_t c = mem_to_chunkid(h, mem);
 
 	/*
 	 * This should catch many double-free cases.
@@ -251,46 +256,53 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 
 	CHECK((align & (align - 1)) == 0);
 	CHECK(big_heap(h));
+
+	if (align <= CHUNK_UNIT) {
+		return sys_heap_alloc(heap, bytes);
+	}
 	if (bytes == 0) {
 		return NULL;
 	}
 
-	/* Find a free block that is guaranteed to fit */
-	size_t chunksz = bytes_to_chunksz(h, bytes);
-	size_t mask = (align / CHUNK_UNIT) - 1;
-	size_t padsz = MAX(CHUNK_UNIT, chunksz + mask);
-	chunkid_t c0 = alloc_chunks(h, padsz);
+	/*
+	 * Find a free block that is guaranteed to fit.
+	 * We over-allocate to account for alignment and then free
+	 * the extra allocations afterwards.
+	 */
+	size_t alloc_sz = bytes_to_chunksz(h, bytes);
+	size_t padded_sz = bytes_to_chunksz(h, bytes + align - 1);
+	chunkid_t c0 = alloc_chunks(h, padded_sz);
 
 	if (c0 == 0) {
 		return NULL;
 	}
 
-	/* Align within memory, using "chunk index" units.  Remember
-	 * the block we're aligning starts in the chunk AFTER the
-	 * header!
-	 */
-	size_t c0i = ((size_t) &chunk_buf(h)[c0 + 1]) / CHUNK_UNIT;
-	size_t ci = ((c0i + mask) & ~mask);
-	chunkid_t c = c0 + (ci - c0i);
+	/* Align allocated memory */
+	void *mem = chunk_mem(h, c0);
+	mem = (void *) ROUND_UP(mem, align);
 
-	CHECK(c >= c0 && c  < c0 + padsz);
-	CHECK((((size_t) chunk_mem(h, c)) & (align - 1)) == 0);
+	/* Get corresponding chunk */
+	chunkid_t c = mem_to_chunkid(h, mem);
+	CHECK(c >= c0 && c  < c0 + padded_sz);
 
 	/* Split and free unused prefix */
 	if (c > c0) {
 		split_chunks(h, c0, c);
-		set_chunk_used(h, c, true);
-		free_chunks(h, c0);
+		/* this can't be merged */
+		CHECK(chunk_used(h, left_chunk(h, c0)));
+		free_list_add(h, c0);
 	}
 
 	/* Split and free unused suffix */
-	if (chunksz < chunk_size(h, c)) {
-		split_chunks(h, c, c + chunksz);
+	if (alloc_sz < chunk_size(h, c)) {
+		split_chunks(h, c, c + alloc_sz);
 		set_chunk_used(h, c, true);
-		free_chunks(h, c + chunksz);
+		free_chunks(h, c + alloc_sz);
+	} else {
+		set_chunk_used(h, c, true);
 	}
 
-	return chunk_mem(h, c);
+	return mem;
 }
 
 void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
