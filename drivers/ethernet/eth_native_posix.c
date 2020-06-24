@@ -444,7 +444,7 @@ static void eth_iface_init(struct net_if *iface)
 
 	ctx->dev_fd = eth_iface_create(ctx->if_name, false);
 	if (ctx->dev_fd < 0) {
-		LOG_ERR("Cannot create %s (%d)", ctx->if_name, ctx->dev_fd);
+		LOG_ERR("Cannot create %s (%d)", ctx->if_name, -errno);
 	} else {
 		/* Create a thread that will handle incoming data from host */
 		create_rx_handler(ctx);
