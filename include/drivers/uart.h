@@ -298,9 +298,11 @@ enum uart_config_flow_control {
  * @brief Define the application callback function signature for
  * uart_irq_callback_user_data_set() function.
  *
+ * @param dev       UART device structure.
  * @param user_data Arbitrary user data.
  */
-typedef void (*uart_irq_callback_user_data_t)(void *user_data);
+typedef void (*uart_irq_callback_user_data_t)(struct device *dev,
+					      void *user_data);
 
 /**
  * @typedef uart_irq_callback_t
@@ -1121,10 +1123,9 @@ static inline void uart_irq_callback_user_data_set(
  * @return N/A
  */
 static inline void uart_irq_callback_set(struct device *dev,
-					 uart_irq_callback_t cb)
+					 uart_irq_callback_user_data_t cb)
 {
-	uart_irq_callback_user_data_set(dev, (uart_irq_callback_user_data_t)cb,
-					dev);
+	uart_irq_callback_user_data_set(dev, cb, NULL);
 }
 
 
