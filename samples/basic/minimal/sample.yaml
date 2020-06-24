@@ -42,3 +42,19 @@ tests:
     build_only: true
     extra_args: CONF_FILE='common.conf;no-mt.conf;no-timers.conf;x86.conf'
     platform_whitelist: qemu_x86
+  sample.minimal.mec15xxevb_assy6853:
+    build_only: true
+    extra_args: CONF_FILE='mec.conf'
+    platform_whitelist: mec15xxevb_assy6853
+  sample.minimal.mt.mec15xxevb_assy6853:
+    build_only: true
+    extra_args: CONF_FILE='mec.conf;mt.conf'
+    platform_whitelist: mec15xxevb_assy6853
+  sample.minimal.mt.network.mec15xxevb_assy6853:
+    build_only: true
+    extra_args: CONF_FILE='mec.conf;mt.conf;network.conf'
+    platform_whitelist: mec15xxevb_assy6853
+  sample.minimal.mt.bluetooth.mec15xxevb_assy6853:
+    build_only: true
+    extra_args: CONF_FILE='mec.conf;mt.conf;bluetooth.conf'
+    platform_whitelist: mec15xxevb_assy6853
