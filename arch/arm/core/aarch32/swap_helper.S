@@ -71,6 +71,11 @@ SECTION_FUNC(TEXT, z_arm_pendsv)
     ldr r1, =_kernel
     ldr r2, [r1, #_kernel_offset_to_current]
 
+#if defined(CONFIG_ARM_STORE_EXC_RETURN)
+    /* Store LSB of LR (EXC_RETURN) to the thread's 'mode' word. */
+    strb lr, [r2, #_thread_offset_to_mode_exc_return]
+#endif
+
     /* addr of callee-saved regs in thread in r0 */
     ldr r0, =_thread_offset_to_callee_saved
     add r0, r2
@@ -95,15 +100,9 @@ SECTION_FUNC(TEXT, z_arm_pendsv)
     stmia r0, {v1-v8, ip}
 #ifdef CONFIG_FPU_SHARING
     /* Assess whether switched-out thread had been using the FP registers. */
-    ldr r0, =0x10 /* EXC_RETURN.F_Type Mask */
-    tst lr, r0    /* EXC_RETURN & EXC_RETURN.F_Type_Msk */
-    beq out_fp_active
-    /* FP context inactive: clear FP state */
-    ldr r0, [r2, #_thread_offset_to_mode]
-    bic r0, #0x4 /* _current->arch.mode &= ~(CONTROL_FPCA_Msk) */
-    b out_fp_endif
+    tst lr, #0x10    /* EXC_RETURN & EXC_RETURN.F_Type_Msk */
+    bne out_fp_endif
 
-out_fp_active:
     /* FP context active: set FP state and store callee-saved registers.
      * Note: if Lazy FP stacking is enabled, storing the callee-saved
      * registers will automatically trigger FP state preservation in
@@ -111,11 +110,8 @@ out_fp_active:
      */
     add r0, r2, #_thread_offset_to_preempt_float
     vstmia r0, {s16-s31}
-    ldr r0, [r2, #_thread_offset_to_mode]
-    orrs r0, r0, #0x4 /* _current->arch.mode |= CONTROL_FPCA_Msk */
 
 out_fp_endif:
-    str r0, [r2, #_thread_offset_to_mode]
     /* At this point FPCCR.LSPACT is guaranteed to be cleared,
      * regardless of whether the thread has an active FP context.
      */
@@ -203,6 +199,11 @@ out_fp_endif:
 
 #endif
 
+#if defined(CONFIG_ARM_STORE_EXC_RETURN)
+    /* Restore EXC_RETURN value. */
+    ldrsb lr, [r2, #_thread_offset_to_mode_exc_return]
+#endif
+
     /* Restore previous interrupt disable state (irq_lock key)
      * (We clear the arch.basepri field after restoring state)
      */
@@ -286,9 +287,8 @@ _thread_irq_disabled:
 
 #ifdef CONFIG_FPU_SHARING
     /* Assess whether switched-in thread had been using the FP registers. */
-    ldr r0, [r2, #_thread_offset_to_mode]
-    tst r0, #0x04 /* thread.arch.mode & CONTROL.FPCA Msk */
-    bne in_fp_active
+    tst lr, #0x10 /* EXC_RETURN & EXC_RETURN.F_Type_Msk */
+    beq in_fp_active
     /* FP context inactive for swapped-in thread:
      * - reset FPSCR to 0
      * - set EXC_RETURN.F_Type (prevents FP frame un-stacking when returning
@@ -296,7 +296,6 @@ _thread_irq_disabled:
      */
     movs.n r3, #0
     vmsr fpscr, r3
-    orrs lr, lr, #0x10 /* EXC_RETURN & EXC_RETURN.F_Type_Msk */
     b in_fp_endif
 
 in_fp_active:
@@ -305,7 +304,6 @@ in_fp_active:
      * - FPSCR and caller-saved registers will be restored automatically
      * - restore callee-saved FP registers
      */
-    bic lr, #0x10 /* EXC_RETURN | (~EXC_RETURN.F_Type_Msk) */
     add r0, r2, #_thread_offset_to_preempt_float
     vldmia r0, {s16-s31}
 in_fp_endif:

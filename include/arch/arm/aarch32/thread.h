@@ -74,25 +74,51 @@ struct _thread_arch {
 	struct _preempt_float  preempt_float;
 #endif
 
-#if defined(CONFIG_USERSPACE) || defined(CONFIG_FPU_SHARING)
+#if defined(CONFIG_ARM_STORE_EXC_RETURN) || defined(CONFIG_USERSPACE)
 	/*
 	 * Status variable holding several thread status flags
 	 * as follows:
 	 *
-	 * +--------------bit-3----------bit-2--------bit-1---+----bit-0------+
+	 * byte 0
+	 * +-bits 4-7-----bit-3----------bit-2--------bit-1---+----bit-0------+
 	 * :          |             |              |          |               |
-	 * : reserved |<Guard FLOAT>| <FP context> | reserved |  <priv mode>  |
-	 * :   bits   |             | CONTROL.FPCA |          | CONTROL.nPRIV |
+	 * : reserved |<Guard FLOAT>|   reserved   | reserved |  <priv mode>  |
+	 * :   bits   |             |              |          | CONTROL.nPRIV |
+	 * +------------------------------------------------------------------+
+	 *
+	 * byte 1
+	 * +----------------------------bits 8-15-----------------------------+
+	 * :              Least significant byte of EXC_RETURN                |
+	 * : bit 15| bit 14| bit 13 | bit 12| bit 11 | bit 10 | bit 9 | bit 8 |
+	 * :  Res  |   S   |  DCRS  | FType |  Mode  | SPSel  |  Res  |  ES   |
 	 * +------------------------------------------------------------------+
 	 *
 	 * Bit 0: thread's current privileged mode (Supervisor or User mode)
 	 *        Mirrors CONTROL.nPRIV flag.
-	 * Bit 2: indicating whether the thread has an active FP context.
+	 * Bit 2: Deprecated in favor of FType. Note: FType = !CONTROL.FPCA.
+	 *        indicating whether the thread has an active FP context.
 	 *        Mirrors CONTROL.FPCA flag.
 	 * Bit 3: indicating whether the thread is applying the long (FLOAT)
 	 *        or the default MPU stack guard size.
+	 *
+	 * Bits 8-15: Least significant octet of the EXC_RETURN value when a
+	 *            thread is switched-out. The value is copied from LR when
+	 *            entering the PendSV handler. When the thread is
+	 *            switched in again, the value is restored to LR before
+	 *            exiting the PendSV handler.
 	 */
-	uint32_t mode;
+	union {
+		uint32_t mode;
+
+#if defined(CONFIG_ARM_STORE_EXC_RETURN)
+		__packed struct {
+			uint8_t mode_bits;
+			uint8_t mode_exc_return;
+			uint16_t mode_reserved2;
+		};
+#endif
+	};
+
 #if defined(CONFIG_USERSPACE)
 	uint32_t priv_stack_start;
 #endif
