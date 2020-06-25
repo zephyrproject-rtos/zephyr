@@ -1465,7 +1465,7 @@ Tests should reference the category and subsystem with a dot as a separator.
                     main_c[suite_regex_match.end():suite_run_match.start()])
                 if achtung_matches:
                     warnings = "found invalid %s in ztest_test_suite()" \
-                               % ", ".join({match.decode() for match in achtung_matches})
+                               % ", ".join(sorted({match.decode() for match in achtung_matches},reverse = True))
                 _matches = re.findall(
                     stc_regex,
                     main_c[suite_regex_match.end():suite_run_match.start()])
