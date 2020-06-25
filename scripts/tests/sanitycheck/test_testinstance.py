@@ -13,7 +13,7 @@ import pytest
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/sanity_chk"))
-from sanitylib import TestInstance, BuildError
+from sanitylib import TestInstance, BuildError, TestCase, SanityCheckException
 
 
 TESTDATA_1 = [
@@ -62,7 +62,7 @@ TESTDATA_2 = [
 ]
 
 @pytest.mark.parametrize("enable_asan, enable_coverage, coverage_platform, platform_type, expected_content", TESTDATA_2)
-def test_create_overlay(class_testsuite, all_testcases_dict, platforms_list, test_data, enable_asan, enable_coverage, coverage_platform, platform_type, expected_content):
+def test_create_overlay(class_testsuite, all_testcases_dict, platforms_list, enable_asan, enable_coverage, coverage_platform, platform_type, expected_content):
     """Test correct content is written to testcase_extra.conf based on if conditions
     TO DO: Add extra_configs to the input list"""
     class_testsuite.testcases = all_testcases_dict
@@ -84,3 +84,63 @@ def test_calculate_sizes(class_testsuite, all_testcases_dict, platforms_list):
 
     with pytest.raises(BuildError):
         assert testinstance.calculate_sizes() == "Missing/multiple output ELF binary"
+
+TESTDATA_3 = [
+    (ZEPHYR_BASE + '/scripts/tests/sanitycheck/test_data/testcases', ZEPHYR_BASE, '/scripts/tests/sanitycheck/test_data/testcases/tests/test_a/test_a.check_1', '/scripts/tests/sanitycheck/test_data/testcases/tests/test_a/test_a.check_1'),
+    (ZEPHYR_BASE, '.', 'test_a.check_1', 'test_a.check_1'),
+    (ZEPHYR_BASE, '/scripts/tests/sanitycheck/test_data/testcases/test_b', 'test_b.check_1', '/scripts/tests/sanitycheck/test_data/testcases/test_b/test_b.check_1'),
+    (os.path.join(ZEPHYR_BASE, '/scripts/tests'), '.', 'test_b.check_1', 'test_b.check_1'),
+    (os.path.join(ZEPHYR_BASE, '/scripts/tests'), '.', '.', '.'),
+    (ZEPHYR_BASE, '.', 'test_a.check_1.check_2', 'test_a.check_1.check_2'),
+]
+@pytest.mark.parametrize("testcase_root, workdir, name, expected", TESTDATA_3)
+def test_get_unique(testcase_root, workdir, name, expected):
+    '''Test to check if the unique name is given for each testcase root and workdir'''
+    unique = TestCase(testcase_root, workdir, name)
+    assert unique.name == expected
+
+TESTDATA_4 = [
+    (ZEPHYR_BASE, '.', 'test_c', 'Tests should reference the category and subsystem with a dot as a separator.'),
+    (os.path.join(ZEPHYR_BASE, '/scripts/tests'), '.', '', 'Tests should reference the category and subsystem with a dot as a separator.'),
+]
+@pytest.mark.parametrize("testcase_root, workdir, name, exception", TESTDATA_4)
+def test_get_unique_exception(testcase_root, workdir, name, exception):
+    '''Test to check if tests reference the category and subsystem with a dot as a separator'''
+
+    with pytest.raises(SanityCheckException):
+        unique = TestCase(testcase_root, workdir, name)
+        assert unique == exception
+
+TESTDATA_5 = [
+    ("testcases/tests/test_ztest.c", None, ['a', 'c', 'unit_a', 'newline', 'aa', 'user', 'last']),
+    ("testcases/tests/test_a/test_ztest_error.c", "Found a test that does not start with test_", ['1a', '1c', '2a', '2b']),
+    ("testcases/tests/test_a/test_ztest_error_1.c", "found invalid #ifdef, #endif in ztest_test_suite()", ['unit_1a', 'unit_1b', 'Unit_1c']),
+]
+
+@pytest.mark.parametrize("test_file, expected_warnings, expected_subcases", TESTDATA_5)
+def test_scan_file(test_data, test_file, expected_warnings, expected_subcases):
+    '''Testing scan_file method with different ztest files for warnings and results'''
+
+    testcase = TestCase("/scripts/tests/sanitycheck/test_data/testcases/tests", ".", "test_a.check_1")
+
+    results, warnings = testcase.scan_file(os.path.join(test_data, test_file))
+    assert sorted(results) == sorted(expected_subcases)
+    assert warnings == expected_warnings
+
+
+TESTDATA_6 = [
+    ("testcases/tests", ['a', 'c', 'unit_a', 'newline', 'aa', 'user', 'last']),
+    ("testcases/tests/test_a", ['unit_1a', 'unit_1b', 'Unit_1c', '1a', '1c', '2a', '2b']),
+]
+
+@pytest.mark.parametrize("test_path, expected_subcases", TESTDATA_6)
+def test_subcases(test_data, test_path, expected_subcases):
+    '''Testing scan path and parse subcases methods for expected subcases'''
+    testcase = TestCase("/scripts/tests/sanitycheck/test_data/testcases/tests", ".", "test_a.check_1")
+
+    subcases = testcase.scan_path(os.path.join(test_data, test_path))
+    assert sorted(subcases) == sorted(expected_subcases)
+
+    testcase.id = "test_id"
+    testcase.parse_subcases(test_data + test_path)
+    assert sorted(testcase.cases) == [testcase.id + '.' + x for x in sorted(expected_subcases)]

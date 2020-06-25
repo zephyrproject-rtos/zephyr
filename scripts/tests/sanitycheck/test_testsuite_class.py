@@ -58,11 +58,9 @@ def test_add_configurations(test_data, class_testsuite, board_root_dir):
 def test_get_all_testcases(class_testsuite, all_testcases_dict):
     """ Testing get_all_testcases function of TestSuite class in Sanitycheck """
     class_testsuite.testcases = all_testcases_dict
-    expected_tests = ['test_b.check_1', 'test_b.check_2',
-                      'test_c.check_1', 'test_c.check_2',
-                      'test_a.check_1', 'test_a.check_2',
-                      'sample_test.app']
-    assert len(class_testsuite.get_all_tests()) == 7
+    expected_tests = ['sample_test.app', 'test_a.check_1.1a', 'test_a.check_1.1c',
+                    'test_a.check_1.2a', 'test_a.check_1.2b', 'test_a.check_1.Unit_1c', 'test_a.check_1.unit_1a', 'test_a.check_1.unit_1b', 'test_a.check_2.1a', 'test_a.check_2.1c', 'test_a.check_2.2a', 'test_a.check_2.2b', 'test_a.check_2.Unit_1c', 'test_a.check_2.unit_1a', 'test_a.check_2.unit_1b', 'test_b.check_1', 'test_b.check_2', 'test_c.check_1', 'test_c.check_2']
+    assert len(class_testsuite.get_all_tests()) == 19
     assert sorted(class_testsuite.get_all_tests()) == sorted(expected_tests)
 
 def test_get_toolchain(class_testsuite, monkeypatch, capsys):
