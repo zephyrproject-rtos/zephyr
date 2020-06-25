@@ -32,18 +32,33 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #error DTCM for DMA buffer is activated but zephyr,dtcm is not present in dts
 #endif
 
+#define PHY_ADDR	CONFIG_ETH_STM32_HAL_PHY_ADDRESS
+
+#define GET_FIRST_DMA_TX_DESC(heth)	(heth->TxDesc)
+#define IS_ETH_DMATXDESC_OWN(dma_tx_desc)	(dma_tx_desc->Status & \
+							ETH_DMATXDESC_OWN)
+
 #if defined(CONFIG_ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER) && \
 	    DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
-static ETH_DMADescTypeDef dma_rx_desc_tab[ETH_RXBUFNB] __dtcm_noinit_section;
-static ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TXBUFNB] __dtcm_noinit_section;
-static uint8_t dma_rx_buffer[ETH_RXBUFNB][ETH_RX_BUF_SIZE] __dtcm_noinit_section;
-static uint8_t dma_tx_buffer[ETH_TXBUFNB][ETH_TX_BUF_SIZE] __dtcm_noinit_section;
+
+#define ETH_DMA_MEM	__dtcm_noinit_section
+
 #else
-static ETH_DMADescTypeDef dma_rx_desc_tab[ETH_RXBUFNB] __aligned(4);
-static ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TXBUFNB] __aligned(4);
-static uint8_t dma_rx_buffer[ETH_RXBUFNB][ETH_RX_BUF_SIZE] __aligned(4);
-static uint8_t dma_tx_buffer[ETH_TXBUFNB][ETH_TX_BUF_SIZE] __aligned(4);
+
+#define ETH_DMA_MEM	__aligned(4)
+
 #endif /* CONFIG_ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER */
+
+#if defined(CONFIG_NOCACHE_MEMORY)
+#define CACHE __nocache
+#else
+#define CACHE
+#endif
+
+static ETH_DMADescTypeDef dma_rx_desc_tab[ETH_RXBUFNB] CACHE ETH_DMA_MEM;
+static ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TXBUFNB] CACHE ETH_DMA_MEM;
+static uint8_t dma_rx_buffer[ETH_RXBUFNB][ETH_RX_BUF_SIZE] CACHE ETH_DMA_MEM;
+static uint8_t dma_tx_buffer[ETH_TXBUFNB][ETH_TX_BUF_SIZE] CACHE ETH_DMA_MEM;
 
 #if defined(CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR)
 #include <net/can.h>
@@ -67,6 +82,15 @@ static void enable_canbus_eth_translator_filter(ETH_HandleTypeDef *heth,
 				  ETH_MACA1HR_MBC_HBits7_0;
 }
 #endif /*CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR*/
+
+static HAL_StatusTypeDef read_eth_phy_register(ETH_HandleTypeDef *heth,
+						uint32_t PHYAddr,
+						uint32_t PHYReg,
+						uint32_t *RegVal)
+{
+	ARG_UNUSED(PHYAddr);
+	return HAL_ETH_ReadPHYRegister(heth, PHYReg, RegVal);
+}
 
 static inline void disable_mcast_filter(ETH_HandleTypeDef *heth)
 {
@@ -98,8 +122,9 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 	ETH_HandleTypeDef *heth;
 	uint8_t *dma_buffer;
 	int res;
-	uint16_t total_len;
+	size_t total_len;
 	__IO ETH_DMADescTypeDef *dma_tx_desc;
+	HAL_StatusTypeDef hal_ret = HAL_OK;
 
 	__ASSERT_NO_MSG(pkt != NULL);
 	__ASSERT_NO_MSG(pkt->frags != NULL);
@@ -117,8 +142,8 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 		goto error;
 	}
 
-	dma_tx_desc = heth->TxDesc;
-	while ((dma_tx_desc->Status & ETH_DMATXDESC_OWN) != (uint32_t)RESET) {
+	dma_tx_desc = GET_FIRST_DMA_TX_DESC(heth);
+	while (IS_ETH_DMATXDESC_OWN(dma_tx_desc) != (uint32_t)RESET) {
 		k_yield();
 	}
 
@@ -129,7 +154,8 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 		goto error;
 	}
 
-	if (HAL_ETH_TransmitFrame(heth, total_len) != HAL_OK) {
+	hal_ret = HAL_ETH_TransmitFrame(heth, total_len);
+	if (hal_ret != HAL_OK) {
 		LOG_ERR("HAL_ETH_TransmitFrame failed");
 		res = -EIO;
 		goto error;
@@ -179,9 +205,9 @@ static struct net_pkt *eth_rx(struct device *dev, uint16_t *vlan_tag)
 	ETH_HandleTypeDef *heth;
 	__IO ETH_DMADescTypeDef *dma_rx_desc;
 	struct net_pkt *pkt;
-	uint16_t total_len;
+	size_t total_len;
 	uint8_t *dma_buffer;
-	int i;
+	HAL_StatusTypeDef hal_ret = HAL_OK;
 
 	__ASSERT_NO_MSG(dev != NULL);
 
@@ -191,7 +217,8 @@ static struct net_pkt *eth_rx(struct device *dev, uint16_t *vlan_tag)
 
 	heth = &dev_data->heth;
 
-	if (HAL_ETH_GetReceivedFrame_IT(heth) != HAL_OK) {
+	hal_ret = HAL_ETH_GetReceivedFrame_IT(heth);
+	if (hal_ret != HAL_OK) {
 		/* no frame available */
 		return NULL;
 	}
@@ -218,7 +245,7 @@ release_desc:
 	/* Point to first descriptor */
 	dma_rx_desc = heth->RxFrameInfos.FSRxDesc;
 	/* Set Own bit in Rx descriptors: gives the buffers back to DMA */
-	for (i = 0; i < heth->RxFrameInfos.SegCount; i++) {
+	for (int i = 0; i < heth->RxFrameInfos.SegCount; i++) {
 		dma_rx_desc->Status |= ETH_DMARXDESC_OWN;
 		dma_rx_desc = (ETH_DMADescTypeDef *)
 			(dma_rx_desc->Buffer2NextDescAddr);
@@ -273,6 +300,7 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 	struct net_pkt *pkt;
 	int res;
 	uint32_t status;
+	HAL_StatusTypeDef hal_ret = HAL_OK;
 
 	__ASSERT_NO_MSG(arg1 != NULL);
 	ARG_UNUSED(unused1);
@@ -305,8 +333,9 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 			}
 		} else if (res == -EAGAIN) {
 			/* semaphore timeout period expired, check link status */
-			if (HAL_ETH_ReadPHYRegister(&dev_data->heth, PHY_BSR,
-				(uint32_t *) &status) == HAL_OK) {
+			hal_ret = read_eth_phy_register(&dev_data->heth,
+				    PHY_ADDR, PHY_BSR, (uint32_t *) &status);
+			if (hal_ret == HAL_OK) {
 				if ((status & PHY_LINKED_STATUS) == PHY_LINKED_STATUS) {
 					if (dev_data->link_up != true) {
 						dev_data->link_up = true;
@@ -372,7 +401,7 @@ static int eth_initialize(struct device *dev)
 	struct eth_stm32_hal_dev_data *dev_data;
 	const struct eth_stm32_hal_dev_cfg *cfg;
 	ETH_HandleTypeDef *heth;
-	uint8_t hal_ret;
+	HAL_StatusTypeDef hal_ret = HAL_OK;
 	int ret = 0;
 
 	__ASSERT_NO_MSG(dev != NULL);
@@ -441,7 +470,10 @@ static int eth_initialize(struct device *dev)
 	HAL_ETH_DMARxDescListInit(heth, dma_rx_desc_tab,
 		&dma_rx_buffer[0][0], ETH_RXBUFNB);
 
-	HAL_ETH_Start(heth);
+	hal_ret = HAL_ETH_Start(heth);
+	if (hal_ret != HAL_OK) {
+		LOG_ERR("HAL_ETH_Start{_IT} failed");
+	}
 
 	disable_mcast_filter(heth);
 
@@ -564,7 +596,7 @@ static struct eth_stm32_hal_dev_data eth0_data = {
 		.Instance = ETH,
 		.Init = {
 			.AutoNegotiation = ETH_AUTONEGOTIATION_ENABLE,
-			.PhyAddress = CONFIG_ETH_STM32_HAL_PHY_ADDRESS,
+			.PhyAddress = PHY_ADDR,
 			.RxMode = ETH_RXINTERRUPT_MODE,
 			.ChecksumMode = ETH_CHECKSUM_BY_SOFTWARE,
 #if defined(CONFIG_ETH_STM32_HAL_MII)
