@@ -27,7 +27,8 @@ static int test_mkdir(void)
 		return res;
 	}
 
-	res = open(TEST_DIR_FILE, O_RDWR);
+	res = open(TEST_DIR_FILE, O_CREAT | O_RDWR);
+
 	if (res < 0) {
 		TC_PRINT("Failed opening file [%d]\n", res);
 		return res;
