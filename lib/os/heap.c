@@ -27,13 +27,8 @@ static inline bool solo_free_header(struct z_heap *h, chunkid_t c)
 		&& chunk_size(h, c) == 1);
 }
 
-static void free_list_remove(struct z_heap *h, int bidx,
-			     chunkid_t c)
+static void free_list_remove_bidx(struct z_heap *h, chunkid_t c, int bidx)
 {
-	if (solo_free_header(h, c)) {
-		return;
-	}
-
 	struct z_heap_bucket *b = &h->buckets[bidx];
 
 	CHECK(!chunk_used(h, c));
@@ -54,33 +49,45 @@ static void free_list_remove(struct z_heap *h, int bidx,
 	}
 }
 
-static void free_list_add(struct z_heap *h, chunkid_t c)
+static void free_list_remove(struct z_heap *h, chunkid_t c)
 {
-	if (solo_free_header(h, c)) {
-		return;
+	if (!solo_free_header(h, c)) {
+		int bidx = bucket_idx(h, chunk_size(h, c));
+		free_list_remove_bidx(h, c, bidx);
 	}
+}
 
-	int bi = bucket_idx(h, chunk_size(h, c));
+static void free_list_add_bidx(struct z_heap *h, chunkid_t c, int bidx)
+{
+	struct z_heap_bucket *b = &h->buckets[bidx];
 
-	if (h->buckets[bi].next == 0) {
-		CHECK((h->avail_buckets & (1 << bi)) == 0);
+	if (b->next == 0) {
+		CHECK((h->avail_buckets & (1 << bidx)) == 0);
 
 		/* Empty list, first item */
-		h->avail_buckets |= (1 << bi);
-		h->buckets[bi].next = c;
+		h->avail_buckets |= (1 << bidx);
+		b->next = c;
 		set_prev_free_chunk(h, c, c);
 		set_next_free_chunk(h, c, c);
 	} else {
-		CHECK(h->avail_buckets & (1 << bi));
+		CHECK(h->avail_buckets & (1 << bidx));
 
 		/* Insert before (!) the "next" pointer */
-		chunkid_t second = h->buckets[bi].next;
+		chunkid_t second = b->next;
 		chunkid_t first = prev_free_chunk(h, second);
 
 		set_prev_free_chunk(h, c, first);
 		set_next_free_chunk(h, c, second);
 		set_next_free_chunk(h, first, c);
 		set_prev_free_chunk(h, second, c);
+	}
+}
+
+static void free_list_add(struct z_heap *h, chunkid_t c)
+{
+	if (!solo_free_header(h, c)) {
+		int bidx = bucket_idx(h, chunk_size(h, c));
+		free_list_add_bidx(h, c, bidx);
 	}
 }
 
@@ -116,12 +123,11 @@ static void merge_chunks(struct z_heap *h, chunkid_t lc, chunkid_t rc)
  */
 static chunkid_t split_alloc(struct z_heap *h, int bidx, size_t sz)
 {
-	CHECK(h->buckets[bidx].next != 0
-	      && sz <= chunk_size(h, h->buckets[bidx].next));
-
 	chunkid_t c = h->buckets[bidx].next;
 
-	free_list_remove(h, bidx, c);
+	CHECK(c != 0 && sz <= chunk_size(h, c));
+
+	free_list_remove_bidx(h, c, bidx);
 
 	/* Split off remainder if it's usefully large */
 	if ((chunk_size(h, c) - sz) >= (big_heap(h) ? 2 : 1)) {
@@ -133,23 +139,17 @@ static chunkid_t split_alloc(struct z_heap *h, int bidx, size_t sz)
 	return c;
 }
 
-static void free_chunks(struct z_heap *h, chunkid_t c)
+static void free_chunk(struct z_heap *h, chunkid_t c)
 {
-	set_chunk_used(h, c, false);
-
 	/* Merge with free right chunk? */
 	if (!chunk_used(h, right_chunk(h, c))) {
-		int bi = bucket_idx(h, chunk_size(h, right_chunk(h, c)));
-
-		free_list_remove(h, bi, right_chunk(h, c));
+		free_list_remove(h, right_chunk(h, c));
 		merge_chunks(h, c, right_chunk(h, c));
 	}
 
 	/* Merge with free left chunk? */
 	if (!chunk_used(h, left_chunk(h, c))) {
-		int bi = bucket_idx(h, chunk_size(h, left_chunk(h, c)));
-
-		free_list_remove(h, bi, left_chunk(h, c));
+		free_list_remove(h, left_chunk(h, c));
 		merge_chunks(h, left_chunk(h, c), c);
 		c = left_chunk(h, c);
 	}
@@ -187,7 +187,8 @@ void sys_heap_free(struct sys_heap *heap, void *mem)
 		 "corrupted heap bounds (buffer overflow?) for memory at %p",
 		 mem);
 
-	free_chunks(h, c);
+	set_chunk_used(h, c, false);
+	free_chunk(h, c);
 }
 
 static chunkid_t alloc_chunks(struct z_heap *h, size_t sz)
@@ -297,7 +298,7 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 	if (alloc_sz < chunk_size(h, c)) {
 		split_chunks(h, c, c + alloc_sz);
 		set_chunk_used(h, c, true);
-		free_chunks(h, c + alloc_sz);
+		free_chunk(h, c + alloc_sz);
 	} else {
 		set_chunk_used(h, c, true);
 	}
