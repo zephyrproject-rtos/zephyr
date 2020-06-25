@@ -784,10 +784,9 @@ static void ppp_uart_flush(struct device *dev)
 	}
 }
 
-static void ppp_uart_isr(void *user_data)
+static void ppp_uart_isr(struct device *uart, void *user_data)
 {
 	struct ppp_driver_context *context = user_data;
-	struct device *uart = context->dev;
 	int rx = 0, ret;
 
 	/* get all of the data off UART as fast as we can */
