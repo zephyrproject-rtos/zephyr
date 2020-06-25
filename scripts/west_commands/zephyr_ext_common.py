@@ -32,7 +32,7 @@ class Forceable(WestCommand):
     def add_force_arg(parser):
         '''Add a -f / --force option to the parser.'''
         parser.add_argument('-f', '--force', action='store_true',
-                            help='Ignore any errors and try to proceed')
+                            help='ignore any errors and try to proceed')
 
     def check_force(self, cond, msg):
         '''Abort if the command needs to be forced and hasn't been.
