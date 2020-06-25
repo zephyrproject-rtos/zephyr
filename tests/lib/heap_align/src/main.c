@@ -7,15 +7,12 @@
 #include <ztest.h>
 #include <sys/sys_heap.h>
 
-/* Must be a power of two */
 #define HEAP_SZ 0x1000
 
-BUILD_ASSERT((HEAP_SZ & (HEAP_SZ - 1)) == 0);
-
-uint64_t heapmem[1 + 2 * HEAP_SZ];
+uint8_t __aligned(8) heapmem[HEAP_SZ];
 
 /* Heap metadata sizes */
-uint64_t *heap_start, *heap_end;
+uint8_t *heap_start, *heap_end;
 
 /* Note that this test is making whitebox assumptions about the
  * behavior of the heap in order to exercise coverage of the
@@ -24,45 +21,48 @@ uint64_t *heap_start, *heap_end;
  * immediately with adjacent free blocks.
  */
 static void check_heap_align(struct sys_heap *h,
-			     uintptr_t prefix, uintptr_t align)
+			     size_t prefix, size_t align, size_t size)
 {
-	void *p, *q, *r;
+	void *p, *q, *r, *s;
 
 	p = sys_heap_alloc(h, prefix);
 	zassert_true(prefix == 0 || p != NULL, "prefix allocation failed");
 
-	q = sys_heap_aligned_alloc(h, align, 8);
+	q = sys_heap_aligned_alloc(h, align, size);
+	zassert_true(q != NULL, "first aligned allocation failed");
 	zassert_true((((uintptr_t)q) & (align - 1)) == 0, "block not aligned");
+
+	r = sys_heap_aligned_alloc(h, align, size);
+	zassert_true(r != NULL, "second aligned allocation failed");
+	zassert_true((((uintptr_t)r) & (align - 1)) == 0, "block not aligned");
 
 	/* Make sure ALL the split memory goes back into the heap and
 	 * we can allocate the full remaining suffix
 	 */
-	r = sys_heap_alloc(h, ((char *)heap_end - (char *)q) - 16);
-	zassert_true(r != NULL, "suffix allocation failed");
+	s = sys_heap_alloc(h, (heap_end - (uint8_t *)r) - size - 8);
+	zassert_true(s != NULL, "suffix allocation failed (%zd/%zd/%zd)",
+				prefix, align, size);
 
 	sys_heap_free(h, p);
 	sys_heap_free(h, q);
 	sys_heap_free(h, r);
+	sys_heap_free(h, s);
 
 	/* Make sure it's still valid, and empty */
 	zassert_true(sys_heap_validate(h), "heap invalid");
-	p = sys_heap_alloc(h, heap_end - heap_start - 8);
+	p = sys_heap_alloc(h, heap_end - heap_start);
 	zassert_true(p != NULL, "heap not empty");
+	q = sys_heap_alloc(h, 1);
+	zassert_true(q == NULL, "heap not full");
 	sys_heap_free(h, p);
 }
 
 static void test_aligned_alloc(void)
 {
 	struct sys_heap heap = {};
-	uintptr_t addr = (uintptr_t) &heapmem[0];
 	void *p;
 
-	/* Choose a "maximally misaligned" buffer for the heap, that
-	 * starts 8 bytes (one chunk header) after the biggest aligned
-	 * block within heapmem
-	 */
-	addr = 8 + ((addr + (HEAP_SZ - 1)) & ~(HEAP_SZ - 1));
-	sys_heap_init(&heap, (void *)addr, HEAP_SZ);
+	sys_heap_init(&heap, heapmem, HEAP_SZ);
 
 	p = sys_heap_alloc(&heap, 1);
 	zassert_true(p != NULL, "initial alloc failed");
@@ -72,11 +72,13 @@ static void test_aligned_alloc(void)
 	 * chunk header before the end of its memory
 	 */
 	heap_start = p;
-	heap_end = (uint64_t *)(addr + HEAP_SZ - 8);
+	heap_end = heapmem + HEAP_SZ - 8;
 
-	for (uintptr_t prefix = 0; prefix <= 8; prefix += 8) {
-		for (uintptr_t align = 8; align <= HEAP_SZ / 4; align *= 2) {
-			check_heap_align(&heap, prefix, align);
+	for (size_t align = 8; align < HEAP_SZ / 4; align *= 2) {
+		for (size_t prefix = 0; prefix <= align; prefix += 8) {
+			for (size_t size = 8; size <= align; size += 8) {
+				check_heap_align(&heap, prefix, align, size);
+			}
 		}
 	}
 }
