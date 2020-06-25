@@ -229,20 +229,28 @@ MODEM_CMD_DEFINE(on_cmd_cipsta)
 
 static void esp_ip_addr_work(struct k_work *work)
 {
-	struct esp_data *data = CONTAINER_OF(work, struct esp_data,
-					     ip_addr_work);
+	struct esp_data *dev = CONTAINER_OF(work, struct esp_data,
+					    ip_addr_work);
+	int ret;
+
 	struct modem_cmd cmds[] = {
 		MODEM_CMD("+"_CIPSTA":", on_cmd_cipsta, 2U, ":"),
 	};
 
-	modem_cmd_send(&data->mctx.iface, &data->mctx.cmd_handler,
-			cmds, ARRAY_SIZE(cmds), "AT+"_CIPSTA"?",
-			&data->sem_response, ESP_CMD_TIMEOUT);
+	ret = modem_cmd_send(&dev->mctx.iface, &dev->mctx.cmd_handler,
+			     cmds, ARRAY_SIZE(cmds), "AT+"_CIPSTA"?",
+			     &dev->sem_response, ESP_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_WRN("Failed to query IP settings: ret %d", ret);
+		k_delayed_work_submit_to_queue(&dev->workq, &dev->ip_addr_work,
+					       K_SECONDS(5));
+		return;
+	}
 
 	/* update interface addresses */
-	net_if_ipv4_set_gw(data->net_iface, &data->gw);
-	net_if_ipv4_set_netmask(data->net_iface, &data->nm);
-	net_if_ipv4_addr_add(data->net_iface, &data->ip, NET_ADDR_DHCP, 0);
+	net_if_ipv4_set_gw(dev->net_iface, &dev->gw);
+	net_if_ipv4_set_netmask(dev->net_iface, &dev->nm);
+	net_if_ipv4_addr_add(dev->net_iface, &dev->ip, NET_ADDR_DHCP, 0);
 }
 
 MODEM_CMD_DEFINE(on_cmd_got_ip)
