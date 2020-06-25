@@ -1056,6 +1056,20 @@ static int cmd_set(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
+int cmd_att_mtu(const struct shell *shell, size_t argc, char *argv[])
+{
+	uint16_t mtu;
+
+	if (default_conn) {
+		mtu = bt_gatt_get_mtu(default_conn);
+		shell_print(shell, "MTU size: %d", mtu);
+	} else {
+		shell_print(shell, "No default connection");
+	}
+
+	return 0;
+}
+
 #define HELP_NONE "[none]"
 
 SHELL_STATIC_SUBCMD_SET_CREATE(gatt_cmds,
@@ -1095,6 +1109,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(gatt_cmds,
 	SHELL_CMD_ARG(get, NULL, "<start handle> [end handle]", cmd_get, 2, 1),
 	SHELL_CMD_ARG(set, NULL, "<handle> [data...]", cmd_set, 2, 255),
 	SHELL_CMD_ARG(show-db, NULL, "[uuid] [num_matches]", cmd_show_db, 1, 2),
+	SHELL_CMD_ARG(att_mtu, NULL, "Output ATT MTU size", cmd_att_mtu, 1, 0),
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB)
 	SHELL_CMD_ARG(metrics, NULL, "[value: on, off]", cmd_metrics, 1, 1),
 	SHELL_CMD_ARG(register, NULL,
