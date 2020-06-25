@@ -1,3 +1,5 @@
+common:
+  timeout: 120
 tests:
   logging.log_immediate:
     tags: log_core logging
