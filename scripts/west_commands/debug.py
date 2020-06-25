@@ -10,7 +10,7 @@ from textwrap import dedent
 
 from west.commands import WestCommand
 
-from run_common import desc_common, add_parser_common, do_run_common
+from run_common import add_parser_common, do_run_common
 
 
 class Debug(WestCommand):
@@ -23,8 +23,7 @@ class Debug(WestCommand):
             dedent('''
             Connect to the board, flash the program, and start a
             debugging session. Use "west attach" instead to attach
-            a debugger without reflashing.\n\n''') +
-            desc_common('debug'),
+            a debugger without reflashing.'''),
             accepts_unknown_args=True)
         self.runner_key = 'debug-runner'  # in runners.yaml
 
@@ -48,8 +47,7 @@ class DebugServer(WestCommand):
 
             The debug server binds to a known port, and allows client software
             started elsewhere to connect to it and debug the running
-            Zephyr image.\n\n''') +
-            desc_common('debugserver'),
+            Zephyr image.'''),
             accepts_unknown_args=True)
         self.runner_key = 'debug-runner'  # in runners.yaml
 
@@ -67,8 +65,7 @@ class Attach(WestCommand):
             'attach',
             # Keep this in sync with the string in west-commands.yml.
             'interactively debug a board',
-            "Like \"west debug\", but doesn't reflash the program.\n\n" +
-            desc_common('attach'),
+            "Like \"west debug\", but doesn't reflash the program.",
             accepts_unknown_args=True)
         self.runner_key = 'debug-runner'  # in runners.yaml
 
