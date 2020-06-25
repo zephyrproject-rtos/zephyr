@@ -819,6 +819,8 @@ static int cmd_advertise(const struct shell *shell, size_t argc, char *argv[])
 			param.options |= BT_LE_ADV_OPT_USE_IDENTITY;
 		} else if (!strcmp(arg, "no-name")) {
 			param.options &= ~BT_LE_ADV_OPT_USE_NAME;
+		} else if (!strcmp(arg, "one-time")) {
+			param.options |= BT_LE_ADV_OPT_ONE_TIME;
 		} else {
 			goto fail;
 		}
@@ -855,9 +857,17 @@ static int cmd_directed_adv(const struct shell *shell,
 		return err;
 	}
 
-	if (argc > 3) {
-		if (!strcmp(argv[3], "low")) {
-			param = *BT_LE_ADV_CONN_DIR_LOW_DUTY(&addr);
+	for (size_t argn = 3; argn < argc; argn++) {
+		const char *arg = argv[argn];
+
+		if (!strcmp(arg, "low")) {
+			param.options |= BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY;
+			param.interval_max = BT_GAP_ADV_FAST_INT_MAX_2;
+			param.interval_min = BT_GAP_ADV_FAST_INT_MIN_2;
+		} else if (!strcmp(arg, "identity")) {
+			param.options |= BT_LE_ADV_OPT_USE_IDENTITY;
+		} else if (!strcmp(arg, "dir-rpa")) {
+			param.options |= BT_LE_ADV_OPT_DIR_ADDR_RPA;
 		} else {
 			shell_help(shell);
 			return -ENOEXEC;
@@ -2406,8 +2416,8 @@ static int cmd_auth_oob_tk(const struct shell *shell, size_t argc, char *argv[])
 #define EXT_ADV_SCAN_OPT " [coded] [no-1m]"
 #define EXT_ADV_PARAM "<type: conn-scan conn-nscan, nconn-scan nconn-nscan> " \
 		      "[ext-adv] [no-2m] [coded] "                            \
-		      "[whitelist: wl, wl-scan, wl-conn] [identity] [name]"   \
-		      "[directed "HELP_ADDR_LE"] [mode: low] "
+		      "[whitelist: wl, wl-scan, wl-conn] [identity] [name] "  \
+		      "[directed "HELP_ADDR_LE"] [mode: low]"
 #else
 #define EXT_ADV_SCAN_OPT ""
 #endif /* defined(CONFIG_BT_EXT_ADV) */
@@ -2432,11 +2442,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #if defined(CONFIG_BT_BROADCASTER)
 	SHELL_CMD_ARG(advertise, NULL,
 		      "<type: off, on, scan, nconn> [mode: discov, non_discov] "
-		      "[whitelist: wl, wl-scan, wl-conn] [identity] [no-name]",
-		      cmd_advertise, 2, 4),
+		      "[whitelist: wl, wl-scan, wl-conn] [identity] [no-name] "
+		      "[one-time]",
+		      cmd_advertise, 2, 5),
 #if defined(CONFIG_BT_PERIPHERAL)
-	SHELL_CMD_ARG(directed-adv, NULL, HELP_ADDR_LE " [mode: low]",
-		      cmd_directed_adv, 3, 1),
+	SHELL_CMD_ARG(directed-adv, NULL, HELP_ADDR_LE " [mode: low] "
+		      "[identity] [dir-rpa]",
+		      cmd_directed_adv, 3, 3),
 #endif /* CONFIG_BT_PERIPHERAL */
 #if defined(CONFIG_BT_EXT_ADV)
 	SHELL_CMD_ARG(adv-create, NULL, EXT_ADV_PARAM, cmd_adv_create, 2, 8),
