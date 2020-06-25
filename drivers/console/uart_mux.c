@@ -243,16 +243,16 @@ static int uart_mux_init(struct device *dev)
  * data from it in uart_mux_rx_work(), we push the data to GSM mux API which
  * will call proper callbacks to pass data to correct recipient.
  */
-static void uart_mux_isr(void *user_data)
+static void uart_mux_isr(struct device *uart, void *user_data)
 {
 	struct uart_mux *real_uart = user_data;
 	int rx = 0;
 	size_t wrote = 0;
 
 	/* Read all data off UART, and send to RX worker for unmuxing */
-	while (uart_irq_update(real_uart->uart) &&
-	       uart_irq_rx_ready(real_uart->uart)) {
-		rx = uart_fifo_read(real_uart->uart, real_uart->rx_buf,
+	while (uart_irq_update(uart) &&
+	       uart_irq_rx_ready(uart)) {
+		rx = uart_fifo_read(uart, real_uart->rx_buf,
 				    sizeof(real_uart->rx_buf));
 		if (rx <= 0) {
 			continue;

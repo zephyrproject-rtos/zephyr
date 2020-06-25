@@ -49,7 +49,7 @@ static bool is_panic_mode;
 static const uint8_t *write_buffer;
 static uint16_t write_length;
 
-static void uart_rx_handle(void)
+static void uart_rx_handle(struct device *dev)
 {
 	uint8_t *data;
 	uint32_t len;
@@ -61,9 +61,7 @@ static void uart_rx_handle(void)
 			ot_uart.rx_ringbuf, &data,
 			ot_uart.rx_ringbuf->size);
 		if (len > 0) {
-			rd_len = uart_fifo_read(
-				ot_uart.dev, data, len);
-
+			rd_len = uart_fifo_read(dev, data, len);
 			if (rd_len > 0) {
 				new_data = true;
 			}
@@ -78,8 +76,7 @@ static void uart_rx_handle(void)
 			/* No space in the ring buffer - consume byte. */
 			LOG_WRN("RX ring buffer full.");
 
-			rd_len = uart_fifo_read(
-				ot_uart.dev, &dummy, 1);
+			rd_len = uart_fifo_read(dev, &dummy, 1);
 		}
 	} while (rd_len && (rd_len == len));
 
@@ -88,36 +85,34 @@ static void uart_rx_handle(void)
 	}
 }
 
-static void uart_tx_handle(void)
+static void uart_tx_handle(struct device *dev)
 {
 	uint32_t len;
 
 	if (write_length) {
-		len = uart_fifo_fill(ot_uart.dev, write_buffer,
-				     write_length);
+		len = uart_fifo_fill(dev, write_buffer, write_length);
 		write_buffer += len;
 		write_length -= len;
 	} else {
-		uart_irq_tx_disable(ot_uart.dev);
+		uart_irq_tx_disable(dev);
 		ot_uart.tx_busy = 0;
 		atomic_set(&(ot_uart.tx_finished), 1);
 		otSysEventSignalPending();
 	}
 }
 
-static void uart_callback(void *user_data)
+static void uart_callback(struct device *dev, void *user_data)
 {
 	ARG_UNUSED(user_data);
 
-	while (uart_irq_update(ot_uart.dev) &&
-	       uart_irq_is_pending(ot_uart.dev)) {
+	while (uart_irq_update(dev) && uart_irq_is_pending(dev)) {
 
-		if (uart_irq_rx_ready(ot_uart.dev)) {
-			uart_rx_handle();
+		if (uart_irq_rx_ready(dev)) {
+			uart_rx_handle(dev);
 		}
 
-		if (uart_irq_tx_ready(ot_uart.dev)) {
-			uart_tx_handle();
+		if (uart_irq_tx_ready(dev)) {
+			uart_tx_handle(dev);
 		}
 	}
 }
@@ -182,10 +177,9 @@ otError otPlatUartEnable(void)
 	}
 #endif
 
-	uart_irq_callback_user_data_set(
-		ot_uart.dev,
-		uart_callback,
-		(void *)&ot_uart);
+	uart_irq_callback_user_data_set(ot_uart.dev,
+					uart_callback,
+					(void *)&ot_uart);
 	uart_irq_rx_enable(ot_uart.dev);
 
 	return OT_ERROR_NONE;

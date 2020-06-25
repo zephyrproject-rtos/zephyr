@@ -27,7 +27,8 @@ SHELL_DEFINE(shell_uart, CONFIG_SHELL_PROMPT_UART, &shell_transport_uart,
 	     SHELL_FLAG_OLF_CRLF);
 
 #ifdef CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
-static void uart_rx_handle(const struct shell_uart *sh_uart)
+static void uart_rx_handle(struct device *dev,
+			   const struct shell_uart *sh_uart)
 {
 	uint8_t *data;
 	uint32_t len;
@@ -39,8 +40,7 @@ static void uart_rx_handle(const struct shell_uart *sh_uart)
 					 sh_uart->rx_ringbuf->size);
 
 		if (len > 0) {
-			rd_len = uart_fifo_read(sh_uart->ctrl_blk->dev,
-						data, len);
+			rd_len = uart_fifo_read(dev, data, len);
 #ifdef CONFIG_MCUMGR_SMP_SHELL
 			/* Divert bytes from shell handling if it is
 			 * part of an mcumgr frame.
@@ -76,8 +76,7 @@ static void uart_rx_handle(const struct shell_uart *sh_uart)
 			/* No space in the ring buffer - consume byte. */
 			LOG_WRN("RX ring buffer full.");
 
-			rd_len = uart_fifo_read(sh_uart->ctrl_blk->dev,
-						&dummy, 1);
+			rd_len = uart_fifo_read(dev, &dummy, 1);
 #ifdef CONFIG_MCUMGR_SMP_SHELL
 			/* Divert this byte from shell handling if it
 			 * is part of an mcumgr frame.
@@ -93,9 +92,8 @@ static void uart_rx_handle(const struct shell_uart *sh_uart)
 	}
 }
 
-static void uart_tx_handle(const struct shell_uart *sh_uart)
+static void uart_tx_handle(struct device *dev, const struct shell_uart *sh_uart)
 {
-	struct device *dev = sh_uart->ctrl_blk->dev;
 	uint32_t len;
 	int err;
 	const uint8_t *data;
@@ -115,19 +113,18 @@ static void uart_tx_handle(const struct shell_uart *sh_uart)
 				   sh_uart->ctrl_blk->context);
 }
 
-static void uart_callback(void *user_data)
+static void uart_callback(struct device *dev, void *user_data)
 {
 	const struct shell_uart *sh_uart = (struct shell_uart *)user_data;
-	struct device *dev = sh_uart->ctrl_blk->dev;
 
 	uart_irq_update(dev);
 
 	if (uart_irq_rx_ready(dev)) {
-		uart_rx_handle(sh_uart);
+		uart_rx_handle(dev, sh_uart);
 	}
 
 	if (uart_irq_tx_ready(dev)) {
-		uart_tx_handle(sh_uart);
+		uart_tx_handle(dev, sh_uart);
 	}
 }
 #endif /* CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN */
