@@ -17,7 +17,7 @@ properties:
     label:
       required: true
 
-    lcd-label:
-      type: string
+    lcd:
+      type: phandle
       required: false
-      description: label of the lcd device connected to eLCDIF
+      description: phandle of the lcd device connected to eLCDIF
