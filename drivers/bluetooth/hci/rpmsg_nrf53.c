@@ -48,6 +48,9 @@ BUILD_ASSERT((SHM_START_ADDR + SHM_SIZE - SHM_BASE_ADDRESS)
 
 #define VDEV_STATUS_ADDR    SHM_BASE_ADDRESS
 
+BUILD_ASSERT(CONFIG_HEAP_MEM_POOL_SIZE >= 1024,
+	"Not enough heap memory for RPMsg queue allocation");
+
 /* End of configuration defines */
 
 static metal_phys_addr_t shm_physmap[] = { SHM_START_ADDR };
