@@ -16,3 +16,4 @@ supported:
   - counter
   - i2c
   - pwm
+  - netif:eth

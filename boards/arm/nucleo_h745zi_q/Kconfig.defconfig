@@ -43,4 +43,14 @@ choice STM32H7_DUAL_CORE_BOOT
 	depends on STM32H7_DUAL_CORE
 endchoice
 
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+config ETH_STM32_HAL
+	default y
+
+endif # NETWORKING
+
 endif # BOARD_NUCLEO_H745ZI_Q_M7 or BOARD_NUCLEO_H745ZI_Q_M4
