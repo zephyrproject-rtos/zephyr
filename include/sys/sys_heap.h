@@ -170,4 +170,13 @@ void sys_heap_stress(void *(*alloc)(void *arg, size_t bytes),
 		     int target_percent,
 		     struct z_heap_stress_result *result);
 
+/** @brief Dump heap structure content for debugging to the console
+ *
+ * Print information on the heap structure such as its size, chunk buckets
+ * and chunk list.
+ *
+ * @param h Heap to print information about
+ */
+void sys_heap_dump(struct sys_heap *h);
+
 #endif /* ZEPHYR_INCLUDE_SYS_SYS_HEAP_H_ */
