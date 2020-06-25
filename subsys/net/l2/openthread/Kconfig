@@ -325,4 +325,58 @@ config OPENTHREAD_REFERENCE_DEVICE
 	help
 	  Enable Thread Certification reference device support in OpenThread stack
 
+config OPENTHREAD_CHANNEL_MONITOR
+	bool "Enable channel monitor support"
+
+config OPENTHREAD_CHANNEL_MANAGER
+	bool "Enable channel manager support"
+	depends on OPENTHREAD_CHANNEL_MONITOR
+
+config OPENTHREAD_CHILD_SUPERVISION
+	bool "Enable child supervision support"
+
+config OPENTHREAD_COAPS
+	bool "Enable secure coap api support"
+	depends on OPENTHREAD_COAP
+
+config OPENTHREAD_DNS_CLIENT
+	bool "Enable DNS client support"
+
+config OPENTHREAD_EXTERNAL_HEAP
+	bool "Enable external heap support"
+
+config OPENTHREAD_IP6_FRAGM
+	bool "Enable ipv6 fragmentation support"
+
+config OPENTHREAD_LEGACY
+	bool "Enable legacy network support"
+
+config OPENTHREAD_LOG_LEVEL_DYNAMIC
+	bool "Enable dynamic log level control"
+
+config OPENTHREAD_MAC_FILTER
+	bool "Enable mac filter support"
+
+config OPENTHREAD_MTD_NETDIAG
+	bool "Enable TMF network diagnostics on MTDs"
+
+config OPENTHREAD_PLATFORM_NETIF
+	bool "Enable platform netif support"
+
+config OPENTHREAD_SETTINGS_RAM
+	bool "Enable volatile-only storage of settings"
+
+config OPENTHREAD_SNTP_CLIENT
+	bool "Enable SNTP Client support"
+
+config OPENTHREAD_CUSTOM_PARAMETERS
+	string "Custom Parameters to pass to OpenThread build system"
+	default ""
+	help
+	  This option is intended for advanced users only.
+	  Pass additional parameters that do not have corresponding Kconfig
+	  options to the OpenThread build system. Separate multiple values with
+	  space " ", for example:
+	  "OPENTHREAD_CONFIG_JOINER_ENABLE=1 OPENTHREAD_CONFIG_JOINER_MAX_CANDIDATES=3"
+
 endif
