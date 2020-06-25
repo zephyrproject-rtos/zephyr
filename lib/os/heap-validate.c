@@ -291,3 +291,43 @@ void sys_heap_stress(void *(*alloc)(void *arg, size_t bytes),
 		result->accumulated_in_use_bytes += sr.bytes_alloced;
 	}
 }
+
+/*
+ * Dump heap structure content for debugging / analysis purpose
+ */
+void heap_dump(struct z_heap *h)
+{
+	int i, nb_buckets = bucket_idx(h, h->len) + 1;
+
+	printk("Heap at %p contains %d units\n", chunk_buf(h), h->len);
+
+	for (i = 0; i < nb_buckets; i++) {
+		chunkid_t first = h->buckets[i].next;
+		int count = 0;
+
+		if (first) {
+			chunkid_t curr = first;
+			do {
+				count++;
+				curr = next_free_chunk(h, curr);
+			} while (curr != first);
+		}
+
+		printk("bucket %d (min %d units): %d chunks\n", i,
+		       (1 << i) - 1 + min_chunk_size(h), count);
+	}
+
+	for (chunkid_t c = 0; ; c = right_chunk(h, c)) {
+		printk("chunk %3zd: %c %3zd] %3zd [%zd\n",
+		       c, chunk_used(h, c) ? '*' : '-',
+		      left_chunk(h, c), chunk_size(h, c), right_chunk(h, c));
+		if (c == h->len) {
+			break;
+		}
+	}
+}
+
+void sys_heap_dump(struct sys_heap *heap)
+{
+	heap_dump(heap->heap);
+}

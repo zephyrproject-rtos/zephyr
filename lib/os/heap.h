@@ -225,5 +225,7 @@ static inline int bucket_idx(struct z_heap *h, size_t sz)
 	return 31 - __builtin_clz(usable_sz);
 }
 
+/* For debugging */
+void heap_dump(struct z_heap *h);
 
 #endif /* ZEPHYR_INCLUDE_LIB_OS_HEAP_H_ */
