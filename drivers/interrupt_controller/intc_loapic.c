@@ -65,6 +65,24 @@ uint32_t loapic_suspend_buf[LOPIC_SUSPEND_BITS_REQD / 32] = {0};
 static uint32_t loapic_device_power_state = DEVICE_PM_ACTIVE_STATE;
 #endif
 
+/*
+ * HACK: LOAPIC still has base address mainatined in Kconfig and
+ * not DTS. Need to convert this! See #26393
+ */
+
+#ifdef DEVICE_MMIO_IS_IN_RAM
+mm_reg_t z_mmio_ram__loapic_regs;
+#endif
+
+const struct z_device_mmio_rom z_mmio_rom__loapic_regs  = {
+#ifdef DEVICE_MMIO_IS_IN_RAM
+	.phys_addr = CONFIG_LOAPIC_BASE_ADDRESS,
+	.size = 0x1000
+#else
+	.addr = CONFIG_LOAPIC_BASE_ADDRESS
+#endif
+};
+
 /**
  * @brief Enable and initialize the local APIC.
  *
@@ -76,6 +94,8 @@ void z_loapic_enable(unsigned char cpu_number)
 	int32_t loApicMaxLvt; /* local APIC Max LVT */
 
 #ifndef CONFIG_X2APIC
+	DEVICE_MMIO_TOPLEVEL_MAP(loapic_regs, K_MAP_CACHE_NONE);
+
 	/*
 	 * in xAPIC and flat model, bits 24-31 in LDR (Logical APIC ID) are
 	 * bitmap of target logical APIC ID and it supports maximum 8 local
