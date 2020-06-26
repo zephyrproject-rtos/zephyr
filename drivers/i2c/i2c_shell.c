@@ -16,9 +16,6 @@ LOG_MODULE_REGISTER(i2c_shell, CONFIG_LOG_DEFAULT_LEVEL);
 
 #define I2C_DEVICE_PREFIX "I2C_"
 
-extern struct device __device_start[];
-extern struct device __device_end[];
-
 /* Maximum bytes we can write or read at once */
 #define MAX_I2C_BYTES	16
 
