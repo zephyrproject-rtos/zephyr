@@ -106,6 +106,19 @@ unsigned int arm_gic_get_active(void)
 
 void arm_gic_eoi(unsigned int intid)
 {
+	/*
+	 * Interrupt request deassertion from peripheral to GIC happens
+	 * by clearing interrupt condition by a write to the peripheral
+	 * register. It is desired that the write transfer is complete
+	 * before the core tries to change GIC state from 'AP/Active' to
+	 * a new state on seeing 'EOI write'.
+	 * Since ICC interface writes are not ordered against Device
+	 * memory writes, a barrier is required to ensure the ordering.
+	 * The dsb will also ensure *completion* of previous writes with
+	 * DEVICE nGnRnE attribute.
+	 */
+	__DSB();
+
 	/* (AP -> Pending) Or (Active -> Inactive) or (AP to AP) nested case */
 	write_sysreg(intid, ICC_EOIR1_EL1);
 }

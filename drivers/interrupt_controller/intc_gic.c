@@ -79,6 +79,16 @@ unsigned int arm_gic_get_active(void)
 
 void arm_gic_eoi(unsigned int irq)
 {
+	/*
+	 * Ensure the write to peripheral registers are *complete* before the write
+	 * to GIC_EOIR.
+	 *
+	 * Note: The completion gurantee depends on various factors of system design
+	 * and the barrier is the best core can do by which execution of further
+	 * instructions waits till the barrier is alive.
+	 */
+	__DSB();
+
 	/* set to inactive */
 	sys_write32(irq, GICC_EOIR);
 }
