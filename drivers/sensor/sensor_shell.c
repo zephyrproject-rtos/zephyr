@@ -16,9 +16,6 @@
 	"when no channels are provided. Syntax:\n" \
 	"<device_name> <channel name 0> .. <channel name N>"
 
-extern struct device __device_start[];
-extern struct device __device_end[];
-
 const char *sensor_channel_name[SENSOR_CHAN_ALL] = {
 	[SENSOR_CHAN_ACCEL_X] =		"accel_x",
 	[SENSOR_CHAN_ACCEL_Y] =		"accel_y",
