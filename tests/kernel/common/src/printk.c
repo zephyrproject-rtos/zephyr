@@ -19,30 +19,38 @@ int (*_old_char_out)(int);
 
 char *expected = "22 113 10000 32768 40000 22\n"
 		 "p 112 -10000 -32768 -40000 -22\n"
-		 "0xcafebabe 0x0000beef\n"
 		 "0x1 0x01 0x0001 0x00000001 0x0000000000000001\n"
 		 "0x1 0x 1 0x   1 0x       1\n"
 		 "42 42 0042 00000042\n"
 		 "-42 -42 -042 -0000042\n"
 		 "42 42   42       42\n"
 		 "42 42 0042 00000042\n"
-		 "255     42    abcdef  0x0000002a      42\n"
+		 "255     42    abcdef        42\n"
 		 "ERR -1 ERR ffffffffffffffff\n"
 ;
 #else
 
 char *expected = "22 113 10000 32768 40000 22\n"
 		 "p 112 -10000 -32768 -40000 -22\n"
-		 "0xcafebabe 0x000000000000beef\n"
 		 "0x1 0x01 0x0001 0x00000001 0x0000000000000001\n"
 		 "0x1 0x 1 0x   1 0x       1\n"
 		 "42 42 0042 00000042\n"
 		 "-42 -42 -042 -0000042\n"
 		 "42 42   42       42\n"
 		 "42 42 0042 00000042\n"
-		 "255     42    abcdef  0x000000000000002a      42\n"
+		 "255     42    abcdef        42\n"
 		 "68719476735 -1 18446744073709551615 ffffffffffffffff\n"
 ;
+#endif
+
+#ifndef CONFIG_64BIT
+
+char *expected2 = "0xcafebabe 0x0000beef 0x0000002a\n";
+
+#else
+
+char *expected2 = "0xcafebabe 0x000000000000beef 0x000000000000002a\n";
+
 #endif
 
 size_t stv = 22;
@@ -94,18 +102,26 @@ void test_printk(void)
 
 	printk("%zu %hhu %hu %u %lu %llu\n", stv, uc, usi, ui, ul, ull);
 	printk("%c %hhd %hd %d %ld %lld\n", c, c, ssi, si, sl, sll);
-	printk("0x%x %p\n", hex, ptr);
 	printk("0x%x 0x%02x 0x%04x 0x%08x 0x%016x\n", 1, 1, 1, 1, 1);
 	printk("0x%x 0x%2x 0x%4x 0x%8x\n", 1, 1, 1, 1);
 	printk("%d %02d %04d %08d\n", 42, 42, 42, 42);
 	printk("%d %02d %04d %08d\n", -42, -42, -42, -42);
 	printk("%u %2u %4u %8u\n", 42, 42, 42, 42);
 	printk("%u %02u %04u %08u\n", 42, 42, 42, 42);
-	printk("%-8u%-6d%-4x  %-2p%8d\n", 0xFF, 42, 0xABCDEF, (char *)42, 42);
+	printk("%-8u%-6d%-4x  %8d\n", 0xFF, 42, 0xABCDEF, 42);
 	printk("%lld %lld %llu %llx\n", 0xFFFFFFFFFULL, -1LL, -1ULL, -1ULL);
 
 	pk_console[pos] = '\0';
 	zassert_true((strcmp(pk_console, expected) == 0), "printk failed");
+
+	/*
+	 * Test %p separately as its width depends on sizeof(void *)
+	 * regardless of CONFIG_PRINTK64.
+	 */
+	pos = 0;
+	printk("0x%x %p %-2p\n", hex, ptr, (char *)42);
+	pk_console[pos] = '\0';
+	zassert_true((strcmp(pk_console, expected2) == 0), "printk failed");
 
 	(void)memset(pk_console, 0, sizeof(pk_console));
 	count = 0;
@@ -115,8 +131,6 @@ void test_printk(void)
 			  stv, uc, usi, ui, ul, ull);
 	count += snprintk(pk_console + count, sizeof(pk_console) - count,
 			  "%c %hhd %hd %d %ld %lld\n", c, c, ssi, si, sl, sll);
-	count += snprintk(pk_console + count, sizeof(pk_console) - count,
-			  "0x%x %p\n", hex, ptr);
 	count += snprintk(pk_console + count, sizeof(pk_console) - count,
 			  "0x%x 0x%02x 0x%04x 0x%08x 0x%016x\n", 1, 1, 1, 1, 1);
 	count += snprintk(pk_console + count, sizeof(pk_console) - count,
@@ -130,8 +144,8 @@ void test_printk(void)
 	count += snprintk(pk_console + count, sizeof(pk_console) - count,
 			  "%u %02u %04u %08u\n", 42, 42, 42, 42);
 	count += snprintk(pk_console + count, sizeof(pk_console) - count,
-			  "%-8u%-6d%-4x  %-2p%8d\n",
-			  0xFF, 42, 0xABCDEF, (char *)42, 42);
+			  "%-8u%-6d%-4x  %8d\n",
+			  0xFF, 42, 0xABCDEF, 42);
 	count += snprintk(pk_console + count, sizeof(pk_console) - count,
 			  "%lld %lld %llu %llx\n",
 			  0xFFFFFFFFFULL, -1LL, -1ULL, -1ULL);

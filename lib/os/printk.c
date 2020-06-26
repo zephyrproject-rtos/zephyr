@@ -261,11 +261,7 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 				out('x', ctx);
 				/* left-pad pointers with zeros */
 				padding = PAD_ZERO_BEFORE;
-				if (sizeof(printk_val_t) > 4) {
-					min_width = 16;
-				} else {
-					min_width = 8;
-				}
+				min_width = sizeof(void *) * 2;
 				/* Fall through */
 			case 'x':
 			case 'X': {
