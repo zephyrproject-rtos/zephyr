@@ -39,6 +39,6 @@ endif # PINMUX_MCUX
 
 config TEMP_KINETIS
 	default y if "$(dt_nodelabel_enabled,adc0)"
-	depends on SENSOR
+	depends on SENSOR && ADC
 
 endif # BOARD_TWR_KE18F
