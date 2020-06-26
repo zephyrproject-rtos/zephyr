@@ -36,13 +36,22 @@ extern uint32_t _irq_vector_table[];
 /* ARC EMSDP' console will use irq 108 / irq 107, will conflict
  * with isr used here, so add a workaround
  */
-#undef CONFIG_NUM_IRQS
-#define CONFIG_NUM_IRQS 105
+#define TEST_NUM_IRQS	105
+#elif defined(CONFIG_SOC_NRF5340_CPUAPP) || defined(CONFIG_SOC_NRF9160)
+/* In nRF9160 and application core in nRF5340, not all interrupts with highest
+ * numbers are implemented. Thus, limit the number of interrupts reported to
+ * the test, so that it does not try to use some unavailable ones.
+ */
+#define TEST_NUM_IRQS	33
+#else
+#define TEST_NUM_IRQS	CONFIG_NUM_IRQS
 #endif
 
-#define IRQ_LINE(offset)	(CONFIG_NUM_IRQS - ((offset) + 1))
-#define TABLE_INDEX(offset)	(IRQ_TABLE_SIZE - ((offset) + 1))
-#define TRIG_CHECK_SIZE         6
+#define TEST_IRQ_TABLE_SIZE 	(IRQ_TABLE_SIZE - \
+				 (CONFIG_NUM_IRQS - TEST_NUM_IRQS))
+#define IRQ_LINE(offset)	(TEST_NUM_IRQS - ((offset) + 1))
+#define TABLE_INDEX(offset)	(TEST_IRQ_TABLE_SIZE - ((offset) + 1))
+#define TRIG_CHECK_SIZE		6
 #endif
 
 #define ISR3_ARG	0xb01dface
