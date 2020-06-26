@@ -5,4 +5,4 @@
 
 config  BOARD_UP_SQUARED_ADSP
 	bool "Xtensa on Up Squared"
-	depends on SOC_INTEL_APL_ADSP
+	depends on SOC_SERIES_INTEL_CAVS_V15

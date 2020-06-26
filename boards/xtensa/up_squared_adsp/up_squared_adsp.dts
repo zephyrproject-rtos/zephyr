@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <intel/intel_apl_adsp.dtsi>
+#include <intel/intel_cavs15.dtsi>
 
 / {
 	model = "up_squared_adsp";

@@ -1,0 +1,18 @@
+# Intel CAVS SoC family configuration options
+#
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_INTEL_ADSP
+	bool
+
+if SOC_FAMILY_INTEL_ADSP
+
+config SOC_FAMILY
+	string
+	default "intel_adsp"
+
+# Select SoC Part No. and configuration options
+source "soc/xtensa/intel_adsp/*/Kconfig.soc"
+
+endif # SOC_FAMILY_INTEL_ADSP

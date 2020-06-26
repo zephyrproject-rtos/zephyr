@@ -42,12 +42,10 @@ def main():
     else:
         if args.etrace == 'sof':
             etrace = SOF_ETRACE
-            offset = 0
         else:
             etrace = QEMU_ETRACE
-            offset = 0x8000
 
-    l = Loglist(etrace, offset=offset)
+    l = Loglist(etrace)
     l.print()
 
 if __name__ == "__main__":
