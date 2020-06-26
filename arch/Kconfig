@@ -489,6 +489,44 @@ config MMU
 	help
 	  This option is enabled when the CPU's memory management unit is active.
 
+config KERNEL_VM_BASE
+	hex "Base virtual address for the kernel"
+	depends on MMU
+	default 0xC0000000
+	help
+	  Define the base virtual memory address for the core kernel. There will
+	  be a permemant mapping of all RAM starting at this virtual address,
+	  with any unused space up to the KERNEL_VM_LIMIT available for memory
+	  mappings. This denotes the start of the RAM mapping and may not be
+	  the base address of the kernel itself, but the offset of the kernel here
+	  will be the same as the offset from the beginning of physical memory
+	  where it was loaded.
+
+config KERNEL_VM_LIMIT
+	hex "Upper bound on kernel address space"
+	depends on MMU
+	default 0xFFFFFFFF
+	help
+	  Inclusive upper bound on the virtual memory area reserved for the kernel.
+	  No mappings will be made past this point. Constraining this helps control
+	  how much memory is used for page tables.
+
+	  The area defined by KERNEL_VM_BASE to KERNEL_VM_LIMIT must have enough
+	  room to map system RAM, plus any driver mappings. Further mappings
+	  may be made at runtime depending on configuration options (such as
+	  memory-mapping stacks).
+
+	  Calls to k_map() that exhaust the space defined here will cause a kernel
+	  panic.
+
+config MMU_PAGE_SIZE
+	hex "Size of smallest granularity MMU page"
+	depends on MMU
+	default 0x1000
+	help
+	  Size of memory pages. Varies per MMU but 4K is common. For MMUs that
+	  support multiple page sizes, put the smallest one here.
+
 config MEMORY_PROTECTION
 	bool
 	help
