@@ -128,7 +128,7 @@ static int lis2dw12_handle_drdy_int(struct device *dev)
 static int lis2dw12_handle_single_tap_int(struct device *dev)
 {
 	struct lis2dw12_data *data = dev->driver_data;
-	sensor_trigger_handler_t handler = data->tap_handler;;
+	sensor_trigger_handler_t handler = data->tap_handler;
 
 	struct sensor_trigger pulse_trig = {
 		.type = SENSOR_TRIG_TAP,
@@ -145,7 +145,7 @@ static int lis2dw12_handle_single_tap_int(struct device *dev)
 static int lis2dw12_handle_double_tap_int(struct device *dev)
 {
 	struct lis2dw12_data *data = dev->driver_data;
-	sensor_trigger_handler_t handler = data->double_tap_handler;;
+	sensor_trigger_handler_t handler = data->double_tap_handler;
 
 	struct sensor_trigger pulse_trig = {
 		.type = SENSOR_TRIG_DOUBLE_TAP,
