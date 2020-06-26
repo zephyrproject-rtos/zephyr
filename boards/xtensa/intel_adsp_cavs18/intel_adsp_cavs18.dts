@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2020 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <intel/intel_cavs18.dtsi>
+
+/ {
+	model = "intel_adsp_cavs18";
+	compatible = "intel";
+
+	chosen {
+		zephyr,sram = &sram0;
+	};
+};

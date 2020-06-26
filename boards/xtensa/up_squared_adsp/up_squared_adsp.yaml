@@ -5,5 +5,5 @@ arch: xtensa
 toolchain:
   - zephyr
 testing:
-  ignore_tags:
-     - net
+  only_tags:
+     - kernel
