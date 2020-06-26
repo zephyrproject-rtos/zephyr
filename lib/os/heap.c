@@ -126,6 +126,12 @@ static void free_chunk(struct z_heap *h, chunkid_t c)
 	free_list_add(h, c);
 }
 
+/*
+ * Return the closest chunk ID corresponding to given memory pointer.
+ * Here "closest" is only meaningful in the context of sys_heap_aligned_alloc()
+ * where wanted alignment might not always correspond to a chunk header
+ * boundary.
+ */
 static chunkid_t mem_to_chunkid(struct z_heap *h, void *p)
 {
 	uint8_t *mem = p, *base = (uint8_t *)chunk_buf(h);
@@ -242,9 +248,8 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 	struct z_heap *h = heap->heap;
 
 	CHECK((align & (align - 1)) == 0);
-	CHECK(big_heap(h));
 
-	if (align <= CHUNK_UNIT) {
+	if (align <= chunk_header_bytes(h)) {
 		return sys_heap_alloc(heap, bytes);
 	}
 	if (bytes == 0) {
