@@ -82,7 +82,6 @@ static int lcp_config_info_req(struct ppp_fsm *fsm,
 	enum ppp_packet_type code;
 	enum net_verdict verdict;
 	int i, nack_idx = 0;
-	int count_rej = 0, count_nack = 0;
 
 	memset(options, 0, sizeof(options));
 	memset(nack_options, 0, sizeof(nack_options));
@@ -105,22 +104,7 @@ static int lcp_config_info_req(struct ppp_fsm *fsm,
 		case LCP_OPTION_RESERVED:
 			continue;
 
-		case LCP_OPTION_MRU:
-			break;
-
-		/* TODO: Check from ctx->lcp.my_options what options to accept
-		 */
-		case LCP_OPTION_ASYNC_CTRL_CHAR_MAP:
-			count_nack++;
-			goto ignore_option;
-
-		case LCP_OPTION_MAGIC_NUMBER:
-			count_nack++;
-			goto ignore_option;
-
 		default:
-			count_rej++;
-		ignore_option:
 			nack_options[nack_idx].type.lcp = options[i].type.lcp;
 			nack_options[nack_idx].len = options[i].len;
 
@@ -138,11 +122,7 @@ static int lcp_config_info_req(struct ppp_fsm *fsm,
 	if (nack_idx > 0) {
 		struct net_buf *nack_buf;
 
-		if (count_rej > 0) {
-			code = PPP_CONFIGURE_REJ;
-		} else {
-			code = PPP_CONFIGURE_NACK;
-		}
+		code = PPP_CONFIGURE_REJ;
 
 		/* Create net_buf containing options that are not accepted */
 		for (i = 0; i < MIN(nack_idx, ARRAY_SIZE(nack_options)); i++) {
