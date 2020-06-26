@@ -1720,7 +1720,6 @@ static int gatt_notify_mult(struct bt_conn *conn, uint16_t handle,
 		*buf = bt_att_create_pdu(conn, BT_ATT_OP_NOTIFY_MULT,
 					 sizeof(*nfy) + params->len);
 		if (!*buf) {
-			BT_WARN("No buffer available to send notification");
 			return -ENOMEM;
 		}
 		/* Set user_data so it can be restored when sending */
@@ -1762,7 +1761,12 @@ static int gatt_notify(struct bt_conn *conn, uint16_t handle,
 
 #if defined(CONFIG_BT_GATT_NOTIFY_MULTIPLE)
 	if (gatt_cf_notify_multi(conn)) {
-		return gatt_notify_mult(conn, handle, params);
+		int err;
+
+		err = gatt_notify_mult(conn, handle, params);
+		if (err && err != -ENOMEM) {
+			return err;
+		}
 	}
 #endif /* CONFIG_BT_GATT_NOTIFY_MULTIPLE */
 
