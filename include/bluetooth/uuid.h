@@ -173,6 +173,10 @@ struct bt_uuid_128 {
  *  @brief Environmental Sensing Service
  */
 #define BT_UUID_ESS                       BT_UUID_DECLARE_16(0x181a)
+/** @def BT_UUID_BMS
+ *  @brief Bond Management Service
+ */
+#define BT_UUID_BMS                       BT_UUID_DECLARE_16(0x181e)
 /** @def BT_UUID_IPSS
  *  @brief IP Support Service
  */
@@ -453,6 +457,14 @@ struct bt_uuid_128 {
  *  @brief Barometric Pressure Trend Characteristic
  */
 #define BT_UUID_BAR_PRESSURE_TREND        BT_UUID_DECLARE_16(0x2aa3)
+/** @def BT_UUID_BMS_CONTROL_POINT
+ *  @brief Bond Management Control Point
+ */
+#define BT_UUID_BMS_CONTROL_POINT         BT_UUID_DECLARE_16(0x2aa4)
+/** @def BT_UUID_BMS_FEATURE
+ *  @brief Bond Management Feature
+ */
+#define BT_UUID_BMS_FEATURE               BT_UUID_DECLARE_16(0x2aa5)
 /** @def BT_UUID_CENTRAL_ADDR_RES
  *  @brief Central Address Resolution Characteristic
  */
