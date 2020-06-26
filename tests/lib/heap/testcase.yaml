@@ -8,4 +8,4 @@ tests:
     tags: heap
     platform_exclude: m2gl025_miv qemu_riscv32
     filter: not CONFIG_SOC_NSIM
-    timeout: 120
+    timeout: 240
