@@ -9,10 +9,6 @@
 
 static void *chunk_mem(struct z_heap *h, chunkid_t c)
 {
-	if (c == 0) {
-		return NULL;
-	}
-
 	chunk_unit_t *buf = chunk_buf(h);
 	uint8_t *ret = ((uint8_t *)&buf[c]) + chunk_header_bytes(h);
 
@@ -112,27 +108,6 @@ static void merge_chunks(struct z_heap *h, chunkid_t lc, chunkid_t rc)
 	set_left_chunk_size(h, right_chunk(h, rc), newsz);
 }
 
-/* Allocates (fit check has already been perfomred) from the next
- * chunk at the specified bucket level
- */
-static chunkid_t split_alloc(struct z_heap *h, int bidx, size_t sz)
-{
-	chunkid_t c = h->buckets[bidx].next;
-
-	CHECK(c != 0 && sz <= chunk_size(h, c));
-
-	free_list_remove_bidx(h, c, bidx);
-
-	/* Split off remainder if any */
-	if (chunk_size(h, c) > sz) {
-		split_chunks(h, c, c + sz);
-		free_list_add(h, c + sz);
-	}
-
-	set_chunk_used(h, c, true);
-	return c;
-}
-
 static void free_chunk(struct z_heap *h, chunkid_t c)
 {
 	/* Merge with free right chunk? */
@@ -185,7 +160,7 @@ void sys_heap_free(struct sys_heap *heap, void *mem)
 	free_chunk(h, c);
 }
 
-static chunkid_t alloc_chunks(struct z_heap *h, size_t sz)
+static chunkid_t alloc_chunk(struct z_heap *h, size_t sz)
 {
 	int bi = bucket_idx(h, sz);
 	struct z_heap_bucket *b = &h->buckets[bi];
@@ -212,10 +187,12 @@ static chunkid_t alloc_chunks(struct z_heap *h, size_t sz)
 		chunkid_t first = b->next;
 		int i = CONFIG_SYS_HEAP_ALLOC_LOOPS;
 		do {
-			if (chunk_size(h, b->next) >= sz) {
-				return split_alloc(h, bi, sz);
+			chunkid_t c = b->next;
+			if (chunk_size(h, c) >= sz) {
+				free_list_remove_bidx(h, c, bi);
+				return c;
 			}
-			b->next = next_free_chunk(h, b->next);
+			b->next = next_free_chunk(h, c);
 			CHECK(b->next != 0);
 		} while (--i && b->next != first);
 	}
@@ -227,8 +204,11 @@ static chunkid_t alloc_chunks(struct z_heap *h, size_t sz)
 
 	if ((bmask & h->avail_buckets) != 0) {
 		int minbucket = __builtin_ctz(bmask & h->avail_buckets);
+		chunkid_t c = h->buckets[minbucket].next;
 
-		return split_alloc(h, minbucket, sz);
+		free_list_remove_bidx(h, c, minbucket);
+		CHECK(chunk_size(h, c) >= sz);
+		return c;
 	}
 
 	return 0;
@@ -239,10 +219,22 @@ void *sys_heap_alloc(struct sys_heap *heap, size_t bytes)
 	if (bytes == 0) {
 		return NULL;
 	}
-	size_t chunksz = bytes_to_chunksz(heap->heap, bytes);
-	chunkid_t c = alloc_chunks(heap->heap, chunksz);
 
-	return chunk_mem(heap->heap, c);
+	struct z_heap *h = heap->heap;
+	size_t chunksz = bytes_to_chunksz(h, bytes);
+	chunkid_t c = alloc_chunk(h, chunksz);
+	if (c == 0) {
+		return NULL;
+	}
+
+	/* Split off remainder if any */
+	if (chunk_size(h, c) > chunksz) {
+		split_chunks(h, c, c + chunksz);
+		free_list_add(h, c + chunksz);
+	}
+
+	set_chunk_used(h, c, true);
+	return chunk_mem(h, c);
 }
 
 void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
@@ -266,7 +258,7 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 	 */
 	size_t alloc_sz = bytes_to_chunksz(h, bytes);
 	size_t padded_sz = bytes_to_chunksz(h, bytes + align - 1);
-	chunkid_t c0 = alloc_chunks(h, padded_sz);
+	chunkid_t c0 = alloc_chunk(h, padded_sz);
 
 	if (c0 == 0) {
 		return NULL;
@@ -283,20 +275,16 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 	/* Split and free unused prefix */
 	if (c > c0) {
 		split_chunks(h, c0, c);
-		/* this can't be merged */
-		CHECK(chunk_used(h, left_chunk(h, c0)));
 		free_list_add(h, c0);
 	}
 
 	/* Split and free unused suffix */
-	if (alloc_sz < chunk_size(h, c)) {
+	if (chunk_size(h, c) > alloc_sz) {
 		split_chunks(h, c, c + alloc_sz);
-		set_chunk_used(h, c, true);
-		free_chunk(h, c + alloc_sz);
-	} else {
-		set_chunk_used(h, c, true);
+		free_list_add(h, c + alloc_sz);
 	}
 
+	set_chunk_used(h, c, true);
 	return mem;
 }
 
