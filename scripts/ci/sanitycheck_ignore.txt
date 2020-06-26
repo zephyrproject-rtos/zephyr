@@ -5,6 +5,8 @@
 # are matched, then sanitycheck will not do a full run and optionally will only
 # run on changed tests or boards.
 #
+.gitlint
+.checkpatch.conf
 .clang-format
 .codecov.yml
 .editorconfig
