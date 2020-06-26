@@ -84,6 +84,7 @@ foreach(optional_include_dir
   ${SOC_DIR}/${ARCH}/${SOC_PATH}
   ${SOC_DIR}/${ARCH}/${SOC_PATH}/include
   ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/include
+  ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/common/include
   )
   if(EXISTS ${optional_include_dir})
     zephyr_include_directories(${optional_include_dir})

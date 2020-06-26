@@ -1,0 +1,7 @@
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_INTEL_BAYTRAIL_ADSP
+	bool "Intel Baytrail Audio DSP"
+	depends on SOC_SERIES_INTEL_ADSP_BAYTRAIL
+	default y if SOC_SERIES_INTEL_ADSP_BAYTRAIL

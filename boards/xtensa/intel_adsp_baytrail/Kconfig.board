@@ -1,0 +1,8 @@
+# Xtensa board configuration
+
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config  BOARD_INTEL_ADSP_BAYTRAIL
+	bool "Intel ADSP BAYTRAIL"
+	depends on SOC_SERIES_INTEL_ADSP_BAYTRAIL

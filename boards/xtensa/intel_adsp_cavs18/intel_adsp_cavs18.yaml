@@ -1,0 +1,10 @@
+identifier: intel_adsp_cavs18
+name: CAVS 1.8 Audio DSP (Connected Audio Voice and Speech)
+type: mcu
+arch: xtensa
+sanitycheck: false
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+     - net

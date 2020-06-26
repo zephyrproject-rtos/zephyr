@@ -101,7 +101,8 @@ config IPM_STM32_IPCC_PROCID
 
 config IPM_CAVS_IDC
 	bool "CAVS DSP Intra-DSP Communication (IDC) driver"
-	depends on SMP && CAVS_ICTL
+	depends on IPM && CAVS_ICTL
+	default y if MP_NUM_CPUS > 1 && SMP
 	help
 	  Driver for the Intra-DSP Communication (IDC) channel for
 	  cross SoC communications.
