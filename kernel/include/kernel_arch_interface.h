@@ -213,6 +213,57 @@ static inline bool arch_is_in_isr(void);
 /** @} */
 
 /**
+ * @defgroup arch-mmu Architecture-specific memory-mapping APIs
+ * @ingroup arch-interface
+ * @{
+ */
+
+#ifdef CONFIG_MMU
+/**
+ * Map physical memory into the virtual address space
+ *
+ * This is a low-level interface to mapping pages into the address space.
+ * Behavior when providing unaligned addresses/sizes is undefined.
+ *
+ * The core kernel handles all management of the virtual address space;
+ * by the time we invoke this function, we know exactly where this mapping
+ * will be established. If the page tables already had mappings installed
+ * for the virtual memory region, these will be overwritten.
+ *
+ * If the target architecture supports multiple page sizes, currently
+ * only the smallest page size will be used.
+ *
+ * If the requested caching mode is unsupported and there is no safe
+ * fallback (for example, falling back to uncached if caching was requested
+ * and caching is not supported by the CPU at all), or otherwise bad flags
+ * are passed in, this will return an error.
+ *
+ * Mappings in the kernel's part of the address space must affect all threads
+ * on the system. This is defined as all virtual memory addresses that
+ * are equal to or greater than CONFIG_KERNEL_VIRTUAL_BASE_ADDRESS.
+ *
+ * The memory range itself is never accessed by this operation.
+ *
+ * This API must be safe to call in ISRs or exception handlers. Calls
+ * to this API are assumed to be serialized, and indeed all usage will
+ * originate from kernel/mm.c which handles virtual memory management.
+ *
+ * @see k_map()
+ *
+ * @param dest Page-aligned Destination virtual address to map
+ * @param addr Page-aligned Source physical address to map
+ * @param size Page-aligned size of the mapped memory region in bytes
+ * @param flags Caching, access and control flags, see K_MAP_* macros
+ * @retval 0 Success
+ * @retval -ENOTSUP Unsupported cache mode with no suitable fallback, or
+ *	   unsupported flags
+ * @retval -ENOMEM Memory for additional paging structures unavailable
+ */
+int arch_mem_map(void *dest, uintptr_t addr, size_t size, uint32_t flags);
+#endif
+/* @} */
+
+/**
  * @defgroup arch-misc Miscellaneous architecture APIs
  * @ingroup arch-interface
  * @{
