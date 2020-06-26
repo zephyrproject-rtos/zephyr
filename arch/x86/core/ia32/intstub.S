@@ -209,8 +209,13 @@ alreadyOnIntStack:
 	movl	$(X86_X2APIC_BASE_MSR + (LOAPIC_EOI >> 4)), %ecx
 	wrmsr
 #else /* xAPIC */
+#ifdef DEVICE_MMIO_IS_IN_RAM
+	movl	z_loapic_regs, %edx
+	movl	%eax, LOAPIC_EOI(%edx)
+#else
 	movl	%eax, (CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI)
-#endif
+#endif /* DEVICE_MMIO_IS_IN_RAM */
+#endif /* CONFIG_X2APIC */
 
 	/* determine whether exiting from a nested interrupt */
 	movl	$_kernel, %ecx

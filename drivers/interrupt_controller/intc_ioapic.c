@@ -64,7 +64,9 @@
 #include <drivers/interrupt_controller/loapic.h> /* public API declarations and registers */
 #include "intc_ioapic_priv.h"
 
-#define IOAPIC_REG DT_INST_REG_ADDR(0)
+DEVICE_MMIO_TOPLEVEL_STATIC(ioapic_regs, 0);
+
+#define IOAPIC_REG DEVICE_MMIO_TOPLEVEL_GET(ioapic_regs)
 #define BITS_PER_IRQ  4
 #define IOAPIC_BITFIELD_HI_LO	0
 #define IOAPIC_BITFIELD_LVL_EDGE 1
@@ -121,6 +123,9 @@ static void IoApicRedUpdateLo(unsigned int irq, uint32_t value,
 int ioapic_init(struct device *unused)
 {
 	ARG_UNUSED(unused);
+
+	DEVICE_MMIO_TOPLEVEL_MAP(ioapic_regs, K_MEM_CACHE_NONE);
+
 #ifdef CONFIG_IOAPIC_MASK_RTE
 	int32_t ix;	/* redirection table index */
 	uint32_t rteValue; /* value to copy into redirection table entry */
