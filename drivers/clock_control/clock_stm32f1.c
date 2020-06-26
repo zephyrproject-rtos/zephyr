@@ -33,40 +33,16 @@
 void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
 {
 	/*
-	 * PLLMUL on SOC_STM32F10X_DENSITY_DEVICE
 	 * 2  -> LL_RCC_PLL_MUL_2  -> 0x00000000
 	 * 3  -> LL_RCC_PLL_MUL_3  -> 0x00040000
 	 * 4  -> LL_RCC_PLL_MUL_4  -> 0x00080000
 	 * ...
 	 * 16 -> LL_RCC_PLL_MUL_16 -> 0x00380000
 	 *
-	 * PLLMUL on SOC_STM32F10X_CONNECTIVITY_LINE_DEVICE
-	 * 4  -> LL_RCC_PLL_MUL_4   -> 0x00080000
-	 * ...
-	 * 9  -> LL_RCC_PLL_MUL_9   -> 0x001C0000
-	 * 13 -> LL_RCC_PLL_MUL_6_5 -> 0x00340000
 	 */
 	pllinit->PLLMul = ((CONFIG_CLOCK_STM32_PLL_MULTIPLIER - 2)
 					<< RCC_CFGR_PLLMULL_Pos);
 
-#ifdef CONFIG_SOC_STM32F10X_DENSITY_DEVICE
-	/* PLL prediv */
-#ifdef CONFIG_CLOCK_STM32_PLL_XTPRE
-	/*
-	 * SOC_STM32F10X_DENSITY_DEVICE:
-	 * PLLXPTRE (depends on PLL source HSE)
-	 * HSE/2 used as PLL source
-	 */
-	pllinit->Prediv = LL_RCC_PREDIV_DIV_2;
-#else
-	/*
-	 * SOC_STM32F10X_DENSITY_DEVICE:
-	 * PLLXPTRE (depends on PLL source HSE)
-	 * HSE used as direct PLL source
-	 */
-	pllinit->Prediv = LL_RCC_PREDIV_DIV_1;
-#endif /* CONFIG_CLOCK_STM32_PLL_XTPRE */
-#else
 	/*
 	 * SOC_STM32F10X_CONNECTIVITY_LINE_DEVICE
 	 * 1  -> LL_RCC_PREDIV_DIV_1  -> 0x00000000
@@ -76,7 +52,6 @@ void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
 	 * 16 -> LL_RCC_PREDIV_DIV_16 -> 0x0000000F
 	 */
 	pllinit->Prediv = CONFIG_CLOCK_STM32_PLL_PREDIV1 - 1;
-#endif /* CONFIG_SOC_STM32F10X_DENSITY_DEVICE */
 }
 
 #endif /* CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL */
