@@ -9,6 +9,7 @@
 static void i2c_config_@NUM@(struct device *port);
 
 static const struct i2c_dw_rom_config i2c_config_dw_@NUM@ = {
+	DEVICE_MMIO_ROM_INIT(@NUM@),
 	.config_func = i2c_config_@NUM@,
 	.bitrate = DT_INST_PROP(@NUM@, clock_frequency),
 
@@ -19,10 +20,7 @@ static const struct i2c_dw_rom_config i2c_config_dw_@NUM@ = {
 #endif
 };
 
-static struct i2c_dw_dev_config i2c_@NUM@_runtime = {
-	.regs = (struct i2c_dw_registers *)
-		DT_INST_REG_ADDR(@NUM@)
-};
+static struct i2c_dw_dev_config i2c_@NUM@_runtime;
 
 DEVICE_AND_API_INIT(i2c_@NUM@, DT_INST_LABEL(@NUM@),
 		    &i2c_dw_initialize,

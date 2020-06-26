@@ -95,6 +95,7 @@ typedef void (*i2c_isr_cb_t)(struct device *port);
 
 
 struct i2c_dw_rom_config {
+	DEVICE_MMIO_ROM;
 	i2c_isr_cb_t	config_func;
 	uint32_t		bitrate;
 #ifdef I2C_DW_PCIE_ENABLED
@@ -105,7 +106,7 @@ struct i2c_dw_rom_config {
 };
 
 struct i2c_dw_dev_config {
-	struct i2c_dw_registers *regs;
+	DEVICE_MMIO_RAM;
 	struct k_sem		device_sync_sem;
 	uint32_t app_config;
 
