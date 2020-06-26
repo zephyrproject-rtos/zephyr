@@ -4974,12 +4974,14 @@ static void le_adv_set_terminated(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_adv_set_terminated *evt;
 	struct bt_le_ext_adv *adv;
+	uint16_t conn_handle;
 
 	evt = (void *)buf->data;
 	adv = bt_adv_lookup_handle(evt->adv_handle);
+	conn_handle = sys_le16_to_cpu(evt->conn_handle);
 
 	BT_DBG("status 0x%02x adv_handle %u conn_handle 0x%02x num %u",
-	       evt->status, evt->adv_handle, evt->conn_handle,
+	       evt->status, evt->adv_handle, conn_handle,
 	       evt->num_completed_ext_adv_evts);
 
 	if (!adv) {
@@ -4999,7 +5001,7 @@ static void le_adv_set_terminated(struct net_buf *buf)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CONN) && !evt->status) {
-		struct bt_conn *conn = bt_conn_lookup_handle(evt->conn_handle);
+		struct bt_conn *conn = bt_conn_lookup_handle(conn_handle);
 
 		if (conn) {
 			if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
