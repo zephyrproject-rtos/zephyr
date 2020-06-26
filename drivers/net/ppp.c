@@ -659,7 +659,6 @@ static void ppp_isr_cb_work(struct k_work *work)
 			/* Ignore empty or too short frames */
 			if (ppp->pkt && net_pkt_get_len(ppp->pkt) > 3) {
 				ppp_process_msg(ppp);
-				break;
 			}
 		}
 	} while (--tmp);
