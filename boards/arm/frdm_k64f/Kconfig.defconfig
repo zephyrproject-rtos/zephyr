@@ -42,7 +42,7 @@ endif # PINMUX_MCUX
 
 config TEMP_KINETIS
 	default y if "$(dt_nodelabel_enabled,adc1)"
-	depends on SENSOR
+	depends on SENSOR && ADC
 
 config SPI_0
 	default y
