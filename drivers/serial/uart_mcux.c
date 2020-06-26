@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, NXP
+ * Copyright (c) 2020 PHYTEC Messtechnik GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,8 +18,7 @@ struct uart_mcux_config {
 	UART_Type *base;
 	char *clock_name;
 	clock_control_subsys_t clock_subsys;
-	uint32_t baud_rate;
-	uint8_t hw_flow_control;
+	struct uart_config uart_cfg;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(struct device *dev);
 #endif
@@ -30,6 +30,80 @@ struct uart_mcux_data {
 	void *cb_data;
 #endif
 };
+
+static int uart_mcux_configure(struct device *dev,
+			       const struct uart_config *cfg)
+{
+	const struct uart_mcux_config *config = dev->config_info;
+	uart_config_t uart_config;
+	struct device *clock_dev;
+	uint32_t clock_freq;
+	status_t retval;
+
+	clock_dev = device_get_binding(config->clock_name);
+	if (clock_dev == NULL) {
+		return -EINVAL;
+	}
+
+	if (clock_control_get_rate(clock_dev, config->clock_subsys,
+				   &clock_freq)) {
+		return -EINVAL;
+	}
+
+	UART_GetDefaultConfig(&uart_config);
+
+	uart_config.enableTx = true;
+	uart_config.enableRx = true;
+	uart_config.baudRate_Bps = cfg->baudrate;
+
+	switch (cfg->stop_bits) {
+	case UART_CFG_STOP_BITS_1:
+#if defined(FSL_FEATURE_UART_HAS_STOP_BIT_CONFIG_SUPPORT) && \
+FSL_FEATURE_UART_HAS_STOP_BIT_CONFIG_SUPPORT
+		uart_config.stopBitCount = kUART_OneStopBit;
+		break;
+	case UART_CFG_STOP_BITS_2:
+		uart_config.stopBitCount = kUART_TwoStopBit;
+#endif
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	switch (cfg->flow_ctrl) {
+	case UART_CFG_FLOW_CTRL_NONE:
+		uart_config.enableRxRTS = false;
+		uart_config.enableTxCTS = false;
+		break;
+	case UART_CFG_FLOW_CTRL_RTS_CTS:
+		uart_config.enableRxRTS = true;
+		uart_config.enableTxCTS = true;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	switch (cfg->parity) {
+	case UART_CFG_PARITY_NONE:
+		uart_config.parityMode = kUART_ParityDisabled;
+		break;
+	case UART_CFG_PARITY_EVEN:
+		uart_config.parityMode = kUART_ParityEven;
+		break;
+	case UART_CFG_PARITY_ODD:
+		uart_config.parityMode = kUART_ParityOdd;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	retval = UART_Init(config->base, &uart_config, clock_freq);
+	if (retval != kStatus_Success) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
 
 static int uart_mcux_poll_in(struct device *dev, unsigned char *c)
 {
@@ -232,30 +306,12 @@ static void uart_mcux_isr(void *arg)
 static int uart_mcux_init(struct device *dev)
 {
 	const struct uart_mcux_config *config = dev->config_info;
-	uart_config_t uart_config;
-	struct device *clock_dev;
-	uint32_t clock_freq;
+	int err;
 
-	clock_dev = device_get_binding(config->clock_name);
-	if (clock_dev == NULL) {
-		return -EINVAL;
+	err = uart_mcux_configure(dev, &config->uart_cfg);
+	if (err != 0) {
+		return err;
 	}
-
-	if (clock_control_get_rate(clock_dev, config->clock_subsys,
-				   &clock_freq)) {
-		return -EINVAL;
-	}
-
-	UART_GetDefaultConfig(&uart_config);
-	uart_config.enableTx = true;
-	uart_config.enableRx = true;
-	if (config->hw_flow_control) {
-		uart_config.enableRxRTS = true;
-		uart_config.enableTxCTS = true;
-	}
-	uart_config.baudRate_Bps = config->baud_rate;
-
-	UART_Init(config->base, &uart_config, clock_freq);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	config->irq_config_func(dev);
@@ -268,6 +324,7 @@ static const struct uart_driver_api uart_mcux_driver_api = {
 	.poll_in = uart_mcux_poll_in,
 	.poll_out = uart_mcux_poll_out,
 	.err_check = uart_mcux_err_check,
+	.configure = uart_mcux_configure,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = uart_mcux_fifo_fill,
 	.fifo_read = uart_mcux_fifo_read,
@@ -291,8 +348,14 @@ static const struct uart_mcux_config uart_mcux_##n##_config = {		\
 	.base = (UART_Type *)DT_INST_REG_ADDR(n),			\
 	.clock_name = DT_INST_CLOCKS_LABEL(n),				\
 	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
-	.baud_rate = DT_INST_PROP(n, current_speed),			\
-	.hw_flow_control = DT_INST_PROP(n, hw_flow_control),		\
+	.uart_cfg = {							\
+		.stop_bits = UART_CFG_STOP_BITS_1,			\
+		.data_bits = UART_CFG_DATA_BITS_8,			\
+		.baudrate  = DT_INST_PROP(n, current_speed),		\
+		.parity    = UART_CFG_PARITY_NONE,			\
+		.flow_ctrl = DT_INST_PROP(n, hw_flow_control) ?		\
+			UART_CFG_FLOW_CTRL_RTS_CTS : UART_CFG_FLOW_CTRL_NONE,\
+	},								\
 	IRQ_FUNC_INIT							\
 }
 
