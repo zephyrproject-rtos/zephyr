@@ -194,6 +194,11 @@ static inline void set_left_chunk_size(struct z_heap *h, chunkid_t c,
 	chunk_set(h, c, LEFT_SIZE, size);
 }
 
+static inline bool solo_free_header(struct z_heap *h, chunkid_t c)
+{
+	return big_heap(h) && chunk_size(h, c) == 1;
+}
+
 static inline size_t chunk_header_bytes(struct z_heap *h)
 {
 	return big_heap(h) ? 8 : 4;

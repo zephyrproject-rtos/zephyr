@@ -21,12 +21,6 @@ static void *chunk_mem(struct z_heap *h, chunkid_t c)
 	return ret;
 }
 
-static inline bool solo_free_header(struct z_heap *h, chunkid_t c)
-{
-	return (IS_ENABLED(CONFIG_SYS_HEAP_ALIGNED_ALLOC)
-		&& chunk_size(h, c) == 1);
-}
-
 static void free_list_remove_bidx(struct z_heap *h, chunkid_t c, int bidx)
 {
 	struct z_heap_bucket *b = &h->buckets[bidx];
@@ -129,8 +123,8 @@ static chunkid_t split_alloc(struct z_heap *h, int bidx, size_t sz)
 
 	free_list_remove_bidx(h, c, bidx);
 
-	/* Split off remainder if it's usefully large */
-	if ((chunk_size(h, c) - sz) >= (big_heap(h) ? 2 : 1)) {
+	/* Split off remainder if any */
+	if (chunk_size(h, c) > sz) {
 		split_chunks(h, c, c + sz);
 		free_list_add(h, c + sz);
 	}
