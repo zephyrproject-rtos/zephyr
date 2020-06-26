@@ -357,7 +357,7 @@ static const struct flash_driver_api flash_sam_api = {
 	.erase = flash_sam_erase,
 	.write = flash_sam_write,
 	.read = flash_sam_read,
-	.get_parameters = flash_sim_get_parameters,
+	.get_parameters = flash_sam_get_parameters,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_sam_page_layout,
 #endif
