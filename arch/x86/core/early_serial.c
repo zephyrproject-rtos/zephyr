@@ -5,32 +5,38 @@
  */
 
 #include <kernel.h>
+#include <sys/device_mmio.h>
 #include <sys/util.h>
 #include <drivers/pcie/pcie.h>
 #include <soc.h>
 
-/* Legacy I/O Port Access to a NS16550 UART */
+
 #ifdef UART_NS16550_ACCESS_IOPORT
+/* Legacy I/O Port Access to a NS16550 UART */
 #define IN(reg)       sys_in8(reg + UART_NS16550_ACCESS_IOPORT)
 #define OUT(reg, val) sys_out8(val, reg + UART_NS16550_ACCESS_IOPORT)
-#endif
-
+#elif defined(X86_SOC_EARLY_SERIAL_PCIDEV)
 /* "Modern" mapping of a UART into a PCI MMIO device.  The registers
  * are still bytes, but spaced at a 32 bit stride instead of packed
  * together.
  */
-#ifdef X86_SOC_EARLY_SERIAL_PCIDEV
-static uintptr_t pci_bar;
-#define IN(reg)       (sys_read32(pci_bar + reg * 4) & 0xff)
-#define OUT(reg, val) sys_write32((val) & 0xff, pci_bar + reg * 4)
-#endif
-
+static mm_reg_t mmio;
+#define IN(reg)       (sys_read32(mmio + reg * 4) & 0xff)
+#define OUT(reg, val) sys_write32((val) & 0xff, mmio + reg * 4)
+#elif defined(X86_SOC_EARLY_SERIAL_MMIO8_ADDR)
 /* Still other devices use a MMIO region containing packed byte
  * registers
  */
-#ifdef X86_SOC_EARLY_SERIAL_MMIO8_ADDR
-#define IN(reg)       sys_read8(X86_SOC_EARLY_SERIAL_MMIO8_ADDR + reg)
-#define OUT(reg, val) sys_write8(val, X86_SOC_EARLY_SERIAL_MMIO8_ADDR + reg)
+#if DEVICE_MMIO_IS_IN_RAM
+static mm_reg_t mmio;
+#define BASE mmio
+#else
+#define BASE X86_SOC_EARLY_SERIAL_MMIO8_ADDR
+#endif /* DEVICE_MMIO_IS_IN_RAM */
+#define IN(reg)       sys_read8(BASE + reg)
+#define OUT(reg, val) sys_write8(val, BASE + reg)
+#else
+#error "Unsupported configuration"
 #endif
 
 #define REG_THR  0x00  /* Transmitter holding reg. */
@@ -72,10 +78,17 @@ int arch_printk_char_out(int c)
 
 void z_x86_early_serial_init(void)
 {
+#if defined(DEVICE_MMIO_IS_IN_RAM) && !defined(UART_NS16550_ACCESS_IOPORT)
+	uintptr_t phys;
+
 #ifdef X86_SOC_EARLY_SERIAL_PCIDEV
-	pci_bar = pcie_get_mbar(X86_SOC_EARLY_SERIAL_PCIDEV, 0);
+	phys = pcie_get_mbar(X86_SOC_EARLY_SERIAL_PCIDEV, 0);
 	pcie_set_cmd(X86_SOC_EARLY_SERIAL_PCIDEV, PCIE_CONF_CMDSTAT_MEM, true);
+#else
+	phys = X86_SOC_EARLY_SERIAL_MMIO8_ADDR;
 #endif
+	device_map(&mmio, phys, 0x1000, K_MEM_CACHE_NONE);
+#endif /* DEVICE_MMIO_IS_IN_RAM */
 
 	OUT(REG_IER, IER_DISABLE);     /* Disable interrupts */
 	OUT(REG_LCR, LCR_DLAB_SELECT); /* DLAB select */
