@@ -50,8 +50,6 @@ list(REMOVE_DUPLICATES
   DTS_ROOT
   )
 
-list(REMOVE_DUPLICATES DTS_ROOT)
-
 set(dts_files
   ${DTS_SOURCE}
   ${shield_dts_files}
