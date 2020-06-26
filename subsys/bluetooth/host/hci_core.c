@@ -2129,8 +2129,9 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	}
 
 	if (!conn) {
-		BT_ERR("Unable to add new conn for handle %u", handle);
-		bt_hci_disconnect(handle, BT_HCI_ERR_MEM_CAPACITY_EXCEEDED);
+		BT_ERR("No pending conn for peer %s",
+		       bt_addr_le_str(&evt->peer_addr));
+		bt_hci_disconnect(handle, BT_HCI_ERR_UNSPECIFIED);
 		return;
 	}
 
