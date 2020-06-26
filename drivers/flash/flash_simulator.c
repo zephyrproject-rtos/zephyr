@@ -279,11 +279,8 @@ static void unit_erase(const uint32_t unit)
 	const off_t unit_addr = FLASH_SIMULATOR_BASE_OFFSET +
 				(unit * FLASH_SIMULATOR_ERASE_UNIT);
 
-	/* byte pattern to fill the flash with */
-	uint8_t byte_pattern = FLASH_SIMULATOR_ERASE_VALUE;
-
 	/* erase the memory unit by setting it to erase value */
-	memset(FLASH(unit_addr), byte_pattern,
+	memset(FLASH(unit_addr), FLASH_SIMULATOR_ERASE_VALUE,
 	       FLASH_SIMULATOR_ERASE_UNIT);
 }
 
@@ -414,7 +411,8 @@ static int flash_mock_init(struct device *dev)
 
 	if (f_stat.st_size == 0) {
 		/* erase the memory unit by pulling all bits to one */
-		(void)memset(mock_flash, 0xff, FLASH_SIMULATOR_FLASH_SIZE);
+		(void)memset(mock_flash, FLASH_SIMULATOR_ERASE_VALUE,
+			     FLASH_SIMULATOR_FLASH_SIZE);
 	}
 
 	return 0;
