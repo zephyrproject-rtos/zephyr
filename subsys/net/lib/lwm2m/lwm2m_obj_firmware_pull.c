@@ -29,7 +29,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 static struct k_work firmware_work;
 static char firmware_uri[URI_LEN];
-static struct lwm2m_ctx firmware_ctx;
+static struct lwm2m_ctx firmware_ctx = {
+	.sock_fd = -1
+};
 static int firmware_retry;
 static struct coap_block_context firmware_block_ctx;
 
@@ -357,12 +359,14 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 	} else {
 		/* Download finished */
 		lwm2m_firmware_set_update_state(STATE_DOWNLOADED);
+		lwm2m_engine_context_close(&firmware_ctx);
 	}
 
 	return 0;
 
 error:
 	set_update_result_from_error(ret);
+	lwm2m_engine_context_close(&firmware_ctx);
 	return ret;
 }
 
@@ -381,6 +385,7 @@ static void do_transmit_timeout_cb(struct lwm2m_message *msg)
 			/* abort retries / transfer */
 			set_update_result_from_error(ret);
 			firmware_retry = PACKET_TRANSFER_RETRY_MAX;
+			lwm2m_engine_context_close(&firmware_ctx);
 			return;
 		}
 
@@ -389,6 +394,7 @@ static void do_transmit_timeout_cb(struct lwm2m_message *msg)
 		LOG_ERR("TIMEOUT - Too many retry packet attempts! "
 			"Aborting firmware download.");
 		lwm2m_firmware_set_update_result(RESULT_CONNECTION_LOST);
+		lwm2m_engine_context_close(&firmware_ctx);
 	}
 }
 
@@ -441,6 +447,7 @@ static void firmware_transfer(struct k_work *work)
 
 error:
 	set_update_result_from_error(ret);
+	lwm2m_engine_context_close(&firmware_ctx);
 }
 
 /* TODO: */
@@ -452,9 +459,8 @@ int lwm2m_firmware_cancel_transfer(void)
 int lwm2m_firmware_start_transfer(char *package_uri)
 {
 	/* close old socket */
-	if (firmware_ctx.sock_fd > 0) {
-		lwm2m_socket_del(&firmware_ctx);
-		(void)close(firmware_ctx.sock_fd);
+	if (firmware_ctx.sock_fd > -1) {
+		lwm2m_engine_context_close(&firmware_ctx);
 	}
 
 	(void)memset(&firmware_ctx, 0, sizeof(struct lwm2m_ctx));
