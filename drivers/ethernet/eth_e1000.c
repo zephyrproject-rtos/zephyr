@@ -216,16 +216,22 @@ int e1000_probe(struct device *device)
 {
 	const pcie_bdf_t bdf = PCIE_BDF(0, 3, 0);
 	struct e1000_dev *dev = device->driver_data;
-	int retval = -ENODEV;
 	uint32_t ral, rah;
+	uintptr_t phys_addr;
+	size_t size;
 
-	if (pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
-			    PCI_DEVICE_ID_I82540EM))) {
-		dev->address = pcie_get_mbar(bdf, 0);
-		pcie_set_cmd(bdf, PCIE_CONF_CMDSTAT_MEM |
-				  PCIE_CONF_CMDSTAT_MASTER, true);
-		retval = 0;
+	if (!pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
+				     PCI_DEVICE_ID_I82540EM))) {
+		return -ENODEV;
 	}
+
+	phys_addr = pcie_get_mbar(bdf, 0);
+	pcie_set_cmd(bdf, PCIE_CONF_CMDSTAT_MEM |
+		     PCIE_CONF_CMDSTAT_MASTER, true);
+	size = KB(128); /* TODO: get from PCIe */
+
+	device_map(&dev->address, phys_addr, size,
+		   K_MEM_CACHE_NONE);
 
 	/* Setup TX descriptor */
 
@@ -258,7 +264,7 @@ int e1000_probe(struct device *device)
 	memcpy(dev->mac, &ral, 4);
 	memcpy(dev->mac + 4, &rah, 2);
 
-	return retval;
+	return 0;
 }
 
 static void e1000_iface_init(struct net_if *iface)
