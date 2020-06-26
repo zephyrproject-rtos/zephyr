@@ -1972,6 +1972,7 @@ PREDEFINED             = "CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT" \
                          "CONFIG_FLASH_PAGE_LAYOUT" \
                          "CONFIG_FPU" \
                          "CONFIG_FPU_SHARING" \
+                         "CONFIG_MMU" \
                          "CONFIG_NET_L2_ETHERNET_MGMT" \
                          "CONFIG_NET_MGMT_EVENT" \
                          "CONFIG_NET_TCP" \
