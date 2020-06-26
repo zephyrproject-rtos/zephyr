@@ -21,13 +21,23 @@ echo ""
 echo "--- ccache stats at start"
 ccache -s
 
-if [ -n "${BUILDKITE_PULL_REQUEST_BASE_BRANCH}" ]; then
-   ./scripts/ci/run_ci.sh  -c -b ${BUILDKITE_PULL_REQUEST_BASE_BRANCH} -r origin \
-	   -m ${JOB_NUM} -M ${BUILDKITE_PARALLEL_JOB_COUNT} -p ${BUILDKITE_PULL_REQUEST}
+if [ -n "${DAILY_BUILD}" ]; then
+   SANITYCHECK_OPTIONS=" --inline-logs -N --build-only --all --retry-failed 3 -v "
+   echo "--- DAILY BUILD"
+   west init -l .
+   west update 1> west.update.log
+   west forall -c 'git reset --hard HEAD'
+   source zephyr-env.sh
+   ./scripts/sanitycheck --subset ${JOB_NUM}/${BUILDKITE_PARALLEL_JOB_COUNT} ${SANITYCHECK_OPTIONS}
 else
-   ./scripts/ci/run_ci.sh -c -b ${BUILDKITE_BRANCH} -r origin \
+   if [ -n "${BUILDKITE_PULL_REQUEST_BASE_BRANCH}" ]; then
+      ./scripts/ci/run_ci.sh  -c -b ${BUILDKITE_PULL_REQUEST_BASE_BRANCH} -r origin \
+	   -m ${JOB_NUM} -M ${BUILDKITE_PARALLEL_JOB_COUNT} -p ${BUILDKITE_PULL_REQUEST}
+   else
+       ./scripts/ci/run_ci.sh -c -b ${BUILDKITE_BRANCH} -r origin \
 	   -m ${JOB_NUM} -M ${BUILDKITE_PARALLEL_JOB_COUNT};
-fi;
+   fi
+fi
 
 SANITY_EXIT_STATUS=$?
 
