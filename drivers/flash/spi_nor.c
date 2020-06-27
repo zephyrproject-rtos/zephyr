@@ -173,7 +173,7 @@ static int spi_nor_access(const struct device *const dev,
 
 	const struct spi_buf_set rx_set = {
 		.buffers = spi_buf,
-		.count = 2
+		.count = 2 + 0,
 	};
 
 	if (is_write) {

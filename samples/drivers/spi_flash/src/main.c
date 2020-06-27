@@ -41,7 +41,7 @@ void main(void)
 	struct device *flash_dev;
 	int rc;
 
-	printf("\n" FLASH_NAME " SPI flash testing\n");
+	printf("\n" FLASH_NAME " SPI flash testing!\n");
 	printf("==========================\n");
 
 	flash_dev = device_get_binding(FLASH_DEVICE);
