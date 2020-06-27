@@ -16,3 +16,24 @@ properties:
 
     clocks:
       required: true
+
+    pcs-sck-delay:
+      type: int
+      required: false
+      description: |
+        Delay in nanoseconds from the chip select assert to the first clock
+        edge. If not set, the minimum supported delay is used.
+
+    sck-pcs-delay:
+      type: int
+      required: false
+      description: |
+        Delay in nanoseconds from the last clock edge to the chip select
+        deassert. If not set, the minimum supported delay is used.
+
+    transfer-delay:
+      type: int
+      required: false
+      description: |
+        Delay in nanoseconds from the chip select deassert to the next chip
+        select assert. If not set, the minimum supported delay is used.

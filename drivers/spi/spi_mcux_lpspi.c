@@ -25,6 +25,9 @@ struct spi_mcux_config {
 	char *clock_name;
 	clock_control_subsys_t clock_subsys;
 	void (*irq_config_func)(struct device *dev);
+	uint32_t pcs_sck_delay;
+	uint32_t sck_pcs_delay;
+	uint32_t transfer_delay;
 };
 
 struct spi_mcux_data {
@@ -173,6 +176,10 @@ static int spi_mcux_configure(struct device *dev,
 
 	master_config.baudRate = spi_cfg->frequency;
 
+	master_config.pcsToSckDelayInNanoSec = config->pcs_sck_delay;
+	master_config.lastSckToPcsDelayInNanoSec = config->sck_pcs_delay;
+	master_config.betweenTransferDelayInNanoSec = config->transfer_delay;
+
 	clock_dev = device_get_binding(config->clock_name);
 	if (clock_dev == NULL) {
 		return -EINVAL;
@@ -284,6 +291,15 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 		.clock_subsys =						\
 		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
 		.irq_config_func = spi_mcux_config_func_##n,		\
+		.pcs_sck_delay = UTIL_AND(				\
+			DT_INST_NODE_HAS_PROP(n, pcs_sck_delay),	\
+			DT_INST_PROP(n, pcs_sck_delay)),		\
+		.sck_pcs_delay = UTIL_AND(				\
+			DT_INST_NODE_HAS_PROP(n, sck_pcs_delay),	\
+			DT_INST_PROP(n, sck_pcs_delay)),		\
+		.transfer_delay = UTIL_AND(				\
+			DT_INST_NODE_HAS_PROP(n, transfer_delay),	\
+			DT_INST_PROP(n, transfer_delay)),		\
 	};								\
 									\
 	static struct spi_mcux_data spi_mcux_data_##n = {		\

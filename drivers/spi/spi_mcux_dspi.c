@@ -23,6 +23,9 @@ struct spi_mcux_config {
 	char *clock_name;
 	clock_control_subsys_t clock_subsys;
 	void (*irq_config_func)(struct device *dev);
+	uint32_t pcs_sck_delay;
+	uint32_t sck_pcs_delay;
+	uint32_t transfer_delay;
 };
 
 struct spi_mcux_data {
@@ -133,6 +136,8 @@ static int spi_mcux_configure(struct device *dev,
 	uint32_t clock_freq;
 	uint32_t word_size;
 
+	dspi_master_ctar_config_t *ctar_config = &master_config.ctarConfig;
+
 	if (spi_context_configured(&data->ctx, spi_cfg)) {
 		/* This configuration is already in use */
 		return 0;
@@ -153,24 +158,28 @@ static int spi_mcux_configure(struct device *dev,
 		return -EINVAL;
 	}
 
-	master_config.ctarConfig.bitsPerFrame = word_size;
+	ctar_config->bitsPerFrame = word_size;
 
-	master_config.ctarConfig.cpol =
+	ctar_config->cpol =
 		(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL)
 		? kDSPI_ClockPolarityActiveLow
 		: kDSPI_ClockPolarityActiveHigh;
 
-	master_config.ctarConfig.cpha =
+	ctar_config->cpha =
 		(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA)
 		? kDSPI_ClockPhaseSecondEdge
 		: kDSPI_ClockPhaseFirstEdge;
 
-	master_config.ctarConfig.direction =
+	ctar_config->direction =
 		(spi_cfg->operation & SPI_TRANSFER_LSB)
 		? kDSPI_LsbFirst
 		: kDSPI_MsbFirst;
 
-	master_config.ctarConfig.baudRate = spi_cfg->frequency;
+	ctar_config->baudRate = spi_cfg->frequency;
+
+	ctar_config->pcsToSckDelayInNanoSec = config->pcs_sck_delay;
+	ctar_config->lastSckToPcsDelayInNanoSec = config->sck_pcs_delay;
+	ctar_config->betweenTransferDelayInNanoSec = config->transfer_delay;
 
 	clock_dev = device_get_binding(config->clock_name);
 	if (clock_dev == NULL) {
@@ -285,6 +294,15 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 		.clock_subsys = 					\
 		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),	\
 		.irq_config_func = spi_mcux_config_func_##id,		\
+		.pcs_sck_delay = UTIL_AND(				\
+			DT_INST_NODE_HAS_PROP(id, pcs_sck_delay),	\
+			DT_INST_PROP(id, pcs_sck_delay)),		\
+		.sck_pcs_delay = UTIL_AND(				\
+			DT_INST_NODE_HAS_PROP(id, sck_pcs_delay),	\
+			DT_INST_PROP(id, sck_pcs_delay)),		\
+		.transfer_delay = UTIL_AND(				\
+			DT_INST_NODE_HAS_PROP(id, transfer_delay),	\
+			DT_INST_PROP(id, transfer_delay)),		\
 	};								\
 	static struct spi_mcux_data spi_mcux_data_##id = {		\
 		SPI_CONTEXT_INIT_LOCK(spi_mcux_data_##id, ctx),		\
