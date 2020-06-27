@@ -8,7 +8,7 @@
 properties:
   jedec-id:
     type: uint8-array
-    required: true
+    required: false
     description: JEDEC ID as manufacturer ID, memory type, memory density
 
   sfdp-bfp:
@@ -92,5 +92,5 @@ properties:
 
   size:
     type: int
-    required: true
+    required: false
     description: flash capacity in bits
