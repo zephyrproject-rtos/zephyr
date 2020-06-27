@@ -10,6 +10,7 @@ User and Developer Guides
    beyond-GSG.rst
    bluetooth/index.rst
    build/index
+   coding_guidelines/index
    c_library
    ../README.rst
    documentation/index
