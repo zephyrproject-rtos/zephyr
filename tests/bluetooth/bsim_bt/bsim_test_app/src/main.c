@@ -20,4 +20,5 @@ bst_test_install_t test_installers[] = {
 void main(void)
 {
 	bst_main();
+	a_call_to_nowhere();
 }
