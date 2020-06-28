@@ -16,7 +16,14 @@
 #include "flash_priv.h"
 #include <nrfx_qspi.h>
 
-#define qspi_nor_config spi_nor_config
+struct qspi_nor_config {
+       /* JEDEC id from devicetree */
+       uint8_t id[SPI_NOR_MAX_ID_LEN];
+
+       /* Size from devicetree, in bytes */
+       uint32_t size;
+};
+
 #define QSPI_NOR_MAX_ID_LEN SPI_NOR_MAX_ID_LEN
 
 /* Status register bits */
