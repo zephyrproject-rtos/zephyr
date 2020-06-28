@@ -8,7 +8,7 @@ import subprocess
 
 import platform
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+from runners.core import ZephyrBinaryRunner, RunnerCaps, BuildConfiguration
 
 DEFAULT_BOSSAC_PORT = '/dev/ttyACM0'
 
@@ -17,11 +17,12 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for bossac.'''
 
     def __init__(self, cfg, bossac='bossac', port=DEFAULT_BOSSAC_PORT,
-            offset=None):
+                 offset=None, flash_address=None):
         super().__init__(cfg)
         self.bossac = bossac
         self.port = port
         self.offset = offset
+        self.flash_address = flash_address
 
     @classmethod
     def name(cls):
@@ -44,8 +45,14 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def do_create(cls, cfg, args):
+        # BOSSA means there's a bootloader so always fetch the flash address
+        args.dt_flash = True
+        build_conf = BuildConfiguration(cfg.build_dir)
+        flash_address = cls.get_flash_address(args, build_conf, None)
+
         return BossacBinaryRunner(cfg, bossac=args.bossac,
-                                  port=args.bossac_port, offset=args.offset)
+                                  port=args.bossac_port, offset=args.offset,
+                                  flash_address=flash_address)
 
     def read_help(self):
         """Run bossac --help and return the output as a list of lines"""
@@ -68,6 +75,8 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
         if supports_offset:
             if self.offset is not None:
                 return self.offset
+            if self.flash_address is not None:
+                return self.flash_address
 
             self.logger.warning(
                 'This version of BOSSA supports the --offset flag but' +
