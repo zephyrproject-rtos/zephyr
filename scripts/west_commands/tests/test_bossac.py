@@ -33,9 +33,10 @@ EXPECTED_COMMANDS_WITH_OFFSET = [
 def require_patch(program):
     assert program in ['bossac', 'stty']
 
+@patch('runners.bossac.BossacBinaryRunner.supports', return_value=True)
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
-def test_bossac_init(cc, req, runner_config):
+def test_bossac_init(cc, req, supports, runner_config):
     '''Test commands using a runner created by constructor.'''
     runner = BossacBinaryRunner(runner_config, port=TEST_BOSSAC_PORT,
                                 offset=TEST_OFFSET)

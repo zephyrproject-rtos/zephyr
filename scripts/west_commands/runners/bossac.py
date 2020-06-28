@@ -4,6 +4,8 @@
 
 '''bossac-specific runner (flash only) for Atmel SAM microcontrollers.'''
 
+import subprocess
+
 import platform
 
 from runners.core import ZephyrBinaryRunner, RunnerCaps
@@ -45,6 +47,44 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
         return BossacBinaryRunner(cfg, bossac=args.bossac,
                                   port=args.bossac_port, offset=args.offset)
 
+    def read_help(self):
+        """Run bossac --help and return the output as a list of lines"""
+        self.require(self.bossac)
+        try:
+            self.check_output([self.bossac, '--help'])
+            return []
+        except subprocess.CalledProcessError as ex:
+            return ex.output.decode().split('\n')
+
+    def supports(self, flag):
+        """Check if bossac supports a flag by searching the help"""
+        for line in self.read_help():
+            if flag in line:
+                return True
+        return False
+
+    def get_offset(self, supports_offset):
+        """Validates and returns the flash offset"""
+        if supports_offset:
+            if self.offset is not None:
+                return self.offset
+
+            self.logger.warning(
+                'This version of BOSSA supports the --offset flag but' +
+                ' no offset was supplied. If flashing fails, then' +
+                ' please specify the size of the bootloader by adding' +
+                ' the --offset= flag to board_runner_args in board.cmake')
+            return self.offset
+
+        if self.offset is not None:
+            self.logger.warning(
+                'This version of BOSSA does not support the --offset flag.' +
+                ' Please see' +
+                ' https://github.com/zephyrproject-rtos/sdk-ng/issues/234' +
+                ' which tracks updating the Zephyr SDK.')
+
+        return self.offset
+
     def do_run(self, command, **kwargs):
         if platform.system() == 'Windows':
             msg = 'CAUTION: BOSSAC runner not support on Windows!'
@@ -62,7 +102,9 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
         cmd_flash = [self.bossac, '-p', self.port, '-R', '-e', '-w', '-v',
                      '-b', self.cfg.bin_file]
 
-        if self.offset is not None:
-            cmd_flash += ['-o', '%s' % self.offset]
+        offset = self.get_offset(self.supports('--offset'))
+
+        if offset is not None:
+            cmd_flash += ['-o', '%s' % offset]
 
         self.check_call(cmd_flash)
