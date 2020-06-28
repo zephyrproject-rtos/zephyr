@@ -8,4 +8,6 @@ source "subsys/mgmt/mcumgr/Kconfig"
 
 source "subsys/mgmt/updatehub/Kconfig"
 
+source "subsys/mgmt/osdp/Kconfig"
+
 endmenu
