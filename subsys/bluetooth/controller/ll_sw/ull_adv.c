@@ -848,13 +848,11 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	const uint8_t phy = lll->phy_p;
-	struct ull_hdr *ull;
 
-	ull = &adv->ull;
-	adv->max_events = max_ext_adv_evts;
 	adv->event_counter = 0;
-	/* duration unit is 10 ms, convert to units of 625 us */
-	adv->remain_duration = duration*16;
+	adv->max_events = max_ext_adv_evts;
+	adv->ticks_remain_duration = HAL_TICKER_US_TO_TICKS((uint64_t)duration *
+							    10000);
 #else
 	/* Legacy ADV only supports LE_1M PHY */
 	const uint8_t phy = 1;
@@ -1153,8 +1151,6 @@ uint8_t ll_adv_enable(uint8_t enable)
 #endif /* !CONFIG_BT_HCI_MESH_EXT */
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-	adv->next_random_delay = 0;
-
 	return 0;
 
 failure_cleanup:
@@ -1409,12 +1405,6 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t laz
 	struct lll_adv *lll;
 	uint32_t ret;
 	uint8_t ref;
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
-	struct ull_hdr *ull;
-	uint32_t time_this_evt;
-	uint32_t time_this_and_next_evt;
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
-	uint32_t curr_random_delay = 0;
 
 	DEBUG_RADIO_PREPARE_A(1);
 
@@ -1444,60 +1434,46 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t laz
 	if (!lll->is_hdcd)
 #endif /* CONFIG_BT_PERIPHERAL */
 	{
+		uint32_t random_delay;
 		uint32_t ret;
 
-		curr_random_delay = adv->next_random_delay;
-		/* initialized to 0, so the first time, we generate a value */
-		if (curr_random_delay == 0) {
-			lll_rand_isr_get(&curr_random_delay,
-				sizeof(curr_random_delay));
-			curr_random_delay %= ULL_ADV_RANDOM_DELAY;
-			curr_random_delay += 1;
-		}
-
-		lll_rand_isr_get(&adv->next_random_delay,
-			sizeof(adv->next_random_delay));
-		adv->next_random_delay %= ULL_ADV_RANDOM_DELAY;
-		adv->next_random_delay += 1;
+		lll_rand_isr_get(&random_delay, sizeof(random_delay));
+		random_delay %= ULL_ADV_RANDOM_DELAY;
+		random_delay += 1;
 
 		ret = ticker_update(TICKER_INSTANCE_ID_CTLR,
 				    TICKER_USER_ID_ULL_HIGH,
 				    (TICKER_ID_ADV_BASE +
 				     ull_adv_handle_get(adv)),
-				    curr_random_delay,
+				    random_delay,
 				    0, 0, 0, 0, 0,
 				    ticker_op_update_cb, adv);
 		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 			  (ret == TICKER_STATUS_BUSY));
-	}
-
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-	ull = &adv->ull;
+		adv->event_counter += (lazy + 1);
 
-	adv->event_counter += (lazy + 1);
+		if (adv->ticks_remain_duration) {
+			uint32_t ticks_interval =
+				HAL_TICKER_US_TO_TICKS((uint64_t)adv->interval *
+						       625U);
+			if (adv->ticks_remain_duration > ticks_interval) {
+				adv->ticks_remain_duration -= ticks_interval;
 
-	time_this_evt =
-		(HAL_TICKER_TICKS_TO_US(curr_random_delay) / 625U)
-		+ adv->interval;
-	time_this_and_next_evt = (HAL_TICKER_TICKS_TO_US
-		(curr_random_delay + adv->next_random_delay) / 625U)
-		+ 2*adv->interval;
-
-	if (adv->remain_duration) {
-		if (adv->remain_duration >= time_this_and_next_evt) {
-			adv->remain_duration -= time_this_evt;
-		} else {
-			/* 1 means terminate adv set after this event*/
-			adv->remain_duration = 1;
+				if (adv->ticks_remain_duration > random_delay) {
+					adv->ticks_remain_duration -=
+						random_delay;
+				}
+			}
 		}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 	}
 
-#if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 	if (adv->lll.aux) {
 		ull_adv_aux_offset_get(adv);
 	}
-#endif /* CONFIG_BT_CTLR_ADV_AUX_SET > 0 */
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
+#endif /* CONFIG_BT_CTLR_ADV_EXT && (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
 
 	DEBUG_RADIO_PREPARE_A(1);
 }

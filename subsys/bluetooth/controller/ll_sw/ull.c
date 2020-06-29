@@ -1806,8 +1806,10 @@ static inline void rx_demux_event_done(memq_link_t *link,
 				((uint32_t)adv->event_counter & 0xff);
 		}
 
-		if (adv->remain_duration == 1) {
-			adv->remain_duration = 0;
+		if (adv->ticks_remain_duration &&
+		    (adv->ticks_remain_duration <
+		     HAL_TICKER_US_TO_TICKS((uint64_t)adv->interval * 625U))) {
+			adv->ticks_remain_duration = 0;
 			send_term_evt = true;
 
 			lll->node_rx_adv_term->rx_ftr.extra = (void *)
