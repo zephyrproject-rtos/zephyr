@@ -6,6 +6,7 @@ menuconfig NORDIC_QSPI_NOR
 	select FLASH_HAS_DRIVER_ENABLED
 	select NRFX_QSPI
 	depends on HAS_HW_NRF_QSPI
+	depends on MULTITHREADING
 	help
 	  Enable support for nrfx QSPI driver with EasyDMA.
 
