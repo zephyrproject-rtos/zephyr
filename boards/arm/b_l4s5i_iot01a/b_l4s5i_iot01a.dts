@@ -154,7 +154,7 @@
 		};
 		scratch_partition: partition@f8000 {
 			label = "image-scratch";
-			reg = <0x000F8000 0x00006000>;
+			reg = <0x000F8000 0x00004000>;
 		};
 
 		storage_partition: partition@fc000 {
