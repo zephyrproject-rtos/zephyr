@@ -6,6 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_imx_usdhc
+
 #include <disk/disk_access.h>
 #include <drivers/gpio.h>
 #include <sys/byteorder.h>
@@ -2874,28 +2876,16 @@ static int disk_usdhc_init(struct device *dev)
 	return disk_access_register(&usdhc_disk);
 }
 
-#ifdef CONFIG_DISK_ACCESS_USDHC1
-static struct usdhc_priv usdhc_priv_1;
-#if DT_NODE_HAS_STATUS(DT_INST(0, nxp_imx_usdhc), okay)
-DEVICE_AND_API_INIT(usdhc_dev1,
-		DT_LABEL(DT_INST(0, nxp_imx_usdhc)), disk_usdhc_init,
-		&usdhc_priv_1, NULL, APPLICATION,
-		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		NULL);
-#else
-#error No USDHC1 slot on board.
-#endif
-#endif
+#define DISK_ACCESS_USDHC_INIT(n)					\
+	static struct usdhc_priv usdhc_priv_##n;			\
+									\
+	DEVICE_AND_API_INIT(usdhc_dev##n,				\
+			    DT_INST_LABEL(n),				\
+			    &disk_usdhc_init,				\
+			    &usdhc_priv_##n,				\
+			    NULL,					\
+			    APPLICATION,				\
+			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    NULL);
 
-#ifdef CONFIG_DISK_ACCESS_USDHC2
-static struct usdhc_priv usdhc_priv_2;
-#if DT_NODE_HAS_STATUS(DT_INST(1, nxp_imx_usdhc), okay)
-DEVICE_AND_API_INIT(usdhc_dev2,
-		DT_LABEL(DT_INST(1, nxp_imx_usdhc)), disk_usdhc_init,
-		usdhc_priv_2, NULL, APPLICATION,
-		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		NULL);
-#else
-#error No USDHC2 slot on board.
-#endif
-#endif
+DT_INST_FOREACH_STATUS_OKAY(DISK_ACCESS_USDHC_INIT)
