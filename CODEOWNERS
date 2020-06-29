@@ -362,6 +362,7 @@
 /include/linker/app_smem*.ld              @andrewboie
 /include/linker/                          @andrewboie @andyross
 /include/logging/                         @nordic-krch
+/include/mgmt/osdp.h                      @cbsiddharth
 /include/net/                             @jukkar @tbursztyka @pfalcon
 /include/net/buf.h                        @jukkar @jhedberg @tbursztyka @pfalcon
 /include/posix/                           @pfalcon
@@ -410,6 +411,7 @@
 /samples/subsys/shell/                    @jakub-uC @nordic-krch
 /samples/subsys/mgmt/mcumgr/smp_svr/      @aunsbjerg @nvlsianpu
 /samples/subsys/mgmt/updatehub/           @nandojve @otavio
+/samples/subsys/mgmt/osdp/                @cbsiddharth
 /samples/subsys/usb/                      @jfischer-phytec-iot @finikorg
 /samples/subsys/power/                    @wentongwu @pabigot
 /samples/userspace/                       @andrewboie
@@ -467,6 +469,7 @@
 /subsys/mgmt/mcumgr/                      @carlescufi @nvlsianpu
 /subsys/mgmt/mcumgr/smp_udp.c             @aunsbjerg
 /subsys/mgmt/updatehub/                   @nandojve @otavio
+/subsys/mgmt/osdp/                        @cbsiddharth
 /subsys/net/buf.c                         @jukkar @jhedberg @tbursztyka @pfalcon
 /subsys/net/ip/                           @jukkar @tbursztyka @pfalcon
 /subsys/net/lib/                          @jukkar @tbursztyka @pfalcon
