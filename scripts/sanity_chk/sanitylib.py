@@ -1725,7 +1725,7 @@ class CMake():
                     self.instance.status = "skipped"
                     self.instance.reason = "{} overflow".format(res[0])
                 else:
-                    self.instance.status = "failed"
+                    self.instance.status = "error"
                     self.instance.reason = "Build failure"
 
             results = {
@@ -1783,7 +1783,7 @@ class CMake():
             results = {'msg': msg, 'filter': filter_results}
 
         else:
-            self.instance.status = "failed"
+            self.instance.status = "error"
             self.instance.reason = "Cmake build failure"
             logger.error("Cmake build failure: %s for %s" % (self.source_dir, self.platform.name))
             results = {"returncode": p.returncode}
@@ -1973,7 +1973,7 @@ class ProjectBuilder(FilterBuilder):
         # The build process, call cmake and build with configured generator
         if op == "cmake":
             results = self.cmake()
-            if self.instance.status == "failed":
+            if self.instance.status in ["failed", "error"]:
                 pipeline.put({"op": "report", "test": self.instance})
             elif self.cmake_only:
                 pipeline.put({"op": "report", "test": self.instance})
@@ -1993,7 +1993,7 @@ class ProjectBuilder(FilterBuilder):
             results = self.build()
 
             if not results:
-                self.instance.status = "failed"
+                self.instance.status = "error"
                 self.instance.reason = "Build Failure"
                 pipeline.put({"op": "report", "test": self.instance})
             else:
@@ -2060,7 +2060,7 @@ class ProjectBuilder(FilterBuilder):
         self.suite.total_done += 1
         instance = self.instance
 
-        if instance.status in ["failed", "timeout"]:
+        if instance.status in ["error", "failed", "timeout"]:
             self.suite.total_failed += 1
             if self.verbose:
                 status = Fore.RED + "FAILED " + Fore.RESET + instance.reason
@@ -2099,7 +2099,7 @@ class ProjectBuilder(FilterBuilder):
                 self.suite.total_done, total_tests_width, self.suite.total_tests, instance.platform.name,
                 instance.testcase.name, status, more_info))
 
-            if instance.status in ["failed", "timeout"]:
+            if instance.status in ["error", "failed", "timeout"]:
                 self.log_info_file(self.inline_logs)
         else:
             sys.stdout.write("\rINFO    - Total complete: %s%4d/%4d%s  %2d%%  skipped: %s%4d%s, failed: %s%4d%s" % (
@@ -2658,6 +2658,8 @@ class TestSuite(DisablePyTestCollectionMixin):
                     self.device_testing,
                     self.fixtures
                 )
+                for t in tc.cases:
+                    instance.results[t] = None
 
                 if device_testing_filter:
                     for h in self.connected_hardware:
@@ -2815,7 +2817,7 @@ class TestSuite(DisablePyTestCollectionMixin):
 
     def execute(self):
         def calc_one_elf_size(instance):
-            if instance.status not in ["failed", "skipped"]:
+            if instance.status not in ["error", "failed", "skipped"]:
                 if instance.platform.type != "native":
                     size_calc = instance.calculate_sizes()
                     instance.metrics["ram_size"] = size_calc.get_ram_size()
@@ -2943,7 +2945,6 @@ class TestSuite(DisablePyTestCollectionMixin):
 
 
     def xunit_report(self, filename, platform=None, full_report=False, append=False):
-
         total = 0
         if platform:
             selected = [platform]
@@ -2978,7 +2979,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                         else:
                             fails += 1
                 else:
-                    if instance.status in ["failed", "timeout"]:
+                    if instance.status in ["error", "failed", "timeout"]:
                         if instance.reason in ['build_error', 'handler_crash']:
                             errors += 1
                         else:
@@ -2999,10 +3000,20 @@ class TestSuite(DisablePyTestCollectionMixin):
             # When we re-run the tests, we re-use the results and update only with
             # the newly run tests.
             if os.path.exists(filename) and append:
-                eleTestsuite = eleTestsuites.findall(f'testsuite/[@name="{p}"]')[0]
-                eleTestsuite.attrib['failures'] = "%d" % fails
-                eleTestsuite.attrib['errors'] = "%d" % errors
-                eleTestsuite.attrib['skip'] = "%d" % skips
+                ts = eleTestsuites.findall(f'testsuite/[@name="{p}"]')
+                if ts:
+                    eleTestsuite = ts[0]
+                    eleTestsuite.attrib['failures'] = "%d" % fails
+                    eleTestsuite.attrib['errors'] = "%d" % errors
+                    eleTestsuite.attrib['skip'] = "%d" % skips
+                else:
+                    logger.info(f"Did not find any existing results for {p}")
+                    eleTestsuite = ET.SubElement(eleTestsuites, 'testsuite',
+                                name=run, time="%f" % duration,
+                                tests="%d" % (total),
+                                failures="%d" % fails,
+                                errors="%d" % (errors), skip="%s" % (skips))
+
             else:
                 eleTestsuite = ET.SubElement(eleTestsuites, 'testsuite',
                                              name=run, time="%f" % duration,
@@ -3039,6 +3050,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                                     type="failure",
                                     message="failed")
                             else:
+
                                 el = ET.SubElement(
                                     eleTestcase,
                                     'error',
@@ -3048,28 +3060,37 @@ class TestSuite(DisablePyTestCollectionMixin):
                             log_file = os.path.join(p, "handler.log")
                             el.text = self.process_log(log_file)
 
+                        elif instance.results[k] == 'PASS':
+                            pass
                         elif instance.results[k] == 'SKIP':
+                            el = ET.SubElement(eleTestcase, 'skipped', type="skipped", message="Skipped")
+                        else:
                             el = ET.SubElement(
                                 eleTestcase,
-                                'skipped',
-                                type="skipped",
-                                message="Skipped")
+                                'error',
+                                type="error",
+                                message=f"{instance.reason}")
                 else:
                     if platform:
                         classname = ".".join(instance.testcase.name.split(".")[:2])
                     else:
                         classname = p + ":" + ".".join(instance.testcase.name.split(".")[:2])
 
+                    # remove testcases that are being re-run from exiting reports
+                    for tc in eleTestsuite.findall(f'testcase/[@classname="{classname}"]'):
+                        eleTestsuite.remove(tc)
+
                     eleTestcase = ET.SubElement(eleTestsuite, 'testcase',
                         classname=classname,
                         name="%s" % (instance.testcase.name),
                         time="%f" % handler_time)
-                    if instance.status in ["failed", "timeout"]:
+                    if instance.status in ["error", "failed", "timeout"]:
                         failure = ET.SubElement(
                             eleTestcase,
                             'failure',
                             type="failure",
                             message=instance.reason)
+
                         p = ("%s/%s/%s" % (self.outdir, instance.platform.name, instance.testcase.name))
                         bl = os.path.join(p, "build.log")
                         hl = os.path.join(p, "handler.log")
@@ -3105,7 +3126,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                            "handler": instance.platform.simulation}
 
                 rowdict["status"] = instance.status
-                if instance.status not in ["failed", "timeout"]:
+                if instance.status not in ["error", "failed", "timeout"]:
                     if instance.handler:
                         rowdict["handler_time"] = instance.metrics.get("handler_time", 0)
                     ram_size = instance.metrics.get("ram_size", 0)

@@ -916,7 +916,6 @@ def main():
             if options.test_tree:
                 for pre, _, node in RenderTree(testsuite):
                     print("%s%s" % (pre, node.name))
-
             return
 
     discards = []
@@ -927,7 +926,7 @@ def main():
         last_run = os.path.join(options.outdir, "sanitycheck.csv")
 
     if options.only_failed:
-        suite.load_from_file(last_run, filter_status=['skipped', 'passed'])
+        suite.load_from_file(last_run, filter_status=['error', 'skipped', 'passed'])
         suite.selected_platforms = set(p.platform.name for p in suite.instances.values())
     elif options.load_tests:
         suite.load_from_file(options.load_tests)
