@@ -290,9 +290,6 @@ out:
 					    NULL, 0U, false);
 	k_sem_give(&dev->cmd_handler_data.sem_tx_lock);
 
-	net_pkt_unref(sock->tx_pkt);
-	sock->tx_pkt = NULL;
-
 	return ret;
 }
 
@@ -315,6 +312,9 @@ static void esp_send_work(struct k_work *work)
 		LOG_ERR("Failed to send data: link %d, ret %d", sock->link_id,
 			ret);
 	}
+
+	net_pkt_unref(sock->tx_pkt);
+	sock->tx_pkt = NULL;
 
 	if (sock->send_cb) {
 		sock->send_cb(sock->context, ret, sock->send_user_data);
@@ -392,10 +392,14 @@ static int esp_sendto(struct net_pkt *pkt,
 	ret = _sock_send(dev, sock);
 	k_sched_unlock();
 
-	if (ret < 0) {
+	if (ret == 0) {
+		net_pkt_unref(sock->tx_pkt);
+	} else {
 		LOG_ERR("Failed to send data: link %d, ret %d", sock->link_id,
 			ret);
 	}
+
+	sock->tx_pkt = NULL;
 
 	if (cb) {
 		cb(context, ret, user_data);
