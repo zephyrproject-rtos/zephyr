@@ -2586,10 +2586,6 @@ APP_SEND_OP_COND_AGAIN:
 	return ret;
 }
 
-struct usdhc_priv g_usdhc_priv1 __aligned(64);
-struct usdhc_priv g_usdhc_priv2 __aligned(64);
-
-
 static K_MUTEX_DEFINE(z_usdhc_init_lock);
 
 static int usdhc_board_access_init(struct usdhc_priv *priv)
