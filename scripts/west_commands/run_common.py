@@ -258,8 +258,9 @@ def load_cmake_cache(build_dir, args):
 
 def rebuild(command, build_dir, args):
     _banner(f'west {command.name}: rebuilding')
+    extra_args = ['--target', 'west_' + command.name + '_depends']
     try:
-        zcmake.run_build(build_dir)
+        zcmake.run_build(build_dir, extra_args=extra_args)
     except CalledProcessError:
         if args.build_dir:
             log.die(f're-build in {args.build_dir} failed')

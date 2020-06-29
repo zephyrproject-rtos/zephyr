@@ -211,6 +211,16 @@ foreach(target flash debug debugserver attach)
       ${comment}
       USES_TERMINAL
       )
+
+    # This is an artificial target to allow west to ensure all dependencies of
+    # target is build before carrying out the actual command.
+    # This allows `west` to run just the dependencies before flashing.
+    add_custom_target(west_${target}_depends
+      COMMAND ${CMAKE_COMMAND} -E echo ""
+      DEPENDS ${RUNNERS_DEPS}
+              $<TARGET_PROPERTY:zephyr_property_target,${TARGET_UPPER}_DEPENDENCIES>
+      USES_TERMINAL
+      )
   else()
     add_custom_target(${target}
       COMMAND ${CMAKE_COMMAND} -E echo \"West was not found in path. To support
