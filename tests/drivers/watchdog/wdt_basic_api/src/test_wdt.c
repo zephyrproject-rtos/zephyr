@@ -218,6 +218,12 @@ static int test_wdt_callback_1(void)
 	m_cfg_wdt0.window.max = 2000U;
 	err = wdt_install_timeout(wdt, &m_cfg_wdt0);
 	if (err < 0) {
+		if (err == -ENOTSUP) {
+			TC_PRINT("CB1 not supported on platform\n");
+			m_testcase_index++;
+			return TC_PASS;
+
+		}
 		TC_PRINT("Watchdog install error\n");
 		return TC_FAIL;
 	}
