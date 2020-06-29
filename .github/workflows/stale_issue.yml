@@ -17,4 +17,4 @@ jobs:
         stale-issue-label: 'Stale'
         stale-pr-label: 'Stale PR'
         exempt-pr-labels: 'DNM,In progress'
-        exempt-issue-labels: 'In progress'
+        exempt-issue-labels: 'In progress,Enhancement,Feature,Feature Request,RFC,Meta'
