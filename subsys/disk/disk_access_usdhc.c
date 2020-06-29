@@ -409,7 +409,6 @@ struct usdhc_config {
 	uint8_t write_burst_len;
 	/* Write burst len
 	 */
-	uint32_t src_clk_hz;
 };
 
 struct usdhc_capability {
@@ -462,6 +461,7 @@ struct usdhc_priv {
 	bool inserted;
 
 	struct device *clock_dev;
+	uint32_t src_clk_hz;
 
 	struct usdhc_config host_config;
 	struct usdhc_capability host_capability;
@@ -1919,7 +1919,7 @@ static int usdhc_select_bus_timing(struct usdhc_priv *priv)
 					SD_TIMING_SDR25_HIGH_SPEED_MODE;
 				priv->card_info.busclk_hz =
 					usdhc_set_sd_clk(priv->host_config.base,
-						priv->host_config.src_clk_hz,
+						priv->src_clk_hz,
 						SD_CLOCK_50MHZ);
 			} else if (error == -ENOTSUP) {
 				/* if not support high speed,
@@ -1951,7 +1951,7 @@ static int usdhc_select_bus_timing(struct usdhc_priv *priv)
 					SD_TIMING_SDR104_MODE;
 				priv->card_info.busclk_hz =
 					usdhc_set_sd_clk(priv->host_config.base,
-						priv->host_config.src_clk_hz,
+						priv->src_clk_hz,
 						SDMMCHOST_SUPPORT_SDR104_FREQ);
 				break;
 			}
@@ -1964,7 +1964,7 @@ static int usdhc_select_bus_timing(struct usdhc_priv *priv)
 				priv->card_info.busclk_hz =
 					usdhc_set_sd_clk(
 						priv->host_config.base,
-						priv->host_config.src_clk_hz,
+						priv->src_clk_hz,
 						SD_CLOCK_50MHZ);
 				usdhc_enable_ddr_mode(
 					priv->host_config.base, true, 0U);
@@ -1980,7 +1980,7 @@ static int usdhc_select_bus_timing(struct usdhc_priv *priv)
 				priv->card_info.busclk_hz =
 					usdhc_set_sd_clk(
 						priv->host_config.base,
-						priv->host_config.src_clk_hz,
+						priv->src_clk_hz,
 						SD_CLOCK_100MHZ);
 			}
 			break;
@@ -1993,7 +1993,7 @@ static int usdhc_select_bus_timing(struct usdhc_priv *priv)
 				priv->card_info.busclk_hz =
 					usdhc_set_sd_clk(
 						priv->host_config.base,
-						priv->host_config.src_clk_hz,
+						priv->src_clk_hz,
 						SD_CLOCK_50MHZ);
 			}
 			break;
@@ -2309,7 +2309,7 @@ static int usdhc_sd_init(struct usdhc_priv *priv)
 	usdhc_set_bus_width(base, USDHC_DATA_BUS_WIDTH_1BIT);
 	/*set card freq to 400KHZ at begging*/
 	priv->card_info.busclk_hz =
-		usdhc_set_sd_clk(base, priv->host_config.src_clk_hz,
+		usdhc_set_sd_clk(base, priv->src_clk_hz,
 			SDMMC_CLOCK_400KHZ);
 	/* send card active */
 	ret = usdhc_set_sd_active(base);
@@ -2515,7 +2515,7 @@ APP_SEND_OP_COND_AGAIN:
 
 	/* Set to max frequency in non-high speed mode. */
 	priv->card_info.busclk_hz = usdhc_set_sd_clk(base,
-		priv->host_config.src_clk_hz, SD_CLOCK_25MHZ);
+		priv->src_clk_hz, SD_CLOCK_25MHZ);
 
 	/* Set to 4-bit data bus mode. */
 	if ((priv->host_capability.host_flags & USDHC_SUPPORT_4BIT_FLAG) &&
@@ -2683,7 +2683,7 @@ static int usdhc_access_init(const struct device *dev)
 
 	if (clock_control_get_rate(priv->clock_dev,
 				   priv->host_config.clock_subsys,
-				   &priv->host_config.src_clk_hz)) {
+				   &priv->src_clk_hz)) {
 		return -EINVAL;
 	}
 
