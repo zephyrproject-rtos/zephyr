@@ -377,6 +377,18 @@ enum usdhc_endian_mode {
 
 struct usdhc_config {
 	USDHC_Type *base;
+	char *clock_name;
+	clock_control_subsys_t clock_subsys;
+	uint8_t nusdhc;
+
+	char *pwr_name;
+	uint8_t pwr_pin;
+	gpio_dt_flags_t pwr_flags;
+
+	char *detect_name;
+	uint8_t detect_pin;
+	gpio_dt_flags_t detect_flags;
+
 	uint32_t data_timeout;
 	/* Data timeout value
 	 */
@@ -438,29 +450,18 @@ struct usdhc_client_info {
 	enum sd_voltage voltage;
 };
 
-struct usdhc_board_config {
-	struct device *pwr_gpio;
-	uint32_t pwr_pin;
-	gpio_dt_flags_t pwr_flags;
-
-	struct device *detect_gpio;
-	uint32_t detect_pin;
-	gpio_dt_flags_t detect_flags;
-	struct gpio_callback detect_cb;
-};
-
 struct usdhc_priv {
 	bool host_ready;
 	uint8_t status;
-	uint8_t nusdhc;
 
-	struct usdhc_board_config board_cfg;
+	struct device *pwr_gpio;
+	struct device *detect_gpio;
+	struct gpio_callback detect_cb;
 
 	enum host_detect_type detect_type;
 	bool inserted;
 
 	struct device *clock_dev;
-	clock_control_subsys_t clock_sys;
 
 	struct usdhc_config host_config;
 	struct usdhc_capability host_capability;
@@ -2010,11 +2011,11 @@ static int usdhc_select_bus_timing(struct usdhc_priv *priv)
 
 		/* config IO strength in IOMUX*/
 		if (priv->card_info.sd_timing == SD_TIMING_SDR50_MODE) {
-			imxrt_usdhc_pinmux(priv->nusdhc, false,
+			imxrt_usdhc_pinmux(priv->host_config.nusdhc, false,
 				CARD_BUS_FREQ_100MHZ1,
 				CARD_BUS_STRENGTH_7);
 		} else {
-			imxrt_usdhc_pinmux(priv->nusdhc, false,
+			imxrt_usdhc_pinmux(priv->host_config.nusdhc, false,
 				CARD_BUS_FREQ_200MHZ,
 				CARD_BUS_STRENGTH_7);
 		}
@@ -2038,7 +2039,7 @@ static int usdhc_select_bus_timing(struct usdhc_priv *priv)
 		/* set default IO strength to 4 to cover card adapter driver
 		 * strength difference
 		 */
-		imxrt_usdhc_pinmux(priv->nusdhc, false,
+		imxrt_usdhc_pinmux(priv->host_config.nusdhc, false,
 			CARD_BUS_FREQ_100MHZ1,
 			CARD_BUS_STRENGTH_4);
 	}
@@ -2224,10 +2225,10 @@ static void usdhc_host_hw_init(USDHC_Type *base,
 static void usdhc_cd_gpio_cb(struct device *dev,
 				  struct gpio_callback *cb, uint32_t pins)
 {
-	struct usdhc_board_config *board_cfg =
-		CONTAINER_OF(cb, struct usdhc_board_config, detect_cb);
+	struct usdhc_priv *priv =
+		CONTAINER_OF(cb, struct usdhc_priv, detect_cb);
 
-	gpio_pin_interrupt_configure(dev, board_cfg->detect_pin,
+	gpio_pin_interrupt_configure(dev, priv->host_config.detect_pin,
 				     GPIO_INT_DISABLE);
 }
 
@@ -2594,68 +2595,28 @@ static int usdhc_board_access_init(struct usdhc_priv *priv)
 	int ret;
 	uint32_t gpio_level;
 
-	if (priv->nusdhc == 0) {
-#if DT_NODE_HAS_PROP(DT_INST(0, nxp_imx_usdhc), pwr_gpios)
-		priv->board_cfg.pwr_gpio =
-			device_get_binding(
-				DT_GPIO_LABEL(DT_INST(0, nxp_imx_usdhc), pwr_gpios));
-		if (!priv->board_cfg.pwr_gpio) {
+	if (priv->host_config.pwr_name) {
+		priv->pwr_gpio =
+			device_get_binding(priv->host_config.pwr_name);
+		if (!priv->pwr_gpio) {
 			return -ENODEV;
 		}
-		priv->board_cfg.pwr_pin =
-			DT_GPIO_PIN(DT_INST(0, nxp_imx_usdhc), pwr_gpios);
-		priv->board_cfg.pwr_flags =
-			DT_GPIO_FLAGS(DT_INST(0, nxp_imx_usdhc), pwr_gpios);
-#endif
-#if DT_NODE_HAS_PROP(DT_INST(0, nxp_imx_usdhc), cd_gpios)
-		priv->detect_type = SD_DETECT_GPIO_CD;
-		priv->board_cfg.detect_gpio =
-			device_get_binding(
-				DT_GPIO_LABEL(DT_INST(0, nxp_imx_usdhc), cd_gpios));
-		if (!priv->board_cfg.detect_gpio) {
-			return -ENODEV;
-		}
-		priv->board_cfg.detect_pin =
-			DT_GPIO_PIN(DT_INST(0, nxp_imx_usdhc), cd_gpios);
-		priv->board_cfg.detect_flags =
-			DT_GPIO_FLAGS(DT_INST(0, nxp_imx_usdhc), cd_gpios);
-#endif
-
-	} else if (priv->nusdhc == 1) {
-#if DT_NODE_HAS_PROP(DT_INST(1, nxp_imx_usdhc), pwr_gpios)
-		priv->board_cfg.pwr_gpio =
-			device_get_binding(
-				DT_GPIO_LABEL(DT_INST(1, nxp_imx_usdhc), pwr_gpios));
-		if (!priv->board_cfg.pwr_gpio) {
-			return -ENODEV;
-		}
-		priv->board_cfg.pwr_pin =
-			DT_GPIO_PIN(DT_INST(1, nxp_imx_usdhc), pwr_gpios);
-		priv->board_cfg.pwr_flags =
-			DT_GPIO_FLAGS(DT_INST(1, nxp_imx_usdhc), pwr_gpios);
-#endif
-#if DT_NODE_HAS_PROP(DT_INST(1, nxp_imx_usdhc), cd_gpios)
-		priv->detect_type = SD_DETECT_GPIO_CD;
-		priv->board_cfg.detect_gpio =
-			device_get_binding(
-				DT_GPIO_LABEL(DT_INST(1, nxp_imx_usdhc), cd_gpios));
-		if (!priv->board_cfg.detect_gpio) {
-			return -ENODEV;
-		}
-		priv->board_cfg.detect_pin =
-			DT_GPIO_PIN(DT_INST(1, nxp_imx_usdhc), cd_gpios);
-		priv->board_cfg.detect_flags =
-			DT_GPIO_FLAGS(DT_INST(1, nxp_imx_usdhc), cd_gpios);
-#endif
-	} else {
-		return -ENODEV;
 	}
 
-	if (priv->board_cfg.pwr_gpio) {
-		ret = gpio_pin_configure(priv->board_cfg.pwr_gpio,
-				priv->board_cfg.pwr_pin,
+	if (priv->host_config.detect_name) {
+		priv->detect_type = SD_DETECT_GPIO_CD;
+		priv->detect_gpio =
+			device_get_binding(priv->host_config.detect_name);
+		if (!priv->detect_gpio) {
+			return -ENODEV;
+		}
+	}
+
+	if (priv->pwr_gpio) {
+		ret = gpio_pin_configure(priv->pwr_gpio,
+				priv->host_config.pwr_pin,
 				GPIO_OUTPUT_ACTIVE |
-				priv->board_cfg.pwr_flags);
+				priv->host_config.pwr_flags);
 		if (ret) {
 			return ret;
 		}
@@ -2666,20 +2627,19 @@ static int usdhc_board_access_init(struct usdhc_priv *priv)
 		k_busy_wait(100000);
 	}
 
-	if (!priv->board_cfg.detect_gpio) {
+	if (!priv->detect_gpio) {
 		LOG_INF("USDHC detection other than GPIO not implemented!\r\n");
 		return 0;
 	}
 
-	ret = usdhc_cd_gpio_init(priv->board_cfg.detect_gpio,
-			priv->board_cfg.detect_pin,
-			priv->board_cfg.detect_flags,
-			&priv->board_cfg.detect_cb);
+	ret = usdhc_cd_gpio_init(priv->detect_gpio,
+			priv->host_config.detect_pin,
+			priv->host_config.detect_flags,
+			&priv->detect_cb);
 	if (ret) {
 		return ret;
 	}
-	ret = gpio_pin_get(priv->board_cfg.detect_gpio,
-			   priv->board_cfg.detect_pin);
+	ret = gpio_pin_get(priv->detect_gpio, priv->host_config.detect_pin);
 	if (ret < 0) {
 		return ret;
 	}
@@ -2701,43 +2661,19 @@ static int usdhc_board_access_init(struct usdhc_priv *priv)
 
 static int usdhc_access_init(const struct device *dev)
 {
+	const struct usdhc_config *config = dev->config_info;
 	struct usdhc_priv *priv = dev->driver_data;
 	int ret;
 
 	(void)k_mutex_lock(&z_usdhc_init_lock, K_FOREVER);
 
 	memset((char *)priv, 0, sizeof(struct usdhc_priv));
-#if DT_NODE_HAS_STATUS(DT_INST(0, nxp_imx_usdhc), okay)
-	if (!strcmp(dev->name, DT_LABEL(DT_INST(0, nxp_imx_usdhc)))) {
-		priv->host_config.base =
-			(USDHC_Type *)DT_REG_ADDR(DT_INST(0, nxp_imx_usdhc));
-		priv->nusdhc = 0;
-		priv->clock_dev = device_get_binding(
-			DT_CLOCKS_LABEL(DT_INST(0, nxp_imx_usdhc)));
-		if (priv->clock_dev == NULL) {
-			return -EINVAL;
-		}
-		priv->clock_sys =
-			(clock_control_subsys_t)
-			DT_CLOCKS_CELL(DT_INST(0, nxp_imx_usdhc), name);
-	}
-#endif
+	priv->host_config = *config;
 
-#if DT_NODE_HAS_STATUS(DT_INST(1, nxp_imx_usdhc), okay)
-	if (!strcmp(dev->name, DT_LABEL(DT_INST(1, nxp_imx_usdhc)))) {
-		priv->host_config.base =
-			(USDHC_Type *)DT_REG_ADDR(DT_INST(1, nxp_imx_usdhc));
-		priv->nusdhc = 1;
-		priv->clock_dev = device_get_binding(
-			DT_CLOCKS_LABEL(DT_INST(1, nxp_imx_usdhc)));
-		if (priv->clock_dev == NULL) {
-			return -EINVAL;
-		}
-		priv->clock_sys =
-			(clock_control_subsys_t)
-			DT_CLOCKS_CELL(DT_INST(1, nxp_imx_usdhc), name);
+	priv->clock_dev = device_get_binding(priv->host_config.clock_name);
+	if (priv->clock_dev == NULL) {
+		return -EINVAL;
 	}
-#endif
 
 	if (!priv->host_config.base) {
 		k_mutex_unlock(&z_usdhc_init_lock);
@@ -2745,7 +2681,8 @@ static int usdhc_access_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (clock_control_get_rate(priv->clock_dev, priv->clock_sys,
+	if (clock_control_get_rate(priv->clock_dev,
+				   priv->host_config.clock_subsys,
 				   &priv->host_config.src_clk_hz)) {
 		return -EINVAL;
 	}
@@ -2756,13 +2693,6 @@ static int usdhc_access_init(const struct device *dev)
 
 		return ret;
 	}
-
-	priv->host_config.data_timeout = USDHC_DATA_TIMEOUT;
-	priv->host_config.endian = USDHC_LITTLE_ENDIAN;
-	priv->host_config.read_watermark = USDHC_READ_WATERMARK_LEVEL;
-	priv->host_config.write_watermark = USDHC_WRITE_WATERMARK_LEVEL;
-	priv->host_config.read_burst_len = USDHC_READ_BURST_LEN;
-	priv->host_config.write_burst_len = USDHC_WRITE_BURST_LEN;
 
 	priv->op_context.dma_cfg.dma_mode = USDHC_DMA_ADMA2;
 	priv->op_context.dma_cfg.burst_len = USDHC_INCR_BURST_LEN;
@@ -2877,13 +2807,33 @@ static int disk_usdhc_init(struct device *dev)
 }
 
 #define DISK_ACCESS_USDHC_INIT(n)					\
+	static const struct usdhc_config usdhc_config_##n = {		\
+		.base = (USDHC_Type  *) DT_INST_REG_ADDR(n),		\
+		.clock_name = DT_INST_CLOCKS_LABEL(n),			\
+		.clock_subsys =						\
+		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
+		.nusdhc = n,						\
+		.pwr_name = DT_INST_GPIO_LABEL(n, pwr_gpios),		\
+		.pwr_pin = DT_INST_GPIO_PIN(n, pwr_gpios),		\
+		.pwr_flags = DT_INST_GPIO_FLAGS(n, pwr_gpios),		\
+		.detect_name = DT_INST_GPIO_LABEL(n, cd_gpios),		\
+		.detect_pin = DT_INST_GPIO_PIN(n, cd_gpios),		\
+		.detect_flags = DT_INST_GPIO_FLAGS(n, cd_gpios),	\
+		.data_timeout = USDHC_DATA_TIMEOUT,			\
+		.endian = USDHC_LITTLE_ENDIAN,				\
+		.read_watermark = USDHC_READ_WATERMARK_LEVEL,		\
+		.write_watermark =  USDHC_WRITE_WATERMARK_LEVEL,	\
+		.read_burst_len = USDHC_READ_BURST_LEN,			\
+		.write_burst_len = USDHC_WRITE_BURST_LEN,		\
+	};								\
+									\
 	static struct usdhc_priv usdhc_priv_##n;			\
 									\
 	DEVICE_AND_API_INIT(usdhc_dev##n,				\
 			    DT_INST_LABEL(n),				\
 			    &disk_usdhc_init,				\
 			    &usdhc_priv_##n,				\
-			    NULL,					\
+			    &usdhc_config_##n,				\
 			    APPLICATION,				\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    NULL);
