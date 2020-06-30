@@ -1544,7 +1544,7 @@ class TestInstance(DisablePyTestCollectionMixin):
         return self.name < other.name
 
     # Global testsuite parameters
-    def check_build_or_run(self, build_only=False, enable_slow=False, device_testing=False, fixtures=[]):
+    def check_build_or_run(self, opt_build_only=False, enable_slow=False, device_testing=False, fixtures=[]):
 
         # right now we only support building on windows. running is still work
         # in progress.
@@ -1556,7 +1556,7 @@ class TestInstance(DisablePyTestCollectionMixin):
         _build_only = True
 
         # we asked for build-only on the command line
-        if build_only or self.testcase.build_only:
+        if opt_build_only or self.testcase.build_only:
             self.build_only = True
             self.run = False
             return
@@ -2244,7 +2244,7 @@ class TestSuite(DisablePyTestCollectionMixin):
 
         # Testsuite Options
         self.coverage_platform = []
-        self.build_only = False
+        self.opt_build_only = False
         self.cmake_only = False
         self.cleanup = False
         self.enable_slow = False
@@ -2592,7 +2592,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                     platform = self.get_platform(row["platform"])
                     instance = TestInstance(self.testcases[test], platform, self.outdir)
                     instance.check_build_or_run(
-                        self.build_only,
+                        self.opt_build_only,
                         self.enable_slow,
                         self.device_testing,
                         self.fixtures
@@ -2653,7 +2653,7 @@ class TestSuite(DisablePyTestCollectionMixin):
             for plat in platforms:
                 instance = TestInstance(tc, plat, self.outdir)
                 instance.check_build_or_run(
-                    self.build_only,
+                    self.opt_build_only,
                     self.enable_slow,
                     self.device_testing,
                     self.fixtures

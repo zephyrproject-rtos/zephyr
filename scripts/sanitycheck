@@ -768,7 +768,7 @@ def main():
     suite = TestSuite(options.board_root, options.testcase_root, options.outdir)
 
     # Set testsuite options from command line.
-    suite.build_only = options.build_only
+    suite.opt_build_only = options.build_only
     suite.cmake_only = options.cmake_only
     suite.cleanup = options.runtime_artifact_cleanup
     suite.test_only = options.test_only
