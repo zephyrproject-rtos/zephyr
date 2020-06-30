@@ -81,7 +81,7 @@
 #define FLASH_SIMULATOR_FLASH_PAGE_COUNT CONFIG_FLASH_SIMULATOR_STAT_PAGE_COUNT
 #endif
 
-/* simulator statistcs */
+/* simulator statistics */
 STATS_SECT_START(flash_sim_stats)
 STATS_SECT_ENTRY32(bytes_read)		/* total bytes read */
 STATS_SECT_ENTRY32(bytes_written)       /* total bytes written */
@@ -204,6 +204,7 @@ static int flash_sim_read(struct device *dev, const off_t offset, void *data,
 static int flash_sim_write(struct device *dev, const off_t offset,
 			   const void *data, const size_t len)
 {
+	uint8_t buf[FLASH_SIMULATOR_PROG_UNIT];
 	ARG_UNUSED(dev);
 
 	if (!flash_range_is_valid(dev, offset, len)) {
@@ -222,11 +223,8 @@ static int flash_sim_write(struct device *dev, const off_t offset,
 	STATS_INC(flash_sim_stats, flash_write_calls);
 
 	/* check if any unit has been already programmed */
+	memset(buf, FLASH_SIMULATOR_ERASE_VALUE, sizeof(buf));
 	for (uint32_t i = 0; i < len; i += FLASH_SIMULATOR_PROG_UNIT) {
-
-		uint8_t buf[FLASH_SIMULATOR_PROG_UNIT];
-
-		memset(buf, FLASH_SIMULATOR_ERASE_VALUE, sizeof(buf));
 		if (memcmp(buf, FLASH(offset + i), sizeof(buf))) {
 			STATS_INC(flash_sim_stats, double_writes);
 #if !CONFIG_FLASH_SIMULATOR_DOUBLE_WRITES
@@ -259,7 +257,11 @@ static int flash_sim_write(struct device *dev, const off_t offset,
 		}
 
 		/* only pull bits to zero */
+#if FLASH_SIMULATOR_ERASE_VALUE == 0xFF
 		*(FLASH(offset + i)) &= *((uint8_t *)data + i);
+#else
+		*(FLASH(offset + i)) = *((uint8_t *)data + i);
+#endif
 	}
 
 	STATS_INCN(flash_sim_stats, bytes_written, len);
