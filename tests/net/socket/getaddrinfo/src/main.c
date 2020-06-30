@@ -108,7 +108,7 @@ static int process_dns(void)
 	socklen_t addr_len;
 	int ret, idx;
 
-	sys_mutex_lock(&wait_data, K_FOREVER);
+	(void)sys_mutex_lock(&wait_data, K_FOREVER);
 
 	NET_DBG("Waiting for IPv4 DNS packets on port %d",
 		ntohs(addr_v4.sin_port));
