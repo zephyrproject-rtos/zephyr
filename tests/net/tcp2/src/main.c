@@ -167,9 +167,8 @@ static void test_sem_give(void)
 static void test_sem_take(k_timeout_t timeout, int line)
 {
 	sem = true;
-	k_sem_take(&test_sem, timeout);
 
-	if (sem) {
+	if (k_sem_take(&test_sem, timeout) != 0) {
 		zassert_true(false, "semaphore timed out (line %d)", line);
 	}
 }
