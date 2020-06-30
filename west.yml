@@ -21,6 +21,8 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+    - name: gustedt
+      url-base: https://gitlab.inria.fr/gustedt
 
   #
   # Please add items below based on alphabetical order
@@ -133,6 +135,11 @@ manifest:
     - name: trusted-firmware-m
       path: modules/tee/tfm
       revision: 7de2daa1967b2dc12cbe0fcc0171ac3064ea596b
+    - name: p99
+      path: modules/lib/p99
+      remote: gustedt
+      revision: 142a8c4ddbdf7fa86e2cec80c17484c98e63415d
+
 
   self:
     path: zephyr
