@@ -479,6 +479,7 @@
 /scripts/kconfig/                         @ulfalizer
 /scripts/sanity_chk/expr_parser.py        @nashif
 /scripts/gen_app_partitions.py            @andrewboie
+/scripts/gen_handles.py                   @pabigot
 /scripts/get_maintainer.py                @nashif
 /scripts/dts/                             @mbolivar-nordic @galak
 /scripts/release/                         @nashif
