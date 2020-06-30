@@ -822,10 +822,10 @@ uint8_t ll_adv_enable(uint8_t enable)
 		struct node_rx_pdu *node_rx_adv_term;
 		void *link_adv_term;
 
-		/* The alloc here used for connection complete event */
+		/* The alloc here used for ext adv termination event */
 		link_adv_term = ll_rx_link_alloc();
 		if (!link_adv_term) {
-				/* TODO: figure out right return value */
+			/* TODO: figure out right return value */
 			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 		}
 
@@ -1681,6 +1681,18 @@ static inline uint8_t disable(uint8_t handle)
 		conn_release(adv);
 	}
 #endif /* CONFIG_BT_PERIPHERAL */
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	struct node_rx_pdu *node_rx_adv_term;
+	struct lll_adv *lll = &adv->lll;
+
+	if (lll->node_rx_adv_term) {
+		node_rx_adv_term = (struct node_rx_pdu *)lll->node_rx_adv_term;
+		ll_rx_link_release(node_rx_adv_term->hdr.link);
+		ll_rx_release(node_rx_adv_term);
+		lll->node_rx_adv_term = NULL;
+	}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 	adv->is_enabled = 0U;
 
