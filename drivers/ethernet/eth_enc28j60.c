@@ -510,11 +510,96 @@ static int eth_enc28j60_tx(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static int eth_enc28j60_rx(const struct device *dev, uint16_t *vlan_tag)
+static void enc28j60_read_packet(const struct device *dev, uint16_t *vlan_tag,
+				 uint16_t frm_len)
 {
 	const struct eth_enc28j60_config *config = dev->config;
 	struct eth_enc28j60_runtime *context = dev->data;
+	struct net_buf *pkt_buf;
+	struct net_pkt *pkt;
 	uint16_t lengthfr;
+	uint8_t dummy[4];
+
+	/* Get the frame from the buffer */
+	pkt = net_pkt_rx_alloc_with_buffer(get_iface(context, *vlan_tag), frm_len,
+					   AF_UNSPEC, 0, K_MSEC(config->timeout));
+	if (!pkt) {
+		LOG_ERR("Could not allocate rx buffer");
+		eth_stats_update_errors_rx(get_iface(context, *vlan_tag));
+		return;
+	}
+
+	pkt_buf = pkt->buffer;
+	lengthfr = frm_len;
+
+	do {
+		size_t frag_len;
+		uint8_t *data_ptr;
+		size_t spi_frame_len;
+
+		data_ptr = pkt_buf->data;
+
+		/* Review the space available for the new frag */
+		frag_len = net_buf_tailroom(pkt_buf);
+
+		if (frm_len > frag_len) {
+			spi_frame_len = frag_len;
+		} else {
+			spi_frame_len = frm_len;
+		}
+
+		eth_enc28j60_read_mem(dev, data_ptr, spi_frame_len);
+
+		net_buf_add(pkt_buf, spi_frame_len);
+
+		/* One fragment has been written via SPI */
+		frm_len -= spi_frame_len;
+		pkt_buf = pkt_buf->frags;
+	} while (frm_len > 0);
+
+	/* Let's pop the useless CRC */
+	eth_enc28j60_read_mem(dev, dummy, 4);
+
+	/* Pops one padding byte from spi circular buffer
+	 * introduced by the device when the frame length is odd
+	 */
+	if (lengthfr & 0x01) {
+		eth_enc28j60_read_mem(dev, dummy, 1);
+	}
+
+#if defined(CONFIG_NET_VLAN)
+	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
+
+	if (ntohs(hdr->type) == NET_ETH_PTYPE_VLAN) {
+		struct net_eth_vlan_hdr *hdr_vlan =
+			(struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
+
+		net_pkt_set_vlan_tci(pkt, ntohs(hdr_vlan->vlan.tci));
+		*vlan_tag = net_pkt_vlan_tag(pkt);
+
+#if CONFIG_NET_TC_RX_COUNT > 1
+		enum net_priority prio;
+
+		prio = net_vlan2priority(net_pkt_vlan_priority(pkt));
+		net_pkt_set_priority(pkt, prio);
+#endif
+	} else {
+		net_pkt_set_iface(pkt, context->iface);
+	}
+#else /* CONFIG_NET_VLAN */
+	net_pkt_set_iface(pkt, context->iface);
+#endif /* CONFIG_NET_VLAN */
+
+	/* Feed buffer frame to IP stack */
+	LOG_DBG("Received packet of length %u", lengthfr);
+	if (net_recv_data(net_pkt_iface(pkt), pkt) < 0) {
+		net_pkt_unref(pkt);
+	}
+}
+
+static int eth_enc28j60_rx(const struct device *dev, uint16_t *vlan_tag)
+{
+	struct eth_enc28j60_runtime *context = dev->data;
 	uint8_t counter;
 
 	/* Errata 6. The Receive Packet Pending Interrupt Flag (EIR.PKTIF)
@@ -530,10 +615,8 @@ static int eth_enc28j60_rx(const struct device *dev, uint16_t *vlan_tag)
 	k_sem_take(&context->tx_rx_sem, K_FOREVER);
 
 	do {
-		struct net_buf *pkt_buf = NULL;
 		uint16_t frm_len = 0U;
 		uint8_t info[RSV_SIZE];
-		struct net_pkt *pkt;
 		uint16_t next_packet;
 		uint8_t rdptl = 0U;
 		uint8_t rdpth = 0U;
@@ -565,85 +648,9 @@ static int eth_enc28j60_rx(const struct device *dev, uint16_t *vlan_tag)
 		 * minus CRC size at the end which is always present
 		 */
 		frm_len = sys_get_le16(info) - 4;
-		lengthfr = frm_len;
 
-		/* Get the frame from the buffer */
-		pkt = net_pkt_rx_alloc_with_buffer(
-			get_iface(context, *vlan_tag), frm_len,
-			AF_UNSPEC, 0, K_MSEC(config->timeout));
-		if (!pkt) {
-			LOG_ERR("Could not allocate rx buffer");
-			eth_stats_update_errors_rx(get_iface(context,
-							     *vlan_tag));
-			goto done;
-		}
+		enc28j60_read_packet(dev, vlan_tag, frm_len);
 
-		pkt_buf = pkt->buffer;
-
-		do {
-			size_t frag_len;
-			uint8_t *data_ptr;
-			size_t spi_frame_len;
-
-			data_ptr = pkt_buf->data;
-
-			/* Review the space available for the new frag */
-			frag_len = net_buf_tailroom(pkt_buf);
-
-			if (frm_len > frag_len) {
-				spi_frame_len = frag_len;
-			} else {
-				spi_frame_len = frm_len;
-			}
-
-			eth_enc28j60_read_mem(dev, data_ptr, spi_frame_len);
-
-			net_buf_add(pkt_buf, spi_frame_len);
-
-			/* One fragment has been written via SPI */
-			frm_len -= spi_frame_len;
-			pkt_buf = pkt_buf->frags;
-		} while (frm_len > 0);
-
-		/* Let's pop the useless CRC */
-		eth_enc28j60_read_mem(dev, NULL, 4);
-
-		/* Pops one padding byte from spi circular buffer
-		 * introduced by the device when the frame length is odd
-		 */
-		if (lengthfr & 0x01) {
-			eth_enc28j60_read_mem(dev, NULL, 1);
-		}
-
-#if defined(CONFIG_NET_VLAN)
-		struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
-
-		if (ntohs(hdr->type) == NET_ETH_PTYPE_VLAN) {
-			struct net_eth_vlan_hdr *hdr_vlan =
-				(struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
-
-			net_pkt_set_vlan_tci(pkt, ntohs(hdr_vlan->vlan.tci));
-			*vlan_tag = net_pkt_vlan_tag(pkt);
-
-#if CONFIG_NET_TC_RX_COUNT > 1
-			enum net_priority prio;
-
-			prio = net_vlan2priority(net_pkt_vlan_priority(pkt));
-			net_pkt_set_priority(pkt, prio);
-#endif
-		} else {
-			net_pkt_set_iface(pkt, context->iface);
-		}
-#else /* CONFIG_NET_VLAN */
-		net_pkt_set_iface(pkt, context->iface);
-#endif /* CONFIG_NET_VLAN */
-
-		/* Feed buffer frame to IP stack */
-		LOG_DBG("Received packet of length %u", lengthfr);
-		if (net_recv_data(net_pkt_iface(pkt), pkt) < 0) {
-			net_pkt_unref(pkt);
-		}
-done:
 		/* Free buffer memory and decrement rx counter */
 		eth_enc28j60_set_bank(dev, ENC28J60_REG_ERXRDPTL);
 		eth_enc28j60_write_reg(dev, ENC28J60_REG_ERXRDPTL,
