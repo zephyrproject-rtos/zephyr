@@ -78,7 +78,7 @@ static void gpiote_pin_cleanup(atomic_t *mask, uint32_t abs_pin)
 	for (size_t i = 0; i < GPIOTE_CH_NUM; i++) {
 		if ((nrf_gpiote_event_pin_get(NRF_GPIOTE, i) == abs_pin)
 		    && (intenset & BIT(i))) {
-			atomic_set_bit_to(mask, i, 0);
+			(void)atomic_and(mask, ~BIT(i));
 			nrf_gpiote_event_disable(NRF_GPIOTE, i);
 			nrf_gpiote_int_disable(NRF_GPIOTE, BIT(i));
 			return;
