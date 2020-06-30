@@ -262,12 +262,12 @@ bail_out:
 	return -ENOMEM;
 }
 
-static int config_info_ack_rej(struct ppp_context *ctx,
-			       struct ppp_fsm *fsm,
-			       struct net_pkt *pkt,
-			       uint16_t length,
-			       uint8_t code)
+static int ipv6cp_config_info_ack(struct ppp_fsm *fsm,
+				  struct net_pkt *pkt,
+				  uint16_t length)
 {
+	struct ppp_context *ctx = CONTAINER_OF(fsm, struct ppp_context,
+					       ipv6cp.fsm);
 	struct ppp_option_pkt nack_options[MAX_IPV6CP_OPTIONS];
 	uint8_t iface_id[PPP_INTERFACE_IDENTIFIER_LEN];
 	int i, ret, iface_id_option_idx = -1;
@@ -330,27 +330,6 @@ static int config_info_ack_rej(struct ppp_context *ctx,
 
 	return 0;
 }
-
-static int ipv6cp_config_info_rej(struct ppp_fsm *fsm,
-				struct net_pkt *pkt,
-				uint16_t length)
-{
-	struct ppp_context *ctx = CONTAINER_OF(fsm, struct ppp_context,
-					       ipv6cp.fsm);
-
-	return config_info_ack_rej(ctx, fsm, pkt, length, PPP_CONFIGURE_REJ);
-}
-
-static int ipv6cp_config_info_ack(struct ppp_fsm *fsm,
-				  struct net_pkt *pkt,
-				  uint16_t length)
-{
-	struct ppp_context *ctx = CONTAINER_OF(fsm, struct ppp_context,
-					       ipv6cp.fsm);
-
-	return config_info_ack_rej(ctx, fsm, pkt, length, PPP_CONFIGURE_ACK);
-}
-
 
 static void ipv6cp_lower_down(struct ppp_context *ctx)
 {
@@ -548,7 +527,6 @@ static void ipv6cp_init(struct ppp_context *ctx)
 	ctx->ipv6cp.fsm.cb.config_info_ack = ipv6cp_config_info_ack;
 	ctx->ipv6cp.fsm.cb.config_info_add = ipv6cp_config_info_add;
 	ctx->ipv6cp.fsm.cb.config_info_req = ipv6cp_config_info_req;
-	ctx->ipv6cp.fsm.cb.config_info_rej = ipv6cp_config_info_rej;
 }
 
 PPP_PROTOCOL_REGISTER(IPV6CP, PPP_IPV6CP,
