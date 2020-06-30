@@ -1653,7 +1653,7 @@ static void le_set_ext_adv_param(struct net_buf *buf, struct net_buf **evt)
 				   cmd->sid, cmd->scan_req_notify_enable);
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
-	rp->status = 0x00;
+	rp->status = status;
 	rp->tx_power = tx_pwr;
 }
 
