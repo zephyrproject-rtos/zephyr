@@ -3473,7 +3473,7 @@ extern void k_work_poll_init(struct k_work_poll *work,
  *
  * @param work_q Address of workqueue.
  * @param work Address of delayed work item.
- * @param events An array of pointers to events which trigger the work.
+ * @param events An array of events which trigger the work.
  * @param num_events The number of events in the array.
  * @param timeout Timeout after which the work will be scheduled
  *		  for execution even if not triggered.
@@ -3511,7 +3511,7 @@ extern int k_work_poll_submit_to_queue(struct k_work_q *work_q,
  * modified until the item has been processed by the workqueue.
  *
  * @param work Address of delayed work item.
- * @param events An array of pointers to events which trigger the work.
+ * @param events An array of events which trigger the work.
  * @param num_events The number of events in the array.
  * @param timeout Timeout after which the work will be scheduled
  *		  for execution even if not triggered.
@@ -5058,7 +5058,7 @@ extern void k_poll_event_init(struct k_poll_event *event, uint32_t type,
  * When called from user mode, a temporary memory allocation is required from
  * the caller's resource pool.
  *
- * @param events An array of pointers to events to be polled for.
+ * @param events An array of events to be polled for.
  * @param num_events The number of events in the array.
  * @param timeout Waiting period for an event to be ready,
  *                or one of the special values K_NO_WAIT and K_FOREVER.
