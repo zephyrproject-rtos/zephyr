@@ -49,7 +49,7 @@ uint8_t *ll_addr_get(uint8_t addr_type, uint8_t *bdaddr)
 	return pub_addr;
 }
 
-uint32_t ll_addr_set(uint8_t addr_type, uint8_t const *const bdaddr)
+uint8_t ll_addr_set(uint8_t addr_type, uint8_t const *const bdaddr)
 {
 	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
 		uint32_t status = ull_adv_is_enabled(0);
