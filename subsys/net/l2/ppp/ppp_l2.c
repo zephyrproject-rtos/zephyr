@@ -63,7 +63,7 @@ static enum net_verdict process_ppp_msg(struct net_if *iface,
 	uint16_t protocol;
 	int ret;
 
-	if (!ctx->is_init || !ctx->is_ready_to_serve) {
+	if (!ctx->is_ready_to_serve) {
 		goto quit;
 	}
 
@@ -160,10 +160,6 @@ static int ppp_send(struct net_if *iface, struct net_pkt *pkt)
 		net_pkt_hexdump(pkt, "send L2");
 	}
 
-	if (!ctx->is_init) {
-		return -EIO;
-	}
-
 	/* If PPP is not yet ready, then just give error to caller as there
 	 * is no way to send before the PPP handshake is finished.
 	 */
@@ -213,9 +209,6 @@ static int ppp_enable(struct net_if *iface, bool state)
 		net_if_get_device(iface)->driver_api;
 	struct ppp_context *ctx = net_if_l2_data(iface);
 
-	if (!ctx->is_init) {
-		return -EIO;
-	}
 
 	if (ctx->is_enabled == state) {
 		return 0;
@@ -417,10 +410,6 @@ static void ppp_startup(struct k_work *work)
 					       startup);
 	int count = 0;
 
-	if (!ctx->is_init) {
-		return;
-	}
-
 	NET_DBG("PPP %p startup for interface %p", ctx, ctx->iface);
 
 	Z_STRUCT_SECTION_FOREACH(ppp_protocol_handler, proto) {
@@ -459,30 +448,24 @@ void net_ppp_init(struct net_if *iface)
 
 	NET_DBG("Initializing PPP L2 %p for iface %p", ctx, iface);
 
-	if (!ctx->is_init) {
-		memset(ctx, 0, sizeof(*ctx));
-	}
+	memset(ctx, 0, sizeof(*ctx));
 
 	ctx->ppp_l2_flags = NET_L2_MULTICAST | NET_L2_POINT_TO_POINT;
 	ctx->iface = iface;
 
-	if (!ctx->is_init) {
-		ctx->is_init = true;
-
 #if defined(CONFIG_NET_SHELL)
-		k_sem_init(&ctx->shell.wait_echo_reply, 0, UINT_MAX);
+	k_sem_init(&ctx->shell.wait_echo_reply, 0, UINT_MAX);
 #endif
 
-		/* TODO: Unify the startup worker code so that we can save
-		 * some memory if there are more than one PPP context in the
-		 * system. The issue is not very likely as typically there
-		 * would be only one PPP network interface in the system.
-		 */
-		k_delayed_work_init(&ctx->startup, ppp_startup);
+	/* TODO: Unify the startup worker code so that we can save
+	 * some memory if there are more than one PPP context in the
+	 * system. The issue is not very likely as typically there
+	 * would be only one PPP network interface in the system.
+	 */
+	k_delayed_work_init(&ctx->startup, ppp_startup);
 
-		ctx->is_startup_pending = true;
+	ctx->is_startup_pending = true;
 
-		k_delayed_work_submit(&ctx->startup,
-				K_MSEC(CONFIG_NET_L2_PPP_DELAY_STARTUP_MS));
-	}
+	k_delayed_work_submit(&ctx->startup,
+			      K_MSEC(CONFIG_NET_L2_PPP_DELAY_STARTUP_MS));
 }

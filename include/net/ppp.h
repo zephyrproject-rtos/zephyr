@@ -484,9 +484,6 @@ struct ppp_context {
 	/** This tells how many network protocols are up */
 	int network_protos_up;
 
-	/** Is this context already initialized */
-	uint16_t is_init : 1;
-
 	/** Is PPP ready to receive packets */
 	uint16_t is_ready_to_serve : 1;
 
