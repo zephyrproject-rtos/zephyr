@@ -1555,8 +1555,8 @@ class TestInstance(DisablePyTestCollectionMixin):
 
         _build_only = True
 
-        # we asked for build-only on the command line
-        if opt_build_only or self.testcase.build_only:
+        # the testcase is build only
+        if self.testcase.build_only:
             self.build_only = True
             self.run = False
             return
@@ -1602,6 +1602,11 @@ class TestInstance(DisablePyTestCollectionMixin):
 
         self.build_only = not (not _build_only and runnable)
         self.run = not self.build_only
+
+        # we asked for build-only on the command line
+        if opt_build_only:
+            self.build_only = True
+
         return
 
     def create_overlay(self, platform, enable_asan=False, enable_coverage=False, coverage_platform=[]):
