@@ -911,12 +911,38 @@ static inline int device_pm_put_sync(const struct device *dev) { return -ENOTSUP
 #define Z_DEVICE_DEFINE_PRE(node_id, dev_name, ...)			\
 	Z_DEVICE_DEFINE_HANDLES(node_id, dev_name, __VA_ARGS__)
 
+
+/* Initial build provides a record that associates the device object
+ * with its devicetree ordinal, and provides the dependency ordinals.
+ * These are provided as weak definitions (to prevent the reference
+ * from being captured when the original object file is compiled), and
+ * in a distinct pass1 section (which will be replaced by
+ * postprocessing).
+ *
+ * It is also (experimentally) necessary to provide explicit alignment
+ * on each object.  Otherwise x86-64 builds will introduce padding
+ * between objects in the same input section in individual object
+ * files, which will be retained in subsequent links both wasting
+ * space and resulting in aggregate size changes relative to pass2
+ * when all objects will be in the same input section.
+ *
+ * The build assert will fail if device_handle_t changes size, which
+ * means the alignment directives in the linker scripts and in
+ * `gen_handles.py` must be updated.
+ */
+BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 #define Z_DEVICE_DEFINE_HANDLES(node_id, dev_name, ...)			\
-	static const device_handle_t Z_DEVICE_HANDLE_NAME(node_id,dev_name)[] = { \
+	extern const device_handle_t					\
+		Z_DEVICE_HANDLE_NAME(node_id, dev_name)[];		\
+	const device_handle_t						\
+	__aligned(sizeof(device_handle_t))				\
+	__attribute__((__weak__,					\
+		       __section__(".__device_handles_pass1")))		\
+	Z_DEVICE_HANDLE_NAME(node_id, dev_name)[] = {			\
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (				\
 			DT_DEP_ORD(node_id),				\
 			DT_REQUIRES_DEP_ORDS(node_id)			\
-		),(							\
+		), (							\
 			DEVICE_HANDLE_NULL,				\
 		))							\
 			DEVICE_HANDLE_SEP,				\
