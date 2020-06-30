@@ -35,6 +35,7 @@
 #define TCONF_PERIODIC   BIT(3)
 #define TCONF_VAL_SET    BIT(6)
 #define TCONF_MODE32     BIT(8)
+#define TCONF_FSB_EN     BIT(14) /* FSB interrupt delivery enable */
 
 #define MIN_DELAY 1000
 
@@ -137,6 +138,7 @@ int z_clock_driver_init(struct device *device)
 	 */
 	GENERAL_CONF_REG |= GCONF_LR | GCONF_ENABLE;
 	TIMER0_CONF_REG &= ~TCONF_PERIODIC;
+	TIMER0_CONF_REG &= ~TCONF_FSB_EN;
 	TIMER0_CONF_REG |= TCONF_MODE32;
 
 	max_ticks = (0x7fffffff - cyc_per_tick) / cyc_per_tick;
