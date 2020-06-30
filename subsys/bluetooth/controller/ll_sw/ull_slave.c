@@ -216,7 +216,7 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	}
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-	if (adv->is_created & ULL_ADV_CREATED_BITMASK_EXTENDED) {
+	if (ll_adv_cmds_is_ext()) {
 		/* Enqueue connection or CSA event */
 		ll_rx_put(link, rx);
 

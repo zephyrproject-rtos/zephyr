@@ -20,7 +20,14 @@ uint8_t ll_addr_set(uint8_t addr_type, uint8_t const *const p_bdaddr);
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 #if defined(CONFIG_BT_HCI_RAW)
 int ll_adv_cmds_set(uint8_t adv_cmds);
-#endif
+int ll_adv_cmds_is_ext(void);
+#else
+static inline int ll_adv_cmds_is_ext(void)
+{
+	return 1;
+}
+#endif /* CONFIG_BT_HCI_RAW */
+
 uint8_t ll_adv_params_set(uint8_t handle, uint16_t evt_prop, uint32_t interval,
 		       uint8_t adv_type, uint8_t own_addr_type,
 		       uint8_t direct_addr_type, uint8_t const *const direct_addr,
