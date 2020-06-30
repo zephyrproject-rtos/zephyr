@@ -91,6 +91,9 @@ int ll_adv_cmds_set(uint8_t adv_cmds)
 		if (adv_cmds == LL_ADV_CMDS_LEGACY) {
 			struct ll_adv_set *adv = &ll_adv[0];
 
+#if defined(CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING)
+			adv->hci_handle = 0;
+#endif
 			adv->is_created = 1;
 		}
 	}
@@ -105,6 +108,53 @@ int ll_adv_cmds_set(uint8_t adv_cmds)
 int ll_adv_cmds_is_ext(void)
 {
 	return ll_adv_cmds == LL_ADV_CMDS_EXT;
+}
+#endif
+
+#if defined(CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING)
+uint8_t ll_adv_set_by_hci_handle_get(uint8_t hci_handle, uint8_t *handle)
+{
+	struct ll_adv_set *adv;
+	uint8_t idx;
+
+	adv =  &ll_adv[0];
+
+	for (idx = 0U; idx < BT_CTLR_ADV_SET; idx++, adv++) {
+		if (adv->is_created && (adv->hci_handle == hci_handle)) {
+			*handle = idx;
+			return 0;
+		}
+	}
+
+	return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
+}
+
+uint8_t ll_adv_set_by_hci_handle_get_or_new(uint8_t hci_handle, uint8_t *handle)
+{
+	struct ll_adv_set *adv, *adv_empty;
+	uint8_t idx;
+
+	adv =  &ll_adv[0];
+	adv_empty = NULL;
+
+	for (idx = 0U; idx < BT_CTLR_ADV_SET; idx++, adv++) {
+		if (adv->is_created) {
+			if (adv->hci_handle == hci_handle) {
+				*handle = idx;
+				return 0;
+			}
+		} else if (!adv_empty) {
+			adv_empty = adv;
+		}
+	}
+
+	if (adv_empty) {
+		adv_empty->hci_handle = hci_handle;
+		*handle = ull_adv_handle_get(adv_empty);
+		return 0;
+	}
+
+	return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 }
 #endif
 

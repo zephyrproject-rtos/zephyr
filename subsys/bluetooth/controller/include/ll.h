@@ -17,6 +17,26 @@ void ll_reset(void);
 uint8_t *ll_addr_get(uint8_t addr_type, uint8_t *p_bdaddr);
 uint8_t ll_addr_set(uint8_t addr_type, uint8_t const *const p_bdaddr);
 
+#if defined(CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING)
+uint8_t ll_adv_set_by_hci_handle_get(uint8_t hci_handle, uint8_t *handle);
+uint8_t ll_adv_set_by_hci_handle_get_or_new(uint8_t hci_handle,
+					    uint8_t *handle);
+#else
+static inline uint8_t ll_adv_set_by_hci_handle_get(uint8_t hci_handle,
+						   uint8_t *handle)
+{
+	*handle = hci_handle;
+	return 0;
+}
+
+static inline uint8_t ll_adv_set_by_hci_handle_get_or_new(uint8_t hci_handle,
+							  uint8_t *handle)
+{
+	*handle = hci_handle;
+	return 0;
+}
+#endif
+
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 #if defined(CONFIG_BT_HCI_RAW)
 int ll_adv_cmds_set(uint8_t adv_cmds);
