@@ -151,9 +151,16 @@ is skipped.
 Final binary
 ============
 
-In some configurations, the binary from the previous stage is
-incomplete, with empty and/or placeholder sections that must be filled
-in by, essentially, reflection. When :ref:`usermode_api` is enabled:
+The binary from the previous stage is incomplete, with empty and/or
+placeholder sections that must be filled in by, essentially, reflection.
+
+Device dependencies
+   The *gen_handles.py* script scans the first-pass binary to determine
+   relationships between devices that were recorded from devicetree data,
+   and replaces the encoded relationships with values that are optimized to
+   locate the devices actually present in the application.
+
+When :ref:`usermode_api` is enabled:
 
 Kernel object hashing
    The *gen_kobject_list.py* scans the *ELF DWARF*
@@ -199,6 +206,15 @@ The following is a detailed description of the scripts used during the build pro
 ========================================
 
 .. include:: ../../../scripts/gen_syscalls.py
+   :start-after: """
+   :end-before: """
+
+.. _gen_handles.py:
+
+:zephyr_file:`scripts/gen_handles.py`
+==========================================
+
+.. include:: ../../../scripts/gen_handles.py
    :start-after: """
    :end-before: """
 
