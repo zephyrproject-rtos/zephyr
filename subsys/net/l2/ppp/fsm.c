@@ -133,13 +133,12 @@ static void ppp_fsm_timeout(struct k_work *work)
 
 static void ppp_pkt_send(struct k_work *work)
 {
-	struct ppp_fsm *fsm = CONTAINER_OF(work, struct ppp_fsm,
-					   sender.work);
+	struct net_pkt *pkt = CONTAINER_OF(work, struct net_pkt, work);
 	int ret;
 
-	ret = net_send_data(fsm->sender.pkt);
+	ret = net_send_data(pkt);
 	if (ret < 0) {
-		net_pkt_unref(fsm->sender.pkt);
+		net_pkt_unref(pkt);
 	}
 }
 
@@ -151,7 +150,6 @@ void ppp_fsm_init(struct ppp_fsm *fsm, uint16_t protocol)
 	fsm->flags = 0U;
 
 	k_delayed_work_init(&fsm->timer, ppp_fsm_timeout);
-	k_delayed_work_init(&fsm->sender.work, ppp_pkt_send);
 }
 
 static void terminate(struct ppp_fsm *fsm, enum ppp_state next_state)
@@ -511,14 +509,8 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 		 * have returned from this function. That is bad because the
 		 * fsm would be in wrong state and the received pkt is dropped.
 		 */
-		fsm->sender.pkt = pkt;
-
-		/* FIXME: qemu_x86 crashes if timeout is 0 when running ppp
-		 * driver unit test. As a workaround set the timeout to 1 msec
-		 * in that case.
-		 */
-		(void)k_delayed_work_submit(&fsm->sender.work,
-			  IS_ENABLED(CONFIG_NET_TEST) ? K_MSEC(1) : K_NO_WAIT);
+		k_work_init(net_pkt_work(pkt), ppp_pkt_send);
+		k_work_submit(net_pkt_work(pkt));
 	} else {
 		ret = net_send_data(pkt);
 		if (ret < 0) {

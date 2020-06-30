@@ -219,19 +219,6 @@ struct ppp_fsm {
 	/** Timeout timer */
 	struct k_delayed_work timer;
 
-	/* We need to send a packet from separate thread so that we do not
-	 * receive reply before we are ready to receive it. The issue was seen
-	 * with QEMU where the link to peer is so fast that we received the
-	 * reply before the net_send_data() returned.
-	 */
-	struct {
-		/** Packet sending timer. */
-		struct k_delayed_work work;
-
-		/** Packet to send */
-		struct net_pkt *pkt;
-	} sender;
-
 	struct {
 		/** Acknowledge Configuration Information */
 		int (*config_info_ack)(struct ppp_fsm *fsm,
