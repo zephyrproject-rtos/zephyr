@@ -2000,7 +2000,7 @@ class ProjectBuilder(FilterBuilder):
                 if results.get('returncode', 1) > 0:
                     pipeline.put({"op": "report", "test": self.instance})
                 else:
-                    if self.instance.run:
+                    if self.instance.run and self.instance.build_only is False:
                         pipeline.put({"op": "run", "test": self.instance})
                     else:
                         pipeline.put({"op": "report", "test": self.instance})
@@ -2674,7 +2674,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                     # Discard silently
                     continue
 
-                if device_testing_filter and instance.build_only:
+                if device_testing_filter and instance.run is False:
                     discards[instance] = "Not runnable on device"
                     continue
 
