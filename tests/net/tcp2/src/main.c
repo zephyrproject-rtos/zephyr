@@ -911,9 +911,8 @@ static void test_client_syn_resend(void)
 				  sizeof(struct sockaddr_in),
 				  NULL,
 				  K_MSEC(1000), NULL);
-	if (ret < 0) {
-		zassert_true(false, "Failed to connect to peer");
-	}
+
+	zassert_true(ret < 0, "Connect on no response from peer");
 
 	/* test handler will release the sem once it receives SYN again */
 	test_sem_take(K_MSEC(500), __LINE__);
