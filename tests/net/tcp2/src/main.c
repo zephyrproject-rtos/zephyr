@@ -497,7 +497,7 @@ static void test_client_ipv4(void)
 	ret = net_context_connect(ctx, (struct sockaddr *)&peer_addr_s,
 				  sizeof(struct sockaddr_in),
 				  NULL,
-				  K_NO_WAIT, NULL);
+				  K_MSEC(100), NULL);
 	if (ret < 0) {
 		zassert_true(false, "Failed to connect to peer");
 	}
@@ -559,7 +559,7 @@ static void test_client_ipv6(void)
 	ret = net_context_connect(ctx, (struct sockaddr *)&peer_addr_v6_s,
 				  sizeof(struct sockaddr_in6),
 				  NULL,
-				  K_NO_WAIT, NULL);
+				  K_MSEC(100), NULL);
 	if (ret < 0) {
 		zassert_true(false, "Failed to connect to peer");
 	}
@@ -910,7 +910,7 @@ static void test_client_syn_resend(void)
 	ret = net_context_connect(ctx, (struct sockaddr *)&peer_addr_s,
 				  sizeof(struct sockaddr_in),
 				  NULL,
-				  K_NO_WAIT, NULL);
+				  K_MSEC(1000), NULL);
 	if (ret < 0) {
 		zassert_true(false, "Failed to connect to peer");
 	}
@@ -1015,7 +1015,7 @@ static void test_client_fin_wait_2_ipv4(void)
 	ret = net_context_connect(ctx, (struct sockaddr *)&peer_addr_s,
 				  sizeof(struct sockaddr_in),
 				  NULL,
-				  K_NO_WAIT, NULL);
+				  K_MSEC(100), NULL);
 	if (ret < 0) {
 		zassert_true(false, "Failed to connect to peer");
 	}
@@ -1136,7 +1136,7 @@ static void test_client_closing_ipv6(void)
 	ret = net_context_connect(ctx, (struct sockaddr *)&peer_addr_v6_s,
 				  sizeof(struct sockaddr_in6),
 				  NULL,
-				  K_NO_WAIT, NULL);
+				  K_MSEC(100), NULL);
 	if (ret < 0) {
 		zassert_true(false, "Failed to connect to peer");
 	}
