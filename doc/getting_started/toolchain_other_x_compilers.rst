@@ -59,3 +59,33 @@ the common prefix is ``/usr/bin/arm-none-eabi-`` (including the trailing dash,
 ``-``).  If your toolchain is installed in ``/opt/mytoolchain/bin`` with binary
 names based on target triplet ``myarch-none-elf``, ``CROSS_COMPILE`` would be
 set to ``/opt/mytoolchain/bin/myarch-none-elf-``.
+
+Other C Libraries
+#################
+
+Once you have a cross compiler installed and configured, you may need to install
+a C library. For example, you might install the picolibc-arm-none-eabi package
+on Debian-based Linux systems:
+
+   .. code-block:: console
+
+      # On Debian
+      sudo apt-get install picolibc-arm-none-eabi
+
+Or, you may install picolibc from source. To get the picolibc source, download a
+tarball from github:
+
+      $ wget https://github.com/picolibc/picolibc/archive/1.4.6.tar.gz
+      $ tar xf 1.4.6.tar.gz
+      $ cd picolibc-1.4.6
+
+There are sample configurations for a range of cross compilers provided with
+picolibc, including RISC-V and ARM. For example, to build picolibc using an
+arm-none-eabi compiler:
+
+   ..code-block:: console
+
+      $ mkdir build
+      $ cd build
+      $ sh ../do-arm-configure
+      $ ninja install

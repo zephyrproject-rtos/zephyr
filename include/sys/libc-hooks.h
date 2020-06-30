@@ -16,7 +16,7 @@
  * that need to call into the kernel as system calls
  */
 
-#ifdef CONFIG_NEWLIB_LIBC
+#if defined(CONFIG_PICOLIBC) || defined(CONFIG_NEWLIB_LIBC)
 
 /* syscall generation ignores preprocessor, ensure this is defined to ensure
  * we don't have compile errors
@@ -58,7 +58,21 @@ extern struct k_mem_partition z_malloc_partition;
  */
 #define Z_MALLOC_PARTITION_EXISTS 1
 #endif /* CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE > 0 */
-#endif /* CONFIG_MINIMAL_LIBC */
+#elif defined(CONFIG_PICOLIBC)
+/* If we are using picolibc, the heap arena is in one of two areas:
+ *  - If we have an MPU that requires power of two alignment, the heap bounds
+ *    must be specified in Kconfig via CONFIG_PICOLIBC_ALIGNED_HEAP_SIZE.
+ *  - Otherwise, the heap arena on most arches starts at a suitably
+ *    aligned base addreess after the `_end` linker symbol, through to the end
+ *    of system RAM.
+ */
+#if (!defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT) || \
+     (defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT) && \
+      CONFIG_PICOLIBC_ALIGNED_HEAP_SIZE))
+#define Z_MALLOC_PARTITION_EXISTS 1
+extern struct k_mem_partition z_malloc_partition;
+#endif
+#endif /* CONFIG_PICOLIBC */
 
 #ifdef Z_MALLOC_PARTITION_EXISTS
 /* Memory partition containing the libc malloc arena. Configuration controls
@@ -68,7 +82,7 @@ extern struct k_mem_partition z_malloc_partition;
 #endif
 
 #if defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_STACK_CANARIES) || \
-    defined(CONFIG_NEED_LIBC_MEM_PARTITION)
+    defined(CONFIG_PICOLIBC) || defined(CONFIG_NEED_LIBC_MEM_PARTITION)
 /* Minimal libc has no globals. We do put the stack canary global in the
  * libc partition since it is not worth placing in a partition of its own.
  *

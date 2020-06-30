@@ -18,6 +18,13 @@ support for ``newlib`` is a set of hooks available under
 :file:`lib/libc/newlib/libc-hooks.c` which integrates the c library with basic
 kernel services.
 
+Zephyr can be used with ``picolibc`` by selecting the
+:option:`CONFIG_PICOLIBC` in the application configuration file. Part of the
+support for ``picolibc`` is a set of hooks available under
+:file:`lib/libc/picolibc/libc-hooks.c` which integrates the c library with basic
+kernel services. Applications that do not require floating point scanf or printf
+functionality can select the
+:option:`CONFIG_PICOLIBC`
 
 Minimal C Library
 *****************

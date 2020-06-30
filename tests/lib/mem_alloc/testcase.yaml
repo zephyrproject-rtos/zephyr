@@ -15,3 +15,6 @@ tests:
     extra_args: CONF_FILE=prj_newlibnano.conf
     toolchain_allow: gnuarmemb
     tags: clib newlib userspace
+  libraries.libc.picolibc:
+    extra_args: CONF_FILE=prj_picolibc.conf
+    tags: clib picolibc userspace

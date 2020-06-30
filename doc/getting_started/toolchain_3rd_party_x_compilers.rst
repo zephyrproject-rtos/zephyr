@@ -70,6 +70,14 @@ You can build toolchains from source code using crosstool-NG.
 
       ./go.sh <arch>
 
+   You can use this method to build a toolchain using picolibc as
+   well. ``sdk-ng`` has configurations for arm64-picolibc, arm-picolibc and
+   riscv64-picolibc (which supports both 32- and 64- bit RISC-V targets).
+
+   .. code-block:: console
+
+      ./go.sh <arch>-picolibc
+
    .. note::
 
       Currently, only i586 and Arm toolchain builds are verified.

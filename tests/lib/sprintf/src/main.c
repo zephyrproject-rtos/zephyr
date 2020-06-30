@@ -497,6 +497,8 @@ void test_sprintf_misc(void)
 	zassert_false((strcmp(buffer, DEADBEEF_PTR_STR) != 0),
 		      "sprintf(%%p).  Expected '%s', got '%s'", DEADBEEF_PTR_STR, buffer);
 	/*******************/
+
+#ifndef CONFIG_PICOLIBC
 	sprintf(buffer, "test data %n test data", &count);
 	zassert_false((count != 10), "sprintf(%%n).  Expected count to be %d, not %d",
 		      10, count);
@@ -504,6 +506,9 @@ void test_sprintf_misc(void)
 	zassert_false((strcmp(buffer, "test data  test data") != 0),
 		      "sprintf(%%p).  Expected '%s', got '%s'",
 		      "test data  test data", buffer);
+#else
+	(void) count;
+#endif
 
 	/*******************/
 	sprintf(buffer, "%*d", 10, 1234);
