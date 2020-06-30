@@ -589,8 +589,7 @@ void ull_filter_adv_pdu_update(struct ll_adv_set *adv, struct pdu_adv *pdu)
 	} else {
 		pdu->tx_addr = adv->own_addr_type & 0x1;
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-		if ((adv->is_created & ULL_ADV_CREATED_BITMASK_EXTENDED) &&
-		    pdu->tx_addr) {
+		if (ll_adv_cmds_is_ext() && pdu->tx_addr) {
 			ll_adv_aux_random_addr_get(adv, adva);
 		} else
 #endif /* CONFIG_BT_CTLR_ADV_EXT */

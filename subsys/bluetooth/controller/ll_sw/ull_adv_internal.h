@@ -6,14 +6,8 @@
 
 #define ULL_ADV_RANDOM_DELAY HAL_TICKER_US_TO_TICKS(10000)
 
-/* Bitmask values used in is_created field of adv set */
-#define ULL_ADV_CREATED_BITMASK_CREATED  BIT(0)
-#define ULL_ADV_CREATED_BITMASK_EXTENDED BIT(1)
-
 /* Bitmask value returned by ull_adv_is_enabled() */
 #define ULL_ADV_ENABLED_BITMASK_ENABLED  BIT(0)
-#define ULL_ADV_ENABLED_BITMASK_CREATED  (ULL_ADV_CREATED_BITMASK_CREATED << 1)
-#define ULL_ADV_ENABLED_BITMASK_EXTENDED (ULL_ADV_CREATED_BITMASK_EXTENDED << 1)
 
 #if defined(CONFIG_BT_CTLR_ADV_SET)
 #define BT_CTLR_ADV_SET CONFIG_BT_CTLR_ADV_SET
@@ -34,8 +28,8 @@ uint16_t ull_adv_handle_get(struct ll_adv_set *adv);
 /* Return ll_adv_set context if enabled */
 struct ll_adv_set *ull_adv_is_enabled_get(uint8_t handle);
 
-/* Return flags, for now just: enabled */
-uint32_t ull_adv_is_enabled(uint8_t handle);
+/* Return enabled status of a set */
+int ull_adv_is_enabled(uint8_t handle);
 
 /* Return filter policy used */
 uint32_t ull_adv_filter_pol_get(uint8_t handle);
