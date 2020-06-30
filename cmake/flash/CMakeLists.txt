@@ -179,8 +179,9 @@ foreach(target flash debug debugserver attach)
   elseif(target STREQUAL attach)
     set(comment "Debugging ${BOARD}")
   endif()
+  string(TOUPPER ${target} TARGET_UPPER)
 
-  list(APPEND FLASH_DEPS ${logical_target_for_zephyr_elf})
+  list(APPEND RUNNERS_DEPS ${logical_target_for_zephyr_elf})
 
   # Enable verbose output, if requested.
   if(CMAKE_VERBOSE_MAKEFILE)
@@ -198,8 +199,8 @@ foreach(target flash debug debugserver attach)
       ${RUNNER_VERBOSE}
       ${target}
       --skip-rebuild
-      DEPENDS ${FLASH_DEPS}
-              $<TARGET_PROPERTY:zephyr_property_target,FLASH_DEPENDENCIES>
+      DEPENDS ${RUNNERS_DEPS}
+              $<TARGET_PROPERTY:zephyr_property_target,${TARGET_UPPER}_DEPENDENCIES>
       WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
       )
 
