@@ -64,7 +64,16 @@ struct i2c_sam0_dev_data {
 	struct device *dma;
 #endif
 
+#ifdef CONFIG_I2C_SLAVE
+	bool master_active;
+	struct i2c_slave_config *slave_cfg;
+	bool slave_attached;
+#endif /* CONFIG_I2C_SLAVE */
 };
+
+#ifdef CONFIG_I2C_SLAVE
+static void i2c_sam0_slave_event(struct device *dev);
+#endif /* CONFIG_I2C_SLAVE */
 
 #define DEV_NAME(dev) ((dev)->name)
 #define DEV_CFG(dev) \
@@ -161,6 +170,13 @@ static void i2c_sam0_isr(void *arg)
 	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
 	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
 	SercomI2cm *i2c = cfg->regs;
+
+#ifdef CONFIG_I2C_SLAVE
+	if (data->slave_attached && !data->master_active) {
+		i2c_sam0_slave_event(dev);
+		return;
+	}
+#endif /* CONFIG_I2C_SLAVE */
 
 	int key = irq_lock();
 
@@ -449,6 +465,13 @@ static int i2c_sam0_transfer(struct device *dev, struct i2c_msg *msgs,
 		return 0;
 	}
 
+#ifdef CONFIG_I2C_SLAVE
+	if (data->slave_attached) {
+		LOG_ERR("Driver is registered as slave");
+		return -EBUSY;
+	}
+#endif /* CONFIG_I2C_SLAVE */
+
 	i = 0;
 	wait_synchronization(i2c);
 	while (i2c->STATUS.bit.BUSSTATE != 1) {
@@ -460,10 +483,14 @@ static int i2c_sam0_transfer(struct device *dev, struct i2c_msg *msgs,
 		i++;
 	}
 
-	if (k_sem_take(&data->transfer_sync, 1000) == -EAGAIN) {
+	if (k_sem_take(&data->transfer_sync, K_MSEC(1000)) == -EAGAIN) {
 		LOG_WRN("Failed to acquire sam0 i2c device lock");
 		return -EAGAIN;
 	}
+
+#ifdef CONFIG_I2C_SLAVE
+	data->master_active = true;
+#endif /* CONFIG_I2C_SLAVE */
 
 	for (; num_msgs > 0;) {
 		if (!msgs->len) {
@@ -586,6 +613,10 @@ static int i2c_sam0_transfer(struct device *dev, struct i2c_msg *msgs,
 		num_msgs--;
 		msgs++;
 	}
+
+#ifdef CONFIG_I2C_SLAVE
+	data->master_active = false;
+#endif /* CONFIG_I2C_SLAVE */
 
 	k_sem_give(&data->transfer_sync);
 	return ret;
@@ -727,16 +758,39 @@ static int i2c_sam0_set_apply_bitrate(struct device *dev, uint32_t config)
 
 static int i2c_sam0_configure(struct device *dev, uint32_t config)
 {
-	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
 	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
 	SercomI2cm *i2c = cfg->regs;
 	int retval;
 
 	if (!(config & I2C_MODE_MASTER)) {
-		return -EINVAL;
+		/* configure for slave mode */
+		i2c->CTRLA.bit.ENABLE = 0;
+		wait_synchronization(i2c);
+
+		/* Disable all I2C interrupts */
+		i2c->INTENCLR.reg = SERCOM_I2CS_INTENCLR_MASK;
+
+		/* I2C mode, enable timeouts */
+		i2c->CTRLA.reg = SERCOM_I2CS_CTRLA_MODE_I2C_SLAVE
+#ifdef SERCOM_I2CS_CTRLA_LOWTOUTEN
+			| SERCOM_I2CS_CTRLA_LOWTOUTEN
+#endif
+			| SERCOM_I2CS_CTRLA_RUNSTDBY;
+		wait_synchronization(i2c);
+
+		/*
+		 * Enable smart mode (auto ACK data received)
+		 * and auto ack an address match
+		 */
+		i2c->CTRLB.reg = SERCOM_I2CS_CTRLB_SMEN;
+		wait_synchronization(i2c);
+
+		i2c->CTRLA.bit.ENABLE = 1;
+		wait_synchronization(i2c);
 	}
 
 	if (config & I2C_MODE_MASTER) {
+		/* configure for master mode */
 		i2c->CTRLA.bit.ENABLE = 0;
 		wait_synchronization(i2c);
 
@@ -847,12 +901,211 @@ static int i2c_sam0_initialize(struct device *dev)
 	i2c->STATUS.bit.BUSSTATE = 1;
 	wait_synchronization(i2c);
 
+#ifdef CONFIG_I2C_SLAVE
+	data->master_active = false;
+	data->slave_attached = false;
+#endif /* CONFIG_I2C_SLAVE */
+
 	return 0;
 }
+
+#ifdef CONFIG_I2C_SLAVE
+static void i2c_sam0_slave_event(struct device *dev)
+{
+	const struct i2c_sam0_dev_config *cfg = DEV_CFG(dev);
+	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
+	SercomI2cs *i2c = (SercomI2cs *)cfg->regs;
+	const struct i2c_slave_callbacks *slave_cb =
+		data->slave_cfg->callbacks;
+
+	/* Get present interrupts */
+	u32_t status = i2c->INTFLAG.reg;
+
+	if (status & SERCOM_I2CS_INTFLAG_ERROR) {
+		/* error */
+		if (i2c->STATUS.bit.LOWTOUT) {
+			LOG_ERR("slave SCL low timeout");
+		}
+
+		if (i2c->STATUS.bit.SEXTTOUT) {
+			LOG_ERR("slave SCL low extend timeout");
+		}
+
+		if (i2c->STATUS.bit.COLL || i2c->STATUS.bit.BUSERR) {
+			/*  Bus error  */
+			i2c->STATUS.bit.COLL = 1;
+			i2c->STATUS.bit.BUSERR = 1;
+			LOG_ERR("slave bus error");
+		}
+		i2c->INTFLAG.reg = SERCOM_I2CS_INTFLAG_ERROR;
+		i2c->INTENCLR.reg = SERCOM_I2CS_INTENCLR_ERROR;
+		i2c->INTENCLR.reg = SERCOM_I2CS_INTENCLR_DRDY;
+		i2c->INTENCLR.reg = SERCOM_I2CS_INTENCLR_PREC;
+		slave_cb->stop(data->slave_cfg);
+		return;
+	}
+
+	if (status & SERCOM_I2CS_INTFLAG_PREC) {
+		/* stop */
+		i2c->INTFLAG.reg = SERCOM_I2CS_INTFLAG_PREC;
+		i2c->INTENCLR.reg = SERCOM_I2CS_INTENCLR_ERROR;
+		i2c->INTENCLR.reg = SERCOM_I2CS_INTENCLR_DRDY;
+		i2c->INTENCLR.reg = SERCOM_I2CS_INTENCLR_PREC;
+		slave_cb->stop(data->slave_cfg);
+	}
+
+	if (status & SERCOM_I2CS_INTFLAG_AMATCH) {
+		/* address match */
+		i2c->INTFLAG.reg = SERCOM_I2CS_INTFLAG_AMATCH;
+
+		if (!i2c->STATUS.bit.DIR) {
+			/*  Master requested write  */
+			slave_cb->write_requested(data->slave_cfg);
+		} else {
+			/*  Master requested read  */
+			u8_t val;
+
+			slave_cb->read_requested(data->slave_cfg, &val);
+			while (!(i2c->INTFLAG.reg & SERCOM_I2CS_INTFLAG_DRDY)) {
+				/* wait for data ready */
+			}
+			i2c->data.reg = val;
+		}
+
+		i2c->INTENSET.reg = SERCOM_I2CS_INTENSET_ERROR;
+		i2c->INTENSET.reg = SERCOM_I2CS_INTENSET_DRDY;
+		i2c->INTENSET.reg = SERCOM_I2CS_INTENSET_PREC;
+		i2c->CTRLB.bit.ACKACT = 0;
+	}
+
+	if (status & SERCOM_I2CS_INTFLAG_DRDY) {
+		/* data ready */
+		if (!i2c->STATUS.bit.DIR) {
+			/*  Master requested write  */
+			u8_t val = i2c->data.reg;
+
+			if (slave_cb->write_received(data->slave_cfg, val)) {
+				/*
+				 * If write_received() returns !=0, then
+				 * handle exception and send NACK to master
+				 */
+			}
+		} else {
+			/*  Master requested read  */
+			u8_t val;
+
+			if (!i2c->STATUS.bit.RXNACK) {
+				slave_cb->read_processed(data->slave_cfg, &val);
+				i2c->data.reg = val;
+			} else {
+				/*
+				 * Master terminated the bus transaction.
+				 * Clear DRDY flag
+				 */
+				i2c->INTFLAG.reg = SERCOM_I2CS_INTFLAG_DRDY;
+			}
+		}
+		return;
+	}
+
+}
+
+/* Attach and start I2C as slave */
+int i2c_sam0_slave_register(struct device *dev,
+			    struct i2c_slave_config *config)
+{
+	const struct i2c_sam0_dev_config *cfg = DEV_CFG(dev);
+	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
+	SercomI2cs *i2c = (SercomI2cs *)cfg->regs;
+	u32_t bitrate_cfg;
+	int ret;
+
+	if (!config) {
+		return -EINVAL;
+	}
+
+	if (data->slave_attached) {
+		return -EBUSY;
+	}
+
+	if (data->master_active) {
+		return -EBUSY;
+	}
+
+	bitrate_cfg = i2c_map_dt_bitrate(cfg->bitrate) & ~I2C_MODE_MASTER;
+
+	ret = i2c_sam0_configure(dev, bitrate_cfg);
+	if (ret < 0) {
+		LOG_ERR("i2c: failure initializing");
+		return ret;
+	}
+
+	i2c->CTRLA.bit.ENABLE = 0;
+	wait_synchronization((SercomI2cm *)i2c);
+	i2c->ADDR.reg = (config->address << 1);
+	i2c->CTRLA.bit.ENABLE = 1;
+	wait_synchronization((SercomI2cm *)i2c);
+	data->slave_cfg = config;
+	data->slave_attached = true;
+
+	/* Enable Address Match interrupt */
+	i2c->INTENSET.reg = SERCOM_I2CS_INTENSET_AMATCH;
+
+	LOG_DBG("i2c: slave registered");
+
+	return 0;
+}
+
+int i2c_sam0_slave_unregister(struct device *dev,
+			       struct i2c_slave_config *config)
+{
+	const struct i2c_sam0_dev_config *cfg = DEV_CFG(dev);
+	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
+	SercomI2cs *i2c = (SercomI2cs *)cfg->regs;
+	int ret;
+
+	if (!data->slave_attached) {
+		return -EINVAL;
+	}
+
+	if (data->master_active) {
+		return -EBUSY;
+	}
+
+	i2c->CTRLA.bit.ENABLE = 0;
+	wait_synchronization((SercomI2cm *)i2c);
+
+	/* Disable all I2C interrupts */
+	i2c->INTENCLR.reg = SERCOM_I2CM_INTENCLR_MASK;
+
+	/* Clear all pending I2C interrupts */
+	i2c->INTFLAG.reg = i2c->INTFLAG.reg;
+
+	data->slave_attached = false;
+
+	u32_t bitrate_cfg = i2c_map_dt_bitrate(cfg->bitrate) | I2C_MODE_MASTER;
+
+	ret = i2c_sam0_configure(dev, bitrate_cfg);
+	if (ret < 0) {
+		LOG_ERR("i2c: failure initializing");
+		return ret;
+	}
+
+	LOG_DBG("i2c: slave unregistered");
+
+	return 0;
+}
+
+#endif /* CONFIG_I2C_SLAVE */
+
 
 static const struct i2c_driver_api i2c_sam0_driver_api = {
 	.configure = i2c_sam0_configure,
 	.transfer = i2c_sam0_transfer,
+#ifdef CONFIG_I2C_SLAVE
+	.slave_register = i2c_sam0_slave_register,
+	.slave_unregister = i2c_sam0_slave_unregister,
+#endif /* CONFIG_I2C_SLAVE */
 };
 
 #ifdef CONFIG_I2C_SAM0_DMA_DRIVEN
