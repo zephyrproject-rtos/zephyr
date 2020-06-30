@@ -7,6 +7,10 @@
 
 #define LL_VERSION_NUMBER BT_HCI_VERSION_5_2
 
+#define LL_ADV_CMDS_ANY    0 /* Any advertising cmd/evt allowed */
+#define LL_ADV_CMDS_LEGACY 1 /* Only legacy advertising cmd/evt allowed */
+#define LL_ADV_CMDS_EXT    2 /* Only extended advertising cmd/evt allowed */
+
 int ll_init(struct k_sem *sem_rx);
 void ll_reset(void);
 
@@ -14,6 +18,9 @@ uint8_t *ll_addr_get(uint8_t addr_type, uint8_t *p_bdaddr);
 uint8_t ll_addr_set(uint8_t addr_type, uint8_t const *const p_bdaddr);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_HCI_RAW)
+int ll_adv_cmds_set(uint8_t adv_cmds);
+#endif
 uint8_t ll_adv_params_set(uint8_t handle, uint16_t evt_prop, uint32_t interval,
 		       uint8_t adv_type, uint8_t own_addr_type,
 		       uint8_t direct_addr_type, uint8_t const *const direct_addr,

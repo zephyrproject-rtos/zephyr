@@ -80,6 +80,29 @@ static struct ll_adv_set ll_adv[BT_CTLR_ADV_SET];
 static struct ticker_ext ll_adv_ticker_ext[BT_CTLR_ADV_SET];
 #endif /* CONFIG_BT_TICKER_EXT */
 
+#if defined(CONFIG_BT_HCI_RAW) && defined(CONFIG_BT_CTLR_ADV_EXT)
+static uint8_t ll_adv_cmds;
+
+int ll_adv_cmds_set(uint8_t adv_cmds)
+{
+	if (!ll_adv_cmds) {
+		ll_adv_cmds = adv_cmds;
+
+		if (adv_cmds == LL_ADV_CMDS_LEGACY) {
+			struct ll_adv_set *adv = &ll_adv[0];
+
+			adv->is_created = 1;
+		}
+	}
+
+	if (ll_adv_cmds != adv_cmds) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+#endif
+
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 uint8_t ll_adv_params_set(uint8_t handle, uint16_t evt_prop, uint32_t interval,
 		       uint8_t adv_type, uint8_t own_addr_type,
@@ -1219,6 +1242,11 @@ int ull_adv_reset(void)
 	int err;
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+
+#if defined(CONFIG_BT_HCI_RAW)
+	ll_adv_cmds = LL_ADV_CMDS_ANY;
+#endif
+
 #if defined(CONFIG_BT_CTLR_ADV_AUX_SET)
 	if (CONFIG_BT_CTLR_ADV_AUX_SET > 0) {
 		err = ull_adv_aux_reset();
