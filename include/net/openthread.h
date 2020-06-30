@@ -102,7 +102,7 @@ struct otInstance *openthread_get_default_instance(void);
  *
  * @param ot_context
  */
-void openthread_start(struct openthread_context *ot_context);
+int openthread_start(struct openthread_context *ot_context);
 
 #define OPENTHREAD_L2_CTX_TYPE struct openthread_context
 
