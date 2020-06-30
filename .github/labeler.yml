@@ -16,11 +16,19 @@
   - "drivers/i2s/**/*"
 "area: C Library":
   - "lib/libc/**/*"
-"area: Device Tree":
+"area: Devicetree":
   - "dts/**/*"
+  - "!dts/bindings/**/*"
   - "**/*.dts"
+  - "**/*.dtsi"
+  - "include/devicetree.h"
   - "include/devicetree/*"
+  - "doc/guides/dts/**/*"
+"area: Devicetree Binding":
   - "include/dt-bindings/**/*"
+  - "dts/bindings/**/*"
+"area: Devicetree Tooling":
+  - "scripts/dts/**/*"
 "area: I2C":
   - "drivers/i2c/**/*"
 "area: SPI":
