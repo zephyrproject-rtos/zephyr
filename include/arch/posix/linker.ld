@@ -22,22 +22,37 @@
 SECTIONS
  {
 
+	SECTION_PROLOGUE(romstart_snippet,,)
+	{
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-rom-start.ld>
+	}
 
 #include <linker/common-rom.ld>
+
+	SECTION_PROLOGUE(rodata_snippet,,)
+	{
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-rodata.ld>
+	}
+} INSERT AFTER .rodata;
+
+SECTIONS
+  {
+
+	SECTION_DATA_PROLOGUE(data_snippet,,)
+	{
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-rwdata.ld>
+	}
 
 #include <linker/common-ram.ld>
 
@@ -48,12 +63,13 @@ SECTIONS
 
 #include <arch/posix/native_tasks.ld>
 
- __data_ram_end = .;
-
+	SECTION_DATA_PROLOGUE(noinit_snippet,,)
+	{
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-noinit.ld>
+	}
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
