@@ -467,10 +467,7 @@ static void enc424j600_rx_thread(const struct device *dev)
 				counter = (uint8_t)estat;
 				LOG_DBG("ESTAT: 0x%04x", estat);
 			}
-			goto done;
-		}
-
-		if (eir & ENC424J600_EIR_LINKIF) {
+		} else if (eir & ENC424J600_EIR_LINKIF) {
 			enc424j600_clear_sfru(dev, ENC424J600_SFRX_EIRL,
 					      ENC424J600_EIR_LINKIF);
 			if (estat & ENC424J600_ESTAT_PHYLNK) {
@@ -484,12 +481,11 @@ static void enc424j600_rx_thread(const struct device *dev)
 					net_eth_carrier_off(context->iface);
 				}
 			}
-			goto done;
+		} else {
+			LOG_ERR("Unknown Interrupt, EIR: 0x%04x", eir);
+			continue;
 		}
 
-		LOG_ERR("Unknown Interrupt, EIR: 0x%04x", eir);
-
-done:
 		enc424j600_set_sfru(dev, ENC424J600_SFR3_EIEL,
 				    ENC424J600_EIE_INTIE);
 	}
