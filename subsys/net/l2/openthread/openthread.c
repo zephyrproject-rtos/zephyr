@@ -317,7 +317,7 @@ int openthread_send(struct net_if *iface, struct net_pkt *pkt)
 	return len;
 }
 
-void openthread_start(struct openthread_context *ot_context)
+int openthread_start(struct openthread_context *ot_context)
 {
 	otInstance *ot_instance = ot_context->instance;
 	otError error;
@@ -353,7 +353,7 @@ void openthread_start(struct openthread_context *ot_context)
 			NET_ERR("Failed to start joiner [%d]", error);
 		}
 
-		return;
+		return error == OT_ERROR_NONE ? 0 : -EIO;
 	} else {
 		/* No dataset - load the default configuration. */
 		NET_DBG("Loading OpenThread default configuration.");
@@ -376,6 +376,20 @@ void openthread_start(struct openthread_context *ot_context)
 	if (error != OT_ERROR_NONE) {
 		NET_ERR("Failed to start the OpenThread network [%d]", error);
 	}
+
+	return error == OT_ERROR_NONE ? 0 : -EIO;
+}
+
+int openthread_stop(struct openthread_context *ot_context)
+{
+	otError error;
+
+	error = otThreadSetEnabled(ot_context->instance, false);
+	if (error == OT_ERROR_INVALID_STATE) {
+		NET_DBG("Openthread interface was not up [%d]", error);
+	}
+
+	return 0;
 }
 
 static int openthread_init(struct net_if *iface)
@@ -429,12 +443,6 @@ static int openthread_init(struct net_if *iface)
 				 OT_PRIORITY, 0, K_NO_WAIT);
 	k_thread_name_set(&ot_thread_data, "openthread");
 
-	if (IS_ENABLED(CONFIG_OPENTHREAD_MANUAL_START)) {
-		NET_DBG("OpenThread manual start.");
-	} else {
-		openthread_start(ot_context);
-	}
-
 	return 0;
 }
 
@@ -451,6 +459,24 @@ void ieee802154_init(struct net_if *iface)
 static enum net_l2_flags openthread_flags(struct net_if *iface)
 {
 	return NET_L2_MULTICAST;
+}
+
+static int openthread_enable(struct net_if *iface, bool state)
+{
+	struct openthread_context *ot_context = net_if_l2_data(iface);
+
+	NET_DBG("iface %p %s", iface, state ? "up" : "down");
+
+	if (state) {
+		if (IS_ENABLED(CONFIG_OPENTHREAD_MANUAL_START)) {
+			NET_DBG("OpenThread manual start.");
+			return 0;
+		}
+
+		return openthread_start(ot_context);
+	}
+
+	return openthread_stop(ot_context);
 }
 
 struct openthread_context *openthread_get_default_context(void)
@@ -487,5 +513,5 @@ void openthread_set_state_changed_cb(otStateChangedCallback cb)
 	state_changed_cb = cb;
 }
 
-NET_L2_INIT(OPENTHREAD_L2, openthread_recv, openthread_send,
-	    NULL, openthread_flags);
+NET_L2_INIT(OPENTHREAD_L2, openthread_recv, openthread_send, openthread_enable,
+	    openthread_flags);
