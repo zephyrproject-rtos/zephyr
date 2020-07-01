@@ -621,7 +621,7 @@ static int uart_ns16550_fifo_fill(struct device *dev, const uint8_t *tx_data,
 	int i;
 	k_spinlock_key_t key = k_spin_lock(&DEV_DATA(dev)->lock);
 
-	for (i = 0; (i < size) && (INBYTE(LSR(dev)) & LSR_THRE) != 0; i++) {
+	for (i = 0; (i < size) && uart_ns16550_can_tx(dev); i++) {
 		OUTBYTE(THR(dev), tx_data[i]);
 	}
 
@@ -663,9 +663,13 @@ static int uart_ns16550_fifo_read(struct device *dev, uint8_t *rx_data,
  */
 static void uart_ns16550_irq_tx_enable(struct device *dev)
 {
+	uint8_t flags = IER_TBE;
 	k_spinlock_key_t key = k_spin_lock(&DEV_DATA(dev)->lock);
 
-	OUTBYTE(IER(dev), INBYTE(IER(dev)) | IER_TBE);
+	if (uart_ns16550_cts_rts_emul(dev)) {
+		flags |= IER_MSI;
+	}
+	OUTBYTE(IER(dev), INBYTE(IER(dev)) | flags);
 
 	k_spin_unlock(&DEV_DATA(dev)->lock, key);
 }
@@ -681,7 +685,7 @@ static void uart_ns16550_irq_tx_disable(struct device *dev)
 {
 	k_spinlock_key_t key = k_spin_lock(&DEV_DATA(dev)->lock);
 
-	OUTBYTE(IER(dev), INBYTE(IER(dev)) & (~IER_TBE));
+	OUTBYTE(IER(dev), INBYTE(IER(dev)) & ~(IER_TBE | IER_MSI));
 
 	k_spin_unlock(&DEV_DATA(dev)->lock, key);
 }
@@ -695,9 +699,15 @@ static void uart_ns16550_irq_tx_disable(struct device *dev)
  */
 static int uart_ns16550_irq_tx_ready(struct device *dev)
 {
+	int ret = 0;
 	k_spinlock_key_t key = k_spin_lock(&DEV_DATA(dev)->lock);
 
-	int ret = ((IIRC(dev) & IIR_ID) == IIR_THRE) ? 1 : 0;
+	switch (IIRC(dev) & IIR_ID) {
+	case IIR_THRE:
+	case IIR_MSTAT:
+		ret = uart_ns16550_can_tx(dev);
+		break;
+	}
 
 	k_spin_unlock(&DEV_DATA(dev)->lock, key);
 
