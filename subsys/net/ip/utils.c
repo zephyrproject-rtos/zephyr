@@ -482,7 +482,7 @@ int z_vrfy_net_addr_pton(sa_family_t family, const char *src,
 		return err;
 	}
 
-	Z_OOPS(z_user_to_copy((void *)src, addr, size));
+	Z_OOPS(z_user_to_copy((void *)dst, addr, size));
 
 	return 0;
 }
