@@ -57,7 +57,16 @@ MCUboot using ``west``:
 
    west build -b YOUR_BOARD samples/hello_world -- -DCONFIG_BOOTLOADER_MCUBOOT=y
    west sign -t imgtool -- --key YOUR_SIGNING_KEY.pem
-   west flash --hex-file build/zephyr/zephyr.signed.hex
+   west flash --signed
+
+Building and flashing :ref:`hello_world` into a custom build directory with
+custom image names:
+
+.. code-block:: console
+
+   west build -b YOUR_BOARD -d my_build_dir samples/hello_world -- -DCONFIG_BOOTLOADER_MCUBOOT=y
+   west sign -t imgtool -d my_build_dir -B my-signed.bin -H my-signed.hex -- --key YOUR_SIGNING_KEY.pem
+   west flash -d my_build_dir --hex-file my-signed.hex
 
 The availability of a hex file, and whether ``west flash`` uses it to flash,
 depends on your board and build configuration. At least the west flash runners
