@@ -429,7 +429,7 @@ static int perform_erase_op(struct device *dev, uint8_t opcode, off_t offset)
 static int spi_flash_at45_erase(struct device *dev, off_t offset, size_t size)
 {
 	const struct spi_flash_at45_config *cfg = get_dev_config(dev);
-	int err;
+	int err = 0;
 
 	if (!is_valid_request(offset, size, cfg->chip_size)) {
 		return -ENODEV;
