@@ -65,6 +65,12 @@ static int board_pinmux_init(struct device *dev)
 #warning Pin mapping may not be configured
 #endif
 
+#if ATMEL_SAM0_DT_TCC_CHECK(0, atmel_sam0_tcc_pwm) && \
+	defined(CONFIG_PWM_SAM0_TCC)
+	/* LED0 on PA10/TCC0/WO[2] */
+	pinmux_pin_set(muxa, 10, PINMUX_FUNC_F);
+#endif
+
 #ifdef CONFIG_USB_DC_SAM0
 	/* USB DP on PA25, USB DM on PA24 */
 	pinmux_pin_set(muxa, 25, PINMUX_FUNC_G);
