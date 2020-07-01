@@ -4032,9 +4032,10 @@ int lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx)
 		}
 	}
 
-	for (i = 0, msg = messages; i < CONFIG_LWM2M_ENGINE_MAX_MESSAGES;
-	     i++, msg++) {
-		memset(msg, 0, sizeof(struct lwm2m_message));
+	for (i = 0, msg = messages; i < ARRAY_SIZE(messages); i++, msg++) {
+		if (msg->ctx == client_ctx) {
+			lwm2m_reset_message(msg, true);
+		}
 	}
 
 	coap_pendings_clear(client_ctx->pendings,
