@@ -10,6 +10,14 @@
   - "drivers/adc/**/*"
 "area: Counter":
   - "drivers/counter/**/*"
+"area: CAN":
+  - "include/drivers/can.h"
+  - "include/canbus/*/**"
+  - "drivers/can/**/*"
+  - "subsys/canbus/*/**"
+"area: EEPROM":
+  - "include/drivers/eeprom.h"
+  - "drivers/eeprom/**/*"
 "area: Timer":
   - "drivers/timer/**/*"
 "area: I2S":
