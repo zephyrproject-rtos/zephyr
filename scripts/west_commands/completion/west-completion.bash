@@ -690,6 +690,7 @@ __comp_west_runner_cmd()
 	local runner_bool_opts="
 		--context -H
 		--skip-rebuild
+		--signed
 	"
 	local runner_args_opts="
 	--build-dir -d

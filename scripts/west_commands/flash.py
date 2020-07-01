@@ -23,7 +23,12 @@ class Flash(WestCommand):
         self.runner_key = 'flash-runner'  # in runners.yaml
 
     def do_add_parser(self, parser_adder):
-        return add_parser_common(self, parser_adder)
+        parser = add_parser_common(self, parser_adder)
+
+        parser.add_argument('--signed', action='store_true',
+                            help='use the signed image for flashing')
+
+        return parser
 
     def do_run(self, my_args, runner_args):
         do_run_common(self, my_args, runner_args)
