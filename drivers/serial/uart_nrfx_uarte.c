@@ -608,6 +608,16 @@ static int uarte_nrfx_rx_disable(struct device *dev)
 
 	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPRX);
 
+	/* Wait for the hardware to signal the RX is finished. If the UART
+	 * hardware is disabled before this occurs, it will not power down
+	 * correctly. This results in ~500uA additional current consumption.
+	 */
+	while (!nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXTO)) {
+		/* Busy wait for event to register */
+	}
+	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDRX);
+	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXTO);
+
 	return 0;
 }
 
