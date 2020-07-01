@@ -150,6 +150,9 @@ class EDT:
 
     bindings_dirs:
       The bindings directory paths passed to __init__()
+
+    The standard library's pickle module can be used to marshal and
+    unmarshal EDT objects.
     """
     def __init__(self, dts, bindings_dirs, warn_file=None,
                  warn_reg_unit_address_mismatch=True,
@@ -182,8 +185,9 @@ class EDT:
           to None.  This allows 'fixed-partitions' binding to match regardless
           of the bus the 'fixed-partition' is under.
         """
-        # Do this indirection with None in case sys.stderr is deliberately
-        # overridden
+        # Do this indirection with None in case sys.stderr is
+        # deliberately overridden. We'll only hold on to this file
+        # while we're initializing.
         self._warn_file = sys.stderr if warn_file is None else warn_file
 
         self._warn_reg_unit_address_mismatch = warn_reg_unit_address_mismatch
@@ -201,6 +205,11 @@ class EDT:
         self._init_luts()
 
         self._define_order()
+
+        # Drop the reference to the open warn file. This is necessary
+        # to make this object pickleable, but also allows it to get
+        # garbage collected and closed if nobody else is using it.
+        self._warn_file = None
 
     def get_node(self, path):
         """
@@ -748,7 +757,10 @@ class EDT:
                      .format(binding_path, prop_name))
 
     def _warn(self, msg):
-        print("warning: " + msg, file=self._warn_file)
+        if self._warn_file is not None:
+            print("warning: " + msg, file=self._warn_file)
+        else:
+            raise _err("can't _warn() outside of EDT.__init__")
 
 
 class Node:
