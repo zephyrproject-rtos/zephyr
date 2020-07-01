@@ -599,6 +599,10 @@ void ll_rx_dequeue(void)
 		}
 	}
 	break;
+
+	case NODE_RX_TYPE_EXT_ADV_TERMINATE:
+	break;
+
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CONN)
@@ -682,11 +686,6 @@ void ll_rx_dequeue(void)
 #if defined(CONFIG_BT_OBSERVER)
 	case NODE_RX_TYPE_REPORT:
 #endif /* CONFIG_BT_OBSERVER */
-
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
-	/* fallthrough */
-	case NODE_RX_TYPE_EXT_ADV_TERMINATE:
-#endif  /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
 	case NODE_RX_TYPE_SCAN_REQ:
@@ -1818,10 +1817,13 @@ static inline void rx_demux_event_done(memq_link_t *link,
 		}
 
 		if (send_term_evt) {
+			lll->node_rx_adv_term->rx_ftr.extra =
+				(void *)lll->node_rx_adv_term->rx_ftr.extra;
 			lll->node_rx_adv_term->type =
 				NODE_RX_TYPE_EXT_ADV_TERMINATE;
-			lll->node_rx_adv_term->rx_ftr.param = (void *)
-				(uint32_t)(lll->node_rx_adv_term->handle);
+			lll->node_rx_adv_term->handle =
+				(uint16_t)ull_adv_handle_get(adv);
+			lll->node_rx_adv_term->rx_ftr.param = (void *)lll;
 
 			rx = lll->node_rx_adv_term;
 			link = rx->link;
