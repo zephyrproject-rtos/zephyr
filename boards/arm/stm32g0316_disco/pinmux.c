@@ -15,6 +15,12 @@ static const struct pin_config pinconf[] = {
 	{STM32_PIN_PA9, STM32G0_PINMUX_FUNC_PA9_USART1_TX},
 	{STM32_PIN_PB7, STM32G0_PINMUX_FUNC_PB7_USART1_RX},
 #endif
+
+#ifdef CONFIG_ADC_1
+    {STM32_PIN_PA1, STM32_MODER_ANALOG_MODE},
+    {STM32_PIN_PA5, STM32_MODER_ANALOG_MODE},
+    {STM32_PIN_PA6, STM32_MODER_ANALOG_MODE},
+#endif /* CONFIG_ADC_1 */
 };
 
 static int pinmux_stm32_init(struct device *port)

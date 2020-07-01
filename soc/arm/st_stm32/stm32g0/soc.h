@@ -65,6 +65,10 @@
 #include <stm32g0xx_ll_tim.h>
 #endif /* CONFIG_PWM_STM32 */
 
+#ifdef CONFIG_ADC_STM32
+#include <stm32g0xx_ll_adc.h>
+#endif
+
 /* Add include for DTS generated information */
 #include <devicetree.h>
 

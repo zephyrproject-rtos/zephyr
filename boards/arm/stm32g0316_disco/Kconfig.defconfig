@@ -8,4 +8,8 @@ if BOARD_STM32G0316_DISCO
 config BOARD
 	default "stm32g0316_disco"
 
+config ADC_1
+	default y
+	depends on ADC
+
 endif # BOARD_STM32G0316_DISCO
