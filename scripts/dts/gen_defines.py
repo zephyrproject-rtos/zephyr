@@ -22,6 +22,7 @@ import argparse
 from collections import defaultdict
 import os
 import pathlib
+import pickle
 import re
 import sys
 
@@ -67,6 +68,7 @@ def main():
         edt.compat2nodes[compat] = sorted(
             nodes, key=lambda node: 0 if node.status == "okay" else 1)
 
+    # Create the generated header.
     with open(args.header_out, "w", encoding="utf-8") as header_file:
         write_top_comment(edt)
 
@@ -91,6 +93,9 @@ def main():
 
         write_chosen(edt)
         write_global_compat_info(edt)
+
+    if args.edt_pickle_out:
+        write_pickled_edt(edt, args.edt_pickle_out)
 
 
 def node_z_path_id(node):
@@ -127,6 +132,8 @@ def parse_args():
     parser.add_argument("--dts-out", required=True,
                         help="path to write merged DTS source code to (e.g. "
                              "as a debugging aid)")
+    parser.add_argument("--edt-pickle-out",
+                        help="path to write pickled edtlib.EDT object to")
 
     return parser.parse_args()
 
@@ -711,6 +718,21 @@ def quote_str(s):
     # backslashes within it
 
     return f'"{escape(s)}"'
+
+
+def write_pickled_edt(edt, out_file):
+    # Writes the edt object in pickle format to out_file.
+
+    with open(out_file, 'wb') as f:
+        # Pickle protocol version 4 is the default as of Python 3.8
+        # and was introduced in 3.4, so it is both available and
+        # recommended on all versions of Python that Zephyr supports
+        # (at time of writing, Python 3.6 was Zephyr's minimum
+        # version, and 3.8 the most recent CPython release).
+        #
+        # Using a common protocol version here will hopefully avoid
+        # reproducibility issues in different Python installations.
+        pickle.dump(edt, f, protocol=4)
 
 
 def err(s):
