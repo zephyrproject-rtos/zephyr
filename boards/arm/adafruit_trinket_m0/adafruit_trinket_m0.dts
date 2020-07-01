@@ -22,6 +22,7 @@
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &led0;
+		pwm-led0 = &pwm_led0;
 	};
 
 	leds {
@@ -29,6 +30,14 @@
 		led0: led_0 {
 			gpios = <&porta 10 0>;
 			label = "LED";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led_0 {
+			pwms = <&tcc0 2>;
 		};
 	};
 };
@@ -68,6 +77,15 @@
 		spi-max-frequency = <24000000>;
 		label = "LED1";
 	};
+};
+
+&tcc0 {
+	status = "okay";
+	compatible = "atmel,sam0-tcc-pwm";
+	/* Gives a maximum period of 1.4 s */
+	prescaler = <4>;
+
+	#pwm-cells = <1>;
 };
 
 &flash0 {

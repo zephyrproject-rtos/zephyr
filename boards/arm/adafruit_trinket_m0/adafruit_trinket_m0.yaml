@@ -15,6 +15,7 @@ supported:
   - gpio
   - hwinfo
   - pinmux
+  - pwm
   - spi
   - uart
   - usb_device
