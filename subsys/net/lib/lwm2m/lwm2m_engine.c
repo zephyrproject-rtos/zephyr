@@ -4124,7 +4124,6 @@ static void socket_receive_loop(void)
 	ssize_t len;
 	int i;
 
-	from_addr_len = sizeof(from_addr);
 	while (1) {
 		/* wait for sockets */
 		if (sock_nfds < 1) {
@@ -4161,6 +4160,7 @@ static void socket_receive_loop(void)
 				continue;
 			}
 
+			from_addr_len = sizeof(from_addr);
 			sock_fds[i].revents = 0;
 			len = recvfrom(sock_ctx[i]->sock_fd, in_buf,
 				       sizeof(in_buf) - 1, 0,
