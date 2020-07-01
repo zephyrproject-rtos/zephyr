@@ -355,6 +355,7 @@ static int spi_flash_at45_write(struct device *dev, off_t offset,
 			break;
 		}
 
+		data    = (uint8_t *)data + chunk_len;
 		offset += chunk_len;
 		len    -= chunk_len;
 	}
