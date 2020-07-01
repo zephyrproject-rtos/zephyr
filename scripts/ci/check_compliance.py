@@ -286,7 +286,6 @@ class KconfigCheck(ComplianceTest):
         os.environ["ARCH"] = "*"
         os.environ["CMAKE_BINARY_DIR"] = tempfile.gettempdir()
         os.environ['DEVICETREE_CONF'] = "dummy"
-        os.environ['DTS_POST_CPP'] = 'dummy'
 
         # Older name for DEVICETREE_CONF, for compatibility with older Zephyr
         # versions that don't have the renaming
