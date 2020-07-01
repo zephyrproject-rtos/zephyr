@@ -547,6 +547,14 @@ class EDT:
             node._init_interrupts()
             node._init_pinctrls()
 
+        if self._warn_reg_unit_address_mismatch:
+            # This warning matches the simple_bus_reg warning in dtc
+            for node in self.nodes:
+                if node.regs and node.regs[0].addr != node.unit_addr:
+                    self._warn("unit address and first address in 'reg' "
+                               f"(0x{node.regs[0].addr:x}) don't match for "
+                               f"{node.path}")
+
     def _init_luts(self):
         # Initialize node lookup tables (LUTs).
 
@@ -892,16 +900,7 @@ class Node:
         except ValueError:
             _err("{!r} has non-hex unit address".format(self))
 
-        addr = _translate(addr, self._node)
-
-        # Matches the simple_bus_reg warning in dtc
-        if self.edt._warn_reg_unit_address_mismatch and \
-           self.regs and self.regs[0].addr != addr:
-            self.edt._warn("unit address and first address in 'reg' "
-                           f"(0x{self.regs[0].addr:x}) don't match for "
-                           f"{self.path}")
-
-        return addr
+        return _translate(addr, self._node)
 
     @property
     def description(self):

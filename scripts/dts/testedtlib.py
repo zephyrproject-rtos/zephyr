@@ -37,6 +37,9 @@ warning: please put 'required: true' instead of 'category: required' in properti
 warning: please put 'required: false' instead of 'category: optional' in properties: optional: ...' in test-bindings/deprecated.yaml - 'category' will be removed
 warning: 'sub-node: properties: ...' in test-bindings/deprecated.yaml is deprecated and will be removed - please give a full binding for the child node in 'child-binding:' instead (see binding-template.yaml)
 warning: "#cells:" in test-bindings/deprecated.yaml is deprecated and will be removed - please put 'interrupt-cells:', 'pwm-cells:', 'gpio-cells:', etc., instead. The name should match the name of the corresponding phandle-array property (see binding-template.yaml)
+warning: unit address and first address in 'reg' (0x1) don't match for /reg-zero-size-cells/node
+warning: unit address and first address in 'reg' (0x5) don't match for /reg-ranges/parent/node
+warning: unit address and first address in 'reg' (0x30000000200000001) don't match for /reg-nested-ranges/grandparent/parent/node
 """)
 
     #
