@@ -3450,14 +3450,17 @@ class HardwareMap:
         if os.path.exists(hwm_file):
             with open(hwm_file, 'r') as yaml_file:
                 hwm = yaml.load(yaml_file, Loader=yaml.FullLoader)
+                hwm.sort(key=lambda x: x['serial'] or '')
+
                 # disconnect everything
                 for h in hwm:
                     h['connected'] = False
                     h['serial'] = None
 
+                self.detected.sort(key=lambda x: x['serial'] or '')
                 for d in self.detected:
                     for h in hwm:
-                        if d['id'] == h['id'] and d['product'] == h['product']:
+                        if d['id'] == h['id'] and d['product'] == h['product'] and not h['connected'] and not d.get('match', False):
                             h['connected'] = True
                             h['serial'] = d['serial']
                             d['match'] = True
