@@ -17,6 +17,13 @@ file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/include/generated)
 # See the Devicetree user guide in the Zephyr documentation for details.
 set(GEN_DEFINES_SCRIPT          ${ZEPHYR_BASE}/scripts/dts/gen_defines.py)
 set(ZEPHYR_DTS                  ${PROJECT_BINARY_DIR}/zephyr.dts)
+# This contains the edtlib.EDT object created from zephyr.dts in Python's
+# pickle data marshalling format (https://docs.python.org/3/library/pickle.html)
+#
+# Its existence is an implementation detail used to speed up further
+# use of the devicetree by processes that run later on in the build,
+# and should not be made part of the documentation.
+set(EDT_PICKLE                  ${PROJECT_BINARY_DIR}/edt.pickle)
 set(DEVICETREE_UNFIXED_H        ${PROJECT_BINARY_DIR}/include/generated/devicetree_unfixed.h)
 set(DEVICETREE_UNFIXED_LEGACY_H ${PROJECT_BINARY_DIR}/include/generated/devicetree_legacy_unfixed.h)
 set(DTS_POST_CPP                ${PROJECT_BINARY_DIR}/${BOARD}.dts.pre.tmp)
@@ -206,6 +213,7 @@ if(SUPPORTS_DTS)
   --bindings-dirs ${DTS_ROOT_BINDINGS}
   --header-out ${DEVICETREE_UNFIXED_H}
   --dts-out ${ZEPHYR_DTS} # As a debugging aid
+  --edt-pickle-out ${EDT_PICKLE}
   )
 
   #
