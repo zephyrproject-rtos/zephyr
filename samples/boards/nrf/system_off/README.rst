@@ -17,6 +17,11 @@ deep sleep on Nordic platforms.  The functional behavior is:
 
 A power monitor will be able to distinguish among these states.
 
+This sample also demonstrates the use of a :c:func:`SYS_INIT()` call to
+disable the deep sleep functionality before the kernel starts, which
+prevents the board from powering down during initialization of drivers
+that use unbounded delays to wait for startup.
+
 Requirements
 ************
 
