@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
+import pickle
 import sys
 
 ZEPHYR_BASE = os.environ.get("ZEPHYR_BASE")
@@ -17,19 +18,12 @@ import edtlib
 doc_mode = os.environ.get('KCONFIG_DOC_MODE') == "1"
 
 if not doc_mode:
-    DTS_POST_CPP = os.environ["DTS_POST_CPP"]
-    BINDINGS_DIRS = os.environ.get("DTS_ROOT_BINDINGS")
-    DTC_FLAGS = os.environ.get("EXTRA_DTC_FLAGS")
+    EDT_PICKLE = os.environ.get("EDT_PICKLE")
 
-    if DTC_FLAGS is not None and "-Wno-simple_bus_reg" in DTC_FLAGS:
-        edt_warn_flag = False
-    else:
-        edt_warn_flag = True
-
-    # if a board port doesn't use DTS than these might not be set
-    if os.path.isfile(DTS_POST_CPP) and BINDINGS_DIRS is not None:
-        edt = edtlib.EDT(DTS_POST_CPP, BINDINGS_DIRS.split("?"),
-                warn_reg_unit_address_mismatch=edt_warn_flag)
+    # The "if" handles a missing dts.
+    if EDT_PICKLE is not None and os.path.isfile(EDT_PICKLE):
+        with open(EDT_PICKLE, 'rb') as f:
+            edt = pickle.load(f)
     else:
         edt = None
 

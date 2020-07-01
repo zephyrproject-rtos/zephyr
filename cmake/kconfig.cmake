@@ -49,6 +49,7 @@ set(ENV{DTS_POST_CPP} ${DTS_POST_CPP})
 set(ENV{DTS_ROOT_BINDINGS} "${DTS_ROOT_BINDINGS}")
 set(ENV{TOOLCHAIN_KCONFIG_DIR} "${TOOLCHAIN_KCONFIG_DIR}")
 set(ENV{EXTRA_DTC_FLAGS} ${EXTRA_DTC_FLAGS})
+set(ENV{EDT_PICKLE} ${EDT_PICKLE})
 
 # Allow out-of-tree users to add their own Kconfig python frontend
 # targets by appending targets to the CMake list
