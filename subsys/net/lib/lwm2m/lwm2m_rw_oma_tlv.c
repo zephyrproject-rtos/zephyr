@@ -949,6 +949,8 @@ int do_write_op_tlv(struct lwm2m_engine_obj *obj, struct lwm2m_message *msg)
 			       msg->operation == LWM2M_OP_CREATE))) {
 				return ret;
 			}
+		} else {
+			return -ENOTSUP;
 		}
 	}
 
