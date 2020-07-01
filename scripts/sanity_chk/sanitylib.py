@@ -562,59 +562,13 @@ class DeviceHandler(Handler):
     def handle(self):
         out_state = "failed"
 
-        if self.suite.west_flash is not None:
-            command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
-            if self.suite.west_runner:
-                command.append("--runner")
-                command.append(self.suite.west_runner)
-            # There are three ways this option is used.
-            # 1) bare: --west-flash
-            #    This results in options.west_flash == []
-            # 2) with a value: --west-flash="--board-id=42"
-            #    This results in options.west_flash == "--board-id=42"
-            # 3) Multiple values: --west-flash="--board-id=42,--erase"
-            #    This results in options.west_flash == "--board-id=42 --erase"
-            if self.suite.west_flash != []:
-                command.append('--')
-                command.extend(self.suite.west_flash.split(','))
-        else:
-            command = [self.generator_cmd, "-C", self.build_dir, "flash"]
-
         while not self.device_is_available(self.instance):
             logger.debug("Waiting for device {} to become available".format(self.instance.platform.name))
             time.sleep(1)
 
         hardware = self.get_available_device(self.instance)
-
         if hardware:
-            runner = hardware.get('runner', None)
-        if runner:
-            board_id = hardware.get("probe_id", hardware.get("id", None))
-            product = hardware.get("product", None)
-            command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
-            command.append("--runner")
-            command.append(hardware.get('runner', None))
-            if runner == "pyocd":
-                command.append("--board-id")
-                command.append(board_id)
-            elif runner == "nrfjprog":
-                command.append('--')
-                command.append("--snr")
-                command.append(board_id)
-            elif runner == "openocd" and product == "STM32 STLink":
-                command.append('--')
-                command.append("--cmd-pre-init")
-                command.append("hla_serial %s" % (board_id))
-            elif runner == "openocd" and product == "STLINK-V3":
-                command.append('--')
-                command.append("--cmd-pre-init")
-                command.append("hla_serial %s" % (board_id))
-            elif runner == "openocd" and product == "EDBG CMSIS-DAP":
-                command.append('--')
-                command.append("--cmd-pre-init")
-                command.append("cmsis_dap_serial %s" % (board_id))
-            elif runner == "jlink":
-                command.append("--tool-opt=-SelectEmuBySN  %s" % (board_id))
+            runner = hardware.get('runner', None) or self.suite.west_runner
 
         serial_pty = hardware.get('serial_pty', None)
         if serial_pty:
@@ -631,6 +585,51 @@ class DeviceHandler(Handler):
             serial_device = hardware['serial']
 
         logger.debug("Using serial device {}".format(serial_device))
+
+        if (self.suite.west_flash is not None) or runner:
+            command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
+            command_extra_args = []
+
+            # There are three ways this option is used.
+            # 1) bare: --west-flash
+            #    This results in options.west_flash == []
+            # 2) with a value: --west-flash="--board-id=42"
+            #    This results in options.west_flash == "--board-id=42"
+            # 3) Multiple values: --west-flash="--board-id=42,--erase"
+            #    This results in options.west_flash == "--board-id=42 --erase"
+            if self.suite.west_flash and self.suite.west_flash != []:
+                command_extra_args.extend(self.suite.west_flash.split(','))
+
+            if runner:
+                command.append("--runner")
+                command.append(runner)
+
+                board_id = hardware.get("probe_id", hardware.get("id", None))
+                product = hardware.get("product", None)
+                if board_id is not None:
+                    if runner == "pyocd":
+                        command_extra_args.append("--board-id")
+                        command_extra_args.append(board_id)
+                    elif runner == "nrfjprog":
+                        command_extra_args.append("--snr")
+                        command_extra_args.append(board_id)
+                    elif runner == "openocd" and product == "STM32 STLink":
+                        command_extra_args.append("--cmd-pre-init")
+                        command_extra_args.append("hla_serial %s" % (board_id))
+                    elif runner == "openocd" and product == "STLINK-V3":
+                        command_extra_args.append("--cmd-pre-init")
+                        command_extra_args.append("hla_serial %s" % (board_id))
+                    elif runner == "openocd" and product == "EDBG CMSIS-DAP":
+                        command_extra_args.append("--cmd-pre-init")
+                        command_extra_args.append("cmsis_dap_serial %s" % (board_id))
+                    elif runner == "jlink":
+                        command.append("--tool-opt=-SelectEmuBySN  %s" % (board_id))
+
+            if command_extra_args != []:
+                command.append('--')
+                command.extend(command_extra_args)
+        else:
+            command = [self.generator_cmd, "-C", self.build_dir, "flash"]
 
         try:
             ser = serial.Serial(
