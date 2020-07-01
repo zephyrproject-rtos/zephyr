@@ -219,8 +219,8 @@ TEST_CASES = [(f, sr, snr, e)
               for snr in (TEST_OVR_SNR, None)
               for e in (False, True)]
 
-def get_board_snr_patch():
-    return TEST_DEF_SNR
+def get_board_snr_patch(glob):
+    return TEST_DEF_SNR if glob == "*" else TEST_OVR_SNR
 
 def require_patch(program):
     assert program == 'nrfjprog'
@@ -256,9 +256,9 @@ def test_nrfjprog_init(cc, get_snr, req, test_case, runner_config):
                                  expected_commands(*test_case)]
 
     if snr is None:
-        get_snr.assert_called_once_with()
+        get_snr.assert_called_once_with('*')
     else:
-        get_snr.assert_not_called()
+        get_snr.assert_called_once_with(snr)
 
 @pytest.mark.parametrize('test_case', TEST_CASES, ids=id_fn)
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
@@ -287,6 +287,6 @@ def test_nrfjprog_create(cc, get_snr, req, test_case, runner_config):
     assert cc.call_args_list == [call(x) for x in
                                  expected_commands(*test_case)]
     if snr is None:
-        get_snr.assert_called_once_with()
+        get_snr.assert_called_once_with('*')
     else:
-        get_snr.assert_not_called()
+        get_snr.assert_called_once_with(snr)
