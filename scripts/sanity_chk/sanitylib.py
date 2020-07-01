@@ -1885,6 +1885,7 @@ class ProjectBuilder(FilterBuilder):
         self.valgrind = kwargs.get('valgrind', False)
         self.extra_args = kwargs.get('extra_args', [])
         self.device_testing = kwargs.get('device_testing', False)
+        self.opt_build_only = kwargs.get('opt_build_only', False)
         self.cmake_only = kwargs.get('cmake_only', False)
         self.cleanup = kwargs.get('cleanup', False)
         self.coverage = kwargs.get('coverage', False)
@@ -1961,7 +1962,7 @@ class ProjectBuilder(FilterBuilder):
                 instance.handler = BinaryHandler(instance, "renode")
                 instance.handler.pid_fn = os.path.join(instance.build_dir, "renode.pid")
                 instance.handler.call_make_run = True
-        elif self.device_testing:
+        elif self.device_testing and self.opt_build_only is False:
             instance.handler = DeviceHandler(instance, "device")
 
         if instance.handler:
@@ -2859,6 +2860,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                                         coverage=self.enable_coverage,
                                         extra_args=self.extra_args,
                                         device_testing=self.device_testing,
+                                        opt_build_only=self.opt_build_only,
                                         cmake_only=self.cmake_only,
                                         cleanup=self.cleanup,
                                         valgrind=self.enable_valgrind,

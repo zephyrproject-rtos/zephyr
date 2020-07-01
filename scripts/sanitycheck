@@ -1036,7 +1036,7 @@ def main():
     logger.info("%d test configurations selected, %d configurations discarded due to filters." %
                 (len(suite.instances), len(discards)))
 
-    if options.device_testing:
+    if options.device_testing and options.build_only is False:
         print("\nDevice testing on:")
         hwm.dump(suite.connected_hardware, suite.selected_platforms)
         print("")
@@ -1098,7 +1098,7 @@ def main():
         coverage_tool.add_ignore_directory('samples')
         coverage_tool.generate(options.outdir)
 
-    if options.device_testing:
+    if options.device_testing and options.build_only is False:
         print("\nHardware distribution summary:\n")
         table = []
         header = ['Board', 'ID', 'Counter']
