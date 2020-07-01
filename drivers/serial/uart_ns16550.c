@@ -429,11 +429,13 @@ static int uart_ns16550_configure(struct device *dev,
 		uart_cfg.data_bits | uart_cfg.stop_bits | uart_cfg.parity);
 
 	mdc = MCR_OUT2 | MCR_RTS | MCR_DTR;
-#ifdef CONFIG_UART_NS16750
 	if (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS) {
+#ifdef CONFIG_UART_NS16750
 		mdc |= MCR_AFCE;
-	}
+#else
+		mdc &= ~(MCR_RTS);
 #endif
+	}
 
 	OUTBYTE(MDC(dev), mdc);
 
@@ -554,6 +556,16 @@ static int uart_ns16550_poll_in(struct device *dev, unsigned char *c)
 		/* got a character */
 		*c = INBYTE(RDR(dev));
 		ret = 0;
+	}
+
+	if (uart_ns16550_cts_rts_emul(dev)) {
+		uint8_t mdc = INBYTE(MDC(dev));
+		if ((INBYTE(LSR(dev)) & LSR_RXRDY) != 0) {
+			mdc &= ~MCR_RTS;
+		} else {
+			mdc |= MCR_RTS;
+		}
+		OUTBYTE(MDC(dev), mdc);
 	}
 
 	k_spin_unlock(&DEV_DATA(dev)->lock, key);
@@ -746,6 +758,10 @@ static void uart_ns16550_irq_rx_enable(struct device *dev)
 
 	OUTBYTE(IER(dev), INBYTE(IER(dev)) | IER_RXRDY);
 
+	if (uart_ns16550_cts_rts_emul(dev)) {
+		OUTBYTE(MDC(dev), INBYTE(MDC(dev)) | MCR_RTS);
+	}
+
 	k_spin_unlock(&DEV_DATA(dev)->lock, key);
 }
 
@@ -759,6 +775,10 @@ static void uart_ns16550_irq_rx_enable(struct device *dev)
 static void uart_ns16550_irq_rx_disable(struct device *dev)
 {
 	k_spinlock_key_t key = k_spin_lock(&DEV_DATA(dev)->lock);
+
+	if (uart_ns16550_cts_rts_emul(dev)) {
+		OUTBYTE(MDC(dev), INBYTE(MDC(dev)) & (~MCR_RTS));
+	}
 
 	OUTBYTE(IER(dev), INBYTE(IER(dev)) & (~IER_RXRDY));
 
