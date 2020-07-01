@@ -21,7 +21,7 @@ config PCIE_MSI
 config PCIE_SHELL
 	bool "Enable PCIe/new PCI Shell"
 	default y
-	depends on SHELL
+	depends on SHELL && !PCIE_ENDPOINT
 	help
 	  Enable commands for debugging PCI(e) using the built-in shell.
 
