@@ -2,7 +2,7 @@
  * Parts derived from tests/kernel/fatal/src/main.c, which has the
  * following copyright and license:
  *
- * Copyright (c) 2020 Intel Corporation
+ * Copyright (c) 2017, 2020 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
