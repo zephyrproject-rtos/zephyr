@@ -182,6 +182,80 @@ struct scfg_reg_t {
 #define NPCX_DEVPU0_I2C3_0_PUE                6
 #define NPCX_DEVPU1_F_SPI_PUD_EN              7
 
+/*
+ * Universal Asynchronous Receiver-Transmitter (UART) device registers
+ */
+struct uart_reg_t {
+	/* 0x000: Transmit Data Buffer */
+	volatile uint8_t UTBUF;
+	volatile uint8_t reserved1;
+	/* 0x002: Receive Data Buffer */
+	volatile uint8_t URBUF;
+	volatile uint8_t reserved2;
+	/* 0x004: Interrupt Control */
+	volatile uint8_t UICTRL;
+	volatile uint8_t reserved3;
+	/* 0x006: Status */
+	volatile uint8_t USTAT;
+	volatile uint8_t reserved4;
+	/* 0x008: Frame Select */
+	volatile uint8_t UFRS;
+	volatile uint8_t reserved5;
+	/* 0x00A: Mode Select */
+	volatile uint8_t UMDSL;
+	volatile uint8_t reserved6;
+	/* 0x00C: Baud Rate Divisor */
+	volatile uint8_t UBAUD;
+	volatile uint8_t reserved7;
+	/* 0x00E: Baud Rate Prescaler */
+	volatile uint8_t UPSR;
+	volatile uint8_t reserved8[17];
+	/* 0x020: FIFO Mode Transmit Status */
+	volatile uint8_t UFTSTS;
+	volatile uint8_t reserved9;
+	/* 0x022: FIFO Mode Receive Status */
+	volatile uint8_t UFRSTS;
+	volatile uint8_t reserved10;
+	/* 0x024: FIFO Mode Transmit Control */
+	volatile uint8_t UFTCTL;
+	volatile uint8_t reserved11;
+	/* 0x026: FIFO Mode Receive Control */
+	volatile uint8_t UFRCTL;
+};
+
+/* UART register fields */
+#define NPCX_UICTRL_TBE                       0
+#define NPCX_UICTRL_RBF                       1
+#define NPCX_UICTRL_ETI                       5
+#define NPCX_UICTRL_ERI                       6
+#define NPCX_UICTRL_EEI                       7
+#define NPCX_USTAT_PE                         0
+#define NPCX_USTAT_FE                         1
+#define NPCX_USTAT_DOE                        2
+#define NPCX_USTAT_ERR                        3
+#define NPCX_USTAT_BKD                        4
+#define NPCX_USTAT_RB9                        5
+#define NPCX_USTAT_XMIP                       6
+#define NPCX_UFRS_CHAR_FIELD                  FIELD(0, 2)
+#define NPCX_UFRS_STP                         2
+#define NPCX_UFRS_XB9                         3
+#define NPCX_UFRS_PSEL_FIELD                  FIELD(4, 2)
+#define NPCX_UFRS_PEN                         6
+#define NPCX_UMDSL_FIFO_MD                    0
+#define NPCX_UFTSTS_TEMPTY_LVL                FIELD(0, 5)
+#define NPCX_UFTSTS_TEMPTY_LVL_STS            5
+#define NPCX_UFTSTS_TFIFO_EMPTY_STS           6
+#define NPCX_UFTSTS_NXMIP                     7
+#define NPCX_UFRSTS_RFULL_LVL_STS             5
+#define NPCX_UFRSTS_RFIFO_NEMPTY_STS          6
+#define NPCX_UFRSTS_ERR                       7
+#define NPCX_UFTCTL_TEMPTY_LVL_SEL            FIELD(0, 5)
+#define NPCX_UFTCTL_TEMPTY_LVL_EN             5
+#define NPCX_UFTCTL_TEMPTY_EN                 6
+#define NPCX_UFTCTL_NXMIPEN                   7
+#define NPCX_UFRCTL_RFULL_LVL_SEL             FIELD(0, 5)
+#define NPCX_UFRCTL_RFULL_LVL_EN              5
+#define NPCX_UFRCTL_RNEMPTY_EN                6
+#define NPCX_UFRCTL_ERR_EN                    7
+
 #endif /* _NUVOTON_NPCX_REG_DEF_H */
-
-

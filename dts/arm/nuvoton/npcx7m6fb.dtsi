@@ -60,6 +60,26 @@
 			#lvol-cells = <2>;
 			label = "SCFG";
 		};
+		
+		uart1: serial@400c4000 {
+			compatible = "nuvoton,npcx-uart";
+			reg = <0x400C4000 0x2000>;
+			interrupts = <33 0>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL1 4>;
+			pinctrl = <&alta_uart1_sl1>; /* PIN10.11 */
+			status = "disabled";
+			label = "UART_1";
+		};
+
+		uart2: serial@400c6000 {
+			compatible = "nuvoton,npcx-uart";
+			reg = <0x400C6000 0x2000>;
+			interrupts = <32 0>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL7 6>;
+			pinctrl = <&alta_uart2_sl>; /* PIN75.86 */
+			status = "disabled";
+			label = "UART_2";
+		};
 	};
 };
 

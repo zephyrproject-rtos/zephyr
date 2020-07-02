@@ -32,6 +32,7 @@ zephyr_library_sources_ifdef(CONFIG_UART_LITEUART uart_liteuart.c)
 zephyr_library_sources_ifdef(CONFIG_UART_RTT_DRIVER uart_rtt.c)
 zephyr_library_sources_ifdef(CONFIG_UART_XLNX_PS uart_xlnx_ps.c)
 zephyr_library_sources_ifdef(CONFIG_UART_XMC4XXX uart_xmc4xxx.c)
+zephyr_library_sources_ifdef(CONFIG_UART_NPCX uart_npcx.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE   uart_handlers.c)
 

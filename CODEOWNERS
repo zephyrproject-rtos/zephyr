@@ -231,6 +231,7 @@
 /drivers/serial/uart_xlnx_ps.c            @wjliang
 /drivers/serial/*xmc4xxx*                 @parthitce
 /drivers/serial/*nuvoton*                 @ssekar15
+/drivers/serial/*npcx*                    @MulinChao
 /drivers/net/                             @jukkar @tbursztyka
 /drivers/ptp_clock/                       @jukkar
 /drivers/pwm/*rv32m1*                     @henrikbrixandersen
