@@ -8,6 +8,9 @@
 /* Macros for device tree declarations */
 #include <dt-bindings/clock/npcx_clock.h>
 
+/* NPCX7 series pinmux mapping table */
+#include "npcx/npcx7-alts-map.dtsi"
+
 / {
 	cpus {
 		#address-cells = <1>;
@@ -28,7 +31,15 @@
 		compatible = "mmio-sram";
 		reg = <0x200C0000 0x10000>;
 	};
-
+	
+	def_io_conf: def_io_conf_list {
+		compatible = "nuvoton,npcx-pinctrl-def";
+		pinctrl = <&alt0_gpio_no_spip
+			   &alt1_no_pwrgd
+			   &alt1_no_lpc_espi
+			   &alta_no_peci_en>;
+	};
+	
 	soc {
 		pcc: clock-controller@4000d000 {
 			compatible = "nuvoton,npcx-pcc";
@@ -40,6 +51,14 @@
 			       0x400b5000 0x2000>;
 			reg-names = "pmc", "cdcg";
 			label = "PMC_CDCG";
+		};
+		
+		scfg: pin-controller@400c3000 {
+			compatible = "nuvoton,npcx-pinctrl";
+			reg = <0x400c3000 0x2000>;
+			#alt-cells = <3>;
+			#lvol-cells = <2>;
+			label = "SCFG";
 		};
 	};
 };

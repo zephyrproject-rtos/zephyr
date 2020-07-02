@@ -16,7 +16,13 @@ config CLOCK_CONTROL_NPCX
 	depends on CLOCK_CONTROL
 	help
 	  Enable support for NPCX clock controller driver.
-	
+
+config PINMUX_NPCX
+	default y
+	depends on PINMUX
+	help
+	  Enable support for NPCX pinmux controller driver.
+	  
 source "soc/arm/nuvoton_npcx/npcx7/Kconfig.defconfig.npcx7*"
 
 endif # SOC_SERIES_NPCX7

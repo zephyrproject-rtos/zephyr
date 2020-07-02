@@ -208,6 +208,7 @@
 /drivers/pcie/                            @andrewboie
 /drivers/pinmux/stm32/                    @idlethread
 /drivers/pinmux/*hsdk*                    @iriszzw
+/drivers/pinmux/*npcx*                    @MulinChao
 /drivers/pwm/*litex*                      @mateusz-holenko @kgugala @pgielda
 /drivers/pwm/*sam0*                       @nzmichaelh
 /drivers/sensor/                          @MaureenHelm
