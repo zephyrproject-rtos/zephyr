@@ -5,6 +5,7 @@ tests:
     platform_exclude: twr_ke18f
     tags: clib minimal_libc userspace
   libraries.libc.newlib:
+    min_ram: 16
     extra_args: CONF_FILE=prj_newlib.conf
     arch_exclude: posix
     platform_exclude: twr_ke18f
