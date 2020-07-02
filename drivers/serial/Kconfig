@@ -128,4 +128,6 @@ source "drivers/serial/Kconfig.xmc4xxx"
 
 source "drivers/serial/Kconfig.lpc11u6x"
 
+source "drivers/serial/Kconfig.npcx"
+
 endif # SERIAL

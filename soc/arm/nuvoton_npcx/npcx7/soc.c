@@ -37,3 +37,8 @@ NPCX_REG_OFFSET_CHECK(scfg_reg_t, DEV_CTL4, 0x006);
 NPCX_REG_OFFSET_CHECK(scfg_reg_t, DEVALT0, 0x010);
 NPCX_REG_OFFSET_CHECK(scfg_reg_t, LV_GPIO_CTL0, 0x02A);
 
+/* UART register structure check */
+NPCX_REG_SIZE_CHECK(uart_reg_t, 0x027);
+NPCX_REG_OFFSET_CHECK(uart_reg_t, UPSR, 0x00E);
+NPCX_REG_OFFSET_CHECK(uart_reg_t, UFTSTS, 0x020);
+NPCX_REG_OFFSET_CHECK(uart_reg_t, UFRCTL, 0x026);
