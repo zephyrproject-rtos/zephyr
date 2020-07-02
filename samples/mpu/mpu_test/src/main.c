@@ -40,7 +40,7 @@ static int cmd_read(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
-#if defined(CONFIG_SOC_FLASH_MCUX)
+#if defined(CONFIG_SOC_FLASH_MCUX) || defined(CONFIG_SOC_FLASH_LPC)
 static int cmd_write_mcux(const struct shell *shell, size_t argc, char *argv[])
 {
 	ARG_UNUSED(argc);
@@ -117,7 +117,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 
 	return 0;
 }
-#endif /* SOC_FLASH_MCUX */
+#endif /* SOC_FLASH_MCUX || SOC_FLASH_LPC */
 
 static int cmd_run(const struct shell *shell, size_t argc, char *argv[])
 {
@@ -158,7 +158,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_mpu,
 	SHELL_CMD_ARG(mtest, NULL, MTEST_CMD_HELP, cmd_mtest, 2, 1),
 	SHELL_CMD(read, NULL, READ_CMD_HELP, cmd_read),
 	SHELL_CMD(run, NULL, RUN_CMD_HELP, cmd_run),
-#if defined(CONFIG_SOC_FLASH_MCUX)
+#if defined(CONFIG_SOC_FLASH_MCUX) || defined(CONFIG_SOC_FLASH_LPC)
 	SHELL_CMD(write, NULL, WRITE_CMD_HELP, cmd_write_mcux),
 #elif defined(CONFIG_SOC_FLASH_STM32)
 	SHELL_CMD(write, NULL, WRITE_CMD_HELP, cmd_write_stm32),
