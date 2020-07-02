@@ -35,10 +35,8 @@ extern void USB_DeviceEhciIsrFunction(void *deviceHandle);
 #define SETUP_DATA_STAGE_OUT	(2)
 
 /* Then endpoint number/index calculation */
-#define EP_ADDR2IDX(ep)		((ep) & ~USB_EP_DIR_MASK)
-#define EP_ADDR2DIR(ep)		((ep) & USB_EP_DIR_MASK)
-#define EP_ABS_IDX(ep)		(((ep) & ~USB_EP_DIR_MASK) * 2 + \
-					(((ep) & USB_EP_DIR_MASK) >> 7))
+#define EP_ABS_IDX(ep)		(USB_EP_GET_IDX(ep) * 2 + \
+					(USB_EP_GET_DIR(ep) >> 7))
 #define NUM_OF_EP_MAX		DT_INST_PROP(0, num_bidir_endpoints)
 
 /* The minimum value is 1 */
@@ -145,7 +143,7 @@ int usb_dc_set_address(const uint8_t addr)
 
 int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data *const cfg)
 {
-	uint8_t ep_idx = EP_ADDR2IDX(cfg->ep_addr);
+	uint8_t ep_idx = USB_EP_GET_IDX(cfg->ep_addr);
 
 	if ((cfg->ep_type == USB_DC_EP_CONTROL) && ep_idx) {
 		LOG_ERR("invalid endpoint configuration");
@@ -158,12 +156,12 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data *const cfg)
 	}
 
 	if (ep_idx & BIT(0)) {
-		if (EP_ADDR2DIR(cfg->ep_addr) != USB_EP_DIR_IN) {
+		if (USB_EP_GET_DIR(cfg->ep_addr) != USB_EP_DIR_IN) {
 			LOG_INF("pre-selected as IN endpoint");
 			return -1;
 		}
 	} else {
-		if (EP_ADDR2DIR(cfg->ep_addr) != USB_EP_DIR_OUT) {
+		if (USB_EP_GET_DIR(cfg->ep_addr) != USB_EP_DIR_OUT) {
 			LOG_INF("pre-selected as OUT endpoint");
 			return -1;
 		}
@@ -220,8 +218,8 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 	 * If it is control endpoint, controller will prime setup
 	 * here set the occupied flag.
 	 */
-	if ((EP_ADDR2IDX(cfg->ep_addr) == USB_CONTROL_ENDPOINT) &&
-	    (EP_ADDR2DIR(cfg->ep_addr) == USB_EP_DIR_OUT)) {
+	if ((USB_EP_GET_IDX(cfg->ep_addr) == USB_CONTROL_ENDPOINT) &&
+	    (USB_EP_DIR_IS_OUT(cfg->ep_addr))) {
 		dev_data.eps[ep_abs_idx].ep_occupied = true;
 	}
 	dev_data.eps[ep_abs_idx].ep_enabled = true;
@@ -268,8 +266,8 @@ int usb_dc_ep_clear_stall(const uint8_t ep)
 		return -EIO;
 	}
 
-	if ((EP_ADDR2IDX(ep) != USB_CONTROL_ENDPOINT) &&
-	    (EP_ADDR2DIR(ep) == USB_EP_DIR_OUT)) {
+	if ((USB_EP_GET_IDX(ep) != USB_CONTROL_ENDPOINT) &&
+	    (USB_EP_DIR_IS_OUT(ep))) {
 		status = dev_data.interface->deviceRecv(
 				dev_data.controllerHandle, ep,
 				(uint8_t *)dev_data.eps[ep_abs_idx].block.data,
@@ -343,8 +341,8 @@ int usb_dc_ep_enable(const uint8_t ep)
 		return -EALREADY;
 	}
 
-	if ((EP_ADDR2IDX(ep) != USB_CONTROL_ENDPOINT) &&
-	    (EP_ADDR2DIR(ep) == USB_EP_DIR_OUT)) {
+	if ((USB_EP_GET_IDX(ep) != USB_CONTROL_ENDPOINT) &&
+	    (USB_EP_DIR_IS_OUT(ep))) {
 		status = dev_data.interface->deviceRecv(
 				dev_data.controllerHandle, ep,
 				(uint8_t *)dev_data.eps[ep_abs_idx].block.data,
@@ -390,7 +388,7 @@ int usb_dc_ep_disable(const uint8_t ep)
 
 int usb_dc_ep_flush(const uint8_t ep)
 {
-	uint8_t ep_idx = EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (ep_idx >= NUM_OF_EP_MAX) {
 		LOG_ERR("Wrong endpoint index/address");
@@ -471,7 +469,7 @@ static void update_control_stage(usb_device_callback_message_struct_t *cb_msg,
 int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 			uint32_t *read_bytes)
 {
-	uint8_t ep_idx = EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	uint8_t ep_abs_idx = EP_ABS_IDX(ep);
 	uint32_t data_len;
 	uint8_t *bufp = NULL;
@@ -481,7 +479,7 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 		return -EBUSY;
 	}
 
-	if ((ep_idx >= NUM_OF_EP_MAX) || (EP_ADDR2DIR(ep) != USB_EP_DIR_OUT)) {
+	if ((ep_idx >= NUM_OF_EP_MAX) || (USB_EP_GET_DIR(ep) != USB_EP_DIR_OUT)) {
 		LOG_ERR("Wrong endpoint index/address/direction");
 		return -EINVAL;
 	}
@@ -530,7 +528,7 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 		*read_bytes = data_len;
 	}
 
-	if (EP_ADDR2IDX(ep) == USB_ENDPOINT_CONTROL) {
+	if (USB_EP_GET_IDX(ep) == USB_ENDPOINT_CONTROL) {
 		update_control_stage(&dev_data.eps[0].transfer_message,
 				     data_len, max_data_len);
 	}
@@ -553,7 +551,7 @@ int usb_dc_ep_read_continue(uint8_t ep)
 		return -EBUSY;
 	}
 
-	if (EP_ADDR2IDX(ep) == USB_ENDPOINT_CONTROL) {
+	if (USB_EP_GET_IDX(ep) == USB_ENDPOINT_CONTROL) {
 		if (dev_data.setupDataStage == SETUP_DATA_STAGE_DONE) {
 			return 0;
 		}
@@ -699,7 +697,7 @@ static void handle_transfer_msg(usb_device_callback_message_struct_t *cb_msg)
 		ep_status_code = USB_DC_EP_SETUP;
 	} else {
 		/* IN TOKEN */
-		if ((ep & USB_EP_DIR_MASK) == USB_EP_DIR_IN) {
+		if (USB_EP_DIR_IS_IN(ep)) {
 			if ((dev_data.address != 0) && (ep_abs_idx == 1)) {
 				/*
 				 * Set Address in the status stage in

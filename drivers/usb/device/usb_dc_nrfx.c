@@ -312,7 +312,7 @@ static inline uint8_t nrfx_addr_to_ep(nrfx_usbd_ep_t ep)
 
 static inline bool ep_is_valid(const uint8_t ep)
 {
-	uint8_t ep_num = ep & ~USB_EP_DIR_MASK;
+	uint8_t ep_num = USB_EP_GET_IDX(ep);
 
 	if (NRF_USBD_EPIN_CHECK(ep)) {
 		if (unlikely(ep_num == NRF_USBD_EPISO_FIRST)) {

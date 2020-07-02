@@ -26,6 +26,17 @@
 #define USB_EP_DIR_IN		0x80
 #define USB_EP_DIR_OUT		0x00
 
+/** Get endpoint index (number) from endpoint address */
+#define USB_EP_GET_IDX(ep) ((ep) & ~USB_EP_DIR_MASK)
+/** Get direction from endpoint address */
+#define USB_EP_GET_DIR(ep) ((ep) & USB_EP_DIR_MASK)
+/** Get endpoint address from endpoint index and direction */
+#define USB_EP_GET_ADDR(idx, dir) ((idx) | ((dir) & USB_EP_DIR_MASK))
+/** True if the endpoint is an IN endpoint */
+#define USB_EP_DIR_IS_IN(ep) (USB_EP_GET_DIR(ep) == USB_EP_DIR_IN)
+/** True if the endpoint is an OUT endpoint */
+#define USB_EP_DIR_IS_OUT(ep) (USB_EP_GET_DIR(ep) == USB_EP_DIR_OUT)
+
 /**
  * USB endpoint Transfer Type mask.
  */
