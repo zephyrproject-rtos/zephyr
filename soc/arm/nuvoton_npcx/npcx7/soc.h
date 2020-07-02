@@ -16,5 +16,7 @@
 
 #include <reg/reg_access.h>
 #include <reg/reg_def.h>
+#include <soc_dt.h>
+#include <soc_clock.h>
 
 #endif /* _NUVOTON_NPCX_SOC_H_ */

@@ -10,6 +10,12 @@ config SOC_SERIES
 
 config NUM_IRQS
 	default 64
+
+config CLOCK_CONTROL_NPCX
+	default y
+	depends on CLOCK_CONTROL
+	help
+	  Enable support for NPCX clock controller driver.
 	
 source "soc/arm/nuvoton_npcx/npcx7/Kconfig.defconfig.npcx7*"
 

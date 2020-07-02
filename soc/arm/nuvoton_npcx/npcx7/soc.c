@@ -17,3 +17,17 @@ static int soc_init(struct device *dev)
 }
 
 SYS_INIT(soc_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+
+/* CDCG register structure check */
+NPCX_REG_SIZE_CHECK(cdcg_reg_t, 0x116);
+NPCX_REG_OFFSET_CHECK(cdcg_reg_t, HFCBCD, 0x010);
+NPCX_REG_OFFSET_CHECK(cdcg_reg_t, HFCBCD2, 0x014);
+NPCX_REG_OFFSET_CHECK(cdcg_reg_t, LFCGCTL, 0x100);
+NPCX_REG_OFFSET_CHECK(cdcg_reg_t, LFCGCTL2, 0x114);
+
+/* PMC register structure check */
+NPCX_REG_SIZE_CHECK(pmc_reg_t, 0x025);
+NPCX_REG_OFFSET_CHECK(pmc_reg_t, ENIDL_CTL, 0x003);
+NPCX_REG_OFFSET_CHECK(pmc_reg_t, PWDWN_CTL1, 0x008);
+NPCX_REG_OFFSET_CHECK(pmc_reg_t, PWDWN_CTL7, 0x024);
+

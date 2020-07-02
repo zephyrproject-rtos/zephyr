@@ -7,6 +7,7 @@ zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_MCUX_MCG            clock_control_mcux
 zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_MCUX_PCC            clock_control_mcux_pcc.c)
 zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_MCUX_SCG            clock_control_mcux_scg.c)
 zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_MCUX_SIM            clock_control_mcux_sim.c)
+zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_NPCX                clock_control_npcx.c)
 zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_NRF                 nrf_power_clock.c)
 zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION nrf_clock_calibration.c)
 zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_RV32M1_PCC          clock_control_rv32m1_pcc.c)
