@@ -1,0 +1,15 @@
+# Copyright (c) 2020 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton NPCX7 Pin-Mux Configuration
+    Configuration map from Nuvoton NPCX GPIO to pinmux controller
+    (SCFG) driver instances.
+
+compatible: "nuvoton,npcx-pinctrl-conf"
+child-binding:
+    description: NPCX Pinmux configuration child node
+    properties:
+        alts:
+            type: phandle-array
+            required: true
+            description: A SCFG ALT (Alternative controllers) specifier for pinmuxing of npcx ec

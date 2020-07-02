@@ -118,6 +118,70 @@ struct pmc_reg_t {
 #define NPCX_ENIDL_CTL_PECI_ENI               2
 #define NPCX_ENIDL_CTL_ADC_ACC_DIS            1
 
+/*
+ * System Configuration (SCFG) device registers
+ */
+struct scfg_reg_t {
+	/* 0x000: Device Control */
+	volatile uint8_t DEVCNT;
+	/* 0x001: Straps Status */
+	volatile uint8_t STRPST;
+	/* 0x002: Reset Control and Status */
+	volatile uint8_t RSTCTL;
+	volatile uint8_t reserved1[3];
+	/* 0x006: Device Control 4 */
+	volatile uint8_t DEV_CTL4;
+	volatile uint8_t reserved2[9];
+	/* 0x010 - 1F: Device Alternate Function 0 - F */
+	volatile uint8_t DEVALT0[16];
+	volatile uint8_t reserved3[6];
+	/* 0x026: Low-Voltage GPIO Pins Control 5 */
+	volatile uint8_t LV_GPIO_CTL5[1];
+	volatile uint8_t reserved4;
+	/* 0x028: Pull-Up/Pull-Down Enable 0 */
+	volatile uint8_t PUPD_EN0;
+	/* 0x029: Pull-Up/Pull-Down Enable 1 */
+	volatile uint8_t PUPD_EN1;
+	/* 0x02A - 2E: Low-Voltage GPIO Pins Control 0 - 4 */
+	volatile uint8_t LV_GPIO_CTL0[5];
+};
+
+/* SCFG multi-registers */
+#define NPCX_DEVALT_OFFSET(n) (0x010 + (n))
+#define NPCX_DEVALT(base, n) (*(volatile uint8_t *)(base + \
+						NPCX_DEVALT_OFFSET(n)))
+
+#define NPCX_LV_GPIO_CTL_OFFSET(n) (((n) < 5) ? (0x02A + (n)) \
+						: (0x026 + (n - 5)))
+#define NPCX_LV_GPIO_CTL(base, n) (*(volatile uint8_t *)(base + \
+						NPCX_LV_GPIO_CTL_OFFSET(n)))
+
+/* SCFG register fields */
+#define NPCX_DEVCNT_F_SPI_TRIS                6
+#define NPCX_DEVCNT_HIF_TYP_SEL_FIELD         FIELD(2, 2)
+#define NPCX_DEVCNT_JEN1_HEN                  5
+#define NPCX_DEVCNT_JEN0_HEN                  4
+#define NPCX_STRPST_TRIST                     1
+#define NPCX_STRPST_TEST                      2
+#define NPCX_STRPST_JEN1                      4
+#define NPCX_STRPST_JEN0                      5
+#define NPCX_STRPST_SPI_COMP                  7
+#define NPCX_RSTCTL_VCC1_RST_STS              0
+#define NPCX_RSTCTL_DBGRST_STS                1
+#define NPCX_RSTCTL_VCC1_RST_SCRATCH          3
+#define NPCX_RSTCTL_LRESET_PLTRST_MODE        5
+#define NPCX_RSTCTL_HIPRST_MODE               6
+#define NPCX_DEV_CTL4_F_SPI_SLLK              2
+#define NPCX_DEV_CTL4_SPI_SP_SEL              4
+#define NPCX_DEV_CTL4_WP_IF                   5
+#define NPCX_DEV_CTL4_VCC1_RST_LK             6
+#define NPCX_DEVPU0_I2C0_0_PUE                0
+#define NPCX_DEVPU0_I2C0_1_PUE                1
+#define NPCX_DEVPU0_I2C1_0_PUE                2
+#define NPCX_DEVPU0_I2C2_0_PUE                4
+#define NPCX_DEVPU0_I2C3_0_PUE                6
+#define NPCX_DEVPU1_F_SPI_PUD_EN              7
+
 #endif /* _NUVOTON_NPCX_REG_DEF_H */
 
 

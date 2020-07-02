@@ -56,4 +56,6 @@ source "drivers/pinmux/Kconfig.stm32"
 
 source "drivers/pinmux/Kconfig.xec"
 
+source "drivers/pinmux/Kconfig.npcx"
+
 endif # PINMUX
