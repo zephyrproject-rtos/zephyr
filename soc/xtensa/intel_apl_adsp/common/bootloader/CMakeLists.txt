@@ -4,12 +4,12 @@
 
 add_library(base_module base_module.c)
 target_include_directories(base_module PUBLIC
-  ${SOC_DIR}/${ARCH}/${SOC_PATH}/include
+  $<TARGET_PROPERTY:${ARCH}_${SOC_NAME},SOURCE_DIR>/include
   )
 
 add_library(boot_module boot_module.c)
 target_include_directories(boot_module PUBLIC
-  ${SOC_DIR}/${ARCH}/${SOC_PATH}/include
+  $<TARGET_PROPERTY:${ARCH}_${SOC_NAME},SOURCE_DIR>/include
   )
 
 add_executable(bootloader
@@ -29,8 +29,8 @@ target_include_directories(bootloader PUBLIC
   ./
   ${ZEPHYR_BASE}/include
   ${TOOLCHAIN_INCLUDES}
-  ${SOC_DIR}/${ARCH}/${SOC_PATH}/
-  ${SOC_DIR}/${ARCH}/${SOC_PATH}/include
+  $<TARGET_PROPERTY:${ARCH}_${SOC_NAME},SOURCE_DIR>/
+  $<TARGET_PROPERTY:${ARCH}_${SOC_NAME},SOURCE_DIR>/include
   )
 
 set_source_files_properties(boot_entry.S PROPERTIES COMPILE_FLAGS -DASSEMBLY)
@@ -40,7 +40,7 @@ target_compile_options(bootloader PUBLIC -fno-inline-functions -mlongcalls -mtex
 
 target_link_libraries(bootloader PUBLIC -Wl,--no-check-sections -ucall_user_start -Wl,-static -nostdlib)
 target_link_libraries(bootloader PRIVATE -lhal -L${zephyr_sdk}/xtensa/intel_apl_adsp/xtensa-zephyr-elf/lib)
-target_link_libraries(bootloader PRIVATE -T${SOC_DIR}/${ARCH}/${SOC_FAMILY}/common/bootloader/boot_ldr.x)
+target_link_libraries(bootloader PRIVATE -T$<TARGET_PROPERTY:${ARCH}_${SOC_NAME},SOURCE_DIR>/common/bootloader/boot_ldr.x)
 
 if(CONFIG_XTENSA_HAL)
   target_link_libraries(bootloader PRIVATE XTENSA_HAL)
