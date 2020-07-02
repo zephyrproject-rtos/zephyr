@@ -27,13 +27,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(usb_dc_dw);
 
-/* convert from endpoint address to hardware endpoint index */
-#define USB_DW_EP_ADDR2IDX(ep)  ((ep) & ~USB_EP_DIR_MASK)
-/* get direction from endpoint address */
-#define USB_DW_EP_ADDR2DIR(ep)  ((ep) & USB_EP_DIR_MASK)
-/* convert from hardware endpoint index and direction to endpoint address */
-#define USB_DW_EP_IDX2ADDR(idx, dir)    ((idx) | ((dir) & USB_EP_DIR_MASK))
-
 /* Number of SETUP back-to-back packets */
 #define USB_DW_SUP_CNT (1)
 
@@ -97,14 +90,12 @@ static void usb_dw_reg_dump(void)
 
 static uint8_t usb_dw_ep_is_valid(uint8_t ep)
 {
-	uint8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	/* Check if ep enabled */
-	if ((USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) &&
-	    ep_idx < USB_DW_OUT_EP_NUM) {
+	if ((USB_EP_DIR_IS_OUT(ep)) && ep_idx < USB_DW_OUT_EP_NUM) {
 		return 1;
-	} else if ((USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_IN) &&
-		   ep_idx < USB_DW_IN_EP_NUM) {
+	} else if ((USB_EP_DIR_IS_IN(ep)) && ep_idx < USB_DW_IN_EP_NUM) {
 		return 1;
 	}
 
@@ -113,13 +104,13 @@ static uint8_t usb_dw_ep_is_valid(uint8_t ep)
 
 static uint8_t usb_dw_ep_is_enabled(uint8_t ep)
 {
-	uint8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	/* Check if ep enabled */
-	if ((USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) &&
+	if ((USB_EP_DIR_IS_OUT(ep)) &&
 	    usb_dw_ctrl.out_ep_ctrl[ep_idx].ep_ena) {
 		return 1;
-	} else if ((USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_IN) &&
+	} else if ((USB_EP_DIR_IS_IN(ep)) &&
 		   usb_dw_ctrl.in_ep_ctrl[ep_idx].ep_ena) {
 		return 1;
 	}
@@ -189,7 +180,7 @@ static int usb_dw_tx_fifo_avail(int ep)
 /* Choose a FIFO number for an IN endpoint */
 static int usb_dw_set_fifo(uint8_t ep)
 {
-	int ep_idx = USB_DW_EP_ADDR2IDX(ep);
+	int ep_idx = USB_EP_GET_IDX(ep);
 	volatile uint32_t *reg = &USB_DW->in_ep_reg[ep_idx].diepctl;
 	uint32_t val;
 	int fifo = 0;
@@ -238,11 +229,11 @@ static int usb_dw_ep_set(uint8_t ep,
 			 uint32_t ep_mps, enum usb_dc_ep_transfer_type ep_type)
 {
 	volatile uint32_t *p_depctl;
-	uint8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	LOG_DBG("%s ep %x, mps %d, type %d", __func__, ep, ep_mps, ep_type);
 
-	if (USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
+	if (USB_EP_DIR_IS_OUT(ep)) {
 		p_depctl = &USB_DW->out_ep_reg[ep_idx].doepctl;
 		usb_dw_ctrl.out_ep_ctrl[ep_idx].mps = ep_mps;
 	} else {
@@ -309,7 +300,7 @@ static int usb_dw_ep_set(uint8_t ep,
 		*p_depctl |= USB_DW_DEPCTL_SETDOPID;
 	}
 
-	if (USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_IN) {
+	if (USB_EP_DIR_IS_IN(ep)) {
 		int ret = usb_dw_set_fifo(ep);
 
 		if (ret) {
@@ -322,7 +313,7 @@ static int usb_dw_ep_set(uint8_t ep,
 
 static void usb_dw_prep_rx(const uint8_t ep, uint8_t setup)
 {
-	enum usb_dw_out_ep_idx ep_idx = USB_DW_EP_ADDR2IDX(ep);
+	enum usb_dw_out_ep_idx ep_idx = USB_EP_GET_IDX(ep);
 	uint32_t ep_mps = usb_dw_ctrl.out_ep_ctrl[ep_idx].mps;
 
 	/* Set max RX size to EP mps so we get an interrupt
@@ -346,7 +337,7 @@ static void usb_dw_prep_rx(const uint8_t ep, uint8_t setup)
 static int usb_dw_tx(uint8_t ep, const uint8_t *const data,
 		uint32_t data_len)
 {
-	enum usb_dw_in_ep_idx ep_idx = USB_DW_EP_ADDR2IDX(ep);
+	enum usb_dw_in_ep_idx ep_idx = USB_EP_GET_IDX(ep);
 	uint32_t max_xfer_size, max_pkt_cnt, pkt_cnt, avail_space;
 	uint32_t ep_mps = usb_dw_ctrl.in_ep_ctrl[ep_idx].mps;
 	unsigned int key;
@@ -571,14 +562,14 @@ static inline void usb_dw_int_rx_flvl_handler(void)
 	case USB_DW_GRXSTSR_PKT_STS_SETUP:
 		/* Call the registered callback if any */
 		if (ep_cb) {
-			ep_cb(USB_DW_EP_IDX2ADDR(ep_idx, USB_EP_DIR_OUT),
+			ep_cb(USB_EP_GET_ADDR(ep_idx, USB_EP_DIR_OUT),
 			      USB_DC_EP_SETUP);
 		}
 
 		break;
 	case USB_DW_GRXSTSR_PKT_STS_OUT_DATA:
 		if (ep_cb) {
-			ep_cb(USB_DW_EP_IDX2ADDR(ep_idx, USB_EP_DIR_OUT),
+			ep_cb(USB_EP_GET_ADDR(ep_idx, USB_EP_DIR_OUT),
 			      USB_DC_EP_DATA_OUT);
 		}
 
@@ -614,7 +605,7 @@ static inline void usb_dw_int_iep_handler(void)
 			    (ep_int_status & USB_DW_DIEPINT_XFER_COMPL)) {
 
 				/* Call the registered callback */
-				ep_cb(USB_DW_EP_IDX2ADDR(ep_idx, USB_EP_DIR_IN),
+				ep_cb(USB_EP_GET_ADDR(ep_idx, USB_EP_DIR_IN),
 				      USB_DC_EP_DATA_IN);
 			}
 		}
@@ -778,7 +769,7 @@ int usb_dc_set_address(const uint8_t addr)
 
 int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 {
-	uint8_t ep_idx = USB_DW_EP_ADDR2IDX(cfg->ep_addr);
+	uint8_t ep_idx = USB_EP_GET_IDX(cfg->ep_addr);
 
 	LOG_DBG("ep %x, mps %d, type %d", cfg->ep_addr, cfg->ep_mps,
 		cfg->ep_type);
@@ -793,13 +784,13 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 		return -1;
 	}
 
-	if ((USB_DW_EP_ADDR2DIR(cfg->ep_addr) == USB_EP_DIR_OUT) &&
+	if ((USB_EP_DIR_IS_OUT(cfg->ep_addr)) &&
 	    (ep_idx >= DW_USB_OUT_EP_NUM)) {
 		LOG_WRN("OUT endpoint address out of range");
 		return -1;
 	}
 
-	if ((USB_DW_EP_ADDR2DIR(cfg->ep_addr) == USB_EP_DIR_IN) &&
+	if ((USB_EP_DIR_IS_IN(cfg->ep_addr)) &&
 	    (ep_idx >= DW_USB_IN_EP_NUM)) {
 		LOG_WRN("IN endpoint address out of range");
 		return -1;
@@ -830,14 +821,14 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const ep_cfg)
 
 int usb_dc_ep_set_stall(const uint8_t ep)
 {
-	uint8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
 		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
-	if (USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
+	if (USB_EP_DIR_IS_OUT(ep)) {
 		USB_DW->out_ep_reg[ep_idx].doepctl |= USB_DW_DEPCTL_STALL;
 	} else {
 		USB_DW->in_ep_reg[ep_idx].diepctl |= USB_DW_DEPCTL_STALL;
@@ -848,7 +839,7 @@ int usb_dc_ep_set_stall(const uint8_t ep)
 
 int usb_dc_ep_clear_stall(const uint8_t ep)
 {
-	uint8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
 		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
@@ -860,7 +851,7 @@ int usb_dc_ep_clear_stall(const uint8_t ep)
 		return -EINVAL;
 	}
 
-	if (USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
+	if (USB_EP_DIR_IS_OUT(ep)) {
 		USB_DW->out_ep_reg[ep_idx].doepctl &= ~USB_DW_DEPCTL_STALL;
 	} else {
 		USB_DW->in_ep_reg[ep_idx].diepctl &= ~USB_DW_DEPCTL_STALL;
@@ -871,7 +862,7 @@ int usb_dc_ep_clear_stall(const uint8_t ep)
 
 int usb_dc_ep_halt(const uint8_t ep)
 {
-	uint8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	volatile uint32_t *p_depctl;
 
 	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
@@ -883,7 +874,7 @@ int usb_dc_ep_halt(const uint8_t ep)
 		/* Cannot disable EP0, just set stall */
 		usb_dc_ep_set_stall(ep);
 	} else {
-		if (USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
+		if (USB_EP_DIR_IS_OUT(ep)) {
 			p_depctl = &USB_DW->out_ep_reg[ep_idx].doepctl;
 		} else {
 			p_depctl = &USB_DW->in_ep_reg[ep_idx].diepctl;
@@ -902,7 +893,7 @@ int usb_dc_ep_halt(const uint8_t ep)
 
 int usb_dc_ep_is_stalled(const uint8_t ep, uint8_t *const stalled)
 {
-	uint8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
 		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
@@ -914,7 +905,7 @@ int usb_dc_ep_is_stalled(const uint8_t ep, uint8_t *const stalled)
 	}
 
 	*stalled = 0U;
-	if (USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
+	if (USB_EP_DIR_IS_OUT(ep)) {
 		if (USB_DW->out_ep_reg[ep_idx].doepctl & USB_DW_DEPCTL_STALL) {
 			*stalled = 1U;
 		}
@@ -929,7 +920,7 @@ int usb_dc_ep_is_stalled(const uint8_t ep, uint8_t *const stalled)
 
 int usb_dc_ep_enable(const uint8_t ep)
 {
-	uint8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
 		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
@@ -937,14 +928,14 @@ int usb_dc_ep_enable(const uint8_t ep)
 	}
 
 	/* enable EP interrupts */
-	if (USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
+	if (USB_EP_DIR_IS_OUT(ep)) {
 		USB_DW->daintmsk |= USB_DW_DAINT_OUT_EP_INT(ep_idx);
 	} else {
 		USB_DW->daintmsk |= USB_DW_DAINT_IN_EP_INT(ep_idx);
 	}
 
 	/* Activate Ep */
-	if (USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
+	if (USB_EP_DIR_IS_OUT(ep)) {
 		USB_DW->out_ep_reg[ep_idx].doepctl |= USB_DW_DEPCTL_USB_ACT_EP;
 		usb_dw_ctrl.out_ep_ctrl[ep_idx].ep_ena = 1U;
 	} else {
@@ -952,7 +943,7 @@ int usb_dc_ep_enable(const uint8_t ep)
 		usb_dw_ctrl.in_ep_ctrl[ep_idx].ep_ena = 1U;
 	}
 
-	if (USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT &&
+	if (USB_EP_DIR_IS_OUT(ep) &&
 	    usb_dw_ctrl.out_ep_ctrl[ep_idx].cb != usb_transfer_ep_callback) {
 		/* Start reading now, except for transfer managed eps */
 		usb_dw_prep_rx(ep, 0);
@@ -963,7 +954,7 @@ int usb_dc_ep_enable(const uint8_t ep)
 
 int usb_dc_ep_disable(const uint8_t ep)
 {
-	uint8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
 		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
@@ -971,7 +962,7 @@ int usb_dc_ep_disable(const uint8_t ep)
 	}
 
 	/* Disable EP interrupts */
-	if (USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
+	if (USB_EP_DIR_IS_OUT(ep)) {
 		USB_DW->daintmsk &= ~USB_DW_DAINT_OUT_EP_INT(ep_idx);
 		USB_DW->doepmsk &= ~USB_DW_DOEPINT_SET_UP;
 	} else {
@@ -981,7 +972,7 @@ int usb_dc_ep_disable(const uint8_t ep)
 	}
 
 	/* De-activate, disable and set NAK for Ep */
-	if (USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
+	if (USB_EP_DIR_IS_OUT(ep)) {
 		USB_DW->out_ep_reg[ep_idx].doepctl &=
 		    ~(USB_DW_DEPCTL_USB_ACT_EP |
 		    USB_DW_DEPCTL_EP_ENA |
@@ -1000,7 +991,7 @@ int usb_dc_ep_disable(const uint8_t ep)
 
 int usb_dc_ep_flush(const uint8_t ep)
 {
-	uint8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	uint32_t cnt;
 
 	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
@@ -1008,7 +999,7 @@ int usb_dc_ep_flush(const uint8_t ep)
 		return -EINVAL;
 	}
 
-	if (USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
+	if (USB_EP_DIR_IS_OUT(ep)) {
 		/* RX FIFO is global and cannot be flushed per EP */
 		return -EINVAL;
 	}
@@ -1041,7 +1032,7 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 	}
 
 	/* Check if IN ep */
-	if (USB_DW_EP_ADDR2DIR(ep) != USB_EP_DIR_IN) {
+	if (USB_EP_GET_DIR(ep) != USB_EP_DIR_IN) {
 		return -EINVAL;
 	}
 
@@ -1065,7 +1056,7 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 			uint32_t *read_bytes)
 {
-	uint8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	uint32_t i, j, data_len, bytes_to_copy;
 
 	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
@@ -1074,7 +1065,7 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 	}
 
 	/* Check if OUT ep */
-	if (USB_DW_EP_ADDR2DIR(ep) != USB_EP_DIR_OUT) {
+	if (USB_EP_GET_DIR(ep) != USB_EP_DIR_OUT) {
 		LOG_ERR("Wrong endpoint direction");
 		return -EINVAL;
 	}
@@ -1140,7 +1131,7 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 
 int usb_dc_ep_read_continue(uint8_t ep)
 {
-	uint8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
 		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
@@ -1148,7 +1139,7 @@ int usb_dc_ep_read_continue(uint8_t ep)
 	}
 
 	/* Check if OUT ep */
-	if (USB_DW_EP_ADDR2DIR(ep) != USB_EP_DIR_OUT) {
+	if (USB_EP_GET_DIR(ep) != USB_EP_DIR_OUT) {
 		LOG_ERR("Wrong endpoint direction");
 		return -EINVAL;
 	}
@@ -1183,14 +1174,14 @@ int usb_dc_ep_read(const uint8_t ep, uint8_t *const data,
 
 int usb_dc_ep_set_callback(const uint8_t ep, const usb_dc_ep_callback cb)
 {
-	uint8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
 		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
-	if (USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_IN) {
+	if (USB_EP_DIR_IS_IN(ep)) {
 		usb_dw_ctrl.in_ep_ctrl[ep_idx].cb = cb;
 	} else {
 		usb_dw_ctrl.out_ep_ctrl[ep_idx].cb = cb;
@@ -1206,14 +1197,14 @@ void usb_dc_set_status_callback(const usb_dc_status_callback cb)
 
 int usb_dc_ep_mps(const uint8_t ep)
 {
-	enum usb_dw_out_ep_idx ep_idx = USB_DW_EP_ADDR2IDX(ep);
+	enum usb_dw_out_ep_idx ep_idx = USB_EP_GET_IDX(ep);
 
 	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
 		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
-	if (USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
+	if (USB_EP_DIR_IS_OUT(ep)) {
 		return usb_dw_ctrl.out_ep_ctrl[ep_idx].mps;
 	} else {
 		return usb_dw_ctrl.in_ep_ctrl[ep_idx].mps;

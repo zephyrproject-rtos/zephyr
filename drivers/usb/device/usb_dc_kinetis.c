@@ -39,9 +39,6 @@ LOG_MODULE_REGISTER(usb_dc_kinetis);
 #define KINETIS_EP_NUMOF_MASK	0xf
 #define KINETIS_ADDR2IDX(addr)	((addr) & (KINETIS_EP_NUMOF_MASK))
 
-#define EP_ADDR2IDX(ep)		((ep) & ~USB_EP_DIR_MASK)
-#define EP_ADDR2DIR(ep)		((ep) & USB_EP_DIR_MASK)
-
 /*
  * Buffer Descriptor (BD) entry provides endpoint buffer control
  * information for USBFS controller. Every endpoint direction requires
@@ -276,7 +273,7 @@ int usb_dc_set_address(const uint8_t addr)
 
 int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 {
-	uint8_t ep_idx = EP_ADDR2IDX(cfg->ep_addr);
+	uint8_t ep_idx = USB_EP_GET_IDX(cfg->ep_addr);
 
 	if (ep_idx > (NUM_OF_EP_MAX - 1)) {
 		LOG_ERR("endpoint index/address out of range");
@@ -310,12 +307,12 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 	}
 
 	if (ep_idx & BIT(0)) {
-		if (EP_ADDR2DIR(cfg->ep_addr) != USB_EP_DIR_IN) {
+		if (USB_EP_GET_DIR(cfg->ep_addr) != USB_EP_DIR_IN) {
 			LOG_INF("pre-selected as IN endpoint");
 			return -1;
 		}
 	} else {
-		if (EP_ADDR2DIR(cfg->ep_addr) != USB_EP_DIR_OUT) {
+		if (USB_EP_GET_DIR(cfg->ep_addr) != USB_EP_DIR_OUT) {
 			LOG_INF("pre-selected as OUT endpoint");
 			return -1;
 		}
@@ -326,7 +323,7 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 
 int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg)
 {
-	uint8_t ep_idx = EP_ADDR2IDX(cfg->ep_addr);
+	uint8_t ep_idx = USB_EP_GET_IDX(cfg->ep_addr);
 	struct usb_ep_ctrl_data *ep_ctrl;
 	struct k_mem_block *block;
 	uint8_t idx_even;
@@ -349,7 +346,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg)
 	LOG_DBG("ep %x, mps %d, type %d", cfg->ep_addr, cfg->ep_mps,
 		cfg->ep_type);
 
-	if (EP_ADDR2DIR(cfg->ep_addr) == USB_EP_DIR_OUT) {
+	if (USB_EP_DIR_IS_OUT(cfg->ep_addr)) {
 		block = &(ep_ctrl->mblock_out);
 	} else {
 		block = &(ep_ctrl->mblock_in);
@@ -397,14 +394,14 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg)
 	case USB_DC_EP_BULK:
 	case USB_DC_EP_INTERRUPT:
 		USB0->ENDPOINT[ep_idx].ENDPT |= USB_ENDPT_EPHSHK_MASK;
-		if (EP_ADDR2DIR(cfg->ep_addr) == USB_EP_DIR_OUT) {
+		if (USB_EP_DIR_IS_OUT(cfg->ep_addr)) {
 			USB0->ENDPOINT[ep_idx].ENDPT |= USB_ENDPT_EPRXEN_MASK;
 		} else {
 			USB0->ENDPOINT[ep_idx].ENDPT |= USB_ENDPT_EPTXEN_MASK;
 		}
 		break;
 	case USB_DC_EP_ISOCHRONOUS:
-		if (EP_ADDR2DIR(cfg->ep_addr) == USB_EP_DIR_OUT) {
+		if (USB_EP_DIR_IS_OUT(cfg->ep_addr)) {
 			USB0->ENDPOINT[ep_idx].ENDPT |= USB_ENDPT_EPRXEN_MASK;
 		} else {
 			USB0->ENDPOINT[ep_idx].ENDPT |= USB_ENDPT_EPTXEN_MASK;
@@ -419,7 +416,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg)
 
 int usb_dc_ep_set_stall(const uint8_t ep)
 {
-	uint8_t ep_idx = EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	uint8_t bd_idx;
 
 	if (ep_idx > (NUM_OF_EP_MAX - 1)) {
@@ -429,7 +426,7 @@ int usb_dc_ep_set_stall(const uint8_t ep)
 
 	LOG_DBG("ep %x, idx %d", ep, ep_idx);
 
-	if (EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
+	if (USB_EP_DIR_IS_OUT(ep)) {
 		dev_data.ep_ctrl[ep_idx].status.out_stalled = 1U;
 		bd_idx = get_bdt_idx(ep,
 				     ~dev_data.ep_ctrl[ep_idx].status.out_odd);
@@ -446,7 +443,7 @@ int usb_dc_ep_set_stall(const uint8_t ep)
 
 int usb_dc_ep_clear_stall(const uint8_t ep)
 {
-	uint8_t ep_idx = EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	uint8_t bd_idx;
 
 	if (ep_idx > (NUM_OF_EP_MAX - 1)) {
@@ -457,7 +454,7 @@ int usb_dc_ep_clear_stall(const uint8_t ep)
 	LOG_DBG("ep %x, idx %d", ep, ep_idx);
 	USB0->ENDPOINT[ep_idx].ENDPT &= ~USB_ENDPT_EPSTALL_MASK;
 
-	if (EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
+	if (USB_EP_DIR_IS_OUT(ep)) {
 		dev_data.ep_ctrl[ep_idx].status.out_stalled = 0U;
 		dev_data.ep_ctrl[ep_idx].status.out_data1 = false;
 		bd_idx = get_bdt_idx(ep,
@@ -482,7 +479,7 @@ int usb_dc_ep_clear_stall(const uint8_t ep)
 
 int usb_dc_ep_is_stalled(const uint8_t ep, uint8_t *const stalled)
 {
-	uint8_t ep_idx = EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (ep_idx > (NUM_OF_EP_MAX - 1)) {
 		LOG_ERR("Wrong endpoint index/address");
@@ -495,7 +492,7 @@ int usb_dc_ep_is_stalled(const uint8_t ep, uint8_t *const stalled)
 	}
 
 	*stalled = 0U;
-	if (EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
+	if (USB_EP_DIR_IS_OUT(ep)) {
 		*stalled = dev_data.ep_ctrl[ep_idx].status.out_stalled;
 	} else {
 		*stalled = dev_data.ep_ctrl[ep_idx].status.in_stalled;
@@ -518,7 +515,7 @@ int usb_dc_ep_halt(const uint8_t ep)
 
 int usb_dc_ep_enable(const uint8_t ep)
 {
-	uint8_t ep_idx = EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	uint8_t idx_even;
 	uint8_t idx_odd;
 
@@ -536,7 +533,7 @@ int usb_dc_ep_enable(const uint8_t ep)
 		return -EALREADY;
 	}
 
-	if (EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
+	if (USB_EP_DIR_IS_OUT(ep)) {
 		bdt[idx_even].set.bd_ctrl = BD_DTS_MASK | BD_OWN_MASK;
 		bdt[idx_odd].set.bd_ctrl = 0U;
 		dev_data.ep_ctrl[ep_idx].status.out_odd = 0U;
@@ -559,7 +556,7 @@ int usb_dc_ep_enable(const uint8_t ep)
 
 int usb_dc_ep_disable(const uint8_t ep)
 {
-	uint8_t ep_idx = EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	uint8_t idx_even;
 	uint8_t idx_odd;
 
@@ -575,7 +572,7 @@ int usb_dc_ep_disable(const uint8_t ep)
 
 	bdt[idx_even].bd_fields = 0U;
 	bdt[idx_odd].bd_fields = 0U;
-	if (EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
+	if (USB_EP_DIR_IS_OUT(ep)) {
 		dev_data.ep_ctrl[ep_idx].status.out_enabled = false;
 	} else {
 		dev_data.ep_ctrl[ep_idx].status.in_enabled = false;
@@ -586,7 +583,7 @@ int usb_dc_ep_disable(const uint8_t ep)
 
 int usb_dc_ep_flush(const uint8_t ep)
 {
-	uint8_t ep_idx = EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (ep_idx > (NUM_OF_EP_MAX - 1)) {
 		LOG_ERR("Wrong endpoint index/address");
@@ -601,7 +598,7 @@ int usb_dc_ep_flush(const uint8_t ep)
 int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 		    const uint32_t data_len, uint32_t * const ret_bytes)
 {
-	uint8_t ep_idx = EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	uint32_t len_to_send = data_len;
 	uint8_t odd;
 	uint8_t bd_idx;
@@ -616,7 +613,7 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 	bd_idx = get_bdt_idx(ep, odd);
 	bufp = (uint8_t *)bdt[bd_idx].buf_addr;
 
-	if (EP_ADDR2DIR(ep) != USB_EP_DIR_IN) {
+	if (USB_EP_GET_DIR(ep) != USB_EP_DIR_IN) {
 		LOG_ERR("Wrong endpoint direction");
 		return -EINVAL;
 	}
@@ -667,7 +664,7 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 			uint32_t *read_bytes)
 {
-	uint8_t ep_idx = EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	uint32_t data_len;
 	uint8_t bd_idx;
 	uint8_t *bufp;
@@ -681,7 +678,7 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 	bd_idx = get_bdt_idx(ep, dev_data.ep_ctrl[ep_idx].status.out_odd);
 	bufp = (uint8_t *)bdt[bd_idx].buf_addr;
 
-	if (EP_ADDR2DIR(ep) != USB_EP_DIR_OUT) {
+	if (USB_EP_GET_DIR(ep) != USB_EP_DIR_OUT) {
 		LOG_ERR("Wrong endpoint direction");
 		return -EINVAL;
 	}
@@ -739,7 +736,7 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 
 int usb_dc_ep_read_continue(uint8_t ep)
 {
-	uint8_t ep_idx = EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	uint8_t bd_idx;
 
 	if (ep_idx > (NUM_OF_EP_MAX - 1)) {
@@ -749,7 +746,7 @@ int usb_dc_ep_read_continue(uint8_t ep)
 
 	bd_idx = get_bdt_idx(ep, dev_data.ep_ctrl[ep_idx].status.out_odd);
 
-	if (EP_ADDR2DIR(ep) != USB_EP_DIR_OUT) {
+	if (USB_EP_GET_DIR(ep) != USB_EP_DIR_OUT) {
 		LOG_ERR("Wrong endpoint direction");
 		return -EINVAL;
 	}
@@ -812,7 +809,7 @@ int usb_dc_ep_read(const uint8_t ep, uint8_t *const data,
 
 int usb_dc_ep_set_callback(const uint8_t ep, const usb_dc_ep_callback cb)
 {
-	uint8_t ep_idx = EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (ep_idx > (NUM_OF_EP_MAX - 1)) {
 		LOG_ERR("Wrong endpoint index/address");
@@ -842,7 +839,7 @@ void usb_dc_set_status_callback(const usb_dc_status_callback cb)
 
 int usb_dc_ep_mps(const uint8_t ep)
 {
-	uint8_t ep_idx = EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (ep_idx > (NUM_OF_EP_MAX - 1)) {
 		LOG_ERR("Wrong endpoint index/address");
@@ -997,7 +994,7 @@ static void usb_kinetis_thread_main(void *arg1, void *unused1, void *unused2)
 
 	while (true) {
 		k_msgq_get(&usb_dc_msgq, &msg, K_FOREVER);
-		ep_idx = EP_ADDR2IDX(msg.ep);
+		ep_idx = USB_EP_GET_IDX(msg.ep);
 
 		if (msg.type == USB_DC_CB_TYPE_EP) {
 			switch (msg.cb) {

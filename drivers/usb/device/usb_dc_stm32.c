@@ -160,10 +160,6 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 #define EP0_IN (EP0_IDX | USB_EP_DIR_IN)
 #define EP0_OUT (EP0_IDX | USB_EP_DIR_OUT)
 
-#define EP_IDX(ep) ((ep) & ~USB_EP_DIR_MASK)
-#define EP_IS_IN(ep) (((ep) & USB_EP_DIR_MASK) == USB_EP_DIR_IN)
-#define EP_IS_OUT(ep) (((ep) & USB_EP_DIR_MASK) == USB_EP_DIR_OUT)
-
 /* Endpoint state */
 struct usb_dc_stm32_ep_state {
 	uint16_t ep_mps;		/** Endpoint max packet size */
@@ -197,17 +193,17 @@ static struct usb_dc_stm32_ep_state *usb_dc_stm32_get_ep_state(uint8_t ep)
 {
 	struct usb_dc_stm32_ep_state *ep_state_base;
 
-	if (EP_IDX(ep) >= USB_NUM_BIDIR_ENDPOINTS) {
+	if (USB_EP_GET_IDX(ep) >= USB_NUM_BIDIR_ENDPOINTS) {
 		return NULL;
 	}
 
-	if (EP_IS_OUT(ep)) {
+	if (USB_EP_DIR_IS_OUT(ep)) {
 		ep_state_base = usb_dc_stm32_state.out_ep_state;
 	} else {
 		ep_state_base = usb_dc_stm32_state.in_ep_state;
 	}
 
-	return ep_state_base + EP_IDX(ep);
+	return ep_state_base + USB_EP_GET_IDX(ep);
 }
 
 static void usb_dc_stm32_isr(void *arg)
@@ -537,7 +533,7 @@ int usb_dc_ep_start_read(uint8_t ep, uint8_t *data, uint32_t max_data_len)
 	LOG_DBG("ep 0x%02x, len %u", ep, max_data_len);
 
 	/* we flush EP0_IN by doing a 0 length receive on it */
-	if (!EP_IS_OUT(ep) && (ep != EP0_IN || max_data_len)) {
+	if (!USB_EP_DIR_IS_OUT(ep) && (ep != EP0_IN || max_data_len)) {
 		LOG_ERR("invalid ep 0x%02x", ep);
 		return -EINVAL;
 	}
@@ -547,7 +543,7 @@ int usb_dc_ep_start_read(uint8_t ep, uint8_t *data, uint32_t max_data_len)
 	}
 
 	status = HAL_PCD_EP_Receive(&usb_dc_stm32_state.pcd, ep,
-				    usb_dc_stm32_state.ep_buf[EP_IDX(ep)],
+				    usb_dc_stm32_state.ep_buf[USB_EP_GET_IDX(ep)],
 				    max_data_len);
 	if (status != HAL_OK) {
 		LOG_ERR("HAL_PCD_EP_Receive failed(0x%02x), %d", ep,
@@ -560,7 +556,7 @@ int usb_dc_ep_start_read(uint8_t ep, uint8_t *data, uint32_t max_data_len)
 
 int usb_dc_ep_get_read_count(uint8_t ep, uint32_t *read_bytes)
 {
-	if (!EP_IS_OUT(ep) || !read_bytes) {
+	if (!USB_EP_DIR_IS_OUT(ep) || !read_bytes) {
 		LOG_ERR("invalid ep 0x%02x", ep);
 		return -EINVAL;
 	}
@@ -572,7 +568,7 @@ int usb_dc_ep_get_read_count(uint8_t ep, uint32_t *read_bytes)
 
 int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 {
-	uint8_t ep_idx = EP_IDX(cfg->ep_addr);
+	uint8_t ep_idx = USB_EP_GET_IDX(cfg->ep_addr);
 
 	LOG_DBG("ep %x, mps %d, type %d", cfg->ep_addr, cfg->ep_mps,
 		cfg->ep_type);
@@ -721,9 +717,9 @@ int usb_dc_ep_enable(const uint8_t ep)
 		return -EIO;
 	}
 
-	if (EP_IS_OUT(ep) && ep != EP0_OUT) {
+	if (USB_EP_DIR_IS_OUT(ep) && ep != EP0_OUT) {
 		return usb_dc_ep_start_read(ep,
-					  usb_dc_stm32_state.ep_buf[EP_IDX(ep)],
+					  usb_dc_stm32_state.ep_buf[USB_EP_GET_IDX(ep)],
 					  EP_MPS);
 	}
 
@@ -761,7 +757,7 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 
 	LOG_DBG("ep 0x%02x, len %u", ep, data_len);
 
-	if (!ep_state || !EP_IS_IN(ep)) {
+	if (!ep_state || !USB_EP_DIR_IS_IN(ep)) {
 		LOG_ERR("invalid ep 0x%02x", ep);
 		return -EINVAL;
 	}
@@ -823,7 +819,7 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 	LOG_DBG("ep 0x%02x, %u bytes, %u+%u, %p", ep, max_data_len,
 		ep_state->read_offset, read_count, data);
 
-	if (!EP_IS_OUT(ep)) { /* check if OUT ep */
+	if (!USB_EP_DIR_IS_OUT(ep)) { /* check if OUT ep */
 		LOG_ERR("Wrong endpoint direction: 0x%02x", ep);
 		return -EINVAL;
 	}
@@ -834,7 +830,7 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 	 */
 	if (data) {
 		read_count = MIN(read_count, max_data_len);
-		memcpy(data, usb_dc_stm32_state.ep_buf[EP_IDX(ep)] +
+		memcpy(data, usb_dc_stm32_state.ep_buf[USB_EP_GET_IDX(ep)] +
 		       ep_state->read_offset, read_count);
 		ep_state->read_count -= read_count;
 		ep_state->read_offset += read_count;
@@ -853,7 +849,7 @@ int usb_dc_ep_read_continue(uint8_t ep)
 {
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 
-	if (!ep_state || !EP_IS_OUT(ep)) { /* Check if OUT ep */
+	if (!ep_state || !USB_EP_DIR_IS_OUT(ep)) { /* Check if OUT ep */
 		LOG_ERR("Not valid endpoint: %02x", ep);
 		return -EINVAL;
 	}
@@ -862,7 +858,7 @@ int usb_dc_ep_read_continue(uint8_t ep)
 	 * DataOutStageCallback will called on transaction complete.
 	 */
 	if (!ep_state->read_count) {
-		usb_dc_ep_start_read(ep, usb_dc_stm32_state.ep_buf[EP_IDX(ep)],
+		usb_dc_ep_start_read(ep, usb_dc_stm32_state.ep_buf[USB_EP_GET_IDX(ep)],
 				     EP_MPS);
 	}
 
@@ -1026,7 +1022,7 @@ void HAL_PCD_SetupStageCallback(PCD_HandleTypeDef *hpcd)
 
 void HAL_PCD_DataOutStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 {
-	uint8_t ep_idx = EP_IDX(epnum);
+	uint8_t ep_idx = USB_EP_GET_IDX(epnum);
 	uint8_t ep = ep_idx | USB_EP_DIR_OUT;
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 
@@ -1046,7 +1042,7 @@ void HAL_PCD_DataOutStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 
 void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 {
-	uint8_t ep_idx = EP_IDX(epnum);
+	uint8_t ep_idx = USB_EP_GET_IDX(epnum);
 	uint8_t ep = ep_idx | USB_EP_DIR_IN;
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 
