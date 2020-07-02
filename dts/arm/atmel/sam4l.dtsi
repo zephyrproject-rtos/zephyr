@@ -161,6 +161,21 @@
 			label = "USART_3";
 		};
 
+		usbc: usbd@400a5000 {
+			compatible = "atmel,sam-usbc";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x400a5000 0x1000>;
+			interrupts = <18 5>;
+			interrupt-names = "usbc";
+			maximum-speed = "full-speed";
+			num-bidir-endpoints = <8>;
+			peripheral-id = <101>;
+			status = "disabled";
+			label = "USBC";
+			pinctrl-0 = <&pa25a_usbc_dm &pa26a_usbc_dp>;
+		};
+
 		pinctrl@400e1000 {
 			compatible = "atmel,sam-pinctrl";
 			#address-cells = <1>;
