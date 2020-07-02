@@ -28,8 +28,8 @@ static ALWAYS_INLINE void clock_init(void)
 	.enableMode = 0U, .prdiv = CONFIG_MCG_PRDIV0, .vdiv = CONFIG_MCG_VDIV0,
 	};
 	const sim_clock_config_t simConfig = {
-		.pllFllSel = 1U,        /* PLLFLLSEL select PLL. */
-		.er32kSrc = 3U,         /* ERCLK32K selection, use LPO. */
+		.pllFllSel = DT_PROP(DT_INST(0, nxp_kinetis_sim), pllfll_select),
+		.er32kSrc = DT_PROP(DT_INST(0, nxp_kinetis_sim), er32k_select),
 		.clkdiv1 = 0x10010000U, /* SIM_CLKDIV1. */
 	};
 

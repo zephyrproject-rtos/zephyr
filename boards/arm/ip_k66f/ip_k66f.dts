@@ -42,6 +42,11 @@
 	clock-frequency = <120000000>;
 };
 
+&sim {
+	pllfll-select = <KINETIS_SIM_PLLFLLSEL_MCGPLLCLK>;
+	er32k-select = <KINETIS_SIM_ER32KSEL_RTC>;
+};
+
 &gpioa {
 	status = "okay";
 };

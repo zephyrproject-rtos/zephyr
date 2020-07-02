@@ -14,13 +14,6 @@
 #include <fsl_common.h>
 #include <fsl_clock.h>
 
-#define PLLFLLSEL_MCGFLLCLK	(0)
-#define PLLFLLSEL_MCGPLLCLK	(1)
-#define PLLFLLSEL_IRC48MHZ	(3)
-
-#define ER32KSEL_OSC32KCLK	(0)
-#define ER32KSEL_LPO1KHZ	(3)
-
 #define PERIPH_CLK_PLLFLLSEL	(1)
 #define PERIPH_CLK_OSCERCLK	(2)
 #define PERIPH_CLK_MCGIRCLK	(3)
@@ -59,14 +52,15 @@ static const mcg_pll_config_t pll0_config = {
 };
 
 static const sim_clock_config_t sim_config = {
-	/* PLLFLLSEL: select PLL. */
-	.pllFllSel = PLLFLLSEL_MCGPLLCLK,
-	/* ERCLK32K selection: use system oscillator. */
-	.er32kSrc = ER32KSEL_OSC32KCLK,
+	.pllFllSel = DT_PROP(DT_INST(0, nxp_kinetis_sim), pllfll_select),
+	.er32kSrc = DT_PROP(DT_INST(0, nxp_kinetis_sim), er32k_select),
 	.clkdiv1 = SIM_CLKDIV1_OUTDIV1(CONFIG_K8X_CORE_CLOCK_DIVIDER - 1) |
 		   SIM_CLKDIV1_OUTDIV2(CONFIG_K8X_BUS_CLOCK_DIVIDER - 1) |
 		   SIM_CLKDIV1_OUTDIV3(CONFIG_K8X_FLEXBUS_CLOCK_DIVIDER - 1) |
 		   SIM_CLKDIV1_OUTDIV4(CONFIG_K8X_FLASH_CLOCK_DIVIDER - 1),
+	/* Divide PLL output frequency by 2 for peripherals */
+	.pllFllDiv = (1),
+	.pllFllFrac = (0),
 };
 
 static ALWAYS_INLINE void clk_init(void)
@@ -82,9 +76,6 @@ static ALWAYS_INLINE void clk_init(void)
 				      CONFIG_MCG_FCRDIV);
 
 	CLOCK_SetSimConfig(&sim_config);
-
-	/* Divide PLL output frequency by 2 for peripherals */
-	CLOCK_SetPllFllSelClock(PLLFLLSEL_MCGPLLCLK, 1, 0);
 
 #if CONFIG_UART_MCUX_LPUART
 	CLOCK_SetLpuartClock(PERIPH_CLK_PLLFLLSEL);
