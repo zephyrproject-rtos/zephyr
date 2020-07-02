@@ -13,6 +13,9 @@ IEEE 802.15.4 is a technical standard which defines the operation of low-rate
 wireless personal area networks (LR-WPANs). For more detailed overview of this
 standard, see this
 `IEEE 802.15.4 Wikipedia article <https://en.wikipedia.org/wiki/IEEE_802.15.4>`_.
+Also, see `IEEE GET Program
+<https://ieeexplore.ieee.org/browse/standards/get-program/page/series?id=68>`_
+for creating an IEEE account and downloading the specification.
 
 Zephyr supports IEEE 802.15.4 with Thread and 6LoWPAN. The Thread implementation
 is based on `OpenThread <https://openthread.io/>`_.
