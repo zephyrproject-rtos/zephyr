@@ -53,9 +53,19 @@
 			reg = <0x4000000 DT_SIZE_K(32)>;
 		};
 
-		flash0:flash@0 {
-			compatible = "soc-nv-flash";
-			reg = <0 DT_SIZE_K(256)>;
+		iap: flash-controller@4009c000 {
+			compatible = "nxp,lpc-iap";
+			label = "FLASH_IAP";
+			reg = <0x4009c000 0x18>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0 DT_SIZE_K(256)>;
+				label = "LPC_FLASH";
+				erase-block-size = <256>;
+				write-block-size = <256>;
+			};
 		};
 
 		gpio0: gpio@0 {
