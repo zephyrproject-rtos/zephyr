@@ -21,7 +21,6 @@
 LOG_MODULE_REGISTER(sx1276);
 
 #define GPIO_RESET_PIN		DT_INST_GPIO_PIN(0, reset_gpios)
-#define GPIO_RESET_FLAGS	DT_INST_GPIO_FLAGS(0, reset_gpios)
 #define GPIO_CS_PIN		DT_INST_SPI_DEV_CS_GPIOS_PIN(0)
 #define GPIO_CS_FLAGS		DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0)
 
@@ -234,8 +233,7 @@ void SX1276Reset(void)
 {
 	SX1276SetBoardTcxo(true);
 
-	gpio_pin_configure(dev_data.reset, GPIO_RESET_PIN,
-			   GPIO_OUTPUT_ACTIVE | GPIO_RESET_FLAGS);
+	gpio_pin_set(dev_data.reset, GPIO_RESET_PIN, 1);
 
 	k_sleep(K_MSEC(1));
 
