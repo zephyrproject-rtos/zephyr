@@ -105,6 +105,11 @@ static int board_pinmux_init(struct device *dev)
 	pinmux_pin_set(muxd, 9, PINMUX_FUNC_C);
 #endif
 
+#if (ATMEL_SAM0_DT_TCC_CHECK(0, atmel_sam0_tcc_pwm) && CONFIG_PWM_SAM0_TCC)
+	/* TCC0 on WO2=PC18 */
+	pinmux_pin_set(muxc, 18, PINMUX_FUNC_F);
+#endif
+
 #ifdef CONFIG_USB_DC_SAM0
 	/* USB DP on PA25, USB DM on PA24 */
 	pinmux_pin_set(muxa, 25, PINMUX_FUNC_H);
