@@ -318,6 +318,8 @@ static void cmd_handler_process(struct modem_cmd_handler *cmd_handler,
 				/* Wait for more data */
 				break;
 			} else if (ret > 0) {
+				LOG_DBG("match direct cmd [%s] (ret:%d)",
+					log_strdup(cmd->cmd), ret);
 				data->rx_buf = net_buf_skip(data->rx_buf, ret);
 			}
 
