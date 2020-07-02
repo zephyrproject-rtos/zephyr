@@ -205,6 +205,10 @@ int z_clock_driver_init(struct device *device)
 	uint16_t ctrl = RTC_MODE0_CTRLA_MODE(0) | RTC_MODE0_CTRLA_PRESCALER(0);
 #endif
 
+#ifdef RTC_MODE0_CTRLA_COUNTSYNC
+	ctrl |= RTC_MODE0_CTRLA_COUNTSYNC;
+#endif
+
 #ifndef CONFIG_TICKLESS_KERNEL
 #ifdef RTC_MODE0_CTRL_MATCHCLR
 	ctrl |= RTC_MODE0_CTRL_MATCHCLR;
