@@ -1,0 +1,17 @@
+# Copyright (c) 2020 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NPCX PCC (Power and Clock Controller) node
+
+compatible: "nuvoton,npcx-pcc"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+    reg:
+        required: true
+
+clock-cells:
+    - bus
+    - ctl
+    - bit
