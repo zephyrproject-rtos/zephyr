@@ -1,7 +1,7 @@
 on:
   push:
-    branches:
-      - master
+    branches-ignore:
+      - '**'
 jobs:
   triage:
     runs-on: ubuntu-latest
