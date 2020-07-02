@@ -57,4 +57,8 @@ config USART_SAM
 	default y
 	depends on SERIAL
 
+config USB_DC_SAM_USBC
+	default y
+	depends on USB
+
 endif # SOC_SERIES_SAM4L
