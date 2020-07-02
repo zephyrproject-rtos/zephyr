@@ -45,5 +45,5 @@ uint32_t x86_get_timer_freq_MHz(void)
 
 uint32_t x86_cyc_to_ns_floor64(uint64_t cyc)
 {
-	return ((cyc) * USEC_PER_SEC / tsc_freq);
+	return ((cyc) * NSEC_PER_SEC / tsc_freq);
 }
