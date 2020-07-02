@@ -116,7 +116,7 @@ endif
 menuconfig MCUMGR_CMD_IMG_MGMT
 	bool "Enable mcumgr handlers for image management"
 	select FLASH
-	select MPU_ALLOW_FLASH_WRITE if CPU_HAS_MPU
+	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
 	select IMG_MANAGER
 	help
 	  Enables mcumgr handlers for image management
