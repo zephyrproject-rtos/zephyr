@@ -59,7 +59,7 @@ static inline void posix_fs_free_obj(struct posix_fs_desc *ptr)
  *
  * See IEEE 1003.1
  */
-int open(const char *name, int flags)
+int open(const char *name, int flags, ...)
 {
 	int rc, fd;
 	struct posix_fs_desc *ptr = NULL;
