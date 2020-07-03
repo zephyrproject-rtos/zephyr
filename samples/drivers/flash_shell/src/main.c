@@ -110,11 +110,20 @@ static void dump_buffer(const struct shell *shell, uint8_t *buf, size_t size)
 	bool newline = false;
 	uint8_t *p = buf;
 
-	while (size >= 8) {
+	while (size >= 16) {
+		PR_SHELL(shell, "%02x %02x %02x %02x | %02x %02x %02x %02x |" \
+		       "%02x %02x %02x %02x | %02x %02x %02x %02x\n",
+		       p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7],
+			   p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]);
+		p += 16;
+		size -= 16;
+	}
+	if (size >= 8) {
 		PR_SHELL(shell, "%02x %02x %02x %02x | %02x %02x %02x %02x\n",
 		       p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
 		p += 8;
 		size -= 8;
+		newline = true;
 	}
 	if (size > 4) {
 		PR_SHELL(shell, "%02x %02x %02x %02x | ",
