@@ -68,7 +68,7 @@ static ALWAYS_INLINE
 			 "sr	%1, [%0];\n\t"
 			 :
 			 : "ir" (port),
-			   "r" (reg), "Mr" (bit)
+			   "r" (reg), "ir" (bit)
 			 : "memory", "cc");
 }
 
@@ -82,7 +82,7 @@ static ALWAYS_INLINE
 			 "sr	%1, [%0];\n\t"
 			 :
 			 : "ir" (port),
-			   "r" (reg), "Mr" (bit)
+			   "r" (reg), "ir" (bit)
 			 : "memory", "cc");
 }
 
@@ -98,7 +98,7 @@ static ALWAYS_INLINE
 			 "lr	%0, [%4];\n\t"
 			 : "=r" (ret)
 			 : "ir" (port),
-			   "r" (reg), "Mr" (bit), "i" (status)
+			   "r" (reg), "ir" (bit), "i" (status)
 			 : "memory", "cc");
 
 	return !(ret & _ARC_V2_STATUS32_Z);

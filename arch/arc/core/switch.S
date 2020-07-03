@@ -112,7 +112,7 @@ SECTION_FUNC(TEXT, arch_switch)
 
 	/* fall through to _switch_return_from_coop */
 
-.balign 4
+.align 4
 _switch_return_from_coop:
 
 	pop_s blink /* pc into blink */
@@ -142,7 +142,7 @@ _switch_return_from_coop:
 	j_s [blink]
 
 
-.balign 4
+.align 4
 _switch_return_from_rirq:
 _switch_return_from_firq:
 

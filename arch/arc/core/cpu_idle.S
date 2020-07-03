@@ -22,7 +22,7 @@ GTEXT(arch_cpu_atomic_idle)
 GDATA(z_arc_cpu_sleep_mode)
 
 SECTION_VAR(BSS, z_arc_cpu_sleep_mode)
-	.balign 4
+	.align 4
 	.word 0
 
 /*

@@ -269,7 +269,7 @@ SECTION_FUNC(TEXT, _rirq_exit)
 	mov r2, r0
 
 /* _rirq_newthread_switch required by exception handling */
-.balign 4
+.align 4
 _rirq_newthread_switch:
 
 	_load_new_thread_callee_regs
@@ -281,7 +281,7 @@ _rirq_newthread_switch:
 
 	/* fall through */
 
-.balign 4
+.align 4
 _rirq_switch_from_coop:
 
 	/* for a cooperative switch, it's not in irq, so
@@ -320,7 +320,7 @@ _rirq_switch_from_coop:
 	/* rtie will pop the rest from the stack */
 	rtie
 
-.balign 4
+.align 4
 _rirq_switch_from_firq:
 _rirq_switch_from_rirq:
 
