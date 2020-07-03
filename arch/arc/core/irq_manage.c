@@ -63,17 +63,17 @@ void z_arc_firq_stack_set(void)
 /* only ilink will not be banked, so use ilink as channel
  * between 2 banks
  */
-	"mov ilink, %0		\n\t"
-	"lr %0, [%1]		\n\t"
-	"or %0, %0, %2		\n\t"
-	"kflag %0		\n\t"
-	"mov sp, ilink		\n\t"
+	"mov %%ilink, %0\n\t"
+	"lr %0, [%1]\n\t"
+	"or %0, %0, %2\n\t"
+	"kflag %0\n\t"
+	"mov %%sp, %%ilink\n\t"
 /* switch back to bank0, use ilink to avoid the pollution of
  * bank1's gp regs.
  */
-	"lr ilink, [%1]		\n\t"
-	"and ilink, ilink, %3	\n\t"
-	"kflag ilink		\n\t"
+	"lr %%ilink, [%1]\n\t"
+	"and %%ilink, %%ilink, %3\n\t"
+	"kflag %%ilink\n\t"
 	:
 	: "r"(firq_sp), "i"(_ARC_V2_STATUS32),
 	  "i"(_ARC_V2_STATUS32_RB(1)),
