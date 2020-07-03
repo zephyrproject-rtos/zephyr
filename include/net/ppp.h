@@ -512,9 +512,6 @@ struct ppp_context {
 	/** PPP enable pending */
 	uint16_t is_enable_done : 1;
 
-	/** Network status (up / down) */
-	uint16_t is_network_up : 1;
-
 	/** IPCP status (up / down) */
 	uint16_t is_ipcp_up : 1;
 

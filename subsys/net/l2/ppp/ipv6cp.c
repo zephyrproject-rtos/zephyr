@@ -417,7 +417,6 @@ static void ipv6cp_up(struct ppp_fsm *fsm)
 
 	ppp_network_up(ctx, PPP_IPV6);
 
-	ctx->is_network_up = true;
 	ctx->is_ipv6cp_up = true;
 
 	NET_DBG("[%s/%p] Current state %s (%d)", fsm->name, fsm,
@@ -469,11 +468,10 @@ static void ipv6cp_down(struct ppp_fsm *fsm)
 	struct in6_addr peer_addr;
 	int ret;
 
-	if (!ctx->is_network_up) {
+	if (!ctx->is_ipv6cp_up) {
 		return;
 	}
 
-	ctx->is_network_up = false;
 	ctx->is_ipv6cp_up = false;
 
 	ppp_network_down(ctx, PPP_IPV6);
