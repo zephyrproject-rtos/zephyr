@@ -95,7 +95,7 @@ int open(const char *name, int flags)
 
 static int fs_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 {
-	int rc;
+	int rc = 0;
 	struct posix_fs_desc *ptr = obj;
 
 	switch (request) {
@@ -112,6 +112,9 @@ static int fs_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		whence = va_arg(args, int);
 
 		rc = fs_seek(&ptr->file, offset, whence);
+		if (rc == 0) {
+			rc = fs_tell(&ptr->file);
+		}
 		break;
 	}
 
@@ -125,7 +128,7 @@ static int fs_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		return -1;
 	}
 
-	return 0;
+	return rc;
 }
 
 /**
