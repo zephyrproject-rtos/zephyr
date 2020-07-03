@@ -9,7 +9,7 @@ config SOC
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
-	default 1000000
+	default 10000000
 
 config UART_CONSOLE_ON_DEV_NAME
 	string
