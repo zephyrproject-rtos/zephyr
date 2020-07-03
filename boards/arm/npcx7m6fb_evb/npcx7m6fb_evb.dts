@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2020 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nuvoton/npcx7m6fb.dtsi>
+
+/ {
+	model = "Nuvoton NPCX7M6FB evaluation board";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart1;
+		zephyr,flash = &flash0;
+	};
+};
+
+/* Overwirte default device properties with overlays in board dt file here. */
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl = <&altc_uart1_sl2>; /* Use UART1_SL2 ie. PIN64.65 */
+};
