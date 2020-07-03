@@ -24,12 +24,7 @@
 extern "C" {
 #endif
 
-#ifdef _ASMLANGUAGE
-GTEXT(_irq_exit);
-GTEXT(arch_irq_enable)
-GTEXT(arch_irq_disable)
-GTEXT(z_arc_firq_stack_set)
-#else
+#ifndef _ASMLANGUAGE
 
 extern void z_arc_firq_stack_set(void);
 extern void arch_irq_enable(unsigned int irq);
@@ -40,7 +35,6 @@ extern void sys_trace_isr_enter(void);
 extern void sys_trace_isr_exit(void);
 #endif
 
-extern void _irq_exit(void);
 extern void z_irq_priority_set(unsigned int irq, unsigned int prio,
 			      uint32_t flags);
 extern void _isr_wrapper(void);
@@ -118,13 +112,19 @@ extern void arch_isr_direct_header(void);
 
 #define ARCH_ISR_DIRECT_FOOTER(swap) arch_isr_direct_footer(swap)
 
+#if defined(__CCAC__)
+#define _ARC_DIRECT_ISR_FUNC_ATTRIBUTE		__interrupt__
+#else
+#define _ARC_DIRECT_ISR_FUNC_ATTRIBUTE		interrupt("ilink")
+#endif
+
 /*
  * Scheduling can not be done in direct isr. If required, please use kernel
  * aware interrupt handling
  */
 #define ARCH_ISR_DIRECT_DECLARE(name) \
 	static inline int name##_body(void); \
-	__attribute__ ((interrupt("ilink")))void name(void) \
+	__attribute__ ((_ARC_DIRECT_ISR_FUNC_ATTRIBUTE))void name(void) \
 	{ \
 		ISR_DIRECT_HEADER(); \
 		name##_body(); \
