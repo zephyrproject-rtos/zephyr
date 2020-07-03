@@ -109,6 +109,10 @@ int fs_close(struct fs_file_t *zfp)
 {
 	int rc = -EINVAL;
 
+	if (zfp->mp == NULL) {
+		return 0;
+	}
+
 	if (zfp->mp->fs->close != NULL) {
 		rc = zfp->mp->fs->close(zfp);
 		if (rc < 0) {
