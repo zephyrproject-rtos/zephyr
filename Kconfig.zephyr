@@ -387,8 +387,9 @@ config BOOTLOADER_MCUBOOT
 
 	    * Setting TEXT_SECTION_OFFSET to a default value that allows space
 	      for the MCUboot image header
-	    * Activating SW_VECTOR_RELAY on Cortex-M0 (or Armv8-M baseline)
-	      targets with no built-in vector relocation mechanisms
+	    * Activating SW_VECTOR_RELAY_CLIENT on Cortex-M0
+	      (or Armv8-M baseline) targets with no built-in vector relocation
+	      mechanisms
 
 config BOOTLOADER_ESP_IDF
 	bool "ESP-IDF bootloader support"
