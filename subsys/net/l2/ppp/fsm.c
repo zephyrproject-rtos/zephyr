@@ -417,13 +417,14 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 
 	case PPP_TERMINATE_REQ:
 	case PPP_TERMINATE_ACK:
+		len = sizeof(ppp);
 		break;
 
 	default:
 		break;
 	}
 
-	if (len == 0) {
+	if (len < sizeof(ppp)) {
 		return -EINVAL;
 	}
 
