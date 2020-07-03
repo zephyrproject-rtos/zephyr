@@ -58,6 +58,7 @@ static int mb85rs64v_access(struct device *spi, struct spi_config *spi_cfg,
 		}
 	} else {
 		tx.count = 1;
+		bufs[0].len = 1;
 	}
 
 	return spi_write(spi, spi_cfg, &tx);
