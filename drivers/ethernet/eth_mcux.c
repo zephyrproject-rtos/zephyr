@@ -1124,7 +1124,8 @@ static int eth_init(const struct device *dev)
 
 	eth_mcux_init(dev);
 
-	LOG_DBG("MAC %02x:%02x:%02x:%02x:%02x:%02x",
+	LOG_DBG("%s MAC %02x:%02x:%02x:%02x:%02x:%02x",
+		eth_name(context->base),
 		context->mac_addr[0], context->mac_addr[1],
 		context->mac_addr[2], context->mac_addr[3],
 		context->mac_addr[4], context->mac_addr[5]);
@@ -1196,6 +1197,34 @@ static enum ethernet_hw_caps eth_mcux_get_capabilities(const struct device *dev)
 		ETHERNET_LINK_100BASE_T;
 }
 
+static int eth_mcux_set_config(const struct device *dev,
+			       enum ethernet_config_type type,
+			       const struct ethernet_config *config)
+{
+	struct eth_context *context = dev->data;
+
+	switch (type) {
+	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
+		memcpy(context->mac_addr,
+		       config->mac_address.addr,
+		       sizeof(context->mac_addr));
+		ENET_SetMacAddr(context->base, context->mac_addr);
+		net_if_set_link_addr(context->iface, context->mac_addr,
+				     sizeof(context->mac_addr),
+				     NET_LINK_ETHERNET);
+		LOG_DBG("%s MAC set to %02x:%02x:%02x:%02x:%02x:%02x",
+			eth_name(context->base),
+			context->mac_addr[0], context->mac_addr[1],
+			context->mac_addr[2], context->mac_addr[3],
+			context->mac_addr[4], context->mac_addr[5]);
+		return 0;
+	default:
+		break;
+	}
+
+	return -ENOTSUP;
+}
+
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 static const struct device *eth_mcux_get_ptp_clock(const struct device *dev)
 {
@@ -1211,6 +1240,7 @@ static const struct ethernet_api api_funcs = {
 	.get_ptp_clock		= eth_mcux_get_ptp_clock,
 #endif
 	.get_capabilities	= eth_mcux_get_capabilities,
+	.set_config		= eth_mcux_set_config,
 	.send			= eth_tx,
 };
 
