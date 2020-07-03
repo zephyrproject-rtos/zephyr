@@ -22,7 +22,7 @@
 #include <v2/irq.h>
 #include <swap_macros.h>
 
-GTEXT(arch_switch)
+GTEXT(z_arc_switch)
 
 /**
  *
@@ -52,7 +52,7 @@ GTEXT(arch_switch)
  *
  */
 
-SECTION_FUNC(TEXT, arch_switch)
+SECTION_FUNC(TEXT, z_arc_switch)
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
 	push_s r0
