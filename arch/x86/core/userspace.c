@@ -9,22 +9,9 @@
 #include <syscall_handler.h>
 #include <kernel_arch_func.h>
 #include <ksched.h>
+#include <x86_mmu.h>
 
 #ifndef CONFIG_X86_KPTI
-/* Change to new set of page tables. ONLY intended for use from
- * z_x88_swap_update_page_tables(). This changes CR3, no memory access
- * afterwards is legal unless it is known for sure that the relevant
- * mappings are identical wrt supervisor mode until we iret out.
- */
-static inline void page_tables_set(struct x86_page_tables *ptables)
-{
-#ifdef CONFIG_X86_64
-	__asm__ volatile("movq %0, %%cr3\n\t" : : "r" (ptables) : "memory");
-#else
-	__asm__ volatile("movl %0, %%cr3\n\t" : : "r" (ptables) : "memory");
-#endif
-}
-
 /* Update the to the incoming thread's page table, and update the location of
  * the privilege elevation stack.
  *
@@ -60,7 +47,7 @@ void z_x86_swap_update_page_tables(struct k_thread *incoming)
 	ptables = z_x86_thread_page_tables_get(incoming);
 
 	if (ptables != z_x86_page_tables_get()) {
-		page_tables_set(ptables);
+		z_x86_page_tables_set(ptables);
 	}
 }
 #endif /* CONFIG_X86_KPTI */
@@ -114,7 +101,7 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	 * started in user mode already had this done via z_setup_new_thread()
 	 */
 	if (_current->mem_domain_info.mem_domain != NULL) {
-		z_x86_apply_mem_domain(_current->arch.ptables,
+		z_x86_apply_mem_domain(_current,
 				       _current->mem_domain_info.mem_domain);
 	}
 

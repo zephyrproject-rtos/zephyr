@@ -41,6 +41,7 @@
 #ifndef _ASMLANGUAGE
 
 #include <zephyr/types.h>
+#include <arch/x86/mmustructs.h>
 
 /*
  * 64-bit Task State Segment. One defined per CPU.
@@ -118,7 +119,12 @@ struct _thread_arch {
 	 * always use the kernel's page table, user thread use per-thread
 	 * tables stored in the stack object
 	 */
-	struct x86_page_tables *ptables;
+	pentry_t *ptables;
+
+	/* Track available unused space in the stack object used for building
+	 * thread-specific page tables.
+	 */
+	uint8_t *mmu_pos;
 
 	/* Initial privilege mode stack pointer when doing a system call.
 	 * Un-set for supervisor threads.

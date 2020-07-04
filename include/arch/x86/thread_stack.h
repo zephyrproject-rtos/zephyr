@@ -15,17 +15,45 @@
 #endif
 
 #ifdef CONFIG_USERSPACE
+/* Macros for reserving space for page tables in thread stack objects
+ *
+ * This is slated for removal, page tables will eventually not be
+ * maintained at the individual thread level
+ */
+#if defined(CONFIG_X86_64) || defined(CONFIG_X86_PAE)
+#ifdef CONFIG_X86_64
+#define Z_X86_NUM_PML4_ENTRIES 512U
+#define Z_X86_NUM_PDPT_ENTRIES 512U
+#else
+#define Z_X86_NUM_PDPT_ENTRIES 4U
+#endif /* CONFIG_X86_64 */
+#define Z_X86_NUM_PD_ENTRIES   512U
+#define Z_X86_NUM_PT_ENTRIES   512U
+#else
+#define Z_X86_NUM_PD_ENTRIES   1024U
+#define Z_X86_NUM_PT_ENTRIES   1024U
+#endif /* !CONFIG_X86_64 && !CONFIG_X86_PAE */
+/* Memory range covered by an instance of various table types */
+#define Z_X86_PT_AREA  ((uintptr_t)CONFIG_MMU_PAGE_SIZE * Z_X86_NUM_PT_ENTRIES)
+#define Z_X86_PD_AREA  (Z_X86_PT_AREA * Z_X86_NUM_PD_ENTRIES)
+#ifdef CONFIG_X86_64
+#define Z_X86_PDPT_AREA (Z_X86_PD_AREA * Z_X86_NUM_PDPT_ENTRIES)
+#endif
+
 /* We need a set of page tables for each thread in the system which runs in
  * user mode. For each thread, we have:
  *
  *   - On 32-bit
+ *      - a toplevel PD
+ *   - On 32-bit (PAE)
  *      - a toplevel PDPT
+ *      - a set of PDs for the memory range covered by system RAM
  *   - On 64-bit
  *      - a toplevel PML4
  *      - a set of PDPTs for the memory range covered by system RAM
+ *      - a set of PDs for the memory range covered by system RAM
  *   - On all modes:
- *      - a set of page directories for the memory range covered by system RAM
- *      - a set of page tbales for the memory range covered by system RAM
+ *      - a set of PTs for the memory range covered by system RAM
  *
  * Directories and tables for memory ranges outside of system RAM will be
  * shared and not thread-specific.
@@ -44,8 +72,8 @@
  *
  * The PDPT is fairly small singleton on x86 PAE (32 bytes) and also must
  * be aligned to 32 bytes, so we place it at the highest addresses of the
- * page reserved for the privilege elevation stack. On 64-bit all table
- * entities up to and including the PML4 are page-sized.
+ * page reserved for the privilege elevation stack. On 64-bit or legacy 32-bit
+ * all table entities up to and including the PML4 are page-sized.
  *
  * The page directories and tables require page alignment so we put them as
  * additional fields in the stack object, using the below macros to compute how
@@ -67,6 +95,7 @@
  */
 #define Z_X86_NUM_PT	((Z_X86_PT_END - Z_X86_PT_START) / Z_X86_PT_AREA)
 
+#ifdef CONFIG_X86_PAE
 /* Same semantics as above, but for the page directories needed to cover
  * system RAM.
  */
@@ -77,6 +106,9 @@
  * specific bounds of system RAM, but roughly 1 page directory per 1GB of RAM
  */
 #define Z_X86_NUM_PD	((Z_X86_PD_END - Z_X86_PD_START) / Z_X86_PD_AREA)
+#else
+#define Z_X86_NUM_PD	1
+#endif /* CONFIG_X86_PAE */
 
 #ifdef CONFIG_X86_64
 /* Same semantics as above, but for the page directory pointer tables needed
@@ -107,10 +139,11 @@
 #define Z_X86_NUM_TABLE_PAGES	0UL
 #endif /* CONFIG_USERSPACE */
 
-#define Z_X86_THREAD_PT_AREA	(Z_X86_NUM_TABLE_PAGES * MMU_PAGE_SIZE)
+#define Z_X86_THREAD_PT_AREA	(Z_X86_NUM_TABLE_PAGES * \
+				     (uintptr_t)CONFIG_MMU_PAGE_SIZE)
 
 #if defined(CONFIG_HW_STACK_PROTECTION) || defined(CONFIG_USERSPACE)
-#define Z_X86_STACK_BASE_ALIGN	MMU_PAGE_SIZE
+#define Z_X86_STACK_BASE_ALIGN	CONFIG_MMU_PAGE_SIZE
 #else
 #define Z_X86_STACK_BASE_ALIGN	ARCH_STACK_PTR_ALIGN
 #endif
@@ -120,7 +153,7 @@
  * the access control granularity and we don't want other kernel data to
  * unintentionally fall in the latter part of the page
  */
-#define Z_X86_STACK_SIZE_ALIGN	MMU_PAGE_SIZE
+#define Z_X86_STACK_SIZE_ALIGN	CONFIG_MMU_PAGE_SIZE
 #else
 #define Z_X86_STACK_SIZE_ALIGN	ARCH_STACK_PTR_ALIGN
 #endif
@@ -136,7 +169,7 @@ struct z_x86_kernel_stack_data {
 	 * are page-aligned and we just reserve room for them in
 	 * Z_X86_THREAD_PT_AREA.
 	 */
-	struct x86_page_tables ptables;
+	uint8_t ptables[0x20];
 } __aligned(0x20);
 #endif /* !CONFIG_X86_64 */
 
@@ -180,14 +213,14 @@ struct z_x86_thread_stack_header {
 #endif
 
 #ifdef CONFIG_HW_STACK_PROTECTION
-	char guard_page[MMU_PAGE_SIZE];
+	char guard_page[CONFIG_MMU_PAGE_SIZE];
 #endif
 
 #ifdef CONFIG_USERSPACE
 #ifdef CONFIG_X86_64
-	char privilege_stack[MMU_PAGE_SIZE];
+	char privilege_stack[CONFIG_MMU_PAGE_SIZE];
 #else
-	char privilege_stack[MMU_PAGE_SIZE -
+	char privilege_stack[CONFIG_MMU_PAGE_SIZE -
 		sizeof(struct z_x86_kernel_stack_data)];
 
 	struct z_x86_kernel_stack_data kernel_data;

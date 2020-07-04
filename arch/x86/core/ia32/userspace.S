@@ -304,7 +304,10 @@ SECTION_FUNC(TEXT, z_x86_userspace_enter)
 	 * want to leak any information.
 	 */
 	mov	%edi, %esp
-	subl	$Z_X86_PDPT_SIZE, %esp
+#ifdef CONFIG_X86_PAE
+	/* Skip over the toplevel PDPT stored here */
+	subl	$0x20, %esp
+#endif /* CONFIG_X86_PAE */
 
 	/* Stash some registers we are going to need to erase the user
 	 * stack.

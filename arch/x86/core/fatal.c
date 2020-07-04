@@ -9,6 +9,7 @@
 #include <kernel_internal.h>
 #include <exc_handle.h>
 #include <logging/log.h>
+#include <x86_mmu.h>
 LOG_MODULE_DECLARE(os);
 
 #if defined(CONFIG_BOARD_QEMU_X86) || defined(CONFIG_BOARD_QEMU_X86_64)
@@ -77,7 +78,7 @@ bool z_x86_check_stack_bounds(uintptr_t addr, size_t size, uint16_t cs)
 				       _current->stack_info.size);
 	} else {
 		/* User thread was doing a syscall, check kernel stack bounds */
-		start = _current->stack_info.start - MMU_PAGE_SIZE;
+		start = _current->stack_info.start - CONFIG_MMU_PAGE_SIZE;
 		end = _current->stack_info.start;
 	}
 
@@ -142,7 +143,7 @@ static void unwind_stack(uintptr_t base_ptr, uint16_t cs)
 }
 #endif /* CONFIG_X86_EXCEPTION_STACK_TRACE */
 
-static inline struct x86_page_tables *get_ptables(const z_arch_esf_t *esf)
+static inline pentry_t *get_ptables(const z_arch_esf_t *esf)
 {
 #if defined(CONFIG_USERSPACE) && defined(CONFIG_X86_KPTI)
 	/* If the interrupted thread was in user mode, we did a page table
@@ -305,7 +306,7 @@ static void dump_page_fault(z_arch_esf_t *esf)
 	}
 
 #ifdef CONFIG_X86_MMU
-	z_x86_dump_mmu_flags(get_ptables(esf), cr2);
+	z_x86_dump_mmu_flags(get_ptables(esf), (void *)cr2);
 #endif /* CONFIG_X86_MMU */
 }
 #endif /* CONFIG_EXCEPTION_DEBUG */

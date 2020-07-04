@@ -16,6 +16,7 @@
 #include <ksched.h>
 #include <arch/x86/mmustructs.h>
 #include <kswap.h>
+#include <x86_mmu.h>
 
 /* forward declaration */
 
@@ -77,10 +78,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	struct z_x86_thread_stack_header *header =
 		(struct z_x86_thread_stack_header *)stack;
 
-	/* Set guard area to read-only to catch stack overflows */
-	z_x86_mmu_set_flags(&z_x86_kernel_ptables, &header->guard_page,
-			    MMU_PAGE_SIZE, MMU_ENTRY_READ, Z_X86_MMU_RW,
-			    true);
+	z_x86_set_stack_guard(&header->guard_page);
 #endif
 
 #ifdef CONFIG_USERSPACE

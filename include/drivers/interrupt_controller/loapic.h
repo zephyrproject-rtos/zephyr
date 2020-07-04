@@ -60,7 +60,9 @@ extern void z_loapic_int_vec_set(unsigned int irq, unsigned int vector);
 extern void z_loapic_irq_enable(unsigned int irq);
 extern void z_loapic_irq_disable(unsigned int irq);
 
-#ifdef CONFIG_X2APIC
+/* Defined in intc_loapic.c */
+DEVICE_MMIO_TOPLEVEL_DECLARE(loapic_regs);
+
 /**
  * @brief Read 64-bit value from the local APIC in x2APIC mode.
  *
@@ -71,9 +73,6 @@ static inline uint64_t x86_read_x2apic(unsigned int reg)
 	reg >>= 4;
 	return z_x86_msr_read(X86_X2APIC_BASE_MSR + reg);
 }
-#else
-/* Defined in intc_loapic.c */
-DEVICE_MMIO_TOPLEVEL_DECLARE(loapic_regs);
 
 /**
  * @brief Read 32-bit value from the local APIC in xAPIC (MMIO) mode.
@@ -84,7 +83,7 @@ static inline uint32_t x86_read_xapic(unsigned int reg)
 {
 	return sys_read32(DEVICE_MMIO_TOPLEVEL_GET(loapic_regs) + reg);
 }
-#endif /* CONFIG_X2APIC */
+
 /**
  * @brief Read value from the local APIC using the default mode.
  *
@@ -104,7 +103,6 @@ static inline uint32_t x86_read_loapic(unsigned int reg)
 #endif
 }
 
-#ifdef CONFIG_X2APIC
 /**
  * @brief Write 64-bit value to the local APIC in x2APIC mode.
  *
@@ -116,7 +114,7 @@ static inline void x86_write_x2apic(unsigned int reg, uint64_t val)
 	reg >>= 4;
 	z_x86_msr_write(X86_X2APIC_BASE_MSR + reg, val);
 }
-#else
+
 /**
  * @brief Write 32-bit value to the local APIC in xAPIC (MMIO) mode.
  *
@@ -127,7 +125,6 @@ static inline void x86_write_xapic(unsigned int reg, uint32_t val)
 {
 	sys_write32(val, DEVICE_MMIO_TOPLEVEL_GET(loapic_regs) + reg);
 }
-#endif /* CONFIG_X2APIC */
 
 /**
  * @brief Write 32-bit value to the local APIC using the default mode.

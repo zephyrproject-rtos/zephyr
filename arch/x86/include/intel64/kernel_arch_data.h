@@ -25,9 +25,6 @@ struct x86_cpuboot {
 	uint64_t sp;		/* initial stack pointer */
 	arch_cpustart_t fn;	/* kernel entry function */
 	void *arg;		/* argument for above function */
-#ifdef CONFIG_X86_MMU
-	struct x86_page_tables *ptables; /* Runtime page tables to install */
-#endif /* CONFIG_X86_MMU */
 };
 
 typedef struct x86_cpuboot x86_cpuboot_t;
