@@ -447,7 +447,7 @@ static int eswifi_socket_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 		return -1;
 	}
 
-	ret = k_sem_take(&socket->read_sem, msecs);
+	ret = k_sem_take(&socket->read_sem, K_MSEC(msecs));
 	return ret;
 }
 
