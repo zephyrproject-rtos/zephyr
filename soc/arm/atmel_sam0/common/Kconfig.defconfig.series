@@ -11,6 +11,9 @@ config ADC_SAM0
 config COUNTER_SAM0_TC32
 	default COUNTER
 
+config DAC_SAM0
+	default DAC
+
 config DMA_SAM0
 	default DMA
 
