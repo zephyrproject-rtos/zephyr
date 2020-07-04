@@ -43,6 +43,12 @@
 	};
 };
 
+&dac0 {
+	interrupts = <23 0>;
+	clocks = <&gclk 26>, <&pm 0x20 18>;
+	clock-names = "GCLK", "PM";
+};
+
 &sercom0 {
 	interrupts = <7 0>;
 	clocks = <&gclk 0xd>, <&pm 0x20 2>;

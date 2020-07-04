@@ -203,6 +203,14 @@
 			prescaler = <4>;
 			#io-channel-cells = <1>;
 		};
+
+		dac0: dac@42004800 {
+			compatible = "atmel,sam0-dac";
+			status = "disabled";
+			reg = <0x42004800 0x10>;
+			label = "DAC_0";
+			#io-channel-cells = <0>;
+		};
 	};
 };
 
