@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #define LOG_LEVEL CONFIG_WIFI_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(wifi_eswifi_offload);
+#include "eswifi_log.h"
+LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 
 #include <zephyr.h>
 #include <kernel.h>
