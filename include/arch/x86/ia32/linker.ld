@@ -51,9 +51,12 @@
 	#define RAMABLE_REGION RAM
 #endif
 
-#ifdef CONFIG_X86_MMU
-	#define MMU_PAGE_SIZE	KB(4)
-	#define MMU_PAGE_ALIGN	. = ALIGN(MMU_PAGE_SIZE);
+/* Used to align areas with separate memory permission characteristics
+ * so that the page permissions can be set in the MMU. Without this,
+ * the kernel is just one blob with the same RWX permissions on all RAM
+ */
+#ifdef CONFIG_SRAM_REGION_PERMISSIONS
+	#define MMU_PAGE_ALIGN	. = ALIGN(CONFIG_MMU_PAGE_SIZE);
 #else
 	#define MMU_PAGE_ALIGN
 #endif
@@ -317,9 +320,11 @@ SECTIONS
 	__data_rom_start = LOADADDR(_DATA_SECTION_NAME);
 
 #include <linker/common-ram.ld>
-
-#include <linker/kobject.ld>
 #include <linker/cplusplus-ram.ld>
+#include <arch/x86/pagetables.ld>
+
+/* Must be last in RAM */
+#include <linker/kobject.ld>
 
 	MMU_PAGE_ALIGN
 	__data_ram_end = .;

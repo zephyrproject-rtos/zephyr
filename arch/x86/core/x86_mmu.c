@@ -1,530 +1,218 @@
 /*
  * Copyright (c) 2011-2014 Wind River Systems, Inc.
- * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2017-2020 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 #include <kernel.h>
 #include <arch/x86/mmustructs.h>
-#include <linker/linker-defs.h>
-#include <kernel_internal.h>
-#include <kernel_structs.h>
-#include <init.h>
-#include <ctype.h>
-#include <string.h>
+#include <sys/mem_manage.h>
+#include <sys/__assert.h>
 #include <logging/log.h>
+#include <errno.h>
+#include <ctype.h>
+#include <spinlock.h>
+#include <kernel_arch_func.h>
+#include <x86_mmu.h>
+#include <init.h>
+#include <kernel_internal.h>
+
 LOG_MODULE_DECLARE(os);
 
-void z_pcie_add_mmu_regions(void);
-
-#define PHYS_RAM_ADDR DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
-#define PHYS_RAM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
-
-/* Despite our use of PAE page tables, we do not (and will never) actually
- * support PAE. Use a 64-bit x86 target if you have that much RAM.
+/* "dummy" pagetables for the first-phase build. The real page tables
+ * are produced by gen-mmu.py based on data read in zephyr-prebuilt.elf,
+ * and this dummy array is discarded.
  */
-BUILD_ASSERT(PHYS_RAM_ADDR + PHYS_RAM_SIZE - 1ULL <=
-				 (unsigned long long)UINTPTR_MAX);
-
-/* Common regions for all x86 processors.
- * Peripheral I/O ranges configured at the SOC level
- */
-
-/* Mark text and rodata as read-only.
- * Userspace may read all text and rodata.
- */
-MMU_BOOT_REGION(&_image_text_start, &_image_text_size,
-		Z_X86_MMU_US);
-
-MMU_BOOT_REGION(&_image_rodata_start, &_image_rodata_size,
-		Z_X86_MMU_US | Z_X86_MMU_XD);
-
-#ifdef CONFIG_USERSPACE
-MMU_BOOT_REGION(&_app_smem_start, &_app_smem_size,
-		Z_X86_MMU_RW | Z_X86_MMU_XD);
-#endif
-
-#ifdef CONFIG_COVERAGE_GCOV
-MMU_BOOT_REGION(&__gcov_bss_start, &__gcov_bss_size,
-		Z_X86_MMU_RW | Z_X86_MMU_US | Z_X86_MMU_XD);
-#endif
-
-#ifdef CONFIG_X86_64
-extern char _locore_start[];
-extern char _locore_size[];
-extern char _lorodata_start[];
-extern char _lorodata_size[];
-extern char _lodata_start[];
-extern char _lodata_size[];
-
-/* Early boot regions that need to be in low memory to be comprehensible
- * by the CPU in 16-bit mode
- */
-
-MMU_BOOT_REGION(&_locore_start, &_locore_size, 0);
-MMU_BOOT_REGION(&_lorodata_start, &_lorodata_size, Z_X86_MMU_XD);
-MMU_BOOT_REGION(&_lodata_start, &_lodata_size, Z_X86_MMU_RW | Z_X86_MMU_XD);
-#endif
-
-/* __kernel_ram_size includes all unused memory, which is used for heaps.
- * User threads cannot access this unless granted at runtime. This is done
- * automatically for stacks.
- */
-MMU_BOOT_REGION(&__kernel_ram_start, &__kernel_ram_size,
-		Z_X86_MMU_RW | Z_X86_MMU_XD);
+Z_GENERIC_SECTION(.dummy_pagetables)
+char z_x86_dummy_pagetables[Z_X86_INITIAL_PAGETABLE_SIZE];
 
 /*
- * Inline functions for setting memory addresses in page table structures
+ * Definitions for building an ontology of paging levels and capabilities
+ * at each level
  */
 
-#ifdef CONFIG_X86_64
-static inline void pml4e_update_pdpt(uint64_t *pml4e, struct x86_mmu_pdpt *pdpt)
-{
-	uintptr_t pdpt_addr = (uintptr_t)pdpt;
-
-	*pml4e = ((*pml4e & ~Z_X86_MMU_PML4E_PDPT_MASK) |
-		  (pdpt_addr & Z_X86_MMU_PML4E_PDPT_MASK));
-}
-#endif /* CONFIG_X86_64 */
-
-static inline void pdpte_update_pd(uint64_t *pdpte, struct x86_mmu_pd *pd)
-{
-	uintptr_t pd_addr = (uintptr_t)pd;
-
-#ifdef CONFIG_X86_64
-	__ASSERT((*pdpte & Z_X86_MMU_PS) == 0, "PDPT is for 1GB page");
-#endif
-	*pdpte = ((*pdpte & ~Z_X86_MMU_PDPTE_PD_MASK) |
-		  (pd_addr & Z_X86_MMU_PDPTE_PD_MASK));
-}
-
-static inline void pde_update_pt(uint64_t *pde, struct x86_mmu_pt *pt)
-{
-	uintptr_t pt_addr = (uintptr_t)pt;
-
-	__ASSERT((*pde & Z_X86_MMU_PS) == 0, "pde is for 2MB page");
-
-	*pde = ((*pde & ~Z_X86_MMU_PDE_PT_MASK) |
-		(pt_addr & Z_X86_MMU_PDE_PT_MASK));
-}
-
-static inline void pte_update_addr(uint64_t *pte, uintptr_t addr)
-{
-	*pte = ((*pte & ~Z_X86_MMU_PTE_ADDR_MASK) |
-		(addr & Z_X86_MMU_PTE_ADDR_MASK));
-}
-
-/*
- * Functions for dumping page tables to console
+/* Data structure describing the characteristics of a particular paging
+ * level
  */
+struct paging_level {
+	/* What bits are used to store physical address */
+	pentry_t mask;
 
-/* Works for PDPT, PD, PT entries, the bits we check here are all the same.
- *
- * Not trying to capture every flag, just the most interesting stuff,
- * Present, write, XD, user, in typically encountered combinations.
- */
-static bool dump_entry_flags(const char *name, uint64_t flags)
-{
-	if ((flags & Z_X86_MMU_P) == 0) {
-		LOG_ERR("%s: Non-present", name);
-		return false;
-	}
+	/* Number of entries in this paging structure */
+	size_t entries;
 
-	LOG_ERR("%s: 0x%016llx %s, %s, %s", name, flags,
-		flags & MMU_ENTRY_WRITE ?
-		"Writable" : "Read-only",
-		flags & MMU_ENTRY_USER ?
-		"User" : "Supervisor",
-		flags & MMU_ENTRY_EXECUTE_DISABLE ?
-		"Execute Disable" : "Execute Enabled");
-	return true;
-}
-
-void z_x86_dump_mmu_flags(struct x86_page_tables *ptables, uintptr_t addr)
-{
-	uint64_t entry;
-
-#ifdef CONFIG_X86_64
-	entry = *z_x86_get_pml4e(ptables, addr);
-	if (!dump_entry_flags("PML4E", entry)) {
-		return;
-	}
-
-	entry = *z_x86_pdpt_get_pdpte(z_x86_pml4e_get_pdpt(entry), addr);
-	if (!dump_entry_flags("PDPTE", entry)) {
-		return;
-	}
-#else
-	/* 32-bit doesn't have anything interesting in the PDPTE except
-	 * the present bit
+	/* How many bits to right-shift a virtual address to obtain the
+	 * appropriate entry within this table.
+	 *
+	 * The memory scope of each entry in this table is 1 << shift.
 	 */
-	entry = *z_x86_get_pdpte(ptables, addr);
-	if ((entry & Z_X86_MMU_P) == 0) {
-		LOG_ERR("PDPTE: Non-present");
-		return;
-	}
+	unsigned int shift;
+#ifdef CONFIG_EXCEPTION_DEBUG
+	/* Name of this level, for debug purposes */
+	const char *name;
 #endif
+};
 
-	entry = *z_x86_pd_get_pde(z_x86_pdpte_get_pd(entry), addr);
-	if (!dump_entry_flags("  PDE", entry)) {
-		return;
-	}
-
-	entry = *z_x86_pt_get_pte(z_x86_pde_get_pt(entry), addr);
-	if (!dump_entry_flags("  PTE", entry)) {
-		return;
-	}
-}
-
-static char get_entry_code(uint64_t value)
-{
-	char ret;
-
-	if ((value & Z_X86_MMU_P) == 0) {
-		ret = '.';
-	} else {
-		if ((value & Z_X86_MMU_RW) != 0) {
-			/* Writable page */
-			if ((value & Z_X86_MMU_XD) != 0) {
-				/* RW */
-				ret = 'w';
-			} else {
-				/* RWX */
-				ret = 'a';
-			}
-		} else {
-			if ((value & Z_X86_MMU_XD) != 0) {
-				/* R */
-				ret = 'r';
-			} else {
-				/* RX */
-				ret = 'x';
-			}
-		}
-
-		if ((value & Z_X86_MMU_US) != 0) {
-			/* Uppercase indicates user mode access */
-			ret = toupper(ret);
-		}
-	}
-
-	return ret;
-}
-
-static void print_entries(uint64_t entries_array[], size_t count)
-{
-	int column = 0;
-
-	for (int i = 0; i < count; i++) {
-		printk("%c", get_entry_code(entries_array[i]));
-
-		column++;
-		if (column == 64) {
-			column = 0;
-			printk("\n");
-		}
-	}
-
-	if (column != 0) {
-		printk("\n");
-	}
-}
-
-static void z_x86_dump_pt(struct x86_mmu_pt *pt, uintptr_t base, int index)
-{
-	printk("Page table %d for 0x%016lX - 0x%016lX at %p\n",
-	       index, base, base + Z_X86_PT_AREA - 1, pt);
-
-	print_entries(pt->entry, Z_X86_NUM_PT_ENTRIES);
-}
-
-static void z_x86_dump_pd(struct x86_mmu_pd *pd, uintptr_t base, int index)
-{
-	printk("Page directory %d for 0x%016lX - 0x%016lX at %p\n",
-	       index, base, base + Z_X86_PD_AREA - 1, pd);
-
-	print_entries(pd->entry, Z_X86_NUM_PD_ENTRIES);
-
-	for (int i = 0; i < Z_X86_NUM_PD_ENTRIES; i++) {
-		struct x86_mmu_pt *pt;
-		uint64_t pde = pd->entry[i];
-
-		if (((pde & Z_X86_MMU_P) == 0) || ((pde & Z_X86_MMU_PS) != 0)) {
-			/* Skip non-present, or 2MB directory entries, there's
-			 * no page table to examine */
-			continue;
-		}
-		pt = z_x86_pde_get_pt(pde);
-
-		z_x86_dump_pt(pt, base + (i * Z_X86_PT_AREA), i);
-	}
-}
-
-static void z_x86_dump_pdpt(struct x86_mmu_pdpt *pdpt, uintptr_t base,
-			    int index)
-{
-	printk("Page directory pointer table %d for 0x%0816lX - 0x%016lX at %p\n",
-	       index, base, base + Z_X86_PDPT_AREA - 1, pdpt);
-
-	print_entries(pdpt->entry, Z_X86_NUM_PDPT_ENTRIES);
-
-	for (int i = 0; i < Z_X86_NUM_PDPT_ENTRIES; i++) {
-		struct x86_mmu_pd *pd;
-		uint64_t pdpte = pdpt->entry[i];
-
-		if ((pdpte & Z_X86_MMU_P) == 0) {
-			continue;
-		}
-#ifdef CONFIG_X86_64
-		if ((pdpte & Z_X86_MMU_PS) != 0) {
-			continue;
-		}
-#endif
-		pd = z_x86_pdpte_get_pd(pdpte);
-		z_x86_dump_pd(pd, base + (i * Z_X86_PD_AREA), i);
-	}
-}
-
-#ifdef CONFIG_X86_64
-static void z_x86_dump_pml4(struct x86_mmu_pml4 *pml4)
-{
-	printk("Page mapping level 4 at %p for all memory addresses\n", pml4);
-
-	print_entries(pml4->entry, Z_X86_NUM_PML4_ENTRIES);
-
-	for (int i = 0; i < Z_X86_NUM_PML4_ENTRIES; i++) {
-		struct x86_mmu_pdpt *pdpt;
-		uint64_t pml4e = pml4->entry[i];
-
-		if ((pml4e & Z_X86_MMU_P) == 0) {
-			continue;
-		}
-
-		pdpt = z_x86_pml4e_get_pdpt(pml4e);
-		z_x86_dump_pdpt(pdpt, i * Z_X86_PDPT_AREA, i);
-	}
-}
-
-void z_x86_dump_page_tables(struct x86_page_tables *ptables)
-{
-	z_x86_dump_pml4(z_x86_get_pml4(ptables));
-}
-
-#else
-void z_x86_dump_page_tables(struct x86_page_tables *ptables)
-{
-	z_x86_dump_pdpt(z_x86_get_pdpt(ptables, 0), 0, 0);
-}
-#endif
-
-void z_x86_mmu_get_flags(struct x86_page_tables *ptables, void *addr,
-			 uint64_t *pde_flags, uint64_t *pte_flags)
-{
-	*pde_flags = *z_x86_get_pde(ptables, (uintptr_t)addr) &
-		~Z_X86_MMU_PDE_PT_MASK;
-
-	if ((*pde_flags & Z_X86_MMU_P) != 0) {
-		*pte_flags = *z_x86_get_pte(ptables, (uintptr_t)addr) &
-			~Z_X86_MMU_PTE_ADDR_MASK;
-	} else {
-		*pte_flags = 0;
-	}
-}
-
-/* Given an address/size pair, which corresponds to some memory address
- * within a table of table_size, return the maximum number of bytes to
- * examine so we look just to the end of the table and no further.
+/* Flags for all entries in intermediate paging levels.
+ * Fortunately, the same bits are set for all intermediate levels for all
+ * three paging modes.
  *
- * If size fits entirely within the table, just return size.
+ * Obviously P is set.
+ *
+ * We want RW and US bit always set; actual access control will be
+ * done at the leaf level.
+ *
+ * XD (if supported) always 0. Disabling execution done at leaf level.
+ *
+ * PCD/PWT always 0. Caching properties again done at leaf level.
  */
-static size_t get_table_max(uintptr_t addr, size_t size, size_t table_size)
-{
-	size_t table_remaining;
+#define INT_FLAGS	(MMU_P | MMU_RW | MMU_US)
 
-	addr &= (table_size - 1);
-	table_remaining = table_size - addr;
-
-	if (size < table_remaining) {
-		return size;
-	} else {
-		return table_remaining;
-	}
-}
-
-/* Range [addr, addr + size) must fall within the bounds of the pt */
-static int x86_mmu_validate_pt(struct x86_mmu_pt *pt, uintptr_t addr,
-			       size_t size, bool write)
-{
-	uintptr_t pos = addr;
-	size_t remaining = size;
-	int ret = 0;
-
-	while (true) {
-		uint64_t pte = *z_x86_pt_get_pte(pt, pos);
-
-		if ((pte & Z_X86_MMU_P) == 0 || (pte & Z_X86_MMU_US) == 0 ||
-		    (write && (pte & Z_X86_MMU_RW) == 0)) {
-			ret = -1;
-			break;
-		}
-
-		if (remaining <= MMU_PAGE_SIZE) {
-			break;
-		}
-
-		remaining -= MMU_PAGE_SIZE;
-		pos += MMU_PAGE_SIZE;
-	}
-
-	return ret;
-}
-
-/* Range [addr, addr + size) must fall within the bounds of the pd */
-static int x86_mmu_validate_pd(struct x86_mmu_pd *pd, uintptr_t addr,
-			       size_t size, bool write)
-{
-	uintptr_t pos = addr;
-	size_t remaining = size;
-	int ret = 0;
-	size_t to_examine;
-
-	while (remaining) {
-		uint64_t pde = *z_x86_pd_get_pde(pd, pos);
-
-		if ((pde & Z_X86_MMU_P) == 0 || (pde & Z_X86_MMU_US) == 0 ||
-		    (write && (pde & Z_X86_MMU_RW) == 0)) {
-			ret = -1;
-			break;
-		}
-
-		to_examine = get_table_max(pos, remaining, Z_X86_PT_AREA);
-
-		if ((pde & Z_X86_MMU_PS) == 0) {
-			/* Not a 2MB PDE. Need to check all the linked
-			 * tables for this entry
-			 */
-			struct x86_mmu_pt *pt;
-
-			pt = z_x86_pde_get_pt(pde);
-			ret = x86_mmu_validate_pt(pt, pos, to_examine, write);
-			if (ret != 0) {
-				break;
-			}
-		} else {
-			ret = 0;
-		}
-
-		remaining -= to_examine;
-		pos += to_examine;
-	}
-
-	return ret;
-}
-
-/* Range [addr, addr + size) must fall within the bounds of the pdpt */
-static int x86_mmu_validate_pdpt(struct x86_mmu_pdpt *pdpt, uintptr_t addr,
-				 size_t size, bool write)
-{
-	uintptr_t pos = addr;
-	size_t remaining = size;
-	int ret = 0;
-	size_t to_examine;
-
-	while (remaining) {
-		uint64_t pdpte = *z_x86_pdpt_get_pdpte(pdpt, pos);
-
-		if ((pdpte & Z_X86_MMU_P) == 0) {
-			/* Non-present */
-			ret = -1;
-			break;
-		}
-
+/* Paging level ontology for the selected paging mode.
+ *
+ * See Figures 4-4, 4-7, 4-11 in the Intel SDM, vol 3A
+ */
+static const struct paging_level paging_levels[] = {
 #ifdef CONFIG_X86_64
-		if ((pdpte & Z_X86_MMU_US) == 0 ||
-		    (write && (pdpte & Z_X86_MMU_RW) == 0)) {
-			ret = -1;
-			break;
-		}
+	/* Page Map Level 4 */
+	{
+		.mask = 0x7FFFFFFFFFFFF000ULL,
+		.entries = 512U,
+		.shift = 39U,
+#ifdef CONFIG_EXCEPTION_DEBUG
+		.name = "PML4"
 #endif
-		to_examine = get_table_max(pos, remaining, Z_X86_PD_AREA);
-
-#ifdef CONFIG_X86_64
-		/* Check if 1GB page, if not, examine linked page directory */
-		if ((pdpte & Z_X86_MMU_PS) == 0) {
-#endif
-			struct x86_mmu_pd *pd = z_x86_pdpte_get_pd(pdpte);
-
-			ret = x86_mmu_validate_pd(pd, pos, to_examine, write);
-			if (ret != 0) {
-				break;
-			}
-#ifdef CONFIG_X86_64
-		} else {
-			ret = 0;
-		}
-#endif
-		remaining -= to_examine;
-		pos += to_examine;
-	}
-
-	return ret;
-}
-
-#ifdef CONFIG_X86_64
-static int x86_mmu_validate_pml4(struct x86_mmu_pml4 *pml4, uintptr_t addr,
-				 size_t size, bool write)
-{
-	uintptr_t pos = addr;
-	size_t remaining = size;
-	int ret = 0;
-	size_t to_examine;
-
-	while (remaining) {
-		uint64_t pml4e = *z_x86_pml4_get_pml4e(pml4, pos);
-		struct x86_mmu_pdpt *pdpt;
-
-		if ((pml4e & Z_X86_MMU_P) == 0 || (pml4e & Z_X86_MMU_US) == 0 ||
-		    (write && (pml4e & Z_X86_MMU_RW) == 0)) {
-			ret = -1;
-			break;
-		}
-
-		to_examine = get_table_max(pos, remaining, Z_X86_PDPT_AREA);
-		pdpt = z_x86_pml4e_get_pdpt(pml4e);
-
-		ret = x86_mmu_validate_pdpt(pdpt, pos, to_examine, write);
-		if (ret != 0) {
-			break;
-		}
-
-		remaining -= to_examine;
-		pos += to_examine;
-	}
-
-	return ret;
-}
+	},
 #endif /* CONFIG_X86_64 */
-
-int z_x86_mmu_validate(struct x86_page_tables *ptables, void *addr, size_t size,
-		       bool write)
-{
-	int ret;
-
+#if defined(CONFIG_X86_64) || defined(CONFIG_X86_PAE)
+	/* Page Directory Pointer Table */
+	{
+		.mask = 0x7FFFFFFFFFFFF000ULL,
 #ifdef CONFIG_X86_64
-	struct x86_mmu_pml4 *pml4 = z_x86_get_pml4(ptables);
-
-	ret = x86_mmu_validate_pml4(pml4, (uintptr_t)addr, size, write);
+		.entries = 512U,
 #else
-	struct x86_mmu_pdpt *pdpt = z_x86_get_pdpt(ptables, (uintptr_t)addr);
-
-	ret = x86_mmu_validate_pdpt(pdpt, (uintptr_t)addr, size, write);
+		/* PAE version */
+		.entries = 4U,
 #endif
-
-#ifdef CONFIG_X86_BOUNDS_CHECK_BYPASS_MITIGATION
-	__asm__ volatile ("lfence" : : : "memory");
+		.shift = 30U,
+#ifdef CONFIG_EXCEPTION_DEBUG
+		.name = "PDPT"
 #endif
+	},
+#endif /* CONFIG_X86_64 || CONFIG_X86_PAE */
+	/* Page Directory */
+	{
+#if defined(CONFIG_X86_64) || defined(CONFIG_X86_PAE)
+		.mask = 0x7FFFFFFFFFFFF000ULL,
+		.entries = 512U,
+		.shift = 21U,
+#else
+		/* 32-bit */
+		.mask = 0xFFFFF000U,
+		.entries = 1024U,
+		.shift = 22U,
+#endif /* CONFIG_X86_64 || CONFIG_X86_PAE */
+#ifdef CONFIG_EXCEPTION_DEBUG
+		.name = "PD"
+#endif
+	},
+	/* Page Table */
+	{
+#if defined(CONFIG_X86_64) || defined(CONFIG_X86_PAE)
+		.mask = 0x07FFFFFFFFFFF000ULL,
+		.entries = 512U,
+		.shift = 12U,
+#else
+		/* 32-bit */
+		.mask = 0xFFFFF000U,
+		.entries = 1024U,
+		.shift = 12U,
+#endif /* CONFIG_X86_64 || CONFIG_X86_PAE */
+#ifdef CONFIG_EXCEPTION_DEBUG
+		.name = "PT"
+#endif
+	}
+};
 
-	return ret;
+#define NUM_LEVELS	ARRAY_SIZE(paging_levels)
+
+/*
+ * Utility functions
+ */
+
+/* For a physical address, return its permanent virtual mapping in the kernel's
+ * address space
+ */
+static inline void *ram_phys_to_virt(uintptr_t phys)
+{
+	return (void *)(phys + Z_MEM_VM_OFFSET);
+}
+
+/* For a table at a particular level, get the entry index that corresponds to
+ * the provided virtual address
+ */
+static inline int get_index(void *virt, int level)
+{
+	return (((uintptr_t)virt >> paging_levels[level].shift) %
+		paging_levels[level].entries);
+}
+
+static inline pentry_t *get_entry_ptr(pentry_t *ptables, void *virt, int level)
+{
+	return &ptables[get_index(virt, level)];
+}
+
+static inline pentry_t get_entry(pentry_t *ptables, void *virt, int level)
+{
+	return ptables[get_index(virt, level)];
+}
+
+/* Get the physical memory address associated with this table entry */
+static inline uintptr_t get_entry_phys(pentry_t entry, int level)
+{
+	return entry & paging_levels[level].mask;
+}
+
+/* Return the virtual address of a linked table stored in the provided entry */
+static inline pentry_t *next_table(pentry_t entry, int level)
+{
+	return ram_phys_to_virt(get_entry_phys(entry, level));
+}
+
+/* 4K for everything except PAE PDPTs */
+static inline size_t table_size(int level)
+{
+	return paging_levels[level].entries * sizeof(pentry_t);
+}
+
+/* For a table at a particular level, size of the amount of virtual memory
+ * that an entry within the table covers
+ */
+static inline size_t get_entry_scope(int level)
+{
+	return (1UL << paging_levels[level].shift);
+}
+
+/* For a table at a particular level, size of the amount of virtual memory
+ * that this entire table covers
+ */
+static inline size_t get_table_scope(int level)
+{
+	return get_entry_scope(level) * paging_levels[level].entries;
+}
+
+/* Must have checked Present bit first! Non-present entries may have OS data
+ * stored in any other bits
+ */
+static inline bool is_leaf(int level, pentry_t entry)
+{
+	if (level == NUM_LEVELS - 1) {
+		/* Always true for PTE */
+		return true;
+	}
+
+	return ((entry & MMU_PS) != 0U);
 }
 
 static inline void tlb_flush_page(void *addr)
@@ -535,366 +223,535 @@ static inline void tlb_flush_page(void *addr)
 	char *page = (char *)addr;
 
 	__asm__ ("invlpg %0" :: "m" (*page));
+
+	/* TODO: Need to implement TLB shootdown for SMP */
 }
 
-#ifdef CONFIG_X86_64
-#define PML4E_FLAGS_MASK	(Z_X86_MMU_RW | Z_X86_MMU_US | Z_X86_MMU_P)
+static inline void assert_addr_aligned(uintptr_t addr)
+{
+#if __ASSERT_ON
+	__ASSERT((addr & (CONFIG_MMU_PAGE_SIZE - 1)) == 0U,
+		 "unaligned address 0x%" PRIxPTR, addr);
+#endif
+}
 
-#define PDPTE_FLAGS_MASK	PML4E_FLAGS_MASK
+static inline void assert_virt_addr_aligned(void *addr)
+{
+	assert_addr_aligned((uintptr_t)addr);
+}
 
-#define PDE_FLAGS_MASK		PDPTE_FLAGS_MASK
+static inline void assert_region_page_aligned(void *addr, size_t size)
+{
+	assert_virt_addr_aligned(addr);
+#if __ASSERT_ON
+	__ASSERT((size & (CONFIG_MMU_PAGE_SIZE - 1)) == 0U,
+		 "unaligned size %zu", size);
+#endif
+}
+
+/*
+ * Debug functions. All conditionally compiled with CONFIG_EXCEPTION_DEBUG.
+ */
+#ifdef CONFIG_EXCEPTION_DEBUG
+
+/* Add colors to page table dumps to indicate mapping type */
+#define COLOR_PAGE_TABLES	1
+
+#if COLOR_PAGE_TABLES
+#define ANSI_DEFAULT "\x1B[0m"
+#define ANSI_RED     "\x1B[1;31m"
+#define ANSI_GREEN   "\x1B[1;32m"
+#define ANSI_YELLOW  "\x1B[1;33m"
+#define ANSI_BLUE    "\x1B[1;34m"
+#define ANSI_MAGENTA "\x1B[1;35m"
+#define ANSI_CYAN    "\x1B[1;36m"
+#define ANSI_GREY    "\x1B[1;90m"
+
+#define COLOR(x)	printk(_CONCAT(ANSI_, x))
 #else
-#define PDPTE_FLAGS_MASK	Z_X86_MMU_P
-
-#define PDE_FLAGS_MASK		(Z_X86_MMU_RW | Z_X86_MMU_US | \
-				 PDPTE_FLAGS_MASK)
+#define COLOR(x)	do { } while (0)
 #endif
 
-#define PTE_FLAGS_MASK		(PDE_FLAGS_MASK | Z_X86_MMU_XD | \
-				 Z_X86_MMU_PWT | \
-				 Z_X86_MMU_PCD)
-
-void z_x86_mmu_set_flags(struct x86_page_tables *ptables, void *ptr,
-			 size_t size, uint64_t flags, uint64_t mask, bool flush)
+static char get_entry_code(pentry_t value)
 {
-	uintptr_t addr = (uintptr_t)ptr;
+	char ret;
 
-	__ASSERT((addr & MMU_PAGE_MASK) == 0U, "unaligned address provided");
-	__ASSERT((size & MMU_PAGE_MASK) == 0U, "unaligned size provided");
+	if ((value & MMU_P) == 0U) {
+		ret = '.';
+	} else {
+		if ((value & MMU_RW) != 0U) {
+			/* Writable page */
+			if ((value & MMU_XD) != 0U) {
+				/* RW */
+				ret = 'w';
+			} else {
+				/* RWX */
+				ret = 'a';
+			}
+		} else {
+			if ((value & MMU_XD) != 0U) {
+				/* R */
+				ret = 'r';
+			} else {
+				/* RX */
+				ret = 'x';
+			}
+		}
 
-	/* L1TF mitigation: non-present PTEs will have address fields
-	 * zeroed. Expand the mask to include address bits if we are changing
-	 * the present bit.
-	 */
-	if ((mask & Z_X86_MMU_P) != 0) {
-		mask |= Z_X86_MMU_PTE_ADDR_MASK;
+		if ((value & MMU_US) != 0U) {
+			/* Uppercase indicates user mode access */
+			ret = toupper(ret);
+		}
 	}
 
-	/* NOTE: All of this code assumes that 2MB or 1GB pages are not being
-	 * modified.
-	 */
-	while (size != 0) {
-		uint64_t *pte;
-		uint64_t *pde;
-		uint64_t *pdpte;
-#ifdef CONFIG_X86_64
-		uint64_t *pml4e;
-#endif
-		uint64_t cur_flags = flags;
-		bool exec = (flags & Z_X86_MMU_XD) == 0;
+	return ret;
+}
 
-#ifdef CONFIG_X86_64
-		pml4e = z_x86_pml4_get_pml4e(z_x86_get_pml4(ptables), addr);
-		__ASSERT((*pml4e & Z_X86_MMU_P) != 0,
-			 "set flags on non-present PML4e");
-		*pml4e |= (flags & PML4E_FLAGS_MASK);
+static void print_entries(pentry_t entries_array[], uint8_t *base, int level,
+			  size_t count)
+{
+	int column = 0;
 
-		if (exec) {
-			*pml4e &= ~Z_X86_MMU_XD;
+	for (int i = 0; i < count; i++) {
+		pentry_t entry = entries_array[i];
+
+		uintptr_t phys = get_entry_phys(entry, level);
+		uintptr_t virt =
+			(uintptr_t)base + (get_entry_scope(level) * i);
+
+		if (entry & MMU_P) {
+			if (is_leaf(level, entry)) {
+				if (phys == virt) {
+					/* Identity mappings */
+					COLOR(YELLOW);
+				} else if (phys + Z_MEM_VM_OFFSET == virt) {
+					/* Permanent ram mappings */
+					COLOR(GREEN);
+				} else {
+					/* general mapped pages */
+					COLOR(CYAN);
+				}
+			} else {
+				COLOR(MAGENTA);
+			}
+		} else {
+			COLOR(GREY);
 		}
 
-		pdpte = z_x86_pdpt_get_pdpte(z_x86_pml4e_get_pdpt(*pml4e),
-					     addr);
-#else
-		pdpte = z_x86_pdpt_get_pdpte(z_x86_get_pdpt(ptables, addr),
-					     addr);
-#endif
-		__ASSERT((*pdpte & Z_X86_MMU_P) != 0,
-			 "set flags on non-present PDPTE");
-		*pdpte |= (flags & PDPTE_FLAGS_MASK);
-#ifdef CONFIG_X86_64
-		if (exec) {
-			*pdpte &= ~Z_X86_MMU_XD;
+		printk("%c", get_entry_code(entry));
+
+		column++;
+		if (column == 64) {
+			column = 0;
+			printk("\n");
 		}
-#endif
-		pde = z_x86_pd_get_pde(z_x86_pdpte_get_pd(*pdpte), addr);
-		__ASSERT((*pde & Z_X86_MMU_P) != 0,
-			 "set flags on non-present PDE");
-		*pde |= (flags & PDE_FLAGS_MASK);
+	}
+	COLOR(DEFAULT);
 
-		/* If any flags enable execution, clear execute disable at the
-		 * page directory level
-		 */
-		if (exec) {
-			*pde &= ~Z_X86_MMU_XD;
-		}
-
-		pte = z_x86_pt_get_pte(z_x86_pde_get_pt(*pde), addr);
-
-		/* If we're setting the present bit, restore the address
-		 * field. If we're clearing it, then the address field
-		 * will be zeroed instead, mapping the PTE to the NULL page.
-		 */
-		if ((mask & Z_X86_MMU_P) != 0 && ((flags & Z_X86_MMU_P) != 0)) {
-			cur_flags |= addr;
-		}
-
-		*pte = (*pte & ~mask) | cur_flags;
-		if (flush) {
-			tlb_flush_page((void *)addr);
-		}
-
-		size -= MMU_PAGE_SIZE;
-		addr += MMU_PAGE_SIZE;
+	if (column != 0) {
+		printk("\n");
 	}
 }
 
-static char __aligned(MMU_PAGE_SIZE)
-	page_pool[MMU_PAGE_SIZE * CONFIG_X86_MMU_PAGE_POOL_PAGES];
-
-static char *page_pos = page_pool + sizeof(page_pool);
-
-static void *get_page(void)
+static void dump_ptables(pentry_t *table, uint8_t *base, int level)
 {
-	page_pos -= MMU_PAGE_SIZE;
-
-	__ASSERT(page_pos >= page_pool, "out of MMU pages\n");
-
-	return page_pos;
-}
+	const struct paging_level *info = &paging_levels[level];
 
 #ifdef CONFIG_X86_64
-#define PTABLES_ALIGN	4096
-#else
-#define PTABLES_ALIGN	32
+	/* Account for the virtual memory "hole" with sign-extension */
+	if (((uintptr_t)base & BITL(47)) != 0) {
+		base = (uint8_t *)((uintptr_t)base | (0xFFFFULL << 48));
+	}
 #endif
 
-__aligned(PTABLES_ALIGN) struct x86_page_tables z_x86_kernel_ptables;
-#ifdef CONFIG_X86_KPTI
-__aligned(PTABLES_ALIGN) struct x86_page_tables z_x86_user_ptables;
-#endif
+	printk("%s at %p (0x%" PRIxPTR ") ", info->name, table,
+		z_mem_phys_addr(table));
+	if (level == 0) {
+		printk("entire address space\n");
+	} else {
+		printk("for %p - %p\n", base,
+		       base + get_table_scope(level) - 1);
+	}
 
-extern char z_shared_kernel_page_start[];
+	print_entries(table, base, level, info->entries);
 
-#ifdef CONFIG_X86_KPTI
-static inline bool is_within_system_ram(uintptr_t addr)
-{
-#ifdef CONFIG_X86_64
-	/* FIXME: locore not included in CONFIG_SRAM_BASE_ADDRESS */
-	return addr < (PHYS_RAM_ADDR + PHYS_RAM_SIZE);
-#else
-	return (addr >= PHYS_RAM_ADDR) &&
-		(addr < (PHYS_RAM_ADDR + PHYS_RAM_SIZE));
-#endif
+	/* Check if we're a page table */
+	if (level == (NUM_LEVELS - 1)) {
+		return;
+	}
+
+	/* Dump all linked child tables */
+	for (int j = 0; j < info->entries; j++) {
+		pentry_t entry = table[j];
+		pentry_t *next;
+
+		if ((entry & MMU_P) == 0U ||
+			(entry & MMU_PS) != 0U) {
+			/* Not present or big page, skip */
+			continue;
+		}
+
+		next = next_table(entry, level);
+		dump_ptables(next, base + (j * get_entry_scope(level)),
+			     level + 1);
+	}
 }
+
+void z_x86_dump_page_tables(pentry_t *ptables)
+{
+	dump_ptables(ptables, NULL, 0);
+}
+
+/* Enable to dump out the kernel's page table right before main() starts,
+ * sometimes useful for deep debugging. May overwhelm sanitycheck.
+ */
+#define DUMP_PAGE_TABLES 0
+
+#if DUMP_PAGE_TABLES
+static int dump_kernel_tables(struct device *unused)
+{
+	z_x86_dump_page_tables(&z_x86_kernel_ptables);
+
+	return 0;
+}
+
+SYS_INIT(dump_kernel_tables, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif
 
-/* Ignored bit posiition at all levels */
-#define IGNORED		BIT64(11)
-
-static void maybe_clear_xd(uint64_t *entry, bool exec)
+static void str_append(char **buf, size_t *size, const char *str)
 {
-	/* Execute disable bit needs special handling, we should only set it at
-	 * intermediate levels if ALL containing pages have XD set (instead of
-	 * just one).
+	int ret = snprintk(*buf, *size, "%s", str);
+
+	if (ret >= *size) {
+		/* Truncated */
+		*size = 0U;
+	} else {
+		*size -= ret;
+		*buf += ret;
+	}
+
+}
+
+static void dump_entry(int level, void *virt, pentry_t entry)
+{
+	const struct paging_level *info = &paging_levels[level];
+	char buf[24] = { 0 };
+	char *pos = buf;
+	size_t sz = sizeof(buf);
+	uint8_t *virtmap = (uint8_t *)ROUND_DOWN(virt, get_entry_scope(level));
+
+	#define DUMP_BIT(bit) do { \
+			if ((entry & MMU_##bit) != 0U) { \
+				str_append(&pos, &sz, #bit " "); \
+			} \
+		} while (0)
+
+	DUMP_BIT(RW);
+	DUMP_BIT(US);
+	DUMP_BIT(PWT);
+	DUMP_BIT(PCD);
+	DUMP_BIT(A);
+	DUMP_BIT(D);
+	DUMP_BIT(G);
+	DUMP_BIT(XD);
+
+	LOG_ERR("%sE: %p -> " PRI_ENTRY ": %s", info->name,
+		virtmap, entry & info->mask, log_strdup(buf));
+
+	#undef DUMP_BIT
+}
+
+void z_x86_pentry_get(int *paging_level, pentry_t *val, pentry_t *ptables,
+		      void *virt)
+{
+	pentry_t *table = ptables;
+
+	for (int level = 0; level < NUM_LEVELS; level++) {
+		pentry_t entry = get_entry(table, virt, level);
+
+		if ((entry & MMU_P) == 0 || is_leaf(level, entry)) {
+			*val = entry;
+			*paging_level = level;
+			break;
+		} else {
+			table = next_table(entry, level);
+		}
+	}
+}
+
+/*
+ * Debug function for dumping out MMU table information to the LOG for a
+ * specific virtual address, such as when we get an unexpected page fault.
+ */
+void z_x86_dump_mmu_flags(pentry_t *ptables, void *virt)
+{
+	pentry_t entry;
+	int level;
+
+	z_x86_pentry_get(&level, &entry, ptables, virt);
+
+	if ((entry & MMU_P) == 0) {
+		LOG_ERR("%sE: not present", paging_levels[level].name);
+	} else {
+		dump_entry(level, virt, entry);
+	}
+}
+#endif /* CONFIG_EXCEPTION_DEBUG */
+
+/* Page allocation function prototype, passed to map_page() */
+typedef void * (*page_get_func_t)(void *);
+
+/*
+ * Pool of free memory pages for creating new page tables, as needed.
+ *
+ * This is very crude, once obtained, pages may not be returned. Fine for
+ * permanent kernel mappings.
+ */
+static uint8_t __noinit
+	page_pool[CONFIG_MMU_PAGE_SIZE * CONFIG_X86_MMU_PAGE_POOL_PAGES]
+	__aligned(CONFIG_MMU_PAGE_SIZE);
+
+static uint8_t *page_pos = page_pool + sizeof(page_pool);
+
+static struct k_spinlock pool_lock;
+
+/* Return a zeroed and suitably aligned memory page for page table data
+ * from the global page pool
+ */
+static void *page_pool_get(void *context)
+{
+	void *ret;
+	k_spinlock_key_t key;
+
+	ARG_UNUSED(context);
+
+	key = k_spin_lock(&pool_lock);
+	if (page_pos == page_pool) {
+		ret = NULL;
+	} else {
+		page_pos -= CONFIG_MMU_PAGE_SIZE;
+		ret = page_pos;
+	}
+	k_spin_unlock(&pool_lock, key);
+
+	if (ret != NULL) {
+		memset(ret, 0, CONFIG_MMU_PAGE_SIZE);
+	}
+
+	return ret;
+}
+
+/**
+ * Low-level mapping function
+ *
+ * Walk the provided page tables until we get to the PTE for the provided
+ * virtual address, and set that to whatever is in 'entry_val'.
+ *
+ * If memory must be drawn to instantiate page table memory, it will be
+ * obtained from the provided get_page() function. The function must
+ * return a page-aligned pointer to a page-sized block of zeroed memory.
+ * All intermediate tables have hard-coded flags of INT_FLAGS.
+ *
+ * Presumes we want to map a minimally sized page of CONFIG_MMU_PAGE_SIZE.
+ * No support for mapping big pages yet; unclear if we will ever need it given
+ * Zephyr's typical use-cases.
+ *
+ * TODO: There may be opportunities to optimize page table walks such as this
+ * by using recusrive page table mappings, see for example
+ * https://os.phil-opp.com/paging-implementation/#recursive-page-tables
+ * May also help if we need fast virtual-to-physical translation outside of
+ * the permanent memory mapping area.
+ *
+ * @param ptables Top-level page tables pointer
+ * @param virt Virtual address to set mapping
+ * @param entry_val Value to set PTE to
+ * @param get_page Function to draw memory pages from
+ * @param ctx Context pointer to pass to get_page()
+ * @retval 0 success
+ * @retval -ENOMEM get_page() failed
+ */
+static int page_map_set(pentry_t *ptables, void *virt, pentry_t entry_val,
+			page_get_func_t get_page, void *ctx)
+{
+	pentry_t *table = ptables;
+
+	for (int level = 0; level < NUM_LEVELS; level++) {
+		int index;
+		pentry_t *entryp;
+
+		index = get_index(virt, level);
+		entryp = &table[index];
+
+		/* Check if we're a PTE */
+		if (level == (NUM_LEVELS - 1)) {
+			*entryp = entry_val;
+			break;
+		}
+
+		/* This is a non-leaf entry */
+		if ((*entryp & MMU_P) == 0U) {
+			/* Not present. Never done a mapping here yet, need
+			 * some RAM for linked tables
+			 */
+			void *new_table = get_page(ctx);
+
+			if (new_table == NULL) {
+				return -ENOMEM;
+			}
+			*entryp = z_mem_phys_addr(new_table) | INT_FLAGS;
+			table = new_table;
+		} else {
+			/* We fail an assertion here due to no support for
+			 * splitting existing bigpage mappings.
+			 * If the PS bit is not supported at some level (like
+			 * in a PML4 entry) it is always reserved and must be 0
+			 */
+			__ASSERT((*entryp & MMU_PS) == 0U,
+				  "large page encountered");
+			table = next_table(*entryp, level);
+		}
+	}
+
+	return 0;
+}
+
+/* map region virt..virt+size to phys with provided arch-neutral flags */
+int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
+{
+	pentry_t entry_flags = MMU_P;
+	pentry_t *ptables;
+
+	LOG_DBG("%s: %p -> %p (%zu) flags 0x%x",
+		__func__, (void *)phys, virt, size, flags);
+
+#ifdef CONFIG_X86_64
+	/* There's a gap in the "64-bit" address space, as 4-level paging
+	 * requires bits 48 to 63 to be copies of bit 47. Test this
+	 * by treating as a signed value and shifting.
+	 */
+	__ASSERT(((((intptr_t)virt) << 16) >> 16) == (intptr_t)virt,
+		 "non-canonical virtual address mapping %p (size %zu)",
+		 virt, size);
+#endif /* CONFIG_X86_64 */
+
+	/* For now, always map in the kernel's page tables, we're just using
+	 * this for driver mappings. User mode mappings
+	 * (and interactions with KPTI) not implemented yet.
+	 */
+	ptables = (pentry_t *)&z_x86_kernel_ptables;
+
+	/* Translate flags argument into HW-recognized entry flags.
 	 *
-	 * Use an ignored bit position in the PDE to store a marker on whether
-	 * any configured region allows execution.
+	 * Support for PAT is not implemented yet. Many systems may have
+	 * BIOS-populated MTRR values such that these cache settings are
+	 * redundant.
 	 */
-	if (exec) {
-		*entry |= IGNORED;
-		*entry &= ~Z_X86_MMU_XD;
-	} else if ((*entry & IGNORED) == 0) {
-		*entry |= Z_X86_MMU_XD;
-	}
-}
-
-static void add_mmu_region_page(struct x86_page_tables *ptables,
-				uintptr_t addr, uint64_t flags, bool user_table)
-{
-#ifdef CONFIG_X86_64
-	uint64_t *pml4e;
-#endif
-	struct x86_mmu_pdpt *pdpt;
-	uint64_t *pdpte;
-	struct x86_mmu_pd *pd;
-	uint64_t *pde;
-	struct x86_mmu_pt *pt;
-	uint64_t *pte;
-	bool exec = (flags & Z_X86_MMU_XD) == 0;
-
-#ifdef CONFIG_X86_KPTI
-	/* If we are generating a page table for user mode, and this address
-	 * does not have the user flag set, and this address falls outside
-	 * of system RAM, then don't bother generating any tables for it,
-	 * we will never need them later as memory domains are limited to
-	 * regions within system RAM.
-	 */
-	if (user_table && (flags & Z_X86_MMU_US) == 0 &&
-	    !is_within_system_ram(addr)) {
-		return;
-	}
-#endif
-
-#ifdef CONFIG_X86_64
-	pml4e = z_x86_pml4_get_pml4e(z_x86_get_pml4(ptables), addr);
-	if ((*pml4e & Z_X86_MMU_P) == 0) {
-		pdpt = get_page();
-		pml4e_update_pdpt(pml4e, pdpt);
-	} else {
-		pdpt = z_x86_pml4e_get_pdpt(*pml4e);
-	}
-	*pml4e |= (flags & PML4E_FLAGS_MASK);
-	maybe_clear_xd(pml4e, exec);
-#else
-	pdpt = z_x86_get_pdpt(ptables, addr);
-#endif
-
-	/* Setup the PDPTE entry for the address, creating a page directory
-	 * if one didn't exist
-	 */
-	pdpte = z_x86_pdpt_get_pdpte(pdpt, addr);
-	if ((*pdpte & Z_X86_MMU_P) == 0) {
-		pd = get_page();
-		pdpte_update_pd(pdpte, pd);
-	} else {
-		pd = z_x86_pdpte_get_pd(*pdpte);
-	}
-	*pdpte |= (flags & PDPTE_FLAGS_MASK);
-#ifdef CONFIG_X86_64
-	maybe_clear_xd(pdpte, exec);
-#endif
-
-	/* Setup the PDE entry for the address, creating a page table
-	 * if necessary
-	 */
-	pde = z_x86_pd_get_pde(pd, addr);
-	if ((*pde & Z_X86_MMU_P) == 0) {
-		pt = get_page();
-		pde_update_pt(pde, pt);
-	} else {
-		pt = z_x86_pde_get_pt(*pde);
-	}
-	*pde |= (flags & PDE_FLAGS_MASK);
-	maybe_clear_xd(pde, exec);
-
-#ifdef CONFIG_X86_KPTI
-	if (user_table && (flags & Z_X86_MMU_US) == 0 &&
-#ifdef CONFIG_X86_64
-	    addr >= (uintptr_t)&_lodata_start &&
-#endif
-	    addr != (uintptr_t)(&z_shared_kernel_page_start)) {
-		/* All non-user accessible pages except the shared page
-		 * are marked non-present in the page table.
-		 *
-		 * For x86_64 we also make the locore text/rodata areas
-		 * present even though they don't have user mode access,
-		 * they contain necessary tables and program text for
-		 * successfully handling exceptions and interrupts.
-		 */
-		return;
-	}
-#else
-	ARG_UNUSED(user_table);
-#endif
-
-	/* Finally set up the page table entry */
-	pte = z_x86_pt_get_pte(pt, addr);
-	pte_update_addr(pte, addr);
-	*pte |= (flags & PTE_FLAGS_MASK);
-}
-
-static void add_mmu_region(struct x86_page_tables *ptables,
-			   struct mmu_region *rgn,
-			   bool user_table)
-{
-	size_t size;
-	uint64_t flags;
-	uintptr_t addr;
-
-	__ASSERT((rgn->address & MMU_PAGE_MASK) == 0U,
-		 "unaligned address provided");
-	__ASSERT((rgn->size & MMU_PAGE_MASK) == 0U,
-		 "unaligned size provided");
-	addr = rgn->address;
-	flags = rgn->flags | Z_X86_MMU_P;
-
-	/* Iterate through the region a page at a time, creating entries as
-	 * necessary.
-	 */
-	size = rgn->size;
-	while (size > 0) {
-		add_mmu_region_page(ptables, addr, flags, user_table);
-
-		size -= MMU_PAGE_SIZE;
-		addr += MMU_PAGE_SIZE;
-	}
-}
-
-
-void z_x86_add_mmu_region(uintptr_t addr, size_t size, uint64_t flags)
-{
-	struct mmu_region rgn = {
-		.address = addr,
-		.size = size,
-		.flags = flags,
-	};
-
-	add_mmu_region(&z_x86_kernel_ptables, &rgn, false);
-#ifdef CONFIG_X86_KPTI
-	add_mmu_region(&z_x86_user_ptables, &rgn, true);
-#endif
-}
-
-int arch_mem_map(void *dest, uintptr_t addr, size_t size, uint32_t flags)
-{
-	uint64_t entry_flags = Z_X86_MMU_P;
-
-	__ASSERT((uintptr_t)dest == addr,
-		 "only identity mapping supported");
-
 	switch (flags & K_MEM_CACHE_MASK) {
 	case K_MEM_CACHE_NONE:
-		entry_flags |= Z_X86_MMU_PCD;
+		entry_flags |= MMU_PCD;
 		break;
 	case K_MEM_CACHE_WT:
-		entry_flags |= Z_X86_MMU_PWT;
+		entry_flags |= MMU_PWT;
 		break;
 	case K_MEM_CACHE_WB:
 		break;
 	default:
 		return -ENOTSUP;
 	}
-	if ((flags & K_MEM_PERM_RW) != 0) {
-		entry_flags |= Z_X86_MMU_RW;
+	if ((flags & K_MEM_PERM_RW) != 0U) {
+		entry_flags |= MMU_RW;
 	}
-	if ((flags & K_MEM_PERM_USER) != 0) {
+	if ((flags & K_MEM_PERM_USER) != 0U) {
 		/* TODO: user mode support
 		 * entry_flags |= MMU_US;
 		 */
 		return -ENOTSUP;
 	}
-	if ((flags & K_MEM_PERM_EXEC) == 0) {
-		entry_flags |= Z_X86_MMU_XD;
+	if ((flags & K_MEM_PERM_EXEC) == 0U) {
+		entry_flags |= MMU_XD;
 	}
 
-	z_x86_add_mmu_region(addr, size, entry_flags);
+	for (size_t offset = 0; offset < size; offset += CONFIG_MMU_PAGE_SIZE) {
+		int ret;
+		pentry_t entry_val = (phys + offset) | entry_flags;
+		uint8_t *dest_virt = (uint8_t *)virt + offset;
+
+		ret = page_map_set(ptables, dest_virt, entry_val,
+				   page_pool_get, NULL);
+
+		/* Currently used for new mappings, no TLB flush. Re-visit
+		 * as capabilities increase
+		 */
+
+		if (ret != 0) {
+			/* NOTE: Currently we do not un-map a partially
+			 * completed mapping.
+			 */
+			return ret;
+		}
+	}
 
 	return 0;
 }
 
-/* Called from x86's arch_kernel_init() */
-void z_x86_paging_init(void)
+static void identity_map_remove(void)
 {
-	Z_STRUCT_SECTION_FOREACH(mmu_region, rgn) {
-		add_mmu_region(&z_x86_kernel_ptables, rgn, false);
-#ifdef CONFIG_X86_KPTI
-		add_mmu_region(&z_x86_user_ptables, rgn, true);
-#endif
-	}
+#if CONFIG_SRAM_BASE_ADDRESS != CONFIG_KERNEL_VM_BASE
+	size_t size, scope = get_entry_scope(0);
+	uint8_t *pos;
 
-#ifdef CONFIG_X86_64
-	/* MMU already enabled at boot for long mode, we just need to
-	 * program CR3 with our newly generated page tables.
+	k_mem_region_align((uintptr_t *)&pos, &size,
+			   (uintptr_t)CONFIG_SRAM_BASE_ADDRESS,
+			   (size_t)CONFIG_SRAM_SIZE * 1024U, scope);
+
+	/* We booted with RAM mapped both to its identity and virtual
+	 * mapping starting at CONFIG_KERNEL_VM_BASE. This was done by
+	 * double-linking the relevant tables in the top-level table.
+	 * At this point we don't need the identity mapping(s) any more,
+	 * zero the top-level table entries corresponding to the
+	 * physical mapping.
 	 */
-	__asm__ volatile("movq %0, %%cr3\n\t"
-			 : : "r" (&z_x86_kernel_ptables) : "memory");
-#else
-	z_x86_enable_paging();
+	while (size) {
+		pentry_t *entry = get_entry_ptr(&z_x86_kernel_ptables, pos, 0);
+
+		/* set_pte */
+		*entry = 0;
+		pos += scope;
+		size -= scope;
+	}
 #endif
 }
 
-#ifdef CONFIG_X86_STACK_PROTECTION
+/* Invoked to remove the identity mappings in the page tables,
+ * they were only needed to tranisition the instruction pointer at early boot
+ */
+void z_x86_mmu_init(void)
+{
+	identity_map_remove();
+}
+
+#if CONFIG_X86_STACK_PROTECTION
+/* Legacy stack guard function. This will eventually be replaced in favor
+ * of memory-mapping stacks (with a non-present mapping immediately below each
+ * one to catch overflows) instead of using in-place
+ */
+static void stack_guard_set(void *guard_page)
+{
+	pentry_t pte = z_mem_phys_addr(guard_page) | MMU_P | MMU_XD;
+	int ret;
+
+	assert_virt_addr_aligned(guard_page);
+
+	/* Always modify the kernel's page tables since this is for
+	 * supervisor threads or handling syscalls
+	 */
+	ret = page_map_set(&z_x86_kernel_ptables, guard_page, pte,
+			   page_pool_get, NULL);
+	/* Literally should never happen */
+	__ASSERT(ret == 0, "stack guard mapping failed for %p", guard_page);
+	(void)ret;
+}
+
 void z_x86_set_stack_guard(k_thread_stack_t *stack)
 {
 #ifdef CONFIG_USERSPACE
@@ -902,262 +759,358 @@ void z_x86_set_stack_guard(k_thread_stack_t *stack)
 		struct z_x86_thread_stack_header *header =
 			(struct z_x86_thread_stack_header *)stack;
 
-		/* Set guard area to read-only to catch stack overflows */
-		z_x86_mmu_set_flags(&z_x86_kernel_ptables, &header->guard_page,
-				    MMU_PAGE_SIZE, MMU_ENTRY_READ, Z_X86_MMU_RW,
-				    true);
-
+		stack_guard_set(&header->guard_page);
 	} else
 #endif /* CONFIG_USERSPACE */
 	{
-		/* Kernel-only stacks have the guard be the first page */
-		z_x86_mmu_set_flags(&z_x86_kernel_ptables, stack,
-				    MMU_PAGE_SIZE, MMU_ENTRY_READ, Z_X86_MMU_RW,
-				    true);
+		stack_guard_set(stack);
 	}
 }
 #endif /* CONFIG_X86_STACK_PROTECTION */
 
-#ifdef CONFIG_X86_USERSPACE
+#ifdef CONFIG_USERSPACE
+/*
+ * All of the code below will eventually be removed/replaced with a virtual
+ * address space aware userspace that doesn't do a physical memory map with
+ * memory domains.
+ */
+static bool page_validate(pentry_t *ptables, uint8_t *addr, bool write)
+{
+	pentry_t *table = (pentry_t *)ptables;
+
+	for (int level = 0; level < NUM_LEVELS; level++) {
+		pentry_t entry = get_entry(table, addr, level);
+
+		if ((entry & MMU_P) == 0U) {
+			/* Non-present, no access.
+			 * TODO: will need re-visiting with demand paging
+			 * implemented, could just be paged out
+			 */
+			return false;
+		}
+
+		if (is_leaf(level, entry)) {
+			if (((entry & MMU_US) == 0U) ||
+			    (write && ((entry & MMU_RW) == 0U))) {
+				return false;
+			}
+		} else {
+			table = next_table(entry, level);
+		}
+	}
+
+	return true;
+}
+
+static inline void bcb_fence(void)
+{
+#ifdef CONFIG_X86_BOUNDS_CHECK_BYPASS_MITIGATION
+	__asm__ volatile ("lfence" : : : "memory");
+#endif
+}
+
 int arch_buffer_validate(void *addr, size_t size, int write)
 {
-	return z_x86_mmu_validate(z_x86_thread_page_tables_get(_current), addr,
-				  size, write != 0);
-}
+	pentry_t *ptables = z_x86_thread_page_tables_get(_current);
+	uint8_t *virt;
+	size_t aligned_size;
+	int ret = 0;
 
-#ifdef CONFIG_X86_64
-static uintptr_t thread_pdpt_create(uintptr_t pages,
-				    struct x86_page_tables *thread_ptables,
-				    struct x86_page_tables *master_ptables)
-{
-	uintptr_t pos = pages, phys_addr = Z_X86_PDPT_START;
+	/* addr/size arbitrary, fix this up into an aligned region */
+	k_mem_region_align((uintptr_t *)&virt, &aligned_size,
+			   (uintptr_t)addr, size, CONFIG_MMU_PAGE_SIZE);
 
-	for (int i = 0; i < Z_X86_NUM_PDPT; i++, phys_addr += Z_X86_PDPT_AREA) {
-		uint64_t *pml4e;
-		struct x86_mmu_pdpt *master_pdpt, *dest_pdpt;
-
-		/* obtain master PDPT tables for the address range and copy
-		 * into per-thread PDPT for this range
-		 */
-		master_pdpt = z_x86_get_pdpt(master_ptables, phys_addr);
-		dest_pdpt = (struct x86_mmu_pdpt *)pos;
-		(void)memcpy(dest_pdpt, master_pdpt,
-			     sizeof(struct x86_mmu_pdpt));
-
-		/* And then wire this up to the relevant per-thread PML4E */
-		pml4e = z_x86_get_pml4e(thread_ptables, phys_addr);
-		pml4e_update_pdpt(pml4e, dest_pdpt);
-		pos += MMU_PAGE_SIZE;
+	for (size_t offset = 0; offset < aligned_size;
+	     offset += CONFIG_MMU_PAGE_SIZE) {
+		if (!page_validate(ptables, virt + offset, write)) {
+			ret = -1;
+			break;
+		}
 	}
 
-	return pos;
-}
-#endif /* CONFIG_X86_64 */
+	bcb_fence();
 
-static uintptr_t thread_pd_create(uintptr_t pages,
-				  struct x86_page_tables *thread_ptables,
-				  struct x86_page_tables *master_ptables)
-{
-	uintptr_t pos = pages, phys_addr = Z_X86_PD_START;
-
-	for (int i = 0; i < Z_X86_NUM_PD; i++, phys_addr += Z_X86_PD_AREA) {
-		uint64_t *pdpte;
-		struct x86_mmu_pd *master_pd, *dest_pd;
-
-		/* Obtain PD in master tables for the address range and copy
-		 * into the per-thread PD for this range
-		 */
-		master_pd = z_x86_get_pd(master_ptables, phys_addr);
-		dest_pd = (struct x86_mmu_pd *)pos;
-
-		(void)memcpy(dest_pd, master_pd, sizeof(struct x86_mmu_pd));
-
-		/* Update pointer in per-thread pdpt to point to the per-thread
-		 * directory we just copied
-		 */
-		pdpte = z_x86_get_pdpte(thread_ptables, phys_addr);
-		pdpte_update_pd(pdpte, dest_pd);
-		pos += MMU_PAGE_SIZE;
-	}
-
-	return pos;
+	return ret;
 }
 
-/* thread_ptables must be initialized, as well as all the page directories */
-static uintptr_t thread_pt_create(uintptr_t pages,
-				  struct x86_page_tables *thread_ptables,
-				  struct x86_page_tables *master_ptables)
-{
-	uintptr_t pos = pages, phys_addr = Z_X86_PT_START;
-
-	for (int i = 0; i < Z_X86_NUM_PT; i++, phys_addr += Z_X86_PT_AREA) {
-		uint64_t *pde;
-		struct x86_mmu_pt *master_pt, *dest_pt;
-
-		/* Same as we did with the directories, obtain PT in master
-		 * tables for the address range and copy into per-thread PT
-		 * for this range
-		 */
-		master_pt = z_x86_get_pt(master_ptables, phys_addr);
-		dest_pt = (struct x86_mmu_pt *)pos;
-		(void)memcpy(dest_pt, master_pt, sizeof(struct x86_mmu_pt));
-
-		/* And then wire this up to the relevant per-thread
-		 * page directory entry
-		 */
-		pde = z_x86_get_pde(thread_ptables, phys_addr);
-		pde_update_pt(pde, dest_pt);
-		pos += MMU_PAGE_SIZE;
-	}
-
-	return pos;
-}
-
-/* Initialize the page tables for a thread. This will contain, once done,
- * the boot-time configuration for a user thread page tables. There are
- * no pre-conditions on the existing state of the per-thread tables.
+/* Fetch pages for per-thread page tables from reserved space within the
+ * thread stack object
  *
- * pos represents the page we are working with in the reserved area
- * in the stack buffer for per-thread tables. As we create tables in
- * this area, pos is incremented to the next free page.
- *
- * The layout of the stack object, when this is done:
- *
- * For 32-bit:
- *
- * +---------------------------+  <- thread->stack_obj
- * | PDE(0)                    |
- * +---------------------------+
- * | ...                       |
- * +---------------------------+
- * | PDE(Z_X86_NUM_PD - 1)     |
- * +---------------------------+
- * | PTE(0)                    |
- * +---------------------------+
- * | ...                       |
- * +---------------------------+
- * | PTE(Z_X86_NUM_PT - 1)     |
- * +---------------------------+ <- pos once this logic completes
- * | Stack guard               |
- * +---------------------------+
- * | Privilege elevation stack |
- * | PDPT                      |
- * +---------------------------+ <- thread->stack_info.start
- * | Thread stack              |
- * | ...                       |
- *
- * For 64-bit:
- *
- * +---------------------------+ <- thread->stack_obj
- * | PML4		       |
- * +---------------------------|
- * | PDPT(0)		       |
- * +---------------------------|
- * | ...                       |
- * +---------------------------|
- * | PDPT(Z_X86_NUM_PDPT - 1)  |
- * +---------------------------+
- * | PDE(0)                    |
- * +---------------------------+
- * | ...                       |
- * +---------------------------+
- * | PDE(Z_X86_NUM_PD - 1)     |
- * +---------------------------+
- * | PTE(0)                    |
- * +---------------------------+
- * | ...                       |
- * +---------------------------+
- * | PTE(Z_X86_NUM_PT - 1)     |
- * +---------------------------+ <- pos once this logic completes
- * | Stack guard               |
- * +---------------------------+
- * | Privilege elevation stack |
- * +---------------------------+ <- thread->stack_info.start
- * | Thread stack              |
- * | ...                       |
+ * For the moment, re-use pool_lock for synchronization
  */
-static void copy_page_tables(struct k_thread *thread,
-			     struct x86_page_tables *thread_ptables,
-			     struct x86_page_tables *master_ptables)
+static void *thread_page_pool_get(void *context)
 {
-	uintptr_t pos, start;
+	struct k_thread *thread = context;
+	uint8_t *stack_object = (uint8_t *)thread->stack_obj;
+	void *ret;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&pool_lock);
+	ret = thread->arch.mmu_pos;
+
+	if (thread->arch.mmu_pos >= stack_object + Z_X86_THREAD_PT_AREA) {
+		ret = NULL;
+	} else {
+		thread->arch.mmu_pos += CONFIG_MMU_PAGE_SIZE;
+		memset(ret, 0, CONFIG_MMU_PAGE_SIZE);
+	}
+	k_spin_unlock(&pool_lock, key);
+
+	return ret;
+}
+
+#define RAM_BASE	((uintptr_t)CONFIG_KERNEL_VM_BASE)
+#define RAM_END		(RAM_BASE + (CONFIG_SRAM_SIZE * 1024UL))
+
+/* Establish a mapping in the thread's page tables */
+static void thread_map(struct k_thread *thread, void *ptr, size_t size,
+		       pentry_t flags, bool flush)
+{
+	pentry_t *ptables = z_x86_thread_page_tables_get(thread);
+
+	assert_region_page_aligned(ptr, size);
+
+	/* Only mapping system RAM addresses is supported in thread page tables,
+	 * as the thread does not have its own copies of tables outside of it
+	 */
+	__ASSERT((uintptr_t)ptr >= RAM_BASE,
+		 "%p below system RAM", ptr);
+	__ASSERT((uintptr_t)ptr < RAM_END,
+		 "%p above system ram", ptr);
+
+	for (size_t offset = 0; offset < size; offset += CONFIG_MMU_PAGE_SIZE) {
+		pentry_t pte;
+		uint8_t *pos;
+		int ret;
+
+		pos = (uint8_t *)ptr + offset;
+
+		if ((flags & MMU_P) == 0U) {
+			/* L1TF */
+			pte = 0U;
+		} else {
+			pte = z_mem_phys_addr(pos) | flags;
+		}
+
+		ret = page_map_set(ptables, pos, pte, thread_page_pool_get,
+				   thread);
+		__ASSERT(ret == 0, "mapping failed for %p", pos);
+		(void)ret;
+
+		if (flush) {
+			tlb_flush_page(pos);
+		}
+	}
+}
+
+/* Get the kernel's PTE value for a particular virtual address */
+static pentry_t kernel_page_map_get(void *virt)
+{
+	pentry_t *table = &z_x86_kernel_ptables;
+
+	for (int level = 0; level < NUM_LEVELS; level++) {
+		pentry_t entry = get_entry(table, virt, level);
+
+		if ((entry & MMU_P) == 0U) {
+			break;
+		}
+
+		if (is_leaf(level, entry)) {
+			__ASSERT((entry & MMU_PS) == 0, "bigpage found");
+			return entry;
+		}
+
+		table = next_table(entry, level);
+	}
+
+	return 0;
+}
+
+/* In thread page tables, set mapping for a particular address to whatever
+ * mapping is set up for that address in the kernel's page tables.
+ */
+static void page_reset(struct k_thread *thread, void *virt)
+{
+	pentry_t kern_pte = kernel_page_map_get(virt);
+	pentry_t *thread_ptables = z_x86_thread_page_tables_get(thread);
+	int ret;
+
+#ifdef CONFIG_X86_KPTI
+	/* Shared kernel page needs to be mapped in page tables as it contains
+	 * trampoline stack and important data structures. Otherwise, non-User
+	 * pages aren't present.
+	 */
+	if ((kern_pte & MMU_US) == 0U && virt != &z_shared_kernel_page_start) {
+		kern_pte = 0;
+	}
+#endif /* CONFIG_X86_KPTI */
+
+	ret = page_map_set(thread_ptables, virt,
+			   kern_pte, thread_page_pool_get, thread);
+	__ASSERT(ret == 0, "mapping failed for %p", virt);
+	(void)ret;
+}
+
+#ifdef CONFIG_X86_KPTI
+/* KPTI version. The thread-level page tables are ONLY used by user mode
+ * and very briefly when changing privileges.
+ *
+ * We leave any memory addresses outside of system RAM unmapped.
+ * Any addresses within system RAM are also unmapped unless they have the US
+ * bit set, or are the trampoline page.
+ */
+static void setup_thread_tables(struct k_thread *thread,
+				pentry_t *thread_ptables)
+{
+	ARG_UNUSED(thread_ptables);
+
+	for (uint8_t *pos = (uint8_t *)RAM_BASE; pos < (uint8_t *)RAM_END;
+	     pos += CONFIG_MMU_PAGE_SIZE) {
+		page_reset(thread, pos);
+	}
+}
+#else
+/* get the Nth level paging structure for a particular virtual address */
+static pentry_t *page_table_get(pentry_t *toplevel, void *virt, int level)
+{
+	pentry_t *table = toplevel;
+
+	__ASSERT(level < NUM_LEVELS, "bad level argument %d", level);
+
+	for (int i = 0; i < level; i++) {
+		pentry_t entry = get_entry(table, virt, level);
+
+		if ((entry & MMU_P) == 0U) {
+			return NULL;
+		}
+		__ASSERT((entry & MMU_PS) == 0, "bigpage found");
+		table = next_table(entry, i);
+	}
+
+	return table;
+}
+
+/* Get a pointer to the N-th level entry for a particular virtual address */
+static pentry_t *page_entry_ptr_get(pentry_t *toplevel, void *virt, int level)
+{
+	pentry_t *table = page_table_get(toplevel, virt, level);
+
+	__ASSERT(table != NULL, "no table mapping for %p at level %d",
+		 virt, level);
+	return get_entry_ptr(table, virt, level);
+}
+
+ /* Non-KPTI version. The thread-level page tables are used even during
+  * interrupts, exceptions, and syscalls, so we need all mappings.
+  * Copies will be made of all tables that provide mappings for system RAM,
+  * otherwise the kernel table will just be linked instead.
+  */
+static void setup_thread_tables(struct k_thread *thread,
+				pentry_t *thread_ptables)
+{
+	/* Copy top-level structure verbatim */
+	(void)memcpy(thread_ptables, &z_x86_kernel_ptables, table_size(0));
+
+	/* Proceed through linked structure levels, and for all system RAM
+	 * virtual addresses, create copies of all relevant tables.
+	 */
+	for (int level = 1; level < NUM_LEVELS; level++) {
+		uint8_t *start, *end;
+		size_t increment;
+
+		increment = get_entry_scope(level);
+		start = (uint8_t *)ROUND_DOWN(RAM_BASE, increment);
+		end = (uint8_t *)ROUND_UP(RAM_END, increment);
+
+		for (uint8_t *virt = start; virt < end; virt += increment) {
+			pentry_t *link, *master_table, *user_table;
+
+			/* We're creating a new thread page table, so get the
+			 * pointer to the entry in the previous table to have
+			 * it point to the new location
+			 */
+			link = page_entry_ptr_get(thread_ptables, virt,
+						  level - 1);
+
+			/* Master table contents, which we make a copy of */
+			master_table = page_table_get(&z_x86_kernel_ptables,
+						      virt, level);
+
+			/* Pulled out of reserved memory in the stack object */
+			user_table = thread_page_pool_get(thread);
+			__ASSERT(user_table != NULL, "out of memory")
+
+			(void)memcpy(user_table, master_table,
+				     table_size(level));
+
+			*link = z_mem_phys_addr(user_table) | INT_FLAGS;
+		}
+	}
+}
+#endif /* CONFIG_X86_KPTI */
+
+/* Called on creation of a user thread or when a supervisor thread drops to
+ * user mode.
+ *
+ * Sets up the per-thread page tables, such that when they are activated on
+ * context switch, everything is rseady to go. thread->arch.ptables is updated
+ * to the thread-level tables instead of the kernel's page tbales.
+ *
+ * Memory for the per-thread page table structures is drawn from the stack
+ * object, a buffer of size Z_X86_THREAD_PT_AREA starting from the beginning
+ * of the stack object.
+ */
+void z_x86_thread_pt_init(struct k_thread *thread)
+{
+	pentry_t *ptables;
+
+	/* thread_page_pool_get() memory starts at the beginning of the
+	 * stack object
+	 */
+	assert_virt_addr_aligned(thread->stack_obj);
+	thread->arch.mmu_pos = (uint8_t *)thread->stack_obj;
+
+	/* Get memory for the top-level structure */
+#ifndef CONFIG_X86_PAE
+	ptables = thread_page_pool_get(thread);
+	__ASSERT(ptables != NULL, "out of memory");
+#else
 	struct z_x86_thread_stack_header *header =
 		(struct z_x86_thread_stack_header *)thread->stack_obj;
 
-	__ASSERT(thread->stack_obj != NULL, "no stack object assigned");
-	__ASSERT(z_x86_page_tables_get() != thread_ptables,
-		 "tables are active");
-	__ASSERT(((uintptr_t)thread_ptables & 0x1f) == 0,
-		 "unaligned page tables at %p", thread_ptables);
-
-	(void)memcpy(thread_ptables, master_ptables,
-		     sizeof(struct x86_page_tables));
-
-	start = (uintptr_t)(&header->page_tables);
-#ifdef CONFIG_X86_64
-	pos = start + sizeof(struct x86_mmu_pml4);
-	pos = thread_pdpt_create(pos, thread_ptables, master_ptables);
-#else
-	pos = start;
+	ptables = (pentry_t *)&header->kernel_data.ptables;
 #endif
-	pos = thread_pd_create(pos, thread_ptables, master_ptables);
-	pos = thread_pt_create(pos, thread_ptables, master_ptables);
+	thread->arch.ptables = z_mem_phys_addr(ptables);
 
-	__ASSERT(pos == (start + Z_X86_THREAD_PT_AREA),
-		 "wrong amount of stack object memory used");
+	setup_thread_tables(thread, ptables);
+
+	/* Enable access to the thread's own stack buffer */
+	thread_map(thread, (void *)thread->stack_info.start,
+		   ROUND_UP(thread->stack_info.size,
+			    CONFIG_MMU_PAGE_SIZE),
+		   MMU_P | MMU_RW | MMU_US | MMU_XD, false);
 }
 
-static void reset_mem_partition(struct x86_page_tables *thread_ptables,
+static inline void apply_mem_partition(struct k_thread *thread,
+				       struct k_mem_partition *partition)
+{
+	thread_map(thread, (void *)partition->start, partition->size,
+		   partition->attr | MMU_P, false);
+}
+
+static void reset_mem_partition(struct k_thread *thread,
 				struct k_mem_partition *partition)
 {
-	uintptr_t addr = partition->start;
+	uint8_t *addr = (uint8_t *)partition->start;
 	size_t size = partition->size;
 
-	__ASSERT((addr & MMU_PAGE_MASK) == 0U, "unaligned address provided");
-	__ASSERT((size & MMU_PAGE_MASK) == 0U, "unaligned size provided");
-
-	while (size != 0) {
-		uint64_t *thread_pte, *master_pte;
-
-		thread_pte = z_x86_get_pte(thread_ptables, addr);
-		master_pte = z_x86_get_pte(&USER_PTABLES, addr);
-
-		*thread_pte = *master_pte;
-
-		size -= MMU_PAGE_SIZE;
-		addr += MMU_PAGE_SIZE;
+	assert_region_page_aligned(addr, size);
+	for (size_t offset = 0; offset < size; offset += CONFIG_MMU_PAGE_SIZE) {
+		page_reset(thread, addr + offset);
 	}
 }
 
-static void apply_mem_partition(struct x86_page_tables *ptables,
-				struct k_mem_partition *partition)
-{
-	uint64_t x86_attr;
-	uint64_t mask;
-
-	if (IS_ENABLED(CONFIG_X86_KPTI)) {
-		x86_attr = partition->attr | Z_X86_MMU_P;
-		mask = K_MEM_PARTITION_PERM_MASK | Z_X86_MMU_P;
-	} else {
-		x86_attr = partition->attr;
-		mask = K_MEM_PARTITION_PERM_MASK;
-	}
-
-	__ASSERT(partition->start >= PHYS_RAM_ADDR,
-		 "region at %08lx[%zu] extends below system ram start 0x%08lx",
-		 partition->start, partition->size, (uintptr_t)PHYS_RAM_ADDR);
-	__ASSERT(((partition->start + partition->size) <=
-		  (PHYS_RAM_ADDR + PHYS_RAM_SIZE)),
-		 "region at %08lx[%zu] end at %08lx extends beyond system ram end 0x%08lx",
-		 partition->start, partition->size,
-		 partition->start + partition->size,
-		 ((uintptr_t)PHYS_RAM_ADDR) + (size_t)PHYS_RAM_SIZE);
-
-	z_x86_mmu_set_flags(ptables, (void *)partition->start, partition->size,
-			    x86_attr, mask, false);
-}
-
-void z_x86_apply_mem_domain(struct x86_page_tables *ptables,
+void z_x86_apply_mem_domain(struct k_thread *thread,
 			    struct k_mem_domain *mem_domain)
 {
 	for (int i = 0, pcount = 0; pcount < mem_domain->num_partitions; i++) {
@@ -1169,56 +1122,17 @@ void z_x86_apply_mem_domain(struct x86_page_tables *ptables,
 		}
 		pcount++;
 
-		apply_mem_partition(ptables, partition);
+		apply_mem_partition(thread, partition);
 	}
 }
 
-/* Called on creation of a user thread or when a supervisor thread drops to
- * user mode.
- *
- * Sets up the per-thread page tables, such that when they are activated on
- * context switch, everything is ready to go. thread->arch.ptables is updated
- * to the thread-level tables instead of the kernel's page tbales.
- */
-void z_x86_thread_pt_init(struct k_thread *thread)
-{
-	struct x86_page_tables *ptables;
-	struct z_x86_thread_stack_header *header =
-		(struct z_x86_thread_stack_header *)thread->stack_obj;
-
-#ifdef CONFIG_X86_64
-	ptables = (struct x86_page_tables *)(&header->page_tables);
-#else
-	ptables = &header->kernel_data.ptables;
-#endif
-	thread->arch.ptables = ptables;
-
-	/* USER_PDPT contains the page tables with the boot time memory
-	 * policy. We use it as a template to set up the per-thread page
-	 * tables.
-	 *
-	 * With KPTI, this is a distinct set of tables z_x86_user_pdpt from the
-	 * kernel page tables in z_x86_kernel_pdpt; it has all non user
-	 * accessible pages except the trampoline page marked as non-present.
-	 * Without KPTI, they are the same object.
-	 */
-	copy_page_tables(thread, ptables, &USER_PTABLES);
-
-	/* Enable access to the thread's own stack buffer */
-	z_x86_mmu_set_flags(ptables, (void *)thread->stack_info.start,
-			    ROUND_UP(thread->stack_info.size, MMU_PAGE_SIZE),
-			    Z_X86_MMU_P | K_MEM_PARTITION_P_RW_U_RW,
-			    Z_X86_MMU_P | K_MEM_PARTITION_PERM_MASK,
-			    false);
-}
-
 /*
- * Memory domain interface
+ * Arch interface implementations for memory domains
  *
- * In all cases, if one of these APIs is called on a supervisor thread,
- * we don't need to do anything. If the thread later drops into supervisor
- * mode the per-thread page tables will be generated and the memory domain
- * configuration applied.
+ * In all cases, if one of these arch_mem_domain_* APIs is called on a
+ * supervisor thread, we don't need to do anything. If the thread later drops
+ * into user mode the per-thread page tables will be generated and the memory
+ * domain configuration applied.
  */
 void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 				      uint32_t partition_id)
@@ -1236,8 +1150,7 @@ void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 			continue;
 		}
 
-		reset_mem_partition(z_x86_thread_page_tables_get(thread),
-				    &domain->partitions[partition_id]);
+		reset_mem_partition(thread, &domain->partitions[partition_id]);
 	}
 }
 
@@ -1274,8 +1187,7 @@ void arch_mem_domain_thread_remove(struct k_thread *thread)
 		}
 		pcount++;
 
-		reset_mem_partition(z_x86_thread_page_tables_get(thread),
-				    partition);
+		reset_mem_partition(thread, partition);
 	}
 }
 
@@ -1292,8 +1204,7 @@ void arch_mem_domain_partition_add(struct k_mem_domain *domain,
 			continue;
 		}
 
-		apply_mem_partition(z_x86_thread_page_tables_get(thread),
-				    &domain->partitions[partition_id]);
+		apply_mem_partition(thread, &domain->partitions[partition_id]);
 	}
 }
 
@@ -1303,12 +1214,11 @@ void arch_mem_domain_thread_add(struct k_thread *thread)
 		return;
 	}
 
-	z_x86_apply_mem_domain(z_x86_thread_page_tables_get(thread),
-			       thread->mem_domain_info.mem_domain);
+	z_x86_apply_mem_domain(thread, thread->mem_domain_info.mem_domain);
 }
 
 int arch_mem_domain_max_partitions_get(void)
 {
 	return CONFIG_MAX_DOMAIN_PARTITIONS;
 }
-#endif	/* CONFIG_X86_USERSPACE*/
+#endif /* CONFIG_USERSPACE */

@@ -8,6 +8,7 @@
 #include <kernel_structs.h>
 #include <kernel_internal.h>
 #include <offsets_short.h>
+#include <x86_mmu.h>
 
 extern void x86_sse_init(struct k_thread *); /* in locore.S */
 

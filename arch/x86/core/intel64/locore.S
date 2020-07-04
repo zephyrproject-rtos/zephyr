@@ -10,6 +10,7 @@
 #include <offsets_short.h>
 #include <drivers/interrupt_controller/loapic.h>
 #include <arch/cpu.h>
+#include <sys/mem_manage.h>
 
 .macro read_tsc var_name
 	push %rax
@@ -21,8 +22,69 @@
 	pop %rax
 .endm
 
+/*
+ * Definitions/macros for enabling paging
+ */
+
+/* Long mode, no-execute, syscall */
+#define EFER_BITS (X86_EFER_MSR_LME | X86_EFER_MSR_NXE | X86_EFER_MSR_SCE)
+
+/* Paging, write-protect */
+#define CR0_BITS (CR0_PG | CR0_WP)
+
+/* PAE, SSE */
+#define CR4_BITS (CR4_PAE | CR4_OSFXSR)
+
+.macro set_efer
+	movl $X86_EFER_MSR, %ecx
+	rdmsr
+	orl $EFER_BITS, %eax
+	wrmsr
+.endm
+
+.macro install_pagetables_32
+	movl %cr4, %eax
+	orl $CR4_BITS, %eax
+	movl %eax, %cr4
+	clts
+
+	/* Page tables created at build time by gen_mmu.py */
+	movl $Z_MEM_PHYS_ADDR(z_x86_kernel_ptables), %eax
+	movl %eax, %cr3
+
+	set_efer
+
+	movl %cr0, %eax
+	orl $CR0_BITS, %eax
+	movl %eax, %cr0
+.endm
+
+.macro install_pagetables_64
+	/* Here, we are already in long mode with paging enabled and
+	 * just need to switch to our own page tables, but let's be
+	 * paranoid and ensure CR4, CR0, and EFER_MSR are set up
+	 * exactly how we expect. Logic is the same as install_pagetables_32
+	 */
+	movq %cr4, %rax
+	orq $CR4_BITS, %rax
+	movq %rax, %cr4
+	clts
+
+	movq $Z_MEM_PHYS_ADDR(z_x86_kernel_ptables), %rax
+	movq %rax, %cr3
+
+	set_efer
+
+	movq %cr0, %rax
+	/* Use 32-bit instructions due to assembler fussiness with large
+	 * immediate values with `orq`, CR0_PG is bit 31. We don't ever set any
+	 * high bits in cr0 anyway.
+	 */
+	orl $CR0_BITS, %eax
+	movq %rax, %cr0
+.endm
+
 .section .locore,"ax"
-.code32
 
 #if CONFIG_MP_NUM_CPUS > 1
 
@@ -79,7 +141,6 @@ unknown_loapic_id:
 .code32
 .globl __start
 __start:
-
 	/*
 	 * kernel execution begins here in 32-bit mode, with flat-mode
 	 * descriptors in all segment registers, interrupts disabled.
@@ -98,7 +159,6 @@ __start:
 	 * next, clear the BSS. note we're still in 32-bit mode,
 	 * so the BSS must fit entirely in the first 4GB of RAM.
 	 */
-
 	cld
 	xorl %eax, %eax
 	movl $__bss_start, %edi
@@ -108,37 +168,17 @@ __start:
 	movl $x86_cpuboot, %ebp		/* BSP is always logical CPU id 0 */
 	movl %ebx, __x86_cpuboot_t_arg_OFFSET(%ebp)	/* multiboot info */
 
-	/*
-	 * transition to long mode, reload the segment registers,
-	 * and configure per-CPU stuff: GS, task register, stack.
-	 */
 
-go64:	movl %cr4, %eax			/* enable PAE and SSE */
-	orl $(CR4_PAE | CR4_OSFXSR), %eax
-	movl %eax, %cr4
-	clts
-
-#ifdef CONFIG_X86_MMU
-	movl __x86_cpuboot_t_ptables_OFFSET(%ebp), %eax
-#else
-	movl $z_x86_flat_ptables, %eax
-#endif
-	movl %eax, %cr3
-
-	movl $X86_EFER_MSR, %ecx  /* enable long mode, no-execute, syscall */
-	rdmsr
-	orl $(X86_EFER_MSR_LME | X86_EFER_MSR_NXE | X86_EFER_MSR_SCE), %eax
-	wrmsr
-
-	movl %cr0, %eax			/* enable paging */
-	orl $(CR0_PG | CR0_WP), %eax
-	movl %eax, %cr0
-
+go64:	/* Install page tables and transition to long mode */
+	install_pagetables_32
 	jmpl $X86_KERNEL_CS, $enter_code64
 
 	/* Long mode entry point.  Arrive here from the code
 	 * immediately above (shared between main CPU startup and AP
-	 * startup), or from EFI entry in __start64
+	 * startup), or from EFI entry in __start64.
+	 *
+	 * Here we reload the segment registers,
+	 * and configure per-CPU stuff: GS, task register, stack.
 	 */
 	.code64
 enter_code64:
@@ -200,20 +240,7 @@ __start64:
 	lidt idt80
 	lgdt gdt80
 
-	/* These state and flag settings really should be done later,
-	 * in the shared startup path, they aren't required for mode
-	 * transition and having them in the 32 bit stub means they
-	 * have to be duplicated here.
-	 */
-	movq %cr4, %rax
-	orq $(CR4_PAE | CR4_OSFXSR), %rax
-	movq %rax, %cr4
-	clts
-	movq $X86_EFER_MSR, %rcx
-	rdmsr
-	orq $(X86_EFER_MSR_NXE | X86_EFER_MSR_SCE), %rax
-	wrmsr
-	cld
+	install_pagetables_64
 
 	/* Disable 8259 PIT.  Almost certainly not needed on modern
 	 * UEFI platforms taking this code path, but...
@@ -948,44 +975,6 @@ idt48:  /* LIDT descriptor for 32 bit mode */
 idt80:  /* LIDT descriptor for 64 bit mode */
 	.word (idt_end - idt - 1)
 	.quad idt
-
-/* Initial page tables for long mode entry.  This generates a second
- * level page full of 512 1G PTE entries of the form:
- *
- * 0x000000nnn0000083
- *
- * Where nnn is an identity-mapped 1G page index in the range
- * 0x000-0x1ff, and 0x83 marks a present, 1G, read/write page
- * entry. It's split up somewhat awkwardly to get around gas's
- * recursion limits in macro expansion.
- *
- * This maps the first 512GB of memory space by default, which will
- * hopefully be enough to reach everything we need before we can
- * bootstrap the real page tables later.
- */
-.macro populate_ptable base, count=64
-	.long 0x00000083
-	.long 64 - \count + \base
-	.long 0x40000083
-	.long 64 - \count + \base
-	.long 0x80000083
-	.long 64 - \count + \base
-	.long 0xC0000083
-	.long 64 - \count + \base
-.if \count > 1
-	populate_ptable \base, (\count - 1)
-.endif
-.endm
-
-.align 4096
-.globl z_x86_flat_ptables
-z_x86_flat_ptables:
-	.long pdp + 0x03		/* 0x03 = R/W, P */
-	.long 0
-	.fill 4088, 1, 0
-pdp:
-	populate_ptable 0
-	populate_ptable 64
 
 .section .gdt,"ad"
 

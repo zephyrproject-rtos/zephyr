@@ -49,9 +49,6 @@ GEN_OFFSET_SYM(x86_cpuboot_t, gs_base);
 GEN_OFFSET_SYM(x86_cpuboot_t, sp);
 GEN_OFFSET_SYM(x86_cpuboot_t, fn);
 GEN_OFFSET_SYM(x86_cpuboot_t, arg);
-#ifdef CONFIG_X86_MMU
-GEN_OFFSET_SYM(x86_cpuboot_t, ptables);
-#endif /* CONFIG_X86_MMU */
 GEN_ABSOLUTE_SYM(__X86_CPUBOOT_SIZEOF, sizeof(x86_cpuboot_t));
 
 #endif /* _X86_OFFSETS_INC_ */

@@ -18,6 +18,9 @@
 #include <inttypes.h>
 #include <exc_handle.h>
 #include <logging/log.h>
+#include <x86_mmu.h>
+#include <sys/mem_manage.h>
+
 LOG_MODULE_DECLARE(os);
 
 __weak void z_debug_fatal_hook(const z_arch_esf_t *esf) { ARG_UNUSED(esf); }
@@ -140,7 +143,7 @@ struct task_state_segment _df_tss = {
 	.es = DATA_SEG,
 	.ss = DATA_SEG,
 	.eip = (uint32_t)df_handler_top,
-	.cr3 = (uint32_t)&z_x86_kernel_ptables
+	.cr3 = Z_MEM_PHYS_ADDR((uint32_t)&z_x86_kernel_ptables)
 };
 
 static __used void df_handler_bottom(void)
@@ -188,7 +191,7 @@ static FUNC_NORETURN __used void df_handler_top(void)
 	_main_tss.es = DATA_SEG;
 	_main_tss.ss = DATA_SEG;
 	_main_tss.eip = (uint32_t)df_handler_bottom;
-	_main_tss.cr3 = (uint32_t)&z_x86_kernel_ptables;
+	_main_tss.cr3 = z_mem_phys_addr(&z_x86_kernel_ptables);
 	_main_tss.eflags = 0U;
 
 	/* NT bit is set in EFLAGS so we will task switch back to _main_tss

@@ -8,6 +8,7 @@
 #include <arch/cpu.h>
 #include <offsets_short.h>
 #include <syscall.h>
+#include <sys/mem_manage.h>
 
 /* Exports */
 GTEXT(z_x86_syscall_entry_stub)
@@ -49,7 +50,7 @@ SECTION_FUNC(TEXT, z_x86_trampoline_to_kernel)
 	pushl	%edi
 
 	/* Switch to kernel page table */
-	movl	$z_x86_kernel_ptables, %esi
+	movl	$Z_MEM_PHYS_ADDR(z_x86_kernel_ptables), %esi
 	movl	%esi, %cr3
 
 	/* Save old trampoline stack pointer in %edi */
@@ -154,7 +155,7 @@ SECTION_FUNC(TEXT, z_x86_syscall_entry_stub)
 	pushl	%edi
 
 	/* Switch to kernel page table */
-	movl	$z_x86_kernel_ptables, %esi
+	movl	$Z_MEM_PHYS_ADDR(z_x86_kernel_ptables), %esi
 	movl	%esi, %cr3
 
 	/* Save old trampoline stack pointer in %edi */
@@ -304,7 +305,10 @@ SECTION_FUNC(TEXT, z_x86_userspace_enter)
 	 * want to leak any information.
 	 */
 	mov	%edi, %esp
-	subl	$Z_X86_PDPT_SIZE, %esp
+#ifdef CONFIG_X86_PAE
+	/* Skip over the toplevel PDPT stored here */
+	subl	$0x20, %esp
+#endif /* CONFIG_X86_PAE */
 
 	/* Stash some registers we are going to need to erase the user
 	 * stack.
