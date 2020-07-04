@@ -1,0 +1,33 @@
+# Copyright (c) 2020 Google LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmel SAM0 family DAC
+
+compatible: "atmel,sam0-dac"
+
+include: dac-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    clocks:
+      required: true
+
+    clock-names:
+      required: true
+
+    label:
+      required: true
+
+    reference:
+      type: string
+      required: false
+      description: Reference voltage source
+      enum:
+        - "intref"
+        - "vddana"
+        - "vrefa"
+
+    "#io-channel-cells":
+      const: 0
