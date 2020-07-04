@@ -89,6 +89,10 @@
 	#pwm-cells = <1>;
 };
 
+&dac0 {
+	status = "okay";
+};
+
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";
