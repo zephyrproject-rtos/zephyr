@@ -30,6 +30,8 @@ LOG_MODULE_DECLARE(LOG_MODULE_NAME);
  */
 #define SD_TO_OBJ(sd) ((void *)(sd + 1))
 #define OBJ_TO_SD(obj) (((int)obj) - 1)
+/* Default socket context (50CE) */
+#define ESWIFI_INIT_CONTEXT	INT_TO_POINTER(0x50CE)
 
 static struct eswifi_dev *eswifi;
 static const struct socket_op_vtable eswifi_socket_fd_op_vtable;
@@ -391,8 +393,7 @@ static int eswifi_socket_open(int family, int type, int proto)
 
 	eswifi_lock(eswifi);
 
-	/* Assign dummy context SOCkEt(50CE) */
-	idx = __eswifi_socket_new(eswifi, family, type, proto, 0x50CE);
+	idx = __eswifi_socket_new(eswifi, family, type, proto, ESWIFI_INIT_CONTEXT);
 	if (idx < 0) {
 		goto unlock;
 	}
@@ -458,7 +459,7 @@ static int eswifi_socket_bind(void *obj, const struct sockaddr *addr,
 	struct eswifi_off_socket *socket;
 	int ret;
 
-	if ((addrlen == NULL) || (addr == NULL) ||
+	if ((addrlen == 0) || (addr == NULL) ||
 	    (sock > ESWIFI_OFFLOAD_MAX_SOCKETS)) {
 		return -EINVAL;
 	}
