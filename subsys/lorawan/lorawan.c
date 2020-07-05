@@ -9,6 +9,8 @@
 #include <lorawan/lorawan.h>
 #include <zephyr.h>
 
+#include "lw_priv.h"
+
 #include <LoRaMac.h>
 
 BUILD_ASSERT(!IS_ENABLED(CONFIG_LORAMAC_REGION_UNKNOWN),
@@ -55,156 +57,7 @@ static enum lorawan_datarate lorawan_datarate = LORAWAN_DR_0;
 static uint8_t lorawan_conf_msg_tries = 1;
 static bool lorawan_adr_enable;
 
-const char *status2str(int status)
-{
-	switch (status) {
-	case LORAMAC_STATUS_OK:
-		return "OK";
-	case LORAMAC_STATUS_BUSY:
-		return "Busy";
-	case LORAMAC_STATUS_SERVICE_UNKNOWN:
-		return "Service unknown";
-	case LORAMAC_STATUS_PARAMETER_INVALID:
-		return "Parameter invalid";
-	case LORAMAC_STATUS_FREQUENCY_INVALID:
-		return "Frequency invalid";
-	case LORAMAC_STATUS_DATARATE_INVALID:
-		return "Datarate invalid";
-	case LORAMAC_STATUS_FREQ_AND_DR_INVALID:
-		return "Frequency or datarate invalid";
-	case LORAMAC_STATUS_NO_NETWORK_JOINED:
-		return "No network joined";
-	case LORAMAC_STATUS_LENGTH_ERROR:
-		return "Length error";
-	case LORAMAC_STATUS_REGION_NOT_SUPPORTED:
-		return "Region not supported";
-	case LORAMAC_STATUS_SKIPPED_APP_DATA:
-		return "Skipped APP data";
-	case LORAMAC_STATUS_DUTYCYCLE_RESTRICTED:
-		return "Duty-cycle restricted";
-	case LORAMAC_STATUS_NO_CHANNEL_FOUND:
-		return "No channel found";
-	case LORAMAC_STATUS_NO_FREE_CHANNEL_FOUND:
-		return "No free channel found";
-	case LORAMAC_STATUS_BUSY_BEACON_RESERVED_TIME:
-		return "Busy beacon reserved time";
-	case LORAMAC_STATUS_BUSY_PING_SLOT_WINDOW_TIME:
-		return "Busy ping-slot window time";
-	case LORAMAC_STATUS_BUSY_UPLINK_COLLISION:
-		return "Busy uplink collision";
-	case LORAMAC_STATUS_CRYPTO_ERROR:
-		return "Crypto error";
-	case LORAMAC_STATUS_FCNT_HANDLER_ERROR:
-		return "FCnt handler error";
-	case LORAMAC_STATUS_MAC_COMMAD_ERROR:
-		return "MAC command error";
-	case LORAMAC_STATUS_CLASS_B_ERROR:
-		return "ClassB error";
-	case LORAMAC_STATUS_CONFIRM_QUEUE_ERROR:
-		return "Confirm queue error";
-	case LORAMAC_STATUS_MC_GROUP_UNDEFINED:
-		return "Multicast group undefined";
-	case LORAMAC_STATUS_ERROR:
-		return "Unknown error";
-	default:
-		return NULL;
-	}
-}
 
-const char *eventinfo2str(int status)
-{
-	switch (status) {
-	case LORAMAC_EVENT_INFO_STATUS_OK:
-		return "OK";
-	case LORAMAC_EVENT_INFO_STATUS_ERROR:
-		return "Error";
-	case LORAMAC_EVENT_INFO_STATUS_TX_TIMEOUT:
-		return "Tx timeout";
-	case LORAMAC_EVENT_INFO_STATUS_RX1_TIMEOUT:
-		return "Rx 1 timeout";
-	case LORAMAC_EVENT_INFO_STATUS_RX2_TIMEOUT:
-		return "Rx 2 timeout";
-	case LORAMAC_EVENT_INFO_STATUS_RX1_ERROR:
-		return "Rx1 error";
-	case LORAMAC_EVENT_INFO_STATUS_RX2_ERROR:
-		return "Rx2 error";
-	case LORAMAC_EVENT_INFO_STATUS_JOIN_FAIL:
-		return "Join failed";
-	case LORAMAC_EVENT_INFO_STATUS_DOWNLINK_REPEATED:
-		return "Downlink repeated";
-	case LORAMAC_EVENT_INFO_STATUS_TX_DR_PAYLOAD_SIZE_ERROR:
-		return "Tx DR payload size error";
-	case LORAMAC_EVENT_INFO_STATUS_DOWNLINK_TOO_MANY_FRAMES_LOSS:
-		return "Downlink too many frames loss";
-	case LORAMAC_EVENT_INFO_STATUS_ADDRESS_FAIL:
-		return "Address fail";
-	case LORAMAC_EVENT_INFO_STATUS_MIC_FAIL:
-		return "MIC fail";
-	case LORAMAC_EVENT_INFO_STATUS_MULTICAST_FAIL:
-		return "Multicast fail";
-	case LORAMAC_EVENT_INFO_STATUS_BEACON_LOCKED:
-		return "Beacon locked";
-	case LORAMAC_EVENT_INFO_STATUS_BEACON_LOST:
-		return "Beacon lost";
-	case LORAMAC_EVENT_INFO_STATUS_BEACON_NOT_FOUND:
-		return "Beacon not found";
-	default:
-		return NULL;
-	}
-}
-
-/*
- * MAC status and Event status to Zephyr error code conversion.
- * Direct mapping is not possible as statuses often indicate the domain from
- * which the error originated rather than its cause or meaning. -EINVAL has been
- * used as a general error code because those usually result from incorrect
- * configuration.
- */
-const int mac_status_to_errno[] = {
-	0,			/* LORAMAC_STATUS_OK */
-	-EBUSY,			/* LORAMAC_STATUS_BUSY */
-	-ENOPROTOOPT,		/* LORAMAC_STATUS_SERVICE_UNKNOWN */
-	-EINVAL,		/* LORAMAC_STATUS_PARAMETER_INVALID */
-	-EINVAL,		/* LORAMAC_STATUS_FREQUENCY_INVALID */
-	-EINVAL,		/* LORAMAC_STATUS_DATARATE_INVALID */
-	-EINVAL,		/* LORAMAC_STATUS_FREQ_AND_DR_INVALID */
-	-ENOTCONN,		/* LORAMAC_STATUS_NO_NETWORK_JOINED */
-	-EMSGSIZE,		/* LORAMAC_STATUS_LENGTH_ERROR */
-	-EPFNOSUPPORT,		/* LORAMAC_STATUS_REGION_NOT_SUPPORTED */
-	-EMSGSIZE,		/* LORAMAC_STATUS_SKIPPED_APP_DATA */
-	-ECONNREFUSED,		/* LORAMAC_STATUS_DUTYCYCLE_RESTRICTED */
-	-ENOTCONN,		/* LORAMAC_STATUS_NO_CHANNEL_FOUND */
-	-ENOTCONN,		/* LORAMAC_STATUS_NO_FREE_CHANNEL_FOUND */
-	-EBUSY,			/* LORAMAC_STATUS_BUSY_BEACON_RESERVED_TIME */
-	-EBUSY,			/* LORAMAC_STATUS_BUSY_PING_SLOT_WINDOW_TIME */
-	-EBUSY,			/* LORAMAC_STATUS_BUSY_UPLINK_COLLISION */
-	-EINVAL,		/* LORAMAC_STATUS_CRYPTO_ERROR */
-	-EINVAL,		/* LORAMAC_STATUS_FCNT_HANDLER_ERROR */
-	-EINVAL,		/* LORAMAC_STATUS_MAC_COMMAD_ERROR */
-	-EINVAL,		/* LORAMAC_STATUS_CLASS_B_ERROR */
-	-EINVAL,		/* LORAMAC_STATUS_CONFIRM_QUEUE_ERROR */
-	-EINVAL			/* LORAMAC_STATUS_MC_GROUP_UNDEFINED */
-};
-
-const int mac_event_info_to_errno[] = {
-	0,			/* LORAMAC_EVENT_INFO_STATUS_OK */
-	-EINVAL,		/* LORAMAC_EVENT_INFO_STATUS_ERROR */
-	-ETIMEDOUT,		/* LORAMAC_EVENT_INFO_STATUS_TX_TIMEOUT */
-	-ETIMEDOUT,		/* LORAMAC_EVENT_INFO_STATUS_RX1_TIMEOUT */
-	-ETIMEDOUT,		/* LORAMAC_EVENT_INFO_STATUS_RX2_TIMEOUT */
-	-EINVAL,		/* LORAMAC_EVENT_INFO_STATUS_RX1_ERROR */
-	-EINVAL,		/* LORAMAC_EVENT_INFO_STATUS_RX2_ERROR */
-	-EINVAL,		/* LORAMAC_EVENT_INFO_STATUS_JOIN_FAIL */
-	-ECONNRESET,		/* LORAMAC_EVENT_INFO_STATUS_DOWNLINK_REPEATED */
-	-EMSGSIZE,		/* LORAMAC_EVENT_INFO_STATUS_TX_DR_PAYLOAD_SIZE_ERROR */
-	-ECONNRESET,		/* LORAMAC_EVENT_INFO_STATUS_DOWNLINK_TOO_MANY_FRAMES_LOSS */
-	-EACCES,		/* LORAMAC_EVENT_INFO_STATUS_ADDRESS_FAIL */
-	-EACCES,		/* LORAMAC_EVENT_INFO_STATUS_MIC_FAIL */
-	-EINVAL,		/* LORAMAC_EVENT_INFO_STATUS_MULTICAST_FAIL */
-	-EINVAL,		/* LORAMAC_EVENT_INFO_STATUS_BEACON_LOCKED */
-	-EINVAL,		/* LORAMAC_EVENT_INFO_STATUS_BEACON_LOST */
-	-EINVAL			/* LORAMAC_EVENT_INFO_STATUS_BEACON_NOT_FOUND */
-};
 
 static LoRaMacPrimitives_t macPrimitives;
 static LoRaMacCallback_t macCallbacks;
@@ -226,7 +79,7 @@ static void McpsConfirm(McpsConfirm_t *mcpsConfirm)
 
 	if (mcpsConfirm->Status != LORAMAC_EVENT_INFO_STATUS_OK) {
 		LOG_ERR("McpsRequest failed : %s",
-			log_strdup(eventinfo2str(mcpsConfirm->Status)));
+			lorawan_eventinfo2str(mcpsConfirm->Status));
 	} else {
 		LOG_DBG("McpsRequest success!");
 	}
@@ -241,7 +94,7 @@ static void McpsIndication(McpsIndication_t *mcpsIndication)
 
 	if (mcpsIndication->Status != LORAMAC_EVENT_INFO_STATUS_OK) {
 		LOG_ERR("McpsIndication failed : %s",
-			log_strdup(eventinfo2str(mcpsIndication->Status)));
+			lorawan_eventinfo2str(mcpsIndication->Status));
 		return;
 	}
 
@@ -267,7 +120,7 @@ static void MlmeConfirm(MlmeConfirm_t *mlmeConfirm)
 
 	if (mlmeConfirm->Status != LORAMAC_EVENT_INFO_STATUS_OK) {
 		LOG_ERR("MlmeConfirm failed : %s",
-			log_strdup(eventinfo2str(mlmeConfirm->Status)));
+			lorawan_eventinfo2str(mlmeConfirm->Status));
 		goto out_sem;
 	}
 
@@ -375,8 +228,8 @@ int lorawan_join(const struct lorawan_join_config *join_cfg)
 		status = lorawan_join_otaa(join_cfg);
 		if (status != LORAMAC_STATUS_OK) {
 			LOG_ERR("OTAA join failed: %s",
-				log_strdup(status2str(status)));
-			ret = mac_status_to_errno[status];
+				lorawan_status2str(status));
+			ret = lorawan_status2errno(status);
 			goto out;
 		}
 
@@ -389,15 +242,15 @@ int lorawan_join(const struct lorawan_join_config *join_cfg)
 		 */
 		k_sem_take(&mlme_confirm_sem, K_FOREVER);
 		if (last_mlme_confirm_status != LORAMAC_EVENT_INFO_STATUS_OK) {
-			ret = mac_event_info_to_errno[last_mlme_confirm_status];
+			ret = lorawan_eventinfo2errno(last_mlme_confirm_status);
 			goto out;
 		}
 	} else if (join_cfg->mode == LORAWAN_ACT_ABP) {
 		status = lorawan_join_abp(join_cfg);
 		if (status != LORAMAC_STATUS_OK) {
 			LOG_ERR("ABP join failed: %s",
-				log_strdup(status2str(status)));
-			ret = mac_status_to_errno[status];
+				lorawan_status2str(status));
+			ret = lorawan_status2errno(status);
 			goto out;
 		}
 	} else {
@@ -431,8 +284,8 @@ int lorawan_set_class(enum lorawan_class dev_class)
 	status = LoRaMacMibSetRequestConfirm(&mib_req);
 	if (status != LORAMAC_STATUS_OK) {
 		LOG_ERR("Failed to set device class: %s",
-			status2str(status));
-		return mac_status_to_errno[status];
+			lorawan_status2str(status));
+		return lorawan_status2errno(status);
 	}
 
 	return 0;
@@ -495,7 +348,7 @@ int lorawan_send(uint8_t port, uint8_t *data, uint8_t len, uint8_t flags)
 		 * next try.
 		 */
 		LOG_ERR("LoRaWAN Query Tx Possible Failed: %s",
-			log_strdup(status2str(status)));
+			lorawan_status2str(status));
 		empty_frame = true;
 		mcpsReq.Type = MCPS_UNCONFIRMED;
 		mcpsReq.Req.Unconfirmed.fBuffer = NULL;
@@ -521,9 +374,8 @@ int lorawan_send(uint8_t port, uint8_t *data, uint8_t len, uint8_t flags)
 
 	status = LoRaMacMcpsRequest(&mcpsReq);
 	if (status != LORAMAC_STATUS_OK) {
-		LOG_ERR("LoRaWAN Send failed: %s",
-			log_strdup(status2str(status)));
-		ret = mac_status_to_errno[status];
+		LOG_ERR("LoRaWAN Send failed: %s", lorawan_status2str(status));
+		ret = lorawan_status2errno(status);
 		goto out;
 	}
 
@@ -546,7 +398,7 @@ int lorawan_send(uint8_t port, uint8_t *data, uint8_t len, uint8_t flags)
 		k_sem_take(&mcps_confirm_sem, K_FOREVER);
 
 		if (last_mcps_confirm_status != LORAMAC_EVENT_INFO_STATUS_OK) {
-			ret = mac_event_info_to_errno[last_mcps_confirm_status];
+			ret = lorawan_eventinfo2errno(last_mcps_confirm_status);
 		}
 	}
 
@@ -563,7 +415,7 @@ int lorawan_start(void)
 	status = LoRaMacStart();
 	if (status != LORAMAC_STATUS_OK) {
 		LOG_ERR("Failed to start the LoRaMAC stack: %s",
-			status2str(status));
+			lorawan_status2str(status));
 		return -EINVAL;
 	}
 
@@ -596,7 +448,7 @@ static int lorawan_init(const struct device *dev)
 				       LORAWAN_REGION);
 	if (status != LORAMAC_STATUS_OK) {
 		LOG_ERR("LoRaMacInitialization failed: %s",
-			log_strdup(status2str(status)));
+			lorawan_status2str(status));
 		return -EINVAL;
 	}
 
