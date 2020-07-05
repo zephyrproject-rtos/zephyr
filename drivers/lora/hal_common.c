@@ -8,13 +8,21 @@
 
 #include <timer.h>
 
+static void timer_work_handler(struct k_work *work);
+K_WORK_DEFINE(timer_work, timer_work_handler);
+
 static uint32_t saved_time;
+
+static void timer_work_handler(struct k_work *work)
+{
+	TimerIrqHandler();
+}
 
 static void timer_callback(struct k_timer *_timer)
 {
 	ARG_UNUSED(_timer);
 
-	TimerIrqHandler();
+	k_work_submit(&timer_work);
 }
 
 K_TIMER_DEFINE(lora_timer, timer_callback, NULL);
