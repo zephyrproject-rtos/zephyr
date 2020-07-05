@@ -34,6 +34,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(semtech_sx1261) +
 #define HAVE_GPIO_CS		DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 #define GPIO_CS_LABEL		DT_INST_SPI_DEV_CS_GPIOS_LABEL(0)
 #define GPIO_CS_PIN		DT_INST_SPI_DEV_CS_GPIOS_PIN(0)
+#define GPIO_CS_FLAGS		DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0)
 
 #define GPIO_RESET_LABEL	DT_INST_GPIO_LABEL(0, reset_gpios)
 #define GPIO_RESET_PIN		DT_INST_GPIO_PIN(0, reset_gpios)
@@ -441,11 +442,14 @@ static int sx126x_lora_init(struct device *dev)
 
 #if HAVE_GPIO_CS
 	dev_data.spi_cs.gpio_dev = device_get_binding(GPIO_CS_LABEL);
-	dev_data.spi_cs.gpio_pin = GPIO_CS_PIN;
 	if (!dev_data.spi_cs.gpio_dev) {
 		LOG_ERR("Cannot get pointer to %s device", GPIO_CS_LABEL);
 		return -EIO;
 	}
+
+	dev_data.spi_cs.gpio_pin = GPIO_CS_PIN;
+	dev_data.spi_cs.gpio_dt_flags = GPIO_CS_FLAGS;
+	dev_data.spi_cs.delay = 0U;
 
 	dev_data.spi_cfg.cs = &dev_data.spi_cs;
 #endif
