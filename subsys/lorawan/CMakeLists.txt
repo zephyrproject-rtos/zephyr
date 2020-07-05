@@ -21,3 +21,4 @@ zephyr_compile_definitions_ifdef(CONFIG_LORAMAC_REGION_US915 REGION_US915)
 zephyr_compile_definitions_ifdef(CONFIG_LORAMAC_REGION_RU864 REGION_RU864)
 
 zephyr_library_sources_ifdef(CONFIG_LORAWAN lorawan.c)
+zephyr_library_sources_ifdef(CONFIG_LORAWAN lw_priv.c)
