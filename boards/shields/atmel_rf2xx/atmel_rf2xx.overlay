@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * This file is intentionally empty.  This shield target all board with a free
+ * SPI port.  This type of boards should define a board overlay.  If you board
+ * have Arduino, MikroBus, Xplained, Xplained Pro or any other standard header
+ * you must use the generic overlay accordingly.
+ */
