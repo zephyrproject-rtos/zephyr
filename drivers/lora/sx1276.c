@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(sx1276);
 #define GPIO_RESET_PIN		DT_INST_GPIO_PIN(0, reset_gpios)
 #define GPIO_RESET_FLAGS	DT_INST_GPIO_FLAGS(0, reset_gpios)
 #define GPIO_CS_PIN		DT_INST_SPI_DEV_CS_GPIOS_PIN(0)
+#define GPIO_CS_FLAGS		DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0)
 
 #define GPIO_ANTENNA_ENABLE_PIN				\
 	DT_INST_GPIO_PIN(0, antenna_enable_gpios)
@@ -541,7 +542,6 @@ static int sx1276_lora_init(struct device *dev)
 	dev_data.spi_cfg.slave = DT_INST_REG_ADDR(0);
 
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	spi_cs.gpio_pin = GPIO_CS_PIN,
 	spi_cs.gpio_dev = device_get_binding(
 			DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
 	if (!spi_cs.gpio_dev) {
@@ -549,6 +549,10 @@ static int sx1276_lora_init(struct device *dev)
 		       DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
 		return -EIO;
 	}
+
+	spi_cs.gpio_pin = GPIO_CS_PIN;
+	spi_cs.gpio_dt_flags = GPIO_CS_FLAGS;
+	spi_cs.delay = 0U;
 
 	dev_data.spi_cfg.cs = &spi_cs;
 #endif
