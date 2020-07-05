@@ -54,6 +54,56 @@
 			gpios = <&piob 12 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 		};
 	};
+
+	ext1_header: xplained-pro-connector1 {
+		compatible = "atmel-xplained-pro-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;		/*           Shared */
+		gpio-map =	<0  0 &pioc 31 0>,	/* AFE1 AD6         */
+				<1  0 &pioa 19 0>,	/* AFE0 AD8         */
+				<2  0 &piob  3 0>,	/* RTS0             */
+				<3  0 &piob  2 0>,	/* CTS0             */
+				<4  0 &pioa  0 0>,	/* PWMC0_H0         */
+				<5  0 &pioc 30 0>,	/* TIOB5            */
+				<6  0 &piod 28 0>,	/* WKUP5            */
+				<7  0 &pioa  5 0>,	/* GPIO             */
+				<8  0 &pioa  3 0>,	/* TWD0        EXT2 */
+				<9  0 &pioa  4 0>,	/* TWCK0       EXT2 */
+				<10 0 &piob  0 0>,	/* RXD0             */
+				<11 0 &piob  1 0>,	/* TXD0             */
+				<12 0 &piod 25 0>,	/* SPI0(NPCS1)      */
+				<13 0 &piod 21 0>,	/* SPI0(MOSI)  EXT2 */
+				<14 0 &piod 20 0>,	/* SPI0(MISO)  EXT2 */
+				<15 0 &piod 22 0>;	/* SPI0(SCK)   EXT2 */
+							/* GND              */
+							/* +3.3V            */
+	};
+
+	ext2_header: xplained-pro-connector2 {
+		compatible = "atmel-xplained-pro-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;		/*           Shared */
+		gpio-map =	<0  0 &piod 30 0>,	/* AFE0 AD0         */
+				<1  0 &pioc 13 0>,	/* AFE1 AD1         */
+				<2  0 &pioa  6 0>,	/* GPIO             */
+				<3  0 &piod 11 0>,	/* GPIO             */
+				<4  0 &pioc 19 0>,	/* PWMC0_H2         */
+				<5  0 &piod 26 0>,	/* PWMC0_L2         */
+				<6  0 &pioa  2 0>,	/* WKUP2            */
+				<7  0 &pioa 24 0>,	/* GPIO             */
+				<8  0 &pioa  3 0>,	/* TWD0        EXT1 */
+				<9  0 &pioa  4 0>,	/* TWCK0       EXT1 */
+				<10 0 &pioa 21 0>,	/* RXD1             */
+				<11 0 &piob  4 0>,	/* TXD1             */
+				<12 0 &piod 27 0>,	/* SPI0(NPCS3)      */
+				<13 0 &piod 21 0>,	/* SPI0(MOSI)  EXT1 */
+				<14 0 &piod 20 0>,	/* SPI0(MISO)  EXT1 */
+				<15 0 &piod 22 0>;	/* SPI0(SCK)   EXT1 */
+							/* GND              */
+							/* +3.3V            */
+	};
 };
 
 &cpu0 {
@@ -78,6 +128,15 @@
 
 &spi0 {
 	status = "okay";
+
+	pinctrl-0 = <&pd20b_spi0_miso
+		     &pd21b_spi0_mosi
+		     &pd22b_spi0_spck
+		     &pd25b_spi0_npcs1
+		     &pd27b_spi0_npcs3>;
+
+	cs-gpios = <&piod 25 GPIO_ACTIVE_LOW>,
+		   <&piod 27 GPIO_ACTIVE_LOW>;
 };
 
 &usart1 {
@@ -164,4 +223,22 @@
 	dmas = <&xdmac 22 DMA_PERID_SSC_RX>, <&xdmac 23 DMA_PERID_SSC_TX>;
 	pinctrl-0 = <&pd24b_ssc_rf &pa22a_ssc_rk &pa10c_ssc_rd
 		     &pb0d_ssc_tf &pb1d_ssc_tk &pb5d_ssc_td>;
+};
+
+ext1_spi: &spi0 {
+};
+
+ext1_i2c: &twihs0 {
+};
+
+ext1_serial: &usart0 {
+};
+
+ext2_spi: &spi0 {
+};
+
+ext2_i2c: &twihs0 {
+};
+
+ext2_serial: &usart1 {
 };
