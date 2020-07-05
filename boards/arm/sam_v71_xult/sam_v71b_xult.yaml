@@ -9,6 +9,9 @@ toolchain:
 supported:
   - netif:eth
   - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
   - gpio
   - spi
   - watchdog
