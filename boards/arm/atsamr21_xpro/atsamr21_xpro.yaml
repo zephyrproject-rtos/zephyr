@@ -18,3 +18,7 @@ supported:
   - pwm
   - spi
   - usb_device
+  - xpro_gpio
+  - xpro_i2c
+  - xpro_serial
+  - xpro_spi
