@@ -1,0 +1,49 @@
+# Copyright (C) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    GPIO pins exposed on Atmel Xplained Pro headers.
+
+    The Xplained Pro layout provide a standard 20 pin header.  A board can have
+    one or more headers and can share pins.  The extension headers are given
+    names EXTn where n ϵ [1…7], n is determined by which ID pin is connected
+    to the embedded debugger.  A header with ID7 signal from the embedded
+    debugger connected should be called EXT7. PWR, EXT1, EXT2 and EXT3 are
+    standard extension headers that have a predefined position according to the
+    list below:
+      * PWR is right angled at the top right hand side of the board. This
+      header must always be implemented.
+      * EXT1 is right angled at the top right hand side of the board, located
+      below the PWR header. This header must always be present.
+      * EXT2 is right angled and at the bottom right hand side of the board.
+      This header is mandatory for medium and large boards and should not be
+      implemented on small boards.
+      * EXT3 is right angled pointing downwards
+    All MCU boards have to implement at least PWR, EXT1, EXT2 (on medium and
+    large boards), and EXT3. EXT4 to EXT7 can be placed differently depending
+    on the board design. EXT4 to EXT7 can either be standard extension headers
+    or application specific headers.
+
+    Documentation:
+    * https://www.microchip.com/development-tools/xplained-boards
+    * http://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-42091-Atmel-Xplained-Pro-Hardware-Development-Kit_User%20Guide.pdf
+
+    This binding provides a nexus mapping for 20 pins where pins are disposed
+    to have a even and odd column:
+
+                           Connector
+    Bind      Pin Name     Pin   Pin  Pin Name        Bind
+                       ID  1       2  GND
+      0            ADC(+)  3       4  ADC(-)           1
+      2   UART(RTS)/GPIO1  5       6  UART(CTS)/GPIO2  3
+      4            PWM(+)  7       8  PWM(-)           5
+      6         IRQ/GPIO3  9      10  SPI(CS1)/GPIO4   7
+      8          I2C(SDA)  11     12  I2C(SCL)         9
+     10          UART(RX)  13     14  UART(TX)         11
+     12          SPI(CS0)  15     16  SPI(MOSI)        13
+     14         SPI(MISO)  17     18  SPI(SCK)         15
+                      GND  19     20  VDD(+3.3V)
+
+compatible: "atmel-xplained-pro-header"
+
+include: [gpio-nexus.yaml, base.yaml]
