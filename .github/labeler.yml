@@ -126,6 +126,16 @@
 "area: Shields":
   - "boards/shields/**"
   - "samples/shields/**"
+"platform: NXP":
+  - "boards/arm/frdm*/**"
+  - "boards/arm/hexiwear*/**"
+  - "boards/arm/lpcxpresso*/**"
+  - "boards/arm/*imx*/**"
+  - "drivers/**/*imx*"
+  - "drivers/**/*mcux*"
+  - "dts/arm/nxp/*/*"
+  - "dts/bindings/**/nxp*"
+  - "soc/arm/nxp*/**"
 "platform: STM32":
   - "boards/arm/nucleo_*/**"
   - "boards/arm/*stm32*/**"
