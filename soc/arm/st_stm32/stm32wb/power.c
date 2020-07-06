@@ -107,22 +107,3 @@ void _sys_pm_power_state_exit_post_ops(enum power_states state)
 	 */
 	irq_unlock(0);
 }
-
-/* Initialize STM32 Power */
-static int stm32_power_init(struct device *dev)
-{
-	unsigned int ret;
-
-	ARG_UNUSED(dev);
-
-	ret = irq_lock();
-
-	/* enable Power clock */
-	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
-
-	irq_unlock(ret);
-
-	return 0;
-}
-
-SYS_INIT(stm32_power_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
