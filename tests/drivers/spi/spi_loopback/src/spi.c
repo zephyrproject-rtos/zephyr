@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(main);
 #define CS_CTRL_GPIO_DRV_NAME CONFIG_SPI_LOOPBACK_CS_CTRL_GPIO_DRV_NAME
 struct spi_cs_control spi_cs = {
 	.gpio_pin = CONFIG_SPI_LOOPBACK_CS_CTRL_GPIO_PIN,
+	.gpio_dt_flags = GPIO_ACTIVE_LOW,
 	.delay = 0,
 };
 #define SPI_CS (&spi_cs)
