@@ -604,7 +604,11 @@ done:
 #define BME280_HAS_CS(inst) DT_INST_SPI_DEV_HAS_CS_GPIOS(inst)
 
 #define BME280_DATA_SPI_CS(inst)					\
-	{ .spi_cs = { .gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(inst), }, }
+	{ .spi_cs = {							\
+		.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(inst),		\
+		.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(inst),	\
+		},							\
+	}
 
 #define BME280_DATA_SPI(inst)						\
 	COND_CODE_1(BME280_HAS_CS(inst),				\
