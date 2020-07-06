@@ -218,7 +218,8 @@ struct eth_enc28j60_config {
 	uint8_t gpio_pin;
 	gpio_dt_flags_t gpio_flags;
 	const char *spi_port;
-	uint8_t spi_cs_pin;
+	gpio_pin_t spi_cs_pin;
+	gpio_dt_flags_t spi_cs_dt_flags;
 	const char *spi_cs_port;
 	uint32_t spi_freq;
 	uint8_t spi_slave;
