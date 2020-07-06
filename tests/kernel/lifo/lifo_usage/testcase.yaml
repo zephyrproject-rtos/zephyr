@@ -1,5 +1,3 @@
 tests:
   kernel.lifo.usage:
     tags: kernel
-    # FIXME: Keeps failing sporadically in CI. See #26163
-    platform_exclude: qemu_arc_hs
