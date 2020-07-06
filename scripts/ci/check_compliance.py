@@ -256,6 +256,28 @@ class KconfigCheck(ComplianceTest):
         except subprocess.CalledProcessError as ex:
             self.error(ex.output)
 
+    def write_kconfig_soc(self):
+        """
+        Write KConfig soc files to be sourced during Kconfig parsing
+
+        """
+
+        soc_defconfig_file = os.path.join(tempfile.gettempdir(), "Kconfig.soc.defconfig")
+        soc_file = os.path.join(tempfile.gettempdir(), "Kconfig.soc")
+        soc_arch_file = os.path.join(tempfile.gettempdir(), "Kconfig.soc.arch")
+        try:
+            with open(soc_defconfig_file, 'w', encoding="utf-8") as fp:
+                fp.write(f'osource "{ZEPHYR_BASE}/soc/$(ARCH)/*/Kconfig.defconfig"\n')
+
+            with open(soc_file, 'w', encoding="utf-8") as fp:
+                fp.write(f'osource "{ZEPHYR_BASE}/soc/$(ARCH)/*/Kconfig.soc"\n')
+
+            with open(soc_arch_file, 'w', encoding="utf-8") as fp:
+                fp.write(f'osource "{ZEPHYR_BASE}/soc/$(ARCH)/Kconfig"\n\
+osource "{ZEPHYR_BASE}/soc/$(ARCH)/*/Kconfig"\n')
+        except IOError as ex:
+            self.error(ex.output)
+
     def parse_kconfig(self):
         """
         Returns a kconfiglib.Kconfig object for the Kconfig files. We reuse
@@ -284,7 +306,7 @@ class KconfigCheck(ComplianceTest):
         os.environ["ARCH_DIR"] = "arch/"
         os.environ["BOARD_DIR"] = "boards/*/*"
         os.environ["ARCH"] = "*"
-        os.environ["CMAKE_BINARY_DIR"] = tempfile.gettempdir()
+        os.environ["KCONFIG_BINARY_DIR"] = tempfile.gettempdir()
         os.environ['DEVICETREE_CONF'] = "dummy"
 
         # Older name for DEVICETREE_CONF, for compatibility with older Zephyr
@@ -293,6 +315,9 @@ class KconfigCheck(ComplianceTest):
 
         # For multi repo support
         self.get_modules(os.path.join(tempfile.gettempdir(), "Kconfig.modules"))
+
+        # For list of SOC_ROOT support
+        self.write_kconfig_soc()
 
         # Tells Kconfiglib to generate warnings for all references to undefined
         # symbols within Kconfig files
