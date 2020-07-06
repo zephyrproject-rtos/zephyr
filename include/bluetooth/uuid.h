@@ -257,6 +257,15 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_GATT \
 	BT_UUID_DECLARE_16(BT_UUID_GATT_VAL)
+/** @def BT_UUID_TPS_VAL
+ *  @brief Tx Power Service UUID value
+ */
+#define BT_UUID_TPS_VAL 0x1804
+/** @def BT_UUID_TPS
+ *  @brief Tx Power Service
+ */
+#define BT_UUID_TPS \
+	BT_UUID_DECLARE_16(BT_UUID_TPS_VAL)
 /** @def BT_UUID_CTS_VAL
  *  @brief Current Time Service UUID value
  */
@@ -546,6 +555,15 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_GATT_SC \
 	BT_UUID_DECLARE_16(BT_UUID_GATT_SC_VAL)
+/** @def BT_UUID_TPS_TX_POWER_LEVEL_VAL
+ *  @brief TPS Characteristic Tx Power Level UUID value
+ */
+#define BT_UUID_TPS_TX_POWER_LEVEL_VAL 0x2a07
+/** @def BT_UUID_TPS_TX_POWER_LEVEL
+ *  @brief TPS Characteristic Tx Power Level
+ */
+#define BT_UUID_TPS_TX_POWER_LEVEL \
+	BT_UUID_DECLARE_16(BT_UUID_TPS_TX_POWER_LEVEL_VAL)
 /** @def BT_UUID_BAS_BATTERY_LEVEL_VAL
  *  @brief BAS Characteristic Battery Level UUID value
  */
