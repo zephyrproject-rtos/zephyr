@@ -8,6 +8,14 @@
 
 import logging
 import yaml
+try:
+    # Use the C LibYAML parser if available, rather than the Python parser.
+    # It's much faster.
+    from yaml import CLoader as Loader
+    from yaml import CSafeLoader as SafeLoader
+    from yaml import CDumper as Dumper
+except ImportError:
+    from yaml import Loader, SafeLoader, Dumper
 
 log = logging.getLogger("scl")
 
@@ -27,7 +35,7 @@ def yaml_load(filename):
     """
     try:
         with open(filename, 'r') as f:
-            return yaml.safe_load(f)
+            return yaml.load(f, Loader=SafeLoader)
     except yaml.scanner.ScannerError as e:	# For errors parsing schema.yaml
         mark = e.problem_mark
         cmark = e.context_mark
