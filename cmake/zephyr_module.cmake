@@ -18,7 +18,7 @@ if(ZEPHYR_EXTRA_MODULES)
   set(ZEPHYR_EXTRA_MODULES_ARG "--extra-modules" ${ZEPHYR_EXTRA_MODULES})
 endif()
 
-set(KCONFIG_MODULES_FILE ${CMAKE_BINARY_DIR}/Kconfig.modules)
+set(KCONFIG_MODULES_FILE ${KCONFIG_BINARY_DIR}/Kconfig.modules)
 
 if(WEST)
   set(WEST_ARG "--zephyr-base" ${ZEPHYR_BASE})

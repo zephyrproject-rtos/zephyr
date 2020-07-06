@@ -492,6 +492,11 @@ include(${ZEPHYR_BASE}/cmake/host-tools.cmake)
 # Include board specific device-tree flags before parsing.
 include(${BOARD_DIR}/pre_dt_board.cmake OPTIONAL)
 
+# Build directory for generated KConfig files, such as:
+# - Zephyr modules Kconfig files
+set(KCONFIG_BINARY_DIR ${CMAKE_BINARY_DIR}/Kconfig)
+file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR})
+
 # DTS should be close to kconfig because CONFIG_ variables from
 # kconfig and dts should be available at the same time.
 #
