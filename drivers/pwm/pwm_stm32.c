@@ -94,7 +94,7 @@ static inline const struct pwm_stm32_config *to_config(struct device *dev)
  */
 static uint32_t get_polarity(pwm_flags_t flags)
 {
-	if (flags & PWM_POLARITY_NORMAL) {
+	if ((flags & PWM_POLARITY_MASK) == PWM_POLARITY_NORMAL) {
 		return LL_TIM_OCPOLARITY_HIGH;
 	}
 
