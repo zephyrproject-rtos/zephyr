@@ -2622,6 +2622,8 @@ static void node_reset(struct bt_mesh_model *model,
 		       struct bt_mesh_msg_ctx *ctx,
 		       struct net_buf_simple *buf)
 {
+	static struct bt_mesh_proxy_idle_cb proxy_idle = {.cb = bt_mesh_reset};
+
 	BT_MESH_MODEL_BUF_DEFINE(msg, OP_NODE_RESET_STATUS, 0);
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
@@ -2638,7 +2640,15 @@ static void node_reset(struct bt_mesh_model *model,
 		BT_ERR("Unable to send Node Reset Status");
 	}
 
-	bt_mesh_reset();
+	if (!IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
+		bt_mesh_reset();
+		return;
+	}
+
+	/* If the response goes to a proxy node, we'll wait for the sending to
+	 * complete before moving on.
+	 */
+	bt_mesh_proxy_on_idle(&proxy_idle);
 }
 
 static void send_friend_status(struct bt_mesh_model *model,
