@@ -38,7 +38,7 @@ A developer who intends to cherry-pick and potentially modify patches sent by
 another contributor shall:
 
 * clarify in their pull request the reason for cherry-picking the patches,
-  instead of assisisting in getting the patches merged in their original
+  instead of assisting in getting the patches merged in their original
   pull request, and
 * invite the original author of the patches to their pull request review.
 
