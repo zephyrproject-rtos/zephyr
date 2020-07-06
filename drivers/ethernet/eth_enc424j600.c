@@ -621,6 +621,7 @@ static int enc424j600_init(struct device *dev)
 	}
 
 	context->spi_cs.gpio_pin = config->spi_cs_pin;
+	context->spi_cs.gpio_dt_flags = config->spi_cs_dt_flags;
 	context->spi_cfg.cs = &context->spi_cs;
 #endif
 
@@ -763,6 +764,7 @@ static const struct enc424j600_config enc424j600_0_config = {
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	.spi_cs_port = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
 	.spi_cs_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
+	.spi_cs_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0),
 #endif
 	.timeout = CONFIG_ETH_ENC424J600_TIMEOUT,
 };
