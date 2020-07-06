@@ -471,7 +471,7 @@ typedef void *lv_obj_user_data_t;
 #define LV_USE_BAR 0
 #endif
 
-#ifdef CONFIG_LVGL_OBJ_BUTTON
+#ifdef CONFIG_LVGL_OBJ_BTN
 #define LV_USE_BTN 1
 #else
 #define LV_USE_BTN 0
@@ -479,7 +479,7 @@ typedef void *lv_obj_user_data_t;
 
 #if LV_USE_BTN != 0
 
-#ifdef CONFIG_LVGL_OBJ_BUTTON_INK_EFFECT
+#ifdef CONFIG_LVGL_OBJ_BTN_INK_EFFECT
 #define LV_BTN_INK_EFFECT 1
 #else
 #define LV_BTN_INK_EFFECT 0
@@ -487,7 +487,7 @@ typedef void *lv_obj_user_data_t;
 
 #endif
 
-#ifdef CONFIG_LVGL_OBJ_BUTTON_MATRIX
+#ifdef CONFIG_LVGL_OBJ_BTNM
 #define LV_USE_BTNM 1
 #else
 #define LV_USE_BTNM 0
@@ -505,7 +505,7 @@ typedef void *lv_obj_user_data_t;
 #define LV_USE_CANVAS 0
 #endif
 
-#ifdef CONFIG_LVGL_OBJ_CHECK_BOX
+#ifdef CONFIG_LVGL_OBJ_CB
 #define LV_USE_CB 1
 #else
 #define LV_USE_CB 0
@@ -521,26 +521,26 @@ typedef void *lv_obj_user_data_t;
 	CONFIG_LVGL_OBJ_CHART_AXIS_TICK_LABEL_MAX_LEN
 #endif
 
-#ifdef CONFIG_LVGL_OBJ_CONTAINER
+#ifdef CONFIG_LVGL_OBJ_CONT
 #define LV_USE_CONT 1
 #else
 #define LV_USE_CONT 0
 #endif
 
-#ifdef CONFIG_LVGL_OBJ_COLOR_PICKER
+#ifdef CONFIG_LVGL_OBJ_CPICKER
 #define LV_USE_CPICKER 1
 #else
 #define LV_USE_CPICKER 0
 #endif
 
-#ifdef CONFIG_LVGL_OBJ_DROP_DOWN_LIST
+#ifdef CONFIG_LVGL_OBJ_DDLIST
 #define LV_USE_DDLIST 1
 #else
 #define LV_USE_DDLIST 0
 #endif
 
 #if LV_USE_DDLIST != 0
-#define LV_DDLIST_DEF_ANIM_TIME	CONFIG_LVGL_OBJ_DROP_DOWN_LIST_ANIM_TIME
+#define LV_DDLIST_DEF_ANIM_TIME	CONFIG_LVGL_OBJ_DDLIST_ANIM_TIME
 #endif
 
 #ifdef CONFIG_LVGL_OBJ_GAUGE
@@ -549,27 +549,27 @@ typedef void *lv_obj_user_data_t;
 #define LV_USE_GAUGE 0
 #endif
 
-#ifdef CONFIG_LVGL_OBJ_IMAGE
+#ifdef CONFIG_LVGL_OBJ_IMG
 #define LV_USE_IMG 1
 #else
 #define LV_USE_IMG 0
 #endif
 
-#ifdef CONFIG_LVGL_OBJ_IMG_BUTTON
+#ifdef CONFIG_LVGL_OBJ_IMGBTN
 #define LV_USE_IMGBTN 1
 #else
 #define LV_USE_IMGBTN 0
 #endif
 
 #if LV_USE_IMGBTN
-#ifdef CONFIG_LVGL_OBJ_IMG_BUTTON_TILED
+#ifdef CONFIG_LVGL_OBJ_IMGBTN_TILED
 #define LV_IMGBTN_TILED 1
 #else
 #define LV_IMGBTN_TILED 0
 #endif
 #endif
 
-#ifdef CONFIG_LVGL_OBJ_KEYBOARD
+#ifdef CONFIG_LVGL_OBJ_KB
 #define LV_USE_KB 1
 #else
 #define LV_USE_KB 0
@@ -622,13 +622,13 @@ typedef void *lv_obj_user_data_t;
 #define LV_LIST_DEF_ANIM_TIME CONFIG_LVGL_OBJ_LIST_FOCUS_TIME
 #endif
 
-#ifdef CONFIG_LVGL_OBJ_LINE_METER
+#ifdef CONFIG_LVGL_OBJ_LMETER
 #define LV_USE_LMETER 1
 #else
 #define LV_USE_LMETER 0
 #endif
 
-#ifdef CONFIG_LVGL_OBJ_MSG_BOX
+#ifdef CONFIG_LVGL_OBJ_MBOX
 #define LV_USE_MBOX 1
 #else
 #define LV_USE_MBOX 0
@@ -684,13 +684,13 @@ typedef void *lv_obj_user_data_t;
 #define LV_USE_SPINBOX 0
 #endif
 
-#ifdef CONFIG_LVGL_OBJ_SWITCH
+#ifdef CONFIG_LVGL_OBJ_SW
 #define LV_USE_SW 1
 #else
 #define LV_USE_SW 0
 #endif
 
-#ifdef CONFIG_LVGL_OBJ_TEXT_AREA
+#ifdef CONFIG_LVGL_OBJ_TA
 #define LV_USE_TA 1
 #else
 #define LV_USE_TA 0
@@ -698,9 +698,9 @@ typedef void *lv_obj_user_data_t;
 
 #if LV_USE_TA != 0
 #define LV_TA_DEF_CURSOR_BLINK_TIME \
-	CONFIG_LVGL_OBJ_TEXT_AREA_CURSOR_BLINK_TIME
+	CONFIG_LVGL_OBJ_TA_CURSOR_BLINK_TIME
 #define LV_TA_DEF_PWD_SHOW_TIME \
-	CONFIG_LVGL_OBJ_TEXT_AREA_PWD_SHOW_TIME
+	CONFIG_LVGL_OBJ_TA_PWD_SHOW_TIME
 #endif
 
 #ifdef CONFIG_LVGL_OBJ_TABLE
@@ -710,30 +710,30 @@ typedef void *lv_obj_user_data_t;
 #endif
 
 #if LV_USE_TABLE
-#define LV_TABLE_COL_MAX CONFIG_LVGL_OBJ_TABLE_COLUMN_MAX
+#define LV_TABLE_COL_MAX CONFIG_LVGL_OBJ_TABLE_COL_MAX
 #endif
 
-#ifdef CONFIG_LVGL_OBJ_TAB_VIEW
+#ifdef CONFIG_LVGL_OBJ_TABVIEW
 #define LV_USE_TABVIEW 1
 #else
 #define LV_USE_TABVIEW 0
 #endif
 
 #if LV_USE_TABVIEW != 0
-#define LV_TABVIEW_DEF_ANIM_TIME CONFIG_LVGL_OBJ_TAB_VIEW_ANIMATION_TIME
+#define LV_TABVIEW_DEF_ANIM_TIME CONFIG_LVGL_OBJ_TABVIEW_ANIMATION_TIME
 #endif
 
-#ifdef CONFIG_LVGL_OBJ_TILE_VIEW
+#ifdef CONFIG_LVGL_OBJ_TILEVIEW
 #define LV_USE_TILEVIEW 1
 #else
 #define LV_USE_TILEVIEW 0
 #endif
 
 #if LV_USE_TILEVIEW
-#define LV_TILEVIEW_DEF_ANIM_TIME CONFIG_LVGL_OBJ_TILE_VIEW_ANIMATION_TIME
+#define LV_TILEVIEW_DEF_ANIM_TIME CONFIG_LVGL_OBJ_TILEVIEW_ANIMATION_TIME
 #endif
 
-#ifdef CONFIG_LVGL_OBJ_WINDOW
+#ifdef CONFIG_LVGL_OBJ_WIN
 #define LV_USE_WIN 1
 #else
 #define LV_USE_WIN 0
