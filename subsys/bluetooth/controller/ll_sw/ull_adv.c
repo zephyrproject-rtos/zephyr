@@ -1044,6 +1044,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 			if (ret) {
 				goto failure_cleanup;
 			}
+			ret_cb = TICKER_STATUS_BUSY;
 
 			aux_is_started = 1U;
 		}
