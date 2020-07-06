@@ -119,8 +119,12 @@ static void usb_sam0_isr(void)
 	/* Acknowledge all interrupts */
 	regs->INTFLAG.reg = intflag;
 
+	/* End of reset interrupt */
 	if ((intflag & USB_DEVICE_INTFLAG_EORST) != 0U) {
 		UsbDeviceEndpoint *endpoint = &regs->DeviceEndpoint[0];
+
+		/* Enable suspend interrupt */
+		regs->INTENSET.reg = USB_DEVICE_INTENSET_SUSPEND;
 
 		/* The device clears some of the configuration of EP0
 		 * when it receives the EORST.  Re-enable interrupts.
@@ -130,6 +134,15 @@ static void usb_sam0_isr(void)
 					   USB_DEVICE_EPINTENSET_RXSTP;
 
 		data->cb(USB_DC_RESET, NULL);
+	}
+
+	/* Suspend interrupt */
+	if ((intflag & USB_DEVICE_INTFLAG_SUSPEND) != 0U) {
+		/* Disable suspend interrupt */
+		regs->INTENCLR.reg = USB_DEVICE_INTENCLR_SUSPEND;
+
+		/* Invoke callback function */
+		data->cb(USB_DC_SUSPEND, NULL);
 	}
 
 	/* Dispatch the endpoint interrupts */
