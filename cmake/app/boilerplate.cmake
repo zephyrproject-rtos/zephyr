@@ -276,11 +276,9 @@ set(CACHED_SHIELD ${SHIELD} CACHE STRING "Selected shield")
 # be found. It always includes ${ZEPHYR_BASE} at the lowest priority.
 list(APPEND BOARD_ROOT ${ZEPHYR_BASE})
 
-if(NOT SOC_ROOT)
-  set(SOC_DIR ${ZEPHYR_BASE}/soc)
-else()
-  set(SOC_DIR ${SOC_ROOT}/soc)
-endif()
+# 'SOC_ROOT' is a prioritized list of directories where socs may be
+# found. It always includes ${ZEPHYR_BASE}/soc at the lowest priority.
+list(APPEND SOC_ROOT ${ZEPHYR_BASE})
 
 if(NOT ARCH_ROOT)
   set(ARCH_DIR ${ZEPHYR_BASE}/arch)
@@ -493,6 +491,7 @@ include(${ZEPHYR_BASE}/cmake/host-tools.cmake)
 include(${BOARD_DIR}/pre_dt_board.cmake OPTIONAL)
 
 # Build directory for generated KConfig files, such as:
+# - Multiple SOC_ROOT inclusion
 # - Zephyr modules Kconfig files
 set(KCONFIG_BINARY_DIR ${CMAKE_BINARY_DIR}/Kconfig)
 file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR})
@@ -523,6 +522,21 @@ if("${SOC_SERIES}" STREQUAL "")
   set(SOC_PATH ${SOC_NAME})
 else()
   set(SOC_PATH ${SOC_FAMILY}/${SOC_SERIES})
+endif()
+
+# Use SOC to search for a 'CMakeLists.txt' file.
+# e.g. zephyr/soc/xtense/intel_apl_adsp/CMakeLists.txt.
+foreach(root ${SOC_ROOT})
+  if(EXISTS ${root}/soc/${ARCH}/${SOC_PATH})
+    set(SOC_DIR ${root}/soc)
+    break()
+  endif()
+endforeach()
+
+if(NOT SOC_DIR)
+  message(FATAL_ERROR "Could not find SOC=${SOC_NAME} for BOARD=${BOARD}, \
+please check your installation. SOC roots searched: \n\
+${SOC_ROOT}")
 endif()
 
 include(${ZEPHYR_BASE}/cmake/target_toolchain.cmake)
