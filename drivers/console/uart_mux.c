@@ -151,25 +151,22 @@ static void uart_mux_cb_work(struct k_work *work)
 	dev_data->cb(dev_data->cb_user_data);
 }
 
-static void uart_mux_rx_work(struct k_work *work)
+static int uart_mux_consume_ringbuf(struct uart_mux *uart_mux)
 {
-	struct uart_mux *uart_mux;
 	uint8_t *data;
 	size_t len;
 	int ret;
-
-	uart_mux = CONTAINER_OF(work, struct uart_mux, rx_work);
-
-	/* We have now received muxed data. Push that through GSM mux API which
-	 * will parse it and call proper functions to get the data to the user.
-	 */
 
 	len = ring_buf_get_claim(uart_mux->rx_ringbuf, &data,
 				 CONFIG_UART_MUX_RINGBUF_SIZE);
 	if (len == 0) {
 		LOG_DBG("Ringbuf %p is empty!", uart_mux->rx_ringbuf);
-		return;
+		return 0;
 	}
+
+	/* We have now received muxed data. Push that through GSM mux API which
+	 * will parse it and call proper functions to get the data to the user.
+	 */
 
 	if (IS_ENABLED(CONFIG_UART_MUX_VERBOSE_DEBUG)) {
 		char tmp[sizeof("RECV muxed ") + 10];
@@ -185,6 +182,19 @@ static void uart_mux_rx_work(struct k_work *work)
 	if (ret < 0) {
 		LOG_DBG("Cannot flush ring buffer (%d)", ret);
 	}
+
+	return -EAGAIN;
+}
+
+static void uart_mux_rx_work(struct k_work *work)
+{
+	struct uart_mux *uart_mux =
+		CONTAINER_OF(work, struct uart_mux, rx_work);;
+	int ret;
+
+	do {
+		ret = uart_mux_consume_ringbuf(uart_mux);
+	} while (ret == -EAGAIN);
 }
 
 static void uart_mux_tx_work(struct k_work *work)
