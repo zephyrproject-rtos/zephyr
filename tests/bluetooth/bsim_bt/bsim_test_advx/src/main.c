@@ -202,7 +202,6 @@ static void test_advx_main(void)
 	}
 	printk("success.\n");
 
-
 	k_sleep(K_MSEC(400));
 
 	printk("Stopping advertising...");
@@ -331,15 +330,18 @@ static void test_advx_main(void)
 
 	k_sleep(K_MSEC(1000));
 
-	printk("Starting non-conn non-scan with aux 1M advertising...");
-	err = ll_adv_aux_ad_data_set(handle, AD_OP, AD_FRAG_PREF,
-				     sizeof(adv_data), (void *)adv_data);
+	printk("Enabling non-conn non-scan without aux 1M advertising...");
+	err = ll_adv_enable(handle, 1, 0, 0);
 	if (err) {
 		goto exit;
 	}
+	printk("success.\n");
 
-	printk("enabling...");
-	err = ll_adv_enable(handle, 1, 0, 0);
+	k_sleep(K_MSEC(400));
+
+	printk("Adding data, so non-conn non-scan with aux 1M advertising...");
+	err = ll_adv_aux_ad_data_set(handle, AD_OP, AD_FRAG_PREF,
+				     sizeof(adv_data), (void *)adv_data);
 	if (err) {
 		goto exit;
 	}
@@ -376,6 +378,15 @@ static void test_advx_main(void)
 
 	k_sleep(K_MSEC(1000));
 
+	printk("Enabling extended...");
+	err = ll_adv_enable(handle, 1, 0, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	k_sleep(K_MSEC(400));
+
 	printk("Starting periodic 1M advertising...");
 	err = ll_adv_sync_param_set(handle, ADV_INTERVAL_PERIODIC, 0);
 	if (err) {
@@ -384,12 +395,6 @@ static void test_advx_main(void)
 
 	printk("enabling periodic...");
 	err = ll_adv_sync_enable(handle, 1);
-	if (err) {
-		goto exit;
-	}
-
-	printk("enabling extended...");
-	err = ll_adv_enable(handle, 1, 0, 0);
 	if (err) {
 		goto exit;
 	}
@@ -431,6 +436,40 @@ static void test_advx_main(void)
 
 	printk("Disabling periodic...");
 	err = ll_adv_sync_enable(handle, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	k_sleep(K_MSEC(1000));
+
+	printk("enabling periodic...");
+	err = ll_adv_sync_enable(handle, 1);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Enabling extended...");
+	err = ll_adv_enable(handle, 1, 0, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	k_sleep(K_MSEC(400));
+
+	printk("Disabling periodic...");
+	err = ll_adv_sync_enable(handle, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	k_sleep(K_MSEC(400));
+
+	printk("Disabling...");
+	err = ll_adv_enable(handle, 0, 0, 0);
 	if (err) {
 		goto exit;
 	}
