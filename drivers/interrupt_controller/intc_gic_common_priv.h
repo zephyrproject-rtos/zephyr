@@ -45,4 +45,18 @@
 				(GIC_GET_RDIST(GET_CPUID) + GICR_SGI_BASE_OFF) \
 				: GIC_DIST_BASE)
 #endif
+
+/* GICD_CTLR Interrupt group definitions */
+#define GICD_CTLR_ENABLE_G0		0
+#define GICD_CTLR_ENABLE_G1NS		1
+
+#if CONFIG_GIC_VER > 2
+#define GICD_CTLR_ENABLE_G1S		2
+#endif
+
+/*
+ * GIC distributor configuration.
+ */
+void gic_dist_init(void);
+
 #endif /* ZEPHYR_INCLUDE_DRIVERS_INTC_GIC_COMMON_PRIV_H */
