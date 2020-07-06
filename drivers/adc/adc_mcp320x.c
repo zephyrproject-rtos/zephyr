@@ -28,7 +28,8 @@ LOG_MODULE_REGISTER(adc_mcp320x, CONFIG_ADC_LOG_LEVEL);
 struct mcp320x_config {
 	const char *spi_dev_name;
 	const char *spi_cs_dev_name;
-	uint8_t spi_cs_pin;
+	gpio_pin_t spi_cs_pin;
+	gpio_dt_flags_t spi_cs_dt_flags;
 	struct spi_config spi_cfg;
 	uint8_t channels;
 };
@@ -294,6 +295,7 @@ static int mcp320x_init(struct device *dev)
 		}
 
 		data->spi_cs.gpio_pin = config->spi_cs_pin;
+		data->spi_cs.gpio_dt_flags = config->spi_cs_dt_flags;
 	}
 
 	k_thread_create(&data->thread, data->stack,
@@ -335,6 +337,11 @@ static const struct adc_driver_api mcp320x_adc_api = {
 			UTIL_AND( \
 			DT_SPI_DEV_HAS_CS_GPIOS(INST_DT_MCP320X(n, t)), \
 			DT_SPI_DEV_CS_GPIOS_PIN(INST_DT_MCP320X(n, t)) \
+			), \
+		.spi_cs_dt_flags = \
+			UTIL_AND( \
+			DT_SPI_DEV_HAS_CS_GPIOS(INST_DT_MCP320X(n, t)), \
+			DT_SPI_DEV_CS_GPIOS_DT_FLAGS(INST_DT_MCP320X(n, t)) \
 			), \
 		.spi_cfg = { \
 			.operation = (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | \
