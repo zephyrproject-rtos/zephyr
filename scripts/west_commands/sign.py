@@ -45,9 +45,8 @@ SIGN_EPILOG = '''\
 imgtool
 -------
 
-Currently, MCUboot's 'imgtool' tool is supported. To build a signed
-binary you can load with MCUboot using imgtool, run this from your
-build directory:
+To build a signed binary you can load with MCUboot using imgtool,
+run this from your build directory:
 
    west sign -t imgtool -- --key YOUR_SIGNING_KEY.pem
 
@@ -58,7 +57,18 @@ The image header size, alignment, and slot sizes are determined from
 the build directory using .config and the device tree. A default
 version number of 0.0.0+0 is used (which can be overridden by passing
 "--version x.y.z+w" after "--key"). As shown above, extra arguments
-after a '--' are passed to imgtool directly.'''
+after a '--' are passed to imgtool directly.
+
+rimage
+------
+
+To create a signed binary with the rimage tool, run this from your build
+directory:
+
+   west sign -t rimage -- -k YOUR_SIGNING_KEY.pem
+
+For this to work, either rimage must be installed or you must pass
+the path to rimage using the -p option.'''
 
 
 class ToggleAction(argparse.Action):
