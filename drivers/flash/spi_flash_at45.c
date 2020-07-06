@@ -64,7 +64,8 @@ struct spi_flash_at45_config {
 	const char *spi_bus;
 	struct spi_config spi_cfg;
 	const char *cs_gpio;
-	int cs_pin;
+	gpio_pin_t cs_pin;
+	gpio_dt_flags_t cs_dt_flags;
 #if IS_ENABLED(CONFIG_FLASH_PAGE_LAYOUT)
 	struct flash_pages_layout pages_layout;
 #endif
@@ -558,6 +559,7 @@ static int spi_flash_at45_init(struct device *dev)
 		}
 
 		dev_data->spi_cs.gpio_pin = dev_config->cs_pin;
+		dev_data->spi_cs.gpio_dt_flags = dev_config->cs_dt_flags;
 		dev_data->spi_cs.delay = 0;
 	}
 
@@ -674,7 +676,8 @@ static const struct flash_driver_api spi_flash_at45_api = {
 		},							     \
 		IF_ENABLED(DT_INST_SPI_DEV_HAS_CS_GPIOS(idx), (		     \
 			.cs_gpio = DT_INST_SPI_DEV_CS_GPIOS_LABEL(idx),      \
-			.cs_pin  = DT_INST_SPI_DEV_CS_GPIOS_PIN(idx),))	     \
+			.cs_pin  = DT_INST_SPI_DEV_CS_GPIOS_PIN(idx),	     \
+			.cs_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(idx),)) \
 		IF_ENABLED(CONFIG_FLASH_PAGE_LAYOUT, (			     \
 			.pages_layout = {				     \
 				.pages_count = INST_##idx##_PAGES,	     \
