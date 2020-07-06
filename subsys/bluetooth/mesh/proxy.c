@@ -103,6 +103,8 @@ static struct bt_mesh_proxy_client {
 	},
 };
 
+static sys_slist_t idle_waiters;
+static atomic_t pending_notifications;
 static uint8_t __noinit client_buf_data[CLIENT_BUF_SIZE * CONFIG_BT_MAX_CONN];
 
 /* Track which service is enabled */
@@ -921,23 +923,54 @@ bool bt_mesh_proxy_relay(struct net_buf_simple *buf, uint16_t dst)
 
 #endif /* CONFIG_BT_MESH_GATT_PROXY */
 
-static int proxy_send(struct bt_conn *conn, const void *data, uint16_t len)
+static void notify_complete(struct bt_conn *conn, void *user_data)
 {
+	sys_snode_t *n;
+
+	if (atomic_dec(&pending_notifications) > 1) {
+		return;
+	}
+
+	BT_DBG("");
+
+	while ((n = sys_slist_get(&idle_waiters))) {
+		CONTAINER_OF(n, struct bt_mesh_proxy_idle_cb, n)->cb();
+	}
+}
+
+static int proxy_send(struct bt_conn *conn, const void *data,
+		      uint16_t len)
+{
+	struct bt_gatt_notify_params params = {
+		.data = data,
+		.len = len,
+		.func = notify_complete,
+	};
+	int err;
+
 	BT_DBG("%u bytes: %s", len, bt_hex(data, len));
 
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
 	if (gatt_svc == MESH_GATT_PROXY) {
-		return bt_gatt_notify(conn, &proxy_attrs[3], data, len);
+		params.attr = &proxy_attrs[3];
 	}
 #endif
-
 #if defined(CONFIG_BT_MESH_PB_GATT)
 	if (gatt_svc == MESH_GATT_PROV) {
-		return bt_gatt_notify(conn, &prov_attrs[3], data, len);
+		params.attr = &prov_attrs[3];
 	}
 #endif
 
-	return 0;
+	if (!params.attr) {
+		return 0;
+	}
+
+	err = bt_gatt_notify_cb(conn, &params);
+	if (!err) {
+		atomic_inc(&pending_notifications);
+	}
+
+	return err;
 }
 
 static int proxy_segment_and_send(struct bt_conn *conn, uint8_t type,
@@ -1319,4 +1352,14 @@ int bt_mesh_proxy_init(void)
 	bt_conn_cb_register(&conn_callbacks);
 
 	return 0;
+}
+
+void bt_mesh_proxy_on_idle(struct bt_mesh_proxy_idle_cb *cb)
+{
+	if (!atomic_get(&pending_notifications)) {
+		cb->cb();
+		return;
+	}
+
+	sys_slist_append(&idle_waiters, &cb->n);
 }
