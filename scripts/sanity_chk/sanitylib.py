@@ -337,6 +337,7 @@ class BinaryHandler(Handler):
         self.valgrind = False
         self.lsan = False
         self.asan = False
+        self.ubsan = False
         self.coverage = False
 
     def try_kill_process_by_pid(self):
@@ -413,6 +414,10 @@ class BinaryHandler(Handler):
                                   env.get("ASAN_OPTIONS", "")
             if not self.lsan:
                 env["ASAN_OPTIONS"] += "detect_leaks=0"
+
+        if self.ubsan:
+            env["UBSAN_OPTIONS"] = "log_path=stdout:halt_on_error=1:" + \
+                                  env.get("UBSAN_OPTIONS", "")
 
         with subprocess.Popen(command, stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE, cwd=self.build_dir, env=env) as proc:
@@ -1623,7 +1628,7 @@ class TestInstance(DisablePyTestCollectionMixin):
         self.run = not self.build_only
         return
 
-    def create_overlay(self, platform, enable_asan=False, enable_coverage=False, coverage_platform=[]):
+    def create_overlay(self, platform, enable_asan=False, enable_ubsan=False, enable_coverage=False, coverage_platform=[]):
         # Create this in a "sanitycheck/" subdirectory otherwise this
         # will pass this overlay to kconfig.py *twice* and kconfig.cmake
         # will silently give that second time precedence over any
@@ -1646,6 +1651,10 @@ class TestInstance(DisablePyTestCollectionMixin):
             if enable_asan:
                 if platform.type == "native":
                     content = content + "\nCONFIG_ASAN=y"
+
+            if enable_ubsan:
+                if platform.type == "native":
+                    content = content + "\nCONFIG_UBSAN=y"
 
             f.write(content)
             return content
@@ -1896,6 +1905,7 @@ class ProjectBuilder(FilterBuilder):
 
         self.lsan = kwargs.get('lsan', False)
         self.asan = kwargs.get('asan', False)
+        self.ubsan = kwargs.get('ubsan', False)
         self.valgrind = kwargs.get('valgrind', False)
         self.extra_args = kwargs.get('extra_args', [])
         self.device_testing = kwargs.get('device_testing', False)
@@ -1962,6 +1972,7 @@ class ProjectBuilder(FilterBuilder):
             handler.asan = self.asan
             handler.valgrind = self.valgrind
             handler.lsan = self.lsan
+            handler.ubsan = self.ubsan
             handler.coverage = self.coverage
 
             handler.binary = os.path.join(instance.build_dir, "zephyr", "zephyr.exe")
@@ -2168,7 +2179,7 @@ class ProjectBuilder(FilterBuilder):
         overlays = extract_overlays(args)
 
         if (self.testcase.extra_configs or self.coverage or
-                self.asan):
+                self.asan or self.ubsan):
             overlays.append(os.path.join(instance.build_dir,
                                          "sanitycheck", "testcase_extra.conf"))
 
@@ -2274,6 +2285,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.device_testing = False
         self.fixtures = []
         self.enable_coverage = False
+        self.enable_ubsan = False
         self.enable_lsan = False
         self.enable_asan = False
         self.enable_valgrind = False
@@ -2620,7 +2632,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                         self.device_testing,
                         self.fixtures
                     )
-                    instance.create_overlay(platform, self.enable_asan, self.enable_coverage, self.coverage_platform)
+                    instance.create_overlay(platform, self.enable_asan, self.enable_ubsan, self.enable_coverage, self.coverage_platform)
                     instance_list.append(instance)
                 self.add_instances(instance_list)
 
@@ -2815,7 +2827,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                 self.add_instances(instance_list)
 
         for _, case in self.instances.items():
-            case.create_overlay(case.platform, self.enable_asan, self.enable_coverage, self.coverage_platform)
+            case.create_overlay(case.platform, self.enable_asan, self.enable_ubsan, self.enable_coverage, self.coverage_platform)
 
         self.discards = discards
         self.selected_platforms = set(p.platform.name for p in self.instances.values())
@@ -2876,6 +2888,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                                         test,
                                         lsan=self.enable_lsan,
                                         asan=self.enable_asan,
+                                        ubsan=self.enable_ubsan,
                                         coverage=self.enable_coverage,
                                         extra_args=self.extra_args,
                                         device_testing=self.device_testing,
