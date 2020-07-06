@@ -53,16 +53,18 @@ def test_check_build_or_run(class_testsuite, monkeypatch, all_testcases_dict, pl
     assert testinstance.build_only and not testinstance.run
 
 TESTDATA_2 = [
-    (True, True, ["demo_board_2"], "native", '\nCONFIG_COVERAGE=y\nCONFIG_COVERAGE_DUMP=y\nCONFIG_ASAN=y'),
-    (False, True, ["demo_board_2"], 'native', '\nCONFIG_COVERAGE=y\nCONFIG_COVERAGE_DUMP=y'),
-    (True, True, ["demo_board_2"], 'mcu', '\nCONFIG_COVERAGE=y\nCONFIG_COVERAGE_DUMP=y'),
-    (False, False, ["demo_board_2"], 'native', ''),
-    (False, True, ['demo_board_1'], 'native', ''),
-    (True, False, ["demo_board_2"], 'native', '\nCONFIG_ASAN=y'),
+    (True, True, True, ["demo_board_2"], "native", '\nCONFIG_COVERAGE=y\nCONFIG_COVERAGE_DUMP=y\nCONFIG_ASAN=y\nCONFIG_UBSAN=y'),
+    (True, False, True, ["demo_board_2"], "native", '\nCONFIG_COVERAGE=y\nCONFIG_COVERAGE_DUMP=y\nCONFIG_ASAN=y'),
+    (False, False, True, ["demo_board_2"], 'native', '\nCONFIG_COVERAGE=y\nCONFIG_COVERAGE_DUMP=y'),
+    (True, False, True, ["demo_board_2"], 'mcu', '\nCONFIG_COVERAGE=y\nCONFIG_COVERAGE_DUMP=y'),
+    (False, False, False, ["demo_board_2"], 'native', ''),
+    (False, False, True, ['demo_board_1'], 'native', ''),
+    (True, False, False, ["demo_board_2"], 'native', '\nCONFIG_ASAN=y'),
+    (False, True, False, ["demo_board_2"], 'native', '\nCONFIG_UBSAN=y'),
 ]
 
-@pytest.mark.parametrize("enable_asan, enable_coverage, coverage_platform, platform_type, expected_content", TESTDATA_2)
-def test_create_overlay(class_testsuite, all_testcases_dict, platforms_list, enable_asan, enable_coverage, coverage_platform, platform_type, expected_content):
+@pytest.mark.parametrize("enable_asan, enable_ubsan, enable_coverage, coverage_platform, platform_type, expected_content", TESTDATA_2)
+def test_create_overlay(class_testsuite, all_testcases_dict, platforms_list, enable_asan, enable_ubsan, enable_coverage, coverage_platform, platform_type, expected_content):
     """Test correct content is written to testcase_extra.conf based on if conditions
     TO DO: Add extra_configs to the input list"""
     class_testsuite.testcases = all_testcases_dict
@@ -72,7 +74,7 @@ def test_create_overlay(class_testsuite, all_testcases_dict, platforms_list, ena
 
     testinstance = TestInstance(testcase, platform, class_testsuite.outdir)
     platform.type = platform_type
-    assert testinstance.create_overlay(platform, enable_asan, enable_coverage, coverage_platform) == expected_content
+    assert testinstance.create_overlay(platform, enable_asan, enable_ubsan, enable_coverage, coverage_platform) == expected_content
 
 def test_calculate_sizes(class_testsuite, all_testcases_dict, platforms_list):
     """ Test Calculate sizes method for zephyr elf"""

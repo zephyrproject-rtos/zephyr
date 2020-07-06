@@ -641,6 +641,14 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         configuration and when --enable-asan is given.
         """)
 
+    parser.add_argument(
+        "--enable-ubsan", action="store_true",
+        help="""Enable undefined behavior sanitizer to check for undefined
+        behaviour during program execution. It uses an optional runtime library
+        to provide better error diagnostics. This option only works with host
+        binaries such as those generated for the native_posix configuration.
+        """)
+
     parser.add_argument("--enable-coverage", action="store_true",
                         help="Enable code coverage using gcov.")
 
@@ -777,6 +785,7 @@ def main():
     suite.fixtures = options.fixture
     suite.enable_asan = options.enable_asan
     suite.enable_lsan = options.enable_lsan
+    suite.enable_ubsan = options.enable_ubsan
     suite.enable_coverage = options.enable_coverage
     suite.enable_valgrind = options.enable_valgrind
     suite.coverage_platform = options.coverage_platform
