@@ -105,7 +105,7 @@ static inline void gd7965_busy_wait(struct gd7965_data *driver)
 	while (pin > 0) {
 		__ASSERT(pin >= 0, "Failed to get pin level");
 		LOG_DBG("wait %u", pin);
-		k_sleep(GD7965_BUSY_DELAY);
+		k_sleep(K_MSEC(GD7965_BUSY_DELAY));
 		pin = gpio_pin_get(driver->busy, GD7965_BUSY_PIN);
 	}
 }
@@ -119,7 +119,7 @@ static int gd7965_update_display(const struct device *dev)
 		return -EIO;
 	}
 
-	k_sleep(GD7965_BUSY_DELAY);
+	k_sleep(K_MSEC(GD7965_BUSY_DELAY));
 
 	return 0;
 }
@@ -318,9 +318,9 @@ static int gd7965_controller_init(struct device *dev)
 	uint8_t tmp[GD7965_TRES_REG_LENGTH];
 
 	gpio_pin_set(driver->reset, GD7965_RESET_PIN, 1);
-	k_sleep(GD7965_RESET_DELAY);
+	k_sleep(K_MSEC(GD7965_RESET_DELAY));
 	gpio_pin_set(driver->reset, GD7965_RESET_PIN, 0);
-	k_sleep(GD7965_RESET_DELAY);
+	k_sleep(K_MSEC(GD7965_RESET_DELAY));
 	gd7965_busy_wait(driver);
 
 	LOG_DBG("Initialize GD7965 controller");
@@ -340,7 +340,7 @@ static int gd7965_controller_init(struct device *dev)
 		return -EIO;
 	}
 
-	k_sleep(GD7965_PON_DELAY);
+	k_sleep(K_MSEC(GD7965_PON_DELAY));
 	gd7965_busy_wait(driver);
 
 	/* Pannel settings, KW mode */
