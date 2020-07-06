@@ -12,7 +12,8 @@
 #include <sys/util.h>
 
 #define Z_GENLIST_FOR_EACH_NODE(__lname, __l, __sn)			\
-	for (__sn = sys_ ## __lname ## _peek_head(__l); __sn != NULL;	\
+	for (__sn = sys_ ## __lname ## _peek_head(__l);		\
+		 (sys_ ## __lname ## _peek_head(__l) != sys_ ## __lname ## _peek_next(__sn) && __sn != NULL);	\
 	     __sn = sys_ ## __lname ## _peek_next(__sn))
 
 
