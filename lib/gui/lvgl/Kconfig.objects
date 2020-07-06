@@ -21,7 +21,6 @@ choice
 
 	config LVGL_EXT_CLICK_AREA_FULL
 		bool "Full flexibility"
-
 endchoice
 
 config LVGL_OBJ_ARC
@@ -40,27 +39,7 @@ config LVGL_OBJ_BTN
 	help
 	  Enable button object support
 
-if LVGL_OBJ_BTN
-
-config LVGL_OBJ_BTN_INK_EFFECT
-	bool "Enable ink effect"
-	help
-	  Enable ink, press, effect for buttons
-
-config LVGL_OBJ_IMGBTN
-	bool "Image Button"
-	help
-	  Enable image button object support
-
-config LVGL_OBJ_IMGBTN_TILED
-	bool "Image button tile support"
-	depends on LVGL_OBJ_IMGBTN
-	help
-	  Enable tile support for image button
-
-endif
-
-config LVGL_OBJ_BTNM
+config LVGL_OBJ_BTNMATRIX
 	bool "Button Matrix object"
 	help
 	  Enable button matrix object support
@@ -76,6 +55,12 @@ config LVGL_OBJ_CANVAS
 	help
 	  Enabled canvas object support
 
+config LVGL_OBJ_CHECKBOX
+	bool "Check box object"
+	depends on LVGL_OBJ_BTN && LVGL_OBJ_LABEL
+	help
+	  Enable check box object support
+
 config LVGL_OBJ_CHART
 	bool "Chart object"
 	help
@@ -83,43 +68,37 @@ config LVGL_OBJ_CHART
 
 config LVGL_OBJ_CHART_AXIS_TICK_LABEL_MAX_LEN
 	int "Maximum length of axis label"
-	default 20
+	default 256
 	depends on LVGL_OBJ_CHART
 	help
 	  Maximum length of axis label
-
-config LVGL_OBJ_CB
-	bool "Check box object"
-	depends on LVGL_OBJ_BTN && LVGL_OBJ_LABEL
-	help
-	  Enable check box object support
-
-config LVGL_OBJ_CPICKER
-	bool "Color picker object"
-	help
-	  Enable color picker object support
 
 config LVGL_OBJ_CONT
 	bool "Container Object"
 	help
 	  Enable container object support
 
-config LVGL_OBJ_DDLIST
+config LVGL_OBJ_CPICKER
+	bool "Color picker object"
+	help
+	  Enable color picker object support
+
+config LVGL_OBJ_DROPDOWN
 	bool "Drop Down List object"
 	depends on LVGL_OBJ_LABEL && LVGL_OBJ_PAGE
 	help
 	  Enable drop down list object support
 
-config LVGL_OBJ_DDLIST_ANIM_TIME
+config LVGL_OBJ_DROPDOWN_ANIM_TIME
 	int "Drop Down list animation time"
 	default 200
-	depends on LVGL_OBJ_DDLIST
+	depends on LVGL_OBJ_DROPDOWN
 	help
 	  Drop down list animation time in milliseconds
 
 config LVGL_OBJ_GAUGE
 	bool "Gauge object"
-	depends on LVGL_OBJ_BAR && LVGL_OBJ_LMETER
+	depends on LVGL_OBJ_BAR && LVGL_OBJ_LINEMETER
 	help
 	  Enable gauge object support
 
@@ -129,9 +108,21 @@ config LVGL_OBJ_IMG
 	help
 	  Enable image object support
 
-config LVGL_OBJ_KB
+config LVGL_OBJ_IMGBTN
+	bool "Image Button"
+	depends on LVGL_OBJ_BTN
+	help
+	  Enable image button object support
+
+config LVGL_OBJ_IMGBTN_TILED
+	bool "Image button tile support"
+	depends on LVGL_OBJ_IMGBTN
+	help
+	  Enable tile support for image button
+
+config LVGL_OBJ_KEYBOARD
 	bool "Keyboard object"
-	depends on LVGL_OBJ_BTNM
+	depends on LVGL_OBJ_BTNMATRIX
 	help
 	  Enable keyboard object support
 
@@ -171,15 +162,26 @@ config LVGL_OBJ_LED
 	help
 	  Enable LED object support
 
+if LVGL_OBJ_LED
+
+config LVGL_OBJ_LED_BRIGHT_MIN
+	int "LED minimum brightness"
+	default 120
+	help
+	  LED minimum brightness
+
+config LVGL_OBJ_LED_BRIGHT_MAX
+	int "LED maximum brightness"
+	default 255
+	help
+	  LED maximum brightness
+
+endif # LVGL_OBJ_LED
+
 config LVGL_OBJ_LINE
 	bool "Line Object"
 	help
 	  Enable line object support
-
-config LVGL_OBJ_LMETER
-	bool "Line meter object"
-	help
-	  Enable line meter object support
 
 config LVGL_OBJ_LIST
 	bool "List object"
@@ -187,16 +189,44 @@ config LVGL_OBJ_LIST
 	help
 	  Enable list object support
 
-config LVGL_OBJ_LIST_FOCUS_TIME
-	int "List focus time"
+config LVGL_OBJ_LIST_DEF_ANIM_TIME
+	int "List default animation time"
 	default 100
 	depends on LVGL_OBJ_LIST
 	help
 	  List focus animation time in milliseconds
 
-config LVGL_OBJ_MBOX
+config LVGL_OBJ_LINEMETER
+	bool "Line meter object"
+	help
+	  Enable line meter object support
+
+if LVGL_OBJ_LINEMETER
+
+choice
+	prompt "Line meter drawing precision"
+	default LVGL_OBJ_LINEMETER_PRECISE_NO_EXTRA
+
+	config LVGL_OBJ_LINEMETER_PRECISE_NO_EXTRA
+		bool "No extra precision"
+
+	config LVGL_OBJ_LINEMETER_PRECISE_SOME_EXTRA
+		bool "Some extra precision"
+
+	config LVGL_OBJ_LINEMETER_PRECISE_BEST
+		bool "Best precision"
+endchoice
+
+endif # LVGL_OBJ_LINEMETER
+
+config LVGL_OBJ_MASK
+	bool "Object mask"
+	help
+	  Enable object mask support
+
+config LVGL_OBJ_MSGBOX
 	bool "Message box object"
-	depends on LVGL_OBJ_BTNM && LVGL_OBJ_LABEL
+	depends on LVGL_OBJ_BTNMATRIX && LVGL_OBJ_LABEL
 	help
 	  Enable message box object support
 
@@ -213,45 +243,52 @@ config LVGL_OBJ_PAGE_DEF_ANIM_TIME
 	help
 	  Default page focus animation time in milliseconds
 
-config LVGL_OBJ_PRELOAD
-	bool "Pre-load object"
+config LVGL_OBJ_SPINNER
+	bool "Spinner object"
 	depends on LVGL_OBJ_ARC
 	help
-	  Enabled pre-load object support
+	  Enable spinner object support
 
-if	LVGL_OBJ_PRELOAD
+if LVGL_OBJ_SPINNER
 
-config LVGL_OBJ_PRELOAD_DEF_ARC_LENGTH
+config LVGL_OBJ_SPINNER_DEF_ARC_LENGTH
 	int "Default arc length"
-	range 1 360
 	default 60
 	help
-	  Default arc length for pre-load in degrees
+	  Spinner default arc length in degrees
 
-config LVGL_OBJ_PRELOAD_DEF_SPIN_TIME
+config LVGL_OBJ_SPINNER_DEF_SPIN_TIME
 	int "Default spin time"
 	default 1000
 	help
-	  Default spin time for pre-load in ms
+	  Spinner default spin time in milliseconds
+
+config LVGL_OBJ_SPINNER_DEF_ARC_LENGTH
+	int "Default arc length"
+	default 60
+	help
+	  Spinner default arg length in degrees
 
 choice
-	prompt "Default pre-load animation type"
-	default LVGL_OBJ_PRELOAD_DEF_ANIMATION_SPIN_ARC
-	help
-	  Default pre-load animation type
+	prompt "Default animation"
+	default LVGL_OBJ_SPINNER_DEF_ANIM_SPINNING_ARC
 
-	config LVGL_OBJ_PRELOAD_DEF_ANIMATION_SPIN_ARC
-		bool "Spinning Arc"
+	config LVGL_OBJ_SPINNER_DEF_ANIM_SPINNING_ARC
+		bool "Spinning arc"
 
-	config LVGL_OBJ_PRELOAD_DEF_ANIMATION_FILL
-		bool "Fill"
+	config LVGL_OBJ_SPINNER_DEF_ANIM_FILLSPIN_ARC
+		bool "Fill spin arc"
 
+	config LVGL_OBJ_SPINNER_DEF_ANIM_CONSTANT_ARC
+		bool "Constant arc"
 endchoice
-endif
+
+endif # LVGL_OBJ_SPINNER
+
 
 config LVGL_OBJ_ROLLER
 	bool "Roller object"
-	depends on LVGL_OBJ_DDLIST
+	depends on LVGL_OBJ_DROPDOWN
 	help
 	  Enable roller object support
 
@@ -277,13 +314,19 @@ config LVGL_OBJ_SLIDER
 	help
 	  Enable slider object support
 
+config LVGL_OBJ_SLIDER
+	bool "Slider object"
+	depends on LVGL_OBJ_BAR
+	help
+	  Enable slider object support
+
 config LVGL_OBJ_SPINBOX
 	bool "Spinbox object"
-	depends on LVGL_OBJ_TA
+	depends on LVGL_OBJ_TEXTAREA
 	help
 	  Enable spinbox object support
 
-config LVGL_OBJ_SW
+config LVGL_OBJ_SWITCH
 	bool "Switch object"
 	depends on LVGL_OBJ_SLIDER
 	help
@@ -304,7 +347,7 @@ config LVGL_OBJ_TABLE_COL_MAX
 
 config LVGL_OBJ_TABVIEW
 	bool "Tab view object"
-	depends on LVGL_OBJ_PAGE && LVGL_OBJ_BTNM
+	depends on LVGL_OBJ_PAGE && LVGL_OBJ_BTNMATRIX
 	help
 	  Enable tab view object support
 
@@ -315,27 +358,27 @@ config LVGL_OBJ_TABVIEW_ANIMATION_TIME
 	help
 	  Tab view animation time in milliseconds
 
-config LVGL_OBJ_TA
+config LVGL_OBJ_TEXTAREA
 	bool "Text area object"
 	depends on LVGL_OBJ_LABEL && LVGL_OBJ_PAGE
 	help
 	  Enable text area object support
 
-if LVGL_OBJ_TA
+if LVGL_OBJ_TEXTAREA
 
-config LVGL_OBJ_TA_CURSOR_BLINK_TIME
+config LVGL_OBJ_TEXTAREA_CURSOR_BLINK_TIME
 	int "Cursor Blink Time"
 	default 400
 	help
 	  Text area cursor blink time in milliseconds
 
-config LVGL_OBJ_TA_PWD_SHOW_TIME
+config LVGL_OBJ_TEXTAREA_PWD_SHOW_TIME
 	int "Label scroll speed"
 	default 1500
 	help
 	  Password character show time in milliseconds
 
-endif
+endif # LVGL_OBJ_TEXTAREA
 
 config LVGL_OBJ_TILEVIEW
 	bool "Tile view object"

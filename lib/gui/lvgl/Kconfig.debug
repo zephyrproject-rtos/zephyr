@@ -32,6 +32,12 @@ config LVGL_USE_ASSERT_MEM
 
 	  Check if memory allocation is successful (Quite fast)
 
+config LVGL_USE_ASSERT_MEM_INTEGRITY
+	bool "Enable memory integrity check"
+	default y if TEST
+	help
+	  Check the integrity of lv_mem after critical operations. (Slow)
+
 config LVGL_USE_ASSERT_STR
 	bool "Enable string assertion"
 	default y if TEST

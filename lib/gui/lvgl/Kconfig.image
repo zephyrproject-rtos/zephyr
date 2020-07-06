@@ -16,11 +16,6 @@ config LVGL_IMG_CF_ALPHA
 	help
 	  Enable support for alpha indexed images
 
-config LVGL_IMG_INDEXED_CHROMA
-	bool "Enable chroma keying for indexed images"
-	help
-	  Enable chroma keying for indexed images
-
 config LVGL_IMG_CACHE_DEF_SIZE
 	int "Default image cache size"
 	default 1

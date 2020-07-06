@@ -12,13 +12,13 @@ config LVGL_DISPLAY_DEV_NAME
 
 config LVGL_HOR_RES
 	int "Horizontal Screen Resolution"
-	default 320
+	default 480
 	help
 	  Horizontal screen resolution in pixels
 
 config LVGL_VER_RES
 	int "Vertical Screen Resolution"
-	default 240
+	default 320
 	help
 	  Vertical screen resolution in pixels
 
@@ -105,14 +105,35 @@ config LVGL_ANTIALIAS
 
 config LVGL_SCREEN_REFRESH_PERIOD
 	int "Screen refresh period"
-	default 50
+	default 30
 	help
 	  Screen refresh period in milliseconds
 
 config LVGL_DPI
 	int "DPI"
-	default 100
+	default 130
 	help
 	  Dots per inch (DPI)
+
+config LVGL_DISP_SMALL_LIMIT
+	int "Small display limit"
+	default 30
+	help
+	  According to the width of the display (hor. res. / dpi) the displays fall
+	  in 4 categories. This limit is the threshold for small displays.
+
+config LVGL_DISP_MEDIUM_LIMIT
+	int "Medium display limit"
+	default 50
+	help
+	  According to the width of the display (hor. res. / dpi) the displays fall
+	  in 4 categories. This limit is the threshold for medium displays.
+
+config LVGL_DISP_LARGE_LIMIT
+	int "Large display limit"
+	default 70
+	help
+	  According to the width of the display (hor. res. / dpi) the displays fall
+	  in 4 categories. This limit is the threshold for large displays.
 
 endmenu

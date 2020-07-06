@@ -24,7 +24,7 @@ config LVGL_TEXT_BREAK_CHARACTERS
 
 config LVGL_TEXT_LINE_BREAK_LONG_LEN
 	int "Minimal word length for line break"
-	default 12
+	default 0
 	help
 	  If a word is at least this long, a line break is allowed in the word.
 
@@ -76,4 +76,13 @@ choice LVGL_TEXT_BIDI_MODE
 		bool "Right-to-left"
 
 endchoice
+
+config LVGL_TEXT_ARABIC_PERSIAN_CHARS
+	bool "Enable Arabic/Persian processing"
+	help
+	  Enable Arabic/Persian processing
+
+	  In these languages characters should be replaced with an other form based
+	  on their position in the text
+
 endmenu

@@ -101,4 +101,5 @@ config LVGL_BUFFER_ALLOC_DYNAMIC
 	  display parameters
 
 endchoice
+
 endmenu
