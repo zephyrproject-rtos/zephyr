@@ -29,8 +29,16 @@ import logging
 from pathlib import Path
 from distutils.spawn import find_executable
 from colorama import Fore
-import yaml
 import platform
+import yaml
+try:
+    # Use the C LibYAML parser if available, rather than the Python parser.
+    # It's much faster.
+    from yaml import CLoader as Loader
+    from yaml import CSafeLoader as SafeLoader
+    from yaml import CDumper as Dumper
+except ImportError:
+    from yaml import Loader, SafeLoader, Dumper
 
 try:
     import serial
@@ -3468,7 +3476,7 @@ class HardwareMap:
         # use existing map
         if os.path.exists(hwm_file):
             with open(hwm_file, 'r') as yaml_file:
-                hwm = yaml.load(yaml_file, Loader=yaml.FullLoader)
+                hwm = yaml.load(yaml_file, Loader=SafeLoader)
                 hwm.sort(key=lambda x: x['serial'] or '')
 
                 # disconnect everything
@@ -3491,12 +3499,12 @@ class HardwareMap:
                 self.dump(hwm)
 
             with open(hwm_file, 'w') as yaml_file:
-                yaml.dump(hwm, yaml_file, default_flow_style=False)
+                yaml.dump(hwm, yaml_file, Dumper=Dumper, default_flow_style=False)
 
         else:
             # create new file
             with open(hwm_file, 'w') as yaml_file:
-                yaml.dump(self.detected, yaml_file, default_flow_style=False)
+                yaml.dump(self.detected, yaml_file, Dumper=Dumper, default_flow_style=False)
             logger.info("Detected devices:")
             self.dump(self.detected)
 
