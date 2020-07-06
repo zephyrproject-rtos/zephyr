@@ -1,4 +1,5 @@
 # Copyright (c) 2019 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+# Copyright (c) 2020 Teslabs Engineering S.L.
 # SPDX-License-Identifier: Apache-2.0
 
 menu "Fonts"
@@ -8,73 +9,73 @@ config LVGL_FONT_SUBPX_BGR
 	help
 	  User BGR pixel format instead of RGB for sub-pixel rendering
 
-config LVGL_BUILD_IN_FONT_ROBOTO_12
+config LVGL_FONT_ROBOTO_12
 	bool "Enable build-in 12px fonts"
 	help
 	  Enable build-in font support, size 12 pixels
 
-config LVGL_BUILD_IN_FONT_ROBOTO_16
+config LVGL_FONT_ROBOTO_16
 	bool "Enable build-in 16px fonts"
 	help
 	  Enable build-in font support, size 16 pixels
 
-config LVGL_BUILD_IN_FONT_ROBOTO_22
+config LVGL_FONT_ROBOTO_22
 	bool "Enable build-in 22px fonts"
 	help
 	  Enable build-in font support, size 22 pixels
 
-config LVGL_BUILD_IN_FONT_ROBOTO_28
+config LVGL_FONT_ROBOTO_28
 	bool "Enable build-in 28px fonts"
 	help
 	  Enable build-in font support, size 28 pixels
 
-config LVGL_BUILD_IN_FONT_UNSCII_8
+config LVGL_FONT_UNSCII_8
 	bool "Enable build-in 8px monospace fonts"
 	default y
 	help
 	  Enable build-in monospace font support, size 8 pixels
 
-config LVGL_BUILD_IN_FONT_ROBOTO_28_COMPRESSED
+config LVGL_FONT_ROBOTO_28_COMPRESSED
 	bool "Enable build-in 28px compressed fonts"
 	help
 	  Enable build-in compressed font support, size 28 pixels
 
-config LVGL_BUILD_IN_FONT_ROBOTO_12_SUBPX
+config LVGL_FONT_ROBOTO_12_SUBPX
 	bool "Enable build-in 12px fonts with sub-pixel rendering"
 	help
 	  Enable build-in font support with sub-pixel rendering, size 12 pixels
 
 choice
 	prompt "Default LVGL font"
-	default LVGL_DEFAULT_FONT_BUILD_IN_UNSCII_8
+	default LVGL_DEFAULT_FONT_UNSCII_8
 
-	config LVGL_DEFAULT_FONT_BUILD_IN_ROBOTO_12
+	config LVGL_DEFAULT_FONT_ROBOTO_12
 		bool "Build-in font size 12"
-		depends on LVGL_BUILD_IN_FONT_ROBOTO_12
+		depends on LVGL_FONT_ROBOTO_12
 
-	config LVGL_DEFAULT_FONT_BUILD_IN_ROBOTO_16
+	config LVGL_DEFAULT_FONT_ROBOTO_16
 		bool "Build-in font size 16"
-		depends on LVGL_BUILD_IN_FONT_ROBOTO_16
+		depends on LVGL_FONT_ROBOTO_16
 
-	config LVGL_DEFAULT_FONT_BUILD_IN_ROBOTO_22
+	config LVGL_DEFAULT_FONT_ROBOTO_22
 		bool "Build-in font size 22"
-		depends on LVGL_BUILD_IN_FONT_ROBOTO_22
+		depends on LVGL_FONT_ROBOTO_22
 
-	config LVGL_DEFAULT_FONT_BUILD_IN_ROBOTO_28
+	config LVGL_DEFAULT_FONT_ROBOTO_28
 		bool "Build-in font size 28"
-		depends on LVGL_BUILD_IN_FONT_ROBOTO_28
+		depends on LVGL_FONT_ROBOTO_28
 
-	config LVGL_DEFAULT_FONT_BUILD_IN_UNSCII_8
+	config LVGL_DEFAULT_FONT_UNSCII_8
 		bool "Build-in monospace font"
-		depends on LVGL_BUILD_IN_FONT_UNSCII_8
+		depends on LVGL_FONT_UNSCII_8
 
-	config LVGL_DEFAULT_FONT_BUILD_IN_ROBOTO_28_COMPRESSED
+	config LVGL_DEFAULT_FONT_ROBOTO_28_COMPRESSED
 		bool "Build-in compressed font size 28"
-		depends on LVGL_BUILD_IN_FONT_ROBOTO_28_COMPRESSED
+		depends on LVGL_FONT_ROBOTO_28_COMPRESSED
 
-	config LVGL_DEFAULT_FONT_BUILD_IN_ROBOTO_12_SUBPX
+	config LVGL_DEFAULT_FONT_ROBOTO_12_SUBPX
 		bool "Build-in font size 12 with sub-pixel rendering"
-		depends on LVGL_BUILD_IN_FONT_ROBOTO_12_SUBPX
+		depends on LVGL_FONT_ROBOTO_12_SUBPX
 
 	config LVGL_DEFAULT_FONT_CUSTOM
 		bool "Custom font"
