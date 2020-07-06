@@ -276,6 +276,7 @@ config SW_VECTOR_RELAY
 
 config SW_VECTOR_RELAY_CLIENT
 	bool "Enable Software Vector Relay (client)"
+	depends on !SW_VECTOR_RELAY
 	default y if BOOTLOADER_MCUBOOT && !(CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP || CPU_CORTEX_M_HAS_VTOR)
 	help
 	  Another image has enabled SW_VECTOR_RELAY, and will relay interrupts
