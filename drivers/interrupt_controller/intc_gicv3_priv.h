@@ -16,6 +16,7 @@
 
 #define GIC_RDIST_BASE	DT_REG_ADDR_BY_IDX(DT_INST(0, arm_gic), 1)
 
+extern mem_addr_t gic_rdists[GIC_NUM_CPU_IF];
 #define GIC_GET_RDIST(cpuid)		gic_rdists[cpuid]
 
 /* SGI base is at 64K offset from Redistributor */
@@ -30,11 +31,6 @@
 
 /* Register bit definations */
 
-/* GICD_CTLR Interrupt group definitions */
-#define GICD_CTLR_ENABLE_G0		0
-#define GICD_CTLR_ENABLE_G1NS		1
-#define GICD_CTLR_ENABLE_G1S		2
-
 /* GICD_CTLR Register write progress bit */
 #define GICD_CTLR_RWP			31
 
@@ -44,5 +40,11 @@
 /* GICR_WAKER */
 #define GICR_WAKER_PS			1
 #define GICR_WAKER_CA			2
+
+/*
+ * Wait for register write pending
+ * @initd interrupt id
+ */
+int gic_wait_rwp(uint32_t intid);
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_INTC_GICV3_PRIV_H_ */

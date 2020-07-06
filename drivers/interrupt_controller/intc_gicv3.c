@@ -5,11 +5,9 @@
  */
 
 #include <assert.h>
-#include <sw_isr_table.h>
-#include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <drivers/interrupt_controller/gic.h>
-#include "intc_gic_common_priv.h"
 #include "intc_gicv3_priv.h"
+#include "intc_gic_common_priv.h"
 
 /* Redistributor base addresses for each core */
 mem_addr_t gic_rdists[GIC_NUM_CPU_IF];
@@ -18,7 +16,7 @@ mem_addr_t gic_rdists[GIC_NUM_CPU_IF];
  * Wait for register write pending
  * TODO: add timed wait
  */
-static int gic_wait_rwp(uint32_t intid)
+int gic_wait_rwp(uint32_t intid)
 {
 	uint32_t rwp_mask;
 	mem_addr_t base;
@@ -35,65 +33,6 @@ static int gic_wait_rwp(uint32_t intid)
 		;
 
 	return 0;
-}
-
-void arm_gic_irq_set_priority(unsigned int intid,
-			      unsigned int prio, uint32_t flags)
-{
-	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
-	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
-	uint32_t shift;
-	uint32_t val;
-	mem_addr_t base = GET_DIST_BASE(intid);
-
-	/* Disable the interrupt */
-	sys_write32(mask, ICENABLER(base, idx));
-	gic_wait_rwp(intid);
-
-	/* PRIORITYR registers provide byte access */
-	sys_write8(prio & GIC_PRI_MASK, IPRIORITYR(base, intid));
-
-	/* Interrupt type config */
-	if (!GIC_IS_SGI(intid)) {
-		idx = intid / GIC_NUM_CFG_PER_REG;
-		shift = (intid & (GIC_NUM_CFG_PER_REG - 1)) * 2;
-
-		val = sys_read32(ICFGR(base, idx));
-		val &= ~(GICD_ICFGR_MASK << shift);
-		if (flags & IRQ_TYPE_EDGE) {
-			val |= (GICD_ICFGR_TYPE << shift);
-		}
-		sys_write32(val, ICFGR(base, idx));
-	}
-}
-
-void arm_gic_irq_enable(unsigned int intid)
-{
-	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
-	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
-
-	sys_write32(mask, ISENABLER(GET_DIST_BASE(intid), idx));
-}
-
-void arm_gic_irq_disable(unsigned int intid)
-{
-	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
-	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
-
-	sys_write32(mask, ICENABLER(GET_DIST_BASE(intid), idx));
-	/* poll to ensure write is complete */
-	gic_wait_rwp(intid);
-}
-
-bool arm_gic_irq_is_enabled(unsigned int intid)
-{
-	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
-	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
-	uint32_t val;
-
-	val = sys_read32(ISENABLER(GET_DIST_BASE(intid), idx));
-
-	return (val & mask) != 0;
 }
 
 unsigned int arm_gic_get_active(void)
@@ -222,62 +161,10 @@ static void gicv3_cpuif_init(void)
 	write_sysreg(1, ICC_IGRPEN1_EL1);
 }
 
-/*
- * TODO: Consider Zephyr in EL1NS.
- */
-static void gicv3_dist_init(void)
-{
-	unsigned int num_ints;
-	unsigned int intid;
-	unsigned int idx;
-	mem_addr_t base = GIC_DIST_BASE;
-
-	num_ints = sys_read32(GICD_TYPER);
-	num_ints &= GICD_TYPER_ITLINESNUM_MASK;
-	num_ints = (num_ints + 1) << 5;
-
-	/*
-	 * Default configuration of all SPIs
-	 */
-	for (intid = GIC_SPI_INT_BASE; intid < num_ints;
-	     intid += GIC_NUM_INTR_PER_REG) {
-		idx = intid / GIC_NUM_INTR_PER_REG;
-		/* Disable interrupt */
-		sys_write32(BIT_MASK(GIC_NUM_INTR_PER_REG),
-			    ICENABLER(base, idx));
-		/* Clear pending */
-		sys_write32(BIT_MASK(GIC_NUM_INTR_PER_REG),
-			    ICPENDR(base, idx));
-		/* All SPIs are G1S and owned by Zephyr */
-		sys_write32(0, IGROUPR(base, idx));
-		sys_write32(BIT_MASK(GIC_NUM_INTR_PER_REG),
-			    IGROUPMODR(base, idx));
-
-	}
-	/* wait for rwp on GICD */
-	gic_wait_rwp(GIC_SPI_INT_BASE);
-
-	/* Configure default priorities for all SPIs. */
-	for (intid = GIC_SPI_INT_BASE; intid < num_ints;
-	     intid += GIC_NUM_PRI_PER_REG) {
-		sys_write32(GIC_INT_DEF_PRI_X4, IPRIORITYR(base, intid));
-	}
-
-	/* Configure all SPIs as active low, level triggered by default */
-	for (intid = GIC_SPI_INT_BASE; intid < num_ints;
-	     intid += GIC_NUM_CFG_PER_REG) {
-		idx = intid / GIC_NUM_CFG_PER_REG;
-		sys_write32(0, ICFGR(base, idx));
-	}
-
-	/* enable Group 1 secure interrupts */
-	sys_set_bit(GICD_CTLR, GICD_CTLR_ENABLE_G1S);
-}
-
 /* TODO: add arm_gic_secondary_init() for multicore support */
 int arm_gic_init(void)
 {
-	gicv3_dist_init();
+	gic_dist_init();
 
 	/* Fixme: populate each redistributor */
 	gic_rdists[0] = GIC_RDIST_BASE;
