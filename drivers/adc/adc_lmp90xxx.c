@@ -109,7 +109,8 @@ LOG_MODULE_REGISTER(adc_lmp90xxx);
 struct lmp90xxx_config {
 	const char *spi_dev_name;
 	const char *spi_cs_dev_name;
-	uint8_t spi_cs_pin;
+	gpio_pin_t spi_cs_pin;
+	gpio_dt_flags_t spi_cs_dt_flags;
 	struct spi_config spi_cfg;
 	const char *drdyb_dev_name;
 	gpio_pin_t drdyb_pin;
@@ -946,6 +947,7 @@ static int lmp90xxx_init(struct device *dev)
 		}
 
 		data->spi_cs.gpio_pin = config->spi_cs_pin;
+		data->spi_cs.gpio_dt_flags = config->spi_cs_dt_flags;
 	}
 
 	err = lmp90xxx_soft_reset(dev);
@@ -1079,6 +1081,10 @@ static const struct adc_driver_api lmp90xxx_adc_api = {
 		.spi_cs_pin = UTIL_AND( \
 			DT_SPI_DEV_HAS_CS_GPIOS(DT_INST_LMP90XXX(n, t)), \
 			DT_SPI_DEV_CS_GPIOS_PIN(DT_INST_LMP90XXX(n, t)) \
+			), \
+		.spi_cs_dt_flags = UTIL_AND( \
+			DT_SPI_DEV_HAS_CS_GPIOS(DT_INST_LMP90XXX(n, t)), \
+			DT_SPI_DEV_CS_GPIOS_FLAGS(DT_INST_LMP90XXX(n, t)) \
 			), \
 		.spi_cfg = { \
 			.operation = (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | \
