@@ -4,7 +4,7 @@
 
 &mikrobus_spi {
 	status = "okay";
-	cs-gpios = <&mikrobus_header 2 0>; /* CS */
+	cs-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>; /* CS */
 
 	eth_click@0 {
 		compatible = "microchip,enc28j60";

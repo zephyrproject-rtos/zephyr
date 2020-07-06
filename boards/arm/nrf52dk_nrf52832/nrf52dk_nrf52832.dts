@@ -190,7 +190,7 @@ arduino_spi: &spi2 {
 	sck-pin = <25>;
 	mosi-pin = <23>;
 	miso-pin = <24>;
-	cs-gpios = <&arduino_header 16 0>; /* D10 */
+	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
 };
 
 &flash0 {
