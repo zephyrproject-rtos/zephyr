@@ -26,11 +26,6 @@
 
 _ASM_FILE_PROLOGUE
 
-/* When CONFIG_BOOTLOADER_MCUBOOT is set the firmware image
- * is chain-loadable and does not need to forward interrupts.
- */
-#if defined(CONFIG_SW_VECTOR_RELAY) && !defined(CONFIG_BOOTLOADER_MCUBOOT)
-
 GDATA(_vector_table_pointer)
 GDATA(z_main_stack)
 
@@ -80,5 +75,3 @@ SECTION_FUNC(vector_relay_table, __vector_relay_table)
 	.endr
 
 GTEXT(__vector_relay_table)
-
-#endif
