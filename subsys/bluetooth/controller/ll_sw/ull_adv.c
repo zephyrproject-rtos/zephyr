@@ -1130,6 +1130,14 @@ uint8_t ll_adv_enable(uint8_t enable)
 						ticks_slot_aux +
 						HAL_TICKER_US_TO_TICKS(EVENT_MAFS_US);
 
+					/* Add sync_info into auxiliary PDU */
+					ret = ull_adv_aux_hdr_set_clear(adv,
+						ULL_ADV_PDU_HDR_FIELD_SYNC_INFO,
+						0, NULL);
+					if (ret) {
+						return ret;
+					}
+
 					ull_hdr_init(&sync->ull);
 
 					ret = ull_adv_sync_start(sync,
