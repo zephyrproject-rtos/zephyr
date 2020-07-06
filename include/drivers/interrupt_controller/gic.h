@@ -70,7 +70,6 @@
  * Helper Constants
  */
 
-#if defined(CONFIG_GIC_V3)
 /**
  * @brief raise SGI to target cores
  *
@@ -81,7 +80,6 @@
  */
 void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
 		   uint16_t target_list);
-#endif
 
 /* GICD_ICFGR */
 #define GICD_ICFGR_MASK			BIT_MASK(2)
@@ -130,8 +128,6 @@ void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
 
 /* Fixme: update from platform specific define or dt */
 #define GIC_NUM_CPU_IF			1
-/* Fixme: arch support need to provide api/macro in SMP implementation */
-#define GET_CPUID			0
 
 #ifndef _ASMLANGUAGE
 
