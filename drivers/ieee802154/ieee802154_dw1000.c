@@ -98,6 +98,7 @@ struct dwt_hi_cfg {
 	gpio_dt_flags_t rst_flags;
 	const char *spi_port;
 	uint8_t spi_cs_pin;
+	gpio_dt_flags_t spi_cs_flags;
 	const char *spi_cs_port;
 	uint32_t spi_freq;
 	uint8_t spi_slave;
@@ -141,6 +142,7 @@ static const struct dwt_hi_cfg dw1000_0_config = {
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	.spi_cs_port = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
 	.spi_cs_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
+	.spi_cs_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0),
 #endif
 };
 
@@ -1517,6 +1519,7 @@ static int dw1000_init(struct device *dev)
 	}
 
 	ctx->spi_cs.gpio_pin = hi_cfg->spi_cs_pin;
+	ctx->spi_cs.gpio_dt_flags = hi_cfg->spi_cs_flags;
 	ctx->spi_cfg_slow.cs = &ctx->spi_cs;
 	ctx->spi_cfg_fast.cs = &ctx->spi_cs;
 #endif
