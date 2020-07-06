@@ -6,7 +6,7 @@
 
 menu "Modules"
 
-source "$(CMAKE_BINARY_DIR)/Kconfig.modules"
+source "$(KCONFIG_BINARY_DIR)/Kconfig.modules"
 source "modules/Kconfig"
 
 endmenu
