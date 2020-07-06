@@ -123,6 +123,9 @@
 "area: Modules":
   - "west.yml"
   - "modules/**/*"
+"area: Shields":
+  - "boards/shields/**"
+  - "samples/shields/**"
 "platform: STM32":
   - "boards/arm/nucleo_*/**"
   - "boards/arm/*stm32*/**"
