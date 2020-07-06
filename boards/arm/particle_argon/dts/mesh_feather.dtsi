@@ -193,7 +193,7 @@ feather_i2c: &i2c0 { };
 	sck-pin = <19>;
 	mosi-pin = <20>;
 	miso-pin = <21>;
-	cs-gpios = <&gpio0 17 0>;
+	cs-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
 	mx25l32: mx25l3233f@0 {
 		compatible = "jedec,spi-nor";
 		label = "MX25L3233F";

@@ -78,7 +78,7 @@
 	sck-pin = <29>;
 	mosi-pin = <25>;
 	miso-pin = <28>;
-	cs-gpios = <&gpio0 3 0>, <&gpio0 8 0>;
+	cs-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>, <&gpio0 8 GPIO_ACTIVE_LOW>;
 
 	bme280@0 {
 		compatible = "bosch,bme280";

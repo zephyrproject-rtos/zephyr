@@ -76,7 +76,7 @@
 	location-tx = <GECKO_LOCATION(29) GECKO_PORT_K GECKO_PIN(0)>;
 	location-clk = <GECKO_LOCATION(18) GECKO_PORT_F GECKO_PIN(7)>;
 
-	cs-gpios = <&gpiok 1 0>;
+	cs-gpios = <&gpiok 1 GPIO_ACTIVE_LOW>;
 
 	status = "okay";
 

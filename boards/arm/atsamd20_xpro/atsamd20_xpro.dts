@@ -52,7 +52,7 @@
 	dopo = <1>;
 	#address-cells = <1>;
 	#size-cells = <0>;
-	cs-gpios = <&porta 5 0>;
+	cs-gpios = <&porta 5 GPIO_ACTIVE_LOW>;
 };
 
 &sercom2 {

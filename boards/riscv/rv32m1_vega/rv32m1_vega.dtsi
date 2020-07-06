@@ -137,7 +137,7 @@ arduino_spi: &lpspi0 {
 
 &lpspi1 {
 	status = "okay";
-	cs-gpios = <&gpiob 22 0>;
+	cs-gpios = <&gpiob 22 GPIO_ACTIVE_LOW>;
 	mx25r32: mx25r3235f@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;

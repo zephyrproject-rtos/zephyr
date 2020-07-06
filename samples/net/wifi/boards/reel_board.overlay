@@ -6,7 +6,7 @@
 
 &spi3 {
 	status = "ok";
-	cs-gpios = <&gpio1 3 0>;
+	cs-gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
 	sck-pin = <36>;
 	mosi-pin = <37>;
 	miso-pin = <38>;

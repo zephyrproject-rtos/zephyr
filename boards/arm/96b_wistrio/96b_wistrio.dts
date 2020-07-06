@@ -60,7 +60,7 @@
 
 &spi1 {
 	status = "okay";
-	cs-gpios = <&gpiob 0 0>;
+	cs-gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
 
 	lora: sx1276@0 {
 		compatible = "semtech,sx1276";

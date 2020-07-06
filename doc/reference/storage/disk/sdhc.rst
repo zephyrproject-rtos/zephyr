@@ -33,7 +33,7 @@ SDHC card has been initialized:
 
     &spi1 {
             status = "okay";
-            cs-gpios = <&porta 27 0>;
+            cs-gpios = <&porta 27 GPIO_ACTIVE_LOW>;
 
             sdhc0: sdhc@0 {
                     compatible = "zephyr,mmc-spi-slot";
