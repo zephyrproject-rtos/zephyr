@@ -814,7 +814,7 @@ class QEMUHandler(Handler):
                 # if we have registered a fail make sure the state is not
                 # overridden by a false success message coming from the
                 # testsuite
-                if out_state != 'failed':
+                if out_state not in ['failed', 'unexpected eof', 'unexpected byte']:
                     out_state = harness.state
 
                 # if we get some state, that means test is doing well, we reset
@@ -828,6 +828,8 @@ class QEMUHandler(Handler):
                         timeout_time = time.time() + 30
                     else:
                         timeout_time = time.time() + 2
+            else:
+                logger.debug("got nothing from harness")
             line = ""
 
         handler.record(harness)
@@ -835,11 +837,16 @@ class QEMUHandler(Handler):
         handler_time = time.time() - start_time
         logger.debug("QEMU complete (%s) after %f seconds" %
                      (out_state, handler_time))
+
         handler.set_state(out_state, handler_time)
+
         if out_state == "timeout":
             handler.instance.reason = "Timeout"
         elif out_state == "failed":
             handler.instance.reason = "Failed"
+        elif out_state in ['unexpected eof', 'unexpected byte']:
+            handler.set_state("failed", handler_time)
+            handler.instance.reason = out_state
 
         log_out_fp.close()
         out_fp.close()
@@ -911,10 +918,14 @@ class QEMUHandler(Handler):
                     proc.kill()
                     self.returncode = proc.returncode
             else:
+                logger.debug(f"No timeout, return code from qemu: {self.returncode}")
                 self.returncode = proc.returncode
 
             if os.path.exists(self.pid_fn):
                 os.unlink(self.pid_fn)
+
+
+        logger.debug(f"return code from qemu: {self.returncode}")
 
         if self.returncode != 0:
             self.set_state("failed", 0)
@@ -2013,6 +2024,7 @@ class ProjectBuilder(FilterBuilder):
             logger.debug("run test: %s" % self.instance.name)
             self.run()
             self.instance.status, _ = self.instance.handler.get_state()
+            logger.debug(f"run status: {self.instance.status}")
             pipeline.put({
                 "op": "report",
                 "test": self.instance,
@@ -2082,8 +2094,11 @@ class ProjectBuilder(FilterBuilder):
         elif instance.status == "skipped":
             self.suite.total_skipped += 1
             status = Fore.YELLOW + "SKIPPED" + Fore.RESET
-        else:
+        elif instance.status == "passed":
             status = Fore.GREEN + "PASSED" + Fore.RESET
+        else:
+            logger.debug(f"Unknown status = {instance.status}")
+            status = Fore.YELLOW + "UNKNOWN" + Fore.RESET
 
         if self.verbose:
             if self.cmake_only:
