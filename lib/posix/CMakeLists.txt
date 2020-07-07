@@ -30,7 +30,7 @@ endif()
 
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include
-  ${ZEPHYR_BASE}/arch/${ARCH}/include
+  ${ARCH_DIR}/${ARCH}/include
 )
 
 zephyr_library_link_libraries(posix_subsys)
