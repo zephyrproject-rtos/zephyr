@@ -73,6 +73,10 @@ static inline void pcie_mm_conf(pcie_bdf_t bdf, unsigned int reg,
 
 void z_pcie_add_mmu_regions(void)
 {
+	if (bus_segs[0].mmio == NULL) {
+		pcie_mm_init();
+	}
+
 	for (int i = 0; i < ARRAY_SIZE(bus_segs); i++) {
 		/* 32 devices & 8 functions per bus, 4k per device */
 		uintptr_t sz = bus_segs[i].n_buses * (32 * 8 * 4096);
