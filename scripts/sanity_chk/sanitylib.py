@@ -831,6 +831,10 @@ class QEMUHandler(Handler):
         handler_time = time.time() - start_time
         logger.debug("QEMU complete (%s) after %f seconds" %
                      (out_state, handler_time))
+
+        if out_state in ["unexpected byte", "unexpected eof"]:
+            out_state = "failed"
+
         handler.set_state(out_state, handler_time)
         if out_state == "timeout":
             handler.instance.reason = "Timeout"
