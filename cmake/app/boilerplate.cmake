@@ -115,8 +115,18 @@ include(${ZEPHYR_BASE}/cmake/version.cmake)  # depends on hex.cmake
 #
 
 include(${ZEPHYR_BASE}/cmake/python.cmake)
+include(${ZEPHYR_BASE}/cmake/west.cmake)
 include(${ZEPHYR_BASE}/cmake/git.cmake)  # depends on version.cmake
 include(${ZEPHYR_BASE}/cmake/ccache.cmake)
+
+#
+# Find Zephyr modules.
+# Those may contain additional DTS, BOARD, SOC, ARCH ROOTs.
+# Also create the Kconfig binary dir for generated Kconf files.
+#
+set(KCONFIG_BINARY_DIR ${CMAKE_BINARY_DIR}/Kconfig)
+file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR})
+include(${ZEPHYR_BASE}/cmake/zephyr_module.cmake)
 
 if(${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR})
   message(FATAL_ERROR "Source directory equals build directory.\
@@ -501,12 +511,6 @@ include(${ZEPHYR_BASE}/cmake/host-tools.cmake)
 # Include board specific device-tree flags before parsing.
 include(${BOARD_DIR}/pre_dt_board.cmake OPTIONAL)
 
-# Build directory for generated KConfig files, such as:
-# - Multiple SOC_ROOT inclusion
-# - Zephyr modules Kconfig files
-set(KCONFIG_BINARY_DIR ${CMAKE_BINARY_DIR}/Kconfig)
-file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR})
-
 # DTS should be close to kconfig because CONFIG_ variables from
 # kconfig and dts should be available at the same time.
 #
@@ -520,7 +524,6 @@ file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR})
 # preprocess DT sources, and then, after we have finished processing
 # both DT and Kconfig we complete the target-specific configuration,
 # and possibly change the toolchain.
-include(${ZEPHYR_BASE}/cmake/zephyr_module.cmake)
 include(${ZEPHYR_BASE}/cmake/generic_toolchain.cmake)
 include(${ZEPHYR_BASE}/cmake/dts.cmake)
 include(${ZEPHYR_BASE}/cmake/kconfig.cmake)
