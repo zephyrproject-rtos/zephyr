@@ -148,7 +148,6 @@ enter_code64:
 	movw %ax, %ss
 	movw %ax, %fs
 
-	movq $x86_cpuboot, %rbp
 	movw __x86_cpuboot_t_tr_OFFSET(%rbp), %ax
 	ltr %ax
 
@@ -224,6 +223,7 @@ __start64:
 	outb %al, $0xA1
 
 	/* Far call into the Zephyr code segment */
+	movq $x86_cpuboot, %rbp
 	mov jmpdesc, %rax
 	jmp *%rax
 jmpdesc:
