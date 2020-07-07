@@ -6,6 +6,13 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_CDB_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_CDB_H_
 
+#include <inttypes.h>
+#include <sys/atomic.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if defined(CONFIG_BT_MESH_CDB)
 #define NODE_COUNT    CONFIG_BT_MESH_CDB_NODE_COUNT
 #define SUBNET_COUNT  CONFIG_BT_MESH_CDB_SUBNET_COUNT
@@ -259,5 +266,9 @@ struct bt_mesh_cdb_app_key *bt_mesh_cdb_app_key_get(uint16_t app_idx);
  *  @param key Application key to be stored.
  */
 void bt_mesh_cdb_app_key_store(const struct bt_mesh_cdb_app_key *key);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_MESH_CDB_H_ */
