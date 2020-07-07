@@ -10,9 +10,9 @@
 # Controller support is an HCI driver in itself, so these HCI driver
 # options are only applicable if controller support hasn't been enabled.
 menu "Bluetooth Drivers"
-	depends on BT && !BT_CTLR
+	depends on BT
 
-if BT_HCI
+if BT_HCI && (!BT_HCI_HOST || !BT_CTLR)
 source "drivers/bluetooth/hci/Kconfig"
 endif
 
