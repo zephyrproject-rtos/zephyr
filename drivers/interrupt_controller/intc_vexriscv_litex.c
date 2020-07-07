@@ -79,7 +79,7 @@ static void vexriscv_litex_irq_handler(void *device)
 
 #ifdef CONFIG_ETH_LITEETH
 	if (irqs & (1 << ETH0_IRQ)) {
-		ite = (struct _isr_table_entry *)&_sw_isr_table[ETH0_IRQ];
+		ite = &_sw_isr_table[ETH0_IRQ];
 		ite->isr(ite->arg);
 	}
 #endif
