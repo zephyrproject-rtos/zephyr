@@ -36,6 +36,11 @@ Build the Zephyr version of the application like this:
    :goals: build
    :compact:
 
+.. warning::
+
+   On some boards the stack size CONFIG_MAIN_STACK_SIZE must be increased!
+   The appropriate value may be found by step-by-step increase.
+
 After the sample starts, it issues an HTTP GET request for
 http://archive.ubuntu.com/ubuntu/dists/xenial/main/installer-amd64/current/images/hd-media/vmlinuz
 This site was selected as providing files of variety of sizes, together
