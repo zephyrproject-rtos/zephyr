@@ -74,11 +74,11 @@ static void prevent_false_prev_evt(void)
 	uint32_t now = counter();
 	uint32_t prev_val;
 
-	/* First take care of a risk of an event coming from CC being set to
-	 * next tick. Reconfigure CC to future (now tick is the furtherest
-	 * future). If CC was set to next tick we need to wait for up to 15us
-	 * (half of 32k tick) and clean potential event. After that time there
-	 * is no risk of unwanted event.
+	/* First take care of a risk of an event coming from CC being set to the
+	 * next cycle.
+	 * Reconfigure CC to the future. If CC was set to next cycle we need to
+	 * wait for up to 15 us (half of 32 kHz interval) and clean a potential
+	 * event. After that there is no risk of unwanted event.
 	 */
 	prev_val = get_comparator();
 	event_clear();
@@ -96,15 +96,15 @@ static void prevent_false_prev_evt(void)
 	NVIC_ClearPendingIRQ(RTC_IRQn);
 }
 
-/* If settings is next tick from now, function attempts to set next tick. If
- * counter progresses during that time it means that 1 tick elapsed and
+/* If alarm is next RTC cycle from now, function attempts to adjust. If
+ * counter progresses during that time it means that 1 cycle elapsed and
  * interrupt is set pending.
  */
-static void handle_next_tick_case(uint32_t t)
+static void handle_next_cycle_case(uint32_t t)
 {
 	set_comparator(t + 2);
 	while (t != counter()) {
-		/* already expired, tick elapsed but event might not be
+		/* Already expired, time elapsed but event might not be
 		 * generated. Trigger interrupt.
 		 */
 		t = counter();
@@ -113,47 +113,47 @@ static void handle_next_tick_case(uint32_t t)
 }
 
 /* Function safely sets absolute alarm. It assumes that provided value is
- * less than MAX_TICKS from now. It detects late setting and also handles
- * +1 tick case.
+ * less than MAX_CYCLES from now. It detects late setting and also handles
+ * +1 cycle case.
  */
-static void set_absolute_ticks(uint32_t abs_val)
+static void set_absolute_alarm(uint32_t abs_val)
 {
 	uint32_t diff;
 	uint32_t t = counter();
 
 	diff = counter_sub(abs_val, t);
 	if (diff == 1) {
-		handle_next_tick_case(t);
+		handle_next_cycle_case(t);
 		return;
 	}
 
 	set_comparator(abs_val);
 	t = counter();
 	/* A little trick, subtract 2 to force now and now + 1 case fall into
-	 * negative (> MAX_TICKS). Diff 0 means two ticks from now.
+	 * negative (> MAX_CYCLES). Diff 0 means two cycles from now.
 	 */
 	diff = counter_sub(abs_val - 2, t);
-	if (diff > MAX_TICKS) {
-		/* Already expired. set for next tick */
+	if (diff > MAX_CYCLES) {
+		/* Already expired, set for subsequent cycle. */
 		/* It is possible that setting CC was interrupted and CC might
 		 * be set to COUNTER+1 value which will not generate an event.
 		 * In that case, special handling is performed (attempt to set
 		 * CC to COUNTER+2).
 		 */
-		handle_next_tick_case(t);
+		handle_next_cycle_case(t);
 	}
 }
 
-/* Sets relative ticks alarm from any context. Function is lockless. It only
+/* Sets relative alarm from any context. Function is lockless. It only
  * blocks RTC interrupt.
  */
-static void set_protected_absolute_ticks(uint32_t ticks)
+static void set_protected_absolute_alarm(uint32_t cycles)
 {
 	int_disable();
 
 	prevent_false_prev_evt();
 
-	set_absolute_ticks(ticks);
+	set_absolute_alarm(cycles);
 
 	int_enable();
 }
@@ -180,7 +180,7 @@ void rtc_nrf_isr(void *arg)
 		/* protection is not needed because we are in the RTC interrupt
 		 * so it won't get preempted by the interrupt.
 		 */
-		set_absolute_ticks(last_count + CYC_PER_TICK);
+		set_absolute_alarm(last_count + CYC_PER_TICK);
 	}
 
 	z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : (dticks > 0));
@@ -256,7 +256,7 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 	}
 
 	cyc += last_count;
-	set_protected_absolute_ticks(cyc);
+	set_protected_absolute_alarm(cyc);
 }
 
 uint32_t z_clock_elapsed(void)
