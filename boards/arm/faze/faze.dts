@@ -61,6 +61,12 @@
 		  <&pinmux0 5 IOCON_FUNC1>;
 	pinmux-names = "SCL", "SDA";
 	status = "okay";
+
+	asm2364: asm2364@30 {
+		compatible = "asmedia,asm2364";
+		int-gpios = <&gpio0 2 0>;
+		reg = <0x30>;
+	};
 };
 
 &i2c1 {
