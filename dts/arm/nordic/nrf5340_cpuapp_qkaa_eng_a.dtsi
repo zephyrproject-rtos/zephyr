@@ -24,3 +24,16 @@
 		compatible = "nordic,nRF5340-CPUAPP-QKAA", "nordic,nRF5340-CPUAPP", "nordic,nRF53", "simple-bus";
 	};
 };
+
+/*
+ * Several peripherals are not functional on ENG_A revision
+ * so we delete the corresponding DTS nodes.
+ */
+/delete-node/ &i2c2;
+/delete-node/ &i2c3;
+/delete-node/ &spi2;
+/delete-node/ &spi3;
+/delete-node/ &uart2;
+/delete-node/ &uart3;
+/delete-node/ &pwm3;
+/delete-node/ &wdt1;
