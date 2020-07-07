@@ -889,10 +889,6 @@ void z_x86_paging_init(void)
 
 	z_x86_soc_add_mmu_regions();
 
-#ifdef CONFIG_PCIE_MMIO_CFG
-	z_pcie_add_mmu_regions();
-#endif
-
 	pages_free = (page_pos - page_pool) / MMU_PAGE_SIZE;
 
 	if (pages_free != 0) {
