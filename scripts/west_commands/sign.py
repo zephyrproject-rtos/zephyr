@@ -32,10 +32,7 @@ In the simplest usage, run this from your build directory:
 
    west sign -t your_tool -- ARGS_FOR_YOUR_TOOL
 
-Assuming your binary was properly built for processing and handling by
-tool "your_tool", this creates zephyr.signed.bin and zephyr.signed.hex
-files (if supported by "your_tool") which are ready for use by your
-bootloader. The "ARGS_FOR_YOUR_TOOL" value can be any additional
+The "ARGS_FOR_YOUR_TOOL" value can be any additional
 arguments you want to pass to the tool, such as the location of a
 signing key, a version identifier, etc.
 
@@ -52,6 +49,10 @@ run this from your build directory:
 
 For this to work, either imgtool must be installed (e.g. using pip3),
 or you must pass the path to imgtool.py using the -p option.
+
+Assuming your binary was properly built for processing and handling by
+imgtool, this creates zephyr.signed.bin and zephyr.signed.hex
+files which are ready for use by your bootloader.
 
 The image header size, alignment, and slot sizes are determined from
 the build directory using .config and the device tree. A default
