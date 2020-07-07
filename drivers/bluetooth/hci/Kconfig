@@ -19,8 +19,8 @@ choice BT_HCI_BUS_TYPE
 
 config BT_H4
 	bool "H:4 UART"
-	select UART_INTERRUPT_DRIVEN
 	select BT_UART
+	select BT_H4_UART
 	select BT_RECV_IS_RX_THREAD
 	depends on SERIAL
 	help

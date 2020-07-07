@@ -8,9 +8,11 @@
 
 static inline void bt_uart_drain(struct device *dev)
 {
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uint8_t c;
 
 	while (uart_fifo_read(dev, &c, 1)) {
 		continue;
 	}
+#endif
 }
