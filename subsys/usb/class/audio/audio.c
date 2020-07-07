@@ -761,8 +761,7 @@ static int audio_custom_handler(struct usb_setup_packet *pSetup, int32_t *len,
 static int audio_class_handle_req(struct usb_setup_packet *pSetup,
 				  int32_t *len, uint8_t **data)
 {
-	LOG_INF("bmRequestType 0x%02x, bRequest 0x%02x, wValue 0x%04x,"
-		"wIndex 0x%04x, wLength 0x%04x",
+	LOG_DBG("bmRT 0x%02x, bR 0x%02x, wV 0x%04x, wI 0x%04x, wL 0x%04x",
 		pSetup->bmRequestType, pSetup->bRequest, pSetup->wValue,
 		pSetup->wIndex, pSetup->wLength);
 
