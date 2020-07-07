@@ -871,29 +871,14 @@ int arch_mem_map(void *dest, uintptr_t addr, size_t size, uint32_t flags)
 	return 0;
 }
 
-void __weak z_x86_soc_add_mmu_regions(void)
-{
-}
-
 /* Called from x86's arch_kernel_init() */
 void z_x86_paging_init(void)
 {
-	size_t pages_free;
-
 	Z_STRUCT_SECTION_FOREACH(mmu_region, rgn) {
 		add_mmu_region(&z_x86_kernel_ptables, rgn, false);
 #ifdef CONFIG_X86_KPTI
 		add_mmu_region(&z_x86_user_ptables, rgn, true);
 #endif
-	}
-
-	z_x86_soc_add_mmu_regions();
-
-	pages_free = (page_pos - page_pool) / MMU_PAGE_SIZE;
-
-	if (pages_free != 0) {
-		printk("Optimal CONFIG_X86_MMU_PAGE_POOL_PAGES %zu\n",
-		       CONFIG_X86_MMU_PAGE_POOL_PAGES - pages_free);
 	}
 
 #ifdef CONFIG_X86_64
