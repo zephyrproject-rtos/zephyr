@@ -7,8 +7,9 @@ choice
 
 config SYS_PM_POLICY_RESIDENCY
 	bool "PM Policy based on CPU residency"
-	select SYS_PM_POLICY_RESIDENCY_DEFAULT if !SOC_SERIES_CC13X2_CC26X2
+	select SYS_PM_POLICY_RESIDENCY_DEFAULT if !SOC_SERIES_CC13X2_CC26X2 && !SOC_FAMILY_STM32
 	select SYS_PM_POLICY_RESIDENCY_CC13X2_CC26X2 if SOC_SERIES_CC13X2_CC26X2
+	select SYS_PM_POLICY_RESIDENCY_STM32 if SOC_FAMILY_STM32
 	help
 	  Select this option for PM policy based on CPU residencies.
 
@@ -33,6 +34,12 @@ config SYS_PM_POLICY_RESIDENCY_CC13X2_CC26X2
 	bool
 	help
 	  Use the residency policy implementation for TI CC13x2/CC26x2
+
+config SYS_PM_POLICY_RESIDENCY_STM32
+	bool "Application PM Policy for STM32 soc"
+	depends on SOC_FAMILY_STM32
+	help
+	  Use the residency policy implementation for STM32 soc
 
 if SYS_PM_POLICY_RESIDENCY
 
