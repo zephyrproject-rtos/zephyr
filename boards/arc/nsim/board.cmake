@@ -1,10 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-
-if(${CONFIG_SOC_NSIM_HS_SMP})
-set(EMU_PLATFORM mdb)
-else()
 set(EMU_PLATFORM nsim)
-endif()
 
 if(NOT CONFIG_SOC_NSIM_HS_SMP)
 board_set_flasher_ifnset(arc-nsim)
