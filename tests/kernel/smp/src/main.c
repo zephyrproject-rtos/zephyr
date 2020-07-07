@@ -498,7 +498,7 @@ void test_get_cpu(void)
 
 #ifdef CONFIG_TRACE_SCHED_IPI
 /* global variable for testing send IPI */
-static int sched_ipi_has_called = -1;
+static volatile int sched_ipi_has_called;
 
 void z_trace_sched_ipi(void)
 {
@@ -524,23 +524,19 @@ void test_smp_ipi(void)
 {
 	TC_PRINT("cpu num=%d", CONFIG_MP_NUM_CPUS);
 
-	sched_ipi_has_called = 0;
-
-	k_busy_wait(DELAY_US);
-
-	/* It shouldn't enter our IPI interrupt handler at this moment */
-	zassert_true(sched_ipi_has_called == 0, "shouldn't receive IPI,(%d)",
-			sched_ipi_has_called);
-
-	for (int i = 1; i <= 3 ; i++) {
+	for (int i = 0; i < 3 ; i++) {
 		/* issue a sched ipi to tell other CPU to run thread */
+		sched_ipi_has_called = 0;
 		arch_sched_ipi();
 
-		/* do busy wait here until get IPI */
-		k_busy_wait(DELAY_US);
+		/* Need to wait longer than we think, loaded CI
+		 * systems need to wait for host scheduling to run the
+		 * other CPU's thread.
+		 */
+		k_msleep(100);
 
 		/**TESTPOINT: check if enter our IPI interrupt handler */
-		zassert_true(sched_ipi_has_called == i,
+		zassert_true(sched_ipi_has_called != 0,
 				"did not receive IPI.(%d)",
 				sched_ipi_has_called);
 	}
