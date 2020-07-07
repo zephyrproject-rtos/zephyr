@@ -20,6 +20,7 @@
  * @{
  */
 
+#include <kernel.h>
 #include <net/net_ip.h>
 #include <net/http_parser.h>
 
