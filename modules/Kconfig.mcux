@@ -209,4 +209,9 @@ config HAS_MCUX_RDC
 	help
 	  Set if the RDC module is present in the SoC.
 
+config HAS_MCUX_PIT
+	bool
+	help
+	  Set if the PIT module is present on the SoC.
+
 endif # HAS_MCUX
