@@ -432,11 +432,11 @@ USBD_CFG_DATA_DEFINE(primary, netusb) struct usb_cfg_data netusb_config = {
 	.interface_config = ecm_interface_config,
 	.interface_descriptor = &cdc_ecm_cfg.if0,
 	.cb_usb_status = ecm_status_cb,
-	.interface = {
+	.request_handlers = {
 		.class_handler = ecm_class_handler,
 		.custom_handler = NULL,
 		.vendor_handler = NULL,
 	},
 	.num_endpoints = ARRAY_SIZE(ecm_ep_data),
-	.endpoint = ecm_ep_data,
+	.endpoints = ecm_ep_data,
 };

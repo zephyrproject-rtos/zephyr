@@ -323,13 +323,13 @@ USBD_CFG_DATA_DEFINE(primary, hci) struct usb_cfg_data bluetooth_config = {
 	.interface_config = bluetooth_interface_config,
 	.interface_descriptor = &bluetooth_cfg.if0,
 	.cb_usb_status = bluetooth_status_cb,
-	.interface = {
+	.request_handlers = {
 		.class_handler = bluetooth_class_handler,
 		.custom_handler = NULL,
 		.vendor_handler = NULL,
 	},
 	.num_endpoints = ARRAY_SIZE(bluetooth_ep_data),
-	.endpoint = bluetooth_ep_data,
+	.endpoints = bluetooth_ep_data,
 };
 
 static int bluetooth_init(struct device *dev)

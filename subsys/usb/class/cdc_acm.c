@@ -289,7 +289,7 @@ static void tx_work_handler(struct k_work *work)
 		CONTAINER_OF(work, struct cdc_acm_dev_data_t, tx_work);
 	struct device *dev = dev_data->common.dev;
 	struct usb_cfg_data *cfg = (void *)dev->config_info;
-	uint8_t ep = cfg->endpoint[ACM_IN_EP_IDX].ep_addr;
+	uint8_t ep = cfg->endpoints[ACM_IN_EP_IDX].ep_addr;
 	uint8_t *data;
 	size_t len;
 
@@ -420,7 +420,7 @@ static void cdc_acm_do_cb(struct cdc_acm_dev_data_t *dev_data,
 		LOG_DBG("USB device connected");
 		break;
 	case USB_DC_CONFIGURED:
-		cdc_acm_read_cb(cfg->endpoint[ACM_OUT_EP_IDX].ep_addr, 0,
+		cdc_acm_read_cb(cfg->endpoints[ACM_OUT_EP_IDX].ep_addr, 0,
 				dev_data);
 		dev_data->tx_ready = true;
 		dev_data->tx_irq_ena = true;
@@ -791,7 +791,7 @@ static int cdc_acm_send_notification(struct device *dev, uint16_t serial_state)
 
 	dev_data->notification_sent = 0U;
 
-	usb_write(cfg->endpoint[ACM_INT_EP_IDX].ep_addr,
+	usb_write(cfg->endpoints[ACM_INT_EP_IDX].ep_addr,
 		  (const uint8_t *)&notification, sizeof(notification), NULL);
 
 	/* Wait for notification to be sent */
@@ -991,12 +991,12 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 		.interface_config = cdc_interface_config,		\
 		.interface_descriptor = &cdc_acm_cfg_##x.if0,		\
 		.cb_usb_status = cdc_acm_dev_status_cb,			\
-		.interface = {						\
+		.request_handlers = {					\
 			.class_handler = cdc_acm_class_handle_req,	\
 			.custom_handler = NULL,				\
 		},							\
 		.num_endpoints = ARRAY_SIZE(cdc_acm_ep_data_##x),	\
-		.endpoint = cdc_acm_ep_data_##x,			\
+		.endpoints = cdc_acm_ep_data_##x,			\
 	};
 
 #if (CONFIG_USB_COMPOSITE_DEVICE || CONFIG_CDC_ACM_IAD)

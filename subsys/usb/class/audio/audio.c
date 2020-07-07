@@ -275,7 +275,7 @@ static void audio_dc_sof(struct usb_cfg_data *cfg,
 	uint8_t ep_addr;
 
 	/* In endpoint always at index 0 */
-	ep_addr = cfg->endpoint[0].ep_addr;
+	ep_addr = cfg->endpoints[0].ep_addr;
 	if ((ep_addr & USB_EP_DIR_MASK) && (dev_data->tx_enable)) {
 		if (dev_data->ops && dev_data->ops->data_request_cb) {
 			dev_data->ops->data_request_cb(
@@ -812,7 +812,7 @@ int usb_audio_send(const struct device *dev, struct net_buf *buffer,
 	struct usb_audio_dev_data *audio_dev_data = dev->driver_data;
 	struct usb_cfg_data *cfg = (void *)dev->config_info;
 	/* EP ISO IN is always placed first in the endpoint table */
-	uint8_t ep = cfg->endpoint[0].ep_addr;
+	uint8_t ep = cfg->endpoints[0].ep_addr;
 
 	if (!(ep & USB_EP_DIR_MASK)) {
 		LOG_ERR("Wrong device");
@@ -926,13 +926,13 @@ void usb_audio_register(struct device *dev,
 		.interface_config = audio_interface_config,		  \
 		.interface_descriptor = &dev##_desc_##i.std_ac_interface, \
 		.cb_usb_status = audio_cb_usb_status,			  \
-		.interface = {						  \
+		.request_handlers = {					  \
 			.class_handler = audio_class_handle_req,	  \
 			.custom_handler = audio_custom_handler,		  \
 			.vendor_handler = NULL,				  \
 		},							  \
 		.num_endpoints = ARRAY_SIZE(dev##_usb_audio_ep_data_##i), \
-		.endpoint = dev##_usb_audio_ep_data_##i,		  \
+		.endpoints = dev##_usb_audio_ep_data_##i,		  \
 	};								  \
 	DEVICE_AND_API_INIT(dev##_usb_audio_device_##i,			  \
 			    DT_LABEL(DT_INST(i, COMPAT_##dev)),		  \

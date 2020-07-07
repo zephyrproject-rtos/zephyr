@@ -709,7 +709,7 @@ USBD_CFG_DATA_DEFINE(primary, dfu) struct usb_cfg_data dfu_config = {
 	.interface_config = dfu_interface_config,
 	.interface_descriptor = &dfu_cfg.if0,
 	.cb_usb_status = dfu_status_cb,
-	.interface = {
+	.request_handlers = {
 		.class_handler = dfu_class_handle_req,
 		.custom_handler = dfu_custom_handle_req,
 	},
@@ -724,7 +724,7 @@ USBD_CFG_DATA_DEFINE(secondary, dfu) struct usb_cfg_data dfu_mode_config = {
 	.interface_config = NULL,
 	.interface_descriptor = &dfu_mode_desc.sec_dfu_cfg.if0,
 	.cb_usb_status = dfu_status_cb,
-	.interface = {
+	.request_handlers = {
 		.class_handler = dfu_class_handle_req,
 		.custom_handler = dfu_custom_handle_req,
 	},

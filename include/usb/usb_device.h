@@ -144,11 +144,11 @@ struct usb_ep_cfg_data {
 };
 
 /**
- * @brief USB Interface Configuration
+ * @brief USB request handlers
  *
- * This structure contains USB interface configuration.
+ * This structure contains USB request handlers
  */
-struct usb_interface_cfg_data {
+struct usb_request_handlers {
 	/** Handler for USB Class specific Control (EP 0) communications */
 	usb_request_handler class_handler;
 	/** Handler for USB Vendor specific commands */
@@ -182,8 +182,8 @@ struct usb_cfg_data {
 	void (*cb_usb_status)(struct usb_cfg_data *cfg,
 			      enum usb_dc_status_code cb_status,
 			      const uint8_t *param);
-	/** USB interface (Class) handler and storage space */
-	struct usb_interface_cfg_data interface;
+	/** USB request handlers */
+	struct usb_request_handlers request_handlers;
 	/** Number of individual endpoints in the device configuration */
 	uint8_t num_endpoints;
 	/**
@@ -191,7 +191,7 @@ struct usb_cfg_data {
 	 * number of EP associated with the device description,
 	 * not including control endpoints
 	 */
-	struct usb_ep_cfg_data *endpoint;
+	struct usb_ep_cfg_data *endpoints;
 };
 
 /**

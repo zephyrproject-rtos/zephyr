@@ -229,7 +229,7 @@ static int usb_validate_ep_cfg_data(struct usb_ep_descriptor * const ep_descr,
 				    uint32_t *requested_ep)
 {
 	for (int i = 0; i < cfg_data->num_endpoints; i++) {
-		struct usb_ep_cfg_data *ep_data = cfg_data->endpoint;
+		struct usb_ep_cfg_data *ep_data = cfg_data->endpoints;
 
 		/*
 		 * Trying to find the right entry in the usb_ep_cfg_data.
@@ -525,7 +525,7 @@ struct usb_dev_data *usb_get_dev_data_by_ep(sys_slist_t *list, uint8_t ep)
 	SYS_SLIST_FOR_EACH_CONTAINER(list, dev_data, node) {
 		struct device *dev = dev_data->dev;
 		const struct usb_cfg_data *cfg = dev->config_info;
-		const struct usb_ep_cfg_data *ep_data = cfg->endpoint;
+		const struct usb_ep_cfg_data *ep_data = cfg->endpoints;
 
 		for (uint8_t i = 0; i < cfg->num_endpoints; i++) {
 			if (ep_data[i].ep_addr == ep) {
