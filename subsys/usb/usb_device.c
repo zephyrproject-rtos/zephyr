@@ -990,7 +990,7 @@ static int foreach_ep(int (* endpoint_callback)(const struct usb_ep_cfg_data *))
 
 	for (size_t i = 0; i < size; i++) {
 		struct usb_cfg_data *cfg = &__usb_data_start[i];
-		struct usb_ep_cfg_data *ep_data = cfg->endpoint;
+		struct usb_ep_cfg_data *ep_data = cfg->endpoints;
 
 		for (uint8_t n = 0; n < cfg->num_endpoints; n++) {
 			int ret;
@@ -1212,13 +1212,13 @@ static int class_handler(struct usb_setup_packet *pSetup,
 {
 	size_t size = (__usb_data_end - __usb_data_start);
 	const struct usb_if_descriptor *if_descr;
-	struct usb_interface_cfg_data *iface;
+	const struct usb_request_handlers *handlers;
 
 	LOG_DBG("bRequest 0x%02x, wIndex 0x%04x",
 		pSetup->bRequest, pSetup->wIndex);
 
 	for (size_t i = 0; i < size; i++) {
-		iface = &(__usb_data_start[i].interface);
+		handlers = &(__usb_data_start[i].request_handlers);
 		if_descr = __usb_data_start[i].interface_descriptor;
 		/*
 		 * Wind forward until it is within the range
@@ -1228,9 +1228,9 @@ static int class_handler(struct usb_setup_packet *pSetup,
 			continue;
 		}
 
-		if (iface->class_handler &&
+		if (handlers->class_handler &&
 		    if_descr->bInterfaceNumber == (pSetup->wIndex & 0xFF)) {
-			return iface->class_handler(pSetup, len, data);
+			return handlers->class_handler(pSetup, len, data);
 		}
 	}
 
@@ -1242,13 +1242,13 @@ static int custom_handler(struct usb_setup_packet *pSetup,
 {
 	size_t size = (__usb_data_end - __usb_data_start);
 	const struct usb_if_descriptor *if_descr;
-	struct usb_interface_cfg_data *iface;
+	const struct usb_request_handlers *handlers;
 
 	LOG_DBG("bRequest 0x%02x, wIndex 0x%04x",
 		pSetup->bRequest, pSetup->wIndex);
 
 	for (size_t i = 0; i < size; i++) {
-		iface = &(__usb_data_start[i].interface);
+		handlers = &(__usb_data_start[i].request_handlers);
 		if_descr = __usb_data_start[i].interface_descriptor;
 		/*
 		 * Wind forward until it is within the range
@@ -1261,10 +1261,11 @@ static int custom_handler(struct usb_setup_packet *pSetup,
 		/* An exception for AUDIO_CLASS is temporary and shall not be
 		 * considered as valid solution for other classes.
 		 */
-		if (iface->custom_handler &&
+		if (handlers->custom_handler &&
 		    (if_descr->bInterfaceNumber == (pSetup->wIndex & 0xFF) ||
 		     if_descr->bInterfaceClass == AUDIO_CLASS)) {
-			return iface->custom_handler(pSetup, len, data);
+			return handlers->custom_handler(pSetup, len, data);
+
 		}
 	}
 
@@ -1275,7 +1276,7 @@ static int vendor_handler(struct usb_setup_packet *pSetup,
 			  int32_t *len, uint8_t **data)
 {
 	size_t size = (__usb_data_end - __usb_data_start);
-	struct usb_interface_cfg_data *iface;
+	const struct usb_request_handlers *handlers;
 
 	LOG_DBG("bRequest 0x%02x, wIndex 0x%04x",
 		pSetup->bRequest, pSetup->wIndex);
@@ -1287,9 +1288,9 @@ static int vendor_handler(struct usb_setup_packet *pSetup,
 	}
 
 	for (size_t i = 0; i < size; i++) {
-		iface = &(__usb_data_start[i].interface);
-		if (iface->vendor_handler) {
-			if (!iface->vendor_handler(pSetup, len, data)) {
+		handlers = &(__usb_data_start[i].request_handlers);
+		if (handlers->vendor_handler) {
+			if (!handlers->vendor_handler(pSetup, len, data)) {
 				return 0;
 			}
 		}
@@ -1304,7 +1305,7 @@ static int composite_setup_ep_cb(void)
 	struct usb_ep_cfg_data *ep_data;
 
 	for (size_t i = 0; i < size; i++) {
-		ep_data = __usb_data_start[i].endpoint;
+		ep_data = __usb_data_start[i].endpoints;
 		for (uint8_t n = 0; n < __usb_data_start[i].num_endpoints; n++) {
 			LOG_DBG("set cb, ep: 0x%x", ep_data[n].ep_addr);
 			if (usb_dc_ep_set_callback(ep_data[n].ep_addr,

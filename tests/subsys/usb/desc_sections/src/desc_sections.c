@@ -95,13 +95,13 @@ struct usb_test_config {
 	.interface_config = interface_config,			\
 	.interface_descriptor = &test_cfg_##x.if0,		\
 	.cb_usb_status = NULL,					\
-	.interface = {						\
+	.request_handlers = {					\
 		.class_handler = NULL,				\
 		.custom_handler = NULL,				\
 		.vendor_handler = NULL,				\
 	},							\
 	.num_endpoints = ARRAY_SIZE(ep_cfg_##x),		\
-	.endpoint = ep_cfg_##x,					\
+	.endpoints = ep_cfg_##x,				\
 	};
 
 #define NUM_INSTANCES 2
@@ -138,7 +138,7 @@ static bool find_cfg_data_ep(const struct usb_ep_descriptor * const ep_descr,
 			     uint8_t ep_count)
 {
 	for (int i = 0; i < cfg_data->num_endpoints; i++) {
-		if (cfg_data->endpoint[i].ep_addr ==
+		if (cfg_data->endpoints[i].ep_addr ==
 				ep_descr->bEndpointAddress) {
 			LOG_DBG("found ep[%d] %x", i,
 				ep_descr->bEndpointAddress);

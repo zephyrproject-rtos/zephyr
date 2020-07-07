@@ -127,13 +127,13 @@ USBD_CFG_DATA_DEFINE(primary, tracing_backend_usb)
 	struct usb_cfg_data tracing_backend_usb_config = {
 	.interface_descriptor = &dev_desc.if0,
 	.cb_usb_status = dev_status_cb,
-	.interface = {
+	.request_handlers = {
 		.class_handler = NULL,
 		.custom_handler = NULL,
 		.vendor_handler = NULL,
 	},
 	.num_endpoints = ARRAY_SIZE(ep_cfg),
-	.endpoint = ep_cfg,
+	.endpoints = ep_cfg,
 };
 
 static void tracing_backend_usb_output(const struct tracing_backend *backend,

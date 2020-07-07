@@ -893,12 +893,12 @@ USBD_CFG_DATA_DEFINE(primary, msd) struct usb_cfg_data mass_storage_config = {
 	.interface_config = mass_interface_config,
 	.interface_descriptor = &mass_cfg.if0,
 	.cb_usb_status = mass_storage_status_cb,
-	.interface = {
+	.request_handlers = {
 		.class_handler = mass_storage_class_handle_req,
 		.custom_handler = NULL,
 	},
 	.num_endpoints = ARRAY_SIZE(mass_ep_data),
-	.endpoint = mass_ep_data
+	.endpoints = mass_ep_data
 };
 
 static void mass_thread_main(int arg1, int unused)

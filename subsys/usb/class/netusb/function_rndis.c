@@ -1170,13 +1170,13 @@ USBD_CFG_DATA_DEFINE(primary, netusb) struct usb_cfg_data netusb_config = {
 	.interface_config = netusb_interface_config,
 	.interface_descriptor = &rndis_cfg.if0,
 	.cb_usb_status = rndis_status_cb,
-	.interface = {
+	.request_handlers = {
 		.class_handler = rndis_class_handler,
 		.custom_handler = NULL,
 		.vendor_handler = NULL,
 	},
 	.num_endpoints = ARRAY_SIZE(rndis_ep_data),
-	.endpoint = rndis_ep_data,
+	.endpoints = rndis_ep_data,
 };
 
 /* Initialize this before eth_netusb device init */

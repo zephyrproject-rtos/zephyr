@@ -635,12 +635,12 @@ static void hid_interface_config(struct usb_desc_header *head,
 		.interface_config = hid_interface_config,		\
 		.interface_descriptor = &hid_cfg_##x.if0,		\
 		.cb_usb_status = hid_status_cb,				\
-		.interface = {						\
+		.request_handlers = {					\
 			.class_handler = hid_class_handle_req,		\
 			.custom_handler = hid_custom_handle_req,	\
 		},							\
 		.num_endpoints = ARRAY_SIZE(hid_ep_data_##x),		\
-		.endpoint = hid_ep_data_##x,				\
+		.endpoints = hid_ep_data_##x,				\
 	};
 
 int usb_hid_init(const struct device *dev)
@@ -680,7 +680,7 @@ int hid_int_ep_write(const struct device *dev, const uint8_t *data, uint32_t dat
 {
 	const struct usb_cfg_data *cfg = dev->config_info;
 
-	return usb_write(cfg->endpoint[HID_INT_IN_EP_IDX].ep_addr, data,
+	return usb_write(cfg->endpoints[HID_INT_IN_EP_IDX].ep_addr, data,
 			 data_len, bytes_ret);
 }
 
@@ -690,7 +690,7 @@ int hid_int_ep_read(const struct device *dev, uint8_t *data, uint32_t max_data_l
 #ifdef CONFIG_ENABLE_HID_INT_OUT_EP
 	const struct usb_cfg_data *cfg = dev->config_info;
 
-	return usb_read(cfg->endpoint[HID_INT_OUT_EP_IDX].ep_addr,
+	return usb_read(cfg->endpoints[HID_INT_OUT_EP_IDX].ep_addr,
 			data, max_data_len, ret_bytes);
 #else
 	return -ENOTSUP;
