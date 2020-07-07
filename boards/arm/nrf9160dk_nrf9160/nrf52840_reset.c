@@ -19,7 +19,6 @@ BUILD_ASSERT(RESET_PIN > 16 && RESET_PIN < 24,
 int bt_hci_transport_setup(struct device *h4)
 {
 	int err;
-	char c;
 	struct device *port;
 
 	port = device_get_binding(DT_LABEL(DT_NODELABEL(gpio0)));
@@ -50,11 +49,13 @@ int bt_hci_transport_setup(struct device *h4)
 	 */
 	k_sleep(K_MSEC(10));
 
+#ifdef CONFIG_BT_H4_UART_INTERRUPT_DRIVEN
+	char c;
 	/* Drain bytes */
 	while (uart_fifo_read(h4, &c, 1)) {
 		continue;
 	}
-
+#endif
 	/* We are ready, let the nRF52840 run to main */
 	err = gpio_pin_set(port, RESET_PIN, 0);
 	if (err) {
