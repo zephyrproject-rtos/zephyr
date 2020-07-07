@@ -589,6 +589,10 @@ class DeviceHandler(Handler):
                 command.append('--')
                 command.append("--cmd-pre-init")
                 command.append("hla_serial %s" % (board_id))
+            elif runner == "openocd" and product == "STLINK-V3":
+                command.append('--')
+                command.append("--cmd-pre-init")
+                command.append("hla_serial %s" % (board_id))
             elif runner == "openocd" and product == "EDBG CMSIS-DAP":
                 command.append('--')
                 command.append("--cmd-pre-init")
@@ -3361,7 +3365,7 @@ class HardwareMap:
             'J-Link OB'
         ],
         'openocd': [
-            'STM32 STLink', '^XDS110.*'
+            'STM32 STLink', '^XDS110.*', 'STLINK-V3'
         ],
         'dediprog': [
             'TTL232R-3V3',
