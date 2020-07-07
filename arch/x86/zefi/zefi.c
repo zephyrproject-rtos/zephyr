@@ -42,6 +42,24 @@ static void efi_putchar(int c)
 	}
 }
 
+/* Existing x86_64 EFI environments have a bad habit of leaving the
+ * HPET timer running.  This then fires later on, once the OS has
+ * started.  If the timing isn't right, it can happen before the OS
+ * HPET driver gets a chance to disable it.  And because we do the
+ * handoff (necessarily) with interrupts disabled, it's not actually
+ * possible for the OS to reliably disable it in time anyway.
+ *
+ * Basically: it's our job as the bootloader to ensure that no
+ * interrupt sources are live before entering the OS. Clear the
+ * interrupt enable bit of HPET timer zero.
+ */
+static void disable_hpet(void)
+{
+	uint64_t *hpet = (uint64_t *)0xfed00000L;
+
+	hpet[32] &= ~4;
+}
+
 /* FIXME: if you check the generated code, "ms_abi" calls like this
  * have to SPILL HALF OF THE SSE REGISTER SET TO THE STACK on entry
  * because of the way the conventions collide.  Is there a way to
@@ -81,6 +99,8 @@ uintptr_t __abi efi_entry(void *img_handle, struct efi_system_table *sys_tab)
 	printf("Jumping to Entry Point: %p (%x %x %x %x %x %x)\n",
 	       code, code[0], code[1], code[2], code[3],
 	       code[4], code[5], code[6]);
+
+	disable_hpet();
 
 	/* The EFI console seems to be buffered, give it a little time
 	 * to drain before we start banging on the same UART from the
