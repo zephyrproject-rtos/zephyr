@@ -3231,6 +3231,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 	uint8_t direct_addr_type = 0U;
 	uint8_t *direct_addr = NULL;
 	uint8_t total_data_len = 0U;
+	uint16_t interval_le16 = 0U;
 	uint8_t adv_addr_type = 0U;
 	uint8_t *adv_addr = NULL;
 	uint8_t data_status = 0U;
@@ -3323,7 +3324,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 			ptr += sizeof(*adi);
 
 			BT_DBG("    AdvDataInfo DID = 0x%x, SID = 0x%x",
-				adi->did, adi->sid);
+			       adi->did, adi->sid);
 		}
 
 		if (h->aux_ptr) {
@@ -3338,8 +3339,32 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 			aux_phy = BIT(aux->phy);
 
 			BT_DBG("    AuxPtr chan_idx = %u, ca = %u, offs_units "
-				"= %u offs = 0x%x, phy = 0x%x", aux->chan_idx,
-				aux->ca, aux->offs_units, aux->offs, aux_phy);
+			       "= %u offs = 0x%x, phy = 0x%x", aux->chan_idx,
+			       aux->ca, aux->offs_units, aux->offs, aux_phy);
+		}
+
+		if (h->sync_info) {
+			struct pdu_adv_sync_info *si;
+
+			si = (void *)ptr;
+			ptr += sizeof(*si);
+
+			interval_le16 = si->interval;
+
+			BT_DBG("    SyncInfo offs = %u, offs_unit = 0x%x, "
+			       "interval = 0x%x, sca = 0x%x, "
+			       "chan map = 0x%x 0x%x 0x%x 0x%x 0x%x, "
+			       "AA = 0x%x, CRC = 0x%x 0x%x 0x%x, "
+			       "evt cntr = 0x%x",
+			       sys_le16_to_cpu(si->offs),
+			       si->offs_units,
+			       sys_le16_to_cpu(si->interval),
+			       ((si->sca_chm[4] & 0xC0) >> 5),
+			       si->sca_chm[0], si->sca_chm[1], si->sca_chm[2],
+			       si->sca_chm[3], (si->sca_chm[4] & 0x3F),
+			       sys_le32_to_cpu(si->aa),
+			       si->crc_init[0], si->crc_init[1],
+			       si->crc_init[2], sys_le16_to_cpu(si->evt_cntr));
 		}
 
 		if (h->tx_pwr) {
@@ -3493,7 +3518,7 @@ no_ext_hdr:
 	adv_info->sid = (adi) ? adi->sid : 0U;
 	adv_info->tx_power = tx_pwr;
 	adv_info->rssi = rssi;
-	adv_info->interval = 0U;
+	adv_info->interval = interval_le16;
 
 	if (evt_type & BT_HCI_LE_ADV_EVT_TYPE_DIRECT) {
 		adv_info->direct_addr.type = direct_addr_type;
