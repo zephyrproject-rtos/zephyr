@@ -16,13 +16,15 @@ fi
 
 TARGET_ARCH=$1
 
+export PYTHON=python3
+
 prepare() {
   if [[ ! -d ./src ]]; then
     git clone http://git.savannah.gnu.org/r/grub.git src
   fi
 
   pushd src
-  git checkout grub-2.04-rc1-17-g8e8723a6b
+  git checkout grub-2.04
   git clean -fdx
   popd
 }
