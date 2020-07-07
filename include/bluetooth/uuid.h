@@ -1832,6 +1832,27 @@ struct bt_uuid_128 {
 #define BT_UUID_ASCS_ASE_CP \
 	BT_UUID_DECLARE_16(BT_UUID_ASCS_ASE_CP_VAL)
 
+/** @def BT_UUID_OTS_TYPE_MPL_ICON
+ *  @brief Media Player Icon Object Type
+ */
+#define BT_UUID_OTS_TYPE_MPL_ICON         BT_UUID_DECLARE_16(0x8f93)
+/** @def BT_UUID_OTS_TYPE_TRACK_SEGMENT
+ *  @brief Track Segments Object Type
+ */
+#define BT_UUID_OTS_TYPE_TRACK_SEGMENT    BT_UUID_DECLARE_16(0x8f90)
+/** @def BT_UUID_OTS_TYPE_TRACK
+ *  @brief Track Object Type
+ */
+#define BT_UUID_OTS_TYPE_TRACK            BT_UUID_DECLARE_16(0x8f91)
+/** @def BT_UUID_OTS_TYPE_GROUP
+ *  @brief Group Object Type
+ */
+#define BT_UUID_OTS_TYPE_GROUP            BT_UUID_DECLARE_16(0x8f92)
+/** @def BT_UUID_OTS_TYPE_DIR_LISTING
+ *  @brief OTS Directory Listing Object Type
+ */
+#define BT_UUID_OTS_TYPE_DIR_LISTING      BT_UUID_DECLARE_16(0x8f93)
+
 /*
  * Protocol UUIDs
  */
