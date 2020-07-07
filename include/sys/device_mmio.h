@@ -74,9 +74,6 @@ struct z_device_mmio_rom {
  * @param phys_addr Physical address base of the MMIO region
  * @param size Size of the MMIO region
  * @param flags Caching mode and access flags, see K_MAP_* macros
- * @retval 0 Success
- * @retval -ENOMEM Insufficient virtual address space
- * @retval -ENOTSUP Unsupported flags
  */
 static inline void device_map(mm_reg_t *virt_addr, uintptr_t phys_addr,
 			      size_t size, uint32_t flags)
