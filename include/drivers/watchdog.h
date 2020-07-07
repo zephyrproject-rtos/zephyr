@@ -231,6 +231,9 @@ static inline int wdt_install_timeout(struct device *dev,
  * @param channel_id Index of the fed channel.
  *
  * @retval 0 If successful.
+ * @retval -EAGAIN If completing the feed operation would stall the
+ *                 caller, for example due to an in-progress watchdog
+ *                 operation such as a previous @c wdt_feed().
  * @retval -EINVAL If there is no installed timeout for supplied channel.
  */
 __syscall int wdt_feed(struct device *dev, int channel_id);
