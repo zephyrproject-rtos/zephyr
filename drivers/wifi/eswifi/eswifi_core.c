@@ -671,6 +671,8 @@ static int eswifi_init(struct device *dev)
 
 	k_work_init(&eswifi->request_work, eswifi_request_work);
 
+	eswifi_shell_register(eswifi);
+
 	return 0;
 }
 

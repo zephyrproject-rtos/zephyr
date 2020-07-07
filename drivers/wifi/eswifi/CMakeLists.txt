@@ -14,5 +14,8 @@ if(CONFIG_WIFI_ESWIFI)
     eswifi_offload.c
     eswifi_socket.c
     )
+
+  zephyr_sources_ifdef(CONFIG_WIFI_ESWIFI_SHELL eswifi_shell.c)
+
 zephyr_sources_ifdef(CONFIG_NET_SOCKETS_OFFLOAD eswifi_socket_offload.c)
 endif()

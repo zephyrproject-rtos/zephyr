@@ -24,4 +24,10 @@ config WIFI_ESWIFI_THREAD_PRIO
 	  This option sets the priority of the esWiFi threads.
 	  Do not touch it unless you know what you are doing.
 
+config WIFI_ESWIFI_SHELL
+	bool "esWiFi shell"
+	depends on SHELL
+	help
+	  Enable esWiFi shell
+
 endif
