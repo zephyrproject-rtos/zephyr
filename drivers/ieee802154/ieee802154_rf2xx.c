@@ -781,6 +781,7 @@ static inline int configure_spi(struct device *dev)
 	ctx->spi_cs.gpio_dev = device_get_binding(conf->spi.cs.devname);
 	if (ctx->spi_cs.gpio_dev) {
 		ctx->spi_cs.gpio_pin = conf->spi.cs.pin;
+		ctx->spi_cs.gpio_dt_flags = conf->spi.cs.flags;
 		ctx->spi_cs.delay = 0U;
 
 		ctx->spi_cfg.cs = &ctx->spi_cs;
