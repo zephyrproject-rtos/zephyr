@@ -41,7 +41,7 @@ endif()
 zephyr_include_directories_ifdef(
   CONFIG_TRACING
   ${ZEPHYR_BASE}/kernel/include
-  ${ZEPHYR_BASE}/arch/${ARCH}/include
+  ${ARCH_DIR}/${ARCH}/include
 )
 
 zephyr_include_directories_ifdef(CONFIG_TRACING include)

@@ -63,7 +63,7 @@ target_sources_ifdef(
 
 target_include_directories(kernel PRIVATE
   ${ZEPHYR_BASE}/kernel/include
-  ${ZEPHYR_BASE}/arch/${ARCH}/include
+  ${ARCH_DIR}/${ARCH}/include
   )
 
 add_dependencies(kernel zephyr_generated_headers)
