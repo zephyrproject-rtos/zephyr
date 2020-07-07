@@ -1,0 +1,16 @@
+identifier: qemu_x86_pae
+name: QEMU Emulation for X86 (PAE page tables)
+type: qemu
+simulation: qemu
+arch: x86
+toolchain:
+  - zephyr
+  - xtools
+supported:
+  - pci
+  - nvs
+  - netif:serial-net
+  - ieee802154
+  - eeprom
+testing:
+  default: true
