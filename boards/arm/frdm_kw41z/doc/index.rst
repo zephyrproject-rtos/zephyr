@@ -170,13 +170,14 @@ path.
 Follow the instructions in :ref:`opensda-jlink-onboard-debug-probe` to program
 the `OpenSDA J-Link FRDM-KW41Z Firmware`_.
 
-Add the argument ``-DOPENSDA_FW=jlink`` when you invoke ``west build`` to
-override the default runner from pyOCD to J-Link:
+Add the arguments ``-DBOARD_FLASH_RUNNER=jlink`` and
+``-DBOARD_DEBUG_RUNNER=jlink`` when you invoke ``west build`` to override the
+default runner from pyOCD to J-Link:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: frdm_kw41z
-   :gen-args: -DOPENSDA_FW=jlink
+   :gen-args: -DBOARD_FLASH_RUNNER=jlink -DBOARD_DEBUG_RUNNER=jlink
    :goals: build
 
 Configuring a Console

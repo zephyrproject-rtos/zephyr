@@ -163,13 +163,14 @@ path.
 Follow the instructions in :ref:`opensda-jlink-onboard-debug-probe` to program
 the `OpenSDA J-Link Firmware for TWR-KE18F`_.
 
-Add the argument ``-DOPENSDA_FW=jlink`` when you invoke ``west build`` to
-override the default runner from pyOCD to J-Link:
+Add the arguments ``-DBOARD_FLASH_RUNNER=jlink`` and
+``-DBOARD_DEBUG_RUNNER=jlink`` when you invoke ``west build`` to override the
+default runner from pyOCD to J-Link:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: twr_ke18f
-   :gen-args: -DOPENSDA_FW=jlink
+   :gen-args: -DBOARD_FLASH_RUNNER=jlink -DBOARD_DEBUG_RUNNER=jlink
    :goals: build
 
 Configuring a Console
