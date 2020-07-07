@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Nordic Semiconductor ASA
+ * Copyright (c) 2016-2020 Nordic Semiconductor ASA
  * Copyright (c) 2015-2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -26,19 +26,9 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/buf.h>
 #include <bluetooth/hci_raw.h>
+#include <drivers/bluetooth/h4_uart.h>
 
-#define LOG_MODULE_NAME hci_uart
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-
-static struct device *hci_uart_dev;
-static K_THREAD_STACK_DEFINE(tx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
-static struct k_thread tx_thread_data;
-static K_FIFO_DEFINE(tx_queue);
-
-#define H4_CMD 0x01
-#define H4_ACL 0x02
-#define H4_SCO 0x03
-#define H4_EVT 0x04
+LOG_MODULE_REGISTER(hci_uart, LOG_LEVEL_DBG);
 
 /* Length of a discard/flush buffer.
  * This is sized to align with a BLE HCI packet:
@@ -49,197 +39,174 @@ static K_FIFO_DEFINE(tx_queue);
  */
 #define H4_DISCARD_LEN 33
 
-static int h4_read(struct device *uart, uint8_t *buf,
-		   size_t len, size_t min)
+struct h4_uart transport;
+
+static K_THREAD_STACK_DEFINE(rx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
+
+static struct {
+	struct net_buf *buf;
+
+	uint16_t    remaining;
+	uint16_t    discard;
+
+	bool     have_hdr;
+	uint8_t     hdr_len;
+	uint8_t     type;
+
+	union {
+		struct bt_hci_cmd_hdr cmd;
+		struct bt_hci_acl_hdr acl;
+		uint8_t hdr[4];
+	};
+} rx;
+
+static struct device *hci_uart_dev;
+
+static void h4_get_type(struct h4_uart *transport)
 {
-	int total = 0;
-
-	while (len) {
-		int rx;
-
-		rx = uart_fifo_read(uart, buf, len);
-		if (rx == 0) {
-			LOG_DBG("Got zero bytes from UART");
-			if (total < min) {
-				continue;
-			}
-			break;
-		}
-
-		LOG_DBG("read %d remaining %d", rx, len - rx);
-		len -= rx;
-		total += rx;
-		buf += rx;
+	/* Get packet type */
+	if (h4_uart_read(transport, &rx.type, 1) != 1) {
+		LOG_WRN("Unable to read H:4 packet type");
+		rx.type = H4_NONE;
+		return;
 	}
 
-	return total;
+	switch (rx.type) {
+	case H4_CMD:
+		rx.remaining = sizeof(rx.cmd);
+		rx.hdr_len = rx.remaining;
+		break;
+	case H4_ACL:
+		rx.remaining = sizeof(rx.acl);
+		rx.hdr_len = rx.remaining;
+		break;
+	default:
+		LOG_ERR("Unknown H:4 type 0x%02x", rx.type);
+		rx.type = H4_NONE;
+	}
 }
 
-static size_t h4_discard(struct device *uart, size_t len)
+static void get_acl_hdr(struct h4_uart *transport)
 {
-	uint8_t buf[H4_DISCARD_LEN];
+	struct bt_hci_acl_hdr *hdr = &rx.acl;
+	int to_read = sizeof(*hdr) - rx.remaining;
+	size_t read;
 
-	return uart_fifo_read(uart, buf, MIN(len, sizeof(buf)));
+	read = h4_uart_read(transport, (uint8_t *)hdr + to_read, rx.remaining);
+	rx.remaining -= read;
+	if (!rx.remaining) {
+		rx.remaining = sys_le16_to_cpu(hdr->len);
+		LOG_DBG("Got ACL header. Payload %u bytes", rx.remaining);
+		rx.have_hdr = true;
+	}
 }
 
-static void h4_cmd_recv(struct net_buf *buf, int *remaining)
+static void get_cmd_hdr(struct h4_uart *transport)
 {
-	struct bt_hci_cmd_hdr hdr;
+	struct bt_hci_cmd_hdr *hdr = &rx.cmd;
+	int to_read = sizeof(*hdr) - rx.remaining;
+	size_t read;
 
-	/* We can ignore the return value since we pass len == min */
-	h4_read(hci_uart_dev, (void *)&hdr, sizeof(hdr), sizeof(hdr));
-
-	*remaining = hdr.param_len;
-
-	net_buf_add_mem(buf, &hdr, sizeof(hdr));
-
-	LOG_DBG("len %u", hdr.param_len);
+	read = h4_uart_read(transport, (uint8_t *)hdr + to_read, rx.remaining);
+	rx.remaining -= read;
+	if (!rx.remaining) {
+		rx.remaining = sys_le16_to_cpu(hdr->param_len);
+		LOG_DBG("Got Command header. Payload %u bytes", rx.remaining);
+		rx.have_hdr = true;
+	}
 }
 
-static void h4_acl_recv(struct net_buf *buf, int *remaining)
+static void reset_rx(void)
 {
-	struct bt_hci_acl_hdr hdr;
-
-	/* We can ignore the return value since we pass len == min */
-	h4_read(hci_uart_dev, (void *)&hdr, sizeof(hdr), sizeof(hdr));
-
-	net_buf_add_mem(buf, &hdr, sizeof(hdr));
-
-	*remaining = sys_le16_to_cpu(hdr.len);
-
-	LOG_DBG("len %u", *remaining);
+	rx.type = H4_NONE;
+	rx.remaining = 0U;
+	rx.have_hdr = false;
+	rx.hdr_len = 0U;
+	net_buf_unref(rx.buf);
 }
 
-static void bt_uart_isr(struct device *unused, void *user_data)
+static void read_header(struct h4_uart *transport)
 {
-	static struct net_buf *buf;
-	static int remaining;
+	LOG_DBG("read header, type: %d", rx.type);
+	switch (rx.type) {
+	case H4_NONE:
+		h4_get_type(transport);
+		break;
+	case H4_CMD:
+		get_cmd_hdr(transport);
+		break;
+	case H4_ACL:
+		get_acl_hdr(transport);
+		break;
+	default:
+		CODE_UNREACHABLE;
+		break;
+	}
 
-	ARG_UNUSED(unused);
-	ARG_UNUSED(user_data);
-
-	while (uart_irq_update(hci_uart_dev) &&
-	       uart_irq_is_pending(hci_uart_dev)) {
-		int read;
-
-		if (!uart_irq_rx_ready(hci_uart_dev)) {
-			if (uart_irq_tx_ready(hci_uart_dev)) {
-				LOG_DBG("transmit ready");
-			} else {
-				LOG_DBG("spurious interrupt");
-			}
-			/* Only the UART RX path is interrupt-enabled */
-			break;
-		}
-
-		/* Beginning of a new packet */
-		if (!remaining) {
-			uint8_t type;
-
-			/* Get packet type */
-			read = h4_read(hci_uart_dev, &type, sizeof(type), 0);
-			if (read != sizeof(type)) {
-				LOG_WRN("Unable to read H4 packet type");
-				continue;
-			}
-
-			buf = bt_buf_get_tx(BT_BUF_H4, K_NO_WAIT, &type,
-					    sizeof(type));
-			if (!buf) {
-				return;
-			}
-
-			switch (bt_buf_get_type(buf)) {
-			case BT_BUF_CMD:
-				h4_cmd_recv(buf, &remaining);
-				break;
-			case BT_BUF_ACL_OUT:
-				h4_acl_recv(buf, &remaining);
-				break;
-			default:
-				LOG_ERR("Unknown H4 type %u", type);
-				return;
-			}
-
-			LOG_DBG("need to get %u bytes", remaining);
-
-			if (remaining > net_buf_tailroom(buf)) {
-				LOG_ERR("Not enough space in buffer");
-				net_buf_unref(buf);
-				buf = NULL;
-			}
-		}
-
-		if (!buf) {
-			read = h4_discard(hci_uart_dev, remaining);
-			LOG_WRN("Discarded %d bytes", read);
-			remaining -= read;
-			continue;
-		}
-
-		read = h4_read(hci_uart_dev, net_buf_tail(buf), remaining, 0);
-
-		buf->len += read;
-		remaining -= read;
-
-		LOG_DBG("received %d bytes", read);
-
-		if (!remaining) {
-			LOG_DBG("full packet received");
-
-			/* Put buffer into TX queue, thread will dequeue */
-			net_buf_put(&tx_queue, buf);
-			buf = NULL;
+	if (rx.have_hdr) {
+		rx.buf = bt_buf_get_tx(BT_BUF_H4, K_FOREVER, &rx.type,
+				       sizeof(rx.type));
+		if (rx.remaining > net_buf_tailroom(rx.buf)) {
+			LOG_ERR("Not enough space in buffer");
+			rx.discard = rx.remaining;
+			reset_rx();
+		} else {
+			net_buf_add_mem(rx.buf, rx.hdr, rx.hdr_len);
 		}
 	}
 }
 
-static void tx_thread(void *p1, void *p2, void *p3)
+static void read_payload(struct h4_uart *transport)
 {
-	while (1) {
-		struct net_buf *buf;
-		int err;
+	int read = h4_uart_read(transport, net_buf_tail(rx.buf), rx.remaining);
 
-		/* Wait until a buffer is available */
-		buf = net_buf_get(&tx_queue, K_FOREVER);
-		/* Pass buffer to the stack */
-		err = bt_send(buf);
-		if (err) {
-			LOG_ERR("Unable to send (err %d)", err);
-			net_buf_unref(buf);
-		}
-
-		/* Give other threads a chance to run if tx_queue keeps getting
-		 * new data all the time.
-		 */
-		k_yield();
-	}
+	rx.buf->len += read;
+	rx.remaining -= read;
 }
 
-static int h4_send(struct net_buf *buf)
+static void complete_rx_buf(void)
 {
-	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf),
-		    buf->len);
+	int err;
 
-	while (buf->len) {
-		uart_poll_out(hci_uart_dev, net_buf_pull_u8(buf));
+	/* Put buffer into TX queue, thread will dequeue */
+	err = bt_send(rx.buf);
+	if (err < 0) {
+		LOG_ERR("Unable to send (err %d)", err);
 	}
 
-	net_buf_unref(buf);
+	reset_rx();
+}
 
-	return 0;
+static void process_rx(struct h4_uart *transport)
+{
+	LOG_DBG("remaining %u discard %u have_hdr %u rx.buf %p len %u",
+		rx.remaining, rx.discard, rx.have_hdr, rx.buf,
+		rx.buf ? rx.buf->len : 0);
+
+	if (rx.discard) {
+		LOG_WRN("discard: %d bytes", rx.discard);
+		size_t read = h4_uart_read(transport, NULL, rx.discard);
+		rx.discard -= read;
+		return;
+	}
+
+	if (!rx.have_hdr) {
+		read_header(transport);
+	}
+
+	if (rx.have_hdr) {
+		read_payload(transport);
+		if (!rx.remaining) {
+			complete_rx_buf();
+		}
+	}
 }
 
 #if defined(CONFIG_BT_CTLR_ASSERT_HANDLER)
 void bt_ctlr_assert_handle(char *file, uint32_t line)
 {
 	uint32_t len = 0U, pos = 0U;
-
-	/* Disable interrupts, this is unrecoverable */
-	(void)irq_lock();
-
-	uart_irq_rx_disable(hci_uart_dev);
-	uart_irq_tx_disable(hci_uart_dev);
+	struct k_spinlock lock = {};
 
 	if (file) {
 		while (file[len] != '\0') {
@@ -248,6 +215,7 @@ void bt_ctlr_assert_handle(char *file, uint32_t line)
 			}
 			len++;
 		}
+
 		file += pos;
 		len -= pos;
 	}
@@ -272,6 +240,8 @@ void bt_ctlr_assert_handle(char *file, uint32_t line)
 	uart_poll_out(hci_uart_dev, line >> 16 & 0xff);
 	uart_poll_out(hci_uart_dev, line >> 24 & 0xff);
 
+	/* Disable interrupts, this is unrecoverable */
+	(void)k_spin_lock(&lock);
 	while (1) {
 	}
 }
@@ -287,13 +257,6 @@ static int hci_uart_init(struct device *unused)
 		return -EINVAL;
 	}
 
-	uart_irq_rx_disable(hci_uart_dev);
-	uart_irq_tx_disable(hci_uart_dev);
-
-	uart_irq_callback_set(hci_uart_dev, bt_uart_isr);
-
-	uart_irq_rx_enable(hci_uart_dev);
-
 	return 0;
 }
 
@@ -302,6 +265,19 @@ DEVICE_INIT(hci_uart, "hci_uart", &hci_uart_init, NULL, NULL,
 
 void main(void)
 {
+	static const struct h4_uart_config config = {
+		.rx = {
+			.process = process_rx,
+			.stack = rx_thread_stack,
+			.rx_thread_stack_size =
+				K_THREAD_STACK_SIZEOF(rx_thread_stack),
+			.thread_prio = K_PRIO_COOP(7)
+		},
+		.tx = {
+			.timeout = 1000,
+			.add_type = false
+		}
+	};
 	/* incoming events and data from the controller */
 	static K_FIFO_DEFINE(rx_queue);
 	int err;
@@ -312,47 +288,12 @@ void main(void)
 	/* Enable the raw interface, this will in turn open the HCI driver */
 	bt_enable_raw(&rx_queue);
 
-	if (IS_ENABLED(CONFIG_BT_WAIT_NOP)) {
-		/* Issue a Command Complete with NOP */
-		int i;
-
-		const struct {
-			const uint8_t h4;
-			const struct bt_hci_evt_hdr hdr;
-			const struct bt_hci_evt_cmd_complete cc;
-		} __packed cc_evt = {
-			.h4 = H4_EVT,
-			.hdr = {
-				.evt = BT_HCI_EVT_CMD_COMPLETE,
-				.len = sizeof(struct bt_hci_evt_cmd_complete),
-			},
-			.cc = {
-				.ncmd = 1,
-				.opcode = sys_cpu_to_le16(BT_OP_NOP),
-			},
-		};
-
-		for (i = 0; i < sizeof(cc_evt); i++) {
-			uart_poll_out(hci_uart_dev,
-				      *(((const uint8_t *)&cc_evt)+i));
-		}
-	}
-
-	/* Spawn the TX thread and start feeding commands and data to the
-	 * controller
-	 */
-	k_thread_create(&tx_thread_data, tx_thread_stack,
-			K_THREAD_STACK_SIZEOF(tx_thread_stack), tx_thread,
-			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
-	k_thread_name_set(&tx_thread_data, "HCI uart TX");
+	err =  h4_uart_init(&transport, hci_uart_dev, &config);
+	__ASSERT(err >= 0, "Unexpected error: %d", err);
 
 	while (1) {
-		struct net_buf *buf;
-
-		buf = net_buf_get(&rx_queue, K_FOREVER);
-		err = h4_send(buf);
-		if (err) {
-			LOG_ERR("Failed to send");
-		}
+		err = h4_uart_write(&transport,
+					   net_buf_get(&rx_queue, K_FOREVER));
+		__ASSERT(err >= 0, "Unexpected error: %d", err);
 	}
 }
