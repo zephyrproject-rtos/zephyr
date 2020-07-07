@@ -24,6 +24,7 @@ LOG_MODULE_REGISTER(temp_nrf5, CONFIG_SENSOR_LOG_LEVEL);
 
 struct temp_nrf5_data {
 	struct k_sem device_sync_sem;
+	struct k_mutex mutex;
 	int32_t sample;
 	struct device *clk_dev;
 };
@@ -52,6 +53,8 @@ static int temp_nrf5_sample_fetch(struct device *dev, enum sensor_channel chan)
 		return -ENOTSUP;
 	}
 
+	k_mutex_lock(&data->mutex, K_FOREVER);
+
 	r = clock_control_async_on(data->clk_dev, CLOCK_CONTROL_NRF_SUBSYS_HF,
 					&clk_data);
 	__ASSERT_NO_MSG(!r);
@@ -64,6 +67,8 @@ static int temp_nrf5_sample_fetch(struct device *dev, enum sensor_channel chan)
 	data->sample = nrf_temp_result_get(NRF_TEMP);
 	LOG_DBG("sample: %d", data->sample);
 	nrf_temp_task_trigger(NRF_TEMP, NRF_TEMP_TASK_STOP);
+
+	k_mutex_unlock(&data->mutex);
 
 	return 0;
 }
@@ -117,6 +122,8 @@ static int temp_nrf5_init(struct device *dev)
 	__ASSERT_NO_MSG(data->clk_dev);
 
 	k_sem_init(&data->device_sync_sem, 0, UINT_MAX);
+	k_mutex_init(&data->mutex);
+
 	IRQ_CONNECT(
 		DT_INST_IRQN(0),
 		DT_INST_IRQ(0, priority),
