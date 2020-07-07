@@ -103,10 +103,15 @@ BUILD_ASSERT(DT_INST_IRQN(0) == 14);
 #define PAD_CFG1_IOSSTATE_MASK		(0x0F << PAD_CFG1_IOSSTATE_POS)
 #define PAD_CFG1_IOSSTATE_IGNORE	(0x0F << PAD_CFG1_IOSSTATE_POS)
 
+/* Required by DEVICE_MMIO_NAMED_* macros */
+#define DEV_CFG(_dev) \
+	((const struct gpio_intel_apl_config *)(_dev)->config_info)
+#define DEV_DATA(_dev) ((struct gpio_intel_apl_data *)(_dev)->driver_data)
+
 struct gpio_intel_apl_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
-	uint32_t	reg_base;
+	DEVICE_MMIO_NAMED_ROM(reg_base);
 
 	uint8_t	pin_offset;
 	uint8_t	num_pins;
@@ -115,11 +120,18 @@ struct gpio_intel_apl_config {
 struct gpio_intel_apl_data {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_data common;
+	DEVICE_MMIO_NAMED_RAM(reg_base);
+
 	/* Pad base address */
 	uint32_t		pad_base;
 
 	sys_slist_t	cb;
 };
+
+static inline mm_reg_t regs(struct device *dev)
+{
+	return DEVICE_MMIO_NAMED_GET(dev, reg_base);
+}
 
 #ifdef CONFIG_GPIO_INTEL_APL_CHECK_PERMS
 /**
@@ -132,7 +144,6 @@ struct gpio_intel_apl_data {
  */
 static bool check_perm(struct device *dev, uint32_t raw_pin)
 {
-	const struct gpio_intel_apl_config *cfg = dev->config_info;
 	struct gpio_intel_apl_data *data = dev->driver_data;
 	uint32_t offset, val;
 
@@ -140,7 +151,7 @@ static bool check_perm(struct device *dev, uint32_t raw_pin)
 
 	/* read the Pad Ownership register related to the pin */
 	offset = REG_PAD_OWNER_BASE + ((raw_pin >> 3) << 2);
-	val = sys_read32(cfg->reg_base + offset);
+	val = sys_read32(regs(dev) + offset);
 
 	/* get the bits about ownership */
 	offset = raw_pin % 8;
@@ -152,7 +163,7 @@ static bool check_perm(struct device *dev, uint32_t raw_pin)
 
 	/* Also need to make sure the function of pad is GPIO */
 	offset = data->pad_base + (raw_pin << 3);
-	val = sys_read32(cfg->reg_base + offset);
+	val = sys_read32(regs(dev) + offset);
 	if (val & PAD_CFG0_PMODE_MASK) {
 		/* mode is not zero => not functioning as GPIO */
 		return false;
@@ -187,7 +198,7 @@ static void gpio_intel_apl_isr(void *arg)
 		cfg = dev->config_info;
 		data = dev->driver_data;
 
-		reg = cfg->reg_base + REG_GPI_INT_STS_BASE
+		reg = regs(dev) + REG_GPI_INT_STS_BASE
 			+ ((cfg->pin_offset >> 5) << 2);
 		int_sts = sys_read32(reg);
 		acc_mask = 0U;
@@ -227,7 +238,7 @@ static int gpio_intel_apl_config(struct device *dev,
 	}
 
 	/* read in pad configuration register */
-	reg = cfg->reg_base + data->pad_base + (raw_pin * 8U);
+	reg = regs(dev) + data->pad_base + (raw_pin * 8U);
 	cfg0 = sys_read32(reg);
 	cfg1 = sys_read32(reg + 4);
 
@@ -303,21 +314,21 @@ static int gpio_intel_apl_pin_interrupt_configure(struct device *dev,
 	}
 
 	/* set owner to GPIO driver mode for legacy interrupt mode */
-	reg = cfg->reg_base + REG_PAD_HOST_SW_OWNER;
+	reg = regs(dev) + REG_PAD_HOST_SW_OWNER;
 	sys_bitfield_set_bit(reg, raw_pin);
 
 	/* read in pad configuration register */
-	reg = cfg->reg_base + data->pad_base + (raw_pin * 8U);
+	reg = regs(dev) + data->pad_base + (raw_pin * 8U);
 	cfg0 = sys_read32(reg);
 	cfg1 = sys_read32(reg + 4);
 
-	reg_en = cfg->reg_base + REG_GPI_INT_EN_BASE;
+	reg_en = regs(dev) + REG_GPI_INT_EN_BASE;
 
 	/* disable interrupt bit first before setup */
 	sys_bitfield_clear_bit(reg_en, raw_pin);
 
 	/* clear (by setting) interrupt status bit */
-	reg_sts = cfg->reg_base + REG_GPI_INT_STS_BASE;
+	reg_sts = regs(dev) + REG_GPI_INT_STS_BASE;
 	sys_bitfield_set_bit(reg_sts, raw_pin);
 
 	/* clear level/edge configuration bits */
@@ -409,7 +420,7 @@ static int port_get_raw(struct device *dev, uint32_t mask, uint32_t *value,
 			continue;
 		}
 
-		reg_addr = cfg->reg_base + data->pad_base + (raw_pin * 8U);
+		reg_addr = regs(dev) + data->pad_base + (raw_pin * 8U);
 		reg_val = sys_read32(reg_addr);
 
 		if ((reg_val & cmp) != 0U) {
@@ -441,7 +452,7 @@ static int port_set_raw(struct device *dev, uint32_t mask, uint32_t value)
 			continue;
 		}
 
-		reg_addr = cfg->reg_base + data->pad_base + (raw_pin * 8U);
+		reg_addr = regs(dev) + data->pad_base + (raw_pin * 8U);
 		reg_val = sys_read32(reg_addr);
 
 		if ((value & BIT(pin)) != 0) {
@@ -511,10 +522,10 @@ static const struct gpio_driver_api gpio_intel_apl_api = {
 
 int gpio_intel_apl_init(struct device *dev)
 {
-	const struct gpio_intel_apl_config *cfg = dev->config_info;
 	struct gpio_intel_apl_data *data = dev->driver_data;
 
-	data->pad_base = sys_read32(cfg->reg_base + REG_PAD_BASE_ADDR);
+	DEVICE_MMIO_NAMED_MAP(dev, reg_base, K_MEM_CACHE_NONE);
+	data->pad_base = sys_read32(regs(dev) + REG_PAD_BASE_ADDR);
 
 	__ASSERT(nr_isr_devs < GPIO_INTEL_APL_NR_SUBDEVS, "too many subdevs");
 
@@ -534,7 +545,7 @@ int gpio_intel_apl_init(struct device *dev)
 
 	/* route to IRQ 14 */
 
-	sys_bitfield_clear_bit(cfg->reg_base + REG_MISCCFG,
+	sys_bitfield_clear_bit(regs(dev) + REG_MISCCFG,
 			       MISCCFG_IRQ_ROUTE_POS);
 
 	return 0;
@@ -546,7 +557,7 @@ static const struct gpio_intel_apl_config				\
 	.common = {							\
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),	\
 	},								\
-	.reg_base = (DT_INST_REG_ADDR(n) & 0xFFFFFF00),			\
+	DEVICE_MMIO_NAMED_ROM_INIT(reg_base, n),			\
 	.pin_offset = DT_INST_PROP(n, pin_offset),			\
 	.num_pins = DT_INST_PROP(n, ngpios),				\
 };									\
