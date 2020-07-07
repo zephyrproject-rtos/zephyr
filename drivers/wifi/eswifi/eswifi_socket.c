@@ -160,6 +160,10 @@ int __eswifi_off_start_client(struct eswifi_dev *eswifi,
 
 	__select_socket(eswifi, socket->index);
 
+	/* Stop any running client */
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "P6=0\r");
+	eswifi_at_cmd(eswifi, eswifi->buf);
+
 	/* Set Remote IP */
 	snprintk(eswifi->buf, sizeof(eswifi->buf), "P3=%u.%u.%u.%u\r",
 		 sin_addr->s4_addr[0], sin_addr->s4_addr[1],
