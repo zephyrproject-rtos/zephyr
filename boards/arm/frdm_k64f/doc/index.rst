@@ -239,13 +239,14 @@ the `OpenSDA J-Link Generic Firmware for V3.2 Bootloader`_. Note that Segger
 does provide an OpenSDA J-Link Board-Specific Firmware for this board, however
 it is not compatible with the DAPLink bootloader.
 
-Add the argument ``-DOPENSDA_FW=jlink`` when you invoke ``west build`` to
-override the default runner from pyOCD to J-Link:
+Add the arguments ``-DBOARD_FLASH_RUNNER=jlink`` and
+``-DBOARD_DEBUG_RUNNER=jlink`` when you invoke ``west build`` to override the
+default runner from pyOCD to J-Link:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: frdm_k64f
-   :gen-args: -DOPENSDA_FW=jlink
+   :gen-args: -DBOARD_FLASH_RUNNER=jlink -DBOARD_DEBUG_RUNNER=jlink
    :goals: build
 
 Configuring a Console
