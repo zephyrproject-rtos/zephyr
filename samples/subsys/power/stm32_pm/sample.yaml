@@ -1,0 +1,17 @@
+sample:
+  name: Low Power Timer Sample for nucleo board
+tests:
+  sample.power.pm.stm32_lptim.lsi:
+    build_only: true
+    depends_on: lptim
+    filter: dt_compat_enabled_with_alias("gpio-leds", "led0") and
+            dt_compat_enabled_with_alias("gpio-leds", "led1") and
+            dt_compat_enabled("st,stm32-lptim")
+  sample.power.pm.stm32_lptim.lse:
+    build_only: true
+    depends_on: lptim
+    filter: dt_compat_enabled_with_alias("gpio-leds", "led0") and
+            dt_compat_enabled_with_alias("gpio-leds", "led1") and
+            dt_compat_enabled("st,stm32-lptim")
+    extra_configs:
+      - CONFIG_STM32_LPTIM_CLOCK_LSE=y
