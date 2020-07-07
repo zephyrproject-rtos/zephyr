@@ -143,3 +143,10 @@
   - "dts/arm/st/*/*"
   - "include/drivers/*/*stm32*"
   - "soc/arm/st_stm32/**"
+"platform: SiLabs":
+  - "boards/arm/efr32_*/**/*"
+  - "boards/arm/efm32_*/**/*"
+  - "drivers/**/*gecko*"
+  - "dts/arm/silabs/**/*"
+  - "dts/bindings/**/silabs,gecko*"
+  - "soc/arm/silabs_exx32/**/*"
