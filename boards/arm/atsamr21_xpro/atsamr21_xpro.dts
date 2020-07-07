@@ -91,7 +91,7 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 
-	cs-gpios = <&portb 31 0>;
+	cs-gpios = <&portb 31 GPIO_ACTIVE_LOW>;
 
 	rf2xx@0 {
 		compatible = "atmel,rf2xx";
