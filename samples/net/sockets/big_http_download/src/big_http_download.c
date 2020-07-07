@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <logging/log.h>
+#define LOG_LEVEL LOG_LEVEL_DBG
+LOG_MODULE_REGISTER(big_http_download);
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
