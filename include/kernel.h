@@ -1773,8 +1773,8 @@ struct k_timer {
 	{ \
 	.timeout = { \
 		.node = {},\
+		.fn = z_timer_expiration_handler, \
 		.dticks = 0, \
-		.fn = z_timer_expiration_handler \
 	}, \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
 	.expiry_fn = expiry, \
