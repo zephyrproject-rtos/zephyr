@@ -204,3 +204,7 @@
 &usbotg {
 	status = "okay";
 };
+
+&pit0 {
+	status = "okay";
+};

@@ -11,6 +11,7 @@ flash: 256
 supported:
   - adc
   - arduino_gpio
+  - counter
   - gpio
   - i2c
   - nvs
