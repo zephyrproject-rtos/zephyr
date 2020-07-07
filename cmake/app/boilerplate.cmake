@@ -280,11 +280,9 @@ list(APPEND BOARD_ROOT ${ZEPHYR_BASE})
 # found. It always includes ${ZEPHYR_BASE}/soc at the lowest priority.
 list(APPEND SOC_ROOT ${ZEPHYR_BASE})
 
-if(NOT ARCH_ROOT)
-  set(ARCH_DIR ${ZEPHYR_BASE}/arch)
-else()
-  set(ARCH_DIR ${ARCH_ROOT}/arch)
-endif()
+# 'ARCH_ROOT' is a prioritized list of directories where archs may be
+# found. It always includes ${ZEPHYR_BASE} at the lowest priority.
+list(APPEND ARCH_ROOT ${ZEPHYR_BASE})
 
 if(DEFINED SHIELD)
   string(REPLACE " " ";" SHIELD_AS_LIST "${SHIELD}")
@@ -426,6 +424,19 @@ endif()
 get_filename_component(BOARD_ARCH_DIR ${BOARD_DIR}      DIRECTORY)
 get_filename_component(BOARD_FAMILY   ${BOARD_DIR}      NAME)
 get_filename_component(ARCH           ${BOARD_ARCH_DIR} NAME)
+
+foreach(root ${ARCH_ROOT})
+  if(EXISTS ${root}/arch/${ARCH}/CMakeLists.txt)
+    set(ARCH_DIR ${root}/arch)
+    break()
+  endif()
+endforeach()
+
+if(NOT ARCH_DIR)
+  message(FATAL_ERROR "Could not find ARCH=${ARCH} for BOARD=${BOARD}, \
+please check your installation. ARCH roots searched: \n\
+${ARCH_ROOT}")
+endif()
 
 if(CONF_FILE)
   # CONF_FILE has either been specified on the cmake CLI or is already
