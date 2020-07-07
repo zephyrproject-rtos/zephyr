@@ -162,7 +162,6 @@ default runner from pyOCD to J-Link:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :tool: all
    :board: frdm_k82f
    :gen-args: -DBOARD_FLASH_RUNNER=jlink -DBOARD_DEBUG_RUNNER=jlink
    :goals: build
