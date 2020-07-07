@@ -451,6 +451,119 @@ static int sdhc_spi_tx_block(struct sdhc_spi_data *data,
 	return sdhc_map_data_status(sdhc_spi_rx_u8(data));
 }
 
+/*
+ * loop on Transmit several SDHC data blocks
+ * send is the pointer to the data to write
+ * it must be aligned on a SDMMC_DEFAULT_BLOCK_SIZE
+ * block_index is the offset on the card
+ * block_nbr is a number of blocks to be written
+ * Both are multiple of SDMMC_DEFAULT_BLOCK_SIZE
+ */
+static int sdhc_spi_tx_blocks(struct sdhc_spi_data *data,
+	uint8_t *send, uint32_t block_index, uint32_t block_nbr)
+{
+	uint8_t buf[SDHC_CRC16_SIZE], tmp;
+	int response, err;
+	uint32_t block_addr = block_index;
+
+	/* send the CMD16 to set the block size */
+	response = sdhc_spi_cmd_r1(data, SDHC_SET_BLOCK_SIZE, 1);
+	sdhc_spi_set_cs(data, 1);
+	/* Write the initial */
+	err = sdhc_spi_tx(data, sdhc_ones, 1);
+	if (err != 0) {
+		return err;
+	}
+
+	if ((response & 0xFF) != SDHC_R1_NO_ERROR) {
+		/* this is also an error */
+		sdhc_spi_set_cs(data, 1);
+		/* Write the initial */
+		sdhc_spi_tx(data, sdhc_ones, 1);
+		return response;
+	}
+
+	/* align address on a block boundary */
+	block_addr *= SDMMC_DEFAULT_BLOCK_SIZE;
+
+	do {
+		/* TODO send the CMD24 with correct length */
+		response = sdhc_spi_cmd_r1(data, SDHC_WRITE_BLOCK, 1);
+		if ((response & 0xFF) != SDHC_R1_NO_ERROR) {
+			/* this is also an error */
+			sdhc_spi_set_cs(data, 1);
+			/* Write the initial */
+			sdhc_spi_tx(data, sdhc_ones, 1);
+			return response;
+		}
+
+		/* Write the initial for CMD WRITE timing */
+		err = sdhc_spi_tx(data, sdhc_ones, 1);
+		if (err != 0) {
+			return err;
+		}
+
+		/* Write the initial for TOKEN */
+		err = sdhc_spi_tx(data, sdhc_ones, 1);
+		if (err != 0) {
+			return err;
+		}
+
+		/* send the data TOKEN to signify the start of the data */
+		tmp = SDHC_TOKEN_SINGLE;
+		err = sdhc_spi_tx(data, &tmp, 1);
+		if (err != 0) {
+			return err;
+		}
+
+		/* Write the block data to SD */
+		err = sdhc_spi_tx(data, (uint8_t *)send + block_addr, SDMMC_DEFAULT_BLOCK_SIZE);
+		if (err != 0) {
+			return err;
+		}
+
+		/* set next write address */
+		block_addr += SDMMC_DEFAULT_BLOCK_SIZE;
+		block_nbr--;
+
+		/* Write the initial */
+		err = sdhc_spi_tx(data, sdhc_ones, 1);
+		if (err != 0) {
+			return err;
+		}
+
+		/* Write the initial twice */
+		err = sdhc_spi_tx(data, sdhc_ones, 1);
+		if (err != 0) {
+			return err;
+		}
+		/* get the response */
+		response = sdhc_spi_skip_until_start(data);
+		if (response != SDHC_RESPONSE_ACCEPTED) {
+			/* set the response value to failure */
+			sdhc_spi_set_cs(data, 1);
+			/* Write the initial */
+			sdhc_spi_tx(data, sdhc_ones, 1);
+			return response;
+		}
+
+		sdhc_spi_set_cs(data, 1);
+		/* Write the initial */
+		err = sdhc_spi_tx(data, sdhc_ones, 1);
+		if (err != 0) {
+			return err;
+		}
+
+	} while ((block_nbr != 0) && (err == 0));
+
+	err = sdhc_spi_tx(data, buf, sizeof(buf));
+	if (err != 0) {
+		return err;
+	}
+
+	return sdhc_map_data_status(sdhc_spi_rx_u8(data));
+}
+
 static int sdhc_spi_recover(struct sdhc_spi_data *data)
 {
 	/* TODO(nzmichaelh): implement */

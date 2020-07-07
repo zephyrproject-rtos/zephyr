@@ -61,6 +61,7 @@ enum sdhc_app_ext_cmd {
 #define SDHC_SEND_OP_COND SDHC_APP_SEND_OP_COND
 
 /* R1 response status */
+#define SDHC_R1_NO_ERROR 0x00
 #define SDHC_R1_IDLE 0x01
 #define SDHC_R1_ERASE_RESET 0x02
 #define SDHC_R1_ILLEGAL_COMMAND 0x04
