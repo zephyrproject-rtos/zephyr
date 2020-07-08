@@ -288,6 +288,7 @@ struct enc424j600_config {
 
 struct enc424j600_runtime {
 	struct net_if *iface;
+	const struct device *dev;
 
 	K_KERNEL_STACK_MEMBER(thread_stack,
 			      CONFIG_ETH_ENC424J600_RX_THREAD_STACK_SIZE);

@@ -441,9 +441,8 @@ done:
 	return 0;
 }
 
-static void enc424j600_rx_thread(const struct device *dev)
+static void enc424j600_rx_thread(struct enc424j600_runtime *context)
 {
-	struct enc424j600_runtime *context = dev->data;
 	uint16_t eir;
 	uint16_t estat;
 	uint8_t counter;
@@ -451,28 +450,30 @@ static void enc424j600_rx_thread(const struct device *dev)
 	while (true) {
 		k_sem_take(&context->int_sem, K_FOREVER);
 
-		enc424j600_clear_sfru(dev, ENC424J600_SFR3_EIEL,
+		enc424j600_clear_sfru(context->dev, ENC424J600_SFR3_EIEL,
 				      ENC424J600_EIE_INTIE);
-		enc424j600_read_sfru(dev, ENC424J600_SFRX_EIRL, &eir);
-		enc424j600_read_sfru(dev, ENC424J600_SFRX_ESTATL, &estat);
+		enc424j600_read_sfru(context->dev, ENC424J600_SFRX_EIRL, &eir);
+		enc424j600_read_sfru(context->dev,
+				     ENC424J600_SFRX_ESTATL, &estat);
 		LOG_DBG("ESTAT: 0x%04x", estat);
 
 		if (eir & ENC424J600_EIR_PKTIF) {
 			counter = (uint8_t)estat;
 			while (counter) {
-				enc424j600_rx(dev);
-				enc424j600_read_sfru(dev,
+				enc424j600_rx(context->dev);
+				enc424j600_read_sfru(context->dev,
 						     ENC424J600_SFRX_ESTATL,
 						     &estat);
 				counter = (uint8_t)estat;
 				LOG_DBG("ESTAT: 0x%04x", estat);
 			}
 		} else if (eir & ENC424J600_EIR_LINKIF) {
-			enc424j600_clear_sfru(dev, ENC424J600_SFRX_EIRL,
+			enc424j600_clear_sfru(context->dev,
+					      ENC424J600_SFRX_EIRL,
 					      ENC424J600_EIR_LINKIF);
 			if (estat & ENC424J600_ESTAT_PHYLNK) {
 				LOG_INF("Link up");
-				enc424j600_setup_mac(dev);
+				enc424j600_setup_mac(context->dev);
 				net_eth_carrier_on(context->iface);
 			} else {
 				LOG_INF("Link down");
@@ -486,7 +487,7 @@ static void enc424j600_rx_thread(const struct device *dev)
 			continue;
 		}
 
-		enc424j600_set_sfru(dev, ENC424J600_SFR3_EIEL,
+		enc424j600_set_sfru(context->dev, ENC424J600_SFR3_EIEL,
 				    ENC424J600_EIE_INTIE);
 	}
 }
@@ -598,6 +599,8 @@ static int enc424j600_init(const struct device *dev)
 	struct enc424j600_runtime *context = dev->data;
 	uint8_t retries = ENC424J600_DEFAULT_NUMOF_RETRIES;
 	uint16_t tmp;
+
+	context->dev;
 
 	/* SPI config */
 	context->spi_cfg.operation = SPI_WORD_SET(8);
@@ -732,7 +735,7 @@ static int enc424j600_init(const struct device *dev)
 	k_thread_create(&context->thread, context->thread_stack,
 			CONFIG_ETH_ENC424J600_RX_THREAD_STACK_SIZE,
 			(k_thread_entry_t)enc424j600_rx_thread,
-			(void *)dev, NULL, NULL,
+			context, NULL, NULL,
 			K_PRIO_COOP(CONFIG_ETH_ENC424J600_RX_THREAD_PRIO),
 			0, K_NO_WAIT);
 
