@@ -1,4 +1,6 @@
 #! /usr/bin/env python3
+# Copyright (c) 2020 Linaro LTD
+# SPDX-License-Identifier: Apache-2.0
 
 import json
 import logging
