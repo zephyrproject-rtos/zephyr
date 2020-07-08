@@ -79,6 +79,7 @@ struct mcux_flexcan_tx_callback {
 };
 
 struct mcux_flexcan_data {
+	const struct device *dev;
 	flexcan_handle_t handle;
 
 	ATOMIC_DEFINE(rx_allocs, MCUX_FLEXCAN_MAX_RX);
@@ -586,23 +587,23 @@ static void mcux_flexcan_transfer_callback(CAN_Type *base,
 					   status_t status, uint32_t result,
 					   void *userData)
 {
-	const struct device *dev = (const struct device *)userData;
+	struct mcux_flexcan_data *data = (struct mcux_flexcan_data *)userData;
 
 	switch (status) {
 	case kStatus_FLEXCAN_UnHandled:
 		__fallthrough;
 	case kStatus_FLEXCAN_ErrorStatus:
-		mcux_flexcan_transfer_error_status(dev, result);
+		mcux_flexcan_transfer_error_status(data->dev, result);
 		break;
 	case kStatus_FLEXCAN_TxSwitchToRx:
 		__fallthrough;
 	case kStatus_FLEXCAN_TxIdle:
-		mcux_flexcan_transfer_tx_idle(dev, result);
+		mcux_flexcan_transfer_tx_idle(data->dev, result);
 		break;
 	case kStatus_FLEXCAN_RxOverflow:
 		__fallthrough;
 	case kStatus_FLEXCAN_RxIdle:
-		mcux_flexcan_transfer_rx_idle(dev, result);
+		mcux_flexcan_transfer_rx_idle(data->dev, result);
 		break;
 	default:
 		LOG_WRN("Unhandled error/status (status 0x%08x, "
@@ -638,8 +639,10 @@ static int mcux_flexcan_init(const struct device *dev)
 		return err;
 	}
 
+	data->dev = dev;
+
 	FLEXCAN_TransferCreateHandle(config->base, &data->handle,
-				     mcux_flexcan_transfer_callback, dev);
+				     mcux_flexcan_transfer_callback, data);
 
 	config->irq_config_func(dev);
 
