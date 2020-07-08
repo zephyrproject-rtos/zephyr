@@ -127,8 +127,9 @@ static void uart_sam0_dma_tx_done(const struct device *dma_dev, void *arg,
 	ARG_UNUSED(id);
 	ARG_UNUSED(error_code);
 
-	const struct device *dev = arg;
-	struct uart_sam0_dev_data *const dev_data = DEV_DATA(dev);
+	struct uart_sam0_dev_data *const dev_data =
+		(struct uart_sam0_dev_data *const) arg;
+	const struct device *dev = dev_data->dev;
 
 	k_delayed_work_cancel(&dev_data->tx_timeout_work);
 
@@ -231,8 +232,9 @@ static void uart_sam0_dma_rx_done(const struct device *dma_dev, void *arg,
 	ARG_UNUSED(id);
 	ARG_UNUSED(error_code);
 
-	const struct device *dev = arg;
-	struct uart_sam0_dev_data *const dev_data = DEV_DATA(dev);
+	struct uart_sam0_dev_data *const dev_data =
+		(struct uart_sam0_dev_data *const)arg;
+	const struct device *dev = dev_data->dev;
 	const struct uart_sam0_dev_cfg *const cfg = dev_data->cfg;
 	SercomUsart * const regs = cfg->regs;
 	int key = irq_lock();
@@ -581,7 +583,7 @@ static int uart_sam0_init(const struct device *dev)
 		dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
 		dma_cfg.source_data_size = 1;
 		dma_cfg.dest_data_size = 1;
-		dma_cfg.user_data = dev;
+		dma_cfg.user_data = dev_data;
 		dma_cfg.dma_callback = uart_sam0_dma_tx_done;
 		dma_cfg.block_count = 1;
 		dma_cfg.head_block = &dma_blk;
@@ -609,7 +611,7 @@ static int uart_sam0_init(const struct device *dev)
 		dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
 		dma_cfg.source_data_size = 1;
 		dma_cfg.dest_data_size = 1;
-		dma_cfg.user_data = dev;
+		dma_cfg.user_data = dev_data;
 		dma_cfg.dma_callback = uart_sam0_dma_rx_done;
 		dma_cfg.block_count = 1;
 		dma_cfg.head_block = &dma_blk;
