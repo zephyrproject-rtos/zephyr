@@ -30,6 +30,7 @@ import pty
 from pathlib import Path
 from distutils.spawn import find_executable
 from colorama import Fore
+import pickle
 import platform
 import yaml
 try:
@@ -59,8 +60,8 @@ ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
     sys.exit("$ZEPHYR_BASE environment variable undefined")
 
+# This is needed to load edt.pickle files.
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts", "dts"))
-import edtlib
 
 hw_map_local = threading.Lock()
 report_lock = threading.Lock()
@@ -1900,12 +1901,12 @@ class FilterBuilder(CMake):
         filter_data.update(self.defconfig)
         filter_data.update(self.cmake_cache)
 
-        dts_path = os.path.join(self.build_dir, "zephyr", self.platform.name + ".dts.pre.tmp")
+        edt_pickle = os.path.join(self.build_dir, "zephyr", "edt.pickle")
         if self.testcase and self.testcase.tc_filter:
             try:
-                if os.path.exists(dts_path):
-                    edt = edtlib.EDT(dts_path, [os.path.join(ZEPHYR_BASE, "dts", "bindings")],
-                            warn_reg_unit_address_mismatch=False)
+                if os.path.exists(edt_pickle):
+                    with open(edt_pickle, 'rb') as f:
+                        edt = pickle.load(f)
                 else:
                     edt = None
                 res = expr_parser.parse(self.testcase.tc_filter, filter_data, edt)

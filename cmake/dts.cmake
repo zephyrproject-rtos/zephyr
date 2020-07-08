@@ -204,7 +204,7 @@ if(SUPPORTS_DTS)
   endif(DTC)
 
   #
-  # Run gen_defines.py to create a header file and zephyr.dts.
+  # Run gen_defines.py to create a header file, zephyr.dts, and edt.pickle.
   #
 
   set(CMD_EXTRACT ${PYTHON_EXECUTABLE} ${GEN_DEFINES_SCRIPT}
@@ -222,9 +222,7 @@ if(SUPPORTS_DTS)
   #
 
   set(CMD_LEGACY_EXTRACT ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/dts/gen_legacy_defines.py
-  --dts ${BOARD}.dts.pre.tmp
-  --dtc-flags '${EXTRA_DTC_FLAGS}'
-  --bindings-dirs ${DTS_ROOT_BINDINGS}
+  --edt-pickle ${EDT_PICKLE}
   --header-out ${DEVICETREE_UNFIXED_LEGACY_H}
   )
 

@@ -14,9 +14,7 @@
 import argparse
 import os
 import pathlib
-import sys
-
-import edtlib
+import pickle
 
 # Set this to True to generated deprecated macro warnings. Since this
 # entire file is deprecated and must be explicitly enabled with
@@ -31,15 +29,8 @@ def main():
 
     args = parse_args()
 
-    try:
-        edt = edtlib.EDT(args.dts, args.bindings_dirs,
-                         # Suppress this warning if it's suppressed in dtc
-                         warn_reg_unit_address_mismatch=
-                             "-Wno-simple_bus_reg" not in args.dtc_flags,
-                         default_prop_types=False,
-                         support_fixed_partitions_on_any_bus = False)
-    except edtlib.EDTError as e:
-        sys.exit(f"devicetree error: {e}")
+    with open(args.edt_pickle, 'rb') as f:
+        edt = pickle.load(f)
 
     header_file = open(args.header_out, "w", encoding="utf-8")
     flash_area_num = 0
@@ -83,13 +74,8 @@ def parse_args():
     # Returns parsed command-line arguments
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dts", required=True, help="DTS file")
-    parser.add_argument("--dtc-flags",
-                        help="'dtc' devicetree compiler flags, some of which "
-                             "might be respected here")
-    parser.add_argument("--bindings-dirs", nargs='+', required=True,
-                        help="directory with bindings in YAML format, "
-                        "we allow multiple")
+    parser.add_argument("--edt-pickle", required=True,
+                        help="pickle file containing EDT object")
     parser.add_argument("--header-out", required=True,
                         help="path to write header to")
 
