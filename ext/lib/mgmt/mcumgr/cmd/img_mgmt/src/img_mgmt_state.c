@@ -108,14 +108,28 @@ img_mgmt_state_any_pending(void)
  * the slot can be freely erased.
  */
 int
-img_mgmt_slot_in_use(int slot)
+img_mgmt_slot_in_use(int slot, bool *in_use)
 {
     uint8_t state_flags;
+    struct image_header hdr;
+    int rc;
 
     state_flags = img_mgmt_state_flags(slot);
-    return state_flags & IMG_MGMT_STATE_F_ACTIVE       ||
-           state_flags & IMG_MGMT_STATE_F_CONFIRMED    ||
-           state_flags & IMG_MGMT_STATE_F_PENDING;
+    *in_use = state_flags & IMG_MGMT_STATE_F_ACTIVE       ||
+             state_flags & IMG_MGMT_STATE_F_CONFIRMED    ||
+             state_flags & IMG_MGMT_STATE_F_PENDING;
+
+    /* Check validity of in_use state by checking the image header contains
+     * the magic value.
+     */
+    rc = img_mgmt_impl_read(slot, 0, &hdr, sizeof hdr);
+
+    if (hdr.ih_magic != IMAGE_MAGIC) {
+        /* Image is invalid */
+        *in_use = false;
+    }
+
+    return rc;
 }
 
 /**
