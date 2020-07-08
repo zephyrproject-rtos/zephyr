@@ -31,6 +31,7 @@ struct gpio_sam0_config {
 struct gpio_sam0_data {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_data common;
+	const struct device *dev;
 	gpio_port_pins_t debounce;
 #ifdef CONFIG_SAM0_EIC
 	sys_slist_t callbacks;
@@ -45,10 +46,9 @@ struct gpio_sam0_data {
 #ifdef CONFIG_SAM0_EIC
 static void gpio_sam0_isr(uint32_t pins, void *arg)
 {
-	const struct device *dev = (const struct device *) arg;
-	struct gpio_sam0_data *const data = DEV_DATA(dev);
+	struct gpio_sam0_data *const data = (struct gpio_sam0_data *)arg;
 
-	gpio_fire_callbacks(&data->callbacks, dev, pins);
+	gpio_fire_callbacks(&data->callbacks, data->dev, pins);
 }
 #endif
 
@@ -167,12 +167,15 @@ static int gpio_sam0_pin_interrupt_configure(const struct device *dev,
 					     enum gpio_int_trig trig)
 {
 	const struct gpio_sam0_config *config = DEV_CFG(dev);
+	struct gpio_sam0_data *const data = DEV_DATA(dev);
 	PortGroup *regs = config->regs;
 	PORT_PINCFG_Type pincfg = {
 		.reg = regs->PINCFG[pin].reg,
 	};
 	enum sam0_eic_trigger trigger;
 	int rc = 0;
+
+	data->dev = dev;
 
 	switch (mode) {
 	case GPIO_INT_MODE_DISABLED:
@@ -231,7 +234,7 @@ static int gpio_sam0_pin_interrupt_configure(const struct device *dev,
 		if (rc == 0) {
 			rc = sam0_eic_acquire(config->id, pin, trigger,
 					      (DEV_DATA(dev)->debounce & BIT(pin)) != 0,
-					      gpio_sam0_isr, dev);
+					      gpio_sam0_isr, data);
 		}
 		if (rc == 0) {
 			rc = sam0_eic_enable_interrupt(config->id, pin);
