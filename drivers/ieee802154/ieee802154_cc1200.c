@@ -448,9 +448,9 @@ static inline bool verify_crc(struct cc1200_context *ctx, struct net_pkt *pkt)
 	return true;
 }
 
-static void cc1200_rx(const struct device *dev)
+static void cc1200_rx(void *arg)
 {
-	struct cc1200_context *cc1200 = dev->data;
+	struct cc1200_context *cc1200 = arg;
 	struct net_pkt *pkt;
 	uint8_t pkt_len;
 
@@ -817,7 +817,7 @@ static int cc1200_init(const struct device *dev)
 	k_thread_create(&cc1200->rx_thread, cc1200->rx_stack,
 			CONFIG_IEEE802154_CC1200_RX_STACK_SIZE,
 			(k_thread_entry_t)cc1200_rx,
-			dev, NULL, NULL, K_PRIO_COOP(2), 0, K_NO_WAIT);
+			cc1200, NULL, NULL, K_PRIO_COOP(2), 0, K_NO_WAIT);
 	k_thread_name_set(&cc1200->rx_thread, "cc1200_rx");
 
 	LOG_INF("CC1200 initialized");
