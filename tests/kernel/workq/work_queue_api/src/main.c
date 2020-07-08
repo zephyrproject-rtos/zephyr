@@ -153,13 +153,13 @@ void test_process_work_items_fifo(void)
 void test_sched_delayed_work_item(void)
 {
 	int32_t ms_remain, ms_spent, start_time, stop_time, cycles_spent;
-
 	int32_t ms_delta = 15;
 
 	k_sem_reset(&sync_sema);
 
-	/* TESTPOINT: init delayed work to be processed */
-	/* only after specific period of time */
+	/* TESTPOINT: init delayed work to be processed
+	 * only after specific period of time
+	 */
 	k_delayed_work_init(&work_item_delayed, common_work_handler);
 	start_time = k_cycle_get_32();
 	k_delayed_work_submit_to_queue(&workq, &work_item_delayed, TIMEOUT);
@@ -311,14 +311,12 @@ static void tdelayed_work_submit_1(struct k_work_q *work_q,
 	tick_to_ms = k_ticks_to_ms_floor64(timeout_ticks +  _TICK_ALIGN);
 
 	/**TESTPOINT: check remaining timeout after submit */
-	zassert_true(time_remaining <= tick_to_ms,
-			NULL);
+	zassert_true(time_remaining <= tick_to_ms, NULL);
 
 	timeout_ticks -= z_ms_to_ticks(15);
 	tick_to_ms = k_ticks_to_ms_floor64(timeout_ticks);
 
-	zassert_true(time_remaining >= tick_to_ms,
-		     NULL);
+	zassert_true(time_remaining >= tick_to_ms, NULL);
 
 	/**TESTPOINT: check pending after delayed work submit*/
 	zassert_true(k_work_pending((struct k_work *)w) == 0, NULL);
