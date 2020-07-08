@@ -33,7 +33,7 @@ LOG_MODULE_REGISTER(webusb);
 #define WEBUSB_IN_EP_IDX		0
 #define WEBUSB_OUT_EP_IDX		1
 
-static struct webusb_req_handlers *req_handlers;
+static struct usb_request_handlers *req_handlers;
 
 uint8_t rx_buf[64];
 
@@ -126,7 +126,7 @@ int webusb_vendor_handle_req(struct usb_setup_packet *pSetup,
  *
  * @return N/A
  */
-void webusb_register_request_handlers(struct webusb_req_handlers *handlers)
+void webusb_register_request_handlers(struct usb_request_handlers *handlers)
 {
 	req_handlers = handlers;
 }

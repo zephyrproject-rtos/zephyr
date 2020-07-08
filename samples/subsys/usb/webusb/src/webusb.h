@@ -15,29 +15,14 @@
 #define __WEBUSB_SERIAL_H__
 
 /**
- * WebUSB request handlers
- */
-struct webusb_req_handlers {
-	/* Handler for WebUSB Vendor specific commands */
-	usb_request_handler vendor_handler;
-	/**
-	 * The custom request handler gets a first chance at handling
-	 * the request before it is handed over to the 'chapter 9' request
-	 * handler
-	 */
-	usb_request_handler custom_handler;
-};
-
-/**
- * @brief Register Custom and Vendor request callbacks
+ * @brief Register request callbacks
  *
- * Function to register Custom and Vendor request callbacks
- * for handling requests.
+ * Function to register request callbacks for handling requests.
  *
- * @param [in] handlers Pointer to WebUSB request handlers structure
+ * @param [in] handlers Pointer request handlers structure
  *
  * @return N/A
  */
-void webusb_register_request_handlers(struct webusb_req_handlers *handlers);
+void webusb_register_request_handlers(struct usb_request_handlers *handlers);
 
 #endif /* __WEBUSB_SERIAL_H__ */
