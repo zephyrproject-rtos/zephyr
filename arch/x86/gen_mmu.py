@@ -21,18 +21,37 @@ mapped with the Present and Write bits set.
 If CONFIG_SRAM_REGION_PERMISSIONS is enabled, the access permissions
 vary:
   - By default, the Present, Write, and Execute Disable bits are
-set.
+    set.
   - The _image_text region will have Present and User bits set
   - The _image_rodata region will have Present, User, and Execute
     Disable bits set
   - On x86_64, the _locore region will have Present set and
     the _lorodata region will have Present and Execute Disable set.
 
+If CONFIG_VIRTUAL_MEMORY is enabled, then this script will establish
+a dual mapping at the address defined by CONFIG_KERNEL_VM_BASE.
+  - The double-mapping is used for virtual memory kernels to transition the
+    instruction pointer from a physical address at early boot to the
+    virtual address where the kernel is actually linked.
+
+  - The mapping is always double-mapped at the top-level paging structure
+    and the physical/virtual base addresses must have the same alignment
+    with respect to the scope of top-level paging structure entries.
+    This allows the same second-level paging structure(s) to be used for
+    both memory bases.
+
+  - The double-mapping is needed so that we can still fetch instructions
+    from identity-mapped physical addresses after we program this table
+    into the MMU, then jump to the equivalent virtual address.
+    The kernel then unlinks the identity mapping before continuing,
+    the address space is purely virtual after that.
+
 Because the set of page tables are linked together by physical address,
 we must know a priori the physical address of each table. The linker
 script must define a z_x86_pagetables_start symbol where the page
 tables will be placed, and this memory address must not shift between
-prebuilt and final ELF builds.
+prebuilt and final ELF builds. This script will not work on systems
+where the physical load address of the kernel is unknown at build time.
 
 64-bit systems will always build IA-32e page tables. 32-bit systems
 build PAE page tables if CONFIG_X86_PAE is set, otherwise standard
@@ -52,6 +71,7 @@ import argparse
 import os
 import struct
 import elftools
+import math
 from distutils.version import LooseVersion
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
@@ -108,20 +128,6 @@ def dump_flags(flags):
         ret += "XD "
 
     return ret.strip()
-
-
-def phys_sym(name):
-    """For a symbol name, return its physical address"""
-    virt = syms[name]
-
-    # TODO: No virtual memory yet. When we do, conversion from physical to
-    # virtual for mapped RAM is easy, just apply a constant offset.
-    offset = 0
-    phys = virt + offset
-
-    debug("%s: virtual 0x%x -> physical 0x%x" % (name, virt, phys))
-    return phys
-
 
 # Hard-coded flags for intermediate paging levels. Permissive, we only control
 # access or set caching properties at leaf levels.
@@ -278,6 +284,9 @@ class PtableSet(object):
         self.page_pos = pages_start
         self.toplevel = self.levels[0]()
 
+        debug("%s starting at physical address 0x%x" %
+              (self.__class__.__name__, pages_start))
+
         # Database of page table pages. Maps physical memory address to
         # MMUTable objects, excluding the top-level table which is tracked
         # separately. Starts out empty as we haven't mapped anything and
@@ -320,23 +329,67 @@ class PtableSet(object):
         # Set up entry in leaf page table
         table.map(virt_addr, phys_addr, flags)
 
-    def map(self, base, size, flags):
+    def map(self, phys_base, virt_base, size, flags):
         """Identity map an address range in the page tables, with provided
-        access flags"""
+        access flags.
+
+        If the virt_base argument is not None, the same memory will be double
+        mapped to the virt_base address, which represents the base virtual
+        address that the kernel will be linked to.
+        """
 
         debug("Identity-mapping 0x%x (%d): %s" %
-              (base, size, dump_flags(flags)))
-        align_check(base, size)
-        for addr in range(base, base + size, 4096):
+              (phys_base, size, dump_flags(flags)))
+        align_check(phys_base, size)
+        for addr in range(phys_base, phys_base + size, 4096):
             self.map_page(addr, addr, flags)
 
+        if virt_base == None:
+            return
+
+        # Find how much VM a top-level entry covers
+        scope = 1 << self.toplevel.addr_shift
+        debug("Double map %s entries with scope 0x%x" %
+              (self.toplevel.__class__.__name__, scope))
+
+        # Round bases down to the entry granularity
+        pd_virt_base = math.floor(virt_base / scope) * scope
+        pd_phys_base = math.floor(phys_base / scope) * scope
+        size = size + (phys_base - pd_phys_base)
+
+        # The base addresses have to line up such that they can be mapped
+        # by the same second-level table
+        if phys_base - pd_phys_base != virt_base - pd_virt_base:
+            error("mis-aligned virtual 0x%x and physical base addresses 0x%x" %
+                  (virt_base, phys_base))
+
+        # Round size up to entry granularity
+        size = math.ceil(size / scope) * scope
+
+        for offset in range(0, size, scope):
+            cur_virt = pd_virt_base + offset
+            cur_phys = pd_phys_base + offset
+
+            # Get the physical address of the second-level table that identity
+            # maps the current chunk of physical memory
+            table_link_phys = self.toplevel.lookup(cur_phys)
+
+            debug("copy mappings 0x%x - 0x%x to 0x%x, using table 0x%x" %
+                  (cur_phys, cur_phys + scope - 1, cur_virt, table_link_phys))
+
+            # Link that to the entry for the virtual mapping
+            self.toplevel.map(cur_virt, table_link_phys, INT_FLAGS)
+
     def set_region_perms(self, name, flags):
-        """Set access permissions for a named region.
+        """Set access permissions for a named region that is already mapped
 
         The bounds of the region will be looked up in the symbol table
         with _start and _size suffixes. The physical address mapping
-        is unchanged."""
-        base = phys_sym(name + "_start")
+        is unchanged and this will not disturb any double-mapping."""
+
+        # Doesn't matter if this is a virtual address, we have a
+        # either dual mapping or it's the same as physical
+        base = syms[name + "_start"]
         size = syms[name + "_size"]
 
         debug("change flags for %s at 0x%x (%d): %s" %
@@ -421,12 +474,22 @@ def main():
     ram_base = syms["CONFIG_SRAM_BASE_ADDRESS"]
     ram_size = syms["CONFIG_SRAM_SIZE"] * 1024
 
-    ptables_phys_location = phys_sym("z_x86_pagetables_start")
-    pt = pclass(ptables_phys_location)
+    ptables_virt = syms["z_x86_pagetables_start"]
+    if "CONFIG_VIRTUAL_MEMORY" in syms:
+        virt_base = syms["CONFIG_KERNEL_VM_BASE"]
+        if (virt_base > ram_base):
+            ptables_phys = ptables_virt - (virt_base - ram_base)
+        else:
+            ptables_phys = ptables_virt + (ram_base - virt_base)
+    else:
+        ptables_phys = ptables_virt
+        virt_base = None
+
+    pt = pclass(ptables_phys)
 
     if "CONFIG_SRAM_REGION_PERMISSIONS" in syms:
         # Default: RW, no-execute, no-user
-        pt.map(ram_base, ram_size, FLAG_P | FLAG_RW | FLAG_XD)
+        pt.map(ram_base, virt_base, ram_size, FLAG_P | FLAG_RW | FLAG_XD)
 
         # Application and kernel text/rodata all mixed together. User mode
         # needs access. This may be revamped in the future such that user mode
@@ -440,14 +503,7 @@ def main():
             pt.set_region_perms("_locore", FLAG_P)
             pt.set_region_perms("_lorodata", FLAG_P | FLAG_XD)
     else:
-        pt.map(ram_base, ram_size, FLAG_P | FLAG_RW)
-
-    # TODO: If a base virtual address for the kernel is provided, not the
-    # same as its physical address, then make a call to link all the page
-    # tables we just created to the page directory entries corresponding to the
-    # virtual region. This establishes a double-mapping to transition the
-    # instruction pointer from the physical to the virtual domain at early
-    # boot. The identity mappings are then removed at runtime.
+        pt.map(ram_base, virt_base, ram_size, FLAG_P | FLAG_RW)
 
     pt.write_output(args.output)
 
