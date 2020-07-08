@@ -34,11 +34,10 @@ import yaml
 try:
     # Use the C LibYAML parser if available, rather than the Python parser.
     # It's much faster.
-    from yaml import CLoader as Loader
     from yaml import CSafeLoader as SafeLoader
     from yaml import CDumper as Dumper
 except ImportError:
-    from yaml import Loader, SafeLoader, Dumper
+    from yaml import SafeLoader, Dumper
 
 try:
     import serial
@@ -1470,9 +1469,6 @@ Tests should reference the category and subsystem with a dot as a separator.
                              'offset': 0}
 
             with contextlib.closing(mmap.mmap(**mmap_args)) as main_c:
-                # contextlib makes pylint think main_c isn't subscriptable
-                # pylint: disable=unsubscriptable-object
-
                 suite_regex_match = suite_regex.search(main_c)
                 if not suite_regex_match:
                     # can't find ztest_test_suite, maybe a client, because
