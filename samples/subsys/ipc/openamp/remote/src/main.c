@@ -95,7 +95,8 @@ struct virtio_dispatch dispatch = {
 static K_SEM_DEFINE(data_sem, 0, 1);
 static K_SEM_DEFINE(data_rx_sem, 0, 1);
 
-static void platform_ipm_callback(void *context, uint32_t id, volatile void *data)
+static void platform_ipm_callback(struct device *dev, void *context,
+				  uint32_t id, volatile void *data)
 {
 	k_sem_give(&data_sem);
 }
