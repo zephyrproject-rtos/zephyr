@@ -489,9 +489,18 @@ config MMU
 	help
 	  This option is enabled when the CPU's memory management unit is active.
 
+config VIRTUAL_MEMORY
+	bool "Virtual Memory [EXPERIMENTAL]"
+	depends on MMU
+	default n
+	help
+	  If true, the MMU page tables are not identity mapped and the kernel
+	  will manage the virtual address space.
+
 config KERNEL_VM_BASE
 	hex "Base virtual address for the kernel"
-	depends on MMU
+	depends on VIRTUAL_MEMORY
+	default 0xFFFF000000000000 if 64BIT
 	default 0xC0000000
 	help
 	  Define the base virtual memory address for the core kernel. There will
@@ -504,7 +513,8 @@ config KERNEL_VM_BASE
 
 config KERNEL_VM_LIMIT
 	hex "Upper bound on kernel address space"
-	depends on MMU
+	depends on VIRTUAL_MEMORY
+	default 0xFFFFFFFFFFFFFFFF if 64BIT
 	default 0xFFFFFFFF
 	help
 	  Inclusive upper bound on the virtual memory area reserved for the kernel.
@@ -516,9 +526,6 @@ config KERNEL_VM_LIMIT
 	  may be made at runtime depending on configuration options (such as
 	  memory-mapping stacks).
 
-	  Calls to k_map() that exhaust the space defined here will cause a kernel
-	  panic.
-
 config MMU_PAGE_SIZE
 	hex "Size of smallest granularity MMU page"
 	depends on MMU
@@ -526,6 +533,17 @@ config MMU_PAGE_SIZE
 	help
 	  Size of memory pages. Varies per MMU but 4K is common. For MMUs that
 	  support multiple page sizes, put the smallest one here.
+
+config SRAM_REGION_PERMISSIONS
+	bool "Assign appropriate permissions to kernel areas in SRAM"
+	depends on MMU
+	default y
+	help
+	  If enabled, the program text, rodata, and data parts of the kernel in
+	  the permanent mappings created at build time will have appropriate
+	  permissions set. Uses extra memory due to page-alignment constraints.
+	  If not enabled, all SRAM mappings will have P, RW, G flags set.
+	  User mode support requires this.
 
 config MEMORY_PROTECTION
 	bool
