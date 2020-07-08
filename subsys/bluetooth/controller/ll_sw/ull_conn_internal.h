@@ -84,3 +84,21 @@ void *ull_conn_ack_dequeue(void);
 struct ll_conn *ull_conn_tx_ack(u16_t handle, memq_link_t *link,
 				struct node_tx *tx);
 u8_t ull_conn_llcp_req(void *conn);
+
+
+
+int ull_conn_llcp_ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
+			  struct pdu_data *pdu_rx, struct ll_conn *conn);
+void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
+		 struct pdu_data *pdu_tx);
+void ctrl_tx_pre_ack(struct ll_conn *conn,
+			    struct pdu_data *pdu_tx);
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+bool is_enc_req_pause_tx(struct ll_conn *conn);
+#endif
+void conn_cleanup(struct ll_conn *conn, u8_t reason);
+void ull_conn_ticker_stop_conn_op_cb(u32_t status, void *param);
+void ull_conn_ticker_start_conn_op_cb(u32_t status, void *param);
+
+struct node_tx *conn_tx_acquire(void);
+void conn_tx_release(struct node_tx *tx);

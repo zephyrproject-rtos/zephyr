@@ -41,6 +41,7 @@ if(CONFIG_BT_LL_SW_SPLIT)
     if(CONFIG_BT_LL_SW_SPLIT_LEGACY)
       zephyr_library_sources(
         ll_sw/ull_conn.c
+        ll_sw/ull_conn_llcp.c
         )
     endif()
     if(CONFIG_BT_LL_SW_SPLIT_LLCP_SM)
