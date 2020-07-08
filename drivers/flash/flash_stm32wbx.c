@@ -48,7 +48,7 @@ static int write_dword(struct device *dev, off_t offset, uint64_t val)
 
 	/* if the control register is locked, do not fail silently */
 	if (regs->CR & FLASH_CR_LOCK) {
-		rc = -EIO;
+		return -EIO;
 	}
 
 	/* Check if this double word is erased */
@@ -78,7 +78,7 @@ static int write_dword(struct device *dev, off_t offset, uint64_t val)
 	/* Clear the PG bit */
 	regs->CR &= (~FLASH_CR_PG);
 
-	return 0;
+	return rc;
 }
 
 static int erase_page(struct device *dev, uint32_t page)
