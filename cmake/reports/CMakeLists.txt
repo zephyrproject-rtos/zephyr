@@ -34,3 +34,21 @@ if(NOT ${PUNCOVER} STREQUAL PUNCOVER-NOTFOUND)
     USES_TERMINAL
     )
 endif()
+
+find_program(PAHOLE pahole)
+
+if(NOT ${PAHOLE} STREQUAL PAHOLE-NOTFOUND)
+  add_custom_target(
+    pahole
+    ${PAHOLE}
+    --anon_include
+    --nested_anon_include
+    --show_decl_info
+    $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
+    ${ZEPHYR_BINARY_DIR}/${KERNEL_ELF_NAME}
+    DEPENDS ${logical_target_for_zephyr_elf}
+            $<TARGET_PROPERTY:zephyr_property_target,${report}_DEPENDENCIES>
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    USES_TERMINAL
+    )
+endif()
