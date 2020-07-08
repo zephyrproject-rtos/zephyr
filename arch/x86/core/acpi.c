@@ -27,6 +27,9 @@ struct acpi_xsdt {
 	uint64_t table_ptrs[];
 } __packed;
 
+#define ZEPHYR_RSDT_REC_ADDR 0x7000L
+#define ZEPHYR_RSDT_MAGIC 0x544453526870655aLL /* == "ZephRSDT" */
+
 static bool check_sum(struct acpi_sdt *t)
 {
 	uint8_t sum = 0, *p = (uint8_t *)t;
@@ -41,9 +44,22 @@ static struct acpi_rsdp *find_rsdp(void)
 {
 	uint64_t magic = 0x2052545020445352; /* == "RSD PTR " */
 
+	uint64_t *zrec = (uint64_t *)ZEPHYR_RSDT_REC_ADDR;
+
+	/* The Zephyr EFI loader finds and communicates the RSDT
+	 * address to us via this record.  Check here first. */
+	 */
+	if (zrec[0] == ZEPHYR_RSDT_MAGIC) {
+		uint64_t *table = (uint64_t *)zrec[1];
+
+		if (*table == magic) {
+			return (void *)table;
+		}
+	}
+
 	/* Physical (real mode!) address 0000:040e stores a (real
 	 * mode!!) segment descriptor pointing to the 1kb Extended
-	 * BIOS Data Area.  Look there first.
+	 * BIOS Data Area.
 	 */
 	uint64_t *search = (void *)(long)(((int)*(uint16_t *)0x040eL) << 4);
 
@@ -63,10 +79,7 @@ static struct acpi_rsdp *find_rsdp(void)
 		}
 	}
 
-	/* Now we're supposed to look in the UEFI system table, which
-	 * is passed as a function argument to the bootloader and long
-	 * forgotten by now...
-	 */
+	__ASSERT(false, "ACPI RSDT not found\n");
 	return NULL;
 }
 

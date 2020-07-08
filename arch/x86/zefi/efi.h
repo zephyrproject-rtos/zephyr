@@ -15,6 +15,18 @@ typedef uintptr_t __abi (*efi_fn2_t)(void *, void *);
 typedef uintptr_t __abi (*efi_fn3_t)(void *, void *, void *);
 typedef uintptr_t __abi (*efi_fn4_t)(void *, void *, void *, void *);
 
+struct efi_guid {
+	uint32_t Data1;
+	uint16_t Data2;
+	uint16_t Data3;
+	uint8_t  Data4[8];
+};
+
+struct efi_configuration_table {
+	struct efi_guid VendorGuid;
+	void *VendorTable;
+};
+
 struct efi_simple_text_output {
 	efi_fn2_t Reset;
 	efi_fn2_t OutputString;
