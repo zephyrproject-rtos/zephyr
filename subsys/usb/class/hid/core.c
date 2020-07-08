@@ -281,11 +281,11 @@ static int hid_on_set_protocol(struct hid_device_info *dev_data,
 #endif
 }
 
-static void usb_set_hid_report_size(const struct usb_cfg_data *cfg, uint16_t size)
+static void usb_set_hid_report_size(const struct usb_class_data *class_data,
+				    uint16_t size)
 {
 	const struct usb_if_descriptor *const if_desc =
-						cfg->if_containers[0].iface;
-
+					class_data->if_containers[0].iface;
 	struct usb_hid_config *desc =
 			CONTAINER_OF(if_desc, struct usb_hid_config, if0);
 
@@ -380,18 +380,18 @@ static void hid_do_status_cb(struct hid_device_info *dev_data,
 
 }
 
-static void hid_status_cb(struct usb_cfg_data *cfg,
+static void hid_status_cb(struct usb_class_data *class_data,
 			  enum usb_dc_status_code status,
 			  const uint8_t *param)
 {
 	struct hid_device_info *dev_data;
 	struct usb_dev_data *common;
 
-	LOG_DBG("cfg %p status %d", cfg, status);
+	LOG_DBG("class_data %p status %d", class_data, status);
 
-	common = usb_get_dev_data_by_cfg(&usb_hid_devlist, cfg);
+	common = usb_get_dev_data_by_class_data(&usb_hid_devlist, class_data);
 	if (common == NULL) {
-		LOG_WRN("Device data not found for cfg %p", cfg);
+		LOG_WRN("Device data not found for class_data %p", class_data);
 		return;
 	}
 
@@ -506,7 +506,7 @@ static int hid_custom_handle_req(struct usb_setup_packet *setup,
 		uint8_t iface_num = (uint8_t)setup->wIndex;
 		struct hid_device_info *dev_data;
 		struct usb_dev_data *common;
-		const struct usb_cfg_data *cfg;
+		const struct usb_class_data *class_data;
 		const struct usb_hid_config *hid_desc;
 		const struct usb_if_descriptor *if_desc;
 
@@ -521,8 +521,8 @@ static int hid_custom_handle_req(struct usb_setup_packet *setup,
 
 		switch (value) {
 		case HID_CLASS_DESCRIPTOR_HID:
-			cfg = common->dev->config_info;
-			if_desc = cfg->if_containers[0].iface;
+			class_data = common->dev->config_info;
+			if_desc = class_data->if_containers[0].iface;
 			hid_desc = CONTAINER_OF(if_desc,
 						struct usb_hid_config, if0);
 
@@ -642,8 +642,8 @@ static void hid_interface_config(struct usb_desc_header *head,
 			.curr_alt = 0,					\
 		}							\
 	};								\
-	USBD_CFG_DATA_DEFINE(primary, hid)				\
-	struct usb_cfg_data hid_config_##x = {				\
+	USBD_CLASS_DATA_DEFINE(primary, hid)				\
+	struct usb_class_data hid_class_##x = {				\
 		.interface_config = hid_interface_config,		\
 		.cb_usb_status = hid_status_cb,				\
 		.request_handlers = {					\
@@ -658,7 +658,7 @@ static void hid_interface_config(struct usb_desc_header *head,
 
 int usb_hid_init(const struct device *dev)
 {
-	struct usb_cfg_data *cfg = (void *)dev->config_info;
+	struct usb_class_data *class_data = (void *)dev->config_info;
 	struct hid_device_info *dev_data = dev->driver_data;
 
 	LOG_DBG("Initializing HID Device: dev %p", dev);
@@ -666,7 +666,7 @@ int usb_hid_init(const struct device *dev)
 	/*
 	 * Modify Report Descriptor Size
 	 */
-	usb_set_hid_report_size(cfg, dev_data->report_size);
+	usb_set_hid_report_size(class_data, dev_data->report_size);
 
 	return 0;
 }
@@ -691,19 +691,19 @@ void usb_hid_register_device(struct device *dev, const uint8_t *desc,
 int hid_int_ep_write(const struct device *dev, const uint8_t *data, uint32_t data_len,
 		     uint32_t *bytes_ret)
 {
-	const struct usb_cfg_data *cfg = dev->config_info;
+	const struct usb_class_data *class_data = dev->config_info;
 
-	return usb_write(cfg->endpoints[HID_INT_IN_EP_IDX].ep_addr, data,
-			 data_len, bytes_ret);
+	return usb_write(class_data->endpoints[HID_INT_IN_EP_IDX].ep_addr,
+			 data, data_len, bytes_ret);
 }
 
 int hid_int_ep_read(const struct device *dev, uint8_t *data, uint32_t max_data_len,
 		    uint32_t *ret_bytes)
 {
 #ifdef CONFIG_ENABLE_HID_INT_OUT_EP
-	const struct usb_cfg_data *cfg = dev->config_info;
+	const struct usb_class_data *class_data = dev->config_info;
 
-	return usb_read(cfg->endpoints[HID_INT_OUT_EP_IDX].ep_addr,
+	return usb_read(class_data->endpoints[HID_INT_OUT_EP_IDX].ep_addr,
 			data, max_data_len, ret_bytes);
 #else
 	return -ENOTSUP;
@@ -729,7 +729,7 @@ static int usb_hid_device_init(struct device *dev)
 			    CONFIG_USB_HID_DEVICE_NAME "_" #x,		\
 			    &usb_hid_device_init,			\
 			    &usb_hid_dev_data_##x,			\
-			    &hid_config_##x, POST_KERNEL,		\
+			    &hid_class_##x, POST_KERNEL,		\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 			    &hid_api);
 

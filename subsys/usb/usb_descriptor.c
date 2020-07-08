@@ -38,8 +38,8 @@ LOG_MODULE_REGISTER(usb_descriptor);
 /* Linker-defined symbols bound the USB descriptor structs */
 extern struct usb_desc_header __usb_descriptor_start[];
 extern struct usb_desc_header __usb_descriptor_end[];
-extern struct usb_cfg_data __usb_data_start[];
-extern struct usb_cfg_data __usb_data_end[];
+extern struct usb_class_data __usb_data_start[];
+extern struct usb_class_data __usb_data_end[];
 
 /* Structure representing the global USB description */
 struct common_descriptor {
@@ -224,12 +224,12 @@ int usb_get_str_descriptor_idx(void *ptr)
  * usb_ep_cfg_data, so both variables bEndpointAddress and ep_addr need
  * to be updated.
  */
-static int usb_validate_ep_cfg_data(struct usb_ep_descriptor * const ep_descr,
-				    struct usb_cfg_data * const cfg_data,
+static int usb_validate_ep_cfg_data(struct usb_ep_descriptor *const ep_descr,
+				    struct usb_class_data *const class_data,
 				    uint32_t *requested_ep)
 {
-	for (int i = 0; i < cfg_data->num_endpoints; i++) {
-		struct usb_ep_cfg_data *ep_data = cfg_data->endpoints;
+	for (int i = 0; i < class_data->num_endpoints; i++) {
+		struct usb_ep_cfg_data *ep_data = class_data->endpoints;
 
 		/*
 		 * Trying to find the right entry in the usb_ep_cfg_data.
@@ -279,20 +279,20 @@ static int usb_validate_ep_cfg_data(struct usb_ep_descriptor * const ep_descr,
 
 /*
  * The interface descriptor of a USB function must be assigned to the
- * usb_cfg_data so that usb_ep_cfg_data and matching endpoint descriptor
+ * usb_class_data so that usb_ep_cfg_data and matching endpoint descriptor
  * can be found.
  */
-static struct usb_cfg_data *usb_get_cfg_data(struct usb_if_descriptor *iface)
+static struct usb_class_data *usb_get_class_data(struct usb_if_descriptor *iface)
 {
 	size_t length = (__usb_data_end - __usb_data_start);
-	struct usb_cfg_data *cfg = NULL;
+	struct usb_class_data *class_data = NULL;
 
 	for (size_t i = 0; i < length; i++) {
-		cfg = &__usb_data_start[i];
+		class_data = &__usb_data_start[i];
 
-		for (size_t j = 0; j < cfg->num_if_containers; j++) {
-			if (cfg->if_containers[j].iface == iface) {
-				return cfg;
+		for (size_t j = 0; j < class_data->num_if_containers; j++) {
+			if (class_data->if_containers[j].iface == iface) {
+				return class_data;
 			}
 		}
 	}
@@ -365,7 +365,7 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 {
 	struct usb_cfg_descriptor *cfg_descr = NULL;
 	struct usb_if_descriptor *if_descr = NULL;
-	struct usb_cfg_data *cfg_data = NULL;
+	struct usb_class_data *class_data = NULL;
 	struct usb_ep_descriptor *ep_descr = NULL;
 	uint8_t numof_ifaces = 0U;
 	uint8_t str_descr_idx = 0U;
@@ -389,15 +389,15 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 			}
 
 			if (if_descr->bInterfaceNumber == 0U) {
-				cfg_data = usb_get_cfg_data(if_descr);
-				if (!cfg_data) {
-					LOG_ERR("There is no usb_cfg_data "
+				class_data = usb_get_class_data(if_descr);
+				if (!class_data) {
+					LOG_ERR("There is no usb_class_data "
 						"for %p", head);
 					return -1;
 				}
 
-				if (cfg_data->interface_config) {
-					cfg_data->interface_config(head,
+				if (class_data->interface_config) {
+					class_data->interface_config(head,
 							numof_ifaces);
 				}
 			}
@@ -405,8 +405,8 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 			numof_ifaces++;
 			break;
 		case USB_ENDPOINT_DESC:
-			if (!cfg_data) {
-				LOG_ERR("Uninitialized usb_cfg_data pointer, "
+			if (!class_data) {
+				LOG_ERR("Uninitialized usb_class_data pointer, "
 					"corrupted device descriptor?");
 				return -1;
 			}
@@ -414,7 +414,7 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 			LOG_DBG("Endpoint descriptor %p", head);
 			ep_descr = (struct usb_ep_descriptor *)head;
 			if (usb_validate_ep_cfg_data(ep_descr,
-						     cfg_data,
+						     class_data,
 						     &requested_ep)) {
 				LOG_ERR("Failed to validate endpoints");
 				return -1;
@@ -483,21 +483,21 @@ uint8_t *usb_get_device_descriptor(void)
 	return (uint8_t *) __usb_descriptor_start;
 }
 
-struct usb_dev_data *usb_get_dev_data_by_cfg(sys_slist_t *list,
-					     struct usb_cfg_data *cfg)
+struct usb_dev_data *usb_get_dev_data_by_class_data(sys_slist_t *list,
+					struct usb_class_data *class_data)
 {
 	struct usb_dev_data *dev_data;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(list, dev_data, node) {
 		struct device *dev = dev_data->dev;
-		const struct usb_cfg_data *cfg_cur = dev->config_info;
+		const struct usb_class_data *class_data_cur = dev->config_info;
 
-		if (cfg_cur == cfg) {
+		if (class_data_cur == class_data) {
 			return dev_data;
 		}
 	}
 
-	LOG_DBG("Device data not found for cfg %p", cfg);
+	LOG_DBG("Device data not found for class_data %p", class_data);
 
 	return NULL;
 }
@@ -509,11 +509,11 @@ struct usb_dev_data *usb_get_dev_data_by_iface(sys_slist_t *list,
 
 	SYS_SLIST_FOR_EACH_CONTAINER(list, dev_data, node) {
 		struct device *dev = dev_data->dev;
-		const struct usb_cfg_data *cfg = dev->config_info;
+		const struct usb_class_data *class_data = dev->config_info;
 		const struct usb_if_descriptor *if_desc = NULL;
 
-		for (int i = 0; i < cfg->num_if_containers; i++) {
-			if_desc = cfg->if_containers[i].iface;
+		for (int i = 0; i < class_data->num_if_containers; i++) {
+			if_desc = class_data->if_containers[i].iface;
 			if (if_desc->bInterfaceNumber == iface_num) {
 				return dev_data;
 			}
@@ -531,10 +531,10 @@ struct usb_dev_data *usb_get_dev_data_by_ep(sys_slist_t *list, uint8_t ep)
 
 	SYS_SLIST_FOR_EACH_CONTAINER(list, dev_data, node) {
 		struct device *dev = dev_data->dev;
-		const struct usb_cfg_data *cfg = dev->config_info;
-		const struct usb_ep_cfg_data *ep_data = cfg->endpoints;
+		const struct usb_class_data *class_data = dev->config_info;
+		const struct usb_ep_cfg_data *ep_data = class_data->endpoints;
 
-		for (uint8_t i = 0; i < cfg->num_endpoints; i++) {
+		for (uint8_t i = 0; i < class_data->num_endpoints; i++) {
 			if (ep_data[i].ep_addr == ep) {
 				return dev_data;
 			}

@@ -53,11 +53,11 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_device_desc dev_desc = {
 				       BULK_EP_MPS, 0),
 };
 
-static void status_cb(struct usb_cfg_data *cfg,
+static void status_cb(struct usb_class_data *class_data,
 		      enum usb_dc_status_code status,
 		      const uint8_t *param)
 {
-	ARG_UNUSED(cfg);
+	ARG_UNUSED(class_data);
 	ARG_UNUSED(status);
 	ARG_UNUSED(param);
 }
@@ -83,7 +83,7 @@ static struct usb_if_container device_if[] = {
 	}
 };
 
-USBD_CFG_DATA_DEFINE(primary, device) struct usb_cfg_data device_config = {
+USBD_CLASS_DATA_DEFINE(primary, device) struct usb_class_data device_class = {
 	.cb_usb_status = status_cb,
 	.request_handlers = {
 		.vendor_handler = NULL,

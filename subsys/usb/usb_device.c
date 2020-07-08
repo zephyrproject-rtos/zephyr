@@ -104,8 +104,8 @@ LOG_MODULE_REGISTER(usb_device);
 #define USB_CONTROL_IN_EP0          0x80
 
 /* Linker-defined symbols bound the USB descriptor structs */
-extern struct usb_cfg_data __usb_data_start[];
-extern struct usb_cfg_data __usb_data_end[];
+extern struct usb_class_data __usb_data_start[];
+extern struct usb_class_data __usb_data_end[];
 
 K_MUTEX_DEFINE(usb_enable_lock);
 
@@ -992,10 +992,10 @@ static int foreach_ep(int (* endpoint_callback)(const struct usb_ep_cfg_data *))
 	size_t size = (__usb_data_end - __usb_data_start);
 
 	for (size_t i = 0; i < size; i++) {
-		struct usb_cfg_data *cfg = &__usb_data_start[i];
-		struct usb_ep_cfg_data *ep_data = cfg->endpoints;
+		struct usb_class_data *class_data = &__usb_data_start[i];
+		struct usb_ep_cfg_data *ep_data = class_data->endpoints;
 
-		for (uint8_t n = 0; n < cfg->num_endpoints; n++) {
+		for (uint8_t n = 0; n < class_data->num_endpoints; n++) {
 			int ret;
 
 			ret = endpoint_callback(&ep_data[n]);
@@ -1028,10 +1028,10 @@ static void forward_status_cb(enum usb_dc_status_code status, const uint8_t *par
 	}
 
 	for (size_t i = 0; i < size; i++) {
-		struct usb_cfg_data *cfg = &__usb_data_start[i];
+		struct usb_class_data *class_data = &__usb_data_start[i];
 
-		if (cfg->cb_usb_status) {
-			cfg->cb_usb_status(cfg, status, param);
+		if (class_data->cb_usb_status) {
+			class_data->cb_usb_status(class_data, status, param);
 		}
 	}
 
@@ -1214,22 +1214,22 @@ static int class_handler(struct usb_setup_packet *pSetup,
 	size_t size = (__usb_data_end - __usb_data_start);
 	const struct usb_if_descriptor *if_descr;
 	const struct usb_request_handlers *handlers;
-	const struct usb_cfg_data *cfg = NULL;
+	const struct usb_class_data *class_data = NULL;
 	uint8_t interface_number = (uint8_t)pSetup->wIndex;
 
 	LOG_DBG("bRequest 0x%02x, wIndex 0x%04x",
 		pSetup->bRequest, pSetup->wIndex);
 
 	for (size_t i = 0; i < size; i++) {
-		cfg = &__usb_data_start[i];
-		handlers = &cfg->request_handlers;
+		class_data = &__usb_data_start[i];
+		handlers = &class_data->request_handlers;
 
 		/* Check if handler exist, if no there is no point
 		 * to search through interface containers
 		 */
 		if (handlers->class_handler) {
-			for (int j = 0; j < cfg->num_if_containers; j++) {
-				if_descr = cfg->if_containers[j].iface;
+			for (int j = 0; j < class_data->num_if_containers; j++) {
+				if_descr = class_data->if_containers[j].iface;
 				if (if_descr->bInterfaceNumber ==
 					interface_number) {
 					return handlers->class_handler(pSetup,
@@ -1248,22 +1248,22 @@ static int custom_handler(struct usb_setup_packet *pSetup,
 	size_t size = (__usb_data_end - __usb_data_start);
 	const struct usb_if_descriptor *if_descr;
 	const struct usb_request_handlers *handlers;
-	const struct usb_cfg_data *cfg = NULL;
+	const struct usb_class_data *class_data = NULL;
 	uint8_t interface_number = (uint8_t)pSetup->wIndex;
 
 	LOG_DBG("bRequest 0x%02x, wIndex 0x%04x",
 		pSetup->bRequest, pSetup->wIndex);
 
 	for (size_t i = 0; i < size; i++) {
-		cfg = &__usb_data_start[i];
-		handlers = &cfg->request_handlers;
+		class_data = &__usb_data_start[i];
+		handlers = &class_data->request_handlers;
 
 		/* Check if handler exist, if no there is no point
 		 * to search through interface containers
 		 */
 		if (handlers->custom_handler) {
-			for (int j = 0; j < cfg->num_if_containers; j++) {
-				if_descr = cfg->if_containers[j].iface;
+			for (int j = 0; j < class_data->num_if_containers; j++) {
+				if_descr = class_data->if_containers[j].iface;
 				if (if_descr->bInterfaceNumber ==
 					interface_number) {
 					return handlers->custom_handler(pSetup,
@@ -1435,7 +1435,7 @@ out:
 
 /*
  * This function configures the USB device stack based on USB descriptor and
- * usb_cfg_data.
+ * usb_class_data.
  */
 static int usb_device_init(struct device *dev)
 {

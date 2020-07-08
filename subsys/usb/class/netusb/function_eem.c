@@ -243,11 +243,11 @@ static inline void eem_status_interface(const uint8_t *desc)
 	netusb_enable(&eem_function);
 }
 
-static void eem_status_cb(struct usb_cfg_data *cfg,
+static void eem_status_cb(struct usb_class_data *class_data,
 			  enum usb_dc_status_code status,
 			  const uint8_t *param)
 {
-	ARG_UNUSED(cfg);
+	ARG_UNUSED(class_data);
 
 	/* Check the USB status and do needed action if required */
 	switch (status) {
@@ -288,7 +288,7 @@ static void eem_interface_config(struct usb_desc_header *head,
 	cdc_eem_cfg.if0.bInterfaceNumber = bInterfaceNumber;
 }
 
-USBD_CFG_DATA_DEFINE(primary, netusb) struct usb_cfg_data netusb_config = {
+USBD_CLASS_DATA_DEFINE(primary, netusb) struct usb_class_data netusb_class = {
 	.interface_config = eem_interface_config,
 	.cb_usb_status = eem_status_cb,
 	.request_handlers = {

@@ -43,8 +43,8 @@ struct usb_dev_data {
 	sys_snode_t node;
 };
 
-struct usb_dev_data *usb_get_dev_data_by_cfg(sys_slist_t *list,
-					     struct usb_cfg_data *cfg);
+struct usb_dev_data *usb_get_dev_data_by_class_data(sys_slist_t *list,
+					struct usb_class_data *class_data);
 struct usb_dev_data *usb_get_dev_data_by_iface(sys_slist_t *list,
 					       uint8_t iface_num);
 struct usb_dev_data *usb_get_dev_data_by_ep(sys_slist_t *list, uint8_t ep);

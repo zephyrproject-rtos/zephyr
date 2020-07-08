@@ -89,12 +89,12 @@ static struct usb_if_container wpanusb_if_containers[] = {
 	}
 };
 
-static void wpanusb_status_cb(struct usb_cfg_data *cfg,
+static void wpanusb_status_cb(struct usb_class_data *class_data,
 			      enum usb_dc_status_code status,
 			      const uint8_t *param)
 {
 	ARG_UNUSED(param);
-	ARG_UNUSED(cfg);
+	ARG_UNUSED(class_data);
 
 	/* Check the USB status and do needed action if required */
 	switch (status) {
@@ -158,7 +158,7 @@ static int wpanusb_vendor_handler(struct usb_setup_packet *setup,
 	return 0;
 }
 
-USBD_CFG_DATA_DEFINE(primary, wpanusb) struct usb_cfg_data wpanusb_config = {
+USBD_CLASS_DATA_DEFINE(primary, wpanusb) struct usb_class_data wpanusb_class = {
 	.cb_usb_status = wpanusb_status_cb,
 	.request_handlers = {
 		.vendor_handler = wpanusb_vendor_handler,
@@ -259,7 +259,7 @@ static int stop(void)
 
 static int tx(struct net_pkt *pkt)
 {
-	uint8_t ep = wpanusb_config.endpoints[WPANUSB_IN_EP_IDX].ep_addr;
+	uint8_t ep = wpanusb_class.endpoints[WPANUSB_IN_EP_IDX].ep_addr;
 	struct net_buf *buf = net_buf_frag_last(pkt->buffer);
 	uint8_t seq = net_buf_pull_u8(buf);
 	int retries = 3;
@@ -393,7 +393,7 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 	 */
 	*p = net_pkt_ieee802154_lqi(pkt);
 
-	ep = wpanusb_config.endpoints[WPANUSB_IN_EP_IDX].ep_addr;
+	ep = wpanusb_class.endpoints[WPANUSB_IN_EP_IDX].ep_addr;
 
 	ret = usb_transfer_sync(ep, tx_buf, len + 2,
 				USB_TRANS_WRITE | USB_TRANS_NO_ZLP);

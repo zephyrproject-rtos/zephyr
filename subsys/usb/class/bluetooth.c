@@ -204,11 +204,11 @@ static void acl_read_cb(uint8_t ep, int size, void *priv)
 		     BT_BUF_ACL_SIZE, USB_TRANS_READ, acl_read_cb, NULL);
 }
 
-static void bluetooth_status_cb(struct usb_cfg_data *cfg,
+static void bluetooth_status_cb(struct usb_class_data *class_data,
 				enum usb_dc_status_code status,
 				const uint8_t *param)
 {
-	ARG_UNUSED(cfg);
+	ARG_UNUSED(class_data);
 
 	/* Check the USB status and do needed action if required */
 	switch (status) {
@@ -327,7 +327,7 @@ static void bluetooth_interface_config(struct usb_desc_header *head,
 	bluetooth_cfg.if0.bInterfaceNumber = bInterfaceNumber;
 }
 
-USBD_CFG_DATA_DEFINE(primary, hci) struct usb_cfg_data bluetooth_config = {
+USBD_CLASS_DATA_DEFINE(primary, hci) struct usb_class_data bluetooth_class = {
 	.interface_config = bluetooth_interface_config,
 	.cb_usb_status = bluetooth_status_cb,
 	.request_handlers = {
