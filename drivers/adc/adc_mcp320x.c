@@ -36,6 +36,7 @@ struct mcp320x_config {
 
 struct mcp320x_data {
 	struct adc_context ctx;
+	const struct device *dev;
 	const struct device *spi_dev;
 	struct spi_cs_control spi_cs;
 	uint16_t *buffer;
@@ -238,9 +239,8 @@ static int mcp320x_read_channel(const struct device *dev, uint8_t channel,
 	return 0;
 }
 
-static void mcp320x_acquisition_thread(const struct device *dev)
+static void mcp320x_acquisition_thread(struct mcp320x_data *data)
 {
-	struct mcp320x_data *data = dev->data;
 	uint16_t result = 0;
 	uint8_t channel;
 	int err;
@@ -253,7 +253,7 @@ static void mcp320x_acquisition_thread(const struct device *dev)
 
 			LOG_DBG("reading channel %d", channel);
 
-			err = mcp320x_read_channel(dev, channel, &result);
+			err = mcp320x_read_channel(data->dev, channel, &result);
 			if (err) {
 				LOG_ERR("failed to read channel %d (err %d)",
 					channel, err);
@@ -268,7 +268,7 @@ static void mcp320x_acquisition_thread(const struct device *dev)
 			WRITE_BIT(data->channels, channel, 0);
 		}
 
-		adc_context_on_sampling_done(&data->ctx, dev);
+		adc_context_on_sampling_done(&data->ctx, data->dev);
 	}
 }
 
@@ -276,6 +276,8 @@ static int mcp320x_init(const struct device *dev)
 {
 	const struct mcp320x_config *config = dev->config;
 	struct mcp320x_data *data = dev->data;
+
+	data->dev = dev;
 
 	k_sem_init(&data->sem, 0, 1);
 	data->spi_dev = device_get_binding(config->spi_dev_name);
@@ -302,7 +304,7 @@ static int mcp320x_init(const struct device *dev)
 	k_thread_create(&data->thread, data->stack,
 			CONFIG_ADC_MCP320X_ACQUISITION_THREAD_STACK_SIZE,
 			(k_thread_entry_t)mcp320x_acquisition_thread,
-			dev, NULL, NULL,
+			data, NULL, NULL,
 			CONFIG_ADC_MCP320X_ACQUISITION_THREAD_PRIO,
 			0, K_NO_WAIT);
 

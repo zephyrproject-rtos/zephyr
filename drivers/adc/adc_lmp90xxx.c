@@ -122,6 +122,7 @@ struct lmp90xxx_config {
 
 struct lmp90xxx_data {
 	struct adc_context ctx;
+	const struct device *dev;
 	const struct device *spi_dev;
 	struct spi_cs_control spi_cs;
 	struct gpio_callback drdyb_cb;
@@ -653,9 +654,8 @@ static int lmp90xxx_adc_read_channel(const struct device *dev,
 	return 0;
 }
 
-static void lmp90xxx_acquisition_thread(const struct device *dev)
+static void lmp90xxx_acquisition_thread(struct lmp90xxx_data *data)
 {
-	struct lmp90xxx_data *data = dev->data;
 	uint8_t bgcalcn = LMP90XXX_BGCALN(0x3); /* Default to BgCalMode3 */
 	int32_t result = 0;
 	uint8_t channel;
@@ -670,7 +670,8 @@ static void lmp90xxx_acquisition_thread(const struct device *dev)
 		}
 
 		LOG_DBG("using BGCALCN = 0x%02x", bgcalcn);
-		err = lmp90xxx_write_reg8(dev, LMP90XXX_REG_BGCALCN, bgcalcn);
+		err = lmp90xxx_write_reg8(data->dev,
+					  LMP90XXX_REG_BGCALCN, bgcalcn);
 		if (err) {
 			LOG_ERR("failed to setup background calibration "
 				"(err %d)", err);
@@ -683,7 +684,8 @@ static void lmp90xxx_acquisition_thread(const struct device *dev)
 
 			LOG_DBG("reading channel %d", channel);
 
-			err = lmp90xxx_adc_read_channel(dev, channel, &result);
+			err = lmp90xxx_adc_read_channel(data->dev,
+							channel, &result);
 			if (err) {
 				adc_context_complete(&data->ctx, err);
 				break;
@@ -701,7 +703,7 @@ static void lmp90xxx_acquisition_thread(const struct device *dev)
 			WRITE_BIT(data->channels, channel, 0);
 		}
 
-		adc_context_on_sampling_done(&data->ctx, dev);
+		adc_context_on_sampling_done(&data->ctx, data->dev);
 	}
 }
 
@@ -931,6 +933,8 @@ static int lmp90xxx_init(const struct device *dev)
 	k_tid_t tid;
 	int err;
 
+	data->dev = dev;
+
 	k_mutex_init(&data->ura_lock);
 	k_sem_init(&data->acq_sem, 0, 1);
 	k_sem_init(&data->drdyb_sem, 0, 1);
@@ -1039,7 +1043,7 @@ static int lmp90xxx_init(const struct device *dev)
 	tid = k_thread_create(&data->thread, data->stack,
 			      CONFIG_ADC_LMP90XXX_ACQUISITION_THREAD_STACK_SIZE,
 			      (k_thread_entry_t)lmp90xxx_acquisition_thread,
-			      dev, NULL, NULL,
+			      data, NULL, NULL,
 			      CONFIG_ADC_LMP90XXX_ACQUISITION_THREAD_PRIO,
 			      0, K_NO_WAIT);
 	k_thread_name_set(tid, "adc_lmp90xxx");
