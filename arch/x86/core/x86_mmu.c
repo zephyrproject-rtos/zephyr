@@ -834,6 +834,43 @@ void z_x86_add_mmu_region(uintptr_t addr, size_t size, uint64_t flags)
 #endif
 }
 
+int arch_mem_map(void *dest, uintptr_t addr, size_t size, uint32_t flags)
+{
+	uint64_t entry_flags = Z_X86_MMU_P;
+
+	__ASSERT((uintptr_t)dest == addr,
+		 "only identity mapping supported");
+
+	switch (flags & K_MEM_CACHE_MASK) {
+	case K_MEM_CACHE_NONE:
+		entry_flags |= Z_X86_MMU_PCD;
+		break;
+	case K_MEM_CACHE_WT:
+		entry_flags |= Z_X86_MMU_PWT;
+		break;
+	case K_MEM_CACHE_WB:
+		break;
+	default:
+		return -ENOTSUP;
+	}
+	if ((flags & K_MEM_PERM_RW) != 0) {
+		entry_flags |= Z_X86_MMU_RW;
+	}
+	if ((flags & K_MEM_PERM_USER) != 0) {
+		/* TODO: user mode support
+		 * entry_flags |= MMU_US;
+		 */
+		return -ENOTSUP;
+	}
+	if ((flags & K_MEM_PERM_EXEC) == 0) {
+		entry_flags |= Z_X86_MMU_XD;
+	}
+
+	z_x86_add_mmu_region(addr, size, entry_flags);
+
+	return 0;
+}
+
 void __weak z_x86_soc_add_mmu_regions(void)
 {
 }
