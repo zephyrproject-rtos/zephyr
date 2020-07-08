@@ -253,7 +253,7 @@ void transmit_message(struct k_work *tx_job)
 
 static inline void handle_tx_done(otInstance *aInstance)
 {
-	if (IS_ENABLED(OPENTHREAD_ENABLE_DIAG) && otPlatDiagModeGet()) {
+	if (IS_ENABLED(CONFIG_OPENTHREAD_DIAG) && otPlatDiagModeGet()) {
 		otPlatDiagRadioTransmitDone(aInstance, &sTransmitFrame,
 					    tx_result);
 	} else {
@@ -295,7 +295,7 @@ static void openthread_handle_received_frame(otInstance *instance,
 					      time->nanosecond / NSEC_PER_USEC;
 #endif
 
-	if (IS_ENABLED(OPENTHREAD_ENABLE_DIAG) && otPlatDiagModeGet()) {
+	if (IS_ENABLED(CONFIG_OPENTHREAD_DIAG) && otPlatDiagModeGet()) {
 		otPlatDiagRadioReceiveDone(instance,
 					   &recv_frame, OT_ERROR_NONE);
 	} else {
