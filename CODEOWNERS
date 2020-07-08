@@ -435,6 +435,7 @@
 /scripts/tracing/                         @wentongwu
 /scripts/sanity_chk/                      @nashif
 /scripts/sanitycheck                      @nashif
+/scripts/security/                        @d3zd3z
 /scripts/series-push-hook.sh              @erwango
 /scripts/west_commands/                   @mbolivar-nordic
 /scripts/west-commands.yml                @mbolivar-nordic
