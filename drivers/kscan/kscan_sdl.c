@@ -12,14 +12,14 @@
 LOG_MODULE_REGISTER(kscan, CONFIG_KSCAN_LOG_LEVEL);
 
 struct sdl_data {
+	const struct device *dev;
 	kscan_callback_t callback;
 	bool enabled;
 };
 
 static int sdl_filter(void *arg, SDL_Event *event)
 {
-	const struct device *dev = arg;
-	struct sdl_data *data = dev->data;
+	struct sdl_data *data = arg;
 	uint32_t row = 0;
 	uint32_t column = 0;
 	bool pressed = 0;
@@ -47,7 +47,7 @@ static int sdl_filter(void *arg, SDL_Event *event)
 	}
 
 	if (data->enabled && data->callback) {
-		data->callback(dev, row, column, pressed);
+		data->callback(data->dev, row, column, pressed);
 	}
 	return 1;
 }
@@ -87,8 +87,12 @@ static int sdl_disable_callback(const struct device *dev)
 
 static int sdl_init(const struct device *dev)
 {
+	struct sdl_data *data = dev->driver_data;
+
+	data->dev = dev;
+
 	LOG_INF("Init '%s' device", dev->name);
-	SDL_AddEventWatch(sdl_filter, dev);
+	SDL_AddEventWatch(sdl_filter, data);
 
 	return 0;
 }
