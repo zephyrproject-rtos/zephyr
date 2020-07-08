@@ -44,12 +44,6 @@
 SECTION_FUNC(TEXT_START, __start)
 
 #include "../common.S"
-
-	/* Enable write-back caching by clearing the NW and CD bits */
-	movl	%cr0, %eax
-	andl	$0x9fffffff, %eax
-	movl	%eax, %cr0
-
 	/*
 	 * Ensure interrupts are disabled.  Interrupts are enabled when
 	 * the first context switch occurs.
@@ -57,36 +51,13 @@ SECTION_FUNC(TEXT_START, __start)
 
 	cli
 
-	/*
-	 * Although the bootloader sets up an Interrupt Descriptor Table (IDT)
-	 * and a Global Descriptor Table (GDT), the specification encourages
-	 * booted operating systems to setup their own IDT and GDT.
-	 */
-#if CONFIG_SET_GDT
-	lgdt	_gdt_rom		/* load 32-bit operand size GDT */
-#endif
-
-
-
-#ifdef CONFIG_SET_GDT
-	/* If we set our own GDT, update the segment registers as well.
-	 */
-	movw	$DATA_SEG, %ax	/* data segment selector (entry = 3) */
-	movw	%ax, %ds	/* set DS */
-	movw	%ax, %es	/* set ES */
-	movw	%ax, %ss	/* set SS */
-	xorw	%ax, %ax	/* AX = 0 */
-	movw	%ax, %fs	/* Zero FS */
-	movw	%ax, %gs	/* Zero GS */
-
-	ljmp	$CODE_SEG, $__csSet	/* set CS = 0x08 */
-
-__csSet:
-#endif /* CONFIG_SET_GDT */
-
 #ifdef CONFIG_X86_MMU
-	/* Load kernel's page tables. TODO: convert to physical address */
+	/* Load kernel's page tables. */
 	movl $z_x86_kernel_ptables, %eax
+#ifdef CONFIG_VIRTUAL_MEMORY
+	/* Need to convert to a physical address */
+	subl $(CONFIG_KERNEL_VM_BASE - CONFIG_SRAM_BASE_ADDRESS), %eax
+#endif /* CONFIG_VIRTUAL_MEMORY */
 	movl %eax, %cr3
 
 #ifdef CONFIG_X86_PAE
@@ -106,7 +77,48 @@ __csSet:
 	movl %cr0, %eax
 	orl $(CR0_PG | CR0_WP), %eax
 	movl %eax, %cr0
+
+#if CONFIG_VIRTUAL_MEMORY
+	/* Jump to a virtual address, which works because the mappings are the
+	 * same
+	 */
+	lea vm_enter, %eax
+	jmp *%ecx
+vm_enter:
+	/* We are now executing in virtual memory. We'll un-map the identity
+	 * mappings later once we are in the C domain
+	 */
+#endif /* CONFIG_VIRTUAL_MEMORY */
 #endif /* CONFIG_X86_MMU */
+
+	/* Enable write-back caching by clearing the NW and CD bits */
+	movl	%cr0, %eax
+	andl	$0x9fffffff, %eax
+	movl	%eax, %cr0
+
+	/*
+	 * Although the bootloader sets up an Interrupt Descriptor Table (IDT)
+	 * and a Global Descriptor Table (GDT), the specification encourages
+	 * booted operating systems to setup their own IDT and GDT.
+	 */
+#if CONFIG_SET_GDT
+	lgdt	_gdt_rom		/* load 32-bit operand size GDT */
+
+	/* If we set our own GDT, update the segment registers as well.
+	 */
+	movw	$DATA_SEG, %ax	/* data segment selector (entry = 3) */
+	movw	%ax, %ds	/* set DS */
+	movw	%ax, %es	/* set ES */
+	movw	%ax, %ss	/* set SS */
+	xorw	%ax, %ax	/* AX = 0 */
+	movw	%ax, %fs	/* Zero FS */
+	movw	%ax, %gs	/* Zero GS */
+
+	ljmp	$CODE_SEG, $__csSet	/* set CS = 0x08 */
+
+__csSet:
+#endif /* CONFIG_SET_GDT */
+
 
 #if !defined(CONFIG_FPU)
 	/*

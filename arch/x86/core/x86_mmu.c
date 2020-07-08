@@ -189,17 +189,20 @@ static const struct paging_level paging_levels[] = {
 /*
  * Utility functions
  */
+#ifdef CONFIG_VIRTUAL_MEMORY
+/* Calculations may wrap around, make sure you always use with uintptr_t */
+#define DELTA ((uintptr_t)CONFIG_KERNEL_VM_BASE - \
+	       (uintptr_t)CONFIG_SRAM_BASE_ADDRESS)
+#else
+#define DELTA 0
+#endif
 
 /* For a physical address, return its permanent virtual mapping in the kernel's
  * address space
  */
 static inline void *ram_phys_to_virt(uintptr_t phys)
 {
-#ifdef CONFIG_VIRTUAL_MEMORY
-#error Implement me!
-#else
-	return (void *)phys;
-#endif
+	return (void *)(phys + DELTA);
 }
 
 /* For a virtual address somewhere in the permanent RAM mapping area, return
@@ -207,12 +210,7 @@ static inline void *ram_phys_to_virt(uintptr_t phys)
  */
 static inline uintptr_t ram_virt_to_phys(void *virt)
 {
-#ifdef CONFIG_VIRTUAL_MEMORY
-	if (KERNEL_VM_BASE > )
-#error Implement me!
-#else
-	return (uintptr_t)virt;
-#endif
+	return (uintptr_t)virt - DELTA;
 }
 
 /* For a table at a particular level, get the entry index that corresponds to
@@ -343,8 +341,7 @@ static char get_entry_code(pentry_t value)
 			if ((value & MMU_XD) != 0) {
 				/* RW */
 				ret = 'w';
-			} else
-			{
+			} else {
 				/* RWX */
 				ret = 'a';
 			}
@@ -352,8 +349,7 @@ static char get_entry_code(pentry_t value)
 			if ((value & MMU_XD) != 0) {
 				/* R */
 				ret = 'r';
-			}
-			else {
+			} else {
 				/* RX */
 				ret = 'x';
 			}
@@ -557,6 +553,9 @@ static void *page_pool_get(void *context)
  * No support for mapping big pages yet; unclear if we will ever need it given
  * Zephyr's typical use-cases.
  *
+ * TODO: This API is not optimal, it should be combined with address range
+ * iterations
+ *
  * @param ptables Top-level page tables pointer
  * @param virt Virtual address to set mapping
  * @param entry_val Value to set PTE to
@@ -571,7 +570,7 @@ static int page_map_set(pentry_t *ptables, void *virt, pentry_t entry_val,
 	pentry_t *table = ptables;
 
 #ifdef CONFIG_X86_64
-	/* There's a gap in the 64-bit address space, as 4-level paging
+	/* There's a gap in the "64-bit" address space, as 4-level paging
 	 * requires bits 48 to 63 to be copies of bit 47.
 	 */
 	__ASSERT((uintptr_t)virt <= 0x0000FFFFFFFFFFFFULL ||
@@ -626,7 +625,8 @@ int arch_mem_map(void *dest, uintptr_t addr, size_t size, uint32_t flags)
 
 	LOG_DBG("arch_mem_map: %p -> %p (%zu) %x\n", (void *)addr, dest, size,
 		flags);
-	/* For now, always map in the kernel's page tables. User mode mappings
+	/* For now, always map in the kernel's page tables, we're just using
+	 * this for driver mappings. User mode mappings
 	 * (and interactions with KPTI) not implemented yet.
 	 */
 	ptables = (pentry_t *)&z_x86_kernel_ptables;
@@ -665,6 +665,9 @@ int arch_mem_map(void *dest, uintptr_t addr, size_t size, uint32_t flags)
 	__ASSERT((addr & (CONFIG_MMU_PAGE_SIZE - 1)) == 0U,
 		 "unaligned physical address 0x%lx", addr);
 
+	/* TODO: Can optimize this by integrating the table walk with iterating
+	 * over the address range instead of doing a full walk for every page
+	 */
 	for (size_t offset = 0; offset < size; offset += CONFIG_MMU_PAGE_SIZE) {
 		int ret;
 		pentry_t entry_val = (addr + offset) | entry_flags;
@@ -710,6 +713,11 @@ void z_x86_set_stack_guard(void *guard_page)
 #endif /* CONFIG_X86_STACK_PROTECTION */
 
 #ifdef CONFIG_USERSPACE
+/*
+ * All of the code below will eventually be removed/replaced with a virtual
+ * address space aware userspace that doesn't do identity mappings, and will
+ * likely use a different API set based mmap() instead of memory domains.
+ */
 static bool page_validate(pentry_t *ptables, uint8_t *addr, bool write)
 {
 	pentry_t *table = (pentry_t *)ptables;

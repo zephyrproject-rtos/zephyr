@@ -68,6 +68,9 @@
  */
 #if defined(CONFIG_ARCH_POSIX)
 #define GROUP_LINK_IN(where)
+#elif defined(CONFIG_VIRTUAL_MEMORY)
+/* Designed for XIP, ignore args */
+#define GROUP_LINK_IN(_a) > RAM AT> ROM
 #else
 #define GROUP_LINK_IN(where) > where
 #endif
@@ -88,6 +91,9 @@
 #else
 #ifdef CONFIG_XIP
 #define GROUP_DATA_LINK_IN(vregion, lregion) > vregion AT> lregion
+#elif defined(CONFIG_VIRTUAL_MEMORY)
+/* Designed for XIP, ignore args */
+#define GROUP_DATA_LINK_IN(_a, _b) > RAM AT> ROM
 #else
 #define GROUP_DATA_LINK_IN(vregion, lregion) > vregion
 #endif
@@ -101,6 +107,9 @@
  */
 #ifdef CONFIG_ARCH_POSIX
 #define GROUP_FOLLOWS_AT(where)
+#elif defined(CONFIG_VIRTUAL_MEMORY)
+/* Designed for XIP, ignore args */
+#define GROUP_FOLLOWS_AT(_a) > RAM AT> ROM
 #else
 #define GROUP_FOLLOWS_AT(where) AT > where
 #endif

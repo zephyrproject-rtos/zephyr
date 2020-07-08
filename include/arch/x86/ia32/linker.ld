@@ -61,7 +61,12 @@
 	#define MMU_PAGE_ALIGN
 #endif
 
+#ifdef CONFIG_VIRTUAL_MEMORY
+z_phys_entry = 0x100000;
+ENTRY(z_phys_entry)
+#else
 ENTRY(CONFIG_KERNEL_ENTRY)
+#endif
 
 /* SECTIONS definitions */
 SECTIONS
@@ -83,11 +88,11 @@ SECTIONS
 	GROUP_START(ROMABLE_REGION)
 
 	. = ALIGN(8);
-
 	_image_rom_start = PHYS_LOAD_ADDR;
-	_image_text_start = PHYS_LOAD_ADDR;
+
 	SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
+	_image_text_start = .;
 
 /* Located in generated directory. This file is populated by calling
  * zephyr_linker_sources(ROM_START ...). This typically contains the vector
