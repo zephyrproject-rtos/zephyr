@@ -76,8 +76,8 @@ static void sam_xdmac_isr(void *arg)
 
 		/* Execute callback */
 		if (channel_cfg->callback) {
-			channel_cfg->callback(channel_cfg->callback_arg,
-					channel, err);
+			channel_cfg->callback(dev, channel_cfg->callback_arg,
+					      channel, err);
 		}
 	}
 }

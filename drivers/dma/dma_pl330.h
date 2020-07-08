@@ -133,8 +133,8 @@ struct dma_pl330_ch_internal {
 	int nonsec_mode;
 };
 
-typedef void (*dma_xfer_callback)(void *callback_arg, uint32_t channel,
-				  int error_code);
+typedef void (*dma_xfer_callback)(struct device *dev, void *callback_arg,
+				  uint32_t channel, int error_code);
 
 struct dma_pl330_ch_config {
 	/* Channel configuration details */

@@ -98,8 +98,9 @@ static void dw_dma_isr(void *arg)
 			 * freed in the user callback function once
 			 * all the blocks are transferred.
 			 */
-			chan_data->dma_blkcallback(chan_data->blkcallback_arg,
-					channel, 0);
+			chan_data->dma_blkcallback(dev,
+						   chan_data->blkcallback_arg,
+						   channel, 0);
 		}
 	}
 
@@ -108,8 +109,9 @@ static void dw_dma_isr(void *arg)
 		status_tfr &= ~(1 << channel);
 		chan_data = &dev_data->chan[channel];
 		if (chan_data->dma_tfrcallback) {
-			chan_data->dma_tfrcallback(chan_data->tfrcallback_arg,
-					channel, 0);
+			chan_data->dma_tfrcallback(dev,
+						   chan_data->tfrcallback_arg,
+						   channel, 0);
 		}
 	}
 }

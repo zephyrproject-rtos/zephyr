@@ -181,13 +181,15 @@ static void i2c_sam0_isr(void *arg)
 
 #ifdef CONFIG_I2C_SAM0_DMA_DRIVEN
 
-static void i2c_sam0_dma_write_done(void *arg, uint32_t id, int error_code)
+static void i2c_sam0_dma_write_done(struct device *dma_dev, void *arg,
+				    uint32_t id, int error_code)
 {
 	struct device *dev = arg;
 	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
 	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
 	SercomI2cm *i2c = cfg->regs;
 
+	ARG_UNUSED(dma_dev);
 	ARG_UNUSED(id);
 
 	int key = irq_lock();
@@ -274,13 +276,15 @@ static bool i2c_sam0_dma_write_start(struct device *dev)
 	return true;
 }
 
-static void i2c_sam0_dma_read_done(void *arg, uint32_t id, int error_code)
+static void i2c_sam0_dma_read_done(struct device *dma_dev, void *arg,
+				   uint32_t id, int error_code)
 {
 	struct device *dev = arg;
 	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
 	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
 	SercomI2cm *i2c = cfg->regs;
 
+	ARG_UNUSED(dma_dev);
 	ARG_UNUSED(id);
 
 	int key = irq_lock();

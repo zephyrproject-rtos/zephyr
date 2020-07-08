@@ -120,8 +120,10 @@ static int uart_sam0_set_baudrate(SercomUsart *const usart, uint32_t baudrate,
 
 #if CONFIG_UART_ASYNC_API
 
-static void uart_sam0_dma_tx_done(void *arg, uint32_t id, int error_code)
+static void uart_sam0_dma_tx_done(struct device *dma_dev, void *arg,
+				  uint32_t id, int error_code)
 {
+	ARG_UNUSED(dma_dev);
 	ARG_UNUSED(id);
 	ARG_UNUSED(error_code);
 
@@ -222,8 +224,10 @@ static void uart_sam0_notify_rx_processed(struct uart_sam0_dev_data *dev_data,
 			   &evt, dev_data->async_cb_data);
 }
 
-static void uart_sam0_dma_rx_done(void *arg, uint32_t id, int error_code)
+static void uart_sam0_dma_rx_done(struct device *dma_dev, void *arg,
+				  uint32_t id, int error_code)
 {
+	ARG_UNUSED(dma_dev);
 	ARG_UNUSED(id);
 	ARG_UNUSED(error_code);
 

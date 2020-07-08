@@ -37,9 +37,10 @@ static __aligned(32) edma_tcd_t
 struct call_back {
 	edma_transfer_config_t transferConfig;
 	edma_handle_t edma_handle;
+	struct device *dev;
 	void *callback_arg;
-	void (*dma_callback)(void *callback_arg, uint32_t channel,
-			     int error_code);
+	void (*dma_callback)(struct device *dev, void *callback_arg,
+			     uint32_t channel, int error_code);
 	enum dma_channel_direction dir;
 	bool busy;
 };
@@ -73,7 +74,7 @@ static void nxp_edma_callback(edma_handle_t *handle, void *param,
 		ret = 0;
 	}
 	LOG_DBG("transfer %d", tcds);
-	data->dma_callback(data->callback_arg, channel, ret);
+	data->dma_callback(data->dev, data->callback_arg, channel, ret);
 }
 
 static void channel_irq(edma_handle_t *handle)
@@ -330,6 +331,7 @@ static int dma_mcux_edma_configure(struct device *dev, uint32_t channel,
 		LOG_DBG("INSTALL call back on channel %d", channel);
 		data->callback_arg = config->callback_arg;
 		data->dma_callback = config->dma_callback;
+		data->dev = dev;
 	}
 
 	irq_unlock(key);
