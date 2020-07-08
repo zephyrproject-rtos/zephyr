@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(dma_nios2);
 
 /* Device configuration parameters */
 struct nios2_msgdma_dev_cfg {
+	const struct device *dev;
 	alt_msgdma_dev *msgdma_dev;
 	alt_msgdma_standard_descriptor desc;
 	uint32_t direction;
@@ -44,8 +45,8 @@ static void nios2_msgdma_isr(void *arg)
 
 static void nios2_msgdma_callback(void *context)
 {
-	const struct device *dev = (const struct device *)context;
-	struct nios2_msgdma_dev_cfg *dev_cfg = DEV_CFG(dev);
+	struct nios2_msgdma_dev_cfg *dev_cfg =
+		(struct nios2_msgdma_dev_cfg *)context;
 	int err_code;
 	uint32_t status;
 
@@ -61,7 +62,7 @@ static void nios2_msgdma_callback(void *context)
 
 	LOG_DBG("msgdma csr status Reg: 0x%x", status);
 
-	dev_cfg->dma_callback(dev, dev_cfg->user_data, 0, err_code);
+	dev_cfg->dma_callback(dev_cfg->dev, dev_cfg->user_data, 0, err_code);
 }
 
 static int nios2_msgdma_config(const struct device *dev, uint32_t channel,
@@ -139,7 +140,7 @@ static int nios2_msgdma_config(const struct device *dev, uint32_t channel,
 			ALTERA_MSGDMA_CSR_GLOBAL_INTERRUPT_MASK |
 			ALTERA_MSGDMA_CSR_STOP_ON_ERROR_MASK |
 			ALTERA_MSGDMA_CSR_STOP_ON_EARLY_TERMINATION_MASK,
-			dev);
+			dev_cfg);
 
 	/* Clear the IRQ status */
 	IOWR_ALTERA_MSGDMA_CSR_STATUS(dev_cfg->msgdma_dev->csr_base,
@@ -210,6 +211,8 @@ DEVICE_DECLARE(dma0_nios2);
 static int nios2_msgdma0_initialize(const struct device *dev)
 {
 	struct nios2_msgdma_dev_cfg *dev_cfg = DEV_CFG(dev);
+
+	dev_cfg->dev = dev;
 
 	/* Initialize semaphore */
 	k_sem_init(&dev_cfg->sem_lock, 1, 1);
