@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 import json
+import logging
 import re
 import subprocess
 import sys
@@ -48,6 +49,7 @@ acli_base = [acli, 'jira', '-u', user,
 
 url_base = 'https://zephyrprojectsec.atlassian.net/browse/'
 vul_doc = "https://docs.zephyrproject.org/latest/security/vulnerabilities.html"
+mitre_base = 'http://cve.mitre.org/cgi-bin/cvename.cgi?name='
 
 def flatten_json(j):
     """Flatten a json input.  Given an array of single map entries,
@@ -65,6 +67,11 @@ def query(issue, action, *args):
     cmd.extend(['--issue', issue, '--action', action])
     cmd.extend(args)
     lines = subprocess.check_output(cmd)
+    # The API seems to return just a newline if there is nothing to
+    # return, which is invalid json.  For these cases, we'll substitue
+    # an empty array.
+    if lines == b'\n':
+        lines = b'[]\n'
     return json.loads(lines)
 
 def query_ticket(issue):
@@ -87,13 +94,12 @@ def clean_version(verno):
 class Issue():
     def __init__(self, issue):
         self.issue = issue
-        # print("Querying {}".format(issue))
+        logging.info(f"Querying {issue}")
         self.ticket = query_ticket(issue)
         self.weblinks = query_weblinks(issue)
         self.links = query_links(issue)
-        # print("ticket: ", self.ticket)
-        # print("links: ", self.links)
-        # print("done")
+        logging.debug(f"ticket: {self.ticket}")
+        logging.debug(f"links: {self.links}")
 
     def cve(self):
         return self.ticket["CVE"]
@@ -175,7 +181,7 @@ if __name__ == '__main__':
     ticket = args[0]
     command = args[1]
 
-    with open('cve-template.json') as fp:
+    with open('scripts/security/cve-template.json') as fp:
         cve = json.load(fp)
     issue = Issue(ticket)
     cve_id = issue.cve()
@@ -198,7 +204,7 @@ if __name__ == '__main__':
 
         refs = []
         add_ref(refs, url_base + ticket)
-        add_ref(refs, vul_doc + "#" + cve_id)
+        add_ref(refs, vul_doc + "#" + cve_id.lower())
         for link in issue.get_links():
             add_ref(refs, link)
 
@@ -222,11 +228,12 @@ if __name__ == '__main__':
         print(issue.description())
         print()
         aff = issue.get_fixed_versions()
-        aff[-1] = "and " + aff[-1]
+        if len(aff) > 2:
+            aff[-1] = "and " + aff[-1]
         print("This has been fixed in releases {}.".format(
             ", ".join(aff)))
         print()
-        print("- `{} <{}#{}>`_".format(cve_id, vul_doc, cve_id))
+        print("- `{} <{}{}>`_".format(cve_id, mitre_base, cve_id))
         print()
         print("- `Zephyr project bug tracker {}".format(ticket))
         print("  <{}{}>`_".format(url_base, ticket))
