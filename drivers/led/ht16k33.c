@@ -77,6 +77,7 @@ struct ht16k33_cfg {
 
 struct ht16k33_data {
 	const struct device *i2c;
+	const struct device *dev;
 	struct led_data dev_data;
 	 /* Shadow buffer for the display data RAM */
 	uint8_t buffer[HT16K33_DISP_DATA_SIZE];
@@ -262,9 +263,8 @@ static bool ht16k33_process_keyscan_data(const struct device *dev)
 	return pressed;
 }
 
-static void ht16k33_irq_thread(const struct device *dev)
+static void ht16k33_irq_thread(struct ht16k33_data *data)
 {
-	struct ht16k33_data *data = dev->data;
 	bool pressed;
 
 	while (true) {
@@ -272,7 +272,7 @@ static void ht16k33_irq_thread(const struct device *dev)
 
 		do {
 			k_sem_reset(&data->irq_sem);
-			pressed = ht16k33_process_keyscan_data(dev);
+			pressed = ht16k33_process_keyscan_data(data->dev);
 			k_msleep(CONFIG_HT16K33_KEYSCAN_DEBOUNCE_MSEC);
 		} while (pressed);
 	}
@@ -327,6 +327,8 @@ static int ht16k33_init(const struct device *dev)
 	struct led_data *dev_data = &data->dev_data;
 	uint8_t cmd[1 + HT16K33_DISP_DATA_SIZE]; /* 1 byte command + data */
 	int err;
+
+	data->dev = dev;
 
 	data->i2c = device_get_binding(config->i2c_dev_name);
 	if (data->i2c == NULL) {
@@ -447,7 +449,7 @@ static int ht16k33_init(const struct device *dev)
 
 	k_thread_create(&data->irq_thread, data->irq_thread_stack,
 			CONFIG_HT16K33_KEYSCAN_IRQ_THREAD_STACK_SIZE,
-			(k_thread_entry_t)ht16k33_irq_thread, dev, NULL, NULL,
+			(k_thread_entry_t)ht16k33_irq_thread, data, NULL, NULL,
 			K_PRIO_COOP(CONFIG_HT16K33_KEYSCAN_IRQ_THREAD_PRIO),
 			0, K_NO_WAIT);
 #endif /* CONFIG_HT16K33_KEYSCAN */
