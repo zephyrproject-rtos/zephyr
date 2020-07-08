@@ -162,8 +162,8 @@ struct dma_config {
 	uint32_t block_count;
 	struct dma_block_config *head_block;
 	void *callback_arg;
-	void (*dma_callback)(void *callback_arg, uint32_t channel,
-			     int error_code);
+	void (*dma_callback)(struct device *dev, void *callback_arg,
+			     uint32_t channel, int error_code);
 };
 
 /**
