@@ -429,7 +429,7 @@ config POLL
 	  Asynchronous notification framework. Enable the k_poll() and
 	  k_poll_signal_raise() APIs.  The former can wait on multiple events
 	  concurrently, which can be either directly triggered or triggered by
-	  the availability of some kernel objects (semaphores and fifos).
+	  the availability of some kernel objects (semaphores and FIFOs).
 
 endmenu
 

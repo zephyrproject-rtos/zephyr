@@ -192,7 +192,7 @@ The kernel supports several mechanisms for offloading interrupt-related
 processing to a thread.
 
 * An ISR can signal a helper thread to do interrupt-related processing
-  using a kernel object, such as a fifo, lifo, or semaphore.
+  using a kernel object, such as a FIFO, LIFO, or semaphore.
 
 * An ISR can instruct the system workqueue thread to execute a work item.
   (See :ref:`workqueues_v2`.)
