@@ -150,10 +150,10 @@ static void hci_rx_thread(void)
 	}
 }
 
-static void bt_h4_status_cb(struct usb_cfg_data *cfg,
+static void bt_h4_status_cb(struct usb_class_data *class_data,
 			    enum usb_dc_status_code status, const uint8_t *param)
 {
-	ARG_UNUSED(cfg);
+	ARG_UNUSED(class_data);
 
 	/* Check the USB status and do needed action if required */
 	switch (status) {
@@ -215,7 +215,7 @@ static void bt_h4_interface_config(struct usb_desc_header *head,
 	bt_h4_cfg.if0.bInterfaceNumber = bInterfaceNumber;
 }
 
-USBD_CFG_DATA_DEFINE(primary, hci_h4) struct usb_cfg_data bt_h4_config = {
+USBD_CLASS_DATA_DEFINE(primary, hci_h4) struct usb_class_data bt_h4_class = {
 	.interface_config = bt_h4_interface_config,
 	.cb_usb_status = bt_h4_status_cb,
 	.request_handlers = {

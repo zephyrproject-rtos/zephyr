@@ -302,7 +302,7 @@ USBD_TERM_DESCR_DEFINE(secondary) struct usb_desc_header term_descr = {
 	.bDescriptorType = 0,
 };
 
-static struct usb_cfg_data dfu_config;
+static struct usb_class_data dfu_class;
 
 /* Device data structure */
 struct dfu_data_t {
@@ -620,12 +620,12 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
  *
  * @return  N/A.
  */
-static void dfu_status_cb(struct usb_cfg_data *cfg,
+static void dfu_status_cb(struct usb_class_data *class_data,
 			  enum usb_dc_status_code status,
 			  const uint8_t *param)
 {
 	ARG_UNUSED(param);
-	ARG_UNUSED(cfg);
+	ARG_UNUSED(class_data);
 
 	/* Check the USB status and do needed action if required */
 	switch (status) {
@@ -726,7 +726,7 @@ static void dfu_interface_config(struct usb_desc_header *head,
 }
 
 /* Configuration of the DFU Device send to the USB Driver */
-USBD_CFG_DATA_DEFINE(primary, dfu) struct usb_cfg_data dfu_config = {
+USBD_CLASS_DATA_DEFINE(primary, dfu) struct usb_class_data dfu_class = {
 	.interface_config = dfu_interface_config,
 	.cb_usb_status = dfu_status_cb,
 	.request_handlers = {
@@ -742,7 +742,7 @@ USBD_CFG_DATA_DEFINE(primary, dfu) struct usb_cfg_data dfu_config = {
  * Dummy configuration, this is necessary to configure DFU mode descriptor
  * which is an alternative (secondary) device descriptor.
  */
-USBD_CFG_DATA_DEFINE(secondary, dfu) struct usb_cfg_data dfu_mode_config = {
+USBD_CLASS_DATA_DEFINE(secondary, dfu) struct usb_class_data dfu_mode_class = {
 	.interface_config = NULL,
 	.cb_usb_status = dfu_status_cb,
 	.request_handlers = {

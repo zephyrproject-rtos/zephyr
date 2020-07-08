@@ -22,8 +22,8 @@ LOG_MODULE_REGISTER(test_main, LOG_LEVEL_DBG);
 /* Linker-defined symbols bound the USB descriptor structs */
 extern struct usb_desc_header __usb_descriptor_start[];
 extern struct usb_desc_header __usb_descriptor_end[];
-extern struct usb_cfg_data __usb_data_start[];
-extern struct usb_cfg_data __usb_data_end[];
+extern struct usb_class_data __usb_data_start[];
+extern struct usb_class_data __usb_data_end[];
 
 uint8_t *usb_get_device_descriptor(void);
 
@@ -97,8 +97,8 @@ struct usb_test_config {
 	};
 
 #define DEFINE_TEST_CFG_DATA(x, _)				\
-	USBD_CFG_DATA_DEFINE(primary, test_##x)			\
-	struct usb_cfg_data test_config_##x = {			\
+	USBD_CLASS_DATA_DEFINE(primary, test_##x)		\
+	struct usb_class_data test_class_##x = {		\
 	.interface_config = interface_config,			\
 	.cb_usb_status = NULL,					\
 	.request_handlers = {					\
@@ -128,17 +128,17 @@ UTIL_LISTIFY(NUM_INSTANCES, DEFINE_TEST_DESC, _)
 UTIL_LISTIFY(NUM_INSTANCES, DEFINE_TEST_EP_IF_CFG, _)
 UTIL_LISTIFY(NUM_INSTANCES, DEFINE_TEST_CFG_DATA, _)
 
-static struct usb_cfg_data *usb_get_cfg_data(struct usb_if_descriptor *iface)
+static struct usb_class_data *usb_get_class_data(struct usb_if_descriptor *iface)
 {
 	size_t length = (__usb_data_end - __usb_data_start);
-	struct usb_cfg_data *cfg = NULL;
+	struct usb_class_data *class_data = NULL;
 
 	for (size_t i = 0; i < length; i++) {
-		cfg = &__usb_data_start[i];
+		class_data = &__usb_data_start[i];
 
-		for (size_t j = 0; j < cfg->num_if_containers; j++) {
-			if (cfg->if_containers[j].iface == iface) {
-				return cfg;
+		for (size_t j = 0; j < class_data->num_if_containers; j++) {
+			if (class_data->if_containers[j].iface == iface) {
+				return class_data;
 			}
 		}
 	}
@@ -146,12 +146,12 @@ static struct usb_cfg_data *usb_get_cfg_data(struct usb_if_descriptor *iface)
 	return NULL;
 }
 
-static bool find_cfg_data_ep(const struct usb_ep_descriptor * const ep_descr,
-			     const struct usb_cfg_data * const cfg_data,
+static bool find_cfg_data_ep(const struct usb_ep_descriptor *const ep_descr,
+			     const struct usb_class_data *const class_data,
 			     uint8_t ep_count)
 {
-	for (int i = 0; i < cfg_data->num_endpoints; i++) {
-		if (cfg_data->endpoints[i].ep_addr ==
+	for (int i = 0; i < class_data->num_endpoints; i++) {
+		if (class_data->endpoints[i].ep_addr ==
 				ep_descr->bEndpointAddress) {
 			LOG_DBG("found ep[%d] %x", i,
 				ep_descr->bEndpointAddress);
@@ -170,7 +170,7 @@ static bool find_cfg_data_ep(const struct usb_ep_descriptor * const ep_descr,
 
 static void check_endpoint_allocation(struct usb_desc_header *head)
 {
-	struct usb_cfg_data *cfg_data = NULL;
+	struct usb_class_data *class_data = NULL;
 	static uint8_t interfaces;
 	uint8_t ep_count = 0;
 
@@ -188,8 +188,8 @@ static void check_endpoint_allocation(struct usb_desc_header *head)
 
 			interfaces++;
 
-			cfg_data = usb_get_cfg_data(if_descr);
-			zassert_not_null(cfg_data, "Check available cfg data");
+			class_data = usb_get_class_data(if_descr);
+			zassert_not_null(class_data, "Check available cfg data");
 		}
 
 		if (head->bDescriptorType == USB_ENDPOINT_DESC) {
@@ -197,11 +197,11 @@ static void check_endpoint_allocation(struct usb_desc_header *head)
 				(struct usb_ep_descriptor *)head;
 
 			/* Check that we get iface desc before */
-			zassert_not_null(cfg_data, "Check available cfg data");
+			zassert_not_null(class_data, "Check available cfg data");
 
-			zassert_true(find_cfg_data_ep(ep_descr, cfg_data,
+			zassert_true(find_cfg_data_ep(ep_descr, class_data,
 						      ep_count),
-				     "Check endpoint config in cfg_data");
+				     "Check endpoint config in class_data");
 			ep_count++;
 		}
 
@@ -228,7 +228,7 @@ static void test_desc_sections(void)
 	TC_PRINT("USB Configuration data span %d\n",
 		 SYMBOL_SPAN(__usb_data_end, __usb_data_start));
 
-	TC_PRINT("sizeof usb_cfg_data %zu\n", sizeof(struct usb_cfg_data));
+	TC_PRINT("sizeof usb_class_data %zu\n", sizeof(struct usb_class_data));
 
 	LOG_DBG("Starting logs");
 
@@ -249,7 +249,7 @@ static void test_desc_sections(void)
 	/* Calculate number of structures */
 	zassert_equal(__usb_data_end - __usb_data_start, NUM_INSTANCES, NULL);
 	zassert_equal(SYMBOL_SPAN(__usb_data_end, __usb_data_start),
-		      NUM_INSTANCES * sizeof(struct usb_cfg_data), NULL);
+		      NUM_INSTANCES * sizeof(struct usb_class_data), NULL);
 
 	check_endpoint_allocation(head);
 }

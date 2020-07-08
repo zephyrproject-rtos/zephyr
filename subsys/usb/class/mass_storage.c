@@ -844,12 +844,12 @@ static void mass_storage_bulk_in(uint8_t ep,
  *
  * @return  N/A.
  */
-static void mass_storage_status_cb(struct usb_cfg_data *cfg,
+static void mass_storage_status_cb(struct usb_class_data *class_data,
 				   enum usb_dc_status_code status,
 				   const uint8_t *param)
 {
 	ARG_UNUSED(param);
-	ARG_UNUSED(cfg);
+	ARG_UNUSED(class_data);
 
 	/* Check the USB status and do needed action if required */
 	switch (status) {
@@ -897,7 +897,8 @@ static void mass_interface_config(struct usb_desc_header *head,
 }
 
 /* Configuration of the Mass Storage Device send to the USB Driver */
-USBD_CFG_DATA_DEFINE(primary, msd) struct usb_cfg_data mass_storage_config = {
+USBD_CLASS_DATA_DEFINE(primary, msd)
+struct usb_class_data mass_storage_class = {
 	.interface_config = mass_interface_config,
 	.cb_usb_status = mass_storage_status_cb,
 	.request_handlers = {

@@ -1128,11 +1128,11 @@ static struct netusb_function rndis_function = {
 	.send_pkt = rndis_send,
 };
 
-static void rndis_status_cb(struct usb_cfg_data *cfg,
+static void rndis_status_cb(struct usb_class_data *class_data,
 			    enum usb_dc_status_code status,
 			    const uint8_t *param)
 {
-	ARG_UNUSED(cfg);
+	ARG_UNUSED(class_data);
 
 	/* Check the USB status and do needed action if required */
 	switch (status) {
@@ -1179,7 +1179,7 @@ static void netusb_interface_config(struct usb_desc_header *head,
 #endif
 }
 
-USBD_CFG_DATA_DEFINE(primary, netusb) struct usb_cfg_data netusb_config = {
+USBD_CLASS_DATA_DEFINE(primary, netusb) struct usb_class_data netusb_class = {
 	.interface_config = netusb_interface_config,
 	.cb_usb_status = rndis_status_cb,
 	.request_handlers = {

@@ -105,11 +105,11 @@ static struct usb_if_container if_cfg[] = {
 	}
 };
 
-static void loopback_status_cb(struct usb_cfg_data *cfg,
+static void loopback_status_cb(struct usb_class_data *class_data,
 			       enum usb_dc_status_code status,
 			       const uint8_t *param)
 {
-	ARG_UNUSED(cfg);
+	ARG_UNUSED(class_data);
 
 	switch (status) {
 	case USB_DC_INTERFACE:
@@ -167,7 +167,8 @@ static void loopback_interface_config(struct usb_desc_header *head,
 }
 
 /* usb.rst device config data start */
-USBD_CFG_DATA_DEFINE(primary, loopback) struct usb_cfg_data loopback_config = {
+USBD_CLASS_DATA_DEFINE(primary, loopback)
+struct usb_class_data loopback_class = {
 	.interface_config = loopback_interface_config,
 	.cb_usb_status = loopback_status_cb,
 	.request_handlers = {

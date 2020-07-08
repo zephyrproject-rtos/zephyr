@@ -62,10 +62,10 @@ extern "C" {
 	static __in_section(usb, descriptor_##p, 5) __used __aligned(1)
 
 /*
- * This macro should be used to place the struct usb_cfg_data
+ * This macro should be used to place the struct usb_class_data
  * inside usb data section in the RAM.
  */
-#define USBD_CFG_DATA_DEFINE(p, name) \
+#define USBD_CLASS_DATA_DEFINE(p, name) \
 	static __in_section(usb, data_##p, name) __used
 
 /*************************************************************************
@@ -180,32 +180,34 @@ struct usb_request_handlers {
 };
 
 /**
- * @brief USB device configuration
+ * @brief USB Class data
  *
- * The Application instantiates this with given parameters added
- * using the "usb_set_config" function. Once this function is called
- * changes to this structure will result in undefined behavior. This structure
- * may only be updated after calls to usb_deconfig
+ * This structure is initialized during build time based on
+ * chosen configuration of the USB device.
+ * The structure represent class in the core USB stack.
  */
-struct usb_cfg_data {
+struct usb_class_data {
 	/** Function for interface runtime configuration */
 	usb_interface_config interface_config;
 	/** Callback to be notified on USB connection status change */
-	void (*cb_usb_status)(struct usb_cfg_data *cfg,
+	void (*cb_usb_status)(struct usb_class_data *class_data,
 			      enum usb_dc_status_code cb_status,
 			      const uint8_t *param);
 	/** USB request handlers */
 	struct usb_request_handlers request_handlers;
-	/* Number of interface containers for this function */
+	/** Number of interface containers for this class */
 	const uint8_t num_if_containers;
-	/* Pointer to table of interface containers for this function */
+	/** Pointer to table of interface containers for this class */
 	struct usb_if_container *const if_containers;
-	/** Number of individual endpoints in the function configuration */
+	/**
+	 * Number of individual endpoints for this class, not including
+	 * conntrol endpoints.
+	 */
 	uint8_t num_endpoints;
 	/**
 	 * Pointer to an array of endpoint structs of length equal to the
-	 * number of EP associated with the function description,
-	 * not including control endpoints
+	 * number of EP associated with this class, not including control
+	 * endpoints.
 	 */
 	struct usb_ep_cfg_data *endpoints;
 };

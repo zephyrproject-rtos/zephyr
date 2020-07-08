@@ -302,8 +302,8 @@ static void tx_work_handler(struct k_work *work)
 	struct cdc_acm_dev_data_t *dev_data =
 		CONTAINER_OF(work, struct cdc_acm_dev_data_t, tx_work);
 	struct device *dev = dev_data->common.dev;
-	struct usb_cfg_data *cfg = (void *)dev->config_info;
-	uint8_t ep = cfg->endpoints[ACM_IN_EP_IDX].ep_addr;
+	struct usb_class_data *class_data = (void *)dev->config_info;
+	uint8_t ep = class_data->endpoints[ACM_IN_EP_IDX].ep_addr;
 	uint8_t *data;
 	size_t len;
 
@@ -414,7 +414,7 @@ static void cdc_acm_do_cb(struct cdc_acm_dev_data_t *dev_data,
 			  const uint8_t *param)
 {
 	struct device *dev = dev_data->common.dev;
-	struct usb_cfg_data *cfg = (void *)dev->config_info;
+	struct usb_class_data *class_data = (void *)dev->config_info;
 
 	/* Check the USB status and do needed action if required */
 	switch (status) {
@@ -430,8 +430,8 @@ static void cdc_acm_do_cb(struct cdc_acm_dev_data_t *dev_data,
 		LOG_DBG("Device connected");
 		break;
 	case USB_DC_CONFIGURED:
-		cdc_acm_read_cb(cfg->endpoints[ACM_OUT_EP_IDX].ep_addr, 0,
-				dev_data);
+		cdc_acm_read_cb(class_data->endpoints[ACM_OUT_EP_IDX].ep_addr,
+				0, dev_data);
 		dev_data->tx_ready = true;
 		dev_data->tx_irq_ena = true;
 		dev_data->rx_irq_ena = true;
@@ -467,18 +467,19 @@ static void cdc_acm_do_cb(struct cdc_acm_dev_data_t *dev_data,
 	}
 }
 
-static void cdc_acm_dev_status_cb(struct usb_cfg_data *cfg,
+static void cdc_acm_dev_status_cb(struct usb_class_data *class_data,
 				  enum usb_dc_status_code status,
 				  const uint8_t *param)
 {
 	struct cdc_acm_dev_data_t *dev_data;
 	struct usb_dev_data *common;
 
-	LOG_DBG("cfg %p status %d", cfg, status);
+	LOG_DBG("class_data %p status %d", class_data, status);
 
-	common = usb_get_dev_data_by_cfg(&cdc_acm_data_devlist, cfg);
+	common = usb_get_dev_data_by_class_data(&cdc_acm_data_devlist,
+						class_data);
 	if (common == NULL) {
-		LOG_WRN("Device data not found for cfg %p", cfg);
+		LOG_WRN("Device data not found for class_data %p", class_data);
 		return;
 	}
 
@@ -813,7 +814,7 @@ static void cdc_acm_baudrate_set(struct device *dev, uint32_t baudrate)
 static int cdc_acm_send_notification(struct device *dev, uint16_t serial_state)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
-	struct usb_cfg_data * const cfg = (void *)dev->config_info;
+	struct usb_class_data *const class_data = (void *)dev->config_info;
 	struct cdc_acm_notification notification;
 	uint32_t cnt = 0U;
 
@@ -826,7 +827,7 @@ static int cdc_acm_send_notification(struct device *dev, uint16_t serial_state)
 
 	dev_data->notification_sent = 0U;
 
-	usb_write(cfg->endpoints[ACM_INT_EP_IDX].ep_addr,
+	usb_write(class_data->endpoints[ACM_INT_EP_IDX].ep_addr,
 		  (const uint8_t *)&notification, sizeof(notification), NULL);
 
 	/* Wait for notification to be sent */
@@ -1032,9 +1033,9 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 		}							\
 	}
 
-#define DEFINE_CDC_ACM_CFG_DATA(x, _)					\
-	USBD_CFG_DATA_DEFINE(primary, cdc_acm)				\
-	struct usb_cfg_data cdc_acm_config_##x = {			\
+#define DEFINE_CDC_ACM_CLASS_DATA(x, _)					\
+	USBD_CLASS_DATA_DEFINE(primary, cdc_acm)			\
+	struct usb_class_data cdc_acm_class_##x = {			\
 		.interface_config = cdc_interface_config,		\
 		.cb_usb_status = cdc_acm_dev_status_cb,			\
 		.request_handlers = {					\
@@ -1114,7 +1115,7 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 	DEVICE_AND_API_INIT(cdc_acm_##x,				\
 			    CONFIG_USB_CDC_ACM_DEVICE_NAME "_" #x,	\
 			    &cdc_acm_init, &cdc_acm_dev_data_##x,	\
-			    &cdc_acm_config_##x,			\
+			    &cdc_acm_class_##x,				\
 			    POST_KERNEL,				\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &cdc_acm_driver_api);
@@ -1127,6 +1128,6 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 
 UTIL_LISTIFY(CONFIG_USB_CDC_ACM_DEVICE_COUNT, DEFINE_CDC_ACM_DESCR_AUTO, _)
 UTIL_LISTIFY(CONFIG_USB_CDC_ACM_DEVICE_COUNT, DEFINE_CDC_ACM_EP_IF_AUTO, _)
-UTIL_LISTIFY(CONFIG_USB_CDC_ACM_DEVICE_COUNT, DEFINE_CDC_ACM_CFG_DATA, _)
+UTIL_LISTIFY(CONFIG_USB_CDC_ACM_DEVICE_COUNT, DEFINE_CDC_ACM_CLASS_DATA, _)
 UTIL_LISTIFY(CONFIG_USB_CDC_ACM_DEVICE_COUNT, DEFINE_CDC_ACM_DEV_DATA, _)
 UTIL_LISTIFY(CONFIG_USB_CDC_ACM_DEVICE_COUNT, DEFINE_CDC_ACM_DEVICE, _)

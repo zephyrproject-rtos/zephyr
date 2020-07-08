@@ -300,13 +300,13 @@ static struct feature_unit_descriptor *get_feature_unit(
  * @brief This is a helper function user to inform the user about
  * possibility to write the data to the device.
  */
-static void audio_dc_sof(struct usb_cfg_data *cfg,
+static void audio_dc_sof(struct usb_class_data *class_data,
 			 struct usb_audio_dev_data *dev_data)
 {
 	uint8_t ep_addr;
 
 	/* In endpoint always at index 0 */
-	ep_addr = cfg->endpoints[0].ep_addr;
+	ep_addr = class_data->endpoints[0].ep_addr;
 	if ((ep_addr & USB_EP_DIR_MASK) && (dev_data->tx_enable)) {
 		if (dev_data->ops && dev_data->ops->data_request_cb) {
 			dev_data->ops->data_request_cb(
@@ -359,17 +359,18 @@ static void audio_interface_config(struct usb_desc_header *head,
 	}
 }
 
-static void audio_cb_usb_status(struct usb_cfg_data *cfg,
+static void audio_cb_usb_status(struct usb_class_data *class_data,
 			 enum usb_dc_status_code cb_status,
 			 const uint8_t *param)
 {
 	struct usb_audio_dev_data *audio_dev_data;
 	struct usb_dev_data *dev_data;
 
-	dev_data = usb_get_dev_data_by_cfg(&usb_audio_data_devlist, cfg);
+	dev_data = usb_get_dev_data_by_class_data(&usb_audio_data_devlist,
+					   class_data);
 
 	if (dev_data == NULL) {
-		LOG_ERR("Device data not found for cfg %p", cfg);
+		LOG_ERR("Device data not found for class_data %p", class_data);
 		return;
 	}
 
@@ -378,7 +379,7 @@ static void audio_cb_usb_status(struct usb_cfg_data *cfg,
 
 	switch (cb_status) {
 	case USB_DC_SOF:
-		audio_dc_sof(cfg, audio_dev_data);
+		audio_dc_sof(class_data, audio_dev_data);
 		break;
 	default:
 		break;
@@ -841,9 +842,9 @@ int usb_audio_send(const struct device *dev, struct net_buf *buffer,
 		   size_t len)
 {
 	struct usb_audio_dev_data *audio_dev_data = dev->driver_data;
-	struct usb_cfg_data *cfg = (void *)dev->config_info;
+	struct usb_class_data *class_data = (void *)dev->config_info;
 	/* EP ISO IN is always placed first in the endpoint table */
-	uint8_t ep = cfg->endpoints[0].ep_addr;
+	uint8_t ep = class_data->endpoints[0].ep_addr;
 
 	if (!(ep & USB_EP_DIR_MASK)) {
 		LOG_ERR("Wrong device");
@@ -931,9 +932,9 @@ void usb_audio_register(struct device *dev,
 			const struct usb_audio_ops *ops)
 {
 	struct usb_audio_dev_data *audio_dev_data = dev->driver_data;
-	const struct usb_cfg_data *cfg = dev->config_info;
+	const struct usb_class_data *class_data = dev->config_info;
 	const struct usb_if_descriptor *iface_descr =
-		cfg->if_containers[0].iface;
+		class_data->if_containers[0].iface;
 	const struct cs_ac_if_descriptor *header =
 		(struct cs_ac_if_descriptor *)
 		((uint8_t *)iface_descr + USB_PASSIVE_IF_DESC_SIZE);
@@ -946,14 +947,13 @@ void usb_audio_register(struct device *dev,
 
 	sys_slist_append(&usb_audio_data_devlist, &audio_dev_data->common.node);
 
-	LOG_DBG("Device dev %p dev_data %p cfg %p added to devlist %p",
-		dev, audio_dev_data, dev->config_info,
-		&usb_audio_data_devlist);
+	LOG_DBG("Device dev %p dev_data %p class_data %p added to devlist %p",
+		dev, audio_dev_data, class_data, &usb_audio_data_devlist);
 }
 
 #define DEFINE_AUDIO_DEVICE(dev, i)					  \
-	USBD_CFG_DATA_DEFINE(primary, audio)				  \
-	struct usb_cfg_data dev##_audio_config_##i = {			  \
+	USBD_CLASS_DATA_DEFINE(primary, audio)				  \
+	struct usb_class_data dev##_audio_class_##i = {			  \
 		.interface_config = audio_interface_config,		  \
 		.cb_usb_status = audio_cb_usb_status,			  \
 		.request_handlers = {					  \
@@ -970,7 +970,7 @@ void usb_audio_register(struct device *dev,
 			    DT_LABEL(DT_INST(i, COMPAT_##dev)),		  \
 			    &usb_audio_device_init,			  \
 			    &dev##_audio_dev_data_##i,			  \
-			    &dev##_audio_config_##i, APPLICATION,	  \
+			    &dev##_audio_class_##i, APPLICATION,	  \
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		  \
 			    DUMMY_API)
 

@@ -138,19 +138,19 @@ static void webusb_write_cb(uint8_t ep, int size, void *priv)
 
 static void webusb_read_cb(uint8_t ep, int size, void *priv)
 {
-	struct usb_cfg_data *cfg = priv;
+	struct usb_class_data *class_data = priv;
 
-	LOG_DBG("cfg %p ep %x size %u", cfg, ep, size);
+	LOG_DBG("class_data %p ep %x size %u", class_data, ep, size);
 
 	if (size <= 0) {
 		goto done;
 	}
 
-	usb_transfer(cfg->endpoints[WEBUSB_IN_EP_IDX].ep_addr, rx_buf, size,
-		     USB_TRANS_WRITE, webusb_write_cb, cfg);
+	usb_transfer(class_data->endpoints[WEBUSB_IN_EP_IDX].ep_addr, rx_buf,
+		     size, USB_TRANS_WRITE, webusb_write_cb, class_data);
 done:
 	usb_transfer(ep, rx_buf, sizeof(rx_buf), USB_TRANS_READ,
-		     webusb_read_cb, cfg);
+		     webusb_read_cb, class_data);
 }
 
 /**
@@ -160,12 +160,12 @@ done:
  *
  * @return  N/A.
  */
-static void webusb_dev_status_cb(struct usb_cfg_data *cfg,
+static void webusb_dev_status_cb(struct usb_class_data *class_data,
 				 enum usb_dc_status_code status,
 				 const uint8_t *param)
 {
 	ARG_UNUSED(param);
-	ARG_UNUSED(cfg);
+	ARG_UNUSED(class_data);
 
 	/* Check the USB status and do needed action if required */
 	switch (status) {
@@ -180,8 +180,8 @@ static void webusb_dev_status_cb(struct usb_cfg_data *cfg,
 		break;
 	case USB_DC_CONFIGURED:
 		LOG_DBG("USB device configured");
-		webusb_read_cb(cfg->endpoints[WEBUSB_OUT_EP_IDX].ep_addr,
-			       0, cfg);
+		webusb_read_cb(class_data->endpoints[WEBUSB_OUT_EP_IDX].ep_addr,
+			       0, class_data);
 		break;
 	case USB_DC_DISCONNECTED:
 		LOG_DBG("USB device disconnected");
@@ -219,7 +219,7 @@ static struct usb_if_container webusb_if_data[] = {
 	}
 };
 
-USBD_CFG_DATA_DEFINE(primary, webusb) struct usb_cfg_data webusb_config = {
+USBD_CLASS_DATA_DEFINE(primary, webusb) struct usb_class_data webusb_class = {
 	.cb_usb_status = webusb_dev_status_cb,
 	.request_handlers = {
 		.class_handler = NULL,
