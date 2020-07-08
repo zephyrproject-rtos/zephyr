@@ -85,10 +85,8 @@ MODEM_CMD_DEFINE(on_cmd_error)
 }
 
 /* RX thread */
-static void esp_rx(const struct device *dev)
+static void esp_rx(struct esp_data *data)
 {
-	struct esp_data *data = dev->data;
-
 	while (true) {
 		/* wait for incoming data */
 		k_sem_take(&data->iface_data.rx_sem, K_FOREVER);
@@ -870,7 +868,7 @@ static int esp_init(const struct device *dev)
 	k_thread_create(&esp_rx_thread, esp_rx_stack,
 			K_KERNEL_STACK_SIZEOF(esp_rx_stack),
 			(k_thread_entry_t)esp_rx,
-			dev, NULL, NULL,
+			data, NULL, NULL,
 			K_PRIO_COOP(CONFIG_WIFI_ESP_RX_THREAD_PRIORITY), 0,
 			K_NO_WAIT);
 	k_thread_name_set(&esp_rx_thread, "esp_rx");
