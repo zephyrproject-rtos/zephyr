@@ -69,3 +69,7 @@ indent_size = 8
 # Git commit messages
 [COMMIT_EDITMSG]
 max_line_length = 72
+
+# Kconfig
+[Kconfig*]
+indent_style=tab
