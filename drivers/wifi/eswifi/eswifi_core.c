@@ -51,29 +51,30 @@ static int eswifi_reset(struct eswifi_dev *eswifi)
 
 static inline int __parse_ssid(char *str, char *ssid)
 {
-	/* fnt => '"SSID"' */
+	int i = 0;
 
-	if (!*str || (*str != '"')) {
-		return -EINVAL;
-	}
-
-	str++;
-	while (*str && (*str != '"')) {
-		*ssid++ = *str++;
-	}
-
-	*ssid = '\0';
+	/* fmt => "SSID" */
 
 	if (*str != '"') {
-		return -EINVAL;
+		return 0;
+	}
+	str++;
+
+	while (*str && (*str != '"') && i < WIFI_SSID_MAX_LEN) {
+		ssid[i++] = *str++;
 	}
 
-	return -EINVAL;
+	if (*str != '"') {
+		return 0;
+	}
+
+	return i;
 }
 
 static void __parse_scan_res(char *str, struct wifi_scan_result *res)
 {
 	int field = 0;
+	int ret;
 
 	/* fmt => #001,"SSID",MACADDR,RSSI,BITRATE,MODE,SECURITY,BAND,CHANNEL */
 
@@ -89,8 +90,7 @@ static void __parse_scan_res(char *str, struct wifi_scan_result *res)
 
 		switch (++field) {
 		case 1: /* SSID */
-			__parse_ssid(str, res->ssid);
-			res->ssid_length = strlen(res->ssid);
+			res->ssid_length = __parse_ssid(str, res->ssid);
 			str += res->ssid_length;
 			break;
 		case 2: /* mac addr */
@@ -179,7 +179,7 @@ static int __parse_ipv4_address(char *str, char *ssid, u8_t ip[4])
 	unsigned int byte = -1;
 
 	/* fmt => [JOIN   ] SSID,192.168.2.18,0,0 */
-	while (*str) {
+	while (*str && byte < 4) {
 		if (byte == -1) {
 			if (!strncmp(str, ssid, strlen(ssid))) {
 				byte = 0U;
