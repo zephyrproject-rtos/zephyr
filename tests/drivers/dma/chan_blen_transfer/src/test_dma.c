@@ -34,7 +34,8 @@ static const char tx_data[] = "It is harder to be kind than to be wise........";
 static char rx_data[RX_BUFF_SIZE] = { 0 };
 #endif
 
-static void test_done(void *arg, uint32_t id, int error_code)
+static void test_done(struct device *dma_dev, void *arg,
+		      uint32_t id, int error_code)
 {
 	if (error_code == 0) {
 		TC_PRINT("DMA transfer done\n");
