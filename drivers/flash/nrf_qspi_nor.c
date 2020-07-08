@@ -266,10 +266,8 @@ static inline void qspi_wait_for_completion(const struct device *dev,
 	}
 }
 
-static inline void qspi_complete(const struct device *dev)
+static inline void qspi_complete(struct qspi_nor_data *dev_data)
 {
-	struct qspi_nor_data *dev_data = get_dev_data(dev);
-
 	k_sem_give(&dev_data->sync);
 }
 
@@ -282,10 +280,10 @@ static inline void qspi_complete(const struct device *dev)
  */
 static void qspi_handler(nrfx_qspi_evt_t event, void *p_context)
 {
-	const struct device *dev = p_context;
+	struct qspi_nor_data *dev_data = p_context;
 
 	if (event == NRFX_QSPI_EVENT_DONE) {
-		qspi_complete(dev);
+		qspi_complete(dev_data);
 	}
 }
 
@@ -440,12 +438,13 @@ static int qspi_nrfx_configure(const struct device *dev)
 		return -ENXIO;
 	}
 
+	struct qspi_nor_data *dev_data = dev->data;
 	/* Main config structure */
 	nrfx_qspi_config_t QSPIconfig;
 
 	qspi_fill_init_struct(&QSPIconfig);
 
-	nrfx_err_t res = nrfx_qspi_init(&QSPIconfig, qspi_handler, dev);
+	nrfx_err_t res = nrfx_qspi_init(&QSPIconfig, qspi_handler, dev_data);
 
 	if (res == NRFX_SUCCESS) {
 		/* If quad transfer was chosen - enable it now */
