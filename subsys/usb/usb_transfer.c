@@ -286,7 +286,7 @@ void usb_cancel_transfers(void)
 		if (trans->status == -EBUSY) {
 			trans->status = -ECANCELED;
 			k_work_submit(&trans->work);
-			LOG_DBG("Cancel transfer");
+			LOG_DBG("Cancel transfer for ep: 0x%02x", trans->ep);
 		}
 
 		irq_unlock(key);
