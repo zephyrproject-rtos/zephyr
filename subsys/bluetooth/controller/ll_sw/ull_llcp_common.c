@@ -30,7 +30,7 @@
 #include "ull_llcp_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_ull_llcp
+#define LOG_MODULE_NAME bt_ctlr_ull_llcp_common
 #include "common/log.h"
 #include <soc.h>
 #include "hal/debug.h"
