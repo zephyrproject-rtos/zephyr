@@ -181,8 +181,7 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 
 static void event_handler(nrfx_twim_evt_t const *p_event, void *p_context)
 {
-	const struct device *dev = p_context;
-	struct i2c_nrfx_twim_data *dev_data = get_dev_data(dev);
+	struct i2c_nrfx_twim_data *dev_data = p_context;
 
 	switch (p_event->type) {
 	case NRFX_TWIM_EVT_DONE:
@@ -234,10 +233,11 @@ static const struct i2c_driver_api i2c_nrfx_twim_driver_api = {
 
 static int init_twim(const struct device *dev)
 {
+	struct i2c_nrfx_twim_data *dev_data = get_dev_data(dev);
 	nrfx_err_t result = nrfx_twim_init(&get_dev_config(dev)->twim,
 					   &get_dev_config(dev)->config,
 					   event_handler,
-					   dev);
+					   dev_data);
 	if (result != NRFX_SUCCESS) {
 		LOG_ERR("Failed to initialize device: %s",
 			dev->name);

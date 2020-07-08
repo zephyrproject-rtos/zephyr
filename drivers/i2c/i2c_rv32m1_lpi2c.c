@@ -102,8 +102,7 @@ static void rv32m1_lpi2c_master_transfer_callback(LPI2C_Type *base,
 						  status_t completionStatus,
 						  void *userData)
 {
-	const struct device *dev = userData;
-	struct rv32m1_lpi2c_data *data = dev->data;
+	struct rv32m1_lpi2c_data *data = userData;
 
 	ARG_UNUSED(base);
 	ARG_UNUSED(handle);
@@ -244,7 +243,7 @@ static int rv32m1_lpi2c_init(const struct device *dev)
 	LPI2C_MasterInit(config->base, &master_config, clk_freq);
 	LPI2C_MasterTransferCreateHandle(config->base, &data->handle,
 					 rv32m1_lpi2c_master_transfer_callback,
-					 dev);
+					 data);
 
 	dev_cfg = i2c_map_dt_bitrate(config->bitrate);
 	err = rv32m1_lpi2c_configure(dev, dev_cfg | I2C_MODE_MASTER);
