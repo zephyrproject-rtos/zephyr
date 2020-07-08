@@ -436,7 +436,8 @@ static int spi_sam0_transceive_sync(struct device *dev,
 
 #ifdef CONFIG_SPI_ASYNC
 
-static void spi_sam0_dma_rx_done(void *arg, uint32_t id, int error_code);
+static void spi_sam0_dma_rx_done(struct device *dma_dev, void *arg,
+				 uint32_t id, int error_code);
 
 static int spi_sam0_dma_rx_load(struct device *dev, uint8_t *buf,
 				size_t len)
@@ -582,7 +583,8 @@ static int spi_sam0_dma_advance_buffers(struct device *dev)
 	return 0;
 }
 
-static void spi_sam0_dma_rx_done(void *arg, uint32_t id, int error_code)
+static void spi_sam0_dma_rx_done(struct device *dma_dev, void *arg,
+				 uint32_t id, int error_code)
 {
 	struct device *dev = arg;
 	const struct spi_sam0_config *cfg = dev->config_info;

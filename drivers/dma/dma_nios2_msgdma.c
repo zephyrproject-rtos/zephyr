@@ -26,8 +26,8 @@ struct nios2_msgdma_dev_cfg {
 	uint32_t direction;
 	struct k_sem sem_lock;
 	void *callback_arg;
-	void (*dma_callback)(void *arg, uint32_t id,
-			     int error_code);
+	void (*dma_callback)(struct device *dev, void *arg,
+			     uint32_t id, int error_code);
 };
 
 #define DEV_NAME(dev) ((dev)->name)
@@ -45,8 +45,8 @@ static void nios2_msgdma_isr(void *arg)
 
 static void nios2_msgdma_callback(void *context)
 {
-	struct nios2_msgdma_dev_cfg *dev_cfg =
-				DEV_CFG((struct device *)context);
+	struct device *dev = (struct device *)context;
+	struct nios2_msgdma_dev_cfg *dev_cfg = DEV_CFG(dev);
 	int err_code;
 	uint32_t status;
 
@@ -62,7 +62,7 @@ static void nios2_msgdma_callback(void *context)
 
 	LOG_DBG("msgdma csr status Reg: 0x%x", status);
 
-	dev_cfg->dma_callback(dev_cfg->callback_arg, 0, err_code);
+	dev_cfg->dma_callback(dev, dev_cfg->callback_arg, 0, err_code);
 }
 
 static int nios2_msgdma_config(struct device *dev, uint32_t channel,

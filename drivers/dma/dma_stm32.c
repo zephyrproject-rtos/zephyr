@@ -90,21 +90,21 @@ static void dma_stm32_irq_handler(void *arg)
 #ifdef CONFIG_DMAMUX_STM32
 		stream->busy = false;
 		/* the callback function expects the dmamux channel nb */
-		stream->dma_callback(stream->callback_arg,
-					stream->mux_channel, 0);
+		stream->dma_callback(dev, stream->callback_arg,
+				     stream->mux_channel, 0);
 #else
-		stream->dma_callback(stream->callback_arg, id + STREAM_OFFSET,
-				     0);
+		stream->dma_callback(dev, stream->callback_arg,
+				     id + STREAM_OFFSET, 0);
 #endif /* CONFIG_DMAMUX_STM32 */
 	} else if (stm32_dma_is_unexpected_irq_happened(dma, id)) {
 		LOG_ERR("Unexpected irq happened.");
 
 #ifdef CONFIG_DMAMUX_STM32
-		stream->dma_callback(stream->callback_arg,
-					stream->mux_channel, -EIO);
+		stream->dma_callback(dev, stream->callback_arg,
+				     stream->mux_channel, -EIO);
 #else
-		stream->dma_callback(stream->callback_arg, id + STREAM_OFFSET,
-				     -EIO);
+		stream->dma_callback(dev, stream->callback_arg,
+				     id + STREAM_OFFSET, -EIO);
 #endif /* CONFIG_DMAMUX_STM32 */
 	} else {
 		LOG_ERR("Transfer Error.");
@@ -112,11 +112,11 @@ static void dma_stm32_irq_handler(void *arg)
 		dma_stm32_clear_stream_irq(dev, id);
 
 #ifdef CONFIG_DMAMUX_STM32
-		stream->dma_callback(stream->callback_arg,
-					stream->mux_channel, -EIO);
+		stream->dma_callback(dev, stream->callback_arg,
+				     stream->mux_channel, -EIO);
 #else
-		stream->dma_callback(stream->callback_arg, id + STREAM_OFFSET,
-				     -EIO);
+		stream->dma_callback(dev, stream->callback_arg,
+				     id + STREAM_OFFSET, -EIO);
 #endif /* CONFIG_DMAMUX_STM32 */
 	}
 }

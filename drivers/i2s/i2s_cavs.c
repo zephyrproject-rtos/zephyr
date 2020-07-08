@@ -166,7 +166,7 @@ I2S_DEVICE_OBJECT_DECLARE(1);
 I2S_DEVICE_OBJECT_DECLARE(2);
 I2S_DEVICE_OBJECT_DECLARE(3);
 
-static void i2s_dma_tx_callback(void *, uint32_t, int);
+static void i2s_dma_tx_callback(struct device *, void *, uint32_t, int);
 static void i2s_tx_stream_disable(struct i2s_cavs_dev_data *,
 		volatile struct i2s_cavs_ssp *const, struct device *);
 static void i2s_rx_stream_disable(struct i2s_cavs_dev_data *,
@@ -186,8 +186,8 @@ static inline void i2s_purge_stream_buffers(struct stream *strm,
 }
 
 /* This function is executed in the interrupt context */
-static void i2s_dma_tx_callback(void *arg, uint32_t channel,
-		int status)
+static void i2s_dma_tx_callback(struct device *dma_dev, void *arg,
+				uint32_t channel, int status)
 {
 	struct device *dev = (struct device *)arg;
 	const struct i2s_cavs_config *const dev_cfg = DEV_CFG(dev);
@@ -242,7 +242,8 @@ static void i2s_dma_tx_callback(void *arg, uint32_t channel,
 	}
 }
 
-static void i2s_dma_rx_callback(void *arg, uint32_t channel, int status)
+static void i2s_dma_rx_callback(struct device *dma_dev, void *arg,
+				uint32_t channel, int status)
 {
 	struct device *dev = (struct device *)arg;
 	const struct i2s_cavs_config *const dev_cfg = DEV_CFG(dev);

@@ -536,7 +536,7 @@ static int dma_pl330_transfer_start(struct device *dev, uint32_t channel)
 
 	/* Execute callback */
 	if (channel_cfg->dma_callback) {
-		channel_cfg->dma_callback(channel_cfg->callback_arg,
+		channel_cfg->dma_callback(dev, channel_cfg->callback_arg,
 					  channel, ret);
 	}
 

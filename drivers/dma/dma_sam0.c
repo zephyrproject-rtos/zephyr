@@ -15,8 +15,8 @@ LOG_MODULE_REGISTER(dma_sam0, CONFIG_DMA_LOG_LEVEL);
 
 #define DMA_REGS	((Dmac *)DT_INST_REG_ADDR(0))
 
-typedef void (*dma_callback)(void *callback_arg, uint32_t channel,
-			     int error_code);
+typedef void (*dma_callback)(struct device *dev, void *callback_arg,
+			     uint32_t channel, int error_code);
 
 struct dma_sam0_channel {
 	dma_callback cb;
@@ -50,11 +50,12 @@ static void dma_sam0_isr(void *arg)
 
 	if (pend & DMAC_INTPEND_TERR) {
 		if (chdata->cb) {
-			chdata->cb(chdata->cb_arg, channel, -DMAC_INTPEND_TERR);
+			chdata->cb(dev, chdata->cb_arg,
+				   channel, -DMAC_INTPEND_TERR);
 		}
 	} else if (pend & DMAC_INTPEND_TCMPL) {
 		if (chdata->cb) {
-			chdata->cb(chdata->cb_arg, channel, 0);
+			chdata->cb(dev, chdata->cb_arg, channel, 0);
 		}
 	}
 

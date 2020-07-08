@@ -57,7 +57,8 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 uint32_t nop_tx;
 
 /* This function is executed in the interrupt context */
-static void dma_callback(void *arg, uint32_t channel, int status)
+static void dma_callback(struct device *dev, void *arg,
+			 uint32_t channel, int status)
 {
 	/* callback_arg directly holds the client data */
 	struct spi_stm32_data *data = arg;
