@@ -52,6 +52,7 @@
 #include <drivers/clock_control/stm32_clock_control.h>
 #include <sys/util.h>
 #include <drivers/gpio.h>
+#include "stm32_hsem.h"
 
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
 #include <logging/log.h>
@@ -109,8 +110,6 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
  * Kconfig system.
  */
 #ifdef USB
-
-#define CFG_HW_RCC_CRRCR_CCIPR_SEMID	5
 
 #define EP0_MPS 64U
 #define EP_MPS 64U
@@ -251,10 +250,7 @@ static int usb_dc_stm32_clock_enable(void)
 	}
 #endif /* CONFIG_SOC_SERIES_STM32L0X */
 
-#ifdef CONFIG_SOC_SERIES_STM32WBX
-	while (LL_HSEM_1StepLock(HSEM, CFG_HW_RCC_CRRCR_CCIPR_SEMID)) {
-	}
-#endif /* CONFIG_SOC_SERIES_STM32WBX */
+	z_stm32_hsem_lock(CFG_HW_CLK48_CONFIG_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
 	LL_RCC_HSI48_Enable();
 	while (!LL_RCC_HSI48_IsReady()) {
@@ -262,6 +258,14 @@ static int usb_dc_stm32_clock_enable(void)
 	}
 
 	LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_HSI48);
+
+#if !defined(CONFIG_SOC_SERIES_STM32WBX)
+	/* Specially for STM32WB, don't unlock the HSEM to prevent M0 core
+	 * to disable HSI48 clock used for RNG.
+	 */
+	z_stm32_hsem_unlock(CFG_HW_CLK48_CONFIG_SEMID);
+#endif /* CONFIG_SOC_SERIES_STM32WBX */
+
 #elif defined(LL_RCC_USB_CLKSOURCE_NONE)
 	/* When MSI is configured in PLL mode with a 32.768 kHz clock source,
 	 * the MSI frequency can be automatically trimmed by hardware to reach
@@ -913,7 +917,9 @@ int usb_dc_detach(void)
 	LOG_ERR("Not implemented");
 
 #ifdef CONFIG_SOC_SERIES_STM32WBX
-	LL_HSEM_ReleaseLock(HSEM, CFG_HW_RCC_CRRCR_CCIPR_SEMID, 0);
+	/* Specially for STM32WB, unlock the HSEM when USB is no more used. */
+	z_stm32_hsem_unlock(CFG_HW_CLK48_CONFIG_SEMID);
+
 	/*
 	 * TODO: AN5289 notes a process of locking Sem0, with possible waits
 	 * via interrupts before switching off CLK48, but lacking any actual

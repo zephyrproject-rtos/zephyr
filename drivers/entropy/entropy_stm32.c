@@ -21,6 +21,7 @@
 #include <sys/printk.h>
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/stm32_clock_control.h>
+#include "stm32_hsem.h"
 
 #define IRQN		DT_INST_IRQN(0)
 #define IRQ_PRIO	DT_INST_IRQ(0, priority)
@@ -386,6 +387,7 @@ static int entropy_stm32_rng_init(const struct device *dev)
 	LL_SYSCFG_VREFINT_EnableHSI48();
 #endif /* CONFIG_SOC_SERIES_STM32L0X */
 
+	z_stm32_hsem_lock(CFG_HW_CLK48_CONFIG_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 	/* Use the HSI48 for the RNG */
 	LL_RCC_HSI48_Enable();
 	while (!LL_RCC_HSI48_IsReady()) {
@@ -393,6 +395,14 @@ static int entropy_stm32_rng_init(const struct device *dev)
 	}
 
 	LL_RCC_SetRNGClockSource(LL_RCC_RNG_CLKSOURCE_HSI48);
+
+#if !defined(CONFIG_SOC_SERIES_STM32WBX)
+	/* Specially for STM32WB, don't unlock the HSEM to prevent M0 core
+	 * to disable HSI48 clock used for RNG.
+	 */
+	z_stm32_hsem_unlock(CFG_HW_CLK48_CONFIG_SEMID);
+#endif /* CONFIG_SOC_SERIES_STM32WBX */
+
 #endif /* CONFIG_SOC_SERIES_STM32L4X */
 
 	dev_data->clock = device_get_binding(STM32_CLOCK_CONTROL_NAME);
