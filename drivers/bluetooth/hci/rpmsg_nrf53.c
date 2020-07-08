@@ -115,7 +115,8 @@ const struct virtio_dispatch dispatch = {
 	.notify = virtio_notify,
 };
 
-static void ipm_callback(void *context, uint32_t id, volatile void *data)
+static void ipm_callback(struct device *dev, void *context,
+			 uint32_t id, volatile void *data)
 {
 	BT_DBG("Got callback of id %u", id);
 	k_sem_give(&rx_sem);

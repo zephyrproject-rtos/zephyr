@@ -122,7 +122,7 @@ static void stm32_ipcc_mailbox_rx_isr(void *arg)
 
 		if (data->callback) {
 			/* Only one MAILBOX, id is unused and set to 0 */
-			data->callback(data->callback_ctx, i, &value);
+			data->callback(dev, data->callback_ctx, i, &value);
 		}
 		/* clear status to acknoledge message reception */
 		IPCC_ClearFlag_CHx(cfg->ipcc, i);

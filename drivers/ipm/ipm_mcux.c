@@ -52,7 +52,7 @@ static void mcux_mailbox_isr(void *arg)
 
 	if (data->callback) {
 		/* Only one MAILBOX, id is unused and set to 0 */
-		data->callback(data->callback_ctx, 0, &value);
+		data->callback(dev, data->callback_ctx, 0, &value);
 	}
 	/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F
 	 * Store immediate overlapping exception return operation

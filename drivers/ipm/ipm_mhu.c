@@ -137,8 +137,8 @@ static void ipm_mhu_isr(void *arg)
 	ipm_mhu_clear_val(d, cpu_id, ipm_mhu_status);
 
 	if (driver_data->callback) {
-		driver_data->callback(driver_data->callback_ctx, cpu_id,
-					&ipm_mhu_status);
+		driver_data->callback(d, driver_data->callback_ctx, cpu_id,
+				      &ipm_mhu_status);
 	}
 }
 
@@ -157,8 +157,8 @@ static int ipm_mhu_max_data_size_get(struct device *d)
 }
 
 static void ipm_mhu_register_cb(struct device *d,
-						ipm_callback_t cb,
-						void *context)
+				ipm_callback_t cb,
+				void *context)
 {
 	struct ipm_mhu_data *driver_data = DEV_DATA(d);
 
