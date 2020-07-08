@@ -22,6 +22,7 @@ struct video_mcux_csi_config {
 };
 
 struct video_mcux_csi_data {
+	const struct device *dev;
 	const struct device *sensor_dev;
 	csi_config_t csi_config;
 	csi_handle_t csi_handle;
@@ -49,9 +50,9 @@ static inline unsigned int video_pix_fmt_bpp(uint32_t pixelformat)
 static void __frame_done_cb(CSI_Type *base, csi_handle_t *handle,
 			    status_t status, void *user_data)
 {
-	const struct device *dev = user_data;
+	struct video_mcux_csi_data *data = user_data;
+	const struct device *dev = data->dev;
 	const struct video_mcux_csi_config *config = dev->config;
-	struct video_mcux_csi_data *data = dev->data;
 	enum video_signal_result result = VIDEO_BUF_DONE;
 	struct video_buffer *vbuf, *vbuf_first = NULL;
 	uint32_t buffer_addr;
@@ -141,7 +142,7 @@ static int video_mcux_csi_set_fmt(const struct device *dev,
 	}
 
 	ret = CSI_TransferCreateHandle(config->base, &data->csi_handle,
-				       __frame_done_cb, dev);
+				       __frame_done_cb, data);
 	if (ret != kStatus_Success) {
 		return -EIO;
 	}
@@ -418,10 +419,14 @@ static struct video_mcux_csi_data video_mcux_csi_data_0;
 
 static int video_mcux_csi_init_0(const struct device *dev)
 {
+	struct video_mcux_csi_data *data = dev->driver_data;
+
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    video_mcux_csi_isr, NULL, 0);
 
 	irq_enable(DT_INST_IRQN(0));
+
+	data->dev = dev;
 
 	return video_mcux_csi_init(dev);
 }
