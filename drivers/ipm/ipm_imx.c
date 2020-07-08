@@ -69,7 +69,7 @@ static void imx_mu_isr(void *arg)
 				}
 
 				if (data->callback) {
-					data->callback(data->callback_ctx,
+					data->callback(dev, data->callback_ctx,
 						       (uint32_t)id,
 						       &data32[0]);
 				}

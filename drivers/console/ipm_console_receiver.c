@@ -84,8 +84,8 @@ static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 	}
 }
 
-static void ipm_console_receive_callback(void *context, uint32_t id,
-					 volatile void *data)
+static void ipm_console_receive_callback(struct device *ipm_dev, void *context,
+					 uint32_t id, volatile void *data)
 {
 	struct device *d;
 	struct ipm_console_receiver_runtime_data *driver_data;
@@ -109,7 +109,7 @@ static void ipm_console_receive_callback(void *context, uint32_t id,
 	 * re-enables the channel and consumes the data.
 	 */
 	if (ring_buf_space_get(&driver_data->rb) == 0) {
-		ipm_set_enabled(driver_data->ipm_device, 0);
+		ipm_set_enabled(ipm_dev, 0);
 		driver_data->channel_disabled = 1;
 	}
 }
