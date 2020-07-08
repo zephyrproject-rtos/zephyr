@@ -31,10 +31,9 @@
  */
 static void gpio_stm32_isr(int line, void *arg)
 {
-	const struct device *dev = arg;
-	struct gpio_stm32_data *data = dev->data;
+	struct gpio_stm32_data *data = arg;
 
-	gpio_fire_callbacks(&data->cb, dev, BIT(line));
+	gpio_fire_callbacks(&data->cb, data->dev, BIT(line));
 }
 
 /**
@@ -431,6 +430,7 @@ static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
 					      enum gpio_int_trig trig)
 {
 	const struct gpio_stm32_config *cfg = dev->config;
+	struct gpio_stm32_data *data = dev->data;
 	int edge = 0;
 	int err = 0;
 
@@ -450,7 +450,7 @@ static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
 		goto exit;
 	}
 
-	if (stm32_exti_set_callback(pin, gpio_stm32_isr, dev) != 0) {
+	if (stm32_exti_set_callback(pin, gpio_stm32_isr, data) != 0) {
 		err = -EBUSY;
 		goto exit;
 	}
@@ -510,6 +510,9 @@ static const struct gpio_driver_api gpio_stm32_driver = {
 static int gpio_stm32_init(const struct device *device)
 {
 	const struct gpio_stm32_config *cfg = device->config;
+	struct gpio_stm32_data *data = device->data;
+
+	data->dev = device;
 
 	/* enable clock for subsystem */
 	const struct device *clk =
