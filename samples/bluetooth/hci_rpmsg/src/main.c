@@ -123,7 +123,8 @@ static void ipm_callback_process(struct k_work *work)
 	virtqueue_notification(vq[1]);
 }
 
-static void ipm_callback(void *context, uint32_t id, volatile void *data)
+static void ipm_callback(struct device *dev, void *context,
+			 uint32_t id, volatile void *data)
 {
 	LOG_INF("Got callback of id %u", id);
 	k_work_submit(&ipm_work);

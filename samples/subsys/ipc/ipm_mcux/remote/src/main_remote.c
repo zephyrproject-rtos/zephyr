@@ -9,17 +9,18 @@
 #include <device.h>
 #include <drivers/ipm.h>
 
-struct device *ipm;
-
-void ping_ipm_callback(void *context, uint32_t id, volatile void *data)
+void ping_ipm_callback(struct device *dev, void *context,
+		       uint32_t id, volatile void *data)
 {
-	ipm_send(ipm, 1, 0, (const void *)data, 4);
+	ipm_send(dev, 1, 0, (const void *)data, 4);
 }
 
 
 
 void main(void)
 {
+	struct device *ipm;
+
 	ipm = device_get_binding(DT_LABEL(DT_INST(0, nxp_lpc_mailbox)));
 	if (!ipm) {
 		while (1) {
