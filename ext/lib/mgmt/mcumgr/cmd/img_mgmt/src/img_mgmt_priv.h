@@ -84,7 +84,7 @@ int img_mgmt_find_by_hash(uint8_t *find, struct image_version *ver);
 int img_mgmt_find_by_ver(struct image_version *find, uint8_t *hash);
 int img_mgmt_read_info(int image_slot, struct image_version *ver,
                        uint8_t *hash, uint32_t *flags);
-int img_mgmt_slot_in_use(int slot);
+int img_mgmt_slot_in_use(int slot, bool *in_use);
 int img_mgmt_state_read(struct mgmt_ctxt *ctxt);
 int img_mgmt_state_write(struct mgmt_ctxt *njb);
 int img_mgmt_ver_str(const struct image_version *ver, char *dst);

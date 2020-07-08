@@ -237,8 +237,14 @@ img_mgmt_erase(struct mgmt_ctxt *ctxt)
 {
     CborError err;
     int rc;
+    bool slot1_in_use;
 
-    if (img_mgmt_slot_in_use(1)) {
+    rc = img_mgmt_slot_in_use(1, &slot1_in_use);
+    if (rc != 0) {
+        return rc;
+    }
+
+    if (slot1_in_use) {
         /* No free slot. */
         return MGMT_ERR_EBADSTATE;
     }
@@ -307,8 +313,14 @@ img_mgmt_upload_first_chunk(struct mgmt_ctxt *ctxt, const uint8_t *req_data,
                             size_t data_sha_len)
 {
     int rc;
+    bool slot1_in_use;
 
-    if (img_mgmt_slot_in_use(1)) {
+    rc = img_mgmt_slot_in_use(1, &slot1_in_use);
+    if (rc != 0) {
+        return rc;
+    }
+
+    if (slot1_in_use) {
         /* No free slot. */
         return MGMT_ERR_ENOMEM;
     }
