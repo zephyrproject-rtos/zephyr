@@ -221,8 +221,7 @@ static const struct spi_driver_api spi_nrfx_driver_api = {
 
 static void event_handler(const nrfx_spis_evt_t *p_event, void *p_context)
 {
-	const struct device *dev = p_context;
-	struct spi_nrfx_data *dev_data = get_dev_data(dev);
+	struct spi_nrfx_data *dev_data = p_context;
 
 	if (p_event->evt_type == NRFX_SPIS_XFER_DONE) {
 		spi_context_complete(&dev_data->ctx, p_event->rx_amount);
@@ -232,20 +231,20 @@ static void event_handler(const nrfx_spis_evt_t *p_event, void *p_context)
 static int init_spis(const struct device *dev,
 		     const nrfx_spis_config_t *config)
 {
+	struct spi_nrfx_data *dev_data = get_dev_data(dev);
 	/* This sets only default values of frequency, mode and bit order.
 	 * The proper ones are set in configure() when a transfer is started.
 	 */
 	nrfx_err_t result = nrfx_spis_init(&get_dev_config(dev)->spis,
 					   config,
 					   event_handler,
-					   dev);
+					   dev_data);
 	if (result != NRFX_SUCCESS) {
-		LOG_ERR("Failed to initialize device: %s",
-			    dev->name);
+		LOG_ERR("Failed to initialize device: %s", dev->name);
 		return -EBUSY;
 	}
 
-	spi_context_unlock_unconditionally(&get_dev_data(dev)->ctx);
+	spi_context_unlock_unconditionally(&dev_data->ctx);
 
 	return 0;
 }

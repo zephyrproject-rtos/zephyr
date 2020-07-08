@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(spi_nrfx_spim);
 
 struct spi_nrfx_data {
 	struct spi_context ctx;
+	const struct device *dev;
 	size_t chunk_len;
 	bool   busy;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
@@ -288,36 +289,39 @@ static const struct spi_driver_api spi_nrfx_driver_api = {
 
 static void event_handler(const nrfx_spim_evt_t *p_event, void *p_context)
 {
-	const struct device *dev = p_context;
-	struct spi_nrfx_data *dev_data = get_dev_data(dev);
+	struct spi_nrfx_data *dev_data = p_context;
 
 	if (p_event->type == NRFX_SPIM_EVENT_DONE) {
 		spi_context_update_tx(&dev_data->ctx, 1, dev_data->chunk_len);
 		spi_context_update_rx(&dev_data->ctx, 1, dev_data->chunk_len);
 
-		transfer_next_chunk(dev);
+		transfer_next_chunk(dev_data->dev);
 	}
 }
 
 static int init_spim(const struct device *dev)
 {
+	struct spi_nrfx_data *data = get_dev_data(dev);
+	nrfx_err_t result;
+
+	data->dev = dev;
+
 	/* This sets only default values of frequency, mode and bit order.
 	 * The proper ones are set in configure() when a transfer is started.
 	 */
-	nrfx_err_t result = nrfx_spim_init(&get_dev_config(dev)->spim,
-					   &get_dev_config(dev)->config,
-					   event_handler,
-					   dev);
+	result = nrfx_spim_init(&get_dev_config(dev)->spim,
+				&get_dev_config(dev)->config,
+				event_handler,
+				data);
 	if (result != NRFX_SUCCESS) {
-		LOG_ERR("Failed to initialize device: %s",
-			    dev->name);
+		LOG_ERR("Failed to initialize device: %s", dev->name);
 		return -EBUSY;
 	}
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	get_dev_data(dev)->pm_state = DEVICE_PM_ACTIVE_STATE;
+	data->pm_state = DEVICE_PM_ACTIVE_STATE;
 #endif
-	spi_context_unlock_unconditionally(&get_dev_data(dev)->ctx);
+	spi_context_unlock_unconditionally(&data->ctx);
 
 	return 0;
 }
