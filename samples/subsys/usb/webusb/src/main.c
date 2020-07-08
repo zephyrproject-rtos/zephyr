@@ -276,7 +276,7 @@ int vendor_handle_req(struct usb_setup_packet *pSetup,
 }
 
 /* Custom and Vendor request handlers */
-static struct webusb_req_handlers req_handlers = {
+static struct usb_request_handlers req_handlers = {
 	.custom_handler = custom_handle_req,
 	.vendor_handler = vendor_handle_req,
 };
