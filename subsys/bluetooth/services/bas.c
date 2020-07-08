@@ -27,9 +27,11 @@ LOG_MODULE_REGISTER(bas);
 
 static uint8_t battery_level = 100U;
 
-static void blvl_ccc_cfg_changed(const struct bt_gatt_attr *attr,
-				       uint16_t value)
+static void blvl_ccc_cfg_changed(struct bt_conn *conn,
+				 const struct bt_gatt_attr *attr,
+				 uint16_t value)
 {
+	ARG_UNUSED(conn);
 	ARG_UNUSED(attr);
 
 	bool notif_enabled = (value == BT_GATT_CCC_NOTIFY);

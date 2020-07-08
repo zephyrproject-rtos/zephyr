@@ -82,7 +82,8 @@ struct bt_conn *conn;
 /* Notification state */
 volatile bool notify_enable;
 
-static void mpu_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
+static void mpu_ccc_cfg_changed(struct bt_conn *conn,
+				const struct bt_gatt_attr *attr, uint16_t value)
 {
 	ARG_UNUSED(attr);
 	notify_enable = (value == BT_GATT_CCC_NOTIFY);

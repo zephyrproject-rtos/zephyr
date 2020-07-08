@@ -56,6 +56,8 @@ Removed APIs in this release
 Stable API changes in this release
 ==================================
 
+* The GATT CCC cfg_changed callback now takes a pointer of the bt_conn that
+  caused the change as an argument.
 
 Kernel
 ******

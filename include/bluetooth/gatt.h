@@ -586,10 +586,12 @@ struct _bt_gatt_ccc {
 
 	/** @brief CCC attribute changed callback
 	 *
+	 *  @param conn   The connection that originated the change
 	 *  @param attr   The attribute that's changed value
 	 *  @param value  New value
 	 */
-	void (*cfg_changed)(const struct bt_gatt_attr *attr, uint16_t value);
+	void (*cfg_changed)(struct bt_conn *conn,
+			    const struct bt_gatt_attr *attr, uint16_t value);
 
 	/** @brief CCC attribute write validation callback
 	 *

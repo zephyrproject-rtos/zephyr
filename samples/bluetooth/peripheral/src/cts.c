@@ -25,7 +25,8 @@
 static uint8_t ct[10];
 static uint8_t ct_update;
 
-static void ct_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
+static void ct_ccc_cfg_changed(struct bt_conn *conn,
+			       const struct bt_gatt_attr *attr, uint16_t value)
 {
 	/* TODO: Handle value */
 }

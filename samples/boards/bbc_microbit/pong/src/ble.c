@@ -500,7 +500,8 @@ static void ble_timeout(struct k_work *work)
 	}
 }
 
-static void pong_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t val)
+static void pong_ccc_cfg_changed(struct bt_conn *conn,
+				 const struct bt_gatt_attr *attr, uint16_t val)
 {
 	printk("val %u\n", val);
 

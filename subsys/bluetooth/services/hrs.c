@@ -27,8 +27,10 @@ LOG_MODULE_REGISTER(hrs);
 
 static uint8_t hrs_blsc;
 
-static void hrmc_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
+static void hrmc_ccc_cfg_changed(struct bt_conn *conn,
+				 const struct bt_gatt_attr *attr, uint16_t value)
 {
+	ARG_UNUSED(conn);
 	ARG_UNUSED(attr);
 
 	bool notif_enabled = (value == BT_GATT_CCC_NOTIFY);

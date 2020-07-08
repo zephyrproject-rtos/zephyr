@@ -69,7 +69,8 @@ static uint8_t simulate_vnd;
 static uint8_t indicating;
 static struct bt_gatt_indicate_params ind_params;
 
-static void vnd_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
+static void vnd_ccc_cfg_changed(struct bt_conn *conn,
+				const struct bt_gatt_attr *attr, uint16_t value)
 {
 	simulate_vnd = (value == BT_GATT_CCC_INDICATE) ? 1 : 0;
 }

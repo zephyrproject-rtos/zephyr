@@ -472,7 +472,8 @@ static bool ccc_added;
 
 static uint8_t ccc_value;
 
-static void ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
+static void ccc_cfg_changed(struct bt_conn *conn,
+			    const struct bt_gatt_attr *attr, uint16_t value)
 {
 	ccc_value = value;
 }

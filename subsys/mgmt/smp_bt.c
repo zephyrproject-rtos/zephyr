@@ -65,7 +65,8 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 	return len;
 }
 
-static void smp_bt_ccc_changed(const struct bt_gatt_attr *attr, uint16_t value)
+static void smp_bt_ccc_changed(struct bt_conn *conn,
+			       const struct bt_gatt_attr *attr, uint16_t value)
 {
 }
 

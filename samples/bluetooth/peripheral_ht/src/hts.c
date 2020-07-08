@@ -31,7 +31,8 @@ static uint8_t simulate_htm;
 static uint8_t indicating;
 static struct bt_gatt_indicate_params ind_params;
 
-static void htmc_ccc_cfg_changed(const struct bt_gatt_attr *attr,
+static void htmc_ccc_cfg_changed(struct bt_conn *conn,
+				 const struct bt_gatt_attr *attr,
 				 uint16_t value)
 {
 	simulate_htm = (value == BT_GATT_CCC_INDICATE) ? 1 : 0;

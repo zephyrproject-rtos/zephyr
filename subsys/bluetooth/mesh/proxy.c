@@ -607,13 +607,14 @@ struct net_buf_simple *bt_mesh_proxy_get_buf(void)
 }
 
 #if defined(CONFIG_BT_MESH_PB_GATT)
-static void prov_ccc_changed(const struct bt_gatt_attr *attr, uint16_t value)
+static void prov_ccc_changed(struct bt_conn *conn,
+			     const struct bt_gatt_attr *attr, uint16_t value)
 {
 	BT_DBG("value 0x%04x", value);
 }
 
 static ssize_t prov_ccc_write(struct bt_conn *conn,
-			   const struct bt_gatt_attr *attr, uint16_t value)
+			      const struct bt_gatt_attr *attr, uint16_t value)
 {
 	struct bt_mesh_proxy_client *client;
 
@@ -726,7 +727,8 @@ int bt_mesh_proxy_prov_disable(bool disconnect)
 #endif /* CONFIG_BT_MESH_PB_GATT */
 
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
-static void proxy_ccc_changed(const struct bt_gatt_attr *attr, uint16_t value)
+static void proxy_ccc_changed(struct bt_conn *conn,
+			      const struct bt_gatt_attr *attr, uint16_t value)
 {
 	BT_DBG("value 0x%04x", value);
 }

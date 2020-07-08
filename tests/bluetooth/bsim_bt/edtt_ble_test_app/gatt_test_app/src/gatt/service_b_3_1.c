@@ -86,7 +86,8 @@ static ssize_t write_value_v6(struct bt_conn *conn,
  * @param attr  The attribute whose descriptor configuration has changed
  * @param value The new value of the descriptor configuration
  */
-static void value_v6_ccc_cfg_changed(const struct bt_gatt_attr *attr,
+static void value_v6_ccc_cfg_changed(struct bt_conn *conn,
+				     const struct bt_gatt_attr *attr,
 				     uint16_t value)
 {
 	value_v6_ntf_active = value == BT_GATT_CCC_NOTIFY;

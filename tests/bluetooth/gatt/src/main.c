@@ -34,7 +34,8 @@ static const struct bt_uuid_128 test1_nfy_uuid = BT_UUID_INIT_128(
 
 static uint8_t nfy_enabled;
 
-static void test1_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
+static void test1_ccc_cfg_changed(struct bt_conn *conn,
+				  const struct bt_gatt_attr *attr, uint16_t value)
 {
 	nfy_enabled = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
 }
