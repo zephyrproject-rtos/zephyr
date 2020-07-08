@@ -103,6 +103,8 @@ struct rf2xx_config {
 struct rf2xx_context {
 	struct net_if *iface;
 
+	const struct device *dev;
+
 	const struct device *irq_gpio;
 	const struct device *reset_gpio;
 	const struct device *slptr_gpio;

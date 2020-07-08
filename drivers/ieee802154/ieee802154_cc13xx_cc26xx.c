@@ -273,9 +273,9 @@ static inline uint8_t ieee802154_cc13xx_cc26xx_convert_rssi(int8_t rssi)
 	       CC13XX_CC26XX_RSSI_DYNAMIC_RANGE;
 }
 
-static void ieee802154_cc13xx_cc26xx_rx_done(const struct device *dev)
+static void ieee802154_cc13xx_cc26xx_rx_done(
+	struct ieee802154_cc13xx_cc26xx_data *drv_data)
 {
-	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
 	struct net_pkt *pkt;
 	uint8_t len, seq, corr;
 	int8_t rssi;
@@ -328,7 +328,7 @@ static void ieee802154_cc13xx_cc26xx_rx_done(const struct device *dev)
 
 static void ieee802154_cc13xx_cc26xx_rx(void *arg1, void *arg2, void *arg3)
 {
-	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(arg1);
+	struct ieee802154_cc13xx_cc26xx_data *drv_data = arg1;
 
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
@@ -336,7 +336,7 @@ static void ieee802154_cc13xx_cc26xx_rx(void *arg1, void *arg2, void *arg3)
 	while (true) {
 		k_sem_take(&drv_data->rx_done, K_FOREVER);
 
-		ieee802154_cc13xx_cc26xx_rx_done(arg1);
+		ieee802154_cc13xx_cc26xx_rx_done(drv_data);
 	}
 }
 
@@ -436,7 +436,7 @@ static void ieee802154_cc13xx_cc26xx_data_init(const struct device *dev)
 
 	k_thread_create(&drv_data->rx_thread, drv_data->rx_stack,
 			K_KERNEL_STACK_SIZEOF(drv_data->rx_stack),
-			ieee802154_cc13xx_cc26xx_rx, dev, NULL, NULL,
+			ieee802154_cc13xx_cc26xx_rx, drv_data, NULL, NULL,
 			K_PRIO_COOP(2), 0, K_NO_WAIT);
 }
 

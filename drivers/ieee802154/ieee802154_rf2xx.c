@@ -302,14 +302,14 @@ static void rf2xx_process_trx_end(const struct device *dev)
 
 static void rf2xx_thread_main(void *arg)
 {
-	const struct device *dev = INT_TO_POINTER(arg);
-	struct rf2xx_context *ctx = dev->data;
+	struct rf2xx_context *ctx = arg;
 	uint8_t isr_status;
 
 	while (true) {
 		k_sem_take(&ctx->trx_isr_lock, K_FOREVER);
 
-		isr_status = rf2xx_iface_reg_read(dev, RF2XX_IRQ_STATUS_REG);
+		isr_status = rf2xx_iface_reg_read(ctx->dev,
+						  RF2XX_IRQ_STATUS_REG);
 
 		/*
 		 *  IRQ_7 (BAT_LOW) Indicates a supply voltage below the
@@ -339,10 +339,11 @@ static void rf2xx_thread_main(void *arg)
 		 */
 		if (isr_status & (1 << RF2XX_RX_START)) {
 			if (ctx->trx_model != RF2XX_TRX_MODEL_231) {
-				rf2xx_iface_sram_read(dev, 0, &ctx->rx_phr, 1);
+				rf2xx_iface_sram_read(ctx->dev, 0,
+						      &ctx->rx_phr, 1);
 			}
 		} else if (isr_status & (1 << RF2XX_TRX_END)) {
-			rf2xx_process_trx_end(dev);
+			rf2xx_process_trx_end(ctx->dev);
 		}
 	}
 }
@@ -803,6 +804,8 @@ static int rf2xx_init(const struct device *dev)
 
 	LOG_DBG("\nInitialize RF2XX Transceiver\n");
 
+	ctx->dev = dev;
+
 	k_sem_init(&ctx->trx_tx_sync, 0, 1);
 	k_sem_init(&ctx->trx_isr_lock, 0, 1);
 
@@ -827,7 +830,7 @@ static int rf2xx_init(const struct device *dev)
 			ctx->trx_stack,
 			CONFIG_IEEE802154_RF2XX_RX_STACK_SIZE,
 			(k_thread_entry_t) rf2xx_thread_main,
-			dev, NULL, NULL,
+			ctx, NULL, NULL,
 			K_PRIO_COOP(2), 0, K_NO_WAIT);
 
 	snprintk(thread_name, sizeof(thread_name),

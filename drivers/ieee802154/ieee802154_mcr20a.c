@@ -712,8 +712,7 @@ static inline bool irqsts3_event(struct mcr20a_context *mcr20a,
 
 static void mcr20a_thread_main(void *arg)
 {
-	const struct device *dev = (const struct device *)arg;
-	struct mcr20a_context *mcr20a = dev->data;
+	struct mcr20a_context *mcr20a = (struct mcr20a_context *)arg;
 	uint8_t dregs[MCR20A_PHY_CTRL4 + 1];
 	bool set_new_seq;
 	uint8_t ctrl1 = 0U;
@@ -1441,7 +1440,7 @@ static int mcr20a_init(const struct device *dev)
 	k_thread_create(&mcr20a->mcr20a_rx_thread, mcr20a->mcr20a_rx_stack,
 			CONFIG_IEEE802154_MCR20A_RX_STACK_SIZE,
 			(k_thread_entry_t)mcr20a_thread_main,
-			dev, NULL, NULL, K_PRIO_COOP(2), 0, K_NO_WAIT);
+			mcr20a, NULL, NULL, K_PRIO_COOP(2), 0, K_NO_WAIT);
 	k_thread_name_set(&mcr20a->mcr20a_rx_thread, "mcr20a_rx");
 
 	return 0;

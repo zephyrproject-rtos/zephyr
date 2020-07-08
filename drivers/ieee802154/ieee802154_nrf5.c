@@ -84,8 +84,7 @@ static void nrf5_get_eui64(uint8_t *mac)
 
 static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 {
-	const struct device *dev = (const struct device *)arg1;
-	struct nrf5_802154_data *nrf5_radio = NRF5_802154_DATA(dev);
+	struct nrf5_802154_data *nrf5_radio = (struct nrf5_802154_data *)arg1;
 	struct net_pkt *pkt;
 	struct nrf5_802154_rx_frame *rx_frame;
 	uint8_t pkt_len;
@@ -492,7 +491,7 @@ static int nrf5_init(const struct device *dev)
 
 	k_thread_create(&nrf5_radio->rx_thread, nrf5_radio->rx_stack,
 			CONFIG_IEEE802154_NRF5_RX_STACK_SIZE,
-			nrf5_rx_thread, dev, NULL, NULL,
+			nrf5_rx_thread, nrf5_radio, NULL, NULL,
 			K_PRIO_COOP(2), 0, K_NO_WAIT);
 
 	k_thread_name_set(&nrf5_radio->rx_thread, "nrf5_rx");
