@@ -45,6 +45,7 @@ struct spi_sam0_config {
 struct spi_sam0_data {
 	struct spi_context ctx;
 #ifdef CONFIG_SPI_ASYNC
+	const struct device *dev;
 	const struct device *dma;
 	uint32_t dma_segment_len;
 #endif
@@ -452,7 +453,7 @@ static int spi_sam0_dma_rx_load(const struct device *dev, uint8_t *buf,
 	dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
 	dma_cfg.source_data_size = 1;
 	dma_cfg.dest_data_size = 1;
-	dma_cfg.user_data = dev;
+	dma_cfg.user_data = data;
 	dma_cfg.dma_callback = spi_sam0_dma_rx_done;
 	dma_cfg.block_count = 1;
 	dma_cfg.head_block = &dma_blk;
@@ -586,9 +587,9 @@ static int spi_sam0_dma_advance_buffers(const struct device *dev)
 static void spi_sam0_dma_rx_done(const struct device *dma_dev, void *arg,
 				 uint32_t id, int error_code)
 {
-	const struct device *dev = arg;
+	struct spi_sam0_data *data = arg;
+	const struct device *dev = data->dev;
 	const struct spi_sam0_config *cfg = dev->config;
-	struct spi_sam0_data *data = dev->data;
 	int retval;
 
 	ARG_UNUSED(id);
@@ -707,6 +708,7 @@ static int spi_sam0_init(const struct device *dev)
 #ifdef CONFIG_SPI_ASYNC
 
 	data->dma = device_get_binding(cfg->dma_dev);
+	data->dev = dev;
 
 #endif
 

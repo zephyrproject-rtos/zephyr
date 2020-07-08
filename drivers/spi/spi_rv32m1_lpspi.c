@@ -32,6 +32,7 @@ struct spi_mcux_config {
 };
 
 struct spi_mcux_data {
+	const struct device *dev;
 	lpspi_master_handle_t handle;
 	struct spi_context ctx;
 	size_t transfer_len;
@@ -114,15 +115,15 @@ static void spi_mcux_isr(void *arg)
 }
 
 static void spi_mcux_master_transfer_callback(LPSPI_Type *base,
-		lpspi_master_handle_t *handle, status_t status, void *userData)
+					      lpspi_master_handle_t *handle,
+					      status_t status, void *userData)
 {
-	const struct device *dev = userData;
-	struct spi_mcux_data *data = dev->data;
+	struct spi_mcux_data *data = userData;
 
 	spi_context_update_tx(&data->ctx, 1, data->transfer_len);
 	spi_context_update_rx(&data->ctx, 1, data->transfer_len);
 
-	spi_mcux_transfer_next_packet(dev);
+	spi_mcux_transfer_next_packet(data->dev);
 }
 
 static int spi_mcux_configure(const struct device *dev,
@@ -189,7 +190,8 @@ static int spi_mcux_configure(const struct device *dev,
 	LPSPI_MasterInit(base, &master_config, clock_freq);
 
 	LPSPI_MasterTransferCreateHandle(base, &data->handle,
-					spi_mcux_master_transfer_callback, dev);
+					 spi_mcux_master_transfer_callback,
+					 data);
 
 	LPSPI_SetDummyData(base, 0);
 
@@ -266,6 +268,8 @@ static int spi_mcux_init(const struct device *dev)
 	CLOCK_SetIpSrc(config->clock_ip_name, config->clock_ip_src);
 
 	config->irq_config_func(dev);
+
+	data->dev = dev;
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
