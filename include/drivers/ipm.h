@@ -35,14 +35,16 @@ extern "C" {
  * interrupt-safe APIS. Registration of callbacks is done via
  * @a ipm_register_callback
  *
- * @param "void *context" Arbitrary context pointer provided at
+ * @param ipmdev Driver instance
+ * @param context Arbitrary context pointer provided at
  *        registration time.
- * @param "uint32_t id" Message type identifier.
- * @param "volatile void *data" Message data pointer. The correct
+ * @param id Message type identifier.
+ * @param data Message data pointer. The correct
  *        amount of data to read out
  * must be inferred using the message id/upper level protocol.
  */
-typedef void (*ipm_callback_t)(void *context, uint32_t id, volatile void *data);
+typedef void (*ipm_callback_t)(struct device *ipmdev, void *context,
+			       uint32_t id, volatile void *data);
 
 /**
  * @typedef ipm_send_t
