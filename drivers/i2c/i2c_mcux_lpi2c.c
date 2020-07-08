@@ -79,10 +79,10 @@ static int mcux_lpi2c_configure(const struct device *dev,
 }
 
 static void mcux_lpi2c_master_transfer_callback(LPI2C_Type *base,
-		lpi2c_master_handle_t *handle, status_t status, void *userData)
+						lpi2c_master_handle_t *handle,
+						status_t status, void *userData)
 {
-	const struct device *dev = userData;
-	struct mcux_lpi2c_data *data = dev->data;
+	struct mcux_lpi2c_data *data = userData;
 
 	ARG_UNUSED(handle);
 	ARG_UNUSED(base);
@@ -205,7 +205,8 @@ static int mcux_lpi2c_init(const struct device *dev)
 	master_config.busIdleTimeout_ns = config->bus_idle_timeout_ns;
 	LPI2C_MasterInit(base, &master_config, clock_freq);
 	LPI2C_MasterTransferCreateHandle(base, &data->handle,
-			mcux_lpi2c_master_transfer_callback, dev);
+					 mcux_lpi2c_master_transfer_callback,
+					 data);
 
 	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
 

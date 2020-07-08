@@ -75,10 +75,10 @@ static int i2c_mcux_configure(const struct device *dev,
 }
 
 static void i2c_mcux_master_transfer_callback(I2C_Type *base,
-		i2c_master_handle_t *handle, status_t status, void *userData)
+					      i2c_master_handle_t *handle,
+					      status_t status, void *userData)
 {
-	const struct device *dev = userData;
-	struct i2c_mcux_data *data = DEV_DATA(dev);
+	struct i2c_mcux_data *data = userData;
 
 	ARG_UNUSED(handle);
 	ARG_UNUSED(base);
@@ -187,7 +187,7 @@ static int i2c_mcux_init(const struct device *dev)
 	I2C_MasterGetDefaultConfig(&master_config);
 	I2C_MasterInit(base, &master_config, clock_freq);
 	I2C_MasterTransferCreateHandle(base, &data->handle,
-			i2c_mcux_master_transfer_callback, dev);
+				       i2c_mcux_master_transfer_callback, data);
 
 	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
 
