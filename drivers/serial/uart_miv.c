@@ -139,6 +139,7 @@ struct uart_miv_device_config {
 
 struct uart_miv_data {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	const struct device *dev;
 	uart_irq_callback_user_data_t callback;
 	void *cb_data;
 #endif
@@ -312,13 +313,17 @@ static void uart_miv_irq_handler(void *arg)
  */
 void uart_miv_rx_thread(void *arg1, void *arg2, void *arg3)
 {
-	const struct device *dev = (const struct device *)arg1;
+	struct uart_miv_data *data = (struct uart_miv_data *)arg1;
+	const struct device *dev = data->dev;
 	volatile struct uart_miv_regs_t *uart = DEV_UART(dev);
 	const struct uart_miv_device_config *const cfg = DEV_CFG(dev);
 	/* Make it go to sleep for a period no longer than
 	 * time to receive next character.
 	 */
 	uint32_t delay = 1000000 / cfg->baud_rate;
+
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
 
 	while (1) {
 		if (uart->status & STATUS_RXFULL_MASK) {
@@ -411,9 +416,13 @@ DEVICE_AND_API_INIT(uart_miv_0, DT_INST_LABEL(0),
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_miv_irq_cfg_func_0(const struct device *dev)
 {
+	struct uart_miv_data *data = DEV_DATA(dev);
+
+	data->dev = dev;
+
 	/* Create a thread which will poll for data - replacement for IRQ */
 	k_thread_create(&rx_thread, rx_stack, 500,
-			uart_miv_rx_thread, dev, NULL, NULL, K_PRIO_COOP(2),
+			uart_miv_rx_thread, data, NULL, NULL, K_PRIO_COOP(2),
 			0, K_NO_WAIT);
 }
 #endif

@@ -100,6 +100,7 @@ struct uarte_nrfx_int_driven {
 
 /* Device data structure */
 struct uarte_nrfx_data {
+	const struct device *dev;
 	struct uart_config uart_config;
 #ifdef UARTE_INTERRUPT_DRIVEN
 	struct uarte_nrfx_int_driven *int_driven;
@@ -485,9 +486,9 @@ static int uarte_nrfx_init(const struct device *dev)
 	}
 
 	k_timer_init(&data->async->rx_timeout_timer, rx_timeout, NULL);
-	k_timer_user_data_set(&data->async->rx_timeout_timer, dev);
+	k_timer_user_data_set(&data->async->rx_timeout_timer, data);
 	k_timer_init(&data->async->tx_timeout_timer, tx_timeout, NULL);
-	k_timer_user_data_set(&data->async->tx_timeout_timer, dev);
+	k_timer_user_data_set(&data->async->tx_timeout_timer, data);
 
 	return 0;
 }
@@ -632,8 +633,8 @@ static int uarte_nrfx_rx_disable(const struct device *dev)
 
 static void tx_timeout(struct k_timer *timer)
 {
-	const struct device *dev = k_timer_user_data_get(timer);
-	(void) uarte_nrfx_tx_abort(dev);
+	struct uarte_nrfx_data *data = k_timer_user_data_get(timer);
+	(void) uarte_nrfx_tx_abort(data->dev);
 }
 
 static void user_callback(const struct device *dev, struct uart_event *evt)
@@ -655,8 +656,8 @@ static void user_callback(const struct device *dev, struct uart_event *evt)
  */
 static void rx_timeout(struct k_timer *timer)
 {
-	const struct device *dev = k_timer_user_data_get(timer);
-	struct uarte_nrfx_data *data = get_dev_data(dev);
+	struct uarte_nrfx_data *data = k_timer_user_data_get(timer);
+	const struct device *dev = data->dev;
 	const struct uarte_nrfx_config *cfg = get_dev_config(dev);
 	uint32_t read;
 
@@ -1301,6 +1302,8 @@ static int uarte_instance_init(const struct device *dev,
 	struct uarte_nrfx_data *data = get_dev_data(dev);
 
 	nrf_uarte_disable(uarte);
+
+	data->dev = dev;
 
 	nrf_gpio_pin_write(config->pseltxd, 1);
 	nrf_gpio_cfg_output(config->pseltxd);
