@@ -202,14 +202,14 @@ void main(void)
 {
 	CO_NMT_reset_cmd_t reset = CO_RESET_NOT;
 	CO_ReturnError_t err;
-	const struct device *can;
+	struct canopen_context can;
 	uint16_t timeout;
 	uint32_t elapsed;
 	int64_t timestamp;
 	int ret;
 
-	can = device_get_binding(CAN_INTERFACE);
-	if (!can) {
+	can.dev = device_get_binding(CAN_INTERFACE);
+	if (!can.dev) {
 		LOG_ERR("CAN interface not found");
 		return;
 	}
@@ -234,7 +234,7 @@ void main(void)
 	while (reset != CO_RESET_APP) {
 		elapsed =  0U; /* milliseconds */
 
-		err = CO_init(can, CONFIG_CANOPEN_NODE_ID, CAN_BITRATE);
+		err = CO_init(&can, CONFIG_CANOPEN_NODE_ID, CAN_BITRATE);
 		if (err != CO_ERROR_NO) {
 			LOG_ERR("CO_init failed (err = %d)", err);
 			return;
