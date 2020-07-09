@@ -445,57 +445,26 @@ const struct Radio_s Radio = {
 	.SetTxContinuousWave = SX1276SetTxContinuousWave,
 };
 
-static inline int __sx1276_configure_pin(struct device **dev,
-					 const char *controller,
-					 gpio_pin_t pin, gpio_flags_t flags)
-{
-	int err;
-
-	*dev = device_get_binding(controller);
-	if (!(*dev)) {
-		LOG_ERR("Cannot get pointer to %s device", controller);
-		return -EIO;
-	}
-
-	err = gpio_pin_configure(*dev, pin, flags);
-	if (err) {
-		LOG_ERR("Cannot configure gpio %s %d: %d", controller, pin,
-			err);
-		return err;
-	}
-
-	return 0;
-}
-
-#define sx1276_configure_pin(_name, _flags)				\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(0, _name##_gpios),		\
-		    (__sx1276_configure_pin(&dev_data._name,		\
-				DT_INST_GPIO_LABEL(0, _name##_gpios),	\
-				DT_INST_GPIO_PIN(0, _name##_gpios),	\
-				DT_INST_GPIO_FLAGS(0, _name##_gpios) |	\
-						      _flags)),		\
-		    (0))
-
 static int sx1276_antenna_configure(void)
 {
 	int ret;
 
-	ret = sx1276_configure_pin(antenna_enable, GPIO_OUTPUT_INACTIVE);
+	ret = sx12xx_configure_pin(antenna_enable, GPIO_OUTPUT_INACTIVE);
 	if (ret) {
 		return ret;
 	}
 
-	ret = sx1276_configure_pin(rfi_enable, GPIO_OUTPUT_INACTIVE);
+	ret = sx12xx_configure_pin(rfi_enable, GPIO_OUTPUT_INACTIVE);
 	if (ret) {
 		return ret;
 	}
 
-	ret = sx1276_configure_pin(rfo_enable, GPIO_OUTPUT_INACTIVE);
+	ret = sx12xx_configure_pin(rfo_enable, GPIO_OUTPUT_INACTIVE);
 	if (ret) {
 		return ret;
 	}
 
-	ret = sx1276_configure_pin(pa_boost_enable, GPIO_OUTPUT_INACTIVE);
+	ret = sx12xx_configure_pin(pa_boost_enable, GPIO_OUTPUT_INACTIVE);
 	if (ret) {
 		return ret;
 	}
@@ -538,13 +507,13 @@ static int sx1276_lora_init(struct device *dev)
 	dev_data.spi_cfg.cs = &spi_cs;
 #endif
 
-	ret = sx1276_configure_pin(tcxo_power, GPIO_OUTPUT_INACTIVE);
+	ret = sx12xx_configure_pin(tcxo_power, GPIO_OUTPUT_INACTIVE);
 	if (ret) {
 		return ret;
 	}
 
 	/* Setup Reset gpio and perform soft reset */
-	ret = sx1276_configure_pin(reset, GPIO_OUTPUT_ACTIVE);
+	ret = sx12xx_configure_pin(reset, GPIO_OUTPUT_ACTIVE);
 	if (ret) {
 		return ret;
 	}
