@@ -96,6 +96,15 @@ enum usb_audio_fucs {
 	USB_AUDIO_FU_LOUDNESS_CONTROL		= 0x0A
 };
 
+/** Endpoint Control Selectors
+ * Refer to Table A-19 from audio10.pdf
+ */
+enum usb_audio_epcs {
+	USB_AUDIO_EP_CONTROL_UNDEFINED		= 0x00,
+	USB_AUDIO_EP_SAMPLING_FREQ_CONTROL	= 0x01,
+	USB_AUDIO_EP_PITCH_CONTROL		= 0x02,
+};
+
 /** USB Terminal Types
  * Refer to Table 2-1 - Table 2-4 from termt10.pdf
  */
@@ -195,12 +204,25 @@ typedef void (*usb_audio_data_completion_cb_t)(const struct device *dev,
  *
  * @warning Host may not use all of configured features.
  *
+ * @param dev The device for which the callback was called.
  * @param evt Pointer to an event to be parsed by the App.
- *	      Pointer sturct is temporary and is valid only during the
+ *	      Pointer struct is temporary and is valid only during the
  *	      execution of this callback.
  */
 typedef void (*usb_audio_feature_updated_cb_t)(struct device *dev,
 				const struct usb_audio_fu_evt *evt);
+
+/**
+ * @brief Callback type used to inform the app that Host has changed
+ *	  the sampling frequency configured for the device.
+ *	  Applicable for all devices.
+ *
+ * @param dev  The device for which the callback was called.
+ * @param freq The frequency set by the Host.
+ */
+typedef void (*usb_audio_sampling_freq_cb_t)(struct device *dev,
+					     enum usb_audio_direction dir,
+					     const uint32_t freq);
 
 /**
  * @brief Audio callbacks used to interact with audio devices by user App.
@@ -230,6 +252,9 @@ struct usb_audio_ops {
 
 	/* Callback called when features were modified by the Host */
 	usb_audio_feature_updated_cb_t feature_update_cb;
+
+	/* Callback called when sampling frequency was modified by the Host */
+	usb_audio_sampling_freq_cb_t sampling_freq_update_cb;
 };
 
 /** @brief Get the frame size that is accepted by the Host.

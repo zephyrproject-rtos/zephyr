@@ -21,14 +21,18 @@
 
 #define USB_PASSIVE_IF_DESC_SIZE sizeof(struct usb_if_descriptor)
 #define USB_AC_CS_IF_DESC_SIZE sizeof(struct as_cs_interface_descriptor)
-#define USB_FORMAT_TYPE_I_DESC_SIZE sizeof(struct format_type_i_descriptor)
+#define USB_FORMAT_TYPE_I_DESC_SIZE(iface)				\
+	((struct format_type_i_descriptor *)((uint8_t *)iface +		\
+					     USB_PASSIVE_IF_DESC_SIZE +	\
+					     USB_AC_CS_IF_DESC_SIZE))->bLength
 #define USB_STD_AS_AD_EP_DESC_SIZE sizeof(struct std_as_ad_endpoint_descriptor)
 #define USB_CS_AS_AD_EP_DESC_SIZE sizeof(struct cs_as_ad_ep_descriptor)
-#define USB_ACTIVE_IF_DESC_SIZE (USB_PASSIVE_IF_DESC_SIZE + \
-				 USB_AC_CS_IF_DESC_SIZE + \
-				 USB_FORMAT_TYPE_I_DESC_SIZE + \
-				 USB_STD_AS_AD_EP_DESC_SIZE + \
-				 USB_CS_AS_AD_EP_DESC_SIZE)
+#define USB_ACTIVE_IF_DESC_SIZE(iface)					\
+	(USB_PASSIVE_IF_DESC_SIZE +					\
+	 USB_AC_CS_IF_DESC_SIZE +					\
+	 USB_FORMAT_TYPE_I_DESC_SIZE(iface) +				\
+	 USB_STD_AS_AD_EP_DESC_SIZE +					\
+	 USB_CS_AS_AD_EP_DESC_SIZE)
 
 #define INPUT_TERMINAL_DESC_SIZE sizeof(struct input_terminal_descriptor)
 #define OUTPUT_TERMINAL_DESC_SIZE sizeof(struct output_terminal_descriptor)
@@ -160,6 +164,18 @@
 #define GET_RES_HS_MIC(i) DT_PROP(DT_INST(i, COMPAT_HS), mic_resolution)
 #define GET_RES(dev, i) GET_RES_##dev(i)
 
+#define GET_FREQ_CNT_HP(i) DT_PROP_LEN(DT_INST(i, COMPAT_HP), frequency)
+#define GET_FREQ_CNT_MIC(i) DT_PROP_LEN(DT_INST(i, COMPAT_MIC), frequency)
+#define GET_FREQ_CNT_HS_HP(i) DT_PROP_LEN(DT_INST(i, COMPAT_HS), hp_frequency)
+#define GET_FREQ_CNT_HS_MIC(i) DT_PROP_LEN(DT_INST(i, COMPAT_HS), mic_frequency)
+#define GET_FREQ_CNT(dev, i) GET_FREQ_CNT_##dev(i)
+
+#define GET_FREQ_HP(i) DT_PROP(DT_INST(i, COMPAT_HP), frequency)
+#define GET_FREQ_MIC(i) DT_PROP(DT_INST(i, COMPAT_MIC), frequency)
+#define GET_FREQ_HS_HP(i) DT_PROP(DT_INST(i, COMPAT_HS), hp_frequency)
+#define GET_FREQ_HS_MIC(i) DT_PROP(DT_INST(i, COMPAT_HS), mic_frequency)
+#define GET_FREQ(dev, i) GET_FREQ_##dev(i)
+
 #define SYNC_TYPE_HP(i)     3
 #define SYNC_TYPE_MIC(i)    DT_ENUM_IDX(DT_INST(i, COMPAT_MIC), sync_type)
 #define SYNC_TYPE_HS_HP(i)  3
@@ -238,7 +254,7 @@ struct feature_unit_descriptor {
 	uint8_t bUnitID;
 	uint8_t bSourceID;
 	uint8_t bControlSize;
-	uint16_t bmaControls[1];
+	uint16_t bmaControls[];
 } __packed;
 
 struct output_terminal_descriptor {
@@ -261,6 +277,10 @@ struct as_cs_interface_descriptor {
 	uint16_t wFormatTag;
 } __packed;
 
+/**
+ * @note Size of Format type descriptor is not fixed.
+ * This structure is just a helper not a common type.
+ */
 struct format_type_i_descriptor {
 	uint8_t bLength;
 	uint8_t bDescriptorType;
@@ -270,7 +290,7 @@ struct format_type_i_descriptor {
 	uint8_t bSubframeSize;
 	uint8_t bBitResolution;
 	uint8_t bSamFreqType;
-	uint8_t tSamFreq[3];
+	uint8_t tSamFreq[];
 } __packed;
 
 struct std_as_ad_endpoint_descriptor {
@@ -316,6 +336,20 @@ struct dev##_feature_unit_descriptor_##i {	\
 	uint8_t iFeature;				\
 } __packed
 
+
+#define DECLARE_FORMAT_DESCRIPTOR(dev, i)		\
+struct dev##_format_type_i_descriptor_##i {		\
+	uint8_t bLength; 				\
+	uint8_t bDescriptorType;			\
+	uint8_t bDescriptorSubtype;			\
+	uint8_t bFormatType;				\
+	uint8_t bNrChannels;				\
+	uint8_t bSubframeSize;				\
+	uint8_t bBitResolution;				\
+	uint8_t bSamFreqType;				\
+	uint8_t tSamFreq[3*GET_FREQ_CNT(dev, i)];	\
+} __packed;
+
 #define INIT_IAD(iface_subclass, if_cnt)			\
 {								\
 	.bLength = sizeof(struct usb_association_descriptor),	\
@@ -339,6 +373,7 @@ struct dev##_feature_unit_descriptor_##i {	\
 #define DECLARE_DESCRIPTOR(dev, i, ifaces)				\
 DECLARE_HEADER(dev, i, ifaces);						\
 DECLARE_FEATURE_UNIT(dev, i);						\
+DECLARE_FORMAT_DESCRIPTOR(dev, i);					\
 struct dev##_descriptor_##i {						\
 	USB_AUDIO_IAD_DECLARE						\
 	struct usb_if_descriptor std_ac_interface;			\
@@ -349,7 +384,7 @@ struct dev##_descriptor_##i {						\
 	struct usb_if_descriptor as_interface_alt_0;			\
 	struct usb_if_descriptor as_interface_alt_1;			\
 		struct as_cs_interface_descriptor as_cs_interface;	\
-		struct format_type_i_descriptor format;			\
+		struct dev##_format_type_i_descriptor_##i format;      	\
 		struct std_as_ad_endpoint_descriptor std_ep;		\
 		struct cs_as_ad_ep_descriptor cs_ep;			\
 } __packed
@@ -358,6 +393,8 @@ struct dev##_descriptor_##i {						\
 DECLARE_HEADER(dev, i, ifaces);						\
 DECLARE_FEATURE_UNIT(dev##_MIC, i);					\
 DECLARE_FEATURE_UNIT(dev##_HP, i);					\
+DECLARE_FORMAT_DESCRIPTOR(dev##_MIC, i);				\
+DECLARE_FORMAT_DESCRIPTOR(dev##_HP, i);					\
 struct dev##_descriptor_##i {						\
 	USB_AUDIO_IAD_DECLARE						\
 	struct usb_if_descriptor std_ac_interface;			\
@@ -371,13 +408,13 @@ struct dev##_descriptor_##i {						\
 	struct usb_if_descriptor as_interface_alt_0_0;			\
 	struct usb_if_descriptor as_interface_alt_0_1;			\
 		struct as_cs_interface_descriptor as_cs_interface_0;	\
-		struct format_type_i_descriptor format_0;		\
+		struct dev##_MIC_format_type_i_descriptor_##i format_0;	\
 		struct std_as_ad_endpoint_descriptor std_ep_0;		\
 		struct cs_as_ad_ep_descriptor cs_ep_0;			\
 	struct usb_if_descriptor as_interface_alt_1_0;			\
 	struct usb_if_descriptor as_interface_alt_1_1;			\
 		struct as_cs_interface_descriptor as_cs_interface_1;	\
-		struct format_type_i_descriptor format_1;		\
+		struct dev##_HP_format_type_i_descriptor_##i format_1;	\
 		struct std_as_ad_endpoint_descriptor std_ep_1;		\
 		struct cs_as_ad_ep_descriptor cs_ep_1;			\
 } __packed
@@ -481,17 +518,17 @@ struct dev##_descriptor_##i {						\
  *  For more information refer to 2.2.5 Type I Format Type Descriptor
  *  from frmts10.pdf
  */
-#define INIT_AS_FORMAT_I(ch_cnt, res)				\
-{								\
-	.bLength = sizeof(struct format_type_i_descriptor),	\
-	.bDescriptorType = USB_CS_INTERFACE_DESC,		\
-	.bDescriptorSubtype = USB_AUDIO_FORMAT_TYPE,		\
-	.bFormatType = 0x01,					\
-	.bNrChannels = MAX(1, ch_cnt),				\
-	.bSubframeSize = res/8,					\
-	.bBitResolution = res,					\
-	.bSamFreqType = 1,					\
-	.tSamFreq = {0x80, 0xBB, 0x00},				\
+
+#define INIT_AS_FORMAT_I(dev, i)					\
+{									\
+	.bLength = sizeof(struct dev##_format_type_i_descriptor_##i),	\
+	.bDescriptorType = USB_CS_INTERFACE_DESC,			\
+	.bDescriptorSubtype = USB_AUDIO_FORMAT_TYPE,			\
+	.bFormatType = 0x01,						\
+	.bNrChannels = MAX(1, CH_CNT(dev, i)),				\
+	.bSubframeSize = GET_RES(dev, i)/8,				\
+	.bBitResolution = GET_RES(dev, i),				\
+	.bSamFreqType = GET_FREQ_CNT(dev, i),				\
 }
 
 #define INIT_STD_AS_AD_EP(dev, i, addr)					\
@@ -511,7 +548,7 @@ struct dev##_descriptor_##i {						\
 	.bLength = sizeof(struct cs_as_ad_ep_descriptor),	\
 	.bDescriptorType = USB_CS_ENDPOINT_DESC,		\
 	.bDescriptorSubtype = 0x01,				\
-	.bmAttributes = 0x00,					\
+	.bmAttributes = 0x01,					\
 	.bLockDelayUnits = 0x00,				\
 	.wLockDelay = 0,					\
 }

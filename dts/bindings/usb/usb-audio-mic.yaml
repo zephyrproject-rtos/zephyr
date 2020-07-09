@@ -19,6 +19,10 @@ properties:
      - 16
      - 24
      - 32
+  frequency:
+    type: array
+    default: [48000]
+    required: false
   sync-type:
     required: false
     default: "Synchronous"

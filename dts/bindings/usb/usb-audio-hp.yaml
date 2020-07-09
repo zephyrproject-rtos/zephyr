@@ -10,6 +10,10 @@ compatible: "usb-audio-hp"
 include: usb-audio.yaml
 
 properties:
+  frequency:
+    type: array
+    default: [48000]
+    required: false
   resolution:
     type: int
     default: 16

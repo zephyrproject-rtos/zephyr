@@ -19,6 +19,10 @@ properties:
      - 16
      - 24
      - 32
+  mic-frequency:
+    type: array
+    default: [48000]
+    required: false
   mic-sync-type:
     required: false
     default: "Synchronous"
@@ -40,6 +44,11 @@ properties:
      - 16
      - 24
      - 32
+  hp-frequency:
+    type: array
+    default: [48000]
+    required: false
+
 # microphone channel configuration options
   mic-channel-l:
     type: boolean
