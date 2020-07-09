@@ -715,8 +715,8 @@ struct bt_mesh_cfg_hb_sub {
 	uint16_t dst;
 	/**
 	 * Logarithmic subscription period to keep listening for.
-	 * The decoded subscription period is (1 << (period - 1)), or 0 if
-	 * period is 0.
+	 * The decoded subscription period is (1 << (period - 1)) seconds, or 0
+	 * seconds if period is 0.
 	 */
 	uint8_t  period;
 	/**
