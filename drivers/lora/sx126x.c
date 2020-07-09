@@ -32,30 +32,17 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(semtech_sx1261) +
 	     "Multiple SX12xx instances in DT");
 
 #define HAVE_GPIO_CS		DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
+#define HAVE_GPIO_ANTENNA_ENABLE			\
+	DT_INST_NODE_HAS_PROP(0, antenna_enable_gpios)
+
 #define GPIO_CS_LABEL		DT_INST_SPI_DEV_CS_GPIOS_LABEL(0)
 #define GPIO_CS_PIN		DT_INST_SPI_DEV_CS_GPIOS_PIN(0)
 #define GPIO_CS_FLAGS		DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0)
 
-#define GPIO_RESET_LABEL	DT_INST_GPIO_LABEL(0, reset_gpios)
 #define GPIO_RESET_PIN		DT_INST_GPIO_PIN(0, reset_gpios)
-#define GPIO_RESET_FLAGS	DT_INST_GPIO_FLAGS(0, reset_gpios)
-
-#define GPIO_BUSY_LABEL		DT_INST_GPIO_LABEL(0, busy_gpios)
 #define GPIO_BUSY_PIN		DT_INST_GPIO_PIN(0, busy_gpios)
-#define GPIO_BUSY_FLAGS		DT_INST_GPIO_FLAGS(0, busy_gpios)
-
-#define GPIO_DIO1_LABEL		DT_INST_GPIO_LABEL(0, dio1_gpios)
 #define GPIO_DIO1_PIN		DT_INST_GPIO_PIN(0, dio1_gpios)
-#define GPIO_DIO1_FLAGS		DT_INST_GPIO_FLAGS(0, dio1_gpios)
-
-#define HAVE_GPIO_ANTENNA_ENABLE			\
-	DT_INST_NODE_HAS_PROP(0, antenna_enable_gpios)
-#define GPIO_ANTENNA_ENABLE_LABEL			\
-	DT_INST_GPIO_LABEL(0, antenna_enable_gpios)
-#define GPIO_ANTENNA_ENABLE_PIN				\
-	DT_INST_GPIO_PIN(0, antenna_enable_gpios)
-#define GPIO_ANTENNA_ENABLE_FLAGS			\
-	DT_INST_GPIO_FLAGS(0, antenna_enable_gpios)
+#define GPIO_ANTENNA_ENABLE_PIN	DT_INST_GPIO_PIN(0, antenna_enable_gpios)
 
 #define DIO2_TX_ENABLE DT_INST_PROP(0, dio2_tx_enable)
 
@@ -381,33 +368,12 @@ static int sx126x_lora_init(struct device *dev)
 
 	LOG_DBG("Initializing %s", DT_INST_LABEL(0));
 
-	dev_data.reset = device_get_binding(GPIO_RESET_LABEL);
-	if (!dev_data.reset) {
-		LOG_ERR("Cannot get pointer to %s device", GPIO_RESET_LABEL);
+	if (sx12xx_configure_pin(reset, GPIO_OUTPUT_ACTIVE) ||
+	    sx12xx_configure_pin(busy, GPIO_INPUT) ||
+	    sx12xx_configure_pin(dio1, GPIO_INPUT | GPIO_INT_DEBOUNCE) ||
+	    sx12xx_configure_pin(antenna_enable, GPIO_OUTPUT_INACTIVE)) {
 		return -EIO;
 	}
-
-	gpio_pin_configure(dev_data.reset, GPIO_RESET_PIN,
-			   GPIO_OUTPUT_ACTIVE | GPIO_RESET_FLAGS);
-
-
-	dev_data.busy = device_get_binding(GPIO_BUSY_LABEL);
-	if (!dev_data.busy) {
-		LOG_ERR("Cannot get pointer to %s device", GPIO_BUSY_LABEL);
-		return -EIO;
-	}
-
-	gpio_pin_configure(dev_data.busy, GPIO_BUSY_PIN,
-			   GPIO_INPUT | GPIO_BUSY_FLAGS);
-
-	dev_data.dio1 = device_get_binding(GPIO_DIO1_LABEL);
-	if (!dev_data.dio1) {
-		LOG_ERR("Cannot get pointer to %s device", GPIO_DIO1_LABEL);
-		return -EIO;
-	}
-
-	gpio_pin_configure(dev_data.dio1, GPIO_DIO1_PIN,
-			   GPIO_INPUT | GPIO_INT_DEBOUNCE | GPIO_DIO1_FLAGS);
 
 	k_work_init(&dev_data.dio1_irq_work, sx126x_dio1_irq_work_handler);
 
@@ -420,18 +386,6 @@ static int sx126x_lora_init(struct device *dev)
 
 	gpio_pin_interrupt_configure(dev_data.dio1, GPIO_DIO1_PIN,
 				     GPIO_INT_EDGE_TO_ACTIVE);
-
-#if HAVE_GPIO_ANTENNA_ENABLE
-	dev_data.antenna_enable = device_get_binding(GPIO_ANTENNA_ENABLE_LABEL);
-	if (!dev_data.antenna_enable) {
-		LOG_ERR("Cannot get pointer to %s device",
-			GPIO_ANTENNA_ENABLE_LABEL);
-		return -EIO;
-	}
-
-	gpio_pin_configure(dev_data.antenna_enable, GPIO_ANTENNA_ENABLE_PIN,
-			   GPIO_OUTPUT_INACTIVE | GPIO_ANTENNA_ENABLE_FLAGS);
-#endif
 
 	dev_data.spi = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (!dev_data.spi) {
