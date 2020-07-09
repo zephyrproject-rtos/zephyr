@@ -18,7 +18,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
 
     def __init__(self, cfg, target,
                  pyocd='pyocd',
-                 flash_addr=0x0, flash_opts=None,
+                 flash_addr=0x0, erase=False, flash_opts=None,
                  gdb_port=DEFAULT_PYOCD_GDB_PORT,
                  telnet_port=DEFAULT_PYOCD_TELNET_PORT, tui=False,
                  board_id=None, daparg=None, frequency=None, tool_opt=None):
@@ -27,6 +27,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         self.target_args = ['-t', target]
         self.pyocd = pyocd
         self.flash_addr_args = ['-a', hex(flash_addr)] if flash_addr else []
+        self.erase = erase
         self.gdb_cmd = [cfg.gdb] if cfg.gdb is not None else None
         self.gdb_port = gdb_port
         self.telnet_port = telnet_port
@@ -64,7 +65,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def capabilities(cls):
         return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach'},
-                          flash_addr=True)
+                          flash_addr=True, erase=True)
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -102,7 +103,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         ret = PyOcdBinaryRunner(
             cfg, args.target,
             pyocd=args.pyocd,
-            flash_addr=flash_addr, flash_opts=args.flash_opt,
+            flash_addr=flash_addr, erase=args.erase, flash_opts=args.flash_opt,
             gdb_port=args.gdb_port, telnet_port=args.telnet_port, tui=args.tui,
             board_id=args.board_id, daparg=args.daparg,
             frequency=args.frequency,
@@ -140,9 +141,11 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                 'Cannot flash; no hex ({}) or bin ({}) files found. '.format(
                     self.hex_name, self.bin_name))
 
+        erase_method = 'chip' if self.erase else 'sector'
+
         cmd = ([self.pyocd] +
                ['flash'] +
-               ['-e', 'sector'] +
+               ['-e', erase_method] +
                self.flash_addr_args +
                self.daparg_args +
                self.target_args +
