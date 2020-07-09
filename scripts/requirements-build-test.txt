@@ -20,4 +20,4 @@ coverage
 pytest
 
 # used for mocking functions in pytest
-mock
+mock>=4.0.1
