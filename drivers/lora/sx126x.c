@@ -430,7 +430,7 @@ static int sx126x_lora_init(struct device *dev)
 	}
 
 	gpio_pin_configure(dev_data.antenna_enable, GPIO_ANTENNA_ENABLE_PIN,
-			   GPIO_OUTPUT_ACTIVE | GPIO_ANTENNA_ENABLE_FLAGS);
+			   GPIO_OUTPUT_INACTIVE | GPIO_ANTENNA_ENABLE_FLAGS);
 #endif
 
 	dev_data.spi = device_get_binding(DT_INST_BUS_LABEL(0));
