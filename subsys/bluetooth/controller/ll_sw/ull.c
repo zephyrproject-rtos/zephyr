@@ -109,7 +109,7 @@
 #endif
 
 #if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
-#define FLASH_TICKER_NODES        1 /* No. of tickers reserved for flashing */
+#define FLASH_TICKER_NODES        2 /* No. of tickers reserved for flashing */
 #define FLASH_TICKER_USER_APP_OPS 1 /* No. of additional ticker operations */
 #else
 #define FLASH_TICKER_NODES        0
