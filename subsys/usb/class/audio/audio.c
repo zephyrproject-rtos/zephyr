@@ -717,7 +717,8 @@ static int audio_custom_handler(struct usb_setup_packet *pSetup, int32_t *len,
 		 * must be the second interface associated with the device.
 		 */
 		if_desc = (struct usb_if_descriptor *)((uint8_t *)if_desc +
-						USB_ACTIVE_IF_DESC_SIZE);
+						USB_ACTIVE_IF_DESC_SIZE +
+						USB_PASSIVE_IF_DESC_SIZE);
 		ep_desc = (struct usb_ep_descriptor *)((uint8_t *)if_desc +
 						USB_PASSIVE_IF_DESC_SIZE +
 						USB_AC_CS_IF_DESC_SIZE +
