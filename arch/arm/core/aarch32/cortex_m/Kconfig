@@ -276,12 +276,13 @@ config SW_VECTOR_RELAY
 
 config SW_VECTOR_RELAY_CLIENT
 	bool "Enable Software Vector Relay (client)"
-	depends on !SW_VECTOR_RELAY
-	default y if BOOTLOADER_MCUBOOT && !(CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP || CPU_CORTEX_M_HAS_VTOR)
+	default y if BOOTLOADER_MCUBOOT
+	depends on ARMV6_M_ARMV8_M_BASELINE && !(CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP || CPU_CORTEX_M_HAS_VTOR)
 	help
-	  Another image has enabled SW_VECTOR_RELAY, and will relay interrupts
-	  to this image. Enable this to make sure the vector table pointer in
-	  RAM is left alone.
+	  Another image has enabled SW_VECTOR_RELAY, and will be forwarding
+	  exceptions and HW interrupts to this image. Enable this option to make
+	  sure the vector table pointer in RAM is set properly by the image upon
+	  initialization.
 
 endmenu
 
