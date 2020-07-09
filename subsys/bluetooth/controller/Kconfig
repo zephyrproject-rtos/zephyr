@@ -765,7 +765,7 @@ config BT_CTLR_FAST_ENC
 
 config BT_CTLR_LLCP_CONN
 	int "Number of connections with worst-case overlapping procedures"
-	default 1
+	default BT_MAX_CONN
 	range 1 BT_MAX_CONN
 	help
 	  Set the number connections for which worst-case buffer requirements
