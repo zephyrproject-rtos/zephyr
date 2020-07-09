@@ -2509,27 +2509,17 @@ static int cmd_cdb_app_key_del(const struct shell *shell, size_t argc,
 }
 #endif
 
+/* List of Mesh subcommands.
+ *
+ * Each command is documented in doc/reference/bluetooth/mesh/shell.rst.
+ *
+ * Please keep the documentation up to date by adding any new commands to the
+ * list.
+ */
 SHELL_STATIC_SUBCMD_SET_CREATE(mesh_cmds,
+	/* General operations */
 	SHELL_CMD_ARG(init, NULL, NULL, cmd_init, 1, 0),
-	SHELL_CMD_ARG(timeout, NULL, "[timeout in seconds]", cmd_timeout, 1, 1),
-#if defined(CONFIG_BT_MESH_PB_ADV)
-	SHELL_CMD_ARG(pb-adv, NULL, "<val: off, on>", cmd_pb_adv, 2, 0),
-#if defined(CONFIG_BT_MESH_PROVISIONER)
-	SHELL_CMD_ARG(provision-adv, NULL, "<UUID> <NetKeyIndex> <addr> "
-		      "<AttentionDuration>", cmd_provision_adv, 5, 0),
-#endif
-#endif
-#if defined(CONFIG_BT_MESH_PB_GATT)
-	SHELL_CMD_ARG(pb-gatt, NULL, "<val: off, on>", cmd_pb_gatt, 2, 0),
-#endif
 	SHELL_CMD_ARG(reset, NULL, NULL, cmd_reset, 1, 0),
-	SHELL_CMD_ARG(uuid, NULL, "<UUID: 1-16 hex values>", cmd_uuid, 2, 0),
-	SHELL_CMD_ARG(input-num, NULL, "<number>", cmd_input_num, 2, 0),
-	SHELL_CMD_ARG(input-str, NULL, "<string>", cmd_input_str, 2, 0),
-	SHELL_CMD_ARG(static-oob, NULL, "[val: 1-16 hex values]",
-		      cmd_static_oob, 2, 1),
-	SHELL_CMD_ARG(provision, NULL, "<NetKeyIndex> <addr> [IVIndex]",
-		      cmd_provision, 3, 1),
 #if defined(CONFIG_BT_MESH_LOW_POWER)
 	SHELL_CMD_ARG(lpn, NULL, "<value: off, on>", cmd_lpn, 2, 0),
 	SHELL_CMD_ARG(poll, NULL, NULL, cmd_poll, 1, 0),
@@ -2550,17 +2540,37 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mesh_cmds,
 #endif
 	SHELL_CMD_ARG(rpl-clear, NULL, NULL, cmd_rpl_clear, 1, 0),
 
+	/* Provisioning operations */
+#if defined(CONFIG_BT_MESH_PB_GATT)
+	SHELL_CMD_ARG(pb-gatt, NULL, "<val: off, on>", cmd_pb_gatt, 2, 0),
+#endif
+#if defined(CONFIG_BT_MESH_PB_ADV)
+	SHELL_CMD_ARG(pb-adv, NULL, "<val: off, on>", cmd_pb_adv, 2, 0),
+#if defined(CONFIG_BT_MESH_PROVISIONER)
+	SHELL_CMD_ARG(provision-adv, NULL, "<UUID> <NetKeyIndex> <addr> "
+		      "<AttentionDuration>", cmd_provision_adv, 5, 0),
+#endif
+#endif
+	SHELL_CMD_ARG(uuid, NULL, "<UUID: 1-16 hex values>", cmd_uuid, 2, 0),
+	SHELL_CMD_ARG(input-num, NULL, "<number>", cmd_input_num, 2, 0),
+	SHELL_CMD_ARG(input-str, NULL, "<string>", cmd_input_str, 2, 0),
+	SHELL_CMD_ARG(static-oob, NULL, "[val: 1-16 hex values]",
+		      cmd_static_oob, 2, 1),
+	SHELL_CMD_ARG(provision, NULL, "<NetKeyIndex> <addr> [IVIndex]",
+		      cmd_provision, 3, 1),
+	SHELL_CMD_ARG(beacon-listen, NULL, "<val: off, on>", cmd_beacon_listen,
+		      2, 0),
+
 	/* Configuration Client Model operations */
+	SHELL_CMD_ARG(timeout, NULL, "[timeout in seconds]", cmd_timeout, 1, 1),
 	SHELL_CMD_ARG(get-comp, NULL, "[page]", cmd_get_comp, 1, 1),
 	SHELL_CMD_ARG(beacon, NULL, "[val: off, on]", cmd_beacon, 2, 1),
-	SHELL_CMD_ARG(beacon-listen, NULL, "[val: off, on]", cmd_beacon_listen,
-		      2, 0),
 	SHELL_CMD_ARG(ttl, NULL, "[ttl: 0x00, 0x02-0x7f]", cmd_ttl, 1, 1),
 	SHELL_CMD_ARG(friend, NULL, "[val: off, on]", cmd_friend, 1, 1),
 	SHELL_CMD_ARG(gatt-proxy, NULL, "[val: off, on]", cmd_gatt_proxy, 1, 1),
 	SHELL_CMD_ARG(relay, NULL,
-		      "[val: off, on] [count: 0-7] [interval: 0-32]", cmd_relay,
-		      1, 3),
+		      "[<val: off, on> [<count: 0-7> [interval: 10-320]]]",
+		      cmd_relay, 1, 3),
 	SHELL_CMD_ARG(net-key-add, NULL, "<NetKeyIndex> [val]", cmd_net_key_add,
 		      2, 1),
 	SHELL_CMD_ARG(net-key-get, NULL, NULL, cmd_net_key_get, 1, 0),
@@ -2575,7 +2585,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mesh_cmds,
 		      "<elem addr> <Model ID> [Company ID]",
 		      cmd_mod_app_get, 3, 1),
 	SHELL_CMD_ARG(mod-pub, NULL, "<addr> <mod id> [cid] [<PubAddr> "
-		      "<AppKeyIndex> <cred> <ttl> <period> <count> <interval>]",
+		      "<AppKeyIndex> <cred: off, on> <ttl> <period> <count> <interval>]",
 		      cmd_mod_pub, 3, 1 + 7),
 	SHELL_CMD_ARG(mod-sub-add, NULL,
 		      "<elem addr> <sub addr> <Model ID> [Company ID]",
