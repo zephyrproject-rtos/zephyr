@@ -379,7 +379,7 @@ static void time_slot_delay(uint32_t ticks_at_expire, uint32_t ticks_delay,
 	 */
 	err = ticker_start(instance_index, /* Radio instance ticker */
 			   0, /* user_id */
-			   0, /* ticker_id */
+			   (ticker_id + 1), /* ticker_id */
 			   ticks_at_expire, /* current tick */
 			   ticks_delay, /* one-shot delayed timeout */
 			   0, /* periodic timeout  */
