@@ -95,16 +95,11 @@ static void gpio_callback(const struct device *dev,
 }
 
 #ifdef CONFIG_CCS811_TRIGGER_OWN_THREAD
-static void irq_thread(int dev_ptr, int unused)
+static void irq_thread(struct ccs811_data *drv_data)
 {
-	const struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct ccs811_data *drv_data = dev->data;
-
-	ARG_UNUSED(unused);
-
 	while (1) {
 		k_sem_take(&drv_data->gpio_sem, K_FOREVER);
-		process_irq(dev);
+		process_irq(drv_data->dev);
 	}
 }
 #elif defined(CONFIG_CCS811_TRIGGER_GLOBAL_THREAD)
@@ -189,8 +184,8 @@ int ccs811_init_interrupt(const struct device *dev)
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
 			CONFIG_CCS811_THREAD_STACK_SIZE,
-			(k_thread_entry_t)irq_thread, dev,
-			0, NULL, K_PRIO_COOP(CONFIG_CCS811_THREAD_PRIORITY),
+			(k_thread_entry_t)irq_thread, drv_data,
+			NULL, NULL, K_PRIO_COOP(CONFIG_CCS811_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_CCS811_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = work_cb;

@@ -201,6 +201,7 @@ struct adxl362_data {
 	uint8_t selected_range;
 
 #if defined(CONFIG_ADXL362_TRIGGER)
+	const struct device *dev;
 	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 	struct k_mutex trigger_mutex;
@@ -216,7 +217,6 @@ struct adxl362_data {
 	struct k_thread thread;
 #elif defined(CONFIG_ADXL362_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	const struct device *dev;
 #endif
 #endif /* CONFIG_ADXL362_TRIGGER */
 };

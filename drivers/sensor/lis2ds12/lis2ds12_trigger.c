@@ -47,9 +47,8 @@ static void lis2ds12_handle_drdy_int(const struct device *dev)
 	}
 }
 
-static void lis2ds12_handle_int(void *arg)
+static void lis2ds12_handle_int(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct lis2ds12_data *data = dev->data;
 	const struct lis2ds12_config *cfg = dev->config;
 	uint8_t status;
@@ -68,16 +67,11 @@ static void lis2ds12_handle_int(void *arg)
 }
 
 #ifdef CONFIG_LIS2DS12_TRIGGER_OWN_THREAD
-static void lis2ds12_thread(int dev_ptr, int unused)
+static void lis2ds12_thread(struct lis2ds12_data *data)
 {
-	const struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct lis2ds12_data *data = dev->data;
-
-	ARG_UNUSED(unused);
-
 	while (1) {
 		k_sem_take(&data->trig_sem, K_FOREVER);
-		lis2ds12_handle_int(dev);
+		lis2ds12_handle_int(data->dev);
 	}
 }
 #endif
@@ -147,8 +141,9 @@ int lis2ds12_trigger_init(const struct device *dev)
 
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_LIS2DS12_THREAD_STACK_SIZE,
-			(k_thread_entry_t)lis2ds12_thread, dev,
-			0, NULL, K_PRIO_COOP(CONFIG_LIS2DS12_THREAD_PRIORITY),
+			(k_thread_entry_t)lis2ds12_thread,
+			data, NULL, NULL,
+			K_PRIO_COOP(CONFIG_LIS2DS12_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_LIS2DS12_TRIGGER_GLOBAL_THREAD)
 	data->work.handler = lis2ds12_work_cb;

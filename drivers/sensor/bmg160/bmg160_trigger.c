@@ -165,9 +165,8 @@ static int bmg160_handle_dataready_int(const struct device *dev)
 	return 0;
 }
 
-static void bmg160_handle_int(void *arg)
+static void bmg160_handle_int(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	uint8_t status_int[4];
 
 	if (bmg160_read(dev, BMG160_REG_INT_STATUS0, status_int, 4) < 0) {
@@ -185,15 +184,12 @@ static void bmg160_handle_int(void *arg)
 static K_KERNEL_STACK_DEFINE(bmg160_thread_stack, CONFIG_BMG160_THREAD_STACK_SIZE);
 static struct k_thread bmg160_thread;
 
-static void bmg160_thread_main(void *arg1, void *arg2, void *arg3)
+static void bmg160_thread_main(struct bmg160_device_data *bmg160)
 {
-	const struct device *dev = (const struct device *)arg1;
-	struct bmg160_device_data *bmg160 = dev->data;
-
 	while (true) {
 		k_sem_take(&bmg160->trig_sem, K_FOREVER);
 
-		bmg160_handle_int(dev);
+		bmg160_handle_int(bmg160->dev);
 	}
 }
 #endif
@@ -246,17 +242,19 @@ int bmg160_trigger_init(const struct device *dev)
 		return -EINVAL;
 	}
 
+	bmg160->dev = dev;
+
 #if defined(CONFIG_BMG160_TRIGGER_OWN_THREAD)
 	k_sem_init(&bmg160->trig_sem, 0, UINT_MAX);
 	k_thread_create(&bmg160_thread, bmg160_thread_stack,
-			CONFIG_BMG160_THREAD_STACK_SIZE, bmg160_thread_main,
-			dev, NULL, NULL,
+			CONFIG_BMG160_THREAD_STACK_SIZE,
+			(k_thread_entry_t)bmg160_thread_main,
+			bmg160, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BMG160_THREAD_PRIORITY), 0,
 			K_NO_WAIT);
 
 #elif defined(CONFIG_BMG160_TRIGGER_GLOBAL_THREAD)
 	bmg160->work.handler = bmg160_work_cb;
-	bmg160->dev = dev;
 #endif
 
 	gpio_pin_configure(bmg160->gpio, cfg->int_pin,

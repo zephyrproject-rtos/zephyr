@@ -37,10 +37,10 @@ struct sx9500_data {
 
 #ifdef CONFIG_SX9500_TRIGGER_GLOBAL_THREAD
 	struct k_work work;
-	const struct device *dev;
 #endif
 
 #ifdef CONFIG_SX9500_TRIGGER
+	const struct device *dev;
 	struct sensor_trigger trigger_drdy;
 	struct sensor_trigger trigger_near_far;
 

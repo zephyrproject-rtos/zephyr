@@ -295,6 +295,8 @@ static int iis2mdc_init(const struct device *dev)
 	struct iis2mdc_data *iis2mdc = dev->data;
 	uint8_t wai;
 
+	iis2mdc->dev = dev;
+
 	if (iis2mdc_init_interface(dev)) {
 		return -EINVAL;
 	}

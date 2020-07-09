@@ -77,16 +77,11 @@ static void adt7420_gpio_callback(const struct device *dev,
 }
 
 #if defined(CONFIG_ADT7420_TRIGGER_OWN_THREAD)
-static void adt7420_thread(int dev_ptr, int unused)
+static void adt7420_thread(struct adt7420_data *drv_data)
 {
-	const struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct adt7420_data *drv_data = dev->data;
-
-	ARG_UNUSED(unused);
-
 	while (true) {
 		k_sem_take(&drv_data->gpio_sem, K_FOREVER);
-		process_int(dev);
+		process_int(drv_data->dev);
 	}
 }
 
@@ -165,8 +160,8 @@ int adt7420_init_interrupt(const struct device *dev)
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
 			CONFIG_ADT7420_THREAD_STACK_SIZE,
-			(k_thread_entry_t)adt7420_thread, dev,
-			0, NULL, K_PRIO_COOP(CONFIG_ADT7420_THREAD_PRIORITY),
+			(k_thread_entry_t)adt7420_thread, drv_data,
+			NULL, NULL, K_PRIO_COOP(CONFIG_ADT7420_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_ADT7420_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = adt7420_work_cb;

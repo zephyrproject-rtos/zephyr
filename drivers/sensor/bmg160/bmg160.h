@@ -191,6 +191,7 @@ struct bmg160_device_config {
 struct bmg160_device_data {
 	const struct device *i2c;
 #ifdef CONFIG_BMG160_TRIGGER
+	const struct device *dev;
 	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 #endif
@@ -200,7 +201,6 @@ struct bmg160_device_data {
 	struct k_sem sem;
 #ifdef CONFIG_BMG160_TRIGGER_GLOBAL_THREAD
 	struct k_work work;
-	const struct device *dev;
 #endif
 #ifdef CONFIG_BMG160_TRIGGER
 	sensor_trigger_handler_t anymotion_handler;

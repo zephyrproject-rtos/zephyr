@@ -115,6 +115,7 @@ struct isl29035_driver_data {
 	uint16_t data_sample;
 
 #if CONFIG_ISL29035_TRIGGER
+	const struct device *dev;
 	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 
@@ -127,7 +128,6 @@ struct isl29035_driver_data {
 	struct k_sem gpio_sem;
 #elif defined(CONFIG_ISL29035_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	const struct device *dev;
 #endif
 
 #endif /* CONFIG_ISL29035_TRIGGER */

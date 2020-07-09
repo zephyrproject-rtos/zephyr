@@ -78,9 +78,8 @@ static void tmp007_gpio_callback(const struct device *dev,
 #endif
 }
 
-static void tmp007_thread_cb(void *arg)
+static void tmp007_thread_cb(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct tmp007_data *drv_data = dev->data;
 	uint16_t status;
 
@@ -102,16 +101,11 @@ static void tmp007_thread_cb(void *arg)
 }
 
 #ifdef CONFIG_TMP007_TRIGGER_OWN_THREAD
-static void tmp007_thread(int dev_ptr, int unused)
+static void tmp007_thread(struct tmp007_data *drv_data)
 {
-	const struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct tmp007_data *drv_data = dev->data;
-
-	ARG_UNUSED(unused);
-
 	while (1) {
 		k_sem_take(&drv_data->gpio_sem, K_FOREVER);
-		tmp007_thread_cb(dev);
+		tmp007_thread_cb(drv_data->dev);
 	}
 }
 #endif
@@ -185,8 +179,8 @@ int tmp007_init_interrupt(const struct device *dev)
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
 			CONFIG_TMP007_THREAD_STACK_SIZE,
-			(k_thread_entry_t)tmp007_thread, dev,
-			0, NULL, K_PRIO_COOP(CONFIG_TMP007_THREAD_PRIORITY),
+			(k_thread_entry_t)tmp007_thread, drv_data,
+			NULL, NULL, K_PRIO_COOP(CONFIG_TMP007_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_TMP007_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = tmp007_work_cb;

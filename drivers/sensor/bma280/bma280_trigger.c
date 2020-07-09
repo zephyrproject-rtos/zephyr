@@ -84,9 +84,8 @@ static void bma280_gpio_callback(const struct device *dev,
 #endif
 }
 
-static void bma280_thread_cb(void *arg)
+static void bma280_thread_cb(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct bma280_data *drv_data = dev->data;
 	uint8_t status = 0U;
 	int err = 0;
@@ -126,16 +125,11 @@ static void bma280_thread_cb(void *arg)
 }
 
 #ifdef CONFIG_BMA280_TRIGGER_OWN_THREAD
-static void bma280_thread(int dev_ptr, int unused)
+static void bma280_thread(struct bma280_data *drv_data)
 {
-	const struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct bma280_data *drv_data = dev->data;
-
-	ARG_UNUSED(unused);
-
 	while (1) {
 		k_sem_take(&drv_data->gpio_sem, K_FOREVER);
-		bma280_thread_cb(dev);
+		bma280_thread_cb(drv_data->dev);
 	}
 }
 #endif
@@ -285,8 +279,8 @@ int bma280_init_interrupt(const struct device *dev)
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
 			CONFIG_BMA280_THREAD_STACK_SIZE,
-			(k_thread_entry_t)bma280_thread, dev,
-			0, NULL, K_PRIO_COOP(CONFIG_BMA280_THREAD_PRIORITY),
+			(k_thread_entry_t)bma280_thread, drv_data,
+			NULL, NULL, K_PRIO_COOP(CONFIG_BMA280_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_BMA280_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = bma280_work_cb;

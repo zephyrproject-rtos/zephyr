@@ -135,16 +135,11 @@ static void alert_cb(const struct device *dev, struct gpio_callback *cb,
 
 #ifdef CONFIG_MCP9808_TRIGGER_OWN_THREAD
 
-static void mcp9808_thread_main(int arg1, int arg2)
+static void mcp9808_thread_main(struct mcp9808_data *data)
 {
-	const struct device *dev = INT_TO_POINTER(arg1);
-	struct mcp9808_data *data = dev->data;
-
-	ARG_UNUSED(arg2);
-
 	while (true) {
 		k_sem_take(&data->sem, K_FOREVER);
-		process_int(dev);
+		process_int(data->dev);
 	}
 }
 
@@ -181,8 +176,9 @@ int mcp9808_setup_interrupt(const struct device *dev)
 
 	k_thread_create(&mcp9808_thread, mcp9808_thread_stack,
 			CONFIG_MCP9808_THREAD_STACK_SIZE,
-			(k_thread_entry_t)mcp9808_thread_main, dev, 0, NULL,
-			K_PRIO_COOP(CONFIG_MCP9808_THREAD_PRIORITY), 0, K_NO_WAIT);
+			(k_thread_entry_t)mcp9808_thread_main, data, NULL, NULL,
+			K_PRIO_COOP(CONFIG_MCP9808_THREAD_PRIORITY),
+			0, K_NO_WAIT);
 #else /* CONFIG_MCP9808_TRIGGER_GLOBAL_THREAD */
 	data->work.handler = mcp9808_gpio_thread_cb;
 #endif /* trigger type */

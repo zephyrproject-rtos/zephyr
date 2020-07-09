@@ -796,6 +796,8 @@ static int lsm6dso_init(const struct device *dev)
 	const struct lsm6dso_config * const config = dev->config;
 	struct lsm6dso_data *data = dev->data;
 
+	data->dev = dev;
+
 	data->bus = device_get_binding(config->bus_name);
 	if (!data->bus) {
 		LOG_DBG("master not found: %s",

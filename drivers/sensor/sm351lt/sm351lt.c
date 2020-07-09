@@ -61,9 +61,8 @@ static void sm351lt_gpio_callback(const struct device *dev,
 #endif
 }
 
-static void sm351lt_thread_cb(void *arg)
+static void sm351lt_thread_cb(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct sm351lt_data *data = dev->data;
 
 	struct sensor_trigger mag_trigger = {
@@ -81,15 +80,14 @@ static void sm351lt_thread_cb(void *arg)
 #if defined(CONFIG_SM351LT_TRIGGER_OWN_THREAD)
 static void sm351lt_thread(void *arg1, void *unused2, void *unused3)
 {
-	const struct device *dev = arg1;
-	struct sm351lt_data *data = dev->data;
+	struct sm351lt_data *data = arg1;
 
 	ARG_UNUSED(unused2);
 	ARG_UNUSED(unused3);
 
 	while (1) {
 		k_sem_take(&data->gpio_sem, K_FOREVER);
-		sm351lt_thread_cb(dev);
+		sm351lt_thread_cb(data->dev);
 	}
 }
 #endif
@@ -212,11 +210,13 @@ static int sm351lt_init(const struct device *dev)
 
 #if defined(CONFIG_SM351LT_TRIGGER)
 #if defined(CONFIG_SM351LT_TRIGGER_OWN_THREAD)
+	data->dev = dev;
+
 	k_sem_init(&data->gpio_sem, 0, UINT_MAX);
 
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_SM351LT_THREAD_STACK_SIZE,
-			(k_thread_entry_t)sm351lt_thread, dev, NULL,
+			(k_thread_entry_t)sm351lt_thread, data, NULL,
 			NULL, K_PRIO_COOP(CONFIG_SM351LT_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 
@@ -227,7 +227,6 @@ static int sm351lt_init(const struct device *dev)
 
 #elif defined(CONFIG_SM351LT_TRIGGER_GLOBAL_THREAD)
 	data->work.handler = sm351lt_work_cb;
-	data->dev = dev;
 #endif
 
 	data->trigger_type = GPIO_INT_DISABLE;

@@ -24,6 +24,7 @@ struct sm351lt_data {
 	bool sample_status;
 
 #ifdef CONFIG_SM351LT_TRIGGER
+	const struct device *dev;
 	struct gpio_callback gpio_cb;
 
 	uint32_t trigger_type;
@@ -35,7 +36,6 @@ struct sm351lt_data {
 	struct k_sem gpio_sem;
 #elif defined(CONFIG_SM351LT_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	const struct device *dev;
 #endif
 
 #endif /* CONFIG_SM351LT_TRIGGER */

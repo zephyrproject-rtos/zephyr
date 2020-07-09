@@ -81,6 +81,7 @@ struct amg88xx_data {
 	int16_t sample[64];
 
 #ifdef CONFIG_AMG88XX_TRIGGER
+	const struct device *dev;
 	const struct device *gpio;
 	uint8_t gpio_pin;
 	struct gpio_callback gpio_cb;
@@ -97,7 +98,6 @@ struct amg88xx_data {
 	struct k_thread thread;
 #elif defined(CONFIG_AMG88XX_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	const struct device *dev;
 #endif
 
 #endif /* CONFIG_AMG88XX_TRIGGER */

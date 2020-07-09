@@ -151,9 +151,8 @@ static void sht3xd_gpio_callback(const struct device *dev,
 	handle_alert(data->dev);
 }
 
-static void sht3xd_thread_cb(void *arg)
+static void sht3xd_thread_cb(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	struct sht3xd_data *data = (struct sht3xd_data *)dev->data;
 
 	if (data->handler != NULL) {
@@ -164,16 +163,11 @@ static void sht3xd_thread_cb(void *arg)
 }
 
 #ifdef CONFIG_SHT3XD_TRIGGER_OWN_THREAD
-static void sht3xd_thread(int dev_ptr, int unused)
+static void sht3xd_thread(struct sht3xd_data *data)
 {
-	const struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct sht3xd_data *data = dev->data;
-
-	ARG_UNUSED(unused);
-
 	while (1) {
 		k_sem_take(&data->gpio_sem, K_FOREVER);
-		sht3xd_thread_cb(dev);
+		sht3xd_thread_cb(data->dev);
 	}
 }
 #endif
@@ -250,8 +244,8 @@ int sht3xd_init_interrupt(const struct device *dev)
 
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_SHT3XD_THREAD_STACK_SIZE,
-			(k_thread_entry_t)sht3xd_thread, dev,
-			0, NULL, K_PRIO_COOP(CONFIG_SHT3XD_THREAD_PRIORITY),
+			(k_thread_entry_t)sht3xd_thread, data,
+			NULL, NULL, K_PRIO_COOP(CONFIG_SHT3XD_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_SHT3XD_TRIGGER_GLOBAL_THREAD)
 	data->work.handler = sht3xd_work_cb;

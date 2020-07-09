@@ -118,6 +118,7 @@ struct lis3mdl_data {
 	int16_t temp_sample;
 
 #ifdef CONFIG_LIS3MDL_TRIGGER
+	const struct device *dev;
 	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 
@@ -130,7 +131,6 @@ struct lis3mdl_data {
 	struct k_thread thread;
 #elif defined(CONFIG_LIS3MDL_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	const struct device *dev;
 #endif
 
 #endif /* CONFIG_LIS3MDL_TRIGGER */

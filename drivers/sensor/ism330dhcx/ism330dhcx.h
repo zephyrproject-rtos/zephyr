@@ -138,6 +138,7 @@ struct ism330dhcx_tf {
 #define ISM330DHCX_SHUB_MAX_NUM_SLVS			2
 
 struct ism330dhcx_data {
+	const struct device *dev;
 	const struct device *bus;
 	int16_t acc[3];
 	uint32_t acc_gain;
@@ -177,8 +178,6 @@ struct ism330dhcx_data {
 	sensor_trigger_handler_t handler_drdy_acc;
 	sensor_trigger_handler_t handler_drdy_gyr;
 	sensor_trigger_handler_t handler_drdy_temp;
-
-	const struct device *dev;
 
 #if defined(CONFIG_ISM330DHCX_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_ISM330DHCX_THREAD_STACK_SIZE);

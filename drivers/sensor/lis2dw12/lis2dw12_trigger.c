@@ -164,9 +164,8 @@ static int lis2dw12_handle_double_tap_int(const struct device *dev)
  * lis2dw12_handle_interrupt - handle the drdy event
  * read data and call handler if registered any
  */
-static void lis2dw12_handle_interrupt(void *arg)
+static void lis2dw12_handle_interrupt(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	struct lis2dw12_data *lis2dw12 = dev->data;
 	const struct lis2dw12_device_config *cfg = dev->config;
 	lis2dw12_all_sources_t sources;
@@ -210,16 +209,11 @@ static void lis2dw12_gpio_callback(const struct device *dev,
 }
 
 #ifdef CONFIG_LIS2DW12_TRIGGER_OWN_THREAD
-static void lis2dw12_thread(int dev_ptr, int unused)
+static void lis2dw12_thread(struct lis2dw12_data *lis2dw12)
 {
-	const struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct lis2dw12_data *lis2dw12 = dev->data;
-
-	ARG_UNUSED(unused);
-
 	while (1) {
 		k_sem_take(&lis2dw12->gpio_sem, K_FOREVER);
-		lis2dw12_handle_interrupt(dev);
+		lis2dw12_handle_interrupt(lis2dw12->dev);
 	}
 }
 #endif /* CONFIG_LIS2DW12_TRIGGER_OWN_THREAD */
@@ -248,17 +242,18 @@ int lis2dw12_init_interrupt(const struct device *dev)
 		return -EINVAL;
 	}
 
+	lis2dw12->dev = dev;
+
 #if defined(CONFIG_LIS2DW12_TRIGGER_OWN_THREAD)
 	k_sem_init(&lis2dw12->gpio_sem, 0, UINT_MAX);
 
 	k_thread_create(&lis2dw12->thread, lis2dw12->thread_stack,
 		       CONFIG_LIS2DW12_THREAD_STACK_SIZE,
-		       (k_thread_entry_t)lis2dw12_thread, dev,
-		       0, NULL, K_PRIO_COOP(CONFIG_LIS2DW12_THREAD_PRIORITY),
+		       (k_thread_entry_t)lis2dw12_thread, lis2dw12,
+		       NULL, NULL, K_PRIO_COOP(CONFIG_LIS2DW12_THREAD_PRIORITY),
 		       0, K_NO_WAIT);
 #elif defined(CONFIG_LIS2DW12_TRIGGER_GLOBAL_THREAD)
 	lis2dw12->work.handler = lis2dw12_work_cb;
-	lis2dw12->dev = dev;
 #endif /* CONFIG_LIS2DW12_TRIGGER_OWN_THREAD */
 
 	lis2dw12->gpio_pin = cfg->int_gpio_pin;

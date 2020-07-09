@@ -62,9 +62,8 @@ int iis3dhhc_trigger_set(const struct device *dev,
  * iis3dhhc_handle_interrupt - handle the drdy event
  * read data and call handler if registered any
  */
-static void iis3dhhc_handle_interrupt(void *arg)
+static void iis3dhhc_handle_interrupt(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct iis3dhhc_data *iis3dhhc = dev->data;
 	struct sensor_trigger drdy_trigger = {
 		.type = SENSOR_TRIG_DATA_READY,
@@ -99,16 +98,11 @@ static void iis3dhhc_gpio_callback(const struct device *dev,
 }
 
 #ifdef CONFIG_IIS3DHHC_TRIGGER_OWN_THREAD
-static void iis3dhhc_thread(int dev_ptr, int unused)
+static void iis3dhhc_thread(struct iis3dhhc_data *iis3dhhc)
 {
-	const struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct iis3dhhc_data *iis3dhhc = dev->data;
-
-	ARG_UNUSED(unused);
-
 	while (1) {
 		k_sem_take(&iis3dhhc->gpio_sem, K_FOREVER);
-		iis3dhhc_handle_interrupt(dev);
+		iis3dhhc_handle_interrupt(iis3dhhc->dev);
 	}
 }
 #endif /* CONFIG_IIS3DHHC_TRIGGER_OWN_THREAD */
@@ -142,8 +136,8 @@ int iis3dhhc_init_interrupt(const struct device *dev)
 
 	k_thread_create(&iis3dhhc->thread, iis3dhhc->thread_stack,
 		       CONFIG_IIS3DHHC_THREAD_STACK_SIZE,
-		       (k_thread_entry_t)iis3dhhc_thread, dev,
-		       0, NULL, K_PRIO_COOP(CONFIG_IIS3DHHC_THREAD_PRIORITY),
+		       (k_thread_entry_t)iis3dhhc_thread, iis3dhhc,
+		       NULL, NULL, K_PRIO_COOP(CONFIG_IIS3DHHC_THREAD_PRIORITY),
 		       0, K_NO_WAIT);
 #elif defined(CONFIG_IIS3DHHC_TRIGGER_GLOBAL_THREAD)
 	iis3dhhc->work.handler = iis3dhhc_work_cb;

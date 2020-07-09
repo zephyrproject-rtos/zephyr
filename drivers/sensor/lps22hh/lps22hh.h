@@ -51,6 +51,7 @@ struct lps22hh_config {
 };
 
 struct lps22hh_data {
+	const struct device *dev;
 	const struct device *bus;
 	int32_t sample_press;
 	int16_t sample_temp;
@@ -70,7 +71,6 @@ struct lps22hh_data {
 
 	struct sensor_trigger data_ready_trigger;
 	sensor_trigger_handler_t handler_drdy;
-	const struct device *dev;
 
 #if defined(CONFIG_LPS22HH_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_LPS22HH_THREAD_STACK_SIZE);

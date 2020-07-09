@@ -49,10 +49,8 @@ static void bmi160_handle_drdy(const struct device *dev, uint8_t status)
 #endif
 }
 
-static void bmi160_handle_interrupts(void *arg)
+static void bmi160_handle_interrupts(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
-
 	union {
 		uint8_t raw[6];
 		struct {
@@ -83,16 +81,11 @@ static void bmi160_handle_interrupts(void *arg)
 static K_KERNEL_STACK_DEFINE(bmi160_thread_stack, CONFIG_BMI160_THREAD_STACK_SIZE);
 static struct k_thread bmi160_thread;
 
-static void bmi160_thread_main(void *arg1, void *unused1, void *unused2)
+static void bmi160_thread_main(struct bmi160_device_data *bmi160)
 {
-	ARG_UNUSED(unused1);
-	ARG_UNUSED(unused2);
-	const struct device *dev = (const struct device *)arg1;
-	struct bmi160_device_data *bmi160 = dev->data;
-
 	while (1) {
 		k_sem_take(&bmi160->sem, K_FOREVER);
-		bmi160_handle_interrupts(dev);
+		bmi160_handle_interrupts(bmi160->dev);
 	}
 }
 #endif
@@ -283,16 +276,19 @@ int bmi160_trigger_mode_init(const struct device *dev)
 		return -EINVAL;
 	}
 
+	bmi160->dev = dev;
+
 #if defined(CONFIG_BMI160_TRIGGER_OWN_THREAD)
 	k_sem_init(&bmi160->sem, 0, UINT_MAX);
 
 	k_thread_create(&bmi160_thread, bmi160_thread_stack,
 			CONFIG_BMI160_THREAD_STACK_SIZE,
-			bmi160_thread_main, dev, NULL, NULL,
-			K_PRIO_COOP(CONFIG_BMI160_THREAD_PRIORITY), 0, K_NO_WAIT);
+			(k_thread_entry_t)bmi160_thread_main,
+			bmi160, NULL, NULL,
+			K_PRIO_COOP(CONFIG_BMI160_THREAD_PRIORITY),
+			 0, K_NO_WAIT);
 #elif defined(CONFIG_BMI160_TRIGGER_GLOBAL_THREAD)
 	bmi160->work.handler = bmi160_work_handler;
-	bmi160->dev = dev;
 #endif
 
 	/* map all interrupts to INT1 pin */

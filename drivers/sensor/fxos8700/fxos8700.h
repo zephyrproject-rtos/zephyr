@@ -164,6 +164,7 @@ struct fxos8700_data {
 	const struct device *i2c;
 	struct k_sem sem;
 #ifdef CONFIG_FXOS8700_TRIGGER
+	const struct device *dev;
 	const struct device *gpio;
 	uint8_t gpio_pin;
 	struct gpio_callback gpio_cb;
@@ -186,7 +187,6 @@ struct fxos8700_data {
 #endif
 #ifdef CONFIG_FXOS8700_TRIGGER_GLOBAL_THREAD
 	struct k_work work;
-	const struct device *dev;
 #endif
 	int16_t raw[FXOS8700_MAX_NUM_CHANNELS];
 #ifdef CONFIG_FXOS8700_TEMP

@@ -431,6 +431,7 @@ struct bmi160_device_data {
 	const struct device *spi;
 	struct spi_config spi_cfg;
 #if defined(CONFIG_BMI160_TRIGGER)
+	const struct device *dev;
 	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 #endif
@@ -444,7 +445,6 @@ struct bmi160_device_data {
 
 #ifdef CONFIG_BMI160_TRIGGER_GLOBAL_THREAD
 	struct k_work work;
-	const struct device *dev;
 #endif
 
 #ifdef CONFIG_BMI160_TRIGGER

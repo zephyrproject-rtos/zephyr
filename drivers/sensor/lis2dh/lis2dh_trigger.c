@@ -274,9 +274,8 @@ static void lis2dh_gpio_int2_callback(const struct device *dev,
 }
 #endif /* DT_INST_PROP_HAS_IDX(0, irq_gpios, 1) */
 
-static void lis2dh_thread_cb(void *arg)
+static void lis2dh_thread_cb(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct lis2dh_data *lis2dh = dev->data;
 	int status;
 
@@ -346,17 +345,11 @@ static void lis2dh_thread_cb(void *arg)
 }
 
 #ifdef CONFIG_LIS2DH_TRIGGER_OWN_THREAD
-static void lis2dh_thread(void *arg1, void *unused2, void *unused3)
+static void lis2dh_thread(struct lis2dh_data *lis2dh)
 {
-	const struct device *dev = arg1;
-	struct lis2dh_data *lis2dh = dev->data;
-
-	ARG_UNUSED(unused2);
-	ARG_UNUSED(unused3);
-
 	while (1) {
 		k_sem_take(&lis2dh->gpio_sem, K_FOREVER);
-		lis2dh_thread_cb(dev);
+		lis2dh_thread_cb(lis2dh->dev);
 	}
 }
 #endif
@@ -387,17 +380,18 @@ int lis2dh_init_interrupt(const struct device *dev)
 		return -EINVAL;
 	}
 
+	lis2dh->dev = dev;
+
 #if defined(CONFIG_LIS2DH_TRIGGER_OWN_THREAD)
 	k_sem_init(&lis2dh->gpio_sem, 0, UINT_MAX);
 
 	k_thread_create(&lis2dh->thread, lis2dh->thread_stack,
 			CONFIG_LIS2DH_THREAD_STACK_SIZE,
-			(k_thread_entry_t)lis2dh_thread, dev, NULL, NULL,
+			(k_thread_entry_t)lis2dh_thread, lis2dh, NULL, NULL,
 			K_PRIO_COOP(CONFIG_LIS2DH_THREAD_PRIORITY), 0,
 			K_NO_WAIT);
 #elif defined(CONFIG_LIS2DH_TRIGGER_GLOBAL_THREAD)
 	lis2dh->work.handler = lis2dh_work_cb;
-	lis2dh->dev = dev;
 #endif
 
 	/* data ready int1 gpio configuration */

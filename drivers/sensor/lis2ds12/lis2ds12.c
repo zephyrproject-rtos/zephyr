@@ -184,13 +184,17 @@ static int lis2ds12_sample_fetch(const struct device *dev,
 		break;
 #if defined(CONFIG_LIS2DS12_ENABLE_TEMP)
 	case SENSOR_CHAN_DIE_TEMP:
-		lis2ds12_sample_fetch_temp(dev);
+		/* ToDo:
+		lis2ds12_sample_fetch_temp(dev)
+		*/
 		break;
 #endif
 	case SENSOR_CHAN_ALL:
 		lis2ds12_sample_fetch_accel(dev);
 #if defined(CONFIG_LIS2DS12_ENABLE_TEMP)
-		lis2ds12_sample_fetch_temp(dev);
+		/* ToDo:
+		lis2ds12_sample_fetch_temp(dev)
+		*/
 #endif
 		break;
 	default:
