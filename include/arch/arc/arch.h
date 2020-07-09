@@ -18,11 +18,11 @@
 
 #include <devicetree.h>
 #include <sw_isr_table.h>
+#include <arch/common/ffs.h>
 #include <arch/arc/thread.h>
 #ifdef CONFIG_CPU_ARCV2
 #include <arch/arc/v2/exc.h>
 #include <arch/arc/v2/irq.h>
-#include <arch/arc/v2/ffs.h>
 #include <arch/arc/v2/error.h>
 #include <arch/arc/v2/misc.h>
 #include <arch/arc/v2/aux_regs.h>
