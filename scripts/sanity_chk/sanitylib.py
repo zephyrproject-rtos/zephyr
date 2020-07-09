@@ -2092,6 +2092,8 @@ class ProjectBuilder(FilterBuilder):
         instance = self.instance
 
         if instance.status in ["error", "failed", "timeout"]:
+            if instance.status == "error":
+                self.suite.total_errors += 1
             self.suite.total_failed += 1
             if self.verbose:
                 status = Fore.RED + "FAILED " + Fore.RESET + instance.reason
@@ -2110,6 +2112,7 @@ class ProjectBuilder(FilterBuilder):
             self.suite.total_skipped += 1
             status = Fore.YELLOW + "SKIPPED" + Fore.RESET
         elif instance.status == "passed":
+            self.suite.total_passed += 1
             status = Fore.GREEN + "PASSED" + Fore.RESET
         else:
             logger.debug(f"Unknown status = {instance.status}")
@@ -2312,6 +2315,8 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.total_done = 0  # tests completed
         self.total_failed = 0
         self.total_skipped = 0
+        self.total_passed = 0
+        self.total_errors = 0
 
         self.total_platforms = 0
         self.start_time = 0
@@ -2420,7 +2425,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                 run += 1
 
         if self.total_tests and self.total_tests != self.total_skipped:
-            pass_rate = (float(self.total_tests - self.total_failed - self.total_skipped) / float(
+            pass_rate = (float(self.total_passed) / float(
                 self.total_tests - self.total_skipped))
         else:
             pass_rate = 0
@@ -2428,7 +2433,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         logger.info(
             "{}{} of {}{} tests passed ({:.2%}), {}{}{} failed, {} skipped with {}{}{} warnings in {:.2f} seconds".format(
                 Fore.RED if failed else Fore.GREEN,
-                self.total_tests - self.total_failed - self.total_skipped,
+                self.total_passed,
                 self.total_tests - self.total_skipped,
                 Fore.RESET,
                 pass_rate,
@@ -2844,13 +2849,14 @@ class TestSuite(DisablePyTestCollectionMixin):
                 if instance.run:
                     pipeline.put({"op": "run", "test": instance, "status": "built"})
             else:
-                if instance.status not in ['passed', 'skipped']:
+                if instance.status not in ['passed', 'skipped', 'error']:
                     instance.status = None
                     pipeline.put({"op": "cmake", "test": instance})
 
         return "DONE FEEDING"
 
     def execute(self):
+
         def calc_one_elf_size(instance):
             if instance.status not in ["error", "failed", "skipped"]:
                 if instance.platform.type != "native":
