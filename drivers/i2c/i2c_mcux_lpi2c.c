@@ -146,6 +146,7 @@ static int mcux_lpi2c_transfer(struct device *dev, struct i2c_msg *msgs,
 		 * e.g., if the bus was busy
 		 */
 		if (status != kStatus_Success) {
+			LPI2C_MasterTransferAbort(base, &data->handle);
 			return -EIO;
 		}
 
@@ -156,6 +157,7 @@ static int mcux_lpi2c_transfer(struct device *dev, struct i2c_msg *msgs,
 		 * successfully. e.g., nak, timeout, lost arbitration
 		 */
 		if (data->callback_status != kStatus_Success) {
+			LPI2C_MasterTransferAbort(base, &data->handle);
 			return -EIO;
 		}
 
