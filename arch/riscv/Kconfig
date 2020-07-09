@@ -104,6 +104,17 @@ config GEN_IRQ_VECTOR_TABLE
 config NUM_IRQS
 	int
 
+if CPU_HAS_MPU
+
+config RISCV_PMP
+	bool "RISC-V Physical Memory Protection support"
+	default y if USERSPACE
+	select THREAD_STACK_INFO
+	select MEMORY_PROTECTION
+	depends on CPU_HAS_MPU
+
+endif # CPU_HAS_MPU
+
 endmenu
 
 endmenu

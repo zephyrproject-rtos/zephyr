@@ -21,15 +21,45 @@
 #include <linker/linker-tool.h>
 
 #ifdef CONFIG_XIP
-#define ROMABLE_REGION              ROM
+#define ROMABLE_REGION			ROM
 #else
-#define ROMABLE_REGION              RAM
+#define ROMABLE_REGION			RAM
 #endif
-#define RAMABLE_REGION              RAM
+#define RAMABLE_REGION			RAM
 
-#define _VECTOR_SECTION_NAME        vector
-#define _EXCEPTION_SECTION_NAME     exceptions
-#define _RESET_SECTION_NAME         reset
+#define _VECTOR_SECTION_NAME	   vector
+#define _EXCEPTION_SECTION_NAME	exceptions
+#define _RESET_SECTION_NAME		reset
+
+#if defined(CONFIG_CUSTOM_SECTION_ALIGN)
+_region_min_align = CONFIG_CUSTOM_SECTION_MIN_ALIGN_SIZE;
+#else
+_region_min_align = 4; /* smallest PMP region allowed */
+#endif
+
+#if !defined(CONFIG_CUSTOM_SECTION_ALIGN) && defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
+#define MPU_ALIGN(region_size) \
+	. = ALIGN(_region_min_align); \
+	. = ALIGN( 1 << LOG2CEIL(region_size))
+#else
+#define MPU_ALIGN(region_size) \
+	. = ALIGN(_region_min_align)
+#endif
+
+#if defined(CONFIG_CUSTOM_SECTION_ALIGN)
+_region_min_align = CONFIG_CUSTOM_SECTION_MIN_ALIGN_SIZE;
+#else
+_region_min_align = 4; /* smallest PMP region allowed */
+#endif
+
+#if !defined(CONFIG_CUSTOM_SECTION_ALIGN) && defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
+#define MPU_ALIGN(region_size) \
+	. = ALIGN(_region_min_align); \
+	. = ALIGN( 1 << LOG2CEIL(region_size))
+#else
+#define MPU_ALIGN(region_size) \
+	. = ALIGN(_region_min_align)
+#endif
 
 MEMORY
 {
@@ -46,55 +76,55 @@ MEMORY
 #define ROM_BASE DT_REG_ADDR_BY_IDX(SPI_CTRL, 1)
 #define ROM_SIZE DT_REG_SIZE_BY_IDX(SPI_CTRL, 1)
 #endif
-    ROM (rx)  : ORIGIN = ROM_BASE, LENGTH = ROM_SIZE
+	ROM (rx)  : ORIGIN = ROM_BASE, LENGTH = ROM_SIZE
 #endif
-    RAM (rwx) : ORIGIN = CONFIG_SRAM_BASE_ADDRESS, LENGTH = KB(CONFIG_SRAM_SIZE)
-    /* Used by and documented in include/linker/intlist.ld */
-    IDT_LIST  (wx)      : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
+	RAM (rwx) : ORIGIN = CONFIG_SRAM_BASE_ADDRESS, LENGTH = KB(CONFIG_SRAM_SIZE)
+	/* Used by and documented in include/linker/intlist.ld */
+	IDT_LIST  (wx)	 : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
 }
 
 ENTRY(CONFIG_KERNEL_ENTRY)
 
 SECTIONS
-    {
+	{
 
 #include <linker/rel-sections.ld>
 
-    /*
-     * The .plt and .iplt are here according to
-     * 'riscv32-zephyr-elf-ld --verbose', before text section.
-     */
-    SECTION_PROLOGUE(.plt,,)
+	/*
+	* The .plt and .iplt are here according to
+	* 'riscv32-zephyr-elf-ld --verbose', before text section.
+	*/
+	SECTION_PROLOGUE(.plt,,)
 	{
 		*(.plt)
 	}
 
-    SECTION_PROLOGUE(.iplt,,)
+	SECTION_PROLOGUE(.iplt,,)
 	{
 		*(.iplt)
 	}
 
-    GROUP_START(ROMABLE_REGION)
-    _image_rom_start = .;
+	GROUP_START(ROMABLE_REGION)
+	_image_rom_start = .;
 
-    SECTION_PROLOGUE(_VECTOR_SECTION_NAME,,)
-    {
+	SECTION_PROLOGUE(_VECTOR_SECTION_NAME,,)
+	{
 		. = ALIGN(4);
 		KEEP(*(.vectors.*))
-    } GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_LINK_IN(ROMABLE_REGION)
 
-    SECTION_PROLOGUE(_RESET_SECTION_NAME,,)
-    {
+	SECTION_PROLOGUE(_RESET_SECTION_NAME,,)
+	{
 		KEEP(*(.reset.*))
-    } GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_LINK_IN(ROMABLE_REGION)
 
-    SECTION_PROLOGUE(_EXCEPTION_SECTION_NAME,,)
-    {
+	SECTION_PROLOGUE(_EXCEPTION_SECTION_NAME,,)
+	{
 		 KEEP(*(".exception.entry.*"))
 		 *(".exception.other.*")
-    } GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_LINK_IN(ROMABLE_REGION)
 
-    SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
+	SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
 		. = ALIGN(4);
 		KEEP(*(.openocd_debug))
@@ -102,17 +132,21 @@ SECTIONS
 
 		_image_text_start = .;
 
+#include <linker/kobject-text.ld>
+
 		*(.text)
 		*(".text.*")
 		*(.gnu.linkonce.t.*)
 		*(.eh_frame)
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
-    _image_text_end = .;
+	_image_text_end = .;
+	_image_rodata_start = .;
 
 #include <linker/common-rom.ld>
+#include <linker/kobject.ld>
 
-    SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
+	SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
 	{
 		 . = ALIGN(4);
 		 *(.srodata)
@@ -126,18 +160,37 @@ SECTIONS
  */
 #include <snippets-rodata.ld>
 
+#include <linker/kobject-rom.ld>
+
+	/*
+	 * For XIP images, in order to avoid the situation when __data_rom_start
+	 * is 32-bit aligned, but the actual data is placed right after rodata
+	 * section, which may not end exactly at 32-bit border, pad rodata
+	 * section, so __data_rom_start points at data and it is 32-bit aligned.
+	 *
+	 * On non-XIP images this may enlarge image size up to 3 bytes. This
+	 * generally is not an issue, since modern ROM and FLASH memory is
+	 * usually 4k aligned.
+	 */
+	. = ALIGN(4);
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 #include <linker/cplusplus-rom.ld>
 
-    _image_rom_end = .;
-    __data_rom_start = .;
+	_image_rodata_end = .;
+	_image_rom_end = .;
+	__data_rom_start = .;
 
-    GROUP_END(ROMABLE_REGION)
+	GROUP_END(ROMABLE_REGION)
 
-    GROUP_START(RAMABLE_REGION)
+	GROUP_START(RAMABLE_REGION)
 
-    SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-ram-sections.ld>
+
+	SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 	{
 		 . = ALIGN(4);
 		 _image_ram_start = .;
@@ -162,9 +215,21 @@ SECTIONS
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-ram-sections.ld>
-    __data_ram_end = .;
+	__data_ram_end = .;
 
-    SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
+#if defined(CONFIG_USERSPACE)
+
+#define APP_SHARED_ALIGN . = ALIGN(_region_min_align);
+#define SMEM_PARTITION_ALIGN MPU_ALIGN
+
+#include <app_smem.ld>
+
+	_app_smem_size = _app_smem_end - _app_smem_start;
+	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
+
+#endif /* CONFIG_USERSPACE */
+
+	SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
 	{
 		/*
 		 * For performance, BSS section is assumed to be 4 byte aligned and
@@ -184,7 +249,7 @@ SECTIONS
 		  __bss_end = ALIGN(4);
 	}  GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 
-    SECTION_PROLOGUE(_NOINIT_SECTION_NAME,(NOLOAD),)
+	SECTION_PROLOGUE(_NOINIT_SECTION_NAME,(NOLOAD),)
 	{
 		/*
 		 * This section is used for non-initialized objects that
@@ -200,23 +265,24 @@ SECTIONS
 
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
+
 #include <linker/cplusplus-ram.ld>
 
-     _image_ram_end = .;
-     _end = .; /* end of image */
+	_image_ram_end = .;
+	_end = .; /* end of image */
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-sections.ld>
 
-     GROUP_END(RAMABLE_REGION)
+	GROUP_END(RAMABLE_REGION)
 
 #include <linker/debug-sections.ld>
 
-    /DISCARD/ : { *(.note.GNU-stack) }
+	/DISCARD/ : { *(.note.GNU-stack) }
 
-    SECTION_PROLOGUE(.riscv.attributes, 0,)
+	SECTION_PROLOGUE(.riscv.attributes, 0,)
 	{
 	KEEP(*(.riscv.attributes))
 	KEEP(*(.gnu.attributes))

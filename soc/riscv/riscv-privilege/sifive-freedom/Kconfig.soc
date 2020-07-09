@@ -10,5 +10,7 @@ choice
 config SOC_RISCV_SIFIVE_FREEDOM
 	bool "SiFive Freedom SOC implementation"
 	select ATOMIC_OPERATIONS_C
+	select ARCH_HAS_USERSPACE
+	select CPU_HAS_MPU
 
 endchoice

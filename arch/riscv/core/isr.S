@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016 Jean-Paul Etienne <fractalclone@gmail.com>
  * Copyright (c) 2018 Foundries.io Ltd
+ * Contributors: 2020 RISE Research Institutes of Sweden <www.ri.se>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +12,7 @@
 #include <arch/cpu.h>
 #include <sys/util.h>
 #include <kernel.h>
+#include <syscall.h>
 
 /* Convenience macros for loading/storing register states. */
 
@@ -70,7 +72,7 @@
 GDATA(_sw_isr_table)
 GTEXT(__soc_is_irq)
 GTEXT(__soc_handle_irq)
-GTEXT(_Fault)
+GTEXT(z_do_kernel_oops)
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 GTEXT(__soc_save_context)
 GTEXT(__soc_restore_context)
@@ -79,6 +81,12 @@ GTEXT(__soc_restore_context)
 GTEXT(_k_neg_eagain)
 GTEXT(_is_next_thread_current)
 GTEXT(z_get_next_ready_thread)
+
+#ifdef CONFIG_USERSPACE
+GTEXT(k_thread_abort)
+GTEXT(k_current_get)
+GDATA(_k_syscall_table)
+#endif
 
 #ifdef CONFIG_TRACING
 GTEXT(sys_trace_thread_switched_in)
@@ -121,6 +129,7 @@ GTEXT(__irq_wrapper)
  * switching or IRQ offloading (when enabled).
  */
 SECTION_FUNC(exception.entry, __irq_wrapper)
+
 	/* Allocate space on thread stack to save registers */
 	addi sp, sp, -__z_arch_esf_t_SIZEOF
 
@@ -165,6 +174,33 @@ skip_store_fp_caller_saved:
 	csrr t0, mstatus
 	RV_OP_STOREREG t0, __z_arch_esf_t_mstatus_OFFSET(sp)
 
+#ifdef CONFIG_USERSPACE
+	/* PMP configuration registers */
+	csrr t0, pmpcfg0
+	RV_OP_STOREREG t0, __z_arch_esf_t_pmpcfg0_OFFSET(sp)
+	csrr t0, pmpcfg1
+	RV_OP_STOREREG t0, __z_arch_esf_t_pmpcfg1_OFFSET(sp)
+
+	/* PMP address registers */
+	csrr t0, pmpaddr0
+	RV_OP_STOREREG t0, __z_arch_esf_t_pmpaddr0_OFFSET(sp)
+	csrr t0, pmpaddr1
+	RV_OP_STOREREG t0, __z_arch_esf_t_pmpaddr1_OFFSET(sp)
+	csrr t0, pmpaddr2
+	RV_OP_STOREREG t0, __z_arch_esf_t_pmpaddr2_OFFSET(sp)
+	csrr t0, pmpaddr3
+	RV_OP_STOREREG t0, __z_arch_esf_t_pmpaddr3_OFFSET(sp)
+	csrr t0, pmpaddr4
+	RV_OP_STOREREG t0, __z_arch_esf_t_pmpaddr4_OFFSET(sp)
+	csrr t0, pmpaddr5
+	RV_OP_STOREREG t0, __z_arch_esf_t_pmpaddr5_OFFSET(sp)
+	csrr t0, pmpaddr6
+	RV_OP_STOREREG t0, __z_arch_esf_t_pmpaddr6_OFFSET(sp)
+	csrr t0, pmpaddr7
+	RV_OP_STOREREG t0, __z_arch_esf_t_pmpaddr7_OFFSET(sp)
+
+#endif /* CONFIG_USERSPACE */
+
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 	/* Handle context saving at SOC level. */
 	addi a0, sp, __z_arch_esf_t_soc_context_OFFSET
@@ -192,33 +228,114 @@ skip_store_fp_caller_saved:
 	bnez a0, is_interrupt
 
 	/*
-	 * If the exception is the result of an ECALL, check whether to
-	 * perform a context-switch or an IRQ offload. Otherwise call _Fault
-	 * to report the exception.
+	 * If the exception is the result of an ECALL, check whether to perform
+         * a context-switch, system call or an IRQ offload. Otherwise call
+	 * z_do_kernel_oops to report the exception.
 	 */
 	csrr t0, mcause
 	li t2, SOC_MCAUSE_EXP_MASK
 	and t0, t0, t2
-	li t1, SOC_MCAUSE_ECALL_EXP
 
+	li t1, SOC_MACHINE_ECALL_EXP /* ECALL from M-mode */
+
+#ifndef CONFIG_USERSPACE
 	/*
-	 * If mcause == SOC_MCAUSE_ECALL_EXP, handle system call,
-	 * otherwise handle fault
+	 * The MSB of the $mcause register indicates whether this is an
+	 * interrupt or a system call. ($t0 = $mcause)
 	 */
-	beq t0, t1, is_syscall
+	beq t0, t1, machine_syscall
+#else
+	/* $a7 contains the system call ID. */
+	RV_OP_LOADREG t2, __z_arch_esf_t_a7_OFFSET(sp)
 
 	/*
-	 * Call _Fault to handle exception.
-	 * Stack pointer is pointing to a z_arch_esf_t structure, pass it
-	 * to _Fault (via register a0).
-	 * If _Fault shall return, set return address to no_reschedule
-	 * to restore stack.
+	 * RISC-V does not provide hardware support to determine the current
+	 * privilege level. If $mcause = 0xb, the thread that instigated the
+	 * current interrupt deliberately made a system call from M-mode.
+	 * ($t0 = $mcause)
+	 */
+	beq t0, t1, machine_syscall
+
+	/*
+	 * If $mcause = 0x8, the thread that instigated the current interrupt
+	 * deliberately made a system call from U-mode. ($t0 = $mcause)
+	 */
+	li t1, SOC_USER_ECALL_EXP /* ECALL from U-mode */
+	beq t0, t1, user_syscall
+	#endif
+
+	/*
+	 * Call _Fault to handle exception. Stack pointer is pointing to a
+	 * z_arch_esf_t structure, pass it to _Fault (via register a0). If
+ 	 * z_do_kernel_oops shall return, set return address to no_reschedule
+ 	 * to restore stack.
 	 */
 	addi a0, sp, 0
 	la ra, no_reschedule
 	tail _Fault
 
-is_syscall:
+#ifdef CONFIG_USERSPACE
+
+user_syscall:
+	la t1, _k_syscall_table
+	RV_OP_LOADREG a0, __z_arch_esf_t_a0_OFFSET(sp)
+
+	/* Handle bad syscall if the call ID is outside the syscall table. */
+	addi t0, zero, K_SYSCALL_BAD
+	blt t2, t0, user_syscall_ok
+	addi t2, t0, 0
+
+user_syscall_ok:
+	/*
+	 * Multiply the call ID by the word length (4) to get the offset from
+	 * _k_syscall_table to the requested syscall pointer.
+	 * ($t2 = call ID, $t1 = _k_syscall_table)
+	 */
+	slli t0, t2, 2
+	add t1, t1, t0
+	lw t2, (t1)
+
+	/* Store a copy of $sp in $t0.  */
+	addi t0, sp, 0
+
+	/* Initialize IRQ stack to handle system call. */
+	la t4, _kernel
+	RV_OP_LOADREG sp, _kernel_offset_to_irq_stack(t4)
+	addi sp, sp, -16
+
+	/* Store the calling thread's $sp on the base of the IRQ stack. */
+	RV_OP_STOREREG t0, 0x00(sp)
+
+	/* Increment _kernel.cpus[0].nested. */
+	lw t3, _kernel_offset_to_nested(t4)
+	addi t3, t3, 1
+	sw t3, _kernel_offset_to_nested(t4)
+
+	/* Jump to the address of the requested syscall. */
+	jalr ra, t2
+
+	/* Restore the thread's stack poiinter. */
+	RV_OP_LOADREG sp, 0x00(sp)
+
+	/* Store the return value of the syscall. */
+	RV_OP_STOREREG a0, __z_arch_esf_t_a0_OFFSET(sp)
+
+	/* Increment $mepc (i.e., the ISR return address) by one word. */
+	RV_OP_LOADREG t0, __z_arch_esf_t_mepc_OFFSET(sp)
+	addi t0, t0, 4
+	RV_OP_STOREREG t0, __z_arch_esf_t_mepc_OFFSET(sp)
+
+	/* Decrement _kernel.cpus[0].nested. */
+	la t1, _kernel
+	lw t2, _kernel_offset_to_nested(t1)
+	addi t2, t2, -1
+	sw t2, _kernel_offset_to_nested(t1)
+
+	j reschedule
+
+#endif /* CONFIG_USERSPACE */
+
+machine_syscall:
 	/*
 	 * A syscall is the result of an ecall instruction, in which case the
 	 * MEPC will contain the address of the ecall instruction.
@@ -231,6 +348,7 @@ is_syscall:
 	RV_OP_LOADREG t0, __z_arch_esf_t_mepc_OFFSET(sp)
 	addi t0, t0, 4
 	RV_OP_STOREREG t0, __z_arch_esf_t_mepc_OFFSET(sp)
+
 
 #ifdef CONFIG_IRQ_OFFLOAD
 	/*
@@ -541,6 +659,32 @@ no_reschedule:
 	/* Restore SOC-specific MSTATUS register */
 	RV_OP_LOADREG t0, __z_arch_esf_t_mstatus_OFFSET(sp)
 	csrw mstatus, t0
+
+#ifdef CONFIG_USERSPACE
+/* Restore PMP configuration registers */
+RV_OP_LOADREG t0, __z_arch_esf_t_pmpcfg0_OFFSET(sp)
+csrw pmpcfg0, t0
+RV_OP_LOADREG t0, __z_arch_esf_t_pmpcfg1_OFFSET(sp)
+csrw pmpcfg1, t0
+
+/* Restore PMP address registers */
+	RV_OP_LOADREG t0, __z_arch_esf_t_pmpaddr0_OFFSET(sp)
+	csrw pmpaddr0, t0
+	RV_OP_LOADREG t0, __z_arch_esf_t_pmpaddr1_OFFSET(sp)
+	csrw pmpaddr1, t0
+	RV_OP_LOADREG t0, __z_arch_esf_t_pmpaddr2_OFFSET(sp)
+	csrw pmpaddr2, t0
+	RV_OP_LOADREG t0, __z_arch_esf_t_pmpaddr3_OFFSET(sp)
+	csrw pmpaddr3, t0
+	RV_OP_LOADREG t0, __z_arch_esf_t_pmpaddr4_OFFSET(sp)
+	csrw pmpaddr4, t0
+	RV_OP_LOADREG t0, __z_arch_esf_t_pmpaddr5_OFFSET(sp)
+	csrw pmpaddr5, t0
+	RV_OP_LOADREG t0, __z_arch_esf_t_pmpaddr6_OFFSET(sp)
+	csrw pmpaddr6, t0
+	RV_OP_LOADREG t0, __z_arch_esf_t_pmpaddr7_OFFSET(sp)
+	csrw pmpaddr7, t0
+#endif
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	/*

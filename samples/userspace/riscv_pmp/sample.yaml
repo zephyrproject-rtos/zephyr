@@ -1,0 +1,10 @@
+sample:
+  description: userspace example
+  name: riscv-pmp
+common:
+    tags: userspace
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "SUCCESS"

@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016 Jean-Paul Etienne <fractalclone@gmail.com>
  * Contributors: 2018 Antmicro <www.antmicro.com>
+ *               2020 RISE Research Institutes of Sweden <www.ri.se>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +16,7 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_RISCV_ARCH_H_
 #define ZEPHYR_INCLUDE_ARCH_RISCV_ARCH_H_
 
+#include <arch/riscv/syscall.h>
 #include <arch/riscv/thread.h>
 #include <arch/riscv/exp.h>
 #include <arch/common/sys_io.h>
@@ -57,7 +59,6 @@
 #define MSTATUS_MPIE_EN (1UL << 7)
 #define MSTATUS_FS_INIT (1UL << 13)
 #define MSTATUS_FS_MASK ((1UL << 13) | (1UL << 14))
-
 
 /* This comes from openisa_rv32m1, but doesn't seem to hurt on other
  * platforms:
@@ -167,6 +168,45 @@ static inline uint32_t arch_k_cycle_get_32(void)
 	return z_timer_cycle_get_32();
 }
 
+#ifdef CONFIG_USERSPACE
+
+typedef uint32_t k_mem_partition_attr_t;
+
+#define Z_PRIVILEGE_STACK_ALIGN 4
+
+#define RV_PMP_0CFG	0
+#define RV_PMP_1CFG	8
+#define RV_PMP_2CFG	16
+#define RV_PMP_3CFG	24
+
+/* PMP addressing modes */
+#define RV_PMP_OFF	(0 << 3)
+#define RV_PMP_TOR	(1 << 3)
+#define RV_PMP_NA4	(2 << 3)
+#define RV_PMP_NAPOT	(3 << 3)
+
+/* PMP permissions */
+#define RV_PMP_R	(1 << 0)
+#define RV_PMP_W	(1 << 1)
+#define RV_PMP_X	(1 << 2)
+#define RV_PMP_RO	(RV_PMP_R)
+#define RV_PMP_RW	(RV_PMP_R | RV_PMP_W)
+#define RV_PMP_RX	(RV_PMP_R | RV_PMP_X)
+#define RV_PMP_RWX	(RV_PMP_R | RV_PMP_W | RV_PMP_X)
+
+/* Read/write/execute access permission attributes */
+#define K_MEM_PARTITION_P_NA_U_NA	(RV_PMP_TOR)
+#define K_MEM_PARTITION_P_RW_U_RW	(RV_PMP_TOR | RV_PMP_RW)
+#define K_MEM_PARTITION_P_RW_U_RO	(RV_PMP_TOR | RV_PMP_R)
+#define K_MEM_PARTITION_P_RW_U_NA	(RV_PMP_TOR)
+#define K_MEM_PARTITION_P_RO_U_RO	(RV_PMP_TOR | RV_PMP_R)
+#define K_MEM_PARTITION_P_RO_U_NA	(RV_PMP_TOR)
+#define K_MEM_PARTITION_P_RWX_U_RWX	(RV_PMP_TOR | RV_PMP_RWX)
+#define K_MEM_PARTITION_P_RWX_U_RX	(RV_PMP_TOR | RV_PMP_RX)
+#define K_MEM_PARTITION_P_RX_U_RX	(RV_PMP_TOR | RV_PMP_RX)
+
+#endif /* CONFIG_USERSPACE */
+
 #ifdef __cplusplus
 }
 #endif
@@ -177,5 +217,4 @@ static inline uint32_t arch_k_cycle_get_32(void)
 #include <arch/riscv/riscv-privilege/asm_inline.h>
 #endif
 
-
-#endif
+#endif /* ZEPHYR_INCLUDE_ARCH_RISCV_ARCH_H_ */

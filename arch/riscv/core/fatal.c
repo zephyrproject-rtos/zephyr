@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Jean-Paul Etienne <fractalclone@gmail.com>
+ * Contributors: 2020 RISE Research Institutes of Sweden <www.ri.se>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,34 +33,8 @@ FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 	CODE_UNREACHABLE;
 }
 
-static char *cause_str(ulong_t cause)
+FUNC_NORETURN void arch_syscall_oops(void *ssf_ptr)
 {
-	switch (cause) {
-	case 0:
-		return "Instruction address misaligned";
-	case 1:
-		return "Instruction Access fault";
-	case 2:
-		return "Illegal instruction";
-	case 3:
-		return "Breakpoint";
-	case 4:
-		return "Load address misaligned";
-	case 5:
-		return "Load access fault";
-	default:
-		return "unknown";
-	}
-}
-
-FUNC_NORETURN void _Fault(const z_arch_esf_t *esf)
-{
-	ulong_t mcause;
-
-	__asm__ volatile("csrr %0, mcause" : "=r" (mcause));
-
-	mcause &= SOC_MCAUSE_EXP_MASK;
-	LOG_ERR("Exception cause %s (%ld)", cause_str(mcause), mcause);
-
-	z_riscv_fatal_error(K_ERR_CPU_EXCEPTION, esf);
+	z_riscv_fatal_error(K_ERR_KERNEL_OOPS, ssf_ptr);
+	CODE_UNREACHABLE;
 }

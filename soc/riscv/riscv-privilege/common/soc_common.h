@@ -17,8 +17,8 @@
 #define RISCV_MACHINE_TIMER_IRQ      7  /* Machine Timer Interrupt */
 #define RISCV_MACHINE_EXT_IRQ        11 /* Machine External Interrupt */
 
-/* Exception numbers */
-#define RISCV_MACHINE_ECALL_EXP      11 /* Machine ECALL instruction */
+#define RISCV_MACHINE_ECALL_EXP      11 /* ECALL instruction from M-mode */
+#define RISCV_USER_ECALL_EXP         8  /* ECALL instruction from U-mode */
 
 /* SOC-specific MCAUSE bitfields */
 #ifdef CONFIG_64BIT
@@ -32,8 +32,9 @@
 /* Exception code Mask */
 #define SOC_MCAUSE_EXP_MASK          0x7FFFFFFF
 #endif
-/* ECALL exception number */
-#define SOC_MCAUSE_ECALL_EXP         RISCV_MACHINE_ECALL_EXP
+/* ECALL exception numbers */
+#define SOC_MACHINE_ECALL_EXP        RISCV_MACHINE_ECALL_EXP
+#define SOC_USER_ECALL_EXP           RISCV_USER_ECALL_EXP
 
 /* SOC-Specific EXIT ISR command */
 #define SOC_ERET                     mret

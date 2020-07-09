@@ -294,7 +294,7 @@ do {                                                                    \
 #define GDATA(sym) glbl_data sym
 #define WDATA(sym) weak_data sym
 
-#else  /* !CONFIG_ARM && !CONFIG_ARC */
+#else
 #define GTEXT(sym) .globl sym; .type sym, @function
 #define GDATA(sym) .globl sym; .type sym, @object
 #endif

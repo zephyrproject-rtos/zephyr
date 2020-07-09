@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016 Jean-Paul Etienne <fractalclone@gmail.com>
  * Copyright (c) 2018 Foundries.io Ltd
+ * Contributors: 2020 RISE Research Institutes of Sweden <www.ri.se>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -96,6 +97,19 @@ struct __esf {
 	RV_FP_TYPE fa5;		/* function argument */
 	RV_FP_TYPE fa6;		/* function argument */
 	RV_FP_TYPE fa7;		/* function argument */
+#endif
+
+#if defined(CONFIG_USERSPACE)
+	ulong_t pmpcfg0;	/* PMP configuration register */
+	ulong_t pmpcfg1;	/* PMP configuration register */
+	ulong_t pmpaddr0;	/* PMP address register */
+	ulong_t pmpaddr1;	/* PMP address register */
+	ulong_t pmpaddr2;	/* PMP address register */
+	ulong_t pmpaddr3;	/* PMP address register */
+	ulong_t pmpaddr4;	/* PMP address register */
+	ulong_t pmpaddr5;	/* PMP address register */
+	ulong_t pmpaddr6;	/* PMP address register */
+	ulong_t pmpaddr7;	/* PMP address register */
 #endif
 
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE

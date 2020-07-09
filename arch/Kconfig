@@ -55,6 +55,7 @@ config RISCV
 	bool
 	select ARCH_IS_SET
 	select HAS_DTS
+	select GEN_PRIV_STACKS
 	help
 	  RISCV architecture
 
