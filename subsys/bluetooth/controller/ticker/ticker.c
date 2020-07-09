@@ -1916,6 +1916,14 @@ static inline uint32_t ticker_job_insert(struct ticker_instance *instance,
 						   ticker_remainder_inc(ticker);
 			ticker->lazy_current++;
 
+			/* No. of times ticker has skipped its interval */
+			if (ticker->lazy_current > ticker->lazy_periodic) {
+				skip = ticker->lazy_current -
+				       ticker->lazy_periodic;
+			} else {
+				skip = 0U;
+			}
+
 			/* Remove any accumulated drift (possibly added due to
 			 * ticker job execution latencies).
 			 */
