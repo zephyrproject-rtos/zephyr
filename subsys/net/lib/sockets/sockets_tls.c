@@ -140,6 +140,10 @@ struct tls_context {
 #endif /* CONFIG_MBEDTLS */
 };
 
+#if defined(CONFIG_ENTROPY_HAS_DRIVER)
+static const struct device *entropy_dev;
+#endif
+
 static mbedtls_ctr_drbg_context tls_ctr_drbg;
 
 /* A global pool of TLS contexts. */
@@ -178,7 +182,9 @@ static void tls_debug(void *ctx, int level, const char *file,
 #if defined(CONFIG_ENTROPY_HAS_DRIVER)
 static int tls_entropy_func(void *ctx, unsigned char *buf, size_t len)
 {
-	return entropy_get_entropy(ctx, buf, len);
+	ARG_UNUSED(ctx);
+
+	return entropy_get_entropy(entropy_dev, buf, len);
 }
 #else
 static int tls_entropy_func(void *ctx, unsigned char *buf, size_t len)
@@ -258,12 +264,10 @@ static int tls_init(const struct device *unused)
 
 	int ret;
 	static const unsigned char drbg_seed[] = "zephyr";
-	const struct device *dev = NULL;
 
 #if defined(CONFIG_ENTROPY_HAS_DRIVER)
-	dev = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
-
-	if (!dev) {
+	entropy_dev = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
+	if (!entropy_dev) {
 		NET_ERR("Failed to obtain entropy device");
 		return -ENODEV;
 	}
@@ -278,7 +282,7 @@ static int tls_init(const struct device *unused)
 
 	mbedtls_ctr_drbg_init(&tls_ctr_drbg);
 
-	ret = mbedtls_ctr_drbg_seed(&tls_ctr_drbg, tls_entropy_func, dev,
+	ret = mbedtls_ctr_drbg_seed(&tls_ctr_drbg, tls_entropy_func, NULL,
 				    drbg_seed, sizeof(drbg_seed));
 	if (ret != 0) {
 		mbedtls_ctr_drbg_free(&tls_ctr_drbg);
