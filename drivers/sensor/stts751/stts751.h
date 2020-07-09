@@ -38,6 +38,7 @@ struct stts751_config {
 };
 
 struct stts751_data {
+	const struct device *dev;
 	const struct device *bus;
 	int16_t sample_temp;
 
@@ -54,7 +55,6 @@ struct stts751_data {
 
 	struct sensor_trigger data_ready_trigger;
 	sensor_trigger_handler_t thsld_handler;
-	const struct device *dev;
 
 #if defined(CONFIG_STTS751_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_STTS751_THREAD_STACK_SIZE);

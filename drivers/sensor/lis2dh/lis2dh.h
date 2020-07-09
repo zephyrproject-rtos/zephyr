@@ -235,6 +235,7 @@ struct lis2dh_data {
 	uint32_t scale;
 
 #ifdef CONFIG_LIS2DH_TRIGGER
+	const struct device *dev;
 	const struct device *gpio_int1;
 	const struct device *gpio_int2;
 	struct gpio_callback gpio_int1_cb;
@@ -251,7 +252,6 @@ struct lis2dh_data {
 	struct k_sem gpio_sem;
 #elif defined(CONFIG_LIS2DH_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	const struct device *dev;
 #endif
 
 #endif /* CONFIG_LIS2DH_TRIGGER */

@@ -79,9 +79,8 @@ static int iis2dh_handle_drdy_int(const struct device *dev)
  * iis2dh_handle_interrupt - handle the drdy event
  * read data and call handler if registered any
  */
-static void iis2dh_handle_interrupt(void *arg)
+static void iis2dh_handle_interrupt(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	struct iis2dh_data *iis2dh = dev->data;
 	const struct iis2dh_device_config *cfg = dev->config;
 
@@ -112,16 +111,11 @@ static void iis2dh_gpio_callback(const struct device *dev,
 }
 
 #ifdef CONFIG_IIS2DH_TRIGGER_OWN_THREAD
-static void iis2dh_thread(int dev_ptr, int unused)
+static void iis2dh_thread(struct iis2dh_data *iis2dh)
 {
-	const struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct iis2dh_data *iis2dh = dev->data;
-
-	ARG_UNUSED(unused);
-
 	while (1) {
 		k_sem_take(&iis2dh->gpio_sem, K_FOREVER);
-		iis2dh_handle_interrupt(dev);
+		iis2dh_handle_interrupt(iis2dh->dev);
 	}
 }
 #endif /* CONFIG_IIS2DH_TRIGGER_OWN_THREAD */
@@ -150,17 +144,18 @@ int iis2dh_init_interrupt(const struct device *dev)
 		return -EINVAL;
 	}
 
+	iis2dh->dev = dev;
+
 #if defined(CONFIG_IIS2DH_TRIGGER_OWN_THREAD)
 	k_sem_init(&iis2dh->gpio_sem, 0, UINT_MAX);
 
 	k_thread_create(&iis2dh->thread, iis2dh->thread_stack,
 		       CONFIG_IIS2DH_THREAD_STACK_SIZE,
-		       (k_thread_entry_t)iis2dh_thread, dev,
+		       (k_thread_entry_t)iis2dh_thread, iis2dh,
 		       0, NULL, K_PRIO_COOP(CONFIG_IIS2DH_THREAD_PRIORITY),
 		       0, K_NO_WAIT);
 #elif defined(CONFIG_IIS2DH_TRIGGER_GLOBAL_THREAD)
 	iis2dh->work.handler = iis2dh_work_cb;
-	iis2dh->dev = dev;
 #endif /* CONFIG_IIS2DH_TRIGGER_OWN_THREAD */
 
 	iis2dh->gpio_pin = cfg->int_gpio_pin;

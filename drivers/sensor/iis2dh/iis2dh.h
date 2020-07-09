@@ -64,6 +64,7 @@ struct iis2dh_data {
 
 	stmdev_ctx_t *ctx;
 #ifdef CONFIG_IIS2DH_TRIGGER
+	const struct device *dev;
 	const struct device *gpio;
 	uint8_t gpio_pin;
 	struct gpio_callback gpio_cb;
@@ -74,7 +75,6 @@ struct iis2dh_data {
 	struct k_sem gpio_sem;
 #elif defined(CONFIG_IIS2DH_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	const struct device *dev;
 #endif /* CONFIG_IIS2DH_TRIGGER_GLOBAL_THREAD */
 #endif /* CONFIG_IIS2DH_TRIGGER */
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)

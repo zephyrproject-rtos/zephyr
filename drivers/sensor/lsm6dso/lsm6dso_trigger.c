@@ -161,9 +161,8 @@ int lsm6dso_trigger_set(const struct device *dev,
  * lsm6dso_handle_interrupt - handle the drdy event
  * read data and call handler if registered any
  */
-static void lsm6dso_handle_interrupt(void *arg)
+static void lsm6dso_handle_interrupt(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct lsm6dso_data *lsm6dso = dev->data;
 	struct sensor_trigger drdy_trigger = {
 		.type = SENSOR_TRIG_DATA_READY,
@@ -224,16 +223,11 @@ static void lsm6dso_gpio_callback(const struct device *dev,
 }
 
 #ifdef CONFIG_LSM6DSO_TRIGGER_OWN_THREAD
-static void lsm6dso_thread(int dev_ptr, int unused)
+static void lsm6dso_thread(struct lsm6dso_data *lsm6dso)
 {
-	const struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct lsm6dso_data *lsm6dso = dev->data;
-
-	ARG_UNUSED(unused);
-
 	while (1) {
 		k_sem_take(&lsm6dso->gpio_sem, K_FOREVER);
-		lsm6dso_handle_interrupt(dev);
+		lsm6dso_handle_interrupt(lsm6dso->dev);
 	}
 }
 #endif /* CONFIG_LSM6DSO_TRIGGER_OWN_THREAD */
@@ -261,15 +255,14 @@ int lsm6dso_init_interrupt(const struct device *dev)
 			    cfg->int_gpio_port);
 		return -EINVAL;
 	}
-	lsm6dso->dev = dev;
 
 #if defined(CONFIG_LSM6DSO_TRIGGER_OWN_THREAD)
 	k_sem_init(&lsm6dso->gpio_sem, 0, UINT_MAX);
 
 	k_thread_create(&lsm6dso->thread, lsm6dso->thread_stack,
 			CONFIG_LSM6DSO_THREAD_STACK_SIZE,
-			(k_thread_entry_t)lsm6dso_thread, dev,
-			0, NULL, K_PRIO_COOP(CONFIG_LSM6DSO_THREAD_PRIORITY),
+			(k_thread_entry_t)lsm6dso_thread, lsm6dso,
+			NULL, NULL, K_PRIO_COOP(CONFIG_LSM6DSO_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_LSM6DSO_TRIGGER_GLOBAL_THREAD)
 	lsm6dso->work.handler = lsm6dso_work_cb;

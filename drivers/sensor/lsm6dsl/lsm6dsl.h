@@ -650,6 +650,7 @@ struct lsm6dsl_data {
 	uint8_t gyro_fs;
 
 #ifdef CONFIG_LSM6DSL_TRIGGER
+	const struct device *dev;
 	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 
@@ -662,7 +663,6 @@ struct lsm6dsl_data {
 	struct k_sem gpio_sem;
 #elif defined(CONFIG_LSM6DSL_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	const struct device *dev;
 #endif
 
 #endif /* CONFIG_LSM6DSL_TRIGGER */

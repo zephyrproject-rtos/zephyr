@@ -176,6 +176,8 @@ static int lps22hh_init(const struct device *dev)
 	const struct lps22hh_config * const config = dev->config;
 	struct lps22hh_data *data = dev->data;
 
+	data->dev = dev;
+
 	data->bus = device_get_binding(config->master_dev_name);
 	if (!data->bus) {
 		LOG_DBG("bus master not found: %s", config->master_dev_name);

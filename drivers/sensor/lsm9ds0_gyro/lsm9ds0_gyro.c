@@ -338,8 +338,6 @@ static int lsm9ds0_gyro_init(const struct device *dev)
 		LOG_DBG("failed to initialize interrupts");
 		return -EIO;
 	}
-
-	data->dev = dev;
 #endif
 
 	return 0;

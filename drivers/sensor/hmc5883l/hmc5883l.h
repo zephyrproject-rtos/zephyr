@@ -48,6 +48,7 @@ struct hmc5883l_data {
 	uint8_t gain_idx;
 
 #ifdef CONFIG_HMC5883L_TRIGGER
+	const struct device *dev;
 	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 
@@ -60,7 +61,6 @@ struct hmc5883l_data {
 	struct k_sem gpio_sem;
 #elif defined(CONFIG_HMC5883L_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	const struct device *dev;
 #endif
 
 #endif /* CONFIG_HMC5883L_TRIGGER */

@@ -117,6 +117,7 @@ struct lis2dw12_data {
 
 	stmdev_ctx_t *ctx;
 #ifdef CONFIG_LIS2DW12_TRIGGER
+	const struct device *dev;
 	const struct device *gpio;
 	uint8_t gpio_pin;
 	struct gpio_callback gpio_cb;
@@ -131,7 +132,6 @@ struct lis2dw12_data {
 	struct k_sem gpio_sem;
 #elif defined(CONFIG_LIS2DW12_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	const struct device *dev;
 #endif /* CONFIG_LIS2DW12_TRIGGER_GLOBAL_THREAD */
 #endif /* CONFIG_LIS2DW12_TRIGGER */
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)

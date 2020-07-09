@@ -295,6 +295,8 @@ static int lis2mdl_init(const struct device *dev)
 	struct lis2mdl_data *lis2mdl = dev->data;
 	uint8_t wai;
 
+	lis2mdl->dev = dev;
+
 	if (lis2mdl_init_interface(dev)) {
 		return -EINVAL;
 	}

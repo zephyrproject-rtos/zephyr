@@ -82,11 +82,9 @@ static void bmc150_magn_gpio_drdy_callback(const struct device *dev,
 	k_sem_give(&data->sem);
 }
 
-static void bmc150_magn_thread_main(void *arg1, void *arg2, void *arg3)
+static void bmc150_magn_thread_main(struct bmc150_magn_data *data)
 {
-	const struct device *dev = (const struct device *) arg1;
-	struct bmc150_magn_data *data = dev->data;
-	const struct bmc150_magn_config *config = dev->config;
+	const struct bmc150_magn_config *config = data->dev->config;
 	uint8_t reg_val;
 
 	while (1) {
@@ -100,10 +98,10 @@ static void bmc150_magn_thread_main(void *arg1, void *arg2, void *arg3)
 		}
 
 		if (data->handler_drdy) {
-			data->handler_drdy(dev, &data->trigger_drdy);
+			data->handler_drdy(data->dev, &data->trigger_drdy);
 		}
 
-		setup_drdy(dev, true);
+		setup_drdy(data->dev, true);
 	}
 }
 
@@ -150,7 +148,8 @@ int bmc150_magn_init_interrupt(const struct device *dev)
 
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_BMC150_MAGN_TRIGGER_THREAD_STACK,
-			bmc150_magn_thread_main, dev, NULL, NULL,
+			(k_thread_entry_t)bmc150_magn_thread_main,
+			data, NULL, NULL,
 			K_PRIO_COOP(10), 0, K_NO_WAIT);
 
 	data->gpio_drdy = device_get_binding(config->gpio_drdy_dev_name);

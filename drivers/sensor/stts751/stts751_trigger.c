@@ -55,9 +55,8 @@ int stts751_trigger_set(const struct device *dev,
  * stts751_handle_interrupt - handle the thsld event
  * read data and call handler if registered any
  */
-static void stts751_handle_interrupt(void *arg)
+static void stts751_handle_interrupt(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct stts751_data *stts751 = dev->data;
 	const struct stts751_config *cfg = dev->config;
 	struct sensor_trigger thsld_trigger = {
@@ -95,16 +94,11 @@ static void stts751_gpio_callback(const struct device *dev,
 }
 
 #ifdef CONFIG_STTS751_TRIGGER_OWN_THREAD
-static void stts751_thread(int dev_ptr, int unused)
+static void stts751_thread(struct stts751_data *stts751)
 {
-	const struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct stts751_data *stts751 = dev->data;
-
-	ARG_UNUSED(unused);
-
 	while (1) {
 		k_sem_take(&stts751->gpio_sem, K_FOREVER);
-		stts751_handle_interrupt(dev);
+		stts751_handle_interrupt(stts751->dev);
 	}
 }
 #endif /* CONFIG_STTS751_TRIGGER_OWN_THREAD */
@@ -131,16 +125,15 @@ int stts751_init_interrupt(const struct device *dev)
 		LOG_DBG("Cannot get pointer to %s device", cfg->event_port);
 		return -EINVAL;
 	}
-	stts751->dev = dev;
 
 #if defined(CONFIG_STTS751_TRIGGER_OWN_THREAD)
 	k_sem_init(&stts751->gpio_sem, 0, UINT_MAX);
 
 	k_thread_create(&stts751->thread, stts751->thread_stack,
-		       CONFIG_STTS751_THREAD_STACK_SIZE,
-		       (k_thread_entry_t)stts751_thread, dev,
-		       0, NULL, K_PRIO_COOP(CONFIG_STTS751_THREAD_PRIORITY),
-		       0, K_NO_WAIT);
+			CONFIG_STTS751_THREAD_STACK_SIZE,
+			(k_thread_entry_t)stts751_thread, stts751,
+			NULL, NULL, K_PRIO_COOP(CONFIG_STTS751_THREAD_PRIORITY),
+			0, K_NO_WAIT);
 #elif defined(CONFIG_STTS751_TRIGGER_GLOBAL_THREAD)
 	stts751->work.handler = stts751_work_cb;
 #endif /* CONFIG_STTS751_TRIGGER_OWN_THREAD */

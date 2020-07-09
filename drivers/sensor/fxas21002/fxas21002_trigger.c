@@ -47,9 +47,8 @@ static int fxas21002_handle_drdy_int(const struct device *dev)
 	return 0;
 }
 
-static void fxas21002_handle_int(void *arg)
+static void fxas21002_handle_int(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct fxas21002_config *config = dev->config;
 	struct fxas21002_data *data = dev->data;
 	uint8_t int_source;
@@ -74,17 +73,11 @@ static void fxas21002_handle_int(void *arg)
 }
 
 #ifdef CONFIG_FXAS21002_TRIGGER_OWN_THREAD
-static void fxas21002_thread_main(void *arg1, void *unused1, void *unused2)
+static void fxas21002_thread_main(struct fxas21002_data *data)
 {
-	const struct device *dev = (const struct device *)arg1;
-	struct fxas21002_data *data = dev->data;
-
-	ARG_UNUSED(unused1);
-	ARG_UNUSED(unused2);
-
 	while (true) {
 		k_sem_take(&data->trig_sem, K_FOREVER);
-		fxas21002_handle_int(dev);
+		fxas21002_handle_int(data->dev);
 	}
 }
 #endif
@@ -175,15 +168,17 @@ int fxas21002_trigger_init(const struct device *dev)
 	struct fxas21002_data *data = dev->data;
 	uint8_t ctrl_reg2;
 
+	data->dev = dev;
+
 #if defined(CONFIG_FXAS21002_TRIGGER_OWN_THREAD)
 	k_sem_init(&data->trig_sem, 0, UINT_MAX);
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_FXAS21002_THREAD_STACK_SIZE,
-			fxas21002_thread_main, dev, 0, NULL,
-			K_PRIO_COOP(CONFIG_FXAS21002_THREAD_PRIORITY), 0, K_NO_WAIT);
+			(k_thread_entry_t)fxas21002_thread_main, data, 0, NULL,
+			K_PRIO_COOP(CONFIG_FXAS21002_THREAD_PRIORITY),
+			0, K_NO_WAIT);
 #elif defined(CONFIG_FXAS21002_TRIGGER_GLOBAL_THREAD)
 	data->work.handler = fxas21002_work_handler;
-	data->dev = dev;
 #endif
 
 	/* Route the interrupts to INT1/INT2 pins */

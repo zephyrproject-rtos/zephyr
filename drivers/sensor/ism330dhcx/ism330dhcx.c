@@ -694,6 +694,8 @@ static int ism330dhcx_init_chip(const struct device *dev)
 	struct ism330dhcx_data *ism330dhcx = dev->data;
 	uint8_t chip_id;
 
+	ism330dhcx->dev = dev;
+
 	if (ism330dhcx_device_id_get(ism330dhcx->ctx, &chip_id) < 0) {
 		LOG_DBG("Failed reading chip id");
 		return -EIO;

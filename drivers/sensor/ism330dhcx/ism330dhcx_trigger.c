@@ -161,9 +161,8 @@ int ism330dhcx_trigger_set(const struct device *dev,
  * ism330dhcx_handle_interrupt - handle the drdy event
  * read data and call handler if registered any
  */
-static void ism330dhcx_handle_interrupt(void *arg)
+static void ism330dhcx_handle_interrupt(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct ism330dhcx_data *ism330dhcx = dev->data;
 	struct sensor_trigger drdy_trigger = {
 		.type = SENSOR_TRIG_DATA_READY,
@@ -224,16 +223,11 @@ static void ism330dhcx_gpio_callback(const struct device *dev,
 }
 
 #ifdef CONFIG_ISM330DHCX_TRIGGER_OWN_THREAD
-static void ism330dhcx_thread(int dev_ptr, int unused)
+static void ism330dhcx_thread(struct ism330dhcx_data *ism330dhcx)
 {
-	const struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct ism330dhcx_data *ism330dhcx = dev->data;
-
-	ARG_UNUSED(unused);
-
 	while (1) {
 		k_sem_take(&ism330dhcx->gpio_sem, K_FOREVER);
-		ism330dhcx_handle_interrupt(dev);
+		ism330dhcx_handle_interrupt(ism330dhcx->dev);
 	}
 }
 #endif /* CONFIG_ISM330DHCX_TRIGGER_OWN_THREAD */
@@ -260,15 +254,15 @@ int ism330dhcx_init_interrupt(const struct device *dev)
 		LOG_ERR("Cannot get pointer to %s device", cfg->int_gpio_port);
 		return -EINVAL;
 	}
-	ism330dhcx->dev = dev;
 
 #if defined(CONFIG_ISM330DHCX_TRIGGER_OWN_THREAD)
 	k_sem_init(&ism330dhcx->gpio_sem, 0, UINT_MAX);
 
 	k_thread_create(&ism330dhcx->thread, ism330dhcx->thread_stack,
 			CONFIG_ISM330DHCX_THREAD_STACK_SIZE,
-			(k_thread_entry_t)ism330dhcx_thread, dev,
-			0, NULL, K_PRIO_COOP(CONFIG_ISM330DHCX_THREAD_PRIORITY),
+			(k_thread_entry_t)ism330dhcx_thread,
+			ism330dhcx, NULL, NULL,
+			K_PRIO_COOP(CONFIG_ISM330DHCX_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_ISM330DHCX_TRIGGER_GLOBAL_THREAD)
 	ism330dhcx->work.handler = ism330dhcx_work_cb;

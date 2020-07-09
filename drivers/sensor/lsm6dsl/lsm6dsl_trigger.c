@@ -76,9 +76,8 @@ static void lsm6dsl_gpio_callback(const struct device *dev,
 	handle_irq(drv_data);
 }
 
-static void lsm6dsl_thread_cb(void *arg)
+static void lsm6dsl_thread_cb(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct lsm6dsl_data *drv_data = dev->data;
 
 	if (drv_data->data_ready_handler != NULL) {
@@ -90,16 +89,11 @@ static void lsm6dsl_thread_cb(void *arg)
 }
 
 #ifdef CONFIG_LSM6DSL_TRIGGER_OWN_THREAD
-static void lsm6dsl_thread(int dev_ptr, int unused)
+static void lsm6dsl_thread(struct lsm6dsl_data *drv_data)
 {
-	const struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct lsm6dsl_data *drv_data = dev->data;
-
-	ARG_UNUSED(unused);
-
 	while (1) {
 		k_sem_take(&drv_data->gpio_sem, K_FOREVER);
-		lsm6dsl_thread_cb(dev);
+		lsm6dsl_thread_cb(drv_data->dev);
 	}
 }
 #endif
@@ -149,17 +143,18 @@ int lsm6dsl_init_interrupt(const struct device *dev)
 		return -EIO;
 	}
 
+	drv_data->dev = dev;
+
 #if defined(CONFIG_LSM6DSL_TRIGGER_OWN_THREAD)
 	k_sem_init(&drv_data->gpio_sem, 0, UINT_MAX);
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
 			CONFIG_LSM6DSL_THREAD_STACK_SIZE,
-			(k_thread_entry_t)lsm6dsl_thread, dev,
-			0, NULL, K_PRIO_COOP(CONFIG_LSM6DSL_THREAD_PRIORITY),
+			(k_thread_entry_t)lsm6dsl_thread, drv_data,
+			NULL, NULL, K_PRIO_COOP(CONFIG_LSM6DSL_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_LSM6DSL_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = lsm6dsl_work_cb;
-	drv_data->dev = dev;
 #endif
 
 	setup_irq(drv_data, true);

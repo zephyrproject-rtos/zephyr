@@ -81,19 +81,16 @@ static void lsm9ds0_gyro_gpio_drdy_callback(const struct device *dev,
 	k_sem_give(&data->sem);
 }
 
-static void lsm9ds0_gyro_thread_main(void *arg1, void *arg2, void *arg3)
+static void lsm9ds0_gyro_thread_main(struct lsm9ds0_gyro_data *data)
 {
-	const struct device *dev = (const struct device *) arg1;
-	struct lsm9ds0_gyro_data *data = dev->data;
-
 	while (1) {
 		k_sem_take(&data->sem, K_FOREVER);
 
 		if (data->handler_drdy) {
-			data->handler_drdy(dev, &data->trigger_drdy);
+			data->handler_drdy(data->dev, &data->trigger_drdy);
 		}
 
-		setup_drdy(dev, true);
+		setup_drdy(data->dev, true);
 	}
 }
 
@@ -103,12 +100,13 @@ int lsm9ds0_gyro_init_interrupt(const struct device *dev)
 					   dev->config;
 	struct lsm9ds0_gyro_data *data = dev->data;
 
+	data->dev = dev;
 	k_sem_init(&data->sem, 0, UINT_MAX);
 
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_LSM9DS0_GYRO_THREAD_STACK_SIZE,
-			lsm9ds0_gyro_thread_main, dev, NULL, NULL,
-			K_PRIO_COOP(10), 0, K_NO_WAIT);
+			(k_thread_entry_t)lsm9ds0_gyro_thread_main,
+			data, NULL, NULL, K_PRIO_COOP(10), 0, K_NO_WAIT);
 
 	data->gpio_drdy = device_get_binding(config->gpio_drdy_dev_name);
 	if (!data->gpio_drdy) {

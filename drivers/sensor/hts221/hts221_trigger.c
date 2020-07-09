@@ -95,16 +95,11 @@ static void hts221_drdy_callback(const struct device *dev,
 }
 
 #ifdef CONFIG_HTS221_TRIGGER_OWN_THREAD
-static void hts221_thread(int dev_ptr, int unused)
+static void hts221_thread(struct hts221_data *data)
 {
-	const struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct hts221_data *data = dev->data;
-
-	ARG_UNUSED(unused);
-
 	while (1) {
 		k_sem_take(&data->drdy_sem, K_FOREVER);
-		process_drdy(dev);
+		process_drdy(data->dev);
 	}
 }
 #endif
@@ -157,8 +152,8 @@ int hts221_init_interrupt(const struct device *dev)
 
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_HTS221_THREAD_STACK_SIZE,
-			(k_thread_entry_t)hts221_thread, dev,
-			0, NULL, K_PRIO_COOP(CONFIG_HTS221_THREAD_PRIORITY),
+			(k_thread_entry_t)hts221_thread, data,
+			NULL, NULL, K_PRIO_COOP(CONFIG_HTS221_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_HTS221_TRIGGER_GLOBAL_THREAD)
 	data->work.handler = hts221_work_cb;

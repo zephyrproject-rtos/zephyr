@@ -138,6 +138,7 @@ struct lsm6dso_tf {
 #define LSM6DSO_SHUB_MAX_NUM_SLVS			2
 
 struct lsm6dso_data {
+	const struct device *dev;
 	const struct device *bus;
 	int16_t acc[3];
 	uint32_t acc_gain;
@@ -177,7 +178,6 @@ struct lsm6dso_data {
 	sensor_trigger_handler_t handler_drdy_acc;
 	sensor_trigger_handler_t handler_drdy_gyr;
 	sensor_trigger_handler_t handler_drdy_temp;
-	const struct device *dev;
 
 #if defined(CONFIG_LSM6DSO_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_LSM6DSO_THREAD_STACK_SIZE);

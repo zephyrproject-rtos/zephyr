@@ -49,6 +49,7 @@ struct lis2mdl_config {
 
 /* Sensor data */
 struct lis2mdl_data {
+	const struct device *dev;
 	const struct device *bus;
 	uint16_t i2c_addr;
 	int16_t mag[3];
@@ -67,7 +68,6 @@ struct lis2mdl_data {
 	struct gpio_callback gpio_cb;
 
 	sensor_trigger_handler_t handler_drdy;
-	const struct device *dev;
 
 #if defined(CONFIG_LIS2MDL_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_LIS2MDL_THREAD_STACK_SIZE);
