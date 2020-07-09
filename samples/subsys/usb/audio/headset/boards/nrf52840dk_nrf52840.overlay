@@ -8,10 +8,12 @@
 	hs_0 {
 		label = "HEADSET";
 		compatible = "usb-audio-hs";
+		mic-frequency = < 44100 48000 >;
 		mic-feature-mute;
 		mic-channel-l;
 		mic-channel-r;
 
+		hp-frequency = < 44100 48000 >;
 		hp-feature-mute;
 		hp-channel-l;
 		hp-channel-r;

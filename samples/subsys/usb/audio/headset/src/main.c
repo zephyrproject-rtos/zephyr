@@ -52,9 +52,18 @@ static void feature_update(struct device *dev,
 	}
 }
 
+static void sampling_freq_update(struct device *dev,
+				 enum usb_audio_direction dir,
+				 const uint32_t freq)
+{
+	LOG_INF("Changed sampling frequency: %u direction %s", freq,
+		(dir == USB_AUDIO_IN) ? log_strdup("in") : log_strdup("out"));
+}
+
 static const struct usb_audio_ops ops = {
 	.data_received_cb = data_received,
 	.feature_update_cb = feature_update,
+	.sampling_freq_update_cb = sampling_freq_update,
 };
 
 void main(void)
