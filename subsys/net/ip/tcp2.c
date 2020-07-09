@@ -1203,7 +1203,7 @@ next_state:
 			}
 		}
 
-		if (len) {
+		if (th && len) {
 			if (th_seq(th) == conn->ack) {
 				if (tcp_data_get(conn, pkt) < 0) {
 					break;
