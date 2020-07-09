@@ -206,6 +206,7 @@ config USERSPACE
 	bool "User mode threads"
 	depends on ARCH_HAS_USERSPACE
 	depends on RUNTIME_ERROR_CHECKS
+	select SRAM_REGION_PERMISSIONS if MMU
 	help
 	  When enabled, threads may be created or dropped down to user mode,
 	  which has significantly restricted permissions and must interact
@@ -501,6 +502,17 @@ config MMU_PAGE_SIZE
 	help
 	  Size of memory pages. Varies per MMU but 4K is common. For MMUs that
 	  support multiple page sizes, put the smallest one here.
+
+config SRAM_REGION_PERMISSIONS
+	bool "Assign appropriate permissions to kernel areas in SRAM"
+	depends on MMU
+	default y
+	help
+	  If enabled, the program text, rodata, and data parts of the kernel in
+	  the permanent mappings created at build time will have appropriate
+	  permissions set. Uses extra memory due to page-alignment constraints.
+	  If not enabled, all SRAM mappings will allow supervisor mode to
+	  read, write, and execute. User mode support requires this.
 
 config MEMORY_PROTECTION
 	bool
