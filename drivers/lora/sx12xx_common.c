@@ -1,15 +1,19 @@
 /*
  * Copyright (c) 2019 Manivannan Sadhasivam
+ * Copyright (c) 2020 Grinn
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <drivers/gpio.h>
 #include <drivers/lora.h>
 #include <logging/log.h>
 #include <zephyr.h>
 
 /* LoRaMac-node specific includes */
 #include <radio.h>
+
+#include "sx12xx_common.h"
 
 LOG_MODULE_REGISTER(sx12xx_common, CONFIG_LORA_LOG_LEVEL);
 
@@ -21,6 +25,27 @@ static struct sx12xx_data {
 	int8_t snr;
 	int16_t rssi;
 } dev_data;
+
+int __sx12xx_configure_pin(struct device **dev, const char *controller,
+			   gpio_pin_t pin, gpio_flags_t flags)
+{
+	int err;
+
+	*dev = device_get_binding(controller);
+	if (!(*dev)) {
+		LOG_ERR("Cannot get pointer to %s device", controller);
+		return -EIO;
+	}
+
+	err = gpio_pin_configure(*dev, pin, flags);
+	if (err) {
+		LOG_ERR("Cannot configure gpio %s %d: %d", controller, pin,
+			err);
+		return err;
+	}
+
+	return 0;
+}
 
 static void sx12xx_ev_rx_done(uint8_t *payload, uint16_t size, int16_t rssi,
 			      int8_t snr)
