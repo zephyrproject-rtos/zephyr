@@ -77,6 +77,10 @@
 	status = "okay";
 };
 
+&wwdt0 {
+	status = "okay";
+};
+
 &flash0 {
 	/*
 	 * For more information, see:

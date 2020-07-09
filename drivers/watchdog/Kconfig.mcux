@@ -14,3 +14,9 @@ config WDT_MCUX_WDOG32
 	depends on HAS_MCUX_WDOG32 && CLOCK_CONTROL
 	help
 	  Enable the mcux wdog32 driver.
+
+config WDT_MCUX_WWDT
+	bool "MCUX WWDT driver"
+	depends on HAS_MCUX_WWDT
+	help
+	  Enable the mcux wwdt driver.

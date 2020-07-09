@@ -18,3 +18,4 @@ supported:
   - arduino_spi
   - gpio
   - spi
+  - watchdog

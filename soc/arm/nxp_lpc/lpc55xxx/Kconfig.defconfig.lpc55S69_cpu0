@@ -24,4 +24,8 @@ config SOC_FLASH_MCUX
 	default y
 	depends on FLASH
 
+config WDT_MCUX_WWDT
+	default y
+	depends on WATCHDOG
+
 endif # SOC_LPC55S69_CPU0
