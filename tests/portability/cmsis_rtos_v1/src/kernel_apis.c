@@ -12,14 +12,15 @@
 
 /* Specify accepted tolerance. On some Zephyr platforms  (e.g. nRF5x) the busy
  * wait loop and the system timer are based on different mechanisms and may not
- * align perfectly.
+ * align perfectly. 1 percent base intolerance is to cover CPU processing in the
+ * test.
  */
 #if CONFIG_NRF_RTC_TIMER
 /* High frequency clock used for k_busy_wait may have up to 8% tolerance.
  * Additionally, if RC is used for low frequency clock then it has 5% tolerance.
  */
 #define TOLERANCE_PPC \
-	1 + 8 + (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC) ? 5 : 0)
+	(1 + 8 + (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC) ? 5 : 0))
 #else
 #define TOLERANCE_PPC 1
 #endif
