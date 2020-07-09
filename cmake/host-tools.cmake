@@ -54,7 +54,7 @@ else()
 
   execute_process(
     COMMAND ${PYTHON_EXECUTABLE} -c
-    "from west.util import west_topdir; print(west_topdir())"
+    "import pathlib; from west.util import west_topdir; print(pathlib.Path(west_topdir()).as_posix())"
     OUTPUT_VARIABLE  WEST_TOPDIR
     OUTPUT_STRIP_TRAILING_WHITESPACE
     WORKING_DIRECTORY ${ZEPHYR_BASE}
