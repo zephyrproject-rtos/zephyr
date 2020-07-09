@@ -24,6 +24,7 @@ LOG_MODULE_REGISTER(sample_driver);
 	((struct sample_driver_foo_dev_data *const)(dev)->data)
 
 struct sample_driver_foo_dev_data {
+	const struct device *dev;
 	sample_driver_callback_t cb;
 	void *cb_context;
 	struct k_timer timer; /* to fake 'interrupts' */
@@ -57,7 +58,7 @@ static int sample_driver_foo_state_set(const struct device *dev, bool active)
 
 	LOG_DBG("%s(%p, %d)", __func__, dev, active);
 
-	data->timer.user_data = dev;
+	data->timer.user_data = data;
 	if (active) {
 		k_timer_start(&data->timer, K_MSEC(100), K_MSEC(100));
 	} else {
@@ -75,8 +76,7 @@ static struct sample_driver_api sample_driver_foo_api = {
 
 static void sample_driver_foo_isr(void *param)
 {
-	const struct device *dev = param;
-	struct sample_driver_foo_dev_data *data = DEV_DATA(dev);
+	struct sample_driver_foo_dev_data *data = param;
 
 	char data_payload[SAMPLE_DRIVER_MSG_SIZE];
 
@@ -85,7 +85,7 @@ static void sample_driver_foo_isr(void *param)
 
 	/* Just for demonstration purposes; the data payload is full of junk */
 	if (data->cb) {
-		data->cb(dev, data->cb_context, data_payload);
+		data->cb(data->dev, data->cb_context, data_payload);
 	}
 
 	data->count++;
@@ -103,6 +103,8 @@ static int sample_driver_foo_init(const struct device *dev)
 	k_timer_init(&data->timer, sample_driver_timer_cb, NULL);
 
 	LOG_DBG("initialized foo sample driver %p", dev);
+
+	data->dev = dev;
 
 	return 0;
 }
