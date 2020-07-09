@@ -13,6 +13,7 @@
 	aliases {
 		gpio-0 = &gpio0;
 		gpio-1 = &gpio1;
+		watchdog0 = &wwdt0;
 	};
 
 	chosen {
@@ -211,6 +212,15 @@
 		reg = <0x3a000 0x1000>;
 		status = "okay";
 		label = "RNG";
+	};
+
+	wwdt0: watchdog@c000 {
+		compatible = "nxp,lpc-wwdt";
+		reg = <0xc000 0x1000>;
+		interrupts = <0 0>;
+		status = "disabled";
+		clk-divider = <1>;
+		label = "WWDT_0";
 	};
 };
 

@@ -68,6 +68,8 @@ features:
 +-----------+------------+-------------------------------------+
 | USART     | on-chip    | serial port-polling                 |
 +-----------+------------+-------------------------------------+
+| WWDT      | on-chip    | windowed watchdog timer             |
++-----------+------------+-------------------------------------+
 
 The default configuration file
 ``boards/arm/lpcxpresso55s69/lpcxpresso55s69_cpu0_defconfig``
