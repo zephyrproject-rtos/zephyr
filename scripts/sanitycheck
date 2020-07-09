@@ -304,6 +304,10 @@ Artificially long but functional example:
         "--retry-failed", type=int, default=0,
         help="Retry failing tests again, up to the number of times specified.")
 
+    parser.add_argument(
+        "--retry-interval", type=int, default=60,
+        help="Retry failing tests after specified period of time.")
+
     test_xor_subtest = case_select.add_mutually_exclusive_group()
 
     test_xor_subtest.add_argument(
@@ -935,7 +939,7 @@ def main():
         last_run = os.path.join(options.outdir, "sanitycheck.csv")
 
     if options.only_failed:
-        suite.load_from_file(last_run, filter_status=['error', 'skipped', 'passed'])
+        suite.load_from_file(last_run, filter_status=['skipped', 'passed'])
         suite.selected_platforms = set(p.platform.name for p in suite.instances.values())
     elif options.load_tests:
         suite.load_from_file(options.load_tests)
@@ -1065,15 +1069,15 @@ def main():
 
         if completed > 1:
             logger.info("%d Iteration:" % (completed))
-            time.sleep(60)  # waiting for the system to settle down
+            time.sleep(options.retry_interval)  # waiting for the system to settle down
             suite.total_done = suite.total_tests - suite.total_failed
-            suite.total_failed = 0
+            suite.total_failed = suite.total_errors
 
         suite.execute()
         print("")
 
         retries = retries - 1
-        if retries == 0 or suite.total_failed == 0:
+        if retries == 0 or suite.total_failed == suite.total_errors:
             break
 
     suite.misc_reports(options.compare_report, options.show_footprint,
