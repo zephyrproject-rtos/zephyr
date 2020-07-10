@@ -871,7 +871,7 @@ static inline int z_vrfy_k_float_disable(struct k_thread *thread)
 #ifdef CONFIG_IRQ_OFFLOAD
 static K_SEM_DEFINE(offload_sem, 1, 1);
 
-void irq_offload(irq_offload_routine_t routine, void *parameter)
+void irq_offload(irq_offload_routine_t routine, const void *parameter)
 {
 	k_sem_take(&offload_sem, K_FOREVER);
 	arch_irq_offload(routine, parameter);
