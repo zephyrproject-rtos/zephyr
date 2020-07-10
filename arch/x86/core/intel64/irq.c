@@ -83,7 +83,8 @@ static int allocate_vector(unsigned int priority)
  */
 
 int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			     void (*func)(void *arg), void *arg, uint32_t flags)
+			     void (*func)(const void *arg),
+			     const void *arg, uint32_t flags)
 {
 	uint32_t key;
 	int vector;

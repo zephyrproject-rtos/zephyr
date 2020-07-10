@@ -165,7 +165,7 @@ void z_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
  * @return N/A
  */
 
-void z_irq_spurious(void *unused)
+void z_irq_spurious(const void *unused)
 {
 	ARG_UNUSED(unused);
 	z_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
@@ -173,8 +173,8 @@ void z_irq_spurious(void *unused)
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			     void (*routine)(void *parameter), void *parameter,
-			     uint32_t flags)
+			     void (*routine)(const void *parameter),
+			     const void *parameter, uint32_t flags)
 {
 	z_isr_install(irq, routine, parameter);
 	z_irq_priority_set(irq, priority, flags);

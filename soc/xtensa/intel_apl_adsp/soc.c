@@ -140,8 +140,8 @@ out:
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 int z_soc_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			      void (*routine)(void *parameter),
-			      void *parameter, uint32_t flags)
+			      void (*routine)(const void *parameter),
+			      const void *parameter, uint32_t flags)
 {
 	uint32_t table_idx;
 	uint32_t cavs_irq, cavs_idx;
