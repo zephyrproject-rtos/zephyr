@@ -34,7 +34,8 @@ static void ipm_dummy_isr(void *data)
 	}
 
 	if (driver_data->cb) {
-		driver_data->cb(driver_data->cb_context, driver_data->regs.id,
+		driver_data->cb(d,
+				driver_data->cb_context, driver_data->regs.id,
 				(volatile void *)&driver_data->regs.data);
 	}
 	driver_data->regs.busy = 0U;
