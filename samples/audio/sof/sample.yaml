@@ -1,0 +1,11 @@
+sample:
+  description: Audio with SOF
+  name: sof
+common:
+    tags: audio
+tests:
+  sample.audio.sof:
+    tags: sof
+    build_only: true
+    integration_platforms:
+      - intel_adsp_cavs15
