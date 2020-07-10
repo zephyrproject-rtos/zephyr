@@ -342,6 +342,8 @@ int bt_mesh_net_decode(struct net_buf_simple *data, enum bt_mesh_net_if net_if,
 void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
 		      enum bt_mesh_net_if net_if);
 
+void bt_mesh_net_loopback_clear(uint16_t net_idx);
+
 uint32_t bt_mesh_next_seq(void);
 
 void bt_mesh_net_start(void);
