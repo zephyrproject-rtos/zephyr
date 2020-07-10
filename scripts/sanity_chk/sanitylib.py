@@ -31,6 +31,7 @@ from distutils.spawn import find_executable
 from colorama import Fore
 import yaml
 import platform
+import json
 
 try:
     import serial
@@ -2442,6 +2443,7 @@ class TestSuite(DisablePyTestCollectionMixin):
             self.xunit_report(filename + ".xml", full_report=False, append=only_failed)
             self.xunit_report(filename + "_report.xml", full_report=True, append=only_failed)
             self.csv_report(filename + ".csv")
+            self.json_report(filename + ".json")
 
             self.target_report(outdir, suffix, append=only_failed)
             if self.discards:
@@ -3096,6 +3098,51 @@ class TestSuite(DisablePyTestCollectionMixin):
                     rowdict["ram_size"] = ram_size
                     rowdict["rom_size"] = rom_size
                 cw.writerow(rowdict)
+
+    def set_default(self, obj):
+        if isinstance(obj,set):
+            return list (obj)
+        raise TypeError
+
+    def json_report(self, filename):
+        with open(filename, "wt") as json_report:
+            for instance in self.instances.values():
+                rowdict = {"test": instance.testcase.name,
+                           "arch": instance.platform.arch,
+                           "platform": instance.platform.name,
+                           "handler": instance.platform.simulation,
+                           "status": instance.status,
+                           "toolchain": TestSuite.get_toolchain(),
+                           "extra_args": instance.testcase.extra_args,
+                           "extra_configs": instance.testcase.extra_configs,
+                           "arch_whitelist": instance.testcase.arch_whitelist,
+                           "arch_exclude": instance.testcase.arch_exclude,
+                           "skip": instance.testcase.skip,
+                           "platform_exclude": instance.testcase.platform_exclude,
+                           "platform_whitelist": instance.testcase.platform_whitelist,
+                           "toolchain_exclude": instance.testcase.toolchain_exclude,
+                           "toolchain_whitelist": instance.testcase.toolchain_whitelist,
+                           "tc_filer": instance.testcase.tc_filter,
+                           "timeout": instance.testcase.timeout,
+                           "min_ram": instance.testcase.min_ram,
+                           "min_flash": instance.testcase.min_flash,
+                           "build_only": instance.testcase.build_only,
+                           "build_on_all": instance.testcase.build_on_all,
+                           "slow": instance.testcase.slow,
+                           "extra_sections": instance.testcase.extra_sections,
+                           "harness": instance.testcase.harness,
+                           "harness_config": instance.testcase.harness_config,
+                           "type": instance.testcase.type,
+                           "tags": instance.testcase.tags
+                           }
+                if instance.status not in ["failed", "timeout"]:
+                    if instance.handler:
+                        rowdict["handler_time"] = instance.metrics.get("handler_time", 0)
+                    ram_size = instance.metrics.get("ram_size", 0)
+                    rom_size = instance.metrics.get("rom_size", 0)
+                    rowdict["ram_size"] = ram_size
+                    rowdict["rom_size"] = rom_size
+                json.dump(rowdict, json_report, indent=4, separators=(',',':'), default=self.set_default)
 
     def get_testcase(self, identifier):
         results = []
