@@ -5,3 +5,7 @@ config SOF
 	bool "Sound Open Firmware (SOF)"
 	help
 	  Build Sound Open Firmware (SOF) support.
+
+if SOF
+rsource "../../modules/audio/sof/Kconfig"
+endif
