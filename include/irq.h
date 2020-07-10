@@ -63,8 +63,8 @@ extern "C" {
  */
 static inline int
 irq_connect_dynamic(unsigned int irq, unsigned int priority,
-		    void (*routine)(void *parameter), void *parameter,
-		    uint32_t flags)
+		    void (*routine)(const void *parameter),
+		    const void *parameter, uint32_t flags)
 {
 	return arch_irq_connect_dynamic(irq, priority, routine, parameter,
 					flags);

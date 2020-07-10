@@ -38,8 +38,8 @@
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 extern int z_soc_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-				     void (*routine)(void *parameter),
-				     void *parameter, uint32_t flags);
+				     void (*routine)(const void *parameter),
+				     const void *parameter, uint32_t flags);
 #endif
 
 #else
