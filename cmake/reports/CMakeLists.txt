@@ -1,18 +1,17 @@
 # SPDX-License-Identifier: Apache-2.0
 
-set(flag_for_ram_report -r)
-set(flag_for_rom_report -F)
+set(flag_for_ram_report ram)
+set(flag_for_rom_report rom)
 
 foreach(report ram_report rom_report)
   add_custom_target(
     ${report}
     ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/footprint/size_report
+    -k ${ZEPHYR_BINARY_DIR}/${KERNEL_ELF_NAME}
+    -z ${ZEPHYR_BASE}
+    -o ${CMAKE_BINARY_DIR}
     ${flag_for_${report}}
-    --objdump ${CMAKE_OBJDUMP}
-    --objcopy ${CMAKE_OBJCOPY}
-    --nm      ${CMAKE_NM}
-    -o ${PROJECT_BINARY_DIR}
     DEPENDS ${logical_target_for_zephyr_elf}
             $<TARGET_PROPERTY:zephyr_property_target,${report}_DEPENDENCIES>
     )

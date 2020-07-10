@@ -1,359 +1,535 @@
 #!/usr/bin/env python3
 #
-# Copyright (c) 2016, Intel Corporation
+# Copyright (c) 2016, 2020 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 
 # Based on a script by:
 #       Chereau, Fabien <fabien.chereau@intel.com>
 
-import os
-import re
 import argparse
-import subprocess
-import json
-import operator
+import os
 import platform
+import sys
+import re
 from pathlib import Path
 
+from distutils.version import LooseVersion
 
-# Return a dict containing {
-#   symbol_name: {:,path/to/file}/symbol
-# }
-# for all symbols from the .elf file. Optionaly strips the path according
-# to the passed sub-path
-def load_symbols_and_paths(bin_nm, elf_file, path_to_strip=""):
-    nm_out = subprocess.check_output(
-        [bin_nm, elf_file, "-S", "-l", "--size-sort", "--radix=d"],
-        universal_newlines=True
-    )
-    for line in nm_out.splitlines():
-        if not line:
-            # Get rid of trailing empty field
-            continue
+import elftools
+from elftools.elf.elffile import ELFFile
+from elftools.elf.sections import SymbolTableSection
+from elftools.dwarf.descriptions import describe_form_class
+from elftools.dwarf.descriptions import (
+    describe_DWARF_expr, set_global_machine_arch)
+from elftools.dwarf.locationlists import (
+    LocationExpr, LocationParser)
 
-        symbol, path = parse_symbol_path_pair(line)
+if LooseVersion(elftools.__version__) < LooseVersion('0.24'):
+    sys.exit("pyelftools is out of date, need version 0.24 or later")
 
-        if path:
-            p_path          = Path(path)
-            p_path_to_strip = Path(path_to_strip)
-            try:
-                processed_path = p_path.relative_to(p_path_to_strip)
-            except ValueError:
-                # path is valid, but is not prefixed by path_to_strip
-                processed_path = p_path
-        else:
-            processed_path = Path(":")
 
-        pathlike_string = processed_path / symbol
+# ELF section flags
+SHF_WRITE = 0x1
+SHF_ALLOC = 0x2
+SHF_EXEC = 0x4
+SHF_WRITE_ALLOC = SHF_WRITE | SHF_ALLOC
+SHF_ALLOC_EXEC = SHF_ALLOC | SHF_EXEC
 
-        yield symbol, pathlike_string
+DT_LOCATION = re.compile(r"\(DW_OP_addr: ([0-9a-f]+)\)")
 
-# Return a pair containing either
-#
-#   (symbol_name, "path/to/file")
-#   or
-#   (symbol_name, "")
-#   or
-#   ("", "")
-#
-#   depending on whether the symbol name and the file are found or not
-# }
-def parse_symbol_path_pair(line):
-    # Line's output from nm might look like this:
-    # '536871152 00000012 b gpio_e	/absolute/path/gpio.c:247'
-    #
-    # We are only trying to extract the symbol and the filename.
-    #
-    # In general lines look something like this:
-    #
-    # 'number number string[\t<symbol>][\t<absolute_path>:line]
-    #
-    # The symbol and file is optional, nm might not find out what a
-    # symbol is named or where it came from.
-    #
-    # NB: <absolute_path> looks different on Windows and Linux
 
-    # Replace tabs with spaces to easily split up the fields (NB:
-    # Whitespace in paths is not supported)
-    line_without_tabs = line.replace('\t', ' ')
+def get_symbol_addr(sym):
+    return sym['st_value']
 
-    fields = line_without_tabs.split()
 
-    assert len(fields) >= 3
+def get_symbol_size(sym):
+    return sym['st_size']
 
-    # When a symbol has been stripped, it's symbol name does not show
-    # in the 'nm' output, but it is still listed as something that
-    # takes up space. We use the empty string to denote these stripped
-    # symbols.
-    symbol_is_missing = len(fields) < 4
-    if symbol_is_missing:
-        symbol = ""
+
+# Given a list of start/end addresses, test if the symbol
+# lies within any of these address ranges
+def is_symbol_in_ranges(sym, ranges):
+    for bound in ranges:
+        if bound['start'] <= sym['st_value'] <= bound['end']:
+            return True
+
+    return False
+
+
+# Get the bounding addresses from a DIE variable or subprogram
+def get_die_mapped_address(die, parser, dwarfinfo):
+    low = None
+    high = None
+
+    if die.tag == 'DW_TAG_variable':
+        if 'DW_AT_location' in die.attributes:
+            loc_attr = die.attributes['DW_AT_location']
+            if parser.attribute_has_location(loc_attr, die.cu['version']):
+                loc = parser.parse_from_attribute(loc_attr, die.cu['version'])
+                if isinstance(loc, LocationExpr):
+                    addr = describe_DWARF_expr(loc.loc_expr,
+                                               dwarfinfo.structs)
+
+                    matcher = DT_LOCATION.match(addr)
+                    if matcher:
+                        low = int(matcher.group(1), 16)
+                        high = low + 1
+
+    if die.tag == 'DW_TAG_subprogram':
+        if 'DW_AT_low_pc' in die.attributes:
+            low = die.attributes['DW_AT_low_pc'].value
+
+            high_pc = die.attributes['DW_AT_high_pc']
+            high_pc_class = describe_form_class(high_pc.form)
+            if high_pc_class == 'address':
+                high = high_pc.value
+            elif high_pc_class == 'constant':
+                high = low + high_pc.value
+
+    return low, high
+
+
+# Find the symbol from a symbol list
+# where it matches the address in DIE variable,
+# or within the range of a DIE subprogram
+def match_symbol_address(symlist, die, parser, dwarfinfo):
+    low, high = get_die_mapped_address(die, parser, dwarfinfo)
+
+    if low is None:
+        return None
+
+    for sym in symlist:
+        if low <= sym['symbol']['st_value'] < high:
+            return sym
+
+    return None
+
+
+def parse_args():
+    global args
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("-k", "--kernel", required=True,
+                        help="Zephyr ELF binary")
+    parser.add_argument("-z", "--zephyrbase", required=True,
+                        help="Zephyr base path")
+    parser.add_argument("-o", "--output", required=True,
+                        help="Output path")
+    parser.add_argument("target", choices=['rom', 'ram'])
+    parser.add_argument("-d", "--depth", dest="depth", type=int,
+                        help="How deep should we go into the tree",
+                        metavar="DEPTH")
+    parser.add_argument("-v", "--verbose", action="store_true",
+                        help="Print extra debugging information")
+    parser.add_argument("--nocolor", action="store_true",
+                        help="No color output")
+
+    args = parser.parse_args()
+
+
+# Fetch the symbols from the symbol table and put them
+# into ROM, RAM buckets
+def get_symbols(elf, addr_ranges):
+    rom_syms = dict()
+    ram_syms = dict()
+    unassigned_syms = dict()
+
+    rom_addr_ranges = addr_ranges['rom']
+    ram_addr_ranges = addr_ranges['ram']
+
+    for section in elf.iter_sections():
+        if isinstance(section, SymbolTableSection):
+            for sym in section.iter_symbols():
+                # Ignore symbols with size == 0
+                if get_symbol_size(sym) == 0:
+                    continue
+
+                found_sec = False
+                entry = {'name': sym.name,
+                         'symbol': sym,
+                         'mapped_files': set()}
+
+                # If symbol is in ROM area?
+                if is_symbol_in_ranges(sym, rom_addr_ranges):
+                    if sym.name not in rom_syms:
+                        rom_syms[sym.name] = list()
+                    rom_syms[sym.name].append(entry)
+                    found_sec = True
+
+                # If symbol is in RAM area?
+                if is_symbol_in_ranges(sym, ram_addr_ranges):
+                    if sym.name not in ram_syms:
+                        ram_syms[sym.name] = list()
+                    ram_syms[sym.name].append(entry)
+                    found_sec = True
+
+                if not found_sec:
+                    unassigned_syms['sym_name'] = entry
+
+    ret = {'rom': rom_syms,
+           'ram': ram_syms,
+           'unassigned': unassigned_syms}
+    return ret
+
+
+# Parse ELF header to find out the address ranges of ROM or RAM sections
+# and their total sizes
+def get_section_ranges(elf):
+    rom_addr_ranges = list()
+    ram_addr_ranges = list()
+    rom_size = 0
+    ram_size = 0
+
+    for section in elf.iter_sections():
+        size = section['sh_size']
+        sec_start = section['sh_addr']
+        sec_end = sec_start + size - 1
+        bound = {'start': sec_start, 'end': sec_end}
+
+        if section['sh_type'] == 'SHT_NOBITS':
+            # BSS and noinit sections
+            ram_addr_ranges.append(bound)
+            ram_size += size
+        elif section['sh_type'] == 'SHT_PROGBITS':
+            # Sections to be in flash or memory
+            flags = section['sh_flags']
+            if (flags & SHF_ALLOC_EXEC) == SHF_ALLOC_EXEC:
+                # Text section
+                rom_addr_ranges.append(bound)
+                rom_size += size
+            elif (flags & SHF_WRITE_ALLOC) == SHF_WRITE_ALLOC:
+                # Data occupies both ROM and RAM
+                # since at boot, content is copied from ROM to RAM
+                rom_addr_ranges.append(bound)
+                rom_size += size
+
+                ram_addr_ranges.append(bound)
+                ram_size += size
+            elif (flags & SHF_ALLOC) == SHF_ALLOC:
+                # Read only data
+                rom_addr_ranges.append(bound)
+                rom_size += size
+
+    ret = {'rom': rom_addr_ranges,
+           'rom_total_size': rom_size,
+           'ram': ram_addr_ranges,
+           'ram_total_size': ram_size}
+    return ret
+
+
+def get_die_filename(die, lineprog):
+    zephyrbase = os.path.normpath(args.zephyrbase)
+
+    file_index = die.attributes['DW_AT_decl_file'].value
+    file_entry = lineprog['file_entry'][file_index - 1]
+
+    dir_index = file_entry['dir_index']
+    if dir_index == 0:
+        filename = file_entry.name
     else:
-        symbol = fields[3]
+        directory = lineprog.header['include_directory'][dir_index - 1]
+        filename = os.path.join(directory, file_entry.name)
 
+    path = Path(filename.decode())
 
-    file_is_missing = len(fields) < 5
-    if file_is_missing:
-        path = ""
-    else:
-        path_with_line_number = fields[4]
+    # Prepend output path to relative path
+    if not path.is_absolute():
+        path = Path(args.output) / path
 
-        # Remove the trailing line number, e.g. 'C:\file.c:237'
-        line_number_index = path_with_line_number.rfind(':')
-        path = path_with_line_number[:line_number_index]
-
-    return (symbol, path)
-
-
-def get_section_size(f, section_name):
-    decimal_size = 0
-    re_res = re.search(r"(.*] " + section_name + ".*)", f, re.MULTILINE)
-    if re_res is not None:
-        # Replace multiple spaces with one space
-        # Skip first characters to avoid having 1 extra random space
-        res = ' '.join(re_res.group(1).split())[5:]
-        decimal_size = int(res.split()[4], 16)
-    return decimal_size
-
-
-def get_footprint_from_bin_and_statfile(
-        bin_file, stat_file, total_flash, total_ram):
-    """Compute flash and RAM memory footprint from a .bin and .stat file"""
-    f = open(stat_file).read()
-
-    # Get kctext + text + ctors + rodata + kcrodata segment size
-    total_used_flash = os.path.getsize(bin_file)
-
-    # getting used ram on target
-    total_used_ram = (get_section_size(f, "noinit") +
-                      get_section_size(f, "bss") +
-                      get_section_size(f, "initlevel") +
-                      get_section_size(f, "datas") +
-                      get_section_size(f, ".data") +
-                      get_section_size(f, ".heap") +
-                      get_section_size(f, ".stack") +
-                      get_section_size(f, ".bss") +
-                      get_section_size(f, ".panic_section"))
-
-    total_percent_ram = 0
-    total_percent_flash = 0
-    if total_ram > 0:
-        total_percent_ram = float(total_used_ram) / total_ram * 100
-    if total_flash > 0:
-        total_percent_flash = float(total_used_flash) / total_flash * 100
-
-    res = {"total_flash": total_used_flash,
-           "percent_flash": total_percent_flash,
-           "total_ram": total_used_ram,
-           "percent_ram": total_percent_ram}
-    return res
-
-
-def generate_target_memory_section(
-        bin_objdump, bin_nm, out, kernel_name, source_dir, features_json):
+    # Change path to relative to Zephyr base
+    path = path.resolve()
     try:
-        json.loads(open(features_json, 'r').read())
-    except BaseException:
+        new_path = path.relative_to(zephyrbase)
+        path = new_path
+    except ValueError:
         pass
 
-    bin_file_abs = os.path.join(out, kernel_name + '.bin')
-    elf_file_abs = os.path.join(out, kernel_name + '.elf')
+    return path
 
-    # First deal with size on flash. These are the symbols flagged as LOAD in
-    # objdump output
-    size_out = subprocess.check_output(
-        [bin_objdump, "-hw", elf_file_abs],
-        universal_newlines=True
-    )
-    loaded_section_total = 0
-    loaded_section_names = []
-    loaded_section_names_sizes = {}
-    ram_section_total = 0
-    ram_section_names = []
-    ram_section_names_sizes = {}
-    for line in size_out.splitlines():
-        if "LOAD" in line:
-            loaded_section_total = loaded_section_total + \
-                int(line.split()[2], 16)
-            loaded_section_names.append(line.split()[1])
-            loaded_section_names_sizes[line.split()[1]] = int(
-                line.split()[2], 16)
-        if "ALLOC" in line and "READONLY" not in line and "rodata" not in line and "CODE" not in line:
-            ram_section_total = ram_section_total + int(line.split()[2], 16)
-            ram_section_names.append(line.split()[1])
-            ram_section_names_sizes[line.split()[1]] = int(line.split()[2], 16)
 
-    # Actual .bin size, which doesn't not always match section sizes
-    bin_size = os.stat(bin_file_abs).st_size
+# Sequentially process DIEs in compiler units with direct file mappings
+# within the DIEs themselves, and do simply matching between DIE names
+# and symbol names.
+def do_simple_name_matching(elf, symbol_dict, processed):
+    mapped_symbols = processed['mapped_symbols']
+    mapped_addresses = processed['mapped_addr']
+    unmapped_symbols = processed['unmapped_symbols']
+    newly_mapped_syms = set()
 
-    # Get the path associated to each symbol
-    symbols_paths = dict(load_symbols_and_paths(bin_nm, elf_file_abs, source_dir))
+    dwarfinfo = elf.get_dwarf_info()
+    location_lists = dwarfinfo.location_lists()
+    location_parser = LocationParser(location_lists)
+
+    unmapped_dies = set()
+
+    # Loop through all compile units
+    for compile_unit in dwarfinfo.iter_CUs():
+        lineprog = dwarfinfo.line_program_for_CU(compile_unit)
+        if lineprog is None:
+            continue
+
+        # Loop through each DIE and find variables and
+        # subprograms (i.e. functions)
+        for die in compile_unit.iter_DIEs():
+            sym_name = None
+
+            # Process variables
+            if die.tag == 'DW_TAG_variable':
+                # DW_AT_declaration
+
+                # having 'DW_AT_location' means this maps
+                # to an actual address (e.g. not an extern)
+                if 'DW_AT_location' in die.attributes:
+                    sym_name = die.get_full_path()
+
+            # Process subprograms (i.e. functions) if they are valid
+            if die.tag == 'DW_TAG_subprogram':
+                # Refer to another DIE for name
+                if ('DW_AT_abstract_origin' in die.attributes) or (
+                        'DW_AT_specification' in die.attributes):
+                    unmapped_dies.add(die)
+
+                # having 'DW_AT_low_pc' means it maps to
+                # an actual address
+                elif 'DW_AT_low_pc' in die.attributes:
+                    # DW_AT_low_pc == 0 is a weak function
+                    # which has been overriden
+                    if die.attributes['DW_AT_low_pc'].value != 0:
+                        sym_name = die.get_full_path()
+
+                # For mangled function names, the linkage name
+                # is what appears in the symbol list
+                if 'DW_AT_linkage_name' in die.attributes:
+                    linkage = die.attributes['DW_AT_linkage_name']
+                    sym_name = linkage.value.decode()
+
+            if sym_name is not None:
+                # Skip DIE with no reference back to a file
+                if not 'DW_AT_decl_file' in die.attributes:
+                    continue
+
+                is_die_mapped = False
+                if sym_name in symbol_dict:
+                    mapped_symbols.add(sym_name)
+                    symlist = symbol_dict[sym_name]
+                    symbol = match_symbol_address(symlist, die,
+                                                  location_parser,
+                                                  dwarfinfo)
+
+                    if symbol is not None:
+                        symaddr = symbol['symbol']['st_value']
+                        if symaddr not in mapped_addresses:
+                            is_die_mapped = True
+                            path = get_die_filename(die, lineprog)
+                            symbol['mapped_files'].add(path)
+                            mapped_addresses.add(symaddr)
+                            newly_mapped_syms.add(sym_name)
+
+                if not is_die_mapped:
+                    unmapped_dies.add(die)
+
+    mapped_symbols = mapped_symbols.union(newly_mapped_syms)
+    unmapped_symbols = unmapped_symbols.difference(newly_mapped_syms)
+
+    processed['mapped_symbols'] = mapped_symbols
+    processed['mapped_addr'] = mapped_addresses
+    processed['unmapped_symbols'] = unmapped_symbols
+    processed['unmapped_dies'] = unmapped_dies
+
+
+# There are functions and variables which are aliases to
+# other functions/variables. So this marks them as mapped
+# so they will not get counted again when a tree is being
+# built for display.
+def mark_address_aliases(symbol_dict, processed):
+    mapped_symbols = processed['mapped_symbols']
+    mapped_addresses = processed['mapped_addr']
+    unmapped_symbols = processed['unmapped_symbols']
+    already_mapped_syms = set()
+
+    for ums in unmapped_symbols:
+        for one_sym in symbol_dict[ums]:
+            symbol = one_sym['symbol']
+            if symbol['st_value'] in mapped_addresses:
+                already_mapped_syms.add(ums)
+
+    mapped_symbols = mapped_symbols.union(already_mapped_syms)
+    unmapped_symbols = unmapped_symbols.difference(already_mapped_syms)
+
+    processed['mapped_symbols'] = mapped_symbols
+    processed['mapped_addr'] = mapped_addresses
+    processed['unmapped_symbols'] = unmapped_symbols
+
+
+# This uses the address ranges of DIEs and map them to symbols
+# residing within those ranges, and works on DIEs that have not
+# been mapped in previous steps. This works on symbol names
+# that do not match the names in DIEs, e.g. "<func>" in DIE,
+# but "<func>.constprop.*" in symbol name list. This also
+# helps with mapping the mangled function names in C++,
+# since the names in DIE are actual function names in source
+# code and not mangled version of them.
+def do_address_range_matching(elf, symbol_dict, processed):
+    if 'unmapped_dies' not in processed:
+        return
+
+    mapped_symbols = processed['mapped_symbols']
+    mapped_addresses = processed['mapped_addr']
+    unmapped_symbols = processed['unmapped_symbols']
+    newly_mapped_syms = set()
+
+    dwarfinfo = elf.get_dwarf_info()
+    location_lists = dwarfinfo.location_lists()
+    location_parser = LocationParser(location_lists)
+
+    unmapped_dies = processed['unmapped_dies']
+
+    # Group DIEs by compile units
+    cu_list = dict()
+
+    for die in unmapped_dies:
+        cu = die.cu
+        if cu not in cu_list:
+            cu_list[cu] = {'dies': set()}
+        cu_list[cu]['dies'].add(die)
+
+    # Loop through all compile units
+    for cu in cu_list:
+        lineprog = dwarfinfo.line_program_for_CU(cu)
+
+        # Map offsets from DIEs
+        offset_map = dict()
+        for die in cu.iter_DIEs():
+            offset_map[die.offset] = die
+
+        for die in cu_list[cu]['dies']:
+            if not die.tag == 'DW_TAG_subprogram':
+                continue
+
+            path = None
+
+            # Has direct reference to file, so use it
+            if 'DW_AT_decl_file' in die.attributes:
+                path = get_die_filename(die, lineprog)
+
+            # Loop through indirect reference until a direct
+            # reference to file is found
+            if ('DW_AT_abstract_origin' in die.attributes) or (
+                    'DW_AT_specification' in die.attributes):
+                die_ptr = die
+                while path is None:
+                    if not (die_ptr.tag == 'DW_TAG_subprogram') or not (
+                            ('DW_AT_abstract_origin' in die_ptr.attributes) or
+                            ('DW_AT_specification' in die_ptr.attributes)):
+                        break
+
+                    if 'DW_AT_abstract_origin' in die_ptr.attributes:
+                        ofname = 'DW_AT_abstract_origin'
+                    elif 'DW_AT_specification' in die_ptr.attributes:
+                        ofname = 'DW_AT_specification'
+
+                    offset = die_ptr.attributes[ofname].value
+                    offset += die_ptr.cu.cu_offset
+
+                    # There is nothing to reference so no need to continue
+                    if offset not in offset_map:
+                        break
+
+                    die_ptr = offset_map[offset]
+                    if 'DW_AT_decl_file' in die_ptr.attributes:
+                        path = get_die_filename(die_ptr, lineprog)
+
+            # Nothing to map
+            if path is not None:
+                low, high = get_die_mapped_address(die, location_parser,
+                                                   dwarfinfo)
+                if low is None:
+                    continue
+
+                for ums in unmapped_symbols:
+                    for one_sym in symbol_dict[ums]:
+                        symbol = one_sym['symbol']
+                        symaddr = symbol['st_value']
+
+                        if symaddr not in mapped_addresses:
+                            if low <= symaddr < high:
+                                one_sym['mapped_files'].add(path)
+                                mapped_addresses.add(symaddr)
+                                newly_mapped_syms.add(ums)
+
+    mapped_symbols = mapped_symbols.union(newly_mapped_syms)
+    unmapped_symbols = unmapped_symbols.difference(newly_mapped_syms)
+
+    processed['mapped_symbols'] = mapped_symbols
+    processed['mapped_addr'] = mapped_addresses
+    processed['unmapped_symbols'] = unmapped_symbols
+
+
+# Any unmapped symbols are added under the root node if those
+# symbols reside within the desired memory address ranges
+# (e.g. ROM or RAM).
+def set_root_path_for_unmapped_symbols(symbol_dict, addr_range, processed):
+    mapped_symbols = processed['mapped_symbols']
+    mapped_addresses = processed['mapped_addr']
+    unmapped_symbols = processed['unmapped_symbols']
+    newly_mapped_syms = set()
+
+    for ums in unmapped_symbols:
+        for one_sym in symbol_dict[ums]:
+            symbol = one_sym['symbol']
+            symaddr = symbol['st_value']
+
+            if is_symbol_in_ranges(symbol, addr_range):
+                if symaddr not in mapped_addresses:
+                    path = Path(':')
+                    one_sym['mapped_files'].add(path)
+                    mapped_addresses.add(symaddr)
+                    newly_mapped_syms.add(ums)
+
+    mapped_symbols = mapped_symbols.union(newly_mapped_syms)
+    unmapped_symbols = unmapped_symbols.difference(newly_mapped_syms)
+
+    processed['mapped_symbols'] = mapped_symbols
+    processed['mapped_addr'] = mapped_addresses
+    processed['unmapped_symbols'] = unmapped_symbols
+
+
+def generate_tree(symbol_dict):
 
     # A set of helper function for building a simple tree with a path-like
     # hierarchy.
     def _insert_one_elem(tree, path, size):
         cur = None
-        for p in path.parts:
+        for part in path.parts:
             if cur is None:
-                cur = p
+                cur = part
             else:
-                cur = cur + os.path.sep + p
+                cur = str(Path(cur, part))
             if cur in tree:
                 tree[cur] += size
             else:
                 tree[cur] = size
 
-    def _parent_for_node(e):
-        parent = "root" if len(os.path.sep) == 1 else e.rsplit(os.path.sep, 1)[0]
-        if e == "root":
-            parent = None
-        return parent
+    total_size = 0
+    nodes = {}
+    nodes[':'] = 0
 
-    def _childs_for_node(tree, node):
-        res = []
-        for e in tree:
-            if _parent_for_node(e) == node:
-                res += [e]
-        return res
+    for name, sym in symbol_dict.items():
+        for symbol in sym:
+            size = get_symbol_size(symbol['symbol'])
+            for file in symbol['mapped_files']:
+                path = Path(file, name)
+                _insert_one_elem(nodes, path, size)
 
-    def _siblings_for_node(tree, node):
-        return _childs_for_node(tree, _parent_for_node(node))
-
-    def _max_sibling_size(tree, node):
-        siblings = _siblings_for_node(tree, node)
-        return max([tree[e] for e in siblings])
-
-    # Extract the list of symbols a second time but this time using the objdump tool
-    # which provides more info as nm
-
-    symbols_out = subprocess.check_output(
-        [bin_objdump, "-tw", elf_file_abs],
-        universal_newlines=True
-    )
-    flash_symbols_total = 0
-    data_nodes = {}
-    data_nodes['root'] = 0
-
-    ram_symbols_total = 0
-    ram_nodes = {}
-    ram_nodes['root'] = 0
-    for l in symbols_out.splitlines():
-        line = l[0:9] + "......." + l[16:]
-        fields = line.replace('\t', ' ').split(' ')
-        # Get rid of trailing empty field
-        if len(fields) != 5:
-            continue
-        size = int(fields[3], 16)
-        if fields[2] in loaded_section_names and size != 0:
-            flash_symbols_total += size
-            _insert_one_elem(data_nodes, symbols_paths[fields[4]], size)
-        if fields[2] in ram_section_names and size != 0:
-            ram_symbols_total += size
-            _insert_one_elem(ram_nodes, symbols_paths[fields[4]], size)
-
-    def _init_features_list_results(features_list):
-        for feature in features_list:
-            _init_feature_results(feature)
-
-    def _init_feature_results(feature):
-        feature["size"] = 0
-        # recursive through children
-        for child in feature["children"]:
-            _init_feature_results(child)
-
-    def _check_all_symbols(symbols_struct, features_list):
-        out = ""
-        sorted_nodes = sorted(symbols_struct.items(),
-                              key=operator.itemgetter(0))
-        named_symbol_filter = re.compile(r'.*\.[a-zA-Z]+/.*')
-        out_symbols_filter = re.compile('^:/')
-        for symbpath in sorted_nodes:
-            matched = 0
-            # The files and folders (not matching regex) are discarded
-            # like: folder folder/file.ext
-            is_symbol = named_symbol_filter.match(symbpath[0])
-            is_generated = out_symbols_filter.match(symbpath[0])
-            if is_symbol is None and is_generated is None:
-                continue
-            # The symbols inside a file are kept: folder/file.ext/symbol
-            # and unrecognized paths too (":/")
-            for feature in features_list:
-                matched = matched + \
-                    _does_symbol_matches_feature(
-                        symbpath[0], symbpath[1], feature)
-            if matched == 0:
-                out += "UNCATEGORIZED: %s %d<br/>" % (symbpath[0], symbpath[1])
-        return out
-
-    def _does_symbol_matches_feature(symbol, size, feature):
-        matched = 0
-        # check each include-filter in feature
-        for inc_path in feature["folders"]:
-            # filter out if the include-filter is not in the symbol string
-            if inc_path not in symbol:
-                continue
-            # if the symbol match the include-filter, check against
-            # exclude-filter
-            is_excluded = 0
-            for exc_path in feature["excludes"]:
-                if exc_path in symbol:
-                    is_excluded = 1
-                    break
-            if is_excluded == 0:
-                matched = 1
-                feature["size"] = feature["size"] + size
-                # it can only be matched once per feature (add size once)
-                break
-        # check children independently of this feature's result
-        for child in feature["children"]:
-            child_matched = _does_symbol_matches_feature(symbol, size, child)
-            matched = matched + child_matched
-        return matched
-
-    # Create a simplified tree keeping only the most important contributors
-    # This is used for the pie diagram summary
-    min_parent_size = bin_size / 25
-    min_sibling_size = bin_size / 35
-    tmp = {}
-    for e in data_nodes:
-        if _parent_for_node(e) is None:
-            continue
-        if data_nodes[_parent_for_node(e)] < min_parent_size:
-            continue
-        if _max_sibling_size(data_nodes, e) < min_sibling_size:
-            continue
-        tmp[e] = data_nodes[e]
-
-    # Keep only final nodes
-    tmp2 = {}
-    for e in tmp:
-        if not _childs_for_node(tmp, e):
-            tmp2[e] = tmp[e]
-
-    # Group nodes too small in an "other" section
-    filtered_data_nodes = {}
-    for e in tmp2:
-        if tmp[e] < min_sibling_size:
-            k = _parent_for_node(e) + "/(other)"
-            if k in filtered_data_nodes:
-                filtered_data_nodes[k] += tmp[e]
-            else:
-                filtered_data_nodes[k] = tmp[e]
-        else:
-            filtered_data_nodes[e] = tmp[e]
-
-    def _parent_level_3_at_most(node):
-        e = _parent_for_node(node)
-        while e.count('/') > 2:
-            e = _parent_for_node(e)
-        return e
-
-    return ram_nodes, data_nodes
+    ret = {'nodes': nodes,
+           'size': total_size}
+    return ret
 
 
 def print_tree(data, total, depth):
-    base = os.environ['ZEPHYR_BASE']
+    base = args.zephyrbase
     totp = 0
 
     bcolors_ansi = {
@@ -366,7 +542,7 @@ def print_tree(data, total, depth):
         "BOLD"      : '\033[1m',
         "UNDERLINE" : '\033[4m'
     }
-    if platform.system() == "Windows":
+    if platform.system() == "Windows" or args.nocolor:
         # Set all color codes to empty string on Windows
         #
         # TODO: Use an approach like the pip package 'colorama' to
@@ -405,56 +581,50 @@ def print_tree(data, total, depth):
 
 
 def main():
+    parse_args()
 
-    parser = argparse.ArgumentParser(
-        description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
+    assert os.path.exists(args.kernel), "{0} does not exist.".format(args.kernel)
 
-    parser.add_argument("-d", "--depth", dest="depth", type=int,
-                      help="How deep should we go into the tree", metavar="DEPTH")
-    parser.add_argument("-o", "--outdir", dest="outdir", required=True,
-                      help="read files from directory OUT", metavar="OUT")
-    parser.add_argument("-k", "--kernel-name", dest="binary", default="zephyr",
-                      help="kernel binary name")
-    parser.add_argument("-r", "--ram",
-                      action="store_true", dest="ram", default=False,
-                      help="print RAM statistics")
-    parser.add_argument("-F", "--rom",
-                      action="store_true", dest="rom", default=False,
-                      help="print ROM statistics")
-    parser.add_argument("-s", "--objdump", dest="bin_objdump", required=True,
-                      help="Path to the GNU binary utility objdump")
-    parser.add_argument("-c", "--objcopy", dest="bin_objcopy",
-                      help="Path to the GNU binary utility objcopy")
-    parser.add_argument("-n", "--nm", dest="bin_nm", required=True,
-                      help="Path to the GNU binary utility nm")
+    elf = ELFFile(open(args.kernel, "rb"))
 
-    args = parser.parse_args()
+    assert elf.has_dwarf_info(), "ELF file has no DWARF information"
 
-    bin_file = os.path.join(args.outdir, args.binary + ".bin")
-    stat_file = os.path.join(args.outdir, args.binary + ".stat")
-    elf_file = os.path.join(args.outdir, args.binary + ".elf")
+    set_global_machine_arch(elf.get_machine_arch())
 
-    if not os.path.exists(elf_file):
-        print("%s does not exist." % (elf_file))
-        return
+    addr_ranges = get_section_ranges(elf)
 
-    if not os.path.exists(bin_file):
-        FNULL = open(os.devnull, 'w')
-        subprocess.call([args.bin_objcopy,"-S", "-Obinary", "-R", ".comment", "-R",
-                       "COMMON", "-R", ".eh_frame", elf_file, bin_file],
-                       stdout=FNULL, stderr=subprocess.STDOUT)
+    symbols = get_symbols(elf, addr_ranges)
 
-    fp = get_footprint_from_bin_and_statfile(bin_file, stat_file, 0, 0)
-    base = os.environ['ZEPHYR_BASE']
-    ram, data = generate_target_memory_section(
-        args.bin_objdump, args.bin_nm, args.outdir, args.binary,
-        base + '/', None)
-    if args.rom:
-        print_tree(data, fp['total_flash'], args.depth)
-    if args.ram:
-        print_tree(ram, fp['total_ram'], args.depth)
+    for sym in symbols['unassigned']:
+        print("WARN: Symbol '{0}' is not in RAM or ROM".format(sym['name']))
 
+    symbol_dict = None
+    if args.target == 'rom':
+        symbol_dict = symbols['rom']
+        symsize = addr_ranges['rom_total_size']
+        ranges = addr_ranges['rom']
+    elif args.target == 'ram':
+        symbol_dict = symbols['ram']
+        symsize = addr_ranges['ram_total_size']
+        ranges = addr_ranges['ram']
+
+    if symbol_dict is not None:
+        processed = {"mapped_symbols": set(),
+                     "mapped_addr": set(),
+                     "unmapped_symbols": set(symbol_dict.keys())}
+
+        do_simple_name_matching(elf, symbol_dict, processed)
+        mark_address_aliases(symbol_dict, processed)
+        do_address_range_matching(elf, symbol_dict, processed)
+        mark_address_aliases(symbol_dict, processed)
+        set_root_path_for_unmapped_symbols(symbol_dict, ranges, processed)
+
+        if args.verbose:
+            for sym in processed['unmapped_symbols']:
+                print("INFO: Unmapped symbol: {0}".format(sym))
+
+        tree = generate_tree(symbol_dict)
+        print_tree(tree['nodes'], symsize, args.depth)
 
 if __name__ == "__main__":
     main()
