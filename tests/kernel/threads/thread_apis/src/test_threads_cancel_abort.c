@@ -195,9 +195,9 @@ void test_delayed_thread_abort(void)
 
 static volatile bool isr_finished;
 
-static void offload_func(void *param)
+static void offload_func(const void *param)
 {
-	struct k_thread *t = param;
+	struct k_thread *t = (struct k_thread *)param;
 
 	k_thread_abort(t);
 

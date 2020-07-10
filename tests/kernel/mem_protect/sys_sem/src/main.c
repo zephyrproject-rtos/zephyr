@@ -33,24 +33,24 @@ struct k_thread multiple_tid[TOTAL_THREADS_WAITING];
 
 /******************************************************************************/
 /* Helper functions */
-void isr_sem_give(void *semaphore)
+void isr_sem_give(const void *semaphore)
 {
 	sys_sem_give((struct sys_sem *)semaphore);
 }
 
-void isr_sem_take(void *semaphore)
+void isr_sem_take(const void *semaphore)
 {
 	sys_sem_take((struct sys_sem *)semaphore, K_NO_WAIT);
 }
 
 void sem_give_from_isr(void *semaphore)
 {
-	irq_offload(isr_sem_give, semaphore);
+	irq_offload(isr_sem_give, (const void *)semaphore);
 }
 
 void sem_take_from_isr(void *semaphore)
 {
-	irq_offload(isr_sem_take, semaphore);
+	irq_offload(isr_sem_take, (const void *)semaphore);
 }
 
 void sem_give_task(void *p1, void *p2, void *p3)

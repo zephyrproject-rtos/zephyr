@@ -92,7 +92,7 @@ dummy_test(test_stack_user_pop_fail);
 #endif /* CONFIG_USERSPACE */
 
 /* entry of contexts */
-static void tIsr_entry_push(void *p)
+static void tIsr_entry_push(const void *p)
 {
 	uint32_t i;
 
@@ -102,7 +102,7 @@ static void tIsr_entry_push(void *p)
 	}
 }
 
-static void tIsr_entry_pop(void *p)
+static void tIsr_entry_pop(const void *p)
 {
 	uint32_t i;
 
@@ -157,12 +157,12 @@ static void thread_entry_fn_dual(void *p1, void *p2, void *p3)
 static void thread_entry_fn_isr(void *p1, void *p2, void *p3)
 {
 	/* Pop items from stack2 */
-	irq_offload(tIsr_entry_pop, p2);
+	irq_offload(tIsr_entry_pop, (const void *)p2);
 	zassert_false(memcmp(data_isr, data2, STACK_LEN),
 		      "Push & Pop items does not match");
 
 	/* Push items to stack1 */
-	irq_offload(tIsr_entry_push, p1);
+	irq_offload(tIsr_entry_push, (const void *)p1);
 
 	/* Give control back to Test thread */
 	k_sem_give(&end_sema);
@@ -255,13 +255,13 @@ static void test_isr_stack_play(void)
 
 
 	/* Push items to stack2 */
-	irq_offload(tIsr_entry_push, &stack2);
+	irq_offload(tIsr_entry_push, (const void *)&stack2);
 
 	/* Let the child thread run */
 	k_sem_take(&end_sema, K_FOREVER);
 
 	/* Pop items from stack1 */
-	irq_offload(tIsr_entry_pop, &stack1);
+	irq_offload(tIsr_entry_pop, (const void *)&stack1);
 
 	zassert_false(memcmp(data_isr, data1, STACK_LEN),
 		      "Push & Pop items does not match");

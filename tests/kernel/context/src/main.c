@@ -137,7 +137,7 @@ static ISR_INFO isr_info;
  *
  * @return N/A
  */
-static void isr_handler(void *data)
+static void isr_handler(const void *data)
 {
 	ARG_UNUSED(data);
 
