@@ -59,6 +59,17 @@ config IMG_ERASE_PROGRESSIVELY
 	  on some hardware that has long erase times, to prevent long wait
 	  times at the beginning of the DFU process.
 
+config IMG_ENABLE_IMAGE_CHECK
+	bool "Enable image check functions"
+	depends on MCUBOOT_IMG_MANAGER
+	select FLASH_AREA_CHECK_INTEGRITY
+	help
+	  If enabled, there will be available the function to check flash
+	  integrity.  It can be used to verify flash integrity after received
+	  a new firmware.  This is useful to avoid firmware reboot and test.
+	  Another use is to ensure that firmware upgrade routines from internet
+	  server to flash slot are performing properly.
+
 module = IMG_MANAGER
 module-str = image manager
 source "subsys/logging/Kconfig.template.log_config"
