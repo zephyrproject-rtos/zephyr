@@ -249,6 +249,13 @@ The `builds@lists.zephyrproject.org mailing list
 <https://lists.zephyrproject.org/g/builds>`_
 archives the CI (shippable) nightly build results.
 
+Coding Guidelines
+*****************
+
+Beyond the :ref:`coding_style` that Zephyr enforces for all code that is
+submitted for inclusion, the project targets compliance with a series of
+coding guidelines. Refer to the :ref:`coding_guidelines` section of the
+documentation for additional details.
 
  .. _Contribution Tools:
 
@@ -336,6 +343,8 @@ On Linux systems, you can install uncrustify with
 
 For Windows installation instructions see the `sourceforge listing for
 uncrustify <https://sourceforge.net/projects/uncrustify>`_.
+
+.. _coding_style:
 
 Coding Style
 ************
