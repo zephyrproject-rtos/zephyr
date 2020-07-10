@@ -21,7 +21,7 @@
 /* Implemented as a software interrupt so that callbacks are executed
  * in the expected context
  */
-static void ipm_dummy_isr(void *data)
+static void ipm_dummy_isr(const void *data)
 {
 	const struct device *d = (const struct device *)data;
 	struct ipm_dummy_driver_data *driver_data = d->data;
@@ -70,7 +70,7 @@ static int ipm_dummy_send(const struct device *d, int wait, uint32_t id,
 	driver_data->regs.id = id;
 	driver_data->regs.busy = 1U;
 
-	irq_offload(ipm_dummy_isr, d);
+	irq_offload(ipm_dummy_isr, (const void *)d);
 
 	if (wait) {
 		while (driver_data->regs.busy) {
@@ -98,7 +98,7 @@ static int ipm_dummy_set_enabled(const struct device *d, int enable)
 	driver_data->regs.enabled = enable;
 	if (enable) {
 		/* In case there are pending messages */
-		irq_offload(ipm_dummy_isr, d);
+		irq_offload(ipm_dummy_isr, (const void *)d);
 	}
 	return 0;
 }

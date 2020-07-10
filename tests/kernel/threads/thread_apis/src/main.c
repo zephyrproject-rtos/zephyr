@@ -317,9 +317,9 @@ void control_entry(void *p1, void *p2, void *p3)
 	k_thread_abort(&join_thread);
 }
 
-void do_join_from_isr(void *arg)
+void do_join_from_isr(const void *arg)
 {
-	int *ret = arg;
+	int *ret = (int *)arg;
 
 	printk("isr: joining join_thread\n");
 	*ret = k_thread_join(&join_thread, K_NO_WAIT);
@@ -365,7 +365,7 @@ int join_scenario(enum control_method m)
 	}
 
 	if (m == ISR_ALREADY_EXIT || m == ISR_RUNNING) {
-		irq_offload(do_join_from_isr, &ret);
+		irq_offload(do_join_from_isr, (const void *)&ret);
 	} else {
 		printk("ztest_thread: joining join_thread\n");
 		ret = k_thread_join(&join_thread, timeout);

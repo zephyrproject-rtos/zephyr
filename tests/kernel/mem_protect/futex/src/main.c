@@ -49,14 +49,14 @@ struct k_thread multiple_wake_tid[TOTAL_THREADS_WAITING];
 
 /******************************************************************************/
 /* Helper functions */
-void futex_isr_wake(void *futex)
+void futex_isr_wake(const void *futex)
 {
 	k_futex_wake((struct k_futex *)futex, false);
 }
 
 void futex_wake_from_isr(struct k_futex *futex)
 {
-	irq_offload(futex_isr_wake, futex);
+	irq_offload(futex_isr_wake, (const void *)futex);
 }
 
 /* test futex wait, no futex wake */

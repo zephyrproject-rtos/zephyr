@@ -138,7 +138,7 @@ static struct {
 };
 
 /*entry of contexts*/
-static void tringbuf_put(void *p)
+static void tringbuf_put(const void *p)
 {
 	int index = POINTER_TO_INT(p);
 	/**TESTPOINT: ring buffer put*/
@@ -148,7 +148,7 @@ static void tringbuf_put(void *p)
 	zassert_equal(ret, 0, NULL);
 }
 
-static void tringbuf_get(void *p)
+static void tringbuf_get(const void *p)
 {
 	uint16_t type;
 	uint8_t value, size32 = DATA_MAX_SIZE;
@@ -189,60 +189,60 @@ void test_ringbuffer_declare_size(void)
 void test_ringbuffer_put_get_thread(void)
 {
 	pbuf = &ringbuf;
-	tringbuf_put((void *)0);
-	tringbuf_put((void *)1);
-	tringbuf_get((void *)0);
-	tringbuf_get((void *)1);
-	tringbuf_put((void *)2);
+	tringbuf_put((const void *)0);
+	tringbuf_put((const void *)1);
+	tringbuf_get((const void *)0);
+	tringbuf_get((const void *)1);
+	tringbuf_put((const void *)2);
 	zassert_false(ring_buf_is_empty(pbuf), NULL);
-	tringbuf_get((void *)2);
+	tringbuf_get((const void *)2);
 	zassert_true(ring_buf_is_empty(pbuf), NULL);
 }
 
 void test_ringbuffer_put_get_isr(void)
 {
 	pbuf = &ringbuf;
-	irq_offload(tringbuf_put, (void *)0);
-	irq_offload(tringbuf_put, (void *)1);
-	irq_offload(tringbuf_get, (void *)0);
-	irq_offload(tringbuf_get, (void *)1);
-	irq_offload(tringbuf_put, (void *)2);
+	irq_offload(tringbuf_put, (const void *)0);
+	irq_offload(tringbuf_put, (const void *)1);
+	irq_offload(tringbuf_get, (const void *)0);
+	irq_offload(tringbuf_get, (const void *)1);
+	irq_offload(tringbuf_put, (const void *)2);
 	zassert_false(ring_buf_is_empty(pbuf), NULL);
-	irq_offload(tringbuf_get, (void *)2);
+	irq_offload(tringbuf_get, (const void *)2);
 	zassert_true(ring_buf_is_empty(pbuf), NULL);
 }
 
 void test_ringbuffer_put_get_thread_isr(void)
 {
 	pbuf = &ringbuf;
-	tringbuf_put((void *)0);
-	irq_offload(tringbuf_put, (void *)1);
-	tringbuf_get((void *)0);
-	irq_offload(tringbuf_get, (void *)1);
-	tringbuf_put((void *)2);
-	irq_offload(tringbuf_get, (void *)2);
+	tringbuf_put((const void *)0);
+	irq_offload(tringbuf_put, (const void *)1);
+	tringbuf_get((const void *)0);
+	irq_offload(tringbuf_get, (const void *)1);
+	tringbuf_put((const void *)2);
+	irq_offload(tringbuf_get, (const void *)2);
 }
 
 void test_ringbuffer_pow2_put_get_thread_isr(void)
 {
 	pbuf = &ringbuf_pow2;
-	tringbuf_put((void *)0);
-	irq_offload(tringbuf_put, (void *)1);
-	tringbuf_get((void *)0);
-	irq_offload(tringbuf_get, (void *)1);
-	tringbuf_put((void *)1);
-	irq_offload(tringbuf_get, (void *)1);
+	tringbuf_put((const void *)0);
+	irq_offload(tringbuf_put, (const void *)1);
+	tringbuf_get((const void *)0);
+	irq_offload(tringbuf_get, (const void *)1);
+	tringbuf_put((const void *)1);
+	irq_offload(tringbuf_get, (const void *)1);
 }
 
 void test_ringbuffer_size_put_get_thread_isr(void)
 {
 	pbuf = &ringbuf_size;
-	tringbuf_put((void *)0);
-	irq_offload(tringbuf_put, (void *)1);
-	tringbuf_get((void *)0);
-	irq_offload(tringbuf_get, (void *)1);
-	tringbuf_put((void *)2);
-	irq_offload(tringbuf_get, (void *)2);
+	tringbuf_put((const void *)0);
+	irq_offload(tringbuf_put, (const void *)1);
+	tringbuf_get((const void *)0);
+	irq_offload(tringbuf_get, (const void *)1);
+	tringbuf_put((const void *)2);
+	irq_offload(tringbuf_get, (const void *)2);
 }
 
 /**

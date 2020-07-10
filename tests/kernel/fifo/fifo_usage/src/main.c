@@ -56,7 +56,7 @@ static struct k_thread tdata;
 static struct k_sem end_sema;
 
 /*entry of contexts*/
-static void tIsr_entry_put(void *p)
+static void tIsr_entry_put(const void *p)
 {
 	uint32_t i;
 
@@ -67,7 +67,7 @@ static void tIsr_entry_put(void *p)
 	zassert_false(k_fifo_is_empty((struct k_fifo *)p), NULL);
 }
 
-static void tIsr_entry_get(void *p)
+static void tIsr_entry_get(const void *p)
 {
 	void *rx_data;
 	uint32_t i;
@@ -118,10 +118,10 @@ static void thread_entry_fn_dual(void *p1, void *p2, void *p3)
 static void thread_entry_fn_isr(void *p1, void *p2, void *p3)
 {
 	/* Get items from fifo2 */
-	irq_offload(tIsr_entry_get, p2);
+	irq_offload(tIsr_entry_get, (const void *)p2);
 
 	/* Put items into fifo1 */
-	irq_offload(tIsr_entry_put, p1);
+	irq_offload(tIsr_entry_put, (const void *)p1);
 
 	/* Give control back to Test thread */
 	k_sem_give(&end_sema);
@@ -223,13 +223,13 @@ static void test_isr_fifo_play(void)
 
 
 	/* Put item into fifo */
-	irq_offload(tIsr_entry_put, &fifo2);
+	irq_offload(tIsr_entry_put, (const void *)&fifo2);
 
 	/* Let the child thread run */
 	k_sem_take(&end_sema, K_FOREVER);
 
 	/* Get item from fifo */
-	irq_offload(tIsr_entry_get, &fifo1);
+	irq_offload(tIsr_entry_get, (const void *)&fifo1);
 
 	/* Clear the spawn thread to avoid side effect */
 	k_thread_abort(tid);

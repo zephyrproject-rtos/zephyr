@@ -15,6 +15,6 @@
 #define BLK_NUM_MAX 2
 #define BLK_ALIGN BLK_SIZE_MIN
 
-extern void tmpool_alloc_free(void *data);
+extern void tmpool_alloc_free(const void *data);
 
 #endif /*__TEST_MPOOL_H__*/

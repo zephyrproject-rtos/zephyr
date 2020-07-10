@@ -89,12 +89,12 @@ static void tqueue_get(struct k_queue *pqueue)
 }
 
 /*entry of contexts*/
-static void tIsr_entry_append(void *p)
+static void tIsr_entry_append(const void *p)
 {
 	tqueue_append((struct k_queue *)p);
 }
 
-static void tIsr_entry_get(void *p)
+static void tIsr_entry_get(const void *p)
 {
 	tqueue_get((struct k_queue *)p);
 }
@@ -121,7 +121,7 @@ static void tqueue_thread_isr(struct k_queue *pqueue)
 {
 	k_sem_init(&end_sema, 0, 1);
 	/**TESTPOINT: thread-isr data passing via queue*/
-	irq_offload(tIsr_entry_append, pqueue);
+	irq_offload(tIsr_entry_append, (const void *)pqueue);
 	tqueue_get(pqueue);
 }
 
@@ -130,7 +130,7 @@ static void tqueue_isr_thread(struct k_queue *pqueue)
 	k_sem_init(&end_sema, 0, 1);
 	/**TESTPOINT: isr-thread data passing via queue*/
 	tqueue_append(pqueue);
-	irq_offload(tIsr_entry_get, pqueue);
+	irq_offload(tIsr_entry_get, (const void *)pqueue);
 }
 
 /*test cases*/

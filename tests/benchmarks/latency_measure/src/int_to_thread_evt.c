@@ -39,7 +39,7 @@ K_SEM_DEFINE(WORKSEMA, 0, 1);
  *
  * @return N/A
  */
-static void latency_test_isr(void *unused)
+static void latency_test_isr(const void *unused)
 {
 	ARG_UNUSED(unused);
 

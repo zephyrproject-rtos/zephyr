@@ -33,7 +33,7 @@ static uint32_t timestamp_end;
  *
  * @return N/A
  */
-static void latency_test_isr(void *unused)
+static void latency_test_isr(const void *unused)
 {
 	ARG_UNUSED(unused);
 
