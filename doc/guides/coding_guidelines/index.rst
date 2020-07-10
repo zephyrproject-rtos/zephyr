@@ -1,4 +1,4 @@
-.. _coding_guidelines_misra:
+.. _coding_guidelines:
 
 Coding Guidelines
 #################
