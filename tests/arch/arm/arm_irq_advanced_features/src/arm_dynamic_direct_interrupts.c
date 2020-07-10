@@ -13,14 +13,14 @@
 
 static volatile int test_flag;
 
-void arm_direct_isr_handler_0(void *args)
+void arm_direct_isr_handler_0(const void *args)
 {
 	ARG_UNUSED(args);
 
 	test_flag = 1;
 }
 
-void arm_direct_isr_handler_1(void *args)
+void arm_direct_isr_handler_1(const void *args)
 {
 	ARG_UNUSED(args);
 

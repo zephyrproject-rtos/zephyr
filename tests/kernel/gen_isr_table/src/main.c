@@ -122,14 +122,14 @@ void isr4(void *param)
 }
 #endif
 
-void isr5(void *param)
+void isr5(const void *param)
 {
 	printk("%s ran with parameter %p\n", __func__, param);
 	trigger_check[ISR5_OFFSET]++;
 }
 
 #ifdef ISR6_OFFSET
-void isr6(void *param)
+void isr6(const void *param)
 {
 	printk("%s ran with parameter %p\n", __func__, param);
 	trigger_check[ISR6_OFFSET]++;
@@ -290,8 +290,8 @@ void main(void)
 	}
 #endif
 
-	irq_connect_dynamic(IRQ_LINE(ISR5_OFFSET), 1, isr5, (void *)ISR5_ARG,
-			    0);
+	irq_connect_dynamic(IRQ_LINE(ISR5_OFFSET), 1, isr5,
+			    (const void *)ISR5_ARG, 0);
 	irq_enable(IRQ_LINE(ISR5_OFFSET));
 	TC_PRINT("isr5 isr=%p irq=%d param=%p\n", isr5, IRQ_LINE(ISR5_OFFSET),
 		 (void *)ISR5_ARG);
@@ -300,8 +300,8 @@ void main(void)
 	}
 
 #ifdef ISR6_OFFSET
-	irq_connect_dynamic(IRQ_LINE(ISR6_OFFSET), 1, isr6, (void *)ISR6_ARG,
-			    0);
+	irq_connect_dynamic(IRQ_LINE(ISR6_OFFSET), 1, isr6,
+			    (const void *)ISR6_ARG, 0);
 	irq_enable(IRQ_LINE(ISR6_OFFSET));
 	TC_PRINT("isr6 isr=%p irq=%d param=%p\n", isr6, IRQ_LINE(ISR6_OFFSET),
 		 (void *)ISR6_ARG);

@@ -67,8 +67,10 @@ static inline void z_vrfy_test_arm_user_syscall(void)
 #include <syscalls/test_arm_user_syscall_mrsh.c>
 
 
-void arm_isr_handler(void *args)
+void arm_isr_handler(const void *args)
 {
+	ARG_UNUSED(args);
+
 	/* Interrupt triggered while running a user thread
 	 *
 	 * Verify the following

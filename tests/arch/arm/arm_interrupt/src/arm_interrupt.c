@@ -29,7 +29,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 	expected_reason = -1;
 }
 
-void arm_isr_handler(void *args)
+void arm_isr_handler(const void *args)
 {
 	ARG_UNUSED(args);
 
