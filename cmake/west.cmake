@@ -21,11 +21,12 @@ else()
     )
 
   if(WEST_PYTHON)
+    get_filename_component(WEST_PYTHON ${WEST_PYTHON} ABSOLUTE)
     if(NOT (${WEST_PYTHON} STREQUAL ${PYTHON_EXECUTABLE}))
       set(PYTHON_EXECUTABLE_OUT_OF_SYNC "\nNote:\n\
   The Python version used by west is:  ${WEST_PYTHON}\n\
   The Python version used by CMake is: ${PYTHON_EXECUTABLE}\n\
-  This might be correct, but please verify your installation.\n")
+  This might be correct, but please verify your installation.")
     endif()
   endif()
 
@@ -43,7 +44,7 @@ else()
   But the minimum supported version is ${MIN_WEST_VERSION}\n\
   Please upgrade with:\n\
       ${PYTHON_EXECUTABLE} -m pip install --upgrade west\
-  ${PYTHON_EXECUTABLE_OUT_OF_SYNC}")
+  ${PYTHON_EXECUTABLE_OUT_OF_SYNC}\n")
   endif()
 
   # Just output information for a single version. This will still work
