@@ -100,18 +100,18 @@ bool z_is_t1_higher_prio_than_t2(struct k_thread *thread_1,
 	}
 
 #ifdef CONFIG_SCHED_DEADLINE
-	/* Note that we don't care about wraparound conditions.  The
-	 * expectation is that the application will have arranged to
-	 * block the threads, change their priorities or reset their
-	 * deadlines when the job is complete.  Letting the deadlines
-	 * go negative is fine and in fact prevents aliasing bugs.
+	/* If we assume all deadlines live within the same "half" of
+	 * the 32 bit modulus space (this is a documented API rule),
+	 * then the latest dealine in the queue minus the earliest is
+	 * guaranteed to be (2's complement) non-negative.  We can
+	 * leverage that to compare the values without having to check
+	 * the current time.
 	 */
 	if (thread_1->base.prio == thread_2->base.prio) {
-		int now = (int) k_cycle_get_32();
-		int dt1 = thread_1->base.prio_deadline - now;
-		int dt2 = thread_2->base.prio_deadline - now;
+		int32_t d1 = thread_1->base.prio_deadline;
+		int32_t d2 = thread_2->base.prio_deadline;
 
-		return dt1 < dt2;
+		return (d2 - d1) >= 0;
 	}
 #endif
 
