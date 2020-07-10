@@ -12,7 +12,7 @@
 
 static volatile int test_flag;
 
-void arm_zero_latency_isr_handler(void *args)
+void arm_zero_latency_isr_handler(const void *args)
 {
 	ARG_UNUSED(args);
 
