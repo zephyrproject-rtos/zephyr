@@ -351,7 +351,7 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
  * @param routine Function to run in interrupt context
  * @param parameter Value to pass to the function when invoked
  */
-void arch_irq_offload(irq_offload_routine_t routine, void *parameter);
+void arch_irq_offload(irq_offload_routine_t routine, const void *parameter);
 #endif /* CONFIG_IRQ_OFFLOAD */
 
 /** @} */
