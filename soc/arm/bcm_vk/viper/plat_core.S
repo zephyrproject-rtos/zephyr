@@ -20,7 +20,7 @@ GTEXT(plat_l2_init)
 
 SECTION_FUNC(TEXT, z_arch_el3_plat_init)
 
-	mov	x19, x30
+	mov	x20, x30
 	/* Enable GIC v3 system interface */
 	mov_imm	x0, (ICC_SRE_ELx_DFB | ICC_SRE_ELx_DIB | \
 		     ICC_SRE_ELx_SRE | ICC_SRE_EL3_EN)
@@ -28,7 +28,7 @@ SECTION_FUNC(TEXT, z_arch_el3_plat_init)
 	/* L2 config */
 	bl	plat_l2_init
 
-	mov	x30, x19
+	mov	x30, x20
 	ret
 
 
