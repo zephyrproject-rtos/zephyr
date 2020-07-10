@@ -3535,6 +3535,8 @@ void bt_mesh_subnet_del(struct bt_mesh_subnet *sub, bool store)
 		bt_mesh_friend_clear_net_idx(sub->net_idx);
 	}
 
+	bt_mesh_net_loopback_clear(sub->net_idx);
+
 	if (IS_ENABLED(CONFIG_BT_SETTINGS) && store) {
 		bt_mesh_clear_subnet(sub);
 	}

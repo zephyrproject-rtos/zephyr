@@ -186,7 +186,7 @@ config BT_MESH_MSG_CACHE_SIZE
 config BT_MESH_ADV_BUF_COUNT
 	int "Number of advertising buffers"
 	default 6
-	range 3 256
+	range 1 256
 	help
 	  Number of advertising buffers available. This should be chosen
 	  based on what kind of features the local node should have. E.g.
@@ -299,6 +299,13 @@ config BT_MESH_TX_SEG_MAX
 	  example, 5 segments means the maximum SDU size is 60 bytes,
 	  which leaves 56 bytes for application layer data using a
 	  4-byte MIC and 52 bytes using an 8-byte MIC.
+
+config BT_MESH_LOOPBACK_BUFS
+	int "Number of loopback buffers"
+	default 3
+	help
+	  The number of buffers allocated for the network loopback mechanism.
+	  Loopback is used when the device sends messages to itself.
 
 config BT_MESH_RELAY
 	bool "Relay support"
