@@ -35,6 +35,9 @@ Stage IV
     Coding guideline rules may be removed/changed at any time by filing a
     GH issue/RFC.
 
+Main rules
+**********
+
 The coding guideline rules are based on MISRA-C 2012 and are a subset of MISRA-C.
 The subset is listed in the table below with a summary of the rules, its
 severity and the equivlent rules from other standards for reference.
@@ -49,7 +52,7 @@ severity and the equivlent rules from other standards for reference.
     once you have one.  The safety committee will review all requests.
 
 
-.. list-table:: Rules
+.. list-table:: Main rules
     :header-rows: 1
 
     * -  MISRA C 2012
@@ -784,3 +787,30 @@ severity and the equivlent rules from other standards for reference.
       -  Where designated initializers are used to initialize an array object the size of the array shall be specified explicitly
       -  N/A
       -  `Rule 9.5 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_09_05.c>`_
+
+Additional rules
+****************
+
+Rule A.1: Conditional Compilation
+=================================
+
+Severity
+--------
+
+Required
+
+Description
+-----------
+
+Do not conditionally compile function declarations in header files.  Do not
+conditionally compile structure declarations in header files.  You may
+conditionally exclude fields within structure definitions to avoid wasting
+memory when the feature they support is not enabled.
+
+Rationale
+---------
+
+Excluding declarations from the header based on compile-time options may prevent
+their documentation from being generated. Their absence also prevents use of
+``if (IS_ENABLED(CONFIG_FOO)) {}`` as an alternative to preprocessor
+conditionals when the code path should change based on the selected options.
