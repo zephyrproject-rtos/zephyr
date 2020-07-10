@@ -10,7 +10,7 @@
 #ifdef CONFIG_IRQ_OFFLOAD
 #include "irq_offload.h"
 
-void arch_irq_offload(irq_offload_routine_t routine, void *parameter)
+void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 {
 	posix_irq_offload(routine, parameter);
 }
