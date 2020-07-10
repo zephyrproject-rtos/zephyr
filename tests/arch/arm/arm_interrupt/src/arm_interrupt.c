@@ -182,7 +182,7 @@ void test_arm_esf_collection(void)
 		"ESF fault collection failed");
 }
 
-void arm_isr_handler(void *args)
+void arm_isr_handler(const void *args)
 {
 	ARG_UNUSED(args);
 
