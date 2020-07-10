@@ -14,14 +14,14 @@
 #include <aarch64/exc.h>
 
 volatile irq_offload_routine_t offload_routine;
-static void *offload_param;
+static const void *offload_param;
 
 void z_irq_do_offload(void)
 {
 	offload_routine(offload_param);
 }
 
-void arch_irq_offload(irq_offload_routine_t routine, void *parameter)
+void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 {
 	k_sched_lock();
 	offload_routine = routine;
