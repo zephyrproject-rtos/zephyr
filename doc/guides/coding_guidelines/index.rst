@@ -22,8 +22,8 @@ Stage II
   LTS2 (2.6) to achieve and LTS2 that is ready for certification.
 
 Stage III
-  Revisit the coding guideline and based on experience from previous stages,
-  refine/iterate on selected rules. This stage is to start after LTS2.
+  Revisit the coding guideline rules and based on experience from previous
+  stages, refine/iterate on selected rules. This stage is to start after LTS2.
 
 Stage IV
    Expand enforcement to the wider codebase. Exceptions may be granted on some
@@ -35,18 +35,18 @@ Stage IV
     Coding guideline rules may be removed/changed at any time by filing a
     GH issue/RFC.
 
-The coding guideline is based on MISRA-C 2012 and is a subset of MISRA-C. The
-subset is listed in the table below with a summary of the rules, its severity
-and the equivlent rules from other standards for reference.
+The coding guideline rules are based on MISRA-C 2012 and are a subset of MISRA-C.
+The subset is listed in the table below with a summary of the rules, its
+severity and the equivlent rules from other standards for reference.
 
 .. note::
 
-    For existing Zephyr maintainers and collaborators, if you are unable to obtain
-    a copy through your employer, a limited number of copies will be made available
-    through the project. If you need a copy of MISRA-C 2012, please send email to
-    safety@lists.zephyrproject.org and provide details on reason why you can't
-    obtain one through other options and expected contributions once you have one.
-    The safety committee will review all requests.
+    For existing Zephyr maintainers and collaborators, if you are unable to
+    obtain a copy through your employer, a limited number of copies will be made
+    available through the project. If you need a copy of MISRA-C 2012, please
+    send email to safety@lists.zephyrproject.org and provide details on reason
+    why you can't obtain one through other options and expected contributions
+    once you have one.  The safety committee will review all requests.
 
 
 .. list-table:: Rules
