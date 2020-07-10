@@ -9,7 +9,7 @@
 #include <sys/printk.h>
 
 volatile irq_offload_routine_t _offload_routine;
-static volatile void *offload_param;
+static volatile const void *offload_param;
 
 /*
  * Called by _enter_irq
@@ -28,10 +28,10 @@ void z_irq_do_offload(void)
 	tmp = _offload_routine;
 	_offload_routine = NULL;
 
-	tmp((void *)offload_param);
+	tmp((const void *)offload_param);
 }
 
-void arch_irq_offload(irq_offload_routine_t routine, void *parameter)
+void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 {
 	unsigned int key;
 
