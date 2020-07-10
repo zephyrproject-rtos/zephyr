@@ -174,7 +174,8 @@
 /* Some F3 series SOCs do not have channel 0 connected to an external GPIO. */
 #define ADC_1ST_CHANNEL_ID	1
 
-#elif defined(CONFIG_BOARD_NUCLEO_L476RG)
+#elif defined(CONFIG_BOARD_NUCLEO_L476RG) || \
+	defined(CONFIG_BOARD_BLACKPILL_F411CE)
 #define ADC_DEVICE_NAME         DT_LABEL(DT_INST(0, st_stm32_adc))
 #define ADC_RESOLUTION		10
 #define ADC_GAIN		ADC_GAIN_1
