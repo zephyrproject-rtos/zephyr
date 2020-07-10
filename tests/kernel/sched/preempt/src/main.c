@@ -161,7 +161,7 @@ void manager(void *p1, void *p2, void *p3)
 	k_sem_give(&main_sem);
 }
 
-void irq_waker(void *p)
+void irq_waker(const void *p)
 {
 	ARG_UNUSED(p);
 	k_sem_give(&worker_sems[target]);

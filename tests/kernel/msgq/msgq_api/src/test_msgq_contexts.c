@@ -79,7 +79,7 @@ static void purge_msgq(struct k_msgq *pmsgq)
 	zassert_equal(k_msgq_peek(pmsgq, &read_data), -ENOMSG, NULL);
 }
 
-static void tisr_entry(void *p)
+static void tisr_entry(const void *p)
 {
 	put_msgq((struct k_msgq *)p);
 }
@@ -150,7 +150,7 @@ static void msgq_thread_overflow(struct k_msgq *pmsgq)
 static void msgq_isr(struct k_msgq *pmsgq)
 {
 	/**TESTPOINT: thread-isr data passing via message queue*/
-	irq_offload(tisr_entry, pmsgq);
+	irq_offload(tisr_entry, (const void *)pmsgq);
 	get_msgq(pmsgq);
 
 	/**TESTPOINT: msgq purge*/

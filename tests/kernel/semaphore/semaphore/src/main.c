@@ -11,8 +11,8 @@
 #define SEM_INIT_VAL (0U)
 #define SEM_MAX_VAL  (10U)
 
-#define sem_give_from_isr(sema) irq_offload(isr_sem_give, sema)
-#define sem_take_from_isr(sema) irq_offload(isr_sem_take, sema)
+#define sem_give_from_isr(sema) irq_offload(isr_sem_give, (const void *)sema)
+#define sem_take_from_isr(sema) irq_offload(isr_sem_take, (const void *)sema)
 
 #define SEM_TIMEOUT (K_MSEC(100))
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
@@ -56,7 +56,7 @@ void sem_give_task(void *p1, void *p2, void *p3)
 	k_sem_give((struct k_sem *)p1);
 }
 
-void isr_sem_give(void *semaphore)
+void isr_sem_give(const void *semaphore)
 {
 	k_sem_give((struct k_sem *)semaphore);
 }
@@ -78,7 +78,7 @@ static void tsema_thread_thread(struct k_sem *psem)
 static void tsema_thread_isr(struct k_sem *psem)
 {
 	/**TESTPOINT: thread-isr sync via sema*/
-	irq_offload(isr_sem_give, psem);
+	irq_offload(isr_sem_give, (const void *)psem);
 	zassert_false(k_sem_take(psem, K_FOREVER), NULL);
 }
 

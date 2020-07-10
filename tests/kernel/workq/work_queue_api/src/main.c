@@ -235,7 +235,7 @@ static void twork_submit_1(struct k_work_q *work_q, struct k_work *w,
 	}
 }
 
-static void twork_submit(void *data)
+static void twork_submit(const void *data)
 {
 	struct k_work_q *work_q = (struct k_work_q *)data;
 
@@ -322,7 +322,7 @@ static void tdelayed_work_submit_1(struct k_work_q *work_q,
 	zassert_true(k_work_pending((struct k_work *)w) == 0, NULL);
 }
 
-static void tdelayed_work_submit(void *data)
+static void tdelayed_work_submit(const void *data)
 {
 	struct k_work_q *work_q = (struct k_work_q *)data;
 
@@ -331,7 +331,7 @@ static void tdelayed_work_submit(void *data)
 	}
 }
 
-static void tdelayed_work_cancel(void *data)
+static void tdelayed_work_cancel(const void *data)
 {
 	struct k_work_q *work_q = (struct k_work_q *)data;
 	int ret;
@@ -392,7 +392,7 @@ static void tdelayed_work_cancel(void *data)
 	/*work items not cancelled: delayed_work[1], delayed_work_sleepy*/
 }
 
-static void ttriggered_work_submit(void *data)
+static void ttriggered_work_submit(const void *data)
 {
 	struct k_work_q *work_q = (struct k_work_q *)data;
 
@@ -442,7 +442,7 @@ static void ttriggered_work_submit(void *data)
 	}
 }
 
-static void ttriggered_work_cancel(void *data)
+static void ttriggered_work_cancel(const void *data)
 {
 	struct k_work_q *work_q = (struct k_work_q *)data;
 	int ret;
@@ -660,7 +660,7 @@ void test_work_resubmit_to_queue(void)
 void test_work_submit_to_queue_isr(void)
 {
 	k_sem_reset(&sync_sema);
-	irq_offload(twork_submit, (void *)&workq);
+	irq_offload(twork_submit, (const void *)&workq);
 	for (int i = 0; i < NUM_OF_WORK; i++) {
 		k_sem_take(&sync_sema, K_FOREVER);
 	}
@@ -764,7 +764,7 @@ void test_delayed_work_submit_to_queue_thread(void)
 void test_delayed_work_submit_to_queue_isr(void)
 {
 	k_sem_reset(&sync_sema);
-	irq_offload(tdelayed_work_submit, (void *)&workq);
+	irq_offload(tdelayed_work_submit, (const void *)&workq);
 	for (int i = 0; i < NUM_OF_WORK; i++) {
 		k_sem_take(&sync_sema, K_FOREVER);
 	}
@@ -865,7 +865,7 @@ void test_delayed_work_cancel_from_queue_thread(void)
 void test_delayed_work_cancel_from_queue_isr(void)
 {
 	k_sem_reset(&sync_sema);
-	irq_offload(tdelayed_work_cancel, &workq);
+	irq_offload(tdelayed_work_cancel, (const void *)&workq);
 	/*wait for work items that could not be cancelled*/
 	for (int i = 0; i < NUM_OF_WORK; i++) {
 		k_sem_take(&sync_sema, K_FOREVER);
@@ -936,7 +936,7 @@ void test_triggered_work_submit_to_queue_thread(void)
 void test_triggered_work_submit_to_queue_isr(void)
 {
 	k_sem_reset(&sync_sema);
-	irq_offload(ttriggered_work_submit, (void *)&workq);
+	irq_offload(ttriggered_work_submit, (const void *)&workq);
 	for (int i = 0; i < NUM_OF_WORK; i++) {
 		k_sem_take(&sync_sema, K_FOREVER);
 	}
@@ -1005,7 +1005,7 @@ void test_triggered_work_cancel_from_queue_thread(void)
 void test_triggered_work_cancel_from_queue_isr(void)
 {
 	k_sem_reset(&sync_sema);
-	irq_offload(ttriggered_work_cancel, &workq);
+	irq_offload(ttriggered_work_cancel, (const void *)&workq);
 	/*wait for work items that could not be cancelled*/
 	for (int i = 0; i < NUM_OF_WORK; i++) {
 		k_sem_take(&sync_sema, K_FOREVER);
