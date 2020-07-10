@@ -46,8 +46,8 @@ int arch_irq_is_enabled(unsigned int irq)
  * @return The vector assigned to this interrupt
  */
 int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			     void (*routine)(void *parameter),
-			     void *parameter, uint32_t flags)
+			     void (*routine)(const void *parameter),
+			     const void *parameter, uint32_t flags)
 {
 	posix_isr_declare(irq, (int)flags, routine, parameter);
 	posix_irq_priority_set(irq, priority, flags);

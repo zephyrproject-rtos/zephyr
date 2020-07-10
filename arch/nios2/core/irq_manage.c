@@ -121,8 +121,8 @@ void _enter_irq(uint32_t ipending)
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			     void (*routine)(void *parameter), void *parameter,
-			     uint32_t flags)
+			     void (*routine)(const void *parameter),
+			     const void *parameter, uint32_t flags)
 {
 	ARG_UNUSED(flags);
 	ARG_UNUSED(priority);
