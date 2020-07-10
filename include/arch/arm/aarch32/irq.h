@@ -221,7 +221,7 @@ extern void z_arm_irq_direct_dynamic_dispatch_no_reschedule(void);
 #endif /* CONFIG_DYNAMIC_DIRECT_INTERRUPTS */
 
 /* Spurious interrupt handler. Throws an error if called */
-extern void z_irq_spurious(void *unused);
+extern void z_irq_spurious(const void *unused);
 
 #ifdef CONFIG_GEN_SW_ISR_TABLE
 /* Architecture-specific common entry point for interrupts from the vector

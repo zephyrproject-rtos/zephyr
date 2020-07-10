@@ -48,7 +48,7 @@ extern void z_irq_priority_set(uint32_t irq, uint32_t prio, uint32_t flags);
 }
 
 /* Spurious interrupt handler. Throws an error if called */
-extern void z_irq_spurious(void *unused);
+extern void z_irq_spurious(const void *unused);
 
 #define XTENSA_ERR_NORET
 

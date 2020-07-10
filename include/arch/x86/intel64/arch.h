@@ -97,6 +97,9 @@ struct x86_ssf {
  * All Intel64 interrupts are dynamically connected.
  */
 
-#define ARCH_IRQ_CONNECT arch_irq_connect_dynamic
+#define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
+	arch_irq_connect_dynamic(irq_p, priority_p,			\
+				 (void (*)(const void *))isr_p,		\
+				 isr_param_p, flags_p)
 
 #endif /* ZEPHYR_INCLUDE_ARCH_X86_INTEL64_ARCH_H_ */

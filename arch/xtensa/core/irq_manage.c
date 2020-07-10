@@ -40,8 +40,8 @@ void z_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 #ifndef CONFIG_MULTI_LEVEL_INTERRUPTS
 int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			       void (*routine)(void *parameter),
-			       void *parameter, uint32_t flags)
+			       void (*routine)(const void *parameter),
+			       const void *parameter, uint32_t flags)
 {
 	ARG_UNUSED(flags);
 	ARG_UNUSED(priority);
@@ -51,8 +51,8 @@ int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 }
 #else /* !CONFIG_MULTI_LEVEL_INTERRUPTS */
 int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			       void (*routine)(void *parameter),
-			       void *parameter, uint32_t flags)
+			       void (*routine)(const void *parameter),
+			       const void *parameter, uint32_t flags)
 {
 	return z_soc_irq_connect_dynamic(irq, priority, routine, parameter,
 					 flags);

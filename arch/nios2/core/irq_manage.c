@@ -22,7 +22,7 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(os);
 
-FUNC_NORETURN void z_irq_spurious(void *unused)
+FUNC_NORETURN void z_irq_spurious(const void *unused)
 {
 	ARG_UNUSED(unused);
 	LOG_ERR("Spurious interrupt detected! ipending: %x",
@@ -121,8 +121,8 @@ void _enter_irq(uint32_t ipending)
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			     void (*routine)(void *parameter), void *parameter,
-			     uint32_t flags)
+			     void (*routine)(const void *parameter),
+			     const void *parameter, uint32_t flags)
 {
 	ARG_UNUSED(flags);
 	ARG_UNUSED(priority);
