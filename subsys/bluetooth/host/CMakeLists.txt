@@ -77,3 +77,11 @@ if(CONFIG_BT_USE_DEBUG_KEYS OR CONFIG_BT_STORE_DEBUG_KEYS)
   Do not use in production."
     )
 endif()
+if(CONFIG_BT_CONN_DISABLE_SECURITY)
+  message(WARNING "CONFIG_BT_CONN_DISABLE_SECURITY is enabled.
+  Security is disabled for incoming requests for GATT attributes and L2CAP
+  channels that would otherwise require encryption/authentication in order to
+  be accessed.
+  Do not use in production."
+    )
+endif()

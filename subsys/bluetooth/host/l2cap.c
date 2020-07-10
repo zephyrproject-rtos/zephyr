@@ -981,6 +981,16 @@ static uint16_t l2cap_chan_accept(struct bt_conn *conn,
 	return BT_L2CAP_LE_SUCCESS;
 }
 
+static bool l2cap_check_security(struct bt_conn *conn,
+				 struct bt_l2cap_server *server)
+{
+	if (IS_ENABLED(CONFIG_BT_CONN_DISABLE_SECURITY)) {
+		return true;
+	}
+
+	return conn->sec_level >= server->sec_level;
+}
+
 static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 			struct net_buf *buf)
 {
@@ -1029,7 +1039,7 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	}
 
 	/* Check if connection has minimum required security level */
-	if (conn->sec_level < server->sec_level) {
+	if (!l2cap_check_security(conn, server)) {
 		rsp->result = sys_cpu_to_le16(BT_L2CAP_LE_ERR_AUTHENTICATION);
 		goto rsp;
 	}
@@ -1095,7 +1105,7 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	}
 
 	/* Check if connection has minimum required security level */
-	if (conn->sec_level < server->sec_level) {
+	if (!l2cap_check_security(conn, server)) {
 		result = BT_L2CAP_LE_ERR_AUTHENTICATION;
 		goto response;
 	}
