@@ -49,6 +49,11 @@ Requirements
 This shield requires a board which provides a configuration that allows an
 UART interface. (see :ref:`shields` for more details).
 
+.. note::
+   Sometimes boards declare standard headers like Arduino R3 but not define
+   all connections.  Make sure that the board you are using have all
+   definitions to avoid build errors.
+
 The ESP-8266 should be loaded with the `ESP8266 AT Bin`_ software which is
 available at Espressif Systems web site. The ESP-01 module have up to 1MB of
 flash and the last available stack that fits on this device is ESP8266 AT Bin
@@ -76,16 +81,54 @@ to works:
         - ESP-8266 bootloader won't send garbage. Try connect at 74880 bps if
           you module have 26MHz crystal to detect boot fails.
 
-Programming
-***********
+.. note::
+	Boards that already have a network interface:  Check network
+	documentation to understand how properly configure both interfaces.
+	To keep simple, make sure WiFi is the only interface enabled at
+	Networking -> Link Layer Options.  This will avoid problems running
+	Zephyr samples.
 
-Set ``-DSHIELD=esp_8266`` when you invoke ``west build``. For example:
+Supported variations
+====================
+
+The below table suggests shield variation accordingly with end user
+application.  When a standard connector (arduino, mikrobus) is available on
+board, user should select the matching shield configuration. When esp_8266
+shield is used with a board that doesn't feature a standard connector, a
+dedicated <board>.overlay file should be provided.  The remaining
+configurations should be used based on the board standard headers available.
+
++-----------------------------+------------------------------+-----------+
+| Connector Standard          | Shield Designation           | Variation |
++=============================+==============================+===========+
+| Without standard (overlay)  | `esp_8266`_                  |     1     |
++-----------------------------+------------------------------+-----------+
+| Arduino                     | `esp_8266_arduino`_          |     2     |
++-----------------------------+------------------------------+-----------+
+| MikroBus                    | `esp_8266_mikrobus`_         |     3     |
++-----------------------------+------------------------------+-----------+
+
+
+Build and Programming
+*********************
+
+Set ``-DSHIELD=<shield designation>`` when you invoke ``west build``.
+
+To build shield with specific overlay:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/wifi
    :board: sam4e_xpro
    :shield: esp_8266
-   :goals: build
+   :goals: build flash
+
+To build shield with standard headers:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/wifi
+   :board: [disco_l475_iot1 | frdm_k64f | lpcxpresso55s69_ns | nucleo_f767zi]
+   :shield: [esp_8266_arduino | esp_8266_mikrobus]
+   :goals: build flash
 
 References
 **********
@@ -94,3 +137,12 @@ References
 
 .. _ESP8266 AT Bin:
    https://www.espressif.com/en/support/download/at
+
+.. _esp_8266:
+   https://github.com/zephyrproject-rtos/zephyr/blob/master/boards/shields/esp_8266/esp_8266.overlay
+
+.. _esp_8266_arduino:
+   https://github.com/zephyrproject-rtos/zephyr/blob/master/boards/shields/esp_8266/esp_8266_arduino.overlay
+
+.. _esp_8266_mikrobus:
+   https://github.com/zephyrproject-rtos/zephyr/blob/master/boards/shields/esp_8266/esp_8266_mikrobus.overlay

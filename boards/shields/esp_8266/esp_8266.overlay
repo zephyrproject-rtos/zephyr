@@ -5,8 +5,6 @@
  */
 
 /*
- * This file can't be used once this shield target all board with
- * a free UART port. If there is a &arduino_serial declared here,
- * boards that don't have the compatible shield pins won't work. This
- * happens because device tree can't handle an inexistent node.
+ * This file is intentionally empty.  Please confer with shield documentation
+ * for instructions to use this shield.
  */

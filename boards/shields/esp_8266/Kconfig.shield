@@ -3,3 +3,9 @@
 
 config SHIELD_ESP_8266
 	def_bool $(shields_list_contains,esp_8266)
+
+config SHIELD_ESP_8266_ARDUINO
+	def_bool $(shields_list_contains,esp_8266_arduino)
+
+config SHIELD_ESP_8266_MIKROBUS
+	def_bool $(shields_list_contains,esp_8266_mikrobus)
