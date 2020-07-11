@@ -6,7 +6,7 @@
 config DMA_MCUX_EDMA
 	bool "Enable MCUX DMA driver"
 	depends on HAS_MCUX_EDMA
-	select NOCACHE_MEMORY if HAS_MCUX_CACHE
+	imply NOCACHE_MEMORY if HAS_MCUX_CACHE
 	help
 	  DMA driver for MCUX series SoCs.
 
