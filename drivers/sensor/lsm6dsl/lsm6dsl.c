@@ -816,11 +816,20 @@ static int lsm6dsl_init(struct device *dev)
 	COND_CODE_1(DT_INST_ON_BUS(n, spi), (lsm6dsl_spi_init),		       \
 		    (lsm6dsl_i2c_init))
 
+#define LSM6DSL_SPI_CFG(n)
+
+#define LSM6DSL_I2C_CFG(n) .i2c.dev_addr = DT_INST_REG_ADDR(n)
+
+#define LSM6DSL_COMM_CFG(n)						       \
+	COND_CODE_1(DT_INST_ON_BUS(n, spi), (LSM6DSL_SPI_CFG(n)),	       \
+		    (LSM6DSL_I2C_CFG(n)))
+
 #define LSM6DSL_DEVICE(n)						       \
 	static struct lsm6dsl_data lsm6dsl_data_##n;			       \
 	static const struct lsm6dsl_config lsm6dsl_config_##n = {	       \
 		.comm_master_dev_name = DT_INST_BUS_LABEL(n),		       \
 		.comm_init = LSM6DSL_COMM_INIT(n),			       \
+		LSM6DSL_COMM_CFG(n),					       \
 	};								       \
 	DEVICE_AND_API_INIT(lsm6dsl_##n, DT_INST_LABEL(n), lsm6dsl_init,       \
 			    &lsm6dsl_data_##n, &lsm6dsl_config_##n,	       \

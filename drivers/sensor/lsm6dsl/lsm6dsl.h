@@ -606,6 +606,11 @@
 struct lsm6dsl_config {
 	const char *comm_master_dev_name;
 	int (*comm_init)(struct device *dev);
+	union {
+		struct {
+			uint16_t dev_addr;
+		} i2c;
+	};
 };
 
 struct lsm6dsl_data;
