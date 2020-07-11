@@ -233,6 +233,10 @@
 	status = "okay";
 };
 
+&edma {
+	status = "okay";
+};
+
 &flash0 {
 	/*
 	 * For more information, see:
