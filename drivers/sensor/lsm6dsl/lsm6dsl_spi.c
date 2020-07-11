@@ -7,38 +7,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT st_lsm6dsl
-
 #include <string.h>
 #include <drivers/spi.h>
-#include "lsm6dsl.h"
 #include <logging/log.h>
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#include "lsm6dsl.h"
 
 #define LSM6DSL_SPI_READ		(1 << 7)
 
 LOG_MODULE_DECLARE(LSM6DSL, CONFIG_SENSOR_LOG_LEVEL);
 
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-static struct spi_cs_control lsm6dsl_cs_ctrl;
-#endif
-
-#define SPI_CS NULL
-
-static struct spi_config lsm6dsl_spi_conf = {
-	.frequency = DT_INST_PROP(0, spi_max_frequency),
-	.operation = (SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
-		      SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE),
-	.slave     = DT_INST_REG_ADDR(0),
-	.cs        = SPI_CS,
-};
-
 static int lsm6dsl_raw_read(struct device *dev, uint8_t reg_addr,
 			    uint8_t *value, uint8_t len)
 {
 	struct lsm6dsl_data *data = dev->driver_data;
-	struct spi_config *spi_cfg = &lsm6dsl_spi_conf;
+	const struct lsm6dsl_config *config = dev->config_info;
+	const struct spi_config *spi_cfg = config->spi.spi_conf;
 	uint8_t buffer_tx[2] = { reg_addr | LSM6DSL_SPI_READ, 0 };
 	const struct spi_buf tx_buf = {
 			.buf = buffer_tx,
@@ -79,7 +63,8 @@ static int lsm6dsl_raw_write(struct device *dev, uint8_t reg_addr,
 			     uint8_t *value, uint8_t len)
 {
 	struct lsm6dsl_data *data = dev->driver_data;
-	struct spi_config *spi_cfg = &lsm6dsl_spi_conf;
+	const struct lsm6dsl_config *config = dev->config_info;
+	const struct spi_config *spi_cfg = config->spi.spi_conf;
 	uint8_t buffer_tx[1] = { reg_addr & ~LSM6DSL_SPI_READ };
 	const struct spi_buf tx_buf[2] = {
 		{
@@ -147,29 +132,20 @@ static const struct lsm6dsl_transfer_function lsm6dsl_spi_transfer_fn = {
 int lsm6dsl_spi_init(struct device *dev)
 {
 	struct lsm6dsl_data *data = dev->driver_data;
+	const struct lsm6dsl_config *config = dev->config_info;
 
 	data->hw_tf = &lsm6dsl_spi_transfer_fn;
 
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	/* handle SPI CS thru GPIO if it is the case */
-	lsm6dsl_cs_ctrl.gpio_dev = device_get_binding(
-		DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
-	if (!lsm6dsl_cs_ctrl.gpio_dev) {
-		LOG_ERR("Unable to get GPIO SPI CS device");
-		return -ENODEV;
+	if (config->spi.gpio_name != NULL) {
+		/* The config is placed in RAM by LSM6DSL_SPI_CS_CONFIG */
+		struct spi_cs_control *cs =
+			(struct spi_cs_control *)config->spi.spi_conf->cs;
+		cs->gpio_dev = device_get_binding(config->spi.gpio_name);
+		if (!cs->gpio_dev) {
+			LOG_ERR("Unable to get GPIO SPI CS device");
+			return -ENODEV;
+		}
 	}
-
-	lsm6dsl_cs_ctrl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
-	lsm6dsl_cs_ctrl.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0);
-	lsm6dsl_cs_ctrl.delay = 0U;
-
-	lsm6dsl_spi_conf.cs = &lsm6dsl_cs_ctrl;
-
-	LOG_DBG("SPI GPIO CS configured on %s:%u",
-		    DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
-		    DT_INST_SPI_DEV_CS_GPIOS_PIN(0));
-#endif
 
 	return 0;
 }
-#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */

@@ -14,6 +14,7 @@
 #include <drivers/sensor.h>
 #include <zephyr/types.h>
 #include <drivers/gpio.h>
+#include <drivers/spi.h>
 #include <sys/util.h>
 
 #define LSM6DSL_REG_FUNC_CFG_ACCESS			0x01
@@ -610,6 +611,10 @@ struct lsm6dsl_config {
 		struct {
 			uint16_t dev_addr;
 		} i2c;
+		struct {
+			const struct spi_config *spi_conf;
+			const char *gpio_name;
+		} spi;
 	};
 };
 
