@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT st_lsm6dsl
-
 #include <device.h>
 #include <drivers/i2c.h>
 #include <sys/__assert.h>
@@ -17,21 +15,24 @@
 
 LOG_MODULE_DECLARE(LSM6DSL, CONFIG_SENSOR_LOG_LEVEL);
 
-static inline void setup_irq(struct lsm6dsl_data *drv_data,
+static inline void setup_irq(struct device *dev,
 			     bool enable)
 {
+	struct lsm6dsl_data *drv_data = dev->driver_data;
+	const struct lsm6dsl_config *const config = dev->config_info;
 	unsigned int flags = enable
 		? GPIO_INT_EDGE_TO_ACTIVE
 		: GPIO_INT_DISABLE;
 
-	gpio_pin_interrupt_configure(drv_data->gpio,
-				     DT_INST_GPIO_PIN(0, irq_gpios),
+	gpio_pin_interrupt_configure(drv_data->gpio, config->trigger_pin,
 				     flags);
 }
 
-static inline void handle_irq(struct lsm6dsl_data *drv_data)
+static inline void handle_irq(struct device *dev)
 {
-	setup_irq(drv_data, false);
+	struct lsm6dsl_data *drv_data = dev->driver_data;
+
+	setup_irq(dev, false);
 
 #if defined(CONFIG_LSM6DSL_TRIGGER_OWN_THREAD)
 	k_sem_give(&drv_data->gpio_sem);
@@ -45,10 +46,11 @@ int lsm6dsl_trigger_set(struct device *dev,
 			sensor_trigger_handler_t handler)
 {
 	struct lsm6dsl_data *drv_data = dev->driver_data;
+	const struct lsm6dsl_config *const config = dev->config_info;
 
 	__ASSERT_NO_MSG(trig->type == SENSOR_TRIG_DATA_READY);
 
-	setup_irq(drv_data, false);
+	setup_irq(dev, false);
 
 	drv_data->data_ready_handler = handler;
 	if (handler == NULL) {
@@ -57,9 +59,9 @@ int lsm6dsl_trigger_set(struct device *dev,
 
 	drv_data->data_ready_trigger = *trig;
 
-	setup_irq(drv_data, true);
-	if (gpio_pin_get(drv_data->gpio, DT_INST_GPIO_PIN(0, irq_gpios)) > 0) {
-		handle_irq(drv_data);
+	setup_irq(dev, true);
+	if (gpio_pin_get(drv_data->gpio, config->trigger_pin) > 0) {
+		handle_irq(dev);
 	}
 
 	return 0;
@@ -73,7 +75,7 @@ static void lsm6dsl_gpio_callback(struct device *dev,
 
 	ARG_UNUSED(pins);
 
-	handle_irq(drv_data);
+	handle_irq(drv_data->dev);
 }
 
 static void lsm6dsl_thread_cb(void *arg)
@@ -86,7 +88,7 @@ static void lsm6dsl_thread_cb(void *arg)
 					     &drv_data->data_ready_trigger);
 	}
 
-	setup_irq(drv_data, true);
+	setup_irq(dev, true);
 }
 
 #ifdef CONFIG_LSM6DSL_TRIGGER_OWN_THREAD
@@ -117,21 +119,22 @@ static void lsm6dsl_work_cb(struct k_work *work)
 int lsm6dsl_init_interrupt(struct device *dev)
 {
 	struct lsm6dsl_data *drv_data = dev->driver_data;
+	const struct lsm6dsl_config *const config = dev->config_info;
 
 	/* setup data ready gpio interrupt */
-	drv_data->gpio = device_get_binding(DT_INST_GPIO_LABEL(0, irq_gpios));
+	drv_data->gpio = device_get_binding(config->trigger_name);
 	if (drv_data->gpio == NULL) {
 		LOG_ERR("Cannot get pointer to %s device.",
-			    DT_INST_GPIO_LABEL(0, irq_gpios));
+			config->trigger_name);
 		return -EINVAL;
 	}
 
-	gpio_pin_configure(drv_data->gpio, DT_INST_GPIO_PIN(0, irq_gpios),
-			   GPIO_INPUT | DT_INST_GPIO_FLAGS(0, irq_gpios));
+	gpio_pin_configure(drv_data->gpio, config->trigger_pin,
+			   GPIO_INPUT | config->trigger_flags);
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   lsm6dsl_gpio_callback,
-			   BIT(DT_INST_GPIO_PIN(0, irq_gpios)));
+			   BIT(config->trigger_pin));
 
 	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
 		LOG_ERR("Could not set gpio callback.");
@@ -162,7 +165,7 @@ int lsm6dsl_init_interrupt(struct device *dev)
 	drv_data->dev = dev;
 #endif
 
-	setup_irq(drv_data, true);
+	setup_irq(dev, true);
 
 	return 0;
 }

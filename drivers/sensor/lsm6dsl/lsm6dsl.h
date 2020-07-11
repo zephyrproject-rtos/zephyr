@@ -616,6 +616,11 @@ struct lsm6dsl_config {
 			const char *gpio_name;
 		} spi;
 	};
+#if defined(CONFIG_LSM6DSL_TRIGGER)
+	const char *trigger_name;
+	uint16_t trigger_pin;
+	uint16_t trigger_flags;
+#endif
 };
 
 struct lsm6dsl_data;
@@ -663,6 +668,7 @@ struct lsm6dsl_data {
 #ifdef CONFIG_LSM6DSL_TRIGGER
 	struct device *gpio;
 	struct gpio_callback gpio_cb;
+	struct device *dev;
 
 	struct sensor_trigger data_ready_trigger;
 	sensor_trigger_handler_t data_ready_handler;
@@ -673,7 +679,6 @@ struct lsm6dsl_data {
 	struct k_sem gpio_sem;
 #elif defined(CONFIG_LSM6DSL_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	struct device *dev;
 #endif
 
 #endif /* CONFIG_LSM6DSL_TRIGGER */
