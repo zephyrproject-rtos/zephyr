@@ -92,7 +92,7 @@ static inline int lsm6dsl_reboot(struct device *dev)
 {
 	struct lsm6dsl_data *data = dev->driver_data;
 
-	if (data->hw_tf->update_reg(data, LSM6DSL_REG_CTRL3_C,
+	if (data->hw_tf->update_reg(dev, LSM6DSL_REG_CTRL3_C,
 				    LSM6DSL_MASK_CTRL3_C_BOOT,
 				    1 << LSM6DSL_SHIFT_CTRL3_C_BOOT) < 0) {
 		return -EIO;
@@ -108,7 +108,7 @@ static int lsm6dsl_accel_set_fs_raw(struct device *dev, uint8_t fs)
 {
 	struct lsm6dsl_data *data = dev->driver_data;
 
-	if (data->hw_tf->update_reg(data,
+	if (data->hw_tf->update_reg(dev,
 				    LSM6DSL_REG_CTRL1_XL,
 				    LSM6DSL_MASK_CTRL1_XL_FS_XL,
 				    fs << LSM6DSL_SHIFT_CTRL1_XL_FS_XL) < 0) {
@@ -124,7 +124,7 @@ static int lsm6dsl_accel_set_odr_raw(struct device *dev, uint8_t odr)
 {
 	struct lsm6dsl_data *data = dev->driver_data;
 
-	if (data->hw_tf->update_reg(data,
+	if (data->hw_tf->update_reg(dev,
 				    LSM6DSL_REG_CTRL1_XL,
 				    LSM6DSL_MASK_CTRL1_XL_ODR_XL,
 				    odr << LSM6DSL_SHIFT_CTRL1_XL_ODR_XL) < 0) {
@@ -141,14 +141,14 @@ static int lsm6dsl_gyro_set_fs_raw(struct device *dev, uint8_t fs)
 	struct lsm6dsl_data *data = dev->driver_data;
 
 	if (fs == GYRO_FULLSCALE_125) {
-		if (data->hw_tf->update_reg(data,
+		if (data->hw_tf->update_reg(dev,
 					LSM6DSL_REG_CTRL2_G,
 					LSM6DSL_MASK_CTRL2_FS125,
 					1 << LSM6DSL_SHIFT_CTRL2_FS125) < 0) {
 			return -EIO;
 		}
 	} else {
-		if (data->hw_tf->update_reg(data,
+		if (data->hw_tf->update_reg(dev,
 					LSM6DSL_REG_CTRL2_G,
 					LSM6DSL_MASK_CTRL2_G_FS_G,
 					fs << LSM6DSL_SHIFT_CTRL2_G_FS_G) < 0) {
@@ -163,7 +163,7 @@ static int lsm6dsl_gyro_set_odr_raw(struct device *dev, uint8_t odr)
 {
 	struct lsm6dsl_data *data = dev->driver_data;
 
-	if (data->hw_tf->update_reg(data,
+	if (data->hw_tf->update_reg(dev,
 				    LSM6DSL_REG_CTRL2_G,
 				    LSM6DSL_MASK_CTRL2_G_ODR_G,
 				    odr << LSM6DSL_SHIFT_CTRL2_G_ODR_G) < 0) {
@@ -319,7 +319,7 @@ static int lsm6dsl_sample_fetch_accel(struct device *dev)
 	struct lsm6dsl_data *data = dev->driver_data;
 	uint8_t buf[6];
 
-	if (data->hw_tf->read_data(data, LSM6DSL_REG_OUTX_L_XL,
+	if (data->hw_tf->read_data(dev, LSM6DSL_REG_OUTX_L_XL,
 				   buf, sizeof(buf)) < 0) {
 		LOG_DBG("failed to read sample");
 		return -EIO;
@@ -340,7 +340,7 @@ static int lsm6dsl_sample_fetch_gyro(struct device *dev)
 	struct lsm6dsl_data *data = dev->driver_data;
 	uint8_t buf[6];
 
-	if (data->hw_tf->read_data(data, LSM6DSL_REG_OUTX_L_G,
+	if (data->hw_tf->read_data(dev, LSM6DSL_REG_OUTX_L_G,
 				   buf, sizeof(buf)) < 0) {
 		LOG_DBG("failed to read sample");
 		return -EIO;
@@ -362,7 +362,7 @@ static int lsm6dsl_sample_fetch_temp(struct device *dev)
 	struct lsm6dsl_data *data = dev->driver_data;
 	uint8_t buf[2];
 
-	if (data->hw_tf->read_data(data, LSM6DSL_REG_OUT_TEMP_L,
+	if (data->hw_tf->read_data(dev, LSM6DSL_REG_OUT_TEMP_L,
 				   buf, sizeof(buf)) < 0) {
 		LOG_DBG("failed to read sample");
 		return -EIO;
@@ -714,7 +714,7 @@ static int lsm6dsl_init_chip(struct device *dev)
 		return -EIO;
 	}
 
-	if (data->hw_tf->read_reg(data, LSM6DSL_REG_WHO_AM_I, &chip_id) < 0) {
+	if (data->hw_tf->read_reg(dev, LSM6DSL_REG_WHO_AM_I, &chip_id) < 0) {
 		LOG_DBG("failed reading chip id");
 		return -EIO;
 	}
@@ -750,7 +750,7 @@ static int lsm6dsl_init_chip(struct device *dev)
 		return -EIO;
 	}
 
-	if (data->hw_tf->update_reg(data,
+	if (data->hw_tf->update_reg(dev,
 				LSM6DSL_REG_FIFO_CTRL5,
 				LSM6DSL_MASK_FIFO_CTRL5_FIFO_MODE,
 				0 << LSM6DSL_SHIFT_FIFO_CTRL5_FIFO_MODE) < 0) {
@@ -758,7 +758,7 @@ static int lsm6dsl_init_chip(struct device *dev)
 		return -EIO;
 	}
 
-	if (data->hw_tf->update_reg(data,
+	if (data->hw_tf->update_reg(dev,
 				    LSM6DSL_REG_CTRL3_C,
 				    LSM6DSL_MASK_CTRL3_C_BDU |
 				    LSM6DSL_MASK_CTRL3_C_BLE |

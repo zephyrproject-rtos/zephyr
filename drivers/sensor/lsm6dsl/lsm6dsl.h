@@ -611,13 +611,13 @@ struct lsm6dsl_config {
 struct lsm6dsl_data;
 
 struct lsm6dsl_transfer_function {
-	int (*read_data)(struct lsm6dsl_data *data, uint8_t reg_addr,
+	int (*read_data)(struct device *dev, uint8_t reg_addr,
 			 uint8_t *value, uint8_t len);
-	int (*write_data)(struct lsm6dsl_data *data, uint8_t reg_addr,
+	int (*write_data)(struct device *dev, uint8_t reg_addr,
 			  uint8_t *value, uint8_t len);
-	int (*read_reg)(struct lsm6dsl_data *data, uint8_t reg_addr,
+	int (*read_reg)(struct device *dev, uint8_t reg_addr,
 			uint8_t *value);
-	int (*update_reg)(struct lsm6dsl_data *data, uint8_t reg_addr,
+	int (*update_reg)(struct device *dev, uint8_t reg_addr,
 			  uint8_t mask, uint8_t value);
 };
 

@@ -139,7 +139,7 @@ int lsm6dsl_init_interrupt(struct device *dev)
 	}
 
 	/* enable data-ready interrupt */
-	if (drv_data->hw_tf->update_reg(drv_data,
+	if (drv_data->hw_tf->update_reg(dev,
 			       LSM6DSL_REG_INT1_CTRL,
 			       LSM6DSL_MASK_INT1_CTRL_DRDY_XL |
 			       LSM6DSL_MASK_INT1_CTRL_DRDY_G,
