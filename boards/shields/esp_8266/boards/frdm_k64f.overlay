@@ -10,14 +10,3 @@
 	 */
 	status = "disabled";
 };
-
-&arduino_serial {
-	status = "okay";
-	current-speed = <115200>;
-
-	esp8266 {
-		compatible = "espressif,esp";
-		label = "esp8266";
-		status = "okay";
-	};
-};
