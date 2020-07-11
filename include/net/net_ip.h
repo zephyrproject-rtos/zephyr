@@ -1056,6 +1056,16 @@ static inline void net_ipv6_addr_create_ll_allnodes_mcast(struct in6_addr *addr)
 }
 
 /**
+ *  @brief Create link local allrouters multicast IPv6 address
+ *
+ *  @param addr IPv6 address
+ */
+static inline void net_ipv6_addr_create_ll_allrouters_mcast(struct in6_addr *addr)
+{
+	net_ipv6_addr_create(addr, 0xff02, 0, 0, 0, 0, 0, 0, 0x0002);
+}
+
+/**
  *  @brief Create IPv6 address interface identifier
  *
  *  @param addr IPv6 address
