@@ -604,7 +604,8 @@
 #endif
 
 struct lsm6dsl_config {
-	char *comm_master_dev_name;
+	const char *comm_master_dev_name;
+	int (*comm_init)(struct device *dev);
 };
 
 struct lsm6dsl_data;

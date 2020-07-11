@@ -773,10 +773,6 @@ static int lsm6dsl_init_chip(struct device *dev)
 	return 0;
 }
 
-static struct lsm6dsl_config lsm6dsl_config = {
-	.comm_master_dev_name = DT_INST_BUS_LABEL(0),
-};
-
 static int lsm6dsl_init(struct device *dev)
 {
 	const struct lsm6dsl_config * const config = dev->config_info;
@@ -789,11 +785,10 @@ static int lsm6dsl_init(struct device *dev)
 		return -EINVAL;
 	}
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	lsm6dsl_spi_init(dev);
-#else
-	lsm6dsl_i2c_init(dev);
-#endif
+	if (config->comm_init(dev) < 0) {
+		LOG_DBG("failed to initialize comms");
+		return -EINVAL;
+	}
 
 	if (lsm6dsl_init_chip(dev) < 0) {
 		LOG_DBG("failed to initialize chip");
@@ -817,9 +812,19 @@ static int lsm6dsl_init(struct device *dev)
 	return 0;
 }
 
+#define LSM6DSL_COMM_INIT(n)						       \
+	COND_CODE_1(DT_INST_ON_BUS(n, spi), (lsm6dsl_spi_init),		       \
+		    (lsm6dsl_i2c_init))
 
-static struct lsm6dsl_data lsm6dsl_data;
+#define LSM6DSL_DEVICE(n)						       \
+	static struct lsm6dsl_data lsm6dsl_data_##n;			       \
+	static const struct lsm6dsl_config lsm6dsl_config_##n = {	       \
+		.comm_master_dev_name = DT_INST_BUS_LABEL(n),		       \
+		.comm_init = LSM6DSL_COMM_INIT(n),			       \
+	};								       \
+	DEVICE_AND_API_INIT(lsm6dsl_##n, DT_INST_LABEL(n), lsm6dsl_init,       \
+			    &lsm6dsl_data_##n, &lsm6dsl_config_##n,	       \
+			    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,	       \
+			    &lsm6dsl_api_funcs)
 
-DEVICE_AND_API_INIT(lsm6dsl, DT_INST_LABEL(0), lsm6dsl_init,
-		    &lsm6dsl_data, &lsm6dsl_config, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY, &lsm6dsl_api_funcs);
+DT_INST_FOREACH_STATUS_OKAY(LSM6DSL_DEVICE);
