@@ -67,6 +67,39 @@ config BT_CTLR_RX_PRIO
 	int
 	default 6
 
+
+config BT_CTLR_SETTINGS
+	bool "Settings System"
+	depends on SETTINGS
+	help
+	  Enable use of settings system in controller.
+
+config BT_CTLR_VERSION_SETTINGS
+	bool "Version Settings"
+	depends on BT_CTLR_SETTINGS
+	help
+	  Make the controller's Company Id and Subversion Number configurable
+	  through settings system.
+
+config BT_CTLR_COMPANY_ID
+	hex "Controller Company Id"
+	default BT_COMPANY_ID
+	range 0x0000 0xFFFF
+	help
+	  Set the Bluetooth Company Identifier that will be used in
+	  the VERSION_IND PDU. Uses BT_COMPANY_ID by default, although
+	  silicon vendors and hardware manufacturers can set their own
+	  Company Identifier for the controller. The full list of Bluetooth
+	  Company Identifiers can be found here:
+	  https://www.bluetooth.com/specifications/assigned-numbers/company-identifiers
+
+config BT_CTLR_SUBVERSION_NUMBER
+	hex "Subversion Number"
+	default 0xFFFF
+	range 0x0000 0xFFFF
+	help
+	  Set the Subversion Number that will be used in VERSION_IND PDU.
+
 config BT_CTLR_ADVANCED_FEATURES
 	bool "Show advanced features"
 	help
