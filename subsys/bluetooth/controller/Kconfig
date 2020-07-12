@@ -51,15 +51,6 @@ config BT_CTLR_DTM_HCI_SUPPORT
 config BT_CTLR_SMI_SUPPORT
 	bool
 
-config BT_CTLR_XTAL_ADVANCED_SUPPORT
-	bool
-
-config BT_CTLR_SCHED_ADVANCED_SUPPORT
-	bool
-
-config BT_CTLR_TIFS_HW_SUPPORT
-	bool
-
 config BT_CTLR
 	bool "Bluetooth Controller"
 	select BT_CTLR_CONN_RSSI if BT_CONN && BT_HCI_RAW

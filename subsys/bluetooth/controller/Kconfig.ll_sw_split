@@ -5,6 +5,15 @@
 
 if BT_LL_SW_SPLIT
 
+config BT_CTLR_XTAL_ADVANCED_SUPPORT
+	bool
+
+config BT_CTLR_SCHED_ADVANCED_SUPPORT
+	bool
+
+config BT_CTLR_TIFS_HW_SUPPORT
+	bool
+
 config BT_CTLR_ADVANCED_FEATURES
 	bool "Show advanced features"
 	help
