@@ -69,6 +69,26 @@ static void lvgl_log(lv_log_level_t level, const char *file, uint32_t line,
 
 static int lvgl_allocate_rendering_buffers(lv_disp_drv_t *disp_drv)
 {
+	struct display_capabilities cap;
+	struct device *display_dev = (struct device *)disp_drv->user_data;
+	int err = 0;
+
+	display_get_capabilities(display_dev, &cap);
+
+	if (cap.x_resolution <= CONFIG_LVGL_HOR_RES) {
+		disp_drv->hor_res = cap.x_resolution;
+	} else {
+		LOG_ERR("Horizontal resolution is larger than maximum");
+		err = -ENOTSUP;
+	}
+
+	if (cap.y_resolution <= CONFIG_LVGL_VER_RES) {
+		disp_drv->ver_res = cap.y_resolution;
+	} else {
+		LOG_ERR("Vertical resolution is larger than maximum");
+		err = -ENOTSUP;
+	}
+
 	disp_drv->buffer = &disp_buf;
 #ifdef CONFIG_LVGL_DOUBLE_VDB
 	lv_disp_buf_init(disp_drv->buffer, &buf0, &buf1, NBR_PIXELS_IN_BUFFER);
@@ -76,7 +96,7 @@ static int lvgl_allocate_rendering_buffers(lv_disp_drv_t *disp_drv)
 	lv_disp_buf_init(disp_drv->buffer, &buf0, NULL, NBR_PIXELS_IN_BUFFER);
 #endif /* CONFIG_LVGL_DOUBLE_VDB  */
 
-	return 0;
+	return err;
 }
 
 #else
@@ -224,6 +244,7 @@ static int lvgl_init(struct device *dev)
 
 	struct device *display_dev =
 		device_get_binding(CONFIG_LVGL_DISPLAY_DEV_NAME);
+	int err = 0;
 	lv_disp_drv_t disp_drv;
 
 	if (display_dev == NULL) {
@@ -244,7 +265,10 @@ static int lvgl_init(struct device *dev)
 	lv_disp_drv_init(&disp_drv);
 	disp_drv.user_data = (void *) display_dev;
 
-	lvgl_allocate_rendering_buffers(&disp_drv);
+	err = lvgl_allocate_rendering_buffers(&disp_drv);
+	if (err != 0) {
+		return err;
+	}
 
 	if (set_lvgl_rendering_cb(&disp_drv) != 0) {
 		LOG_ERR("Display not supported.");
