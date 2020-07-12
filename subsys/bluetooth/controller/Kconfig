@@ -448,8 +448,8 @@ config BT_CTLR_ADV_EXT
 	bool "LE Advertising Extensions" if !BT_LL_SW_SPLIT
 	depends on BT_CTLR_ADV_EXT_SUPPORT
 	select BT_CTLR_SCAN_REQ_NOTIFY
-	# Uncomment when "LE Advertising Set Terminated event" is implemented
-	# default y if BT_EXT_ADV
+	# Enable by default for BT_LL_SW_SPLIT when "LE Advertising Set Terminated event" is implemented
+	default y if BT_EXT_ADV && !BT_LL_SW_SPLIT
 	help
 	  Enable support for Bluetooth 5.0 LE Advertising Extensions in the
 	  Controller.
