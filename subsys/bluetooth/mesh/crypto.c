@@ -66,7 +66,7 @@ static int bt_mesh_aes_cmac(const uint8_t key[16], struct bt_mesh_sg *sg,
 	return 0;
 }
 
-static int bt_mesh_aes_cmac_one(const uint8_t key[16], const void *m,
+int bt_mesh_aes_cmac_one(const uint8_t key[16], const void *m,
 				size_t len, uint8_t mac[16])
 {
 	struct bt_mesh_sg sg = { m, len };

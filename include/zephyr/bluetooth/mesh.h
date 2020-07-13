@@ -25,6 +25,9 @@
 #include <zephyr/bluetooth/mesh/health_cli.h>
 #include <zephyr/bluetooth/mesh/blob_cli.h>
 #include <zephyr/bluetooth/mesh/blob_io_flash.h>
+#include <zephyr/bluetooth/mesh/dfu_srv.h>
+#include <zephyr/bluetooth/mesh/dfu_cli.h>
+#include <zephyr/bluetooth/mesh/dfu_metadata.h>
 #include <zephyr/bluetooth/mesh/proxy.h>
 #include <zephyr/bluetooth/mesh/heartbeat.h>
 #include <zephyr/bluetooth/mesh/cdb.h>
