@@ -63,3 +63,9 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH_SELF_TEST test.c)
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_CDB cdb.c)
 
 add_subdirectory_ifdef(CONFIG_BT_MESH_SHELL shell)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_BLOB_SRV blob_srv.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_BLOB_CLI blob_cli.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_BLOB_IO_FLASH blob_io_flash.c)
