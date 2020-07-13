@@ -81,6 +81,11 @@ config SOC_GECKO_RTCC
 	help
 	  Set if the Real Time Counter and Calendar (RTCC) HAL module is used.
 
+config SOC_GECKO_SE
+	bool
+	help
+	  Set if the Secure Element (SE) HAL module is used.
+
 config SOC_GECKO_TIMER
 	bool
 	help

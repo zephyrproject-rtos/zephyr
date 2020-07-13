@@ -41,6 +41,7 @@
 /soc/arm/nordic_nrf/                      @ioannisg
 /soc/arm/nuvoton/                         @ssekar15
 /soc/arm/qemu_cortex_a53/                 @carlocaione
+/soc/arm/silabs_exx32/efr32mg21/          @l-alfred
 /soc/arm/st_stm32/                        @erwango
 /soc/arm/st_stm32/stm32f4/                @idlethread
 /soc/arm/st_stm32/stm32mp1/               @arnopo
@@ -277,6 +278,7 @@
 /dts/arm/silabs/efr32bg13p*               @mnkp
 /dts/arm/silabs/efm32jg12b*               @chrta
 /dts/arm/silabs/efm32pg12b*               @chrta
+/dts/arm/silabs/efr32mg21*                @l-alfred
 /dts/riscv/microsemi-miv.dtsi             @galak
 /dts/riscv/rv32m1*                        @MaureenHelm
 /dts/riscv/riscv32-fe310.dtsi             @nategraff-sifive
