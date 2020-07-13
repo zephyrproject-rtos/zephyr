@@ -75,14 +75,23 @@ static struct usb_ep_cfg_data device_ep[] = {
 	},
 };
 
+static struct usb_if_container device_if[] = {
+	{
+		.iface = &dev_desc.if0,
+		.iface_alt = NULL,
+		.curr_alt = 0,
+	}
+};
+
 USBD_CFG_DATA_DEFINE(primary, device) struct usb_cfg_data device_config = {
-	.interface_descriptor = &dev_desc.if0,
 	.cb_usb_status = status_cb,
 	.request_handlers = {
 		.vendor_handler = NULL,
 		.class_handler = NULL,
 		.custom_handler = NULL,
 	},
+	.num_if_containers = ARRAY_SIZE(device_if),
+	.if_containers = device_if,
 	.num_endpoints = ARRAY_SIZE(device_ep),
 	.endpoints = device_ep,
 };

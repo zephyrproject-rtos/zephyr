@@ -144,6 +144,20 @@ struct usb_ep_cfg_data {
 };
 
 /**
+ * @brief USB Interface container
+ *
+ * This structure represents interface related data
+ * requred for USB core stack part to correctly address
+ * the requests. Right now interface container provides
+ * only one alternate setting, this may change in the future.
+ */
+struct usb_if_container {
+	const struct usb_if_descriptor *const iface;
+	const struct usb_if_descriptor *const iface_alt;
+	uint8_t curr_alt;
+};
+
+/**
  * @brief USB request handlers
  *
  * This structure contains USB request handlers
@@ -174,8 +188,6 @@ struct usb_request_handlers {
  * may only be updated after calls to usb_deconfig
  */
 struct usb_cfg_data {
-	/** Pointer to interface descriptor */
-	const void *interface_descriptor;
 	/** Function for interface runtime configuration */
 	usb_interface_config interface_config;
 	/** Callback to be notified on USB connection status change */
@@ -184,11 +196,15 @@ struct usb_cfg_data {
 			      const uint8_t *param);
 	/** USB request handlers */
 	struct usb_request_handlers request_handlers;
-	/** Number of individual endpoints in the device configuration */
+	/* Number of interface containers for this function */
+	const uint8_t num_if_containers;
+	/* Pointer to table of interface containers for this function */
+	struct usb_if_container *const if_containers;
+	/** Number of individual endpoints in the function configuration */
 	uint8_t num_endpoints;
 	/**
 	 * Pointer to an array of endpoint structs of length equal to the
-	 * number of EP associated with the device description,
+	 * number of EP associated with the function description,
 	 * not including control endpoints
 	 */
 	struct usb_ep_cfg_data *endpoints;

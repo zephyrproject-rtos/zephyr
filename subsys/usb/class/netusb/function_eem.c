@@ -90,6 +90,14 @@ static struct usb_ep_cfg_data eem_ep_data[] = {
 	},
 };
 
+static struct usb_if_container eem_if_data[] = {
+	{
+		.iface = &cdc_eem_cfg.if0,
+		.iface_alt = NULL,
+		.curr_alt = 0,
+	}
+};
+
 static inline uint16_t eem_pkt_size(uint16_t hdr)
 {
 	if (hdr & BIT(15)) {
@@ -282,13 +290,14 @@ static void eem_interface_config(struct usb_desc_header *head,
 
 USBD_CFG_DATA_DEFINE(primary, netusb) struct usb_cfg_data netusb_config = {
 	.interface_config = eem_interface_config,
-	.interface_descriptor = &cdc_eem_cfg.if0,
 	.cb_usb_status = eem_status_cb,
 	.request_handlers = {
 		.class_handler = NULL,
 		.custom_handler = NULL,
 		.vendor_handler = NULL,
 	},
+	.num_if_containers = ARRAY_SIZE(eem_if_data),
+	.if_containers = eem_if_data,
 	.num_endpoints = ARRAY_SIZE(eem_ep_data),
 	.endpoints = eem_ep_data,
 };

@@ -123,15 +123,24 @@ static struct usb_ep_cfg_data ep_cfg[] = {
 	},
 };
 
+static struct usb_if_container if_cfg[] = {
+	{
+		.iface = &dev_desc.if0,
+		.iface_alt = NULL,
+		.curr_alt = 0,
+	}
+};
+
 USBD_CFG_DATA_DEFINE(primary, tracing_backend_usb)
 	struct usb_cfg_data tracing_backend_usb_config = {
-	.interface_descriptor = &dev_desc.if0,
 	.cb_usb_status = dev_status_cb,
 	.request_handlers = {
 		.class_handler = NULL,
 		.custom_handler = NULL,
 		.vendor_handler = NULL,
 	},
+	.num_if_containers = ARRAY_SIZE(if_cfg),
+	.if_containers = if_cfg,
 	.num_endpoints = ARRAY_SIZE(ep_cfg),
 	.endpoints = ep_cfg,
 };

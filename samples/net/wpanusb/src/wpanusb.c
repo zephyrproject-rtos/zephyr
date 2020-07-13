@@ -81,6 +81,14 @@ static struct usb_ep_cfg_data wpanusb_ep[] = {
 	},
 };
 
+static struct usb_if_container wpanusb_if_containers[] = {
+	{
+		.iface = &wpanusb_desc.if0,
+		.iface_alt = NULL,
+		.curr_alt = 0,
+	}
+};
+
 static void wpanusb_status_cb(struct usb_cfg_data *cfg,
 			      enum usb_dc_status_code status,
 			      const uint8_t *param)
@@ -151,13 +159,14 @@ static int wpanusb_vendor_handler(struct usb_setup_packet *setup,
 }
 
 USBD_CFG_DATA_DEFINE(primary, wpanusb) struct usb_cfg_data wpanusb_config = {
-	.interface_descriptor = &wpanusb_desc.if0,
 	.cb_usb_status = wpanusb_status_cb,
 	.request_handlers = {
 		.vendor_handler = wpanusb_vendor_handler,
 		.class_handler = NULL,
 		.custom_handler = NULL,
 	},
+	.num_if_containers = ARRAY_SIZE(wpanusb_if_containers),
+	.if_containers = wpanusb_if_containers,
 	.num_endpoints = ARRAY_SIZE(wpanusb_ep),
 	.endpoints = wpanusb_ep,
 };

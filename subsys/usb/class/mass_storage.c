@@ -144,6 +144,14 @@ static struct usb_ep_cfg_data mass_ep_data[] = {
 	}
 };
 
+static struct usb_if_container mass_if_data[] = {
+	{
+		.iface = &mass_cfg.if0,
+		.iface_alt = NULL,
+		.curr_alt = 0,
+	}
+};
+
 /* CSW Status */
 enum Status {
 	CSW_PASSED,
@@ -891,12 +899,13 @@ static void mass_interface_config(struct usb_desc_header *head,
 /* Configuration of the Mass Storage Device send to the USB Driver */
 USBD_CFG_DATA_DEFINE(primary, msd) struct usb_cfg_data mass_storage_config = {
 	.interface_config = mass_interface_config,
-	.interface_descriptor = &mass_cfg.if0,
 	.cb_usb_status = mass_storage_status_cb,
 	.request_handlers = {
 		.class_handler = mass_storage_class_handle_req,
 		.custom_handler = NULL,
 	},
+	.num_if_containers = ARRAY_SIZE(mass_if_data),
+	.if_containers = mass_if_data,
 	.num_endpoints = ARRAY_SIZE(mass_ep_data),
 	.endpoints = mass_ep_data
 };

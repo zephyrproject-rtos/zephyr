@@ -1011,25 +1011,38 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 		.ep_addr = addr,					\
 	}
 
-#define DEFINE_CDC_ACM_EP(x, int_ep_addr, out_ep_addr, in_ep_addr)	\
+#define DEFINE_CDC_ACM_EP_IF(x, int_ep_addr, out_ep_addr, in_ep_addr)	\
 	static struct usb_ep_cfg_data cdc_acm_ep_data_##x[] = {		\
 		INITIALIZER_EP_DATA(cdc_acm_int_in, int_ep_addr),	\
 		INITIALIZER_EP_DATA(usb_transfer_ep_callback,		\
 				    out_ep_addr),			\
 		INITIALIZER_EP_DATA(usb_transfer_ep_callback,		\
 				    in_ep_addr),			\
+	};								\
+	static struct usb_if_container cdc_acm_if_data_##x[] = {	\
+		{							\
+			.iface = &cdc_acm_cfg_##x.if0,			\
+			.iface_alt = NULL,				\
+			.curr_alt = 0,					\
+		},							\
+		{							\
+			.iface = &cdc_acm_cfg_##x.if1,			\
+			.iface_alt = NULL,				\
+			.curr_alt = 0,					\
+		}							\
 	}
 
 #define DEFINE_CDC_ACM_CFG_DATA(x, _)					\
 	USBD_CFG_DATA_DEFINE(primary, cdc_acm)				\
 	struct usb_cfg_data cdc_acm_config_##x = {			\
 		.interface_config = cdc_interface_config,		\
-		.interface_descriptor = &cdc_acm_cfg_##x.if0,		\
 		.cb_usb_status = cdc_acm_dev_status_cb,			\
 		.request_handlers = {					\
 			.class_handler = cdc_acm_class_handle_req,	\
 			.custom_handler = NULL,				\
 		},							\
+		.num_if_containers = ARRAY_SIZE(cdc_acm_if_data_##x),	\
+		.if_containers = cdc_acm_if_data_##x,			\
 		.num_endpoints = ARRAY_SIZE(cdc_acm_ep_data_##x),	\
 		.endpoints = cdc_acm_ep_data_##x,			\
 	};
@@ -1109,11 +1122,11 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 #define DEFINE_CDC_ACM_DESCR_AUTO(x, _) \
 	DEFINE_CDC_ACM_DESCR(x, AUTO_EP_IN, AUTO_EP_OUT, AUTO_EP_IN);
 
-#define DEFINE_CDC_ACM_EP_AUTO(x, _) \
-	DEFINE_CDC_ACM_EP(x, AUTO_EP_IN, AUTO_EP_OUT, AUTO_EP_IN);
+#define DEFINE_CDC_ACM_EP_IF_AUTO(x, _) \
+	DEFINE_CDC_ACM_EP_IF(x, AUTO_EP_IN, AUTO_EP_OUT, AUTO_EP_IN);
 
 UTIL_LISTIFY(CONFIG_USB_CDC_ACM_DEVICE_COUNT, DEFINE_CDC_ACM_DESCR_AUTO, _)
-UTIL_LISTIFY(CONFIG_USB_CDC_ACM_DEVICE_COUNT, DEFINE_CDC_ACM_EP_AUTO, _)
+UTIL_LISTIFY(CONFIG_USB_CDC_ACM_DEVICE_COUNT, DEFINE_CDC_ACM_EP_IF_AUTO, _)
 UTIL_LISTIFY(CONFIG_USB_CDC_ACM_DEVICE_COUNT, DEFINE_CDC_ACM_CFG_DATA, _)
 UTIL_LISTIFY(CONFIG_USB_CDC_ACM_DEVICE_COUNT, DEFINE_CDC_ACM_DEV_DATA, _)
 UTIL_LISTIFY(CONFIG_USB_CDC_ACM_DEVICE_COUNT, DEFINE_CDC_ACM_DEVICE, _)
