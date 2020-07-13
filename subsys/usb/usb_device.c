@@ -96,7 +96,6 @@ LOG_MODULE_REGISTER(usb_device);
 #define ENDP_DESC_bmAttributes      3 /** Bulk or interrupt? */
 #define ENDP_DESC_wMaxPacketSize    4 /** Maximum packet size offset */
 
-#define MAX_NUM_REQ_HANDLERS        4
 #define MAX_STD_REQ_MSG_SIZE        8
 
 /* Default USB control EP, always 0 and 0x80 */
@@ -120,16 +119,12 @@ static struct usb_dev_priv {
 	int32_t data_buf_len;
 	/** Zero length packet flag of control transfer */
 	bool zlp_flag;
-	/** Installed custom request handler */
-	usb_request_handler custom_req_handler;
 	/** USB stack status callback */
 	usb_dc_status_callback status_callback;
 	/** USB user status callback */
 	usb_dc_status_callback user_status_callback;
 	/** Pointer to registered descriptors */
 	const uint8_t *descriptors;
-	/** Array of installed request handler callbacks */
-	usb_request_handler req_handlers[MAX_NUM_REQ_HANDLERS];
 	/* Buffer used for storing standard, class and vendor request data */
 	uint8_t req_data[CONFIG_USB_REQUEST_BUFFER_SIZE];
 
@@ -151,6 +146,15 @@ struct usb_setup_packet_packed {
 	uint16_t wIndex;
 	uint16_t wLength;
 } __packed;
+
+static int usb_handle_standard_request(struct usb_setup_packet *setup,
+				       int32_t *len, uint8_t **data_buf);
+static int class_handler(struct usb_setup_packet *pSetup,
+			  int32_t *len, uint8_t **data);
+static int vendor_handler(struct usb_setup_packet *pSetup,
+			  int32_t *len, uint8_t **data);
+static int custom_handler(struct usb_setup_packet *pSetup,
+			  int32_t *len, uint8_t **data);
 
 /*
  * @brief print the contents of a setup packet
@@ -190,23 +194,33 @@ static bool usb_handle_request(struct usb_setup_packet *setup,
 			       int32_t *len, uint8_t **data)
 {
 	uint32_t type = REQTYPE_GET_TYPE(setup->bmRequestType);
-	usb_request_handler handler = usb_dev.req_handlers[type];
 
-	if (type >= MAX_NUM_REQ_HANDLERS) {
-		LOG_DBG("Error Incorrect iType %d", type);
+	switch (type) {
+	case REQTYPE_TYPE_STANDARD:
+		LOG_DBG("Standard request");
+		if (usb_handle_standard_request(setup, len, data) >= 0) {
+			return true;
+		}
+		break;
+	case REQTYPE_TYPE_CLASS:
+		LOG_DBG("Class request");
+		if (class_handler(setup, len, data) >= 0) {
+			return true;
+		}
+		break;
+	case REQTYPE_TYPE_VENDOR:
+		LOG_DBG("Vendor request");
+		if (vendor_handler(setup, len, data) >= 0) {
+			return true;
+		}
+		break;
+	default:
+		LOG_ERR("Unknown request");
 		return false;
 	}
 
-	if (handler == NULL) {
-		LOG_DBG("No handler for reqtype %d", type);
-		return false;
-	}
-
-	if ((*handler)(setup, len, data) < 0) {
-		LOG_DBG("Handler Error %d", type);
-		usb_print_setup(setup);
-		return false;
-	}
+	LOG_DBG("Unsupported request");
+	usb_print_setup(setup);
 
 	return true;
 }
@@ -307,7 +321,7 @@ static void usb_handle_control_transfer(uint8_t ep,
 			return;
 		}
 
-		/* Ask installed handler to process request */
+		/* Ask handler to process request */
 		if (!usb_handle_request(setup,
 					&usb_dev.data_buf_len,
 					&usb_dev.data_buf)) {
@@ -367,20 +381,6 @@ static void usb_handle_control_transfer(uint8_t ep,
 	} else {
 		__ASSERT_NO_MSG(false);
 	}
-}
-
-/*
- * @brief register a callback for handling requests
- *
- * @param [in] type       Type of request, e.g. REQTYPE_TYPE_STANDARD
- * @param [in] handler    Callback function pointer
- *
- * @return N/A
- */
-static void usb_register_request_handler(int32_t type,
-					 usb_request_handler handler)
-{
-	usb_dev.req_handlers[type] = handler;
 }
 
 /*
@@ -929,8 +929,7 @@ static int usb_handle_standard_request(struct usb_setup_packet *setup,
 	}
 
 	/* try the custom request handler first */
-	if (usb_dev.custom_req_handler &&
-	    !usb_dev.custom_req_handler(setup, len, data_buf)) {
+	if (custom_handler(setup, len, data_buf) == 0) {
 		return 0;
 	}
 
@@ -953,25 +952,8 @@ static int usb_handle_standard_request(struct usb_setup_packet *setup,
 	default:
 		rc = -EINVAL;
 	}
-	return rc;
-}
 
-/*
- * @brief Registers a callback for custom device requests
- *
- * In usb_register_custom_req_handler, the custom request handler gets a first
- * chance at handling the request before it is handed over to the 'chapter 9'
- * request handler.
- *
- * This can be used for example in HID devices, where a REQ_GET_DESCRIPTOR
- * request is sent to an interface, which is not covered by the 'chapter 9'
- * specification.
- *
- * @param [in] handler Callback function pointer
- */
-static void usb_register_custom_req_handler(usb_request_handler handler)
-{
-	usb_dev.custom_req_handler = handler;
+	return rc;
 }
 
 /*
@@ -1100,15 +1082,6 @@ int usb_deconfig(void)
 {
 	/* unregister descriptors */
 	usb_register_descriptors(NULL);
-
-	/* unegister standard request handler */
-	usb_register_request_handler(REQTYPE_TYPE_STANDARD, NULL);
-
-	/* unregister class request handlers for each interface*/
-	usb_register_request_handler(REQTYPE_TYPE_CLASS, NULL);
-
-	/* unregister class request handlers for each interface*/
-	usb_register_custom_req_handler(NULL);
 
 	/* unregister status callback */
 	usb_register_status_callback(NULL);
@@ -1326,19 +1299,6 @@ int usb_set_config(const uint8_t *device_descriptor)
 {
 	/* register descriptors */
 	usb_register_descriptors(device_descriptor);
-
-	/* register standard request handler */
-	usb_register_request_handler(REQTYPE_TYPE_STANDARD,
-				     usb_handle_standard_request);
-
-	/* register class request handlers for each interface*/
-	usb_register_request_handler(REQTYPE_TYPE_CLASS, class_handler);
-
-	/* register vendor request handler */
-	usb_register_request_handler(REQTYPE_TYPE_VENDOR, vendor_handler);
-
-	/* register class request handlers for each interface*/
-	usb_register_custom_req_handler(custom_handler);
 
 	return 0;
 }
