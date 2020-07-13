@@ -74,6 +74,9 @@ Architectures
 
 * ARM:
 
+  * Interrupt vector relaying feature support is extended to Cortex-M Mainline
+    architecture variants
+
 
 * POSIX:
 
