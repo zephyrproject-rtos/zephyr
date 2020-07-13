@@ -1481,6 +1481,19 @@ static int cmd_info(const struct shell *shell, size_t argc, char *argv[])
 			    info.le.latency, info.le.latency * 5 / 4);
 		shell_print(ctx_shell, "Supervision timeout: 0x%04x (%d ms)",
 			    info.le.timeout, info.le.timeout * 10);
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+		shell_print(ctx_shell, "LE PHY: TX PHY %s, RX PHY %s",
+			    phy2str(info.le.phy->tx_phy),
+			    phy2str(info.le.phy->rx_phy));
+#endif
+#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
+		shell_print(ctx_shell, "LE data len: TX (len: %d time: %d)"
+			    " RX (len: %d time: %d)",
+			    info.le.data_len->tx_max_len,
+			    info.le.data_len->tx_max_time,
+			    info.le.data_len->rx_max_len,
+			    info.le.data_len->rx_max_time);
+#endif
 	}
 
 #if defined(CONFIG_BT_BREDR)
