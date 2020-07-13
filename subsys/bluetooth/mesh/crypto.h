@@ -8,6 +8,12 @@
 
 int bt_mesh_s1(const char *m, size_t m_len, uint8_t salt[16]);
 
+/* FIXME: This is needed by dfu_metadata.c and should be moved to crypto.c
+ * for proper encapsulation.
+ */
+int bt_mesh_aes_cmac_one(const uint8_t key[16], const void *m,
+			 size_t len, uint8_t mac[16]);
+
 static inline int bt_mesh_s1_str(const char *m, uint8_t salt[16])
 {
 	return bt_mesh_s1(m, strlen(m), salt);

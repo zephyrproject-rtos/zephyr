@@ -1061,6 +1061,71 @@ config BT_MESH_BLOB_IO_FLASH
 	  Enable the BLOB flash stream for reading and writing BLOBs directly to
 	  and from flash.
 
+config BT_MESH_DFU_SRV
+	bool "Support for Firmware Update Server model"
+	depends on BT_MESH_BLOB_SRV
+	help
+	  Enable the Firmware Update Server model.
+
+config BT_MESH_DFU_CLI
+	bool "Support for Firmware Update Client model"
+	depends on BT_MESH_BLOB_CLI
+	help
+	  Enable the Firmware Update Client model.
+
+menu "Firmware Update model configuration"
+	visible if BT_MESH_DFU_SRV || BT_MESH_DFU_CLI
+
+config BT_MESH_DFU_FWID_MAXLEN
+	int "DFU FWID max length"
+	default 16
+	range 0 106
+	help
+	  This value defines the maximum length of an image's firmware ID.
+
+config BT_MESH_DFU_METADATA_MAXLEN
+	int "DFU metadata max length"
+	default 32
+	range 18 255 if BT_MESH_DFU_METADATA
+	range 0 255
+	help
+	  This value defines the maximum length of an image's metadata.
+
+config BT_MESH_DFU_METADATA
+	bool "Support for the default metadata format"
+	help
+	  This option adds a set of functions that can be used to encode and decode a firmware
+	  metadata using the format defined in the Bluetooth mesh DFU subsystem.
+
+config BT_MESH_DFU_URI_MAXLEN
+	int "DFU URI max length"
+	default 32
+	range 0 255
+	help
+	  This value defines the maximum length of an image's URI, not including
+	  a string terminator.
+
+endmenu
+
+menuconfig BT_MESH_DFU_SLOTS
+	bool "Firmware image slot manager"
+	default y if BT_MESH_DFU_CLI
+	help
+	  Enable the DFU image slot manager, for managing firmware distribution slots
+	  for the Firmware Update Client model.
+
+if BT_MESH_DFU_SLOTS
+
+config BT_MESH_DFU_SLOT_CNT
+	int "Number of firmware image slots"
+	default 1
+	range 1 32767
+	help
+	  This value defines the number of firmware slots the DFU image slot manager
+	  can keep simultaneously.
+
+endif
+
 endif # BT_MESH_V1d1
 
 rsource "shell/Kconfig"
@@ -1253,6 +1318,10 @@ config BT_MESH_DEBUG_MODEL
 module = BT_MESH_MODEL
 legacy-debug-sym = BT_MESH_DEBUG_MODEL
 module-str = "Foundation model"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_MESH_DFU
+module-str = "DFU model"
 source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
 config BT_MESH_DEBUG_ADV

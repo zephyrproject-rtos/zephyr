@@ -69,3 +69,11 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH_BLOB_SRV blob_srv.c)
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_BLOB_CLI blob_cli.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_BLOB_IO_FLASH blob_io_flash.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_DFU_CLI dfu_cli.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_DFU_SRV dfu_srv.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_DFU_SLOTS dfu_slot.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_DFU_METADATA dfu_metadata.c)
