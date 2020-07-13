@@ -1,0 +1,20 @@
+# Silicon Labs EFR32MG21 (Mighty Gecko) MCU configuration options
+
+# Copyright (c) 2020 TriaGnoSys GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_GECKO
+	default y
+	depends on GPIO || LOG_BACKEND_SWO
+
+config UART_GECKO
+	default y
+	depends on SERIAL
+
+config I2C_GECKO
+	default y
+	depends on I2C
+
+config SOC_FLASH_GECKO
+	default y
+	depends on FLASH
