@@ -184,6 +184,8 @@ struct bt_mesh_elem {
 #define BT_MESH_MODEL_ID_BLOB_CLI                  0x1401
 #define BT_MESH_MODEL_ID_DFU_SRV                   0x1402
 #define BT_MESH_MODEL_ID_DFU_CLI                   0x1403
+#define BT_MESH_MODEL_ID_DFD_SRV                   0x1404
+#define BT_MESH_MODEL_ID_DFD_CLI                   0x1405
 
 /** Model opcode handler. */
 struct bt_mesh_model_op {
