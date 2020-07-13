@@ -115,6 +115,14 @@ static struct usb_ep_cfg_data bluetooth_ep_data[] = {
 	},
 };
 
+static struct usb_if_container bluetooth_interfaces[] = {
+	{
+		.iface = &bluetooth_cfg.if0,
+		.iface_alt = NULL,
+		.curr_alt = 0,
+	}
+};
+
 static void hci_tx_thread(void)
 {
 	LOG_DBG("Start USB Bluetooth thread");
@@ -321,13 +329,14 @@ static void bluetooth_interface_config(struct usb_desc_header *head,
 
 USBD_CFG_DATA_DEFINE(primary, hci) struct usb_cfg_data bluetooth_config = {
 	.interface_config = bluetooth_interface_config,
-	.interface_descriptor = &bluetooth_cfg.if0,
 	.cb_usb_status = bluetooth_status_cb,
 	.request_handlers = {
 		.class_handler = bluetooth_class_handler,
 		.custom_handler = NULL,
 		.vendor_handler = NULL,
 	},
+	.num_if_containers = ARRAY_SIZE(bluetooth_interfaces),
+	.if_containers = bluetooth_interfaces,
 	.num_endpoints = ARRAY_SIZE(bluetooth_ep_data),
 	.endpoints = bluetooth_ep_data,
 };

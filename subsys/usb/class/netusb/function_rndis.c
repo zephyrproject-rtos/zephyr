@@ -273,6 +273,19 @@ static struct usb_ep_cfg_data rndis_ep_data[] = {
 	},
 };
 
+static struct usb_if_container rndis_if_data[] = {
+	{
+		.iface = &rndis_cfg.if0,
+		.iface_alt = NULL,
+		.curr_alt = 0,
+	},
+	{
+		.iface = &rndis_cfg.if1,
+		.iface_alt = NULL,
+		.curr_alt = 0,
+	}
+};
+
 static int parse_rndis_header(const uint8_t *buffer, uint32_t buf_len)
 {
 	struct rndis_payload_packet *hdr = (void *)buffer;
@@ -1168,13 +1181,14 @@ static void netusb_interface_config(struct usb_desc_header *head,
 
 USBD_CFG_DATA_DEFINE(primary, netusb) struct usb_cfg_data netusb_config = {
 	.interface_config = netusb_interface_config,
-	.interface_descriptor = &rndis_cfg.if0,
 	.cb_usb_status = rndis_status_cb,
 	.request_handlers = {
 		.class_handler = rndis_class_handler,
 		.custom_handler = NULL,
 		.vendor_handler = NULL,
 	},
+	.num_if_containers = ARRAY_SIZE(rndis_if_data),
+	.if_containers = rndis_if_data,
 	.num_endpoints = ARRAY_SIZE(rndis_ep_data),
 	.endpoints = rndis_ep_data,
 };

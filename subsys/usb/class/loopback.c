@@ -97,6 +97,14 @@ static struct usb_ep_cfg_data ep_cfg[] = {
 };
 /* usb.rst endpoint configuration end */
 
+static struct usb_if_container if_cfg[] = {
+	{
+		.iface = &loopback_cfg.if0,
+		.iface_alt = NULL,
+		.curr_alt = 0,
+	}
+};
+
 static void loopback_status_cb(struct usb_cfg_data *cfg,
 			       enum usb_dc_status_code status,
 			       const uint8_t *param)
@@ -161,13 +169,14 @@ static void loopback_interface_config(struct usb_desc_header *head,
 /* usb.rst device config data start */
 USBD_CFG_DATA_DEFINE(primary, loopback) struct usb_cfg_data loopback_config = {
 	.interface_config = loopback_interface_config,
-	.interface_descriptor = &loopback_cfg.if0,
 	.cb_usb_status = loopback_status_cb,
 	.request_handlers = {
 		.class_handler = NULL,
 		.custom_handler = NULL,
 		.vendor_handler = loopback_vendor_handler,
 	},
+	.num_if_containers = ARRAY_SIZE(if_cfg),
+	.if_containers = if_cfg,
 	.num_endpoints = ARRAY_SIZE(ep_cfg),
 	.endpoints = ep_cfg,
 };

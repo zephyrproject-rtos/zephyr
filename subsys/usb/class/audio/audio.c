@@ -86,6 +86,19 @@ struct dev##_descriptor_##i dev##_desc_##i = {				      \
 };									      \
 static struct usb_ep_cfg_data dev##_usb_audio_ep_data_##i[] = {		      \
 	INIT_EP_DATA(cb, addr),						      \
+};									      \
+static struct usb_if_container						      \
+dev##_usb_audio_iface_data_##i[] = {					      \
+	{								      \
+		.iface = &dev##_desc_##i.std_ac_interface,		      \
+		.iface_alt = NULL,					      \
+		.curr_alt = 0,						      \
+	},								      \
+	{								      \
+		.iface = &dev##_desc_##i.as_interface_alt_0,		      \
+		.iface_alt = &dev##_desc_##i.as_interface_alt_1,	      \
+		.curr_alt = 0,						      \
+	},								      \
 }
 
 /**
@@ -144,6 +157,24 @@ struct dev##_descriptor_##i dev##_desc_##i = {				  \
 static struct usb_ep_cfg_data dev##_usb_audio_ep_data_##i[] = {		  \
 	INIT_EP_DATA(usb_transfer_ep_callback, AUTO_EP_IN),		  \
 	INIT_EP_DATA(audio_receive_cb, AUTO_EP_OUT),			  \
+};									  \
+static struct usb_if_container						  \
+dev##_usb_audio_iface_data_##i[] = {					  \
+	{								  \
+		.iface = &dev##_desc_##i.std_ac_interface,		  \
+		.iface_alt = NULL,					  \
+		.curr_alt = 0,						  \
+	},								  \
+	{								  \
+		.iface = &dev##_desc_##i.as_interface_alt_0_0,		  \
+		.iface_alt = &dev##_desc_##i.as_interface_alt_0_1,	  \
+		.curr_alt = 0,						  \
+	},								  \
+	{								  \
+		.iface = &dev##_desc_##i.as_interface_alt_1_0,		  \
+		.iface_alt = &dev##_desc_##i.as_interface_alt_1_1,	  \
+		.curr_alt = 0,						  \
+	},								  \
 }
 
 #define DEFINE_AUDIO_DEV_DATA(dev, i, __out_pool, __in_pool_size)   \
@@ -901,8 +932,8 @@ void usb_audio_register(struct device *dev,
 {
 	struct usb_audio_dev_data *audio_dev_data = dev->driver_data;
 	const struct usb_cfg_data *cfg = dev->config_info;
-	const struct std_if_descriptor *iface_descr =
-		cfg->interface_descriptor;
+	const struct usb_if_descriptor *iface_descr =
+		cfg->if_containers[0].iface;
 	const struct cs_ac_if_descriptor *header =
 		(struct cs_ac_if_descriptor *)
 		((uint8_t *)iface_descr + USB_PASSIVE_IF_DESC_SIZE);
@@ -924,13 +955,14 @@ void usb_audio_register(struct device *dev,
 	USBD_CFG_DATA_DEFINE(primary, audio)				  \
 	struct usb_cfg_data dev##_audio_config_##i = {			  \
 		.interface_config = audio_interface_config,		  \
-		.interface_descriptor = &dev##_desc_##i.std_ac_interface, \
 		.cb_usb_status = audio_cb_usb_status,			  \
 		.request_handlers = {					  \
 			.class_handler = audio_class_handle_req,	  \
 			.custom_handler = audio_custom_handler,		  \
 			.vendor_handler = NULL,				  \
 		},							  \
+		.num_if_containers = ARRAY_SIZE(dev##_usb_audio_iface_data_##i),\
+		.if_containers = dev##_usb_audio_iface_data_##i,	  \
 		.num_endpoints = ARRAY_SIZE(dev##_usb_audio_ep_data_##i), \
 		.endpoints = dev##_usb_audio_ep_data_##i,		  \
 	};								  \

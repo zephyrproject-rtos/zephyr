@@ -82,24 +82,32 @@ struct usb_test_config {
 		.ep_addr = addr,					\
 	}
 
-#define DEFINE_TEST_EP_CFG(x, _)				\
+#define DEFINE_TEST_EP_IF_CFG(x, _)				\
 	static struct usb_ep_cfg_data ep_cfg_##x[] = {		\
 		INITIALIZER_EP_DATA(NULL, AUTO_EP_OUT),		\
 		INITIALIZER_EP_DATA(NULL, AUTO_EP_IN),		\
 		INITIALIZER_EP_DATA(NULL, AUTO_EP_IN),		\
+	};							\
+	static struct usb_if_container iface_cfg_##x[] = {	\
+		{						\
+			.iface = &test_cfg_##x.if0,		\
+			.iface_alt = NULL,			\
+			.curr_alt = 0,				\
+		}						\
 	};
 
 #define DEFINE_TEST_CFG_DATA(x, _)				\
 	USBD_CFG_DATA_DEFINE(primary, test_##x)			\
 	struct usb_cfg_data test_config_##x = {			\
 	.interface_config = interface_config,			\
-	.interface_descriptor = &test_cfg_##x.if0,		\
 	.cb_usb_status = NULL,					\
 	.request_handlers = {					\
 		.class_handler = NULL,				\
 		.custom_handler = NULL,				\
 		.vendor_handler = NULL,				\
 	},							\
+	.num_if_containers = ARRAY_SIZE(iface_cfg_##x),		\
+	.if_containers = iface_cfg_##x,				\
 	.num_endpoints = ARRAY_SIZE(ep_cfg_##x),		\
 	.endpoints = ep_cfg_##x,				\
 	};
@@ -117,16 +125,21 @@ static void interface_config(struct usb_desc_header *head,
 }
 
 UTIL_LISTIFY(NUM_INSTANCES, DEFINE_TEST_DESC, _)
-UTIL_LISTIFY(NUM_INSTANCES, DEFINE_TEST_EP_CFG, _)
+UTIL_LISTIFY(NUM_INSTANCES, DEFINE_TEST_EP_IF_CFG, _)
 UTIL_LISTIFY(NUM_INSTANCES, DEFINE_TEST_CFG_DATA, _)
 
 static struct usb_cfg_data *usb_get_cfg_data(struct usb_if_descriptor *iface)
 {
 	size_t length = (__usb_data_end - __usb_data_start);
+	struct usb_cfg_data *cfg = NULL;
 
 	for (size_t i = 0; i < length; i++) {
-		if (__usb_data_start[i].interface_descriptor == iface) {
-			return &__usb_data_start[i];
+		cfg = &__usb_data_start[i];
+
+		for (size_t j = 0; j < cfg->num_if_containers; j++) {
+			if (cfg->if_containers[j].iface == iface) {
+				return cfg;
+			}
 		}
 	}
 

@@ -115,6 +115,14 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_dfu_config dfu_cfg = {
 	},
 };
 
+static struct usb_if_container dfu_runtime_ifs[] = {
+	{
+		.iface = &dfu_cfg.if0,
+		.iface_alt = NULL,
+		.curr_alt = 0,
+	}
+};
+
 /* dfu mode device descriptor */
 
 struct dev_dfu_mode_descriptor {
@@ -196,6 +204,19 @@ struct dev_dfu_mode_descriptor dfu_mode_desc = {
 				sys_cpu_to_le16(DFU_VERSION),
 		},
 	},
+};
+
+static struct usb_if_container dfu_mode_ifs[] = {
+	{
+		.iface = &dfu_mode_desc.sec_dfu_cfg.if0,
+		.iface_alt = NULL,
+		.curr_alt = 0
+	},
+	{
+		.iface = &dfu_mode_desc.sec_dfu_cfg.if1,
+		.iface_alt = NULL,
+		.curr_alt = 0
+	}
 };
 
 struct usb_string_desription {
@@ -707,12 +728,13 @@ static void dfu_interface_config(struct usb_desc_header *head,
 /* Configuration of the DFU Device send to the USB Driver */
 USBD_CFG_DATA_DEFINE(primary, dfu) struct usb_cfg_data dfu_config = {
 	.interface_config = dfu_interface_config,
-	.interface_descriptor = &dfu_cfg.if0,
 	.cb_usb_status = dfu_status_cb,
 	.request_handlers = {
 		.class_handler = dfu_class_handle_req,
 		.custom_handler = dfu_custom_handle_req,
 	},
+	.num_if_containers = ARRAY_SIZE(dfu_runtime_ifs),
+	.if_containers = dfu_runtime_ifs,
 	.num_endpoints = 0,
 };
 
@@ -722,12 +744,13 @@ USBD_CFG_DATA_DEFINE(primary, dfu) struct usb_cfg_data dfu_config = {
  */
 USBD_CFG_DATA_DEFINE(secondary, dfu) struct usb_cfg_data dfu_mode_config = {
 	.interface_config = NULL,
-	.interface_descriptor = &dfu_mode_desc.sec_dfu_cfg.if0,
 	.cb_usb_status = dfu_status_cb,
 	.request_handlers = {
 		.class_handler = dfu_class_handle_req,
 		.custom_handler = dfu_custom_handle_req,
 	},
+	.num_if_containers = ARRAY_SIZE(dfu_mode_ifs),
+	.if_containers = dfu_mode_ifs,
 	.num_endpoints = 0,
 };
 
