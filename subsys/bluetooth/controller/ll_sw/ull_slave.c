@@ -216,10 +216,7 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	if (adv->is_created & ULL_ADV_CREATED_BITMASK_EXTENDED) {
-		struct ull_hdr *ull;
-
-		ull = &adv->ull;
-
+		/* Enqueue connection or CSA event */
 		ll_rx_put(link, rx);
 
 		/* use reserved link and node_rx to prepare
@@ -227,9 +224,11 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 		 */
 		rx = adv->lll.node_rx_adv_term;
 		link = rx->link;
+
 		rx->handle = ull_adv_handle_get(adv);
 		rx->type = NODE_RX_TYPE_EXT_ADV_TERMINATE;
-		rx->rx_ftr.extra = (void *)((uint32_t)lll->handle << 16);
+		rx->rx_ftr.param = (void *)(uint32_t)lll->handle;
+		rx->rx_ftr.extra = NULL;
 	}
 #endif
 

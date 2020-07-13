@@ -448,9 +448,6 @@ static void isr_done(void *param)
 {
 	struct node_rx_hdr *node_rx;
 	struct lll_adv *lll = param;
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
-	struct event_done_extra *e;
-#endif  /* CONFIG_BT_CTLR_ADV_EXT */
 
 	/* Clear radio status and events */
 	lll_isr_status_reset();
@@ -558,9 +555,12 @@ static void isr_done(void *param)
 #endif /* !CONFIG_BT_CTLR_ADV_INDICATION */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-	e = ull_event_done_extra_get();
-	LL_ASSERT(e);
-	e->type = EVENT_DONE_EXTRA_TYPE_ADV;
+	struct event_done_extra *extra;
+
+	extra = ull_event_done_extra_get();
+	LL_ASSERT(extra);
+
+	extra->type = EVENT_DONE_EXTRA_TYPE_ADV;
 #endif  /* CONFIG_BT_CTLR_ADV_EXT */
 
 	lll_isr_cleanup(param);

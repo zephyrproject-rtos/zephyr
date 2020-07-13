@@ -3604,12 +3604,12 @@ static void le_adv_ext_terminate(struct pdu_data *pdu_data,
 	}
 
 	sep = meta_evt(buf, BT_HCI_EVT_LE_ADV_SET_TERMINATED, sizeof(*sep));
-	sep->num_completed_ext_adv_evts =
-		(uint8_t)((uint32_t)node_rx->hdr.rx_ftr.extra & 0xff);
 	sep->status = ((uint32_t)node_rx->hdr.rx_ftr.extra >> 8) & 0xff;
-	sep->adv_handle = (node_rx->hdr.handle & 0xff);
-	sep->conn_handle = sys_cpu_to_le16
-		(*(uint16_t *)((uint32_t)node_rx->hdr.rx_ftr.extra >> 16));
+	sep->adv_handle = node_rx->hdr.handle & 0xff;
+	sep->conn_handle =
+		sys_cpu_to_le16((uint32_t)node_rx->hdr.rx_ftr.param & 0xffff);
+	sep->num_completed_ext_adv_evts =
+		(uint32_t)node_rx->hdr.rx_ftr.extra & 0xff;
 }
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
@@ -4322,11 +4322,10 @@ uint8_t hci_get_class(struct node_rx_pdu *node_rx)
 		case NODE_RX_TYPE_REPORT:
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-		/* fallthrough */
+			/* fallthrough */
 		case NODE_RX_TYPE_EXT_1M_REPORT:
 		case NODE_RX_TYPE_EXT_2M_REPORT:
 		case NODE_RX_TYPE_EXT_CODED_REPORT:
-		case NODE_RX_TYPE_EXT_ADV_TERMINATE:
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
 
@@ -4354,6 +4353,11 @@ uint8_t hci_get_class(struct node_rx_pdu *node_rx)
 		case NODE_RX_TYPE_MESH_REPORT:
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+			/* fallthrough */
+		case NODE_RX_TYPE_EXT_ADV_TERMINATE:
+			return HCI_CLASS_EVT_REQUIRED;
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CONN)
 		case NODE_RX_TYPE_CONNECTION:

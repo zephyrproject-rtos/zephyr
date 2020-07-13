@@ -46,6 +46,10 @@ uint8_t ull_scan_rsp_set(struct ll_adv_set *adv, uint8_t len,
 			 uint8_t const *const data);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+
+/* helper function to handle adv done events */
+void ull_adv_done(struct node_rx_event_done *done);
+
 /* Helper functions to initialise and reset ull_adv_aux module */
 int ull_adv_aux_init(void);
 int ull_adv_aux_reset(void);

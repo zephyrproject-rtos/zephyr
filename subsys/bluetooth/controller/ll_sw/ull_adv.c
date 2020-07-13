@@ -67,6 +67,11 @@ static void disabled_cb(void *param);
 static void conn_release(struct ll_adv_set *adv);
 #endif /* CONFIG_BT_PERIPHERAL */
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+static void ticker_op_ext_stop_cb(uint32_t status, void *param);
+static void ext_disabled_cb(void *param);
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+
 static inline uint8_t disable(uint8_t handle);
 
 #if defined(CONFIG_BT_CTLR_ADV_SET)
@@ -825,23 +830,32 @@ uint8_t ll_adv_enable(uint8_t enable)
 		/* The alloc here used for ext adv termination event */
 		link_adv_term = ll_rx_link_alloc();
 		if (!link_adv_term) {
+#if defined(CONFIG_BT_PERIPHERAL)
+			if (adv->lll.conn) {
+				conn_release(adv);
+			}
+#endif /* CONFIG_BT_PERIPHERAL */
+
 			/* TODO: figure out right return value */
 			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 		}
 
 		node_rx_adv_term = ll_rx_alloc();
 		if (!node_rx_adv_term) {
+#if defined(CONFIG_BT_PERIPHERAL)
+			if (adv->lll.conn) {
+				conn_release(adv);
+			}
+#endif /* CONFIG_BT_PERIPHERAL */
+
 			ll_rx_link_release(link_adv_term);
 
 			/* TODO: figure out right return value */
 			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 		}
 
-		node_rx_adv_term->hdr.link =
-			(memq_link_t *)link_adv_term;
-
-		adv->lll.node_rx_adv_term =
-			(struct node_rx_hdr *)node_rx_adv_term;
+		node_rx_adv_term->hdr.link = (void *)link_adv_term;
+		adv->lll.node_rx_adv_term = (void *)node_rx_adv_term;
 	}
 #endif  /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_PERIPHERAL */
@@ -1378,6 +1392,51 @@ uint8_t ull_scan_rsp_set(struct ll_adv_set *adv, uint8_t len,
 	return 0;
 }
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+void ull_adv_done(struct node_rx_event_done *done)
+{
+	struct lll_adv *lll = (void *)HDR_ULL2LLL(done->param);
+	struct ll_adv_set *adv = (void *)HDR_LLL2EVT(lll);
+	uint8_t handle;
+	uint32_t ret;
+
+	if (adv->max_events && (adv->event_counter >= adv->max_events)) {
+		adv->max_events = 0;
+
+		lll->node_rx_adv_term->rx_ftr.extra =
+			(void *)(((uint32_t)adv->event_counter & 0xff) |
+				 (BT_HCI_ERR_LIMIT_REACHED << 8));
+
+		goto ext_adv_disable;
+	}
+
+	if (adv->ticks_remain_duration &&
+	    (adv->ticks_remain_duration <
+	     HAL_TICKER_US_TO_TICKS((uint64_t)adv->interval * 625U))) {
+		adv->ticks_remain_duration = 0;
+
+		lll->node_rx_adv_term->rx_ftr.extra =
+			(void *)(((uint32_t)adv->event_counter & 0xff) |
+				 (BT_HCI_ERR_ADV_TIMEOUT << 8));
+
+		goto ext_adv_disable;
+	}
+
+	return;
+
+ext_adv_disable:
+	handle = ull_adv_handle_get(adv);
+	LL_ASSERT(handle < BT_CTLR_ADV_SET);
+
+	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+			  (TICKER_ID_ADV_BASE + handle), ticker_op_ext_stop_cb,
+			  adv);
+
+	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+		  (ret == TICKER_STATUS_BUSY));
+}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+
 static int init_reset(void)
 {
 	return 0;
@@ -1450,6 +1509,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t laz
 				    ticker_op_update_cb, adv);
 		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 			  (ret == TICKER_STATUS_BUSY));
+
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 		adv->event_counter += (lazy + 1);
 
@@ -1611,6 +1671,49 @@ static void conn_release(struct ll_adv_set *adv)
 }
 #endif /* CONFIG_BT_PERIPHERAL */
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+static void ticker_op_ext_stop_cb(uint32_t status, void *param)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, NULL};
+	struct ll_adv_set *adv;
+	uint32_t ret;
+
+	/* Ignore if race between thread and ULL */
+	if (status != TICKER_STATUS_SUCCESS) {
+		/* TODO: detect race */
+
+		return;
+	}
+
+	adv = param;
+	mfy.fp = ext_disabled_cb;
+	mfy.param = &adv->lll;
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW, TICKER_USER_ID_ULL_HIGH, 0,
+			     &mfy);
+	LL_ASSERT(!ret);
+}
+
+static void ext_disabled_cb(void *param)
+{
+	struct lll_adv *lll = (void *)param;
+	struct node_rx_hdr *rx_hdr = (void *)lll->node_rx_adv_term;
+
+	/* Under race condition, if a connection has been established then
+	 * node_rx is already utilized to send terminate event on connection */
+	if (!rx_hdr) {
+		return;
+	}
+
+	rx_hdr->type = NODE_RX_TYPE_EXT_ADV_TERMINATE;
+
+	/* NOTE: parameters are already populated on disable, just enqueue here
+	 */
+	ll_rx_put(rx_hdr->link, rx_hdr);
+	ll_rx_sched();
+}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+
 static inline uint8_t disable(uint8_t handle)
 {
 	uint32_t volatile ret_cb;
@@ -1683,14 +1786,16 @@ static inline uint8_t disable(uint8_t handle)
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-	struct node_rx_pdu *node_rx_adv_term;
 	struct lll_adv *lll = &adv->lll;
 
 	if (lll->node_rx_adv_term) {
-		node_rx_adv_term = (struct node_rx_pdu *)lll->node_rx_adv_term;
+		struct node_rx_pdu *node_rx_adv_term =
+			(void *)lll->node_rx_adv_term;
+
+		lll->node_rx_adv_term = NULL;
+
 		ll_rx_link_release(node_rx_adv_term->hdr.link);
 		ll_rx_release(node_rx_adv_term);
-		lll->node_rx_adv_term = NULL;
 	}
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 

@@ -280,10 +280,6 @@ static inline void rx_demux_event_done(memq_link_t *link,
 static inline void ll_rx_link_inc_quota(int8_t delta);
 static void disabled_cb(void *param);
 
-#if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_BROADCASTER)
-static void term_evt_disable(struct ull_hdr *ull_hdr);
-#endif /* CONFIG_BT_CTLR_ADV_EXT && CONFIG_BT_BROADCASTER */
-
 #if defined(CONFIG_BT_CONN)
 static uint8_t tx_cmplt_get(uint16_t *handle, uint8_t *first, uint8_t last);
 #endif /* CONFIG_BT_CONN */
@@ -601,8 +597,39 @@ void ll_rx_dequeue(void)
 	break;
 
 	case NODE_RX_TYPE_EXT_ADV_TERMINATE:
-	break;
+	{
+		struct lll_conn *lll_conn;
+		struct ll_adv_set *adv;
+		struct ll_conn *conn;
+		memq_link_t *link;
 
+		adv = ull_adv_set_get(rx->handle);
+
+		lll_conn = adv->lll.conn;
+		if (!lll_conn) {
+			adv->is_enabled = 0U;
+
+			break;
+		}
+
+		LL_ASSERT(!lll_conn->link_tx_free);
+		link = memq_deinit(&lll_conn->memq_tx.head,
+				   &lll_conn->memq_tx.tail);
+		LL_ASSERT(link);
+		lll_conn->link_tx_free = link;
+
+		conn = (void *)HDR_LLL2EVT(lll_conn);
+		ll_conn_release(conn);
+		adv->lll.conn = NULL;
+
+		ll_rx_release(adv->node_rx_cc_free);
+		adv->node_rx_cc_free = NULL;
+		ll_rx_link_release(adv->link_cc_free);
+		adv->link_cc_free = NULL;
+
+		adv->is_enabled = 0U;
+	}
+	break;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CONN)
@@ -668,9 +695,9 @@ void ll_rx_dequeue(void)
 			 * enabled status bitmask
 			 */
 			bm = (IS_ENABLED(CONFIG_BT_OBSERVER) &&
-				ull_scan_is_enabled(0) << 1) |
-				(IS_ENABLED(CONFIG_BT_BROADCASTER) &&
-				ull_adv_is_enabled(0));
+			      (ull_scan_is_enabled(0) << 1)) |
+			     (IS_ENABLED(CONFIG_BT_BROADCASTER) &&
+			      ull_adv_is_enabled(0));
 
 			if (!bm) {
 				ull_filter_adv_scan_state_cb(0);
@@ -1745,28 +1772,6 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 	return 0;
 }
 
-#if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_BROADCASTER)
-static void term_evt_disable(struct ull_hdr *ull_hdr)
-{
-	struct lll_adv *lll;
-	struct ll_adv_set *adv;
-	uint8_t handle;
-	uint32_t ret;
-
-	lll = (struct lll_adv *)HDR_ULL2LLL(ull_hdr);
-	adv = (void *)HDR_LLL2EVT(lll);
-
-	handle = ull_adv_handle_get(adv);
-	LL_ASSERT(handle < BT_CTLR_ADV_SET);
-
-	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
-			  TICKER_ID_ADV_BASE + handle, NULL, adv);
-
-	LL_ASSERT((ret == TICKER_STATUS_SUCCESS)
-		|| (ret == TICKER_STATUS_BUSY));
-}
-#endif /* CONFIG_BT_CTLR_ADV_EXT && CONFIG_BT_BROADCASTER */
-
 static inline void rx_demux_event_done(memq_link_t *link,
 				       struct node_rx_hdr *rx)
 {
@@ -1788,53 +1793,8 @@ static inline void rx_demux_event_done(memq_link_t *link,
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_BROADCASTER)
 	case EVENT_DONE_EXTRA_TYPE_ADV:
-	{
-		struct lll_adv *lll;
-		struct ll_adv_set *adv;
-		bool   send_term_evt = false;
-
-		lll = (struct lll_adv *)HDR_ULL2LLL(ull_hdr);
-		adv = (void *)HDR_LLL2EVT(lll);
-
-		if ((adv->max_events > 0) &&
-			(adv->event_counter >= adv->max_events)) {
-			adv->max_events = 0;
-			send_term_evt = true;
-
-			lll->node_rx_adv_term->rx_ftr.extra = (void *)
-				((uint32_t)adv->event_counter & 0xff);
-		}
-
-		if (adv->ticks_remain_duration &&
-		    (adv->ticks_remain_duration <
-		     HAL_TICKER_US_TO_TICKS((uint64_t)adv->interval * 625U))) {
-			adv->ticks_remain_duration = 0;
-			send_term_evt = true;
-
-			lll->node_rx_adv_term->rx_ftr.extra = (void *)
-				(((uint32_t)adv->event_counter & 0xff)
-				| (BT_HCI_ERR_ADV_TIMEOUT << 8));
-		}
-
-		if (send_term_evt) {
-			lll->node_rx_adv_term->rx_ftr.extra =
-				(void *)lll->node_rx_adv_term->rx_ftr.extra;
-			lll->node_rx_adv_term->type =
-				NODE_RX_TYPE_EXT_ADV_TERMINATE;
-			lll->node_rx_adv_term->handle =
-				(uint16_t)ull_adv_handle_get(adv);
-			lll->node_rx_adv_term->rx_ftr.param = (void *)lll;
-
-			rx = lll->node_rx_adv_term;
-			link = rx->link;
-
-			ll_rx_put(link, rx);
-			ll_rx_sched();
-
-			term_evt_disable(ull_hdr);
-		}
+		ull_adv_done(done);
 		break;
-	}
 #endif /* CONFIG_BT_CTLR_ADV_EXT && CONFIG_BT_BROADCASTER */
 
 #if defined(CONFIG_BT_OBSERVER)
