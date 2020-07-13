@@ -20,8 +20,11 @@
 #include <zephyr/bluetooth/mesh/cfg.h>
 #include <zephyr/bluetooth/mesh/cfg_srv.h>
 #include <zephyr/bluetooth/mesh/health_srv.h>
+#include <zephyr/bluetooth/mesh/blob_srv.h>
 #include <zephyr/bluetooth/mesh/cfg_cli.h>
 #include <zephyr/bluetooth/mesh/health_cli.h>
+#include <zephyr/bluetooth/mesh/blob_cli.h>
+#include <zephyr/bluetooth/mesh/blob_io_flash.h>
 #include <zephyr/bluetooth/mesh/proxy.h>
 #include <zephyr/bluetooth/mesh/heartbeat.h>
 #include <zephyr/bluetooth/mesh/cdb.h>
