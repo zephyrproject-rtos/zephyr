@@ -9,11 +9,6 @@
  */
 
 #include <linker/sections.h>
-
-#if defined(CONFIG_UART_NSIM)
-	EXTERN(_VectorTable)
-#endif
-
 #include <linker/linker-defs.h>
 #include <linker/linker-tool.h>
 
