@@ -15,9 +15,10 @@
 extern "C" {
 #endif
 
-void posix_isr_declare(unsigned int irq_p, int flags, void isr_p(void *),
-		       void *isr_param_p);
-void posix_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags);
+void posix_isr_declare(unsigned int irq_p, int flags, void isr_p(const void *),
+		       const void *isr_param_p);
+void posix_irq_priority_set(unsigned int irq, unsigned int prio,
+			    uint32_t flags);
 
 /**
  * Configure a static interrupt.
@@ -42,8 +43,8 @@ void posix_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
  */
 #define ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
 { \
-	posix_isr_declare(irq_p, ISR_FLAG_DIRECT, (void (*)(void *))isr_p, \
-			  NULL); \
+	posix_isr_declare(irq_p, ISR_FLAG_DIRECT, \
+			  (void (*)(const void *))isr_p, NULL); \
 	posix_irq_priority_set(irq_p, priority_p, flags_p); \
 }
 
