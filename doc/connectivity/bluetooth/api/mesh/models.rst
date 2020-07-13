@@ -26,3 +26,4 @@ In addition to the Foundation models defined in the Bluetooth Mesh specification
    :maxdepth: 1
 
    blob
+   dfu
