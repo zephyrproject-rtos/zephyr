@@ -251,47 +251,47 @@ static int board_pinmux_init(struct device *dev)
 #endif
 
 #ifdef CONFIG_PWM_XEC
-#if DT_NODE_HAS_STATUS(DT_INST(0, microchip_xec_pwm), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm0), okay)
 	mchp_pcr_periph_slp_ctrl(PCR_PWM0, MCHP_PCR_SLEEP_DIS);
 	pinmux_pin_set(portb, MCHP_GPIO_053, MCHP_GPIO_CTRL_MUX_F1);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_INST(1, microchip_xec_pwm), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm1), okay)
 	mchp_pcr_periph_slp_ctrl(PCR_PWM1, MCHP_PCR_SLEEP_DIS);
 	pinmux_pin_set(portb, MCHP_GPIO_054, MCHP_GPIO_CTRL_MUX_F1);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_INST(2, microchip_xec_pwm), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm2), okay)
 	mchp_pcr_periph_slp_ctrl(PCR_PWM2, MCHP_PCR_SLEEP_DIS);
 	pinmux_pin_set(portb, MCHP_GPIO_055, MCHP_GPIO_CTRL_MUX_F1);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_INST(3, microchip_xec_pwm), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm3), okay)
 	mchp_pcr_periph_slp_ctrl(PCR_PWM3, MCHP_PCR_SLEEP_DIS);
 	pinmux_pin_set(portb, MCHP_GPIO_056, MCHP_GPIO_CTRL_MUX_F1);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_INST(4, microchip_xec_pwm), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm4), okay)
 	mchp_pcr_periph_slp_ctrl(PCR_PWM4, MCHP_PCR_SLEEP_DIS);
 	pinmux_pin_set(porta, MCHP_GPIO_011, MCHP_GPIO_CTRL_MUX_F2);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_INST(5, microchip_xec_pwm), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm5), okay)
 	mchp_pcr_periph_slp_ctrl(PCR_PWM5, MCHP_PCR_SLEEP_DIS);
 	pinmux_pin_set(porta, MCHP_GPIO_002, MCHP_GPIO_CTRL_MUX_F1);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_INST(6, microchip_xec_pwm), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm6), okay)
 	mchp_pcr_periph_slp_ctrl(PCR_PWM6, MCHP_PCR_SLEEP_DIS);
 	pinmux_pin_set(porta, MCHP_GPIO_014, MCHP_GPIO_CTRL_MUX_F1);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_INST(7, microchip_xec_pwm), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm7), okay)
 	mchp_pcr_periph_slp_ctrl(PCR_PWM7, MCHP_PCR_SLEEP_DIS);
 	pinmux_pin_set(porta, MCHP_GPIO_015, MCHP_GPIO_CTRL_MUX_F1);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_INST(8, microchip_xec_pwm), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm8), okay)
 	mchp_pcr_periph_slp_ctrl(PCR_PWM8, MCHP_PCR_SLEEP_DIS);
 	pinmux_pin_set(porta, MCHP_GPIO_035, MCHP_GPIO_CTRL_MUX_F1);
 #endif
