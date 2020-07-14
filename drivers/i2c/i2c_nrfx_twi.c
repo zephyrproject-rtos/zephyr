@@ -276,7 +276,7 @@ static int twi_nrfx_pm_control(const struct device *dev,
 	BUILD_ASSERT(I2C_FREQUENCY(idx)	!=				       \
 		     I2C_NRFX_TWI_INVALID_FREQUENCY,			       \
 		     "Wrong I2C " #idx " frequency setting in dts");	       \
-	static int twi_##idx##_init(struct device *dev)			       \
+	static int twi_##idx##_init(const struct device *dev)		\
 	{								       \
 		IRQ_CONNECT(DT_IRQN(I2C(idx)), DT_IRQ(I2C(idx), priority),     \
 			    nrfx_isr, nrfx_twi_##idx##_irq_handler, 0);	       \

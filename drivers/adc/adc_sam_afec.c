@@ -350,7 +350,7 @@ static void adc_sam_isr(const struct device *dev)
 }
 
 #define ADC_SAM_INIT(n)							\
-	static void adc##n##_sam_cfg_func(struct device *dev);		\
+	static void adc##n##_sam_cfg_func(const struct device *dev);	\
 									\
 	static const struct adc_sam_cfg adc##n##_sam_cfg = {		\
 		.regs = (Afec *)DT_INST_REG_ADDR(n),			\
@@ -371,7 +371,7 @@ static void adc_sam_isr(const struct device *dev)
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &adc_sam_api);				\
 									\
-	static void adc##n##_sam_cfg_func(struct device *dev)		\
+	static void adc##n##_sam_cfg_func(const struct device *dev)	\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
 			    adc_sam_isr,				\

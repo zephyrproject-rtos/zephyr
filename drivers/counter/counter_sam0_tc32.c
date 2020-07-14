@@ -422,7 +422,7 @@ static const struct counter_driver_api counter_sam0_tc32_driver_api = {
 		    (DT_INST_PROP(n, prescaler)), (1))
 
 #define COUNTER_SAM0_TC32_DEVICE(n)					\
-	static void counter_sam0_tc32_config_##n(struct device *dev);	\
+	static void counter_sam0_tc32_config_##n(const struct device *dev); \
 	static const struct counter_sam0_tc32_config			\
 									\
 	counter_sam0_tc32_dev_config_##n = {				\
@@ -451,7 +451,7 @@ static const struct counter_driver_api counter_sam0_tc32_driver_api = {
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &counter_sam0_tc32_driver_api);		\
 									\
-	static void counter_sam0_tc32_config_##n(struct device *dev)	\
+	static void counter_sam0_tc32_config_##n(const struct device *dev) \
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 			    DT_INST_IRQ(n, priority),			\

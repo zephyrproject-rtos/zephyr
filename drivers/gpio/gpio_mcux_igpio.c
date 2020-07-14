@@ -212,7 +212,7 @@ static const struct gpio_driver_api mcux_igpio_driver_api = {
 	} while (0)
 
 #define MCUX_IGPIO_INIT(n)						\
-	static int mcux_igpio_##n##_init(struct device *dev);		\
+	static int mcux_igpio_##n##_init(const struct device *dev);	\
 									\
 	static const struct mcux_igpio_config mcux_igpio_##n##_config = {\
 		.common = {						\
@@ -231,7 +231,7 @@ static const struct gpio_driver_api mcux_igpio_driver_api = {
 			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 			    &mcux_igpio_driver_api);			\
 									\
-	static int mcux_igpio_##n##_init(struct device *dev)		\
+	static int mcux_igpio_##n##_init(const struct device *dev)	\
 	{								\
 		MCUX_IGPIO_IRQ_INIT(n, 0);				\
 									\

@@ -266,7 +266,7 @@ static inline int dma_config(const struct device *dev, uint32_t channel,
 static inline int dma_reload(const struct device *dev, uint32_t channel,
 			     uint64_t src, uint64_t dst, size_t size)
 #else
-static inline int dma_reload(struct device *dev, uint32_t channel,
+static inline int dma_reload(const struct device *dev, uint32_t channel,
 		uint32_t src, uint32_t dst, size_t size)
 #endif
 {

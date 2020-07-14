@@ -407,7 +407,7 @@ static int spim_nrfx_pm_control(const struct device *dev,
 		!SPIM_NRFX_MISO_PULL_UP(idx) || !SPIM_NRFX_MISO_PULL_DOWN(idx),\
 		"SPIM"#idx						       \
 		": cannot enable both pull-up and pull-down on MISO line");    \
-	static int spi_##idx##_init(struct device *dev)			       \
+	static int spi_##idx##_init(const struct device *dev)		       \
 	{								       \
 		IRQ_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_SPIM##idx),		       \
 			    DT_IRQ(SPIM(idx), priority),		       \

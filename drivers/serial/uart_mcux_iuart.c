@@ -284,7 +284,7 @@ static const struct uart_driver_api mcux_iuart_driver_api = {
 		irq_enable(DT_INST_IRQ_BY_IDX(n, i, irq));		\
 	} while (0)
 #define IUART_MCUX_CONFIG_FUNC(n)					\
-	static void mcux_iuart_config_func_##n(struct device *dev)	\
+	static void mcux_iuart_config_func_##n(const struct device *dev) \
 	{								\
 		MCUX_IUART_IRQ_INIT(n, 0);				\
 									\

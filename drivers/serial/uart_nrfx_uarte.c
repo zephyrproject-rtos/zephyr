@@ -1547,7 +1547,7 @@ static int uarte_nrfx_pm_control(const struct device *dev,
 			(.timer = NRFX_TIMER_INSTANCE(			       \
 				CONFIG_UART_##idx##_NRF_HW_ASYNC_TIMER),))     \
 	};								       \
-	static int uarte_##idx##_init(struct device *dev)		       \
+	static int uarte_##idx##_init(const struct device *dev)		       \
 	{								       \
 		const struct uarte_init_config init_config = {		       \
 			.pseltxd = UARTE_PROP(idx, tx_pin),  /* must be set */ \

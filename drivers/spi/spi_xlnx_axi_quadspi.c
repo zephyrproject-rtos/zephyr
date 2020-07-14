@@ -462,7 +462,7 @@ static const struct spi_driver_api xlnx_quadspi_driver_api = {
 };
 
 #define XLNX_QUADSPI_INIT(n)						\
-	static void xlnx_quadspi_config_func_##n(struct device *dev);	\
+	static void xlnx_quadspi_config_func_##n(const struct device *dev);	\
 									\
 	static const struct xlnx_quadspi_config xlnx_quadspi_config_##n = { \
 		.base = DT_INST_REG_ADDR(n),				\
@@ -483,7 +483,7 @@ static const struct spi_driver_api xlnx_quadspi_driver_api = {
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &xlnx_quadspi_driver_api);			\
 									\
-	static void xlnx_quadspi_config_func_##n(struct device *dev)	\
+	static void xlnx_quadspi_config_func_##n(const struct device *dev)	\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
 			    xlnx_quadspi_isr,				\

@@ -273,7 +273,7 @@ static int i2c_stm32_init(const struct device *dev)
 #endif /* CONFIG_I2C_STM32_COMBINED_INTERRUPT */
 
 #define STM32_I2C_IRQ_HANDLER_DECL(name)				\
-static void i2c_stm32_irq_config_func_##name(struct device *dev)
+static void i2c_stm32_irq_config_func_##name(const struct device *dev)
 #define STM32_I2C_IRQ_HANDLER_FUNCTION(name)				\
 	.irq_config_func = i2c_stm32_irq_config_func_##name,
 #define STM32_I2C_IRQ_HANDLER(name)					\

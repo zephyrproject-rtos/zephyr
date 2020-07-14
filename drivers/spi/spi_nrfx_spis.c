@@ -261,7 +261,7 @@ static int init_spis(const struct device *dev,
 #define SPIS_PROP(idx, prop) DT_PROP(SPIS(idx), prop)
 
 #define SPI_NRFX_SPIS_DEVICE(idx)					       \
-	static int spi_##idx##_init(struct device *dev)			       \
+	static int spi_##idx##_init(const struct device *dev)		       \
 	{								       \
 		IRQ_CONNECT(DT_IRQN(SPIS(idx)), DT_IRQ(SPIS(idx), priority),   \
 			    nrfx_isr, nrfx_spis_##idx##_irq_handler, 0);       \

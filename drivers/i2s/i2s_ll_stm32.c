@@ -888,7 +888,7 @@ static const struct device *get_dev_from_tx_dma_channel(uint32_t dma_channel)
 #define I2S_INIT(index, clk_sel)					\
 DEVICE_DECLARE(i2s_stm32_##index);		\
 									\
-static void i2s_stm32_irq_config_func_##index(struct device *dev);	\
+static void i2s_stm32_irq_config_func_##index(const struct device *dev);	\
 									\
 static const struct i2s_stm32_cfg i2s_stm32_config_##index = {		\
 	.i2s = (SPI_TypeDef *) DT_REG_ADDR(DT_NODELABEL(i2s##index)),	\
@@ -915,7 +915,7 @@ DEVICE_AND_API_INIT(i2s_stm32_##index,					\
 		    &i2s_stm32_config_##index, POST_KERNEL,		\
 		    CONFIG_I2S_INIT_PRIORITY, &i2s_stm32_driver_api);	\
 									\
-static void i2s_stm32_irq_config_func_##index(struct device *dev)	\
+static void i2s_stm32_irq_config_func_##index(const struct device *dev)	\
 {									\
 	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(i2s##index)),			\
 		    DT_IRQ(DT_NODELABEL(i2s##index), priority),		\

@@ -301,7 +301,7 @@ static const struct gpio_driver_api gpio_rv32m1_driver_api = {
 	UTIL_AND(DT_INST_NODE_HAS_PROP(n, clocks), DT_INST_CLOCKS_CELL(n, name))
 
 #define GPIO_RV32M1_INIT(n) \
-	static int gpio_rv32m1_##n##_init(struct device *dev);		\
+	static int gpio_rv32m1_##n##_init(const struct device *dev);	\
 									\
 	static const struct gpio_rv32m1_config gpio_rv32m1_##n##_config = {\
 		.common = {						\
@@ -326,7 +326,7 @@ static const struct gpio_driver_api gpio_rv32m1_driver_api = {
 			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 			    &gpio_rv32m1_driver_api);			\
 									\
-	static int gpio_rv32m1_##n##_init(struct device *dev)		\
+	static int gpio_rv32m1_##n##_init(const struct device *dev)	\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 			    0,						\

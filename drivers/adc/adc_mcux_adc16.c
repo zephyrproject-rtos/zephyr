@@ -276,7 +276,7 @@ static const struct adc_driver_api mcux_adc16_driver_api = {
 };
 
 #define ACD16_MCUX_INIT(n)						\
-	static void mcux_adc16_config_func_##n(struct device *dev);	\
+	static void mcux_adc16_config_func_##n(const struct device *dev); \
 									\
 	static const struct mcux_adc16_config mcux_adc16_config_##n = {	\
 		.base = (ADC_Type *)DT_INST_REG_ADDR(n),		\
@@ -295,7 +295,7 @@ static const struct adc_driver_api mcux_adc16_driver_api = {
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &mcux_adc16_driver_api);			\
 									\
-	static void mcux_adc16_config_func_##n(struct device *dev)	\
+	static void mcux_adc16_config_func_##n(const struct device *dev) \
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
 			    mcux_adc16_isr,				\

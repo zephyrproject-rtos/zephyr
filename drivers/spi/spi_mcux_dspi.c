@@ -289,7 +289,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 };
 
 #define SPI_MCUX_DSPI_DEVICE(id)					\
-	static void spi_mcux_config_func_##id(struct device *dev);	\
+	static void spi_mcux_config_func_##id(const struct device *dev); \
 	static const struct spi_mcux_config spi_mcux_config_##id = {	\
 		.base = (SPI_Type *)DT_INST_REG_ADDR(id),		\
 		.clock_name = DT_INST_CLOCKS_LABEL(id),			\
@@ -318,7 +318,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 			    POST_KERNEL,				\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &spi_mcux_driver_api);			\
-	static void spi_mcux_config_func_##id(struct device *dev)	\
+	static void spi_mcux_config_func_##id(const struct device *dev)	\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(id),				\
 			    DT_INST_IRQ(id, priority),			\

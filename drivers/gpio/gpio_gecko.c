@@ -306,7 +306,7 @@ static int gpio_gecko_common_init(const struct device *dev)
 }
 
 #define GPIO_PORT_INIT(idx) \
-static int gpio_gecko_port##idx##_init(struct device *dev); \
+static int gpio_gecko_port##idx##_init(const struct device *dev); \
 \
 static const struct gpio_gecko_config gpio_gecko_port##idx##_config = { \
 	.common = { \
@@ -325,7 +325,7 @@ DEVICE_AND_API_INIT(gpio_gecko_port##idx, \
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, \
 		    &gpio_gecko_driver_api); \
 \
-static int gpio_gecko_port##idx##_init(struct device *dev) \
+static int gpio_gecko_port##idx##_init(const struct device *dev) \
 { \
 	gpio_gecko_add_port(&gpio_gecko_common_data, dev); \
 	return 0; \

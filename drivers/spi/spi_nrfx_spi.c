@@ -357,7 +357,7 @@ static int spi_nrfx_pm_control(const struct device *dev,
 		!SPI_PROP(idx, miso_pull_up) || !SPI_PROP(idx, miso_pull_down),\
 		"SPI"#idx						       \
 		": cannot enable both pull-up and pull-down on MISO line");    \
-	static int spi_##idx##_init(struct device *dev)			       \
+	static int spi_##idx##_init(const struct device *dev)		       \
 	{								       \
 		IRQ_CONNECT(DT_IRQN(SPI(idx)), DT_IRQ(SPI(idx), priority),     \
 			    nrfx_isr, nrfx_spi_##idx##_irq_handler, 0);	       \

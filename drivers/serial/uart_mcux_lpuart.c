@@ -296,7 +296,7 @@ static const struct uart_driver_api mcux_lpuart_driver_api = {
 		irq_enable(DT_INST_IRQ_BY_IDX(n, i, irq));		\
 	} while (0)
 #define LPUART_MCUX_CONFIG_FUNC(n)					\
-	static void mcux_lpuart_config_func_##n(struct device *dev)	\
+	static void mcux_lpuart_config_func_##n(const struct device *dev) \
 	{								\
 		MCUX_LPUART_IRQ_INIT(n, 0);				\
 									\

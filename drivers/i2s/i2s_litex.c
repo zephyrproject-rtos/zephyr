@@ -615,7 +615,7 @@ static const struct i2s_driver_api i2s_litex_driver_api = {
 			sizeof(dir##_ring_buf) / sizeof(struct queue_item),    \
 	};                                                                     \
 									       \
-	static void i2s_litex_irq_config_func_##dir(struct device *dev);       \
+	static void i2s_litex_irq_config_func_##dir(const struct device *dev); \
 									       \
 	static struct i2s_litex_cfg i2s_litex_cfg_##dir = {                    \
 		.base = DT_REG_ADDR_BY_NAME(DT_NODELABEL(i2s_##dir), control), \
@@ -630,7 +630,7 @@ static const struct i2s_driver_api i2s_litex_driver_api = {
 				CONFIG_I2S_INIT_PRIORITY,		       \
 				&i2s_litex_driver_api);			       \
 									       \
-	static void i2s_litex_irq_config_func_##dir(struct device *dev)        \
+	static void i2s_litex_irq_config_func_##dir(const struct device *dev)  \
 	{                                                                      \
 		IRQ_CONNECT(DT_IRQN(DT_NODELABEL(i2s_##dir)),                  \
 					DT_IRQ(DT_NODELABEL(i2s_##dir),	       \

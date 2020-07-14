@@ -739,7 +739,7 @@ static int uart_stm32_init(const struct device *dev)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 #define STM32_UART_IRQ_HANDLER_DECL(index)				\
-	static void uart_stm32_irq_config_func_##index(struct device *dev)
+	static void uart_stm32_irq_config_func_##index(const struct device *dev)
 #define STM32_UART_IRQ_HANDLER_FUNC(index)				\
 	.irq_config_func = uart_stm32_irq_config_func_##index,
 #define STM32_UART_IRQ_HANDLER(index)					\

@@ -163,7 +163,7 @@ static int dtmr_cmsdk_apb_init(const struct device *dev)
 	((volatile struct dualtimer_cmsdk_apb *)DT_INST_REG_ADDR(inst))
 
 #define DTIMER_CMSDK_INIT(inst)						\
-	static void dtimer_cmsdk_apb_config_##inst(struct device *dev);	\
+	static void dtimer_cmsdk_apb_config_##inst(const struct device *dev); \
 									\
 	static const struct dtmr_cmsdk_apb_cfg				\
 	dtmr_cmsdk_apb_cfg_##inst = {					\
@@ -199,7 +199,7 @@ static int dtmr_cmsdk_apb_init(const struct device *dev)
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &dtmr_cmsdk_apb_api);			\
 									\
-	static void dtimer_cmsdk_apb_config_##inst(struct device *dev)	\
+	static void dtimer_cmsdk_apb_config_##inst(const struct device *dev) \
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(inst),				\
 			    DT_INST_IRQ(inst, priority),		\

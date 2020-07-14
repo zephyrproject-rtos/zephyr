@@ -262,7 +262,7 @@ static const struct i2c_driver_api rv32m1_lpi2c_driver_api = {
 };
 
 #define RV32M1_LPI2C_DEVICE(id)                                                \
-	static void rv32m1_lpi2c_irq_config_func_##id(struct device *dev);     \
+	static void rv32m1_lpi2c_irq_config_func_##id(const struct device *dev);     \
 	static const struct rv32m1_lpi2c_config rv32m1_lpi2c_##id##_config = { \
 		.base =                                                        \
 		(LPI2C_Type *)DT_INST_REG_ADDR(id),                            \
@@ -287,7 +287,7 @@ static const struct i2c_driver_api rv32m1_lpi2c_driver_api = {
 			    &rv32m1_lpi2c_##id##_config,                       \
 			    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,             \
 			    &rv32m1_lpi2c_driver_api);	                       \
-	static void rv32m1_lpi2c_irq_config_func_##id(struct device *dev)      \
+	static void rv32m1_lpi2c_irq_config_func_##id(const struct device *dev)      \
 	{                                                                      \
 		IRQ_CONNECT(DT_INST_IRQN(id),                                  \
 			    0,						       \
