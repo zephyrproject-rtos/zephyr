@@ -518,6 +518,7 @@ static int hci_driver_open(void)
 static const struct bt_hci_driver drv = {
 	.name	= "Controller",
 	.bus	= BT_HCI_DRIVER_BUS_VIRTUAL,
+	.quirks = BT_QUIRK_NO_AUTO_DLE,
 	.open	= hci_driver_open,
 	.send	= hci_driver_send,
 };

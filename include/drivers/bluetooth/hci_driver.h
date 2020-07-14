@@ -37,6 +37,8 @@ enum {
 	BT_QUIRK_NO_AUTO_DLE = BIT(1),
 };
 
+#define IS_BT_QUIRK_NO_AUTO_DLE(bt_dev) ((bt_dev)->drv->quirks & BT_QUIRK_NO_AUTO_DLE)
+
 /* @brief The HCI event shall be given to bt_recv_prio */
 #define BT_HCI_EVT_FLAG_RECV_PRIO BIT(0)
 /* @brief  The HCI event shall be given to bt_recv. */
