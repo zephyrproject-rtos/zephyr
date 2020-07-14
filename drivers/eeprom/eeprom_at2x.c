@@ -580,7 +580,7 @@ static const struct eeprom_driver_api eeprom_at2x_api = {
 			DT_SPI_DEV_CS_GPIOS_PIN(INST_DT_AT2X(n, t))), \
 		.spi_cs_dt_flags = UTIL_AND( \
 			DT_SPI_DEV_HAS_CS_GPIOS(INST_DT_AT2X(n, t)), \
-			DT_SPI_DEV_CS_GPIOS_DT_FLAGS(INST_DT_AT2X(n, t))), \
+			DT_SPI_DEV_CS_GPIOS_FLAGS(INST_DT_AT2X(n, t))), \
 		.wp_gpio_pin = UTIL_AND( \
 			DT_NODE_HAS_PROP(INST_DT_AT2X(n, t), wp_gpios), \
 			DT_GPIO_PIN(INST_DT_AT2X(n, t), wp_gpios)), \
