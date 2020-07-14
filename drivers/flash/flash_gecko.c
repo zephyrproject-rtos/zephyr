@@ -126,7 +126,11 @@ static int flash_gecko_write_protection(struct device *dev, bool enable)
 		MSC->LOCK = 0;
 	} else {
 		/* Unlock the MSC module. */
+	#if defined(MSC_LOCK_LOCKKEY_UNLOCK)
+		MSC->LOCK = MSC_LOCK_LOCKKEY_UNLOCK;
+	#else
 		MSC->LOCK = MSC_UNLOCK_CODE;
+	#endif
 	}
 
 	k_sem_give(&dev_data->mutex);
