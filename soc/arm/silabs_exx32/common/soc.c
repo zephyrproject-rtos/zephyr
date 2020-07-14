@@ -26,12 +26,12 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 /**
  * @brief Initialization parameters for the external high frequency oscillator
  */
-static const CMU_HFXOInit_TypeDef hfxoInit = CMU_HFXOINIT_DEFAULT;
+static CMU_HFXOInit_TypeDef hfxoInit = CMU_HFXOINIT_DEFAULT;
 #elif (defined CONFIG_CMU_HFCLK_LFXO)
 /**
  * @brief Initialization parameters for the external low frequency oscillator
  */
-static const CMU_LFXOInit_TypeDef lfxoInit = CMU_LFXOINIT_DEFAULT;
+static CMU_LFXOInit_TypeDef lfxoInit = CMU_LFXOINIT_DEFAULT;
 #endif
 
 /**
