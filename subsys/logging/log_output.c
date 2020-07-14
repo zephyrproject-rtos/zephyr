@@ -502,12 +502,12 @@ static uint32_t prefix_print(const struct log_output *log_output,
 			log_output->control_block->hostname ?
 			log_output->control_block->hostname :
 			"zephyr");
-
 	} else {
 		color_prefix(log_output, colors_on, level);
-		length += ids_print(log_output, level_on, func_on,
-				    domain_id, source_id, level);
 	}
+
+	length += ids_print(log_output, level_on, func_on,
+			domain_id, source_id, level);
 
 	return length;
 }
