@@ -13,12 +13,16 @@ K_SEM_DEFINE(rx_buf_released, 0, 1);
 K_SEM_DEFINE(rx_disabled, 0, 1);
 
 ZTEST_BMEM volatile bool failed_in_isr;
+static const struct device *uart_dev;
+
+void init_test(void)
+{
+	uart_dev = device_get_binding(UART_DEVICE_NAME);
+}
 
 #ifdef CONFIG_USERSPACE
 void set_permissions(void)
 {
-	const struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
-
 	k_thread_access_grant(k_current_get(), &tx_done, &tx_aborted,
 			      &rx_rdy, &rx_buf_released, &rx_disabled,
 			      uart_dev);
@@ -56,8 +60,6 @@ ZTEST_BMEM volatile uint32_t tx_aborted_count;
 
 void test_single_read_setup(void)
 {
-	const struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
-
 	uart_callback_set(uart_dev,
 			  test_single_read_callback,
 			  (void *) &tx_aborted_count);
@@ -65,9 +67,6 @@ void test_single_read_setup(void)
 
 void test_single_read(void)
 {
-	const struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
-
-
 	uint8_t rx_buf[10] = {0};
 	uint8_t tx_buf[5] = "test";
 
@@ -137,14 +136,11 @@ void test_chained_read_callback(const struct device *uart_dev,
 
 void test_chained_read_setup(void)
 {
-	const struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
-
 	uart_callback_set(uart_dev, test_chained_read_callback, NULL);
 }
 
 void test_chained_read(void)
 {
-	const struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
 	uint8_t tx_buf[10];
 
 	uart_rx_enable(uart_dev, chained_read_buf0, 10, 50);
@@ -203,14 +199,11 @@ void test_double_buffer_callback(const struct device *uart_dev,
 
 void test_double_buffer_setup(void)
 {
-	const struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
-
 	uart_callback_set(uart_dev, test_double_buffer_callback, NULL);
 }
 
 void test_double_buffer(void)
 {
-	const struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
 	uint8_t tx_buf[4];
 
 	zassert_equal(uart_rx_enable(uart_dev,
@@ -267,8 +260,6 @@ void test_read_abort_callback(const struct device *dev,
 
 void test_read_abort_setup(void)
 {
-	const struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
-
 	failed_in_isr = false;
 	uart_callback_set(uart_dev, test_read_abort_callback, NULL);
 
@@ -280,8 +271,6 @@ void test_read_abort_setup(void)
 
 void test_read_abort(void)
 {
-	const struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
-
 	uint8_t rx_buf[100];
 	uint8_t tx_buf[100];
 
@@ -343,15 +332,11 @@ void test_write_abort_callback(const struct device *dev,
 
 void test_write_abort_setup(void)
 {
-	const struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
-
 	uart_callback_set(uart_dev, test_write_abort_callback, NULL);
 }
 
 void test_write_abort(void)
 {
-	const struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
-
 	uint8_t rx_buf[100];
 	uint8_t tx_buf[100];
 
@@ -413,15 +398,11 @@ void test_forever_timeout_callback(const struct device *dev,
 
 void test_forever_timeout_setup(void)
 {
-	const struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
-
 	uart_callback_set(uart_dev, test_forever_timeout_callback, NULL);
 }
 
 void test_forever_timeout(void)
 {
-	const struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
-
 	uint8_t rx_buf[100];
 	uint8_t tx_buf[100];
 
@@ -493,15 +474,11 @@ void test_chained_write_callback(const struct device *uart_dev,
 
 void test_chained_write_setup(void)
 {
-	const struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
-
 	uart_callback_set(uart_dev, test_chained_write_callback, NULL);
 }
 
 void test_chained_write(void)
 {
-	const struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
-
 	uint8_t rx_buf[20];
 
 	memset(rx_buf, 0, sizeof(rx_buf));
@@ -572,15 +549,11 @@ void test_long_buffers_callback(const struct device *uart_dev,
 
 void test_long_buffers_setup(void)
 {
-	const struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
-
 	uart_callback_set(uart_dev, test_long_buffers_callback, NULL);
 }
 
 void test_long_buffers(void)
 {
-	const struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
-
 	memset(long_rx_buf, 0, sizeof(long_rx_buf));
 	memset(long_tx_buf, 1, sizeof(long_tx_buf));
 
