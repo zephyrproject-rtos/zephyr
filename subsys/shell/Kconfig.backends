@@ -30,6 +30,15 @@ config SHELL_PROMPT_UART
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_SHELL_UART := zephyr,shell-uart
 
+config UART_SHELL_USE_CDC_ACM
+	bool "Deliver Shell through USB CDC AMC"
+	depends on USB_DEVICE_STACK
+	depends on USB_CDC_ACM
+	help
+	  This option allows for directing shell through USB CDC ACM-based
+	  serial. Make sure UART_SHELL_ON_DEV_NAME is set to a
+	  UART_SHELL_USE_CDC_ACM-based value.
+
 config UART_SHELL_ON_DEV_NAME
 	string "Device Name of UART Device for SHELL_BACKEND_SERIAL"
 	default "$(dt_chosen_label,$(DT_CHOSEN_Z_SHELL_UART))" if HAS_DTS
