@@ -78,16 +78,11 @@
 /**
  * @brief Get a node identifier for a devicetree path
  *
- * The arguments to this macro are the names of non-root nodes in the
- * tree required to reach the desired node, starting from the root.
- * Non-alphanumeric characters in each name must be converted to
- * underscores to form valid C tokens, and letters must be lowercased.
- *
  * Example devicetree fragment:
  *
  *     / {
  *             soc {
- *                     serial1: serial@40001000 {
+ *                     my-serial: serial@40002000 {
  *                             status = "okay";
  *                             current-speed = <115200>;
  *                             ...
@@ -95,24 +90,22 @@
  *             };
  *     };
  *
- * You can use DT_PATH(soc, serial_40001000) to get a node identifier
- * for the serial@40001000 node. Node labels like "serial1" cannot be
- * used as DT_PATH() arguments; use DT_NODELABEL() for those instead.
+ * Example usage with @ref DT_PROP() to get current-speed:
  *
- * Example usage with DT_PROP() to get the current-speed property:
+ *     DT_PROP(DT_PATH(soc, serial_40002000), current_speed) // 115200
  *
- *     DT_PROP(DT_PATH(soc, serial_40001000), current_speed) // 115200
+ * The arguments to this macro are the names of non-root nodes in the
+ * tree required to reach the desired node, starting from the root.
+ * Non-alphanumeric characters in each name must be converted to
+ * underscores to form valid C tokens, and letters must be lowercased.
  *
- * (The current-speed property is also in "lowercase-and-underscores"
- * form when used with this API.)
+ * That is:
  *
- * When determining arguments to DT_PATH():
- *
- * - the first argument corresponds to a child node of the root ("soc" above)
+ * - a first argument corresponds to a child node of the root ("soc" above)
  * - a second argument corresponds to a child of the first argument
- *   ("serial_40001000" above, from the node name "serial@40001000"
- *   after lowercasing and changing "@" to "_")
- * - and so on for deeper nodes in the desired node's path
+ *   ("serial_40002000" above, from the node name "serial@40002000"
+ *   after changing "@" to "_")
+ * - and so on for deeper nodes until the desired path is given
  *
  * @param ... lowercase-and-underscores node names along the node's path,
  *            with each name given as a separate argument
@@ -123,29 +116,25 @@
 /**
  * @brief Get a node identifier for a node label
  *
- * Convert non-alphanumeric characters in the node label to
- * underscores to form valid C tokens, and lowercase all letters. Note
- * that node labels are not the same thing as label properties.
- *
  * Example devicetree fragment:
  *
- *     serial1: serial@40001000 {
+ *     my-serial: serial@40002000 {
  *             label = "UART_0";
  *             status = "okay";
  *             current-speed = <115200>;
  *             ...
  *     };
  *
- * The only node label in this example is "serial1".
- *
+ * The only node label in this example is "my-serial".
  * The string "UART_0" is *not* a node label; it's the value of a
- * property named label.
+ * property named "label".
  *
- * You can use DT_NODELABEL(serial1) to get a node identifier for the
- * serial@40001000 node. Example usage with DT_PROP() to get the
- * current-speed property:
+ * Example usage to get current-speed:
  *
- *     DT_PROP(DT_NODELABEL(serial1), current_speed) // 115200
+ *     DT_PROP(DT_NODELABEL(my_serial), current_speed) // 115200
+ *
+ * Convert non-alphanumeric characters in the label to underscores as
+ * shown, and lowercase all letters.
  *
  * Another example devicetree fragment:
  *
@@ -156,12 +145,12 @@
  *            };
  *     };
  *
- * Example usage to get the cache-level property:
+ * Example usage to get cache-level:
  *
  *     DT_PROP(DT_NODELABEL(l2_0), cache_level) // 2
  *
- * Notice how "L2_0" in the devicetree is lowercased to "l2_0" in the
- * DT_NODELABEL() argument.
+ * Notice how "L2_0" in the devicetree is lowercased to "l2_0"
+ * for this macro's argument.
  *
  * @param label lowercase-and-underscores node label name
  * @return node identifier for the node with that label
@@ -169,35 +158,26 @@
 #define DT_NODELABEL(label) DT_CAT(DT_N_NODELABEL_, label)
 
 /**
- * @brief Get a node identifier from /aliases
- *
- * This macro's argument is a property of the /aliases node. It
- * returns a node identifier for the node which is aliased. Convert
- * non-alphanumeric characters in the alias property to underscores to
- * form valid C tokens, and lowercase all letters.
+ * @brief Get a node identifier for an alias
  *
  * Example devicetree fragment:
  *
- *     / {
- *             aliases {
- *                     my-serial = &serial1;
- *             };
- *
- *             soc {
- *                     serial1: serial@40001000 {
- *                             status = "okay";
- *                             current-speed = <115200>;
- *                             ...
- *                     };
- *             };
+ *     aliases {
+ *             my-serial = &serial0;
  *     };
  *
- * You can use DT_ALIAS(my_serial) to get a node identifier for the
- * serial@40001000 node. Notice how my-serial in the devicetree
- * becomes my_serial in the DT_ALIAS() argument. Example usage with
- * DT_PROP() to get the current-speed property:
+ *     serial0: serial@40002000 {
+ *             status = "okay";
+ *             current-speed = <115200>;
+ *             ...
+ *     };
+ *
+ * Example usage to get current-speed:
  *
  *     DT_PROP(DT_ALIAS(my_serial), current_speed) // 115200
+ *
+ * Convert non-alphanumeric characters in the alias to underscores as
+ * shown, and lowercase all letters.
  *
  * @param alias lowercase-and-underscores alias name.
  * @return node identifier for the node with that alias
@@ -207,89 +187,38 @@
 /**
  * @brief Get a node identifier for an instance of a compatible
  *
- * All nodes with a particular compatible property value are assigned
- * instance numbers, which are zero-based indexes specific to that
- * compatible. You can get a node identifier for these nodes by
- * passing DT_INST() an instance number, "inst", along with the
- * lowercase-and-underscores version of the compatible, "compat".
+ * Instance numbers are just indexes among *all* nodes with the same
+ * compatible. This complicates their use outside of device drivers.
+ * The **only guarantees** are:
  *
- * Instance numbers have the following properties:
+ * - instance numbers start at 0,
+ * - are contiguous, and
+ * - exactly one is assigned for *each* node with a matching compatible,
+ *   **including disabled ones**
  *
- * - for each compatible, instance numbers start at 0 and are contiguous
- * - exactly one instance number is assigned for each node with a compatible,
- *   **including disabled nodes**
- * - enabled nodes (status property is "okay" or missing) are assigned the
- *   instance numbers starting from 0, and disabled nodes have instance
- *   numbers which are greater than those of any enabled node
+ * Instance numbers **in no way reflect** any numbering scheme that
+ * might exist in SoC documentation, node labels or unit addresses, or
+ * properties of the /aliases node.
  *
- * No other guarantees are made. In particular:
- *
- * - instance numbers **in no way reflect** any numbering scheme that
- *   might exist in SoC documentation, node labels or unit addresses,
- *   or properties of the /aliases node (use DT_NODELABEL() or DT_ALIAS()
- *   for those)
- * - there **is no general guarantee** that the same node will have
- *   the same instance number between builds, even if you are building
- *   the same application again in the same build directory
+ * There **is no guarantee** that the same node will have the same
+ * instance number between builds, even if you are building the same
+ * application again in the same build directory.
  *
  * Example devicetree fragment:
  *
- *     serial1: serial@40001000 {
- *             compatible = "vnd,soc-serial";
- *             status = "disabled";
- *             current-speed = <9600>;
- *             ...
- *     };
- *
- *     serial2: serial@40002000 {
+ *     serial@40002000 {
  *             compatible = "vnd,soc-serial";
  *             status = "okay";
- *             current-speed = <57600>;
- *             ...
- *     };
- *
- *     serial3: serial@40003000 {
- *             compatible = "vnd,soc-serial";
  *             current-speed = <115200>;
  *             ...
  *     };
  *
- * Assuming no other nodes in the devicetree have compatible
- * "vnd,soc-serial", that compatible has nodes with instance numbers
- * 0, 1, and 2.
+ * Example usage to get current-speed, **assuming that** this node is
+ * instance number zero of the compatible "vnd,soc-serial":
  *
- * The nodes serial@40002000 and serial@40003000 are both enabled, so
- * their instance numbers are 0 and 1, but no guarantees are made
- * regarding which node has which instance number.
+ *     DT_PROP(DT_INST(0, vnd_soc_serial), current_speed) // 115200
  *
- * Since serial@40001000 is the only disabled node, it has instance
- * number 2, since disabled nodes are assigned the largest instance
- * numbers. Therefore:
- *
- *     // Could be 57600 or 115200. There is no way to be sure:
- *     // either serial@40002000 or serial@40003000 could
- *     // have instance number 0, so this could be the current-speed
- *     // property of either of those nodes.
- *     DT_PROP(DT_INST(0, vnd_soc_serial), current_speed)
- *
- *     // Could be 57600 or 115200, for the same reason.
- *     // If the above expression expands to 57600, then
- *     // this expands to 115200, and vice-versa.
- *     DT_PROP(DT_INST(1, vnd_soc_serial), current_speed)
- *
- *     // 9600, because there is only one disabled node, and
- *     // disabled nodes are "at the the end" of the instance
- *     // number "list".
- *     DT_PROP(DT_INST(2, vnd_soc_serial), current_speed)
- *
- * Notice how "vnd,soc-serial" in the devicetree becomes vnd_soc_serial
- * (without quotes) in the DT_INST() arguments. (As usual, current-speed
- * in the devicetree becomes current_speed as well.)
- *
- * Nodes whose "compatible" property has multiple values are assigned
- * independent instance numbers for each compatible.
- *
- * @param inst instance number for compatible "compat"
+ * @param inst instance number
  * @param compat lowercase-and-underscores compatible, without quotes
  * @return node identifier for the node with that instance number and
  *         compatible
@@ -307,13 +236,12 @@
  *             };
  *     };
  *
- * The following are equivalent ways to get the same node identifier:
+ * The following generate equivalent node identifiers:
  *
  *     DT_NODELABEL(parent)
  *     DT_PARENT(DT_NODELABEL(child))
  *
  * @param node_id node identifier
- * @return a node identifier for the node's parent
  */
 #define DT_PARENT(node_id) UTIL_CAT(node_id, _PARENT)
 
@@ -324,7 +252,7 @@
  *
  *     / {
  *             soc-label: soc {
- *                     serial1: serial@40001000 {
+ *                     my-serial: serial@4 {
  *                             status = "okay";
  *                             current-speed = <115200>;
  *                             ...
@@ -332,23 +260,28 @@
  *             };
  *     };
  *
- * Example usage with @ref DT_PROP() to get the status of the
- * serial@40001000 node:
+ * Example usage with @ref DT_PROP() to get the status of the child node
+ * "serial@4" of the node referenced by node label "soc-label":
  *
- *     #define SOC_NODE DT_NODELABEL(soc_label)
- *     DT_PROP(DT_CHILD(SOC_NODE, serial_40001000), status) // "okay"
- *
- * Node labels like "serial1" cannot be used as the "child" argument
- * to this macro. Use DT_NODELABEL() for that instead.
- *
- * You can also use DT_FOREACH_CHILD() to iterate over node
- * identifiers for all of a node's children.
+ *     DT_PROP(DT_CHILD(DT_NODELABEL(soc_label), serial_4), status) // "okay"
  *
  * @param node_id node identifier
  * @param child lowercase-and-underscores child node name
  * @return node identifier for the node with the name referred to by 'child'
  */
 #define DT_CHILD(node_id, child) UTIL_CAT(node_id, DT_S_PREFIX(child))
+
+/**
+ * @brief Invokes given macro for all child nodes of a parent.
+ *
+ * @param node_id node identifier
+ * @param fn macro to invoke
+ *
+ * Macro should be defined to take one parameter, which will be a node
+ * identifier for each child node of node_id.
+ */
+#define DT_FOREACH_CHILD(node_id, fn) \
+	DT_CAT(node_id, _FOREACH_CHILD)(fn)
 
 /**
  * @}
@@ -372,19 +305,12 @@
  * - array, uint8-array, string-array: an initializer expression in braces,
  *   whose elements are integer or string literals (like {0, 1, 2},
  *   {"hello", "world"}, etc.)
- * - phandle: a node identifier for the node with that phandle
+ * - phandle: a node identifier
  *
- * A property's type is usually defined by its binding. In some
- * special cases, it has an assumed type defined by the devicetree
- * specification even when no binding is available: "compatible" has
- * type string-array, "status" and "label" have type string, and
- * "interrupt-controller" has type boolean.
+ * For other properties, behavior is undefined.
  *
- * For other properties or properties with unknown type due to a
- * missing binding, behavior is undefined.
- *
- * For usage examples, see @ref DT_PATH(), @ref DT_ALIAS(), @ref
- * DT_NODELABEL(), and @ref DT_INST() above.
+ * For examples, see @ref DT_PATH(), @ref DT_ALIAS(), @ref DT_NODELABEL(),
+ * and @ref DT_INST().
  *
  * @param node_id node identifier
  * @param prop lowercase-and-underscores property name
@@ -395,23 +321,21 @@
 /**
  * @brief Get a property's logical length
  *
- * Here, "length" is a number of elements, which may differ from the
- * property's size in bytes.
+ * Here, "length" is a number of elements, which may not
+ * be a size in bytes.
  *
- * The return value depends on the property's type:
+ * For properties whose binding has type array, string-array, or
+ * uint8-array, this expands to the number of elements in the array.
  *
- * - for types array, string-array, and uint8-array, this expands
- *   to the number of elements in the array
- * - for type phandles, this expands to the number of phandles
- * - for type phandle-array, this expands to the number of
- *   phandle and specifier blocks in the property
+ * For properties of type phandles or phandle-array, it expands to the
+ * number of phandles or phandle+specifiers respectively.
  *
  * These properties are handled as special cases:
  *
  * - reg property: use DT_NUM_REGS(node_id) instead
  * - interrupts property: use DT_NUM_IRQS(node_id) instead
  *
- * It is an error to use this macro with the reg or interrupts properties.
+ * It is an error to use this macro with the above properties.
  *
  * For other properties, behavior is undefined.
  *
@@ -425,7 +349,7 @@
  * @brief Is index "idx" valid for an array type property?
  *
  * If this returns 1, then DT_PROP_BY_IDX(node_id, prop, idx) or
- * DT_PHA_BY_IDX(node_id, prop, idx, ...) are valid at index "idx".
+ * DT_PHA_BY_IDX(node_id, pha, idx, cell) are valid at index "idx".
  * If it returns 0, it is an error to use those macros with that index.
  *
  * These properties are handled as special cases:
@@ -433,13 +357,13 @@
  * - reg property: use DT_REG_HAS_IDX(node_id, idx) instead
  * - interrupts property: use DT_IRQ_HAS_IDX(node_id, idx) instead
  *
- * It is an error to use this macro with the reg or interrupts properties.
+ * It is an error to use this macro with the above properties.
  *
  * @param node_id node identifier
  * @param prop a lowercase-and-underscores property with a logical length
  * @param idx index to check
- * @return An expression which evaluates to 1 if "idx" is a valid index
- *         into the given property, and 0 otherwise.
+ * @return 1 if "idx" is a valid index into the given property,
+ *         0 otherwise.
  */
 #define DT_PROP_HAS_IDX(node_id, prop, idx) \
 	((idx) < DT_PROP_LEN(node_id, prop))
@@ -523,6 +447,21 @@
  */
 
 /**
+ * @brief Get a property value from a phandle's node
+ *
+ * This is a shorthand for DT_PROP_BY_PHANDLE_IDX(node_id, ph, 0, prop).
+ * It helps readability when "ph" has type "phandle".
+ *
+ * @param node_id node identifier
+ * @param ph lowercase-and-underscores property of "node_id"
+ *           with type "phandle"
+ * @param prop lowercase-and-underscores property of the phandle's node
+ * @return the value of "prop" as described in the DT_PROP() documentation
+ */
+#define DT_PROP_BY_PHANDLE(node_id, ph, prop) \
+	DT_PROP_BY_PHANDLE_IDX(node_id, ph, 0, prop)
+
+/**
  * @brief Get a property value from a phandle in a property.
  *
  * This is a shorthand for:
@@ -559,72 +498,46 @@
  * @param idx logical index into "phs", which must be zero if "phs"
  *            has type "phandle"
  * @param prop lowercase-and-underscores property of the phandle's node
- * @return the property's value
+ * @return the value of "prop" as described in the DT_PROP() documentation
  */
 #define DT_PROP_BY_PHANDLE_IDX(node_id, phs, idx, prop) \
 	DT_PROP(DT_PHANDLE_BY_IDX(node_id, phs, idx), prop)
 
 /**
- * @brief Get a property value from a phandle's node
- *
- * This is equivalent to DT_PROP_BY_PHANDLE_IDX(node_id, ph, 0, prop).
- *
- * @param node_id node identifier
- * @param ph lowercase-and-underscores property of "node_id"
- *           with type "phandle"
- * @param prop lowercase-and-underscores property of the phandle's node
- * @return the property's value
- */
-#define DT_PROP_BY_PHANDLE(node_id, ph, prop) \
-	DT_PROP_BY_PHANDLE_IDX(node_id, ph, 0, prop)
-
-/**
- * @brief Get a phandle-array specifier cell value at an index
+ * @brief Get a phandle-array specifier value at an index
  *
  * It might help to read the argument order as being similar to
- * "node->phandle_array[index].cell". That is, the cell value is in
- * the "pha" property of "node_id", inside the specifier at index
- * "idx".
+ * "node->phandle[index].cell". That is, the cell value is in the
+ * "pha" property of "node_id".
  *
  * Example devicetree fragment:
  *
- *     gpio0: gpio@... {
- *             #gpio-cells = <2>;
- *     };
- *
- *     gpio1: gpio@... {
- *             #gpio-cells = <2>;
+ *     gpio0: gpio@12340000 {
+ *             #gpio-cells = < 2 >;
  *     };
  *
  *     led: led_0 {
- *             gpios = <&gpio0 17 0x1>, <&gpio1 5 0x3>;
+ *             gpios = < &gpio0 17 0x1 >;
  *     };
  *
- * Bindings fragment for the gpio0 and gpio1 nodes:
+ * Bindings fragment for the gpio0 node:
  *
  *     gpio-cells:
  *       - pin
  *       - flags
  *
- * Above, "gpios" has two elements:
- *
- * - index 0 has specifier <17 0x1>, so its "pin" cell is 17, and its
- *   "flags" cell is 0x1
- * - index 1 has specifier <5 0x3>, so "pin" is 5 and "flags" is 0x3
- *
  * Example usage:
  *
  *     #define LED DT_NODELABEL(led)
  *
- *     DT_PHA_BY_IDX(LED, gpios, 0, pin)   // 17
- *     DT_PHA_BY_IDX(LED, gpios, 1, flags) // 0x3
+ *     DT_PHA_BY_IDX(LED, gpios, pin, 0)   // 17
+ *     DT_PHA_BY_IDX(LED, gpios, flags, 0) // 0x1
  *
  * @param node_id node identifier
  * @param pha lowercase-and-underscores property with type "phandle-array"
- * @param idx logical index into "pha"
- * @param cell lowercase-and-underscores cell name within the specifier
- *             at "pha" index "idx"
- * @return the cell's value
+ * @param idx logical index into the property "pha"
+ * @param cell binding's cell name within the specifier at index "idx"
+ * @return the value of the cell inside the specifier at index "idx"
  */
 #define DT_PHA_BY_IDX(node_id, pha, idx, cell) \
 	DT_PROP(node_id, pha##_IDX_##idx##_VAL_##cell)
@@ -633,8 +546,8 @@
  * @brief Equivalent to DT_PHA_BY_IDX(node_id, pha, 0, cell)
  * @param node_id node identifier
  * @param pha lowercase-and-underscores property with type "phandle-array"
- * @param cell lowercase-and-underscores cell name
- * @return the cell's value
+ * @param cell binding's cell name for the specifier at "pha" index 0
+ * @return the cell value
  */
 #define DT_PHA(node_id, pha, cell) DT_PHA_BY_IDX(node_id, pha, 0, cell)
 
@@ -642,12 +555,12 @@
  * @brief Get a value within a phandle-array specifier by name
  *
  * This is like DT_PHA_BY_IDX(), except it treats "pha" as a structure
- * where each array element has a name.
+ * where each specifier has a name.
  *
  * It might help to read the argument order as being similar to
  * "node->phandle_struct.name.cell". That is, the cell value is in the
- * "pha" property of "node_id", treated as a data structure where
- * each array element has a name.
+ * "pha" property of "node_id", treated as a data structure with named
+ * components.
  *
  * Example devicetree fragment:
  *
@@ -669,8 +582,8 @@
  * @param node_id node identifier
  * @param pha lowercase-and-underscores property with type "phandle-array"
  * @param name lowercase-and-underscores name of a specifier in "pha"
- * @param cell lowercase-and-underscores cell name in the named specifier
- * @return the cell's value
+ * @param cell binding's cell name for the named specifier
+ * @return the cell value
  */
 #define DT_PHA_BY_NAME(node_id, pha, name, cell) \
 	DT_PROP(node_id, pha##_NAME_##name##_VAL_##cell)
@@ -680,7 +593,7 @@
  *
  * It might help to read the argument order as being similar to
  * "node->phandle_struct.name.phandle". That is, the phandle array is
- * treated as a structure with named elements. The return value is
+ * treated as a structure with named components. The return value is
  * the node identifier for a phandle inside the structure.
  *
  * Example devicetree fragment:
@@ -698,11 +611,6 @@
  *             io-channel-names = "SENSOR", "BANDGAP";
  *     };
  *
- * Above, "io-channels" has two elements:
- *
- * - the element named "SENSOR" has phandle &adc1
- * - the element named "BANDGAP" has phandle &adc2
- *
  * Example usage:
  *
  *     #define NODE DT_NODELABEL(n)
@@ -710,13 +618,10 @@
  *     DT_LABEL(DT_PHANDLE_BY_NAME(NODE, io_channels, sensor))  // "ADC_1"
  *     DT_LABEL(DT_PHANDLE_BY_NAME(NODE, io_channels, bandgap)) // "ADC_2"
  *
- * Notice how devicetree properties and names are lowercased, and
- * non-alphanumeric characters are converted to underscores.
- *
  * @param node_id node identifier
  * @param pha lowercase-and-underscores property with type "phandle-array"
  * @param name lowercase-and-underscores name of an element in "pha"
- * @return a node identifier for the node with that phandle
+ * @return node identifier for the phandle at the element named "name"
  */
 #define DT_PHANDLE_BY_NAME(node_id, pha, name) \
 	DT_PROP(node_id, pha##_NAME_##name##_PH)
@@ -740,11 +645,6 @@
  *     n2: node-2 { ... };
  *     n3: node-3 { ... };
  *
- * Above, "foo" has type phandles and has two elements:
- *
- * - index 0 has phandle &n2, which is node-2's phandle
- * - index 1 has phandle &n3, which is node-3's phandle
- *
  * Example usage:
  *
  *     #define N1 DT_NODELABEL(n1)
@@ -758,7 +658,7 @@
  * @param prop lowercase-and-underscores property name in "node_id"
  *             with type "phandle", "phandles" or "phandle-array"
  * @param idx index into "prop"
- * @return node identifier for the node with the phandle at that index
+ * @return a node identifier for the phandle at index "idx" in "prop"
  */
 #define DT_PHANDLE_BY_IDX(node_id, prop, idx) \
 	DT_PROP(node_id, prop##_IDX_##idx##_PH)
@@ -776,14 +676,8 @@
  */
 #define DT_PHANDLE(node_id, prop) DT_PHANDLE_BY_IDX(node_id, prop, 0)
 
-/**
- * @}
- */
-
-/**
- * @defgroup devicetree-reg-prop reg property
- * @ingroup devicetree
- * @{
+/*
+ * reg property
  */
 
 /**
@@ -868,14 +762,8 @@
 #define DT_REG_SIZE_BY_NAME(node_id, name) \
 	DT_CAT(node_id, _REG_NAME_##name##_VAL_SIZE)
 
-/**
- * @}
- */
-
-/**
- * @defgroup devicetree-interrupts-prop interrupts property
- * @ingroup devicetree
- * @{
+/*
+ * interrupts property
  */
 
 /**
@@ -902,40 +790,6 @@
 	IS_ENABLED(DT_CAT(node_id, _IRQ_IDX_##idx##_EXISTS))
 
 /**
- * @brief Does an interrupts property have a named cell specifier at an index?
- * If this returns 1, then DT_IRQ_BY_IDX(node_id, idx, cell) is valid.
- * If it returns 0, it is an error to use that macro.
- * @param node_id node identifier
- * @param idx index to check
- * @param cell named cell value whose existence to check
- * @return 1 if the named cell exists in the interrupt specifier at index idx
- *         0 otherwise.
- */
-#define DT_IRQ_HAS_CELL_AT_IDX(node_id, idx, cell) \
-	IS_ENABLED(DT_CAT(node_id, _IRQ_IDX_##idx##_VAL_##cell##_EXISTS))
-
-/**
- * @brief Equivalent to DT_IRQ_HAS_CELL_AT_IDX(node_id, 0, cell)
- * @param node_id node identifier
- * @param cell named cell value whose existence to check
- * @return 1 if the named cell exists in the interrupt specifier at index 0
- *         0 otherwise.
- */
-#define DT_IRQ_HAS_CELL(node_id, cell) DT_IRQ_HAS_CELL_AT_IDX(node_id, 0, cell)
-
-/**
- * @brief Does an interrupts property have a named specifier value at an index?
- * If this returns 1, then DT_IRQ_BY_NAME(node_id, name, cell) is valid.
- * If it returns 0, it is an error to use that macro.
- * @param node_id node identifier
- * @param name lowercase-and-underscores interrupt specifier name
- * @return 1 if "name" is a valid named specifier
- *         0 otherwise.
- */
-#define DT_IRQ_HAS_NAME(node_id, name) \
-	IS_ENABLED(DT_CAT(node_id, _IRQ_NAME_##name##_VAL_irq_EXISTS))
-
-/**
  * @brief Get a value within an interrupt specifier at an index
  *
  * It might help to read the argument order as being similar to
@@ -956,8 +810,8 @@
  *
  *     #define SERIAL DT_NODELABEL(my_serial)
  *
- *     Example usage                       Value
- *     -------------                       -----
+ *     Example usage                    Value
+ *     -------------                    -----
  *     DT_IRQ_BY_IDX(SERIAL, 0, irq)          33
  *     DT_IRQ_BY_IDX(SERIAL, 0, priority)      0
  *     DT_IRQ_BY_IDX(SERIAL, 1, irq,          34
@@ -1022,69 +876,12 @@
 
 /**
  * @brief Get a node identifier for a /chosen node property
- *
  * This is only valid to call if DT_HAS_CHOSEN(prop) is 1.
  * @param prop lowercase-and-underscores property name for
  *             the /chosen node
  * @return a node identifier for the chosen node property
  */
 #define DT_CHOSEN(prop) DT_CAT(DT_CHOSEN_, prop)
-
-/**
- * @brief Test if the devicetree has a /chosen node
- * @param prop lowercase-and-underscores devicetree property
- * @return 1 if the chosen property exists and refers to a node,
- *         0 otherwise
- */
-#define DT_HAS_CHOSEN(prop) IS_ENABLED(DT_CHOSEN_##prop##_EXISTS)
-
-/**
- * @}
- */
-
-/**
- * @defgroup devicetree-generic-foreach "For-each" macros
- * @ingroup devicetree
- * @{
- */
-
-/**
- * @brief Invokes "fn" for each child of "node_id"
- *
- * The macro "fn" must take one parameter, which will be the node
- * identifier of a child node of "node_id".
- *
- * Example devicetree fragment:
- *
- *     n: node {
- *             child-1 {
- *                     label = "foo";
- *             };
- *             child-2 {
- *                     label = "bar";
- *             };
- *     };
- *
- * Example usage:
- *
- *     #define LABEL_AND_COMMA(node_id) DT_LABEL(node_id),
- *
- *     const char *child_labels[] = {
- *         DT_FOREACH_CHILD(DT_NODELABEL(n), LABEL_AND_COMMA)
- *     };
- *
- * This expands to:
- *
- *     const char *child_labels[] = {
- *         "foo", "bar",
- *     };
- *
- * @param node_id node identifier
- * @param fn macro to invoke
- */
-#define DT_FOREACH_CHILD(node_id, fn) \
-	DT_CAT(node_id, _FOREACH_CHILD)(fn)
-
 
 /**
  * @}
@@ -1128,14 +925,15 @@
  *   in the devicetree is treated as if it were "okay" instead)
  *
  * @param node_id a node identifier
- * @param status a status as one of the tokens okay or disabled, not a string
- * @return 1 if the node has the given status, 0 otherwise.
+ * @param status a status as a token (not a string), e.g. okay or disabled
+ * @return 1 if the node identifier refers to a usable node,
+ *         0 otherwise.
  */
 #define DT_NODE_HAS_STATUS(node_id, status) \
 	DT_NODE_HAS_STATUS_INTERNAL(node_id, status)
 
 /**
- * @brief Does the devicetree have a status "okay" node with a compatible?
+ * @brief Does the devicetree have an "okay" node with a compatible?
  *
  * Test for whether the devicetree has any nodes with status "okay"
  * and the given compatible. That is, this returns 1 if and only if
@@ -1145,11 +943,9 @@
  *     DT_NODE_HAS_STATUS(node_id, okay)
  *     DT_NODE_HAS_COMPAT(node_id, compat)
  *
- * As usual, both a missing status and an "ok" status are treated as
- * "okay".
- *
  * @param compat lowercase-and-underscores version of a compatible
- * @return 1 if both of the above conditions are met, 0 otherwise
+ * @return 0 if no nodes of the compatible are available for use,
+ *         1 if at least one is enabled and has a matching binding
  */
 #define DT_HAS_COMPAT_STATUS_OKAY(compat) \
 	IS_ENABLED(DT_CAT(DT_COMPAT_HAS_OKAY_, compat))
@@ -1163,6 +959,14 @@
 #define DT_NUM_INST_STATUS_OKAY(compat)			\
 	UTIL_AND(DT_HAS_COMPAT_STATUS_OKAY(compat),		\
 		 UTIL_CAT(DT_N_INST, DT_DASH(compat, NUM_OKAY)))
+
+/**
+ * @brief Test if the devicetree has a /chosen node
+ * @param prop lowercase-and-underscores devicetree property
+ * @return 1 if the chosen property exists and refers to a node,
+ *         0 otherwise
+ */
+#define DT_HAS_CHOSEN(prop) IS_ENABLED(DT_CHOSEN_##prop##_EXISTS)
 
 /**
  * @brief Does a devicetree node match a compatible?
@@ -1180,7 +984,7 @@
  *
  * This macro only uses the value of the compatible property. Whether
  * or not a particular compatible has a matching binding has no effect
- * on its value, nor does the node's status.
+ * on its value.
  *
  * @param node_id node identifier
  * @param compat lowercase-and-underscorse compatible value
@@ -1190,29 +994,15 @@
 #define DT_NODE_HAS_COMPAT(node_id, compat) \
 	IS_ENABLED(DT_CAT(node_id, _COMPAT_MATCHES_##compat))
 
-/**
- * @brief Does a devicetree node have a compatible and status?
- *
- * This is equivalent to:
- *
- *     (DT_NODE_HAS_COMPAT(node_id, compat) &&
- *      DT_NODE_HAS_STATUS(node_id, status))
- *
- * @param node_id node identifier
- * @param compat lowercase-and-underscores compatible
- * @param status okay or disabled as a token, not a string
- */
 #define DT_NODE_HAS_COMPAT_STATUS(node_id, compat, status) \
 	DT_NODE_HAS_COMPAT(node_id, compat) && DT_NODE_HAS_STATUS(node_id, status)
 
 /**
  * @brief Does a devicetree node have a property?
  *
- * Tests whether a devicetree node has a property defined.
- *
- * This tests whether the property is defined at all, not whether a
- * boolean property is true or false. To get a boolean property's
- * truth value, use DT_PROP(node_id, prop) instead.
+ * Tests whether a devicetree node has a property defined. This
+ * tests whether the property is part of the node at all, not whether
+ * a boolean property is true or not.
  *
  * @param node_id node identifier
  * @param prop lowercase-and-underscores property name
@@ -1224,17 +1014,13 @@
 
 /**
  * @brief Does a phandle array have a named cell specifier at an index?
- *
- * If this returns 1, then the phandle-array property "pha" has a cell
- * named "cell" at index "idx", and therefore DT_PHA_BY_IDX(node_id,
- * pha, idx, cell) is valid. If it returns 0, it's an error to use
- * DT_PHA_BY_IDX() with the same arguments.
- *
+ * If this returns 1, then the cell argument to
+ * DT_PHA_BY_IDX(node_id, pha, idx, cell) is valid.
+ * If it returns 0, it is an error.
  * @param node_id node identifier
  * @param pha lowercase-and-underscores property with type "phandle-array"
- * @param idx index to check within "pha"
- * @param cell lowercase-and-underscores cell name whose existence to check
- *             at index "idx"
+ * @param idx index to check
+ * @param cell named cell value whose existence to check
  * @return 1 if the named cell exists in the specifier at index idx,
  *         0 otherwise.
  */
@@ -1246,13 +1032,46 @@
  * @brief Equivalent to DT_PHA_HAS_CELL_AT_IDX(node_id, pha, 0, cell)
  * @param node_id node identifier
  * @param pha lowercase-and-underscores property with type "phandle-array"
- * @param cell lowercase-and-underscores cell name whose existence to check
- *             at index "idx"
- * @return 1 if the named cell exists in the specifier at index 0,
+ * @param cell named cell value whose existence to check
+ * @return 1 if the named ceell exists in the specifier at index 0,
  *         0 otherwise.
  */
 #define DT_PHA_HAS_CELL(node_id, pha, cell) \
 	DT_PHA_HAS_CELL_AT_IDX(node_id, pha, 0, cell)
+
+/**
+ * @brief Does an interrupts property have a named cell specifier at an index?
+ * If this returns 1, then DT_IRQ_BY_IDX(node_id, idx, cell) is valid.
+ * If it returns 0, it is an error to use that macro.
+ * @param node_id node identifier
+ * @param idx index to check
+ * @param cell named cell value whose existence to check
+ * @return 1 if the named cell exists in the interrupt specifier at index idx
+ *         0 otherwise.
+ */
+#define DT_IRQ_HAS_CELL_AT_IDX(node_id, idx, cell) \
+	IS_ENABLED(DT_CAT(node_id, _IRQ_IDX_##idx##_VAL_##cell##_EXISTS))
+
+/**
+ * @brief Equivalent to DT_IRQ_HAS_CELL_AT_IDX(node_id, 0, cell)
+ * @param node_id node identifier
+ * @param cell named cell value whose existence to check
+ * @return 1 if the named cell exists in the interrupt specifier at index 0
+ *         0 otherwise.
+ */
+#define DT_IRQ_HAS_CELL(node_id, cell) DT_IRQ_HAS_CELL_AT_IDX(node_id, 0, cell)
+
+/**
+ * @brief Does an interrupts property have a named specifier value at an index?
+ * If this returns 1, then DT_IRQ_BY_NAME(node_id, name, cell) is valid.
+ * If it returns 0, it is an error to use that macro.
+ * @param node_id node identifier
+ * @param name lowercase-and-underscores interrupt specifier name
+ * @return 1 if "name" is a valid named specifier
+ *         0 otherwise.
+ */
+#define DT_IRQ_HAS_NAME(node_id, name) \
+	IS_ENABLED(DT_CAT(node_id, _IRQ_NAME_##name##_VAL_irq_EXISTS))
 
 /**
  * @}
@@ -1759,7 +1578,7 @@
 #define DT_COMPAT_ON_BUS_INTERNAL(compat, bus) \
 	IS_ENABLED(UTIL_CAT(DT_CAT(DT_COMPAT_, compat), _BUS_##bus))
 
-/* have these last so they have access to all previously defined macros */
+/* have these last so the have access to all previously defined macros */
 #include <devicetree/adc.h>
 #include <devicetree/clocks.h>
 #include <devicetree/gpio.h>
