@@ -1,6 +1,7 @@
 # EFR32 radio board
 
 # Copyright (c) 2020 Piotr Mienkowski
+# Copyright (c) 2020 TriaGnoSys GmbH
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_EFR32_RADIO
@@ -8,6 +9,7 @@ if BOARD_EFR32_RADIO
 config BOARD
 	default "efr32_radio_brd4104a" if BOARD_EFR32_RADIO_BRD4104A
 	default "efr32_radio_brd4250b" if BOARD_EFR32_RADIO_BRD4250B
+	default "efr32_radio_brd4180a" if BOARD_EFR32_RADIO_BRD4180A
 
 config CMU_HFXO_FREQ
 	default 38400000
@@ -15,25 +17,16 @@ config CMU_HFXO_FREQ
 config CMU_LFXO_FREQ
 	default 32768
 
-if LOG_BACKEND_SWO
-
 config LOG_BACKEND_SWO_FREQ_HZ
 	default 875000
-
-endif # LOG_BACKEND_SWO
-
-if SERIAL
+	depends on LOG_BACKEND_SWO
 
 config UART_GECKO
 	default y
-
-endif # SERIAL
-
-if COUNTER
+	depends on SERIAL
 
 config COUNTER_GECKO_RTCC
 	default y
-
-endif # COUNTER
+	depends on COUNTER
 
 endif # BOARD_EFR32_RADIO
