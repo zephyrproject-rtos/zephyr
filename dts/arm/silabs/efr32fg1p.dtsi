@@ -167,6 +167,7 @@
 		wdog0: wdog@40052000 {
 			compatible = "silabs,gecko-wdog";
 			reg = <0x40052000 0x2C>;
+			peripheral-id = <0>;
 			label = "WDOG0";
 			interrupts = <2 0>;
 			status = "disabled";
