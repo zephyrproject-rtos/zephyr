@@ -82,6 +82,9 @@ typedef enum bt_l2cap_chan_status {
 	 */
 	BT_L2CAP_STATUS_SHUTDOWN,
 
+	/** @brief Channel encryption pending status */
+	BT_L2CAP_STATUS_ENCRYPT_PENDING,
+
 	/* Total number of status - must be at the end of the enum */
 	BT_L2CAP_NUM_STATUS,
 } __packed bt_l2cap_chan_status_t;
