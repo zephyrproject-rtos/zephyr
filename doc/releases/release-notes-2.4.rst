@@ -65,6 +65,13 @@ API Changes
   been modified accordingly. The context argument has been renamed to user_data
   and all drivers have been modified against it as well.
 
+* The :c:func:`fs_open` function now accepts open flags that are passed as
+  a third parameter.
+  All custom file system front-ends require change to the implementation
+  of ``open`` callback to accept the new parameter.
+  To maintain original behaviour within user code, two argument invocations
+  should be converted to pass a third argument ``FS_O_CREATE | FS_O_RDWR``.
+
 Deprecated in this release
 ==========================
 
