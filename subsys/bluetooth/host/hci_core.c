@@ -170,7 +170,7 @@ NET_BUF_POOL_FIXED_DEFINE(hci_rx_pool, CONFIG_BT_RX_BUF_COUNT,
 			  BT_BUF_RX_SIZE, NULL);
 
 #if defined(CONFIG_BT_CONN)
-#define NUM_COMLETE_EVENT_SIZE BT_BUF_SIZE(                            \
+#define NUM_COMLETE_EVENT_SIZE BT_BUF_SIZE(\
 	sizeof(struct bt_hci_evt_hdr) +                                \
 	sizeof(struct bt_hci_cp_host_num_completed_packets) +          \
 	CONFIG_BT_MAX_CONN * sizeof(struct bt_hci_handle_count))
@@ -1959,21 +1959,22 @@ static void conn_auto_initiate(struct bt_conn *conn)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_AUTO_DATA_LEN_UPDATE) &&
-		BT_FEAT_LE_DLE(bt_dev.le.features)) {
-		if (bt_dev.drv->quirks & BT_QUIRK_NO_AUTO_DLE) {
+	    BT_FEAT_LE_DLE(bt_dev.le.features)) {
+		if (IS_BT_QUIRK_NO_AUTO_DLE(&bt_dev)) {
 			uint16_t tx_octets, tx_time;
 
 			err = hci_le_read_max_data_len(&tx_octets, &tx_time);
 			if (!err) {
-				err = bt_le_set_data_len(conn, tx_octets, tx_time);
+				err = bt_le_set_data_len(conn,
+						tx_octets, tx_time);
 				if (err) {
 					BT_ERR("Failed to set data len (%d)", err);
 				}
 			}
 		} else {
 			/* No need to auto-initiate DLE procedure.
-			 * It is done by the controller. */
-			atomic_set_bit(conn->flags, BT_CONN_AUTO_DATA_LEN_COMPLETE);
+			 * It is done by the controller.
+			 */
 		}
 	}
 
@@ -2353,8 +2354,7 @@ static void le_data_len_change(struct net_buf *buf)
 	       max_tx_time, max_rx_octets, max_rx_time);
 
 #if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
-	if (IS_ENABLED(CONFIG_BT_AUTO_DATA_LEN_UPDATE) &&
-		(bt_dev.drv->quirks & BT_QUIRK_NO_AUTO_DLE)) {
+	if (IS_ENABLED(CONFIG_BT_AUTO_DATA_LEN_UPDATE)) {
 		atomic_set_bit(conn->flags, BT_CONN_AUTO_DATA_LEN_COMPLETE);
 	}
 
@@ -2623,6 +2623,7 @@ static void unpair(uint8_t id, const bt_addr_le_t *addr)
 {
 	struct bt_keys *keys = NULL;
 	struct bt_conn *conn = bt_conn_lookup_addr_le(id, addr);
+
 	if (conn) {
 		/* Clear the conn->le.keys pointer since we'll invalidate it,
 		 * and don't want any subsequent code (like disconnected
@@ -5733,9 +5734,9 @@ static int le_init(void)
 
 	if (IS_ENABLED(CONFIG_BT_CONN) &&
 	    IS_ENABLED(CONFIG_BT_DATA_LEN_UPDATE) &&
+	    IS_ENABLED(CONFIG_BT_AUTO_DATA_LEN_UPDATE) &&
 	    BT_FEAT_LE_DLE(bt_dev.le.features)) {
-		if ((IS_ENABLED(CONFIG_BT_AUTO_DATA_LEN_UPDATE) &&
-			!(bt_dev.drv->quirks & BT_QUIRK_NO_AUTO_DLE))) {
+		if (!IS_BT_QUIRK_NO_AUTO_DLE(&bt_dev)) {
 			struct bt_hci_cp_le_write_default_data_len *cp;
 			uint16_t tx_octets, tx_time;
 
@@ -5761,7 +5762,9 @@ static int le_init(void)
 			}
 		} else {
 			/* No need to set default data length.
-			 * The host needs to explicitly initiate a Data Length procedure. */
+			 * The host needs to explicitly initiate
+			 * a Data Length procedure.
+			 */
 		}
 	}
 
