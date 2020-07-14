@@ -2357,7 +2357,7 @@ _DEFAULT_PROP_TYPES = {
     "reg": "array",
     "reg-names": "string-array",
     "label": "string",
-    "interrupts": "array",
+    "interrupt": "array",
     "interrupts-extended": "compound",
     "interrupt-names": "string-array",
     "interrupt-controller": "boolean",
