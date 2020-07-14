@@ -119,6 +119,12 @@ config BT_CTLR_ADVANCED_FEATURES
 menu "Advanced features"
 	visible if BT_CTLR_ADVANCED_FEATURES
 
+config BT_LL_SW_SPLIT_LLCP_LEGACY
+	bool "Legacy software-based BLE Link Layer"
+	default y
+	help
+	  Use Zephyr legacy software BLE Link Layer ULL LLL split implementation.
+
 config BT_CTLR_SW_DEFERRED_PRIVACY
 	bool "LE Controller-based Software Privacy"
 	depends on BT_CTLR_PRIVACY
