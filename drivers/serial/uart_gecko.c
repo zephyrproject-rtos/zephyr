@@ -147,7 +147,7 @@ static int uart_gecko_irq_tx_complete(struct device *dev)
 static int uart_gecko_irq_tx_ready(struct device *dev)
 {
 	const struct uart_gecko_config *config = dev->config_info;
-	uint32_t flags = USART_IntGet(config->base);
+	uint32_t flags = USART_IntGetEnabled(config->base);
 
 	return (flags & USART_IF_TXBL) != 0U;
 }
