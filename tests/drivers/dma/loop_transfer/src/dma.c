@@ -26,8 +26,8 @@ static __aligned(16) char tx_data[64] __used
 static __aligned(16) char rx_data[TRANSFER_LOOPS][RX_BUFF_SIZE] __used
 	__attribute__((__section__(".nocache.dma")));
 #else
-/* pad to times of 8*/
-static const char tx_data[] =
+/* this src memory shall be in RAM to support usingas a DMA source pointer.*/
+static char tx_data[] =
 	"The quick brown fox jumps over the lazy dog ....";
 static __aligned(16) char rx_data[TRANSFER_LOOPS][RX_BUFF_SIZE] = { { 0 } };
 #endif
