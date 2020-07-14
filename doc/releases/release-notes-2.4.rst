@@ -53,6 +53,12 @@ API Changes
   :c:func:`uart_irq_callback_user_data_set` and :c:func:`uart_irq_callback_set`
   user code have been modified accordingly.
 
+* ``<drivers/dma.h>`` has seen its callback normalized. It had its signature
+  changed to add a struct device pointer as first parameter. Such callback
+  signature has been generalized throuh the addition of dma_callback_t.
+  'callback_arg' argument has been renamed to 'user_data. All user code have
+  been modified accordingly.
+
 Deprecated in this release
 ==========================
 
