@@ -209,17 +209,12 @@ void ot_receive_handler(otMessage *aMessage, void *context)
 	}
 
 	if (!pkt_list_is_full(ot_context)) {
-		if (pkt_list_add(ot_context, pkt) != 0) {
-			NET_ERR("pkt_list_add failed");
-			goto out;
-		}
-
 		if (net_recv_data(ot_context->iface, pkt) < 0) {
 			NET_ERR("net_recv_data failed");
-			pkt_list_remove_first(ot_context);
 			goto out;
 		}
 
+		pkt_list_add(ot_context, pkt);
 		pkt = NULL;
 	} else {
 		NET_INFO("Packet list is full");
