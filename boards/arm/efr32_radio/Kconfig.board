@@ -1,6 +1,7 @@
-# EFR32BG13 BRD4104A board
+# EFR32BG13 BRD4104A / EFR32MG21 BRD4180A board
 
 # Copyright (c) 2020 Piotr Mienkowski
+# Copyright (c) 2020 TriaGnoSys GmbH
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_EFR32_RADIO_BRD4104A
@@ -14,3 +15,9 @@ config BOARD_EFR32_RADIO_BRD4250B
 	depends on SOC_SERIES_EFR32FG1P
 	select BOARD_EFR32_RADIO
 	select SOC_PART_NUMBER_EFR32FG1P133F256GM48
+
+config BOARD_EFR32_RADIO_BRD4180A
+	bool "Silicon Labs BRD4180A (Mighty Gecko Radio Board)"
+	depends on SOC_SERIES_EFR32MG21
+	select BOARD_EFR32_RADIO
+	select SOC_PART_NUMBER_EFR32MG21A020F1024IM32

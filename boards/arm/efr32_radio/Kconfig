@@ -6,13 +6,10 @@
 config BOARD_EFR32_RADIO
 	bool
 
-if BOARD_EFR32_RADIO
-
 config BOARD_INIT_PRIORITY
 	int
 	default KERNEL_INIT_PRIORITY_DEFAULT
+	depends on BOARD_EFR32_RADIO
 	help
 	  Board initialization priority. This must be bigger than
 	  GPIO_GECKO_COMMON_INIT_PRIORITY.
-
-endif # BOARD_EFR32_RADIO
