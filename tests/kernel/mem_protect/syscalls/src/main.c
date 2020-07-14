@@ -122,22 +122,33 @@ static inline int z_vrfy_syscall_arg64(uint64_t arg)
  /* System call made for test test_system_call_separate_stack */
 int z_impl_syscall_separate_stack(void)
 {
-	/* Test that syscall is running on a separate stack, not accessible
-	 * to the calling thread.
-	 */
+	/* Test that the variable is outside the thread's normal stack */
 	int syscall_var = 10;
 	int *var_ptr = &syscall_var;
 	intptr_t ptr_int = (intptr_t)var_ptr;
-
 	struct k_thread *thread = _current;
-	unsigned int start_addr = thread->stack_info.start;
 	size_t size_addr = thread->stack_info.size;
+
+#if CONFIG_X86
+	unsigned int start_addr = thread->stack_info.start;
 
 	if ((ptr_int >= (start_addr + size_addr)) || (ptr_int <= start_addr)) {
 		return 0;
 	} else {
 		return -1;
 	}
+#elif defined(CONFIG_ARC) || defined(CONFIG_ARM)
+	unsigned int start_addr = thread->arch.priv_stack_start;
+
+	if ((ptr_int >= (start_addr + size_addr)) || (ptr_int <= start_addr)) {
+		return 0;
+	} else {
+		return -1;
+	}
+#else
+#error "Not implemented for this architecture"
+	zassert_unreachable("Can't verify stack");
+#endif
 }
 
 static inline int z_vrfy_syscall_separate_stack(void)
@@ -417,7 +428,7 @@ K_MEM_POOL_DEFINE(test_pool, BUF_SIZE, BUF_SIZE, 4 * NR_THREADS, 4);
  * - Then inside of the system call address of the local variable
  * checked that it is not within the bounds of the caller thread stack
  * - If that test is running in user mode, verify that
- * system call is handled on a private stack,
+ * system call is handled on a separate stack,
  * which is not accessible to the calling user mode thread.
  *
  * @ingroup kernel_memprotect_tests
@@ -425,7 +436,7 @@ K_MEM_POOL_DEFINE(test_pool, BUF_SIZE, BUF_SIZE, 4 * NR_THREADS, 4);
 void test_syscall_separate_stack(void)
 {
 	zassert_true(syscall_separate_stack() == 0,
-		"System call wasn't handled by a kernel "
+		"System call wasn't handled by kernel "
 		"on a separate stack");
 }
 
