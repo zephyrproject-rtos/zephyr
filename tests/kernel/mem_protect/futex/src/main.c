@@ -22,6 +22,7 @@
 #define PRIO_WAIT (CONFIG_ZTEST_THREAD_PRIORITY - 1)
 #define PRIO_WAKE (CONFIG_ZTEST_THREAD_PRIORITY - 2)
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define PRIORITY 5
 
 /******************************************************************************/
 /* declaration */
@@ -508,16 +509,14 @@ void test_futex_locate_access(void)
 
 	k_thread_create(&futex_tid, stack_1, STACK_SIZE,
 			futex_wait_wake, NULL, NULL, NULL,
-			PRIO_WAIT, K_USER | K_INHERIT_PERMS,
-			K_NO_WAIT);
+			PRIORITY, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
 	/* giving time for the futex_wait_wake_task to execute */
 	k_yield();
 
 	k_thread_create(&futex_wake_tid, futex_wake_stack, STACK_SIZE,
 			futex_wake, NULL, NULL, NULL,
-			PRIO_WAKE, K_USER | K_INHERIT_PERMS,
-			K_NO_WAIT);
+			PRIORITY, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
 	/*
 	 * giving time for the futex_wake_task
@@ -529,6 +528,10 @@ void test_futex_locate_access(void)
 /* ztest main entry*/
 void test_main(void)
 {
+	k_thread_access_grant(k_current_get(),
+					&futex_tid, &stack_1, &futex_wake_tid, &futex_wake_stack,
+					&simple_futex);
+
 	ztest_test_suite(test_futex,
 			 ztest_user_unit_test(test_user_futex_bad),
 			 ztest_unit_test(test_futex_wait_forever_wake),
@@ -540,7 +543,7 @@ void test_main(void)
 			 ztest_unit_test(test_futex_wait_forever),
 			 ztest_unit_test(test_futex_wait_timeout),
 			 ztest_unit_test(test_futex_wait_nowait),
-			 ztest_unit_test(test_futex_locate_access)
+			 ztest_user_unit_test(test_futex_locate_access)
 			 );
 	ztest_run_test_suite(test_futex);
 }
