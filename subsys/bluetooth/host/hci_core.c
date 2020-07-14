@@ -7594,6 +7594,11 @@ int bt_le_adv_start_legacy(const struct bt_le_adv_param *param,
 	    (param->options & BT_LE_ADV_OPT_CONNECTABLE)) {
 		err = le_adv_start_add_conn(adv, &conn);
 		if (err) {
+			if (err == -ENOMEM && !dir_adv &&
+			    !(param->options & BT_LE_ADV_OPT_ONE_TIME)) {
+				goto set_adv_state;
+			}
+
 			return err;
 		}
 	}
@@ -7618,6 +7623,7 @@ int bt_le_adv_start_legacy(const struct bt_le_adv_param *param,
 		bt_conn_unref(conn);
 	}
 
+set_adv_state:
 	atomic_set_bit_to(adv->flags, BT_ADV_PERSIST, !dir_adv &&
 			  !(param->options & BT_LE_ADV_OPT_ONE_TIME));
 
@@ -7818,6 +7824,11 @@ int bt_le_adv_start_ext(struct bt_le_ext_adv *adv,
 	    (param->options & BT_LE_ADV_OPT_CONNECTABLE)) {
 		err = le_adv_start_add_conn(adv, &conn);
 		if (err) {
+			if (err == -ENOMEM && !dir_adv &&
+			    !(param->options & BT_LE_ADV_OPT_ONE_TIME)) {
+				goto set_adv_state;
+			}
+
 			return err;
 		}
 	}
@@ -7842,6 +7853,7 @@ int bt_le_adv_start_ext(struct bt_le_ext_adv *adv,
 		bt_conn_unref(conn);
 	}
 
+set_adv_state:
 	/* Flag always set to false by le_ext_adv_param_set */
 	atomic_set_bit_to(adv->flags, BT_ADV_PERSIST, !dir_adv &&
 			  !(param->options & BT_LE_ADV_OPT_ONE_TIME));
