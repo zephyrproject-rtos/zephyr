@@ -42,7 +42,6 @@ for seg in ef.iter_segments():
 
     assert h.p_memsz >= h.p_filesz
     assert (h.p_vaddr % 8) == 0
-    assert (h.p_memsz % 8) == 0
     assert (h.p_filesz % 8) == 0
     assert len(seg.data()) == h.p_filesz
 
@@ -55,6 +54,8 @@ for seg in ef.iter_segments():
 
     if h.p_memsz > h.p_filesz:
         bytesz = h.p_memsz - h.p_filesz
+        if bytesz % 8:
+            bytesz += 8 - (bytesz % 8)
         addr = h.p_vaddr + h.p_filesz
         print("%d bytes of zero-fill at 0x%x" % (bytesz, addr))
         zero_segs.append((addr, bytesz / 8))
