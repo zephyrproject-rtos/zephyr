@@ -37,7 +37,10 @@ enum {
 	BT_CONN_AUTO_PHY_COMPLETE,      /* Auto-initiated PHY procedure done */
 	BT_CONN_AUTO_FEATURE_EXCH,	/* Auto-initiated LE Feat done */
 	BT_CONN_AUTO_VERSION_INFO,      /* Auto-initiated LE version done */
-	BT_CONN_AUTO_DATA_LEN_COMPLETE, /* Auto-initiated Data Length done */
+
+	/* Auto-initiated Data Length done. Auto-initiated Data Length Update
+	 * is only needed for controllers with BT_QUIRK_NO_AUTO_DLE. */
+	BT_CONN_AUTO_DATA_LEN_COMPLETE,
 
 	/* Total number of flags - must be at the end of the enum */
 	BT_CONN_NUM_FLAGS,
