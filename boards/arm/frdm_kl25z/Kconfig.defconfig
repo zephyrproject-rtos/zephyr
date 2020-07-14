@@ -38,7 +38,7 @@ config PINMUX_MCUX_PORTD
 	default y
 
 config PINMUX_MCUX_PORTE
-	default y if "$(dt_nodelabel_enabled,i2c0)"
+	default y if "$(dt_nodelabel_enabled,i2c0)" && I2C
 
 endif # PINMUX_MCUX
 

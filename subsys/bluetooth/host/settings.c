@@ -58,7 +58,7 @@ void bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
 			len++;
 		}
 
-		for (s8_t i = 5; i >= 0 && len < path_size; i--) {
+		for (int8_t i = 5; i >= 0 && len < path_size; i--) {
 			len += bin2hex(&addr->a.val[i], 1, &path[len],
 				       path_size - len);
 		}
@@ -104,7 +104,7 @@ int bt_settings_decode_key(const char *key, bt_addr_le_t *addr)
 		return -EINVAL;
 	}
 
-	for (u8_t i = 0; i < 6; i++) {
+	for (uint8_t i = 0; i < 6; i++) {
 		hex2bin(&key[i * 2], 2, &addr->a.val[5 - i], 1);
 	}
 

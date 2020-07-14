@@ -26,7 +26,7 @@
 #include <errno.h>
 #include <sys/base64.h>
 
-static const u8_t base64_enc_map[64] = {
+static const uint8_t base64_enc_map[64] = {
 	'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
 	'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
 	'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd',
@@ -36,7 +36,7 @@ static const u8_t base64_enc_map[64] = {
 	'8', '9', '+', '/'
 };
 
-static const u8_t base64_dec_map[128] = {
+static const uint8_t base64_dec_map[128] = {
 	127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
 	127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
 	127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
@@ -57,12 +57,12 @@ static const u8_t base64_dec_map[128] = {
 /*
  * Encode a buffer into base64 format
  */
-int base64_encode(u8_t *dst, size_t dlen, size_t *olen, const u8_t *src,
+int base64_encode(uint8_t *dst, size_t dlen, size_t *olen, const uint8_t *src,
 		  size_t slen)
 {
 	size_t i, n;
 	int C1, C2, C3;
-	u8_t *p;
+	uint8_t *p;
 
 	if (slen == 0) {
 		*olen = 0;
@@ -121,12 +121,12 @@ int base64_encode(u8_t *dst, size_t dlen, size_t *olen, const u8_t *src,
 /*
  * Decode a base64-formatted buffer
  */
-int base64_decode(u8_t *dst, size_t dlen, size_t *olen, const u8_t *src,
+int base64_decode(uint8_t *dst, size_t dlen, size_t *olen, const uint8_t *src,
 		  size_t slen)
 {
 	size_t i, n;
-	u32_t j, x;
-	u8_t *p;
+	uint32_t j, x;
+	uint8_t *p;
 
 	/* First pass: check for validity and get output length */
 	for (i = n = j = 0U; i < slen; i++) {

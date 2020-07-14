@@ -22,28 +22,28 @@
 
 #define ETH0_IRQ		DT_IRQN(DT_INST(0, litex_eth0))
 
-static inline void vexriscv_litex_irq_setmask(u32_t mask)
+static inline void vexriscv_litex_irq_setmask(uint32_t mask)
 {
 	__asm__ volatile ("csrw %0, %1" :: "i"(IRQ_MASK), "r"(mask));
 }
 
-static inline u32_t vexriscv_litex_irq_getmask(void)
+static inline uint32_t vexriscv_litex_irq_getmask(void)
 {
-	u32_t mask;
+	uint32_t mask;
 
 	__asm__ volatile ("csrr %0, %1" : "=r"(mask) : "i"(IRQ_MASK));
 	return mask;
 }
 
-static inline u32_t vexriscv_litex_irq_pending(void)
+static inline uint32_t vexriscv_litex_irq_pending(void)
 {
-	u32_t pending;
+	uint32_t pending;
 
 	__asm__ volatile ("csrr %0, %1" : "=r"(pending) : "i"(IRQ_PENDING));
 	return pending;
 }
 
-static inline void vexriscv_litex_irq_setie(u32_t ie)
+static inline void vexriscv_litex_irq_setie(uint32_t ie)
 {
 	if (ie) {
 		__asm__ volatile ("csrrs x0, mstatus, %0"
@@ -57,7 +57,7 @@ static inline void vexriscv_litex_irq_setie(u32_t ie)
 static void vexriscv_litex_irq_handler(void *device)
 {
 	struct _isr_table_entry *ite;
-	u32_t pending, mask, irqs;
+	uint32_t pending, mask, irqs;
 
 	pending = vexriscv_litex_irq_pending();
 	mask = vexriscv_litex_irq_getmask();

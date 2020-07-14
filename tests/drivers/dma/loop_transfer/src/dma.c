@@ -14,29 +14,38 @@
 #include <string.h>
 
 /* in millisecond */
-#define SLEEPTIME  1000
+#define SLEEPTIME 1000
 
 #define TRANSFER_LOOPS (5)
-#define RX_BUFF_SIZE (50)
+#define RX_BUFF_SIZE (64)
 
-static const char tx_data[] = "The quick brown fox jumps over the lazy dog";
-static char rx_data[TRANSFER_LOOPS][RX_BUFF_SIZE] = {{ 0 } };
+#if CONFIG_NOCACHE_MEMORY
+static const char TX_DATA[] = "The quick brown fox jumps over the lazy dog";
+static __aligned(16) char tx_data[64] __used
+	__attribute__((__section__(".nocache")));
+static __aligned(16) char rx_data[TRANSFER_LOOPS][RX_BUFF_SIZE] __used
+	__attribute__((__section__(".nocache.dma")));
+#else
+/* pad to times of 8*/
+static const char tx_data[] =
+	"The quick brown fox jumps over the lazy dog ....";
+static __aligned(16) char rx_data[TRANSFER_LOOPS][RX_BUFF_SIZE] = { { 0 } };
+#endif
 
 #define DMA_DEVICE_NAME "DMA_0"
 
-volatile u8_t transfer_count;
+volatile uint8_t transfer_count;
 static struct dma_config dma_cfg = {0};
 static struct dma_block_config dma_block_cfg = {0};
 
-static void test_transfer(struct device *dev, u32_t id)
+static void test_transfer(struct device *dev, uint32_t id)
 {
 	int ret;
-
 	transfer_count++;
 	if (transfer_count < TRANSFER_LOOPS) {
 		dma_block_cfg.block_size = strlen(tx_data);
-		dma_block_cfg.source_address = (u32_t)tx_data;
-		dma_block_cfg.dest_address = (u32_t)rx_data[transfer_count];
+		dma_block_cfg.source_address = (uint32_t)tx_data;
+		dma_block_cfg.dest_address = (uint32_t)rx_data[transfer_count];
 
 		ret = dma_config(dev, id, &dma_cfg);
 		if (ret == 0) {
@@ -50,7 +59,7 @@ static void test_error(void)
 	printk("DMA could not proceed, an error occurred\n");
 }
 
-static void dma_user_callback(void *arg, u32_t id, int error_code)
+static void dma_user_callback(void *arg, uint32_t id, int error_code)
 {
 	struct device *dev = (struct device *)arg;
 
@@ -64,11 +73,18 @@ static void dma_user_callback(void *arg, u32_t id, int error_code)
 void main(void)
 {
 	struct device *dma;
-	static u32_t chan_id;
+	static uint32_t chan_id;
 
 	printk("DMA memory to memory transfer started on %s\n",
-		DMA_DEVICE_NAME);
+	       DMA_DEVICE_NAME);
 	printk("Preparing DMA Controller\n");
+
+#if CONFIG_NOCACHE_MEMORY
+	memset(tx_data, 0, sizeof(tx_data));
+	memcpy(tx_data, TX_DATA, sizeof(TX_DATA));
+#endif
+
+	memset(rx_data, 0, sizeof(rx_data));
 
 	dma = device_get_binding(DMA_DEVICE_NAME);
 	if (!dma) {
@@ -85,13 +101,18 @@ void main(void)
 	dma_cfg.dma_callback = dma_user_callback;
 	dma_cfg.block_count = 1U;
 	dma_cfg.head_block = &dma_block_cfg;
+#ifdef CONFIG_DMA_MCUX_TEST_SLOT_START
+	dma_cfg.dma_slot = CONFIG_DMA_MCUX_TEST_SLOT_START;
+#endif
 
 	chan_id = 0U;
-
+	transfer_count = 0;
 	printk("Starting the transfer and waiting for 1 second\n");
+	printk("TX data: %s\n", tx_data);
+	printk("block_size %d\n", strlen(tx_data));
 	dma_block_cfg.block_size = strlen(tx_data);
-	dma_block_cfg.source_address = (u32_t)tx_data;
-	dma_block_cfg.dest_address = (u32_t)rx_data[transfer_count];
+	dma_block_cfg.source_address = (uint32_t)tx_data;
+	dma_block_cfg.dest_address = (uint32_t)rx_data[transfer_count];
 
 	if (dma_config(dma, chan_id, &dma_cfg)) {
 		printk("ERROR: transfer config\n");

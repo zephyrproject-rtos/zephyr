@@ -7,6 +7,9 @@
 #include <ztest.h>
 #include <sys/atomic.h>
 
+/* an example of the number of atomic bit in an array */
+#define NUM_FLAG_BITS 100
+
 /**
  * @addtogroup kernel_common_tests
  * @{
@@ -30,6 +33,8 @@ void test_atomic(void)
 	atomic_val_t value;
 	atomic_val_t oldvalue;
 	void *ptr_value, *old_ptr_value;
+
+	ATOMIC_DEFINE(flag_bits, NUM_FLAG_BITS) = {0};
 
 	target = 4;
 	value = 5;
@@ -187,6 +192,16 @@ void test_atomic(void)
 		target = orig;
 		atomic_set_bit_to(&target, i, true);
 		zassert_true(target == (orig | (1 << i)), "atomic_set_bit_to");
+	}
+
+	/* ATOMIC_DEFINE */
+	for (i = 0; i < NUM_FLAG_BITS; i++) {
+		atomic_set_bit(flag_bits, i);
+		zassert_true(!!atomic_test_bit(flag_bits, i) == !!(1),
+			"Failed to set a single bit in an array of atomic variables");
+		atomic_clear_bit(flag_bits, i);
+		zassert_true(!!atomic_test_bit(flag_bits, i) == !!(0),
+			"Failed to clear a single bit in an array of atomic variables");
 	}
 }
 /**

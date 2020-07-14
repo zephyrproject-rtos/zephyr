@@ -10,6 +10,9 @@ CONFIG_BOARD_B_L072Z_LRWAN1=y
 # General Kernel Options
 CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=32000000
 
+# Enable MPU
+CONFIG_ARM_MPU=y
+
 # Clock configuration
 CONFIG_CLOCK_CONTROL=y
 # SYSCLK selection

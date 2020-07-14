@@ -45,6 +45,74 @@
 			gpios = <&pioa 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 		};
 	};
+
+	xplained1_header: xplained-connector1 {
+		compatible = "atmel-xplained-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;		/*           Shared */
+		gpio-map =	<0 0 &pioa  3 0>,	/* TWD0           y */
+				<1 0 &pioa  4 0>,	/* TWCK0          y */
+				<2 0 &piob  2 0>,	/* URXD1            */
+				<3 0 &piob  3 0>,	/* UTXD1            */
+				<4 0 &pioa 31 0>,	/* SPI(CS)          */
+				<5 0 &pioa 13 0>,	/* SPI(MOSI)      y */
+				<6 0 &pioa 12 0>,	/* SPI(MISO)      y */
+				<7 0 &pioa 14 0>;	/* SPI(SCK)       y */
+							/* GND              */
+							/* +3.3V            */
+	};
+
+	xplained2_header: xplained-connector2 {
+		compatible = "atmel-xplained-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;		/*           Shared */
+		gpio-map =	<0 0 &pioa 22 0>,	/* GPIO             */
+				<1 0 &pioc 12 0>,	/* GPIO             */
+				<2 0 &piob  0 0>,	/* GPIO             */
+				<3 0 &piob  1 0>,	/* GPIO             */
+				<4 0 &pioa 17 0>,	/* GPIO             */
+				<5 0 &pioa 21 0>,	/* GPIO             */
+				<6 0 &pioc 13 0>,	/* GPIO             */
+				<7 0 &pioc 15 0>;	/* GPIO             */
+							/* GND              */
+							/* +3.3V            */
+	};
+
+	xplained3_header: xplained-connector3 {
+		compatible = "atmel-xplained-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;		/*           Shared */
+		gpio-map =	<0 0 &pioa 20 0>,	/* GPIO             */
+				<1 0 &pioa 11 0>,	/* GPIO             */
+				<2 0 &pioa 23 0>,	/* GPIO             */
+				<3 0 &pioa 18 0>,	/* GPIO             */
+				<4 0 &pioa 15 0>,	/* GPIO             */
+				<5 0 &pioa 16 0>,	/* GPIO             */
+				<6 0 &pioa  2 0>,	/* GPIO             */
+				<7 0 &pioc  2 0>;	/* GPIO             */
+							/* GND              */
+							/* +3.3V            */
+	};
+
+	xplained4_header: xplained-connector4 {
+		compatible = "atmel-xplained-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;		/*           Shared */
+		gpio-map =	<0 0 &pioa  3 0>,	/* TWD0           y */
+				<1 0 &pioa  4 0>,	/* TWCK0          y */
+				<2 0 &piob  2 0>,	/* URXD1            */
+				<3 0 &piob  3 0>,	/* UTXD1            */
+				<4 0 &pioa 30 0>,	/* SPI(CS)          */
+				<5 0 &pioa 13 0>,	/* SPI(MOSI)      y */
+				<6 0 &pioa 12 0>,	/* SPI(MISO)      y */
+				<7 0 &pioa 14 0>;	/* SPI(SCK)       y */
+							/* GND              */
+							/* +3.3V            */
+	};
 };
 
 &cpu0 {
@@ -56,6 +124,13 @@
 };
 
 &spi0 {
+	pinctrl-0 = <&pa12a_spi_miso
+		     &pa13a_spi_mosi
+		     &pa14a_spi_spck
+		     &pa31a_spi_npcs1
+		     &pa30b_spi_npcs2>;
+	cs-gpios = <&pioa 31 GPIO_ACTIVE_LOW>,
+		   <&pioa 30 GPIO_ACTIVE_LOW>;
 	status = "okay";
 };
 
@@ -71,4 +146,22 @@
 
 &wdt {
 	status = "okay";
+};
+
+xplained1_i2c: &twi0 {
+};
+
+xplained1_spi: &spi0 {
+};
+
+xplained1_serial: &uart1 {
+};
+
+xplained4_i2c: &twi0 {
+};
+
+xplained4_spi: &spi0 {
+};
+
+xplained4_serial: &uart1 {
 };

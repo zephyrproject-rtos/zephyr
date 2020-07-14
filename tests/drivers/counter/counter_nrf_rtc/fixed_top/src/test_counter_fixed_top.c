@@ -11,7 +11,7 @@
 #include <hal/nrf_rtc.h>
 LOG_MODULE_REGISTER(test);
 
-static volatile u32_t top_cnt;
+static volatile uint32_t top_cnt;
 
 const char *devices[] = {
 #ifdef CONFIG_COUNTER_RTC0
@@ -84,7 +84,7 @@ static void top_handler(struct device *dev, void *user_data)
 void test_top_handler_on_instance(const char *dev_name)
 {
 	struct device *dev;
-	u32_t tmp_top_cnt;
+	uint32_t tmp_top_cnt;
 	int err;
 	struct counter_top_cfg top_cfg = {
 		.callback = top_handler,

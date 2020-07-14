@@ -22,7 +22,7 @@ endif()
 
 message(INFO " ${BOARD} compile as Master in this sample")
 
-find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(openamp)
 
 enable_language(C ASM)

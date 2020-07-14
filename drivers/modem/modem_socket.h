@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-struct modem_socket {
+__net_socket struct modem_socket {
 	sa_family_t family;
 	enum net_sock_type type;
 	enum net_ip_protocol ip_proto;
@@ -33,8 +33,8 @@ struct modem_socket {
 	int sock_fd;
 
 	/** packet data */
-	u16_t packet_sizes[CONFIG_MODEM_SOCKET_PACKET_COUNT];
-	u16_t packet_count;
+	uint16_t packet_sizes[CONFIG_MODEM_SOCKET_PACKET_COUNT];
+	uint16_t packet_count;
 
 	/** data ready semaphore */
 	struct k_sem sem_data_ready;
@@ -61,7 +61,7 @@ struct modem_socket_config {
 };
 
 /* return size of the first packet */
-u16_t modem_socket_next_packet_size(struct modem_socket_config *cfg,
+uint16_t modem_socket_next_packet_size(struct modem_socket_config *cfg,
 				    struct modem_socket *sock);
 int modem_socket_packet_size_update(struct modem_socket_config *cfg,
 				    struct modem_socket *sock, int new_total);
@@ -74,7 +74,7 @@ struct modem_socket *modem_socket_from_id(struct modem_socket_config *cfg,
 struct modem_socket *modem_socket_from_newid(struct modem_socket_config *cfg);
 void modem_socket_put(struct modem_socket_config *cfg, int sock_fd);
 int modem_socket_poll(struct modem_socket_config *cfg,
-		      struct pollfd *fds, int nfds, int msecs);
+		      struct zsock_pollfd *fds, int nfds, int msecs);
 void modem_socket_wait_data(struct modem_socket_config *cfg,
 			    struct modem_socket *sock);
 void modem_socket_data_ready(struct modem_socket_config *cfg,

@@ -96,6 +96,8 @@ features:
 +-----------+------------+-------------------------------------+
 | CAN       | on-chip    | CAN                                 |
 +-----------+------------+-------------------------------------+
+| IWDG      | on-chip    | Independent WatchDoG                |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 

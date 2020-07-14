@@ -12,7 +12,7 @@
 struct device *ipm;
 int gcounter;
 
-void ping_ipm_callback(void *context, u32_t id, volatile void *data)
+void ping_ipm_callback(void *context, uint32_t id, volatile void *data)
 {
 	gcounter = *(int *)data;
 	/* Show current ping-pong counter value */

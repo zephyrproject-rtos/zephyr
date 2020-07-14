@@ -28,17 +28,17 @@
 struct leuart_gecko_config {
 	LEUART_TypeDef *base;
 	CMU_Clock_TypeDef clock;
-	u32_t baud_rate;
+	uint32_t baud_rate;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(struct device *dev);
 #endif
 	struct soc_gpio_pin pin_rx;
 	struct soc_gpio_pin pin_tx;
 #ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
-	u8_t loc_rx;
-	u8_t loc_tx;
+	uint8_t loc_rx;
+	uint8_t loc_tx;
 #else
-	u8_t loc;
+	uint8_t loc;
 #endif
 };
 
@@ -52,7 +52,7 @@ struct leuart_gecko_data {
 static int leuart_gecko_poll_in(struct device *dev, unsigned char *c)
 {
 	LEUART_TypeDef *base = DEV_BASE(dev);
-	u32_t flags = LEUART_StatusGet(base);
+	uint32_t flags = LEUART_StatusGet(base);
 
 	if (flags & LEUART_STATUS_RXDATAV) {
 		*c = LEUART_Rx(base);
@@ -75,7 +75,7 @@ static void leuart_gecko_poll_out(struct device *dev, unsigned char c)
 static int leuart_gecko_err_check(struct device *dev)
 {
 	LEUART_TypeDef *base = DEV_BASE(dev);
-	u32_t flags = LEUART_IntGet(base);
+	uint32_t flags = LEUART_IntGet(base);
 	int err = 0;
 
 	if (flags & LEUART_IF_RXOF) {
@@ -98,31 +98,31 @@ static int leuart_gecko_err_check(struct device *dev)
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static int leuart_gecko_fifo_fill(struct device *dev, const u8_t *tx_data,
+static int leuart_gecko_fifo_fill(struct device *dev, const uint8_t *tx_data,
 			       int len)
 {
 	LEUART_TypeDef *base = DEV_BASE(dev);
-	u8_t num_tx = 0U;
+	uint8_t num_tx = 0U;
 
 	while ((len - num_tx > 0) &&
 	       (base->STATUS & LEUART_STATUS_TXBL)) {
 
-		base->TXDATA = (u32_t)tx_data[num_tx++];
+		base->TXDATA = (uint32_t)tx_data[num_tx++];
 	}
 
 	return num_tx;
 }
 
-static int leuart_gecko_fifo_read(struct device *dev, u8_t *rx_data,
+static int leuart_gecko_fifo_read(struct device *dev, uint8_t *rx_data,
 			       const int len)
 {
 	LEUART_TypeDef *base = DEV_BASE(dev);
-	u8_t num_rx = 0U;
+	uint8_t num_rx = 0U;
 
 	while ((len - num_rx > 0) &&
 	       (base->STATUS & LEUART_STATUS_RXDATAV)) {
 
-		rx_data[num_rx++] = (u8_t)base->RXDATA;
+		rx_data[num_rx++] = (uint8_t)base->RXDATA;
 	}
 
 	return num_rx;
@@ -131,7 +131,7 @@ static int leuart_gecko_fifo_read(struct device *dev, u8_t *rx_data,
 static void leuart_gecko_irq_tx_enable(struct device *dev)
 {
 	LEUART_TypeDef *base = DEV_BASE(dev);
-	u32_t mask = LEUART_IEN_TXBL | LEUART_IEN_TXC;
+	uint32_t mask = LEUART_IEN_TXBL | LEUART_IEN_TXC;
 
 	LEUART_IntEnable(base, mask);
 }
@@ -139,7 +139,7 @@ static void leuart_gecko_irq_tx_enable(struct device *dev)
 static void leuart_gecko_irq_tx_disable(struct device *dev)
 {
 	LEUART_TypeDef *base = DEV_BASE(dev);
-	u32_t mask = LEUART_IEN_TXBL | LEUART_IEN_TXC;
+	uint32_t mask = LEUART_IEN_TXBL | LEUART_IEN_TXC;
 
 	LEUART_IntDisable(base, mask);
 }
@@ -147,7 +147,7 @@ static void leuart_gecko_irq_tx_disable(struct device *dev)
 static int leuart_gecko_irq_tx_complete(struct device *dev)
 {
 	LEUART_TypeDef *base = DEV_BASE(dev);
-	u32_t flags = LEUART_IntGet(base);
+	uint32_t flags = LEUART_IntGet(base);
 
 	return (flags & LEUART_IF_TXC) != 0U;
 }
@@ -155,7 +155,7 @@ static int leuart_gecko_irq_tx_complete(struct device *dev)
 static int leuart_gecko_irq_tx_ready(struct device *dev)
 {
 	LEUART_TypeDef *base = DEV_BASE(dev);
-	u32_t flags = LEUART_IntGet(base);
+	uint32_t flags = LEUART_IntGet(base);
 
 	return (flags & LEUART_IF_TXBL) != 0U;
 }
@@ -163,7 +163,7 @@ static int leuart_gecko_irq_tx_ready(struct device *dev)
 static void leuart_gecko_irq_rx_enable(struct device *dev)
 {
 	LEUART_TypeDef *base = DEV_BASE(dev);
-	u32_t mask = LEUART_IEN_RXDATAV;
+	uint32_t mask = LEUART_IEN_RXDATAV;
 
 	LEUART_IntEnable(base, mask);
 }
@@ -171,7 +171,7 @@ static void leuart_gecko_irq_rx_enable(struct device *dev)
 static void leuart_gecko_irq_rx_disable(struct device *dev)
 {
 	LEUART_TypeDef *base = DEV_BASE(dev);
-	u32_t mask = LEUART_IEN_RXDATAV;
+	uint32_t mask = LEUART_IEN_RXDATAV;
 
 	LEUART_IntDisable(base, mask);
 }
@@ -179,7 +179,7 @@ static void leuart_gecko_irq_rx_disable(struct device *dev)
 static int leuart_gecko_irq_rx_full(struct device *dev)
 {
 	LEUART_TypeDef *base = DEV_BASE(dev);
-	u32_t flags = LEUART_IntGet(base);
+	uint32_t flags = LEUART_IntGet(base);
 
 	return (flags & LEUART_IF_RXDATAV) != 0U;
 }
@@ -187,7 +187,7 @@ static int leuart_gecko_irq_rx_full(struct device *dev)
 static int leuart_gecko_irq_rx_ready(struct device *dev)
 {
 	LEUART_TypeDef *base = DEV_BASE(dev);
-	u32_t mask = LEUART_IEN_RXDATAV;
+	uint32_t mask = LEUART_IEN_RXDATAV;
 
 	return (base->IEN & mask)
 		&& leuart_gecko_irq_rx_full(dev);

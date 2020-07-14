@@ -22,6 +22,7 @@
 
 #include <zephyr/types.h>
 #include <stddef.h>
+#include <kernel.h>
 
 /**
  * @brief Random Function APIs
@@ -43,7 +44,8 @@ extern "C" {
  *
  * @return 32-bit random value.
  */
-extern u32_t sys_rand32_get(void);
+__syscall uint32_t sys_rand32_get(void);
+
 /**
  * @brief Fill the destination buffer with random data values that should
  * pass general randomness tests.
@@ -55,7 +57,7 @@ extern u32_t sys_rand32_get(void);
  * @param len size of the destination buffer.
  *
  */
-extern void sys_rand_get(void *dst, size_t len);
+__syscall void sys_rand_get(void *dst, size_t len);
 
 /**
  * @brief Fill the destination buffer with cryptographically secure
@@ -70,7 +72,7 @@ extern void sys_rand_get(void *dst, size_t len);
  * @return 0 if success, -EIO if entropy reseed error
  *
  */
-extern int sys_csrand_get(void *dst, size_t len);
+__syscall int sys_csrand_get(void *dst, size_t len);
 
 #ifdef __cplusplus
 }
@@ -80,4 +82,5 @@ extern int sys_csrand_get(void *dst, size_t len);
  * @}
  */
 
+#include <syscalls/rand32.h>
 #endif /* ZEPHYR_INCLUDE_RANDOM_RAND32_H_ */

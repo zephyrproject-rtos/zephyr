@@ -44,7 +44,8 @@
 #error "Define a PWM device"
 #endif
 
-#if defined(CONFIG_BOARD_COLIBRI_IMX7D_M4) || defined(CONFIG_SOC_MK64F12)
+#if defined(CONFIG_BOARD_COLIBRI_IMX7D_M4) || defined(CONFIG_SOC_MK64F12) || \
+	defined(CONFIG_SOC_MKW41Z4)
 #define DEFAULT_PERIOD_CYCLE 1024
 #define DEFAULT_PULSE_CYCLE 512
 #define DEFAULT_PERIOD_USEC 2000
@@ -72,7 +73,7 @@
 #define UNIT_USECS	1
 #define UNIT_NSECS	2
 
-static int test_task(u32_t port, u32_t period, u32_t pulse, u8_t unit)
+static int test_task(uint32_t port, uint32_t period, uint32_t pulse, uint8_t unit)
 {
 	TC_PRINT("[PWM]: %" PRIu8 ", [period]: %" PRIu32 ", [pulse]: %" PRIu32 "\n",
 		port, period, pulse);

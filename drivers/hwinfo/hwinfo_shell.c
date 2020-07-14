@@ -12,7 +12,7 @@
 
 static int cmd_get_device_id(const struct shell *shell, size_t argc, char **argv)
 {
-	u8_t dev_id[16];
+	uint8_t dev_id[16];
 	ssize_t length;
 	int i;
 

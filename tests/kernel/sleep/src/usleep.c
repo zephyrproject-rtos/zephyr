@@ -62,11 +62,11 @@
 void test_usleep(void)
 {
 	int retries = 0;
-	s64_t elapsed_ms;
+	int64_t elapsed_ms;
 
 	while (retries < RETRIES) {
-		s64_t start_ms;
-		s64_t end_ms;
+		int64_t start_ms;
+		int64_t end_ms;
 		int i;
 
 		++retries;
@@ -87,7 +87,7 @@ void test_usleep(void)
 		}
 	}
 
-	printk("elapsed_ms = %lld\n", elapsed_ms);
+	printk("elapsed_ms = %" PRId64 "\n", elapsed_ms);
 	zassert_true(elapsed_ms >= LOWER_BOUND_MS, "short sleep");
 	zassert_true(elapsed_ms <= UPPER_BOUND_MS, "overslept");
 }

@@ -11,9 +11,9 @@ virtual report
 
 @r_cmp depends on !(file in "ext")@
 position p;
-typedef u8_t, u16_t, u32_t, u64_t;
+typedef uint8_t, uint16_t, uint32_t, uint64_t;
 {unsigned char, unsigned short, unsigned int, unsigned long, unsigned long long,
-	size_t, u8_t, u16_t, u32_t, u64_t} v;
+	size_t, uint8_t, uint16_t, uint32_t, uint64_t} v;
 @@
 
 	(\( v@p < 0 \| v@p <= 0 \))

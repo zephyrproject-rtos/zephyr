@@ -38,7 +38,7 @@ extern "C" {
  *
  * @see http://man7.org/linux/man-pages/man3/timegm.3.html
  */
-s64_t timeutil_timegm64(const struct tm *tm);
+int64_t timeutil_timegm64(const struct tm *tm);
 
 /**
  * @brief Convert broken-down time to a POSIX epoch offset in seconds.

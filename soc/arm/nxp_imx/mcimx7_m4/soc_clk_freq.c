@@ -9,13 +9,13 @@
 #include "soc_clk_freq.h"
 
 #ifdef CONFIG_PWM_IMX
-u32_t get_pwm_clock_freq(PWM_Type *base)
+uint32_t get_pwm_clock_freq(PWM_Type *base)
 {
-	u32_t root;
-	u32_t hz;
-	u32_t pre, post;
+	uint32_t root;
+	uint32_t hz;
+	uint32_t pre, post;
 
-	switch ((u32_t)base) {
+	switch ((uint32_t)base) {
 	case PWM1_BASE:
 		root = CCM_GetRootMux(CCM, ccmRootPwm1);
 		CCM_GetRootDivider(CCM, ccmRootPwm1, &pre, &post);

@@ -13,7 +13,7 @@ LOG_MODULE_REGISTER(net_wifi_mgmt, CONFIG_NET_L2_WIFI_MGMT_LOG_LEVEL);
 #include <net/net_if.h>
 #include <net/wifi_mgmt.h>
 
-static int wifi_connect(u32_t mgmt_request, struct net_if *iface,
+static int wifi_connect(uint32_t mgmt_request, struct net_if *iface,
 			void *data, size_t len)
 {
 	struct wifi_connect_req_params *params =
@@ -69,7 +69,7 @@ static void scan_result_cb(struct net_if *iface, int status,
 					entry, sizeof(struct wifi_scan_result));
 }
 
-static int wifi_scan(u32_t mgmt_request, struct net_if *iface,
+static int wifi_scan(uint32_t mgmt_request, struct net_if *iface,
 		     void *data, size_t len)
 {
 	struct device *dev = net_if_get_device(iface);
@@ -86,7 +86,7 @@ static int wifi_scan(u32_t mgmt_request, struct net_if *iface,
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_SCAN, wifi_scan);
 
 
-static int wifi_disconnect(u32_t mgmt_request, struct net_if *iface,
+static int wifi_disconnect(uint32_t mgmt_request, struct net_if *iface,
 			   void *data, size_t len)
 {
 	struct device *dev = net_if_get_device(iface);
@@ -124,7 +124,7 @@ void wifi_mgmt_raise_disconnect_result_event(struct net_if *iface, int status)
 					sizeof(struct wifi_status));
 }
 
-static int wifi_ap_enable(u32_t mgmt_request, struct net_if *iface,
+static int wifi_ap_enable(uint32_t mgmt_request, struct net_if *iface,
 			  void *data, size_t len)
 {
 	struct wifi_connect_req_params *params =
@@ -142,7 +142,7 @@ static int wifi_ap_enable(u32_t mgmt_request, struct net_if *iface,
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_ENABLE, wifi_ap_enable);
 
-static int wifi_ap_disable(u32_t mgmt_request, struct net_if *iface,
+static int wifi_ap_disable(uint32_t mgmt_request, struct net_if *iface,
 			  void *data, size_t len)
 {
 	struct device *dev = net_if_get_device(iface);

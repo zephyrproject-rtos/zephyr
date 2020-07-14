@@ -33,7 +33,7 @@ static inline const struct spi_nrfx_config *get_dev_config(struct device *dev)
 	return dev->config_info;
 }
 
-static inline nrf_spis_mode_t get_nrf_spis_mode(u16_t operation)
+static inline nrf_spis_mode_t get_nrf_spis_mode(uint16_t operation)
 {
 	if (SPI_MODE_GET(operation) & SPI_MODE_CPOL) {
 		if (SPI_MODE_GET(operation) & SPI_MODE_CPHA) {
@@ -50,7 +50,7 @@ static inline nrf_spis_mode_t get_nrf_spis_mode(u16_t operation)
 	}
 }
 
-static inline nrf_spis_bit_order_t get_nrf_spis_bit_order(u16_t operation)
+static inline nrf_spis_bit_order_t get_nrf_spis_bit_order(uint16_t operation)
 {
 	if (operation & SPI_TRANSFER_LSB) {
 		return NRF_SPIS_BIT_ORDER_LSB_FIRST;

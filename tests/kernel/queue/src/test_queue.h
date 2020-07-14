@@ -23,11 +23,14 @@ extern void test_queue_alloc_prepend_user(void);
 extern void test_queue_alloc_append_user(void);
 #endif
 extern void test_queue_alloc(void);
+extern void test_queue_poll_race(void);
+extern void test_multiple_queues(void);
+
 extern struct k_mem_pool test_pool;
 
 typedef struct qdata {
 	sys_snode_t snode;
-	u32_t data;
+	uint32_t data;
 	bool allocated;
 } qdata_t;
 #endif

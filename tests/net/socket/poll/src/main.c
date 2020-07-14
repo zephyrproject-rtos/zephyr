@@ -38,7 +38,7 @@ void test_poll(void)
 	struct sockaddr_in6 s_addr;
 	struct pollfd pollfds[2];
 	struct pollfd pollout[1];
-	u32_t tstamp;
+	uint32_t tstamp;
 	ssize_t len;
 	char buf[10];
 

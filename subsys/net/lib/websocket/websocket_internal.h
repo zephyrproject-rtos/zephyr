@@ -10,6 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <toolchain/common.h>
+
 #define WS_SHA1_OUTPUT_LEN 20
 
 /* Min Websocket header length */
@@ -24,7 +26,7 @@
 /**
  * Websocket connection information
  */
-struct websocket_context {
+__net_socket struct websocket_context {
 	union {
 		/** User data.
 		 */
@@ -33,7 +35,7 @@ struct websocket_context {
 		/** This is used during HTTP handshake to verify that the
 		 * peer sent proper Sec-WebSocket-Accept key.
 		 */
-		u8_t *sec_accept_key;
+		uint8_t *sec_accept_key;
 	};
 
 	/** Reference count.
@@ -61,7 +63,7 @@ struct websocket_context {
 	 * headers. User must provide the actual buffer where the headers are
 	 * stored temporarily.
 	 */
-	u8_t *tmp_buf;
+	uint8_t *tmp_buf;
 
 	/** Temporary buffer length.
 	 */
@@ -76,31 +78,31 @@ struct websocket_context {
 	int real_sock;
 
 	/** Websocket connection masking value */
-	u32_t masking_value;
+	uint32_t masking_value;
 
 	/** Amount of data received. */
-	u64_t total_read;
+	uint64_t total_read;
 
 	/** Message length */
-	u64_t message_len;
+	uint64_t message_len;
 
 	/** Message type */
-	u32_t message_type;
+	uint32_t message_type;
 
 	/** Is the message masked */
-	u8_t masked : 1;
+	uint8_t masked : 1;
 
 	/** Did we receive Sec-WebSocket-Accept: field */
-	u8_t sec_accept_present : 1;
+	uint8_t sec_accept_present : 1;
 
 	/** Is Sec-WebSocket-Accept field correct */
-	u8_t sec_accept_ok : 1;
+	uint8_t sec_accept_ok : 1;
 
 	/** Did we receive all from peer during HTTP handshake */
-	u8_t all_received : 1;
+	uint8_t all_received : 1;
 
 	/** Header received */
-	u8_t header_received : 1;
+	uint8_t header_received : 1;
 };
 
 /**

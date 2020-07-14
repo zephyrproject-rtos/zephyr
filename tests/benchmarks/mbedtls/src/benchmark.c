@@ -69,6 +69,7 @@
 
 #include <zephyr/types.h>
 #include <sys/byteorder.h>
+#include <random/rand32.h>
 
 #include "kernel.h"
 
@@ -153,8 +154,8 @@ void mbedtls_set_alarm(int seconds)
 #define TIME_AND_TSC(TITLE, CODE)                                     \
 do {                                                                  \
 	unsigned long ii, jj;                                         \
-	u32_t tsc;                                                    \
-	u64_t delta;                                                  \
+	uint32_t tsc;                                                    \
+	uint64_t delta;                                                  \
 	int ret = 0;                                                  \
 								      \
 	mbedtls_printf(HEADER_FORMAT, TITLE);                         \

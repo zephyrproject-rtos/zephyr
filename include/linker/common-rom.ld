@@ -2,7 +2,19 @@
 
 	SECTION_PROLOGUE(initlevel,,)
 	{
-		INIT_SECTIONS()
+		/*
+		 * link in initialization objects for all objects that are
+		 * automatically initialized by the kernel; the objects are
+		 * sorted in the order they will be initialized (i.e. ordered
+		 * by level, sorted by priority within a level)
+		 */
+		__init_start = .;
+		CREATE_OBJ_LEVEL(init, PRE_KERNEL_1)
+		CREATE_OBJ_LEVEL(init, PRE_KERNEL_2)
+		CREATE_OBJ_LEVEL(init, POST_KERNEL)
+		CREATE_OBJ_LEVEL(init, APPLICATION)
+		CREATE_OBJ_LEVEL(init, SMP)
+		__init_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 #if defined(CONFIG_GEN_SW_ISR_TABLE) && !defined(CONFIG_DYNAMIC_INTERRUPTS)
@@ -21,7 +33,7 @@
 	/* verify we don't have rogue .init_<something> initlevel sections */
 	SECTION_PROLOGUE(initlevel_error,,)
 	{
-		INIT_UNDEFINED_SECTION()
+		KEEP(*(SORT(.init_[_A-Z0-9]*)))
 	}
 	ASSERT(SIZEOF(initlevel_error) == 0, "Undefined initialization levels used.")
 
@@ -64,12 +76,7 @@
 	/* Build-time assignment of permissions to kernel objects to
 	 * threads declared with K_THREAD_DEFINE()
 	 */
-	SECTION_PROLOGUE(object_access,,)
-	{
-		_z_object_assignment_list_start = .;
-		KEEP(*("._z_object_assignment.*"))
-		_z_object_assignment_list_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	Z_ITERABLE_SECTION_ROM(z_object_assignment, 4)
 #endif
 
 	SECTION_PROLOGUE(app_shmem_regions,,)
@@ -88,12 +95,7 @@
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 #if defined(CONFIG_NET_SOCKETS)
-	SECTION_PROLOGUE(net_socket_register,,)
-	{
-		_net_socket_register_list_start = .;
-		KEEP(*(SORT_BY_NAME("._net_socket_register.*")))
-		_net_socket_register_list_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	Z_ITERABLE_SECTION_ROM(net_socket_register, 4)
 #endif
 
 #if defined(CONFIG_NET_L2_PPP)
@@ -106,36 +108,16 @@
 	} GROUP_LINK_IN(ROMABLE_REGION)
 #endif
 
-	SECTION_DATA_PROLOGUE(_bt_channels_area,,SUBALIGN(4))
-	{
-		_bt_l2cap_fixed_chan_list_start = .;
-		KEEP(*(SORT_BY_NAME("._bt_l2cap_fixed_chan.static.*")))
-		_bt_l2cap_fixed_chan_list_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	Z_ITERABLE_SECTION_ROM(bt_l2cap_fixed_chan, 4)
 
 #if defined(CONFIG_BT_BREDR)
-	SECTION_DATA_PROLOGUE(_bt_br_channels_area,,SUBALIGN(4))
-	{
-		_bt_l2cap_br_fixed_chan_list_start = .;
-		KEEP(*(SORT_BY_NAME("._bt_l2cap_br_fixed_chan.static.*")))
-		_bt_l2cap_br_fixed_chan_list_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	Z_ITERABLE_SECTION_ROM(bt_l2cap_br_fixed_chan, 4)
 #endif
 
-	SECTION_DATA_PROLOGUE(_bt_services_area,,SUBALIGN(4))
-	{
-		_bt_gatt_service_static_list_start = .;
-		KEEP(*(SORT_BY_NAME("._bt_gatt_service_static.static.*")))
-		_bt_gatt_service_static_list_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	Z_ITERABLE_SECTION_ROM(bt_gatt_service_static, 4)
 
 #if defined(CONFIG_SETTINGS)
-	SECTION_DATA_PROLOGUE(_settings_handlers_area,,SUBALIGN(4))
-	{
-		_settings_handler_static_list_start = .;
-		KEEP(*(SORT_BY_NAME("._settings_handler_static.static.*")))
-		_settings_handler_static_list_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	Z_ITERABLE_SECTION_ROM(settings_handler_static, 4)
 #endif
 
 	SECTION_DATA_PROLOGUE(log_const_sections,,)
@@ -152,12 +134,7 @@
 		__log_backends_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
-	SECTION_DATA_PROLOGUE(shell_sections,,)
-	{
-		_shell_list_start = .;
-		KEEP(*(SORT(._shell.static.*)));
-		_shell_list_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	Z_ITERABLE_SECTION_ROM(shell, 4)
 
 	SECTION_DATA_PROLOGUE(shell_root_cmds_sections,,)
 	{
@@ -173,9 +150,4 @@
 		__font_entry_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
-	SECTION_DATA_PROLOGUE(tracing_backends_sections,,)
-	{
-		_tracing_backend_list_start = .;
-		KEEP(*("._tracing_backend.*"));
-		_tracing_backend_list_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	Z_ITERABLE_SECTION_ROM(tracing_backend, 4)

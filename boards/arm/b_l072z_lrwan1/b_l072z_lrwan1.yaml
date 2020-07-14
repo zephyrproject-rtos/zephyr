@@ -18,3 +18,5 @@ supported:
   - gpio
   - pinmux
   - counter
+  - eeprom
+  - nvs

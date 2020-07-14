@@ -32,7 +32,7 @@ extern "C" {
 int coap_well_known_core_get(struct coap_resource *resource,
 			     struct coap_packet *request,
 			     struct coap_packet *response,
-			     u8_t *data, u16_t len);
+			     uint8_t *data, uint16_t len);
 
 /**
  * In case you want to add attributes to the resources included in the

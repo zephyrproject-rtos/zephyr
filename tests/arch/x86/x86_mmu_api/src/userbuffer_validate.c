@@ -15,9 +15,9 @@
 
 static int status;
 
-#define BUFF_READABLE ((u32_t) 0x0)
-#define BUFF_WRITEABLE ((u32_t) 0x1)
-#define BUFF_USER ((u32_t) 0x2)
+#define BUFF_READABLE ((uint32_t) 0x0)
+#define BUFF_WRITEABLE ((uint32_t) 0x1)
+#define BUFF_USER ((uint32_t) 0x2)
 
 void reset_flag(void);
 void reset_multi_pte_page_flag(void);
@@ -25,15 +25,15 @@ void reset_multi_pde_flag(void);
 
 #define PTABLES (&z_x86_kernel_ptables)
 
-#define ADDR_PAGE_1 ((u8_t *)__bss_start + SKIP_SIZE * MMU_PAGE_SIZE)
-#define ADDR_PAGE_2 ((u8_t *)__bss_start + (SKIP_SIZE + 1) * MMU_PAGE_SIZE)
+#define ADDR_PAGE_1 ((uint8_t *)__bss_start + SKIP_SIZE * MMU_PAGE_SIZE)
+#define ADDR_PAGE_2 ((uint8_t *)__bss_start + (SKIP_SIZE + 1) * MMU_PAGE_SIZE)
 #define PRESET_PAGE_1_VALUE set_flags(ADDR_PAGE_1, MMU_PAGE_SIZE, \
 				      MMU_ENTRY_PRESENT, Z_X86_MMU_P)
 #define PRESET_PAGE_2_VALUE set_flags(ADDR_PAGE_2, MMU_PAGE_SIZE, \
 				      MMU_ENTRY_PRESENT, Z_X86_MMU_P)
 
-static void set_flags(void *ptr, size_t size, u64_t flags,
-		      u64_t mask)
+static void set_flags(void *ptr, size_t size, uint64_t flags,
+		      uint64_t mask)
 {
 	z_x86_mmu_set_flags(PTABLES, ptr, size, flags, mask, true);
 }

@@ -19,41 +19,41 @@
 LOG_MODULE_REGISTER(ms5607);
 
 static void ms5607_compensate(struct ms5607_data *data,
-			      const s32_t adc_temperature,
-			      const s32_t adc_pressure)
+			      const int32_t adc_temperature,
+			      const int32_t adc_pressure)
 {
-	s64_t dT;
-	s64_t OFF;
-	s64_t SENS;
-	s64_t temp_sq;
-	s64_t Ti;
-	s64_t OFFi;
-	s64_t SENSi;
+	int64_t dT;
+	int64_t OFF;
+	int64_t SENS;
+	int64_t temp_sq;
+	int64_t Ti;
+	int64_t OFFi;
+	int64_t SENSi;
 
 	/* first order compensation as per datasheet
 	 * (https://www.te.com/usa-en/product-CAT-BLPS0035.html) section
 	 * PRESSURE AND TEMPERATURE CALCULATION
 	 */
 
-	dT = adc_temperature - ((u32_t)(data->t_ref) << 8);
+	dT = adc_temperature - ((uint32_t)(data->t_ref) << 8);
 	data->temperature = 2000 + (dT * data->tempsens) / (1ll << 23);
-	OFF = ((s64_t)(data->off_t1) << 17) + (dT * data->tco) / (1ll << 6);
-	SENS = ((s64_t)(data->sens_t1) << 16) + (dT * data->tcs) / (1ll << 7);
+	OFF = ((int64_t)(data->off_t1) << 17) + (dT * data->tco) / (1ll << 6);
+	SENS = ((int64_t)(data->sens_t1) << 16) + (dT * data->tcs) / (1ll << 7);
 
 	/* Second order compensation as per datasheet
 	 * (https://www.te.com/usa-en/product-CAT-BLPS0035.html) section
 	 * SECOND ORDER TEMPERATURE COMPENSATION
 	 */
 
-	temp_sq = (s64_t)(data->temperature - 2000) *
-		  (s64_t)(data->temperature - 2000);
+	temp_sq = (int64_t)(data->temperature - 2000) *
+		  (int64_t)(data->temperature - 2000);
 	if (data->temperature < 2000) {
 		Ti = (dT * dT) / (1ll << 31);
 		OFFi = (61ll * temp_sq) / (1ll << 4);
 		SENSi = 2ll * temp_sq;
 		if (data->temperature < -1500) {
-			temp_sq = (s64_t)(data->temperature + 1500) *
-				  (s64_t)(data->temperature + 1500);
+			temp_sq = (int64_t)(data->temperature + 1500) *
+				  (int64_t)(data->temperature + 1500);
 			OFFi += 15ll * temp_sq;
 			SENSi += 8ll * temp_sq;
 		}
@@ -67,12 +67,12 @@ static void ms5607_compensate(struct ms5607_data *data,
 	SENS -= SENSi;
 
 	data->temperature -= Ti;
-	data->pressure = (SENS * (s64_t)adc_pressure / (1ll << 21) - OFF) /
+	data->pressure = (SENS * (int64_t)adc_pressure / (1ll << 21) - OFF) /
 			 (1ll << 15);
 }
 
-static int ms5607_read_prom(const struct ms5607_data *data, u8_t cmd,
-			    u16_t *val)
+static int ms5607_read_prom(const struct ms5607_data *data, uint8_t cmd,
+			    uint16_t *val)
 {
 	int err;
 
@@ -86,9 +86,9 @@ static int ms5607_read_prom(const struct ms5607_data *data, u8_t cmd,
 }
 
 static int ms5607_get_measurement(const struct ms5607_data *data,
-				  u32_t *val,
-				  u8_t cmd,
-				  u8_t delay)
+				  uint32_t *val,
+				  uint8_t cmd,
+				  uint8_t delay)
 {
 	int err;
 
@@ -113,7 +113,7 @@ static int ms5607_sample_fetch(struct device *dev, enum sensor_channel channel)
 {
 	struct ms5607_data *data = dev->driver_data;
 	int err;
-	u32_t adc_pressure, adc_temperature;
+	uint32_t adc_pressure, adc_temperature;
 
 	__ASSERT_NO_MSG(channel == SENSOR_CHAN_ALL);
 
@@ -163,7 +163,7 @@ static int ms5607_attr_set(struct device *dev, enum sensor_channel chan,
 			   const struct sensor_value *val)
 {
 	struct ms5607_data *data = dev->driver_data;
-	u8_t p_conv_cmd, t_conv_cmd, conv_delay;
+	uint8_t p_conv_cmd, t_conv_cmd, conv_delay;
 
 	if (attr != SENSOR_ATTR_OVERSAMPLING) {
 		return -ENOTSUP;

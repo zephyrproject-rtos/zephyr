@@ -95,7 +95,7 @@
 	sck-pin = <25>;
 	mosi-pin = <23>;
 	miso-pin = <24>;
-	cs-gpios = <&gpio0 22 0>;
+	cs-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
 };
 
 &spi1 {
@@ -104,7 +104,7 @@
 	sck-pin = <16>;
 	mosi-pin = <20>;
 	miso-pin = <14>;
-	cs-gpios = <&gpio0 12 0>;
+	cs-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 };
 
 &flash0 {

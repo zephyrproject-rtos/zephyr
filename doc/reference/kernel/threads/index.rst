@@ -277,12 +277,12 @@ each thread calls a specific routine.
 
     int call_tracking_routine(void)
     {
-        u32_t call_count;
+        uint32_t call_count;
 
         if (k_is_in_isr()) {
 	    /* ignore any call made by an ISR */
         } else {
-            call_count = (u32_t)k_thread_custom_data_get();
+            call_count = (uint32_t)k_thread_custom_data_get();
             call_count++;
             k_thread_custom_data_set((void *)call_count);
 	}
@@ -341,7 +341,13 @@ The following code has the same effect as the code segment above.
 
     K_THREAD_DEFINE(my_tid, MY_STACK_SIZE,
                     my_entry_point, NULL, NULL, NULL,
-                    MY_PRIORITY, 0, K_NO_WAIT);
+                    MY_PRIORITY, 0, 0);
+
+.. note::
+   The delay parameter to :cpp:func:`k_thread_create()` is a
+   :c:type:`k_timeout_t` value, so :c:macro:`K_NO_WAIT` means to start the
+   thread immediately. The corresponding parameter to :c:macro:`K_THREAD_DEFINE`
+   is a duration in integral milliseconds, so the equivalent argument is 0.
 
 User Mode Constraints
 ---------------------

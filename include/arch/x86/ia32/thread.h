@@ -212,7 +212,7 @@ typedef struct s_preempFloatReg {
  */
 
 struct _thread_arch {
-	u8_t flags;
+	uint8_t flags;
 
 #ifdef CONFIG_USERSPACE
 	/* Pointer to page tables used by this thread. Supervisor threads

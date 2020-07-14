@@ -12,8 +12,4 @@ config BOARD
 config BUILD_OUTPUT_STRIPPED
 	default y
 
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 19200000 if HPET_TIMER		# guess
-	default 1100000000 if LOAPIC_TIMER	# another guess
-
 endif # BOARD_GPMRB

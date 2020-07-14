@@ -27,13 +27,13 @@ extern "C" {
  */
 struct gptp_mi_port_sync_sync {
 	/** Time at which the sync receipt timeout occurs. */
-	u64_t sync_receipt_timeout_time;
+	uint64_t sync_receipt_timeout_time;
 
 	/** Copy of the gptp_md_sync_info to be transmitted. */
 	struct gptp_md_sync_info sync_info;
 
 	/** Port to which the Sync Information belongs to. */
-	u16_t local_port_number;
+	uint16_t local_port_number;
 };
 
 /**
@@ -67,7 +67,7 @@ void gptp_mi_state_machines(void);
  *
  * @return Current time in nanoseconds.
  */
-u64_t gptp_get_current_time_nanosecond(int port);
+uint64_t gptp_get_current_time_nanosecond(int port);
 
 #ifdef __cplusplus
 }

@@ -20,9 +20,9 @@ static struct device *dev;
 static void uart_isr(struct device *dev)
 {
 	int rx;
-	u8_t byte;
-	static u8_t *cmd;
-	static u32_t length, cur;
+	uint8_t byte;
+	static uint8_t *cmd;
+	static uint32_t length, cur;
 
 	while (uart_irq_update(dev) && uart_irq_is_pending(dev)) {
 		if (!uart_irq_rx_ready(dev)) {
@@ -59,9 +59,9 @@ static void uart_isr(struct device *dev)
 
 static void tracing_backend_uart_output(
 		const struct tracing_backend *backend,
-		u8_t *data, u32_t length)
+		uint8_t *data, uint32_t length)
 {
-	for (u32_t i = 0; i < length; i++) {
+	for (uint32_t i = 0; i < length; i++) {
 		uart_poll_out(dev, data[i]);
 	}
 }
@@ -78,7 +78,7 @@ static void tracing_backend_uart_init(void)
 	uart_irq_callback_set(dev, uart_isr);
 
 	while (uart_irq_rx_ready(dev)) {
-		u8_t c;
+		uint8_t c;
 
 		uart_fifo_read(dev, &c, 1);
 	}

@@ -10,7 +10,7 @@
  */
 
 struct bt_smp_hdr {
-	u8_t  code;
+	uint8_t  code;
 } __packed;
 
 #define BT_SMP_ERR_PASSKEY_ENTRY_FAILED		0x01
@@ -58,43 +58,43 @@ struct bt_smp_hdr {
 #define BT_SMP_CMD_PAIRING_REQ			0x01
 #define BT_SMP_CMD_PAIRING_RSP			0x02
 struct bt_smp_pairing {
-	u8_t  io_capability;
-	u8_t  oob_flag;
-	u8_t  auth_req;
-	u8_t  max_key_size;
-	u8_t  init_key_dist;
-	u8_t  resp_key_dist;
+	uint8_t  io_capability;
+	uint8_t  oob_flag;
+	uint8_t  auth_req;
+	uint8_t  max_key_size;
+	uint8_t  init_key_dist;
+	uint8_t  resp_key_dist;
 } __packed;
 
 #define BT_SMP_CMD_PAIRING_CONFIRM		0x03
 struct bt_smp_pairing_confirm {
-	u8_t  val[16];
+	uint8_t  val[16];
 } __packed;
 
 #define BT_SMP_CMD_PAIRING_RANDOM		0x04
 struct bt_smp_pairing_random {
-	u8_t  val[16];
+	uint8_t  val[16];
 } __packed;
 
 #define BT_SMP_CMD_PAIRING_FAIL			0x05
 struct bt_smp_pairing_fail {
-	u8_t  reason;
+	uint8_t  reason;
 } __packed;
 
 #define BT_SMP_CMD_ENCRYPT_INFO			0x06
 struct bt_smp_encrypt_info {
-	u8_t  ltk[16];
+	uint8_t  ltk[16];
 } __packed;
 
 #define BT_SMP_CMD_MASTER_IDENT			0x07
 struct bt_smp_master_ident {
-	u8_t ediv[2];
-	u8_t rand[8];
+	uint8_t ediv[2];
+	uint8_t rand[8];
 } __packed;
 
 #define BT_SMP_CMD_IDENT_INFO			0x08
 struct bt_smp_ident_info {
-	u8_t  irk[16];
+	uint8_t  irk[16];
 } __packed;
 
 #define BT_SMP_CMD_IDENT_ADDR_INFO		0x09
@@ -104,28 +104,28 @@ struct bt_smp_ident_addr_info {
 
 #define BT_SMP_CMD_SIGNING_INFO			0x0a
 struct bt_smp_signing_info {
-	u8_t csrk[16];
+	uint8_t csrk[16];
 } __packed;
 
 #define BT_SMP_CMD_SECURITY_REQUEST		0x0b
 struct bt_smp_security_request {
-	u8_t  auth_req;
+	uint8_t  auth_req;
 } __packed;
 
 #define BT_SMP_CMD_PUBLIC_KEY			0x0c
 struct bt_smp_public_key {
-	u8_t x[32];
-	u8_t y[32];
+	uint8_t x[32];
+	uint8_t y[32];
 } __packed;
 
 #define BT_SMP_DHKEY_CHECK			0x0d
 struct bt_smp_dhkey_check {
-	u8_t e[16];
+	uint8_t e[16];
 } __packed;
 
 int bt_smp_start_security(struct bt_conn *conn);
-bool bt_smp_request_ltk(struct bt_conn *conn, u64_t rand, u16_t ediv,
-			u8_t *ltk);
+bool bt_smp_request_ltk(struct bt_conn *conn, uint64_t rand, uint16_t ediv,
+			uint8_t *ltk);
 
 void bt_smp_update_keys(struct bt_conn *conn);
 
@@ -138,7 +138,7 @@ int bt_smp_auth_passkey_confirm(struct bt_conn *conn);
 int bt_smp_auth_pairing_confirm(struct bt_conn *conn);
 int bt_smp_auth_cancel(struct bt_conn *conn);
 
-int bt_smp_le_oob_set_tk(struct bt_conn *conn, const u8_t *tk);
+int bt_smp_le_oob_set_tk(struct bt_conn *conn, const uint8_t *tk);
 int bt_smp_le_oob_generate_sc_data(struct bt_le_oob_sc_data *le_sc_oob);
 int bt_smp_le_oob_set_sc_data(struct bt_conn *conn,
 			      const struct bt_le_oob_sc_data *oobd_local,
@@ -166,4 +166,4 @@ int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf);
 int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf);
 
 /** Generate IRK from Identity Root (IR) */
-int bt_smp_irk_get(u8_t *ir, u8_t *irk);
+int bt_smp_irk_get(uint8_t *ir, uint8_t *irk);

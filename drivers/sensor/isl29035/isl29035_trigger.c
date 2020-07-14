@@ -41,13 +41,13 @@ static inline void handle_int(struct isl29035_driver_data *drv_data)
 #endif
 }
 
-static u16_t isl29035_lux_processed_to_raw(struct sensor_value const *val)
+static uint16_t isl29035_lux_processed_to_raw(struct sensor_value const *val)
 {
-	u64_t raw_val;
+	uint64_t raw_val;
 
 	/* raw_val = val * (2 ^ adc_data_bits) / lux_range */
-	raw_val = (((u64_t)val->val1) << ISL29035_ADC_DATA_BITS) +
-		  (((u64_t)val->val2) << ISL29035_ADC_DATA_BITS) / 1000000U;
+	raw_val = (((uint64_t)val->val1) << ISL29035_ADC_DATA_BITS) +
+		  (((uint64_t)val->val2) << ISL29035_ADC_DATA_BITS) / 1000000U;
 
 	return raw_val / ISL29035_LUX_RANGE;
 }
@@ -58,8 +58,8 @@ int isl29035_attr_set(struct device *dev,
 		      const struct sensor_value *val)
 {
 	struct isl29035_driver_data *drv_data = dev->driver_data;
-	u8_t lsb_reg, msb_reg;
-	u16_t raw_val;
+	uint8_t lsb_reg, msb_reg;
+	uint16_t raw_val;
 
 	if (attr == SENSOR_ATTR_UPPER_THRESH) {
 		lsb_reg = ISL29035_INT_HT_LSB_REG;
@@ -85,7 +85,7 @@ int isl29035_attr_set(struct device *dev,
 }
 
 static void isl29035_gpio_callback(struct device *dev,
-				   struct gpio_callback *cb, u32_t pins)
+				   struct gpio_callback *cb, uint32_t pins)
 {
 	struct isl29035_driver_data *drv_data =
 		CONTAINER_OF(cb, struct isl29035_driver_data, gpio_cb);
@@ -98,7 +98,7 @@ static void isl29035_gpio_callback(struct device *dev,
 static void isl29035_thread_cb(struct device *dev)
 {
 	struct isl29035_driver_data *drv_data = dev->driver_data;
-	u8_t val;
+	uint8_t val;
 
 	/* clear interrupt */
 	if (i2c_reg_read_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,

@@ -36,10 +36,10 @@ extern volatile bool notify_enable;
 
 static struct device *button_dev;
 static struct gpio_callback gpio_cb;
-u16_t but_val;
+uint16_t but_val;
 
 void button_pressed(struct device *gpiob, struct gpio_callback *cb,
-		    u32_t pins)
+		    uint32_t pins)
 {
 	int err;
 

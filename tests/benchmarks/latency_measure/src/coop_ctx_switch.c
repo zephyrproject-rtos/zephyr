@@ -34,11 +34,11 @@ static K_THREAD_STACK_DEFINE(thread_two_stack, STACKSIZE);
 static struct k_thread thread_one_data;
 static struct k_thread thread_two_data;
 
-static u32_t timestamp_start;
-static u32_t timestamp_end;
+static uint32_t timestamp_start;
+static uint32_t timestamp_end;
 
 /* context switches counter */
-static volatile u32_t ctx_switch_counter;
+static volatile uint32_t ctx_switch_counter;
 
 /* context switch balancer. Incremented by one thread, decremented by another*/
 static volatile int ctx_switch_balancer;
@@ -118,7 +118,7 @@ int coop_ctx_switch(void)
 		error_count++;
 		PRINT_OVERFLOW_ERROR();
 	} else {
-		u32_t diff;
+		uint32_t diff;
 
 		diff = TIMING_INFO_GET_DELTA(timestamp_start, timestamp_end);
 

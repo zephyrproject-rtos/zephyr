@@ -29,17 +29,17 @@ static gpio_pin_config_t enet_gpio_config = {
  */
 
 static void mm_swiftio_usdhc_pinmux(
-	u16_t nusdhc, bool init,
-	u32_t speed, u32_t strength)
+	uint16_t nusdhc, bool init,
+	uint32_t speed, uint32_t strength)
 {
-	u32_t cmd_data = IOMUXC_SW_PAD_CTL_PAD_SPEED(speed) |
+	uint32_t cmd_data = IOMUXC_SW_PAD_CTL_PAD_SPEED(speed) |
 				IOMUXC_SW_PAD_CTL_PAD_SRE_MASK |
 				IOMUXC_SW_PAD_CTL_PAD_PKE_MASK |
 				IOMUXC_SW_PAD_CTL_PAD_PUE_MASK |
 				IOMUXC_SW_PAD_CTL_PAD_HYS_MASK |
 				IOMUXC_SW_PAD_CTL_PAD_PUS(1) |
 				IOMUXC_SW_PAD_CTL_PAD_DSE(strength);
-	u32_t clk = IOMUXC_SW_PAD_CTL_PAD_SPEED(speed) |
+	uint32_t clk = IOMUXC_SW_PAD_CTL_PAD_SPEED(speed) |
 				IOMUXC_SW_PAD_CTL_PAD_SRE_MASK |
 				IOMUXC_SW_PAD_CTL_PAD_HYS_MASK |
 				IOMUXC_SW_PAD_CTL_PAD_PUS(0) |
@@ -133,7 +133,7 @@ static int mm_swiftio_init(struct device *dev)
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart1), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart1), okay) && CONFIG_SERIAL
 	/* LPUART1 TX/RX */
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_12_LPUART1_TX, 0);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_13_LPUART1_RX, 0);
@@ -149,7 +149,7 @@ static int mm_swiftio_init(struct device *dev)
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c1), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c1), okay) && CONFIG_I2C
 		IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_00_LPI2C1_SCL, 1);
 		IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_01_LPI2C1_SDA, 1);
 
@@ -168,7 +168,7 @@ static int mm_swiftio_init(struct device *dev)
 				IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c3), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c3), okay) && CONFIG_I2C
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_07_LPI2C3_SCL, 1);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_06_LPI2C3_SDA, 1);
 
@@ -187,7 +187,7 @@ static int mm_swiftio_init(struct device *dev)
 				IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi3), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi3), okay) && CONFIG_SPI
 	/* LPSPI3 SCK, SDO, SDI, PCS0 */
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_00_LPSPI3_SCK, 0);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_01_LPSPI3_SDO, 0);

@@ -46,6 +46,11 @@ struct flash_sam_dev_data {
 	struct k_sem sem;
 };
 
+static const struct flash_parameters flash_sam_parameters = {
+	.write_block_size = FLASH_WRITE_BLK_SZ,
+	.erase_value = 0xff,
+};
+
 #define DEV_CFG(dev) \
 	((const struct flash_sam_dev_cfg *const)(dev)->config_info)
 
@@ -91,8 +96,8 @@ static int flash_sam_wait_ready(struct device *dev)
 {
 	Efc *const efc = DEV_CFG(dev)->regs;
 
-	u64_t timeout_time = k_uptime_get() + SAM_FLASH_TIMEOUT_MS;
-	u32_t fsr;
+	uint64_t timeout_time = k_uptime_get() + SAM_FLASH_TIMEOUT_MS;
+	uint32_t fsr;
 
 	do {
 		fsr = efc->EEFC_FSR;
@@ -129,8 +134,8 @@ static int flash_sam_write_page(struct device *dev, off_t offset,
 				const void *data, size_t len)
 {
 	Efc *const efc = DEV_CFG(dev)->regs;
-	const u32_t *src = data;
-	u32_t *dst = (u32_t *)((u8_t *)CONFIG_FLASH_BASE_ADDRESS + offset);
+	const uint32_t *src = data;
+	uint32_t *dst = (uint32_t *)((uint8_t *)CONFIG_FLASH_BASE_ADDRESS + offset);
 
 	LOG_DBG("offset = 0x%lx, len = %zu", (long)offset, len);
 
@@ -155,7 +160,7 @@ static int flash_sam_write(struct device *dev, off_t offset,
 			    const void *data, size_t len)
 {
 	int rc;
-	const u8_t *data8 = data;
+	const uint8_t *data8 = data;
 
 	LOG_DBG("offset = 0x%lx, len = %zu", (long)offset, len);
 
@@ -219,7 +224,7 @@ static int flash_sam_read(struct device *dev, off_t offset, void *data,
 		return -EINVAL;
 	}
 
-	memcpy(data, (u8_t *)CONFIG_FLASH_BASE_ADDRESS + offset, len);
+	memcpy(data, (uint8_t *)CONFIG_FLASH_BASE_ADDRESS + offset, len);
 
 	return 0;
 }
@@ -330,6 +335,14 @@ void flash_sam_page_layout(struct device *dev,
 }
 #endif
 
+static const struct flash_parameters *
+flash_sam_get_parameters(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return &flash_sam_parameters;
+}
+
 static int flash_sam_init(struct device *dev)
 {
 	struct flash_sam_dev_data *const data = DEV_DATA(dev);
@@ -344,10 +357,10 @@ static const struct flash_driver_api flash_sam_api = {
 	.erase = flash_sam_erase,
 	.write = flash_sam_write,
 	.read = flash_sam_read,
+	.get_parameters = flash_sam_get_parameters,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_sam_page_layout,
 #endif
-	.write_block_size = FLASH_WRITE_BLK_SZ,
 };
 
 static const struct flash_sam_dev_cfg flash_sam_cfg = {

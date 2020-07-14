@@ -11,5 +11,6 @@ config SOC_SERIES_STM32F2X
 	select SOC_FAMILY_STM32
 	select HAS_STM32CUBE
 	select HAS_SWO
+	select CPU_HAS_ARM_MPU
 	help
 	  Enable support for stm32f2 MCU series

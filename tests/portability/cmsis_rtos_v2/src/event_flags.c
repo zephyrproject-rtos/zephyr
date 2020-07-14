@@ -69,7 +69,7 @@ static osEventFlagsAttr_t event_flags_attrs = {
 void test_event_flags_no_wait_timeout(void)
 {
 	osThreadId_t id1;
-	u32_t flags;
+	uint32_t flags;
 	const char *name;
 	osEventFlagsId_t dummy_id = NULL;
 
@@ -120,7 +120,7 @@ void test_event_flags_no_wait_timeout(void)
 void test_event_flags_signalled(void)
 {
 	osThreadId_t id1, id2;
-	u32_t flags;
+	uint32_t flags;
 
 	id1 = osThreadNew(thread1, evt_id, &thread1_attr);
 	zassert_true(id1 != NULL, "Failed creating thread1");

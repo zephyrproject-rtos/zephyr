@@ -9,7 +9,7 @@ cmake_minimum_required(VERSION 3.13.1)
 # mcumgr.  It can be used as a starting point for new applications.
 
 # Standard Zephyr application boilerplate.
-find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(smp_svr)
 
 target_sources(app PRIVATE src/main.c)

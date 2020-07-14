@@ -53,6 +53,8 @@
 		led2 = &blue_led;
 		led3 = &red_led;
 		sw0 = &user_button;
+		eeprom-0 = &eeprom;
+		lora0 = &lora;
 	};
 };
 
@@ -72,6 +74,26 @@ arduino_i2c: &i2c1 {};
 
 &spi1 {
 	status = "okay";
+	cs-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
+
+	lora: sx1276@0 {
+		compatible = "semtech,sx1276";
+		reg = <0>;
+		label = "sx1276";
+		reset-gpios = <&gpioc 0 GPIO_ACTIVE_LOW>;
+		dio-gpios = <&gpiob 4 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+			<&gpiob 1 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+			<&gpiob 0 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+			<&gpioc 13 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+			<&gpioa 5 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+			<&gpioa 4 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+		rfi-enable-gpios = <&gpioa 1 GPIO_ACTIVE_HIGH>;
+		rfo-enable-gpios = <&gpioc 2 GPIO_ACTIVE_HIGH>;
+		pa-boost-enable-gpios = <&gpioc 1 GPIO_ACTIVE_HIGH>;
+		tcxo-power-gpios = <&gpioa 12 GPIO_ACTIVE_HIGH>;
+		tcxo-power-startup-delay-ms = <5>;
+		spi-max-frequency = <1000000>;
+	};
 };
 
 &spi2 {
@@ -85,4 +107,30 @@ arduino_i2c: &i2c1 {};
 
 &rtc {
 	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+&eeprom {
+	status = "okay";
+};
+
+&usb {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Set aside 32KiB for data at the end of the 192KiB flash */
+		storage_partition: partition@28000 {
+			label = "storage";
+			reg = <0x00028000 0x00008000>;
+		};
+	};
 };

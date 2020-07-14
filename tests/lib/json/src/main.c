@@ -522,13 +522,13 @@ static void test_json_escape_bounds_check(void)
 static void test_json_encode_bounds_check(void)
 {
 	struct number {
-		u32_t val;
+		uint32_t val;
 	} str = { 0 };
 	const struct json_obj_descr descr[] = {
 		JSON_OBJ_DESCR_PRIM(struct number, val, JSON_TOK_NUMBER),
 	};
 	/* Encodes to {"val":0}\0 for a total of 10 bytes */
-	u8_t buf[10];
+	uint8_t buf[10];
 	ssize_t ret = json_obj_encode_buf(descr, ARRAY_SIZE(descr),
 					  &str, buf, 10);
 	zassert_equal(ret, 0, "Bounds check passed");

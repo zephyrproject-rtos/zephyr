@@ -69,10 +69,10 @@ LOG_MODULE_REGISTER(main);
 #define LED_FLAGS	0
 #endif
 
-static const u8_t hid_report_desc[] = HID_MOUSE_REPORT_DESC(2);
+static const uint8_t hid_report_desc[] = HID_MOUSE_REPORT_DESC(2);
 
-static u8_t def_val[4];
-static volatile u8_t status[4];
+static uint8_t def_val[4];
+static volatile uint8_t status[4];
 static K_SEM_DEFINE(sem, 0, 1);	/* starts off "not available" */
 static struct gpio_callback callback[4];
 static enum usb_dc_status_code usb_status;
@@ -87,16 +87,16 @@ static enum usb_dc_status_code usb_status;
 
 
 
-static void status_cb(enum usb_dc_status_code status, const u8_t *param)
+static void status_cb(enum usb_dc_status_code status, const uint8_t *param)
 {
 	usb_status = status;
 }
 
 static void left_button(struct device *gpio, struct gpio_callback *cb,
-			u32_t pins)
+			uint32_t pins)
 {
 	int ret;
-	u8_t state = status[MOUSE_BTN_REPORT_POS];
+	uint8_t state = status[MOUSE_BTN_REPORT_POS];
 
 	if (IS_ENABLED(CONFIG_USB_DEVICE_REMOTE_WAKEUP)) {
 		if (usb_status == USB_DC_SUSPEND) {
@@ -112,7 +112,7 @@ static void left_button(struct device *gpio, struct gpio_callback *cb,
 		return;
 	}
 
-	if (def_val[0] != (u8_t)ret) {
+	if (def_val[0] != (uint8_t)ret) {
 		state |= MOUSE_BTN_LEFT;
 	} else {
 		state &= ~MOUSE_BTN_LEFT;
@@ -126,10 +126,10 @@ static void left_button(struct device *gpio, struct gpio_callback *cb,
 
 #if DT_NODE_HAS_STATUS(SW1_NODE, okay)
 static void right_button(struct device *gpio, struct gpio_callback *cb,
-			 u32_t pins)
+			 uint32_t pins)
 {
 	int ret;
-	u8_t state = status[MOUSE_BTN_REPORT_POS];
+	uint8_t state = status[MOUSE_BTN_REPORT_POS];
 
 	if (IS_ENABLED(CONFIG_USB_DEVICE_REMOTE_WAKEUP)) {
 		if (usb_status == USB_DC_SUSPEND) {
@@ -145,7 +145,7 @@ static void right_button(struct device *gpio, struct gpio_callback *cb,
 		return;
 	}
 
-	if (def_val[1] != (u8_t)ret) {
+	if (def_val[1] != (uint8_t)ret) {
 		state |= MOUSE_BTN_RIGHT;
 	} else {
 		state &= ~MOUSE_BTN_RIGHT;
@@ -159,10 +159,10 @@ static void right_button(struct device *gpio, struct gpio_callback *cb,
 #endif
 
 #if DT_NODE_HAS_STATUS(SW2_NODE, okay)
-static void x_move(struct device *gpio, struct gpio_callback *cb, u32_t pins)
+static void x_move(struct device *gpio, struct gpio_callback *cb, uint32_t pins)
 {
 	int ret;
-	u8_t state = status[MOUSE_X_REPORT_POS];
+	uint8_t state = status[MOUSE_X_REPORT_POS];
 
 	ret = gpio_pin_get(gpio, PIN2);
 	if (ret < 0) {
@@ -171,7 +171,7 @@ static void x_move(struct device *gpio, struct gpio_callback *cb, u32_t pins)
 		return;
 	}
 
-	if (def_val[2] != (u8_t)ret) {
+	if (def_val[2] != (uint8_t)ret) {
 		state += 10U;
 	}
 
@@ -183,10 +183,10 @@ static void x_move(struct device *gpio, struct gpio_callback *cb, u32_t pins)
 #endif
 
 #if DT_NODE_HAS_STATUS(SW3_NODE, okay)
-static void y_move(struct device *gpio, struct gpio_callback *cb, u32_t pins)
+static void y_move(struct device *gpio, struct gpio_callback *cb, uint32_t pins)
 {
 	int ret;
-	u8_t state = status[MOUSE_Y_REPORT_POS];
+	uint8_t state = status[MOUSE_Y_REPORT_POS];
 
 	ret = gpio_pin_get(gpio, PIN3);
 	if (ret < 0) {
@@ -195,7 +195,7 @@ static void y_move(struct device *gpio, struct gpio_callback *cb, u32_t pins)
 		return;
 	}
 
-	if (def_val[3] != (u8_t)ret) {
+	if (def_val[3] != (uint8_t)ret) {
 		state += 10U;
 	}
 
@@ -206,9 +206,9 @@ static void y_move(struct device *gpio, struct gpio_callback *cb, u32_t pins)
 }
 #endif
 
-int callbacks_configure(struct device *gpio, u32_t pin, int flags,
+int callbacks_configure(struct device *gpio, uint32_t pin, int flags,
 			gpio_callback_handler_t handler,
-			struct gpio_callback *callback, u8_t *val)
+			struct gpio_callback *callback, uint8_t *val)
 {
 	int ret;
 
@@ -231,7 +231,7 @@ int callbacks_configure(struct device *gpio, u32_t pin, int flags,
 		return ret;
 	}
 
-	*val = (u8_t)ret;
+	*val = (uint8_t)ret;
 
 	gpio_init_callback(callback, handler, BIT(pin));
 	ret = gpio_add_callback(gpio, callback);
@@ -254,7 +254,7 @@ int callbacks_configure(struct device *gpio, u32_t pin, int flags,
 void main(void)
 {
 	int ret;
-	u8_t report[4] = { 0x00 };
+	uint8_t report[4] = { 0x00 };
 	struct device *led_dev, *hid_dev;
 
 	led_dev = device_get_binding(LED_PORT);

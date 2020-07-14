@@ -144,3 +144,8 @@
 &test_spi_iis3dhhc {
 	irq-gpios = <&test_gpio 0 0>, <&test_gpio 0 0>;
 };
+
+/* disable device to conflict with i2c version */
+&test_spi_iis2dh {
+	status = "disabled";
+};

@@ -17,7 +17,7 @@ K_THREAD_STACK_DEFINE(civetweb_stack, CIVETWEB_MAIN_THREAD_STACK_SIZE);
 struct civetweb_info {
 	const char *version;
 	const char *os;
-	u32_t features;
+	uint32_t features;
 	const char *feature_list;
 	const char *build;
 	const char *compiler;

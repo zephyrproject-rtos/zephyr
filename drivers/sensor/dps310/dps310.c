@@ -206,94 +206,94 @@ enum {
 #define POW_2_19_MINUS_1	BIT_MASK(19)
 
 /* Needed because the values are referenced by pointer. */
-static const u8_t REG_ADDR_MEAS_CFG = IFX_DPS310_REG_ADDR_MEAS_CFG;
-static const u8_t REG_ADDR_CALIB_COEFF_0 = IFX_DPS310_REG_ADDR_COEF_0;
-static const u8_t REG_ADDR_TMP_B2 = IFX_DPS310_REG_ADDR_TMP_B2;
-static const u8_t REG_ADDR_PSR_B2 = IFX_DPS310_REG_ADDR_PSR_B2;
-static const u8_t REG_ADDR_COEF_SRCE = IFX_DPS310_REG_ADDR_COEF_SRCE;
+static const uint8_t REG_ADDR_MEAS_CFG = IFX_DPS310_REG_ADDR_MEAS_CFG;
+static const uint8_t REG_ADDR_CALIB_COEFF_0 = IFX_DPS310_REG_ADDR_COEF_0;
+static const uint8_t REG_ADDR_TMP_B2 = IFX_DPS310_REG_ADDR_TMP_B2;
+static const uint8_t REG_ADDR_PSR_B2 = IFX_DPS310_REG_ADDR_PSR_B2;
+static const uint8_t REG_ADDR_COEF_SRCE = IFX_DPS310_REG_ADDR_COEF_SRCE;
 
 /* calibration coefficients */
 struct dps310_cal_coeff {
 	/* Pressure Sensor Calibration Coefficients */
-	s32_t c00; /* 20bit */
-	s32_t c10; /* 20bit */
-	s16_t c01; /* 16bit */
-	s16_t c11; /* 16bit */
-	s16_t c20; /* 16bit */
-	s16_t c21; /* 16bit */
-	s16_t c30; /* 16bit */
+	int32_t c00; /* 20bit */
+	int32_t c10; /* 20bit */
+	int16_t c01; /* 16bit */
+	int16_t c11; /* 16bit */
+	int16_t c20; /* 16bit */
+	int16_t c21; /* 16bit */
+	int16_t c30; /* 16bit */
 	/* Temperature Sensor Calibration Coefficients */
-	s16_t c0; /* 12bit */
-	s16_t c1; /* 12bit */
+	int16_t c0; /* 12bit */
+	int16_t c1; /* 12bit */
 };
 
 struct dps310_data {
 	struct device *i2c_master;
 	struct dps310_cal_coeff comp;
 	/* Temperature Values */
-	s32_t tmp_val1;
-	s32_t tmp_val2;
+	int32_t tmp_val1;
+	int32_t tmp_val2;
 	/* Last raw temperature value for temperature compensation */
-	s32_t raw_tmp;
+	int32_t raw_tmp;
 	/* Pressure Values */
-	s32_t psr_val1;
-	s32_t psr_val2;
+	int32_t psr_val1;
+	int32_t psr_val2;
 };
 
 struct dps310_cfg {
 	char *i2c_bus_name;
-	u16_t i2c_addr;
+	uint16_t i2c_addr;
 };
 
 /*
  * Convert the bytes from calibration memory to calibration coefficients
  * structure
  */
-static void dps310_calib_coeff_creation(const u8_t raw_coef[18],
+static void dps310_calib_coeff_creation(const uint8_t raw_coef[18],
 					struct dps310_cal_coeff *comp)
 {
 	/* Temperature sensor compensation values */
-	comp->c0 = (((u16_t)raw_coef[0]) << 4) + (raw_coef[1] >> 4);
+	comp->c0 = (((uint16_t)raw_coef[0]) << 4) + (raw_coef[1] >> 4);
 	/* coefficient is 2nd compliment */
 	if (comp->c0 > POW_2_11_MINUS_1) {
 		comp->c0 = comp->c0 - POW_2_12;
 	}
 
-	comp->c1 = (((u16_t)(raw_coef[1] & 0x0F)) << 8) + raw_coef[2];
+	comp->c1 = (((uint16_t)(raw_coef[1] & 0x0F)) << 8) + raw_coef[2];
 	/* coefficient is 2nd compliment */
 	if (comp->c1 > POW_2_11_MINUS_1) {
 		comp->c1 = comp->c1 - POW_2_12;
 	}
 
 	/* Pressure sensor compensation values */
-	comp->c00 = (((u32_t)raw_coef[3]) << 12) + (((u16_t)raw_coef[4]) << 4) +
+	comp->c00 = (((uint32_t)raw_coef[3]) << 12) + (((uint16_t)raw_coef[4]) << 4) +
 		    (raw_coef[5] >> 4);
 	/* coefficient is 2nd compliment */
 	if (comp->c00 > POW_2_19_MINUS_1) {
 		comp->c00 = comp->c00 - POW_2_20;
 	}
 
-	comp->c10 = (((u32_t)(raw_coef[5] & 0x0F)) << 16) +
-		    (((u16_t)raw_coef[6]) << 8) + raw_coef[7];
+	comp->c10 = (((uint32_t)(raw_coef[5] & 0x0F)) << 16) +
+		    (((uint16_t)raw_coef[6]) << 8) + raw_coef[7];
 	/* coefficient is 2nd compliment */
 	if (comp->c10 > POW_2_19_MINUS_1) {
 		comp->c10 = comp->c10 - POW_2_20;
 	}
 
-	comp->c01 = (s16_t) sys_get_be16(&raw_coef[8]);
-	comp->c11 = (s16_t) sys_get_be16(&raw_coef[10]);
-	comp->c20 = (s16_t) sys_get_be16(&raw_coef[12]);
-	comp->c21 = (s16_t) sys_get_be16(&raw_coef[14]);
-	comp->c30 = (s16_t) sys_get_be16(&raw_coef[16]);
+	comp->c01 = (int16_t) sys_get_be16(&raw_coef[8]);
+	comp->c11 = (int16_t) sys_get_be16(&raw_coef[10]);
+	comp->c20 = (int16_t) sys_get_be16(&raw_coef[12]);
+	comp->c21 = (int16_t) sys_get_be16(&raw_coef[14]);
+	comp->c30 = (int16_t) sys_get_be16(&raw_coef[16]);
 }
 
 /* Poll one or multiple bits given by ready_mask in reg_addr */
 static bool poll_rdy(struct dps310_data *data, const struct dps310_cfg *config,
-		     u8_t reg_addr, u8_t ready_mask)
+		     uint8_t reg_addr, uint8_t ready_mask)
 {
 	/* Try only a finite number of times */
 	for (int i = 0; i < POLL_TRIES; i++) {
-		u8_t reg = 0;
+		uint8_t reg = 0;
 		int res = i2c_reg_read_byte(data->i2c_master, config->i2c_addr,
 					 reg_addr, &reg);
 		if (res < 0) {
@@ -318,7 +318,7 @@ static bool dps310_trigger_temperature(struct dps310_data *data,
 				       const struct dps310_cfg *config)
 {
 	/* command to start temperature measurement */
-	static const u8_t tmp_meas_cmd[] = {
+	static const uint8_t tmp_meas_cmd[] = {
 		IFX_DPS310_REG_ADDR_MEAS_CFG,
 		IFX_DPS310_MODE_COMMAND_TEMPERATURE
 	};
@@ -348,7 +348,7 @@ static bool dps310_trigger_pressure(struct dps310_data *data,
 				    const struct dps310_cfg *config)
 {
 	/* command to start pressure measurement */
-	static const u8_t psr_meas_cmd[] = {
+	static const uint8_t psr_meas_cmd[] = {
 		IFX_DPS310_REG_ADDR_MEAS_CFG,
 		IFX_DPS310_MODE_COMMAND_PRESSURE
 	};
@@ -382,7 +382,7 @@ static void dps310_hw_bug_fix(struct dps310_data *data,
 			      const struct dps310_cfg *config)
 {
 	/* setup the necessary 5 sequences to fix the hw bug */
-	static const u8_t hw_bug_fix_sequence[HW_BUG_FIX_SEQUENCE_LEN][2] = {
+	static const uint8_t hw_bug_fix_sequence[HW_BUG_FIX_SEQUENCE_LEN][2] = {
 		/*
 		 * First write valid signature on 0x0e and 0x0f
 		 * to unlock address 0x62
@@ -412,19 +412,19 @@ static void dps310_hw_bug_fix(struct dps310_data *data,
  * The formula is based on the Chapter 4.9.2 in the datasheet and was
  * modified to need only integer arithmetic.
  */
-static void dps310_scale_temperature(s32_t tmp_raw, struct dps310_data *data)
+static void dps310_scale_temperature(int32_t tmp_raw, struct dps310_data *data)
 {
 	const struct dps310_cal_coeff *comp = &data->comp;
 
 	/* first term, rescaled to micro °C */
-	s32_t tmp_p0 = (1000000 / 2) * comp->c0;
+	int32_t tmp_p0 = (1000000 / 2) * comp->c0;
 
 	/* second term, rescaled to mirco °C */
-	s32_t tmp_p1 =
-		(((s64_t)1000000) * comp->c1 * tmp_raw) / IFX_DPS310_SF_TMP;
+	int32_t tmp_p1 =
+		(((int64_t)1000000) * comp->c1 * tmp_raw) / IFX_DPS310_SF_TMP;
 
 	/* calculate the temperature corresponding to the datasheet */
-	s32_t tmp_final = tmp_p0 + tmp_p1; /* value is in micro °C */
+	int32_t tmp_final = tmp_p0 + tmp_p1; /* value is in micro °C */
 
 	/* store calculated value */
 	data->tmp_val1 = tmp_final / 1000000;
@@ -435,7 +435,7 @@ static void dps310_scale_temperature(s32_t tmp_raw, struct dps310_data *data)
  * Scale and temperature compensate the raw pressure measurement value to
  * Kilopascal. The formula is based on the Chapter 4.9.1 in the datasheet.
  */
-static void dps310_scale_pressure(s32_t tmp_raw, s32_t psr_raw,
+static void dps310_scale_pressure(int32_t tmp_raw, int32_t psr_raw,
 				  struct dps310_data *data)
 {
 	const struct dps310_cal_coeff *comp = &data->comp;
@@ -458,11 +458,11 @@ static void dps310_scale_pressure(s32_t tmp_raw, s32_t psr_raw,
 	data->psr_val2 = (psr_final - data->psr_val1) * 1000000;
 }
 
-/* Convert the raw sensor data to s32_t */
-static s32_t raw_to_int24(const u8_t raw[3])
+/* Convert the raw sensor data to int32_t */
+static int32_t raw_to_int24(const uint8_t raw[3])
 {
 	/* convert from twos complement */
-	s32_t res = (s32_t) sys_get_be24(raw);
+	int32_t res = (int32_t) sys_get_be24(raw);
 
 	if (res > POW_2_23_MINUS_1) {
 		res -= POW_2_24;
@@ -484,7 +484,7 @@ static bool dps310_measure_tmp_psr(struct dps310_data *data,
 	}
 
 	/* memory for pressure and temperature raw values */
-	u8_t value_raw[6];
+	uint8_t value_raw[6];
 
 	/* read pressure and temperature raw values in one continuous read */
 	int res = i2c_write_read(data->i2c_master, config->i2c_addr,
@@ -496,7 +496,7 @@ static bool dps310_measure_tmp_psr(struct dps310_data *data,
 	}
 
 	/* convert raw data to int */
-	s32_t psr_raw = raw_to_int24(&value_raw[0]);
+	int32_t psr_raw = raw_to_int24(&value_raw[0]);
 
 	data->raw_tmp = raw_to_int24(&value_raw[3]);
 
@@ -520,7 +520,7 @@ static bool dps310_measure_psr(struct dps310_data *data,
 	}
 
 	/* memory for pressure raw value */
-	u8_t value_raw[3];
+	uint8_t value_raw[3];
 
 	/* read pressure raw values in one continuous read */
 	int res = i2c_write_read(data->i2c_master, config->i2c_addr,
@@ -532,7 +532,7 @@ static bool dps310_measure_psr(struct dps310_data *data,
 	}
 
 	/* convert raw data to int */
-	s32_t psr_raw = raw_to_int24(&value_raw[0]);
+	int32_t psr_raw = raw_to_int24(&value_raw[0]);
 
 	dps310_scale_pressure(data->raw_tmp, psr_raw, data);
 
@@ -549,7 +549,7 @@ static bool dps310_measure_tmp(struct dps310_data *data,
 	}
 
 	/* memory for temperature raw value */
-	u8_t value_raw[3];
+	uint8_t value_raw[3];
 
 	/* read temperature raw values in one continuous read */
 	int res = i2c_write_read(data->i2c_master, config->i2c_addr,
@@ -580,7 +580,7 @@ static int dps310_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	u8_t product_id = 0;
+	uint8_t product_id = 0;
 	int res = i2c_reg_read_byte(data->i2c_master, config->i2c_addr,
 				 IFX_DPS310_REG_ADDR_PRODUCT_ID, &product_id);
 
@@ -606,7 +606,7 @@ static int dps310_init(struct device *dev)
 	}
 
 	/* read calibration coefficients */
-	u8_t raw_coef[18] = { 0 };
+	uint8_t raw_coef[18] = { 0 };
 
 	res = i2c_write_read(data->i2c_master, config->i2c_addr,
 			     &REG_ADDR_CALIB_COEFF_0, 1, &raw_coef, 18);
@@ -622,7 +622,7 @@ static int dps310_init(struct device *dev)
 	 * check which temperature sensor was used for calibration and use it
 	 * for measurements.
 	 */
-	u8_t tmp_coef_srce = 0;
+	uint8_t tmp_coef_srce = 0;
 
 	res = i2c_write_read(data->i2c_master, config->i2c_addr,
 			     &REG_ADDR_COEF_SRCE, 1, &tmp_coef_srce, 18);
@@ -638,7 +638,7 @@ static int dps310_init(struct device *dev)
 	tmp_coef_srce |= IFX_DPS310_TMP_CFG;
 
 	/* set complete configuration in one write */
-	const u8_t config_seq[] = {
+	const uint8_t config_seq[] = {
 		IFX_DPS310_REG_ADDR_PRS_CFG,	/* start register address */
 		IFX_DPS310_PSR_CFG,		/* PSR_CFG */
 		tmp_coef_srce,			/* TMP_CFG */

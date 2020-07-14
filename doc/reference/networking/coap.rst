@@ -89,8 +89,8 @@ the ``.well-known/core`` CoAP message.
     /* Initialize the CoAP message */
     char *path = "test";
     struct coap_packet request;
-    u8_t data[100];
-    u8_t payload[20];
+    uint8_t data[100];
+    uint8_t payload[20];
 
     coap_packet_init(&request, data, sizeof(data),
                      1, COAP_TYPE_CON, 8, coap_next_token(),
@@ -104,7 +104,7 @@ the ``.well-known/core`` CoAP message.
     coap_packet_append_payload_marker(&request);
 
     /* Append payload */
-    coap_packet_append_payload(&request, (u8_t *)payload,
+    coap_packet_append_payload(&request, (uint8_t *)payload,
                                sizeof(payload) - 1);
 
     /* send over sockets */

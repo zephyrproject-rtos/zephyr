@@ -8,6 +8,7 @@
 #define ZEPHYR_DRIVERS_ETHERNET_ETH_H_
 
 #include <zephyr/types.h>
+#include <random/rand32.h>
 
 /* helper macro to return mac address octet from local_mac_address prop */
 #define NODE_MAC_ADDR_OCTET(node, n) DT_PROP_BY_IDX(node, local_mac_address, n)
@@ -29,9 +30,9 @@
 	UTIL_AND(DT_NODE_HAS_PROP(node, local_mac_address),\
 			(!NODE_MAC_ADDR_NULL(node)))
 
-static inline void gen_random_mac(u8_t *mac_addr, u8_t b0, u8_t b1, u8_t b2)
+static inline void gen_random_mac(uint8_t *mac_addr, uint8_t b0, uint8_t b1, uint8_t b2)
 {
-	u32_t entropy;
+	uint32_t entropy;
 
 	entropy = sys_rand32_get();
 

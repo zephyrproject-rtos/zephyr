@@ -9,7 +9,7 @@
 #include <irq_offload.h>
 #include <kernel.h>
 
-u32_t tick;
+uint32_t tick;
 osStatus_t status_val;
 
 typedef struct {

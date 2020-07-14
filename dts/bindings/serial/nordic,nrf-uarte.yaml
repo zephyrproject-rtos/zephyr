@@ -11,9 +11,6 @@ properties:
     interrupts:
       required: true
 
-    hw-flow-control:
-      type: boolean
-
     tx-pin:
       type: int
       description: TX pin

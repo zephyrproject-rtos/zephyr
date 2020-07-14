@@ -54,13 +54,13 @@ static void spi_mcux_transfer_next_packet(struct device *dev)
 		transfer.configFlags = kSPI_FrameAssert;
 	} else if (ctx->rx_len == 0) {
 		/* tx only, nothing to rx */
-		transfer.txData = (u8_t *) ctx->tx_buf;
+		transfer.txData = (uint8_t *) ctx->tx_buf;
 		transfer.rxData = NULL;
 		transfer.dataSize = ctx->tx_len;
 		transfer.configFlags = kSPI_FrameAssert;
 	} else if (ctx->tx_len == ctx->rx_len) {
 		/* rx and tx are the same length */
-		transfer.txData = (u8_t *) ctx->tx_buf;
+		transfer.txData = (uint8_t *) ctx->tx_buf;
 		transfer.rxData = ctx->rx_buf;
 		transfer.dataSize = ctx->tx_len;
 		transfer.configFlags = kSPI_FrameAssert;
@@ -69,7 +69,7 @@ static void spi_mcux_transfer_next_packet(struct device *dev)
 		 * rx into a longer intermediate buffer. Leave chip select
 		 * active between transfers.
 		 */
-		transfer.txData = (u8_t *) ctx->tx_buf;
+		transfer.txData = (uint8_t *) ctx->tx_buf;
 		transfer.rxData = ctx->rx_buf;
 		transfer.dataSize = ctx->rx_len;
 		transfer.configFlags = 0;
@@ -78,7 +78,7 @@ static void spi_mcux_transfer_next_packet(struct device *dev)
 		 * tx from a longer intermediate buffer. Leave chip select
 		 * active between transfers.
 		 */
-		transfer.txData = (u8_t *) ctx->tx_buf;
+		transfer.txData = (uint8_t *) ctx->tx_buf;
 		transfer.rxData = ctx->rx_buf;
 		transfer.dataSize = ctx->tx_len;
 		transfer.configFlags = 0;
@@ -125,8 +125,8 @@ static int spi_mcux_configure(struct device *dev,
 	struct spi_mcux_data *data = dev->driver_data;
 	SPI_Type *base = config->base;
 	spi_master_config_t master_config;
-	u32_t clock_freq;
-	u32_t word_size;
+	uint32_t clock_freq;
+	uint32_t word_size;
 
 	if (spi_context_configured(&data->ctx, spi_cfg)) {
 		/* This configuration is already in use */

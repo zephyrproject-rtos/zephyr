@@ -1,4 +1,4 @@
-.. _peci:
+.. _peci_api:
 
 PECI
 ####

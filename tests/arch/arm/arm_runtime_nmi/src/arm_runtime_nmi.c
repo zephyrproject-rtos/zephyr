@@ -47,7 +47,7 @@ static void nmi_test_isr(void)
  */
 void test_arm_runtime_nmi(void)
 {
-	u32_t i = 0U;
+	uint32_t i = 0U;
 
 	TC_START("nmi_test_isr");
 	/* Configure the NMI isr */

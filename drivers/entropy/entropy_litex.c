@@ -18,11 +18,11 @@
 #define PRBS_WIDTH      DT_INST_REG_SIZE(0)
 #define SUBREG_SIZE_BIT 8
 
-static inline unsigned int prbs_read(volatile u32_t *reg_status,
-					 volatile u32_t reg_width)
+static inline unsigned int prbs_read(volatile uint32_t *reg_status,
+					 volatile uint32_t reg_width)
 {
-	u32_t shifted_data, shift, i;
-	u32_t result = 0;
+	uint32_t shifted_data, shift, i;
+	uint32_t result = 0;
 
 	for (i = 0; i < reg_width; ++i) {
 		shifted_data = *(reg_status + i);
@@ -33,12 +33,12 @@ static inline unsigned int prbs_read(volatile u32_t *reg_status,
 	return result;
 }
 
-static int entropy_prbs_get_entropy(struct device *dev, u8_t *buffer,
-					 u16_t length)
+static int entropy_prbs_get_entropy(struct device *dev, uint8_t *buffer,
+					 uint16_t length)
 {
 	while (length > 0) {
 		size_t to_copy;
-		u32_t value;
+		uint32_t value;
 
 		value = prbs_read(PRBS_STATUS, PRBS_WIDTH);
 		to_copy = MIN(length, sizeof(value));

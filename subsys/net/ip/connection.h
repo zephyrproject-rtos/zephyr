@@ -63,13 +63,13 @@ struct net_conn {
 	void *user_data;
 
 	/** Connection protocol */
-	u16_t proto;
+	uint16_t proto;
 
 	/** Protocol family */
-	u8_t family;
+	uint8_t family;
 
 	/** Flags for the connection */
-	u8_t flags;
+	uint8_t flags;
 };
 
 /**
@@ -89,20 +89,20 @@ struct net_conn {
  * @return Return 0 if the registration succeed, <0 otherwise.
  */
 #if defined(CONFIG_NET_NATIVE)
-int net_conn_register(u16_t proto, u8_t family,
+int net_conn_register(uint16_t proto, uint8_t family,
 		      const struct sockaddr *remote_addr,
 		      const struct sockaddr *local_addr,
-		      u16_t remote_port,
-		      u16_t local_port,
+		      uint16_t remote_port,
+		      uint16_t local_port,
 		      net_conn_cb_t cb,
 		      void *user_data,
 		      struct net_conn_handle **handle);
 #else
-static inline int net_conn_register(u16_t proto, u8_t family,
+static inline int net_conn_register(uint16_t proto, uint8_t family,
 				    const struct sockaddr *remote_addr,
 				    const struct sockaddr *local_addr,
-				    u16_t remote_port,
-				    u16_t local_port,
+				    uint16_t remote_port,
+				    uint16_t local_port,
 				    net_conn_cb_t cb,
 				    void *user_data,
 				    struct net_conn_handle **handle)
@@ -167,12 +167,12 @@ int net_conn_change_callback(struct net_conn_handle *handle,
 	defined(CONFIG_NET_SOCKETS_PACKET) || defined(CONFIG_NET_SOCKETS_CAN)
 enum net_verdict net_conn_input(struct net_pkt *pkt,
 				union net_ip_header *ip_hdr,
-				u8_t proto,
+				uint8_t proto,
 				union net_proto_header *proto_hdr);
 #else
 static inline enum net_verdict net_conn_input(struct net_pkt *pkt,
 					      union net_ip_header *ip_hdr,
-					      u8_t proto,
+					      uint8_t proto,
 					      union net_proto_header *proto_hdr)
 {
 	return NET_DROP;

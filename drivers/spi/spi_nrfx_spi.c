@@ -19,7 +19,7 @@ struct spi_nrfx_data {
 	size_t chunk_len;
 	bool   busy;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	u32_t pm_state;
+	uint32_t pm_state;
 #endif
 };
 
@@ -38,7 +38,7 @@ static inline const struct spi_nrfx_config *get_dev_config(struct device *dev)
 	return dev->config_info;
 }
 
-static inline nrf_spi_frequency_t get_nrf_spi_frequency(u32_t frequency)
+static inline nrf_spi_frequency_t get_nrf_spi_frequency(uint32_t frequency)
 {
 	/* Get the highest supported frequency not exceeding the requested one.
 	 */
@@ -59,7 +59,7 @@ static inline nrf_spi_frequency_t get_nrf_spi_frequency(u32_t frequency)
 	}
 }
 
-static inline nrf_spi_mode_t get_nrf_spi_mode(u16_t operation)
+static inline nrf_spi_mode_t get_nrf_spi_mode(uint16_t operation)
 {
 	if (SPI_MODE_GET(operation) & SPI_MODE_CPOL) {
 		if (SPI_MODE_GET(operation) & SPI_MODE_CPHA) {
@@ -76,7 +76,7 @@ static inline nrf_spi_mode_t get_nrf_spi_mode(u16_t operation)
 	}
 }
 
-static inline nrf_spi_bit_order_t get_nrf_spi_bit_order(u16_t operation)
+static inline nrf_spi_bit_order_t get_nrf_spi_bit_order(uint16_t operation)
 {
 	if (operation & SPI_TRANSFER_LSB) {
 		return NRF_SPI_BIT_ORDER_LSB_FIRST;
@@ -281,7 +281,7 @@ static int init_spi(struct device *dev)
 }
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static int spi_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
+static int spi_nrfx_pm_control(struct device *dev, uint32_t ctrl_command,
 				void *context, device_pm_cb cb, void *arg)
 {
 	int ret = 0;
@@ -289,7 +289,7 @@ static int spi_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 	const struct spi_nrfx_config *config = get_dev_config(dev);
 
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-		u32_t new_state = *((const u32_t *)context);
+		uint32_t new_state = *((const uint32_t *)context);
 
 		if (new_state != data->pm_state) {
 			switch (new_state) {
@@ -316,7 +316,7 @@ static int spi_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 		}
 	} else {
 		__ASSERT_NO_MSG(ctrl_command == DEVICE_PM_GET_POWER_STATE);
-		*((u32_t *)context) = data->pm_state;
+		*((uint32_t *)context) = data->pm_state;
 	}
 
 	if (cb) {

@@ -47,7 +47,7 @@ int arch_irq_is_enabled(unsigned int irq)
 	return arm_gic_irq_is_enabled(irq);
 }
 
-void z_arm64_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
+void z_arm64_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {
 	arm_gic_irq_set_priority(irq, prio, flags);
 }
@@ -56,7 +56,7 @@ void z_arm64_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			     void (*routine)(void *parameter), void *parameter,
-			     u32_t flags)
+			     uint32_t flags)
 {
 	z_isr_install(irq, routine, parameter);
 	z_arm64_irq_priority_set(irq, priority, flags);

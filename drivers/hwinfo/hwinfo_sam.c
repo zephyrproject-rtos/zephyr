@@ -10,9 +10,9 @@
 #include <soc.h>
 #include <string.h>
 
-static u8_t sam_uid[16];
+static uint8_t sam_uid[16];
 
-ssize_t z_impl_hwinfo_get_device_id(u8_t *buffer, size_t length)
+ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
 	if (length > sizeof(sam_uid)) {
 		length = sizeof(sam_uid);
@@ -34,7 +34,7 @@ ssize_t z_impl_hwinfo_get_device_id(u8_t *buffer, size_t length)
 __ramfunc static void hwinfo_sam_read_device_id(void)
 {
 	Efc *efc = (Efc *)DT_REG_ADDR(DT_INST(0, atmel_sam_flash_controller));
-	u8_t *flash = (u8_t *)CONFIG_FLASH_BASE_ADDRESS;
+	uint8_t *flash = (uint8_t *)CONFIG_FLASH_BASE_ADDRESS;
 	int i;
 
 	/* Switch the flash controller to the unique identifier area. The flash
@@ -65,7 +65,7 @@ __ramfunc static void hwinfo_sam_read_device_id(void)
 static int hwinfo_sam_init(struct device *arg)
 {
 	Efc *efc = (Efc *)DT_REG_ADDR(DT_INST(0, atmel_sam_flash_controller));
-	u32_t fmr;
+	uint32_t fmr;
 	int key;
 
 	/* Disable interrupts. */

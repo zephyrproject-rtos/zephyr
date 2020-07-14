@@ -23,7 +23,7 @@ extern "C" {
  * in include/dt-bindings/pcie/pcie.h: see PCIE_BDF() and friends, since
  * these tuples are referenced from devicetree.
  */
-typedef u32_t pcie_bdf_t;
+typedef uint32_t pcie_bdf_t;
 
 /**
  * @typedef pcie_id_t
@@ -33,7 +33,7 @@ typedef u32_t pcie_bdf_t;
  * pair, which is meant to tell the system what the PCI(e) endpoint is. Again,
  * look to PCIE_ID_* macros in include/dt-bindings/pcie/pcie.h for more.
  */
-typedef u32_t pcie_id_t;
+typedef uint32_t pcie_id_t;
 
 /*
  * These functions are arch-, board-, or SoC-specific.
@@ -48,7 +48,7 @@ typedef u32_t pcie_id_t;
  * @param reg the configuration word index (not address)
  * @return the word read (0xFFFFFFFFU if nonexistent endpoint or word)
  */
-extern u32_t pcie_conf_read(pcie_bdf_t bdf, unsigned int reg);
+extern uint32_t pcie_conf_read(pcie_bdf_t bdf, unsigned int reg);
 
 /**
  * @brief Write a 32-bit word to an endpoint's configuration space.
@@ -59,7 +59,7 @@ extern u32_t pcie_conf_read(pcie_bdf_t bdf, unsigned int reg);
  * @param reg the configuration word index (not address)
  * @param data the value to write
  */
-extern void pcie_conf_write(pcie_bdf_t bdf, unsigned int reg, u32_t data);
+extern void pcie_conf_write(pcie_bdf_t bdf, unsigned int reg, uint32_t data);
 
 /**
  * @brief Probe for the presence of a PCI(e) endpoint.
@@ -74,7 +74,7 @@ extern bool pcie_probe(pcie_bdf_t bdf, pcie_id_t id);
  * @brief Get the nth MMIO address assigned to an endpoint.
  * @param bdf the PCI(e) endpoint
  * @param index (0-based) index
- * @return the (32-bit) address, or PCI_CONF_BAR_NONE if nonexistent.
+ * @return the address, or PCI_CONF_BAR_NONE if nonexistent.
  *
  * A PCI(e) endpoint has 0 or more memory-mapped regions. This function
  * allows the caller to enumerate them by calling with index=0..n. If
@@ -82,17 +82,7 @@ extern bool pcie_probe(pcie_bdf_t bdf, pcie_id_t id);
  * are order-preserving with respect to the endpoint BARs: e.g., index 0
  * will return the lowest-numbered memory BAR on the endpoint.
  */
-extern u32_t pcie_get_mbar(pcie_bdf_t bdf, unsigned int index);
-
-/**
- * @brief Get the nth I/O address assigned to an endpoint.
- * @param bdf the PCI(e) endpoint
- * @param index (0-based) index
- * @return the (32-bit) address, or PCI_CONF_BAR_NONE if nonexistent.
- *
- * Analogous to pcie_get_mbar(), except returns I/O region data.
- */
-extern u32_t pcie_get_iobar(pcie_bdf_t bdf, unsigned int index);
+extern uintptr_t pcie_get_mbar(pcie_bdf_t bdf, unsigned int index);
 
 /**
  * @brief Set or reset bits in the endpoint command/status register.
@@ -101,7 +91,7 @@ extern u32_t pcie_get_iobar(pcie_bdf_t bdf, unsigned int index);
  * @param bits the powerset of bits of interest
  * @param on use true to set bits, false to reset them
  */
-extern void pcie_set_cmd(pcie_bdf_t bdf, u32_t bits, bool on);
+extern void pcie_set_cmd(pcie_bdf_t bdf, uint32_t bits, bool on);
 
 /**
  * @brief Return the IRQ assigned by the firmware/board to an endpoint.
@@ -180,7 +170,7 @@ extern void pcie_irq_enable(pcie_bdf_t bdf, unsigned int irq);
 #define PCIE_CONF_BAR_IO(w)		(((w) & 0x00000001U) == 0x00000001U)
 #define PCIE_CONF_BAR_MEM(w)		(((w) & 0x00000001U) != 0x00000001U)
 #define PCIE_CONF_BAR_64(w)		(((w) & 0x00000006U) == 0x00000004U)
-#define PCIE_CONF_BAR_ADDR(w)		((w) & 0xFFFFFFF0U)
+#define PCIE_CONF_BAR_ADDR(w)		((w) & ~0xfUL)
 #define PCIE_CONF_BAR_NONE		0U
 
 /*

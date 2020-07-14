@@ -79,7 +79,7 @@ void test_thread(void *arg1, void *arg2, void *arg3)
 
 void main(void)
 {
-	u32_t start_time, stop_time, cycles_spent, nanoseconds_spent;
+	uint32_t start_time, stop_time, cycles_spent, nanoseconds_spent;
 	int i;
 
 	printk("Calculate first %d digits of Pi independently by %d threads.\n",
@@ -103,7 +103,7 @@ void main(void)
 	stop_time = k_cycle_get_32();
 
 	cycles_spent = stop_time - start_time;
-	nanoseconds_spent = (u32_t)k_cyc_to_ns_floor64(cycles_spent);
+	nanoseconds_spent = (uint32_t)k_cyc_to_ns_floor64(cycles_spent);
 
 	for (i = 0; i < THREADS_NUM; i++)
 		printk("Pi value calculated by thread #%d: %s\n", i, buffer[i]);

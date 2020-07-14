@@ -19,21 +19,6 @@ to modify the source code if you are using a different servomotor.
 Requirements
 ************
 
-The servomotor must be connected via PWM. The PWM device must be configured
-using the ``pwm-servo`` :ref:`devicetree <dt-guide>` alias. Usually you will
-need to set this up via a :ref:`devicetree overlay <set-devicetree-overlays>`
-like so:
-
-.. code-block:: DTS
-
-   / {
-   	aliases {
-   		pwm-servo = &foo;
-   	};
-   };
-
-Where ``foo`` is the node label of a PWM device in your system.
-
 You will see this error if you try to build this sample for an unsupported
 board:
 
@@ -41,7 +26,23 @@ board:
 
    Unsupported board: pwm-servo devicetree alias is not defined
 
-The sample uses PWM channel 0.
+The sample requires a servomotor whose signal pin is connected to a PWM
+device's channel 0. The PWM device must be configured using the ``pwm-servo``
+:ref:`devicetree <dt-guide>` alias. Usually you will need to set this up via a
+:ref:`devicetree overlay <set-devicetree-overlays>` like so:
+
+.. code-block:: DTS
+
+   / {
+   	aliases {
+   		pwm-servo = &some_pwm_node;
+   	};
+   };
+
+Where ``some_pwm_node`` is the node label of a PWM device in your system.
+
+See :zephyr_file:`samples/basic/servo_motor/boards/bbc_microbit.overlay` for an
+example.
 
 Wiring
 ******
@@ -50,13 +51,12 @@ BBC micro:bit
 =============
 
 You will need to connect the motor's red wire to external 5V, the black wire to
-ground and the white wire to pad 0 on the edge connector.
+ground and the white wire to the SCL pin, i.e. pin 21 on the edge connector.
 
 Building and Running
 ********************
 
-The sample has a devicetree overlay for the :ref:`bbc_microbit` which uses
-``pwm0``.
+The sample has a devicetree overlay for the :ref:`bbc_microbit`.
 
 This sample can be built for multiple boards, in this example we will build it
 for the bbc_microbit board:

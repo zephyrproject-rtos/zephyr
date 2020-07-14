@@ -173,7 +173,7 @@ int __eswifi_off_start_client(struct eswifi_dev *eswifi,
 
 	/* Set Remote Port */
 	snprintk(eswifi->buf, sizeof(eswifi->buf), "P4=%d\r",
-		(u16_t)sys_be16_to_cpu(net_sin(addr)->sin_port));
+		(uint16_t)sys_be16_to_cpu(net_sin(addr)->sin_port));
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
 		LOG_ERR("Unable to set remote port");

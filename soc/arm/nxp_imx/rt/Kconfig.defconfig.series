@@ -8,7 +8,7 @@ if SOC_SERIES_IMX_RT
 config SOC_SERIES
 	default "rt"
 
-config TEXT_SECTION_OFFSET
+config ROM_START_OFFSET
 	default 0x2000 if BOOT_FLEXSPI_NOR || BOOT_SEMC_NOR
 
 config CLOCK_CONTROL_MCUX_CCM
@@ -121,10 +121,10 @@ endif # DATA_SEMC
 if DATA_OCRAM
 
 config SRAM_SIZE
-	default $(dt_node_reg_size_int,/memory@20200000,0,K)
+	default $(dt_node_reg_size_int,/soc/flexram@400b0000/ocram@20200000,0,K)
 
 config SRAM_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/memory@20200000)
+	default $(dt_node_reg_addr_hex,/soc/flexram@400b0000/ocram@20200000)
 
 endif # DATA_OCRAM
 
@@ -135,6 +135,10 @@ config USB_DC_NXP_EHCI
 config VIDEO_MCUX_CSI
 	default y if HAS_MCUX_CSI
 	depends on VIDEO
+
+config DMA_MCUX_EDMA
+	default y if HAS_MCUX_EDMA
+	depends on DMA
 
 source "soc/arm/nxp_imx/rt/Kconfig.defconfig.mimxrt*"
 

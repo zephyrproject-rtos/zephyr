@@ -17,16 +17,17 @@ extern "C" {
 #endif
 
 /**
- * @defgroup devicetree-dmas Devicetree dma API
+ * @defgroup devicetree-dmas Devicetree DMA API
  * @ingroup devicetree
  * @{
  */
 
 /**
- * @brief Get dma controller "name" (label property) at an index
+ * @brief Get a label property from the node referenced by a dmas
+ *        property at an index
  *
- * It's an error if the dma controller referenced by the phandle
- * in property "dmas" at index "idx" has no label property.
+ * It's an error if the DMA controller node referenced by the phandle
+ * in node_id's dmas property at index "idx" has no label property.
  *
  * Example devicetree fragment:
  *
@@ -41,36 +42,36 @@ extern "C" {
  *     n: node {
  *		dmas = <&dma1 1 2 0x400 0x3>,
  *			<&dma2 6 3 0x404 0x5>;
- *		dma-names = "tx", "rx";
  *     };
  *
  * Example usage:
  *
  *     DT_DMAS_LABEL_BY_IDX(DT_NODELABEL(n), 1) // "DMA_2"
  *
- * @param node_id node identifier
- * @param idx logical index into the "dmas" property
- * @return the label property for the dma-controller at index idx
+ * @param node_id node identifier for a node with a dmas property
+ * @param idx logical index into dmas property
+ * @return the label property of the node referenced at index "idx"
  */
 #define DT_DMAS_LABEL_BY_IDX(node_id, idx) \
 	DT_PROP_BY_PHANDLE_IDX(node_id, dmas, idx, label)
 
 /**
- * @brief Get dmas's controller "name" at an index
- * (see @ref DT_DMAS_LABEL_BY_IDX)
- * @param inst instance number
- * @param idx logical index into the "dmas" property
- * @return the label property for the targeted dma-controller
+ * @brief Get a label property from a DT_DRV_COMPAT instance's dmas
+ *        property at an index
+ * @param inst DT_DRV_COMPAT instance number
+ * @param idx logical index into dmas property
+ * @return the label property of the node referenced at index "idx"
+ * @see DT_DMAS_LABEL_BY_IDX()
  */
 #define DT_INST_DMAS_LABEL_BY_IDX(inst, idx) \
 	DT_DMAS_LABEL_BY_IDX(DT_DRV_INST(inst), idx)
 
 /**
- * @brief Get dma controller "name" (label property) by dma channel specifier
- * name
+ * @brief Get a label property from a dmas property by name
  *
- * It's an error if the dma controller referenced by the phandle
- * in property "dmas" referenced as "name" has no label property.
+ * It's an error if the DMA controller node referenced by the phandle
+ * in node_id's dmas property at the element named "name" has no label
+ * property.
  *
  * Example devicetree fragment:
  *
@@ -92,43 +93,47 @@ extern "C" {
  *
  *     DT_DMAS_LABEL_BY_NAME(DT_NODELABEL(n), rx) // "DMA_2"
  *
- * @param node_id node identifier
- * @param name lowercase-and-underscores dma channel specifier name
- * @return the label property for the targeted dma-controller
+ * @param node_id node identifier for a node with a dmas property
+ * @param name lowercase-and-underscores name of a dmas element
+ *             as defined by the node's dma-names property
+ * @return the label property of the node referenced at the named element
  */
 #define DT_DMAS_LABEL_BY_NAME(node_id, name) \
 	DT_PROP(DT_PHANDLE_BY_NAME(node_id, dmas, name), label)
 
 /**
- * @brief Get dmas's controller "name" by name
- * (see @ref DT_DMAS_LABEL_BY_NAME)
- * @param inst instance number
- * @param name lowercase-and-underscores "dmas" name
- * @return the label property for the targeted dma-controller
+ * @brief Get a label property from a DT_DRV_COMPAT instance's dmas
+ *        property by name
+ * @param inst DT_DRV_COMPAT instance number
+ * @param name lowercase-and-underscores name of a dmas element
+ *             as defined by the node's dma-names property
+ * @return the label property of the node referenced at the named element
+ * @see DT_DMAS_LABEL_BY_NAME()
  */
 #define DT_INST_DMAS_LABEL_BY_NAME(inst, name) \
 	DT_DMAS_LABEL_BY_NAME(DT_DRV_INST(inst), name)
 
 /**
- * @brief Get dma channel specifier cell value at an index
+ * @brief Get a DMA specifier's cell value at an index
  *
  * Example devicetree fragment:
  *
  *     dma1: dma@... {
- *             label = "DMA_1";
+ *             compatible = "vnd,dma";
+ *             #dma-cells = <2>;
  *     };
  *
  *     dma2: dma@... {
- *             label = "DMA_2";
+ *             compatible = "vnd,dma";
+ *             #dma-cells = <2>;
  *     };
  *
  *     n: node {
  *		dmas = <&dma1 1 0x400>,
  *		       <&dma2 6 0x404>;
- *		dma-names = "tx", "rx";
  *     };
  *
- * Bindings fragment for the dma nodes:
+ * Bindings fragment for the vnd,dma compatible:
  *
  *     dma-cells:
  *       - channel
@@ -136,40 +141,44 @@ extern "C" {
  *
  * Example usage:
  *
- *     DT_DMAS_CELL_BY_IDX(DT_NODELABEL(n), channel, 0) // 1
- *     DT_DMAS_CELL_BY_IDX(DT_NODELABEL(n), config, 1) // 0x404
+ *     DT_DMAS_CELL_BY_IDX(DT_NODELABEL(n), 0, channel) // 1
+ *     DT_DMAS_CELL_BY_IDX(DT_NODELABEL(n), 1, channel) // 6
+ *     DT_DMAS_CELL_BY_IDX(DT_NODELABEL(n), 0, config) // 0x400
+ *     DT_DMAS_CELL_BY_IDX(DT_NODELABEL(n), 1, config) // 0x404
  *
- * @param node_id node identifier
- * @param cell_name binding's cell name within the specifier at index idx
- * @param idx logical index into the "dmas" property
- * @return the value of "cell" inside the dma channel specifier
+ * @param node_id node identifier for a node with a dmas property
+ * @param idx logical index into dmas property
+ * @param cell lowercase-and-underscores cell name
+ * @return the cell value at index "idx"
+ * @see DT_PHA_BY_IDX()
  */
-
-#define DT_DMAS_CELL_BY_IDX(node_id, cell_name, idx) \
-	DT_PHA_BY_IDX(node_id, dmas, cell_name, idx)
+#define DT_DMAS_CELL_BY_IDX(node_id, idx, cell) \
+	DT_PHA_BY_IDX(node_id, dmas, idx, cell)
 
 /**
- * @brief Get dma channel specifier cell value at an index
- * (see @ref DT_DMAS_CELL_BY_IDX)
- * @param inst instance number
- * @param cell_name binding's cell name within the specifier at index idx
- * @param idx logical index into the "dmas" property
- * @return the value of "cell" inside the dma channel specifier
+ * @brief Get a DT_DRV_COMPAT instance's DMA specifier's cell value at an index
+ * @param inst DT_DRV_COMPAT instance number
+ * @param idx logical index into dmas property
+ * @param cell lowercase-and-underscores cell name
+ * @return the cell value at index "idx"
+ * @see DT_DMAS_CELL_BY_IDX()
  */
-#define DT_INST_DMAS_CELL_BY_IDX(inst, cell_name, idx) \
-	DT_PHA_BY_IDX(DT_DRV_INST(inst), dmas, cell_name, idx)
+#define DT_INST_DMAS_CELL_BY_IDX(inst, idx, cell) \
+	DT_PHA_BY_IDX(DT_DRV_INST(inst), dmas, idx, cell)
 
 /**
- * @brief Get dma channel specifier cell value by name
+ * @brief Get a DMA specifier's cell value by name
  *
  * Example devicetree fragment:
  *
  *     dma1: dma@... {
- *             label = "DMA_1";
+ *             compatible = "vnd,dma";
+ *             #dma-cells = <2>;
  *     };
  *
  *     dma2: dma@... {
- *             label = "DMA_2";
+ *             compatible = "vnd,dma";
+ *             #dma-cells = <2>;
  *     };
  *
  *     n: node {
@@ -178,7 +187,7 @@ extern "C" {
  *		dma-names = "tx", "rx";
  *     };
  *
- * Bindings fragment for the dma nodes:
+ * Bindings fragment for the vnd,dma compatible:
  *
  *     dma-cells:
  *       - channel
@@ -187,63 +196,66 @@ extern "C" {
  * Example usage:
  *
  *     DT_DMAS_CELL_BY_NAME(DT_NODELABEL(n), tx, channel) // 1
+ *     DT_DMAS_CELL_BY_NAME(DT_NODELABEL(n), rx, channel) // 6
+ *     DT_DMAS_CELL_BY_NAME(DT_NODELABEL(n), tx, config) // 0x400
  *     DT_DMAS_CELL_BY_NAME(DT_NODELABEL(n), rx, config) // 0x404
  *
- * @param node_id node identifier
- * @param name lowercase-and-underscores dma channel specifier name
- * @param cell binding's cell name within the specifier referenced as "name"
- * @return the value of "cell" inside the dma channel specifier
- * @see DT_PHA_PHANDLE_IDX()
+ * @param node_id node identifier for a node with a dmas property
+ * @param name lowercase-and-underscores name of a dmas element
+ *             as defined by the node's dma-names property
+ * @param cell lowercase-and-underscores cell name
+ * @return the cell value in the specifier at the named element
+ * @see DT_PHA_BY_NAME()
  */
-
 #define DT_DMAS_CELL_BY_NAME(node_id, name, cell) \
 	DT_PHA_BY_NAME(node_id, dmas, name, cell)
 
 /**
- * @brief Get dma channel specifier cell value by name
- * (see @ref DT_DMAS_CELL_BY_NAME)
- * @param inst instance number
- * @param name lowercase-and-underscores dma channel specifier name
- * @param cell binding's cell name within the specifier referenced as "name"
- * @return the value of "cell" inside the specifier
+ * @brief Get a DT_DRV_COMPAT instance's DMA specifier's cell value by name
+ * @param inst DT_DRV_COMPAT instance number
+ * @param name lowercase-and-underscores name of a dmas element
+ *             as defined by the node's dma-names property
+ * @param cell lowercase-and-underscores cell name
+ * @return the cell value in the specifier at the named element
+ * @see DT_DMAS_CELL_BY_NAME()
  */
 #define DT_INST_DMAS_CELL_BY_NAME(inst, name, cell) \
 	DT_DMAS_CELL_BY_NAME(DT_DRV_INST(inst), name, cell)
 
 /**
- * @brief Does a DMA client have a channel specifier at an index?
- * @param node_id node identifier
- * @param idx logical index into the "dmas" property
- * @return 1 if the "dmas" property has a specifier at index "idx", 0 otherwise
+ * @brief Is index "idx" valid for a dmas property?
+ * @param node_id node identifier for a node with a dmas property
+ * @param idx logical index into dmas property
+ * @return 1 if the "dmas" property has index "idx", 0 otherwise
  */
-
 #define DT_DMAS_HAS_IDX(node_id, idx) \
 	IS_ENABLED(DT_CAT(node_id, _P_dmas_IDX_##idx##_EXISTS))
 
 /**
- * @brief Does a DMA client have a channel specifier at an index?
- * @param inst instance number
- * @param idx logical index into the "dmas" property
+ * @brief Is index "idx" valid for a DT_DRV_COMPAT instance's dmas property?
+ * @param inst DT_DRV_COMPAT instance number
+ * @param idx logical index into dmas property
  * @return 1 if the "dmas" property has a specifier at index "idx", 0 otherwise
  */
-
 #define DT_INST_DMAS_HAS_IDX(inst, idx) \
 	DT_DMAS_HAS_IDX(DT_DRV_INST(inst), idx)
 
 /**
- * @brief Does a DMA client have a DMA specifier with a given name?
- * @param node_id node identifier
- * @param name lowercase-and-underscores dma channel specifier name
- * @return 1 if it has a "name" dma channel specifier, 0 otherwise
+ * @brief Does a dmas property have a named element?
+ * @param node_id node identifier for a node with a dmas property
+ * @param name lowercase-and-underscores name of a dmas element
+ *             as defined by the node's dma-names property
+ * @return 1 if the dmas property has the named element, 0 otherwise
  */
 #define DT_DMAS_HAS_NAME(node_id, name) \
 	IS_ENABLED(DT_CAT(node_id, _P_dmas_NAME_##name##_EXISTS))
 
 /**
- * @brief Does a DMA client have a DMA specifier with a given name?
- * @param inst instance number
- * @param name lowercase-and-underscores dma channel specifier name
- * @return 1 if it has a "name" dma channel specifier, 0 otherwise
+ * @brief Does a DT_DRV_COMPAT instance's dmas property have a named element?
+ * @param inst DT_DRV_COMPAT instance number
+ * @param name lowercase-and-underscores name of a dmas element
+ *             as defined by the node's dma-names property
+ * @return 1 if the dmas property has the named element, 0 otherwise
  */
 #define DT_INST_DMAS_HAS_NAME(inst, name) \
 	DT_DMAS_HAS_NAME(DT_DRV_INST(inst), name)

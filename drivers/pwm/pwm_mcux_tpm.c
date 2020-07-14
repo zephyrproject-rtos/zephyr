@@ -29,23 +29,23 @@ struct mcux_tpm_config {
 	clock_control_subsys_t clock_subsys;
 	tpm_clock_source_t tpm_clock_source;
 	tpm_clock_prescale_t prescale;
-	u8_t channel_count;
+	uint8_t channel_count;
 	tpm_pwm_mode_t mode;
 };
 
 struct mcux_tpm_data {
-	u32_t clock_freq;
-	u32_t period_cycles;
+	uint32_t clock_freq;
+	uint32_t period_cycles;
 	tpm_chnl_pwm_signal_param_t channel[MAX_CHANNELS];
 };
 
-static int mcux_tpm_pin_set(struct device *dev, u32_t pwm,
-			      u32_t period_cycles, u32_t pulse_cycles,
+static int mcux_tpm_pin_set(struct device *dev, uint32_t pwm,
+			      uint32_t period_cycles, uint32_t pulse_cycles,
 			      pwm_flags_t flags)
 {
 	const struct mcux_tpm_config *config = dev->config_info;
 	struct mcux_tpm_data *data = dev->driver_data;
-	u8_t duty_cycle;
+	uint8_t duty_cycle;
 
 	if ((period_cycles == 0U) || (pulse_cycles > period_cycles)) {
 		LOG_ERR("Invalid combination: period_cycles=%d, "
@@ -71,7 +71,7 @@ static int mcux_tpm_pin_set(struct device *dev, u32_t pwm,
 		pulse_cycles, period_cycles, duty_cycle, flags);
 
 	if (period_cycles != data->period_cycles) {
-		u32_t pwm_freq;
+		uint32_t pwm_freq;
 		status_t status;
 
 		if (data->period_cycles != 0) {
@@ -116,8 +116,8 @@ static int mcux_tpm_pin_set(struct device *dev, u32_t pwm,
 	return 0;
 }
 
-static int mcux_tpm_get_cycles_per_sec(struct device *dev, u32_t pwm,
-					 u64_t *cycles)
+static int mcux_tpm_get_cycles_per_sec(struct device *dev, uint32_t pwm,
+					 uint64_t *cycles)
 {
 	const struct mcux_tpm_config *config = dev->config_info;
 	struct mcux_tpm_data *data = dev->driver_data;

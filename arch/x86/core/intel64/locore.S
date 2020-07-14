@@ -11,6 +11,16 @@
 #include <drivers/interrupt_controller/loapic.h>
 #include <arch/cpu.h>
 
+.macro read_tsc var_name
+	push %rax
+	push %rdx
+	rdtsc
+	mov %eax,\var_name
+	mov %edx,\var_name+4
+	pop %rdx
+	pop %rax
+.endm
+
 .section .locore,"ax"
 .code32
 
@@ -124,9 +134,15 @@ go64:	movl %cr4, %eax			/* enable PAE and SSE */
 	orl $(CR0_PG | CR0_WP), %eax
 	movl %eax, %cr0
 
-	jmpl $X86_KERNEL_CS, $1f
-.code64
-1:	movl $X86_KERNEL_DS, %eax
+	jmpl $X86_KERNEL_CS, $enter_code64
+
+	/* Long mode entry point.  Arrive here from the code
+	 * immediately above (shared between main CPU startup and AP
+	 * startup), or from EFI entry in __start64
+	 */
+	.code64
+enter_code64:
+	movl $X86_KERNEL_DS, %eax
 	movw %ax, %ds
 	movw %ax, %es
 	movw %ax, %ss
@@ -166,6 +182,54 @@ go64:	movl %cr4, %eax			/* enable PAE and SSE */
 	movq %rbp, %rdi
 	call z_x86_cpu_init
 
+	/* 64 bit OS entry point, used by EFI support.  UEFI
+	 * guarantees an identity-mapped page table that covers
+	 * physical memory, and the loader stub already used it to
+	 * write all of the Zephyr image, so we know it works for what
+	 * we need.  Other things need fixups to match what multiboot
+	 * 32 bit startup does.
+	 */
+.globl __start64
+__start64:
+	/* Zero the TSC */
+	xorq %rax, %rax
+	xorq %rdx, %rdx
+	movq $X86_TIME_STAMP_COUNTER_MSR, %rcx
+	wrmsr
+
+	lidt idt80
+	lgdt gdt80
+
+	/* These state and flag settings really should be done later,
+	 * in the shared startup path, they aren't required for mode
+	 * transition and having them in the 32 bit stub means they
+	 * have to be duplicated here.
+	 */
+	movq %cr4, %rax
+	orq $(CR4_PAE | CR4_OSFXSR), %rax
+	movq %rax, %cr4
+	clts
+	movq $X86_EFER_MSR, %rcx
+	rdmsr
+	orq $(X86_EFER_MSR_NXE | X86_EFER_MSR_SCE), %rax
+	wrmsr
+	cld
+
+	/* Disable 8259 PIT.  Almost certainly not needed on modern
+	 * UEFI platforms taking this code path, but...
+	 */
+	movb $0xff, %al
+	outb %al, $0x21
+	outb %al, $0xA1
+
+	/* Far call into the Zephyr code segment */
+	movq $x86_cpuboot, %rbp
+	mov jmpdesc, %rax
+	jmp *%rax
+jmpdesc:
+	.quad enter_code64
+	.short X86_KERNEL_CS
+
 /*
  * void x86_sse_init(struct k_thread *thread);
  *
@@ -196,6 +260,10 @@ mxcsr:	.long X86_MXCSR_SANE
 
 .globl z_x86_switch
 z_x86_switch:
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	read_tsc arch_timing_swap_start
+#endif
+
 	/* RSI contains the switch_handle field to which we are
 	 * notionally supposed to store.  Offset it to get back to the
 	 * thread handle instead.
@@ -319,6 +387,17 @@ __resume:
 	/* swapgs variant of Spectre V1. Disable speculation past this point */
 	lfence
 #endif /* CONFIG_X86_BOUNDS_CHECK_BYPASS_MITIGATION */
+
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	cmp $0x1,arch_timing_value_swap_end
+	jne time_read_not_needed
+	movw $0x2,arch_timing_value_swap_end
+	read_tsc arch_timing_value_swap_common
+	pushq arch_timing_swap_start
+	popq arch_timing_value_swap_temp
+time_read_not_needed:
+#endif
+
 	iretq
 
 
@@ -486,6 +565,10 @@ EXCEPT(Z_X86_OOPS_VECTOR);
 .globl x86_irq_args	/* .. for these definitions */
 
 irq:
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	read_tsc arch_timing_irq_start
+#endif
+
 	pushq %rsi
 
 #ifdef CONFIG_USERSPACE
@@ -601,6 +684,10 @@ irq_enter_unnested: /* Not nested: dump state to thread struct for __resume */
 #endif
 
 irq_dispatch:
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	read_tsc arch_timing_irq_end
+#endif
+
 	movq x86_irq_funcs(,%rcx,8), %rbx
 	movq x86_irq_args(,%rcx,8), %rdi
 	call *%rbx
@@ -615,6 +702,7 @@ irq_dispatch:
 #endif
 
 	movq %gs:__x86_tss64_t_cpu_OFFSET, %rsi
+
 	cli
 	addq $CONFIG_ISR_SUBSTACK_SIZE, %gs:__x86_tss64_t_ist1_OFFSET
 	decl ___cpu_t_nested_OFFSET(%rsi)
@@ -850,33 +938,53 @@ idt:
 	IDT(250, INTR, IRQ_STACK); IDT(251, INTR, IRQ_STACK)
 	IDT(252, INTR, IRQ_STACK); IDT(253, INTR, IRQ_STACK)
 	IDT(254, INTR, IRQ_STACK); IDT(255, INTR, IRQ_STACK)
+idt_end:
 
-idt48:
-	.word (idt48 - idt - 1)
+idt48:  /* LIDT descriptor for 32 bit mode */
+	.word (idt_end - idt - 1)
 	.long idt
 
-/*
- * Page tables. Long mode requires them, but we don't implement any memory
- * protection yet, so these simply identity-map the first 4GB w/ 1GB pages.
+idt80:  /* LIDT descriptor for 64 bit mode */
+	.word (idt_end - idt - 1)
+	.quad idt
+
+/* Initial page tables for long mode entry.  This generates a second
+ * level page full of 512 1G PTE entries of the form:
+ *
+ * 0x000000nnn0000083
+ *
+ * Where nnn is an identity-mapped 1G page index in the range
+ * 0x000-0x1ff, and 0x83 marks a present, 1G, read/write page
+ * entry. It's split up somewhat awkwardly to get around gas's
+ * recursion limits in macro expansion.
+ *
+ * This maps the first 512GB of memory space by default, which will
+ * hopefully be enough to reach everything we need before we can
+ * bootstrap the real page tables later.
  */
+.macro populate_ptable base, count=64
+	.long 0x00000083
+	.long 64 - \count + \base
+	.long 0x40000083
+	.long 64 - \count + \base
+	.long 0x80000083
+	.long 64 - \count + \base
+	.long 0xC0000083
+	.long 64 - \count + \base
+.if \count > 1
+	populate_ptable \base, (\count - 1)
+.endif
+.endm
 
 .align 4096
-
 .globl z_x86_flat_ptables
 z_x86_flat_ptables:
 	.long pdp + 0x03		/* 0x03 = R/W, P */
 	.long 0
 	.fill 4088, 1, 0
-
-pdp:	.long 0x00000083		/* 0x83 = 1GB, R/W, P */
-	.long 0
-	.long 0x40000083
-	.long 0
-	.long 0x80000083
-	.long 0
-	.long 0xC0000083
-	.long 0
-	.fill 4064, 1, 0
+pdp:
+	populate_ptable 0
+	populate_ptable 64
 
 .section .gdt,"ad"
 
@@ -931,10 +1039,15 @@ gdt:
 	.word 0, 0, 0, 0, 0
 #endif
 
-gdt48:
-	.word (gdt48 - gdt - 1)
+gdt_end:
+
+gdt48:  /* LGDT descriptor for 32 bit mode */
+	.word (gdt_end - gdt - 1)
 	.long gdt
 
+gdt80:  /* LGDT descriptor for long mode */
+	.word (gdt_end - gdt - 1)
+	.quad gdt
 .section .lodata,"ad"
 
 /*

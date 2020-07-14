@@ -13,14 +13,14 @@
 
 struct upipe_context {
 	struct net_if *iface;
-	u8_t mac_addr[8];
+	uint8_t mac_addr[8];
 	bool stopped;
 	/** RX specific attributes */
-	u8_t uart_pipe_buf[1];
+	uint8_t uart_pipe_buf[1];
 	bool rx;
-	u8_t rx_len;
-	u8_t rx_off;
-	u8_t rx_buf[127];
+	uint8_t rx_len;
+	uint8_t rx_off;
+	uint8_t rx_buf[127];
 };
 
 #endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_UART_PIPE_H_ */

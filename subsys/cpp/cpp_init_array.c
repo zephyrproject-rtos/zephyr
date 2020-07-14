@@ -11,8 +11,8 @@
 
 typedef void (*func_ptr)(void);
 
-extern func_ptr __init_array_start[0];
-extern func_ptr __init_array_end[0];
+extern func_ptr __init_array_start[];
+extern func_ptr __init_array_end[];
 
 /**
  * @brief Execute initialization routines referenced in .init_array section

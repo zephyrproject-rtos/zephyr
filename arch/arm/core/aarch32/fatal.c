@@ -27,10 +27,10 @@ static void esf_dump(const z_arch_esf_t *esf)
 	for (int i = 0; i < 16; i += 4) {
 		LOG_ERR("s[%2d]:  0x%08x  s[%2d]:  0x%08x"
 			"  s[%2d]:  0x%08x  s[%2d]:  0x%08x",
-			i, (u32_t)esf->s[i],
-			i + 1, (u32_t)esf->s[i + 1],
-			i + 2, (u32_t)esf->s[i + 2],
-			i + 3, (u32_t)esf->s[i + 3]);
+			i, (uint32_t)esf->s[i],
+			i + 1, (uint32_t)esf->s[i + 1],
+			i + 2, (uint32_t)esf->s[i + 2],
+			i + 3, (uint32_t)esf->s[i + 3]);
 	}
 	LOG_ERR("fpscr:  0x%08x", esf->fpscr);
 #endif
@@ -88,7 +88,7 @@ void z_do_kernel_oops(const z_arch_esf_t *esf)
 
 FUNC_NORETURN void arch_syscall_oops(void *ssf_ptr)
 {
-	u32_t *ssf_contents = ssf_ptr;
+	uint32_t *ssf_contents = ssf_ptr;
 	z_arch_esf_t oops_esf = { 0 };
 
 	/* TODO: Copy the rest of the register set out of ssf_ptr */

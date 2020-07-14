@@ -27,4 +27,9 @@
 #include "soc_gpio.h"
 #endif
 
+#include <drivers/pcie/pcie.h>
+
+/* This expands to "PCIE_BDF(0, 0x18, 0)" on this platform */
+#define X86_SOC_EARLY_SERIAL_PCIDEV DT_REG_ADDR(DT_CHOSEN(zephyr_console))
+
 #endif /* __SOC_H_ */

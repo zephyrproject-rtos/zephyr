@@ -78,6 +78,8 @@ extern "C" {
 
 /** LE PHY types */
 enum {
+	/** Convenience macro for when no PHY is set. */
+	BT_GAP_LE_PHY_NONE                    = 0,
 	/** LE 1M PHY */
 	BT_GAP_LE_PHY_1M                      = BIT(0),
 	 /** LE 2M PHY */

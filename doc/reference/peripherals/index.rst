@@ -19,7 +19,6 @@ Peripherals
    hwinfo.rst
    i2c_eeprom_slave.rst
    i2c.rst
-   i2s.rst
    ipm.rst
    kscan.rst
    led.rst

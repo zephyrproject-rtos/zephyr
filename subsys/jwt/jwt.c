@@ -138,8 +138,8 @@ static struct json_obj_descr jwt_header_desc[] = {
 };
 
 struct jwt_payload {
-	s32_t exp;
-	s32_t iat;
+	int32_t exp;
+	int32_t iat;
 	const char *aud;
 };
 
@@ -174,8 +174,8 @@ static void jwt_add_header(struct jwt_builder *builder)
 }
 
 int jwt_add_payload(struct jwt_builder *builder,
-		     s32_t exp,
-		     s32_t iat,
+		     int32_t exp,
+		     int32_t iat,
 		     const char *aud)
 {
 	struct jwt_payload payload = {
@@ -209,7 +209,7 @@ int jwt_sign(struct jwt_builder *builder,
 		return res;
 	}
 
-	u8_t hash[32], sig[256];
+	uint8_t hash[32], sig[256];
 	size_t sig_len = sizeof(sig);
 
 	/*
@@ -248,10 +248,10 @@ static int setup_prng(void)
 	}
 	prng_init = true;
 
-	u8_t entropy[TC_AES_KEY_SIZE + TC_AES_BLOCK_SIZE];
+	uint8_t entropy[TC_AES_KEY_SIZE + TC_AES_BLOCK_SIZE];
 
-	for (int i = 0; i < sizeof(entropy); i += sizeof(u32_t)) {
-		u32_t rv = sys_rand32_get();
+	for (int i = 0; i < sizeof(entropy); i += sizeof(uint32_t)) {
+		uint32_t rv = sys_rand32_get();
 
 		memcpy(entropy + i, &rv, sizeof(uint32_t));
 	}
@@ -264,7 +264,7 @@ static int setup_prng(void)
 	return res == TC_CRYPTO_SUCCESS ? 0 : -EINVAL;
 }
 
-int default_CSPRNG(u8_t *dest, unsigned int size)
+int default_CSPRNG(uint8_t *dest, unsigned int size)
 {
 	int res = tc_ctr_prng_generate(&prng_state, NULL, 0, dest, size);
 	return res;
@@ -275,7 +275,7 @@ int jwt_sign(struct jwt_builder *builder,
 	     size_t der_key_len)
 {
 	struct tc_sha256_state_struct ctx;
-	u8_t hash[32], sig[64];
+	uint8_t hash[32], sig[64];
 	int res;
 
 	tc_sha256_init(&ctx);

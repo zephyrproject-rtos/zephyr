@@ -32,7 +32,7 @@ static void tfifo_put(struct k_fifo *pfifo)
 
 	head->snode.next = (sys_snode_t *)tail;
 	tail->snode.next = NULL;
-	k_fifo_put_list(pfifo, (u32_t *)head, (u32_t *)tail);
+	k_fifo_put_list(pfifo, (uint32_t *)head, (uint32_t *)tail);
 
 	/**TESTPOINT: fifo put slist*/
 	sys_slist_t slist;

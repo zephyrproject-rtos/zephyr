@@ -155,11 +155,11 @@
 
 
 struct pi_lcd_data {
-	u8_t	disp_func;	/* Display Function */
-	u8_t	disp_cntl;	/* Display Control */
-	u8_t disp_mode;	/* Display Mode */
-	u8_t	cfg_rows;
-	u8_t	row_offsets[4];
+	uint8_t	disp_func;	/* Display Function */
+	uint8_t	disp_cntl;	/* Display Control */
+	uint8_t disp_mode;	/* Display Mode */
+	uint8_t	cfg_rows;
+	uint8_t	row_offsets[4];
 };
 
 /* Default Configuration - User can update */
@@ -171,7 +171,7 @@ struct pi_lcd_data lcd_data = {
 	.row_offsets = {0x00, 0x00, 0x00, 0x00}
 };
 
-void _set_row_offsets(s8_t row0, s8_t row1, s8_t row2, s8_t row3)
+void _set_row_offsets(int8_t row0, int8_t row1, int8_t row2, int8_t row3)
 {
 	lcd_data.row_offsets[0] = row0;
 	lcd_data.row_offsets[1] = row1;
@@ -191,7 +191,7 @@ void _pi_lcd_toggle_enable(struct device *gpio_dev)
 }
 
 
-void _pi_lcd_4bits_wr(struct device *gpio_dev, u8_t bits)
+void _pi_lcd_4bits_wr(struct device *gpio_dev, uint8_t bits)
 {
 	/* High bits */
 	GPIO_PIN_WR(gpio_dev, GPIO_PIN_PC24_D4, LOW);
@@ -236,7 +236,7 @@ void _pi_lcd_4bits_wr(struct device *gpio_dev, u8_t bits)
 	_pi_lcd_toggle_enable(gpio_dev);
 }
 
-void _pi_lcd_8bits_wr(struct device *gpio_dev, u8_t bits)
+void _pi_lcd_8bits_wr(struct device *gpio_dev, uint8_t bits)
 {
 	/* High bits */
 	GPIO_PIN_WR(gpio_dev, GPIO_PIN_PC21_D7, LOW);
@@ -278,7 +278,7 @@ void _pi_lcd_8bits_wr(struct device *gpio_dev, u8_t bits)
 	_pi_lcd_toggle_enable(gpio_dev);
 }
 
-void _pi_lcd_data(struct device *gpio_dev, u8_t bits)
+void _pi_lcd_data(struct device *gpio_dev, uint8_t bits)
 {
 	if (lcd_data.disp_func & LCD_8BIT_MODE) {
 		_pi_lcd_8bits_wr(gpio_dev, bits);
@@ -287,14 +287,14 @@ void _pi_lcd_data(struct device *gpio_dev, u8_t bits)
 	}
 }
 
-void _pi_lcd_command(struct device *gpio_dev, u8_t bits)
+void _pi_lcd_command(struct device *gpio_dev, uint8_t bits)
 {
 	/* mode = False for command */
 	GPIO_PIN_WR(gpio_dev, GPIO_PIN_PC28_RS, LOW);
 	_pi_lcd_data(gpio_dev, bits);
 }
 
-void _pi_lcd_write(struct device *gpio_dev, u8_t bits)
+void _pi_lcd_write(struct device *gpio_dev, uint8_t bits)
 {
 	/* mode = True for character */
 	GPIO_PIN_WR(gpio_dev, GPIO_PIN_PC28_RS, HIGH);
@@ -313,7 +313,7 @@ void pi_lcd_home(struct device *gpio_dev)
 }
 
 /** Set curson position */
-void pi_lcd_set_cursor(struct device *gpio_dev, u8_t col, u8_t row)
+void pi_lcd_set_cursor(struct device *gpio_dev, uint8_t col, uint8_t row)
 {
 	size_t max_lines;
 
@@ -436,7 +436,7 @@ void pi_lcd_string(struct device *gpio_dev, char *msg)
 {
 	int i;
 	int len = 0;
-	u8_t data;
+	uint8_t data;
 
 	len = strlen(msg);
 	if (len > LCD_WIDTH) {
@@ -451,7 +451,7 @@ void pi_lcd_string(struct device *gpio_dev, char *msg)
 
 
 /** LCD initialization function */
-void pi_lcd_init(struct device *gpio_dev, u8_t cols, u8_t rows, u8_t dotsize)
+void pi_lcd_init(struct device *gpio_dev, uint8_t cols, uint8_t rows, uint8_t dotsize)
 {
 	if (rows > 1) {
 		lcd_data.disp_func |= LCD_2_LINE;

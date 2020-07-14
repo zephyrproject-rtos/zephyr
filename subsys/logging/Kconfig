@@ -86,7 +86,7 @@ config LOG_MIPI_SYST_ENABLE
 
 if !LOG_MINIMAL
 
-menu "Prepend log message with function name"
+menu "Prepend non-hexdump log message with function name"
 	depends on !LOG_FRONTEND
 
 config LOG_FUNC_NAME_PREFIX_ERR

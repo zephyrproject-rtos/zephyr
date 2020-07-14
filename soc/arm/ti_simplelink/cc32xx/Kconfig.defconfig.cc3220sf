@@ -15,7 +15,7 @@ config NUM_IRQS
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 80000000
 
-config TEXT_SECTION_OFFSET
+config ROM_START_OFFSET
 	default 0x800 if XIP
 	default 0x0   if !XIP
 

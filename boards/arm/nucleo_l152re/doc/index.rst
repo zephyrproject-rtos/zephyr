@@ -90,6 +90,8 @@ The Zephyr nucleo_l152re board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | ADC Controller                      |
 +-----------+------------+-------------------------------------+
+| DAC       | on-chip    | DAC Controller                      |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.
 
@@ -119,6 +121,7 @@ Default Zephyr Peripheral Mapping:
 - I2C1 SCL/SDA : PB8/PB9 (Arduino I2C)
 - B1 (USER/blue) : PC13
 - LD1 : PA5
+- DAC : PA4
 
 For mode details please refer to `STM32 Nucleo-64 board User Manual`_.
 

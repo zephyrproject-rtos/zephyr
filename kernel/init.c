@@ -52,8 +52,8 @@ LOG_MODULE_REGISTER(os);
 /* boot time measurement items */
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
-u32_t __noinit z_timestamp_main;  /* timestamp when main task starts */
-u32_t __noinit z_timestamp_idle;  /* timestamp when CPU goes idle */
+uint32_t __noinit z_timestamp_main;  /* timestamp when main task starts */
+uint32_t __noinit z_timestamp_idle;  /* timestamp when CPU goes idle */
 #endif
 
 /* init/main and idle threads */
@@ -108,11 +108,11 @@ void z_bss_zero(void)
 	(void)memset(__bss_start, 0, __bss_end - __bss_start);
 #if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ccm), okay)
 	(void)memset(&__ccm_bss_start, 0,
-		     ((u32_t) &__ccm_bss_end - (u32_t) &__ccm_bss_start));
+		     ((uint32_t) &__ccm_bss_end - (uint32_t) &__ccm_bss_start));
 #endif
 #if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
 	(void)memset(&__dtcm_bss_start, 0,
-		     ((u32_t) &__dtcm_bss_end - (u32_t) &__dtcm_bss_start));
+		     ((uint32_t) &__dtcm_bss_end - (uint32_t) &__dtcm_bss_start));
 #endif
 #ifdef CONFIG_CODE_DATA_RELOCATION
 	extern void bss_zeroing_relocation(void);
@@ -121,7 +121,7 @@ void z_bss_zero(void)
 #endif	/* CONFIG_CODE_DATA_RELOCATION */
 #ifdef CONFIG_COVERAGE_GCOV
 	(void)memset(&__gcov_bss_start, 0,
-		 ((u32_t) &__gcov_bss_end - (u32_t) &__gcov_bss_start));
+		 ((uint32_t) &__gcov_bss_end - (uint32_t) &__gcov_bss_start));
 #endif
 }
 
@@ -169,9 +169,9 @@ void z_data_copy(void)
 	 * value gets set later in z_cstart().
 	 */
 	uintptr_t guard_copy = __stack_chk_guard;
-	u8_t *src = (u8_t *)&_app_smem_rom_start;
-	u8_t *dst = (u8_t *)&_app_smem_start;
-	u32_t count = _app_smem_end - _app_smem_start;
+	uint8_t *src = (uint8_t *)&_app_smem_rom_start;
+	uint8_t *dst = (uint8_t *)&_app_smem_start;
+	uint32_t count = _app_smem_end - _app_smem_start;
 
 	guard_copy = __stack_chk_guard;
 	while (count > 0) {
@@ -373,9 +373,9 @@ static FUNC_NORETURN void switch_to_main_thread(void)
 #endif /* CONFIG_MULTITHREADING */
 
 #if defined(CONFIG_ENTROPY_HAS_DRIVER) || defined(CONFIG_TEST_RANDOM_GENERATOR)
-void z_early_boot_rand_get(u8_t *buf, size_t length)
+void z_early_boot_rand_get(uint8_t *buf, size_t length)
 {
-	int n = sizeof(u32_t);
+	int n = sizeof(uint32_t);
 #ifdef CONFIG_ENTROPY_HAS_DRIVER
 	struct device *entropy = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
 	int rc;
@@ -410,12 +410,12 @@ sys_rand_fallback:
 	 */
 
 	while (length > 0) {
-		u32_t rndbits;
-		u8_t *p_rndbits = (u8_t *)&rndbits;
+		uint32_t rndbits;
+		uint8_t *p_rndbits = (uint8_t *)&rndbits;
 
 		rndbits = sys_rand32_get();
 
-		if (length < sizeof(u32_t)) {
+		if (length < sizeof(uint32_t)) {
 			n = length;
 		}
 
@@ -467,7 +467,7 @@ FUNC_NORETURN void z_cstart(void)
 #ifdef CONFIG_STACK_CANARIES
 	uintptr_t stack_guard;
 
-	z_early_boot_rand_get((u8_t *)&stack_guard, sizeof(stack_guard));
+	z_early_boot_rand_get((uint8_t *)&stack_guard, sizeof(stack_guard));
 	__stack_chk_guard = stack_guard;
 	__stack_chk_guard <<= 8;
 #endif	/* CONFIG_STACK_CANARIES */

@@ -16,9 +16,6 @@
 	"when no channels are provided. Syntax:\n" \
 	"<device_name> <channel name 0> .. <channel name N>"
 
-extern struct device __device_start[];
-extern struct device __device_end[];
-
 const char *sensor_channel_name[SENSOR_CHAN_ALL] = {
 	[SENSOR_CHAN_ACCEL_X] =		"accel_x",
 	[SENSOR_CHAN_ACCEL_Y] =		"accel_y",
@@ -57,19 +54,27 @@ const char *sensor_channel_name[SENSOR_CHAN_ALL] = {
 static int handle_channel_by_name(const struct shell *shell, struct device *dev,
 					const char *channel_name)
 {
-	int i;
 	struct sensor_value value[3];
+	char *endptr;
 	int err;
+	int i;
 
-	for (i = 0; i < ARRAY_SIZE(sensor_channel_name); i++) {
-		if (strcmp(channel_name, sensor_channel_name[i]) == 0) {
-			break;
+	/* Attempt to parse channel name as a number first */
+	i = strtoul(channel_name, &endptr, 0);
+
+	if (*endptr != '\0') {
+		/* Channel name is not a number, look it up */
+		for (i = 0; i < ARRAY_SIZE(sensor_channel_name); i++) {
+			if (strcmp(channel_name, sensor_channel_name[i]) == 0) {
+				break;
+			}
 		}
-	}
 
-	if (i == ARRAY_SIZE(sensor_channel_name)) {
-		shell_error(shell, "Channel not supported (%s)", channel_name);
-		return -ENOTSUP;
+		if (i == ARRAY_SIZE(sensor_channel_name)) {
+			shell_error(shell, "Channel not supported (%s)",
+				    channel_name);
+			return -ENOTSUP;
+		}
 	}
 
 	err = sensor_channel_get(dev, i, value);
@@ -77,7 +82,10 @@ static int handle_channel_by_name(const struct shell *shell, struct device *dev,
 		return err;
 	}
 
-	if (i != SENSOR_CHAN_ACCEL_XYZ &&
+	if (i >= ARRAY_SIZE(sensor_channel_name)) {
+		shell_print(shell, "channel idx=%d value = %10.6f", i,
+			    sensor_value_to_double(&value[0]));
+	} else if (i != SENSOR_CHAN_ACCEL_XYZ &&
 		i != SENSOR_CHAN_GYRO_XYZ &&
 		i != SENSOR_CHAN_MAGN_XYZ) {
 		shell_print(shell,
@@ -162,24 +170,12 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
 static void device_name_get(size_t idx, struct shell_static_entry *entry)
 {
-	int device_idx = 0;
-	struct device *dev;
+	struct device *dev = shell_device_lookup(idx, NULL);
 
-	entry->syntax = NULL;
+	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;
 	entry->help  = NULL;
 	entry->subcmd = &dsub_channel_name;
-
-	for (dev = __device_start; dev != __device_end; dev++) {
-		if ((dev->driver_api != NULL) &&
-		strcmp(dev->name, "") && (dev->name != NULL)) {
-			if (idx == device_idx) {
-				entry->syntax = dev->name;
-				break;
-			}
-			device_idx++;
-		}
-	}
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_sensor,

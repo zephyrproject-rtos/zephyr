@@ -13,6 +13,7 @@ supported:
   - arduino_gpio
   - arduino_i2c
   - arduino_spi
+  - gpio
   - counter
   - nvs
   - i2c

@@ -40,24 +40,24 @@ LOG_MODULE_REGISTER(i2c_sam_twi);
 struct i2c_sam_twi_dev_cfg {
 	Twi *regs;
 	void (*irq_config)(void);
-	u32_t bitrate;
+	uint32_t bitrate;
 	const struct soc_gpio_pin *pin_list;
-	u8_t pin_list_size;
-	u8_t periph_id;
-	u8_t irq_id;
+	uint8_t pin_list_size;
+	uint8_t periph_id;
+	uint8_t irq_id;
 };
 
 struct twi_msg {
 	/* Buffer containing data to read or write */
-	u8_t *buf;
+	uint8_t *buf;
 	/* Length of the buffer */
-	u32_t len;
+	uint32_t len;
 	/* Index of the next byte to be read/written from/to the buffer */
-	u32_t idx;
+	uint32_t idx;
 	/* Value of TWI_SR at the end of the message */
-	u32_t twi_sr;
+	uint32_t twi_sr;
 	/* Transfer flags as defined in the i2c.h file */
-	u8_t flags;
+	uint8_t flags;
 };
 
 /* Device run time data */
@@ -72,10 +72,10 @@ struct i2c_sam_twi_dev_data {
 #define DEV_DATA(dev) \
 	((struct i2c_sam_twi_dev_data *const)(dev)->driver_data)
 
-static int i2c_clk_set(Twi *const twi, u32_t speed)
+static int i2c_clk_set(Twi *const twi, uint32_t speed)
 {
-	u32_t ck_div = 0U;
-	u32_t cl_div;
+	uint32_t ck_div = 0U;
+	uint32_t cl_div;
 	bool div_completed = false;
 
 	/*  From the datasheet "TWI Clock Waveform Generator Register"
@@ -104,11 +104,11 @@ static int i2c_clk_set(Twi *const twi, u32_t speed)
 	return 0;
 }
 
-static int i2c_sam_twi_configure(struct device *dev, u32_t config)
+static int i2c_sam_twi_configure(struct device *dev, uint32_t config)
 {
 	const struct i2c_sam_twi_dev_cfg *const dev_cfg = DEV_CFG(dev);
 	Twi *const twi = dev_cfg->regs;
-	u32_t bitrate;
+	uint32_t bitrate;
 	int ret;
 
 	if (!(config & I2C_MODE_MASTER)) {
@@ -150,7 +150,7 @@ static int i2c_sam_twi_configure(struct device *dev, u32_t config)
 	return 0;
 }
 
-static void write_msg_start(Twi *const twi, struct twi_msg *msg, u8_t daddr)
+static void write_msg_start(Twi *const twi, struct twi_msg *msg, uint8_t daddr)
 {
 	/* Set slave address and number of internal address bytes. */
 	twi->TWI_MMR = TWI_MMR_DADR(daddr);
@@ -162,9 +162,9 @@ static void write_msg_start(Twi *const twi, struct twi_msg *msg, u8_t daddr)
 	twi->TWI_IER = TWI_IER_TXRDY | TWI_IER_TXCOMP | TWI_IER_NACK;
 }
 
-static void read_msg_start(Twi *const twi, struct twi_msg *msg, u8_t daddr)
+static void read_msg_start(Twi *const twi, struct twi_msg *msg, uint8_t daddr)
 {
-	u32_t twi_cr_stop;
+	uint32_t twi_cr_stop;
 
 	/* Set slave address and number of internal address bytes */
 	twi->TWI_MMR = TWI_MMR_MREAD | TWI_MMR_DADR(daddr);
@@ -179,7 +179,7 @@ static void read_msg_start(Twi *const twi, struct twi_msg *msg, u8_t daddr)
 }
 
 static int i2c_sam_twi_transfer(struct device *dev, struct i2c_msg *msgs,
-				u8_t num_msgs, u16_t addr)
+				uint8_t num_msgs, uint16_t addr)
 {
 	const struct i2c_sam_twi_dev_cfg *const dev_cfg = DEV_CFG(dev);
 	struct i2c_sam_twi_dev_data *const dev_data = DEV_DATA(dev);
@@ -241,7 +241,7 @@ static void i2c_sam_twi_isr(void *arg)
 	struct i2c_sam_twi_dev_data *const dev_data = DEV_DATA(dev);
 	Twi *const twi = dev_cfg->regs;
 	struct twi_msg *msg = &dev_data->msg;
-	u32_t isr_status;
+	uint32_t isr_status;
 
 	/* Retrieve interrupt status */
 	isr_status = twi->TWI_SR & twi->TWI_IMR;
@@ -299,7 +299,7 @@ static int i2c_sam_twi_initialize(struct device *dev)
 	const struct i2c_sam_twi_dev_cfg *const dev_cfg = DEV_CFG(dev);
 	struct i2c_sam_twi_dev_data *const dev_data = DEV_DATA(dev);
 	Twi *const twi = dev_cfg->regs;
-	u32_t bitrate_cfg;
+	uint32_t bitrate_cfg;
 	int ret;
 
 	/* Configure interrupts */
@@ -339,7 +339,7 @@ static const struct i2c_driver_api i2c_sam_twi_driver_api = {
 };
 
 #define I2C_TWI_SAM_INIT(n)						\
-	static struct device DEVICE_NAME_GET(i2c##n##_sam);		\
+	DEVICE_DECLARE(i2c##n##_sam);		\
 									\
 	static void i2c##n##_sam_irq_config(void)			\
 	{								\

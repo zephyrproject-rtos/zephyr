@@ -89,6 +89,13 @@ def init():
     #   <path> is an absolute pathlib.Path instance, which is handy for robust
     #   path comparisons.
     #
+    # no_index_modules:
+    #   A list of (<title>, <path>) tuples. See the --no-index-modules flag.
+    #   Empty if --no-index-modules wasn't passed.
+    #
+    #   <path> is an absolute pathlib.Path instance, which is handy for robust
+    #   path comparisons.
+    #
     # separate_all_index:
     #   True if --separate-all-index was passed
     #
@@ -99,6 +106,7 @@ def init():
     global out_dir
     global index_desc
     global modules
+    global no_index_modules
     global separate_all_index
     global strip_module_paths
 
@@ -134,6 +142,25 @@ def init():
             sys.exit(f"error: path '{abspath}' in --modules argument does not exist")
 
         modules.append((title, suffix, abspath, desc_path))
+
+    no_index_modules = []
+    for module_spec in args.no_index_modules:
+        # Split on ',', but keep any ',,' as a literal ','. Temporarily
+        # represent a literal comma with null.
+        spec_parts = [part.replace("\0", ",")
+                      for part in module_spec.replace(",,", "\0").split(",")]
+        if len(spec_parts) == 2:
+            title, path_s = spec_parts
+        else:
+            sys.exit(f"error: --no-index-modules argument '{module_spec}' "
+                     "should have the format <title>,<path>.")
+
+        abspath = pathlib.Path(path_s).resolve()
+        if not abspath.is_dir():
+            sys.exit("error: path '{}' in --no-index-modules argument does not"
+                     " exist".format(abspath))
+
+        no_index_modules.append((title, abspath))
 
 
 def parse_args():
@@ -205,6 +232,26 @@ symbol information pages, showing
 '<title>/path/within/module/Kconfig' for paths that fall
 within modules. This behavior can be disabled by passing
 --keep-module-paths.""")
+
+    parser.add_argument(
+        "--no-index-modules",
+        metavar="NO_INDEX_MODULE_SPECIFICATION",
+        nargs="+",
+        default=[],
+        help="""\
+Passing --no-index-modules works similarly to --modules
+but it does not generate index pages. It only tweaks how
+paths are displayed on symbol information pages, showing
+'<title>/path/within/module/Kconfig' for paths that fall
+within modules. This behavior can be disabled by passing
+--keep-module-paths.
+
+Each NO_INDEX_MODULE_SPECIFICATION has the form
+
+    <title>,<path>
+
+To insert a literal comma into any of the parts, double it,
+e.g. 'My title,, with a comma'.""")
 
     parser.add_argument(
         "--separate-all-index",
@@ -760,6 +807,14 @@ def strip_module_path(path):
                 relpath = abspath.relative_to(mod_path)
             except ValueError:
                 # Not within the module
+                continue
+
+            return f"<{title}>{os.path.sep}{relpath}"
+
+        for title, mod_path in no_index_modules:
+            try:
+                relpath = abspath.relative_to(mod_path)
+            except ValueError:
                 continue
 
             return f"<{title}>{os.path.sep}{relpath}"

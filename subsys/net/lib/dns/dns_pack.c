@@ -9,22 +9,22 @@
 
 #include "dns_pack.h"
 
-static inline u16_t dns_strlen(const char *str)
+static inline uint16_t dns_strlen(const char *str)
 {
 	if (str == NULL) {
 		return 0;
 	}
-	return (u16_t)strlen(str);
+	return (uint16_t)strlen(str);
 }
 
-int dns_msg_pack_qname(u16_t *len, u8_t *buf, u16_t size,
+int dns_msg_pack_qname(uint16_t *len, uint8_t *buf, uint16_t size,
 		       const char *domain_name)
 {
-	u16_t dn_size;
-	u16_t lb_start;
-	u16_t lb_index;
-	u16_t lb_size;
-	u16_t i;
+	uint16_t dn_size;
+	uint16_t lb_start;
+	uint16_t lb_index;
+	uint16_t lb_size;
+	uint16_t i;
 
 	lb_start = 0U;
 	lb_index = 1U;
@@ -65,7 +65,7 @@ int dns_msg_pack_qname(u16_t *len, u8_t *buf, u16_t size,
 }
 
 static inline void set_dns_msg_response(struct dns_msg_t *dns_msg, int type,
-					u16_t pos, u16_t len)
+					uint16_t pos, uint16_t len)
 {
 	dns_msg->response_type = type;
 	dns_msg->response_position = pos;
@@ -76,7 +76,7 @@ static inline void set_dns_msg_response(struct dns_msg_t *dns_msg, int type,
  * Skip encoded FQDN in DNS message.
  * Returns size in bytes of encoded FQDN, or negative error code.
  */
-static int skip_fqdn(u8_t *answer, int buf_sz)
+static int skip_fqdn(uint8_t *answer, int buf_sz)
 {
 	int i = 0;
 
@@ -104,13 +104,13 @@ static int skip_fqdn(u8_t *answer, int buf_sz)
 	return i;
 }
 
-int dns_unpack_answer(struct dns_msg_t *dns_msg, int dname_ptr, u32_t *ttl)
+int dns_unpack_answer(struct dns_msg_t *dns_msg, int dname_ptr, uint32_t *ttl)
 {
 	int dname_len;
-	u16_t rem_size;
-	u16_t pos;
-	u16_t len;
-	u8_t *answer;
+	uint16_t rem_size;
+	uint16_t pos;
+	uint16_t len;
+	uint8_t *answer;
 
 	answer = dns_msg->msg + dns_msg->answer_offset;
 
@@ -175,8 +175,8 @@ int dns_unpack_answer(struct dns_msg_t *dns_msg, int dname_ptr, u32_t *ttl)
 
 int dns_unpack_response_header(struct dns_msg_t *msg, int src_id)
 {
-	u8_t *dns_header;
-	u16_t size;
+	uint8_t *dns_header;
+	uint16_t size;
 	int qdcount;
 	int ancount;
 	int rc;
@@ -226,15 +226,15 @@ int dns_unpack_response_header(struct dns_msg_t *msg, int src_id)
 	return 0;
 }
 
-static int dns_msg_pack_query_header(u8_t *buf, u16_t size, u16_t id)
+static int dns_msg_pack_query_header(uint8_t *buf, uint16_t size, uint16_t id)
 {
-	u16_t offset;
+	uint16_t offset;
 
 	if (size < DNS_MSG_HEADER_SIZE) {
 		return -ENOMEM;
 	}
 
-	UNALIGNED_PUT(htons(id), (u16_t *)(buf));
+	UNALIGNED_PUT(htons(id), (uint16_t *)(buf));
 
 	/* RD = 1, TC = 0, AA = 0, Opcode = 0, QR = 0 <-> 0x01 (1B)
 	 * RCode = 0, Z = 0, RA = 0		      <-> 0x00 (1B)
@@ -251,25 +251,25 @@ static int dns_msg_pack_query_header(u8_t *buf, u16_t size, u16_t id)
 
 	offset += DNS_HEADER_FLAGS_LEN;
 	/* set question counter */
-	UNALIGNED_PUT(htons(1), (u16_t *)(buf + offset));
+	UNALIGNED_PUT(htons(1), (uint16_t *)(buf + offset));
 
 	offset += DNS_QDCOUNT_LEN;
 	/* set answer and ns rr */
-	UNALIGNED_PUT(0, (u32_t *)(buf + offset));
+	UNALIGNED_PUT(0, (uint32_t *)(buf + offset));
 
 	offset += DNS_ANCOUNT_LEN + DNS_NSCOUNT_LEN;
 	/* set the additional records */
-	UNALIGNED_PUT(0, (u16_t *)(buf + offset));
+	UNALIGNED_PUT(0, (uint16_t *)(buf + offset));
 
 	return 0;
 }
 
-int dns_msg_pack_query(u8_t *buf, u16_t *len, u16_t size,
-		       u8_t *qname, u16_t qname_len, u16_t id,
+int dns_msg_pack_query(uint8_t *buf, uint16_t *len, uint16_t size,
+		       uint8_t *qname, uint16_t qname_len, uint16_t id,
 		       enum dns_rr_type qtype)
 {
-	u16_t msg_size;
-	u16_t offset;
+	uint16_t msg_size;
+	uint16_t offset;
 	int rc;
 
 	msg_size = DNS_MSG_HEADER_SIZE + DNS_QTYPE_LEN + DNS_QCLASS_LEN;
@@ -288,18 +288,18 @@ int dns_msg_pack_query(u8_t *buf, u16_t *len, u16_t size,
 	offset += qname_len;
 
 	/* QType */
-	UNALIGNED_PUT(htons(qtype), (u16_t *)(buf + offset + 0));
+	UNALIGNED_PUT(htons(qtype), (uint16_t *)(buf + offset + 0));
 	offset += DNS_QTYPE_LEN;
 
 	/* QClass */
-	UNALIGNED_PUT(htons(DNS_CLASS_IN), (u16_t *)(buf + offset));
+	UNALIGNED_PUT(htons(DNS_CLASS_IN), (uint16_t *)(buf + offset));
 
 	*len = offset + DNS_QCLASS_LEN;
 
 	return 0;
 }
 
-static int dns_find_null(int *qname_size, u8_t *buf, u16_t size)
+static int dns_find_null(int *qname_size, uint8_t *buf, uint16_t size)
 {
 	*qname_size = 0;
 	while (*qname_size < size) {
@@ -313,8 +313,8 @@ static int dns_find_null(int *qname_size, u8_t *buf, u16_t size)
 
 int dns_unpack_response_query(struct dns_msg_t *dns_msg)
 {
-	u8_t *dns_query;
-	u8_t *buf;
+	uint8_t *dns_query;
+	uint8_t *buf;
 	int remaining_size;
 	int qname_size;
 	int offset;
@@ -354,12 +354,12 @@ int dns_unpack_response_query(struct dns_msg_t *dns_msg)
 	return 0;
 }
 
-int dns_copy_qname(u8_t *buf, u16_t *len, u16_t size,
-		   struct dns_msg_t *dns_msg, u16_t pos)
+int dns_copy_qname(uint8_t *buf, uint16_t *len, uint16_t size,
+		   struct dns_msg_t *dns_msg, uint16_t pos)
 {
-	u16_t msg_size = dns_msg->msg_size;
-	u8_t *msg = dns_msg->msg;
-	u16_t lb_size;
+	uint16_t msg_size = dns_msg->msg_size;
+	uint8_t *msg = dns_msg->msg;
+	uint16_t lb_size;
 	int rc = -EINVAL;
 	int i = 0;
 
@@ -378,7 +378,7 @@ int dns_copy_qname(u8_t *buf, u16_t *len, u16_t size,
 
 		/* pointer */
 		if (lb_size > DNS_LABEL_MAX_SIZE) {
-			u8_t mask = DNS_LABEL_MAX_SIZE;
+			uint8_t mask = DNS_LABEL_MAX_SIZE;
 
 			if (pos + 1 >= msg_size) {
 				rc = -ENOMEM;
@@ -418,10 +418,10 @@ int dns_copy_qname(u8_t *buf, u16_t *len, u16_t size,
 	return rc;
 }
 
-int mdns_unpack_query_header(struct dns_msg_t *msg, u16_t *src_id)
+int mdns_unpack_query_header(struct dns_msg_t *msg, uint16_t *src_id)
 {
-	u8_t *dns_header;
-	u16_t size;
+	uint8_t *dns_header;
+	uint16_t size;
 	int qdcount;
 
 	dns_header = msg->msg;
@@ -462,12 +462,12 @@ int mdns_unpack_query_header(struct dns_msg_t *msg, u16_t *src_id)
 }
 
 /* Returns the length of the unpacked name */
-static int dns_unpack_name(const u8_t *msg, int maxlen, const u8_t *src,
-			   struct net_buf *buf, const u8_t **eol)
+static int dns_unpack_name(const uint8_t *msg, int maxlen, const uint8_t *src,
+			   struct net_buf *buf, const uint8_t **eol)
 {
 	int dest_size = net_buf_tailroom(buf);
-	const u8_t *end_of_label = NULL;
-	const u8_t *curr_src = src;
+	const uint8_t *end_of_label = NULL;
+	const uint8_t *curr_src = src;
 	int loop_check = 0, len = -1;
 	int label_len;
 	int val;
@@ -543,8 +543,8 @@ static int dns_unpack_name(const u8_t *msg, int maxlen, const u8_t *src,
 int dns_unpack_query(struct dns_msg_t *dns_msg, struct net_buf *buf,
 		     enum dns_rr_type *qtype, enum dns_class *qclass)
 {
-	const u8_t *end_of_label;
-	u8_t *dns_query;
+	const uint8_t *end_of_label;
+	uint8_t *dns_query;
 	int remaining_size;
 	int ret;
 	int query_type, query_class;

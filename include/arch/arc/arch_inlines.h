@@ -19,7 +19,7 @@
 static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 {
 #ifdef CONFIG_SMP
-	u32_t core;
+	uint32_t core;
 
 	core = z_arc_v2_core_id();
 

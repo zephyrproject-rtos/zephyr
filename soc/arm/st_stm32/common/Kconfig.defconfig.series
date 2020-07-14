@@ -9,8 +9,13 @@ if SOC_FAMILY_STM32
 
 config CORTEX_M_SYSTICK
 	bool
-	default n if STM32_LPTIM_TIMER
-	default y if !STM32_LPTIM_TIMER
+	default y
+	depends on !STM32_LPTIM_TIMER
+
+# set the tick per sec as a divider of the LPTIM clock source
+config SYS_CLOCK_TICKS_PER_SEC
+	default 4096 if STM32_LPTIM_TIMER && STM32_LPTIM_CLOCK_LSE
+	default 4000 if STM32_LPTIM_TIMER && STM32_LPTIM_CLOCK_LSI
 
 config CLOCK_CONTROL_STM32_CUBE
 	default y

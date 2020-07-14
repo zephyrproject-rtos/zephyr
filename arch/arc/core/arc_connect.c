@@ -24,7 +24,7 @@ static struct k_spinlock arc_connect_spinlock;
 
 
 /* Generate an inter-core interrupt to the target core */
-void z_arc_connect_ici_generate(u32_t core)
+void z_arc_connect_ici_generate(uint32_t core)
 {
 	LOCKED(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_INTRPT_GENERATE_IRQ, core);
@@ -32,7 +32,7 @@ void z_arc_connect_ici_generate(u32_t core)
 }
 
 /* Acknowledge the inter-core interrupt raised by core */
-void z_arc_connect_ici_ack(u32_t core)
+void z_arc_connect_ici_ack(uint32_t core)
 {
 	LOCKED(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_INTRPT_GENERATE_ACK, core);
@@ -40,9 +40,9 @@ void z_arc_connect_ici_ack(u32_t core)
 }
 
 /* Read inter-core interrupt status */
-u32_t z_arc_connect_ici_read_status(u32_t core)
+uint32_t z_arc_connect_ici_read_status(uint32_t core)
 {
-	u32_t ret = 0;
+	uint32_t ret = 0;
 
 	LOCKED(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_INTRPT_READ_STATUS, core);
@@ -53,9 +53,9 @@ u32_t z_arc_connect_ici_read_status(u32_t core)
 }
 
 /* Check the source of inter-core interrupt */
-u32_t z_arc_connect_ici_check_src(void)
+uint32_t z_arc_connect_ici_check_src(void)
 {
-	u32_t ret = 0;
+	uint32_t ret = 0;
 
 	LOCKED(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_INTRPT_CHECK_SOURCE, 0);
@@ -68,7 +68,7 @@ u32_t z_arc_connect_ici_check_src(void)
 /* Clear the inter-core interrupt */
 void z_arc_connect_ici_clear(void)
 {
-	u32_t cpu, c;
+	uint32_t cpu, c;
 
 	LOCKED(&arc_connect_spinlock) {
 
@@ -89,7 +89,7 @@ void z_arc_connect_ici_clear(void)
 }
 
 /* Reset the cores in core_mask */
-void z_arc_connect_debug_reset(u32_t core_mask)
+void z_arc_connect_debug_reset(uint32_t core_mask)
 {
 	LOCKED(&arc_connect_spinlock) {
 		z_arc_connect_cmd_data(ARC_CONNECT_CMD_DEBUG_RESET,
@@ -98,7 +98,7 @@ void z_arc_connect_debug_reset(u32_t core_mask)
 }
 
 /* Halt the cores in core_mask */
-void z_arc_connect_debug_halt(u32_t core_mask)
+void z_arc_connect_debug_halt(uint32_t core_mask)
 {
 	LOCKED(&arc_connect_spinlock) {
 		z_arc_connect_cmd_data(ARC_CONNECT_CMD_DEBUG_HALT,
@@ -107,7 +107,7 @@ void z_arc_connect_debug_halt(u32_t core_mask)
 }
 
 /* Run the cores in core_mask */
-void z_arc_connect_debug_run(u32_t core_mask)
+void z_arc_connect_debug_run(uint32_t core_mask)
 {
 	LOCKED(&arc_connect_spinlock) {
 		z_arc_connect_cmd_data(ARC_CONNECT_CMD_DEBUG_RUN,
@@ -116,7 +116,7 @@ void z_arc_connect_debug_run(u32_t core_mask)
 }
 
 /* Set core mask */
-void z_arc_connect_debug_mask_set(u32_t core_mask, u32_t mask)
+void z_arc_connect_debug_mask_set(uint32_t core_mask, uint32_t mask)
 {
 	LOCKED(&arc_connect_spinlock) {
 		z_arc_connect_cmd_data(ARC_CONNECT_CMD_DEBUG_SET_MASK,
@@ -125,9 +125,9 @@ void z_arc_connect_debug_mask_set(u32_t core_mask, u32_t mask)
 }
 
 /* Read core mask */
-u32_t z_arc_connect_debug_mask_read(u32_t core_mask)
+uint32_t z_arc_connect_debug_mask_read(uint32_t core_mask)
 {
-	u32_t ret = 0;
+	uint32_t ret = 0;
 
 	LOCKED(&arc_connect_spinlock) {
 		z_arc_connect_cmd_data(ARC_CONNECT_CMD_DEBUG_READ_MASK,
@@ -141,7 +141,7 @@ u32_t z_arc_connect_debug_mask_read(u32_t core_mask)
 /*
  * Select cores that should be halted if the core issuing the command is halted
  */
-void z_arc_connect_debug_select_set(u32_t core_mask)
+void z_arc_connect_debug_select_set(uint32_t core_mask)
 {
 	LOCKED(&arc_connect_spinlock) {
 		z_arc_connect_cmd_data(ARC_CONNECT_CMD_DEBUG_SET_SELECT,
@@ -150,9 +150,9 @@ void z_arc_connect_debug_select_set(u32_t core_mask)
 }
 
 /* Read the select value */
-u32_t z_arc_connect_debug_select_read(void)
+uint32_t z_arc_connect_debug_select_read(void)
 {
-	u32_t ret = 0;
+	uint32_t ret = 0;
 
 	LOCKED(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_DEBUG_READ_SELECT, 0);
@@ -163,9 +163,9 @@ u32_t z_arc_connect_debug_select_read(void)
 }
 
 /* Read the status, halt or run of all cores in the system */
-u32_t z_arc_connect_debug_en_read(void)
+uint32_t z_arc_connect_debug_en_read(void)
 {
-	u32_t ret = 0;
+	uint32_t ret = 0;
 
 	LOCKED(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_DEBUG_READ_EN, 0);
@@ -176,9 +176,9 @@ u32_t z_arc_connect_debug_en_read(void)
 }
 
 /* Read the last command sent */
-u32_t z_arc_connect_debug_cmd_read(void)
+uint32_t z_arc_connect_debug_cmd_read(void)
 {
-	u32_t ret = 0;
+	uint32_t ret = 0;
 
 	LOCKED(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_DEBUG_READ_CMD, 0);
@@ -189,9 +189,9 @@ u32_t z_arc_connect_debug_cmd_read(void)
 }
 
 /* Read the value of internal MCD_CORE register */
-u32_t z_arc_connect_debug_core_read(void)
+uint32_t z_arc_connect_debug_core_read(void)
 {
-	u32_t ret = 0;
+	uint32_t ret = 0;
 
 	LOCKED(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_DEBUG_READ_CORE, 0);
@@ -210,11 +210,11 @@ void z_arc_connect_gfrc_clear(void)
 }
 
 /* Read total 64 bits of global free running counter */
-u64_t z_arc_connect_gfrc_read(void)
+uint64_t z_arc_connect_gfrc_read(void)
 {
-	u32_t low;
-	u32_t high;
-	u32_t key;
+	uint32_t low;
+	uint32_t high;
+	uint32_t key;
 
 	/*
 	 * each core has its own arc connect interface, i.e.,
@@ -233,7 +233,7 @@ u64_t z_arc_connect_gfrc_read(void)
 
 	arch_irq_unlock(key);
 
-	return (((u64_t)high) << 32) | low;
+	return (((uint64_t)high) << 32) | low;
 }
 
 /* Enable global free running counter */
@@ -253,7 +253,7 @@ void z_arc_connect_gfrc_disable(void)
 }
 
 /* Disable global free running counter */
-void z_arc_connect_gfrc_core_set(u32_t core_mask)
+void z_arc_connect_gfrc_core_set(uint32_t core_mask)
 {
 	LOCKED(&arc_connect_spinlock) {
 		z_arc_connect_cmd_data(ARC_CONNECT_CMD_GFRC_SET_CORE,
@@ -262,9 +262,9 @@ void z_arc_connect_gfrc_core_set(u32_t core_mask)
 }
 
 /* Set the relevant cores to halt global free running counter */
-u32_t z_arc_connect_gfrc_halt_read(void)
+uint32_t z_arc_connect_gfrc_halt_read(void)
 {
-	u32_t ret = 0;
+	uint32_t ret = 0;
 
 	LOCKED(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_GFRC_READ_HALT, 0);
@@ -275,9 +275,9 @@ u32_t z_arc_connect_gfrc_halt_read(void)
 }
 
 /* Read the internal CORE register */
-u32_t z_arc_connect_gfrc_core_read(void)
+uint32_t z_arc_connect_gfrc_core_read(void)
 {
-	u32_t ret = 0;
+	uint32_t ret = 0;
 
 	LOCKED(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_GFRC_READ_CORE, 0);
@@ -304,9 +304,9 @@ void z_arc_connect_idu_disable(void)
 }
 
 /* Read enable status of interrupt distribute unit */
-u32_t z_arc_connect_idu_read_enable(void)
+uint32_t z_arc_connect_idu_read_enable(void)
 {
-	u32_t ret = 0;
+	uint32_t ret = 0;
 
 	LOCKED(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_IDU_READ_ENABLE, 0);
@@ -320,8 +320,8 @@ u32_t z_arc_connect_idu_read_enable(void)
  * Set the triggering mode and distribution mode for the specified common
  * interrupt
  */
-void z_arc_connect_idu_set_mode(u32_t irq_num,
-	u16_t trigger_mode, u16_t distri_mode)
+void z_arc_connect_idu_set_mode(uint32_t irq_num,
+	uint16_t trigger_mode, uint16_t distri_mode)
 {
 	LOCKED(&arc_connect_spinlock) {
 		z_arc_connect_cmd_data(ARC_CONNECT_CMD_IDU_SET_MODE,
@@ -330,9 +330,9 @@ void z_arc_connect_idu_set_mode(u32_t irq_num,
 }
 
 /* Read the internal MODE register of the specified common interrupt */
-u32_t z_arc_connect_idu_read_mode(u32_t irq_num)
+uint32_t z_arc_connect_idu_read_mode(uint32_t irq_num)
 {
-	u32_t ret = 0;
+	uint32_t ret = 0;
 
 	LOCKED(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_IDU_READ_MODE, irq_num);
@@ -346,7 +346,7 @@ u32_t z_arc_connect_idu_read_mode(u32_t irq_num)
  * Set the target cores to receive the specified common interrupt
  * when it is triggered
  */
-void z_arc_connect_idu_set_dest(u32_t irq_num, u32_t core_mask)
+void z_arc_connect_idu_set_dest(uint32_t irq_num, uint32_t core_mask)
 {
 	LOCKED(&arc_connect_spinlock) {
 		z_arc_connect_cmd_data(ARC_CONNECT_CMD_IDU_SET_DEST,
@@ -355,9 +355,9 @@ void z_arc_connect_idu_set_dest(u32_t irq_num, u32_t core_mask)
 }
 
 /* Read the internal DEST register of the specified common interrupt */
-u32_t z_arc_connect_idu_read_dest(u32_t irq_num)
+uint32_t z_arc_connect_idu_read_dest(uint32_t irq_num)
 {
-	u32_t ret = 0;
+	uint32_t ret = 0;
 
 	LOCKED(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_IDU_READ_DEST, irq_num);
@@ -368,7 +368,7 @@ u32_t z_arc_connect_idu_read_dest(u32_t irq_num)
 }
 
 /* Assert the specified common interrupt */
-void z_arc_connect_idu_gen_cirq(u32_t irq_num)
+void z_arc_connect_idu_gen_cirq(uint32_t irq_num)
 {
 	LOCKED(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_IDU_GEN_CIRQ, irq_num);
@@ -376,7 +376,7 @@ void z_arc_connect_idu_gen_cirq(u32_t irq_num)
 }
 
 /* Acknowledge the specified common interrupt */
-void z_arc_connect_idu_ack_cirq(u32_t irq_num)
+void z_arc_connect_idu_ack_cirq(uint32_t irq_num)
 {
 	LOCKED(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_IDU_ACK_CIRQ, irq_num);
@@ -384,9 +384,9 @@ void z_arc_connect_idu_ack_cirq(u32_t irq_num)
 }
 
 /* Read the internal STATUS register of the specified common interrupt */
-u32_t z_arc_connect_idu_check_status(u32_t irq_num)
+uint32_t z_arc_connect_idu_check_status(uint32_t irq_num)
 {
-	u32_t ret = 0;
+	uint32_t ret = 0;
 
 	LOCKED(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_IDU_CHECK_STATUS, irq_num);
@@ -397,9 +397,9 @@ u32_t z_arc_connect_idu_check_status(u32_t irq_num)
 }
 
 /* Read the internal SOURCE register of the specified common interrupt */
-u32_t z_arc_connect_idu_check_source(u32_t irq_num)
+uint32_t z_arc_connect_idu_check_source(uint32_t irq_num)
 {
-	u32_t ret = 0;
+	uint32_t ret = 0;
 
 	LOCKED(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_IDU_CHECK_SOURCE, irq_num);
@@ -410,7 +410,7 @@ u32_t z_arc_connect_idu_check_source(u32_t irq_num)
 }
 
 /* Mask or unmask the specified common interrupt */
-void z_arc_connect_idu_set_mask(u32_t irq_num, u32_t mask)
+void z_arc_connect_idu_set_mask(uint32_t irq_num, uint32_t mask)
 {
 	LOCKED(&arc_connect_spinlock) {
 		z_arc_connect_cmd_data(ARC_CONNECT_CMD_IDU_SET_MASK,
@@ -419,9 +419,9 @@ void z_arc_connect_idu_set_mask(u32_t irq_num, u32_t mask)
 }
 
 /* Read the internal MASK register of the specified common interrupt */
-u32_t z_arc_connect_idu_read_mask(u32_t irq_num)
+uint32_t z_arc_connect_idu_read_mask(uint32_t irq_num)
 {
-	u32_t ret = 0;
+	uint32_t ret = 0;
 
 	LOCKED(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_IDU_READ_MASK, irq_num);
@@ -435,9 +435,9 @@ u32_t z_arc_connect_idu_read_mask(u32_t irq_num)
  * Check if it is the first-acknowledging core to the common interrupt
  * if IDU is programmed in the first-acknowledged mode
  */
-u32_t z_arc_connect_idu_check_first(u32_t irq_num)
+uint32_t z_arc_connect_idu_check_first(uint32_t irq_num)
 {
-	u32_t ret = 0;
+	uint32_t ret = 0;
 
 	LOCKED(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_IDU_CHECK_FIRST, irq_num);

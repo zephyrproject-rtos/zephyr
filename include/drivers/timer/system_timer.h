@@ -41,7 +41,7 @@ extern int z_clock_driver_init(struct device *device);
  * management.  It is a weak symbol that will be implemented as a noop
  * if undefined in the clock driver.
  */
-extern int z_clock_device_ctrl(struct device *device, u32_t ctrl_command,
+extern int z_clock_device_ctrl(struct device *device, uint32_t ctrl_command,
 			       void *context, device_pm_cb cb, void *arg);
 
 /**
@@ -87,7 +87,7 @@ extern int z_clock_device_ctrl(struct device *device, u32_t ctrl_command,
  * @param idle Hint to the driver that the system is about to enter
  *        the idle state immediately after setting the timeout
  */
-extern void z_clock_set_timeout(s32_t ticks, bool idle);
+extern void z_clock_set_timeout(int32_t ticks, bool idle);
 
 /**
  * @brief Timer idle exit notification
@@ -114,7 +114,7 @@ extern void z_clock_idle_exit(void);
  *
  * @param ticks Elapsed time, in ticks
  */
-extern void z_clock_announce(s32_t ticks);
+extern void z_clock_announce(int32_t ticks);
 
 /**
  * @brief Ticks elapsed since last z_clock_announce() call
@@ -124,7 +124,7 @@ extern void z_clock_announce(s32_t ticks);
  * this with appropriate locking, the driver needs only provide an
  * instantaneous answer.
  */
-extern u32_t z_clock_elapsed(void);
+extern uint32_t z_clock_elapsed(void);
 
 #ifdef __cplusplus
 }

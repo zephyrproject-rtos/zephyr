@@ -39,13 +39,13 @@ struct sntp_ctx {
 	 *  This is used to check if the originated timestamp in the server
 	 *  reply matches the one in client request.
 	 */
-	u32_t expected_orig_ts;
+	uint32_t expected_orig_ts;
 };
 
 /** Time as returned by SNTP API, fractional seconds since 1 Jan 1970 */
 struct sntp_time {
-	u64_t seconds;
-	u32_t fraction;
+	uint64_t seconds;
+	uint32_t fraction;
 };
 
 /**
@@ -69,8 +69,8 @@ int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr,
  *
  * @return 0 if ok, <0 if error (-ETIMEDOUT if timeout).
  */
-__deprecated int sntp_request(struct sntp_ctx *ctx, u32_t timeout,
-			      u64_t *epoch_time);
+__deprecated int sntp_request(struct sntp_ctx *ctx, uint32_t timeout,
+			      uint64_t *epoch_time);
 
 /**
  * @brief Perform SNTP query
@@ -82,7 +82,7 @@ __deprecated int sntp_request(struct sntp_ctx *ctx, u32_t timeout,
  *
  * @return 0 if ok, <0 if error (-ETIMEDOUT if timeout).
  */
-int sntp_query(struct sntp_ctx *ctx, u32_t timeout,
+int sntp_query(struct sntp_ctx *ctx, uint32_t timeout,
 	       struct sntp_time *time);
 
 /**
@@ -105,7 +105,7 @@ void sntp_close(struct sntp_ctx *ctx);
  *
  * @return 0 if ok, <0 if error (-ETIMEDOUT if timeout).
  */
-int sntp_simple(const char *server, u32_t timeout,
+int sntp_simple(const char *server, uint32_t timeout,
 		struct sntp_time *time);
 
 #ifdef __cplusplus

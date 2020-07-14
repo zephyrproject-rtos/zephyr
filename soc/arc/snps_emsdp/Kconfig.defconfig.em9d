@@ -37,4 +37,7 @@ config ZTEST_STACKSIZE
 	default 2048
 	depends on ZTEST
 
+config NUM_IRQS
+	default 111
+
 endif # SOC_EMSDP_EM9D

@@ -37,17 +37,17 @@ static void ataes132a_init_states(void)
 	}
 }
 
-static int ataes132a_send_command(struct device *dev, u8_t opcode,
-				  u8_t mode, u8_t *params,
-				  u8_t nparams, u8_t *response,
-				  u8_t *nresponse)
+static int ataes132a_send_command(struct device *dev, uint8_t opcode,
+				  uint8_t mode, uint8_t *params,
+				  uint8_t nparams, uint8_t *response,
+				  uint8_t *nresponse)
 {
 	int retry_count = 0;
 	struct ataes132a_device_data *data = dev->driver_data;
 	const struct ataes132a_device_config *cfg = dev->config_info;
-	u8_t count;
-	u8_t status;
-	u8_t crc[2];
+	uint8_t count;
+	uint8_t status;
+	uint8_t crc[2];
 	int i, i2c_return;
 
 	count = nparams + 5;
@@ -168,7 +168,7 @@ int ataes132a_init(struct device *dev)
 {
 	struct ataes132a_device_data *ataes132a = dev->driver_data;
 	const struct ataes132a_device_config *cfg = dev->config_info;
-	u32_t i2c_cfg;
+	uint32_t i2c_cfg;
 
 	LOG_DBG("ATAES132A INIT");
 
@@ -190,19 +190,19 @@ int ataes132a_init(struct device *dev)
 }
 
 int ataes132a_aes_ccm_decrypt(struct device *dev,
-			      u8_t key_id,
+			      uint8_t key_id,
 			      struct ataes132a_mac_mode *mac_mode,
 			      struct ataes132a_mac_packet *mac_packet,
 			      struct cipher_aead_pkt *aead_op,
-			      u8_t *nonce_buf)
+			      uint8_t *nonce_buf)
 {
-	u8_t command_mode = 0x0;
+	uint8_t command_mode = 0x0;
 	struct ataes132a_device_data *data = dev->driver_data;
-	u8_t out_len;
-	u8_t in_buf_len;
-	u8_t return_code;
-	u8_t expected_out_len;
-	u8_t param_buffer[52];
+	uint8_t out_len;
+	uint8_t in_buf_len;
+	uint8_t return_code;
+	uint8_t expected_out_len;
+	uint8_t param_buffer[52];
 
 	if (!aead_op) {
 		LOG_ERR("Parameter cannot be null");
@@ -390,18 +390,18 @@ int ataes132a_aes_ccm_decrypt(struct device *dev,
 }
 
 int ataes132a_aes_ccm_encrypt(struct device *dev,
-			      u8_t key_id,
+			      uint8_t key_id,
 			      struct ataes132a_mac_mode *mac_mode,
 			      struct cipher_aead_pkt *aead_op,
-			      u8_t *nonce_buf,
-			      u8_t *mac_count)
+			      uint8_t *nonce_buf,
+			      uint8_t *mac_count)
 {
-	u8_t command_mode = 0x0;
+	uint8_t command_mode = 0x0;
 	struct ataes132a_device_data *data = dev->driver_data;
-	u8_t buf_len;
-	u8_t out_len;
-	u8_t return_code;
-	u8_t param_buffer[40];
+	uint8_t buf_len;
+	uint8_t out_len;
+	uint8_t return_code;
+	uint8_t param_buffer[40];
 
 	if (!aead_op) {
 		LOG_ERR("Parameter cannot be null");
@@ -578,14 +578,14 @@ int ataes132a_aes_ccm_encrypt(struct device *dev,
 }
 
 int ataes132a_aes_ecb_block(struct device *dev,
-			    u8_t key_id,
+			    uint8_t key_id,
 			    struct cipher_pkt *pkt)
 {
 	struct ataes132a_device_data *data = dev->driver_data;
-	u8_t buf_len;
-	u8_t out_len;
-	u8_t return_code;
-	u8_t param_buffer[19];
+	uint8_t buf_len;
+	uint8_t out_len;
+	uint8_t return_code;
+	uint8_t param_buffer[19];
 
 	if (!pkt) {
 		LOG_ERR("Parameter cannot be null");
@@ -666,16 +666,16 @@ int ataes132a_aes_ecb_block(struct device *dev,
 }
 
 static int do_ccm_encrypt_mac(struct cipher_ctx *ctx,
-			      struct cipher_aead_pkt *aead_op, u8_t *nonce)
+			      struct cipher_aead_pkt *aead_op, uint8_t *nonce)
 {
 	struct device *dev = ctx->device;
 	struct ataes132a_driver_state *state = ctx->drv_sessn_state;
 	struct ataes132a_mac_mode mac_mode;
-	u8_t key_id;
+	uint8_t key_id;
 
 	key_id = state->key_id;
 
-	assert(*(u8_t *)ctx->key.handle == key_id);
+	assert(*(uint8_t *)ctx->key.handle == key_id);
 
 	/* Removing all this salt from the MAC reduces the protection
 	 * but allows any other crypto implementations to authorize
@@ -715,16 +715,16 @@ static int do_ccm_encrypt_mac(struct cipher_ctx *ctx,
 }
 
 static int do_ccm_decrypt_auth(struct cipher_ctx *ctx,
-			       struct cipher_aead_pkt *aead_op, u8_t *nonce)
+			       struct cipher_aead_pkt *aead_op, uint8_t *nonce)
 {
 	struct device *dev = ctx->device;
 	struct ataes132a_driver_state *state = ctx->drv_sessn_state;
 	struct ataes132a_mac_mode mac_mode;
-	u8_t key_id;
+	uint8_t key_id;
 
 	key_id = state->key_id;
 
-	assert(*(u8_t *)ctx->key.handle == key_id);
+	assert(*(uint8_t *)ctx->key.handle == key_id);
 
 	/* Removing all this salt from the MAC reduces the protection
 	 * but allows any other crypto implementations to authorize
@@ -764,11 +764,11 @@ static int do_block(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 {
 	struct device *dev = ctx->device;
 	struct ataes132a_driver_state *state = ctx->drv_sessn_state;
-	u8_t key_id;
+	uint8_t key_id;
 
 	key_id = state->key_id;
 
-	assert(*(u8_t *)ctx->key.handle == key_id);
+	assert(*(uint8_t *)ctx->key.handle == key_id);
 
 	if (pkt->out_buf_max < 16) {
 		LOG_ERR("Not enough space available in out buffer.");
@@ -796,10 +796,10 @@ static int ataes132a_session_setup(struct device *dev, struct cipher_ctx *ctx,
 				   enum cipher_algo algo, enum cipher_mode mode,
 				   enum cipher_op op_type)
 {
-	u8_t key_id = *((u8_t *)ctx->key.handle);
+	uint8_t key_id = *((uint8_t *)ctx->key.handle);
 	struct ataes132a_device_data *data = dev->driver_data;
 	const struct ataes132a_device_config *cfg = dev->config_info;
-	u8_t config;
+	uint8_t config;
 
 	if (ataes132a_state[key_id].in_use) {
 		LOG_ERR("Session in progress");

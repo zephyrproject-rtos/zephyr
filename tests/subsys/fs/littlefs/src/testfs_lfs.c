@@ -26,9 +26,9 @@ struct fs_mount_t testfs_medium_mnt = {
 	.mnt_point = TESTFS_MNT_POINT_MEDIUM,
 };
 
-static u8_t large_read_buffer[LARGE_CACHE_SIZE];
-static u8_t large_prog_buffer[LARGE_CACHE_SIZE];
-static u32_t large_lookahead_buffer[LARGE_LOOKAHEAD_SIZE / 4U];
+static uint8_t large_read_buffer[LARGE_CACHE_SIZE];
+static uint8_t large_prog_buffer[LARGE_CACHE_SIZE];
+static uint32_t large_lookahead_buffer[LARGE_LOOKAHEAD_SIZE / 4U];
 static struct fs_littlefs large = {
 	.cfg = {
 		.read_size = LARGE_IO_SIZE,

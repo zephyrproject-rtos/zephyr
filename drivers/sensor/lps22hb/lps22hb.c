@@ -20,7 +20,7 @@
 
 LOG_MODULE_REGISTER(LPS22HB, CONFIG_SENSOR_LOG_LEVEL);
 
-static inline int lps22hb_set_odr_raw(struct device *dev, u8_t odr)
+static inline int lps22hb_set_odr_raw(struct device *dev, uint8_t odr)
 {
 	struct lps22hb_data *data = dev->driver_data;
 	const struct lps22hb_config *config = dev->config_info;
@@ -36,7 +36,7 @@ static int lps22hb_sample_fetch(struct device *dev,
 {
 	struct lps22hb_data *data = dev->driver_data;
 	const struct lps22hb_config *config = dev->config_info;
-	u8_t out[5];
+	uint8_t out[5];
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
@@ -46,31 +46,31 @@ static int lps22hb_sample_fetch(struct device *dev,
 		return -EIO;
 	}
 
-	data->sample_press = (s32_t)((u32_t)(out[0]) |
-				     ((u32_t)(out[1]) << 8) |
-				     ((u32_t)(out[2]) << 16));
-	data->sample_temp = (s16_t)((u16_t)(out[3]) |
-				    ((u16_t)(out[4]) << 8));
+	data->sample_press = (int32_t)((uint32_t)(out[0]) |
+				     ((uint32_t)(out[1]) << 8) |
+				     ((uint32_t)(out[2]) << 16));
+	data->sample_temp = (int16_t)((uint16_t)(out[3]) |
+				    ((uint16_t)(out[4]) << 8));
 
 	return 0;
 }
 
 static inline void lps22hb_press_convert(struct sensor_value *val,
-					 s32_t raw_val)
+					 int32_t raw_val)
 {
 	/* Pressure sensitivity is 4096 LSB/hPa */
 	/* Convert raw_val to val in kPa */
 	val->val1 = (raw_val >> 12) / 10;
 	val->val2 = (raw_val >> 12) % 10 * 100000 +
-		(((s32_t)((raw_val) & 0x0FFF) * 100000L) >> 12);
+		(((int32_t)((raw_val) & 0x0FFF) * 100000L) >> 12);
 }
 
 static inline void lps22hb_temp_convert(struct sensor_value *val,
-					s16_t raw_val)
+					int16_t raw_val)
 {
 	/* Temperature sensitivity is 100 LSB/deg C */
 	val->val1 = raw_val / 100;
-	val->val2 = ((s32_t)raw_val % 100) * 10000;
+	val->val2 = ((int32_t)raw_val % 100) * 10000;
 }
 
 static int lps22hb_channel_get(struct device *dev,
@@ -99,7 +99,7 @@ static int lps22hb_init_chip(struct device *dev)
 {
 	struct lps22hb_data *data = dev->driver_data;
 	const struct lps22hb_config *config = dev->config_info;
-	u8_t chip_id;
+	uint8_t chip_id;
 
 	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
 			      LPS22HB_REG_WHO_AM_I, &chip_id) < 0) {

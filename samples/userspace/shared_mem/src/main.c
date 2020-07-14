@@ -27,7 +27,7 @@
  */
 
 /* prepare the memory partition structures  */
-FOR_EACH(K_APPMEM_PARTITION_DEFINE, part0, part1, part2, part3, part4);
+FOR_EACH(K_APPMEM_PARTITION_DEFINE, (;), part0, part1, part2, part3, part4);
 /* prepare the memory domain structures  */
 struct k_mem_domain dom0, dom1, dom2;
 /* each variable starts with a name defined in main.h

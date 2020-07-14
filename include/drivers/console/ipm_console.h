@@ -41,7 +41,7 @@ struct ipm_console_receiver_config_info {
 	 * Ring buffer data area for stashing characters from the interrupt
 	 * callback
 	 */
-	u32_t *ring_buf_data;
+	uint32_t *ring_buf_data;
 
 	/** Size of ring_buf_data in 32-bit chunks */
 	unsigned int rb_size32;

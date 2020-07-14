@@ -31,8 +31,8 @@ static const char *format_time(time_t time,
 }
 
 static void sec_counter_callback(struct device *dev,
-				 u8_t id,
-				 u32_t ticks,
+				 uint8_t id,
+				 uint32_t ticks,
 				 void *ud)
 {
 	printk("Counter callback at %u ms, id %d, ticks %u, ud %p\n",
@@ -40,11 +40,11 @@ static void sec_counter_callback(struct device *dev,
 }
 
 static void sec_alarm_handler(struct device *dev,
-			      u8_t id,
-			      u32_t syncclock,
+			      uint8_t id,
+			      uint32_t syncclock,
 			      void *ud)
 {
-	u32_t now = maxim_ds3231_read_syncclock(dev);
+	uint32_t now = maxim_ds3231_read_syncclock(dev);
 	struct counter_alarm_cfg alarm = {
 		.callback = sec_counter_callback,
 		.ticks = 10,
@@ -95,42 +95,42 @@ void timespec_add(struct timespec *apb,
 }
 
 static void min_alarm_handler(struct device *dev,
-			      u8_t id,
-			      u32_t syncclock,
+			      uint8_t id,
+			      uint32_t syncclock,
 			      void *ud)
 {
-	u32_t time = 0;
+	uint32_t time = 0;
 	struct maxim_ds3231_syncpoint sp = { 0 };
 
 	(void)counter_get_value(dev, &time);
 
-	u32_t uptime = k_uptime_get_32();
-	u8_t us = uptime % 1000U;
+	uint32_t uptime = k_uptime_get_32();
+	uint8_t us = uptime % 1000U;
 
 	uptime /= 1000U;
-	u8_t se = uptime % 60U;
+	uint8_t se = uptime % 60U;
 
 	uptime /= 60U;
-	u8_t mn = uptime % 60U;
+	uint8_t mn = uptime % 60U;
 
 	uptime /= 60U;
-	u8_t hr = uptime;
+	uint8_t hr = uptime;
 
 	(void)maxim_ds3231_get_syncpoint(dev, &sp);
 
-	u32_t offset_syncclock = syncclock - sp.syncclock;
-	u32_t offset_s = time - (u32_t)sp.rtc.tv_sec;
-	u32_t syncclock_Hz = maxim_ds3231_syncclock_frequency(dev);
+	uint32_t offset_syncclock = syncclock - sp.syncclock;
+	uint32_t offset_s = time - (uint32_t)sp.rtc.tv_sec;
+	uint32_t syncclock_Hz = maxim_ds3231_syncclock_frequency(dev);
 	struct timespec adj;
 
 	adj.tv_sec = offset_syncclock / syncclock_Hz;
 	adj.tv_nsec = (offset_syncclock % syncclock_Hz)
-		* (u64_t)NSEC_PER_SEC / syncclock_Hz;
+		* (uint64_t)NSEC_PER_SEC / syncclock_Hz;
 
-	s32_t err_ppm = (s32_t)(offset_syncclock
+	int32_t err_ppm = (int32_t)(offset_syncclock
 				- offset_s * syncclock_Hz)
-			* (s64_t)1000000
-			/ (s32_t)syncclock_Hz / (s32_t)offset_s;
+			* (int64_t)1000000
+			/ (int32_t)syncclock_Hz / (int32_t)offset_s;
 	struct timespec *ts = &sp.rtc;
 
 	ts->tv_sec += adj.tv_sec;
@@ -142,7 +142,7 @@ static void min_alarm_handler(struct device *dev,
 
 	printk("%s: adj %d.%09lu, uptime %u:%02u:%02u.%03u, clk err %d ppm\n",
 	       format_time(time, -1),
-	       (u32_t)(ts->tv_sec - time), ts->tv_nsec,
+	       (uint32_t)(ts->tv_sec - time), ts->tv_nsec,
 	       hr, mn, se, us, err_ppm);
 }
 
@@ -151,7 +151,7 @@ struct maxim_ds3231_alarm min_alarm;
 
 static void show_counter(struct device *ds3231)
 {
-	u32_t now = 0;
+	uint32_t now = 0;
 
 	printk("\nCounter at %p\n", ds3231);
 	printk("\tMax top value: %u (%08x)\n",
@@ -182,16 +182,16 @@ static void set_aligned_clock(struct device *ds3231)
 		return;
 	}
 
-	u32_t syncclock_Hz = maxim_ds3231_syncclock_frequency(ds3231);
-	u32_t syncclock = maxim_ds3231_read_syncclock(ds3231);
-	u32_t now = 0;
+	uint32_t syncclock_Hz = maxim_ds3231_syncclock_frequency(ds3231);
+	uint32_t syncclock = maxim_ds3231_read_syncclock(ds3231);
+	uint32_t now = 0;
 	int rc = counter_get_value(ds3231, &now);
-	u32_t align_hour = now + 3600 - (now % 3600);
+	uint32_t align_hour = now + 3600 - (now % 3600);
 
 	struct maxim_ds3231_syncpoint sp = {
 		.rtc = {
 			.tv_sec = align_hour,
-			.tv_nsec = (u64_t)NSEC_PER_SEC * syncclock / syncclock_Hz,
+			.tv_nsec = (uint64_t)NSEC_PER_SEC * syncclock / syncclock_Hz,
 		},
 		.syncclock = syncclock,
 	};
@@ -205,7 +205,7 @@ static void set_aligned_clock(struct device *ds3231)
 	k_poll_signal_init(&ss);
 	sys_notify_init_signal(&notify, &ss);
 
-	u32_t t0 = k_uptime_get_32();
+	uint32_t t0 = k_uptime_get_32();
 
 	rc = maxim_ds3231_set(ds3231, &sp, &notify);
 
@@ -215,7 +215,7 @@ static void set_aligned_clock(struct device *ds3231)
 	/* Wait for the set to complete */
 	rc = k_poll(&sevt, 1, K_FOREVER);
 
-	u32_t t1 = k_uptime_get_32();
+	uint32_t t1 = k_uptime_get_32();
 
 	/* Delay so log messages from sync can complete */
 	k_sleep(K_MSEC(100));
@@ -223,7 +223,7 @@ static void set_aligned_clock(struct device *ds3231)
 
 	rc = maxim_ds3231_get_syncpoint(ds3231, &sp);
 	printk("wrote sync %d: %u %u at %u\n", rc,
-	       (u32_t)sp.rtc.tv_sec, (u32_t)sp.rtc.tv_nsec,
+	       (uint32_t)sp.rtc.tv_sec, (uint32_t)sp.rtc.tv_nsec,
 	       sp.syncclock);
 }
 
@@ -238,7 +238,7 @@ void main(void)
 		return;
 	}
 
-	u32_t syncclock_Hz = maxim_ds3231_syncclock_frequency(ds3231);
+	uint32_t syncclock_Hz = maxim_ds3231_syncclock_frequency(ds3231);
 
 	printk("DS3231 on %s syncclock %u Hz\n\n", CONFIG_BOARD, syncclock_Hz);
 
@@ -273,14 +273,14 @@ void main(void)
 	k_poll_signal_init(&ss);
 	sys_notify_init_signal(&notify, &ss);
 
-	u32_t t0 = k_uptime_get_32();
+	uint32_t t0 = k_uptime_get_32();
 
 	rc = maxim_ds3231_synchronize(ds3231, &notify);
 	printk("\nSynchronize init: %d\n", rc);
 
 	rc = k_poll(&sevt, 1, K_FOREVER);
 
-	u32_t t1 = k_uptime_get_32();
+	uint32_t t1 = k_uptime_get_32();
 
 	k_sleep(K_MSEC(100));   /* wait for log messages */
 
@@ -288,15 +288,15 @@ void main(void)
 
 	rc = maxim_ds3231_get_syncpoint(ds3231, &sp);
 	printk("\nread sync %d: %u %u at %u\n", rc,
-	       (u32_t)sp.rtc.tv_sec, (u32_t)sp.rtc.tv_nsec,
+	       (uint32_t)sp.rtc.tv_sec, (uint32_t)sp.rtc.tv_nsec,
 	       sp.syncclock);
 
 	rc = maxim_ds3231_get_alarm(ds3231, 0, &sec_alarm);
 	printk("\nAlarm 1 flags %x at %u: %d\n", sec_alarm.flags,
-	       (u32_t)sec_alarm.time, rc);
+	       (uint32_t)sec_alarm.time, rc);
 	rc = maxim_ds3231_get_alarm(ds3231, 1, &min_alarm);
 	printk("Alarm 2 flags %x at %u: %d\n", min_alarm.flags,
-	       (u32_t)min_alarm.time, rc);
+	       (uint32_t)min_alarm.time, rc);
 
 	/* One-shot auto-disable callback in 5 s.  The handler will
 	 * then use the base device counter API to schedule a second
@@ -321,21 +321,21 @@ void main(void)
 
 	rc = maxim_ds3231_set_alarm(ds3231, 0, &sec_alarm);
 	printk("Set sec alarm %x at %u ~ %s: %d\n", sec_alarm.flags,
-	       (u32_t)sec_alarm.time, format_time(sec_alarm.time, -1), rc);
+	       (uint32_t)sec_alarm.time, format_time(sec_alarm.time, -1), rc);
 
 	rc = maxim_ds3231_set_alarm(ds3231, 1, &min_alarm);
 	printk("Set min alarm flags %x at %u ~ %s: %d\n", min_alarm.flags,
-	       (u32_t)min_alarm.time, format_time(min_alarm.time, -1), rc);
+	       (uint32_t)min_alarm.time, format_time(min_alarm.time, -1), rc);
 
 	printk("%u ms in: get alarms: %d %d\n", k_uptime_get_32(),
 	       maxim_ds3231_get_alarm(ds3231, 0, &sec_alarm),
 	       maxim_ds3231_get_alarm(ds3231, 1, &min_alarm));
 	if (rc >= 0) {
 		printk("Sec alarm flags %x at %u ~ %s\n", sec_alarm.flags,
-		       (u32_t)sec_alarm.time, format_time(sec_alarm.time, -1));
+		       (uint32_t)sec_alarm.time, format_time(sec_alarm.time, -1));
 
 		printk("Min alarm flags %x at %u ~ %s\n", min_alarm.flags,
-		       (u32_t)min_alarm.time, format_time(min_alarm.time, -1));
+		       (uint32_t)min_alarm.time, format_time(min_alarm.time, -1));
 	}
 
 	k_sleep(K_FOREVER);

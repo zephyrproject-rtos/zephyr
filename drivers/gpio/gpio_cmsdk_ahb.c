@@ -44,7 +44,7 @@ struct gpio_cmsdk_ahb_dev_data {
 	sys_slist_t gpio_cb;
 };
 
-static int gpio_cmsdk_ahb_port_get_raw(struct device *dev, u32_t *value)
+static int gpio_cmsdk_ahb_port_get_raw(struct device *dev, uint32_t *value)
 {
 	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config_info;
 
@@ -53,8 +53,8 @@ static int gpio_cmsdk_ahb_port_get_raw(struct device *dev, u32_t *value)
 	return 0;
 }
 
-static int gpio_cmsdk_ahb_port_set_masked_raw(struct device *dev, u32_t mask,
-					 u32_t value)
+static int gpio_cmsdk_ahb_port_set_masked_raw(struct device *dev, uint32_t mask,
+					 uint32_t value)
 {
 	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config_info;
 
@@ -63,7 +63,7 @@ static int gpio_cmsdk_ahb_port_set_masked_raw(struct device *dev, u32_t mask,
 	return 0;
 }
 
-static int gpio_cmsdk_ahb_port_set_bits_raw(struct device *dev, u32_t mask)
+static int gpio_cmsdk_ahb_port_set_bits_raw(struct device *dev, uint32_t mask)
 {
 	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config_info;
 
@@ -72,7 +72,7 @@ static int gpio_cmsdk_ahb_port_set_bits_raw(struct device *dev, u32_t mask)
 	return 0;
 }
 
-static int gpio_cmsdk_ahb_port_clear_bits_raw(struct device *dev, u32_t mask)
+static int gpio_cmsdk_ahb_port_clear_bits_raw(struct device *dev, uint32_t mask)
 {
 	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config_info;
 
@@ -81,7 +81,7 @@ static int gpio_cmsdk_ahb_port_clear_bits_raw(struct device *dev, u32_t mask)
 	return 0;
 }
 
-static int gpio_cmsdk_ahb_port_toggle_bits(struct device *dev, u32_t mask)
+static int gpio_cmsdk_ahb_port_toggle_bits(struct device *dev, uint32_t mask)
 {
 	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config_info;
 
@@ -90,7 +90,7 @@ static int gpio_cmsdk_ahb_port_toggle_bits(struct device *dev, u32_t mask)
 	return 0;
 }
 
-static int cmsdk_ahb_gpio_config(struct device *dev, u32_t mask, gpio_flags_t flags)
+static int cmsdk_ahb_gpio_config(struct device *dev, uint32_t mask, gpio_flags_t flags)
 {
 	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config_info;
 
@@ -189,7 +189,7 @@ static void gpio_cmsdk_ahb_isr(void *arg)
 	struct device *dev = (struct device *)arg;
 	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config_info;
 	struct gpio_cmsdk_ahb_dev_data *data = dev->driver_data;
-	u32_t int_stat;
+	uint32_t int_stat;
 
 	int_stat = cfg->port->intstatus;
 
@@ -209,26 +209,6 @@ static int gpio_cmsdk_ahb_manage_callback(struct device *dev,
 	return gpio_manage_callback(&data->gpio_cb, callback, set);
 }
 
-static int gpio_cmsdk_ahb_enable_callback(struct device *dev,
-					  gpio_pin_t pin)
-{
-	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config_info;
-
-	cfg->port->intenset |= BIT(pin);
-
-	return 0;
-}
-
-static int gpio_cmsdk_ahb_disable_callback(struct device *dev,
-					   gpio_pin_t pin)
-{
-	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config_info;
-
-	cfg->port->intenclr |= BIT(pin);
-
-	return 0;
-}
-
 static const struct gpio_driver_api gpio_cmsdk_ahb_drv_api_funcs = {
 	.pin_configure = gpio_cmsdk_ahb_config,
 	.port_get_raw = gpio_cmsdk_ahb_port_get_raw,
@@ -238,8 +218,6 @@ static const struct gpio_driver_api gpio_cmsdk_ahb_drv_api_funcs = {
 	.port_toggle_bits = gpio_cmsdk_ahb_port_toggle_bits,
 	.pin_interrupt_configure = gpio_cmsdk_ahb_pin_interrupt_configure,
 	.manage_callback = gpio_cmsdk_ahb_manage_callback,
-	.enable_callback = gpio_cmsdk_ahb_enable_callback,
-	.disable_callback = gpio_cmsdk_ahb_disable_callback,
 };
 
 /**

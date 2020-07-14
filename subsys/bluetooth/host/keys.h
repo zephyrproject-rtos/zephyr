@@ -33,29 +33,29 @@ enum {
 };
 
 struct bt_ltk {
-	u8_t                    rand[8];
-	u8_t                    ediv[2];
-	u8_t                    val[16];
+	uint8_t                    rand[8];
+	uint8_t                    ediv[2];
+	uint8_t                    val[16];
 };
 
 struct bt_irk {
-	u8_t                    val[16];
+	uint8_t                    val[16];
 	bt_addr_t               rpa;
 };
 
 struct bt_csrk {
-	u8_t                    val[16];
-	u32_t                   cnt;
+	uint8_t                    val[16];
+	uint32_t                   cnt;
 };
 
 struct bt_keys {
-	u8_t                    id;
+	uint8_t                    id;
 	bt_addr_le_t            addr;
-	u8_t                    state;
-	u8_t                    storage_start[0] __aligned(sizeof(void *));
-	u8_t                    enc_size;
-	u8_t                    flags;
-	u16_t                   keys;
+	uint8_t                    state;
+	uint8_t                    storage_start[0] __aligned(sizeof(void *));
+	uint8_t                    enc_size;
+	uint8_t                    flags;
+	uint16_t                   keys;
 	struct bt_ltk           ltk;
 	struct bt_irk           irk;
 #if defined(CONFIG_BT_SIGNING)
@@ -66,7 +66,7 @@ struct bt_keys {
 	struct bt_ltk           slave_ltk;
 #endif /* CONFIG_BT_SMP_SC_PAIR_ONLY */
 #if (defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST))
-	u32_t                   aging_counter;
+	uint32_t                   aging_counter;
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 };
 
@@ -76,11 +76,11 @@ struct bt_keys {
 void bt_keys_foreach(int type, void (*func)(struct bt_keys *keys, void *data),
 		     void *data);
 
-struct bt_keys *bt_keys_get_addr(u8_t id, const bt_addr_le_t *addr);
-struct bt_keys *bt_keys_get_type(int type, u8_t id, const bt_addr_le_t *addr);
-struct bt_keys *bt_keys_find(int type, u8_t id, const bt_addr_le_t *addr);
-struct bt_keys *bt_keys_find_irk(u8_t id, const bt_addr_le_t *addr);
-struct bt_keys *bt_keys_find_addr(u8_t id, const bt_addr_le_t *addr);
+struct bt_keys *bt_keys_get_addr(uint8_t id, const bt_addr_le_t *addr);
+struct bt_keys *bt_keys_get_type(int type, uint8_t id, const bt_addr_le_t *addr);
+struct bt_keys *bt_keys_find(int type, uint8_t id, const bt_addr_le_t *addr);
+struct bt_keys *bt_keys_find_irk(uint8_t id, const bt_addr_le_t *addr);
+struct bt_keys *bt_keys_find_addr(uint8_t id, const bt_addr_le_t *addr);
 
 void bt_keys_add_type(struct bt_keys *keys, int type);
 void bt_keys_clear(struct bt_keys *keys);
@@ -102,16 +102,25 @@ enum {
 
 struct bt_keys_link_key {
 	bt_addr_t               addr;
-	u8_t                    flags;
-	u8_t                    val[16];
+	uint8_t                 storage_start[0]  __aligned(sizeof(void *));
+	uint8_t                 flags;
+	uint8_t                 val[16];
+#if (defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST))
+	uint32_t                aging_counter;
+#endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 };
+#define BT_KEYS_LINK_KEY_STORAGE_LEN     (sizeof(struct bt_keys_link_key) - \
+	offsetof(struct bt_keys_link_key, storage_start))
 
 struct bt_keys_link_key *bt_keys_get_link_key(const bt_addr_t *addr);
 struct bt_keys_link_key *bt_keys_find_link_key(const bt_addr_t *addr);
 void bt_keys_link_key_clear(struct bt_keys_link_key *link_key);
 void bt_keys_link_key_clear_addr(const bt_addr_t *addr);
+void bt_keys_link_key_store(struct bt_keys_link_key *link_key);
+
 
 /* This function is used to signal that the key has been used for paring */
 /* It updates the aging counter and saves it to flash if configuration option */
 /* BT_KEYS_SAVE_AGING_COUNTER_ON_PAIRING is enabled */
-void bt_keys_update_usage(u8_t id, const bt_addr_le_t *addr);
+void bt_keys_update_usage(uint8_t id, const bt_addr_le_t *addr);
+void bt_keys_link_key_update_usage(const bt_addr_t *addr);

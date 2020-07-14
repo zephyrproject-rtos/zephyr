@@ -66,7 +66,7 @@ int lsm6dsl_trigger_set(struct device *dev,
 }
 
 static void lsm6dsl_gpio_callback(struct device *dev,
-				  struct gpio_callback *cb, u32_t pins)
+				  struct gpio_callback *cb, uint32_t pins)
 {
 	struct lsm6dsl_data *drv_data =
 		CONTAINER_OF(cb, struct lsm6dsl_data, gpio_cb);

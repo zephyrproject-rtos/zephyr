@@ -22,12 +22,12 @@ extern "C" {
 #endif
 
 #define MODEM_CMD_DEFINE(name_) \
-static int name_(struct modem_cmd_handler_data *data, u16_t len, \
-		 u8_t **argv, u16_t argc)
+static int name_(struct modem_cmd_handler_data *data, uint16_t len, \
+		 uint8_t **argv, uint16_t argc)
 
 #define MODEM_CMD(cmd_, func_cb_, acount_, adelim_) { \
 	.cmd = cmd_, \
-	.cmd_len = (u16_t)sizeof(cmd_)-1, \
+	.cmd_len = (uint16_t)sizeof(cmd_)-1, \
 	.func = func_cb_, \
 	.arg_count = acount_, \
 	.delim = adelim_, \
@@ -38,7 +38,7 @@ static int name_(struct modem_cmd_handler_data *data, u16_t len, \
 
 #define MODEM_CMD_DIRECT(cmd_, func_cb_) { \
 	.cmd = cmd_, \
-	.cmd_len = (u16_t)sizeof(cmd_)-1, \
+	.cmd_len = (uint16_t)sizeof(cmd_)-1, \
 	.func = func_cb_, \
 	.arg_count = 0, \
 	.delim = "", \
@@ -53,12 +53,12 @@ static int name_(struct modem_cmd_handler_data *data, u16_t len, \
 struct modem_cmd_handler_data;
 
 struct modem_cmd {
-	int (*func)(struct modem_cmd_handler_data *data, u16_t len,
-		    u8_t **argv, u16_t argc);
+	int (*func)(struct modem_cmd_handler_data *data, uint16_t len,
+		    uint8_t **argv, uint16_t argc);
 	const char *cmd;
 	const char *delim;
-	u16_t cmd_len;
-	u16_t arg_count;
+	uint16_t cmd_len;
+	uint16_t arg_count;
 	bool direct;
 };
 
@@ -153,7 +153,7 @@ int modem_cmd_send_nolock(struct modem_iface *iface,
 			  struct modem_cmd_handler *handler,
 			  struct modem_cmd *handler_cmds,
 			  size_t handler_cmds_len,
-			  const u8_t *buf, struct k_sem *sem,
+			  const uint8_t *buf, struct k_sem *sem,
 			  k_timeout_t timeout);
 
 /**
@@ -170,7 +170,7 @@ int modem_cmd_send_nolock(struct modem_iface *iface,
 int modem_cmd_send(struct modem_iface *iface,
 		   struct modem_cmd_handler *handler,
 		   struct modem_cmd *handler_cmds, size_t handler_cmds_len,
-		   const u8_t *buf, struct k_sem *sem, k_timeout_t timeout);
+		   const uint8_t *buf, struct k_sem *sem, k_timeout_t timeout);
 
 /**
  * @brief  send a series of AT commands

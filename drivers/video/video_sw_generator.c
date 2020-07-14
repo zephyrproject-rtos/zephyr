@@ -69,7 +69,7 @@ static int video_sw_generator_stream_stop(struct device *dev)
 }
 
 /* Black, Blue, Red, Purple, Green, Aqua, Yellow, White */
-u16_t rgb565_colorbar_value[] = { 0x0000, 0x001F, 0xF800, 0xF81F,
+uint16_t rgb565_colorbar_value[] = { 0x0000, 0x001F, 0xF800, 0xF81F,
 				  0x07E0, 0x07FF, 0xFFE0, 0xFFFF };
 
 static void __fill_buffer_colorbar(struct video_sw_generator_data *data,
@@ -82,7 +82,7 @@ static void __fill_buffer_colorbar(struct video_sw_generator_data *data,
 		for (w = 0; w < data->fmt.width; w++) {
 			int color_idx =  data->ctrl_vflip ? 7 - w / bw : w / bw;
 			if (data->fmt.pixelformat == VIDEO_PIX_FMT_RGB565) {
-				u16_t *pixel = (u16_t *)&vbuf->buffer[i];
+				uint16_t *pixel = (uint16_t *)&vbuf->buffer[i];
 				*pixel = rgb565_colorbar_value[color_idx];
 				i += 2;
 			}

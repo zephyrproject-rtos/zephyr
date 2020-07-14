@@ -62,7 +62,7 @@ static sys_slist_t conn_used;
 #if (CONFIG_NET_CONN_LOG_LEVEL >= LOG_LEVEL_DBG)
 static inline
 void conn_register_debug(struct net_conn *conn,
-			 u16_t remote_port, u16_t local_port)
+			 uint16_t remote_port, uint16_t local_port)
 {
 	char dst[NET_IPV6_ADDR_LEN];
 	char src[NET_IPV6_ADDR_LEN];
@@ -142,11 +142,11 @@ static void conn_set_unused(struct net_conn *conn)
 }
 
 /* Check if we already have identical connection handler installed. */
-static struct net_conn *conn_find_handler(u16_t proto, u8_t family,
+static struct net_conn *conn_find_handler(uint16_t proto, uint8_t family,
 					  const struct sockaddr *remote_addr,
 					  const struct sockaddr *local_addr,
-					  u16_t remote_port,
-					  u16_t local_port)
+					  uint16_t remote_port,
+					  uint16_t local_port)
 {
 	struct net_conn *conn;
 
@@ -239,17 +239,17 @@ static struct net_conn *conn_find_handler(u16_t proto, u8_t family,
 	return NULL;
 }
 
-int net_conn_register(u16_t proto, u8_t family,
+int net_conn_register(uint16_t proto, uint8_t family,
 		      const struct sockaddr *remote_addr,
 		      const struct sockaddr *local_addr,
-		      u16_t remote_port,
-		      u16_t local_port,
+		      uint16_t remote_port,
+		      uint16_t local_port,
 		      net_conn_cb_t cb,
 		      void *user_data,
 		      struct net_conn_handle **handle)
 {
 	struct net_conn *conn;
-	u8_t flags = 0U;
+	uint8_t flags = 0U;
 
 	conn = conn_find_handler(proto, family, remote_addr, local_addr,
 				 remote_port, local_port);
@@ -470,8 +470,8 @@ static inline void conn_send_icmp_error(struct net_pkt *pkt)
 
 static bool conn_are_end_points_valid(struct net_pkt *pkt,
 				      union net_ip_header *ip_hdr,
-				      u16_t src_port,
-				      u16_t dst_port)
+				      uint16_t src_port,
+				      uint16_t dst_port)
 {
 	bool my_src_addr = false;
 
@@ -506,16 +506,16 @@ static bool conn_are_end_points_valid(struct net_pkt *pkt,
 
 enum net_verdict net_conn_input(struct net_pkt *pkt,
 				union net_ip_header *ip_hdr,
-				u8_t proto,
+				uint8_t proto,
 				union net_proto_header *proto_hdr)
 {
 	struct net_if *pkt_iface = net_pkt_iface(pkt);
 	struct net_conn *best_match = NULL;
 	bool is_mcast_pkt = false, mcast_pkt_delivered = false;
-	s16_t best_rank = -1;
+	int16_t best_rank = -1;
 	struct net_conn *conn;
-	u16_t src_port;
-	u16_t dst_port;
+	uint16_t src_port;
+	uint16_t dst_port;
 
 	if (IS_ENABLED(CONFIG_NET_UDP) && proto == IPPROTO_UDP) {
 		src_port = proto_hdr->udp->src_port;
@@ -657,8 +657,28 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 
 				mcast_pkt_delivered = true;
 			}
-		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) ||
-			   IS_ENABLED(CONFIG_NET_SOCKETS_CAN)) {
+		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET)) {
+			if (conn->flags & NET_CONN_LOCAL_ADDR_SET) {
+				struct sockaddr_ll *local;
+
+				local = (struct sockaddr_ll *)&conn->local_addr;
+
+				if (local->sll_ifindex !=
+				    net_if_get_by_iface(net_pkt_iface(pkt))) {
+					continue;
+				}
+
+				if (best_rank < NET_CONN_RANK(conn->flags)) {
+					best_rank = NET_CONN_RANK(conn->flags);
+					best_match = conn;
+				}
+			} else {
+				if (best_rank < NET_CONN_RANK(conn->flags)) {
+					best_rank = 0;
+					best_match = conn;
+				}
+			}
+		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN)) {
 			best_rank = 0;
 			best_match = conn;
 		}

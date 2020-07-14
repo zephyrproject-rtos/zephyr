@@ -216,14 +216,14 @@ extern "C" {
 #if CONFIG_ARC_MPU_VER == 2
 #define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size) \
 	BUILD_ASSERT(!(((size) & ((size) - 1))) && (size) >= STACK_ALIGN \
-		 && !((u32_t)(start) & ((size) - 1)), \
+		 && !((uint32_t)(start) & ((size) - 1)), \
 		"the size of the partition must be power of 2" \
 		" and greater than or equal to the mpu adddress alignment." \
 		"start address of the partition must align with size.")
 #elif CONFIG_ARC_MPU_VER == 3
 #define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size) \
 	BUILD_ASSERT((size) % STACK_ALIGN == 0 && (size) >= STACK_ALIGN \
-		 && (u32_t)(start) % STACK_ALIGN == 0, \
+		 && (uint32_t)(start) % STACK_ALIGN == 0, \
 		"the size of the partition must align with 32" \
 		" and greater than or equal to 32." \
 		"start address of the partition must align with 32.")
@@ -232,7 +232,7 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 /* Typedef for the k_mem_partition attribute*/
-typedef u32_t k_mem_partition_attr_t;
+typedef uint32_t k_mem_partition_attr_t;
 
 static ALWAYS_INLINE void arch_nop(void)
 {

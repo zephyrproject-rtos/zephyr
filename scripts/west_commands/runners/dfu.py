@@ -20,7 +20,7 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
 
     def __init__(self, cfg, pid, alt, img, exe='dfu-util',
                  dfuse_config=None):
-        super(DfuUtilBinaryRunner, self).__init__(cfg)
+        super().__init__(cfg)
         self.alt = alt
         self.img = img
         self.cmd = [exe, '-d,{}'.format(pid)]
@@ -74,7 +74,7 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
                             help='dfu-util executable; defaults to "dfu-util"')
 
     @classmethod
-    def create(cls, cfg, args):
+    def do_create(cls, cfg, args):
         if args.img is None:
             args.img = cfg.bin_file
 

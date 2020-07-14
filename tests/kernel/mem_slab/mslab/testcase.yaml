@@ -1,4 +1,3 @@
 tests:
   kernel.memory_slabs.api:
     tags: kernel
-    min_ram: 16

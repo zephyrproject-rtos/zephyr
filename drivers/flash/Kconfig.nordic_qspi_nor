@@ -6,6 +6,7 @@ menuconfig NORDIC_QSPI_NOR
 	select FLASH_HAS_DRIVER_ENABLED
 	select NRFX_QSPI
 	depends on HAS_HW_NRF_QSPI
+	depends on MULTITHREADING
 	help
 	  Enable support for nrfx QSPI driver with EasyDMA.
 
@@ -28,5 +29,16 @@ config NORDIC_QSPI_NOR_FLASH_LAYOUT_PAGE_SIZE
 	  When CONFIG_FLASH_PAGE_LAYOUT is used this driver will support
 	  that API.  By default the page size corresponds to the block
 	  size (65536).  Other option include the sector size (4096).
+
+config NORDIC_QSPI_NOR_STACK_WRITE_BUFFER_SIZE
+	int "Size of a stack-based buffer to support writes from NVMC"
+	default 0
+	help
+	  The QSPI peripheral uses DMA and cannot write data that is
+	  read from the internal flash.  A non-zero value here enables
+	  a stack buffer into which data is copied to allow the write
+	  to proceed.  Multiple transfers will be initiated if the
+	  data is larger than the configured limit.  Must be a
+	  multiple of 4.  The feature is disabled when set to 0.
 
 endif # NORDIC_QSPI_NOR

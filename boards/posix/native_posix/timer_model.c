@@ -42,7 +42,7 @@
  * Note: the caller has to allocate the destination buffer (at least 17 chars)
  */
 #include <stdio.h>
-static char *us_time_to_str(char *dest, u64_t time)
+static char *us_time_to_str(char *dest, uint64_t time)
 {
 	if (time != NEVER) {
 		unsigned int hour;
@@ -64,13 +64,13 @@ static char *us_time_to_str(char *dest, u64_t time)
 }
 #endif
 
-u64_t hw_timer_timer;
+uint64_t hw_timer_timer;
 
-u64_t hw_timer_tick_timer;
-u64_t hw_timer_awake_timer;
+uint64_t hw_timer_tick_timer;
+uint64_t hw_timer_awake_timer;
 
-static u64_t tick_p; /* Period of the ticker */
-static s64_t silent_ticks;
+static uint64_t tick_p; /* Period of the ticker */
+static int64_t silent_ticks;
 
 static bool real_time_mode =
 #if defined(CONFIG_NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME)
@@ -85,7 +85,7 @@ static bool reset_rtc; /*"Reset" the RTC on boot*/
  * When this executable started running, this value shall not be changed after
  * boot
  */
-static u64_t boot_time;
+static uint64_t boot_time;
 
 /*
  * Ratio of the simulated clock to the real host time
@@ -103,21 +103,21 @@ static double clock_ratio = 1.0;
  *
  * This variable is only kept for debugging purposes
  */
-static s64_t last_drift_offset;
+static int64_t last_drift_offset;
 #endif
 
 /*
  * Offsets of the RTC relative to the hardware models simu_time
  * "simu_time" == simulated time which starts at 0 on boot
  */
-static s64_t rtc_offset;
+static int64_t rtc_offset;
 
 /* Last host/real time when the ratio was adjusted */
-static u64_t last_radj_rtime;
+static uint64_t last_radj_rtime;
 /* Last simulated time when the ratio was adjusted */
-static u64_t last_radj_stime;
+static uint64_t last_radj_stime;
 
-extern u64_t posix_get_hw_cycle(void);
+extern uint64_t posix_get_hw_cycle(void);
 
 void hwtimer_set_real_time_mode(bool new_rt)
 {
@@ -138,12 +138,12 @@ static inline void host_clock_gettime(struct timespec *tv)
 #endif
 }
 
-u64_t get_host_us_time(void)
+uint64_t get_host_us_time(void)
 {
 	struct timespec tv;
 
 	host_clock_gettime(&tv);
-	return (u64_t)tv.tv_sec * 1e6 + tv.tv_nsec / 1000;
+	return (uint64_t)tv.tv_sec * 1e6 + tv.tv_nsec / 1000;
 }
 
 void hwtimer_init(void)
@@ -159,10 +159,10 @@ void hwtimer_init(void)
 	}
 	if (!reset_rtc) {
 		struct timespec tv;
-		u64_t realhosttime;
+		uint64_t realhosttime;
 
 		clock_gettime(CLOCK_REALTIME, &tv);
-		realhosttime = (u64_t)tv.tv_sec * 1e6 + tv.tv_nsec / 1000;
+		realhosttime = (uint64_t)tv.tv_sec * 1e6 + tv.tv_nsec / 1000;
 
 		rtc_offset += realhosttime;
 	}
@@ -176,7 +176,7 @@ void hwtimer_cleanup(void)
 /**
  * Enable the HW timer tick interrupts with a period <period> in micoseconds
  */
-void hwtimer_enable(u64_t period)
+void hwtimer_enable(uint64_t period)
 {
 	tick_p = period;
 	hw_timer_tick_timer = hwm_get_time() + tick_p;
@@ -187,12 +187,12 @@ void hwtimer_enable(u64_t period)
 static void hwtimer_tick_timer_reached(void)
 {
 	if (real_time_mode) {
-		u64_t expected_rt = (hw_timer_tick_timer - last_radj_stime)
+		uint64_t expected_rt = (hw_timer_tick_timer - last_radj_stime)
 				    / clock_ratio
 				    + last_radj_rtime;
-		u64_t real_time = get_host_us_time();
+		uint64_t real_time = get_host_us_time();
 
-		s64_t diff = expected_rt - real_time;
+		int64_t diff = expected_rt - real_time;
 
 #if DEBUG_NP_TIMER
 		char es[30];
@@ -213,7 +213,7 @@ static void hwtimer_tick_timer_reached(void)
 			requested_time.tv_nsec = (diff -
 						 requested_time.tv_sec*1e6)*1e3;
 
-			nanosleep(&requested_time, &remaining);
+			(void) nanosleep(&requested_time, &remaining);
 		}
 	}
 
@@ -236,7 +236,7 @@ static void hwtimer_awake_timer_reached(void)
 
 void hwtimer_timer_reached(void)
 {
-	u64_t Now = hw_timer_timer;
+	uint64_t Now = hw_timer_timer;
 
 	if (hw_timer_awake_timer == Now) {
 		hwtimer_awake_timer_reached();
@@ -255,7 +255,7 @@ void hwtimer_timer_reached(void)
  *
  * This is meant for k_busy_wait() like functionality
  */
-void hwtimer_wake_in_time(u64_t time)
+void hwtimer_wake_in_time(uint64_t time)
 {
 	if (hw_timer_awake_timer > time) {
 		hw_timer_awake_timer = time;
@@ -267,12 +267,12 @@ void hwtimer_wake_in_time(u64_t time)
  * The kernel wants to skip the next sys_ticks tick interrupts
  * If sys_ticks == 0, the next interrupt will be raised.
  */
-void hwtimer_set_silent_ticks(s64_t sys_ticks)
+void hwtimer_set_silent_ticks(int64_t sys_ticks)
 {
 	silent_ticks = sys_ticks;
 }
 
-s64_t hwtimer_get_pending_silent_ticks(void)
+int64_t hwtimer_get_pending_silent_ticks(void)
 {
 	return silent_ticks;
 }
@@ -291,7 +291,7 @@ void hwtimer_reset_rtc(void)
  * Set a time offset (microseconds) of the RTC simulated time
  * Note: This should not be used after starting
  */
-void hwtimer_set_rtc_offset(s64_t offset)
+void hwtimer_set_rtc_offset(int64_t offset)
 {
 	rtc_offset = offset;
 }
@@ -308,7 +308,7 @@ void hwtimer_set_rt_ratio(double ratio)
 /**
  * Increase or decrease the RTC simulated time by offset_delta
  */
-void hwtimer_adjust_rtc_offset(s64_t offset_delta)
+void hwtimer_adjust_rtc_offset(int64_t offset_delta)
 {
 	rtc_offset += offset_delta;
 }
@@ -318,8 +318,8 @@ void hwtimer_adjust_rtc_offset(s64_t offset_delta)
  */
 void hwtimer_adjust_rt_ratio(double ratio_correction)
 {
-	u64_t current_stime = hwm_get_time();
-	s64_t s_diff = current_stime - last_radj_stime;
+	uint64_t current_stime = hwm_get_time();
+	int64_t s_diff = current_stime - last_radj_stime;
 	/* Accumulated real time drift time since last adjustment: */
 
 	last_radj_rtime += s_diff / clock_ratio;
@@ -327,7 +327,7 @@ void hwtimer_adjust_rt_ratio(double ratio_correction)
 
 #if DEBUG_NP_TIMER
 	char ct[30];
-	s64_t r_drift = (long double)(clock_ratio-1.0)/(clock_ratio)*s_diff;
+	int64_t r_drift = (long double)(clock_ratio-1.0)/(clock_ratio)*s_diff;
 
 	last_drift_offset += r_drift;
 	us_time_to_str(ct, current_stime);
@@ -351,7 +351,7 @@ void hwtimer_adjust_rt_ratio(double ratio_correction)
 /**
  * Return the current simulated RTC time in microseconds
  */
-s64_t hwtimer_get_simu_rtc_time(void)
+int64_t hwtimer_get_simu_rtc_time(void)
 {
 	return hwm_get_time() + rtc_offset;
 }
@@ -367,7 +367,7 @@ s64_t hwtimer_get_simu_rtc_time(void)
  * This will be the case in general if native_posix is not able to run at or
  * faster than real time.
  */
-void hwtimer_get_pseudohost_rtc_time(u32_t *nsec, u64_t *sec)
+void hwtimer_get_pseudohost_rtc_time(uint32_t *nsec, uint64_t *sec)
 {
 	/*
 	 * Note: long double has a 64bits mantissa in x86.
@@ -396,8 +396,8 @@ void hwtimer_get_pseudohost_rtc_time(u32_t *nsec, u64_t *sec)
 
 	host_clock_gettime(&tv);
 
-	u64_t rt_us = (u64_t)tv.tv_sec * 1000000ULL + tv.tv_nsec / 1000;
-	u32_t rt_ns = tv.tv_nsec % 1000;
+	uint64_t rt_us = (uint64_t)tv.tv_sec * 1000000ULL + tv.tv_nsec / 1000;
+	uint32_t rt_ns = tv.tv_nsec % 1000;
 
 	long double drt_us = (long double)rt_us - last_radj_rtime;
 	long double drt_ns = drt_us * 1000.0 + (long double)rt_ns;

@@ -20,8 +20,8 @@
 
 LOG_MODULE_DECLARE(ISM330DHCX, CONFIG_SENSOR_LOG_LEVEL);
 
-static int ism330dhcx_i2c_read(struct device *dev, u8_t reg_addr,
-			    u8_t *value, u8_t len)
+static int ism330dhcx_i2c_read(struct device *dev, uint8_t reg_addr,
+			    uint8_t *value, uint8_t len)
 {
 	struct ism330dhcx_data *data = dev->driver_data;
 	const struct ism330dhcx_config *cfg = dev->config_info;
@@ -30,8 +30,8 @@ static int ism330dhcx_i2c_read(struct device *dev, u8_t reg_addr,
 			      reg_addr, value, len);
 }
 
-static int ism330dhcx_i2c_write(struct device *dev, u8_t reg_addr,
-			     u8_t *value, u8_t len)
+static int ism330dhcx_i2c_write(struct device *dev, uint8_t reg_addr,
+			     uint8_t *value, uint8_t len)
 {
 	struct ism330dhcx_data *data = dev->driver_data;
 	const struct ism330dhcx_config *cfg = dev->config_info;

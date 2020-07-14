@@ -16,17 +16,21 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <ztest_assert.h>
 
+#include "test_socketpair_thread.h"
+
 #undef read
 #define read(fd, buf, len) zsock_recv(fd, buf, len, 0)
 
 #undef write
 #define write(fd, buf, len) zsock_send(fd, buf, len, 0)
 
-#define STACK_SIZE 512
-/* stack for the secondary thread */
-static K_THREAD_STACK_DEFINE(th_stack, STACK_SIZE);
-static struct k_thread th;
-static k_tid_t tid;
+struct ctx {
+	bool should_write;
+	int fd;
+	k_timeout_t delay;
+};
+static ZTEST_BMEM struct ctx ctx;
+static ZTEST_BMEM struct k_work work;
 
 /*
  * Timeout should work the same for blocking & non-blocking threads
@@ -94,17 +98,17 @@ void test_socketpair_poll_timeout_nonblocking(void)
 	test_socketpair_poll_timeout_common(sv);
 }
 
-static void close_fun(void *arg1, void *arg2, void *arg3)
+static void close_fun(struct k_work *work)
 {
-	(void)arg2;
-	(void)arg3;
+	(void)work;
 
-	const int *const fd = (const int *)arg1;
+	if (!(K_TIMEOUT_EQ(ctx.delay, K_NO_WAIT)
+		|| K_TIMEOUT_EQ(ctx.delay, K_FOREVER))) {
+		k_sleep(ctx.delay);
+	}
 
-	k_sleep(K_MSEC(1000));
-
-	LOG_DBG("about to close fd %d", *fd);
-	close(*fd);
+	LOG_DBG("about to close fd %d", ctx.fd);
+	close(ctx.fd);
 }
 
 /*
@@ -134,18 +138,18 @@ void test_socketpair_poll_close_remote_end_POLLIN(void)
 	fds[0].fd = sv[0];
 	fds[0].events |= POLLIN;
 
-	tid = k_thread_create(&th, th_stack,
-		K_THREAD_STACK_SIZEOF(th_stack), close_fun,
-		&sv[1], NULL, NULL,
-		CONFIG_MAIN_THREAD_PRIORITY + 1,
-		K_USER, K_NO_WAIT);
+	memset(&ctx, 0, sizeof(ctx));
+	ctx.fd = sv[1];
+	ctx.delay = K_MSEC(1000);
+
+	LOG_DBG("scheduling work");
+	k_work_init(&work, close_fun);
+	res = k_work_submit_to_user_queue(&test_socketpair_work_q, &work);
+	zassert_equal(res, 0, "k_work_submit_to_user_queue() failed: %d", res);
 
 	res = poll(fds, 1, -1);
 	zassert_equal(res, 1, "poll(2) failed: %d", res);
 	zassert_equal(fds[0].revents & POLLIN, POLLIN, "POLLIN not set");
-
-	res = k_thread_join(&th, K_MSEC(5000));
-	zassert_false(res < 0, "k_thread_join failed: %d", res);
 
 	res = read(sv[0], &c, 1);
 	zassert_equal(res, 0, "read did not return EOF");
@@ -177,18 +181,18 @@ void test_socketpair_poll_close_remote_end_POLLOUT(void)
 	fds[0].fd = sv[0];
 	fds[0].events |= POLLOUT;
 
-	tid = k_thread_create(&th, th_stack,
-		K_THREAD_STACK_SIZEOF(th_stack), close_fun,
-		&sv[1], NULL, NULL,
-		CONFIG_MAIN_THREAD_PRIORITY + 1,
-		K_USER, K_NO_WAIT);
+	memset(&ctx, 0, sizeof(ctx));
+	ctx.fd = sv[1];
+	ctx.delay = K_MSEC(1000);
+
+	LOG_DBG("scheduling work");
+	k_work_init(&work, close_fun);
+	res = k_work_submit_to_user_queue(&test_socketpair_work_q, &work);
+	zassert_equal(res, 0, "k_work_submit_to_user_queue() failed: %d", res);
 
 	res = poll(fds, 1, -1);
 	zassert_equal(res, 1, "poll(2) failed: %d", res);
 	zassert_equal(fds[0].revents & POLLHUP, POLLHUP, "POLLHUP not set");
-
-	res = k_thread_join(&th, K_MSEC(5000));
-	zassert_false(res < 0, "k_thread_join failed: %d", res);
 
 	res = write(sv[0], "x", 1);
 	zassert_equal(res, -1, "write(2): expected: -1 actual: %d", res);
@@ -249,21 +253,21 @@ void test_socketpair_poll_immediate_data(void)
 	close(sv[1]);
 }
 
-static void rw_fun(void *arg1, void *arg2, void *arg3)
+static void rw_fun(struct k_work *work)
 {
-	(void)arg3;
-
-	const bool *const should_write = (const bool *) arg1;
-	const int *const fd = (const int *)arg2;
+	(void)work;
 
 	int res;
 	char c;
 
-	k_sleep(K_MSEC(1000));
+	if (!(K_TIMEOUT_EQ(ctx.delay, K_NO_WAIT)
+		|| K_TIMEOUT_EQ(ctx.delay, K_FOREVER))) {
+		k_sleep(ctx.delay);
+	}
 
-	if (*should_write) {
+	if (ctx.should_write) {
 		LOG_DBG("about to write 1 byte");
-		res = write(*fd, "x", 1);
+		res = write(ctx.fd, "x", 1);
 		if (-1 == res) {
 			LOG_DBG("write(2) failed: %d", errno);
 		} else {
@@ -271,7 +275,7 @@ static void rw_fun(void *arg1, void *arg2, void *arg3)
 		}
 	} else {
 		LOG_DBG("about to read 1 byte");
-		res = read(*fd, &c, 1);
+		res = read(ctx.fd, &c, 1);
 		if (-1 == res) {
 			LOG_DBG("read(2) failed: %d", errno);
 		} else {
@@ -290,8 +294,6 @@ void test_socketpair_poll_delayed_data(void)
 	int sv[2] = {-1, -1};
 	int res;
 
-	bool should_write;
-
 	struct pollfd fds[1];
 
 	res = socketpair(AF_UNIX, SOCK_STREAM, 0, sv);
@@ -300,19 +302,21 @@ void test_socketpair_poll_delayed_data(void)
 	memset(fds, 0, sizeof(fds));
 	fds[0].fd = sv[0];
 	fds[0].events |= POLLIN;
-	should_write = true;
 
-	tid = k_thread_create(&th, th_stack,
-		K_THREAD_STACK_SIZEOF(th_stack), rw_fun,
-		&should_write, &sv[1], NULL,
-		CONFIG_MAIN_THREAD_PRIORITY + 1,
-		K_USER, K_NO_WAIT);
+	memset(&ctx, 0, sizeof(ctx));
+	ctx.fd = sv[1];
+	ctx.should_write = true;
+	ctx.delay = K_MSEC(100);
+
+	LOG_DBG("scheduling work");
+	k_work_init(&work, rw_fun);
+	res = k_work_submit_to_user_queue(&test_socketpair_work_q, &work);
+	zassert_equal(res, 0, "k_work_submit_to_user_queue() failed: %d", res);
 
 	res = poll(fds, 1, 5000);
 	zassert_not_equal(res, -1, "poll(2) failed: %d", errno);
 	zassert_equal(res, 1, "poll(2): expected: 1 actual: %d", res);
 	zassert_not_equal(fds[0].revents & POLLIN, 0, "POLLIN not set");
-	k_thread_join(&th, K_FOREVER);
 
 	for (size_t i = 0; i < CONFIG_NET_SOCKETPAIR_BUFFER_SIZE; ++i) {
 		res = write(sv[0], "x", 1);
@@ -322,19 +326,21 @@ void test_socketpair_poll_delayed_data(void)
 	memset(fds, 0, sizeof(fds));
 	fds[0].fd = sv[0];
 	fds[0].events |= POLLOUT;
-	should_write = false;
 
-	tid = k_thread_create(&th, th_stack,
-		K_THREAD_STACK_SIZEOF(th_stack), rw_fun,
-		&should_write, &sv[1], NULL,
-		CONFIG_MAIN_THREAD_PRIORITY + 1,
-		K_USER, K_NO_WAIT);
+	memset(&ctx, 0, sizeof(ctx));
+	ctx.fd = sv[1];
+	ctx.should_write = false;
+	ctx.delay = K_MSEC(100);
+
+	LOG_DBG("scheduling work");
+	k_work_init(&work, rw_fun);
+	res = k_work_submit_to_user_queue(&test_socketpair_work_q, &work);
+	zassert_equal(res, 0, "k_work_submit_to_user_queue() failed: %d", res);
 
 	res = poll(fds, 1, 5000);
 	zassert_not_equal(res, -1, "poll(2) failed: %d", errno);
 	zassert_equal(res, 1, "poll(2): expected: 1 actual: %d", res);
 	zassert_not_equal(fds[0].revents & POLLOUT, 0, "POLLOUT was not set");
-	k_thread_join(&th, K_FOREVER);
 
 	close(sv[0]);
 	close(sv[1]);

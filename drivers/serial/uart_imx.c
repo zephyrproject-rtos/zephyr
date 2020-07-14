@@ -28,8 +28,8 @@
 
 struct imx_uart_config {
 	UART_Type *base;
-	u32_t baud_rate;
-	u8_t modem_mode;
+	uint32_t baud_rate;
+	uint8_t modem_mode;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(struct device *dev);
 #endif
@@ -121,7 +121,7 @@ static int uart_imx_poll_in(struct device *dev, unsigned char *c)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-static int uart_imx_fifo_fill(struct device *dev, const u8_t *tx_data,
+static int uart_imx_fifo_fill(struct device *dev, const uint8_t *tx_data,
 				  int size)
 {
 	UART_Type *uart = UART_STRUCT(dev);
@@ -137,7 +137,7 @@ static int uart_imx_fifo_fill(struct device *dev, const u8_t *tx_data,
 	return (int)num_tx;
 }
 
-static int uart_imx_fifo_read(struct device *dev, u8_t *rx_data,
+static int uart_imx_fifo_read(struct device *dev, uint8_t *rx_data,
 				  const int size)
 {
 	UART_Type *uart = UART_STRUCT(dev);

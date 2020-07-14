@@ -53,7 +53,7 @@
 	buttons {
 		compatible = "gpio-keys";
 		button0: button_0 {
-			gpios = <&gpio0 2 GPIO_PULL_UP>;
+			gpios = <&gpio0 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 0";
 		};
 	};
@@ -124,7 +124,7 @@
 	sck-pin  = <16>;
 	mosi-pin = <20>;
 	miso-pin = <18>;
-	cs-gpios = <&gpio0 17 0>;
+	cs-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
 
 	dw1000@0 {
 		compatible = "decawave,dw1000";

@@ -9,6 +9,7 @@
 #include <canbus/canopen.h>
 #include <dfu/flash_img.h>
 #include <dfu/mcuboot.h>
+#include <storage/flash_map.h>
 #include <sys/crc.h>
 
 #define LOG_LEVEL CONFIG_CANOPEN_LOG_LEVEL
@@ -43,23 +44,23 @@ LOG_MODULE_REGISTER(canopen_program);
 #define FLASH_STATUS_UNSPECIFIED_ERROR   (63U << 1)
 
 struct canopen_program_context {
-	u32_t flash_status;
+	uint32_t flash_status;
 	size_t total;
 	CO_NMT_t *nmt;
 	CO_EM_t *em;
 	struct flash_img_context flash_img_ctx;
-	u8_t program_status;
+	uint8_t program_status;
 	bool flash_written;
 };
 
 static struct canopen_program_context ctx;
 
-static void canopen_program_set_status(u32_t status)
+static void canopen_program_set_status(uint32_t status)
 {
 	ctx.program_status = status;
 }
 
-static u32_t canopen_program_get_status(void)
+static uint32_t canopen_program_get_status(void)
 {
 	/*
 	 * Non-confirmed boot image takes precedence over other
@@ -228,7 +229,7 @@ static inline CO_SDO_abortCode_t canopen_program_cmd_confirm(void)
 static CO_SDO_abortCode_t canopen_odf_1f51(CO_ODF_arg_t *odf_arg)
 {
 	CO_SDO_abortCode_t ab;
-	u8_t cmd;
+	uint8_t cmd;
 
 	if (odf_arg->subIndex != 1U) {
 		return CO_SDO_AB_NONE;
@@ -246,7 +247,7 @@ static CO_SDO_abortCode_t canopen_odf_1f51(CO_ODF_arg_t *odf_arg)
 
 	/* Preserve old value */
 	cmd = odf_arg->data[0];
-	memcpy(odf_arg->data, odf_arg->ODdataStorage, sizeof(u8_t));
+	memcpy(odf_arg->data, odf_arg->ODdataStorage, sizeof(uint8_t));
 
 	LOG_DBG("program status = %d, cmd = %d", canopen_program_get_status(),
 		cmd);
@@ -280,11 +281,11 @@ static CO_SDO_abortCode_t canopen_odf_1f56(CO_ODF_arg_t *odf_arg)
 	const struct flash_area *flash_area;
 	struct mcuboot_img_header header;
 	off_t offset = 0;
-	u32_t crc = 0;
+	uint32_t crc = 0;
 	size_t size;
-	u8_t fa_id;
-	u32_t data;
-	u32_t len;
+	uint8_t fa_id;
+	uint32_t data;
+	uint32_t len;
 	int err;
 
 	if (odf_arg->subIndex != 1U) {
@@ -293,7 +294,7 @@ static CO_SDO_abortCode_t canopen_odf_1f56(CO_ODF_arg_t *odf_arg)
 
 	if (!odf_arg->reading) {
 		/* Preserve old value */
-		memcpy(odf_arg->data, odf_arg->ODdataStorage, sizeof(u32_t));
+		memcpy(odf_arg->data, odf_arg->ODdataStorage, sizeof(uint32_t));
 		return CO_SDO_AB_READONLY;
 	}
 
@@ -341,7 +342,7 @@ static CO_SDO_abortCode_t canopen_odf_1f56(CO_ODF_arg_t *odf_arg)
 			return CO_SDO_AB_HW;
 		}
 
-		crc = crc32_ieee_update(crc, (u8_t *)&data, size);
+		crc = crc32_ieee_update(crc, (uint8_t *)&data, size);
 		len -= size;
 		offset += size;
 	}
@@ -362,7 +363,7 @@ static CO_SDO_abortCode_t canopen_odf_1f57(CO_ODF_arg_t *odf_arg)
 
 	if (!odf_arg->reading) {
 		/* Preserve old value */
-		memcpy(odf_arg->data, odf_arg->ODdataStorage, sizeof(u32_t));
+		memcpy(odf_arg->data, odf_arg->ODdataStorage, sizeof(uint32_t));
 		return CO_SDO_AB_READONLY;
 	}
 

@@ -12,9 +12,8 @@ tests:
             - "Test 1: Flash erase"
             - "Flash erase succeeded!"
             - "Test 2: Flash write"
-            - "Attempted to write 55 aa"
-            - "Data read 55 aa"
-            - "Data read matches with data written. Good!!"
+            - "Attempting to write 4 bytes"
+            - "Data read matches data written. Good!!"
     depends_on: spi
   sample.drivers.spi.flash_dpd:
     tags: spi flash

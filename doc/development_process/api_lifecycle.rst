@@ -198,7 +198,11 @@ The following are the requirements for deprecating an existing API:
   where an API is deprecated sooner.
 - What is required when deprecating:
 
-  - Mark as deprecated
+  - Mark as deprecated. This can be done by using the compiler itself
+    (``__deprecated`` for  function declarations and ``__DEPRECATED_MACRO`` for
+    macro definitions), or by introducing a Kconfig option (typically one that
+    contains the ``DEPRECATED`` word in it) that, when enabled, reverts the APIs
+    back to their previous form
   - Document the deprecation
   - Include the deprecation in the "API Changes" of the release notes for the
     next upcoming release

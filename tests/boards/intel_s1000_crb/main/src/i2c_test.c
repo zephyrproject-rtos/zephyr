@@ -54,7 +54,7 @@
 
 extern struct k_sem thread_sem;
 
-void test_i2c_write_led(struct device *i2c_dev, u16_t i2c_slave_led, u8_t color)
+void test_i2c_write_led(struct device *i2c_dev, uint16_t i2c_slave_led, uint8_t color)
 {
 	int ret;
 	int led_val[6];
@@ -120,10 +120,10 @@ void test_i2c_write_led(struct device *i2c_dev, u16_t i2c_slave_led, u8_t color)
 	}
 }
 
-void test_i2c_read_led(struct device *i2c_dev, u16_t i2c_slave_led)
+void test_i2c_read_led(struct device *i2c_dev, uint16_t i2c_slave_led)
 {
 	int ret;
-	u8_t data = 0U;
+	uint8_t data = 0U;
 
 	ret = i2c_reg_read_byte(i2c_dev, i2c_slave_led, LED0, &data);
 	if (ret) {

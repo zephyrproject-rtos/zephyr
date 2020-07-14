@@ -54,29 +54,29 @@ void __gcov_exit(void)
 #define MASK_32BIT (0xffffffffUL)
 static inline void buff_write_u64(void *buffer, size_t *off, uint64_t v)
 {
-	*((u32_t *)((u8_t *)buffer + *off) + 0) = (u32_t)(v & MASK_32BIT);
-	*((u32_t *)((u8_t *)buffer + *off) + 1) = (u32_t)((v >> 32) &
+	*((uint32_t *)((uint8_t *)buffer + *off) + 0) = (uint32_t)(v & MASK_32BIT);
+	*((uint32_t *)((uint8_t *)buffer + *off) + 1) = (uint32_t)((v >> 32) &
 							  MASK_32BIT);
-	*off = *off + sizeof(u64_t);
+	*off = *off + sizeof(uint64_t);
 }
 
 /**
  * buff_write_u32 - Store 32 bit data on a buffer and return the size
  */
-static inline void buff_write_u32(void *buffer, size_t *off, u32_t v)
+static inline void buff_write_u32(void *buffer, size_t *off, uint32_t v)
 {
-	*((u32_t *)((u8_t *)buffer + *off)) = v;
-	*off = *off + sizeof(u32_t);
+	*((uint32_t *)((uint8_t *)buffer + *off)) = v;
+	*off = *off + sizeof(uint32_t);
 }
 
 
 size_t calculate_buff_size(struct gcov_info *info)
 {
-	u32_t iter;
-	u32_t iter_1;
-	u32_t iter_2;
+	uint32_t iter;
+	uint32_t iter_1;
+	uint32_t iter_2;
 	/* few Fixed values at the start version, stamp and magic number. */
-	u32_t size = sizeof(u32_t) * 3;
+	uint32_t size = sizeof(uint32_t) * 3;
 
 	for (iter = 0U; iter < info->n_functions; iter++) {
 		/* space for TAG_FUNCTION and FUNCTION_LENGTH
@@ -84,7 +84,7 @@ size_t calculate_buff_size(struct gcov_info *info)
 		 * lineno_checksum
 		 * cfg_checksum
 		 */
-		size += (sizeof(u32_t) * 5);
+		size += (sizeof(uint32_t) * 5);
 
 		for (iter_1 = 0U; iter_1 < GCOV_COUNTERS; iter_1++) {
 			if (!info->merge[iter_1]) {
@@ -92,14 +92,14 @@ size_t calculate_buff_size(struct gcov_info *info)
 			}
 
 			/*  for function counter and number of values  */
-			size += (sizeof(u32_t) * 2);
+			size += (sizeof(uint32_t) * 2);
 
 			for (iter_2 = 0U;
 			     iter_2 < info->functions[iter]->ctrs->num;
 			     iter_2++) {
 
-				/* Iter for values which is u64_t */
-				size += (sizeof(u64_t));
+				/* Iter for values which is uint64_t */
+				size += (sizeof(uint64_t));
 			}
 
 		}
@@ -117,13 +117,13 @@ size_t calculate_buff_size(struct gcov_info *info)
  * This buffer will now have info similar to a regular gcda
  * format.
  */
-size_t populate_buffer(u8_t *buffer, struct gcov_info *info)
+size_t populate_buffer(uint8_t *buffer, struct gcov_info *info)
 {
 	struct gcov_fn_info *functions;
 	struct gcov_ctr_info *counters_per_func;
-	u32_t iter_functions;
-	u32_t iter_counts;
-	u32_t iter_counter_values;
+	uint32_t iter_functions;
+	uint32_t iter_counts;
+	uint32_t iter_counter_values;
 	size_t buffer_write_position = 0;
 
 	/* File header. */
@@ -202,7 +202,7 @@ size_t populate_buffer(u8_t *buffer, struct gcov_info *info)
 
 void dump_on_console(const char *filename, char *ptr, size_t len)
 {
-	u32_t iter;
+	uint32_t iter;
 
 	printk("\n%c", FILE_START_INDICATOR);
 	while (*filename != '\0') {
@@ -213,7 +213,7 @@ void dump_on_console(const char *filename, char *ptr, size_t len)
 	/* Data dump */
 
 	for (iter = 0U; iter < len; iter++) {
-		printk(" %02x", (u8_t)*ptr++);
+		printk(" %02x", (uint8_t)*ptr++);
 	}
 }
 
@@ -222,7 +222,7 @@ void dump_on_console(const char *filename, char *ptr, size_t len)
  */
 void gcov_coverage_dump(void)
 {
-	u8_t *buffer;
+	uint8_t *buffer;
 	size_t size;
 	size_t written_size;
 	struct gcov_info *gcov_list = gcov_info_head;
@@ -233,7 +233,7 @@ void gcov_coverage_dump(void)
 
 		size = calculate_buff_size(gcov_list);
 
-		buffer = (u8_t *) k_mem_pool_malloc(&gcov_heap_mem_pool, size);
+		buffer = (uint8_t *) k_mem_pool_malloc(&gcov_heap_mem_pool, size);
 		if (!buffer) {
 			printk("No Mem available to continue dump\n");
 			goto coverage_dump_end;
@@ -260,9 +260,9 @@ coverage_dump_end:
 /* Initialize the gcov by calling the required constructors */
 void gcov_static_init(void)
 {
-	extern u32_t __init_array_start, __init_array_end;
-	u32_t func_pointer_start = (u32_t) &__init_array_start;
-	u32_t func_pointer_end = (u32_t) &__init_array_end;
+	extern uint32_t __init_array_start, __init_array_end;
+	uint32_t func_pointer_start = (uint32_t) &__init_array_start;
+	uint32_t func_pointer_end = (uint32_t) &__init_array_end;
 
 	while (func_pointer_start < func_pointer_end) {
 		void (**p)(void);

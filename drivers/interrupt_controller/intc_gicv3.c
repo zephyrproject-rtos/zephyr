@@ -18,9 +18,9 @@ mem_addr_t gic_rdists[GIC_NUM_CPU_IF];
  * Wait for register write pending
  * TODO: add timed wait
  */
-static int gic_wait_rwp(u32_t intid)
+static int gic_wait_rwp(uint32_t intid)
 {
-	u32_t rwp_mask;
+	uint32_t rwp_mask;
 	mem_addr_t base;
 
 	if (intid < GIC_SPI_INT_BASE) {
@@ -38,12 +38,12 @@ static int gic_wait_rwp(u32_t intid)
 }
 
 void arm_gic_irq_set_priority(unsigned int intid,
-			      unsigned int prio, u32_t flags)
+			      unsigned int prio, uint32_t flags)
 {
-	u32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
-	u32_t idx = intid / GIC_NUM_INTR_PER_REG;
-	u32_t shift;
-	u32_t val;
+	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
+	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
+	uint32_t shift;
+	uint32_t val;
 	mem_addr_t base = GET_DIST_BASE(intid);
 
 	/* Disable the interrupt */
@@ -54,29 +54,31 @@ void arm_gic_irq_set_priority(unsigned int intid,
 	sys_write8(prio & GIC_PRI_MASK, IPRIORITYR(base, intid));
 
 	/* Interrupt type config */
-	idx = intid / GIC_NUM_CFG_PER_REG;
-	shift = (intid & (GIC_NUM_CFG_PER_REG - 1)) * 2;
+	if (!GIC_IS_SGI(intid)) {
+		idx = intid / GIC_NUM_CFG_PER_REG;
+		shift = (intid & (GIC_NUM_CFG_PER_REG - 1)) * 2;
 
-	val = sys_read32(ICFGR(base, idx));
-	val &= ~(GICD_ICFGR_MASK << shift);
-	if (flags & IRQ_TYPE_EDGE) {
-		val |= (GICD_ICFGR_TYPE << shift);
+		val = sys_read32(ICFGR(base, idx));
+		val &= ~(GICD_ICFGR_MASK << shift);
+		if (flags & IRQ_TYPE_EDGE) {
+			val |= (GICD_ICFGR_TYPE << shift);
+		}
+		sys_write32(val, ICFGR(base, idx));
 	}
-	sys_write32(val, ICFGR(base, idx));
 }
 
 void arm_gic_irq_enable(unsigned int intid)
 {
-	u32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
-	u32_t idx = intid / GIC_NUM_INTR_PER_REG;
+	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
+	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
 
 	sys_write32(mask, ISENABLER(GET_DIST_BASE(intid), idx));
 }
 
 void arm_gic_irq_disable(unsigned int intid)
 {
-	u32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
-	u32_t idx = intid / GIC_NUM_INTR_PER_REG;
+	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
+	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
 
 	sys_write32(mask, ICENABLER(GET_DIST_BASE(intid), idx));
 	/* poll to ensure write is complete */
@@ -85,9 +87,9 @@ void arm_gic_irq_disable(unsigned int intid)
 
 bool arm_gic_irq_is_enabled(unsigned int intid)
 {
-	u32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
-	u32_t idx = intid / GIC_NUM_INTR_PER_REG;
-	u32_t val;
+	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
+	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
+	uint32_t val;
 
 	val = sys_read32(ISENABLER(GET_DIST_BASE(intid), idx));
 
@@ -106,8 +108,42 @@ unsigned int arm_gic_get_active(void)
 
 void arm_gic_eoi(unsigned int intid)
 {
+	/*
+	 * Interrupt request deassertion from peripheral to GIC happens
+	 * by clearing interrupt condition by a write to the peripheral
+	 * register. It is desired that the write transfer is complete
+	 * before the core tries to change GIC state from 'AP/Active' to
+	 * a new state on seeing 'EOI write'.
+	 * Since ICC interface writes are not ordered against Device
+	 * memory writes, a barrier is required to ensure the ordering.
+	 * The dsb will also ensure *completion* of previous writes with
+	 * DEVICE nGnRnE attribute.
+	 */
+	__DSB();
+
 	/* (AP -> Pending) Or (Active -> Inactive) or (AP to AP) nested case */
 	write_sysreg(intid, ICC_EOIR1_EL1);
+}
+
+void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
+		   uint16_t target_list)
+{
+	uint32_t aff3, aff2, aff1;
+	uint64_t sgi_val;
+
+	assert(GIC_IS_SGI(sgi_id));
+
+	/* Extract affinity fields from target */
+	aff1 = MPIDR_AFFLVL(target_aff, 1);
+	aff2 = MPIDR_AFFLVL(target_aff, 2);
+	aff3 = MPIDR_AFFLVL(target_aff, 3);
+
+	sgi_val = GICV3_SGIR_VALUE(aff3, aff2, aff1, sgi_id,
+				   SGIR_IRM_TO_AFF, target_list);
+
+	__DSB();
+	write_sysreg(sgi_val, ICC_SGI1R);
+	__ISB();
 }
 
 /*
@@ -131,8 +167,8 @@ static void gicv3_rdist_enable(mem_addr_t rdist)
  */
 static void gicv3_cpuif_init(void)
 {
-	u32_t icc_sre;
-	u32_t intid;
+	uint32_t icc_sre;
+	uint32_t intid;
 
 	mem_addr_t base = gic_rdists[GET_CPUID] + GICR_SGI_BASE_OFF;
 

@@ -38,7 +38,7 @@ extern int arch_irq_is_enabled(unsigned int irq);
 
 extern void _irq_exit(void);
 extern void z_irq_priority_set(unsigned int irq, unsigned int prio,
-			      u32_t flags);
+			      uint32_t flags);
 extern void _isr_wrapper(void);
 extern void z_irq_spurious(void *unused);
 

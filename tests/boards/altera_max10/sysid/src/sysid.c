@@ -11,7 +11,7 @@
 
 void test_sysid(void)
 {
-	s32_t sysid, status = TC_FAIL;
+	int32_t sysid, status = TC_FAIL;
 
 	sysid = alt_avalon_sysid_test();
 	if (!sysid) {

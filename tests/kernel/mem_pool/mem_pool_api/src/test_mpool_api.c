@@ -153,7 +153,7 @@ void test_mpool_alloc_size(void)
 void test_mpool_alloc_timeout(void)
 {
 	static struct k_mem_block block[2 * BLK_NUM_MIN], fblock;
-	s64_t tms;
+	int64_t tms;
 	int nb;
 
 	/* allocate all blocks */

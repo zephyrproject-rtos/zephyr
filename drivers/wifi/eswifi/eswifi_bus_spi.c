@@ -256,6 +256,7 @@ int eswifi_spi_init(struct eswifi_dev *eswifi)
 	spi->spi_cs.gpio_dev =
 		device_get_binding(DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
 	spi->spi_cs.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
+	spi->spi_cs.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0);
 	spi->spi_cs.delay = 1000U;
 	spi->spi_cfg.cs = &spi->spi_cs;
 

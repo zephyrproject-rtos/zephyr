@@ -13,7 +13,7 @@ LOG_MODULE_DECLARE(os);
 #define FAULT_DUMP_VERBOSE	(CONFIG_FAULT_DUMP == 2)
 
 #if FAULT_DUMP_VERBOSE
-static const char *get_dbgdscr_moe_string(u32_t moe)
+static const char *get_dbgdscr_moe_string(uint32_t moe)
 {
 	switch (moe) {
 	case DBGDSCR_MOE_HALT_REQUEST:
@@ -40,14 +40,14 @@ static const char *get_dbgdscr_moe_string(u32_t moe)
 static void dump_debug_event(void)
 {
 	/* Read and parse debug mode of entry */
-	u32_t dbgdscr = __get_DBGDSCR();
-	u32_t moe = (dbgdscr & DBGDSCR_MOE_Msk) >> DBGDSCR_MOE_Pos;
+	uint32_t dbgdscr = __get_DBGDSCR();
+	uint32_t moe = (dbgdscr & DBGDSCR_MOE_Msk) >> DBGDSCR_MOE_Pos;
 
 	/* Print debug event information */
 	LOG_ERR("Debug Event (%s)", get_dbgdscr_moe_string(moe));
 }
 
-static void dump_fault(u32_t status, u32_t addr)
+static void dump_fault(uint32_t status, uint32_t addr)
 {
 	/*
 	 * Dump fault status and, if applicable, tatus-specific information.
@@ -110,11 +110,11 @@ bool z_arm_fault_undef_instruction(z_arch_esf_t *esf)
 bool z_arm_fault_prefetch(z_arch_esf_t *esf)
 {
 	/* Read and parse Instruction Fault Status Register (IFSR) */
-	u32_t ifsr = __get_IFSR();
-	u32_t fs = ((ifsr & IFSR_FS1_Msk) >> 6) | (ifsr & IFSR_FS0_Msk);
+	uint32_t ifsr = __get_IFSR();
+	uint32_t fs = ((ifsr & IFSR_FS1_Msk) >> 6) | (ifsr & IFSR_FS0_Msk);
 
 	/* Read Instruction Fault Address Register (IFAR) */
-	u32_t ifar = __get_IFAR();
+	uint32_t ifar = __get_IFAR();
 
 	/* Print fault information*/
 	LOG_ERR("***** PREFETCH ABORT *****");
@@ -137,11 +137,11 @@ bool z_arm_fault_prefetch(z_arch_esf_t *esf)
 bool z_arm_fault_data(z_arch_esf_t *esf)
 {
 	/* Read and parse Data Fault Status Register (DFSR) */
-	u32_t dfsr = __get_DFSR();
-	u32_t fs = ((dfsr & DFSR_FS1_Msk) >> 6) | (dfsr & DFSR_FS0_Msk);
+	uint32_t dfsr = __get_DFSR();
+	uint32_t fs = ((dfsr & DFSR_FS1_Msk) >> 6) | (dfsr & DFSR_FS0_Msk);
 
 	/* Read Data Fault Address Register (DFAR) */
-	u32_t dfar = __get_DFAR();
+	uint32_t dfar = __get_DFAR();
 
 	/* Print fault information*/
 	LOG_ERR("***** DATA ABORT *****");

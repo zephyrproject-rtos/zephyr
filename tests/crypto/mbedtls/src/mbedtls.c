@@ -75,7 +75,7 @@
 #if defined(MBEDTLS_RSA_C)
 int rand(void)
 {
-	static ZTEST_DMEM u32_t seed = 7U;
+	static ZTEST_DMEM uint32_t seed = 7U;
 
 	seed ^= seed << 13;
 	seed ^= seed >> 17;

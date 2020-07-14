@@ -1,0 +1,5 @@
+Test cases that ensure the legacy macros match the results for the
+devicetree.h API. This directory is safe to remove once the legacy
+devicetree macros documented here are no longer supported:
+
+https://docs.zephyrproject.org/latest/guides/dts/legacy-macros.html

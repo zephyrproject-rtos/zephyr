@@ -15,7 +15,7 @@
 
 #define AUDIO_FREQ		16000
 #define CHAN_SIZE		16
-#define PCM_BLK_SIZE_MS		((AUDIO_FREQ/1000) * sizeof(s16_t))
+#define PCM_BLK_SIZE_MS		((AUDIO_FREQ/1000) * sizeof(int16_t))
 
 #define NUM_MS		1000
 
@@ -46,7 +46,7 @@ size_t rx_size = PCM_BLK_SIZE_MS;
 void main(void)
 {
 	int i;
-	u32_t ms;
+	uint32_t ms;
 	int ret;
 
 	struct device *mic_dev = device_get_binding(DT_LABEL(DT_INST(0, st_mpxxdtyy)));
@@ -89,7 +89,7 @@ void main(void)
 	int j;
 
 	for (i = 0; i < NUM_MS; i++) {
-		u16_t *pcm_out = rx_block[i];
+		uint16_t *pcm_out = rx_block[i];
 
 		for (j = 0; j < rx_size/2; j++) {
 			printk("0x%04x,\n", pcm_out[j]);
@@ -101,7 +101,7 @@ void main(void)
 	int j;
 
 	for (i = 0; i < NUM_MS; i++) {
-		u16_t *pcm_out = rx_block[i];
+		uint16_t *pcm_out = rx_block[i];
 
 		for (j = 0; j < rx_size/2; j++) {
 			pcm_l = (char)(pcm_out[j] & 0xFF);

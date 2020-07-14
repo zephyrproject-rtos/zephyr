@@ -32,22 +32,22 @@ enum {
 
 /** @brief This is a 'tentative' type and should be used as a pointer only */
 struct bt_uuid {
-	u8_t type;
+	uint8_t type;
 };
 
 struct bt_uuid_16 {
 	struct bt_uuid uuid;
-	u16_t val;
+	uint16_t val;
 };
 
 struct bt_uuid_32 {
 	struct bt_uuid uuid;
-	u32_t val;
+	uint32_t val;
 };
 
 struct bt_uuid_128 {
 	struct bt_uuid uuid;
-	u8_t val[16];
+	uint8_t val[16];
 };
 
 #define BT_UUID_INIT_16(value)		\
@@ -173,6 +173,10 @@ struct bt_uuid_128 {
  *  @brief Environmental Sensing Service
  */
 #define BT_UUID_ESS                       BT_UUID_DECLARE_16(0x181a)
+/** @def BT_UUID_BMS
+ *  @brief Bond Management Service
+ */
+#define BT_UUID_BMS                       BT_UUID_DECLARE_16(0x181e)
 /** @def BT_UUID_IPSS
  *  @brief IP Support Service
  */
@@ -453,6 +457,14 @@ struct bt_uuid_128 {
  *  @brief Barometric Pressure Trend Characteristic
  */
 #define BT_UUID_BAR_PRESSURE_TREND        BT_UUID_DECLARE_16(0x2aa3)
+/** @def BT_UUID_BMS_CONTROL_POINT
+ *  @brief Bond Management Control Point
+ */
+#define BT_UUID_BMS_CONTROL_POINT         BT_UUID_DECLARE_16(0x2aa4)
+/** @def BT_UUID_BMS_FEATURE
+ *  @brief Bond Management Feature
+ */
+#define BT_UUID_BMS_FEATURE               BT_UUID_DECLARE_16(0x2aa5)
 /** @def BT_UUID_CENTRAL_ADDR_RES
  *  @brief Central Address Resolution Characteristic
  */
@@ -587,7 +599,7 @@ int bt_uuid_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2);
  *
  *  @return true if the data was valid and the UUID was successfully created.
  */
-bool bt_uuid_create(struct bt_uuid *uuid, const u8_t *data, u8_t data_len);
+bool bt_uuid_create(struct bt_uuid *uuid, const uint8_t *data, uint8_t data_len);
 
 /** @brief Convert Bluetooth UUID to string.
  *

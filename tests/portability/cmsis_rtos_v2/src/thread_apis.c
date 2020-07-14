@@ -67,7 +67,7 @@ static void thread1(void *argument)
 
 static void thread2(void *argument)
 {
-	u32_t i, num_threads, max_num_threads = 5U;
+	uint32_t i, num_threads, max_num_threads = 5U;
 	osThreadId_t *thread_array;
 	int *yield_check = (int *)argument;
 
@@ -83,8 +83,8 @@ static void thread2(void *argument)
 		      "Incorrect number of cmsis rtos v2 threads");
 
 	for (i = 0U; i < num_threads; i++) {
-		u32_t size = osThreadGetStackSize(thread_array[i]);
-		u32_t space = osThreadGetStackSpace(thread_array[i]);
+		uint32_t size = osThreadGetStackSize(thread_array[i]);
+		uint32_t space = osThreadGetStackSpace(thread_array[i]);
 
 		zassert_true(space < size,
 			     "stack size remaining is not what is expected");
@@ -270,8 +270,8 @@ static void thread4(void *argument)
 void test_thread_join(void)
 {
 	osThreadAttr_t attr = { 0 };
-	s64_t time_stamp;
-	s64_t milliseconds_spent;
+	int64_t time_stamp;
+	int64_t milliseconds_spent;
 	osThreadId_t tA, tB;
 	osStatus_t status;
 

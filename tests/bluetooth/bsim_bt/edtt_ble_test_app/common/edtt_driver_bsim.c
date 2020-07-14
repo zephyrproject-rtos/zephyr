@@ -46,7 +46,7 @@ extern unsigned int global_device_nbr;
 
 static void edttd_clean_up(void);
 static void edptd_create_fifo_if(void);
-static int fifo_low_level_read(u8_t *bufptr, int size);
+static int fifo_low_level_read(uint8_t *bufptr, int size);
 
 bool edtt_start(void)
 {
@@ -57,7 +57,7 @@ bool edtt_start(void)
 
 	edptd_create_fifo_if();
 
-	extern void tm_set_phy_max_resync_offset(u64_t offset_in_us);
+	extern void tm_set_phy_max_resync_offset(uint64_t offset_in_us);
 	tm_set_phy_max_resync_offset(EDTT_SIMU_RESYNC_TIME_WITH_EDTT);
 	return true;
 }
@@ -90,7 +90,7 @@ NATIVE_TASK(edtt_stop, ON_EXIT, 1);
  *
  * Returns the amount of read bytes, or -1 on error
  */
-int edtt_read(u8_t *ptr, size_t size, int flags)
+int edtt_read(uint8_t *ptr, size_t size, int flags)
 {
 	if (edtt_mode_enabled == false) {
 		return -1;
@@ -132,7 +132,7 @@ int edtt_read(u8_t *ptr, size_t size, int flags)
  * <flags> is ignored in this driver, all writes to the tool are
  * instantaneous
  */
-int edtt_write(u8_t *ptr, size_t size, int flags)
+int edtt_write(uint8_t *ptr, size_t size, int flags)
 {
 	if (edtt_mode_enabled == false) {
 		return -1;
@@ -240,7 +240,7 @@ static void edttd_clean_up(void)
 	}
 }
 
-static int fifo_low_level_read(u8_t *bufptr, int size)
+static int fifo_low_level_read(uint8_t *bufptr, int size)
 {
 	int received_bytes = read(fifo[TO_DEVICE], bufptr, size);
 

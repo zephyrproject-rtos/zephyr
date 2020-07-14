@@ -32,13 +32,22 @@ struct flash_stm32_priv {
 	struct k_sem sem;
 };
 
+#if DT_PROP(DT_INST(0, soc_nv_flash), write_block_size)
+#define FLASH_STM32_WRITE_BLOCK_SIZE \
+	DT_PROP(DT_INST(0, soc_nv_flash), write_block_size)
+#else
+#error Flash write block size not available
+	/* Flash Write block size is extracted from device tree */
+	/* as flash node property 'write-block-size' */
+#endif
+
 #define FLASH_STM32_PRIV(dev) ((struct flash_stm32_priv *)((dev)->driver_data))
 #define FLASH_STM32_REGS(dev) (FLASH_STM32_PRIV(dev)->regs)
 
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 static inline bool flash_stm32_range_exists(struct device *dev,
 					    off_t offset,
-					    u32_t len)
+					    uint32_t len)
 {
 	struct flash_pages_info info;
 
@@ -48,7 +57,7 @@ static inline bool flash_stm32_range_exists(struct device *dev,
 #endif	/* CONFIG_FLASH_PAGE_LAYOUT */
 
 bool flash_stm32_valid_range(struct device *dev, off_t offset,
-			     u32_t len, bool write);
+			     uint32_t len, bool write);
 
 int flash_stm32_write_range(struct device *dev, unsigned int offset,
 			    const void *data, unsigned int len);

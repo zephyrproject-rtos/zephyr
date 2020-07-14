@@ -8,7 +8,7 @@
 
 from west.commands import WestCommand
 
-from run_common import desc_common, add_parser_common, do_run_common
+from run_common import add_parser_common, do_run_common
 
 
 class Flash(WestCommand):
@@ -18,8 +18,7 @@ class Flash(WestCommand):
             'flash',
             # Keep this in sync with the string in west-commands.yml.
             'flash and run a binary on a board',
-            'Permanently reprogram a board with a new binary.\n' +
-            desc_common('flash'),
+            "Permanently reprogram a board's flash with a new binary.",
             accepts_unknown_args=True)
         self.runner_key = 'flash-runner'  # in runners.yaml
 

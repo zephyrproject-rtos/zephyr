@@ -216,7 +216,7 @@ Now, let's write 8 bytes:
     net_pkt_write(pkt, data, 8);
 
 The buffer length is now 8 bytes.
-There are various helpers to write a byte, or big endian u16_t, u32_t.
+There are various helpers to write a byte, or big endian uint16_t, uint32_t.
 
 .. code-block:: c
 

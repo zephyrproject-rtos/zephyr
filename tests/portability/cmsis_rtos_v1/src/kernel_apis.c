@@ -10,6 +10,21 @@
 
 #define WAIT_TIME_US 1000000
 
+/* Specify accepted tolerance. On some Zephyr platforms  (e.g. nRF5x) the busy
+ * wait loop and the system timer are based on different mechanisms and may not
+ * align perfectly. 1 percent base intolerance is to cover CPU processing in the
+ * test.
+ */
+#if CONFIG_NRF_RTC_TIMER
+/* High frequency clock used for k_busy_wait may have up to 8% tolerance.
+ * Additionally, if RC is used for low frequency clock then it has 5% tolerance.
+ */
+#define TOLERANCE_PPC \
+	(1 + 8 + (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC) ? 5 : 0))
+#else
+#define TOLERANCE_PPC 1
+#endif
+
 /**
  * @brief Test kernel start
  *
@@ -39,21 +54,17 @@ void test_kernel_start(void)
  */
 void test_kernel_systick(void)
 {
-	u32_t start_time, stop_time, diff, max, min;
+	uint32_t start_time, stop_time, diff, max, min;
 
 	start_time = osKernelSysTick();
 	k_busy_wait(WAIT_TIME_US);
 	stop_time = osKernelSysTick();
 
-	diff = (u32_t)k_cyc_to_ns_floor64(stop_time -
+	diff = (uint32_t)k_cyc_to_ns_floor64(stop_time -
 					 start_time) / NSEC_PER_USEC;
 
-	/* Check that it's within 1%.  On some Zephyr platforms
-	 * (e.g. nRF5x) the busy wait loop and the system timer are
-	 * based on different mechanisms and may not align perfectly.
-	 */
-	max = WAIT_TIME_US + (WAIT_TIME_US / 100);
-	min = WAIT_TIME_US - (WAIT_TIME_US / 100);
+	max = WAIT_TIME_US + (TOLERANCE_PPC * WAIT_TIME_US / 100);
+	min = WAIT_TIME_US - (TOLERANCE_PPC * WAIT_TIME_US / 100);
 
 	zassert_true(diff <= max && diff >= min,
 		     "start %d stop %d (diff %d) wait %d\n",

@@ -94,7 +94,7 @@ This section shows additional configuration options that can be set in
 Sample
 ======
 A sample showcasing this feature is provided at
-``$ZEPHYR_BASE/samples/application_development/test_relocation/``
+``$ZEPHYR_BASE/samples/application_development/code_relocation/``
 
 This is an example of using the code relocation feature.
 

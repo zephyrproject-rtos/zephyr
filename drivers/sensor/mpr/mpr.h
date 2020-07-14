@@ -30,14 +30,14 @@
 struct mpr_data {
 	struct device *i2c_master;
 
-	u32_t reg_val;
+	uint32_t reg_val;
 };
 
 struct mpr_config {
 	const char *i2c_bus;
-	u16_t i2c_addr;
+	uint16_t i2c_addr;
 };
 
-int mpr_reg_read(struct device *dev, u8_t reg, u16_t *val);
+int mpr_reg_read(struct device *dev, uint8_t reg, uint16_t *val);
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_MPR_H_ */

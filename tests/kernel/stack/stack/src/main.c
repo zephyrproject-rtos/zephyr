@@ -93,7 +93,7 @@ dummy_test(test_stack_user_pop_fail);
 /* entry of contexts */
 static void tIsr_entry_push(void *p)
 {
-	u32_t i;
+	uint32_t i;
 
 	/* Push items to stack */
 	for (i = 0U; i < STACK_LEN; i++) {
@@ -103,7 +103,7 @@ static void tIsr_entry_push(void *p)
 
 static void tIsr_entry_pop(void *p)
 {
-	u32_t i;
+	uint32_t i;
 
 	/* Pop items from stack */
 	for (i = 0U; i < STACK_LEN; i++) {
@@ -118,7 +118,7 @@ static void tIsr_entry_pop(void *p)
 static void thread_entry_fn_single(void *p1, void *p2, void *p3)
 {
 	stack_data_t tmp[STACK_LEN];
-	u32_t i;
+	uint32_t i;
 
 	/* Pop items from stack */
 	for (i = STACK_LEN; i; i--) {
@@ -139,7 +139,7 @@ static void thread_entry_fn_single(void *p1, void *p2, void *p3)
 static void thread_entry_fn_dual(void *p1, void *p2, void *p3)
 {
 	stack_data_t tmp[STACK_LEN];
-	u32_t i;
+	uint32_t i;
 
 	for (i = 0U; i < STACK_LEN; i++) {
 		/* Pop items from stack2 */
@@ -179,7 +179,7 @@ static void thread_entry_fn_isr(void *p1, void *p2, void *p3)
 static void test_single_stack_play(void)
 {
 	stack_data_t tmp[STACK_LEN];
-	u32_t i;
+	uint32_t i;
 
 	/* Init kernel objects */
 	k_sem_init(&end_sema, 0, 1);
@@ -216,7 +216,7 @@ static void test_single_stack_play(void)
 static void test_dual_stack_play(void)
 {
 	stack_data_t tmp[STACK_LEN];
-	u32_t i;
+	uint32_t i;
 
 	k_tid_t tid = k_thread_create(&thread_data, threadstack, TSTACK_SIZE,
 				      thread_entry_fn_dual, &stack1, &stack2,

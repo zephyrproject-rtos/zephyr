@@ -24,7 +24,7 @@ struct unit_test {
 	void (*test)(void);
 	void (*setup)(void);
 	void (*teardown)(void);
-	u32_t thread_options;
+	uint32_t thread_options;
 };
 
 void z_ztest_run_test_suite(const char *name, struct unit_test *suite);

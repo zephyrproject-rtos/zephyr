@@ -21,7 +21,7 @@ static void test_arm_max_q31(
 	const q31_t *input1, int ref_index, size_t length)
 {
 	q31_t val;
-	u32_t index;
+	uint32_t index;
 
 	/* Run test function */
 	arm_max_q31(input1, length, &val, &index);
@@ -42,7 +42,7 @@ static void test_arm_min_q31(
 	const q31_t *input1, int ref_index, size_t length)
 {
 	q31_t val;
-	u32_t index;
+	uint32_t index;
 
 	/* Run test function */
 	arm_min_q31(input1, length, &val, &index);

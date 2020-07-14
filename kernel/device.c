@@ -24,8 +24,8 @@ extern struct device __device_start[];
 extern struct device __device_end[];
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-extern u32_t __device_busy_start[];
-extern u32_t __device_busy_end[];
+extern uint32_t __device_busy_start[];
+extern uint32_t __device_busy_end[];
 #define DEVICE_BUSY_SIZE (__device_busy_end - __device_busy_start)
 #endif
 
@@ -40,7 +40,7 @@ extern u32_t __device_busy_end[];
  *
  * @param level init level to run.
  */
-void z_sys_init_run_level(s32_t level)
+void z_sys_init_run_level(int32_t level)
 {
 	static const struct init_entry *levels[] = {
 		__init_PRE_KERNEL_1_start,
@@ -86,15 +86,13 @@ struct device *z_impl_device_get_binding(const char *name)
 	 * performed. Reserve string comparisons for a fallback.
 	 */
 	for (dev = __device_start; dev != __device_end; dev++) {
-		if ((dev->driver_api != NULL) &&
-		    (dev->name == name)) {
+		if (z_device_ready(dev) && (dev->name == name)) {
 			return dev;
 		}
 	}
 
 	for (dev = __device_start; dev != __device_end; dev++) {
-		if ((dev->driver_api != NULL) &&
-		    (strcmp(name, dev->name) == 0)) {
+		if (z_device_ready(dev) && (strcmp(name, dev->name) == 0)) {
 			return dev;
 		}
 	}
@@ -117,23 +115,21 @@ static inline struct device *z_vrfy_device_get_binding(const char *name)
 #include <syscalls/device_get_binding_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
+size_t z_device_get_all_static(struct device **devices)
+{
+	*devices = __device_start;
+	return __device_end - __device_start;
+}
+
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 int device_pm_control_nop(struct device *unused_device,
-		       u32_t unused_ctrl_command,
+		       uint32_t unused_ctrl_command,
 		       void *unused_context,
 		       device_pm_cb cb,
 		       void *unused_arg)
 {
-	return 0;
+	return -ENOTSUP;
 }
-
-void device_list_get(struct device **device_list, int *device_count)
-{
-
-	*device_list = __device_start;
-	*device_count = __device_end - __device_start;
-}
-
 
 int device_any_busy_check(void)
 {

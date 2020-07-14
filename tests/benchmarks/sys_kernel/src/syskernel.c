@@ -27,10 +27,10 @@ const char sz_partial[] = "PARTIAL";
 const char sz_fail[] = "FAILED";
 
 /* time necessary to read the time */
-u32_t tm_off;
+uint32_t tm_off;
 
 /* Holds the loop count that need to be carried out. */
-u32_t number_of_loops;
+uint32_t number_of_loops;
 
 /**
  *
@@ -58,7 +58,7 @@ void begin_test(void)
  * @param i   Number of tests.
  * @param t   Time in ticks for the whole test.
  */
-int check_result(int i, u32_t t)
+int check_result(int i, uint32_t t)
 {
 	/*
 	 * bench_test_end checks tCheck static variable.
@@ -147,11 +147,11 @@ void main(void)
 	/* The following code is needed to make the benchmakring run on
 	 * slower platforms.
 	 */
-	u64_t time_stamp = z_tick_get();
+	uint64_t time_stamp = z_tick_get();
 
 	k_sleep(K_MSEC(1));
 
-	u64_t time_stamp_2 = z_tick_get();
+	uint64_t time_stamp_2 = z_tick_get();
 
 	if (time_stamp_2 - time_stamp > 1) {
 		number_of_loops = 10U;

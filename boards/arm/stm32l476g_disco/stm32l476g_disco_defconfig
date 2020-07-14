@@ -5,6 +5,9 @@ CONFIG_SOC_STM32L476XX=y
 # 80MHz system clock
 CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=80000000
 
+# Enable MPU
+CONFIG_ARM_MPU=y
+
 # enable uart driver
 CONFIG_SERIAL=y
 

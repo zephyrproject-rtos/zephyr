@@ -50,8 +50,8 @@ psa_status_t att_get_pub_key(void);
  *
  * @return Returns error code as specified in \ref psa_status_t
  */
-psa_status_t att_get_iat(u8_t *ch_buffer, u32_t ch_sz,
-			 u8_t *token_buffer, u32_t *token_sz);
+psa_status_t att_get_iat(uint8_t *ch_buffer, uint32_t ch_sz,
+			 uint8_t *token_buffer, uint32_t *token_sz);
 
 /**
  * @brief TODO!

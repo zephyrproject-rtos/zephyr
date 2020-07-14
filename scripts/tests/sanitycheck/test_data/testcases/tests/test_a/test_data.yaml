@@ -1,0 +1,6 @@
+tests:
+  test_a.check_1:
+    tags: test_a
+  test_a.check_2:
+    extra_args: CONF_FILE="test.conf"
+    tags: test_a

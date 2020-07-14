@@ -16,8 +16,8 @@
 #define STM32_CLOCK_CONTROL_NAME "stm32-cc"
 
 struct stm32_pclken {
-	u32_t bus;
-	u32_t enr;
+	uint32_t bus;
+	uint32_t enr;
 };
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_STM32_CLOCK_CONTROL_H_ */

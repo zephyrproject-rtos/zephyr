@@ -33,10 +33,15 @@ static bool connected;
 K_SEM_DEFINE(run_app, 0, 1);
 static bool want_to_quit;
 
+#if defined(CONFIG_USERSPACE)
+K_APPMEM_PARTITION_DEFINE(app_partition);
+struct k_mem_domain app_domain;
+#endif
+
 #define EVENT_MASK (NET_EVENT_L4_CONNECTED | \
 		    NET_EVENT_L4_DISCONNECTED)
 
-struct configs conf = {
+APP_DMEM struct configs conf = {
 	.ipv4 = {
 		.proto = "IPv4",
 	},
@@ -77,7 +82,7 @@ static void stop_udp_and_tcp(void)
 }
 
 static void event_handler(struct net_mgmt_event_callback *cb,
-			  u32_t mgmt_event, struct net_if *iface)
+			  uint32_t mgmt_event, struct net_if *iface)
 {
 	if ((mgmt_event & EVENT_MASK) != mgmt_event) {
 		return;
@@ -113,10 +118,22 @@ static void event_handler(struct net_mgmt_event_callback *cb,
 
 static void init_app(void)
 {
+#if defined(CONFIG_USERSPACE)
+	struct k_mem_partition *parts[] = {
+#if Z_LIBC_PARTITION_EXISTS
+		&z_libc_partition,
+#endif
+		&app_partition
+	};
+
+	k_mem_domain_init(&app_domain, ARRAY_SIZE(parts), parts);
+#endif
+
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) || \
 	defined(CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED)
 	int err;
 #endif
+
 	k_sem_init(&quit_lock, 0, UINT_MAX);
 
 	LOG_INF(APP_BANNER);

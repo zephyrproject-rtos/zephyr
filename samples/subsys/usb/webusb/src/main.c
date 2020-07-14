@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(main);
 #include "webusb.h"
 
 /* Predefined response to control commands related to MS OS 2.0 descriptors */
-static const u8_t msos2_descriptor[] = {
+static const uint8_t msos2_descriptor[] = {
 	/* MS OS 2.0 set header descriptor   */
 	0x0A, 0x00,             /* Descriptor size (10 bytes)                 */
 	0x00, 0x00,             /* MS_OS_20_SET_HEADER_DESCRIPTOR             */
@@ -121,7 +121,7 @@ USB_DEVICE_BOS_DESC_DEFINE_CAP struct usb_bos_msosv2_desc {
 };
 
 /* WebUSB Device Requests */
-static const u8_t webusb_allowed_origins[] = {
+static const uint8_t webusb_allowed_origins[] = {
 	/* Allowed Origins Header:
 	 * https://wicg.github.io/webusb/#get-allowed-origins
 	 */
@@ -142,7 +142,7 @@ static const u8_t webusb_allowed_origins[] = {
 #define NUMBER_OF_ALLOWED_ORIGINS   1
 
 /* URL Descriptor: https://wicg.github.io/webusb/#url-descriptor */
-static const u8_t webusb_origin_url[] = {
+static const uint8_t webusb_origin_url[] = {
 	/* Length, DescriptorType, Scheme */
 	0x11, 0x03, 0x00,
 	'l', 'o', 'c', 'a', 'l', 'h', 'o', 's', 't', ':', '8', '0', '0', '0'
@@ -154,9 +154,9 @@ static const u8_t webusb_origin_url[] = {
  */
 #define MSOS_STRING_LENGTH	18
 static struct string_desc {
-	u8_t bLength;
-	u8_t bDescriptorType;
-	u8_t bString[MSOS_STRING_LENGTH];
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint8_t bString[MSOS_STRING_LENGTH];
 
 } __packed msos1_string_descriptor = {
 	.bLength = MSOS_STRING_LENGTH,
@@ -170,7 +170,7 @@ static struct string_desc {
 	},
 };
 
-static const u8_t msos1_compatid_descriptor[] = {
+static const uint8_t msos1_compatid_descriptor[] = {
 	/* See https://github.com/pbatard/libwdi/wiki/WCID-Devices */
 	/* MS OS 1.0 header section */
 	0x28, 0x00, 0x00, 0x00, /* Descriptor size (40 bytes)          */
@@ -200,11 +200,11 @@ static const u8_t msos1_compatid_descriptor[] = {
  * @return  0 on success, negative errno code on fail
  */
 int custom_handle_req(struct usb_setup_packet *pSetup,
-		      s32_t *len, u8_t **data)
+		      int32_t *len, uint8_t **data)
 {
 	if (GET_DESC_TYPE(pSetup->wValue) == USB_STRING_DESC &&
 	    GET_DESC_INDEX(pSetup->wValue) == 0xEE) {
-		*data = (u8_t *)(&msos1_string_descriptor);
+		*data = (uint8_t *)(&msos1_string_descriptor);
 		*len = sizeof(msos1_string_descriptor);
 
 		LOG_DBG("Get MS OS Descriptor v1 string");
@@ -226,11 +226,11 @@ int custom_handle_req(struct usb_setup_packet *pSetup,
  * @return  0 on success, negative errno code on fail.
  */
 int vendor_handle_req(struct usb_setup_packet *pSetup,
-		      s32_t *len, u8_t **data)
+		      int32_t *len, uint8_t **data)
 {
 	/* Get Allowed origins request */
 	if (pSetup->bRequest == 0x01 && pSetup->wIndex == 0x01) {
-		*data = (u8_t *)(&webusb_allowed_origins);
+		*data = (uint8_t *)(&webusb_allowed_origins);
 		*len = sizeof(webusb_allowed_origins);
 
 		LOG_DBG("Get webusb_allowed_origins");
@@ -238,13 +238,13 @@ int vendor_handle_req(struct usb_setup_packet *pSetup,
 		return 0;
 	} else if (pSetup->bRequest == 0x01 && pSetup->wIndex == 0x02) {
 		/* Get URL request */
-		u8_t index = GET_DESC_INDEX(pSetup->wValue);
+		uint8_t index = GET_DESC_INDEX(pSetup->wValue);
 
 		if (index == 0U || index > NUMBER_OF_ALLOWED_ORIGINS) {
 			return -ENOTSUP;
 		}
 
-		*data = (u8_t *)(&webusb_origin_url);
+		*data = (uint8_t *)(&webusb_origin_url);
 		*len = sizeof(webusb_origin_url);
 
 		LOG_DBG("Get webusb_origin_url");
@@ -253,7 +253,7 @@ int vendor_handle_req(struct usb_setup_packet *pSetup,
 	} else if (pSetup->bRequest == 0x02 && pSetup->wIndex == 0x07) {
 		/* Get MS OS 2.0 Descriptors request */
 		/* 0x07 means "MS_OS_20_DESCRIPTOR_INDEX" */
-		*data = (u8_t *)(&msos2_descriptor);
+		*data = (uint8_t *)(&msos2_descriptor);
 		*len = sizeof(msos2_descriptor);
 
 		LOG_DBG("Get MS OS Descriptors v2");
@@ -264,7 +264,7 @@ int vendor_handle_req(struct usb_setup_packet *pSetup,
 		/* 0x04 means "Extended compat ID".
 		 * Use 0x05 instead for "Extended properties".
 		 */
-		*data = (u8_t *)(&msos1_compatid_descriptor);
+		*data = (uint8_t *)(&msos1_compatid_descriptor);
 		*len = sizeof(msos1_compatid_descriptor);
 
 		LOG_DBG("Get MS OS Descriptors CompatibeID");

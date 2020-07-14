@@ -11,6 +11,7 @@ core on a special-purpose SoC which requires a complicated script to
 network boot.'''
 
 from runners.core import ZephyrBinaryRunner, RunnerCaps
+import argparse
 
 class MiscFlasher(ZephyrBinaryRunner):
     '''Runner for handling special purpose flashing commands.'''
@@ -37,12 +38,12 @@ class MiscFlasher(ZephyrBinaryRunner):
         parser.add_argument('cmd',
                             help='''command to run; it will be passed the
                             build directory as its first argument''')
-        parser.add_argument('args', nargs='*',
+        parser.add_argument('args', nargs=argparse.REMAINDER,
                             help='''additional arguments to pass after the build
                             directory''')
 
     @classmethod
-    def create(cls, cfg, args):
+    def do_create(cls, cfg, args):
         return MiscFlasher(cfg, args.cmd, args.args)
 
     def do_run(self, *args, **kwargs):

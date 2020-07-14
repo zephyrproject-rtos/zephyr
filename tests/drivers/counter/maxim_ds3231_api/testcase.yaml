@@ -1,8 +1,10 @@
 tests:
   drivers.counter.maxim_ds3231:
     tags: drivers
-    depends_on: counter
+    depends_on: counter i2c
     min_ram: 16
     timeout: 400
     filter: dt_compat_enabled("maxim,ds3231")
-    platform_whitelist: efr32mg_sltb004a frdm_k64f nrf51dk_nrf51422 nrf52840dk_nrf52840 nucleo_l476rg particle_xenon
+    harness: ztest
+    harness_config:
+      fixture: maxim_ds3231

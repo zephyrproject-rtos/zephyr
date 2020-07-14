@@ -187,7 +187,7 @@ static void iis2dlpc_handle_interrupt(void *arg)
 }
 
 static void iis2dlpc_gpio_callback(struct device *dev,
-				    struct gpio_callback *cb, u32_t pins)
+				    struct gpio_callback *cb, uint32_t pins)
 {
 	struct iis2dlpc_data *iis2dlpc =
 		CONTAINER_OF(cb, struct iis2dlpc_data, gpio_cb);

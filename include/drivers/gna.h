@@ -39,19 +39,19 @@ struct gna_config {
  * Describes the key parameters of the neural network model
  */
 struct gna_model_header {
-	u32_t	labase_offset;
-	u32_t	model_size;
-	u32_t	gna_mode;
-	u32_t	layer_count;
-	u32_t	bytes_per_input;
-	u32_t	bytes_per_output;
-	u32_t	num_input_nodes;
-	u32_t	num_output_nodes;
-	u32_t	input_ptr_offset;
-	u32_t	output_ptr_offset;
-	u32_t	rw_region_size;
-	u32_t	input_scaling_factor;
-	u32_t	output_scaling_factor;
+	uint32_t	labase_offset;
+	uint32_t	model_size;
+	uint32_t	gna_mode;
+	uint32_t	layer_count;
+	uint32_t	bytes_per_input;
+	uint32_t	bytes_per_output;
+	uint32_t	num_input_nodes;
+	uint32_t	num_output_nodes;
+	uint32_t	input_ptr_offset;
+	uint32_t	output_ptr_offset;
+	uint32_t	rw_region_size;
+	uint32_t	input_scaling_factor;
+	uint32_t	output_scaling_factor;
 };
 
 /**
@@ -78,9 +78,9 @@ struct gna_inference_req {
  * Statistics of the inference operation returned after completion
  */
 struct gna_inference_stats {
-	u32_t total_cycles;
-	u32_t stall_cycles;
-	u32_t cycles_per_sec;
+	uint32_t total_cycles;
+	uint32_t stall_cycles;
+	uint32_t cycles_per_sec;
 };
 
 /**

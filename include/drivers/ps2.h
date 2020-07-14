@@ -35,7 +35,7 @@ extern "C" {
  * @param dev   Pointer to the device structure for the driver instance.
  * @param data  Data byte passed pack to the user.
  */
-typedef void (*ps2_callback_t)(struct device *dev, u8_t data);
+typedef void (*ps2_callback_t)(struct device *dev, uint8_t data);
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -45,8 +45,8 @@ typedef void (*ps2_callback_t)(struct device *dev, u8_t data);
  * (Internal use only.)
  */
 typedef int (*ps2_config_t)(struct device *dev, ps2_callback_t callback_isr);
-typedef int (*ps2_read_t)(struct device *dev, u8_t *value);
-typedef int (*ps2_write_t)(struct device *dev, u8_t value);
+typedef int (*ps2_read_t)(struct device *dev, uint8_t *value);
+typedef int (*ps2_write_t)(struct device *dev, uint8_t value);
 typedef int (*ps2_disable_callback_t)(struct device *dev);
 typedef int (*ps2_enable_callback_t)(struct device *dev);
 
@@ -91,9 +91,9 @@ static inline int z_impl_ps2_config(struct device *dev,
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-__syscall int ps2_write(struct device *dev, u8_t value);
+__syscall int ps2_write(struct device *dev, uint8_t value);
 
-static inline int z_impl_ps2_write(struct device *dev, u8_t value)
+static inline int z_impl_ps2_write(struct device *dev, uint8_t value)
 {
 	const struct ps2_driver_api *api =
 			(const struct ps2_driver_api *)dev->driver_api;
@@ -109,9 +109,9 @@ static inline int z_impl_ps2_write(struct device *dev, u8_t value)
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-__syscall int ps2_read(struct device *dev,  u8_t *value);
+__syscall int ps2_read(struct device *dev,  uint8_t *value);
 
-static inline int z_impl_ps2_read(struct device *dev, u8_t *value)
+static inline int z_impl_ps2_read(struct device *dev, uint8_t *value)
 {
 	const struct ps2_driver_api *api =
 			(const struct ps2_driver_api *)dev->driver_api;

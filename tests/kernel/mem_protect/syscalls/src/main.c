@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2017, 2020 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,13 @@
 #include "test_syscalls.h"
 
 #define BUF_SIZE	32
+#define SLEEP_MS_LONG	15000
+
+#if defined(CONFIG_BOARD_NUCLEO_F429ZI) || defined(CONFIG_BOARD_NUCLEO_F207ZG)
+#define FAULTY_ADDRESS 0x0FFFFFFF
+#else
+#define FAULTY_ADDRESS 0xFFFFFFF0
+#endif
 
 char kernel_string[BUF_SIZE];
 char kernel_buf[BUF_SIZE];
@@ -98,7 +105,7 @@ static inline int z_vrfy_to_copy(char *dest)
 }
 #include <syscalls/to_copy_mrsh.c>
 
-int z_impl_syscall_arg64(u64_t arg)
+int z_impl_syscall_arg64(uint64_t arg)
 {
 	/* "Hash" (heh) the return to avoid accidental false positives
 	 * due to using common/predictable values.
@@ -106,7 +113,7 @@ int z_impl_syscall_arg64(u64_t arg)
 	return (int)(arg + 0x8c32a9eda4ca2621ULL + (size_t)&kernel_string);
 }
 
-static inline int z_vrfy_syscall_arg64(u64_t arg)
+static inline int z_vrfy_syscall_arg64(uint64_t arg)
 {
 	return z_impl_syscall_arg64(arg);
 }
@@ -116,12 +123,12 @@ static inline int z_vrfy_syscall_arg64(u64_t arg)
  * arguments (this one happens to need 9), and to test generation of
  * 64 bit return values.
  */
-u64_t z_impl_syscall_arg64_big(u32_t arg1, u32_t arg2,
-			       u64_t arg3, u32_t arg4,
-			       u32_t arg5, u64_t arg6)
+uint64_t z_impl_syscall_arg64_big(uint32_t arg1, uint32_t arg2,
+			       uint64_t arg3, uint32_t arg4,
+			       uint32_t arg5, uint64_t arg6)
 {
-	u64_t args[] = { arg1, arg2, arg3, arg4, arg5, arg6 };
-	u64_t ret = 0xae751a24ef464cc0ULL;
+	uint64_t args[] = { arg1, arg2, arg3, arg4, arg5, arg6 };
+	uint64_t ret = 0xae751a24ef464cc0ULL;
 
 	for (int i = 0; i < ARRAY_SIZE(args); i++) {
 		ret += args[i];
@@ -131,9 +138,9 @@ u64_t z_impl_syscall_arg64_big(u32_t arg1, u32_t arg2,
 	return ret;
 }
 
-static inline u64_t z_vrfy_syscall_arg64_big(u32_t arg1, u32_t arg2,
-					     u64_t arg3, u32_t arg4,
-					     u32_t arg5, u64_t arg6)
+static inline uint64_t z_vrfy_syscall_arg64_big(uint32_t arg1, uint32_t arg2,
+					     uint64_t arg3, uint32_t arg4,
+					     uint32_t arg5, uint64_t arg6)
 {
 	return z_impl_syscall_arg64_big(arg1, arg2, arg3, arg4, arg5, arg6);
 }
@@ -175,7 +182,7 @@ void test_string_nlen(void)
 	 */
 #if !(defined(CONFIG_BOARD_NSIM) && defined(CONFIG_SOC_NSIM_SEM))
 	/* Try to blow up the kernel */
-	ret = string_nlen((char *)0xFFFFFFF0, BUF_SIZE, &err);
+	ret = string_nlen((char *)FAULTY_ADDRESS, BUF_SIZE, &err);
 	zassert_equal(err, -1, "nonsense string address did not fault");
 #endif
 }
@@ -319,16 +326,55 @@ void test_syscall_torture(void)
 	}
 
 	/* Let the torture threads hog the system for 15 seconds before we
-	 * abort them. They will all be hammering the cpu(s) with system calls,
+	 * abort them.
+	 * They will all be hammering the cpu(s) with system calls,
 	 * hopefully smoking out any issues and causing a crash.
 	 */
-	k_msleep(15000);
+	k_sleep(K_MSEC(SLEEP_MS_LONG));
 
 	for (i = 0; i < NR_THREADS; i++) {
 		k_thread_abort(&torture_threads[i]);
 	}
 
 	printk("\n");
+}
+
+bool z_impl_syscall_context(void)
+{
+	return z_is_in_user_syscall();
+}
+
+static inline bool z_vrfy_syscall_context(void)
+{
+	return z_impl_syscall_context();
+}
+#include <syscalls/syscall_context_mrsh.c>
+
+void test_syscall_context_user(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	zassert_true(syscall_context(),
+		     "not reported in user syscall");
+}
+
+/* Show that z_is_in_syscall() works properly */
+void test_syscall_context(void)
+{
+	/* We're a regular supervisor thread. */
+	zassert_false(z_is_in_user_syscall(),
+		      "reported in user syscall when in supv. thread ctx");
+
+	/* Make a system call from supervisor mode. The check in the
+	 * implementation function should return false.
+	 */
+	zassert_false(syscall_context(),
+		      "reported in user syscall when called from supervisor");
+
+	/* Remainder of the test in user mode */
+	k_thread_user_mode_enter(test_syscall_context_user, NULL, NULL, NULL);
 }
 
 K_MEM_POOL_DEFINE(test_pool, BUF_SIZE, BUF_SIZE, 4 * NR_THREADS, 4);
@@ -346,7 +392,8 @@ void test_main(void)
 			 ztest_user_unit_test(test_user_string_copy),
 			 ztest_user_unit_test(test_user_string_alloc_copy),
 			 ztest_user_unit_test(test_arg64),
-			 ztest_unit_test(test_syscall_torture)
+			 ztest_unit_test(test_syscall_torture),
+			 ztest_unit_test(test_syscall_context)
 			 );
 	ztest_run_test_suite(syscalls);
 }

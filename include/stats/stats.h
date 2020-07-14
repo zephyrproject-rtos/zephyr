@@ -59,15 +59,15 @@ extern "C" {
 #endif
 
 struct stats_name_map {
-	u16_t snm_off;
+	uint16_t snm_off;
 	const char *snm_name;
 } __attribute__((packed));
 
 struct stats_hdr {
 	const char *s_name;
-	u8_t s_size;
-	u16_t s_cnt;
-	u8_t s_pad1;
+	uint8_t s_size;
+	uint16_t s_cnt;
+	uint8_t s_pad1;
 #ifdef CONFIG_STATS_NAMES
 	const struct stats_name_map *s_map;
 	int s_map_cnt;
@@ -107,28 +107,28 @@ struct stats_hdr {
  *
  * @param var__                 The name to assign to the entry.
  */
-#define STATS_SECT_ENTRY(var__) u32_t var__;
+#define STATS_SECT_ENTRY(var__) uint32_t var__;
 
 /**
  * @brief Declares a 16-bit stat entry inside a group struct.
  *
  * @param var__                 The name to assign to the entry.
  */
-#define STATS_SECT_ENTRY16(var__) u16_t var__;
+#define STATS_SECT_ENTRY16(var__) uint16_t var__;
 
 /**
  * @brief Declares a 32-bit stat entry inside a group struct.
  *
  * @param var__                 The name to assign to the entry.
  */
-#define STATS_SECT_ENTRY32(var__) u32_t var__;
+#define STATS_SECT_ENTRY32(var__) uint32_t var__;
 
 /**
  * @brief Declares a 64-bit stat entry inside a group struct.
  *
  * @param var__                 The name to assign to the entry.
  */
-#define STATS_SECT_ENTRY64(var__) u64_t var__;
+#define STATS_SECT_ENTRY64(var__) uint64_t var__;
 
 /**
  * @brief Increases a statistic entry by the specified amount.
@@ -167,9 +167,9 @@ struct stats_hdr {
 #define STATS_CLEAR(group__, var__) \
 	((group__).var__ = 0)
 
-#define STATS_SIZE_16 (sizeof(u16_t))
-#define STATS_SIZE_32 (sizeof(u32_t))
-#define STATS_SIZE_64 (sizeof(u64_t))
+#define STATS_SIZE_16 (sizeof(uint16_t))
+#define STATS_SIZE_32 (sizeof(uint32_t))
+#define STATS_SIZE_64 (sizeof(uint64_t))
 
 #define STATS_SIZE_INIT_PARMS(group__, size__) \
 	(size__),			       \
@@ -214,8 +214,8 @@ struct stats_hdr {
  * @param group__               The group containing the entry to clear.
  * @param var__                 The statistic entry to clear.
  */
-void stats_init(struct stats_hdr *shdr, u8_t size, u16_t cnt,
-		const struct stats_name_map *map, u16_t map_cnt);
+void stats_init(struct stats_hdr *shdr, uint8_t size, uint16_t cnt,
+		const struct stats_name_map *map, uint16_t map_cnt);
 
 /**
  * @brief Registers a statistics group to be managed.
@@ -255,8 +255,8 @@ int stats_register(const char *name, struct stats_hdr *shdr);
  *
  * @see STATS_INIT_AND_REG
  */
-int stats_init_and_reg(struct stats_hdr *hdr, u8_t size, u16_t cnt,
-		       const struct stats_name_map *map, u16_t map_cnt,
+int stats_init_and_reg(struct stats_hdr *hdr, uint8_t size, uint16_t cnt,
+		       const struct stats_name_map *map, uint16_t map_cnt,
 		       const char *name);
 
 /**
@@ -279,7 +279,7 @@ void stats_reset(struct stats_hdr *shdr);
  *                              nonzero to abort the walk.
  */
 typedef int stats_walk_fn(struct stats_hdr *hdr, void *arg,
-			  const char *name, u16_t off);
+			  const char *name, uint16_t off);
 
 /**
  * @brief Applies a function to every stat entry in a group.

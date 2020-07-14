@@ -33,7 +33,6 @@
 #include <mempool_sys.h>
 #endif
 #include <kernel_version.h>
-#include <random/rand32.h>
 #include <syscall.h>
 #include <sys/printk.h>
 #include <arch/cpu.h>

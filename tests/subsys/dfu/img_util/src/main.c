@@ -36,15 +36,15 @@ void test_collecting(void)
 {
 	const struct flash_area *fa;
 	struct flash_img_context ctx;
-	u32_t i, j;
-	u8_t data[5], temp, k;
+	uint32_t i, j;
+	uint8_t data[5], temp, k;
 	int ret;
 
 	ret = flash_img_init(&ctx);
 	zassert_true(ret == 0, "Flash img init");
 
 #ifdef CONFIG_IMG_ERASE_PROGRESSIVELY
-	u8_t erase_buf[8];
+	uint8_t erase_buf[8];
 	(void)memset(erase_buf, 0xff, sizeof(erase_buf));
 
 	ret = flash_area_open(FLASH_AREA_ID(image_1), &fa);
@@ -98,7 +98,7 @@ void test_collecting(void)
 	}
 
 #ifdef CONFIG_IMG_ERASE_PROGRESSIVELY
-	u8_t buf[sizeof(erase_buf)];
+	uint8_t buf[sizeof(erase_buf)];
 
 	ret = flash_area_read(fa, fa->fa_size - sizeof(buf), buf, sizeof(buf));
 	zassert_true(ret == 0, "Flash read failure (%d)", ret);

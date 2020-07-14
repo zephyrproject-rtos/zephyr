@@ -321,10 +321,10 @@ code.  For example, consider this design:
 
 .. code-block:: c
 
-    void my_wait_for_event(struct my_subsys *obj, s32_t timeout_in_ms)
+    void my_wait_for_event(struct my_subsys *obj, int32_t timeout_in_ms)
     {
         while (true) {
-            u32_t start = k_uptime_get_32();
+            uint32_t start = k_uptime_get_32();
 
             if (is_event_complete(obj)) {
                 return;
@@ -350,7 +350,7 @@ expire.  So such a loop might look like:
     void my_wait_for_event(struct my_subsys *obj, k_timeout_t timeout_in_ms)
     {
         /* Compute the end time from the timeout */
-        u64_t end = z_timeout_end_calc(timeout_in_ms);
+        uint64_t end = z_timeout_end_calc(timeout_in_ms);
 
         while (end < k_uptime_ticks()) {
                 if (is_event_complete(obj)) {

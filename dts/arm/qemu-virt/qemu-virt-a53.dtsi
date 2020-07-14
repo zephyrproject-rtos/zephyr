@@ -52,7 +52,7 @@
 			compatible = "arm,pl011";
 			reg = <0x9000000 0x1000>;
 			status = "disabled";
-			interrupts = <GIC_SPI 1 0 IRQ_TYPE_LEVEL>;
+			interrupts = <GIC_SPI 1 IRQ_TYPE_LEVEL 0>;
 			interrupt-names = "irq_0";
 			clocks = <&uartclk>;
 			label = "UART_0";
@@ -70,14 +70,14 @@
 
 		arch_timer: timer {
 			compatible = "arm,arm-timer";
-			interrupts = <GIC_PPI 13 IRQ_DEFAULT_PRIORITY
-					IRQ_TYPE_EDGE>,
-				     <GIC_PPI 14 IRQ_DEFAULT_PRIORITY
-					IRQ_TYPE_EDGE>,
-				     <GIC_PPI 11 IRQ_DEFAULT_PRIORITY
-					IRQ_TYPE_EDGE>,
-				     <GIC_PPI 10 IRQ_DEFAULT_PRIORITY
-					IRQ_TYPE_EDGE>;
+			interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>,
+				     <GIC_PPI 14 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>,
+				     <GIC_PPI 11 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>,
+				     <GIC_PPI 10 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
 			label = "arch_timer";
 		};
 	};

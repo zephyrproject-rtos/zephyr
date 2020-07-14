@@ -16,6 +16,7 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config PWM_SHELL
 	bool "Enable PWM shell"
+	default y
 	depends on SHELL
 	help
 	  Enable the PWM related shell commands.
@@ -49,5 +50,7 @@ source "drivers/pwm/Kconfig.litex"
 source "drivers/pwm/Kconfig.rv32m1_tpm"
 
 source "drivers/pwm/Kconfig.mcux_tpm"
+
+source "drivers/pwm/Kconfig.sam0"
 
 endif # PWM

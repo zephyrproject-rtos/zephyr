@@ -99,7 +99,7 @@ struct websocket_request {
 	const struct http_parser_settings *http_cb;
 
 	/** User supplied buffer where HTTP connection data is stored */
-	u8_t *tmp_buf;
+	uint8_t *tmp_buf;
 
 	/** Length of the user supplied temp buffer */
 	size_t tmp_buf_len;
@@ -124,7 +124,7 @@ struct websocket_request {
  * @return Websocket id to be used when sending/receiving Websocket data.
  */
 int websocket_connect(int http_sock, struct websocket_request *req,
-		      s32_t timeout, void *user_data);
+		      int32_t timeout, void *user_data);
 
 /**
  * @brief Send websocket msg to peer.
@@ -147,9 +147,9 @@ int websocket_connect(int http_sock, struct websocket_request *req,
  *
  * @return <0 if error, >=0 amount of bytes sent
  */
-int websocket_send_msg(int ws_sock, const u8_t *payload, size_t payload_len,
+int websocket_send_msg(int ws_sock, const uint8_t *payload, size_t payload_len,
 		       enum websocket_opcode opcode, bool mask, bool final,
-		       s32_t timeout);
+		       int32_t timeout);
 
 /**
  * @brief Receive websocket msg from peer.
@@ -168,8 +168,8 @@ int websocket_send_msg(int ws_sock, const u8_t *payload, size_t payload_len,
  *
  * @return <0 if error, >=0 amount of bytes received
  */
-int websocket_recv_msg(int ws_sock, u8_t *buf, size_t buf_len,
-		       u32_t *message_type, u64_t *remaining, s32_t timeout);
+int websocket_recv_msg(int ws_sock, uint8_t *buf, size_t buf_len,
+		       uint32_t *message_type, uint64_t *remaining, int32_t timeout);
 
 /**
  * @brief Close websocket.

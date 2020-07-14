@@ -20,8 +20,8 @@
 
 LOG_MODULE_DECLARE(LPS22HH, CONFIG_SENSOR_LOG_LEVEL);
 
-static int lps22hh_i2c_read(struct device *dev, u8_t reg_addr,
-				 u8_t *value, u16_t len)
+static int lps22hh_i2c_read(struct device *dev, uint8_t reg_addr,
+				 uint8_t *value, uint16_t len)
 {
 	struct lps22hh_data *data = dev->driver_data;
 	const struct lps22hh_config *cfg = dev->config_info;
@@ -30,8 +30,8 @@ static int lps22hh_i2c_read(struct device *dev, u8_t reg_addr,
 			      reg_addr, value, len);
 }
 
-static int lps22hh_i2c_write(struct device *dev, u8_t reg_addr,
-				  u8_t *value, u16_t len)
+static int lps22hh_i2c_write(struct device *dev, uint8_t reg_addr,
+				  uint8_t *value, uint16_t len)
 {
 	struct lps22hh_data *data = dev->driver_data;
 	const struct lps22hh_config *cfg = dev->config_info;

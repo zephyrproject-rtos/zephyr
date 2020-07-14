@@ -6,7 +6,7 @@ if(BOARD MATCHES "qemu_.*")
   list(APPEND QEMU_EXTRA_FLAGS -serial file:channel0_0)
 endif()
 
-find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(tracing_tests)
 
 target_sources(app PRIVATE src/main.c)

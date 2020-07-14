@@ -57,7 +57,7 @@ static int iis2mdc_set_hard_iron(struct device *dev, enum sensor_channel chan,
 				   const struct sensor_value *val)
 {
 	struct iis2mdc_data *iis2mdc = dev->driver_data;
-	u8_t i;
+	uint8_t i;
 	union axis3bit16_t offset;
 
 	for (i = 0U; i < 3; i++) {
@@ -72,9 +72,9 @@ static void iis2mdc_channel_get_mag(struct device *dev,
 				      enum sensor_channel chan,
 				      struct sensor_value *val)
 {
-	s32_t cval;
+	int32_t cval;
 	int i;
-	u8_t ofs_start, ofs_stop;
+	uint8_t ofs_start, ofs_stop;
 	struct iis2mdc_data *iis2mdc = dev->driver_data;
 	struct sensor_value *pval = val;
 
@@ -193,7 +193,7 @@ static int iis2mdc_sample_fetch_temp(struct device *dev)
 {
 	struct iis2mdc_data *iis2mdc = dev->driver_data;
 	union axis1bit16_t raw_temp;
-	s32_t temp;
+	int32_t temp;
 
 	/* fetch raw temperature sample */
 	if (iis2mdc_temperature_raw_get(iis2mdc->ctx, raw_temp.u8bit) < 0) {
@@ -273,6 +273,7 @@ static const struct iis2mdc_config iis2mdc_dev_config = {
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	.gpio_cs_port	    = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
 	.cs_gpio	    = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
+	.cs_gpio_flags	    = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
 
 	.spi_conf.cs        =  &iis2mdc_data.cs_ctrl,
 #else
@@ -289,7 +290,7 @@ static const struct iis2mdc_config iis2mdc_dev_config = {
 static int iis2mdc_init(struct device *dev)
 {
 	struct iis2mdc_data *iis2mdc = dev->driver_data;
-	u8_t wai;
+	uint8_t wai;
 
 	if (iis2mdc_init_interface(dev)) {
 		return -EINVAL;

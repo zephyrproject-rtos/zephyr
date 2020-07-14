@@ -35,9 +35,9 @@
 
 void main(void)
 {
-	const u8_t expected[] = { 0x55, 0xaa, 0x66, 0x99 };
+	const uint8_t expected[] = { 0x55, 0xaa, 0x66, 0x99 };
 	const size_t len = sizeof(expected);
-	u8_t buf[sizeof(expected)];
+	uint8_t buf[sizeof(expected)];
 	struct device *flash_dev;
 	int rc;
 
@@ -88,14 +88,14 @@ void main(void)
 	if (memcmp(expected, buf, len) == 0) {
 		printf("Data read matches data written. Good!!\n");
 	} else {
-		const u8_t *wp = expected;
-		const u8_t *rp = buf;
-		const u8_t *rpe = rp + len;
+		const uint8_t *wp = expected;
+		const uint8_t *rp = buf;
+		const uint8_t *rpe = rp + len;
 
 		printf("Data read does not match data written!!\n");
 		while (rp < rpe) {
 			printf("%08x wrote %02x read %02x %s\n",
-			       (u32_t)(FLASH_TEST_REGION_OFFSET + (rp - buf)),
+			       (uint32_t)(FLASH_TEST_REGION_OFFSET + (rp - buf)),
 			       *wp, *rp, (*rp == *wp) ? "match" : "MISMATCH");
 			++rp;
 			++wp;

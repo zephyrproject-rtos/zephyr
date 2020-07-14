@@ -92,8 +92,8 @@ int net_tcp_dev_init(struct device *dev)
 
 static void net_tcp_iface_init(struct net_if *iface)
 {
-	static u8_t mac_addr_1[6];
-	static u8_t mac_addr_2[6];
+	static uint8_t mac_addr_1[6];
+	static uint8_t mac_addr_2[6];
 
 	if (mac_addr_1[0] == 0U) {
 		/* 00-00-5E-00-53-xx Documentation RFC 7042 */
@@ -287,8 +287,8 @@ static inline struct in_addr *if_get_addr(struct net_if *iface)
 struct ud {
 	const struct sockaddr *remote_addr;
 	const struct sockaddr *local_addr;
-	u16_t remote_port;
-	u16_t local_port;
+	uint16_t remote_port;
+	uint16_t local_port;
 	char *test;
 	struct net_conn_handle *handle;
 };
@@ -336,13 +336,13 @@ static enum net_verdict test_fail(struct net_conn *conn,
 	return NET_DROP;
 }
 
-static u8_t data[] = { 'f', 'o', 'o', 'b', 'a', 'r' };
+static uint8_t data[] = { 'f', 'o', 'o', 'b', 'a', 'r' };
 
 static struct net_pkt *setup_ipv6_tcp(struct net_if *iface,
 				      struct in6_addr *remote_addr,
 				      struct in6_addr *local_addr,
-				      u16_t remote_port,
-				      u16_t local_port)
+				      uint16_t remote_port,
+				      uint16_t local_port)
 {
 	struct net_pkt *pkt;
 	struct net_tcp_hdr tcp_hdr = { 0 };
@@ -373,8 +373,8 @@ static struct net_pkt *setup_ipv6_tcp(struct net_if *iface,
 static struct net_pkt *setup_ipv4_tcp(struct net_if *iface,
 				      struct in_addr *remote_addr,
 				      struct in_addr *local_addr,
-				      u16_t remote_port,
-				      u16_t local_port)
+				      uint16_t remote_port,
+				      uint16_t local_port)
 {
 	struct net_pkt *pkt;
 	struct net_tcp_hdr tcp_hdr = { 0 };
@@ -402,7 +402,7 @@ static struct net_pkt *setup_ipv4_tcp(struct net_if *iface,
 	return pkt;
 }
 
-u8_t ipv6_hop_by_hop_ext_hdr[] = {
+uint8_t ipv6_hop_by_hop_ext_hdr[] = {
 /* Next header TCP */
 0x06,
 /* Length (multiple of 8 octets) */
@@ -432,8 +432,8 @@ u8_t ipv6_hop_by_hop_ext_hdr[] = {
 static struct net_pkt *setup_ipv6_tcp_long(struct net_if *iface,
 					   struct in6_addr *remote_addr,
 					   struct in6_addr *local_addr,
-					   u16_t remote_port,
-					   u16_t local_port)
+					   uint16_t remote_port,
+					   uint16_t local_port)
 {
 	struct net_pkt *pkt;
 	struct net_tcp_hdr tcp_hdr = { 0 };
@@ -472,8 +472,8 @@ static struct net_pkt *setup_ipv6_tcp_long(struct net_if *iface,
 static bool send_ipv6_tcp_msg(struct net_if *iface,
 			      struct in6_addr *src,
 			      struct in6_addr *dst,
-			      u16_t src_port,
-			      u16_t dst_port,
+			      uint16_t src_port,
+			      uint16_t dst_port,
 			      struct ud *ud,
 			      bool expect_failure)
 {
@@ -512,8 +512,8 @@ static bool send_ipv6_tcp_msg(struct net_if *iface,
 static bool send_ipv4_tcp_msg(struct net_if *iface,
 			      struct in_addr *src,
 			      struct in_addr *dst,
-			      u16_t src_port,
-			      u16_t dst_port,
+			      uint16_t src_port,
+			      uint16_t dst_port,
 			      struct ud *ud,
 			      bool expect_failure)
 {
@@ -552,8 +552,8 @@ static bool send_ipv4_tcp_msg(struct net_if *iface,
 static bool send_ipv6_tcp_long_msg(struct net_if *iface,
 				   struct in6_addr *src,
 				   struct in6_addr *dst,
-				   u16_t src_port,
-				   u16_t dst_port,
+				   uint16_t src_port,
+				   uint16_t dst_port,
 				   struct ud *ud,
 				   bool expect_failure)
 {
@@ -590,8 +590,8 @@ static bool send_ipv6_tcp_long_msg(struct net_if *iface,
 }
 
 static void set_port(sa_family_t family, struct sockaddr *raddr,
-		     struct sockaddr *laddr, u16_t rport,
-		     u16_t lport)
+		     struct sockaddr *laddr, uint16_t rport,
+		     uint16_t lport)
 {
 	if (family == AF_INET6) {
 		if (raddr) {
@@ -880,7 +880,7 @@ static bool test_register(void)
 
 static bool v6_check_port_and_address(char *test_str, struct net_pkt *pkt,
 				      const struct in6_addr *expected_dst_addr,
-				      u16_t expected_dst_port)
+				      uint16_t expected_dst_port)
 {
 	struct net_tcp_hdr *tcp_hdr;
 
@@ -922,7 +922,7 @@ static bool v6_check_port_and_address(char *test_str, struct net_pkt *pkt,
 
 static bool v4_check_port_and_address(char *test_str, struct net_pkt *pkt,
 				      const struct in_addr *expected_dst_addr,
-				      u16_t expected_dst_port)
+				      uint16_t expected_dst_port)
 {
 	struct net_tcp_hdr *tcp_hdr;
 
@@ -965,7 +965,7 @@ static bool v4_check_port_and_address(char *test_str, struct net_pkt *pkt,
 static bool test_create_v6_reset_packet(void)
 {
 	struct net_tcp *tcp = v6_ctx->tcp;
-	u8_t flags = NET_TCP_RST;
+	uint8_t flags = NET_TCP_RST;
 	struct net_pkt *pkt = NULL;
 	struct net_tcp_hdr hdr, *tcp_hdr;
 	int ret;
@@ -1002,7 +1002,7 @@ static bool test_create_v6_reset_packet(void)
 static bool test_create_v4_reset_packet(void)
 {
 	struct net_tcp *tcp = v4_ctx->tcp;
-	u8_t flags = NET_TCP_RST;
+	uint8_t flags = NET_TCP_RST;
 	struct net_pkt *pkt = NULL;
 	struct net_tcp_hdr hdr, *tcp_hdr;
 	int ret;
@@ -1039,7 +1039,7 @@ static bool test_create_v4_reset_packet(void)
 static bool test_create_v6_syn_packet(void)
 {
 	struct net_tcp *tcp = v6_ctx->tcp;
-	u8_t flags = NET_TCP_SYN;
+	uint8_t flags = NET_TCP_SYN;
 	struct net_pkt *pkt = NULL;
 	struct net_tcp_hdr hdr, *tcp_hdr;
 	int ret;
@@ -1076,7 +1076,7 @@ static bool test_create_v6_syn_packet(void)
 static bool test_create_v4_syn_packet(void)
 {
 	struct net_tcp *tcp = v4_ctx->tcp;
-	u8_t flags = NET_TCP_SYN;
+	uint8_t flags = NET_TCP_SYN;
 	struct net_pkt *pkt = NULL;
 	struct net_tcp_hdr hdr, *tcp_hdr;
 	int ret;
@@ -1113,7 +1113,7 @@ static bool test_create_v4_syn_packet(void)
 static bool test_create_v6_synack_packet(void)
 {
 	struct net_tcp *tcp = v6_ctx->tcp;
-	u8_t flags = NET_TCP_SYN | NET_TCP_ACK;
+	uint8_t flags = NET_TCP_SYN | NET_TCP_ACK;
 	struct net_pkt *pkt = NULL;
 	struct net_tcp_hdr hdr, *tcp_hdr;
 	int ret;
@@ -1151,7 +1151,7 @@ static bool test_create_v6_synack_packet(void)
 static bool test_create_v4_synack_packet(void)
 {
 	struct net_tcp *tcp = v4_ctx->tcp;
-	u8_t flags = NET_TCP_SYN | NET_TCP_ACK;
+	uint8_t flags = NET_TCP_SYN | NET_TCP_ACK;
 	struct net_pkt *pkt = NULL;
 	struct net_tcp_hdr hdr, *tcp_hdr;
 	int ret;
@@ -1189,7 +1189,7 @@ static bool test_create_v4_synack_packet(void)
 static bool test_create_v6_fin_packet(void)
 {
 	struct net_tcp *tcp = v6_ctx->tcp;
-	u8_t flags = NET_TCP_FIN;
+	uint8_t flags = NET_TCP_FIN;
 	struct net_pkt *pkt = NULL;
 	struct net_tcp_hdr hdr, *tcp_hdr;
 	int ret;
@@ -1226,7 +1226,7 @@ static bool test_create_v6_fin_packet(void)
 static bool test_create_v4_fin_packet(void)
 {
 	struct net_tcp *tcp = v4_ctx->tcp;
-	u8_t flags = NET_TCP_FIN;
+	uint8_t flags = NET_TCP_FIN;
 	struct net_pkt *pkt = NULL;
 	struct net_tcp_hdr hdr, *tcp_hdr;
 	int ret;
@@ -1263,10 +1263,10 @@ static bool test_create_v4_fin_packet(void)
 static bool test_v6_seq_check(void)
 {
 	struct net_tcp *tcp = v6_ctx->tcp;
-	u8_t flags = NET_TCP_SYN;
+	uint8_t flags = NET_TCP_SYN;
 	struct net_pkt *pkt = NULL;
 	struct net_tcp_hdr *tcp_hdr;
-	u32_t seq;
+	uint32_t seq;
 	int ret;
 
 	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0, NULL,
@@ -1298,10 +1298,10 @@ static bool test_v6_seq_check(void)
 static bool test_v4_seq_check(void)
 {
 	struct net_tcp *tcp = v4_ctx->tcp;
-	u8_t flags = NET_TCP_SYN;
+	uint8_t flags = NET_TCP_SYN;
 	struct net_pkt *pkt = NULL;
 	struct net_tcp_hdr *tcp_hdr;
-	u32_t seq;
+	uint32_t seq;
 	int ret;
 
 	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0, NULL,
@@ -1474,7 +1474,7 @@ static bool test_init_tcp_context(void)
 }
 
 /* Receive window helper function copied from tcp.c */
-static inline u32_t get_recv_wnd(struct net_tcp *tcp)
+static inline uint32_t get_recv_wnd(struct net_tcp *tcp)
 {
 	ARG_UNUSED(tcp);
 
@@ -1490,7 +1490,7 @@ static inline u32_t get_recv_wnd(struct net_tcp *tcp)
 static bool test_tcp_seq_validity(void)
 {
 	struct net_tcp *tcp = v6_ctx->tcp;
-	u8_t flags = NET_TCP_RST;
+	uint8_t flags = NET_TCP_RST;
 	struct net_pkt *pkt = NULL;
 	struct net_tcp_hdr hdr, *tcp_hdr;
 	int ret;

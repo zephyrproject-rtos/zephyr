@@ -44,9 +44,9 @@ static void preprint_char(int c)
 	}
 }
 
-static u8_t buf[_STDOUT_BUF_SIZE];
+static uint8_t buf[_STDOUT_BUF_SIZE];
 
-static int char_out(u8_t *data, size_t length, void *ctx)
+static int char_out(uint8_t *data, size_t length, void *ctx)
 {
 	for (size_t i = 0; i < length; i++) {
 		preprint_char(data[i]);
@@ -62,7 +62,7 @@ static void put(const struct log_backend *const backend,
 {
 	log_msg_get(msg);
 
-	u32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_TIMESTAMP;
+	uint32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_TIMESTAMP;
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_SHOW_COLOR)) {
 		if (posix_trace_over_tty(0)) {
@@ -85,7 +85,7 @@ static void panic(struct log_backend const *const backend)
 	log_output_flush(&log_output);
 }
 
-static void dropped(const struct log_backend *const backend, u32_t cnt)
+static void dropped(const struct log_backend *const backend, uint32_t cnt)
 {
 	ARG_UNUSED(backend);
 
@@ -93,11 +93,11 @@ static void dropped(const struct log_backend *const backend, u32_t cnt)
 }
 
 static void sync_string(const struct log_backend *const backend,
-		     struct log_msg_ids src_level, u32_t timestamp,
+		     struct log_msg_ids src_level, uint32_t timestamp,
 		     const char *fmt, va_list ap)
 {
-	u32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_TIMESTAMP;
-	u32_t key;
+	uint32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_TIMESTAMP;
+	uint32_t key;
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_SHOW_COLOR)) {
 		flags |= LOG_OUTPUT_FLAG_COLORS;
@@ -113,11 +113,11 @@ static void sync_string(const struct log_backend *const backend,
 }
 
 static void sync_hexdump(const struct log_backend *const backend,
-			 struct log_msg_ids src_level, u32_t timestamp,
-			 const char *metadata, const u8_t *data, u32_t length)
+			 struct log_msg_ids src_level, uint32_t timestamp,
+			 const char *metadata, const uint8_t *data, uint32_t length)
 {
-	u32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_TIMESTAMP;
-	u32_t key;
+	uint32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_TIMESTAMP;
+	uint32_t key;
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_SHOW_COLOR)) {
 		flags |= LOG_OUTPUT_FLAG_COLORS;

@@ -10,10 +10,10 @@
 #include <stdio.h>
 #include <sys/util.h>
 
-static s32_t read_sensor(struct device *sensor, enum sensor_channel channel)
+static int32_t read_sensor(struct device *sensor, enum sensor_channel channel)
 {
 	struct sensor_value val[3];
-	s32_t ret = 0;
+	int32_t ret = 0;
 
 	ret = sensor_sample_fetch(sensor);
 	if (ret < 0 && ret != -EBADMSG) {

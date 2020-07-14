@@ -26,7 +26,7 @@
  */
 #define BT_UUID_VALUE_V4                BT_UUID_DECLARE_16(0xb004)
 
-static u8_t   value_v4_value = 0x04;
+static uint8_t   value_v4_value = 0x04;
 
 /**
  * @brief Attribute read call back for the Value V4 attribute
@@ -42,9 +42,9 @@ static u8_t   value_v4_value = 0x04;
  */
 static ssize_t read_value_v4(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
-			     u16_t len, u16_t offset)
+			     uint16_t len, uint16_t offset)
 {
-	const u8_t *value = attr->user_data;
+	const uint8_t *value = attr->user_data;
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 sizeof(value_v4_value));
@@ -65,9 +65,9 @@ static ssize_t read_value_v4(struct bt_conn *conn,
  */
 static ssize_t write_value_v4(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, const void *buf,
-			      u16_t len, u16_t offset, u8_t flags)
+			      uint16_t len, uint16_t offset, uint8_t flags)
 {
-	u8_t *value = attr->user_data;
+	uint8_t *value = attr->user_data;
 
 	if (offset >= sizeof(value_v4_value))
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);

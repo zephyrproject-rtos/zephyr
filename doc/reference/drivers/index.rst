@@ -68,22 +68,28 @@ The following APIs for device drivers are provided by :file:`device.h`. The APIs
 are intended for use in device drivers only and should not be used in
 applications.
 
-:c:func:`DEVICE_INIT()`
-   create device object and set it up for boot time initialization.
+:c:func:`DEVICE_DEFINE()`
+   Create device object and related data structures including setting it
+   up for boot-time initialization.
 
 :c:func:`DEVICE_AND_API_INIT()`
-   Create device object and set it up for boot time initialization.
-   This also takes a pointer to driver API struct for link time
-   pointer assignment.
+   Like :c:func:`DEVICE_DEFINE()` but without support for device power
+   management.
+
+:c:func:`DEVICE_INIT()`
+   Like :c:func:`DEVICE_AND_API_INIT()` but without providing an API
+   pointer.
 
 :c:func:`DEVICE_NAME_GET()`
-   Expands to the full name of a global device object.
+   Converts a device identifier to the global identifier for a device
+   object.
 
 :c:func:`DEVICE_GET()`
    Obtain a pointer to a device object by name.
 
 :c:func:`DEVICE_DECLARE()`
-   Declare a device object.
+   Declare a device object.  Use this when you need a forward reference
+   to a device that has not yet been defined.
 
 .. _device_struct:
 
@@ -97,22 +103,16 @@ split into read-only and runtime-mutable parts. At a high level we have:
 .. code-block:: C
 
   struct device {
-        struct device_config *config;
-        void *driver_api;
-        void *driver_data;
-  };
-
-  struct device_config {
-	char    *name;
-	int (*init)(struct device *device);
+	const char *name;
 	const void *config_info;
-    [...]
+        const void *driver_api;
+        void * const driver_data;
   };
 
-The ``config`` member is for read-only configuration data set at build time. For
+The ``config_info`` member is for read-only configuration data set at build time. For
 example, base memory mapped IO addresses, IRQ line numbers, or other fixed
 physical characteristics of the device. This is the ``config_info`` structure
-passed to the ``DEVICE_*INIT()`` macros.
+passed to ``DEVICE_DEFINE()`` and related macros.
 
 The ``driver_data`` struct is kept in RAM, and is used by the driver for
 per-instance runtime housekeeping. For example, it may contain reference counts,
@@ -179,8 +179,7 @@ of these APIs, and populate an instance of subsystem_api structure:
   };
 
 The driver would then pass ``my_driver_api_funcs`` as the ``api`` argument to
-``DEVICE_AND_API_INIT()``, or manually assign it to ``device->driver_api``
-in the driver init function.
+``DEVICE_AND_API_INIT()``.
 
 .. note::
 
@@ -205,25 +204,65 @@ A device-specific API definition typically looks like this:
 
    #include <drivers/subsystem.h>
 
-   int specific_do_this(struct device *device, int foo);
+   /* When extensions need not be invoked from user mode threads */
+   int specific_do_that(struct device *device, int foo);
+
+   /* When extensions must be invokable from user mode threads */
+   __syscall int specific_from_user(struct device *device, int bar);
+
+   /* Only needed when extensions include syscalls */
+   #include <syscalls/specific.h>
 
 A driver implementing extensions to the subsystem will define the real
 implementation of both the subsystem API and the specific APIs:
 
 .. code-block:: C
 
-   static int generic_do_whatever(struct device *device, void *arg)
+   static int generic_do_this(struct device *device, void *arg)
    {
       ...
    }
 
-   static int specific_do_this(struct device *device, int foo)
+   static struct generic_api api {
+      ...
+      .do_this = generic_do_this,
+      ...
+   };
+
+   /* supervisor-only API is globally visible */
+   int specific_do_that(struct device *device, int foo)
    {
       ...
    }
+
+   /* syscall API passes through a translation */
+   int z_impl_specific_from_user(struct device *device, int bar)
+   {
+      ...
+   }
+
+   #ifdef CONFIG_USERSPACE
+
+   #include <syscall_handler.h>
+
+   int z_vrfy_specific_from_user(struct device *device, int bar)
+   {
+       Z_OOPS(Z_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_GENERIC, &api));
+       return z_impl_specific_do_that(device, bar)
+   }
+
+   #include <syscalls/specific_from_user_mrsh.c>
+
+   #endif /* CONFIG_USERSPACE */
 
 Applications use the device through both the subsystem and specific
 APIs.
+
+.. note::
+   Public API for device-specific extensions should be prefixed with the
+   compatible for the device to which it applies.  For example, if
+   adding special functions to support the Maxim DS3231 the identifier
+   fragment ``specific`` in the examples above would be ``maxim_ds3231``.
 
 Single Driver, Multiple Instances
 *********************************
@@ -245,7 +284,7 @@ with a different interrupt line. In ``drivers/subsystem/subsystem_my_driver.h``:
   typedef void (*my_driver_config_irq_t)(struct device *device);
 
   struct my_driver_config {
-        u32_t base_addr;
+        uint32_t base_addr;
         my_driver_config_irq_t config_func;
   };
 
@@ -304,10 +343,11 @@ the IRQ handler argument and the definition of the device itself.
 Initialization Levels
 *********************
 
-Drivers may depend on other drivers being initialized first, or
-require the use of kernel services. The DEVICE_INIT() APIs allow the user to
-specify at what time during the boot sequence the init function will be
-executed. Any driver will specify one of four initialization levels:
+Drivers may depend on other drivers being initialized first, or require
+the use of kernel services. :c:func:`DEVICE_DEFINE()` and related APIs
+allow the user to specify at what time during the boot sequence the init
+function will be executed. Any driver will specify one of four
+initialization levels:
 
 ``PRE_KERNEL_1``
         Used for devices that have no dependencies, such as those that rely
@@ -349,7 +389,7 @@ System Drivers
 **************
 
 In some cases you may just need to run a function at boot. Special ``SYS_*``
-macros exist that map to ``DEVICE_*INIT()`` calls.
+macros exist that map to ``DEVICE_DEFINE()`` calls.
 For ``SYS_INIT()`` there are no config or runtime data structures and there
 isn't a way
 to later get a device pointer by name. The same policies for initialization
@@ -359,8 +399,11 @@ For ``SYS_DEVICE_DEFINE()`` you can obtain pointers by name, see
 :ref:`power management <power_management_api>` section.
 
 :c:func:`SYS_INIT()`
+   Run an initialization function at boot at specified priority.
 
 :c:func:`SYS_DEVICE_DEFINE()`
+   Like :c:func:`DEVICE_DEFINE` without an API table and constructing
+   the device name from the init function name.
 
 Error handling
 **************

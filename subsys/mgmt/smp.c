@@ -105,7 +105,7 @@ zephyr_smp_trim_front(void *buf, size_t len, void *arg)
  *                              NULL on failure.
  */
 static struct net_buf *
-zephyr_smp_split_frag(struct net_buf **nb, void *arg, u16_t mtu)
+zephyr_smp_split_frag(struct net_buf **nb, void *arg, uint16_t mtu)
 {
 	struct net_buf *frag;
 	struct net_buf *src;
@@ -167,7 +167,7 @@ zephyr_smp_tx_rsp(struct smp_streamer *ns, void *rsp, void *arg)
 	struct zephyr_smp_transport *zst;
 	struct net_buf *frag;
 	struct net_buf *nb;
-	u16_t mtu;
+	uint16_t mtu;
 	int rc;
 	int i;
 

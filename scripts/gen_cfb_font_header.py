@@ -158,7 +158,7 @@ def generate_header():
 #include <zephyr.h>
 #include <display/cfb.h>
 
-static const u8_t cfb_font_{name:s}_{width:d}{height:d}[{elem:d}][{b:.0f}] = {{\n"""
+static const uint8_t cfb_font_{name:s}_{width:d}{height:d}[{elem:d}][{b:.0f}] = {{\n"""
                       .format(cmd=" ".join(clean_cmd),
                               name=args.name,
                               width=args.width,

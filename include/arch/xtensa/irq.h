@@ -39,7 +39,7 @@
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 extern int z_soc_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 				     void (*routine)(void *parameter),
-				     void *parameter, u32_t flags);
+				     void *parameter, uint32_t flags);
 #endif
 
 #else
@@ -53,12 +53,12 @@ extern int z_soc_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 
 #endif
 
-static ALWAYS_INLINE void z_xtensa_irq_enable(u32_t irq)
+static ALWAYS_INLINE void z_xtensa_irq_enable(uint32_t irq)
 {
 	z_xt_ints_on(1 << irq);
 }
 
-static ALWAYS_INLINE void z_xtensa_irq_disable(u32_t irq)
+static ALWAYS_INLINE void z_xtensa_irq_disable(uint32_t irq)
 {
 	z_xt_ints_off(1 << irq);
 }

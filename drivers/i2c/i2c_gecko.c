@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(i2c_gecko);
 #include "i2c-priv.h"
 
 #define DEV_CFG(dev) \
-	((struct i2c_gecko_config * const)(dev)->config_info)
+	((const struct i2c_gecko_config * const)(dev)->config_info)
 #define DEV_DATA(dev) \
 	((struct i2c_gecko_data * const)(dev)->driver_data)
 #define DEV_BASE(dev) \
@@ -30,21 +30,20 @@ LOG_MODULE_REGISTER(i2c_gecko);
 struct i2c_gecko_config {
 	I2C_TypeDef *base;
 	CMU_Clock_TypeDef clock;
-	I2C_Init_TypeDef i2cInit;
-	u32_t bitrate;
+	uint32_t bitrate;
 	struct soc_gpio_pin pin_sda;
 	struct soc_gpio_pin pin_scl;
 #ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
-	u8_t loc_sda;
-	u8_t loc_scl;
+	uint8_t loc_sda;
+	uint8_t loc_scl;
 #else
-	u8_t loc;
+	uint8_t loc;
 #endif
 };
 
 struct i2c_gecko_data {
 	struct k_sem device_sync_sem;
-	u32_t dev_config;
+	uint32_t dev_config;
 };
 
 void i2c_gecko_config_pins(struct device *dev,
@@ -52,7 +51,7 @@ void i2c_gecko_config_pins(struct device *dev,
 			   const struct soc_gpio_pin *pin_scl)
 {
 	I2C_TypeDef *base = DEV_BASE(dev);
-	struct i2c_gecko_config *config = DEV_CFG(dev);
+	const struct i2c_gecko_config *config = DEV_CFG(dev);
 
 	soc_gpio_configure(pin_scl);
 	soc_gpio_configure(pin_sda);
@@ -66,12 +65,12 @@ void i2c_gecko_config_pins(struct device *dev,
 #endif
 }
 
-static int i2c_gecko_configure(struct device *dev, u32_t dev_config_raw)
+static int i2c_gecko_configure(struct device *dev, uint32_t dev_config_raw)
 {
 	I2C_TypeDef *base = DEV_BASE(dev);
-	struct i2c_gecko_config *config = DEV_CFG(dev);
 	struct i2c_gecko_data *data = DEV_DATA(dev);
-	u32_t baudrate;
+	I2C_Init_TypeDef i2cInit = I2C_INIT_DEFAULT;
+	uint32_t baudrate;
 
 	if (!(I2C_MODE_MASTER & dev_config_raw)) {
 		return -EINVAL;
@@ -92,21 +91,21 @@ static int i2c_gecko_configure(struct device *dev, u32_t dev_config_raw)
 	}
 
 	data->dev_config = dev_config_raw;
-	config->i2cInit.freq = baudrate;
+	i2cInit.freq = baudrate;
 
-	I2C_Init(base, &config->i2cInit);
+	I2C_Init(base, &i2cInit);
 
 	return 0;
 }
 
 static int i2c_gecko_transfer(struct device *dev, struct i2c_msg *msgs,
-			      u8_t num_msgs, u16_t addr)
+			      uint8_t num_msgs, uint16_t addr)
 {
 	I2C_TypeDef *base = DEV_BASE(dev);
 	struct i2c_gecko_data *data = DEV_DATA(dev);
 	I2C_TransferSeq_TypeDef seq;
 	I2C_TransferReturn_TypeDef ret = -EIO;
-	u32_t timeout = 300000U;
+	uint32_t timeout = 300000U;
 
 	if (!num_msgs) {
 		return 0;
@@ -165,8 +164,8 @@ finish:
 
 static int i2c_gecko_init(struct device *dev)
 {
-	struct i2c_gecko_config *config = DEV_CFG(dev);
-	u32_t bitrate_cfg;
+	const struct i2c_gecko_config *config = DEV_CFG(dev);
+	uint32_t bitrate_cfg;
 	int error;
 
 	CMU_ClockEnable(config->clock, true);
@@ -195,10 +194,9 @@ static const struct i2c_driver_api i2c_gecko_driver_api = {
 #define PIN_I2C_0_SCL {DT_INST_PROP_BY_IDX(0, location_scl, 1), \
 		DT_INST_PROP_BY_IDX(0, location_scl, 2), gpioModeWiredAnd, 1}
 
-static struct i2c_gecko_config i2c_gecko_config_0 = {
+static const struct i2c_gecko_config i2c_gecko_config_0 = {
 	.base = (I2C_TypeDef *)DT_INST_REG_ADDR(0),
 	.clock = cmuClock_I2C0,
-	.i2cInit = I2C_INIT_DEFAULT,
 	.pin_sda = PIN_I2C_0_SDA,
 	.pin_scl = PIN_I2C_0_SCL,
 #ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
@@ -229,10 +227,9 @@ DEVICE_AND_API_INIT(i2c_gecko_0, DT_INST_LABEL(0),
 #define PIN_I2C_1_SCL {DT_INST_PROP_BY_IDX(1, location_scl, 1), \
 		DT_INST_PROP_BY_IDX(1, location_scl, 2), gpioModeWiredAnd, 1}
 
-static struct i2c_gecko_config i2c_gecko_config_1 = {
+static const struct i2c_gecko_config i2c_gecko_config_1 = {
 	.base = (I2C_TypeDef *)DT_INST_REG_ADDR(1),
 	.clock = cmuClock_I2C1,
-	.i2cInit = I2C_INIT_DEFAULT,
 	.pin_sda = PIN_I2C_1_SDA,
 	.pin_scl = PIN_I2C_1_SCL,
 #ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION

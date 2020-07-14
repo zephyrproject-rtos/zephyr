@@ -13,6 +13,10 @@
 	model = "nRF52 Adafruit Feather";
 	compatible = "adafruit,nrf52_adafruit_feather";
 
+	aliases {
+		pwm-led0 = &red_pwm_led;
+	};
+
 	chosen {
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
@@ -40,6 +44,16 @@
 		led1: led_1 {
 			gpios = <&gpio0 19 0>;
 			label = "Blue LED";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		red_pwm_led: pwm_led_0 {
+			pwms = <&pwm0 17>;
+		};
+		blue_pwm_led: pwm_led_1 {
+			pwms = <&pwm0 19>;
 		};
 	};
 
@@ -105,4 +119,10 @@
 			reg = <0x0007a000 0x00006000>;
 		};
 	};
+};
+
+&pwm0 {
+	status = "okay";
+	ch0-pin = <17>;
+	ch0-inverted;
 };

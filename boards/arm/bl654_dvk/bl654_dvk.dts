@@ -119,7 +119,7 @@
 	sck-pin = <41>;
 	mosi-pin = <40>;
 	miso-pin = <4>;
-	cs-gpios = <&gpio1 12 0>;
+	cs-gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
 };
 
 &spi1 {
@@ -128,7 +128,7 @@
 	sck-pin = <19>;
 	mosi-pin = <20>;
 	miso-pin = <21>;
-	cs-gpios = <&gpio0 17 0>;
+	cs-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
 	mx25r6435f@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;

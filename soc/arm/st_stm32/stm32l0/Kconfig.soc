@@ -7,13 +7,19 @@ choice
 	prompt "STM32L0x MCU Selection"
 	depends on SOC_SERIES_STM32L0X
 
+config SOC_STM32L011XX
+	bool "STM32L011XX"
+
 config SOC_STM32L053XX
 	bool "STM32L053XX"
+	select CPU_HAS_ARM_MPU
 
 config SOC_STM32L072XX
 	bool "STM32L072XX"
+	select CPU_HAS_ARM_MPU
 
 config SOC_STM32L073XX
 	bool "STM32L073XX"
+	select CPU_HAS_ARM_MPU
 
 endchoice

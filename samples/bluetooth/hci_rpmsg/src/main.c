@@ -91,7 +91,7 @@ static unsigned char virtio_get_status(struct virtio_device *vdev)
 	return sys_read8(VDEV_STATUS_ADDR);
 }
 
-static u32_t virtio_get_features(struct virtio_device *vdev)
+static uint32_t virtio_get_features(struct virtio_device *vdev)
 {
 	return BIT(VIRTIO_RPMSG_F_NS);
 }
@@ -123,7 +123,7 @@ static void ipm_callback_process(struct k_work *work)
 	virtqueue_notification(vq[1]);
 }
 
-static void ipm_callback(void *context, u32_t id, volatile void *data)
+static void ipm_callback(void *context, uint32_t id, volatile void *data)
 {
 	LOG_INF("Got callback of id %u", id);
 	k_work_submit(&ipm_work);
@@ -143,7 +143,7 @@ static K_FIFO_DEFINE(tx_queue);
 #define HCI_RPMSG_SCO 0x03
 #define HCI_RPMSG_EVT 0x04
 
-static struct net_buf *hci_rpmsg_cmd_recv(u8_t *data, size_t remaining)
+static struct net_buf *hci_rpmsg_cmd_recv(uint8_t *data, size_t remaining)
 {
 	struct bt_hci_cmd_hdr *hdr = (void *)data;
 	struct net_buf *buf;
@@ -174,7 +174,7 @@ static struct net_buf *hci_rpmsg_cmd_recv(u8_t *data, size_t remaining)
 	return buf;
 }
 
-static struct net_buf *hci_rpmsg_acl_recv(u8_t *data, size_t remaining)
+static struct net_buf *hci_rpmsg_acl_recv(uint8_t *data, size_t remaining)
 {
 	struct bt_hci_acl_hdr *hdr = (void *)data;
 	struct net_buf *buf;
@@ -205,9 +205,9 @@ static struct net_buf *hci_rpmsg_acl_recv(u8_t *data, size_t remaining)
 	return buf;
 }
 
-static void hci_rpmsg_rx(u8_t *data, size_t len)
+static void hci_rpmsg_rx(uint8_t *data, size_t len)
 {
-	u8_t pkt_indicator;
+	uint8_t pkt_indicator;
 	struct net_buf *buf = NULL;
 	size_t remaining = len;
 
@@ -261,7 +261,7 @@ static void tx_thread(void *p1, void *p2, void *p3)
 
 static int hci_rpmsg_send(struct net_buf *buf)
 {
-	u8_t pkt_indicator;
+	uint8_t pkt_indicator;
 
 	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf),
 		buf->len);
@@ -291,17 +291,17 @@ static int hci_rpmsg_send(struct net_buf *buf)
 }
 
 #if defined(CONFIG_BT_CTLR_ASSERT_HANDLER)
-void bt_ctlr_assert_handle(char *file, u32_t line)
+void bt_ctlr_assert_handle(char *file, uint32_t line)
 {
 	LOG_ERR("Controller assert in: %s at %d", file, line);
 }
 #endif /* CONFIG_BT_CTLR_ASSERT_HANDLER */
 
-int endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len, u32_t src,
+int endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len, uint32_t src,
 		void *priv)
 {
 	LOG_INF("Received message of %u bytes.", len);
-	hci_rpmsg_rx((u8_t *) data, len);
+	hci_rpmsg_rx((uint8_t *) data, len);
 
 	return RPMSG_SUCCESS;
 }

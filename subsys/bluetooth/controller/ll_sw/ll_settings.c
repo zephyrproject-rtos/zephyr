@@ -18,14 +18,14 @@
 
 #if defined(CONFIG_BT_CTLR_VERSION_SETTINGS)
 
-static u16_t company_id = CONFIG_BT_CTLR_COMPANY_ID;
-static u16_t subversion = CONFIG_BT_CTLR_SUBVERSION_NUMBER;
+static uint16_t company_id = CONFIG_BT_CTLR_COMPANY_ID;
+static uint16_t subversion = CONFIG_BT_CTLR_SUBVERSION_NUMBER;
 
-u16_t ll_settings_company_id(void)
+uint16_t ll_settings_company_id(void)
 {
 	return company_id;
 }
-u16_t ll_settings_subversion_number(void)
+uint16_t ll_settings_subversion_number(void)
 {
 	return subversion;
 }
@@ -34,7 +34,7 @@ u16_t ll_settings_subversion_number(void)
 
 #if defined(CONFIG_BT_CTLR_SMI_TX_SETTING)
 
-static u8_t smi_tx;
+static uint8_t smi_tx;
 
 bool ll_settings_smi_tx(void)
 {

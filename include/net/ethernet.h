@@ -43,7 +43,7 @@ extern "C" {
 /** @cond INTERNAL_HIDDEN */
 
 struct net_eth_addr {
-	u8_t addr[6];
+	uint8_t addr[6];
 };
 
 #define NET_ETH_HDR(pkt) ((struct net_eth_hdr *)net_pkt_data(pkt))
@@ -253,7 +253,7 @@ struct ethernet_api {
 	 * this information if needed.
 	 */
 	int (*vlan_setup)(struct device *dev, struct net_if *iface,
-			  u16_t tag, bool enable);
+			  uint16_t tag, bool enable);
 #endif /* CONFIG_NET_VLAN */
 
 #if defined(CONFIG_PTP_CLOCK)
@@ -274,7 +274,7 @@ BUILD_ASSERT(offsetof(struct ethernet_api, iface_api) == 0);
 struct net_eth_hdr {
 	struct net_eth_addr dst;
 	struct net_eth_addr src;
-	u16_t type;
+	uint16_t type;
 } __packed;
 
 struct ethernet_vlan {
@@ -282,7 +282,7 @@ struct ethernet_vlan {
 	struct net_if *iface;
 
 	/** VLAN tag */
-	u16_t tag;
+	uint16_t tag;
 };
 
 #if defined(CONFIG_NET_VLAN_COUNT)
@@ -304,7 +304,7 @@ struct ethernet_lldp {
 	const struct net_lldpdu *lldpdu;
 
 	/** LLDP Data Unit optional TLVs for the interface */
-	const u8_t *optional_du;
+	const uint8_t *optional_du;
 
 	/** Length of the optional Data Unit TLVs */
 	size_t optional_len;
@@ -313,10 +313,10 @@ struct ethernet_lldp {
 	struct net_if *iface;
 
 	/** LLDP TX timer start time */
-	s64_t tx_timer_start;
+	int64_t tx_timer_start;
 
 	/** LLDP TX timeout */
-	u32_t tx_timer_timeout;
+	uint32_t tx_timer_timeout;
 
 	/** LLDP RX callback function */
 	net_lldp_recv_cb_t cb;
@@ -372,7 +372,7 @@ struct ethernet_context {
 	 * context. The same information can be dug from the vlan array but
 	 * this saves some time in RX path.
 	 */
-	s8_t vlan_enabled;
+	int8_t vlan_enabled;
 #endif
 
 	/** Is this context already initialized */
@@ -397,10 +397,10 @@ struct net_eth_vlan_hdr {
 	struct net_eth_addr dst;
 	struct net_eth_addr src;
 	struct {
-		u16_t tpid; /* tag protocol id  */
-		u16_t tci;  /* tag control info */
+		uint16_t tpid; /* tag protocol id  */
+		uint16_t tci;  /* tag control info */
 	} vlan;
-	u16_t type;
+	uint16_t type;
 } __packed;
 
 
@@ -510,9 +510,9 @@ enum ethernet_hw_caps net_eth_get_hw_capabilities(struct net_if *iface)
  * @return 0 if ok, <0 if error
  */
 #if defined(CONFIG_NET_VLAN)
-int net_eth_vlan_enable(struct net_if *iface, u16_t tag);
+int net_eth_vlan_enable(struct net_if *iface, uint16_t tag);
 #else
-static inline int net_eth_vlan_enable(struct net_if *iface, u16_t tag)
+static inline int net_eth_vlan_enable(struct net_if *iface, uint16_t tag)
 {
 	return -EINVAL;
 }
@@ -527,9 +527,9 @@ static inline int net_eth_vlan_enable(struct net_if *iface, u16_t tag)
  * @return 0 if ok, <0 if error
  */
 #if defined(CONFIG_NET_VLAN)
-int net_eth_vlan_disable(struct net_if *iface, u16_t tag);
+int net_eth_vlan_disable(struct net_if *iface, uint16_t tag);
 #else
-static inline int net_eth_vlan_disable(struct net_if *iface, u16_t tag)
+static inline int net_eth_vlan_disable(struct net_if *iface, uint16_t tag)
 {
 	return -EINVAL;
 }
@@ -544,9 +544,9 @@ static inline int net_eth_vlan_disable(struct net_if *iface, u16_t tag)
  * is not configured for that interface.
  */
 #if defined(CONFIG_NET_VLAN)
-u16_t net_eth_get_vlan_tag(struct net_if *iface);
+uint16_t net_eth_get_vlan_tag(struct net_if *iface);
 #else
-static inline u16_t net_eth_get_vlan_tag(struct net_if *iface)
+static inline uint16_t net_eth_get_vlan_tag(struct net_if *iface)
 {
 	return NET_VLAN_TAG_UNSPEC;
 }
@@ -563,10 +563,10 @@ static inline u16_t net_eth_get_vlan_tag(struct net_if *iface)
  * exists.
  */
 #if defined(CONFIG_NET_VLAN)
-struct net_if *net_eth_get_vlan_iface(struct net_if *iface, u16_t tag);
+struct net_if *net_eth_get_vlan_iface(struct net_if *iface, uint16_t tag);
 #else
 static inline
-struct net_if *net_eth_get_vlan_iface(struct net_if *iface, u16_t tag)
+struct net_if *net_eth_get_vlan_iface(struct net_if *iface, uint16_t tag)
 {
 	return NULL;
 }
@@ -618,7 +618,7 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
  * @param init_fn Address to the init function of the driver.
  * @param pm_control_fn Pointer to device_pm_control function.
  * Can be empty function (device_pm_control_nop) if not implemented.
- * @param data Pointer to the device's configuration data.
+ * @param data Pointer to the device's private data.
  * @param cfg_info The address to the structure containing the
  * configuration information for this instance of the driver.
  * @param prio The initialization level at which configuration occurs.

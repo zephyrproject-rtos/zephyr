@@ -17,8 +17,8 @@
 
 struct sys_mem_pool_lvl {
 	union {
-		u32_t *bits_p;
-		u32_t bits[sizeof(u32_t *)/4];
+		uint32_t *bits_p;
+		uint32_t bits[sizeof(uint32_t *)/4];
 	};
 	sys_dlist_t free_list;
 };
@@ -29,11 +29,11 @@ struct sys_mem_pool_lvl {
 struct sys_mem_pool_base {
 	void *buf;
 	size_t max_sz;
-	u16_t n_max;
-	u8_t n_levels;
-	s8_t max_inline_level;
+	uint16_t n_max;
+	uint8_t n_levels;
+	int8_t max_inline_level;
 	struct sys_mem_pool_lvl *levels;
-	u8_t flags;
+	uint8_t flags;
 };
 
 #define _MPOOL_MINBLK sizeof(sys_dnode_t)
@@ -59,7 +59,7 @@ struct sys_mem_pool_base {
 	Z_MPOOL_HAVE_LVL((maxsz), (minsz), 14) +	\
 	Z_MPOOL_HAVE_LVL((maxsz), (minsz), 15))
 
-/* Rounds the needed bits up to integer multiples of u32_t */
+/* Rounds the needed bits up to integer multiples of uint32_t */
 #define Z_MPOOL_LBIT_WORDS_UNCLAMPED(n_max, l) \
 	((((n_max) << (2*(l))) + 31) / 32)
 
@@ -67,7 +67,7 @@ struct sys_mem_pool_base {
  * otherwise the calculated unclamped value
  */
 #define Z_MPOOL_LBIT_WORDS(n_max, l)					 \
-	(Z_MPOOL_LBIT_WORDS_UNCLAMPED(n_max, l) <= sizeof(u32_t *)/4 ? 0 \
+	(Z_MPOOL_LBIT_WORDS_UNCLAMPED(n_max, l) <= sizeof(uint32_t *)/4 ? 0 \
 	 : Z_MPOOL_LBIT_WORDS_UNCLAMPED(n_max, l))
 
 /* How many bytes for the bitfields of a single level? */
@@ -98,9 +98,9 @@ struct sys_mem_pool_base {
 void z_sys_mem_pool_base_init(struct sys_mem_pool_base *p);
 
 int z_sys_mem_pool_block_alloc(struct sys_mem_pool_base *p, size_t size,
-			      u32_t *level_p, u32_t *block_p, void **data_p);
+			      uint32_t *level_p, uint32_t *block_p, void **data_p);
 
-void z_sys_mem_pool_block_free(struct sys_mem_pool_base *p, u32_t level,
-			      u32_t block);
+void z_sys_mem_pool_block_free(struct sys_mem_pool_base *p, uint32_t level,
+			      uint32_t block);
 
 #endif /* ZEPHYR_INCLUDE_SYS_MEMPOOL_BASE_H_ */

@@ -25,10 +25,10 @@
 				       HWINFO_DEVICE_ID_LENGTH_M + \
 				       HWINFO_DEVICE_ID_LENGTH_H)
 
-ssize_t z_impl_hwinfo_get_device_id(u8_t *buffer, size_t length)
+ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
-	u32_t id[HWINFO_DEVICE_ID_LENGTH_TOTAL];
-	u32_t *idp = id;
+	uint32_t id[HWINFO_DEVICE_ID_LENGTH_TOTAL];
+	uint32_t *idp = id;
 
 #if defined(SIM_UIDH)
 	*idp++ = sys_cpu_to_be32(SIM->UIDH);

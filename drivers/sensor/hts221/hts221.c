@@ -27,14 +27,14 @@ static int hts221_channel_get(struct device *dev,
 			      struct sensor_value *val)
 {
 	struct hts221_data *data = dev->driver_data;
-	s32_t conv_val;
+	int32_t conv_val;
 
 	/*
 	 * see "Interpreting humidity and temperature readings" document
 	 * for more details
 	 */
 	if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
-		conv_val = (s32_t)(data->t1_degc_x8 - data->t0_degc_x8) *
+		conv_val = (int32_t)(data->t1_degc_x8 - data->t0_degc_x8) *
 			   (data->t_sample - data->t0_out) /
 			   (data->t1_out - data->t0_out) +
 			   data->t0_degc_x8;
@@ -43,7 +43,7 @@ static int hts221_channel_get(struct device *dev,
 		val->val1 = conv_val / 8;
 		val->val2 = (conv_val % 8) * (1000000 / 8);
 	} else if (chan == SENSOR_CHAN_HUMIDITY) {
-		conv_val = (s32_t)(data->h1_rh_x2 - data->h0_rh_x2) *
+		conv_val = (int32_t)(data->h1_rh_x2 - data->h0_rh_x2) *
 			   (data->rh_sample - data->h0_t0_out) /
 			   (data->h1_t0_out - data->h0_t0_out) +
 			   data->h0_rh_x2;
@@ -62,7 +62,7 @@ static int hts221_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct hts221_data *data = dev->driver_data;
 	const struct hts221_config *cfg = dev->config_info;
-	u8_t buf[4];
+	uint8_t buf[4];
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
@@ -83,7 +83,7 @@ static int hts221_read_conversion_data(struct device *dev)
 {
 	struct hts221_data *data = dev->driver_data;
 	const struct hts221_config *cfg = dev->config_info;
-	u8_t buf[16];
+	uint8_t buf[16];
 
 	if (i2c_burst_read(data->i2c, cfg->i2c_addr,
 			   HTS221_REG_CONVERSION_START |
@@ -116,7 +116,7 @@ int hts221_init(struct device *dev)
 {
 	const struct hts221_config *cfg = dev->config_info;
 	struct hts221_data *data = dev->driver_data;
-	u8_t id, idx;
+	uint8_t id, idx;
 
 	data->i2c = device_get_binding(cfg->i2c_bus);
 	if (data->i2c == NULL) {

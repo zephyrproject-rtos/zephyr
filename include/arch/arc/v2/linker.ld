@@ -116,14 +116,6 @@ SECTIONS {
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-rodata.ld>
-#ifdef CONFIG_SOC_RODATA_LD
-#include <soc-rodata.ld>
-#endif
-
-#ifdef CONFIG_CUSTOM_RODATA_LD
-/* Located in project source directory */
-#include <custom-rodata.ld>
-#endif
 
 #include <linker/kobject-rom.ld>
 
@@ -193,9 +185,6 @@ SECTIONS {
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-noinit.ld>
-#ifdef CONFIG_SOC_NOINIT_LD
-#include <soc-noinit.ld>
-#endif
 
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
@@ -211,14 +200,6 @@ SECTIONS {
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-rwdata.ld>
-#ifdef CONFIG_SOC_RWDATA_LD
-#include <soc-rwdata.ld>
-#endif
-
-#ifdef CONFIG_CUSTOM_RWDATA_LD
-/* Located in project source directory */
-#include <custom-rwdata.ld>
-#endif
 
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
@@ -241,10 +222,6 @@ SECTIONS {
 
 	GROUP_END(RAMABLE_REGION)
 
-#ifdef CONFIG_CUSTOM_SECTIONS_LD
-/* Located in project source directory */
-#include <custom-sections.ld>
-#endif
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
  */

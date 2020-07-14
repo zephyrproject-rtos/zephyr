@@ -15,7 +15,7 @@
 #include <storage/flash_map.h>
 #include <drivers/flash.h>
 
-static u32_t val32;
+static uint32_t val32;
 
 #if defined(CONFIG_SOC_SERIES_STM32L0X) || defined(CONFIG_SOC_SERIES_STM32L0X)
 #define ERASED_VAL 0x00
@@ -29,7 +29,7 @@ static u32_t val32;
 	DT_PROP(DT_CHOSEN(zephyr_flash), write_block_size)
 static const volatile __attribute__((section(".rodata")))
 __aligned(FLASH_WRITE_BLOCK_SIZE)
-u8_t prepared_mark[FLASH_WRITE_BLOCK_SIZE] = {ERASED_VAL};
+uint8_t prepared_mark[FLASH_WRITE_BLOCK_SIZE] = {ERASED_VAL};
 #endif
 
 static int c1_set(const char *name, size_t len, settings_read_cb read_cb,
@@ -64,7 +64,7 @@ static struct settings_handler c1_settings = {
 void test_init(void)
 {
 	int err;
-	u32_t prev_int;
+	uint32_t prev_int;
 
 	val32++;
 
@@ -90,7 +90,7 @@ void test_prepare_storage(void)
 	int err;
 	const struct flash_area *fa;
 	struct device *dev;
-	u8_t new_val[FLASH_WRITE_BLOCK_SIZE];
+	uint8_t new_val[FLASH_WRITE_BLOCK_SIZE];
 
 	if (prepared_mark[0] == ERASED_VAL) {
 		TC_PRINT("First run: erasing the storage\r\n");

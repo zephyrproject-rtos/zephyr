@@ -60,7 +60,7 @@
 
 &spi1 {
 	status = "okay";
-	cs-gpios = <&gpiob 0 0>;
+	cs-gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
 
 	lora: sx1276@0 {
 		compatible = "semtech,sx1276";
@@ -73,6 +73,7 @@
 			<&gpioh 0 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
 			<&gpioc 13 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
 		spi-max-frequency = <1000000>;
+		power-amplifier-output = "pa-boost";
 	};
 };
 

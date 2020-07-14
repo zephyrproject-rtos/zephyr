@@ -11,7 +11,7 @@
 #define HANDLER_TOKEN	0xDEADBEEF
 
 static struct k_timer irqlock_timer;
-volatile u32_t handler_result;
+volatile uint32_t handler_result;
 
 static void timer_handler(struct k_timer *timer)
 {

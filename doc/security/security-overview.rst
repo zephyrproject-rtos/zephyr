@@ -25,7 +25,7 @@ in detail. As depicted in Figure 1, these main steps are:
 
 1. **Secure Development:** Defines the system architecture and
    development process that ensures adherence to relevant coding
-   guidelines and quality assurance procedures.
+   principles and quality assurance procedures.
 
 2. **Secure Design:** Defines security procedures and implement measures
    to enforce them. A security architecture of the system and
@@ -174,7 +174,7 @@ maintainer. The main goals of the code review are:
 
 -  Reviewing the security relevant code for potential issues
 
-The current coding guidelines focus mostly on coding styles and
+The current coding principles focus mostly on coding styles and
 conventions. Functional correctness is ensured by the build system and
 the experience of the reviewer. Especially for security relevant code,
 concrete and detailed guidelines need to be developed and aligned with
@@ -272,8 +272,8 @@ basis for the security architecture. Please refer to the
 :ref:`Zephyr subsystem documentation <api_reference>` for
 detailed information.
 
-Secure Coding Guidelines
-========================
+Secure Coding
+=============
 
 Designing an open software system such as Zephyr to be secure requires
 adhering to a defined set of design standards. These standards are
@@ -282,7 +282,7 @@ included in the Zephyr Project documentation, specifically in its
 accepted principles for protection mechanisms are defined to prevent
 security violations and limit their impact:
 
--  **Open design** as a design guideline incorporates the maxim that
+-  **Open design** as a design principle incorporates the maxim that
    protection mechanisms cannot be kept secret on any system in
    widespread use. Instead of relying on secret, custom-tailored
    security measures, publicly accepted cryptographic algorithms and
@@ -364,10 +364,10 @@ Quality Assurance
 
 The quality assurance part encompasses the following criteria:
 
--  **Adherence to the Coding Guidelines** with respect to coding style,
+-  **Adherence to the Coding Conventions** with respect to coding style,
    naming schemes of modules, functions, variables, and so forth.
    This increases the readability of the Zephyr code base and eases
-   the code review. These coding guidelines are enforced by
+   the code review. These coding conventions are enforced by
    automated scripts prior to check-in.
 
 -  **Adherence to Deployment Guidelines** is required to ensure
@@ -462,7 +462,7 @@ for detailed information.
 
 The software security process includes:
 
--  **Adherence to the Secure Development Guidelines** is mandatory to
+-  **Adherence to the Secure Development Coding** is mandatory to
    avoid that individual components breach the system security and
    to minimize the vulnerability of individual modules. While this
    can be partially achieved by automated tests, it is inevitable to

@@ -16,7 +16,7 @@
 
 #include "platform-zephyr.h"
 
-#define OT_SHELL_BUFFER_SIZE 256
+#define OT_SHELL_BUFFER_SIZE CONFIG_SHELL_CMD_BUFF_SIZE
 
 static char rx_buffer[OT_SHELL_BUFFER_SIZE];
 

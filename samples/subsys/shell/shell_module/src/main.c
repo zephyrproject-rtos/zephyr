@@ -27,7 +27,7 @@ void timer_expired_handler(struct k_timer *timer)
 K_TIMER_DEFINE(log_timer, timer_expired_handler, NULL);
 
 static int cmd_log_test_start(const struct shell *shell, size_t argc,
-			      char **argv, u32_t period)
+			      char **argv, uint32_t period)
 {
 	ARG_UNUSED(argv);
 

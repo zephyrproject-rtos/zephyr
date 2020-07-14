@@ -288,12 +288,12 @@ DEFINE_TEST_VARIANT3(arm_shift_q31, possat, in_maxpos, ref_shift_possat, 9);
 DEFINE_TEST_VARIANT3(arm_shift_q31, negsat, in_maxneg, ref_shift_negsat, 9);
 
 static void test_arm_and_u32(
-	const u32_t *input1, const u32_t *input2, const u32_t *ref, size_t length)
+	const uint32_t *input1, const uint32_t *input2, const uint32_t *ref, size_t length)
 {
-	u32_t *output;
+	uint32_t *output;
 
 	/* Allocate output buffer */
-	output = malloc(length * sizeof(u32_t));
+	output = malloc(length * sizeof(uint32_t));
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Run test function */
@@ -313,12 +313,12 @@ DEFINE_TEST_VARIANT4(arm_and_u32, 8, in_bitwise1, in_bitwise2, ref_and, 8);
 DEFINE_TEST_VARIANT4(arm_and_u32, 11, in_bitwise1, in_bitwise2, ref_and, 11);
 
 static void test_arm_or_u32(
-	const u32_t *input1, const u32_t *input2, const u32_t *ref, size_t length)
+	const uint32_t *input1, const uint32_t *input2, const uint32_t *ref, size_t length)
 {
-	u32_t *output;
+	uint32_t *output;
 
 	/* Allocate output buffer */
-	output = malloc(length * sizeof(u32_t));
+	output = malloc(length * sizeof(uint32_t));
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Run test function */
@@ -338,12 +338,12 @@ DEFINE_TEST_VARIANT4(arm_or_u32, 8, in_bitwise1, in_bitwise2, ref_or, 8);
 DEFINE_TEST_VARIANT4(arm_or_u32, 11, in_bitwise1, in_bitwise2, ref_or, 11);
 
 static void test_arm_not_u32(
-	const u32_t *input1, const u32_t *ref, size_t length)
+	const uint32_t *input1, const uint32_t *ref, size_t length)
 {
-	u32_t *output;
+	uint32_t *output;
 
 	/* Allocate output buffer */
-	output = malloc(length * sizeof(u32_t));
+	output = malloc(length * sizeof(uint32_t));
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Run test function */
@@ -363,12 +363,12 @@ DEFINE_TEST_VARIANT3(arm_not_u32, 8, in_bitwise1, ref_not, 8);
 DEFINE_TEST_VARIANT3(arm_not_u32, 11, in_bitwise1, ref_not, 11);
 
 static void test_arm_xor_u32(
-	const u32_t *input1, const u32_t *input2, const u32_t *ref, size_t length)
+	const uint32_t *input1, const uint32_t *input2, const uint32_t *ref, size_t length)
 {
-	u32_t *output;
+	uint32_t *output;
 
 	/* Allocate output buffer */
-	output = malloc(length * sizeof(u32_t));
+	output = malloc(length * sizeof(uint32_t));
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Run test function */

@@ -35,74 +35,74 @@ struct ll_conn {
 	struct ull_hdr  ull;
 	struct lll_conn lll;
 
-	u16_t connect_expire;
-	u16_t supervision_reload;
-	u16_t supervision_expire;
-	u16_t procedure_reload;
-	u16_t procedure_expire;
+	uint16_t connect_expire;
+	uint16_t supervision_reload;
+	uint16_t supervision_expire;
+	uint16_t procedure_reload;
+	uint16_t procedure_expire;
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
-	u16_t appto_reload;
-	u16_t appto_expire;
-	u16_t apto_reload;
-	u16_t apto_expire;
+	uint16_t appto_reload;
+	uint16_t appto_expire;
+	uint16_t apto_reload;
+	uint16_t apto_expire;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-	u16_t default_tx_octets;
+	uint16_t default_tx_octets;
 
 #if defined(CONFIG_BT_CTLR_PHY)
-	u16_t default_tx_time;
+	uint16_t default_tx_time;
 #endif /* CONFIG_BT_CTLR_PHY */
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 	union {
 		struct {
-			u8_t fex_valid:1;
+			uint8_t fex_valid:1;
 		} common;
 
 #if defined(CONFIG_BT_PERIPHERAL)
 		struct {
-			u8_t  fex_valid:1;
-			u8_t  latency_cancel:1;
-			u8_t  sca:3;
-			u32_t force;
-			u32_t ticks_to_offset;
+			uint8_t  fex_valid:1;
+			uint8_t  latency_cancel:1;
+			uint8_t  sca:3;
+			uint32_t force;
+			uint32_t ticks_to_offset;
 		} slave;
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CENTRAL)
 		struct {
-			u8_t fex_valid:1;
-			u8_t terminate_ack:1;
+			uint8_t fex_valid:1;
+			uint8_t terminate_ack:1;
 		} master;
 #endif /* CONFIG_BT_CENTRAL */
 	};
 
-	u8_t llcp_req;
-	u8_t llcp_ack;
-	u8_t llcp_type;
+	uint8_t llcp_req;
+	uint8_t llcp_ack;
+	uint8_t llcp_type;
 
 	union {
 		struct {
-			u16_t instant;
-			u16_t *pdu_win_offset;
-			u32_t ticks_anchor;
+			uint16_t instant;
+			uint16_t *pdu_win_offset;
+			uint32_t ticks_anchor;
 		} conn_upd;
 
 		struct {
-			u8_t  initiate:1;
-			u8_t  chm[5];
-			u16_t instant;
+			uint8_t  initiate:1;
+			uint8_t  chm[5];
+			uint16_t instant;
 		} chan_map;
 
 #if defined(CONFIG_BT_CTLR_PHY)
 		struct {
-			u8_t initiate:1;
-			u8_t cmd:1;
-			u8_t tx:3;
-			u8_t rx:3;
-			u16_t instant;
+			uint8_t initiate:1;
+			uint8_t cmd:1;
+			uint8_t tx:3;
+			uint8_t rx:3;
+			uint16_t instant;
 		} phy_upd_ind;
 #endif /* CONFIG_BT_CTLR_PHY */
 
@@ -113,8 +113,8 @@ struct ll_conn {
 				LLCP_ENC_STATE_INIT,
 				LLCP_ENC_STATE_LTK_WAIT,
 			} state:2 __packed;
-			u8_t  error_code;
-			u8_t  skd[16];
+			uint8_t  error_code;
+			uint8_t  skd[16];
 		} encryption;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 	} llcp;
@@ -122,65 +122,66 @@ struct ll_conn {
 	struct node_rx_pdu *llcp_rx;
 
 	struct {
-		u8_t  req;
-		u8_t  ack;
+		uint8_t  req;
+		uint8_t  ack;
 		enum {
 			LLCP_CUI_STATE_INPROG,
 			LLCP_CUI_STATE_USE,
 			LLCP_CUI_STATE_SELECT
 		} state:2 __packed;
-		u8_t  cmd:1;
-		u16_t interval;
-		u16_t latency;
-		u16_t timeout;
-		u32_t win_offset_us;
-		u8_t  win_size;
+		uint8_t  cmd:1;
+		uint16_t interval;
+		uint16_t latency;
+		uint16_t timeout;
+		uint32_t win_offset_us;
+		uint8_t  win_size;
 	} llcp_cu;
 
 	struct {
-		u8_t  req;
-		u8_t  ack;
-		u32_t features;
+		uint8_t  req;
+		uint8_t  ack;
+		uint32_t features_conn;
+		uint32_t features_peer;
 	} llcp_feature;
 
 	struct {
-		u8_t  req;
-		u8_t  ack;
-		u8_t  tx:1;
-		u8_t  rx:1;
-		u8_t  version_number;
-		u16_t company_id;
-		u16_t sub_version_number;
+		uint8_t  req;
+		uint8_t  ack;
+		uint8_t  tx:1;
+		uint8_t  rx:1;
+		uint8_t  version_number;
+		uint16_t company_id;
+		uint16_t sub_version_number;
 	} llcp_version;
 
 	struct {
-		u8_t req;
-		u8_t ack;
-		u8_t reason_own;
-		u8_t reason_peer;
+		uint8_t req;
+		uint8_t ack;
+		uint8_t reason_own;
+		uint8_t reason_peer;
 		struct {
 			struct node_rx_hdr hdr;
-			u8_t reason;
+			uint8_t reason;
 		} node_rx;
 	} llcp_terminate;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	struct {
-		u8_t req;
-		u8_t ack;
-		u8_t pause_rx:1;
-		u8_t pause_tx:1;
-		u8_t refresh:1;
-		u8_t ediv[2];
-		u8_t rand[8];
-		u8_t ltk[16];
+		uint8_t req;
+		uint8_t ack;
+		uint8_t pause_rx:1;
+		uint8_t pause_tx:1;
+		uint8_t refresh:1;
+		uint8_t ediv[2];
+		uint8_t rand[8];
+		uint8_t ltk[16];
 	} llcp_enc;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	struct {
-		u8_t  req;
-		u8_t  ack;
+		uint8_t  req;
+		uint8_t  ack;
 		enum {
 			LLCP_CPR_STATE_REQ,
 			LLCP_CPR_STATE_RSP,
@@ -189,32 +190,32 @@ struct ll_conn {
 			LLCP_CPR_STATE_RSP_WAIT,
 			LLCP_CPR_STATE_UPD
 		} state:3 __packed;
-		u8_t  cmd:1;
-		u8_t  disabled:1;
-		u8_t  status;
-		u16_t interval_min;
-		u16_t interval_max;
-		u16_t latency;
-		u16_t timeout;
-		u8_t  preferred_periodicity;
-		u16_t reference_conn_event_count;
-		u16_t offset0;
-		u16_t offset1;
-		u16_t offset2;
-		u16_t offset3;
-		u16_t offset4;
-		u16_t offset5;
-		u16_t *pdu_win_offset0;
-		u32_t ticks_ref;
-		u32_t ticks_to_offset_next;
+		uint8_t  cmd:1;
+		uint8_t  disabled:1;
+		uint8_t  status;
+		uint16_t interval_min;
+		uint16_t interval_max;
+		uint16_t latency;
+		uint16_t timeout;
+		uint8_t  preferred_periodicity;
+		uint16_t reference_conn_event_count;
+		uint16_t offset0;
+		uint16_t offset1;
+		uint16_t offset2;
+		uint16_t offset3;
+		uint16_t offset4;
+		uint16_t offset5;
+		uint16_t *pdu_win_offset0;
+		uint32_t ticks_ref;
+		uint32_t ticks_to_offset_next;
 	} llcp_conn_param;
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	struct {
-		u8_t  req;
-		u8_t  ack;
-		u8_t  state:3;
+		uint8_t  req;
+		uint8_t  ack;
+		uint8_t  state:3;
 #define LLCP_LENGTH_STATE_REQ                 0
 #define LLCP_LENGTH_STATE_REQ_ACK_WAIT        1
 #define LLCP_LENGTH_STATE_RSP_WAIT            2
@@ -222,17 +223,17 @@ struct ll_conn {
 #define LLCP_LENGTH_STATE_RESIZE              4
 #define LLCP_LENGTH_STATE_RESIZE_RSP          5
 #define LLCP_LENGTH_STATE_RESIZE_RSP_ACK_WAIT 6
-		u8_t  disabled:1;
-		u16_t rx_octets;
-		u16_t tx_octets;
+		uint8_t  disabled:1;
+		uint16_t rx_octets;
+		uint16_t tx_octets;
 #if defined(CONFIG_BT_CTLR_PHY)
-		u16_t rx_time;
-		u16_t tx_time;
+		uint16_t rx_time;
+		uint16_t tx_time;
 #endif /* CONFIG_BT_CTLR_PHY */
 		struct {
-			u16_t tx_octets;
+			uint16_t tx_octets;
 #if defined(CONFIG_BT_CTLR_PHY)
-			u16_t tx_time;
+			uint16_t tx_time;
 #endif /* CONFIG_BT_CTLR_PHY */
 		} cache;
 	} llcp_length;
@@ -240,29 +241,29 @@ struct ll_conn {
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	struct {
-		u8_t req;
-		u8_t ack;
-		u8_t state:2;
+		uint8_t req;
+		uint8_t ack;
+		uint8_t state:2;
 #define LLCP_PHY_STATE_REQ      0
 #define LLCP_PHY_STATE_ACK_WAIT 1
 #define LLCP_PHY_STATE_RSP_WAIT 2
 #define LLCP_PHY_STATE_UPD      3
-		u8_t tx:3;
-		u8_t rx:3;
-		u8_t pause_tx:1;
-		u8_t flags:1;
-		u8_t cmd:1;
-		u8_t disabled:1;
+		uint8_t tx:3;
+		uint8_t rx:3;
+		uint8_t pause_tx:1;
+		uint8_t flags:1;
+		uint8_t cmd:1;
+		uint8_t disabled:1;
 	} llcp_phy;
 
-	u8_t phy_pref_tx:3;
-	u8_t phy_pref_flags:1;
-	u8_t phy_pref_rx:3;
+	uint8_t phy_pref_tx:3;
+	uint8_t phy_pref_flags:1;
+	uint8_t phy_pref_rx:3;
 #endif /* CONFIG_BT_CTLR_PHY */
 
 #if defined(CONFIG_BT_CTLR_LLID_DATA_START_EMPTY)
 	/* Detect empty L2CAP start frame */
-	u8_t  start_empty:1;
+	uint8_t  start_empty:1;
 #endif /* CONFIG_BT_CTLR_LLID_DATA_START_EMPTY */
 
 	struct node_tx *tx_head;
@@ -271,37 +272,37 @@ struct ll_conn {
 	struct node_tx *tx_data;
 	struct node_tx *tx_data_last;
 
-	u8_t chm_updated;
+	uint8_t chm_updated;
 };
 
 struct node_rx_cc {
-	u8_t  status;
-	u8_t  role;
-	u8_t  peer_addr_type;
-	u8_t  peer_addr[BDADDR_SIZE];
+	uint8_t  status;
+	uint8_t  role;
+	uint8_t  peer_addr_type;
+	uint8_t  peer_addr[BDADDR_SIZE];
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	u8_t  peer_rpa[BDADDR_SIZE];
-	u8_t  local_rpa[BDADDR_SIZE];
+	uint8_t  peer_rpa[BDADDR_SIZE];
+	uint8_t  local_rpa[BDADDR_SIZE];
 #endif /* CONFIG_BT_CTLR_PRIVACY */
-	u16_t interval;
-	u16_t latency;
-	u16_t timeout;
-	u8_t  sca;
+	uint16_t interval;
+	uint16_t latency;
+	uint16_t timeout;
+	uint8_t  sca;
 };
 
 struct node_rx_cu {
-	u8_t  status;
-	u16_t interval;
-	u16_t latency;
-	u16_t timeout;
+	uint8_t  status;
+	uint16_t interval;
+	uint16_t latency;
+	uint16_t timeout;
 };
 
 struct node_rx_cs {
-	u8_t csa;
+	uint8_t csa;
 };
 
 struct node_rx_pu {
-	u8_t status;
-	u8_t tx;
-	u8_t rx;
+	uint8_t status;
+	uint8_t tx;
+	uint8_t rx;
 };

@@ -96,9 +96,9 @@ static void test_con1_tick(bs_time_t HW_device_time)
 	}
 }
 
-static u8_t notify_func(struct bt_conn *conn,
+static uint8_t notify_func(struct bt_conn *conn,
 			struct bt_gatt_subscribe_params *params,
-			const void *data, u16_t length)
+			const void *data, uint16_t length)
 {
 	static int notify_count;
 	if (!data) {
@@ -128,7 +128,7 @@ static u8_t notify_func(struct bt_conn *conn,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static u8_t discover_func(struct bt_conn *conn,
+static uint8_t discover_func(struct bt_conn *conn,
 		const struct bt_gatt_attr *attr,
 		struct bt_gatt_discover_params *params)
 {
@@ -204,7 +204,7 @@ static struct bt_conn_auth_cb auth_cb_success = {
 	.pairing_complete = update_conn,
 };
 
-static void connected(struct bt_conn *conn, u8_t conn_err)
+static void connected(struct bt_conn *conn, uint8_t conn_err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 	int err;
@@ -235,10 +235,10 @@ static void connected(struct bt_conn *conn, u8_t conn_err)
 	}
 }
 
-static void params_updated(struct bt_conn *conn, u16_t interval,
-			   u16_t latency, u16_t timeout)
+static void params_updated(struct bt_conn *conn, uint16_t interval,
+			   uint16_t latency, uint16_t timeout)
 {
-	u8_t chm[5] = { 0x11, 0x22, 0x33, 0x44, 0x00 };
+	uint8_t chm[5] = { 0x11, 0x22, 0x33, 0x44, 0x00 };
 	int err;
 
 	if (interval != UPDATE_PARAM_INTERVAL_MAX ||
@@ -284,15 +284,15 @@ static bool eir_found(struct bt_data *data, void *user_data)
 	switch (data->type) {
 	case BT_DATA_UUID16_SOME:
 	case BT_DATA_UUID16_ALL:
-		if (data->data_len % sizeof(u16_t) != 0U) {
+		if (data->data_len % sizeof(uint16_t) != 0U) {
 			FAIL("AD malformed\n");
 			return true;
 		}
 
-		for (i = 0; i < data->data_len; i += sizeof(u16_t)) {
+		for (i = 0; i < data->data_len; i += sizeof(uint16_t)) {
 			struct bt_uuid *uuid;
 			struct bt_le_conn_param *param;
-			u16_t u16;
+			uint16_t u16;
 			int err;
 
 			memcpy(&u16, &data->data[i], sizeof(u16));
@@ -321,7 +321,7 @@ static bool eir_found(struct bt_data *data, void *user_data)
 	return true;
 }
 
-static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
+static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 		struct net_buf_simple *ad)
 {
 	char dev[BT_ADDR_LE_STR_LEN];
@@ -337,7 +337,7 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
 	}
 }
 
-static void disconnected(struct bt_conn *conn, u8_t reason)
+static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 	int err;

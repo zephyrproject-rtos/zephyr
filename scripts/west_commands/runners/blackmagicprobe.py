@@ -13,7 +13,7 @@ class BlackMagicProbeRunner(ZephyrBinaryRunner):
     '''Runner front-end for Black Magic probe.'''
 
     def __init__(self, cfg, gdb_serial):
-        super(BlackMagicProbeRunner, self).__init__(cfg)
+        super().__init__(cfg)
         self.gdb = [cfg.gdb] if cfg.gdb else None
         self.elf_file = cfg.elf_file
         self.gdb_serial = gdb_serial
@@ -27,7 +27,7 @@ class BlackMagicProbeRunner(ZephyrBinaryRunner):
         return RunnerCaps(commands={'flash', 'debug', 'attach'})
 
     @classmethod
-    def create(cls, cfg, args):
+    def do_create(cls, cfg, args):
         return BlackMagicProbeRunner(cfg, args.gdb_serial)
 
     @classmethod

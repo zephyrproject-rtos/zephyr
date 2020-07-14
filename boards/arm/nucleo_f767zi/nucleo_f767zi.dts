@@ -108,3 +108,7 @@
 &adc1 {
 	status = "okay";
 };
+
+&rng {
+	status = "okay";
+};

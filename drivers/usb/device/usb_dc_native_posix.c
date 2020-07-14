@@ -22,13 +22,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(native_posix);
 
-/* convert from endpoint address to hardware endpoint index */
-#define USBIP_EP_ADDR2IDX(ep)  ((ep) & ~USB_EP_DIR_MASK)
-/* get direction from endpoint address */
-#define USBIP_EP_ADDR2DIR(ep)  ((ep) & USB_EP_DIR_MASK)
-/* convert from hardware endpoint index and direction to endpoint address */
-#define USBIP_EP_IDX2ADDR(idx, dir)    ((idx) | ((dir) & USB_EP_DIR_MASK))
-
 #define USBIP_IN_EP_NUM		8
 #define USBIP_OUT_EP_NUM	8
 
@@ -53,12 +46,12 @@ static void thread_main(void *a, void *b, void *c)
  * USB endpoint private structure.
  */
 struct usb_ep_ctrl_prv {
-	u8_t ep_ena;
-	u16_t mps;
+	uint8_t ep_ena;
+	uint16_t mps;
 	usb_dc_ep_callback cb;
-	u32_t data_len;
-	u8_t buf[64];
-	u8_t buf_len;
+	uint32_t data_len;
+	uint8_t buf[64];
+	uint8_t buf_len;
 };
 
 /*
@@ -68,18 +61,18 @@ static struct usbip_ctrl_prv {
 	usb_dc_status_callback status_cb;
 	struct usb_ep_ctrl_prv in_ep_ctrl[USBIP_IN_EP_NUM];
 	struct usb_ep_ctrl_prv out_ep_ctrl[USBIP_OUT_EP_NUM];
-	u8_t attached;
+	uint8_t attached;
 } usbip_ctrl;
 
-static u8_t usbip_ep_is_valid(u8_t ep)
+static uint8_t usbip_ep_is_valid(uint8_t ep)
 {
-	u8_t ep_idx = USBIP_EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	/* Check if ep is valid */
-	if ((USBIP_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) &&
+	if ((USB_EP_DIR_IS_OUT(ep)) &&
 	    ep_idx < USBIP_OUT_EP_NUM) {
 		return 1;
-	} else if ((USBIP_EP_ADDR2DIR(ep) == USB_EP_DIR_IN) &&
+	} else if ((USB_EP_DIR_IS_IN(ep)) &&
 	    ep_idx < USBIP_IN_EP_NUM) {
 		return 1;
 	}
@@ -87,17 +80,17 @@ static u8_t usbip_ep_is_valid(u8_t ep)
 	return 0;
 }
 
-static u8_t usbip_ep_is_enabled(u8_t ep)
+static uint8_t usbip_ep_is_enabled(uint8_t ep)
 {
-	u8_t ep_idx = USBIP_EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	LOG_DBG("ep %x", ep);
 
 	/* Check if ep enabled */
-	if ((USBIP_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) &&
+	if ((USB_EP_DIR_IS_OUT(ep)) &&
 	    usbip_ctrl.out_ep_ctrl[ep_idx].ep_ena) {
 		return 1;
-	} else if ((USBIP_EP_ADDR2DIR(ep) == USB_EP_DIR_IN) &&
+	} else if ((USB_EP_DIR_IS_IN(ep)) &&
 	    usbip_ctrl.in_ep_ctrl[ep_idx].ep_ena) {
 		return 1;
 	}
@@ -147,7 +140,7 @@ int usb_dc_reset(void)
 	return 0;
 }
 
-int usb_dc_set_address(const u8_t addr)
+int usb_dc_set_address(const uint8_t addr)
 {
 	LOG_DBG("");
 
@@ -156,7 +149,7 @@ int usb_dc_set_address(const u8_t addr)
 
 int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 {
-	u8_t ep_idx = USBIP_EP_ADDR2IDX(cfg->ep_addr);
+	uint8_t ep_idx = USB_EP_GET_IDX(cfg->ep_addr);
 
 	LOG_DBG("ep %x, mps %d, type %d", cfg->ep_addr, cfg->ep_mps,
 		cfg->ep_type);
@@ -171,13 +164,13 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 		return -1;
 	}
 
-	if ((USBIP_EP_ADDR2DIR(cfg->ep_addr) == USB_EP_DIR_OUT) &&
+	if ((USB_EP_DIR_IS_OUT(cfg->ep_addr)) &&
 	    (ep_idx >= USBIP_OUT_EP_NUM)) {
 		LOG_WRN("OUT endpoint address out of range");
 		return -1;
 	}
 
-	if ((USBIP_EP_ADDR2DIR(cfg->ep_addr) == USB_EP_DIR_IN) &&
+	if ((USB_EP_DIR_IS_IN(cfg->ep_addr)) &&
 	    (ep_idx >= USBIP_IN_EP_NUM)) {
 		LOG_WRN("IN endpoint address out of range");
 		return -1;
@@ -188,9 +181,9 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 
 int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg)
 {
-	u16_t ep_mps = cfg->ep_mps;
-	u8_t ep = cfg->ep_addr;
-	u8_t ep_idx = USBIP_EP_ADDR2IDX(ep);
+	uint16_t ep_mps = cfg->ep_mps;
+	uint8_t ep = cfg->ep_addr;
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (usb_dc_ep_check_cap(cfg)) {
 		return -EINVAL;
@@ -201,7 +194,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg)
 		return -EINVAL;
 	}
 
-	if (USBIP_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
+	if (USB_EP_DIR_IS_OUT(ep)) {
 		usbip_ctrl.out_ep_ctrl[ep_idx].mps = ep_mps;
 	} else {
 		usbip_ctrl.in_ep_ctrl[ep_idx].mps = ep_mps;
@@ -210,7 +203,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg)
 	return 0;
 }
 
-int usb_dc_ep_set_stall(const u8_t ep)
+int usb_dc_ep_set_stall(const uint8_t ep)
 {
 	LOG_DBG("ep %x", ep);
 
@@ -225,9 +218,9 @@ int usb_dc_ep_set_stall(const u8_t ep)
 	return 0;
 }
 
-int usb_dc_ep_clear_stall(const u8_t ep)
+int usb_dc_ep_clear_stall(const uint8_t ep)
 {
-	u8_t ep_idx = USBIP_EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	LOG_DBG("ep %x", ep);
 
@@ -244,9 +237,9 @@ int usb_dc_ep_clear_stall(const u8_t ep)
 	return 0;
 }
 
-int usb_dc_ep_halt(const u8_t ep)
+int usb_dc_ep_halt(const uint8_t ep)
 {
-	u8_t ep_idx = USBIP_EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	LOG_DBG("ep %x", ep);
 
@@ -263,7 +256,7 @@ int usb_dc_ep_halt(const u8_t ep)
 	return 0;
 }
 
-int usb_dc_ep_is_stalled(const u8_t ep, u8_t *const stalled)
+int usb_dc_ep_is_stalled(const uint8_t ep, uint8_t *const stalled)
 {
 	LOG_DBG("ep %x", ep);
 
@@ -279,9 +272,9 @@ int usb_dc_ep_is_stalled(const u8_t ep, u8_t *const stalled)
 	return 0;
 }
 
-int usb_dc_ep_enable(const u8_t ep)
+int usb_dc_ep_enable(const uint8_t ep)
 {
-	u8_t ep_idx = USBIP_EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	LOG_DBG("ep %x", ep);
 
@@ -291,7 +284,7 @@ int usb_dc_ep_enable(const u8_t ep)
 	}
 
 	/* Enable Ep */
-	if (USBIP_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
+	if (USB_EP_DIR_IS_OUT(ep)) {
 		usbip_ctrl.out_ep_ctrl[ep_idx].ep_ena = 1U;
 	} else {
 		usbip_ctrl.in_ep_ctrl[ep_idx].ep_ena = 1U;
@@ -300,7 +293,7 @@ int usb_dc_ep_enable(const u8_t ep)
 	return 0;
 }
 
-int usb_dc_ep_disable(const u8_t ep)
+int usb_dc_ep_disable(const uint8_t ep)
 {
 	LOG_DBG("ep %x", ep);
 
@@ -312,7 +305,7 @@ int usb_dc_ep_disable(const u8_t ep)
 	return 0;
 }
 
-int usb_dc_ep_flush(const u8_t ep)
+int usb_dc_ep_flush(const uint8_t ep)
 {
 	LOG_DBG("ep %x", ep);
 
@@ -321,7 +314,7 @@ int usb_dc_ep_flush(const u8_t ep)
 		return -EINVAL;
 	}
 
-	if (USBIP_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
+	if (USB_EP_DIR_IS_OUT(ep)) {
 		/* RX FIFO is global and cannot be flushed per EP */
 		return -EINVAL;
 	}
@@ -329,8 +322,8 @@ int usb_dc_ep_flush(const u8_t ep)
 	return 0;
 }
 
-int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
-		    const u32_t data_len, u32_t * const ret_bytes)
+int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
+		    const uint32_t data_len, uint32_t * const ret_bytes)
 {
 	LOG_DBG("ep %x len %u", ep, data_len);
 
@@ -340,7 +333,7 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 	}
 
 	/* Check if IN ep */
-	if (USBIP_EP_ADDR2DIR(ep) != USB_EP_DIR_IN) {
+	if (USB_EP_GET_DIR(ep) != USB_EP_DIR_IN) {
 		return -EINVAL;
 	}
 
@@ -350,7 +343,7 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 		return -EINVAL;
 	}
 
-	if (USBIP_EP_ADDR2IDX(ep) == 0) {
+	if (USB_EP_GET_IDX(ep) == 0) {
 		if (!usbip_send_common(ep, data_len)) {
 			return -EIO;
 		}
@@ -359,7 +352,7 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 			return -EIO;
 		}
 	} else {
-		u8_t ep_idx = USBIP_EP_ADDR2IDX(ep);
+		uint8_t ep_idx = USB_EP_GET_IDX(ep);
 		struct usb_ep_ctrl_prv *ctrl = &usbip_ctrl.in_ep_ctrl[ep_idx];
 
 		memcpy(ctrl->buf, data, data_len);
@@ -373,10 +366,10 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 	return 0;
 }
 
-int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
-			u32_t *read_bytes)
+int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
+			uint32_t *read_bytes)
 {
-	u32_t bytes;
+	uint32_t bytes;
 
 	if (!usbip_ctrl.attached || !usbip_ep_is_valid(ep)) {
 		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
@@ -384,7 +377,7 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 	}
 
 	/* Check if OUT ep */
-	if (USBIP_EP_ADDR2DIR(ep) != USB_EP_DIR_OUT) {
+	if (USB_EP_GET_DIR(ep) != USB_EP_DIR_OUT) {
 		LOG_ERR("Wrong endpoint direction");
 		return -EINVAL;
 	}
@@ -406,7 +399,7 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 		 * the available data in buffer
 		 */
 		if (read_bytes) {
-			u8_t ep_idx = USBIP_EP_ADDR2IDX(ep);
+			uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 			*read_bytes = usbip_ctrl.out_ep_ctrl[ep_idx].data_len;
 		}
@@ -425,9 +418,9 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 	return 0;
 }
 
-int usb_dc_ep_read_continue(u8_t ep)
+int usb_dc_ep_read_continue(uint8_t ep)
 {
-	u8_t ep_idx = USBIP_EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (!usbip_ctrl.attached || !usbip_ep_is_valid(ep)) {
 		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
@@ -435,7 +428,7 @@ int usb_dc_ep_read_continue(u8_t ep)
 	}
 
 	/* Check if OUT ep */
-	if (USBIP_EP_ADDR2DIR(ep) != USB_EP_DIR_OUT) {
+	if (USB_EP_GET_DIR(ep) != USB_EP_DIR_OUT) {
 		LOG_ERR("Wrong endpoint direction");
 		return -EINVAL;
 	}
@@ -448,8 +441,8 @@ int usb_dc_ep_read_continue(u8_t ep)
 	return 0;
 }
 
-int usb_dc_ep_read(const u8_t ep, u8_t *const data,
-		   const u32_t max_data_len, u32_t * const read_bytes)
+int usb_dc_ep_read(const uint8_t ep, uint8_t *const data,
+		   const uint32_t max_data_len, uint32_t * const read_bytes)
 {
 	LOG_DBG("ep %x max_data_len %u", ep, max_data_len);
 
@@ -471,9 +464,9 @@ int usb_dc_ep_read(const u8_t ep, u8_t *const data,
 	return 0;
 }
 
-int usb_dc_ep_set_callback(const u8_t ep, const usb_dc_ep_callback cb)
+int usb_dc_ep_set_callback(const uint8_t ep, const usb_dc_ep_callback cb)
 {
-	u8_t ep_idx = USBIP_EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	LOG_DBG("ep %x callback %p", ep, cb);
 
@@ -482,7 +475,7 @@ int usb_dc_ep_set_callback(const u8_t ep, const usb_dc_ep_callback cb)
 		return -EINVAL;
 	}
 
-	if (USBIP_EP_ADDR2DIR(ep) == USB_EP_DIR_IN) {
+	if (USB_EP_DIR_IS_IN(ep)) {
 		usbip_ctrl.in_ep_ctrl[ep_idx].cb = cb;
 	} else {
 		usbip_ctrl.out_ep_ctrl[ep_idx].cb = cb;
@@ -496,9 +489,9 @@ void usb_dc_set_status_callback(const usb_dc_status_callback cb)
 	usbip_ctrl.status_cb = cb;
 }
 
-int usb_dc_ep_mps(const u8_t ep)
+int usb_dc_ep_mps(const uint8_t ep)
 {
-	u8_t ep_idx = USBIP_EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	LOG_DBG("ep %x", ep);
 
@@ -507,7 +500,7 @@ int usb_dc_ep_mps(const u8_t ep)
 		return -EINVAL;
 	}
 
-	if (USBIP_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
+	if (USB_EP_DIR_IS_OUT(ep)) {
 		return usbip_ctrl.out_ep_ctrl[ep_idx].mps;
 	} else {
 		return usbip_ctrl.in_ep_ctrl[ep_idx].mps;
@@ -516,7 +509,7 @@ int usb_dc_ep_mps(const u8_t ep)
 
 int handle_usb_control(struct usbip_header *hdr)
 {
-	u8_t ep_idx = USBIP_EP_ADDR2IDX(ntohl(hdr->common.ep));
+	uint8_t ep_idx = USB_EP_GET_IDX(ntohl(hdr->common.ep));
 	usb_dc_ep_callback ep_cb = usbip_ctrl.out_ep_ctrl[ep_idx].cb;
 
 	LOG_DBG("ep %x idx %u", ntohl(hdr->common.ep), ep_idx);
@@ -535,9 +528,9 @@ int handle_usb_control(struct usbip_header *hdr)
 
 int handle_usb_data(struct usbip_header *hdr)
 {
-	u8_t ep_idx = ntohl(hdr->common.ep);
+	uint8_t ep_idx = ntohl(hdr->common.ep);
 	usb_dc_ep_callback ep_cb;
-	u8_t ep;
+	uint8_t ep;
 
 	LOG_DBG("ep_idx %u", ep_idx);
 
@@ -556,8 +549,8 @@ int handle_usb_data(struct usbip_header *hdr)
 			return -EIO;
 		}
 	} else {
-		u8_t buf_len = usbip_ctrl.in_ep_ctrl[ep_idx].buf_len;
-		u8_t *buf = usbip_ctrl.in_ep_ctrl[ep_idx].buf;
+		uint8_t buf_len = usbip_ctrl.in_ep_ctrl[ep_idx].buf_len;
+		uint8_t *buf = usbip_ctrl.in_ep_ctrl[ep_idx].buf;
 
 		if (ep_idx >= USBIP_IN_EP_NUM) {
 			return -EINVAL;

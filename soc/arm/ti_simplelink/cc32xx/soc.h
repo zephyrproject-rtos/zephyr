@@ -17,7 +17,7 @@
  * the ARM compiler from sign extending IRQn_Type values higher than 0x80
  * into negative IRQ values, which causes hard-to-debug Hard Faults.
  */
-typedef u32_t IRQn_Type;
+typedef uint32_t IRQn_Type;
 
 /* Need to keep the remaining from cmsis.h, as Zephyr expects these. */
 typedef enum {

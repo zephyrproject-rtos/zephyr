@@ -40,6 +40,12 @@ struct sys_sem {
 };
 
 /**
+ * @defgroup user_semaphore_apis User mode semaphore APIs
+ * @ingroup kernel_apis
+ * @{
+ */
+
+/**
  * @brief Statically define and initialize a sys_sem
  *
  * The semaphore can be accessed outside the module where it is defined using:
@@ -65,7 +71,7 @@ struct sys_sem {
  * are identical and can be treated as a k_sem in the boot initialization code
  */
 #define SYS_SEM_DEFINE(_name, _initial_count, _count_limit) \
-	Z_STRUCT_SECTION_ITERABLE(sys_sem, _name) = { \
+	Z_STRUCT_SECTION_ITERABLE_ALTERNATE(k_sem, sys_sem, _name) = { \
 		.kernel_sem = Z_SEM_INITIALIZER(_name.kernel_sem, \
 						_initial_count, _count_limit) \
 	}; \
@@ -130,6 +136,10 @@ int sys_sem_take(struct sys_sem *sem, k_timeout_t timeout);
  * @return Current value of sys_sem.
  */
 unsigned int sys_sem_count_get(struct sys_sem *sem);
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

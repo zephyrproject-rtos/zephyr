@@ -84,7 +84,7 @@ static void process_irq(struct device *dev)
 
 static void gpio_callback(struct device *dev,
 			  struct gpio_callback *cb,
-			  u32_t pins)
+			  uint32_t pins)
 {
 	struct ccs811_data *data =
 		CONTAINER_OF(cb, struct ccs811_data, gpio_cb);
@@ -123,7 +123,7 @@ int ccs811_trigger_set(struct device *dev,
 		       sensor_trigger_handler_t handler)
 {
 	struct ccs811_data *drv_data = dev->driver_data;
-	u8_t drdy_thresh = CCS811_MODE_THRESH | CCS811_MODE_DATARDY;
+	uint8_t drdy_thresh = CCS811_MODE_THRESH | CCS811_MODE_DATARDY;
 	int rc;
 
 	LOG_DBG("CCS811 trigger set");

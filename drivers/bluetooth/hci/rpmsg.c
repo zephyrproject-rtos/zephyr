@@ -23,9 +23,9 @@
 int bt_rpmsg_platform_init(void);
 int bt_rpmsg_platform_send(struct net_buf *buf);
 
-static bool is_hci_event_discardable(const u8_t *evt_data)
+static bool is_hci_event_discardable(const uint8_t *evt_data)
 {
-	u8_t evt_type = evt_data[0];
+	uint8_t evt_type = evt_data[0];
 
 	switch (evt_type) {
 #if defined(CONFIG_BT_BREDR)
@@ -34,7 +34,7 @@ static bool is_hci_event_discardable(const u8_t *evt_data)
 		return true;
 #endif
 	case BT_HCI_EVT_LE_META_EVENT: {
-		u8_t subevt_type = evt_data[sizeof(struct bt_hci_evt_hdr)];
+		uint8_t subevt_type = evt_data[sizeof(struct bt_hci_evt_hdr)];
 
 		switch (subevt_type) {
 		case BT_HCI_EVT_LE_ADVERTISING_REPORT:
@@ -48,8 +48,7 @@ static bool is_hci_event_discardable(const u8_t *evt_data)
 	}
 }
 
-static struct net_buf *bt_rpmsg_evt_recv(u8_t *data, size_t remaining,
-					 bool *prio)
+static struct net_buf *bt_rpmsg_evt_recv(uint8_t *data, size_t remaining)
 {
 	bool discardable;
 	struct bt_hci_evt_hdr hdr;
@@ -83,14 +82,12 @@ static struct net_buf *bt_rpmsg_evt_recv(u8_t *data, size_t remaining,
 	}
 
 	net_buf_add_mem(buf, &hdr, sizeof(hdr));
-	*prio = bt_hci_evt_is_prio(hdr.evt);
-
 	net_buf_add_mem(buf, data, remaining);
 
 	return buf;
 }
 
-static struct net_buf *bt_rpmsg_acl_recv(u8_t *data, size_t remaining)
+static struct net_buf *bt_rpmsg_acl_recv(uint8_t *data, size_t remaining)
 {
 	struct bt_hci_acl_hdr hdr;
 	struct net_buf *buf;
@@ -124,10 +121,9 @@ static struct net_buf *bt_rpmsg_acl_recv(u8_t *data, size_t remaining)
 	return buf;
 }
 
-void bt_rpmsg_rx(u8_t *data, size_t len)
+void bt_rpmsg_rx(uint8_t *data, size_t len)
 {
-	u8_t pkt_indicator;
-	bool prio = false;
+	uint8_t pkt_indicator;
 	struct net_buf *buf = NULL;
 	size_t remaining = len;
 
@@ -138,7 +134,7 @@ void bt_rpmsg_rx(u8_t *data, size_t len)
 
 	switch (pkt_indicator) {
 	case RPMSG_EVT:
-		buf = bt_rpmsg_evt_recv(data, remaining, &prio);
+		buf = bt_rpmsg_evt_recv(data, remaining);
 		break;
 
 	case RPMSG_ACL:
@@ -152,11 +148,8 @@ void bt_rpmsg_rx(u8_t *data, size_t len)
 
 	if (buf) {
 		BT_DBG("Calling bt_recv(%p)", buf);
-		if (prio) {
-			bt_recv_prio(buf);
-		} else {
-			bt_recv(buf);
-		}
+
+		bt_recv(buf);
 
 		BT_HEXDUMP_DBG(buf->data, buf->len, "RX buf payload:");
 	}
@@ -165,7 +158,7 @@ void bt_rpmsg_rx(u8_t *data, size_t len)
 static int bt_rpmsg_send(struct net_buf *buf)
 {
 	int err;
-	u8_t pkt_indicator;
+	uint8_t pkt_indicator;
 
 	BT_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
 

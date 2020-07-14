@@ -67,15 +67,15 @@
  *     + response_length: this is an offset. It holds the response's length.
  */
 struct dns_msg_t {
-	u8_t *msg;
+	uint8_t *msg;
 
 	int response_type;
-	u16_t response_position;
-	u16_t response_length;
+	uint16_t response_position;
+	uint16_t response_length;
 
-	u16_t query_offset;
-	u16_t answer_offset;
-	u16_t msg_size;
+	uint16_t query_offset;
+	uint16_t answer_offset;
+	uint16_t msg_size;
 };
 
 #define DNS_MSG_INIT(b, s)	{.msg = b, .msg_size = s,	\
@@ -116,143 +116,143 @@ enum dns_header_rcode {
 };
 
 /** It returns the ID field in the DNS msg header	*/
-static inline int dns_header_id(u8_t *header)
+static inline int dns_header_id(uint8_t *header)
 {
-	return htons(UNALIGNED_GET((u16_t *)(header)));
+	return htons(UNALIGNED_GET((uint16_t *)(header)));
 }
 
 /* inline unpack routines are used to unpack data from network
  * order to cpu. Similar routines without the unpack prefix are
  * used for cpu to network order.
  */
-static inline int dns_unpack_header_id(u8_t *header)
+static inline int dns_unpack_header_id(uint8_t *header)
 {
-	return ntohs(UNALIGNED_GET((u16_t *)(header)));
+	return ntohs(UNALIGNED_GET((uint16_t *)(header)));
 }
 
 /** It returns the QR field in the DNS msg header	*/
-static inline int dns_header_qr(u8_t *header)
+static inline int dns_header_qr(uint8_t *header)
 {
 	return ((*(header + 2)) & 0x80) ? 1 : 0;
 }
 
 /** It returns the OPCODE field in the DNS msg header	*/
-static inline int dns_header_opcode(u8_t *header)
+static inline int dns_header_opcode(uint8_t *header)
 {
 	return ((*(header + 2)) & 0x70) >> 1;
 }
 
 /** It returns the AA field in the DNS msg header	*/
-static inline int dns_header_aa(u8_t *header)
+static inline int dns_header_aa(uint8_t *header)
 {
 	return ((*(header + 2)) & 0x04) ? 1 : 0;
 }
 
 /** It returns the TC field in the DNS msg header	*/
-static inline int dns_header_tc(u8_t *header)
+static inline int dns_header_tc(uint8_t *header)
 {
 	return ((*(header + 2)) & 0x02) ? 1 : 0;
 }
 
 /** It returns the RD field in the DNS msg header	*/
-static inline int dns_header_rd(u8_t *header)
+static inline int dns_header_rd(uint8_t *header)
 {
 	return ((*(header + 2)) & 0x01) ? 1 : 0;
 }
 
 /** It returns the RA field in the DNS msg header	*/
-static inline int dns_header_ra(u8_t *header)
+static inline int dns_header_ra(uint8_t *header)
 {
 	return ((*(header + 3)) & 0x80) >> 7;
 }
 
 /** It returns the Z field in the DNS msg header	*/
-static inline int dns_header_z(u8_t *header)
+static inline int dns_header_z(uint8_t *header)
 {
 	return ((*(header + 3)) & 0x70) >> 4;
 }
 
 /** It returns the RCODE field in the DNS msg header	*/
-static inline int dns_header_rcode(u8_t *header)
+static inline int dns_header_rcode(uint8_t *header)
 {
 	return ((*(header + 3)) & 0x0F);
 }
 
 /** It returns the QDCOUNT field in the DNS msg header	*/
-static inline int dns_header_qdcount(u8_t *header)
+static inline int dns_header_qdcount(uint8_t *header)
 {
-	return htons(UNALIGNED_GET((u16_t *)(header + 4)));
+	return htons(UNALIGNED_GET((uint16_t *)(header + 4)));
 }
 
-static inline int dns_unpack_header_qdcount(u8_t *header)
+static inline int dns_unpack_header_qdcount(uint8_t *header)
 {
-	return ntohs(UNALIGNED_GET((u16_t *)(header + 4)));
+	return ntohs(UNALIGNED_GET((uint16_t *)(header + 4)));
 }
 
 /** It returns the ANCOUNT field in the DNS msg header	*/
-static inline int dns_header_ancount(u8_t *header)
+static inline int dns_header_ancount(uint8_t *header)
 {
-	return htons(UNALIGNED_GET((u16_t *)(header + 6)));
+	return htons(UNALIGNED_GET((uint16_t *)(header + 6)));
 }
 
-static inline int dns_unpack_header_ancount(u8_t *header)
+static inline int dns_unpack_header_ancount(uint8_t *header)
 {
-	return ntohs(UNALIGNED_GET((u16_t *)(header + 6)));
+	return ntohs(UNALIGNED_GET((uint16_t *)(header + 6)));
 }
 
 /** It returns the NSCOUNT field in the DNS msg header	*/
-static inline int dns_header_nscount(u8_t *header)
+static inline int dns_header_nscount(uint8_t *header)
 {
-	return htons(UNALIGNED_GET((u16_t *)(header + 8)));
+	return htons(UNALIGNED_GET((uint16_t *)(header + 8)));
 }
 
 /** It returns the ARCOUNT field in the DNS msg header	*/
-static inline int dns_header_arcount(u8_t *header)
+static inline int dns_header_arcount(uint8_t *header)
 {
-	return htons(UNALIGNED_GET((u16_t *)(header + 10)));
+	return htons(UNALIGNED_GET((uint16_t *)(header + 10)));
 }
 
-static inline int dns_query_qtype(u8_t *question)
+static inline int dns_query_qtype(uint8_t *question)
 {
-	return htons(UNALIGNED_GET((u16_t *)(question + 0)));
+	return htons(UNALIGNED_GET((uint16_t *)(question + 0)));
 }
 
-static inline int dns_unpack_query_qtype(const u8_t *question)
+static inline int dns_unpack_query_qtype(const uint8_t *question)
 {
-	return ntohs(UNALIGNED_GET((u16_t *)(question + 0)));
+	return ntohs(UNALIGNED_GET((uint16_t *)(question + 0)));
 }
 
-static inline int dns_query_qclass(u8_t *question)
+static inline int dns_query_qclass(uint8_t *question)
 {
-	return htons(UNALIGNED_GET((u16_t *)(question + 2)));
+	return htons(UNALIGNED_GET((uint16_t *)(question + 2)));
 }
 
-static inline int dns_unpack_query_qclass(const u8_t *question)
+static inline int dns_unpack_query_qclass(const uint8_t *question)
 {
-	return ntohs(UNALIGNED_GET((u16_t *)(question + 2)));
+	return ntohs(UNALIGNED_GET((uint16_t *)(question + 2)));
 }
 
-static inline int dns_answer_type(u16_t dname_size, u8_t *answer)
+static inline int dns_answer_type(uint16_t dname_size, uint8_t *answer)
 {
 	/* 4.1.3. Resource record format */
-	return ntohs(UNALIGNED_GET((u16_t *)(answer + dname_size + 0)));
+	return ntohs(UNALIGNED_GET((uint16_t *)(answer + dname_size + 0)));
 }
 
-static inline int dns_answer_class(u16_t dname_size, u8_t *answer)
+static inline int dns_answer_class(uint16_t dname_size, uint8_t *answer)
 {
 	/* 4.1.3. Resource record format */
-	return ntohs(UNALIGNED_GET((u16_t *)(answer + dname_size + 2)));
+	return ntohs(UNALIGNED_GET((uint16_t *)(answer + dname_size + 2)));
 }
 
-static inline int dns_answer_ttl(u16_t dname_size, u8_t *answer)
+static inline int dns_answer_ttl(uint16_t dname_size, uint8_t *answer)
 {
-	return ntohl(UNALIGNED_GET((u32_t *)(answer + dname_size + 4)));
+	return ntohl(UNALIGNED_GET((uint32_t *)(answer + dname_size + 4)));
 }
 
-static inline int dns_answer_rdlength(u16_t dname_size,
-					     u8_t *answer)
+static inline int dns_answer_rdlength(uint16_t dname_size,
+					     uint8_t *answer)
 {
-	return ntohs(UNALIGNED_GET((u16_t *)(answer + dname_size + 8)));
+	return ntohs(UNALIGNED_GET((uint16_t *)(answer + dname_size + 8)));
 }
 
 /**
@@ -266,7 +266,7 @@ static inline int dns_answer_rdlength(u16_t dname_size,
  * @retval -ENOMEM if there is no enough space to store the resultant QNAME
  * @retval -EINVAL if an invalid parameter was passed as an argument
  */
-int dns_msg_pack_qname(u16_t *len, u8_t *buf, u16_t size,
+int dns_msg_pack_qname(uint16_t *len, uint8_t *buf, uint16_t size,
 		       const char *domain_name);
 
 /**
@@ -279,7 +279,7 @@ int dns_msg_pack_qname(u16_t *len, u8_t *buf, u16_t size,
  * @retval 0 on success
  * @retval -ENOMEM on error
  */
-int dns_unpack_answer(struct dns_msg_t *dns_msg, int dname_ptr, u32_t *ttl);
+int dns_unpack_answer(struct dns_msg_t *dns_msg, int dname_ptr, uint32_t *ttl);
 
 /**
  * @brief Unpacks the header's response.
@@ -314,8 +314,8 @@ int dns_unpack_response_header(struct dns_msg_t *msg, int src_id);
  * @retval On error, a negative value is returned.
  *         See: dns_msg_pack_query_header and  dns_msg_pack_qname.
  */
-int dns_msg_pack_query(u8_t *buf, u16_t *len, u16_t size,
-		       u8_t *qname, u16_t qname_len, u16_t id,
+int dns_msg_pack_query(uint8_t *buf, uint16_t *len, uint16_t size,
+		       uint8_t *qname, uint16_t qname_len, uint16_t id,
 		       enum dns_rr_type qtype);
 
 /**
@@ -351,8 +351,8 @@ int dns_unpack_response_query(struct dns_msg_t *dns_msg);
  * @retval -EINVAL if an invalid parameter was passed as an argument
  * @retval -ENOMEM if the label's size is corrupted
  */
-int dns_copy_qname(u8_t *buf, u16_t *len, u16_t size,
-		   struct dns_msg_t *dns_msg, u16_t pos);
+int dns_copy_qname(uint8_t *buf, uint16_t *len, uint16_t size,
+		   struct dns_msg_t *dns_msg, uint16_t pos);
 
 /**
  * @brief Unpacks the mDNS query. This is special version for multicast DNS
@@ -371,10 +371,10 @@ int dns_copy_qname(u8_t *buf, u16_t *len, u16_t size,
  * @retval RFC 1035 RCODEs (> 0) 1 Format error, 2 Server failure, 3 Name Error,
  *         4 Not Implemented and 5 Refused.
  */
-int mdns_unpack_query_header(struct dns_msg_t *msg, u16_t *src_id);
+int mdns_unpack_query_header(struct dns_msg_t *msg, uint16_t *src_id);
 
 static inline int llmnr_unpack_query_header(struct dns_msg_t *msg,
-					    u16_t *src_id)
+					    uint16_t *src_id)
 {
 	return mdns_unpack_query_header(msg, src_id);
 }

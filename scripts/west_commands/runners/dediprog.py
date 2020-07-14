@@ -17,7 +17,7 @@ class DediProgBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for DediProg (dpcmd).'''
 
     def __init__(self, cfg, spi_image, vcc, retries):
-        super(DediProgBinaryRunner, self).__init__(cfg)
+        super().__init__(cfg)
         self.spi_image = spi_image
         self.vcc = vcc
         self.dpcmd_retries = retries
@@ -40,7 +40,7 @@ class DediProgBinaryRunner(ZephyrBinaryRunner):
                             help='Number of retries (default 5)')
 
     @classmethod
-    def create(cls, cfg, args):
+    def do_create(cls, cfg, args):
         return DediProgBinaryRunner(cfg,
                                     spi_image=args.spi_image,
                                     vcc=args.vcc,

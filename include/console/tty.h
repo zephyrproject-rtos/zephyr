@@ -19,16 +19,16 @@ struct tty_serial {
 	struct device *uart_dev;
 
 	struct k_sem rx_sem;
-	u8_t *rx_ringbuf;
-	u32_t rx_ringbuf_sz;
-	u16_t rx_get, rx_put;
-	s32_t rx_timeout;
+	uint8_t *rx_ringbuf;
+	uint32_t rx_ringbuf_sz;
+	uint16_t rx_get, rx_put;
+	int32_t rx_timeout;
 
 	struct k_sem tx_sem;
-	u8_t *tx_ringbuf;
-	u32_t tx_ringbuf_sz;
-	u16_t tx_get, tx_put;
-	s32_t tx_timeout;
+	uint8_t *tx_ringbuf;
+	uint32_t tx_ringbuf_sz;
+	uint16_t tx_get, tx_put;
+	int32_t tx_timeout;
 };
 
 /**
@@ -60,7 +60,7 @@ int tty_init(struct tty_serial *tty, struct device *uart_dev);
  * @param tty tty device structure
  * @param timeout timeout in milliseconds, or 0, or SYS_FOREVER_MS.
  */
-static inline void tty_set_rx_timeout(struct tty_serial *tty, s32_t timeout)
+static inline void tty_set_rx_timeout(struct tty_serial *tty, int32_t timeout)
 {
 	tty->rx_timeout = timeout;
 }
@@ -74,7 +74,7 @@ static inline void tty_set_rx_timeout(struct tty_serial *tty, s32_t timeout)
  * @param tty tty device structure
  * @param timeout timeout in milliseconds, or 0, or SYS_FOREVER_MS.
  */
-static inline void tty_set_tx_timeout(struct tty_serial *tty, s32_t timeout)
+static inline void tty_set_tx_timeout(struct tty_serial *tty, int32_t timeout)
 {
 	tty->tx_timeout = timeout;
 }

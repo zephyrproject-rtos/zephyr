@@ -14,14 +14,14 @@
 #define TIMEOUT 500
 #define Q_LEN 5
 
-osMessageQDef(message, Q_LEN, u32_t);
+osMessageQDef(message, Q_LEN, uint32_t);
 osMessageQId message_id;
 
 void send_msg_thread(void const *argument)
 {
 	int i;
 	osStatus status;
-	u32_t data = MESSAGE1;
+	uint32_t data = MESSAGE1;
 
 	/* Wait for message_recv to complete initial checks */
 	osDelay(TIMEOUT);
@@ -65,7 +65,7 @@ void message_recv(void)
 {
 	int i;
 	osEvent  evt;
-	u32_t data;
+	uint32_t data;
 
 	/* Try getting message immediately before the queue is populated */
 	evt = osMessageGet(message_id, 0);

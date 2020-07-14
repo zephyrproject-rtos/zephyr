@@ -10,7 +10,7 @@ if (NOT DEFINED ENV{BSIM_COMPONENTS_PATH})
  https://babblesim.github.io/folder_structure_and_env.html")
 endif()
 
-find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(peripheral_test)
 
 FILE(GLOB app_sources src/*.c)

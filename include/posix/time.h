@@ -74,7 +74,7 @@ extern "C" {
 #define TIMER_ABSTIME 4
 #endif
 
-static inline s32_t _ts_to_ms(const struct timespec *to)
+static inline int32_t _ts_to_ms(const struct timespec *to)
 {
 	return (to->tv_sec * MSEC_PER_SEC) + (to->tv_nsec / NSEC_PER_MSEC);
 }
@@ -91,6 +91,7 @@ int timer_delete(timer_t timerid);
 int timer_gettime(timer_t timerid, struct itimerspec *its);
 int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,
 		  struct itimerspec *ovalue);
+int nanosleep(const struct timespec *rqtp, struct timespec *rmtp);
 
 #ifdef __cplusplus
 }

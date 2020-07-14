@@ -63,11 +63,11 @@ LOG_MODULE_REGISTER(wdt_wwdg_stm32);
 
 static void wwdg_stm32_irq_config(struct device *dev);
 
-static u32_t wwdg_stm32_get_pclk(struct device *dev)
+static uint32_t wwdg_stm32_get_pclk(struct device *dev)
 {
 	struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
 	const struct wwdg_stm32_config *cfg = WWDG_STM32_CFG(dev);
-	u32_t pclk_rate;
+	uint32_t pclk_rate;
 
 	__ASSERT_NO_MSG(clk);
 
@@ -88,10 +88,10 @@ static u32_t wwdg_stm32_get_pclk(struct device *dev)
  * @param counter The counter value.
  * @return The timeout calculated in microseconds.
  */
-static u32_t wwdg_stm32_get_timeout(struct device *dev, u32_t prescaler,
-				    u32_t counter)
+static uint32_t wwdg_stm32_get_timeout(struct device *dev, uint32_t prescaler,
+				    uint32_t counter)
 {
-	u32_t divider = WWDG_INTERNAL_DIVIDER * (1 << (prescaler >> 7));
+	uint32_t divider = WWDG_INTERNAL_DIVIDER * (1 << (prescaler >> 7));
 	float f_wwdg = (float)wwdg_stm32_get_pclk(dev) / divider;
 
 	return USEC_PER_SEC * (((counter & 0x3F) + 1) / f_wwdg);
@@ -105,13 +105,13 @@ static u32_t wwdg_stm32_get_timeout(struct device *dev, u32_t prescaler,
  * @param prescaler Pointer to prescaler value.
  * @param counter Pointer to counter value.
  */
-static void wwdg_stm32_convert_timeout(struct device *dev, u32_t timeout,
-				       u32_t *prescaler,
-				       u32_t *counter)
+static void wwdg_stm32_convert_timeout(struct device *dev, uint32_t timeout,
+				       uint32_t *prescaler,
+				       uint32_t *counter)
 {
-	u32_t clock_freq = wwdg_stm32_get_pclk(dev);
-	u8_t divider = 0U;
-	u8_t shift = 3U;
+	uint32_t clock_freq = wwdg_stm32_get_pclk(dev);
+	uint8_t divider = 0U;
+	uint8_t shift = 3U;
 
 	/* Convert timeout to seconds. */
 	float timeout_s = (float)timeout / USEC_PER_SEC;
@@ -123,7 +123,7 @@ static void wwdg_stm32_convert_timeout(struct device *dev, u32_t timeout,
 	for (divider = 8; divider >= 1; divider >>= 1) {
 		wwdg_freq = ((float)clock_freq) / WWDG_INTERNAL_DIVIDER / divider;
 		/* +1 to ceil the result, which may lose from truncation */
-		*counter = (u32_t)(timeout_s * wwdg_freq + 1) - 1;
+		*counter = (uint32_t)(timeout_s * wwdg_freq + 1) - 1;
 		*counter |= WWDG_RESET_LIMIT;
 		*prescaler = shift << 7;
 
@@ -135,7 +135,7 @@ static void wwdg_stm32_convert_timeout(struct device *dev, u32_t timeout,
 	}
 }
 
-static int wwdg_stm32_setup(struct device *dev, u8_t options)
+static int wwdg_stm32_setup(struct device *dev, uint8_t options)
 {
 	WWDG_TypeDef *wwdg = WWDG_STM32_STRUCT(dev);
 
@@ -175,10 +175,10 @@ static int wwdg_stm32_install_timeout(struct device *dev,
 {
 	struct wwdg_stm32_data *data = WWDG_STM32_DATA(dev);
 	WWDG_TypeDef *wwdg = WWDG_STM32_STRUCT(dev);
-	u32_t timeout = config->window.max * USEC_PER_MSEC;
-	u32_t calculated_timeout;
-	u32_t prescaler = 0U;
-	u32_t counter = 0U;
+	uint32_t timeout = config->window.max * USEC_PER_MSEC;
+	uint32_t calculated_timeout;
+	uint32_t prescaler = 0U;
+	uint32_t counter = 0U;
 
 	if (config->callback != NULL) {
 		data->callback = config->callback;

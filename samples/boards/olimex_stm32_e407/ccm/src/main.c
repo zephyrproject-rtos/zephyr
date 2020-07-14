@@ -21,21 +21,21 @@
 
 #define CCM_DATA_ARRAY_VAL(i)	(((i)+1)*0x11)
 
-u8_t __ccm_data_section ccm_data_var_8 = CCM_DATA_VAR_8_VAL;
-u16_t __ccm_data_section ccm_data_var_16 = CCM_DATA_VAR_16_VAL;
-u32_t __ccm_data_section ccm_data_var_32 = CCM_DATA_VAR_32_VAL;
+uint8_t __ccm_data_section ccm_data_var_8 = CCM_DATA_VAR_8_VAL;
+uint16_t __ccm_data_section ccm_data_var_16 = CCM_DATA_VAR_16_VAL;
+uint32_t __ccm_data_section ccm_data_var_32 = CCM_DATA_VAR_32_VAL;
 
-u8_t __ccm_data_section ccm_data_array[CCM_DATA_ARRAY_SIZE] = {
+uint8_t __ccm_data_section ccm_data_array[CCM_DATA_ARRAY_SIZE] = {
 	CCM_DATA_ARRAY_VAL(0),
 	CCM_DATA_ARRAY_VAL(1),
 	CCM_DATA_ARRAY_VAL(2),
 	CCM_DATA_ARRAY_VAL(3),
 	CCM_DATA_ARRAY_VAL(4),
 };
-u8_t __ccm_bss_section ccm_bss_array[CCM_BSS_ARRAY_SIZE];
-u8_t __ccm_noinit_section ccm_noinit_array[CCM_NOINIT_ARRAY_SIZE];
+uint8_t __ccm_bss_section ccm_bss_array[CCM_BSS_ARRAY_SIZE];
+uint8_t __ccm_noinit_section ccm_noinit_array[CCM_NOINIT_ARRAY_SIZE];
 
-void print_array(const void *array, u32_t size)
+void print_array(const void *array, uint32_t size)
 {
 	int i;
 

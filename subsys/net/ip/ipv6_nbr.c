@@ -61,7 +61,7 @@ LOG_MODULE_DECLARE(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
  * state will be removed from the table and new entry will be
  * added.
  */
-static u32_t stale_counter;
+static uint32_t stale_counter;
 
 static struct k_sem nbr_lock;
 #endif
@@ -69,7 +69,7 @@ static struct k_sem nbr_lock;
 #if defined(CONFIG_NET_IPV6_ND)
 static struct k_delayed_work ipv6_nd_reachable_timer;
 static void ipv6_nd_reachable_timeout(struct k_work *work);
-static void ipv6_nd_restart_reachable_timer(struct net_nbr *nbr, s64_t time);
+static void ipv6_nd_restart_reachable_timer(struct net_nbr *nbr, int64_t time);
 #endif
 
 #if defined(CONFIG_NET_IPV6_NBR_CACHE)
@@ -129,7 +129,7 @@ static inline struct net_nbr *get_nbr_from_data(struct net_ipv6_nbr_data *data)
 	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
 		struct net_nbr *nbr = get_nbr(i);
 
-		if (nbr->data == (u8_t *)data) {
+		if (nbr->data == (uint8_t *)data) {
 			return nbr;
 		}
 	}
@@ -337,7 +337,7 @@ bool net_ipv6_nbr_rm(struct net_if *iface, struct in6_addr *addr)
 
 static void ipv6_ns_reply_timeout(struct k_work *work)
 {
-	s64_t current = k_uptime_get();
+	int64_t current = k_uptime_get();
 	struct net_nbr *nbr = NULL;
 	struct net_ipv6_nbr_data *data;
 	int i;
@@ -345,7 +345,7 @@ static void ipv6_ns_reply_timeout(struct k_work *work)
 	ARG_UNUSED(work);
 
 	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
-		s64_t remaining;
+		int64_t remaining;
 		nbr = get_nbr(i);
 
 		if (!nbr || !nbr->ref) {
@@ -454,7 +454,7 @@ static void dbg_update_neighbor_lladdr(const struct net_linkaddr *new_lladdr,
 		log_strdup(out));
 }
 
-static void dbg_update_neighbor_lladdr_raw(u8_t *new_lladdr,
+static void dbg_update_neighbor_lladdr_raw(uint8_t *new_lladdr,
 				       struct net_linkaddr_storage *old_lladdr,
 				       struct in6_addr *addr)
 {
@@ -505,7 +505,7 @@ static void ipv6_nd_remove_old_stale_nbr(void)
 	struct net_nbr *nbr = NULL;
 	struct net_ipv6_nbr_data *data = NULL;
 	int nbr_idx = -1;
-	u32_t oldest = UINT32_MAX;
+	uint32_t oldest = UINT32_MAX;
 	int i;
 
 	k_sem_take(&nbr_lock, K_FOREVER);
@@ -662,7 +662,7 @@ void net_neighbor_table_clear(struct net_nbr_table *table)
 }
 
 struct in6_addr *net_ipv6_nbr_lookup_by_index(struct net_if *iface,
-					      u8_t idx)
+					      uint8_t idx)
 {
 	int i;
 
@@ -790,7 +790,7 @@ enum net_verdict net_ipv6_prepare_for_send(struct net_pkt *pkt)
 	 * contain a proper value and we can skip other checks.
 	 */
 	if (net_pkt_ipv6_fragment_id(pkt) == 0U) {
-		u16_t mtu = net_if_get_mtu(net_pkt_iface(pkt));
+		uint16_t mtu = net_if_get_mtu(net_pkt_iface(pkt));
 		size_t pkt_len = net_pkt_get_len(pkt);
 
 		mtu = MAX(NET_IPV6_MTU, mtu);
@@ -880,7 +880,16 @@ ignore_frag_error:
 		if (net_if_ipv6_addr_onlink(&iface, nexthop)) {
 			net_pkt_set_iface(pkt, iface);
 		} else {
-			iface = net_pkt_iface(pkt);
+			/* nexthop might be the nbr list, e.g. a link-local
+			 * address of a connected peer.
+			 */
+			nbr = net_ipv6_nbr_lookup(NULL, nexthop);
+			if (nbr) {
+				iface = nbr->iface;
+				net_pkt_set_iface(pkt, iface);
+			} else {
+				iface = net_pkt_iface(pkt);
+			}
 		}
 
 		/* If the above check returns null, we try to send
@@ -959,7 +968,7 @@ struct net_nbr *net_ipv6_nbr_lookup(struct net_if *iface,
 	return nbr_lookup(&net_neighbor.table, iface, addr);
 }
 
-struct net_nbr *net_ipv6_get_nbr(struct net_if *iface, u8_t idx)
+struct net_nbr *net_ipv6_get_nbr(struct net_if *iface, uint8_t idx)
 {
 	int i;
 
@@ -984,9 +993,9 @@ struct net_nbr *net_ipv6_get_nbr(struct net_if *iface, u8_t idx)
 	return NULL;
 }
 
-static inline u8_t get_llao_len(struct net_if *iface)
+static inline uint8_t get_llao_len(struct net_if *iface)
 {
-	u8_t total_len = net_if_get_link_addr(iface)->len +
+	uint8_t total_len = net_if_get_link_addr(iface)->len +
 			 sizeof(struct net_icmpv6_nd_opt_hdr);
 
 	return ROUND_UP(total_len, 8U);
@@ -994,7 +1003,7 @@ static inline u8_t get_llao_len(struct net_if *iface)
 
 static inline bool set_llao(struct net_pkt *pkt,
 			    struct net_linkaddr *lladdr,
-			    u8_t llao_len, u8_t type)
+			    uint8_t llao_len, uint8_t type)
 {
 	struct net_icmpv6_nd_opt_hdr opt_hdr = {
 		.type = type,
@@ -1012,10 +1021,10 @@ static inline bool set_llao(struct net_pkt *pkt,
 }
 
 static bool read_llao(struct net_pkt *pkt,
-		      u8_t len,
+		      uint8_t len,
 		      struct net_linkaddr_storage *llstorage)
 {
-	u8_t padding;
+	uint8_t padding;
 
 	llstorage->len = NET_LINK_ADDR_MAX_LENGTH;
 	if (net_pkt_lladdr_src(pkt)->len < llstorage->len) {
@@ -1038,14 +1047,14 @@ static bool read_llao(struct net_pkt *pkt,
 
 int net_ipv6_send_na(struct net_if *iface, const struct in6_addr *src,
 		     const struct in6_addr *dst, const struct in6_addr *tgt,
-		     u8_t flags)
+		     uint8_t flags)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(na_access,
 					      struct net_icmpv6_na_hdr);
 	int ret = -ENOBUFS;
 	struct net_icmpv6_na_hdr *na_hdr;
 	struct net_pkt *pkt;
-	u8_t llao_len;
+	uint8_t llao_len;
 
 	llao_len = get_llao_len(iface);
 
@@ -1140,8 +1149,8 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt,
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ns_access,
 					      struct net_icmpv6_ns_hdr);
 	NET_PKT_DATA_ACCESS_DEFINE(nd_access, struct net_icmpv6_nd_opt_hdr);
-	u16_t length = net_pkt_get_len(pkt);
-	u8_t flags = 0U;
+	uint16_t length = net_pkt_get_len(pkt);
+	uint8_t flags = 0U;
 	bool routing = false;
 	struct net_icmpv6_nd_opt_hdr *nd_opt_hdr;
 	struct net_icmpv6_ns_hdr *ns_hdr;
@@ -1183,7 +1192,7 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt,
 
 	while (nd_opt_hdr && nd_opt_hdr->len > 0 &&
 	       net_pkt_ipv6_ext_opt_len(pkt) < length) {
-		u8_t prev_opt_len;
+		uint8_t prev_opt_len;
 
 		net_pkt_acknowledge_data(pkt, &nd_access);
 
@@ -1384,9 +1393,9 @@ drop:
 #endif /* CONFIG_NET_IPV6_NBR_CACHE */
 
 #if defined(CONFIG_NET_IPV6_ND)
-static void ipv6_nd_restart_reachable_timer(struct net_nbr *nbr, s64_t time)
+static void ipv6_nd_restart_reachable_timer(struct net_nbr *nbr, int64_t time)
 {
-	s64_t remaining;
+	int64_t remaining;
 
 	if (nbr) {
 		net_ipv6_nbr_data(nbr)->reachable = k_uptime_get();
@@ -1401,14 +1410,14 @@ static void ipv6_nd_restart_reachable_timer(struct net_nbr *nbr, s64_t time)
 
 static void ipv6_nd_reachable_timeout(struct k_work *work)
 {
-	s64_t current = k_uptime_get();
+	int64_t current = k_uptime_get();
 	struct net_nbr *nbr = NULL;
 	struct net_ipv6_nbr_data *data = NULL;
 	int ret;
 	int i;
 
 	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
-		s64_t remaining;
+		int64_t remaining;
 
 		nbr = get_nbr(i);
 		if (!nbr || !nbr->ref) {
@@ -1509,7 +1518,7 @@ static void ipv6_nd_reachable_timeout(struct k_work *work)
 void net_ipv6_nbr_set_reachable_timer(struct net_if *iface,
 				      struct net_nbr *nbr)
 {
-	u32_t time;
+	uint32_t time;
 
 	time = net_if_ipv6_get_reachable_time(iface);
 
@@ -1525,7 +1534,7 @@ void net_ipv6_nbr_set_reachable_timer(struct net_if *iface,
 #if defined(CONFIG_NET_IPV6_NBR_CACHE)
 static inline bool handle_na_neighbor(struct net_pkt *pkt,
 				      struct net_icmpv6_na_hdr *na_hdr,
-				      u16_t tllao_offset)
+				      uint16_t tllao_offset)
 {
 	struct net_linkaddr_storage lladdr = { 0 };
 	bool lladdr_changed = false;
@@ -1706,8 +1715,8 @@ static enum net_verdict handle_na_input(struct net_pkt *pkt,
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(na_access,
 					      struct net_icmpv6_na_hdr);
 	NET_PKT_DATA_ACCESS_DEFINE(nd_access, struct net_icmpv6_nd_opt_hdr);
-	u16_t length = net_pkt_get_len(pkt);
-	u16_t tllao_offset = 0U;
+	uint16_t length = net_pkt_get_len(pkt);
+	uint16_t tllao_offset = 0U;
 	struct net_icmpv6_nd_opt_hdr *nd_opt_hdr;
 	struct net_icmpv6_na_hdr *na_hdr;
 	struct net_if_addr *ifaddr;
@@ -1745,7 +1754,7 @@ static enum net_verdict handle_na_input(struct net_pkt *pkt,
 
 	while (nd_opt_hdr && nd_opt_hdr->len &&
 	       net_pkt_ipv6_ext_opt_len(pkt) < length) {
-		u8_t prev_opt_len;
+		uint8_t prev_opt_len;
 
 		switch (nd_opt_hdr->type) {
 		case NET_ICMPV6_ND_OPT_TLLAO:
@@ -1823,7 +1832,7 @@ int net_ipv6_send_ns(struct net_if *iface,
 	struct net_icmpv6_ns_hdr *ns_hdr;
 	struct in6_addr node_dst;
 	struct net_nbr *nbr;
-	u8_t llao_len;
+	uint8_t llao_len;
 
 	if (!dst) {
 		net_ipv6_addr_create_solicited_node(tgt, &node_dst);
@@ -1953,7 +1962,7 @@ drop:
 #if defined(CONFIG_NET_IPV6_ND)
 int net_ipv6_send_rs(struct net_if *iface)
 {
-	u8_t llao_len = 0U;
+	uint8_t llao_len = 0U;
 	int ret = -ENOBUFS;
 	const struct in6_addr *src;
 	struct in6_addr dst;
@@ -2017,7 +2026,7 @@ int net_ipv6_start_rs(struct net_if *iface)
 	return net_ipv6_send_rs(iface);
 }
 
-static inline struct net_nbr *handle_ra_neighbor(struct net_pkt *pkt, u8_t len)
+static inline struct net_nbr *handle_ra_neighbor(struct net_pkt *pkt, uint8_t len)
 {
 	struct net_linkaddr lladdr;
 	struct net_linkaddr_storage llstorage;
@@ -2112,26 +2121,26 @@ static inline void handle_prefix_onlink(struct net_pkt *pkt,
 
 #define TWO_HOURS (2 * 60 * 60)
 
-static u32_t time_diff(u32_t time1, u32_t time2)
+static uint32_t time_diff(uint32_t time1, uint32_t time2)
 {
-	return (u32_t)abs((s32_t)time1 - (s32_t)time2);
+	return (uint32_t)abs((int32_t)time1 - (int32_t)time2);
 }
 
-static inline u32_t remaining_lifetime(struct net_if_addr *ifaddr)
+static inline uint32_t remaining_lifetime(struct net_if_addr *ifaddr)
 {
-	u64_t remaining;
+	uint64_t remaining;
 
 	if (ifaddr->lifetime.timer_timeout == 0) {
 		return 0;
 	}
 
-	remaining = (u64_t)ifaddr->lifetime.timer_timeout +
-		(u64_t)ifaddr->lifetime.wrap_counter *
-		(u64_t)NET_TIMEOUT_MAX_VALUE -
-		(u64_t)time_diff(k_uptime_get_32(),
+	remaining = (uint64_t)ifaddr->lifetime.timer_timeout +
+		(uint64_t)ifaddr->lifetime.wrap_counter *
+		(uint64_t)NET_TIMEOUT_MAX_VALUE -
+		(uint64_t)time_diff(k_uptime_get_32(),
 				 ifaddr->lifetime.timer_start);
 
-	return (u32_t)(remaining / MSEC_PER_SEC);
+	return (uint32_t)(remaining / MSEC_PER_SEC);
 }
 
 static inline void handle_prefix_autonomous(struct net_pkt *pkt,
@@ -2195,7 +2204,7 @@ static inline bool handle_ra_prefix(struct net_pkt *pkt)
 	NET_PKT_DATA_ACCESS_DEFINE(rapfx_access,
 				   struct net_icmpv6_nd_opt_prefix_info);
 	struct net_icmpv6_nd_opt_prefix_info *pfx_info;
-	u32_t valid_lifetime, preferred_lifetime;
+	uint32_t valid_lifetime, preferred_lifetime;
 
 	pfx_info = (struct net_icmpv6_nd_opt_prefix_info *)
 				net_pkt_get_data(pkt, &rapfx_access);
@@ -2226,7 +2235,7 @@ static inline bool handle_ra_prefix(struct net_pkt *pkt)
 
 #if defined(CONFIG_NET_6LO_CONTEXT)
 /* 6lowpan Context Option RFC 6775, 4.2 */
-static inline bool handle_ra_6co(struct net_pkt *pkt, u8_t len)
+static inline bool handle_ra_6co(struct net_pkt *pkt, uint8_t len)
 {
 	NET_PKT_DATA_ACCESS_DEFINE(ctx_access, struct net_icmpv6_nd_opt_6co);
 	struct net_icmpv6_nd_opt_6co *context;
@@ -2272,13 +2281,13 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt,
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ra_access,
 					      struct net_icmpv6_ra_hdr);
 	NET_PKT_DATA_ACCESS_DEFINE(nd_access, struct net_icmpv6_nd_opt_hdr);
-	u16_t length = net_pkt_get_len(pkt);
+	uint16_t length = net_pkt_get_len(pkt);
 	struct net_nbr *nbr = NULL;
 	struct net_icmpv6_nd_opt_hdr *nd_opt_hdr;
 	struct net_icmpv6_ra_hdr *ra_hdr;
 	struct net_if_router *router;
-	u32_t mtu, reachable_time, retrans_timer;
-	u16_t router_lifetime;
+	uint32_t mtu, reachable_time, retrans_timer;
+	uint16_t router_lifetime;
 
 	ra_hdr = (struct net_icmpv6_ra_hdr *)net_pkt_get_data(pkt, &ra_access);
 	if (!ra_hdr) {
@@ -2361,6 +2370,12 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt,
 
 			break;
 		case NET_ICMPV6_ND_OPT_PREFIX_INFO:
+			if (nd_opt_hdr->len != 4) {
+				NET_ERR("DROP: Invalid %s length (%d)",
+					"prefix opt", nd_opt_hdr->len);
+				goto drop;
+			}
+
 			if (!handle_ra_prefix(pkt)) {
 				goto drop;
 			}
@@ -2370,8 +2385,8 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt,
 		case NET_ICMPV6_ND_OPT_6CO:
 			/* RFC 6775, 4.2 (Length)*/
 			if (!(nd_opt_hdr->len == 2U || nd_opt_hdr->len == 3U)) {
-				NET_ERR("DROP: Invalid 6CO length %d",
-					nd_opt_hdr->len);
+				NET_ERR("DROP: Invalid %s length %d",
+					"6CO", nd_opt_hdr->len);
 				goto drop;
 			}
 

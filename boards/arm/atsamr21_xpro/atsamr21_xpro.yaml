@@ -13,7 +13,12 @@ toolchain:
   - xtools
 supported:
   - gpio
-  - spi
   - i2c
   - ieee802154
+  - pwm
+  - spi
   - usb_device
+  - xpro_gpio
+  - xpro_i2c
+  - xpro_serial
+  - xpro_spi

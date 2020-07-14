@@ -71,7 +71,7 @@ static const struct z_exc_handle exceptions[] = {
  * @return The lowest allowed stack frame pointer, if error is a
  *         thread stack corruption, otherwise return 0.
  */
-static u32_t z_check_thread_stack_fail(const u32_t fault_addr, u32_t sp)
+static uint32_t z_check_thread_stack_fail(const uint32_t fault_addr, uint32_t sp)
 {
 	const struct k_thread *thread = _current;
 
@@ -89,8 +89,8 @@ static u32_t z_check_thread_stack_fail(const u32_t fault_addr, u32_t sp)
 #else
 			sp = z_arc_v2_aux_reg_read(_ARC_V2_USER_SP);
 #endif
-			if (sp <= (u32_t)thread->stack_obj) {
-				return (u32_t)thread->stack_obj;
+			if (sp <= (uint32_t)thread->stack_obj) {
+				return (uint32_t)thread->stack_obj;
 			}
 		} else {
 			/* User thread in privilege mode */
@@ -103,10 +103,10 @@ static u32_t z_check_thread_stack_fail(const u32_t fault_addr, u32_t sp)
 		}
 	} else {
 		/* Supervisor thread */
-		if (IS_MPU_GUARD_VIOLATION((u32_t)thread->stack_obj,
+		if (IS_MPU_GUARD_VIOLATION((uint32_t)thread->stack_obj,
 			fault_addr, sp)) {
 			/* Supervisor thread stack corruption */
-			return (u32_t)thread->stack_obj + STACK_GUARD_SIZE;
+			return (uint32_t)thread->stack_obj + STACK_GUARD_SIZE;
 		}
 	}
 #else /* CONFIG_USERSPACE */
@@ -129,7 +129,7 @@ static u32_t z_check_thread_stack_fail(const u32_t fault_addr, u32_t sp)
  * These codes and parameters do not have associated* names in
  * the technical manual, just switch on the values in Table 6-5
  */
-static const char *get_protv_access_err(u32_t parameter)
+static const char *get_protv_access_err(uint32_t parameter)
 {
 	switch (parameter) {
 	case 0x1:
@@ -151,7 +151,7 @@ static const char *get_protv_access_err(u32_t parameter)
 	}
 }
 
-static void dump_protv_exception(u32_t cause, u32_t parameter)
+static void dump_protv_exception(uint32_t cause, uint32_t parameter)
 {
 	switch (cause) {
 	case 0x0:
@@ -185,7 +185,7 @@ static void dump_protv_exception(u32_t cause, u32_t parameter)
 	}
 }
 
-static void dump_machine_check_exception(u32_t cause, u32_t parameter)
+static void dump_machine_check_exception(uint32_t cause, uint32_t parameter)
 {
 	switch (cause) {
 	case 0x0:
@@ -233,7 +233,7 @@ static void dump_machine_check_exception(u32_t cause, u32_t parameter)
 	}
 }
 
-static void dump_privilege_exception(u32_t cause, u32_t parameter)
+static void dump_privilege_exception(uint32_t cause, uint32_t parameter)
 {
 	switch (cause) {
 	case 0x0:
@@ -289,7 +289,7 @@ static void dump_privilege_exception(u32_t cause, u32_t parameter)
 	}
 }
 
-static void dump_exception_info(u32_t vector, u32_t cause, u32_t parameter)
+static void dump_exception_info(uint32_t vector, uint32_t cause, uint32_t parameter)
 {
 	if (vector >= 0x10 && vector <= 0xFF) {
 		LOG_ERR("interrupt %u", vector);
@@ -363,19 +363,19 @@ static void dump_exception_info(u32_t vector, u32_t cause, u32_t parameter)
  * invokes the user provided routine k_sys_fatal_error_handler() which is
  * responsible for implementing the error handling policy.
  */
-void _Fault(z_arch_esf_t *esf, u32_t old_sp)
+void _Fault(z_arch_esf_t *esf, uint32_t old_sp)
 {
-	u32_t vector, cause, parameter;
-	u32_t exc_addr = z_arc_v2_aux_reg_read(_ARC_V2_EFA);
-	u32_t ecr = z_arc_v2_aux_reg_read(_ARC_V2_ECR);
+	uint32_t vector, cause, parameter;
+	uint32_t exc_addr = z_arc_v2_aux_reg_read(_ARC_V2_EFA);
+	uint32_t ecr = z_arc_v2_aux_reg_read(_ARC_V2_ECR);
 
 #ifdef CONFIG_USERSPACE
 	for (int i = 0; i < ARRAY_SIZE(exceptions); i++) {
-		u32_t start = (u32_t)exceptions[i].start;
-		u32_t end = (u32_t)exceptions[i].end;
+		uint32_t start = (uint32_t)exceptions[i].start;
+		uint32_t end = (uint32_t)exceptions[i].end;
 
 		if (esf->pc >= start && esf->pc < end) {
-			esf->pc = (u32_t)(exceptions[i].fixup);
+			esf->pc = (uint32_t)(exceptions[i].fixup);
 			return;
 		}
 	}

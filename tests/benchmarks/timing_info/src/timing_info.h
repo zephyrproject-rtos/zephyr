@@ -6,15 +6,9 @@
 #include <timestamp.h>
 #include <kernel_internal.h>
 
-#define CALCULATE_TIME(special_char, profile, name)			     \
-	{								     \
-		total_##profile##_##name##_time = CYCLES_TO_NS( \
-			special_char##profile##_##name##_end_time -	     \
-			special_char##profile##_##name##_start_time);	     \
-	}
-
-#define DECLARE_VAR(profile, name) \
-	u64_t total_##profile##_##name##_time;
+#define CALCULATE_CYCLES(profile, name)					\
+	((profile##_##name##_end_time) -				\
+	 (profile##_##name##_start_time))
 
 /* Stack size for all the threads created in this benchmark */
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
@@ -60,13 +54,13 @@
 #define TIMING_INFO_PRE_READ()
 #define TIMING_INFO_OS_GET_TIME()      (k_cycle_get_32())
 #define TIMING_INFO_GET_TIMER_VALUE()  (SysTick->VAL)
-#define SUBTRACT_CLOCK_CYCLES(val)     (SysTick->LOAD - (u32_t)val)
+#define SUBTRACT_CLOCK_CYCLES(val)     (SysTick->LOAD - (uint32_t)val)
 
 #elif defined(CONFIG_ARC)
 #define TIMING_INFO_PRE_READ()
 #define TIMING_INFO_OS_GET_TIME()     (k_cycle_get_32())
 #define TIMING_INFO_GET_TIMER_VALUE() (z_arc_v2_aux_reg_read(_ARC_V2_TMR0_COUNT))
-#define SUBTRACT_CLOCK_CYCLES(val)    ((u32_t)val)
+#define SUBTRACT_CLOCK_CYCLES(val)    ((uint32_t)val)
 
 #elif defined(CONFIG_NIOS2)
 #include "altera_avalon_timer_regs.h"
@@ -74,24 +68,24 @@
 	(IOWR_ALTERA_AVALON_TIMER_SNAPL(TIMER_0_BASE, 10))
 
 #define TIMING_INFO_OS_GET_TIME()      (SUBTRACT_CLOCK_CYCLES(\
-	((u32_t)IORD_ALTERA_AVALON_TIMER_SNAPH(TIMER_0_BASE) << 16)\
-	| ((u32_t)IORD_ALTERA_AVALON_TIMER_SNAPL(TIMER_0_BASE))))
+	((uint32_t)IORD_ALTERA_AVALON_TIMER_SNAPH(TIMER_0_BASE) << 16)\
+	| ((uint32_t)IORD_ALTERA_AVALON_TIMER_SNAPL(TIMER_0_BASE))))
 
 #define TIMING_INFO_GET_TIMER_VALUE()  (\
-	((u32_t)IORD_ALTERA_AVALON_TIMER_SNAPH(TIMER_0_BASE) << 16)\
-	| ((u32_t)IORD_ALTERA_AVALON_TIMER_SNAPL(TIMER_0_BASE)))
+	((uint32_t)IORD_ALTERA_AVALON_TIMER_SNAPH(TIMER_0_BASE) << 16)\
+	| ((uint32_t)IORD_ALTERA_AVALON_TIMER_SNAPL(TIMER_0_BASE)))
 
 #define SUBTRACT_CLOCK_CYCLES(val)     \
 	((IORD_ALTERA_AVALON_TIMER_PERIODH(TIMER_0_BASE)	\
 	  << 16 |						\
 	  (IORD_ALTERA_AVALON_TIMER_PERIODL(TIMER_0_BASE)))	\
-	 - ((u32_t)val))
+	 - ((uint32_t)val))
 
 #else
 #define TIMING_INFO_PRE_READ()
 #define TIMING_INFO_OS_GET_TIME()      (k_cycle_get_32())
 #define TIMING_INFO_GET_TIMER_VALUE()  (k_cycle_get_32())
-#define SUBTRACT_CLOCK_CYCLES(val)     ((u32_t)val)
+#define SUBTRACT_CLOCK_CYCLES(val)     ((uint32_t)val)
 #endif
 
 /******************************************************************************/
@@ -103,8 +97,9 @@
 #define CYCLES_PER_SEC   (16000000/(1 << NRF_TIMER2->PRESCALER))
 
 #define CYCLES_TO_NS(x)        ((x) * (NANOSECS_PER_SEC/CYCLES_PER_SEC))
-#define PRINT_STATS(x, y, z)   PRINT_F(x, (y*((SystemCoreClock)/	\
-					      CYCLES_PER_SEC)), z)
+#define PRINT_STATS(x, y) \
+	PRINT_F(x, (y * ((SystemCoreClock) / CYCLES_PER_SEC)), \
+		CYCLES_TO_NS(y))
 
 /* Configure Timer parameters */
 static inline void benchmark_timer_init(void)
@@ -128,7 +123,7 @@ static inline void benchmark_timer_start(void)
 }
 
 /* Get Core Frequency in MHz */
-static inline u32_t get_core_freq_MHz(void)
+static inline uint32_t get_core_freq_MHz(void)
 {
 	return SystemCoreClock/1000000;
 }
@@ -138,7 +133,7 @@ static inline u32_t get_core_freq_MHz(void)
 #define NANOSECS_PER_SEC	(1000000000)
 #define CYCLES_PER_SEC		(48000000)
 #define CYCLES_TO_NS(x)		((x) * (NANOSECS_PER_SEC/CYCLES_PER_SEC))
-#define PRINT_STATS(x, y, z)   PRINT_F(x, y, z)
+#define PRINT_STATS(x, y)	PRINT_F(x, y, CYCLES_TO_NS(y))
 
 /* Configure Timer parameters */
 static inline void benchmark_timer_init(void)
@@ -169,10 +164,28 @@ static inline void benchmark_timer_start(void)
 }
 
 /* 48MHz counter frequency */
-static inline u32_t get_core_freq_MHz(void)
+static inline uint32_t get_core_freq_MHz(void)
 {
 	return CYCLES_PER_SEC;
 }
+
+#elif defined(CONFIG_X86)
+
+static inline void benchmark_timer_init(void)  {       }
+static inline void benchmark_timer_stop(void)  {       }
+static inline void benchmark_timer_start(void) {       }
+
+extern uint32_t x86_cyc_to_ns_floor64(uint64_t cyc);
+extern uint32_t x86_get_timer_freq_MHz(void);
+
+#define CYCLES_TO_NS(x) x86_cyc_to_ns_floor64(x)
+
+static inline uint32_t get_core_freq_MHz(void)
+{
+	return x86_get_timer_freq_MHz();
+}
+
+#define PRINT_STATS(x, y)	PRINT_F(x, y, CYCLES_TO_NS(y))
 
 #else  /* All other architectures */
 /* Done because weak attribute doesn't work on static inline. */
@@ -180,15 +193,15 @@ static inline void benchmark_timer_init(void)  {       }
 static inline void benchmark_timer_stop(void)  {       }
 static inline void benchmark_timer_start(void) {       }
 
-#define CYCLES_TO_NS(x) (u32_t)k_cyc_to_ns_floor64(x)
+#define CYCLES_TO_NS(x) (uint32_t)k_cyc_to_ns_floor64(x)
 
 /* Get Core Frequency in MHz */
-static inline u32_t get_core_freq_MHz(void)
+static inline uint32_t get_core_freq_MHz(void)
 {
 	return  (sys_clock_hw_cycles_per_sec() / 1000000);
 }
 
-#define PRINT_STATS(x, y, z)   PRINT_F(x, y, z)
+#define PRINT_STATS(x, y)	PRINT_F(x, y, CYCLES_TO_NS(y))
 #endif /* CONFIG_NRF_RTC_TIMER */
 
 /******************************************************************************/
@@ -251,7 +264,7 @@ void userspace_bench(void);
 #ifdef CONFIG_USERSPACE
 #include <syscall_handler.h>
 __syscall int k_dummy_syscall(void);
-__syscall u32_t userspace_read_timer_value(void);
+__syscall uint32_t userspace_read_timer_value(void);
 __syscall int validation_overhead_syscall(void);
 #include <syscalls/timing_info.h>
 #endif	/* CONFIG_USERSPACE */

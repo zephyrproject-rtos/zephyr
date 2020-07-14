@@ -18,6 +18,7 @@
 #include <logging/log.h>
 
 #include "flash_stm32.h"
+#include "stm32_hsem.h"
 
 LOG_MODULE_REGISTER(flash_stm32, CONFIG_FLASH_LOG_LEVEL);
 
@@ -36,6 +37,9 @@ LOG_MODULE_REGISTER(flash_stm32, CONFIG_FLASH_LOG_LEVEL);
 /* STM32F7: maximum erase time of 4s for a 256K sector */
 #elif defined(CONFIG_SOC_SERIES_STM32F7X)
 #define STM32_FLASH_MAX_ERASE_TIME	4000
+/* STM32L0: maximum erase time of 3.2ms for a 128B page */
+#elif defined(CONFIG_SOC_SERIES_STM32L0X)
+#define STM32_FLASH_MAX_ERASE_TIME	4
 /* STM32L4: maximum erase time of 24.47ms for a 2K sector */
 #elif defined(CONFIG_SOC_SERIES_STM32L4X)
 #define STM32_FLASH_MAX_ERASE_TIME	25
@@ -55,7 +59,16 @@ LOG_MODULE_REGISTER(flash_stm32, CONFIG_FLASH_LOG_LEVEL);
  */
 #define STM32_FLASH_TIMEOUT	(2 * STM32_FLASH_MAX_ERASE_TIME)
 
-#define CFG_HW_FLASH_SEMID	2
+static const struct flash_parameters flash_stm32_parameters = {
+	.write_block_size = FLASH_STM32_WRITE_BLOCK_SIZE,
+	/* Some SoCs (L0/L1) use an EEPROM under the hood. Distinguish
+	 * between them based on the presence of the PECR register. */
+#if defined(FLASH_PECR_ERASE)
+	.erase_value = 0,
+#else
+	.erase_value = 0xff,
+#endif
+};
 
 #if defined(CONFIG_MULTITHREADING)
 /*
@@ -65,24 +78,14 @@ LOG_MODULE_REGISTER(flash_stm32, CONFIG_FLASH_LOG_LEVEL);
  */
 static inline void _flash_stm32_sem_take(struct device *dev)
 {
-
-#ifdef CONFIG_SOC_SERIES_STM32WBX
-	while (LL_HSEM_1StepLock(HSEM, CFG_HW_FLASH_SEMID)) {
-	}
-#endif /* CONFIG_SOC_SERIES_STM32WBX */
-
 	k_sem_take(&FLASH_STM32_PRIV(dev)->sem, K_FOREVER);
+	z_stm32_hsem_lock(CFG_HW_FLASH_SEMID, HSEM_LOCK_WAIT_FOREVER);
 }
 
 static inline void _flash_stm32_sem_give(struct device *dev)
 {
-
+	z_stm32_hsem_unlock(CFG_HW_FLASH_SEMID);
 	k_sem_give(&FLASH_STM32_PRIV(dev)->sem);
-
-#ifdef CONFIG_SOC_SERIES_STM32WBX
-	LL_HSEM_ReleaseLock(HSEM, CFG_HW_FLASH_SEMID, 0);
-#endif /* CONFIG_SOC_SERIES_STM32WBX */
-
 }
 
 #define flash_stm32_sem_init(dev) k_sem_init(&FLASH_STM32_PRIV(dev)->sem, 1, 1)
@@ -97,7 +100,7 @@ static inline void _flash_stm32_sem_give(struct device *dev)
 #if !defined(CONFIG_SOC_SERIES_STM32WBX)
 static int flash_stm32_check_status(struct device *dev)
 {
-	u32_t const error =
+	uint32_t const error =
 #if defined(FLASH_FLAG_PGAERR)
 		FLASH_FLAG_PGAERR |
 #endif
@@ -129,7 +132,7 @@ static int flash_stm32_check_status(struct device *dev)
 
 int flash_stm32_wait_flash_idle(struct device *dev)
 {
-	s64_t timeout_time = k_uptime_get() + STM32_FLASH_TIMEOUT;
+	int64_t timeout_time = k_uptime_get() + STM32_FLASH_TIMEOUT;
 	int rc;
 
 	rc = flash_stm32_check_status(dev);
@@ -194,7 +197,7 @@ static int flash_stm32_read(struct device *dev, off_t offset, void *data,
 
 	LOG_DBG("Read offset: %ld, len: %zu", (long int) offset, len);
 
-	memcpy(data, (u8_t *) CONFIG_FLASH_BASE_ADDRESS + offset, len);
+	memcpy(data, (uint8_t *) CONFIG_FLASH_BASE_ADDRESS + offset, len);
 
 	return 0;
 }
@@ -266,19 +269,53 @@ static int flash_stm32_write_protection(struct device *dev, bool enable)
 			flash_stm32_sem_give(dev);
 			return rc;
 		}
+	}
+
+#if defined(FLASH_CR_LOCK)
+	if (enable) {
 		regs->CR |= FLASH_CR_LOCK;
-		LOG_DBG("Enable write protection");
 	} else {
 		if (regs->CR & FLASH_CR_LOCK) {
 			regs->KEYR = FLASH_KEY1;
 			regs->KEYR = FLASH_KEY2;
 		}
+	}
+#else
+	if (enable) {
+		regs->PECR |= FLASH_PECR_PRGLOCK;
+		regs->PECR |= FLASH_PECR_PELOCK;
+	} else {
+		if (regs->PECR & FLASH_PECR_PRGLOCK) {
+			LOG_DBG("Disabling write protection");
+			regs->PEKEYR = FLASH_PEKEY1;
+			regs->PEKEYR = FLASH_PEKEY2;
+			regs->PRGKEYR = FLASH_PRGKEY1;
+			regs->PRGKEYR = FLASH_PRGKEY2;
+		}
+		if (FLASH->PECR & FLASH_PECR_PRGLOCK) {
+			LOG_ERR("Unlock failed");
+			rc = -EIO;
+		}
+	}
+#endif
+
+	if (enable) {
+		LOG_DBG("Enable write protection");
+	} else {
 		LOG_DBG("Disable write protection");
 	}
 
 	flash_stm32_sem_give(dev);
 
 	return rc;
+}
+
+static const struct flash_parameters *
+flash_stm32_get_parameters(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return &flash_stm32_parameters;
 }
 
 static struct flash_stm32_priv flash_data = {
@@ -299,15 +336,9 @@ static const struct flash_driver_api flash_stm32_api = {
 	.erase = flash_stm32_erase,
 	.write = flash_stm32_write,
 	.read = flash_stm32_read,
+	.get_parameters = flash_stm32_get_parameters,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_stm32_page_layout,
-#endif
-#if DT_PROP(DT_INST(0, soc_nv_flash), write_block_size)
-	.write_block_size = DT_PROP(DT_INST(0, soc_nv_flash), write_block_size),
-#else
-#error Flash write block size not available
-	/* Flash Write block size is extracted from device tree */
-	/* as flash node property 'write-block-size' */
 #endif
 };
 
@@ -348,7 +379,7 @@ static int stm32_flash_init(struct device *dev)
 	flash_stm32_sem_init(dev);
 
 	LOG_DBG("Flash initialized. BS: %zu",
-		flash_stm32_api.write_block_size);
+		flash_stm32_parameters.write_block_size);
 
 #if ((CONFIG_FLASH_LOG_LEVEL >= LOG_LEVEL_DBG) && CONFIG_FLASH_PAGE_LAYOUT)
 	const struct flash_pages_layout *layout;

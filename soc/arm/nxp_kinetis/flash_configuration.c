@@ -7,7 +7,7 @@
 #include <kernel.h>
 #include <linker/sections.h>
 
-u8_t __kinetis_flash_config_section __kinetis_flash_config[] = {
+uint8_t __kinetis_flash_config_section __kinetis_flash_config[] = {
 	/* Backdoor Comparison Key (unused) */
 	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 

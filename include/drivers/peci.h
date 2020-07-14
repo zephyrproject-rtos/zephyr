@@ -165,7 +165,7 @@ enum peci_command_code {
  * an additional byte for this in rx buffer.
  */
 struct peci_buf {
-	u8_t *buf;
+	uint8_t *buf;
 	size_t len;
 };
 
@@ -174,7 +174,7 @@ struct peci_buf {
  */
 struct peci_msg {
 	/** Client address */
-	u8_t addr;
+	uint8_t addr;
 	/** Command code */
 	enum peci_command_code cmd_code;
 	/** Pointer to buffer of write data */
@@ -182,7 +182,7 @@ struct peci_msg {
 	/** Pointer to buffer of read data */
 	struct peci_buf rx_buffer;
 	/** PECI msg flags */
-	u8_t flags;
+	uint8_t flags;
 };
 
 /**
@@ -192,7 +192,7 @@ struct peci_msg {
  *
  * (Internal use only.)
  */
-typedef int (*peci_config_t)(struct device *dev, u32_t bitrate);
+typedef int (*peci_config_t)(struct device *dev, uint32_t bitrate);
 typedef int (*peci_transfer_t)(struct device *dev, struct peci_msg *msg);
 typedef int (*peci_disable_t)(struct device *dev);
 typedef int (*peci_enable_t)(struct device *dev);
@@ -218,9 +218,9 @@ struct peci_driver_api {
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-__syscall int peci_config(struct device *dev, u32_t bitrate);
+__syscall int peci_config(struct device *dev, uint32_t bitrate);
 
-static inline int z_impl_peci_config(struct device *dev, u32_t bitrate)
+static inline int z_impl_peci_config(struct device *dev, uint32_t bitrate)
 {
 	struct peci_driver_api *api;
 

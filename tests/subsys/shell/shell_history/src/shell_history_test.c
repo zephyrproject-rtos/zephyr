@@ -17,7 +17,7 @@
 #define HIST_BUF_SIZE 160
 SHELL_HISTORY_DEFINE(history, HIST_BUF_SIZE);
 
-static void init_test_buf(u8_t *buf, size_t len, u8_t offset)
+static void init_test_buf(uint8_t *buf, size_t len, uint8_t offset)
 {
 	for (int i = 0; i < len; i++) {
 		buf[i] = offset + i;
@@ -28,11 +28,11 @@ static void init_test_buf(u8_t *buf, size_t len, u8_t offset)
  * Function tests getting line from history and compares it against expected
  * result.
  */
-static void test_get(bool ok, bool up, u8_t *exp_buf, u16_t exp_len)
+static void test_get(bool ok, bool up, uint8_t *exp_buf, uint16_t exp_len)
 {
 	bool res;
-	u8_t out_buf[HIST_BUF_SIZE];
-	u16_t out_len;
+	uint8_t out_buf[HIST_BUF_SIZE];
+	uint16_t out_len;
 
 	out_len = sizeof(out_buf);
 
@@ -60,7 +60,7 @@ static void test_get(bool ok, bool up, u8_t *exp_buf, u16_t exp_len)
  */
 static void test_history_add_get(void)
 {
-	u8_t exp_buf[HIST_BUF_SIZE];
+	uint8_t exp_buf[HIST_BUF_SIZE];
 
 	init_test_buf(exp_buf, sizeof(exp_buf), 0);
 
@@ -78,7 +78,7 @@ static void test_history_add_get(void)
 /* Test verifies that after purging there is no line in the history. */
 static void test_history_purge(void)
 {
-	u8_t exp_buf[HIST_BUF_SIZE];
+	uint8_t exp_buf[HIST_BUF_SIZE];
 
 	init_test_buf(exp_buf, sizeof(exp_buf), 0);
 
@@ -109,9 +109,9 @@ static void test_history_purge(void)
  */
 static void test_history_get_up_and_down(void)
 {
-	u8_t exp1_buf[HIST_BUF_SIZE];
-	u8_t exp2_buf[HIST_BUF_SIZE];
-	u8_t exp3_buf[HIST_BUF_SIZE];
+	uint8_t exp1_buf[HIST_BUF_SIZE];
+	uint8_t exp2_buf[HIST_BUF_SIZE];
+	uint8_t exp3_buf[HIST_BUF_SIZE];
 
 	init_test_buf(exp1_buf, sizeof(exp1_buf), 0);
 	init_test_buf(exp2_buf, sizeof(exp2_buf), 10);
@@ -138,10 +138,10 @@ static void test_history_get_up_and_down(void)
 /* Function for getting maximal buffer size that can be stored in the history */
 static int get_max_buffer_len(void)
 {
-	u8_t buf[HIST_BUF_SIZE];
-	u8_t out_buf[HIST_BUF_SIZE];
+	uint8_t buf[HIST_BUF_SIZE];
+	uint8_t out_buf[HIST_BUF_SIZE];
 	int len = sizeof(buf);
-	u16_t out_len;
+	uint16_t out_len;
 
 	shell_history_init(&history);
 
@@ -168,7 +168,7 @@ static int get_max_buffer_len(void)
  */
 static void test_too_long_line_not_stored(void)
 {
-	u8_t exp1_buf[HIST_BUF_SIZE];
+	uint8_t exp1_buf[HIST_BUF_SIZE];
 	int max_len = get_max_buffer_len();
 
 	init_test_buf(exp1_buf, sizeof(exp1_buf), 0);
@@ -199,7 +199,7 @@ static void test_too_long_line_not_stored(void)
  */
 static void test_no_duplicates_in_a_row(void)
 {
-	u8_t exp1_buf[HIST_BUF_SIZE];
+	uint8_t exp1_buf[HIST_BUF_SIZE];
 
 	init_test_buf(exp1_buf, sizeof(exp1_buf), 0);
 	shell_history_init(&history);
@@ -227,9 +227,9 @@ static void test_no_duplicates_in_a_row(void)
  */
 static void test_storing_long_buffers(void)
 {
-	u8_t exp1_buf[HIST_BUF_SIZE];
-	u8_t exp2_buf[HIST_BUF_SIZE];
-	u8_t exp3_buf[HIST_BUF_SIZE];
+	uint8_t exp1_buf[HIST_BUF_SIZE];
+	uint8_t exp2_buf[HIST_BUF_SIZE];
+	uint8_t exp3_buf[HIST_BUF_SIZE];
 	int max_len = get_max_buffer_len();
 
 	init_test_buf(exp1_buf, sizeof(exp1_buf), 0);

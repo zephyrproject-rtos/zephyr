@@ -11,10 +11,10 @@
  #include "soc.h"
  #include "em_cmu.h"
 
-static void entropy_gecko_trng_read(u8_t *output, size_t len)
+static void entropy_gecko_trng_read(uint8_t *output, size_t len)
 {
-	u32_t tmp;
-	u32_t *data = (u32_t *) output;
+	uint32_t tmp;
+	uint32_t *data = (uint32_t *) output;
 
 	/* Read known good available data. */
 	while (len >= 4) {
@@ -26,12 +26,12 @@ static void entropy_gecko_trng_read(u8_t *output, size_t len)
 		 * and FIFO data is available.
 		 */
 		tmp = TRNG0->FIFO;
-		memcpy(data, (const u8_t *) &tmp, len);
+		memcpy(data, (const uint8_t *) &tmp, len);
 	}
 }
 
-static int entropy_gecko_trng_get_entropy(struct device *dev, u8_t *buffer,
-					 u16_t length)
+static int entropy_gecko_trng_get_entropy(struct device *dev, uint8_t *buffer,
+					 uint16_t length)
 {
 	size_t count = 0;
 	size_t available;
@@ -53,8 +53,8 @@ static int entropy_gecko_trng_get_entropy(struct device *dev, u8_t *buffer,
 	return 0;
 }
 
-static int entropy_gecko_trng_get_entropy_isr(struct device *dev, u8_t *buf,
-					u16_t len, u32_t flags)
+static int entropy_gecko_trng_get_entropy_isr(struct device *dev, uint8_t *buf,
+					uint16_t len, uint32_t flags)
 {
 
 	if ((flags & ENTROPY_BUSYWAIT) == 0U) {

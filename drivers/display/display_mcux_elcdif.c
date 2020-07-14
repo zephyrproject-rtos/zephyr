@@ -28,7 +28,7 @@ struct mcux_elcdif_config {
 	void (*irq_config_func)(struct device *dev);
 	elcdif_rgb_mode_config_t rgb_mode;
 	enum display_pixel_format pixel_format;
-	u8_t bits_per_pixel;
+	uint8_t bits_per_pixel;
 };
 
 struct mcux_elcdif_data {
@@ -36,23 +36,23 @@ struct mcux_elcdif_data {
 	struct k_sem sem;
 	size_t pixel_bytes;
 	size_t fb_bytes;
-	u8_t write_idx;
+	uint8_t write_idx;
 };
 
-static int mcux_elcdif_write(const struct device *dev, const u16_t x,
-			     const u16_t y,
+static int mcux_elcdif_write(const struct device *dev, const uint16_t x,
+			     const uint16_t y,
 			     const struct display_buffer_descriptor *desc,
 			     const void *buf)
 {
 	const struct mcux_elcdif_config *config = dev->config_info;
 	struct mcux_elcdif_data *data = dev->driver_data;
 
-	u8_t write_idx = data->write_idx;
-	u8_t read_idx = !write_idx;
+	uint8_t write_idx = data->write_idx;
+	uint8_t read_idx = !write_idx;
 
 	int h_idx;
-	const u8_t *src;
-	u8_t *dst;
+	const uint8_t *src;
+	uint8_t *dst;
 
 	__ASSERT((data->pixel_bytes * desc->pitch * desc->height) <=
 		 desc->buf_size, "Input buffer too small");
@@ -87,8 +87,8 @@ static int mcux_elcdif_write(const struct device *dev, const u16_t x,
 	return 0;
 }
 
-static int mcux_elcdif_read(const struct device *dev, const u16_t x,
-			    const u16_t y,
+static int mcux_elcdif_read(const struct device *dev, const uint16_t x,
+			    const uint16_t y,
 			    const struct display_buffer_descriptor *desc,
 			    void *buf)
 {
@@ -115,14 +115,14 @@ static int mcux_elcdif_display_blanking_on(const struct device *dev)
 }
 
 static int mcux_elcdif_set_brightness(const struct device *dev,
-				      const u8_t brightness)
+				      const uint8_t brightness)
 {
 	LOG_WRN("Set brightness not implemented");
 	return -ENOTSUP;
 }
 
 static int mcux_elcdif_set_contrast(const struct device *dev,
-				    const u8_t contrast)
+				    const uint8_t contrast)
 {
 	LOG_ERR("Set contrast not implemented");
 	return -ENOTSUP;
@@ -169,7 +169,7 @@ static void mcux_elcdif_isr(void *arg)
 	struct device *dev = (struct device *)arg;
 	const struct mcux_elcdif_config *config = dev->config_info;
 	struct mcux_elcdif_data *data = dev->driver_data;
-	u32_t status;
+	uint32_t status;
 
 	status = ELCDIF_GetInterruptStatus(config->base);
 	ELCDIF_ClearInterruptStatus(config->base, status);

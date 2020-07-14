@@ -121,7 +121,7 @@ struct z_app_region {
 		.bss_start = &Z_APP_BSS_START(name), \
 		.bss_size = (size_t) &Z_APP_BSS_SIZE(name) \
 	}; \
-	Z_APPMEM_PLACEHOLDER(name);
+	Z_APPMEM_PLACEHOLDER(name)
 #else
 
 #define K_APP_BMEM(ptn)

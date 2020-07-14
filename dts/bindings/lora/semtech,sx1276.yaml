@@ -1,4 +1,5 @@
 # Copyright (c) 2019, Manivannan Sadhasivam
+# Copyright (c) 2020, Grinn
 # SPDX-License-Identifier: Apache-2.0
 
 description: Semtech SX1276 LoRa Modem
@@ -24,3 +25,50 @@ properties:
         Up to six pins that produce service interrupts from the modem.
 
         These signals are normally active-high.
+
+    power-amplifier-output:
+      type: string
+      required: false
+      description: |
+        Selects power amplifier output pin. This is required when neither
+        'rfo-enable-gpios' nor 'pa-boost-enable-gpios' is specified. In other
+        case this property is simply ignored.
+      enum:
+         - "rfo"
+         - "pa-boost"
+
+    antenna-enable-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        Antenna power enable pin.
+
+    rfi-enable-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        RFI antenna input enable pin.
+
+    rfo-enable-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        RFO antenna output enable pin.
+
+    pa-boost-enable-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        PA_BOOST antenna output enable pin.
+
+    tcxo-power-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        TCXO power enable pin.
+
+    tcxo-power-startup-delay-ms:
+      type: int
+      required: false
+      description: |
+        Delay which has to be applied after enabling TCXO power.

@@ -1,7 +1,3 @@
 tests:
   kernel.common:
     tags: kernel
-    min_ram: 20
-    # FIXME: Remove `qemu_cortex_r5` exclusion once Zephyr SDK 0.11.3 is
-    #        mainlined (see #22904).
-    platform_exclude: qemu_cortex_r5

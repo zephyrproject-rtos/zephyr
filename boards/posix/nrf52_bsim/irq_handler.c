@@ -122,7 +122,7 @@ static inline void vector_to_irq(int irq_nbr, int *may_swap)
  */
 void posix_irq_handler(void)
 {
-	u64_t irq_lock;
+	uint64_t irq_lock;
 	int irq_nbr;
 	static int may_swap;
 
@@ -365,29 +365,6 @@ void posix_irq_offload(void (*routine)(void *), void *parameter)
 }
 #endif
 
-/**
- * Replacement for ARMs NVIC_SetPendingIRQ()
- *
- * Sets the interrupt IRQn as pending
- * Note:
- * This will interrupt immediately if the interrupt
- * is not masked and irqs are not locked, and this interrupt is higher
- * priority than a possibly currently running interrupt
- */
-void NVIC_SetPendingIRQ(IRQn_Type IRQn)
-{
-	hw_irq_ctrl_raise_im_from_sw(IRQn);
-}
-
-/**
- *  Replacement for ARMs NVIC_ClearPendingIRQ()
- *  Clear pending interrupt IRQn
- */
-void NVIC_ClearPendingIRQ(IRQn_Type IRQn)
-{
-	hw_irq_ctrl_clear_irq(IRQn);
-}
-
 /*
  * Very simple model of the WFE and SEV ARM instructions
  * which seems good enough for the Nordic controller
@@ -402,6 +379,11 @@ void __WFE(void)
 		CPU_will_be_awaken_from_WFE = false;
 	}
 	CPU_event_set_flag = false;
+}
+
+void __WFI(void)
+{
+	__WFE();
 }
 
 void __SEV(void)

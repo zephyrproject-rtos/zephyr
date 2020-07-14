@@ -148,10 +148,10 @@ enum gptp_received_info {
  */
 struct gptp_path_trace {
 	/** Length of the path trace. */
-	u16_t len;
+	uint16_t len;
 
 	/** Path trace of the announce message. */
-	u8_t path_sequence[GPTP_MAX_PATHTRACE_SIZE][GPTP_CLOCK_ID_LEN];
+	uint8_t path_sequence[GPTP_MAX_PATHTRACE_SIZE][GPTP_CLOCK_ID_LEN];
 };
 
 /**
@@ -165,10 +165,10 @@ struct gptp_path_trace {
  */
 struct gptp_global_ds {
 	/** Mean time interval between messages providing time-sync info. */
-	u64_t clk_master_sync_itv;
+	uint64_t clk_master_sync_itv;
 
 	/** Value if current time. */
-	u64_t sync_receipt_local_time;
+	uint64_t sync_receipt_local_time;
 
 	/** Fractional frequency offset of the Clock Source entity. */
 	double clk_src_freq_offset;
@@ -216,28 +216,28 @@ struct gptp_global_ds {
 	struct gptp_scaled_ns clk_src_phase_offset;
 
 	/** Grand Master Time Base Indicator. */
-	u16_t gm_time_base_indicator;
+	uint16_t gm_time_base_indicator;
 
 	/** Reselect port bit array. */
-	u32_t reselect_array;
+	uint32_t reselect_array;
 
 	/** Selected port bit array. */
-	u32_t selected_array;
+	uint32_t selected_array;
 
 	/** Steps removed from selected master. */
-	u16_t master_steps_removed;
+	uint16_t master_steps_removed;
 
 	/** Current UTC offset. */
-	s16_t current_utc_offset;
+	int16_t current_utc_offset;
 
 	/** System current UTC offset. */
-	s16_t sys_current_utc_offset;
+	int16_t sys_current_utc_offset;
 
 	/** Time Base Indicator. */
-	u16_t clk_src_time_base_indicator;
+	uint16_t clk_src_time_base_indicator;
 
 	/** Previous Time Base Indicator. */
-	u16_t clk_src_time_base_indicator_prev;
+	uint16_t clk_src_time_base_indicator_prev;
 
 	/** Time source. */
 	enum gptp_time_source time_source;
@@ -265,25 +265,25 @@ struct gptp_default_ds {
 	enum gptp_time_source time_source;
 
 	/** Clock Identity of the local clock. */
-	u8_t clk_id[GPTP_CLOCK_ID_LEN];
+	uint8_t clk_id[GPTP_CLOCK_ID_LEN];
 
 	/** System current flags. */
 	struct gptp_flags flags;
 
 	/** Current UTC offset. */
-	u16_t cur_utc_offset;
+	uint16_t cur_utc_offset;
 
 	/** Defines if this system is Grand Master capable. */
 	bool gm_capable;
 
 	/** Number of ports of the time-aware system. */
-	u8_t nb_ports;
+	uint8_t nb_ports;
 
 	/** Primary priority of the time-aware system. */
-	u8_t priority1;
+	uint8_t priority1;
 
 	/** Secondary priority of the time-aware system. */
-	u8_t priority2;
+	uint8_t priority2;
 };
 
 /**
@@ -296,28 +296,28 @@ struct gptp_current_ds {
 	struct gptp_scaled_ns last_gm_phase_change;
 
 	/** Time difference between a slave and the Grand Master. */
-	s64_t offset_from_master;
+	int64_t offset_from_master;
 
 	/** Last Grand Master Frequency change. */
 	double last_gm_freq_change;
 
 	/** Number of times a Grand Master has changed in the domain. */
-	u32_t gm_change_count;
+	uint32_t gm_change_count;
 
 	/** Time when the most recent Grand Master changed. */
-	u32_t last_gm_chg_evt_time;
+	uint32_t last_gm_chg_evt_time;
 
 	/** Time when the most recent Grand Master phase changed. */
-	u32_t last_gm_phase_chg_evt_time;
+	uint32_t last_gm_phase_chg_evt_time;
 
 	/** Time when the most recent Grand Master frequency changed. */
-	u32_t last_gm_freq_chg_evt_time;
+	uint32_t last_gm_freq_chg_evt_time;
 
 	/** Time Base Indicator of the current Grand Master. */
-	u16_t gm_timebase_indicator;
+	uint16_t gm_timebase_indicator;
 
 	/** Number of steps between the local clock and the Grand Master. */
-	u8_t steps_removed;
+	uint8_t steps_removed;
 };
 
 /**
@@ -327,10 +327,10 @@ struct gptp_current_ds {
  */
 struct gptp_parent_ds {
 	/** Ratio of the frequency of the GM with the local clock. */
-	s32_t cumulative_rate_ratio;
+	int32_t cumulative_rate_ratio;
 
 	/** Clock Identity of the Grand Master clock. */
-	u8_t gm_id[GPTP_CLOCK_ID_LEN];
+	uint8_t gm_id[GPTP_CLOCK_ID_LEN];
 
 	/** Clock Class of the Grand Master clock. */
 	struct gptp_clock_quality gm_clk_quality;
@@ -339,10 +339,10 @@ struct gptp_parent_ds {
 	struct gptp_port_identity port_id;
 
 	/** Primary Priority of the Grand Master clock. */
-	u8_t gm_priority1;
+	uint8_t gm_priority1;
 
 	/** Secondary Priority of the Grand Master clock. */
-	u8_t gm_priority2;
+	uint8_t gm_priority2;
 };
 
 /**
@@ -356,7 +356,7 @@ struct gptp_time_prop_ds {
 	enum gptp_time_source time_source;
 
 	/** Current UTC offset for the Grand Master. */
-	u16_t cur_utc_offset;
+	uint16_t cur_utc_offset;
 
 	/** Current UTC offset valid for the Grand Master. */
 	bool cur_utc_offset_valid : 1;
@@ -383,10 +383,10 @@ struct gptp_time_prop_ds {
  */
 struct gptp_port_ds {
 	/** Maximum interval between sync messages. */
-	u64_t sync_receipt_timeout_time_itv;
+	uint64_t sync_receipt_timeout_time_itv;
 
 	/** Asymmetry on the link relative to the grand master time base. */
-	s64_t delay_asymmetry;
+	int64_t delay_asymmetry;
 
 	/** One way propagation time on the link attached to this port. */
 	double neighbor_prop_delay;
@@ -407,46 +407,46 @@ struct gptp_port_ds {
 	struct gptp_uscaled_ns pdelay_req_itv;
 
 	/** Maximum number of Path Delay Requests without a response. */
-	u16_t allowed_lost_responses;
+	uint16_t allowed_lost_responses;
 
 	/** Current Sync sequence id for this port. */
-	u16_t sync_seq_id;
+	uint16_t sync_seq_id;
 
 	/** Current Path Delay Request sequence id for this port. */
-	u16_t pdelay_req_seq_id;
+	uint16_t pdelay_req_seq_id;
 
 	/** Current Announce sequence id for this port. */
-	u16_t announce_seq_id;
+	uint16_t announce_seq_id;
 
 	/** Current Signaling sequence id for this port. */
-	u16_t signaling_seq_id;
+	uint16_t signaling_seq_id;
 
 	/** Initial Announce Interval as a Logarithm to base 2. */
-	s8_t ini_log_announce_itv;
+	int8_t ini_log_announce_itv;
 
 	/** Current Announce Interval as a Logarithm to base 2. */
-	s8_t cur_log_announce_itv;
+	int8_t cur_log_announce_itv;
 
 	/** Time without receiving announce messages before running BMCA. */
-	u8_t announce_receipt_timeout;
+	uint8_t announce_receipt_timeout;
 
 	/** Initial Sync Interval as a Logarithm to base 2. */
-	s8_t ini_log_half_sync_itv;
+	int8_t ini_log_half_sync_itv;
 
 	/** Current Sync Interval as a Logarithm to base 2. */
-	s8_t cur_log_half_sync_itv;
+	int8_t cur_log_half_sync_itv;
 
 	/** Time without receiving sync messages before running BMCA. */
-	u8_t sync_receipt_timeout;
+	uint8_t sync_receipt_timeout;
 
 	/** Initial Path Delay Request Interval as a Logarithm to base 2. */
-	s8_t ini_log_pdelay_req_itv;
+	int8_t ini_log_pdelay_req_itv;
 
 	/** Current Path Delay Request Interval as a Logarithm to base 2. */
-	s8_t cur_log_pdelay_req_itv;
+	int8_t cur_log_pdelay_req_itv;
 
 	/** Version of PTP running on this port. */
-	u8_t version;
+	uint8_t version;
 
 	/** Time synchronization and Best Master Selection enabled. */
 	bool ptt_port_enabled : 1;
@@ -477,55 +477,55 @@ struct gptp_port_ds {
  */
 struct gptp_port_param_ds {
 	/** Number of Sync messages received. */
-	u32_t rx_sync_count;
+	uint32_t rx_sync_count;
 
 	/** Number of Follow Up messages received. */
-	u32_t rx_fup_count;
+	uint32_t rx_fup_count;
 
 	/** Number of Path Delay Requests messages received. */
-	u32_t rx_pdelay_req_count;
+	uint32_t rx_pdelay_req_count;
 
 	/** Number of Path Delay Response messages received. */
-	u32_t rx_pdelay_resp_count;
+	uint32_t rx_pdelay_resp_count;
 
 	/** Number of Path Delay Follow Up messages received. */
-	u32_t rx_pdelay_resp_fup_count;
+	uint32_t rx_pdelay_resp_fup_count;
 
 	/** Number of Announce messages received. */
-	u32_t rx_announce_count;
+	uint32_t rx_announce_count;
 
 	/** Number of ptp messages discarded. */
-	u32_t rx_ptp_packet_discard_count;
+	uint32_t rx_ptp_packet_discard_count;
 
 	/** Number of Sync reception timeout. */
-	u32_t sync_receipt_timeout_count;
+	uint32_t sync_receipt_timeout_count;
 
 	/** Number of Announce reception timeout. */
-	u32_t announce_receipt_timeout_count;
+	uint32_t announce_receipt_timeout_count;
 
 	/** Number Path Delay Requests without a response. */
-	u32_t pdelay_allowed_lost_resp_exceed_count;
+	uint32_t pdelay_allowed_lost_resp_exceed_count;
 
 	/** Number of Sync messages sent. */
-	u32_t tx_sync_count;
+	uint32_t tx_sync_count;
 
 	/** Number of Follow Up messages sent. */
-	u32_t tx_fup_count;
+	uint32_t tx_fup_count;
 
 	/** Number of Path Delay Request messages sent. */
-	u32_t tx_pdelay_req_count;
+	uint32_t tx_pdelay_req_count;
 
 	/** Number of Path Delay Response messages sent. */
-	u32_t tx_pdelay_resp_count;
+	uint32_t tx_pdelay_resp_count;
 
 	/** Number of Path Delay Response messages sent. */
-	u32_t tx_pdelay_resp_fup_count;
+	uint32_t tx_pdelay_resp_fup_count;
 
 	/** Number of Announce messages sent. */
-	u32_t tx_announce_count;
+	uint32_t tx_announce_count;
 
 	/** Neighbor propagation delay threshold exceeded. */
-	u32_t neighbor_prop_delay_exceeded;
+	uint32_t neighbor_prop_delay_exceeded;
 };
 
 /**

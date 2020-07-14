@@ -42,13 +42,13 @@ LOG_MODULE_REGISTER(uart_stm32);
 
 #define TIMEOUT 1000
 
-static inline void uart_stm32_set_baudrate(struct device *dev, u32_t baud_rate)
+static inline void uart_stm32_set_baudrate(struct device *dev, uint32_t baud_rate)
 {
 	const struct uart_stm32_config *config = DEV_CFG(dev);
 	struct uart_stm32_data *data = DEV_DATA(dev);
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 
-	u32_t clock_rate;
+	uint32_t clock_rate;
 
 	/* Get clock rate */
 	if (clock_control_get_rate(data->clock,
@@ -85,63 +85,63 @@ static inline void uart_stm32_set_baudrate(struct device *dev, u32_t baud_rate)
 #endif /* HAS_LPUART_1 */
 }
 
-static inline void uart_stm32_set_parity(struct device *dev, u32_t parity)
+static inline void uart_stm32_set_parity(struct device *dev, uint32_t parity)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 
 	LL_USART_SetParity(UartInstance, parity);
 }
 
-static inline u32_t uart_stm32_get_parity(struct device *dev)
+static inline uint32_t uart_stm32_get_parity(struct device *dev)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 
 	return LL_USART_GetParity(UartInstance);
 }
 
-static inline void uart_stm32_set_stopbits(struct device *dev, u32_t stopbits)
+static inline void uart_stm32_set_stopbits(struct device *dev, uint32_t stopbits)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 
 	LL_USART_SetStopBitsLength(UartInstance, stopbits);
 }
 
-static inline u32_t uart_stm32_get_stopbits(struct device *dev)
+static inline uint32_t uart_stm32_get_stopbits(struct device *dev)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 
 	return LL_USART_GetStopBitsLength(UartInstance);
 }
 
-static inline void uart_stm32_set_databits(struct device *dev, u32_t databits)
+static inline void uart_stm32_set_databits(struct device *dev, uint32_t databits)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 
 	LL_USART_SetDataWidth(UartInstance, databits);
 }
 
-static inline u32_t uart_stm32_get_databits(struct device *dev)
+static inline uint32_t uart_stm32_get_databits(struct device *dev)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 
 	return LL_USART_GetDataWidth(UartInstance);
 }
 
-static inline void uart_stm32_set_hwctrl(struct device *dev, u32_t hwctrl)
+static inline void uart_stm32_set_hwctrl(struct device *dev, uint32_t hwctrl)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 
 	LL_USART_SetHWFlowCtrl(UartInstance, hwctrl);
 }
 
-static inline u32_t uart_stm32_get_hwctrl(struct device *dev)
+static inline uint32_t uart_stm32_get_hwctrl(struct device *dev)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 
 	return LL_USART_GetHWFlowCtrl(UartInstance);
 }
 
-static inline u32_t uart_stm32_cfg2ll_parity(enum uart_config_parity parity)
+static inline uint32_t uart_stm32_cfg2ll_parity(enum uart_config_parity parity)
 {
 	switch (parity) {
 	case UART_CFG_PARITY_ODD:
@@ -154,7 +154,7 @@ static inline u32_t uart_stm32_cfg2ll_parity(enum uart_config_parity parity)
 	}
 }
 
-static inline enum uart_config_parity uart_stm32_ll2cfg_parity(u32_t parity)
+static inline enum uart_config_parity uart_stm32_ll2cfg_parity(uint32_t parity)
 {
 	switch (parity) {
 	case LL_USART_PARITY_ODD:
@@ -167,7 +167,7 @@ static inline enum uart_config_parity uart_stm32_ll2cfg_parity(u32_t parity)
 	}
 }
 
-static inline u32_t uart_stm32_cfg2ll_stopbits(enum uart_config_stop_bits sb)
+static inline uint32_t uart_stm32_cfg2ll_stopbits(enum uart_config_stop_bits sb)
 {
 	switch (sb) {
 /* Some MCU's don't support 0.5 stop bits */
@@ -188,7 +188,7 @@ static inline u32_t uart_stm32_cfg2ll_stopbits(enum uart_config_stop_bits sb)
 	}
 }
 
-static inline enum uart_config_stop_bits uart_stm32_ll2cfg_stopbits(u32_t sb)
+static inline enum uart_config_stop_bits uart_stm32_ll2cfg_stopbits(uint32_t sb)
 {
 	switch (sb) {
 /* Some MCU's don't support 0.5 stop bits */
@@ -209,7 +209,7 @@ static inline enum uart_config_stop_bits uart_stm32_ll2cfg_stopbits(u32_t sb)
 	}
 }
 
-static inline u32_t uart_stm32_cfg2ll_databits(enum uart_config_data_bits db)
+static inline uint32_t uart_stm32_cfg2ll_databits(enum uart_config_data_bits db)
 {
 	switch (db) {
 /* Some MCU's don't support 7B or 9B datawidth */
@@ -227,7 +227,7 @@ static inline u32_t uart_stm32_cfg2ll_databits(enum uart_config_data_bits db)
 	}
 }
 
-static inline enum uart_config_data_bits uart_stm32_ll2cfg_databits(u32_t db)
+static inline enum uart_config_data_bits uart_stm32_ll2cfg_databits(uint32_t db)
 {
 	switch (db) {
 /* Some MCU's don't support 7B or 9B datawidth */
@@ -252,7 +252,7 @@ static inline enum uart_config_data_bits uart_stm32_ll2cfg_databits(u32_t db)
  * @param  fc: Zephyr hardware flow control option.
  * @retval LL_USART_HWCONTROL_RTS_CTS, or LL_USART_HWCONTROL_NONE.
  */
-static inline u32_t uart_stm32_cfg2ll_hwctrl(enum uart_config_flow_control fc)
+static inline uint32_t uart_stm32_cfg2ll_hwctrl(enum uart_config_flow_control fc)
 {
 	if (fc == UART_CFG_FLOW_CTRL_RTS_CTS) {
 		return LL_USART_HWCONTROL_RTS_CTS;
@@ -268,7 +268,7 @@ static inline u32_t uart_stm32_cfg2ll_hwctrl(enum uart_config_flow_control fc)
  * @param  fc: LL hardware flow control definition.
  * @retval UART_CFG_FLOW_CTRL_RTS_CTS, or UART_CFG_FLOW_CTRL_NONE.
  */
-static inline enum uart_config_flow_control uart_stm32_ll2cfg_hwctrl(u32_t fc)
+static inline enum uart_config_flow_control uart_stm32_ll2cfg_hwctrl(uint32_t fc)
 {
 	if (fc == LL_USART_HWCONTROL_RTS_CTS) {
 		return UART_CFG_FLOW_CTRL_RTS_CTS;
@@ -282,10 +282,10 @@ static int uart_stm32_configure(struct device *dev,
 {
 	struct uart_stm32_data *data = DEV_DATA(dev);
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
-	const u32_t parity = uart_stm32_cfg2ll_parity(cfg->parity);
-	const u32_t stopbits = uart_stm32_cfg2ll_stopbits(cfg->stop_bits);
-	const u32_t databits = uart_stm32_cfg2ll_databits(cfg->data_bits);
-	const u32_t flowctrl = uart_stm32_cfg2ll_hwctrl(cfg->flow_ctrl);
+	const uint32_t parity = uart_stm32_cfg2ll_parity(cfg->parity);
+	const uint32_t stopbits = uart_stm32_cfg2ll_stopbits(cfg->stop_bits);
+	const uint32_t databits = uart_stm32_cfg2ll_databits(cfg->data_bits);
+	const uint32_t flowctrl = uart_stm32_cfg2ll_hwctrl(cfg->flow_ctrl);
 
 	/* Hardware doesn't support mark or space parity */
 	if ((UART_CFG_PARITY_MARK == cfg->parity) ||
@@ -407,13 +407,13 @@ static void uart_stm32_poll_out(struct device *dev,
 
 	LL_USART_ClearFlag_TC(UartInstance);
 
-	LL_USART_TransmitData8(UartInstance, (u8_t)c);
+	LL_USART_TransmitData8(UartInstance, (uint8_t)c);
 }
 
 static int uart_stm32_err_check(struct device *dev)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
-	u32_t err = 0U;
+	uint32_t err = 0U;
 
 	/* Check for errors, but don't clear them here.
 	 * Some SoC clear all error flags when at least
@@ -464,11 +464,11 @@ static inline void __uart_stm32_get_clock(struct device *dev)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-static int uart_stm32_fifo_fill(struct device *dev, const u8_t *tx_data,
+static int uart_stm32_fifo_fill(struct device *dev, const uint8_t *tx_data,
 				  int size)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
-	u8_t num_tx = 0U;
+	uint8_t num_tx = 0U;
 
 	while ((size - num_tx > 0) &&
 	       LL_USART_IsActiveFlag_TXE(UartInstance)) {
@@ -481,11 +481,11 @@ static int uart_stm32_fifo_fill(struct device *dev, const u8_t *tx_data,
 	return num_tx;
 }
 
-static int uart_stm32_fifo_read(struct device *dev, u8_t *rx_data,
+static int uart_stm32_fifo_read(struct device *dev, uint8_t *rx_data,
 				  const int size)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
-	u8_t num_rx = 0U;
+	uint8_t num_rx = 0U;
 
 	while ((size - num_rx > 0) &&
 	       LL_USART_IsActiveFlag_RXNE(UartInstance)) {
@@ -660,8 +660,8 @@ static int uart_stm32_init(struct device *dev)
 	const struct uart_stm32_config *config = DEV_CFG(dev);
 	struct uart_stm32_data *data = DEV_DATA(dev);
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
-	u32_t ll_parity;
-	u32_t ll_datawidth;
+	uint32_t ll_parity;
+	uint32_t ll_datawidth;
 
 	__uart_stm32_get_clock(dev);
 	/* enable clock */
@@ -756,7 +756,7 @@ STM32_UART_IRQ_HANDLER_DECL(index);					\
 									\
 static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 	.uconf = {							\
-		.base = (u8_t *)DT_INST_REG_ADDR(index),\
+		.base = (uint8_t *)DT_INST_REG_ADDR(index),\
 		STM32_UART_IRQ_HANDLER_FUNC(index)			\
 	},								\
 	.pclken = { .bus = DT_INST_CLOCKS_CELL(index, bus),	\

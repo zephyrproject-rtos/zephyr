@@ -127,7 +127,7 @@ static void netusb_init(struct net_if *iface)
 {
 	int ret;
 
-	static u8_t mac[6] = { 0x00, 0x00, 0x5E, 0x00, 0x53, 0x00 };
+	static uint8_t mac[6] = { 0x00, 0x00, 0x5E, 0x00, 0x53, 0x00 };
 
 	LOG_DBG("netusb device initialization");
 

@@ -6,6 +6,7 @@
 #include <xtensa/xtensa.dtsi>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/i2c/i2c.h>
+#include <dt-bindings/clock/esp32_clock.h>
 
 / {
 	chosen {
@@ -20,12 +21,14 @@
 			device_type = "cpu";
 			compatible = "cadence,tensilica-xtensa-lx6";
 			reg = <0>;
+			clock-source = <ESP32_CLK_SRC_PLL>;
 		};
 
 		cpu1: cpu@1 {
 			device_type = "cpu";
 			compatible = "cadence,tensilica-xtensa-lx6";
 			reg = <1>;
+			clock-source = <ESP32_CLK_SRC_PLL>;
 		};
 
 	};
@@ -36,12 +39,23 @@
 		reg = <0x3FFB0000 0x50000>;
 	};
 
+	rtc: rtc@3ff48000 {
+		compatible = "espressif,esp32-rtc";
+		reg = <0x3ff48000 0x0D8>;
+		label = "RTC";
+		xtal-freq = <ESP32_CLK_XTAL_40M>;
+		xtal-div = <0>;
+		#clock-cells = <1>;
+		status = "ok";
+	};
+
 	soc {
 		uart0: uart@3ff40000 {
 			compatible = "espressif,esp32-uart";
 			reg = <0x3ff40000 0x400>;
 			/* interrupts = <12>; - FIXME: Enable interrupts when interrupt-controller got supported in device tree */
 			label = "UART_0";
+			clocks = <&rtc ESP32_UART0_MODULE>;
 			status = "disabled";
 		};
 
@@ -50,6 +64,7 @@
 			reg = <0x3ff50000 0x400>;
 			/* interrupts = <17>; - FIXME: Enable interrupts when interrupt-controller got supported in device tree */
 			label = "UART_1";
+			clocks = <&rtc ESP32_UART1_MODULE>;
 			status = "disabled";
 		};
 
@@ -58,6 +73,7 @@
 			reg = <0x3ff6E000 0x400>;
 			/* interrupts = <18>; - FIXME: Enable interrupts when interrupt-controller got supported in device tree */
 			label = "UART_2";
+			clocks = <&rtc ESP32_UART2_MODULE>;
 			status = "disabled";
 		};
 
@@ -91,6 +107,7 @@
 			reg = <0x3ff53000 0x1000>;
 			/* interrupts = <8>; - FIXME: Enable interrupts when interrupt-controller got supported in device tree */
 			label = "I2C_0";
+			clocks = <&rtc ESP32_I2C_EXT0_MODULE>;
 			status = "disabled";
 		};
 
@@ -101,6 +118,7 @@
 			reg = <0x3ff67000 0x1000>;
 			/* interrupts = <9>; - FIXME: Enable interrupts when interrupt-controller got supported in device tree */
 			label = "I2C_1";
+			clocks = <&rtc ESP32_I2C_EXT1_MODULE>;
 			status = "disabled";
 		};
 

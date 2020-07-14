@@ -25,12 +25,15 @@ PROVIDE ( __stack = 0x3ffe3f20 );
 PROVIDE ( esp32_rom_uart_tx_one_char = 0x40009200 );
 PROVIDE ( esp32_rom_uart_rx_one_char = 0x400092d0 );
 PROVIDE ( esp32_rom_uart_attach = 0x40008fd0 );
+PROVIDE ( esp32_rom_uart_tx_wait_idle = 0x40009278 );
 PROVIDE ( esp32_rom_intr_matrix_set = 0x4000681c );
 PROVIDE ( esp32_rom_gpio_matrix_in = 0x40009edc );
 PROVIDE ( esp32_rom_gpio_matrix_out = 0x40009f0c );
 PROVIDE ( esp32_rom_Cache_Flush = 0x40009a14 );
 PROVIDE ( esp32_rom_Cache_Read_Enable = 0x40009a84 );
 PROVIDE ( esp32_rom_ets_set_appcpu_boot_addr = 0x4000689c );
+PROVIDE ( esp32_rom_i2c_readReg = 0x40004148 );
+PROVIDE ( esp32_rom_i2c_writeReg = 0x400041a4 );
 
 MEMORY
 {

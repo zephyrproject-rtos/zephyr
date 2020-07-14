@@ -38,8 +38,8 @@
  */
 
 struct _pin {
-	u32_t		hat_num;
-	u32_t		pin;
+	uint32_t		hat_num;
+	uint32_t		pin;
 	const char	*gpio_dev_name;
 	struct device	*gpio_dev;
 };
@@ -75,14 +75,14 @@ struct _pin intr_pin = {
 
 static struct gpio_callback gpio_cb;
 
-static volatile u32_t counter;
+static volatile uint32_t counter;
 
 K_SEM_DEFINE(counter_sem, 0, 1);
 
 #define NUM_PINS	ARRAY_SIZE(counter_pins)
 #define MASK		(BIT(NUM_PINS) - 1)
 
-void button_cb(struct device *gpiodev, struct gpio_callback *cb, u32_t pin)
+void button_cb(struct device *gpiodev, struct gpio_callback *cb, uint32_t pin)
 {
 	counter++;
 	k_sem_give(&counter_sem);
@@ -102,7 +102,7 @@ int get_gpio_dev(struct _pin *pin)
 
 void main(void)
 {
-	u32_t val;
+	uint32_t val;
 	int i, ret;
 
 	for (i = 0; i < NUM_PINS; i++) {

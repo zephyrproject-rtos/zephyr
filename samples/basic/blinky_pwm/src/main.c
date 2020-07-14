@@ -43,9 +43,9 @@
 void main(void)
 {
 	struct device *pwm;
-	u32_t max_period;
-	u32_t period;
-	u8_t dir = 0U;
+	uint32_t max_period;
+	uint32_t period;
+	uint8_t dir = 0U;
 	int ret;
 
 	printk("PWM-based blinky\n");

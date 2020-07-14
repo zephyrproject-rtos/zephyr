@@ -20,14 +20,14 @@ enum transition_types {
 
 struct transition {
 	bool just_started;
-	u8_t type;
-	u8_t tt;
-	u8_t rt;
-	u8_t delay;
-	u32_t quo_tt;
-	u32_t counter;
-	u32_t total_duration;
-	s64_t start_timestamp;
+	uint8_t type;
+	uint8_t tt;
+	uint8_t rt;
+	uint8_t delay;
+	uint32_t quo_tt;
+	uint32_t counter;
+	uint32_t total_duration;
+	int64_t start_timestamp;
 
 	struct k_timer timer;
 };
@@ -37,7 +37,7 @@ extern struct transition transition;
 extern struct k_timer dummy_timer;
 
 void calculate_rt(struct transition *transition);
-void set_transition_values(u8_t type);
+void set_transition_values(uint8_t type);
 
 void onoff_handler(void);
 void level_lightness_handler(void);

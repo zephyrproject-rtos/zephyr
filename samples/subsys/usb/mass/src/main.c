@@ -15,6 +15,7 @@
 LOG_MODULE_REGISTER(main);
 
 #if CONFIG_DISK_ACCESS_FLASH
+#include <storage/flash_map.h>
 #if CONFIG_FAT_FILESYSTEM_ELM
 #include <fs/fs.h>
 #include <ff.h>
@@ -25,12 +26,12 @@ static FATFS fat_fs;
 static struct fs_mount_t fs_mnt = {
 	.type = FS_FATFS,
 	.mnt_point = FATFS_MNTP,
+	.storage_dev = (void *)FLASH_AREA_ID(storage),
 	.fs_data = &fat_fs,
 };
 #elif CONFIG_FILE_SYSTEM_LITTLEFS
 #include <fs/fs.h>
 #include <fs/littlefs.h>
-#include <storage/flash_map.h>
 
 FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(storage);
 static struct fs_mount_t fs_mnt = {
@@ -44,18 +45,8 @@ static struct fs_mount_t fs_mnt = {
 #endif  /* file system */
 #endif  /* CONFIG_DISK_ACCESS_FLASH */
 
-void main(void)
+static void setup_disk(void)
 {
-	int ret;
-
-	ret = usb_enable(NULL);
-	if (ret != 0) {
-		LOG_ERR("Failed to enable USB");
-		return;
-	}
-
-	LOG_INF("The device is put in USB mass storage mode.\n");
-
 #if CONFIG_DISK_ACCESS_FLASH
 	struct fs_mount_t *mp = &fs_mnt;
 	unsigned int id = (uintptr_t)mp->storage_dev;
@@ -123,4 +114,19 @@ void main(void)
 out:
 	flash_area_close(pfa);
 #endif
+}
+
+void main(void)
+{
+	int ret;
+
+	setup_disk();
+
+	ret = usb_enable(NULL);
+	if (ret != 0) {
+		LOG_ERR("Failed to enable USB");
+		return;
+	}
+
+	LOG_INF("The device is put in USB mass storage mode.\n");
 }

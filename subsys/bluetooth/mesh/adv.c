@@ -55,13 +55,6 @@ static K_FIFO_DEFINE(adv_queue);
 static struct k_thread adv_thread_data;
 static K_THREAD_STACK_DEFINE(adv_thread_stack, ADV_STACK_SIZE);
 
-static const u8_t adv_type[] = {
-	[BT_MESH_ADV_PROV]   = BT_DATA_MESH_PROV,
-	[BT_MESH_ADV_DATA]   = BT_DATA_MESH_MESSAGE,
-	[BT_MESH_ADV_BEACON] = BT_DATA_MESH_BEACON,
-	[BT_MESH_ADV_URI]    = BT_DATA_URI,
-};
-
 NET_BUF_POOL_DEFINE(adv_buf_pool, CONFIG_BT_MESH_ADV_BUF_COUNT,
 		    BT_MESH_ADV_DATA_SIZE, BT_MESH_ADV_USER_DATA_SIZE, NULL);
 
@@ -72,7 +65,7 @@ static struct bt_mesh_adv *adv_alloc(int id)
 	return &adv_pool[id];
 }
 
-static inline void adv_send_start(u16_t duration, int err,
+static inline void adv_send_start(uint16_t duration, int err,
 				  const struct bt_mesh_send_cb *cb,
 				  void *cb_data)
 {
@@ -91,12 +84,18 @@ static inline void adv_send_end(int err, const struct bt_mesh_send_cb *cb,
 
 static inline void adv_send(struct net_buf *buf)
 {
-	const s32_t adv_int_min = ((bt_dev.hci_version >= BT_HCI_VERSION_5_0) ?
+	static const uint8_t adv_type[] = {
+		[BT_MESH_ADV_PROV]   = BT_DATA_MESH_PROV,
+		[BT_MESH_ADV_DATA]   = BT_DATA_MESH_MESSAGE,
+		[BT_MESH_ADV_BEACON] = BT_DATA_MESH_BEACON,
+		[BT_MESH_ADV_URI]    = BT_DATA_URI,
+	};
+	const int32_t adv_int_min = ((bt_dev.hci_version >= BT_HCI_VERSION_5_0) ?
 				   ADV_INT_FAST_MS : ADV_INT_DEFAULT_MS);
 	const struct bt_mesh_send_cb *cb = BT_MESH_ADV(buf)->cb;
 	void *cb_data = BT_MESH_ADV(buf)->cb_data;
 	struct bt_le_adv_param param = {};
-	u16_t duration, adv_int;
+	uint16_t duration, adv_int;
 	struct bt_data ad;
 	int err;
 
@@ -197,7 +196,7 @@ void bt_mesh_adv_update(void)
 struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
 					     bt_mesh_adv_alloc_t get_id,
 					     enum bt_mesh_adv_type type,
-					     u8_t xmit, k_timeout_t timeout)
+					     uint8_t xmit, k_timeout_t timeout)
 {
 	struct bt_mesh_adv *adv;
 	struct net_buf *buf;
@@ -223,7 +222,7 @@ struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
 	return buf;
 }
 
-struct net_buf *bt_mesh_adv_create(enum bt_mesh_adv_type type, u8_t xmit,
+struct net_buf *bt_mesh_adv_create(enum bt_mesh_adv_type type, uint8_t xmit,
 				   k_timeout_t timeout)
 {
 	return bt_mesh_adv_create_from_pool(&adv_buf_pool, adv_alloc, type,
@@ -243,8 +242,8 @@ void bt_mesh_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
 	net_buf_put(&adv_queue, net_buf_ref(buf));
 }
 
-static void bt_mesh_scan_cb(const bt_addr_le_t *addr, s8_t rssi,
-			    u8_t adv_type, struct net_buf_simple *buf)
+static void bt_mesh_scan_cb(const bt_addr_le_t *addr, int8_t rssi,
+			    uint8_t adv_type, struct net_buf_simple *buf)
 {
 	if (adv_type != BT_GAP_ADV_TYPE_ADV_NONCONN_IND) {
 		return;
@@ -254,7 +253,7 @@ static void bt_mesh_scan_cb(const bt_addr_le_t *addr, s8_t rssi,
 
 	while (buf->len > 1) {
 		struct net_buf_simple_state state;
-		u8_t len, type;
+		uint8_t len, type;
 
 		len = net_buf_simple_pull_u8(buf);
 		/* Check for early termination */

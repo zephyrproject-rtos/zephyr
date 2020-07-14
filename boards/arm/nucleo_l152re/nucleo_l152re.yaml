@@ -16,3 +16,4 @@ supported:
   - uart
   - watchdog
   - adc
+  - dac

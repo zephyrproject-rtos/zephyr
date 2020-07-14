@@ -13,7 +13,7 @@ extern "C" {
 
 /*
  * MASKS AND SHIFT FOR ADDRESSES
- * an address in nvs is an u32_t where:
+ * an address in nvs is an uint32_t where:
  *   high 2 bytes represent the sector number
  *   low 2 bytes represent the offset in a sector
  */
@@ -30,15 +30,15 @@ extern "C" {
 
 /* Allocation Table Entry */
 struct nvs_ate {
-	u16_t id;	/* data id */
-	u16_t offset;	/* data offset within sector */
-	u16_t len;	/* data len within sector */
-	u8_t part;	/* part of a multipart data - future extension */
-	u8_t crc8;	/* crc8 check of the entry */
+	uint16_t id;	/* data id */
+	uint16_t offset;	/* data offset within sector */
+	uint16_t len;	/* data len within sector */
+	uint8_t part;	/* part of a multipart data - future extension */
+	uint8_t crc8;	/* crc8 check of the entry */
 } __packed;
 
 BUILD_ASSERT(offsetof(struct nvs_ate, crc8) ==
-		 sizeof(struct nvs_ate) - sizeof(u8_t),
+		 sizeof(struct nvs_ate) - sizeof(uint8_t),
 		 "crc8 must be the last member");
 
 #ifdef __cplusplus

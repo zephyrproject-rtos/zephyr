@@ -87,22 +87,22 @@ struct net_ipv6_nbr_data {
 	struct in6_addr addr;
 
 	/** Reachable timer. */
-	s64_t reachable;
+	int64_t reachable;
 
 	/** Reachable timeout */
-	s32_t reachable_timeout;
+	int32_t reachable_timeout;
 
 	/** Neighbor Solicitation reply timer */
-	s64_t send_ns;
+	int64_t send_ns;
 
 	/** State of the neighbor discovery */
 	enum net_ipv6_nbr_state state;
 
 	/** Link metric for the neighbor */
-	u16_t link_metric;
+	uint16_t link_metric;
 
 	/** How many times we have sent NS */
-	u8_t ns_count;
+	uint8_t ns_count;
 
 	/** Is the neighbor a router */
 	bool is_router;
@@ -111,7 +111,7 @@ struct net_ipv6_nbr_data {
 	/** Stale counter used to removed oldest nbr in STALE state,
 	 *  when table is full.
 	 */
-	u32_t stale_counter;
+	uint32_t stale_counter;
 #endif
 };
 
@@ -133,10 +133,10 @@ int net_ipv6_start_rs(struct net_if *iface);
 
 int net_ipv6_send_na(struct net_if *iface, const struct in6_addr *src,
 		     const struct in6_addr *dst, const struct in6_addr *tgt,
-		     u8_t flags);
+		     uint8_t flags);
 
 
-static inline bool net_ipv6_is_nexthdr_upper_layer(u8_t nexthdr)
+static inline bool net_ipv6_is_nexthdr_upper_layer(uint8_t nexthdr)
 {
 	return (nexthdr == IPPROTO_ICMPV6 || nexthdr == IPPROTO_UDP ||
 		nexthdr == IPPROTO_TCP);
@@ -180,10 +180,10 @@ static inline int net_ipv6_create(struct net_pkt *pkt,
  * @return 0 on success, negative errno otherwise.
  */
 #if defined(CONFIG_NET_NATIVE_IPV6)
-int net_ipv6_finalize(struct net_pkt *pkt, u8_t next_header_proto);
+int net_ipv6_finalize(struct net_pkt *pkt, uint8_t next_header_proto);
 #else
 static inline int net_ipv6_finalize(struct net_pkt *pkt,
-				    u8_t next_header_proto)
+				    uint8_t next_header_proto)
 {
 	ARG_UNUSED(pkt);
 	ARG_UNUSED(next_header_proto);
@@ -278,7 +278,7 @@ static inline struct net_nbr *net_ipv6_nbr_lookup(struct net_if *iface,
  *
  * @return A valid pointer on a neighbor on success, NULL otherwise
  */
-struct net_nbr *net_ipv6_get_nbr(struct net_if *iface, u8_t idx);
+struct net_nbr *net_ipv6_get_nbr(struct net_if *iface, uint8_t idx);
 
 /**
  * @brief Look for a neighbor from it's link local address index
@@ -291,11 +291,11 @@ struct net_nbr *net_ipv6_get_nbr(struct net_if *iface, u8_t idx);
  */
 #if defined(CONFIG_NET_IPV6_NBR_CACHE) && defined(CONFIG_NET_NATIVE_IPV6)
 struct in6_addr *net_ipv6_nbr_lookup_by_index(struct net_if *iface,
-					      u8_t idx);
+					      uint8_t idx);
 #else
 static inline
 struct in6_addr *net_ipv6_nbr_lookup_by_index(struct net_if *iface,
-					      u8_t idx)
+					      uint8_t idx)
 {
 	return NULL;
 }
@@ -408,7 +408,7 @@ struct net_ipv6_reassembly {
 	struct net_pkt *pkt[NET_IPV6_FRAGMENTS_MAX_PKT];
 
 	/** IPv6 fragment identification */
-	u32_t id;
+	uint32_t id;
 };
 
 /**
@@ -440,8 +440,8 @@ void net_ipv6_frag_foreach(net_ipv6_frag_cb_t cb, void *user_data);
  *
  * @return 0 on success, a negative errno otherwise.
  */
-int net_ipv6_find_last_ext_hdr(struct net_pkt *pkt, u16_t *next_hdr_off,
-			       u16_t *last_hdr_off);
+int net_ipv6_find_last_ext_hdr(struct net_pkt *pkt, uint16_t *next_hdr_off,
+			       uint16_t *last_hdr_off);
 
 /**
  * @brief Handles IPv6 fragmented packets.
@@ -455,12 +455,12 @@ int net_ipv6_find_last_ext_hdr(struct net_pkt *pkt, u16_t *next_hdr_off,
 #if defined(CONFIG_NET_IPV6_FRAGMENT) && defined(CONFIG_NET_NATIVE_IPV6)
 enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
 					      struct net_ipv6_hdr *hdr,
-					      u8_t nexthdr);
+					      uint8_t nexthdr);
 #else
 static inline
 enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
 					      struct net_ipv6_hdr *hdr,
-					      u8_t nexthdr)
+					      uint8_t nexthdr)
 {
 	ARG_UNUSED(pkt);
 	ARG_UNUSED(hdr);

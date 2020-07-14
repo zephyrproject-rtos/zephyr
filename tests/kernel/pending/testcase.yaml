@@ -1,4 +1,3 @@
 tests:
   kernel.objects:
-    min_ram: 16
     tags: kernel

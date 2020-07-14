@@ -46,13 +46,13 @@ struct pca9633_data {
 	struct led_data dev_data;
 };
 
-static int pca9633_led_blink(struct device *dev, u32_t led,
-			     u32_t delay_on, u32_t delay_off)
+static int pca9633_led_blink(struct device *dev, uint32_t led,
+			     uint32_t delay_on, uint32_t delay_off)
 {
 	struct pca9633_data *data = dev->driver_data;
 	struct led_data *dev_data = &data->dev_data;
-	u8_t gdc, gfrq;
-	u32_t period;
+	uint8_t gdc, gfrq;
+	uint32_t period;
 
 	period = delay_on + delay_off;
 
@@ -109,12 +109,12 @@ static int pca9633_led_blink(struct device *dev, u32_t led,
 	return 0;
 }
 
-static int pca9633_led_set_brightness(struct device *dev, u32_t led,
-				      u8_t value)
+static int pca9633_led_set_brightness(struct device *dev, uint32_t led,
+				      uint8_t value)
 {
 	struct pca9633_data *data = dev->driver_data;
 	struct led_data *dev_data = &data->dev_data;
-	u8_t val;
+	uint8_t val;
 
 	if (value < dev_data->min_brightness ||
 	    value > dev_data->max_brightness) {
@@ -142,7 +142,7 @@ static int pca9633_led_set_brightness(struct device *dev, u32_t led,
 	return 0;
 }
 
-static inline int pca9633_led_on(struct device *dev, u32_t led)
+static inline int pca9633_led_on(struct device *dev, uint32_t led)
 {
 	struct pca9633_data *data = dev->driver_data;
 
@@ -158,7 +158,7 @@ static inline int pca9633_led_on(struct device *dev, u32_t led)
 	return 0;
 }
 
-static inline int pca9633_led_off(struct device *dev, u32_t led)
+static inline int pca9633_led_off(struct device *dev, uint32_t led)
 {
 	struct pca9633_data *data = dev->driver_data;
 

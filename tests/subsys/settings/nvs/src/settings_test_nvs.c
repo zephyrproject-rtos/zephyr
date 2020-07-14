@@ -9,10 +9,10 @@
 #include "settings_priv.h"
 #include "settings_test.h"
 
-u8_t val8;
-u8_t val8_un;
-u32_t val32;
-u64_t val64;
+uint8_t val8;
+uint8_t val8_un;
+uint32_t val32;
+uint64_t val64;
 
 int test_get_called;
 int test_set_called;

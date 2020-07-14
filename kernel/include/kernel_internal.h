@@ -44,7 +44,7 @@ extern void z_setup_new_thread(struct k_thread *new_thread,
 			      k_thread_stack_t *stack, size_t stack_size,
 			      k_thread_entry_t entry,
 			      void *p1, void *p2, void *p3,
-			      int prio, u32_t options, const char *name);
+			      int prio, uint32_t options, const char *name);
 
 static inline void z_new_thread_init(struct k_thread *thread,
 				     char *stack, size_t stack_size)
@@ -117,15 +117,15 @@ extern void z_smp_init(void);
 
 extern void smp_timer_init(void);
 
-extern void z_early_boot_rand_get(u8_t *buf, size_t length);
+extern void z_early_boot_rand_get(uint8_t *buf, size_t length);
 
 #if CONFIG_STACK_POINTER_RANDOM
 extern int z_stack_adjust_initialized;
 #endif
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
-extern u32_t z_timestamp_main; /* timestamp when main task starts */
-extern u32_t z_timestamp_idle; /* timestamp when CPU goes idle */
+extern uint32_t z_timestamp_main; /* timestamp when main task starts */
+extern uint32_t z_timestamp_idle; /* timestamp when CPU goes idle */
 #endif
 
 extern struct k_thread z_main_thread;
@@ -138,7 +138,7 @@ extern K_THREAD_STACK_ARRAY_DEFINE(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
 				   CONFIG_ISR_STACK_SIZE);
 
 #ifdef CONFIG_GEN_PRIV_STACKS
-extern u8_t *z_priv_stack_find(k_thread_stack_t *stack);
+extern uint8_t *z_priv_stack_find(k_thread_stack_t *stack);
 #endif
 
 #ifdef __cplusplus

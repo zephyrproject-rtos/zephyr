@@ -23,7 +23,7 @@ struct crypto_stm32_data {
 
 struct crypto_stm32_session {
 	CRYP_ConfigTypeDef config;
-	u32_t key[CRYPTO_STM32_AES_MAX_KEY_LEN / sizeof(u32_t)];
+	uint32_t key[CRYPTO_STM32_AES_MAX_KEY_LEN / sizeof(uint32_t)];
 	bool in_use;
 };
 

@@ -31,13 +31,13 @@ struct pwm_mcux_data {
 	pwm_signal_param_t channel[CHANNEL_COUNT];
 };
 
-static int mcux_pwm_pin_set(struct device *dev, u32_t pwm,
-			    u32_t period_cycles, u32_t pulse_cycles,
+static int mcux_pwm_pin_set(struct device *dev, uint32_t pwm,
+			    uint32_t period_cycles, uint32_t pulse_cycles,
 			    pwm_flags_t flags)
 {
 	const struct pwm_mcux_config *config = dev->config_info;
 	struct pwm_mcux_data *data = dev->driver_data;
-	u8_t duty_cycle;
+	uint8_t duty_cycle;
 
 	if (pwm >= CHANNEL_COUNT) {
 		LOG_ERR("Invalid channel");
@@ -108,8 +108,8 @@ static int mcux_pwm_pin_set(struct device *dev, u32_t pwm,
 	return 0;
 }
 
-static int mcux_pwm_get_cycles_per_sec(struct device *dev, u32_t pwm,
-				       u64_t *cycles)
+static int mcux_pwm_get_cycles_per_sec(struct device *dev, uint32_t pwm,
+				       uint64_t *cycles)
 {
 	const struct pwm_mcux_config *config = dev->config_info;
 

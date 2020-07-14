@@ -54,7 +54,7 @@ extern "C" {
  *
  * @return 0 if ok, <0 if error.
  */
-int net_config_init(const char *app_info, u32_t flags, s32_t timeout);
+int net_config_init(const char *app_info, uint32_t flags, int32_t timeout);
 
 /**
  * @}

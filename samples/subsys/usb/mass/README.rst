@@ -48,11 +48,11 @@ The board will be detected as shown by the Linux journalctl command:
 
     $ journalctl -k -n 17
     usb 2-2.4: new full-speed USB device number 29 using xhci_hcd
-    usb 2-2.4: New USB device found, idVendor=2fe3, idProduct=0100, bcdDevice= 0.11
+    usb 2-2.4: New USB device found, idVendor=2fe3, idProduct=0008, bcdDevice= 2.03
     usb 2-2.4: New USB device strings: Mfr=1, Product=2, SerialNumber=3
     usb 2-2.4: Product: Zephyr MSC sample
     usb 2-2.4: Manufacturer: ZEPHYR
-    usb 2-2.4: SerialNumber: 0.01
+    usb 2-2.4: SerialNumber: 86FE679A598AC47A
     usb-storage 2-2.4:1.0: USB Mass Storage device detected
     scsi host3: usb-storage 2-2.4:1.0
     scsi 3:0:0:0: Direct-Access     ZEPHYR   ZEPHYR USB DISK  0.01 PQ: 0 ANSI: 0 CCS

@@ -15,7 +15,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(dma_stm32_v2);
 
-u32_t table_ll_stream[] = {
+uint32_t table_ll_stream[] = {
 	LL_DMA_CHANNEL_1,
 	LL_DMA_CHANNEL_2,
 	LL_DMA_CHANNEL_3,
@@ -66,7 +66,7 @@ void (*func_ll_clear_tc[])(DMA_TypeDef *DMAx) = {
 #endif /* LL_DMA_IFCR_CTCIF8 */
 };
 
-u32_t (*func_ll_is_active_ht[])(DMA_TypeDef *DMAx) = {
+uint32_t (*func_ll_is_active_ht[])(DMA_TypeDef *DMAx) = {
 	LL_DMA_IsActiveFlag_HT1,
 	LL_DMA_IsActiveFlag_HT2,
 	LL_DMA_IsActiveFlag_HT3,
@@ -83,7 +83,7 @@ u32_t (*func_ll_is_active_ht[])(DMA_TypeDef *DMAx) = {
 #endif /* LL_DMA_ISR_HTIF8 */
 };
 
-u32_t (*func_ll_is_active_tc[])(DMA_TypeDef *DMAx) = {
+uint32_t (*func_ll_is_active_tc[])(DMA_TypeDef *DMAx) = {
 	LL_DMA_IsActiveFlag_TC1,
 	LL_DMA_IsActiveFlag_TC2,
 	LL_DMA_IsActiveFlag_TC3,
@@ -134,7 +134,7 @@ void (*func_ll_clear_gi[])(DMA_TypeDef *DMAx) = {
 #endif /* LL_DMA_IFCR_CGIF8 */
 };
 
-static u32_t (*func_ll_is_active_te[])(DMA_TypeDef *DMAx) = {
+static uint32_t (*func_ll_is_active_te[])(DMA_TypeDef *DMAx) = {
 	LL_DMA_IsActiveFlag_TE1,
 	LL_DMA_IsActiveFlag_TE2,
 	LL_DMA_IsActiveFlag_TE3,
@@ -152,7 +152,7 @@ static u32_t (*func_ll_is_active_te[])(DMA_TypeDef *DMAx) = {
 };
 
 
-u32_t (*func_ll_is_active_gi[])(DMA_TypeDef *DMAx) = {
+uint32_t (*func_ll_is_active_gi[])(DMA_TypeDef *DMAx) = {
 	LL_DMA_IsActiveFlag_GI1,
 	LL_DMA_IsActiveFlag_GI2,
 	LL_DMA_IsActiveFlag_GI3,
@@ -170,7 +170,7 @@ u32_t (*func_ll_is_active_gi[])(DMA_TypeDef *DMAx) = {
 
 };
 
-void stm32_dma_dump_stream_irq(DMA_TypeDef *dma, u32_t id)
+void stm32_dma_dump_stream_irq(DMA_TypeDef *dma, uint32_t id)
 {
 	LOG_INF("tc: %d, ht: %d, te: %d, gi: %d",
 		func_ll_is_active_tc[id](dma),
@@ -179,12 +179,12 @@ void stm32_dma_dump_stream_irq(DMA_TypeDef *dma, u32_t id)
 		func_ll_is_active_gi[id](dma));
 }
 
-void stm32_dma_clear_stream_irq(DMA_TypeDef *dma, u32_t id)
+void stm32_dma_clear_stream_irq(DMA_TypeDef *dma, uint32_t id)
 {
 	func_ll_clear_te[id](dma);
 }
 
-bool stm32_dma_is_irq_happened(DMA_TypeDef *dma, u32_t id)
+bool stm32_dma_is_irq_happened(DMA_TypeDef *dma, uint32_t id)
 {
 	if (func_ll_is_active_te[id](dma)) {
 		return true;
@@ -193,18 +193,18 @@ bool stm32_dma_is_irq_happened(DMA_TypeDef *dma, u32_t id)
 	return false;
 }
 
-bool stm32_dma_is_unexpected_irq_happened(DMA_TypeDef *dma, u32_t id)
+bool stm32_dma_is_unexpected_irq_happened(DMA_TypeDef *dma, uint32_t id)
 {
 	/* Preserve for future amending. */
 	return false;
 }
 
-void stm32_dma_enable_stream(DMA_TypeDef *dma, u32_t id)
+void stm32_dma_enable_stream(DMA_TypeDef *dma, uint32_t id)
 {
 	LL_DMA_EnableChannel(dma, table_ll_stream[id]);
 }
 
-int stm32_dma_disable_stream(DMA_TypeDef *dma, u32_t id)
+int stm32_dma_disable_stream(DMA_TypeDef *dma, uint32_t id)
 {
 	if (!LL_DMA_IsEnabledChannel(dma, table_ll_stream[id])) {
 		return 0;

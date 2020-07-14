@@ -48,15 +48,16 @@ After flashing the device, run the code:
 
 Sample Output
 =================
+
 cc1352rl_launchxl output
 ------------------------
 
 .. code-block:: console
 
-*** Booting Zephyr OS build zephyr-v2.2.0-664-gd774727cc66e  ***
+        *** Booting Zephyr OS build zephyr-v2.2.0-664-gd774727cc66e  ***
 
-cc1352r1_launchxl system off demo
-Busy-wait 5 s
-Sleep 2000 us (IDLE)
-Sleep 3 s (STANDBY)
-Entering system off (SHUTDOWN); press BUTTON1 to restart
+        cc1352r1_launchxl system off demo
+        Busy-wait 5 s
+        Sleep 2000 us (IDLE)
+        Sleep 3 s (STANDBY)
+        Entering system off (SHUTDOWN); press BUTTON1 to restart

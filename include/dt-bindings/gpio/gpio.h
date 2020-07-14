@@ -77,19 +77,6 @@
 /** @} */
 
 /**
- * @cond INTERNAL_HIDDEN
- *
- * Following defines are deprecated and shouldn't be used in DTS files.
- */
-#define GPIO_DIR_IN             (1 << 8) /* GPIO_INPUT */
-#define GPIO_DIR_OUT            (1 << 9) /* GPIO_OUTPUT */
-#define GPIO_PUD_PULL_UP	GPIO_PULL_UP
-#define GPIO_PUD_PULL_DOWN	GPIO_PULL_DOWN
-#define GPIO_INT_ACTIVE_LOW     (1 << 17) /* GPIO_INT_LOW_0 */
-#define GPIO_INT_ACTIVE_HIGH    (1 << 18) /* GPIO_INT_HIGH_1 */
-/** @endcond */
-
-/**
  * @}
  */
 

@@ -9,3 +9,4 @@ config SOC_APOLLO_LAKE
 	select PCIE
 	select PCIE_MSI
 	select DYNAMIC_INTERRUPTS
+	select X86_MMU

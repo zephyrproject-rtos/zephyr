@@ -424,7 +424,7 @@ void test_v4_accept_timeout(void)
 	/* Test if accept() will timeout properly */
 	int s_sock;
 	int new_sock;
-	u32_t tstamp;
+	uint32_t tstamp;
 	struct sockaddr_in s_saddr;
 	struct sockaddr addr;
 	socklen_t addrlen = sizeof(addr);
@@ -446,8 +446,73 @@ void test_v4_accept_timeout(void)
 	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
+#ifdef CONFIG_USERSPACE
+#define CHILD_STACK_SZ		(2048 + CONFIG_TEST_EXTRA_STACKSIZE)
+struct k_thread child_thread;
+K_THREAD_STACK_DEFINE(child_stack, CHILD_STACK_SZ);
+ZTEST_BMEM volatile int result;
+
+static void child_entry(void *p1, void *p2, void *p3)
+{
+	int sock = (int)p1;
+
+	result = close(sock);
+}
+
+static void spawn_child(int sock)
+{
+	k_thread_create(&child_thread, child_stack,
+			K_THREAD_STACK_SIZEOF(child_stack), child_entry,
+			(void *)sock, NULL, NULL, 0, K_USER,
+			K_FOREVER);
+}
+#endif
+
+void test_socket_permission(void)
+{
+#ifdef CONFIG_USERSPACE
+	int sock;
+	struct sockaddr_in saddr;
+	struct net_context *ctx;
+
+	prepare_sock_tcp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
+			    &sock, &saddr);
+
+	ctx = zsock_get_context_object(sock);
+	zassert_not_null(ctx, "zsock_get_context_object() failed");
+
+	/* Spawn a child thread which doesn't inherit our permissions,
+	 * it will try to perform a socket operation and fail due to lack
+	 * of permissions on it.
+	 */
+	spawn_child(sock);
+	k_thread_start(&child_thread);
+	k_thread_join(&child_thread, K_FOREVER);
+
+	zassert_not_equal(result, 0, "child succeeded with no permission");
+
+	/* Now spawn the same child thread again, but this time we grant
+	 * permission on the net_context before we start it, and the
+	 * child should now succeed.
+	 */
+	spawn_child(sock);
+	k_object_access_grant(ctx, &child_thread);
+	k_thread_start(&child_thread);
+	k_thread_join(&child_thread, K_FOREVER);
+
+	zassert_equal(result, 0, "child failed with permissions");
+#else
+	ztest_test_skip();
+#endif /* CONFIG_USERSPACE */
+}
+
 void test_main(void)
 {
+#ifdef CONFIG_USERSPACE
+	/* ztest thread inherit permissions from main */
+	k_thread_access_grant(k_current_get(), &child_thread, child_stack);
+#endif
+
 	ztest_test_suite(
 		socket_tcp,
 		ztest_user_unit_test(test_v4_send_recv),
@@ -457,7 +522,9 @@ void test_main(void)
 		ztest_user_unit_test(test_v4_sendto_recvfrom_null_dest),
 		ztest_user_unit_test(test_v6_sendto_recvfrom_null_dest),
 		ztest_unit_test(test_open_close_immediately),
-		ztest_user_unit_test(test_v4_accept_timeout));
+		ztest_user_unit_test(test_v4_accept_timeout),
+		ztest_user_unit_test(test_socket_permission)
+		);
 
 	ztest_run_test_suite(socket_tcp);
 }

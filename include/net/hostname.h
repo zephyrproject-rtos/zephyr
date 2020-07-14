@@ -63,10 +63,10 @@ static inline void net_hostname_init(void)
  * @return 0 if ok, <0 if error
  */
 #if defined(CONFIG_NET_HOSTNAME_UNIQUE)
-int net_hostname_set_postfix(const u8_t *hostname_postfix,
+int net_hostname_set_postfix(const uint8_t *hostname_postfix,
 			      int postfix_len);
 #else
-static inline int net_hostname_set_postfix(const u8_t *hostname_postfix,
+static inline int net_hostname_set_postfix(const uint8_t *hostname_postfix,
 					   int postfix_len)
 {
 	return -EMSGSIZE;

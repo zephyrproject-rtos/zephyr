@@ -18,6 +18,8 @@ LOG_MODULE_REGISTER(ieee802154_cc13xx_cc26xx);
 #include <string.h>
 #include <sys/sys_io.h>
 
+#include <ti/drivers/dpl/HwiP.h>
+
 #include <driverlib/aon_rtc.h>
 #include <driverlib/osc.h>
 #include <driverlib/prcm.h>
@@ -33,13 +35,15 @@ LOG_MODULE_REGISTER(ieee802154_cc13xx_cc26xx);
 DEVICE_DECLARE(ieee802154_cc13xx_cc26xx);
 
 /* Overrides from SmartRF Studio 7 2.13.0 */
-static u32_t overrides[] = {
+static uint32_t overrides[] = {
 	/* DC/DC regulator: In Tx, use DCDCCTL5[3:0]=0x3 (DITHER_EN=0 and IPEAK=3). */
 	0x00F388D3,
 	/* Rx: Set LNA bias current offset to +15 to saturate trim to max (default: 0) */
 	0x000F8883,
 	0xFFFFFFFF
 };
+
+static HwiP_Struct RF_hwiCpe0Obj;
 
 static inline struct ieee802154_cc13xx_cc26xx_data *
 get_dev_data(struct device *dev)
@@ -58,9 +62,9 @@ ieee802154_cc13xx_cc26xx_get_capabilities(struct device *dev)
 static int ieee802154_cc13xx_cc26xx_cca(struct device *dev)
 {
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
-	u32_t status;
+	uint32_t status;
 
-	status = RFCDoorbellSendTo((u32_t)&drv_data->cmd_ieee_cca_req);
+	status = RFCDoorbellSendTo((uint32_t)&drv_data->cmd_ieee_cca_req);
 	if (status != CMDSTA_Done) {
 		LOG_ERR("Failed to request CCA (0x%x)", status);
 		return -EIO;
@@ -79,10 +83,10 @@ static int ieee802154_cc13xx_cc26xx_cca(struct device *dev)
 }
 
 static int ieee802154_cc13xx_cc26xx_set_channel(struct device *dev,
-						u16_t channel)
+						uint16_t channel)
 {
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
-	u32_t status;
+	uint32_t status;
 
 	/* TODO Support sub-GHz for CC13xx */
 	if (channel < 11 || channel > 26) {
@@ -93,7 +97,7 @@ static int ieee802154_cc13xx_cc26xx_set_channel(struct device *dev,
 	RFCDoorbellSendTo(CMDR_DIR_CMD(CMD_ABORT));
 
 	/* Set all RX entries to empty */
-	status = RFCDoorbellSendTo((u32_t)&drv_data->cmd_clear_rx);
+	status = RFCDoorbellSendTo((uint32_t)&drv_data->cmd_clear_rx);
 	if (status != CMDSTA_Done) {
 		LOG_ERR("Failed to clear RX queue (0x%x)", status);
 		return -EIO;
@@ -102,7 +106,7 @@ static int ieee802154_cc13xx_cc26xx_set_channel(struct device *dev,
 	/* Run BG receive process on requested channel */
 	drv_data->cmd_ieee_rx.status = IDLE;
 	drv_data->cmd_ieee_rx.channel = channel;
-	status = RFCDoorbellSendTo((u32_t)&drv_data->cmd_ieee_rx);
+	status = RFCDoorbellSendTo((uint32_t)&drv_data->cmd_ieee_rx);
 	if (status != CMDSTA_Done) {
 		LOG_ERR("Failed to submit RX command (0x%x)", status);
 		return -EIO;
@@ -123,7 +127,7 @@ ieee802154_cc13xx_cc26xx_filter(struct device *dev, bool set,
 	}
 
 	if (type == IEEE802154_FILTER_TYPE_IEEE_ADDR) {
-		memcpy((u8_t *)&drv_data->cmd_ieee_rx.localExtAddr,
+		memcpy((uint8_t *)&drv_data->cmd_ieee_rx.localExtAddr,
 		       filter->ieee_addr,
 		       sizeof(drv_data->cmd_ieee_rx.localExtAddr));
 	} else if (type == IEEE802154_FILTER_TYPE_SHORT_ADDR) {
@@ -137,10 +141,10 @@ ieee802154_cc13xx_cc26xx_filter(struct device *dev, bool set,
 	return 0;
 }
 
-static int ieee802154_cc13xx_cc26xx_set_txpower(struct device *dev, s16_t dbm)
+static int ieee802154_cc13xx_cc26xx_set_txpower(struct device *dev, int16_t dbm)
 {
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
-	u32_t status;
+	uint32_t status;
 
 	/* Values from SmartRF Studio 7 2.13.0 */
 	switch (dbm) {
@@ -178,7 +182,7 @@ static int ieee802154_cc13xx_cc26xx_set_txpower(struct device *dev, s16_t dbm)
 		return -EINVAL;
 	}
 
-	status = RFCDoorbellSendTo((u32_t)&drv_data->cmd_set_tx_power);
+	status = RFCDoorbellSendTo((uint32_t)&drv_data->cmd_set_tx_power);
 	if (status != CMDSTA_Done) {
 		LOG_DBG("Failed to set TX power (0x%x)", status);
 		return -EIO;
@@ -196,7 +200,7 @@ static int ieee802154_cc13xx_cc26xx_tx(struct device *dev,
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
 	bool ack = ieee802154_is_ar_flag_set(frag);
 	int retry = CONFIG_NET_L2_IEEE802154_RADIO_TX_RETRIES;
-	u32_t status;
+	uint32_t status;
 
 	if (mode != IEEE802154_TX_MODE_CSMA_CA) {
 		NET_ERR("TX mode %d not supported", mode);
@@ -220,7 +224,7 @@ static int ieee802154_cc13xx_cc26xx_tx(struct device *dev,
 	__ASSERT_NO_MSG(k_sem_count_get(&drv_data->fg_done) == 0);
 
 	do {
-		status = RFCDoorbellSendTo((u32_t)&drv_data->cmd_ieee_csma);
+		status = RFCDoorbellSendTo((uint32_t)&drv_data->cmd_ieee_csma);
 		if (status != CMDSTA_Done) {
 			LOG_ERR("Failed to submit TX command (0x%x)", status);
 			return -EIO;
@@ -254,7 +258,7 @@ static int ieee802154_cc13xx_cc26xx_tx(struct device *dev,
 	return -EIO;
 }
 
-static inline u8_t ieee802154_cc13xx_cc26xx_convert_rssi(s8_t rssi)
+static inline uint8_t ieee802154_cc13xx_cc26xx_convert_rssi(int8_t rssi)
 {
 	if (rssi > CC13XX_CC26XX_RECEIVER_SENSITIVITY +
 			   CC13XX_CC26XX_RSSI_DYNAMIC_RANGE) {
@@ -272,9 +276,9 @@ static void ieee802154_cc13xx_cc26xx_rx_done(struct device *dev)
 {
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
 	struct net_pkt *pkt;
-	u8_t len, seq, corr;
-	s8_t rssi;
-	u8_t *sdu;
+	uint8_t len, seq, corr;
+	int8_t rssi;
+	uint8_t *sdu;
 
 	for (int i = 0; i < CC13XX_CC26XX_NUM_RX_BUF; i++) {
 		if (drv_data->rx_entry[i].status == DATA_ENTRY_FINISHED) {
@@ -362,7 +366,7 @@ ieee802154_cc13xx_cc26xx_configure(struct device *dev,
 static void ieee802154_cc13xx_cc26xx_cpe0_isr(void *arg)
 {
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(arg);
-	u32_t flags;
+	uint32_t flags;
 
 	flags = RFCCpeIntGetAndClear(IRQ_RX_ENTRY_DONE |
 				     IRQ_LAST_FG_COMMAND_DONE);
@@ -378,7 +382,7 @@ static void ieee802154_cc13xx_cc26xx_cpe0_isr(void *arg)
 
 static void ieee802154_cc13xx_cc26xx_cpe1_isr(void *arg)
 {
-	u32_t flags;
+	uint32_t flags;
 
 	ARG_UNUSED(arg);
 
@@ -396,13 +400,13 @@ static void ieee802154_cc13xx_cc26xx_cpe1_isr(void *arg)
 static void ieee802154_cc13xx_cc26xx_data_init(struct device *dev)
 {
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
-	u8_t *mac;
+	uint8_t *mac;
 
 	if (sys_read32(CCFG_BASE + CCFG_O_IEEE_MAC_0) != 0xFFFFFFFF &&
 	    sys_read32(CCFG_BASE + CCFG_O_IEEE_MAC_1) != 0xFFFFFFFF) {
-		mac = (u8_t *)(CCFG_BASE + CCFG_O_IEEE_MAC_0);
+		mac = (uint8_t *)(CCFG_BASE + CCFG_O_IEEE_MAC_0);
 	} else {
-		mac = (u8_t *)(FCFG1_BASE + FCFG1_O_MAC_15_4_0);
+		mac = (uint8_t *)(FCFG1_BASE + FCFG1_O_MAC_15_4_0);
 	}
 
 	memcpy(&drv_data->mac, mac, sizeof(drv_data->mac));
@@ -411,19 +415,19 @@ static void ieee802154_cc13xx_cc26xx_data_init(struct device *dev)
 	memset(&drv_data->rx_entry[0], 0, sizeof(drv_data->rx_entry[0]));
 	memset(&drv_data->rx_entry[1], 0, sizeof(drv_data->rx_entry[1]));
 
-	drv_data->rx_entry[0].pNextEntry = (u8_t *)&drv_data->rx_entry[1];
+	drv_data->rx_entry[0].pNextEntry = (uint8_t *)&drv_data->rx_entry[1];
 	drv_data->rx_entry[0].config.type = DATA_ENTRY_TYPE_PTR;
 	drv_data->rx_entry[0].config.lenSz = 1;
 	drv_data->rx_entry[0].length = sizeof(drv_data->rx_data[0]);
 	drv_data->rx_entry[0].pData = drv_data->rx_data[0];
 
-	drv_data->rx_entry[1].pNextEntry = (u8_t *)&drv_data->rx_entry[0];
+	drv_data->rx_entry[1].pNextEntry = (uint8_t *)&drv_data->rx_entry[0];
 	drv_data->rx_entry[1].config.type = DATA_ENTRY_TYPE_PTR;
 	drv_data->rx_entry[1].config.lenSz = 1;
 	drv_data->rx_entry[1].length = sizeof(drv_data->rx_data[1]);
 	drv_data->rx_entry[1].pData = drv_data->rx_data[1];
 
-	drv_data->rx_queue.pCurrEntry = (u8_t *)&drv_data->rx_entry[0];
+	drv_data->rx_queue.pCurrEntry = (uint8_t *)&drv_data->rx_entry[0];
 	drv_data->rx_queue.pLastEntry = NULL;
 
 	k_sem_init(&drv_data->fg_done, 0, UINT_MAX);
@@ -466,7 +470,8 @@ static int ieee802154_cc13xx_cc26xx_init(struct device *dev)
 {
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
 	bool set_osc_hf;
-	u32_t key, status;
+	uint32_t key, status;
+	HwiP_Params params;
 
 	/* Apply RF patches */
 	rf_patch_cpe_ieee_802_15_4();
@@ -513,10 +518,16 @@ static int ieee802154_cc13xx_cc26xx_init(struct device *dev)
 	RFCCpeIntDisable(0xFFFFFFFF);
 
 	/* Enable CPE0 interrupts */
-	IRQ_CONNECT(CC13XX_CC26XX_CPE0_IRQ, 0,
-		    ieee802154_cc13xx_cc26xx_cpe0_isr,
-		    DEVICE_GET(ieee802154_cc13xx_cc26xx), 0);
-	irq_enable(CC13XX_CC26XX_CPE0_IRQ);
+	/*
+	 * Use HwiP_construct() to connect the irq for CPE0. IRQ_CONNECT() can
+	 * only be called once for a given irq, and we need to keep it within
+	 * HwiP so that TI's RF driver can plug the same interrupt.
+	 */
+	HwiP_Params_init(&params);
+	params.priority = INT_PRI_LEVEL1;
+	params.arg = (uintptr_t)DEVICE_GET(ieee802154_cc13xx_cc26xx);
+	HwiP_construct(&RF_hwiCpe0Obj, INT_RFC_CPE_0,
+		(HwiP_Fxn)ieee802154_cc13xx_cc26xx_cpe0_isr, &params);
 	RFCCpe0IntSelectClearEnable(IRQ_RX_ENTRY_DONE |
 				    IRQ_LAST_FG_COMMAND_DONE);
 
@@ -547,7 +558,7 @@ static int ieee802154_cc13xx_cc26xx_init(struct device *dev)
 	}
 
 	/* Setup radio */
-	status = RFCDoorbellSendTo((u32_t)&drv_data->cmd_radio_setup);
+	status = RFCDoorbellSendTo((uint32_t)&drv_data->cmd_radio_setup);
 	if (status != CMDSTA_Done) {
 		LOG_DBG("Failed to submit setup radio command (0x%x)", status);
 		return -EIO;

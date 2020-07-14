@@ -26,8 +26,8 @@ static const osThreadAttr_t init_thread_attrs = {
 
 static sys_dlist_t thread_list;
 static struct cv2_thread cv2_thread_pool[CONFIG_CMSIS_V2_THREAD_MAX_COUNT];
-static u32_t thread_num;
-static u32_t thread_num_dynamic;
+static uint32_t thread_num;
+static uint32_t thread_num_dynamic;
 
 static K_THREAD_STACK_ARRAY_DEFINE(cv2_thread_stack_pool,		     \
 				   CONFIG_CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT, \
@@ -35,17 +35,17 @@ static K_THREAD_STACK_ARRAY_DEFINE(cv2_thread_stack_pool,		     \
 
 static inline int _is_thread_cmsis_inactive(struct k_thread *thread)
 {
-	u8_t state = thread->base.thread_state;
+	uint8_t state = thread->base.thread_state;
 
 	return state & (_THREAD_PRESTART | _THREAD_DEAD);
 }
 
-static inline u32_t zephyr_to_cmsis_priority(u32_t z_prio)
+static inline uint32_t zephyr_to_cmsis_priority(uint32_t z_prio)
 {
 	return (osPriorityISR - z_prio);
 }
 
-static inline u32_t cmsis_to_zephyr_priority(u32_t c_prio)
+static inline uint32_t cmsis_to_zephyr_priority(uint32_t c_prio)
 {
 	return (osPriorityISR - c_prio);
 }
@@ -101,14 +101,14 @@ osThreadId_t get_cmsis_thread_id(k_tid_t tid)
 osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg,
 			 const osThreadAttr_t *attr)
 {
-	s32_t prio;
+	int32_t prio;
 	osPriority_t cv2_prio;
 	struct cv2_thread *tid;
-	static u32_t one_time;
+	static uint32_t one_time;
 	void *stack;
 	size_t stack_size;
-	u32_t this_thread_num;
-	u32_t this_thread_num_dynamic;
+	uint32_t this_thread_num;
+	uint32_t this_thread_num_dynamic;
 
 	if (k_is_in_isr()) {
 		return NULL;
@@ -248,7 +248,7 @@ osThreadId_t osThreadGetId(void)
 osPriority_t osThreadGetPriority(osThreadId_t thread_id)
 {
 	struct cv2_thread *tid = (struct cv2_thread *)thread_id;
-	u32_t priority;
+	uint32_t priority;
 
 	if (k_is_in_isr() || (tid == NULL) ||
 	    (is_cmsis_rtos_v2_thread(tid) == NULL) ||
@@ -545,7 +545,7 @@ osStatus_t osThreadTerminate(osThreadId_t thread_id)
 uint32_t osThreadGetCount(void)
 {
 	struct k_thread *thread;
-	u32_t count = 0U;
+	uint32_t count = 0U;
 
 	__ASSERT(!k_is_in_isr(), "");
 	for (thread = _kernel.threads; thread; thread = thread->next_thread) {
@@ -563,7 +563,7 @@ uint32_t osThreadGetCount(void)
 uint32_t osThreadEnumerate(osThreadId_t *thread_array, uint32_t array_items)
 {
 	struct k_thread *thread;
-	u32_t count = 0U;
+	uint32_t count = 0U;
 	osThreadId_t tid;
 
 	__ASSERT(!k_is_in_isr(), "");

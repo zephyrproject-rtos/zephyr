@@ -55,7 +55,7 @@ static int uc_fd = -1;
 
 static int bt_dev_index = -1;
 
-static struct net_buf *get_rx(const u8_t *buf)
+static struct net_buf *get_rx(const uint8_t *buf)
 {
 	if (buf[0] == H4_EVT) {
 		return bt_buf_get_evt(buf[1], false, K_FOREVER);
@@ -80,7 +80,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 	BT_DBG("started");
 
 	while (1) {
-		static u8_t frame[512];
+		static uint8_t frame[512];
 		struct net_buf *buf;
 		ssize_t len;
 
@@ -109,11 +109,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 
 		BT_DBG("Calling bt_recv(%p)", buf);
 
-		if (frame[0] == H4_EVT && bt_hci_evt_is_prio(frame[1])) {
-			bt_recv_prio(buf);
-		} else {
-			bt_recv(buf);
-		}
+		bt_recv(buf);
 
 		k_yield();
 	}
@@ -148,7 +144,7 @@ static int uc_send(struct net_buf *buf)
 	return 0;
 }
 
-static int user_chan_open(u16_t index)
+static int user_chan_open(uint16_t index)
 {
 	struct sockaddr_hci addr;
 	int fd;

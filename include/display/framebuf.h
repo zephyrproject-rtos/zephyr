@@ -13,9 +13,9 @@ extern const struct display_driver_api framebuf_display_api;
 
 struct framebuf_dev_data {
 	void			  *buffer;
-	u32_t			  pitch;
-	u16_t			  width;
-	u16_t			  height;
+	uint32_t			  pitch;
+	uint16_t			  width;
+	uint16_t			  height;
 };
 
 #define FRAMEBUF_DATA(dev) ((struct framebuf_dev_data *) ((dev)->driver_data))

@@ -325,7 +325,7 @@ For example:
 
 .. code-block:: c
 
-    static int z_vrfy_k_sem_take(struct k_sem *sem, s32_t timeout)
+    static int z_vrfy_k_sem_take(struct k_sem *sem, int32_t timeout)
     {
         Z_OOPS(Z_SYSCALL_OBJ(sem, K_OBJ_SEM));
         return z_impl_k_sem_take(sem, timeout);

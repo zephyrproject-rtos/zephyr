@@ -16,40 +16,40 @@
 
 LOG_MODULE_REGISTER(opt3001, CONFIG_SENSOR_LOG_LEVEL);
 
-static int opt3001_reg_read(struct opt3001_data *drv_data, u8_t reg,
-			    u16_t *val)
+static int opt3001_reg_read(struct opt3001_data *drv_data, uint8_t reg,
+			    uint16_t *val)
 {
-	u8_t value[2];
+	uint8_t value[2];
 
 	if (i2c_burst_read(drv_data->i2c, DT_INST_REG_ADDR(0),
 		reg, value, 2) != 0) {
 		return -EIO;
 	}
 
-	*val = ((u16_t)value[0] << 8) + value[1];
+	*val = ((uint16_t)value[0] << 8) + value[1];
 
 	return 0;
 }
 
-static int opt3001_reg_write(struct opt3001_data *drv_data, u8_t reg,
-			     u16_t val)
+static int opt3001_reg_write(struct opt3001_data *drv_data, uint8_t reg,
+			     uint16_t val)
 {
-	u8_t new_value[2];
+	uint8_t new_value[2];
 
 	new_value[0] = val >> 8;
 	new_value[1] = val & 0xff;
 
-	u8_t tx_buf[3] = { reg, new_value[0], new_value[1] };
+	uint8_t tx_buf[3] = { reg, new_value[0], new_value[1] };
 
 	return i2c_write(drv_data->i2c, tx_buf, sizeof(tx_buf),
 			 DT_INST_REG_ADDR(0));
 }
 
-static int opt3001_reg_update(struct opt3001_data *drv_data, u8_t reg,
-			      u16_t mask, u16_t val)
+static int opt3001_reg_update(struct opt3001_data *drv_data, uint8_t reg,
+			      uint16_t mask, uint16_t val)
 {
-	u16_t old_val;
-	u16_t new_val;
+	uint16_t old_val;
+	uint16_t new_val;
 
 	if (opt3001_reg_read(drv_data, reg, &old_val) != 0) {
 		return -EIO;
@@ -64,7 +64,7 @@ static int opt3001_reg_update(struct opt3001_data *drv_data, u8_t reg,
 static int opt3001_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct opt3001_data *drv_data = dev->driver_data;
-	u16_t value;
+	uint16_t value;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_LIGHT);
 
@@ -83,7 +83,7 @@ static int opt3001_channel_get(struct device *dev, enum sensor_channel chan,
 			       struct sensor_value *val)
 {
 	struct opt3001_data *drv_data = dev->driver_data;
-	s32_t uval;
+	int32_t uval;
 
 	if (chan != SENSOR_CHAN_LIGHT) {
 		return -ENOTSUP;
@@ -113,7 +113,7 @@ static const struct sensor_driver_api opt3001_driver_api = {
 static int opt3001_chip_init(struct device *dev)
 {
 	struct opt3001_data *drv_data = dev->driver_data;
-	u16_t value;
+	uint16_t value;
 
 	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (drv_data->i2c == NULL) {

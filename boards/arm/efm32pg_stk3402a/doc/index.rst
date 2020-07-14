@@ -44,6 +44,8 @@ The efm32pg_stk3402a board configuration supports the following hardware feature
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
 +===========+============+=====================================+
+| MPU       | on-chip    | memory protection unit              |
++-----------+------------+-------------------------------------+
 | NVIC      | on-chip    | nested vector interrupt controller  |
 +-----------+------------+-------------------------------------+
 | SYSTICK   | on-chip    | systick                             |

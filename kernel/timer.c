@@ -109,6 +109,10 @@ void k_timer_init(struct k_timer *timer,
 void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 			  k_timeout_t period)
 {
+	if (K_TIMEOUT_EQ(duration, K_FOREVER)) {
+		return;
+	}
+
 #ifdef CONFIG_LEGACY_TIMEOUT_API
 	duration = k_ms_to_ticks_ceil32(duration);
 	period = k_ms_to_ticks_ceil32(period);
@@ -182,10 +186,10 @@ static inline void z_vrfy_k_timer_stop(struct k_timer *timer)
 #include <syscalls/k_timer_stop_mrsh.c>
 #endif
 
-u32_t z_impl_k_timer_status_get(struct k_timer *timer)
+uint32_t z_impl_k_timer_status_get(struct k_timer *timer)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	u32_t result = timer->status;
+	uint32_t result = timer->status;
 
 	timer->status = 0U;
 	k_spin_unlock(&lock, key);
@@ -194,7 +198,7 @@ u32_t z_impl_k_timer_status_get(struct k_timer *timer)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline u32_t z_vrfy_k_timer_status_get(struct k_timer *timer)
+static inline uint32_t z_vrfy_k_timer_status_get(struct k_timer *timer)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(timer, K_OBJ_TIMER));
 	return z_impl_k_timer_status_get(timer);
@@ -202,12 +206,12 @@ static inline u32_t z_vrfy_k_timer_status_get(struct k_timer *timer)
 #include <syscalls/k_timer_status_get_mrsh.c>
 #endif
 
-u32_t z_impl_k_timer_status_sync(struct k_timer *timer)
+uint32_t z_impl_k_timer_status_sync(struct k_timer *timer)
 {
 	__ASSERT(!arch_is_in_isr(), "");
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	u32_t result = timer->status;
+	uint32_t result = timer->status;
 
 	if (result == 0U) {
 		if (!z_is_inactive_timeout(&timer->timeout)) {
@@ -231,7 +235,7 @@ u32_t z_impl_k_timer_status_sync(struct k_timer *timer)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline u32_t z_vrfy_k_timer_status_sync(struct k_timer *timer)
+static inline uint32_t z_vrfy_k_timer_status_sync(struct k_timer *timer)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(timer, K_OBJ_TIMER));
 	return z_impl_k_timer_status_sync(timer);

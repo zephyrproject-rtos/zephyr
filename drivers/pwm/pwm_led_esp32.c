@@ -44,23 +44,23 @@ enum {
 
 struct pwm_led_esp32_timer {
 	int freq;
-	u8_t bit_num;
+	uint8_t bit_num;
 } __attribute__ ((__packed__));
 
 struct pwm_led_esp32_channel {
-	u8_t timer : 2;
-	u8_t gpio : 6;
+	uint8_t timer : 2;
+	uint8_t gpio : 6;
 };
 
 union pwm_led_esp32_duty {
 	struct {
-		u32_t start: 1;
-		u32_t direction: 1;
-		u32_t num: 3;
-		u32_t cycle: 3;
-		u32_t scale: 3;
+		uint32_t start: 1;
+		uint32_t direction: 1;
+		uint32_t num: 3;
+		uint32_t cycle: 3;
+		uint32_t scale: 3;
 	};
-	u32_t val;
+	uint32_t val;
 };
 
 struct pwm_led_esp32_config {
@@ -80,12 +80,12 @@ struct pwm_led_esp32_config {
 /* TODO: Remove these functions after this PR:
  * https://github.com/zephyrproject-rtos/zephyr/pull/5113
  */
-static inline void set_mask32(u32_t v, u32_t mem_addr)
+static inline void set_mask32(uint32_t v, uint32_t mem_addr)
 {
 	sys_write32(sys_read32(mem_addr) | v, mem_addr);
 }
 
-static inline void clear_mask32(u32_t v, u32_t mem_addr)
+static inline void clear_mask32(uint32_t v, uint32_t mem_addr)
 {
 	sys_write32(sys_read32(mem_addr) & ~v, mem_addr);
 }
@@ -108,10 +108,10 @@ static const char *esp32_get_gpio_for_pin(int pin)
 }
 /* end Remove after PR 5113 */
 
-static u8_t pwm_led_esp32_get_gpio_config(u8_t pin,
+static uint8_t pwm_led_esp32_get_gpio_config(uint8_t pin,
 		const struct pwm_led_esp32_channel *ch_cfg)
 {
-	u8_t i;
+	uint8_t i;
 
 	for (i = 0U; i < 16; i++) {
 		if (ch_cfg[i].gpio == pin) {
@@ -123,7 +123,7 @@ static u8_t pwm_led_esp32_get_gpio_config(u8_t pin,
 
 static void pwm_led_esp32_low_speed_update(int speed_mode, int channel)
 {
-	u32_t reg_addr;
+	uint32_t reg_addr;
 
 	if (speed_mode == PWM_LED_ESP32_LOW_SPEED) {
 		reg_addr = PWM_ESP32_LSCH_CONF0(channel);
@@ -133,8 +133,8 @@ static void pwm_led_esp32_low_speed_update(int speed_mode, int channel)
 
 static void pwm_led_esp32_update_duty(int speed_mode, int channel)
 {
-	u32_t conf0_addr;
-	u32_t conf1_addr;
+	uint32_t conf0_addr;
+	uint32_t conf1_addr;
 
 	if (speed_mode == PWM_LED_ESP32_HIGH_SPEED) {
 		conf0_addr = PWM_ESP32_HSCH_CONF0(channel);
@@ -155,10 +155,10 @@ static void pwm_led_esp32_duty_config(int speed_mode,
 				      int duty_val,
 				      union pwm_led_esp32_duty duty)
 {
-	volatile u32_t hpoint_addr;
-	volatile u32_t duty_addr;
-	volatile u32_t conf1_addr;
-	volatile u32_t conf1_val;
+	volatile uint32_t hpoint_addr;
+	volatile uint32_t duty_addr;
+	volatile uint32_t conf1_addr;
+	volatile uint32_t conf1_val;
 
 	if (speed_mode == PWM_LED_ESP32_HIGH_SPEED) {
 		hpoint_addr = PWM_ESP32_HSCH_HPOINT(channel);
@@ -194,7 +194,7 @@ static void pwm_led_esp32_bind_channel_timer(int speed_mode,
 					     int channel,
 					     int timer)
 {
-	volatile u32_t timer_addr;
+	volatile uint32_t timer_addr;
 
 	if (speed_mode == PWM_LED_ESP32_HIGH_SPEED) {
 		timer_addr = PWM_ESP32_HSCH_CONF0(channel);
@@ -215,7 +215,7 @@ static int pwm_led_esp32_channel_set(int pin, bool speed_mode, int channel,
 	const char *device_name;
 	struct device *gpio;
 	int ret;
-	u32_t sig_out_idx;
+	uint32_t sig_out_idx;
 
 	/* Set duty cycle */
 	pwm_led_esp32_duty_set(speed_mode, channel, duty);
@@ -253,10 +253,10 @@ static int pwm_led_esp32_channel_set(int pin, bool speed_mode, int channel,
 static int pwm_led_esp32_timer_set(int speed_mode, int timer,
 				   int bit_num, int frequency)
 {
-	u32_t timer_addr;
-	u64_t div_num;
+	uint32_t timer_addr;
+	uint64_t div_num;
 	int tick_sel = PWM_LED_ESP32_APB_CLK_FREQ;
-	u32_t precision = (0x1 << bit_num);
+	uint32_t precision = (0x1 << bit_num);
 
 	assert(frequency > 0);
 
@@ -264,7 +264,7 @@ static int pwm_led_esp32_timer_set(int speed_mode, int timer,
 	 * Manual chapter 13.2.2 Timers.
 	 * div_num is a fixed point value (Q10.8).
 	 */
-	div_num = ((u64_t) APB_CLK_FREQ << 8) / frequency / precision;
+	div_num = ((uint64_t) APB_CLK_FREQ << 8) / frequency / precision;
 
 	if (div_num < 0x100) {
 		/* Since Q10.8 is a fixed point value, then div_num < 0x100
@@ -277,7 +277,7 @@ static int pwm_led_esp32_timer_set(int speed_mode, int timer,
 		/* Since Q10.8 is a fixed point value, then div_num > 0x3FFFF
 		 * means divisor is too high. We can try to use the REF_TICK.
 		 */
-		div_num = ((u64_t) 1000000 << 8) / frequency / precision;
+		div_num = ((uint64_t) 1000000 << 8) / frequency / precision;
 		if (div_num < 0x100 || div_num > 0x3FFFF) {
 			return -EINVAL;
 		}
@@ -312,8 +312,8 @@ static int pwm_led_esp32_timer_set(int speed_mode, int timer,
 
 /* period_cycles is not used, set frequency on menuconfig instead. */
 static int pwm_led_esp32_pin_set_cycles(struct device *dev,
-					u32_t pwm, u32_t period_cycles,
-					u32_t pulse_cycles, pwm_flags_t flags)
+					uint32_t pwm, uint32_t period_cycles,
+					uint32_t pulse_cycles, pwm_flags_t flags)
 {
 	int speed_mode;
 	int channel;
@@ -365,8 +365,8 @@ static int pwm_led_esp32_pin_set_cycles(struct device *dev,
 	return ret;
 }
 
-static int pwm_led_esp32_get_cycles_per_sec(struct device *dev, u32_t pwm,
-					    u64_t *cycles)
+static int pwm_led_esp32_get_cycles_per_sec(struct device *dev, uint32_t pwm,
+					    uint64_t *cycles)
 {
 	const struct pwm_led_esp32_config *config;
 	int channel;

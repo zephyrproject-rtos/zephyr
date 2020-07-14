@@ -20,41 +20,41 @@
 
 /* BOS Capability Descriptor */
 struct usb_bos_platform_descriptor {
-	u8_t bLength;
-	u8_t bDescriptorType;
-	u8_t bDevCapabilityType;
-	u8_t bReserved;
-	u8_t PlatformCapabilityUUID[16];
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint8_t bDevCapabilityType;
+	uint8_t bReserved;
+	uint8_t PlatformCapabilityUUID[16];
 } __packed;
 
 /* BOS Descriptor */
 struct usb_bos_descriptor {
-	u8_t bLength;
-	u8_t bDescriptorType;
-	u16_t wTotalLength;
-	u8_t bNumDeviceCaps;
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint16_t wTotalLength;
+	uint8_t bNumDeviceCaps;
 } __packed;
 
 /* BOS Capability webusb */
 struct usb_bos_capability_webusb {
-	u16_t bcdVersion;
-	u8_t bVendorCode;
-	u8_t iLandingPage;
+	uint16_t bcdVersion;
+	uint8_t bVendorCode;
+	uint8_t iLandingPage;
 } __packed;
 
 /* BOS Capability MS OS Descriptors version 2 */
 struct usb_bos_capability_msos {
-	u32_t dwWindowsVersion;
-	u16_t wMSOSDescriptorSetTotalLength;
-	u8_t bMS_VendorCode;
-	u8_t bAltEnumCode;
+	uint32_t dwWindowsVersion;
+	uint16_t wMSOSDescriptorSetTotalLength;
+	uint8_t bMS_VendorCode;
+	uint8_t bAltEnumCode;
 } __packed;
 
 size_t usb_bos_get_length(void);
 void usb_bos_fix_total_length(void);
 void usb_bos_register_cap(struct usb_bos_platform_descriptor *hdr);
 const void *usb_bos_get_header(void);
-int usb_handle_bos(struct usb_setup_packet *setup, s32_t *len, u8_t **data);
+int usb_handle_bos(struct usb_setup_packet *setup, int32_t *len, uint8_t **data);
 #else
 #define usb_handle_bos(x, y, z)		-ENOTSUP
 #endif

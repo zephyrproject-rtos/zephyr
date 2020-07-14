@@ -14,7 +14,7 @@ static struct onoff_manager srv;
 static struct onoff_monitor mon;
 
 struct transition_record {
-	u32_t state;
+	uint32_t state;
 	int res;
 };
 static struct transition_record trans[32];
@@ -22,7 +22,7 @@ static size_t ntrans;
 
 static void trans_callback(struct onoff_manager *mgr,
 			  struct onoff_monitor *mon,
-			  u32_t state,
+			  uint32_t state,
 			  int res)
 {
 	if (ntrans < ARRAY_SIZE(trans)) {
@@ -33,8 +33,8 @@ static void trans_callback(struct onoff_manager *mgr,
 	}
 }
 
-static void check_trans(u32_t idx,
-		       u32_t state,
+static void check_trans(uint32_t idx,
+		       uint32_t state,
 		       int res,
 		       const char *tag)
 {
@@ -51,13 +51,13 @@ static void check_trans(u32_t idx,
 		      idx, xp->res, res, tag);
 }
 
-static u32_t callback_state;
+static uint32_t callback_state;
 static int callback_res;
 static onoff_client_callback callback_fn;
 
 static void callback(struct onoff_manager *srv,
 		     struct onoff_client *cli,
-		     u32_t state,
+		     uint32_t state,
 		     int res)
 {
 	onoff_client_callback cb = callback_fn;
@@ -71,7 +71,7 @@ static void callback(struct onoff_manager *srv,
 	}
 }
 
-static void check_callback(u32_t state,
+static void check_callback(uint32_t state,
 			   int res,
 			   const char *tag)
 {
@@ -761,7 +761,7 @@ static void test_recheck_stop(void)
 
 static void rel_in_req_cb(struct onoff_manager *srv,
 			  struct onoff_client *cli,
-			  u32_t state,
+			  uint32_t state,
 			  int res)
 {
 	int rc = onoff_release(srv);

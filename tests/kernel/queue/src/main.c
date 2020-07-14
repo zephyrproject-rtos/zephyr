@@ -8,25 +8,16 @@
 #include "test_queue.h"
 
 #ifndef CONFIG_USERSPACE
-static void test_queue_supv_to_user(void)
-{
-	ztest_test_skip();
-}
+#define dummy_test(_name)		\
+	static void _name(void)		\
+	{				\
+		ztest_test_skip();	\
+	}
 
-static void test_auto_free(void)
-{
-	ztest_test_skip();
-}
-
-static void test_queue_alloc_prepend_user(void)
-{
-	ztest_test_skip();
-}
-
-static void test_queue_alloc_append_user(void)
-{
-	ztest_test_skip();
-}
+dummy_test(test_queue_supv_to_user);
+dummy_test(test_queue_alloc_prepend_user);
+dummy_test(test_queue_alloc_append_user);
+dummy_test(test_auto_free);
 #endif
 
 #ifdef CONFIG_64BIT
@@ -52,6 +43,8 @@ void test_main(void)
 			 ztest_1cpu_unit_test(test_queue_get_2threads),
 			 ztest_1cpu_unit_test(test_queue_get_fail),
 			 ztest_1cpu_unit_test(test_queue_loop),
-			 ztest_unit_test(test_queue_alloc));
+			 ztest_unit_test(test_queue_alloc),
+			 ztest_1cpu_unit_test(test_queue_poll_race),
+			 ztest_unit_test(test_multiple_queues));
 	ztest_run_test_suite(queue_api);
 }

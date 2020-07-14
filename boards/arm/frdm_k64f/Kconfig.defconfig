@@ -32,7 +32,8 @@ config PINMUX_MCUX_PORTC
 	default y
 
 config PINMUX_MCUX_PORTD
-	default y if "$(dt_nodelabel_enabled,spi0)" || "$(dt_nodelabel_enabled,uart2)"
+	default y if "$(dt_nodelabel_enabled,spi0)" && SPI
+	default y if "$(dt_nodelabel_enabled,uart2)" && SERIAL
 
 config PINMUX_MCUX_PORTE
 	default y
@@ -41,7 +42,7 @@ endif # PINMUX_MCUX
 
 config TEMP_KINETIS
 	default y if "$(dt_nodelabel_enabled,adc1)"
-	depends on SENSOR
+	depends on SENSOR && ADC
 
 config SPI_0
 	default y

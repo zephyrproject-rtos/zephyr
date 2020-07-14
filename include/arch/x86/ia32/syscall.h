@@ -39,7 +39,7 @@ static inline uintptr_t arch_syscall_invoke6(uintptr_t arg1, uintptr_t arg2,
 					     uintptr_t arg5, uintptr_t arg6,
 					     uintptr_t call_id)
 {
-	u32_t ret;
+	uint32_t ret;
 
 	__asm__ volatile("push %%ebp\n\t"
 			 "mov %[arg6], %%ebp\n\t"
@@ -58,7 +58,7 @@ static inline uintptr_t arch_syscall_invoke5(uintptr_t arg1, uintptr_t arg2,
 					     uintptr_t arg5,
 					     uintptr_t call_id)
 {
-	u32_t ret;
+	uint32_t ret;
 
 	__asm__ volatile("int $0x80"
 			 : "=a" (ret)
@@ -72,7 +72,7 @@ static inline uintptr_t arch_syscall_invoke4(uintptr_t arg1, uintptr_t arg2,
 					     uintptr_t arg3, uintptr_t arg4,
 					     uintptr_t call_id)
 {
-	u32_t ret;
+	uint32_t ret;
 
 	__asm__ volatile("int $0x80"
 			 : "=a" (ret)
@@ -86,7 +86,7 @@ static inline uintptr_t arch_syscall_invoke3(uintptr_t arg1, uintptr_t arg2,
 					     uintptr_t arg3,
 					     uintptr_t call_id)
 {
-	u32_t ret;
+	uint32_t ret;
 
 	__asm__ volatile("int $0x80"
 			 : "=a" (ret)
@@ -98,7 +98,7 @@ static inline uintptr_t arch_syscall_invoke3(uintptr_t arg1, uintptr_t arg2,
 static inline uintptr_t arch_syscall_invoke2(uintptr_t arg1, uintptr_t arg2,
 					     uintptr_t call_id)
 {
-	u32_t ret;
+	uint32_t ret;
 
 	__asm__ volatile("int $0x80"
 			 : "=a" (ret)
@@ -111,7 +111,7 @@ static inline uintptr_t arch_syscall_invoke2(uintptr_t arg1, uintptr_t arg2,
 static inline uintptr_t arch_syscall_invoke1(uintptr_t arg1,
 					     uintptr_t call_id)
 {
-	u32_t ret;
+	uint32_t ret;
 
 	__asm__ volatile("int $0x80"
 			 : "=a" (ret)
@@ -123,7 +123,7 @@ static inline uintptr_t arch_syscall_invoke1(uintptr_t arg1,
 
 static inline uintptr_t arch_syscall_invoke0(uintptr_t call_id)
 {
-	u32_t ret;
+	uint32_t ret;
 
 	__asm__ volatile("int $0x80"
 			 : "=a" (ret)

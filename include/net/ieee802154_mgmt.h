@@ -187,26 +187,26 @@ enum net_event_ieee802154_cmd {
  */
 struct ieee802154_req_params {
 	/** The set of channels to scan, use above macros to manage it */
-	u32_t channel_set;
+	uint32_t channel_set;
 
 	/** Duration of scan, per-channel, in milliseconds */
-	u32_t duration;
+	uint32_t duration;
 
 	/** Current channel in use as a result */
-	u16_t channel;
+	uint16_t channel;
 	/** Current pan_id in use as a result */
-	u16_t pan_id;
+	uint16_t pan_id;
 
 	/** Result address */
 	union {
-		u8_t addr[IEEE802154_MAX_ADDR_LENGTH];
-		u16_t short_addr;
+		uint8_t addr[IEEE802154_MAX_ADDR_LENGTH];
+		uint16_t short_addr;
 	};
 
 	/** length of address */
-	u8_t len;
+	uint8_t len;
 	/** Link quality information, between 0 and 255 */
-	u8_t lqi;
+	uint8_t lqi;
 };
 
 /**
@@ -215,11 +215,11 @@ struct ieee802154_req_params {
  * Used to setup the link-layer security settings
  */
 struct ieee802154_security_params {
-	u8_t key[16];
-	u8_t key_len;
-	u8_t key_mode	: 2;
-	u8_t level	: 3;
-	u8_t _unused	: 3;
+	uint8_t key[16];
+	uint8_t key_len;
+	uint8_t key_mode	: 2;
+	uint8_t level	: 3;
+	uint8_t _unused	: 3;
 };
 
 #ifdef __cplusplus

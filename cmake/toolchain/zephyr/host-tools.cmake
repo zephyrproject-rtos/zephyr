@@ -39,7 +39,16 @@ if(("zephyr" STREQUAL ${ZEPHYR_TOOLCHAIN_VARIANT}) OR
   SET(CMAKE_FIND_PACKAGE_SORT_ORDER NATURAL)
 
   if(DEFINED ZEPHYR_SDK_INSTALL_DIR)
+    # The Zephyr SDK will automatically set the toolchain variant.
+    # To support Zephyr SDK tools (DTC, and other tools) with 3rd party toolchains
+    # then we keep track of current toolchain variant.
+    set(ZEPHYR_CURRENT_TOOLCHAIN_VARIANT ${ZEPHYR_TOOLCHAIN_VARIANT})
     find_package(Zephyr-sdk ${MINIMUM_REQUIRED_SDK_VERSION} QUIET HINTS $ENV{ZEPHYR_SDK_INSTALL_DIR})
+    if(ZEPHYR_CURRENT_TOOLCHAIN_VARIANT)
+      if(NOT "zephyr" STREQUAL ${ZEPHYR_CURRENT_TOOLCHAIN_VARIANT})
+        set(ZEPHYR_TOOLCHAIN_VARIANT ${ZEPHYR_CURRENT_TOOLCHAIN_VARIANT})
+      endif()
+    endif()
   else()
     find_package(Zephyr-sdk ${MINIMUM_REQUIRED_SDK_VERSION} QUIET PATHS
                  /usr

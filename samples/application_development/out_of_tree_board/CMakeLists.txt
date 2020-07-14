@@ -10,7 +10,7 @@ set(BOARD_ROOT ${CMAKE_CURRENT_LIST_DIR})
 # this board.
 set(BOARD nrf52840dk_nrf52840)
 
-find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(out_of_tree_board)
 
 target_sources(app PRIVATE src/main.c)

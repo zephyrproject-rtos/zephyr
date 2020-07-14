@@ -109,40 +109,40 @@ static int bind_ctx(struct net_context *ctx,
 	return ret;
 }
 
-static void setup_dns_hdr(u8_t *buf, u16_t answers)
+static void setup_dns_hdr(uint8_t *buf, uint16_t answers)
 {
-	u16_t offset;
-	u16_t flags;
+	uint16_t offset;
+	uint16_t flags;
 
 	/* See RFC 1035, ch 4.1.1 for header details */
 
 	flags = BIT(15);  /* This is response */
 	flags |= BIT(10); /* Authoritative Answer */
 
-	UNALIGNED_PUT(0, (u16_t *)(buf)); /* Identifier, RFC 6762 ch 18.1 */
+	UNALIGNED_PUT(0, (uint16_t *)(buf)); /* Identifier, RFC 6762 ch 18.1 */
 	offset = DNS_HEADER_ID_LEN;
 
-	UNALIGNED_PUT(htons(flags), (u16_t *)(buf+offset));
+	UNALIGNED_PUT(htons(flags), (uint16_t *)(buf+offset));
 	offset += DNS_HEADER_FLAGS_LEN;
 
-	UNALIGNED_PUT(0, (u16_t *)(buf + offset));
+	UNALIGNED_PUT(0, (uint16_t *)(buf + offset));
 	offset += DNS_QDCOUNT_LEN;
 
-	UNALIGNED_PUT(htons(answers), (u16_t *)(buf + offset));
+	UNALIGNED_PUT(htons(answers), (uint16_t *)(buf + offset));
 	offset += DNS_ANCOUNT_LEN;
 
-	UNALIGNED_PUT(0, (u16_t *)(buf + offset));
+	UNALIGNED_PUT(0, (uint16_t *)(buf + offset));
 	offset += DNS_NSCOUNT_LEN;
 
-	UNALIGNED_PUT(0, (u16_t *)(buf + offset));
+	UNALIGNED_PUT(0, (uint16_t *)(buf + offset));
 }
 
 static void add_answer(struct net_buf *query, enum dns_rr_type qtype,
-		       u32_t ttl, u16_t addr_len, u8_t *addr)
+		       uint32_t ttl, uint16_t addr_len, uint8_t *addr)
 {
 	char *dot = query->data + DNS_MSG_HEADER_SIZE;
 	char *prev = NULL;
-	u16_t offset;
+	uint16_t offset;
 
 	while ((dot = strchr(dot, '.'))) {
 		if (!prev) {
@@ -162,12 +162,12 @@ static void add_answer(struct net_buf *query, enum dns_rr_type qtype,
 	query->len += 1;
 
 	offset = DNS_MSG_HEADER_SIZE + query->len;
-	UNALIGNED_PUT(htons(qtype), (u16_t *)(query->data+offset));
+	UNALIGNED_PUT(htons(qtype), (uint16_t *)(query->data+offset));
 
 	/* Bit 15 tells to flush the cache */
 	offset += DNS_QTYPE_LEN;
 	UNALIGNED_PUT(htons(DNS_CLASS_IN | BIT(15)),
-		      (u16_t *)(query->data+offset));
+		      (uint16_t *)(query->data+offset));
 
 
 	offset += DNS_QCLASS_LEN;
@@ -183,7 +183,7 @@ static void add_answer(struct net_buf *query, enum dns_rr_type qtype,
 static int create_answer(struct net_context *ctx,
 			 struct net_buf *query,
 			 enum dns_rr_type qtype,
-			 u16_t addr_len, u8_t *addr)
+			 uint16_t addr_len, uint8_t *addr)
 {
 	/* Prepare the response into the query buffer: move the name
 	 * query buffer has to get enough free space: dns_hdr + answer
@@ -229,7 +229,7 @@ static int send_response(struct net_context *ctx,
 		dst_len = sizeof(struct sockaddr_in);
 
 		ret = create_answer(ctx, query, qtype,
-				      sizeof(struct in_addr), (u8_t *)addr);
+				      sizeof(struct in_addr), (uint8_t *)addr);
 		if (ret != 0) {
 			return ret;
 		}
@@ -250,7 +250,7 @@ static int send_response(struct net_context *ctx,
 		dst_len = sizeof(struct sockaddr_in6);
 
 		ret = create_answer(ctx, query, qtype,
-				      sizeof(struct in6_addr), (u8_t *)addr);
+				      sizeof(struct in6_addr), (uint8_t *)addr);
 		if (ret != 0) {
 			return -ENOMEM;
 		}
@@ -327,7 +327,7 @@ static int dns_read(struct net_context *ctx,
 	do {
 		enum dns_rr_type qtype;
 		enum dns_class qclass;
-		u8_t *lquery;
+		uint8_t *lquery;
 
 		(void)memset(result->data, 0, net_buf_tailroom(result));
 		result->len = 0U;

@@ -5,6 +5,8 @@
 # are matched, then sanitycheck will not do a full run and optionally will only
 # run on changed tests or boards.
 #
+.gitlint
+.checkpatch.conf
 .clang-format
 .codecov.yml
 .editorconfig
@@ -19,6 +21,8 @@ Makefile
 tests/*
 samples/*
 doc/*
+# GH action have no impact on code
+.github/*
 *.rst
 *.md
 # if we change this file or associated script, it should not trigger a full

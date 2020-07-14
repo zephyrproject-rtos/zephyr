@@ -15,7 +15,7 @@
 extern "C" {
 #endif
 
-typedef u32_t pthread_once_t;
+typedef uint32_t pthread_once_t;
 
 /* pthread_key */
 typedef void *pthread_key_t;

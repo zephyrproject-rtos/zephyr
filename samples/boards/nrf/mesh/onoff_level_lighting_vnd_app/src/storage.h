@@ -23,11 +23,11 @@ enum ps_variables_id {
 	TEMPERATURE_RANGE
 };
 
-extern u8_t reset_counter;
+extern uint8_t reset_counter;
 
 extern struct k_work storage_work;
 
 int ps_settings_init(void);
-void save_on_flash(u8_t id);
+void save_on_flash(uint8_t id);
 
 #endif

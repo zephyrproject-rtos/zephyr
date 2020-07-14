@@ -60,7 +60,7 @@ static void telnet_sent_cb(struct net_context *client,
 	}
 }
 
-static void telnet_command_send_reply(u8_t *msg, u16_t len)
+static void telnet_command_send_reply(uint8_t *msg, uint16_t len)
 {
 	int err;
 
@@ -80,7 +80,7 @@ static void telnet_reply_ay_command(void)
 {
 	static const char alive[] = "Zephyr at your service\r\n";
 
-	telnet_command_send_reply((u8_t *)alive, strlen(alive));
+	telnet_command_send_reply((uint8_t *)alive, strlen(alive));
 }
 
 static void telnet_reply_do_command(struct telnet_simple_command *cmd)
@@ -94,7 +94,7 @@ static void telnet_reply_do_command(struct telnet_simple_command *cmd)
 		break;
 	}
 
-	telnet_command_send_reply((u8_t *)cmd,
+	telnet_command_send_reply((uint8_t *)cmd,
 				  sizeof(struct telnet_simple_command));
 }
 
@@ -158,7 +158,7 @@ static void telnet_send_prematurely(struct k_work *work)
 static inline bool telnet_handle_command(struct net_pkt *pkt)
 {
 	/* Commands are two or three bytes. */
-	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(cmd_access, u16_t);
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(cmd_access, uint16_t);
 	struct telnet_simple_command *cmd;
 
 	cmd = (struct telnet_simple_command *)net_pkt_get_data(pkt,
@@ -372,7 +372,7 @@ static int write(const struct shell_transport *transport,
 	struct shell_telnet_line_buf *lb;
 	size_t copy_len;
 	int err;
-	u32_t timeout;
+	uint32_t timeout;
 
 	if (sh_telnet == NULL) {
 		*cnt = 0;
@@ -399,7 +399,7 @@ static int write(const struct shell_transport *transport,
 			copy_len = length - *cnt;
 		}
 
-		memcpy(lb->buf + lb->len, (u8_t *)data + *cnt, copy_len);
+		memcpy(lb->buf + lb->len, (uint8_t *)data + *cnt, copy_len);
 		lb->len += copy_len;
 
 		/* Send the data immediately if the buffer is full or line feed
@@ -490,7 +490,7 @@ static int enable_shell_telnet(struct device *arg)
 	ARG_UNUSED(arg);
 
 	bool log_backend = CONFIG_SHELL_TELNET_INIT_LOG_LEVEL > 0;
-	u32_t level = (CONFIG_SHELL_TELNET_INIT_LOG_LEVEL > LOG_LEVEL_DBG) ?
+	uint32_t level = (CONFIG_SHELL_TELNET_INIT_LOG_LEVEL > LOG_LEVEL_DBG) ?
 		      CONFIG_LOG_MAX_LEVEL : CONFIG_SHELL_TELNET_INIT_LOG_LEVEL;
 
 	return shell_init(&shell_telnet, NULL, true, log_backend, level);

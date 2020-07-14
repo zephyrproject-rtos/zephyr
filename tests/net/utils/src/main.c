@@ -835,7 +835,6 @@ void test_addr_parse(void)
 void test_main(void)
 {
 	ztest_test_suite(test_utils_fn,
-			 ztest_unit_test(test_net_addr),
 			 ztest_user_unit_test(test_net_addr),
 			 ztest_unit_test(test_addr_parse));
 

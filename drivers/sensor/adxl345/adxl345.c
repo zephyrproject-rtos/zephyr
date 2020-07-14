@@ -21,8 +21,8 @@ static int adxl345_read_sample(struct device *dev,
 			       struct adxl345_sample *sample)
 {
 	struct adxl345_dev_data *data = dev->driver_data;
-	s16_t raw_x, raw_y, raw_z;
-	u8_t axis_data[6];
+	int16_t raw_x, raw_y, raw_z;
+	uint8_t axis_data[6];
 
 	int rc = i2c_burst_read(data->i2c_master,
 				data->i2c_addr,
@@ -46,7 +46,7 @@ static int adxl345_read_sample(struct device *dev,
 	return 0;
 }
 
-static void adxl345_accel_convert(struct sensor_value *val, s16_t sample)
+static void adxl345_accel_convert(struct sensor_value *val, int16_t sample)
 {
 	if (sample & BIT(9)) {
 		sample |= ADXL345_COMPLEMENT;
@@ -60,7 +60,7 @@ static int adxl345_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct adxl345_dev_data *data = dev->driver_data;
 	struct adxl345_sample sample;
-	u8_t samples_count;
+	uint8_t samples_count;
 	int rc;
 
 	data->sample_number = 0;
@@ -73,7 +73,7 @@ static int adxl345_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	__ASSERT_NO_MSG(samples_count <= ARRAY_SIZE(data->bufx));
 
-	for (u8_t s = 0; s < samples_count; s++) {
+	for (uint8_t s = 0; s < samples_count; s++) {
 		rc = adxl345_read_sample(dev, &sample);
 		if (rc < 0) {
 			LOG_ERR("Failed to fetch sample rc=%d\n", rc);
@@ -133,7 +133,7 @@ static int adxl345_init(struct device *dev)
 	int rc;
 	struct adxl345_dev_data *data = dev->driver_data;
 	const struct adxl345_dev_config *cfg = dev->config_info;
-	u8_t dev_id;
+	uint8_t dev_id;
 
 	data->sample_number = 0;
 	data->i2c_master = device_get_binding(cfg->i2c_master_name);

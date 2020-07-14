@@ -12,6 +12,7 @@ LOG_MODULE_REGISTER(mqtt_azure, LOG_LEVEL_DBG);
 #include <net/mqtt.h>
 
 #include <sys/printk.h>
+#include <random/rand32.h>
 #include <string.h>
 #include <errno.h>
 
@@ -19,8 +20,8 @@ LOG_MODULE_REGISTER(mqtt_azure, LOG_LEVEL_DBG);
 #include "test_certs.h"
 
 /* Buffers for MQTT client. */
-static u8_t rx_buffer[APP_MQTT_BUFFER_SIZE];
-static u8_t tx_buffer[APP_MQTT_BUFFER_SIZE];
+static uint8_t rx_buffer[APP_MQTT_BUFFER_SIZE];
+static uint8_t tx_buffer[APP_MQTT_BUFFER_SIZE];
 
 /* The mqtt client struct */
 static struct mqtt_client client_ctx;
@@ -63,7 +64,7 @@ static sec_tag_t m_sec_tags[] = {
 	APP_CA_CERT_TAG,
 };
 
-static u8_t topic[] = "devices/" MQTT_CLIENTID "/messages/devicebound/#";
+static uint8_t topic[] = "devices/" MQTT_CLIENTID "/messages/devicebound/#";
 static struct mqtt_topic subs_topic;
 static struct mqtt_subscription_list subs_list;
 
@@ -153,15 +154,15 @@ static void client_init(struct mqtt_client *client)
 	client->broker = &broker;
 	client->evt_cb = mqtt_event_handler;
 
-	client->client_id.utf8 = (u8_t *)MQTT_CLIENTID;
+	client->client_id.utf8 = (uint8_t *)MQTT_CLIENTID;
 	client->client_id.size = strlen(MQTT_CLIENTID);
 
-	password.utf8 = (u8_t *)CONFIG_SAMPLE_CLOUD_AZURE_PASSWORD;
+	password.utf8 = (uint8_t *)CONFIG_SAMPLE_CLOUD_AZURE_PASSWORD;
 	password.size = strlen(CONFIG_SAMPLE_CLOUD_AZURE_PASSWORD);
 
 	client->password = &password;
 
-	username.utf8 = (u8_t *)CONFIG_SAMPLE_CLOUD_AZURE_USERNAME;
+	username.utf8 = (uint8_t *)CONFIG_SAMPLE_CLOUD_AZURE_USERNAME;
 	username.size = strlen(CONFIG_SAMPLE_CLOUD_AZURE_USERNAME);
 
 	client->user_name = &username;
@@ -197,7 +198,7 @@ static void mqtt_event_handler(struct mqtt_client *const client,
 			       const struct mqtt_evt *evt)
 {
 	struct mqtt_puback_param puback;
-	u8_t data[33];
+	uint8_t data[33];
 	int len;
 	int bytes_read;
 
@@ -289,11 +290,11 @@ static int publish(struct mqtt_client *client, enum mqtt_qos qos)
 {
 	char payload[] = "{id=123}";
 	char topic[] = "devices/" MQTT_CLIENTID "/messages/events/";
-	u8_t len = strlen(topic);
+	uint8_t len = strlen(topic);
 	struct mqtt_publish_param param;
 
 	param.message.topic.qos = qos;
-	param.message.topic.topic.utf8 = (u8_t *)topic;
+	param.message.topic.topic.utf8 = (uint8_t *)topic;
 	param.message.topic.topic.size = len;
 	param.message.payload.data = payload;
 	param.message.payload.len = strlen(payload);
@@ -321,7 +322,7 @@ static void poll_mqtt(void)
  * then keep the application connection live by calling mqtt_live()
  * in regular intervals.
  */
-static u8_t timeout_for_publish(void)
+static uint8_t timeout_for_publish(void)
 {
 	return (10 + sys_rand32_get() % 5);
 }
@@ -347,7 +348,7 @@ end:
 
 static int try_to_connect(struct mqtt_client *client)
 {
-	u8_t retries = 3U;
+	uint8_t retries = 3U;
 	int rc;
 
 	LOG_DBG("attempting to connect...");
@@ -485,7 +486,7 @@ static void abort_mqtt_connection(void)
 }
 
 static void l4_event_handler(struct net_mgmt_event_callback *cb,
-			     u32_t mgmt_event, struct net_if *iface)
+			     uint32_t mgmt_event, struct net_if *iface)
 {
 	if ((mgmt_event & L4_EVENT_MASK) != mgmt_event) {
 		return;

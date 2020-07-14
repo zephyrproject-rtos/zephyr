@@ -62,7 +62,7 @@ struct ili9340_data;
  * @param tx_len Number of bytes in tx_data buffer
  *
  */
-void ili9340_transmit(struct ili9340_data *data, u8_t cmd, void *tx_data,
+void ili9340_transmit(struct ili9340_data *data, uint8_t cmd, void *tx_data,
 		      size_t tx_len);
 
 /**

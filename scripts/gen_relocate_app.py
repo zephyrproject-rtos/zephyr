@@ -135,13 +135,13 @@ void bss_zeroing_relocation(void)
 
 MEMCPY_TEMPLATE = """
 	(void)memcpy(&__{0}_{1}_start, &__{0}_{1}_rom_start,
-		     (u32_t) &__{0}_{1}_size);
+		     (uint32_t) &__{0}_{1}_size);
 
 """
 
 MEMSET_TEMPLATE = """
  	(void)memset(&__{0}_bss_start, 0,
-		     (u32_t) &__{0}_bss_size);
+		     (uint32_t) &__{0}_bss_size);
 """
 
 

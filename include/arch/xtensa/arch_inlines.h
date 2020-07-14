@@ -13,7 +13,7 @@
 #include <kernel_structs.h>
 
 #define RSR(sr) \
-	({u32_t v; \
+	({uint32_t v; \
 	 __asm__ volatile ("rsr." sr " %0" : "=a"(v)); \
 	 v; })
 

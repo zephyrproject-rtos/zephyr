@@ -8,7 +8,7 @@
 	sck-pin = <11>;
 	mosi-pin = <12>;
 	miso-pin = <13>;
-	cs-gpios = <&gpio0 20 0>, <&gpio0 10 0>;
+	cs-gpios = <&gpio0 20 GPIO_ACTIVE_LOW>, <&gpio0 10 GPIO_ACTIVE_LOW>;
 
 	at45db041e@0 {
 		compatible = "atmel,at45";

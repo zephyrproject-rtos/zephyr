@@ -15,11 +15,11 @@
 LOG_MODULE_REGISTER(tach_xec, CONFIG_SENSOR_LOG_LEVEL);
 
 struct tach_xec_config {
-	u32_t base_address;
+	uint32_t base_address;
 };
 
 struct tach_xec_data {
-	u16_t count;
+	uint16_t count;
 };
 
 #define FAN_STOPPED		0xFFFFU
@@ -48,7 +48,7 @@ int tach_xec_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	TACH_Type *tach = TACH_XEC_REG_BASE(dev);
 	struct tach_xec_data *data = TACH_XEC_DATA(dev);
-	u8_t poll_count = 0;
+	uint8_t poll_count = 0;
 
 	while (poll_count < PIN_STS_TIMEOUT) {
 		/* See whether internal counter is already latched */

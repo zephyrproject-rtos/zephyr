@@ -116,7 +116,7 @@ static inline int stm32_clock_control_off(struct device *dev,
 
 static int stm32_clock_control_get_subsys_rate(struct device *clock,
 					clock_control_subsys_t sub_system,
-					u32_t *rate)
+					uint32_t *rate)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
 

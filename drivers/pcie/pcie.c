@@ -16,7 +16,7 @@
 
 bool pcie_probe(pcie_bdf_t bdf, pcie_id_t id)
 {
-	u32_t data;
+	uint32_t data;
 
 	data = pcie_conf_read(bdf, PCIE_CONF_ID);
 
@@ -31,9 +31,9 @@ bool pcie_probe(pcie_bdf_t bdf, pcie_id_t id)
 	return (id == data);
 }
 
-void pcie_set_cmd(pcie_bdf_t bdf, u32_t bits, bool on)
+void pcie_set_cmd(pcie_bdf_t bdf, uint32_t bits, bool on)
 {
-	u32_t cmdstat;
+	uint32_t cmdstat;
 
 	cmdstat = pcie_conf_read(bdf, PCIE_CONF_CMDSTAT);
 
@@ -46,49 +46,33 @@ void pcie_set_cmd(pcie_bdf_t bdf, u32_t bits, bool on)
 	pcie_conf_write(bdf, PCIE_CONF_CMDSTAT, cmdstat);
 }
 
-static u32_t pcie_get_bar(pcie_bdf_t bdf, unsigned int index, bool io)
+uintptr_t pcie_get_mbar(pcie_bdf_t bdf, unsigned int index)
 {
-	int bar;
-	u32_t data;
+	uint32_t reg, bar;
+	uintptr_t addr = PCIE_CONF_BAR_NONE;
 
-	for (bar = PCIE_CONF_BAR0; bar <= PCIE_CONF_BAR5; ++bar) {
-		data = pcie_conf_read(bdf, bar);
-		if (data == PCIE_CONF_BAR_NONE) {
-			continue;
-		}
-
-		if ((PCIE_CONF_BAR_IO(data) && io) ||
-		    (PCIE_CONF_BAR_MEM(data) && !io)) {
-			if (index == 0) {
-				return PCIE_CONF_BAR_ADDR(data);
-			}
-
-			--index;
-		}
-
-		if (PCIE_CONF_BAR_64(data)) {
-			++bar;
+	reg = PCIE_CONF_BAR0;
+	for (bar = 0; bar < index && reg <= PCIE_CONF_BAR5; bar++) {
+		if (PCIE_CONF_BAR_64(pcie_conf_read(bdf, reg++))) {
+			reg++;
 		}
 	}
 
-	return PCIE_CONF_BAR_NONE;
-}
+	if (bar == index) {
+		addr = pcie_conf_read(bdf, reg++);
+		if (IS_ENABLED(CONFIG_64BIT) && PCIE_CONF_BAR_64(addr)) {
+			addr |= ((uint64_t)pcie_conf_read(bdf, reg)) << 32;
+		}
+	}
 
-u32_t pcie_get_mbar(pcie_bdf_t bdf, unsigned int index)
-{
-	return pcie_get_bar(bdf, index, false);
+	return PCIE_CONF_BAR_ADDR(addr);
 }
 
 unsigned int pcie_wired_irq(pcie_bdf_t bdf)
 {
-	u32_t data = pcie_conf_read(bdf, PCIE_CONF_INTR);
+	uint32_t data = pcie_conf_read(bdf, PCIE_CONF_INTR);
 
 	return PCIE_CONF_INTR_IRQ(data);
-}
-
-u32_t pcie_get_iobar(pcie_bdf_t bdf, unsigned int index)
-{
-	return pcie_get_bar(bdf, index, true);
 }
 
 void pcie_irq_enable(pcie_bdf_t bdf, unsigned int irq)

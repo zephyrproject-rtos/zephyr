@@ -17,8 +17,8 @@ struct mcux_entropy_config {
 	TRNG_Type *base;
 };
 
-static int entropy_mcux_trng_get_entropy(struct device *dev, u8_t *buffer,
-					 u16_t length)
+static int entropy_mcux_trng_get_entropy(struct device *dev, uint8_t *buffer,
+					 uint16_t length)
 {
 	const struct mcux_entropy_config *config = dev->config_info;
 	status_t status;

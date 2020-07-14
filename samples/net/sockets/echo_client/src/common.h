@@ -18,16 +18,16 @@ struct data {
 		/* Work controlling udp data sending */
 		struct k_delayed_work recv;
 		struct k_delayed_work transmit;
-		u32_t expecting;
-		u32_t counter;
-		u32_t mtu;
+		uint32_t expecting;
+		uint32_t counter;
+		uint32_t mtu;
 	} udp;
 
 	struct {
 		int sock;
-		u32_t expecting;
-		u32_t received;
-		u32_t counter;
+		uint32_t expecting;
+		uint32_t received;
+		uint32_t counter;
 	} tcp;
 };
 

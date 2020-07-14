@@ -33,7 +33,7 @@ extern "C" {
  * @typedef net_stats_t
  * @brief Network statistics counter
  */
-typedef u32_t net_stats_t;
+typedef uint32_t net_stats_t;
 
 /**
  * @brief Number of bytes sent and received.
@@ -206,7 +206,7 @@ struct net_stats_ipv6_mld {
  * @brief Network packet transfer times for calculating average TX time
  */
 struct net_stats_tx_time {
-	u64_t sum;
+	uint64_t sum;
 	net_stats_t count;
 };
 
@@ -214,7 +214,7 @@ struct net_stats_tx_time {
  * @brief Network packet receive times for calculating average RX time
  */
 struct net_stats_rx_time {
-	u64_t sum;
+	uint64_t sum;
 	net_stats_t count;
 };
 
@@ -226,14 +226,14 @@ struct net_stats_tc {
 		struct net_stats_tx_time tx_time;
 		net_stats_t pkts;
 		net_stats_t bytes;
-		u8_t priority;
+		uint8_t priority;
 	} sent[NET_TC_TX_COUNT];
 
 	struct {
 		struct net_stats_rx_time rx_time;
 		net_stats_t pkts;
 		net_stats_t bytes;
-		u8_t priority;
+		uint8_t priority;
 	} recv[NET_TC_RX_COUNT];
 };
 
@@ -242,10 +242,10 @@ struct net_stats_tc {
  * @brief Power management statistics
  */
 struct net_stats_pm {
-	u64_t overall_suspend_time;
+	uint64_t overall_suspend_time;
 	net_stats_t suspend_count;
-	u32_t last_suspend_time;
-	u32_t start_time;
+	uint32_t last_suspend_time;
+	uint32_t start_time;
 };
 
 
@@ -386,7 +386,7 @@ struct net_stats_eth_hw_timestamp {
  */
 struct net_stats_eth_vendor {
 	const char * const key;
-	u32_t value;
+	uint32_t value;
 };
 #endif
 

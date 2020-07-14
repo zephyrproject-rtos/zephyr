@@ -16,7 +16,7 @@ __attribute__((section(".boot_hdr.dcd_data")))
 #pragma location = ".boot_hdr.dcd_data"
 #endif
 
-const u8_t dcd_data[] = {
+const uint8_t dcd_data[] = {
 	0xD2,
 
 	0x04, 0x30,
@@ -289,6 +289,6 @@ const u8_t dcd_data[] = {
 };
 
 #else
-const u8_t dcd_data[] = { 0x00 };
+const uint8_t dcd_data[] = { 0x00 };
 #endif
 #endif

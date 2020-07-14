@@ -84,7 +84,7 @@ int net_icmpv6_finalize(struct net_pkt *pkt)
 	return net_pkt_set_data(pkt, &icmp_access);
 }
 
-int net_icmpv6_create(struct net_pkt *pkt, u8_t icmp_type, u8_t icmp_code)
+int net_icmpv6_create(struct net_pkt *pkt, uint8_t icmp_type, uint8_t icmp_code)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmp_access,
 					      struct net_icmp_hdr);
@@ -109,7 +109,7 @@ enum net_verdict icmpv6_handle_echo_request(struct net_pkt *pkt,
 {
 	struct net_pkt *reply = NULL;
 	const struct in6_addr *src;
-	s16_t payload_len;
+	int16_t payload_len;
 
 	ARG_UNUSED(icmp_hdr);
 
@@ -184,8 +184,8 @@ drop:
 	return NET_DROP;
 }
 
-int net_icmpv6_send_error(struct net_pkt *orig, u8_t type, u8_t code,
-			  u32_t param)
+int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
+			  uint32_t param)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
 	int err = -EIO;
@@ -296,8 +296,8 @@ drop_no_pkt:
 
 int net_icmpv6_send_echo_request(struct net_if *iface,
 				 struct in6_addr *dst,
-				 u16_t identifier,
-				 u16_t sequence,
+				 uint16_t identifier,
+				 uint16_t sequence,
 				 const void *data,
 				 size_t data_size)
 {

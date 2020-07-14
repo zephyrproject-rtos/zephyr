@@ -33,7 +33,7 @@ static struct device *ieee802154_dev;
 static struct k_fifo tx_queue;
 
 /* IEEE802.15.4 frame + 1 byte len + 1 byte LQI */
-u8_t tx_buf[IEEE802154_MTU + 1 + 1];
+uint8_t tx_buf[IEEE802154_MTU + 1 + 1];
 
 /**
  * Stack for the tx thread.
@@ -83,7 +83,7 @@ static struct usb_ep_cfg_data wpanusb_ep[] = {
 
 static void wpanusb_status_cb(struct usb_cfg_data *cfg,
 			      enum usb_dc_status_code status,
-			      const u8_t *param)
+			      const uint8_t *param)
 {
 	ARG_UNUSED(param);
 	ARG_UNUSED(cfg);
@@ -123,7 +123,7 @@ static void wpanusb_status_cb(struct usb_cfg_data *cfg,
  * later processing
  */
 static int wpanusb_vendor_handler(struct usb_setup_packet *setup,
-				  s32_t *len, u8_t **data)
+				  int32_t *len, uint8_t **data)
 {
 	struct net_pkt *pkt;
 
@@ -184,7 +184,7 @@ static int set_ieee_addr(void *data, int len)
 	    radio_api->get_capabilities(ieee802154_dev)) {
 		struct ieee802154_filter filter;
 
-		filter.ieee_addr = (u8_t *)&req->ieee_addr;
+		filter.ieee_addr = (uint8_t *)&req->ieee_addr;
 
 		return radio_api->filter(ieee802154_dev, true,
 					 IEEE802154_FILTER_TYPE_IEEE_ADDR,
@@ -251,9 +251,9 @@ static int stop(void)
 
 static int tx(struct net_pkt *pkt)
 {
-	u8_t ep = wpanusb_config.endpoint[WPANUSB_IN_EP_IDX].ep_addr;
+	uint8_t ep = wpanusb_config.endpoint[WPANUSB_IN_EP_IDX].ep_addr;
 	struct net_buf *buf = net_buf_frag_last(pkt->buffer);
-	u8_t seq = net_buf_pull_u8(buf);
+	uint8_t seq = net_buf_pull_u8(buf);
 	int retries = 3;
 	int ret;
 
@@ -286,7 +286,7 @@ static void tx_thread(void)
 	LOG_DBG("Tx thread started");
 
 	while (1) {
-		u8_t cmd;
+		uint8_t cmd;
 		struct net_pkt *pkt;
 		struct net_buf *buf;
 
@@ -350,9 +350,9 @@ static void init_tx_queue(void)
 int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 {
 	size_t len = net_pkt_get_len(pkt);
-	u8_t *p = tx_buf;
+	uint8_t *p = tx_buf;
 	int ret;
-	u8_t ep;
+	uint8_t ep;
 
 	LOG_DBG("Got data, pkt %p, len %d", pkt, len);
 
@@ -367,7 +367,7 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 	/**
 	 * Add length 1 byte
 	 */
-	*p++ = (u8_t)len;
+	*p++ = (uint8_t)len;
 
 	/* This is needed to work with pkt */
 	net_pkt_cursor_init(pkt);

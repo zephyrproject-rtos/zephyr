@@ -118,15 +118,15 @@ config FLASH_LOAD_SIZE
 
 endif # HAS_FLASH_LOAD_OFFSET
 
-config TEXT_SECTION_OFFSET
+config ROM_START_OFFSET
 	hex
-	prompt "TEXT section offset" if !BOOTLOADER_MCUBOOT
+	prompt "ROM start offset" if !BOOTLOADER_MCUBOOT
 	default 0x200 if BOOTLOADER_MCUBOOT
 	default 0
 	help
 	  If the application is built for chain-loading by a bootloader this
 	  variable is required to be set to value that leaves sufficient
-	  space between the beginning of the image and the start of the .text
+	  space between the beginning of the image and the start of the first
 	  section to store an image header or any other metadata.
 	  In the particular case of the MCUboot bootloader this reserves enough
 	  space to store the image header, which should also meet vector table
@@ -152,27 +152,6 @@ config CUSTOM_LINKER_SCRIPT
 	  This is useful when an application needs to add sections into the
 	  linker script and avoid having to change the script provided by
 	  Zephyr.
-
-config CUSTOM_RODATA_LD
-	bool "(DEPRECATED) Include custom-rodata.ld"
-	help
-	  Note: This is deprecated, use Cmake function zephyr_linker_sources() instead.
-	  Include a customized linker script fragment for inserting additional
-	  data and linker directives into the rodata section.
-
-config CUSTOM_RWDATA_LD
-	bool "(DEPRECATED) Include custom-rwdata.ld"
-	help
-	  Note: This is deprecated, use Cmake function zephyr_linker_sources() instead.
-	  Include a customized linker script fragment for inserting additional
-	  data and linker directives into the data section.
-
-config CUSTOM_SECTIONS_LD
-	bool "(DEPRECATED) Include custom-sections.ld"
-	help
-	  Note: This is deprecated, use Cmake function zephyr_linker_sources() instead.
-	  Include a customized linker script fragment for inserting additional
-	  arbitrary sections.
 
 config KERNEL_ENTRY
 	string "Kernel entry symbol"
@@ -363,6 +342,13 @@ config LEGACY_DEVICETREE_MACROS
 	  Zephyr 2.2 and previous versions, rather than the devicetree.h
 	  API introduced during the Zephyr 2.3 development cycle.
 
+config DEPRECATED_ZEPHYR_INT_TYPES
+	bool "Allow the use of the deprecated zephyr integer types"
+	help
+	  Allows the use of the deprecated Zephyr integer typedefs defined in
+	  Zephyr 2.3 and previous versions.  These types are:
+	  u8_t, u16_t, u32_t, u64_t, s8_t, s16_t, s32_t, and s64_t.
+
 endmenu
 endmenu
 
@@ -399,10 +385,11 @@ config BOOTLOADER_MCUBOOT
 	  order for the image generated to be bootable using the MCUboot open
 	  source bootloader. Currently this includes:
 
-	    * Setting TEXT_SECTION_OFFSET to a default value that allows space
+	    * Setting ROM_START_OFFSET to a default value that allows space
 	      for the MCUboot image header
-	    * Activating SW_VECTOR_RELAY on Cortex-M0 (or Armv8-M baseline)
-	      targets with no built-in vector relocation mechanisms
+	    * Activating SW_VECTOR_RELAY_CLIENT on Cortex-M0
+	      (or Armv8-M baseline) targets with no built-in vector relocation
+	      mechanisms
 
 config BOOTLOADER_ESP_IDF
 	bool "ESP-IDF bootloader support"

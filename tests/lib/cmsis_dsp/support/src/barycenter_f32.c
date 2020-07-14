@@ -19,8 +19,8 @@ void test_arm_barycenter_f32(void)
 {
 	int test_index;
 	const size_t length = ARRAY_SIZE(ref_barycenter);
-	const u16_t test_count = in_barycenter_dims[0];
-	const u16_t *dims = in_barycenter_dims + 1;
+	const uint16_t test_count = in_barycenter_dims[0];
+	const uint16_t *dims = in_barycenter_dims + 1;
 	const float32_t *input_val = (const float32_t *)in_barycenter_val;
 	const float32_t *input_coeff = (const float32_t *)in_barycenter_coeff;
 	float32_t *output, *output_buf;
@@ -33,8 +33,8 @@ void test_arm_barycenter_f32(void)
 
 	/* Enumerate tests */
 	for (test_index = 0; test_index < test_count; test_index++) {
-		const u16_t vec_count = dims[0];
-		const u16_t vec_length = dims[1];
+		const uint16_t vec_count = dims[0];
+		const uint16_t vec_length = dims[1];
 
 		/* Run test function */
 		arm_barycenter_f32(

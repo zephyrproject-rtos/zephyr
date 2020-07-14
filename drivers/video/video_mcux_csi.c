@@ -27,11 +27,11 @@ struct video_mcux_csi_data {
 	csi_handle_t csi_handle;
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
-	u32_t pixelformat;
+	uint32_t pixelformat;
 	struct k_poll_signal *signal;
 };
 
-static inline unsigned int video_pix_fmt_bpp(u32_t pixelformat)
+static inline unsigned int video_pix_fmt_bpp(uint32_t pixelformat)
 {
 	switch (pixelformat) {
 	case VIDEO_PIX_FMT_BGGR8:
@@ -54,7 +54,7 @@ static void __frame_done_cb(CSI_Type *base, csi_handle_t *handle,
 	struct video_mcux_csi_data *data = dev->driver_data;
 	enum video_signal_result result = VIDEO_BUF_DONE;
 	struct video_buffer *vbuf, *vbuf_first = NULL;
-	u32_t buffer_addr;
+	uint32_t buffer_addr;
 
 	/* IRQ context */
 
@@ -71,7 +71,7 @@ static void __frame_done_cb(CSI_Type *base, csi_handle_t *handle,
 
 	/* Get matching vbuf by addr */
 	while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT))) {
-		if ((u32_t)vbuf->buffer == buffer_addr) {
+		if ((uint32_t)vbuf->buffer == buffer_addr) {
 			break;
 		}
 
@@ -217,7 +217,7 @@ static int video_mcux_csi_flush(struct device *dev, enum video_endpoint_id ep,
 	const struct video_mcux_csi_config *config = dev->config_info;
 	struct video_mcux_csi_data *data = dev->driver_data;
 	struct video_buf *vbuf;
-	u32_t buffer_addr;
+	uint32_t buffer_addr;
 	status_t ret;
 
 	if (!cancel) {
@@ -261,7 +261,7 @@ static int video_mcux_csi_enqueue(struct device *dev, enum video_endpoint_id ep,
 	vbuf->bytesused = to_read;
 
 	ret = CSI_TransferSubmitEmptyBuffer(config->base, &data->csi_handle,
-					    (u32_t)vbuf->buffer);
+					    (uint32_t)vbuf->buffer);
 	if (ret != kStatus_Success) {
 		return -EIO;
 	}

@@ -33,12 +33,12 @@
 #define REG_IDCCTL_IDCIDIE(x)	(0x100 << (x))
 #define REG_IDCCTL_IDCTBIE(x)	(0x1 << (x))
 
-static inline u32_t idc_read(u32_t reg, u32_t core_id)
+static inline uint32_t idc_read(uint32_t reg, uint32_t core_id)
 {
 	return sys_read32(IDC_REG_BASE(core_id) + reg);
 }
 
-static inline void idc_write(u32_t reg, u32_t core_id, u32_t val)
+static inline void idc_write(uint32_t reg, uint32_t core_id, uint32_t val)
 {
 	sys_write32(val, IDC_REG_BASE(core_id) + reg);
 }

@@ -16,14 +16,14 @@
 extern "C" {
 #endif
 
-typedef u32_t io_port_t;
-typedef u32_t mm_reg_t;
+typedef uint32_t io_port_t;
+typedef uintptr_t mm_reg_t;
 typedef uintptr_t mem_addr_t;
 
 /* Port I/O functions */
 
 /**
- * @fn static inline void sys_out8(u8_t data, io_port_t port);
+ * @fn static inline void sys_out8(uint8_t data, io_port_t port);
  * @brief Output a byte to an I/O port
  *
  * This function writes a byte to the given port.
@@ -33,7 +33,7 @@ typedef uintptr_t mem_addr_t;
  */
 
 /**
- * @fn static inline u8_t sys_in8(io_port_t port);
+ * @fn static inline uint8_t sys_in8(io_port_t port);
  * @brief Input a byte from an I/O port
  *
  * This function reads a byte from the port.
@@ -44,7 +44,7 @@ typedef uintptr_t mem_addr_t;
  */
 
 /**
- * @fn static inline void sys_out16(u16_t data, io_port_t port);
+ * @fn static inline void sys_out16(uint16_t data, io_port_t port);
  * @brief Output a 16 bits to an I/O port
  *
  * This function writes a 16 bits to the given port.
@@ -54,7 +54,7 @@ typedef uintptr_t mem_addr_t;
  */
 
 /**
- * @fn static inline u16_t sys_in16(io_port_t port);
+ * @fn static inline uint16_t sys_in16(io_port_t port);
  * @brief Input 16 bits from an I/O port
  *
  * This function reads 16 bits from the port.
@@ -65,7 +65,7 @@ typedef uintptr_t mem_addr_t;
  */
 
 /**
- * @fn static inline void sys_out32(u32_t data, io_port_t port);
+ * @fn static inline void sys_out32(uint32_t data, io_port_t port);
  * @brief Output 32 bits to an I/O port
  *
  * This function writes 32 bits to the given port.
@@ -75,7 +75,7 @@ typedef uintptr_t mem_addr_t;
  */
 
 /**
- * @fn static inline u32_t sys_in32(io_port_t port);
+ * @fn static inline uint32_t sys_in32(io_port_t port);
  * @brief Input 32 bits from an I/O port
  *
  * This function reads 32 bits from the port.
@@ -147,7 +147,7 @@ typedef uintptr_t mem_addr_t;
 /* Memory mapped registers I/O functions */
 
 /**
- * @fn static inline void sys_write8(u8_t data, mm_reg_t addr);
+ * @fn static inline void sys_write8(uint8_t data, mm_reg_t addr);
  * @brief Write a byte to a memory mapped register
  *
  * This function writes a byte to the given memory mapped register.
@@ -157,7 +157,7 @@ typedef uintptr_t mem_addr_t;
  */
 
 /**
- * @fn static inline u8_t sys_read8(mm_reg_t addr);
+ * @fn static inline uint8_t sys_read8(mm_reg_t addr);
  * @brief Read a byte from a memory mapped register
  *
  * This function reads a byte from the given memory mapped register.
@@ -168,7 +168,7 @@ typedef uintptr_t mem_addr_t;
  */
 
 /**
- * @fn static inline void sys_write16(u16_t data, mm_reg_t addr);
+ * @fn static inline void sys_write16(uint16_t data, mm_reg_t addr);
  * @brief Write 16 bits to a memory mapped register
  *
  * This function writes 16 bits to the given memory mapped register.
@@ -178,7 +178,7 @@ typedef uintptr_t mem_addr_t;
  */
 
 /**
- * @fn static inline u16_t sys_read16(mm_reg_t addr);
+ * @fn static inline uint16_t sys_read16(mm_reg_t addr);
  * @brief Read 16 bits from a memory mapped register
  *
  * This function reads 16 bits from the given memory mapped register.
@@ -190,7 +190,7 @@ typedef uintptr_t mem_addr_t;
  */
 
 /**
- * @fn static inline void sys_write32(u32_t data, mm_reg_t addr);
+ * @fn static inline void sys_write32(uint32_t data, mm_reg_t addr);
  * @brief Write 32 bits to a memory mapped register
  *
  * This function writes 32 bits to the given memory mapped register.
@@ -200,7 +200,7 @@ typedef uintptr_t mem_addr_t;
  */
 
 /**
- * @fn static inline u32_t sys_read32(mm_reg_t addr);
+ * @fn static inline uint32_t sys_read32(mm_reg_t addr);
  * @brief Read 32 bits from a memory mapped register
  *
  * This function reads 32 bits from the given memory mapped register.

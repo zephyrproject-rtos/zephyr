@@ -27,7 +27,7 @@ config MCG_FCRDIV
 if PINMUX_MCUX
 
 config PINMUX_MCUX_PORTA
-	default y if "$(dt_nodelabel_enabled,uart0)"
+	default y if "$(dt_nodelabel_enabled,uart0)" && SERIAL
 
 config PINMUX_MCUX_PORTB
 	default y if SPI_1

@@ -36,16 +36,16 @@ static const char *const hmc5883l_fs_strings[] = {
 	"0.88", "1.3", "1.9", "2.5", "4", "4.7", "5.6", "8.1"
 };
 
-static const u16_t hmc5883l_gain[] = {
+static const uint16_t hmc5883l_gain[] = {
 	1370, 1090, 820, 660, 440, 390, 330, 230
 };
 
 struct hmc5883l_data {
 	struct device *i2c;
-	s16_t x_sample;
-	s16_t y_sample;
-	s16_t z_sample;
-	u8_t gain_idx;
+	int16_t x_sample;
+	int16_t y_sample;
+	int16_t z_sample;
+	uint8_t gain_idx;
 
 #ifdef CONFIG_HMC5883L_TRIGGER
 	struct device *gpio;

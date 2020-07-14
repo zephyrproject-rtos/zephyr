@@ -61,7 +61,7 @@ static int cmd_ieee802154_ack(const struct shell *shell,
 	return 0;
 }
 
-static inline void parse_extended_address(char *addr, u8_t *ext_addr)
+static inline void parse_extended_address(char *addr, uint8_t *ext_addr)
 {
 	net_bytes_from_str(ext_addr, IEEE802154_EXT_ADDR_LENGTH, addr);
 }
@@ -90,7 +90,7 @@ static int cmd_ieee802154_associate(const struct shell *shell,
 		parse_extended_address(ext_addr, params.addr);
 		params.len = IEEE802154_EXT_ADDR_LENGTH;
 	} else {
-		params.short_addr = (u16_t) atoi(ext_addr);
+		params.short_addr = (uint16_t) atoi(ext_addr);
 		params.len = IEEE802154_SHORT_ADDR_LENGTH;
 	}
 
@@ -143,15 +143,15 @@ static int cmd_ieee802154_disassociate(const struct shell *shell,
 	return 0;
 }
 
-static inline u32_t parse_channel_set(char *str_set)
+static inline uint32_t parse_channel_set(char *str_set)
 {
-	u32_t channel_set = 0U;
+	uint32_t channel_set = 0U;
 	char *p, *n;
 
 	p = str_set;
 
 	do {
-		u32_t chan;
+		uint32_t chan;
 
 		n = strchr(p, ':');
 		if (n) {
@@ -190,7 +190,7 @@ static inline char *print_coordinator_address(char *buf, int buf_len)
 }
 
 static void scan_result_cb(struct net_mgmt_event_callback *cb,
-			   u32_t mgmt_event, struct net_if *iface)
+			   uint32_t mgmt_event, struct net_if *iface)
 {
 	char buf[64];
 
@@ -204,7 +204,7 @@ static int cmd_ieee802154_scan(const struct shell *shell,
 			       size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_ieee802154();
-	u32_t scan_type;
+	uint32_t scan_type;
 	int ret;
 
 	if (argc < 3) {
@@ -276,7 +276,7 @@ static int cmd_ieee802154_set_chan(const struct shell *shell,
 				   size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_ieee802154();
-	u16_t channel;
+	uint16_t channel;
 
 	if (argc < 2) {
 		shell_help(shell);
@@ -289,10 +289,10 @@ static int cmd_ieee802154_set_chan(const struct shell *shell,
 		return -ENOEXEC;
 	}
 
-	channel = (u16_t)atoi(argv[1]);
+	channel = (uint16_t)atoi(argv[1]);
 
 	if (net_mgmt(NET_REQUEST_IEEE802154_SET_CHANNEL, iface,
-		     &channel, sizeof(u16_t))) {
+		     &channel, sizeof(uint16_t))) {
 		shell_fprintf(shell, SHELL_WARNING,
 			      "Could not set channel %u\n", channel);
 
@@ -309,7 +309,7 @@ static int cmd_ieee802154_get_chan(const struct shell *shell,
 				   size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_ieee802154();
-	u16_t channel;
+	uint16_t channel;
 
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
@@ -321,7 +321,7 @@ static int cmd_ieee802154_get_chan(const struct shell *shell,
 	}
 
 	if (net_mgmt(NET_REQUEST_IEEE802154_GET_CHANNEL, iface,
-		     &channel, sizeof(u16_t))) {
+		     &channel, sizeof(uint16_t))) {
 		shell_fprintf(shell, SHELL_WARNING,
 			      "Could not get channel\n");
 
@@ -338,7 +338,7 @@ static int cmd_ieee802154_set_pan_id(const struct shell *shell,
 				     size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_ieee802154();
-	u16_t pan_id;
+	uint16_t pan_id;
 
 	ARG_UNUSED(argc);
 
@@ -353,10 +353,10 @@ static int cmd_ieee802154_set_pan_id(const struct shell *shell,
 		return -ENOEXEC;
 	}
 
-	pan_id = (u16_t)atoi(argv[1]);
+	pan_id = (uint16_t)atoi(argv[1]);
 
 	if (net_mgmt(NET_REQUEST_IEEE802154_SET_PAN_ID, iface,
-		     &pan_id, sizeof(u16_t))) {
+		     &pan_id, sizeof(uint16_t))) {
 		shell_fprintf(shell, SHELL_WARNING,
 			      "Could not set PAN ID %u\n", pan_id);
 
@@ -373,7 +373,7 @@ static int cmd_ieee802154_get_pan_id(const struct shell *shell,
 				     size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_ieee802154();
-	u16_t pan_id;
+	uint16_t pan_id;
 
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
@@ -385,7 +385,7 @@ static int cmd_ieee802154_get_pan_id(const struct shell *shell,
 	}
 
 	if (net_mgmt(NET_REQUEST_IEEE802154_GET_PAN_ID, iface,
-		     &pan_id, sizeof(u16_t))) {
+		     &pan_id, sizeof(uint16_t))) {
 		shell_fprintf(shell, SHELL_WARNING,
 			      "Could not get PAN ID\n");
 
@@ -402,7 +402,7 @@ static int cmd_ieee802154_set_ext_addr(const struct shell *shell,
 				       size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_ieee802154();
-	u8_t addr[IEEE802154_EXT_ADDR_LENGTH];
+	uint8_t addr[IEEE802154_EXT_ADDR_LENGTH];
 
 	if (argc < 2) {
 		shell_help(shell);
@@ -441,7 +441,7 @@ static int cmd_ieee802154_get_ext_addr(const struct shell *shell,
 				       size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_ieee802154();
-	u8_t addr[IEEE802154_EXT_ADDR_LENGTH];
+	uint8_t addr[IEEE802154_EXT_ADDR_LENGTH];
 
 	if (!iface) {
 		shell_fprintf(shell, SHELL_INFO,
@@ -477,7 +477,7 @@ static int cmd_ieee802154_set_short_addr(const struct shell *shell,
 					 size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_ieee802154();
-	u16_t short_addr;
+	uint16_t short_addr;
 
 	if (argc < 2) {
 		shell_help(shell);
@@ -490,10 +490,10 @@ static int cmd_ieee802154_set_short_addr(const struct shell *shell,
 		return -ENOEXEC;
 	}
 
-	short_addr = (u16_t)atoi(argv[1]);
+	short_addr = (uint16_t)atoi(argv[1]);
 
 	if (net_mgmt(NET_REQUEST_IEEE802154_SET_SHORT_ADDR, iface,
-		     &short_addr, sizeof(u16_t))) {
+		     &short_addr, sizeof(uint16_t))) {
 		shell_fprintf(shell, SHELL_WARNING,
 			      "Could not set short address %u\n", short_addr);
 
@@ -510,7 +510,7 @@ static int cmd_ieee802154_get_short_addr(const struct shell *shell,
 					 size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_ieee802154();
-	u16_t short_addr;
+	uint16_t short_addr;
 
 	if (!iface) {
 		shell_fprintf(shell, SHELL_INFO,
@@ -519,7 +519,7 @@ static int cmd_ieee802154_get_short_addr(const struct shell *shell,
 	}
 
 	if (net_mgmt(NET_REQUEST_IEEE802154_GET_SHORT_ADDR, iface,
-		     &short_addr, sizeof(u16_t))) {
+		     &short_addr, sizeof(uint16_t))) {
 		shell_fprintf(shell, SHELL_WARNING,
 			      "Could not get short address\n");
 
@@ -536,7 +536,7 @@ static int cmd_ieee802154_set_tx_power(const struct shell *shell,
 				       size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_ieee802154();
-	s16_t tx_power;
+	int16_t tx_power;
 
 	if (argc < 2) {
 		shell_help(shell);
@@ -549,10 +549,10 @@ static int cmd_ieee802154_set_tx_power(const struct shell *shell,
 		return -ENOEXEC;
 	}
 
-	tx_power = (s16_t)atoi(argv[1]);
+	tx_power = (int16_t)atoi(argv[1]);
 
 	if (net_mgmt(NET_REQUEST_IEEE802154_SET_TX_POWER, iface,
-		     &tx_power, sizeof(s16_t))) {
+		     &tx_power, sizeof(int16_t))) {
 		shell_fprintf(shell, SHELL_WARNING,
 			      "Could not set TX power %d\n", tx_power);
 
@@ -569,7 +569,7 @@ static int cmd_ieee802154_get_tx_power(const struct shell *shell,
 				       size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_ieee802154();
-	s16_t tx_power;
+	int16_t tx_power;
 
 	if (!iface) {
 		shell_fprintf(shell, SHELL_INFO,
@@ -578,7 +578,7 @@ static int cmd_ieee802154_get_tx_power(const struct shell *shell,
 	}
 
 	if (net_mgmt(NET_REQUEST_IEEE802154_GET_TX_POWER, iface,
-		     &tx_power, sizeof(s16_t))) {
+		     &tx_power, sizeof(int16_t))) {
 		shell_fprintf(shell, SHELL_WARNING,
 			      "Could not get TX power\n");
 

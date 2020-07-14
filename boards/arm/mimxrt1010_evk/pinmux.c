@@ -36,7 +36,7 @@ static int mimxrt1010_evk_init(struct device *dev)
 				IOMUXC_SW_PAD_CTL_PAD_DSE(4));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart1), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart1), okay) && CONFIG_SERIAL
 	/* LPUART1 TX/RX */
 	IOMUXC_SetPinMux(IOMUXC_GPIO_09_LPUART1_RXD, 0);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_10_LPUART1_TXD, 0);
@@ -52,7 +52,7 @@ static int mimxrt1010_evk_init(struct device *dev)
 				IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c1), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c1), okay) && CONFIG_I2C
 	/* LPI2C1 SCL, SDA */
 	IOMUXC_SetPinMux(IOMUXC_GPIO_01_LPI2C1_SDA, 1);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_02_LPI2C1_SCL, 1);

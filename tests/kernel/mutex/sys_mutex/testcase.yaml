@@ -1,6 +1,5 @@
 tests:
   system.mutex:
-    min_ram: 32
     filter: CONFIG_ARCH_HAS_USERSPACE
     tags: kernel userspace
   system.mutex.nouser:

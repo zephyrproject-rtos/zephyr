@@ -81,7 +81,7 @@
 &spi1 {
 	status = "okay";
 
-	cs-gpios = <&gpioe 11 0>, <&gpioe 12 0>, <&gpioe 10 0>;
+	cs-gpios = <&gpioe 11 GPIO_ACTIVE_LOW>, <&gpioe 12 GPIO_ACTIVE_LOW>, <&gpioe 10 GPIO_ACTIVE_LOW>;
 
 	lis2dw12@0 {
 		compatible = "st,lis2dw12";
@@ -111,7 +111,7 @@
 &spi3 {
 	status = "okay";
 
-	cs-gpios = <&gpioa 15 0>;
+	cs-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
 
 	lis2mdl@0 {
 		compatible = "st,lis2mdl";

@@ -172,10 +172,10 @@ struct onoff_manager {
 	int last_res;
 
 	/* Flags identifying the service state. */
-	u16_t flags;
+	uint16_t flags;
 
 	/* Number of active clients for the service. */
-	u16_t refs;
+	uint16_t refs;
 };
 
 /** @brief Initializer for a onoff_transitions object.
@@ -249,7 +249,7 @@ struct onoff_client;
  */
 typedef void (*onoff_client_callback)(struct onoff_manager *mgr,
 				      struct onoff_client *cli,
-				      u32_t state,
+				      uint32_t state,
 				      int res);
 
 /**
@@ -508,7 +508,7 @@ int onoff_reset(struct onoff_manager *mgr,
  */
 typedef void (*onoff_monitor_callback)(struct onoff_manager *mgr,
 				       struct onoff_monitor *mon,
-				       u32_t state,
+				       uint32_t state,
 				       int res);
 
 /**

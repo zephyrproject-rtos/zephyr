@@ -9,18 +9,33 @@
 #if defined(CONFIG_ARCH_POSIX)
 #define ALIGN_MS_BOUNDARY		       \
 	do {				       \
-		u32_t t = k_uptime_get_32();   \
+		uint32_t t = k_uptime_get_32();   \
 		while (t == k_uptime_get_32()) \
 			k_busy_wait(50);       \
 	} while (0)
 #else
 #define ALIGN_MS_BOUNDARY		       \
 	do {				       \
-		u32_t t = k_uptime_get_32();   \
+		uint32_t t = k_uptime_get_32();   \
 		while (t == k_uptime_get_32()) \
 			;		       \
 	} while (0)
 #endif
+
+struct timer_data {
+	int duration_count;
+	int stop_count;
+};
+static void duration_expire(struct k_timer *timer);
+static void stop_expire(struct k_timer *timer);
+
+/** TESTPOINT: init timer via K_TIMER_DEFINE */
+K_TIMER_DEFINE(ktimer, duration_expire, stop_expire);
+
+static ZTEST_BMEM struct timer_data tdata;
+
+#define DURATION 100
+#define LESS_DURATION 80
 
 /**
  * @addtogroup kernel_common_tests
@@ -34,8 +49,8 @@
  */
 void test_clock_uptime(void)
 {
-	u64_t t64, t32;
-	s64_t d64 = 0;
+	uint64_t t64, t32;
+	int64_t d64 = 0;
 
 	/**TESTPOINT: uptime elapse*/
 	t64 = k_uptime_get();
@@ -74,7 +89,7 @@ void test_clock_uptime(void)
  */
 void test_clock_cycle(void)
 {
-	u32_t c32, c0, c1, t32;
+	uint32_t c32, c0, c1, t32;
 
 	/**TESTPOINT: cycle elapse*/
 	ALIGN_MS_BOUNDARY;
@@ -105,11 +120,65 @@ void test_clock_cycle(void)
 			     (sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC),
 			     NULL);
 		/* delta NS should be greater than 1 milli-second */
-		zassert_true((u32_t)k_cyc_to_ns_floor64(c1 - c0) >
+		zassert_true((uint32_t)k_cyc_to_ns_floor64(c1 - c0) >
 			     (NSEC_PER_SEC / MSEC_PER_SEC), NULL);
 	}
 }
 
+
+/*
+ *help function
+ */
+static void duration_expire(struct k_timer *timer)
+{
+	tdata.duration_count++;
+}
+
+static void stop_expire(struct k_timer *timer)
+{
+	tdata.stop_count++;
+}
+
+static void init_data_count(void)
+{
+	tdata.duration_count = 0;
+	tdata.stop_count = 0;
+}
+
+/**
+ * @brief Test millisecond time duration
+ *
+ * @details initialize a timer, then providing time duration in
+ * millisecond, and check the duration time whether correct.
+ *
+ * @see k_timer_init(), k_timer_start(), k_timer_stop(),
+ * k_busy_wait()
+ *
+ *
+ */
+
+void test_ms_time_duration(void)
+{
+	init_data_count();
+	k_timer_start(&ktimer, K_MSEC(DURATION), K_NO_WAIT);
+
+	/** TESTPOINT: waiting time less than duration and check the count*/
+	k_busy_wait(LESS_DURATION * 1000);
+	zassert_true(tdata.duration_count == 0, NULL);
+	zassert_true(tdata.stop_count == 0, NULL);
+
+	/** TESTPOINT: proving duration in millisecond */
+	init_data_count();
+	k_timer_start(&ktimer, K_MSEC(100), K_MSEC(50));
+
+	/** TESTPOINT: waiting time more than duration and check the count */
+	k_busy_wait((DURATION + 1) * 1000);
+	zassert_true(tdata.duration_count == 1, NULL);
+	zassert_true(tdata.stop_count == 0, NULL);
+
+	/** cleanup environemtn */
+	k_timer_stop(&ktimer);
+}
 /**
  * @}
  */

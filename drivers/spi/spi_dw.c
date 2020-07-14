@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(spi_dw);
 
 #if (CONFIG_SPI_LOG_LEVEL == 4)
 #define DBG_COUNTER_INIT()	\
-	u32_t __cnt = 0
+	uint32_t __cnt = 0
 #define DBG_COUNTER_INC()	\
 	(__cnt++)
 #define DBG_COUNTER_RESULT()	\
@@ -89,8 +89,8 @@ static void push_data(struct device *dev)
 {
 	const struct spi_dw_config *info = dev->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
-	u32_t data = 0U;
-	u32_t f_tx;
+	uint32_t data = 0U;
+	uint32_t f_tx;
 
 	DBG_COUNTER_INIT();
 
@@ -108,16 +108,16 @@ static void push_data(struct device *dev)
 		if (spi_context_tx_buf_on(&spi->ctx)) {
 			switch (spi->dfs) {
 			case 1:
-				data = UNALIGNED_GET((u8_t *)
+				data = UNALIGNED_GET((uint8_t *)
 						     (spi->ctx.tx_buf));
 				break;
 			case 2:
-				data = UNALIGNED_GET((u16_t *)
+				data = UNALIGNED_GET((uint16_t *)
 						     (spi->ctx.tx_buf));
 				break;
 #ifndef CONFIG_ARC
 			case 4:
-				data = UNALIGNED_GET((u32_t *)
+				data = UNALIGNED_GET((uint32_t *)
 						     (spi->ctx.tx_buf));
 				break;
 #endif
@@ -162,21 +162,21 @@ static void pull_data(struct device *dev)
 	DBG_COUNTER_INIT();
 
 	while (read_rxflr(info->regs)) {
-		u32_t data = read_dr(info->regs);
+		uint32_t data = read_dr(info->regs);
 
 		DBG_COUNTER_INC();
 
 		if (spi_context_rx_buf_on(&spi->ctx)) {
 			switch (spi->dfs) {
 			case 1:
-				UNALIGNED_PUT(data, (u8_t *)spi->ctx.rx_buf);
+				UNALIGNED_PUT(data, (uint8_t *)spi->ctx.rx_buf);
 				break;
 			case 2:
-				UNALIGNED_PUT(data, (u16_t *)spi->ctx.rx_buf);
+				UNALIGNED_PUT(data, (uint16_t *)spi->ctx.rx_buf);
 				break;
 #ifndef CONFIG_ARC
 			case 4:
-				UNALIGNED_PUT(data, (u32_t *)spi->ctx.rx_buf);
+				UNALIGNED_PUT(data, (uint32_t *)spi->ctx.rx_buf);
 				break;
 #endif
 			}
@@ -199,7 +199,7 @@ static int spi_dw_configure(const struct spi_dw_config *info,
 			    struct spi_dw_data *spi,
 			    const struct spi_config *config)
 {
-	u32_t ctrlr0 = 0U;
+	uint32_t ctrlr0 = 0U;
 
 	LOG_DBG("%p (prev %p)", config, spi->ctx.config);
 
@@ -292,9 +292,9 @@ static int spi_dw_configure(const struct spi_dw_config *info,
 }
 
 static uint32_t spi_dw_compute_ndf(const struct spi_buf *rx_bufs,
-				   size_t rx_count, u8_t dfs)
+				   size_t rx_count, uint8_t dfs)
 {
-	u32_t len = 0U;
+	uint32_t len = 0U;
 
 	for (; rx_count; rx_bufs++, rx_count--) {
 		if (len > (UINT16_MAX - rx_bufs->len)) {
@@ -314,7 +314,7 @@ error:
 static void spi_dw_update_txftlr(const struct spi_dw_config *info,
 				 struct spi_dw_data *spi)
 {
-	u32_t reg_data = DW_SPI_TXFTLR_DFLT;
+	uint32_t reg_data = DW_SPI_TXFTLR_DFLT;
 
 	if (spi_dw_is_slave(spi)) {
 		if (!spi->ctx.tx_len) {
@@ -338,8 +338,8 @@ static int transceive(struct device *dev,
 {
 	const struct spi_dw_config *info = dev->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
-	u32_t tmod = DW_SPI_CTRLR0_TMOD_TX_RX;
-	u32_t reg_data;
+	uint32_t tmod = DW_SPI_CTRLR0_TMOD_TX_RX;
+	uint32_t reg_data;
 	int ret;
 
 	spi_context_lock(&spi->ctx, asynchronous, signal);
@@ -479,7 +479,7 @@ static int spi_dw_release(struct device *dev, const struct spi_config *config)
 void spi_dw_isr(struct device *dev)
 {
 	const struct spi_dw_config *info = dev->config_info;
-	u32_t int_status;
+	uint32_t int_status;
 	int error;
 
 	int_status = read_isr(info->regs);

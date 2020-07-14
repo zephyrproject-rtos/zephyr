@@ -8,13 +8,13 @@
 #include <drivers/can.h>
 
 static inline int z_vrfy_can_configure(struct device *dev, enum can_mode mode,
-				       u32_t bitrate)
+				       uint32_t bitrate)
 {
 
 	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, configure));
 
 	return z_impl_can_configure((struct device *)dev, (enum can_mode)mode,
-				   (u32_t)bitrate);
+				   (uint32_t)bitrate);
 }
 #include <syscalls/can_configure_mrsh.c>
 

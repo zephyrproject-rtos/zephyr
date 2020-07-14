@@ -64,7 +64,7 @@ void test_posix_mqueue(void)
 {
 	mqd_t mqd;
 	struct mq_attr attrs;
-	s32_t mode = 0777, flags = O_RDWR | O_CREAT, ret, i;
+	int32_t mode = 0777, flags = O_RDWR | O_CREAT, ret, i;
 	void *retval;
 	pthread_attr_t attr[N_THR];
 	pthread_t newthread[N_THR];

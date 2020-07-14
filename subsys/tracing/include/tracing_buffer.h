@@ -31,14 +31,14 @@ bool tracing_buffer_is_empty(void);
  *
  * @return Tracing buffer free space (in bytes).
  */
-u32_t tracing_buffer_space_get(void);
+uint32_t tracing_buffer_space_get(void);
 
 /**
  * @brief Get tracing buffer capacity (max size).
  *
  * @return Tracing buffer capacity (in bytes).
  */
-u32_t tracing_buffer_capacity_get(void);
+uint32_t tracing_buffer_capacity_get(void);
 
 /**
  * @brief Try to allocate buffer in the tracing buffer.
@@ -50,7 +50,7 @@ u32_t tracing_buffer_capacity_get(void);
  * @return Size of allocated buffer which can be smaller than
  *         requested if there isn't enough free space or buffer wraps.
  */
-u32_t tracing_buffer_put_claim(u8_t **data, u32_t size);
+uint32_t tracing_buffer_put_claim(uint8_t **data, uint32_t size);
 
 /**
  * @brief Indicate number of bytes written to the allocated buffer.
@@ -60,7 +60,7 @@ u32_t tracing_buffer_put_claim(u8_t **data, u32_t size);
  * @retval 0 Successful operation.
  * @retval -EINVAL Given @a size exceeds free space of tracing buffer.
  */
-int tracing_buffer_put_finish(u32_t size);
+int tracing_buffer_put_finish(uint32_t size);
 
 /**
  * @brief Write data to tracing buffer.
@@ -70,7 +70,7 @@ int tracing_buffer_put_finish(u32_t size);
  *
  * @retval Number of bytes written to tracing buffer.
  */
-u32_t tracing_buffer_put(u8_t *data, u32_t size);
+uint32_t tracing_buffer_put(uint8_t *data, uint32_t size);
 
 /**
  * @brief Get address of the first valid data in tracing buffer.
@@ -82,7 +82,7 @@ u32_t tracing_buffer_put(u8_t *data, u32_t size);
  * @return Size of valid buffer which can be smaller than requested
  *         if there isn't enough valid data or buffer wraps.
  */
-u32_t tracing_buffer_get_claim(u8_t **data, u32_t size);
+uint32_t tracing_buffer_get_claim(uint8_t **data, uint32_t size);
 
 /**
  * @brief Indicate number of bytes read from claimed buffer.
@@ -92,7 +92,7 @@ u32_t tracing_buffer_get_claim(u8_t **data, u32_t size);
  * @retval 0 Successful operation.
  * @retval -EINVAL Given @a size exceeds available data of tracing buffer.
  */
-int tracing_buffer_get_finish(u32_t size);
+int tracing_buffer_get_finish(uint32_t size);
 
 /**
  * @brief Read data from tracing buffer to output buffer.
@@ -102,7 +102,7 @@ int tracing_buffer_get_finish(u32_t size);
  *
  * @retval Number of bytes written to the output buffer.
  */
-u32_t tracing_buffer_get(u8_t *data, u32_t size);
+uint32_t tracing_buffer_get(uint8_t *data, uint32_t size);
 
 /**
  * @brief Get buffer from tracing command buffer.
@@ -111,7 +111,7 @@ u32_t tracing_buffer_get(u8_t *data, u32_t size);
  *
  * @return Tracing command buffer size (in bytes).
  */
-u32_t tracing_cmd_buffer_alloc(u8_t **data);
+uint32_t tracing_cmd_buffer_alloc(uint8_t **data);
 
 #ifdef __cplusplus
 }

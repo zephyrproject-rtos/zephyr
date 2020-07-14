@@ -58,10 +58,10 @@ LOG_MODULE_REGISTER(main);
 #define SENSOR_ACCEL_NAME DT_LABEL(DT_INST(0, nxp_fxos8700))
 #endif
 
-static const u8_t hid_report_desc[] = HID_MOUSE_REPORT_DESC(2);
+static const uint8_t hid_report_desc[] = HID_MOUSE_REPORT_DESC(2);
 
-static u32_t def_val[4];
-static volatile u8_t status[4];
+static uint32_t def_val[4];
+static volatile uint8_t status[4];
 static K_SEM_DEFINE(sem, 0, 1);	/* starts off "not available" */
 static struct gpio_callback callback[4];
 
@@ -75,10 +75,10 @@ static struct gpio_callback callback[4];
 
 
 static void left_button(struct device *gpio, struct gpio_callback *cb,
-			u32_t pins)
+			uint32_t pins)
 {
-	u32_t cur_val;
-	u8_t state = status[MOUSE_BTN_REPORT_POS];
+	uint32_t cur_val;
+	uint8_t state = status[MOUSE_BTN_REPORT_POS];
 
 	cur_val = gpio_pin_get(gpio, PIN0);
 	if (def_val[0] != cur_val) {
@@ -95,10 +95,10 @@ static void left_button(struct device *gpio, struct gpio_callback *cb,
 
 #if DT_PHA_HAS_CELL(DT_ALIAS(sw1), gpios, pin)
 static void right_button(struct device *gpio, struct gpio_callback *cb,
-			 u32_t pins)
+			 uint32_t pins)
 {
-	u32_t cur_val;
-	u8_t state = status[MOUSE_BTN_REPORT_POS];
+	uint32_t cur_val;
+	uint8_t state = status[MOUSE_BTN_REPORT_POS];
 
 	cur_val = gpio_pin_get(gpio, PIN1);
 	if (def_val[0] != cur_val) {
@@ -114,9 +114,9 @@ static void right_button(struct device *gpio, struct gpio_callback *cb,
 }
 #endif
 
-int callbacks_configure(struct device *gpio, u32_t pin, int flags,
+int callbacks_configure(struct device *gpio, uint32_t pin, int flags,
 			void (*handler)(struct device*, struct gpio_callback*,
-			u32_t), struct gpio_callback *callback, u32_t *val)
+			uint32_t), struct gpio_callback *callback, uint32_t *val)
 {
 	int ret;
 
@@ -132,7 +132,7 @@ int callbacks_configure(struct device *gpio, u32_t pin, int flags,
 		return ret;
 	}
 
-	*val = (u32_t)ret;
+	*val = (uint32_t)ret;
 
 	gpio_init_callback(callback, handler, BIT(pin));
 	gpio_add_callback(gpio, callback);
@@ -194,7 +194,7 @@ static void trigger_handler(struct device *dev, struct sensor_trigger *tr)
 void main(void)
 {
 	int ret;
-	u8_t report[4] = { 0x00 };
+	uint8_t report[4] = { 0x00 };
 	struct device *led_dev, *accel_dev, *hid_dev;
 
 	led_dev = device_get_binding(LED_PORT);

@@ -17,7 +17,7 @@ void main(void)
 	console_write(NULL, prompt, sizeof(prompt) - 1);
 
 	while (1) {
-		u8_t c = console_getchar();
+		uint8_t c = console_getchar();
 
 		console_putchar(c);
 		if (c == '\r') {

@@ -23,8 +23,8 @@
 
 #include <arch/cpu.h>
 
-static u32_t timestamp_start;
-static u32_t timestamp_end;
+static uint32_t timestamp_start;
+static uint32_t timestamp_end;
 static struct k_work work;
 
 K_SEM_DEFINE(INTSEMA, 0, 1);
@@ -89,7 +89,7 @@ K_THREAD_DEFINE(int_thread_id, 512,
  */
 int int_to_thread_evt(void)
 {
-	u32_t diff;
+	uint32_t diff;
 
 	PRINT_FORMAT(" 2 - Measure time from ISR to executing a different thread"
 		     " (rescheduled)");

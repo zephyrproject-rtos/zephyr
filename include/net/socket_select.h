@@ -27,7 +27,7 @@ struct zsock_timeval {
 };
 
 typedef struct zsock_fd_set {
-	u32_t bitset[(CONFIG_POSIX_MAX_FDS + 31) / 32];
+	uint32_t bitset[(CONFIG_POSIX_MAX_FDS + 31) / 32];
 } zsock_fd_set;
 
 

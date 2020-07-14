@@ -22,7 +22,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                  gdb_port=DEFAULT_PYOCD_GDB_PORT,
                  telnet_port=DEFAULT_PYOCD_TELNET_PORT, tui=False,
                  board_id=None, daparg=None, frequency=None, tool_opt=None):
-        super(PyOcdBinaryRunner, self).__init__(cfg)
+        super().__init__(cfg)
 
         self.target_args = ['-t', target]
         self.pyocd = pyocd
@@ -95,7 +95,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                             e.g. \'--script=user.py\' ''')
 
     @classmethod
-    def create(cls, cfg, args):
+    def do_create(cls, cfg, args):
         build_conf = BuildConfiguration(cfg.build_dir)
         flash_addr = cls.get_flash_address(args, build_conf)
 

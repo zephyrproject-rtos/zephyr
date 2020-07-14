@@ -1,0 +1,19 @@
+# Copyright 2020 Broadcom.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Broadcom iProc PCIe EP node
+
+compatible: "brcm,iproc-pcie-ep"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+      description: |
+        Register space for the memory mapped PAX(PCIe to AXI bridge) registers,
+        It includes registers to access EP configuration space
+        and to map Host PCIe address to PCIe Outbound memory.
+
+    label:
+      required: true

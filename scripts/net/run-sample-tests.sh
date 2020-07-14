@@ -21,9 +21,7 @@ check_dirs ()
     then
 	echo '$ZEPHYR_BASE is unset' >&2
 	ret_zephyr=1
-    fi
-
-    if [ ! -d "$ZEPHYR_BASE" ]
+    elif [ ! -d "$ZEPHYR_BASE" ]
     then
 	echo '$ZEPHYR_BASE is set, but it is not a directory' >&2
 	ret_zephyr=1
@@ -55,9 +53,7 @@ check_dirs ()
     then
 	echo '$NET_TOOLS_BASE is unset, no net-tools found' >&2
 	ret_net_tools=1
-    fi
-
-    if [ ! -d "$NET_TOOLS_BASE" ]
+    elif [ ! -d "$NET_TOOLS_BASE" ]
     then
 	echo '$NET_TOOLS_BASE set, but it is not a directory' >&2
 	ret_net_tools=1

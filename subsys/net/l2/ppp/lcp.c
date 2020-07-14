@@ -21,7 +21,7 @@ LOG_MODULE_DECLARE(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 #include "ppp_internal.h"
 
 static enum net_verdict lcp_handle_ext(struct ppp_fsm *fsm,
-				       enum ppp_packet_type code, u8_t id,
+				       enum ppp_packet_type code, uint8_t id,
 				       struct net_pkt *pkt)
 {
 	enum net_verdict verdict = NET_DROP;
@@ -57,7 +57,7 @@ static enum net_verdict lcp_handle(struct ppp_context *ctx,
 	return ppp_fsm_input(&ctx->lcp.fsm, PPP_LCP, pkt);
 }
 
-static bool append_to_buf(struct net_buf *buf, u8_t *data, u8_t data_len)
+static bool append_to_buf(struct net_buf *buf, uint8_t *data, uint8_t data_len)
 {
 	if (data_len > net_buf_tailroom(buf)) {
 		return false;
@@ -73,7 +73,7 @@ static bool append_to_buf(struct net_buf *buf, u8_t *data, u8_t data_len)
 
 static int lcp_config_info_req(struct ppp_fsm *fsm,
 			       struct net_pkt *pkt,
-			       u16_t length,
+			       uint16_t length,
 			       struct net_buf **buf)
 {
 	struct ppp_option_pkt options[MAX_LCP_OPTIONS];
@@ -82,7 +82,6 @@ static int lcp_config_info_req(struct ppp_fsm *fsm,
 	enum ppp_packet_type code;
 	enum net_verdict verdict;
 	int i, nack_idx = 0;
-	int count_rej = 0, count_nack = 0;
 
 	memset(options, 0, sizeof(options));
 	memset(nack_options, 0, sizeof(nack_options));
@@ -105,22 +104,7 @@ static int lcp_config_info_req(struct ppp_fsm *fsm,
 		case LCP_OPTION_RESERVED:
 			continue;
 
-		case LCP_OPTION_MRU:
-			break;
-
-		/* TODO: Check from ctx->lcp.my_options what options to accept
-		 */
-		case LCP_OPTION_ASYNC_CTRL_CHAR_MAP:
-			count_nack++;
-			goto ignore_option;
-
-		case LCP_OPTION_MAGIC_NUMBER:
-			count_nack++;
-			goto ignore_option;
-
 		default:
-			count_rej++;
-		ignore_option:
 			nack_options[nack_idx].type.lcp = options[i].type.lcp;
 			nack_options[nack_idx].len = options[i].len;
 
@@ -138,11 +122,7 @@ static int lcp_config_info_req(struct ppp_fsm *fsm,
 	if (nack_idx > 0) {
 		struct net_buf *nack_buf;
 
-		if (count_rej > 0) {
-			code = PPP_CONFIGURE_REJ;
-		} else {
-			code = PPP_CONFIGURE_NACK;
-		}
+		code = PPP_CONFIGURE_REJ;
 
 		/* Create net_buf containing options that are not accepted */
 		for (i = 0; i < MIN(nack_idx, ARRAY_SIZE(nack_options)); i++) {
@@ -214,7 +194,7 @@ static void lcp_open(struct ppp_context *ctx)
 	ppp_fsm_open(&ctx->lcp.fsm);
 }
 
-static void lcp_close(struct ppp_context *ctx, const u8_t *reason)
+static void lcp_close(struct ppp_context *ctx, const uint8_t *reason)
 {
 	if (ctx->phase != PPP_DEAD) {
 		ppp_change_phase(ctx, PPP_TERMINATE);

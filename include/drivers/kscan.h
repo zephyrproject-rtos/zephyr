@@ -41,7 +41,7 @@ extern "C" {
  * @param row	Describes row change.
  * @param pressed Describes the kind of key event.
  */
-typedef void (*kscan_callback_t)(struct device *dev, u32_t row, u32_t column,
+typedef void (*kscan_callback_t)(struct device *dev, uint32_t row, uint32_t column,
 				 bool pressed);
 
 /**

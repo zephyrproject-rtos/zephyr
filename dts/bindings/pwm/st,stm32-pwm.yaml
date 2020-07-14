@@ -14,9 +14,10 @@ properties:
       description: Clock prescaler at the input of the timer
 
     "#pwm-cells":
-      const: 2
+      const: 3
 
 pwm-cells:
   - channel
 # period in terms of nanoseconds
   - period
+  - flags

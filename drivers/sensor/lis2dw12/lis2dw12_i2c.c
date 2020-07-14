@@ -18,19 +18,19 @@
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 
-static u16_t lis2dw12_i2c_slave_addr = DT_INST_REG_ADDR(0);
+static uint16_t lis2dw12_i2c_slave_addr = DT_INST_REG_ADDR(0);
 
 LOG_MODULE_DECLARE(LIS2DW12, CONFIG_SENSOR_LOG_LEVEL);
 
-static int lis2dw12_i2c_read(struct lis2dw12_data *data, u8_t reg_addr,
-				 u8_t *value, u16_t len)
+static int lis2dw12_i2c_read(struct lis2dw12_data *data, uint8_t reg_addr,
+				 uint8_t *value, uint16_t len)
 {
 	return i2c_burst_read(data->bus, lis2dw12_i2c_slave_addr,
 			      reg_addr, value, len);
 }
 
-static int lis2dw12_i2c_write(struct lis2dw12_data *data, u8_t reg_addr,
-				  u8_t *value, u16_t len)
+static int lis2dw12_i2c_write(struct lis2dw12_data *data, uint8_t reg_addr,
+				  uint8_t *value, uint16_t len)
 {
 	return i2c_burst_write(data->bus, lis2dw12_i2c_slave_addr,
 			       reg_addr, value, len);

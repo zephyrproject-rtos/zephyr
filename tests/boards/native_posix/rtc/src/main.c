@@ -17,7 +17,7 @@
 
 #include <stdio.h>
 
-static char *us_time_to_str(char *dest, u64_t time)
+static char *us_time_to_str(char *dest, uint64_t time)
 {
 	if (time != NEVER) {
 		unsigned int hour;
@@ -47,12 +47,12 @@ static char *us_time_to_str(char *dest, u64_t time)
  */
 static void test_realtime(void)
 {
-	extern u64_t get_host_us_time(void);
-	u64_t time;
+	extern uint64_t get_host_us_time(void);
+	uint64_t time;
 	char time_s[60];
-	u64_t end_time, start_time;
-	s64_t diff, error;
-	u64_t start_rtc_time[3];
+	uint64_t end_time, start_time;
+	int64_t diff, error;
+	uint64_t start_rtc_time[3];
 	double acc_ratio = 1;
 	double time_ratios[5] = {0.25, 2, 2, 2, 2};
 	/* This ratio adjustments lead to test speeds 0.25x, 0.5x, 1x, 2x & 4x*/
@@ -146,8 +146,8 @@ static void test_realtime(void)
 static void test_rtc_offset(void)
 {
 	int offset = 567;
-	u64_t start_rtc_time[2];
-	s64_t diff, error;
+	uint64_t start_rtc_time[2];
+	int64_t diff, error;
 
 	start_rtc_time[0] = native_rtc_gettime_us(RTC_CLOCK_REALTIME);
 	start_rtc_time[1] = native_rtc_gettime_us(RTC_CLOCK_PSEUDOHOSTREALTIME);

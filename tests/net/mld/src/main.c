@@ -27,6 +27,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 #include <net/net_mgmt.h>
 #include <net/net_event.h>
 
+#include <random/rand32.h>
+
 #include "icmpv6.h"
 #include "ipv6.h"
 
@@ -62,7 +64,7 @@ K_SEM_DEFINE(wait_data, 0, UINT_MAX);
 #define PEER_PORT 13856
 
 struct net_test_mld {
-	u8_t mac_addr[sizeof(struct net_eth_addr)];
+	uint8_t mac_addr[sizeof(struct net_eth_addr)];
 	struct net_linkaddr ll_addr;
 };
 
@@ -71,7 +73,7 @@ int net_test_dev_init(struct device *dev)
 	return 0;
 }
 
-static u8_t *net_test_get_mac(struct device *dev)
+static uint8_t *net_test_get_mac(struct device *dev)
 {
 	struct net_test_mld *context = dev->driver_data;
 
@@ -90,7 +92,7 @@ static u8_t *net_test_get_mac(struct device *dev)
 
 static void net_test_iface_init(struct net_if *iface)
 {
-	u8_t *mac = net_test_get_mac(net_if_get_device(iface));
+	uint8_t *mac = net_test_get_mac(net_if_get_device(iface));
 
 	net_if_set_link_addr(iface, mac, sizeof(struct net_eth_addr),
 			     NET_LINK_ETHERNET);
@@ -148,7 +150,7 @@ NET_DEVICE_INIT(net_test_mld, "net_test_mld",
 		127);
 
 static void group_joined(struct net_mgmt_event_callback *cb,
-			 u32_t nm_event, struct net_if *iface)
+			 uint32_t nm_event, struct net_if *iface)
 {
 	if (nm_event != NET_EVENT_IPV6_MCAST_JOIN) {
 		/* Spurious callback. */
@@ -161,7 +163,7 @@ static void group_joined(struct net_mgmt_event_callback *cb,
 }
 
 static void group_left(struct net_mgmt_event_callback *cb,
-			 u32_t nm_event, struct net_if *iface)
+			 uint32_t nm_event, struct net_if *iface)
 {
 	if (nm_event != NET_EVENT_IPV6_MCAST_LEAVE) {
 		/* Spurious callback. */
@@ -174,7 +176,7 @@ static void group_left(struct net_mgmt_event_callback *cb,
 }
 
 static struct mgmt_events {
-	u32_t event;
+	uint32_t event;
 	net_mgmt_event_handler_t handler;
 	struct net_mgmt_event_callback cb;
 } mgmt_events[] = {

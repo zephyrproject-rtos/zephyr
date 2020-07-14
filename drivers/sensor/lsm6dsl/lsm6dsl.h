@@ -610,14 +610,14 @@ struct lsm6dsl_config {
 struct lsm6dsl_data;
 
 struct lsm6dsl_transfer_function {
-	int (*read_data)(struct lsm6dsl_data *data, u8_t reg_addr,
-			 u8_t *value, u8_t len);
-	int (*write_data)(struct lsm6dsl_data *data, u8_t reg_addr,
-			  u8_t *value, u8_t len);
-	int (*read_reg)(struct lsm6dsl_data *data, u8_t reg_addr,
-			u8_t *value);
-	int (*update_reg)(struct lsm6dsl_data *data, u8_t reg_addr,
-			  u8_t mask, u8_t value);
+	int (*read_data)(struct lsm6dsl_data *data, uint8_t reg_addr,
+			 uint8_t *value, uint8_t len);
+	int (*write_data)(struct lsm6dsl_data *data, uint8_t reg_addr,
+			  uint8_t *value, uint8_t len);
+	int (*read_reg)(struct lsm6dsl_data *data, uint8_t reg_addr,
+			uint8_t *value);
+	int (*update_reg)(struct lsm6dsl_data *data, uint8_t reg_addr,
+			  uint8_t mask, uint8_t value);
 };
 
 struct lsm6dsl_data {
@@ -644,10 +644,10 @@ struct lsm6dsl_data {
 	int sample_temp;
 #endif
 	const struct lsm6dsl_transfer_function *hw_tf;
-	u16_t accel_freq;
-	u8_t accel_fs;
-	u16_t gyro_freq;
-	u8_t gyro_fs;
+	uint16_t accel_freq;
+	uint8_t accel_fs;
+	uint16_t gyro_freq;
+	uint8_t gyro_fs;
 
 #ifdef CONFIG_LSM6DSL_TRIGGER
 	struct device *gpio;
@@ -672,7 +672,7 @@ int lsm6dsl_spi_init(struct device *dev);
 int lsm6dsl_i2c_init(struct device *dev);
 #if defined(CONFIG_LSM6DSL_SENSORHUB)
 int lsm6dsl_shub_init_external_chip(struct device *dev);
-int lsm6dsl_shub_read_external_chip(struct device *dev, u8_t *buf, u8_t len);
+int lsm6dsl_shub_read_external_chip(struct device *dev, uint8_t *buf, uint8_t len);
 #endif
 
 #ifdef CONFIG_LSM6DSL_TRIGGER

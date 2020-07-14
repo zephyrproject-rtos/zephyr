@@ -42,7 +42,7 @@ static int __attribute__((noinline)) add_one(int i)
 	return (i + 1);
 }
 
-static void execute_from_buffer(u8_t *dst)
+static void execute_from_buffer(uint8_t *dst)
 {
 	void *src = FUNC_TO_PTR(add_one);
 	int (*func)(int i) = PTR_TO_FUNC(dst);
@@ -76,7 +76,7 @@ static void execute_from_buffer(u8_t *dst)
  */
 static void test_write_ro(void)
 {
-	u32_t *ptr = (u32_t *)&rodata_var;
+	uint32_t *ptr = (uint32_t *)&rodata_var;
 
 	/*
 	 * Try writing to rodata.  Optimally, this triggers a fault.
@@ -147,7 +147,7 @@ static void test_exec_data(void)
  */
 static void test_exec_stack(void)
 {
-	u8_t stack_buf[BUF_SIZE] __aligned(sizeof(int));
+	uint8_t stack_buf[BUF_SIZE] __aligned(sizeof(int));
 
 	execute_from_buffer(stack_buf);
 	zassert_unreachable("Execute from stack did not fault");
@@ -161,7 +161,7 @@ static void test_exec_stack(void)
 #if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
 static void test_exec_heap(void)
 {
-	u8_t *heap_buf = k_malloc(BUF_SIZE);
+	uint8_t *heap_buf = k_malloc(BUF_SIZE);
 
 	execute_from_buffer(heap_buf);
 	k_free(heap_buf);

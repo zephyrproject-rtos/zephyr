@@ -44,9 +44,9 @@ LOG_MODULE_REGISTER(audio_io);
 static void audio_drv_thread(void);
 
 __attribute__((section(".dma_buffers"))) static struct {
-	s32_t	host_inout[HOST_INOUT_BUF_COUNT][HOST_FRAME_SAMPLES];
-	s32_t	spk_out[SPK_OUT_BUF_COUNT][SPK_FRAME_SAMPLES];
-	s32_t	mic_in[MIC_IN_BUF_COUNT][MIC_FRAME_SAMPLES];
+	int32_t	host_inout[HOST_INOUT_BUF_COUNT][HOST_FRAME_SAMPLES];
+	int32_t	spk_out[SPK_OUT_BUF_COUNT][SPK_FRAME_SAMPLES];
+	int32_t	mic_in[MIC_IN_BUF_COUNT][MIC_FRAME_SAMPLES];
 } audio_buffers;
 
 static struct device *codec_dev;
@@ -67,8 +67,8 @@ K_THREAD_DEFINE(audio_drv_thread_id, AUDIO_DRIVER_THREAD_STACKSIZE,
 
 static void audio_driver_process_audio_input(void)
 {
-	s32_t *host_in_buf;
-	s32_t *mic_in_buf;
+	int32_t *host_in_buf;
+	int32_t *mic_in_buf;
 	size_t size;
 	int ret;
 
@@ -96,8 +96,8 @@ static void audio_driver_process_audio_input(void)
 
 static void audio_driver_process_audio_output(void)
 {
-	s32_t *spk_out_buf;
-	s32_t *host_out_buf;
+	int32_t *spk_out_buf;
+	int32_t *host_out_buf;
 	int ret;
 
 	ret = k_mem_slab_alloc(&spk_out_mem_slab, (void *)&spk_out_buf,

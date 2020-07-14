@@ -43,7 +43,7 @@ static void mcux_mailbox_isr(void *arg)
 
 	cpu_id = MAILBOX_ID_THIS_CPU;
 
-	volatile u32_t value = MAILBOX_GetValue(config->base, cpu_id);
+	volatile uint32_t value = MAILBOX_GetValue(config->base, cpu_id);
 
 	__ASSERT(value, "spurious MAILBOX interrupt");
 
@@ -64,13 +64,13 @@ static void mcux_mailbox_isr(void *arg)
 }
 
 
-static int mcux_mailbox_ipm_send(struct device *d, int wait, u32_t id,
+static int mcux_mailbox_ipm_send(struct device *d, int wait, uint32_t id,
 			const void *data, int size)
 {
 	const struct mcux_mailbox_config *config = d->config_info;
 	MAILBOX_Type *base = config->base;
-	u32_t data32[MCUX_IPM_DATA_REGS]; /* Until we change API
-					   * to u32_t array
+	uint32_t data32[MCUX_IPM_DATA_REGS]; /* Until we change API
+					   * to uint32_t array
 					   */
 	unsigned int flags;
 	int i;
@@ -81,7 +81,7 @@ static int mcux_mailbox_ipm_send(struct device *d, int wait, u32_t id,
 		return -EINVAL;
 	}
 
-	if (size > MCUX_IPM_DATA_REGS * sizeof(u32_t)) {
+	if (size > MCUX_IPM_DATA_REGS * sizeof(uint32_t)) {
 		return -EMSGSIZE;
 	}
 
@@ -104,11 +104,11 @@ static int mcux_mailbox_ipm_max_data_size_get(struct device *d)
 {
 	ARG_UNUSED(d);
 	/* Only a single 32-bit register available */
-	return MCUX_IPM_DATA_REGS*sizeof(u32_t);
+	return MCUX_IPM_DATA_REGS*sizeof(uint32_t);
 }
 
 
-static u32_t mcux_mailbox_ipm_max_id_val_get(struct device *d)
+static uint32_t mcux_mailbox_ipm_max_id_val_get(struct device *d)
 {
 	ARG_UNUSED(d);
 	/* Only a single instance of MAILBOX available for this platform */

@@ -102,15 +102,15 @@ extern "C" {
 struct isotp_msg_id {
 	/** Message identifier*/
 	union {
-		u32_t std_id  : 11;
-		u32_t ext_id  : 29;
+		uint32_t std_id  : 11;
+		uint32_t ext_id  : 29;
 	};
 	/** extended address */
-	u8_t ext_addr;
+	uint8_t ext_addr;
 	/** Indicates the identifier type (standard or extended) */
-	u8_t id_type : 1;
+	uint8_t id_type : 1;
 	/** Indicates if extended addressing is used */
-	u8_t use_ext_addr : 1;
+	uint8_t use_ext_addr : 1;
 };
 
 /*
@@ -127,8 +127,8 @@ struct isotp_msg_id {
  * Used to pass the options to the bind and send functions.
  */
 struct isotp_fc_opts {
-	u8_t bs;    /**< Block size. Number of CF PDUs before next CF is sent */
-	u8_t stmin; /**< Minimum separation time. Min time between frames */
+	uint8_t bs;    /**< Block size. Number of CF PDUs before next CF is sent */
+	uint8_t stmin; /**< Minimum separation time. Min time between frames */
 };
 
 typedef void (*isotp_tx_callback_t)(int error_nr, void *arg);
@@ -190,7 +190,7 @@ void isotp_unbind(struct isotp_recv_ctx *ctx);
  * @retval ISOTP_WAIT_TIMEOUT when "timeout" timed out
  * @retval ISOTP_N_* on error
  */
-int isotp_recv(struct isotp_recv_ctx *ctx, u8_t *data, size_t len,
+int isotp_recv(struct isotp_recv_ctx *ctx, uint8_t *data, size_t len,
 	       k_timeout_t timeout);
 
 /**
@@ -236,7 +236,7 @@ int isotp_recv_net(struct isotp_recv_ctx *ctx, struct net_buf **buffer,
  * @retval ISOTP_N_* on error
  */
 int isotp_send(struct isotp_send_ctx *ctx, struct device *can_dev,
-	       const u8_t *data, size_t len,
+	       const uint8_t *data, size_t len,
 	       const struct isotp_msg_id *tx_addr,
 	       const struct isotp_msg_id *rx_addr,
 	       isotp_tx_callback_t complete_cb, void *cb_arg);
@@ -261,7 +261,7 @@ int isotp_send(struct isotp_send_ctx *ctx, struct device *can_dev,
  * @retval ISOTP_N_* on error
  */
 int isotp_send_ctx_buf(struct device *can_dev,
-		       const u8_t *data, size_t len,
+		       const uint8_t *data, size_t len,
 		       const struct isotp_msg_id *tx_addr,
 		       const struct isotp_msg_id *rx_addr,
 		       isotp_tx_callback_t complete_cb, void *cb_arg,
@@ -316,7 +316,7 @@ int isotp_send_net_ctx_buf(struct device *can_dev,
  * @retval ISOTP_* on error
  */
 int isotp_send_buf(struct device *can_dev,
-		   const u8_t *data, size_t len,
+		   const uint8_t *data, size_t len,
 		   const struct isotp_msg_id *tx_addr,
 		   const struct isotp_msg_id *rx_addr,
 		   isotp_tx_callback_t complete_cb, void *cb_arg,
@@ -332,12 +332,12 @@ struct isotp_callback {
 
 struct isotp_send_ctx {
 	int filter_id;
-	u32_t error_nr;
+	uint32_t error_nr;
 	struct device *can_dev;
 	union {
 		struct net_buf *buf;
 		struct {
-			const u8_t *data;
+			const uint8_t *data;
 			size_t len;
 		};
 	};
@@ -348,16 +348,16 @@ struct isotp_send_ctx {
 		struct k_sem fin_sem;
 	};
 	struct isotp_fc_opts opts;
-	u8_t state;
-	u8_t tx_backlog;
+	uint8_t state;
+	uint8_t tx_backlog;
 	struct isotp_msg_id rx_addr;
 	struct isotp_msg_id tx_addr;
-	u8_t wft;
-	u8_t bs;
-	u8_t sn : 4;
-	u8_t is_net_buf  : 1;
-	u8_t is_ctx_slab : 1;
-	u8_t has_callback: 1;
+	uint8_t wft;
+	uint8_t bs;
+	uint8_t sn : 4;
+	uint8_t is_net_buf  : 1;
+	uint8_t is_ctx_slab : 1;
+	uint8_t has_callback: 1;
 };
 
 struct isotp_recv_ctx {
@@ -366,7 +366,7 @@ struct isotp_recv_ctx {
 	struct net_buf *buf;
 	struct net_buf *act_frag;
 	sys_snode_t alloc_node;
-	u32_t length;
+	uint32_t length;
 	int error_nr;
 	struct k_work work;
 	struct _timeout timeout;
@@ -374,10 +374,10 @@ struct isotp_recv_ctx {
 	struct isotp_msg_id rx_addr;
 	struct isotp_msg_id tx_addr;
 	struct isotp_fc_opts opts;
-	u8_t state;
-	u8_t bs;
-	u8_t wft;
-	u8_t sn_expected : 4;
+	uint8_t state;
+	uint8_t bs;
+	uint8_t wft;
+	uint8_t sn_expected : 4;
 };
 
 /** @endcond */

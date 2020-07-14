@@ -461,7 +461,7 @@
 
 struct lsm6ds0_config {
 	char *i2c_master_dev_name;
-	u16_t i2c_slave_addr;
+	uint16_t i2c_slave_addr;
 };
 
 struct lsm6ds0_data {

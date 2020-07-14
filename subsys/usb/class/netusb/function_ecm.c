@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(usb_ecm);
 #define ECM_IN_EP_IDX			2
 
 
-static u8_t tx_buf[NET_ETH_MAX_FRAME_SIZE], rx_buf[NET_ETH_MAX_FRAME_SIZE];
+static uint8_t tx_buf[NET_ETH_MAX_FRAME_SIZE], rx_buf[NET_ETH_MAX_FRAME_SIZE];
 
 struct usb_cdc_ecm_config {
 #ifdef CONFIG_USB_COMPOSITE_DEVICE
@@ -164,12 +164,12 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_cdc_ecm_config cdc_ecm_cfg = {
 	},
 };
 
-static u8_t ecm_get_first_iface_number(void)
+static uint8_t ecm_get_first_iface_number(void)
 {
 	return cdc_ecm_cfg.if0.bInterfaceNumber;
 }
 
-static void ecm_int_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
+static void ecm_int_in(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
 	LOG_DBG("EP 0x%x status %d", ep, ep_status);
 }
@@ -192,8 +192,8 @@ static struct usb_ep_cfg_data ecm_ep_data[] = {
 	},
 };
 
-static int ecm_class_handler(struct usb_setup_packet *setup, s32_t *len,
-			     u8_t **data)
+static int ecm_class_handler(struct usb_setup_packet *setup, int32_t *len,
+			     uint8_t **data)
 {
 	LOG_DBG("len %d req_type 0x%x req 0x%x enabled %u",
 		*len, setup->bmRequestType, setup->bRequest,
@@ -224,8 +224,8 @@ static int ecm_class_handler(struct usb_setup_packet *setup, s32_t *len,
 static size_t ecm_eth_size(void *ecm_pkt, size_t len)
 {
 	struct net_eth_hdr *hdr = (void *)ecm_pkt;
-	u8_t *ip_data = (u8_t *)ecm_pkt + sizeof(struct net_eth_hdr);
-	u16_t ip_len;
+	uint8_t *ip_data = (uint8_t *)ecm_pkt + sizeof(struct net_eth_hdr);
+	uint16_t ip_len;
 
 	if (len < NET_IPV6H_LEN + sizeof(struct net_eth_hdr)) {
 		/* Too short */
@@ -277,7 +277,7 @@ static int ecm_send(struct net_pkt *pkt)
 	return 0;
 }
 
-static void ecm_read_cb(u8_t ep, int size, void *priv)
+static void ecm_read_cb(uint8_t ep, int size, void *priv)
 {
 	struct net_pkt *pkt;
 
@@ -339,11 +339,11 @@ static struct netusb_function ecm_function = {
 	.send_pkt = ecm_send,
 };
 
-static inline void ecm_status_interface(const u8_t *desc)
+static inline void ecm_status_interface(const uint8_t *desc)
 {
 	const struct usb_if_descriptor *if_desc = (void *)desc;
-	u8_t iface_num = if_desc->bInterfaceNumber;
-	u8_t alt_set = if_desc->bAlternateSetting;
+	uint8_t iface_num = if_desc->bInterfaceNumber;
+	uint8_t alt_set = if_desc->bAlternateSetting;
 
 	LOG_DBG("iface %u alt_set %u", iface_num, if_desc->bAlternateSetting);
 
@@ -358,7 +358,7 @@ static inline void ecm_status_interface(const u8_t *desc)
 
 static void ecm_status_cb(struct usb_cfg_data *cfg,
 			  enum usb_dc_status_code status,
-			  const u8_t *param)
+			  const uint8_t *param)
 {
 	ARG_UNUSED(cfg);
 
@@ -394,9 +394,9 @@ static void ecm_status_cb(struct usb_cfg_data *cfg,
 }
 
 struct usb_cdc_ecm_mac_descr {
-	u8_t bLength;
-	u8_t bDescriptorType;
-	u8_t bString[USB_BSTRING_LENGTH(CONFIG_USB_DEVICE_NETWORK_ECM_MAC)];
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint8_t bString[USB_BSTRING_LENGTH(CONFIG_USB_DEVICE_NETWORK_ECM_MAC)];
 } __packed;
 
 USBD_STRING_DESCR_DEFINE(primary) struct usb_cdc_ecm_mac_descr utf16le_mac = {
@@ -407,7 +407,7 @@ USBD_STRING_DESCR_DEFINE(primary) struct usb_cdc_ecm_mac_descr utf16le_mac = {
 };
 
 static void ecm_interface_config(struct usb_desc_header *head,
-				 u8_t bInterfaceNumber)
+				 uint8_t bInterfaceNumber)
 {
 	int idx = usb_get_str_descriptor_idx(&utf16le_mac);
 

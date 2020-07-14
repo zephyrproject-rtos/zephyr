@@ -20,8 +20,8 @@ static int sdl_filter(void *arg, SDL_Event *event)
 {
 	struct device *dev = arg;
 	struct sdl_data *data = dev->driver_data;
-	u32_t row = 0;
-	u32_t column = 0;
+	uint32_t row = 0;
+	uint32_t column = 0;
 	bool pressed = 0;
 
 	switch (event->type) {

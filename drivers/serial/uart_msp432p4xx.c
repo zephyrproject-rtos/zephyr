@@ -33,7 +33,7 @@ struct uart_msp432p4xx_dev_data_t {
 #define DEV_DATA(dev) \
 	((struct uart_msp432p4xx_dev_data_t * const)(dev)->driver_data)
 
-static struct device DEVICE_NAME_GET(uart_msp432p4xx_0);
+DEVICE_DECLARE(uart_msp432p4xx_0);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_msp432p4xx_isr(void *arg);
@@ -52,8 +52,8 @@ static struct uart_msp432p4xx_dev_data_t uart_msp432p4xx_dev_data_0 = {
 
 static int baudrate_set(eUSCI_UART_Config *config, uint32_t baudrate)
 {
-	u16_t prescalar;
-	u8_t first_mod_reg, second_mod_reg;
+	uint16_t prescalar;
+	uint8_t first_mod_reg, second_mod_reg;
 
 	switch (baudrate) {
 	case 1200:
@@ -175,7 +175,7 @@ static void uart_msp432p4xx_poll_out(struct device *dev,
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static int uart_msp432p4xx_fifo_fill(struct device *dev,
-						const u8_t *tx_data, int size)
+						const uint8_t *tx_data, int size)
 {
 	const struct uart_device_config *config = DEV_CFG(dev);
 	unsigned int num_tx = 0U;
@@ -194,7 +194,7 @@ static int uart_msp432p4xx_fifo_fill(struct device *dev,
 	return (int)num_tx;
 }
 
-static int uart_msp432p4xx_fifo_read(struct device *dev, u8_t *rx_data,
+static int uart_msp432p4xx_fifo_read(struct device *dev, uint8_t *rx_data,
 							const int size)
 {
 	const struct uart_device_config *config = DEV_CFG(dev);

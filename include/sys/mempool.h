@@ -18,8 +18,8 @@ struct sys_mem_pool {
 
 struct sys_mem_pool_block {
 	struct sys_mem_pool *pool;
-	u32_t level : 4;
-	u32_t block : 28;
+	uint32_t level : 4;
+	uint32_t block : 28;
 };
 
 /**

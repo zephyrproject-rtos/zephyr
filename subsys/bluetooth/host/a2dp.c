@@ -47,7 +47,7 @@ void a2d_reset(struct bt_a2dp *a2dp_conn)
 
 struct bt_a2dp *get_new_connection(struct bt_conn *conn)
 {
-	s8_t i, free;
+	int8_t i, free;
 
 	free = A2DP_NO_SPACE;
 
@@ -145,7 +145,7 @@ struct bt_a2dp *bt_a2dp_connect(struct bt_conn *conn)
 }
 
 int bt_a2dp_register_endpoint(struct bt_a2dp_endpoint *endpoint,
-			      u8_t media_type, u8_t role)
+			      uint8_t media_type, uint8_t role)
 {
 	int err;
 

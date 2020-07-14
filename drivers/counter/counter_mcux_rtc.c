@@ -59,13 +59,13 @@ static int mcux_rtc_stop(struct device *dev)
 	return 0;
 }
 
-static u32_t mcux_rtc_read(struct device *dev)
+static uint32_t mcux_rtc_read(struct device *dev)
 {
 	const struct counter_config_info *info = dev->config_info;
 	const struct mcux_rtc_config *config =
 		CONTAINER_OF(info, struct mcux_rtc_config, info);
 
-	u32_t ticks = config->base->TSR;
+	uint32_t ticks = config->base->TSR;
 
 	/*
 	 * Read TSR seconds twice in case it glitches during an update.
@@ -81,13 +81,13 @@ static u32_t mcux_rtc_read(struct device *dev)
 	return ticks;
 }
 
-static int mcux_rtc_get_value(struct device *dev, u32_t *ticks)
+static int mcux_rtc_get_value(struct device *dev, uint32_t *ticks)
 {
 	*ticks = mcux_rtc_read(dev);
 	return 0;
 }
 
-static int mcux_rtc_set_alarm(struct device *dev, u8_t chan_id,
+static int mcux_rtc_set_alarm(struct device *dev, uint8_t chan_id,
 			      const struct counter_alarm_cfg *alarm_cfg)
 {
 	const struct counter_config_info *info = dev->config_info;
@@ -95,8 +95,8 @@ static int mcux_rtc_set_alarm(struct device *dev, u8_t chan_id,
 		CONTAINER_OF(info, struct mcux_rtc_config, info);
 	struct mcux_rtc_data *data = dev->driver_data;
 
-	u32_t ticks = alarm_cfg->ticks;
-	u32_t current = mcux_rtc_read(dev);
+	uint32_t ticks = alarm_cfg->ticks;
+	uint32_t current = mcux_rtc_read(dev);
 
 	LOG_DBG("Current time is %d ticks", current);
 
@@ -127,7 +127,7 @@ static int mcux_rtc_set_alarm(struct device *dev, u8_t chan_id,
 	return 0;
 }
 
-static int mcux_rtc_cancel_alarm(struct device *dev, u8_t chan_id)
+static int mcux_rtc_cancel_alarm(struct device *dev, uint8_t chan_id)
 {
 	struct mcux_rtc_data *data = dev->driver_data;
 
@@ -166,7 +166,7 @@ static int mcux_rtc_set_top_value(struct device *dev,
 	return 0;
 }
 
-static u32_t mcux_rtc_get_pending_int(struct device *dev)
+static uint32_t mcux_rtc_get_pending_int(struct device *dev)
 {
 	const struct counter_config_info *info = dev->config_info;
 	const struct mcux_rtc_config *config =
@@ -175,14 +175,14 @@ static u32_t mcux_rtc_get_pending_int(struct device *dev)
 	return RTC_GetStatusFlags(config->base) & RTC_SR_TAF_MASK;
 }
 
-static u32_t mcux_rtc_get_top_value(struct device *dev)
+static uint32_t mcux_rtc_get_top_value(struct device *dev)
 {
 	const struct counter_config_info *info = dev->config_info;
 
 	return info->max_top_value;
 }
 
-static u32_t mcux_rtc_get_max_relative_alarm(struct device *dev)
+static uint32_t mcux_rtc_get_max_relative_alarm(struct device *dev)
 {
 	const struct counter_config_info *info = dev->config_info;
 
@@ -197,7 +197,7 @@ static void mcux_rtc_isr(void *arg)
 		CONTAINER_OF(info, struct mcux_rtc_config, info);
 	struct mcux_rtc_data *data = dev->driver_data;
 	counter_alarm_callback_t cb;
-	u32_t current = mcux_rtc_read(dev);
+	uint32_t current = mcux_rtc_read(dev);
 
 
 	LOG_DBG("Current time is %d ticks", current);

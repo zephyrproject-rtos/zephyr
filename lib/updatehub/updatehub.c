@@ -5,8 +5,7 @@
  */
 
 #include <logging/log.h>
-
-LOG_MODULE_REGISTER(updatehub);
+LOG_MODULE_REGISTER(updatehub, CONFIG_UPDATEHUB_LOG_LEVEL);
 
 #include <zephyr.h>
 
@@ -27,6 +26,7 @@ LOG_MODULE_REGISTER(updatehub);
 #include "updatehub_priv.h"
 #include "updatehub_firmware.h"
 #include "updatehub_device.h"
+#include "updatehub_timer.h"
 
 #if defined(CONFIG_UPDATEHUB_DTLS)
 #define CA_CERTIFICATE_TAG 1
@@ -43,7 +43,6 @@ LOG_MODULE_REGISTER(updatehub);
  * otherwise download size will be less than real size.
  */
 #define MAX_DOWNLOAD_DATA (MAX_PAYLOAD_SIZE + 32)
-#define COAP_MAX_RETRY 3
 #define MAX_IP_SIZE 30
 
 #define SHA256_HEX_DIGEST_SIZE	((TC_SHA256_DIGEST_SIZE * 2) + 1)
@@ -60,8 +59,8 @@ static struct updatehub_context {
 	struct flash_img_context flash_ctx;
 	struct tc_sha256_state_struct sha256sum;
 	enum updatehub_response code_status;
-	u8_t uri_path[MAX_PATH_SIZE];
-	u8_t payload[MAX_PAYLOAD_SIZE];
+	uint8_t uri_path[MAX_PATH_SIZE];
+	uint8_t payload[MAX_PAYLOAD_SIZE];
 	int downloaded_size;
 	struct pollfd fds[1];
 	int sock;
@@ -76,7 +75,7 @@ static struct update_info {
 
 static struct k_delayed_work updatehub_work_handle;
 
-static int bin2hex_str(u8_t *bin, size_t bin_len, char *str, size_t str_buf_len)
+static int bin2hex_str(uint8_t *bin, size_t bin_len, char *str, size_t str_buf_len)
 {
 	if (bin == NULL || str == NULL) {
 		return -1;
@@ -154,6 +153,8 @@ static bool start_coap_client(void)
 	int resolve_attempts = 10;
 	int ret = -1;
 
+	memset(&hints, 0, sizeof(hints));
+
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
 		hints.ai_family = AF_INET6;
 		hints.ai_socktype = SOCK_STREAM;
@@ -229,8 +230,8 @@ static int send_request(enum coap_msgtype msgtype, enum coap_method method,
 {
 	struct coap_packet request_packet;
 	int ret = -1;
-	u8_t content_application_json = 50;
-	u8_t *data = k_malloc(MAX_PAYLOAD_SIZE);
+	uint8_t content_application_json = 50;
+	uint8_t *data = k_malloc(MAX_PAYLOAD_SIZE);
 
 	if (data == NULL) {
 		LOG_ERR("Could not alloc data memory");
@@ -339,7 +340,7 @@ error:
 
 static bool install_update_cb_sha256(void)
 {
-	u8_t hash[TC_SHA256_DIGEST_SIZE];
+	uint8_t hash[TC_SHA256_DIGEST_SIZE];
 	char sha256[SHA256_HEX_DIGEST_SIZE];
 
 	if (tc_sha256_final(hash, &ctx.sha256sum) < 1) {
@@ -363,10 +364,33 @@ static bool install_update_cb_sha256(void)
 	return true;
 }
 
+static int install_update_cb_check_blk_num(struct coap_packet *resp)
+{
+	int blk_num;
+	int blk2_opt;
+
+	blk2_opt = coap_get_option_int(resp, COAP_OPTION_BLOCK2);
+
+	if ((resp->max_len - resp->offset) <= 0 || (blk2_opt < 0)) {
+		LOG_DBG("Invalid data received or block number is < 0");
+		return -ENOENT;
+	}
+
+	blk_num = GET_BLOCK_NUM(blk2_opt);
+
+	if (blk_num == updatehub_blk_get(UPDATEHUB_BLK_INDEX)) {
+		updatehub_blk_inc(UPDATEHUB_BLK_INDEX);
+
+		return 0;
+	}
+
+	return -EAGAIN;
+}
+
 static void install_update_cb(void)
 {
 	struct coap_packet response_packet;
-	u8_t *data = k_malloc(MAX_DOWNLOAD_DATA);
+	uint8_t *data = k_malloc(MAX_DOWNLOAD_DATA);
 	int rcvd = -1;
 
 	if (data == NULL) {
@@ -389,6 +413,15 @@ static void install_update_cb(void)
 		ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
 		goto cleanup;
 	}
+
+	if (install_update_cb_check_blk_num(&response_packet) < 0) {
+		ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
+		goto cleanup;
+	}
+
+	updatehub_tmr_stop();
+	updatehub_blk_set(UPDATEHUB_BLK_ATTEMPT, 0);
+	updatehub_blk_set(UPDATEHUB_BLK_TX_AVAILABLE, 1);
 
 	ctx.downloaded_size = ctx.downloaded_size +
 			      (response_packet.max_len - response_packet.offset);
@@ -438,9 +471,6 @@ cleanup:
 
 static enum updatehub_response install_update(void)
 {
-	int verification_download = 0;
-	int attempts_download = 0;
-
 	if (boot_erase_img_bank(FLASH_AREA_ID(image_1)) != 0) {
 		LOG_ERR("Failed to init flash and erase second slot");
 		ctx.code_status = UPDATEHUB_FLASH_INIT_ERROR;
@@ -458,7 +488,8 @@ static enum updatehub_response install_update(void)
 		goto error;
 	}
 
-	if (coap_block_transfer_init(&ctx.block, COAP_BLOCK_1024,
+	if (coap_block_transfer_init(&ctx.block,
+				     CONFIG_UPDATEHUB_COAP_BLOCK_SIZE_EXP,
 				     update_info.image_size) < 0) {
 		LOG_ERR("Unable init block transfer");
 		ctx.code_status = UPDATEHUB_NETWORKING_ERROR;
@@ -468,29 +499,42 @@ static enum updatehub_response install_update(void)
 	flash_img_init(&ctx.flash_ctx);
 
 	ctx.downloaded_size = 0;
+	updatehub_blk_set(UPDATEHUB_BLK_ATTEMPT, 0);
+	updatehub_blk_set(UPDATEHUB_BLK_INDEX, 0);
+	updatehub_blk_set(UPDATEHUB_BLK_TX_AVAILABLE, 1);
 
 	while (ctx.downloaded_size != ctx.block.total_size) {
-		verification_download = ctx.downloaded_size;
+		if (updatehub_blk_get(UPDATEHUB_BLK_TX_AVAILABLE)) {
+			if (send_request(COAP_TYPE_CON, COAP_METHOD_GET,
+					 UPDATEHUB_DOWNLOAD) < 0) {
+				ctx.code_status = UPDATEHUB_NETWORKING_ERROR;
+				goto cleanup;
+			}
 
-		if (send_request(COAP_TYPE_CON, COAP_METHOD_GET,
-				 UPDATEHUB_DOWNLOAD) < 0) {
-			ctx.code_status = UPDATEHUB_NETWORKING_ERROR;
-			goto cleanup;
+			updatehub_blk_set(UPDATEHUB_BLK_TX_AVAILABLE, 0);
+			updatehub_blk_inc(UPDATEHUB_BLK_ATTEMPT);
+			updatehub_tmr_start();
 		}
 
 		install_update_cb();
 
-		if (ctx.code_status != UPDATEHUB_OK) {
+		if (ctx.code_status == UPDATEHUB_OK) {
+			continue;
+		}
+
+		if (ctx.code_status != UPDATEHUB_DOWNLOAD_ERROR &&
+		    ctx.code_status != UPDATEHUB_NETWORKING_ERROR) {
+			LOG_DBG("status: %d", ctx.code_status);
 			goto cleanup;
 		}
 
-		if (verification_download == ctx.downloaded_size) {
-			if (attempts_download == COAP_MAX_RETRY) {
-				LOG_ERR("Could not get the packet");
-				ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
-				goto cleanup;
-			}
-			attempts_download++;
+		if (updatehub_blk_get(UPDATEHUB_BLK_ATTEMPT) ==
+		    CONFIG_UPDATEHUB_COAP_MAX_RETRY) {
+			updatehub_tmr_stop();
+
+			LOG_ERR("Could not get the packet");
+			ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
+			goto cleanup;
 		}
 	}
 
@@ -623,6 +667,7 @@ static void probe_cb(char *metadata, size_t metadata_size)
 		return;
 	}
 
+	memset(metadata, 0, metadata_size);
 	memcpy(metadata, reply.data + reply.offset,
 	       reply.max_len - reply.offset);
 
@@ -716,6 +761,9 @@ enum updatehub_response updatehub_probe(void)
 		goto cleanup;
 	}
 
+	LOG_DBG("metadata size: %d", strlen(metadata));
+	LOG_HEXDUMP_DBG(metadata, MAX_DOWNLOAD_DATA, "metadata");
+
 	memcpy(metadata_copy, metadata, strlen(metadata));
 	if (json_obj_parse(metadata, strlen(metadata),
 			   recv_probe_sh_array_descr,
@@ -744,6 +792,7 @@ enum updatehub_response updatehub_probe(void)
 		       metadata_any_boards.objects[1].objects.sha256sum,
 		       SHA256_HEX_DIGEST_SIZE);
 		update_info.image_size = metadata_any_boards.objects[1].objects.size;
+		LOG_DBG("metadata_any: %s", update_info.sha256sum_image);
 	} else {
 		if (!is_compatible_hardware(&metadata_some_boards)) {
 			LOG_ERR("Incompatible hardware");
@@ -753,7 +802,7 @@ enum updatehub_response updatehub_probe(void)
 		}
 
 		sha256size = strlen(
-			metadata_any_boards.objects[1].objects.sha256sum) + 1;
+			metadata_some_boards.objects[1].objects.sha256sum) + 1;
 
 		if (sha256size != SHA256_HEX_DIGEST_SIZE) {
 			LOG_ERR("SHA256 size is invalid");
@@ -766,6 +815,7 @@ enum updatehub_response updatehub_probe(void)
 		       SHA256_HEX_DIGEST_SIZE);
 		update_info.image_size =
 			metadata_some_boards.objects[1].objects.size;
+		LOG_DBG("metadata_some: %s", update_info.sha256sum_image);
 	}
 
 	ctx.code_status = UPDATEHUB_HAS_UPDATE;

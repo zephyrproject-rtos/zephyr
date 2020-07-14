@@ -64,7 +64,7 @@ void log_frontend_3(const char *str,
  */
 void log_frontend_n(const char *str,
 		    log_arg_t *args,
-		    u32_t narg,
+		    uint32_t narg,
 		    struct log_msg_ids src_level);
 
 /** @brief Hexdump log.
@@ -75,8 +75,8 @@ void log_frontend_n(const char *str,
  * @param src_level	Log identification.
  */
 void log_frontend_hexdump(const char *str,
-			  const u8_t *data,
-			  u32_t length,
+			  const uint8_t *data,
+			  uint32_t length,
 			  struct log_msg_ids src_level);
 
 

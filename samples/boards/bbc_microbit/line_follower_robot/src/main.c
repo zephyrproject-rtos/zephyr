@@ -24,7 +24,7 @@ unsigned char speed_hex[1];
 
 /* Setup gpio of the microbit board */
 static void line_detection(struct device *dev, struct gpio_callback *cb,
-			   u32_t pins)
+			   uint32_t pins)
 {
 	left_line[0] = gpio_pin_get_raw(gpio, EXT_P13_GPIO_PIN);
 	right_line[0] = gpio_pin_get_raw(gpio, EXT_P14_GPIO_PIN);

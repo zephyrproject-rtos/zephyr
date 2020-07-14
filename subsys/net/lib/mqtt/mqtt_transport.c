@@ -54,8 +54,8 @@ int mqtt_transport_connect(struct mqtt_client *client)
 	return transport_fn[client->transport.type].connect(client);
 }
 
-int mqtt_transport_write(struct mqtt_client *client, const u8_t *data,
-			 u32_t datalen)
+int mqtt_transport_write(struct mqtt_client *client, const uint8_t *data,
+			 uint32_t datalen)
 {
 	return transport_fn[client->transport.type].write(client, data,
 							  datalen);
@@ -67,7 +67,7 @@ int mqtt_transport_write_msg(struct mqtt_client *client,
 	return transport_fn[client->transport.type].write_msg(client, message);
 }
 
-int mqtt_transport_read(struct mqtt_client *client, u8_t *data, u32_t buflen,
+int mqtt_transport_read(struct mqtt_client *client, uint8_t *data, uint32_t buflen,
 			bool shall_block)
 {
 	return transport_fn[client->transport.type].read(client, data, buflen,

@@ -66,12 +66,32 @@ static K_THREAD_STACK_DEFINE(recv_thread_stack, CONFIG_BT_RX_STACK_SIZE);
 static struct k_poll_signal hbuf_signal =
 		K_POLL_SIGNAL_INITIALIZER(hbuf_signal);
 static sys_slist_t hbuf_pend;
-static s32_t hbuf_count;
+static int32_t hbuf_count;
 #endif
 
-static struct net_buf *process_prio_evt(struct node_rx_pdu *node_rx)
+static struct net_buf *process_prio_evt(struct node_rx_pdu *node_rx,
+					uint8_t *evt_flags)
 {
-	/* Currently there are no events processed */
+#if defined(CONFIG_BT_CONN)
+	if (node_rx->hdr.user_meta == HCI_CLASS_EVT_CONNECTION) {
+		uint16_t handle;
+		struct pdu_data *pdu_data = PDU_DATA(node_rx);
+
+		handle = node_rx->hdr.handle;
+		if (node_rx->hdr.type == NODE_RX_TYPE_TERMINATE) {
+			struct net_buf *buf;
+
+			buf = bt_buf_get_evt(BT_HCI_EVT_DISCONN_COMPLETE, false,
+					     K_FOREVER);
+			hci_disconn_complete_encode(pdu_data, handle, buf);
+			hci_disconn_complete_process(handle);
+			*evt_flags = BT_HCI_EVT_FLAG_RECV_PRIO | BT_HCI_EVT_FLAG_RECV;
+			return buf;
+		}
+	}
+#endif /* CONFIG_BT_CONN */
+
+	*evt_flags = BT_HCI_EVT_FLAG_RECV;
 	return NULL;
 }
 
@@ -88,8 +108,8 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 	while (1) {
 		struct node_rx_pdu *node_rx;
 		struct net_buf *buf;
-		u8_t num_cmplt;
-		u16_t handle;
+		uint8_t num_cmplt;
+		uint16_t handle;
 
 		/* While there are completed rx nodes */
 		while ((num_cmplt = ll_rx_get((void *)&node_rx, &handle))) {
@@ -105,6 +125,8 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 		}
 
 		if (node_rx) {
+			uint8_t evt_flags;
+
 			/* Until now we've only peeked, now we really do
 			 * the handover
 			 */
@@ -113,15 +135,24 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 			/* Find out and store the class for this node */
 			node_rx->hdr.user_meta = hci_get_class(node_rx);
 
-			buf = process_prio_evt(node_rx);
+			buf = process_prio_evt(node_rx, &evt_flags);
 			if (buf) {
-
-				node_rx->hdr.next = NULL;
-				ll_rx_mem_release((void **)&node_rx);
-
 				BT_DBG("Priority event");
+				if (!(evt_flags & BT_HCI_EVT_FLAG_RECV)) {
+					node_rx->hdr.next = NULL;
+					ll_rx_mem_release((void **)&node_rx);
+				}
+
 				bt_recv_prio(buf);
-			} else {
+				/* bt_recv_prio would not release normal evt
+				 * buf.
+				 */
+				if (evt_flags & BT_HCI_EVT_FLAG_RECV) {
+					net_buf_unref(buf);
+				}
+			}
+
+			if (evt_flags & BT_HCI_EVT_FLAG_RECV) {
 				/* Send the rx node up to Host thread,
 				 * recv_thread()
 				 */
@@ -149,7 +180,7 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 }
 
 static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
-					  s8_t class)
+					  int8_t class)
 {
 	struct net_buf *buf = NULL;
 
@@ -189,7 +220,7 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 
 static inline struct net_buf *process_node(struct node_rx_pdu *node_rx)
 {
-	u8_t class = node_rx->hdr.user_meta;
+	uint8_t class = node_rx->hdr.user_meta;
 	struct net_buf *buf = NULL;
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
@@ -231,9 +262,9 @@ static inline struct net_buf *process_hbuf(struct node_rx_pdu *n)
 {
 	/* shadow total count in case of preemption */
 	struct node_rx_pdu *node_rx = NULL;
-	s32_t hbuf_total = hci_hbuf_total;
+	int32_t hbuf_total = hci_hbuf_total;
 	struct net_buf *buf = NULL;
-	u8_t class;
+	uint8_t class;
 	int reset;
 
 	reset = atomic_test_and_clear_bit(&hci_state_mask, HCI_STATE_BIT_RESET);
@@ -419,7 +450,7 @@ static int acl_handle(struct net_buf *buf)
 
 static int hci_driver_send(struct net_buf *buf)
 {
-	u8_t type;
+	uint8_t type;
 	int err;
 
 	BT_DBG("enter");
@@ -455,13 +486,13 @@ static int hci_driver_send(struct net_buf *buf)
 
 static int hci_driver_open(void)
 {
-	u32_t err;
+	uint32_t err;
 
 	DEBUG_INIT();
 
 	err = ll_init(&sem_prio_recv);
 	if (err) {
-		BT_ERR("LL initialization failed: %u", err);
+		BT_ERR("LL initialization failed: %d", err);
 		return err;
 	}
 

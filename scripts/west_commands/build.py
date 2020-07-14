@@ -6,6 +6,7 @@ import argparse
 import os
 import pathlib
 import shlex
+import sys
 
 from west import log
 from west.configuration import config
@@ -24,13 +25,23 @@ west build [-h] [-b BOARD] [-d BUILD_DIR]
            [source_dir] -- [cmake_opt [cmake_opt ...]]
 '''
 
-BUILD_DESCRIPTION = '''\
+BUILD_DESCRIPTION = f'''\
 Convenience wrapper for building Zephyr applications.
 
+{FIND_BUILD_DIR_DESCRIPTION}
+
 positional arguments:
-  source_dir            Use this path as the source directory
-  cmake_opt             Extra options to pass to CMake; implies -c
+  source_dir            application source directory
+  cmake_opt             extra options to pass to cmake; implies -c
+                        (these must come after "--" as shown above)
 '''
+
+PRISTINE_DESCRIPTION = """\
+A "pristine" build directory is empty. The -p option controls
+whether the build directory is made pristine before the build
+is done. A bare '--pristine' with no value is the same as
+--pristine=always. Setting --pristine=auto uses heuristics to
+guess if a pristine build may be necessary."""
 
 def _banner(msg):
     log.inf('-- west build: ' + msg, colorize=True)
@@ -86,36 +97,34 @@ class Build(Forceable):
         # Remember to update scripts/west-completion.bash if you add or remove
         # flags
 
-        parser.add_argument('-b', '--board', help='Board to build for')
+        parser.add_argument('-b', '--board', help='board to build for')
         # Hidden option for backwards compatibility
         parser.add_argument('-s', '--source-dir', help=argparse.SUPPRESS)
         parser.add_argument('-d', '--build-dir',
-                            help='Build directory. ' +
-                            FIND_BUILD_DIR_DESCRIPTION +
-                            " Otherwise the default build directory is " +
-                            "created and used.")
-        parser.add_argument('-t', '--target',
-                            help='''Build system target ("usage"
-                            for more info; and "help" for a list)''')
-        parser.add_argument('-p', '--pristine', choices=['auto', 'always',
-                            'never'], action=AlwaysIfMissing, nargs='?',
-                            help='''Control whether the build folder is made
-                            pristine before running CMake. --pristine is the
-                            same as --pristine=always. If 'auto', it will
-                            be made pristine only if needed.''')
-        parser.add_argument('-c', '--cmake', action='store_true',
-                            help='Force CMake to run')
-        parser.add_argument('--cmake-only', action='store_true',
-                            help="Just run CMake; don't build. Implies -c.")
-        parser.add_argument('-n', '--just-print', '--dry-run', '--recon',
-                            dest='dry_run', action='store_true',
-                            help='''Just print the build commands; don't run
-                            them''')
-        parser.add_argument('-o', '--build-opt', default=[], action='append',
-                            help='''Options to pass to the build tool.
-                            May be given more than once to append multiple
-                            values.''')
+                            help='build directory to create or use')
         self.add_force_arg(parser)
+
+        group = parser.add_argument_group('cmake and build tool')
+        group.add_argument('-c', '--cmake', action='store_true',
+                           help='force a cmake run')
+        group.add_argument('--cmake-only', action='store_true',
+                           help="just run cmake; don't build (implies -c)")
+        group.add_argument('-t', '--target',
+                           help='''run this build system target (try "-t usage"
+                           or "-t help")''')
+        group.add_argument('-o', '--build-opt', default=[], action='append',
+                           help='''options to pass to the build tool
+                           (make or ninja); may be given more than once''')
+        group.add_argument('-n', '--just-print', '--dry-run', '--recon',
+                            dest='dry_run', action='store_true',
+                            help="just print build commands; don't run them")
+
+        group = parser.add_argument_group('pristine builds',
+                                          PRISTINE_DESCRIPTION)
+        group.add_argument('-p', '--pristine', choices=['auto', 'always',
+                            'never'], action=AlwaysIfMissing, nargs='?',
+                            help='pristine build folder setting')
+
         return parser
 
     def do_run(self, args, remainder):
@@ -396,7 +405,8 @@ class Build(Forceable):
         # to Just Work:
         #
         # west build -- -DOVERLAY_CONFIG=relative-path.conf
-        final_cmake_args = ['-B{}'.format(self.build_dir),
+        final_cmake_args = ['-DWEST_PYTHON={}'.format(sys.executable),
+                            '-B{}'.format(self.build_dir),
                             '-S{}'.format(self.source_dir),
                             '-G{}'.format(config_get('generator',
                                                      DEFAULT_CMAKE_GENERATOR))]

@@ -9,7 +9,7 @@
 
 static char enc_buf[128];
 static int enc_buf_cnt;
-static u8_t test_rwbs = 1U;
+static uint8_t test_rwbs = 1U;
 #define ENC_CTX_VAL 0x2018
 
 static int write_handler(void *ctx, off_t off, char const *buf, size_t len)
@@ -26,7 +26,7 @@ static int write_handler(void *ctx, off_t off, char const *buf, size_t len)
 }
 
 static void test_encoding_iteration(char const *name, char const *value,
-				    char const *pattern, int exp_len, u8_t wbs)
+				    char const *pattern, int exp_len, uint8_t wbs)
 {
 	int rc;
 
@@ -93,7 +93,7 @@ static int read_handle(void *ctx, off_t off, char *buf, size_t *len)
 
 char read_buf[128+10];
 
-static void test_raw_read_iteration(u8_t rbs, size_t off, size_t len)
+static void test_raw_read_iteration(uint8_t rbs, size_t off, size_t len)
 {
 	test_rwbs = rbs;
 	size_t len_read;
@@ -147,7 +147,7 @@ void test_setting_raw_read(void)
 
 static void test_val_read_iteration(char const *src, size_t src_len,
 				    char const *pattern, size_t pattern_len,
-				    size_t len, u8_t rbs, size_t off,
+				    size_t len, uint8_t rbs, size_t off,
 				    size_t val_off)
 {
 	size_t len_read;

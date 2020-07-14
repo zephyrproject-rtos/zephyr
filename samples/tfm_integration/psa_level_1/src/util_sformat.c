@@ -10,7 +10,7 @@
 
 static void sf_hex_ascii(unsigned char *data, size_t len, unsigned char nonvis)
 {
-	u32_t idx;
+	uint32_t idx;
 
 	/* Render printable characters. */
 	idx = 0;
@@ -24,10 +24,10 @@ static void sf_hex_ascii(unsigned char *data, size_t len, unsigned char nonvis)
 void sf_hex_tabulate_16(struct sf_hex_tbl_fmt *fmt, unsigned char *data,
 			size_t len)
 {
-	u32_t idx;
-	u32_t cpos;     /* Current position. */
-	u32_t ca;       /* Current address. */
-	u32_t ea;       /* End address. */
+	uint32_t idx;
+	uint32_t cpos;     /* Current position. */
+	uint32_t ca;       /* Current address. */
+	uint32_t ea;       /* End address. */
 
 	if (!len) {
 		return;

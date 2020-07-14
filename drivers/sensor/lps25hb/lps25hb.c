@@ -20,7 +20,7 @@
 
 LOG_MODULE_REGISTER(LPS25HB, CONFIG_SENSOR_LOG_LEVEL);
 
-static inline int lps25hb_power_ctrl(struct device *dev, u8_t value)
+static inline int lps25hb_power_ctrl(struct device *dev, uint8_t value)
 {
 	struct lps25hb_data *data = dev->driver_data;
 	const struct lps25hb_config *config = dev->config_info;
@@ -31,7 +31,7 @@ static inline int lps25hb_power_ctrl(struct device *dev, u8_t value)
 				   value << LPS25HB_SHIFT_CTRL_REG1_PD);
 }
 
-static inline int lps25hb_set_odr_raw(struct device *dev, u8_t odr)
+static inline int lps25hb_set_odr_raw(struct device *dev, uint8_t odr)
 {
 	struct lps25hb_data *data = dev->driver_data;
 	const struct lps25hb_config *config = dev->config_info;
@@ -47,7 +47,7 @@ static int lps25hb_sample_fetch(struct device *dev,
 {
 	struct lps25hb_data *data = dev->driver_data;
 	const struct lps25hb_config *config = dev->config_info;
-	u8_t out[5];
+	uint8_t out[5];
 	int offset;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
@@ -61,30 +61,30 @@ static int lps25hb_sample_fetch(struct device *dev,
 		}
 	}
 
-	data->sample_press = (s32_t)((u32_t)(out[0]) |
-					((u32_t)(out[1]) << 8) |
-					((u32_t)(out[2]) << 16));
-	data->sample_temp = (s16_t)((u16_t)(out[3]) |
-					((u16_t)(out[4]) << 8));
+	data->sample_press = (int32_t)((uint32_t)(out[0]) |
+					((uint32_t)(out[1]) << 8) |
+					((uint32_t)(out[2]) << 16));
+	data->sample_temp = (int16_t)((uint16_t)(out[3]) |
+					((uint16_t)(out[4]) << 8));
 
 	return 0;
 }
 
 static inline void lps25hb_press_convert(struct sensor_value *val,
-					 s32_t raw_val)
+					 int32_t raw_val)
 {
 	/* val = raw_val / 40960 */
 	val->val1 = raw_val / 40960;
-	val->val2 = ((s32_t)raw_val * 1000000 / 40960) % 1000000;
+	val->val2 = ((int32_t)raw_val * 1000000 / 40960) % 1000000;
 }
 
 static inline void lps25hb_temp_convert(struct sensor_value *val,
-					s16_t raw_val)
+					int16_t raw_val)
 {
-	s32_t uval;
+	int32_t uval;
 
 	/* val = raw_val / 480 + 42.5 */
-	uval = (s32_t)raw_val * 1000000 / 480 + 42500000;
+	uval = (int32_t)raw_val * 1000000 / 480 + 42500000;
 	val->val1 = (raw_val * 10 / 480 + 425) / 10;
 	val->val2 = uval % 1000000;
 }
@@ -115,7 +115,7 @@ static int lps25hb_init_chip(struct device *dev)
 {
 	struct lps25hb_data *data = dev->driver_data;
 	const struct lps25hb_config *config = dev->config_info;
-	u8_t chip_id;
+	uint8_t chip_id;
 
 	lps25hb_power_ctrl(dev, 0);
 	k_busy_wait(USEC_PER_MSEC * 50U);

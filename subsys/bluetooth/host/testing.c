@@ -30,7 +30,7 @@ void bt_test_cb_unregister(struct bt_test_cb *cb)
 }
 
 #if defined(CONFIG_BT_MESH)
-void bt_test_mesh_net_recv(u8_t ttl, u8_t ctl, u16_t src, u16_t dst,
+void bt_test_mesh_net_recv(uint8_t ttl, uint8_t ctl, uint16_t src, uint16_t dst,
 			   const void *payload, size_t payload_len)
 {
 	struct bt_test_cb *cb;
@@ -43,8 +43,8 @@ void bt_test_mesh_net_recv(u8_t ttl, u8_t ctl, u16_t src, u16_t dst,
 	}
 }
 
-void bt_test_mesh_model_bound(u16_t addr, struct bt_mesh_model *model,
-			      u16_t key_idx)
+void bt_test_mesh_model_bound(uint16_t addr, struct bt_mesh_model *model,
+			      uint16_t key_idx)
 {
 	struct bt_test_cb *cb;
 
@@ -55,8 +55,8 @@ void bt_test_mesh_model_bound(u16_t addr, struct bt_mesh_model *model,
 	}
 }
 
-void bt_test_mesh_model_unbound(u16_t addr, struct bt_mesh_model *model,
-				u16_t key_idx)
+void bt_test_mesh_model_unbound(uint16_t addr, struct bt_mesh_model *model,
+				uint16_t key_idx)
 {
 	struct bt_test_cb *cb;
 
@@ -67,7 +67,7 @@ void bt_test_mesh_model_unbound(u16_t addr, struct bt_mesh_model *model,
 	}
 }
 
-void bt_test_mesh_prov_invalid_bearer(u8_t opcode)
+void bt_test_mesh_prov_invalid_bearer(uint8_t opcode)
 {
 	struct bt_test_cb *cb;
 
@@ -89,14 +89,14 @@ void bt_test_mesh_trans_incomp_timer_exp(void)
 	}
 }
 
-int bt_test_mesh_lpn_group_add(u16_t group)
+int bt_test_mesh_lpn_group_add(uint16_t group)
 {
 	bt_mesh_lpn_group_add(group);
 
 	return 0;
 }
 
-int bt_test_mesh_lpn_group_remove(u16_t *groups, size_t groups_count)
+int bt_test_mesh_lpn_group_remove(uint16_t *groups, size_t groups_count)
 {
 	bt_mesh_lpn_group_del(groups, groups_count);
 

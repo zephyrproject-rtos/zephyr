@@ -76,14 +76,14 @@ enum rf2xx_trx_model_t {
 
 struct rf2xx_dt_gpio_t {
 	const char *devname;
-	u32_t pin;
-	u32_t flags;
+	uint32_t pin;
+	uint32_t flags;
 };
 
 struct rf2xx_dt_spi_t {
 	const char *devname;
-	u32_t freq;
-	u32_t addr;
+	uint32_t freq;
+	uint32_t addr;
 	struct rf2xx_dt_gpio_t cs;
 };
 
@@ -96,8 +96,8 @@ struct rf2xx_config {
 
 	struct rf2xx_dt_spi_t spi;
 
-	u8_t inst;
-	u8_t has_mac;
+	uint8_t inst;
+	uint8_t has_mac;
 };
 
 struct rf2xx_context {
@@ -124,12 +124,12 @@ struct rf2xx_context {
 	enum rf2xx_trx_model_t trx_model;
 	enum rf2xx_trx_state_trac_t trx_trac;
 
-	u8_t mac_addr[8];
-	u8_t pkt_lqi;
-	u8_t pkt_ed;
-	s8_t trx_rssi_base;
-	u8_t trx_version;
-	u8_t rx_phr;
+	uint8_t mac_addr[8];
+	uint8_t pkt_lqi;
+	uint8_t pkt_ed;
+	int8_t trx_rssi_base;
+	uint8_t trx_version;
+	uint8_t rx_phr;
 };
 
 #endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_RF2XX_H_ */

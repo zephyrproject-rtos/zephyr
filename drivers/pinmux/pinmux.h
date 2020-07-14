@@ -16,12 +16,12 @@ extern "C" {
 #endif
 
 struct pin_config {
-	u8_t pin_num;
-	u32_t mode;
+	uint8_t pin_num;
+	uint32_t mode;
 };
 
 struct pinmux_config {
-	u32_t	base_address;
+	uint32_t	base_address;
 };
 
 #ifdef __cplusplus

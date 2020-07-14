@@ -17,7 +17,7 @@ struct i2c_stm32_config {
 #endif
 	struct stm32_pclken pclken;
 	I2C_TypeDef *i2c;
-	u32_t bitrate;
+	uint32_t bitrate;
 };
 
 struct i2c_stm32_data {
@@ -25,9 +25,9 @@ struct i2c_stm32_data {
 	struct k_sem device_sync_sem;
 #endif
 	struct k_sem bus_mutex;
-	u32_t dev_config;
+	uint32_t dev_config;
 #ifdef CONFIG_I2C_STM32_V1
-	u16_t slave_address;
+	uint16_t slave_address;
 #endif
 	struct {
 #ifdef CONFIG_I2C_STM32_V1
@@ -40,7 +40,7 @@ struct i2c_stm32_data {
 		unsigned int is_err;
 		struct i2c_msg *msg;
 		unsigned int len;
-		u8_t *buf;
+		uint8_t *buf;
 	} current;
 #ifdef CONFIG_I2C_SLAVE
 	bool master_active;
@@ -49,12 +49,12 @@ struct i2c_stm32_data {
 #endif
 };
 
-s32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg, u8_t *flg,
-			  u16_t sadr);
-s32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg, u8_t *flg,
-			 u16_t sadr);
-s32_t stm32_i2c_configure_timing(struct device *dev, u32_t clk);
-int i2c_stm32_runtime_configure(struct device *dev, u32_t config);
+int32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg, uint8_t *flg,
+			  uint16_t sadr);
+int32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg, uint8_t *flg,
+			 uint16_t sadr);
+int32_t stm32_i2c_configure_timing(struct device *dev, uint32_t clk);
+int i2c_stm32_runtime_configure(struct device *dev, uint32_t config);
 
 void stm32_i2c_event_isr(void *arg);
 void stm32_i2c_error_isr(void *arg);

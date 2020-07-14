@@ -40,25 +40,25 @@ struct adc_sam_data {
 	struct device *dev;
 
 	/* Pointer to the buffer in the sequence. */
-	u16_t *buffer;
+	uint16_t *buffer;
 
 	/* Pointer to the beginning of a sample. Consider the number of
 	 * channels in the sequence: this buffer changes by that amount
 	 * so all the channels would get repeated.
 	 */
-	u16_t *repeat_buffer;
+	uint16_t *repeat_buffer;
 
 	/* Bit mask of the channels to be sampled. */
-	u32_t channels;
+	uint32_t channels;
 
 	/* Index of the channel being sampled. */
-	u8_t channel_id;
+	uint8_t channel_id;
 };
 
 struct adc_sam_cfg {
 	Afec *regs;
 	cfg_func_t cfg_func;
-	u32_t periph_id;
+	uint32_t periph_id;
 	struct soc_gpio_pin afec_trg_pin;
 };
 
@@ -74,7 +74,7 @@ static int adc_sam_channel_setup(struct device *dev,
 	const struct adc_sam_cfg * const cfg = DEV_CFG(dev);
 	Afec *const afec = cfg->regs;
 
-	u8_t channel_id = channel_cfg->channel_id;
+	uint8_t channel_id = channel_cfg->channel_id;
 
 	/* Clear the gain bits for the channel. */
 	afec->AFEC_CGR &= ~(3 << channel_id * 2U);
@@ -168,10 +168,10 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 }
 
 static int check_buffer_size(const struct adc_sequence *sequence,
-			     u8_t active_channels)
+			     uint8_t active_channels)
 {
 	size_t needed_buffer_size;
-	needed_buffer_size = active_channels * sizeof(u16_t);
+	needed_buffer_size = active_channels * sizeof(uint16_t);
 	if (sequence->options) {
 		needed_buffer_size *= (1 + sequence->options->extra_samplings);
 	}
@@ -187,7 +187,7 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 {
 	struct adc_sam_data *data = DEV_DATA(dev);
 	int error = 0;
-	u32_t channels = sequence->channels;
+	uint32_t channels = sequence->channels;
 
 	data->channels = 0U;
 
@@ -214,8 +214,8 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 		return -EINVAL;
 	}
 
-	u8_t num_active_channels = 0U;
-	u8_t channel = 0U;
+	uint8_t num_active_channels = 0U;
+	uint8_t channel = 0U;
 
 	while (channels > 0) {
 		if (channels & 1) {
@@ -330,13 +330,13 @@ static void adc_sam_isr(void *arg)
 	struct adc_sam_data *data = DEV_DATA(dev);
 	const struct adc_sam_cfg *const cfg = DEV_CFG(dev);
 	Afec *const afec = cfg->regs;
-	u16_t result;
+	uint16_t result;
 
 	afec->AFEC_CHDR |= BIT(data->channel_id);
 	afec->AFEC_IDR |= BIT(data->channel_id);
 
 	afec->AFEC_CSELR = AFEC_CSELR_CSEL(data->channel_id);
-	result = (u16_t)(afec->AFEC_CDR);
+	result = (uint16_t)(afec->AFEC_CDR);
 
 	*data->buffer++ = result;
 	data->channels &= ~BIT(data->channel_id);

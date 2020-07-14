@@ -85,68 +85,68 @@ extern "C" {
 #error GNA_NUM_PG_TABLES_NEEDED exceeds GNA_CONFIG_DESC_PG_DIR_SIZE
 #endif
 
-#define GNA_GET_BITS(val, b_hi, b_lo)	((((u32_t)(val)) << (31 - (b_hi))) >> \
+#define GNA_GET_BITS(val, b_hi, b_lo)	((((uint32_t)(val)) << (31 - (b_hi))) >> \
 		(31 - (b_hi) + (b_lo)))
 
 #define GNA_VA_PG_DIR(virt_addr)	GNA_GET_BITS(virt_addr, 27, 22)
 #define GNA_VA_PG_TABLE(virt_addr)	GNA_GET_BITS(virt_addr, 21, 12)
 
-#define GNA_PHYS_ADDR_TO_PAGE(addr)	((u32_t)(addr) >> \
+#define GNA_PHYS_ADDR_TO_PAGE(addr)	((uint32_t)(addr) >> \
 		GNA_PG_SIZE_IN_BITSHIFT)
 #define GNA_PG_DIR_ENTRY(phys_addr)	GNA_PHYS_ADDR_TO_PAGE(phys_addr)
-#define GNA_PG_BASE(addr)		((u32_t)(addr) & \
+#define GNA_PG_BASE(addr)		((uint32_t)(addr) & \
 		~BIT_MASK(GNA_PG_SIZE_IN_BITSHIFT))
-#define GNA_PG_OFFSET(addr)		((u32_t)(addr) & \
+#define GNA_PG_OFFSET(addr)		((uint32_t)(addr) & \
 		BIT_MASK(GNA_PG_SIZE_IN_BITSHIFT))
 #define GNA_PG_TABLE_ENTRY(phys_addr)	GNA_PHYS_ADDR_TO_PAGE(phys_addr)
 
 struct intel_gna_regs {
-	u32_t	gnasts;
-	u32_t	gnactrl;
-	u32_t	gnamctl;
-	u32_t	gnaptc;
-	u32_t	gnasc;
-	u32_t	gnaisi;
-	u32_t	gnais_low;
-	u32_t	gnais_high;
-	u32_t	gnabp_low;
-	u32_t	gnabp_high;
-	u32_t	reserved1[2];
-	u32_t	gnadesbase;
-	u32_t	gnaibuffs;
-	u32_t	reserved2[2];
-	u32_t	ovrcfgctl;
-	u32_t	reserved3[3];
-	u32_t	gnaversion;
+	uint32_t	gnasts;
+	uint32_t	gnactrl;
+	uint32_t	gnamctl;
+	uint32_t	gnaptc;
+	uint32_t	gnasc;
+	uint32_t	gnaisi;
+	uint32_t	gnais_low;
+	uint32_t	gnais_high;
+	uint32_t	gnabp_low;
+	uint32_t	gnabp_high;
+	uint32_t	reserved1[2];
+	uint32_t	gnadesbase;
+	uint32_t	gnaibuffs;
+	uint32_t	reserved2[2];
+	uint32_t	ovrcfgctl;
+	uint32_t	reserved3[3];
+	uint32_t	gnaversion;
 };
 
 struct intel_gna_config_desc {
-	u32_t	reserved1[64];
-	u32_t	labase;		/* layer array base */
-	u16_t	lacnt;		/* layer array count */
-	u16_t	reserved2;
-	u32_t	reserved3[62];
-	u32_t	vamaxaddr;	/* virtual address max address */
-	u32_t	reserved4[3];
+	uint32_t	reserved1[64];
+	uint32_t	labase;		/* layer array base */
+	uint16_t	lacnt;		/* layer array count */
+	uint16_t	reserved2;
+	uint32_t	reserved3[62];
+	uint32_t	vamaxaddr;	/* virtual address max address */
+	uint32_t	reserved4[3];
 	/* page directory entries */
-	u32_t	pagedir[GNA_CONFIG_DESC_PG_DIR_SIZE];
+	uint32_t	pagedir[GNA_CONFIG_DESC_PG_DIR_SIZE];
 } __packed;
 
 struct intel_gna_page_table {
-	u32_t	entry[GNA_NUM_PG_TABLE_ENTRIES];
+	uint32_t	entry[GNA_NUM_PG_TABLE_ENTRIES];
 } __aligned(GNA_PG_SIZE_IN_BYTES);
 
 struct intel_gna_layer_desc {
-	u32_t	gna_words[8];
-	u32_t	inarrayptr;
-	u32_t	outarrayactptr;
-	u32_t	outarraysumptr;
-	u32_t	outfbarrayactptr;
-	u32_t	wtfltarrayptr;
-	u32_t	constarrayptr;
-	u32_t	actoutputslistptr;
-	u32_t	actfuncsectdefptr;
-	u32_t	reserved[16];
+	uint32_t	gna_words[8];
+	uint32_t	inarrayptr;
+	uint32_t	outarrayactptr;
+	uint32_t	outarraysumptr;
+	uint32_t	outfbarrayactptr;
+	uint32_t	wtfltarrayptr;
+	uint32_t	constarrayptr;
+	uint32_t	actoutputslistptr;
+	uint32_t	actfuncsectdefptr;
+	uint32_t	reserved[16];
 } __packed __aligned(GNA_LAYER_DESC_ALIGN);
 
 struct intel_gna_config {

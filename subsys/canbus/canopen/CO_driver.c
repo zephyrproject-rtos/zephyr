@@ -65,7 +65,7 @@ inline void canopen_od_unlock(void)
 
 static void canopen_detach_all_rx_filters(CO_CANmodule_t *CANmodule)
 {
-	u16_t i;
+	uint16_t i;
 
 	if (!CANmodule || !CANmodule->rx_array || !CANmodule->configured) {
 		return;
@@ -96,7 +96,7 @@ static void canopen_rx_isr_callback(struct zcan_frame *msg, void *arg)
 	buffer->pFunct(buffer->object, &rxMsg);
 }
 
-static void canopen_tx_isr_callback(u32_t error_flags, void *arg)
+static void canopen_tx_isr_callback(uint32_t error_flags, void *arg)
 {
 	CO_CANmodule_t *CANmodule = arg;
 
@@ -120,7 +120,7 @@ static void canopen_tx_retry(struct k_work *item)
 	struct zcan_frame msg;
 	CO_CANtx_t *buffer;
 	int err;
-	u16_t i;
+	uint16_t i;
 
 	CO_LOCK_CAN_SEND();
 
@@ -165,11 +165,11 @@ void CO_CANsetNormalMode(CO_CANmodule_t *CANmodule)
 
 CO_ReturnError_t CO_CANmodule_init(CO_CANmodule_t *CANmodule,
 				   void *CANdriverState,
-				   CO_CANrx_t rxArray[], u16_t rxSize,
-				   CO_CANtx_t txArray[], u16_t txSize,
-				   u16_t CANbitRate)
+				   CO_CANrx_t rxArray[], uint16_t rxSize,
+				   CO_CANtx_t txArray[], uint16_t txSize,
+				   uint16_t CANbitRate)
 {
-	u16_t i;
+	uint16_t i;
 	int err;
 
 	LOG_DBG("rxSize = %d, txSize = %d", rxSize, txSize);
@@ -240,13 +240,13 @@ void CO_CANmodule_disable(CO_CANmodule_t *CANmodule)
 	}
 }
 
-u16_t CO_CANrxMsg_readIdent(const CO_CANrxMsg_t *rxMsg)
+uint16_t CO_CANrxMsg_readIdent(const CO_CANrxMsg_t *rxMsg)
 {
 	return rxMsg->ident;
 }
 
-CO_ReturnError_t CO_CANrxBufferInit(CO_CANmodule_t *CANmodule, u16_t index,
-				u16_t ident, u16_t mask, bool_t rtr,
+CO_ReturnError_t CO_CANrxBufferInit(CO_CANmodule_t *CANmodule, uint16_t index,
+				uint16_t ident, uint16_t mask, bool_t rtr,
 				void *object,
 				CO_CANrxBufferCallback_t pFunct)
 {
@@ -291,8 +291,8 @@ CO_ReturnError_t CO_CANrxBufferInit(CO_CANmodule_t *CANmodule, u16_t index,
 	return CO_ERROR_NO;
 }
 
-CO_CANtx_t *CO_CANtxBufferInit(CO_CANmodule_t *CANmodule, u16_t index,
-			       u16_t ident, bool_t rtr, u8_t noOfBytes,
+CO_CANtx_t *CO_CANtxBufferInit(CO_CANmodule_t *CANmodule, uint16_t index,
+			       uint16_t ident, bool_t rtr, uint8_t noOfBytes,
 			       bool_t syncFlag)
 {
 	CO_CANtx_t *buffer;
@@ -365,7 +365,7 @@ void CO_CANclearPendingSyncPDOs(CO_CANmodule_t *CANmodule)
 {
 	bool_t tpdoDeleted = false;
 	CO_CANtx_t *buffer;
-	u16_t i;
+	uint16_t i;
 
 	if (!CANmodule) {
 		return;
@@ -394,8 +394,8 @@ void CO_CANverifyErrors(CO_CANmodule_t *CANmodule)
 	CO_EM_t *em = (CO_EM_t *)CANmodule->em;
 	struct can_bus_err_cnt err_cnt;
 	enum can_state state;
-	u8_t rx_overflows;
-	u32_t errors;
+	uint8_t rx_overflows;
+	uint32_t errors;
 
 	/*
 	 * TODO: Zephyr lacks an API for reading the rx mailbox
@@ -405,8 +405,8 @@ void CO_CANverifyErrors(CO_CANmodule_t *CANmodule)
 
 	state = can_get_state(CANmodule->dev, &err_cnt);
 
-	errors = ((u32_t)err_cnt.tx_err_cnt << 16) |
-		 ((u32_t)err_cnt.rx_err_cnt << 8) |
+	errors = ((uint32_t)err_cnt.tx_err_cnt << 16) |
+		 ((uint32_t)err_cnt.rx_err_cnt << 8) |
 		 rx_overflows;
 
 	if (errors != CANmodule->errors) {

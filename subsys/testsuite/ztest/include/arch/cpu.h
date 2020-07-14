@@ -18,7 +18,7 @@ struct _thread_arch {
 typedef struct _thread_arch _thread_arch_t;
 
 /* Architecture functions */
-static inline u32_t arch_k_cycle_get_32(void)
+static inline uint32_t arch_k_cycle_get_32(void)
 {
 	return 0;
 }

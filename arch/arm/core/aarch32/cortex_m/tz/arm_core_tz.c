@@ -8,24 +8,24 @@
 #include <aarch32/cortex_m/tz.h>
 #include <aarch32/cortex_m/exc.h>
 
-static void configure_nonsecure_vtor_offset(u32_t vtor_ns)
+static void configure_nonsecure_vtor_offset(uint32_t vtor_ns)
 {
 	SCB_NS->VTOR = vtor_ns;
 }
 
-static void configure_nonsecure_msp(u32_t msp_ns)
+static void configure_nonsecure_msp(uint32_t msp_ns)
 {
 	__TZ_set_MSP_NS(msp_ns);
 }
 
-static void configure_nonsecure_psp(u32_t psp_ns)
+static void configure_nonsecure_psp(uint32_t psp_ns)
 {
 	__TZ_set_PSP_NS(psp_ns);
 }
 
-static void configure_nonsecure_control(u32_t spsel_ns, u32_t npriv_ns)
+static void configure_nonsecure_control(uint32_t spsel_ns, uint32_t npriv_ns)
 {
-	u32_t control_ns = __TZ_get_CONTROL_NS();
+	uint32_t control_ns = __TZ_get_CONTROL_NS();
 
 	/* Only nPRIV and SPSEL bits are banked between security states. */
 	control_ns &= ~(CONTROL_SPSEL_Msk | CONTROL_nPRIV_Msk);
@@ -46,12 +46,12 @@ static void configure_nonsecure_control(u32_t spsel_ns, u32_t npriv_ns)
  * Stack Pointer Limit registers.
  */
 
-void tz_nonsecure_msplim_set(u32_t val)
+void tz_nonsecure_msplim_set(uint32_t val)
 {
 	__TZ_set_MSPLIM_NS(val);
 }
 
-void tz_nonsecure_psplim_set(u32_t val)
+void tz_nonsecure_psplim_set(uint32_t val)
 {
 	__TZ_set_PSPLIM_NS(val);
 }
@@ -71,7 +71,7 @@ void tz_nonsecure_state_setup(const tz_nonsecure_setup_conf_t *p_ns_conf)
 
 void tz_nbanked_exception_target_state_set(int secure_state)
 {
-	u32_t aircr_payload = SCB->AIRCR & (~(SCB_AIRCR_VECTKEY_Msk));
+	uint32_t aircr_payload = SCB->AIRCR & (~(SCB_AIRCR_VECTKEY_Msk));
 	if (secure_state) {
 		aircr_payload &= ~(SCB_AIRCR_BFHFNMINS_Msk);
 	} else {
@@ -84,7 +84,7 @@ void tz_nbanked_exception_target_state_set(int secure_state)
 
 void tz_nonsecure_exception_prio_config(int secure_boost)
 {
-	u32_t aircr_payload = SCB->AIRCR & (~(SCB_AIRCR_VECTKEY_Msk));
+	uint32_t aircr_payload = SCB->AIRCR & (~(SCB_AIRCR_VECTKEY_Msk));
 	if (secure_boost) {
 		aircr_payload |= SCB_AIRCR_PRIS_Msk;
 	} else {
@@ -97,7 +97,7 @@ void tz_nonsecure_exception_prio_config(int secure_boost)
 
 void tz_nonsecure_system_reset_req_block(int block)
 {
-	u32_t aircr_payload = SCB->AIRCR & (~(SCB_AIRCR_VECTKEY_Msk));
+	uint32_t aircr_payload = SCB->AIRCR & (~(SCB_AIRCR_VECTKEY_Msk));
 	if (block) {
 		aircr_payload |= SCB_AIRCR_SYSRESETREQS_Msk;
 	} else {
@@ -130,7 +130,7 @@ void tz_sau_configure(int enable, int allns)
 	}
 }
 
-u32_t tz_sau_number_of_regions_get(void)
+uint32_t tz_sau_number_of_regions_get(void)
 {
 	return SAU->TYPE & SAU_TYPE_SREGION_Msk;
 }
@@ -139,7 +139,7 @@ u32_t tz_sau_number_of_regions_get(void)
 #if defined (__SAUREGION_PRESENT) && (__SAUREGION_PRESENT == 1U)
 int tz_sau_region_configure_enable(tz_sau_conf_t *p_sau_conf)
 {
-	u32_t regions = tz_sau_number_of_regions_get();
+	uint32_t regions = tz_sau_number_of_regions_get();
 
 	if ((p_sau_conf->region_num == 0) ||
 		(p_sau_conf->region_num > (regions - 1))) {

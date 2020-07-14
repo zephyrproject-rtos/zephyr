@@ -13,6 +13,11 @@ source "soc/arm/st_stm32/stm32l4/Kconfig.defconfig.stm32l4*"
 config SOC_SERIES
 	default "stm32l4"
 
+config STM32_LPTIM_TIMER
+	bool
+	default y
+	depends on SYS_POWER_MANAGEMENT
+
 config DMA_STM32_V2
 	default y
 	depends on DMA_STM32

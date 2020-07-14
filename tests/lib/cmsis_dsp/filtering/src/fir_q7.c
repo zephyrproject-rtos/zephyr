@@ -22,7 +22,7 @@ static void test_arm_fir_q7(void)
 	size_t block_size, tap_count;
 	size_t sample_count = ARRAY_SIZE(in_config) / 2;
 	size_t length = ARRAY_SIZE(ref_val);
-	const u16_t *config = in_config;
+	const uint16_t *config = in_config;
 	const q7_t *input = (const q7_t *)in_val;
 	const q7_t *coeff = (const q7_t *)in_coeff;
 	const q7_t *ref = (const q7_t *)ref_val;

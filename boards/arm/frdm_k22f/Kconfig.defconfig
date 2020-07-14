@@ -35,7 +35,7 @@ config PINMUX_MCUX_PORTD
 	default y
 
 config PINMUX_MCUX_PORTE
-	default y if "$(dt_nodelabel_enabled,uart1)"
+	default y if "$(dt_nodelabel_enabled,uart1)" && SERIAL
 
 endif # PINMUX_MCUX
 

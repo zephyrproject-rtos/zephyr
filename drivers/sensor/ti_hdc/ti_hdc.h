@@ -23,8 +23,8 @@
 
 struct ti_hdc_data {
 	struct device *i2c;
-	u16_t t_sample;
-	u16_t rh_sample;
+	uint16_t t_sample;
+	uint16_t rh_sample;
 
 #if DT_INST_NODE_HAS_PROP(0, drdy_gpios)
 	struct device *gpio;

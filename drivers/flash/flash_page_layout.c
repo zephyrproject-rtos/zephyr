@@ -13,7 +13,7 @@ static int flash_get_page_info(struct device *dev, off_t offs,
 	const struct flash_pages_layout *layout;
 	size_t page_count = 0;
 	off_t group_offs = 0;
-	u32_t num_in_group;
+	uint32_t num_in_group;
 	off_t end = 0;
 	size_t layout_size;
 
@@ -58,7 +58,7 @@ int z_impl_flash_get_page_info_by_offs(struct device *dev, off_t offs,
 	return flash_get_page_info(dev, offs, true, info);
 }
 
-int z_impl_flash_get_page_info_by_idx(struct device *dev, u32_t page_index,
+int z_impl_flash_get_page_info_by_idx(struct device *dev, uint32_t page_index,
 				     struct flash_pages_info *info)
 {
 	return flash_get_page_info(dev, page_index, false, info);

@@ -1,0 +1,15 @@
+# Copyright (c) 2020 Synopsys, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "ARC QEMU SoC Selection"
+	default SOC_QEMU_ARC_HS
+	depends on SOC_QEMU_ARC
+
+config SOC_QEMU_ARC_EM
+	bool "Synopsys ARC EM in QEMU"
+
+config SOC_QEMU_ARC_HS
+	bool "Synopsys ARC HS in QEMU"
+
+endchoice

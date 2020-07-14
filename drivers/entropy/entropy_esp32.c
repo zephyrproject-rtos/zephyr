@@ -9,7 +9,7 @@
 #include <string.h>
 #include <drivers/entropy.h>
 
-static inline u32_t entropy_esp32_get_u32(void)
+static inline uint32_t entropy_esp32_get_u32(void)
 {
 	/*
 	 * APB Address:   0x60035144 (Safe,slower writes)
@@ -19,7 +19,7 @@ static inline u32_t entropy_esp32_get_u32(void)
 	 * https://www.esp32.com/viewtopic.php?f=2&t=3033&p=14227
 	 * also check: ECO and Workarounds for Bugs Document, point 3.3
 	 */
-	volatile u32_t *rng_data_reg = (u32_t *)DT_INST_REG_ADDR(0);
+	volatile uint32_t *rng_data_reg = (uint32_t *)DT_INST_REG_ADDR(0);
 
 	/* Read just once.  This is not optimal as the generator has
 	 * limited throughput due to scarce sources of entropy, specially
@@ -28,10 +28,10 @@ static inline u32_t entropy_esp32_get_u32(void)
 	return *rng_data_reg;
 }
 
-static int entropy_esp32_get_entropy(struct device *device, u8_t *buf, u16_t len)
+static int entropy_esp32_get_entropy(struct device *device, uint8_t *buf, uint16_t len)
 {
 	while (len) {
-		u32_t v = entropy_esp32_get_u32();
+		uint32_t v = entropy_esp32_get_u32();
 
 		if (len >= sizeof(v)) {
 			memcpy(buf, &v, sizeof(v));

@@ -92,7 +92,7 @@
 	mosi-pin = <9>;
 	miso-pin = <8>;
 	cs-pin = <11>;
-	cs-gpios = <&gpio0 11 0>;
+	cs-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 };
 
 &rtc {

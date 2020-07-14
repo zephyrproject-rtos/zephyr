@@ -25,7 +25,7 @@
  */
 static int st_stm32f4_init(struct device *arg)
 {
-	u32_t key;
+	uint32_t key;
 
 	ARG_UNUSED(arg);
 

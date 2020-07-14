@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(net_trickle, CONFIG_NET_TRICKLE_LOG_LEVEL);
 
 #include <errno.h>
 #include <sys/util.h>
+#include <random/rand32.h>
 
 #include <net/net_core.h>
 #include <net/trickle.h>
@@ -34,13 +35,13 @@ static inline bool is_tx_allowed(struct net_trickle *trickle)
 		(trickle->c < trickle->k);
 }
 
-static inline u32_t get_end(struct net_trickle *trickle)
+static inline uint32_t get_end(struct net_trickle *trickle)
 {
 	return trickle->Istart + trickle->I;
 }
 
 /* Returns a random time point t in [I/2 , I) */
-static u32_t get_t(u32_t I)
+static uint32_t get_t(uint32_t I)
 {
 	I >>= 1;
 
@@ -54,8 +55,8 @@ static void double_interval_timeout(struct k_work *work)
 	struct net_trickle *trickle = CONTAINER_OF(work,
 						   struct net_trickle,
 						   timer);
-	u32_t rand_time;
-	u32_t last_end = get_end(trickle);
+	uint32_t rand_time;
+	uint32_t last_end = get_end(trickle);
 
 	trickle->c = 0U;
 
@@ -88,13 +89,13 @@ static void double_interval_timeout(struct k_work *work)
 
 static inline void reschedule(struct net_trickle *trickle)
 {
-	u32_t now = k_uptime_get_32();
-	u32_t diff = get_end(trickle) - now;
+	uint32_t now = k_uptime_get_32();
+	uint32_t diff = get_end(trickle) - now;
 
 	NET_DBG("now %d end in %d", now, diff);
 
 	/* Did the clock wrap */
-	if ((s32_t)diff < 0) {
+	if ((int32_t)diff < 0) {
 		diff = 0U;
 		NET_DBG("Clock wrap");
 	}
@@ -126,7 +127,7 @@ static void trickle_timeout(struct k_work *work)
 
 static void setup_new_interval(struct net_trickle *trickle)
 {
-	u32_t t;
+	uint32_t t;
 
 	trickle->c = 0U;
 
@@ -147,9 +148,9 @@ static void setup_new_interval(struct net_trickle *trickle)
 	((Imin < 2) || (Imin > (TICK_MAX >> 1)))
 
 int net_trickle_create(struct net_trickle *trickle,
-		       u32_t Imin,
-		       u8_t Imax,
-		       u8_t k)
+		       uint32_t Imin,
+		       uint8_t Imax,
+		       uint8_t k)
 {
 	NET_ASSERT(trickle && Imax > 0 && k > 0 && !CHECK_IMIN(Imin));
 

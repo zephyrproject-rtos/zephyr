@@ -80,8 +80,8 @@
 
 /** USB descriptor header */
 struct usb_desc_header {
-	u8_t bLength;               /**< descriptor length */
-	u8_t bDescriptorType;       /**< descriptor type */
+	uint8_t bLength;               /**< descriptor length */
+	uint8_t bDescriptorType;       /**< descriptor type */
 };
 
 #define GET_DESC_TYPE(x)            (((x)>>8)&0xFF)

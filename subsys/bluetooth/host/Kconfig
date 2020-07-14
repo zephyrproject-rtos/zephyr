@@ -128,11 +128,12 @@ config BT_HCI_RESERVE
 config BT_RECV_IS_RX_THREAD
 	# Hidden option set by the HCI driver to indicate that there's
 	# no need for the host to have its own RX thread.
-	# It is then the responsibility of the HCI driver to call bt_recv_prio
-	# from a higher priority context than bt_recv in order to avoid deadlock.
-	# If the host has its own RX thread it is safe to call bt_recv and
-	# bt_recv_prio from the same priority context.
+	# If this option has been enabled it is then the responsibility of the
+	# HCI driver to call bt_recv_prio from a higher priority context than
+	# bt_recv in order to avoid deadlocks.
+	# If this option is disabled then only bt_recv should be called.
 	bool
+	prompt "bt_recv is called from RX thread" if BT_NO_DRIVER
 
 config BT_RX_STACK_SIZE
 	int "Size of the receiving thread stack"
@@ -429,10 +430,10 @@ config BT_USE_DEBUG_KEYS
 	help
 	  This option places Security Manager in a Debug Mode. In this mode
 	  predefined Diffie-Hellman private/public key pair is used as described
-	  in Core Specification Vol. 3, Part H, 2.3.5.6.1. This option should
-	  only be enabled for debugging and should never be used in production.
-	  If this option is enabled anyone is able to decipher encrypted air
-	  traffic.
+	  in Core Specification Vol. 3, Part H, 2.3.5.6.1.
+
+	  WARNING: This option enables anyone to decrypt on-air traffic.
+	  Use of this feature in production is strongly discouraged.
 
 config BT_BONDABLE
 	bool "Bondable Mode"
@@ -454,8 +455,12 @@ config BT_STORE_DEBUG_KEYS
 	bool "Store Debug Mode bonds"
 	help
 	  This option enables support for storing bonds where either of devices
-	  has the Security Manager in Debug mode. This option should
-	  only be enabled for debugging and should never be used in production.
+	  is using the predefined Diffie-Hellman private/public key pair as
+	  described in the Core Specification Vol 3, Part H, 2.3.5.6.1.
+
+	  WARNING: This option potentially enables anyone to decrypt on-air
+	  traffic.
+	  Use of this feature in production is strongly discouraged.
 
 config BT_SMP_ENFORCE_MITM
 	bool "Enforce MITM protection"
@@ -471,8 +476,10 @@ config BT_OOB_DATA_FIXED
 	help
 	  With this option enabled, the application will be able to perform LESC
 	  pairing with OOB data that consists of fixed random number and confirm
-	  value. This option should only be enabled for debugging and should
-	  never be used in production.
+	  value.
+
+	  WARNING: This option stores a hardcoded Out-of-Band value in the image.
+	  Use of this feature in production is strongly discouraged.
 
 config BT_KEYS_OVERWRITE_OLDEST
 	bool "Overwrite oldest keys with new ones if key storage is full"
@@ -645,6 +652,10 @@ config BT_DEBUG_KEYS
 	  This option enables debug support for the handling of
 	  Bluetooth security keys.
 
+	  WARNING: This option prints out private security keys such as
+	  the Long Term Key.
+	  Use of this feature in production is strongly discouraged.
+
 config BT_DEBUG_SMP
 	bool "Bluetooth Security Manager Protocol (SMP) debug"
 	depends on BT_HCI_HOST
@@ -652,6 +663,10 @@ config BT_DEBUG_SMP
 	help
 	  This option enables debug support for the Bluetooth
 	  Security Manager Protocol (SMP).
+
+	  WARNING: This option prints out private security keys such as
+	  the Long Term Key.
+	  Use of this feature in production is strongly discouraged.
 
 config BT_SMP_SELFTEST
 	bool "Bluetooth SMP self tests executed on init"

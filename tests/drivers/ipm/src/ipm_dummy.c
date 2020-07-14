@@ -43,12 +43,12 @@ static void ipm_dummy_isr(void *data)
 
 /* IPM API functions for the dummy driver */
 
-static int ipm_dummy_send(struct device *d, int wait, u32_t id,
+static int ipm_dummy_send(struct device *d, int wait, uint32_t id,
 			  const void *data, int size)
 {
 	struct ipm_dummy_driver_data *driver_data;
-	volatile u8_t *datareg;
-	const u8_t *data8;
+	volatile uint8_t *datareg;
+	const uint8_t *data8;
 	int i;
 
 	driver_data = d->driver_data;
@@ -60,8 +60,8 @@ static int ipm_dummy_send(struct device *d, int wait, u32_t id,
 		return -EBUSY;
 	}
 
-	data8 = (const u8_t *)data;
-	datareg = (volatile u8_t *)driver_data->regs.data;
+	data8 = (const uint8_t *)data;
+	datareg = (volatile uint8_t *)driver_data->regs.data;
 
 	for (i = 0; i < size; ++i) {
 		datareg[i] = data8[i];
@@ -101,14 +101,14 @@ static int ipm_dummy_set_enabled(struct device *d, int enable)
 	return 0;
 }
 
-static u32_t ipm_dummy_max_id_val_get(struct device *d)
+static uint32_t ipm_dummy_max_id_val_get(struct device *d)
 {
 	return 0xFFFFFFFF;
 }
 
 static int ipm_dummy_max_data_size_get(struct device *d)
 {
-	return DUMMY_IPM_DATA_WORDS * sizeof(u32_t);
+	return DUMMY_IPM_DATA_WORDS * sizeof(uint32_t);
 }
 
 struct ipm_driver_api ipm_dummy_api = {

@@ -154,7 +154,7 @@ Newly added commands can be prompted or autocompleted with the :kbd:`Tab` key.
 	static char dynamic_cmd_buffer[10][50];
 
 	/* commands counter */
-	static u8_t dynamic_cmd_cnt;
+	static uint8_t dynamic_cmd_cnt;
 
 	/* Function returning command dynamically created
 	 * in  dynamic_cmd_buffer.

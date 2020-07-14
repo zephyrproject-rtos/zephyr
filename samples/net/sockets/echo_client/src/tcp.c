@@ -16,6 +16,7 @@ LOG_MODULE_DECLARE(net_echo_client_sample, LOG_LEVEL_DBG);
 
 #include <net/socket.h>
 #include <net/tls_credentials.h>
+#include <random/rand32.h>
 
 #include "common.h"
 #include "ca_certificate.h"
@@ -69,7 +70,7 @@ static int send_tcp_data(struct data *data)
 	return ret;
 }
 
-static int compare_tcp_data(struct data *data, const char *buf, u32_t received)
+static int compare_tcp_data(struct data *data, const char *buf, uint32_t received)
 {
 	if (data->tcp.received + received > data->tcp.expecting) {
 		LOG_ERR("Too much data received: TCP %s", data->proto);

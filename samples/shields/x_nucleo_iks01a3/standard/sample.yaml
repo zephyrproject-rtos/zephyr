@@ -7,4 +7,4 @@ tests:
     harness: shield
     tags: shield
     depends_on: arduino_i2c arduino_gpio
-    platform_exclude: disco_l475_iot1 stm32mp157c_dk2
+    platform_exclude: disco_l475_iot1 lpcxpresso55s16_ns stm32mp157c_dk2

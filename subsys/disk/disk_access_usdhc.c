@@ -6,6 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_imx_usdhc
+
 #include <disk/disk_access.h>
 #include <drivers/gpio.h>
 #include <sys/byteorder.h>
@@ -273,13 +275,13 @@ enum usdhc_data_bus_width {
 	USDHC_BLK_ATT_BLKCNT_SHIFT)
 
 struct usdhc_cmd {
-	u32_t index;	/*cmd idx*/
-	u32_t argument;	/*cmd arg*/
+	uint32_t index;	/*cmd idx*/
+	uint32_t argument;	/*cmd arg*/
 	enum usdhc_cmd_type cmd_type;
 	enum sdhc_rsp_type rsp_type;
-	u32_t response[4U];
-	u32_t rsp_err_flags;
-	u32_t flags;
+	uint32_t response[4U];
+	uint32_t rsp_err_flags;
+	uint32_t flags;
 };
 
 struct usdhc_data {
@@ -292,20 +294,20 @@ struct usdhc_data {
 	 * to read/write all the data
 	 */
 	bool data_enable;
-	u8_t data_type;
+	uint8_t data_type;
 	/* this is used to distinguish
 	 * the normal/tuning/boot data
 	 */
-	u32_t block_size;
+	uint32_t block_size;
 	/* Block size
 	 */
-	u32_t block_count;
+	uint32_t block_count;
 	/* Block count
 	 */
-	u32_t *rx_data;
+	uint32_t *rx_data;
 	/* Buffer to save data read
 	 */
-	const u32_t *tx_data;
+	const uint32_t *tx_data;
 	/* Data buffer to write
 	 */
 };
@@ -344,11 +346,11 @@ struct usdhc_adma_config {
 	enum usdhc_burst_len burst_len;
 	/* burst len config
 	 */
-	u32_t *adma_table;
+	uint32_t *adma_table;
 	/* ADMA table address,
 	 * can't be null if transfer way is ADMA1/ADMA2
 	 */
-	u32_t adma_table_words;
+	uint32_t adma_table_words;
 	/* ADMA table length united as words,
 	 * can't be 0 if transfer way is ADMA1/ADMA2
 	 */
@@ -375,33 +377,44 @@ enum usdhc_endian_mode {
 
 struct usdhc_config {
 	USDHC_Type *base;
-	u32_t data_timeout;
+	char *clock_name;
+	clock_control_subsys_t clock_subsys;
+	uint8_t nusdhc;
+
+	char *pwr_name;
+	uint8_t pwr_pin;
+	gpio_dt_flags_t pwr_flags;
+
+	char *detect_name;
+	uint8_t detect_pin;
+	gpio_dt_flags_t detect_flags;
+
+	uint32_t data_timeout;
 	/* Data timeout value
 	 */
 	enum usdhc_endian_mode endian;
 	/* Endian mode
 	 */
-	u8_t read_watermark;
+	uint8_t read_watermark;
 	/* Watermark level for DMA read operation.
 	 * Available range is 1 ~ 128.
 	 */
-	u8_t write_watermark;
+	uint8_t write_watermark;
 	/* Watermark level for DMA write operation.
 	 * Available range is 1 ~ 128.
 	 */
-	u8_t read_burst_len;
+	uint8_t read_burst_len;
 	/* Read burst len
 	 */
-	u8_t write_burst_len;
+	uint8_t write_burst_len;
 	/* Write burst len
 	 */
-	u32_t src_clk_hz;
 };
 
 struct usdhc_capability {
-	u32_t max_blk_len;
-	u32_t max_blk_cnt;
-	u32_t host_flags;
+	uint32_t max_blk_len;
+	uint32_t max_blk_cnt;
+	uint32_t host_flags;
 };
 
 enum host_detect_type {
@@ -417,50 +430,40 @@ enum host_detect_type {
 };
 
 struct usdhc_client_info {
-	u32_t busclk_hz;
-	u32_t relative_addr;
-	u32_t version;
-	u32_t card_flags;
-	u32_t raw_cid[4U];
-	u32_t raw_csd[4U];
-	u32_t raw_scr[2U];
-	u32_t raw_ocr;
+	uint32_t busclk_hz;
+	uint32_t relative_addr;
+	uint32_t version;
+	uint32_t card_flags;
+	uint32_t raw_cid[4U];
+	uint32_t raw_csd[4U];
+	uint32_t raw_scr[2U];
+	uint32_t raw_ocr;
 	struct sd_cid cid;
 	struct sd_csd csd;
 	struct sd_scr scr;
-	u32_t sd_block_count;
-	u32_t sd_block_size;
+	uint32_t sd_block_count;
+	uint32_t sd_block_size;
 	enum sd_timing_mode sd_timing;
 	enum sd_driver_strength driver_strength;
 	enum sd_max_current max_current;
 	enum sd_voltage voltage;
 };
 
-struct usdhc_board_config {
-	struct device *pwr_gpio;
-	u32_t pwr_pin;
-	gpio_dt_flags_t pwr_flags;
-
-	struct device *detect_gpio;
-	u32_t detect_pin;
-	gpio_dt_flags_t detect_flags;
-	struct gpio_callback detect_cb;
-};
-
 struct usdhc_priv {
 	bool host_ready;
-	u8_t status;
-	u8_t nusdhc;
+	uint8_t status;
 
-	struct usdhc_board_config board_cfg;
+	struct device *pwr_gpio;
+	struct device *detect_gpio;
+	struct gpio_callback detect_cb;
 
 	enum host_detect_type detect_type;
 	bool inserted;
 
 	struct device *clock_dev;
-	clock_control_subsys_t clock_sys;
+	uint32_t src_clk_hz;
 
-	struct usdhc_config host_config;
+	const struct usdhc_config *config;
 	struct usdhc_capability host_capability;
 
 	struct usdhc_client_info card_info;
@@ -557,9 +560,9 @@ enum usdhc_adma2_descriptor_flag {
 };
 
 struct usdhc_adma2_descriptor {
-	u32_t attribute;
+	uint32_t attribute;
 	/*!< The control and status field */
-	const u32_t *address;
+	const uint32_t *address;
 	/*!< The address field */
 };
 
@@ -721,28 +724,28 @@ static void usdhc_millsec_delay(unsigned int cycles_to_wait)
 		;
 }
 
-u32_t g_usdhc_boot_dummy __aligned(64);
-u32_t g_usdhc_rx_dummy[2048] __aligned(64);
+uint32_t g_usdhc_boot_dummy __aligned(64);
+uint32_t g_usdhc_rx_dummy[2048] __aligned(64);
 
 static int usdhc_adma2_descriptor_cfg(
-	u32_t *adma_table, u32_t adma_table_words,
-	const u32_t *data_addr, u32_t data_size, u32_t flags)
+	uint32_t *adma_table, uint32_t adma_table_words,
+	const uint32_t *data_addr, uint32_t data_size, uint32_t flags)
 {
-	u32_t min_entries, start_entry = 0U;
-	u32_t max_entries = (adma_table_words * sizeof(u32_t)) /
+	uint32_t min_entries, start_entry = 0U;
+	uint32_t max_entries = (adma_table_words * sizeof(uint32_t)) /
 		sizeof(struct usdhc_adma2_descriptor);
 	struct usdhc_adma2_descriptor *adma2_addr =
 		(struct usdhc_adma2_descriptor *)(adma_table);
-	u32_t i, dma_buf_len = 0U;
+	uint32_t i, dma_buf_len = 0U;
 
-	if ((u32_t)data_addr % USDHC_ADMA2_ADDRESS_ALIGN) {
+	if ((uint32_t)data_addr % USDHC_ADMA2_ADDRESS_ALIGN) {
 		return -EIO;
 	}
 	/* Add non aligned access support.
 	 */
-	if (data_size % sizeof(u32_t)) {
+	if (data_size % sizeof(uint32_t)) {
 		/* make the data length as word-aligned */
-		data_size += sizeof(u32_t) - (data_size % sizeof(u32_t));
+		data_size += sizeof(uint32_t) - (data_size % sizeof(uint32_t));
 	}
 
 	/* Check if ADMA descriptor's number is enough. */
@@ -776,7 +779,7 @@ static int usdhc_adma2_descriptor_cfg(
 			dma_buf_len =
 				USDHC_ADMA2_DESCRIPTOR_MAX_LENGTH_PER_ENTRY;
 		} else {
-			dma_buf_len = (data_size == 0U ? sizeof(u32_t) :
+			dma_buf_len = (data_size == 0U ? sizeof(uint32_t) :
 				data_size);
 			/* adma don't support 0 data length transfer
 			 * descriptor
@@ -791,7 +794,7 @@ static int usdhc_adma2_descriptor_cfg(
 		adma2_addr[i].attribute |=
 			(data_size == 0U) ? 0U :
 				(USDHC_ADMA2_XFER_FLAG | USDHC_ADMA2_INT_FLAG);
-		data_addr += (dma_buf_len / sizeof(u32_t));
+		data_addr += (dma_buf_len / sizeof(uint32_t));
 
 		if (data_size != 0U)
 			data_size -= dma_buf_len;
@@ -813,14 +816,14 @@ static int usdhc_adma2_descriptor_cfg(
 
 static int usdhc_Internal_dma_cfg(struct usdhc_priv *priv,
 	struct usdhc_adma_config *dma_cfg,
-	const u32_t *data_addr)
+	const uint32_t *data_addr)
 {
-	USDHC_Type *base = priv->host_config.base;
+	USDHC_Type *base = priv->config->base;
 	bool cmd23 = priv->op_context.data.cmd23;
 
 	if (dma_cfg->dma_mode == USDHC_DMA_SIMPLE) {
 		/* check DMA data buffer address align or not */
-		if (((u32_t)data_addr % USDHC_ADMA2_ADDRESS_ALIGN) != 0U) {
+		if (((uint32_t)data_addr % USDHC_ADMA2_ADDRESS_ALIGN) != 0U) {
 			return -EIO;
 		}
 		/* in simple DMA mode if use auto CMD23,
@@ -828,13 +831,13 @@ static int usdhc_Internal_dma_cfg(struct usdhc_priv *priv,
 		 * and block count should load to DS_ADDR
 		 */
 		if (cmd23)
-			base->ADMA_SYS_ADDR = (u32_t)data_addr;
+			base->ADMA_SYS_ADDR = (uint32_t)data_addr;
 		else
-			base->DS_ADDR = (u32_t)data_addr;
+			base->DS_ADDR = (uint32_t)data_addr;
 	} else {
 		/* When use ADMA, disable simple DMA */
 		base->DS_ADDR = 0U;
-		base->ADMA_SYS_ADDR = (u32_t)(dma_cfg->adma_table);
+		base->ADMA_SYS_ADDR = (uint32_t)(dma_cfg->adma_table);
 	}
 
 	/* select DMA mode and config the burst length */
@@ -849,16 +852,16 @@ static int usdhc_Internal_dma_cfg(struct usdhc_priv *priv,
 }
 
 
-static int usdhc_adma_table_cfg(struct usdhc_priv *priv, u32_t flags)
+static int usdhc_adma_table_cfg(struct usdhc_priv *priv, uint32_t flags)
 {
 	int error = -EIO;
 	struct usdhc_data *data = &priv->op_context.data;
 	struct usdhc_adma_config *dma_cfg = &priv->op_context.dma_cfg;
-	u32_t boot_dummy_off = data->data_type == USDHC_XFER_BOOT_CONTINUOUS ?
-		sizeof(u32_t) : 0U;
-	const u32_t *data_addr = (const u32_t *)((u32_t)((!data->rx_data) ?
+	uint32_t boot_dummy_off = data->data_type == USDHC_XFER_BOOT_CONTINUOUS ?
+		sizeof(uint32_t) : 0U;
+	const uint32_t *data_addr = (const uint32_t *)((uint32_t)((!data->rx_data) ?
 		data->tx_data : data->rx_data) + boot_dummy_off);
-	u32_t data_size = data->block_size * data->block_count - boot_dummy_off;
+	uint32_t data_size = data->block_size * data->block_count - boot_dummy_off;
 
 	switch (dma_cfg->dma_mode) {
 	case USDHC_DMA_SIMPLE:
@@ -891,10 +894,10 @@ static int usdhc_adma_table_cfg(struct usdhc_priv *priv, u32_t flags)
 static int usdhc_data_xfer_cfg(struct usdhc_priv *priv,
 	bool en_dma)
 {
-	USDHC_Type *base = priv->host_config.base;
-	u32_t mix_ctrl = base->MIX_CTRL;
+	USDHC_Type *base = priv->config->base;
+	uint32_t mix_ctrl = base->MIX_CTRL;
 	struct usdhc_data *data = NULL;
-	u32_t *flag = &priv->op_context.cmd.flags;
+	uint32_t *flag = &priv->op_context.cmd.flags;
 
 	if (!priv->op_context.cmd_only)
 		data = &priv->op_context.data;
@@ -1004,8 +1007,8 @@ static int usdhc_data_xfer_cfg(struct usdhc_priv *priv,
 
 static void usdhc_send_cmd(USDHC_Type *base, struct usdhc_cmd *command)
 {
-	u32_t xfer_type = base->CMD_XFR_TYP;
-	u32_t flags = command->flags;
+	uint32_t xfer_type = base->CMD_XFR_TYP;
+	uint32_t flags = command->flags;
 
 	if (!(base->PRES_STATE & USDHC_CMD_INHIBIT_FLAG)
 		&& (command->cmd_type != USDHC_CMD_TYPE_EMPTY)) {
@@ -1076,8 +1079,8 @@ static void usdhc_send_cmd(USDHC_Type *base, struct usdhc_cmd *command)
 
 static int usdhc_cmd_rsp(struct usdhc_priv *priv)
 {
-	u32_t i;
-	USDHC_Type *base = priv->host_config.base;
+	uint32_t i;
+	USDHC_Type *base = priv->config->base;
 	struct usdhc_cmd *cmd = &priv->op_context.cmd;
 
 	if (cmd->rsp_type != SDHC_RSP_TYPE_NONE) {
@@ -1121,8 +1124,8 @@ static int usdhc_wait_cmd_done(struct usdhc_priv *priv,
 	bool poll_cmd)
 {
 	int error = 0;
-	u32_t int_status = 0U;
-	USDHC_Type *base = priv->host_config.base;
+	uint32_t int_status = 0U;
+	USDHC_Type *base = priv->config->base;
 
 	/* check if need polling command done or not */
 	if (poll_cmd) {
@@ -1152,38 +1155,38 @@ static int usdhc_wait_cmd_done(struct usdhc_priv *priv,
 	return error;
 }
 
-static inline void usdhc_write_data(USDHC_Type *base, u32_t data)
+static inline void usdhc_write_data(USDHC_Type *base, uint32_t data)
 {
 	base->DATA_BUFF_ACC_PORT = data;
 }
 
-static inline u32_t usdhc_read_data(USDHC_Type *base)
+static inline uint32_t usdhc_read_data(USDHC_Type *base)
 {
 	return base->DATA_BUFF_ACC_PORT;
 }
 
-static u32_t usdhc_read_data_port(struct usdhc_priv *priv,
-	u32_t xfered_words)
+static uint32_t usdhc_read_data_port(struct usdhc_priv *priv,
+	uint32_t xfered_words)
 {
-	USDHC_Type *base = priv->host_config.base;
+	USDHC_Type *base = priv->config->base;
 	struct usdhc_data *data = &priv->op_context.data;
-	u32_t i, total_words, remaing_words;
+	uint32_t i, total_words, remaing_words;
 	/* The words can be read at this time. */
-	u32_t watermark = ((base->WTMK_LVL & USDHC_WTMK_LVL_RD_WML_MASK) >>
+	uint32_t watermark = ((base->WTMK_LVL & USDHC_WTMK_LVL_RD_WML_MASK) >>
 		USDHC_WTMK_LVL_RD_WML_SHIFT);
 
 	/* If DMA is enable, do not need to polling data port */
 	if (!(base->MIX_CTRL & USDHC_MIX_CTRL_DMAEN_MASK)) {
 		/*Add non aligned access support.*/
-		if (data->block_size % sizeof(u32_t)) {
+		if (data->block_size % sizeof(uint32_t)) {
 			data->block_size +=
-				sizeof(u32_t) -
-				(data->block_size % sizeof(u32_t));
+				sizeof(uint32_t) -
+				(data->block_size % sizeof(uint32_t));
 			/* make the block size as word-aligned */
 		}
 
 		total_words = ((data->block_count * data->block_size) /
-			sizeof(u32_t));
+			sizeof(uint32_t));
 
 		if (watermark >= total_words) {
 			remaing_words = total_words;
@@ -1206,21 +1209,21 @@ static u32_t usdhc_read_data_port(struct usdhc_priv *priv,
 
 static int usdhc_read_data_port_sync(struct usdhc_priv *priv)
 {
-	USDHC_Type *base = priv->host_config.base;
+	USDHC_Type *base = priv->config->base;
 	struct usdhc_data *data = &priv->op_context.data;
-	u32_t total_words;
-	u32_t xfered_words = 0U, int_status = 0U;
+	uint32_t total_words;
+	uint32_t xfered_words = 0U, int_status = 0U;
 	int error = 0;
 
-	if (data->block_size % sizeof(u32_t)) {
+	if (data->block_size % sizeof(uint32_t)) {
 		data->block_size +=
-			sizeof(u32_t) -
-			(data->block_size % sizeof(u32_t));
+			sizeof(uint32_t) -
+			(data->block_size % sizeof(uint32_t));
 	}
 
 	total_words =
 		((data->block_count * data->block_size) /
-		sizeof(u32_t));
+		sizeof(uint32_t));
 
 	while ((!error) && (xfered_words < total_words)) {
 		while (!(int_status & (USDHC_INT_BUF_READ_READY_FLAG |
@@ -1262,27 +1265,27 @@ static int usdhc_read_data_port_sync(struct usdhc_priv *priv)
 	return error;
 }
 
-static u32_t usdhc_write_data_port(struct usdhc_priv *priv,
-	u32_t xfered_words)
+static uint32_t usdhc_write_data_port(struct usdhc_priv *priv,
+	uint32_t xfered_words)
 {
-	USDHC_Type *base = priv->host_config.base;
+	USDHC_Type *base = priv->config->base;
 	struct usdhc_data *data = &priv->op_context.data;
-	u32_t i, total_words, remaing_words;
+	uint32_t i, total_words, remaing_words;
 	/* Words can be wrote at this time. */
-	u32_t watermark = ((base->WTMK_LVL & USDHC_WTMK_LVL_WR_WML_MASK) >>
+	uint32_t watermark = ((base->WTMK_LVL & USDHC_WTMK_LVL_WR_WML_MASK) >>
 		USDHC_WTMK_LVL_WR_WML_SHIFT);
 
 	/* If DMA is enable, do not need to polling data port */
 	if (!(base->MIX_CTRL & USDHC_MIX_CTRL_DMAEN_MASK)) {
-		if (data->block_size % sizeof(u32_t)) {
+		if (data->block_size % sizeof(uint32_t)) {
 			data->block_size +=
-				sizeof(u32_t) -
-				(data->block_size % sizeof(u32_t));
+				sizeof(uint32_t) -
+				(data->block_size % sizeof(uint32_t));
 		}
 
 		total_words =
 			((data->block_count * data->block_size) /
-			sizeof(u32_t));
+			sizeof(uint32_t));
 
 		if (watermark >= total_words) {
 			remaing_words = total_words;
@@ -1305,18 +1308,18 @@ static u32_t usdhc_write_data_port(struct usdhc_priv *priv,
 
 static status_t usdhc_write_data_port_sync(struct usdhc_priv *priv)
 {
-	USDHC_Type *base = priv->host_config.base;
+	USDHC_Type *base = priv->config->base;
 	struct usdhc_data *data = &priv->op_context.data;
-	u32_t total_words;
-	u32_t xfered_words = 0U, int_status = 0U;
+	uint32_t total_words;
+	uint32_t xfered_words = 0U, int_status = 0U;
 	int error = 0;
 
-	if (data->block_size % sizeof(u32_t)) {
+	if (data->block_size % sizeof(uint32_t)) {
 		data->block_size +=
-			sizeof(u32_t) - (data->block_size % sizeof(u32_t));
+			sizeof(uint32_t) - (data->block_size % sizeof(uint32_t));
 	}
 
-	total_words = (data->block_count * data->block_size) / sizeof(u32_t);
+	total_words = (data->block_count * data->block_size) / sizeof(uint32_t);
 
 	while ((!error) && (xfered_words < total_words)) {
 		while (!(int_status & (USDHC_INT_BUF_WRITE_READY_FLAG |
@@ -1366,8 +1369,8 @@ static status_t usdhc_write_data_port_sync(struct usdhc_priv *priv)
 static int usdhc_data_sync_xfer(struct usdhc_priv *priv, bool en_dma)
 {
 	int error = 0;
-	u32_t int_status = 0U;
-	USDHC_Type *base = priv->host_config.base;
+	uint32_t int_status = 0U;
+	USDHC_Type *base = priv->config->base;
 	struct usdhc_data *data = &priv->op_context.data;
 
 	if (en_dma) {
@@ -1412,7 +1415,7 @@ static int usdhc_xfer(struct usdhc_priv *priv)
 	int error = -EIO;
 	struct usdhc_data *data = NULL;
 	bool en_dma = true, execute_tuning;
-	USDHC_Type *base = priv->host_config.base;
+	USDHC_Type *base = priv->config->base;
 
 	if (!priv->op_context.cmd_only) {
 		data = &priv->op_context.data;
@@ -1480,9 +1483,9 @@ static inline void usdhc_force_clk_on(USDHC_Type *base, bool on)
 		base->VEND_SPEC &= ~USDHC_VEND_SPEC_FRC_SDCLK_ON_MASK;
 }
 
-static void usdhc_tuning(USDHC_Type *base, u32_t start, u32_t step, bool enable)
+static void usdhc_tuning(USDHC_Type *base, uint32_t start, uint32_t step, bool enable)
 {
-	u32_t tuning_ctrl = 0U;
+	uint32_t tuning_ctrl = 0U;
 
 	if (enable) {
 		/* feedback clock */
@@ -1510,9 +1513,9 @@ static void usdhc_tuning(USDHC_Type *base, u32_t start, u32_t step, bool enable)
 	}
 }
 
-int usdhc_adjust_tuning_timing(USDHC_Type *base, u32_t delay)
+int usdhc_adjust_tuning_timing(USDHC_Type *base, uint32_t delay)
 {
-	u32_t clk_tune_ctrl = 0U;
+	uint32_t clk_tune_ctrl = 0U;
 
 	clk_tune_ctrl = base->CLK_TUNE_CTRL_STATUS;
 
@@ -1531,7 +1534,7 @@ int usdhc_adjust_tuning_timing(USDHC_Type *base, u32_t delay)
 	return 0;
 }
 
-static inline void usdhc_set_retuning_timer(USDHC_Type *base, u32_t counter)
+static inline void usdhc_set_retuning_timer(USDHC_Type *base, uint32_t counter)
 {
 	base->HOST_CTRL_CAP &= ~USDHC_HOST_CTRL_CAP_TIME_COUNT_RETUNING_MASK;
 	base->HOST_CTRL_CAP |= USDHC_HOST_CTRL_CAP_TIME_COUNT_RETUNING(counter);
@@ -1548,7 +1551,7 @@ static int usdhc_execute_tuning(struct usdhc_priv *priv)
 {
 	bool tuning_err = true;
 	int ret;
-	USDHC_Type *base = priv->host_config.base;
+	USDHC_Type *base = priv->config->base;
 
 	/* enable the standard tuning */
 	usdhc_tuning(base, SDHC_STANDARD_TUNING_START, SDHC_TUINIG_STEP, true);
@@ -1599,7 +1602,7 @@ static int usdhc_execute_tuning(struct usdhc_priv *priv)
 
 static int usdhc_vol_switch(struct usdhc_priv *priv)
 {
-	USDHC_Type *base = priv->host_config.base;
+	USDHC_Type *base = priv->config->base;
 	int retry = 0xffff;
 
 	while (base->PRES_STATE &
@@ -1638,7 +1641,7 @@ static int usdhc_vol_switch(struct usdhc_priv *priv)
 }
 
 static inline void usdhc_op_ctx_init(struct usdhc_priv *priv,
-	bool cmd_only, u8_t cmd_idx, u32_t arg, enum sdhc_rsp_type rsp_type)
+	bool cmd_only, uint8_t cmd_idx, uint32_t arg, enum sdhc_rsp_type rsp_type)
 {
 	struct usdhc_cmd *cmd = &priv->op_context.cmd;
 	struct usdhc_data *data = &priv->op_context.data;
@@ -1654,11 +1657,12 @@ static inline void usdhc_op_ctx_init(struct usdhc_priv *priv,
 }
 
 static int usdhc_select_fun(struct usdhc_priv *priv,
-	u32_t group, u32_t function)
+	uint32_t group, uint32_t function)
 {
-	u32_t *fun_status;
-	u16_t fun_grp_info[6U] = {0};
-	u32_t current_fun_status = 0U, arg;
+	const struct usdhc_config *config = priv->config;
+	uint32_t *fun_status;
+	uint16_t fun_grp_info[6U] = {0};
+	uint32_t current_fun_status = 0U, arg;
 	struct usdhc_cmd *cmd = &priv->op_context.cmd;
 	struct usdhc_data *data = &priv->op_context.data;
 	int ret;
@@ -1671,7 +1675,7 @@ static int usdhc_select_fun(struct usdhc_priv *priv,
 
 	/* Check if card support high speed mode. */
 	arg = (SD_SWITCH_CHECK << 31U | 0x00FFFFFFU);
-	arg &= ~((u32_t)(0xFU) << (group * 4U));
+	arg &= ~((uint32_t)(0xFU) << (group * 4U));
 	arg |= (function << (group * 4U));
 	usdhc_op_ctx_init(priv, 0, SDHC_SWITCH, arg, SDHC_RSP_TYPE_R1);
 
@@ -1687,7 +1691,7 @@ static int usdhc_select_fun(struct usdhc_priv *priv,
 	/* Switch function status byte sequence
 	 * from card is big endian(MSB first).
 	 */
-	switch (priv->host_config.endian) {
+	switch (config->endian) {
 	case USDHC_LITTLE_ENDIAN:
 		fun_status[0U] = SWAP_WORD_BYTE_SEQUENCE(fun_status[0U]);
 		fun_status[1U] = SWAP_WORD_BYTE_SEQUENCE(fun_status[1U]);
@@ -1708,12 +1712,12 @@ static int usdhc_select_fun(struct usdhc_priv *priv,
 		return -ENOTSUP;
 	}
 
-	fun_grp_info[5U] = (u16_t)fun_status[0U];
-	fun_grp_info[4U] = (u16_t)(fun_status[1U] >> 16U);
-	fun_grp_info[3U] = (u16_t)(fun_status[1U]);
-	fun_grp_info[2U] = (u16_t)(fun_status[2U] >> 16U);
-	fun_grp_info[1U] = (u16_t)(fun_status[2U]);
-	fun_grp_info[0U] = (u16_t)(fun_status[3U] >> 16U);
+	fun_grp_info[5U] = (uint16_t)fun_status[0U];
+	fun_grp_info[4U] = (uint16_t)(fun_status[1U] >> 16U);
+	fun_grp_info[3U] = (uint16_t)(fun_status[1U]);
+	fun_grp_info[2U] = (uint16_t)(fun_status[2U] >> 16U);
+	fun_grp_info[1U] = (uint16_t)(fun_status[2U]);
+	fun_grp_info[0U] = (uint16_t)(fun_status[3U] >> 16U);
 	current_fun_status = ((fun_status[3U] & 0xFFU) << 8U) |
 		(fun_status[4U] >> 24U);
 
@@ -1732,7 +1736,7 @@ static int usdhc_select_fun(struct usdhc_priv *priv,
 	data->rx_data = &g_usdhc_rx_dummy[0];
 
 	cmd->argument = (SD_SWITCH_SET << 31U | 0x00FFFFFFU);
-	cmd->argument &= ~((u32_t)(0xFU) << (group * 4U));
+	cmd->argument &= ~((uint32_t)(0xFU) << (group * 4U));
 	cmd->argument |= (function << (group * 4U));
 
 	ret = usdhc_xfer(priv);
@@ -1741,7 +1745,7 @@ static int usdhc_select_fun(struct usdhc_priv *priv,
 	/* Switch function status byte sequence
 	 * from card is big endian(MSB first).
 	 */
-	switch (priv->host_config.endian) {
+	switch (config->endian) {
 	case USDHC_LITTLE_ENDIAN:
 		fun_status[3U] = SWAP_WORD_BYTE_SEQUENCE(fun_status[3U]);
 		fun_status[4U] = SWAP_WORD_BYTE_SEQUENCE(fun_status[4U]);
@@ -1771,13 +1775,13 @@ static int usdhc_select_fun(struct usdhc_priv *priv,
 	return 0;
 }
 
-u32_t usdhc_set_sd_clk(USDHC_Type *base, u32_t src_clk_hz, u32_t sd_clk_hz)
+uint32_t usdhc_set_sd_clk(USDHC_Type *base, uint32_t src_clk_hz, uint32_t sd_clk_hz)
 {
-	u32_t total_div = 0U;
-	u32_t divisor = 0U;
-	u32_t prescaler = 0U;
-	u32_t sysctl = 0U;
-	u32_t nearest_freq = 0U;
+	uint32_t total_div = 0U;
+	uint32_t divisor = 0U;
+	uint32_t prescaler = 0U;
+	uint32_t sysctl = 0U;
+	uint32_t nearest_freq = 0U;
 
 	assert(src_clk_hz != 0U);
 	assert((sd_clk_hz != 0U) && (sd_clk_hz <= src_clk_hz));
@@ -1870,9 +1874,9 @@ u32_t usdhc_set_sd_clk(USDHC_Type *base, u32_t src_clk_hz, u32_t sd_clk_hz)
 }
 
 static void usdhc_enable_ddr_mode(USDHC_Type *base,
-	bool enable, u32_t nibble_pos)
+	bool enable, uint32_t nibble_pos)
 {
-	u32_t prescaler = (base->SYS_CTRL & USDHC_SYS_CTRL_SDCLKFS_MASK) >>
+	uint32_t prescaler = (base->SYS_CTRL & USDHC_SYS_CTRL_SDCLKFS_MASK) >>
 		USDHC_SYS_CTRL_SDCLKFS_SHIFT;
 
 	if (enable) {
@@ -1896,6 +1900,7 @@ static void usdhc_enable_ddr_mode(USDHC_Type *base,
 
 static int usdhc_select_bus_timing(struct usdhc_priv *priv)
 {
+	const struct usdhc_config *config = priv->config;
 	int error = -EIO;
 
 	if (priv->card_info.voltage != SD_VOL_1_8_V) {
@@ -1915,8 +1920,8 @@ static int usdhc_select_bus_timing(struct usdhc_priv *priv)
 				priv->card_info.sd_timing =
 					SD_TIMING_SDR25_HIGH_SPEED_MODE;
 				priv->card_info.busclk_hz =
-					usdhc_set_sd_clk(priv->host_config.base,
-						priv->host_config.src_clk_hz,
+					usdhc_set_sd_clk(config->base,
+						priv->src_clk_hz,
 						SD_CLOCK_50MHZ);
 			} else if (error == -ENOTSUP) {
 				/* if not support high speed,
@@ -1947,8 +1952,8 @@ static int usdhc_select_bus_timing(struct usdhc_priv *priv)
 				priv->card_info.sd_timing =
 					SD_TIMING_SDR104_MODE;
 				priv->card_info.busclk_hz =
-					usdhc_set_sd_clk(priv->host_config.base,
-						priv->host_config.src_clk_hz,
+					usdhc_set_sd_clk(config->base,
+						priv->src_clk_hz,
 						SDMMCHOST_SUPPORT_SDR104_FREQ);
 				break;
 			}
@@ -1960,11 +1965,10 @@ static int usdhc_select_bus_timing(struct usdhc_priv *priv)
 					SD_TIMING_DDR50_MODE;
 				priv->card_info.busclk_hz =
 					usdhc_set_sd_clk(
-						priv->host_config.base,
-						priv->host_config.src_clk_hz,
+						config->base,
+						priv->src_clk_hz,
 						SD_CLOCK_50MHZ);
-				usdhc_enable_ddr_mode(
-					priv->host_config.base, true, 0U);
+				usdhc_enable_ddr_mode(config->base, true, 0U);
 			}
 			break;
 		case SD_TIMING_SDR50_MODE:
@@ -1976,8 +1980,8 @@ static int usdhc_select_bus_timing(struct usdhc_priv *priv)
 					SD_TIMING_SDR50_MODE;
 				priv->card_info.busclk_hz =
 					usdhc_set_sd_clk(
-						priv->host_config.base,
-						priv->host_config.src_clk_hz,
+						config->base,
+						priv->src_clk_hz,
 						SD_CLOCK_100MHZ);
 			}
 			break;
@@ -1989,8 +1993,8 @@ static int usdhc_select_bus_timing(struct usdhc_priv *priv)
 					SD_TIMING_SDR25_HIGH_SPEED_MODE;
 				priv->card_info.busclk_hz =
 					usdhc_set_sd_clk(
-						priv->host_config.base,
-						priv->host_config.src_clk_hz,
+						config->base,
+						priv->src_clk_hz,
 						SD_CLOCK_50MHZ);
 			}
 			break;
@@ -2008,11 +2012,11 @@ static int usdhc_select_bus_timing(struct usdhc_priv *priv)
 
 		/* config IO strength in IOMUX*/
 		if (priv->card_info.sd_timing == SD_TIMING_SDR50_MODE) {
-			imxrt_usdhc_pinmux(priv->nusdhc, false,
+			imxrt_usdhc_pinmux(config->nusdhc, false,
 				CARD_BUS_FREQ_100MHZ1,
 				CARD_BUS_STRENGTH_7);
 		} else {
-			imxrt_usdhc_pinmux(priv->nusdhc, false,
+			imxrt_usdhc_pinmux(config->nusdhc, false,
 				CARD_BUS_FREQ_200MHZ,
 				CARD_BUS_STRENGTH_7);
 		}
@@ -2036,7 +2040,7 @@ static int usdhc_select_bus_timing(struct usdhc_priv *priv)
 		/* set default IO strength to 4 to cover card adapter driver
 		 * strength difference
 		 */
-		imxrt_usdhc_pinmux(priv->nusdhc, false,
+		imxrt_usdhc_pinmux(config->nusdhc, false,
 			CARD_BUS_FREQ_100MHZ1,
 			CARD_BUS_STRENGTH_4);
 	}
@@ -2044,8 +2048,8 @@ static int usdhc_select_bus_timing(struct usdhc_priv *priv)
 	return error;
 }
 
-static int usdhc_write_sector(void *bus_data, const u8_t *buf, u32_t sector,
-		     u32_t count)
+static int usdhc_write_sector(void *bus_data, const uint8_t *buf, uint32_t sector,
+		     uint32_t count)
 {
 	struct usdhc_priv *priv = bus_data;
 	struct usdhc_cmd *cmd = &priv->op_context.cmd;
@@ -2058,7 +2062,7 @@ static int usdhc_write_sector(void *bus_data, const u8_t *buf, u32_t sector,
 	cmd->index = SDHC_WRITE_MULTIPLE_BLOCK;
 	data->block_size = priv->card_info.sd_block_size;
 	data->block_count = count;
-	data->tx_data = (const u32_t *)buf;
+	data->tx_data = (const uint32_t *)buf;
 	data->cmd12 = true;
 	if (data->block_count == 1U) {
 		cmd->index = SDHC_WRITE_BLOCK;
@@ -2073,8 +2077,8 @@ static int usdhc_write_sector(void *bus_data, const u8_t *buf, u32_t sector,
 	return usdhc_xfer(priv);
 }
 
-static int usdhc_read_sector(void *bus_data, u8_t *buf, u32_t sector,
-		     u32_t count)
+static int usdhc_read_sector(void *bus_data, uint8_t *buf, uint32_t sector,
+		     uint32_t count)
 {
 	struct usdhc_priv *priv = bus_data;
 	struct usdhc_cmd *cmd = &priv->op_context.cmd;
@@ -2087,7 +2091,7 @@ static int usdhc_read_sector(void *bus_data, u8_t *buf, u32_t sector,
 	cmd->index = SDHC_READ_MULTIPLE_BLOCK;
 	data->block_size = priv->card_info.sd_block_size;
 	data->block_count = count;
-	data->rx_data = (u32_t *)buf;
+	data->rx_data = (uint32_t *)buf;
 	data->cmd12 = true;
 
 	if (data->block_count == 1U) {
@@ -2107,7 +2111,7 @@ static int usdhc_read_sector(void *bus_data, u8_t *buf, u32_t sector,
 
 static bool usdhc_set_sd_active(USDHC_Type *base)
 {
-	u32_t timeout = 0xffff;
+	uint32_t timeout = 0xffff;
 
 	base->SYS_CTRL |= USDHC_SYS_CTRL_INITA_MASK;
 	/* Delay some time to wait card become active state. */
@@ -2125,8 +2129,8 @@ static bool usdhc_set_sd_active(USDHC_Type *base)
 static void usdhc_get_host_capability(USDHC_Type *base,
 	struct usdhc_capability *capability)
 {
-	u32_t host_cap;
-	u32_t max_blk_len;
+	uint32_t host_cap;
+	uint32_t max_blk_len;
 
 	host_cap = base->HOST_CTRL_CAP;
 
@@ -2150,7 +2154,7 @@ static void usdhc_get_host_capability(USDHC_Type *base,
 		USDHC_SUPPORT_8BIT_FLAG);
 }
 
-static bool usdhc_hw_reset(USDHC_Type *base, u32_t mask, u32_t timeout)
+static bool usdhc_hw_reset(USDHC_Type *base, uint32_t mask, uint32_t timeout)
 {
 	base->SYS_CTRL |= (mask & (USDHC_SYS_CTRL_RSTA_MASK |
 		USDHC_SYS_CTRL_RSTC_MASK | USDHC_SYS_CTRL_RSTD_MASK));
@@ -2168,8 +2172,8 @@ static bool usdhc_hw_reset(USDHC_Type *base, u32_t mask, u32_t timeout)
 static void usdhc_host_hw_init(USDHC_Type *base,
 	const struct usdhc_config *config)
 {
-	u32_t proctl, sysctl, wml;
-	u32_t int_mask;
+	uint32_t proctl, sysctl, wml;
+	uint32_t int_mask;
 
 	assert(config);
 	assert((config->write_watermark >= 1U) &&
@@ -2220,17 +2224,17 @@ static void usdhc_host_hw_init(USDHC_Type *base,
 }
 
 static void usdhc_cd_gpio_cb(struct device *dev,
-				  struct gpio_callback *cb, u32_t pins)
+				  struct gpio_callback *cb, uint32_t pins)
 {
-	struct usdhc_board_config *board_cfg =
-		CONTAINER_OF(cb, struct usdhc_board_config, detect_cb);
+	struct usdhc_priv *priv =
+		CONTAINER_OF(cb, struct usdhc_priv, detect_cb);
+	const struct usdhc_config *config = priv->config;
 
-	gpio_pin_interrupt_configure(dev, board_cfg->detect_pin,
-				     GPIO_INT_DISABLE);
+	gpio_pin_interrupt_configure(dev, config->detect_pin, GPIO_INT_DISABLE);
 }
 
 static int usdhc_cd_gpio_init(struct device *detect_gpio,
-	u32_t pin, gpio_dt_flags_t flags,
+	uint32_t pin, gpio_dt_flags_t flags,
 	struct gpio_callback *callback)
 {
 	int ret;
@@ -2246,7 +2250,7 @@ static int usdhc_cd_gpio_init(struct device *detect_gpio,
 
 static void usdhc_host_reset(struct usdhc_priv *priv)
 {
-	USDHC_Type *base = priv->host_config.base;
+	USDHC_Type *base = priv->config->base;
 
 	usdhc_select_1_8_vol(base, false);
 	usdhc_enable_ddr_mode(base, false, 0);
@@ -2259,7 +2263,7 @@ static void usdhc_host_reset(struct usdhc_priv *priv)
 }
 
 static int usdhc_app_host_cmd(struct usdhc_priv *priv, int retry,
-	u32_t arg, u8_t app_cmd, u32_t app_arg, enum sdhc_rsp_type rsp_type,
+	uint32_t arg, uint8_t app_cmd, uint32_t app_arg, enum sdhc_rsp_type rsp_type,
 	enum sdhc_rsp_type app_rsp_type, bool app_cmd_only)
 {
 	struct usdhc_cmd *cmd = &priv->op_context.cmd;
@@ -2290,8 +2294,9 @@ APP_CMD_XFER_AGAIN:
 
 static int usdhc_sd_init(struct usdhc_priv *priv)
 {
-	USDHC_Type *base = priv->host_config.base;
-	u32_t app_cmd_41_arg = 0U;
+	const struct usdhc_config *config = priv->config;
+	USDHC_Type *base = config->base;
+	uint32_t app_cmd_41_arg = 0U;
 	int ret, retry;
 	struct usdhc_cmd *cmd = &priv->op_context.cmd;
 	struct usdhc_data *data = &priv->op_context.data;
@@ -2306,7 +2311,7 @@ static int usdhc_sd_init(struct usdhc_priv *priv)
 	usdhc_set_bus_width(base, USDHC_DATA_BUS_WIDTH_1BIT);
 	/*set card freq to 400KHZ at begging*/
 	priv->card_info.busclk_hz =
-		usdhc_set_sd_clk(base, priv->host_config.src_clk_hz,
+		usdhc_set_sd_clk(base, priv->src_clk_hz,
 			SDMMC_CLOCK_400KHZ);
 	/* send card active */
 	ret = usdhc_set_sd_active(base);
@@ -2472,7 +2477,7 @@ APP_SEND_OP_COND_AGAIN:
 		return ret;
 	}
 
-	switch (priv->host_config.endian) {
+	switch (config->endian) {
 	case USDHC_LITTLE_ENDIAN:
 		priv->card_info.raw_scr[0] =
 			SWAP_WORD_BYTE_SEQUENCE(priv->card_info.raw_scr[0]);
@@ -2512,7 +2517,7 @@ APP_SEND_OP_COND_AGAIN:
 
 	/* Set to max frequency in non-high speed mode. */
 	priv->card_info.busclk_hz = usdhc_set_sd_clk(base,
-		priv->host_config.src_clk_hz, SD_CLOCK_25MHZ);
+		priv->src_clk_hz, SD_CLOCK_25MHZ);
 
 	/* Set to 4-bit data bus mode. */
 	if ((priv->host_capability.host_flags & USDHC_SUPPORT_4BIT_FLAG) &&
@@ -2567,7 +2572,7 @@ APP_SEND_OP_COND_AGAIN:
 	retry = 10;
 	ret = -EIO;
 	while (ret && retry >= 0) {
-		ret = usdhc_read_sector(priv, (u8_t *)g_usdhc_rx_dummy, 0, 1);
+		ret = usdhc_read_sector(priv, (uint8_t *)g_usdhc_rx_dummy, 0, 1);
 		if (!ret) {
 			break;
 		}
@@ -2581,79 +2586,34 @@ APP_SEND_OP_COND_AGAIN:
 	return ret;
 }
 
-struct usdhc_priv g_usdhc_priv1 __aligned(64);
-struct usdhc_priv g_usdhc_priv2 __aligned(64);
-
-
 static K_MUTEX_DEFINE(z_usdhc_init_lock);
 
 static int usdhc_board_access_init(struct usdhc_priv *priv)
 {
+	const struct usdhc_config *config = priv->config;
 	int ret;
-	u32_t gpio_level;
+	uint32_t gpio_level;
 
-	if (priv->nusdhc == 0) {
-#if DT_NODE_HAS_PROP(DT_INST(0, nxp_imx_usdhc), pwr_gpios)
-		priv->board_cfg.pwr_gpio =
-			device_get_binding(
-				DT_GPIO_LABEL(DT_INST(0, nxp_imx_usdhc), pwr_gpios));
-		if (!priv->board_cfg.pwr_gpio) {
+	if (config->pwr_name) {
+		priv->pwr_gpio = device_get_binding(config->pwr_name);
+		if (!priv->pwr_gpio) {
 			return -ENODEV;
 		}
-		priv->board_cfg.pwr_pin =
-			DT_GPIO_PIN(DT_INST(0, nxp_imx_usdhc), pwr_gpios);
-		priv->board_cfg.pwr_flags =
-			DT_GPIO_FLAGS(DT_INST(0, nxp_imx_usdhc), pwr_gpios);
-#endif
-#if DT_NODE_HAS_PROP(DT_INST(0, nxp_imx_usdhc), cd_gpios)
-		priv->detect_type = SD_DETECT_GPIO_CD;
-		priv->board_cfg.detect_gpio =
-			device_get_binding(
-				DT_GPIO_LABEL(DT_INST(0, nxp_imx_usdhc), cd_gpios));
-		if (!priv->board_cfg.detect_gpio) {
-			return -ENODEV;
-		}
-		priv->board_cfg.detect_pin =
-			DT_GPIO_PIN(DT_INST(0, nxp_imx_usdhc), cd_gpios);
-		priv->board_cfg.detect_flags =
-			DT_GPIO_FLAGS(DT_INST(0, nxp_imx_usdhc), cd_gpios);
-#endif
-
-	} else if (priv->nusdhc == 1) {
-#if DT_NODE_HAS_PROP(DT_INST(1, nxp_imx_usdhc), pwr_gpios)
-		priv->board_cfg.pwr_gpio =
-			device_get_binding(
-				DT_GPIO_LABEL(DT_INST(1, nxp_imx_usdhc), pwr_gpios));
-		if (!priv->board_cfg.pwr_gpio) {
-			return -ENODEV;
-		}
-		priv->board_cfg.pwr_pin =
-			DT_GPIO_PIN(DT_INST(1, nxp_imx_usdhc), pwr_gpios);
-		priv->board_cfg.pwr_flags =
-			DT_GPIO_FLAGS(DT_INST(1, nxp_imx_usdhc), pwr_gpios);
-#endif
-#if DT_NODE_HAS_PROP(DT_INST(1, nxp_imx_usdhc), cd_gpios)
-		priv->detect_type = SD_DETECT_GPIO_CD;
-		priv->board_cfg.detect_gpio =
-			device_get_binding(
-				DT_GPIO_LABEL(DT_INST(1, nxp_imx_usdhc), cd_gpios));
-		if (!priv->board_cfg.detect_gpio) {
-			return -ENODEV;
-		}
-		priv->board_cfg.detect_pin =
-			DT_GPIO_PIN(DT_INST(1, nxp_imx_usdhc), cd_gpios);
-		priv->board_cfg.detect_flags =
-			DT_GPIO_FLAGS(DT_INST(1, nxp_imx_usdhc), cd_gpios);
-#endif
-	} else {
-		return -ENODEV;
 	}
 
-	if (priv->board_cfg.pwr_gpio) {
-		ret = gpio_pin_configure(priv->board_cfg.pwr_gpio,
-				priv->board_cfg.pwr_pin,
+	if (config->detect_name) {
+		priv->detect_type = SD_DETECT_GPIO_CD;
+		priv->detect_gpio = device_get_binding(config->detect_name);
+		if (!priv->detect_gpio) {
+			return -ENODEV;
+		}
+	}
+
+	if (priv->pwr_gpio) {
+		ret = gpio_pin_configure(priv->pwr_gpio,
+				config->pwr_pin,
 				GPIO_OUTPUT_ACTIVE |
-				priv->board_cfg.pwr_flags);
+				config->pwr_flags);
 		if (ret) {
 			return ret;
 		}
@@ -2664,20 +2624,19 @@ static int usdhc_board_access_init(struct usdhc_priv *priv)
 		k_busy_wait(100000);
 	}
 
-	if (!priv->board_cfg.detect_gpio) {
+	if (!priv->detect_gpio) {
 		LOG_INF("USDHC detection other than GPIO not implemented!\r\n");
 		return 0;
 	}
 
-	ret = usdhc_cd_gpio_init(priv->board_cfg.detect_gpio,
-			priv->board_cfg.detect_pin,
-			priv->board_cfg.detect_flags,
-			&priv->board_cfg.detect_cb);
+	ret = usdhc_cd_gpio_init(priv->detect_gpio,
+			config->detect_pin,
+			config->detect_flags,
+			&priv->detect_cb);
 	if (ret) {
 		return ret;
 	}
-	ret = gpio_pin_get(priv->board_cfg.detect_gpio,
-			   priv->board_cfg.detect_pin);
+	ret = gpio_pin_get(priv->detect_gpio, config->detect_pin);
 	if (ret < 0) {
 		return ret;
 	}
@@ -2699,52 +2658,29 @@ static int usdhc_board_access_init(struct usdhc_priv *priv)
 
 static int usdhc_access_init(const struct device *dev)
 {
+	const struct usdhc_config *config = dev->config_info;
 	struct usdhc_priv *priv = dev->driver_data;
 	int ret;
 
 	(void)k_mutex_lock(&z_usdhc_init_lock, K_FOREVER);
 
 	memset((char *)priv, 0, sizeof(struct usdhc_priv));
-#if DT_NODE_HAS_STATUS(DT_INST(0, nxp_imx_usdhc), okay)
-	if (!strcmp(dev->name, DT_LABEL(DT_INST(0, nxp_imx_usdhc)))) {
-		priv->host_config.base =
-			(USDHC_Type *)DT_REG_ADDR(DT_INST(0, nxp_imx_usdhc));
-		priv->nusdhc = 0;
-		priv->clock_dev = device_get_binding(
-			DT_CLOCKS_LABEL(DT_INST(0, nxp_imx_usdhc)));
-		if (priv->clock_dev == NULL) {
-			return -EINVAL;
-		}
-		priv->clock_sys =
-			(clock_control_subsys_t)
-			DT_CLOCKS_CELL(DT_INST(0, nxp_imx_usdhc), name);
-	}
-#endif
+	priv->config = config;
 
-#if DT_NODE_HAS_STATUS(DT_INST(1, nxp_imx_usdhc), okay)
-	if (!strcmp(dev->name, DT_LABEL(DT_INST(1, nxp_imx_usdhc)))) {
-		priv->host_config.base =
-			(USDHC_Type *)DT_REG_ADDR(DT_INST(1, nxp_imx_usdhc));
-		priv->nusdhc = 1;
-		priv->clock_dev = device_get_binding(
-			DT_CLOCKS_LABEL(DT_INST(1, nxp_imx_usdhc)));
-		if (priv->clock_dev == NULL) {
-			return -EINVAL;
-		}
-		priv->clock_sys =
-			(clock_control_subsys_t)
-			DT_CLOCKS_CELL(DT_INST(1, nxp_imx_usdhc), name);
+	priv->clock_dev = device_get_binding(config->clock_name);
+	if (priv->clock_dev == NULL) {
+		return -EINVAL;
 	}
-#endif
 
-	if (!priv->host_config.base) {
+	if (!config->base) {
 		k_mutex_unlock(&z_usdhc_init_lock);
 
 		return -ENODEV;
 	}
 
-	if (clock_control_get_rate(priv->clock_dev, priv->clock_sys,
-				   &priv->host_config.src_clk_hz)) {
+	if (clock_control_get_rate(priv->clock_dev,
+				   config->clock_subsys,
+				   &priv->src_clk_hz)) {
 		return -EINVAL;
 	}
 
@@ -2755,19 +2691,12 @@ static int usdhc_access_init(const struct device *dev)
 		return ret;
 	}
 
-	priv->host_config.data_timeout = USDHC_DATA_TIMEOUT;
-	priv->host_config.endian = USDHC_LITTLE_ENDIAN;
-	priv->host_config.read_watermark = USDHC_READ_WATERMARK_LEVEL;
-	priv->host_config.write_watermark = USDHC_WRITE_WATERMARK_LEVEL;
-	priv->host_config.read_burst_len = USDHC_READ_BURST_LEN;
-	priv->host_config.write_burst_len = USDHC_WRITE_BURST_LEN;
-
 	priv->op_context.dma_cfg.dma_mode = USDHC_DMA_ADMA2;
 	priv->op_context.dma_cfg.burst_len = USDHC_INCR_BURST_LEN;
 	/*No DMA used for this Version*/
 	priv->op_context.dma_cfg.adma_table = 0;
 	priv->op_context.dma_cfg.adma_table_words = USDHC_ADMA_TABLE_WORDS;
-	usdhc_host_hw_init(priv->host_config.base, &priv->host_config);
+	usdhc_host_hw_init(config->base, config);
 	priv->host_ready = 1;
 
 	usdhc_host_reset(priv);
@@ -2785,8 +2714,8 @@ static int disk_usdhc_access_status(struct disk_info *disk)
 	return priv->status;
 }
 
-static int disk_usdhc_access_read(struct disk_info *disk, u8_t *buf,
-				 u32_t sector, u32_t count)
+static int disk_usdhc_access_read(struct disk_info *disk, uint8_t *buf,
+				 uint32_t sector, uint32_t count)
 {
 	struct device *dev = disk->dev;
 	struct usdhc_priv *priv = dev->driver_data;
@@ -2796,8 +2725,8 @@ static int disk_usdhc_access_read(struct disk_info *disk, u8_t *buf,
 	return usdhc_read_sector(priv, buf, sector, count);
 }
 
-static int disk_usdhc_access_write(struct disk_info *disk, const u8_t *buf,
-				  u32_t sector, u32_t count)
+static int disk_usdhc_access_write(struct disk_info *disk, const uint8_t *buf,
+				  uint32_t sector, uint32_t count)
 {
 	struct device *dev = disk->dev;
 	struct usdhc_priv *priv = dev->driver_data;
@@ -2807,7 +2736,7 @@ static int disk_usdhc_access_write(struct disk_info *disk, const u8_t *buf,
 	return usdhc_write_sector(priv, buf, sector, count);
 }
 
-static int disk_usdhc_access_ioctl(struct disk_info *disk, u8_t cmd, void *buf)
+static int disk_usdhc_access_ioctl(struct disk_info *disk, uint8_t cmd, void *buf)
 {
 	struct device *dev = disk->dev;
 	struct usdhc_priv *priv = dev->driver_data;
@@ -2822,13 +2751,13 @@ static int disk_usdhc_access_ioctl(struct disk_info *disk, u8_t cmd, void *buf)
 	case DISK_IOCTL_CTRL_SYNC:
 		break;
 	case DISK_IOCTL_GET_SECTOR_COUNT:
-		*(u32_t *)buf = priv->card_info.sd_block_count;
+		*(uint32_t *)buf = priv->card_info.sd_block_count;
 		break;
 	case DISK_IOCTL_GET_SECTOR_SIZE:
-		*(u32_t *)buf = priv->card_info.sd_block_size;
+		*(uint32_t *)buf = priv->card_info.sd_block_size;
 		break;
 	case DISK_IOCTL_GET_ERASE_BLOCK_SZ:
-		*(u32_t *)buf = priv->card_info.sd_block_size;
+		*(uint32_t *)buf = priv->card_info.sd_block_size;
 		break;
 	default:
 		return -EINVAL;
@@ -2874,28 +2803,36 @@ static int disk_usdhc_init(struct device *dev)
 	return disk_access_register(&usdhc_disk);
 }
 
-#ifdef CONFIG_DISK_ACCESS_USDHC1
-static struct usdhc_priv usdhc_priv_1;
-#if DT_NODE_HAS_STATUS(DT_INST(0, nxp_imx_usdhc), okay)
-DEVICE_AND_API_INIT(usdhc_dev1,
-		DT_LABEL(DT_INST(0, nxp_imx_usdhc)), disk_usdhc_init,
-		&usdhc_priv_1, NULL, APPLICATION,
-		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		NULL);
-#else
-#error No USDHC1 slot on board.
-#endif
-#endif
+#define DISK_ACCESS_USDHC_INIT(n)					\
+	static const struct usdhc_config usdhc_config_##n = {		\
+		.base = (USDHC_Type  *) DT_INST_REG_ADDR(n),		\
+		.clock_name = DT_INST_CLOCKS_LABEL(n),			\
+		.clock_subsys =						\
+		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
+		.nusdhc = n,						\
+		.pwr_name = DT_INST_GPIO_LABEL(n, pwr_gpios),		\
+		.pwr_pin = DT_INST_GPIO_PIN(n, pwr_gpios),		\
+		.pwr_flags = DT_INST_GPIO_FLAGS(n, pwr_gpios),		\
+		.detect_name = DT_INST_GPIO_LABEL(n, cd_gpios),		\
+		.detect_pin = DT_INST_GPIO_PIN(n, cd_gpios),		\
+		.detect_flags = DT_INST_GPIO_FLAGS(n, cd_gpios),	\
+		.data_timeout = USDHC_DATA_TIMEOUT,			\
+		.endian = USDHC_LITTLE_ENDIAN,				\
+		.read_watermark = USDHC_READ_WATERMARK_LEVEL,		\
+		.write_watermark =  USDHC_WRITE_WATERMARK_LEVEL,	\
+		.read_burst_len = USDHC_READ_BURST_LEN,			\
+		.write_burst_len = USDHC_WRITE_BURST_LEN,		\
+	};								\
+									\
+	static struct usdhc_priv usdhc_priv_##n;			\
+									\
+	DEVICE_AND_API_INIT(usdhc_dev##n,				\
+			    DT_INST_LABEL(n),				\
+			    &disk_usdhc_init,				\
+			    &usdhc_priv_##n,				\
+			    &usdhc_config_##n,				\
+			    APPLICATION,				\
+			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    NULL);
 
-#ifdef CONFIG_DISK_ACCESS_USDHC2
-static struct usdhc_priv usdhc_priv_2;
-#if DT_NODE_HAS_STATUS(DT_INST(1, nxp_imx_usdhc), okay)
-DEVICE_AND_API_INIT(usdhc_dev2,
-		DT_LABEL(DT_INST(1, nxp_imx_usdhc)), disk_usdhc_init,
-		usdhc_priv_2, NULL, APPLICATION,
-		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		NULL);
-#else
-#error No USDHC2 slot on board.
-#endif
-#endif
+DT_INST_FOREACH_STATUS_OKAY(DISK_ACCESS_USDHC_INIT)

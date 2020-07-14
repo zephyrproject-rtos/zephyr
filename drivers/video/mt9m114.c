@@ -51,13 +51,13 @@ LOG_MODULE_REGISTER(mt9m114);
 struct mt9m114_data {
 	struct device *i2c;
 	struct video_format fmt;
-	u8_t i2c_addr;
+	uint8_t i2c_addr;
 };
 
 struct mt9m114_reg {
-	u16_t addr;
-	u16_t value_size;
-	u32_t value;
+	uint16_t addr;
+	uint16_t value_size;
+	uint32_t value;
 };
 
 static struct mt9m114_reg mt9m114_vga_24mhz_pll[] = {
@@ -101,10 +101,10 @@ static struct mt9m114_reg mt9m114_vga_24mhz_pll[] = {
 	{ /* NULL terminated */ }
 };
 
-static inline int i2c_burst_read16(struct device *dev, u16_t dev_addr,
-				   u16_t start_addr, u8_t *buf, u32_t num_bytes)
+static inline int i2c_burst_read16(struct device *dev, uint16_t dev_addr,
+				   uint16_t start_addr, uint8_t *buf, uint32_t num_bytes)
 {
-	u8_t addr_buffer[2];
+	uint8_t addr_buffer[2];
 
 	addr_buffer[1] = start_addr & 0xFF;
 	addr_buffer[0] = start_addr >> 8;
@@ -112,11 +112,11 @@ static inline int i2c_burst_read16(struct device *dev, u16_t dev_addr,
 			      buf, num_bytes);
 }
 
-static inline int i2c_burst_write16(struct device *dev, u16_t dev_addr,
-				    u16_t start_addr, const u8_t *buf,
-				    u32_t num_bytes)
+static inline int i2c_burst_write16(struct device *dev, uint16_t dev_addr,
+				    uint16_t start_addr, const uint8_t *buf,
+				    uint32_t num_bytes)
 {
-	u8_t addr_buffer[2];
+	uint8_t addr_buffer[2];
 	struct i2c_msg msg[2];
 
 	addr_buffer[1] = start_addr & 0xFF;
@@ -125,24 +125,24 @@ static inline int i2c_burst_write16(struct device *dev, u16_t dev_addr,
 	msg[0].len = 2U;
 	msg[0].flags = I2C_MSG_WRITE;
 
-	msg[1].buf = (u8_t *)buf;
+	msg[1].buf = (uint8_t *)buf;
 	msg[1].len = num_bytes;
 	msg[1].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
 
 	return i2c_transfer(dev, msg, 2, dev_addr);
 }
 
-static int mt9m114_write_reg(struct device *dev, u16_t reg_addr, u8_t reg_size,
+static int mt9m114_write_reg(struct device *dev, uint16_t reg_addr, uint8_t reg_size,
 			     void *value)
 {
 	struct mt9m114_data *drv_data = dev->driver_data;
 
 	switch (reg_size) {
 	case 2:
-		*(u16_t *)value = sys_cpu_to_be16(*(u16_t *)value);
+		*(uint16_t *)value = sys_cpu_to_be16(*(uint16_t *)value);
 		break;
 	case 4:
-		*(u16_t *)value = sys_cpu_to_be32(*(u16_t *)value);
+		*(uint16_t *)value = sys_cpu_to_be32(*(uint16_t *)value);
 		break;
 	case 1:
 		break;
@@ -154,7 +154,7 @@ static int mt9m114_write_reg(struct device *dev, u16_t reg_addr, u8_t reg_size,
 				 value, reg_size);
 }
 
-static int mt9m114_read_reg(struct device *dev, u16_t reg_addr, u8_t reg_size,
+static int mt9m114_read_reg(struct device *dev, uint16_t reg_addr, uint8_t reg_size,
 			    void *value)
 {
 	struct mt9m114_data *drv_data = dev->driver_data;
@@ -172,10 +172,10 @@ static int mt9m114_read_reg(struct device *dev, u16_t reg_addr, u8_t reg_size,
 
 	switch (reg_size) {
 	case 2:
-		*(u16_t *)value = sys_be16_to_cpu(*(u16_t *)value);
+		*(uint16_t *)value = sys_be16_to_cpu(*(uint16_t *)value);
 		break;
 	case 4:
-		*(u32_t *)value = sys_be32_to_cpu(*(u32_t *)value);
+		*(uint32_t *)value = sys_be32_to_cpu(*(uint32_t *)value);
 		break;
 	case 1:
 		break;
@@ -205,9 +205,9 @@ static int mt9m114_write_all(struct device *dev, struct mt9m114_reg *reg)
 	return 0;
 }
 
-static int mt9m114_set_state(struct device *dev, u8_t state)
+static int mt9m114_set_state(struct device *dev, uint8_t state)
 {
-	u16_t val;
+	uint16_t val;
 	int err;
 
 	/* Set next state. */
@@ -258,7 +258,7 @@ static int mt9m114_set_fmt(struct device *dev, enum video_endpoint_id ep,
 			   struct video_format *fmt)
 {
 	struct mt9m114_data *drv_data = dev->driver_data;
-	u16_t output_format;
+	uint16_t output_format;
 	int ret;
 
 	/* we only support one format for now (VGA RGB565) */
@@ -347,7 +347,7 @@ static const struct video_driver_api mt9m114_driver_api = {
 static int mt9m114_init(struct device *dev)
 {
 	struct video_format fmt;
-	u16_t val;
+	uint16_t val;
 	int ret;
 
 	/* no power control, wait for camera ready */

@@ -188,7 +188,7 @@ static void stop_udp_and_tcp(void)
 }
 
 static void event_handler(struct net_mgmt_event_callback *cb,
-			  u32_t mgmt_event, struct net_if *iface)
+			  uint32_t mgmt_event, struct net_if *iface)
 {
 	if ((mgmt_event & EVENT_MASK) != mgmt_event) {
 		return;

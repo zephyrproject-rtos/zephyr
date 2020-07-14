@@ -98,11 +98,11 @@ static struct transfers transfer_blocks[MAX_TRANSFERS] = {
 	},
 };
 static struct device *dma_device;
-static u32_t current_block_count, total_block_count;
+static uint32_t current_block_count, total_block_count;
 
-static void test_done(void *arg, u32_t channel, int error_code)
+static void test_done(void *arg, uint32_t channel, int error_code)
 {
-	u32_t src, dst;
+	uint32_t src, dst;
 	size_t size;
 
 	current_block_count++;
@@ -111,8 +111,8 @@ static void test_done(void *arg, u32_t channel, int error_code)
 		printk("DMA transfer met an error = 0x%x\n", error_code);
 		k_sem_give(&dma_sem);
 	} else if (current_block_count < total_block_count) {
-		src = (u32_t)transfer_blocks[current_block_count].source;
-		dst = (u32_t)transfer_blocks[current_block_count].destination;
+		src = (uint32_t)transfer_blocks[current_block_count].source;
+		dst = (uint32_t)transfer_blocks[current_block_count].destination;
 		size = transfer_blocks[current_block_count].size;
 		dma_reload(dma_device, channel, src, dst, size);
 		dma_start(dma_device, channel);
@@ -122,14 +122,14 @@ static void test_done(void *arg, u32_t channel, int error_code)
 	}
 }
 
-static int test_task(u32_t chan_id, u32_t blen, u32_t block_count)
+static int test_task(uint32_t chan_id, uint32_t blen, uint32_t block_count)
 {
 	struct dma_config dma_cfg = {0};
 
 	struct dma_block_config dma_block_cfg = {
 		.block_size = sizeof(tx_data),
-		.source_address = (u32_t)tx_data,
-		.dest_address = (u32_t)rx_data,
+		.source_address = (uint32_t)tx_data,
+		.dest_address = (uint32_t)rx_data,
 	};
 
 	if (block_count > ARRAY_SIZE(transfer_blocks)) {

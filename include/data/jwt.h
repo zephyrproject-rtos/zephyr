@@ -76,8 +76,8 @@ int jwt_init_builder(struct jwt_builder *builder,
  * @brief add JWT primary payload.
  */
 int jwt_add_payload(struct jwt_builder *builder,
-		    s32_t exp,
-		    s32_t iat,
+		    int32_t exp,
+		    int32_t iat,
 		    const char *aud);
 
 /**

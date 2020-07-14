@@ -39,7 +39,7 @@ static bool device_get_config_level(const struct shell *shell, int level)
 	bool devices = false;
 
 	for (dev = levels[level]; dev < levels[level+1]; dev++) {
-		if (dev->driver_api != NULL) {
+		if (z_device_ready(dev)) {
 			devices = true;
 
 			shell_fprintf(shell, SHELL_NORMAL, "- %s\n", dev->name);
@@ -92,14 +92,14 @@ static int cmd_device_list(const struct shell *shell,
 	shell_fprintf(shell, SHELL_NORMAL, "devices:\n");
 
 	for (dev = __device_start; dev != __device_end; dev++) {
-		if (dev->driver_api == NULL) {
+		if (!z_device_ready(dev)) {
 			continue;
 		}
 
 		shell_fprintf(shell, SHELL_NORMAL, "- %s", dev->name);
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-		u32_t state = DEVICE_PM_ACTIVE_STATE;
+		uint32_t state = DEVICE_PM_ACTIVE_STATE;
 		int err;
 
 		err = device_get_power_state(dev, &state);

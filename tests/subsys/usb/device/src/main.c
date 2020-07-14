@@ -55,7 +55,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_device_desc dev_desc = {
 
 static void status_cb(struct usb_cfg_data *cfg,
 		      enum usb_dc_status_code status,
-		      const u8_t *param)
+		      const uint8_t *param)
 {
 	ARG_UNUSED(cfg);
 	ARG_UNUSED(status);
@@ -63,7 +63,7 @@ static void status_cb(struct usb_cfg_data *cfg,
 }
 
 /* EP Bulk IN handler, used to send data to the Host */
-static void bulk_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
+static void bulk_in(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
 }
 
@@ -115,8 +115,8 @@ static void test_usb_dc_api(void)
 /* Test USB Device Cotnroller API for invalid parameters */
 static void test_usb_dc_api_invalid(void)
 {
-	u32_t size;
-	u8_t byte;
+	uint32_t size;
+	uint8_t byte;
 
 	/* Set stall to invalid EP */
 	zassert_not_equal(usb_dc_ep_set_stall(INVALID_EP), TC_PASS,
@@ -174,8 +174,8 @@ static void test_usb_dc_api_invalid(void)
 
 static void test_usb_dc_api_read_write(void)
 {
-	u32_t size;
-	u8_t byte;
+	uint32_t size;
+	uint8_t byte;
 
 	/* Read invalid EP */
 	zassert_not_equal(usb_read(INVALID_EP, &byte, sizeof(byte), &size),

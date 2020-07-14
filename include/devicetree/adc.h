@@ -23,10 +23,11 @@ extern "C" {
  */
 
 /**
- * @brief Get IO channels controller "name" (label property) at an index
+ * @brief Get a label property from the node referenced by an
+ *        io-channels property at an index
  *
- * It's an error if the IO channels controller referenced by the phandle
- * in property "io_channels" at index "idx" has no label property.
+ * It's an error if the node referenced by the phandle in node_id's
+ * io-channels property at index "idx" has no label property.
  *
  * Example devicetree fragment:
  *
@@ -46,19 +47,20 @@ extern "C" {
  *
  *     DT_IO_CHANNELS_LABEL_BY_IDX(DT_NODELABEL(n), 1) // "ADC_2"
  *
- * @param node_id node identifier
- * @param idx logical index into the property
- * @return the label property for the referenced node at index idx
- * @see DT_PHANDLE_BY_IDX()
+ * @param node_id node identifier for a node with an io-channels property
+ * @param idx logical index into io-channels property
+ * @return the label property of the node referenced at index "idx"
+ * @see DT_PROP_BY_PHANDLE_IDX()
  */
 #define DT_IO_CHANNELS_LABEL_BY_IDX(node_id, idx) \
 	DT_PROP_BY_PHANDLE_IDX(node_id, io_channels, idx, label)
 
 /**
- * @brief Get IO channels controller "name" (label property) by name
+ * @brief Get a label property from an io-channels property by name
  *
- * It's an error if the IO channels controller referenced by the phandle
- * in property "io_channels" at index "idx" has no label property.
+ * It's an error if the node referenced by the phandle in node_id's
+ * io-channels property at the element named "name" has no label
+ * property.
  *
  * Example devicetree fragment:
  *
@@ -79,9 +81,10 @@ extern "C" {
  *
  *     DT_IO_CHANNELS_LABEL_BY_NAME(DT_NODELABEL(n), bandgap) // "ADC_2"
  *
- * @param node_id node identifier
- * @param name lowercase-and-underscores "io_channel" name
- * @return the label property for the referenced node by name
+ * @param node_id node identifier for a node with an io-channels property
+ * @param name lowercase-and-underscores name of an io-channels element
+ *             as defined by the node's io-channel-names property
+ * @return the label property of the node referenced at the named element
  * @see DT_PHANDLE_BY_NAME()
  */
 #define DT_IO_CHANNELS_LABEL_BY_NAME(node_id, name) \
@@ -89,101 +92,158 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_IO_CHANNELS_LABEL_BY_IDX(node_id, 0)
- * @param node_id node identifier
- * @return the label property for the named specifier at index 0
+ * @param node_id node identifier for a node with an io-channels property
+ * @return the label property of the node referenced at index 0
  * @see DT_IO_CHANNELS_LABEL_BY_IDX()
  */
 #define DT_IO_CHANNELS_LABEL(node_id) DT_IO_CHANNELS_LABEL_BY_IDX(node_id, 0)
 
 /**
- * @brief Get IO channel's controller "name" at an index
- * (see @ref DT_IO_CHANNELS_LABEL_BY_IDX)
- * @param inst instance number
- * @param idx logical index into the property
- * @return the label property for the named specifier at index idx
+ * @brief Get a label property from a DT_DRV_COMPAT instance's io-channels
+ *        property at an index
+ * @param inst DT_DRV_COMPAT instance number
+ * @param idx logical index into io-channels property
+ * @return the label property of the node referenced at index "idx"
+ * @see DT_IO_CHANNELS_LABEL_BY_IDX()
  */
 #define DT_INST_IO_CHANNELS_LABEL_BY_IDX(inst, idx) \
 	DT_IO_CHANNELS_LABEL_BY_IDX(DT_DRV_INST(inst), idx)
 
 /**
- * @brief Get IO channel's controller "name" by name
- * (see @ref DT_IO_CHANNELS_LABEL_BY_NAME)
- * @param inst instance number
- * @param name lowercase-and-underscores "io_channel" name
- * @return the label property for the named specifier by name
+ * @brief Get a label property from a DT_DRV_COMPAT instance's io-channels
+ *        property by name
+ * @param inst DT_DRV_COMPAT instance number
+ * @param name lowercase-and-underscores name of an io-channels element
+ *             as defined by the instance's io-channel-names property
+ * @return the label property of the node referenced at the named element
+ * @see DT_IO_CHANNELS_LABEL_BY_NAME()
  */
 #define DT_INST_IO_CHANNELS_LABEL_BY_NAME(inst, name) \
 	DT_IO_CHANNELS_LABEL_BY_NAME(DT_DRV_INST(inst), name)
 
 /**
  * @brief Equivalent to DT_INST_IO_CHANNELS_LABEL_BY_IDX(inst, 0)
- * @param inst instance number
- * @return the label property for the named specifier at index 0
+ * @param inst DT_DRV_COMPAT instance number
+ * @return the label property of the node referenced at index 0
  */
 #define DT_INST_IO_CHANNELS_LABEL(inst) DT_INST_IO_CHANNELS_LABEL_BY_IDX(inst, 0)
 
 /**
- * @brief Get IO channels controller 'input' at an index
+ * @brief Get an io-channels specifier input cell at an index
  *
- * This macro only works for IO channels controllers that specify a 'input'
- * field in the phandle-array specifier.  Refer to the specific IO channels
- * controller binding if needed.
+ * This macro only works for io-channels specifiers with cells named
+ * "input". Refer to the node's binding to check if necessary.
  *
- * @param node_id node identifier
- * @param idx logical index into the property
- * @return the input value for the named specifier at index idx
+ * Example devicetree fragment:
+ *
+ *     adc1: adc@... {
+ *             compatible = "vnd,adc";
+ *             #io-channel-cells = <1>;
+ *     };
+ *
+ *     adc2: adc@... {
+ *             compatible = "vnd,adc";
+ *             #io-channel-cells = <1>;
+ *     };
+ *
+ *     n: node {
+ *             io-channels = <&adc1 10>, <&adc2 20>;
+ *     };
+ *
+ * Bindings fragment for the vnd,adc compatible:
+ *
+ *    io-channel-cells:
+ *      - input
+ *
+ * Example usage:
+ *
+ *     DT_IO_CHANNELS_INPUT_BY_IDX(DT_NODELABEL(n), 0) // 10
+ *     DT_IO_CHANNELS_INPUT_BY_IDX(DT_NODELABEL(n), 1) // 20
+ *
+ * @param node_id node identifier for a node with an io-channels property
+ * @param idx logical index into io-channels property
+ * @return the input cell in the specifier at index "idx"
  * @see DT_PHA_BY_IDX()
- * @see DT_PHA()
  */
 #define DT_IO_CHANNELS_INPUT_BY_IDX(node_id, idx) \
 	DT_PHA_BY_IDX(node_id, io_channels, idx, input)
 
 /**
- * @brief Get IO channels controller 'input' by name
+ * @brief Get an io-channels specifier input cell by name
  *
- * This macro only works for IO channels controllers that specify a 'input'
- * field in the phandle-array specifier.  Refer to the specific IO channels
- * controller binding if needed.
+ * This macro only works for io-channels specifiers with cells named
+ * "input". Refer to the node's binding to check if necessary.
  *
- * @param node_id node identifier
- * @param name lowercase-and-underscores "io_channel" name
- * @return the input value for the named specifier by name
+ * Example devicetree fragment:
+ *
+ *     adc1: adc@... {
+ *             compatible = "vnd,adc";
+ *             #io-channel-cells = <1>;
+ *     };
+ *
+ *     adc2: adc@... {
+ *             compatible = "vnd,adc";
+ *             #io-channel-cells = <1>;
+ *     };
+ *
+ *     n: node {
+ *             io-channels = <&adc1 10>, <&adc2 20>;
+ *             io-channel-names = "SENSOR", "BANDGAP";
+ *     };
+ *
+ * Bindings fragment for the vnd,adc compatible:
+ *
+ *    io-channel-cells:
+ *      - input
+ *
+ * Example usage:
+ *
+ *     DT_IO_CHANNELS_INPUT_BY_NAME(DT_NODELABEL(n), sensor) // 10
+ *     DT_IO_CHANNELS_INPUT_BY_NAME(DT_NODELABEL(n), bandgap) // 20
+ *
+ * @param node_id node identifier for a node with an io-channels property
+ * @param name lowercase-and-underscores name of an io-channels element
+ *             as defined by the node's io-channel-names property
+ * @return the input cell in the specifier at the named element
  * @see DT_PHA_BY_NAME()
  */
 #define DT_IO_CHANNELS_INPUT_BY_NAME(node_id, name) \
 	DT_PHA_BY_NAME(node_id, io_channels, name, input)
 /**
  * @brief Equivalent to DT_IO_CHANNELS_INPUT_BY_IDX(node_id, 0)
- * @param node_id node identifier
- * @return the label property for the named specifier at index 0
+ * @param node_id node identifier for a node with an io-channels property
+ * @return the input cell in the specifier at index 0
  * @see DT_IO_CHANNELS_INPUT_BY_IDX()
  */
 #define DT_IO_CHANNELS_INPUT(node_id) DT_IO_CHANNELS_INPUT_BY_IDX(node_id, 0)
 
 /**
- * @brief Get IO channel's controller "input" at an index
- * (see @ref DT_IO_CHANNELS_INPUT_BY_IDX)
- * @param inst instance number
- * @param idx logical index into the property
- * @return the input value for the named specifier at index idx
+ * @brief Get an input cell from the "DT_DRV_INST(inst)" io-channels
+ *        property at an index
+ * @param inst DT_DRV_COMPAT instance number
+ * @param idx logical index into io-channels property
+ * @return the input cell in the specifier at index "idx"
+ * @see DT_IO_CHANNELS_INPUT_BY_IDX()
  */
 #define DT_INST_IO_CHANNELS_INPUT_BY_IDX(inst, idx) \
 	DT_IO_CHANNELS_INPUT_BY_IDX(DT_DRV_INST(inst), idx)
 
 /**
- * @brief Get IO channel's controller "input" by name
- * (see @ref DT_IO_CHANNELS_INPUT_BY_NAME)
- * @param inst instance number
- * @param name lowercase-and-underscores "io_channel" name
- * @return the input value for the named specifier at index idx
+ * @brief Get an input cell from the "DT_DRV_INST(inst)" io-channels
+ *        property by name
+ * @param inst DT_DRV_COMPAT instance number
+ * @param name lowercase-and-underscores name of an io-channels element
+ *             as defined by the instance's io-channel-names property
+ * @return the input cell in the specifier at the named element
+ * @see DT_IO_CHANNELS_INPUT_BY_NAME()
  */
 #define DT_INST_IO_CHANNELS_INPUT_BY_NAME(inst, name) \
 	DT_IO_CHANNELS_INPUT_BY_NAME(DT_DRV_INST(inst), name)
 
 /**
- * @brief Equivalent to DT_INST_IO_CHANNELS_INPUT(inst, 0)
- * @param inst instance number
- * @return the input property for the named specifier at index 0
+ * @brief Equivalent to DT_INST_IO_CHANNELS_INPUT_BY_IDX(inst, 0)
+ * @param inst DT_DRV_COMPAT instance number
+ * @return the input cell in the specifier at index 0
  */
 #define DT_INST_IO_CHANNELS_INPUT(inst) DT_INST_IO_CHANNELS_INPUT_BY_IDX(inst, 0)
 
@@ -194,6 +254,5 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-
 
 #endif  /* ZEPHYR_INCLUDE_DEVICETREE_ADC_H_ */

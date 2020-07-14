@@ -44,7 +44,7 @@ int hmc5883l_trigger_set(struct device *dev,
 }
 
 static void hmc5883l_gpio_callback(struct device *dev,
-				   struct gpio_callback *cb, u32_t pins)
+				   struct gpio_callback *cb, uint32_t pins)
 {
 	struct hmc5883l_data *drv_data =
 		CONTAINER_OF(cb, struct hmc5883l_data, gpio_cb);

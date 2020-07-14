@@ -16,7 +16,7 @@ static void zephyr_timer_wrapper(struct k_timer *timer);
 struct timer_obj {
 	struct k_timer ztimer;
 	os_timer_type type;
-	u32_t status;
+	uint32_t status;
 	void (*callback_function)(void const *argument);
 	void *arg;
 };

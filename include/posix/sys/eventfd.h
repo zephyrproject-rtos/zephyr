@@ -21,7 +21,7 @@ extern "C" {
 #define EFD_NONBLOCK  O_NONBLOCK
 #define EFD_FLAGS_SET (EFD_SEMAPHORE | EFD_NONBLOCK)
 
-typedef u64_t eventfd_t;
+typedef uint64_t eventfd_t;
 
 /**
  * @brief Create a file descriptor for event notification

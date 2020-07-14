@@ -29,16 +29,16 @@
 #include <kernel.h>
 #include <kernel_structs.h>
 #include <toolchain.h>
-#include <linker/sections.h>
 #include <ksched.h>
 #include <wait_q.h>
-#include <sys/dlist.h>
-#include <debug/object_tracing_common.h>
 #include <errno.h>
 #include <init.h>
 #include <syscall_handler.h>
+#include <debug/object_tracing_common.h>
 #include <tracing/tracing.h>
 #include <sys/check.h>
+#include <logging/log.h>
+LOG_MODULE_DECLARE(os);
 
 /* We use a global spinlock here because some of the synchronization
  * is protecting things like owner thread priorities which aren't
@@ -93,7 +93,7 @@ static inline int z_vrfy_k_mutex_init(struct k_mutex *mutex)
 #include <syscalls/k_mutex_init_mrsh.c>
 #endif
 
-static s32_t new_prio_for_inheritance(s32_t target, s32_t limit)
+static int32_t new_prio_for_inheritance(int32_t target, int32_t limit)
 {
 	int new_prio = z_is_prio_higher(target, limit) ? target : limit;
 
@@ -102,11 +102,11 @@ static s32_t new_prio_for_inheritance(s32_t target, s32_t limit)
 	return new_prio;
 }
 
-static bool adjust_owner_prio(struct k_mutex *mutex, s32_t new_prio)
+static bool adjust_owner_prio(struct k_mutex *mutex, int32_t new_prio)
 {
 	if (mutex->owner->base.prio != new_prio) {
 
-		K_DEBUG("%p (ready (y/n): %c) prio changed to %d (was %d)\n",
+		LOG_DBG("%p (ready (y/n): %c) prio changed to %d (was %d)",
 			mutex->owner, z_is_thread_ready(mutex->owner) ?
 			'y' : 'n',
 			new_prio, mutex->owner->base.prio);
@@ -122,6 +122,8 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 	k_spinlock_key_t key;
 	bool resched = false;
 
+	__ASSERT(!arch_is_in_isr(), "mutexes cannot be used inside ISRs");
+
 	sys_trace_void(SYS_TRACE_ID_MUTEX_LOCK);
 	key = k_spin_lock(&lock);
 
@@ -134,7 +136,7 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 		mutex->lock_count++;
 		mutex->owner = _current;
 
-		K_DEBUG("%p took mutex %p, count: %d, orig prio: %d\n",
+		LOG_DBG("%p took mutex %p, count: %d, orig prio: %d",
 			_current, mutex, mutex->lock_count,
 			mutex->owner_orig_prio);
 
@@ -153,7 +155,7 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 	new_prio = new_prio_for_inheritance(_current->base.prio,
 					    mutex->owner->base.prio);
 
-	K_DEBUG("adjusting prio up on mutex %p\n", mutex);
+	LOG_DBG("adjusting prio up on mutex %p", mutex);
 
 	if (z_is_prio_higher(new_prio, mutex->owner->base.prio)) {
 		resched = adjust_owner_prio(mutex, new_prio);
@@ -161,9 +163,9 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 
 	int got_mutex = z_pend_curr(&lock, key, &mutex->wait_q, timeout);
 
-	K_DEBUG("on mutex %p got_mutex value: %d\n", mutex, got_mutex);
+	LOG_DBG("on mutex %p got_mutex value: %d", mutex, got_mutex);
 
-	K_DEBUG("%p got mutex %p (y/n): %c\n", _current, mutex,
+	LOG_DBG("%p got mutex %p (y/n): %c", _current, mutex,
 		got_mutex ? 'y' : 'n');
 
 	if (got_mutex == 0) {
@@ -173,7 +175,7 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 
 	/* timed out */
 
-	K_DEBUG("%p timeout on mutex %p\n", _current, mutex);
+	LOG_DBG("%p timeout on mutex %p", _current, mutex);
 
 	key = k_spin_lock(&lock);
 
@@ -183,7 +185,7 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 		new_prio_for_inheritance(waiter->base.prio, mutex->owner_orig_prio) :
 		mutex->owner_orig_prio;
 
-	K_DEBUG("adjusting prio down on mutex %p\n", mutex);
+	LOG_DBG("adjusting prio down on mutex %p", mutex);
 
 	resched = adjust_owner_prio(mutex, new_prio) || resched;
 
@@ -211,6 +213,8 @@ int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 {
 	struct k_thread *new_owner;
 
+	__ASSERT(!arch_is_in_isr(), "mutexes cannot be used inside ISRs");
+
 	CHECKIF(mutex->owner == NULL) {
 		return -EINVAL;
 	}
@@ -232,7 +236,7 @@ int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 	sys_trace_void(SYS_TRACE_ID_MUTEX_UNLOCK);
 	z_sched_lock();
 
-	K_DEBUG("mutex %p lock_count: %d\n", mutex, mutex->lock_count);
+	LOG_DBG("mutex %p lock_count: %d", mutex, mutex->lock_count);
 
 	/*
 	 * If we are the owner and count is greater than 1, then decrement
@@ -252,7 +256,7 @@ int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 
 	mutex->owner = new_owner;
 
-	K_DEBUG("new owner of mutex %p: %p (prio: %d)\n",
+	LOG_DBG("new owner of mutex %p: %p (prio: %d)",
 		mutex, new_owner, new_owner ? new_owner->base.prio : -1000);
 
 	if (new_owner != NULL) {

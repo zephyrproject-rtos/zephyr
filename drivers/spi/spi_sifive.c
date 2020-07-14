@@ -16,9 +16,9 @@ LOG_MODULE_REGISTER(spi_sifive);
 
 /* Helper Functions */
 
-static inline void sys_set_mask(mem_addr_t addr, u32_t mask, u32_t value)
+static inline void sys_set_mask(mem_addr_t addr, uint32_t mask, uint32_t value)
 {
-	u32_t temp = sys_read32(addr);
+	uint32_t temp = sys_read32(addr);
 
 	temp &= ~(mask);
 	temp |= value;
@@ -26,10 +26,10 @@ static inline void sys_set_mask(mem_addr_t addr, u32_t mask, u32_t value)
 	sys_write32(temp, addr);
 }
 
-int spi_config(struct device *dev, u32_t frequency, u16_t operation)
+int spi_config(struct device *dev, uint32_t frequency, uint16_t operation)
 {
-	u32_t div;
-	u32_t fmt_len;
+	uint32_t div;
+	uint32_t fmt_len;
 
 	if (SPI_OP_MODE_GET(operation) != SPI_OP_MODE_MASTER) {
 		return -ENOTSUP;
@@ -93,35 +93,35 @@ int spi_config(struct device *dev, u32_t frequency, u16_t operation)
 	return 0;
 }
 
-void spi_sifive_send(struct device *dev, u16_t frame)
+void spi_sifive_send(struct device *dev, uint16_t frame)
 {
 	while (sys_read32(SPI_REG(dev, REG_TXDATA)) & SF_TXDATA_FULL) {
 	}
 
-	sys_write32((u32_t) frame, SPI_REG(dev, REG_TXDATA));
+	sys_write32((uint32_t) frame, SPI_REG(dev, REG_TXDATA));
 }
 
-u16_t spi_sifive_recv(struct device *dev)
+uint16_t spi_sifive_recv(struct device *dev)
 {
-	u32_t val;
+	uint32_t val;
 
 	while ((val = sys_read32(SPI_REG(dev, REG_RXDATA))) & SF_RXDATA_EMPTY) {
 	}
 
-	return (u16_t) val;
+	return (uint16_t) val;
 }
 
 void spi_sifive_xfer(struct device *dev, const bool hw_cs_control)
 {
 	struct spi_context *ctx = &SPI_DATA(dev)->ctx;
 
-	u32_t send_len = spi_context_longest_current_buf(ctx);
+	uint32_t send_len = spi_context_longest_current_buf(ctx);
 
-	for (u32_t i = 0; i < send_len; i++) {
+	for (uint32_t i = 0; i < send_len; i++) {
 
 		/* Send a frame */
 		if (i < ctx->tx_len) {
-			spi_sifive_send(dev, (u16_t) (ctx->tx_buf)[i]);
+			spi_sifive_send(dev, (uint16_t) (ctx->tx_buf)[i]);
 		} else {
 			/* Send dummy bytes */
 			spi_sifive_send(dev, 0);
@@ -129,7 +129,7 @@ void spi_sifive_xfer(struct device *dev, const bool hw_cs_control)
 
 		/* Receive a frame */
 		if (i < ctx->rx_len) {
-			ctx->rx_buf[i] = (u8_t) spi_sifive_recv(dev);
+			ctx->rx_buf[i] = (uint8_t) spi_sifive_recv(dev);
 		} else {
 			/* Discard returned value */
 			spi_sifive_recv(dev);

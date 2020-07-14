@@ -20,14 +20,14 @@ void test_gaussian_naive_bayes_predict_f32(void)
 	arm_gaussian_naive_bayes_instance_f32 inst;
 
 	size_t index;
-	const u16_t pattern_count = in_dims[0];
-	const u16_t class_count = in_dims[1];
-	const u16_t vec_dims = in_dims[2];
+	const uint16_t pattern_count = in_dims[0];
+	const uint16_t class_count = in_dims[1];
+	const uint16_t vec_dims = in_dims[2];
 
 	const float32_t *params = (const float32_t *)in_param;
 	const float32_t *input = (const float32_t *)in_val;
 	float32_t *output_probs_buf, *output_probs;
-	u16_t *output_preds_buf, *output_preds;
+	uint16_t *output_preds_buf, *output_preds;
 
 	/* Initialise instance */
 	inst.vectorDimension = vec_dims;
@@ -43,7 +43,7 @@ void test_gaussian_naive_bayes_predict_f32(void)
 	zassert_not_null(output_probs_buf, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	output_preds_buf =
-		malloc(pattern_count * sizeof(u16_t));
+		malloc(pattern_count * sizeof(uint16_t));
 	zassert_not_null(output_preds_buf, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	output_probs = output_probs_buf;

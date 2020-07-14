@@ -12,22 +12,22 @@
 extern "C" {
 #endif
 
-#define FCB_CRC_SZ	sizeof(u8_t)
+#define FCB_CRC_SZ	sizeof(uint8_t)
 #define FCB_TMP_BUF_SZ	32
 
 #define FCB_ID_GT(a, b) (((int16_t)(a) - (int16_t)(b)) > 0)
 
 struct fcb_disk_area {
-	u32_t fd_magic;
-	u8_t fd_ver;
-	u8_t _pad;
-	u16_t fd_id;
+	uint32_t fd_magic;
+	uint8_t fd_ver;
+	uint8_t _pad;
+	uint16_t fd_id;
 };
 
-int fcb_put_len(u8_t *buf, u16_t len);
-int fcb_get_len(u8_t *buf, u16_t *len);
+int fcb_put_len(uint8_t *buf, uint16_t len);
+int fcb_get_len(uint8_t *buf, uint16_t *len);
 
-static inline int fcb_len_in_flash(struct fcb *fcb, u16_t len)
+static inline int fcb_len_in_flash(struct fcb *fcb, uint16_t len)
 {
 	if (fcb->f_align <= 1U) {
 		return len;
@@ -36,7 +36,7 @@ static inline int fcb_len_in_flash(struct fcb *fcb, u16_t len)
 }
 
 const struct flash_area *fcb_open_flash(const struct fcb *fcb);
-u8_t fcb_get_align(const struct fcb *fcb);
+uint8_t fcb_get_align(const struct fcb *fcb);
 int fcb_erase_sector(const struct fcb *fcb, const struct flash_sector *sector);
 
 int fcb_getnext_in_sector(struct fcb *fcb, struct fcb_entry *loc);
@@ -45,9 +45,9 @@ struct flash_sector *fcb_getnext_sector(struct fcb *fcb,
 int fcb_getnext_nolock(struct fcb *fcb, struct fcb_entry *loc);
 
 int fcb_elem_info(struct fcb *fcb, struct fcb_entry *loc);
-int fcb_elem_crc8(struct fcb *fcb, struct fcb_entry *loc, u8_t *crc8p);
+int fcb_elem_crc8(struct fcb *fcb, struct fcb_entry *loc, uint8_t *crc8p);
 
-int fcb_sector_hdr_init(struct fcb *fcb, struct flash_sector *sector, u16_t id);
+int fcb_sector_hdr_init(struct fcb *fcb, struct flash_sector *sector, uint16_t id);
 int fcb_sector_hdr_read(struct fcb *fcb, struct flash_sector *sector,
 			struct fcb_disk_area *fdap);
 

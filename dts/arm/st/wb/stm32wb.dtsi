@@ -9,6 +9,7 @@
 #include <dt-bindings/clock/stm32_clock.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/i2c/i2c.h>
+#include <dt-bindings/pwm/pwm.h>
 
 / {
 	chosen {
@@ -206,6 +207,8 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40012c00 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000800>;
+			interrupts = <24 0>, <25 0>, <26 0>, <27 0>;
+			interrupt-names = "brk", "up", "trgcom", "cc";
 			status = "disabled";
 			label = "TIMERS_1";
 
@@ -214,7 +217,7 @@
 				status = "disabled";
 				st,prescaler = <10000>;
 				label = "PWM_1";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -222,6 +225,8 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40000000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000001>;
+			interrupts = <28 0>;
+			interrupt-names = "global";
 			status = "disabled";
 			label = "TIMERS_2";
 
@@ -230,7 +235,7 @@
 				status = "disabled";
 				st,prescaler = <0>;
 				label = "PWM_2";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -238,6 +243,8 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40014400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00020000>;
+			interrupts = <25 0>;
+			interrupt-names = "global";
 			status = "disabled";
 			label = "TIMERS_16";
 
@@ -246,7 +253,7 @@
 				status = "disabled";
 				st,prescaler = <10000>;
 				label = "PWM_16";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -254,6 +261,8 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40014800 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00040000>;
+			interrupts = <26 0>;
+			interrupt-names = "global";
 			status = "disabled";
 			label = "TIMERS_17";
 
@@ -262,7 +271,7 @@
 				status = "disabled";
 				st,prescaler = <10000>;
 				label = "PWM_17";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -283,7 +292,7 @@
 		};
 
 		lptim1: timers@40007c00 {
-			compatible = "st,stm32-timers";
+			compatible = "st,stm32-lptim";
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>;
 			#address-cells = <1>;
 			#size-cells = <0>;

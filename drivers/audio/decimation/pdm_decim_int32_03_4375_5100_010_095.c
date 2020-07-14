@@ -12,7 +12,7 @@
 
 #include "pdm_decim_fir.h"
 
-static const s32_t fir_int32_03_4375_5100_010_095[157] = {
+static const int32_t fir_int32_03_4375_5100_010_095[157] = {
 	350904,
 	1127891,
 	2233546,

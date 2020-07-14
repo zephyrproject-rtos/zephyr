@@ -25,7 +25,7 @@ extern "C" {
  */
 struct uart_mcumgr_rx_buf {
 	void *fifo_reserved;   /* 1st word reserved for use by fifo */
-	u8_t data[CONFIG_UART_MCUMGR_RX_BUF_SIZE];
+	uint8_t data[CONFIG_UART_MCUMGR_RX_BUF_SIZE];
 	int length;
 };
 
@@ -48,7 +48,7 @@ typedef void uart_mcumgr_recv_fn(struct uart_mcumgr_rx_buf *rx_buf);
  *
  * @return                      0 on success; negative error code on failure.
  */
-int uart_mcumgr_send(const u8_t *data, int len);
+int uart_mcumgr_send(const uint8_t *data, int len);
 
 /**
  * @brief Frees the supplied receive buffer.

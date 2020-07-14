@@ -14,7 +14,7 @@
 #if defined(CONFIG_CPU_CORTEX_M)
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
 
-static inline u32_t get_available_nvic_line(u32_t initial_offset)
+static inline uint32_t get_available_nvic_line(uint32_t initial_offset)
 {
 	int i;
 
@@ -62,6 +62,7 @@ static inline void trigger_irq(int irq)
 
 #elif defined(CONFIG_GIC)
 #include <drivers/interrupt_controller/gic.h>
+#include <dt-bindings/interrupt-controller/arm-gic.h>
 
 static inline void trigger_irq(int irq)
 {
@@ -74,8 +75,12 @@ static inline void trigger_irq(int irq)
 	 * Generate a software generated interrupt and forward it to the
 	 * requesting CPU.
 	 */
+#if CONFIG_GIC_VER <= 2
 	sys_write32(GICD_SGIR_TGTFILT_REQONLY | GICD_SGIR_SGIINTID(irq),
 		    GICD_SGIR);
+#else
+	gic_raise_sgi(irq, GET_MPIDR(), BIT(MPIDR_TO_CORE(GET_MPIDR())));
+#endif
 }
 
 #elif defined(CONFIG_CPU_ARCV2)

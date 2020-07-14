@@ -9,14 +9,14 @@
 #include <drivers/pinmux.h>
 #include <soc.h>
 
-#define creg_gpio_mux_reg	(*(volatile u32_t *)CREG_GPIO_MUX_BASE_ADDR)
+#define creg_gpio_mux_reg	(*(volatile uint32_t *)CREG_GPIO_MUX_BASE_ADDR)
 
 void _arc_sync(void)
 {
 	__asm__ volatile("sync");
 }
 
-static int pinmux_hsdk_set(struct device *dev, u32_t pin, u32_t func)
+static int pinmux_hsdk_set(struct device *dev, uint32_t pin, uint32_t func)
 {
 
 	if (func >= HSDK_PINMUX_FUNS || pin >= HSDK_PINMUX_SELS)
@@ -30,7 +30,7 @@ static int pinmux_hsdk_set(struct device *dev, u32_t pin, u32_t func)
 	return 0;
 }
 
-static int pinmux_hsdk_get(struct device *dev, u32_t pin, u32_t *func)
+static int pinmux_hsdk_get(struct device *dev, uint32_t pin, uint32_t *func)
 {
 
 	if (pin >= HSDK_PINMUX_SELS || func == NULL)
@@ -41,12 +41,12 @@ static int pinmux_hsdk_get(struct device *dev, u32_t pin, u32_t *func)
 	return 0;
 }
 
-static int pinmux_hsdk_pullup(struct device *dev, u32_t pin, u8_t func)
+static int pinmux_hsdk_pullup(struct device *dev, uint32_t pin, uint8_t func)
 {
 	return -ENOTSUP;
 }
 
-static int pinmux_hsdk_input(struct device *dev, u32_t pin, u8_t func)
+static int pinmux_hsdk_input(struct device *dev, uint32_t pin, uint8_t func)
 {
 	return -ENOTSUP;
 }

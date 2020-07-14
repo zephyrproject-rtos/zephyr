@@ -35,8 +35,8 @@ LOG_MODULE_DECLARE(LSM6DSL, CONFIG_SENSOR_LOG_LEVEL);
 #define LSM6DSL_EMBEDDED_SLV0_WRITE_IDLE 0x07
 
 static int lsm6dsl_shub_write_slave_reg(struct lsm6dsl_data *data,
-					u8_t slv_addr, u8_t slv_reg,
-					u8_t *value, u16_t len);
+					uint8_t slv_addr, uint8_t slv_reg,
+					uint8_t *value, uint16_t len);
 
 /*
  * LIS2MDL magn device specific part
@@ -53,9 +53,9 @@ static int lsm6dsl_shub_write_slave_reg(struct lsm6dsl_data *data,
 #define LIS2MDL_OFF_CANC          0x02
 #define LIS2MDL_SENSITIVITY       1500
 
-static int lsm6dsl_lis2mdl_init(struct lsm6dsl_data *data, u8_t i2c_addr)
+static int lsm6dsl_lis2mdl_init(struct lsm6dsl_data *data, uint8_t i2c_addr)
 {
-	u8_t mag_cfg[2];
+	uint8_t mag_cfg[2];
 
 	data->magn_sensitivity = LIS2MDL_SENSITIVITY;
 
@@ -89,9 +89,9 @@ static int lsm6dsl_lis2mdl_init(struct lsm6dsl_data *data, u8_t i2c_addr)
 #define LPS22HB_LPF_EN            0x08
 #define LPS22HB_BDU_EN            0x02
 
-static int lsm6dsl_lps22hb_init(struct lsm6dsl_data *data, u8_t i2c_addr)
+static int lsm6dsl_lps22hb_init(struct lsm6dsl_data *data, uint8_t i2c_addr)
 {
-	u8_t baro_cfg[2];
+	uint8_t baro_cfg[2];
 
 	/* sw reset device */
 	baro_cfg[0] = LPS22HB_SW_RESET;
@@ -111,12 +111,12 @@ static int lsm6dsl_lps22hb_init(struct lsm6dsl_data *data, u8_t i2c_addr)
 
 /* List of supported external sensors */
 static struct lsm6dsl_shub_sens_list {
-	u8_t i2c_addr[2];
-	u8_t wai_addr;
-	u8_t wai_val;
-	u8_t out_data_addr;
-	u8_t out_data_len;
-	int (*dev_init)(struct lsm6dsl_data *data, u8_t i2c_addr);
+	uint8_t i2c_addr[2];
+	uint8_t wai_addr;
+	uint8_t wai_val;
+	uint8_t out_data_addr;
+	uint8_t out_data_len;
+	int (*dev_init)(struct lsm6dsl_data *data, uint8_t i2c_addr);
 } lsm6dsl_shub_sens_list[] = {
 #ifdef CONFIG_LSM6DSL_EXT0_LIS2MDL
 	{
@@ -143,11 +143,11 @@ static struct lsm6dsl_shub_sens_list {
 #endif  /* CONFIG_LSM6DSL_EXT0_LPS22HB */
 };
 
-static u8_t ext_i2c_addr;
+static uint8_t ext_i2c_addr;
 
 static inline void lsm6dsl_shub_wait_completed(struct lsm6dsl_data *data)
 {
-	u16_t freq;
+	uint16_t freq;
 
 	freq = (data->accel_freq == 0U) ? 26 : data->accel_freq;
 	k_msleep((2000U / freq) + 1);
@@ -155,7 +155,7 @@ static inline void lsm6dsl_shub_wait_completed(struct lsm6dsl_data *data)
 
 static inline void lsm6dsl_shub_embedded_en(struct lsm6dsl_data *data, bool on)
 {
-	u8_t func_en = (on) ? 0x1 : 0x0;
+	uint8_t func_en = (on) ? 0x1 : 0x0;
 
 	data->hw_tf->update_reg(data, LSM6DSL_REG_FUNC_CFG_ACCESS,
 				LSM6DSL_MASK_FUNC_CFG_EN,
@@ -166,7 +166,7 @@ static inline void lsm6dsl_shub_embedded_en(struct lsm6dsl_data *data, bool on)
 
 #ifdef LSM6DSL_DEBUG
 static int lsm6dsl_read_embedded_reg(struct lsm6dsl_data *data,
-				     u8_t reg_addr, u8_t *value, int len)
+				     uint8_t reg_addr, uint8_t *value, int len)
 {
 	lsm6dsl_shub_embedded_en(data, true);
 
@@ -183,8 +183,8 @@ static int lsm6dsl_read_embedded_reg(struct lsm6dsl_data *data,
 #endif
 
 static int lsm6dsl_shub_write_embedded_regs(struct lsm6dsl_data *data,
-					    u8_t reg_addr,
-					    u8_t *value, u8_t len)
+					    uint8_t reg_addr,
+					    uint8_t *value, uint8_t len)
 {
 	lsm6dsl_shub_embedded_en(data, true);
 
@@ -245,10 +245,10 @@ static void lsm6dsl_shub_disable(struct lsm6dsl_data *data)
  * use SLV0 for generic read to slave device
  */
 static int lsm6dsl_shub_read_slave_reg(struct lsm6dsl_data *data,
-				       u8_t slv_addr, u8_t slv_reg,
-				       u8_t *value, u16_t len)
+				       uint8_t slv_addr, uint8_t slv_reg,
+				       uint8_t *value, uint16_t len)
 {
-	u8_t slave[3];
+	uint8_t slave[3];
 
 	slave[0] = (slv_addr << 1) | LSM6DSL_EMBEDDED_SLVX_READ;
 	slave[1] = slv_reg;
@@ -273,11 +273,11 @@ static int lsm6dsl_shub_read_slave_reg(struct lsm6dsl_data *data,
  * use SLV0 to configure slave device
  */
 static int lsm6dsl_shub_write_slave_reg(struct lsm6dsl_data *data,
-					u8_t slv_addr, u8_t slv_reg,
-					u8_t *value, u16_t len)
+					uint8_t slv_addr, uint8_t slv_reg,
+					uint8_t *value, uint16_t len)
 {
-	u8_t slv_cfg[3];
-	u8_t cnt = 0U;
+	uint8_t slv_cfg[3];
+	uint8_t cnt = 0U;
 
 	while (cnt < len) {
 		slv_cfg[0] = (slv_addr << 1) & ~LSM6DSL_EMBEDDED_SLVX_READ;
@@ -329,8 +329,8 @@ static int lsm6dsl_shub_write_slave_reg(struct lsm6dsl_data *data,
  */
 static int lsm6dsl_shub_set_data_channel(struct lsm6dsl_data *data)
 {
-	u8_t slv_cfg[3];
-	u8_t slv_i2c_addr = lsm6dsl_shub_sens_list[0].i2c_addr[ext_i2c_addr];
+	uint8_t slv_cfg[3];
+	uint8_t slv_i2c_addr = lsm6dsl_shub_sens_list[0].i2c_addr[ext_i2c_addr];
 
 	/* SLV0 is used for generic write */
 	slv_cfg[0] = LSM6DSL_EMBEDDED_SLV0_WRITE_IDLE;
@@ -361,7 +361,7 @@ static int lsm6dsl_shub_set_data_channel(struct lsm6dsl_data *data)
 	return 0;
 }
 
-int lsm6dsl_shub_read_external_chip(struct device *dev, u8_t *buf, u8_t len)
+int lsm6dsl_shub_read_external_chip(struct device *dev, uint8_t *buf, uint8_t len)
 {
 	struct lsm6dsl_data *data = dev->driver_data;
 
@@ -373,10 +373,10 @@ int lsm6dsl_shub_read_external_chip(struct device *dev, u8_t *buf, u8_t len)
 int lsm6dsl_shub_init_external_chip(struct device *dev)
 {
 	struct lsm6dsl_data *data = dev->driver_data;
-	u8_t i;
-	u8_t chip_id = 0U;
-	u8_t slv_i2c_addr;
-	u8_t slv_wai_addr = lsm6dsl_shub_sens_list[0].wai_addr;
+	uint8_t i;
+	uint8_t chip_id = 0U;
+	uint8_t slv_i2c_addr;
+	uint8_t slv_wai_addr = lsm6dsl_shub_sens_list[0].wai_addr;
 
 	/*
 	 * The external sensor may have different I2C address.

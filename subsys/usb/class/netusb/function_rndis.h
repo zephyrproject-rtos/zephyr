@@ -40,37 +40,37 @@ void rndis_clean(void);
 #define RNDIS_MEDIUM_WIRED_ETHERNET	0
 
 struct rndis_init_cmd {
-	u32_t type;
-	u32_t len;
-	u32_t req_id;
-	u32_t major_ver;
-	u32_t minor_version;
-	u32_t max_transfer_size;
+	uint32_t type;
+	uint32_t len;
+	uint32_t req_id;
+	uint32_t major_ver;
+	uint32_t minor_version;
+	uint32_t max_transfer_size;
 } __packed;
 
 struct rndis_init_cmd_complete {
-	u32_t type;
-	u32_t len;
-	u32_t req_id;
-	u32_t status;
-	u32_t major_ver;
-	u32_t minor_ver;
-	u32_t flags;
-	u32_t medium;
-	u32_t max_packets;
-	u32_t max_transfer_size;
-	u32_t pkt_align_factor;
-	u32_t __reserved[2];
+	uint32_t type;
+	uint32_t len;
+	uint32_t req_id;
+	uint32_t status;
+	uint32_t major_ver;
+	uint32_t minor_ver;
+	uint32_t flags;
+	uint32_t medium;
+	uint32_t max_packets;
+	uint32_t max_transfer_size;
+	uint32_t pkt_align_factor;
+	uint32_t __reserved[2];
 } __packed;
 
 struct rndis_query_cmd {
-	u32_t type;
-	u32_t len;
-	u32_t req_id;
-	u32_t object_id;
-	u32_t buf_len;
-	u32_t buf_offset;
-	u32_t vc_handle;	/* Reserved for connection-oriented devices */
+	uint32_t type;
+	uint32_t len;
+	uint32_t req_id;
+	uint32_t object_id;
+	uint32_t buf_len;
+	uint32_t buf_offset;
+	uint32_t vc_handle;	/* Reserved for connection-oriented devices */
 } __packed;
 
 /* Specifies RNDS objects for Query and Set */
@@ -118,69 +118,69 @@ struct rndis_query_cmd {
 #define RNDIS_STATUS_DISCONNECT_MEDIA		0x4001000C
 
 struct rndis_query_cmd_complete {
-	u32_t type;
-	u32_t len;
-	u32_t req_id;
-	u32_t status;
-	u32_t buf_len;
-	u32_t buf_offset;
+	uint32_t type;
+	uint32_t len;
+	uint32_t req_id;
+	uint32_t status;
+	uint32_t buf_len;
+	uint32_t buf_offset;
 } __packed;
 
 struct rndis_set_cmd {
-	u32_t type;
-	u32_t len;
-	u32_t req_id;
-	u32_t object_id;
-	u32_t buf_len;
-	u32_t buf_offset;
-	u32_t vc_handle;	/* Reserved for connection-oriented devices */
+	uint32_t type;
+	uint32_t len;
+	uint32_t req_id;
+	uint32_t object_id;
+	uint32_t buf_len;
+	uint32_t buf_offset;
+	uint32_t vc_handle;	/* Reserved for connection-oriented devices */
 } __packed;
 
 struct rndis_set_cmd_complete {
-	u32_t type;
-	u32_t len;
-	u32_t req_id;
-	u32_t status;
+	uint32_t type;
+	uint32_t len;
+	uint32_t req_id;
+	uint32_t status;
 } __packed;
 
 struct rndis_payload_packet {
-	u32_t type;
-	u32_t len;
-	u32_t payload_offset;
-	u32_t payload_len;
-	u32_t oob_payload_offset;
-	u32_t oob_payload_len;
-	u32_t oob_num;
-	u32_t pkt_payload_offset;
-	u32_t pkt_payload_len;
-	u32_t vc_handle;
-	u32_t __reserved;
+	uint32_t type;
+	uint32_t len;
+	uint32_t payload_offset;
+	uint32_t payload_len;
+	uint32_t oob_payload_offset;
+	uint32_t oob_payload_len;
+	uint32_t oob_num;
+	uint32_t pkt_payload_offset;
+	uint32_t pkt_payload_len;
+	uint32_t vc_handle;
+	uint32_t __reserved;
 } __packed;
 
 struct rndis_keepalive_cmd {
-	u32_t type;
-	u32_t len;
-	u32_t req_id;
+	uint32_t type;
+	uint32_t len;
+	uint32_t req_id;
 } __packed;
 
 struct rndis_keepalive_cmd_complete {
-	u32_t type;
-	u32_t len;
-	u32_t req_id;
-	u32_t status;
+	uint32_t type;
+	uint32_t len;
+	uint32_t req_id;
+	uint32_t status;
 } __packed;
 
 struct rndis_media_status_indicate {
-	u32_t type;
-	u32_t len;
-	u32_t status;
-	u32_t buf_len;
-	u32_t buf_offset;
+	uint32_t type;
+	uint32_t len;
+	uint32_t status;
+	uint32_t buf_len;
+	uint32_t buf_offset;
 } __packed;
 
 struct rndis_reset_cmd_complete {
-	u32_t type;
-	u32_t len;
-	u32_t status;
-	u32_t addr_reset;
+	uint32_t type;
+	uint32_t len;
+	uint32_t status;
+	uint32_t addr_reset;
 } __packed;

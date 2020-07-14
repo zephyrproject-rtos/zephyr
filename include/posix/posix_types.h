@@ -24,7 +24,7 @@ typedef unsigned long useconds_t;
 /* time related attributes */
 #ifndef CONFIG_NEWLIB_LIBC
 #ifndef __clockid_t_defined
-typedef u32_t clockid_t;
+typedef uint32_t clockid_t;
 #endif
 #endif /*CONFIG_NEWLIB_LIBC */
 #ifndef __timer_t_defined
@@ -37,11 +37,11 @@ typedef struct pthread_attr_t {
 	int priority;
 	void *stack;
 	size_t stacksize;
-	u32_t flags;
-	u32_t delayedstart;
-	u32_t schedpolicy;
-	s32_t detachstate;
-	u32_t initialized;
+	uint32_t flags;
+	uint32_t delayedstart;
+	uint32_t schedpolicy;
+	int32_t detachstate;
+	uint32_t initialized;
 } pthread_attr_t;
 
 typedef void *pthread_t;
@@ -52,7 +52,7 @@ typedef struct k_sem sem_t;
 /* Mutex */
 typedef struct pthread_mutex {
 	pthread_t owner;
-	u16_t lock_count;
+	uint16_t lock_count;
 	int type;
 	_wait_q_t wait_q;
 } pthread_mutex_t;
@@ -79,13 +79,13 @@ typedef struct pthread_barrier {
 typedef struct pthread_barrierattr {
 } pthread_barrierattr_t;
 
-typedef u32_t pthread_rwlockattr_t;
+typedef uint32_t pthread_rwlockattr_t;
 
 typedef struct pthread_rwlock_obj {
 	struct k_sem rd_sem;
 	struct k_sem wr_sem;
 	struct k_sem reader_active;/* blocks WR till reader has acquired lock */
-	s32_t status;
+	int32_t status;
 	k_tid_t wr_owner;
 } pthread_rwlock_t;
 

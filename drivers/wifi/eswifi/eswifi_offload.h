@@ -27,7 +27,7 @@ enum eswifi_socket_state {
 };
 
 struct eswifi_off_socket {
-	u8_t index;
+	uint8_t index;
 	enum eswifi_transport_type type;
 	enum eswifi_socket_state state;
 	struct net_context *context;
@@ -46,7 +46,7 @@ struct eswifi_off_socket {
 	struct sockaddr peer_addr;
 	struct k_sem read_sem;
 	struct k_sem accept_sem;
-	u16_t port;
+	uint16_t port;
 	bool is_server;
 	int usage;
 	struct k_fifo fifo;

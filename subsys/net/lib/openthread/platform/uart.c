@@ -50,9 +50,9 @@ OT_UART_DEFINE(ot_uart, CONFIG_OPENTHREAD_NCP_UART_RING_BUFFER_SIZE);
 
 static void uart_rx_handle(void)
 {
-	u8_t *data;
-	u32_t len;
-	u32_t rd_len;
+	uint8_t *data;
+	uint32_t len;
+	uint32_t rd_len;
 	bool new_data = false;
 
 	do {
@@ -72,7 +72,7 @@ static void uart_rx_handle(void)
 			(void)err;
 			__ASSERT_NO_MSG(err == 0);
 		} else {
-			u8_t dummy;
+			uint8_t dummy;
 
 			/* No space in the ring buffer - consume byte. */
 			LOG_WRN("RX ring buffer full.");
@@ -89,10 +89,10 @@ static void uart_rx_handle(void)
 
 static void uart_tx_handle(void)
 {
-	u32_t len;
-	const u8_t *data;
+	uint32_t len;
+	const uint8_t *data;
 
-	len = ring_buf_get_claim(ot_uart.tx_ringbuf, (u8_t **)&data,
+	len = ring_buf_get_claim(ot_uart.tx_ringbuf, (uint8_t **)&data,
 				 ot_uart.tx_ringbuf->size);
 	if (len) {
 		int err;
@@ -128,13 +128,13 @@ static void uart_callback(void *user_data)
 
 void platformUartProcess(otInstance *aInstance)
 {
-	u32_t len = 0;
-	const u8_t *data;
+	uint32_t len = 0;
+	const uint8_t *data;
 
 	/* Process UART RX */
 	while ((len = ring_buf_get_claim(
 			ot_uart.rx_ringbuf,
-			(u8_t **)&data,
+			(uint8_t **)&data,
 			ot_uart.rx_ringbuf->size)) > 0) {
 		int err;
 
@@ -166,7 +166,7 @@ otError otPlatUartEnable(void)
 
 #ifdef CONFIG_OPENTHREAD_NCP_SPINEL_ON_UART_ACM
 	int ret = usb_enable(NULL);
-	u32_t baudrate = 0U;
+	uint32_t baudrate = 0U;
 
 	if (ret != 0) {
 		LOG_ERR("Failed to enable USB");
@@ -203,7 +203,7 @@ otError otPlatUartDisable(void)
 };
 
 
-otError otPlatUartSend(const u8_t *aBuf, u16_t aBufLength)
+otError otPlatUartSend(const uint8_t *aBuf, uint16_t aBufLength)
 {
 	size_t cnt = ring_buf_put(ot_uart.tx_ringbuf, aBuf, aBufLength);
 

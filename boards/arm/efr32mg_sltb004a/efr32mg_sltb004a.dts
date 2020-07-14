@@ -76,7 +76,7 @@
 	location-tx = <GECKO_LOCATION(29) GECKO_PORT_K GECKO_PIN(0)>;
 	location-clk = <GECKO_LOCATION(18) GECKO_PORT_F GECKO_PIN(7)>;
 
-	cs-gpios = <&gpiok 1 0>;
+	cs-gpios = <&gpiok 1 GPIO_ACTIVE_LOW>;
 
 	status = "okay";
 
@@ -105,9 +105,16 @@
 };
 
 &i2c1 {
-	location-sda = <GECKO_LOCATION(17) GECKO_PORT_C GECKO_PIN(4)>;
-	location-scl = <GECKO_LOCATION(17) GECKO_PORT_C GECKO_PIN(5)>;
-	status = "okay";
+	location-sda = <GECKO_LOCATION(6) GECKO_PORT_B GECKO_PIN(6)>;
+	location-scl = <GECKO_LOCATION(6) GECKO_PORT_B GECKO_PIN(7)>;
+
+	ccs811: ccs811@5a {
+		compatible = "ams,ccs811";
+		reg = <0x5a>;
+		label = "CCS811";
+		irq-gpios = <&gpiof 13 GPIO_ACTIVE_LOW>;
+		wake-gpios = <&gpiof 15 GPIO_ACTIVE_LOW>;
+	};
 };
 
 &rtcc0 {

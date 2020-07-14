@@ -5,12 +5,6 @@
 
 if SOC_SERIES_STM32F1X
 
-config CLOCK_STM32_PLL_XTPRE
-	bool "HSE to PLL /2 prescaler"
-	depends on SOC_STM32F10X_DENSITY_DEVICE && CLOCK_STM32_PLL_SRC_HSE
-	help
-	  Enable this option to enable /2 prescaler on HSE to PLL clock signal
-
 config CLOCK_STM32_PLL_MULTIPLIER
 	int "PLL multiplier"
 	depends on CLOCK_STM32_SYSCLK_SRC_PLL
@@ -24,7 +18,7 @@ config CLOCK_STM32_PLL_MULTIPLIER
 
 config CLOCK_STM32_PLL_PREDIV1
 	int "PREDIV1 Prescaler"
-	depends on SOC_STM32F10X_CONNECTIVITY_LINE_DEVICE && CLOCK_STM32_SYSCLK_SRC_PLL
+	depends on CLOCK_STM32_SYSCLK_SRC_PLL
 	default 1
 	range 1 16
 	help

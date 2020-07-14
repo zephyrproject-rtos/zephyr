@@ -9,16 +9,16 @@
 #define VERSION "1.1"
 
 struct zperf_results {
-	u32_t nb_packets_sent;
-	u32_t nb_packets_rcvd;
-	u32_t nb_packets_lost;
-	u32_t nb_packets_outorder;
-	u32_t nb_bytes_sent;
-	u32_t time_in_us;
-	u32_t jitter_in_us;
-	u32_t client_time_in_us;
-	u32_t packet_size;
-	u32_t nb_packets_errors;
+	uint32_t nb_packets_sent;
+	uint32_t nb_packets_rcvd;
+	uint32_t nb_packets_lost;
+	uint32_t nb_packets_outorder;
+	uint32_t nb_bytes_sent;
+	uint32_t time_in_us;
+	uint32_t jitter_in_us;
+	uint32_t client_time_in_us;
+	uint32_t packet_size;
+	uint32_t nb_packets_errors;
 };
 
 typedef void (*zperf_callback)(int status, struct zperf_results *);

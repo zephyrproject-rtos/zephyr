@@ -91,7 +91,7 @@ static const char * const lis3mdl_odr_strings[] = {
 	"40", "80", "155", "300", "560", "1000"
 };
 
-static const u8_t lis3mdl_odr_bits[] = {
+static const uint8_t lis3mdl_odr_bits[] = {
 	LIS3MDL_ODR_BITS(0, 0, 0), /* 0.625 Hz */
 	LIS3MDL_ODR_BITS(0, 1, 0), /* 1.25 Hz */
 	LIS3MDL_ODR_BITS(0, 2, 0), /* 2.5 Hz */
@@ -106,16 +106,16 @@ static const u8_t lis3mdl_odr_bits[] = {
 	LIS3MDL_ODR_BITS(0, 0, 1)  /* 1000 Hz */
 };
 
-static const u16_t lis3mdl_magn_gain[] = {
+static const uint16_t lis3mdl_magn_gain[] = {
 	6842, 3421, 2281, 1711
 };
 
 struct lis3mdl_data {
 	struct device *i2c;
-	s16_t x_sample;
-	s16_t y_sample;
-	s16_t z_sample;
-	s16_t temp_sample;
+	int16_t x_sample;
+	int16_t y_sample;
+	int16_t z_sample;
+	int16_t temp_sample;
 
 #ifdef CONFIG_LIS3MDL_TRIGGER
 	struct device *gpio;

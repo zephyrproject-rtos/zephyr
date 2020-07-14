@@ -60,6 +60,12 @@ endif()
 # Connect monitor to the console chardev.
 list(APPEND QEMU_FLAGS -mon chardev=con,mode=readline)
 
+if(CONFIG_QEMU_ICOUNT)
+  list(APPEND QEMU_FLAGS
+	  -icount shift=${CONFIG_QEMU_ICOUNT_SHIFT},align=off,sleep=off
+	  -rtc clock=vm)
+endif()
+
 # Add a BT serial device when building for bluetooth, unless the
 # application explicitly opts out with NO_QEMU_SERIAL_BT_SERVER.
 if(CONFIG_BT)

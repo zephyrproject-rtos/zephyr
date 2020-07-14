@@ -23,8 +23,8 @@ config PINMUX_MCUX_PORTA
 	default y
 
 config PINMUX_MCUX_PORTB
-	default y if "$(dt_nodelabel_enabled,adc0)"
-	default y if "$(dt_nodelabel_enabled,tpm1)"
+	default y if "$(dt_nodelabel_enabled,adc0)" && ADC
+	default y if "$(dt_nodelabel_enabled,tpm1)" && PWM
 
 config PINMUX_MCUX_PORTC
 	default y

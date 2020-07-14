@@ -50,8 +50,8 @@
 void main(void)
 {
 	struct device *pwm;
-	u32_t pulse_width = 0U;
-	u8_t dir = 1U;
+	uint32_t pulse_width = 0U;
+	uint8_t dir = 1U;
 	int ret;
 
 	printk("PWM-based LED fade\n");

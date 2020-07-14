@@ -11,7 +11,7 @@
 #include "soc.h"
 #include "hw_models_top.h"
 
-u64_t sdl_event_timer;
+uint64_t sdl_event_timer;
 
 static void sdl_handle_window_event(const SDL_Event *event)
 {

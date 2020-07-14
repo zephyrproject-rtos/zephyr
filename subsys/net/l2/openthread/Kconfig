@@ -8,12 +8,20 @@
 #
 menuconfig NET_L2_OPENTHREAD
 	bool "OpenThread L2"
-	depends on FLASH
-	depends on FLASH_PAGE_LAYOUT
-	depends on CPLUSPLUS
-	depends on REBOOT
-	depends on SETTINGS
+	depends on NETWORKING
+
+	select SETTINGS
+	select FLASH
+	select FLASH_PAGE_LAYOUT
+	select FLASH_MAP
+	select MPU_ALLOW_FLASH_WRITE
+	select NVS
+
 	select OPENTHREAD_PLAT
+	select CPLUSPLUS
+	select REBOOT
+	select ENTROPY_GENERATOR
+
 	select MBEDTLS
 	select MBEDTLS_ENABLE_HEAP
 	select MBEDTLS_CIPHER_AES_ENABLED
@@ -21,6 +29,12 @@ menuconfig NET_L2_OPENTHREAD
 	select MBEDTLS_MAC_SHA256_ENABLED
 	select MBEDTLS_ENTROPY_ENABLED
 	select MBEDTLS_MAC_CMAC_ENABLED
+	select MBEDTLS_CIPHER
+	select MBEDTLS_MD
+
+	imply NET_UDP
+	imply NET_IPV6
+	imply NET_CONFIG_NEED_IPV6
 
 if NET_L2_OPENTHREAD
 
@@ -53,22 +67,25 @@ choice
 	help
 	  This option selects log level for OpenThread stack.
 
-config OPENTHREAD_LOG_LEVEL_ERROR
-	bool "Error"
-config OPENTHREAD_LOG_LEVEL_WARNING
+config OPENTHREAD_LOG_LEVEL_CRIT
+	bool "Critical"
+config OPENTHREAD_LOG_LEVEL_WARN
 	bool "Warning"
+config OPENTHREAD_LOG_LEVEL_NOTE
+	bool "Notice"
 config OPENTHREAD_LOG_LEVEL_INFO
-	bool "Info"
-config OPENTHREAD_LOG_LEVEL_DEBUG
+	bool "Informational"
+config OPENTHREAD_LOG_LEVEL_DEBG
 	bool "Debug"
 endchoice
 
 config OPENTHREAD_LOG_LEVEL
 	int
-	default 1 if OPENTHREAD_LOG_LEVEL_ERROR
-	default 2 if OPENTHREAD_LOG_LEVEL_WARNING
-	default 3 if OPENTHREAD_LOG_LEVEL_INFO
-	default 4 if OPENTHREAD_LOG_LEVEL_DEBUG
+	default 1 if OPENTHREAD_LOG_LEVEL_CRIT
+	default 2 if OPENTHREAD_LOG_LEVEL_WARN
+	default 3 if OPENTHREAD_LOG_LEVEL_NOTE
+	default 4 if OPENTHREAD_LOG_LEVEL_INFO
+	default 5 if OPENTHREAD_LOG_LEVEL_DEBG
 	default 0
 
 menuconfig OPENTHREAD_L2_DEBUG
@@ -96,8 +113,12 @@ module-str = Log level for OpenThread driver
 module-help = Enables OpenThread driver to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
+config OPENTHREAD_THREAD_PREEMPTIVE
+	bool "Set Openthread thread to be preemptive"
+
 config OPENTHREAD_THREAD_PRIORITY
 	int "OpenThread thread priority"
+	default 0 if OPENTHREAD_THREAD_PREEMPTIVE
 	default 8
 
 config OPENTHREAD_THREAD_STACK_SIZE
@@ -120,8 +141,6 @@ config OPENTHREAD_MANUAL_START
 	  commissioning or pre-commissioned with other Kconfig options,
 	  depending on configuration used).
 
-if !OPENTHREAD_MANUAL_START
-
 config OPENTHREAD_PANID
 	int "Default PAN ID"
 	default 43981
@@ -142,8 +161,6 @@ config OPENTHREAD_XPANID
 	help
 	  Extended PAN ID for OpenThread with
 	  format "de:ad:00:be:ef:00:ca:fe"
-
-endif
 
 choice
 	prompt "OpenThread device type"
@@ -182,7 +199,7 @@ config OPENTHREAD_COMMISSIONER
 	  Enable commissioner capability in OpenThread stack. Note, that DTLS
 	  handshake used in the commissioning procedure requires a larger
 	  mbedTLS heap than the default value. A minimum recommended value of
-	  CONFIG_MBEDTLS_HEAP_SIZE for the commissioning is 8KB.
+	  CONFIG_MBEDTLS_HEAP_SIZE for the commissioning is 10KB.
 
 config OPENTHREAD_JOINER
 	bool "Joiner functions support"
@@ -191,7 +208,7 @@ config OPENTHREAD_JOINER
 	  Enable joiner capability in OpenThread stack. Note, that DTLS
 	  handshake used in the commissioning procedure requires a larger
 	  mbedTLS heap than the default value. A minimum recommended value of
-	  CONFIG_MBEDTLS_HEAP_SIZE for the commissioning is 8KB.
+	  CONFIG_MBEDTLS_HEAP_SIZE for the commissioning is 10KB.
 
 config OPENTHREAD_JOINER_AUTOSTART
 	bool "Support for automatic joiner start"
@@ -302,5 +319,64 @@ config OT_PLAT_FLASH_PAGES_COUNT
 	default 4
 	help
 	  This option sets flash pages count used by OpenThread to store its settings. They are located at the end of flash.
+
+config OPENTHREAD_REFERENCE_DEVICE
+	bool "Reference device support"
+	help
+	  Enable Thread Certification reference device support in OpenThread stack
+
+config OPENTHREAD_CHANNEL_MONITOR
+	bool "Enable channel monitor support"
+
+config OPENTHREAD_CHANNEL_MANAGER
+	bool "Enable channel manager support"
+	depends on OPENTHREAD_CHANNEL_MONITOR
+
+config OPENTHREAD_CHILD_SUPERVISION
+	bool "Enable child supervision support"
+
+config OPENTHREAD_COAPS
+	bool "Enable secure coap api support"
+	depends on OPENTHREAD_COAP
+
+config OPENTHREAD_DNS_CLIENT
+	bool "Enable DNS client support"
+
+config OPENTHREAD_EXTERNAL_HEAP
+	bool "Enable external heap support"
+
+config OPENTHREAD_IP6_FRAGM
+	bool "Enable ipv6 fragmentation support"
+
+config OPENTHREAD_LEGACY
+	bool "Enable legacy network support"
+
+config OPENTHREAD_LOG_LEVEL_DYNAMIC
+	bool "Enable dynamic log level control"
+
+config OPENTHREAD_MAC_FILTER
+	bool "Enable mac filter support"
+
+config OPENTHREAD_MTD_NETDIAG
+	bool "Enable TMF network diagnostics on MTDs"
+
+config OPENTHREAD_PLATFORM_NETIF
+	bool "Enable platform netif support"
+
+config OPENTHREAD_SETTINGS_RAM
+	bool "Enable volatile-only storage of settings"
+
+config OPENTHREAD_SNTP_CLIENT
+	bool "Enable SNTP Client support"
+
+config OPENTHREAD_CUSTOM_PARAMETERS
+	string "Custom Parameters to pass to OpenThread build system"
+	default ""
+	help
+	  This option is intended for advanced users only.
+	  Pass additional parameters that do not have corresponding Kconfig
+	  options to the OpenThread build system. Separate multiple values with
+	  space " ", for example:
+	  "OPENTHREAD_CONFIG_JOINER_ENABLE=1 OPENTHREAD_CONFIG_JOINER_MAX_CANDIDATES=3"
 
 endif

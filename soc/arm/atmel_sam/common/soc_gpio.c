@@ -21,7 +21,7 @@
 #error "Unsupported Atmel SAM MCU series"
 #endif
 
-static void configure_common_attr(Pio *pio, u32_t mask, u32_t flags)
+static void configure_common_attr(Pio *pio, uint32_t mask, uint32_t flags)
 {
 	/* Disable interrupts on the pin(s) */
 	pio->PIO_IDR = mask;
@@ -51,7 +51,7 @@ static void configure_common_attr(Pio *pio, u32_t mask, u32_t flags)
 	}
 }
 
-static void configure_input_attr(Pio *pio, u32_t mask, u32_t flags)
+static void configure_input_attr(Pio *pio, uint32_t mask, uint32_t flags)
 {
 	/* Configure input filter */
 	if ((flags & SOC_GPIO_IN_FILTER_MASK) != 0U) {
@@ -107,7 +107,7 @@ static void configure_input_attr(Pio *pio, u32_t mask, u32_t flags)
 	}
 }
 
-static void configure_output_attr(Pio *pio, u32_t mask, u32_t flags)
+static void configure_output_attr(Pio *pio, uint32_t mask, uint32_t flags)
 {
 	/* Enable control of the I/O line by the PIO_ODSR register */
 	pio->PIO_OWER = mask;
@@ -115,11 +115,11 @@ static void configure_output_attr(Pio *pio, u32_t mask, u32_t flags)
 
 void soc_gpio_configure(const struct soc_gpio_pin *pin)
 {
-	u32_t mask = pin->mask;
+	uint32_t mask = pin->mask;
 	Pio *pio = pin->regs;
-	u8_t periph_id = pin->periph_id;
-	u32_t flags = pin->flags;
-	u32_t type = pin->flags & SOC_GPIO_FUNC_MASK;
+	uint8_t periph_id = pin->periph_id;
+	uint32_t flags = pin->flags;
+	uint32_t type = pin->flags & SOC_GPIO_FUNC_MASK;
 
 	/* Configure pin attributes common to all functions */
 	configure_common_attr(pio, mask, flags);

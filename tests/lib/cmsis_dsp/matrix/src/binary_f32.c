@@ -23,13 +23,13 @@
 #define OP2_MULT		(0)
 #define OP2C_CMPLX_MULT		(0)
 
-static void test_op2(int op, const u32_t *input1, const u32_t *input2,
-	const u32_t *ref, size_t length)
+static void test_op2(int op, const uint32_t *input1, const uint32_t *input2,
+	const uint32_t *ref, size_t length)
 {
 	size_t index;
-	u16_t *dims = (u16_t *)in_dims;
+	uint16_t *dims = (uint16_t *)in_dims;
 	float32_t *tmp1, *tmp2, *output;
-	u16_t rows, internal, columns;
+	uint16_t rows, internal, columns;
 
 	arm_matrix_instance_f32 mat_in1;
 	arm_matrix_instance_f32 mat_in2;
@@ -108,13 +108,13 @@ DEFINE_TEST_VARIANT5(
 	in_mult1, in_mult2, ref_mult,
 	ARRAY_SIZE(ref_mult));
 
-static void test_op2c(int op, const u32_t *input1, const u32_t *input2,
-	const u32_t *ref, size_t length)
+static void test_op2c(int op, const uint32_t *input1, const uint32_t *input2,
+	const uint32_t *ref, size_t length)
 {
 	size_t index;
-	u16_t *dims = (u16_t *)in_dims;
+	uint16_t *dims = (uint16_t *)in_dims;
 	float32_t *tmp1, *tmp2, *output;
-	u16_t rows, internal, columns;
+	uint16_t rows, internal, columns;
 
 	arm_matrix_instance_f32 mat_in1;
 	arm_matrix_instance_f32 mat_in2;

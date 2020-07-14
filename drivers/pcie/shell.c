@@ -18,8 +18,8 @@
 static void show_msi(const struct shell *shell, pcie_bdf_t bdf)
 {
 #ifdef CONFIG_PCIE_MSI
-	u32_t msi;
-	u32_t data;
+	uint32_t msi;
+	uint32_t data;
 
 	msi = pcie_get_cap(bdf, PCIE_MSI_CAP_ID);
 
@@ -40,7 +40,7 @@ static void show_msi(const struct shell *shell, pcie_bdf_t bdf)
 
 static void show_bars(const struct shell *shell, pcie_bdf_t bdf)
 {
-	u32_t data;
+	uint32_t data;
 	int bar;
 
 	for (bar = PCIE_CONF_BAR0; bar <= PCIE_CONF_BAR5; ++bar) {
@@ -63,7 +63,7 @@ static void show_bars(const struct shell *shell, pcie_bdf_t bdf)
 
 static void show(const struct shell *shell, pcie_bdf_t bdf)
 {
-	u32_t data;
+	uint32_t data;
 	unsigned int irq;
 
 	data = pcie_conf_read(bdf, PCIE_CONF_ID);
@@ -103,7 +103,7 @@ static void show(const struct shell *shell, pcie_bdf_t bdf)
 	}
 }
 
-static int cmd_lspcie(const struct shell *shell, size_t argc, char **argv)
+static int cmd_pcie_ls(const struct shell *shell, size_t argc, char **argv)
 {
 	int bus;
 	int dev;
@@ -119,5 +119,11 @@ static int cmd_lspcie(const struct shell *shell, size_t argc, char **argv)
 
 	return 0;
 }
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_pcie_cmds,
+			       SHELL_CMD(ls, NULL,
+					 "List PCIE devices", cmd_pcie_ls),
+			       SHELL_SUBCMD_SET_END /* Array terminated. */
+		);
 
-SHELL_CMD_REGISTER(lspcie, NULL, "List PCI(e) devices", cmd_lspcie);
+
+SHELL_CMD_REGISTER(pcie, &sub_pcie_cmds, "PCI(e) device information", cmd_pcie_ls);

@@ -26,24 +26,27 @@ LOG_MODULE_REGISTER(wdt_sam0);
 #define WDT_CONFIG_PER_16K_Val WDT_CONFIG_PER_CYC16384_Val
 #endif
 
+/* syncbusy check is different for SAM D/E */
+#ifdef WDT_STATUS_SYNCBUSY
+#define WDT_SYNCBUSY WDT_REGS->STATUS.bit.SYNCBUSY
+#else
+#define WDT_SYNCBUSY WDT_REGS->SYNCBUSY.reg
+#endif
+
 struct wdt_sam0_dev_data {
 	wdt_callback_t cb;
 	bool timeout_valid;
 };
 
-static struct device DEVICE_NAME_GET(wdt_sam0);
+DEVICE_DECLARE(wdt_sam0);
 
 static struct wdt_sam0_dev_data wdt_sam0_data = { 0 };
 
 static void wdt_sam0_wait_synchronization(void)
 {
-#ifdef WDT_STATUS_SYNCBUSY
-	while (WDT_REGS->STATUS.bit.SYNCBUSY) {
+	while (WDT_SYNCBUSY) {
+		/* wait for SYNCBUSY */
 	}
-#else
-	while (WDT_REGS->SYNCBUSY.reg) {
-	}
-#endif
 }
 
 static inline void wdt_sam0_set_enable(bool on)
@@ -64,10 +67,10 @@ static inline bool wdt_sam0_is_enabled(void)
 #endif
 }
 
-static u32_t wdt_sam0_timeout_to_wdt_period(u32_t timeout_ms)
+static uint32_t wdt_sam0_timeout_to_wdt_period(uint32_t timeout_ms)
 {
-	u32_t next_pow2;
-	u32_t cycles;
+	uint32_t next_pow2;
+	uint32_t cycles;
 
 	/* Calculate number of clock cycles @ 1.024 kHz input clock */
 	cycles = (timeout_ms * 1024U) / 1000;
@@ -93,7 +96,7 @@ static void wdt_sam0_isr(struct device *dev)
 	}
 }
 
-static int wdt_sam0_setup(struct device *dev, u8_t options)
+static int wdt_sam0_setup(struct device *dev, uint8_t options)
 {
 	struct wdt_sam0_dev_data *data = dev->driver_data;
 
@@ -140,7 +143,7 @@ static int wdt_sam0_install_timeout(struct device *dev,
 				const struct wdt_timeout_cfg *cfg)
 {
 	struct wdt_sam0_dev_data *data = dev->driver_data;
-	u32_t window, per;
+	uint32_t window, per;
 
 	/* CONFIG is enable protected, error out if already enabled */
 	if (wdt_sam0_is_enabled()) {
@@ -229,6 +232,10 @@ static int wdt_sam0_feed(struct device *dev, int channel_id)
 	if (!data->timeout_valid) {
 		LOG_ERR("No valid timeout installed");
 		return -EINVAL;
+	}
+
+	if (WDT_SYNCBUSY) {
+		return -EAGAIN;
 	}
 
 	WDT_REGS->CLEAR.reg = WDT_CLEAR_CLEAR_KEY_Val;

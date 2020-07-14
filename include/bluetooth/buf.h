@@ -101,7 +101,7 @@ struct net_buf *bt_buf_get_cmd_complete(k_timeout_t timeout);
  *                      the special values K_NO_WAIT and K_FOREVER.
  *  @return A new buffer.
  */
-struct net_buf *bt_buf_get_evt(u8_t evt, bool discardable, k_timeout_t timeout);
+struct net_buf *bt_buf_get_evt(uint8_t evt, bool discardable, k_timeout_t timeout);
 
 /** Set the buffer type
  *
@@ -110,7 +110,7 @@ struct net_buf *bt_buf_get_evt(u8_t evt, bool discardable, k_timeout_t timeout);
  */
 static inline void bt_buf_set_type(struct net_buf *buf, enum bt_buf_type type)
 {
-	*(u8_t *)net_buf_user_data(buf) = type;
+	*(uint8_t *)net_buf_user_data(buf) = type;
 }
 
 /** Get the buffer type
@@ -127,7 +127,7 @@ static inline enum bt_buf_type bt_buf_get_type(struct net_buf *buf)
 	 * a temporary cast to 8-bit to ensure only 8 bits are read from
 	 * the pointer.
 	 */
-	return (enum bt_buf_type)(*(u8_t *)net_buf_user_data(buf));
+	return (enum bt_buf_type)(*(uint8_t *)net_buf_user_data(buf));
 }
 
 /**

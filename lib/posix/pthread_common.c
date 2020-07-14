@@ -10,9 +10,9 @@
 #include <posix/time.h>
 
 #ifdef CONFIG_POSIX_CLOCK
-s64_t timespec_to_timeoutms(const struct timespec *abstime)
+int64_t timespec_to_timeoutms(const struct timespec *abstime)
 {
-	s64_t milli_secs, secs, nsecs;
+	int64_t milli_secs, secs, nsecs;
 	struct timespec curtime;
 
 	/* FIXME: Zephyr does have CLOCK_REALTIME to get time.

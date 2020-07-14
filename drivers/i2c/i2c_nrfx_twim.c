@@ -8,17 +8,22 @@
 #include <drivers/i2c.h>
 #include <dt-bindings/i2c/i2c.h>
 #include <nrfx_twim.h>
+#include <sys/util.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(i2c_nrfx_twim, CONFIG_I2C_LOG_LEVEL);
+
+#define I2C_TRANSFER_TIMEOUT_MSEC		K_MSEC(100)
 
 struct i2c_nrfx_twim_data {
 	struct k_sem transfer_sync;
 	struct k_sem completion_sync;
 	volatile nrfx_err_t res;
 	uint32_t dev_config;
+	uint16_t concat_buf_size;
+	uint8_t *concat_buf;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	u32_t pm_state;
+	uint32_t pm_state;
 #endif
 };
 
@@ -39,11 +44,21 @@ const struct i2c_nrfx_twim_config *get_dev_config(struct device *dev)
 }
 
 static int i2c_nrfx_twim_transfer(struct device *dev, struct i2c_msg *msgs,
-				  u8_t num_msgs, u16_t addr)
+				  uint8_t num_msgs, uint16_t addr)
 {
 	int ret = 0;
+	uint32_t concat_len = 0;
+	uint8_t *concat_buf = get_dev_data(dev)->concat_buf;
+	uint16_t concat_buf_size = get_dev_data(dev)->concat_buf_size;
+	nrfx_twim_xfer_desc_t cur_xfer = {
+		.address = addr
+	};
 
 	k_sem_take(&(get_dev_data(dev)->transfer_sync), K_FOREVER);
+
+	/* Dummy take on completion_sync sem to be sure that it is empty */
+	k_sem_take(&(get_dev_data(dev)->completion_sync), K_NO_WAIT);
+
 	nrfx_twim_enable(&get_dev_config(dev)->twim);
 
 	for (size_t i = 0; i < num_msgs; i++) {
@@ -52,18 +67,44 @@ static int i2c_nrfx_twim_transfer(struct device *dev, struct i2c_msg *msgs,
 			break;
 		}
 
-		nrfx_twim_xfer_desc_t cur_xfer = {
-			.p_primary_buf  = msgs[i].buf,
-			.primary_length = msgs[i].len,
-			.address	= addr,
-			.type		= (msgs[i].flags & I2C_MSG_READ) ?
-					  NRFX_TWIM_XFER_RX : NRFX_TWIM_XFER_TX
-		};
+		bool last_or_non_concatenable =
+			((msgs[i].flags & I2C_MSG_STOP)
+			 || !(i + 1 < num_msgs)
+			 || (msgs[i + 1].flags & I2C_MSG_RESTART)
+			 || ((msgs[i + 1].flags & I2C_MSG_READ)
+			     != (msgs[i].flags & I2C_MSG_READ)));
+
+		if ((concat_len != 0) || !last_or_non_concatenable) {
+			if (msgs[i].len > concat_buf_size) {
+				LOG_ERR("Concatenation buffer is too small");
+				return -ENOSPC;
+			}
+			if (!(msgs[i].flags & I2C_MSG_READ)) {
+				memcpy(concat_buf + concat_len,
+				       msgs[i].buf,
+				       msgs[i].len);
+			}
+			concat_len += msgs[i].len;
+		}
+
+		if (last_or_non_concatenable) {
+			if (concat_len == 0) {
+				cur_xfer.p_primary_buf = msgs[i].buf;
+				cur_xfer.primary_length = msgs[i].len;
+			} else {
+				cur_xfer.p_primary_buf = concat_buf;
+				cur_xfer.primary_length = concat_len;
+			}
+			cur_xfer.type = (msgs[i].flags & I2C_MSG_READ) ?
+					 NRFX_TWIM_XFER_RX : NRFX_TWIM_XFER_TX;
+		} else {
+			continue;
+		}
 
 		nrfx_err_t res = nrfx_twim_xfer(&get_dev_config(dev)->twim,
-					       &cur_xfer,
-					       (msgs[i].flags & I2C_MSG_STOP) ?
-					       0 : NRFX_TWIM_FLAG_TX_NO_STOP);
+						&cur_xfer,
+						(msgs[i].flags & I2C_MSG_STOP) ?
+						 0 : NRFX_TWIM_FLAG_TX_NO_STOP);
 		if (res != NRFX_SUCCESS) {
 			if (res == NRFX_ERROR_BUSY) {
 				ret = -EBUSY;
@@ -74,13 +115,50 @@ static int i2c_nrfx_twim_transfer(struct device *dev, struct i2c_msg *msgs,
 			}
 		}
 
-		k_sem_take(&(get_dev_data(dev)->completion_sync), K_FOREVER);
+		ret = k_sem_take(&(get_dev_data(dev)->completion_sync),
+				 I2C_TRANSFER_TIMEOUT_MSEC);
+		if (ret != 0) {
+			/* Whatever the frequency, completion_sync should have
+			 * been give by the event handler.
+			 *
+			 * If it hasn't it's probably due to an hardware issue
+			 * on the I2C line, for example a short between SDA and
+			 * GND.
+			 *
+			 * Note to fully recover from this issue one should
+			 * reinit nrfx twim.
+			 */
+			LOG_ERR("Error on I2C line occurred for message %d", i);
+			ret = -EIO;
+			break;
+		}
+
 		res = get_dev_data(dev)->res;
+
 		if (res != NRFX_SUCCESS) {
 			LOG_ERR("Error %d occurred for message %d", res, i);
 			ret = -EIO;
 			break;
 		}
+
+		/* If concatenated messages were I2C_MSG_READ type, then
+		 * content of concatenation buffer has to be copied back into
+		 * buffers provided by user. */
+		if ((msgs[i].flags & I2C_MSG_READ)
+		    && cur_xfer.p_primary_buf == concat_buf) {
+			int j = i;
+
+			while (concat_len >= msgs[j].len) {
+				concat_len -= msgs[j].len;
+				memcpy(msgs[j].buf,
+				       concat_buf + concat_len,
+				       msgs[j].len);
+				j--;
+			}
+
+		}
+
+		concat_len = 0;
 	}
 
 	nrfx_twim_disable(&get_dev_config(dev)->twim);
@@ -112,7 +190,7 @@ static void event_handler(nrfx_twim_evt_t const *p_event, void *p_context)
 	k_sem_give(&dev_data->completion_sync);
 }
 
-static int i2c_nrfx_twim_configure(struct device *dev, u32_t dev_config)
+static int i2c_nrfx_twim_configure(struct device *dev, uint32_t dev_config)
 {
 	nrfx_twim_t const *inst = &(get_dev_config(dev)->twim);
 
@@ -161,14 +239,14 @@ static int init_twim(struct device *dev)
 }
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static int twim_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
+static int twim_nrfx_pm_control(struct device *dev, uint32_t ctrl_command,
 				void *context, device_pm_cb cb, void *arg)
 {
 	int ret = 0;
-	u32_t pm_current_state = get_dev_data(dev)->pm_state;
+	uint32_t pm_current_state = get_dev_data(dev)->pm_state;
 
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-		u32_t new_state = *((const u32_t *)context);
+		uint32_t new_state = *((const uint32_t *)context);
 
 		if (new_state != pm_current_state) {
 			switch (new_state) {
@@ -199,7 +277,7 @@ static int twim_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 		}
 	} else {
 		__ASSERT_NO_MSG(ctrl_command == DEVICE_PM_GET_POWER_STATE);
-		*((u32_t *)context) = get_dev_data(dev)->pm_state;
+		*((uint32_t *)context) = get_dev_data(dev)->pm_state;
 	}
 
 	if (cb) {
@@ -221,6 +299,13 @@ static int twim_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 #define I2C_FREQUENCY(idx)						       \
 	I2C_NRFX_TWIM_FREQUENCY(DT_PROP(I2C(idx), clock_frequency))
 
+#define CONCAT_BUF_SIZE(idx) DT_PROP(I2C(idx), concat_buf_size)
+
+#define I2C_CONCAT_BUF(idx)						       \
+	COND_CODE_1(DT_NODE_HAS_PROP(I2C(idx), concat_buf_size),	       \
+	(.concat_buf = twim_##idx##_concat_buf,				       \
+	.concat_buf_size = CONCAT_BUF_SIZE(idx),), ())
+
 #define I2C_NRFX_TWIM_DEVICE(idx)					       \
 	BUILD_ASSERT(I2C_FREQUENCY(idx) !=				       \
 		     I2C_NRFX_TWIM_INVALID_FREQUENCY,			       \
@@ -231,11 +316,16 @@ static int twim_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 			    nrfx_isr, nrfx_twim_##idx##_irq_handler, 0);       \
 		return init_twim(dev);					       \
 	}								       \
+	COND_CODE_1(DT_NODE_HAS_PROP(I2C(idx), concat_buf_size),	       \
+	(static uint8_t twim_##idx##_concat_buf[CONCAT_BUF_SIZE(idx)];),       \
+	())								       \
+									       \
 	static struct i2c_nrfx_twim_data twim_##idx##_data = {		       \
 		.transfer_sync = Z_SEM_INITIALIZER(                            \
 			twim_##idx##_data.transfer_sync, 1, 1),                \
 		.completion_sync = Z_SEM_INITIALIZER(                          \
-			twim_##idx##_data.completion_sync, 0, 1)               \
+			twim_##idx##_data.completion_sync, 0, 1),              \
+		I2C_CONCAT_BUF(idx)					       \
 	};								       \
 	static const struct i2c_nrfx_twim_config twim_##idx##z_config = {      \
 		.twim = NRFX_TWIM_INSTANCE(idx),			       \

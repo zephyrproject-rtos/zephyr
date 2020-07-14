@@ -56,25 +56,25 @@ DEVICE_DECLARE(intmux);
  * <irq_nextlevel.h> API
  */
 
-static void rv32m1_intmux_irq_enable(struct device *dev, u32_t irq)
+static void rv32m1_intmux_irq_enable(struct device *dev, uint32_t irq)
 {
 	INTMUX_Type *regs = DEV_REGS(dev);
-	u32_t channel = rv32m1_intmux_channel(irq);
-	u32_t line = rv32m1_intmux_line(irq);
+	uint32_t channel = rv32m1_intmux_channel(irq);
+	uint32_t line = rv32m1_intmux_line(irq);
 
 	regs->CHANNEL[channel].CHn_IER_31_0 |= BIT(line);
 }
 
-static void rv32m1_intmux_irq_disable(struct device *dev, u32_t irq)
+static void rv32m1_intmux_irq_disable(struct device *dev, uint32_t irq)
 {
 	INTMUX_Type *regs = DEV_REGS(dev);
-	u32_t channel = rv32m1_intmux_channel(irq);
-	u32_t line = rv32m1_intmux_line(irq);
+	uint32_t channel = rv32m1_intmux_channel(irq);
+	uint32_t line = rv32m1_intmux_line(irq);
 
 	regs->CHANNEL[channel].CHn_IER_31_0 &= ~BIT(line);
 }
 
-static u32_t rv32m1_intmux_get_state(struct device *dev)
+static uint32_t rv32m1_intmux_get_state(struct device *dev)
 {
 	INTMUX_Type *regs = DEV_REGS(dev);
 	size_t i;
@@ -91,8 +91,8 @@ static u32_t rv32m1_intmux_get_state(struct device *dev)
 static int rv32m1_intmux_get_line_state(struct device *dev, unsigned int irq)
 {
 	INTMUX_Type *regs = DEV_REGS(dev);
-	u32_t channel = rv32m1_intmux_channel(irq);
-	u32_t line = rv32m1_intmux_line(irq);
+	uint32_t channel = rv32m1_intmux_channel(irq);
+	uint32_t line = rv32m1_intmux_line(irq);
 
 	if ((regs->CHANNEL[channel].CHn_IER_31_0 & BIT(line)) != 0) {
 		return 1;
@@ -112,8 +112,8 @@ static void rv32m1_intmux_isr(void *arg)
 {
 	struct device *dev = DEVICE_GET(intmux);
 	INTMUX_Type *regs = DEV_REGS(dev);
-	u32_t channel = POINTER_TO_UINT(arg);
-	u32_t line = (regs->CHANNEL[channel].CHn_VEC >> 2);
+	uint32_t channel = POINTER_TO_UINT(arg);
+	uint32_t line = (regs->CHANNEL[channel].CHn_VEC >> 2);
 	struct _isr_table_entry *isr_base = DEV_CFG(dev)->isr_base;
 	struct _isr_table_entry *entry;
 

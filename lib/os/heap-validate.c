@@ -19,24 +19,25 @@
 
 static size_t max_chunkid(struct z_heap *h)
 {
-	return h->len - bytes_to_chunksz(h, 1);
+	return h->len - min_chunk_size(h);
 }
 
 static bool in_bounds(struct z_heap *h, chunkid_t c)
 {
-	return (c >= h->chunk0)
+	return (c >= right_chunk(h, 0))
 		&& (c <= max_chunkid(h))
-		&& (size(h, c) < h->len);
+		&& (chunk_size(h, c) < h->len);
 }
 
 static bool valid_chunk(struct z_heap *h, chunkid_t c)
 {
-	return (size(h, c) > 0
-		&& (c + size(h, c) <= h->len)
+	return (chunk_size(h, c) > 0
+		&& (c + chunk_size(h, c) <= h->len)
 		&& in_bounds(h, c)
-		&& ((c == h->chunk0) || in_bounds(h, c - left_size(h, c)))
-		&& (used(h, c) || in_bounds(h, free_prev(h, c)))
-		&& (used(h, c) || in_bounds(h, free_next(h, c))));
+		&& (right_chunk(h, left_chunk(h, c)) == c)
+		&& (left_chunk(h, right_chunk(h, c)) == c)
+		&& (chunk_used(h, c) || in_bounds(h, prev_free_chunk(h, c)))
+		&& (chunk_used(h, c) || in_bounds(h, next_free_chunk(h, c))));
 }
 
 /* Validate multiple state dimensions for the bucket "next" pointer
@@ -49,22 +50,13 @@ static inline void check_nexts(struct z_heap *h, int bidx)
 
 	bool emptybit = (h->avail_buckets & (1 << bidx)) == 0;
 	bool emptylist = b->next == 0;
-	bool emptycount = b->list_size == 0;
-	bool empties_match = emptybit == emptylist && emptybit == emptycount;
+	bool empties_match = emptybit == emptylist;
 
 	(void)empties_match;
 	CHECK(empties_match);
 
 	if (b->next != 0) {
 		CHECK(valid_chunk(h, b->next));
-	}
-
-	if (b->list_size == 2) {
-		CHECK(free_next(h, b->next) == free_prev(h, b->next));
-		CHECK(free_next(h, b->next) != b->next);
-	} else if (b->list_size == 1) {
-		CHECK(free_next(h, b->next) == free_prev(h, b->next));
-		CHECK(free_next(h, b->next) == b->next);
 	}
 }
 
@@ -79,16 +71,16 @@ bool sys_heap_validate(struct sys_heap *heap)
 	 */
 	for (int b = 0; b <= bucket_idx(h, h->len); b++) {
 		chunkid_t c0 = h->buckets[b].next;
-		u32_t n = 0;
+		uint32_t n = 0;
 
 		check_nexts(h, b);
 
 		for (c = c0; c != 0 && (n == 0 || c != c0);
-		    n++, c = free_next(h, c)) {
+		     n++, c = next_free_chunk(h, c)) {
 			if (!valid_chunk(h, c)) {
 				return false;
 			}
-			chunk_set_used(h, c, true);
+			set_chunk_used(h, c, true);
 		}
 
 		bool empty = (h->avail_buckets & (1 << b)) == 0;
@@ -101,10 +93,6 @@ bool sys_heap_validate(struct sys_heap *heap)
 		if (empty && h->buckets[b].next != 0) {
 			return false;
 		}
-
-		if (n != h->buckets[b].list_size) {
-			return false;
-		}
 	}
 
 	/* Walk through the chunks linearly, verifying sizes and end
@@ -112,24 +100,21 @@ bool sys_heap_validate(struct sys_heap *heap)
 	 * blocks were found during enumeration).  Mark all blocks
 	 * UNUSED
 	 */
-	size_t prev_size = 0;
+	chunkid_t prev_chunk = 0;
 
-	for (c = h->chunk0; c <= max_chunkid(h); c = right_chunk(h, c)) {
+	for (c = right_chunk(h, 0); c <= max_chunkid(h); c = right_chunk(h, c)) {
 		if (!valid_chunk(h, c)) {
 			return false;
 		}
-		if (!used(h, c)) {
+		if (!chunk_used(h, c)) {
 			return false;
 		}
-
-		if (c != h->chunk0) {
-			if (left_size(h, c) != prev_size) {
-				return false;
-			}
+		if (left_chunk(h, c) != prev_chunk) {
+			return false;
 		}
-		prev_size = size(h, c);
+		prev_chunk = c;
 
-		chunk_set_used(h, c, false);
+		set_chunk_used(h, c, false);
 	}
 	if (c != h->len) {
 		return false;  /* Should have exactly consumed the buffer */
@@ -147,19 +132,19 @@ bool sys_heap_validate(struct sys_heap *heap)
 			continue;
 		}
 
-		for (c = c0; n == 0 || c != c0; n++, c = free_next(h, c)) {
-			if (used(h, c)) {
+		for (c = c0; n == 0 || c != c0; n++, c = next_free_chunk(h, c)) {
+			if (chunk_used(h, c)) {
 				return false;
 			}
-			chunk_set_used(h, c, true);
+			set_chunk_used(h, c, true);
 		}
 	}
 
 	/* Now we are valid, but have managed to invert all the in-use
 	 * fields.  One more linear pass to fix them up
 	 */
-	for (c = h->chunk0; c <= max_chunkid(h); c = right_chunk(h, c)) {
-		chunk_set_used(h, c, !used(h, c));
+	for (c = right_chunk(h, 0); c <= max_chunkid(h); c = right_chunk(h, c)) {
+		set_chunk_used(h, c, !chunk_used(h, c));
 	}
 	return true;
 }
@@ -173,7 +158,7 @@ struct z_heap_stress_rec {
 	size_t nblocks;
 	size_t blocks_alloced;
 	size_t bytes_alloced;
-	u32_t target_percent;
+	uint32_t target_percent;
 };
 
 struct z_heap_stress_block {
@@ -185,13 +170,13 @@ struct z_heap_stress_block {
  *
  * Here to guarantee cross-platform test repeatability.
  */
-static u32_t rand32(void)
+static uint32_t rand32(void)
 {
-	static u64_t state = 123456789; /* seed */
+	static uint64_t state = 123456789; /* seed */
 
 	state = state * 2862933555777941757UL + 3037000493UL;
 
-	return (u32_t)(state >> 32);
+	return (uint32_t)(state >> 32);
 }
 
 static bool rand_alloc_choice(struct z_heap_stress_rec *sr)
@@ -219,9 +204,9 @@ static bool rand_alloc_choice(struct z_heap_stress_rec *sr)
 	 * though!).
 	 */
 	__ASSERT(sr->total_bytes < 0xffffffffU / 100, "too big for u32!");
-	u32_t full_pct = (100 * sr->bytes_alloced) / sr->total_bytes;
-	u32_t target = sr->target_percent ? sr->target_percent : 1;
-	u32_t free_chance = 0xffffffffU;
+	uint32_t full_pct = (100 * sr->bytes_alloced) / sr->total_bytes;
+	uint32_t target = sr->target_percent ? sr->target_percent : 1;
+	uint32_t free_chance = 0xffffffffU;
 
 	if (full_pct < sr->target_percent) {
 		free_chance = full_pct * (0x80000000U / target);
@@ -262,7 +247,7 @@ static size_t rand_free_choice(struct z_heap_stress_rec *sr)
 void sys_heap_stress(void *(*alloc)(void *arg, size_t bytes),
 		     void (*free)(void *arg, void *p),
 		     void *arg, size_t total_bytes,
-		     u32_t op_count,
+		     uint32_t op_count,
 		     void *scratch_mem, size_t scratch_bytes,
 		     int target_percent,
 		     struct z_heap_stress_result *result)
@@ -279,7 +264,7 @@ void sys_heap_stress(void *(*alloc)(void *arg, size_t bytes),
 
 	*result = (struct z_heap_stress_result) {0};
 
-	for (u32_t i = 0; i < op_count; i++) {
+	for (uint32_t i = 0; i < op_count; i++) {
 		if (rand_alloc_choice(&sr)) {
 			size_t sz = rand_alloc_size(&sr);
 			void *p = sr.alloc(sr.arg, sz);
@@ -305,4 +290,44 @@ void sys_heap_stress(void *(*alloc)(void *arg, size_t bytes),
 		}
 		result->accumulated_in_use_bytes += sr.bytes_alloced;
 	}
+}
+
+/*
+ * Dump heap structure content for debugging / analysis purpose
+ */
+void heap_dump(struct z_heap *h)
+{
+	int i, nb_buckets = bucket_idx(h, h->len) + 1;
+
+	printk("Heap at %p contains %d units\n", chunk_buf(h), h->len);
+
+	for (i = 0; i < nb_buckets; i++) {
+		chunkid_t first = h->buckets[i].next;
+		int count = 0;
+
+		if (first) {
+			chunkid_t curr = first;
+			do {
+				count++;
+				curr = next_free_chunk(h, curr);
+			} while (curr != first);
+		}
+
+		printk("bucket %d (min %d units): %d chunks\n", i,
+		       (1 << i) - 1 + min_chunk_size(h), count);
+	}
+
+	for (chunkid_t c = 0; ; c = right_chunk(h, c)) {
+		printk("chunk %3zd: %c %3zd] %3zd [%zd\n",
+		       c, chunk_used(h, c) ? '*' : '-',
+		      left_chunk(h, c), chunk_size(h, c), right_chunk(h, c));
+		if (c == h->len) {
+			break;
+		}
+	}
+}
+
+void sys_heap_dump(struct sys_heap *heap)
+{
+	heap_dump(heap->heap);
 }

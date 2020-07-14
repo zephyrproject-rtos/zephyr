@@ -58,10 +58,15 @@ void child_thread_get(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief Verify queue elements from a user thread
+ * @brief Verify queue elements and cancel wait from a user thread
+ *
  * @details The test adds elements to queue and then
  * verified by the child user thread.
+ * Get data from a empty queue,and use K_FORVER to wait for available
+ * And to cancel wait from current thread.
+ *
  * @ingroup kernel_queue_tests
+ *
  * @see k_queue_append(), k_queue_alloc_append(),
  * k_queue_init(), k_queue_cancel_wait()
  */
@@ -109,6 +114,18 @@ void test_queue_supv_to_user(void)
 	k_sem_take(sem, K_FOREVER);
 }
 
+/**
+ * @brief verify allocate and feature "Last In, First Out"
+ *
+ * @details Create a new queue
+ * And allocated memory for the queue
+ * Initialize and insert data item in sequence.
+ * Verify the feather "Last in,First out"
+ *
+ * @ingroup kernel_queue_tests
+ *
+ * @see k_queue_alloc_prepend()
+ */
 void test_queue_alloc_prepend_user(void)
 {
 	struct k_queue *q;
@@ -131,6 +148,18 @@ void test_queue_alloc_prepend_user(void)
 	}
 }
 
+/**
+ * @brief verify feature of queue "First In, First Out"
+ *
+ * @details Create a new queue
+ * And allocated memory for the queue
+ * Initialize and insert data item in sequence.
+ * Verify the feather "First in,First out"
+ *
+ * @ingroup kernel_queue_tests
+ *
+ * @see k_queue_init(), k_queue_alloc_append()
+ */
 void test_queue_alloc_append_user(void)
 {
 	struct k_queue *q;

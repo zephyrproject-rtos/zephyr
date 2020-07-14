@@ -48,7 +48,7 @@ static ALWAYS_INLINE void arch_kernel_init(void)
  */
 static ALWAYS_INLINE int Z_INTERRUPT_CAUSE(void)
 {
-	u32_t irq_num = z_arc_v2_aux_reg_read(_ARC_V2_ICAUSE);
+	uint32_t irq_num = z_arc_v2_aux_reg_read(_ARC_V2_ICAUSE);
 
 	return irq_num;
 }
@@ -62,7 +62,7 @@ extern void z_thread_entry_wrapper(void);
 extern void z_user_thread_entry_wrapper(void);
 
 extern void z_arc_userspace_enter(k_thread_entry_t user_entry, void *p1,
-		 void *p2, void *p3, u32_t stack, u32_t size,
+		 void *p2, void *p3, uint32_t stack, uint32_t size,
 		 struct k_thread *thread);
 
 

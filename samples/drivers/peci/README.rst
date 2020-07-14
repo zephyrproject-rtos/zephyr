@@ -6,7 +6,7 @@ PECI Interface
 Overview
 ********
 
-This sample demonstrates how to use the :ref:`PECI API <peci>`.
+This sample demonstrates how to use the :ref:`PECI API <peci_api>`.
 Callbacks are registered that will write to the console indicating PECI events.
 These events indicate PECI host interaction.
 

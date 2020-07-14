@@ -21,7 +21,7 @@ struct shell_telnet_line_buf {
 	char buf[CONFIG_SHELL_TELNET_LINE_BUF_SIZE];
 
 	/** Current line length. */
-	u16_t len;
+	uint16_t len;
 };
 
 /** TELNET-based shell transport. */

@@ -50,9 +50,9 @@
 #endif
 #endif
 
-static u8_t buf[1];
+static uint8_t buf[1];
 
-static int char_out(u8_t *data, size_t length, void *ctx)
+static int char_out(uint8_t *data, size_t length, void *ctx)
 {
 	ARG_UNUSED(ctx);
 
@@ -68,7 +68,7 @@ LOG_OUTPUT_DEFINE(log_output, char_out, buf, sizeof(buf));
 static void log_backend_swo_put(const struct log_backend *const backend,
 		struct log_msg *msg)
 {
-	u32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_SWO_SYST_ENABLE) ?
+	uint32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_SWO_SYST_ENABLE) ?
 		LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
 
 	log_backend_std_put(&log_output, flag, msg);
@@ -104,7 +104,7 @@ static void log_backend_swo_panic(struct log_backend const *const backend)
 {
 }
 
-static void dropped(const struct log_backend *const backend, u32_t cnt)
+static void dropped(const struct log_backend *const backend, uint32_t cnt)
 {
 	ARG_UNUSED(backend);
 
@@ -112,10 +112,10 @@ static void dropped(const struct log_backend *const backend, u32_t cnt)
 }
 
 static void log_backend_swo_sync_string(const struct log_backend *const backend,
-		struct log_msg_ids src_level, u32_t timestamp,
+		struct log_msg_ids src_level, uint32_t timestamp,
 		const char *fmt, va_list ap)
 {
-	u32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_SWO_SYST_ENABLE) ?
+	uint32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_SWO_SYST_ENABLE) ?
 		LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
 
 	log_backend_std_sync_string(&log_output, flag, src_level,
@@ -124,10 +124,10 @@ static void log_backend_swo_sync_string(const struct log_backend *const backend,
 
 static void log_backend_swo_sync_hexdump(
 		const struct log_backend *const backend,
-		struct log_msg_ids src_level, u32_t timestamp,
-		const char *metadata, const u8_t *data, u32_t length)
+		struct log_msg_ids src_level, uint32_t timestamp,
+		const char *metadata, const uint8_t *data, uint32_t length)
 {
-	u32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_SWO_SYST_ENABLE) ?
+	uint32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_SWO_SYST_ENABLE) ?
 		LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
 
 	log_backend_std_sync_hexdump(&log_output, flag, src_level,

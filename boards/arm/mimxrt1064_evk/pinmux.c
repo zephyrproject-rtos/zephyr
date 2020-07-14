@@ -12,7 +12,7 @@
 
 LOG_MODULE_REGISTER(mimxrt1064_evk, LOG_LEVEL_INF);
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay) && CONFIG_NET_L2_ETHERNET
 static gpio_pin_config_t enet_gpio_config = {
 	.direction = kGPIO_DigitalOutput,
 	.outputLogic = 0,
@@ -31,10 +31,10 @@ static gpio_pin_config_t enet_gpio_config = {
  *Hyst. Enable Field: Hysteresis Enabled.
  */
 
-static void mimxrt1064_evk_usdhc_pinmux(u16_t nusdhc, bool init, u32_t speed,
-					u32_t strength)
+static void mimxrt1064_evk_usdhc_pinmux(uint16_t nusdhc, bool init, uint32_t speed,
+					uint32_t strength)
 {
-	u32_t cmd_data = IOMUXC_SW_PAD_CTL_PAD_SPEED(speed) |
+	uint32_t cmd_data = IOMUXC_SW_PAD_CTL_PAD_SPEED(speed) |
 			 IOMUXC_SW_PAD_CTL_PAD_SRE_MASK |
 			 IOMUXC_SW_PAD_CTL_PAD_PKE_MASK |
 			 IOMUXC_SW_PAD_CTL_PAD_PUE_MASK |
@@ -42,7 +42,7 @@ static void mimxrt1064_evk_usdhc_pinmux(u16_t nusdhc, bool init, u32_t speed,
 			 IOMUXC_SW_PAD_CTL_PAD_PUS(1) |
 			 IOMUXC_SW_PAD_CTL_PAD_DSE(strength);
 
-	u32_t clk = IOMUXC_SW_PAD_CTL_PAD_SPEED(speed) |
+	uint32_t clk = IOMUXC_SW_PAD_CTL_PAD_SPEED(speed) |
 		    IOMUXC_SW_PAD_CTL_PAD_SRE_MASK |
 		    IOMUXC_SW_PAD_CTL_PAD_HYS_MASK |
 		    IOMUXC_SW_PAD_CTL_PAD_PUS(0) |
@@ -114,7 +114,7 @@ static int mimxrt1064_evk_init(struct device *dev)
 	IOMUXC_SetPinMux(IOMUXC_SNVS_WAKEUP_GPIO5_IO00, 0);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart1), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart1), okay) && CONFIG_SERIAL
 	/* LPUART1 TX/RX */
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_12_LPUART1_TX, 0);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_13_LPUART1_RX, 0);
@@ -130,7 +130,7 @@ static int mimxrt1064_evk_init(struct device *dev)
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lcdif), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lcdif), okay) && CONFIG_DISPLAY
 	IOMUXC_SetPinMux(IOMUXC_GPIO_B0_00_LCD_CLK, 0);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_B0_01_LCD_ENABLE, 0);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_B0_02_LCD_HSYNC, 0);
@@ -189,7 +189,7 @@ static int mimxrt1064_evk_init(struct device *dev)
 	GPIO_PinInit(GPIO2, 31, &config);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c1), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c1), okay) && CONFIG_I2C
 	/* LPI2C1 SCL, SDA */
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_00_LPI2C1_SCL, 1);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_01_LPI2C1_SDA, 1);
@@ -209,7 +209,7 @@ static int mimxrt1064_evk_init(struct device *dev)
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay) && CONFIG_NET_L2_ETHERNET
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_09_GPIO1_IO09, 0U);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_10_GPIO1_IO10, 0U);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_B1_04_ENET_RX_DATA00, 0);
@@ -247,11 +247,11 @@ static int mimxrt1064_evk_init(struct device *dev)
 	GPIO_WritePinOutput(GPIO1, 9, 0);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexpwm2_pwm3), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexpwm2_pwm3), okay) && CONFIG_PWM
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_09_FLEXPWM2_PWMA03, 0);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(csi), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(csi), okay) && CONFIG_VIDEO
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_04_GPIO1_IO04, 0);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_04_CSI_PIXCLK, 0);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_05_CSI_MCLK, 0);
@@ -275,7 +275,7 @@ static int mimxrt1064_evk_init(struct device *dev)
 	return 0;
 }
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay) && CONFIG_NET_L2_ETHERNET
 static int mimxrt1064_evk_phy_reset(struct device *dev)
 {
 	/* RESET PHY chip. */
@@ -287,6 +287,6 @@ static int mimxrt1064_evk_phy_reset(struct device *dev)
 #endif
 
 SYS_INIT(mimxrt1064_evk_init, PRE_KERNEL_1, 0);
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay) && CONFIG_NET_L2_ETHERNET
 SYS_INIT(mimxrt1064_evk_phy_reset, PRE_KERNEL_2, 0);
 #endif

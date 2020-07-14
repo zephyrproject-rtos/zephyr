@@ -30,6 +30,9 @@ CONFIG_CLOCK_STM32_PLL_P_DIVISOR=2
 CONFIG_CLOCK_STM32_PLL_Q_DIVISOR=4
 CONFIG_CLOCK_STM32_PLL_R_DIVISOR=2
 
+# Enable MPU
+CONFIG_ARM_MPU=y
+
 # Disable following to assign serial ports to m4 core
 
 # enable uart driver

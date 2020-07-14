@@ -36,9 +36,9 @@ static int mcux_ccm_off(struct device *dev,
 
 static int mcux_ccm_get_subsys_rate(struct device *dev,
 				    clock_control_subsys_t sub_system,
-				    u32_t *rate)
+				    uint32_t *rate)
 {
-	u32_t clock_name = (u32_t) sub_system;
+	uint32_t clock_name = (uint32_t) sub_system;
 
 	switch (clock_name) {
 
@@ -57,7 +57,7 @@ static int mcux_ccm_get_subsys_rate(struct device *dev,
 
 	case IMX_CCM_LPSPI_CLK:
 	{
-		u32_t lpspi_mux = CLOCK_GetMux(kCLOCK_LpspiMux);
+		uint32_t lpspi_mux = CLOCK_GetMux(kCLOCK_LpspiMux);
 		clock_name_t lpspi_clock = lpspi_clocks[lpspi_mux];
 
 		*rate = CLOCK_GetFreq(lpspi_clock)
@@ -87,6 +87,12 @@ static int mcux_ccm_get_subsys_rate(struct device *dev,
 	case IMX_CCM_USDHC2_CLK:
 		*rate = CLOCK_GetSysPfdFreq(kCLOCK_Pfd0) /
 				(CLOCK_GetDiv(kCLOCK_Usdhc2Div) + 1U);
+		break;
+#endif
+
+#ifdef CONFIG_DMA_MCUX_EDMA
+	case IMX_CCM_EDMA_CLK:
+		*rate = CLOCK_GetIpgFreq();
 		break;
 #endif
 	}

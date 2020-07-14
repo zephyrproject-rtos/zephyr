@@ -22,7 +22,7 @@ static void test_arm_fir_f32(void)
 	size_t block_size, tap_count;
 	size_t sample_count = ARRAY_SIZE(in_config) / 2;
 	size_t length = ARRAY_SIZE(ref_val);
-	const u16_t *config = in_config;
+	const uint16_t *config = in_config;
 	const float32_t *input = (const float32_t *)in_val;
 	const float32_t *coeff = (const float32_t *)in_coeff;
 	const float32_t *ref = (const float32_t *)ref_val;

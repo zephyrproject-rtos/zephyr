@@ -49,12 +49,15 @@ static int mcux_dac32_channel_setup(struct device *dev,
 	DAC32_Init(config->base, &dac32_config);
 	DAC32_EnableBufferOutput(config->base, config->buffered);
 
+	DAC32_EnableTestOutput(config->base,
+			       IS_ENABLED(CONFIG_DAC_MCUX_DAC32_TESTOUT));
+
 	data->configured = true;
 
 	return 0;
 }
 
-static int mcux_dac32_write_value(struct device *dev, u8_t channel, u32_t value)
+static int mcux_dac32_write_value(struct device *dev, uint8_t channel, uint32_t value)
 {
 	const struct mcux_dac32_config *config = dev->config_info;
 	struct mcux_dac32_data *data = dev->driver_data;

@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 #include <string.h>
 #include <errno.h>
 #include <sys/printk.h>
+#include <random/rand32.h>
 
 #include <ztest.h>
 
@@ -64,15 +65,15 @@ static bool test_started;
 static bool timeout_query;
 static struct k_sem wait_data;
 static struct k_sem wait_data2;
-static u16_t current_dns_id;
+static uint16_t current_dns_id;
 static struct dns_addrinfo addrinfo;
 
 /* this must be higher that the DNS_TIMEOUT */
 #define WAIT_TIME K_MSEC(DNS_TIMEOUT + 300)
 
 struct net_if_test {
-	u8_t idx;
-	u8_t mac_addr[sizeof(struct net_eth_addr)];
+	uint8_t idx;
+	uint8_t mac_addr[sizeof(struct net_eth_addr)];
 	struct net_linkaddr ll_addr;
 };
 
@@ -81,7 +82,7 @@ static int net_iface_dev_init(struct device *dev)
 	return 0;
 }
 
-static u8_t *net_iface_get_mac(struct device *dev)
+static uint8_t *net_iface_get_mac(struct device *dev)
 {
 	struct net_if_test *data = dev->driver_data;
 
@@ -103,14 +104,14 @@ static u8_t *net_iface_get_mac(struct device *dev)
 
 static void net_iface_init(struct net_if *iface)
 {
-	u8_t *mac = net_iface_get_mac(net_if_get_device(iface));
+	uint8_t *mac = net_iface_get_mac(net_if_get_device(iface));
 
 	net_if_set_link_addr(iface, mac, sizeof(struct net_eth_addr),
 			     NET_LINK_ETHERNET);
 }
 
 static inline int get_slot_by_id(struct dns_resolve_context *ctx,
-				 u16_t dns_id)
+				 uint16_t dns_id)
 {
 	int i;
 
@@ -521,7 +522,7 @@ static void verify_cancelled(void)
 static void test_dns_query_ipv4_cancel(void)
 {
 	int expected_status = DNS_EAI_CANCELED;
-	u16_t dns_id;
+	uint16_t dns_id;
 	int ret;
 
 	timeout_query = true;
@@ -547,7 +548,7 @@ static void test_dns_query_ipv4_cancel(void)
 static void test_dns_query_ipv6_cancel(void)
 {
 	int expected_status = DNS_EAI_CANCELED;
-	u16_t dns_id;
+	uint16_t dns_id;
 	int ret;
 
 	timeout_query = true;

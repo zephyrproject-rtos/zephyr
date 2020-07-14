@@ -20,7 +20,7 @@ extern "C" {
  *
  * @return 0 if data was sent, <0 if error
  */
-int uart_mux_send(struct device *uart, const u8_t *buf, size_t size);
+int uart_mux_send(struct device *uart, const uint8_t *buf, size_t size);
 
 /**
  * @brief Receive unmuxed data.
@@ -34,7 +34,7 @@ int uart_mux_send(struct device *uart, const u8_t *buf, size_t size);
  * @retval <0 Error
  */
 int uart_mux_recv(struct device *mux, struct gsm_dlci *dlci,
-			    u8_t *data, size_t len);
+			    uint8_t *data, size_t len);
 
 #ifdef __cplusplus
 }

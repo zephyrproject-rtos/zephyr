@@ -186,17 +186,40 @@ class RunnerCaps:
     - flash_addr: whether the runner supports flashing to an
       arbitrary address. Default is False. If true, the runner
       must honor the --dt-flash option.
+
+    - erase: whether the runner supports an --erase option, which
+      does a mass-erase of the entire addressable flash on the target
+      before flashing. On multi-core SoCs, this may only erase portions of
+      flash specific the actual target core. (This option can be useful for
+      things like clearing out old settings values or other subsystem state
+      that may affect the behavior of the zephyr image. It is also sometimes
+      needed by SoCs which have flash-like areas that can't be sector
+      erased by the underlying tool before flashing; UICR on nRF SoCs
+      is one example.)
     '''
 
     def __init__(self,
                  commands={'flash', 'debug', 'debugserver', 'attach'},
-                 flash_addr=False):
+                 flash_addr=False, erase=False):
         self.commands = commands
         self.flash_addr = bool(flash_addr)
+        self.erase = bool(erase)
 
     def __str__(self):
-        return 'RunnerCaps(commands={}, flash_addr={})'.format(
-            self.commands, self.flash_addr)
+        return (f'RunnerCaps(commands={self.commands}, '
+                f'flash_addr={self.flash_addr}, '
+                f'erase={self.erase}'
+                ')')
+
+
+def _missing_cap(cls, option):
+    # Helper function that's called when an option was given on the
+    # command line that corresponds to a missing capability.
+    #
+    # 'cls' is a ZephyrBinaryRunner subclass; 'option' is an option
+    # that can't be supported due to missing capability.
+
+    raise ValueError(f"{cls.name()} doesn't support {option} option")
 
 
 class RunnerConfig:
@@ -260,7 +283,9 @@ class _DTFlashAction(argparse.Action):
 class ZephyrBinaryRunner(abc.ABC):
     '''Abstract superclass for binary runners (flashers, debuggers).
 
-    **Note**: these APIs are still evolving, and will change!
+    **Note**: this class's API has changed relatively rarely since it
+    as added, but it is not considered a stable Zephyr API, and may change
+    without notice.
 
     With some exceptions, boards supported by Zephyr must provide
     generic means to be flashed (have a Zephyr firmware binary
@@ -389,13 +414,24 @@ class ZephyrBinaryRunner(abc.ABC):
 
         Runner-specific options are added through the do_add_parser()
         hook.'''
-        # Common options that depend on runner capabilities.
-        if cls.capabilities().flash_addr:
+        # Common options that depend on runner capabilities. If a
+        # capability is not supported, the option string or strings
+        # are added anyway, to prevent an individual runner class from
+        # using them to mean something else.
+        caps = cls.capabilities()
+
+        if caps.flash_addr:
             parser.add_argument('--dt-flash', default='n', choices=_YN_CHOICES,
                                 action=_DTFlashAction,
                                 help='''If 'yes', use configuration generated
                                 by device tree (DT) to compute flash
                                 addresses.''')
+        else:
+            parser.add_argument('--dt-flash', help=argparse.SUPPRESS)
+
+        parser.add_argument('--erase', action='store_true',
+                            help=('if given, mass erase flash before loading'
+                                  if caps.erase else argparse.SUPPRESS))
 
         # Runner-specific options.
         cls.do_add_parser(parser)
@@ -406,13 +442,24 @@ class ZephyrBinaryRunner(abc.ABC):
         '''Hook for adding runner-specific options.'''
 
     @classmethod
-    @abc.abstractmethod
     def create(cls, cfg, args):
         '''Create an instance from command-line arguments.
 
         - ``cfg``: RunnerConfig instance (pass to superclass __init__)
         - ``args``: runner-specific argument namespace parsed from
           execution environment, as specified by ``add_parser()``.'''
+        caps = cls.capabilities()
+        if args.dt_flash and not caps.flash_addr:
+            _missing_cap(cls, '--dt-flash')
+        if args.erase and not caps.erase:
+            _missing_cap(cls, '--erase')
+
+        return cls.do_create(cfg, args)
+
+    @classmethod
+    @abc.abstractmethod
+    def do_create(cls, cfg, args):
+        '''Hook for instance creation from command line arguments.'''
 
     @classmethod
     def get_flash_address(cls, args, build_conf, default=0x0):

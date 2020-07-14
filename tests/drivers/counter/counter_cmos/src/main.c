@@ -18,7 +18,7 @@
 void test_cmos_rate(void)
 {
 	struct device *cmos;
-	u32_t start, elapsed;
+	uint32_t start, elapsed;
 	int err;
 
 	cmos = device_get_binding("CMOS");

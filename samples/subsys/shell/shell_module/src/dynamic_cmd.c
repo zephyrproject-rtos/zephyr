@@ -14,7 +14,7 @@
 /* buffer holding dynamicly created user commands */
 static char dynamic_cmd_buffer[MAX_CMD_CNT][MAX_CMD_LEN];
 /* commands counter */
-static u8_t dynamic_cmd_cnt;
+static uint8_t dynamic_cmd_cnt;
 
 typedef int cmp_t(const void *, const void *);
 extern void qsort(void *a, size_t n, size_t es, cmp_t *cmp);
@@ -28,8 +28,8 @@ static int string_cmp(const void *p_a, const void *p_b)
 static int cmd_dynamic_add(const struct shell *shell,
 			   size_t argc, char **argv)
 {
-	u16_t cmd_len;
-	u8_t idx;
+	uint16_t cmd_len;
+	uint8_t idx;
 
 	ARG_UNUSED(argc);
 
@@ -77,7 +77,7 @@ static int cmd_dynamic_execute(const struct shell *shell,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	for (u8_t idx = 0; idx <  dynamic_cmd_cnt; idx++) {
+	for (uint8_t idx = 0; idx <  dynamic_cmd_cnt; idx++) {
 		if (!strcmp(dynamic_cmd_buffer[idx], argv[1])) {
 			shell_print(shell, "dynamic command: %s", argv[1]);
 			return 0;
@@ -95,7 +95,7 @@ static int cmd_dynamic_remove(const struct shell *shell, size_t argc,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	for (u8_t idx = 0; idx <  dynamic_cmd_cnt; idx++) {
+	for (uint8_t idx = 0; idx <  dynamic_cmd_cnt; idx++) {
 		if (!strcmp(dynamic_cmd_buffer[idx], argv[1])) {
 			if (idx == MAX_CMD_CNT - 1) {
 				dynamic_cmd_buffer[idx][0] = '\0';
@@ -129,7 +129,7 @@ static int cmd_dynamic_show(const struct shell *shell,
 
 	shell_print(shell, "Dynamic command list:");
 
-	for (u8_t i = 0; i < dynamic_cmd_cnt; i++) {
+	for (uint8_t i = 0; i < dynamic_cmd_cnt; i++) {
 		shell_print(shell, "[%3d] %s", i, dynamic_cmd_buffer[i]);
 	}
 

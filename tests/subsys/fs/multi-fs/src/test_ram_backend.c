@@ -12,7 +12,7 @@
 #include <zephyr/types.h>
 #include <ztest_assert.h>
 
-static u8_t rambuf[FLASH_AREA_SIZE(storage)];
+static uint8_t rambuf[FLASH_AREA_SIZE(storage)];
 
 static int test_ram_flash_init(struct device *dev)
 {

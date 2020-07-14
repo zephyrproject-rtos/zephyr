@@ -151,19 +151,19 @@
 
 struct arm_mpu_region_attr {
 	/* Attributes belonging to RBAR */
-	u8_t rbar: 5;
+	uint8_t rbar: 5;
 	/* MAIR index for attribute indirection */
-	u8_t mair_idx: 3;
+	uint8_t mair_idx: 3;
 	/* Region Limit Address value to be written to the RLAR register. */
-	u32_t r_limit;
+	uint32_t r_limit;
 };
 
 typedef struct arm_mpu_region_attr arm_mpu_region_attr_t;
 
 /* Typedef for the k_mem_partition attribute */
 typedef struct {
-	u16_t rbar;
-	u16_t mair_idx;
+	uint16_t rbar;
+	uint16_t mair_idx;
 } k_mem_partition_attr_t;
 
 /* Kernel macros for memory attribution
@@ -252,7 +252,7 @@ typedef struct {
 #endif /* _ASMLANGUAGE */
 
 #define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size) \
-	BUILD_ASSERT((size > 0) && ((u32_t)start % \
+	BUILD_ASSERT((size > 0) && ((uint32_t)start % \
 			CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE == 0U) && \
 		((size) % CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE == 0), \
 		" the start and size of the partition must align " \

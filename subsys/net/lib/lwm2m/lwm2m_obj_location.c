@@ -39,7 +39,7 @@ static float32_value_t longitude;
 static float32_value_t altitude;
 static float32_value_t radius;
 static float32_value_t speed;
-static s32_t timestamp;
+static int32_t timestamp;
 
 static struct lwm2m_engine_obj location;
 static struct lwm2m_engine_obj_field fields[] = {
@@ -56,7 +56,7 @@ static struct lwm2m_engine_obj_inst inst;
 static struct lwm2m_engine_res res[LOCATION_MAX_ID];
 static struct lwm2m_engine_res_inst res_inst[RESOURCE_INSTANCE_COUNT];
 
-static struct lwm2m_engine_obj_inst *location_create(u16_t obj_inst_id)
+static struct lwm2m_engine_obj_inst *location_create(uint16_t obj_inst_id)
 {
 	int i = 0, j = 0;
 

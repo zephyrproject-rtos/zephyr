@@ -45,7 +45,7 @@ static const unsigned int pm_min_residency[] = {
 #endif /* CONFIG_SYS_POWER_DEEP_SLEEP_STATES */
 };
 
-enum power_states sys_pm_policy_next_state(s32_t ticks)
+enum power_states sys_pm_policy_next_state(int32_t ticks)
 {
 	int i;
 

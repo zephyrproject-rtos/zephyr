@@ -45,17 +45,17 @@ struct init_stack_frame {
 	/* top of the stack / most recently pushed */
 
 	/* SPSL_ELn and ELR_ELn */
-	u64_t spsr;
-	u64_t elr;
+	uint64_t spsr;
+	uint64_t elr;
 
 	/*
 	 * Used by z_thread_entry_wrapper. pulls these off the stack and
 	 * into argument registers before calling z_thread_entry()
 	 */
-	u64_t entry_point;
-	u64_t arg1;
-	u64_t arg2;
-	u64_t arg3;
+	uint64_t entry_point;
+	uint64_t arg1;
+	uint64_t arg2;
+	uint64_t arg3;
 
 	/* least recently pushed */
 };
@@ -76,10 +76,10 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	pInitCtx = (struct init_stack_frame *)(Z_STACK_PTR_ALIGN(stackEnd -
 				    sizeof(struct init_stack_frame)));
 
-	pInitCtx->entry_point = (u64_t)pEntry;
-	pInitCtx->arg1 = (u64_t)parameter1;
-	pInitCtx->arg2 = (u64_t)parameter2;
-	pInitCtx->arg3 = (u64_t)parameter3;
+	pInitCtx->entry_point = (uint64_t)pEntry;
+	pInitCtx->arg1 = (uint64_t)parameter1;
+	pInitCtx->arg2 = (uint64_t)parameter2;
+	pInitCtx->arg3 = (uint64_t)parameter3;
 
 	/*
 	 * - ELR_ELn: to be used by eret in z_thread_entry_wrapper() to return
@@ -88,7 +88,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 * - SPSR_ELn: to enable IRQs (we are masking debug exceptions, SError
 	 *   interrupts and FIQs).
 	 */
-	pInitCtx->elr = (u64_t)z_thread_entry;
+	pInitCtx->elr = (uint64_t)z_thread_entry;
 	pInitCtx->spsr = SPSR_MODE_EL1H | DAIF_FIQ;
 
 	/*
@@ -100,6 +100,6 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 *   task is first scheduled.
 	 */
 
-	thread->callee_saved.sp = (u64_t)pInitCtx;
-	thread->callee_saved.x30 = (u64_t)z_thread_entry_wrapper;
+	thread->callee_saved.sp = (uint64_t)pInitCtx;
+	thread->callee_saved.x30 = (uint64_t)z_thread_entry_wrapper;
 }

@@ -23,9 +23,9 @@ static int lpcxpresso_54114_pinmux_init(struct device *dev)
 		device_get_binding(CONFIG_PINMUX_MCUX_LPC_PORT1_NAME);
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_usart, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_usart, okay) && CONFIG_SERIAL
 	/* USART0 RX,  TX */
-	const u32_t port0_pin0_config = (
+	const uint32_t port0_pin0_config = (
 			IOCON_PIO_FUNC1 |
 			IOCON_PIO_MODE_INACT |
 			IOCON_PIO_INV_DI |
@@ -35,7 +35,7 @@ static int lpcxpresso_54114_pinmux_init(struct device *dev)
 			IOCON_PIO_OPENDRAIN_DI
 			);
 
-	const u32_t port0_pin1_config = (
+	const uint32_t port0_pin1_config = (
 			IOCON_PIO_FUNC1 |
 			IOCON_PIO_MODE_INACT |
 			IOCON_PIO_INV_DI |
@@ -51,7 +51,7 @@ static int lpcxpresso_54114_pinmux_init(struct device *dev)
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)
-	const u32_t port0_pin29_config = (
+	const uint32_t port0_pin29_config = (
 			IOCON_PIO_FUNC0 |
 			IOCON_PIO_MODE_PULLUP |
 			IOCON_PIO_INV_DI |
@@ -62,7 +62,7 @@ static int lpcxpresso_54114_pinmux_init(struct device *dev)
 
 	pinmux_pin_set(port0, 29, port0_pin29_config);
 
-	const u32_t port0_pin24_config = (
+	const uint32_t port0_pin24_config = (
 			IOCON_PIO_FUNC0 |
 			IOCON_PIO_INV_DI |
 			IOCON_PIO_DIGITAL_EN |
@@ -71,7 +71,7 @@ static int lpcxpresso_54114_pinmux_init(struct device *dev)
 			);
 	pinmux_pin_set(port0,  24, port0_pin24_config);
 
-	const u32_t port0_pin31_config = (
+	const uint32_t port0_pin31_config = (
 			IOCON_PIO_FUNC0 |
 			IOCON_PIO_MODE_PULLUP |
 			IOCON_PIO_INV_DI |
@@ -81,7 +81,7 @@ static int lpcxpresso_54114_pinmux_init(struct device *dev)
 			);
 	pinmux_pin_set(port0,  31, port0_pin31_config);
 
-	const u32_t port0_pin4_config = (
+	const uint32_t port0_pin4_config = (
 			IOCON_PIO_FUNC0 |
 			IOCON_PIO_MODE_PULLUP |
 			IOCON_PIO_INV_DI |
@@ -94,7 +94,7 @@ static int lpcxpresso_54114_pinmux_init(struct device *dev)
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay)
-	const u32_t port1_pin10_config = (
+	const uint32_t port1_pin10_config = (
 			IOCON_PIO_FUNC0 |
 			IOCON_PIO_MODE_PULLUP |
 			IOCON_PIO_INV_DI |
@@ -107,7 +107,7 @@ static int lpcxpresso_54114_pinmux_init(struct device *dev)
 	pinmux_pin_set(port1, 10, port1_pin10_config);
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm4), nxp_lpc_i2c, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm4), nxp_lpc_i2c, okay) && CONFIG_I2C
 	/* PORT0 PIN25 is configured as FC4_RTS_SCL_SSEL1 */
 	pinmux_pin_set(port0, 25, IOCON_PIO_FUNC1 |
 				  IOCON_PIO_I2CSLEW_I2C |
@@ -127,7 +127,7 @@ static int lpcxpresso_54114_pinmux_init(struct device *dev)
 				  IOCON_PIO_I2CFILTER_EN);
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm5), nxp_lpc_spi, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm5), nxp_lpc_spi, okay) && CONFIG_SPI
 	/* PORT0 PIN18 is configured as FC5_TXD_SCL_MISO */
 	pinmux_pin_set(port0, 18, IOCON_PIO_FUNC1 |
 				  IOCON_PIO_MODE_PULLUP |

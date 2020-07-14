@@ -17,7 +17,7 @@ extern "C" {
 
 void posix_isr_declare(unsigned int irq_p, int flags, void isr_p(void *),
 		       void *isr_param_p);
-void posix_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags);
+void posix_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags);
 
 /**
  * Configure a static interrupt.

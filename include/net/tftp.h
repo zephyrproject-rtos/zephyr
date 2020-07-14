@@ -20,8 +20,8 @@ extern "C" {
 #endif
 
 struct tftpc {
-	u8_t   *user_buf;
-	u32_t  user_buf_size;
+	uint8_t   *user_buf;
+	uint32_t  user_buf_size;
 };
 
 /* TFTP Client Error codes. */

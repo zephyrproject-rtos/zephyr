@@ -92,6 +92,27 @@
 #define ICC_SRE_ELx_DIB		BIT(2)
 #define ICC_SRE_EL3_EN		BIT(3)
 
+/* ICC SGI macros */
+#define SGIR_TGT_MASK		0xffff
+#define SGIR_AFF1_SHIFT		16
+#define SGIR_INTID_SHIFT	24
+#define SGIR_INTID_MASK		0xf
+#define SGIR_AFF2_SHIFT		32
+#define SGIR_IRM_SHIFT		40
+#define SGIR_IRM_MASK		0x1
+#define SGIR_AFF3_SHIFT		48
+#define SGIR_AFF_MASK		0xf
+
+#define SGIR_IRM_TO_AFF		0
+
+#define GICV3_SGIR_VALUE(_aff3, _aff2, _aff1, _intid, _irm, _tgt)	\
+	((((uint64_t) (_aff3) & SGIR_AFF_MASK) << SGIR_AFF3_SHIFT) |	\
+	 (((uint64_t) (_irm) & SGIR_IRM_MASK) << SGIR_IRM_SHIFT) |	\
+	 (((uint64_t) (_aff2) & SGIR_AFF_MASK) << SGIR_AFF2_SHIFT) |	\
+	 (((_intid) & SGIR_INTID_MASK) << SGIR_INTID_SHIFT) |		\
+	 (((_aff1) & SGIR_AFF_MASK) << SGIR_AFF1_SHIFT) |		\
+	 ((_tgt) & SGIR_TGT_MASK))
+
 /* Implementation defined register definations */
 #if defined(CONFIG_CPU_CORTEX_A72)
 
@@ -118,7 +139,7 @@
 #ifndef _ASMLANGUAGE
 /* Core sysreg macros */
 #define read_sysreg(reg) ({					\
-	u64_t val;						\
+	uint64_t val;						\
 	__asm__ volatile("mrs %0, " STRINGIFY(reg) : "=r" (val));\
 	val;							\
 })
@@ -139,4 +160,17 @@
 
 #define GET_EL(_mode)		(((_mode) >> MODE_EL_SHIFT) & MODE_EL_MASK)
 
+/* mpidr */
+#define MPIDR_AFFLVL_MASK	0xff
+
+#define MPIDR_AFF0_SHIFT	0
+#define MPIDR_AFF1_SHIFT	8
+#define MPIDR_AFF2_SHIFT	16
+#define MPIDR_AFF3_SHIFT	32
+
+#define MPIDR_AFFLVL(mpidr, aff_level) \
+		(((mpidr) >> MPIDR_AFF##aff_level##_SHIFT) & MPIDR_AFFLVL_MASK)
+
+#define GET_MPIDR()		read_sysreg(mpidr_el1)
+#define MPIDR_TO_CORE(mpidr)	MPIDR_AFFLVL(mpidr, 0)
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_CPU_H_ */

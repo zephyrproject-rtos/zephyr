@@ -209,6 +209,10 @@ void test_pipe_user_thread2thread(void)
 
 /**
  * @brief Test pipe put of blocks
+ * @details Check if kernel support sending a kernel
+ * memory block into a pipe.
+ * - Using a sub thread to put blcok data to pipe
+ * - Get the pipe data and verify it
  * @see k_pipe_block_put()
  */
 void test_pipe_block_put(void)

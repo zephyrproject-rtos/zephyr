@@ -65,8 +65,8 @@ void main(void)
 {
 	int rc = 0, cnt = 0, cnt_his = 0;
 	char buf[16];
-	u8_t key[8], longarray[128];
-	u32_t reboot_counter = 0U, reboot_counter_his;
+	uint8_t key[8], longarray[128];
+	uint32_t reboot_counter = 0U, reboot_counter_his;
 	struct flash_pages_info info;
 
 	/* define the nvs file system by settings with:

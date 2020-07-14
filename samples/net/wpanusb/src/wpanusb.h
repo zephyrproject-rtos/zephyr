@@ -23,18 +23,18 @@ enum wpanusb_requests {
 };
 
 struct set_channel {
-	u8_t page;
-	u8_t channel;
+	uint8_t page;
+	uint8_t channel;
 } __packed;
 
 struct set_short_addr {
-	u16_t short_addr;
+	uint16_t short_addr;
 } __packed;
 
 struct set_pan_id {
-	u16_t pan_id;
+	uint16_t pan_id;
 } __packed;
 
 struct set_ieee_addr {
-	u64_t ieee_addr;
+	uint64_t ieee_addr;
 } __packed;

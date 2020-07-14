@@ -41,7 +41,7 @@ static void tcp_received(struct net_context *context,
 {
 	const struct shell *shell = tcp_shell;
 	struct session *session;
-	u32_t time;
+	uint32_t time;
 
 	if (!shell) {
 		printk("Shell is not set!\n");
@@ -74,19 +74,19 @@ static void tcp_received(struct net_context *context,
 		}
 
 		if (pkt == NULL && status == 0) { /* EOF */
-			u32_t rate_in_kbps;
-			u32_t duration = HW_CYCLES_TO_USEC(
+			uint32_t rate_in_kbps;
+			uint32_t duration = HW_CYCLES_TO_USEC(
 				time_delta(session->start_time, time));
 
 			session->state = STATE_COMPLETED;
 
 			/* Compute baud rate */
 			if (duration != 0U) {
-				rate_in_kbps = (u32_t)
-					(((u64_t)session->length *
-					  (u64_t)8 *
-					  (u64_t)USEC_PER_SEC) /
-					 ((u64_t)duration * 1024U));
+				rate_in_kbps = (uint32_t)
+					(((uint64_t)session->length *
+					  (uint64_t)8 *
+					  (uint64_t)USEC_PER_SEC) /
+					 ((uint64_t)duration * 1024U));
 			} else {
 				rate_in_kbps = 0U;
 			}

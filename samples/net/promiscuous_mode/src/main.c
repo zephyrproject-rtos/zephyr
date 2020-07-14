@@ -40,7 +40,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	LOG_INF("Promiscuous mode enabled for interface %p", iface);
 }
 
-static int get_ports(struct net_pkt *pkt, u16_t *src, u16_t *dst)
+static int get_ports(struct net_pkt *pkt, uint16_t *src, uint16_t *dst)
 {
 	struct net_udp_hdr hdr, *udp_hdr;
 
@@ -59,10 +59,10 @@ static void print_info(struct net_pkt *pkt)
 {
 	char src_addr_buf[NET_IPV6_ADDR_LEN], *src_addr;
 	char dst_addr_buf[NET_IPV6_ADDR_LEN], *dst_addr;
-	u16_t dst_port = 0U, src_port = 0U;
+	uint16_t dst_port = 0U, src_port = 0U;
 	sa_family_t family = AF_UNSPEC;
 	void *dst, *src;
-	u8_t next_hdr;
+	uint8_t next_hdr;
 	const char *proto;
 	size_t len;
 	int ret;

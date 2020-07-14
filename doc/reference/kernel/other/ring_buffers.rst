@@ -130,7 +130,7 @@ is capable of holding 64 words of data and metadata information.
 
     struct my_struct {
         struct ring_buf rb;
-        u32_t buffer[MY_RING_BUF_SIZE];
+        uint32_t buffer[MY_RING_BUF_SIZE];
         ...
     };
     struct my_struct ms;
@@ -177,7 +177,7 @@ A data item is added to a ring buffer by calling
 
 .. code-block:: c
 
-    u32_t data[MY_DATA_WORDS];
+    uint32_t data[MY_DATA_WORDS];
     int ret;
 
     ret = ring_buf_item_put(&ring_buf, TYPE_FOO, 0, data, SIZE32_OF(data));
@@ -205,8 +205,8 @@ Bytes are copied to a **byte mode** ring buffer by calling
 
 .. code-block:: c
 
-    u8_t my_data[MY_RING_BUF_BYTES];
-    u32_t ret;
+    uint8_t my_data[MY_RING_BUF_BYTES];
+    uint32_t ret;
 
     ret = ring_buf_put(&ring_buf, my_data, SIZE_OF(my_data));
     if (ret != SIZE_OF(my_data)) {
@@ -219,9 +219,9 @@ ring buffer's memory.  For example:
 
 .. code-block:: c
 
-    u32_t size;
-    u32_t rx_size;
-    u8_t *data;
+    uint32_t size;
+    uint32_t rx_size;
+    uint8_t *data;
     int err;
 
     /* Allocate buffer within a ring buffer memory. */
@@ -245,16 +245,16 @@ A data item is removed from a ring buffer by calling
 
 .. code-block:: c
 
-    u32_t my_data[MY_DATA_WORDS];
-    u16_t my_type;
-    u8_t  my_value;
-    u8_t  my_size;
+    uint32_t my_data[MY_DATA_WORDS];
+    uint16_t my_type;
+    uint8_t  my_value;
+    uint8_t  my_size;
     int ret;
 
     my_size = SIZE32_OF(my_data);
     ret = ring_buf_item_get(&ring_buf, &my_type, &my_value, my_data, &my_size);
     if (ret == -EMSGSIZE) {
-        printk("Buffer is too small, need %d u32_t\n", my_size);
+        printk("Buffer is too small, need %d uint32_t\n", my_size);
     } else if (ret == -EAGAIN) {
         printk("Ring buffer is empty\n");
     } else {
@@ -268,7 +268,7 @@ Data bytes are copied out from a **byte mode** ring buffer by calling
 
 .. code-block:: c
 
-    u8_t my_data[MY_DATA_BYTES];
+    uint8_t my_data[MY_DATA_BYTES];
     size_t  ret;
 
     ret = ring_buf_get(&ring_buf, my_data, sizeof(my_data));
@@ -284,9 +284,9 @@ operations on the ring buffer's memory.  For example:
 
 .. code-block:: c
 
-    u32_t size;
-    u32_t proc_size;
-    u8_t *data;
+    uint32_t size;
+    uint32_t proc_size;
+    uint8_t *data;
     int err;
 
     /* Get buffer within a ring buffer memory. */

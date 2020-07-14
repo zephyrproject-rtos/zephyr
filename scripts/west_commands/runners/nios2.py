@@ -19,7 +19,7 @@ class Nios2BinaryRunner(ZephyrBinaryRunner):
     #      and CONFIG_INCLUDE_RESET_VECTOR must be disabled."
 
     def __init__(self, cfg, quartus_py=None, cpu_sof=None, tui=False):
-        super(Nios2BinaryRunner, self).__init__(cfg)
+        super().__init__(cfg)
         self.hex_name = cfg.hex_file
         self.elf_name = cfg.elf_file
         self.cpu_sof = cpu_sof
@@ -41,7 +41,7 @@ class Nios2BinaryRunner(ZephyrBinaryRunner):
                             help='if given, GDB uses -tui')
 
     @classmethod
-    def create(cls, cfg, args):
+    def do_create(cls, cfg, args):
         return Nios2BinaryRunner(cfg,
                                  quartus_py=args.quartus_flash,
                                  cpu_sof=args.cpu_sof,

@@ -323,6 +323,20 @@ z_x86_userspace_enter:
 	xorq	%r15, %r15
 
 	cli
+
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	/* Save the eax and edx registers before reading the time stamp
+	* once done pop the values.
+	*/
+	push %rax
+	push %rdx
+	rdtsc
+	mov %eax,arch_timing_enter_user_mode_end
+	mov %edx,arch_timing_enter_user_mode_end+4
+	pop %rdx
+	pop %rax
+#endif
+
 #ifdef CONFIG_X86_KPTI
 	/* Switch to thread's page table. We have free registers so no need
 	 * to involve the trampoline stack.

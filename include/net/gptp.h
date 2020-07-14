@@ -43,10 +43,10 @@ extern "C" {
  */
 struct gptp_scaled_ns {
 	/** High half. */
-	s32_t high;
+	int32_t high;
 
 	/** Low half. */
-	s64_t low;
+	int64_t low;
 } __packed;
 
 /**
@@ -54,10 +54,10 @@ struct gptp_scaled_ns {
  */
 struct gptp_uscaled_ns {
 	/** High half. */
-	u32_t high;
+	uint32_t high;
 
 	/** Low half. */
-	u64_t low;
+	uint64_t low;
 } __packed;
 
 /** @cond INTERNAL_HIDDEN */
@@ -119,64 +119,64 @@ static inline double gptp_pow2(int exp)
  */
 struct gptp_port_identity {
 	/** Clock identity of the port. */
-	u8_t clk_id[GPTP_CLOCK_ID_LEN];
+	uint8_t clk_id[GPTP_CLOCK_ID_LEN];
 
 	/** Number of the port. */
-	u16_t port_number;
+	uint16_t port_number;
 } __packed;
 
 struct gptp_flags {
 	union {
 		/** Byte access. */
-		u8_t octets[2];
+		uint8_t octets[2];
 
 		/** Whole field access. */
-		u16_t all;
+		uint16_t all;
 	};
 } __packed;
 
 struct gptp_hdr {
 	/** Type of the message. */
-	u8_t message_type:4;
+	uint8_t message_type:4;
 
 	/** Transport specific, always 1. */
-	u8_t transport_specific:4;
+	uint8_t transport_specific:4;
 
 	/** Version of the PTP, always 2. */
-	u8_t ptp_version:4;
+	uint8_t ptp_version:4;
 
 	/** Reserved field. */
-	u8_t reserved0:4;
+	uint8_t reserved0:4;
 
 	/** Total length of the message from the header to the last TLV. */
-	u16_t message_length;
+	uint16_t message_length;
 
 	/** Domain number, always 0. */
-	u8_t domain_number;
+	uint8_t domain_number;
 
 	/** Reserved field. */
-	u8_t reserved1;
+	uint8_t reserved1;
 
 	/** Message flags. */
 	struct gptp_flags flags;
 
 	/** Correction Field. The content depends of the message type. */
-	s64_t correction_field;
+	int64_t correction_field;
 
 	/** Reserved field. */
-	u32_t reserved2;
+	uint32_t reserved2;
 
 	/** Port Identity of the sender. */
 	struct gptp_port_identity port_id;
 
 	/** Sequence Id. */
-	u16_t sequence_id;
+	uint16_t sequence_id;
 
 	/** Control value. Sync: 0, Follow-up: 2, Others: 5. */
-	u8_t control;
+	uint8_t control;
 
 	/** Message Interval in Log2 for Sync and Announce messages. */
-	s8_t log_msg_interval;
+	int8_t log_msg_interval;
 } __packed;
 
 /** @cond INTERNAL_HIDDEN */
@@ -194,9 +194,9 @@ struct gptp_hdr {
  * @typedef gptp_phase_dis_callback_t
  * @brief Define callback that is called after a phase discontinuity has been
  *        sent by the grandmaster.
- * @param "u8_t *gm_identity" A pointer to first element of a
+ * @param "uint8_t *gm_identity" A pointer to first element of a
  *        ClockIdentity array. The size of the array is GPTP_CLOCK_ID_LEN.
- * @param "u16_t *gm_time_base" A pointer to the value of timeBaseIndicator
+ * @param "uint16_t *gm_time_base" A pointer to the value of timeBaseIndicator
  *        of the current grandmaster.
  * @param "struct scaled_ns *last_gm_ph_change" A pointer to the value of
  *        lastGmPhaseChange received from grandmaster.
@@ -204,8 +204,8 @@ struct gptp_hdr {
  *        lastGmFreqChange received from the grandmaster.
  */
 typedef void (*gptp_phase_dis_callback_t)(
-	u8_t *gm_identity,
-	u16_t *time_base,
+	uint8_t *gm_identity,
+	uint16_t *time_base,
 	struct gptp_scaled_ns *last_gm_ph_change,
 	double *last_gm_freq_change);
 
@@ -241,7 +241,7 @@ struct gptp_clk_src_time_invoke_params {
 	struct gptp_scaled_ns last_gm_phase_change;
 
 	/** Time Base - changed only if Phase or Frequency changes. */
-	u16_t time_base_indicator;
+	uint16_t time_base_indicator;
 };
 
 /**
@@ -285,7 +285,7 @@ int gptp_event_capture(struct net_ptp_time *slave_time, bool *gm_present);
  *
  * @return Pointer to output buffer
  */
-char *gptp_sprint_clock_id(const u8_t *clk_id, char *output,
+char *gptp_sprint_clock_id(const uint8_t *clk_id, char *output,
 			   size_t output_len);
 
 /**

@@ -68,8 +68,8 @@ struct ccs811_data {
 #elif defined(CONFIG_CCS811_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
 #endif
-	u16_t co2_l2m;
-	u16_t co2_m2h;
+	uint16_t co2_l2m;
+	uint16_t co2_m2h;
 #endif /* CONFIG_CCS811_TRIGGER */
 #endif
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
@@ -79,15 +79,15 @@ struct ccs811_data {
 	struct device *wake_gpio;
 #endif
 	struct ccs811_result_type result;
-	u8_t mode;
-	u8_t app_fw_ver;
+	uint8_t mode;
+	uint8_t app_fw_ver;
 };
 
 #ifdef CONFIG_CCS811_TRIGGER
 
 int ccs811_mutate_meas_mode(struct device *dev,
-			    u8_t set,
-			    u8_t clear);
+			    uint8_t set,
+			    uint8_t clear);
 
 int ccs811_set_thresholds(struct device *dev);
 

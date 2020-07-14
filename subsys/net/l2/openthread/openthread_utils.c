@@ -27,7 +27,7 @@ static bool is_anycast_locator(const otNetifAddress *address)
 }
 
 static bool is_mesh_local(struct openthread_context *context,
-			  const u8_t *address)
+			  const uint8_t *address)
 {
 	const otMeshLocalPrefix *ml_prefix =
 				otThreadGetMeshLocalPrefix(context->instance);
@@ -37,7 +37,7 @@ static bool is_mesh_local(struct openthread_context *context,
 
 int pkt_list_add(struct openthread_context *context, struct net_pkt *pkt)
 {
-	u16_t i_idx = context->pkt_list_in_idx;
+	uint16_t i_idx = context->pkt_list_in_idx;
 
 	if (context->pkt_list_full) {
 		return -ENOMEM;
@@ -56,6 +56,22 @@ int pkt_list_add(struct openthread_context *context, struct net_pkt *pkt)
 	context->pkt_list_in_idx = i_idx;
 
 	return 0;
+}
+
+void pkt_list_remove_first(struct openthread_context *context)
+{
+	uint16_t idx = context->pkt_list_in_idx;
+
+	if (idx == 0U) {
+		idx = CONFIG_OPENTHREAD_PKT_LIST_SIZE - 1;
+	} else {
+		idx--;
+	}
+	context->pkt_list_in_idx = idx;
+
+	if (context->pkt_list_full) {
+		context->pkt_list_full = 0U;
+	}
 }
 
 struct net_pkt *pkt_list_peek(struct openthread_context *context)
@@ -105,10 +121,31 @@ void add_ipv6_addr_to_zephyr(struct openthread_context *context)
 				       buf, sizeof(buf))));
 		}
 
-		if_addr = net_if_ipv6_addr_add(
+		/* Thread and SLAAC are clearly AUTOCONF, handle
+		 * manual/NCP addresses in the same way
+		 */
+		if ((address->mAddressOrigin == OT_ADDRESS_ORIGIN_THREAD) ||
+		    (address->mAddressOrigin == OT_ADDRESS_ORIGIN_SLAAC)) {
+			if_addr = net_if_ipv6_addr_add(
 					context->iface,
 					(struct in6_addr *)(&address->mAddress),
 					NET_ADDR_AUTOCONF, 0);
+		} else if (address->mAddressOrigin ==
+			   OT_ADDRESS_ORIGIN_DHCPV6) {
+			if_addr = net_if_ipv6_addr_add(
+					context->iface,
+					(struct in6_addr *)(&address->mAddress),
+					NET_ADDR_DHCP, 0);
+		} else if (address->mAddressOrigin ==
+			  OT_ADDRESS_ORIGIN_MANUAL) {
+			if_addr = net_if_ipv6_addr_add(
+					context->iface,
+					(struct in6_addr *)(&address->mAddress),
+					NET_ADDR_MANUAL, 0);
+		} else {
+			NET_ERR("Unknown OpenThread address origin ignored.");
+			continue;
+		}
 
 		if (if_addr == NULL) {
 			NET_ERR("Cannot add OpenThread unicast address");
@@ -150,6 +187,17 @@ void add_ipv6_addr_to_ot(struct openthread_context *context)
 	addr.mValid = true;
 	addr.mPreferred = true;
 	addr.mPrefixLength = 64;
+
+	if (ipv6->unicast[i].addr_type == NET_ADDR_AUTOCONF) {
+		addr.mAddressOrigin = OT_ADDRESS_ORIGIN_SLAAC;
+	} else if (ipv6->unicast[i].addr_type == NET_ADDR_DHCP) {
+		addr.mAddressOrigin = OT_ADDRESS_ORIGIN_DHCPV6;
+	} else if (ipv6->unicast[i].addr_type == NET_ADDR_MANUAL) {
+		addr.mAddressOrigin = OT_ADDRESS_ORIGIN_MANUAL;
+	} else {
+		NET_ERR("Unknown address type");
+		return;
+	}
 
 	otIp6AddUnicastAddress(context->instance, &addr);
 

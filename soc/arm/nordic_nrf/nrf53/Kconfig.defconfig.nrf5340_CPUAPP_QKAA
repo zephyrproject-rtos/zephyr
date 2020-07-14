@@ -13,7 +13,6 @@ config NUM_IRQS
 
 config NRF5340_CPUAPP_ERRATUM19
 	bool "Include workarounds for Erratum 19"
-	default y
 	depends on !TRUSTED_EXECUTION_NONSECURE
 	help
 	  This anomaly applies to IC Rev. Engineering A, build codes QKAA-AB0.

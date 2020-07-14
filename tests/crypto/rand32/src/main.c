@@ -8,13 +8,14 @@
 
 /*
  * This tests the following random number routines:
- * void z_early_boot_rand_get(u8_t *buf, size_t length)
- * u32_t sys_rand32_get(void);
+ * void z_early_boot_rand_get(uint8_t *buf, size_t length)
+ * uint32_t sys_rand32_get(void);
  */
 
 
 #include <ztest.h>
 #include <kernel_internal.h>
+#include <random/rand32.h>
 
 #define N_VALUES 10
 
@@ -29,14 +30,14 @@
 
 void test_rand32(void)
 {
-	u32_t gen, last_gen;
+	uint32_t gen, last_gen;
 	int rnd_cnt;
 	int equal_count = 0;
-	u32_t buf[N_VALUES];
+	uint32_t buf[N_VALUES];
 
 	/* Test early boot random number generation function */
-	z_early_boot_rand_get((u8_t *)&last_gen, sizeof(last_gen));
-	z_early_boot_rand_get((u8_t *)&gen, sizeof(gen));
+	z_early_boot_rand_get((uint8_t *)&last_gen, sizeof(last_gen));
+	z_early_boot_rand_get((uint8_t *)&gen, sizeof(gen));
 	zassert_true(last_gen != gen,
 			"z_early_boot_rand_get failed");
 
@@ -69,7 +70,7 @@ void test_rand32(void)
 
 	printk("Generating bulk fill random numbers\n");
 	memset(buf, 0, sizeof(buf));
-	sys_rand_get((u8_t *)(&buf[0]), sizeof(buf));
+	sys_rand_get((uint8_t *)(&buf[0]), sizeof(buf));
 
 	for (rnd_cnt = 0; rnd_cnt < (N_VALUES - 1); rnd_cnt++) {
 		gen = buf[rnd_cnt];

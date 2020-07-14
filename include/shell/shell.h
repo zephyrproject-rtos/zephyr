@@ -36,6 +36,8 @@ extern "C" {
 
 #define SHELL_CMD_ROOT_LVL		(0u)
 
+#define SHELL_HEXDUMP_BYTES_IN_LINE	16
+
 /**
  * @brief Flag indicates that optional arguments will be treated as one,
  *	  unformatted argument.
@@ -100,9 +102,27 @@ struct shell_cmd_entry {
 struct shell;
 
 struct shell_static_args {
-	u8_t mandatory; /*!< Number of mandatory arguments. */
-	u8_t optional;  /*!< Number of optional arguments. */
+	uint8_t mandatory; /*!< Number of mandatory arguments. */
+	uint8_t optional;  /*!< Number of optional arguments. */
 };
+
+/**
+ * @brief Get by index a device that matches .
+ *
+ * This can be used, for example, to identify I2C_1 as the second I2C
+ * device.
+ *
+ * Devices that failed to initialize or do not have a non-empty name
+ * are excluded from the candidates for a match.
+ *
+ * @param idx the device number starting from zero.
+ *
+ * @param prefix optional name prefix used to restrict candidate
+ * devices.  Indexing is done relative to devices with names that
+ * start with this text.  Pass null if no prefix match is required.
+ */
+struct device *shell_device_lookup(size_t idx,
+				   const char *prefix);
 
 /**
  * @brief Shell command handler prototype.
@@ -514,18 +534,18 @@ struct shell_stats {
  * @internal @brief Flags for internal shell usage.
  */
 struct shell_flags {
-	u32_t insert_mode :1; /*!< Controls insert mode for text introduction.*/
-	u32_t use_colors  :1; /*!< Controls colored syntax.*/
-	u32_t echo        :1; /*!< Controls shell echo.*/
-	u32_t processing  :1; /*!< Shell is executing process function.*/
-	u32_t tx_rdy      :1;
-	u32_t mode_delete :1; /*!< Operation mode of backspace key */
-	u32_t history_exit:1; /*!< Request to exit history mode */
-	u32_t cmd_ctx	  :1; /*!< Shell is executing command */
-	u32_t last_nl     :8; /*!< Last received new line character */
+	uint32_t insert_mode :1; /*!< Controls insert mode for text introduction.*/
+	uint32_t use_colors  :1; /*!< Controls colored syntax.*/
+	uint32_t echo        :1; /*!< Controls shell echo.*/
+	uint32_t processing  :1; /*!< Shell is executing process function.*/
+	uint32_t tx_rdy      :1;
+	uint32_t mode_delete :1; /*!< Operation mode of backspace key */
+	uint32_t history_exit:1; /*!< Request to exit history mode */
+	uint32_t cmd_ctx	  :1; /*!< Shell is executing command */
+	uint32_t last_nl     :8; /*!< Last received new line character */
 };
 
-BUILD_ASSERT((sizeof(struct shell_flags) == sizeof(u32_t)),
+BUILD_ASSERT((sizeof(struct shell_flags) == sizeof(uint32_t)),
 	     "Structure must fit in 4 bytes");
 
 
@@ -533,7 +553,7 @@ BUILD_ASSERT((sizeof(struct shell_flags) == sizeof(u32_t)),
  * @internal @brief Union for internal shell usage.
  */
 union shell_internal {
-	u32_t value;
+	uint32_t value;
 	struct shell_flags flags;
 };
 
@@ -563,10 +583,10 @@ struct shell_ctx {
 	/*!< VT100 color and cursor position, terminal width.*/
 	struct shell_vt100_ctx vt100_ctx;
 
-	u16_t cmd_buff_len; /*!< Command length.*/
-	u16_t cmd_buff_pos; /*!< Command buffer cursor position.*/
+	uint16_t cmd_buff_len; /*!< Command length.*/
+	uint16_t cmd_buff_pos; /*!< Command buffer cursor position.*/
 
-	u16_t cmd_tmp_buff_len; /*!< Command length in tmp buffer.*/
+	uint16_t cmd_tmp_buff_len; /*!< Command length in tmp buffer.*/
 
 	/*!< Command input buffer.*/
 	char cmd_buff[CONFIG_SHELL_CMD_BUFF_SIZE];
@@ -641,7 +661,7 @@ extern void shell_print_stream(const void *user_ctx, const char *data,
 		     _log_queue_size, _log_timeout, _shell_flag)	      \
 	static const struct shell _name;				      \
 	static struct shell_ctx UTIL_CAT(_name, _ctx);			      \
-	static u8_t _name##_out_buffer[CONFIG_SHELL_PRINTF_BUFF_SIZE];	      \
+	static uint8_t _name##_out_buffer[CONFIG_SHELL_PRINTF_BUFF_SIZE];	      \
 	SHELL_LOG_BACKEND_DEFINE(_name, _name##_out_buffer,		      \
 				 CONFIG_SHELL_PRINTF_BUFF_SIZE,		      \
 				 _log_queue_size, _log_timeout);	      \
@@ -682,7 +702,7 @@ extern void shell_print_stream(const void *user_ctx, const char *data,
  * @return Standard error code.
  */
 int shell_init(const struct shell *shell, const void *transport_config,
-	       bool use_colors, bool log_backend, u32_t init_log_level);
+	       bool use_colors, bool log_backend, uint32_t init_log_level);
 
 /**
  * @brief Uninitializes the transport layer and the internal shell state.
@@ -766,13 +786,31 @@ void shell_vfprintf(const struct shell *shell, enum shell_vt100_color color,
 		   const char *fmt, va_list args);
 
 /**
+ * @brief Print a line of data in hexadecimal format.
+ *
+ * Each line shows the offset, bytes and then ASCII representation.
+ *
+ * For example:
+ *
+ * 00008010: 20 25 00 20 2f 48 00 08  80 05 00 20 af 46 00
+ *	| %. /H.. ... .F. |
+ *
+ * @param[in] shell	Pointer to the shell instance.
+ * @param[in] offset	Offset to show for this line.
+ * @param[in] data	Pointer to data.
+ * @param[in] len	Length of data.
+ */
+void shell_hexdump_line(const struct shell *shell, unsigned int offset,
+			const uint8_t *data, size_t len);
+
+/**
  * @brief Print data in hexadecimal format.
  *
  * @param[in] shell	Pointer to the shell instance.
  * @param[in] data	Pointer to data.
  * @param[in] len	Length of data.
  */
-void shell_hexdump(const struct shell *shell, const u8_t *data, size_t len);
+void shell_hexdump(const struct shell *shell, const uint8_t *data, size_t len);
 
 /**
  * @brief Print info message to the shell.

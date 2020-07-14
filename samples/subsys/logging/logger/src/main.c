@@ -44,7 +44,7 @@ SAMPLE_INSTANCE_DEFINE(app_part, inst2);
 #include <soc.h>
 #endif
 
-static u32_t timestamp_get(void)
+static uint32_t timestamp_get(void)
 {
 #ifdef CONFIG_SOC_FAMILY_NRF
 	return NRF_RTC1->COUNTER;
@@ -53,7 +53,7 @@ static u32_t timestamp_get(void)
 #endif
 }
 
-static u32_t timestamp_freq(void)
+static uint32_t timestamp_freq(void)
 {
 #ifdef CONFIG_SOC_FAMILY_NRF
 	return 32768 / (NRF_RTC1->PRESCALER + 1);
@@ -191,6 +191,13 @@ static void log_strdup_showcase(void)
 	transient_str[0] = '\0';
 }
 
+static void wait_on_log_flushed(void)
+{
+	while (log_buffered_cnt()) {
+		k_sleep(K_MSEC(5));
+	}
+}
+
 /**
  * @brief Function demonstrates how fast data can be logged.
  *
@@ -200,32 +207,61 @@ static void log_strdup_showcase(void)
  */
 static void performance_showcase(void)
 {
-	volatile u32_t current_timestamp;
-	volatile u32_t start_timestamp;
-	u32_t per_sec;
-	u32_t cnt = 0U;
-	u32_t window = 2U;
+/* Arbitrary limit when LOG_IMMEDIATE is enabled. */
+#define LOG_IMMEDIATE_TEST_MESSAGES_LIMIT 50
+
+	volatile uint32_t current_timestamp;
+	volatile uint32_t start_timestamp;
+	uint32_t limit = COND_CODE_1(CONFIG_LOG_IMMEDIATE,
+			     (LOG_IMMEDIATE_TEST_MESSAGES_LIMIT),
+			     (CONFIG_LOG_BUFFER_SIZE / sizeof(struct log_msg)));
+	uint32_t per_sec;
+	uint32_t cnt = 0U;
+	uint32_t window = 2U;
 
 	printk("Logging performance showcase.\n");
-
-	start_timestamp = timestamp_get();
-
-	while (start_timestamp == timestamp_get()) {
-#if (CONFIG_ARCH_POSIX)
-		k_busy_wait(100);
-#endif
-	}
-
-	start_timestamp = timestamp_get();
+	wait_on_log_flushed();
 
 	do {
-		LOG_INF("performance test - log message %d", cnt);
-		cnt++;
-		current_timestamp = timestamp_get();
-#if (CONFIG_ARCH_POSIX)
-		k_busy_wait(100);
-#endif
-	} while (current_timestamp < (start_timestamp + window));
+		cnt = 0;
+		start_timestamp = timestamp_get();
+
+		while (start_timestamp == timestamp_get()) {
+	#if (CONFIG_ARCH_POSIX)
+			k_busy_wait(100);
+	#endif
+		}
+
+		start_timestamp = timestamp_get();
+
+		do {
+			LOG_INF("performance test - log message %d", cnt);
+			cnt++;
+			current_timestamp = timestamp_get();
+	#if (CONFIG_ARCH_POSIX)
+			k_busy_wait(100);
+	#endif
+		} while (current_timestamp < (start_timestamp + window));
+
+		wait_on_log_flushed();
+
+		/* If limit exceeded then some messages might be dropped which
+		 * degraded performance. Decrease window size.
+		 * If less than half of limit is reached then it means that
+		 * window can be increased to improve precision.
+		 */
+		if (cnt >= limit) {
+			if (window >= 2) {
+				window /= 2;
+			} else {
+				break;
+			}
+		} else if (cnt < (limit / 2)) {
+			window *= 2;
+		} else {
+			break;
+		}
+	} while (1);
 
 	per_sec = (cnt * timestamp_freq()) / window;
 	printk("Estimated logging capabilities: %d messages/second\n", per_sec);
@@ -238,13 +274,6 @@ static void external_log_system_showcase(void)
 	ext_log_system_log_adapt();
 
 	ext_log_system_foo();
-}
-
-static void wait_on_log_flushed(void)
-{
-	while (log_buffered_cnt()) {
-		k_sleep(K_MSEC(5));
-	}
 }
 
 static void log_demo_thread(void *p1, void *p2, void *p3)

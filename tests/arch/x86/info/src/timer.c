@@ -9,9 +9,9 @@
 
 #define NR_SAMPLES 10	/* sample timer 10 times */
 
-static u32_t sync(struct device *cmos)
+static uint32_t sync(struct device *cmos)
 {
-	u32_t this, last;
+	uint32_t this, last;
 	int err;
 
 	err = counter_get_value(cmos, &this);
@@ -53,12 +53,12 @@ void timer(void)
 	if (cmos == NULL) {
 		printk("\tCan't get reference CMOS clock device.\n");
 	} else {
-		u64_t sum = 0;
+		uint64_t sum = 0;
 
 		printk("\tUsing CMOS RTC as reference clock:\n");
 
 		for (int i = 0; i < NR_SAMPLES; ++i) {
-			u32_t start, end;
+			uint32_t start, end;
 
 			start = sync(cmos);
 			end = sync(cmos);

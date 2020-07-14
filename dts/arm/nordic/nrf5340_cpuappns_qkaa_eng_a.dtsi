@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2019 - 2020 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <nordic/nrf5340_cpuappns.dtsi>
+
+&flash0 {
+	reg = <0x00000000 DT_SIZE_K(1024)>;
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(512)>;
+};
+
+&mpu {
+	arm,num-mpu-regions = <16>;
+};
+
+/ {
+	soc {
+		compatible = "nordic,nRF5340-CPUAPP-QKAA", "nordic,nRF5340-CPUAPP", "nordic,nRF53", "simple-bus";
+	};
+};

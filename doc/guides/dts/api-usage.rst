@@ -8,6 +8,21 @@ from C source files. It assumes you're familiar with the concepts in
 :ref:`devicetree-intro` and :ref:`dt-bindings`. See :ref:`devicetree_api` for
 API reference documentation.
 
+A note for Linux developers
+***************************
+
+Linux developers familiar with devicetree should be warned that the API
+described here differs significantly from how devicetree is used on Linux.
+
+Instead of generating a C header with all the devicetree data which is then
+abstracted behind a macro API, the Linux kernel would instead read the
+devicetree data structure in its binary form. The binary representation is
+parsed at runtime, for example to load and initialize device drivers.
+
+Zephyr does not work this way because the size of the devicetree binary and
+associated handling code would be too large to fit comfortably on the
+relatively constrained devices Zephyr supports.
+
 .. _dt-node-identifiers:
 
 Node identifiers
@@ -15,30 +30,42 @@ Node identifiers
 
 To get information about a particular devicetree node, you need a *node
 identifier* for it. This is a just a C macro that refers to the node.
-There are four types, each of which is created with a different macro:
 
-Path identifiers
-   These use the node's full path in the devicetree, starting from the
-   root node. They are mostly useful if you happen to know the exact node
-   you're looking for. Create these with :c:func:`DT_PATH()`.
+These are the main ways to get a node identifier:
 
-Node label identifiers
-   Unique names which can be given to each node where it is
-   defined. These are often used when the SoC :file:`.dtsi` gives nodes
-   names that match the SoC datasheet, like ``i2c_1``, ``spi_2``, etc.
-   Create these with :c:func:`DT_NODELABEL()`.
+By path
+   Use :c:func:`DT_PATH()` along with the node's full path in the devicetree,
+   starting from the root node. This is mostly useful if you happen to know the
+   exact node you're looking for.
 
-Alias identifiers
-   These are created for properties of the special ``/aliases`` node. They are
-   useful for supporting applications (like :ref:`blinky <blinky-sample>`,
-   which uses the ``led0`` alias) that need to refer to *some* device of a
-   particular type ("the board's user LED") but don't care which exact one is
-   used. Create these with :c:func:`DT_ALIAS()`.
+By node label
+   Use :c:func:`DT_NODELABEL()` to get a node identifier from a :ref:`node
+   label <dt-node-labels>`. Node labels are often provided by SoC :file:`.dtsi`
+   to give nodes names that match the SoC datasheet, like ``i2c1``, ``spi2``,
+   etc.
 
-Instance identifiers
-   These are used primarily by device drivers, as they're a way to refer to
-   nodes based on their matching compatible. Create these with
-   :c:func:`DT_INST()`, but be careful doing so.
+By alias
+   Use :c:func:`DT_ALIAS()` to get a node identifier for a property of the
+   special ``/aliases`` node. This is sometmes done by applications (like
+   :ref:`blinky <blinky-sample>`, which uses the ``led0`` alias) that need to
+   refer to *some* device of a particular type ("the board's user LED") but
+   don't care which one is used.
+
+By instance number
+   This is done primarily by device drivers, as instance numbers are a way to
+   refer to individual nodes based on a matching compatible. Get these with
+   :c:func:`DT_INST()`, but be careful doing so. See below.
+
+By chosen node
+   Use :c:func:`DT_CHOSEN()` to get a node identifier for ``/chosen`` node
+   properties.
+
+By parent/child
+   Use :c:func:`DT_PARENT()` and :c:func:`DT_CHILD()` to get a node identifier
+   for a parent or child node, starting from a node identifier you already have.
+
+Two node identifiers which refer to the same node are identical and can be used
+interchangeably.
 
 .. _dt-node-main-ex:
 
@@ -49,16 +76,13 @@ this file for examples:
    :language: DTS
    :start-after: start-after-here
 
-Here are node identifiers of each type for the ``i2c@40002000`` node:
+Here are a few ways to get node identifiers for the ``i2c@40002000`` node:
 
 - ``DT_PATH(soc, i2c_40002000)``
 - ``DT_NODELABEL(i2c1)``
 - ``DT_ALIAS(sensor_controller)``
 - ``DT_INST(x, vnd_soc_i2c)`` for some unknown number ``x``. See the
   :c:func:`DT_INST()` documentation for details.
-
-These identifiers are precisely equivalent: they refer to the same node, and
-are otherwise interchangeable in the following examples.
 
 .. important::
 
@@ -255,7 +279,7 @@ processed view of this value.
    multilevel interrupt numbering.
 
    This is currently not very well documented, and you'll need to read the
-   scripts source code and existing drivers for more details if you are writing
+   scripts' source code and existing drivers for more details if you are writing
    a device driver.
 
 .. _phandle-properties:
@@ -284,7 +308,7 @@ There are also hardware-specific shorthands like :c:func:`DT_GPIO_LABEL_BY_IDX`,
 :c:func:`DT_GPIO_FLAGS_BY_IDX`, and :c:func:`DT_GPIO_FLAGS`.
 
 See :c:func:`DT_PHA_HAS_CELL_AT_IDX` and :c:func:`DT_PROP_HAS_IDX` for ways to
-check if a specifier value is present.
+check if a specifier value is present in a phandle property.
 
 .. _other-devicetree-apis:
 
@@ -295,17 +319,13 @@ Here are pointers to some other available APIs.
 
 - :c:func:`DT_CHOSEN`, :c:func:`DT_HAS_CHOSEN`: for properties
   of the special ``/chosen`` node
-- :c:func:`DT_HAS_COMPAT`: test if a compatible has a binding and at least one
-  enabled node
+- :c:func:`DT_HAS_COMPAT_STATUS_OKAY`, :c:func:`DT_NODE_HAS_COMPAT`: global-
+  and node-specific tests related to the ``compatible`` property
 - :c:func:`DT_BUS`: get a node's bus controller, if there is one
 - :c:func:`DT_ENUM_IDX`: for properties whose values are among a fixed list of
   choices
-
-Flash partitions
-****************
-
-These currently must be managed via the legacy API. See
-:ref:`legacy_flash_partitions`.
+- :ref:`devicetree-flash-api`: APIs for managing fixed flash partitions.
+  Also see :ref:`flash_map_api`, which wraps this in a more user-friendly API.
 
 Device driver conveniences
 **************************

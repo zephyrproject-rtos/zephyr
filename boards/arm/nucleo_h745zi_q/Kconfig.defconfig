@@ -1,0 +1,46 @@
+# STM32H745ZI Nucleo board configuration
+
+# Copyright (c) 2020 Alexander Kozhinov
+# AlexanderKozhinov@yandex.com
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NUCLEO_H745ZI_Q_M7 || BOARD_NUCLEO_H745ZI_Q_M4
+
+config BOARD
+	default "nucleo_h745zi_q_m7" if BOARD_NUCLEO_H745ZI_Q_M7
+	default "nucleo_h745zi_q_m4" if BOARD_NUCLEO_H745ZI_Q_M4
+
+config CLOCK_STM32_D1CPRE
+	default 1
+
+config CLOCK_STM32_HPRE
+	# HCLK: 240MHz
+	default 2
+
+config CLOCK_STM32_D2PPRE1
+	# APBX: 120MHz
+	default 2
+
+config CLOCK_STM32_D2PPRE2
+	default 2
+
+config CLOCK_STM32_D1PPRE
+	default 2
+
+config CLOCK_STM32_D3PPRE
+	default 2
+
+config STM32H7_DUAL_CORE
+	default y
+
+# Dual core boot configuration.
+# Boot method is selected in common file to avoid
+# desync issues.
+choice STM32H7_DUAL_CORE_BOOT
+	# Use out of the box config by default
+	# default STM32H7_BOOT_CM4_CM7
+	default STM32H7_BOOT_CM7_CM4GATED
+	depends on STM32H7_DUAL_CORE
+endchoice
+
+endif # BOARD_NUCLEO_H745ZI_Q_M7 or BOARD_NUCLEO_H745ZI_Q_M4

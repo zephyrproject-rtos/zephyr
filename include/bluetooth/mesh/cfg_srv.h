@@ -26,61 +26,61 @@ struct bt_mesh_cfg_srv {
 	/** Composition data model entry pointer. */
 	struct bt_mesh_model *model;
 
-	u8_t net_transmit;         /**< Network Transmit state */
-	u8_t relay;                /**< Relay Mode state */
-	u8_t relay_retransmit;     /**< Relay Retransmit state */
-	u8_t beacon;               /**< Secure Network Beacon state */
-	u8_t gatt_proxy;           /**< GATT Proxy state */
-	u8_t frnd;                 /**< Friend state */
-	u8_t default_ttl;          /**< Default TTL */
+	uint8_t net_transmit;         /**< Network Transmit state */
+	uint8_t relay;                /**< Relay Mode state */
+	uint8_t relay_retransmit;     /**< Relay Retransmit state */
+	uint8_t beacon;               /**< Secure Network Beacon state */
+	uint8_t gatt_proxy;           /**< GATT Proxy state */
+	uint8_t frnd;                 /**< Friend state */
+	uint8_t default_ttl;          /**< Default TTL */
 
 	/** Heartbeat Publication parameters */
 	struct bt_mesh_hb_pub {
 		struct k_delayed_work timer;
 
 		/** Destination address. */
-		u16_t dst;
+		uint16_t dst;
 		/** Remaining publish count. */
-		u16_t count;
+		uint16_t count;
 		/** Logarithmic publish interval in seconds. */
-		u8_t  period;
+		uint8_t  period;
 		/** Time To Live value. */
-		u8_t  ttl;
+		uint8_t  ttl;
 		/**
 		 * Bitmap of features that trigger a Heartbeat publication if
 		 * they change. Legal values are
 		 * @ref BT_MESH_FEAT_RELAY, @ref BT_MESH_FEAT_PROXY,
 		 * @ref BT_MESH_FEAT_FRIEND and @ref BT_MESH_FEAT_LOW_POWER.
 		 */
-		u16_t feat;
+		uint16_t feat;
 		/** Network index used for publishing. */
-		u16_t net_idx;
+		uint16_t net_idx;
 	} hb_pub;
 
 	/** Heartbeat Subscription parameters. */
 	struct bt_mesh_hb_sub {
 		/** Subscription period exipration timestamp. */
-		s64_t  expiry;
+		int64_t  expiry;
 		/** Source address to receive Heartbeats from. */
-		u16_t src;
+		uint16_t src;
 		/** Destination address to received Heartbeats on. */
-		u16_t dst;
+		uint16_t dst;
 		/** The number of received Heartbeat messages so far. */
-		u16_t count;
+		uint16_t count;
 		/**
 		 * Minimum hops in received messages, ie the shortest registered
 		 * path from the publishing node to the subscribing node. A
 		 * Heartbeat received from an immediate neighbor has hop
 		 * count = 1.
 		 */
-		u8_t  min_hops;
+		uint8_t  min_hops;
 		/**
 		 * Maximum hops in received messages, ie the longest registered
 		 * path from the publishing node to the subscribing node. A
 		 * Heartbeat received from an immediate neighbor has hop
 		 * count = 1.
 		 */
-		u8_t  max_hops;
+		uint8_t  max_hops;
 
 		/** @brief Optional Heartbeat subscription tracking callback.
 		 *
@@ -94,7 +94,7 @@ struct bt_mesh_cfg_srv {
 		 *              @ref BT_MESH_FEAT_FRIEND and
 		 *              @ref BT_MESH_FEAT_LOW_POWER.
 		 */
-		void (*func)(u8_t hops, u16_t feat);
+		void (*func)(uint8_t hops, uint16_t feat);
 	} hb_sub;
 };
 

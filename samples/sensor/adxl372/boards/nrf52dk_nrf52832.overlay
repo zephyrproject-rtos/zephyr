@@ -5,7 +5,7 @@
  */
 
 &spi2 {
-	cs-gpios = <&gpio0 22 0>;
+	cs-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
 	adxl372@0 {
 		compatible = "adi,adxl372";
 		reg = <0>;

@@ -77,6 +77,21 @@ config ESPI_PERIPHERAL_HOST_IO
 	help
 	  Enables ACPI Host I/O over eSPI peripheral channel.
 
+config ESPI_PERIPHERAL_HOST_IO_PVT
+	bool "Host I/O peripheral Private Channel"
+	help
+	  Enables ACPI Host I/O over eSPI peripheral channel for private channel.
+
+config ESPI_PERIPHERAL_HOST_IO_PVT_PORT_NUM
+	hex "Host I/O peripheral Private Channel"
+	depends on ESPI_PERIPHERAL_HOST_IO_PVT
+	default 0x06A00000
+	help
+	  This is the port number used by the Host and EC to communicate over
+	  the private channel. Please ensure the Host code is configured to use
+	  the same port. Also, ensure the port number selected doesn't clash
+	  with the existing ports (like 80, 92, 62 etc).
+
 config ESPI_PERIPHERAL_PORT_92
 	bool "Legacy Port 92 peripheral"
 	help

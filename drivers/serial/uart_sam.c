@@ -24,7 +24,7 @@
 /* Device constant configuration parameters */
 struct uart_sam_dev_cfg {
 	Uart *regs;
-	u32_t periph_id;
+	uint32_t periph_id;
 	struct soc_gpio_pin pin_rx;
 	struct soc_gpio_pin pin_tx;
 
@@ -35,7 +35,7 @@ struct uart_sam_dev_cfg {
 
 /* Device run time data */
 struct uart_sam_dev_data {
-	u32_t baud_rate;
+	uint32_t baud_rate;
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t irq_cb;	/* Interrupt Callback */
@@ -49,8 +49,8 @@ struct uart_sam_dev_data {
 	((struct uart_sam_dev_data *const)(dev)->driver_data)
 
 
-static int baudrate_set(Uart *const uart, u32_t baudrate,
-			u32_t mck_freq_hz);
+static int baudrate_set(Uart *const uart, uint32_t baudrate,
+			uint32_t mck_freq_hz);
 
 
 static int uart_sam_init(struct device *dev)
@@ -120,7 +120,7 @@ static void uart_sam_poll_out(struct device *dev, unsigned char c)
 	}
 
 	/* send a character */
-	uart->UART_THR = (u32_t)c;
+	uart->UART_THR = (uint32_t)c;
 }
 
 static int uart_sam_err_check(struct device *dev)
@@ -143,10 +143,10 @@ static int uart_sam_err_check(struct device *dev)
 	return errors;
 }
 
-static int baudrate_set(Uart *const uart, u32_t baudrate,
-			u32_t mck_freq_hz)
+static int baudrate_set(Uart *const uart, uint32_t baudrate,
+			uint32_t mck_freq_hz)
 {
-	u32_t divisor;
+	uint32_t divisor;
 
 	__ASSERT(baudrate,
 		 "baud rate has to be bigger than 0");

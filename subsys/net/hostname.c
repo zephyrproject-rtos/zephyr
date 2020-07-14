@@ -30,7 +30,7 @@ const char *net_hostname_get(void)
 }
 
 #if defined(CONFIG_NET_HOSTNAME_UNIQUE)
-int net_hostname_set_postfix(const u8_t *hostname_postfix,
+int net_hostname_set_postfix(const uint8_t *hostname_postfix,
 			     int postfix_len)
 {
 	static bool postfix_set;

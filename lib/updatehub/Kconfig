@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2019 O.S.Systems
+# Copyright (c) 2018-2020 O.S.Systems
 # SPDX -License-Identifier: Apache-2.0
 
 menuconfig UPDATEHUB
@@ -85,6 +85,40 @@ config UPDATEHUB_DTLS
 	help
 	  Enables DTLS communication between the UpdateHub
 	  client and the server
+
+config UPDATEHUB_COAP_CONN_TIMEOUT
+	int "CoAP connection timeout in seconds"
+	default 10
+	range 1 360
+	depends on UPDATEHUB
+	help
+	  Set the CoAP connection timeout value.
+
+config UPDATEHUB_COAP_MAX_RETRY
+	int "Maximum retries attempts to download a packet"
+	default 10
+	range 3 10
+	depends on UPDATEHUB
+	help
+	  Set the maximum number of retries attempts to download a packet
+	  before abort a current update.
+
+config UPDATEHUB_COAP_BLOCK_SIZE_EXP
+	int "Max CoAP block size defined as 2^(4 + EXP)"
+	default 6
+	range 0 6
+	depends on UPDATEHUB
+	help
+	  Configure the max size of a data payload were value:
+	    0 - COAP_BLOCK_16
+	    1 - COAP_BLOCK_32
+	    2 - COAP_BLOCK_64
+	    3 - COAP_BLOCK_128
+	    4 - COAP_BLOCK_256
+	    5 - COAP_BLOCK_512
+	    6 - COAP_BLOCK_1024
+
+	  This value is mapped directly to enum coap_block_size.
 
 module = UPDATEHUB
 module-str = Log level for UpdateHub

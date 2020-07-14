@@ -73,8 +73,8 @@ osEvent osSignalWait(int32_t signals, uint32_t millisec)
 {
 	int retval, key;
 	osEvent evt;
-	u32_t time_delta_ms, timeout = millisec;
-	u64_t time_stamp_start, hwclk_cycles_delta, time_delta_ns;
+	uint32_t time_delta_ms, timeout = millisec;
+	uint64_t time_stamp_start, hwclk_cycles_delta, time_delta_ns;
 
 	if (k_is_in_isr()) {
 		evt.status = osErrorISR;
@@ -91,7 +91,7 @@ osEvent osSignalWait(int32_t signals, uint32_t millisec)
 
 	for (;;) {
 
-		time_stamp_start = (u64_t)k_cycle_get_32();
+		time_stamp_start = (uint64_t)k_cycle_get_32();
 
 		switch (millisec) {
 		case 0:
@@ -141,10 +141,10 @@ osEvent osSignalWait(int32_t signals, uint32_t millisec)
 		 * timeout value accordingly based on the time that has
 		 * already elapsed.
 		 */
-		hwclk_cycles_delta = (u64_t)k_cycle_get_32() - time_stamp_start;
+		hwclk_cycles_delta = (uint64_t)k_cycle_get_32() - time_stamp_start;
 		time_delta_ns =
-			(u32_t)k_cyc_to_ns_floor64(hwclk_cycles_delta);
-		time_delta_ms =	(u32_t)time_delta_ns/NSEC_PER_MSEC;
+			(uint32_t)k_cyc_to_ns_floor64(hwclk_cycles_delta);
+		time_delta_ms =	(uint32_t)time_delta_ns/NSEC_PER_MSEC;
 
 		if (timeout > time_delta_ms) {
 			timeout -= time_delta_ms;

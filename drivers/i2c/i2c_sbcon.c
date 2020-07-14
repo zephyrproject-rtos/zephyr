@@ -22,10 +22,10 @@
 /* SBCon hardware registers layout */
 struct sbcon {
 	union {
-		volatile u32_t SB_CONTROLS; /* Write to set pins high */
-		volatile u32_t SB_CONTROL;  /* Read for state of pins */
+		volatile uint32_t SB_CONTROLS; /* Write to set pins high */
+		volatile uint32_t SB_CONTROL;  /* Read for state of pins */
 	};
-	volatile u32_t SB_CONTROLC;	/* Write to set pins low */
+	volatile uint32_t SB_CONTROLC;	/* Write to set pins low */
 };
 
 /* Bits values for SCL and SDA lines in struct sbcon registers */
@@ -77,7 +77,7 @@ static const struct i2c_bitbang_io io_fns = {
 	.get_sda = &i2c_sbcon_get_sda,
 };
 
-static int i2c_sbcon_configure(struct device *dev, u32_t dev_config)
+static int i2c_sbcon_configure(struct device *dev, uint32_t dev_config)
 {
 	struct i2c_sbcon_context *context = dev->driver_data;
 
@@ -85,7 +85,7 @@ static int i2c_sbcon_configure(struct device *dev, u32_t dev_config)
 }
 
 static int i2c_sbcon_transfer(struct device *dev, struct i2c_msg *msgs,
-				u8_t num_msgs, u16_t slave_address)
+				uint8_t num_msgs, uint16_t slave_address)
 {
 	struct i2c_sbcon_context *context = dev->driver_data;
 

@@ -11,7 +11,7 @@
 #include <sys/util.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 #include "clock_stm32_ll_common.h"
-
+#include "stm32_hsem.h"
 
 #ifdef CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL
 
@@ -47,6 +47,12 @@ void config_enable_default_clocks(void)
 #ifdef CONFIG_CLOCK_STM32_LSE
 	/* LSE belongs to the back-up domain, enable access.*/
 
+#if defined(CONFIG_SOC_SERIES_STM32WBX)
+	/* HW semaphore Clock enable */
+	LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_HSEM);
+#endif
+	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+
 #ifdef LL_APB1_GRP1_PERIPH_PWR
 	/* Enable the power interface clock */
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
@@ -65,5 +71,8 @@ void config_enable_default_clocks(void)
 	}
 
 	LL_PWR_DisableBkUpAccess();
+
+	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
+
 #endif
 }

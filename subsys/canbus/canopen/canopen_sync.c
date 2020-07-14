@@ -18,10 +18,10 @@
  */
 static void canopen_sync_thread(void *p1, void *p2, void *p3)
 {
-	u32_t start; /* cycles */
-	u32_t stop;  /* cycles */
-	u32_t delta; /* cycles */
-	u32_t elapsed = 0; /* microseconds */
+	uint32_t start; /* cycles */
+	uint32_t stop;  /* cycles */
+	uint32_t delta; /* cycles */
+	uint32_t elapsed = 0; /* microseconds */
 	bool sync;
 
 	ARG_UNUSED(p1);
@@ -41,7 +41,7 @@ static void canopen_sync_thread(void *p1, void *p2, void *p3)
 		k_sleep(K_MSEC(1));
 		stop = k_cycle_get_32();
 		delta = stop - start;
-		elapsed = (u32_t)k_cyc_to_ns_floor64(delta) / NSEC_PER_USEC;
+		elapsed = (uint32_t)k_cyc_to_ns_floor64(delta) / NSEC_PER_USEC;
 	}
 }
 

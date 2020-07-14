@@ -16,6 +16,7 @@
 /.known-issues/                           @nashif
 /.github/				  @nashif
 /.github/workflows/                       @galak @nashif
+/.buildkite/				  @galak
 /arch/arc/                                @vonhust @ruuddw
 /arch/arm/                                @MaureenHelm @galak @ioannisg
 /arch/arm/core/aarch32/cortex_m/cmse/     @ioannisg
@@ -37,6 +38,7 @@
 /soc/arm/infineon_xmc/                    @parthitce
 /soc/arm/nxp*/                            @MaureenHelm
 /soc/arm/nordic_nrf/                      @ioannisg
+/soc/arm/nuvoton/                         @ssekar15
 /soc/arm/qemu_cortex_a53/                 @carlocaione
 /soc/arm/st_stm32/                        @erwango
 /soc/arm/st_stm32/stm32f4/                @idlethread
@@ -86,6 +88,7 @@
 /boards/arm/nrf*/                         @carlescufi @lemrey @ioannisg
 /boards/arm/nucleo*/                      @erwango
 /boards/arm/nucleo_f401re/                @idlethread
+/boards/arm/nuvoton_pfm_m487/             @ssekar15
 /boards/arm/qemu_cortex_a53/              @carlocaione
 /boards/arm/qemu_cortex_r*/               @stephanosio
 /boards/arm/qemu_cortex_m*/               @ioannisg
@@ -112,6 +115,7 @@
 /boards/riscv/                            @kgugala @pgielda @nategraff-sifive
 /boards/riscv/rv32m1_vega/                @MaureenHelm
 /boards/shields/                          @erwango
+/boards/shields/atmel_rf2xx/              @nandojve
 /boards/x86/                              @andrewboie @nashif
 /boards/xtensa/                           @nashif @dcpleung
 /boards/xtensa/intel_s1000_crb/           @sathishkuttan @dcpleung
@@ -140,6 +144,7 @@
 /drivers/can/                             @alexanderwachter
 /drivers/can/*mcp2515*                    @karstenkoenig
 /drivers/clock_control/*nrf*              @nordic-krch
+/drivers/clock_control/*esp32*            @extremegtx
 /drivers/counter/                         @nordic-krch
 /drivers/console/semihost_console.c       @luozhongyao
 /drivers/counter/counter_cmos.c           @andrewboie
@@ -196,6 +201,7 @@
 /drivers/pinmux/stm32/                    @idlethread
 /drivers/pinmux/*hsdk*                    @iriszzw
 /drivers/pwm/*litex*                      @mateusz-holenko @kgugala @pgielda
+/drivers/pwm/*sam0*                       @nzmichaelh
 /drivers/sensor/                          @MaureenHelm
 /drivers/sensor/ams_iAQcore/              @alexanderwachter
 /drivers/sensor/ens210/                   @alexanderwachter
@@ -214,6 +220,7 @@
 /drivers/serial/Kconfig.xlnx              @wjliang
 /drivers/serial/uart_xlnx_ps.c            @wjliang
 /drivers/serial/*xmc4xxx*                 @parthitce
+/drivers/serial/*nuvoton*                 @ssekar15
 /drivers/net/                             @jukkar @tbursztyka
 /drivers/ptp_clock/                       @jukkar
 /drivers/pwm/*rv32m1*                     @henrikbrixandersen
@@ -257,6 +264,7 @@
 /dts/arm/ti/cc26?2*                       @bwitherspoon
 /dts/arm/ti/cc3235*                       @vanti
 /dts/arm/nordic/                          @ioannisg @carlescufi
+/dts/arm/nuvoton/                         @ssekar15
 /dts/arm/nxp/                             @MaureenHelm
 /dts/arm/microchip/                       @franciscomunoz @albertofloyd @scottwcpg
 /dts/arm/silabs/efm32gg11b*               @oanerer

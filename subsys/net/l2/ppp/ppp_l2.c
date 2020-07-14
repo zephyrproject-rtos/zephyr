@@ -61,7 +61,7 @@ static enum net_verdict process_ppp_msg(struct net_if *iface,
 	struct ppp_context *ctx = net_if_l2_data(iface);
 	enum net_verdict verdict = NET_DROP;
 	struct ppp_protocol_handler *proto;
-	u16_t protocol;
+	uint16_t protocol;
 	int ret;
 
 	if (!ctx->is_init || !ctx->is_ready_to_serve) {
@@ -340,8 +340,8 @@ static int get_ppp_context(int idx, struct ppp_context **ctx,
 static void echo_reply_handler(void *user_data, size_t user_data_len)
 {
 	struct ppp_context *ctx = user_data;
-	u32_t end_time = k_cycle_get_32();
-	u32_t time_diff;
+	uint32_t end_time = k_cycle_get_32();
+	uint32_t time_diff;
 
 	time_diff = end_time - ctx->shell.echo_req_data;
 	ctx->shell.echo_req_data =
@@ -350,7 +350,7 @@ static void echo_reply_handler(void *user_data, size_t user_data_len)
 	k_sem_give(&ctx->shell.wait_echo_reply);
 }
 
-int net_ppp_ping(int idx, s32_t timeout)
+int net_ppp_ping(int idx, int32_t timeout)
 {
 	struct ppp_context *ctx;
 	struct net_if *iface;

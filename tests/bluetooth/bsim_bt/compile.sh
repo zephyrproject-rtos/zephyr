@@ -55,5 +55,6 @@ app=tests/bluetooth/bsim_bt/bsim_test_app conf_file=prj_split.conf \
 	compile
 app=tests/bluetooth/bsim_bt/bsim_test_app conf_file=prj_split_privacy.conf \
   compile
+app=tests/bluetooth/bsim_bt/bsim_test_advx compile
 app=tests/bluetooth/bsim_bt/edtt_ble_test_app/hci_test_app compile
 app=tests/bluetooth/bsim_bt/edtt_ble_test_app/gatt_test_app compile

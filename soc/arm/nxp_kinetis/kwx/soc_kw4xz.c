@@ -46,7 +46,7 @@ static const sim_clock_config_t simConfig = {
  */
 static void CLOCK_SYS_FllStableDelay(void)
 {
-	u32_t i = 30000U;
+	uint32_t i = 30000U;
 	while (i--) {
 		__NOP();
 	}

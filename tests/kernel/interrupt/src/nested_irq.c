@@ -47,8 +47,15 @@
 #define IRQ0_LINE	14
 #define IRQ1_LINE	15
 
-#define IRQ0_PRIO	2
-#define IRQ1_PRIO	1
+/*
+ * Choose lower prio for IRQ0 and higher priority for IRQ1
+ * Minimum legal value of GICC BPR is '3' ie  <gggg.ssss>
+ * Hence choosing default priority and highest possible priority
+ * '0x0' as the priorities so that the preemption rule applies
+ * generically to all GIC versions and security states.
+ */
+#define IRQ0_PRIO	IRQ_DEFAULT_PRIORITY
+#define IRQ1_PRIO	0x0
 #else
 /*
  * For all the other platforms, use the last two available IRQ lines for
@@ -62,11 +69,11 @@
 #endif
 
 #ifdef TEST_NESTED_ISR
-static u32_t irq_line_0;
-static u32_t irq_line_1;
+static uint32_t irq_line_0;
+static uint32_t irq_line_1;
 
-static u32_t isr0_result;
-static u32_t isr1_result;
+static uint32_t isr0_result;
+static uint32_t isr1_result;
 
 void isr1(void *param)
 {

@@ -113,7 +113,7 @@ SECTION_FUNC(TEXT, __start)
 	ori r3, r3, 0xaaaa
 1:
 	/* Loop through the z_interrupt_stacks treating it as an array of
-	 * u32_t, setting each element to r3 */
+	 * uint32_t, setting each element to r3 */
 	stw r3, (r1)
 	subi r2, r2, 4
 	addi r1, r1, 4

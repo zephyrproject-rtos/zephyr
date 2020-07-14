@@ -60,9 +60,9 @@ static struct nrf5_802154_data nrf5_data;
 #define NRF5_802154_CFG(dev) \
 	((const struct nrf5_802154_config * const)(dev)->config_info)
 
-static void nrf5_get_eui64(u8_t *mac)
+static void nrf5_get_eui64(uint8_t *mac)
 {
-	memcpy(mac, (const u32_t *)&NRF_FICR->DEVICEID, 8);
+	memcpy(mac, (const uint32_t *)&NRF_FICR->DEVICEID, 8);
 }
 
 static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
@@ -71,7 +71,7 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 	struct nrf5_802154_data *nrf5_radio = NRF5_802154_DATA(dev);
 	struct net_pkt *pkt;
 	struct nrf5_802154_rx_frame *rx_frame;
-	u8_t pkt_len;
+	uint8_t pkt_len;
 
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
@@ -181,7 +181,7 @@ static int nrf5_cca(struct device *dev)
 	return nrf5_radio->channel_free ? 0 : -EBUSY;
 }
 
-static int nrf5_set_channel(struct device *dev, u16_t channel)
+static int nrf5_set_channel(struct device *dev, uint16_t channel)
 {
 	ARG_UNUSED(dev);
 
@@ -197,7 +197,7 @@ static int nrf5_set_channel(struct device *dev, u16_t channel)
 }
 
 static int nrf5_energy_scan_start(struct device *dev,
-				  u16_t duration,
+				  uint16_t duration,
 				  energy_scan_done_cb_t done_cb)
 {
 	int err = 0;
@@ -218,9 +218,9 @@ static int nrf5_energy_scan_start(struct device *dev,
 	return err;
 }
 
-static int nrf5_set_pan_id(struct device *dev, u16_t pan_id)
+static int nrf5_set_pan_id(struct device *dev, uint16_t pan_id)
 {
-	u8_t pan_id_le[2];
+	uint8_t pan_id_le[2];
 
 	ARG_UNUSED(dev);
 
@@ -232,9 +232,9 @@ static int nrf5_set_pan_id(struct device *dev, u16_t pan_id)
 	return 0;
 }
 
-static int nrf5_set_short_addr(struct device *dev, u16_t short_addr)
+static int nrf5_set_short_addr(struct device *dev, uint16_t short_addr)
 {
-	u8_t short_addr_le[2];
+	uint8_t short_addr_le[2];
 
 	ARG_UNUSED(dev);
 
@@ -246,7 +246,7 @@ static int nrf5_set_short_addr(struct device *dev, u16_t short_addr)
 	return 0;
 }
 
-static int nrf5_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
+static int nrf5_set_ieee_addr(struct device *dev, const uint8_t *ieee_addr)
 {
 	ARG_UNUSED(dev);
 
@@ -280,7 +280,7 @@ static int nrf5_filter(struct device *dev, bool set,
 	return -ENOTSUP;
 }
 
-static int nrf5_set_txpower(struct device *dev, s16_t dbm)
+static int nrf5_set_txpower(struct device *dev, int16_t dbm)
 {
 	ARG_UNUSED(dev);
 
@@ -293,7 +293,7 @@ static int nrf5_set_txpower(struct device *dev, s16_t dbm)
 
 static int handle_ack(struct nrf5_802154_data *nrf5_radio)
 {
-	u8_t ack_len = nrf5_radio->ack_frame.psdu[0] - NRF5_FCS_LENGTH;
+	uint8_t ack_len = nrf5_radio->ack_frame.psdu[0] - NRF5_FCS_LENGTH;
 	struct net_pkt *ack_pkt;
 	int err = 0;
 
@@ -352,8 +352,8 @@ static int nrf5_tx(struct device *dev,
 		   struct net_buf *frag)
 {
 	struct nrf5_802154_data *nrf5_radio = NRF5_802154_DATA(dev);
-	u8_t payload_len = frag->len;
-	u8_t *payload = frag->data;
+	uint8_t payload_len = frag->len;
+	uint8_t *payload = frag->data;
 	bool ret = true;
 
 	LOG_DBG("%p (%u)", payload, payload_len);
@@ -438,20 +438,24 @@ static int nrf5_stop(struct device *dev)
 	return 0;
 }
 
+#ifndef CONFIG_IEEE802154_NRF5_EXT_IRQ_MGMT
 static void nrf5_radio_irq(void *arg)
 {
 	ARG_UNUSED(arg);
 
 	nrf_802154_radio_irq_handler();
 }
+#endif
 
 static void nrf5_irq_config(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
+#ifndef CONFIG_IEEE802154_NRF5_EXT_IRQ_MGMT
 	IRQ_CONNECT(RADIO_IRQn, NRF_802154_IRQ_PRIORITY,
 		    nrf5_radio_irq, NULL, 0);
 	irq_enable(RADIO_IRQn);
+#endif
 }
 
 static int nrf5_init(struct device *dev)
@@ -472,7 +476,7 @@ static int nrf5_init(struct device *dev)
 			nrf5_rx_thread, dev, NULL, NULL,
 			K_PRIO_COOP(2), 0, K_NO_WAIT);
 
-	k_thread_name_set(&nrf5_radio->rx_thread, "802154 RX");
+	k_thread_name_set(&nrf5_radio->rx_thread, "nrf5_rx");
 
 	LOG_INF("nRF5 802154 radio initialized");
 
@@ -567,7 +571,7 @@ static int nrf5_configure(struct device *dev, enum ieee802154_config_type type,
 void nrf_802154_received_timestamp_raw(uint8_t *data, int8_t power, uint8_t lqi,
 				       uint32_t time)
 {
-	for (u32_t i = 0; i < ARRAY_SIZE(nrf5_data.rx_frames); i++) {
+	for (uint32_t i = 0; i < ARRAY_SIZE(nrf5_data.rx_frames); i++) {
 		if (nrf5_data.rx_frames[i].psdu != NULL) {
 			continue;
 		}
@@ -649,7 +653,7 @@ void nrf_802154_cca_failed(nrf_802154_cca_error_t error)
 void nrf_802154_energy_detected(uint8_t result)
 {
 	if (nrf5_data.energy_scan_done != NULL) {
-		s16_t dbm;
+		int16_t dbm;
 		energy_scan_done_cb_t callback = nrf5_data.energy_scan_done;
 
 		nrf5_data.energy_scan_done = NULL;

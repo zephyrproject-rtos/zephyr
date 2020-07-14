@@ -79,8 +79,8 @@ int disk_access_status(const char *pdrv)
 	return rc;
 }
 
-int disk_access_read(const char *pdrv, u8_t *data_buf,
-		     u32_t start_sector, u32_t num_sector)
+int disk_access_read(const char *pdrv, uint8_t *data_buf,
+		     uint32_t start_sector, uint32_t num_sector)
 {
 	struct disk_info *disk = disk_access_get_di(pdrv);
 	int rc = -EINVAL;
@@ -93,8 +93,8 @@ int disk_access_read(const char *pdrv, u8_t *data_buf,
 	return rc;
 }
 
-int disk_access_write(const char *pdrv, const u8_t *data_buf,
-		      u32_t start_sector, u32_t num_sector)
+int disk_access_write(const char *pdrv, const uint8_t *data_buf,
+		      uint32_t start_sector, uint32_t num_sector)
 {
 	struct disk_info *disk = disk_access_get_di(pdrv);
 	int rc = -EINVAL;
@@ -107,7 +107,7 @@ int disk_access_write(const char *pdrv, const u8_t *data_buf,
 	return rc;
 }
 
-int disk_access_ioctl(const char *pdrv, u8_t cmd, void *buf)
+int disk_access_ioctl(const char *pdrv, uint8_t cmd, void *buf)
 {
 	struct disk_info *disk = disk_access_get_di(pdrv);
 	int rc = -EINVAL;

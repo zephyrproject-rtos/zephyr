@@ -111,12 +111,12 @@
 #define EXCFLAG0_RX_UNDERFLOW			BIT(5)
 #define EXCFLAG0_RX_OVERFLOW			BIT(6)
 #define EXCFLAG0_RXENABLE_ZERO			BIT(7)
-#define EXCFLAG0_RESET_TX_FLAGS			((u8_t) \
+#define EXCFLAG0_RESET_TX_FLAGS			((uint8_t) \
 						 ~(EXCFLAG0_TX_FRM_DONE | \
 						   EXCFLAG0_TX_ACK_DONE | \
 						   EXCFLAG0_TX_UNDERFLOW | \
 						   EXCFLAG0_TX_OVERFLOW))
-#define EXCFLAG0_RESET_RX_FLAGS			((u8_t) \
+#define EXCFLAG0_RESET_RX_FLAGS			((uint8_t) \
 						 ~(EXCFLAG0_RX_UNDERFLOW | \
 						   EXCFLAG0_RX_OVERFLOW | \
 						   EXCFLAG0_RXENABLE_ZERO))
@@ -130,7 +130,7 @@
 #define EXCFLAG1_SFD				BIT(5)
 #define EXCFLAG1_DPU_DONE_L			BIT(6)
 #define EXCFLAG1_DPU_DONE_H			BIT(7)
-#define EXCFLAG1_RESET_RX_FLAGS			((u8_t) \
+#define EXCFLAG1_RESET_RX_FLAGS			((uint8_t) \
 						 ~(EXCFLAG1_RX_FRM_DONE | \
 						   EXCFLAG1_RX_FRM_ACCEPTED | \
 						   EXCFLAG1_FIFOP))

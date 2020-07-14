@@ -27,9 +27,9 @@ static void test_op2(int op, const q31_t *input1, const q31_t *input2,
 	const q31_t *ref, size_t length)
 {
 	size_t index;
-	u16_t *dims = (u16_t *)in_dims;
+	uint16_t *dims = (uint16_t *)in_dims;
 	q31_t *tmp1, *tmp2, *output;
-	u16_t rows, internal, columns;
+	uint16_t rows, internal, columns;
 
 	arm_matrix_instance_q31 mat_in1;
 	arm_matrix_instance_q31 mat_in2;
@@ -110,9 +110,9 @@ static void test_op2c(int op, const q31_t *input1, const q31_t *input2,
 	const q31_t *ref, size_t length)
 {
 	size_t index;
-	u16_t *dims = (u16_t *)in_dims;
+	uint16_t *dims = (uint16_t *)in_dims;
 	q31_t *tmp1, *tmp2, *output;
-	u16_t rows, internal, columns;
+	uint16_t rows, internal, columns;
 
 	arm_matrix_instance_q31 mat_in1;
 	arm_matrix_instance_q31 mat_in2;

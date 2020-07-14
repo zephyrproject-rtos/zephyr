@@ -22,25 +22,25 @@
 
 #define OP_VENDOR_BUTTON BT_MESH_MODEL_OP_3(0x00, BT_COMP_ID_LF)
 
-static const u8_t net_key[16] = {
+static const uint8_t net_key[16] = {
 	0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
 	0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
 };
-static const u8_t dev_key[16] = {
+static const uint8_t dev_key[16] = {
 	0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
 	0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
 };
-static const u8_t app_key[16] = {
+static const uint8_t app_key[16] = {
 	0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
 	0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
 };
-static const u16_t net_idx;
-static const u16_t app_idx;
-static const u32_t iv_index;
-static u8_t flags;
-static u16_t addr = NODE_ADDR;
+static const uint16_t net_idx;
+static const uint16_t app_idx;
+static const uint32_t iv_index;
+static uint8_t flags;
+static uint16_t addr = NODE_ADDR;
 
-static void heartbeat(u8_t hops, u16_t feat)
+static void heartbeat(uint8_t hops, uint16_t feat)
 {
 	board_heartbeat(hops, feat);
 	board_play("100H");
@@ -169,7 +169,7 @@ static void configure(void)
 	board_play("100C100D100E100F100G100A100H");
 }
 
-static const u8_t dev_uuid[16] = { 0xdd, 0xdd };
+static const uint8_t dev_uuid[16] = { 0xdd, 0xdd };
 
 static const struct bt_mesh_prov prov = {
 	.uuid = dev_uuid,
@@ -228,7 +228,7 @@ static void bt_ready(int err)
 #endif
 }
 
-static u16_t target = GROUP_ADDR;
+static uint16_t target = GROUP_ADDR;
 
 void board_button_1_pressed(void)
 {
@@ -249,7 +249,7 @@ void board_button_1_pressed(void)
 	printk("Button message sent with OpCode 0x%08x\n", OP_VENDOR_BUTTON);
 }
 
-u16_t board_set_target(void)
+uint16_t board_set_target(void)
 {
 	switch (target) {
 	case GROUP_ADDR:

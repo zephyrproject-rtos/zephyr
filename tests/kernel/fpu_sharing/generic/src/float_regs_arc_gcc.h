@@ -39,7 +39,7 @@
 static inline void _load_all_float_registers(struct fp_register_set *regs)
 {
 #ifdef CONFIG_FP_FPU_DA
-	u32_t temp = 0;
+	uint32_t temp = 0;
 
 	__asm__ volatile (
 		"ld.ab %1, [%0, 4];\n\t"
@@ -73,7 +73,7 @@ static inline void _load_all_float_registers(struct fp_register_set *regs)
 static inline void _store_all_float_registers(struct fp_register_set *regs)
 {
 #ifdef CONFIG_FP_FPU_DA
-	u32_t temp = 0;
+	uint32_t temp = 0;
 
 	__asm__ volatile (
 		"lr %1, [%2];\n\t"

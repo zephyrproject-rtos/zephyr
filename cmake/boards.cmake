@@ -101,7 +101,7 @@ if(CMAKE_SCRIPT_MODE_FILE AND NOT CMAKE_PARENT_LIST_FILE)
 cmake_minimum_required(VERSION 3.13.1)
 
 set(NO_BOILERPLATE TRUE)
-find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 # Appending Zephyr base to list of board roots, as this is also done in boilerplate.cmake.
 # But as this file was executed in script mode, it must also be done here, to give same output.

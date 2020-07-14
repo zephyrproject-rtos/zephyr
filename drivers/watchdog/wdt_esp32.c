@@ -20,19 +20,19 @@
  * That's why the type name starts with `timer` not `wdt`
  */
 struct timer_esp32_irq_regs_t {
-	u32_t *timer_int_ena;
-	u32_t *timer_int_clr;
+	uint32_t *timer_int_ena;
+	uint32_t *timer_int_clr;
 };
 
 struct wdt_esp32_regs_t {
-	u32_t config0;
-	u32_t config1;
-	u32_t config2;
-	u32_t config3;
-	u32_t config4;
-	u32_t config5;
-	u32_t feed;
-	u32_t wprotect;
+	uint32_t config0;
+	uint32_t config1;
+	uint32_t config2;
+	uint32_t config3;
+	uint32_t config4;
+	uint32_t config5;
+	uint32_t feed;
+	uint32_t wprotect;
 };
 
 enum wdt_mode {
@@ -41,7 +41,7 @@ enum wdt_mode {
 };
 
 struct wdt_esp32_data {
-	u32_t timeout;
+	uint32_t timeout;
 	enum wdt_mode mode;
 	wdt_callback_t callback;
 };
@@ -96,7 +96,7 @@ static int wdt_esp32_disable(struct device *dev)
 	return 0;
 }
 
-static void adjust_timeout(struct device *dev, u32_t timeout)
+static void adjust_timeout(struct device *dev, uint32_t timeout)
 {
 	/* MWDT ticks every 12.5ns.  Set the prescaler to 40000, so the
 	 * counter for each watchdog stage is decremented every 0.5ms.
@@ -130,10 +130,10 @@ static void set_interrupt_enabled(struct device *dev, bool setting)
 	}
 }
 
-static int wdt_esp32_set_config(struct device *dev, u8_t options)
+static int wdt_esp32_set_config(struct device *dev, uint8_t options)
 {
 	struct wdt_esp32_data *data = DEV_DATA(dev);
-	u32_t v = DEV_BASE(dev)->config0;
+	uint32_t v = DEV_BASE(dev)->config0;
 
 	if (!data) {
 		return -EINVAL;
@@ -241,8 +241,8 @@ static const struct wdt_driver_api wdt_api = {
 	static struct wdt_esp32_config wdt_esp32_config##idx = {					   \
 		.base = (struct wdt_esp32_regs_t *) DT_INST_REG_ADDR(idx), \
 		.irq_regs = {										   \
-			.timer_int_ena = (u32_t *)TIMG_INT_ENA_TIMERS_REG(idx),				   \
-			.timer_int_clr = (u32_t *)TIMG_INT_CLR_TIMERS_REG(idx),				   \
+			.timer_int_ena = (uint32_t *)TIMG_INT_ENA_TIMERS_REG(idx),				   \
+			.timer_int_clr = (uint32_t *)TIMG_INT_CLR_TIMERS_REG(idx),				   \
 		},											   \
 		.irq = {										   \
 			.source =  ETS_TG##idx##_WDT_LEVEL_INTR_SOURCE,					   \

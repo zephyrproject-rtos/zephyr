@@ -1,9 +1,9 @@
 tests:
   kernel.timer:
-    tags: kernel userspace
-    platform_exclude: qemu_x86_coverage qemu_cortex_m0
+    tags: kernel timer userspace
+    platform_exclude: qemu_x86_coverage qemu_arc_em qemu_arc_hs
   kernel.timer.tickless:
     extra_args: CONF_FILE="prj_tickless.conf"
     arch_exclude: riscv32 nios2 posix
-    platform_exclude: qemu_x86_coverage qemu_cortex_m0
-    tags: kernel userspace
+    platform_exclude: qemu_x86_coverage qemu_arc_em qemu_arc_hs
+    tags: kernel timer userspace

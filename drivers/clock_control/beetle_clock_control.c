@@ -23,15 +23,15 @@
 
 struct beetle_clock_control_cfg_t {
 	/* Clock Control ID */
-	u32_t clock_control_id;
+	uint32_t clock_control_id;
 	/* Clock control freq */
-	u32_t freq;
+	uint32_t freq;
 };
 
-static inline void beetle_set_clock(volatile u32_t *base,
-				    u8_t bit, enum arm_soc_state_t state)
+static inline void beetle_set_clock(volatile uint32_t *base,
+				    uint8_t bit, enum arm_soc_state_t state)
 {
-	u32_t key;
+	uint32_t key;
 
 	key = irq_lock();
 
@@ -52,31 +52,31 @@ static inline void beetle_set_clock(volatile u32_t *base,
 	irq_unlock(key);
 }
 
-static inline void beetle_ahb_set_clock_on(u8_t bit,
+static inline void beetle_ahb_set_clock_on(uint8_t bit,
 					   enum arm_soc_state_t state)
 {
-	beetle_set_clock((volatile u32_t *)&(__BEETLE_SYSCON->ahbclkcfg0set),
+	beetle_set_clock((volatile uint32_t *)&(__BEETLE_SYSCON->ahbclkcfg0set),
 			 bit, state);
 }
 
-static inline void beetle_ahb_set_clock_off(u8_t bit,
+static inline void beetle_ahb_set_clock_off(uint8_t bit,
 					    enum arm_soc_state_t state)
 {
-	beetle_set_clock((volatile u32_t *)&(__BEETLE_SYSCON->ahbclkcfg0clr),
+	beetle_set_clock((volatile uint32_t *)&(__BEETLE_SYSCON->ahbclkcfg0clr),
 			 bit, state);
 }
 
-static inline void beetle_apb_set_clock_on(u8_t bit,
+static inline void beetle_apb_set_clock_on(uint8_t bit,
 					   enum arm_soc_state_t state)
 {
-	beetle_set_clock((volatile u32_t *)&(__BEETLE_SYSCON->apbclkcfg0set),
+	beetle_set_clock((volatile uint32_t *)&(__BEETLE_SYSCON->apbclkcfg0set),
 			 bit, state);
 }
 
-static inline void beetle_apb_set_clock_off(u8_t bit,
+static inline void beetle_apb_set_clock_off(uint8_t bit,
 					    enum arm_soc_state_t state)
 {
-	beetle_set_clock((volatile u32_t *)&(__BEETLE_SYSCON->apbclkcfg0clr),
+	beetle_set_clock((volatile uint32_t *)&(__BEETLE_SYSCON->apbclkcfg0clr),
 			 bit, state);
 }
 
@@ -86,7 +86,7 @@ static inline int beetle_clock_control_on(struct device *dev,
 	struct arm_clock_control_t *beetle_cc =
 				(struct arm_clock_control_t *)(sub_system);
 
-	u8_t bit = 0U;
+	uint8_t bit = 0U;
 
 	switch (beetle_cc->bus) {
 	case CMSDK_AHB:
@@ -110,7 +110,7 @@ static inline int beetle_clock_control_off(struct device *dev,
 	struct arm_clock_control_t *beetle_cc =
 				(struct arm_clock_control_t *)(sub_system);
 
-	u8_t bit = 0U;
+	uint8_t bit = 0U;
 
 	switch (beetle_cc->bus) {
 	case CMSDK_AHB:
@@ -129,12 +129,12 @@ static inline int beetle_clock_control_off(struct device *dev,
 
 static int beetle_clock_control_get_subsys_rate(struct device *clock,
 					      clock_control_subsys_t sub_system,
-					      u32_t *rate)
+					      uint32_t *rate)
 {
 #ifdef CONFIG_CLOCK_CONTROL_BEETLE_ENABLE_PLL
 	const struct beetle_clock_control_cfg_t * const cfg =
 						clock->config_info;
-	u32_t nc_mainclk = beetle_round_freq(cfg->freq);
+	uint32_t nc_mainclk = beetle_round_freq(cfg->freq);
 
 	*rate = nc_mainclk;
 #else
@@ -154,9 +154,9 @@ static const struct clock_control_driver_api beetle_clock_control_api = {
 };
 
 #ifdef CONFIG_CLOCK_CONTROL_BEETLE_ENABLE_PLL
-static u32_t beetle_round_freq(u32_t mainclk)
+static uint32_t beetle_round_freq(uint32_t mainclk)
 {
-	u32_t nc_mainclk = 0U;
+	uint32_t nc_mainclk = 0U;
 
 	/*
 	 * Verify that the frequency is in the supported range otherwise
@@ -175,9 +175,9 @@ static u32_t beetle_round_freq(u32_t mainclk)
 	return nc_mainclk;
 }
 
-static u32_t beetle_get_prescaler(u32_t mainclk)
+static uint32_t beetle_get_prescaler(uint32_t mainclk)
 {
-	u32_t pre_mainclk = 0U;
+	uint32_t pre_mainclk = 0U;
 
 	/*
 	 * Verify that the frequency is in the supported range otherwise
@@ -196,10 +196,10 @@ static u32_t beetle_get_prescaler(u32_t mainclk)
 	return pre_mainclk;
 }
 
-static int beetle_pll_enable(u32_t mainclk)
+static int beetle_pll_enable(uint32_t mainclk)
 {
 
-	u32_t pre_mainclk = beetle_get_prescaler(mainclk);
+	uint32_t pre_mainclk = beetle_get_prescaler(mainclk);
 
 	/* Set PLLCTRL Register */
 	__BEETLE_SYSCON->pllctrl = BEETLE_PLL_CONFIGURATION;

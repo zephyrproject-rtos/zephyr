@@ -12,19 +12,19 @@
 /**
  * Internal data structure for a buffer header.
  *
- * We want all of this to fit in a single u32_t. Every item stored in the
+ * We want all of this to fit in a single uint32_t. Every item stored in the
  * ring buffer will be one of these headers plus any extra data supplied
  */
 struct ring_element {
-	u32_t  type   :16; /**< Application-specific */
-	u32_t  length :8;  /**< length in 32-bit chunks */
-	u32_t  value  :8;  /**< Room for small integral values */
+	uint32_t  type   :16; /**< Application-specific */
+	uint32_t  length :8;  /**< length in 32-bit chunks */
+	uint32_t  value  :8;  /**< Room for small integral values */
 };
 
-int ring_buf_item_put(struct ring_buf *buf, u16_t type, u8_t value,
-		      u32_t *data, u8_t size32)
+int ring_buf_item_put(struct ring_buf *buf, uint16_t type, uint8_t value,
+		      uint32_t *data, uint8_t size32)
 {
-	u32_t i, space, index, rc;
+	uint32_t i, space, index, rc;
 
 	space = ring_buf_space_get(buf);
 	if (space >= (size32 + 1)) {
@@ -56,11 +56,11 @@ int ring_buf_item_put(struct ring_buf *buf, u16_t type, u8_t value,
 	return rc;
 }
 
-int ring_buf_item_get(struct ring_buf *buf, u16_t *type, u8_t *value,
-		      u32_t *data, u8_t *size32)
+int ring_buf_item_get(struct ring_buf *buf, uint16_t *type, uint8_t *value,
+		      uint32_t *data, uint8_t *size32)
 {
 	struct ring_element *header;
-	u32_t i, index;
+	uint32_t i, index;
 
 	if (ring_buf_is_empty(buf)) {
 		return -EAGAIN;
@@ -101,14 +101,14 @@ int ring_buf_item_get(struct ring_buf *buf, u16_t *type, u8_t *value,
  *
  * @return value % max.
  */
-static inline u32_t wrap(u32_t val, u32_t max)
+static inline uint32_t wrap(uint32_t val, uint32_t max)
 {
 	return val >= max ? (val - max) : val;
 }
 
-u32_t ring_buf_put_claim(struct ring_buf *buf, u8_t **data, u32_t size)
+uint32_t ring_buf_put_claim(struct ring_buf *buf, uint8_t **data, uint32_t size)
 {
-	u32_t space, trail_size, allocated;
+	uint32_t space, trail_size, allocated;
 
 	space = z_ring_buf_custom_space_get(buf->size, buf->head,
 					    buf->misc.byte_mode.tmp_tail);
@@ -127,7 +127,7 @@ u32_t ring_buf_put_claim(struct ring_buf *buf, u8_t **data, u32_t size)
 	return allocated;
 }
 
-int ring_buf_put_finish(struct ring_buf *buf, u32_t size)
+int ring_buf_put_finish(struct ring_buf *buf, uint32_t size)
 {
 	if (size > ring_buf_space_get(buf)) {
 		return -EINVAL;
@@ -139,11 +139,11 @@ int ring_buf_put_finish(struct ring_buf *buf, u32_t size)
 	return 0;
 }
 
-u32_t ring_buf_put(struct ring_buf *buf, const u8_t *data, u32_t size)
+uint32_t ring_buf_put(struct ring_buf *buf, const uint8_t *data, uint32_t size)
 {
-	u8_t *dst;
-	u32_t partial_size;
-	u32_t total_size = 0U;
+	uint8_t *dst;
+	uint32_t partial_size;
+	uint32_t total_size = 0U;
 	int err;
 
 	do {
@@ -160,9 +160,9 @@ u32_t ring_buf_put(struct ring_buf *buf, const u8_t *data, u32_t size)
 	return total_size;
 }
 
-u32_t ring_buf_get_claim(struct ring_buf *buf, u8_t **data, u32_t size)
+uint32_t ring_buf_get_claim(struct ring_buf *buf, uint8_t **data, uint32_t size)
 {
-	u32_t space, granted_size, trail_size;
+	uint32_t space, granted_size, trail_size;
 
 	space = (buf->size - 1) -
 		z_ring_buf_custom_space_get(buf->size,
@@ -183,9 +183,9 @@ u32_t ring_buf_get_claim(struct ring_buf *buf, u8_t **data, u32_t size)
 	return granted_size;
 }
 
-int ring_buf_get_finish(struct ring_buf *buf, u32_t size)
+int ring_buf_get_finish(struct ring_buf *buf, uint32_t size)
 {
-	u32_t allocated = (buf->size - 1) - ring_buf_space_get(buf);
+	uint32_t allocated = (buf->size - 1) - ring_buf_space_get(buf);
 
 	if (size > allocated) {
 		return -EINVAL;
@@ -197,11 +197,11 @@ int ring_buf_get_finish(struct ring_buf *buf, u32_t size)
 	return 0;
 }
 
-u32_t ring_buf_get(struct ring_buf *buf, u8_t *data, u32_t size)
+uint32_t ring_buf_get(struct ring_buf *buf, uint8_t *data, uint32_t size)
 {
-	u8_t *src;
-	u32_t partial_size;
-	u32_t total_size = 0U;
+	uint8_t *src;
+	uint32_t partial_size;
+	uint32_t total_size = 0U;
 	int err;
 
 	do {

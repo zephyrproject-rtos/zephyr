@@ -50,7 +50,7 @@ extern "C" {
  * @note           Call this function with dlen = 0 to obtain the
  *                 required buffer size in *olen
  */
-int base64_encode(u8_t *dst, size_t dlen, size_t *olen, const u8_t *src,
+int base64_encode(uint8_t *dst, size_t dlen, size_t *olen, const uint8_t *src,
 		  size_t slen);
 
 /**
@@ -69,7 +69,7 @@ int base64_encode(u8_t *dst, size_t dlen, size_t *olen, const u8_t *src,
  * @note           Call this function with *dst = NULL or dlen = 0 to obtain
  *                 the required buffer size in *olen
  */
-int base64_decode(u8_t *dst, size_t dlen, size_t *olen, const u8_t *src,
+int base64_decode(uint8_t *dst, size_t dlen, size_t *olen, const uint8_t *src,
 		  size_t slen);
 
 #ifdef __cplusplus

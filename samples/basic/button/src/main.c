@@ -51,7 +51,7 @@ static void match_led_to_button(struct device *button, struct device *led);
 static struct gpio_callback button_cb_data;
 
 void button_pressed(struct device *dev, struct gpio_callback *cb,
-		    u32_t pins)
+		    uint32_t pins)
 {
 	printk("Button pressed at %" PRIu32 "\n", k_cycle_get_32());
 }

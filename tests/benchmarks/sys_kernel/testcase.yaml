@@ -1,6 +1,5 @@
 tests:
   benchmark.kernel.core:
     arch_exclude: nios2 riscv32 xtensa
-    platform_exclude: qemu_x86_64
     min_ram: 32
     tags: benchmark

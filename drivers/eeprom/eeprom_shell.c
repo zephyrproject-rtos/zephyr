@@ -14,11 +14,11 @@
 #include <stdlib.h>
 
 struct args_index {
-	u8_t device;
-	u8_t offset;
-	u8_t length;
-	u8_t data;
-	u8_t pattern;
+	uint8_t device;
+	uint8_t offset;
+	uint8_t length;
+	uint8_t data;
+	uint8_t pattern;
 };
 
 static const struct args_index args_indx = {
@@ -31,7 +31,7 @@ static const struct args_index args_indx = {
 
 static int cmd_read(const struct shell *shell, size_t argc, char **argv)
 {
-	u8_t buf[CONFIG_EEPROM_SHELL_BUFFER_SIZE];
+	uint8_t buf[CONFIG_EEPROM_SHELL_BUFFER_SIZE];
 	struct device *eeprom;
 	off_t offset;
 	size_t len;
@@ -68,8 +68,8 @@ static int cmd_read(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_write(const struct shell *shell, size_t argc, char **argv)
 {
-	u8_t wr_buf[CONFIG_EEPROM_SHELL_BUFFER_SIZE];
-	u8_t rd_buf[CONFIG_EEPROM_SHELL_BUFFER_SIZE];
+	uint8_t wr_buf[CONFIG_EEPROM_SHELL_BUFFER_SIZE];
+	uint8_t rd_buf[CONFIG_EEPROM_SHELL_BUFFER_SIZE];
 	struct device *eeprom;
 	unsigned long byte;
 	off_t offset;
@@ -143,8 +143,8 @@ static int cmd_size(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_fill(const struct shell *shell, size_t argc, char **argv)
 {
-	u8_t wr_buf[CONFIG_EEPROM_SHELL_BUFFER_SIZE];
-	u8_t rd_buf[CONFIG_EEPROM_SHELL_BUFFER_SIZE];
+	uint8_t wr_buf[CONFIG_EEPROM_SHELL_BUFFER_SIZE];
+	uint8_t rd_buf[CONFIG_EEPROM_SHELL_BUFFER_SIZE];
 	struct device *eeprom;
 	unsigned long pattern;
 	off_t offset;

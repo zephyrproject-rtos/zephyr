@@ -19,10 +19,10 @@
 #include "hal/debug.h"
 #include "fsl_cau3_ble.h"
 
-void ecb_encrypt_be(u8_t const *const key_be, u8_t const *const clear_text_be,
-		    u8_t *const cipher_text_be)
+void ecb_encrypt_be(uint8_t const *const key_be, uint8_t const *const clear_text_be,
+		    uint8_t *const cipher_text_be)
 {
-	u8_t keyAes[16] __aligned(4);
+	uint8_t keyAes[16] __aligned(4);
 	status_t status;
 
 	cau3_handle_t handle;
@@ -51,12 +51,12 @@ void ecb_encrypt_be(u8_t const *const key_be, u8_t const *const clear_text_be,
 	}
 }
 
-void ecb_encrypt(u8_t const *const key_le, u8_t const *const clear_text_le,
-		 u8_t *const cipher_text_le, u8_t *const cipher_text_be)
+void ecb_encrypt(uint8_t const *const key_le, uint8_t const *const clear_text_le,
+		 uint8_t *const cipher_text_le, uint8_t *const cipher_text_be)
 {
-	u8_t keyAes[16] __aligned(4);
-	u8_t clear[16];
-	u8_t cipher[16];
+	uint8_t keyAes[16] __aligned(4);
+	uint8_t clear[16];
+	uint8_t cipher[16];
 	status_t status;
 
 	cau3_handle_t handle;
@@ -102,7 +102,7 @@ void ecb_encrypt(u8_t const *const key_le, u8_t const *const clear_text_le,
 	}
 }
 
-u32_t ecb_encrypt_nonblocking(struct ecb *ecb)
+uint32_t ecb_encrypt_nonblocking(struct ecb *ecb)
 {
 	return 0;
 }
@@ -121,7 +121,7 @@ void isr_ecb(void *param)
 		    &conn->llcp.encryption.skd[0], NULL,
 		    &lll->ccm_rx.key[0]);
  */
-u32_t ecb_ut(void)
+uint32_t ecb_ut(void)
 {
 	/*
 	 * LTK = 0x4C68384139F574D836BCF34E9DFB01BF (MSO to LSO)
@@ -134,21 +134,21 @@ u32_t ecb_ut(void)
 	 * :0x66:0xC6:0xC2:0x27:0x8E:0x3B:0x8E:0x05
 	 * :0x3E:0x7E:0xA3:0x26:0x52:0x1B:0xAD:0x99
 	 */
-	static const u8_t ltk_le[16] = {
+	static const uint8_t ltk_le[16] = {
 		0xbf, 0x01, 0xfb, 0x9d, 0x4e, 0xf3, 0xbc, 0x36,
 		0xd8, 0x74, 0xf5, 0x39, 0x41, 0x38, 0x68, 0x4c
 	};
-	static const u8_t skd_le[16] = {
+	static const uint8_t skd_le[16] = {
 		0x13, 0x02, 0xF1, 0xE0, 0xDF, 0xCE, 0xBD, 0xAC,
 		0x79, 0x68, 0x57, 0x46, 0x35, 0x24, 0x13, 0x02
 	};
-	u8_t key_le[16] = {};
-	u8_t key_ref_le[16] = {
+	uint8_t key_le[16] = {};
+	uint8_t key_ref_le[16] = {
 		0x66, 0xC6, 0xC2, 0x27, 0x8E, 0x3B, 0x8E, 0x05,
 		0x3E, 0x7E, 0xA3, 0x26, 0x52, 0x1B, 0xAD, 0x99
 	};
-	u32_t status = kStatus_Success;
-	u8_t *key;
+	uint32_t status = kStatus_Success;
+	uint8_t *key;
 
 	/* calc the Session Key and compare vs the ref_le in LSO format */
 	ecb_encrypt(ltk_le, skd_le, key = key_le, NULL);

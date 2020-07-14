@@ -79,9 +79,14 @@ struct spi_nor_data {
 	/* Low 32-bits of uptime counter at which device last entered
 	 * deep power-down.
 	 */
-	u32_t ts_enter_dpd;
+	uint32_t ts_enter_dpd;
 #endif
 	struct k_sem sem;
+};
+
+static const struct flash_parameters flash_nor_parameters = {
+	.write_block_size = 1,
+	.erase_value = 0xff,
 };
 
 /* Capture the time at which the device entered deep power-down. */
@@ -101,7 +106,7 @@ static inline void delay_until_exit_dpd_ok(const struct device *const dev)
 {
 #if DT_INST_NODE_HAS_PROP(0, has_dpd)
 	struct spi_nor_data *const driver_data = dev->driver_data;
-	s32_t since = (s32_t)(k_uptime_get_32() - driver_data->ts_enter_dpd);
+	int32_t since = (int32_t)(k_uptime_get_32() - driver_data->ts_enter_dpd);
 
 	/* If the time is negative the 32-bit counter has wrapped,
 	 * which is certainly long enough no further delay is
@@ -120,7 +125,7 @@ static inline void delay_until_exit_dpd_ok(const struct device *const dev)
 		 * until it reaches zero before we can proceed.
 		 */
 		if (since < 0) {
-			k_sleep(K_MSEC((u32_t)-since));
+			k_sleep(K_MSEC((uint32_t)-since));
 		}
 	}
 #endif /* DT_INST_NODE_HAS_PROP(0, has_dpd) */
@@ -139,12 +144,12 @@ static inline void delay_until_exit_dpd_ok(const struct device *const dev)
  * @return 0 on success, negative errno code otherwise
  */
 static int spi_nor_access(const struct device *const dev,
-			  u8_t opcode, bool is_addressed, off_t addr,
+			  uint8_t opcode, bool is_addressed, off_t addr,
 			  void *data, size_t length, bool is_write)
 {
 	struct spi_nor_data *const driver_data = dev->driver_data;
 
-	u8_t buf[4] = {
+	uint8_t buf[4] = {
 		opcode,
 		(addr & 0xFF0000) >> 16,
 		(addr & 0xFF00) >> 8,
@@ -281,7 +286,7 @@ static void release_device(struct device *dev)
 static inline int spi_nor_read_id(struct device *dev,
 				  const struct spi_nor_config *const flash_id)
 {
-	u8_t buf[SPI_NOR_MAX_ID_LEN];
+	uint8_t buf[SPI_NOR_MAX_ID_LEN];
 
 	if (spi_nor_cmd_read(dev, SPI_NOR_CMD_RDID, buf,
 	    SPI_NOR_MAX_ID_LEN) != 0) {
@@ -304,7 +309,7 @@ static inline int spi_nor_read_id(struct device *dev,
 static int spi_nor_wait_until_ready(struct device *dev)
 {
 	int ret;
-	u8_t reg;
+	uint8_t reg;
 
 	do {
 		ret = spi_nor_cmd_read(dev, SPI_NOR_CMD_RDSR, &reg, 1);
@@ -369,7 +374,7 @@ static int spi_nor_write(struct device *dev, off_t addr, const void *src,
 		}
 
 		size -= to_write;
-		src = (const u8_t *)src + to_write;
+		src = (const uint8_t *)src + to_write;
 		addr += to_write;
 
 		spi_nor_wait_until_ready(dev);
@@ -385,9 +390,19 @@ static int spi_nor_erase(struct device *dev, off_t addr, size_t size)
 	const struct spi_nor_config *params = dev->config_info;
 	int ret = 0;
 
-	/* should be between 0 and flash size */
+	/* erase area must be subregion of device */
 	if ((addr < 0) || ((size + addr) > params->size)) {
 		return -ENODEV;
+	}
+
+	/* address must be sector-aligned */
+	if (!SPI_NOR_IS_SECTOR_ALIGNED(addr)) {
+		return -EINVAL;
+	}
+
+	/* size must be a multiple of sectors */
+	if ((size % SPI_NOR_SECTOR_SIZE) != 0) {
+		return -EINVAL;
 	}
 
 	acquire_device(dev);
@@ -490,6 +505,7 @@ static int spi_nor_configure(struct device *dev)
 	}
 
 	data->cs_ctrl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
+	data->cs_ctrl.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0);
 	data->cs_ctrl.delay = CONFIG_SPI_NOR_CS_WAIT_DELAY;
 
 	data->spi_cfg.cs = &data->cs_ctrl;
@@ -558,15 +574,23 @@ static void spi_nor_pages_layout(struct device *dev,
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
+static const struct flash_parameters *
+flash_nor_get_parameters(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return &flash_nor_parameters;
+}
+
 static const struct flash_driver_api spi_nor_api = {
 	.read = spi_nor_read,
 	.write = spi_nor_write,
 	.erase = spi_nor_erase,
 	.write_protection = spi_nor_write_protection_set,
+	.get_parameters = flash_nor_get_parameters,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = spi_nor_pages_layout,
 #endif
-	.write_block_size = 1,
 };
 
 static const struct spi_nor_config flash_id = {

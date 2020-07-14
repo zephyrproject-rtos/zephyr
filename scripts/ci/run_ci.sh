@@ -146,7 +146,8 @@ function west_setup() {
 	pushd ..
 	if [ ! -d .west ]; then
 		west init -l ${git_dir}
-		west update
+		west update 1> west.update.log
+		west forall -c 'git reset --hard HEAD'
 	fi
 	popd
 }
@@ -236,7 +237,7 @@ if [ -n "$main_ci" ]; then
 	$short_git_log
 
 
-	if [ -n "${BSIM_OUT_PATH}" -a -d "${BSIM_OUT_PATH}" -a "$SC" == "full" ]; then
+	if [ -n "${BSIM_OUT_PATH}" -a -d "${BSIM_OUT_PATH}" ]; then
 		echo "Build and run BT simulator tests"
 		# Run BLE tests in simulator on the 1st CI instance:
 		if [ "$matrix" = "1" ]; then
@@ -267,6 +268,8 @@ if [ -n "$main_ci" ]; then
 	tail -n +2 test_file_2.txt > test_file_2_in.txt
 	tail -n +2 test_file_1.txt > test_file_1_in.txt
 	cat test_file_3.txt test_file_2_in.txt test_file_1_in.txt > test_file.txt
+
+	echo "+++ run sanitycheck"
 
 	# Run a subset of tests based on matrix size
 	${sanitycheck} ${sanitycheck_options} --load-tests test_file.txt \

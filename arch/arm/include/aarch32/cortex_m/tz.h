@@ -35,13 +35,13 @@ extern "C" {
  * state configuration.
  */
 typedef struct tz_nonsecure_setup_conf {
-	u32_t msp_ns;
-	u32_t psp_ns;
-	u32_t vtor_ns;
+	uint32_t msp_ns;
+	uint32_t psp_ns;
+	uint32_t vtor_ns;
 	struct {
-		u32_t npriv:1;
-		u32_t spsel:1;
-		u32_t reserved:30;
+		uint32_t npriv:1;
+		uint32_t spsel:1;
+		uint32_t reserved:30;
 	} control_ns;
 } tz_nonsecure_setup_conf_t;
 
@@ -84,7 +84,7 @@ void tz_nonsecure_state_setup(const tz_nonsecure_setup_conf_t *p_ns_conf);
  *
  * @return N/A
  */
-void tz_nonsecure_msplim_set(u32_t val);
+void tz_nonsecure_msplim_set(uint32_t val);
 
 /**
  *
@@ -101,7 +101,7 @@ void tz_nonsecure_msplim_set(u32_t val);
  *
  * @return N/A
  */
-void tz_nonsecure_psplim_set(u32_t val);
+void tz_nonsecure_psplim_set(uint32_t val);
 
 #endif /* CONFIG_ARMV8_M_MAINLINE */
 
@@ -229,7 +229,7 @@ void tz_sau_configure(int enable, int allns);
  *
  * @return The number of configured SAU regions.
  */
-u32_t tz_sau_number_of_regions_get(void);
+uint32_t tz_sau_number_of_regions_get(void);
 
 #if defined(CONFIG_CPU_HAS_ARM_SAU)
 /**
@@ -240,11 +240,11 @@ u32_t tz_sau_number_of_regions_get(void);
  * for a SAU region configuration.
  */
 typedef struct {
-	u8_t region_num;
-	u8_t enable:1;
-	u8_t nsc:1;
-	u32_t base_addr;
-	u32_t limit_addr;
+	uint8_t region_num;
+	uint8_t enable:1;
+	uint8_t nsc:1;
+	uint32_t base_addr;
+	uint32_t limit_addr;
 } tz_sau_conf_t;
 
 

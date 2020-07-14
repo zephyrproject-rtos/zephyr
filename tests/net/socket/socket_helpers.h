@@ -48,7 +48,7 @@ static inline int prepare_listen_sock_udp_v6(struct sockaddr_in6 *addr)
 	return sock;
 }
 
-static inline void prepare_sock_udp_v4(const char *addr, u16_t port,
+static inline void prepare_sock_udp_v4(const char *addr, uint16_t port,
 				       int *sock, struct sockaddr_in *sockaddr)
 {
 	int rv;
@@ -66,7 +66,7 @@ static inline void prepare_sock_udp_v4(const char *addr, u16_t port,
 	zassert_equal(rv, 1, "inet_pton failed");
 }
 
-static inline void prepare_sock_udp_v6(const char *addr, u16_t port,
+static inline void prepare_sock_udp_v6(const char *addr, uint16_t port,
 				       int *sock, struct sockaddr_in6 *sockaddr)
 {
 	int rv;
@@ -85,7 +85,7 @@ static inline void prepare_sock_udp_v6(const char *addr, u16_t port,
 	zassert_equal(rv, 1, "inet_pton failed");
 }
 
-static inline void prepare_sock_tcp_v4(const char *addr, u16_t port,
+static inline void prepare_sock_tcp_v4(const char *addr, uint16_t port,
 				       int *sock, struct sockaddr_in *sockaddr)
 {
 	int rv;
@@ -103,7 +103,7 @@ static inline void prepare_sock_tcp_v4(const char *addr, u16_t port,
 	zassert_equal(rv, 1, "inet_pton failed");
 }
 
-static inline void prepare_sock_tcp_v6(const char *addr, u16_t port,
+static inline void prepare_sock_tcp_v6(const char *addr, uint16_t port,
 				       int *sock, struct sockaddr_in6 *sockaddr)
 {
 	int rv;

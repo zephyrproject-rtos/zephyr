@@ -32,14 +32,14 @@ LOG_MODULE_REGISTER(TMP112, CONFIG_SENSOR_LOG_LEVEL);
 
 struct tmp112_data {
 	struct device *i2c;
-	s16_t sample;
+	int16_t sample;
 };
 
 static int tmp112_reg_read(struct tmp112_data *drv_data,
-			   u8_t reg, u16_t *val)
+			   uint8_t reg, uint16_t *val)
 {
 	if (i2c_burst_read(drv_data->i2c, TMP112_I2C_ADDRESS,
-			   reg, (u8_t *) val, 2) < 0) {
+			   reg, (uint8_t *) val, 2) < 0) {
 		return -EIO;
 	}
 
@@ -49,19 +49,19 @@ static int tmp112_reg_read(struct tmp112_data *drv_data,
 }
 
 static int tmp112_reg_write(struct tmp112_data *drv_data,
-			    u8_t reg, u16_t val)
+			    uint8_t reg, uint16_t val)
 {
-	u16_t val_be = sys_cpu_to_be16(val);
+	uint16_t val_be = sys_cpu_to_be16(val);
 
 	return i2c_burst_write(drv_data->i2c, TMP112_I2C_ADDRESS,
-			       reg, (u8_t *)&val_be, 2);
+			       reg, (uint8_t *)&val_be, 2);
 }
 
-static int tmp112_reg_update(struct tmp112_data *drv_data, u8_t reg,
-			     u16_t mask, u16_t val)
+static int tmp112_reg_update(struct tmp112_data *drv_data, uint8_t reg,
+			     uint16_t mask, uint16_t val)
 {
-	u16_t old_val = 0U;
-	u16_t new_val;
+	uint16_t old_val = 0U;
+	uint16_t new_val;
 
 	if (tmp112_reg_read(drv_data, reg, &old_val) < 0) {
 		return -EIO;
@@ -79,8 +79,8 @@ static int tmp112_attr_set(struct device *dev,
 			   const struct sensor_value *val)
 {
 	struct tmp112_data *drv_data = dev->driver_data;
-	s64_t value;
-	u16_t cr;
+	int64_t value;
+	uint16_t cr;
 
 	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
 		return -ENOTSUP;
@@ -152,7 +152,7 @@ static int tmp112_attr_set(struct device *dev,
 static int tmp112_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct tmp112_data *drv_data = dev->driver_data;
-	u16_t val;
+	uint16_t val;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_AMBIENT_TEMP);
 
@@ -161,9 +161,9 @@ static int tmp112_sample_fetch(struct device *dev, enum sensor_channel chan)
 	}
 
 	if (val & TMP112_D0_BIT) {
-		drv_data->sample = arithmetic_shift_right((s16_t)val, 3);
+		drv_data->sample = arithmetic_shift_right((int16_t)val, 3);
 	} else {
-		drv_data->sample = arithmetic_shift_right((s16_t)val, 4);
+		drv_data->sample = arithmetic_shift_right((int16_t)val, 4);
 	}
 
 	return 0;
@@ -174,13 +174,13 @@ static int tmp112_channel_get(struct device *dev,
 		struct sensor_value *val)
 {
 	struct tmp112_data *drv_data = dev->driver_data;
-	s32_t uval;
+	int32_t uval;
 
 	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
 		return -ENOTSUP;
 	}
 
-	uval = (s32_t)drv_data->sample * TMP112_TEMP_SCALE;
+	uval = (int32_t)drv_data->sample * TMP112_TEMP_SCALE;
 	val->val1 = uval / 1000000;
 	val->val2 = uval % 1000000;
 

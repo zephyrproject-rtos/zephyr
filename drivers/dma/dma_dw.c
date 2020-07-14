@@ -43,14 +43,14 @@ LOG_MODULE_REGISTER(dma_dw);
 #define DW_DMA_CFG_TRIES	10000
 #define INT_MASK_ALL		0xFF00
 
-static ALWAYS_INLINE void dw_write(u32_t dma_base, u32_t reg, u32_t value)
+static ALWAYS_INLINE void dw_write(uint32_t dma_base, uint32_t reg, uint32_t value)
 {
-	*((volatile u32_t*)(dma_base + reg)) = value;
+	*((volatile uint32_t*)(dma_base + reg)) = value;
 }
 
-static ALWAYS_INLINE u32_t dw_read(u32_t dma_base, u32_t reg)
+static ALWAYS_INLINE uint32_t dw_read(uint32_t dma_base, uint32_t reg)
 {
-	return *((volatile u32_t*)(dma_base + reg));
+	return *((volatile uint32_t*)(dma_base + reg));
 }
 
 static void dw_dma_isr(void *arg)
@@ -60,11 +60,11 @@ static void dw_dma_isr(void *arg)
 	struct dw_dma_dev_data *const dev_data = DEV_DATA(dev);
 	struct dma_chan_data *chan_data;
 
-	u32_t status_tfr = 0U;
-	u32_t status_block = 0U;
-	u32_t status_err = 0U;
-	u32_t status_intr;
-	u32_t channel;
+	uint32_t status_tfr = 0U;
+	uint32_t status_block = 0U;
+	uint32_t status_err = 0U;
+	uint32_t status_intr;
+	uint32_t channel;
 
 	status_intr = dw_read(dev_cfg->base, DW_INTR_STATUS);
 	if (!status_intr) {
@@ -114,16 +114,16 @@ static void dw_dma_isr(void *arg)
 	}
 }
 
-static int dw_dma_config(struct device *dev, u32_t channel,
+static int dw_dma_config(struct device *dev, uint32_t channel,
 			 struct dma_config *cfg)
 {
 	struct dw_dma_dev_data *const dev_data = DEV_DATA(dev);
 	const struct dw_dma_dev_cfg *const dev_cfg = DEV_CFG(dev);
 	struct dma_chan_data *chan_data;
 	struct dma_block_config *cfg_blocks;
-	u32_t m_size;
-	u32_t tr_width;
-	u32_t ctrl_lo;
+	uint32_t m_size;
+	uint32_t tr_width;
+	uint32_t ctrl_lo;
 
 	if (channel >= DW_MAX_CHAN) {
 		return -EINVAL;
@@ -248,8 +248,8 @@ static int dw_dma_config(struct device *dev, u32_t channel,
 	return 0;
 }
 
-static int dw_dma_reload(struct device *dev, u32_t channel,
-		u32_t src, u32_t dst, size_t size)
+static int dw_dma_reload(struct device *dev, uint32_t channel,
+		uint32_t src, uint32_t dst, size_t size)
 {
 	struct dw_dma_dev_data *const dev_data = DEV_DATA(dev);
 	const struct dw_dma_dev_cfg *const dev_cfg = DEV_CFG(dev);
@@ -267,7 +267,7 @@ static int dw_dma_reload(struct device *dev, u32_t channel,
 	return 0;
 }
 
-static int dw_dma_transfer_start(struct device *dev, u32_t channel)
+static int dw_dma_transfer_start(struct device *dev, uint32_t channel)
 {
 	const struct dw_dma_dev_cfg *const dev_cfg = DEV_CFG(dev);
 
@@ -281,7 +281,7 @@ static int dw_dma_transfer_start(struct device *dev, u32_t channel)
 	return 0;
 }
 
-static int dw_dma_transfer_stop(struct device *dev, u32_t channel)
+static int dw_dma_transfer_stop(struct device *dev, uint32_t channel)
 {
 	const struct dw_dma_dev_cfg *const dev_cfg = DEV_CFG(dev);
 
@@ -361,7 +361,7 @@ static const struct dma_driver_api dw_dma_driver_api = {
 
 #define DW_DMAC_INIT(inst)						\
 									\
-	static struct device DEVICE_NAME_GET(dw_dma##inst);		\
+	DEVICE_DECLARE(dw_dma##inst);		\
 									\
 	static struct dw_drv_plat_data dmac##inst = {			\
 		.chan[0] = {						\

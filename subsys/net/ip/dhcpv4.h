@@ -16,24 +16,24 @@
 #define __INTERNAL_DHCPV4_H
 
 struct dhcp_msg {
-	u8_t op;		/* Message type, 1:BOOTREQUEST, 2:BOOTREPLY */
-	u8_t htype;		/* Hardware Address Type */
-	u8_t hlen;		/* Hardware Address length */
-	u8_t hops;		/* used by relay agents when booting via relay
+	uint8_t op;		/* Message type, 1:BOOTREQUEST, 2:BOOTREPLY */
+	uint8_t htype;		/* Hardware Address Type */
+	uint8_t hlen;		/* Hardware Address length */
+	uint8_t hops;		/* used by relay agents when booting via relay
 				 * agent, client sets zero
 				 */
-	u32_t xid;		/* Transaction ID, random number */
-	u16_t secs;		/* Seconds elapsed since client began address
+	uint32_t xid;		/* Transaction ID, random number */
+	uint16_t secs;		/* Seconds elapsed since client began address
 				 * acquisition or renewal process
 				 */
-	u16_t flags;		/* Broadcast or Unicast */
-	u8_t ciaddr[4];		/* Client IP Address */
-	u8_t yiaddr[4];		/* your (client) IP address */
-	u8_t siaddr[4];		/* IP address of next server to use in bootstrap
+	uint16_t flags;		/* Broadcast or Unicast */
+	uint8_t ciaddr[4];		/* Client IP Address */
+	uint8_t yiaddr[4];		/* your (client) IP address */
+	uint8_t siaddr[4];		/* IP address of next server to use in bootstrap
 				 * returned in DHCPOFFER, DHCPACK by server
 				 */
-	u8_t giaddr[4];		/* Relat agent IP address */
-	u8_t chaddr[16];	/* Client hardware address */
+	uint8_t giaddr[4];		/* Relat agent IP address */
+	uint8_t chaddr[16];	/* Client hardware address */
 } __packed;
 
 #define SIZE_OF_SNAME		64

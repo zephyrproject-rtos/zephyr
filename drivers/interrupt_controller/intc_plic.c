@@ -28,8 +28,8 @@
 #define PLIC_EN_SIZE     ((PLIC_IRQS >> 5) + 1)
 
 struct plic_regs_t {
-	u32_t threshold_prio;
-	u32_t claim_complete;
+	uint32_t threshold_prio;
+	uint32_t claim_complete;
 };
 
 static int save_irq;
@@ -46,10 +46,10 @@ static int save_irq;
  *
  * @return N/A
  */
-void riscv_plic_irq_enable(u32_t irq)
+void riscv_plic_irq_enable(uint32_t irq)
 {
-	u32_t key;
-	volatile u32_t *en = (volatile u32_t *)PLIC_IRQ_EN;
+	uint32_t key;
+	volatile uint32_t *en = (volatile uint32_t *)PLIC_IRQ_EN;
 
 	key = irq_lock();
 	en += (irq >> 5);
@@ -69,10 +69,10 @@ void riscv_plic_irq_enable(u32_t irq)
  *
  * @return N/A
  */
-void riscv_plic_irq_disable(u32_t irq)
+void riscv_plic_irq_disable(uint32_t irq)
 {
-	u32_t key;
-	volatile u32_t *en = (volatile u32_t *)PLIC_IRQ_EN;
+	uint32_t key;
+	volatile uint32_t *en = (volatile uint32_t *)PLIC_IRQ_EN;
 
 	key = irq_lock();
 	en += (irq >> 5);
@@ -89,9 +89,9 @@ void riscv_plic_irq_disable(u32_t irq)
  *
  * @return 1 or 0
  */
-int riscv_plic_irq_is_enabled(u32_t irq)
+int riscv_plic_irq_is_enabled(uint32_t irq)
 {
-	volatile u32_t *en = (volatile u32_t *)PLIC_IRQ_EN;
+	volatile uint32_t *en = (volatile uint32_t *)PLIC_IRQ_EN;
 
 	en += (irq >> 5);
 	return !!(*en & (1 << (irq & 31)));
@@ -108,9 +108,9 @@ int riscv_plic_irq_is_enabled(u32_t irq)
  *
  * @return N/A
  */
-void riscv_plic_set_priority(u32_t irq, u32_t priority)
+void riscv_plic_set_priority(uint32_t irq, uint32_t priority)
 {
-	volatile u32_t *prio = (volatile u32_t *)PLIC_PRIO;
+	volatile uint32_t *prio = (volatile uint32_t *)PLIC_PRIO;
 
 	if (priority > PLIC_MAX_PRIO)
 		priority = PLIC_MAX_PRIO;
@@ -139,7 +139,7 @@ static void plic_irq_handler(void *arg)
 	volatile struct plic_regs_t *regs =
 	    (volatile struct plic_regs_t *) PLIC_REG;
 
-	u32_t irq;
+	uint32_t irq;
 	struct _isr_table_entry *ite;
 
 	/* Get the IRQ number generating the interrupt */
@@ -182,8 +182,8 @@ static int plic_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	volatile u32_t *en = (volatile u32_t *)PLIC_IRQ_EN;
-	volatile u32_t *prio = (volatile u32_t *)PLIC_PRIO;
+	volatile uint32_t *en = (volatile uint32_t *)PLIC_IRQ_EN;
+	volatile uint32_t *prio = (volatile uint32_t *)PLIC_PRIO;
 	volatile struct plic_regs_t *regs =
 	    (volatile struct plic_regs_t *)PLIC_REG;
 	int i;

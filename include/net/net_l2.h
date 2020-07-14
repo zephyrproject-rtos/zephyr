@@ -77,7 +77,7 @@ struct net_l2 {
 };
 
 /** @cond INTERNAL_HIDDEN */
-#define NET_L2_GET_NAME(_name) (__net_l2_##_name)
+#define NET_L2_GET_NAME(_name) __net_l2_##_name
 #define NET_L2_DECLARE_PUBLIC(_name)					\
 	extern const struct net_l2 NET_L2_GET_NAME(_name)
 #define NET_L2_GET_CTX_TYPE(_name) _name##_CTX_TYPE

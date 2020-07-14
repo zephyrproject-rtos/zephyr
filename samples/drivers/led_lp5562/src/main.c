@@ -33,7 +33,7 @@ LOG_MODULE_REGISTER(main);
 /*
  * The following colors are shown in the given order.
  */
-static u8_t colors[COLORS_TO_SHOW][VALUES_PER_COLOR] = {
+static uint8_t colors[COLORS_TO_SHOW][VALUES_PER_COLOR] = {
 	{ 0xFF, 0x00, 0x00 }, /*< Red    */
 	{ 0x00, 0xFF, 0x00 }, /*< Green  */
 	{ 0x00, 0x00, 0xFF }, /*< Blue   */
@@ -51,7 +51,7 @@ static u8_t colors[COLORS_TO_SHOW][VALUES_PER_COLOR] = {
  *
  * @return Hex value scaled to percent.
  */
-static inline u8_t scale_color_to_percent(u8_t hex)
+static inline uint8_t scale_color_to_percent(uint8_t hex)
 {
 	return (hex * 100U) / 0xFF;
 }
@@ -66,7 +66,7 @@ static inline u8_t scale_color_to_percent(u8_t hex)
  *
  * @return 0 if successful, -ERRNO otherwise.
  */
-static int set_static_color(struct device *dev, u8_t r, u8_t g, u8_t b)
+static int set_static_color(struct device *dev, uint8_t r, uint8_t g, uint8_t b)
 {
 	int ret;
 
@@ -111,7 +111,7 @@ static int set_static_color(struct device *dev, u8_t r, u8_t g, u8_t b)
  * @return 0 if successful, -ERRNO otherwise.
  */
 static int blink_color(struct device *dev, bool r, bool g, bool b,
-		u32_t delay_on, u32_t delay_off)
+		uint32_t delay_on, uint32_t delay_off)
 {
 	int ret;
 

@@ -206,10 +206,10 @@ static inline void hal_radio_ram_prio_setup(void)
 
 }
 
-static inline u32_t hal_radio_phy_mode_get(u8_t phy, u8_t flags)
+static inline uint32_t hal_radio_phy_mode_get(uint8_t phy, uint8_t flags)
 {
 	ARG_UNUSED(flags);
-	u32_t mode;
+	uint32_t mode;
 
 	switch (phy) {
 	case BIT(0):
@@ -225,58 +225,58 @@ static inline u32_t hal_radio_phy_mode_get(u8_t phy, u8_t flags)
 	return mode;
 }
 
-static inline u32_t hal_radio_tx_power_min_get(void)
+static inline uint32_t hal_radio_tx_power_min_get(void)
 {
 	return RADIO_TXPOWER_TXPOWER_Neg40dBm;
 }
 
-static inline u32_t hal_radio_tx_power_max_get(void)
+static inline uint32_t hal_radio_tx_power_max_get(void)
 {
 	return RADIO_TXPOWER_TXPOWER_Pos4dBm;
 }
 
-static inline u32_t hal_radio_tx_power_floor(s8_t tx_power_lvl)
+static inline uint32_t hal_radio_tx_power_floor(int8_t tx_power_lvl)
 {
-	if (tx_power_lvl >= (s8_t)RADIO_TXPOWER_TXPOWER_Pos4dBm) {
+	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Pos4dBm) {
 		return RADIO_TXPOWER_TXPOWER_Pos4dBm;
 	}
 
-	if (tx_power_lvl >= (s8_t)RADIO_TXPOWER_TXPOWER_Pos3dBm) {
+	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Pos3dBm) {
 		return RADIO_TXPOWER_TXPOWER_Pos3dBm;
 	}
 
-	if (tx_power_lvl >= (s8_t)RADIO_TXPOWER_TXPOWER_0dBm) {
+	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_0dBm) {
 		return RADIO_TXPOWER_TXPOWER_0dBm;
 	}
 
-	if (tx_power_lvl >= (s8_t)RADIO_TXPOWER_TXPOWER_Neg4dBm) {
+	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Neg4dBm) {
 		return RADIO_TXPOWER_TXPOWER_Neg4dBm;
 	}
 
-	if (tx_power_lvl >= (s8_t)RADIO_TXPOWER_TXPOWER_Neg8dBm) {
+	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Neg8dBm) {
 		return RADIO_TXPOWER_TXPOWER_Neg8dBm;
 	}
 
-	if (tx_power_lvl >= (s8_t)RADIO_TXPOWER_TXPOWER_Neg12dBm) {
+	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Neg12dBm) {
 		return RADIO_TXPOWER_TXPOWER_Neg12dBm;
 	}
 
-	if (tx_power_lvl >= (s8_t)RADIO_TXPOWER_TXPOWER_Neg16dBm) {
+	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Neg16dBm) {
 		return RADIO_TXPOWER_TXPOWER_Neg16dBm;
 	}
 
-	if (tx_power_lvl >= (s8_t)RADIO_TXPOWER_TXPOWER_Neg20dBm) {
+	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Neg20dBm) {
 		return RADIO_TXPOWER_TXPOWER_Neg20dBm;
 	}
 
-	if (tx_power_lvl >= (s8_t)RADIO_TXPOWER_TXPOWER_Neg30dBm) {
+	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Neg30dBm) {
 		return RADIO_TXPOWER_TXPOWER_Neg30dBm;
 	}
 
 	return RADIO_TXPOWER_TXPOWER_Neg40dBm;
 }
 
-static inline u32_t hal_radio_tx_ready_delay_us_get(u8_t phy, u8_t flags)
+static inline uint32_t hal_radio_tx_ready_delay_us_get(uint8_t phy, uint8_t flags)
 {
 	ARG_UNUSED(flags);
 
@@ -289,7 +289,7 @@ static inline u32_t hal_radio_tx_ready_delay_us_get(u8_t phy, u8_t flags)
 	}
 }
 
-static inline u32_t hal_radio_rx_ready_delay_us_get(u8_t phy, u8_t flags)
+static inline uint32_t hal_radio_rx_ready_delay_us_get(uint8_t phy, uint8_t flags)
 {
 	ARG_UNUSED(flags);
 
@@ -302,7 +302,7 @@ static inline u32_t hal_radio_rx_ready_delay_us_get(u8_t phy, u8_t flags)
 	}
 }
 
-static inline u32_t hal_radio_tx_chain_delay_us_get(u8_t phy, u8_t flags)
+static inline uint32_t hal_radio_tx_chain_delay_us_get(uint8_t phy, uint8_t flags)
 {
 	ARG_UNUSED(phy);
 	ARG_UNUSED(flags);
@@ -310,7 +310,7 @@ static inline u32_t hal_radio_tx_chain_delay_us_get(u8_t phy, u8_t flags)
 	return HAL_RADIO_NRF52832_TX_CHAIN_DELAY_US;
 }
 
-static inline u32_t hal_radio_rx_chain_delay_us_get(u8_t phy, u8_t flags)
+static inline uint32_t hal_radio_rx_chain_delay_us_get(uint8_t phy, uint8_t flags)
 {
 	ARG_UNUSED(flags);
 
@@ -323,7 +323,7 @@ static inline u32_t hal_radio_rx_chain_delay_us_get(u8_t phy, u8_t flags)
 	}
 }
 
-static inline u32_t hal_radio_tx_ready_delay_ns_get(u8_t phy, u8_t flags)
+static inline uint32_t hal_radio_tx_ready_delay_ns_get(uint8_t phy, uint8_t flags)
 {
 	ARG_UNUSED(flags);
 
@@ -336,7 +336,7 @@ static inline u32_t hal_radio_tx_ready_delay_ns_get(u8_t phy, u8_t flags)
 	}
 }
 
-static inline u32_t hal_radio_rx_ready_delay_ns_get(u8_t phy, u8_t flags)
+static inline uint32_t hal_radio_rx_ready_delay_ns_get(uint8_t phy, uint8_t flags)
 {
 	ARG_UNUSED(flags);
 
@@ -349,7 +349,7 @@ static inline u32_t hal_radio_rx_ready_delay_ns_get(u8_t phy, u8_t flags)
 	}
 }
 
-static inline u32_t hal_radio_tx_chain_delay_ns_get(u8_t phy, u8_t flags)
+static inline uint32_t hal_radio_tx_chain_delay_ns_get(uint8_t phy, uint8_t flags)
 {
 	ARG_UNUSED(phy);
 	ARG_UNUSED(flags);
@@ -357,7 +357,7 @@ static inline u32_t hal_radio_tx_chain_delay_ns_get(u8_t phy, u8_t flags)
 	return HAL_RADIO_NRF52832_TX_CHAIN_DELAY_US;
 }
 
-static inline u32_t hal_radio_rx_chain_delay_ns_get(u8_t phy, u8_t flags)
+static inline uint32_t hal_radio_rx_chain_delay_ns_get(uint8_t phy, uint8_t flags)
 {
 	ARG_UNUSED(flags);
 

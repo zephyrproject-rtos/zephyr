@@ -29,7 +29,7 @@ static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0x0d, 0x18, 0x0f, 0x18, 0x0a, 0x18),
 };
 
-static void connected(struct bt_conn *conn, u8_t err)
+static void connected(struct bt_conn *conn, uint8_t err)
 {
 	if (err) {
 		printk("Connection failed (err 0x%02x)\n", err);
@@ -39,7 +39,7 @@ static void connected(struct bt_conn *conn, u8_t err)
 	}
 }
 
-static void disconnected(struct bt_conn *conn, u8_t reason)
+static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	printk("Disconnected (reason 0x%02x)\n", reason);
 
@@ -84,7 +84,7 @@ static struct bt_conn_auth_cb auth_cb_display = {
 
 static void bas_notify(void)
 {
-	u8_t battery_level = bt_gatt_bas_get_battery_level();
+	uint8_t battery_level = bt_gatt_bas_get_battery_level();
 
 	battery_level--;
 
@@ -97,7 +97,7 @@ static void bas_notify(void)
 
 static void hrs_notify(void)
 {
-	static u8_t heartrate = 90U;
+	static uint8_t heartrate = 90U;
 
 	/* Heartrate measurements simulation */
 	heartrate++;

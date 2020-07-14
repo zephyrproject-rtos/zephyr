@@ -56,35 +56,35 @@
  */
 #define BT_UUID_VALUE_V17               BT_UUID_DECLARE_16(0xb011)
 
-static u8_t   value_v14_value[] = {
+static uint8_t   value_v14_value[] = {
 	      'L', 'e', 'n', 'g', 't', 'h', ' ', 'i', 's', ' ', '\0'
 };
 static const struct bt_gatt_cpf cha_format_value = {
 	     0x19, 0x00, 0x3000, 0x01, 0x0000
 };
-static u8_t   value_v15_value = 0x65;
+static uint8_t   value_v15_value = 0x65;
 static const struct bt_gatt_cpf cha_format_1_value = {
 	     0x04, 0x00, 0x2701, 0x01, 0x0001
 };
-static u16_t  value_v6_value = 0x1234;
+static uint16_t  value_v6_value = 0x1234;
 static const struct bt_gatt_cpf cha_format_2_value = {
 	     0x06, 0x00, 0x2710, 0x01, 0x0002
 };
-static u32_t  value_v7_value = 0x01020304;
+static uint32_t  value_v7_value = 0x01020304;
 static const struct bt_gatt_cpf cha_format_3_value = {
 	     0x08, 0x00, 0x2717, 0x01, 0x0003
 };
 static struct __packed value_v16_t {
-	u8_t  field_a;
-	u16_t field_b;
-	u32_t field_c;
+	uint8_t  field_a;
+	uint16_t field_b;
+	uint32_t field_c;
 } value_v16_value = { 0x65, 0x1234, 0x01020304 };
 static struct __packed agg_format_t {
-	u16_t field_a;
-	u16_t field_b;
-	u16_t field_c;
+	uint16_t field_a;
+	uint16_t field_b;
+	uint16_t field_c;
 } agg_format_value = { 0x00A6, 0x00A9, 0x00AC };
-static u8_t   value_v17_value = 0x12;
+static uint8_t   value_v17_value = 0x12;
 
 /**
  * @brief Attribute read call back for the Value V14 string attribute
@@ -100,7 +100,7 @@ static u8_t   value_v17_value = 0x12;
  */
 static ssize_t read_str_value(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, void *buf,
-			      u16_t len, u16_t offset)
+			      uint16_t len, uint16_t offset)
 {
 	const char *value = attr->user_data;
 
@@ -122,9 +122,9 @@ static ssize_t read_str_value(struct bt_conn *conn,
  */
 static ssize_t read_value_v15(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, void *buf,
-			      u16_t len, u16_t offset)
+			      uint16_t len, uint16_t offset)
 {
-	const u8_t *value = attr->user_data;
+	const uint8_t *value = attr->user_data;
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 sizeof(value_v15_value));
@@ -145,9 +145,9 @@ static ssize_t read_value_v15(struct bt_conn *conn,
  */
 static ssize_t write_value_v15(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, const void *buf,
-			       u16_t len, u16_t offset, u8_t flags)
+			       uint16_t len, uint16_t offset, uint8_t flags)
 {
-	u8_t *value = attr->user_data;
+	uint8_t *value = attr->user_data;
 
 	if (offset >= sizeof(value_v15_value))
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -173,10 +173,10 @@ static ssize_t write_value_v15(struct bt_conn *conn,
  */
 static ssize_t read_value_v6(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
-			     u16_t len, u16_t offset)
+			     uint16_t len, uint16_t offset)
 {
-	const u16_t *value = attr->user_data;
-	u16_t value_v6_conv = sys_cpu_to_le16(*value);
+	const uint16_t *value = attr->user_data;
+	uint16_t value_v6_conv = sys_cpu_to_le16(*value);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &value_v6_conv,
 				 sizeof(value_v6_conv));
@@ -197,17 +197,17 @@ static ssize_t read_value_v6(struct bt_conn *conn,
  */
 static ssize_t write_value_v6(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, const void *buf,
-			      u16_t len, u16_t offset, u8_t flags)
+			      uint16_t len, uint16_t offset, uint8_t flags)
 {
-	u16_t *value = attr->user_data;
-	u16_t value_v6_conv = sys_cpu_to_le16(*value);
+	uint16_t *value = attr->user_data;
+	uint16_t value_v6_conv = sys_cpu_to_le16(*value);
 
 	if (offset >= sizeof(value_v6_value))
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	if (offset + len > sizeof(value_v6_value))
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 
-	memcpy((u8_t *)&value_v6_conv + offset, buf, len);
+	memcpy((uint8_t *)&value_v6_conv + offset, buf, len);
 
 	*value = sys_le16_to_cpu(value_v6_conv);
 
@@ -228,10 +228,10 @@ static ssize_t write_value_v6(struct bt_conn *conn,
  */
 static ssize_t read_value_v7(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
-			     u16_t len, u16_t offset)
+			     uint16_t len, uint16_t offset)
 {
-	const u32_t *value = attr->user_data;
-	u32_t value_v7_conv = sys_cpu_to_le32(*value);
+	const uint32_t *value = attr->user_data;
+	uint32_t value_v7_conv = sys_cpu_to_le32(*value);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &value_v7_conv,
 				 sizeof(value_v7_conv));
@@ -252,17 +252,17 @@ static ssize_t read_value_v7(struct bt_conn *conn,
  */
 static ssize_t write_value_v7(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, const void *buf,
-			      u16_t len, u16_t offset, u8_t flags)
+			      uint16_t len, uint16_t offset, uint8_t flags)
 {
-	u32_t *value = attr->user_data;
-	u32_t value_v7_conv = sys_cpu_to_le32(*value);
+	uint32_t *value = attr->user_data;
+	uint32_t value_v7_conv = sys_cpu_to_le32(*value);
 
 	if (offset >= sizeof(value_v7_value))
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	if (offset + len > sizeof(value_v7_value))
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 
-	memcpy((u8_t *)&value_v7_conv + offset, buf, len);
+	memcpy((uint8_t *)&value_v7_conv + offset, buf, len);
 
 	*value = sys_le32_to_cpu(value_v7_conv);
 
@@ -283,7 +283,7 @@ static ssize_t write_value_v7(struct bt_conn *conn,
  */
 static ssize_t read_value_v16(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, void *buf,
-			      u16_t len, u16_t offset)
+			      uint16_t len, uint16_t offset)
 {
 	const struct value_v16_t *value = attr->user_data;
 	struct value_v16_t value_v16_conv;
@@ -310,7 +310,7 @@ static ssize_t read_value_v16(struct bt_conn *conn,
  */
 static ssize_t read_agg_format(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, void *buf,
-			       u16_t len, u16_t offset)
+			       uint16_t len, uint16_t offset)
 {
 	const struct agg_format_t *value = attr->user_data;
 	struct agg_format_t agg_format_conv;
@@ -337,9 +337,9 @@ static ssize_t read_agg_format(struct bt_conn *conn,
  */
 static ssize_t read_value_v17(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, void *buf,
-			      u16_t len, u16_t offset)
+			      uint16_t len, uint16_t offset)
 {
-	const u8_t *value = attr->user_data;
+	const uint8_t *value = attr->user_data;
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 sizeof(value_v17_value));

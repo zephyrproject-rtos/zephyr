@@ -29,9 +29,9 @@ SHELL_DEFINE(shell_uart, CONFIG_SHELL_PROMPT_UART, &shell_transport_uart,
 #ifdef CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
 static void uart_rx_handle(const struct shell_uart *sh_uart)
 {
-	u8_t *data;
-	u32_t len;
-	u32_t rd_len;
+	uint8_t *data;
+	uint32_t len;
+	uint32_t rd_len;
 	bool new_data = false;
 
 	do {
@@ -57,7 +57,7 @@ static void uart_rx_handle(const struct shell_uart *sh_uart)
 			rd_len -= i;
 			new_data = true;
 			if (rd_len) {
-				for (u32_t j = 0; j < rd_len; j++) {
+				for (uint32_t j = 0; j < rd_len; j++) {
 					data[j] = data[i + j];
 				}
 			}
@@ -71,7 +71,7 @@ static void uart_rx_handle(const struct shell_uart *sh_uart)
 			(void)err;
 			__ASSERT_NO_MSG(err == 0);
 		} else {
-			u8_t dummy;
+			uint8_t dummy;
 
 			/* No space in the ring buffer - consume byte. */
 			LOG_WRN("RX ring buffer full.");
@@ -96,11 +96,11 @@ static void uart_rx_handle(const struct shell_uart *sh_uart)
 static void uart_tx_handle(const struct shell_uart *sh_uart)
 {
 	struct device *dev = sh_uart->ctrl_blk->dev;
-	u32_t len;
+	uint32_t len;
 	int err;
-	const u8_t *data;
+	const uint8_t *data;
 
-	len = ring_buf_get_claim(sh_uart->tx_ringbuf, (u8_t **)&data,
+	len = ring_buf_get_claim(sh_uart->tx_ringbuf, (uint8_t **)&data,
 				 sh_uart->tx_ringbuf->size);
 	if (len) {
 		len = uart_fifo_fill(dev, data, len);
@@ -144,7 +144,7 @@ static void uart_irq_init(const struct shell_uart *sh_uart)
 
 static void timer_handler(struct k_timer *timer)
 {
-	u8_t c;
+	uint8_t c;
 	const struct shell_uart *sh_uart = k_timer_user_data_get(timer);
 
 	while (uart_poll_in(sh_uart->ctrl_blk->dev, &c) == 0) {
@@ -215,7 +215,7 @@ static int write(const struct shell_transport *transport,
 		 const void *data, size_t length, size_t *cnt)
 {
 	const struct shell_uart *sh_uart = (struct shell_uart *)transport->ctx;
-	const u8_t *data8 = (const u8_t *)data;
+	const uint8_t *data8 = (const uint8_t *)data;
 
 	if (IS_ENABLED(CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN) &&
 		!sh_uart->ctrl_blk->blocking_tx) {
@@ -270,9 +270,13 @@ static int enable_shell_uart(struct device *arg)
 	struct device *dev =
 			device_get_binding(CONFIG_UART_SHELL_ON_DEV_NAME);
 	bool log_backend = CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL > 0;
-	u32_t level =
+	uint32_t level =
 		(CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL > LOG_LEVEL_DBG) ?
 		CONFIG_LOG_MAX_LEVEL : CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL;
+
+	if (dev == NULL) {
+		return -ENODEV;
+	}
 
 	shell_init(&shell_uart, dev, true, log_backend, level);
 

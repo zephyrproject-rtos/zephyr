@@ -36,11 +36,11 @@ extern "C" {
  */
 static ALWAYS_INLINE void z_icache_setup(void)
 {
-	u32_t icache_config = (
+	uint32_t icache_config = (
 		IC_CACHE_DIRECT | /* direct mapping (one-way assoc.) */
 		IC_CACHE_ENABLE   /* i-cache enabled */
 	);
-	u32_t val;
+	uint32_t val;
 
 	val = z_arc_v2_aux_reg_read(_ARC_V2_I_CACHE_BUILD);
 	val &= 0xff;

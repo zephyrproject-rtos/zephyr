@@ -8,7 +8,7 @@
 
 menuconfig LORA
 	bool "LoRa support [EXPERIMENTAL]"
-	depends on NEWLIB_LIBC
+	select REQUIRES_FULL_LIBC
 	help
 	  Include LoRa drivers in the system configuration.
 
@@ -20,6 +20,7 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config LORA_SHELL
 	bool "Enable LoRa Shell"
+	default y
 	depends on SHELL
 	help
 	  Enable LoRa Shell for testing.
@@ -30,6 +31,6 @@ config LORA_INIT_PRIORITY
 	help
 	  System initialization priority for LoRa drivers.
 
-source "drivers/lora/Kconfig.sx1276"
+source "drivers/lora/Kconfig.sx12xx"
 
 endif # LORA

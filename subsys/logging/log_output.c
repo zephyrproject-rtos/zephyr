@@ -41,8 +41,8 @@ static const char *const colors[] = {
 	NULL                    /* dbg */
 };
 
-static u32_t freq;
-static u32_t timestamp_div;
+static uint32_t freq;
+static uint32_t timestamp_div;
 
 typedef int (*out_func_t)(int c, void *ctx);
 
@@ -50,13 +50,13 @@ extern int z_prf(int (*func)(), void *dest, char *format, va_list vargs);
 extern void z_vprintk(out_func_t out, void *log_output,
 		     const char *fmt, va_list ap);
 extern void log_output_msg_syst_process(const struct log_output *log_output,
-				struct log_msg *msg, u32_t flag);
+				struct log_msg *msg, uint32_t flag);
 extern void log_output_string_syst_process(const struct log_output *log_output,
 				struct log_msg_ids src_level,
-				const char *fmt, va_list ap, u32_t flag);
+				const char *fmt, va_list ap, uint32_t flag);
 extern void log_output_hexdump_syst_process(const struct log_output *log_output,
 				struct log_msg_ids src_level,
-				const u8_t *data, u32_t length, u32_t flag);
+				const uint8_t *data, uint32_t length, uint32_t flag);
 
 /* The RFC 5424 allows very flexible mapping and suggest the value 0 being the
  * highest severity and 7 to be the lowest (debugging level) severity.
@@ -70,9 +70,9 @@ extern void log_output_hexdump_syst_process(const struct log_output *log_output,
  *    6   Informational  Informational messages
  *    7   Debug          Debug-level messages
  */
-static int level_to_rfc5424_severity(u32_t level)
+static int level_to_rfc5424_severity(uint32_t level)
 {
-	u8_t ret;
+	uint8_t ret;
 
 	switch (level) {
 	case LOG_LEVEL_NONE:
@@ -106,7 +106,7 @@ static int out_func(int c, void *ctx)
 
 	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
 		/* Backend must be thread safe in synchronous operation. */
-		out_ctx->func((u8_t *)&c, 1, out_ctx->control_block->ctx);
+		out_ctx->func((uint8_t *)&c, 1, out_ctx->control_block->ctx);
 		return 0;
 	}
 
@@ -115,7 +115,7 @@ static int out_func(int c, void *ctx)
 	}
 
 	idx = atomic_inc(&out_ctx->control_block->offset);
-	out_ctx->buf[idx] = (u8_t)c;
+	out_ctx->buf[idx] = (uint8_t)c;
 
 	__ASSERT_NO_MSG(out_ctx->control_block->offset <= out_ctx->size);
 
@@ -140,7 +140,7 @@ static int print_formatted(const struct log_output *log_output,
 	return length;
 }
 
-static void buffer_write(log_output_func_t outf, u8_t *buf, size_t len,
+static void buffer_write(log_output_func_t outf, uint8_t *buf, size_t len,
 			 void *ctx)
 {
 	int processed;
@@ -163,7 +163,7 @@ void log_output_flush(const struct log_output *log_output)
 }
 
 static int timestamp_print(const struct log_output *log_output,
-			   u32_t flags, u32_t timestamp)
+			   uint32_t flags, uint32_t timestamp)
 {
 	int length;
 	bool format =
@@ -174,12 +174,12 @@ static int timestamp_print(const struct log_output *log_output,
 	if (!format) {
 		length = print_formatted(log_output, "[%08lu] ", timestamp);
 	} else if (freq != 0U) {
-		u32_t remainder;
-		u32_t seconds;
-		u32_t hours;
-		u32_t mins;
-		u32_t ms;
-		u32_t us;
+		uint32_t remainder;
+		uint32_t seconds;
+		uint32_t hours;
+		uint32_t mins;
+		uint32_t ms;
+		uint32_t us;
 
 		timestamp /= timestamp_div;
 		seconds = timestamp / freq;
@@ -224,7 +224,7 @@ static int timestamp_print(const struct log_output *log_output,
 }
 
 static void color_print(const struct log_output *log_output,
-			bool color, bool start, u32_t level)
+			bool color, bool start, uint32_t level)
 {
 	if (color) {
 		const char *color = start && (colors[level] != NULL) ?
@@ -234,20 +234,20 @@ static void color_print(const struct log_output *log_output,
 }
 
 static void color_prefix(const struct log_output *log_output,
-			 bool color, u32_t level)
+			 bool color, uint32_t level)
 {
 	color_print(log_output, color, true, level);
 }
 
 static void color_postfix(const struct log_output *log_output,
-			  bool color, u32_t level)
+			  bool color, uint32_t level)
 {
 	color_print(log_output, color, false, level);
 }
 
 
 static int ids_print(const struct log_output *log_output, bool level_on,
-		    bool func_on, u32_t domain_id, u32_t source_id, u32_t level)
+		    bool func_on, uint32_t domain_id, uint32_t source_id, uint32_t level)
 {
 	int total = 0;
 
@@ -264,7 +264,7 @@ static int ids_print(const struct log_output *log_output, bool level_on,
 	return total;
 }
 
-static void newline_print(const struct log_output *ctx, u32_t flags)
+static void newline_print(const struct log_output *ctx, uint32_t flags)
 {
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
 	    flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
@@ -286,8 +286,8 @@ static void std_print(struct log_msg *msg,
 		      const struct log_output *log_output)
 {
 	const char *str = log_msg_str_get(msg);
-	u32_t nargs = log_msg_nargs_get(msg);
-	u32_t *args = alloca(sizeof(u32_t)*nargs);
+	uint32_t nargs = log_msg_nargs_get(msg);
+	uint32_t *args = alloca(sizeof(uint32_t)*nargs);
 	int i;
 
 	for (i = 0; i < nargs; i++) {
@@ -372,8 +372,8 @@ static void std_print(struct log_msg *msg,
 }
 
 static void hexdump_line_print(const struct log_output *log_output,
-			       const u8_t *data, u32_t length,
-			       int prefix_offset, u32_t flags)
+			       const uint8_t *data, uint32_t length,
+			       int prefix_offset, uint32_t flags)
 {
 	newline_print(log_output, flags);
 
@@ -413,10 +413,10 @@ static void hexdump_line_print(const struct log_output *log_output,
 
 static void hexdump_print(struct log_msg *msg,
 			  const struct log_output *log_output,
-			  int prefix_offset, u32_t flags)
+			  int prefix_offset, uint32_t flags)
 {
-	u32_t offset = 0U;
-	u8_t buf[HEXDUMP_BYTES_IN_LINE];
+	uint32_t offset = 0U;
+	uint8_t buf[HEXDUMP_BYTES_IN_LINE];
 	size_t length;
 
 	print_formatted(log_output, "%s", log_msg_str_get(msg));
@@ -463,11 +463,11 @@ static void raw_string_print(struct log_msg *msg,
 	}
 }
 
-static u32_t prefix_print(const struct log_output *log_output,
-			 u32_t flags, bool func_on, u32_t timestamp, u8_t level,
-			 u8_t domain_id, u16_t source_id)
+static uint32_t prefix_print(const struct log_output *log_output,
+			 uint32_t flags, bool func_on, uint32_t timestamp, uint8_t level,
+			 uint8_t domain_id, uint16_t source_id)
 {
-	u32_t length = 0U;
+	uint32_t length = 0U;
 
 	bool stamp = flags & LOG_OUTPUT_FLAG_TIMESTAMP;
 	bool colors_on = flags & LOG_OUTPUT_FLAG_COLORS;
@@ -511,7 +511,7 @@ static u32_t prefix_print(const struct log_output *log_output,
 }
 
 static void postfix_print(const struct log_output *log_output,
-			  u32_t flags, u8_t level)
+			  uint32_t flags, uint8_t level)
 {
 	color_postfix(log_output, (flags & LOG_OUTPUT_FLAG_COLORS),
 			      level);
@@ -520,13 +520,13 @@ static void postfix_print(const struct log_output *log_output,
 
 void log_output_msg_process(const struct log_output *log_output,
 			    struct log_msg *msg,
-			    u32_t flags)
+			    uint32_t flags)
 {
 	bool std_msg = log_msg_is_std(msg);
-	u32_t timestamp = log_msg_timestamp_get(msg);
-	u8_t level = (u8_t)log_msg_level_get(msg);
-	u8_t domain_id = (u8_t)log_msg_domain_id_get(msg);
-	u16_t source_id = (u16_t)log_msg_source_id_get(msg);
+	uint32_t timestamp = log_msg_timestamp_get(msg);
+	uint8_t level = (uint8_t)log_msg_level_get(msg);
+	uint8_t domain_id = (uint8_t)log_msg_domain_id_get(msg);
+	uint16_t source_id = (uint16_t)log_msg_source_id_get(msg);
 	bool raw_string = (level == LOG_LEVEL_INTERNAL_RAW_STRING);
 	int prefix_offset;
 
@@ -568,13 +568,13 @@ static bool ends_with_newline(const char *fmt)
 }
 
 void log_output_string(const struct log_output *log_output,
-		       struct log_msg_ids src_level, u32_t timestamp,
-		       const char *fmt, va_list ap, u32_t flags)
+		       struct log_msg_ids src_level, uint32_t timestamp,
+		       const char *fmt, va_list ap, uint32_t flags)
 {
 	int length;
-	u8_t level = (u8_t)src_level.level;
-	u8_t domain_id = (u8_t)src_level.domain_id;
-	u16_t source_id = (u16_t)src_level.source_id;
+	uint8_t level = (uint8_t)src_level.level;
+	uint8_t domain_id = (uint8_t)src_level.domain_id;
+	uint16_t source_id = (uint16_t)src_level.source_id;
 	bool raw_string = (level == LOG_LEVEL_INTERNAL_RAW_STRING);
 
 	if (IS_ENABLED(CONFIG_LOG_MIPI_SYST_ENABLE) &&
@@ -611,14 +611,14 @@ void log_output_string(const struct log_output *log_output,
 }
 
 void log_output_hexdump(const struct log_output *log_output,
-			     struct log_msg_ids src_level, u32_t timestamp,
-			     const char *metadata, const u8_t *data,
-			     u32_t length, u32_t flags)
+			     struct log_msg_ids src_level, uint32_t timestamp,
+			     const char *metadata, const uint8_t *data,
+			     uint32_t length, uint32_t flags)
 {
-	u32_t prefix_offset;
-	u8_t level = (u8_t)src_level.level;
-	u8_t domain_id = (u8_t)src_level.domain_id;
-	u16_t source_id = (u16_t)src_level.source_id;
+	uint32_t prefix_offset;
+	uint8_t level = (uint8_t)src_level.level;
+	uint8_t domain_id = (uint8_t)src_level.domain_id;
+	uint16_t source_id = (uint16_t)src_level.source_id;
 
 	if (IS_ENABLED(CONFIG_LOG_MIPI_SYST_ENABLE) &&
 	    flags & LOG_OUTPUT_FLAG_FORMAT_SYST) {
@@ -634,7 +634,7 @@ void log_output_hexdump(const struct log_output *log_output,
 	print_formatted(log_output, "%s", metadata);
 
 	while (length) {
-		u32_t part_len = length > HEXDUMP_BYTES_IN_LINE ?
+		uint32_t part_len = length > HEXDUMP_BYTES_IN_LINE ?
 				HEXDUMP_BYTES_IN_LINE : length;
 
 		hexdump_line_print(log_output, data, part_len,
@@ -648,7 +648,7 @@ void log_output_hexdump(const struct log_output *log_output,
 	log_output_flush(log_output);
 }
 
-void log_output_dropped_process(const struct log_output *log_output, u32_t cnt)
+void log_output_dropped_process(const struct log_output *log_output, uint32_t cnt)
 {
 	char buf[5];
 	int len;
@@ -661,12 +661,12 @@ void log_output_dropped_process(const struct log_output *log_output, u32_t cnt)
 	cnt = MIN(cnt, 9999);
 	len = snprintk(buf, sizeof(buf), "%d", cnt);
 
-	buffer_write(outf, (u8_t *)prefix, sizeof(prefix) - 1, dev);
+	buffer_write(outf, (uint8_t *)prefix, sizeof(prefix) - 1, dev);
 	buffer_write(outf, buf, len, dev);
-	buffer_write(outf, (u8_t *)postfix, sizeof(postfix) - 1, dev);
+	buffer_write(outf, (uint8_t *)postfix, sizeof(postfix) - 1, dev);
 }
 
-void log_output_timestamp_freq_set(u32_t frequency)
+void log_output_timestamp_freq_set(uint32_t frequency)
 {
 	timestamp_div = 1U;
 	/* There is no point to have frequency higher than 1MHz (ns are not

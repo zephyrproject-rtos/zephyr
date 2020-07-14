@@ -85,12 +85,12 @@ STATS_NAME(eeprom_sim_thresholds, max_len)
 STATS_NAME_END(eeprom_sim_thresholds);
 
 #ifdef CONFIG_ARCH_POSIX
-static u8_t *mock_eeprom;
+static uint8_t *mock_eeprom;
 static int eeprom_fd = -1;
 static const char *eeprom_file_path;
 static const char default_eeprom_file_path[] = "eeprom.bin";
 #else
-static u8_t mock_eeprom[DT_INST_PROP(0, size)];
+static uint8_t mock_eeprom[DT_INST_PROP(0, size)];
 #endif /* CONFIG_ARCH_POSIX */
 
 static int eeprom_range_is_valid(struct device *dev, off_t offset, size_t len)

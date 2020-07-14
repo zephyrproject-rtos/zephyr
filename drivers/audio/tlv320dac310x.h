@@ -127,8 +127,8 @@ extern "C" {
 #define TIMER_MCLK_DIV_VAL(val)	((val) & TIMER_MCLK_DIV_MASK)
 
 struct reg_addr {
-	u8_t page; 		/* page number */
-	u8_t reg_addr; 		/* register address */
+	uint8_t page; 		/* page number */
+	uint8_t reg_addr; 		/* register address */
 };
 
 enum proc_block {

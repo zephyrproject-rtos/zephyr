@@ -28,8 +28,8 @@
 #define OP_JENSENSHANNON	(7)
 #define OP_MINKOWSKI		(8)
 
-static void test_arm_distance(int op, bool scratchy, const u16_t *dims,
-	const u32_t *dinput1, const u32_t *dinput2, const u32_t *ref)
+static void test_arm_distance(int op, bool scratchy, const uint16_t *dims,
+	const uint32_t *dinput1, const uint32_t *dinput2, const uint32_t *ref)
 {
 	size_t index;
 	const size_t length = DIMS_IN;
@@ -155,7 +155,7 @@ static void test_arm_distance_minkowski(void)
 	size_t index;
 	const size_t length = in_dims_minkowski[0];
 	const size_t dims_vec = in_dims_minkowski[1];
-	const u16_t *dims = in_dims_minkowski + 2;
+	const uint16_t *dims = in_dims_minkowski + 2;
 	const float32_t *input1 = (const float32_t *)in_com1;
 	const float32_t *input2 = (const float32_t *)in_com2;
 	float32_t *output;

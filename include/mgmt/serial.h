@@ -84,7 +84,7 @@ struct mcumgr_serial_rx_ctxt {
 	struct net_buf *nb;
 
 	/* Length of full packet, as read from header. */
-	u16_t pkt_len;
+	uint16_t pkt_len;
 };
 
 /** @typedef mcumgr_serial_tx_cb
@@ -119,7 +119,7 @@ typedef int (*mcumgr_serial_tx_cb)(const void *data, int len, void *arg);
  */
 struct net_buf *mcumgr_serial_process_frag(
 	struct mcumgr_serial_rx_ctxt *rx_ctxt,
-	const u8_t *frag, int frag_len);
+	const uint8_t *frag, int frag_len);
 
 /**
  * @brief Encodes and transmits an mcumgr packet over serial.
@@ -131,7 +131,7 @@ struct net_buf *mcumgr_serial_process_frag(
  *
  * @return                      0 on success; negative error code on failure.
  */
-int mcumgr_serial_tx_pkt(const u8_t *data, int len, mcumgr_serial_tx_cb cb,
+int mcumgr_serial_tx_pkt(const uint8_t *data, int len, mcumgr_serial_tx_cb cb,
 			 void *arg);
 
 #ifdef __cplusplus

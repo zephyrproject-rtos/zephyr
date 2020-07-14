@@ -308,6 +308,7 @@
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x40038000 0x98>;
 			interrupts = <42 0>;
+			prescaler = <16>;
 			label = "FTM_0";
 			status = "disabled";
 		};
@@ -316,6 +317,7 @@
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x40039000 0x98>;
 			interrupts = <43 0>;
+			prescaler = <16>;
 			label = "FTM_1";
 			status = "disabled";
 		};
@@ -324,6 +326,7 @@
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x4003a000 0x98>;
 			interrupts = <44 0>;
+			prescaler = <16>;
 			label = "FTM_2";
 			status = "disabled";
 		};
@@ -332,6 +335,7 @@
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x400b9000 0x98>;
 			interrupts = <71 0>;
+			prescaler = <16>;
 			label = "FTM_3";
 			status = "disabled";
 		};

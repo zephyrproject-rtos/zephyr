@@ -32,7 +32,7 @@ static K_THREAD_STACK_DEFINE(thread_tickless_stack, STACKSIZE);
  * failed when it was removed.  So just leave it here as a vestigial
  * thing until the test gets reworked
  */
-s32_t _sys_idle_threshold_ticks;
+int32_t _sys_idle_threshold_ticks;
 #endif
 
 #define TICKS_TO_MS  (MSEC_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
@@ -48,7 +48,7 @@ s32_t _sys_idle_threshold_ticks;
  */
 
 #if defined(CONFIG_X86) || defined(CONFIG_ARC) || defined(CONFIG_ARCH_POSIX)
-typedef u64_t _timer_res_t;
+typedef uint64_t _timer_res_t;
 #define _TIMER_ZERO  0ULL
 
 /* timestamp routines */
@@ -67,12 +67,12 @@ typedef u64_t _timer_res_t;
 #error "This QEMU target does not support tickless idle!"
 #  endif
 
-typedef u32_t _timer_res_t;
+typedef uint32_t _timer_res_t;
 #define _TIMER_ZERO  0
 
 /* timestamp routines, from timestamps.c */
 extern void _timestamp_open(void);
-extern u32_t _timestamp_read(void);
+extern uint32_t _timestamp_read(void);
 extern void _timestamp_close(void);
 
 #define _TIMESTAMP_OPEN()       (_timestamp_open())
@@ -85,10 +85,10 @@ extern void _timestamp_close(void);
 
 void ticklessTestThread(void)
 {
-	s32_t start_time;
-	s32_t end_time;
-	s32_t diff_time;
-	s32_t diff_ticks;
+	int32_t start_time;
+	int32_t end_time;
+	int32_t diff_time;
+	int32_t diff_ticks;
 	_timer_res_t start_tsc;
 	_timer_res_t end_tsc;
 	_timer_res_t cal_tsc = _TIMER_ZERO;
@@ -96,7 +96,7 @@ void ticklessTestThread(void)
 	_timer_res_t diff_per;
 
 #ifdef CONFIG_TICKLESS_IDLE
-	s32_t oldThreshold;
+	int32_t oldThreshold;
 #endif
 	int i;
 
@@ -135,9 +135,9 @@ void ticklessTestThread(void)
 
 #if defined(CONFIG_X86) || defined(CONFIG_ARC)
 	printk("Calibrated time stamp period = 0x%x%x\n",
-	       (u32_t)(cal_tsc >> 32), (u32_t)(cal_tsc & 0xFFFFFFFFLL));
+	       (uint32_t)(cal_tsc >> 32), (uint32_t)(cal_tsc & 0xFFFFFFFFLL));
 #elif defined(CONFIG_ARCH_POSIX)
-	printk("Calibrated time stamp period = %llu\n", cal_tsc);
+	printk("Calibrated time stamp period = %" PRIu64 "\n", cal_tsc);
 #elif defined(CONFIG_ARM)
 	printk("Calibrated time stamp period = 0x%x\n", cal_tsc);
 #endif
@@ -180,12 +180,12 @@ void ticklessTestThread(void)
 
 #if defined(CONFIG_X86) || defined(CONFIG_ARC)
 	printk("diff  time stamp: 0x%x%x\n",
-	       (u32_t)(diff_tsc >> 32), (u32_t)(diff_tsc & 0xFFFFFFFFULL));
+	       (uint32_t)(diff_tsc >> 32), (uint32_t)(diff_tsc & 0xFFFFFFFFULL));
 	printk("Cal   time stamp: 0x%x%x\n",
-	       (u32_t)(cal_tsc >> 32), (u32_t)(cal_tsc & 0xFFFFFFFFLL));
+	       (uint32_t)(cal_tsc >> 32), (uint32_t)(cal_tsc & 0xFFFFFFFFLL));
 #elif defined(CONFIG_ARCH_POSIX)
-	printk("diff  time stamp: %llu\n", diff_tsc);
-	printk("Cal   time stamp: %llu\n", cal_tsc);
+	printk("diff  time stamp: %" PRIu64 "\n", diff_tsc);
+	printk("Cal   time stamp: %" PRIu64 "\n", cal_tsc);
 #elif defined(CONFIG_ARM)
 	printk("diff  time stamp: 0x%x\n", diff_tsc);
 	printk("Cal   time stamp: 0x%x\n", cal_tsc);
@@ -201,7 +201,7 @@ void ticklessTestThread(void)
 		diff_per = ((cal_tsc - diff_tsc) * 100U) / cal_tsc;
 	}
 
-	printk("variance in time stamp diff: %d percent\n", (s32_t)diff_per);
+	printk("variance in time stamp diff: %d percent\n", (int32_t)diff_per);
 
 	zassert_equal(diff_ticks, SLEEP_TICKS,
 		      "* TEST FAILED. TICK COUNT INCORRECT *");

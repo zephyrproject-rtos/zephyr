@@ -34,7 +34,7 @@ struct arm_clock_control_t {
 	/* Clock can be configured for 3 states: Active, Sleep, Deep Sleep */
 	enum arm_soc_state_t state;
 	/* Identifies the device on the bus */
-	u32_t device;
+	uint32_t device;
 };
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_ARM_CLOCK_CONTROL_H_ */

@@ -20,12 +20,12 @@ LOG_MODULE_REGISTER(i2c_ll_stm32);
 
 #include "i2c-priv.h"
 
-int i2c_stm32_runtime_configure(struct device *dev, u32_t config)
+int i2c_stm32_runtime_configure(struct device *dev, uint32_t config)
 {
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
 	struct i2c_stm32_data *data = DEV_DATA(dev);
 	I2C_TypeDef *i2c = cfg->i2c;
-	u32_t clock = 0U;
+	uint32_t clock = 0U;
 	int ret;
 
 #if defined(CONFIG_SOC_SERIES_STM32F3X) || defined(CONFIG_SOC_SERIES_STM32F0X)
@@ -61,7 +61,7 @@ int i2c_stm32_runtime_configure(struct device *dev, u32_t config)
 #define OPERATION(msg) (((struct i2c_msg *) msg)->flags & I2C_MSG_RW_MASK)
 
 static int i2c_stm32_transfer(struct device *dev, struct i2c_msg *msg,
-			      u8_t num_msgs, u16_t slave)
+			      uint8_t num_msgs, uint16_t slave)
 {
 	struct i2c_stm32_data *data = DEV_DATA(dev);
 	struct i2c_msg *current, *next;
@@ -78,7 +78,7 @@ static int i2c_stm32_transfer(struct device *dev, struct i2c_msg *msg,
 	 */
 	current->flags |= I2C_MSG_RESTART;
 
-	for (u8_t i = 1; i <= num_msgs; i++) {
+	for (uint8_t i = 1; i <= num_msgs; i++) {
 
 		if (i < num_msgs) {
 			next = current + 1;
@@ -117,16 +117,16 @@ static int i2c_stm32_transfer(struct device *dev, struct i2c_msg *msg,
 	current = msg;
 
 	while (num_msgs > 0) {
-		u8_t *next_msg_flags = NULL;
+		uint8_t *next_msg_flags = NULL;
 
 		if (num_msgs > 1) {
 			next = current + 1;
 			next_msg_flags = &(next->flags);
 		}
 		do {
-			u32_t temp_len = current->len;
-			u8_t tmp_msg_flags = current->flags & ~I2C_MSG_RESTART;
-			u8_t tmp_next_msg_flags = next_msg_flags ?
+			uint32_t temp_len = current->len;
+			uint8_t tmp_msg_flags = current->flags & ~I2C_MSG_RESTART;
+			uint8_t tmp_next_msg_flags = next_msg_flags ?
 							*next_msg_flags : 0;
 
 			if (current->len > 255) {
@@ -178,7 +178,7 @@ static int i2c_stm32_init(struct device *dev)
 {
 	struct device *clock = device_get_binding(STM32_CLOCK_CONTROL_NAME);
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
-	u32_t bitrate_cfg;
+	uint32_t bitrate_cfg;
 	int ret;
 	struct i2c_stm32_data *data = DEV_DATA(dev);
 #ifdef CONFIG_I2C_STM32_INTERRUPT
@@ -207,7 +207,7 @@ static int i2c_stm32_init(struct device *dev)
 	 * I2C2 on STM32F0 uses APB1 clock as I2C clock source
 	 */
 
-	switch ((u32_t)cfg->i2c) {
+	switch ((uint32_t)cfg->i2c) {
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay)
 	case DT_REG_ADDR(DT_NODELABEL(i2c1)):
 		LL_RCC_SetI2CClockSource(LL_RCC_I2C1_CLKSOURCE_SYSCLK);

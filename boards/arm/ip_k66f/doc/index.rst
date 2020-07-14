@@ -160,3 +160,17 @@ Step through the application in your debugger.
 
 .. _OpenSDA J-Link Generic Firmware for V3.2 Bootloader:
    https://www.segger.com/downloads/jlink/OpenSDA_V3_2
+
+Serial console
+==============
+
+The ``ip_k66f`` board only uses Segger's RTT console for providing serial
+console. There is no physical serial port available.
+
+- To communicate with this board one needs in one console:
+
+``/opt/SEGGER/JLink_V664/JLinkRTTLogger -Device MK66FN2M0XXX18 -RTTChannel 1 -if SWD -Speed 4000 ~/rtt.log``
+
+- In another one:
+
+``nc localhost 19021``

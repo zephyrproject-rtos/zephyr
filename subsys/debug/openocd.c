@@ -107,5 +107,5 @@ __attribute__((used, section(".openocd_dbg")))
 size_t _kernel_openocd_num_offsets = ARRAY_SIZE(_kernel_openocd_offsets);
 
 __attribute__((used, section(".openocd_dbg")))
-u8_t _kernel_openocd_size_t_size = (u8_t)sizeof(size_t);
+uint8_t _kernel_openocd_size_t_size = (uint8_t)sizeof(size_t);
 #endif

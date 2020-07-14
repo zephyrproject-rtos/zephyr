@@ -47,7 +47,7 @@ SYS_INIT(init_msgq_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 #endif /* CONFIG_OBJECT_TRACING */
 
 void k_msgq_init(struct k_msgq *msgq, char *buffer, size_t msg_size,
-		 u32_t max_msgs)
+		 uint32_t max_msgs)
 {
 	msgq->msg_size = msg_size;
 	msgq->max_msgs = max_msgs;
@@ -66,7 +66,7 @@ void k_msgq_init(struct k_msgq *msgq, char *buffer, size_t msg_size,
 }
 
 int z_impl_k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size,
-			    u32_t max_msgs)
+			    uint32_t max_msgs)
 {
 	void *buffer;
 	int ret;
@@ -90,7 +90,7 @@ int z_impl_k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size,
 
 #ifdef CONFIG_USERSPACE
 int z_vrfy_k_msgq_alloc_init(struct k_msgq *q, size_t msg_size,
-			    u32_t max_msgs)
+			    uint32_t max_msgs)
 {
 	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(q, K_OBJ_MSGQ));
 
@@ -312,14 +312,14 @@ static inline void z_vrfy_k_msgq_purge(struct k_msgq *q)
 }
 #include <syscalls/k_msgq_purge_mrsh.c>
 
-static inline u32_t z_vrfy_k_msgq_num_free_get(struct k_msgq *q)
+static inline uint32_t z_vrfy_k_msgq_num_free_get(struct k_msgq *q)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(q, K_OBJ_MSGQ));
 	return z_impl_k_msgq_num_free_get(q);
 }
 #include <syscalls/k_msgq_num_free_get_mrsh.c>
 
-static inline u32_t z_vrfy_k_msgq_num_used_get(struct k_msgq *q)
+static inline uint32_t z_vrfy_k_msgq_num_used_get(struct k_msgq *q)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(q, K_OBJ_MSGQ));
 	return z_impl_k_msgq_num_used_get(q);

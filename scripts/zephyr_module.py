@@ -22,9 +22,8 @@ import os
 import sys
 import yaml
 import pykwalify.core
-import subprocess
-import re
 from pathlib import Path, PurePath
+from collections import namedtuple
 
 METADATA_SCHEMA = '''
 ## A pykwalify schema for basic validation of the structure of a
@@ -44,6 +43,11 @@ mapping:
       kconfig:
         required: false
         type: str
+      depends:
+        required: false
+        type: seq
+        sequence:
+          - type: str
   tests:
     required: false
     type: seq
@@ -176,37 +180,23 @@ def main():
                              list`""")
     parser.add_argument('-x', '--extra-modules', nargs='+', default=[],
                         help='List of extra modules to parse')
-    parser.add_argument('-w', '--west-path', default='west',
-                        help='Path to west executable')
     parser.add_argument('-z', '--zephyr-base',
                         help='Path to zephyr repository')
     args = parser.parse_args()
 
     if args.modules is None:
-        p = subprocess.Popen([args.west_path, 'list', '--format={posixpath}'],
-                             cwd=args.zephyr_base,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
-        out, err = p.communicate()
-        if p.returncode == 0:
-            projects = out.decode(sys.getdefaultencoding()).splitlines()
-        elif re.match((r'Error: .* is not in a west installation\.'
-                       '|FATAL ERROR: no west installation found from .*'
-                       '|FATAL ERROR: no west workspace.*'),
-                      err.decode(sys.getdefaultencoding())):
-            # Only accept the error the event we are outside a west
-            # workspace.
-            #
-            # TODO: we can just use "west topdir" instead if we can
-            # depend on west 0.7.0 or later.
+        # West is imported here, as it is optional (and thus maybe not installed)
+        # if user is providing a specific modules list.
+        from west.manifest import Manifest
+        from west.util import WestNotFound
+        try:
+            manifest = Manifest.from_file()
+            projects = [p.posixpath for p in manifest.get_projects([])]
+        except WestNotFound:
+            # Only accept WestNotFound, meaning we are not in a west
+            # workspace. Such setup is allowed, as west may be installed
+            # but the project is not required to use west.
             projects = []
-        else:
-            print(err.decode(sys.getdefaultencoding()))
-            # A real error occurred, raise an exception
-            raise subprocess.CalledProcessError(cmd=p.args,
-                                                returncode=p.returncode)
-    else:
-        projects = args.modules
 
     projects += args.extra_modules
     extra_modules = set(args.extra_modules)
@@ -215,19 +205,59 @@ def main():
     cmake = ""
     sanitycheck = ""
 
+    Module = namedtuple('Module', ['project', 'meta', 'depends'])
+    # dep_modules is a list of all modules that has an unresolved dependency
+    dep_modules = []
+    # start_modules is a list modules with no depends left (no incoming edge)
+    start_modules = []
+    # sorted_modules is a topological sorted list of the modules
+    sorted_modules = []
+
     for project in projects:
         # Avoid including Zephyr base project as module.
-        if project == os.environ.get('ZEPHYR_BASE'):
+        if project == args.zephyr_base:
             continue
 
         meta = process_module(project)
         if meta:
-            kconfig += process_kconfig(project, meta)
-            cmake += process_cmake(project, meta)
-            sanitycheck += process_sanitycheck(project, meta)
+            section = meta.get('build', dict())
+            deps = section.get('depends', [])
+            if not deps:
+                start_modules.append(Module(project, meta, []))
+            else:
+                dep_modules.append(Module(project, meta, deps))
         elif project in extra_modules:
             sys.exit(f'{project}, given in ZEPHYR_EXTRA_MODULES, '
                      'is not a valid zephyr module')
+
+    # This will do a topological sort to ensure the modules are ordered
+    # according to dependency settings.
+    while start_modules:
+        node = start_modules.pop(0)
+        sorted_modules.append(node)
+        node_name = PurePath(node.project).name
+        to_remove = []
+        for module in dep_modules:
+            if node_name in module.depends:
+                module.depends.remove(node_name)
+                if not module.depends:
+                    start_modules.append(module)
+                    to_remove.append(module)
+        for module in to_remove:
+            dep_modules.remove(module)
+
+    if dep_modules:
+        # If there are any modules with unresolved dependencies, then the
+        # modules contains unmet or cyclic dependencies. Error out.
+        error = 'Unmet or cyclic dependencies in modules:\n'
+        for module in dep_modules:
+            error += f'{module.project} depends on: {module.depends}\n'
+        sys.exit(error)
+
+    for module in sorted_modules:
+        kconfig += process_kconfig(module.project, module.meta)
+        cmake += process_cmake(module.project, module.meta)
+        sanitycheck += process_sanitycheck(module.project, module.meta)
 
     if args.kconfig_out:
         with open(args.kconfig_out, 'w', encoding="utf-8") as fp:

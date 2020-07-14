@@ -106,6 +106,18 @@ To get this value back into your current terminal environment, **you must run**
 The value will be lost if you close the window, etc.; run ``zephyr-env.cmd``
 again to get it back.
 
+Option 4: Using Zephyr Build Configuration CMake package
+--------------------------------------------------------
+
+Choose this option if you want to make those variable settings shared among all
+users of your project.
+
+Using a :ref:`cmake_build_config_package` allows you to commit the shared
+settings into the repository, so that all users can share them.
+
+It also removes the need for running ``source zephyr-env.sh`` or
+``zephyr-env.cmd`` when opening a new terminal.
+
 .. _zephyr-env:
 
 Zephyr Environment Scripts

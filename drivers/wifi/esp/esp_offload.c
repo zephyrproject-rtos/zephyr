@@ -121,7 +121,7 @@ static int esp_connect(struct net_context *context,
 		       const struct sockaddr *addr,
 		       socklen_t addrlen,
 		       net_context_connect_cb_t cb,
-		       s32_t timeout,
+		       int32_t timeout,
 		       void *user_data)
 {
 	struct esp_socket *sock;
@@ -164,7 +164,7 @@ static int esp_connect(struct net_context *context,
 }
 
 static int esp_accept(struct net_context *context,
-			     net_tcp_accept_cb_t cb, s32_t timeout,
+			     net_tcp_accept_cb_t cb, int32_t timeout,
 			     void *user_data)
 {
 	return -ENOTSUP;
@@ -290,9 +290,6 @@ out:
 					    NULL, 0U, false);
 	k_sem_give(&dev->cmd_handler_data.sem_tx_lock);
 
-	net_pkt_unref(sock->tx_pkt);
-	sock->tx_pkt = NULL;
-
 	return ret;
 }
 
@@ -316,6 +313,9 @@ static void esp_send_work(struct k_work *work)
 			ret);
 	}
 
+	net_pkt_unref(sock->tx_pkt);
+	sock->tx_pkt = NULL;
+
 	if (sock->send_cb) {
 		sock->send_cb(sock->context, ret, sock->send_user_data);
 	}
@@ -325,7 +325,7 @@ static int esp_sendto(struct net_pkt *pkt,
 		      const struct sockaddr *dst_addr,
 		      socklen_t addrlen,
 		      net_context_send_cb_t cb,
-		      s32_t timeout,
+		      int32_t timeout,
 		      void *user_data)
 {
 	struct net_context *context;
@@ -392,10 +392,14 @@ static int esp_sendto(struct net_pkt *pkt,
 	ret = _sock_send(dev, sock);
 	k_sched_unlock();
 
-	if (ret < 0) {
+	if (ret == 0) {
+		net_pkt_unref(sock->tx_pkt);
+	} else {
 		LOG_ERR("Failed to send data: link %d, ret %d", sock->link_id,
 			ret);
 	}
+
+	sock->tx_pkt = NULL;
 
 	if (cb) {
 		cb(context, ret, user_data);
@@ -406,7 +410,7 @@ static int esp_sendto(struct net_pkt *pkt,
 
 static int esp_send(struct net_pkt *pkt,
 		    net_context_send_cb_t cb,
-		    s32_t timeout,
+		    int32_t timeout,
 		    void *user_data)
 {
 	return esp_sendto(pkt, NULL, 0, cb, timeout, user_data);
@@ -448,8 +452,9 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata)
 	} else if (*endptr == 0) {
 		ret = -EAGAIN;
 		goto out;
-	} else if (*endptr != ':') {
-		LOG_ERR("Invalid end of cmd: 0x%02x != 0x%02x", *endptr, ':');
+	} else if (*endptr != _CIPRECVDATA_END) {
+		LOG_ERR("Invalid end of cmd: 0x%02x != 0x%02x", *endptr,
+			_CIPRECVDATA_END);
 		ret = len;
 		goto out;
 	}
@@ -489,7 +494,7 @@ static void esp_recvdata_work(struct k_work *work)
 	int len = CIPRECVDATA_MAX_LEN, ret;
 	char cmd[32];
 	struct modem_cmd cmds[] = {
-		MODEM_CMD_DIRECT("+CIPRECVDATA,", on_cmd_ciprecvdata),
+		MODEM_CMD_DIRECT(_CIPRECVDATA, on_cmd_ciprecvdata),
 	};
 
 	sock = CONTAINER_OF(work, struct esp_socket, recvdata_work);
@@ -565,7 +570,7 @@ static void esp_recv_work(struct k_work *work)
 
 static int esp_recv(struct net_context *context,
 		    net_context_recv_cb_t cb,
-		    s32_t timeout,
+		    int32_t timeout,
 		    void *user_data)
 {
 	struct esp_socket *sock;

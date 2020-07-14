@@ -23,7 +23,7 @@ static void start_scan(void);
 
 static struct bt_conn *default_conn;
 
-static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
+static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 			 struct net_buf_simple *ad)
 {
 	char addr_str[BT_ADDR_LE_STR_LEN];
@@ -73,7 +73,7 @@ static void start_scan(void)
 	printk("Scanning successfully started\n");
 }
 
-static void connected(struct bt_conn *conn, u8_t err)
+static void connected(struct bt_conn *conn, uint8_t err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 
@@ -98,7 +98,7 @@ static void connected(struct bt_conn *conn, u8_t err)
 	bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 }
 
-static void disconnected(struct bt_conn *conn, u8_t reason)
+static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 

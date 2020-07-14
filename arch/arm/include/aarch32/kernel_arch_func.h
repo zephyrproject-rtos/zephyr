@@ -52,8 +52,8 @@ arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
 
 extern FUNC_NORETURN void z_arm_userspace_enter(k_thread_entry_t user_entry,
 					       void *p1, void *p2, void *p3,
-					       u32_t stack_end,
-					       u32_t stack_start);
+					       uint32_t stack_end,
+					       uint32_t stack_start);
 
 extern void z_arm_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
 

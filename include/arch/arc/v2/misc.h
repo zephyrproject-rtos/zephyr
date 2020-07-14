@@ -21,9 +21,9 @@ extern "C" {
 #ifndef _ASMLANGUAGE
 extern unsigned int z_arc_cpu_sleep_mode;
 
-extern u32_t z_timer_cycle_get_32(void);
+extern uint32_t z_timer_cycle_get_32(void);
 
-static inline u32_t arch_k_cycle_get_32(void)
+static inline uint32_t arch_k_cycle_get_32(void)
 {
 	return z_timer_cycle_get_32();
 }

@@ -82,4 +82,9 @@ void platformShellInit(otInstance *aInstance);
  */
 int notify_new_rx_frame(struct net_pkt *pkt);
 
+/**
+ * Notify OpenThread task about new tx message.
+ */
+int notify_new_tx_frame(struct net_pkt *pkt);
+
 #endif  /* PLATFORM_POSIX_H_ */

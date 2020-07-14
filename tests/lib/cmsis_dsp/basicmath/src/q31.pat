@@ -721,25 +721,25 @@ static const q31_t ref_shift_negsat[9] = {
     0x80000000
     };
 
-static const u32_t ref_and[11] = {
+static const uint32_t ref_and[11] = {
     0x0418E004, 0x04002208, 0x4A100080, 0x40394D00,
     0x2140A805, 0xC2C08210, 0x81002C20, 0x40031182,
     0x22180104, 0x25029904, 0x2008430E
     };
 
-static const u32_t ref_or[11] = {
+static const uint32_t ref_or[11] = {
     0x977DFFCF, 0x7FC7AEDB, 0xCF177BBF, 0xFE3F7D89,
     0xF7FFFFFD, 0xF6C7CFFF, 0x9D6D3C7D, 0xEFEF7BDA,
     0x6B5ADFE6, 0xF5CFDFBC, 0xBB7FF73F
     };
 
-static const u32_t ref_not[11] = {
+static const uint32_t ref_not[11] = {
     0x7AC61631, 0xD07BD5B6, 0x34EC8443, 0x0DC482F6,
     0x0C8A522A, 0x393B306D, 0x76B6D38F, 0x16D0AC35,
     0x95A5E619, 0x8A7562E3, 0xCEC5B8C1
     };
 
-static const u32_t ref_xor[11] = {
+static const uint32_t ref_xor[11] = {
     0x93651FCB, 0x7BC78CD3, 0x85077B3F, 0xBE063089,
     0xD6BF57F8, 0x34074DEF, 0x1C6D105D, 0xAFEC6A58,
     0x4942DEE2, 0xD0CD46B8, 0x9B77B431

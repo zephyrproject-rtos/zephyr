@@ -10,10 +10,10 @@
 
 /* functions documented in include/drivers/pcie/msi.h */
 
-u32_t pcie_get_cap(pcie_bdf_t bdf, u32_t cap_id)
+uint32_t pcie_get_cap(pcie_bdf_t bdf, uint32_t cap_id)
 {
-	u32_t reg = 0U;
-	u32_t data;
+	uint32_t reg = 0U;
+	uint32_t data;
 
 	data = pcie_conf_read(bdf, PCIE_CONF_CMDSTAT);
 	if (data & PCIE_CONF_CMDSTAT_CAPS) {
@@ -37,10 +37,10 @@ u32_t pcie_get_cap(pcie_bdf_t bdf, u32_t cap_id)
 bool pcie_set_msi(pcie_bdf_t bdf, unsigned int irq)
 {
 	bool success = false; /* keepin' the MISRA peeps employed */
-	u32_t base;
-	u32_t mcr;
-	u32_t map;
-	u32_t mdr;
+	uint32_t base;
+	uint32_t mcr;
+	uint32_t map;
+	uint32_t mdr;
 
 	map = pcie_msi_map(irq);
 	mdr = pcie_msi_mdr(irq);

@@ -372,7 +372,7 @@ static void translate_sl_to_z_addr(SlSockAddr_t *sl_addr,
 			z_sockaddr_in6->sin6_family = AF_INET6;
 			z_sockaddr_in6->sin6_port = sl_addr_in6->sin6_port;
 			z_sockaddr_in6->sin6_scope_id =
-				(u8_t)sl_addr_in6->sin6_scope_id;
+				(uint8_t)sl_addr_in6->sin6_scope_id;
 			memcpy(z_sockaddr_in6->sin6_addr.s6_addr,
 			       sl_addr_in6->sin6_addr._S6_un._S6_u32,
 			       sizeof(z_sockaddr_in6->sin6_addr.s6_addr));
@@ -526,7 +526,7 @@ exit:
 
 static const struct socket_op_vtable simplelink_socket_fd_op_vtable;
 
-static int simplelink_poll(struct pollfd *fds, int nfds, int msecs)
+static int simplelink_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 {
 	int max_sd = 0;
 	struct SlTimeval_t tv, *ptv;
@@ -723,7 +723,7 @@ static int simplelink_setsockopt(void *obj, int level, int optname,
 				 * verification and it is indeed
 				 * performed when the cert is set.
 				 */
-				if (*(u32_t *)optval != 2U) {
+				if (*(uint32_t *)optval != 2U) {
 					retval = slcb_SetErrno(ENOTSUP);
 					goto exit;
 				} else {
@@ -753,7 +753,7 @@ static int simplelink_setsockopt(void *obj, int level, int optname,
 				/* if user wishes to have TCP_NODELAY = FALSE,
 				 * we return EINVAL and fail in the cases below.
 				 */
-				if (*(u32_t *)optval) {
+				if (*(uint32_t *)optval) {
 					retval = 0;
 					goto exit;
 				}
@@ -946,7 +946,7 @@ static ssize_t simplelink_sendto(void *obj, const void *buf, size_t len,
 			goto exit;
 		}
 
-		retval = sl_SendTo(sd, buf, (u16_t)len, flags,
+		retval = sl_SendTo(sd, buf, (uint16_t)len, flags,
 				   sl_addr, sl_addrlen);
 	} else {
 		retval = (ssize_t)sl_Send(sd, buf, len, flags);
@@ -987,18 +987,18 @@ static int simplelink_getaddrinfo(const char *node, const char *service,
 
 	/* Check args: */
 	if (!node) {
-		retval = EAI_NONAME;
+		retval = DNS_EAI_NONAME;
 		goto exit;
 	}
 	if (service) {
 		port = strtol(service, NULL, 10);
 		if (port < 1 || port > USHRT_MAX) {
-			retval = EAI_SERVICE;
+			retval = DNS_EAI_SERVICE;
 			goto exit;
 		}
 	}
 	if (!res) {
-		retval = EAI_NONAME;
+		retval = DNS_EAI_NONAME;
 		goto exit;
 	}
 
@@ -1018,7 +1018,7 @@ static int simplelink_getaddrinfo(const char *node, const char *service,
 	if (retval < 0) {
 		LOG_ERR("Could not resolve name: %s, retval: %d",
 			    node, retval);
-		retval = EAI_NONAME;
+		retval = DNS_EAI_NONAME;
 		goto exit;
 	}
 
@@ -1026,13 +1026,13 @@ static int simplelink_getaddrinfo(const char *node, const char *service,
 	*res = calloc(1, sizeof(struct zsock_addrinfo));
 	ai = *res;
 	if (!ai) {
-		retval = EAI_MEMORY;
+		retval = DNS_EAI_MEMORY;
 		goto exit;
 	} else {
 		/* Now, alloc the embedded sockaddr struct: */
 		ai_addr = calloc(1, sizeof(struct sockaddr));
 		if (!ai_addr) {
-			retval = EAI_MEMORY;
+			retval = DNS_EAI_MEMORY;
 			free(*res);
 			goto exit;
 		}

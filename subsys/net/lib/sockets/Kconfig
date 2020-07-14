@@ -102,7 +102,6 @@ config NET_SOCKETS_TLS_MAX_CIPHERSUITES
 
 config NET_SOCKETS_OFFLOAD
 	bool "Offload Socket APIs [EXPERIMENTAL]"
-	select NET_SOCKETS_POSIX_NAMES
 	help
 	  Enables direct offloading of socket operations to dedicated TCP/IP
 	  hardware.

@@ -7,13 +7,24 @@
 
 #define TIMEOUT 500
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define THREAD_HIGH_PRIORITY 1
+#define THREAD_MID_PRIORITY 3
+#define THREAD_LOW_PRIORITY 5
+
+/* use to pass case type to threads */
+static ZTEST_DMEM int case_type;
+static ZTEST_DMEM int thread_ret = TC_FAIL;
 
 /**TESTPOINT: init via K_MUTEX_DEFINE*/
 K_MUTEX_DEFINE(kmutex);
 static struct k_mutex mutex;
 
 static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
+static K_THREAD_STACK_DEFINE(tstack2, STACK_SIZE);
+static K_THREAD_STACK_DEFINE(tstack3, STACK_SIZE);
 static struct k_thread tdata;
+static struct k_thread tdata2;
+static struct k_thread tdata3;
 
 static void tThread_entry_lock_forever(void *p1, void *p2, void *p3)
 {
@@ -91,6 +102,91 @@ static void tmutex_test_lock_unlock(struct k_mutex *pmutex)
 	k_mutex_unlock(pmutex);
 }
 
+static void tThread_T1_priority_inheritance(void *p1, void *p2, void *p3)
+{
+	/* t1 will get mutex first */
+	zassert_true(k_mutex_lock((struct k_mutex *)p1, K_FOREVER) == 0,
+		      "access locked resource from spawn thread T1");
+
+	/* record its original priority */
+	int priority_origin = k_thread_priority_get((k_tid_t)p2);
+
+	/* wait for a time period to see if priority inheritance happended */
+	k_sleep(K_MSEC(500));
+
+	int priority = k_thread_priority_get((k_tid_t)p2);
+
+	if (case_type == 1) {
+		zassert_equal(priority, THREAD_HIGH_PRIORITY,
+			"priority inheritance not happened!");
+
+		k_mutex_unlock((struct k_mutex *)p1);
+
+		/* check if priority set back to original one */
+		priority = k_thread_priority_get((k_tid_t)p2);
+
+		zassert_equal(priority, priority_origin,
+			"priority inheritance adjust back not happened!");
+	} else if (case_type == 2) {
+		zassert_equal(priority, priority_origin,
+			"priority inheritance should not be happened!");
+
+		/* wait for t2 timeout to get mutex*/
+		k_sleep(K_MSEC(TIMEOUT));
+
+		k_mutex_unlock((struct k_mutex *)p1);
+	} else if (case_type == 3) {
+		zassert_equal(priority, THREAD_HIGH_PRIORITY,
+			"priority inheritance not happened!");
+
+		/* wait for t2 timeout to get mutex*/
+		k_sleep(K_MSEC(TIMEOUT));
+
+		k_mutex_unlock((struct k_mutex *)p1);
+	} else {
+		zassert_true(0, "should not be here!");
+	}
+}
+
+static void tThread_T2_priority_inheritance(void *p1, void *p2, void *p3)
+{
+	if (case_type == 1) {
+		zassert_true(k_mutex_lock((struct k_mutex *)p1, K_FOREVER) == 0,
+		      "access locked resource from spawn thread T2");
+
+		k_mutex_unlock((struct k_mutex *)p1);
+	} else if (case_type == 2 || case_type == 3) {
+		zassert_false(k_mutex_lock((struct k_mutex *)p1,
+				K_MSEC(100)) == 0,
+				"T2 should not get the resource");
+	} else {
+		zassert_true(0, "should not be here!");
+	}
+}
+
+static void tThread_lock_with_time_period(void *p1, void *p2, void *p3)
+{
+	zassert_true(k_mutex_lock((struct k_mutex *)p1, K_FOREVER) == 0,
+		      "access locked resource from spawn thread");
+
+	/* This thread will hold mutex for 600 ms, then release it */
+	k_sleep(K_MSEC(TIMEOUT + 100));
+
+	k_mutex_unlock((struct k_mutex *)p1);
+}
+
+static void tThread_waiter(void *p1, void *p2, void *p3)
+{
+	/* This thread participates in recursive locking tests */
+	/* Wait for mutex to be released */
+	zassert_true(k_mutex_lock((struct k_mutex *)p1, K_FOREVER) == 0,
+			"Failed to get the test_mutex");
+
+	/* keep the next waiter waitting for a while */
+	thread_ret = TC_PASS;
+	k_mutex_unlock((struct k_mutex *)p1);
+}
+
 /*test cases*/
 void test_mutex_reent_lock_forever(void)
 {
@@ -140,18 +236,171 @@ void test_mutex_lock_unlock(void)
 	tmutex_test_lock_unlock(&kmutex);
 }
 
+/**
+ * @brief Test recursive mutex
+ * @details To verify that getting a lock of a mutex already locked will
+ * succeed and waiters will be unblocked only when the number of locks
+ * reaches zero.
+ * @ingroup kernel_mutex_tests
+ */
+void test_mutex_recursive(void)
+{
+	k_mutex_init(&mutex);
+
+	/**TESTPOINT: when mutex has no owner, we cannot unlock it */
+	zassert_true(k_mutex_unlock(&mutex) == -EINVAL,
+			"fail: mutex has no owner");
+
+	zassert_true(k_mutex_lock(&mutex, K_NO_WAIT) == 0,
+			"Failed to lock mutex");
+
+	/**TESTPOINT: lock the mutex recursively */
+	zassert_true(k_mutex_lock(&mutex, K_NO_WAIT) == 0,
+		"Failed to recursively lock mutex");
+
+	/* Spawn a waiter thread */
+	k_thread_create(&tdata3, tstack3, STACK_SIZE,
+			(k_thread_entry_t)tThread_waiter, &mutex, NULL, NULL,
+			K_PRIO_PREEMPT(12),
+			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+
+	zassert_true(thread_ret == TC_FAIL,
+		"waiter thread should block on the recursively locked mutex");
+
+	zassert_true(k_mutex_unlock(&mutex) == 0, "fail to unlock");
+
+	/**TESTPOINT: unlock the mutex recursively */
+	zassert_true(thread_ret == TC_FAIL,
+		"waiter thread should still block on the locked mutex");
+
+	zassert_true(k_mutex_unlock(&mutex) == 0, "fail to unlock");
+
+	/* Give thread_waiter a chance to get the mutex */
+	k_sleep(K_MSEC(1));
+
+	/**TESTPOINT: waiter thread got the mutex */
+	zassert_true(thread_ret == TC_PASS,
+			"waiter thread can't take the mutex");
+}
+
+/**
+ * @brief Test mutex's priority inheritance mechanism
+ * @details To verify mutex provide priority inheritance to prevent prority
+ * inversion, and there are 3 cases need to run.
+ * The thread T1 hold the mutex first and cases list as below:
+ * - case 1. When prority T2 > T1, priority inheritance happened.
+ * - case 2. When prority T1 > T2, priority inheritance won't happened.
+ * - case 3. When prority T2 > T3 > T1, priority inheritance happened but T2
+ *   wait for timeout and T3 got the mutex.
+ * @ingroup kernel_mutex_tests
+ */
+void test_mutex_priority_inheritance(void)
+{
+	/**TESTPOINT: run test case 1, given priority T1 < T2 */
+	k_mutex_init(&mutex);
+
+	/* we told thread which case runs now */
+	case_type = 1;
+
+	/* spawn a lower priority thread t1 for holding the mutex */
+	k_thread_create(&tdata, tstack, STACK_SIZE,
+		(k_thread_entry_t)tThread_T1_priority_inheritance,
+			&mutex, &tdata, NULL,
+			K_PRIO_PREEMPT(THREAD_LOW_PRIORITY),
+			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+
+	/* wait for spawn thread t1 to take action */
+	k_msleep(TIMEOUT);
+
+	/**TESTPOINT: The current thread does not own the mutex.*/
+	zassert_true(k_mutex_unlock(&mutex) == -EPERM,
+			"fail: current thread does not own the mutex");
+
+	/* spawn a higher priority thread t2 for holding the mutex */
+	k_thread_create(&tdata2, tstack2, STACK_SIZE,
+		(k_thread_entry_t)tThread_T2_priority_inheritance,
+			&mutex, &tdata2, NULL,
+			K_PRIO_PREEMPT(THREAD_HIGH_PRIORITY),
+			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+
+	/* wait for spawn thread t2 to take action */
+	k_msleep(TIMEOUT+1000);
+
+	/**TESTPOINT: run test case 2, given priority T1 > T2, this means
+	 * priority inheritance won't happen.
+	 */
+	k_mutex_init(&mutex);
+	case_type = 2;
+
+	/* spawn a lower priority thread t1 for holding the mutex */
+	k_thread_create(&tdata, tstack, STACK_SIZE,
+		(k_thread_entry_t)tThread_T1_priority_inheritance,
+			&mutex, &tdata, NULL,
+			K_PRIO_PREEMPT(THREAD_HIGH_PRIORITY),
+			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+
+	/* wait for spawn thread t1 to take action */
+	k_msleep(TIMEOUT);
+
+	/* spawn a higher priority thread t2 for holding the mutex */
+	k_thread_create(&tdata2, tstack2, STACK_SIZE,
+		(k_thread_entry_t)tThread_T2_priority_inheritance,
+			&mutex, &tdata2, NULL,
+			K_PRIO_PREEMPT(THREAD_LOW_PRIORITY),
+			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+
+	/* wait for spawn thread t2 to take action */
+	k_msleep(TIMEOUT+1000);
+
+	/**TESTPOINT: run test case 3, given priority T1 < T3 < T2, but t2 do
+	 * not get mutex due to timeout.
+	 */
+	k_mutex_init(&mutex);
+	case_type = 3;
+
+	/* spawn a lower priority thread t1 for holding the mutex */
+	k_thread_create(&tdata, tstack, STACK_SIZE,
+		(k_thread_entry_t)tThread_T1_priority_inheritance,
+			&mutex, &tdata, NULL,
+			K_PRIO_PREEMPT(THREAD_LOW_PRIORITY),
+			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+
+	/* wait for spawn thread t1 to take action */
+	k_msleep(TIMEOUT);
+
+	/* spawn a higher priority thread t2 for holding the mutex */
+	k_thread_create(&tdata2, tstack2, STACK_SIZE,
+		(k_thread_entry_t)tThread_T2_priority_inheritance,
+			&mutex, &tdata2, NULL,
+			K_PRIO_PREEMPT(THREAD_HIGH_PRIORITY),
+			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+
+	/* spawn a higher priority thread t3 for holding the mutex */
+	k_thread_create(&tdata3, tstack3, STACK_SIZE,
+		(k_thread_entry_t)tThread_lock_with_time_period,
+			&mutex, &tdata3, NULL,
+			K_PRIO_PREEMPT(THREAD_MID_PRIORITY),
+			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+
+	/* wait for spawn thread t2 and t3 to take action */
+	k_msleep(TIMEOUT+1000);
+}
+
 /*test case main entry*/
 void test_main(void)
 {
-	k_thread_access_grant(k_current_get(), &tdata, &tstack, &kmutex,
-			      &mutex);
+	k_thread_access_grant(k_current_get(), &tdata, &tstack, &tdata2,
+				&tstack2, &tdata3, &tstack3, &kmutex,
+				&mutex);
 
 	ztest_test_suite(mutex_api,
-			 ztest_1cpu_user_unit_test(test_mutex_lock_unlock),
-			 ztest_1cpu_user_unit_test(test_mutex_reent_lock_forever),
-			 ztest_user_unit_test(test_mutex_reent_lock_no_wait),
-			 ztest_user_unit_test(test_mutex_reent_lock_timeout_fail),
-			 ztest_1cpu_user_unit_test(test_mutex_reent_lock_timeout_pass)
-			 );
+		 ztest_1cpu_user_unit_test(test_mutex_lock_unlock),
+		 ztest_1cpu_user_unit_test(test_mutex_reent_lock_forever),
+		 ztest_user_unit_test(test_mutex_reent_lock_no_wait),
+		 ztest_user_unit_test(test_mutex_reent_lock_timeout_fail),
+		 ztest_1cpu_user_unit_test(test_mutex_reent_lock_timeout_pass),
+		 ztest_user_unit_test(test_mutex_recursive),
+		 ztest_user_unit_test(test_mutex_priority_inheritance)
+		 );
 	ztest_run_test_suite(mutex_api);
 }

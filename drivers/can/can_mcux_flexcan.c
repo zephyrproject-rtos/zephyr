@@ -45,9 +45,9 @@ LOG_MODULE_REGISTER(can_mcux_flexcan);
 
 /* Convert from back from FLEXCAN IDs to Zephyr CAN IDs. */
 #define FLEXCAN_ID_TO_ZCAN_ID_STD(id) \
-	((u32_t)((((u32_t)(id)) & CAN_ID_STD_MASK) >> CAN_ID_STD_SHIFT))
+	((uint32_t)((((uint32_t)(id)) & CAN_ID_STD_MASK) >> CAN_ID_STD_SHIFT))
 #define FLEXCAN_ID_TO_ZCAN_ID_EXT(id) \
-	((u32_t)((((u32_t)(id)) & (CAN_ID_STD_MASK | CAN_ID_EXT_MASK)) \
+	((uint32_t)((((uint32_t)(id)) & (CAN_ID_STD_MASK | CAN_ID_EXT_MASK)) \
 	>> CAN_ID_EXT_SHIFT))
 
 struct mcux_flexcan_config {
@@ -55,11 +55,11 @@ struct mcux_flexcan_config {
 	char *clock_name;
 	clock_control_subsys_t clock_subsys;
 	int clk_source;
-	u32_t bitrate;
-	u32_t sjw;
-	u32_t prop_seg;
-	u32_t phase_seg1;
-	u32_t phase_seg2;
+	uint32_t bitrate;
+	uint32_t sjw;
+	uint32_t prop_seg;
+	uint32_t phase_seg1;
+	uint32_t phase_seg2;
 	void (*irq_config_func)(struct device *dev);
 };
 
@@ -93,12 +93,12 @@ struct mcux_flexcan_data {
 };
 
 static int mcux_flexcan_configure(struct device *dev, enum can_mode mode,
-				  u32_t bitrate)
+				  uint32_t bitrate)
 {
 	const struct mcux_flexcan_config *config = dev->config_info;
 	flexcan_config_t flexcan_config;
 	struct device *clock_dev;
-	u32_t clock_freq;
+	uint32_t clock_freq;
 
 	clock_dev = device_get_binding(config->clock_name);
 	if (clock_dev == NULL) {
@@ -185,7 +185,7 @@ static void mcux_flexcan_copy_frame_to_zframe(const flexcan_frame_t *src,
 
 static void mcux_flexcan_copy_zfilter_to_mbconfig(const struct zcan_filter *src,
 						  flexcan_rx_mb_config_t *dest,
-						  u32_t *mask)
+						  uint32_t *mask)
 {
 	if (src->id_type == CAN_STANDARD_IDENTIFIER) {
 		dest->format = kFLEXCAN_FrameFormatStandard;
@@ -303,7 +303,7 @@ static int mcux_flexcan_attach_isr(struct device *dev, can_rx_callback_t isr,
 	struct mcux_flexcan_data *data = dev->driver_data;
 	flexcan_mb_transfer_t xfer;
 	status_t status;
-	u32_t mask;
+	uint32_t mask;
 	int alloc = CAN_NO_FREE_FILTER;
 	int i;
 
@@ -362,7 +362,7 @@ static enum can_state mcux_flexcan_get_state(struct device *dev,
 					     struct can_bus_err_cnt *err_cnt)
 {
 	const struct mcux_flexcan_config *config = dev->config_info;
-	u32_t status_flags;
+	uint32_t status_flags;
 
 	if (err_cnt) {
 		FLEXCAN_GetBusErrCount(config->base, &err_cnt->tx_err_cnt,
@@ -388,7 +388,7 @@ int mcux_flexcan_recover(struct device *dev, k_timeout_t timeout)
 {
 	const struct mcux_flexcan_config *config = dev->config_info;
 	int ret = 0;
-	u64_t start_time;
+	uint64_t start_time;
 
 	if (mcux_flexcan_get_state(dev, NULL) != CAN_BUS_OFF) {
 		return 0;
@@ -441,7 +441,7 @@ static void mcux_flexcan_detach(struct device *dev, int filter_id)
 }
 
 static inline void mcux_flexcan_transfer_error_status(struct device *dev,
-						      u32_t error)
+						      uint32_t error)
 {
 	const struct mcux_flexcan_config *config = dev->config_info;
 	struct mcux_flexcan_data *data = dev->driver_data;
@@ -518,7 +518,7 @@ static inline void mcux_flexcan_transfer_error_status(struct device *dev,
 }
 
 static inline void mcux_flexcan_transfer_tx_idle(struct device *dev,
-						 u32_t mb)
+						 uint32_t mb)
 {
 	struct mcux_flexcan_data *data = dev->driver_data;
 	can_tx_callback_t function;
@@ -543,7 +543,7 @@ static inline void mcux_flexcan_transfer_tx_idle(struct device *dev,
 }
 
 static inline void mcux_flexcan_transfer_rx_idle(struct device *dev,
-						 u32_t mb)
+						 uint32_t mb)
 {
 	const struct mcux_flexcan_config *config = dev->config_info;
 	struct mcux_flexcan_data *data = dev->driver_data;
@@ -580,12 +580,14 @@ static inline void mcux_flexcan_transfer_rx_idle(struct device *dev,
 
 static void mcux_flexcan_transfer_callback(CAN_Type *base,
 					   flexcan_handle_t *handle,
-					   status_t status, u32_t result,
+					   status_t status, uint32_t result,
 					   void *userData)
 {
 	struct device *dev = (struct device *)userData;
 
 	switch (status) {
+	case kStatus_FLEXCAN_UnHandled:
+		/* fallthrough */
 	case kStatus_FLEXCAN_ErrorStatus:
 		mcux_flexcan_transfer_error_status(dev, result);
 		break;
@@ -594,6 +596,8 @@ static void mcux_flexcan_transfer_callback(CAN_Type *base,
 	case kStatus_FLEXCAN_TxIdle:
 		mcux_flexcan_transfer_tx_idle(dev, result);
 		break;
+	case kStatus_FLEXCAN_RxOverflow:
+		/* fallthrough */
 	case kStatus_FLEXCAN_RxIdle:
 		mcux_flexcan_transfer_rx_idle(dev, result);
 		break;

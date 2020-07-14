@@ -363,20 +363,20 @@ static void shell_udp_upload_print_stats(const struct shell *shell,
 		shell_fprintf(shell, SHELL_NORMAL, "-\nUpload completed!\n");
 
 		if (results->time_in_us != 0U) {
-			rate_in_kbps = (u32_t)
-				(((u64_t)results->nb_bytes_sent *
-				  (u64_t)8 * (u64_t)USEC_PER_SEC) /
-				 ((u64_t)results->time_in_us * 1024U));
+			rate_in_kbps = (uint32_t)
+				(((uint64_t)results->nb_bytes_sent *
+				  (uint64_t)8 * (uint64_t)USEC_PER_SEC) /
+				 ((uint64_t)results->time_in_us * 1024U));
 		} else {
 			rate_in_kbps = 0U;
 		}
 
 		if (results->client_time_in_us != 0U) {
-			client_rate_in_kbps = (u32_t)
-				(((u64_t)results->nb_packets_sent *
-				  (u64_t)results->packet_size * (u64_t)8 *
-				  (u64_t)USEC_PER_SEC) /
-				 ((u64_t)results->client_time_in_us * 1024U));
+			client_rate_in_kbps = (uint32_t)
+				(((uint64_t)results->nb_packets_sent *
+				  (uint64_t)results->packet_size * (uint64_t)8 *
+				  (uint64_t)USEC_PER_SEC) /
+				 ((uint64_t)results->client_time_in_us * 1024U));
 		} else {
 			client_rate_in_kbps = 0U;
 		}
@@ -428,11 +428,11 @@ static void shell_tcp_upload_print_stats(const struct shell *shell,
 		shell_fprintf(shell, SHELL_NORMAL, "-\nUpload completed!\n");
 
 		if (results->client_time_in_us != 0U) {
-			client_rate_in_kbps = (u32_t)
-				(((u64_t)results->nb_packets_sent *
-				  (u64_t)results->packet_size * (u64_t)8 *
-				  (u64_t)USEC_PER_SEC) /
-				 ((u64_t)results->client_time_in_us * 1024U));
+			client_rate_in_kbps = (uint32_t)
+				(((uint64_t)results->nb_packets_sent *
+				  (uint64_t)results->packet_size * (uint64_t)8 *
+				  (uint64_t)USEC_PER_SEC) /
+				 ((uint64_t)results->client_time_in_us * 1024U));
 		} else {
 			client_rate_in_kbps = 0U;
 		}
@@ -697,7 +697,7 @@ static int shell_cmd_upload(const struct shell *shell, size_t argc,
 	sa_family_t family = AF_UNSPEC;
 	unsigned int duration_in_ms, packet_size, rate_in_kbps;
 	char *port_str;
-	u16_t port;
+	uint16_t port;
 	bool is_udp;
 	int start = 0;
 
@@ -836,10 +836,10 @@ static int shell_cmd_upload2(const struct shell *shell, size_t argc,
 			     char *argv[], enum net_ip_protocol proto)
 {
 	struct net_context *context6 = NULL, *context4 = NULL;
-	u16_t port = DEF_PORT;
+	uint16_t port = DEF_PORT;
 	unsigned int duration_in_ms, packet_size, rate_in_kbps;
 	sa_family_t family;
-	u8_t is_udp;
+	uint8_t is_udp;
 	int start = 0;
 
 	is_udp = proto == IPPROTO_UDP;

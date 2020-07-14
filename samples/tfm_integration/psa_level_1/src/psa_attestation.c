@@ -25,11 +25,11 @@ psa_status_t att_get_pub_key(void)
 	return err ? al_psa_status(err, __func__) : err;
 }
 
-psa_status_t att_get_iat(u8_t *ch_buffer, u32_t ch_sz,
-			 u8_t *token_buffer, u32_t *token_sz)
+psa_status_t att_get_iat(uint8_t *ch_buffer, uint32_t ch_sz,
+			 uint8_t *token_buffer, uint32_t *token_sz)
 {
 	psa_status_t err = PSA_SUCCESS;
-	u32_t sys_token_sz;
+	uint32_t sys_token_sz;
 	size_t token_buf_size = ATT_MAX_TOKEN_SIZE;
 
 
@@ -99,8 +99,8 @@ psa_status_t att_test(void)
 	 * 00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF
 	 * 00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF
 	 */
-	u32_t nonce_sz = 64;
-	u8_t nonce_buf[ATT_MAX_TOKEN_SIZE] = {
+	uint32_t nonce_sz = 64;
+	uint8_t nonce_buf[ATT_MAX_TOKEN_SIZE] = {
 		0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
 		0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF,
 		0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
@@ -113,8 +113,8 @@ psa_status_t att_test(void)
 	};
 
 	/* IAT response buffer. */
-	u32_t iat_sz = ATT_MAX_TOKEN_SIZE;
-	u8_t iat_buf[ATT_MAX_TOKEN_SIZE] = { 0 };
+	uint32_t iat_sz = ATT_MAX_TOKEN_SIZE;
+	uint8_t iat_buf[ATT_MAX_TOKEN_SIZE] = { 0 };
 
 	/* String format output config. */
 	struct sf_hex_tbl_fmt fmt = {

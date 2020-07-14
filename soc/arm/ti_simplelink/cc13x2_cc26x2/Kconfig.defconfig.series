@@ -59,4 +59,12 @@ config NET_CONFIG_IEEE802154_DEV_NAME
 
 endif # IEEE802154
 
+if BT
+
+config BLE_CC13XX_CC26XX
+	bool
+	default y
+
+endif # BT
+
 endif # SOC_SERIES_CC13X2_CC26X2

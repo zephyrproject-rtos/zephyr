@@ -47,7 +47,7 @@ class CANopenBinaryRunner(ZephyrBinaryRunner):
                                "see the getting started guide for details on "
                                "how to fix")
 
-        super(CANopenBinaryRunner, self).__init__(cfg)
+        super().__init__(cfg)
         self.bin_file = cfg.bin_file
         self.confirm = confirm
         self.confirm_only = confirm_only
@@ -87,7 +87,7 @@ class CANopenBinaryRunner(ZephyrBinaryRunner):
         parser.set_defaults(confirm=True)
 
     @classmethod
-    def create(cls, cfg, args):
+    def do_create(cls, cfg, args):
         return CANopenBinaryRunner(cfg, int(args.node_id),
                                    can_context=args.can_context,
                                    program_number=int(args.program_number),

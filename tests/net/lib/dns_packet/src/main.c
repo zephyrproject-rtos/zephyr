@@ -13,11 +13,11 @@
 /* RFC 1035, 4.1.1. Header section format */
 #define DNS_HEADER_SIZE	12
 
-static u8_t buf[MAX_BUF_SIZE];
-static u16_t buf_len;
+static uint8_t buf[MAX_BUF_SIZE];
+static uint16_t buf_len;
 
-static u8_t qname[MAX_BUF_SIZE];
-static u16_t qname_len;
+static uint8_t qname[MAX_BUF_SIZE];
+static uint16_t qname_len;
 
 
 /* Domain: www.zephyrproject.org
@@ -25,7 +25,7 @@ static u16_t qname_len;
  * Transaction ID: 0xda0f
  * Recursion desired
  */
-static u8_t query_ipv4[] = { 0xda, 0x0f, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00,
+static uint8_t query_ipv4[] = { 0xda, 0x0f, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x03, 0x77, 0x77, 0x77,
 				0x0d, 0x7a, 0x65, 0x70, 0x68, 0x79, 0x72, 0x70,
 				0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x03, 0x6f,
@@ -37,7 +37,7 @@ static u8_t query_ipv4[] = { 0xda, 0x0f, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00,
  * Type: standard query (IPv6)
  * Recursion not desired
  */
-static u8_t query_mdns[] = {
+static uint8_t query_mdns[] = {
 	0xda, 0x0f, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x06, 0x7a, 0x65, 0x70,
 	0x68, 0x79, 0x72, 0x05, 0x6c, 0x6f, 0x63, 0x61,
@@ -46,12 +46,12 @@ static u8_t query_mdns[] = {
 
 #define ZEPHYR_LOCAL "zephyr.local"
 
-static u16_t tid1 = 0xda0f;
+static uint16_t tid1 = 0xda0f;
 
-static int eval_query(const char *dname, u16_t tid, enum dns_rr_type type,
-		      u8_t *expected, u16_t expected_len)
+static int eval_query(const char *dname, uint16_t tid, enum dns_rr_type type,
+		      uint8_t *expected, uint16_t expected_len)
 {
-	u8_t *question;
+	uint8_t *question;
 	int rc;
 
 	rc = dns_msg_pack_qname(&qname_len, qname, MAX_BUF_SIZE, dname);
@@ -188,26 +188,26 @@ struct dns_response_test {
 	const char *dname;
 
 	/* expected result */
-	u8_t *res;
+	uint8_t *res;
 	/* expected result length */
-	u16_t res_len;
+	uint16_t res_len;
 
 	/* transaction id */
-	u16_t tid;
+	uint16_t tid;
 	/* A, AAAA */
-	u8_t answer_type;
+	uint8_t answer_type;
 	/* answer counter */
-	u8_t ancount;
+	uint8_t ancount;
 	/* answer TTL */
-	u32_t ttl;
+	uint32_t ttl;
 	/* recursion available */
-	u8_t ra;
+	uint8_t ra;
 	/* recursion desired */
-	u8_t rd;
+	uint8_t rd;
 	/* data len */
-	u8_t rdlen;
+	uint8_t rdlen;
 	/* data */
-	const u8_t *rdata;
+	const uint8_t *rdata;
 };
 
 /* This routine evaluates DNS responses with one RR, and assumes that the
@@ -215,8 +215,8 @@ struct dns_response_test {
  */
 static int eval_response1(struct dns_response_test *resp, bool unpack_answer)
 {
-	u8_t *ptr = resp->res;
-	u16_t offset;
+	uint8_t *ptr = resp->res;
+	uint16_t offset;
 	int  rc;
 
 	if (resp->res_len < RESPONSE_MIN_SIZE) {
@@ -335,7 +335,7 @@ static int eval_response1(struct dns_response_test *resp, bool unpack_answer)
 	offset += INT_SIZE + INT_SIZE;
 
 	if (unpack_answer) {
-		u32_t ttl;
+		uint32_t ttl;
 		struct dns_msg_t msg;
 
 		msg.msg = resp->res;
@@ -441,7 +441,7 @@ void test_dns_query(void)
  * RD len: 4 (IPv4 Address)
  * RData: 140.211.169.8
  */
-static u8_t resp_ipv4[] = { 0xb0, 0x41, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01,
+static uint8_t resp_ipv4[] = { 0xb0, 0x41, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01,
 			       0x00, 0x00, 0x00, 0x00, 0x03, 0x77, 0x77, 0x77,
 			       0x0d, 0x7a, 0x65, 0x70, 0x68, 0x79, 0x72, 0x70,
 			       0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x03, 0x6f,
@@ -449,7 +449,7 @@ static u8_t resp_ipv4[] = { 0xb0, 0x41, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01,
 			       0x0c, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x0b,
 			       0xd4, 0x00, 0x04, 0x8c, 0xd3, 0xa9, 0x08 };
 
-static const u8_t resp_ipv4_addr[] = {140, 211, 169, 8};
+static const uint8_t resp_ipv4_addr[] = {140, 211, 169, 8};
 
 void test_dns_response(void)
 {
@@ -500,7 +500,7 @@ char answer_ipv4[] = {
 
 #define DNAME2 "www.wireshark.org"
 
-static const u8_t answer_ipv4_addr[] = { 174, 137, 42, 65 };
+static const uint8_t answer_ipv4_addr[] = { 174, 137, 42, 65 };
 
 void test_dns_response2(void)
 {
@@ -544,7 +544,7 @@ void test_mdns_query(void)
  * RD len: 16 (IPv6 Address)
  * RData: fe80:0000:0000:0000:0200:5eff:fe00:5337
  */
-static u8_t resp_ipv6[] = {
+static uint8_t resp_ipv6[] = {
 	0xf2, 0xb6, 0x80, 0x00, 0x00, 0x01, 0x00, 0x01,
 	0x00, 0x00, 0x00, 0x00, 0x06, 0x7a, 0x65, 0x70,
 	0x68, 0x79, 0x72, 0x05, 0x6c, 0x6f, 0x63, 0x61,
@@ -556,7 +556,7 @@ static u8_t resp_ipv6[] = {
 	0x5e, 0xff, 0xfe, 0x00, 0x53, 0x37,
 };
 
-static const u8_t resp_ipv6_addr[] = {
+static const uint8_t resp_ipv6_addr[] = {
 	0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x02, 0x00, 0x5e, 0xff, 0xfe, 0x00, 0x53, 0x37
 };

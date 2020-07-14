@@ -18,14 +18,14 @@ LOG_MODULE_REGISTER(spi_xec, CONFIG_SPI_LOG_LEVEL);
 /* Device constant configuration parameters */
 struct spi_qmspi_config {
 	QMSPI_Type *regs;
-	u32_t cs_timing;
-	u8_t girq;
-	u8_t girq_pos;
-	u8_t girq_nvic_aggr;
-	u8_t girq_nvic_direct;
-	u8_t irq_pri;
-	u8_t chip_sel;
-	u8_t width;	/* 1(single), 2(dual), 4(quad) */
+	uint32_t cs_timing;
+	uint8_t girq;
+	uint8_t girq_pos;
+	uint8_t girq_nvic_aggr;
+	uint8_t girq_nvic_direct;
+	uint8_t irq_pri;
+	uint8_t chip_sel;
+	uint8_t width;	/* 1(single), 2(dual), 4(quad) */
 };
 
 /* Device run time data */
@@ -33,7 +33,7 @@ struct spi_qmspi_data {
 	struct spi_context ctx;
 };
 
-static inline u32_t descr_rd(QMSPI_Type *regs, u32_t did)
+static inline uint32_t descr_rd(QMSPI_Type *regs, uint32_t did)
 {
 	uintptr_t raddr = (uintptr_t)regs + MCHP_QMSPI_DESC0_OFS +
 			  ((did & MCHP_QMSPI_C_NEXT_DESCR_MASK0) << 2);
@@ -41,7 +41,7 @@ static inline u32_t descr_rd(QMSPI_Type *regs, u32_t did)
 	return REG32(raddr);
 }
 
-static inline void descr_wr(QMSPI_Type *regs, u32_t did, u32_t val)
+static inline void descr_wr(QMSPI_Type *regs, uint32_t did, uint32_t val)
 {
 	uintptr_t raddr = (uintptr_t)regs + MCHP_QMSPI_DESC0_OFS +
 			  ((did & MCHP_QMSPI_C_NEXT_DESCR_MASK0) << 2);
@@ -49,12 +49,12 @@ static inline void descr_wr(QMSPI_Type *regs, u32_t did, u32_t val)
 	REG32(raddr) = val;
 }
 
-static inline void txb_wr8(QMSPI_Type *regs, u8_t data8)
+static inline void txb_wr8(QMSPI_Type *regs, uint8_t data8)
 {
 	REG8(&regs->TX_FIFO) = data8;
 }
 
-static inline u8_t rxb_rd8(QMSPI_Type *regs)
+static inline uint8_t rxb_rd8(QMSPI_Type *regs)
 {
 	return REG8(&regs->RX_FIFO);
 }
@@ -65,9 +65,9 @@ static inline u8_t rxb_rd8(QMSPI_Type *regs)
  * mode register is defined as: 0=maximum divider of 256. Values 1 through
  * 255 divide 48MHz by that value.
  */
-static void qmspi_set_frequency(QMSPI_Type *regs, u32_t freq_hz)
+static void qmspi_set_frequency(QMSPI_Type *regs, uint32_t freq_hz)
 {
-	u32_t div, qmode;
+	uint32_t div, qmode;
 
 	if (freq_hz == 0) {
 		div = 0; /* max divider = 256 */
@@ -108,18 +108,18 @@ static void qmspi_set_frequency(QMSPI_Type *regs, u32_t freq_hz)
  *  Mode 3: CPOL=1 CHPA=1 (CHPA_MISO=0 and CHPA_MOSI=1)
  */
 
-const u8_t smode_tbl[4] = {
+const uint8_t smode_tbl[4] = {
 	0x00u, 0x06u, 0x01u, 0x07u
 };
 
-const u8_t smode48_tbl[4] = {
+const uint8_t smode48_tbl[4] = {
 	0x04u, 0x02u, 0x05u, 0x03u
 };
 
-static void qmspi_set_signalling_mode(QMSPI_Type *regs, u32_t smode)
+static void qmspi_set_signalling_mode(QMSPI_Type *regs, uint32_t smode)
 {
-	const u8_t *ptbl;
-	u32_t m;
+	const uint8_t *ptbl;
+	uint32_t m;
 
 	ptbl = smode_tbl;
 	if (((regs->MODE >> MCHP_QMSPI_M_FDIV_POS) &
@@ -127,7 +127,7 @@ static void qmspi_set_signalling_mode(QMSPI_Type *regs, u32_t smode)
 		ptbl = smode48_tbl;
 	}
 
-	m = (u32_t)ptbl[smode & 0x03];
+	m = (uint32_t)ptbl[smode & 0x03];
 	regs->MODE = (regs->MODE & ~(MCHP_QMSPI_M_SIG_MASK))
 		     | (m << MCHP_QMSPI_M_SIG_POS);
 }
@@ -136,9 +136,9 @@ static void qmspi_set_signalling_mode(QMSPI_Type *regs, u32_t smode)
  * QMSPI HW support single, dual, and quad.
  * Return QMSPI Control/Descriptor register encoded value.
  */
-static u32_t qmspi_config_get_lines(const struct spi_config *config)
+static uint32_t qmspi_config_get_lines(const struct spi_config *config)
 {
-	u32_t qlines;
+	uint32_t qlines;
 
 	switch (config->operation & SPI_LINES_MASK) {
 	case SPI_LINES_SINGLE:
@@ -171,7 +171,7 @@ static int qmspi_configure(struct device *dev,
 	const struct spi_qmspi_config *cfg = dev->config_info;
 	struct spi_qmspi_data *data = dev->driver_data;
 	QMSPI_Type *regs = cfg->regs;
-	u32_t smode;
+	uint32_t smode;
 
 	if (spi_context_configured(&data->ctx, config)) {
 		return 0;
@@ -237,9 +237,9 @@ static int qmspi_configure(struct device *dev,
  * Quad mode: 4 bits per clock  -> IFM fiels = 1xb. Max 0x1fff clocks
  * QMSPI unit size set to bits.
  */
-static int qmspi_tx_dummy_clocks(QMSPI_Type *regs, u32_t nclocks)
+static int qmspi_tx_dummy_clocks(QMSPI_Type *regs, uint32_t nclocks)
 {
-	u32_t descr, ifm, qstatus;
+	uint32_t descr, ifm, qstatus;
 
 	ifm = regs->CTRL & MCHP_QMSPI_C_IFM_MASK;
 	descr = ifm | MCHP_QMSPI_C_TX_DIS | MCHP_QMSPI_C_XFR_UNITS_BITS
@@ -272,9 +272,9 @@ static int qmspi_tx_dummy_clocks(QMSPI_Type *regs, u32_t nclocks)
 /*
  * Return unit size power of 2 given number of bytes to transfer.
  */
-static u32_t qlen_shift(u32_t len)
+static uint32_t qlen_shift(uint32_t len)
 {
-	u32_t ushift;
+	uint32_t ushift;
 
 	/* is len a multiple of 4 or 16? */
 	if ((len & 0x0F) == 0) {
@@ -294,7 +294,7 @@ static u32_t qlen_shift(u32_t len)
  * Input: power of 2 unit size 4, 2, or 0(default) corresponding
  * to 16, 4, or 1 byte units.
  */
-static u32_t get_qunits(u32_t qshift)
+static uint32_t get_qunits(uint32_t qshift)
 {
 	if (qshift == 4) {
 		return MCHP_QMSPI_C_XFR_UNITS_16;
@@ -318,7 +318,7 @@ static u32_t get_qunits(u32_t qshift)
 static int qmspi_descr_alloc(QMSPI_Type *regs, const struct spi_buf *txb,
 			     int didx, bool is_tx)
 {
-	u32_t descr, qshift, n, nu;
+	uint32_t descr, qshift, n, nu;
 	int dn;
 
 	if (didx >= MCHP_QMSPI_MAX_DESCR) {
@@ -373,9 +373,9 @@ static int qmspi_descr_alloc(QMSPI_Type *regs, const struct spi_buf *txb,
 static int qmspi_tx(QMSPI_Type *regs, const struct spi_buf *tx_buf,
 		    bool close)
 {
-	const u8_t *p = tx_buf->buf;
+	const uint8_t *p = tx_buf->buf;
 	size_t tlen = tx_buf->len;
-	u32_t descr;
+	uint32_t descr;
 	int didx;
 
 	if (tlen == 0) {
@@ -447,11 +447,11 @@ static int qmspi_tx(QMSPI_Type *regs, const struct spi_buf *tx_buf,
 static int qmspi_rx(QMSPI_Type *regs, const struct spi_buf *rx_buf,
 		    bool close)
 {
-	u8_t *p = rx_buf->buf;
+	uint8_t *p = rx_buf->buf;
 	size_t rlen = rx_buf->len;
-	u32_t descr;
+	uint32_t descr;
 	int didx;
-	u8_t data_byte;
+	uint8_t data_byte;
 
 	if (rlen == 0) {
 		return 0;
@@ -514,7 +514,7 @@ static int qmspi_transceive(struct device *dev,
 	const struct spi_buf *ptx;
 	const struct spi_buf *prx;
 	size_t nb;
-	u32_t descr, last_didx;
+	uint32_t descr, last_didx;
 	int err;
 
 	spi_context_lock(&data->ctx, false, NULL);

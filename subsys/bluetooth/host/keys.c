@@ -34,11 +34,11 @@ static struct bt_keys key_pool[CONFIG_BT_MAX_PAIRED];
 #define BT_KEYS_STORAGE_LEN_COMPAT (BT_KEYS_STORAGE_LEN - sizeof(uint32_t))
 
 #if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
-static u32_t aging_counter_val;
+static uint32_t aging_counter_val;
 static struct bt_keys *last_keys_updated;
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 
-struct bt_keys *bt_keys_get_addr(u8_t id, const bt_addr_le_t *addr)
+struct bt_keys *bt_keys_get_addr(uint8_t id, const bt_addr_le_t *addr)
 {
 	struct bt_keys *keys;
 	int i;
@@ -98,7 +98,7 @@ struct bt_keys *bt_keys_get_addr(u8_t id, const bt_addr_le_t *addr)
 	return NULL;
 }
 
-void bt_foreach_bond(u8_t id, void (*func)(const struct bt_bond_info *info,
+void bt_foreach_bond(uint8_t id, void (*func)(const struct bt_bond_info *info,
 					   void *user_data),
 		     void *user_data)
 {
@@ -128,7 +128,7 @@ void bt_keys_foreach(int type, void (*func)(struct bt_keys *keys, void *data),
 	}
 }
 
-struct bt_keys *bt_keys_find(int type, u8_t id, const bt_addr_le_t *addr)
+struct bt_keys *bt_keys_find(int type, uint8_t id, const bt_addr_le_t *addr)
 {
 	int i;
 
@@ -144,7 +144,7 @@ struct bt_keys *bt_keys_find(int type, u8_t id, const bt_addr_le_t *addr)
 	return NULL;
 }
 
-struct bt_keys *bt_keys_get_type(int type, u8_t id, const bt_addr_le_t *addr)
+struct bt_keys *bt_keys_get_type(int type, uint8_t id, const bt_addr_le_t *addr)
 {
 	struct bt_keys *keys;
 
@@ -165,7 +165,7 @@ struct bt_keys *bt_keys_get_type(int type, u8_t id, const bt_addr_le_t *addr)
 	return keys;
 }
 
-struct bt_keys *bt_keys_find_irk(u8_t id, const bt_addr_le_t *addr)
+struct bt_keys *bt_keys_find_irk(uint8_t id, const bt_addr_le_t *addr)
 {
 	int i;
 
@@ -214,7 +214,7 @@ struct bt_keys *bt_keys_find_irk(u8_t id, const bt_addr_le_t *addr)
 	return NULL;
 }
 
-struct bt_keys *bt_keys_find_addr(u8_t id, const bt_addr_le_t *addr)
+struct bt_keys *bt_keys_find_addr(uint8_t id, const bt_addr_le_t *addr)
 {
 	int i;
 
@@ -299,7 +299,7 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 {
 	struct bt_keys *keys;
 	bt_addr_le_t addr;
-	u8_t id;
+	uint8_t id;
 	ssize_t len;
 	int err;
 	char val[BT_KEYS_STORAGE_LEN];
@@ -411,7 +411,7 @@ SETTINGS_STATIC_HANDLER_DEFINE(bt_keys, "bt/keys", NULL, keys_set, keys_commit,
 #endif /* CONFIG_BT_SETTINGS */
 
 #if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
-void bt_keys_update_usage(u8_t id, const bt_addr_le_t *addr)
+void bt_keys_update_usage(uint8_t id, const bt_addr_le_t *addr)
 {
 	struct bt_keys *keys = bt_keys_find_addr(id, addr);
 

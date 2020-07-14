@@ -26,3 +26,12 @@
 		full-ohms = <(2100000 + 806000)>;
 	};
 };
+
+&uart1 { /* feather UART2 */
+	compatible = "nordic,nrf-uarte";
+	current-speed = <115200>;
+	status = "disabled";
+	tx-pin = <40>;
+	rx-pin = <42>;
+	/* optional mesh_feather_uart2_rtscts.dtsi */
+};

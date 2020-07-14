@@ -21,7 +21,7 @@
  * @param cycles to repeat the cycle described above.
  * @retval 0 if successful, errno otherwise.
  */
-int test_pwr_mgmt_singlethread(bool use_logging, u8_t cycles);
+int test_pwr_mgmt_singlethread(bool use_logging, uint8_t cycles);
 
 /** @brief Alternates between light and deep sleep cycles.
  *
@@ -33,6 +33,6 @@ int test_pwr_mgmt_singlethread(bool use_logging, u8_t cycles);
  * @param cycles to repeat the cycle described above.
  * @retval 0 if successful, errno otherwise.
  */
-int test_pwr_mgmt_multithread(bool use_logging, u8_t cycles);
+int test_pwr_mgmt_multithread(bool use_logging, uint8_t cycles);
 
 #endif /* __TEST_PWRMGMT_H__ */

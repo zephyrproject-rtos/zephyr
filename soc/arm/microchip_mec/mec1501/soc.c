@@ -46,12 +46,12 @@ static int soc_pcr_init(void)
  *   connected to the VBAT power rail. If using a battery one can
  *   check the VBAT Power Fail and Reset Status register for a VBAT POR.
  */
-static void clk32_change(u8_t new_clk32)
+static void clk32_change(uint8_t new_clk32)
 {
 	new_clk32 &= MCHP_VBATR_CLKEN_MASK;
 
 	if ((VBATR_REGS->CLK32_EN & MCHP_VBATR_CLKEN_MASK)
-		== (u32_t)new_clk32) {
+		== (uint32_t)new_clk32) {
 		return;
 	}
 
@@ -70,7 +70,7 @@ static void clk32_change(u8_t new_clk32)
 
 static int soc_clk32_init(void)
 {
-	u8_t new_clk32;
+	uint8_t new_clk32;
 
 #ifdef CONFIG_SOC_MEC1501_EXT_32K
   #ifdef CONFIG_SOC_MEC1501_EXT_32K_CRYSTAL
@@ -104,7 +104,7 @@ static int soc_clk32_init(void)
 static int soc_ecia_init(void)
 {
 	GIRQ_Type *pg;
-	u32_t n;
+	uint32_t n;
 
 	mchp_pcr_periph_slp_ctrl(PCR_ECIA, MCHP_PCR_SLEEP_DIS);
 
@@ -134,7 +134,7 @@ static int soc_ecia_init(void)
 
 static int soc_init(struct device *dev)
 {
-	u32_t isave;
+	uint32_t isave;
 
 	ARG_UNUSED(dev);
 

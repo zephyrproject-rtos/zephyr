@@ -13,14 +13,14 @@ LOG_MODULE_DECLARE(conn_mgr, CONFIG_NET_CONNECTION_MANAGER_LOG_LEVEL);
 
 #include <conn_mgr.h>
 
-extern u16_t iface_states[CONN_MGR_IFACE_MAX];
+extern uint16_t iface_states[CONN_MGR_IFACE_MAX];
 
 static struct net_mgmt_event_callback iface_events_cb;
 static struct net_mgmt_event_callback ipv6_events_cb;
 static struct net_mgmt_event_callback ipv4_events_cb;
 
 static void conn_mgr_iface_events_handler(struct net_mgmt_event_callback *cb,
-					  u32_t mgmt_event,
+					  uint32_t mgmt_event,
 					  struct net_if *iface)
 {
 	int idx;
@@ -52,7 +52,7 @@ static void conn_mgr_iface_events_handler(struct net_mgmt_event_callback *cb,
 
 #if defined(CONFIG_NET_IPV6)
 static void conn_mgr_ipv6_events_handler(struct net_mgmt_event_callback *cb,
-					 u32_t mgmt_event,
+					 uint32_t mgmt_event,
 					 struct net_if *iface)
 {
 	int idx;
@@ -98,7 +98,7 @@ static void conn_mgr_ipv6_events_handler(struct net_mgmt_event_callback *cb,
 #else
 static inline
 void conn_mgr_ipv6_events_handler(struct net_mgmt_event_callback *cb,
-				  u32_t mgmt_event,
+				  uint32_t mgmt_event,
 				  struct net_if *iface)
 {
 	ARG_UNUSED(cb);
@@ -109,7 +109,7 @@ void conn_mgr_ipv6_events_handler(struct net_mgmt_event_callback *cb,
 
 #if defined(CONFIG_NET_IPV4)
 static void conn_mgr_ipv4_events_handler(struct net_mgmt_event_callback *cb,
-					 u32_t mgmt_event,
+					 uint32_t mgmt_event,
 					 struct net_if *iface)
 {
 	int idx;
@@ -145,7 +145,7 @@ static void conn_mgr_ipv4_events_handler(struct net_mgmt_event_callback *cb,
 #else
 static inline
 void conn_mgr_ipv4_events_handler(struct net_mgmt_event_callback *cb,
-				  u32_t mgmt_event,
+				  uint32_t mgmt_event,
 				  struct net_if *iface)
 {
 	ARG_UNUSED(cb);

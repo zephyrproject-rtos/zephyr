@@ -21,7 +21,7 @@
 #define SEC2MS(s) ((s) * 1000)
 
 struct timeout_info {
-	u32_t timeout;
+	uint32_t timeout;
 	struct k_sem *sema;
 };
 
@@ -103,7 +103,7 @@ void sem_take_timeout_isr_helper(void *p1, void *p2, void *p3)
 
 void sem_take_multiple_low_prio_helper(void *p1, void *p2, void *p3)
 {
-	s32_t ret_value;
+	int32_t ret_value;
 
 	ret_value = k_sem_take(&low_prio_sem, K_FOREVER);
 	zassert_true(ret_value == 0, "k_sem_take failed");
@@ -116,7 +116,7 @@ void sem_take_multiple_low_prio_helper(void *p1, void *p2, void *p3)
 
 void sem_take_multiple_mid_prio_helper(void *p1, void *p2, void *p3)
 {
-	s32_t ret_value;
+	int32_t ret_value;
 
 	ret_value = k_sem_take(&mid_prio_sem, K_FOREVER);
 	zassert_true(ret_value == 0, "k_sem_take failed");
@@ -129,7 +129,7 @@ void sem_take_multiple_mid_prio_helper(void *p1, void *p2, void *p3)
 
 void sem_take_multiple_high_prio_helper(void *p1, void *p2, void *p3)
 {
-	s32_t ret_value;
+	int32_t ret_value;
 
 	ret_value = k_sem_take(&high_prio_sem, K_FOREVER);
 	zassert_true(ret_value == 0, "k_sem_take failed");
@@ -260,7 +260,7 @@ void test_sema_count_get(void)
  */
 void test_simple_sem_from_isr(void)
 {
-	u32_t signal_count;
+	uint32_t signal_count;
 
 	/*
 	 * Signal the semaphore several times from an ISR.  After each signal,
@@ -284,7 +284,7 @@ void test_simple_sem_from_isr(void)
  */
 void test_simple_sem_from_task(void)
 {
-	u32_t signal_count;
+	uint32_t signal_count;
 
 	/*
 	 * Signal the semaphore several times from a task.  After each signal,
@@ -310,8 +310,8 @@ void test_simple_sem_from_task(void)
  */
 void test_sem_take_no_wait(void)
 {
-	u32_t signal_count;
-	s32_t ret_value;
+	uint32_t signal_count;
+	int32_t ret_value;
 
 	/*
 	 * Test the semaphore without wait.  Check the signal count after each
@@ -343,8 +343,8 @@ void test_sem_take_no_wait(void)
  */
 void test_sem_take_no_wait_fails(void)
 {
-	u32_t signal_count;
-	s32_t ret_value;
+	uint32_t signal_count;
+	int32_t ret_value;
 
 	/*
 	 * Test the semaphore without wait.  Check the signal count after each
@@ -372,7 +372,7 @@ void test_sem_take_no_wait_fails(void)
  */
 void test_sem_take_timeout_fails(void)
 {
-	s32_t ret_value;
+	int32_t ret_value;
 
 	/*
 	 * Test the semaphore with timeout without a k_sem_give.
@@ -394,7 +394,7 @@ void test_sem_take_timeout_fails(void)
  */
 void test_sem_take_timeout(void)
 {
-	s32_t ret_value;
+	int32_t ret_value;
 
 	/*
 	 * Signal the semaphore upon which the other thread is waiting.  The
@@ -420,7 +420,7 @@ void test_sem_take_timeout(void)
  */
 void test_sem_take_timeout_forever(void)
 {
-	s32_t ret_value;
+	int32_t ret_value;
 
 	/*
 	 * Signal the semaphore upon which the another thread is waiting.  The
@@ -446,7 +446,7 @@ void test_sem_take_timeout_forever(void)
  */
 void test_sem_take_timeout_isr(void)
 {
-	s32_t ret_value;
+	int32_t ret_value;
 
 	/*
 	 * Signal the semaphore upon which the another thread is waiting.  The
@@ -470,7 +470,7 @@ void test_sem_take_timeout_isr(void)
  */
 void test_sem_take_multiple(void)
 {
-	u32_t signal_count;
+	uint32_t signal_count;
 
 	/*
 	 * Signal the semaphore upon which the another thread is waiting.  The
@@ -563,7 +563,7 @@ void test_sem_take_multiple(void)
  */
 void test_sem_give_take_from_isr(void)
 {
-	u32_t signal_count;
+	uint32_t signal_count;
 
 	k_sem_reset(&simple_sem);
 
@@ -609,9 +609,9 @@ void sem_multiple_threads_wait_helper(void *p1, void *p2, void *p3)
  */
 void test_sem_multiple_threads_wait(void)
 {
-	u32_t signal_count;
-	s32_t ret_value;
-	u32_t repeat_count = 0U;
+	uint32_t signal_count;
+	int32_t ret_value;
+	uint32_t repeat_count = 0U;
 
 	k_sem_reset(&simple_sem);
 	k_sem_reset(&multiple_thread_sem);
@@ -670,8 +670,8 @@ void test_sem_multiple_threads_wait(void)
  */
 void test_sem_measure_timeouts(void)
 {
-	s32_t ret_value;
-	u32_t start_ticks, end_ticks;
+	int32_t ret_value;
+	uint32_t start_ticks, end_ticks;
 
 	k_sem_reset(&simple_sem);
 
@@ -721,8 +721,8 @@ void sem_measure_timeout_from_thread_helper(void *p1, void *p2, void *p3)
  */
 void test_sem_measure_timeout_from_thread(void)
 {
-	s32_t ret_value;
-	u32_t start_ticks, end_ticks;
+	int32_t ret_value;
+	uint32_t start_ticks, end_ticks;
 
 	k_sem_reset(&simple_sem);
 	k_sem_reset(&multiple_thread_sem);
@@ -755,7 +755,7 @@ void test_sem_measure_timeout_from_thread(void)
 void sem_multiple_take_and_timeouts_helper(void *p1, void *p2, void *p3)
 {
 	int timeout = POINTER_TO_INT(p1);
-	u32_t start_ticks, end_ticks;
+	uint32_t start_ticks, end_ticks;
 	size_t bytes_written;
 
 	start_ticks = k_uptime_get();
@@ -781,7 +781,7 @@ void sem_multiple_take_and_timeouts_helper(void *p1, void *p2, void *p3)
  */
 void test_sem_multiple_take_and_timeouts(void)
 {
-	u32_t timeout;
+	uint32_t timeout;
 	size_t bytes_read;
 
 	k_sem_reset(&simple_sem);
@@ -815,8 +815,8 @@ void sem_multi_take_timeout_diff_sem_helper(void *p1, void *p2, void *p3)
 {
 	int timeout = POINTER_TO_INT(p1);
 	struct k_sem *sema = p2;
-	u32_t start_ticks, end_ticks;
-	s32_t ret_value;
+	uint32_t start_ticks, end_ticks;
+	int32_t ret_value;
 	size_t bytes_written;
 	struct timeout_info info = {
 		.timeout = timeout,

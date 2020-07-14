@@ -40,14 +40,14 @@ void log_3(const char *str,
 
 void log_n(const char *str,
 	   log_arg_t *args,
-	   u32_t narg,
+	   uint32_t narg,
 	   struct log_msg_ids src_level)
 {
 }
 
 void log_hexdump(const char *str,
-		 const u8_t *data,
-		 u32_t length,
+		 const uint8_t *data,
+		 uint32_t length,
 		 struct log_msg_ids src_level)
 {
 }
@@ -57,11 +57,12 @@ void log_string_sync(struct log_msg_ids src_level, const char *fmt, ...)
 }
 
 void log_hexdump_sync(struct log_msg_ids src_level, const char *metadata,
-		      const u8_t *data, u32_t len)
+		      const uint8_t *data, uint32_t len)
 {
 }
 
-void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap)
+void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap,
+		 enum log_strdup_action strdup_action)
 {
 }
 
@@ -79,12 +80,12 @@ void log_free(void *buf)
 {
 }
 
-u32_t log_get_strdup_pool_utilization(void)
+uint32_t log_get_strdup_pool_utilization(void)
 {
 	return 0;
 }
 
-u32_t log_get_strdup_longest_string(void)
+uint32_t log_get_strdup_longest_string(void)
 {
 	return 0;
 }
@@ -99,6 +100,6 @@ void __printf_like(2, 3) log_from_user(struct log_msg_ids src_level,
 }
 
 void log_hexdump_from_user(struct log_msg_ids src_level, const char *metadata,
-			   const u8_t *data, u32_t len)
+			   const uint8_t *data, uint32_t len)
 {
 }

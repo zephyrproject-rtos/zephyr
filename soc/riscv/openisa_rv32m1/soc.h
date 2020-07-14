@@ -45,7 +45,7 @@ static inline unsigned int rv32m1_irq_level(unsigned int irq)
  * @param The IRQ number in the Zephyr <irq.h> numbering system
  * @return Level 1 (i.e. event unit) IRQ number associated with irq
  */
-static inline u32_t rv32m1_level1_irq(unsigned int irq)
+static inline uint32_t rv32m1_level1_irq(unsigned int irq)
 {
 	/*
 	 * There's no need to do any math; the precondition is that
@@ -63,7 +63,7 @@ static inline u32_t rv32m1_level1_irq(unsigned int irq)
  *            to get, in the Zephyr <irq.h> numbering system
  * @return INTMUX channel number associated with the IRQ
  */
-static inline u32_t rv32m1_intmux_channel(unsigned int irq)
+static inline uint32_t rv32m1_intmux_channel(unsigned int irq)
 {
 	/*
 	 * Here we make use of these facts:
@@ -89,7 +89,7 @@ static inline u32_t rv32m1_intmux_channel(unsigned int irq)
  *        <irq.h> numbering system
  * @return The INTMUX interrupt ID, in the inclusive range 0 to 31
  */
-static inline u32_t rv32m1_intmux_line(unsigned int irq)
+static inline uint32_t rv32m1_intmux_line(unsigned int irq)
 {
 	return ((irq >> 8) & 0xff) - 1;
 }

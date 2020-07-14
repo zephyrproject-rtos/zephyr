@@ -19,8 +19,8 @@ struct timer_obj {
 	void (*sigev_notify_function)(sigval val);
 	sigval val;
 	struct timespec interval;	/* Reload value */
-	u32_t reload;			/* Reload value in ms */
-	u32_t status;
+	uint32_t reload;			/* Reload value in ms */
+	uint32_t status;
 };
 
 K_MEM_SLAB_DEFINE(posix_timer_slab, sizeof(struct timer_obj),
@@ -91,8 +91,8 @@ int timer_create(clockid_t clockid, struct sigevent *evp, timer_t *timerid)
 int timer_gettime(timer_t timerid, struct itimerspec *its)
 {
 	struct timer_obj *timer = (struct timer_obj *)timerid;
-	s32_t remaining, leftover;
-	s64_t   nsecs, secs;
+	int32_t remaining, leftover;
+	int64_t   nsecs, secs;
 
 	if (timer == NULL) {
 		errno = EINVAL;
@@ -103,9 +103,9 @@ int timer_gettime(timer_t timerid, struct itimerspec *its)
 		remaining = k_timer_remaining_get(&timer->ztimer);
 		secs =  remaining / MSEC_PER_SEC;
 		leftover = remaining - (secs * MSEC_PER_SEC);
-		nsecs = (s64_t)leftover * NSEC_PER_MSEC;
-		its->it_value.tv_sec = (s32_t) secs;
-		its->it_value.tv_nsec = (s32_t) nsecs;
+		nsecs = (int64_t)leftover * NSEC_PER_MSEC;
+		its->it_value.tv_sec = (int32_t) secs;
+		its->it_value.tv_nsec = (int32_t) nsecs;
 	} else {
 		/* Timer is disarmed */
 		its->it_value.tv_sec = 0;
@@ -126,7 +126,7 @@ int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,
 		  struct itimerspec *ovalue)
 {
 	struct timer_obj *timer = (struct timer_obj *) timerid;
-	u32_t duration, current;
+	uint32_t duration, current;
 
 	if (timer == NULL ||
 	    value->it_interval.tv_nsec < 0 ||

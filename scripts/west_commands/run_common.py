@@ -80,52 +80,51 @@ def add_parser_common(command, parser_adder=None, parser=None):
             command.name,
             formatter_class=argparse.RawDescriptionHelpFormatter,
             help=command.help,
-            description=command.description,
-            epilog=FIND_BUILD_DIR_DESCRIPTION)
+            description=command.description)
 
     # Remember to update scripts/west-completion.bash if you add or remove
     # flags
 
     parser.add_argument('-H', '--context', action='store_true',
-                        help='''Rebuild application and print context-sensitive
-                        help; this may be combined with --runner to restrict
-                        output to a given runner.''')
+                        help='print build directory specific help')
 
-    group = parser.add_argument_group(title='General options')
+    group = parser.add_argument_group('general options',
+                                      FIND_BUILD_DIR_DESCRIPTION)
 
     group.add_argument('-d', '--build-dir', metavar='DIR',
-                       help='zephyr build directory')
+                       help='application build directory')
+    # still supported for backwards compatibility, but questionably
+    # useful now that we do everything with runners.yaml
     group.add_argument('-c', '--cmake-cache', metavar='FILE',
-                       help='override the default CMake cache file')
+                       help=argparse.SUPPRESS)
     group.add_argument('-r', '--runner',
-                       help=f'overrides the default {command.name} runner')
+                       help='override default runner from --build-dir')
     group.add_argument('--skip-rebuild', action='store_true',
-                       help='do not rebuild the application first')
+                       help='do not refresh cmake dependencies first')
 
-    group = parser.add_argument_group(title='Common runner options')
+    group = parser.add_argument_group(
+        'runner configuration overrides',
+        textwrap.dedent(f'''\
+        Run "west {command.name} --context" for --build-dir specific options.
+        Not all runners respect --elf-file / --hex-file / --bin-file, nor use
+        gdb or openocd.'''))
 
-    group.add_argument('--board-dir', metavar='DIR',
-                       help='zephyr board directory')
-    # FIXME: we should just have a single --file argument.
+    # TODO: is this actually useful?
+    group.add_argument('--board-dir', metavar='DIR', help='board directory')
+    # FIXME: we should just have a single --file argument. The variation
+    # between runners is confusing people.
     group.add_argument('--elf-file', metavar='FILE', help='path to zephyr.elf')
     group.add_argument('--hex-file', metavar='FILE', help='path to zephyr.hex')
     group.add_argument('--bin-file', metavar='FILE', help='path to zephyr.bin')
-    # FIXME: these are runner-specific. Remove them from this location.
-    group.add_argument('--gdb', help='path to GDB, if applicable')
-    group.add_argument('--openocd', help='path to OpenOCD, if applicable')
+    # FIXME: these are runner-specific and should be moved to where --context
+    # can find them instead.
+    group.add_argument('--gdb', help='path to GDB')
+    group.add_argument('--openocd', help='path to openocd')
     group.add_argument(
         '--openocd-search', metavar='DIR',
-        help='path to add to OpenOCD search path, if applicable')
+        help='path to add to openocd search path, if applicable')
 
     return parser
-
-def desc_common(command_name):
-    return textwrap.dedent(f'''\
-    Only common "west {command_name}" options are listed here.
-    To get help on available runner-specific options, run:
-
-      west {command_name} --context -d BUILD_DIR
-    ''')
 
 def do_run_common(command, user_args, user_runner_args):
     # This is the main routine for all the "west flash", "west debug",
@@ -210,8 +209,8 @@ def do_run_common(command, user_args, user_runner_args):
     #
     # Use that RunnerConfig to create the ZephyrBinaryRunner instance
     # and call its run().
-    runner = runner_cls.create(runner_cfg_from_args(args, build_dir), args)
     try:
+        runner = runner_cls.create(runner_cfg_from_args(args, build_dir), args)
         runner.run(command_name)
     except ValueError as ve:
         log.err(str(ve), fatal=True)
@@ -259,8 +258,9 @@ def load_cmake_cache(build_dir, args):
 
 def rebuild(command, build_dir, args):
     _banner(f'west {command.name}: rebuilding')
+    extra_args = ['--target', 'west_' + command.name + '_depends']
     try:
-        zcmake.run_build(build_dir)
+        zcmake.run_build(build_dir, extra_args=extra_args)
     except CalledProcessError:
         if args.build_dir:
             log.die(f're-build in {args.build_dir} failed')

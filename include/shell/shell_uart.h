@@ -37,7 +37,7 @@ struct shell_uart_ctrl_blk {
 	RING_BUF_DECLARE(_name##_tx_ringbuf, _size)
 
 #define UART_SHELL_TX_BUF_DECLARE(_name) \
-	u8_t _name##_txbuf[SHELL_UART_TX_BUF_SIZE]
+	uint8_t _name##_txbuf[SHELL_UART_TX_BUF_SIZE]
 
 #define UART_SHELL_RX_TIMER_DECLARE(_name) /* Empty */
 

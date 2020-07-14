@@ -42,14 +42,14 @@ static void button_send_pressed(struct k_work *work)
 }
 
 static void button_pressed(struct device *dev, struct gpio_callback *cb,
-			   u32_t pins)
+			   uint32_t pins)
 {
 	struct mb_display *disp = mb_display_get();
 
 	if (pins & BIT(DT_GPIO_PIN(DT_ALIAS(sw0), gpios))) {
 		k_work_submit(&button_work);
 	} else {
-		u16_t target = board_set_target();
+		uint16_t target = board_set_target();
 
 		if (target > 0x0009) {
 			mb_display_print(disp, MB_DISPLAY_MODE_SINGLE,
@@ -63,8 +63,8 @@ static void button_pressed(struct device *dev, struct gpio_callback *cb,
 
 static const struct {
 	char  note;
-	u32_t period;
-	u32_t sharp;
+	uint32_t period;
+	uint32_t sharp;
 } period_map[] = {
 	{ 'C',  3822,  3608 },
 	{ 'D',  3405,  3214 },
@@ -75,7 +75,7 @@ static const struct {
 	{ 'B',  2025,  2025 },
 };
 
-static u32_t get_period(char note, bool sharp)
+static uint32_t get_period(char note, bool sharp)
 {
 	int i;
 
@@ -101,7 +101,7 @@ static u32_t get_period(char note, bool sharp)
 void board_play_tune(const char *str)
 {
 	while (*str) {
-		u32_t period, duration = 0U;
+		uint32_t period, duration = 0U;
 
 		while (*str && !isdigit((unsigned char)*str)) {
 			str++;
@@ -137,7 +137,7 @@ void board_play_tune(const char *str)
 	}
 }
 
-void board_heartbeat(u8_t hops, u16_t feat)
+void board_heartbeat(uint8_t hops, uint16_t feat)
 {
 	struct mb_display *disp = mb_display_get();
 	const struct mb_image hops_img[] = {
@@ -177,7 +177,7 @@ void board_heartbeat(u8_t hops, u16_t feat)
 	}
 }
 
-void board_other_dev_pressed(u16_t addr)
+void board_other_dev_pressed(uint16_t addr)
 {
 	struct mb_display *disp = mb_display_get();
 
@@ -246,7 +246,7 @@ static void configure_button(void)
 	gpio_add_callback(gpio, &button_cb);
 }
 
-void board_init(u16_t *addr)
+void board_init(uint16_t *addr)
 {
 	struct mb_display *disp = mb_display_get();
 

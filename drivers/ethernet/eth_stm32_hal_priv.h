@@ -32,7 +32,7 @@ struct eth_stm32_hal_dev_cfg {
 /* Device run time data */
 struct eth_stm32_hal_dev_data {
 	struct net_if *iface;
-	u8_t mac_addr[6];
+	uint8_t mac_addr[6];
 	ETH_HandleTypeDef heth;
 	/* clock device */
 	struct device *clock;

@@ -20,11 +20,11 @@
 LOG_MODULE_DECLARE(LIS2DS12, CONFIG_SENSOR_LOG_LEVEL);
 
 static void lis2ds12_gpio_callback(struct device *dev,
-				  struct gpio_callback *cb, u32_t pins)
+				  struct gpio_callback *cb, uint32_t pins)
 {
 	struct lis2ds12_data *data =
 		CONTAINER_OF(cb, struct lis2ds12_data, gpio_cb);
-	const struct lis2ds12_config *cfg = dev->config_info;
+	const struct lis2ds12_config *cfg = data->dev->config_info;
 
 	ARG_UNUSED(pins);
 
@@ -52,7 +52,7 @@ static void lis2ds12_handle_int(void *arg)
 	struct device *dev = arg;
 	struct lis2ds12_data *data = dev->driver_data;
 	const struct lis2ds12_config *cfg = dev->config_info;
-	u8_t status;
+	uint8_t status;
 
 	if (data->hw_tf->read_reg(data, LIS2DS12_REG_STATUS, &status) < 0) {
 		LOG_ERR("status reading error");
@@ -140,6 +140,7 @@ int lis2ds12_trigger_init(struct device *dev)
 		LOG_ERR("Could not set gpio callback.");
 		return -EIO;
 	}
+	data->dev = dev;
 
 #if defined(CONFIG_LIS2DS12_TRIGGER_OWN_THREAD)
 	k_sem_init(&data->trig_sem, 0, UINT_MAX);
@@ -151,7 +152,6 @@ int lis2ds12_trigger_init(struct device *dev)
 			0, K_NO_WAIT);
 #elif defined(CONFIG_LIS2DS12_TRIGGER_GLOBAL_THREAD)
 	data->work.handler = lis2ds12_work_cb;
-	data->dev = dev;
 #endif
 
 	gpio_pin_interrupt_configure(data->gpio, cfg->irq_pin,
@@ -166,7 +166,7 @@ int lis2ds12_trigger_set(struct device *dev,
 {
 	struct lis2ds12_data *data = dev->driver_data;
 	const struct lis2ds12_config *cfg = dev->config_info;
-	u8_t buf[6];
+	uint8_t buf[6];
 
 	__ASSERT_NO_MSG(trig->type == SENSOR_TRIG_DATA_READY);
 

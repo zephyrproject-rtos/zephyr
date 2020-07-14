@@ -34,17 +34,17 @@ static void init(void)
 		      (void *)CONFIG_LOG_BACKEND_RB_MEM_BASE);
 }
 
-static void trace(const u8_t *data, size_t length)
+static void trace(const uint8_t *data, size_t length)
 {
-	const u16_t magic = 0x55aa;
-	static u16_t log_id;
-	volatile u8_t *t, *region;
+	const uint16_t magic = 0x55aa;
+	static uint16_t log_id;
+	volatile uint8_t *t, *region;
 	int space;
 	int i;
 
 	space = ring_buf_space_get(&ringbuf);
 	if (space < CONFIG_LOG_BACKEND_RB_SLOT_SIZE) {
-		u8_t *dummy;
+		uint8_t *dummy;
 
 		/* Remove oldest entry */
 		ring_buf_get_claim(&ringbuf, &dummy,
@@ -52,16 +52,16 @@ static void trace(const u8_t *data, size_t length)
 		ring_buf_get_finish(&ringbuf, CONFIG_LOG_BACKEND_RB_SLOT_SIZE);
 	}
 
-	ring_buf_put_claim(&ringbuf, (u8_t **)&t,
+	ring_buf_put_claim(&ringbuf, (uint8_t **)&t,
 			   CONFIG_LOG_BACKEND_RB_SLOT_SIZE);
 	region = t;
 
 	/* Add magic number at the beginning of the slot */
-	*(u16_t *)t = magic;
+	*(uint16_t *)t = magic;
 	t += 2;
 
 	/* Add log id */
-	*(u16_t *)t = log_id++;
+	*(uint16_t *)t = log_id++;
 	t += 2;
 
 	for (i = 0; i < MIN(length, CONFIG_LOG_BACKEND_RB_SLOT_SIZE - 4); i++) {
@@ -73,7 +73,7 @@ static void trace(const u8_t *data, size_t length)
 	ring_buf_put_finish(&ringbuf, CONFIG_LOG_BACKEND_RB_SLOT_SIZE);
 }
 
-static int char_out(u8_t *data, size_t length, void *ctx)
+static int char_out(uint8_t *data, size_t length, void *ctx)
 {
 	trace(data, length);
 
@@ -81,7 +81,7 @@ static int char_out(u8_t *data, size_t length, void *ctx)
 }
 
 /* magic and log id takes space */
-static u8_t buf[CONFIG_LOG_BACKEND_RB_SLOT_SIZE - 4];
+static uint8_t buf[CONFIG_LOG_BACKEND_RB_SLOT_SIZE - 4];
 
 LOG_OUTPUT_DEFINE(log_output, char_out, buf, sizeof(buf));
 
@@ -90,7 +90,7 @@ static void put(const struct log_backend *const backend,
 {
 	log_msg_get(msg);
 
-	u32_t flags = LOG_OUTPUT_FLAG_LEVEL;
+	uint32_t flags = LOG_OUTPUT_FLAG_LEVEL;
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP)) {
 		flags |= LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
@@ -106,7 +106,7 @@ static void panic(struct log_backend const *const backend)
 	log_output_flush(&log_output);
 }
 
-static void dropped(const struct log_backend *const backend, u32_t cnt)
+static void dropped(const struct log_backend *const backend, uint32_t cnt)
 {
 	ARG_UNUSED(backend);
 
@@ -114,11 +114,11 @@ static void dropped(const struct log_backend *const backend, u32_t cnt)
 }
 
 static void sync_string(const struct log_backend *const backend,
-			struct log_msg_ids src_level, u32_t timestamp,
+			struct log_msg_ids src_level, uint32_t timestamp,
 			const char *fmt, va_list ap)
 {
-	u32_t flags = LOG_OUTPUT_FLAG_LEVEL;
-	u32_t key;
+	uint32_t flags = LOG_OUTPUT_FLAG_LEVEL;
+	uint32_t key;
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP)) {
 		flags |= LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
@@ -130,11 +130,11 @@ static void sync_string(const struct log_backend *const backend,
 }
 
 static void sync_hexdump(const struct log_backend *const backend,
-			 struct log_msg_ids src_level, u32_t timestamp,
-			 const char *metadata, const u8_t *data, u32_t length)
+			 struct log_msg_ids src_level, uint32_t timestamp,
+			 const char *metadata, const uint8_t *data, uint32_t length)
 {
-	u32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_TIMESTAMP;
-	u32_t key;
+	uint32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_TIMESTAMP;
+	uint32_t key;
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP)) {
 		flags |= LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;

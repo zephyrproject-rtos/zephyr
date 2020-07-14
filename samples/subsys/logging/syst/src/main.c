@@ -13,26 +13,26 @@
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_DBG);
 
 struct test_frame {
-	u32_t id_type : 1;
-	u32_t rtr     : 1;
+	uint32_t id_type : 1;
+	uint32_t rtr     : 1;
 	/* Message identifier */
 	union {
-		u32_t std_id  : 11;
-		u32_t ext_id  : 29;
+		uint32_t std_id  : 11;
+		uint32_t ext_id  : 29;
 	};
 	/* The length of the message (max. 8) in byte */
-	u8_t dlc;
+	uint8_t dlc;
 	/* The message data */
 	union {
-		u8_t data[8];
-		u32_t data_32[2];
+		uint8_t data[8];
+		uint32_t data_32[2];
 	};
 } __packed;
 
 void main(void)
 {
 	struct test_frame frame = { 0 };
-	const u8_t data[DATA_MAX_DLEN] = { 0x01, 0x02, 0x03, 0x04,
+	const uint8_t data[DATA_MAX_DLEN] = { 0x01, 0x02, 0x03, 0x04,
 					0x05, 0x06, 0x07, 0x08 };
 	struct log_msg_ids src_level = {
 		.level = LOG_LEVEL_INTERNAL_RAW_STRING,
@@ -59,10 +59,10 @@ void main(void)
 	frame.dlc = sizeof(data);
 	memcpy(frame.data, data, sizeof(data));
 
-	LOG_HEXDUMP_ERR((const u8_t *)&frame, sizeof(frame), "frame");
-	LOG_HEXDUMP_WRN((const u8_t *)&frame, sizeof(frame), "frame");
-	LOG_HEXDUMP_INF((const u8_t *)&frame, sizeof(frame), "frame");
-	LOG_HEXDUMP_DBG((const u8_t *)&frame, sizeof(frame), "frame");
+	LOG_HEXDUMP_ERR((const uint8_t *)&frame, sizeof(frame), "frame");
+	LOG_HEXDUMP_WRN((const uint8_t *)&frame, sizeof(frame), "frame");
+	LOG_HEXDUMP_INF((const uint8_t *)&frame, sizeof(frame), "frame");
+	LOG_HEXDUMP_DBG((const uint8_t *)&frame, sizeof(frame), "frame");
 
 	/* raw string */
 	printk("hello sys-t on board %s\n", CONFIG_BOARD);

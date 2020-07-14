@@ -1483,7 +1483,7 @@ endmacro()
 function(print_usage)
   if(NOT CMAKE_MAKE_PROGRAM)
     # Create dummy project, in order to obtain make program for correct usage printing.
-    project(NONE)
+    project(dummy_print_usage)
   endif()
   message("see usage:")
   string(REPLACE ";" " " BOARD_ROOT_SPACE_SEPARATED "${BOARD_ROOT}")

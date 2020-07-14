@@ -3,35 +3,50 @@
 Introduction to devicetree
 ##########################
 
-This page provides an introduction to :ref:`devicetree <dt-guide>` and
-how it is used in Zephyr.
+.. tip::
 
-The following figure shows how devicetree is used by :ref:`Zephyr's build
-system <build_overview>`:
+   This is a conceptual overview of devicetree and how Zephyr uses it. For
+   step-by-step guides and examples, see :ref:`dt-howtos`.
+
+A *devicetree* is a hierarchical data structure that describes hardware. The
+`Devicetree specification`_ defines its source and binary representations.
+Zephyr uses devicetree to describe the hardware available on its :ref:`boards`,
+as well as that hardware's initial configuration.
+
+There are two types of devicetree input files: *devicetree sources* and
+*devicetree bindings*. The sources contain the devicetree itself. The bindings
+describe its contents, including data types. The :ref:`build system
+<build_overview>` uses devicetree sources and bindings to produce a generated C
+header. The generated header's contents are abstracted by the ``devicetree.h``
+API, which you can use to get information from your devicetree.
+
+Here is a simplified view of the process:
 
 .. figure:: zephyr_dt_build_flow.png
    :figclass: align-center
 
    Devicetree build flow
 
-The build system generates a C header file which contains preprocessor macros
-with devicetree data. These macros can be referenced by :ref:`device drivers
-<device_model_api>`, applications, tests, etc., by including the
-``<devicetree.h>`` header file and using its API. The macro-based
-:file:`devicetree.h` API has names that start with ``DT_``.
+All Zephyr and application source code files can include and use
+``devicetree.h``. This includes :ref:`device drivers <device_model_api>`,
+:ref:`applications <application>`, :ref:`tests <testing>`, the kernel, etc.
 
-Information from devicetree is also sometimes available using ``CONFIG_``
-macros generated from :ref:`Kconfig <kconfig>`. This only happens when
-devicetree-related information is referenced from Kconfig symbol definitions
-via :ref:`Kconfig functions <kconfig-functions>`. See :ref:`dt_vs_kconfig` for
-some additional comparisons with Kconfig.
+The API itself is based on C macros. The macro names all start with ``DT_``. In
+general, if you see a macro that starts with ``DT_`` in a Zephyr source file,
+it's probably a ``devicetree.h`` macro. The generated C header contains macros
+that start with ``DT_`` as well; you might see those in compiler error
+messages. You always can tell a generated- from a non-generated macro:
+generated macros have some lowercased letters, while the ``devicetree.h`` macro
+names have all capital letters.
 
-This differs significantly from how devicetree is used on Linux. The
-Linux kernel would instead read the entire devicetree data structure in its
-binary form, parsing it at runtime in order to load and initialize device
-drivers. Zephyr does not work this way because the size of the devicetree
-binary and associated handling code would be too large to fit comfortably on
-the relatively constrained devices Zephyr supports.
+Some information defined in devicetree is available via ``CONFIG_`` macros
+generated from :ref:`Kconfig <kconfig>`. This is often done for backwards
+compatibility, since Zephyr has used Kconfig for longer than devicetree, and is
+still in the process of converting some information from Kconfig to devicetree.
+It is also done to allow Kconfig overrides of default values taken from
+devicetree. Devicetree information is referenced from Kconfig via :ref:`Kconfig
+functions <kconfig-functions>`. See :ref:`dt_vs_kconfig` for some additional
+comparisons with Kconfig.
 
 .. _dt-syntax:
 
@@ -71,7 +86,8 @@ The tree has three *nodes*:
 
 Nodes can be given *labels*, which are unique shorthands that can be used to
 refer to the labeled node elsewhere in the devicetree. Above, ``a-sub-node``
-has label ``subnode_label``.
+has label ``subnode_label``. A node can have zero, one, or multiple node
+labels.
 
 Devicetree nodes have *paths* identifying their locations in the tree. Like
 Unix file system paths, devicetree paths are strings separated by slashes
@@ -89,7 +105,7 @@ value 3. The size and type of ``foo``\ 's value are implied by the enclosing
 angle brackets (``<`` and ``>``) in the DTS. See
 :ref:`dt-writing-property-values` below for more example property values.
 
-In practice, devicetree nodes correspond to some hardware, and the node
+In practice, devicetree nodes usually correspond to some hardware, and the node
 hierarchy reflects the hardware's physical layout. For example, let's consider
 a board with three I2C peripherals connected to an I2C bus controller on an SoC,
 like this:
@@ -99,10 +115,9 @@ like this:
    :figclass: align-center
 
 Nodes corresponding to the I2C bus controller and each I2C peripheral would be
-present in this board's devicetree. Reflecting the hardware layout, the
-devicetree's peripheral nodes would be children of the bus controller node.
-Similar conventions exist for representing other types of hardware in
-devicetree.
+present in the devicetree. Reflecting the hardware layout, the
+I2C peripheral nodes would be children of the bus controller node.
+Similar conventions exist for representing other types of hardware.
 
 The DTS would look something like this:
 
@@ -210,8 +225,9 @@ Memory-mapped flash
     For example, a node named ``flash@8000000`` represents a flash device
     whose physical start address is 0x8000000.
 
-Flash partitions
-    The start offset of the partition within its flash device.
+Fixed flash partitions
+    This applies when the devicetree is used to store a flash partition table.
+    The unit address is the partition's start offset within the flash memory.
     For example, take this flash device and its partitions:
 
     .. code-block:: DTS
@@ -237,17 +253,28 @@ Important properties
 Some important properties are:
 
 compatible
-    Says what kind of device the node represents. The recommended format is
-    ``"manufacturer,device"``, like ``"avago,apds9960"``, or a sequence of
-    these, like ``"ti,hdc", "ti,hdc1010"``. The file
-    :zephyr_file:`dts/bindings/vendor-prefixes.txt` contains a list of accepted
-    ``manufacturer`` prefixes.
+    The name of the hardware device the node represents.
+
+    The recommended format is ``"vendor,device"``, like ``"avago,apds9960"``,
+    or a sequence of these, like ``"ti,hdc", "ti,hdc1010"``. The ``vendor``
+    part is an abbreviated name of the vendor. The file
+    :zephyr_file:`dts/bindings/vendor-prefixes.txt` contains a list of commonly
+    accepted ``vendor`` names. The ``device`` part is usually taken from the
+    datasheet.
 
     It is also sometimes a value like ``gpio-keys``, ``mmio-sram``, or
     ``fixed-clock`` when the hardware's behavior is generic.
 
     The build system uses the compatible property to find the right
-    :ref:`bindings <dt-bindings>` for the node.
+    :ref:`bindings <dt-bindings>` for the node. Device drivers use
+    ``devicetree.h`` to find nodes with relevant compatibles, in order to
+    determine the available hardware to manage.
+
+    The ``compatible`` property can have multiple values. Additional values are
+    useful when the device is a specific instance of a more general family, to
+    allow the system to match from most- to least-specific device drivers.
+
+    Within Zephyr's bindings syntax, this property has type ``string-array``.
 
 label
     The device's name according to Zephyr's :ref:`device_model_api`. The value
@@ -281,14 +308,77 @@ reg
     property can be seen as a more detailed view of the addressable resources
     within a device than its unit address.
 
+status
+    A string which describes whether the node is enabled.
+
+    The devicetree specification allows this property to have values
+    ``"okay"``, ``"disabled"``, ``"reserved"``, ``"fail"``, and ``"fail-sss"``.
+    Only the values ``"okay"`` and ``"disabled"`` are currently relevant to
+    Zephyr; use of other values currently results in undefined behavior.
+
+    A node is considered enabled if its status property is either ``"okay"`` or
+    not defined (i.e. does not exist in the devicetree source). Nodes with
+    status ``"disabled"`` are explicitly disabled. (For backwards
+    compatibility, the value ``"ok"`` is treated the same as ``"okay"``, but
+    this usage is deprecated.) Devicetree nodes which correspond to physical
+    devices must be enabled for the corresponding ``struct device`` in the
+    Zephyr driver model to be allocated and initialized.
+
 interrupts
     Information about interrupts generated by the device, encoded as an array
     of one or more *interrupt specifiers*. Each interrupt specifier has some
-    number of cells. See section 2.4 Interrupts and Interrupt Mapping in the
-    devicetree specification release v0.3 for more details.
+    number of cells. See section 2.4, *Interrupts and Interrupt Mapping*, in the
+    `Devicetree Specification release v0.3`_ for more details.
 
     Zephyr's devicetree bindings language lets you give a name to each cell in
     an interrupt specifier.
+
+.. _Devicetree Specification release v0.3:
+   https://www.devicetree.org/specifications/
+
+Aliases and chosen nodes
+************************
+
+There are two additional ways beyond :ref:`node labels <dt-node-labels>` to
+refer to a particular node without specifying its entire path: by alias, or by
+chosen node.
+
+Here is an example devicetree which uses both:
+
+.. code-block:: DTS
+
+   /dts-v1/;
+
+   / {
+   	chosen {
+   		zephyr,console = &uart0;
+        };
+
+   	aliases {
+   		my-uart = &uart0;
+   	};
+
+   	soc {
+   		uart0: serial@12340000 {
+   			...
+   		};
+   	};
+   };
+
+The ``/aliases`` and ``/chosen`` nodes do not refer to an actual hardware
+device. Their purpose is to specify other nodes in the devicetree.
+
+Above, ``my-uart`` is an alias for the node with path ``/soc/serial@12340000``.
+Using its node label ``uart0``, the same node is set as the value of the chosen
+``zephyr,console`` node.
+
+Zephyr sample applications sometimes use aliases to allow overriding the
+particular hardware device used by the application in a generic way. For
+example, :ref:`blinky-sample` uses this to abstract the LED to blink via the
+``led0`` alias.
+
+The ``/chosen`` node's properties are used to configure system- or
+subsystem-wide values. See :ref:`devicetree-chosen-nodes` for more information.
 
 .. _devicetree-in-out-files:
 
@@ -422,15 +512,15 @@ These are created in your application's build directory.
 
 :file:`<build>/zephyr/include/generated/devicetree_unfixed.h`
    The generated macros and additional comments describing the devicetree.
-   Included by ``<devicetree.h>``.
+   Included by ``devicetree.h``.
 
 :file:`<build>/zephyr/include/generated/devicetree_legacy_unfixed.h`
    The generated :ref:`dt-legacy-macros`.
-   Included by ``<devicetree.h>``.
+   Included by ``devicetree.h``.
 
 :file:`<build>/zephyr/include/generated/devicetree_fixups.h`
    The concatenated contents of any :file:`dts_fixup.h` files.
-   Included by ``<devicetree.h>``.
+   Included by ``devicetree.h``.
 
 :file:`<build>/zephyr/zephyr.dts`
    The final merged devicetree. This file is output by :file:`gen_defines.py`

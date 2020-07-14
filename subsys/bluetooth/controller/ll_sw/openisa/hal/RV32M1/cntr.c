@@ -59,10 +59,10 @@ void cntr_init(void)
 	irq_enable(LL_RTC0_IRQn_2nd_lvl);
 }
 
-static u8_t refcount;
-static u32_t cnt_diff;
+static uint8_t refcount;
+static uint32_t cnt_diff;
 
-u32_t cntr_start(void)
+uint32_t cntr_start(void)
 {
 	if (refcount++) {
 		return 1;
@@ -74,7 +74,7 @@ u32_t cntr_start(void)
 	return 0;
 }
 
-u32_t cntr_stop(void)
+uint32_t cntr_stop(void)
 {
 	LL_ASSERT(refcount);
 
@@ -92,7 +92,7 @@ u32_t cntr_stop(void)
 	return 0;
 }
 
-u32_t cntr_cnt_get(void)
+uint32_t cntr_cnt_get(void)
 {
 	/*
 	 * On each read of the CNR,
@@ -102,7 +102,7 @@ u32_t cntr_cnt_get(void)
 	return (LPTMR1->CNR + cnt_diff);
 }
 
-void cntr_cmp_set(u8_t cmp, u32_t value)
+void cntr_cmp_set(uint8_t cmp, uint32_t value)
 {
 	/*
 	 * When the LPTMR is enabled, the first increment will take an

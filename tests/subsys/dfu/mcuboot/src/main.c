@@ -18,8 +18,8 @@
 void test_bank_erase(void)
 {
 	const struct flash_area *fa;
-	u32_t temp;
-	u32_t temp2 = 0x5a5a5a5a;
+	uint32_t temp;
+	uint32_t temp2 = 0x5a5a5a5a;
 	off_t offs;
 	int ret;
 
@@ -51,7 +51,7 @@ void test_bank_erase(void)
 void test_request_upgrade(void)
 {
 	const struct flash_area *fa;
-	const u32_t expectation[6] = {
+	const uint32_t expectation[6] = {
 		0xffffffff,
 		0xffffffff,
 		BOOT_MAGIC_VAL_W0,
@@ -59,7 +59,7 @@ void test_request_upgrade(void)
 		BOOT_MAGIC_VAL_W2,
 		BOOT_MAGIC_VAL_W3
 	};
-	u32_t readout[ARRAY_SIZE(expectation)];
+	uint32_t readout[ARRAY_SIZE(expectation)];
 	int ret;
 
 	ret = flash_area_open(FLASH_AREA_ID(image_1), &fa);
@@ -93,8 +93,8 @@ void test_request_upgrade(void)
 
 void test_write_confirm(void)
 {
-	const u32_t img_magic[4] = BOOT_MAGIC_VALUES;
-	u32_t readout[ARRAY_SIZE(img_magic)];
+	const uint32_t img_magic[4] = BOOT_MAGIC_VALUES;
+	uint32_t readout[ARRAY_SIZE(img_magic)];
 	const struct flash_area *fa;
 	int ret;
 

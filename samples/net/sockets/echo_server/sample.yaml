@@ -14,6 +14,24 @@ tests:
   sample.net.sockets.echo_server.802154:
     extra_args: OVERLAY_CONFIG="overlay-qemu_802154.conf"
     platform_whitelist: qemu_x86
+  sample.net.sockets.echo_server.802154.rf2xx:
+    extra_args: OVERLAY_CONFIG="overlay-802154.conf"
+    platform_whitelist: atsamr21_xpro
+  sample.net.sockets.echo_server.802154.rf2xx.xplained:
+    extra_args: SHIELD=atmel_rf2xx_xplained OVERLAY_CONFIG="overlay-802154.conf"
+    platform_whitelist: sam4s_xplained
+  sample.net.sockets.echo_server.802154.rf2xx.xpro:
+    extra_args: SHIELD=atmel_rf2xx_xpro OVERLAY_CONFIG="overlay-802154.conf"
+    platform_whitelist: sam4e_xpro sam_v71_xult
+  sample.net.sockets.echo_server.802154.rf2xx.legacy:
+    extra_args: SHIELD=atmel_rf2xx_legacy OVERLAY_CONFIG="overlay-802154.conf"
+    platform_whitelist: sam4e_xpro sam_v71_xult
+  sample.net.sockets.echo_server.802154.rf2xx.arduino:
+    extra_args: SHIELD=atmel_rf2xx_arduino OVERLAY_CONFIG="overlay-802154.conf"
+    platform_whitelist: sam_v71_xult frdm_k64f nucleo_f767zi
+  sample.net.sockets.echo_server.802154.rf2xx.mikrobus:
+    extra_args: SHIELD=atmel_rf2xx_mikrobus OVERLAY_CONFIG="overlay-802154.conf"
+    platform_whitelist: lpcxpresso55s69_ns
   sample.net.sockets.echo_server.bt:
     extra_args: OVERLAY_CONFIG="overlay-bt.conf"
     platform_whitelist: qemu_x86
@@ -58,3 +76,6 @@ tests:
     extra_args: OVERLAY_CONFIG="overlay-smsc911x.conf"
     tags: net
     platform_whitelist: mps2_an385
+  sample.net.sockets.echo_server.userspace:
+    extra_args: CONFIG_USERSPACE=y OVERLAY_CONFIG="overlay-e1000.conf"
+    platform_whitelist: qemu_x86

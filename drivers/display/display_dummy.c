@@ -24,16 +24,16 @@ static int dummy_display_init(struct device *dev)
 	return 0;
 }
 
-static int dummy_display_write(const struct device *dev, const u16_t x,
-			       const u16_t y,
+static int dummy_display_write(const struct device *dev, const uint16_t x,
+			       const uint16_t y,
 			       const struct display_buffer_descriptor *desc,
 			       const void *buf)
 {
 	return 0;
 }
 
-static int dummy_display_read(const struct device *dev, const u16_t x,
-			      const u16_t y,
+static int dummy_display_read(const struct device *dev, const uint16_t x,
+			      const uint16_t y,
 			      const struct display_buffer_descriptor *desc,
 			      void *buf)
 {
@@ -56,13 +56,13 @@ static int dummy_display_blanking_on(const struct device *dev)
 }
 
 static int dummy_display_set_brightness(const struct device *dev,
-					const u8_t brightness)
+					const uint8_t brightness)
 {
 	return 0;
 }
 
 static int dummy_display_set_contrast(const struct device *dev,
-				      const u8_t contrast)
+				      const uint8_t contrast)
 {
 	return 0;
 }

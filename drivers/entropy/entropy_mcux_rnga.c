@@ -13,10 +13,10 @@
 
 #include "fsl_rnga.h"
 
-static u8_t entropy_mcux_rnga_get_uint8(void)
+static uint8_t entropy_mcux_rnga_get_uint8(void)
 {
-	u32_t random;
-	u8_t output = 0U;
+	uint32_t random;
+	uint8_t output = 0U;
 	int i;
 
 	RNGA_SetMode(RNG, kRNGA_ModeNormal);
@@ -38,8 +38,8 @@ static u8_t entropy_mcux_rnga_get_uint8(void)
 	return output;
 }
 
-static int entropy_mcux_rnga_get_entropy(struct device *dev, u8_t *buffer,
-					u16_t length)
+static int entropy_mcux_rnga_get_entropy(struct device *dev, uint8_t *buffer,
+					uint16_t length)
 {
 	int i;
 
@@ -65,7 +65,7 @@ DEVICE_AND_API_INIT(entropy_mcux_rnga, DT_INST_LABEL(0),
 
 static int entropy_mcux_rnga_init(struct device *dev)
 {
-	u32_t seed = k_cycle_get_32();
+	uint32_t seed = k_cycle_get_32();
 
 	ARG_UNUSED(dev);
 

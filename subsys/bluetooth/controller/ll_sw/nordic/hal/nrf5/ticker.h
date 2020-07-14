@@ -18,7 +18,7 @@
  */
 #define HAL_TICKER_US_TO_TICKS(x) \
 	( \
-		((u32_t)(((u64_t) (x) * 1000000000UL) / 30517578125UL)) \
+		((uint32_t)(((uint64_t) (x) * 1000000000UL) / 30517578125UL)) \
 		& HAL_TICKER_CNTR_MASK \
 	)
 
@@ -26,15 +26,15 @@
 #define HAL_TICKER_REMAINDER(x) \
 	( \
 		( \
-			((u64_t) (x) * 1000000000UL) \
-			- ((u64_t)HAL_TICKER_US_TO_TICKS(x) * 30517578125UL) \
+			((uint64_t) (x) * 1000000000UL) \
+			- ((uint64_t)HAL_TICKER_US_TO_TICKS(x) * 30517578125UL) \
 		) \
 		/ 1000UL \
 	)
 
 /* Macro to translate tick units to microseconds. */
 #define HAL_TICKER_TICKS_TO_US(x) \
-	((u32_t)(((u64_t)(x) * 30517578125UL) / 1000000000UL))
+	((uint32_t)(((uint64_t)(x) * 30517578125UL) / 1000000000UL))
 
 /* Macro defines the h/w supported most significant bit */
 #define HAL_TICKER_CNTR_MSBIT 23

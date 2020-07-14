@@ -68,3 +68,11 @@ config SOC_MEC1501_VTR3_1_8V
 	bool "VTR3 power rail is tied to 1.8V"
 	help
 	  Set this is if VTR3 power sourcejumper in the board is changed.
+
+config SOC_MEC1501_VCI_PINS_AS_GPIOS
+	bool "Use VCI block pins as GPIOS"
+	default y
+	help
+	  By default these pins are not GPIOs, but HW controlled.
+	  Set this if VCI pin block HW logic is not required in the board
+	  design.

@@ -20,7 +20,7 @@
  */
 void memorymap_test(void)
 {
-	u32_t et; /* elapsed time */
+	uint32_t et; /* elapsed time */
 	int i;
 	void *p;
 	int alloc_status;

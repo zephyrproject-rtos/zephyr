@@ -19,7 +19,7 @@ void main(void)
 {
 	struct device *dev;
 	struct sensor_value val;
-	u32_t lum = 0U;
+	uint32_t lum = 0U;
 
 	printk("MAX44009 light sensor application\n");
 

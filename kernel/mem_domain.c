@@ -13,17 +13,17 @@
 #include <spinlock.h>
 
 static struct k_spinlock lock;
-static u8_t max_partitions;
+static uint8_t max_partitions;
 
 #if (defined(CONFIG_EXECUTE_XOR_WRITE) || \
 	defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)) && __ASSERT_ON
 static bool sane_partition(const struct k_mem_partition *part,
 			   const struct k_mem_partition *parts,
-			   u32_t num_parts)
+			   uint32_t num_parts)
 {
 	bool exec, write;
-	u32_t last;
-	u32_t i;
+	uint32_t last;
+	uint32_t i;
 
 	last = part->start + part->size - 1;
 	exec = K_MEM_PARTITION_IS_EXECUTABLE(part->attr);
@@ -38,7 +38,7 @@ static bool sane_partition(const struct k_mem_partition *part,
 
 	for (i = 0U; i < num_parts; i++) {
 		bool cur_write, cur_exec;
-		u32_t cur_last;
+		uint32_t cur_last;
 
 		cur_last = parts[i].start + parts[i].size - 1;
 
@@ -80,7 +80,7 @@ static inline bool sane_partition_domain(const struct k_mem_domain *domain,
 #define sane_partition_domain(...) (true)
 #endif
 
-void k_mem_domain_init(struct k_mem_domain *domain, u8_t num_parts,
+void k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
 		       struct k_mem_partition *parts[])
 {
 	k_spinlock_key_t key;
@@ -95,7 +95,7 @@ void k_mem_domain_init(struct k_mem_domain *domain, u8_t num_parts,
 	(void)memset(domain->partitions, 0, sizeof(domain->partitions));
 
 	if (num_parts != 0U) {
-		u32_t i;
+		uint32_t i;
 
 		for (i = 0U; i < num_parts; i++) {
 			__ASSERT(parts[i] != NULL, "");

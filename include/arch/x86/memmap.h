@@ -48,8 +48,8 @@ enum x86_memmap_entry_type {
 };
 
 struct x86_memmap_entry {
-	u64_t base;
-	u64_t length;
+	uint64_t base;
+	uint64_t length;
 	enum x86_memmap_entry_type type;
 };
 

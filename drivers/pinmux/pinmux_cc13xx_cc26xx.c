@@ -11,7 +11,7 @@
 
 #include <driverlib/ioc.h>
 
-static int pinmux_cc13xx_cc26xx_set(struct device *dev, u32_t pin, u32_t func)
+static int pinmux_cc13xx_cc26xx_set(struct device *dev, uint32_t pin, uint32_t func)
 {
 	ARG_UNUSED(dev);
 
@@ -23,7 +23,7 @@ static int pinmux_cc13xx_cc26xx_set(struct device *dev, u32_t pin, u32_t func)
 	return 0;
 }
 
-static int pinmux_cc13xx_cc26xx_get(struct device *dev, u32_t pin, u32_t *func)
+static int pinmux_cc13xx_cc26xx_get(struct device *dev, uint32_t pin, uint32_t *func)
 {
 	ARG_UNUSED(dev);
 
@@ -34,7 +34,7 @@ static int pinmux_cc13xx_cc26xx_get(struct device *dev, u32_t pin, u32_t *func)
 	return 0;
 }
 
-static int pinmux_cc13xx_cc26xx_pullup(struct device *dev, u32_t pin, u8_t func)
+static int pinmux_cc13xx_cc26xx_pullup(struct device *dev, uint32_t pin, uint8_t func)
 {
 	ARG_UNUSED(dev);
 
@@ -52,7 +52,7 @@ static int pinmux_cc13xx_cc26xx_pullup(struct device *dev, u32_t pin, u8_t func)
 	return -EINVAL;
 }
 
-static int pinmux_cc13xx_cc26xx_input(struct device *dev, u32_t pin, u8_t func)
+static int pinmux_cc13xx_cc26xx_input(struct device *dev, uint32_t pin, uint8_t func)
 {
 	ARG_UNUSED(dev);
 

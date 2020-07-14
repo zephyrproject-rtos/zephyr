@@ -18,11 +18,19 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+/* Generic read()/write() is available in POSIX config, so use it. */
+#define READ(fd, buf, sz) read(fd, buf, sz)
+#define WRITE(fd, buf, sz) write(fd, buf, sz)
+
 #else
 
 #include <fcntl.h>
 #include <net/socket.h>
 #include <kernel.h>
+
+/* Generic read()/write() are not defined, so use socket-specific recv(). */
+#define READ(fd, buf, sz) recv(fd, buf, sz, 0)
+#define WRITE(fd, buf, sz) send(fd, buf, sz, 0)
 
 #endif
 
@@ -178,17 +186,18 @@ void main(void)
 				       addr_str, client);
 				if (pollfds_add(client) < 0) {
 					static char msg[] = "Too many connections\n";
-					send(client, msg, sizeof(msg) - 1, 0);
+					WRITE(client, msg, sizeof(msg) - 1);
 					close(client);
 				} else {
 					setblocking(client, false);
 				}
 			} else {
 				char buf[128];
-				int len = recv(fd, buf, sizeof(buf), 0);
+				int len = READ(fd, buf, sizeof(buf));
 				if (len <= 0) {
 					if (len < 0) {
-						printf("error: recv: %d\n", errno);
+						printf("error: RECV: %d\n",
+						       errno);
 					}
 error:
 					pollfds_del(fd);
@@ -207,10 +216,10 @@ error:
 					setblocking(fd, true);
 
 					for (p = buf; len; len -= out_len) {
-						out_len = send(fd, p, len, 0);
+						out_len = WRITE(fd, p, len);
 						if (out_len < 0) {
 							printf("error: "
-							       "send: %d\n",
+							       "WRITE: %d\n",
 							       errno);
 							goto error;
 						}

@@ -218,3 +218,7 @@ arduino_spi: &spi0 {
 	status = "okay";
 	bus-speed = <125000>;
 };
+
+&edma0 {
+	status = "okay";
+};

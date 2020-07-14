@@ -22,8 +22,8 @@ struct smp_shell_data {
 	char mcumgr_buff[128];
 	bool cmd_rdy;
 	atomic_t esc_state;
-	u32_t cur;
-	u32_t end;
+	uint32_t cur;
+	uint32_t end;
 };
 
 /**

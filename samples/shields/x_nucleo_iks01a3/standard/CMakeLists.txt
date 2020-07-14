@@ -9,7 +9,7 @@ set(SHIELD x_nucleo_iks01a3)
 
 set(CONF_FILE prj.conf)
 
-find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(x_nucleo_iks01a3)
 
 FILE(GLOB app_sources src/*.c)

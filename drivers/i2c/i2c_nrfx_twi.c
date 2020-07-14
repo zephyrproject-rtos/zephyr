@@ -12,13 +12,15 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(i2c_nrfx_twi, CONFIG_I2C_LOG_LEVEL);
 
+#define I2C_TRANSFER_TIMEOUT_MSEC		K_MSEC(100)
+
 struct i2c_nrfx_twi_data {
 	struct k_sem transfer_sync;
 	struct k_sem completion_sync;
 	volatile nrfx_err_t res;
-	u32_t dev_config;
+	uint32_t dev_config;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	u32_t pm_state;
+	uint32_t pm_state;
 #endif
 };
 
@@ -39,11 +41,15 @@ const struct i2c_nrfx_twi_config *get_dev_config(struct device *dev)
 }
 
 static int i2c_nrfx_twi_transfer(struct device *dev, struct i2c_msg *msgs,
-				 u8_t num_msgs, u16_t addr)
+				 uint8_t num_msgs, uint16_t addr)
 {
 	int ret = 0;
 
 	k_sem_take(&(get_dev_data(dev)->transfer_sync), K_FOREVER);
+
+	/* Dummy take on completion_sync sem to be sure that it is empty */
+	k_sem_take(&(get_dev_data(dev)->completion_sync), K_NO_WAIT);
+
 	nrfx_twi_enable(&get_dev_config(dev)->twi);
 
 	for (size_t i = 0; i < num_msgs; i++) {
@@ -59,7 +65,7 @@ static int i2c_nrfx_twi_transfer(struct device *dev, struct i2c_msg *msgs,
 			.type		= (msgs[i].flags & I2C_MSG_READ) ?
 					  NRFX_TWI_XFER_RX : NRFX_TWI_XFER_TX
 		};
-		u32_t xfer_flags = 0;
+		uint32_t xfer_flags = 0;
 		nrfx_err_t res;
 
 		/* In case the STOP condition is not supposed to appear after
@@ -103,7 +109,24 @@ static int i2c_nrfx_twi_transfer(struct device *dev, struct i2c_msg *msgs,
 			}
 		}
 
-		k_sem_take(&(get_dev_data(dev)->completion_sync), K_FOREVER);
+		ret = k_sem_take(&(get_dev_data(dev)->completion_sync),
+				 I2C_TRANSFER_TIMEOUT_MSEC);
+		if (ret != 0) {
+			/* Whatever the frequency, completion_sync should have
+			 * been give by the event handler.
+			 *
+			 * If it hasn't it's probably due to an hardware issue
+			 * on the I2C line, for example a short between SDA and
+			 * GND.
+			 *
+			 * Note to fully recover from this issue one should
+			 * reinit nrfx twi.
+			 */
+			LOG_ERR("Error on I2C line occurred for message %d", i);
+			ret = -EIO;
+			break;
+		}
+
 		res = get_dev_data(dev)->res;
 		if (res != NRFX_SUCCESS) {
 			LOG_ERR("Error %d occurred for message %d", res, i);
@@ -141,7 +164,7 @@ static void event_handler(nrfx_twi_evt_t const *p_event, void *p_context)
 	k_sem_give(&dev_data->completion_sync);
 }
 
-static int i2c_nrfx_twi_configure(struct device *dev, u32_t dev_config)
+static int i2c_nrfx_twi_configure(struct device *dev, uint32_t dev_config)
 {
 	nrfx_twi_t const *inst = &(get_dev_config(dev)->twi);
 
@@ -188,14 +211,14 @@ static int init_twi(struct device *dev)
 }
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static int twi_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
+static int twi_nrfx_pm_control(struct device *dev, uint32_t ctrl_command,
 				void *context, device_pm_cb cb, void *arg)
 {
 	int ret = 0;
-	u32_t pm_current_state = get_dev_data(dev)->pm_state;
+	uint32_t pm_current_state = get_dev_data(dev)->pm_state;
 
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-		u32_t new_state = *((const u32_t *)context);
+		uint32_t new_state = *((const uint32_t *)context);
 
 		if (new_state != pm_current_state) {
 			switch (new_state) {
@@ -225,7 +248,7 @@ static int twi_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 		}
 	} else {
 		__ASSERT_NO_MSG(ctrl_command == DEVICE_PM_GET_POWER_STATE);
-		*((u32_t *)context) = get_dev_data(dev)->pm_state;
+		*((uint32_t *)context) = get_dev_data(dev)->pm_state;
 	}
 
 	if (cb) {

@@ -93,10 +93,10 @@ static int check_flash_device(const struct shell *shell)
 	return 0;
 }
 
-static void dump_buffer(const struct shell *shell, u8_t *buf, size_t size)
+static void dump_buffer(const struct shell *shell, uint8_t *buf, size_t size)
 {
 	bool newline = false;
-	u8_t *p = buf;
+	uint8_t *p = buf;
 
 	while (size >= 8) {
 		PR_SHELL(shell, "%02x %02x %02x %02x | %02x %02x %02x %02x\n",
@@ -135,21 +135,21 @@ static int parse_ul(const char *str, unsigned long *result)
 	return 0;
 }
 
-static int parse_u8(const char *str, u8_t *result)
+static int parse_u8(const char *str, uint8_t *result)
 {
 	unsigned long val;
 
 	if (parse_ul(str, &val) || val > 0xff) {
 		return -EINVAL;
 	}
-	*result = (u8_t)val;
+	*result = (uint8_t)val;
 	return 0;
 }
 
 /* Read bytes, dumping contents to console and printing on error. */
 static int do_read(const struct shell *shell, off_t offset, size_t len)
 {
-	u8_t buf[64];
+	uint8_t buf[64];
 	int ret;
 
 	while (len > sizeof(buf)) {
@@ -198,7 +198,7 @@ static int do_erase(const struct shell *shell, off_t offset, size_t size)
 }
 
 /* Write bytes, handling write protection and printing on error. */
-static int do_write(const struct shell *shell, off_t offset, u8_t *buf,
+static int do_write(const struct shell *shell, off_t offset, uint8_t *buf,
 		    size_t len, bool read_back)
 {
 	int ret;
@@ -298,7 +298,7 @@ exit:
 static int cmd_write(const struct shell *shell, size_t argc, char **argv)
 {
 	unsigned long int i, offset;
-	u8_t buf[ARGC_MAX];
+	uint8_t buf[ARGC_MAX];
 
 	int err = check_flash_device(shell);
 
@@ -516,7 +516,7 @@ static int cmd_page_write(const struct shell *shell, size_t argc, char **argv)
 {
 	struct flash_pages_info info;
 	unsigned long int page, off;
-	u8_t buf[ARGC_MAX];
+	uint8_t buf[ARGC_MAX];
 	size_t i;
 	int ret;
 

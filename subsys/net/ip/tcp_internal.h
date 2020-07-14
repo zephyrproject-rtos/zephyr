@@ -14,6 +14,7 @@
 #define __TCP_INTERNAL_H
 
 #include <zephyr/types.h>
+#include <random/rand32.h>
 
 #include <net/net_core.h>
 #include <net/net_ip.h>
@@ -99,7 +100,7 @@ enum net_tcp_state {
 
 /** Parsed TCP option values for net_tcp_parse_opts()  */
 struct net_tcp_options {
-	u16_t mss;
+	uint16_t mss;
 };
 
 /* Max received bytes to buffer internally */
@@ -133,13 +134,13 @@ struct net_tcp {
 	sys_slist_t sent_list;
 
 	/** Current sequence number. */
-	u32_t send_seq;
+	uint32_t send_seq;
 
 	/** Acknowledgment number to send in next packet. */
-	u32_t send_ack;
+	uint32_t send_ack;
 
 	/** Last ACK value sent */
-	u32_t sent_ack;
+	uint32_t sent_ack;
 
 	/** Accept callback to be called when the connection has been
 	 * established.
@@ -154,25 +155,25 @@ struct net_tcp {
 	/**
 	 * Current TCP receive window for our side
 	 */
-	u16_t recv_wnd;
+	uint16_t recv_wnd;
 
 	/**
 	 * Send MSS for the peer
 	 */
-	u16_t send_mss;
+	uint16_t send_mss;
 
 	/** Current retransmit period */
-	u32_t retry_timeout_shift : 5;
+	uint32_t retry_timeout_shift : 5;
 	/** Flags for the TCP */
-	u32_t flags : 8;
+	uint32_t flags : 8;
 	/** Current TCP state */
-	u32_t state : 4;
+	uint32_t state : 4;
 	/* An outbound FIN packet has been sent */
-	u32_t fin_sent : 1;
+	uint32_t fin_sent : 1;
 	/* An inbound FIN packet has been received */
-	u32_t fin_rcvd : 1;
-	/** Remaining bits in this u32_t */
-	u32_t _padding : 13;
+	uint32_t fin_rcvd : 1;
+	/** Remaining bits in this uint32_t */
+	uint32_t _padding : 13;
 };
 
 typedef void (*net_tcp_cb_t)(struct net_tcp *tcp, void *user_data);
@@ -199,11 +200,11 @@ static inline bool net_tcp_is_used(struct net_tcp *tcp)
  *
  * @return Return 0 if the registration succeed, <0 otherwise.
  */
-static inline int net_tcp_register(u8_t family,
+static inline int net_tcp_register(uint8_t family,
 				   const struct sockaddr *remote_addr,
 				   const struct sockaddr *local_addr,
-				   u16_t remote_port,
-				   u16_t local_port,
+				   uint16_t remote_port,
+				   uint16_t local_port,
 				   net_conn_cb_t cb,
 				   void *user_data,
 				   struct net_conn_handle **handle)
@@ -230,7 +231,7 @@ static inline int net_tcp_unregister(struct net_conn_handle *handle)
  *
  * @return Return a random TCP sequence number
  */
-static inline u32_t tcp_init_isn(void)
+static inline uint32_t tcp_init_isn(void)
 {
 	/* Randomise initial seq number */
 	return sys_rand32_get();
@@ -297,13 +298,13 @@ static inline int net_tcp_release(struct net_tcp *tcp)
  * @return 0 if ok, < 0 if error
  */
 #if defined(CONFIG_NET_NATIVE_TCP)
-int net_tcp_prepare_segment(struct net_tcp *tcp, u8_t flags,
+int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
 			    void *options, size_t optlen,
 			    const struct sockaddr_ptr *local,
 			    const struct sockaddr *remote,
 			    struct net_pkt **send_pkt);
 #else
-static inline int net_tcp_prepare_segment(struct net_tcp *tcp, u8_t flags,
+static inline int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
 					  void *options, size_t optlen,
 					  const struct sockaddr_ptr *local,
 					  const struct sockaddr *remote,
@@ -457,9 +458,9 @@ static inline int net_tcp_send_pkt(struct net_pkt *pkt)
  * @return False if ACK sequence number is invalid, true otherwise
  */
 #if defined(CONFIG_NET_NATIVE_TCP)
-bool net_tcp_ack_received(struct net_context *ctx, u32_t ack);
+bool net_tcp_ack_received(struct net_context *ctx, uint32_t ack);
 #else
-static inline bool net_tcp_ack_received(struct net_context *ctx, u32_t ack)
+static inline bool net_tcp_ack_received(struct net_context *ctx, uint32_t ack)
 {
 	ARG_UNUSED(ctx);
 	ARG_UNUSED(ack);
@@ -475,9 +476,9 @@ static inline bool net_tcp_ack_received(struct net_context *ctx, u32_t ack)
  * @return Maximum Segment Size
  */
 #if defined(CONFIG_NET_NATIVE_TCP)
-u16_t net_tcp_get_recv_mss(const struct net_tcp *tcp);
+uint16_t net_tcp_get_recv_mss(const struct net_tcp *tcp);
 #else
-static inline u16_t net_tcp_get_recv_mss(const struct net_tcp *tcp)
+static inline uint16_t net_tcp_get_recv_mss(const struct net_tcp *tcp)
 {
 	ARG_UNUSED(tcp);
 	return 0;
@@ -492,9 +493,9 @@ static inline u16_t net_tcp_get_recv_mss(const struct net_tcp *tcp)
  * @return Current TCP receive window
  */
 #if defined(CONFIG_NET_NATIVE_TCP)
-u32_t net_tcp_get_recv_wnd(const struct net_tcp *tcp);
+uint32_t net_tcp_get_recv_wnd(const struct net_tcp *tcp);
 #else
-static inline u32_t net_tcp_get_recv_wnd(const struct net_tcp *tcp)
+static inline uint32_t net_tcp_get_recv_wnd(const struct net_tcp *tcp)
 {
 	ARG_UNUSED(tcp);
 	return 0;
@@ -648,10 +649,10 @@ static inline int net_tcp_listen(struct net_context *context)
  *         if TCP is not supported
  */
 #if defined(CONFIG_NET_NATIVE_TCP)
-int net_tcp_update_recv_wnd(struct net_context *context, s32_t delta);
+int net_tcp_update_recv_wnd(struct net_context *context, int32_t delta);
 #else
 static inline int net_tcp_update_recv_wnd(struct net_context *context,
-					  s32_t delta)
+					  int32_t delta)
 {
 	ARG_UNUSED(context);
 	ARG_UNUSED(delta);
@@ -738,8 +739,8 @@ static inline int net_tcp_accept(struct net_context *context,
 int net_tcp_connect(struct net_context *context,
 		    const struct sockaddr *addr,
 		    struct sockaddr *laddr,
-		    u16_t rport,
-		    u16_t lport,
+		    uint16_t rport,
+		    uint16_t lport,
 		    k_timeout_t timeout,
 		    net_context_connect_cb_t cb,
 		    void *user_data);
@@ -747,7 +748,7 @@ int net_tcp_connect(struct net_context *context,
 static inline int net_tcp_connect(struct net_context *context,
 				  const struct sockaddr *addr,
 				  struct sockaddr *laddr,
-				  u16_t rport, u16_t lport, k_timeout_t timeout,
+				  uint16_t rport, uint16_t lport, k_timeout_t timeout,
 				  net_context_connect_cb_t cb, void *user_data)
 {
 	ARG_UNUSED(context);

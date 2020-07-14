@@ -21,7 +21,7 @@ stats_get_name(const struct stats_hdr *hdr, int idx)
 {
 #ifdef CONFIG_STATS_NAMES
 	const struct stats_name_map *cur;
-	u16_t off;
+	uint16_t off;
 	int i;
 
 	/* The stats name map contains two elements, an offset into the
@@ -41,7 +41,7 @@ stats_get_name(const struct stats_hdr *hdr, int idx)
 	return NULL;
 }
 
-static u16_t
+static uint16_t
 stats_get_off(const struct stats_hdr *hdr, int idx)
 {
 	return sizeof(*hdr) + idx * hdr->s_size;
@@ -131,8 +131,8 @@ stats_walk(struct stats_hdr *hdr, stats_walk_fn *walk_func, void *arg)
  * @param map_cnt The number of items in the statistics map
  */
 void
-stats_init(struct stats_hdr *hdr, u8_t size, u16_t cnt,
-	   const struct stats_name_map *map, u16_t map_cnt)
+stats_init(struct stats_hdr *hdr, uint8_t size, uint16_t cnt,
+	   const struct stats_name_map *map, uint16_t map_cnt)
 {
 	hdr->s_size = size;
 	hdr->s_cnt = cnt;
@@ -257,8 +257,8 @@ stats_register(const char *name, struct stats_hdr *hdr)
  * @return 0 on success, non-zero error code on failure.
  */
 int
-stats_init_and_reg(struct stats_hdr *shdr, u8_t size, u16_t cnt,
-		   const struct stats_name_map *map, u16_t map_cnt,
+stats_init_and_reg(struct stats_hdr *shdr, uint8_t size, uint16_t cnt,
+		   const struct stats_name_map *map, uint16_t map_cnt,
 		   const char *name)
 {
 	int rc;
@@ -281,5 +281,5 @@ stats_init_and_reg(struct stats_hdr *shdr, u8_t size, u16_t cnt,
 void
 stats_reset(struct stats_hdr *hdr)
 {
-	(void)memset((u8_t *)hdr + sizeof(*hdr), 0, hdr->s_size * hdr->s_cnt);
+	(void)memset((uint8_t *)hdr + sizeof(*hdr), 0, hdr->s_size * hdr->s_cnt);
 }

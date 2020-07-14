@@ -17,23 +17,23 @@
 LOG_MODULE_REGISTER(MPU6050, CONFIG_SENSOR_LOG_LEVEL);
 
 /* see "Accelerometer Measurements" section from register map description */
-static void mpu6050_convert_accel(struct sensor_value *val, s16_t raw_val,
-				  u16_t sensitivity_shift)
+static void mpu6050_convert_accel(struct sensor_value *val, int16_t raw_val,
+				  uint16_t sensitivity_shift)
 {
-	s64_t conv_val;
+	int64_t conv_val;
 
-	conv_val = ((s64_t)raw_val * SENSOR_G) >> sensitivity_shift;
+	conv_val = ((int64_t)raw_val * SENSOR_G) >> sensitivity_shift;
 	val->val1 = conv_val / 1000000;
 	val->val2 = conv_val % 1000000;
 }
 
 /* see "Gyroscope Measurements" section from register map description */
-static void mpu6050_convert_gyro(struct sensor_value *val, s16_t raw_val,
-				 u16_t sensitivity_x10)
+static void mpu6050_convert_gyro(struct sensor_value *val, int16_t raw_val,
+				 uint16_t sensitivity_x10)
 {
-	s64_t conv_val;
+	int64_t conv_val;
 
-	conv_val = ((s64_t)raw_val * SENSOR_PI * 10) /
+	conv_val = ((int64_t)raw_val * SENSOR_PI * 10) /
 		   (sensitivity_x10 * 180U);
 	val->val1 = conv_val / 1000000;
 	val->val2 = conv_val % 1000000;
@@ -41,10 +41,10 @@ static void mpu6050_convert_gyro(struct sensor_value *val, s16_t raw_val,
 
 /* see "Temperature Measurement" section from register map description */
 static inline void mpu6050_convert_temp(struct sensor_value *val,
-					s16_t raw_val)
+					int16_t raw_val)
 {
 	val->val1 = raw_val / 340 + 36;
-	val->val2 = ((s64_t)(raw_val % 340) * 1000000) / 340 + 530000;
+	val->val2 = ((int64_t)(raw_val % 340) * 1000000) / 340 + 530000;
 
 	if (val->val2 < 0) {
 		val->val1--;
@@ -113,10 +113,10 @@ static int mpu6050_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct mpu6050_data *drv_data = dev->driver_data;
 	const struct mpu6050_config *cfg = dev->config_info;
-	s16_t buf[7];
+	int16_t buf[7];
 
 	if (i2c_burst_read(drv_data->i2c, cfg->i2c_addr,
-			   MPU6050_REG_DATA_START, (u8_t *)buf, 14) < 0) {
+			   MPU6050_REG_DATA_START, (uint8_t *)buf, 14) < 0) {
 		LOG_ERR("Failed to read data sample.");
 		return -EIO;
 	}
@@ -144,7 +144,7 @@ int mpu6050_init(struct device *dev)
 {
 	struct mpu6050_data *drv_data = dev->driver_data;
 	const struct mpu6050_config *cfg = dev->config_info;
-	u8_t id, i;
+	uint8_t id, i;
 
 	drv_data->i2c = device_get_binding(cfg->i2c_label);
 	if (drv_data->i2c == NULL) {

@@ -40,6 +40,7 @@
 	rx-pin = <36>;
 	rts-pin = <39>;
 	cts-pin = <38>;
+	hw-flow-control;
 
 	sara_r4 {
 		compatible = "ublox,sara-r4";

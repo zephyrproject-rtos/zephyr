@@ -7,7 +7,7 @@
 #include <drivers/watchdog.h>
 #include <syscall_handler.h>
 
-static inline int z_vrfy_wdt_setup(struct device *dev, u8_t options)
+static inline int z_vrfy_wdt_setup(struct device *dev, uint8_t options)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_WDT(dev, setup));
 	return z_impl_wdt_setup(dev, options);

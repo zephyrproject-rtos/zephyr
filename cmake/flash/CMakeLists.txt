@@ -179,8 +179,9 @@ foreach(target flash debug debugserver attach)
   elseif(target STREQUAL attach)
     set(comment "Debugging ${BOARD}")
   endif()
+  string(TOUPPER ${target} TARGET_UPPER)
 
-  list(APPEND FLASH_DEPS ${logical_target_for_zephyr_elf})
+  list(APPEND RUNNERS_DEPS ${logical_target_for_zephyr_elf})
 
   # Enable verbose output, if requested.
   if(CMAKE_VERBOSE_MAKEFILE)
@@ -198,7 +199,8 @@ foreach(target flash debug debugserver attach)
       ${RUNNER_VERBOSE}
       ${target}
       --skip-rebuild
-      DEPENDS ${FLASH_DEPS}
+      DEPENDS ${RUNNERS_DEPS}
+              $<TARGET_PROPERTY:zephyr_property_target,${TARGET_UPPER}_DEPENDENCIES>
       WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
       )
 
@@ -207,6 +209,16 @@ foreach(target flash debug debugserver attach)
       ${cmd}
       COMMENT
       ${comment}
+      USES_TERMINAL
+      )
+
+    # This is an artificial target to allow west to ensure all dependencies of
+    # target is build before carrying out the actual command.
+    # This allows `west` to run just the dependencies before flashing.
+    add_custom_target(west_${target}_depends
+      COMMAND ${CMAKE_COMMAND} -E echo ""
+      DEPENDS ${RUNNERS_DEPS}
+              $<TARGET_PROPERTY:zephyr_property_target,${TARGET_UPPER}_DEPENDENCIES>
       USES_TERMINAL
       )
   else()

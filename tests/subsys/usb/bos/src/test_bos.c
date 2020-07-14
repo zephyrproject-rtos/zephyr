@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(test_main, LOG_LEVEL_DBG);
  * Compare old style USB BOS definition with section aligned
  */
 
-static const u8_t dummy_descriptor[] = {
+static const uint8_t dummy_descriptor[] = {
 	0x00, 0x01, 0x02
 };
 
@@ -197,8 +197,8 @@ static void test_usb_bos_macros(void)
 static void test_usb_bos(void)
 {
 	struct usb_setup_packet setup;
-	s32_t len = 0;
-	u8_t *data = NULL;
+	int32_t len = 0;
+	uint8_t *data = NULL;
 	int ret;
 
 	/* Already registered due to previous test */

@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(net_udp, CONFIG_NET_UDP_LOG_LEVEL);
 
 #define PKT_WAIT_TIME K_SECONDS(1)
 
-int net_udp_create(struct net_pkt *pkt, u16_t src_port, u16_t dst_port)
+int net_udp_create(struct net_pkt *pkt, uint16_t src_port, uint16_t dst_port)
 {
 	NET_PKT_DATA_ACCESS_DEFINE(udp_access, struct net_udp_hdr);
 	struct net_udp_hdr *udp_hdr;
@@ -39,7 +39,7 @@ int net_udp_finalize(struct net_pkt *pkt)
 {
 	NET_PKT_DATA_ACCESS_DEFINE(udp_access, struct net_udp_hdr);
 	struct net_udp_hdr *udp_hdr;
-	u16_t length = 0;
+	uint16_t length = 0;
 
 	udp_hdr = (struct net_udp_hdr *)net_pkt_get_data(pkt, &udp_access);
 	if (!udp_hdr) {
@@ -124,11 +124,11 @@ out:
 	return udp_hdr == NULL ? NULL : hdr;
 }
 
-int net_udp_register(u8_t family,
+int net_udp_register(uint8_t family,
 		     const struct sockaddr *remote_addr,
 		     const struct sockaddr *local_addr,
-		     u16_t remote_port,
-		     u16_t local_port,
+		     uint16_t remote_port,
+		     uint16_t local_port,
 		     net_conn_cb_t cb,
 		     void *user_data,
 		     struct net_conn_handle **handle)

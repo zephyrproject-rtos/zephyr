@@ -20,6 +20,7 @@
 #define ZEPHYR_INCLUDE_LINKER_LINKER_DEFS_H_
 
 #include <toolchain.h>
+#include <toolchain/common.h>
 #include <linker/sections.h>
 #include <sys/util.h>
 #include <offsets.h>
@@ -36,25 +37,34 @@
 #endif
 
 #ifdef _LINKER
+#define Z_LINK_ITERABLE(struct_type) \
+	_CONCAT(_##struct_type, _list_start) = .; \
+	KEEP(*(SORT_BY_NAME(._##struct_type##.static.*))); \
+	_CONCAT(_##struct_type, _list_end) = .
 
-
-/*
- * Space for storing per device busy bitmap. Since we do not know beforehand
- * the number of devices, we go through the below mechanism to allocate the
- * required space.
+/* Define an output section which will set up an iterable area
+ * of equally-sized data structures. For use with Z_STRUCT_SECTION_ITERABLE.
+ * Input sections will be sorted by name, per ld's SORT_BY_NAME.
+ *
+ * This macro should be used for read-only data.
  */
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-#define DEVICE_COUNT \
-	((__device_end - __device_start) / _DEVICE_STRUCT_SIZEOF)
-#define DEV_BUSY_SZ	(((DEVICE_COUNT + 31) / 32) * 4)
-#define DEVICE_BUSY_BITFIELD()			\
-		FILL(0x00) ;			\
-		__device_busy_start = .;	\
-		. = . + DEV_BUSY_SZ;		\
-		__device_busy_end = .;
-#else
-#define DEVICE_BUSY_BITFIELD()
-#endif
+#define Z_ITERABLE_SECTION_ROM(struct_type, subalign) \
+	SECTION_PROLOGUE(struct_type##_area,,SUBALIGN(subalign)) \
+	{ \
+		Z_LINK_ITERABLE(struct_type); \
+	} GROUP_LINK_IN(ROMABLE_REGION)
+
+/* Define an output section which will set up an iterable area
+ * of equally-sized data structures. For use with Z_STRUCT_SECTION_ITERABLE.
+ * Input sections will be sorted by name, per ld's SORT_BY_NAME.
+ *
+ * This macro should be used for read-write data that is modified at runtime.
+ */
+#define Z_ITERABLE_SECTION_RAM(struct_type, subalign) \
+	SECTION_DATA_PROLOGUE(struct_type##_area,,SUBALIGN(subalign)) \
+	{ \
+		Z_LINK_ITERABLE(struct_type); \
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 /*
  * generate a symbol to mark the start of the objects array for
@@ -65,57 +75,7 @@
 #define CREATE_OBJ_LEVEL(object, level)				\
 		__##object##_##level##_start = .;		\
 		KEEP(*(SORT(.##object##_##level[0-9])));	\
-		KEEP(*(SORT(.##object##_##level[1-9][0-9])));	\
-
-/*
- * link in initialization objects for all objects that are automatically
- * initialized by the kernel; the objects are sorted in the order they will be
- * initialized (i.e. ordered by level, sorted by priority within a level)
- */
-
-#define	INIT_SECTIONS()					\
-		__init_start = .;			\
-		CREATE_OBJ_LEVEL(init, PRE_KERNEL_1)	\
-		CREATE_OBJ_LEVEL(init, PRE_KERNEL_2)	\
-		CREATE_OBJ_LEVEL(init, POST_KERNEL)	\
-		CREATE_OBJ_LEVEL(init, APPLICATION)	\
-		CREATE_OBJ_LEVEL(init, SMP)		\
-		__init_end = .;				\
-
-
-/* define a section for undefined device initialization levels */
-#define INIT_UNDEFINED_SECTION()		\
-		KEEP(*(SORT(.init_[_A-Z0-9]*)))	\
-
-
-/*
- * link in devices objects, which are tied to the init ones;
- * the objects are thus sorted the same way as their init object parent
- * see include/device.h
- */
-#define	DEVICE_SECTIONS()				\
-		__device_start = .;			\
-		CREATE_OBJ_LEVEL(device, PRE_KERNEL_1)	\
-		CREATE_OBJ_LEVEL(device, PRE_KERNEL_2)	\
-		CREATE_OBJ_LEVEL(device, POST_KERNEL)	\
-		CREATE_OBJ_LEVEL(device, APPLICATION)	\
-		CREATE_OBJ_LEVEL(device, SMP)		\
-		__device_end = .;			\
-		DEVICE_BUSY_BITFIELD()			\
-
-
-/*
- * link in shell initialization objects for all modules that use shell and
- * their shell commands are automatically initialized by the kernel.
- */
-
-#define	SHELL_INIT_SECTIONS()				\
-		__shell_module_start = .;		\
-		KEEP(*(".shell_module_*"));		\
-		__shell_module_end = .;			\
-		__shell_cmd_start = .;			\
-		KEEP(*(".shell_cmd_*"));		\
-		__shell_cmd_end = .;			\
+		KEEP(*(SORT(.##object##_##level[1-9][0-9])));
 
 /*
  * link in shell initialization objects for all modules that use shell and
@@ -123,26 +83,6 @@
  */
 
 #define APP_SMEM_SECTION() KEEP(*(SORT("data_smem_*")))
-
-#ifdef CONFIG_X86 /* LINKER FILES: defines used by linker script */
-/* Should be moved to linker-common-defs.h */
-#if defined(CONFIG_XIP)
-#define ROMABLE_REGION ROM
-#else
-#define ROMABLE_REGION RAM
-#endif
-#endif
-
-/*
- * If image is loaded via kexec Linux system call, then program
- * headers need to be page aligned.
- * This can be done by section page aligning.
- */
-#ifdef CONFIG_BOOTLOADER_KEXEC
-#define KEXEC_PGALIGN_PAD(x) . = ALIGN(x);
-#else
-#define KEXEC_PGALIGN_PAD(x)
-#endif
 
 #elif defined(_ASMLANGUAGE)
 

@@ -19,6 +19,7 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config DAC_SHELL
 	bool "Enable DAC shell"
+	default y
 	depends on SHELL
 	help
 	  Enable DAC related shell commands.

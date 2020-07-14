@@ -76,30 +76,30 @@ struct ms5607_data {
 	struct device *ms5607_device;
 	const struct ms5607_transfer_function *tf;
 	/* Calibration values */
-	u16_t sens_t1;
-	u16_t off_t1;
-	u16_t tcs;
-	u16_t tco;
-	u16_t t_ref;
-	u16_t tempsens;
+	uint16_t sens_t1;
+	uint16_t off_t1;
+	uint16_t tcs;
+	uint16_t tco;
+	uint16_t t_ref;
+	uint16_t tempsens;
 
 	/* Measured values */
-	s32_t pressure;
-	s32_t temperature;
+	int32_t pressure;
+	int32_t temperature;
 
 	/* conversion commands */
-	u8_t pressure_conv_cmd;
-	u8_t temperature_conv_cmd;
+	uint8_t pressure_conv_cmd;
+	uint8_t temperature_conv_cmd;
 
-	u8_t pressure_conv_delay;
-	u8_t temperature_conv_delay;
+	uint8_t pressure_conv_delay;
+	uint8_t temperature_conv_delay;
 };
 
 struct ms5607_transfer_function {
 	int (*reset)(const struct ms5607_data *data);
-	int (*read_prom)(const struct ms5607_data *data, u8_t cmd, u16_t *val);
-	int (*start_conversion)(const struct ms5607_data *data, u8_t cmd);
-	int (*read_adc)(const struct ms5607_data *data, u32_t *val);
+	int (*read_prom)(const struct ms5607_data *data, uint8_t cmd, uint16_t *val);
+	int (*start_conversion)(const struct ms5607_data *data, uint8_t cmd);
+	int (*read_adc)(const struct ms5607_data *data, uint32_t *val);
 };
 
 #endif /* __SENSOR_MS607_H__*/

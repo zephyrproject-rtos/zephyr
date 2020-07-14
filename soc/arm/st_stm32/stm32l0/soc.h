@@ -21,11 +21,8 @@
 
 #include <stm32l0xx.h>
 
-/* ARM CMSIS definitions must be included before kernel_includes.h.
- * Therefore, it is essential to include kernel_includes.h after including
- * core SOC-specific headers.
- */
-#include <kernel_includes.h>
+/* Add include for DTS generated information */
+#include <devicetree.h>
 
 #include <stm32l0xx_ll_system.h>
 
@@ -81,6 +78,13 @@
 #ifdef CONFIG_DMA_STM32
 #include <stm32l0xx_ll_dma.h>
 #endif
+
+#ifdef CONFIG_ENTROPY_STM32_RNG
+#include <stm32l0xx_ll_rng.h>
+#endif
+#ifdef CONFIG_PWM_STM32
+#include <stm32l0xx_ll_tim.h>
+#endif /* CONFIG_PWM_STM32 */
 
 #endif /* !_ASMLANGUAGE */
 

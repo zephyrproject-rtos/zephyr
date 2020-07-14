@@ -16,13 +16,24 @@
 #define THREAD_PRIORITY K_PRIO_COOP(8)
 #define RECV_BUFFER_SIZE 1280
 
+#if defined(CONFIG_USERSPACE)
+#include <app_memory/app_memdomain.h>
+extern struct k_mem_partition app_partition;
+extern struct k_mem_domain app_domain;
+#define APP_BMEM K_APP_BMEM(app_partition)
+#define APP_DMEM K_APP_DMEM(app_partition)
+#else
+#define APP_BMEM
+#define APP_DMEM
+#endif
+
 struct data {
 	const char *proto;
 
 	struct {
 		int sock;
 		char recv_buffer[RECV_BUFFER_SIZE];
-		u32_t counter;
+		uint32_t counter;
 	} udp;
 
 	struct {
@@ -31,7 +42,7 @@ struct data {
 		struct {
 			int sock;
 			char recv_buffer[RECV_BUFFER_SIZE];
-			u32_t counter;
+			uint32_t counter;
 		} accepted[CONFIG_NET_SAMPLE_NUM_HANDLERS];
 	} tcp;
 };

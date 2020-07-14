@@ -111,6 +111,8 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40000400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000002>;
+			interrupts = <29 0>;
+			interrupt-names = "global";
 			status = "disabled";
 			label = "TIMERS_3";
 
@@ -119,7 +121,7 @@
 				status = "disabled";
 				st,prescaler = <10000>;
 				label = "PWM_3";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 	};

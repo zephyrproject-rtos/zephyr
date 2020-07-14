@@ -28,7 +28,7 @@ static int iaqcore_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
-	msg.buf = (u8_t *)&buf;
+	msg.buf = (uint8_t *)&buf;
 	msg.len = sizeof(struct iaq_registers);
 	msg.flags = I2C_MSG_READ | I2C_MSG_STOP;
 

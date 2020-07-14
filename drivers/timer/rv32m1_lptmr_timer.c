@@ -42,7 +42,7 @@
 
 struct device;	       /* forward declaration; type is not used. */
 
-static volatile u32_t cycle_count;
+static volatile uint32_t cycle_count;
 
 static void lptmr_irq_handler(struct device *unused)
 {
@@ -55,7 +55,7 @@ static void lptmr_irq_handler(struct device *unused)
 
 int z_clock_driver_init(struct device *unused)
 {
-	u32_t csr, psr, sircdiv; /* LPTMR registers */
+	uint32_t csr, psr, sircdiv; /* LPTMR registers */
 
 	ARG_UNUSED(unused);
 	IRQ_CONNECT(DT_INST_IRQN(0),
@@ -131,7 +131,7 @@ int z_clock_driver_init(struct device *unused)
 	return 0;
 }
 
-u32_t z_timer_cycle_get_32(void)
+uint32_t z_timer_cycle_get_32(void)
 {
 	return cycle_count + SYSTEM_TIMER_INSTANCE->CNR;
 }
@@ -139,7 +139,7 @@ u32_t z_timer_cycle_get_32(void)
 /*
  * Since we're not tickless, this is identically zero.
  */
-u32_t z_clock_elapsed(void)
+uint32_t z_clock_elapsed(void)
 {
 	return 0;
 }

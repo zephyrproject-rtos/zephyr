@@ -135,7 +135,7 @@ static struct k_delayed_work ipv4_timer;
 static void do_ipv4_lookup(struct k_work *work)
 {
 	static const char *query = "www.zephyrproject.org";
-	static u16_t dns_id;
+	static uint16_t dns_id;
 	int ret;
 
 	ret = dns_get_addr_info(query,
@@ -153,7 +153,7 @@ static void do_ipv4_lookup(struct k_work *work)
 }
 
 static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
-				  u32_t mgmt_event,
+				  uint32_t mgmt_event,
 				  struct net_if *iface)
 {
 	char hr_addr[NET_IPV4_ADDR_LEN];
@@ -250,7 +250,7 @@ static void do_mdns_ipv4_lookup(struct k_work *work)
 static void do_ipv4_lookup(void)
 {
 	static const char *query = "www.zephyrproject.org";
-	static u16_t dns_id;
+	static uint16_t dns_id;
 	int ret;
 
 	ret = dns_get_addr_info(query,
@@ -292,7 +292,7 @@ static void setup_ipv4(struct net_if *iface)
 static void do_ipv6_lookup(void)
 {
 	static const char *query = "www.zephyrproject.org";
-	static u16_t dns_id;
+	static uint16_t dns_id;
 	int ret;
 
 	ret = dns_get_addr_info(query,

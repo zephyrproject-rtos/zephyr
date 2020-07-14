@@ -30,9 +30,9 @@ typedef void (*irq_cfg_func_t)(void);
 #endif
 
 struct uart_liteuart_device_config {
-	u32_t port;
-	u32_t sys_clk_freq;
-	u32_t baud_rate;
+	uint32_t port;
+	uint32_t sys_clk_freq;
+	uint32_t baud_rate;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	irq_cfg_func_t cfg_func;
 #endif
@@ -95,7 +95,7 @@ static int uart_liteuart_poll_in(struct device *dev, unsigned char *c)
  */
 static void uart_liteuart_irq_tx_enable(struct device *dev)
 {
-	u8_t enable = sys_read8(UART_EV_ENABLE);
+	uint8_t enable = sys_read8(UART_EV_ENABLE);
 
 	sys_write8(enable | UART_EV_TX, UART_EV_ENABLE);
 }
@@ -109,7 +109,7 @@ static void uart_liteuart_irq_tx_enable(struct device *dev)
  */
 static void uart_liteuart_irq_tx_disable(struct device *dev)
 {
-	u8_t enable = sys_read8(UART_EV_ENABLE);
+	uint8_t enable = sys_read8(UART_EV_ENABLE);
 
 	sys_write8(enable & ~(UART_EV_TX), UART_EV_ENABLE);
 }
@@ -123,7 +123,7 @@ static void uart_liteuart_irq_tx_disable(struct device *dev)
  */
 static void uart_liteuart_irq_rx_enable(struct device *dev)
 {
-	u8_t enable = sys_read8(UART_EV_ENABLE);
+	uint8_t enable = sys_read8(UART_EV_ENABLE);
 
 	sys_write8(enable | UART_EV_RX, UART_EV_ENABLE);
 }
@@ -137,7 +137,7 @@ static void uart_liteuart_irq_rx_enable(struct device *dev)
  */
 static void uart_liteuart_irq_rx_disable(struct device *dev)
 {
-	u8_t enable = sys_read8(UART_EV_ENABLE);
+	uint8_t enable = sys_read8(UART_EV_ENABLE);
 
 	sys_write8(enable & ~(UART_EV_RX), UART_EV_ENABLE);
 }
@@ -151,7 +151,7 @@ static void uart_liteuart_irq_rx_disable(struct device *dev)
  */
 static int uart_liteuart_irq_tx_ready(struct device *dev)
 {
-	u8_t val = sys_read8(UART_TXFULL);
+	uint8_t val = sys_read8(UART_TXFULL);
 
 	return !val;
 }
@@ -165,7 +165,7 @@ static int uart_liteuart_irq_tx_ready(struct device *dev)
  */
 static int uart_liteuart_irq_rx_ready(struct device *dev)
 {
-	u8_t pending;
+	uint8_t pending;
 
 	pending = sys_read8(UART_EV_PENDING);
 
@@ -186,7 +186,7 @@ static int uart_liteuart_irq_rx_ready(struct device *dev)
  * @return Number of bytes sent
  */
 static int uart_liteuart_fifo_fill(struct device *dev,
-		const u8_t *tx_data, int size)
+		const uint8_t *tx_data, int size)
 {
 	int i;
 
@@ -207,7 +207,7 @@ static int uart_liteuart_fifo_fill(struct device *dev,
  * @return Number of bytes read
  */
 static int uart_liteuart_fifo_read(struct device *dev,
-		u8_t *rx_data, const int size)
+		uint8_t *rx_data, const int size)
 {
 	int i;
 
@@ -237,7 +237,7 @@ static void uart_liteuart_irq_err(struct device *dev)
  */
 static int uart_liteuart_irq_is_pending(struct device *dev)
 {
-	u8_t pending;
+	uint8_t pending;
 
 	pending = sys_read8(UART_EV_PENDING);
 

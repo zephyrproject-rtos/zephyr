@@ -15,7 +15,7 @@
 #define LOG_MODULE_NAME bt_aes_ccm
 #include "common/log.h"
 
-static inline void xor16(u8_t *dst, const u8_t *a, const u8_t *b)
+static inline void xor16(uint8_t *dst, const uint8_t *a, const uint8_t *b)
 {
 	dst[0] = a[0] ^ b[0];
 	dst[1] = a[1] ^ b[1];
@@ -36,9 +36,9 @@ static inline void xor16(u8_t *dst, const u8_t *a, const u8_t *b)
 }
 
 /* pmsg is assumed to have the nonce already present in bytes 1-13 */
-static int ccm_calculate_X0(const u8_t key[16], const u8_t *aad, u8_t aad_len,
-			    size_t mic_size, u8_t msg_len, u8_t b[16],
-			    u8_t X0[16])
+static int ccm_calculate_X0(const uint8_t key[16], const uint8_t *aad, uint8_t aad_len,
+			    size_t mic_size, uint8_t msg_len, uint8_t b[16],
+			    uint8_t X0[16])
 {
 	int i, j, err;
 
@@ -56,12 +56,12 @@ static int ccm_calculate_X0(const u8_t key[16], const u8_t *aad, u8_t aad_len,
 	if (aad_len) {
 		sys_put_be16(aad_len, b);
 
-		for (i = 0; i < sizeof(u16_t); i++) {
+		for (i = 0; i < sizeof(uint16_t); i++) {
 			b[i] = X0[i] ^ b[i];
 		}
 
 		j = 0;
-		aad_len += sizeof(u16_t);
+		aad_len += sizeof(uint16_t);
 		while (aad_len > 16) {
 			do {
 				b[i] = X0[i] ^ aad[j];
@@ -94,12 +94,12 @@ static int ccm_calculate_X0(const u8_t key[16], const u8_t *aad, u8_t aad_len,
 	return 0;
 }
 
-static int ccm_auth(const u8_t key[16], u8_t nonce[13],
-		    const u8_t *cleartext_msg, size_t msg_len, const u8_t *aad,
-		    size_t aad_len, u8_t *mic, size_t mic_size)
+static int ccm_auth(const uint8_t key[16], uint8_t nonce[13],
+		    const uint8_t *cleartext_msg, size_t msg_len, const uint8_t *aad,
+		    size_t aad_len, uint8_t *mic, size_t mic_size)
 {
-	u8_t b[16], Xn[16], s0[16];
-	u16_t blk_cnt, last_blk;
+	uint8_t b[16], Xn[16], s0[16];
+	uint16_t blk_cnt, last_blk;
 	int err, j, i;
 
 	last_blk = msg_len % 16;
@@ -147,11 +147,11 @@ static int ccm_auth(const u8_t key[16], u8_t nonce[13],
 	return 0;
 }
 
-static int ccm_crypt(const u8_t key[16], const u8_t nonce[13],
-		     const u8_t *in_msg, u8_t *out_msg, size_t msg_len)
+static int ccm_crypt(const uint8_t key[16], const uint8_t nonce[13],
+		     const uint8_t *in_msg, uint8_t *out_msg, size_t msg_len)
 {
-	u8_t a_i[16], s_i[16];
-	u16_t last_blk, blk_cnt;
+	uint8_t a_i[16], s_i[16];
+	uint16_t last_blk, blk_cnt;
 	size_t i, j;
 	int err;
 
@@ -186,11 +186,11 @@ static int ccm_crypt(const u8_t key[16], const u8_t nonce[13],
 	return 0;
 }
 
-int bt_ccm_decrypt(const u8_t key[16], u8_t nonce[13], const u8_t *enc_msg,
-		   size_t msg_len, const u8_t *aad, size_t aad_len,
-		   u8_t *out_msg, size_t mic_size)
+int bt_ccm_decrypt(const uint8_t key[16], uint8_t nonce[13], const uint8_t *enc_msg,
+		   size_t msg_len, const uint8_t *aad, size_t aad_len,
+		   uint8_t *out_msg, size_t mic_size)
 {
-	u8_t mic[16];
+	uint8_t mic[16];
 
 	if (aad_len >= 0xff00 || mic_size > sizeof(mic)) {
 		return -EINVAL;
@@ -207,11 +207,11 @@ int bt_ccm_decrypt(const u8_t key[16], u8_t nonce[13], const u8_t *enc_msg,
 	return 0;
 }
 
-int bt_ccm_encrypt(const u8_t key[16], u8_t nonce[13], const u8_t *msg,
-		   size_t msg_len, const u8_t *aad, size_t aad_len,
-		   u8_t *out_msg, size_t mic_size)
+int bt_ccm_encrypt(const uint8_t key[16], uint8_t nonce[13], const uint8_t *msg,
+		   size_t msg_len, const uint8_t *aad, size_t aad_len,
+		   uint8_t *out_msg, size_t mic_size)
 {
-	u8_t *mic = out_msg + msg_len;
+	uint8_t *mic = out_msg + msg_len;
 
 	BT_DBG("key %s", bt_hex(key, 16));
 	BT_DBG("nonce %s", bt_hex(nonce, 13));

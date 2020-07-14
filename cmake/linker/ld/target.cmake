@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-find_program(CMAKE_LINKER     ${CROSS_COMPILE}ld      PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+find_program(CMAKE_LINKER     ${CROSS_COMPILE}ld      PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 
 set_ifndef(LINKERFLAGPREFIX -Wl)
 

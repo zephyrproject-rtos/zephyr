@@ -29,13 +29,13 @@ LOG_MODULE_REGISTER(grove_temp, CONFIG_SENSOR_LOG_LEVEL);
 struct gts_data {
 	struct device *adc;
 	struct adc_channel_cfg ch_cfg;
-	u16_t raw;
+	uint16_t raw;
 };
 
 struct gts_config {
 	const char *adc_label;
-	s16_t b_const;
-	u8_t adc_channel;
+	int16_t b_const;
+	uint8_t adc_channel;
 };
 
 static struct adc_sequence_options options = {
@@ -73,8 +73,8 @@ static int gts_channel_get(struct device *dev,
 		     / cfg->b_const
 		     + (1 / 298.15)))
 		- 273.15;
-	val->val1 = (s32_t)dval;
-	val->val2 = ((s32_t)(dval * 1000000)) % 1000000;
+	val->val1 = (int32_t)dval;
+	val->val2 = ((int32_t)(dval * 1000000)) % 1000000;
 
 	return 0;
 }

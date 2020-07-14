@@ -85,7 +85,7 @@ static int test_file_read(void)
 	/* Now test after non-zero lseek. */
 
 	res = lseek(file, 2, SEEK_SET);
-	if (res != 0) {
+	if (res != 2) {
 		TC_PRINT("lseek failed [%d]\n", (int)res);
 		close(file);
 		return TC_FAIL;
@@ -109,7 +109,7 @@ static int test_file_read(void)
 		return TC_FAIL;
 	}
 
-	return res;
+	return TC_PASS;
 }
 
 static int test_file_close(void)

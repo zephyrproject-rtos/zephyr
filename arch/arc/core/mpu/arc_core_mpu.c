@@ -36,7 +36,7 @@ int arch_mem_domain_max_partitions_get(void)
  * Reset MPU region for a single memory partition
  */
 void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
-				      u32_t partition_id)
+				      uint32_t partition_id)
 {
 	if (_current->mem_domain_info.mem_domain != domain) {
 		return;
@@ -76,7 +76,7 @@ void arch_mem_domain_destroy(struct k_mem_domain *domain)
 }
 
 void arch_mem_domain_partition_add(struct k_mem_domain *domain,
-				   u32_t partition_id)
+				   uint32_t partition_id)
 {
 	/* No-op on this architecture */
 }

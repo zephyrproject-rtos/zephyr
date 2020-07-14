@@ -55,7 +55,7 @@ void z_impl_test_arm_user_syscall(void)
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
 	zassert_true(__get_PSPLIM() == _current->arch.priv_stack_start,
 	"PSPLIM not guarding the thread's privileged stack\n");
-	zassert_true(__get_MSPLIM() == (u32_t)z_interrupt_stacks,
+	zassert_true(__get_MSPLIM() == (uint32_t)z_interrupt_stacks,
 	"MSPLIM not guarding the interrupt stack\n");
 #endif
 }
@@ -108,13 +108,13 @@ void arm_isr_handler(void *args)
 		 */
 		zassert_true(__get_PSPLIM() == 0,
 		"PSPLIM not clear\n");
-		zassert_true(__get_MSPLIM() == (u32_t)z_interrupt_stacks,
+		zassert_true(__get_MSPLIM() == (uint32_t)z_interrupt_stacks,
 		"MSPLIM not guarding the interrupt stack\n");
 #endif
 	}
 }
 
-static void user_thread_entry(u32_t irq_line)
+static void user_thread_entry(uint32_t irq_line)
 {
 	/* User Thread */
 #if !defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
@@ -131,7 +131,7 @@ static void user_thread_entry(u32_t irq_line)
 	 * Trigger an ISR to switch to handler mode, to inspect
 	 * the kernel structs and verify the thread state.
 	 */
-	TC_PRINT("USR Thread: IRQ Line: %u\n", (u32_t)irq_line);
+	TC_PRINT("USR Thread: IRQ Line: %u\n", (uint32_t)irq_line);
 
 	NVIC->STIR = irq_line;
 	__DSB();
@@ -176,7 +176,7 @@ void test_arm_syscalls(void)
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
 	zassert_true(__get_PSPLIM() == _current->stack_info.start,
 	"PSPLIM not guarding the default stack\n");
-	zassert_true(__get_MSPLIM() == (u32_t)z_interrupt_stacks,
+	zassert_true(__get_MSPLIM() == (uint32_t)z_interrupt_stacks,
 	"MSPLIM not guarding the interrupt stack\n");
 #endif
 
@@ -231,7 +231,7 @@ void test_arm_syscalls(void)
 		user_thread_stack,
 		K_THREAD_STACK_SIZEOF(user_thread_stack),
 		(k_thread_entry_t)user_thread_entry,
-		(u32_t *)i, NULL, NULL,
+		(uint32_t *)i, NULL, NULL,
 		K_PRIO_COOP(PRIORITY), K_USER,
 		K_NO_WAIT);
 }

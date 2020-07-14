@@ -398,10 +398,10 @@ For example::
 
       struct z_object {
          char *name;
-         u8_t perms[CONFIG_MAX_THREAD_BYTES];
-         u8_t type;
-         u8_t flags;
-         u32_t data;
+         uint8_t perms[CONFIG_MAX_THREAD_BYTES];
+         uint8_t type;
+         uint8_t flags;
+         uint32_t data;
       } __packed;
 
 Note the blank line between the ``code-block`` directive and the first
@@ -414,10 +414,10 @@ This would be rendered as:
 
       struct z_object {
          char *name;
-         u8_t perms[CONFIG_MAX_THREAD_BYTES];
-         u8_t type;
-         u8_t flags;
-         u32_t data;
+         uint8_t perms[CONFIG_MAX_THREAD_BYTES];
+         uint8_t type;
+         uint8_t flags;
+         uint32_t data;
       } __packed;
 
 

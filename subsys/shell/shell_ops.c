@@ -7,7 +7,7 @@
 #include <ctype.h>
 #include "shell_ops.h"
 
-void shell_op_cursor_vert_move(const struct shell *shell, s32_t delta)
+void shell_op_cursor_vert_move(const struct shell *shell, int32_t delta)
 {
 	if (delta != 0) {
 		shell_raw_fprintf(shell->fprintf_ctx, "\033[%d%c",
@@ -16,7 +16,7 @@ void shell_op_cursor_vert_move(const struct shell *shell, s32_t delta)
 	}
 }
 
-void shell_op_cursor_horiz_move(const struct shell *shell, s32_t delta)
+void shell_op_cursor_horiz_move(const struct shell *shell, int32_t delta)
 {
 	if (delta != 0) {
 		shell_raw_fprintf(shell->fprintf_ctx, "\033[%d%c",
@@ -74,12 +74,12 @@ void shell_op_cursor_position_synchronize(const struct shell *shell)
 	}
 }
 
-void shell_op_cursor_move(const struct shell *shell, s16_t val)
+void shell_op_cursor_move(const struct shell *shell, int16_t val)
 {
 	struct shell_multiline_cons *cons = &shell->ctx->vt100_ctx.cons;
-	u16_t new_pos = shell->ctx->cmd_buff_pos + val;
-	s32_t row_span;
-	s32_t col_span;
+	uint16_t new_pos = shell->ctx->cmd_buff_pos + val;
+	int32_t row_span;
+	int32_t col_span;
 
 	shell_multiline_data_calc(cons, shell->ctx->cmd_buff_pos,
 				  shell->ctx->cmd_buff_len);
@@ -98,11 +98,11 @@ void shell_op_cursor_move(const struct shell *shell, s16_t val)
 	shell->ctx->cmd_buff_pos = new_pos;
 }
 
-static u16_t shift_calc(const char *str, u16_t pos, u16_t len, s16_t sign)
+static uint16_t shift_calc(const char *str, uint16_t pos, uint16_t len, int16_t sign)
 {
 	bool found = false;
-	u16_t ret = 0U;
-	u16_t idx;
+	uint16_t ret = 0U;
+	uint16_t idx;
 
 	while (1) {
 		idx = pos + ret * sign;
@@ -123,10 +123,10 @@ static u16_t shift_calc(const char *str, u16_t pos, u16_t len, s16_t sign)
 	return ret;
 }
 
-void shell_op_cursor_word_move(const struct shell *shell, s16_t val)
+void shell_op_cursor_word_move(const struct shell *shell, int16_t val)
 {
-	s16_t shift;
-	s16_t sign;
+	int16_t shift;
+	int16_t sign;
 
 	if (val < 0) {
 		val = -val;
@@ -147,7 +147,7 @@ void shell_op_word_remove(const struct shell *shell)
 {
 	char *str = &shell->ctx->cmd_buff[shell->ctx->cmd_buff_pos - 1];
 	char *str_start = &shell->ctx->cmd_buff[0];
-	u16_t chars_to_delete;
+	uint16_t chars_to_delete;
 
 	/* Line must not be empty and cursor must not be at 0 to continue. */
 	if ((shell->ctx->cmd_buff_len == 0) ||
@@ -209,7 +209,7 @@ void shell_op_right_arrow(const struct shell *shell)
 	}
 }
 
-static void reprint_from_cursor(const struct shell *shell, u16_t diff,
+static void reprint_from_cursor(const struct shell *shell, uint16_t diff,
 				bool data_removed)
 {
 	/* Clear eos is needed only when newly printed command is shorter than
@@ -236,9 +236,9 @@ static void reprint_from_cursor(const struct shell *shell, u16_t diff,
 	shell_op_cursor_move(shell, -diff);
 }
 
-static void data_insert(const struct shell *shell, const char *data, u16_t len)
+static void data_insert(const struct shell *shell, const char *data, uint16_t len)
 {
-	u16_t after = shell->ctx->cmd_buff_len - shell->ctx->cmd_buff_pos;
+	uint16_t after = shell->ctx->cmd_buff_len - shell->ctx->cmd_buff_pos;
 	char *curr_pos = &shell->ctx->cmd_buff[shell->ctx->cmd_buff_pos];
 
 	if ((shell->ctx->cmd_buff_len + len) >= CONFIG_SHELL_CMD_BUFF_SIZE) {
@@ -295,7 +295,7 @@ void shell_op_char_backspace(const struct shell *shell)
 
 void shell_op_char_delete(const struct shell *shell)
 {
-	u16_t diff = shell->ctx->cmd_buff_len - shell->ctx->cmd_buff_pos;
+	uint16_t diff = shell->ctx->cmd_buff_len - shell->ctx->cmd_buff_pos;
 	char *str = &shell->ctx->cmd_buff[shell->ctx->cmd_buff_pos];
 
 	if (diff == 0U) {
@@ -317,7 +317,7 @@ void shell_op_delete_from_cursor(const struct shell *shell)
 
 void shell_op_completion_insert(const struct shell *shell,
 				const char *compl,
-				u16_t compl_len)
+				uint16_t compl_len)
 {
 	data_insert(shell, compl, compl_len);
 }
@@ -378,7 +378,7 @@ void shell_write(const struct shell *shell, const void *data,
 
 	while (length) {
 		int err = shell->iface->api->write(shell->iface,
-				&((const u8_t *) data)[offset], length,
+				&((const uint8_t *) data)[offset], length,
 				&tmp_cnt);
 		(void)err;
 		__ASSERT_NO_MSG(err == 0);
@@ -408,7 +408,7 @@ static void vt100_bgcolor_set(const struct shell *shell,
 	}
 
 	/* -1 because default value is first in enum */
-	u8_t cmd[] = SHELL_VT100_BGCOLOR(bgcolor - 1);
+	uint8_t cmd[] = SHELL_VT100_BGCOLOR(bgcolor - 1);
 
 	shell->ctx->vt100_ctx.col.bgcol = bgcolor;
 	shell_raw_fprintf(shell->fprintf_ctx, "%s", cmd);
@@ -427,11 +427,11 @@ void shell_vt100_color_set(const struct shell *shell,
 
 	if (color != SHELL_NORMAL) {
 
-		u8_t cmd[] = SHELL_VT100_COLOR(color - 1);
+		uint8_t cmd[] = SHELL_VT100_COLOR(color - 1);
 
 		shell_raw_fprintf(shell->fprintf_ctx, "%s", cmd);
 	} else {
-		static const u8_t cmd[] = SHELL_VT100_MODESOFF;
+		static const uint8_t cmd[] = SHELL_VT100_MODESOFF;
 
 		shell_raw_fprintf(shell->fprintf_ctx, "%s", cmd);
 	}

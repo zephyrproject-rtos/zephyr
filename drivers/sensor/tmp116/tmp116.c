@@ -20,12 +20,12 @@
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 LOG_MODULE_REGISTER(TMP116);
 
-static int tmp116_reg_read(struct device *dev, u8_t reg, u16_t *val)
+static int tmp116_reg_read(struct device *dev, uint8_t reg, uint16_t *val)
 {
 	struct tmp116_data *drv_data = dev->driver_data;
 	const struct tmp116_dev_config *cfg = dev->config_info;
 
-	if (i2c_burst_read(drv_data->i2c, cfg->i2c_addr, reg, (u8_t *)val, 2)
+	if (i2c_burst_read(drv_data->i2c, cfg->i2c_addr, reg, (uint8_t *)val, 2)
 	    < 0) {
 		return -EIO;
 	}
@@ -45,7 +45,7 @@ static int tmp116_reg_read(struct device *dev, u8_t reg, u16_t *val)
  */
 static inline int tmp116_device_id_check(struct device *dev)
 {
-	u16_t value;
+	uint16_t value;
 
 	if (tmp116_reg_read(dev, TMP116_REG_DEVICE_ID, &value) != 0) {
 		LOG_ERR("%s: Failed to get Device ID register!",
@@ -65,7 +65,7 @@ static inline int tmp116_device_id_check(struct device *dev)
 static int tmp116_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct tmp116_data *drv_data = dev->driver_data;
-	u16_t value;
+	uint16_t value;
 	int rc;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL ||
@@ -83,7 +83,7 @@ static int tmp116_sample_fetch(struct device *dev, enum sensor_channel chan)
 	}
 
 	/* store measurements to the driver */
-	drv_data->sample = (s16_t)value;
+	drv_data->sample = (int16_t)value;
 
 	return 0;
 }
@@ -92,7 +92,7 @@ static int tmp116_channel_get(struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	struct tmp116_data *drv_data = dev->driver_data;
-	s32_t tmp;
+	int32_t tmp;
 
 	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
 		return -ENOTSUP;
@@ -102,7 +102,7 @@ static int tmp116_channel_get(struct device *dev, enum sensor_channel chan,
 	 * See datasheet "Temperature Results and Limits" section for more
 	 * details on processing sample data.
 	 */
-	tmp = ((s16_t)drv_data->sample * (s32_t)TMP116_RESOLUTION) / 10;
+	tmp = ((int16_t)drv_data->sample * (int32_t)TMP116_RESOLUTION) / 10;
 	val->val1 = tmp / 1000000; /* uCelsius */
 	val->val2 = tmp % 1000000;
 

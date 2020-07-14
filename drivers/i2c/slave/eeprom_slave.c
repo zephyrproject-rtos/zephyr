@@ -20,17 +20,17 @@ LOG_MODULE_REGISTER(i2c_slave);
 struct i2c_eeprom_slave_data {
 	struct device *i2c_controller;
 	struct i2c_slave_config config;
-	u32_t buffer_size;
-	u8_t *buffer;
-	u32_t buffer_idx;
+	uint32_t buffer_size;
+	uint8_t *buffer;
+	uint32_t buffer_idx;
 	bool first_write;
 };
 
 struct i2c_eeprom_slave_config {
 	char *controller_dev_name;
-	u8_t address;
-	u32_t buffer_size;
-	u8_t *buffer;
+	uint8_t address;
+	uint32_t buffer_size;
+	uint8_t *buffer;
 };
 
 /* convenience defines */
@@ -40,7 +40,7 @@ struct i2c_eeprom_slave_config {
 #define DEV_DATA(dev)							\
 	((struct i2c_eeprom_slave_data * const)(dev)->driver_data)
 
-int eeprom_slave_program(struct device *dev, u8_t *eeprom_data,
+int eeprom_slave_program(struct device *dev, uint8_t *eeprom_data,
 			 unsigned int length)
 {
 	struct i2c_eeprom_slave_data *data = dev->driver_data;
@@ -54,7 +54,7 @@ int eeprom_slave_program(struct device *dev, u8_t *eeprom_data,
 	return 0;
 }
 
-int eeprom_slave_read(struct device *dev, u8_t *eeprom_data,
+int eeprom_slave_read(struct device *dev, uint8_t *eeprom_data,
 		      unsigned int offset)
 {
 	struct i2c_eeprom_slave_data *data = dev->driver_data;
@@ -82,7 +82,7 @@ static int eeprom_slave_write_requested(struct i2c_slave_config *config)
 }
 
 static int eeprom_slave_read_requested(struct i2c_slave_config *config,
-				       u8_t *val)
+				       uint8_t *val)
 {
 	struct i2c_eeprom_slave_data *data = CONTAINER_OF(config,
 						struct i2c_eeprom_slave_data,
@@ -98,7 +98,7 @@ static int eeprom_slave_read_requested(struct i2c_slave_config *config,
 }
 
 static int eeprom_slave_write_received(struct i2c_slave_config *config,
-				       u8_t val)
+				       uint8_t val)
 {
 	struct i2c_eeprom_slave_data *data = CONTAINER_OF(config,
 						struct i2c_eeprom_slave_data,
@@ -124,7 +124,7 @@ static int eeprom_slave_write_received(struct i2c_slave_config *config,
 }
 
 static int eeprom_slave_read_processed(struct i2c_slave_config *config,
-				       u8_t *val)
+				       uint8_t *val)
 {
 	struct i2c_eeprom_slave_data *data = CONTAINER_OF(config,
 						struct i2c_eeprom_slave_data,
@@ -209,7 +209,7 @@ static int i2c_eeprom_slave_init(struct device *dev)
 	static struct i2c_eeprom_slave_data				\
 		i2c_eeprom_slave_##inst##_dev_data;			\
 									\
-	static u8_t							\
+	static uint8_t							\
 	i2c_eeprom_slave_##inst##_buffer[(DT_INST_PROP(inst, size))];	\
 									\
 	static const struct i2c_eeprom_slave_config			\

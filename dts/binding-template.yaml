@@ -294,7 +294,6 @@ properties:
 #         ...
 # };
 child-binding:
-    title: PWM LED
     description: LED that uses PWM
 
     properties:
@@ -314,18 +313,12 @@ child-binding:
 #                 };
 #         };
 # }
-#
-# WARNING: Due to implementation issues with legacy code, only up to two levels
-# of 'child-binding:' nesting (like below) is supported. This restriction will
-# go away in Zephyr 2.2.
 child-binding:
-    title: ...
     description: ...
 
     ...
 
     child-binding:
-        title: ...
         description: ...
 
         properties:
@@ -364,12 +357,5 @@ pwm-cells:
 # As a special case, all *-gpio properties map to the key 'gpio-cells',
 # regardless of prefix
 gpio-cells:
-    - pin
-    - flags
-
-# This older syntax is deprecated and will generate a warning when used. It
-# works as a catch-all, where the name of the referencing 'phandle-array'
-# property doesn't matter.
-"#cells":
     - pin
     - flags

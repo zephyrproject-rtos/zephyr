@@ -22,7 +22,7 @@
 
 LOG_MODULE_REGISTER(STTS751, CONFIG_SENSOR_LOG_LEVEL);
 
-static inline int stts751_set_odr_raw(struct device *dev, u8_t odr)
+static inline int stts751_set_odr_raw(struct device *dev, uint8_t odr)
 {
 	struct stts751_data *data = dev->driver_data;
 
@@ -48,10 +48,10 @@ static int stts751_sample_fetch(struct device *dev,
 }
 
 static inline void stts751_temp_convert(struct sensor_value *val,
-					s16_t raw_val)
+					int16_t raw_val)
 {
 	val->val1 = raw_val / 256;
-	val->val2 = ((s32_t)raw_val % 256) * 10000;
+	val->val2 = ((int32_t)raw_val % 256) * 10000;
 }
 
 static int stts751_channel_get(struct device *dev,
@@ -70,8 +70,8 @@ static int stts751_channel_get(struct device *dev,
 }
 
 static const struct {
-	s32_t rate;
-	s32_t rate_dec;
+	int32_t rate;
+	int32_t rate_dec;
 } stts751_map[] = {
 			{0, 62500},
 			{0, 125000},

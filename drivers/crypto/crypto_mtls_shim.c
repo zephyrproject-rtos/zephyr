@@ -108,10 +108,10 @@ int mtls_ecb_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 	return 0;
 }
 
-int mtls_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt, u8_t *iv)
+int mtls_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *iv)
 {
 	int ret, iv_bytes;
-	u8_t *p_iv, iv_loc[16];
+	uint8_t *p_iv, iv_loc[16];
 	mbedtls_aes_context *cbc_ctx = MTLS_GET_CTX(ctx, aes);
 
 	if ((ctx->flags & CAP_NO_IV_PREFIX) == 0U) {
@@ -139,10 +139,10 @@ int mtls_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt, u8_t *iv)
 	return 0;
 }
 
-int mtls_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt, u8_t *iv)
+int mtls_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *iv)
 {
 	int ret, iv_bytes;
-	u8_t *p_iv, iv_loc[16];
+	uint8_t *p_iv, iv_loc[16];
 	mbedtls_aes_context *cbc_ctx = MTLS_GET_CTX(ctx, aes);
 
 	if ((ctx->flags & CAP_NO_IV_PREFIX) == 0U) {
@@ -168,7 +168,7 @@ int mtls_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt, u8_t *iv)
 
 static int mtls_ccm_encrypt_auth(struct cipher_ctx *ctx,
 				 struct cipher_aead_pkt *apkt,
-				 u8_t *nonce)
+				 uint8_t *nonce)
 {
 	mbedtls_ccm_context *mtls_ctx = MTLS_GET_CTX(ctx, ccm);
 	int ret;
@@ -197,7 +197,7 @@ static int mtls_ccm_encrypt_auth(struct cipher_ctx *ctx,
 
 static int mtls_ccm_decrypt_auth(struct cipher_ctx *ctx,
 				 struct cipher_aead_pkt *apkt,
-				 u8_t *nonce)
+				 uint8_t *nonce)
 {
 	mbedtls_ccm_context *mtls_ctx = MTLS_GET_CTX(ctx, ccm);
 	int ret;
@@ -229,7 +229,7 @@ static int mtls_ccm_decrypt_auth(struct cipher_ctx *ctx,
 #ifdef CONFIG_MBEDTLS_CIPHER_GCM_ENABLED
 static int mtls_gcm_encrypt_auth(struct cipher_ctx *ctx,
 				 struct cipher_aead_pkt *apkt,
-				 u8_t *nonce)
+				 uint8_t *nonce)
 {
 	mbedtls_gcm_context *mtls_ctx = MTLS_GET_CTX(ctx, gcm);
 	int ret;
@@ -257,7 +257,7 @@ static int mtls_gcm_encrypt_auth(struct cipher_ctx *ctx,
 
 static int mtls_gcm_decrypt_auth(struct cipher_ctx *ctx,
 				 struct cipher_aead_pkt *apkt,
-				 u8_t *nonce)
+				 uint8_t *nonce)
 {
 	mbedtls_gcm_context *mtls_ctx = MTLS_GET_CTX(ctx, gcm);
 	int ret;

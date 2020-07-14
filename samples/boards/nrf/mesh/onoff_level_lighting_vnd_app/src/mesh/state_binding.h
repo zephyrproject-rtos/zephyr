@@ -24,12 +24,12 @@ enum state_binding {
 	CTL_DELTA_UV
 };
 
-u16_t constrain_lightness(u16_t light);
-u16_t constrain_temperature(u16_t temp);
-u16_t level_to_light_ctl_temp(s16_t level);
+uint16_t constrain_lightness(uint16_t light);
+uint16_t constrain_temperature(uint16_t temp);
+uint16_t level_to_light_ctl_temp(int16_t level);
 
-void set_target(u8_t type, void *dptr);
-int get_current(u8_t type);
-int get_target(u8_t type);
+void set_target(uint8_t type, void *dptr);
+int get_current(uint8_t type);
+int get_target(uint8_t type);
 
 #endif

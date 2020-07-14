@@ -21,8 +21,8 @@
 #define TEST_REGION_OFFSET  0xFE00
 #define TEST_REGION_SIZE    0x400
 
-static u8_t write_buf[TEST_REGION_SIZE];
-static u8_t read_buf[TEST_REGION_SIZE];
+static uint8_t write_buf[TEST_REGION_SIZE];
+static uint8_t read_buf[TEST_REGION_SIZE];
 
 void main(void)
 {
@@ -31,7 +31,7 @@ void main(void)
 	struct device *flash_dev;
 	int i;
 	int err;
-	u8_t data;
+	uint8_t data;
 	struct flash_pages_info pages_info;
 	size_t page_count, chip_size;
 
@@ -59,7 +59,7 @@ void main(void)
 	++data;
 	printk("Preparing test content starting with 0x%02X.\n", data);
 	for (i = 0; i < TEST_REGION_SIZE; ++i) {
-		write_buf[i] = (u8_t)(data + i);
+		write_buf[i] = (uint8_t)(data + i);
 	}
 
 #if !IS_ENABLED(CONFIG_SPI_FLASH_AT45_USE_READ_MODIFY_WRITE)

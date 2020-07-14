@@ -67,7 +67,7 @@ struct sockaddr_nm {
 	uintptr_t nm_pid;
 
 	/** net_mgmt mask */
-	u32_t nm_mask;
+	uint32_t nm_mask;
 };
 
 
@@ -76,13 +76,13 @@ struct sockaddr_nm {
  */
 struct net_mgmt_msghdr {
 	/** Network management version */
-	u32_t nm_msg_version;
+	uint32_t nm_msg_version;
 
 	/** Length of the data */
-	u32_t nm_msg_len;
+	uint32_t nm_msg_len;
 
 	/** The actual message data follows */
-	u8_t nm_msg[];
+	uint8_t nm_msg[];
 };
 
 /**

@@ -76,10 +76,10 @@ BUILD_ASSERT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 32768,
  */
 
 static struct k_spinlock lock;
-static u32_t total_cycles;
-static u32_t cached_icr = CYCLES_PER_TICK;
+static uint32_t total_cycles;
+static uint32_t cached_icr = CYCLES_PER_TICK;
 
-static void timer_restart(u32_t countdown)
+static void timer_restart(uint32_t countdown)
 {
 	TIMER_REGS->CTRL = 0U;
 	TIMER_REGS->CTRL = MCHP_RTMR_CTRL_BLK_EN;
@@ -99,9 +99,9 @@ static void timer_restart(u32_t countdown)
  * is 0 and the START bit is set then the timer has been started and is in the
  * process of moving the preload register value into the count register.
  */
-static inline u32_t timer_count(void)
+static inline uint32_t timer_count(void)
 {
-	u32_t ccr = TIMER_REGS->CNT;
+	uint32_t ccr = TIMER_REGS->CNT;
 
 	if ((ccr == 0) && (TIMER_REGS->CTRL & MCHP_RTMR_CTRL_START)) {
 		ccr = cached_icr;
@@ -112,7 +112,7 @@ static inline u32_t timer_count(void)
 
 #ifdef CONFIG_TICKLESS_KERNEL
 
-static u32_t last_announcement;	/* last time we called z_clock_announce() */
+static uint32_t last_announcement;	/* last time we called z_clock_announce() */
 
 /*
  * Request a timeout n Zephyr ticks in the future from now.
@@ -126,14 +126,14 @@ static u32_t last_announcement;	/* last time we called z_clock_announce() */
  * Writing a new value to preload only takes effect once the count
  * register reaches 0.
  */
-void z_clock_set_timeout(s32_t n, bool idle)
+void z_clock_set_timeout(int32_t n, bool idle)
 {
 	ARG_UNUSED(idle);
 
-	u32_t ccr, temp;
+	uint32_t ccr, temp;
 	int   full_ticks;	/* number of complete ticks we'll wait */
-	u32_t full_cycles;	/* full_ticks represented as cycles */
-	u32_t partial_cycles;	/* number of cycles to first tick boundary */
+	uint32_t full_cycles;	/* full_ticks represented as cycles */
+	uint32_t partial_cycles;	/* number of cycles to first tick boundary */
 
 	if (idle && (n == K_TICKS_FOREVER)) {
 		/*
@@ -185,25 +185,25 @@ void z_clock_set_timeout(s32_t n, bool idle)
 
 /*
  * Return the number of Zephyr ticks elapsed from last call to
- * z_clock_announce in the ISR. The caller casts u32_t to s32_t.
+ * z_clock_announce in the ISR. The caller casts uint32_t to int32_t.
  * We must make sure bit[31] is 0 in the return value.
  */
-u32_t z_clock_elapsed(void)
+uint32_t z_clock_elapsed(void)
 {
-	u32_t ccr;
-	u32_t ticks;
-	s32_t elapsed;
+	uint32_t ccr;
+	uint32_t ticks;
+	int32_t elapsed;
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	ccr = timer_count();
 
 	/* It may not look efficient but the compiler does a good job */
-	elapsed = (s32_t)total_cycles - (s32_t)last_announcement;
+	elapsed = (int32_t)total_cycles - (int32_t)last_announcement;
 	if (elapsed < 0) {
 		elapsed = -1 * elapsed;
 	}
-	ticks = (u32_t)elapsed;
+	ticks = (uint32_t)elapsed;
 	ticks += cached_icr - ccr;
 	ticks /= CYCLES_PER_TICK;
 	ticks &= TIMER_COUNT_MASK;
@@ -222,8 +222,8 @@ static void xec_rtos_timer_isr(void *arg)
 	read_timer_start_of_tick_handler();
 #endif
 
-	u32_t cycles;
-	s32_t ticks;
+	uint32_t cycles;
+	int32_t ticks;
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
@@ -271,7 +271,7 @@ static void xec_rtos_timer_isr(void *arg)
 	/* Restart the timer as early as possible to minimize drift... */
 	timer_restart(cached_icr);
 
-	u32_t temp = total_cycles + CYCLES_PER_TICK;
+	uint32_t temp = total_cycles + CYCLES_PER_TICK;
 
 	total_cycles = temp & TIMER_COUNT_MASK;
 	k_spin_unlock(&lock, key);
@@ -279,7 +279,7 @@ static void xec_rtos_timer_isr(void *arg)
 	z_clock_announce(1);
 }
 
-u32_t z_clock_elapsed(void)
+uint32_t z_clock_elapsed(void)
 {
 	return 0U;
 }
@@ -293,13 +293,13 @@ u32_t z_clock_elapsed(void)
  *    The kernel is casting return to (int) and using it uncasted in math
  *    expressions with int types. Expression result is stored in an int.
  * 2. If CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT is not defined then
- *    z_impl_k_busy_wait calls here. This code path uses the value as u32_t.
+ *    z_impl_k_busy_wait calls here. This code path uses the value as uint32_t.
  *
  */
-u32_t z_timer_cycle_get_32(void)
+uint32_t z_timer_cycle_get_32(void)
 {
-	u32_t ret;
-	u32_t ccr;
+	uint32_t ret;
+	uint32_t ccr;
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
@@ -348,7 +348,7 @@ int z_clock_driver_init(struct device *device)
 	irq_enable(RTMR_IRQn);
 
 #ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
-	u32_t btmr_ctrl = B32TMR0_REGS->CTRL = (MCHP_BTMR_CTRL_ENABLE
+	uint32_t btmr_ctrl = B32TMR0_REGS->CTRL = (MCHP_BTMR_CTRL_ENABLE
 			  | MCHP_BTMR_CTRL_AUTO_RESTART
 			  | MCHP_BTMR_CTRL_COUNT_UP
 			  | (47UL << MCHP_BTMR_CTRL_PRESCALE_POS));
@@ -381,16 +381,16 @@ int z_clock_driver_init(struct device *device)
  * 32-bit basic timer 0 configured for 1MHz count up, auto-reload,
  * and no interrupt generation.
  */
-void arch_busy_wait(u32_t usec_to_wait)
+void arch_busy_wait(uint32_t usec_to_wait)
 {
 	if (usec_to_wait == 0) {
 		return;
 	}
 
-	u32_t start = B32TMR0_REGS->CNT;
+	uint32_t start = B32TMR0_REGS->CNT;
 
 	for (;;) {
-		u32_t curr = B32TMR0_REGS->CNT;
+		uint32_t curr = B32TMR0_REGS->CNT;
 
 		if ((curr - start) >= usec_to_wait) {
 			break;

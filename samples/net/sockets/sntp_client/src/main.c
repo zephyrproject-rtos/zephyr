@@ -49,7 +49,7 @@ void main(void)
 
 	LOG_INF("status: %d", rv);
 	LOG_INF("time since Epoch: high word: %u, low word: %u",
-		(u32_t)(sntp_time.seconds >> 32), (u32_t)sntp_time.seconds);
+		(uint32_t)(sntp_time.seconds >> 32), (uint32_t)sntp_time.seconds);
 
 #if defined(CONFIG_NET_IPV6)
 	sntp_close(&ctx);
@@ -77,7 +77,7 @@ void main(void)
 
 	LOG_INF("status: %d", rv);
 	LOG_INF("time since Epoch: high word: %u, low word: %u",
-		(u32_t)(sntp_time.seconds >> 32), (u32_t)sntp_time.seconds);
+		(uint32_t)(sntp_time.seconds >> 32), (uint32_t)sntp_time.seconds);
 #endif
 
 end:

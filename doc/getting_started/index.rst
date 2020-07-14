@@ -292,33 +292,38 @@ to build Zephyr applications.
          .. code-block:: bash
 
             cd ~
-            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.11.2/zephyr-sdk-0.11.2-setup.run
+            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.11.3/zephyr-sdk-0.11.3-setup.run
 
-      #. Run the installer, installing the SDK in :file:`~/zephyr-sdk-0.11.2`:
+      #. Run the installer, installing the SDK in :file:`~/zephyr-sdk-0.11.3`:
 
          .. code-block:: bash
 
-            chmod +x zephyr-sdk-0.11.2-setup.run
-            ./zephyr-sdk-0.11.2-setup.run -- -d ~/zephyr-sdk-0.11.2
+            chmod +x zephyr-sdk-0.11.3-setup.run
+            ./zephyr-sdk-0.11.3-setup.run -- -d ~/zephyr-sdk-0.11.3
 
          .. note::
+            It is recommended to install the Zephyr SDK at one of the following locations:
+
+            * ``$HOME/zephyr-sdk[-x.y.z]``
+            * ``$HOME/.local/zephyr-sdk[-x.y.z]``
+            * ``$HOME/.local/opt/zephyr-sdk[-x.y.z]``
+            * ``$HOME/bin/zephyr-sdk[-x.y.z]``
+            * ``/opt/zephyr-sdk[-x.y.z]``
+            * ``/usr/zephyr-sdk[-x.y.z]``
+            * ``/usr/local/zephyr-sdk[-x.y.z]``
+
+            where ``[-x.y.z]`` is optional text, and can be any text, for example ``-0.11.3``.
+
+            If installing the Zephyr SDK outside any of those locations, please read: :ref:`zephyr_sdk`
 
             You cannot move the SDK directory after you have installed it.
-
-      #. Set the :ref:`environment variables <env_vars>` required to use the
-         Zephyr SDK:
-
-         .. code-block:: bash
-
-            export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-            export ZEPHYR_SDK_INSTALL_DIR=~/zephyr-sdk-0.11.2
 
       #. Install `udev <https://en.wikipedia.org/wiki/Udev>`_ rules, which
          allow you to flash most Zephyr boards as a regular user:
 
          .. code-block:: bash
 
-            sudo cp ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/x86_64-pokysdk-linux/usr/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d
+            sudo cp ~/zephyr-sdk-0.11.3/sysroots/x86_64-pokysdk-linux/usr/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d
             sudo udevadm control --reload
 
    .. group-tab:: macOS

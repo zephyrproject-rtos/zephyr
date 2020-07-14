@@ -8,11 +8,11 @@
 #include <cmsis_os2.h>
 
 #define ONESHOT_TIME_TICKS      100
-#define PERIOD_TICKS            50
+#define PERIOD_TICKS            MAX(50, k_ms_to_ticks_ceil32(5))
 #define NUM_PERIODS             5
 
-u32_t num_oneshots_executed;
-u32_t num_periods_executed;
+uint32_t num_oneshots_executed;
+uint32_t num_periods_executed;
 
 const osTimerAttr_t timer_attr = {
 	"myTimer",
@@ -23,7 +23,7 @@ const osTimerAttr_t timer_attr = {
 
 void Timer1_Callback(void *arg)
 {
-	u32_t Tmr = *(u32_t *)arg;
+	uint32_t Tmr = *(uint32_t *)arg;
 
 	num_oneshots_executed++;
 	TC_PRINT("oneshot_callback (Timer %d) = %d\n",
@@ -32,7 +32,7 @@ void Timer1_Callback(void *arg)
 
 void Timer2_Callback(void *arg)
 {
-	u32_t Tmr = *(u32_t *)arg;
+	uint32_t Tmr = *(uint32_t *)arg;
 
 	num_periods_executed++;
 	TC_PRINT("periodic_callback (Timer %d) = %d\n",
@@ -43,10 +43,10 @@ void test_timer(void)
 {
 	osTimerId_t id1;
 	osTimerId_t id2;
-	u32_t exec1;
-	u32_t exec2;
+	uint32_t exec1;
+	uint32_t exec2;
 	osStatus_t status;
-	u32_t timerDelay;
+	uint32_t timerDelay;
 	const char *name;
 
 	/* Create one-shot timer */

@@ -9,10 +9,22 @@ if(CONFIG_BT_LL_SW_SPLIT)
     zephyr_library_sources(
       ll_sw/nordic/lll/lll_adv.c
       )
+    zephyr_library_sources_ifdef(
+      CONFIG_BT_CTLR_ADV_EXT
+      ll_sw/nordic/lll/lll_adv_aux.c
+      )
+    zephyr_library_sources_ifdef(
+      CONFIG_BT_CTLR_ADV_PERIODIC
+      ll_sw/nordic/lll/lll_adv_sync.c
+      )
   endif()
   if(CONFIG_BT_OBSERVER)
     zephyr_library_sources(
       ll_sw/nordic/lll/lll_scan.c
+      )
+    zephyr_library_sources_ifdef(
+      CONFIG_BT_CTLR_ADV_EXT
+      ll_sw/nordic/lll/lll_scan_aux.c
       )
   endif()
   if(CONFIG_BT_CONN)

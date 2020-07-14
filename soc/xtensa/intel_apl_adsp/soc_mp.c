@@ -55,17 +55,17 @@ static struct device *idc;
 extern void __start(void);
 
 struct cpustart_rec {
-	u32_t		cpu;
+	uint32_t		cpu;
 
 	arch_cpustart_t	fn;
 	char		*stack_top;
 	void		*arg;
-	u32_t		vecbase;
+	uint32_t		vecbase;
 
-	u32_t		alive;
+	uint32_t		alive;
 
 	/* padding to cache line */
-	u8_t		padding[XCHAL_DCACHE_LINESIZE - 6 * 4];
+	uint8_t		padding[XCHAL_DCACHE_LINESIZE - 6 * 4];
 };
 
 static __aligned(XCHAL_DCACHE_LINESIZE)
@@ -76,7 +76,7 @@ static void *mp_top;
 static void mp_entry2(void)
 {
 	volatile int ps, ie;
-	u32_t idc_reg;
+	uint32_t idc_reg;
 
 	/* Copy over VECBASE from the main CPU for an initial value
 	 * (will need to revisit this if we ever allow a user API to
@@ -149,8 +149,8 @@ __asm__("\n"
  */
 void z_mp_entry(void)
 {
-	*(u32_t *)CONFIG_SRAM_BASE_ADDRESS = 0xDEADBEEF;
-	SOC_DCACHE_FLUSH((u32_t *)CONFIG_SRAM_BASE_ADDRESS, 64);
+	*(uint32_t *)CONFIG_SRAM_BASE_ADDRESS = 0xDEADBEEF;
+	SOC_DCACHE_FLUSH((uint32_t *)CONFIG_SRAM_BASE_ADDRESS, 64);
 
 	mp_stack_switch(mp_top, mp_entry2);
 }
@@ -158,8 +158,8 @@ void z_mp_entry(void)
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
 {
-	u32_t vecbase;
-	u32_t idc_reg;
+	uint32_t vecbase;
+	uint32_t idc_reg;
 
 	__ASSERT(cpu_num == 1, "Only supports only two CPUs!");
 

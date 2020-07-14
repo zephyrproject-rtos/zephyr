@@ -36,7 +36,7 @@ struct can_bus_err_cnt current_err_cnt;
 
 CAN_DEFINE_MSGQ(counter_msgq, 2);
 
-void tx_irq_callback(u32_t error_flags, void *arg)
+void tx_irq_callback(uint32_t error_flags, void *arg)
 {
 	char *sender = (char *)arg;
 
@@ -73,7 +73,7 @@ void rx_thread(void *arg1, void *arg2, void *arg3)
 		}
 
 		printk("Counter received: %u\n",
-		       sys_be16_to_cpu(UNALIGNED_GET((u16_t *)&msg.data)));
+		       sys_be16_to_cpu(UNALIGNED_GET((uint16_t *)&msg.data)));
 	}
 }
 
@@ -190,8 +190,8 @@ void main(void)
 		.ext_id = COUNTER_MSG_ID,
 		.dlc = 2
 	};
-	u8_t toggle = 1;
-	u16_t counter = 0;
+	uint8_t toggle = 1;
+	uint16_t counter = 0;
 	struct device *led_gpio_dev = NULL;
 	k_tid_t rx_tid, get_state_tid;
 	int ret;
@@ -267,7 +267,7 @@ void main(void)
 		k_sleep(SLEEP_TIME);
 
 		UNALIGNED_PUT(sys_cpu_to_be16(counter),
-			      (u16_t *)&counter_frame.data[0]);
+			      (uint16_t *)&counter_frame.data[0]);
 		counter++;
 		/* This sending call is blocking until the message is sent. */
 		can_send(can_dev, &counter_frame, K_MSEC(100), NULL, NULL);

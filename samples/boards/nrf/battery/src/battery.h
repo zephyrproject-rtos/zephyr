@@ -31,10 +31,10 @@ int battery_sample(void);
  */
 struct battery_level_point {
 	/** Remaining life at #lvl_mV. */
-	u16_t lvl_pptt;
+	uint16_t lvl_pptt;
 
 	/** Battery voltage at #lvl_pptt remaining life. */
-	u16_t lvl_mV;
+	uint16_t lvl_mV;
 };
 
 /** Calculate the estimated battery level based on a measured voltage.

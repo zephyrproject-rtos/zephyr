@@ -19,37 +19,37 @@
 struct pinmux_mcux_lpc_config {
 	clock_ip_name_t clock_ip_name;
 	IOCON_Type *base;
-	u32_t port_no;
+	uint32_t port_no;
 };
 
-static int pinmux_mcux_lpc_set(struct device *dev, u32_t pin, u32_t func)
+static int pinmux_mcux_lpc_set(struct device *dev, uint32_t pin, uint32_t func)
 {
 	const struct pinmux_mcux_lpc_config *config = dev->config_info;
 	IOCON_Type *base = config->base;
-	u32_t port = config->port_no;
+	uint32_t port = config->port_no;
 
 	base->PIO[port][pin] = func;
 
 	return 0;
 }
 
-static int pinmux_mcux_lpc_get(struct device *dev, u32_t pin, u32_t *func)
+static int pinmux_mcux_lpc_get(struct device *dev, uint32_t pin, uint32_t *func)
 {
 	const struct pinmux_mcux_lpc_config *config = dev->config_info;
 	IOCON_Type *base = config->base;
-	u32_t port = config->port_no;
+	uint32_t port = config->port_no;
 
 	*func = base->PIO[port][pin];
 
 	return 0;
 }
 
-static int pinmux_mcux_lpc_pullup(struct device *dev, u32_t pin, u8_t func)
+static int pinmux_mcux_lpc_pullup(struct device *dev, uint32_t pin, uint8_t func)
 {
 	return -ENOTSUP;
 }
 
-static int pinmux_mcux_lpc_input(struct device *dev, u32_t pin, u8_t func)
+static int pinmux_mcux_lpc_input(struct device *dev, uint32_t pin, uint8_t func)
 {
 	return -ENOTSUP;
 }

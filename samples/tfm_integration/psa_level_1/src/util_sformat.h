@@ -19,11 +19,11 @@ extern "C" {
  */
 struct sf_hex_tbl_fmt {
 	/** Whether or not to render ASCII equivalents. */
-	u8_t ascii : 1;
+	uint8_t ascii : 1;
 	/** Whether or not to add address labels to the output. */
-	u8_t addr_label : 1;
+	uint8_t addr_label : 1;
 	/** The starting value for the address labels. */
-	u32_t addr;
+	uint32_t addr;
 } __packed;
 
 /**

@@ -20,13 +20,13 @@ LOG_MODULE_DECLARE(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 
 enum net_verdict ppp_parse_options(struct ppp_fsm *fsm,
 				   struct net_pkt *pkt,
-				   u16_t length,
+				   uint16_t length,
 				   struct ppp_option_pkt options[],
 				   int options_len)
 {
 	int remaining = length, pkt_remaining;
 	enum net_verdict verdict;
-	u8_t opt_type, opt_len;
+	uint8_t opt_type, opt_len;
 	int ret, idx = 0;
 
 	pkt_remaining = net_pkt_remaining_data(pkt);
@@ -90,7 +90,7 @@ out:
 	return verdict;
 }
 
-struct net_buf *ppp_get_net_buf(struct net_buf *root_buf, u8_t len)
+struct net_buf *ppp_get_net_buf(struct net_buf *root_buf, uint8_t len)
 {
 	struct net_buf *tmp;
 

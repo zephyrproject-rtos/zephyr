@@ -29,7 +29,7 @@
  * @retval 0 If successful.
  * @retval -EINVAL Invalid data size
  */
-int eeprom_slave_program(struct device *dev, u8_t *eeprom_data,
+int eeprom_slave_program(struct device *dev, uint8_t *eeprom_data,
 			 unsigned int length);
 
 /**
@@ -42,7 +42,7 @@ int eeprom_slave_program(struct device *dev, u8_t *eeprom_data,
  * @retval 0 If successful.
  * @retval -EINVAL Invalid data pointer or offset
  */
-int eeprom_slave_read(struct device *dev, u8_t *eeprom_data,
+int eeprom_slave_read(struct device *dev, uint8_t *eeprom_data,
 		      unsigned int offset);
 
 /**

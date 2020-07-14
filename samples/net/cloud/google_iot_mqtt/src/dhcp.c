@@ -23,7 +23,7 @@ static struct net_mgmt_event_callback mgmt_cb;
 static K_SEM_DEFINE(got_address, 0, 1);
 
 static void handler(struct net_mgmt_event_callback *cb,
-		    u32_t mgmt_event,
+		    uint32_t mgmt_event,
 		    struct net_if *iface)
 {
 	int i;

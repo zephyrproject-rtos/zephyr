@@ -60,44 +60,44 @@
 #define ENS210_CRC7_DATA_MSB   (1UL << (ENS210_CRC7_DATA_WIDTH - 1))
 
 struct ens210_value_data {
-	u16_t val;
-	u8_t  valid : 1;
-	u8_t  crc7  : 7;
+	uint16_t val;
+	uint8_t  valid : 1;
+	uint8_t  crc7  : 7;
 } __packed;
 
 struct ens210_sys_ctrl {
-	u8_t  low_power : 1;
-	u8_t  reserved  : 6;
-	u8_t  reset     : 1;
+	uint8_t  low_power : 1;
+	uint8_t  reserved  : 6;
+	uint8_t  reset     : 1;
 } __packed;
 
 struct ens210_sys_stat {
-	u8_t  sys_active : 1;
-	u8_t  reserved   : 7;
+	uint8_t  sys_active : 1;
+	uint8_t  reserved   : 7;
 } __packed;
 
 struct ens210_sens_run {
-	u8_t  t_run    : 1;
-	u8_t  h_run    : 1;
-	u8_t  reserved : 6;
+	uint8_t  t_run    : 1;
+	uint8_t  h_run    : 1;
+	uint8_t  reserved : 6;
 } __packed;
 
 struct ens210_sens_start {
-	u8_t  t_start  : 1;
-	u8_t  h_start  : 1;
-	u8_t  reserved : 6;
+	uint8_t  t_start  : 1;
+	uint8_t  h_start  : 1;
+	uint8_t  reserved : 6;
 } __packed;
 
 struct ens210_sens_stop {
-	u8_t  t_stop  : 1;
-	u8_t  h_stop  : 1;
-	u8_t  reserved : 6;
+	uint8_t  t_stop  : 1;
+	uint8_t  h_stop  : 1;
+	uint8_t  reserved : 6;
 } __packed;
 
 struct ens210_sens_stat {
-	u8_t  t_stat  : 1;
-	u8_t  h_stat  : 1;
-	u8_t  reserved : 6;
+	uint8_t  t_stat  : 1;
+	uint8_t  h_stat  : 1;
+	uint8_t  reserved : 6;
 } __packed;
 
 struct ens210_data {

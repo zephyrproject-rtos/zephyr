@@ -35,7 +35,7 @@ extern "C" {
  */
 
 
-typedef u8_t i2s_fmt_t;
+typedef uint8_t i2s_fmt_t;
 
 /** Data Format bit field position. */
 #define I2S_FMT_DATA_FORMAT_SHIFT           0
@@ -167,7 +167,7 @@ typedef u8_t i2s_fmt_t;
 #define I2S_FMT_CLK_IF_NB		(2 << I2S_FMT_CLK_FORMAT_SHIFT)
 #define I2S_FMT_CLK_IF_IB		(3 << I2S_FMT_CLK_FORMAT_SHIFT)
 
-typedef u8_t i2s_opt_t;
+typedef uint8_t i2s_opt_t;
 
 /** Run bit clock continuously */
 #define I2S_OPT_BIT_CLK_CONT                (0 << 0)
@@ -297,14 +297,14 @@ enum i2s_trigger_cmd {
  *        queue is full or RX queue is empty, or 0, or SYS_FOREVER_MS.
  */
 struct i2s_config {
-	u8_t word_size;
-	u8_t channels;
+	uint8_t word_size;
+	uint8_t channels;
 	i2s_fmt_t format;
 	i2s_opt_t options;
-	u32_t frame_clk_freq;
+	uint32_t frame_clk_freq;
 	struct k_mem_slab *mem_slab;
 	size_t block_size;
-	s32_t timeout;
+	int32_t timeout;
 };
 
 /**

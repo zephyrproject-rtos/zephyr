@@ -54,9 +54,9 @@ static inline int z_abort_thread_timeout(struct k_thread *thread)
 	return z_abort_timeout(&thread->base.timeout);
 }
 
-s32_t z_get_next_timeout_expiry(void);
+int32_t z_get_next_timeout_expiry(void);
 
-void z_set_timeout_expiry(s32_t ticks, bool idle);
+void z_set_timeout_expiry(int32_t ticks, bool idle);
 
 k_ticks_t z_timeout_remaining(struct _timeout *timeout);
 
@@ -66,7 +66,7 @@ k_ticks_t z_timeout_remaining(struct _timeout *timeout);
 #define z_init_thread_timeout(t) do {} while (false)
 #define z_abort_thread_timeout(t) (0)
 #define z_is_inactive_timeout(t) 0
-#define z_get_next_timeout_expiry() ((s32_t) K_TICKS_FOREVER)
+#define z_get_next_timeout_expiry() ((int32_t) K_TICKS_FOREVER)
 #define z_set_timeout_expiry(t, i) do {} while (false)
 
 static inline void z_add_thread_timeout(struct k_thread *th, k_timeout_t ticks)

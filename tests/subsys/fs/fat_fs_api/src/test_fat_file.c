@@ -34,6 +34,10 @@ static int test_file_open(void)
 
 	TC_PRINT("Opened file %s\n", TEST_FILE);
 
+	if (check_file_dir_exists(TEST_FILE)) {
+		TC_PRINT("File now exists %s\n", TEST_FILE);
+	}
+
 	return res;
 }
 

@@ -209,24 +209,24 @@ enum queue_idx {
 
 /** Minimal ring buffer implementation */
 struct ring_buf {
-	u32_t *buf;
-	u16_t len;
-	u16_t head;
-	u16_t tail;
+	uint32_t *buf;
+	uint16_t len;
+	uint16_t head;
+	uint16_t tail;
 };
 
 /** Receive/transmit buffer descriptor */
 struct gmac_desc {
-	u32_t w0;
-	u32_t w1;
+	uint32_t w0;
+	uint32_t w1;
 };
 
 /** Ring list of receive/transmit buffer descriptors */
 struct gmac_desc_list {
 	struct gmac_desc *buf;
-	u16_t len;
-	u16_t head;
-	u16_t tail;
+	uint16_t len;
+	uint16_t head;
+	uint16_t tail;
 };
 
 /** GMAC Queue data */
@@ -249,11 +249,11 @@ struct gmac_queue {
 #endif
 
 	/** Number of RX frames dropped by the driver */
-	volatile u32_t err_rx_frames_dropped;
+	volatile uint32_t err_rx_frames_dropped;
 	/** Number of times receive queue was flushed */
-	volatile u32_t err_rx_flushed_count;
+	volatile uint32_t err_rx_flushed_count;
 	/** Number of times transmit queue was flushed */
-	volatile u32_t err_tx_flushed_count;
+	volatile uint32_t err_tx_flushed_count;
 
 	enum queue_idx que_idx;
 };
@@ -261,9 +261,9 @@ struct gmac_queue {
 /* Device constant configuration parameters */
 struct eth_sam_dev_cfg {
 	Gmac *regs;
-	u32_t periph_id;
+	uint32_t periph_id;
 	const struct soc_gpio_pin *pin_list;
-	u32_t pin_list_size;
+	uint32_t pin_list_size;
 	void (*config_func)(void);
 	struct phy_sam_gmac_dev phy;
 };
@@ -274,7 +274,7 @@ struct eth_sam_dev_data {
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 	struct device *ptp_clock;
 #endif
-	u8_t mac_addr[6];
+	uint8_t mac_addr[6];
 	struct k_delayed_work monitor_work;
 	bool link_up;
 	struct gmac_queue queue_list[GMAC_QUEUE_NUM];

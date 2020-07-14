@@ -22,13 +22,13 @@ extern "C" {
 
 struct led_data {
 	/* Minimum acceptable LED blinking time period (in ms) */
-	u32_t min_period;
+	uint32_t min_period;
 	/* Maximum acceptable LED blinking time period (in ms) */
-	u32_t max_period;
+	uint32_t max_period;
 	/* Minimum acceptable LED brightness value */
-	u16_t min_brightness;
+	uint16_t min_brightness;
 	/* Maximum acceptable LED brightness value */
-	u16_t max_brightness;
+	uint16_t max_brightness;
 };
 
 #ifdef __cplusplus

@@ -14,8 +14,8 @@
 struct gpio_mmio32_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
-	volatile u32_t *reg;
-	u32_t mask;
+	volatile uint32_t *reg;
+	uint32_t mask;
 };
 
 struct gpio_mmio32_context {
@@ -49,7 +49,7 @@ static const struct gpio_mmio32_config _dev_name##_dev_cfg = {		\
 	.common = {							\
 		 .port_pin_mask = _mask,				\
 	},								\
-	.reg	= (volatile u32_t *)_address,				\
+	.reg	= (volatile uint32_t *)_address,				\
 	.mask	= _mask,						\
 };									\
 									\

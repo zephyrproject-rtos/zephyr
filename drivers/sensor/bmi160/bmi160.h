@@ -379,8 +379,8 @@ enum bmi160_odr {
 /* end of default settings */
 
 struct bmi160_range {
-	u16_t range;
-	u8_t reg_val;
+	uint16_t range;
+	uint8_t reg_val;
 };
 
 struct bmi160_device_config {
@@ -392,39 +392,39 @@ struct bmi160_device_config {
 };
 
 union bmi160_pmu_status {
-	u8_t raw;
+	uint8_t raw;
 	struct {
-		u8_t mag : 2;
-		u8_t gyr : 2;
-		u8_t acc : 2;
-		u8_t res : 2;
+		uint8_t mag : 2;
+		uint8_t gyr : 2;
+		uint8_t acc : 2;
+		uint8_t res : 2;
 	};
 };
 
 #if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND) && \
 		!defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
-#	define BMI160_SAMPLE_SIZE		(6 * sizeof(u16_t))
+#	define BMI160_SAMPLE_SIZE		(6 * sizeof(uint16_t))
 #else
-#	define BMI160_SAMPLE_SIZE		(3 * sizeof(u16_t))
+#	define BMI160_SAMPLE_SIZE		(3 * sizeof(uint16_t))
 #endif
 
 #define BMI160_BUF_SIZE			(BMI160_SAMPLE_SIZE)
 union bmi160_sample {
-	u8_t raw[BMI160_BUF_SIZE];
+	uint8_t raw[BMI160_BUF_SIZE];
 	struct {
-		u8_t dummy_byte;
+		uint8_t dummy_byte;
 #if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
-		u16_t gyr[3];
+		uint16_t gyr[3];
 #endif
 #if !defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
-		u16_t acc[3];
+		uint16_t acc[3];
 #endif
 	} __packed;
 };
 
 struct bmi160_scale {
-	u16_t acc; /* micro m/s^2/lsb */
-	u16_t gyr; /* micro radians/s/lsb */
+	uint16_t acc; /* micro m/s^2/lsb */
+	uint16_t gyr; /* micro radians/s/lsb */
 };
 
 struct bmi160_device_data {
@@ -458,15 +458,15 @@ struct bmi160_device_data {
 #endif /* CONFIG_BMI160_TRIGGER */
 };
 
-int bmi160_read(struct device *dev, u8_t reg_addr,
-		u8_t *data, u8_t len);
-int bmi160_byte_read(struct device *dev, u8_t reg_addr, u8_t *byte);
-int bmi160_byte_write(struct device *dev, u8_t reg_addr, u8_t byte);
-int bmi160_word_write(struct device *dev, u8_t reg_addr, u16_t word);
-int bmi160_reg_field_update(struct device *dev, u8_t reg_addr,
-			    u8_t pos, u8_t mask, u8_t val);
-static inline int bmi160_reg_update(struct device *dev, u8_t reg_addr,
-				    u8_t mask, u8_t val)
+int bmi160_read(struct device *dev, uint8_t reg_addr,
+		uint8_t *data, uint8_t len);
+int bmi160_byte_read(struct device *dev, uint8_t reg_addr, uint8_t *byte);
+int bmi160_byte_write(struct device *dev, uint8_t reg_addr, uint8_t byte);
+int bmi160_word_write(struct device *dev, uint8_t reg_addr, uint16_t word);
+int bmi160_reg_field_update(struct device *dev, uint8_t reg_addr,
+			    uint8_t pos, uint8_t mask, uint8_t val);
+static inline int bmi160_reg_update(struct device *dev, uint8_t reg_addr,
+				    uint8_t mask, uint8_t val)
 {
 	return bmi160_reg_field_update(dev, reg_addr, 0, mask, val);
 }
@@ -476,7 +476,7 @@ int bmi160_trigger_set(struct device *dev,
 		       sensor_trigger_handler_t handler);
 int bmi160_acc_slope_config(struct device *dev, enum sensor_attribute attr,
 			    const struct sensor_value *val);
-s32_t bmi160_acc_reg_val_to_range(u8_t reg_val);
-s32_t bmi160_gyr_reg_val_to_range(u8_t reg_val);
+int32_t bmi160_acc_reg_val_to_range(uint8_t reg_val);
+int32_t bmi160_gyr_reg_val_to_range(uint8_t reg_val);
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMI160_BMI160_H_ */

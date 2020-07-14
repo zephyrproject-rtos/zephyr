@@ -28,7 +28,7 @@ void test_gethostname(void)
 void test_inet_pton(void)
 {
 	int res;
-	u8_t buf[32];
+	uint8_t buf[32];
 
 	res = inet_pton(AF_INET, "127.0.0.1", buf);
 	zassert_equal(res, 1, "");

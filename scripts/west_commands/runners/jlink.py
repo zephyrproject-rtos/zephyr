@@ -30,7 +30,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                  iface='swd', speed='auto',
                  gdbserver='JLinkGDBServer', gdb_port=DEFAULT_JLINK_GDB_PORT,
                  tui=False, tool_opt=[]):
-        super(JLinkBinaryRunner, self).__init__(cfg)
+        super().__init__(cfg)
         self.bin_name = cfg.bin_file
         self.elf_name = cfg.elf_file
         self.gdb_cmd = [cfg.gdb] if cfg.gdb else None
@@ -56,7 +56,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def capabilities(cls):
         return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach'},
-                          flash_addr=True)
+                          flash_addr=True, erase=True)
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -80,8 +80,6 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                             e.g. \'-autoconnect 1\' ''')
         parser.add_argument('--commander', default=DEFAULT_JLINK_EXE,
                             help='J-Link Commander, default is JLinkExe')
-        parser.add_argument('--erase', default=False, action='store_true',
-                            help='if given, mass erase flash before loading')
         parser.add_argument('--reset-after-load', '--no-reset-after-load',
                             dest='reset_after_load', nargs=0,
                             action=ToggleAction,
@@ -90,7 +88,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         parser.set_defaults(reset_after_load=False)
 
     @classmethod
-    def create(cls, cfg, args):
+    def do_create(cls, cfg, args):
         build_conf = BuildConfiguration(cfg.build_dir)
         flash_addr = cls.get_flash_address(args, build_conf)
         return JLinkBinaryRunner(cfg, args.device,
@@ -159,6 +157,16 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
             lines.append('r') # Reset and halt the target
 
         lines.append('g') # Start the CPU
+
+        # Reset the Debug Port CTRL/STAT register
+        # Under normal operation this is done automatically, but if other
+        # JLink tools are running, it is not performed.
+        # The J-Link scripting layer chains commands, meaning that writes are
+        # not actually performed until after the next operation. After writing
+        # the register, read it back to perform this flushing.
+        lines.append('writeDP 1 0')
+        lines.append('readDP 1')
+
         lines.append('q') # Close the connection and quit
 
         self.logger.debug('JLink commander script:')

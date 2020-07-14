@@ -30,17 +30,17 @@
 
 struct hts221_data {
 	struct device *i2c;
-	s16_t rh_sample;
-	s16_t t_sample;
+	int16_t rh_sample;
+	int16_t t_sample;
 
-	u8_t h0_rh_x2;
-	u8_t h1_rh_x2;
-	u16_t t0_degc_x8;
-	u16_t t1_degc_x8;
-	s16_t h0_t0_out;
-	s16_t h1_t0_out;
-	s16_t t0_out;
-	s16_t t1_out;
+	uint8_t h0_rh_x2;
+	uint8_t h1_rh_x2;
+	uint16_t t0_degc_x8;
+	uint16_t t1_degc_x8;
+	int16_t h0_t0_out;
+	int16_t h1_t0_out;
+	int16_t t0_out;
+	int16_t t1_out;
 
 #ifdef CONFIG_HTS221_TRIGGER
 	struct device *dev;
@@ -63,7 +63,7 @@ struct hts221_data {
 
 struct hts221_config {
 	const char *i2c_bus;
-	u16_t i2c_addr;
+	uint16_t i2c_addr;
 #ifdef CONFIG_HTS221_TRIGGER
 	gpio_pin_t drdy_pin;
 	gpio_flags_t drdy_flags;

@@ -26,7 +26,7 @@ extern "C" {
  * now, capabilities-related code is only included when MSI is. It
  * can easily be separated out if/when its use spreads.
  */
-extern u32_t pcie_get_cap(pcie_bdf_t bdf, u32_t cap_id);
+extern uint32_t pcie_get_cap(pcie_bdf_t bdf, uint32_t cap_id);
 
 /*
  * Configuration word 13 contains the head of the capabilities list.
@@ -51,7 +51,7 @@ extern u32_t pcie_get_cap(pcie_bdf_t bdf, u32_t cap_id);
  * @param irq The IRQ we wish to trigger via MSI.
  * @return A (32-bit) value for the MSI MAP register.
  */
-extern u32_t pcie_msi_map(unsigned int irq);
+extern uint32_t pcie_msi_map(unsigned int irq);
 
 /**
  * @brief Compute the data for an MSI posted write.
@@ -61,7 +61,7 @@ extern u32_t pcie_msi_map(unsigned int irq);
  * @param irq The IRQ we wish to trigger via MSI.
  * @return A (16-bit) value for MSI MDR register.
  */
-extern u16_t pcie_msi_mdr(unsigned int irq);
+extern uint16_t pcie_msi_mdr(unsigned int irq);
 
 /**
  * @brief Configure the given PCI endpoint to generate MSIs.

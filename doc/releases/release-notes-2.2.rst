@@ -1,6 +1,51 @@
 :orphan:
 
 .. _zephyr_2.2:
+.. _zephyr_2.2.1:
+
+Zephyr 2.2.1
+#############
+
+This is a maintenance release for Zephyr 2.2 with fixes.
+
+See :ref:`zephyr_2.2.0` for the previous version release notes.
+
+Security Vulnerability Related
+******************************
+
+The following security vulnerabilities (CVE) were addressed in this release:
+
+  * Fix CVE-2020-10028
+  * Fix CVE-2020-10060
+  * Fix CVE-2020-10063
+  * Fix CVE-2020-10066
+
+More detailed information can be found in:
+https://docs.zephyrproject.org/latest/security/vulnerabilities.html
+
+Issues Fixed
+************
+
+These GitHub issues were addressed since the previous 2.2.0 tagged
+release:
+
+* :github:`23494` - Bluetooth: LL/PAC/SLA/BV-01-C fails if Slave-initiated Feature Exchange is disabled
+* :github:`23485` - BT: host: Service Change indication sent regardless of whether it is needed or not.
+* :github:`23482` - 2M PHY + DLE and timing calculations on an encrypted link are wrong
+* :github:`23070` - Bluetooth: controller: Fix ticker implementation to avoid catch up
+* :github:`22967` - Bluetooth: controller: ASSERTION FAIL on invalid packet sequence
+* :github:`24183` - [v2.2] Bluetooth: controller: split: Regression slave latency during connection update
+* :github:`23805` - Bluetooth: controller: Switching to non conn adv fails for Mesh LPN
+* :github:`24086` - Bluetooth: SMP: Existing bond deleted on pairing failure
+* :github:`24211` - [v2.2.x] lib: updatehub: Not working on Zephyr 2.x
+* :github:`24601` - Bluetooth: Mesh: Config Client's net_key_status pulls two key indexes, should pull one.
+* :github:`25067` - Insufficient ticker nodes for vendor implementations
+* :github:`25350` - Bluetooth: controller: Data transmission delayed by slave latency
+* :github:`25483` - Bluetooth: controller: split: feature exchange not conform V5.0 core spec
+* :github:`25478` - settings_runtime_set() not populating bt/cf
+* :github:`25447` - cf_set() returns 0 when no cfg is available
+
+.. _zephyr_2.2.0:
 
 Zephyr 2.2.0
 ############

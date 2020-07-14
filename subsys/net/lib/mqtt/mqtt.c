@@ -138,8 +138,8 @@ static int client_read(struct mqtt_client *client)
 	return err_code;
 }
 
-static int client_write(struct mqtt_client *client, const u8_t *data,
-			u32_t datalen)
+static int client_write(struct mqtt_client *client, const uint8_t *data,
+			uint32_t datalen)
 {
 	int err_code;
 
@@ -190,7 +190,7 @@ void mqtt_client_init(struct mqtt_client *client)
 	mqtt_mutex_init(client);
 
 	client->protocol_version = MQTT_VERSION_3_1_1;
-	client->clean_session = 1U;
+	client->clean_session = MQTT_CLEAN_SESSION;
 	client->keepalive = MQTT_KEEPALIVE;
 }
 
@@ -607,7 +607,7 @@ int mqtt_abort(struct mqtt_client *client)
 int mqtt_live(struct mqtt_client *client)
 {
 	int err_code = 0;
-	u32_t elapsed_time;
+	uint32_t elapsed_time;
 	bool ping_sent = false;
 
 	NULL_PARAM_CHECK(client);
@@ -631,11 +631,11 @@ int mqtt_live(struct mqtt_client *client)
 	}
 }
 
-u32_t mqtt_keepalive_time_left(const struct mqtt_client *client)
+uint32_t mqtt_keepalive_time_left(const struct mqtt_client *client)
 {
-	u32_t elapsed_time = mqtt_elapsed_time_in_ms_get(
+	uint32_t elapsed_time = mqtt_elapsed_time_in_ms_get(
 					client->internal.last_activity);
-	u32_t keepalive_ms = 1000U * client->keepalive;
+	uint32_t keepalive_ms = 1000U * client->keepalive;
 
 	if (client->keepalive == 0) {
 		/* Keep alive not enabled. */
@@ -722,10 +722,10 @@ int mqtt_read_publish_payload_blocking(struct mqtt_client *client, void *buffer,
 	return read_publish_payload(client, buffer, length, true);
 }
 
-int mqtt_readall_publish_payload(struct mqtt_client *client, u8_t *buffer,
+int mqtt_readall_publish_payload(struct mqtt_client *client, uint8_t *buffer,
 				 size_t length)
 {
-	u8_t *end = buffer + length;
+	uint8_t *end = buffer + length;
 
 	while (buffer < end) {
 		int ret = mqtt_read_publish_payload_blocking(client, buffer,

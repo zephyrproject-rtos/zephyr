@@ -1,0 +1,11 @@
+common:
+  arch_exclude: posix
+  min_ram: 32
+  tags: posix pthread eventfd
+tests:
+  posix.eventfd_basic:
+    extra_configs:
+      - CONFIG_POSIX_API=n
+  posix.eventfd_basic.posix_api:
+    extra_configs:
+      - CONFIG_POSIX_API=y

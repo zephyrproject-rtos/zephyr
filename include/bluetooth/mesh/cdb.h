@@ -6,6 +6,13 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_CDB_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_CDB_H_
 
+#include <inttypes.h>
+#include <sys/atomic.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if defined(CONFIG_BT_MESH_CDB)
 #define NODE_COUNT    CONFIG_BT_MESH_CDB_NODE_COUNT
 #define SUBNET_COUNT  CONFIG_BT_MESH_CDB_SUBNET_COUNT
@@ -24,32 +31,32 @@ enum {
 };
 
 struct bt_mesh_cdb_node {
-	u8_t  uuid[16];
-	u16_t addr;
-	u16_t net_idx;
-	u8_t  num_elem;
-	u8_t  dev_key[16];
+	uint8_t  uuid[16];
+	uint16_t addr;
+	uint16_t net_idx;
+	uint8_t  num_elem;
+	uint8_t  dev_key[16];
 
 	ATOMIC_DEFINE(flags, BT_MESH_CDB_NODE_FLAG_COUNT);
 };
 
 struct bt_mesh_cdb_subnet {
-	u16_t net_idx;
+	uint16_t net_idx;
 
 	bool kr_flag;
-	u8_t kr_phase;
+	uint8_t kr_phase;
 
 	struct {
-		u8_t net_key[16];
+		uint8_t net_key[16];
 	} keys[2];
 };
 
 struct bt_mesh_cdb_app_key {
-	u16_t net_idx;
-	u16_t app_idx;
+	uint16_t net_idx;
+	uint16_t app_idx;
 
 	struct {
-		u8_t app_key[16];
+		uint8_t app_key[16];
 	} keys[2];
 };
 
@@ -64,7 +71,7 @@ enum {
 };
 
 struct bt_mesh_cdb {
-	u32_t iv_index;
+	uint32_t iv_index;
 
 	ATOMIC_DEFINE(flags, BT_MESH_CDB_FLAG_COUNT);
 
@@ -85,7 +92,7 @@ extern struct bt_mesh_cdb bt_mesh_cdb;
  *
  *  @return 0 on success or negative error code on failure.
  */
-int bt_mesh_cdb_create(const u8_t key[16]);
+int bt_mesh_cdb_create(const uint8_t key[16]);
 
 /** @brief Clear the Mesh Configuration Database.
  *
@@ -106,7 +113,7 @@ void bt_mesh_cdb_clear(void);
  *  @param iv_index The new IV Index to use.
  *  @param iv_update True if there is an ongoing IV Update procedure.
  */
-void bt_mesh_cdb_iv_update(u32_t iv_index, bool iv_update);
+void bt_mesh_cdb_iv_update(uint32_t iv_index, bool iv_update);
 
 /** @brief Allocate a node.
  *
@@ -120,8 +127,8 @@ void bt_mesh_cdb_iv_update(u32_t iv_index, bool iv_update);
  *
  *  @return The new node or NULL if it cannot be allocated.
  */
-struct bt_mesh_cdb_node *bt_mesh_cdb_node_alloc(const u8_t uuid[16], u16_t addr,
-						u8_t num_elem, u16_t net_idx);
+struct bt_mesh_cdb_node *bt_mesh_cdb_node_alloc(const uint8_t uuid[16], uint16_t addr,
+						uint8_t num_elem, uint16_t net_idx);
 
 /** @brief Delete a node.
  *
@@ -142,7 +149,7 @@ void bt_mesh_cdb_node_del(struct bt_mesh_cdb_node *node, bool store);
  *  @return The node that has an element with address addr or NULL if no such
  *          node exists.
  */
-struct bt_mesh_cdb_node *bt_mesh_cdb_node_get(u16_t addr);
+struct bt_mesh_cdb_node *bt_mesh_cdb_node_get(uint16_t addr);
 
 /** @brief Store node to persistent storage.
  *
@@ -164,7 +171,7 @@ enum {
  *  @return BT_MESH_CDB_ITER_CONTINUE to continue to iterate through the nodes
  *          or BT_MESH_CDB_ITER_STOP to stop.
  */
-typedef u8_t (*bt_mesh_cdb_node_func_t)(struct bt_mesh_cdb_node *node,
+typedef uint8_t (*bt_mesh_cdb_node_func_t)(struct bt_mesh_cdb_node *node,
 					void *user_data);
 
 /** @brief Node iterator.
@@ -185,7 +192,7 @@ void bt_mesh_cdb_node_foreach(bt_mesh_cdb_node_func_t func, void *user_data);
  *
  *  @return The new subnet or NULL if it cannot be allocated.
  */
-struct bt_mesh_cdb_subnet *bt_mesh_cdb_subnet_alloc(u16_t net_idx);
+struct bt_mesh_cdb_subnet *bt_mesh_cdb_subnet_alloc(uint16_t net_idx);
 
 /** @brief Delete a subnet.
  *
@@ -205,7 +212,7 @@ void bt_mesh_cdb_subnet_del(struct bt_mesh_cdb_subnet *sub, bool store);
  *  @return The subnet with the specified NetIdx or NULL if no such subnet
  *          exists.
  */
-struct bt_mesh_cdb_subnet *bt_mesh_cdb_subnet_get(u16_t net_idx);
+struct bt_mesh_cdb_subnet *bt_mesh_cdb_subnet_get(uint16_t net_idx);
 
 /** @brief Store subnet to persistent storage.
  *
@@ -219,7 +226,7 @@ void bt_mesh_cdb_subnet_store(const struct bt_mesh_cdb_subnet *sub);
  *
  *  @return The flags for the subnet.
  */
-u8_t bt_mesh_cdb_subnet_flags(const struct bt_mesh_cdb_subnet *sub);
+uint8_t bt_mesh_cdb_subnet_flags(const struct bt_mesh_cdb_subnet *sub);
 
 
 /** @brief Allocate an application key.
@@ -231,8 +238,8 @@ u8_t bt_mesh_cdb_subnet_flags(const struct bt_mesh_cdb_subnet *sub);
  *
  *  @return The new application key or NULL if it cannot be allocated.
  */
-struct bt_mesh_cdb_app_key *bt_mesh_cdb_app_key_alloc(u16_t net_idx,
-						      u16_t app_idx);
+struct bt_mesh_cdb_app_key *bt_mesh_cdb_app_key_alloc(uint16_t net_idx,
+						      uint16_t app_idx);
 
 /** @brief Delete an application key.
  *
@@ -252,12 +259,16 @@ void bt_mesh_cdb_app_key_del(struct bt_mesh_cdb_app_key *key, bool store);
  *  @return The application key with the specified AppIdx or NULL if no such key
  *          exists.
  */
-struct bt_mesh_cdb_app_key *bt_mesh_cdb_app_key_get(u16_t app_idx);
+struct bt_mesh_cdb_app_key *bt_mesh_cdb_app_key_get(uint16_t app_idx);
 
 /** @brief Store application key to persistent storage.
  *
  *  @param key Application key to be stored.
  */
 void bt_mesh_cdb_app_key_store(const struct bt_mesh_cdb_app_key *key);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_MESH_CDB_H_ */

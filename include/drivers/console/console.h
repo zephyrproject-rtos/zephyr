@@ -22,7 +22,7 @@ struct console_input {
 	/** FIFO uses first word itself, reserve space */
 	intptr_t _unused;
 	/** Whether this is an mcumgr command */
-	u8_t is_mcumgr : 1;
+	uint8_t is_mcumgr : 1;
 	/** Buffer where the input line is recorded */
 	char line[CONSOLE_MAX_LINE_LEN];
 };
@@ -42,7 +42,7 @@ struct console_input {
  *  @return N/A
  */
 typedef void (*console_input_fn)(struct k_fifo *avail, struct k_fifo *lines,
-				 u8_t (*completion)(char *str, u8_t len));
+				 uint8_t (*completion)(char *str, uint8_t len));
 
 #ifdef __cplusplus
 }

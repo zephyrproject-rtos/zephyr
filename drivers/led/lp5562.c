@@ -172,7 +172,7 @@ struct lp5562_data {
  * @retval 0       On success.
  * @retval -EINVAL If an invalid channel is given.
  */
-static int lp5562_get_pwm_reg(enum lp5562_led_channels channel, u8_t *reg)
+static int lp5562_get_pwm_reg(enum lp5562_led_channels channel, uint8_t *reg)
 {
 	switch (channel) {
 	case LP5562_CHANNEL_W:
@@ -205,7 +205,7 @@ static int lp5562_get_pwm_reg(enum lp5562_led_channels channel, u8_t *reg)
  * @retval -EINVAL If a source is given that is not a valid engine.
  */
 static int lp5562_get_engine_ram_base_addr(enum lp5562_led_sources engine,
-					   u8_t *base_addr)
+					   uint8_t *base_addr)
 {
 	switch (engine) {
 	case LP5562_SOURCE_ENGINE_1:
@@ -237,7 +237,7 @@ static int lp5562_get_engine_ram_base_addr(enum lp5562_led_sources engine,
  * @retval -EINVAL If a source is given that is not a valid engine.
  */
 static int lp5562_get_engine_reg_shift(enum lp5562_led_sources engine,
-				       u8_t *shift)
+				       uint8_t *shift)
 {
 	switch (engine) {
 	case LP5562_SOURCE_ENGINE_1:
@@ -268,8 +268,8 @@ static int lp5562_get_engine_reg_shift(enum lp5562_led_sources engine,
  * @param prescale  Pointer to the prescale value.
  * @param step_time Pointer to the step_time value.
  */
-static void lp5562_ms_to_prescale_and_step(struct led_data *data, u32_t ms,
-					   u8_t *prescale, u8_t *step_time)
+static void lp5562_ms_to_prescale_and_step(struct led_data *data, uint32_t ms,
+					   uint8_t *prescale, uint8_t *step_time)
 {
 	/*
 	 * One step with the prescaler set to 0 takes 0.49ms. The max value for
@@ -335,7 +335,7 @@ static int lp5562_get_led_source(struct device *dev,
 				 enum lp5562_led_sources *source)
 {
 	struct lp5562_data *data = dev->driver_data;
-	u8_t led_map;
+	uint8_t led_map;
 
 	if (i2c_reg_read_byte(data->i2c, DT_INST_REG_ADDR(0),
 			      LP5562_LED_MAP, &led_map)) {
@@ -362,7 +362,7 @@ static bool lp5562_is_engine_executing(struct device *dev,
 				       enum lp5562_led_sources engine)
 {
 	struct lp5562_data *data = dev->driver_data;
-	u8_t enabled, shift;
+	uint8_t enabled, shift;
 	int ret;
 
 	ret = lp5562_get_engine_reg_shift(engine, &shift);
@@ -425,10 +425,10 @@ static int lp5562_get_available_engine(struct device *dev,
  */
 static int lp5562_set_engine_reg(struct device *dev,
 				 enum lp5562_led_sources engine,
-				 u8_t reg, u8_t val)
+				 uint8_t reg, uint8_t val)
 {
 	struct lp5562_data *data = dev->driver_data;
-	u8_t shift;
+	uint8_t shift;
 	int ret;
 
 	ret = lp5562_get_engine_reg_shift(engine, &shift);
@@ -546,12 +546,12 @@ static inline int lp5562_stop_program_exec(struct device *dev,
  */
 static int lp5562_program_command(struct device *dev,
 				  enum lp5562_led_sources engine,
-				  u8_t command_index,
-				  u8_t command_msb,
-				  u8_t command_lsb)
+				  uint8_t command_index,
+				  uint8_t command_msb,
+				  uint8_t command_lsb)
 {
 	struct lp5562_data *data = dev->driver_data;
-	u8_t prog_base_addr;
+	uint8_t prog_base_addr;
 	int ret;
 
 	if (command_index >= LP5562_PROG_MAX_COMMANDS) {
@@ -595,12 +595,12 @@ static int lp5562_program_command(struct device *dev,
  */
 static int lp5562_program_set_brightness(struct device *dev,
 					 enum lp5562_led_sources engine,
-					 u8_t command_index,
-					 u8_t brightness)
+					 uint8_t command_index,
+					 uint8_t brightness)
 {
 	struct lp5562_data *data = dev->driver_data;
 	struct led_data *dev_data = &data->dev_data;
-	u8_t val;
+	uint8_t val;
 
 	if ((brightness < dev_data->min_brightness) ||
 			(brightness > dev_data->max_brightness)) {
@@ -632,14 +632,14 @@ static int lp5562_program_set_brightness(struct device *dev,
  */
 static int lp5562_program_ramp(struct device *dev,
 			       enum lp5562_led_sources engine,
-			       u8_t command_index,
-			       u32_t time_per_step,
-			       u8_t step_count,
+			       uint8_t command_index,
+			       uint32_t time_per_step,
+			       uint8_t step_count,
 			       enum lp5562_engine_fade_dirs fade_dir)
 {
 	struct lp5562_data *data = dev->driver_data;
 	struct led_data *dev_data = &data->dev_data;
-	u8_t prescale, step_time;
+	uint8_t prescale, step_time;
 
 	if ((time_per_step < dev_data->min_period) ||
 			(time_per_step > dev_data->max_period)) {
@@ -668,8 +668,8 @@ static int lp5562_program_ramp(struct device *dev,
  */
 static inline int lp5562_program_wait(struct device *dev,
 				      enum lp5562_led_sources engine,
-				      u8_t command_index,
-				      u32_t time)
+				      uint8_t command_index,
+				      uint32_t time)
 {
 	/*
 	 * A wait command is a ramp with the step_count set to 0. The fading
@@ -695,7 +695,7 @@ static inline int lp5562_program_wait(struct device *dev,
  */
 static inline int lp5562_program_go_to_start(struct device *dev,
 					     enum lp5562_led_sources engine,
-					     u8_t command_index)
+					     uint8_t command_index)
 {
 	return lp5562_program_command(dev, engine, command_index, 0x00, 0x00);
 }
@@ -725,7 +725,7 @@ static inline int lp5562_program_go_to_start(struct device *dev,
  */
 static int lp5562_update_blinking_brightness(struct device *dev,
 					     enum lp5562_led_sources engine,
-					     u8_t brightness_on)
+					     uint8_t brightness_on)
 {
 	int ret;
 
@@ -754,14 +754,14 @@ static int lp5562_update_blinking_brightness(struct device *dev,
 	return 0;
 }
 
-static int lp5562_led_blink(struct device *dev, u32_t led,
-			    u32_t delay_on, u32_t delay_off)
+static int lp5562_led_blink(struct device *dev, uint32_t led,
+			    uint32_t delay_on, uint32_t delay_off)
 {
 	struct lp5562_data *data = dev->driver_data;
 	struct led_data *dev_data = &data->dev_data;
 	int ret;
 	enum lp5562_led_sources engine;
-	u8_t command_index = 0U;
+	uint8_t command_index = 0U;
 
 	ret = lp5562_get_available_engine(dev, &engine);
 	if (ret) {
@@ -815,12 +815,12 @@ static int lp5562_led_blink(struct device *dev, u32_t led,
 	return 0;
 }
 
-static int lp5562_led_set_brightness(struct device *dev, u32_t led, u8_t value)
+static int lp5562_led_set_brightness(struct device *dev, uint32_t led, uint8_t value)
 {
 	struct lp5562_data *data = dev->driver_data;
 	struct led_data *dev_data = &data->dev_data;
 	int ret;
-	u8_t val, reg;
+	uint8_t val, reg;
 	enum lp5562_led_sources current_source;
 
 	if ((value < dev_data->min_brightness) ||
@@ -865,7 +865,7 @@ static int lp5562_led_set_brightness(struct device *dev, u32_t led, u8_t value)
 	return 0;
 }
 
-static inline int lp5562_led_on(struct device *dev, u32_t led)
+static inline int lp5562_led_on(struct device *dev, uint32_t led)
 {
 	struct lp5562_data *data = dev->driver_data;
 	struct led_data *dev_data = &data->dev_data;
@@ -873,7 +873,7 @@ static inline int lp5562_led_on(struct device *dev, u32_t led)
 	return lp5562_led_set_brightness(dev, led, dev_data->max_brightness);
 }
 
-static inline int lp5562_led_off(struct device *dev, u32_t led)
+static inline int lp5562_led_off(struct device *dev, uint32_t led)
 {
 	struct lp5562_data *data = dev->driver_data;
 	struct led_data *dev_data = &data->dev_data;

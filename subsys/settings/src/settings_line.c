@@ -22,7 +22,7 @@ struct settings_io_cb_s {
 	int (*read_cb)(void *ctx, off_t off, char *buf, size_t *len);
 	int (*write_cb)(void *ctx, off_t off, char const *buf, size_t len);
 	size_t (*get_len_cb)(void *ctx);
-	u8_t rwbs;
+	uint8_t rwbs;
 } static settings_io_cb;
 
 #define MAX_ENC_BLOCK_SIZE 4
@@ -44,9 +44,9 @@ int settings_line_write(const char *name, const char *value, size_t val_len,
 	char w_buf[16]; /* write buff, must be aligned either to minimal */
 			/* base64 encoding size and write-block-size */
 	int rc;
-	u8_t wbs = settings_io_cb.rwbs;
+	uint8_t wbs = settings_io_cb.rwbs;
 #ifdef CONFIG_SETTINGS_ENCODE_LEN
-	u16_t len_field;
+	uint16_t len_field;
 #endif
 
 	rem = strlen(name);
@@ -160,7 +160,7 @@ int settings_line_write(const char *name, const char *value, size_t val_len,
 int settings_next_line_ctx(struct line_entry_ctx *entry_ctx)
 {
 	size_t len_read;
-	u16_t readout;
+	uint16_t readout;
 	int rc;
 
 	entry_ctx->seek += entry_ctx->len; /* to begin of nex line */
@@ -224,9 +224,9 @@ static int settings_line_raw_read_until(off_t seek, char *out, size_t len_req,
 	size_t rem_size, len;
 	char temp_buf[16]; /* buffer for fit read-block-size requirements */
 	size_t exp_size, read_size;
-	u8_t rbs = settings_io_cb.rwbs;
+	uint8_t rbs = settings_io_cb.rwbs;
 	off_t off;
-	int rc;
+	int rc = -EINVAL;
 
 	if (len_req == 0) {
 		return -EINVAL;
@@ -373,7 +373,7 @@ size_t settings_line_val_get_len(off_t val_off, void *read_cb_ctx)
 
 	len = settings_io_cb.get_len_cb(read_cb_ctx);
 #ifdef CONFIG_SETTINGS_USE_BASE64
-	u8_t raw[2];
+	uint8_t raw[2];
 	int rc;
 	size_t len_base64 = len - val_off;
 
@@ -428,7 +428,7 @@ int settings_line_name_read(char *out, size_t len_req, size_t *len_read,
 int settings_line_entry_copy(void *dst_ctx, off_t dst_off, void *src_ctx,
 			     off_t src_off, size_t len)
 {
-	int rc;
+	int rc = -EINVAL;
 	char buf[16];
 	size_t chunk_size;
 
@@ -458,7 +458,7 @@ void settings_line_io_init(int (*read_cb)(void *ctx, off_t off, char *buf,
 			  int (*write_cb)(void *ctx, off_t off, char const *buf,
 					  size_t len),
 			  size_t (*get_len_cb)(void *ctx),
-			  u8_t io_rwbs)
+			  uint8_t io_rwbs)
 {
 	settings_io_cb.read_cb = read_cb;
 	settings_io_cb.write_cb = write_cb;
@@ -474,7 +474,7 @@ static int settings_line_cmp(char const *val, size_t val_len,
 	size_t len_read, exp_len;
 	size_t rem;
 	char buf[16];
-	int rc;
+	int rc = -EINVAL;
 	off_t off = 0;
 
 	if (val_len == 0) {

@@ -14,11 +14,7 @@
 #define PTHREAD_STACK_MIN 0
 #endif
 
-#if CONFIG_POSIX_API
 #include <net/socket.h>
-#else
-#include <sys/socket.h>
-#endif
 
 #include <poll.h>
 

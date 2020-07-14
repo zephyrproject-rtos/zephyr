@@ -70,7 +70,7 @@ struct eswifi_dev {
 	struct eswifi_sta sta;
 	enum eswifi_request req;
 	enum eswifi_role role;
-	u8_t mac[6];
+	uint8_t mac[6];
 	char buf[MAX_DATA_SIZE];
 	struct k_mutex mutex;
 	atomic_val_t mutex_owner;
@@ -112,7 +112,7 @@ static inline void eswifi_unlock(struct eswifi_dev *eswifi)
 }
 
 int eswifi_at_cmd(struct eswifi_dev *eswifi, char *cmd);
-static inline int __select_socket(struct eswifi_dev *eswifi, u8_t idx)
+static inline int __select_socket(struct eswifi_dev *eswifi, uint8_t idx)
 {
 	snprintk(eswifi->buf, sizeof(eswifi->buf), "P0=%d\r", idx);
 	return eswifi_at_cmd(eswifi, eswifi->buf);
@@ -126,7 +126,7 @@ struct eswifi_dev *eswifi_socket_to_dev(struct eswifi_off_socket *socket)
 
 extern struct eswifi_bus_ops eswifi_bus_ops_spi;
 int eswifi_offload_init(struct eswifi_dev *eswifi);
-struct eswifi_dev *eswifi_by_iface_idx(u8_t iface);
+struct eswifi_dev *eswifi_by_iface_idx(uint8_t iface);
 int eswifi_at_cmd_rsp(struct eswifi_dev *eswifi, char *cmd, char **rsp);
 void eswifi_async_msg(struct eswifi_dev *eswifi, char *msg, size_t len);
 void eswifi_offload_async_msg(struct eswifi_dev *eswifi, char *msg, size_t len);

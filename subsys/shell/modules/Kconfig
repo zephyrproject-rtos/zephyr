@@ -5,17 +5,24 @@
 
 config KERNEL_SHELL
 	bool "Enable kernel shell"
+	default y
+	imply INIT_STACKS
+	imply THREAD_MONITOR
+	imply THREAD_NAME
+	imply THREAD_STACK_INFO
 	help
 	  This shell provides access to basic kernel data like version, uptime
 	  and other useful information.
 
 config DEVICE_SHELL
 	bool "Enable device shell"
+	default y
 	help
 	  This shell provides access to basic device data.
 
 config DATE_SHELL
 	bool "Enable date shell"
 	depends on POSIX_CLOCK
+	default y
 	help
 	  This shell provides access to date and time based on Unix time.

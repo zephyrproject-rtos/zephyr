@@ -65,7 +65,7 @@ void lll_slave_prepare(void *param)
 {
 	struct lll_prepare_param *p = param;
 	struct lll_conn *lll = p->param;
-	u16_t elapsed;
+	uint16_t elapsed;
 	int err;
 
 	err = lll_hfclock_on();
@@ -87,8 +87,7 @@ void lll_slave_prepare(void *param)
 	}
 
 	/* Invoke common pipeline handling of prepare */
-	err = lll_prepare(lll_conn_is_abort_cb, lll_conn_abort_cb, prepare_cb,
-			  0, p);
+	err = lll_prepare(lll_is_abort_cb, lll_conn_abort_cb, prepare_cb, 0, p);
 	LL_ASSERT(!err || err == -EINPROGRESS);
 }
 
@@ -100,13 +99,13 @@ static int init_reset(void)
 static int prepare_cb(struct lll_prepare_param *prepare_param)
 {
 	struct lll_conn *lll = prepare_param->param;
-	u32_t ticks_at_event, ticks_at_start;
+	uint32_t ticks_at_event, ticks_at_start;
 	struct evt_hdr *evt;
-	u16_t event_counter;
-	u32_t remainder_us;
-	u8_t data_chan_use;
-	u32_t remainder;
-	u32_t hcto;
+	uint16_t event_counter;
+	uint32_t remainder_us;
+	uint8_t data_chan_use;
+	uint32_t remainder;
+	uint32_t hcto;
 
 	DEBUG_RADIO_START_S(1);
 
@@ -169,9 +168,9 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 
 	radio_aa_set(lll->access_addr);
 	radio_crc_configure(((0x5bUL) | ((0x06UL) << 8) | ((0x00UL) << 16)),
-			    (((u32_t)lll->crc_init[2] << 16) |
-			     ((u32_t)lll->crc_init[1] << 8) |
-			     ((u32_t)lll->crc_init[0])));
+			    (((uint32_t)lll->crc_init[2] << 16) |
+			     ((uint32_t)lll->crc_init[1] << 8) |
+			     ((uint32_t)lll->crc_init[0])));
 
 	lll_chan_set(data_chan_use);
 
@@ -199,8 +198,9 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	radio_tmr_aa_capture();
 	radio_tmr_aa_save(0);
 
-	hcto = remainder_us + EVENT_JITTER_US + (EVENT_JITTER_US << 2) +
-	       (lll->slave.window_widening_event_us << 1) +
+	hcto = remainder_us +
+	       ((EVENT_JITTER_US + EVENT_TICKER_RES_MARGIN_US +
+		 lll->slave.window_widening_event_us) << 1) +
 	       lll->slave.window_size_event_us;
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -243,12 +243,12 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	/* check if preempt to start has changed */
 	if (lll_preempt_calc(evt, (TICKER_ID_CONN_BASE + lll->handle),
 			     ticks_at_event)) {
-		radio_isr_set(lll_conn_isr_abort, lll);
+		radio_isr_set(lll_isr_abort, lll);
 		radio_disable();
 	} else
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 	{
-		u32_t ret;
+		uint32_t ret;
 
 		ret = lll_prepare_done(lll);
 		LL_ASSERT(!ret);

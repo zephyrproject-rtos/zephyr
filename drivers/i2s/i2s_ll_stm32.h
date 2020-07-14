@@ -62,30 +62,30 @@ struct queue_item {
 /* Minimal ring buffer implementation */
 struct ring_buf {
 	struct queue_item *buf;
-	u16_t len;
-	u16_t head;
-	u16_t tail;
+	uint16_t len;
+	uint16_t head;
+	uint16_t tail;
 };
 
 /* Device constant configuration parameters */
 struct i2s_stm32_cfg {
 	SPI_TypeDef *i2s;
 	struct stm32_pclken pclken;
-	u32_t i2s_clk_sel;
+	uint32_t i2s_clk_sel;
 	void (*irq_config)(struct device *dev);
 };
 
 struct stream {
-	s32_t state;
+	int32_t state;
 	struct k_sem sem;
 
 	const char *dma_name;
-	u32_t dma_channel;
+	uint32_t dma_channel;
 	struct dma_config dma_cfg;
-	u8_t priority;
+	uint8_t priority;
 	bool src_addr_increment;
 	bool dst_addr_increment;
-	u8_t fifo_threshold;
+	uint8_t fifo_threshold;
 
 	struct i2s_config cfg;
 	struct ring_buf mem_block_queue;

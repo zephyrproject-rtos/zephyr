@@ -293,13 +293,13 @@ DEFINE_TEST_VARIANT3(arm_shift_q15, possat, in_maxpos, ref_shift_possat, 17);
 DEFINE_TEST_VARIANT3(arm_shift_q15, negsat, in_maxneg, ref_shift_negsat, 17);
 
 static void test_arm_and_u16(
-	const u16_t *input1, const u16_t *input2, const u16_t *ref,
+	const uint16_t *input1, const uint16_t *input2, const uint16_t *ref,
 	size_t length)
 {
-	u16_t *output;
+	uint16_t *output;
 
 	/* Allocate output buffer */
-	output = malloc(length * sizeof(u16_t));
+	output = malloc(length * sizeof(uint16_t));
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Run test function */
@@ -319,13 +319,13 @@ DEFINE_TEST_VARIANT4(arm_and_u16, 16, in_bitwise1, in_bitwise2, ref_and, 16);
 DEFINE_TEST_VARIANT4(arm_and_u16, 23, in_bitwise1, in_bitwise2, ref_and, 23);
 
 static void test_arm_or_u16(
-	const u16_t *input1, const u16_t *input2, const u16_t *ref,
+	const uint16_t *input1, const uint16_t *input2, const uint16_t *ref,
 	size_t length)
 {
-	u16_t *output;
+	uint16_t *output;
 
 	/* Allocate output buffer */
-	output = malloc(length * sizeof(u16_t));
+	output = malloc(length * sizeof(uint16_t));
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Run test function */
@@ -345,12 +345,12 @@ DEFINE_TEST_VARIANT4(arm_or_u16, 16, in_bitwise1, in_bitwise2, ref_or, 16);
 DEFINE_TEST_VARIANT4(arm_or_u16, 23, in_bitwise1, in_bitwise2, ref_or, 23);
 
 static void test_arm_not_u16(
-	const u16_t *input1, const u16_t *ref, size_t length)
+	const uint16_t *input1, const uint16_t *ref, size_t length)
 {
-	u16_t *output;
+	uint16_t *output;
 
 	/* Allocate output buffer */
-	output = malloc(length * sizeof(u16_t));
+	output = malloc(length * sizeof(uint16_t));
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Run test function */
@@ -370,13 +370,13 @@ DEFINE_TEST_VARIANT3(arm_not_u16, 16, in_bitwise1, ref_not, 16);
 DEFINE_TEST_VARIANT3(arm_not_u16, 23, in_bitwise1, ref_not, 23);
 
 static void test_arm_xor_u16(
-	const u16_t *input1, const u16_t *input2, const u16_t *ref,
+	const uint16_t *input1, const uint16_t *input2, const uint16_t *ref,
 	size_t length)
 {
-	u16_t *output;
+	uint16_t *output;
 
 	/* Allocate output buffer */
-	output = malloc(length * sizeof(u16_t));
+	output = malloc(length * sizeof(uint16_t));
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Run test function */

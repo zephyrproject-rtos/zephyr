@@ -27,11 +27,11 @@ void zperf_tcp_upload(const struct shell *shell,
 		      unsigned int packet_size,
 		      struct zperf_results *results)
 {
-	u32_t duration = MSEC_TO_HW_CYCLES(duration_in_ms);
-	u32_t nb_packets = 0U, nb_errors = 0U;
-	u32_t start_time, last_print_time, end_time;
-	u8_t time_elapsed = 0U, finished = 0U;
-	u32_t alloc_errors = 0U;
+	uint32_t duration = MSEC_TO_HW_CYCLES(duration_in_ms);
+	uint32_t nb_packets = 0U, nb_errors = 0U;
+	uint32_t start_time, last_print_time, end_time;
+	uint8_t time_elapsed = 0U, finished = 0U;
+	uint32_t alloc_errors = 0U;
 
 	if (packet_size > PACKET_SIZE_MAX) {
 		shell_fprintf(shell, SHELL_WARNING,
@@ -57,7 +57,7 @@ void zperf_tcp_upload(const struct shell *shell,
 
 	do {
 		int ret = 0;
-		u32_t loop_time;
+		uint32_t loop_time;
 
 		/* Timestamps */
 		loop_time = k_cycle_get_32();

@@ -12,6 +12,15 @@ config SOC
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 19200000
 
+config HPET_TIMER
+	default y
+
+config APIC_TIMER
+	default y if !HPET_TIMER
+
+config PCIE_MMIO_CFG
+	default y
+
 if APIC_TIMER
 
 config APIC_TIMER_IRQ

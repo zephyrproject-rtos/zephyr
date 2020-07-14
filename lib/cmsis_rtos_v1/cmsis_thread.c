@@ -12,17 +12,17 @@
 
 static inline int _is_thread_cmsis_inactive(struct k_thread *thread)
 {
-	u8_t state = thread->base.thread_state;
+	uint8_t state = thread->base.thread_state;
 
 	return state & (_THREAD_PRESTART | _THREAD_DEAD);
 }
 
-static inline s32_t zephyr_to_cmsis_priority(u32_t z_prio)
+static inline int32_t zephyr_to_cmsis_priority(uint32_t z_prio)
 {
 	return(osPriorityRealtime - z_prio);
 }
 
-static inline u32_t cmsis_to_zephyr_priority(s32_t c_prio)
+static inline uint32_t cmsis_to_zephyr_priority(int32_t c_prio)
 {
 	return(osPriorityRealtime - c_prio);
 }
@@ -40,9 +40,9 @@ static void zephyr_thread_wrapper(void *arg1, void *arg2, void *arg3)
 osThreadId osThreadCreate(const osThreadDef_t *thread_def, void *arg)
 {
 	struct k_thread *cm_thread;
-	u32_t prio;
+	uint32_t prio;
 	k_tid_t tid;
-	u32_t stacksz;
+	uint32_t stacksz;
 
 	k_thread_stack_t
 	   (*stk_ptr)[K_THREAD_STACK_LEN(CONFIG_CMSIS_THREAD_MAX_STACK_SIZE)];
@@ -109,7 +109,7 @@ osThreadId osThreadGetId(void)
 osPriority osThreadGetPriority(osThreadId thread_id)
 {
 	k_tid_t thread = (k_tid_t)thread_id;
-	u32_t priority;
+	uint32_t priority;
 
 	if ((thread_id == NULL) || (k_is_in_isr())) {
 		return osPriorityError;

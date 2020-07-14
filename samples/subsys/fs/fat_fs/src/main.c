@@ -35,9 +35,9 @@ void main(void)
 	/* raw disk i/o */
 	do {
 		static const char *disk_pdrv = "SD";
-		u64_t memory_size_mb;
-		u32_t block_count;
-		u32_t block_size;
+		uint64_t memory_size_mb;
+		uint32_t block_count;
+		uint32_t block_size;
 
 		if (disk_access_init(disk_pdrv) != 0) {
 			LOG_ERR("Storage init ERROR!");
@@ -58,8 +58,8 @@ void main(void)
 		}
 		printk("Sector size %u\n", block_size);
 
-		memory_size_mb = (u64_t)block_count * block_size;
-		printk("Memory Size(MB) %u\n", (u32_t)memory_size_mb>>20);
+		memory_size_mb = (uint64_t)block_count * block_size;
+		printk("Memory Size(MB) %u\n", (uint32_t)(memory_size_mb >> 20));
 	} while (0);
 
 	mp.mnt_point = disk_mount_pt;

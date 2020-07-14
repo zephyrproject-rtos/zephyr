@@ -113,11 +113,11 @@ static struct usb_dev_priv {
 	/** Setup packet */
 	struct usb_setup_packet setup;
 	/** Pointer to data buffer */
-	u8_t *data_buf;
+	uint8_t *data_buf;
 	/** Remaining bytes in buffer */
-	s32_t data_buf_residue;
+	int32_t data_buf_residue;
 	/** Total length of control transfer */
-	s32_t data_buf_len;
+	int32_t data_buf_len;
 	/** Zero length packet flag of control transfer */
 	bool zlp_flag;
 	/** Installed custom request handler */
@@ -127,21 +127,30 @@ static struct usb_dev_priv {
 	/** USB user status callback */
 	usb_dc_status_callback user_status_callback;
 	/** Pointer to registered descriptors */
-	const u8_t *descriptors;
+	const uint8_t *descriptors;
 	/** Array of installed request handler callbacks */
 	usb_request_handler req_handlers[MAX_NUM_REQ_HANDLERS];
 	/* Buffer used for storing standard, class and vendor request data */
-	u8_t req_data[CONFIG_USB_REQUEST_BUFFER_SIZE];
+	uint8_t req_data[CONFIG_USB_REQUEST_BUFFER_SIZE];
 
 	/** Variable to check whether the usb has been enabled */
 	bool enabled;
 	/** Variable to check whether the usb has been configured */
 	bool configured;
 	/** Currently selected configuration */
-	u8_t configuration;
+	uint8_t configuration;
 	/** Remote wakeup feature status */
 	bool remote_wakeup;
 } usb_dev;
+
+/* Setup packet definition used to read raw data from USB line */
+struct usb_setup_packet_packed {
+	uint8_t bmRequestType;
+	uint8_t bRequest;
+	uint16_t wValue;
+	uint16_t wIndex;
+	uint16_t wLength;
+} __packed;
 
 /*
  * @brief print the contents of a setup packet
@@ -154,12 +163,13 @@ static void usb_print_setup(struct usb_setup_packet *setup)
 	/* avoid compiler warning if LOG_DBG is not defined */
 	ARG_UNUSED(setup);
 
-	LOG_DBG("Setup: %x %x %x %x %x",
+	LOG_DBG("Setup: "
+		"bmRT 0x%02x, bR 0x%02x, wV 0x%04x, wI 0x%04x, wL 0x%04x",
 		setup->bmRequestType,
 		setup->bRequest,
-		sys_le16_to_cpu(setup->wValue),
-		sys_le16_to_cpu(setup->wIndex),
-		sys_le16_to_cpu(setup->wLength));
+		setup->wValue,
+		setup->wIndex,
+		setup->wLength);
 }
 
 /*
@@ -177,9 +187,9 @@ static void usb_print_setup(struct usb_setup_packet *setup)
  * @return true if the request was handles successfully
  */
 static bool usb_handle_request(struct usb_setup_packet *setup,
-			       s32_t *len, u8_t **data)
+			       int32_t *len, uint8_t **data)
 {
-	u32_t type = REQTYPE_GET_TYPE(setup->bmRequestType);
+	uint32_t type = REQTYPE_GET_TYPE(setup->bmRequestType);
 	usb_request_handler handler = usb_dev.req_handlers[type];
 
 	if (type >= MAX_NUM_REQ_HANDLERS) {
@@ -206,10 +216,10 @@ static bool usb_handle_request(struct usb_setup_packet *setup,
  *
  * @return N/A
  */
-static void usb_data_to_host(u16_t len)
+static void usb_data_to_host(uint16_t len)
 {
 	if (usb_dev.zlp_flag == false) {
-		u32_t chunk = usb_dev.data_buf_residue;
+		uint32_t chunk = usb_dev.data_buf_residue;
 
 		/*Always EP0 for control*/
 		usb_write(USB_CONTROL_IN_EP0, usb_dev.data_buf,
@@ -248,30 +258,35 @@ static void usb_data_to_host(u16_t len)
  *
  * @return N/A
  */
-static void usb_handle_control_transfer(u8_t ep,
+static void usb_handle_control_transfer(uint8_t ep,
 					enum usb_dc_ep_cb_status_code ep_status)
 {
-	u32_t chunk = 0U;
+	uint32_t chunk = 0U;
 	struct usb_setup_packet *setup = &usb_dev.setup;
+	struct usb_setup_packet_packed setup_raw;
 
 	LOG_DBG("ep 0x%02x, status 0x%02x", ep, ep_status);
 
 	if (ep == USB_CONTROL_OUT_EP0 && ep_status == USB_DC_EP_SETUP) {
-		u16_t length;
-
 		/*
 		 * OUT transfer, Setup packet,
 		 * reset request message state machine
 		 */
-		if (usb_dc_ep_read(ep,
-				   (u8_t *)setup, sizeof(*setup), NULL) < 0) {
+		if (usb_dc_ep_read(ep, (uint8_t *)&setup_raw,
+				   sizeof(setup_raw), NULL) < 0) {
 			LOG_DBG("Read Setup Packet failed");
 			usb_dc_ep_set_stall(USB_CONTROL_IN_EP0);
 			return;
 		}
 
-		length = sys_le16_to_cpu(setup->wLength);
-		if (length > CONFIG_USB_REQUEST_BUFFER_SIZE) {
+		/* Take care of endianness */
+		setup->bmRequestType = setup_raw.bmRequestType;
+		setup->bRequest = setup_raw.bRequest;
+		setup->wValue = sys_le16_to_cpu(setup_raw.wValue);
+		setup->wIndex = sys_le16_to_cpu(setup_raw.wIndex);
+		setup->wLength = sys_le16_to_cpu(setup_raw.wLength);
+
+		if (setup->wLength > CONFIG_USB_REQUEST_BUFFER_SIZE) {
 			if (REQTYPE_GET_DIR(setup->bmRequestType)
 			    != REQTYPE_DIR_TO_HOST) {
 				LOG_ERR("Request buffer too small");
@@ -282,11 +297,11 @@ static void usb_handle_control_transfer(u8_t ep,
 		}
 
 		usb_dev.data_buf = usb_dev.req_data;
-		usb_dev.data_buf_residue = length;
-		usb_dev.data_buf_len = length;
+		usb_dev.data_buf_residue = setup->wLength;
+		usb_dev.data_buf_len = setup->wLength;
 		usb_dev.zlp_flag = false;
 
-		if (length &&
+		if (setup->wLength &&
 		    REQTYPE_GET_DIR(setup->bmRequestType)
 		    == REQTYPE_DIR_TO_DEVICE) {
 			return;
@@ -302,9 +317,10 @@ static void usb_handle_control_transfer(u8_t ep,
 		}
 
 		/* Send smallest of requested and offered length */
-		usb_dev.data_buf_residue = MIN(usb_dev.data_buf_len, length);
+		usb_dev.data_buf_residue = MIN(usb_dev.data_buf_len,
+					       setup->wLength);
 		/* Send first part (possibly a zero-length status message) */
-		usb_data_to_host(length);
+		usb_data_to_host(setup->wLength);
 	} else if (ep == USB_CONTROL_OUT_EP0) {
 		/* OUT transfer, data or status packets */
 		if (usb_dev.data_buf_residue <= 0) {
@@ -341,12 +357,12 @@ static void usb_handle_control_transfer(u8_t ep,
 
 			/*Send status to host*/
 			LOG_DBG(">> usb_data_to_host(2)");
-			usb_data_to_host(sys_le16_to_cpu(setup->wLength));
+			usb_data_to_host(setup->wLength);
 		}
 	} else if (ep == USB_CONTROL_IN_EP0) {
 		/* Send more data if available */
 		if (usb_dev.data_buf_residue != 0 || usb_dev.zlp_flag == true) {
-			usb_data_to_host(sys_le16_to_cpu(setup->wLength));
+			usb_data_to_host(setup->wLength);
 		}
 	} else {
 		__ASSERT_NO_MSG(false);
@@ -361,7 +377,7 @@ static void usb_handle_control_transfer(u8_t ep,
  *
  * @return N/A
  */
-static void usb_register_request_handler(s32_t type,
+static void usb_register_request_handler(int32_t type,
 					 usb_request_handler handler)
 {
 	usb_dev.req_handlers[type] = handler;
@@ -375,7 +391,7 @@ static void usb_register_request_handler(s32_t type,
  *
  * @param [in] usb_descriptors The descriptor byte array
  */
-static void usb_register_descriptors(const u8_t *usb_descriptors)
+static void usb_register_descriptors(const uint8_t *usb_descriptors)
 {
 	usb_dev.descriptors = usb_descriptors;
 }
@@ -393,13 +409,13 @@ static void usb_register_descriptors(const u8_t *usb_descriptors)
  *
  * @return true if the descriptor was found, false otherwise
  */
-static bool usb_get_descriptor(u16_t type_index, u16_t lang_id,
-		s32_t *len, u8_t **data)
+static bool usb_get_descriptor(uint16_t type_index, uint16_t lang_id,
+		int32_t *len, uint8_t **data)
 {
-	u8_t type = 0U;
-	u8_t index = 0U;
-	u8_t *p = NULL;
-	s32_t cur_index = 0;
+	uint8_t type = 0U;
+	uint8_t index = 0U;
+	uint8_t *p = NULL;
+	int32_t cur_index = 0;
 	bool found = false;
 
 	/*Avoid compiler warning until this is used for something*/
@@ -417,7 +433,7 @@ static bool usb_get_descriptor(u16_t type_index, u16_t lang_id,
 		return false;
 	}
 
-	p = (u8_t *)usb_dev.descriptors;
+	p = (uint8_t *)usb_dev.descriptors;
 	cur_index = 0;
 
 	while (p[DESC_bLength] != 0U) {
@@ -532,8 +548,8 @@ static bool reset_endpoint(const struct usb_ep_descriptor *ep_desc)
 }
 
 static bool usb_eps_reconfigure(struct usb_ep_descriptor *ep_desc,
-				u8_t cur_alt_setting,
-				u8_t alt_setting)
+				uint8_t cur_alt_setting,
+				uint8_t alt_setting)
 {
 	bool ret;
 
@@ -560,11 +576,11 @@ static bool usb_eps_reconfigure(struct usb_ep_descriptor *ep_desc,
  *
  * @return true if successfully configured false if error or unconfigured
  */
-static bool usb_set_configuration(u8_t config_index, u8_t alt_setting)
+static bool usb_set_configuration(uint8_t config_index, uint8_t alt_setting)
 {
-	u8_t *p = (u8_t *)usb_dev.descriptors;
-	u8_t cur_alt_setting = 0xFF;
-	u8_t cur_config = 0xFF;
+	uint8_t *p = (uint8_t *)usb_dev.descriptors;
+	uint8_t cur_alt_setting = 0xFF;
+	uint8_t cur_config = 0xFF;
 	bool found = false;
 
 	if (config_index == 0U) {
@@ -623,13 +639,13 @@ static bool usb_set_configuration(u8_t config_index, u8_t alt_setting)
  *
  * @return true if successfully configured false if error or unconfigured
  */
-static bool usb_set_interface(u8_t iface, u8_t alt_setting)
+static bool usb_set_interface(uint8_t iface, uint8_t alt_setting)
 {
-	const u8_t *p = usb_dev.descriptors;
-	const u8_t *if_desc = NULL;
+	const uint8_t *p = usb_dev.descriptors;
+	const uint8_t *if_desc = NULL;
 	struct usb_ep_descriptor *ep;
-	u8_t cur_alt_setting = 0xFF;
-	u8_t cur_iface = 0xFF;
+	uint8_t cur_alt_setting = 0xFF;
+	uint8_t cur_iface = 0xFF;
 	bool ret = false;
 
 	LOG_DBG("iface %u alt_setting %u", iface, alt_setting);
@@ -681,12 +697,12 @@ static bool usb_set_interface(u8_t iface, u8_t alt_setting)
  * @return true if the request was handled successfully
  */
 static bool usb_handle_std_device_req(struct usb_setup_packet *setup,
-				      s32_t *len, u8_t **data_buf)
+				      int32_t *len, uint8_t **data_buf)
 {
-	u16_t value = sys_le16_to_cpu(setup->wValue);
-	u16_t index = sys_le16_to_cpu(setup->wIndex);
+	uint16_t value = setup->wValue;
+	uint16_t index = setup->wIndex;
 	bool ret = true;
-	u8_t *data = *data_buf;
+	uint8_t *data = *data_buf;
 
 	switch (setup->bRequest) {
 	case REQ_GET_STATUS:
@@ -763,12 +779,12 @@ static bool usb_handle_std_device_req(struct usb_setup_packet *setup,
 		break;
 
 	case REQ_SET_DESCRIPTOR:
-		LOG_DBG("Device req %x not implemented", setup->bRequest);
+		LOG_DBG("Device req 0x%02x not implemented", setup->bRequest);
 		ret = false;
 		break;
 
 	default:
-		LOG_DBG("Illegal device req %x", setup->bRequest);
+		LOG_DBG("Illegal device req 0x%02x", setup->bRequest);
 		ret = false;
 		break;
 	}
@@ -786,9 +802,9 @@ static bool usb_handle_std_device_req(struct usb_setup_packet *setup,
  * @return true if the request was handled successfully
  */
 static bool usb_handle_std_interface_req(struct usb_setup_packet *setup,
-					 s32_t *len, u8_t **data_buf)
+					 int32_t *len, uint8_t **data_buf)
 {
-	u8_t *data = *data_buf;
+	uint8_t *data = *data_buf;
 
 	switch (setup->bRequest) {
 	case REQ_GET_STATUS:
@@ -811,13 +827,12 @@ static bool usb_handle_std_interface_req(struct usb_setup_packet *setup,
 
 	case REQ_SET_INTERFACE:
 		LOG_DBG("REQ_SET_INTERFACE");
-		usb_set_interface(sys_le16_to_cpu(setup->wIndex),
-				  sys_le16_to_cpu(setup->wValue));
+		usb_set_interface(setup->wIndex, setup->wValue);
 		*len = 0;
 		break;
 
 	default:
-		LOG_DBG("Illegal interface req %d", setup->bRequest);
+		LOG_DBG("Illegal interface req 0x%02x", setup->bRequest);
 		return false;
 	}
 
@@ -834,10 +849,10 @@ static bool usb_handle_std_interface_req(struct usb_setup_packet *setup,
  * @return true if the request was handled successfully
  */
 static bool usb_handle_std_endpoint_req(struct usb_setup_packet *setup,
-					s32_t *len, u8_t **data_buf)
+					int32_t *len, uint8_t **data_buf)
 {
-	u8_t ep = sys_le16_to_cpu(setup->wIndex);
-	u8_t *data = *data_buf;
+	uint8_t ep = (uint8_t)setup->wIndex;
+	uint8_t *data = *data_buf;
 
 	switch (setup->bRequest) {
 	case REQ_GET_STATUS:
@@ -848,7 +863,7 @@ static bool usb_handle_std_endpoint_req(struct usb_setup_packet *setup,
 		break;
 
 	case REQ_CLEAR_FEATURE:
-		if (sys_le16_to_cpu(setup->wValue) == FEA_ENDPOINT_HALT) {
+		if (setup->wValue == FEA_ENDPOINT_HALT) {
 			/* clear HALT by unstalling */
 			LOG_INF("... EP clear halt %x", ep);
 			usb_dc_ep_clear_stall(ep);
@@ -861,7 +876,7 @@ static bool usb_handle_std_endpoint_req(struct usb_setup_packet *setup,
 		return false;
 
 	case REQ_SET_FEATURE:
-		if (sys_le16_to_cpu(setup->wValue) == FEA_ENDPOINT_HALT) {
+		if (setup->wValue == FEA_ENDPOINT_HALT) {
 			/* set HALT by stalling */
 			LOG_INF("--- EP SET halt %x", ep);
 			usb_dc_ep_set_stall(ep);
@@ -874,11 +889,11 @@ static bool usb_handle_std_endpoint_req(struct usb_setup_packet *setup,
 		return false;
 
 	case REQ_SYNCH_FRAME:
-		LOG_DBG("EP req %d not implemented", setup->bRequest);
+		LOG_DBG("EP req 0x%02x not implemented", setup->bRequest);
 		return false;
 
 	default:
-		LOG_DBG("Illegal EP req %d", setup->bRequest);
+		LOG_DBG("Illegal EP req 0x%02x", setup->bRequest);
 		return false;
 	}
 
@@ -898,7 +913,7 @@ static bool usb_handle_std_endpoint_req(struct usb_setup_packet *setup,
  * @return true if the request was handled successfully
  */
 static int usb_handle_standard_request(struct usb_setup_packet *setup,
-				       s32_t *len, u8_t **data_buf)
+				       int32_t *len, uint8_t **data_buf)
 {
 	int rc = 0;
 
@@ -977,7 +992,7 @@ static int foreach_ep(int (* endpoint_callback)(const struct usb_ep_cfg_data *))
 		struct usb_cfg_data *cfg = &__usb_data_start[i];
 		struct usb_ep_cfg_data *ep_data = cfg->endpoint;
 
-		for (u8_t n = 0; n < cfg->num_endpoints; n++) {
+		for (uint8_t n = 0; n < cfg->num_endpoints; n++) {
 			int ret;
 
 			ret = endpoint_callback(&ep_data[n]);
@@ -995,7 +1010,7 @@ static int disable_interface_ep(const struct usb_ep_cfg_data *ep_data)
 	return usb_dc_ep_disable(ep_data->ep_addr);
 }
 
-static void forward_status_cb(enum usb_dc_status_code status, const u8_t *param)
+static void forward_status_cb(enum usb_dc_status_code status, const uint8_t *param)
 {
 	size_t size = (__usb_data_end - __usb_data_start);
 
@@ -1126,7 +1141,7 @@ int usb_disable(void)
 	return 0;
 }
 
-int usb_write(u8_t ep, const u8_t *data, u32_t data_len, u32_t *bytes_ret)
+int usb_write(uint8_t ep, const uint8_t *data, uint32_t data_len, uint32_t *bytes_ret)
 {
 	int tries = CONFIG_USB_NUMOF_EP_WRITE_RETRIES;
 	int ret;
@@ -1143,27 +1158,27 @@ int usb_write(u8_t ep, const u8_t *data, u32_t data_len, u32_t *bytes_ret)
 	return ret;
 }
 
-int usb_read(u8_t ep, u8_t *data, u32_t max_data_len, u32_t *ret_bytes)
+int usb_read(uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_t *ret_bytes)
 {
 	return usb_dc_ep_read(ep, data, max_data_len, ret_bytes);
 }
 
-int usb_ep_set_stall(u8_t ep)
+int usb_ep_set_stall(uint8_t ep)
 {
 	return usb_dc_ep_set_stall(ep);
 }
 
-int usb_ep_clear_stall(u8_t ep)
+int usb_ep_clear_stall(uint8_t ep)
 {
 	return usb_dc_ep_clear_stall(ep);
 }
 
-int usb_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len, u32_t *ret_bytes)
+int usb_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_t *ret_bytes)
 {
 	return usb_dc_ep_read_wait(ep, data, max_data_len, ret_bytes);
 }
 
-int usb_ep_read_continue(u8_t ep)
+int usb_ep_read_continue(uint8_t ep)
 {
 	return usb_dc_ep_read_continue(ep);
 }
@@ -1193,14 +1208,14 @@ int usb_wakeup_request(void)
  */
 
 static int class_handler(struct usb_setup_packet *pSetup,
-			 s32_t *len, u8_t **data)
+			 int32_t *len, uint8_t **data)
 {
 	size_t size = (__usb_data_end - __usb_data_start);
 	const struct usb_if_descriptor *if_descr;
 	struct usb_interface_cfg_data *iface;
 
-	LOG_DBG("bRequest 0x%x, wIndex 0x%x", pSetup->bRequest,
-		sys_le16_to_cpu(pSetup->wIndex));
+	LOG_DBG("bRequest 0x%02x, wIndex 0x%04x",
+		pSetup->bRequest, pSetup->wIndex);
 
 	for (size_t i = 0; i < size; i++) {
 		iface = &(__usb_data_start[i].interface);
@@ -1209,13 +1224,12 @@ static int class_handler(struct usb_setup_packet *pSetup,
 		 * Wind forward until it is within the range
 		 * of the current descriptor.
 		 */
-		if ((u8_t *)if_descr < usb_dev.descriptors) {
+		if ((uint8_t *)if_descr < usb_dev.descriptors) {
 			continue;
 		}
 
-		if ((iface->class_handler) &&
-		    (if_descr->bInterfaceNumber ==
-		     (sys_le16_to_cpu(pSetup->wIndex) & 0xFF))) {
+		if (iface->class_handler &&
+		    if_descr->bInterfaceNumber == (pSetup->wIndex & 0xFF)) {
 			return iface->class_handler(pSetup, len, data);
 		}
 	}
@@ -1224,14 +1238,14 @@ static int class_handler(struct usb_setup_packet *pSetup,
 }
 
 static int custom_handler(struct usb_setup_packet *pSetup,
-			  s32_t *len, u8_t **data)
+			  int32_t *len, uint8_t **data)
 {
 	size_t size = (__usb_data_end - __usb_data_start);
 	const struct usb_if_descriptor *if_descr;
 	struct usb_interface_cfg_data *iface;
 
-	LOG_DBG("bRequest 0x%x, wIndex 0x%x", pSetup->bRequest,
-		sys_le16_to_cpu(pSetup->wIndex));
+	LOG_DBG("bRequest 0x%02x, wIndex 0x%04x",
+		pSetup->bRequest, pSetup->wIndex);
 
 	for (size_t i = 0; i < size; i++) {
 		iface = &(__usb_data_start[i].interface);
@@ -1240,7 +1254,7 @@ static int custom_handler(struct usb_setup_packet *pSetup,
 		 * Wind forward until it is within the range
 		 * of the current descriptor.
 		 */
-		if ((u8_t *)if_descr < usb_dev.descriptors) {
+		if ((uint8_t *)if_descr < usb_dev.descriptors) {
 			continue;
 		}
 
@@ -1248,9 +1262,8 @@ static int custom_handler(struct usb_setup_packet *pSetup,
 		 * considered as valid solution for other classes.
 		 */
 		if (iface->custom_handler &&
-		    (if_descr->bInterfaceNumber ==
-		    sys_le16_to_cpu(pSetup->wIndex) ||
-		    if_descr->bInterfaceClass == AUDIO_CLASS)) {
+		    (if_descr->bInterfaceNumber == (pSetup->wIndex & 0xFF) ||
+		     if_descr->bInterfaceClass == AUDIO_CLASS)) {
 			return iface->custom_handler(pSetup, len, data);
 		}
 	}
@@ -1259,13 +1272,13 @@ static int custom_handler(struct usb_setup_packet *pSetup,
 }
 
 static int vendor_handler(struct usb_setup_packet *pSetup,
-			  s32_t *len, u8_t **data)
+			  int32_t *len, uint8_t **data)
 {
 	size_t size = (__usb_data_end - __usb_data_start);
 	struct usb_interface_cfg_data *iface;
 
-	LOG_DBG("bRequest 0x%x, wIndex 0x%x", pSetup->bRequest,
-		sys_le16_to_cpu(pSetup->wIndex));
+	LOG_DBG("bRequest 0x%02x, wIndex 0x%04x",
+		pSetup->bRequest, pSetup->wIndex);
 
 	if (usb_os_desc_enabled()) {
 		if (!usb_handle_os_desc_feature(pSetup, len, data)) {
@@ -1292,7 +1305,7 @@ static int composite_setup_ep_cb(void)
 
 	for (size_t i = 0; i < size; i++) {
 		ep_data = __usb_data_start[i].endpoint;
-		for (u8_t n = 0; n < __usb_data_start[i].num_endpoints; n++) {
+		for (uint8_t n = 0; n < __usb_data_start[i].num_endpoints; n++) {
 			LOG_DBG("set cb, ep: 0x%x", ep_data[n].ep_addr);
 			if (usb_dc_ep_set_callback(ep_data[n].ep_addr,
 						   ep_data[n].ep_cb)) {
@@ -1304,7 +1317,7 @@ static int composite_setup_ep_cb(void)
 	return 0;
 }
 
-int usb_set_config(const u8_t *device_descriptor)
+int usb_set_config(const uint8_t *device_descriptor)
 {
 	/* register descriptors */
 	usb_register_descriptors(device_descriptor);
@@ -1421,7 +1434,7 @@ out:
  */
 static int usb_device_init(struct device *dev)
 {
-	u8_t *device_descriptor;
+	uint8_t *device_descriptor;
 
 	if (usb_dev.enabled == true) {
 		return 0;

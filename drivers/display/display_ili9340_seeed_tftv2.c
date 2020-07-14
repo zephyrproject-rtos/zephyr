@@ -15,8 +15,8 @@
 
 void ili9340_lcd_init(struct ili9340_data *p_ili9340)
 {
-	u8_t cmd;
-	u8_t data[15];
+	uint8_t cmd;
+	uint8_t data[15];
 
 	/* Software reset */
 	cmd = ILI9340_CMD_SOFTWARE_RESET;

@@ -1,0 +1,29 @@
+# DMA configuration options
+
+# Copyright (c) 2020, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_MCUX_EDMA
+	bool "Enable MCUX DMA driver"
+	depends on HAS_MCUX_EDMA
+	select NOCACHE_MEMORY if HAS_MCUX_CACHE
+	help
+	  DMA driver for MCUX series SoCs.
+
+if DMA_MCUX_EDMA
+
+config DMA_TCD_QUEUE_SIZE
+	int "number of TCD in a queue for SG mode"
+	default 2
+	help
+	  number of TCD in a queue for SG mode
+
+config DMA_MCUX_TEST_SLOT_START
+	int "test slot start num"
+	depends on SOC_SERIES_KINETIS_K6X
+	default 58
+	help
+	  test slot start num
+
+
+endif # DMA_MCUX_EDMA

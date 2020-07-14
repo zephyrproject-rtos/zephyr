@@ -48,9 +48,9 @@ enum {
  * - write operations may block if the remote @a recv_q is full
  * - each endpoint may be blocking or non-blocking
  */
-struct spair {
+__net_socket struct spair {
 	int remote; /**< the remote endpoint file descriptor */
-	u32_t flags; /**< status and option bits */
+	uint32_t flags; /**< status and option bits */
 	struct k_sem sem; /**< semaphore for exclusive structure access */
 	struct k_pipe recv_q; /**< receive queue of local endpoint */
 	/** indicates write of local @a recv_q occurred */
@@ -58,7 +58,7 @@ struct spair {
 	/** indicates read of local @a recv_q occurred */
 	struct k_poll_signal read_signal;
 	/** buffer for @a recv_q recv_q */
-	u8_t buf[CONFIG_NET_SOCKETPAIR_BUFFER_SIZE];
+	uint8_t buf[CONFIG_NET_SOCKETPAIR_BUFFER_SIZE];
 };
 
 /* forward declaration */
@@ -121,9 +121,9 @@ static inline size_t spair_read_avail(struct spair *spair)
 }
 
 /** Swap two 32-bit integers */
-static inline void swap32(u32_t *a, u32_t *b)
+static inline void swap32(uint32_t *a, uint32_t *b)
 {
-	u32_t c;
+	uint32_t c;
 
 	c = *b;
 	*b = *a;
@@ -193,8 +193,11 @@ static void spair_delete(struct spair *spair)
 
 	/* ensure no private information is released to the memory pool */
 	memset(spair, 0, sizeof(*spair));
-
+#ifdef CONFIG_USERSPACE
+	k_object_free(spair);
+#else
 	k_free(spair);
+#endif
 
 	if (remote != NULL && have_remote_sem) {
 		k_sem_give(&remote->sem);
@@ -214,7 +217,18 @@ static struct spair *spair_new(void)
 {
 	struct spair *spair;
 
+#ifdef CONFIG_USERSPACE
+	struct z_object *zo = z_dynamic_object_create(sizeof(*spair));
+
+	if (zo == NULL) {
+		spair = NULL;
+	} else {
+		spair = zo->name;
+		zo->type = K_OBJ_NET_SOCKET;
+	}
+#else
 	spair = k_malloc(sizeof(*spair));
+#endif
 	if (spair == NULL) {
 		errno = ENOMEM;
 		goto out;
@@ -369,13 +383,13 @@ out:
 static ssize_t spair_write(void *obj, const void *buffer, size_t count)
 {
 	int res;
-	bool is_connected;
+	int key;
 	size_t avail;
 	bool is_nonblock;
-	bool will_block;
 	size_t bytes_written;
 	bool have_local_sem = false;
 	bool have_remote_sem = false;
+	bool will_block = false;
 	struct spair *const spair = (struct spair *)obj;
 	struct spair *remote = NULL;
 
@@ -385,9 +399,10 @@ static ssize_t spair_write(void *obj, const void *buffer, size_t count)
 		goto out;
 	}
 
+	key = irq_lock();
 	is_nonblock = sock_is_nonblock(spair);
-
 	res = k_sem_take(&spair->sem, K_NO_WAIT);
+	irq_unlock(key);
 	if (res < 0) {
 		if (is_nonblock) {
 			errno = EAGAIN;
@@ -401,6 +416,7 @@ static ssize_t spair_write(void *obj, const void *buffer, size_t count)
 			res = -1;
 			goto out;
 		}
+		is_nonblock = sock_is_nonblock(spair);
 	}
 
 	have_local_sem = true;
@@ -408,10 +424,7 @@ static ssize_t spair_write(void *obj, const void *buffer, size_t count)
 	remote = z_get_fd_obj(spair->remote,
 		(const struct fd_op_vtable *)&spair_fd_op_vtable, 0);
 
-	is_connected = sock_is_connected(spair);
-	is_nonblock = sock_is_nonblock(spair);
-
-	if (!is_connected) {
+	if (remote == NULL) {
 		errno = EPIPE;
 		res = -1;
 		goto out;
@@ -434,14 +447,17 @@ static ssize_t spair_write(void *obj, const void *buffer, size_t count)
 
 	have_remote_sem = true;
 
-	avail = is_connected ? spair_write_avail(spair) : 0;
-	if (avail == 0 && is_nonblock) {
-		errno = EAGAIN;
-		res = -1;
-		goto out;
+	avail = spair_write_avail(spair);
+
+	if (avail == 0) {
+		if (is_nonblock) {
+			errno = EAGAIN;
+			res = -1;
+			goto out;
+		}
+		will_block = true;
 	}
 
-	will_block = (count > avail) && !is_nonblock;
 	if (will_block) {
 
 		for (int signaled = false, result = -1; !signaled;
@@ -464,19 +480,21 @@ static ssize_t spair_write(void *obj, const void *buffer, size_t count)
 				goto out;
 			}
 
-			res = k_sem_take(&remote->sem, K_NO_WAIT);
+			remote = z_get_fd_obj(spair->remote,
+				(const struct fd_op_vtable *)
+				&spair_fd_op_vtable, 0);
+
+			if (remote == NULL) {
+				errno = EPIPE;
+				res = -1;
+				goto out;
+			}
+
+			res = k_sem_take(&remote->sem, K_FOREVER);
 			if (res < 0) {
-				if (is_nonblock) {
-					errno = -res;
-					res = -1;
-					goto out;
-				}
-				res = k_sem_take(&remote->sem, K_FOREVER);
-				if (res < 0) {
-					errno = -res;
-					res = -1;
-					goto out;
-				}
+				errno = -res;
+				res = -1;
+				goto out;
 			}
 
 			have_remote_sem = true;
@@ -569,14 +587,13 @@ out:
 static ssize_t spair_read(void *obj, void *buffer, size_t count)
 {
 	int res;
-
+	int key;
 	bool is_connected;
 	size_t avail;
 	bool is_nonblock;
-	bool will_block;
 	size_t bytes_read;
-
 	bool have_local_sem = false;
+	bool will_block = false;
 	struct spair *const spair = (struct spair *)obj;
 
 	if (obj == NULL || buffer == NULL || count == 0) {
@@ -585,9 +602,10 @@ static ssize_t spair_read(void *obj, void *buffer, size_t count)
 		goto out;
 	}
 
+	key = irq_lock();
 	is_nonblock = sock_is_nonblock(spair);
-
 	res = k_sem_take(&spair->sem, K_NO_WAIT);
+	irq_unlock(key);
 	if (res < 0) {
 		if (is_nonblock) {
 			errno = EAGAIN;
@@ -601,24 +619,28 @@ static ssize_t spair_read(void *obj, void *buffer, size_t count)
 			res = -1;
 			goto out;
 		}
+		is_nonblock = sock_is_nonblock(spair);
 	}
 
 	have_local_sem = true;
 
 	is_connected = sock_is_connected(spair);
 	avail = spair_read_avail(spair);
-	will_block = (avail == 0) && !is_nonblock;
 
-	if (avail == 0 && !is_connected) {
-		/* signal EOF */
-		res = 0;
-		goto out;
-	}
+	if (avail == 0) {
+		if (!is_connected) {
+			/* signal EOF */
+			res = 0;
+			goto out;
+		}
 
-	if (avail == 0 && is_nonblock) {
-		errno = EAGAIN;
-		res = -1;
-		goto out;
+		if (is_nonblock) {
+			errno = EAGAIN;
+			res = -1;
+			goto out;
+		}
+
+		will_block = true;
 	}
 
 	if (will_block) {
@@ -1005,16 +1027,20 @@ static ssize_t spair_sendmsg(void *obj, const struct msghdr *msg,
 
 	int res;
 	size_t len = 0;
+	bool is_connected;
+	size_t avail;
+	bool is_nonblock;
 	struct spair *const spair = (struct spair *)obj;
-	const bool is_connected = sock_is_connected(spair);
-	const size_t avail = is_connected ? spair_write_avail(spair) : 0;
-	const bool is_nonblock = sock_is_nonblock(spair);
 
 	if (spair == NULL || msg == NULL) {
 		errno = EINVAL;
 		res = -1;
 		goto out;
 	}
+
+	is_connected = sock_is_connected(spair);
+	avail = is_connected ? spair_write_avail(spair) : 0;
+	is_nonblock = sock_is_nonblock(spair);
 
 	for (size_t i = 0; i < msg->msg_iovlen; ++i) {
 		/* check & msg->msg_iov[i]? */

@@ -17,7 +17,7 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
 
     def __init__(self, cfg, family, softreset, snr, erase=False,
         tool_opt=[]):
-        super(NrfJprogBinaryRunner, self).__init__(cfg)
+        super().__init__(cfg)
         self.hex_ = cfg.hex_file
         self.family = family
         self.softreset = softreset
@@ -34,7 +34,7 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash'})
+        return RunnerCaps(commands={'flash'}, erase=True)
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -44,8 +44,6 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--softreset', required=False,
                             action='store_true',
                             help='use reset instead of pinreset')
-        parser.add_argument('--erase', action='store_true',
-                            help='if given, mass erase flash before loading')
         parser.add_argument('--snr', required=False,
                             help='serial number of board to use')
         parser.add_argument('--tool-opt', default=[], action='append',
@@ -53,7 +51,7 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
                             e.g. "--recover"''')
 
     @classmethod
-    def create(cls, cfg, args):
+    def do_create(cls, cfg, args):
         return NrfJprogBinaryRunner(cfg, args.nrf_family, args.softreset,
                                     args.snr, erase=args.erase,
                                     tool_opt=args.tool_opt)

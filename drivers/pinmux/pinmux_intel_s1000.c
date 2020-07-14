@@ -10,16 +10,16 @@
 #include <drivers/pinmux.h>
 #include <iomux.h>
 
-static volatile u32_t *iomux_ctrl_regs = (volatile u32_t *)DT_INST_REG_ADDR(0);
+static volatile uint32_t *iomux_ctrl_regs = (volatile uint32_t *)DT_INST_REG_ADDR(0);
 
 #define PINMUX_CTRL_REG_COUNT (DT_INST_REG_SIZE(0) / 4)
 
-static int pinmux_set(struct device *dev, u32_t pin, u32_t func)
+static int pinmux_set(struct device *dev, uint32_t pin, uint32_t func)
 {
-	u32_t lsb, msb;
-	u32_t index;
-	u32_t value;
-	u32_t mask;
+	uint32_t lsb, msb;
+	uint32_t index;
+	uint32_t value;
+	uint32_t mask;
 
 	/* retrieve control register index */
 	index = IOMUX_INDEX(pin);
@@ -43,11 +43,11 @@ static int pinmux_set(struct device *dev, u32_t pin, u32_t func)
 	return 0;
 }
 
-static int pinmux_get(struct device *dev, u32_t pin, u32_t *func)
+static int pinmux_get(struct device *dev, uint32_t pin, uint32_t *func)
 {
-	u32_t lsb, msb;
-	u32_t index;
-	u32_t mask;
+	uint32_t lsb, msb;
+	uint32_t index;
+	uint32_t mask;
 
 	/* retrieve control register index */
 	index = IOMUX_INDEX(pin);
@@ -71,12 +71,12 @@ static int pinmux_get(struct device *dev, u32_t pin, u32_t *func)
 	return 0;
 }
 
-static int pinmux_pullup(struct device *dev, u32_t pin, u8_t func)
+static int pinmux_pullup(struct device *dev, uint32_t pin, uint8_t func)
 {
 	return -ENOSYS;
 }
 
-static int pinmux_input(struct device *dev, u32_t pin, u8_t func)
+static int pinmux_input(struct device *dev, uint32_t pin, uint8_t func)
 {
 	return -ENOSYS;
 }

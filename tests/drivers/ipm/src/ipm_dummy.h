@@ -16,10 +16,10 @@
 #define DUMMY_IPM_DATA_WORDS    4
 
 struct ipm_dummy_regs {
-	u32_t id;
-	u32_t data[DUMMY_IPM_DATA_WORDS];
-	u8_t busy;
-	u8_t enabled;
+	uint32_t id;
+	uint32_t data[DUMMY_IPM_DATA_WORDS];
+	uint8_t busy;
+	uint8_t enabled;
 };
 
 struct ipm_dummy_driver_data {

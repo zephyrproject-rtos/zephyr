@@ -46,71 +46,71 @@ enum usb_dw_out_ep_idx {
 
 /* USB IN EP Register block type */
 struct usb_dw_in_ep_reg {
-	volatile u32_t diepctl;
-	u32_t reserved;
-	volatile u32_t diepint;
-	u32_t reserved1;
-	volatile u32_t dieptsiz;
-	volatile u32_t diepdma;
-	volatile u32_t dtxfsts;
-	u32_t reserved2;
+	volatile uint32_t diepctl;
+	uint32_t reserved;
+	volatile uint32_t diepint;
+	uint32_t reserved1;
+	volatile uint32_t dieptsiz;
+	volatile uint32_t diepdma;
+	volatile uint32_t dtxfsts;
+	uint32_t reserved2;
 };
 
 /* USB OUT EP Register block type */
 struct usb_dw_out_ep_reg {
-	volatile u32_t doepctl;
-	u32_t reserved;
-	volatile u32_t doepint;
-	u32_t reserved1;
-	volatile u32_t doeptsiz;
-	volatile u32_t doepdma;
-	u32_t reserved2;
-	u32_t reserved3;
+	volatile uint32_t doepctl;
+	uint32_t reserved;
+	volatile uint32_t doepint;
+	uint32_t reserved1;
+	volatile uint32_t doeptsiz;
+	volatile uint32_t doepdma;
+	uint32_t reserved2;
+	uint32_t reserved3;
 };
 
 /* USB Register block type */
 struct usb_dw_reg {
-	volatile u32_t gotgctl;
-	volatile u32_t gotgint;
-	volatile u32_t gahbcfg;
-	volatile u32_t gusbcfg;
-	volatile u32_t grstctl;
-	volatile u32_t gintsts;
-	volatile u32_t gintmsk;
-	volatile u32_t grxstsr;
-	volatile u32_t grxstsp;
-	volatile u32_t grxfsiz;
-	volatile u32_t gnptxfsiz;
-	u32_t reserved[5];
-	volatile u32_t gsnpsid;
-	volatile u32_t ghwcfg1;
-	volatile u32_t ghwcfg2;
-	volatile u32_t ghwcfg3;
-	volatile u32_t ghwcfg4;
-	volatile u32_t gdfifocfg;
-	u32_t reserved1[43];
-	volatile u32_t dieptxf1;
-	volatile u32_t dieptxf2;
-	volatile u32_t dieptxf3;
-	volatile u32_t dieptxf4;
-	volatile u32_t dieptxf5;
-	u32_t reserved2[442];
-	volatile u32_t dcfg;
-	volatile u32_t dctl;
-	volatile u32_t dsts;
-	u32_t reserved3;
-	volatile u32_t diepmsk;
-	volatile u32_t doepmsk;
-	volatile u32_t daint;
-	volatile u32_t daintmsk;
-	u32_t reserved4[2];
-	volatile u32_t dvbusdis;
-	volatile u32_t dvbuspulse;
-	volatile u32_t dthrctl;
-	volatile u32_t diepempmsk;
-	u32_t reserved5[50];
+	volatile uint32_t gotgctl;
+	volatile uint32_t gotgint;
+	volatile uint32_t gahbcfg;
+	volatile uint32_t gusbcfg;
+	volatile uint32_t grstctl;
+	volatile uint32_t gintsts;
+	volatile uint32_t gintmsk;
+	volatile uint32_t grxstsr;
+	volatile uint32_t grxstsp;
+	volatile uint32_t grxfsiz;
+	volatile uint32_t gnptxfsiz;
+	uint32_t reserved[5];
+	volatile uint32_t gsnpsid;
+	volatile uint32_t ghwcfg1;
+	volatile uint32_t ghwcfg2;
+	volatile uint32_t ghwcfg3;
+	volatile uint32_t ghwcfg4;
+	volatile uint32_t gdfifocfg;
+	uint32_t reserved1[43];
+	volatile uint32_t dieptxf1;
+	volatile uint32_t dieptxf2;
+	volatile uint32_t dieptxf3;
+	volatile uint32_t dieptxf4;
+	volatile uint32_t dieptxf5;
+	uint32_t reserved2[442];
+	volatile uint32_t dcfg;
+	volatile uint32_t dctl;
+	volatile uint32_t dsts;
+	uint32_t reserved3;
+	volatile uint32_t diepmsk;
+	volatile uint32_t doepmsk;
+	volatile uint32_t daint;
+	volatile uint32_t daintmsk;
+	uint32_t reserved4[2];
+	volatile uint32_t dvbusdis;
+	volatile uint32_t dvbuspulse;
+	volatile uint32_t dthrctl;
+	volatile uint32_t diepempmsk;
+	uint32_t reserved5[50];
 	struct usb_dw_in_ep_reg in_ep_reg[USB_DW_IN_EP_NUM];
-	u32_t reserved6[80];
+	uint32_t reserved6[80];
 	struct usb_dw_out_ep_reg out_ep_reg[USB_DW_OUT_EP_NUM];
 };
 
@@ -198,7 +198,7 @@ struct usb_dw_reg {
 #define USB_DW_PLL_TIMEOUT_US 100
 
 #define USB_DW_EP_FIFO(ep)						\
-	(*(u32_t *)(DT_INST_REG_ADDR(0) + 0x1000 * (ep + 1)))
+	(*(uint32_t *)(DT_INST_REG_ADDR(0) + 0x1000 * (ep + 1)))
 /* USB register block base address */
 #define USB_DW ((struct usb_dw_reg *)DT_INST_REG_ADDR(0))
 

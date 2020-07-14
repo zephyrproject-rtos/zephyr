@@ -32,10 +32,10 @@ static void reset_state(void)
 {
 	if (link.conn) {
 		bt_conn_unref(link.conn);
+		link.conn = NULL;
 	}
 
 	k_delayed_work_cancel(&link.prot_timer);
-	memset(&link, 0, offsetof(struct prov_link, prot_timer));
 
 	link.rx_buf = bt_mesh_proxy_get_buf();
 }
@@ -139,6 +139,11 @@ static void clear_tx(void)
 void pb_gatt_init(void)
 {
 	k_delayed_work_init(&link.prot_timer, protocol_timeout);
+}
+
+void pb_gatt_reset(void)
+{
+	reset_state();
 }
 
 const struct prov_bearer pb_gatt = {

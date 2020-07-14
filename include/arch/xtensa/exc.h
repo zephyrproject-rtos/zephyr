@@ -29,7 +29,7 @@ extern "C" {
 struct __esf {
 	/* FIXME - not finished yet */
 	sys_define_gpr_with_alias(a1, sp);
-	u32_t pc;
+	uint32_t pc;
 };
 
 /* Xtensa uses a variable length stack frame depending on how many

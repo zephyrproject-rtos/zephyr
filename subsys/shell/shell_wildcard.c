@@ -10,13 +10,13 @@
 #include "shell_utils.h"
 #include "shell_ops.h"
 
-static enum shell_wildcard_status command_add(char *buff, u16_t *buff_len,
+static enum shell_wildcard_status command_add(char *buff, uint16_t *buff_len,
 					      char const *cmd,
 					      char const *pattern)
 {
-	u16_t cmd_len = shell_strlen(cmd);
+	uint16_t cmd_len = shell_strlen(cmd);
 	char *completion_addr;
-	u16_t shift;
+	uint16_t shift;
 
 	/* +1 for space */
 	if ((*buff_len + cmd_len + 1) > CONFIG_SHELL_CMD_BUFF_SIZE) {
@@ -107,7 +107,7 @@ static enum shell_wildcard_status commands_expand(const struct shell *shell,
 
 bool shell_wildcard_character_exist(const char *str)
 {
-	u16_t str_len = shell_strlen(str);
+	uint16_t str_len = shell_strlen(str);
 
 	for (size_t i = 0; i < str_len; i++) {
 		if ((str[i] == '?') || (str[i] == '*')) {

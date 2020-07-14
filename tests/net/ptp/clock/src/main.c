@@ -29,6 +29,8 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <net/net_ip.h>
 #include <net/net_l2.h>
 
+#include <random/rand32.h>
+
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
 
@@ -72,7 +74,7 @@ static K_SEM_DEFINE(wait_data, 0, UINT_MAX);
 
 struct eth_context {
 	struct net_if *iface;
-	u8_t mac_addr[6];
+	uint8_t mac_addr[6];
 
 	struct net_ptp_time time;
 	struct device *ptp_clock;
@@ -135,7 +137,7 @@ static struct ethernet_api api_funcs = {
 	.send = eth_tx,
 };
 
-static void generate_mac(u8_t *mac_addr)
+static void generate_mac(uint8_t *mac_addr)
 {
 	/* 00-00-5E-00-53-xx Documentation RFC 7042 */
 	mac_addr[0] = 0x00;
@@ -167,7 +169,7 @@ ETH_NET_DEVICE_INIT(eth_test_3, "eth_test_3", eth_init, device_pm_control_nop,
 		    &eth_context_3, NULL, CONFIG_ETH_INIT_PRIORITY, &api_funcs,
 		    NET_ETH_MTU);
 
-static u64_t timestamp_to_nsec(struct net_ptp_time *ts)
+static uint64_t timestamp_to_nsec(struct net_ptp_time *ts)
 {
 	if (!ts) {
 		return 0;
@@ -426,7 +428,7 @@ static void test_ptp_clock_iface(int idx)
 		.nanosecond = 1,
 	};
 	struct device *clk;
-	u64_t orig, new_value;
+	uint64_t orig, new_value;
 
 	clk = net_eth_get_ptp_clock(eth_interfaces[idx]);
 

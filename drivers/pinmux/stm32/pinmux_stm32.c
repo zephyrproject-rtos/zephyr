@@ -30,7 +30,7 @@
 /* base address for where GPIO registers start */
 #define GPIO_PORTS_BASE       (GPIOA_BASE)
 
-static const u32_t ports_enable[STM32_PORTS_MAX] = {
+static const uint32_t ports_enable[STM32_PORTS_MAX] = {
 	STM32_PERIPH_GPIOA,
 	STM32_PERIPH_GPIOB,
 	STM32_PERIPH_GPIOC,
@@ -84,7 +84,7 @@ static const u32_t ports_enable[STM32_PORTS_MAX] = {
  *
  * @return 0 on success, error otherwise
  */
-static int enable_port(u32_t port, struct device *clk)
+static int enable_port(uint32_t port, struct device *clk)
 {
 	/* enable port clock */
 	if (!clk) {
@@ -106,13 +106,13 @@ static int enable_port(u32_t port, struct device *clk)
 static int stm32_pin_configure(int pin, int func, int altf)
 {
 	/* determine IO port registers location */
-	u32_t offset = STM32_PORT(pin) * GPIO_REG_SIZE;
-	u8_t *port_base = (u8_t *)(GPIO_PORTS_BASE + offset);
+	uint32_t offset = STM32_PORT(pin) * GPIO_REG_SIZE;
+	uint8_t *port_base = (uint8_t *)(GPIO_PORTS_BASE + offset);
 
 	/* not much here, on STM32F10x the alternate function is
 	 * controller by setting up GPIO pins in specific mode.
 	 */
-	return gpio_stm32_configure((u32_t *)port_base,
+	return gpio_stm32_configure((uint32_t *)port_base,
 				    STM32_PIN(pin), func, altf);
 }
 
@@ -125,7 +125,7 @@ static int stm32_pin_configure(int pin, int func, int altf)
  *
  * @return 0 on success, error otherwise
  */
-int z_pinmux_stm32_set(u32_t pin, u32_t func,
+int z_pinmux_stm32_set(uint32_t pin, uint32_t func,
 				struct device *clk)
 {
 	/* make sure to enable port clock first */

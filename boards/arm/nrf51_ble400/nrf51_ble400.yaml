@@ -9,6 +9,7 @@ toolchain:
 ram: 16
 supported:
   - ble
+  - gpio
   - i2c
 testing:
   ignore_tags:

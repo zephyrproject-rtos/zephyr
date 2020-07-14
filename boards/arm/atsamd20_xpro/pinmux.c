@@ -15,68 +15,68 @@ static int board_pinmux_init(struct device *dev)
 
 	ARG_UNUSED(dev);
 
-#if ATMEL_SAM0_DT_SERCOM_CHECK(0, atmel_sam0_uart)
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(0, atmel_sam0_uart) && CONFIG_UART_SAM0)
 #warning Pin mapping may not be configured
 #endif
-#if ATMEL_SAM0_DT_SERCOM_CHECK(1, atmel_sam0_uart)
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(1, atmel_sam0_uart) && CONFIG_UART_SAM0)
 #warning Pin mapping may not be configured
 #endif
-#if ATMEL_SAM0_DT_SERCOM_CHECK(2, atmel_sam0_uart)
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(2, atmel_sam0_uart) && CONFIG_UART_SAM0)
 #warning Pin mapping may not be configured
 #endif
-#if ATMEL_SAM0_DT_SERCOM_CHECK(3, atmel_sam0_uart)
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(3, atmel_sam0_uart) && CONFIG_UART_SAM0)
 	/* SERCOM3 on RX=PA25, TX=PA24 */
 	pinmux_pin_set(muxa, 24, PINMUX_FUNC_C);
 	pinmux_pin_set(muxa, 25, PINMUX_FUNC_C);
 #endif
-#if ATMEL_SAM0_DT_SERCOM_CHECK(4, atmel_sam0_uart)
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(4, atmel_sam0_uart) && CONFIG_UART_SAM0)
 	pinmux_pin_set(muxb,  8, PINMUX_FUNC_D);
 	pinmux_pin_set(muxb,  9, PINMUX_FUNC_D);
 #endif
-#if ATMEL_SAM0_DT_SERCOM_CHECK(5, atmel_sam0_uart)
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(5, atmel_sam0_uart) && CONFIG_UART_SAM0)
 #warning Pin mapping may not be configured
 #endif
 
-#if ATMEL_SAM0_DT_SERCOM_CHECK(0, atmel_sam0_spi)
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(0, atmel_sam0_spi) && CONFIG_SPI_SAM0)
 	/* SPI SERCOM0 on MISO=PA04, MOSI=PA06, SCK=PA07 */
 	pinmux_pin_set(muxa,  4, PINMUX_FUNC_D);
 	pinmux_pin_set(muxa,  6, PINMUX_FUNC_D);
 	pinmux_pin_set(muxa,  7, PINMUX_FUNC_D);
 #endif
-#if ATMEL_SAM0_DT_SERCOM_CHECK(1, atmel_sam0_spi)
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(1, atmel_sam0_spi) && CONFIG_SPI_SAM0)
 #warning Pin mapping may not be configured
 #endif
-#if ATMEL_SAM0_DT_SERCOM_CHECK(2, atmel_sam0_spi)
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(2, atmel_sam0_spi) && CONFIG_SPI_SAM0)
 #warning Pin mapping may not be configured
 #endif
-#if ATMEL_SAM0_DT_SERCOM_CHECK(3, atmel_sam0_spi)
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(3, atmel_sam0_spi) && CONFIG_SPI_SAM0)
 #warning Pin mapping may not be configured
 #endif
-#if ATMEL_SAM0_DT_SERCOM_CHECK(4, atmel_sam0_spi)
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(4, atmel_sam0_spi) && CONFIG_SPI_SAM0)
 #warning Pin mapping may not be configured
 #endif
-#if ATMEL_SAM0_DT_SERCOM_CHECK(5, atmel_sam0_spi)
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(5, atmel_sam0_spi) && CONFIG_SPI_SAM0)
 #warning Pin mapping may not be configured
 #endif
 
-#if ATMEL_SAM0_DT_SERCOM_CHECK(0, atmel_sam0_i2c)
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(0, atmel_sam0_i2c) && CONFIG_I2C_SAM0)
 #warning Pin mapping may not be configured
 #endif
-#if ATMEL_SAM0_DT_SERCOM_CHECK(1, atmel_sam0_i2c)
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(1, atmel_sam0_i2c) && CONFIG_I2C_SAM0)
 #warning Pin mapping may not be configured
 #endif
-#if ATMEL_SAM0_DT_SERCOM_CHECK(2, atmel_sam0_i2c)
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(2, atmel_sam0_i2c) && CONFIG_I2C_SAM0)
 	/* SERCOM2 on SDA=PA08, SCL=PA09 */
 	pinmux_pin_set(muxa, 8, PINMUX_FUNC_D);
 	pinmux_pin_set(muxa, 9, PINMUX_FUNC_D);
 #endif
-#if ATMEL_SAM0_DT_SERCOM_CHECK(3, atmel_sam0_i2c)
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(3, atmel_sam0_i2c) && CONFIG_I2C_SAM0)
 #warning Pin mapping may not be configured
 #endif
-#if ATMEL_SAM0_DT_SERCOM_CHECK(4, atmel_sam0_i2c)
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(4, atmel_sam0_i2c) && CONFIG_I2C_SAM0)
 #warning Pin mapping may not be configured
 #endif
-#if ATMEL_SAM0_DT_SERCOM_CHECK(5, atmel_sam0_i2c)
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(5, atmel_sam0_i2c) && CONFIG_I2C_SAM0)
 #warning Pin mapping may not be configured
 #endif
 

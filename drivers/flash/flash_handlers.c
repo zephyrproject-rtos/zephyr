@@ -55,7 +55,7 @@ static inline int z_vrfy_flash_get_page_info_by_offs(struct device *dev,
 #include <syscalls/flash_get_page_info_by_offs_mrsh.c>
 
 static inline int z_vrfy_flash_get_page_info_by_idx(struct device *dev,
-					 u32_t idx,
+					 uint32_t idx,
 					 struct flash_pages_info *info)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_FLASH(dev, page_layout));

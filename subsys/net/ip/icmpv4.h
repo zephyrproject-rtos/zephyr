@@ -28,8 +28,8 @@
 #define NET_ICMPV4_UNUSED_LEN 4
 
 struct net_icmpv4_echo_req {
-	u16_t identifier;
-	u16_t sequence;
+	uint16_t identifier;
+	uint16_t sequence;
 } __packed;
 
 typedef enum net_verdict (*icmpv4_callback_handler_t)(
@@ -40,8 +40,8 @@ typedef enum net_verdict (*icmpv4_callback_handler_t)(
 struct net_icmpv4_handler {
 	sys_snode_t node;
 	icmpv4_callback_handler_t handler;
-	u8_t type;
-	u8_t code;
+	uint8_t type;
+	uint8_t code;
 };
 
 /**
@@ -51,7 +51,7 @@ struct net_icmpv4_handler {
  * @param code Code of the type of the error message.
  * @return Return 0 if the sending succeed, <0 otherwise.
  */
-int net_icmpv4_send_error(struct net_pkt *pkt, u8_t type, u8_t code);
+int net_icmpv4_send_error(struct net_pkt *pkt, uint8_t type, uint8_t code);
 
 /**
  * @brief Send ICMPv4 echo request message.
@@ -71,15 +71,15 @@ int net_icmpv4_send_error(struct net_pkt *pkt, u8_t type, u8_t code);
 #if defined(CONFIG_NET_NATIVE_IPV4)
 int net_icmpv4_send_echo_request(struct net_if *iface,
 				 struct in_addr *dst,
-				 u16_t identifier,
-				 u16_t sequence,
+				 uint16_t identifier,
+				 uint16_t sequence,
 				 const void *data,
 				 size_t data_size);
 #else
 static inline int net_icmpv4_send_echo_request(struct net_if *iface,
 					       struct in_addr *dst,
-					       u16_t identifier,
-					       u16_t sequence,
+					       uint16_t identifier,
+					       uint16_t sequence,
 					       const void *data,
 					       size_t data_size)
 {

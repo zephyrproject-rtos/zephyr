@@ -25,8 +25,8 @@
 
 static struct device *peci_dev;
 static bool peci_initialized;
-static u8_t tjmax;
-static u8_t rx_fcs;
+static uint8_t tjmax;
+static uint8_t rx_fcs;
 static void monitor_temperature_func(void *dummy1, void *dummy2, void *dummy3);
 
 static struct k_thread temp_id;
@@ -55,15 +55,15 @@ int peci_ping(void)
 	return 0;
 }
 
-int peci_get_tjmax(u8_t *tjmax)
+int peci_get_tjmax(uint8_t *tjmax)
 {
 	int ret;
 	int retries = 3;
-	u8_t peci_resp;
+	uint8_t peci_resp;
 	struct peci_msg packet;
 
-	u8_t peci_resp_buf[PECI_RD_PKG_LEN_DWORD+1];
-	u8_t peci_req_buf[] = { PECI_CONFIGHOSTID,
+	uint8_t peci_resp_buf[PECI_RD_PKG_LEN_DWORD+1];
+	uint8_t peci_req_buf[] = { PECI_CONFIGHOSTID,
 				PECI_CONFIGINDEX_TJMAX,
 				PECI_CONFIGPARAM & 0x00FF,
 				(PECI_CONFIGPARAM & 0xFF00) >> 8,
@@ -99,11 +99,11 @@ int peci_get_tjmax(u8_t *tjmax)
 
 int peci_get_temp(int *temperature)
 {
-	s16_t raw_cpu_temp;
+	int16_t raw_cpu_temp;
 	int ret;
 	struct peci_msg packet = {0};
 
-	u8_t peci_resp_buf[PECI_GET_TEMP_RD_LEN+1];
+	uint8_t peci_resp_buf[PECI_GET_TEMP_RD_LEN+1];
 
 	rx_fcs = 0;
 	packet.tx_buffer.buf = NULL;
@@ -125,8 +125,8 @@ int peci_get_temp(int *temperature)
 	printk("Temp bytes: %02x", packet.rx_buffer.buf[0]);
 	printk("%02x\n", packet.rx_buffer.buf[1]);
 
-	raw_cpu_temp = (s16_t)(packet.rx_buffer.buf[0] |
-			(s16_t)((packet.rx_buffer.buf[1] << 8) & 0xFF00));
+	raw_cpu_temp = (int16_t)(packet.rx_buffer.buf[0] |
+			(int16_t)((packet.rx_buffer.buf[1] << 8) & 0xFF00));
 
 	if (raw_cpu_temp == 0x8000) {
 		printk("Invalid temp %x\n", raw_cpu_temp);

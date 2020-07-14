@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(net_ieee802154, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 #define BUF_TIMEOUT K_MSEC(50)
 
 /* No need to hold space for the FCS */
-static u8_t frame_buffer_data[IEEE802154_MTU - 2];
+static uint8_t frame_buffer_data[IEEE802154_MTU - 2];
 
 static struct net_buf frame_buf = {
 	.data = frame_buffer_data,
@@ -125,8 +125,8 @@ enum net_verdict ieee802154_manage_recv_packet(struct net_if *iface,
 					       size_t hdr_len)
 {
 	enum net_verdict verdict = NET_CONTINUE;
-	u32_t src;
-	u32_t dst;
+	uint32_t src;
+	uint32_t dst;
 
 	/* Upper IP stack expects the link layer address to be in
 	 * big endian format so we must swap it here.
@@ -218,7 +218,7 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 
 	pkt_hexdump(RX_PKT_TITLE " (with ll)", pkt, true);
 
-	hdr_len = (u8_t *)mpdu.payload - net_pkt_data(pkt);
+	hdr_len = (uint8_t *)mpdu.payload - net_pkt_data(pkt);
 	net_buf_pull(pkt->buffer, hdr_len);
 
 	return ieee802154_manage_recv_packet(iface, pkt, hdr_len);
@@ -230,7 +230,7 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	struct ieee802154_fragment_ctx f_ctx;
 	struct net_buf *buf;
-	u8_t ll_hdr_size;
+	uint8_t ll_hdr_size;
 	bool fragment;
 	int len;
 
@@ -329,14 +329,19 @@ NET_L2_INIT(IEEE802154_L2,
 void ieee802154_init(struct net_if *iface)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
-	const u8_t *mac = net_if_get_link_addr(iface)->addr;
-	s16_t tx_power = CONFIG_NET_L2_IEEE802154_RADIO_DFLT_TX_POWER;
-	u8_t long_addr[8];
+	const uint8_t *mac = net_if_get_link_addr(iface)->addr;
+	int16_t tx_power = CONFIG_NET_L2_IEEE802154_RADIO_DFLT_TX_POWER;
+	uint8_t long_addr[8];
 
 	NET_DBG("Initializing IEEE 802.15.4 stack on iface %p", iface);
 
 	ctx->channel = IEEE802154_NO_CHANNEL;
 	ctx->flags = NET_L2_MULTICAST;
+
+	if (IS_ENABLED(CONFIG_IEEE802154_NET_IF_NO_AUTO_START)) {
+		LOG_DBG("Interface auto start disabled.");
+		net_if_flag_set(iface, NET_IF_NO_AUTO_START);
+	}
 
 	ieee802154_mgmt_init(iface);
 

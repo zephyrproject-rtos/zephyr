@@ -33,13 +33,13 @@ extern "C" {
  */
 struct bt_test_cb {
 #if defined(CONFIG_BT_MESH)
-	void (*mesh_net_recv)(u8_t ttl, u8_t ctl, u16_t src, u16_t dst,
+	void (*mesh_net_recv)(uint8_t ttl, uint8_t ctl, uint16_t src, uint16_t dst,
 			      const void *payload, size_t payload_len);
-	void (*mesh_model_bound)(u16_t addr, struct bt_mesh_model *model,
-				 u16_t key_idx);
-	void (*mesh_model_unbound)(u16_t addr, struct bt_mesh_model *model,
-				   u16_t key_idx);
-	void (*mesh_prov_invalid_bearer)(u8_t opcode);
+	void (*mesh_model_bound)(uint16_t addr, struct bt_mesh_model *model,
+				 uint16_t key_idx);
+	void (*mesh_model_unbound)(uint16_t addr, struct bt_mesh_model *model,
+				   uint16_t key_idx);
+	void (*mesh_prov_invalid_bearer)(uint8_t opcode);
 	void (*mesh_trans_incomp_timer_exp)(void);
 #endif /* CONFIG_BT_MESH */
 
@@ -67,7 +67,7 @@ void bt_test_cb_unregister(struct bt_test_cb *cb);
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int bt_test_mesh_lpn_group_add(u16_t group);
+int bt_test_mesh_lpn_group_add(uint16_t group);
 
 /** Send Friend Subscription List Remove message.
  *
@@ -80,7 +80,7 @@ int bt_test_mesh_lpn_group_add(u16_t group);
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int bt_test_mesh_lpn_group_remove(u16_t *groups, size_t groups_count);
+int bt_test_mesh_lpn_group_remove(uint16_t *groups, size_t groups_count);
 
 /** Clear replay protection list cache.
  *

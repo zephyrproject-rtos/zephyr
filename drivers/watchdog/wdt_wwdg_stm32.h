@@ -30,7 +30,7 @@ struct wwdg_stm32_config {
 /* driver data */
 struct wwdg_stm32_data {
 	/* WWDG reset counter */
-	u8_t counter;
+	uint8_t counter;
 
 	/* WWDG user defined callback on EWI */
 	wdt_callback_t callback;

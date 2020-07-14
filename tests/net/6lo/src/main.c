@@ -95,8 +95,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_6LO_LOG_LEVEL);
 		{ { { 0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
 		      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xbb, 0xaa } } }
 
-u8_t src_mac[8] = { 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xbb };
-u8_t dst_mac[8] = { 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0xbb, 0xaa };
+uint8_t src_mac[8] = { 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xbb };
+uint8_t dst_mac[8] = { 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0xbb, 0xaa };
 
 /* Source and Destination addresses are contect related addresses. */
 #if defined(CONFIG_NET_6LO_CONTEXT)
@@ -287,7 +287,7 @@ static bool compare_ipv6_hdr(struct net_pkt *pkt, struct net_6lo_data *data)
 
 	net_pkt_acknowledge_data(pkt, &ipv6_access);
 
-	res = memcmp((u8_t *)ipv6_hdr, (u8_t *)&data->ipv6,
+	res = memcmp((uint8_t *)ipv6_hdr, (uint8_t *)&data->ipv6,
 		      sizeof(struct net_ipv6_hdr));
 	if (res) {
 		TC_PRINT("Missmatch IPv6 HDR\n");
@@ -310,7 +310,7 @@ static bool compare_udp_hdr(struct net_pkt *pkt, struct net_6lo_data *data)
 
 	net_pkt_acknowledge_data(pkt, &udp_access);
 
-	res = memcmp((u8_t *)udp_hdr, (u8_t *)&data->nh.udp,
+	res = memcmp((uint8_t *)udp_hdr, (uint8_t *)&data->nh.udp,
 		      sizeof(struct net_udp_hdr));
 	if (res) {
 		TC_PRINT("Missmatch UDP HDR\n");
@@ -333,7 +333,7 @@ static bool compare_icmp_hdr(struct net_pkt *pkt, struct net_6lo_data *data)
 
 	net_pkt_acknowledge_data(pkt, &icmp_access);
 
-	res = memcmp((u8_t *)icmp_hdr, (u8_t *)&data->nh.icmp,
+	res = memcmp((uint8_t *)icmp_hdr, (uint8_t *)&data->nh.icmp,
 		      sizeof(struct net_icmp_hdr));
 	if (res) {
 		TC_PRINT("Missmatch ICMP HDR\n");
@@ -456,8 +456,8 @@ static struct net_pkt *create_pkt(struct net_6lo_data *data)
 {
 	struct net_pkt *pkt;
 	struct net_buf *frag;
-	u8_t bytes, pos;
-	u16_t len;
+	uint8_t bytes, pos;
+	uint16_t len;
 	int remaining;
 
 	pkt = net_pkt_alloc_on_iface(net_if_get_default(), K_FOREVER);
@@ -480,14 +480,14 @@ static struct net_pkt *create_pkt(struct net_6lo_data *data)
 	}
 
 	if (data->nh_udp) {
-		memcpy(frag->data, (u8_t *) data, NET_IPV6UDPH_LEN);
+		memcpy(frag->data, (uint8_t *) data, NET_IPV6UDPH_LEN);
 		net_buf_add(frag, NET_IPV6UDPH_LEN);
 	} else if (data->nh_icmp) {
-		memcpy(frag->data, (u8_t *) data, NET_IPV6ICMPH_LEN);
+		memcpy(frag->data, (uint8_t *) data, NET_IPV6ICMPH_LEN);
 		net_buf_add(frag, NET_IPV6ICMPH_LEN);
 
 	} else {
-		memcpy(frag->data, (u8_t *) data, NET_IPV6H_LEN);
+		memcpy(frag->data, (uint8_t *) data, NET_IPV6H_LEN);
 		net_buf_add(frag, NET_IPV6H_LEN);
 	}
 
@@ -506,19 +506,19 @@ static struct net_pkt *create_pkt(struct net_6lo_data *data)
 	 * in ipv6, udp and in data pointer too (it's required in comparison)
 	 */
 	frag->data[4] = len >> 8;
-	frag->data[5] = (u8_t) len;
+	frag->data[5] = (uint8_t) len;
 
 	data->ipv6.len = htons(len);
 
 	if (data->nh_udp) {
 		frag->data[44] = len >> 8;
-		frag->data[45] = (u8_t) len;
+		frag->data[45] = (uint8_t) len;
 
 		data->nh.udp.len = htons(len);
 	}
 
 	while (remaining > 0) {
-		u8_t copy;
+		uint8_t copy;
 
 		bytes = net_buf_tailroom(frag);
 		copy = remaining > bytes ? bytes : remaining;

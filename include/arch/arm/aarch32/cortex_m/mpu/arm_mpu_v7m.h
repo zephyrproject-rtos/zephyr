@@ -133,14 +133,14 @@
 
 struct arm_mpu_region_attr {
 	/* Attributes belonging to RASR (including the encoded region size) */
-	u32_t rasr;
+	uint32_t rasr;
 };
 
 typedef struct arm_mpu_region_attr arm_mpu_region_attr_t;
 
 /* Typedef for the k_mem_partition attribute */
 typedef struct {
-	u32_t rasr_attr;
+	uint32_t rasr_attr;
 } k_mem_partition_attr_t;
 
 /* Read-Write access permission attributes */
@@ -267,7 +267,7 @@ typedef struct {
 #define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size) \
 	BUILD_ASSERT(!(((size) & ((size) - 1))) && \
 		(size) >= CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE && \
-		!((u32_t)(start) & ((size) - 1)), \
+		!((uint32_t)(start) & ((size) - 1)), \
 		"the size of the partition must be power of 2" \
 		" and greater than or equal to the minimum MPU region size." \
 		"start address of the partition must align with size.")

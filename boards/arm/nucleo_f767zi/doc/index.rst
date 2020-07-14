@@ -104,7 +104,7 @@ features:
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
-| ETHERNET  | on-chip    | ethernet                            |
+| ETHERNET  | on-chip    | ethernet (*)                        |
 +-----------+------------+-------------------------------------+
 | USB       | on-chip    | usb_device                          |
 +-----------+------------+-------------------------------------+
@@ -120,6 +120,14 @@ features:
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | ADC Controller                      |
 +-----------+------------+-------------------------------------+
+| RNG       | on-chip    | True Random number generator        |
++-----------+------------+-------------------------------------+
+
+(*) nucleo_f767zi with soc cut-A (Device marking A) has some ethernet
+    instability (https://github.com/zephyrproject-rtos/zephyr/issues/26519).
+    Use of cut-Z is advised.
+    see restrictions errata:
+    https://www.st.com/content/ccc/resource/technical/document/errata_sheet/group0/23/a6/11/0b/30/24/46/a5/DM00257543/files/DM00257543.pdf/jcr:content/translations/en.DM00257543.pdf
 
 Other hardware features are not yet supported on this Zephyr port.
 

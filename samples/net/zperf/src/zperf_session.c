@@ -30,7 +30,7 @@ struct session *get_session(struct net_pkt *pkt,
 	struct in_addr ipv4 = { };
 	struct net_udp_hdr *udp_hdr;
 	int i = 0;
-	u16_t port;
+	uint16_t port;
 
 	if (!pkt) {
 		printk("Error! null pkt detected.\n");

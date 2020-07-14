@@ -14,7 +14,7 @@ parse_syscalls.py to create several files:
   as well as the system call dispatch table, which maps system call type IDs
   to their handler functions.
 
-- A header file defing the system call type IDs, as well as function
+- A header file defining the system call type IDs, as well as function
   prototypes for all system call handler functions.
 
 - A directory containing header files. Each header corresponds to a header
@@ -29,7 +29,7 @@ import argparse
 import os
 import json
 
-types64 = ["s64_t", "u64_t"]
+types64 = ["int64_t", "uint64_t"]
 
 # The kernel linkage is complicated.  These functions from
 # userspace_handlers.c are present in the kernel .a library after
@@ -174,7 +174,7 @@ def wrapper_defs(func_name, func_type, args):
     wrap += "static inline %s %s(%s)\n" % (func_type, func_name, decl_arglist)
     wrap += "{\n"
     wrap += "#ifdef CONFIG_USERSPACE\n"
-    wrap += ("\t" + "u64_t ret64;\n") if ret64 else ""
+    wrap += ("\t" + "uint64_t ret64;\n") if ret64 else ""
     wrap += "\t" + "if (z_syscall_trap()) {\n"
 
     for parmnum, rec in enumerate(split_args):
@@ -284,15 +284,19 @@ def marshall_defs(func_name, func_type, args):
 
     if func_type == "void":
         mrsh += "\t" + "%s;\n" % vrfy_call
+        mrsh += "\t" + "_current->syscall_frame = NULL;\n"
         mrsh += "\t" + "return 0;\n"
     else:
         mrsh += "\t" + "%s ret = %s;\n" % (func_type, vrfy_call)
+
         if need_split(func_type):
-            ptr = "((u64_t *)%s)" % mrsh_rval(nmrsh - 1, nmrsh)
+            ptr = "((uint64_t *)%s)" % mrsh_rval(nmrsh - 1, nmrsh)
             mrsh += "\t" + "Z_OOPS(Z_SYSCALL_MEMORY_WRITE(%s, 8));\n" % ptr
             mrsh += "\t" + "*%s = ret;\n" % ptr
+            mrsh += "\t" + "_current->syscall_frame = NULL;\n"
             mrsh += "\t" + "return 0;\n"
         else:
+            mrsh += "\t" + "_current->syscall_frame = NULL;\n"
             mrsh += "\t" + "return (uintptr_t) ret;\n"
 
     mrsh += "}\n"

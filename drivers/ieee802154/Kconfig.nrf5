@@ -31,4 +31,15 @@ config IEEE802154_NRF5_INIT_PRIO
 	  Set the initialization priority number. Do not mess with it unless
 	  you know what you are doing.
 
+config IEEE802154_NRF5_EXT_IRQ_MGMT
+	bool "Radio IRQ is managed by an external module"
+	help
+	  The driver may manage radio IRQs by itself, or use an external
+	  radio IRQ provider. When radio IRQs are managed by an external
+	  provider, the driver shall not configure radio IRQs.
+
+	  Enable this option when external radio IRQ provider is enabled in
+	  the system. One example of external radio IRQ provider could be
+	  a radio arbiter used in dynamic multiprotocol applications.
+
 endif

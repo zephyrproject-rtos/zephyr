@@ -158,9 +158,6 @@ SECTION_FUNC(TEXT, _firq_exit)
 	 */
 	_get_next_switch_handle
 
-	/* restore interrupted context' sp */
-	pop sp
-
 	cmp r0, r2
 	bne _firq_switch
 
@@ -168,6 +165,8 @@ SECTION_FUNC(TEXT, _firq_exit)
 
 .balign 4
 _firq_no_switch:
+	/* restore interrupted context' sp */
+	pop sp
 	/*
 	 * Keeping this code block close to those that use it allows using brxx
 	 * instruction instead of a pair of cmp and bxx
@@ -179,6 +178,8 @@ _firq_no_switch:
 
 .balign 4
 _firq_switch:
+	/* restore interrupted context' sp */
+	pop sp
 
 #if CONFIG_RGF_NUM_BANKS != 1
 /*

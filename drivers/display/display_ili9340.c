@@ -67,6 +67,7 @@ static int ili9340_init(struct device *dev)
 	data->cs_ctrl.gpio_dev =
 		device_get_binding(DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
 	data->cs_ctrl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
+	data->cs_ctrl.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0);
 	data->cs_ctrl.delay = 0U;
 	data->spi_config.cs = &(data->cs_ctrl);
 #else
@@ -117,10 +118,10 @@ static int ili9340_init(struct device *dev)
 	return 0;
 }
 
-static void ili9340_set_mem_area(struct ili9340_data *data, const u16_t x,
-				 const u16_t y, const u16_t w, const u16_t h)
+static void ili9340_set_mem_area(struct ili9340_data *data, const uint16_t x,
+				 const uint16_t y, const uint16_t w, const uint16_t h)
 {
-	u16_t spi_data[2];
+	uint16_t spi_data[2];
 
 	spi_data[0] = sys_cpu_to_be16(x);
 	spi_data[1] = sys_cpu_to_be16(x + w - 1);
@@ -131,22 +132,22 @@ static void ili9340_set_mem_area(struct ili9340_data *data, const u16_t x,
 	ili9340_transmit(data, ILI9340_CMD_PAGE_ADDR, &spi_data[0], 4);
 }
 
-static int ili9340_write(const struct device *dev, const u16_t x,
-			 const u16_t y,
+static int ili9340_write(const struct device *dev, const uint16_t x,
+			 const uint16_t y,
 			 const struct display_buffer_descriptor *desc,
 			 const void *buf)
 {
 	struct ili9340_data *data = (struct ili9340_data *)dev->driver_data;
-	const u8_t *write_data_start = (u8_t *) buf;
+	const uint8_t *write_data_start = (uint8_t *) buf;
 	struct spi_buf tx_buf;
 	struct spi_buf_set tx_bufs;
-	u16_t write_cnt;
-	u16_t nbr_of_writes;
-	u16_t write_h;
+	uint16_t write_cnt;
+	uint16_t nbr_of_writes;
+	uint16_t write_h;
 
 	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller then width");
-	__ASSERT((desc->pitch * ILI9340_RGB_SIZE * desc->height) <= desc->bu_size,
-			"Input buffer to small");
+	__ASSERT((desc->pitch * ILI9340_RGB_SIZE * desc->height)
+		 <= desc->buf_size, "Input buffer to small");
 
 	LOG_DBG("Writing %dx%d (w,h) @ %dx%d (x,y)", desc->width, desc->height,
 			x, y);
@@ -178,8 +179,8 @@ static int ili9340_write(const struct device *dev, const u16_t x,
 	return 0;
 }
 
-static int ili9340_read(const struct device *dev, const u16_t x,
-			const u16_t y,
+static int ili9340_read(const struct device *dev, const uint16_t x,
+			const uint16_t y,
 			const struct display_buffer_descriptor *desc,
 			void *buf)
 {
@@ -212,13 +213,13 @@ static int ili9340_display_blanking_on(const struct device *dev)
 }
 
 static int ili9340_set_brightness(const struct device *dev,
-				  const u8_t brightness)
+				  const uint8_t brightness)
 {
 	LOG_WRN("Set brightness not implemented");
 	return -ENOTSUP;
 }
 
-static int ili9340_set_contrast(const struct device *dev, const u8_t contrast)
+static int ili9340_set_contrast(const struct device *dev, const uint8_t contrast)
 {
 	LOG_ERR("Set contrast not supported");
 	return -ENOTSUP;
@@ -265,7 +266,7 @@ static void ili9340_get_capabilities(const struct device *dev,
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
 
-void ili9340_transmit(struct ili9340_data *data, u8_t cmd, void *tx_data,
+void ili9340_transmit(struct ili9340_data *data, uint8_t cmd, void *tx_data,
 		      size_t tx_len)
 {
 	struct spi_buf tx_buf = { .buf = &cmd, .len = 1 };

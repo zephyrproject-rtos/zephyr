@@ -229,8 +229,8 @@ extern "C" {
  * maxim_ds3231_alarm::user_data.
  */
 typedef void (*maxim_ds3231_alarm_callback_handler_t)(struct device *dev,
-						      u8_t id,
-						      u32_t syncclock,
+						      uint8_t id,
+						      uint32_t syncclock,
 						      void *user_data);
 
 /** @brief Signature used to notify a user of the DS3231 that an
@@ -309,7 +309,7 @@ struct maxim_ds3231_alarm {
 	 * maxim_ds3231_set_alarm() to return an error, leaving the
 	 * alarm configuration unchanged.
 	 */
-	u8_t flags;
+	uint8_t flags;
 };
 
 /** @brief Register the RTC clock against system clocks.
@@ -332,7 +332,7 @@ struct maxim_ds3231_syncpoint {
 	 * running at between 1 kHz and 1 MHz, allowing for
 	 * microsecond to millisecond accuracy in synchronization.
 	 */
-	u32_t syncclock;
+	uint32_t syncclock;
 };
 
 /** @brief Read the local synchronization clock.
@@ -358,7 +358,7 @@ struct maxim_ds3231_syncpoint {
  *
  * @return the current value of the synchronization clock.
  */
-static inline u32_t maxim_ds3231_read_syncclock(struct device *dev)
+static inline uint32_t maxim_ds3231_read_syncclock(struct device *dev)
 {
 	return k_uptime_get_32();
 }
@@ -371,7 +371,7 @@ static inline u32_t maxim_ds3231_read_syncclock(struct device *dev)
  *
  * @return the frequency of the selected synchronization clock.
  */
-static inline u32_t maxim_ds3231_syncclock_frequency(struct device *dev)
+static inline uint32_t maxim_ds3231_syncclock_frequency(struct device *dev)
 {
 	return 1000U;
 }
@@ -394,8 +394,8 @@ static inline u32_t maxim_ds3231_syncclock_frequency(struct device *dev)
  * negative error code from an I2C transaction.
  */
 int maxim_ds3231_ctrl_update(struct device *dev,
-			     u8_t set_bits,
-			     u8_t clear_bits);
+			     uint8_t set_bits,
+			     uint8_t clear_bits);
 
 /**
  * @brief Read the ctrl_stat register then set and clear bits in it.
@@ -427,8 +427,8 @@ int maxim_ds3231_ctrl_update(struct device *dev,
  * code from an I2C transaction.
  */
 int maxim_ds3231_stat_update(struct device *dev,
-			     u8_t set_bits,
-			     u8_t clear_bits);
+			     uint8_t set_bits,
+			     uint8_t clear_bits);
 
 /** @brief Read a DS3231 alarm configuration.
  *
@@ -449,7 +449,7 @@ int maxim_ds3231_stat_update(struct device *dev,
  * negative error code from an I2C transaction or invalid parameter.
  */
 int maxim_ds3231_get_alarm(struct device *dev,
-			   u8_t id,
+			   uint8_t id,
 			   struct maxim_ds3231_alarm *cfg);
 
 /** @brief Configure a DS3231 alarm.
@@ -473,7 +473,7 @@ int maxim_ds3231_get_alarm(struct device *dev,
  * from an I2C transaction or an invalid parameter.
  */
 int maxim_ds3231_set_alarm(struct device *dev,
-			   u8_t id,
+			   uint8_t id,
 			   const struct maxim_ds3231_alarm *cfg);
 
 /** @brief Synchronize the RTC against the local clock.

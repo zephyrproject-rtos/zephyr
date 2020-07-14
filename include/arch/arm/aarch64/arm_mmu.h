@@ -117,11 +117,11 @@
 /* Region definition data structure */
 struct arm_mmu_region {
 	/* Region Base Physical Address */
-	u64_t base_pa;
+	uint64_t base_pa;
 	/* Region Base Virtual Address */
-	u64_t base_va;
+	uint64_t base_va;
 	/* Region size */
-	u64_t size;
+	uint64_t size;
 	/* Region Name */
 	const char *name;
 	/* Region Attributes */
@@ -131,7 +131,7 @@ struct arm_mmu_region {
 /* MMU configuration data structure */
 struct arm_mmu_config {
 	/* Number of regions */
-	u32_t num_regions;
+	uint32_t num_regions;
 	/* Regions */
 	const struct arm_mmu_region *mmu_regions;
 };

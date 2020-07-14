@@ -39,59 +39,59 @@
 
 #define HW_CYCLES_TO_USEC(__hw_cycle__) \
 	( \
-		((u64_t)(__hw_cycle__) * (u64_t)USEC_PER_SEC) / \
-		((u64_t)sys_clock_hw_cycles_per_sec())		\
+		((uint64_t)(__hw_cycle__) * (uint64_t)USEC_PER_SEC) / \
+		((uint64_t)sys_clock_hw_cycles_per_sec())		\
 	)
 
 #define HW_CYCLES_TO_SEC(__hw_cycle__) \
 	( \
-		((u64_t)(HW_CYCLES_TO_USEC(__hw_cycle__))) / \
-		((u64_t)USEC_PER_SEC) \
+		((uint64_t)(HW_CYCLES_TO_USEC(__hw_cycle__))) / \
+		((uint64_t)USEC_PER_SEC) \
 	)
 
 #define USEC_TO_HW_CYCLES(__usec__) \
 	( \
-	 ((u64_t)(__usec__) * (u64_t)sys_clock_hw_cycles_per_sec()) /	\
-		((u64_t)USEC_PER_SEC) \
+	 ((uint64_t)(__usec__) * (uint64_t)sys_clock_hw_cycles_per_sec()) /	\
+		((uint64_t)USEC_PER_SEC) \
 	)
 
 #define SEC_TO_HW_CYCLES(__sec__) \
-	USEC_TO_HW_CYCLES((u64_t)(__sec__) * \
-	(u64_t)USEC_PER_SEC)
+	USEC_TO_HW_CYCLES((uint64_t)(__sec__) * \
+	(uint64_t)USEC_PER_SEC)
 
 #define MSEC_TO_HW_CYCLES(__msec__) \
-		USEC_TO_HW_CYCLES((u64_t)(__msec__) * \
-		(u64_t)MSEC_PER_SEC)
+		USEC_TO_HW_CYCLES((uint64_t)(__msec__) * \
+		(uint64_t)MSEC_PER_SEC)
 
 struct zperf_udp_datagram {
-	s32_t id;
-	u32_t tv_sec;
-	u32_t tv_usec;
+	int32_t id;
+	uint32_t tv_sec;
+	uint32_t tv_usec;
 } __packed;
 
 struct zperf_client_hdr_v1 {
-	s32_t flags;
-	s32_t num_of_threads;
-	s32_t port;
-	s32_t buffer_len;
-	s32_t bandwidth;
-	s32_t num_of_bytes;
+	int32_t flags;
+	int32_t num_of_threads;
+	int32_t port;
+	int32_t buffer_len;
+	int32_t bandwidth;
+	int32_t num_of_bytes;
 };
 
 struct zperf_server_hdr {
-	s32_t flags;
-	s32_t total_len1;
-	s32_t total_len2;
-	s32_t stop_sec;
-	s32_t stop_usec;
-	s32_t error_cnt;
-	s32_t outorder_cnt;
-	s32_t datagrams;
-	s32_t jitter1;
-	s32_t jitter2;
+	int32_t flags;
+	int32_t total_len1;
+	int32_t total_len2;
+	int32_t stop_sec;
+	int32_t stop_usec;
+	int32_t error_cnt;
+	int32_t outorder_cnt;
+	int32_t datagrams;
+	int32_t jitter1;
+	int32_t jitter2;
 };
 
-static inline u32_t time_delta(u32_t ts, u32_t t)
+static inline uint32_t time_delta(uint32_t ts, uint32_t t)
 {
 	return (t >= ts) ? (t - ts) : (ULONG_MAX - ts + t);
 }

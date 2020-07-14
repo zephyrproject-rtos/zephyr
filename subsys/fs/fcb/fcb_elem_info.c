@@ -15,15 +15,15 @@
  * the data.
  */
 int
-fcb_elem_crc8(struct fcb *fcb, struct fcb_entry *loc, u8_t *c8p)
+fcb_elem_crc8(struct fcb *fcb, struct fcb_entry *loc, uint8_t *c8p)
 {
-	u8_t tmp_str[FCB_TMP_BUF_SZ];
+	uint8_t tmp_str[FCB_TMP_BUF_SZ];
 	int cnt;
 	int blk_sz;
-	u8_t crc8;
-	u16_t len;
-	u32_t off;
-	u32_t end;
+	uint8_t crc8;
+	uint16_t len;
+	uint32_t off;
+	uint32_t end;
 	int rc;
 
 	if (loc->fe_elem_off + 2 > loc->fe_sector->fs_size) {
@@ -66,8 +66,8 @@ fcb_elem_crc8(struct fcb *fcb, struct fcb_entry *loc, u8_t *c8p)
 int fcb_elem_info(struct fcb *fcb, struct fcb_entry *loc)
 {
 	int rc;
-	u8_t crc8;
-	u8_t fl_crc8;
+	uint8_t crc8;
+	uint8_t fl_crc8;
 	off_t off;
 
 	rc = fcb_elem_crc8(fcb, loc, &crc8);

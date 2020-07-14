@@ -52,18 +52,18 @@
 #define COMPARE_MARGIN 6
 
 /* RTC count of the last announce call, rounded down to tick boundary. */
-static volatile u64_t rtc_last;
+static volatile uint64_t rtc_last;
 
 #ifdef CONFIG_TICKLESS_KERNEL
 static struct k_spinlock lock;
 #else
-static u64_t nextThreshold = RTC_COUNTS_PER_TICK;
+static uint64_t nextThreshold = RTC_COUNTS_PER_TICK;
 #endif /* CONFIG_TICKLESS_KERNEL */
 
 
-static void setThreshold(u32_t next)
+static void setThreshold(uint32_t next)
 {
-	u32_t now;
+	uint32_t now;
 	unsigned int key;
 
 	key = irq_lock();
@@ -73,10 +73,10 @@ static void setThreshold(u32_t next)
 
 	/* if next is too soon, set at least one RTC tick in future */
 	/* assume next never be more than half the maximum 32 bit count value */
-	if ((next - now) > (u32_t)0x80000000) {
+	if ((next - now) > (uint32_t)0x80000000) {
 		/* now is past next */
 		next = now + COMPARE_MARGIN;
-	} else if ((now + COMPARE_MARGIN - next) < (u32_t)0x80000000) {
+	} else if ((now + COMPARE_MARGIN - next) < (uint32_t)0x80000000) {
 		if (next < now + COMPARE_MARGIN) {
 			next = now + COMPARE_MARGIN;
 		}
@@ -91,10 +91,10 @@ static void setThreshold(u32_t next)
 void rtc_isr(void *arg)
 {
 #ifndef CONFIG_TICKLESS_KERNEL
-	u64_t newThreshold;
-	u32_t next;
+	uint64_t newThreshold;
+	uint32_t next;
 #else
-	u64_t ticks, currCount;
+	uint64_t ticks, currCount;
 #endif
 
 	ARG_UNUSED(arg);
@@ -103,7 +103,7 @@ void rtc_isr(void *arg)
 
 #ifdef CONFIG_TICKLESS_KERNEL
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	currCount = (u64_t)AONRTCCurrent64BitValueGet();
+	currCount = (uint64_t)AONRTCCurrent64BitValueGet();
 	ticks = (currCount - rtc_last) / RTC_COUNTS_PER_TICK;
 
 	rtc_last += ticks * RTC_COUNTS_PER_TICK;
@@ -116,7 +116,7 @@ void rtc_isr(void *arg)
 	/* calculate new 64-bit RTC count for next interrupt */
 	newThreshold = nextThreshold + RTC_COUNTS_PER_TICK;
 
-	next = (u32_t)((u64_t)newThreshold >> 16);
+	next = (uint32_t)((uint64_t)newThreshold >> 16);
 	setThreshold(next);
 
 	nextThreshold = newThreshold;
@@ -145,8 +145,8 @@ static void initDevice(void)
 
 static void startDevice(void)
 {
-	u32_t compare;
-	u64_t period;
+	uint32_t compare;
+	uint64_t period;
 	unsigned int key;
 
 	key = irq_lock();
@@ -201,20 +201,20 @@ int z_clock_driver_init(struct device *device)
 	return 0;
 }
 
-void z_clock_set_timeout(s32_t ticks, bool idle)
+void z_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
 #ifdef CONFIG_TICKLESS_KERNEL
 
 	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
-	ticks = MAX(MIN(ticks - 1, (s32_t) MAX_TICKS), 0);
+	ticks = MAX(MIN(ticks - 1, (int32_t) MAX_TICKS), 0);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	/* Compute number of RTC cycles until the next timeout. */
-	u64_t count = AONRTCCurrent64BitValueGet();
-	u64_t timeout = ticks * RTC_COUNTS_PER_TICK +
+	uint64_t count = AONRTCCurrent64BitValueGet();
+	uint64_t timeout = ticks * RTC_COUNTS_PER_TICK +
 		(count - rtc_last);
 
 	/* Round to the nearest tick boundary. */
@@ -230,15 +230,15 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 #endif /* CONFIG_TICKLESS_KERNEL */
 }
 
-u32_t z_clock_elapsed(void)
+uint32_t z_clock_elapsed(void)
 {
-	u32_t ret = (AONRTCCurrent64BitValueGet() - rtc_last) /
+	uint32_t ret = (AONRTCCurrent64BitValueGet() - rtc_last) /
 		RTC_COUNTS_PER_TICK;
 
 	return ret;
 }
 
-u32_t z_timer_cycle_get_32(void)
+uint32_t z_timer_cycle_get_32(void)
 {
 	return (AONRTCCurrent64BitValueGet() / RTC_COUNTS_PER_CYCLE)
 		& 0xFFFFFFFF;

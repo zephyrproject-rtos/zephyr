@@ -11,14 +11,14 @@
 #define BAD_DRIVER_NAME	"bad_driver"
 
 typedef int (*bad_api_configure_t)(struct device *dev,
-				     u32_t dev_config);
+				     uint32_t dev_config);
 
 
 struct bad_driver_api {
 	bad_api_configure_t configure;
 };
 
-static int bad_configure(struct device *dev, u32_t config)
+static int bad_configure(struct device *dev, uint32_t config)
 {
 	return 0;
 }

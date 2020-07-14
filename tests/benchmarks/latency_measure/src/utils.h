@@ -79,7 +79,7 @@ static inline void print_dash_line(void)
 #endif
 
 void raiseIntFunc(void);
-extern void raiseInt(u8_t id);
+extern void raiseInt(uint8_t id);
 
 /* pointer to the ISR */
 typedef void (*ptestIsr) (void *unused);

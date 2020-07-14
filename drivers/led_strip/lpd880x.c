@@ -48,9 +48,9 @@ static int lpd880x_update(struct device *dev, void *data, size_t size)
 	 * a zero byte propagates through at most 32 LED driver ICs.
 	 * The LPD8803 is the worst case, at 3 output channels per IC.
 	 */
-	u8_t reset_size = ceiling_fraction(ceiling_fraction(size, 3), 32);
-	u8_t reset_buf[reset_size];
-	u8_t last = 0x00;
+	uint8_t reset_size = ceiling_fraction(ceiling_fraction(size, 3), 32);
+	uint8_t reset_buf[reset_size];
+	uint8_t last = 0x00;
 	const struct spi_buf bufs[3] = {
 		{
 			/* Prepares the strip to shift in new data values. */
@@ -89,8 +89,8 @@ static int lpd880x_strip_update_rgb(struct device *dev,
 				    struct led_rgb *pixels,
 				    size_t num_pixels)
 {
-	u8_t *px = (u8_t *)pixels;
-	u8_t r, g, b;
+	uint8_t *px = (uint8_t *)pixels;
+	uint8_t r, g, b;
 	size_t i;
 
 	/*
@@ -114,7 +114,7 @@ static int lpd880x_strip_update_rgb(struct device *dev,
 	return lpd880x_update(dev, pixels, 3 * num_pixels);
 }
 
-static int lpd880x_strip_update_channels(struct device *dev, u8_t *channels,
+static int lpd880x_strip_update_channels(struct device *dev, uint8_t *channels,
 					 size_t num_channels)
 {
 	size_t i;

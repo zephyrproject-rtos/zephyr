@@ -7,15 +7,15 @@
 #include <ztest.h>
 #include <sys/notify.h>
 
-static u32_t get_extflags(const struct sys_notify *anp)
+static uint32_t get_extflags(const struct sys_notify *anp)
 {
-	u32_t flags = anp->flags & SYS_NOTIFY_EXTENSION_MASK;
+	uint32_t flags = anp->flags & SYS_NOTIFY_EXTENSION_MASK;
 
 	return flags >> SYS_NOTIFY_EXTENSION_POS;
 }
 
 static void set_extflags(struct sys_notify *anp,
-			 u32_t flags)
+			 uint32_t flags)
 {
 	anp->flags = (anp->flags & ~SYS_NOTIFY_EXTENSION_MASK)
 		     | (flags << SYS_NOTIFY_EXTENSION_POS);
@@ -48,7 +48,7 @@ static void test_spinwait(void)
 	int res;
 	sys_notify_generic_callback cb;
 	struct sys_notify notify;
-	u32_t xflags = 0x1234;
+	uint32_t xflags = 0x1234;
 
 	memset(&notify, 0xac, sizeof(notify));
 	rc = sys_notify_validate(&notify);
@@ -102,7 +102,7 @@ static void test_signal(void)
 	struct k_poll_signal sig;
 	sys_notify_generic_callback cb;
 	struct sys_notify notify;
-	u32_t xflags = 0x1234;
+	uint32_t xflags = 0x1234;
 
 	memset(&notify, 0xac, sizeof(notify));
 	rc = sys_notify_validate(&notify);
@@ -174,7 +174,7 @@ static void test_callback(void)
 	int res;
 	sys_notify_generic_callback cb;
 	struct sys_notify notify;
-	u32_t xflags = 0x8765432;
+	uint32_t xflags = 0x8765432;
 
 	memset(&notify, 0xac, sizeof(notify));
 	rc = sys_notify_validate(&notify);

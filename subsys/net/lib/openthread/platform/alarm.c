@@ -47,8 +47,8 @@ void otPlatAlarmMilliStartAt(otInstance *aInstance, uint32_t t0, uint32_t dt)
 {
 	ARG_UNUSED(aInstance);
 
-	s64_t reftime = (s64_t)t0 + (s64_t)dt;
-	s64_t delta = -k_uptime_delta(&reftime);
+	int64_t reftime = (int64_t)t0 + (int64_t)dt;
+	int64_t delta = -k_uptime_delta(&reftime);
 
 	if (delta > 0) {
 		k_timer_start(&ot_timer, K_MSEC(delta), K_NO_WAIT);

@@ -5,4 +5,4 @@
   {
           *(.vt_pointer_section)
           *(".vt_pointer_section.*")
-  }
+  } GROUP_LINK_IN(RAMABLE_REGION)

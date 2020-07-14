@@ -19,7 +19,7 @@ class Stm32flashBinaryRunner(ZephyrBinaryRunner):
     def __init__(self, cfg, device, action='write', baud=57600,
                  force_binary=False, start_addr=0, exec_addr=None,
                  serial_mode='8e1', reset=False, verify=False):
-        super(Stm32flashBinaryRunner, self).__init__(cfg)
+        super().__init__(cfg)
 
         self.device = device
         self.action = action
@@ -79,7 +79,7 @@ class Stm32flashBinaryRunner(ZephyrBinaryRunner):
                             help='verify writes, default False')
 
     @classmethod
-    def create(cls, cfg, args):
+    def do_create(cls, cfg, args):
         return Stm32flashBinaryRunner(cfg, device=args.device, action=args.action,
             baud=args.baud_rate, force_binary=args.force_binary,
             start_addr=args.start_addr, exec_addr=args.execution_addr,
@@ -106,7 +106,7 @@ class Stm32flashBinaryRunner(ZephyrBinaryRunner):
             size_aligned = (int(bin_size) & 0xfffff000) + 4096
             msg_text = "erase {} bit starting at {}".format(size_aligned, self.start_addr)
             cmd_flash.extend([
-            '-S', self.start_addr + ":" + str(size_aligned), '-o'])
+            '-S', str(self.start_addr) + ":" + str(size_aligned), '-o'])
 
         elif action == 'start':
             # start execution
@@ -123,7 +123,7 @@ class Stm32flashBinaryRunner(ZephyrBinaryRunner):
             # flash binary file
             msg_text = "write {} bytes starting at {}".format(bin_size, self.start_addr)
             cmd_flash.extend([
-            '-S', self.start_addr + ":" + str(bin_size),
+            '-S', str(self.start_addr) + ":" + str(bin_size),
             '-w', bin_name])
 
             if self.exec_addr:

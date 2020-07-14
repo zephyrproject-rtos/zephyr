@@ -17,7 +17,7 @@
 static void test_u8_to_dec(void)
 {
 	char text[4];
-	u8_t len;
+	uint8_t len;
 
 	len = u8_to_dec(text, sizeof(text), 0);
 	zassert_equal(len, 1, "Length of 0 is not 1");
@@ -79,16 +79,16 @@ void test_COND_CODE_1(void)
 	/* Test validates that expected code has been injected. Failure would
 	 * be seen in compilation (lack of variable or ununsed variable.
 	 */
-	COND_CODE_1(1, (u32_t x0 = 1;), (u32_t y0;))
+	COND_CODE_1(1, (uint32_t x0 = 1;), (uint32_t y0;))
 	zassert_true((x0 == 1), NULL);
 
-	COND_CODE_1(NOT_EXISTING_DEFINE, (u32_t x1 = 1;), (u32_t y1 = 1;))
+	COND_CODE_1(NOT_EXISTING_DEFINE, (uint32_t x1 = 1;), (uint32_t y1 = 1;))
 	zassert_true((y1 == 1), NULL);
 
-	COND_CODE_1(TEST_DEFINE_1, (u32_t x2 = 1;), (u32_t y2 = 1;))
+	COND_CODE_1(TEST_DEFINE_1, (uint32_t x2 = 1;), (uint32_t y2 = 1;))
 	zassert_true((x2 == 1), NULL);
 
-	COND_CODE_1(2, (u32_t x3 = 1;), (u32_t y3 = 1;))
+	COND_CODE_1(2, (uint32_t x3 = 1;), (uint32_t y3 = 1;))
 	zassert_true((y3 == 1), NULL);
 }
 
@@ -97,16 +97,16 @@ void test_COND_CODE_0(void)
 	/* Test validates that expected code has been injected. Failure would
 	 * be seen in compilation (lack of variable or ununsed variable.
 	 */
-	COND_CODE_0(0, (u32_t x0 = 1;), (u32_t y0;))
+	COND_CODE_0(0, (uint32_t x0 = 1;), (uint32_t y0;))
 	zassert_true((x0 == 1), NULL);
 
-	COND_CODE_0(NOT_EXISTING_DEFINE, (u32_t x1 = 1;), (u32_t y1 = 1;))
+	COND_CODE_0(NOT_EXISTING_DEFINE, (uint32_t x1 = 1;), (uint32_t y1 = 1;))
 	zassert_true((y1 == 1), NULL);
 
-	COND_CODE_0(TEST_DEFINE_0, (u32_t x2 = 1;), (u32_t y2 = 1;))
+	COND_CODE_0(TEST_DEFINE_0, (uint32_t x2 = 1;), (uint32_t y2 = 1;))
 	zassert_true((x2 == 1), NULL);
 
-	COND_CODE_0(2, (u32_t x3 = 1;), (u32_t y3 = 1;))
+	COND_CODE_0(2, (uint32_t x3 = 1;), (uint32_t y3 = 1;))
 	zassert_true((y3 == 1), NULL);
 }
 
@@ -219,46 +219,46 @@ static void test_z_max_z_min(void)
 
 static void test_FOR_EACH(void)
 {
-	#define FOR_EACH_MACRO_TEST(arg) *buf++ = arg;
+	#define FOR_EACH_MACRO_TEST(arg) *buf++ = arg
 
-	u8_t array[3] = {0};
-	u8_t *buf = array;
+	uint8_t array[3] = {0};
+	uint8_t *buf = array;
 
-	FOR_EACH(FOR_EACH_MACRO_TEST, 1, 2, 3)
+	FOR_EACH(FOR_EACH_MACRO_TEST, (;), 1, 2, 3);
 
 	zassert_equal(array[0], 1, "Unexpected value %d", array[0]);
 	zassert_equal(array[1], 2, "Unexpected value %d", array[1]);
 	zassert_equal(array[2], 3, "Unexpected value %d", array[2]);
 }
 
-static void fsum(u32_t incr, u32_t *sum)
+static void fsum(uint32_t incr, uint32_t *sum)
 {
 	*sum = *sum + incr;
 }
 
 static void test_FOR_EACH_FIXED_ARG(void)
 {
-	u32_t sum = 0;
+	uint32_t sum = 0;
 
-	FOR_EACH_FIXED_ARG(fsum, &sum, 1, 2, 3)
+	FOR_EACH_FIXED_ARG(fsum, (;), &sum, 1, 2, 3);
 
 	zassert_equal(sum, 6, "Unexpected value %d", sum);
 }
 
 static void test_FOR_EACH_IDX(void)
 {
-	#define FOR_EACH_IDX_MACRO_TEST(n, arg) u8_t a##n = arg;
+	#define FOR_EACH_IDX_MACRO_TEST(n, arg) uint8_t a##n = arg
 
-	FOR_EACH_IDX(FOR_EACH_IDX_MACRO_TEST, 1, 2, 3)
+	FOR_EACH_IDX(FOR_EACH_IDX_MACRO_TEST, (;), 1, 2, 3);
 
 	zassert_equal(a0, 1, "Unexpected value %d", a0);
 	zassert_equal(a1, 2, "Unexpected value %d", a1);
 	zassert_equal(a2, 3, "Unexpected value %d", a2);
 
-	#define FOR_EACH_IDX_MACRO_TEST2(n, arg) array[n] = arg;
-	u8_t array[32] = {0};
+	#define FOR_EACH_IDX_MACRO_TEST2(n, arg) array[n] = arg
+	uint8_t array[32] = {0};
 
-	FOR_EACH_IDX(FOR_EACH_IDX_MACRO_TEST2, 1, 2, 3, 4, 5, 6, 7, 8,
+	FOR_EACH_IDX(FOR_EACH_IDX_MACRO_TEST2, (;), 1, 2, 3, 4, 5, 6, 7, 8,
 						9, 10, 11, 12, 13, 14, 15);
 	for (int i = 0; i < 15; i++) {
 		zassert_equal(array[i], i + 1,
@@ -266,10 +266,10 @@ static void test_FOR_EACH_IDX(void)
 	}
 	zassert_equal(array[15], 0, "Unexpected value: %d", array[15]);
 
-	#define FOR_EACH_IDX_MACRO_TEST3(n, arg) &a##n,
+	#define FOR_EACH_IDX_MACRO_TEST3(n, arg) &a##n
 
-	u8_t *a[] = {
-		FOR_EACH_IDX(FOR_EACH_IDX_MACRO_TEST3, 1, 2, 3)
+	uint8_t *a[] = {
+		FOR_EACH_IDX(FOR_EACH_IDX_MACRO_TEST3, (,), 1, 2, 3)
 	};
 
 	zassert_equal(ARRAY_SIZE(a), 3, "Unexpected value:%d", ARRAY_SIZE(a));
@@ -279,9 +279,9 @@ static void test_FOR_EACH_IDX_FIXED_ARG(void)
 {
 	#undef FOO
 	#define FOO(n, arg, fixed_arg) \
-		u8_t fixed_arg##n = arg;
+		uint8_t fixed_arg##n = arg
 
-	FOR_EACH_IDX_FIXED_ARG(FOO, a, 1, 2, 3)
+	FOR_EACH_IDX_FIXED_ARG(FOO, (;), a, 1, 2, 3);
 
 	zassert_equal(a0, 1, "Unexpected value %d", a0);
 	zassert_equal(a1, 2, "Unexpected value %d", a1);
@@ -307,16 +307,81 @@ static void test_LIST_DROP_EMPTY(void)
 	 */
 	#define TEST_BROKEN_LIST EMPTY, Henry, EMPTY, Dorsett, Case,
 	#define TEST_FIXED_LIST LIST_DROP_EMPTY(TEST_BROKEN_LIST)
-	#define TEST_MKSTR(a) #a,
 	static const char *const arr[] = {
-		FOR_EACH(TEST_MKSTR, TEST_FIXED_LIST)
+		FOR_EACH(STRINGIFY, (,), TEST_FIXED_LIST)
 	};
 
-	zassert_equal(sizeof(arr) / sizeof(char *), 3,
-		      "Failed to cleanup list");
+	zassert_equal(ARRAY_SIZE(arr), 3, "Failed to cleanup list");
 	zassert_equal(strcmp(arr[0], "Henry"), 0, "Failed at 0");
 	zassert_equal(strcmp(arr[1], "Dorsett"), 0, "Failed at 1");
 	zassert_equal(strcmp(arr[2], "Case"), 0, "Failed at 0");
+}
+
+static void test_nested_FOR_EACH(void)
+{
+	#define FOO_1(x) a##x = x
+	#define FOO_2(x) int x
+
+	FOR_EACH(FOO_2, (;), FOR_EACH(FOO_1, (,), 0, 1, 2));
+
+	zassert_equal(a0, 0, NULL);
+	zassert_equal(a1, 1, NULL);
+	zassert_equal(a2, 2, NULL);
+}
+
+static void test_GET_ARG_N(void)
+{
+	int a = GET_ARG_N(1, 10, 100, 1000);
+	int b = GET_ARG_N(2, 10, 100, 1000);
+	int c = GET_ARG_N(3, 10, 100, 1000);
+
+	zassert_equal(a, 10, NULL);
+	zassert_equal(b, 100, NULL);
+	zassert_equal(c, 1000, NULL);
+}
+
+static void test_GET_ARGS_LESS_N(void)
+{
+	uint8_t a[] = { GET_ARGS_LESS_N(0, 1, 2, 3) };
+	uint8_t b[] = { GET_ARGS_LESS_N(1, 1, 2, 3) };
+	uint8_t c[] = { GET_ARGS_LESS_N(2, 1, 2, 3) };
+
+	zassert_equal(sizeof(a), 3, NULL);
+
+	zassert_equal(sizeof(b), 2, NULL);
+	zassert_equal(b[0], 2, NULL);
+	zassert_equal(b[1], 3, NULL);
+
+	zassert_equal(sizeof(c), 1, NULL);
+	zassert_equal(c[0], 3, NULL);
+}
+
+static void test_mixing_GET_ARG_and_FOR_EACH(void)
+{
+	#undef TEST_MACRO
+	#define TEST_MACRO(x) x,
+	int i;
+
+	i = GET_ARG_N(3, FOR_EACH(TEST_MACRO, (), 1, 2, 3, 4, 5));
+	zassert_equal(i, 3, NULL);
+
+	i = GET_ARG_N(2, 1, GET_ARGS_LESS_N(2, 1, 2, 3, 4, 5));
+	zassert_equal(i, 3, NULL);
+
+	#undef TEST_MACRO
+	#undef TEST_MACRO2
+	#define TEST_MACRO(x) GET_ARG_N(3, 1, 2, x),
+	#define TEST_MACRO2(...) FOR_EACH(TEST_MACRO, (), __VA_ARGS__)
+	int a[] = {
+		LIST_DROP_EMPTY(TEST_MACRO2(1, 2, 3, 4)), 5
+	};
+
+	zassert_equal(ARRAY_SIZE(a), 5, NULL);
+	zassert_equal(a[0], 1, NULL);
+	zassert_equal(a[1], 2, NULL);
+	zassert_equal(a[2], 3, NULL);
+	zassert_equal(a[3], 4, NULL);
+	zassert_equal(a[4], 5, NULL);
 }
 
 void test_main(void)
@@ -336,7 +401,11 @@ void test_main(void)
 			 ztest_unit_test(test_FOR_EACH_IDX),
 			 ztest_unit_test(test_FOR_EACH_IDX_FIXED_ARG),
 			 ztest_unit_test(test_IS_EMPTY),
-			 ztest_unit_test(test_LIST_DROP_EMPTY)
+			 ztest_unit_test(test_LIST_DROP_EMPTY),
+			 ztest_unit_test(test_nested_FOR_EACH),
+			 ztest_unit_test(test_GET_ARG_N),
+			 ztest_unit_test(test_GET_ARGS_LESS_N),
+			 ztest_unit_test(test_mixing_GET_ARG_and_FOR_EACH)
 	);
 
 	ztest_run_test_suite(test_lib_sys_util_tests);

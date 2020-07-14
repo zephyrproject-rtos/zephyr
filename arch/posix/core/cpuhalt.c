@@ -48,6 +48,8 @@ void arch_cpu_atomic_idle(unsigned int key)
  */
 void __weak sys_arch_reboot(int type)
 {
-	ARG_UNUSED(type);
+	posix_print_warning("%s called with type %d. Exiting\n",
+						__func__, type);
+	posix_exit(1);
 }
 #endif /* CONFIG_REBOOT */

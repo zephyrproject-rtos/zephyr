@@ -90,10 +90,10 @@ typedef int (*handle_cmd_input_t)(struct at_client *at, struct net_buf *buf,
 
 struct at_client {
 	char *buf;
-	u8_t pos;
-	u8_t buf_max_len;
-	u8_t state;
-	u8_t cmd_state;
+	uint8_t pos;
+	uint8_t buf_max_len;
+	uint8_t state;
+	uint8_t cmd_state;
 	at_resp_cb_t resp;
 	at_resp_cb_t unsolicited;
 	at_finish_cb_t finish;
@@ -103,7 +103,7 @@ struct at_client {
 void at_register(struct at_client *at, at_resp_cb_t resp,
 		 at_finish_cb_t finish);
 void at_register_unsolicited(struct at_client *at, at_resp_cb_t unsolicited);
-int at_get_number(struct at_client *at, u32_t *val);
+int at_get_number(struct at_client *at, uint32_t *val);
 /* This parsing will only works for non-fragmented net_buf */
 int at_parse_input(struct at_client *at, struct net_buf *buf);
 /* This command parsing will only works for non-fragmented net_buf */
@@ -111,8 +111,8 @@ int at_parse_cmd_input(struct at_client *at, struct net_buf *buf,
 		       const char *prefix, parse_val_t func,
 		       enum at_cmd_type type);
 int at_check_byte(struct net_buf *buf, char check_byte);
-int at_list_get_range(struct at_client *at, u32_t *min, u32_t *max);
-int at_list_get_string(struct at_client *at, char *name, u8_t len);
+int at_list_get_range(struct at_client *at, uint32_t *min, uint32_t *max);
+int at_list_get_string(struct at_client *at, char *name, uint8_t len);
 int at_close_list(struct at_client *at);
 int at_open_list(struct at_client *at);
 int at_has_next_list(struct at_client *at);

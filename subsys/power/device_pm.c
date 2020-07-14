@@ -23,7 +23,7 @@ static void device_pm_callback(struct device *dev,
 	__ASSERT(retval == 0, "Device set power state failed");
 
 	/* Set the fsm_state */
-	if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+	if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 		atomic_set(&dev->pm->fsm_state,
 			   DEVICE_PM_FSM_STATE_ACTIVE);
 	} else {
@@ -40,7 +40,7 @@ static void pm_work_handler(struct k_work *work)
 					struct device_pm, work);
 	struct device *dev = pm->dev;
 	int ret = 0;
-	u8_t pm_state;
+	uint8_t pm_state;
 
 	switch (atomic_get(&dev->pm->fsm_state)) {
 	case DEVICE_PM_FSM_STATE_ACTIVE:
@@ -86,7 +86,7 @@ fsm_out:
 }
 
 static int device_pm_request(struct device *dev,
-			     u32_t target_state, u32_t pm_flags)
+			     uint32_t target_state, uint32_t pm_flags)
 {
 	int result, signaled = 0;
 

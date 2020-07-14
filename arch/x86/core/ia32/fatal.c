@@ -127,20 +127,20 @@ struct task_state_segment _main_tss = {
 	 * In a special kernel page that, unlike all other kernel pages,
 	 * is marked present in the user page table.
 	 */
-	.esp0 = (u32_t)&z_trampoline_stack_end
+	.esp0 = (uint32_t)&z_trampoline_stack_end
 #endif
 };
 
 /* Special TSS for handling double-faults with a known good stack */
 Z_GENERIC_SECTION(.tss)
 struct task_state_segment _df_tss = {
-	.esp = (u32_t)(_df_stack + sizeof(_df_stack)),
+	.esp = (uint32_t)(_df_stack + sizeof(_df_stack)),
 	.cs = CODE_SEG,
 	.ds = DATA_SEG,
 	.es = DATA_SEG,
 	.ss = DATA_SEG,
-	.eip = (u32_t)df_handler_top,
-	.cr3 = (u32_t)&z_x86_kernel_ptables
+	.eip = (uint32_t)df_handler_top,
+	.cr3 = (uint32_t)&z_x86_kernel_ptables
 };
 
 static __used void df_handler_bottom(void)
@@ -149,8 +149,8 @@ static __used void df_handler_bottom(void)
 	int reason = K_ERR_CPU_EXCEPTION;
 
 	/* Restore the top half so it is runnable again */
-	_df_tss.esp = (u32_t)(_df_stack + sizeof(_df_stack));
-	_df_tss.eip = (u32_t)df_handler_top;
+	_df_tss.esp = (uint32_t)(_df_stack + sizeof(_df_stack));
+	_df_tss.eip = (uint32_t)df_handler_top;
 
 	LOG_ERR("Double Fault");
 #ifdef CONFIG_THREAD_STACK_INFO
@@ -181,14 +181,14 @@ static FUNC_NORETURN __used void df_handler_top(void)
 	_df_esf.eflags = _main_tss.eflags;
 
 	/* Restore the main IA task to a runnable state */
-	_main_tss.esp = (u32_t)(ARCH_THREAD_STACK_BUFFER(
+	_main_tss.esp = (uint32_t)(ARCH_THREAD_STACK_BUFFER(
 		z_interrupt_stacks[0]) + CONFIG_ISR_STACK_SIZE);
 	_main_tss.cs = CODE_SEG;
 	_main_tss.ds = DATA_SEG;
 	_main_tss.es = DATA_SEG;
 	_main_tss.ss = DATA_SEG;
-	_main_tss.eip = (u32_t)df_handler_bottom;
-	_main_tss.cr3 = (u32_t)&z_x86_kernel_ptables;
+	_main_tss.eip = (uint32_t)df_handler_bottom;
+	_main_tss.cr3 = (uint32_t)&z_x86_kernel_ptables;
 	_main_tss.eflags = 0U;
 
 	/* NT bit is set in EFLAGS so we will task switch back to _main_tss

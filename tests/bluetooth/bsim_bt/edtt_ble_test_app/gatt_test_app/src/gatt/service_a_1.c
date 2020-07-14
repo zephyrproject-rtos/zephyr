@@ -38,8 +38,8 @@ extern struct bt_gatt_attr service_d_1_attrs[];
  */
 #define BT_UUID_VALUE_V3                BT_UUID_DECLARE_16(0xb003)
 
-static u8_t   value_v1_value = 0x01;
-static u8_t   value_v2_value[] = {
+static uint8_t   value_v1_value = 0x01;
+static uint8_t   value_v2_value[] = {
 	      '1', '1', '1', '1', '1', '2', '2', '2', '2', '2', '3', '3', '3',
 	      '3', '3', '4', '4', '4', '4', '4', '5', '5', '5', '5', '5', '6',
 	      '6', '6', '6', '6', '7', '7', '7', '7', '7', '8', '8', '8', '8',
@@ -81,13 +81,13 @@ static u8_t   value_v2_value[] = {
 	      '9', '0', '0', '0', '0', '0', '1', '2', '3', '4', '5', '6', '7',
 	      '8', '9', '0', '1', '2', '\0'
 };
-static u8_t   value_v2_1_value[] = {
+static uint8_t   value_v2_1_value[] = {
 	      '1', '1', '1', '1', '1', '2', '2', '2', '2', '2', '3', '3', '3',
 	      '3', '3', '4', '4', '4', '4', '4', '5', '5', '5', '5', '5', '6',
 	      '6', '6', '6', '6', '7', '7', '7', '7', '7', '8', '8', '8', '8',
 	      '8', '9', '9', '9', '9', '9', '0', '0', '0', '0', '0', '\0'
 };
-static u8_t   value_v3_value = 0x03;
+static uint8_t   value_v3_value = 0x03;
 
 /**
  * @brief Attribute read call back for the Value V1 attribute
@@ -103,9 +103,9 @@ static u8_t   value_v3_value = 0x03;
  */
 static ssize_t read_value_v1(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
-			     u16_t len, u16_t offset)
+			     uint16_t len, uint16_t offset)
 {
-	const u8_t *value = attr->user_data;
+	const uint8_t *value = attr->user_data;
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 sizeof(value_v1_value));
@@ -125,7 +125,7 @@ static ssize_t read_value_v1(struct bt_conn *conn,
  */
 static ssize_t read_str_value(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, void *buf,
-			      u16_t len, u16_t offset)
+			      uint16_t len, uint16_t offset)
 {
 	const char *value = attr->user_data;
 
@@ -148,7 +148,7 @@ static ssize_t read_str_value(struct bt_conn *conn,
  */
 static ssize_t write_value_v2(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, const void *buf,
-			      u16_t len, u16_t offset, u8_t flags)
+			      uint16_t len, uint16_t offset, uint8_t flags)
 {
 	char *value = attr->user_data;
 
@@ -177,8 +177,8 @@ static ssize_t write_value_v2(struct bt_conn *conn,
  */
 static ssize_t write_value_v2_1(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr,
-				const void *buf, u16_t len, u16_t offset,
-				u8_t flags)
+				const void *buf, uint16_t len, uint16_t offset,
+				uint8_t flags)
 {
 	char *value = attr->user_data;
 
@@ -207,9 +207,9 @@ static ssize_t write_value_v2_1(struct bt_conn *conn,
  */
 static ssize_t write_value_v3(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, const void *buf,
-			      u16_t len, u16_t offset, u8_t flags)
+			      uint16_t len, uint16_t offset, uint8_t flags)
 {
-	u8_t *value = attr->user_data;
+	uint8_t *value = attr->user_data;
 
 	if (offset >= sizeof(value_v3_value))
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);

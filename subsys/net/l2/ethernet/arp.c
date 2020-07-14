@@ -179,14 +179,14 @@ static void arp_entry_register_pending(struct arp_entry *entry)
 
 static void arp_request_timeout(struct k_work *work)
 {
-	u32_t current = k_uptime_get_32();
+	uint32_t current = k_uptime_get_32();
 	struct arp_entry *entry, *next;
 
 	ARG_UNUSED(work);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&arp_pending_entries,
 					  entry, next, node) {
-		if ((s32_t)(entry->req_start +
+		if ((int32_t)(entry->req_start +
 			    ARP_REQUEST_TIMEOUT - current) > 0) {
 			break;
 		}
@@ -272,17 +272,17 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 		net_ipaddr_copy(&entry->ip, next_addr);
 
 		net_pkt_lladdr_src(pkt)->addr =
-			(u8_t *)net_if_get_link_addr(entry->iface)->addr;
+			(uint8_t *)net_if_get_link_addr(entry->iface)->addr;
 
 		arp_entry_register_pending(entry);
 	} else {
 		net_pkt_lladdr_src(pkt)->addr =
-			(u8_t *)net_if_get_link_addr(iface)->addr;
+			(uint8_t *)net_if_get_link_addr(iface)->addr;
 	}
 
 	net_pkt_lladdr_src(pkt)->len = sizeof(struct net_eth_addr);
 
-	net_pkt_lladdr_dst(pkt)->addr = (u8_t *)net_eth_broadcast_addr();
+	net_pkt_lladdr_dst(pkt)->addr = (uint8_t *)net_eth_broadcast_addr();
 	net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
 
 	hdr->hwtype = htons(NET_ARP_HTYPE_ETH);
@@ -381,10 +381,10 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 	}
 
 	net_pkt_lladdr_src(pkt)->addr =
-		(u8_t *)net_if_get_link_addr(entry->iface)->addr;
+		(uint8_t *)net_if_get_link_addr(entry->iface)->addr;
 	net_pkt_lladdr_src(pkt)->len = sizeof(struct net_eth_addr);
 
-	net_pkt_lladdr_dst(pkt)->addr = (u8_t *)&entry->eth;
+	net_pkt_lladdr_dst(pkt)->addr = (uint8_t *)&entry->eth;
 	net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
 
 	NET_DBG("ARP using ll %s for IP %s",
@@ -406,10 +406,10 @@ static void arp_gratuitous(struct net_if *iface,
 	if (entry) {
 		NET_DBG("Gratuitous ARP hwaddr %s -> %s",
 			log_strdup(net_sprint_ll_addr(
-					   (const u8_t *)&entry->eth,
+					   (const uint8_t *)&entry->eth,
 					   sizeof(struct net_eth_addr))),
 			log_strdup(net_sprint_ll_addr(
-					   (const u8_t *)hwaddr,
+					   (const uint8_t *)hwaddr,
 					   sizeof(struct net_eth_addr))));
 
 		memcpy(&entry->eth, hwaddr, sizeof(struct net_eth_addr));
@@ -467,7 +467,7 @@ static void arp_update(struct net_if *iface,
 	/* Set the dst in the pending packet */
 	net_pkt_lladdr_dst(entry->pending)->len = sizeof(struct net_eth_addr);
 	net_pkt_lladdr_dst(entry->pending)->addr =
-		(u8_t *) &NET_ETH_HDR(entry->pending)->dst.addr;
+		(uint8_t *) &NET_ETH_HDR(entry->pending)->dst.addr;
 
 	NET_DBG("dst %s pending %p frag %p",
 		log_strdup(net_sprint_ipv4_addr(&entry->ip)),
@@ -522,7 +522,7 @@ static inline struct net_pkt *arp_prepare_reply(struct net_if *iface,
 	net_pkt_lladdr_src(pkt)->addr = net_if_get_link_addr(iface)->addr;
 	net_pkt_lladdr_src(pkt)->len = sizeof(struct net_eth_addr);
 
-	net_pkt_lladdr_dst(pkt)->addr = (u8_t *)&hdr->dst_hwaddr.addr;
+	net_pkt_lladdr_dst(pkt)->addr = (uint8_t *)&hdr->dst_hwaddr.addr;
 	net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
 
 	return pkt;
@@ -551,10 +551,10 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 	struct in_addr *addr;
 
 	if (net_pkt_get_len(pkt) < (sizeof(struct net_arp_hdr) -
-				    (net_pkt_ip_data(pkt) - (u8_t *)eth_hdr))) {
+				    (net_pkt_ip_data(pkt) - (uint8_t *)eth_hdr))) {
 		NET_DBG("Invalid ARP header (len %zu, min %zu bytes) %p",
 			net_pkt_get_len(pkt), sizeof(struct net_arp_hdr) -
-			(net_pkt_ip_data(pkt) - (u8_t *)eth_hdr), pkt);
+			(net_pkt_ip_data(pkt) - (uint8_t *)eth_hdr), pkt);
 		return NET_DROP;
 	}
 
@@ -614,7 +614,7 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 		NET_DBG("ARP request from %s [%s] for %s",
 			log_strdup(net_sprint_ipv4_addr(&arp_hdr->src_ipaddr)),
 			log_strdup(net_sprint_ll_addr(
-					   (u8_t *)&arp_hdr->src_hwaddr,
+					   (uint8_t *)&arp_hdr->src_hwaddr,
 					   arp_hdr->hwlen)),
 			log_strdup(net_sprint_ipv4_addr(
 					   &arp_hdr->dst_ipaddr)));
@@ -628,7 +628,7 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 				log_strdup(net_sprint_ipv4_addr(
 						 &arp_hdr->src_ipaddr)),
 				log_strdup(net_sprint_ll_addr(
-						 (u8_t *)&arp_hdr->src_hwaddr,
+						 (uint8_t *)&arp_hdr->src_hwaddr,
 						 arp_hdr->hwlen)));
 
 			arp_update(net_pkt_iface(pkt),
