@@ -246,9 +246,18 @@ static void uart_gecko_init_pins(struct device *dev)
 		(config->loc_tx << _USART_ROUTELOC0_TXLOC_SHIFT) |
 		(config->loc_rx << _USART_ROUTELOC0_RXLOC_SHIFT);
 	config->base->ROUTELOC1 = _USART_ROUTELOC1_RESETVALUE;
-#else
+#elif defined(USART_ROUTE_RXPEN) && defined(USART_ROUTE_TXPEN)
 	config->base->ROUTE = USART_ROUTE_RXPEN | USART_ROUTE_TXPEN
 		| (config->loc << 8);
+#elif defined(GPIO_USART_ROUTEEN_RXPEN) && defined(GPIO_USART_ROUTEEN_TXPEN)
+	GPIO->USARTROUTE[USART_NUM(config->base)].ROUTEEN =
+		GPIO_USART_ROUTEEN_TXPEN | GPIO_USART_ROUTEEN_RXPEN;
+	GPIO->USARTROUTE[USART_NUM(config->base)].TXROUTE =
+		(config->pin_tx.pin << _GPIO_USART_TXROUTE_PIN_SHIFT) |
+		(config->pin_tx.port << _GPIO_USART_TXROUTE_PORT_SHIFT);
+	GPIO->USARTROUTE[USART_NUM(config->base)].RXROUTE =
+		(config->pin_rx.pin << _GPIO_USART_RXROUTE_PIN_SHIFT) |
+		(config->pin_rx.port << _GPIO_USART_RXROUTE_PORT_SHIFT);
 #endif
 }
 
