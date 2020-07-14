@@ -64,10 +64,13 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
         """Run bossac --help and return the output as a list of lines"""
         self.require(self.bossac)
         try:
-            self.check_output([self.bossac, '--help'])
-            return []
+            # BOSSA > 1.9.1 returns OK
+            out = self.check_output([self.bossac, '--help']).decode()
         except subprocess.CalledProcessError as ex:
-            return ex.output.decode().split('\n')
+            # BOSSA <= 1.9.1 returns an error
+            out = ex.output.decode()
+
+        return out.split('\n')
 
     def supports(self, flag):
         """Check if bossac supports a flag by searching the help"""
