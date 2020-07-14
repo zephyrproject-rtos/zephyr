@@ -1,30 +1,4 @@
-# PCIe/new PCI configuration options
+# PCIe RC/EP drivers configuration options
 
-# Copyright (c) 2019 Intel Corporation
-# SPDX-License-Identifier: Apache-2.0
-
-menuconfig PCIE
-	bool "Enable new PCI/PCIe support"
-	help
-	  This option enables support for new PCI(e) drivers.
-
-if PCIE
-
-config PCIE_MSI
-	bool "Enable support for PCI(e) MSI"
-	help
-	  Use Message-Signaled Interrupts where possible. With this option
-	  enabled, PCI(e) devices which support MSI will be configured (at
-	  runtime) to use them. This is typically required for PCIe devices
-	  to generate interrupts at all.
-
-config PCIE_SHELL
-	bool "Enable PCIe/new PCI Shell"
-	default y
-	depends on SHELL && !PCIE_ENDPOINT
-	help
-	  Enable commands for debugging PCI(e) using the built-in shell.
-
+source "drivers/pcie/host/Kconfig"
 source "drivers/pcie/endpoint/Kconfig"
-
-endif # PCIE
