@@ -56,6 +56,9 @@ config BT_CTLR_SCHED_ADVANCED_SUPPORT
 config BT_CTLR_TIFS_HW_SUPPORT
 	bool
 
+config BT_LL_SW_SPLIT
+	bool
+
 config BT_CTLR
 	bool "Bluetooth Controller"
 	help
@@ -68,12 +71,22 @@ choice BT_LL_CHOICE
 	help
 	  Select the Bluetooth Link Layer to compile.
 
-config BT_LL_SW_SPLIT
+config BT_LL_SW_SPLIT_LEGACY
 	bool "Software-based BLE Link Layer"
+	select BT_LL_SW_SPLIT
 	select BT_RECV_IS_RX_THREAD
 	select ENTROPY_GENERATOR
 	help
 	  Use Zephyr software BLE Link Layer ULL LLL split implementation.
+
+config BT_LL_SW_SPLIT_LLCP_SM
+	bool "Software-based BLE Link Layer with state-machine for control procedures"
+	select BT_LL_SW_SPLIT
+	select BT_RECV_IS_RX_THREAD
+	select ENTROPY_GENERATOR
+	help
+	  Use Zephyr software BLE Link Layer ULL LLL split implementation
+	  with a state-machine for the control procedures
 
 endchoice
 
