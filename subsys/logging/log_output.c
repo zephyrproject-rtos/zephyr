@@ -174,6 +174,7 @@ static int timestamp_print(const struct log_output *log_output,
 	if (!format) {
 		length = print_formatted(log_output, "[%08lu] ", timestamp);
 	} else if (freq != 0U) {
+		uint32_t total_seconds;
 		uint32_t remainder;
 		uint32_t seconds;
 		uint32_t hours;
@@ -182,7 +183,8 @@ static int timestamp_print(const struct log_output *log_output,
 		uint32_t us;
 
 		timestamp /= timestamp_div;
-		seconds = timestamp / freq;
+		total_seconds = timestamp / freq;
+		seconds = total_seconds;
 		hours = seconds / 3600U;
 		seconds -= hours * 3600U;
 		mins = seconds / 60U;
@@ -199,7 +201,7 @@ static int timestamp_print(const struct log_output *log_output,
 			struct tm *tm;
 			time_t time;
 
-			time = seconds;
+			time = total_seconds;
 			tm = gmtime(&time);
 
 			strftime(time_str, sizeof(time_str), "%FT%T", tm);
