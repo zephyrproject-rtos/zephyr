@@ -252,6 +252,7 @@ static int gpio_mcux_lpc_pin_interrupt_configure(struct device *dev,
 	uint32_t port = config->port_no;
 	uint32_t isr;
 	uint32_t pint_idx;
+	static bool pint_inited;
 
 	/* Ensure pin used as interrupt is set as input*/
 	if ((mode & GPIO_INT_ENABLE) &&
@@ -296,6 +297,10 @@ static int gpio_mcux_lpc_pin_interrupt_configure(struct device *dev,
 		data->pint_id[pin] = pint_idx;
 	}
 
+	if (!pint_inited) {
+		PINT_Init(config->pint_base);
+		pint_inited = true;
+	}
 	PINT_PinInterruptConfig(config->pint_base, data->pint_id[pin],
 		interruptMode,
 		(pint_cb_t)gpio_mcux_lpc_port_isr);
