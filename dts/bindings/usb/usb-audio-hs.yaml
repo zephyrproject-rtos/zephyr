@@ -128,11 +128,11 @@ properties:
     required: false
     description: Enable Bass Boost feature.
                  Currently not supported.
-  mic-mic-feature-loduness:
+  mic-feature-loudness:
     type: boolean
     required: false
     description: Enable Loudness feature.
-                     Currently not supported.
+                 Currently not supported.
 # headphones channel configuration options
   hp-channel-l:
     type: boolean
@@ -221,8 +221,8 @@ properties:
     required: false
     description: Enable Bass Boost feature.
                  Currently not supported.
-  hp-feature-loduness:
+  hp-feature-loudness:
     type: boolean
     required: false
     description: Enable Loudness feature.
-                     Currently not supported.
+                 Currently not supported.
