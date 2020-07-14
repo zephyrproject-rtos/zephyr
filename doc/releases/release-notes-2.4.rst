@@ -59,6 +59,12 @@ API Changes
   'callback_arg' argument has been renamed to 'user_data. All user code have
   been modified accordingly.
 
+* ``<drivers/ipm.h>`` has seen its callback normalized.
+  :c:type:`ipm_callback_t` had its signature changed to add a struct device
+  pointer as first parameter. :c:func:`ipm_register_callback` user code have
+  been modified accordingly. The context argument has been renamed to user_data
+  and all drivers have been modified against it as well.
+
 Deprecated in this release
 ==========================
 
