@@ -119,8 +119,8 @@ properties:
     required: false
     description: Enable Bass Boost feature.
                  Currently not supported.
-  feature-loduness:
+  feature-loudness:
     type: boolean
     required: false
     description: Enable Loudness feature.
-                     Currently not supported.
+                 Currently not supported.
