@@ -284,7 +284,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 };
 
 #define SPI_RV32M1_INIT(n)						\
-	static void spi_mcux_config_func_##n(struct device *dev);	\
+	static void spi_mcux_config_func_##n(const struct device *dev);	\
 									\
 	static const struct spi_mcux_config spi_mcux_config_##n = {	\
 		.base = (LPSPI_Type *) DT_INST_REG_ADDR(n),		\
@@ -308,7 +308,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &spi_mcux_driver_api);			\
 									\
-	static void spi_mcux_config_func_##n(struct device *dev)	\
+	static void spi_mcux_config_func_##n(const struct device *dev)	\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 			    0,						\

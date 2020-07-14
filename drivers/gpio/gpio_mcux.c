@@ -265,7 +265,7 @@ static const struct gpio_driver_api gpio_mcux_driver_api = {
 #define GPIO_PORT_BASE_ADDR(n) DT_REG_ADDR(DT_INST_PHANDLE(n, nxp_kinetis_port))
 
 #define GPIO_DEVICE_INIT_MCUX(n)					\
-	static int gpio_mcux_port## n ## _init(struct device *dev);	\
+	static int gpio_mcux_port## n ## _init(const struct device *dev); \
 									\
 	static const struct gpio_mcux_config gpio_mcux_port## n ## _config = {\
 		.common = {						\
@@ -286,7 +286,7 @@ static const struct gpio_driver_api gpio_mcux_driver_api = {
 			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 			    &gpio_mcux_driver_api);			\
 									\
-	static int gpio_mcux_port## n ##_init(struct device *dev)	\
+	static int gpio_mcux_port## n ##_init(const struct device *dev)	\
 	{								\
 		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0),			\
 			(GPIO_MCUX_IRQ_INIT(n);))			\

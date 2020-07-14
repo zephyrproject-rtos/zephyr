@@ -222,9 +222,8 @@ void stm32_exti_trigger(int line, int trigger)
  * @param min low end of EXTI# range
  * @param max low end of EXTI# range
  */
-static void __stm32_exti_isr(int min, int max, void *arg)
+static void __stm32_exti_isr(int min, int max, const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct stm32_exti_data *data = dev->data;
 	int line;
 

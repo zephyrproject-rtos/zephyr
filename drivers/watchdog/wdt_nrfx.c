@@ -158,7 +158,7 @@ static void wdt_event_handler(const struct device *dev)
 	{								       \
 		wdt_event_handler(DEVICE_GET(wdt_##idx));		       \
 	}								       \
-	static int wdt_##idx##_init(struct device *dev)			       \
+	static int wdt_##idx##_init(const struct device *dev)		       \
 	{								       \
 		nrfx_err_t err_code;					       \
 		IRQ_CONNECT(DT_IRQN(WDT(idx)), DT_IRQ(WDT(idx), priority),     \

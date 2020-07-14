@@ -259,7 +259,7 @@ static const struct adc_driver_api mcux_adc12_driver_api = {
 				 (kADC12_ReferenceVoltageSourceVref))
 
 #define ACD12_MCUX_INIT(n)						\
-	static void mcux_adc12_config_func_##n(struct device *dev);	\
+	static void mcux_adc12_config_func_##n(const struct device *dev); \
 									\
 	ASSERT_WITHIN_RANGE(DT_INST_PROP(n, clk_source), 0, 3,		\
 			    "Invalid clock source");			\
@@ -289,7 +289,7 @@ static const struct adc_driver_api mcux_adc12_driver_api = {
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &mcux_adc12_driver_api);			\
 									\
-	static void mcux_adc12_config_func_##n(struct device *dev)	\
+	static void mcux_adc12_config_func_##n(const struct device *dev) \
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 			    DT_INST_IRQ(n, priority), mcux_adc12_isr,	\

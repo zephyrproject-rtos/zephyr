@@ -1074,7 +1074,7 @@ static const struct uart_driver_api uart_sam0_driver_api = {
 	} while (0)
 
 #define UART_SAM0_IRQ_HANDLER_DECL(n)					\
-	static void uart_sam0_irq_config_##n(struct device *dev)
+	static void uart_sam0_irq_config_##n(const struct device *dev)
 #define UART_SAM0_IRQ_HANDLER_FUNC(n)					\
 	.irq_config_func = uart_sam0_irq_config_##n,
 

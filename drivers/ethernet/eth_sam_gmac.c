@@ -1674,9 +1674,9 @@ static void queue0_isr(const struct device *dev)
 }
 
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
-static inline void priority_queue_isr(void *arg, unsigned int queue_idx)
+static inline void priority_queue_isr(const struct device *dev,
+				      unsigned int queue_idx)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(dev);
 	struct eth_sam_dev_data *const dev_data = DEV_DATA(dev);
 	Gmac *gmac = cfg->regs;
@@ -1725,37 +1725,37 @@ static inline void priority_queue_isr(void *arg, unsigned int queue_idx)
 #endif
 
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
-static void queue1_isr(const void *arg)
+static void queue1_isr(const struct device *dev)
 {
-	priority_queue_isr(arg, 1);
+	priority_queue_isr(dev, 1);
 }
 #endif
 
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 2
-static void queue2_isr(const void *arg)
+static void queue2_isr(const struct device *dev)
 {
-	priority_queue_isr(arg, 2);
+	priority_queue_isr(dev, 2);
 }
 #endif
 
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 3
-static void queue3_isr(const void *arg)
+static void queue3_isr(const struct device *dev)
 {
-	priority_queue_isr(arg, 3);
+	priority_queue_isr(dev, 3);
 }
 #endif
 
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 4
-static void queue4_isr(const void *arg)
+static void queue4_isr(const struct device *dev)
 {
-	priority_queue_isr(arg, 4);
+	priority_queue_isr(dev, 4);
 }
 #endif
 
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 5
-static void queue5_isr(const void *arg)
+static void queue5_isr(const struct device *dev)
 {
-	priority_queue_isr(arg, 5);
+	priority_queue_isr(dev, 5);
 }
 #endif
 

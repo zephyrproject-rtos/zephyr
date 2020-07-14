@@ -309,7 +309,7 @@ int gpio_sam_init(const struct device *dev)
 }
 
 #define GPIO_SAM_INIT(n)						\
-	static void port_##n##_sam_config_func(struct device *dev);	\
+	static void port_##n##_sam_config_func(const struct device *dev);	\
 									\
 	static const struct gpio_sam_config port_##n##_sam_config = {	\
 		.common = {						\
@@ -328,7 +328,7 @@ int gpio_sam_init(const struct device *dev)
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &gpio_sam_api);				\
 									\
-	static void port_##n##_sam_config_func(struct device *dev)	\
+	static void port_##n##_sam_config_func(const struct device *dev)	\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
 			    gpio_sam_isr,				\

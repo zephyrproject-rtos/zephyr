@@ -212,7 +212,7 @@ static const struct led_strip_driver_api ws2812_gpio_api = {
 
 #define WS2812_GPIO_DEVICE(idx)					\
 									\
-	static int ws2812_gpio_##idx##_init(struct device *dev)	\
+	static int ws2812_gpio_##idx##_init(const struct device *dev)	\
 	{								\
 		struct ws2812_gpio_data *data = dev_data(dev);		\
 									\

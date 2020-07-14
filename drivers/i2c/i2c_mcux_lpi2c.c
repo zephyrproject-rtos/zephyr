@@ -225,7 +225,7 @@ static const struct i2c_driver_api mcux_lpi2c_driver_api = {
 };
 
 #define I2C_MCUX_LPI2C_INIT(n)						\
-	static void mcux_lpi2c_config_func_##n(struct device *dev);	\
+	static void mcux_lpi2c_config_func_##n(const struct device *dev); \
 									\
 	static const struct mcux_lpi2c_config mcux_lpi2c_config_##n = {	\
 		.base = (LPI2C_Type *)DT_INST_REG_ADDR(n),		\
@@ -247,7 +247,7 @@ static const struct i2c_driver_api mcux_lpi2c_driver_api = {
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &mcux_lpi2c_driver_api);			\
 									\
-	static void mcux_lpi2c_config_func_##n(struct device *dev)	\
+	static void mcux_lpi2c_config_func_##n(const struct device *dev) \
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 			    DT_INST_IRQ(n, priority),			\

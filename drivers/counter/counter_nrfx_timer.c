@@ -398,7 +398,7 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 			TIMER_PRESCALER_PRESCALER_Msk,			       \
 		     "TIMER prescaler out of range");			       \
 	DEVICE_DECLARE(timer_##idx);					       \
-	static int counter_##idx##_init(struct device *dev)		       \
+	static int counter_##idx##_init(const struct device *dev)		       \
 	{								       \
 		IRQ_CONNECT(DT_IRQN(TIMER(idx)), DT_IRQ(TIMER(idx), priority), \
 			    irq_handler, DEVICE_GET(timer_##idx), 0);	       \

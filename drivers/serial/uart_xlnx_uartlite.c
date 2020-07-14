@@ -345,7 +345,7 @@ static const struct uart_driver_api xlnx_uartlite_driver_api = {
 		irq_enable(DT_INST_IRQ_BY_IDX(n, i, irq));		\
 	} while (0)
 #define XLNX_UARTLITE_CONFIG_FUNC(n)					\
-	static void xlnx_uartlite_config_func_##n(struct device *dev)	\
+	static void xlnx_uartlite_config_func_##n(const struct device *dev) \
 	{								\
 		/* IRQ line not always present on all instances */	\
 		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0),			\

@@ -163,7 +163,7 @@ static int tmr_cmsdk_apb_init(const struct device *dev)
 }
 
 #define TIMER_CMSDK_INIT(inst)						\
-	static void timer_cmsdk_apb_config_##inst(struct device *dev);	\
+	static void timer_cmsdk_apb_config_##inst(const struct device *dev); \
 									\
 	static const struct tmr_cmsdk_apb_cfg tmr_cmsdk_apb_cfg_##inst = { \
 		.info = {						\
@@ -194,7 +194,7 @@ static int tmr_cmsdk_apb_init(const struct device *dev)
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &tmr_cmsdk_apb_api);			\
 									\
-	static void timer_cmsdk_apb_config_##inst(struct device *dev)	\
+	static void timer_cmsdk_apb_config_##inst(const struct device *dev) \
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(inst),				\
 			    DT_INST_IRQ(inst, priority),		\

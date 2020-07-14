@@ -470,13 +470,13 @@ static const struct uart_driver_api uart_esp32_api = {
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 #define ESP32_UART_IRQ_HANDLER_DECL(idx) \
-	static void uart_esp32_irq_config_func_##idx(struct device *dev)
+	static void uart_esp32_irq_config_func_##idx(const struct device *dev)
 
 #define ESP32_UART_IRQ_HANDLER_FUNC(idx) \
 	.irq_config_func = uart_esp32_irq_config_func_##idx,
 
 #define ESP32_UART_IRQ_HANDLER(idx)					     \
-	static void uart_esp32_irq_config_func_##idx(const struct device *dev)     \
+	static void uart_esp32_irq_config_func_##idx(const struct device *dev) \
 	{								     \
 		esp32_rom_intr_matrix_set(0, ETS_UART##idx##_INTR_SOURCE,    \
 					  INST_##idx##_ESPRESSIF_ESP32_UART_IRQ_0); \

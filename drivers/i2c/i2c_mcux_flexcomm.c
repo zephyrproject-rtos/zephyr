@@ -205,7 +205,7 @@ static const struct i2c_driver_api mcux_flexcomm_driver_api = {
 };
 
 #define I2C_MCUX_FLEXCOMM_DEVICE(id)					\
-	static void mcux_flexcomm_config_func_##id(struct device *dev);	\
+	static void mcux_flexcomm_config_func_##id(const struct device *dev); \
 	static const struct mcux_flexcomm_config mcux_flexcomm_config_##id = {	\
 		.base = (I2C_Type *) DT_INST_REG_ADDR(id),		\
 		.irq_config_func = mcux_flexcomm_config_func_##id,	\
@@ -220,7 +220,7 @@ static const struct i2c_driver_api mcux_flexcomm_driver_api = {
 			    POST_KERNEL,				\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &mcux_flexcomm_driver_api);			\
-	static void mcux_flexcomm_config_func_##id(struct device *dev)	\
+	static void mcux_flexcomm_config_func_##id(const struct device *dev) \
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(id),				\
 			    DT_INST_IRQ(id, priority),			\

@@ -831,7 +831,7 @@ static int spi_stm32_init(const struct device *dev)
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 #define STM32_SPI_IRQ_HANDLER_DECL(id)					\
-	static void spi_stm32_irq_config_func_##id(struct device *dev)
+	static void spi_stm32_irq_config_func_##id(const struct device *dev)
 #define STM32_SPI_IRQ_HANDLER_FUNC(id)					\
 	.irq_config = spi_stm32_irq_config_func_##id,
 #define STM32_SPI_IRQ_HANDLER(id)					\

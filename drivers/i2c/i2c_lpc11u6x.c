@@ -379,7 +379,7 @@ static const struct i2c_driver_api i2c_api = {
 
 #define LPC11U6X_I2C_INIT(idx)						      \
 									      \
-static void lpc11u6x_i2c_isr_config_##idx(struct device *dev);	              \
+static void lpc11u6x_i2c_isr_config_##idx(const struct device *dev);	              \
 									      \
 static const struct lpc11u6x_i2c_config i2c_cfg_##idx = {		      \
 	.base =								      \
@@ -407,7 +407,7 @@ DEVICE_AND_API_INIT(lpc11u6x_i2c_##idx, DT_INST_LABEL(idx),		      \
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,	      \
 		    &i2c_api);						      \
 									      \
-static void lpc11u6x_i2c_isr_config_##idx(struct device *dev)		      \
+static void lpc11u6x_i2c_isr_config_##idx(const struct device *dev)		      \
 {									      \
 	IRQ_CONNECT(DT_INST_IRQN(idx),					      \
 		    DT_INST_IRQ(idx, priority),				      \

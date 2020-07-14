@@ -254,7 +254,7 @@ static int gpio_cmsdk_ahb_init(const struct device *dev)
 }
 
 #define CMSDK_AHB_GPIO_DEVICE(n)						\
-	static void gpio_cmsdk_port_##n##_config_func(struct device *dev);	\
+	static void gpio_cmsdk_port_##n##_config_func(const struct device *dev); \
 										\
 	static const struct gpio_cmsdk_ahb_cfg gpio_cmsdk_port_##n##_config = {	\
 		.common = {							\
@@ -280,7 +280,7 @@ static int gpio_cmsdk_ahb_init(const struct device *dev)
 			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 			    &gpio_cmsdk_ahb_drv_api_funcs);			\
 										\
-	static void gpio_cmsdk_port_##n##_config_func(struct device *dev)	\
+	static void gpio_cmsdk_port_##n##_config_func(const struct device *dev)	\
 	{									\
 		IRQ_CONNECT(DT_INST_IRQN(n),					\
 			    DT_INST_IRQ(n, priority),				\

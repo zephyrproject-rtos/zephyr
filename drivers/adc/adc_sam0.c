@@ -587,7 +587,7 @@ do {									\
 #endif
 
 #define ADC_SAM0_DEVICE(n)						\
-	static void adc_sam0_config_##n(struct device *dev);		\
+	static void adc_sam0_config_##n(const struct device *dev);	\
 	static const struct adc_sam0_cfg adc_sam_cfg_##n = {		\
 		.regs = (Adc *)DT_INST_REG_ADDR(n),			\
 		ADC_SAM0_CLOCK_CONTROL(n)				\
@@ -607,7 +607,7 @@ do {									\
 			    &adc_sam_cfg_##n, POST_KERNEL,		\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &adc_sam0_api);				\
-	static void adc_sam0_config_##n(struct device *dev)		\
+	static void adc_sam0_config_##n(const struct device *dev)	\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 			    DT_INST_IRQ(n, priority),			\

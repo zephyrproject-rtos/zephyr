@@ -796,7 +796,7 @@ static const struct i2c_sam0_dev_config i2c_sam0_dev_config_##n = {	\
 #endif
 
 #define I2C_SAM0_DEVICE(n)						\
-	static void i2c_sam0_irq_config_##n(struct device *dev);	\
+	static void i2c_sam0_irq_config_##n(const struct device *dev);	\
 	I2C_SAM0_CONFIG(n);						\
 	static struct i2c_sam0_dev_data i2c_sam0_dev_data_##n;		\
 	DEVICE_AND_API_INIT(i2c_sam0_##n,				\

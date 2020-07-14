@@ -208,7 +208,7 @@ static const struct gpio_driver_api imx_gpio_driver_api = {
 };
 
 #define GPIO_IMX_INIT(n)						\
-	static int imx_gpio_##n##_init(struct device *port);		\
+	static int imx_gpio_##n##_init(const struct device *port);	\
 									\
 	static const struct imx_gpio_config imx_gpio_##n##_config = {	\
 		.common = {						\
@@ -228,7 +228,7 @@ static const struct gpio_driver_api imx_gpio_driver_api = {
 			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 			    &imx_gpio_driver_api);			\
 									\
-	static int imx_gpio_##n##_init(struct device *port)		\
+	static int imx_gpio_##n##_init(const struct device *port)	\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 0, irq),		\
 			    DT_INST_IRQ_BY_IDX(n, 0, priority),		\
