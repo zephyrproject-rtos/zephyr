@@ -12,12 +12,12 @@ Overview
 
 The L2 stack is designed to hide the whole networking link-layer part
 and the related device drivers from the upper network stack. This is made
-through a :c:type:`struct net_if` declared in
+through a :c:type:`net_if` declared in
 :zephyr_file:`include/net/net_if.h`.
 
 The upper layers are unaware of implementation details beyond the net_if
 object and the generic API provided by the L2 layer in
-:zephyr_file:`include/net/net_l2.h` as :c:type:`struct net_l2`.
+:zephyr_file:`include/net/net_l2.h` as :c:type:`net_l2`.
 
 Only the L2 layer can talk to the device driver, linked to the net_if
 object. The L2 layer dictates the API provided by the device driver,
@@ -39,7 +39,7 @@ See also :ref:`network stack architecture <network_stack_architecture>` for
 more details. The generic L2 API has these functions:
 
 - ``recv()``: All device drivers, once they receive a packet which they put
-  into a :c:type:`struct net_pkt`, will push this buffer to the network
+  into a :c:type:`net_pkt`, will push this buffer to the network
   stack via :c:func:`net_recv_data()`. At this point, the network
   stack does not know what to do with it. Instead, it passes the
   buffer along to the L2 stack's ``recv()`` function for handling.
@@ -69,13 +69,13 @@ basis. Please refer to :ref:`device_model_api`.
 
 There are, however, two differences:
 
-- The driver_api pointer must point to a valid :c:type:`struct net_if_api`
+- The driver_api pointer must point to a valid :c:type:`net_if_api`
   pointer.
 
 - The network device driver must use ``NET_DEVICE_INIT_INSTANCE()``
   or ``ETH_NET_DEVICE_INIT()`` for Ethernet devices. These
   macros will call the ``DEVICE_AND_API_INIT()`` macro, and also
-  instantiate a unique :c:type:`struct net_if` related to the created
+  instantiate a unique :c:type:`net_if` related to the created
   device driver instance.
 
 Implementing a network device driver depends on the L2 stack it
@@ -90,7 +90,7 @@ Ethernet device driver
 
 On reception, it is up to the device driver to fill-in the network packet with
 as many data buffers as required. The network packet itself is a
-:c:type:`struct net_pkt` and should be allocated through
+:c:type:`net_pkt` and should be allocated through
 :c:func:`net_pkt_rx_alloc_with_buffer()`. Then all data buffers will be
 automatically allocated and filled by :c:func:`net_pkt_write()`.
 
@@ -116,9 +116,8 @@ Device drivers for IEEE 802.15.4 L2 work basically the same as for
 Ethernet.  What has been described above, especially for ``recv()``, applies
 here as well.  There are two specific differences however:
 
-- It requires a dedicated device driver API: :c:type:`struct
-  ieee802154_radio_api`, which overloads :c:type:`struct
-  net_if_api`. This is because 802.15.4 L2 needs more from the device
+- It requires a dedicated device driver API: :c:type:`ieee802154_radio_api`,
+  which overloads :c:type:`net_if_api`. This is because 802.15.4 L2 needs more from the device
   driver than just ``send()`` and ``recv()`` functions.  This dedicated API is
   declared in :zephyr_file:`include/net/ieee802154_radio.h`. Each and every
   IEEE 802.15.4 device driver must provide a valid pointer on such
@@ -129,15 +128,15 @@ here as well.  There are two specific differences however:
   payload and frame checksum.  Buffers are meant to fit such
   frame size limitation.  But a buffer containing an IPv6/UDP packet
   might have more than one fragment. IEEE 802.15.4 drivers
-  handle only one buffer at a time.  This is why the :c:type:`struct
-  ieee802154_radio_api` requires a tx function pointer which differs
-  from the :c:type:`struct net_if_api` send function pointer.
+  handle only one buffer at a time.  This is why the
+  :c:type:`ieee802154_radio_api` requires a tx function pointer which differs
+  from the :c:type:`net_if_api` send function pointer.
   Instead, the IEEE 802.15.4 L2, provides a generic
   :c:func:`ieee802154_radio_send()` meant to be given as
-  :c:type:`struct net_if` send function. It turn, the implementation
+  :c:type:`net_if` send function. It turn, the implementation
   of :c:func:`ieee802154_radio_send()` will ensure the same behavior:
-  sending one buffer at a time through :c:type:`struct
-  ieee802154_radio_api` tx function, and unreferencing the network packet
+  sending one buffer at a time through :c:type:`ieee802154_radio_api` tx
+  function, and unreferencing the network packet
   only when all the transmission were successful.
 
 Each IEEE 802.15.4 device driver, in the end, will need to call

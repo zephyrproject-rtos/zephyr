@@ -247,7 +247,7 @@ Sample usage
 ************
 
 To use the LwM2M library, start by creating an LwM2M client context
-:c:type:`struct lwm2m_ctx` structure:
+:c:type:`lwm2m_ctx` structure:
 
 .. code-block:: c
 
