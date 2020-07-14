@@ -52,8 +52,8 @@ waiting sender(s).
 Implementation
 **************
 
-A pipe is defined using a variable of type :c:type:`struct k_pipe` and an
-optional character buffer of type :c:type:`unsigned char`. It must then be
+A pipe is defined using a variable of type :c:type:`k_pipe` and an
+optional character buffer of type ``unsigned char``. It must then be
 initialized by calling :cpp:func:`k_pipe_init()`.
 
 The following code defines and initializes an empty pipe that has a ring

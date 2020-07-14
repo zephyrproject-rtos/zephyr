@@ -53,7 +53,7 @@ Implementation
 Defining a LIFO
 ===============
 
-A LIFO is defined using a variable of type :c:type:`struct k_lifo`.
+A LIFO is defined using a variable of type :c:type:`k_lifo`.
 It must then be initialized by calling :cpp:func:`k_lifo_init()`.
 
 The following defines and initializes an empty LIFO.

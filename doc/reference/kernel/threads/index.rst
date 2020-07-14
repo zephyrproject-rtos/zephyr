@@ -24,7 +24,7 @@ A thread has the following key properties:
   stack memory regions.
 
 * A **thread control block** for private kernel bookkeeping of the thread's
-  metadata. This is an instance of type :c:type:`struct k_thread`.
+  metadata. This is an instance of type :c:type:`k_thread`.
 
 * An **entry point function**, which is invoked when the thread is started.
   Up to 3 **argument values** can be passed to this function.

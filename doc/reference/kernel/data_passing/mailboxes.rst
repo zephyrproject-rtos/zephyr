@@ -118,7 +118,7 @@ Implementation
 Defining a Mailbox
 ==================
 
-A mailbox is defined using a variable of type :c:type:`struct k_mbox`.
+A mailbox is defined using a variable of type :c:type:`k_mbox`.
 It must then be initialized by calling :cpp:func:`k_mbox_init()`.
 
 The following code defines and initializes an empty mailbox.
@@ -141,7 +141,7 @@ The following code has the same effect as the code segment above.
 Message Descriptors
 ===================
 
-A message descriptor is a structure of type :c:type:`struct k_mbox_msg`.
+A message descriptor is a structure of type :c:type:`k_mbox_msg`.
 Only the fields listed below should be used; any other fields are for
 internal mailbox use only.
 

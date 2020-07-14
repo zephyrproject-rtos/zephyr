@@ -74,7 +74,7 @@ Buffer allocation
 =================
 
 The net_pkt object does not define its own buffer, but instead uses an
-existing object for this: :c:type:`struct net_buf`. (See
+existing object for this: :c:type:`net_buf`. (See
 :ref:`net_buf_interface` for more information). However, it mostly
 hides the usage of such a buffer because net_pkt brings network
 awareness to buffer allocation and, as we will see later, its

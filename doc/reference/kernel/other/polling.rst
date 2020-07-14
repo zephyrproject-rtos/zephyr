@@ -68,7 +68,7 @@ Using k_poll()
 ==============
 
 The main API is :cpp:func:`k_poll()`, which operates on an array of poll events
-of type :c:type:`struct k_poll_event`. Each entry in the array represents one
+of type :c:type:`k_poll_event`. Each entry in the array represents one
 event a call to :cpp:func:`k_poll()` will wait for its condition to be
 fulfilled.
 
@@ -82,7 +82,7 @@ this). The user **tag** is optional and completely opaque to the API: it is
 there to help a user to group similar events together. Being optional, it is
 passed to the static initializer, but not the runtime ones for performance
 reasons. If using runtime initializers, the user must set it separately in the
-:c:type:`struct k_poll_event` data structure. If an event in the array is to be
+:c:type:`k_poll_event` data structure. If an event in the array is to be
 ignored, most likely temporarily, its type can be set to K_POLL_TYPE_IGNORE.
 
 .. code-block:: c
@@ -125,12 +125,12 @@ satisfied and not sooner.
 
 Only one thread can poll on a semaphore or a FIFO at a time. If a second thread
 tries to poll on the same semaphore or FIFO, :cpp:func:`k_poll()` immediately
-returns with the return value :c:macro:`-EADDRINUSE`. In that case, if other
+returns with the return value -:c:macro:`EADDRINUSE`. In that case, if other
 conditions passed to :cpp:func:`k_poll` were met, their state will be set in
 the corresponding poll event.
 
 In case of success, :cpp:func:`k_poll()` returns 0. If it times out, it returns
-:c:macro:`-EAGAIN`.
+-:c:macro:`EAGAIN`.
 
 .. code-block:: c
 
@@ -179,7 +179,7 @@ One of the types of events is :c:macro:`K_POLL_TYPE_SIGNAL`: this is a "direct"
 signal to a poll event. This can be seen as a lightweight binary semaphore only
 one thread can wait for.
 
-A poll signal is a separate object of type :c:type:`struct k_poll_signal` that
+A poll signal is a separate object of type :c:type:`k_poll_signal` that
 must be attached to a k_poll_event, similar to a semaphore or FIFO. It must
 first be initialized either via :c:macro:`K_POLL_SIGNAL_INITIALIZER()` or
 :cpp:func:`k_poll_signal_init()`.

@@ -47,7 +47,7 @@ Implementation
 Defining a Semaphore
 ====================
 
-A semaphore is defined using a variable of type :c:type:`struct k_sem`.
+A semaphore is defined using a variable of type :c:type:`k_sem`.
 It must then be initialized by calling :cpp:func:`k_sem_init()`.
 
 The following code defines a semaphore, then configures it as a binary

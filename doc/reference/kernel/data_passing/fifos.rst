@@ -62,7 +62,7 @@ Implementation
 Defining a FIFO
 ===============
 
-A FIFO is defined using a variable of type :c:type:`struct k_fifo`.
+A FIFO is defined using a variable of type :c:type:`k_fifo`.
 It must then be initialized by calling :cpp:func:`k_fifo_init()`.
 
 The following code defines and initializes an empty FIFO.
