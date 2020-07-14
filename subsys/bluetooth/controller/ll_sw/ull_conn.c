@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include <zephyr.h>
 #include <device.h>
+#include <drivers/entropy.h>
 #include <bluetooth/bluetooth.h>
 #include <sys/byteorder.h>
 
@@ -167,6 +168,8 @@ static u8_t default_phy_rx;
 static struct ll_conn conn_pool[CONFIG_BT_MAX_CONN];
 static struct ll_conn *conn_upd_curr;
 static void *conn_free;
+
+static struct device *entropy;
 
 struct ll_conn *ll_conn_acquire(void)
 {
@@ -602,6 +605,11 @@ u8_t ll_apto_set(u16_t handle, u16_t apto)
 int ull_conn_init(void)
 {
 	int err;
+
+	entropy = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
+	if (!entropy) {
+		return -ENODEV;
+	}
 
 	err = init_reset();
 	if (err) {
@@ -3858,9 +3866,9 @@ static void enc_req_reused_send(struct ll_conn *conn, struct node_tx **tx)
 		     sizeof(pdu_ctrl_tx->llctrl.enc_req.skdm)));
 
 	/* NOTE: if not sufficient random numbers, ignore waiting */
-	lll_trng_isr_get(pdu_ctrl_tx->llctrl.enc_req.skdm,
-			 sizeof(pdu_ctrl_tx->llctrl.enc_req.skdm) +
-			 sizeof(pdu_ctrl_tx->llctrl.enc_req.ivm));
+	entropy_get_entropy_isr(entropy, pdu_ctrl_tx->llctrl.enc_req.skdm,
+				sizeof(pdu_ctrl_tx->llctrl.enc_req.skdm) +
+				sizeof(pdu_ctrl_tx->llctrl.enc_req.ivm), 0);
 
 	ctrl_tx_enqueue(conn, *tx);
 
@@ -3895,9 +3903,9 @@ static int enc_rsp_send(struct ll_conn *conn)
 		     sizeof(pdu_ctrl_tx->llctrl.enc_rsp.skds)));
 
 	/* NOTE: if not sufficient random numbers, ignore waiting */
-	lll_trng_isr_get(pdu_ctrl_tx->llctrl.enc_rsp.skds,
-			 sizeof(pdu_ctrl_tx->llctrl.enc_rsp.skds) +
-			 sizeof(pdu_ctrl_tx->llctrl.enc_rsp.ivs));
+	entropy_get_entropy_isr(entropy, pdu_ctrl_tx->llctrl.enc_rsp.skds,
+				sizeof(pdu_ctrl_tx->llctrl.enc_rsp.skds) +
+				sizeof(pdu_ctrl_tx->llctrl.enc_rsp.ivs), 0);
 
 	/* things from slave stored for session key calculation */
 	memcpy(&conn->llcp.encryption.skd[8],

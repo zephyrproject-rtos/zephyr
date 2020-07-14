@@ -116,9 +116,11 @@ int lll_init(void)
 	ARG_UNUSED(clk_k32);
 
 	/* Get reference to entropy device */
-	dev_entropy = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
+	dev_entropy =
+		device_get_binding(DT_LABEL(DT_INST(0, openisa_rv32m1_trng)));
 	if (!dev_entropy) {
-		return -ENODEV;
+		dev_entropy = NULL;
+		/* return -ENODEV; */
 	}
 
 	/* Initialise LLL internals */
@@ -161,23 +163,9 @@ int lll_init(void)
 	return 0;
 }
 
-int lll_trng_get(void *buf, size_t len)
+u8_t lll_entropy_get(u8_t len, void *rand)
 {
-	return entropy_get_entropy(dev_entropy, buf, len);
-}
-
-int lll_trng_isr_get(void *buf, size_t len)
-{
-	return entropy_get_entropy_isr(dev_entropy, buf, len, 0);
-}
-
-int lll_rng_get(void *buf, size_t len)
-{
-	return 0;
-}
-
-int lll_rng_isr_get(void *buf, size_t len)
-{
+	/* entropy_get_entropy_isr(dev_entropy, rand, len, 0); */
 	return 0;
 }
 

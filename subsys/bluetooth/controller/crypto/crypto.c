@@ -7,15 +7,13 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_crypto
 #include "common/log.h"
-
-#include "util/memq.h"
+#include "../util/util.h"
 
 #include "hal/ecb.h"
-#include "lll.h"
 
 int bt_rand(void *buf, size_t len)
 {
-	return lll_trng_get(buf, len);
+	return util_rand(buf, len);
 }
 
 int bt_encrypt_le(const u8_t key[16], const u8_t plaintext[16],
