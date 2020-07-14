@@ -19,6 +19,10 @@
 #define MY_DRIVER_A     "my_driver_A"
 #define MY_DRIVER_B     "my_driver_B"
 
+extern void test_mmio_multiple(void);
+extern void test_mmio_toplevel(void);
+extern void test_mmio_single(void);
+extern void test_mmio_device_map(void);
 
 /**
  * @brief Test cases to verify device objects
@@ -382,6 +386,10 @@ void test_main(void)
 			 ztest_user_unit_test(test_dynamic_name),
 			 ztest_unit_test(test_device_init_level),
 			 ztest_unit_test(test_device_init_priority),
-			 ztest_unit_test(test_abstraction_driver_common));
+			 ztest_unit_test(test_abstraction_driver_common),
+			 ztest_unit_test(test_mmio_single),
+			 ztest_unit_test(test_mmio_multiple),
+			 ztest_unit_test(test_mmio_toplevel),
+			 ztest_unit_test(test_mmio_device_map));
 	ztest_run_test_suite(device);
 }
