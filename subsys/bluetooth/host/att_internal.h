@@ -6,6 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define BT_EATT_PSM		0x27
 #define BT_ATT_DEFAULT_LE_MTU	23
 #define BT_ATT_TIMEOUT		K_SECONDS(30)
 
@@ -221,6 +222,26 @@ struct bt_att_indicate {
 
 struct bt_att_signature {
 	u8_t  value[12];
+} __packed;
+
+#define BT_ATT_OP_READ_MULT_VL_REQ		0x20
+struct bt_att_read_mult_vl_req {
+	u16_t handles[0];
+} __packed;
+
+/* Read Multiple Respose */
+#define BT_ATT_OP_READ_MULT_VL_RSP		0x21
+struct bt_att_read_mult_vl_rsp {
+	u16_t len;
+	u8_t  value[0];
+} __packed;
+
+/* Handle Multiple Value Notification */
+#define BT_ATT_OP_NOTIFY_MULT			0x23
+struct bt_att_notify_mult {
+	u16_t handle;
+	u16_t len;
+	u8_t  value[0];
 } __packed;
 
 /* Write Command */
