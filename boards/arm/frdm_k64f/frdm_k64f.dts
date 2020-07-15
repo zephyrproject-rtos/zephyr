@@ -222,3 +222,7 @@ arduino_spi: &spi0 {
 &edma0 {
 	status = "okay";
 };
+
+&pit0 {
+	status = "okay";
+};
