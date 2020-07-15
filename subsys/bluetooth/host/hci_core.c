@@ -2649,9 +2649,11 @@ static void unpair(uint8_t id, const bt_addr_le_t *addr)
 
 	bt_gatt_clear(id, addr);
 
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 	if (bt_auth && bt_auth->bond_deleted) {
 		bt_auth->bond_deleted(id, addr);
 	}
+#endif /* defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR) */
 }
 
 static void unpair_remote(const struct bt_bond_info *info, void *data)

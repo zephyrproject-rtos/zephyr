@@ -2032,6 +2032,14 @@ enum bt_security_err pairing_accept(
 }
 #endif /* CONFIG_BT_SMP_APP_PAIRING_ACCEPT */
 
+void bond_deleted(uint8_t id, const bt_addr_le_t *peer)
+{
+	char addr[BT_ADDR_STR_LEN];
+
+	bt_addr_le_to_str(peer, addr, sizeof(addr));
+	shell_print(ctx_shell, "Bond deleted for %s, id %u", addr, id);
+}
+
 static struct bt_conn_auth_cb auth_cb_display = {
 	.passkey_display = auth_passkey_display,
 	.passkey_entry = NULL,
@@ -2047,6 +2055,7 @@ static struct bt_conn_auth_cb auth_cb_display = {
 #if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
 	.pairing_accept = pairing_accept,
 #endif
+	.bond_deleted = bond_deleted,
 };
 
 static struct bt_conn_auth_cb auth_cb_display_yes_no = {
@@ -2064,6 +2073,7 @@ static struct bt_conn_auth_cb auth_cb_display_yes_no = {
 #if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
 	.pairing_accept = pairing_accept,
 #endif
+	.bond_deleted = bond_deleted,
 };
 
 static struct bt_conn_auth_cb auth_cb_input = {
@@ -2081,6 +2091,7 @@ static struct bt_conn_auth_cb auth_cb_input = {
 #if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
 	.pairing_accept = pairing_accept,
 #endif
+	.bond_deleted = bond_deleted,
 };
 
 static struct bt_conn_auth_cb auth_cb_confirm = {
@@ -2095,6 +2106,7 @@ static struct bt_conn_auth_cb auth_cb_confirm = {
 #if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
 	.pairing_accept = pairing_accept,
 #endif
+	.bond_deleted = bond_deleted,
 };
 
 static struct bt_conn_auth_cb auth_cb_all = {
@@ -2112,6 +2124,7 @@ static struct bt_conn_auth_cb auth_cb_all = {
 #if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
 	.pairing_accept = pairing_accept,
 #endif
+	.bond_deleted = bond_deleted,
 };
 
 static struct bt_conn_auth_cb auth_cb_oob = {
@@ -2129,6 +2142,7 @@ static struct bt_conn_auth_cb auth_cb_oob = {
 #if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
 	.pairing_accept = pairing_accept,
 #endif
+	.bond_deleted = bond_deleted,
 };
 
 
