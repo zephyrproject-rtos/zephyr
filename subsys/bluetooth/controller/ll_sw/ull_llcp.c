@@ -317,7 +317,7 @@ void ull_cp_state_set(struct ull_cp_conn *conn, uint8_t state)
 	default:
 		break;
 	}
-} 
+}
 
 uint8_t ull_cp_min_used_chans(struct ull_cp_conn *conn, uint8_t phys, uint8_t min_used_chans)
 {

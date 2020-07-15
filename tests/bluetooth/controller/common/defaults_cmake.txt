@@ -25,11 +25,14 @@ FILE(GLOB ll_sw_sources
         ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_phy.c
         ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_enc.c
         ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp.c
+        ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_hci.c
+	${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_connections.c
 )
 
 FILE(GLOB mock_sources
         ${ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/src/ll.c
         ${ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/src/ll_assert.c
+	${ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/src/util.c
 )
 
 FILE(GLOB common_sources
@@ -39,3 +42,4 @@ FILE(GLOB common_sources
 
 add_definitions(-include kconfig.h)
 add_definitions(-include ztest.h)
+add_definitions(-include soc.h)
