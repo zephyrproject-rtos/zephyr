@@ -114,6 +114,10 @@
 	status = "okay";
 };
 
+&mac {
+	status = "okay";
+};
+
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";

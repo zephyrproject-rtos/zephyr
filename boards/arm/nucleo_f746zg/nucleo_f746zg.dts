@@ -112,3 +112,7 @@
 &rng {
 	status = "okay";
 };
+
+&mac {
+	status = "okay";
+};

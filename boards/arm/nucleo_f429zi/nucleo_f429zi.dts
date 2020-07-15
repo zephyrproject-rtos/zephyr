@@ -95,6 +95,10 @@
 	status = "okay";
 };
 
+&mac {
+	status = "okay";
+};
+
 &flash0 {
 	/*
 	 * For more information, see:

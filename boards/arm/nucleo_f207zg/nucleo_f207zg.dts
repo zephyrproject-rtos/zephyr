@@ -76,3 +76,8 @@
 &adc1 {
 	status = "okay";
 };
+
+
+&mac {
+	status = "okay";
+};
