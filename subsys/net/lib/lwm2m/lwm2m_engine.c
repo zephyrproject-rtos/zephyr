@@ -3353,6 +3353,12 @@ static int handle_request(struct coap_packet *request,
 	} else if ((code & COAP_REQUEST_MASK) == COAP_METHOD_POST && r == 1 && \
 		   strncmp(options[0].value, "bs", options[0].len) == 0) {
 		engine_bootstrap_finish();
+
+		r = lwm2m_init_message(msg);
+		if (r < 0) {
+			goto error;
+		}
+
 		return 0;
 #endif
 	} else {
