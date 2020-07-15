@@ -421,3 +421,16 @@ timer2: timer@11000 {
 	prescaler = <0>;
 	label = "TIMER_2";
 };
+
+usbd: usbd@36000 {
+	compatible = "nordic,nrf-usbd";
+	reg = <0x36000 0x1000>;
+	interrupts = <54 1>;
+	num-bidir-endpoints = <1>;
+	num-in-endpoints = <7>;
+	num-out-endpoints = <7>;
+	num-isoin-endpoints = <1>;
+	num-isoout-endpoints = <1>;
+	status = "disabled";
+	label = "USBD";
+};
