@@ -35,6 +35,102 @@
 #endif
 #define FLASH_SECTOR_SIZE        4096
 
+#if 0
+
+extern const uint8_t __device_handles_start[];
+extern const uint8_t __device_handles_end[];
+
+static void dump_handles(const char *tag,
+			 const device_handle_t *cp)
+{
+	const device_handle_t *cps = cp;
+	unsigned int setnum = 0;
+	char buf[128] = {0};
+	char *bp = buf;
+	const struct device *devlist;
+	size_t devcnt = z_device_get_all_static(&devlist);
+
+	printk("handles sets for %s: %p:\n", tag, cp);
+	while (true) {
+		if ((*cp == DEVICE_HANDLE_SEP)
+		    || (*cp == DEVICE_HANDLE_ENDS)) {
+			printk("\tS%u: %u elts:%s\n", setnum, (unsigned int)(cp - cps), buf);
+			bp = buf;
+			*bp = 0;
+			cps = cp + 1;
+			++setnum;
+			if (*cp == DEVICE_HANDLE_ENDS) {
+				break;
+			}
+		} else {
+			bp += snprintf(bp, buf + sizeof(buf) -  bp, " %d", *cp);
+			if (setnum == 0) {
+				bp += snprintf(bp, buf + sizeof(buf) - bp, "[%s]",
+					       devlist[*cp].name);
+			}
+		}
+		++cp;
+	}
+	printk("%s has %u sets\n", tag, setnum);
+}
+
+static void showhandles(void)
+{
+	const struct device *devlist;
+	size_t devcnt = z_device_get_all_static(&devlist);
+	const struct device *dpe = devlist + devcnt;
+	const struct device *dp = devlist;
+
+	printk("%zu devices at %p:\n", devcnt, devlist);
+	printk("%u bytes handles at %p\n",
+	       __device_handles_end - __device_handles_start,
+	       __device_handles_start);
+	while (dp < dpe) {
+		const char *name = dp->name ? dp->name : "<?>";
+
+		printk("%u: %p: %s\n", (unsigned int)(dp - devlist), dp, name);
+		if (dp->handles) {
+			dump_handles(name, dp->handles);
+		}
+		++dp;
+	}
+}
+#else
+static void showhandles(void)
+{
+	const struct device *devlist;
+	size_t devcnt = z_device_get_all_static(&devlist);
+	const struct device *dpe = devlist + devcnt;
+	const struct device *dp = devlist;
+
+	printk("%zu devices at %p:\n", devcnt, devlist);
+
+	while (dp < dpe) {
+		const char *name = dp->name ? dp->name : "<?>";
+		size_t ndh = 0;
+		const device_handle_t *dhp = device_get_requires_handles(dp, &ndh);
+
+		printk("%u: %p: %s:", device_get_handle(dp), dp, name);
+		if (ndh > 0) {
+			size_t di = 0;
+
+			while (di < ndh) {
+				device_handle_t dh = dhp[di];
+				const struct device *rdp = device_from_handle(dh);
+
+				printk("\n\tdep %u: %p: %s",
+				       dh, rdp, rdp->name ? rdp->name : "<?>");
+				++di;
+			}
+			printk("\n");
+		} else {
+			printk(" no device dependencies\n");
+		}
+		++dp;
+	}
+}
+#endif
+
 void main(void)
 {
 	const uint8_t expected[] = { 0x55, 0xaa, 0x66, 0x99 };
@@ -45,6 +141,8 @@ void main(void)
 
 	printf("\n" FLASH_NAME " SPI flash testing\n");
 	printf("==========================\n");
+
+	showhandles();
 
 	flash_dev = device_get_binding(FLASH_DEVICE);
 
