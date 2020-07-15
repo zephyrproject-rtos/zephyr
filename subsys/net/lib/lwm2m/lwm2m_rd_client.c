@@ -198,6 +198,8 @@ void engine_trigger_restart(void)
 {
 	lwm2m_engine_context_close(client.ctx);
 
+	client.ctx->sec_obj_inst = -1;
+
 	/* Jump directly to the registration phase. In case there is no valid
 	 * security object for the LWM2M server, it will fall back to the
 	 * bootstrap procedure.
