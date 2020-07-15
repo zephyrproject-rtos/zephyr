@@ -35,5 +35,6 @@
 /delete-node/ &spi3;
 /delete-node/ &uart2;
 /delete-node/ &uart3;
+/delete-node/ &usbd;
 /delete-node/ &pwm3;
 /delete-node/ &wdt1;
