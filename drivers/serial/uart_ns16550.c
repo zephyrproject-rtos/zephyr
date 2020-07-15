@@ -256,12 +256,18 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 
 /* device config */
 struct uart_ns16550_device_config {
-	struct uart_device_config devconf;
-
+#ifndef UART_NS16550_ACCESS_IOPORT
+	DEVICE_MMIO_ROM;
+#else
+	uint32_t port;
+#endif
+	uint32_t sys_clk_freq;
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
+	uart_irq_config_func_t	irq_config_func;
+#endif
 #ifdef UART_NS16550_PCP_ENABLED
 	uint32_t pcp;
 #endif
-
 #ifdef UART_NS16550_PCIE_ENABLED
 	bool pcie;
 	pcie_bdf_t pcie_bdf;
@@ -271,8 +277,8 @@ struct uart_ns16550_device_config {
 
 /** Device data structure */
 struct uart_ns16550_dev_data_t {
-#ifdef UART_NS16550_PCIE_ENABLED
-	uint64_t pcimem;
+#ifndef UART_NS16550_ACCESS_IOPORT
+	DEVICE_MMIO_RAM;
 #endif
 	struct uart_config uart_config;
 	struct k_spinlock lock;
@@ -292,13 +298,11 @@ static const struct uart_driver_api uart_ns16550_driver_api;
 
 static inline uintptr_t get_port(struct device *dev)
 {
-#ifdef UART_NS16550_PCIE_ENABLED
-	if (DEV_CFG(dev)->pcie) {
-		return (uintptr_t) DEV_DATA(dev)->pcimem;
-	}
-#endif /* UART_NS16550_PCIE_ENABLED */
-
-	return DEV_CFG(dev)->devconf.port;
+#ifndef UART_NS16550_ACCESS_IOPORT
+	return DEVICE_MMIO_GET(dev);
+#else
+	return DEV_CFG(dev)->port;
+#endif
 }
 
 static void set_baud_rate(struct device *dev, uint32_t baud_rate)
@@ -308,12 +312,12 @@ static void set_baud_rate(struct device *dev, uint32_t baud_rate)
 	uint32_t divisor; /* baud rate divisor */
 	uint8_t lcr_cache;
 
-	if ((baud_rate != 0U) && (dev_cfg->devconf.sys_clk_freq != 0U)) {
+	if ((baud_rate != 0U) && (dev_cfg->sys_clk_freq != 0U)) {
 		/*
 		 * calculate baud rate divisor. a variant of
 		 * (uint32_t)(dev_cfg->sys_clk_freq / (16.0 * baud_rate) + 0.5)
 		 */
-		divisor = ((dev_cfg->devconf.sys_clk_freq + (baud_rate << 3))
+		divisor = ((dev_cfg->sys_clk_freq + (baud_rate << 3))
 					/ baud_rate) >> 4;
 
 		/* set the DLAB to access the baud rate divisor registers */
@@ -345,17 +349,28 @@ static int uart_ns16550_configure(struct device *dev,
 	ARG_UNUSED(dev_data);
 	ARG_UNUSED(dev_cfg);
 
+#ifndef UART_NS16550_ACCESS_IOPORT
 #ifdef UART_NS16550_PCIE_ENABLED
 	if (dev_cfg->pcie) {
+		uintptr_t phys;
+
 		if (!pcie_probe(dev_cfg->pcie_bdf, dev_cfg->pcie_id)) {
 			ret = -EINVAL;
 			goto out;
 		}
 
-		dev_data->pcimem = pcie_get_mbar(dev_cfg->pcie_bdf, 0);
+		phys = pcie_get_mbar(dev_cfg->pcie_bdf, 0);
 		pcie_set_cmd(dev_cfg->pcie_bdf, PCIE_CONF_CMDSTAT_MEM, true);
+
+		device_map(DEVICE_MMIO_RAM_PTR(dev), phys, 0x1000,
+			   K_MEM_CACHE_NONE);
+	} else
+#endif /* UART_NS16550_PCIE_ENABLED */
+	{
+		/* Map directly from DTS */
+		DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 	}
-#endif
+#endif /* UART_NS15660_ACCESS_IOPORT */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	dev_data->iir_cache = 0U;
@@ -492,7 +507,7 @@ static int uart_ns16550_init(struct device *dev)
 	}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	DEV_CFG(dev)->devconf.irq_config_func(dev);
+	DEV_CFG(dev)->irq_config_func(dev);
 #endif
 
 	return 0;
