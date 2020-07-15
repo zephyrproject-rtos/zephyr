@@ -786,8 +786,8 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	ticker_status = ticker_stop(TICKER_INSTANCE_ID_CTLR,
 				    TICKER_USER_ID_ULL_HIGH,
 				    ticker_id_scan, ticker_op_stop_scan_cb,
-				    (void *)(uint32_t)ticker_id_scan);
-	ticker_op_stop_scan_cb(ticker_status, (void *)(uint32_t)ticker_id_scan);
+				    (void *)(u32_t)ticker_id_scan);
+	ticker_op_stop_scan_cb(ticker_status, (void *)(u32_t)ticker_id_scan);
 
 	/* Scanner stop can expire while here in this ISR.
 	 * Deferred attempt to stop can fail as it would have
