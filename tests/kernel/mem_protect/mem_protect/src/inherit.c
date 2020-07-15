@@ -28,6 +28,7 @@ K_MUTEX_DEFINE(inherit_mutex);
 K_TIMER_DEFINE(inherit_timer, dummy_start, dummy_end);
 K_MSGQ_DEFINE(inherit_msgq, MSG_Q_SIZE, MSG_Q_MAX_NUM_MSGS, MSG_Q_ALIGN);
 struct k_thread test_1_tid, parent_thr, child_thr;
+k_tid_t parent_tid;
 
 uint8_t MEM_DOMAIN_ALIGNMENT inherit_buf[MEM_REGION_ALLOC]; /* for mem domain */
 
@@ -59,8 +60,14 @@ static void access_test(void)
 
 static void test_thread_1_for_user(void *p1, void *p2, void *p3)
 {
+	/* check that child thread inherited permissions */
 	access_test();
-	ztest_test_pass();
+
+	set_fault_valid(true);
+
+	/* Check that child thread can't access parent thread object*/
+	/* Kernel fault in that place will happen */
+	k_thread_priority_get(parent_tid);
 }
 
 static void test_thread_1_for_SU(void *p1, void *p2, void *p3)
@@ -74,8 +81,18 @@ static void test_thread_1_for_SU(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief Test object permission inheritance
+ * @brief Test object permission inheritance except of the parent thread object
  *
+ * @details
+ * - To the parent current thread grant permissions on kernel objects.
+ * - Create a child thread and check that it inherited permissions on that
+ *   kernel objects.
+ * - Then check child thread can't access to the parent thread object using API
+ *   command k_thread_priority_get()
+ * - At the same moment that test verifies that child thread was granted
+ *   permission on a kernel objects. That meanis child user thread caller
+ *   already has permission on the thread objects being granted.
+
  * @ingroup kernel_memprotect_tests
  *
  * @see k_mem_domain_init(), k_mem_domain_add_thread(),
@@ -88,9 +105,10 @@ void test_permission_inheritance(void *p1, void *p2, void *p3)
 			  inherit_memory_partition_array);
 
 	k_mem_domain_remove_thread(k_current_get());
-	k_mem_domain_add_thread(&inherit_mem_domain, k_current_get());
+	parent_tid = k_current_get();
+	k_mem_domain_add_thread(&inherit_mem_domain, parent_tid);
 
-	k_thread_access_grant(k_current_get(),
+	k_thread_access_grant(parent_tid,
 			      &inherit_sem,
 			      &inherit_mutex,
 			      &inherit_timer,

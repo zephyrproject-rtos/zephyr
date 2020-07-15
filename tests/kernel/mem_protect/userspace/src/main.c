@@ -507,6 +507,10 @@ static void test_write_other_stack(void)
 /**
  * @brief Test to revoke access to kobject without permission
  *
+ * @details User thread can only revoke their own access to an object.
+ * In that test user thread to revokes access to unathorized object, as a result
+ * the system will assert.
+ *
  * @ingroup kernel_memprotect_tests
  */
 static void test_revoke_noperms_object(void)

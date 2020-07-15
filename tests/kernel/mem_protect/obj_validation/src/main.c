@@ -67,7 +67,13 @@ void object_permission_checks(struct k_sem *sem, bool skip_init)
 }
 
 /**
- * @brief Tests to verify object permission
+ * @brief Test to verify object permission
+ *
+ * @details
+ * - The kernel must be able to associate kernel object memory addresses
+ *   with whether the calling thread has access to that object, the object is
+ *   of the expected type, and the object is of the expected init state.
+ * - Test support freeing kernel objects allocated at runtime manually.
  *
  * @ingroup kernel_memprotect_tests
  *
