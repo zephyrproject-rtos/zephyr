@@ -1380,7 +1380,7 @@ static int cmd_select(const struct shell *shell, size_t argc, char *argv[])
 		return err;
 	}
 
-	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &addr);
+	conn = bt_conn_lookup_addr_le(selected_id, &addr);
 	if (!conn) {
 		shell_error(shell, "No matching connection found");
 		return -ENOEXEC;
