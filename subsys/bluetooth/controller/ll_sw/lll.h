@@ -247,14 +247,14 @@ struct node_rx_ftr {
 /* Header of node_rx_pdu */
 struct node_rx_hdr {
 	union {
-		void        *next;
-		memq_link_t *link;
-		uint8_t        ack_last;
+		void        *next;    /* For slist, by hci module */
+		memq_link_t *link;    /* Supply memq_link from ULL to LLL */
+		uint8_t     ack_last; /* Tx ack queue index at this node rx */
 	};
 
-	enum node_rx_type   type;
-	uint8_t                user_meta; /* User metadata */
-	uint16_t               handle;
+	enum node_rx_type type;
+	uint8_t           user_meta; /* User metadata */
+	uint16_t          handle;    /* State/Role instance handle */
 
 	union {
 #if defined(CONFIG_BT_CTLR_RX_PDU_META)
