@@ -7,6 +7,7 @@
 /* Temporary data structure to avoid change ll_conn/lll_conn to much
  * and having to update all the dependencies
  */
+
 struct ull_cp_conn {
 	struct ull_tx_q tx_q;
 
@@ -56,6 +57,8 @@ struct ull_cp_conn {
 	} llcp;
 
 	struct mocked_lll_conn {
+		uint16_t handle;
+
 		/* Encryption State (temporary) */
 		uint8_t enc_tx;
 		uint8_t enc_rx;
