@@ -219,8 +219,15 @@ enum node_rx_type {
 
 /* Footer of node_rx_hdr */
 struct node_rx_ftr {
-	void  *param;
-	void  *extra;
+	union {
+		void *param;
+		struct {
+			uint8_t  status;
+			uint8_t  num_events;
+			uint16_t conn_handle;
+		} param_adv_term;
+	};
+	void     *extra;
 	uint32_t ticks_anchor;
 	uint32_t radio_end_us;
 	uint8_t  rssi;
