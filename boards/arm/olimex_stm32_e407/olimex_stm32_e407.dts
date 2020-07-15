@@ -72,3 +72,7 @@ usb_otg1: &usbotg_fs {
 usb_otg2: &usbotg_hs {
 	status = "okay";
 };
+
+&mac {
+	status = "okay";
+};

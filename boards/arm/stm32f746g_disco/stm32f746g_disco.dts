@@ -94,3 +94,7 @@
 	status = "okay";
 	cd-gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
 };
+
+&mac {
+	status = "okay";
+};
