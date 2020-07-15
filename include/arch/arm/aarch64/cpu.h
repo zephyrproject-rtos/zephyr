@@ -173,4 +173,5 @@
 
 #define GET_MPIDR()		read_sysreg(mpidr_el1)
 #define MPIDR_TO_CORE(mpidr)	MPIDR_AFFLVL(mpidr, 0)
+#define GET_CPUID		MPIDR_TO_CORE(GET_MPIDR())
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_CPU_H_ */

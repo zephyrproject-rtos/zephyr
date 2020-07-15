@@ -31,4 +31,7 @@
 
 #define FPEXC_EN	(1 << 30)
 
+#define MPIDR_TO_CORE(X)	((X) & 0x3)
+#define GET_CPUID		MPIDR_TO_CORE(__get_MPIDR())
+
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_CPU_H_ */
