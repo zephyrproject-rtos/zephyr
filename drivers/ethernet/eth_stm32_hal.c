@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT st_stm32_ethernet
+
 #define LOG_MODULE_NAME eth_stm32_hal
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
 
@@ -49,11 +51,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define ETH_MEDIA_INTERFACE_MII		HAL_ETH_MII_MODE
 #define ETH_MEDIA_INTERFACE_RMII	HAL_ETH_RMII_MODE
-
-#define LL_AHB1_GRP1_PERIPH_ETHMAC	LL_AHB1_GRP1_PERIPH_ETH1MAC
-#define LL_AHB1_GRP1_PERIPH_ETHMACTX	LL_AHB1_GRP1_PERIPH_ETH1TX
-#define LL_AHB1_GRP1_PERIPH_ETHMACRX	LL_AHB1_GRP1_PERIPH_ETH1RX
-#define LL_AHB1_GRP1_PERIPH_ETHMACPTP	LL_AHB1_GRP1_PERIPH_ETH1MAC
 
 #define ETH_DMA_TRANSMIT_TIMEOUT	20U  /* transmit timeout in sys tiks */
 
@@ -534,8 +531,10 @@ static int eth_initialize(struct device *dev)
 		(clock_control_subsys_t *)&cfg->pclken_tx);
 	ret |= clock_control_on(dev_data->clock,
 		(clock_control_subsys_t *)&cfg->pclken_rx);
+#if !defined(CONFIG_SOC_SERIES_STM32H7X)
 	ret |= clock_control_on(dev_data->clock,
 		(clock_control_subsys_t *)&cfg->pclken_ptp);
+#endif /* !defined(CONFIG_SOC_SERIES_STM32H7X) */
 
 	if (ret) {
 		LOG_ERR("Failed to enable ethernet clock");
@@ -730,26 +729,28 @@ DEVICE_DECLARE(eth0_stm32_hal);
 
 static void eth0_irq_config(void)
 {
-	IRQ_CONNECT(ETH_IRQn, CONFIG_ETH_STM32_HAL_IRQ_PRI, eth_isr,
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), eth_isr,
 		    DEVICE_GET(eth0_stm32_hal), 0);
-	irq_enable(ETH_IRQn);
+	irq_enable(DT_INST_IRQN(0));
 }
 
 static const struct eth_stm32_hal_dev_cfg eth0_config = {
 	.config_func = eth0_irq_config,
-	.pclken   =   { .bus = STM32_CLOCK_BUS_AHB1,
-			.enr = LL_AHB1_GRP1_PERIPH_ETHMAC },
-	.pclken_tx =  { .bus = STM32_CLOCK_BUS_AHB1,
-			.enr = LL_AHB1_GRP1_PERIPH_ETHMACTX },
-	.pclken_rx =  { .bus = STM32_CLOCK_BUS_AHB1,
-			.enr = LL_AHB1_GRP1_PERIPH_ETHMACRX },
-	.pclken_ptp = { .bus = STM32_CLOCK_BUS_AHB1,
-			.enr = LL_AHB1_GRP1_PERIPH_ETHMACPTP },
+	.pclken = {.bus = DT_INST_CLOCKS_CELL_BY_NAME(0, stmmaceth, bus),
+		   .enr = DT_INST_CLOCKS_CELL_BY_NAME(0, stmmaceth, bits)},
+	.pclken_tx = {.bus = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk_tx, bus),
+		      .enr = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk_tx, bits)},
+	.pclken_rx = {.bus = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk_rx, bus),
+		      .enr = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk_rx, bits)},
+#if !defined(CONFIG_SOC_SERIES_STM32H7X)
+	.pclken_ptp = {.bus = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk_ptp, bus),
+		       .enr = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk_ptp, bits)},
+#endif /* !CONFIG_SOC_SERIES_STM32H7X */
 };
 
 static struct eth_stm32_hal_dev_data eth0_data = {
 	.heth = {
-		.Instance = ETH,
+		.Instance = (ETH_TypeDef *)DT_INST_REG_ADDR(0),
 		.Init = {
 #if !defined(CONFIG_SOC_SERIES_STM32H7X)
 			.AutoNegotiation = ETH_AUTONEGOTIATION_ENABLE,
@@ -776,6 +777,6 @@ static struct eth_stm32_hal_dev_data eth0_data = {
 	},
 };
 
-ETH_NET_DEVICE_INIT(eth0_stm32_hal, CONFIG_ETH_STM32_HAL_NAME, eth_initialize,
+ETH_NET_DEVICE_INIT(eth0_stm32_hal, DT_INST_LABEL(0), eth_initialize,
 		    device_pm_control_nop, &eth0_data, &eth0_config,
 		    CONFIG_ETH_INIT_PRIORITY, &eth_api, ETH_STM32_HAL_MTU);

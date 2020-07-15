@@ -26,7 +26,9 @@ struct eth_stm32_hal_dev_cfg {
 	struct stm32_pclken pclken;
 	struct stm32_pclken pclken_rx;
 	struct stm32_pclken pclken_tx;
+#if !defined(CONFIG_SOC_SERIES_STM32H7X)
 	struct stm32_pclken pclken_ptp;
+#endif /* !defined(CONFIG_SOC_SERIES_STM32H7X) */
 };
 
 /* Device run time data */
