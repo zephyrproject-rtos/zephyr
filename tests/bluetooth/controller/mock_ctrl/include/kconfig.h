@@ -9,15 +9,46 @@
  * Common Kconfig settings
  */
 
+#ifndef CONFIG_BT_LL_SW
+#define CONFIG_BT_LL_SW y
+#endif
+
 #define CONFIG_BT_CONN
-#define CONFIG_BT_MAX_CONN 4
+#define CONFIG_BT_MAX_CONN 2
+
+/* ensure that proper configuration is set */
+
+#ifndef CONFIG_BT_PERIPHERAL
+#define CONFIG_BT_PERIPHERAL y
+#endif
+#ifndef CONFIG_BT_CENTRAL
+#define CONFIG_BT_CENTRAL y
+#endif
 
 #ifndef CONFIG_BT_CTLR_PHY
 #define CONFIG_BT_CTLR_PHY 1
 #endif
+#ifndef CONFIG_BT_CTLR_PHY_2M
+#define CONFIG_BT_CTLR_PHY_2M y
+#endif
+
+#ifndef CONFIG_BT_CTLR_DATA_LENGTH
+#define CONFIG_BT_CTLR_DATA_LENGTH y
+#endif
+#ifndef CONFIG_BT_CTLR_DATA_LENGTH_MAX
+#define CONFIG_BT_CTLR_DATA_LENGTH_MAX 251
+#endif
 
 #ifndef CONFIG_BT_CTLR_LE_ENC
-#define CONFIG_BT_CTLR_LE_ENC 1
+#define CONFIG_BT_CTLR_LE_ENC y
+#endif
+
+#ifndef CONFIG_BT_CTLR_LE_PING
+#define CONFIG_BT_CTLR_LE_PING y
+#endif
+
+#ifndef CONFIG_BT_CTLR_CONN_RSSI
+#define CONFIG_BT_CTLR_CONN_RSSI y
 #endif
 
 /* Kconfig Cheats */
