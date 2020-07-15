@@ -162,10 +162,10 @@ void test_feature_exchange_mas_rem(void)
 		0x0 };
 	uint64_t exp_featureset[] = {
 		DEFAULT_FEATURE,
+		DEFAULT_FEATURE & LL_FEAT_BIT_MASK_VALID,
+		DEFAULT_FEATURE & EXPECTED_FEAT_EXCH_VALID,
 		DEFAULT_FEATURE,
-		DEFAULT_FEATURE,
-		DEFAULT_FEATURE,
-		0x0 };
+		DEFAULT_FEATURE & 0xFFFFFFFFFFFFFF00 };
 	int feat_to_test = ARRAY_SIZE(set_featureset);
 	struct node_tx *tx;
 
@@ -220,11 +220,11 @@ void test_feature_exchange_mas_rem_2(void)
 		0x0 };
 	uint64_t exp_featureset[] = {
 		DEFAULT_FEATURE,
+		DEFAULT_FEATURE & LL_FEAT_BIT_MASK_VALID,
+		DEFAULT_FEATURE & EXPECTED_FEAT_EXCH_VALID,
 		DEFAULT_FEATURE,
-		DEFAULT_FEATURE,
-		DEFAULT_FEATURE,
-		0x0 };
-	uint64_t ut_featureset[] = {
+		DEFAULT_FEATURE & 0xFFFFFFFFFFFFFF00 };
+	u64_t ut_featureset[] = {
 		DEFAULT_FEATURE,
 		DEFAULT_FEATURE,
 		DEFAULT_FEATURE,
@@ -232,10 +232,10 @@ void test_feature_exchange_mas_rem_2(void)
 		DEFAULT_FEATURE };
 	uint64_t ut_exp_featureset[] = {
 		DEFAULT_FEATURE,
+		DEFAULT_FEATURE & LL_FEAT_BIT_MASK_VALID,
+		DEFAULT_FEATURE & EXPECTED_FEAT_EXCH_VALID,
 		DEFAULT_FEATURE,
-		DEFAULT_FEATURE,
-		DEFAULT_FEATURE,
-		0x00 };
+		DEFAULT_FEATURE & 0xFFFFFFFFFFFFFF00 };
 
 	int feat_to_test = ARRAY_SIZE(set_featureset);
 	uint64_t err;
@@ -384,6 +384,8 @@ void test_feature_exchange_sla_loc_unknown_rsp(void)
 }
 
 
+void test_hci_main(void);
+
 void test_main(void)
 {
 	ztest_test_suite(feature_exchange_master,
@@ -404,4 +406,6 @@ void test_main(void)
 	ztest_run_test_suite(feature_exchange_master);
 	ztest_run_test_suite(feature_exchange_slave);
 	ztest_run_test_suite(feature_exchange_unknown);
+
+	test_hci_main();
 }
