@@ -1397,34 +1397,30 @@ void ull_adv_done(struct node_rx_event_done *done)
 {
 	struct lll_adv *lll = (void *)HDR_ULL2LLL(done->param);
 	struct ll_adv_set *adv = (void *)HDR_LLL2EVT(lll);
+	struct node_rx_hdr *rx_hdr;
 	uint8_t handle;
 	uint32_t ret;
 
 	if (adv->max_events && (adv->event_counter >= adv->max_events)) {
 		adv->max_events = 0;
 
-		lll->node_rx_adv_term->rx_ftr.extra =
-			(void *)(((uint32_t)adv->event_counter & 0xff) |
-				 (BT_HCI_ERR_LIMIT_REACHED << 8));
-
-		goto ext_adv_disable;
-	}
-
-	if (adv->ticks_remain_duration &&
-	    (adv->ticks_remain_duration <
-	     HAL_TICKER_US_TO_TICKS((uint64_t)adv->interval * 625U))) {
+		rx_hdr = (void *)lll->node_rx_adv_term;
+		rx_hdr->rx_ftr.param_adv_term.status = BT_HCI_ERR_LIMIT_REACHED;
+	} else if (adv->ticks_remain_duration &&
+		   (adv->ticks_remain_duration <
+		    HAL_TICKER_US_TO_TICKS((uint64_t)adv->interval * 625U))) {
 		adv->ticks_remain_duration = 0;
 
-		lll->node_rx_adv_term->rx_ftr.extra =
-			(void *)(((uint32_t)adv->event_counter & 0xff) |
-				 (BT_HCI_ERR_ADV_TIMEOUT << 8));
-
-		goto ext_adv_disable;
+		rx_hdr = (void *)lll->node_rx_adv_term;
+		rx_hdr->rx_ftr.param_adv_term.status = BT_HCI_ERR_ADV_TIMEOUT;
+	} else {
+		return;
 	}
 
-	return;
+	rx_hdr->type = NODE_RX_TYPE_EXT_ADV_TERMINATE;
+	rx_hdr->rx_ftr.param_adv_term.conn_handle = 0xffff;
+	rx_hdr->rx_ftr.param_adv_term.num_events = adv->event_counter;
 
-ext_adv_disable:
 	handle = ull_adv_handle_get(adv);
 	LL_ASSERT(handle < BT_CTLR_ADV_SET);
 
@@ -1704,8 +1700,6 @@ static void ext_disabled_cb(void *param)
 	if (!rx_hdr) {
 		return;
 	}
-
-	rx_hdr->type = NODE_RX_TYPE_EXT_ADV_TERMINATE;
 
 	/* NOTE: parameters are already populated on disable, just enqueue here
 	 */

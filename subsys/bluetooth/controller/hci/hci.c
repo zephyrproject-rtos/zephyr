@@ -3604,12 +3604,12 @@ static void le_adv_ext_terminate(struct pdu_data *pdu_data,
 	}
 
 	sep = meta_evt(buf, BT_HCI_EVT_LE_ADV_SET_TERMINATED, sizeof(*sep));
-	sep->status = ((uint32_t)node_rx->hdr.rx_ftr.extra >> 8) & 0xff;
+	sep->status = node_rx->hdr.rx_ftr.param_adv_term.status;
 	sep->adv_handle = node_rx->hdr.handle & 0xff;
 	sep->conn_handle =
-		sys_cpu_to_le16((uint32_t)node_rx->hdr.rx_ftr.param & 0xffff);
+		sys_cpu_to_le16(node_rx->hdr.rx_ftr.param_adv_term.conn_handle);
 	sep->num_completed_ext_adv_evts =
-		(uint32_t)node_rx->hdr.rx_ftr.extra & 0xff;
+		node_rx->hdr.rx_ftr.param_adv_term.num_events;
 }
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */

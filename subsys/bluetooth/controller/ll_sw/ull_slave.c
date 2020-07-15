@@ -227,8 +227,9 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 
 		rx->handle = ull_adv_handle_get(adv);
 		rx->type = NODE_RX_TYPE_EXT_ADV_TERMINATE;
-		rx->rx_ftr.param = (void *)(uint32_t)lll->handle;
-		rx->rx_ftr.extra = NULL;
+		rx->rx_ftr.param_adv_term.status = 0U;
+		rx->rx_ftr.param_adv_term.conn_handle = lll->handle;
+		rx->rx_ftr.param_adv_term.num_events = 0U;
 	}
 #endif
 
