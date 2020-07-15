@@ -572,12 +572,6 @@ cleanup_engine:
 	return ret;
 }
 
-static int sm_bootstrap_reg_done(void)
-{
-	LOG_INF("Bootstrap registration done.");
-	return 0;
-}
-
 void engine_bootstrap_finish(void)
 {
 	LOG_INF("Bootstrap data transfer done!");
@@ -854,7 +848,6 @@ static void lwm2m_rd_client_service(struct k_work *work)
 			break;
 
 		case ENGINE_BOOTSTRAP_REG_DONE:
-			sm_bootstrap_reg_done();
 			/* wait for transfer done */
 			break;
 
