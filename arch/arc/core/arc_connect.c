@@ -26,8 +26,17 @@ static struct k_spinlock arc_connect_spinlock;
 /* Generate an inter-core interrupt to the target core */
 void z_arc_connect_ici_generate(uint32_t core)
 {
+	uint32_t ret = 0;
+
 	LOCKED(&arc_connect_spinlock) {
-		z_arc_connect_cmd(ARC_CONNECT_CMD_INTRPT_GENERATE_IRQ, core);
+		z_arc_connect_cmd(ARC_CONNECT_CMD_INTRPT_READ_STATUS, core);
+		ret = z_arc_connect_cmd_readback();
+
+		/* raise an ici when there is no previous ici int */
+		if ((ret & 0x1) == 0x0) {
+			z_arc_connect_cmd(ARC_CONNECT_CMD_INTRPT_GENERATE_IRQ,
+					  core);
+		}
 	}
 }
 
