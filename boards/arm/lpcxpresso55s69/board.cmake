@@ -8,6 +8,8 @@
 ## DAP Link implementation in pyocd is underway,
 ## until then jlink can be used or copy image to storage
 
+set(TFM_TARGET_PLATFORM "LPC55S69")
+
 if(CONFIG_BOARD_LPCXPRESSO55S69_CPU0)
 board_runner_args(jlink "--device=LPC55S69_core0")
 endif()
