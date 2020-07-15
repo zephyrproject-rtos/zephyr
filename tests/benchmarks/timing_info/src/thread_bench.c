@@ -23,8 +23,8 @@ extern uint32_t arch_timing_value_swap_end;
 extern uint64_t arch_timing_value_swap_temp;
 extern uint64_t arch_timing_value_swap_common;
 
-volatile uint64_t thread_abort_end_time;
-volatile uint64_t thread_abort_start_time;
+volatile uint64_t thread_abort_current_end_time;
+volatile uint64_t thread_abort_current_start_time;
 
 /* Thread suspend*/
 volatile uint64_t thread_suspend_start_time;
@@ -101,7 +101,7 @@ void thread_swap_test(void *p1, void *p2, void *p3)
 {
 	arch_timing_value_swap_end = 1U;
 	TIMING_INFO_PRE_READ();
-	thread_abort_start_time = TIMING_INFO_OS_GET_TIME();
+	thread_abort_current_start_time = TIMING_INFO_OS_GET_TIME();
 	k_thread_abort(_current);
 }
 
@@ -121,8 +121,8 @@ void system_thread_bench(void)
 	uint64_t thread_create_end_time;
 
 	/*Thread cancel*/
-	uint64_t thread_cancel_start_time;
-	uint64_t thread_cancel_end_time;
+	uint64_t thread_abort_nonrun_start_time;
+	uint64_t thread_abort_nonrun_end_time;
 
 	/* to measure context switch time */
 	k_thread_create(&my_thread_0, my_stack_area_0, STACK_SIZE,
@@ -131,7 +131,7 @@ void system_thread_bench(void)
 			-1 /*priority*/, 0, K_NO_WAIT);
 
 	k_sleep(K_MSEC(1));
-	thread_abort_end_time = (arch_timing_value_swap_common);
+	thread_abort_current_end_time = (arch_timing_value_swap_common);
 	arch_timing_swap_end = arch_timing_value_swap_common;
 #if defined(CONFIG_X86)
 	arch_timing_swap_start = arch_timing_value_swap_temp;
@@ -158,17 +158,17 @@ void system_thread_bench(void)
 					 STACK_SIZE,
 					 thread_swap_test,
 					 NULL, NULL, NULL,
-					 5 /*priority*/, 0, K_MSEC(10));
+					 5 /*priority*/, 0, K_FOREVER);
 	TIMING_INFO_PRE_READ();
 	thread_create_end_time = TIMING_INFO_OS_GET_TIME();
 
-	/* thread Termination */
+	/* aborting a non-running thread */
 	TIMING_INFO_PRE_READ();
-	thread_cancel_start_time = TIMING_INFO_OS_GET_TIME();
+	thread_abort_nonrun_start_time = TIMING_INFO_OS_GET_TIME();
 	k_thread_abort(my_tid);
 
 	TIMING_INFO_PRE_READ();
-	thread_cancel_end_time = TIMING_INFO_OS_GET_TIME();
+	thread_abort_nonrun_end_time = TIMING_INFO_OS_GET_TIME();
 
 	/* Thread suspend */
 	k_tid_t sus_res_tid = k_thread_create(&my_thread, my_stack_area,
@@ -208,12 +208,12 @@ void system_thread_bench(void)
 	PRINT_STATS("Thread creation", total_cycles);
 
 	/* thread cancel */
-	total_cycles = CALCULATE_CYCLES(thread, cancel);
-	PRINT_STATS("Thread cancel", total_cycles);
+	total_cycles = CALCULATE_CYCLES(thread, abort_nonrun);
+	PRINT_STATS("Thread abort (non-running)", total_cycles);
 
 	/* thread abort */
-	total_cycles = CALCULATE_CYCLES(thread, abort);
-	PRINT_STATS("Thread abort", total_cycles);
+	total_cycles = CALCULATE_CYCLES(thread, abort_current);
+	PRINT_STATS("Thread abort (_current)", total_cycles);
 
 	/* thread suspend */
 	total_cycles = CALCULATE_CYCLES(thread, suspend);
