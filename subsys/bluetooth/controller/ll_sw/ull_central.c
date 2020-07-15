@@ -748,7 +748,6 @@ void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	uint32_t ticker_status;
 	struct node_rx_cc *cc;
 	struct ll_conn *conn;
-	memq_link_t *link;
 	uint8_t chan_sel;
 
 	/* Get reference to Tx-ed CONNECT_IND PDU */
@@ -853,6 +852,7 @@ void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 
 	ticks_slot_offset = MAX(conn->ull.ticks_active_to_start,
 				conn->ull.ticks_prepare_to_start);
+
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;
 	} else {
@@ -863,7 +863,7 @@ void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	conn_interval_us = lll->interval * CONN_INT_UNIT_US;
 	conn_offset_us = ftr->radio_end_us;
 	conn_offset_us += EVENT_TICKER_RES_MARGIN_US;
-
+	
 #if defined(CONFIG_BT_CTLR_PHY)
 	conn_offset_us -= lll_radio_tx_ready_delay_get(lll->phy_tx,
 						      lll->phy_flags);
