@@ -992,9 +992,9 @@ static void ccc_delayed_store(struct k_work *work)
 		}
 
 		if (bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+			ccc_store->conn_list[i] = NULL;
 			bt_gatt_store_ccc(conn->id, &conn->le.dst);
 			bt_conn_unref(conn);
-			ccc_store->conn_list[i] = NULL;
 		}
 	}
 }
