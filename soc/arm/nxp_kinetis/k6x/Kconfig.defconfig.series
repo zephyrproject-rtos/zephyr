@@ -19,6 +19,10 @@ config DMA_MCUX_EDMA
 	default y if HAS_MCUX_EDMA
 	depends on DMA
 
+config COUNTER_MCUX_PIT
+	default y if HAS_MCUX_PIT
+    depends on COUNTER
+
 source "soc/arm/nxp_kinetis/k6x/Kconfig.defconfig.mk*"
 
 endif # SOC_SERIES_KINETIS_K6X
