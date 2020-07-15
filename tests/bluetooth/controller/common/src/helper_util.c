@@ -112,8 +112,7 @@ void test_print_conn(struct ull_cp_conn *conn)
 }
 void test_setup(struct ull_cp_conn *conn)
 {
-	memset(conn, 0, sizeof(struct ull_cp_conn));
-		/* Initialize the upper test rx queue */
+	/* Initialize the upper test rx queue */
 	sys_slist_init(&ut_rx_q);
 
 	/* Initialize the lower tester tx queue */
@@ -128,6 +127,7 @@ void test_setup(struct ull_cp_conn *conn)
 	/* Initialize the connection object */
 	ull_cp_conn_init(conn);
 
+	conn->lll.event_counter = 0;
 	event_active = 0;
 	lazy = 0;
 }
