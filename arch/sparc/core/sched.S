@@ -159,7 +159,7 @@ arch_switch:
 	/* 4) Get new thread */
 	/*    FIXME: does anyone have better idea to get new thread's struct? */
 	set _kernel, %g1
-	ld [%g1 + ___kernel_t_current_OFFSET], %g7
+	ld [%g1 + ___cpu_t_current_OFFSET], %g7
 
 	/* 5) Load the new thread's context */
 	/*    We have new thread in %g7 */

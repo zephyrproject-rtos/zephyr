@@ -12,9 +12,9 @@
 #define MIN_IRQ_NUMBER (1)
 #define MAX_IRQ_NUMBER (15)
 
-void arch_irq_enable(u32_t irq)
+void arch_irq_enable(uint32_t irq)
 {
-	u32_t val;
+	uint32_t val;
 
 	if ((irq < MIN_IRQ_NUMBER) || (irq > MAX_IRQ_NUMBER)) {
 		printk("Invalid irq number: %d\n", irq);
@@ -27,9 +27,9 @@ void arch_irq_enable(u32_t irq)
 	sys_write32(val, LEON2_INTR_MASK);
 }
 
-void arch_irq_disable(u32_t irq)
+void arch_irq_disable(uint32_t irq)
 {
-	u32_t val;
+	uint32_t val;
 
 	if ((irq < MIN_IRQ_NUMBER) || (irq > MAX_IRQ_NUMBER)) {
 		printk("Invalid irq number: %d\n", irq);

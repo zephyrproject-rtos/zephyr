@@ -34,27 +34,27 @@ extern "C" {
  *
  */
 struct __esf {
-	u32_t pc;
-	u32_t npc;
-	u32_t psr;
-	u32_t y;
+	uint32_t pc;
+	uint32_t npc;
+	uint32_t psr;
+	uint32_t y;
 
-	u32_t o0;
-	u32_t o1;
-	u32_t o2;
-	u32_t o3;
-	u32_t o4;
-	u32_t o5;
+	uint32_t o0;
+	uint32_t o1;
+	uint32_t o2;
+	uint32_t o3;
+	uint32_t o4;
+	uint32_t o5;
 	/* %sp is stored on switch_handle */
-	u32_t o7;
+	uint32_t o7;
 
-	u32_t g1;
-	u32_t g2;
-	u32_t g3;
-	u32_t g4;
-	u32_t g5;
-	u32_t g6;
-	u32_t g7;
+	uint32_t g1;
+	uint32_t g2;
+	uint32_t g3;
+	uint32_t g4;
+	uint32_t g5;
+	uint32_t g6;
+	uint32_t g7;
 };
 
 typedef struct __esf z_arch_esf_t;

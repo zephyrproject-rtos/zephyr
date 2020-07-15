@@ -19,7 +19,7 @@ GTEXT(_isr_wrapper)
 GTEXT(nmi_handler)
 GTEXT(fault_handler)
 
-GDATA(_interrupt_stack)
+GDATA(z_interrupt_stacks)
 
 #define RESET_ENTRY(handler)   	 \
 	ba handler;                 \
@@ -55,7 +55,7 @@ GDATA(_interrupt_stack)
 	nop;
 
 /* trap not defined. dummy entry */
-#define EMPTY()                 \
+#define EMPTY_TRAP_ENTRY()          \
 	ta 0;                       \
 	nop;                        \
 	nop;                        \
@@ -93,13 +93,13 @@ FAULT_TRAP_ENTRY()               /* 09: data miss exception */
 FAULT_TRAP_ENTRY()               /* 0a: tagged inst overflow */
 FAULT_TRAP_ENTRY()               /* 0b: watchpoint detected */
 
-EMPTY()                          /* 0c: */
-EMPTY()                          /* 0d: */
-EMPTY()                          /* 0e: */
-EMPTY()                          /* 0f: */
+EMPTY_TRAP_ENTRY()               /* 0c: */
+EMPTY_TRAP_ENTRY()               /* 0d: */
+EMPTY_TRAP_ENTRY()               /* 0e: */
+EMPTY_TRAP_ENTRY()               /* 0f: */
 
 /* 0x10 - 0x1f */
-EMPTY()                          /* 10: */
+EMPTY_TRAP_ENTRY()               /* 10: */
 IRQ_ENTRY(_isr_wrapper, 1)       /* 11: irq level 1 */
 IRQ_ENTRY(_isr_wrapper, 2)       /* 12: irq level 2 */
 IRQ_ENTRY(_isr_wrapper, 3)       /* 13: irq level 3 */
@@ -122,13 +122,13 @@ TRAP_ENTRY(nmi_handler)          /* 1f: irq level 15 */
 /* 0x20 - 0x2f */
 FAULT_TRAP_ENTRY()               /* 20: r reg access err */
 FAULT_TRAP_ENTRY()               /* 21: inst access err */
-EMPTY()                          /* 22: */
-EMPTY()                          /* 23: */
+EMPTY_TRAP_ENTRY()               /* 22: */
+EMPTY_TRAP_ENTRY()               /* 23: */
 
 FAULT_TRAP_ENTRY()               /* 24: co-processor disabled */
 FAULT_TRAP_ENTRY()               /* 25: unimplemented flush */
-EMPTY()                          /* 26: */
-EMPTY()                          /* 27: */
+EMPTY_TRAP_ENTRY()               /* 26: */
+EMPTY_TRAP_ENTRY()               /* 27: */
 
 FAULT_TRAP_ENTRY()               /* 28: co-processor exception */
 FAULT_TRAP_ENTRY()               /* 29: data access err */
@@ -137,35 +137,35 @@ FAULT_TRAP_ENTRY()               /* 2b: data store err */
 
 FAULT_TRAP_ENTRY()               /* 2c: data access mmu miss */
 FAULT_TRAP_ENTRY()               /* 2d: */
-EMPTY()                          /* 2e: */
-EMPTY()                          /* 2f: */
+EMPTY_TRAP_ENTRY()               /* 2e: */
+EMPTY_TRAP_ENTRY()               /* 2f: */
 
 /* 0x30 - 0x3f */
-EMPTY() EMPTY() EMPTY() EMPTY()
-EMPTY() EMPTY() EMPTY() EMPTY()
-EMPTY() EMPTY() EMPTY() EMPTY()
+EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY()
+EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY()
+EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY()
 /* 3c: instruction_access_mmu_miss */
-FAULT_TRAP_ENTRY()   EMPTY() EMPTY() EMPTY()
+FAULT_TRAP_ENTRY()   EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY()
 /* 0x40 - 0x4f */
-EMPTY() EMPTY() EMPTY() EMPTY()
-EMPTY() EMPTY() EMPTY() EMPTY()
-EMPTY() EMPTY() EMPTY() EMPTY()
-EMPTY() EMPTY() EMPTY() EMPTY()
+EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY()
+EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY()
+EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY()
+EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY()
 /* 0x50 - 0x5f */
-EMPTY() EMPTY() EMPTY() EMPTY()
-EMPTY() EMPTY() EMPTY() EMPTY()
-EMPTY() EMPTY() EMPTY() EMPTY()
-EMPTY() EMPTY() EMPTY() EMPTY()
+EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY()
+EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY()
+EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY()
+EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY()
 /* 0x60 - 0x6f */
-EMPTY() EMPTY() EMPTY() EMPTY()
-EMPTY() EMPTY() EMPTY() EMPTY()
-EMPTY() EMPTY() EMPTY() EMPTY()
-EMPTY() EMPTY() EMPTY() EMPTY()
+EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY()
+EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY()
+EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY()
+EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY()
 /* 0x70 - 0x7f */
-EMPTY() EMPTY() EMPTY() EMPTY()
-EMPTY() EMPTY() EMPTY() EMPTY()
-EMPTY() EMPTY() EMPTY() EMPTY()
-EMPTY() EMPTY() EMPTY() EMPTY()
+EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY()
+EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY()
+EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY()
+EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY() EMPTY_TRAP_ENTRY()
 /* 0x80 - 0x8f */
 SOFT_TRAP_ENTRY() SOFT_TRAP_ENTRY() SOFT_TRAP_ENTRY() SOFT_TRAP_ENTRY()
 SOFT_TRAP_ENTRY() SOFT_TRAP_ENTRY() SOFT_TRAP_ENTRY() SOFT_TRAP_ENTRY()
@@ -241,14 +241,14 @@ SECTION_FUNC(text, reset_handler)
 	nop                     /* We assume three delay instructions */
 	nop
 
-	/* Initialize the stack pointer.  We use _interrupt_stack for
+	/* Initialize the stack pointer.  We use z_interrupt_stacks for
 	 * kernel initialization.  The stack starts at
-	 * _interrupt_stack + CONFIG_ISR_STACK_SIZE.  Because "add"
+	 * z_interrupt_stacks + CONFIG_ISR_STACK_SIZE.  Because "add"
 	 * instruction can only take simm13, we load both the address
-	 * of _interrupt_stack and the size of it on registers, then
+	 * of z_interrupt_stacks and the size of it on registers, then
 	 * add them together.  We first initialize %fp here and then
 	 * initialize %sp later. */
-	set _interrupt_stack, %g1       /* Load _interrut_stack to %g1 */
+	set z_interrupt_stacks, %g1       /* Load _interrut_stack to %g1 */
 	set CONFIG_ISR_STACK_SIZE, %g2  /* Load stack size */
 	add %g1, %g2, %fp               /* Add them to calculate the end of */
 					/* the stack as %fp */
@@ -269,8 +269,8 @@ fill_aa:
 	/* %sp must be aligned to double word.
 	 * __STD_STACK_FRAME_SIZEOF is aligned to 8 bytes.  Thus, need
 	 * to make sure %fp is aligned. */
-	andn %fp, STACK_ALIGN_SIZE, %fp	/* Drop the LSB bits to round down to */
-					/* 8 bytes */
+	andn %fp, ARCH_STACK_PTR_ALIGN, %fp	/* Drop the LSB bits to round */
+						/* down to 8 bytes */
 
 	/* We must have at least 96 bytes of stack frame on the stack
 	 * _before_ calling a C function.  It is the storage area to

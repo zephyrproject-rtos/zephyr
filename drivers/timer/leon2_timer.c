@@ -40,7 +40,7 @@ uint32_t z_timer_cycle_get_32(void)
 }
 
 /* tickless kernel is not yet supported */
-u32_t z_clock_elapsed(void)
+uint32_t z_clock_elapsed(void)
 {
 	return 0;
 }

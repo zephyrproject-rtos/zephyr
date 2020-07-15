@@ -30,7 +30,7 @@ static void uart_leon2_poll_out(struct device *dev, uint8_t c)
 
 static int uart_leon2_poll_in(struct device *dev, uint8_t *c)
 {
-	u32_t stat;
+	uint32_t stat;
 
 	stat = sys_read32(LEON2_UART1_STAT);
 	if ((stat & STAT_DR) != 0) {

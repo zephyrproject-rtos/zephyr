@@ -36,13 +36,7 @@ extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
  */
 static ALWAYS_INLINE void arch_kernel_init(void)
 {
-	/* It's safe to set it here. Even though we use
-	 * _interrupt_stack for kernel initialization, we currently do
-	 * not enable Trap while in exception handler.  We do enable
-	 * it in interrupt handler, though.
-	 */
-	_kernel.irq_stack =
-		Z_THREAD_STACK_BUFFER(_interrupt_stack) + CONFIG_ISR_STACK_SIZE;
+
 }
 
 /* SPARC currently supports USE_SWITCH and USE_SWITCH only */
@@ -50,7 +44,7 @@ void arch_switch(void *switch_to, void **switched_from);
 
 static inline bool arch_is_in_isr(void)
 {
-	return _kernel.nested != 0U;
+	return _kernel.cpus[0].nested != 0U;
 }
 
 #endif /* _ASMLANGUAGE */

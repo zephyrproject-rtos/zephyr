@@ -43,10 +43,10 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		     void *arg2, void *arg3, int prio, unsigned int options)
 {
 	char *stack_memory = Z_THREAD_STACK_BUFFER(stack);
-	u32_t sp;
+	uint32_t sp;
 	struct __esf *context;
 
-	z_new_thread_init(thread, stack_memory, stack_size, prio, options);
+	z_new_thread_init(thread, stack_memory, stack_size);
 
 	/* Point to top of stack */
 	sp = STACK_ROUND_DOWN(stack_memory + stack_size);
@@ -58,14 +58,14 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	context = (struct __esf *)sp;
 
 	/* Create new thread context which starts from z_thread_entry*/
-	context->o0 = (u32_t)entry;
-	context->o1 = (u32_t)arg1;
-	context->o2 = (u32_t)arg2;
-	context->o3 = (u32_t)arg3;
+	context->o0 = (uint32_t)entry;
+	context->o1 = (uint32_t)arg1;
+	context->o2 = (uint32_t)arg2;
+	context->o3 = (uint32_t)arg3;
 
 	/* Create special registers */
-	context->pc = (u32_t)z_thread_entry;
-	context->npc = (u32_t)z_thread_entry + 4;
+	context->pc = (uint32_t)z_thread_entry;
+	context->npc = (uint32_t)z_thread_entry + 4;
 	context->psr = THREAD_INIT_PSR;
 
 	/* Save context stack pointer */

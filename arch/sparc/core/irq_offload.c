@@ -21,7 +21,7 @@ void z_irq_do_offload(void)
 	offload_routine(offload_param);
 }
 
-void irq_offload(irq_offload_routine_t routine, void *parameter)
+void arch_irq_offload(irq_offload_routine_t routine, void *parameter)
 {
 	__ASSERT((z_sparc_get_psr() & PSR_ET) != 0,
 		 "%s called with trap disabled\n", __func__);

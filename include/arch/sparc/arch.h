@@ -32,7 +32,7 @@ extern "C" {
 #define STACK_ALIGN (0x100)
 
 /* CPU specific requirement for %sp alignment */
-#define STACK_ALIGN_SIZE 8
+#define ARCH_STACK_PTR_ALIGN 8
 
 #define PSR_ICC (0xf << 20)
 #define PSR_EC  BIT(13)
@@ -59,8 +59,8 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
-#define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN_SIZE)
-#define STACK_ROUND_DOWN(x) ROUND_DOWN(x, STACK_ALIGN_SIZE)
+#define STACK_ROUND_UP(x) ROUND_UP(x, ARCH_STACK_PTR_ALIGN)
+#define STACK_ROUND_DOWN(x) ROUND_DOWN(x, ARCH_STACK_PTR_ALIGN)
 
 static ALWAYS_INLINE unsigned int z_sparc_get_psr(void)
 {
@@ -102,8 +102,8 @@ static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 		: "memory");
 }
 
-void arch_irq_enable(u32_t irq);
-void arch_irq_disable(u32_t irq);
+void arch_irq_enable(uint32_t irq);
+void arch_irq_disable(uint32_t irq);
 
 void z_irq_spurious(void *unused);
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
@@ -121,9 +121,9 @@ static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 	return (key & PSR_PIL) == 0;
 }
 
-extern u32_t z_timer_cycle_get_32(void);
+extern uint32_t z_timer_cycle_get_32(void);
 
-static inline u32_t arch_k_cycle_get_32(void)
+static inline uint32_t arch_k_cycle_get_32(void)
 {
 	return z_timer_cycle_get_32();
 }

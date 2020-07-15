@@ -56,32 +56,32 @@ extern "C" {
  *
  */
 struct _standard_stack_frame {
-	u32_t l0;
-	u32_t l1;
-	u32_t l2;
-	u32_t l3;
-	u32_t l4;
-	u32_t l5;
-	u32_t l6;
-	u32_t l7;
+	uint32_t l0;
+	uint32_t l1;
+	uint32_t l2;
+	uint32_t l3;
+	uint32_t l4;
+	uint32_t l5;
+	uint32_t l6;
+	uint32_t l7;
 
-	u32_t i0;
-	u32_t i1;
-	u32_t i2;
-	u32_t i3;
-	u32_t i4;
-	u32_t i5;
-	u32_t i6;
-	u32_t i7;
+	uint32_t i0;
+	uint32_t i1;
+	uint32_t i2;
+	uint32_t i3;
+	uint32_t i4;
+	uint32_t i5;
+	uint32_t i6;
+	uint32_t i7;
 
-	u32_t hidden;
+	uint32_t hidden;
 
-	u32_t arg1;
-	u32_t arg2;
-	u32_t arg3;
-	u32_t arg4;
-	u32_t arg5;
-	u32_t arg6;
+	uint32_t arg1;
+	uint32_t arg2;
+	uint32_t arg3;
+	uint32_t arg4;
+	uint32_t arg5;
+	uint32_t arg6;
 };
 
 typedef struct _standard_stack_frame _standard_stack_frame_t;
