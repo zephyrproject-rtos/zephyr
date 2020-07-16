@@ -100,12 +100,13 @@ static k_tid_t ot_tid;
 static struct net_linkaddr *ll_addr;
 static otStateChangedCallback state_changed_cb;
 
-static struct net_mgmt_event_callback ip6_addr_cb;
-
 k_tid_t openthread_thread_id_get(void)
 {
 	return ot_tid;
 }
+
+#ifdef CONFIG_NET_MGMT_EVENT
+static struct net_mgmt_event_callback ip6_addr_cb;
 
 static void ipv6_addr_event_handler(struct net_mgmt_event_callback *cb,
 				    uint32_t mgmt_event, struct net_if *iface)
@@ -122,6 +123,7 @@ static void ipv6_addr_event_handler(struct net_mgmt_event_callback *cb,
 		add_ipv6_maddr_to_ot(ot_context);
 	}
 }
+#endif
 
 void otPlatRadioGetIeeeEui64(otInstance *instance, uint8_t *ieee_eui64)
 {
