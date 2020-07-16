@@ -372,6 +372,8 @@ Basics
    Additionally, ``west`` allows you to :ref:`set a default board
    <west-building-config>`.
 
+.. _build-directory-contents:
+
 Build Directory Contents
 ========================
 
