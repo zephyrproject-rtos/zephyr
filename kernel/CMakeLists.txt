@@ -56,6 +56,7 @@ target_sources_ifdef(
   kernel PRIVATE
   futex.c
   mem_domain.c
+  cache_handlers.c
   userspace_handler.c
   userspace.c
   )
