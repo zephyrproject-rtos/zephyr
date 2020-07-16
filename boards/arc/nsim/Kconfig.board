@@ -6,6 +6,7 @@
 config BOARD_NSIM
 	bool "ARC nSIM simulator"
 	depends on SOC_NSIM
+	select HAS_COVERAGE_SUPPORT
 	help
 	  The DesignWare ARC nSIM board is a virtual board based on
 	  the ARC nSIM simulator. It demonstrates the ARC core features
