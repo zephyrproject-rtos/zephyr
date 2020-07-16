@@ -3875,6 +3875,15 @@ static void bt_hci_evt_read_remote_version_complete(struct net_buf *buf)
 }
 #endif /* CONFIG_BT_REMOTE_VERSION */
 
+static void hci_hardware_error(struct net_buf *buf)
+{
+	struct bt_hci_evt_hardware_error *evt;
+
+	evt = net_buf_pull_mem(buf, sizeof(*evt));
+
+	BT_ERR("Hardware error, hardware code: %d", evt->hardware_code);
+}
+
 #if defined(CONFIG_BT_SMP)
 static void le_ltk_neg_reply(uint16_t handle)
 {
@@ -5047,6 +5056,8 @@ static const struct event_handler normal_events[] = {
 		      bt_hci_evt_read_remote_version_complete,
 		      sizeof(struct bt_hci_evt_remote_version_info)),
 #endif /* CONFIG_BT_REMOTE_VERSION */
+	EVENT_HANDLER(BT_HCI_EVT_HARDWARE_ERROR, hci_hardware_error,
+		      sizeof(struct bt_hci_evt_hardware_error)),
 };
 
 static void hci_event(struct net_buf *buf)

@@ -1363,6 +1363,11 @@ struct bt_hci_evt_cmd_status {
 	uint16_t opcode;
 } __packed;
 
+#define BT_HCI_EVT_HARDWARE_ERROR               0x10
+struct bt_hci_evt_hardware_error {
+	uint8_t  hardware_code;
+} __packed;
+
 #define BT_HCI_EVT_ROLE_CHANGE                  0x12
 struct bt_hci_evt_role_change {
 	uint8_t   status;
