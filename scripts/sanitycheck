@@ -412,8 +412,10 @@ Artificially long but functional example:
              "run. Intended to be run by CI when tagging an official "
              "release. This database is used as a basis for comparison "
              "when looking for deltas in metrics such as footprint")
-    parser.add_argument("-w", "--warnings-as-errors", action="store_true",
+
+    parser.add_argument("-W", "--disable-warnings-as-errors", action="store_true",
                         help="Treat warning conditions as errors")
+
     parser.add_argument(
         "-v",
         "--verbose",
@@ -799,6 +801,7 @@ def main():
     suite.west_flash = options.west_flash
     suite.west_runner = options.west_runner
     suite.verbose = VERBOSE
+    suite.warnings_as_errors = not options.disable_warnings_as_errors
 
     if options.ninja:
         suite.generator_cmd = "ninja"

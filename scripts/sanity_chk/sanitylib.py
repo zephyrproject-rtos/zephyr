@@ -1764,17 +1764,21 @@ class CMake():
 
     def run_cmake(self, args=[]):
 
-        ldflags = "-Wl,--fatal-warnings"
-        logger.debug("Running cmake on %s for %s" % (self.source_dir, self.platform.name))
+        if self.warnings_as_errors:
+            ldflags = "-Wl,--fatal-warnings"
+            cflags = "-Werror"
+            aflags = "-Wa,--fatal-warnings"
+        else:
+            ldflags = cflags = aflags = ""
 
-        # fixme: add additional cflags based on options
+        logger.debug("Running cmake on %s for %s" % (self.source_dir, self.platform.name))
         cmake_args = [
-            '-B{}'.format(self.build_dir),
-            '-S{}'.format(self.source_dir),
-            '-DEXTRA_CFLAGS="-Werror ',
-            '-DEXTRA_AFLAGS=-Wa,--fatal-warnings',
-            '-DEXTRA_LDFLAGS="{}'.format(ldflags),
-            '-G{}'.format(self.generator)
+            f'-B{self.build_dir}',
+            f'-S{self.source_dir}',
+            f'-DEXTRA_CFLAGS="{cflags}"',
+            f'-DEXTRA_AFLAGS="{aflags}',
+            f'-DEXTRA_LDFLAGS="{ldflags}"',
+            f'-G{self.generator}'
         ]
 
         if self.cmake_only:
@@ -1915,6 +1919,7 @@ class ProjectBuilder(FilterBuilder):
         self.generator = kwargs.get('generator', None)
         self.generator_cmd = kwargs.get('generator_cmd', None)
         self.verbose = kwargs.get('verbose', None)
+        self.warnings_as_errors = kwargs.get('warnings_as_errors', True)
 
     @staticmethod
     def log_info(filename, inline_logs):
@@ -2298,6 +2303,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.west_runner = None
         self.generator = None
         self.generator_cmd = None
+        self.warnings_as_errors = True
 
         # Keep track of which test cases we've filtered out and why
         self.testcases = {}
@@ -2903,7 +2909,8 @@ class TestSuite(DisablePyTestCollectionMixin):
                                         inline_logs=self.inline_logs,
                                         generator=self.generator,
                                         generator_cmd=self.generator_cmd,
-                                        verbose=self.verbose
+                                        verbose=self.verbose,
+                                        warnings_as_errors=self.warnings_as_errors
                                         )
                     future_to_test[executor.submit(pb.process, message)] = test.name
 
