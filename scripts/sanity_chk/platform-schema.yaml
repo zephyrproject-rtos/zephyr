@@ -49,6 +49,11 @@ mapping:
     mapping:
       "default":
         type: bool
+      "only_tags":
+        type: seq
+        seq:
+          -
+            type: str
       "ignore_tags":
         type: seq
         seq:

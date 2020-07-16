@@ -147,7 +147,7 @@ TESTDATA_PART1 = [
     ("arch_exclude", ['x86_demo'], None, None, "In test case arch exclude"),
     ("arch_whitelist", ['arm'], None, None, "Not in test case arch whitelist"),
     ("skip", True, None, None, "Skip filter"),
-    ("tags", set(['sensor', 'bluetooth']), "ignore_tags", ['bluetooth'], "Excluded tags per platform"),
+    ("tags", set(['sensor', 'bluetooth']), "ignore_tags", ['bluetooth'], "Excluded tags per platform (exclude_tags)"),
     ("min_flash", "2024", "flash", "1024", "Not enough FLASH"),
     ("min_ram", "500", "ram", "256", "Not enough RAM"),
     ("None", "None", "env", ['BSIM_OUT_PATH', 'demo_env'], "Environment (BSIM_OUT_PATH, demo_env) not satisfied"),
