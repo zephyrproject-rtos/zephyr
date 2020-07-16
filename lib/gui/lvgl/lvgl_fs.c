@@ -52,13 +52,17 @@ static lv_fs_res_t lvgl_fs_open(struct _lv_fs_drv_t *drv, void *file,
 		const char *path, lv_fs_mode_t mode)
 {
 	int err;
+	int zmode = FS_O_CREATE;
 
 	/* LVGL is passing absolute paths without the root slash add it back
 	 * by decrementing the path pointer.
 	 */
 	path--;
 
-	err = fs_open((struct fs_file_t *)file, path);
+	zmode |= (mode & LV_FS_MODE_WR) ? FS_O_WRITE : 0;
+	zmode |= (mode & LV_FS_MODE_RD) ? FS_O_READ : 0;
+
+	err = fs_open((struct fs_file_t *)file, path, zmode);
 	return errno_to_lv_fs_res(err);
 }
 
