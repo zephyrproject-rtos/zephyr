@@ -840,8 +840,6 @@ class QEMUHandler(Handler):
                         timeout_time = time.time() + 30
                     else:
                         timeout_time = time.time() + 2
-            else:
-                logger.debug("got nothing from harness")
             line = ""
 
         handler.record(harness)
@@ -850,15 +848,17 @@ class QEMUHandler(Handler):
         logger.debug("QEMU complete (%s) after %f seconds" %
                      (out_state, handler_time))
 
-        handler.set_state(out_state, handler_time)
-
         if out_state == "timeout":
             handler.instance.reason = "Timeout"
+            handler.set_state("failed", handler_time)
         elif out_state == "failed":
             handler.instance.reason = "Failed"
-        elif out_state in ['unexpected eof', 'unexpected byte']:
             handler.set_state("failed", handler_time)
+        elif out_state in ['unexpected eof', 'unexpected byte']:
             handler.instance.reason = out_state
+            handler.set_state("failed", handler_time)
+        else:
+            handler.set_state(out_state, handler_time)
 
         log_out_fp.close()
         out_fp.close()
@@ -936,10 +936,9 @@ class QEMUHandler(Handler):
             if os.path.exists(self.pid_fn):
                 os.unlink(self.pid_fn)
 
-
         logger.debug(f"return code from qemu: {self.returncode}")
 
-        if self.returncode != 0:
+        if self.returncode != 0 or not harness.state:
             self.set_state("failed", 0)
             self.instance.reason = "Exited with {}".format(self.returncode)
 
