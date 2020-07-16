@@ -91,7 +91,7 @@ void setup_fs(void)
 		return;
 	}
 
-	ret = fs_open(&img, IMG_FILE_PATH);
+	ret = fs_open(&img, IMG_FILE_PATH, FS_O_CREATE | FS_O_WRITE);
 	if (ret < 0) {
 		TC_PRINT("Failed to open image file: %d\n", ret);
 		ztest_test_fail();
