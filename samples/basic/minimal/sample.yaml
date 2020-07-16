@@ -1,6 +1,8 @@
 sample:
   description: minimal sample, the smallest possible Zephyr application
   name: minimal
+common:
+  tags: footprint
 tests:
   sample.minimal.mt.arm:
     build_only: true

@@ -1,3 +1,4 @@
 tests:
   kernel.multiprocessing.spinlock:
+    tags: smp spinlock
     filter: CONFIG_SMP and CONFIG_MP_NUM_CPUS > 1
