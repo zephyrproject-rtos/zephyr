@@ -346,10 +346,3 @@ exit:
 }
 #endif /* CONFIG_BT_OBSERVER */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
-
-int cmd_ull_reset(const struct shell *shell, size_t  argc, char *argv[])
-{
-	ll_reset();
-
-	return 0;
-}

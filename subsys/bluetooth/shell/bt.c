@@ -2567,8 +2567,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(test_rx, NULL, "<chan> <phy> <mod_idx>", cmd_test_rx,
 		      4, 0),
 	SHELL_CMD_ARG(test_end, NULL, HELP_NONE, cmd_test_end, 1, 0),
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
-	SHELL_CMD(ull_reset, NULL, HELP_NONE, cmd_ull_reset),
+#endif /* CONFIG_BT_CTLR_DTM */
 	SHELL_SUBCMD_SET_END
 );
 
