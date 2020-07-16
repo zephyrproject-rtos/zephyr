@@ -18,6 +18,7 @@ zephyr_library_sources_ifdef(
   keys_br.c
   l2cap_br.c
   sdp.c
+  ssp.c
   )
 
 zephyr_library_sources_ifdef(

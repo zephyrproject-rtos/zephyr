@@ -205,12 +205,6 @@ struct bt_conn *bt_conn_lookup_addr_sco(const bt_addr_t *peer);
 /* Look up an existing connection by BT address */
 struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer);
 
-void bt_conn_pin_code_req(struct bt_conn *conn);
-uint8_t bt_conn_get_io_capa(void);
-uint8_t bt_conn_ssp_get_auth(const struct bt_conn *conn);
-void bt_conn_ssp_auth(struct bt_conn *conn, uint32_t passkey);
-void bt_conn_ssp_auth_complete(struct bt_conn *conn, uint8_t status);
-
 void bt_conn_disconnect_all(uint8_t id);
 
 /* Look up an existing connection */

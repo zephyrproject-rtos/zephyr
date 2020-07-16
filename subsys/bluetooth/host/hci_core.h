@@ -295,6 +295,8 @@ struct bt_dev {
 extern struct bt_dev bt_dev;
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 extern const struct bt_conn_auth_cb *bt_auth;
+
+enum bt_security_err bt_security_err_get(uint8_t hci_err);
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
 
 int bt_hci_disconnect(uint16_t handle, uint8_t reason);
@@ -331,3 +333,15 @@ int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
 
 void bt_le_adv_resume(void);
 bool bt_le_scan_random_addr_check(void);
+
+/* HCI event handlers */
+void hci_evt_pin_code_req(struct net_buf *buf);
+void hci_evt_link_key_notify(struct net_buf *buf);
+void hci_evt_link_key_req(struct net_buf *buf);
+void hci_evt_io_capa_resp(struct net_buf *buf);
+void hci_evt_io_capa_req(struct net_buf *buf);
+void hci_evt_ssp_complete(struct net_buf *buf);
+void hci_evt_user_confirm_req(struct net_buf *buf);
+void hci_evt_user_passkey_notify(struct net_buf *buf);
+void hci_evt_user_passkey_req(struct net_buf *buf);
+void hci_evt_auth_complete(struct net_buf *buf);
