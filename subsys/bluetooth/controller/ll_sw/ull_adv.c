@@ -493,11 +493,11 @@ uint8_t ll_adv_enable(uint8_t enable)
 	uint8_t const handle = 0;
 	uint32_t ticks_anchor;
 #endif /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_HCI_MESH_EXT */
-	volatile uint32_t ret_cb = TICKER_STATUS_BUSY;
 	uint32_t ticks_slot_overhead;
+	uint32_t ticks_slot_offset;
+	uint32_t volatile ret_cb;
 	struct pdu_adv *pdu_scan;
 	struct pdu_adv *pdu_adv;
-	uint32_t ticks_slot_offset;
 	struct ll_adv_set *adv;
 	struct lll_adv *lll;
 	uint32_t ret;
@@ -952,6 +952,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 #if defined(CONFIG_BT_PERIPHERAL)
 	lll->is_hdcd = !interval && (pdu_adv->type == PDU_ADV_TYPE_DIRECT_IND);
 	if (lll->is_hdcd) {
+		ret_cb = TICKER_STATUS_BUSY;
 		ret = ticker_start(TICKER_INSTANCE_ID_CTLR,
 				   TICKER_USER_ID_THREAD,
 				   (TICKER_ID_ADV_BASE + handle),
@@ -961,7 +962,6 @@ uint8_t ll_adv_enable(uint8_t enable)
 				   (adv->evt.ticks_slot + ticks_slot_overhead),
 				   ticker_cb, adv,
 				   ull_ticker_status_give, (void *)&ret_cb);
-
 		ret = ull_ticker_status_take(ret, &ret_cb);
 		if (ret != TICKER_STATUS_SUCCESS) {
 			goto failure_cleanup;
@@ -1044,11 +1044,12 @@ uint8_t ll_adv_enable(uint8_t enable)
 			if (ret) {
 				goto failure_cleanup;
 			}
-			ret_cb = TICKER_STATUS_BUSY;
 
 			aux_is_started = 1U;
 		}
 #endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
+
+		ret_cb = TICKER_STATUS_BUSY;
 
 #if defined(CONFIG_BT_TICKER_EXT)
 		ll_adv_ticker_ext[handle].ticks_slot_window =
@@ -1561,7 +1562,7 @@ static void conn_release(struct ll_adv_set *adv)
 
 static inline uint8_t disable(uint8_t handle)
 {
-	volatile uint32_t ret_cb = TICKER_STATUS_BUSY;
+	uint32_t volatile ret_cb;
 	struct ll_adv_set *adv;
 	void *mark;
 	uint32_t ret;
@@ -1592,6 +1593,7 @@ static inline uint8_t disable(uint8_t handle)
 
 #if defined(CONFIG_BT_PERIPHERAL)
 	if (adv->lll.is_hdcd) {
+		ret_cb = TICKER_STATUS_BUSY;
 		ret = ticker_stop(TICKER_INSTANCE_ID_CTLR,
 				  TICKER_USER_ID_THREAD, TICKER_ID_ADV_STOP,
 				  ull_ticker_status_give, (void *)&ret_cb);
@@ -1602,14 +1604,13 @@ static inline uint8_t disable(uint8_t handle)
 
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
-		ret_cb = TICKER_STATUS_BUSY;
 	}
 #endif
 
+	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
 			  TICKER_ID_ADV_BASE + handle,
 			  ull_ticker_status_give, (void *)&ret_cb);
-
 	ret = ull_ticker_status_take(ret, &ret_cb);
 	if (ret) {
 		mark = ull_disable_mark(adv);

@@ -696,7 +696,7 @@ static inline uint16_t sync_handle_get(struct ll_adv_sync_set *sync)
 
 static inline uint8_t sync_stop(struct ll_adv_sync_set *sync)
 {
-	volatile uint32_t ret_cb = TICKER_STATUS_BUSY;
+	uint32_t volatile ret_cb;
 	uint8_t sync_handle;
 	void *mark;
 	uint32_t ret;
@@ -706,10 +706,10 @@ static inline uint8_t sync_stop(struct ll_adv_sync_set *sync)
 
 	sync_handle = sync_handle_get(sync);
 
+	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
 			  TICKER_ID_ADV_SYNC_BASE + sync_handle,
 			  ull_ticker_status_give, (void *)&ret_cb);
-
 	ret = ull_ticker_status_take(ret, &ret_cb);
 	if (ret) {
 		mark = ull_disable_mark(sync);
@@ -746,12 +746,13 @@ static void mfy_sync_offset_get(void *param)
 	ticks_current = 0U;
 	retry = 4U;
 	do {
-		uint32_t volatile ret_cb = TICKER_STATUS_BUSY;
+		uint32_t volatile ret_cb;
 		uint32_t ticks_previous;
 		uint32_t ret;
 
 		ticks_previous = ticks_current;
 
+		ret_cb = TICKER_STATUS_BUSY;
 		ret = ticker_next_slot_get(TICKER_INSTANCE_ID_CTLR,
 					   TICKER_USER_ID_ULL_LOW,
 					   &id,

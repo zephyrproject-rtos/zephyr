@@ -263,9 +263,9 @@ void ull_scan_params_set(struct lll_scan *lll, uint8_t type, uint16_t interval,
 
 uint8_t ull_scan_enable(struct ll_scan_set *scan)
 {
-	volatile uint32_t ret_cb = TICKER_STATUS_BUSY;
 	struct lll_scan *lll = &scan->lll;
 	uint32_t ticks_slot_overhead;
+	uint32_t volatile ret_cb;
 	uint32_t ticks_interval;
 	uint32_t ticks_anchor;
 	uint32_t ret;
@@ -335,6 +335,7 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 
 	uint8_t handle = ull_scan_handle_get(scan);
 
+	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR,
 			   TICKER_USER_ID_THREAD, TICKER_ID_SCAN_BASE + handle,
 			   ticks_anchor, 0, ticks_interval,
@@ -343,7 +344,6 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 			   (scan->evt.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, scan,
 			   ull_ticker_status_give, (void *)&ret_cb);
-
 	ret = ull_ticker_status_take(ret, &ret_cb);
 	if (ret != TICKER_STATUS_SUCCESS) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
@@ -365,17 +365,17 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 
 uint8_t ull_scan_disable(uint8_t handle, struct ll_scan_set *scan)
 {
-	volatile uint32_t ret_cb = TICKER_STATUS_BUSY;
+	uint32_t volatile ret_cb;
 	void *mark;
 	uint32_t ret;
 
 	mark = ull_disable_mark(scan);
 	LL_ASSERT(mark == scan);
 
+	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
 			  TICKER_ID_SCAN_BASE + handle,
 			  ull_ticker_status_give, (void *)&ret_cb);
-
 	ret = ull_ticker_status_take(ret, &ret_cb);
 	if (ret) {
 		mark = ull_disable_unmark(scan);
