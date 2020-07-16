@@ -112,7 +112,7 @@ static int erase_page(struct device *dev, uint32_t page)
 	/* Wait for the BSY bit */
 	rc = flash_stm32_wait_flash_idle(dev);
 
-	regs->CR &= (~FLASH_TYPEERASE_PAGES);
+	regs->CR &= ~FLASH_CR_PER;
 
 	return rc;
 }
