@@ -1658,7 +1658,7 @@ static void ticker_op_stop_cb(uint32_t status, void *param)
 
 static inline void disable(uint16_t handle)
 {
-	volatile uint32_t ret_cb = TICKER_STATUS_BUSY;
+	uint32_t volatile ret_cb;
 	struct ll_conn *conn;
 	void *mark;
 	uint32_t ret;
@@ -1668,10 +1668,10 @@ static inline void disable(uint16_t handle)
 	mark = ull_disable_mark(conn);
 	LL_ASSERT(mark == conn);
 
+	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
 			  TICKER_ID_CONN_BASE + handle,
 			  ull_ticker_status_give, (void *)&ret_cb);
-
 	ret = ull_ticker_status_take(ret, &ret_cb);
 	if (!ret) {
 		ret = ull_disable(&conn->lll);

@@ -464,7 +464,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 
 	if (adv->is_enabled && !aux->is_started) {
 		uint32_t ticks_slot_overhead;
-		volatile uint32_t ret_cb;
+		uint32_t volatile ret_cb;
 		uint32_t ticks_anchor;
 		uint32_t ret;
 
@@ -480,7 +480,6 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 
 		ret = ull_adv_aux_start(aux, ticks_anchor, ticks_slot_overhead,
 					&ret_cb);
-
 		ret = ull_ticker_status_take(ret, &ret_cb);
 		if (ret != TICKER_STATUS_SUCCESS) {
 			/* FIXME: Use a better error code */
@@ -646,7 +645,7 @@ uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 
 uint8_t ull_adv_aux_stop(struct ll_adv_aux_set *aux)
 {
-	volatile uint32_t ret_cb = TICKER_STATUS_BUSY;
+	uint32_t volatile ret_cb;
 	uint8_t aux_handle;
 	void *mark;
 	uint32_t ret;
@@ -656,10 +655,10 @@ uint8_t ull_adv_aux_stop(struct ll_adv_aux_set *aux)
 
 	aux_handle = aux_handle_get(aux);
 
+	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
 			  TICKER_ID_ADV_AUX_BASE + aux_handle,
 			  ull_ticker_status_give, (void *)&ret_cb);
-
 	ret = ull_ticker_status_take(ret, &ret_cb);
 	if (ret) {
 		mark = ull_disable_mark(aux);
@@ -793,12 +792,13 @@ static void mfy_aux_offset_get(void *param)
 	ticks_current = 0U;
 	retry = 4U;
 	do {
-		uint32_t volatile ret_cb = TICKER_STATUS_BUSY;
+		uint32_t volatile ret_cb;
 		uint32_t ticks_previous;
 		uint32_t ret;
 
 		ticks_previous = ticks_current;
 
+		ret_cb = TICKER_STATUS_BUSY;
 		ret = ticker_next_slot_get(TICKER_INSTANCE_ID_CTLR,
 					   TICKER_USER_ID_ULL_LOW,
 					   &id,

@@ -63,15 +63,15 @@ void ull_sched_after_mstr_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 	ticks_to_expire = ticks_to_expire_prev = *us_offset = 0U;
 	ticks_slot_abs_prev = 0U;
 	while (1) {
-		uint32_t volatile ret_cb = TICKER_STATUS_BUSY;
+		uint32_t volatile ret_cb;
 		struct ll_conn *conn;
 		uint32_t ret;
 
+		ret_cb = TICKER_STATUS_BUSY;
 		ret = ticker_next_slot_get(TICKER_INSTANCE_ID_CTLR, user_id,
 					   &ticker_id, ticks_anchor,
 					   &ticks_to_expire, ticker_op_cb,
 					   (void *)&ret_cb);
-
 		if (ret == TICKER_STATUS_BUSY) {
 			while (ret_cb == TICKER_STATUS_BUSY) {
 				ticker_job_sched(TICKER_INSTANCE_ID_CTLR,
@@ -345,10 +345,11 @@ static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
 		ticks_anchor_prev = offset_index = offset = 0U;
 	ticks_slot_abs_prev = 0U;
 	do {
-		uint32_t volatile ret_cb = TICKER_STATUS_BUSY;
+		uint32_t volatile ret_cb;
 		struct ll_conn *conn;
 		uint32_t ret;
 
+		ret_cb = TICKER_STATUS_BUSY;
 		ret = ticker_next_slot_get(TICKER_INSTANCE_ID_CTLR,
 					   TICKER_USER_ID_ULL_LOW,
 					   &ticker_id, &ticks_anchor,
