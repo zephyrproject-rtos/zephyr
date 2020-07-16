@@ -26,7 +26,9 @@ extern void z_arm_nmi_init(void);
 #define NMI_INIT()
 #endif
 
-#if defined(CONFIG_SOC_NRF52810)
+#if defined(CONFIG_SOC_NRF52805)
+#include <system_nrf52805.h>
+#elif defined(CONFIG_SOC_NRF52810)
 #include <system_nrf52810.h>
 #elif defined(CONFIG_SOC_NRF52811)
 #include <system_nrf52811.h>
