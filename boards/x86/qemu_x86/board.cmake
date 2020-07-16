@@ -23,6 +23,7 @@ set(QEMU_FLAGS_${ARCH}
   -m 9
   -cpu ${QEMU_CPU_TYPE_${ARCH}}
   -device isa-debug-exit,iobase=0xf4,iosize=0x04
+  -machine type=pc-i440fx-3.1
   ${REBOOT_FLAG}
   -nographic
   )
