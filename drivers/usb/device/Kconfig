@@ -54,6 +54,7 @@ menuconfig USB_NRFX
 	select USB_DEVICE_DRIVER
 	select NRFX_USBD
 	select USB_DEVICE_DISABLE_ZLP_EPIN_HANDLING
+	select NRFX_USBREG if SOC_SERIES_NRF53X
 	help
 	  nRF USB Device Controller Driver
 

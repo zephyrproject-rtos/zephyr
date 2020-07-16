@@ -20,9 +20,9 @@
 #include <drivers/usb/usb_dc.h>
 #include <usb/usb_device.h>
 #include <drivers/clock_control.h>
-#include <hal/nrf_power.h>
 #include <drivers/clock_control/nrf_clock_control.h>
 #include <nrfx_usbd.h>
+#include <nrfx_power.h>
 
 
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
@@ -493,18 +493,18 @@ static inline struct usbd_event *usbd_evt_alloc(void)
 	return ev;
 }
 
-void usb_dc_nrfx_power_event_callback(nrf_power_event_t event)
+void usb_dc_nrfx_power_event_callback(nrfx_power_usb_evt_t event)
 {
 	enum usbd_periph_state new_state;
 
 	switch (event) {
-	case NRF_POWER_EVENT_USBDETECTED:
+	case NRFX_POWER_USB_EVT_DETECTED:
 		new_state = USBD_ATTACHED;
 		break;
-	case NRF_POWER_EVENT_USBPWRRDY:
+	case NRFX_POWER_USB_EVT_READY:
 		new_state = USBD_POWERED;
 		break;
-	case NRF_POWER_EVENT_USBREMOVED:
+	case NRFX_POWER_USB_EVT_REMOVED:
 		new_state = USBD_DETACHED;
 		break;
 	default:
@@ -1202,7 +1202,8 @@ static inline void usbd_reinit(void)
 	int ret;
 	nrfx_err_t err;
 
-	nrf5_power_usb_power_int_enable(false);
+	nrfx_power_usbevt_disable();
+
 	nrfx_usbd_disable();
 	nrfx_usbd_uninit();
 
@@ -1210,7 +1211,8 @@ static inline void usbd_reinit(void)
 	ret = eps_ctx_init();
 	__ASSERT_NO_MSG(ret == 0);
 
-	nrf5_power_usb_power_int_enable(true);
+	nrfx_power_usbevt_enable();
+
 	err = nrfx_usbd_init(usbd_event_handler);
 
 	if (err != NRFX_SUCCESS) {
@@ -1348,7 +1350,8 @@ int usb_dc_attach(void)
 		LOG_DBG("nRF USBD driver init failed. Code: %d", (uint32_t)err);
 		return -EIO;
 	}
-	nrf5_power_usb_power_int_enable(true);
+
+	nrfx_power_usbevt_enable();
 
 	ret = eps_ctx_init();
 	if (ret == 0) {
@@ -1359,7 +1362,7 @@ int usb_dc_attach(void)
 		usbd_work_schedule();
 	}
 
-	if (nrf_power_usbregstatus_vbusdet_get(NRF_POWER)) {
+	if (nrfx_power_usbstatus_get() != NRFX_POWER_USB_STATE_DISCONNECTED) {
 		/* USBDETECTED event is be generated on cable attachment and
 		 * when cable is already attached during reset, but not when
 		 * the peripheral is re-enabled.
@@ -1367,7 +1370,7 @@ int usb_dc_attach(void)
 		 * will not receive this event and it needs to be generated
 		 * again here.
 		 */
-		usb_dc_nrfx_power_event_callback(NRF_POWER_EVENT_USBDETECTED);
+		usb_dc_nrfx_power_event_callback(NRFX_POWER_USB_EVT_DETECTED);
 	}
 
 	return ret;
@@ -1391,7 +1394,8 @@ int usb_dc_detach(void)
 	}
 
 	(void)hfxo_stop(ctx);
-	nrf5_power_usb_power_int_enable(false);
+
+	nrfx_power_usbevt_disable();
 
 	ctx->attached = false;
 	k_mutex_unlock(&ctx->drv_lock);
