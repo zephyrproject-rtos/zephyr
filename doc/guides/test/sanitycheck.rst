@@ -154,6 +154,8 @@ testing:
   ignore_tags:
     Do not attempt to build (and therefore run) tests marked with this list of
     tags.
+  only_tags:
+    Only execute tests with this list of tags on a specific platform.
 
 Test Cases
 **********

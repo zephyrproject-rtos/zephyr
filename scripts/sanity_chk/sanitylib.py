@@ -1306,6 +1306,7 @@ class Platform:
         self.ram = 128
 
         self.ignore_tags = []
+        self.only_tags = []
         self.default = False
         # if no flash size is specified by the board, take a default of 512K
         self.flash = 512
@@ -1330,6 +1331,7 @@ class Platform:
         self.ram = data.get("ram", 128)
         testing = data.get("testing", {})
         self.ignore_tags = testing.get("ignore_tags", [])
+        self.only_tags = testing.get("only_tags", [])
         self.default = testing.get("default", False)
         # if no flash size is specified by the board, take a default of 512K
         self.flash = data.get("flash", 512)
@@ -2803,7 +2805,11 @@ class TestSuite(DisablePyTestCollectionMixin):
                     continue
 
                 if set(plat.ignore_tags) & tc.tags:
-                    discards[instance] = "Excluded tags per platform"
+                    discards[instance] = "Excluded tags per platform (exclude_tags)"
+                    continue
+
+                if not tc.tags or (plat.only_tags and tc.tags - set(plat.only_tags)):
+                    discards[instance] = "Excluded tags per platform (only_tags)"
                     continue
 
                 # if nothing stopped us until now, it means this configuration
