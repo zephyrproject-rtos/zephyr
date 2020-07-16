@@ -98,6 +98,10 @@
 		compatible = "ti,bq274xx";
 		label = "BQ274XX";
 		reg = <0x55>;
+		design-voltage = <3700>;
+		design-capacity = <1800>;
+		taper-current = <45>;
+		terminate-voltage = <3000>;
 	};
 
 	lis2dh12-accel@19 {

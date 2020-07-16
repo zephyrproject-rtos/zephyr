@@ -13,24 +13,20 @@ include: i2c-device.yaml
 properties:
     design-voltage:
       type: int
-      required: false
-      description: Battery Design Volatge in (3300 - 4400)mV
-      default: 3700
+      required: true
+      description: Battery Design Voltage in mV (3300 - 4400)
 
     design-capacity:
       type: int
-      required: false
+      required: true
       description: Battery Design Capacity in mAh
-      default: 1800
 
     taper-current:
       type: int
-      required: false
+      required: true
       description: Battery Taper current in mAh
-      default: 45
 
     terminate-voltage:
       type: int
-      required: false
+      required: true
       description: Battery Terminate Voltage in mV
-      default: 3000
