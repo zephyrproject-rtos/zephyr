@@ -50,12 +50,14 @@ static int si7055_get_temperature(struct device *i2c_dev,
 	if (retval == 0) {
 		#if CONFIG_SI7055_ENABLE_CHECKSUM
 		if (crc8(temp, SI7055_DATA_SIZE, SI7055_CRC_POLY,
-				SI7055_CRC_INIT, false) != temp[SI7055_DATA_SIZE]){
+				SI7055_CRC_INIT, false) !=
+                                temp[SI7055_DATA_SIZE]){
 				LOG_ERR("checksum failed.\n");
 				return(-EIO);
 		}
 		#endif
-		si_data->temperature = (temp[SI7055_TEMPERATURE_DATA_BYTE_0] << 8) |
+		si_data->temperature = (temp[SI7055_TEMPERATURE_DATA_BYTE_0]
+                                        << 8) |
                                         temp[SI7055_TEMPERATURE_DATA_BYTE_1];
 	} else {
 		LOG_ERR("read register err");
@@ -95,10 +97,11 @@ static int si7055_channel_get(struct device *dev, enum sensor_channel chan,
 
 	if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
 
-		int32_t temp_ucelcius = 
-			(((SI7055_CONV_FACTOR_1 * (int32_t)si_data->temperature)
-				/ (__UINT16_MAX__ + 1)) - SI7055_CONV_FACTOR_2) * 
-					SI7055_MULTIPLIER;
+		int32_t temp_ucelcius =
+			(((SI7055_CONV_FACTOR_1 * 
+                                (int32_t)si_data->temperature)
+			/ (__UINT16_MAX__ + 1)) - SI7055_CONV_FACTOR_2) *
+				SI7055_MULTIPLIER;
 
 		val->val1 = temp_ucelcius / SI7055_DIVIDER;
 		val->val2 = temp_ucelcius % SI7055_DIVIDER;
