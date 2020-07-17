@@ -974,7 +974,7 @@ def main():
         suite.load_from_file(last_run, filter_status=['skipped', 'passed'])
         suite.selected_platforms = set(p.platform.name for p in suite.instances.values())
     elif options.load_tests:
-        suite.load_from_file(options.load_tests)
+        suite.load_from_file(options.load_tests, filter_status=['skipped'])
         suite.selected_platforms = set(p.platform.name for p in suite.instances.values())
     elif options.test_only:
         suite.load_from_file(last_run, filter_status=['skipped'])
@@ -1078,7 +1078,7 @@ def main():
         return
 
     logger.info("%d test configurations selected, %d configurations discarded due to filters." %
-                (len(suite.instances), len(discards)))
+                (len(suite.instances), len(discards) - suite.total_skipped))
 
     if options.device_testing:
         print("\nDevice testing on:")
