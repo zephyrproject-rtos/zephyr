@@ -14,7 +14,4 @@ config ETH_SAM_GMAC
 config USART_SAM
 	default y
 
-config TEST_RANDOM_GENERATOR
-	default y
-
 endif # BOARD_SAM4E_XPRO

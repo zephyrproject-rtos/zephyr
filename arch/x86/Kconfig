@@ -186,6 +186,7 @@ config X86_VERY_EARLY_CONSOLE
 config X86_MMU
 	bool "Enable Memory Management Unit"
 	select MEMORY_PROTECTION
+	select MMU
 	help
 	  This options enables the memory management unit present in x86
 	  and creates a set of page tables at boot time that is runtime-

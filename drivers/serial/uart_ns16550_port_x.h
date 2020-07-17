@@ -14,11 +14,15 @@ static void irq_config_func_@NUM@(struct device *port);
 #endif
 
 static const struct uart_ns16550_device_config uart_ns16550_dev_cfg_@NUM@ = {
-	.devconf.port = DT_INST_REG_ADDR(@NUM@),
-	.devconf.sys_clk_freq = DT_INST_PROP(@NUM@, clock_frequency),
+#ifdef UART_NS16550_ACCESS_IOPORT
+	.port = DT_INST_REG_ADDR(@NUM@),
+#elif !DT_INST_PROP(@NUM@, pcie)
+	DEVICE_MMIO_ROM_INIT(@NUM@),
+#endif
+	.sys_clk_freq = DT_INST_PROP(@NUM@, clock_frequency),
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.devconf.irq_config_func = irq_config_func_@NUM@,
+	.irq_config_func = irq_config_func_@NUM@,
 #endif
 
 #if DT_INST_NODE_HAS_PROP(@NUM@, pcp)

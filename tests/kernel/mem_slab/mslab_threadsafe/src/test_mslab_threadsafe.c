@@ -6,6 +6,7 @@
 
 #include <ztest.h>
 #include <sys/atomic.h>
+
 #define LOOP 10
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define THREAD_NUM 4
@@ -32,17 +33,18 @@ static struct k_mem_slab mslab2, *slabs[SLAB_NUM] = { &mslab1, &mslab2 };
 static K_THREAD_STACK_ARRAY_DEFINE(tstack, THREAD_NUM, STACK_SIZE);
 static struct k_thread tdata[THREAD_NUM];
 static char __aligned(BLK_ALIGN) tslab[BLK_SIZE2 * SLAB_BLOCKS];
-static struct k_sem sync_sema;
 static atomic_t slab_id;
+static volatile bool success[THREAD_NUM];
 
 /* thread entry simply invoke the APIs*/
 static void tmslab_api(void *p1, void *p2, void *p3)
 {
 	void *block[BLK_NUM];
-	struct k_mem_slab *slab = slabs[atomic_inc(&slab_id) % SLAB_NUM];
-	int i = LOOP, ret;
+	int id = atomic_inc(&slab_id);
+	struct k_mem_slab *slab = slabs[id % SLAB_NUM];
+	int j = LOOP, ret;
 
-	while (i--) {
+	while (j--) {
 		(void)memset(block, 0, sizeof(block));
 
 		for (int i = 0; i < BLK_NUM; i++) {
@@ -56,8 +58,7 @@ static void tmslab_api(void *p1, void *p2, void *p3)
 			}
 		}
 	}
-
-	k_sem_give(&sync_sema);
+	success[id] = true;
 }
 
 /* test cases*/
@@ -75,7 +76,6 @@ void test_mslab_threadsafe(void)
 	k_tid_t tid[THREAD_NUM];
 
 	k_mem_slab_init(&mslab2, tslab, BLK_SIZE2, SLAB_BLOCKS);
-	k_sem_init(&sync_sema, 0, THREAD_NUM);
 
 	/* create multiple threads to invoke same memory slab APIs*/
 	for (int i = 0; i < THREAD_NUM; i++) {
@@ -83,13 +83,12 @@ void test_mslab_threadsafe(void)
 					 tmslab_api, NULL, NULL, NULL,
 					 K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
 	}
-	/* TESTPOINT: all threads complete and exit the entry function*/
-	for (int i = 0; i < THREAD_NUM; i++) {
-		k_sem_take(&sync_sema, K_FOREVER);
-	}
 
-	/* test case tear down*/
+	/* wait for completion */
 	for (int i = 0; i < THREAD_NUM; i++) {
-		k_thread_abort(tid[i]);
+		int ret = k_thread_join(tid[i], K_FOREVER);
+
+		zassert_false(ret, "k_thread_join() failed");
+		zassert_true(success[i], "thread %d failed", i);
 	}
 }

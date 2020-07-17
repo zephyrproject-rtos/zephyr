@@ -77,7 +77,7 @@ struct e1000_rx {
 struct e1000_dev {
 	volatile struct e1000_tx tx __aligned(16);
 	volatile struct e1000_rx rx __aligned(16);
-	uint32_t address;
+	mm_reg_t address;
 	/* If VLAN is enabled, there can be multiple VLAN interfaces related to
 	 * this physical device. In that case, this iface pointer value is not
 	 * really used for anything.

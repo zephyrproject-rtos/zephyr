@@ -39,6 +39,7 @@ config X86
 	select ATOMIC_OPERATIONS_BUILTIN
 	select HAS_DTS
 	select ARCH_HAS_CUSTOM_SWAP_TO_MAIN if !X86_64
+	select CPU_HAS_MMU
 	help
 	  x86 architecture
 
@@ -476,6 +477,27 @@ config CPU_HAS_MPU
 	bool
 	help
 	  This option is enabled when the CPU has a Memory Protection Unit (MPU).
+
+config CPU_HAS_MMU
+	bool
+	help
+	  This hidden option is selected when the CPU has a Memory Management Unit
+	  (MMU).
+
+config MMU
+	bool
+	depends on CPU_HAS_MMU
+	help
+	  This option is enabled when the CPU's memory management unit is active
+	  and the arch_mem_map() API is available.
+
+config MMU_PAGE_SIZE
+	hex "Size of smallest granularity MMU page"
+	depends on MMU
+	default 0x1000
+	help
+	  Size of memory pages. Varies per MMU but 4K is common. For MMUs that
+	  support multiple page sizes, put the smallest one here.
 
 config MEMORY_PROTECTION
 	bool

@@ -501,6 +501,13 @@ guard memory region immediately before the stack area.
   should be reconfigured on context switch such that the guard region
   for the incoming thread is not writable.
 
+Memory Management
+=================
+
+If the target platform enables paging and requires drivers to memory-map
+their I/O regions, :option:`CONFIG_MMU` needs to be enabled and the
+:cpp:func:`arch_mem_map()` API implemented.
+
 User Mode Threads
 =================
 
@@ -606,6 +613,12 @@ Benchmarking
 ============
 
 .. doxygengroup:: arch-benchmarking
+   :project: Zephyr
+
+Memory Management
+=================
+
+.. doxygengroup:: arch-mmu
    :project: Zephyr
 
 Miscellaneous Architecture APIs

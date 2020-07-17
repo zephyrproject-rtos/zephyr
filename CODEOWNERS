@@ -116,6 +116,7 @@
 /boards/riscv/rv32m1_vega/                @MaureenHelm
 /boards/shields/                          @erwango
 /boards/shields/atmel_rf2xx/              @nandojve
+/boards/shields/esp_8266/                 @nandojve
 /boards/x86/                              @andrewboie @nashif
 /boards/xtensa/                           @nashif @dcpleung
 /boards/xtensa/intel_s1000_crb/           @sathishkuttan @dcpleung
