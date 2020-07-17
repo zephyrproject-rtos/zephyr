@@ -8,23 +8,27 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
-#include <pthread.h>
-
-#ifndef PTHREAD_STACK_MIN
-#define PTHREAD_STACK_MIN 0
-#endif
-
 #include <net/socket.h>
-
 #include <poll.h>
-
 #include <sys/eventfd.h>
 
-#define EVENTFD_STACK_SIZE	(1024 + CONFIG_TEST_EXTRA_STACKSIZE + \
-				 PTHREAD_STACK_MIN)
+#define TESTVAL 10
 
-K_THREAD_STACK_DEFINE(eventfd_stack, EVENTFD_STACK_SIZE);
-static pthread_t eventfd_thread;
+static int is_blocked(int fd, short *event)
+{
+	struct pollfd pfd;
+	int ret;
+
+	pfd.fd = fd;
+	pfd.events = *event;
+
+	ret = poll(&pfd, 1, 0);
+	zassert_true(ret >= 0, "poll failed %d", ret);
+
+	*event = pfd.revents;
+
+	return ret == 0;
+}
 
 static void test_eventfd(void)
 {
@@ -37,14 +41,25 @@ static void test_eventfd(void)
 
 static void test_eventfd_read_nonblock(void)
 {
-	eventfd_t val;
+	eventfd_t val = 0;
 	int fd, ret;
 
 	fd = eventfd(0, EFD_NONBLOCK);
 	zassert_true(fd >= 0, "fd == %d", fd);
 
 	ret = eventfd_read(fd, &val);
-	zassert_true(ret == -1, "read ret %d", ret);
+	zassert_true(ret == -1, "read unset ret %d", ret);
+	zassert_true(errno == EAGAIN, "errno %d", errno);
+
+	ret = eventfd_write(fd, TESTVAL);
+	zassert_true(ret == 0, "write ret %d", ret);
+
+	ret = eventfd_read(fd, &val);
+	zassert_true(ret == 0, "read set ret %d", ret);
+	zassert_true(val == TESTVAL, "red set val %d", val);
+
+	ret = eventfd_read(fd, &val);
+	zassert_true(ret == -1, "read subsequent ret %d val %d", ret, val);
 	zassert_true(errno == EAGAIN, "errno %d", errno);
 
 	close(fd);
@@ -105,101 +120,149 @@ static void test_eventfd_poll_timeout(void)
 	close(fd);
 }
 
-struct test_thread_data {
-	int fd;
-	struct k_sem written_twice;
-};
-
-static void *test_thread_wait_and_write(void *arg)
+static void eventfd_poll_unset_common(int fd)
 {
-	struct test_thread_data *d = arg;
-	int fd = d->fd;
+	eventfd_t val = 0;
+	short event;
 	int ret;
 
-	k_sleep(K_MSEC(500));
+	event = POLLIN;
+	ret = is_blocked(fd, &event);
+	zassert_equal(ret, 1, "eventfd not blocked with initval == 0");
 
-	ret = eventfd_write(fd, 10);
-	zassert_true(ret == 0, "write ret %d", ret);
+	ret = eventfd_write(fd, TESTVAL);
+	zassert_equal(ret, 0, "write ret %d", ret);
 
-	ret = eventfd_write(fd, 10);
-	zassert_true(ret == 0, "write ret %d", ret);
+	event = POLLIN;
+	ret = is_blocked(fd, &event);
+	zassert_equal(ret, 0, "eventfd blocked after write");
+	zassert_equal(event, POLLIN, "POLLIN not set");
 
-	k_sem_give(&d->written_twice);
+	ret = eventfd_write(fd, TESTVAL);
+	zassert_equal(ret, 0, "write ret %d", ret);
 
-	k_sleep(K_MSEC(1500));
+	ret = eventfd_read(fd, &val);
+	zassert_equal(ret, 0, "read ret %d", ret);
+	zassert_equal(val, 2*TESTVAL, "val == %d, expected %d", val, TESTVAL);
 
-	ret = eventfd_write(fd, 5);
-	zassert_true(ret == 0, "write ret %d", ret);
+	/* eventfd shall block on subsequent reads */
 
-	return NULL;
+	event = POLLIN;
+	ret = is_blocked(fd, &event);
+	zassert_equal(ret, 1, "eventfd not blocked after read");
 }
 
-static void test_eventfd_poll_event(void)
+static void test_eventfd_unset_poll_event_block(void)
 {
-	struct sched_param schedparam;
-	pthread_attr_t attr;
-	struct pollfd pfd;
-	eventfd_t val;
-	struct test_thread_data d;
+	int fd;
+
+	fd = eventfd(0, 0);
+	zassert_true(fd >= 0, "fd == %d", fd);
+
+	eventfd_poll_unset_common(fd);
+
+	close(fd);
+}
+
+static void test_eventfd_unset_poll_event_nonblock(void)
+{
+	int fd;
+
+	fd = eventfd(0, EFD_NONBLOCK);
+	zassert_true(fd >= 0, "fd == %d", fd);
+
+	eventfd_poll_unset_common(fd);
+
+	close(fd);
+}
+
+static void eventfd_poll_set_common(int fd)
+{
+	eventfd_t val = 0;
+	short event;
+	int ret;
+
+	event = POLLIN;
+	ret = is_blocked(fd, &event);
+	zassert_equal(ret, 0, "eventfd is blocked with initval != 0");
+
+	ret = eventfd_read(fd, &val);
+	zassert_equal(ret, 0, "read ret %d", ret);
+	zassert_equal(val, TESTVAL, "val == %d", val);
+
+	event = POLLIN;
+	ret = is_blocked(fd, &event);
+	zassert_equal(ret, 1, "eventfd is not blocked after read");
+}
+
+static void test_eventfd_set_poll_event_block(void)
+{
+	int fd;
+
+	fd = eventfd(TESTVAL, 0);
+	zassert_true(fd >= 0, "fd == %d", fd);
+
+	eventfd_poll_set_common(fd);
+
+	close(fd);
+}
+
+static void test_eventfd_set_poll_event_nonblock(void)
+{
+	int fd;
+
+	fd = eventfd(TESTVAL, EFD_NONBLOCK);
+	zassert_true(fd >= 0, "fd == %d", fd);
+
+	eventfd_poll_set_common(fd);
+
+	close(fd);
+}
+
+static void test_eventfd_overflow(void)
+{
+	short event;
+	int fd, ret;
+
+	fd = eventfd(0, EFD_NONBLOCK);
+	zassert_true(fd >= 0, "fd == %d", fd);
+
+	event = POLLOUT;
+	ret = is_blocked(fd, &event);
+	zassert_equal(ret, 0, "eventfd write blocked with initval == 0");
+
+	ret = eventfd_write(fd, UINT64_MAX);
+	zassert_equal(ret, -1, "fd == %d", fd);
+	zassert_equal(errno, EINVAL, "did not get EINVAL");
+
+	ret = eventfd_write(fd, UINT64_MAX-1);
+	zassert_equal(ret, 0, "fd == %d", fd);
+
+	event = POLLOUT;
+	ret = is_blocked(fd, &event);
+	zassert_equal(ret, 1, "eventfd write not blocked with cnt == UINT64_MAX-1");
+
+	ret = eventfd_write(fd, 1);
+	zassert_equal(ret, -1, "fd == %d", fd);
+	zassert_equal(errno, EAGAIN, "did not get EINVAL");
+
+	close(fd);
+}
+
+static void test_eventfd_zero_shall_not_unblock(void)
+{
+	short event;
 	int fd, ret;
 
 	fd = eventfd(0, 0);
 	zassert_true(fd >= 0, "fd == %d", fd);
 
-	ret = pthread_attr_init(&attr);
-	zassert_true(ret == 0, "pthread_attr_init ret %d", ret);
+	ret = eventfd_write(fd, 0);
+	zassert_equal(ret, 0, "fd == %d", fd);
 
-	ret = pthread_attr_setschedpolicy(&attr, SCHED_FIFO);
-	zassert_true(ret == 0, "pthread_attr_setschedpolicy ret %d", ret);
-
-	schedparam.sched_priority = 1;
-	ret = pthread_attr_setschedparam(&attr, &schedparam);
-	zassert_true(ret == 0, "pthread_attr_setschedparam ret %d", ret);
-
-	ret = pthread_attr_setstack(&attr, eventfd_stack, EVENTFD_STACK_SIZE);
-	zassert_true(ret == 0, "pthread_attr_setstack ret %d", ret);
-
-	d.fd = fd;
-	k_sem_init(&d.written_twice, 0, 1);
-
-	ret = pthread_create(&eventfd_thread, &attr, test_thread_wait_and_write,
-			     &d);
-	zassert_true(ret == 0, "pthread_create ret %d", ret);
-
-	pfd.fd = fd;
-	pfd.events = POLLIN;
-
-	TC_PRINT("Waiting for first event\n");
-
-	ret = poll(&pfd, 1, 3000);
-	zassert_true(ret == 1, "poll ret %d %d", ret, pfd.revents);
-	zassert_equal(pfd.revents, POLLIN, "POLLIN not set");
-
-	k_sem_take(&d.written_twice, K_FOREVER);
-
-	TC_PRINT("Reading two events\n");
-
-	ret = eventfd_read(fd, &val);
-	zassert_true(ret == 0, "read ret %d", ret);
-	zassert_true(val == 20, "val == %d", val);
-
-	TC_PRINT("Waiting 1s for event after 1.5s (should timeout)\n");
-
-	ret = poll(&pfd, 1, 1000);
-	zassert_true(ret == 0, "poll ret %d %d", ret, pfd.revents);
-	zassert_equal(pfd.revents, 0, "POLLIN set");
-
-	TC_PRINT("Waiting 3s for event after 0.5s (should succeed)\n");
-
-	ret = poll(&pfd, 1, 3000);
-	zassert_true(ret == 1, "poll ret %d %d", ret, pfd.revents);
-	zassert_equal(pfd.revents, POLLIN, "POLLIN not set");
-
-	TC_PRINT("Reading last event\n");
-
-	ret = eventfd_read(fd, &val);
-	zassert_true(ret == 0, "read ret %d", ret);
-	zassert_true(val == 5, "val == %d", val);
+	event = POLLIN;
+	ret = is_blocked(fd, &event);
+	zassert_equal(ret, 1, "eventfd unblocked by zero");
 
 	close(fd);
 }
@@ -211,7 +274,12 @@ void test_main(void)
 				ztest_unit_test(test_eventfd_read_nonblock),
 				ztest_unit_test(test_eventfd_write_then_read),
 				ztest_unit_test(test_eventfd_poll_timeout),
-				ztest_unit_test(test_eventfd_poll_event)
+				ztest_unit_test(test_eventfd_unset_poll_event_block),
+				ztest_unit_test(test_eventfd_unset_poll_event_nonblock),
+				ztest_unit_test(test_eventfd_set_poll_event_block),
+				ztest_unit_test(test_eventfd_set_poll_event_nonblock),
+				ztest_unit_test(test_eventfd_overflow),
+				ztest_unit_test(test_eventfd_zero_shall_not_unblock)
 				);
 	ztest_run_test_suite(test_eventfd);
 }
