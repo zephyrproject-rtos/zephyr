@@ -200,7 +200,6 @@ In general, :file:`plank.dts` should look like this:
 
    / {
    	model = "A human readable name";
-   	compatible = "yourcompany,plank";
 
    	chosen {
    		zephyr,console = &your_uart_console;
@@ -240,6 +239,11 @@ In general, :file:`plank.dts` should look like this:
    &another_peripheral_you_want {
    	status = "okay";
    };
+
+.. note::
+
+   The above example used to include a ``compatible`` property for the
+   entire board. This is now deprecated.
 
 If you're in a hurry, simple hardware can usually be supported by copy/paste
 followed by trial and error. If you want to understand details, you will need
