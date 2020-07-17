@@ -85,37 +85,6 @@ void lll_adv_sync_prepare(void *param)
 	LL_ASSERT(!err || err == -EINPROGRESS);
 }
 
-void lll_adv_sync_offset_fill(uint32_t ticks_offset, uint32_t start_us,
-			     struct pdu_adv *pdu)
-{
-	struct pdu_adv_com_ext_adv *p;
-	struct pdu_adv_sync_info *si;
-	struct pdu_adv_hdr *h;
-	uint8_t *ptr;
-
-	p = (void *)&pdu->adv_ext_ind;
-	h = (void *)p->ext_hdr_adi_adv_data;
-	ptr = (uint8_t *)h + sizeof(*h);
-
-	if (h->adv_addr) {
-		ptr += BDADDR_SIZE;
-	}
-
-	if (h->adi) {
-		ptr += sizeof(struct pdu_adv_adi);
-	}
-
-	if (h->aux_ptr) {
-		ptr += sizeof(struct pdu_adv_aux_ptr);
-	}
-
-	si = (void *)ptr;
-	si->offs = (HAL_TICKER_TICKS_TO_US(ticks_offset) - start_us) / 30;
-	if (si->offs_units) {
-		si->offs /= 10;
-	}
-}
-
 static int init_reset(void)
 {
 	return 0;

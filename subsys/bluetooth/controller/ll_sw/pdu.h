@@ -77,6 +77,10 @@
 /* Standard allows 2 us timing uncertainty inside the event */
 #define EVENT_MAFS_MAX_US       (EVENT_MAFS_US + 2)
 
+/* SyncInfo field Sync Packet Offset Units field encoding */
+#define SYNC_PKT_OFFS_UNIT_30_US  30
+#define SYNC_PKT_OFFS_UNIT_300_US 300
+
 /*
  * Macros to return correct Data Channel PDU time
  * Note: formula is valid for 1M, 2M and Coded S8
