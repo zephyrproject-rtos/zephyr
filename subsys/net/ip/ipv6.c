@@ -403,6 +403,13 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 		goto drop;
 	}
 
+#ifdef CONFIG_NET_PROMISCUOUS_MODE
+	if (net_ipv6_is_my_addr(&hdr->src)) {
+		NET_DBG("DROP: src addr is mine");
+		goto drop;
+	}
+#endif
+
 	if (net_ipv6_is_addr_mcast(&hdr->src) ||
 	    net_ipv6_is_addr_mcast_scope(&hdr->dst, 0)) {
 		NET_DBG("DROP: multicast packet");
