@@ -14,6 +14,9 @@
 
 #if defined(CONFIG_BOARD_NUCLEO_F429ZI) || defined(CONFIG_BOARD_NUCLEO_F207ZG)
 #define FAULTY_ADDRESS 0x0FFFFFFF
+#elif CONFIG_MMU
+/* Just past the permanent RAM mapping should be a non-present page */
+#define FAULTY_ADDRESS (CONFIG_KERNEL_VM_BASE + (CONFIG_SRAM_SIZE * 1024UL))
 #else
 #define FAULTY_ADDRESS 0xFFFFFFF0
 #endif
