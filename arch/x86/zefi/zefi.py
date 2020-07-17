@@ -50,23 +50,23 @@ def build_elf(elf_file):
 
         assert h.p_memsz >= h.p_filesz
         assert (h.p_vaddr % 8) == 0
-        assert (h.p_filesz % 8) == 0
+        assert (h.p_filesz % 4) == 0
         assert len(seg.data()) == h.p_filesz
 
         if h.p_filesz > 0:
             sd = seg.data()
             verbose("%d bytes of data at 0x%x, data offset %d"
                 % (len(sd), h.p_vaddr, len(data_blob)))
-            data_segs.append((h.p_vaddr, len(sd) / 8, len(data_blob) / 8))
+            data_segs.append((h.p_vaddr, len(sd) / 4, len(data_blob) / 4))
             data_blob = data_blob + sd
 
         if h.p_memsz > h.p_filesz:
             bytesz = h.p_memsz - h.p_filesz
-            if bytesz % 8:
-                bytesz += 8 - (bytesz % 8)
+            if bytesz % 4:
+                bytesz += 4 - (bytesz % 4)
             addr = h.p_vaddr + h.p_filesz
             verbose("%d bytes of zero-fill at 0x%x" % (bytesz, addr))
-            zero_segs.append((addr, bytesz / 8))
+            zero_segs.append((addr, bytesz / 4))
 
     verbose(f"{len(data_blob)} bytes of data to include in image")
 
@@ -77,8 +77,8 @@ def build_elf(elf_file):
 
     cf.write("/* GENERATED CODE.  DO NOT EDIT. */\n\n")
 
-    cf.write("/* Sizes and offsets specified in 8-byte units.\n")
-    cf.write(" * All addresses 8-byte aligned.\n")
+    cf.write("/* Sizes and offsets specified in 4-byte units.\n")
+    cf.write(" * All addresses 4-byte aligned.\n")
     cf.write(" */\n")
 
     cf.write("struct data_seg { uint64_t addr; uint32_t sz; uint32_t off; };\n\n")
