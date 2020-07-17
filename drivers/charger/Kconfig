@@ -1,0 +1,24 @@
+# Charger configuration options
+
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig CHARGER
+	bool "Support for charger"
+	help
+		Enable charger support
+
+if CHARGER
+
+config CHARGER_INIT_PRIORITY
+	int "Init priority"
+	default 80
+	help
+		Charger driver initialization priority.
+
+module = CHARGER
+module-str = charger
+
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # CHARGER
