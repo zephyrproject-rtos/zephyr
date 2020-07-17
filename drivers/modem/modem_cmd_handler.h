@@ -29,7 +29,18 @@ static int name_(struct modem_cmd_handler_data *data, uint16_t len, \
 	.cmd = cmd_, \
 	.cmd_len = (uint16_t)sizeof(cmd_)-1, \
 	.func = func_cb_, \
-	.arg_count = acount_, \
+	.arg_count_min = acount_, \
+	.arg_count_max = acount_, \
+	.delim = adelim_, \
+	.direct = false, \
+}
+
+#define MODEM_CMD_ARGS_MAX(cmd_, func_cb_, acount_, acountmax_, adelim_) { \
+	.cmd = cmd_, \
+	.cmd_len = (uint16_t)sizeof(cmd_)-1, \
+	.func = func_cb_, \
+	.arg_count_min = acount_, \
+	.arg_count_max = acountmax_, \
 	.delim = adelim_, \
 	.direct = false, \
 }
@@ -40,7 +51,8 @@ static int name_(struct modem_cmd_handler_data *data, uint16_t len, \
 	.cmd = cmd_, \
 	.cmd_len = (uint16_t)sizeof(cmd_)-1, \
 	.func = func_cb_, \
-	.arg_count = 0, \
+	.arg_count_min = 0, \
+	.arg_count_max = 0, \
 	.delim = "", \
 	.direct = true, \
 }
@@ -58,7 +70,8 @@ struct modem_cmd {
 	const char *cmd;
 	const char *delim;
 	uint16_t cmd_len;
-	uint16_t arg_count;
+	uint16_t arg_count_min;
+	uint16_t arg_count_max;
 	bool direct;
 };
 
