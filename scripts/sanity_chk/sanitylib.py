@@ -1702,6 +1702,24 @@ class TestInstance(DisablePyTestCollectionMixin):
 
         return SizeCalculator(fns[0], self.testcase.extra_sections)
 
+    def fill_results_by_status(self):
+        """Fills results according to self.status
+
+        The method is used to propagate the instance level status
+        to the test cases inside. Useful when the whole instance is skipped
+        and the info is required also at the test cases level for reporting.
+        Should be used with caution, e.g. should not be used
+        to fill all results with passes
+        """
+        status_to_verdict = {
+            'skipped': 'SKIP',
+            'error': 'BLOCK',
+            'failure': 'FAILED'
+        }
+
+        for k in self.results:
+            self.results[k] = status_to_verdict[self.status]
+
     def __repr__(self):
         return "<TestCase %s on %s>" % (self.testcase.name, self.platform.name)
 
@@ -2046,6 +2064,7 @@ class ProjectBuilder(FilterBuilder):
                     self.instance.reason = "filter"
                     for case in self.instance.testcase.cases:
                         self.instance.results.update({case: 'SKIP'})
+                        self.suite.total_skipped_cases += 1
                     pipeline.put({"op": "report", "test": self.instance})
                 else:
                     pipeline.put({"op": "build", "test": self.instance})
@@ -2119,7 +2138,7 @@ class ProjectBuilder(FilterBuilder):
                     os.rmdir(path)
 
     def report_out(self):
-        total_tests_width = len(str(self.suite.total_tests))
+        total_tests_width = len(str(self.suite.total_to_do))
         self.suite.total_done += 1
         instance = self.instance
 
@@ -2165,7 +2184,7 @@ class ProjectBuilder(FilterBuilder):
                     more_info = "build"
 
             logger.info("{:>{}}/{} {:<25} {:<50} {} ({})".format(
-                self.suite.total_done, total_tests_width, self.suite.total_tests, instance.platform.name,
+                self.suite.total_done, total_tests_width, self.suite.total_to_do, instance.platform.name,
                 instance.testcase.name, status, more_info))
 
             if instance.status in ["error", "failed", "timeout"]:
@@ -2174,9 +2193,9 @@ class ProjectBuilder(FilterBuilder):
             sys.stdout.write("\rINFO    - Total complete: %s%4d/%4d%s  %2d%%  skipped: %s%4d%s, failed: %s%4d%s" % (
                 Fore.GREEN,
                 self.suite.total_done,
-                self.suite.total_tests,
+                self.suite.total_to_do,
                 Fore.RESET,
-                int((float(self.suite.total_done) / self.suite.total_tests) * 100),
+                int((float(self.suite.total_done) / self.suite.total_to_do) * 100),
                 Fore.YELLOW if self.suite.total_skipped > 0 else Fore.RESET,
                 self.suite.total_skipped,
                 Fore.RESET,
@@ -2346,6 +2365,7 @@ class TestSuite(DisablePyTestCollectionMixin):
 
         self.total_tests = 0  # number of test instances
         self.total_cases = 0  # number of test cases
+        self.total_skipped_cases = 0  # number of skipped test cases
         self.total_done = 0  # tests completed
         self.total_failed = 0
         self.total_skipped = 0
@@ -2379,7 +2399,11 @@ class TestSuite(DisablePyTestCollectionMixin):
 
     def update(self):
         self.total_tests = len(self.instances)
-        self.total_cases = len(self.testcases)
+        self.total_to_do = self.total_tests - self.total_skipped
+        self.total_cases = 0
+        for instance in self.instances:
+            self.total_cases += len(self.instances[instance].testcase.cases)
+
 
     def compare_metrics(self, filename):
         # name, datatype, lower results better
@@ -2486,14 +2510,14 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.total_platforms = len(self.platforms)
         if self.platforms:
             logger.info("In total {} test cases were executed on {} out of total {} platforms ({:02.2f}%)".format(
-                self.total_cases,
+                self.total_cases - self.total_skipped_cases,
                 len(self.selected_platforms),
                 self.total_platforms,
                 (100 * len(self.selected_platforms) / len(self.platforms))
             ))
 
         logger.info(f"{Fore.GREEN}{run}{Fore.RESET} tests executed on platforms, \
-{Fore.RED}{self.total_tests - run}{Fore.RESET} tests were only built.")
+{Fore.RED}{self.total_tests - run - self.total_skipped}{Fore.RESET} tests were only built.")
 
     def save_reports(self, name, suffix, report_dir, no_update, release, only_failed):
         if not self.instances:
@@ -2747,105 +2771,83 @@ class TestSuite(DisablePyTestCollectionMixin):
                                 instance.run = True
 
                 if not force_platform and plat.name in exclude_platform:
-                    discards[instance] = "Platform is excluded on command line."
-                    continue
+                    discards[instance] = discards.get(instance, "Platform is excluded on command line.")
 
                 if (plat.arch == "unit") != (tc.type == "unit"):
                     # Discard silently
                     continue
 
                 if device_testing_filter and instance.build_only:
-                    discards[instance] = "Not runnable on device"
-                    continue
+                    discards[instance] = discards.get(instance, "Not runnable on device")
 
                 if self.integration and tc.integration_platforms and plat.name not in tc.integration_platforms:
-                    discards[instance] = "Not part of integration platforms"
-                    continue
+                    discards[instance] = discards.get(instance, "Not part of integration platforms")
 
                 if tc.skip:
-                    discards[instance] = "Skip filter"
-                    continue
+                    discards[instance] = discards.get(instance, "Skip filter")
 
                 if tc.build_on_all and not platform_filter:
                     platform_filter = []
 
                 if tag_filter and not tc.tags.intersection(tag_filter):
-                    discards[instance] = "Command line testcase tag filter"
-                    continue
+                    discards[instance] = discards.get(instance, "Command line testcase tag filter")
 
                 if exclude_tag and tc.tags.intersection(exclude_tag):
-                    discards[instance] = "Command line testcase exclude filter"
-                    continue
+                    discards[instance] = discards.get(instance, "Command line testcase exclude filter")
 
                 if testcase_filter and tc_name not in testcase_filter:
-                    discards[instance] = "Testcase name filter"
-                    continue
+                    discards[instance] = discards.get(instance, "Testcase name filter")
 
                 if arch_filter and plat.arch not in arch_filter:
-                    discards[instance] = "Command line testcase arch filter"
-                    continue
+                    discards[instance] = discards.get(instance, "Command line testcase arch filter")
 
                 if not force_platform:
 
                     if tc.arch_whitelist and plat.arch not in tc.arch_whitelist:
-                        discards[instance] = "Not in test case arch whitelist"
-                        continue
+                        discards[instance] = discards.get(instance, "Not in test case arch whitelist")
 
                     if tc.arch_exclude and plat.arch in tc.arch_exclude:
-                        discards[instance] = "In test case arch exclude"
-                        continue
+                        discards[instance] = discards.get(instance, "In test case arch exclude")
 
                     if tc.platform_exclude and plat.name in tc.platform_exclude:
-                        discards[instance] = "In test case platform exclude"
-                        continue
+                        discards[instance] = discards.get(instance, "In test case platform exclude")
 
                 if tc.toolchain_exclude and toolchain in tc.toolchain_exclude:
-                    discards[instance] = "In test case toolchain exclude"
-                    continue
+                    discards[instance] = discards.get(instance, "In test case toolchain exclude")
 
                 if platform_filter and plat.name not in platform_filter:
-                    discards[instance] = "Command line platform filter"
-                    continue
+                    discards[instance] = discards.get(instance, "Command line platform filter")
 
                 if tc.platform_whitelist and plat.name not in tc.platform_whitelist:
-                    discards[instance] = "Not in testcase platform whitelist"
-                    continue
+                    discards[instance] = discards.get(instance, "Not in testcase platform whitelist")
 
                 if tc.toolchain_whitelist and toolchain not in tc.toolchain_whitelist:
-                    discards[instance] = "Not in testcase toolchain whitelist"
-                    continue
+                    discards[instance] = discards.get(instance, "Not in testcase toolchain whitelist")
 
                 if not plat.env_satisfied:
-                    discards[instance] = "Environment ({}) not satisfied".format(", ".join(plat.env))
-                    continue
+                    discards[instance] = discards.get(instance, "Environment ({}) not satisfied".format(", ".join(plat.env)))
 
                 if not force_toolchain \
                         and toolchain and (toolchain not in plat.supported_toolchains) \
                         and tc.type != 'unit':
-                    discards[instance] = "Not supported by the toolchain"
-                    continue
+                    discards[instance] = discards.get(instance, "Not supported by the toolchain")
 
                 if plat.ram < tc.min_ram:
-                    discards[instance] = "Not enough RAM"
-                    continue
+                    discards[instance] = discards.get(instance, "Not enough RAM")
 
                 if tc.depends_on:
                     dep_intersection = tc.depends_on.intersection(set(plat.supported))
                     if dep_intersection != set(tc.depends_on):
-                        discards[instance] = "No hardware support"
-                        continue
+                        discards[instance] = discards.get(instance, "No hardware support")
 
                 if plat.flash < tc.min_flash:
-                    discards[instance] = "Not enough FLASH"
-                    continue
+                    discards[instance] = discards.get(instance, "Not enough FLASH")
 
                 if set(plat.ignore_tags) & tc.tags:
-                    discards[instance] = "Excluded tags per platform (exclude_tags)"
-                    continue
+                    discards[instance] = discards.get(instance, "Excluded tags per platform (exclude_tags)")
 
                 if plat.only_tags and not set(plat.only_tags) & tc.tags:
-                    discards[instance] = "Excluded tags per platform (only_tags)"
-                    continue
+                    discards[instance] = discards.get(instance, "Excluded tags per platform (only_tags)")
 
                 # if nothing stopped us until now, it means this configuration
                 # needs to be added.
@@ -2872,7 +2874,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                     self.add_instances(instances)
 
                 for instance in list(filter(lambda inst: not inst.platform.default, instance_list)):
-                    discards[instance] = "Not a default test platform"
+                    discards[instance] = discards.get(instance, "Not a default test platform")
 
             else:
                 self.add_instances(instance_list)
@@ -2882,6 +2884,15 @@ class TestSuite(DisablePyTestCollectionMixin):
 
         self.discards = discards
         self.selected_platforms = set(p.platform.name for p in self.instances.values())
+
+        for instance in self.discards:
+            instance.reason = self.discards[instance]
+            instance.status = "skipped"
+            instance.fill_results_by_status()
+            # We only count skipped tests for instances in self.instances
+            if self.instances.get(instance.name, False):
+                self.total_skipped += 1
+                self.total_skipped_cases += len(instance.testcase.cases)
 
         return discards
 
@@ -3158,7 +3169,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                             pass
                         elif instance.results[k] == 'SKIP' \
                             or (instance.build_only and instance.status in ["skipped"]):
-                            el = ET.SubElement(eleTestcase, 'skipped', type="skipped", message="Skipped")
+                            el = ET.SubElement(eleTestcase, 'skipped', type="skipped", message=instance.reason)
                         else:
                             el = ET.SubElement(
                                 eleTestcase,
