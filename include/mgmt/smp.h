@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_INCLUDE_MGMT_SMP_H_
 #define ZEPHYR_INCLUDE_MGMT_SMP_H_
 
+#include <kernel.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
