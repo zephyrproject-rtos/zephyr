@@ -61,12 +61,26 @@ MALLOC_BSS static unsigned char __aligned(CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE)
 #define HEAP_BASE	USED_RAM_END_ADDR
 #endif /* Z_MALLOC_PARTITION_EXISTS */
 
+#ifdef CONFIG_MMU
+/* Currently a placeholder, we're just setting up all unused RAM pages
+ * past the end of the kernel as the heap arena. SRAM_BASE_ADDRESS is
+ * a physical address so we can't use that.
+ *
+ * Later, we will do this much more like other VM-enabled operating systems:
+ * - Extend k_map() or add new mapping fn to do anonymous mappings
+ * - Define VM region for the heap
+ * - Have _sbrk() map pages into the heap arena as needed
+ */
+#define RAM_BASE CONFIG_KERNEL_VM_BASE
+#else
+#define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
+#endif
+
 #ifdef CONFIG_XTENSA
 extern void *_heap_sentry;
 #define MAX_HEAP_SIZE  (POINTER_TO_UINT(&_heap_sentry) - HEAP_BASE)
 #else
-#define MAX_HEAP_SIZE	(KB(CONFIG_SRAM_SIZE) - \
-			 (HEAP_BASE - CONFIG_SRAM_BASE_ADDRESS))
+#define MAX_HEAP_SIZE	(KB(CONFIG_SRAM_SIZE) - (HEAP_BASE - RAM_BASE))
 #endif
 
 #if Z_MALLOC_PARTITION_EXISTS
