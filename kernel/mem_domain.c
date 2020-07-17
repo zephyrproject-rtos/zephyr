@@ -80,6 +80,23 @@ static inline bool sane_partition_domain(const struct k_mem_domain *domain,
 #define sane_partition_domain(...) (true)
 #endif
 
+static void partition_asserts(struct k_mem_domain *domain,
+			      struct k_mem_partition *part)
+{
+	__ASSERT(domain != NULL, "null domain");
+	__ASSERT(part != NULL, "null partition");
+	__ASSERT(part->size != 0, "zero sized partition at %p with base 0x%lx",
+		 part, part->start);
+	__ASSERT((part->start + part->size) > part->start,
+		 "invalid partition %p, wraparound detected. base 0x%lx size %zu",
+		 part, part->start, part->size);
+#if defined(CONFIG_EXECUTE_XOR_WRITE) || \
+	defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
+	__ASSERT(sane_partition_domain(domain, part),
+		 "domain check failed");
+#endif
+}
+
 void k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
 		       struct k_mem_partition *parts[])
 {
@@ -98,18 +115,8 @@ void k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
 		uint32_t i;
 
 		for (i = 0U; i < num_parts; i++) {
-			__ASSERT(parts[i] != NULL, "");
-			__ASSERT((parts[i]->start + parts[i]->size) >
-				 parts[i]->start,
-				 "invalid partition %p size %zu",
-				 parts[i], parts[i]->size);
+			partition_asserts(domain, parts[i]);
 
-#if defined(CONFIG_EXECUTE_XOR_WRITE) || \
-	defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
-			__ASSERT(sane_partition_domain(domain,
-						       parts[i]),
-				 "");
-#endif
 			domain->partitions[i] = *parts[i];
 			domain->num_partitions++;
 		}
@@ -148,15 +155,7 @@ void k_mem_domain_add_partition(struct k_mem_domain *domain,
 	int p_idx;
 	k_spinlock_key_t key;
 
-	__ASSERT(domain != NULL, "");
-	__ASSERT(part != NULL, "");
-	__ASSERT((part->start + part->size) > part->start,
-		 "invalid partition %p size %zu", part, part->size);
-
-#if defined(CONFIG_EXECUTE_XOR_WRITE) || \
-	defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
-	__ASSERT(sane_partition_domain(domain, part), "");
-#endif
+	partition_asserts(domain, part);
 
 	key = k_spin_lock(&lock);
 
