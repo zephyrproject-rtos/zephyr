@@ -245,6 +245,12 @@ static int pin_physical(void)
 	rc = gpio_pin_set_raw(dev, PIN_OUT, 32);
 	zassert_equal(rc, 0,
 		      "pin_set_raw high failed");
+
+	/* ensure that gpio configuration flags do reflect */
+	rc = gpio_pin_get_raw(dev, PIN_IN);
+	zassert_equal(rc, 1,
+		      "output pin set raw high physical level failed");
+
 	zassert_equal(raw_in(), true,
 		      "pin_set_raw high failed");
 
