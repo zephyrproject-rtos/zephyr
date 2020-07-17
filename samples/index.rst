@@ -26,6 +26,7 @@ Samples and Demos
    video/*
    scheduler/*
    smp/*
+   wasm_micro_runtime/*
    tfm_integration/tfm_integration.rst
 
 .. comment
