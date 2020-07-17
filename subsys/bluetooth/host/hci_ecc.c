@@ -194,7 +194,7 @@ static void emulate_le_generate_dhkey(void)
 
 	if (ret == TC_CRYPTO_FAIL) {
 		evt->status = BT_HCI_ERR_UNSPECIFIED;
-		(void)memset(evt->dhkey, 0, sizeof(evt->dhkey));
+		(void)memset(evt->dhkey, 0xff, sizeof(evt->dhkey));
 	} else {
 		evt->status = 0U;
 		/* Convert from big-endian (provided by crypto API) to
