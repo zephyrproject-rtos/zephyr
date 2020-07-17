@@ -28,6 +28,8 @@ jobs:
 
     - name: checkout
       uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
 
     - name: Upload to AWS S3
       run: |
