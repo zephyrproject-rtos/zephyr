@@ -8,6 +8,7 @@ macro(toolchain_cc_warning_base)
     -Wall
     -Wformat
     -Wformat-security
+    -Wmissing-parameter-type
     -Wno-format-zero-length
     -Wno-main
     -Woverride-init
