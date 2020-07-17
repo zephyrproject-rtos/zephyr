@@ -1,0 +1,12 @@
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: ISL92XX series I2C-based charger
+
+compatible: "renesas,isl92xx"
+
+include: [i2c-device.yaml]
+
+properties:
+    label:
+      required: true
