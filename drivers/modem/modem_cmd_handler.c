@@ -134,7 +134,7 @@ static int parse_params(struct modem_cmd_handler_data *data,  size_t match_len,
 			}
 		}
 
-		if (count >= cmd->arg_count) {
+		if (count >= cmd->arg_count_max) {
 			break;
 		}
 
@@ -158,7 +158,7 @@ static int parse_params(struct modem_cmd_handler_data *data,  size_t match_len,
 	}
 
 	/* missing arguments */
-	if (*argc < cmd->arg_count) {
+	if (*argc < cmd->arg_count_min) {
 		return -EAGAIN;
 	}
 
@@ -181,7 +181,7 @@ static int process_cmd(const struct modem_cmd *cmd, size_t match_len,
 	memset(argv, 0, sizeof(argv[0]) * ARRAY_SIZE(argv));
 
 	/* do we need to parse arguments? */
-	if (cmd->arg_count > 0U) {
+	if (cmd->arg_count_max > 0U) {
 		/* returns < 0 on error and > 0 for parsed len */
 		parsed_len = parse_params(data, match_len, cmd,
 					  argv, ARRAY_SIZE(argv), &argc);
