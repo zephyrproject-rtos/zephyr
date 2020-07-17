@@ -17,6 +17,7 @@
 /.github/				  @nashif
 /.github/workflows/                       @galak @nashif
 /.buildkite/				  @galak
+/MAINTAINERS.yml                          @ioannisg @MaureenHelm
 /arch/arc/                                @vonhust @ruuddw
 /arch/arm/                                @MaureenHelm @galak @ioannisg
 /arch/arm/core/aarch32/cortex_m/cmse/     @ioannisg
@@ -413,6 +414,7 @@
 /scripts/kconfig/                         @ulfalizer
 /scripts/sanity_chk/expr_parser.py        @nashif
 /scripts/gen_app_partitions.py            @andrewboie
+/scripts/get_maintainer.py                @nashif
 /scripts/dts/                             @ulfalizer @galak
 /scripts/release/                         @nashif
 /scripts/ci/                              @nashif
