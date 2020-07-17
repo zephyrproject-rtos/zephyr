@@ -17,7 +17,11 @@ config GPIO_MCUX_LPC
 	depends on GPIO
 
 config UART_MCUX_FLEXCOMM
-	default y
+	default y if HAS_MCUX_FLEXCOMM
 	depends on SERIAL
+
+config I2C_MCUX_FLEXCOMM
+	default y if HAS_MCUX_FLEXCOMM
+	depends on I2C
 
 endif # SOC_MIMXRT685S_CM33

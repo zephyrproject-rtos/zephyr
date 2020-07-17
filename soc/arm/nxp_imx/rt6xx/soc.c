@@ -150,6 +150,11 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 
 	CLOCK_AttachClk(kSFRO_to_FLEXCOMM0);
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm2), nxp_lpc_i2c, okay)
+	CLOCK_AttachClk(kSFRO_to_FLEXCOMM2);
+#endif
+
 #endif /* CONFIG_SOC_MIMXRT685S_CM33 */
 }
 
