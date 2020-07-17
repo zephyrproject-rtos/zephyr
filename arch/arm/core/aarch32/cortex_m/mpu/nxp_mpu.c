@@ -106,7 +106,7 @@ static void region_init(const uint32_t index,
 		SYSMPU->WORD[index][3] = SYSMPU_WORD_VLD_MASK;
 	}
 
-	LOG_DBG("[%d] 0x%08x 0x%08x 0x%08x 0x%08x", index,
+	LOG_DBG("[%02d] 0x%08x 0x%08x 0x%08x 0x%08x", index,
 		    (uint32_t)SYSMPU->WORD[index][0],
 		    (uint32_t)SYSMPU->WORD[index][1],
 		    (uint32_t)SYSMPU->WORD[index][2],
@@ -327,15 +327,35 @@ static int mpu_configure_dynamic_mpu_regions(const struct k_mem_partition
 {
 	unsigned int key;
 
-	/* Reset MPU regions inside which dynamic memory regions may
-	 * be programmed.
+	/*
+	 * Programming the NXP MPU has to be done with care to avoid race
+	 * conditions that will cause memory faults. The NXP MPU is composed
+	 * of a number of memory region descriptors. The number of descriptors
+	 * varies depending on the SOC. Each descriptor has a start addr, end
+	 * addr, attribute, and valid. When the MPU is enabled, access to
+	 * memory space is checked for access protection errors through an
+	 * OR operation of all of the valid MPU descriptors.
 	 *
-	 * Re-programming these regions will temporarily leave memory areas
-	 * outside all MPU regions.
-	 * This might trigger memory faults if ISRs occurring during
-	 * re-programming perform access in those areas.
+	 * Writing the start/end/attribute descriptor register will clear the
+	 * valid bit for that descriptor. This presents a problem because if
+	 * the current program stack is in that region or if an ISR occurs
+	 * that switches state and uses that region a memory fault will be
+	 * triggered. Note that local variable access can also cause stack
+	 * accesses while programming these registers depending on the compiler
+	 * optimization level.
+	 *
+	 * To avoid the race condition a temporary descriptor is set to enable
+	 * access to all of memory before the call to mpu_configure_regions()
+	 * to configure the dynamic memory regions. After, the temporary
+	 * descriptor is invalidated if the mpu_configure_regions() didn't
+	 * overwrite it.
 	 */
 	key = irq_lock();
+	/* Use last descriptor region as temporary descriptor */
+	region_init(get_num_regions()-1, (const struct nxp_mpu_region *)
+		&mpu_config.mpu_regions[mpu_config.sram_region]);
+
+	/* Now reset the main SRAM region */
 	region_init(mpu_config.sram_region, (const struct nxp_mpu_region *)
 		&mpu_config.mpu_regions[mpu_config.sram_region]);
 	irq_unlock(key);
