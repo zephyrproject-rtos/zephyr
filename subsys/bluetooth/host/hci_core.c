@@ -7957,6 +7957,7 @@ void bt_le_adv_resume(void)
 {
 	struct bt_le_ext_adv *adv = bt_adv_lookup_legacy();
 	struct bt_conn *conn;
+	bool persist_paused = false;
 	int err;
 
 	if (!adv) {
@@ -7975,7 +7976,7 @@ void bt_le_adv_resume(void)
 
 	err = le_adv_start_add_conn(adv, &conn);
 	if (err) {
-		BT_DBG("Cannot resume connectable advertising (%d)", err);
+		BT_DBG("Host cannot resume connectable advertising (%d)", err);
 		return;
 	}
 
@@ -7988,13 +7989,24 @@ void bt_le_adv_resume(void)
 
 	err = set_le_adv_enable(adv, true);
 	if (err) {
+		BT_DBG("Controller cannot resume connectable advertising (%d)",
+		       err);
 		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+
+		/* Temporarily clear persist flag to avoid recursion in
+		 * bt_conn_unref if the flag is still set.
+		 */
+		persist_paused = atomic_test_and_clear_bit(adv->flags,
+							   BT_ADV_PERSIST);
 	}
 
 	/* Since we don't give the application a reference to manage in
 	 * this case, we need to release this reference here.
 	 */
 	bt_conn_unref(conn);
+	if (persist_paused) {
+		atomic_set_bit(adv->flags, BT_ADV_PERSIST);
+	}
 }
 #endif /* defined(CONFIG_BT_PERIPHERAL) */
 
