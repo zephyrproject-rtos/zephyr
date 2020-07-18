@@ -16,6 +16,15 @@ This kernel image has been properly padded such that inserting
 these data structures will not disturb the memory addresses of
 other symbols.
 
+The input kernel ELF binary is used to obtain the following
+information:
+
+- Memory addresses of the Main and Double Fault TSS structures
+  so GDT descriptors can be created for them
+- Memory addresses of where the GDT lives in memory, so that this
+  address can be populated in the GDT pseudo descriptor
+- whether userspace or HW stack protection are enabled in Kconfig
+
 The output is a GDT whose contents depend on the kernel
 configuration. With no memory protection features enabled,
 we generate flat 32-bit code and data segments. If hardware-
