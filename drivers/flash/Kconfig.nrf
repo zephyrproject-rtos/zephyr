@@ -20,12 +20,25 @@ menuconfig SOC_FLASH_NRF
 
 if SOC_FLASH_NRF
 
+choice
+	prompt "Nordic nRFx flash driver synchronization"
+	default SOC_FLASH_NRF_RADIO_SYNC if BT_CTLR
+	default SOC_FLASH_NRF_RADIO_SYNC_NONE
+	help
+	  synchronization between flash memory driver and radio.
+
 config SOC_FLASH_NRF_RADIO_SYNC
 	bool "Nordic nRFx flash driver synchronized with radio"
-	default y
 	depends on BT_CTLR
 	help
-	  Enable synchronization between flash memory driver and radio.
+	  Enable synchronization between flash memory driver and radio using
+	  BLE LL controller ticker API.
+
+config SOC_FLASH_NRF_RADIO_SYNC_NONE
+	bool "none"
+	help
+	  disable synchronization between flash memory driver and radio.
+endchoice
 
 config SOC_FLASH_NRF_PARTIAL_ERASE
 	bool "Nordic nRFx flash driver partial erase"
