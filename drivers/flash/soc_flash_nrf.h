@@ -16,18 +16,17 @@ struct flash_context {
 	uint32_t data_addr;  /* Address of data to write. */
 	uint32_t flash_addr; /* Address of flash to write or erase. */
 	uint32_t len;        /* Size of data to write or erase [B]. */
-#if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
+#ifndef CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE
 	uint8_t  enable_time_limit; /* set execution limited to the execution
 				     * window.
 				     */
-#endif /* CONFIG_SOC_FLASH_NRF_RADIO_SYNC */
+#endif /* !CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE */
 #if defined(CONFIG_SOC_FLASH_NRF_PARTIAL_ERASE)
 	uint32_t flash_addr_next;
 #endif /* CONFIG_SOC_FLASH_NRF_PARTIAL_ERASE */
 }; /*< Context type for f. @ref write_op @ref erase_op */
 
-#if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
-
+#ifndef CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE
 
 #if defined(CONFIG_SOC_FLASH_NRF_PARTIAL_ERASE)
 /* The timeout is multiplied by 1.5 because switching tasks may take
@@ -192,5 +191,5 @@ bool nrf_flash_sync_check_time_limit(uint32_t iteration);
  * @}
  */
 
-#endif /* defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC) */
+#endif /* !CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE */
 #endif /* !__SOC_FLASH_NRF_H__ */
