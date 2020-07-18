@@ -57,7 +57,7 @@ void *malloc(size_t size)
 {
 	ARG_UNUSED(size);
 
-	LOG_DBG("CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE is 0");
+	LOG_ERR("CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE is 0");
 	errno = ENOMEM;
 
 	return NULL;
