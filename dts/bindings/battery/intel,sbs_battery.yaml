@@ -1,0 +1,12 @@
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: SBS series I2C-based battery
+
+compatible: "intel,sbs_battery"
+
+include: [i2c-device.yaml]
+
+properties:
+    label:
+      required: true

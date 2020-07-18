@@ -141,6 +141,7 @@
 /drivers/*/*native_posix*                 @aescolar @daor-oti
 /drivers/adc/                             @anangl
 /drivers/adc/adc_stm32.c                  @cybertale
+/drivers/battery/                         @rgundi
 /drivers/bluetooth/                       @joerchan @jhedberg @Vudentz
 /drivers/can/                             @alexanderwachter
 /drivers/can/*mcp2515*                    @karstenkoenig
