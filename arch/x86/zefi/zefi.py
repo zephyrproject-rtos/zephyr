@@ -1,134 +1,159 @@
 #!/usr/bin/env python3
 # Copyright (c) 2020 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
-import sys
+
 import os.path
 import subprocess
 import elftools.elf.elffile
+import argparse
 
-ZEPHYR_ELF = sys.argv[1]
 ENTRY_SYM = "__start64"
 GCC = "gcc"
 OBJCOPY = "objcopy"
 
-dir = os.path.dirname(os.path.abspath(__file__))
-cfile = dir + "/zefi.c"
-ldscript = dir + "/efi.ld"
-assert os.path.isfile(cfile)
-assert os.path.isfile(ldscript)
+def verbose(msg):
+    if args.verbose:
+        print(msg)
 
-#
-# Open the ELF file up and find our entry point
-#
-ef = elftools.elf.elffile.ELFFile(open(ZEPHYR_ELF, "rb"))
+def build_elf(elf_file):
+    base_dir = os.path.dirname(os.path.abspath(__file__))
 
-symtab = ef.get_section_by_name(".symtab")
-entry_addr = symtab.get_symbol_by_name(ENTRY_SYM)[0].entry.st_value
+    cfile = os.path.join(base_dir, "zefi.c")
+    ldscript = os.path.join(base_dir, "efi.ld")
 
-print("Entry point address (symbol: %s) 0x%x" % (ENTRY_SYM, entry_addr))
+    assert os.path.isfile(cfile)
+    assert os.path.isfile(ldscript)
 
-#
-# Parse the ELF file and extract segment data
-#
+    #
+    # Open the ELF file up and find our entry point
+    #
+    fp = open(elf_file, "rb")
+    ef = elftools.elf.elffile.ELFFile(fp)
 
-data_blob = b''
-data_segs = []
-zero_segs = []
+    symtab = ef.get_section_by_name(".symtab")
+    entry_addr = symtab.get_symbol_by_name(ENTRY_SYM)[0].entry.st_value
 
-for seg in ef.iter_segments():
-    h = seg.header
-    if h.p_type != "PT_LOAD":
-        continue
+    verbose("Entry point address (symbol: %s) 0x%x" % (ENTRY_SYM, entry_addr))
 
-    assert h.p_memsz >= h.p_filesz
-    assert (h.p_vaddr % 8) == 0
-    assert (h.p_filesz % 8) == 0
-    assert len(seg.data()) == h.p_filesz
+    #
+    # Parse the ELF file and extract segment data
+    #
 
-    if h.p_filesz > 0:
-        sd = seg.data()
-        print("%d bytes of data at 0x%x, data offset %d"
-              % (len(sd), h.p_vaddr, len(data_blob)))
-        data_segs.append((h.p_vaddr, len(sd) / 8, len(data_blob) / 8))
-        data_blob = data_blob + sd
+    data_blob = b''
+    data_segs = []
+    zero_segs = []
 
-    if h.p_memsz > h.p_filesz:
-        bytesz = h.p_memsz - h.p_filesz
-        if bytesz % 8:
-            bytesz += 8 - (bytesz % 8)
-        addr = h.p_vaddr + h.p_filesz
-        print("%d bytes of zero-fill at 0x%x" % (bytesz, addr))
-        zero_segs.append((addr, bytesz / 8))
+    for seg in ef.iter_segments():
+        h = seg.header
+        if h.p_type != "PT_LOAD":
+            continue
 
-print(len(data_blob), "bytes of data to include in image")
+        assert h.p_memsz >= h.p_filesz
+        assert (h.p_vaddr % 8) == 0
+        assert (h.p_filesz % 4) == 0
+        assert len(seg.data()) == h.p_filesz
 
-#
-# Emit a C header containing the metadata
-#
-cf = open("zefi-segments.h", "w")
+        if h.p_filesz > 0:
+            sd = seg.data()
+            verbose("%d bytes of data at 0x%x, data offset %d"
+                % (len(sd), h.p_vaddr, len(data_blob)))
+            data_segs.append((h.p_vaddr, len(sd) / 4, len(data_blob) / 4))
+            data_blob = data_blob + sd
 
-cf.write("/* GENERATED CODE.  DO NOT EDIT. */\n\n")
+        if h.p_memsz > h.p_filesz:
+            bytesz = h.p_memsz - h.p_filesz
+            if bytesz % 4:
+                bytesz += 4 - (bytesz % 4)
+            addr = h.p_vaddr + h.p_filesz
+            verbose("%d bytes of zero-fill at 0x%x" % (bytesz, addr))
+            zero_segs.append((addr, bytesz / 4))
 
-cf.write("/* Sizes and offsets specified in 8-byte units.\n")
-cf.write(" * All addresses 8-byte aligned.\n")
-cf.write(" */\n")
+    verbose(f"{len(data_blob)} bytes of data to include in image")
 
-cf.write("struct data_seg { uint64_t addr; uint32_t sz; uint32_t off; };\n\n")
+    #
+    # Emit a C header containing the metadata
+    #
+    cf = open("zefi-segments.h", "w")
 
-cf.write("static struct data_seg zefi_dsegs[] = {\n")
-for s in data_segs:
-    cf.write("    { 0x%x, %d, %d },\n"
-             % (s[0], s[1], s[2]))
-cf.write("};\n\n")
+    cf.write("/* GENERATED CODE.  DO NOT EDIT. */\n\n")
 
-cf.write("struct zero_seg { uint64_t addr; uint32_t sz; };\n\n")
+    cf.write("/* Sizes and offsets specified in 4-byte units.\n")
+    cf.write(" * All addresses 4-byte aligned.\n")
+    cf.write(" */\n")
 
-cf.write("static struct zero_seg zefi_zsegs[] = {\n")
-for s in zero_segs:
-    cf.write("    { 0x%x, %d },\n"
-             % (s[0], s[1]))
-cf.write("};\n\n")
+    cf.write("struct data_seg { uint64_t addr; uint32_t sz; uint32_t off; };\n\n")
 
-cf.write("static uintptr_t zefi_entry = 0x%xUL;\n" % (entry_addr))
+    cf.write("static struct data_seg zefi_dsegs[] = {\n")
+    for s in data_segs:
+        cf.write("    { 0x%x, %d, %d },\n"
+                % (s[0], s[1], s[2]))
+    cf.write("};\n\n")
 
-cf.close()
+    cf.write("struct zero_seg { uint64_t addr; uint32_t sz; };\n\n")
 
-print("\nMetadata header generated.\n")
+    cf.write("static struct zero_seg zefi_zsegs[] = {\n")
+    for s in zero_segs:
+        cf.write("    { 0x%x, %d },\n"
+                % (s[0], s[1]))
+    cf.write("};\n\n")
 
-#
-# Build
-#
+    cf.write("static uintptr_t zefi_entry = 0x%xUL;\n" % (entry_addr))
 
-# First stage ELF binary.  Flag notes:
-#  + Stack protector is default on some distros and needs library support
-#  + We need pic to enforce that the linker adds no relocations
-#  + UEFI can take interrupts on our stack, so no red zone
-#  + UEFI API assumes 16-bit wchar_t
-cmd = [GCC, "-shared", "-Wall", "-Werror", "-I.",
-       "-fno-stack-protector", "-fpic", "-mno-red-zone", "-fshort-wchar",
-       "-Wl,-nostdlib", "-T", ldscript, "-o", "zefi.elf", cfile]
-print(" ".join(cmd))
-subprocess.run(cmd, check = True)
+    cf.close()
 
-# Extract the .data segment and append our extra blob
-cmd = [OBJCOPY, "-O", "binary", "-j", ".data", "zefi.elf", "data.dat"]
-print(" ".join(cmd))
-subprocess.run(cmd, check = True)
+    verbose("Metadata header generated.")
 
-assert (os.stat("data.dat").st_size % 8) == 0
-df = open("data.dat", "ab")
-df.write(data_blob)
-df.close()
+    #
+    # Build
+    #
 
-# FIXME: this generates warnings about our unused trash section having to be moved to make room.  Set its address far away...
-subprocess.run([OBJCOPY, "--update-section", ".data=data.dat",
-                "zefi.elf"], check = True)
+    # First stage ELF binary.  Flag notes:
+    #  + Stack protector is default on some distros and needs library support
+    #  + We need pic to enforce that the linker adds no relocations
+    #  + UEFI can take interrupts on our stack, so no red zone
+    #  + UEFI API assumes 16-bit wchar_t
+    cmd = [GCC, "-shared", "-Wall", "-Werror", "-I.",
+        "-fno-stack-protector", "-fpic", "-mno-red-zone", "-fshort-wchar",
+        "-Wl,-nostdlib", "-T", ldscript, "-o", "zefi.elf", cfile]
+    verbose(" ".join(cmd))
+    subprocess.run(cmd, check = True)
 
-# Convert it to a PE-COFF DLL.
-cmd = [OBJCOPY, "--target=efi-app-x86_64",
-       "-j", ".text", "-j", ".reloc", "-j", ".data",
-       "zefi.elf", "zephyr.efi"]
-print(" ".join(cmd))
-subprocess.run(cmd, check = True)
+    # Extract the .data segment and append our extra blob
+    cmd = [OBJCOPY, "-O", "binary", "-j", ".data", "zefi.elf", "data.dat"]
+    verbose(" ".join(cmd))
+    subprocess.run(cmd, check = True)
 
-print("\nBuild complete; zephyr.efi wrapper binary is ready")
+    assert (os.stat("data.dat").st_size % 8) == 0
+    df = open("data.dat", "ab")
+    df.write(data_blob)
+    df.close()
+
+    # FIXME: this generates warnings about our unused trash section having to be moved to make room.  Set its address far away...
+    subprocess.run([OBJCOPY, "--update-section", ".data=data.dat",
+                    "zefi.elf"], check = True)
+
+    # Convert it to a PE-COFF DLL.
+    cmd = [OBJCOPY, "--target=efi-app-x86_64",
+        "-j", ".text", "-j", ".reloc", "-j", ".data",
+        "zefi.elf", "zephyr.efi"]
+    verbose(" ".join(cmd))
+    subprocess.run(cmd, check = True)
+
+    verbose("Build complete; zephyr.efi wrapper binary is ready")
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+
+    parser.add_argument("-f", "--elf-file", required=True, help="Input file")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
+
+    return parser.parse_args()
+
+if __name__ == "__main__":
+
+    args = parse_args()
+    verbose(f"Working on {args.elf_file}...")
+    build_elf(args.elf_file)

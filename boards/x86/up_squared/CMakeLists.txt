@@ -1,0 +1,9 @@
+# Create an EFI image
+if(CONFIG_BOARD_UP_SQUARED)
+set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+  COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/arch/x86/zefi/zefi.py
+  -f ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.elf
+  $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
+  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+)
+endif()

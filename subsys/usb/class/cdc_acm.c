@@ -402,22 +402,18 @@ static void cdc_acm_do_cb(struct cdc_acm_dev_data_t *dev_data,
 	struct device *dev = dev_data->common.dev;
 	struct usb_cfg_data *cfg = (void *)dev->config_info;
 
-	/* Store the new status */
-	if (!(status == USB_DC_SOF || status == USB_DC_INTERFACE)) {
-		dev_data->usb_status = status;
-	}
-
 	/* Check the USB status and do needed action if required */
 	switch (status) {
 	case USB_DC_ERROR:
-		LOG_DBG("USB device error");
+		LOG_DBG("Device error");
 		break;
 	case USB_DC_RESET:
-		LOG_DBG("USB device reset detected");
+		LOG_DBG("Device reset detected");
 		cdc_acm_reset_port(dev_data);
+		dev_data->usb_status = status;
 		break;
 	case USB_DC_CONNECTED:
-		LOG_DBG("USB device connected");
+		LOG_DBG("Device connected");
 		break;
 	case USB_DC_CONFIGURED:
 		cdc_acm_read_cb(cfg->endpoint[ACM_OUT_EP_IDX].ep_addr, 0,
@@ -425,25 +421,34 @@ static void cdc_acm_do_cb(struct cdc_acm_dev_data_t *dev_data,
 		dev_data->tx_ready = true;
 		dev_data->tx_irq_ena = true;
 		dev_data->rx_irq_ena = true;
-		LOG_INF("USB device configured");
+		dev_data->usb_status = status;
+		LOG_INF("Device configured");
 		break;
 	case USB_DC_DISCONNECTED:
-		LOG_INF("USB device disconnected");
+		LOG_INF("Device disconnected");
 		cdc_acm_reset_port(dev_data);
+		dev_data->usb_status = status;
 		break;
 	case USB_DC_SUSPEND:
-		LOG_INF("USB device suspended");
+		LOG_INF("Device suspended");
+		dev_data->usb_status = status;
 		break;
 	case USB_DC_RESUME:
-		dev_data->usb_status = USB_DC_CONFIGURED;
-		LOG_INF("USB device resumed");
+		if (dev_data->usb_status == USB_DC_SUSPEND) {
+			cdc_acm_read_cb(cfg->endpoint[ACM_OUT_EP_IDX].ep_addr,
+					0, dev_data);
+			dev_data->usb_status = USB_DC_CONFIGURED;
+			LOG_INF("Define resumed");
+		} else {
+			LOG_DBG("Spurious resume event");
+		}
 		break;
 	case USB_DC_SOF:
 	case USB_DC_INTERFACE:
 		break;
 	case USB_DC_UNKNOWN:
 	default:
-		LOG_DBG("USB unknown state");
+		LOG_DBG("Unknown event");
 		break;
 	}
 }

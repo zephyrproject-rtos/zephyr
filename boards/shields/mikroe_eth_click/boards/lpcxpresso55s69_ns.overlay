@@ -1,13 +1,18 @@
-/* Copyright (c) 2020 Linaro Limited.
+/*
+ * Copyright (C) 2020, NXP
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/delete-node/ &eth_click;
 
 &mikrobus_spi {
 	status = "okay";
 
-	eth_click: eth_click@0 {
+    /* LPCXpresso55xxx boards all use SSEL1. */
+	eth_click: eth_click@1 {
 		compatible = "microchip,enc28j60";
-		reg = <0x0>;
+		reg = <0x1>;
 		local-mac-address = [00 00 00 01 02 03];
 		/* Errata B7/1 specifies min 8Mhz, 20MHz max according to RM */
 		spi-max-frequency = <10000000>;

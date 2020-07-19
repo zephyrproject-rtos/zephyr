@@ -447,6 +447,7 @@ vocore VoCore Studio
 voipac	Voipac Technologies s.r.o.
 vot	Vision Optical Technology Co., Ltd.
 wd	Western Digital Corp.
+weact WeAct Studio
 wetek	WeTek Electronics, limited.
 wexler	Wexler
 whwave  Shenzhen whwave Electronics, Inc.

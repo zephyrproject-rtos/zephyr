@@ -55,6 +55,7 @@ config X86_ENABLE_TSS
 config X86_STACK_PROTECTION
 	bool
 	default y if HW_STACK_PROTECTION
+	select THREAD_STACK_INFO
 	select SET_GDT
 	select GDT_DYNAMIC
 	select X86_ENABLE_TSS

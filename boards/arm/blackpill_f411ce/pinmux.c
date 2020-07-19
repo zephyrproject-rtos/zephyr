@@ -1,0 +1,57 @@
+/*
+ * Copyright (c) 2020 Brian Bradley <brian.bradley.p@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <kernel.h>
+#include <device.h>
+#include <init.h>
+#include <drivers/pinmux.h>
+#include <sys/sys_io.h>
+
+#include <pinmux/stm32/pinmux_stm32.h>
+
+/* pin assignments for Black Pill V2.0 board */
+static const struct pin_config pinconf[] = {
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usart1), okay) && CONFIG_SERIAL
+	{STM32_PIN_PA9, STM32F4_PINMUX_FUNC_PA9_USART1_TX},
+	{STM32_PIN_PA10, STM32F4_PINMUX_FUNC_PA10_USART1_RX},
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay) && CONFIG_I2C
+	{STM32_PIN_PB8, STM32F4_PINMUX_FUNC_PB8_I2C1_SCL},
+	{STM32_PIN_PB9, STM32F4_PINMUX_FUNC_PB9_I2C1_SDA},
+#endif
+#if (DT_NODE_HAS_STATUS(DT_NODELABEL(spi1), okay) && CONFIG_SPI)
+#ifdef CONFIG_SPI_STM32_USE_HW_SS
+	{STM32_PIN_PA4, STM32F4_PINMUX_FUNC_PA4_SPI1_NSS},
+#endif /* CONFIG_SPI_STM32_USE_HW_SS */
+	{STM32_PIN_PA5, STM32F4_PINMUX_FUNC_PA5_SPI1_SCK},
+	/* V2.0 routes flash DO to PB4, V2.1+ uses PA6 */
+	{STM32_PIN_PA6, STM32F4_PINMUX_FUNC_PA6_SPI1_MISO},
+	{STM32_PIN_PA7, STM32F4_PINMUX_FUNC_PA7_SPI1_MOSI},
+#endif
+#ifdef CONFIG_USB_DC_STM32
+	{STM32_PIN_PA11, STM32F4_PINMUX_FUNC_PA11_OTG_FS_DM},
+	{STM32_PIN_PA12, STM32F4_PINMUX_FUNC_PA12_OTG_FS_DP},
+#endif	/* CONFIG_USB_DC_STM32 */
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc1), okay) && CONFIG_ADC
+	{STM32_PIN_PA1, STM32F4_PINMUX_FUNC_PA1_ADC123_IN1},
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm4), okay) && CONFIG_PWM
+	{STM32_PIN_PB6, STM32F4_PINMUX_FUNC_PB6_PWM4_CH1},
+	{STM32_PIN_PB7, STM32F4_PINMUX_FUNC_PB7_PWM4_CH2},
+#endif
+};
+
+static int pinmux_stm32_init(struct device *port)
+{
+	ARG_UNUSED(port);
+
+	stm32_setup_pins(pinconf, ARRAY_SIZE(pinconf));
+
+	return 0;
+}
+
+SYS_INIT(pinmux_stm32_init, PRE_KERNEL_1,
+		CONFIG_PINMUX_STM32_DEVICE_INITIALIZATION_PRIORITY);
