@@ -20,6 +20,7 @@
  */
 
 #include <init.h>
+#include <power/rt_dpm.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,7 +63,7 @@ extern "C" {
  */
 #define SYS_DEVICE_DEFINE(drv_name, init_fn, pm_control_fn, level, prio) \
 	DEVICE_DEFINE(Z_SYS_NAME(init_fn), drv_name, init_fn, pm_control_fn, \
-		      NULL, NULL, level, prio, NULL)
+		      NULL, NULL, NULL, level, prio, NULL)
 
 /**
  * @def DEVICE_INIT
@@ -132,7 +133,7 @@ extern "C" {
 #define DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info, \
 			    level, prio, api)				 \
 	DEVICE_DEFINE(dev_name, drv_name, init_fn,			 \
-		      device_pm_control_nop, data, cfg_info, level,	 \
+		      device_pm_control_nop, NULL, data, cfg_info, level,\
 		      prio, api)
 #endif
 
@@ -150,12 +151,12 @@ extern "C" {
  */
 #ifndef CONFIG_DEVICE_POWER_MANAGEMENT
 #define DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_control_fn,	 \
-		      data, cfg_info, level, prio, api)			 \
+		      rt_dpm_fn, data, cfg_info, level, prio, api)	 \
 	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info, \
 			    level, prio, api)
 #else
 #define DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_control_fn,	\
-		      data, cfg_info, level, prio, api)			\
+		      rt_dpm_fn, data, cfg_info, level, prio, api)	\
 	static struct device_pm _CONCAT(__pm_, dev_name) __used  = {	\
 		.usage = ATOMIC_INIT(0),				\
 		.lock = Z_SEM_INITIALIZER(				\
@@ -167,6 +168,15 @@ extern "C" {
 			K_POLL_MODE_NOTIFY_ONLY,			\
 			&_CONCAT(__pm_, dev_name).signal),		\
 	};								\
+	static struct rt_dpm _CONCAT(__rt_dpm, dev_name) __used = {	\
+		.wait_q = Z_WAIT_Q_INIT(				\
+			&_CONCAT(__rt_dpm, dev_name).wait_q),		\
+		.work = Z_WORK_INITIALIZER(NULL),			\
+		.usage_count = ATOMIC_INIT(0),				\
+		.state = RT_DPM_SUSPENDED,				\
+		.disable_count = 0,					\
+		.ops = rt_dpm_fn,					\
+	};								\
 	static Z_DECL_ALIGN(struct device)				\
 		DEVICE_NAME_GET(dev_name) __used			\
 	__attribute__((__section__(".device_" #level STRINGIFY(prio)))) = { \
@@ -176,6 +186,7 @@ extern "C" {
 		.driver_data = (data),					\
 		.device_pm_control = (pm_control_fn),			\
 		.pm  = &_CONCAT(__pm_, dev_name),			\
+		.rt_pm = &_CONCAT(__rt_dpm, dev_name),			\
 	};								\
 	Z_INIT_ENTRY_DEFINE(_CONCAT(__device_, dev_name), init_fn,	\
 			    (&_CONCAT(__device_, dev_name)), level, prio)
@@ -259,6 +270,7 @@ struct device {
 				 void *context, device_pm_cb cb, void *arg);
 	struct device_pm * const pm;
 #endif
+	struct rt_dpm *rt_pm;
 };
 
 /**
@@ -475,111 +487,7 @@ int device_any_busy_check(void);
  */
 int device_busy_check(struct device *chk_dev);
 
-#ifdef CONFIG_DEVICE_IDLE_PM
-
-/* Device PM FSM states */
-enum device_pm_fsm_state {
-	DEVICE_PM_FSM_STATE_ACTIVE = 1,
-	DEVICE_PM_FSM_STATE_SUSPENDED,
-	DEVICE_PM_FSM_STATE_SUSPENDING,
-	DEVICE_PM_FSM_STATE_RESUMING,
-};
-
-/**
- * @brief Enable device idle PM
- *
- * Called by a device driver to enable device idle power management.
- * The device might be asynchronously suspended if Idle PM is enabled
- * when the device is not use.
- *
- * @param dev Pointer to device structure of the specific device driver
- * the caller is interested in.
- */
-void device_pm_enable(struct device *dev);
-
-/**
- * @brief Disable device idle PM
- *
- * Called by a device driver to disable device idle power management.
- * The device might be asynchronously resumed if Idle PM is disabled
- *
- * @param dev Pointer to device structure of the specific device driver
- * the caller is interested in.
- */
-void device_pm_disable(struct device *dev);
-
-/**
- * @brief Call device resume asynchronously based on usage count
- *
- * Called by a device driver to mark the device as being used.
- * This API will asynchronously bring the device to resume state
- * if it not already in active state.
- *
- * @param dev Pointer to device structure of the specific device driver
- * the caller is interested in.
- * @retval 0 If successfully queued the Async request. If queued,
- * the caller need to wait on the poll event linked to device
- * pm signal mechanism to know the completion of resume operation.
- * @retval Errno Negative errno code if failure.
- */
-int device_pm_get(struct device *dev);
-
-/**
- * @brief Call device resume synchronously based on usage count
- *
- * Called by a device driver to mark the device as being used. It
- * will bring up or resume the device if it is in suspended state
- * based on the device usage count. This call is blocked until the
- * device PM state is changed to resume.
- *
- * @param dev Pointer to device structure of the specific device driver
- * the caller is interested in.
- * @retval 0 If successful.
- * @retval Errno Negative errno code if failure.
- */
-int device_pm_get_sync(struct device *dev);
-
-/**
- * @brief Call device suspend asynchronously based on usage count
- *
- * Called by a device driver to mark the device as being released.
- * This API asynchronously put the device to suspend state if
- * it not already in suspended state.
- *
- * @param dev Pointer to device structure of the specific device driver
- * the caller is interested in.
- * @retval 0 If successfully queued the Async request. If queued,
- * the caller need to wait on the poll event linked to device pm
- * signal mechanism to know the completion of suspend operation.
- * @retval Errno Negative errno code if failure.
- */
-int device_pm_put(struct device *dev);
-
-/**
- * @brief Call device suspend synchronously based on usage count
- *
- * Called by a device driver to mark the device as being released. It
- * will put the device to suspended state if is is in active state
- * based on the device usage count. This call is blocked until the
- * device PM state is changed to resume.
- *
- * @param dev Pointer to device structure of the specific device driver
- * the caller is interested in.
- * @retval 0 If successful.
- * @retval Errno Negative errno code if failure.
- */
-int device_pm_put_sync(struct device *dev);
-#else
-static inline void device_pm_enable(struct device *dev) { }
-static inline void device_pm_disable(struct device *dev) { }
-static inline int device_pm_get(struct device *dev) { return -ENOTSUP; }
-static inline int device_pm_get_sync(struct device *dev) { return -ENOTSUP; }
-static inline int device_pm_put(struct device *dev) { return -ENOTSUP; }
-static inline int device_pm_put_sync(struct device *dev) { return -ENOTSUP; }
-#endif
-#else
 #define device_pm_control_nop(...) NULL
-#endif
 
 /**
  * @}
