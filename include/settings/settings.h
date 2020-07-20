@@ -63,7 +63,7 @@ typedef ssize_t (*settings_read_cb)(void *cb_arg, void *data, size_t len);
  */
 struct settings_handler {
 
-	char *name;
+	const char *name;
 	/**< Name of subtree. */
 
 	int (*h_get)(const char *key, char *val, int val_len_max);
