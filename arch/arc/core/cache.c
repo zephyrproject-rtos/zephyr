@@ -85,9 +85,9 @@ void arch_dcache_flush(void *start_addr_ptr, size_t size)
 
 	do {
 		z_arc_v2_aux_reg_write(_ARC_V2_DC_FLDL, start_addr);
-		__asm__ volatile("nop_s");
-		__asm__ volatile("nop_s");
-		__asm__ volatile("nop_s");
+		__builtin_arc_nop();
+		__builtin_arc_nop();
+		__builtin_arc_nop();
 		/* wait for flush completion */
 		do {
 			if ((z_arc_v2_aux_reg_read(_ARC_V2_DC_CTRL) &
@@ -118,9 +118,9 @@ void arch_dcache_invd(void *start_addr_ptr, size_t size)
 
 	do {
 		z_arc_v2_aux_reg_write(_ARC_V2_DC_IVDL, start_addr);
-		__asm__ volatile("nop_s");
-		__asm__ volatile("nop_s");
-		__asm__ volatile("nop_s");
+		__builtin_arc_nop();
+		__builtin_arc_nop();
+		__builtin_arc_nop();
 		start_addr += DCACHE_LINE_SIZE;
 	} while (start_addr < end_addr);
 	irq_unlock(key); /* -exit critical section- */
