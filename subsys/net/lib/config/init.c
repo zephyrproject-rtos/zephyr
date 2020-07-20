@@ -402,7 +402,7 @@ int net_config_init(const char *app_info, uint32_t flags, int32_t timeout)
 		k_sem_take(&waiter, K_MSEC(loop));
 	}
 
-	if (!count && timeout) {
+	if (count == -1 && timeout > 0) {
 		NET_ERR("Timeout while waiting network %s", "setup");
 		return -ETIMEDOUT;
 	}
