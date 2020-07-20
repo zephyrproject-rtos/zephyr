@@ -58,6 +58,9 @@ static const char * const devices[] = {
 #ifdef CONFIG_COUNTER_RTC2
 	DT_LABEL(DT_NODELABEL(rtc2)),
 #endif
+#ifdef CONFIG_COUNTER_NATIVE_POSIX_RTC
+	DT_LABEL(DT_NODELABEL(rtc0)),
+#endif
 	/* NOTE: there is no trailing comma, as the DT_LABELS_FOR_COMPAT
 	 * handles it.
 	 */
@@ -287,8 +290,10 @@ static void alarm_handler(struct device *dev, uint8_t chan_id, uint32_t counter,
 			"%s: Unexpected callback", dev->name);
 	}
 
+#ifndef CONFIG_COUNTER_NATIVE_POSIX_RTC
 	zassert_true(k_is_in_isr(), "%s: Expected interrupt context",
 			dev->name);
+#endif /* CONFIG_COUNTER_NATIVE_POSIX_RTC */
 	k_sem_give(&alarm_cnt_sem);
 }
 

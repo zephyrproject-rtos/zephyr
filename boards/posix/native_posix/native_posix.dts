@@ -94,4 +94,9 @@
 		label = "ENTROPY_0";
 	};
 
+	rtc0: rtc {
+		status = "okay";
+		compatible = "zephyr,native-posix-rtc";
+		label = "rtc0";
+	};
 };

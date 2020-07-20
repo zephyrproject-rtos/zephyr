@@ -1,0 +1,11 @@
+# Counter native_posix rtc
+
+# Copyright (c) 2020, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_NATIVE_POSIX_RTC
+	bool "Enable Counter on RTC"
+	depends on BOARD_NATIVE_POSIX
+	default y if BOARD_NATIVE_POSIX
+	help
+		Zephyr Counter implementation using native posix' RTC hardware model.
