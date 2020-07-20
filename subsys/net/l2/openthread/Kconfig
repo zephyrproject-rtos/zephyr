@@ -22,6 +22,15 @@ menuconfig NET_L2_OPENTHREAD
 	select REBOOT
 	select ENTROPY_GENERATOR
 
+	imply NET_UDP
+	imply NET_IPV6
+	imply NET_CONFIG_NEED_IPV6
+
+if NET_L2_OPENTHREAD
+
+config OPENTHREAD_MBEDTLS
+	bool "Enable built-in mbedtls for use with OpenThread"
+	default y
 	select MBEDTLS
 	select MBEDTLS_ENABLE_HEAP
 	select MBEDTLS_CIPHER_AES_ENABLED
@@ -31,12 +40,22 @@ menuconfig NET_L2_OPENTHREAD
 	select MBEDTLS_MAC_CMAC_ENABLED
 	select MBEDTLS_CIPHER
 	select MBEDTLS_MD
+	select MBEDTLS_TLS_VERSION_1_2 if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+	select MBEDTLS_DTLS if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+	select MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+	select MBEDTLS_ECP_DP_SECP256R1_ENABLED if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+	select MBEDTLS_ECP_NIST_OPTIM if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+	select MBEDTLS_SSL_EXPORT_KEYS if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+	select MBEDTLS_CTR_DRBG_ENABLED if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+	select MBEDTLS_HMAC_DRBG_ENABLED if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
 
-	imply NET_UDP
-	imply NET_IPV6
-	imply NET_CONFIG_NEED_IPV6
-
-if NET_L2_OPENTHREAD
+config OPENTHREAD_MBEDTLS_TARGET
+	string "mbedtls target name"
+	default "mbedTLS"
+	help
+	  This option allows to specify custom mbedtls CMake target name for
+	  openthread. This is sometimes needed to utilize hardware cryptography
+	  acceleration.
 
 choice OPENTHREAD_IMPLEMENTATION
 	prompt "OpenThread Selection"
@@ -50,18 +69,6 @@ config OPENTHREAD_SOURCES
 	  Build Zephyrs OpenThread port from sources.
 
 endchoice
-
-config OPENTHREAD_DTLS
-	# Hidden option to enable DTLS support in OpenThread
-	bool
-	select MBEDTLS_TLS_VERSION_1_2
-	select MBEDTLS_DTLS
-	select MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
-	select MBEDTLS_ECP_DP_SECP256R1_ENABLED
-	select MBEDTLS_ECP_NIST_OPTIM
-	select MBEDTLS_SSL_EXPORT_KEYS
-	select MBEDTLS_CTR_DRBG_ENABLED
-	select MBEDTLS_HMAC_DRBG_ENABLED
 
 config OPENTHREAD_PLAT
 	bool
@@ -207,7 +214,6 @@ config OPENTHREAD_DIAG
 
 config OPENTHREAD_COMMISSIONER
 	bool "Commissioner functions support"
-	select OPENTHREAD_DTLS
 	help
 	  Enable commissioner capability in OpenThread stack. Note, that DTLS
 	  handshake used in the commissioning procedure requires a larger
@@ -216,7 +222,6 @@ config OPENTHREAD_COMMISSIONER
 
 config OPENTHREAD_JOINER
 	bool "Joiner functions support"
-	select OPENTHREAD_DTLS
 	help
 	  Enable joiner capability in OpenThread stack. Note, that DTLS
 	  handshake used in the commissioning procedure requires a larger
