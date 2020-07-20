@@ -517,6 +517,7 @@ config SRAM_REGION_PERMISSIONS
 config KERNEL_VM_BASE
 	hex "Base virtual address for the kernel"
 	depends on MMU
+	default SRAM_BASE_ADDRESS if X86 # TODO remove once x86 is linked properly
 	default 0xFFFF800000000000 if 64BIT
 	default 0xC0000000
 	help
