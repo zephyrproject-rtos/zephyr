@@ -31,6 +31,8 @@
 #define QSPI_PROP_AT(prop, idx) DT_PROP_BY_IDX(QSPI_NODE, prop, idx)
 #define QSPI_PROP_LEN(prop) DT_PROP_LEN(QSPI_NODE, prop)
 
+#define WORD_SIZE 4
+
 LOG_MODULE_REGISTER(qspi_nor, CONFIG_FLASH_LOG_LEVEL);
 
 static const struct flash_parameters qspi_flash_parameters = {
@@ -503,27 +505,86 @@ static inline int qspi_nor_read_id(struct device *dev,
 	return 0;
 }
 
+static inline nrfx_err_t read_non_aligned(struct device *dev, off_t addr,
+					  void *dest, size_t size)
+{
+	uint8_t __aligned(WORD_SIZE) buf[WORD_SIZE * 2];
+	uint8_t *dptr = dest;
+
+	off_t flash_prefix = (WORD_SIZE - (addr % WORD_SIZE)) % WORD_SIZE;
+
+	if (flash_prefix > size) {
+		flash_prefix = size;
+	}
+
+	off_t dest_prefix = (WORD_SIZE - (off_t)dptr % WORD_SIZE) % WORD_SIZE;
+
+	if (dest_prefix > size) {
+		dest_prefix = size;
+	}
+
+	off_t flash_suffix = (size - flash_prefix) % WORD_SIZE;
+	off_t flash_middle = size - flash_prefix - flash_suffix;
+	off_t dest_middle = size - dest_prefix -
+			    (size - dest_prefix) % WORD_SIZE;
+
+	if (flash_middle > dest_middle) {
+		flash_middle = dest_middle;
+		flash_suffix = size - flash_prefix - flash_middle;
+	}
+
+	nrfx_err_t res = NRFX_SUCCESS;
+
+	/* read from aligned flash to aligned memory */
+	if (flash_middle != 0) {
+		res = nrfx_qspi_read(dptr + dest_prefix, flash_middle,
+				     addr + flash_prefix);
+		qspi_wait_for_completion(dev, res);
+		if (res != NRFX_SUCCESS) {
+			return res;
+		}
+
+		/* perform shift in RAM */
+		if (flash_prefix != dest_prefix) {
+			memmove(dptr + flash_prefix, dptr + dest_prefix, flash_middle);
+		}
+	}
+
+	/* read prefix */
+	if (flash_prefix != 0) {
+		res = nrfx_qspi_read(buf, WORD_SIZE, addr -
+				     (WORD_SIZE - flash_prefix));
+		qspi_wait_for_completion(dev, res);
+		if (res != NRFX_SUCCESS) {
+			return res;
+		}
+		memcpy(dptr, buf + WORD_SIZE - flash_prefix, flash_prefix);
+	}
+
+	/* read suffix */
+	if (flash_suffix != 0) {
+		res = nrfx_qspi_read(buf, WORD_SIZE * 2,
+				     addr + flash_prefix + flash_middle);
+		qspi_wait_for_completion(dev, res);
+		if (res != NRFX_SUCCESS) {
+			return res;
+		}
+		memcpy(dptr + flash_prefix + flash_middle, buf, flash_suffix);
+	}
+
+	return res;
+}
+
 static int qspi_nor_read(struct device *dev, off_t addr, void *dest,
 			 size_t size)
 {
-	void *dptr = dest;
-	size_t dlen = size;
-	uint8_t __aligned(4) buf[4];
-
 	if (!dest) {
 		return -EINVAL;
 	}
 
-	/* read size must be non-zero multiple of 4 bytes */
-	if ((size > 0) && (size < 4U)) {
-		dest = buf;
-		size = sizeof(buf);
-	} else if (((size % 4U) != 0) || (size == 0)) {
-		return -EINVAL;
-	}
-	/* address must be 4-byte aligned */
-	if ((addr % 4U) != 0) {
-		return -EINVAL;
+	/* read size must be non-zero */
+	if (!size) {
+		return 0;
 	}
 
 	const struct qspi_nor_config *params = dev->config_info;
@@ -539,17 +600,11 @@ static int qspi_nor_read(struct device *dev, off_t addr, void *dest,
 
 	qspi_lock(dev);
 
-	nrfx_err_t res = nrfx_qspi_read(dest, size, addr);
-
-	qspi_wait_for_completion(dev, res);
+	nrfx_err_t res = read_non_aligned(dev, addr, dest, size);
 
 	qspi_unlock(dev);
 
 	int rc = qspi_get_zephyr_ret_code(res);
-
-	if ((rc == 0) && (dest != dptr)) {
-		memcpy(dptr, dest, dlen);
-	}
 
 	return rc;
 }
