@@ -23,7 +23,6 @@ struct smp_shell_data {
 	bool cmd_rdy;
 	atomic_t esc_state;
 	uint32_t cur;
-	uint32_t end;
 };
 
 /**

@@ -96,18 +96,17 @@ bool smp_shell_rx_byte(struct smp_shell_data *data, uint8_t byte)
 	 * The received byte is part of an mcumgr command.  Process the byte
 	 * and return true to indicate that shell should ignore it.
 	 */
-	if (data->cur + data->end < sizeof(data->mcumgr_buff) - 1) {
+	if (data->cur < sizeof(data->mcumgr_buff) - 1) {
 		data->mcumgr_buff[data->cur++] = byte;
 	}
 	if (mcumgr_state == SMP_SHELL_MCUMGR_STATE_PAYLOAD && byte == '\n') {
-		data->mcumgr_buff[data->cur + data->end] = '\0';
+		data->mcumgr_buff[data->cur] = '\0';
 		data->cmd_rdy = true;
 		atomic_clear_bit(&data->esc_state, ESC_MCUMGR_PKT_1);
 		atomic_clear_bit(&data->esc_state, ESC_MCUMGR_PKT_2);
 		atomic_clear_bit(&data->esc_state, ESC_MCUMGR_FRAG_1);
 		atomic_clear_bit(&data->esc_state, ESC_MCUMGR_FRAG_2);
 		data->cur = 0U;
-		data->end = 0U;
 	}
 
 	return true;
