@@ -406,7 +406,7 @@ int net_config_init_by_iface(struct net_if *iface, const char *app_info,
 		k_sem_take(&waiter, K_MSEC(loop));
 	}
 
-	if (!count && timeout) {
+	if (count == -1 && timeout > 0) {
 		NET_ERR("Timeout while waiting network %s", "setup");
 		return -ETIMEDOUT;
 	}
