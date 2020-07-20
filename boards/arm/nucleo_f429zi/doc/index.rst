@@ -105,6 +105,8 @@ The Zephyr nucleo_f429zi board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | independent watchdog                |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -161,6 +163,7 @@ and a ST morpho connector. Board is configured as follows
 - LD3 : PB14
 - USB DM : PA11
 - USB DP : PA12
+- ADC1 : PA0
 
 System Clock
 ------------
