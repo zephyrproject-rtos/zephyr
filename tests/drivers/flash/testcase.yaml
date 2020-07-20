@@ -1,0 +1,9 @@
+tests:
+  drivers.flash.nrf_qspi_nor:
+    platform_whitelist: nrf52840dk_nrf52840
+    tags: flash nrf52 nrf_qspi_fash
+    extra_args: OVERLAY_CONFIG=boards/nrf52840_flash_qspi.conf
+  drivers.flash.soc_flash_nrf:
+    platform_whitelist: nrf52840dk_nrf52840
+    tags: nrf52 soc_flash_nrf
+    extra_args: OVERLAY_CONFIG=boards/nrf52840_flash_soc.conf
