@@ -20,7 +20,6 @@ choice
 
 	config LVGL_EXT_CLICK_AREA_FULL
 		bool "Full flexibility"
-
 endchoice
 
 config LVGL_OBJ_LABEL
@@ -59,6 +58,22 @@ config LVGL_OBJ_IMAGE
 	depends on LVGL_OBJ_LABEL
 	help
 	  Enable image object support
+
+if LVGL_OBJ_LED
+
+config LVGL_OBJ_LED_BRIGHT_MIN
+	int "LED minimum brightness"
+	default 120
+	help
+	  LED minimum brightness
+
+config LVGL_OBJ_LED_BRIGHT_MAX
+	int "LED maximum brightness"
+	default 255
+	help
+	  LED maximum brightness
+
+endif # LVGL_OBJ_LED
 
 config LVGL_OBJ_LINE
 	bool "Line Object"
@@ -125,41 +140,45 @@ config LVGL_OBJ_CALENDAR
 	help
 	  Enable calendar object support
 
-config LVGL_OBJ_PRELOAD
-	bool "Pre-load object"
+config LVGL_OBJ_SPINNER
+	bool "Spinner object"
 	depends on LVGL_OBJ_ARC
 	help
-	  Enabled pre-load object support
+	  Enable spinner object support
 
-if	LVGL_OBJ_PRELOAD
+if LVGL_OBJ_SPINNER
 
-config LVGL_OBJ_PRELOAD_DEF_ARC_LENGTH
+config LVGL_OBJ_SPINNER_DEF_ARC_LENGTH
 	int "Default arc length"
 	range 1 360
 	default 60
 	help
-	  Default arc length for pre-load in degrees
+	  Default arc length for spinner in degrees
 
-config LVGL_OBJ_PRELOAD_DEF_SPIN_TIME
+config LVGL_OBJ_SPINNER_DEF_SPIN_TIME
 	int "Default spin time"
 	default 1000
 	help
-	  Default spin time for pre-load in ms
+	  Default spin time for spinner in ms
 
 choice
-	prompt "Default pre-load animation type"
-	default LVGL_OBJ_PRELOAD_DEF_ANIMATION_SPIN_ARC
+	prompt "Default spinner animation type"
+	default LVGL_OBJ_SPINNER_DEF_ANIM_SPINNING_ARC
 	help
-	  Default pre-load animation type
+	  Default spinner animation type
 
-	config LVGL_OBJ_PRELOAD_DEF_ANIMATION_SPIN_ARC
-		bool "Spinning Arc"
+	config LVGL_OBJ_SPINNER_DEF_ANIM_SPINNING_ARC
+		bool "Spinning arc"
 
-	config LVGL_OBJ_PRELOAD_DEF_ANIMATION_FILL
-		bool "Fill"
+	config LVGL_OBJ_SPINNER_DEF_ANIM_FILLSPIN_ARC
+		bool "Fill spin arc"
 
+	config LVGL_OBJ_SPINNER_DEF_ANIM_CONSTANT_ARC
+		bool "Constant arc"
 endchoice
-endif
+
+endif # LVGL_OBJ_SPINNER
+
 
 config LVGL_OBJ_CANVAS
 	bool "Canvas object"
@@ -177,6 +196,24 @@ config LVGL_OBJ_LINE_METER
 	help
 	  Enable line meter object support
 
+if LVGL_OBJ_LINE_METER
+
+choice
+	prompt "Line meter drawing precision"
+	default LVGL_OBJ_LINE_METER_PRECISE_NO_EXTRA
+
+	config LVGL_OBJ_LINE_METER_PRECISE_NO_EXTRA
+		bool "No extra precision"
+
+	config LVGL_OBJ_LINE_METER_PRECISE_SOME_EXTRA
+		bool "Some extra precision"
+
+	config LVGL_OBJ_LINE_METER_PRECISE_BEST
+		bool "Best precision"
+endchoice
+
+endif # LVGL_OBJ_LINE_METER
+
 config LVGL_OBJ_GAUGE
 	bool "Gauge object"
 	depends on LVGL_OBJ_BAR && LVGL_OBJ_LINE_METER
@@ -190,7 +227,7 @@ config LVGL_OBJ_CHART
 
 config LVGL_OBJ_CHART_AXIS_TICK_LABEL_MAX_LEN
 	int "Maximum length of axis label"
-	default 20
+	default 256
 	depends on LVGL_OBJ_CHART
 	help
 	  Maximum length of axis label
@@ -239,7 +276,7 @@ config LVGL_OBJ_TEXT_AREA_PWD_SHOW_TIME
 	help
 	  Password character show time in milliseconds
 
-endif
+endif # LVGL_OBJ_TEXT_AREA
 
 config LVGL_OBJ_SPINBOX
 	bool "Spinbox object"
@@ -253,15 +290,9 @@ config LVGL_OBJ_BUTTON
 	help
 	  Enable button object support
 
-if LVGL_OBJ_BUTTON
-
-config LVGL_OBJ_BUTTON_INK_EFFECT
-	bool "Enable ink effect"
-	help
-	  Enable ink, press, effect for buttons
-
 config LVGL_OBJ_IMG_BUTTON
 	bool "Image Button"
+	depends on LVGL_OBJ_BUTTON
 	help
 	  Enable image button object support
 
@@ -270,8 +301,6 @@ config LVGL_OBJ_IMG_BUTTON_TILED
 	depends on LVGL_OBJ_IMG_BUTTON
 	help
 	  Enable tile support for image button
-
-endif
 
 config LVGL_OBJ_BUTTON_MATRIX
 	bool "Button Matrix object"
@@ -296,12 +325,12 @@ config LVGL_OBJ_LIST
 	help
 	  Enable list object support
 
-config LVGL_OBJ_LIST_FOCUS_TIME
-	int "List focus time"
+config LVGL_OBJ_LIST_DEF_ANIM_TIME
+	int "List focus default animation time"
 	default 100
 	depends on LVGL_OBJ_LIST
 	help
-	  List focus animation time in milliseconds
+	  List focus default animation time in milliseconds
 
 config LVGL_OBJ_COLOR_PICKER
 	bool "Color picker object"
@@ -354,5 +383,10 @@ config LVGL_OBJ_SWITCH
 	depends on LVGL_OBJ_SLIDER
 	help
 	  Enable switch object support
+
+config LVGL_OBJ_OBJMASK
+	bool "Mask object"
+	help
+	  Enable object mask support
 
 endmenu
