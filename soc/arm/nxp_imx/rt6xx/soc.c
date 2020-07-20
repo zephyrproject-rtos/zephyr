@@ -126,8 +126,6 @@ static ALWAYS_INLINE void clock_init(void)
 		POWER_DisablePD(kPDRUNCFG_PD_SYSXTAL);
 		CLOCK_EnableSysOscClk(true, true, BOARD_SYSOSC_SETTLING_US);
 	}
-	/* Updated XTAL oscillator settling time */
-	POWER_UpdateOscSettlingTime(BOARD_SYSOSC_SETTLING_US);
 	CLOCK_SetXtalFreq(BOARD_XTAL_SYS_CLK_HZ);
 
 	/* Let CPU and AHB bus run on FFRO 48MHz for safe switching. */
@@ -143,11 +141,6 @@ static ALWAYS_INLINE void clock_init(void)
 
 	/* Set FRGPLLCLKDIV divider to value 12 */
 	CLOCK_SetClkDiv(kCLOCK_DivPllFrgClk, 12U);
-
-	/* Switch CM33 core to SYS PLL (250MHz). */
-	CLOCK_SetClkDiv(kCLOCK_DivSysCpuAhbClk, 2U);
-	/* Switch MAIN_CLK to MAIN_PLL */
-	CLOCK_AttachClk(kMAIN_PLL_to_MAIN_CLK);
 
 #ifdef CONFIG_INIT_AUDIO_PLL
 	/* Configure Audio PLL clock source */
