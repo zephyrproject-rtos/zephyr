@@ -39,8 +39,6 @@ LOG_MODULE_REGISTER(spi_flash_at45, CONFIG_FLASH_LOG_LEVEL);
 /* - Buffer and Page Size Configuration, "Power of 2" binary page size */
 #define CMD_BINARY_PAGE_SIZE	{ 0x3D, 0x2A, 0x80, 0xA6 }
 
-#define AT45_SECTOR_SIZE	0x10000UL
-
 #define STATUS_REG_LSB_RDY_BUSY_BIT	0x80
 #define STATUS_REG_LSB_PAGE_SIZE_BIT	0x01
 
@@ -70,6 +68,7 @@ struct spi_flash_at45_config {
 	struct flash_pages_layout pages_layout;
 #endif
 	uint32_t chip_size;
+	uint32_t sector_size;
 	uint16_t block_size;
 	uint16_t page_size;
 	uint16_t t_enter_dpd; /* in microseconds */
@@ -451,12 +450,12 @@ static int spi_flash_at45_erase(const struct device *dev, off_t offset,
 		err = perform_chip_erase(dev);
 	} else {
 		while (size) {
-			if (is_erase_possible(AT45_SECTOR_SIZE,
+			if (is_erase_possible(cfg->sector_size,
 					      offset, size)) {
 				err = perform_erase_op(dev, CMD_SECTOR_ERASE,
 						       offset);
-				offset += AT45_SECTOR_SIZE;
-				size   -= AT45_SECTOR_SIZE;
+				offset += cfg->sector_size;
+				size   -= cfg->sector_size;
 			} else if (is_erase_possible(cfg->block_size,
 						     offset, size)) {
 				err = perform_erase_op(dev, CMD_BLOCK_ERASE,
@@ -688,6 +687,7 @@ static const struct flash_driver_api spi_flash_at45_api = {
 				.pages_size  = DT_INST_PROP(idx, page_size), \
 			},))						     \
 		.chip_size   = INST_##idx##_BYTES,			     \
+		.sector_size = DT_INST_PROP(idx, sector_size),		     \
 		.block_size  = DT_INST_PROP(idx, block_size),		     \
 		.page_size   = DT_INST_PROP(idx, page_size),		     \
 		.t_enter_dpd = ceiling_fraction(			     \
