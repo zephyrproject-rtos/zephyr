@@ -174,7 +174,7 @@ config BT_CTLR_SCAN_AUX_SET
 
 config BT_CTLR_ZLI
 	bool "Use Zero Latency IRQs"
-	depends on ZERO_LATENCY_IRQS && BT_LL_SW_SPLIT
+	depends on ZERO_LATENCY_IRQS
 	help
 	  Enable support for use of Zero Latency IRQ feature. Note, applications
 	  shall not use Zero Latency IRQ themselves when this option is selected,
@@ -236,7 +236,6 @@ config BT_CTLR_SCHED_ADVANCED
 	  Disabling this feature will lead to overlapping role in timespace
 	  leading to skipped events amongst active roles.
 
-if BT_LL_SW_SPLIT
 config BT_CTLR_LLL_PRIO
 	int "Lower Link Layer (Radio) IRQ priority"
 	range 0 3 if SOC_SERIES_NRF51X
@@ -291,8 +290,6 @@ config BT_CTLR_CONN_META
 config BT_CTLR_RX_PDU_META
 	prompt "Enable RX pdu meta data"
 	bool
-
-endif # BT_LL_SW_SPLIT
 
 config BT_CTLR_RADIO_ENABLE_FAST
 	bool "Use tTXEN/RXEN,FAST ramp-up"
@@ -450,7 +447,6 @@ config BT_TICKER_EXT
 
 config BT_CTLR_USER_EXT
 	prompt "Enable proprietary extensions in Controller"
-	depends on BT_LL_SW_SPLIT
 	bool
 	help
 	  Catch-all for enabling proprietary event types in Controller behavior.
