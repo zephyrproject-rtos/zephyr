@@ -692,18 +692,14 @@ irq_dispatch:
 	movq x86_irq_args(,%rcx,8), %rdi
 	call *%rbx
 
-	xorl %eax, %eax
+	xorq %rax, %rax
 #ifdef CONFIG_X2APIC
 	xorl %edx, %edx
 	movl $(X86_X2APIC_BASE_MSR + (LOAPIC_EOI >> 4)), %ecx
 	wrmsr
 #else /* xAPIC */
-#ifdef DEVICE_MMIO_IS_IN_RAM
-	movl z_loapic_regs, %edx
-	movl %eax, LOAPIC_EOI(%edx)
-#else
-	movl %eax, (CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI)
-#endif /* DEVICE_MMIO_IS_IN_RAM */
+	movq z_loapic_regs, %rdx
+	movq %rax, LOAPIC_EOI(%rdx)
 #endif /* CONFIG_X2APIC */
 
 	movq %gs:__x86_tss64_t_cpu_OFFSET, %rsi
