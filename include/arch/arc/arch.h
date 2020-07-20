@@ -236,7 +236,7 @@ typedef uint32_t k_mem_partition_attr_t;
 
 static ALWAYS_INLINE void arch_nop(void)
 {
-	__asm__ volatile("nop");
+	__builtin_arc_nop();
 }
 
 #endif /* _ASMLANGUAGE */
