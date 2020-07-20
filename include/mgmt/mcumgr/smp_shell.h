@@ -17,12 +17,14 @@
 extern "C" {
 #endif
 
+#define SMP_SHELL_RX_BUF_SIZE	127
+
 /** @brief Data used by SMP shell */
 struct smp_shell_data {
-	char mcumgr_buff[128];
-	bool cmd_rdy;
+	struct net_buf_pool *buf_pool;
+	struct k_fifo buf_ready;
+	struct net_buf *buf;
 	atomic_t esc_state;
-	uint32_t cur;
 };
 
 /**
