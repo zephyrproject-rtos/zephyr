@@ -35,6 +35,7 @@
 #ifdef CONFIG_CPU_CORTEX_M
 #include <arch/arm/aarch32/cortex_m/cpu.h>
 #include <arch/arm/aarch32/cortex_m/memory_map.h>
+#include <arch/common/sys_bitops.h>
 #include <arch/common/sys_io.h>
 #elif defined(CONFIG_CPU_CORTEX_R)
 #include <arch/arm/aarch32/cortex_a_r/cpu.h>
