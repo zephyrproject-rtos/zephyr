@@ -250,7 +250,7 @@ static void setup_ipv6(struct net_if *iface, uint32_t flags)
 
 	if (sizeof(CONFIG_NET_CONFIG_MY_IPV6_ADDR) == 1) {
 		/* Empty address, skip setting ANY address in this case */
-		return;
+		goto exit;
 	}
 
 	if (net_addr_pton(AF_INET6, CONFIG_NET_CONFIG_MY_IPV6_ADDR, &laddr)) {
@@ -281,6 +281,8 @@ static void setup_ipv6(struct net_if *iface, uint32_t flags)
 				CONFIG_NET_CONFIG_MY_IPV6_ADDR);
 		}
 	}
+
+exit:
 
 #if !defined(CONFIG_NET_IPV6_DAD)
 	services_notify_ready(NET_CONFIG_NEED_IPV6);
