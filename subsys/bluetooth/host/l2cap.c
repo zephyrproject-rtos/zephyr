@@ -61,10 +61,7 @@ NET_BUF_POOL_FIXED_DEFINE(disc_pool, 1,
 			  BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU), NULL);
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
-/* Size of MTU is based on the maximum amount of data the buffer can hold
- * excluding ACL and driver headers.
- */
-#define L2CAP_MAX_LE_MPS	BT_L2CAP_RX_MTU
+#define L2CAP_MAX_LE_MPS	CONFIG_BT_L2CAP_RX_MTU
 /* For now use MPS - SDU length to disable segmentation */
 #define L2CAP_MAX_LE_MTU	(L2CAP_MAX_LE_MPS - 2)
 
@@ -777,9 +774,9 @@ static void l2cap_chan_rx_init(struct bt_l2cap_le_chan *chan)
 	if (!chan->rx.init_credits) {
 		if (chan->chan.ops->alloc_buf) {
 			/* Auto tune credits to receive a full packet */
-			chan->rx.init_credits = (chan->rx.mtu +
-						 (L2CAP_MAX_LE_MPS - 1)) /
-						L2CAP_MAX_LE_MPS;
+			chan->rx.init_credits =
+				ceiling_fraction(chan->rx.mtu,
+						 L2CAP_MAX_LE_MPS);
 		} else {
 			chan->rx.init_credits = L2CAP_LE_MAX_CREDITS;
 		}

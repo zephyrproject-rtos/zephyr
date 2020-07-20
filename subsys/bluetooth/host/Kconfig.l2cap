@@ -14,7 +14,6 @@ config BT_L2CAP_RX_MTU
 	range 70 1300 if BT_EATT
 	range 65 1300 if BT_SMP
 	range 23 1300
-	depends on BT_HCI_ACL_FLOW_CONTROL
 	help
 	  Maximum size of each incoming L2CAP PDU.
 
