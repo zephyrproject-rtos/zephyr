@@ -29,6 +29,7 @@
 #include <arch/arm/aarch64/sys_io.h>
 #include <arch/arm/aarch64/timer.h>
 #include <arch/common/addr_types.h>
+#include <arch/common/sys_bitops.h>
 #include <arch/common/ffs.h>
 
 #ifdef __cplusplus
