@@ -145,6 +145,11 @@ Drivers and Sensors
 
 * Bluetooth
 
+  * L2CAP RX MTU is now controlled by CONFIG_BT_L2CAP_RX_MTU when
+    CONFIG_BT_ACL_FLOW_CONTROL is disabled, previously this was controlled
+    by CONFIG_BT_RX_BUF_LEN. If CONFIG_BT_RX_BUF_LEN has been changed from its
+    default value then CONFIG_BT_L2CAP_RX_MTU should be set to
+    CONFIG_BT_RX_BUF_LEN - 8.
 
 * CAN
 
