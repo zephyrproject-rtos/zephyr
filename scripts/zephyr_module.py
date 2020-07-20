@@ -197,6 +197,8 @@ def main():
             # workspace. Such setup is allowed, as west may be installed
             # but the project is not required to use west.
             projects = []
+    else:
+        projects = args.modules.copy()
 
     projects += args.extra_modules
     extra_modules = set(args.extra_modules)
