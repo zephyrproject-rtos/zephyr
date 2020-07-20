@@ -20,8 +20,8 @@ LOG_MODULE_REGISTER(shell_uart);
 #endif
 
 #ifdef CONFIG_MCUMGR_SMP_SHELL
-NET_BUF_POOL_DEFINE(smp_shell_rx_pool, 1, SMP_SHELL_RX_BUF_SIZE,
-		    0, NULL);
+NET_BUF_POOL_DEFINE(smp_shell_rx_pool, CONFIG_MCUMGR_SMP_SHELL_RX_BUF_COUNT,
+		    SMP_SHELL_RX_BUF_SIZE, 0, NULL);
 #endif /* CONFIG_MCUMGR_SMP_SHELL */
 
 SHELL_UART_DEFINE(shell_transport_uart,
