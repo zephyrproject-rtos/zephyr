@@ -29,16 +29,20 @@ static lv_disp_buf_t disp_buf;
 
 #define NBR_PIXELS_IN_BUFFER (BUFFER_SIZE * 8 / CONFIG_LVGL_BITS_PER_PIXEL)
 
-static uint8_t buf0[BUFFER_SIZE];
+/* NOTE: depending on chosen color depth buffer may be accessed using uint8_t *,
+ * uint16_t * or uint32_t *, therefore buffer needs to be aligned accordingly to
+ * prevent unaligned memory accesses.
+ */
+static uint8_t buf0[BUFFER_SIZE] __aligned(4);
 #ifdef CONFIG_LVGL_DOUBLE_VDB
-static uint8_t buf1[BUFFER_SIZE];
+static uint8_t buf1[BUFFER_SIZE] __aligned(4);
 #endif
 
 #endif /* CONFIG_LVGL_BUFFER_ALLOC_STATIC */
 
 #if CONFIG_LVGL_LOG_LEVEL != 0
 static void lvgl_log(lv_log_level_t level, const char *file, uint32_t line,
-		const char *dsc)
+		const char *func, const char *dsc)
 {
 	/* Convert LVGL log level to Zephyr log level
 	 *
@@ -60,8 +64,9 @@ static void lvgl_log(lv_log_level_t level, const char *file, uint32_t line,
 
 	ARG_UNUSED(file);
 	ARG_UNUSED(line);
+	ARG_UNUSED(func);
 
-	Z_LOG(zephyr_level, "%s", dsc);
+	Z_LOG(zephyr_level, "%s", log_strdup(dsc));
 }
 #endif
 

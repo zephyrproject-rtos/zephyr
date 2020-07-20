@@ -8,80 +8,127 @@ config LVGL_FONT_SUBPX_BGR
 	help
 	  User BGR pixel format instead of RGB for sub-pixel rendering
 
-config LVGL_BUILD_IN_FONT_ROBOTO_12
-	bool "Enable build-in 12px fonts"
+config LVGL_FONT_MONTSERRAT_12
+	bool "Enable Montserrat 12px font"
 	help
-	  Enable build-in font support, size 12 pixels
+	  Enable Montserrat font support, size 12 pixels
 
-config LVGL_BUILD_IN_FONT_ROBOTO_16
-	bool "Enable build-in 16px fonts"
+config LVGL_FONT_MONTSERRAT_14
+	bool "Enable Montserrat 14px font"
 	help
-	  Enable build-in font support, size 16 pixels
+	  Enable Montserrat font support, size 14 pixels
 
-config LVGL_BUILD_IN_FONT_ROBOTO_22
-	bool "Enable build-in 22px fonts"
+config LVGL_FONT_MONTSERRAT_16
+	bool "Enable Montserrat 16px font"
 	help
-	  Enable build-in font support, size 22 pixels
+	  Enable Montserrat font support, size 16 pixels
 
-config LVGL_BUILD_IN_FONT_ROBOTO_28
-	bool "Enable build-in 28px fonts"
+config LVGL_FONT_MONTSERRAT_18
+	bool "Enable Montserrat 18px font"
 	help
-	  Enable build-in font support, size 28 pixels
+	  Enable Montserrat font support, size 18 pixels
 
-config LVGL_BUILD_IN_FONT_UNSCII_8
-	bool "Enable build-in 8px monospace fonts"
+config LVGL_FONT_MONTSERRAT_20
+	bool "Enable Montserrat 20px font"
+	help
+	  Enable Montserrat font support, size 20 pixels
+
+config LVGL_FONT_MONTSERRAT_22
+	bool "Enable Montserrat 22px font"
+	help
+	  Enable Montserrat font support, size 22 pixels
+
+config LVGL_FONT_MONTSERRAT_24
+	bool "Enable Montserrat 24px font"
+	help
+	  Enable Montserrat font support, size 24 pixels
+
+config LVGL_FONT_MONTSERRAT_26
+	bool "Enable Montserrat 26px font"
+	help
+	  Enable Montserrat font support, size 26 pixels
+
+config LVGL_FONT_MONTSERRAT_28
+	bool "Enable Montserrat 28px font"
+	help
+	  Enable Montserrat font support, size 28 pixels
+
+config LVGL_FONT_MONTSERRAT_30
+	bool "Enable Montserrat 30px font"
+	help
+	  Enable Montserrat font support, size 30 pixels
+
+config LVGL_FONT_MONTSERRAT_32
+	bool "Enable Montserrat 32px font"
+	help
+	  Enable Montserrat font support, size 32 pixels
+
+config LVGL_FONT_MONTSERRAT_34
+	bool "Enable Montserrat 34px font"
+	help
+	  Enable Montserrat font support, size 34 pixels
+
+config LVGL_FONT_MONTSERRAT_36
+	bool "Enable Montserrat 36px font"
+	help
+	  Enable Montserrat font support, size 36 pixels
+
+config LVGL_FONT_MONTSERRAT_38
+	bool "Enable Montserrat 38px font"
+	help
+	  Enable Montserrat font support, size 38 pixels
+
+config LVGL_FONT_MONTSERRAT_40
+	bool "Enable Montserrat 40px font"
+	help
+	  Enable Montserrat font support, size 40 pixels
+
+config LVGL_FONT_MONTSERRAT_42
+	bool "Enable Montserrat 42px font"
+	help
+	  Enable Montserrat font support, size 42 pixels
+
+config LVGL_FONT_MONTSERRAT_44
+	bool "Enable Montserrat 44px font"
+	help
+	  Enable Montserrat font support, size 44 pixels
+
+config LVGL_FONT_MONTSERRAT_46
+	bool "Enable Montserrat 46px font"
+	help
+	  Enable Montserrat font support, size 46 pixels
+
+config LVGL_FONT_MONTSERRAT_48
+	bool "Enable Montserrat 48px font"
+	help
+	  Enable Montserrat font support, size 48 pixels
+
+config LVGL_FONT_MONTSERRAT_12_SUBPX
+	bool "Enable Montserrat 12px font with sub-pixel rendering"
+	help
+	  Enable Montserrat font support with sub-pixel rendering, size 12 pixels
+
+config LVGL_FONT_MONTSERRAT_28_COMPRESSED
+	bool "Enable Montserrat 28px compressed font"
+	help
+	  Enable Montserrat compressed font support, size 28 pixels
+
+config LVGL_FONT_DEJAVU_16_PERSIAN_HEBREW
+	bool "Enable Dejavu 16px font with Hebrew, Arabic and Persian letters"
+	help
+	  Enable Dejavu font support, size 16 pixels, Hebrew, Arabic, Perisan
+	  letters and all their forms
+
+config LVGL_FONT_SIMSUN_16_CJK
+	bool "Enable Simsun 16px font with CJK radicals"
+	help
+	  Enable Simsun font support, size 16 pixels, 1000 most common CJK
+	  radicals
+
+config LVGL_FONT_UNSCII_8
+	bool "Enable Unscii 8px monospace fonts"
 	default y
 	help
-	  Enable build-in monospace font support, size 8 pixels
-
-config LVGL_BUILD_IN_FONT_ROBOTO_28_COMPRESSED
-	bool "Enable build-in 28px compressed fonts"
-	help
-	  Enable build-in compressed font support, size 28 pixels
-
-config LVGL_BUILD_IN_FONT_ROBOTO_12_SUBPX
-	bool "Enable build-in 12px fonts with sub-pixel rendering"
-	help
-	  Enable build-in font support with sub-pixel rendering, size 12 pixels
-
-choice
-	prompt "Default LVGL font"
-	default LVGL_DEFAULT_FONT_BUILD_IN_UNSCII_8
-
-	config LVGL_DEFAULT_FONT_BUILD_IN_ROBOTO_12
-		bool "Build-in font size 12"
-		depends on LVGL_BUILD_IN_FONT_ROBOTO_12
-
-	config LVGL_DEFAULT_FONT_BUILD_IN_ROBOTO_16
-		bool "Build-in font size 16"
-		depends on LVGL_BUILD_IN_FONT_ROBOTO_16
-
-	config LVGL_DEFAULT_FONT_BUILD_IN_ROBOTO_22
-		bool "Build-in font size 22"
-		depends on LVGL_BUILD_IN_FONT_ROBOTO_22
-
-	config LVGL_DEFAULT_FONT_BUILD_IN_ROBOTO_28
-		bool "Build-in font size 28"
-		depends on LVGL_BUILD_IN_FONT_ROBOTO_28
-
-	config LVGL_DEFAULT_FONT_BUILD_IN_UNSCII_8
-		bool "Build-in monospace font"
-		depends on LVGL_BUILD_IN_FONT_UNSCII_8
-
-	config LVGL_DEFAULT_FONT_BUILD_IN_ROBOTO_28_COMPRESSED
-		bool "Build-in compressed font size 28"
-		depends on LVGL_BUILD_IN_FONT_ROBOTO_28_COMPRESSED
-
-	config LVGL_DEFAULT_FONT_BUILD_IN_ROBOTO_12_SUBPX
-		bool "Build-in font size 12 with sub-pixel rendering"
-		depends on LVGL_BUILD_IN_FONT_ROBOTO_12_SUBPX
-
-	config LVGL_DEFAULT_FONT_CUSTOM
-		bool "Custom font"
-		help
-		  Use a none build-in font as default font. A pointer named lv_default_font_custom_ptr
-		  should exists as a global variable and point to a valid font structure
-
-endchoice
+	  Enable Unscii monospace font support, size 8 pixels
 
 endmenu

@@ -42,21 +42,42 @@ endif # LVGL_POINTER_KSCAN
 
 config LVGL_HOR_RES
 	int "Horizontal Screen Resolution"
-	default 320
+	default 480
 	help
 	  Horizontal screen resolution in pixels
 
 config LVGL_VER_RES
 	int "Vertical Screen Resolution"
-	default 240
+	default 320
 	help
 	  Vertical screen resolution in pixels
 
 config LVGL_DPI
 	int "DPI"
-	default 100
+	default 130
 	help
 	  Dots per inch (DPI)
+
+config LVGL_DISP_SMALL_LIMIT
+	int "Small display limit"
+	default 30
+	help
+	  According to the width of the display (hor. res. / dpi) the displays fall
+	  in 4 categories. This limit is the threshold for small displays.
+
+config LVGL_DISP_MEDIUM_LIMIT
+	int "Medium display limit"
+	default 50
+	help
+	  According to the width of the display (hor. res. / dpi) the displays fall
+	  in 4 categories. This limit is the threshold for medium displays.
+
+config LVGL_DISP_LARGE_LIMIT
+	int "Large display limit"
+	default 70
+	help
+	  According to the width of the display (hor. res. / dpi) the displays fall
+	  in 4 categories. This limit is the threshold for large displays.
 
 choice LVGL_COLOR_DEPTH
 	prompt "Color Depth"
@@ -234,13 +255,13 @@ endchoice
 
 config LVGL_SCREEN_REFRESH_PERIOD
 	int "Screen refresh period"
-	default 50
+	default 30
 	help
 	  Screen refresh period in milliseconds
 
 config LVGL_INPUT_REFRESH_PERIOD
 	int "Input device refresh period"
-	default 50
+	default 30
 	help
 	  Refresh period for input devices in milliseconds
 
@@ -252,7 +273,7 @@ config LVGL_INPUT_DRAG_THRESHOLD
 
 config LVGL_INPUT_DRAG_THROW_SLOW_DOWN
 	int "Drag throw slow-down"
-	default 20
+	default 10
 	range 0 100
 	help
 	  Percentage of slow down of a throw following a drag.
@@ -270,6 +291,18 @@ config LVGL_INPUT_LONG_RESS_REPEAT_TIME
 	help
 	  Period in milliseconds after which a new trigger is generated
 	  for a long press
+
+config LVGL_INPUT_GESTURE_LIMIT
+	int "Gesture threshold"
+	default 50
+	help
+	  Gesture threshold in pixels
+
+config LVGL_INPUT_GESTURE_MIN_VELOCITY
+	int "Gesture minimum velocity"
+	default 3
+	help
+	  Gesture min velocity at release before swipe (pixels)
 
 choice
 	prompt "String character encoding"
@@ -291,7 +324,7 @@ config LVGL_TEXT_BREAK_CHARACTERS
 
 config LVGL_TEXT_LINE_BREAK_LONG_LEN
 	int "Minimal word length for line break"
-	default 12
+	default 0
 	help
 	  If a word is at least this long, a line break is allowed in the word.
 
@@ -344,6 +377,14 @@ choice LVGL_TEXT_BIDI_MODE
 
 endchoice
 
+config LVGL_TEXT_ARABIC_PERSIAN_CHARS
+	bool "Enable Arabic/Persian processing"
+	help
+	  Enable Arabic/Persian processing
+
+	  In these languages characters should be replaced with an other form based
+	  on their position in the text
+
 config LVGL_ANTIALIAS
 	bool "Enable anti-aliasing"
 	help
@@ -358,6 +399,30 @@ config LVGL_SHADOW
 	bool "Enable shadows"
 	help
 	  Enable shadows
+
+config LVGL_SHADOW_CACHE_SIZE
+	int "Shadow cache size"
+	depends on LVGL_SHADOW
+	default 0
+	help
+	  Allow buffering some shadow calculation. This parameter is the maximum
+	  shadow size to buffer.
+
+config LVGL_BLEND_MODES
+	bool "Enable other blend modes"
+	help
+	  Use other blend modes than normal
+
+config LVGL_OPA_SCALE
+	bool "Enable opa_scale style property"
+	help
+	  Use the opa_scale style property to set the opacity of an object and
+	  its children at once
+
+config LVGL_IMG_TRANSFORM
+	bool "Enable image transformations"
+	help
+	  Use image zoom and rotation
 
 config LVGL_GROUP
 	bool "Enable group support"
@@ -382,17 +447,22 @@ config LVGL_IMG_CF_ALPHA
 	help
 	  Enable support for alpha indexed images
 
-config LVGL_IMG_INDEXED_CHROMA
-	bool "Enable chroma keying for indexed images"
-	help
-	  Enable chroma keying for indexed images
-
 config LVGL_FILESYSTEM
 	bool "Enable file system"
 	depends on FILE_SYSTEM
 	default y if FILE_SYSTEM
 	help
 	  Enable LittlevGL file system
+
+config LVGL_PERF_MONITOR
+	bool "Enable performance monitor"
+	help
+	  Show CPU usage and FPS count in the right bottom corner
+
+config LVGL_API_EXTENSION_V6
+	bool "Enable V6 API extensions"
+	help
+	  Use the functions and types from the older API if possible
 
 config LVGL_IMG_CACHE_DEF_SIZE
 	int "Default image cache size"
@@ -431,6 +501,12 @@ config LVGL_USE_ASSERT_MEM
 	  Enable memory allocation assertion
 
 	  Check if memory allocation is successful (Quite fast)
+
+config LVGL_USE_ASSERT_MEM_INTEGRITY
+	bool "Enable memory integrity check"
+	default y if TEST
+	help
+	  Check the integrity of lv_mem after critical operations. (Slow)
 
 config LVGL_USE_ASSERT_STR
 	bool "Enable string assertion"
