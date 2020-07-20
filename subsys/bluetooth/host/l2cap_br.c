@@ -51,11 +51,6 @@
 #define L2CAP_BR_DISCONN_TIMEOUT	K_SECONDS(1)
 #define L2CAP_BR_CONN_TIMEOUT		K_SECONDS(40)
 
-/* Size of MTU is based on the maximum amount of data the buffer can hold
- * excluding ACL and driver headers.
- */
-#define L2CAP_BR_MAX_MTU	BT_L2CAP_RX_MTU
-
 /*
  * L2CAP extended feature mask:
  * BR/EDR fixed channel support enabled
@@ -733,7 +728,8 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR);
 
 	/* Disable fragmentation of l2cap rx pdu */
-	BR_CHAN(chan)->rx.mtu = MIN(BR_CHAN(chan)->rx.mtu, L2CAP_BR_MAX_MTU);
+	BR_CHAN(chan)->rx.mtu = MIN(BR_CHAN(chan)->rx.mtu,
+				    CONFIG_BT_L2CAP_RX_MTU);
 
 	switch (l2cap_br_conn_security(chan, psm)) {
 	case L2CAP_CONN_SECURITY_PENDING:
