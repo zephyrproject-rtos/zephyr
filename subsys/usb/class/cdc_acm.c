@@ -170,8 +170,6 @@ static struct k_sem poll_wait_sem;
 
 /* Device data structure */
 struct cdc_acm_dev_data_t {
-	/* USB device status code */
-	enum usb_dc_status_code usb_status;
 	/* Callback function pointer/arg */
 	uart_irq_callback_user_data_t cb;
 	void *cb_data;
@@ -197,6 +195,10 @@ struct cdc_acm_dev_data_t {
 	uint8_t serial_state;
 	/* CDC ACM notification sent status */
 	uint8_t notification_sent;
+	/* CDC ACM configured flag */
+	bool configured;
+	/* CDC ACM suspended flag */
+	bool suspended;
 
 	struct usb_dev_data common;
 };
@@ -398,6 +400,8 @@ static void cdc_acm_int_in(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 static void cdc_acm_reset_port(struct cdc_acm_dev_data_t *dev_data)
 {
 	k_sem_give(&poll_wait_sem);
+	dev_data->configured = false;
+	dev_data->suspended = false;
 	dev_data->rx_ready = false;
 	dev_data->tx_ready = false;
 	dev_data->tx_irq_ena = false;
@@ -424,35 +428,38 @@ static void cdc_acm_do_cb(struct cdc_acm_dev_data_t *dev_data,
 	case USB_DC_RESET:
 		LOG_DBG("Device reset detected");
 		cdc_acm_reset_port(dev_data);
-		dev_data->usb_status = status;
 		break;
 	case USB_DC_CONNECTED:
 		LOG_DBG("Device connected");
 		break;
 	case USB_DC_CONFIGURED:
-		cdc_acm_read_cb(cfg->endpoint[ACM_OUT_EP_IDX].ep_addr, 0,
-				dev_data);
+		LOG_INF("Device configured");
+		if (!dev_data->configured) {
+			cdc_acm_read_cb(cfg->endpoint[ACM_OUT_EP_IDX].ep_addr, 0,
+					dev_data);
+		}
+		dev_data->configured = true;
 		dev_data->tx_ready = true;
 		dev_data->tx_irq_ena = true;
 		dev_data->rx_irq_ena = true;
-		dev_data->usb_status = status;
-		LOG_INF("Device configured");
 		break;
 	case USB_DC_DISCONNECTED:
 		LOG_INF("Device disconnected");
 		cdc_acm_reset_port(dev_data);
-		dev_data->usb_status = status;
 		break;
 	case USB_DC_SUSPEND:
 		LOG_INF("Device suspended");
-		dev_data->usb_status = status;
+		dev_data->suspended = true;
 		break;
 	case USB_DC_RESUME:
-		if (dev_data->usb_status == USB_DC_SUSPEND) {
-			cdc_acm_read_cb(cfg->endpoint[ACM_OUT_EP_IDX].ep_addr,
+		LOG_INF("Device resumed");
+		if (dev_data->suspended) {
+			LOG_INF("from suspend");
+			dev_data->suspended = false;
+			if (dev_data->configured) {
+				cdc_acm_read_cb(cfg->endpoint[ACM_OUT_EP_IDX].ep_addr,
 					0, dev_data);
-			dev_data->usb_status = USB_DC_CONFIGURED;
-			LOG_INF("Define resumed");
+			}
 		} else {
 			LOG_DBG("Spurious resume event");
 		}
@@ -568,8 +575,9 @@ static int cdc_acm_fifo_fill(struct device *dev,
 	LOG_DBG("dev_data %p len %d tx_ringbuf space %u",
 		dev_data, len, ring_buf_space_get(dev_data->tx_ringbuf));
 
-	if (dev_data->usb_status != USB_DC_CONFIGURED) {
-		LOG_WRN("Device not configured, drop %d bytes", len);
+	if (!dev_data->configured || dev_data->suspended) {
+		LOG_WRN("Device not configured or suspended, drop %d bytes",
+			len);
 		return 0;
 	}
 
@@ -1092,7 +1100,6 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 	RING_BUF_DECLARE(tx_ringbuf_##x,				\
 			 CONFIG_USB_CDC_ACM_RINGBUF_SIZE);		\
 	static struct cdc_acm_dev_data_t cdc_acm_dev_data_##x = {	\
-		.usb_status = USB_DC_UNKNOWN,				\
 		.line_coding = CDC_ACM_DEFAULT_BAUDRATE,		\
 		.rx_ringbuf = &rx_ringbuf_##x,				\
 		.tx_ringbuf = &tx_ringbuf_##x,				\
