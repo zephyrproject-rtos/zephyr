@@ -40,7 +40,7 @@ struct i2c_eeprom_slave_config {
 #define DEV_DATA(dev)							\
 	((struct i2c_eeprom_slave_data * const)(dev)->driver_data)
 
-int eeprom_slave_program(struct device *dev, uint8_t *eeprom_data,
+int eeprom_slave_program(struct device *dev, const uint8_t *eeprom_data,
 			 unsigned int length)
 {
 	struct i2c_eeprom_slave_data *data = dev->driver_data;
