@@ -22,8 +22,13 @@
  * completeness.
  */
 
+#ifndef _ARM_OFFSETS_INC_
+#define _ARM_OFFSETS_INC_
+
 #include <kernel.h>
 #include <kernel_arch_data.h>
 #include <kernel_offsets.h>
 
 GEN_OFFSET_SYM(_thread_arch_t, swap_return_value);
+
+#endif /* _ARM_OFFSETS_INC_ */
