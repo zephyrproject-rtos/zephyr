@@ -154,19 +154,23 @@ static int smp_udp_init(struct device *dev)
 static int create_socket(struct sockaddr *addr, const char *proto)
 {
 	int sock = socket(addr->sa_family, SOCK_DGRAM, IPPROTO_UDP);
+	int err = errno;
 
 	if (sock < 0) {
 		LOG_ERR("Could not open receive socket (%s), err: %i",
-			proto, errno);
+			proto, err);
 
-		return -errno;
+		return -err;
 	}
 
 	if (bind(sock, addr, sizeof(*addr)) < 0) {
+		err = errno;
 		LOG_ERR("Could not bind to receive socket (%s), err: %i",
-			proto, errno);
+			proto, err);
 
-		return -errno;
+		close(sock);
+
+		return -err;
 	}
 
 	return sock;
