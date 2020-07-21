@@ -400,7 +400,8 @@ severity and the equivlent rules from other standards for reference.
       -  Required
       -  The address of an object with automatic storage shall not be copied to another object that persists after the first object has ceased to exist
       -  N/A
-      -  `Rule 18.6 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_18_06.c>`_
+      -  | `Rule 18.6 example 1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_18_06_1.c>`_
+         | `Rule 18.6 example 2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_18_06_2.c>`_
     * -  Rule 18.8
       -  Required
       -  Variable-length array types shall not be used
