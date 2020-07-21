@@ -22,6 +22,9 @@
  * completeness.
  */
 
+#ifndef _ARM_OFFSETS_INC_
+#define _ARM_OFFSETS_INC_
+
 #include <kernel.h>
 #include <kernel_arch_data.h>
 #include <kernel_offsets.h>
@@ -88,3 +91,5 @@ GEN_ABSOLUTE_SYM(_K_THREAD_NO_FLOAT_SIZEOF, sizeof(struct k_thread) -
 #else
 GEN_ABSOLUTE_SYM(_K_THREAD_NO_FLOAT_SIZEOF, sizeof(struct k_thread));
 #endif
+
+#endif /* _ARM_OFFSETS_INC_ */
