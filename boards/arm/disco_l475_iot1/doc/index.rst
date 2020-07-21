@@ -123,6 +123,8 @@ The Zephyr Disco L475 IoT board configuration supports the following hardware fe
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | independent watchdog                |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -155,6 +157,7 @@ Default Zephyr Peripheral Mapping:
 - PWM_2_CH1 : PA15
 - USER_PB : PC13
 - LD2 : PA5
+- ADC1 : PA0
 
 System Clock
 ------------
