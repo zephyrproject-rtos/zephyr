@@ -333,34 +333,35 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	 *  |   ...   |
 	 *  +---------+ <--  pmpaddr0
 	 *  |  .text  |        [RX]
-	 *  +---------+ <--  pmpaddr1
+	 *  +---------+ <--  pmpaddr1/2
 	 *  | .rodata |        [RO]
-	 *  +---------+ <--  pmpaddr2
-	 *  |   ...   |
 	 *  +---------+ <--  pmpaddr3
-	 *  |  stack  |        [RW]
+	 *  |   ...   |
 	 *  +---------+ <--  pmpaddr4
+	 *  |  stack  |        [RW]
+	 *  +---------+ <--  pmpaddr5
 	 *  |   ...   |
 	 *  +=========+
 	 */
 
 	uint32_t pmpcfg[2];
-	uint32_t pmpaddr[5];
+	uint32_t pmpaddr[6];
 
 	pmpcfg[0] = ((RV_PMP_TOR) << RV_PMP_0CFG) |
 		    ((RV_PMP_TOR | RV_PMP_RX) << RV_PMP_1CFG) | /* text */
-		    ((RV_PMP_TOR | RV_PMP_RO) << RV_PMP_2CFG) | /* rodata */
-		    ((RV_PMP_TOR) << RV_PMP_3CFG);
-	pmpcfg[1] = ((RV_PMP_TOR | RV_PMP_RW) << RV_PMP_0CFG) | /* stack */
-		    ((RV_PMP_OFF) << RV_PMP_1CFG) |
+		    ((RV_PMP_TOR) << RV_PMP_2CFG) |
+		    ((RV_PMP_TOR | RV_PMP_RO) << RV_PMP_3CFG);  /* rodata */
+	pmpcfg[1] = ((RV_PMP_OFF) << RV_PMP_0CFG) |
+		    ((RV_PMP_TOR | RV_PMP_RW) << RV_PMP_1CFG) | /* stack */
 		    ((RV_PMP_OFF) << RV_PMP_2CFG) |
 		    ((RV_PMP_OFF) << RV_PMP_3CFG);
 
 	pmpaddr[0] = ((uint32_t)_image_text_start) >> 2;
 	pmpaddr[1] = ((uint32_t)_image_text_end) >> 2;
-	pmpaddr[2] = ((uint32_t)_image_rodata_end) >> 2;
-	pmpaddr[3] = ((uint32_t) _current->stack_info.start) >> 2;
-	pmpaddr[4] = (((uint32_t) _current->stack_info.size) >> 2) + pmpaddr[3];
+	pmpaddr[2] = ((uint32_t)_image_rodata_start) >> 2;
+	pmpaddr[3] = ((uint32_t)_image_rodata_end) >> 2;
+	pmpaddr[4] = ((uint32_t)_current->stack_info.start) >> 2;
+	pmpaddr[5] = (((uint32_t)_current->stack_info.size) >> 2) + pmpaddr[4];
 
 	__asm__ volatile ("csrw pmpcfg0, %0" :: "r" (pmpcfg[0]));
 	__asm__ volatile ("csrw pmpcfg1, %0" :: "r" (pmpcfg[1]));
@@ -369,6 +370,7 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	__asm__ volatile ("csrw pmpaddr2, %0" :: "r" (pmpaddr[2]));
 	__asm__ volatile ("csrw pmpaddr3, %0" :: "r" (pmpaddr[3]));
 	__asm__ volatile ("csrw pmpaddr4, %0" :: "r" (pmpaddr[4]));
+	__asm__ volatile ("csrw pmpaddr5, %0" :: "r" (pmpaddr[5]));
 
 	z_riscv_userspace_enter();
 	z_thread_entry_wrapper(user_entry, p1, p2, p3);

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016-2017 Jean-Paul Etienne <fractalclone@gmail.com>
+ * Contributors: 2020 RISE Research Institutes of Sweden <www.ri.se>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,11 +22,11 @@
 #include <linker/linker-tool.h>
 
 #ifdef CONFIG_XIP
-#define ROMABLE_REGION			ROM
+#define ROMABLE_REGION ROM
 #else
-#define ROMABLE_REGION			RAM
+#define ROMABLE_REGION RAM
 #endif
-#define RAMABLE_REGION			RAM
+#define RAMABLE_REGION RAM
 
 #define _VECTOR_SECTION_NAME	   vector
 #define _EXCEPTION_SECTION_NAME	exceptions
@@ -34,22 +35,7 @@
 #if defined(CONFIG_CUSTOM_SECTION_ALIGN)
 _region_min_align = CONFIG_CUSTOM_SECTION_MIN_ALIGN_SIZE;
 #else
-_region_min_align = 4; /* smallest PMP region allowed */
-#endif
-
-#if !defined(CONFIG_CUSTOM_SECTION_ALIGN) && defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
-#define MPU_ALIGN(region_size) \
-	. = ALIGN(_region_min_align); \
-	. = ALIGN( 1 << LOG2CEIL(region_size))
-#else
-#define MPU_ALIGN(region_size) \
-	. = ALIGN(_region_min_align)
-#endif
-
-#if defined(CONFIG_CUSTOM_SECTION_ALIGN)
-_region_min_align = CONFIG_CUSTOM_SECTION_MIN_ALIGN_SIZE;
-#else
-_region_min_align = 4; /* smallest PMP region allowed */
+_region_min_align = 8;
 #endif
 
 #if !defined(CONFIG_CUSTOM_SECTION_ALIGN) && defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
@@ -130,6 +116,10 @@ SECTIONS
 		KEEP(*(.openocd_debug))
 		KEEP(*(".openocd_debug.*"))
 
+#ifdef CONFIG_USERSPACE	
+		MPU_ALIGN(1 << LOG2CEIL(_image_text_area_used));
+#endif /* CONFIG_USERSPACE */
+
 		_image_text_start = .;
 
 #include <linker/kobject-text.ld>
@@ -138,13 +128,20 @@ SECTIONS
 		*(".text.*")
 		*(.gnu.linkonce.t.*)
 		*(.eh_frame)
+
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 	_image_text_end = .;
+
+#ifdef CONFIG_USERSPACE
+	_image_text_area_used = _image_text_end - _image_text_start;
+	MPU_ALIGN(_image_text_area_used);
+	MPU_ALIGN(_image_rodata_area_used);
+#endif /* CONFIG_USERSPACE */
+
 	_image_rodata_start = .;
 
 #include <linker/common-rom.ld>
-#include <linker/kobject.ld>
 
 	SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
 	{
@@ -172,12 +169,15 @@ SECTIONS
 	 * generally is not an issue, since modern ROM and FLASH memory is
 	 * usually 4k aligned.
 	 */
-	. = ALIGN(4);
+		. = ALIGN(4);
+
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 #include <linker/cplusplus-rom.ld>
 
 	_image_rodata_end = .;
+	_image_rodata_area_used = _image_rodata_end - _image_rodata_start;
+
 	_image_rom_end = .;
 	__data_rom_start = .;
 
@@ -210,6 +210,7 @@ SECTIONS
 	}  GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 #include <linker/common-ram.ld>
+#include <linker/kobject.ld>
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
@@ -284,8 +285,8 @@ SECTIONS
 
 	SECTION_PROLOGUE(.riscv.attributes, 0,)
 	{
-	KEEP(*(.riscv.attributes))
-	KEEP(*(.gnu.attributes))
+		KEEP(*(.riscv.attributes))
+		KEEP(*(.gnu.attributes))
 	}
 
 }
