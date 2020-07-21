@@ -418,6 +418,15 @@ def shields_list_contains(kconf, _, shield):
     return "y" if shield in list.split(";") else "n"
 
 
+# Keys in this dict are the function names as they appear
+# in Kconfig files. The values are tuples in this form:
+#
+#       (python_function, minimum_number_of_args, maximum_number_of_args)
+#
+# Each python function is given a kconf object and its name in the
+# Kconfig file, followed by arguments from the Kconfig file.
+#
+# See the kconfiglib documentation for more details.
 functions = {
         "dt_compat_enabled": (dt_compat_enabled, 1, 1),
         "dt_compat_on_bus": (dt_compat_on_bus, 2, 2),
