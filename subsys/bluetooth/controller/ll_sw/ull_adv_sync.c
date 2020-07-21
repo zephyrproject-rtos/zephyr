@@ -67,7 +67,7 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 
 	adv = ull_adv_is_created_get(handle);
 	if (!adv) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
+		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
 	}
 
 	lll_sync = adv->lll.sync;
@@ -532,7 +532,7 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 
 	adv = ull_adv_is_created_get(handle);
 	if (!adv) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
+		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
 	}
 
 	lll_sync = adv->lll.sync;
