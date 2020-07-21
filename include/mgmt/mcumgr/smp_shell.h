@@ -47,6 +47,16 @@ bool smp_shell_rx_byte(struct smp_shell_data *data, uint8_t byte);
  */
 void smp_shell_process(struct smp_shell_data *data);
 
+/**
+ * @brief Initializes SMP transport over shell.
+ *
+ * This function should be called before feeding SMP transport with received
+ * data.
+ *
+ * @return 0 on success
+ */
+int smp_shell_init(void);
+
 #ifdef __cplusplus
 }
 #endif

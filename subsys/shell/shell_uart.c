@@ -285,6 +285,10 @@ static int enable_shell_uart(struct device *arg)
 		return -ENODEV;
 	}
 
+	if (IS_ENABLED(CONFIG_MCUMGR_SMP_SHELL)) {
+		smp_shell_init();
+	}
+
 	shell_init(&shell_uart, dev, true, log_backend, level);
 
 	return 0;

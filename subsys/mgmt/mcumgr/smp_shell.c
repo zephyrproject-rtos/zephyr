@@ -154,14 +154,10 @@ static int smp_shell_tx_pkt(struct zephyr_smp_transport *zst,
 	return rc;
 }
 
-static int smp_shell_init(struct device *dev)
+int smp_shell_init(void)
 {
-	ARG_UNUSED(dev);
-
 	zephyr_smp_transport_init(&smp_shell_transport, smp_shell_tx_pkt,
 				  smp_shell_get_mtu, NULL, NULL);
 
 	return 0;
 }
-
-SYS_INIT(smp_shell_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
