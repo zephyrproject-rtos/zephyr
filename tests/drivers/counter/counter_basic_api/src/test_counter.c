@@ -58,6 +58,9 @@ static const char * const devices[] = {
 #ifdef CONFIG_COUNTER_RTC2
 	DT_LABEL(DT_NODELABEL(rtc2)),
 #endif
+#ifdef CONFIG_COUNTER_NATIVE_POSIX
+	DT_LABEL(DT_NODELABEL(counter0)),
+#endif
 	/* NOTE: there is no trailing comma, as the DT_LABELS_FOR_COMPAT
 	 * handles it.
 	 */
@@ -873,6 +876,11 @@ static bool reliable_cancel_capable(const char *dev_name)
 
 #ifdef CONFIG_COUNTER_TIMER4
 	if (strcmp(dev_name, DT_LABEL(DT_NODELABEL(timer4))) == 0) {
+		return true;
+	}
+#endif
+#ifdef CONFIG_COUNTER_NATIVE_POSIX
+	if (strcmp(dev_name, DT_LABEL(DT_NODELABEL(counter0))) == 0) {
 		return true;
 	}
 #endif

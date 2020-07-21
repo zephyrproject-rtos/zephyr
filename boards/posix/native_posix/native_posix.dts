@@ -94,4 +94,10 @@
 		label = "ENTROPY_0";
 	};
 
+	counter0: counter {
+		status = "okay";
+		compatible = "zephyr,native-posix-counter";
+		label = "COUNTER_0";
+	};
+
 };
