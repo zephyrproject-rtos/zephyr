@@ -30,6 +30,71 @@
 #endif
 #endif
 
+#ifdef CONFIG_RISCV_PMP
+#ifdef CONFIG_64BIT
+#define	RISCV_PMP_CFG_NUM	(CONFIG_PMP_SLOT >> 3)
+#else
+#define	RISCV_PMP_CFG_NUM	(CONFIG_PMP_SLOT >> 2)
+#endif
+#endif
+
+#ifdef CONFIG_PMP_STACK_GUARD
+/*
+ * PMP entries:
+ *   (1 for interrupt stack guard: None)
+ *   4 for stacks guard: None
+ *   1 for RAM: RW
+ *   1 for other address space: RWX
+ */
+#define PMP_REGION_NUM_FOR_STACK_GUARD	6
+#define PMP_CFG_CSR_NUM_FOR_STACK_GUARD	2
+#endif /* CONFIG_PMP_STACK_GUARD */
+
+#ifdef CONFIG_PMP_POWER_OF_TWO_ALIGNMENT
+#ifdef CONFIG_USERSPACE
+#ifdef CONFIG_PMP_STACK_GUARD
+/*
+ * 1 for interrupt stack guard: None
+ * 1 for core state: R
+ * 1 for program and read only data: RX
+ * 1 for user thread stack: RW
+ */
+#define PMP_REGION_NUM_FOR_U_THREAD	4
+#else /* CONFIG_PMP_STACK_GUARD */
+/*
+ * 1 for core state: R
+ * 1 for program and read only data: RX
+ * 1 for user thread stack: RW
+ */
+#define PMP_REGION_NUM_FOR_U_THREAD	3
+#endif /* CONFIG_PMP_STACK_GUARD */
+#define PMP_MAX_DYNAMIC_REGION	(CONFIG_PMP_SLOT - PMP_REGION_NUM_FOR_U_THREAD)
+#endif /* CONFIG_USERSPACE */
+
+#else /* CONFIG_PMP_POWER_OF_TWO_ALIGNMENT */
+
+#ifdef CONFIG_USERSPACE
+#ifdef CONFIG_PMP_STACK_GUARD
+/*
+ * 1 for interrupt stack guard: None
+ * 1 for core state: R
+ * 2 for program and read only data: RX
+ * 2 for user thread stack: RW
+ */
+#define PMP_REGION_NUM_FOR_U_THREAD	6
+#else /* CONFIG_PMP_STACK_GUARD */
+/*
+ * 1 for core state: R
+ * 2 for program and read only data: RX
+ * 2 for user thread stack: RW
+ */
+#define PMP_REGION_NUM_FOR_U_THREAD	5
+#endif /* CONFIG_PMP_STACK_GUARD */
+#define PMP_MAX_DYNAMIC_REGION	((CONFIG_PMP_SLOT - \
+				PMP_REGION_NUM_FOR_U_THREAD) >> 1)
+#endif /* CONFIG_USERSPACE */
+#endif /* CONFIG_PMP_POWER_OF_TWO_ALIGNMENT */
+
 /*
  * The following structure defines the list of registers that need to be
  * saved/restored when a cooperative context switch occurs.
@@ -70,6 +135,19 @@ typedef struct _callee_saved _callee_saved_t;
 
 struct _thread_arch {
 	uint32_t swap_return_value; /* Return value of z_swap() */
+
+#ifdef CONFIG_PMP_STACK_GUARD
+	ulong_t s_pmpcfg[PMP_CFG_CSR_NUM_FOR_STACK_GUARD];
+	ulong_t s_pmpaddr[PMP_REGION_NUM_FOR_STACK_GUARD];
+#endif
+
+#ifdef CONFIG_USERSPACE
+	ulong_t priv_stack_start;
+	ulong_t user_sp;
+	ulong_t unfinished_syscall;
+	ulong_t u_pmpcfg[RISCV_PMP_CFG_NUM];
+	ulong_t u_pmpaddr[CONFIG_PMP_SLOT];
+#endif
 };
 
 typedef struct _thread_arch _thread_arch_t;
