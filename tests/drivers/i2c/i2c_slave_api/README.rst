@@ -12,6 +12,8 @@ hardware, the I2C traffic from i2c_transfer() is rerouted back through the
 I2C-controller driver to an emulator, called a slave device. It is a little
 like a loopback mode.
 
+When testing on hardware two I2C controllers are required, and they must
+have their SCL (and SDA) lines shorted so they share a bus.
 
 Plumbing
 ********
