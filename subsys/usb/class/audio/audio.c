@@ -12,10 +12,8 @@
  */
 
 #include <kernel.h>
-#include <usb/usb_common.h>
 #include <usb/usb_device.h>
 #include <usb_descriptor.h>
-#include <usb/usbstruct.h>
 #include <usb/class/usb_audio.h>
 #include "usb_audio_internal.h"
 
@@ -69,7 +67,7 @@ static sys_slist_t usb_audio_data_devlist;
  * @param [in] ot_type	Output terminal type
  */
 #define DEFINE_AUDIO_DESCRIPTOR(dev, i, id, link, it_type, ot_type, cb, addr) \
-USBD_CLASS_DESCR_DEFINE(primary, audio)					      \
+USBD_CLASS_DESC_DEFINE(primary, audio)					      \
 struct dev##_descriptor_##i dev##_desc_##i = {				      \
 	USB_AUDIO_IAD(2)						      \
 	.std_ac_interface = INIT_STD_IF(USB_AUDIO_AUDIOCONTROL, 0, 0, 0),     \
@@ -118,7 +116,7 @@ dev##_usb_audio_iface_data_##i[] = {					      \
  * @param [in] id	Param for counting logic entities
  */
 #define DEFINE_AUDIO_DESCRIPTOR_BIDIR(dev, i, id)			  \
-USBD_CLASS_DESCR_DEFINE(primary, audio)					  \
+USBD_CLASS_DESC_DEFINE(primary, audio)					  \
 struct dev##_descriptor_##i dev##_desc_##i = {				  \
 	USB_AUDIO_IAD(3)						  \
 	.std_ac_interface = INIT_STD_IF(USB_AUDIO_AUDIOCONTROL, 0, 0, 0), \
@@ -756,17 +754,16 @@ static int audio_custom_handler(struct usb_setup_packet *pSetup, int32_t *len,
 						USB_FORMAT_TYPE_I_DESC_SIZE);
 	}
 
-	if (REQTYPE_GET_RECIP(pSetup->bmRequestType) ==
-	    REQTYPE_RECIP_INTERFACE) {
+	if (pSetup->RequestType.recipient == USB_REQTYPE_RECIPIENT_INTERFACE) {
 		switch (pSetup->bRequest) {
-		case REQ_SET_INTERFACE:
+		case USB_SREQ_SET_INTERFACE:
 			if (ep_desc->bEndpointAddress & USB_EP_DIR_MASK) {
 				audio_dev_data->tx_enable = pSetup->wValue;
 			} else {
 				audio_dev_data->rx_enable = pSetup->wValue;
 			}
 			return -EINVAL;
-		case REQ_GET_INTERFACE:
+		case USB_SREQ_GET_INTERFACE:
 			if (ep_desc->bEndpointAddress & USB_EP_DIR_MASK) {
 				*data[0] = audio_dev_data->tx_enable;
 			} else {
@@ -797,8 +794,8 @@ static int audio_class_handle_req(struct usb_setup_packet *pSetup,
 		pSetup->bmRequestType, pSetup->bRequest, pSetup->wValue,
 		pSetup->wIndex, pSetup->wLength);
 
-	switch (REQTYPE_GET_RECIP(pSetup->bmRequestType)) {
-	case REQTYPE_RECIP_INTERFACE:
+	switch (pSetup->RequestType.recipient) {
+	case USB_REQTYPE_RECIPIENT_INTERFACE:
 		return handle_interface_req(pSetup, len, data);
 	default:
 		LOG_ERR("Request recipient invalid");

@@ -13,7 +13,6 @@ LOG_MODULE_REGISTER(usb_hid);
 
 #include <sys/byteorder.h>
 #include <usb_device.h>
-#include <usb_common.h>
 
 #include <usb_descriptor.h>
 #include <class/usb_hid.h>
@@ -36,11 +35,11 @@ struct usb_hid_config {
 #define INITIALIZER_IF							\
 	{								\
 		.bLength = sizeof(struct usb_if_descriptor),		\
-		.bDescriptorType = USB_INTERFACE_DESC,			\
+		.bDescriptorType = USB_DESC_INTERFACE,			\
 		.bInterfaceNumber = 0,					\
 		.bAlternateSetting = 0,					\
 		.bNumEndpoints = 1,					\
-		.bInterfaceClass = HID_CLASS,				\
+		.bInterfaceClass = USB_BCC_HID,				\
 		.bInterfaceSubClass = 1,				\
 		.bInterfaceProtocol = CONFIG_USB_HID_PROTOCOL_CODE,	\
 		.iInterface = 0,					\
@@ -49,11 +48,11 @@ struct usb_hid_config {
 #define INITIALIZER_IF							\
 	{								\
 		.bLength = sizeof(struct usb_if_descriptor),		\
-		.bDescriptorType = USB_INTERFACE_DESC,			\
+		.bDescriptorType = USB_DESC_INTERFACE,			\
 		.bInterfaceNumber = 0,					\
 		.bAlternateSetting = 0,					\
 		.bNumEndpoints = 1,					\
-		.bInterfaceClass = HID_CLASS,				\
+		.bInterfaceClass = USB_BCC_HID,				\
 		.bInterfaceSubClass = 0,				\
 		.bInterfaceProtocol = 0,				\
 		.iInterface = 0,					\
@@ -64,12 +63,12 @@ struct usb_hid_config {
 #define INITIALIZER_IF_HID						\
 	{								\
 		.bLength = sizeof(struct usb_hid_descriptor),		\
-		.bDescriptorType = USB_HID_DESC,			\
-		.bcdHID = sys_cpu_to_le16(USB_1_1),			\
+		.bDescriptorType = USB_DESC_HID,			\
+		.bcdHID = sys_cpu_to_le16(USB_SRN_1_1),			\
 		.bCountryCode = 0,					\
 		.bNumDescriptors = 1,					\
 		.subdesc[0] = {						\
-			.bDescriptorType = USB_HID_REPORT_DESC,		\
+			.bDescriptorType = USB_DESC_HID_REPORT,	\
 			.wDescriptorLength = 0,				\
 		},							\
 	}
@@ -77,7 +76,7 @@ struct usb_hid_config {
 #define INITIALIZER_IF_EP(addr, attr, mps)				\
 	{								\
 		.bLength = sizeof(struct usb_ep_descriptor),		\
-		.bDescriptorType = USB_ENDPOINT_DESC,			\
+		.bDescriptorType = USB_DESC_ENDPOINT,			\
 		.bEndpointAddress = addr,				\
 		.bmAttributes = attr,					\
 		.wMaxPacketSize = sys_cpu_to_le16(mps),			\
@@ -85,8 +84,8 @@ struct usb_hid_config {
 	}
 
 #ifdef CONFIG_ENABLE_HID_INT_OUT_EP
-#define DEFINE_HID_DESCR(x, _)						\
-	USBD_CLASS_DESCR_DEFINE(primary, x)				\
+#define DEFINE_HID_DESC(x, _)						\
+	USBD_CLASS_DESC_DEFINE(primary, x)				\
 	struct usb_hid_config hid_cfg_##x = {				\
 	/* Interface descriptor */					\
 	.if0 = INITIALIZER_IF,						\
@@ -101,8 +100,8 @@ struct usb_hid_config {
 				  CONFIG_HID_INTERRUPT_EP_MPS),		\
 	};
 #else
-#define DEFINE_HID_DESCR(x, _)						\
-	USBD_CLASS_DESCR_DEFINE(primary, x)				\
+#define DEFINE_HID_DESC(x, _)						\
+	USBD_CLASS_DESC_DEFINE(primary, x)				\
 	struct usb_hid_config hid_cfg_##x = {				\
 	/* Interface descriptor */					\
 	.if0 = INITIALIZER_IF,						\
@@ -420,7 +419,7 @@ static int hid_class_handle_req(struct usb_setup_packet *setup,
 
 	dev_data = CONTAINER_OF(common, struct hid_device_info, common);
 
-	if (REQTYPE_GET_DIR(setup->bmRequestType) == REQTYPE_DIR_TO_HOST) {
+	if (usb_reqtype_is_to_host(setup)) {
 		switch (setup->bRequest) {
 		case HID_GET_IDLE:
 			if (dev_data->ops && dev_data->ops->get_idle) {
@@ -498,10 +497,9 @@ static int hid_custom_handle_req(struct usb_setup_packet *setup,
 		"bRequest 0x%02x, bmRequestType 0x%02x, len %d",
 		setup->bRequest, setup->bmRequestType, *len);
 
-	if (REQTYPE_GET_DIR(setup->bmRequestType) == REQTYPE_DIR_TO_HOST &&
-	    REQTYPE_GET_RECIP(setup->bmRequestType) ==
-					REQTYPE_RECIP_INTERFACE &&
-					setup->bRequest == REQ_GET_DESCRIPTOR) {
+	if (usb_reqtype_is_to_host(setup) &&
+	    setup->RequestType.recipient == USB_REQTYPE_RECIPIENT_DEVICE &&
+	    setup->bRequest == USB_SREQ_GET_DESCRIPTOR) {
 		uint8_t value = (uint8_t)(setup->wValue >> 8);
 		uint8_t iface_num = (uint8_t)setup->wIndex;
 		struct hid_device_info *dev_data;
@@ -520,7 +518,7 @@ static int hid_custom_handle_req(struct usb_setup_packet *setup,
 		dev_data = CONTAINER_OF(common, struct hid_device_info, common);
 
 		switch (value) {
-		case HID_CLASS_DESCRIPTOR_HID:
+		case USB_DESC_HID:
 			class_data = common->dev->config_info;
 			if_desc = class_data->if_containers[0].iface;
 			hid_desc = CONTAINER_OF(if_desc,
@@ -531,7 +529,7 @@ static int hid_custom_handle_req(struct usb_setup_packet *setup,
 			*len = MIN(*len, hid_desc->if0_hid.bLength);
 			*data = (uint8_t *)&hid_desc->if0_hid;
 			break;
-		case HID_CLASS_DESCRIPTOR_REPORT:
+		case USB_DESC_REPORT:
 			LOG_DBG("Return Report Descriptor");
 
 			/* Some buggy system may be pass a larger wLength when
@@ -733,7 +731,7 @@ static int usb_hid_device_init(struct device *dev)
 			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 			    &hid_api);
 
-UTIL_LISTIFY(CONFIG_USB_HID_DEVICE_COUNT, DEFINE_HID_DESCR, _)
+UTIL_LISTIFY(CONFIG_USB_HID_DEVICE_COUNT, DEFINE_HID_DESC, _)
 UTIL_LISTIFY(CONFIG_USB_HID_DEVICE_COUNT, DEFINE_HID_EP, _)
 UTIL_LISTIFY(CONFIG_USB_HID_DEVICE_COUNT, DEFINE_HID_CFG_DATA, _)
 UTIL_LISTIFY(CONFIG_USB_HID_DEVICE_COUNT, DEFINE_HID_DEV_DATA, _)
