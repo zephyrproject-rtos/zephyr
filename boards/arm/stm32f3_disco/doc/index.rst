@@ -98,6 +98,8 @@ features:
 +-----------+------------+-------------------------------------+
 | IWDG      | on-chip    | Independent WatchDoG                |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | analog to digital converter         |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 
