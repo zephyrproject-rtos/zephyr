@@ -116,9 +116,9 @@ SECTIONS
 		KEEP(*(.openocd_debug))
 		KEEP(*(".openocd_debug.*"))
 
-#ifdef CONFIG_USERSPACE	
-		MPU_ALIGN(1 << LOG2CEIL(_image_text_area_used));
-#endif /* CONFIG_USERSPACE */
+#ifdef CONFIG_USERSPACE
+		MPU_ALIGN(_image_text_area_used);
+#endif
 
 		_image_text_start = .;
 
@@ -132,20 +132,20 @@ SECTIONS
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 	_image_text_end = .;
-
-#ifdef CONFIG_USERSPACE
 	_image_text_area_used = _image_text_end - _image_text_start;
-	MPU_ALIGN(_image_text_area_used);
-	MPU_ALIGN(_image_rodata_area_used);
-#endif /* CONFIG_USERSPACE */
-
-	_image_rodata_start = .;
-
-#include <linker/common-rom.ld>
 
 	SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
 	{
-		 . = ALIGN(4);
+
+#ifdef CONFIG_USERSPACE
+		MPU_ALIGN(_image_text_area_used);
+		MPU_ALIGN(_image_rodata_area_used);
+#else
+		. = ALIGN(4);
+#endif
+
+		_image_rodata_start = .;
+
 		 *(.srodata)
 		 *(".srodata.*")
 		 *(.rodata)
@@ -173,6 +173,7 @@ SECTIONS
 
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
+#include <linker/common-rom.ld>
 #include <linker/cplusplus-rom.ld>
 
 	_image_rodata_end = .;

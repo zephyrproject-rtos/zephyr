@@ -209,7 +209,15 @@ typedef uint32_t k_mem_partition_attr_t;
 		1 << (31 - __builtin_clz(x) + 1) : \
 		1 << (31 - __builtin_clz(x)))
 
-/* 
+/* Macros for encoding and decoding PMP NAPOT address registers */ 
+#define RV_NAPOT_PUT(addr, size) ((0xffffffff >> \
+		(32 - (__builtin_ctz(POW2_CEIL(size) >> 3)))) | \
+		(((uint32_t)addr) >> 2))
+#define RV_NAPOT_SIZE(pmpaddr) (1 << (__builtin_ctz(~pmpaddr) + 3))
+#define RV_NAPOT_ADDR(pmpaddr) ((pmpaddr >> __builtin_ctz(~pmpaddr)) \
+		<< (__builtin_ctz(~pmpaddr) + 2))
+
+/*
  * The following macros generate naturally-aligned power-of-two privilege stacks
  * for userspace threads. See sys/thread_stack.h for more information.
  */
