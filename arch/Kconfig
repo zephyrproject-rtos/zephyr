@@ -492,17 +492,16 @@ config CPU_HAS_MMU
 	help
 	  This hidden option is selected when the CPU has a Memory Management Unit
 	  (MMU).
-
-config MMU
-	bool
+menuconfig MMU
+	bool "Enable MMU features"
 	depends on CPU_HAS_MMU
 	help
 	  This option is enabled when the CPU's memory management unit is active
 	  and the arch_mem_map() API is available.
 
+if MMU
 config MMU_PAGE_SIZE
 	hex "Size of smallest granularity MMU page"
-	depends on MMU
 	default 0x1000
 	help
 	  Size of memory pages. Varies per MMU but 4K is common. For MMUs that
@@ -510,7 +509,6 @@ config MMU_PAGE_SIZE
 
 config SRAM_REGION_PERMISSIONS
 	bool "Assign appropriate permissions to kernel areas in SRAM"
-	depends on MMU
 	default y
 	help
 	  If enabled, the program text, rodata, and data parts of the kernel in
@@ -521,7 +519,6 @@ config SRAM_REGION_PERMISSIONS
 
 config KERNEL_VM_BASE
 	hex "Base virtual address for the kernel"
-	depends on MMU
 	default SRAM_BASE_ADDRESS if X86 # TODO remove once x86 is linked properly
 	default 0xFFFF800000000000 if 64BIT
 	default 0xC0000000
@@ -546,7 +543,6 @@ config KERNEL_VM_BASE
 
 config KERNEL_VM_LIMIT
 	hex "Upper bound on kernel address space"
-	depends on MMU
 	default 0xFFFFFFFFFFFFFFFF if 64BIT
 	default 0xFFFFFFFF
 	help
@@ -558,6 +554,8 @@ config KERNEL_VM_LIMIT
 	  room to map system RAM, plus any driver mappings. Further mappings
 	  may be made at runtime depending on configuration options (such as
 	  memory-mapping stacks, VDSO pages, etc).
+
+endif   # MMU
 
 config MEMORY_PROTECTION
 	bool
