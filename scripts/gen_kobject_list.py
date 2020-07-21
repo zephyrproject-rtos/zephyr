@@ -430,14 +430,25 @@ def analyze_die_array(die):
     for child in die.iter_children():
         if child.tag != "DW_TAG_subrange_type":
             continue
-        if "DW_AT_upper_bound" not in child.attributes:
-            continue
 
-        ub = child.attributes["DW_AT_upper_bound"]
-        if not ub.form.startswith("DW_FORM_data"):
-            continue
+        if "DW_AT_upper_bound" in child.attributes:
+            ub = child.attributes["DW_AT_upper_bound"]
 
-        elements.append(ub.value + 1)
+            if not ub.form.startswith("DW_FORM_data"):
+                continue
+
+            elements.append(ub.value + 1)
+        # in DWARF 4, e.g. ARC Metaware toolchain, DW_AT_count is used
+        # not DW_AT_upper_bound
+        elif "DW_AT_count" in child.attributes:
+            ub = child.attributes["DW_AT_count"]
+
+            if not ub.form.startswith("DW_FORM_data"):
+                continue
+
+            elements.append(ub.value)
+        else:
+            continue
 
     if not elements:
         if type_offset in type_env.keys():
