@@ -995,7 +995,7 @@ cleanup:
 
 int lwm2m_send_message(struct lwm2m_message *msg)
 {
-	int rc;
+	int rc, ret;
 
 	if (!msg || !msg->ctx) {
 		LOG_ERR("LwM2M message is invalid.");
@@ -1008,9 +1008,12 @@ int lwm2m_send_message(struct lwm2m_message *msg)
 
 	msg->send_attempts++;
 
-	sys_mutex_lock(&msg->ctx->send_lock, K_FOREVER);
+	ret = sys_mutex_lock(&msg->ctx->send_lock, K_FOREVER);
+	__ASSERT(ret == 0, "sys_mutex_lock failed with %d", ret);
 	rc = send(msg->ctx->sock_fd, msg->cpkt.data, msg->cpkt.offset, 0);
-	sys_mutex_unlock(&msg->ctx->send_lock);
+	ret = sys_mutex_unlock(&msg->ctx->send_lock);
+	__ASSERT(ret == 0, "sys_mutex_unlock failed with %d", ret);
+	ARG_UNUSED(ret);
 	if (rc < 0) {
 		if (msg->type == COAP_TYPE_CON) {
 			coap_pending_clear(msg->pending);
@@ -3744,6 +3747,7 @@ static void retransmit_request(struct k_work *work)
 	struct lwm2m_message *msg;
 	struct coap_pending *pending;
 	int32_t remaining;
+	int ret;
 
 	client_ctx = CONTAINER_OF(work, struct lwm2m_ctx, retransmit_work);
 	pending = coap_pending_next_to_expire(client_ctx->pendings,
@@ -3784,7 +3788,8 @@ static void retransmit_request(struct k_work *work)
 	LOG_INF("Resending message: %p", msg);
 	msg->send_attempts++;
 
-	sys_mutex_lock(&client_ctx->send_lock, K_FOREVER);
+	ret = sys_mutex_lock(&client_ctx->send_lock, K_FOREVER);
+	__ASSERT(ret == 0, "sys_mutex_lock failed with %d", ret);
 
 	if (msg->ctx == NULL) {
 		LOG_INF("Response for %p already handled", msg);
@@ -3797,7 +3802,9 @@ static void retransmit_request(struct k_work *work)
 	}
 
 next_locked:
-	sys_mutex_unlock(&client_ctx->send_lock);
+	ret = sys_mutex_unlock(&client_ctx->send_lock);
+	__ASSERT(ret == 0, "sys_mutex_unlock failed with %d", ret);
+	ARG_UNUSED(ret);
 
 next:
 	pending = coap_pending_next_to_expire(client_ctx->pendings,
