@@ -138,7 +138,7 @@ static int read_bytes(struct device *spi, struct spi_config *spi_cfg,
 void main(void)
 {
 	struct device *spi;
-	struct spi_config spi_cfg;
+	struct spi_config spi_cfg = {0};
 	int err;
 
 	printk("fujitsu FRAM example application\n");
