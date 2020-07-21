@@ -210,7 +210,7 @@ Developers are expected to fix issues and rework their patches and submit again.
 
 The CI infrastructure currently runs the following tests:
 
-- Run ''checkpatch'' for code style issues (can vote -1 on errors)
+- Run ''checkpatch'' for code style issues (can vote -1 on errors; see note)
 - Gitlint: Git commit style based on project requirements
 - License Check: Check for conflicting licenses
 - Run ''sanitycheck'' script
@@ -219,6 +219,25 @@ The CI infrastructure currently runs the following tests:
   - Build various samples for different boards (can vote -1 on errors)
 
 - Verify documentation builds correctly.
+
+.. note::
+
+   ''checkpatch'' is a Perl script that uses regular expressions to
+   extract information that requires a C language parser to process
+   accurately.  As such it sometimes issues false positives.  Known
+   cases include constructs like::
+
+      static uint8_t __aligned(PAGE_SIZE) page_pool[PAGE_SIZE * POOL_PAGES];
+      IOPCTL_Type *base = config->base;
+
+   Both lines produce a diagnostic regarding spaces around the ``*``
+   operator: the first is misidentifed as a pointer type declaration
+   that would be correct as ``PAGE_SIZE *POOL_PAGES`` while the second
+   is misidentified as a multiplication expression that would be correct
+   as ``IOPCTL_Type * base``.
+
+   Maintainers can override the -1 in cases where the CI infrastructure
+   gets the wrong answer.
 
 
 .. _gh_labels:
