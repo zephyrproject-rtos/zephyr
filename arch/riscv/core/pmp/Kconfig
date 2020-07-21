@@ -1,0 +1,11 @@
+# Physical Memory Protection (PMP) configuration options
+
+# Copyright (c) 2020 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config PMP_SLOT
+	int "Number of PMP slot"
+	default 8
+	help
+	  Depend of the arch/board. Take care to don't put value higher
+	  than the Hardware allow you.

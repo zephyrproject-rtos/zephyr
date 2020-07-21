@@ -25,6 +25,7 @@ menu "RISCV Processor Options"
 
 config CORE_E31
 	bool "Use E31 core"
+	select RISCV_PMP
 	select ARCH_HAS_USERSPACE
 	select ARCH_HAS_STACK_PROTECTION if PMP_STACK_GUARD
 	default n
@@ -111,6 +112,19 @@ config GEN_IRQ_VECTOR_TABLE
 
 config NUM_IRQS
 	int
+
+menuconfig RISCV_PMP
+	bool "RISC-V PMP Support"
+	default n
+	select THREAD_STACK_INFO
+	select MEMORY_PROTECTION
+	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
+	help
+	  MCU implements Physical Memory Protection.
+
+if RISCV_PMP
+source "arch/riscv/core/pmp/Kconfig"
+endif #RISCV_PMP
 
 endmenu
 
