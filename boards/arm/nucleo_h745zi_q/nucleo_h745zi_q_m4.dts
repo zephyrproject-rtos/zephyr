@@ -10,13 +10,13 @@
 #include "nucleo_h745zi_q.dtsi"
 
 / {
-	model = "STMicroelectronics STM32H745ZI-NUCLEO board";
-	compatible = "st,stm32h745zi-nucleo", "st,stm32h745";
+	model = "STMicroelectronics STM32H745ZI-Q-NUCLEO board";
+	compatible = "st,stm32h745zi-q-nucleo", "st,stm32h745";
 
 	/* HW resources belonging to CM4 */
 	chosen {
-		/* zephyr,console = &uart8; */
-		/* zephyr,shell-uart = &uart8; */
+		zephyr,console = &uart8;
+		zephyr,shell-uart = &uart8;
 		zephyr,sram = &sram1;
 		zephyr,flash = &flash1;
 	};
@@ -28,5 +28,5 @@
 
 &uart8 {
 	current-speed = <115200>;
-	/* status = "okay"; */
+	status = "okay";
 };
