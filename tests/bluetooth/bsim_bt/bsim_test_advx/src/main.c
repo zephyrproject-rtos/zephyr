@@ -765,6 +765,11 @@ static bool data_cb(struct bt_data *data, void *user_data)
 	}
 }
 
+static bool is_periodic;
+static uint8_t per_sid;
+static bt_addr_le_t per_addr;
+static uint8_t per_adv_evt_cnt_actual;
+
 static void scan_recv(const struct bt_le_scan_recv_info *info,
 		      struct net_buf_simple *buf)
 {
@@ -777,7 +782,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 	printk("[DEVICE]: %s, AD evt type %u, Tx Pwr: %i, RSSI %i %s "
-	       "C:%u S:%u D:%u SR:%u E:%u Prim: %s, Secn: %s "
+	       "C:%u S:%u D:%u SR:%u E:%u I: 0x%x Prim: %s, Secn: %s "
 	       "SID: %u\n",
 	       le_addr, info->adv_type, info->tx_power, info->rssi, name,
 	       (info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0,
@@ -785,14 +790,80 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	       (info->adv_props & BT_GAP_ADV_PROP_DIRECTED) != 0,
 	       (info->adv_props & BT_GAP_ADV_PROP_SCAN_RESPONSE) != 0,
 	       (info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) != 0,
+	       info->interval,
 	       phy2str(info->primary_phy), phy2str(info->secondary_phy),
 	       info->sid);
 
-	/* TODO: Add verification of received reports */
+	if (info->interval) {
+		if (!is_periodic) {
+			is_periodic = true;
+			per_sid = info->sid;
+			bt_addr_le_copy(&per_addr, info->addr);
+		} else {
+			if ((per_sid == info->sid) &&
+			    !bt_addr_le_cmp(&per_addr, info->addr)) {
+				per_adv_evt_cnt_actual++;
+
+				printk("per_adv_evt_cnt_actual %u\n",
+				       per_adv_evt_cnt_actual);
+			}
+		}
+	}
 }
 
 static struct bt_le_scan_cb scan_callbacks = {
 	.recv = scan_recv,
+};
+
+static bool is_sync;
+
+static void
+per_adv_sync_sync_cb(struct bt_le_per_adv_sync *sync,
+		     struct bt_le_per_adv_sync_synced_info *info)
+{
+	char le_addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+
+	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s synced, "
+	       "Interval 0x%04x (%u ms), PHY %s",
+	       bt_le_per_adv_sync_get_index(sync), le_addr,
+	       info->interval, info->interval * 5 / 4, phy2str(info->phy));
+
+	is_sync = true;
+}
+
+static void
+per_adv_sync_terminated_cb(struct bt_le_per_adv_sync *sync,
+			   const struct bt_le_per_adv_sync_term_info *info)
+{
+	char le_addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+
+	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s sync terminated",
+	       bt_le_per_adv_sync_get_index(sync), le_addr);
+}
+
+static void
+per_adv_sync_recv_cb(struct bt_le_per_adv_sync *sync,
+		     const struct bt_le_per_adv_sync_recv_info *info,
+		     struct net_buf_simple *buf)
+{
+	char le_addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+
+	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s, tx_power %i, "
+	       "RSSI %i, CTE %u, data length %u",
+	       bt_le_per_adv_sync_get_index(sync), le_addr, info->tx_power,
+	       info->rssi, info->cte_type, buf->len);
+}
+
+static struct bt_le_per_adv_sync_cb sync_cb = {
+	.synced = per_adv_sync_sync_cb,
+	.term = per_adv_sync_terminated_cb,
+	.recv = per_adv_sync_recv_cb
 };
 
 static void test_scanx_main(void)
@@ -803,6 +874,9 @@ static void test_scanx_main(void)
 		.interval   = 0x0004,
 		.window     = 0x0004,
 	};
+	struct bt_le_per_adv_sync_param sync_create_param;
+	struct bt_le_per_adv_sync *sync = NULL;
+	uint8_t per_adv_evt_cnt_expected;
 	int err;
 
 	printk("\n*Extended Scanning test*\n");
@@ -840,44 +914,47 @@ static void test_scanx_main(void)
 	}
 
 	printk("Start scanning...");
+	is_periodic = false;
+	per_adv_evt_cnt_actual = 0;
+	per_adv_evt_cnt_expected = 5;
 	err = bt_le_scan_start(&scan_param, scan_cb);
 	if (err) {
 		goto exit;
 	}
 	printk("success.\n");
 
-	/* TODO: Replace sleep with verification of adv reports and number
-	 * of reports expected.
-	 */
-	k_sleep(K_SECONDS(10));
+	printk("Waiting...");
+	while (!is_periodic ||
+	       (per_adv_evt_cnt_actual != per_adv_evt_cnt_expected)) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("done.\n");
 
-#if TEST_LOW_LEVEL
-	uint8_t type = (BIT(0) << 1) | 0x01; /* 1M PHY and active scanning */
-
-	printk("Setting scan parameters...");
-	err = ll_scan_params_set(type, SCAN_INTERVAL, SCAN_WINDOW,
-				 OWN_ADDR_TYPE, FILTER_POLICY);
+	printk("Stop scanning...");
+	err = bt_le_scan_stop();
 	if (err) {
 		goto exit;
 	}
 	printk("success.\n");
 
-	printk("enabling...");
-	err = ll_scan_enable(1);
+	printk("Creating Periodic Advertising Sync...");
+	is_sync = false;
+	bt_addr_le_copy(&sync_create_param.addr, &per_addr);
+	sync_create_param.options = 0;
+	sync_create_param.sid = per_sid;
+	sync_create_param.skip = 0;
+	sync_create_param.timeout = 0xa;
+	err = bt_le_per_adv_sync_create(&sync_create_param, &sync_cb, &sync);
 	if (err) {
 		goto exit;
 	}
 	printk("success.\n");
 
-	k_sleep(K_SECONDS(5));
-
-	printk("Disabling...");
-	err = ll_scan_enable(0);
-	if (err) {
-		goto exit;
+	printk("Waiting...");
+	while (!is_sync) {
+		k_sleep(K_MSEC(100));
 	}
-	printk("success.\n");
-#endif
+	printk("done.\n");
 
 	PASS("ScanX tests Passed\n");
 
