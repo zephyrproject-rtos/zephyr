@@ -20,16 +20,6 @@
 #define LED0_NODE DT_ALIAS(led0)
 #define LED1_NODE DT_ALIAS(led1)
 
-/*
- * Devicetree helper macro which gets the 'flags' cell from a 'gpios'
- * property, or returns 0 if the property has no 'flags' cell.
- */
-
-#define FLAGS_OR_ZERO(node)						\
-	COND_CODE_1(DT_PHA_HAS_CELL(node, gpios, flags),		\
-		    (DT_GPIO_FLAGS(node, gpios)),			\
-		    (0))
-
 struct printk_data_t {
 	void *fifo_reserved; /* 1st word reserved for use by fifo */
 	uint32_t led;
@@ -90,7 +80,7 @@ void blink0(void)
 		.gpio_dev_name = DT_GPIO_LABEL(LED0_NODE, gpios),
 		.gpio_pin_name = DT_LABEL(LED0_NODE),
 		.gpio_pin = DT_GPIO_PIN(LED0_NODE, gpios),
-		.gpio_flags = GPIO_OUTPUT | FLAGS_OR_ZERO(LED0_NODE),
+		.gpio_flags = GPIO_OUTPUT | DT_GPIO_FLAGS(LED0_NODE, gpios),
 #else
 #error "Unsupported board: led0 devicetree alias is not defined"
 #endif
@@ -106,7 +96,7 @@ void blink1(void)
 		.gpio_dev_name = DT_GPIO_LABEL(LED1_NODE, gpios),
 		.gpio_pin_name = DT_LABEL(LED1_NODE),
 		.gpio_pin = DT_GPIO_PIN(LED1_NODE, gpios),
-		.gpio_flags = GPIO_OUTPUT | FLAGS_OR_ZERO(LED1_NODE),
+		.gpio_flags = GPIO_OUTPUT | DT_GPIO_FLAGS(LED1_NODE, gpios),
 #else
 #error "Unsupported board: led1 devicetree alias is not defined"
 #endif
