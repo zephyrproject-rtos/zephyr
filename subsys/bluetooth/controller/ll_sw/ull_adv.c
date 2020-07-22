@@ -233,6 +233,14 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 				return BT_HCI_ERR_INVALID_PARAM;
 			}
 
+#if (CONFIG_BT_CTLR_ADV_AUX_SET == 0)
+			/* Connectable or scannable requires aux */
+			if (evt_prop & (BT_HCI_LE_ADV_PROP_CONN |
+					BT_HCI_LE_ADV_PROP_SCAN)) {
+				return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+			}
+#endif
+
 			adv_type = 0x05; /* PDU_ADV_TYPE_EXT_IND in */
 					 /* pdu_adv_type array. */
 
