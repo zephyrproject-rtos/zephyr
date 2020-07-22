@@ -414,7 +414,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	/* AdvA flag */
 	/* NOTE: as we will use auxiliary packet, we remove AdvA in
 	 * primary channel. i.e. Do nothing to not add AdvA in the primary
-	 * PDU.
+	 * PDU. Connectable or scannable advertising always has AdvA in aux.
 	 */
 	if (pri_hdr_prev.adv_addr) {
 		pri_dptr_prev += BDADDR_SIZE;
@@ -424,6 +424,9 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 
 		/* NOTE: AdvA is filled at enable */
 		sec_pdu->tx_addr = pri_pdu->tx_addr;
+	} else if (pri_com_hdr->adv_mode) {
+		sec_hdr->adv_addr = 1;
+		sec_pdu->tx_addr = adv->own_addr_type & 0x1;
 	}
 	pri_pdu->tx_addr = 0U;
 	pri_pdu->rx_addr = 0U;
