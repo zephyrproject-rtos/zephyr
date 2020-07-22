@@ -2187,14 +2187,14 @@ struct net_if_api {
 	}
 
 #define NET_IF_OFFLOAD_INIT(dev_name, sfx, _mtu)			\
-	static struct net_if_dev (NET_IF_DEV_GET_NAME(dev_name, sfx)) __used \
-	__attribute__((__section__(".net_if_dev.data"))) = {		\
-		.dev = &(__device_##dev_name),				\
+	static Z_STRUCT_SECTION_ITERABLE(net_if_dev,			\
+				NET_IF_DEV_GET_NAME(dev_name, sfx)) = {	\
+		.dev = &(DEVICE_NAME_GET(dev_name)),			\
 		.mtu = _mtu,						\
 	};								\
-	static struct net_if						\
-	(NET_IF_GET_NAME(dev_name, sfx))[NET_IF_MAX_CONFIGS] __used	\
-	__attribute__((__section__(".net_if.data"))) = {		\
+	static Z_DECL_ALIGN(struct net_if)				\
+		NET_IF_GET_NAME(dev_name, sfx)[NET_IF_MAX_CONFIGS]	\
+		       __used __in_section(_net_if, static, net_if) = {	\
 		[0 ... (NET_IF_MAX_CONFIGS - 1)] = {			\
 			.if_dev = &(NET_IF_DEV_GET_NAME(dev_name, sfx)), \
 			NET_IF_CONFIG_INIT				\
