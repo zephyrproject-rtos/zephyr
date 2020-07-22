@@ -531,6 +531,10 @@ static int espi_xec_receive_oob(struct device *dev,
 		return -EIO;
 	}
 
+	/* Enable Rx only when we want to receive data */
+	ESPI_OOB_REGS->RX_IEN |= MCHP_ESPI_OOB_RX_IEN;
+	ESPI_OOB_REGS->RX_CTRL |= MCHP_ESPI_OOB_RX_CTRL_AVAIL;
+
 	/* Wait until ISR or timeout */
 	ret = k_sem_take(&data->rx_lock, K_MSEC(MAX_OOB_TIMEOUT));
 	if (ret == -EAGAIN) {
@@ -685,7 +689,6 @@ static void espi_init_oob(struct device *dev)
 	ESPI_OOB_REGS->TX_ADDR_LSW = (uint32_t)&slave_tx_mem[0];
 	ESPI_OOB_REGS->RX_ADDR_LSW = (uint32_t)&slave_rx_mem[0];
 	ESPI_OOB_REGS->RX_LEN = 0x00FF0000;
-	ESPI_OOB_REGS->RX_CTRL |= MCHP_ESPI_OOB_RX_CTRL_AVAIL;
 
 	/* Enable OOB Tx channel enable change status interrupt */
 	ESPI_OOB_REGS->TX_IEN |= MCHP_ESPI_OOB_TX_IEN_CHG_EN;
@@ -892,6 +895,9 @@ static void espi_oob_down_isr(struct device *dev)
 	if (status & MCHP_ESPI_OOB_RX_STS_DONE) {
 		/* Register is write-on-clear, ensure only 1 bit is affected */
 		ESPI_OOB_REGS->RX_STS = MCHP_ESPI_OOB_RX_STS_DONE;
+
+		/* Disable Rx interrupt */
+		ESPI_OOB_REGS->RX_IEN &= ~MCHP_ESPI_OOB_RX_IEN;
 
 		k_sem_give(&data->rx_lock);
 	}
