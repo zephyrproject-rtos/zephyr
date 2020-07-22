@@ -7269,7 +7269,7 @@ static inline bool ad_has_name(const struct bt_data *ad, size_t ad_len)
 static int le_adv_update(struct bt_le_ext_adv *adv,
 			 const struct bt_data *ad, size_t ad_len,
 			 const struct bt_data *sd, size_t sd_len,
-			 bool scannable, bool use_name)
+			 bool ext_adv, bool scannable, bool use_name)
 {
 	struct bt_ad d[2] = {};
 	struct bt_data data;
@@ -7290,19 +7290,21 @@ static int le_adv_update(struct bt_le_ext_adv *adv,
 			name, strlen(name));
 	}
 
-	d_len = 1;
-	d[0].data = ad;
-	d[0].len = ad_len;
+	if (!(ext_adv && scannable)) {
+		d_len = 1;
+		d[0].data = ad;
+		d[0].len = ad_len;
 
-	if (use_name && !scannable) {
-		d[1].data = &data;
-		d[1].len = 1;
-		d_len = 2;
-	}
+		if (use_name && !scannable) {
+			d[1].data = &data;
+			d[1].len = 1;
+			d_len = 2;
+		}
 
-	err = set_ad(adv, d, d_len);
-	if (err) {
-		return err;
+		err = set_ad(adv, d, d_len);
+		if (err) {
+			return err;
+		}
 	}
 
 	if (scannable) {
@@ -7343,7 +7345,7 @@ int bt_le_adv_update_data(const struct bt_data *ad, size_t ad_len,
 	scannable = atomic_test_bit(adv->flags, BT_ADV_SCANNABLE);
 	use_name = atomic_test_bit(adv->flags, BT_ADV_INCLUDE_NAME);
 
-	return le_adv_update(adv, ad, ad_len, sd, sd_len, scannable,
+	return le_adv_update(adv, ad, ad_len, sd, sd_len, false, scannable,
 			     use_name);
 }
 
@@ -7589,7 +7591,8 @@ int bt_le_adv_start_legacy(const struct bt_le_adv_param *param,
 	}
 
 	if (!dir_adv) {
-		err = le_adv_update(adv, ad, ad_len, sd, sd_len, scannable,
+		err = le_adv_update(adv, ad, ad_len, sd, sd_len, false,
+				    scannable,
 				    param->options & BT_LE_ADV_OPT_USE_NAME);
 		if (err) {
 			return err;
@@ -8150,12 +8153,13 @@ int bt_le_ext_adv_set_data(struct bt_le_ext_adv *adv,
 			   const struct bt_data *ad, size_t ad_len,
 			   const struct bt_data *sd, size_t sd_len)
 {
-	bool scannable, use_name;
+	bool ext_adv, scannable, use_name;
 
+	ext_adv = atomic_test_bit(adv->flags, BT_ADV_EXT_ADV);
 	scannable = atomic_test_bit(adv->flags, BT_ADV_SCANNABLE);
 	use_name = atomic_test_bit(adv->flags, BT_ADV_INCLUDE_NAME);
 
-	return le_adv_update(adv, ad, ad_len, sd, sd_len, scannable,
+	return le_adv_update(adv, ad, ad_len, sd, sd_len, ext_adv, scannable,
 			     use_name);
 }
 
