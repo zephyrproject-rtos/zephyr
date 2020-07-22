@@ -7778,6 +7778,9 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 	atomic_set_bit_to(adv->flags, BT_ADV_USE_IDENTITY,
 			  param->options & BT_LE_ADV_OPT_USE_IDENTITY);
 
+	atomic_set_bit_to(adv->flags, BT_ADV_EXT_ADV,
+			  param->options & BT_LE_ADV_OPT_EXT_ADV);
+
 	return 0;
 }
 
