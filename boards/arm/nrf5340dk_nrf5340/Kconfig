@@ -37,10 +37,11 @@ config BOARD_ENABLE_CPUNET
 	  as a consequence will power up the Network MCU during system boot.
 	  Additionally, the option allocates GPIO pins that will be used by UARTE
 	  of the Network MCU.
-	  Note: The non-secure image can only be started by the secure firmware,
-	  so when this option is used with the non-secure version of the board,
-	  the application needs to take into consideration, that the secure firmware
-	  may already have started the Network MCU.
+	  Note: GPIO pin allocation can only be configured by the secure Application
+	  MCU firmware, so when this option is used with the non-secure version of
+	  the board, the application needs to take into consideration, that the
+	  secure firmware image must already have configured GPIO allocation for the
+	  Network MCU.
 	default y if (BT || NET_L2_IEEE802154)
 
 endif # BOARD_NRF5340PDK_NRF5340_CPUAPP || BOARD_NRF5340PDK_NRF5340_CPUAPPNS || BOARD_NRF5340DK_NRF5340_CPUAPP || BOARD_NRF5340DK_NRF5340_CPUAPPNS
