@@ -100,6 +100,9 @@ The Adafruit Feather M0 Basic Proto ships with a BOSSA compatible
 SAM-BA bootloader.  The bootloader can be entered by quickly tapping
 the reset button twice.
 
+Additionally, if :code:`CONFIG_USB_CDC_ACM` is enabled then the bootloader
+will be entered automatically when you run :code:`west flash`.
+
 Flashing
 ========
 
