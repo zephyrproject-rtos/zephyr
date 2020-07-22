@@ -88,12 +88,16 @@ static int mpr_read_reg(struct device *dev)
  *
  * returns pressure [kPa] * 10^6
  */
-static inline void mpr_convert_reg(const uint32_t *reg, int64_t *value)
+static inline void mpr_convert_reg(const uint32_t *reg, uint64_t *value)
 {
-	*value = (*reg - MPR_OUTPUT_MIN) * (MPR_P_MAX - MPR_P_MIN);
-	*value *= MPR_CONVERSION_FACTOR;
-	*value /= MPR_OUTPUT_RANGE;
-	*value += MPR_P_MIN;
+	if (*reg > MPR_OUTPUT_MIN) {
+		*value = (uint64_t)(*reg - MPR_OUTPUT_MIN) * (MPR_P_MAX - MPR_P_MIN);
+		*value *= MPR_CONVERSION_FACTOR;
+		*value /= MPR_OUTPUT_RANGE;
+		*value += MPR_P_MIN;
+	} else {
+		*value = MPR_P_MIN;
+	}
 }
 
 static int mpr_sample_fetch(struct device *dev, enum sensor_channel chan)
@@ -111,7 +115,7 @@ static int mpr_channel_get(struct device *dev,
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_PRESS);
 
-	int64_t value;
+	uint64_t value;
 
 	mpr_convert_reg(&data->reg_val, &value);
 
