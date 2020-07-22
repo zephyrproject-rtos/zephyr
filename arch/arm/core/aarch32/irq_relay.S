@@ -74,4 +74,4 @@ SECTION_FUNC(vector_relay_table, __vector_relay_table)
 	.word __vector_relay_handler
 	.endr
 
-GTEXT(__vector_relay_table)
+GDATA(__vector_relay_table)

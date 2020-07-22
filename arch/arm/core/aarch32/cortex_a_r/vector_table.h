@@ -29,7 +29,7 @@
 #include <sys/util.h>
 
 GTEXT(__start)
-GTEXT(_vector_table)
+GDATA(_vector_table)
 
 GTEXT(z_arm_nmi)
 GTEXT(z_arm_undef_instruction)
