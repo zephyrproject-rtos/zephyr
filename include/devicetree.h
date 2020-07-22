@@ -1368,14 +1368,12 @@
 #define DT_INST_PROP(inst, prop) DT_PROP(DT_DRV_INST(inst), prop)
 
 /**
- * @brief Get a DT_DRV_COMPAT element value in an array property
+ * @brief Get a DT_DRV_COMPAT property length
  * @param inst instance number
  * @param prop lowercase-and-underscores property name
- * @param idx the index to get
- * @return a representation of the idx-th element of the property
+ * @return logical length of the property
  */
-#define DT_INST_PROP_BY_IDX(inst, prop, idx) \
-	DT_PROP_BY_IDX(DT_DRV_INST(inst), prop, idx)
+#define DT_INST_PROP_LEN(inst, prop) DT_PROP_LEN(DT_DRV_INST(inst), prop)
 
 /**
  * @brief Is index "idx" valid for an array type property
@@ -1390,12 +1388,14 @@
 	DT_PROP_HAS_IDX(DT_DRV_INST(inst), prop, idx)
 
 /**
- * @brief Get a DT_DRV_COMPAT property length
+ * @brief Get a DT_DRV_COMPAT element value in an array property
  * @param inst instance number
  * @param prop lowercase-and-underscores property name
- * @return logical length of the property
+ * @param idx the index to get
+ * @return a representation of the idx-th element of the property
  */
-#define DT_INST_PROP_LEN(inst, prop) DT_PROP_LEN(DT_DRV_INST(inst), prop)
+#define DT_INST_PROP_BY_IDX(inst, prop, idx) \
+	DT_PROP_BY_IDX(DT_DRV_INST(inst), prop, idx)
 
 /**
  * @brief Get a DT_DRV_COMPAT instance's "label" property
