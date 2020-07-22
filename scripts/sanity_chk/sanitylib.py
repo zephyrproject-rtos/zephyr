@@ -523,7 +523,7 @@ class DeviceHandler(Handler):
         for i in self.suite.connected_hardware:
             if fixture and fixture not in i.get('fixtures', []):
                 continue
-            if i['platform'] == device and i['available'] and (i['serial'] or i['serial_pty']):
+            if i['platform'] == device and i['available'] and (i['serial'] or i.get('serial_pty', None)):
                 return True
 
         return False
@@ -531,7 +531,7 @@ class DeviceHandler(Handler):
     def get_available_device(self, instance):
         device = instance.platform.name
         for i in self.suite.connected_hardware:
-            if i['platform'] == device and i['available'] and (i['serial'] or i['serial_pty']):
+            if i['platform'] == device and i['available'] and (i['serial'] or i.get('serial_pty', None)):
                 i['available'] = False
                 i['counter'] += 1
                 return i
@@ -541,7 +541,7 @@ class DeviceHandler(Handler):
     def make_device_available(self, serial):
         with hw_map_local:
             for i in self.suite.connected_hardware:
-                if i['serial'] == serial or i['serial_pty']:
+                if i['serial'] == serial or i.get('serial_pty', None):
                     i['available'] = True
 
     @staticmethod
@@ -613,7 +613,7 @@ class DeviceHandler(Handler):
             elif runner == "jlink":
                 command.append("--tool-opt=-SelectEmuBySN  %s" % (board_id))
 
-        serial_pty = hardware['serial_pty']
+        serial_pty = hardware.get('serial_pty', None)
         if serial_pty:
             master, slave = pty.openpty()
 
