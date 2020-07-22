@@ -89,6 +89,8 @@ enum {
 	BT_ADV_CONNECTABLE,
 	/* Advertiser set is scannable */
 	BT_ADV_SCANNABLE,
+	/* Advertiser set is using extended advertising */
+	BT_ADV_EXT_ADV,
 	/* Advertiser set has disabled the use of private addresses and is using
 	 * the identity address instead.
 	 */
