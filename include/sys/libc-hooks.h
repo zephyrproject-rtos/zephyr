@@ -37,10 +37,33 @@ __syscall size_t zephyr_fwrite(const void *_MLIBC_RESTRICT ptr, size_t size,
 #endif /* CONFIG_NEWLIB_LIBC */
 
 #ifdef CONFIG_USERSPACE
-#if defined(CONFIG_NEWLIB_LIBC) || (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE > 0)
+#if defined(CONFIG_NEWLIB_LIBC)
+/* If we are using newlib, the heap arena is in one of two areas:
+ *  - If we have an MPU that requires power of two alignment, the heap bounds
+ *    must be specified in Kconfig via CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE.
+ *  - Otherwise, the heap arena on most arches starts at a suitably
+ *    aligned base addreess after the `_end` linker symbol, through to the end
+ *    of system RAM.
+ */
+#if (!defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT) || \
+     (defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT) && \
+      CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE))
 #define Z_MALLOC_PARTITION_EXISTS 1
+extern struct k_mem_partition z_malloc_partition;
+#endif
+#elif defined(CONFIG_MINIMAL_LIBC)
+#if (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE > 0)
+/* Minimal libc by default has no malloc arena, its size must be set in
+ * Kconfig via CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE
+ */
+#define Z_MALLOC_PARTITION_EXISTS 1
+#endif /* CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE > 0 */
+#endif /* CONFIG_MINIMAL_LIBC */
 
-/* Memory partition containing the libc malloc arena */
+#ifdef Z_MALLOC_PARTITION_EXISTS
+/* Memory partition containing the libc malloc arena. Configuration controls
+ * whether this is available, and an arena size may need to be set.
+ */
 extern struct k_mem_partition z_malloc_partition;
 #endif
 
