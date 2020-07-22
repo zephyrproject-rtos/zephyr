@@ -22,10 +22,9 @@
 
 	};
 
-	sram0: memory@0 {
+	dram0: memory@0 {
 		device_type = "memory";
-		compatible = "mmio-sram";
-		reg = <0x0 DT_SRAM_SIZE>;
+		reg = <0x0 DT_DRAM_SIZE>;
 	};
 
 	intc: ioapic@fec00000  {

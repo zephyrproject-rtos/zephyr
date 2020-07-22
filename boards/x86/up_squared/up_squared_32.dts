@@ -8,7 +8,7 @@
 
 #include <mem.h>
 
-#define DT_SRAM_SIZE		DT_SIZE_M(2048)
+#define DT_DRAM_SIZE		DT_SIZE_M(2048)
 
 #include <apollo_lake.dtsi>
 
@@ -17,7 +17,7 @@
 	compatible = "intel,apollo_lake";
 
 	chosen {
-		zephyr,sram = &sram0;
+		zephyr,sram = &dram0;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,bt-uart = &uart1;
