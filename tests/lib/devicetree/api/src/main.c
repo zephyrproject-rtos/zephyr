@@ -18,6 +18,7 @@
 #define TEST_PH	DT_NODELABEL(test_phandles)
 #define TEST_IRQ	DT_NODELABEL(test_irq)
 #define TEST_TEMP	DT_NODELABEL(test_temp_sensor)
+#define TEST_REG	DT_NODELABEL(test_reg)
 
 #define TEST_I2C_DEV DT_PATH(test, i2c_11112222, test_i2c_dev_10)
 #define TEST_I2C_BUS DT_BUS(TEST_I2C_DEV)
@@ -156,6 +157,57 @@ static void test_inst_props(void)
 	zassert_true(!strncmp(label_startswith, DT_INST_LABEL(0),
 			      strlen(label_startswith)),
 		     "inst 0 label");
+}
+
+static void test_default_prop_access(void)
+{
+	/*
+	 * The APIs guarantee that the default_value is not expanded
+	 * if the relevant property or cell is defined. This "X" macro
+	 * is meant as poison which causes (hopefully) easy to
+	 * understand build errors if this guarantee is not met due to
+	 * a regression.
+	 */
+#undef X
+#define X do.not.expand.this.argument
+
+	/* Node identifier variants. */
+	zassert_equal(DT_PROP_OR(TEST_REG, misc_prop, X), 1234, "");
+	zassert_equal(DT_PROP_OR(TEST_REG, not_a_property, -1), -1, "");
+
+	zassert_equal(DT_PHA_BY_IDX_OR(TEST_TEMP, dmas, 1, channel, X), 3, "");
+	zassert_equal(DT_PHA_BY_IDX_OR(TEST_TEMP, dmas, 1, not_a_cell, -1), -1,
+		      "");
+
+	zassert_equal(DT_PHA_OR(TEST_TEMP, dmas, channel, X), 1, "");
+	zassert_equal(DT_PHA_OR(TEST_TEMP, dmas, not_a_cell, -1), -1, "");
+
+	zassert_equal(DT_PHA_BY_NAME_OR(TEST_TEMP, dmas, tx, channel, X), 1,
+		      "");
+	zassert_equal(DT_PHA_BY_NAME_OR(TEST_TEMP, dmas, tx, not_a_cell, -1),
+		      -1, "");
+
+	/* Instance number variants. */
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_reg_holder
+	zassert_equal(DT_INST_PROP_OR(0, misc_prop, X), 1234, "");
+	zassert_equal(DT_INST_PROP_OR(0, not_a_property, -1), -1, "");
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_adc_temp_sensor
+	zassert_equal(DT_INST_PHA_BY_IDX_OR(0, dmas, 1, channel, X), 3, "");
+	zassert_equal(DT_INST_PHA_BY_IDX_OR(0, dmas, 1, not_a_cell, -1), -1,
+		      "");
+
+	zassert_equal(DT_INST_PHA_OR(0, dmas, channel, X), 1, "");
+	zassert_equal(DT_INST_PHA_OR(0, dmas, not_a_cell, -1), -1, "");
+
+	zassert_equal(DT_INST_PHA_BY_NAME_OR(0, dmas, tx, channel, X), 1,
+		      "");
+	zassert_equal(DT_INST_PHA_BY_NAME_OR(0, dmas, tx, not_a_cell, -1), -1,
+		      "");
+
+#undef X
 }
 
 static void test_has_path(void)
@@ -1488,6 +1540,7 @@ void test_main(void)
 			 ztest_unit_test(test_alias_props),
 			 ztest_unit_test(test_nodelabel_props),
 			 ztest_unit_test(test_inst_props),
+			 ztest_unit_test(test_default_prop_access),
 			 ztest_unit_test(test_has_path),
 			 ztest_unit_test(test_has_alias),
 			 ztest_unit_test(test_inst_checks),
