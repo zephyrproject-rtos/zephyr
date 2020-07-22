@@ -5,11 +5,10 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if(CONFIG_PINMUX_MCUX_LPC)
-  zephyr_library()
-  zephyr_library_include_directories(${ZEPHYR_BASE}/drivers)
-  zephyr_library_sources(pinmux.c)
-endif()
+ zephyr_library()
+ zephyr_library_sources(pinmux.c)
+ zephyr_library_include_directories(${ZEPHYR_BASE}/drivers)
+
 
 if (CONFIG_BUILD_WITH_TFM)
 	# Set default image versions if not defined elsewhere
@@ -22,6 +21,7 @@ if (CONFIG_BUILD_WITH_TFM)
 	endif()
 
 	set(PREPROCESSED_FILE "${CMAKE_BINARY_DIR}/tfm/image_macros_preprocessed")
+	set(TFM_MCUBOOT_DIR "${ZEPHYR_BASE}/../modules/tee/tfm/trusted-firmware-m/bl2/ext/mcuboot")
 
 	# Configure which format (full or hash) to include the public key in
 	# the image manifest
@@ -33,14 +33,35 @@ if (CONFIG_BUILD_WITH_TFM)
 	    message(FATAL_ERROR "'srec_cat' not found. Please install it, or add it to $PATH.")
 	endif()
 
-	#Create and sign for concatenated binary image, should align with the TF-M BL2
-  set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+	#Create and sign for concatenated binary image should align with the TF-M BL2
+	set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
 
-  #Create concatenated binary image from the two binary file
-  COMMAND ${PYTHON_EXECUTABLE} ${TFM_MCUBOOT_DIR}/scripts/assemble.py
-  ARGS --layout ${PREPROCESSED_FILE}.c
-    -s ${CMAKE_BINARY_DIR}/build/tfm/install/outputs/LPC55S69/tfm_s.bin
-    -n ${CMAKE_BINARY_DIR}/zephyr/zephyr.bin
-    -o ${CMAKE_BINARY_DIR}/tfm_full.bin
-  )
+		#Create concatenated binary image from the two binary file
+		COMMAND ${PYTHON_EXECUTABLE} ${TFM_MCUBOOT_DIR}/scripts/assemble.py
+		ARGS --layout ${PREPROCESSED_FILE}.c
+			-s ${CMAKE_BINARY_DIR}/tfm/install/outputs/LPC55S69/tfm_s.bin
+			-n ${CMAKE_BINARY_DIR}/zephyr/zephyr.bin
+			-o ${CMAKE_BINARY_DIR}/tfm_full.bin
+
+		#Sign concatenated binary image with default public key in mcuboot folder
+		COMMAND ${PYTHON_EXECUTABLE} ${TFM_MCUBOOT_DIR}/scripts/imgtool.py
+		ARGS sign
+			--layout ${PREPROCESSED_FILE}_s.c
+			-k ${CONFIG_TFM_KEY_FILE_S}
+			--public-key-format ${TFM_PUBLIC_KEY_FORMAT}
+			--align 1
+			-v ${TFM_IMAGE_VERSION_S}
+			${ADD_SECURITY_COUNTER}
+			-H 0x400
+			${CMAKE_BINARY_DIR}/tfm_full.bin
+			${CMAKE_BINARY_DIR}/tfm_sign.bin
+
+		#srec_cat to combine images into hex for drag and drop
+		COMMAND ${SREC_CAT}
+		ARGS ${CMAKE_BINARY_DIR}/tfm/bl2/ext/mcuboot/mcuboot.bin -binary
+			-offset 0x0
+			${CMAKE_BINARY_DIR}/tfm_sign.bin -binary
+			-offset 0x20000
+			-o ${CMAKE_BINARY_DIR}/tfm_zephyr.hex -Intel --line-length=44
+	)
 endif()
