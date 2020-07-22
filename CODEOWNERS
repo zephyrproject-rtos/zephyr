@@ -215,6 +215,7 @@
 /drivers/sensor/lis*/                     @avisconti
 /drivers/sensor/lps*/                     @avisconti
 /drivers/sensor/lsm*/                     @avisconti
+/drivers/sensor/mpr/                      @sven-hm
 /drivers/sensor/st*/                      @avisconti
 /drivers/serial/uart_altera_jtag_hal.c    @wentongwu
 /drivers/serial/*ns16550*                 @andrewboie
