@@ -42,7 +42,10 @@ void dummy(void)
 
 void main(void)
 {
+	k_mem_domain_remove_thread(tid0);
 	k_yield();
+
+	//k_mem_domain_remove_thread(_current);
 
 	if (arch_is_user_context()) {
 		printk("Hello from user context! ");

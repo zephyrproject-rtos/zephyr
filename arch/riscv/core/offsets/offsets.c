@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2016 Jean-Paul Etienne <fractalclone@gmail.com>
- * Contributors: 2020 RISE Research Institutes of Sweden <www.ri.se>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -105,19 +104,6 @@ GEN_OFFSET_SYM(z_arch_esf_t, fa4);
 GEN_OFFSET_SYM(z_arch_esf_t, fa5);
 GEN_OFFSET_SYM(z_arch_esf_t, fa6);
 GEN_OFFSET_SYM(z_arch_esf_t, fa7);
-#endif
-
-#if defined(CONFIG_USERSPACE)
-GEN_OFFSET_SYM(z_arch_esf_t, pmpcfg0);
-GEN_OFFSET_SYM(z_arch_esf_t, pmpcfg1);
-GEN_OFFSET_SYM(z_arch_esf_t, pmpaddr0);
-GEN_OFFSET_SYM(z_arch_esf_t, pmpaddr1);
-GEN_OFFSET_SYM(z_arch_esf_t, pmpaddr2);
-GEN_OFFSET_SYM(z_arch_esf_t, pmpaddr3);
-GEN_OFFSET_SYM(z_arch_esf_t, pmpaddr4);
-GEN_OFFSET_SYM(z_arch_esf_t, pmpaddr5);
-GEN_OFFSET_SYM(z_arch_esf_t, pmpaddr6);
-GEN_OFFSET_SYM(z_arch_esf_t, pmpaddr7);
 #endif
 
 #if defined(CONFIG_RISCV_SOC_CONTEXT_SAVE)

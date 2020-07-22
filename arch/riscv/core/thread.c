@@ -72,9 +72,6 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #endif
 
 #if defined(CONFIG_USERSPACE)
-	stack_init->pmpcfg0 = 0;
-	stack_init->pmpcfg1 = 0;
-
 	if (options & K_USER) {
 		stack_init->mepc = (ulong_t)arch_user_mode_enter;
 	} else {
@@ -158,8 +155,85 @@ int arch_float_enable(struct k_thread *thread)
 
 #ifdef CONFIG_USERSPACE
 
-/*
- * Each 32-bit pmpcfg# register contains four 8-bit configuration sections.
+#include <offsets_short.h>
+#include <linker/linker-defs.h>
+
+extern void z_riscv_userspace_enter(void);
+
+void z_riscv_pmp_configure(struct k_thread *thread)
+{
+	/* Userspace threads are configured by default to isolate .text,
+	 * .rodata and their own stack. The remaining PMP registers are
+	 * reserved for user-defined memory partitions.
+	 *
+	 *  +=========+ <--  0x0
+	 *  |   ...   |
+	 *  +---------+ <--  pmpaddr0
+	 *  |  .text  |        [RX]
+	 *  +---------+
+	 *  |   ...   |
+	 *  +---------+ <--  pmpaddr1
+	 *  | .rodata |        [RO]
+	 *  +---------+
+	 *  |   ...   |
+	 *  +---------+ <--  pmpaddr2
+	 *  |  stack  |        [RW]
+	 *  +---------+
+	 *  |   ...   |
+	 *  +=========+
+	 */
+
+	size_t pmpcfg[2];
+	size_t pmpaddr[8];
+
+	pmpcfg[0] = ((RV_PMP_NAPOT | RV_PMP_RX) << (RV_CFG_OFFSET * 0)) |
+   		    ((RV_PMP_NAPOT | RV_PMP_RO) << (RV_CFG_OFFSET * 1)) |
+		    ((RV_PMP_NAPOT | RV_PMP_RW) << (RV_CFG_OFFSET * 2));
+
+	pmpaddr[0] = RV_NAPOT_CALC(_image_text_start,
+			_image_text_end - _image_text_start);
+	pmpaddr[1] = RV_NAPOT_CALC(_image_rodata_start,
+			_image_rodata_end - _image_rodata_start);
+	pmpaddr[2] = RV_NAPOT_CALC(_current->stack_info.start,
+			_current->stack_info.size);
+
+	struct k_mem_domain *mem_domain = _current->mem_domain_info.mem_domain;
+	struct k_mem_partition partition;
+	
+	if (mem_domain) {
+		int rv_pmp_idx;
+	
+		for (int i = 0; i < mem_domain->num_partitions; i++) {
+			partition = mem_domain->partitions[i];
+			if (partition.size == 0) {
+				/* Partition does not exist. */
+				continue;
+			}
+	
+			/* pmpcfg0 has room for a single memory partition.
+			 * pmpcfg1 can accomodate four.
+			 */
+			rv_pmp_idx = i + 3;
+			pmpaddr[rv_pmp_idx] = RV_NAPOT_CALC(partition.start, 
+					partition.size);
+			pmpcfg[rv_pmp_idx/4] |= ((RV_PMP_NAPOT | partition.attr)
+					<< ((rv_pmp_idx % 4) * RV_CFG_OFFSET));
+		}
+	
+		__asm__ volatile ("csrw pmpaddr3, %0" :: "r" (pmpaddr[3]));
+		__asm__ volatile ("csrw pmpaddr4, %0" :: "r" (pmpaddr[4]));
+		__asm__ volatile ("csrw pmpaddr5, %0" :: "r" (pmpaddr[5]));
+		__asm__ volatile ("csrw pmpaddr6, %0" :: "r" (pmpaddr[6]));
+		__asm__ volatile ("csrw pmpaddr7, %0" :: "r" (pmpaddr[7]));
+	}
+
+	__asm__ volatile ("csrw pmpcfg0, %0" :: "r" (pmpcfg[0]));
+	__asm__ volatile ("csrw pmpaddr0, %0" :: "r" (pmpaddr[0]));
+	__asm__ volatile ("csrw pmpaddr1, %0" :: "r" (pmpaddr[1]));
+	__asm__ volatile ("csrw pmpaddr2, %0" :: "r" (pmpaddr[2]));
+}
+
+/* Each 32-bit pmpcfg# register contains four 8-bit configuration sections.
  * These section numbers contain flags which apply to region defined by the
  * corresponding pmpaddr# register.
  *
@@ -181,7 +255,7 @@ int arch_float_enable(struct k_thread *thread)
  *	  A: 0 = OFF (null region / disabled)
  *		 1 = TOR (top of range)
  *		 2 = NA4 (naturally aligned four-byte region)
- *		 3 = RV_PMP_NAPOT_PUT (naturally aligned power-of-two region, > 7 bytes)
+ *		 3 = NAPOT (naturally aligned power-of-two region, > 7 bytes)
  *	  X: execute
  *	  W: write
  *	  R: read
@@ -196,7 +270,7 @@ int arch_float_enable(struct k_thread *thread)
  * |                        address[33:2]                          | pmpaddr#
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  *
- * RV_PMP_NAPOT_PUT: Each 32-bit pmpaddr# register defines the start address and the size
+ * NAPOT: Each 32-bit pmpaddr# register defines the start address and the size
  * of the PMP region. The number of concurrent 1s begging at the LSB indicates
  * the size of the region as a power of two (e.g. 0x...0 = 8-byte, 0x...1 =
  * 16-byte, 0x...11 = 32-byte, etc.).
@@ -207,30 +281,30 @@ int arch_float_enable(struct k_thread *thread)
  * |                        address[33:2]                |0|1|1|1|1| pmpaddr#
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  *
- * NA4: This is essentially an edge case of RV_PMP_NAPOT_PUT where the entire pmpaddr#
+ * NA4: This is essentially an edge case of NAPOT where the entire pmpaddr#
  * register defines a 4-byte wide region.
  */
 
 int arch_buffer_validate(void *addr, size_t size, int write)
 {
-	size_t pmpcfg;
+	size_t pmpcfg[2];
 	size_t pmpaddr[8];
 
 	uint8_t region_cfg[8];
 	size_t region_size;
 	size_t region_addr;
 
-	__asm__ volatile ("csrr %0, pmpcfg0" : "=r" (pmpcfg));
-	region_cfg[0] = (pmpcfg >> RV_PMP_0CFG);
-	region_cfg[1] = (pmpcfg >> RV_PMP_1CFG);
-	region_cfg[2] = (pmpcfg >> RV_PMP_2CFG);
-	region_cfg[3] = (pmpcfg >> RV_PMP_3CFG);
+	__asm__ volatile ("csrr %0, pmpcfg0" : "=r" (pmpcfg[0]));
+	__asm__ volatile ("csrr %0, pmpcfg1" : "=r" (pmpcfg[1]));
 
-	__asm__ volatile ("csrr %0, pmpcfg1" : "=r" (pmpcfg));
-	region_cfg[4] = (pmpcfg >> RV_PMP_0CFG);
-	region_cfg[5] = (pmpcfg >> RV_PMP_1CFG);
-	region_cfg[6] = (pmpcfg >> RV_PMP_2CFG);
-	region_cfg[7] = (pmpcfg >> RV_PMP_3CFG);
+	region_cfg[0] = (uint8_t)(pmpcfg[0] >> (RV_CFG_OFFSET * 0));
+	region_cfg[1] = (uint8_t)(pmpcfg[0] >> (RV_CFG_OFFSET * 1));
+	region_cfg[2] = (uint8_t)(pmpcfg[0] >> (RV_CFG_OFFSET * 2));
+	region_cfg[3] = (uint8_t)(pmpcfg[0] >> (RV_CFG_OFFSET * 3));
+	region_cfg[4] = (uint8_t)(pmpcfg[1] >> (RV_CFG_OFFSET * 0));
+	region_cfg[5] = (uint8_t)(pmpcfg[1] >> (RV_CFG_OFFSET * 1));
+	region_cfg[6] = (uint8_t)(pmpcfg[1] >> (RV_CFG_OFFSET * 2));
+	region_cfg[7] = (uint8_t)(pmpcfg[1] >> (RV_CFG_OFFSET * 3));
 
 	__asm__ volatile ("csrr %0, pmpaddr0" : "=r" (pmpaddr[0]));
 	__asm__ volatile ("csrr %0, pmpaddr1" : "=r" (pmpaddr[1]));
@@ -266,10 +340,7 @@ int arch_buffer_validate(void *addr, size_t size, int write)
 
 int arch_mem_domain_max_partitions_get(void)
 {
-	/* Three of the eight available PMP registers are used by default to
-	 * protect the .text, .rodata and stack regions.
-	 */
-	return 5;
+	return 8;
 }
 
 void arch_mem_domain_partition_add(struct k_mem_domain *domain,
@@ -286,63 +357,36 @@ void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 
 void arch_mem_domain_thread_add(struct k_thread *thread)
 {
+	/* No-op on this architecture. */
+}
+
+void z_riscv_mem_domain_thread_remove(struct k_thread *thread)
+{
 	/* TODO */
 }
 
 void arch_mem_domain_thread_remove(struct k_thread *thread)
 {
-	/* TODO */
+	z_riscv_mem_domain_thread_remove(thread);
 }
 
 void arch_mem_domain_destroy(struct k_mem_domain *domain)
 {
-	/* TODO */
+	sys_dnode_t * node, * next_node;
+
+	SYS_DLIST_FOR_EACH_NODE_SAFE(&domain->mem_domain_q, node, next_node) {
+
+		struct k_thread *thread =
+			CONTAINER_OF(node, struct k_thread, mem_domain_info);
+		
+		z_riscv_mem_domain_thread_remove(thread);
+	}
 }
-
-#include <linker/linker-defs.h>
-
-extern void z_riscv_userspace_enter(void); /* See userspace.S. */
 
 FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 		void *p1, void *p2, void *p3)
 {
-	/*  +=========+ <--  0x0
-	 *  |   ...   |
-	 *  +---------+ <--  pmpaddr0
-	 *  |  .text  |        [RX]
-	 *  +---------+
-	 *  |   ...   |
-	 *  +---------+ <--  pmpaddr1
-	 *  | .rodata |        [RO]
-	 *  +---------+
-	 *  |   ...   |
-	 *  +---------+ <--  pmpaddr2
-	 *  |  stack  |        [RW]
-	 *  +---------+
-	 *  |   ...   |
-	 *  +=========+
-	 */
-
-	uint32_t pmpcfg0;
-	uint32_t pmpaddr[3];
-
-	pmpcfg0 = ((RV_PMP_NAPOT | RV_PMP_RX) << RV_PMP_0CFG) | /* text */
-		  ((RV_PMP_NAPOT | RV_PMP_RO) << RV_PMP_1CFG) | /* rodata */
-		  ((RV_PMP_NAPOT | RV_PMP_RW) << RV_PMP_2CFG) | /* stack */
-		  ((RV_PMP_OFF) << RV_PMP_3CFG);
-
-	pmpaddr[0] = RV_NAPOT_PUT(_image_text_start,
-			_image_text_end - _image_text_start);
-	pmpaddr[1] = RV_NAPOT_PUT(_image_rodata_start,
-			_image_rodata_end - _image_rodata_start);
-	pmpaddr[2] = RV_NAPOT_PUT(_current->stack_info.start,
-			_current->stack_info.size);
-
-	__asm__ volatile ("csrw pmpcfg0, %0" :: "r" (pmpcfg0));
-	__asm__ volatile ("csrw pmpaddr0, %0" :: "r" (pmpaddr[0]));
-	__asm__ volatile ("csrw pmpaddr1, %0" :: "r" (pmpaddr[1]));
-	__asm__ volatile ("csrw pmpaddr2, %0" :: "r" (pmpaddr[2]));
-
+	z_riscv_pmp_configure(k_current_get());
 	z_riscv_userspace_enter();
 	z_thread_entry_wrapper(user_entry, p1, p2, p3);
 

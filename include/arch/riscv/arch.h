@@ -174,10 +174,8 @@ typedef uint32_t k_mem_partition_attr_t;
 
 #define Z_PRIVILEGE_STACK_ALIGN 4
 
-#define RV_PMP_0CFG	0
-#define RV_PMP_1CFG	8
-#define RV_PMP_2CFG	16
-#define RV_PMP_3CFG	24
+/* Bit offset to segments within pmpcfg# registers */
+#define RV_CFG_OFFSET	8
 
 /* PMP addressing modes */
 #define RV_PMP_OFF	(0 << 3)
@@ -210,7 +208,7 @@ typedef uint32_t k_mem_partition_attr_t;
 		1 << (31 - __builtin_clz(x)))
 
 /* Macros for encoding and decoding PMP NAPOT address registers */ 
-#define RV_NAPOT_PUT(addr, size) ((0xffffffff >> \
+#define RV_NAPOT_CALC(addr, size) ((0xffffffff >> \
 		(32 - (__builtin_ctz(POW2_CEIL(size) >> 3)))) | \
 		(((uint32_t)addr) >> 2))
 #define RV_NAPOT_SIZE(pmpaddr) (1 << (__builtin_ctz(~pmpaddr) + 3))
