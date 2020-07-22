@@ -20,6 +20,8 @@ LOG_MODULE_DECLARE(espi, CONFIG_ESPI_LOG_LEVEL);
 
 /* Temperature command opcode */
 #define OOB_CMDCODE           0x01u
+#define OOB_RESPONSE_LEN      0x05u
+#define OOB_RESPONSE_INDEX    0x03u
 
 /* Maximum bytes for OOB transactions */
 #define MAX_RESP_SIZE         20u
@@ -46,11 +48,6 @@ struct oob_header {
 	uint8_t oob_cmd_code;
 	uint8_t byte_cnt;
 	uint8_t src_slave_addr;
-};
-
-struct oob_response {
-	struct oob_header hdr;
-	uint8_t buf[MAX_RESP_SIZE];
 };
 
 #ifdef CONFIG_ESPI_GPIO_DEV_NEEDED
@@ -113,10 +110,18 @@ static void espi_ch_handler(struct device *dev, struct espi_callback *cb,
 			    struct espi_event event)
 {
 	if (event.evt_type == ESPI_BUS_EVENT_CHANNEL_READY) {
-		if (event.evt_details == ESPI_CHANNEL_VWIRE) {
-			LOG_INF("VW channel is ready");
-		} else if (event.evt_details == ESPI_CHANNEL_FLASH) {
-			LOG_INF("Flash channel is ready");
+		switch (event.evt_details) {
+		case ESPI_CHANNEL_VWIRE:
+			LOG_INF("VW channel event %x", event.evt_data);
+			break;
+		case ESPI_CHANNEL_FLASH:
+			LOG_INF("Flash channel event %d", event.evt_data);
+			break;
+		case ESPI_CHANNEL_OOB:
+			LOG_INF("OOB channel event %d", event.evt_data);
+			break;
+		default:
+			LOG_ERR("Unknown channel event");
 		}
 	}
 }
@@ -455,12 +460,12 @@ static int espi_flash_test(uint32_t start_flash_addr, uint8_t blocks)
 }
 #endif /* CONFIG_ESPI_FLASH_CHANNEL */
 
-int get_pch_temp(struct device *dev)
+int get_pch_temp(struct device *dev, int *temp)
 {
 	struct espi_oob_packet req_pckt;
 	struct espi_oob_packet resp_pckt;
 	struct oob_header oob_hdr;
-	struct oob_response rsp;
+	uint8_t buf[MAX_RESP_SIZE];
 	int ret;
 
 	LOG_INF("%s", __func__);
@@ -473,7 +478,7 @@ int get_pch_temp(struct device *dev)
 	/* Packetize OOB request */
 	req_pckt.buf = (uint8_t *)&oob_hdr;
 	req_pckt.len = sizeof(struct oob_header);
-	resp_pckt.buf = (uint8_t *)&rsp;
+	resp_pckt.buf = (uint8_t *)&buf;
 	resp_pckt.len = MAX_RESP_SIZE;
 
 	ret = espi_send_oob(dev, &req_pckt);
@@ -490,7 +495,13 @@ int get_pch_temp(struct device *dev)
 
 	LOG_INF("OOB transaction completed rcvd: %d bytes", resp_pckt.len);
 	for (int i = 0; i < resp_pckt.len; i++) {
-		LOG_INF("%x ", rsp.buf[i]);
+		LOG_INF("%x ", buf[i]);
+	}
+
+	if (resp_pckt.len == OOB_RESPONSE_LEN) {
+		*temp = buf[OOB_RESPONSE_INDEX];
+	} else {
+		LOG_ERR("Incorrect size response");
 	}
 
 	return 0;
@@ -601,9 +612,15 @@ int espi_test(void)
 	/*  Attempt to use OOB channel to read temperature, regardless of
 	 * if is enabled or not.
 	 */
-	ret = get_pch_temp(espi_dev);
-	if (ret)  {
-		LOG_ERR("eSPI OOB transaction failed %d", ret);
+	for (int i = 0; i < 5; i++) {
+		int temp;
+
+		ret = get_pch_temp(espi_dev, &temp);
+		if (ret)  {
+			LOG_ERR("eSPI OOB transaction failed %d", ret);
+		} else {
+			LOG_INF("Temp: %d ", temp);
+		}
 	}
 
 	/* Cleanup */
