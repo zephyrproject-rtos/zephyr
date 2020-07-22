@@ -691,9 +691,8 @@ static void espi_init_oob(struct device *dev)
 	ESPI_OOB_REGS->RX_LEN = 0x00FF0000;
 
 	/* Enable OOB Tx channel enable change status interrupt */
-	ESPI_OOB_REGS->TX_IEN |= MCHP_ESPI_OOB_TX_IEN_CHG_EN;
-
-	ESPI_CAP_REGS->OOB_RDY = 1;
+	ESPI_OOB_REGS->TX_IEN |= MCHP_ESPI_OOB_TX_IEN_CHG_EN |
+				MCHP_ESPI_OOB_TX_IEN_DONE;
 }
 #endif
 
@@ -704,9 +703,6 @@ static void espi_init_flash(struct device *dev)
 	    (struct espi_xec_config *)(dev->config_info);
 
 	LOG_DBG("%s", __func__);
-
-	/* Indicate slave flash channel is ready */
-	ESPI_CAP_REGS->FC_RDY |= MCHP_ESPI_FC_READY;
 
 	/* Enable interrupts */
 	MCHP_GIRQ_ENSET(config->bus_girq_id) = BIT(MCHP_ESPI_FC_GIRQ_POS);
@@ -864,7 +860,7 @@ static void espi_vwire_chanel_isr(struct device *dev)
 	struct espi_xec_data *data = (struct espi_xec_data *)(dev->driver_data);
 	const struct espi_xec_config *config = dev->config_info;
 	struct espi_event evt = { .evt_type = ESPI_BUS_EVENT_CHANNEL_READY,
-				  .evt_details = 0,
+				  .evt_details = ESPI_CHANNEL_VWIRE,
 				  .evt_data = 0 };
 	uint32_t status;
 
@@ -872,14 +868,12 @@ static void espi_vwire_chanel_isr(struct device *dev)
 
 	if (status & MCHP_ESPI_VW_EN_STS_RO) {
 		ESPI_IO_VW_REGS->VW_RDY = 1;
-
+		evt.evt_data = 1;
 		/* VW channel interrupt can disabled at this point */
 		MCHP_GIRQ_ENCLR(config->bus_girq_id) = MCHP_ESPI_VW_EN_GIRQ_VAL;
 		send_slave_bootdone(dev);
 	}
 
-	evt.evt_details = ESPI_CHANNEL_VWIRE;
-	evt.evt_data = status;
 	espi_send_callbacks(&data->callbacks, dev, evt);
 }
 
@@ -907,6 +901,10 @@ static void espi_oob_up_isr(struct device *dev)
 {
 	uint32_t status;
 	struct espi_xec_data *data = (struct espi_xec_data *)(dev->driver_data);
+	struct espi_event evt = { .evt_type = ESPI_BUS_EVENT_CHANNEL_READY,
+				  .evt_details = ESPI_CHANNEL_OOB,
+				  .evt_data = 0
+				};
 
 	status = ESPI_OOB_REGS->TX_STS;
 	LOG_DBG("%s sts:%x", __func__, status);
@@ -920,13 +918,13 @@ static void espi_oob_up_isr(struct device *dev)
 	if (status & MCHP_ESPI_OOB_TX_STS_CHG_EN) {
 		if (status & MCHP_ESPI_OOB_TX_STS_CHEN) {
 			espi_init_oob(dev);
-
-			ESPI_OOB_REGS->TX_IEN = MCHP_ESPI_OOB_TX_IEN_CHG_EN |
-						MCHP_ESPI_OOB_TX_IEN_DONE;
-			ESPI_OOB_REGS->RX_IEN |= MCHP_ESPI_OOB_RX_IEN;
+			/* Indicate OOB channel is ready to eSPI host */
+			ESPI_CAP_REGS->OOB_RDY = 1;
+			evt.evt_data = 1;
 		}
 
 		ESPI_OOB_REGS->TX_STS = MCHP_ESPI_OOB_TX_STS_CHG_EN;
+		espi_send_callbacks(&data->callbacks, dev, evt);
 	}
 }
 #endif
@@ -936,7 +934,10 @@ static void espi_flash_isr(struct device *dev)
 {
 	uint32_t status;
 	struct espi_xec_data *data = (struct espi_xec_data *)(dev->driver_data);
-	struct espi_event evt = { ESPI_BUS_EVENT_CHANNEL_READY, 0, 0 };
+	struct espi_event evt = { .evt_type = ESPI_BUS_EVENT_CHANNEL_READY,
+				  .evt_details = ESPI_CHANNEL_FLASH,
+				  .evt_data = 0,
+				};
 
 	status = ESPI_FC_REGS->STS;
 	LOG_DBG("%s %x", __func__, status);
@@ -951,10 +952,11 @@ static void espi_flash_isr(struct device *dev)
 	if (status & MCHP_ESPI_FC_STS_CHAN_EN_CHG) {
 		/* Ensure to clear only relevant bit */
 		ESPI_FC_REGS->STS = MCHP_ESPI_FC_STS_CHAN_EN_CHG;
-		espi_init_flash(dev);
 
-		evt.evt_details = ESPI_CHANNEL_FLASH;
 		if (status & MCHP_ESPI_FC_STS_CHAN_EN) {
+			espi_init_flash(dev);
+			/* Indicate flash channel is ready to eSPI master */
+			ESPI_CAP_REGS->FC_RDY = MCHP_ESPI_FC_READY;
 			evt.evt_data = 1;
 		}
 
@@ -1347,6 +1349,12 @@ static int espi_xec_init(struct device *dev)
 	MCHP_GIRQ_ENSET(config->bus_girq_id) = MCHP_ESPI_ESPI_RST_GIRQ_VAL |
 		MCHP_ESPI_VW_EN_GIRQ_VAL | MCHP_ESPI_PC_GIRQ_VAL;
 
+#ifdef CONFIG_ESPI_OOB_CHANNEL
+	espi_init_oob(dev);
+#endif
+#ifdef CONFIG_ESPI_FLASH_CHANNEL
+	espi_init_flash(dev);
+#endif
 	/* Enable aggregated block interrupts for VWires */
 	MCHP_GIRQ_ENSET(config->vw_girq_id) = MEC_ESPI_MSVW00_SRC0_VAL |
 		MEC_ESPI_MSVW00_SRC1_VAL | MEC_ESPI_MSVW00_SRC2_VAL |
