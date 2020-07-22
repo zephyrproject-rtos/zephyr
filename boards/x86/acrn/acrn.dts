@@ -8,7 +8,7 @@
 
 #include <mem.h>
 
-#define DT_SRAM_SIZE	DT_SIZE_K(8192)
+#define DT_DRAM_SIZE	DT_SIZE_K(8192)
 
 #include <ia32.dtsi>
 
@@ -22,7 +22,7 @@
 	};
 
 	chosen {
-		zephyr,sram = &sram0;
+		zephyr,sram = &dram0;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 	};
