@@ -80,32 +80,6 @@ severity and the equivlent rules from other standards for reference.
       -  Run-time failures shall be minimized
       -  N/A
       -  `Dir 4.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/D_04_01.c>`_
-    * -  Dir 4.10
-      -  Required
-      -  Precautions shall be taken in order to prevent the contents of a header file being included more than once
-      -  `PRE06-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152155/>`_
-      -  `Dir 4.10 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/D_04_10.c>`_
-    * -  Dir 4.11
-      -  Required
-      -  The validity of values passed to library functions shall be checked
-      -  N/A
-      -  `Dir 4.11 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/D_04_11.c>`_
-    * -  Dir 4.12
-      -  Required
-      -  Dynamic memory allocation shall not be used
-      -  `STR01-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152414/>`_
-      -  `Dir 4.12 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/D_04_12.c>`_
-    * -  Dir 4.13
-      -  Advisory
-      -  Functions which are designed to provide operations on a resource should be called in an appropriate sequence
-      -  N/A
-      -  `Dir 4.13 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/D_04_13.c>`_
-    * -  Dir 4.14
-      -  Required
-      -  The validity of values received from external sources shall be checked
-
-      -  N/A
-      -  `Dir 4.14 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/D_04_14.c>`_
     * -  Dir 4.2
       -  Advisory
       -  All usage of assembly language should be documented
@@ -141,6 +115,32 @@ severity and the equivlent rules from other standards for reference.
       -  A function should be used in preference to a function-like macro where they are interchangeable
       -  `PRE00-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152416/>`_
       -  `Dir 4.9 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/D_04_09.c>`_
+    * -  Dir 4.10
+      -  Required
+      -  Precautions shall be taken in order to prevent the contents of a header file being included more than once
+      -  `PRE06-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152155/>`_
+      -  `Dir 4.10 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/D_04_10.c>`_
+    * -  Dir 4.11
+      -  Required
+      -  The validity of values passed to library functions shall be checked
+      -  N/A
+      -  `Dir 4.11 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/D_04_11.c>`_
+    * -  Dir 4.12
+      -  Required
+      -  Dynamic memory allocation shall not be used
+      -  `STR01-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152414/>`_
+      -  `Dir 4.12 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/D_04_12.c>`_
+    * -  Dir 4.13
+      -  Advisory
+      -  Functions which are designed to provide operations on a resource should be called in an appropriate sequence
+      -  N/A
+      -  `Dir 4.13 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/D_04_13.c>`_
+    * -  Dir 4.14
+      -  Required
+      -  The validity of values received from external sources shall be checked
+
+      -  N/A
+      -  `Dir 4.14 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/D_04_14.c>`_
     * -  Rule 1.2
       -  Advisory
       -  Language extensions should not be used
@@ -151,6 +151,206 @@ severity and the equivlent rules from other standards for reference.
       -  There shall be no occurrence of undefined or critical unspecified behaviour
       -  N/A
       -  `Rule 1.3 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_01_03.c>`_
+    * -  Rule 2.1
+      -  Required
+      -  A project shall not contain unreachable code
+      -  `MSC07-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152362/>`_
+      -  `Rule 2.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_02_01.c>`_
+    * -  Rule 2.2
+      -  Required
+      -  There shall be no dead code
+      -  `MSC12-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152101/>`_
+      -  `Rule 2.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_02_02.c>`_
+    * -  Rule 2.3
+      -  Advisory
+      -  A project should not contain unused type declarations
+      -  N/A
+      -  `Rule 2.3 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_02_03.c>`_
+    * -  Rule 2.6
+      -  Advisory
+      -  A function should not contain unused label declarations
+      -  N/A
+      -  `Rule 2.6 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_02_06.c>`_
+    * -  Rule 2.7
+      -  Advisory
+      -  There should be no unused parameters in functions
+      -  N/A
+      -  `Rule 2.7 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_02_07.c>`_
+    * -  Rule 3.1
+      -  Required
+      -  The character sequences /* and // shall not be used within a comment
+      -  `MSC04-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152275/>`_
+      -  `Rule 3.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_03_01.c>`_
+    * -  Rule 3.2
+      -  Required
+      -  Line-splicing shall not be used in // comments
+      -  N/A
+      -  `Rule 3.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_03_02.c>`_
+    * -  Rule 4.1
+      -  Required
+      -  Octal and hexadecimal escape sequences shall be terminated
+      -  `MSC09-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152154/>`_
+      -  `Rule 4.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_04_01.c>`_
+    * -  Rule 4.2
+      -  Advisory
+      -  Trigraphs should not be used
+      -  `PRE07-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152056/>`_
+      -  `Rule 4.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_04_02.c>`_
+    * -  Rule 5.1
+      -  Required
+      -  External identifiers shall be distinct
+      -  `DCL23-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152406/>`_
+      -  `Rule 5.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_01.c>`_
+    * -  Rule 5.2
+      -  Required
+      -  Identifiers declared in the same scope and name space shall be distinct
+      -  `DCL23-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152406/>`_
+      -  `Rule 5.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_02.c>`_
+    * -  Rule 5.3
+      -  Required
+      -  An identifier declared in an inner scope shall not hide an identifier declared in an outer scope
+      -  `DCL23-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152406/>`_
+      -  `Rule 5.3 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_03.c>`_
+    * -  Rule 5.4
+      -  Required
+      -  Macro identifiers shall be distinct
+      -  `DCL23-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152406/>`_
+      -  `Rule 5.4 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_04.c>`_
+    * -  Rule 5.5
+      -  Required
+      -  Identifiers shall be distinct from macro names
+      -  `DCL23-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152406/>`_
+      -  `Rule 5.5 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_05.c>`_
+    * -  Rule 5.6
+      -  Required
+      -  A typedef name shall be a unique identifier
+      -  N/A
+      -  `Rule 5.6 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_06.c>`_
+    * -  Rule 5.7
+      -  Required
+      -  A tag name shall be a unique identifier
+      -  N/A
+      -  `Rule 5.7 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_07.c>`_
+    * -  Rule 5.8
+      -  Required
+      -  Identifiers that define objects or functions with external linkage shall be unique
+      -  N/A
+      -  `Rule 5.8 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_08.c>`_
+    * -  Rule 5.9
+      -  Advisory
+      -  Identifiers that define objects or functions with internal linkage should be unique
+      -  N/A
+      -  `Rule 5.9 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_09.c>`_
+    * -  Rule 6.1
+      -  Required
+      -  Bit-fields shall only be declared with an appropriate type
+      -  `INT14-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152075/>`_
+      -  `Rule 6.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_06_01.c>`_
+    * -  Rule 6.2
+      -  Required
+      -  Single-bit named bit fields shall not be of a signed type
+      -  `INT14-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152075/>`_
+      -  `Rule 6.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_06_02.c>`_
+    * -  Rule 7.1
+      -  Required
+      -  Octal constants shall not be used
+      -  `DCL18-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152234/>`_
+      -  `Rule 7.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_07_01.c>`_
+    * -  Rule 7.2
+      -  Required
+      -  A u or U suffix shall be applied to all integer constants that are represented in an unsigned type
+      -  N/A
+      -  `Rule 7.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_07_02.c>`_
+    * -  Rule 7.3
+      -  Required
+      -  The lowercase character l shall not be used in a literal suffix
+      -  `DCL16-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152241/>`_
+      -  `Rule 7.3 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_07_03.c>`_
+    * -  Rule 7.4
+      -  Required
+      -  A string literal shall not be assigned to an object unless the objects type is pointer to const-qualified char
+      -  N/A
+      -  `Rule 7.4 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_07_04.c>`_
+    * -  Rule 8.1
+      -  Required
+      -  Types shall be explicitly specified
+      -  N/A
+      -  `Rule 8.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_01.c>`_
+    * -  Rule 8.2
+      -  Required
+      -  Function types shall be in prototype form with named parameters
+      -  `DCL20-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152311/>`_
+      -  `Rule 8.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_02.c>`_
+    * -  Rule 8.3
+      -  Required
+      -  All declarations of an object or function shall use the same names and type qualifiers
+      -  N/A
+      -  `Rule 8.3 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_03.c>`_
+    * -  Rule 8.4
+      -  Required
+      -  A compatible declaration shall be visible when an object or function with external linkage is defined
+      -  N/A
+      -  `Rule 8.4 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_04.c>`_
+    * -  Rule 8.5
+      -  Required
+      -  An external object or function shall be declared once in one and only one file
+      -  N/A
+      -  `Rule 8.5 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_05.c>`_
+    * -  Rule 8.6
+      -  Required
+      -  An identifier with external linkage shall have exactly one external definition
+      -  N/A
+      -  `Rule 8.6 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_06.c>`_
+    * -  Rule 8.8
+      -  Required
+      -  The static storage class specifier shall be used in all declarations of objects and functions that have internal linkage
+      -  `DCL15-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152278/>`_
+      -  `Rule 8.8 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_08.c>`_
+    * -  Rule 8.9
+      -  Advisory
+      -  An object should be defined at block scope if its identifier only appears in a single function
+      -  `DCL19-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152335/>`_
+      -  `Rule 8.9 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_09.c>`_
+    * -  Rule 8.10
+      -  Required
+      -  An inline function shall be declared with the static storage class
+      -  N/A
+      -  `Rule 8.10 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_10.c>`_
+    * -  Rule 8.12
+      -  Required
+      -  Within an enumerator list, the value of an implicitly-specified enumeration constant shall be unique
+      -  `INT09-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152467/>`_
+      -  `Rule 8.12 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_12.c>`_
+    * -  Rule 8.14
+      -  Required
+      -  The restrict type qualifier shall not be used
+      -  N/A
+      -  `Rule 8.14 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_14.c>`_
+    * -  Rule 9.1
+      -  Mandatory
+      -  The value of an object with automatic storage duration shall not be read before it has been set
+      -  N/A
+      -  `Rule 9.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_09_01.c>`_
+    * -  Rule 9.2
+      -  Required
+      -  The initializer for an aggregate or union shall be enclosed in braces
+      -  N/A
+      -  `Rule 9.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_09_02.c>`_
+    * -  Rule 9.3
+      -  Required
+      -  Arrays shall not be partially initialized
+      -  N/A
+      -  `Rule 9.3 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_09_03.c>`_
+    * -  Rule 9.4
+      -  Required
+      -  An element of an object shall not be initialized more than once
+      -  N/A
+      -  `Rule 9.4 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_09_04.c>`_
+    * -  Rule 9.5
+      -  Required
+      -  Where designated initializers are used to initialize an array object the size of the array shall be specified explicitly
+      -  N/A
+      -  `Rule 9.5 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_09_05.c>`_
     * -  Rule 10.1
       -  Required
       -  Operands shall not be of an inappropriate essential type
@@ -412,51 +612,6 @@ severity and the equivlent rules from other standards for reference.
       -  An object shall not be assigned or copied to an overlapping object
       -  N/A
       -  `Rule 19.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_19_01.c>`_
-    * -  Rule 2.1
-      -  Required
-      -  A project shall not contain unreachable code
-      -  `MSC07-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152362/>`_
-      -  `Rule 2.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_02_01.c>`_
-    * -  Rule 2.2
-      -  Required
-      -  There shall be no dead code
-      -  `MSC12-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152101/>`_
-      -  `Rule 2.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_02_02.c>`_
-    * -  Rule 2.3
-      -  Advisory
-      -  A project should not contain unused type declarations
-      -  N/A
-      -  `Rule 2.3 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_02_03.c>`_
-    * -  Rule 2.6
-      -  Advisory
-      -  A function should not contain unused label declarations
-      -  N/A
-      -  `Rule 2.6 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_02_06.c>`_
-    * -  Rule 2.7
-      -  Advisory
-      -  There should be no unused parameters in functions
-      -  N/A
-      -  `Rule 2.7 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_02_07.c>`_
-    * -  Rule 20.11
-      -  Required
-      -  A macro parameter immediately following a # operator shall not immediately be followed by a ## operator
-      -  N/A
-      -  `Rule 20.11 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_20_11.c>`_
-    * -  Rule 20.12
-      -  Required
-      -  A macro parameter used as an operand to the # or ## operators, which is itself subject to further macro replacement, shall only be used as an operand to these operators
-      -  N/A
-      -  `Rule 20.12 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_20_12.c>`_
-    * -  Rule 20.13
-      -  Required
-      -  A line whose first token is # shall be a valid preprocessing directive
-      -  N/A
-      -  `Rule 20.13 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_20_13.c>`_
-    * -  Rule 20.14
-      -  Required
-      -  All #else, #elif and #endif preprocessor directives shall reside in the same file as the #if, #ifdef or #ifndef directive to which they are related
-      -  N/A
-      -  `Rule 20.14 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_20_14.c>`_
     * -  Rule 20.2
       -  Required
       -  The ', or \ characters and the /* or // character sequences shall not occur in a header file name"
@@ -487,11 +642,106 @@ severity and the equivlent rules from other standards for reference.
       -  All identifiers used in the controlling expression of #if or #elif preprocessing directives shall be #defined before evaluation
       -  N/A
       -  `Rule 20.9 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_20_09.c>`_
+    * -  Rule 20.11
+      -  Required
+      -  A macro parameter immediately following a # operator shall not immediately be followed by a ## operator
+      -  N/A
+      -  `Rule 20.11 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_20_11.c>`_
+    * -  Rule 20.12
+      -  Required
+      -  A macro parameter used as an operand to the # or ## operators, which is itself subject to further macro replacement, shall only be used as an operand to these operators
+      -  N/A
+      -  `Rule 20.12 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_20_12.c>`_
+    * -  Rule 20.13
+      -  Required
+      -  A line whose first token is # shall be a valid preprocessing directive
+      -  N/A
+      -  `Rule 20.13 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_20_13.c>`_
+    * -  Rule 20.14
+      -  Required
+      -  All #else, #elif and #endif preprocessor directives shall reside in the same file as the #if, #ifdef or #ifndef directive to which they are related
+      -  N/A
+      -  `Rule 20.14 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_20_14.c>`_
     * -  Rule 21.1
       -  Required
       -  #define and #undef shall not be used on a reserved identifier or reserved macro name
       -  N/A
       -  `Rule 21.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_21_01.c>`_
+    * -  Rule 21.2
+      -  Required
+      -  A reserved identifier or macro name shall not be declared
+      -  N/A
+      -  `Rule 21.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_21_02.c>`_
+    * -  Rule 21.3
+      -  Required
+      -  The memory allocation and deallocation functions of <stdlib.h> shall not be used
+      -  `MSC24-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152260/>`_
+      -  `Rule 21.3 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_21_03.c>`_
+    * -  Rule 21.4
+      -  Required
+      -  The standard header file <setjmp.h> shall not be used
+      -  N/A
+      -  `Rule 21.4 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_21_04.c>`_
+    * -  Rule 21.6
+      -  Required
+      -  The Standard Library input/output functions shall not be used
+      -  N/A
+      -  `Rule 21.6 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_21_06.c>`_
+    * -  Rule 21.7
+      -  Required
+      -  The atof, atoi, atol and atoll functions of <stdlib.h> shall not be used
+      -  N/A
+      -  `Rule 21.7 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_21_07.c>`_
+    * -  Rule 21.9
+      -  Required
+      -  The library functions bsearch and qsort of <stdlib.h> shall not be used
+      -  N/A
+      -  `Rule 21.9 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_21_09.c>`_
+    * -  Rule 22.1
+      -  Required
+      -  All resources obtained dynamically by means of Standard Library functions shall be explicitly released
+      -  N/A
+      -  `Rule 22.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_01.c>`_
+    * -  Rule 22.3
+      -  Required
+      -  The same file shall not be open for read and write access at the same time on different streams
+      -  N/A
+      -  `Rule 22.3 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_03.c>`_
+    * -  Rule 22.4
+      -  Mandatory
+      -  There shall be no attempt to write to a stream which has been opened as read-only
+      -  N/A
+      -  `Rule 22.4 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_04.c>`_
+    * -  Rule 22.5
+      -  Mandatory
+      -  A pointer to a FILE object shall not be dereferenced
+      -  N/A
+      -  `Rule 22.5 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_05.c>`_
+    * -  Rule 22.6
+      -  Mandatory
+      -  The value of a pointer to a FILE shall not be used after the associated stream has been closed
+      -  N/A
+      -  `Rule 22.6 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_06.c>`_
+    * -  Rule 22.7
+      -  Required
+      -  The macro EOF shall only be compared with the unmodified return value from any Standard Library function capable of returning EOF
+      -  N/A
+      -  `Rule 22.7 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_07.c>`_
+    * -  Rule 22.8
+      -  Required
+      -  The value of errno shall be set to zero prior to a call to an errno-setting-function
+      -  N/A
+      -  `Rule 22.8 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_08.c>`_
+    * -  Rule 22.9
+      -  Required
+      -  The value of errno shall be tested against zero after calling an errno-setting-function
+      -  N/A
+      -  `Rule 22.9 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_09.c>`_
+    * -  Rule 22.10
+      -  Required
+      -  The value of errno shall only be tested when the last function to be called was an errno-setting-function
+      -  N/A
+      -  `Rule 22.10 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_10.c>`_
     * -  Rule 21.11
       -  Required
       -  The standard header file <tgmath.h> shall not be used
@@ -532,262 +782,11 @@ severity and the equivlent rules from other standards for reference.
       -  The size_t argument passed to any function in <string.h> shall have an appropriate value
       -  N/A
       -  `Rule 21.18 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_21_18.c>`_
-    * -  Rule 21.2
-      -  Required
-      -  A reserved identifier or macro name shall not be declared
-      -  N/A
-      -  `Rule 21.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_21_02.c>`_
     * -  Rule 21.20
       -  Mandatory
       -  The pointer returned by the Standard Library functions asctime, ctime, gmtime, localtime, localeconv, getenv, setlocale or strerror shall not be used following a subsequent call to the same function
       -  N/A
       -  `Rule 21.20 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_21_20.c>`_
-    * -  Rule 21.3
-      -  Required
-      -  The memory allocation and deallocation functions of <stdlib.h> shall not be used
-      -  `MSC24-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152260/>`_
-      -  `Rule 21.3 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_21_03.c>`_
-    * -  Rule 21.4
-      -  Required
-      -  The standard header file <setjmp.h> shall not be used
-      -  N/A
-      -  `Rule 21.4 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_21_04.c>`_
-    * -  Rule 21.6
-      -  Required
-      -  The Standard Library input/output functions shall not be used
-      -  N/A
-      -  `Rule 21.6 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_21_06.c>`_
-    * -  Rule 21.7
-      -  Required
-      -  The atof, atoi, atol and atoll functions of <stdlib.h> shall not be used
-      -  N/A
-      -  `Rule 21.7 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_21_07.c>`_
-    * -  Rule 21.9
-      -  Required
-      -  The library functions bsearch and qsort of <stdlib.h> shall not be used
-      -  N/A
-      -  `Rule 21.9 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_21_09.c>`_
-    * -  Rule 22.1
-      -  Required
-      -  All resources obtained dynamically by means of Standard Library functions shall be explicitly released
-      -  N/A
-      -  `Rule 22.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_01.c>`_
-    * -  Rule 22.10
-      -  Required
-      -  The value of errno shall only be tested when the last function to be called was an errno-setting-function
-      -  N/A
-      -  `Rule 22.10 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_10.c>`_
-    * -  Rule 22.3
-      -  Required
-      -  The same file shall not be open for read and write access at the same time on different streams
-      -  N/A
-      -  `Rule 22.3 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_03.c>`_
-    * -  Rule 22.4
-      -  Mandatory
-      -  There shall be no attempt to write to a stream which has been opened as read-only
-      -  N/A
-      -  `Rule 22.4 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_04.c>`_
-    * -  Rule 22.5
-      -  Mandatory
-      -  A pointer to a FILE object shall not be dereferenced
-      -  N/A
-      -  `Rule 22.5 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_05.c>`_
-    * -  Rule 22.6
-      -  Mandatory
-      -  The value of a pointer to a FILE shall not be used after the associated stream has been closed
-      -  N/A
-      -  `Rule 22.6 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_06.c>`_
-    * -  Rule 22.7
-      -  Required
-      -  The macro EOF shall only be compared with the unmodified return value from any Standard Library function capable of returning EOF
-      -  N/A
-      -  `Rule 22.7 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_07.c>`_
-    * -  Rule 22.8
-      -  Required
-      -  The value of errno shall be set to zero prior to a call to an errno-setting-function
-
-      -  N/A
-      -  `Rule 22.8 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_08.c>`_
-    * -  Rule 22.9
-      -  Required
-      -  The value of errno shall be tested against zero after calling an errno-setting-function
-      -  N/A
-      -  `Rule 22.9 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_09.c>`_
-    * -  Rule 3.1
-      -  Required
-      -  The character sequences /* and // shall not be used within a comment
-      -  `MSC04-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152275/>`_
-      -  `Rule 3.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_03_01.c>`_
-    * -  Rule 3.2
-      -  Required
-      -  Line-splicing shall not be used in // comments
-      -  N/A
-      -  `Rule 3.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_03_02.c>`_
-    * -  Rule 4.1
-      -  Required
-      -  Octal and hexadecimal escape sequences shall be terminated
-      -  `MSC09-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152154/>`_
-      -  `Rule 4.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_04_01.c>`_
-    * -  Rule 4.2
-      -  Advisory
-      -  Trigraphs should not be used
-      -  `PRE07-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152056/>`_
-      -  `Rule 4.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_04_02.c>`_
-    * -  Rule 5.1
-      -  Required
-      -  External identifiers shall be distinct
-      -  `DCL23-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152406/>`_
-      -  `Rule 5.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_01.c>`_
-    * -  Rule 5.2
-      -  Required
-      -  Identifiers declared in the same scope and name space shall be distinct
-      -  `DCL23-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152406/>`_
-      -  `Rule 5.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_02.c>`_
-    * -  Rule 5.3
-      -  Required
-      -  An identifier declared in an inner scope shall not hide an identifier declared in an outer scope
-      -  `DCL23-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152406/>`_
-      -  `Rule 5.3 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_03.c>`_
-    * -  Rule 5.4
-      -  Required
-      -  Macro identifiers shall be distinct
-      -  `DCL23-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152406/>`_
-      -  `Rule 5.4 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_04.c>`_
-    * -  Rule 5.5
-      -  Required
-      -  Identifiers shall be distinct from macro names
-      -  `DCL23-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152406/>`_
-      -  `Rule 5.5 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_05.c>`_
-    * -  Rule 5.6
-      -  Required
-      -  A typedef name shall be a unique identifier
-      -  N/A
-      -  `Rule 5.6 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_06.c>`_
-    * -  Rule 5.7
-      -  Required
-      -  A tag name shall be a unique identifier
-      -  N/A
-      -  `Rule 5.7 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_07.c>`_
-    * -  Rule 5.8
-      -  Required
-      -  Identifiers that define objects or functions with external linkage shall be unique
-      -  N/A
-      -  `Rule 5.8 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_08.c>`_
-    * -  Rule 5.9
-      -  Advisory
-      -  Identifiers that define objects or functions with internal linkage should be unique
-      -  N/A
-      -  `Rule 5.9 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_09.c>`_
-    * -  Rule 6.1
-      -  Required
-      -  Bit-fields shall only be declared with an appropriate type
-      -  `INT14-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152075/>`_
-      -  `Rule 6.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_06_01.c>`_
-    * -  Rule 6.2
-      -  Required
-      -  Single-bit named bit fields shall not be of a signed type
-      -  `INT14-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152075/>`_
-      -  `Rule 6.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_06_02.c>`_
-    * -  Rule 7.1
-      -  Required
-      -  Octal constants shall not be used
-      -  `DCL18-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152234/>`_
-      -  `Rule 7.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_07_01.c>`_
-    * -  Rule 7.2
-      -  Required
-      -  A u or U suffix shall be applied to all integer constants that are represented in an unsigned type
-      -  N/A
-      -  `Rule 7.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_07_02.c>`_
-    * -  Rule 7.3
-      -  Required
-      -  The lowercase character l shall not be used in a literal suffix
-      -  `DCL16-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152241/>`_
-      -  `Rule 7.3 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_07_03.c>`_
-    * -  Rule 7.4
-      -  Required
-      -  A string literal shall not be assigned to an object unless the objects type is pointer to const-qualified char
-      -  N/A
-      -  `Rule 7.4 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_07_04.c>`_
-    * -  Rule 8.1
-      -  Required
-      -  Types shall be explicitly specified
-      -  N/A
-      -  `Rule 8.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_01.c>`_
-    * -  Rule 8.10
-      -  Required
-      -  An inline function shall be declared with the static storage class
-      -  N/A
-      -  `Rule 8.10 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_10.c>`_
-    * -  Rule 8.12
-      -  Required
-      -  Within an enumerator list, the value of an implicitly-specified enumeration constant shall be unique
-      -  `INT09-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152467/>`_
-      -  `Rule 8.12 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_12.c>`_
-    * -  Rule 8.14
-      -  Required
-      -  The restrict type qualifier shall not be used
-      -  N/A
-      -  `Rule 8.14 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_14.c>`_
-    * -  Rule 8.2
-      -  Required
-      -  Function types shall be in prototype form with named parameters
-      -  `DCL20-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152311/>`_
-      -  `Rule 8.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_02.c>`_
-    * -  Rule 8.3
-      -  Required
-      -  All declarations of an object or function shall use the same names and type qualifiers
-      -  N/A
-      -  `Rule 8.3 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_03.c>`_
-    * -  Rule 8.4
-      -  Required
-      -  A compatible declaration shall be visible when an object or function with external linkage is defined
-      -  N/A
-      -  `Rule 8.4 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_04.c>`_
-    * -  Rule 8.5
-      -  Required
-      -  An external object or function shall be declared once in one and only one file
-      -  N/A
-      -  `Rule 8.5 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_05.c>`_
-    * -  Rule 8.6
-      -  Required
-      -  An identifier with external linkage shall have exactly one external definition
-      -  N/A
-      -  `Rule 8.6 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_06.c>`_
-    * -  Rule 8.8
-      -  Required
-      -  The static storage class specifier shall be used in all declarations of objects and functions that have internal linkage
-      -  `DCL15-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152278/>`_
-      -  `Rule 8.8 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_08.c>`_
-    * -  Rule 8.9
-      -  Advisory
-      -  An object should be defined at block scope if its identifier only appears in a single function
-      -  `DCL19-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152335/>`_
-      -  `Rule 8.9 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_09.c>`_
-    * -  Rule 9.1
-      -  Mandatory
-      -  The value of an object with automatic storage duration shall not be read before it has been set
-      -  N/A
-      -  `Rule 9.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_09_01.c>`_
-    * -  Rule 9.2
-      -  Required
-      -  The initializer for an aggregate or union shall be enclosed in braces
-      -  N/A
-      -  `Rule 9.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_09_02.c>`_
-    * -  Rule 9.3
-      -  Required
-      -  Arrays shall not be partially initialized
-      -  N/A
-      -  `Rule 9.3 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_09_03.c>`_
-    * -  Rule 9.4
-      -  Required
-      -  An element of an object shall not be initialized more than once
-      -  N/A
-      -  `Rule 9.4 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_09_04.c>`_
-    * -  Rule 9.5
-      -  Required
-      -  Where designated initializers are used to initialize an array object the size of the array shall be specified explicitly
-      -  N/A
-      -  `Rule 9.5 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_09_05.c>`_
 
 Additional rules
 ****************
