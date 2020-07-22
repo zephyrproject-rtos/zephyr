@@ -29,7 +29,7 @@
 #include "lll_adv.h"
 #include "lll_scan.h"
 #include "lll_conn.h"
-#include "lll_master.h"
+#include "lll_centrl.h"
 #include "lll_filter.h"
 #include "lll_tim_internal.h"
 
@@ -42,10 +42,10 @@
 #include "ull_chan_internal.h"
 #include "ull_scan_internal.h"
 #include "ull_conn_internal.h"
-#include "ull_master_internal.h"
+#include "ull_centrl_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_ull_master
+#define LOG_MODULE_NAME bt_ctlr_ull_centrl
 #include "common/log.h"
 #include <soc.h>
 #include "hal/debug.h"
@@ -240,7 +240,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
 	conn->common.fex_valid = 0U;
-	conn->master.terminate_ack = 0U;
+	conn->centrl.terminate_ack = 0U;
 
 	conn->llcp_req = conn->llcp_ack = conn->llcp_type = 0U;
 	conn->llcp_rx = NULL;
@@ -416,7 +416,7 @@ uint8_t ll_connect_disable(void **rx)
 }
 
 /* FIXME: Refactor out this interface so that its usable by extended
- * advertising channel classification, and also master role connections can
+ * advertising channel classification, and also central role connections can
  * perform channel map update control procedure.
  */
 uint8_t ll_chm_update(uint8_t const *const chm)
@@ -527,7 +527,7 @@ uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand,
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
-void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
+void ull_centrl_setup(memq_link_t *link, struct node_rx_hdr *rx,
 		      struct node_rx_ftr *ftr, struct lll_conn *lll)
 {
 	uint32_t conn_offset_us, conn_interval_us;
@@ -696,7 +696,7 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
 		    TICKER_ID_SCAN_STOP, NULL, NULL);
 
-	/* Start master */
+	/* Start central */
 	ticker_id_conn = TICKER_ID_CONN_BASE + ll_conn_handle_get(conn);
 	ticker_status = ticker_start(TICKER_INSTANCE_ID_CTLR,
 				     TICKER_USER_ID_ULL_HIGH,
@@ -708,7 +708,7 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 				     TICKER_NULL_LAZY,
 				     (conn->evt.ticks_slot +
 				      ticks_slot_overhead),
-				     ull_master_ticker_cb, conn, ticker_op_cb,
+				     ull_centrl_ticker_cb, conn, ticker_op_cb,
 				     (void *)__LINE__);
 	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 		  (ticker_status == TICKER_STATUS_BUSY));
@@ -721,11 +721,11 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 #endif
 }
 
-void ull_master_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t lazy,
+void ull_centrl_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t lazy,
 			  void *param)
 {
 	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, lll_master_prepare};
+	static struct mayfly mfy = {0, 0, &link, NULL, lll_centrl_prepare};
 	static struct lll_prepare_param p;
 	struct ll_conn *conn = param;
 	uint32_t err;

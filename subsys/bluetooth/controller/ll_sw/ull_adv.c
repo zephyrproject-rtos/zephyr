@@ -581,7 +581,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		lll->rl_idx = FILTER_IDX_NONE;
 
-		/* Prepare whitelist and optionally resolving list */
+		/* Prepare allowlist and optionally resolving list */
 		ull_filter_adv_update(lll->filter_policy);
 
 		if (adv->own_addr_type == BT_ADDR_LE_PUBLIC_ID ||
@@ -733,10 +733,10 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 		conn_lll->latency_prepare = 0;
 		conn_lll->latency_event = 0;
-		conn_lll->slave.latency_enabled = 0;
-		conn_lll->slave.window_widening_prepare_us = 0;
-		conn_lll->slave.window_widening_event_us = 0;
-		conn_lll->slave.window_size_prepare_us = 0;
+		conn_lll->perip.latency_enabled = 0;
+		conn_lll->perip.window_widening_prepare_us = 0;
+		conn_lll->perip.window_widening_event_us = 0;
+		conn_lll->perip.window_size_prepare_us = 0;
 		/* FIXME: END: Move to ULL? */
 #if defined(CONFIG_BT_CTLR_CONN_META)
 		memset(&conn_lll->conn_meta, 0, sizeof(conn_lll->conn_meta));
@@ -747,7 +747,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn->procedure_expire = 0;
 
 		conn->common.fex_valid = 0;
-		conn->slave.latency_cancel = 0;
+		conn->perip.latency_cancel = 0;
 
 		conn->llcp_req = conn->llcp_ack = conn->llcp_type = 0;
 		conn->llcp_rx = NULL;

@@ -197,7 +197,7 @@ void ull_sched_mfy_free_win_offset_calc(void *param)
 #if defined(CONFIG_BT_PERIPHERAL)
 	if (conn->lll.role) {
 		conn->llcp_conn_param.ticks_to_offset_next =
-			conn->slave.ticks_to_offset;
+			conn->perip.ticks_to_offset;
 
 		ticks_to_offset_next =
 			&conn->llcp_conn_param.ticks_to_offset_next;

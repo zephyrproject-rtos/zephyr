@@ -19,7 +19,7 @@ int8_t radio_tx_power_min_get(void);
 int8_t radio_tx_power_max_get(void);
 int8_t radio_tx_power_floor(int8_t power);
 void radio_freq_chan_set(uint32_t chan);
-void radio_whiten_iv_set(uint32_t iv);
+void radio_decorr_iv_set(uint32_t iv);
 void radio_aa_set(uint8_t *aa);
 void radio_pkt_configure(uint8_t bits_len, uint8_t max_len, uint8_t flags);
 void radio_pkt_rx_set(void *rx_packet);

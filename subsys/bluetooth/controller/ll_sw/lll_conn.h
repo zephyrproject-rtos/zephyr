@@ -65,7 +65,7 @@ struct lll_conn {
 		uint32_t window_widening_event_us;
 		uint32_t window_size_prepare_us;
 		uint32_t window_size_event_us;
-	} slave;
+	} perip;
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)

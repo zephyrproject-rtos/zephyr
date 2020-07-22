@@ -31,8 +31,8 @@
 #include "ull_sched_internal.h"
 #include "ull_chan_internal.h"
 #include "ull_conn_internal.h"
-#include "ull_slave_internal.h"
-#include "ull_master_internal.h"
+#include "ull_perip_internal.h"
+#include "ull_centrl_internal.h"
 
 #include "ll.h"
 #include "ll_feat.h"
@@ -236,12 +236,12 @@ int ll_tx_mem_enqueue(uint16_t handle, void *tx)
 	MFIFO_ENQUEUE(conn_tx, idx);
 
 #if defined(CONFIG_BT_PERIPHERAL)
-	/* break slave latency */
+	/* break peripheral latency */
 	if (conn->lll.role && conn->lll.latency_event &&
-	    !conn->slave.latency_cancel) {
+	    !conn->perip.latency_cancel) {
 		uint32_t ticker_status;
 
-		conn->slave.latency_cancel = 1U;
+		conn->perip.latency_cancel = 1U;
 
 		ticker_status =
 			ticker_update(TICKER_INSTANCE_ID_CTLR,
@@ -676,13 +676,13 @@ void ull_conn_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	switch (lll->role) {
 #if defined(CONFIG_BT_CENTRAL)
 	case 0:
-		ull_master_setup(link, rx, ftr, lll);
+		ull_centrl_setup(link, rx, ftr, lll);
 		break;
 #endif /* CONFIG_BT_CENTRAL */
 
 #if defined(CONFIG_BT_PERIPHERAL)
 	case 1:
-		ull_slave_setup(link, rx, ftr, lll);
+		ull_perip_setup(link, rx, ftr, lll);
 		break;
 #endif /* CONFIG_BT_PERIPHERAL */
 
@@ -991,8 +991,8 @@ void ull_conn_done(struct node_rx_event_done *done)
 	}
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
-	/* Master transmitted ack for the received terminate ind or
-	 * Slave received terminate ind or MIC failure
+	/* Central transmitted ack for the received terminate ind or
+	 * Peripheral received terminate ind or MIC failure
 	 */
 	reason_peer = conn->llcp_terminate.reason_peer;
 	if (reason_peer && (
@@ -1002,7 +1002,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 			    0 ||
 #endif /* CONFIG_BT_PERIPHERAL */
 #if defined(CONFIG_BT_CENTRAL)
-			    conn->master.terminate_ack ||
+			    conn->centrl.terminate_ack ||
 			    (reason_peer == BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL)
 #else /* CONFIG_BT_CENTRAL */
 			    1
@@ -1017,8 +1017,8 @@ void ull_conn_done(struct node_rx_event_done *done)
 	latency_event = lll->latency_event;
 	elapsed_event = latency_event + 1;
 
-	/* Slave drift compensation calc and new latency or
-	 * master terminate acked
+	/* Peripheral drift compensation calc and new latency or
+	 * central terminate acked
 	 */
 	ticks_drift_plus = 0U;
 	ticks_drift_minus = 0U;
@@ -1026,7 +1026,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 		if (0) {
 #if defined(CONFIG_BT_PERIPHERAL)
 		} else if (lll->role) {
-			ull_slave_done(done, &ticks_drift_plus,
+			ull_perip_done(done, &ticks_drift_plus,
 				       &ticks_drift_minus);
 
 			if (!conn->tx_head) {
@@ -1037,14 +1037,14 @@ void ull_conn_done(struct node_rx_event_done *done)
 						       lll->memq_tx.tail,
 						       NULL)) {
 				lll->latency_event = 0;
-			} else if (lll->slave.latency_enabled) {
+			} else if (lll->perip.latency_enabled) {
 				lll->latency_event = lll->latency;
 			}
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CENTRAL)
 		} else if (reason_peer) {
-			conn->master.terminate_ack = 1;
+			conn->centrl.terminate_ack = 1;
 #endif /* CONFIG_BT_CENTRAL */
 
 		}
@@ -1088,26 +1088,26 @@ void ull_conn_done(struct node_rx_event_done *done)
 			/* break latency */
 			lll->latency_event = 0;
 
-			/* Force both master and slave when close to
+			/* Force both central and peripheral when close to
 			 * supervision timeout.
 			 */
 			if (conn->supervision_expire <= 6U) {
 				force = 1U;
 			}
 #if defined(CONFIG_BT_PERIPHERAL)
-			/* use randomness to force slave role when anchor
+			/* use randomness to force peripheral role when anchor
 			 * points are being missed.
 			 */
 			else if (lll->role) {
 				if (latency_event) {
 					force = 1U;
 				} else {
-					force = conn->slave.force & 0x01;
+					force = conn->perip.force & 0x01;
 
 					/* rotate force bits */
-					conn->slave.force >>= 1;
+					conn->perip.force >>= 1;
 					if (force) {
-						conn->slave.force |= BIT(31);
+						conn->perip.force |= BIT(31);
 					}
 				}
 			}
@@ -1218,9 +1218,9 @@ void ull_conn_done(struct node_rx_event_done *done)
 		uint32_t ticker_status;
 
 		/* Call to ticker_update can fail under the race
-		 * condition where in the Slave role is being stopped but
-		 * at the same time it is preempted by Slave event that
-		 * gets into close state. Accept failure when Slave role
+		 * condition where in the Peripheral role is being stopped but
+		 * at the same time it is preempted by Peripheral event that
+		 * gets into close state. Accept failure when Peripheral role
 		 * is being stopped.
 		 */
 		ticker_status = ticker_update(TICKER_INSTANCE_ID_CTLR,
@@ -1607,13 +1607,13 @@ static void ticker_update_latency_cancel_op_cb(uint32_t ticker_status,
 
 	LL_ASSERT(ticker_status == TICKER_STATUS_SUCCESS);
 
-	conn->slave.latency_cancel = 0U;
+	conn->perip.latency_cancel = 0U;
 }
 #endif /* CONFIG_BT_PERIPHERAL */
 
 static void ticker_update_conn_op_cb(uint32_t status, void *param)
 {
-	/* Slave drift compensation succeeds, or it fails in a race condition
+	/* Peripheral drift compensation succeeds, or it fails in a race condition
 	 * when disconnecting or connection update (race between ticker_update
 	 * and ticker_stop calls).
 	 */
@@ -1720,7 +1720,7 @@ static void conn_cleanup(struct ll_conn *conn, uint8_t reason)
 	/* flush demux-ed Tx buffer still in ULL context */
 	tx_ull_flush(conn);
 
-	/* Stop Master or Slave role ticker */
+	/* Stop Central or Peripheral role ticker */
 	ticker_status = ticker_stop(TICKER_INSTANCE_ID_CTLR,
 				    TICKER_USER_ID_ULL_HIGH,
 				    TICKER_ID_CONN_BASE + lll->handle,
@@ -2077,7 +2077,7 @@ static inline void event_conn_upd_init(struct ll_conn *conn,
 		uint32_t retval;
 
 		/* calculate window offset that places the connection in the
-		 * next available slot after existing masters.
+		 * next available slot after existing centrls.
 		 */
 		conn->llcp.conn_upd.ticks_anchor = ticks_at_expire;
 
@@ -2293,35 +2293,35 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 		if (0) {
 #if defined(CONFIG_BT_PERIPHERAL)
 		} else if (lll->role) {
-			lll->slave.window_widening_prepare_us -=
-				lll->slave.window_widening_periodic_us *
+			lll->perip.window_widening_prepare_us -=
+				lll->perip.window_widening_periodic_us *
 				instant_latency;
 
-			lll->slave.window_widening_periodic_us =
+			lll->perip.window_widening_periodic_us =
 				(((lll_conn_ppm_local_get() +
-				   lll_conn_ppm_get(conn->slave.sca)) *
+				   lll_conn_ppm_get(conn->perip.sca)) *
 				  conn_interval_us) + (1000000 - 1)) / 1000000U;
-			lll->slave.window_widening_max_us =
+			lll->perip.window_widening_max_us =
 				(conn_interval_us >> 1) - EVENT_IFS_US;
-			lll->slave.window_size_prepare_us =
+			lll->perip.window_size_prepare_us =
 				conn->llcp_cu.win_size * 1250U;
-			conn->slave.ticks_to_offset = 0U;
+			conn->perip.ticks_to_offset = 0U;
 
-			lll->slave.window_widening_prepare_us +=
-				lll->slave.window_widening_periodic_us *
+			lll->perip.window_widening_prepare_us +=
+				lll->perip.window_widening_periodic_us *
 				latency;
-			if (lll->slave.window_widening_prepare_us >
-			    lll->slave.window_widening_max_us) {
-				lll->slave.window_widening_prepare_us =
-					lll->slave.window_widening_max_us;
+			if (lll->perip.window_widening_prepare_us >
+			    lll->perip.window_widening_max_us) {
+				lll->perip.window_widening_prepare_us =
+					lll->perip.window_widening_max_us;
 			}
 
 			ticks_at_expire -= HAL_TICKER_US_TO_TICKS(
-				lll->slave.window_widening_periodic_us *
+				lll->perip.window_widening_periodic_us *
 				latency);
 			ticks_win_offset = HAL_TICKER_US_TO_TICKS(
 				(conn->llcp_cu.win_offset_us / 1250U) * 1250U);
-			periodic_us -= lll->slave.window_widening_periodic_us;
+			periodic_us -= lll->perip.window_widening_periodic_us;
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CENTRAL)
@@ -2377,7 +2377,7 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 			      0);
 #endif
 
-		/* start slave/master with new timings */
+		/* start perip/central with new timings */
 		ticker_id_conn = TICKER_ID_CONN_BASE + ll_conn_handle_get(conn);
 		ticker_status =	ticker_stop(TICKER_INSTANCE_ID_CTLR,
 					    TICKER_USER_ID_ULL_HIGH,
@@ -2401,12 +2401,12 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 				     (ticks_slot_overhead +
 				      conn->evt.ticks_slot),
 #if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CENTRAL)
-				     lll->role ? ull_slave_ticker_cb :
-						 ull_master_ticker_cb,
+				     lll->role ? ull_perip_ticker_cb :
+						 ull_centrl_ticker_cb,
 #elif defined(CONFIG_BT_PERIPHERAL)
-				     ull_slave_ticker_cb,
+				     ull_perip_ticker_cb,
 #else
-				     ull_master_ticker_cb,
+				     ull_centrl_ticker_cb,
 #endif
 				     conn, ticker_start_conn_op_cb,
 				     (void *)conn);
@@ -2576,7 +2576,7 @@ static inline void event_enc_prep(struct ll_conn *conn)
 
 	pdu_ctrl_tx = (void *)tx->pdu;
 
-	/* master sends encrypted enc start rsp in control priority */
+	/* central sends encrypted enc start rsp in control priority */
 	if (!lll->role) {
 		/* calc the Session Key */
 		ecb_encrypt(&conn->llcp_enc.ltk[0],
@@ -2595,8 +2595,8 @@ static inline void event_enc_prep(struct ll_conn *conn)
 		lll->ccm_rx.counter = 0;
 		lll->ccm_tx.counter = 0;
 
-		/* set direction: slave to master = 0,
-		 * master to slave = 1
+		/* set direction: peripheral to central = 0,
+		 * central to peripheral = 1
 		 */
 		lll->ccm_rx.direction = 0;
 		lll->ccm_tx.direction = 1;
@@ -2610,7 +2610,7 @@ static inline void event_enc_prep(struct ll_conn *conn)
 		ctrl_tx_enqueue(conn, tx);
 	}
 
-	/* slave send reject ind or start enc req at control priority */
+	/* peripheral send reject ind or start enc req at control priority */
 
 #if defined(CONFIG_BT_CTLR_FAST_ENC)
 	else {
@@ -2644,14 +2644,14 @@ static inline void event_enc_prep(struct ll_conn *conn)
 			lll->ccm_rx.counter = 0U;
 			lll->ccm_tx.counter = 0U;
 
-			/* set direction: slave to master = 0,
-			 * master to slave = 1
+			/* set direction: peripheral to central = 0,
+			 * central to peripheral = 1
 			 */
 			lll->ccm_rx.direction = 1U;
 			lll->ccm_tx.direction = 0U;
 
 			/* enable receive encryption (transmit turned
-			 * on when start enc resp from master is
+			 * on when start enc resp from central is
 			 * received)
 			 */
 			lll->enc_rx = 1U;
@@ -2742,7 +2742,7 @@ static inline void event_fex_prep(struct ll_conn *conn)
 			   sizeof(struct pdu_data_llctrl_feature_req);
 		pdu->llctrl.opcode = !conn->lll.role ?
 				     PDU_DATA_LLCTRL_TYPE_FEATURE_REQ :
-				     PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ;
+				     PDU_DATA_LLCTRL_TYPE_PERIP_FEATURE_REQ;
 		(void)memset(&pdu->llctrl.feature_req.features[0],
 			     0x00,
 			     sizeof(pdu->llctrl.feature_req.features));
@@ -2937,7 +2937,7 @@ static inline void event_conn_param_rsp(struct ll_conn *conn)
 			return;
 		}
 
-		/* master/slave response with reject ext ind */
+		/* centrl/perip response with reject ext ind */
 		pdu = (void *)tx->pdu;
 		pdu->ll_id = PDU_DATA_LLID_CTRL;
 		pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND;
@@ -2959,7 +2959,7 @@ static inline void event_conn_param_rsp(struct ll_conn *conn)
 		return;
 	}
 
-	/* master respond with connection update */
+	/* central respond with connection update */
 	if (!conn->lll.role) {
 		if (conn->llcp_cu.req != conn->llcp_cu.ack) {
 			return;
@@ -2990,7 +2990,7 @@ static inline void event_conn_param_rsp(struct ll_conn *conn)
 		return;
 	}
 
-	/* slave response with connection parameter response */
+	/* peripheral response with connection parameter response */
 	tx = mem_acquire(&mem_conn_tx_ctrl.free);
 	if (!tx) {
 		return;
@@ -3733,8 +3733,8 @@ static uint8_t conn_upd_recv(struct ll_conn *conn, memq_link_t *link,
 		return BT_HCI_ERR_DIFF_TRANS_COLLISION;
 	}
 
-	/* set mutex, if only not already set. As a master the mutex shall
-	 * be set, but a slave we accept it as new 'set' of mutex.
+	/* set mutex, if only not already set. As a central the mutex shall
+	 * be set, but a peripheral we accept it as new 'set' of mutex.
 	 */
 	if (!conn_upd_curr) {
 		LL_ASSERT(conn->lll.role);
@@ -3883,7 +3883,7 @@ static int enc_rsp_send(struct ll_conn *conn)
 			   sizeof(pdu_ctrl_tx->llctrl.enc_rsp.skds) +
 			   sizeof(pdu_ctrl_tx->llctrl.enc_rsp.ivs));
 
-	/* things from slave stored for session key calculation */
+	/* things from peripheral stored for session key calculation */
 	memcpy(&conn->llcp.encryption.skd[8],
 	       &pdu_ctrl_tx->llctrl.enc_rsp.skds[0], 8);
 	memcpy(&conn->lll.ccm_rx.iv[4],
@@ -4259,7 +4259,7 @@ static inline int reject_ind_conn_upd_recv(struct ll_conn *conn,
 #if defined(CONFIG_BT_PERIPHERAL)
 		/* update to next ticks offset */
 		if (lll->role) {
-			conn->slave.ticks_to_offset =
+			conn->perip.ticks_to_offset =
 			    conn->llcp_conn_param.ticks_to_offset_next;
 		}
 #endif /* CONFIG_BT_PERIPHERAL */
@@ -4769,7 +4769,7 @@ static int phy_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 		return -ENOBUFS;
 	}
 
-	/* Wait for peer master to complete the procedure */
+	/* Wait for peer central to complete the procedure */
 	conn->llcp_phy.state = LLCP_PHY_STATE_RSP_WAIT;
 	if (conn->llcp_phy.ack ==
 	    conn->llcp_phy.req) {
@@ -4964,7 +4964,7 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
-		/* things from master stored for session key calculation */
+		/* things from central stored for session key calculation */
 		memcpy(&conn->llcp.encryption.skd[0],
 		       &pdu_tx->llctrl.enc_req.skdm[0], 8);
 		memcpy(&conn->lll.ccm_rx.iv[0],
@@ -5165,8 +5165,8 @@ static inline bool pdu_len_cmp(uint8_t opcode, uint8_t len)
 		 sizeof(struct pdu_data_llctrl_version_ind)),
 		(offsetof(struct pdu_data_llctrl, reject_ind) +
 		 sizeof(struct pdu_data_llctrl_reject_ind)),
-		(offsetof(struct pdu_data_llctrl, slave_feature_req) +
-		 sizeof(struct pdu_data_llctrl_slave_feature_req)),
+		(offsetof(struct pdu_data_llctrl, perip_feature_req) +
+		 sizeof(struct pdu_data_llctrl_perip_feature_req)),
 		(offsetof(struct pdu_data_llctrl, conn_param_req) +
 		 sizeof(struct pdu_data_llctrl_conn_param_req)),
 		(offsetof(struct pdu_data_llctrl, conn_param_rsp) +
@@ -5290,7 +5290,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		conn->llcp_enc.ediv[0] = pdu_rx->llctrl.enc_req.ediv[0];
 		conn->llcp_enc.ediv[1] = pdu_rx->llctrl.enc_req.ediv[1];
 
-		/* Enc rsp to be scheduled in master prepare */
+		/* Enc rsp to be scheduled in central prepare */
 		conn->llcp.encryption.state = LLCP_ENC_STATE_INIT;
 
 		/* Mark for buffer for release */
@@ -5301,7 +5301,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		conn->llcp_type = LLCP_ENCRYPTION;
 		conn->llcp_ack -= 2U;
 
-		/* things from master stored for session key calculation */
+		/* things from central stored for session key calculation */
 		memcpy(&conn->llcp.encryption.skd[0],
 		       &pdu_rx->llctrl.enc_req.skdm[0], 8);
 		memcpy(&conn->lll.ccm_rx.iv[0],
@@ -5323,7 +5323,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			goto ull_conn_rx_unknown_rsp_send;
 		}
 
-		/* things sent by slave stored for session key calculation */
+		/* things sent by peripheral stored for session key calculation */
 		memcpy(&conn->llcp.encryption.skd[8],
 		       &pdu_rx->llctrl.enc_rsp.skds[0], 8);
 		memcpy(&conn->lll.ccm_rx.iv[4],
@@ -5345,7 +5345,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			goto ull_conn_rx_unknown_rsp_send;
 		}
 
-		/* start enc rsp to be scheduled in master prepare */
+		/* start enc rsp to be scheduled in central prepare */
 		conn->llcp.encryption.state = LLCP_ENC_STATE_INPROG;
 
 		/* Mark for buffer for release */
@@ -5366,7 +5366,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 				goto ull_conn_rx_unknown_rsp_send;
 			}
 
-			/* start enc rsp to be scheduled in slave  prepare */
+			/* start enc rsp to be scheduled in peripheral  prepare */
 			conn->llcp.encryption.state = LLCP_ENC_STATE_INPROG;
 			if (conn->llcp_req == conn->llcp_ack) {
 				conn->llcp_type = LLCP_ENCRYPTION;
@@ -5414,20 +5414,20 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		nack = feature_rsp_send(conn, *rx, pdu_rx);
 		break;
 
-#if defined(CONFIG_BT_CTLR_SLAVE_FEAT_REQ)
-	case PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ:
+#if defined(CONFIG_BT_CTLR_PERIP_FEAT_REQ)
+	case PDU_DATA_LLCTRL_TYPE_PERIP_FEATURE_REQ:
 		if (conn->lll.role ||
-		    !pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ,
+		    !pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_PERIP_FEATURE_REQ,
 				 pdu_rx->len)) {
 			goto ull_conn_rx_unknown_rsp_send;
 		}
 
 		nack = feature_rsp_send(conn, *rx, pdu_rx);
 		break;
-#endif /* CONFIG_BT_CTLR_SLAVE_FEAT_REQ */
+#endif /* CONFIG_BT_CTLR_PERIP_FEAT_REQ */
 
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_RSP:
-		if ((!IS_ENABLED(CONFIG_BT_CTLR_SLAVE_FEAT_REQ) &&
+		if ((!IS_ENABLED(CONFIG_BT_CTLR_PERIP_FEAT_REQ) &&
 		     conn->lll.role) ||
 		    !pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_FEATURE_RSP,
 				 pdu_rx->len)) {

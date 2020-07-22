@@ -415,7 +415,7 @@ void lll_chan_set(uint32_t chan)
 		break;
 	}
 
-	radio_whiten_iv_set(chan);
+	radio_decorr_iv_set(chan);
 }
 
 

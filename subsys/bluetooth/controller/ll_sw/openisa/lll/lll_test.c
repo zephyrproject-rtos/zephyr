@@ -186,7 +186,7 @@ static uint32_t init(uint8_t chan, uint8_t phy, void (*isr)(void *))
 	}
 
 	/* Setup Radio in Tx/Rx */
-	/* NOTE: No whitening in test mode. */
+	/* NOTE: No decorrelation in test mode. */
 	radio_phy_set(test_phy, test_phy_flags);
 	radio_tmr_tifs_set(150);
 	radio_tx_power_max_set();

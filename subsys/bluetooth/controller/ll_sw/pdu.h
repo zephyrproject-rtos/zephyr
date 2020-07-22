@@ -386,7 +386,7 @@ enum pdu_data_llctrl_type {
 	PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP = 0x0B,
 	PDU_DATA_LLCTRL_TYPE_VERSION_IND = 0x0C,
 	PDU_DATA_LLCTRL_TYPE_REJECT_IND = 0x0D,
-	PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ = 0x0E,
+	PDU_DATA_LLCTRL_TYPE_PERIP_FEATURE_REQ = 0x0E,
 	PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ = 0x0F,
 	PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP = 0x10,
 	PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND = 0x11,
@@ -468,7 +468,7 @@ struct pdu_data_llctrl_reject_ind {
 	uint8_t error_code;
 } __packed;
 
-struct pdu_data_llctrl_slave_feature_req {
+struct pdu_data_llctrl_perip_feature_req {
 	uint8_t features[8];
 } __packed;
 
@@ -567,7 +567,7 @@ struct pdu_data_llctrl {
 		struct pdu_data_llctrl_pause_enc_rsp pause_enc_rsp;
 		struct pdu_data_llctrl_version_ind version_ind;
 		struct pdu_data_llctrl_reject_ind reject_ind;
-		struct pdu_data_llctrl_slave_feature_req slave_feature_req;
+		struct pdu_data_llctrl_perip_feature_req perip_feature_req;
 		struct pdu_data_llctrl_conn_param_req conn_param_req;
 		struct pdu_data_llctrl_conn_param_rsp conn_param_rsp;
 		struct pdu_data_llctrl_reject_ext_ind reject_ext_ind;

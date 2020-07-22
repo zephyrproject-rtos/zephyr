@@ -41,7 +41,7 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
-/* Hardware whitelist */
+/* Hardware allowlist */
 static struct lll_filter wl_filter;
 uint8_t wl_anon;
 
@@ -50,8 +50,8 @@ uint8_t wl_anon;
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 #include "common/rpa.h"
 
-/* Whitelist peer list */
-static struct lll_whitelist wl[WL_SIZE];
+/* Allowlist peer list */
+static struct lll_allowlist wl[WL_SIZE];
 
 static uint8_t rl_enable;
 
@@ -298,7 +298,7 @@ uint8_t ll_rl_add(bt_addr_le_t *id_addr, const uint8_t pirk[IRK_SIZE],
 #endif
 	/* Default to Network Privacy */
 	rl[i].dev = 0U;
-	/* Add reference to  a whitelist entry */
+	/* Add reference to  a allowlist entry */
 	j = wl_find(id_addr->type, id_addr->a.val, NULL);
 	if (j < ARRAY_SIZE(wl)) {
 		wl[j].rl_idx = i;
@@ -345,7 +345,7 @@ uint8_t ll_rl_remove(bt_addr_le_t *id_addr)
 			peer_irk_count--;
 		}
 
-		/* Check if referenced by a whitelist entry */
+		/* Check if referenced by a allowlist entry */
 		j = wl_find(id_addr->type, id_addr->a.val, NULL);
 		if (j < ARRAY_SIZE(wl)) {
 			wl[j].rl_idx = FILTER_IDX_NONE;
@@ -473,7 +473,7 @@ void ull_filter_adv_update(uint8_t adv_fp)
 	if (adv_fp &&
 	    (!IS_ENABLED(CONFIG_BT_OBSERVER) ||
 	     !(ull_scan_filter_pol_get(0) & 0x1))) {
-		/* whitelist not in use, update whitelist */
+		/* allowlist not in use, update allowlist */
 		wl_update();
 	}
 
@@ -496,7 +496,7 @@ void ull_filter_scan_update(uint8_t scan_fp)
 	if ((scan_fp & 0x1) &&
 	    (!IS_ENABLED(CONFIG_BT_BROADCASTER) ||
 	     !ull_adv_filter_pol_get(0))) {
-		/* whitelist not in use, update whitelist */
+		/* allowlist not in use, update allowlist */
 		wl_update();
 	}
 
@@ -685,11 +685,11 @@ uint8_t *ull_filter_lll_irks_get(uint8_t *count)
 	return (uint8_t *)peer_irks;
 }
 
-uint8_t ull_filter_lll_rl_idx(bool whitelist, uint8_t devmatch_id)
+uint8_t ull_filter_lll_rl_idx(bool allowlist, uint8_t devmatch_id)
 {
 	uint8_t i;
 
-	if (whitelist) {
+	if (allowlist) {
 		LL_ASSERT(devmatch_id < ARRAY_SIZE(wl));
 		LL_ASSERT(wl[devmatch_id].taken);
 		i = wl[devmatch_id].rl_idx;
@@ -714,7 +714,7 @@ uint8_t ull_filter_lll_rl_irk_idx(uint8_t irkmatch_id)
 	return i;
 }
 
-bool ull_filter_lll_irk_whitelisted(uint8_t rl_idx)
+bool ull_filter_lll_irk_allowlisted(uint8_t rl_idx)
 {
 	if (rl_idx >= ARRAY_SIZE(rl)) {
 		return false;
@@ -726,21 +726,21 @@ bool ull_filter_lll_irk_whitelisted(uint8_t rl_idx)
 }
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-struct lll_filter *ull_filter_lll_get(bool whitelist)
+struct lll_filter *ull_filter_lll_get(bool allowlist)
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	if (whitelist) {
+	if (allowlist) {
 		return &wl_filter;
 	}
 	return &rl_filter;
 #else
-	LL_ASSERT(whitelist);
+	LL_ASSERT(allowlist);
 	return &wl_filter;
 #endif
 }
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-struct lll_whitelist *ull_filter_lll_whitelist_get(void)
+struct lll_allowlist *ull_filter_lll_allowlist_get(void)
 {
 	return wl;
 }

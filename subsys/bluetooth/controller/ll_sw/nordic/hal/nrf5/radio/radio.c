@@ -166,7 +166,7 @@ void radio_freq_chan_set(uint32_t chan)
 	NRF_RADIO->FREQUENCY = chan;
 }
 
-void radio_whiten_iv_set(uint32_t iv)
+void radio_decorr_iv_set(uint32_t iv)
 {
 	NRF_RADIO->DATAWHITEIV = iv;
 

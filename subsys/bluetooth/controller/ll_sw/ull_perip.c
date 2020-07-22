@@ -25,7 +25,7 @@
 #include "lll_vendor.h"
 #include "lll_adv.h"
 #include "lll_conn.h"
-#include "lll_slave.h"
+#include "lll_perip.h"
 #include "lll_filter.h"
 #include "lll_tim_internal.h"
 
@@ -36,10 +36,10 @@
 #include "ull_internal.h"
 #include "ull_adv_internal.h"
 #include "ull_conn_internal.h"
-#include "ull_slave_internal.h"
+#include "ull_perip_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_ull_slave
+#define LOG_MODULE_NAME bt_ctlr_ull_perip
 #include "common/log.h"
 #include <soc.h>
 #include "hal/debug.h"
@@ -47,7 +47,7 @@
 static void ticker_op_stop_adv_cb(uint32_t status, void *param);
 static void ticker_op_cb(uint32_t status, void *param);
 
-void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
+void ull_perip_setup(memq_link_t *link, struct node_rx_hdr *rx,
 		     struct node_rx_ftr *ftr, struct lll_conn *lll)
 {
 	uint32_t conn_offset_us, conn_interval_us;
@@ -72,7 +72,7 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	adv = ((struct lll_adv *)ftr->param)->hdr.parent;
 	conn = lll->hdr.parent;
 
-	/* Populate the slave context */
+	/* Populate the peripheral context */
 	pdu_adv = (void *)((struct node_rx_pdu *)rx)->pdu;
 	memcpy(&lll->crc_init[0], &pdu_adv->connect_ind.crc_init[0], 3);
 	memcpy(&lll->access_addr[0], &pdu_adv->connect_ind.access_addr[0], 4);
@@ -95,14 +95,14 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	conn_interval_us = interval * 1250U;
 
 	/* calculate the window widening */
-	conn->slave.sca = pdu_adv->connect_ind.sca;
-	lll->slave.window_widening_periodic_us =
+	conn->perip.sca = pdu_adv->connect_ind.sca;
+	lll->perip.window_widening_periodic_us =
 		(((lll_conn_ppm_local_get() +
-		   lll_conn_ppm_get(conn->slave.sca)) *
+		   lll_conn_ppm_get(conn->perip.sca)) *
 		  conn_interval_us) + (1000000 - 1)) / 1000000U;
-	lll->slave.window_widening_max_us = (conn_interval_us >> 1) -
+	lll->perip.window_widening_max_us = (conn_interval_us >> 1) -
 					    EVENT_IFS_US;
-	lll->slave.window_size_event_us = pdu_adv->connect_ind.win_size * 1250U;
+	lll->perip.window_size_event_us = pdu_adv->connect_ind.win_size * 1250U;
 
 	/* procedure timeouts */
 	timeout = sys_le16_to_cpu(pdu_adv->connect_ind.timeout);
@@ -124,8 +124,8 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 			     conn->apto_reload;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
-	memcpy((void *)&conn->slave.force, &lll->access_addr[0],
-	       sizeof(conn->slave.force));
+	memcpy((void *)&conn->perip.force, &lll->access_addr[0],
+	       sizeof(conn->perip.force));
 
 	peer_addr_type = pdu_adv->tx_addr;
 	memcpy(peer_addr, pdu_adv->connect_ind.init_addr, BDADDR_SIZE);
@@ -168,7 +168,7 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	cc->interval = lll->interval;
 	cc->latency = lll->latency;
 	cc->timeout = timeout;
-	cc->sca = conn->slave.sca;
+	cc->sca = conn->perip.sca;
 
 	lll->handle = ll_conn_handle_get(conn);
 	rx->handle = lll->handle;
@@ -243,7 +243,7 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 		ticks_slot_overhead = 0U;
 	}
 
-	conn_interval_us -= lll->slave.window_widening_periodic_us;
+	conn_interval_us -= lll->perip.window_widening_periodic_us;
 
 	conn_offset_us = ftr->radio_end_us;
 	conn_offset_us += ((uint64_t)win_offset + 1) * 1250U;
@@ -276,7 +276,7 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 			    TICKER_ID_ADV_STOP, NULL, NULL);
 	}
 
-	/* Start Slave */
+	/* Start Peripheral */
 	ticker_id_conn = TICKER_ID_CONN_BASE + ll_conn_handle_get(conn);
 	ticker_status = ticker_start(TICKER_INSTANCE_ID_CTLR,
 				     TICKER_USER_ID_ULL_HIGH,
@@ -292,7 +292,7 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 #endif /* CONFIG_BT_CTLR_CONN_META */
 				     (conn->evt.ticks_slot +
 				      ticks_slot_overhead),
-				     ull_slave_ticker_cb, conn, ticker_op_cb,
+				     ull_perip_ticker_cb, conn, ticker_op_cb,
 				     (void *)__LINE__);
 	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 		  (ticker_status == TICKER_STATUS_BUSY));
@@ -312,7 +312,7 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
  * @param ticks_drift_plus[out]  Positive part of drift uncertainty window
  * @param ticks_drift_minus[out] Negative part of drift uncertainty window
  */
-void ull_slave_done(struct node_rx_event_done *done, uint32_t *ticks_drift_plus,
+void ull_perip_done(struct node_rx_event_done *done, uint32_t *ticks_drift_plus,
 		    uint32_t *ticks_drift_minus)
 {
 	uint32_t start_to_address_expected_us;
@@ -321,11 +321,11 @@ void ull_slave_done(struct node_rx_event_done *done, uint32_t *ticks_drift_plus,
 	uint32_t preamble_to_addr_us;
 
 	start_to_address_actual_us =
-		done->extra.slave.start_to_address_actual_us;
+		done->extra.perip.start_to_address_actual_us;
 	window_widening_event_us =
-		done->extra.slave.window_widening_event_us;
+		done->extra.perip.window_widening_event_us;
 	preamble_to_addr_us =
-		done->extra.slave.preamble_to_addr_us;
+		done->extra.perip.preamble_to_addr_us;
 
 	start_to_address_expected_us = EVENT_JITTER_US +
 				       EVENT_TICKER_RES_MARGIN_US +
@@ -348,11 +348,11 @@ void ull_slave_done(struct node_rx_event_done *done, uint32_t *ticks_drift_plus,
 	}
 }
 
-void ull_slave_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t lazy,
-			 void *param)
+void ull_perip_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
+			 uint16_t lazy, void *param)
 {
 	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, lll_slave_prepare};
+	static struct mayfly mfy = {0, 0, &link, NULL, lll_perip_prepare};
 	static struct lll_prepare_param p;
 	struct ll_conn *conn = param;
 	uint32_t err;

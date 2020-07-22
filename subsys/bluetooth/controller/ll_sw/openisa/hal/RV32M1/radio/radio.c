@@ -644,7 +644,7 @@ void radio_freq_chan_set(uint32_t chan)
 #define GENFSK_BLE_WHITEN_SIZE			7	/* poly order */
 #define GENFSK_BLE_WHITEN_POLY			0x04
 
-void radio_whiten_iv_set(uint32_t iv)
+void radio_decorr_iv_set(uint32_t iv)
 {
 	GENFSK->WHITEN_CFG &= ~(GENFSK_WHITEN_CFG_WHITEN_START_MASK |
 				GENFSK_WHITEN_CFG_WHITEN_END_MASK |
@@ -1286,7 +1286,7 @@ void *radio_ccm_rx_pkt_set(struct ccm *ccm, uint8_t phy, void *pkt)
 	ctx_ccm.rx_pkt_out = (struct pdu_data *)pkt;
 	ctx_ccm.nonce.counter = ccm->counter;	/* LSO to MSO, counter is LE */
 	/* The directionBit set to 1 for Data Physical Chan PDUs sent by
-	 * the master and set to 0 for Data Physical Chan PDUs sent by the slave
+	 * the central and set to 0 for Data Physical Chan PDUs sent by the perip
 	 */
 	ctx_ccm.nonce.bytes[4] |= ccm->direction << 7;
 	memcpy(&ctx_ccm.nonce.bytes[5], ccm->iv, 8); /* LSO to MSO */
@@ -1384,7 +1384,7 @@ void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt)
 	memcpy(key_local, ccm->key, sizeof(key_local));
 	ctx_ccm.nonce.counter = ccm->counter;	/* LSO to MSO, counter is LE */
 	/* The directionBit set to 1 for Data Physical Chan PDUs sent by
-	 * the master and set to 0 for Data Physical Chan PDUs sent by the slave
+	 * the central and set to 0 for Data Physical Chan PDUs sent by the perip
 	 */
 	ctx_ccm.nonce.bytes[4] |= ccm->direction << 7;
 	memcpy(&ctx_ccm.nonce.bytes[5], ccm->iv, 8); /* LSO to MSO */

@@ -13,8 +13,8 @@ struct lll_filter {
 	uint8_t  bdaddr[WL_SIZE][BDADDR_SIZE];
 };
 
-/* Whitelist peer list */
-struct lll_whitelist {
+/* Allowlist peer list */
+struct lll_allowlist {
 	uint8_t      taken:1;
 	uint8_t      id_addr_type:1;
 	uint8_t      rl_idx;
@@ -45,11 +45,11 @@ struct lll_resolvelist {
 bool ull_filter_lll_lrpa_used(uint8_t rl_idx);
 extern bt_addr_t *ull_filter_lll_lrpa_get(uint8_t rl_idx);
 extern uint8_t *ull_filter_lll_irks_get(uint8_t *count);
-extern uint8_t ull_filter_lll_rl_idx(bool whitelist, uint8_t devmatch_id);
+extern uint8_t ull_filter_lll_rl_idx(bool allowlist, uint8_t devmatch_id);
 extern uint8_t ull_filter_lll_rl_irk_idx(uint8_t irkmatch_id);
-extern bool ull_filter_lll_irk_whitelisted(uint8_t rl_idx);
-extern struct lll_filter *ull_filter_lll_get(bool whitelist);
-extern struct lll_whitelist *ull_filter_lll_whitelist_get(void);
+extern bool ull_filter_lll_irk_allowlisted(uint8_t rl_idx);
+extern struct lll_filter *ull_filter_lll_get(bool allowlist);
+extern struct lll_allowlist *ull_filter_lll_allowlist_get(void);
 extern struct lll_resolvelist *ull_filter_lll_resolvelist_get(void);
 extern bool ull_filter_lll_rl_idx_allowed(uint8_t irkmatch_ok, uint8_t rl_idx);
 extern bool ull_filter_lll_rl_addr_allowed(uint8_t id_addr_type, uint8_t *id_addr,

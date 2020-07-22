@@ -15,7 +15,7 @@ config BT_LLL_VENDOR_NORDIC
 					 !BT_CTLR_PHY_2M_NRF
 	select BT_CTLR_CONN_PARAM_REQ_SUPPORT
 	select BT_CTLR_EXT_REJ_IND_SUPPORT
-	select BT_CTLR_SLAVE_FEAT_REQ_SUPPORT
+	select BT_CTLR_PERIP_FEAT_REQ_SUPPORT
 	select BT_CTLR_DATA_LEN_UPDATE_SUPPORT if !SOC_SERIES_NRF51X || \
 						  BT_CTLR_DATA_LENGTH_CLEAR
 	select BT_CTLR_PRIVACY_SUPPORT if !SOC_SERIES_NRF51X
@@ -109,10 +109,10 @@ menu "Advanced features"
 	visible if BT_CTLR_ADVANCED_FEATURES
 
 config BT_CTLR_FILTER
-	bool "Device Whitelist Support"
+	bool "Device Allowlist Support"
 	default y
 	help
-	  Enable support for controller device whitelist feature
+	  Enable support for controller device allowlist feature
 
 config BT_CTLR_SW_DEFERRED_PRIVACY
 	bool "LE Controller-based Software Privacy"
@@ -223,15 +223,16 @@ config BT_CTLR_SCHED_ADVANCED
 	depends on (BT_MAX_CONN != 0) && BT_CTLR_SCHED_ADVANCED_SUPPORT
 	default y if !(BT_PERIPHERAL && !BT_CENTRAL)
 	help
-	  Enable non-overlapping placement of observer, initiator and master
+	  Enable non-overlapping placement of observer, initiator and central
 	  roles in timespace. Uses window offset in connection updates and uses
-	  connection parameter request in slave role to negotiate
-	  non-overlapping placement with active master roles to avoid slave
-	  roles drifting into active master roles in the local controller.
+	  connection parameter request in peripheral role to negotiate
+	  non-overlapping placement with active central roles to avoid perip
+	  roles drifting into active central roles in the local controller.
 
 	  This feature maximizes the average data transmission amongst active
-	  concurrent master and slave connections while other observer,
-	  initiator, master or slave roles are active in the local controller.
+	  concurrent central and peripheral connections while other observer,
+	  initiator, central or peripheral roles are active in the local
+	  controller.
 
 	  Disabling this feature will lead to overlapping role in timespace
 	  leading to skipped events amongst active roles.

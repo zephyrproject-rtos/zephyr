@@ -68,14 +68,14 @@ struct ll_conn {
 			uint8_t  sca:3;
 			uint32_t force;
 			uint32_t ticks_to_offset;
-		} slave;
+		} perip;
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CENTRAL)
 		struct {
 			uint8_t fex_valid:1;
 			uint8_t terminate_ack:1;
-		} master;
+		} centrl;
 #endif /* CONFIG_BT_CENTRAL */
 	};
 

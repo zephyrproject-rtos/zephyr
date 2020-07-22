@@ -217,7 +217,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	remainder_us = radio_tmr_start(0, ticks_at_start, remainder);
 
 	/* capture end of Rx-ed PDU, for initiator to calculate first
-	 * master event.
+	 * central event.
 	 */
 	radio_tmr_end_capture();
 
@@ -547,7 +547,7 @@ static void isr_done(void *param)
 #endif /* !CONFIG_BT_CTLR_GPIO_LNA_PIN */
 
 	/* capture end of Rx-ed PDU, for initiator to calculate first
-	 * master event.
+	 * central event.
 	 */
 	radio_tmr_end_capture();
 }
@@ -563,7 +563,7 @@ static void isr_window(void *param)
 	remainder_us = radio_tmr_start_tick(0, ticks_at_start);
 
 	/* capture end of Rx-ed PDU, for initiator to calculate first
-	 * master event.
+	 * central event.
 	 */
 	radio_tmr_end_capture();
 
@@ -643,7 +643,7 @@ static inline bool isr_rx_scan_check(struct lll_scan *lll, uint8_t irkmatch_ok,
 		 (!devmatch_ok || ull_filter_lll_rl_idx_allowed(irkmatch_ok,
 								rl_idx))) ||
 		(((lll->filter_policy & 0x01) != 0) &&
-		 (devmatch_ok || ull_filter_lll_irk_whitelisted(rl_idx)));
+		 (devmatch_ok || ull_filter_lll_irk_allowlisted(rl_idx)));
 #else
 	return ((lll->filter_policy & 0x01) == 0U) ||
 		devmatch_ok;
@@ -1010,7 +1010,7 @@ static inline bool isr_scan_init_adva_check(struct lll_scan *lll,
 					    struct pdu_adv *pdu, uint8_t rl_idx)
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	/* Only applies to initiator with no whitelist */
+	/* Only applies to initiator with no allowlist */
 	if (rl_idx != FILTER_IDX_NONE) {
 		return (rl_idx == lll->rl_idx);
 	}

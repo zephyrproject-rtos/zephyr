@@ -359,7 +359,7 @@ static void isr_tx(void *param)
 	radio_tmr_hcto_configure(hcto);
 
 	/* capture end of CONNECT_IND PDU, used for calculating first
-	 * slave event.
+	 * peripheral event.
 	 */
 	radio_tmr_end_capture();
 
@@ -771,7 +771,7 @@ static inline bool isr_rx_sr_check(struct lll_adv *lll, struct pdu_adv *adv,
 						sr->scan_req.scan_addr,
 						rl_idx)) ||
 		(((lll->filter_policy & 0x01) != 0) &&
-		 (devmatch_ok || ull_filter_lll_irk_whitelisted(*rl_idx)))) &&
+		 (devmatch_ok || ull_filter_lll_irk_allowlisted(*rl_idx)))) &&
 		isr_rx_sr_adva_check(adv, sr);
 #else
 	return (((lll->filter_policy & 0x01) == 0U) || devmatch_ok) &&
@@ -844,7 +844,7 @@ static inline bool isr_rx_ci_check(struct lll_adv *lll, struct pdu_adv *adv,
 						ci->connect_ind.init_addr,
 						rl_idx)) ||
 		(((lll->filter_policy & 0x02) != 0) &&
-		 (devmatch_ok || ull_filter_lll_irk_whitelisted(*rl_idx)))) &&
+		 (devmatch_ok || ull_filter_lll_irk_allowlisted(*rl_idx)))) &&
 	       isr_rx_ci_adva_check(adv, ci);
 #else
 	return (((lll->filter_policy & 0x02) == 0) ||

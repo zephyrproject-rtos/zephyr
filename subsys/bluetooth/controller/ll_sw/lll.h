@@ -280,7 +280,7 @@ enum {
 
 };
 
-struct event_done_extra_slave {
+struct event_done_extra_perip {
 	uint32_t start_to_address_actual_us;
 	uint32_t window_widening_event_us;
 	uint32_t preamble_to_addr_us;
@@ -296,7 +296,7 @@ struct event_done_extra {
 			uint8_t  mic_state;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 			union {
-				struct event_done_extra_slave slave;
+				struct event_done_extra_perip perip;
 			};
 		};
 	};
