@@ -82,9 +82,9 @@ static int mpr_read_reg(struct device *dev)
 	return 0;
 }
 
-/*			  (reg_value - out_min) * (p_max - p_min)
+/*            (reg_value - out_min) * (p_max - p_min)
  * pressure = --------------------------------------- + p_min
- *					out_max - out_min
+ *                     out_max - out_min
  *
  * returns pressure [kPa] * 10^6
  */
