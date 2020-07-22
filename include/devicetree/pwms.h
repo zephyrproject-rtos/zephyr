@@ -291,40 +291,44 @@ extern "C" {
 /**
  * @brief Get a PWM specifier's flags cell value at an index
  *
- * This macro only works for PWM specifiers with cells named "flags".
- * Refer to the node's binding to check if necessary.
+ * This macro expects PWM specifiers with cells named "flags".
+ * If there is no "flags" cell in the PWM specifier, zero is returned.
+ * Refer to the node's binding to check specifier cell names if necessary.
  *
  * This is equivalent to DT_PWMS_CELL_BY_IDX(node_id, idx, flags).
  *
  * @param node_id node identifier for a node with a pwms property
  * @param idx logical index into pwms property
- * @return the flags cell value at index "idx"
+ * @return the flags cell value at index "idx", or zero if there is none
  * @see DT_PWMS_CELL_BY_IDX()
  */
 #define DT_PWMS_FLAGS_BY_IDX(node_id, idx) \
-	DT_PWMS_CELL_BY_IDX(node_id, idx, flags)
+	DT_PHA_BY_IDX_OR(node_id, pwms, idx, flags, 0)
 
 /**
  * @brief Get a PWM specifier's flags cell value by name
  *
- * This macro only works for PWM specifiers with cells named "flags".
- * Refer to the node's binding to check if necessary.
+ * This macro expects PWM specifiers with cells named "flags".
+ * If there is no "flags" cell in the PWM specifier, zero is returned.
+ * Refer to the node's binding to check specifier cell names if necessary.
  *
- * This is equivalent to DT_PWMS_CELL_BY_NAME(node_id, name, flags).
+ * This is equivalent to DT_PWMS_CELL_BY_NAME(node_id, name, flags) if
+ * there is a flags cell, but expands to zero if there is none.
  *
  * @param node_id node identifier for a node with a pwms property
  * @param name lowercase-and-underscores name of a pwms element
  *             as defined by the node's pwm-names property
- * @return the flags cell value in the specifier at the named element
+ * @return the flags cell value in the specifier at the named element,
+ *         or zero if there is none
  * @see DT_PWMS_CELL_BY_NAME()
  */
 #define DT_PWMS_FLAGS_BY_NAME(node_id, name) \
-	DT_PWMS_CELL_BY_NAME(node_id, name, flags)
+	DT_PHA_BY_NAME_OR(node_id, pwms, name, flags, 0)
 
 /**
  * @brief Equivalent to DT_PWMS_FLAGS_BY_IDX(node_id, 0)
  * @param node_id node identifier for a node with a pwms property
- * @return the flags cell value at index 0
+ * @return the flags cell value at index 0, or zero if there is none
  * @see DT_PWMS_FLAGS_BY_IDX()
  */
 #define DT_PWMS_FLAGS(node_id) DT_PWMS_FLAGS_BY_IDX(node_id, 0)
@@ -454,7 +458,7 @@ extern "C" {
  * @brief Equivalent to DT_INST_PWMS_CELL_BY_IDX(inst, idx, flags)
  * @param inst DT_DRV_COMPAT instance number
  * @param idx logical index into pwms property
- * @return the flags cell value at index "idx"
+ * @return the flags cell value at index "idx", or zero if there is none
  * @see DT_INST_PWMS_CELL_BY_IDX()
  */
 #define DT_INST_PWMS_FLAGS_BY_IDX(inst, idx) \
@@ -465,7 +469,8 @@ extern "C" {
  * @param inst DT_DRV_COMPAT instance number
  * @param name lowercase-and-underscores name of a pwms element
  *             as defined by the node's pwm-names property
- * @return the flags cell value in the specifier at the named element
+ * @return the flags cell value in the specifier at the named element,
+ *         or zero if there is none
  * @see DT_INST_PWMS_CELL_BY_NAME()
  */
 #define DT_INST_PWMS_FLAGS_BY_NAME(inst, name) \
@@ -474,7 +479,7 @@ extern "C" {
 /**
  * @brief Equivalent to DT_INST_PWMS_FLAGS_BY_IDX(inst, 0)
  * @param inst DT_DRV_COMPAT instance number
- * @return the flags cell value at index 0
+ * @return the flags cell value at index 0, or zero if there is none
  * @see DT_INST_PWMS_FLAGS_BY_IDX()
  */
 #define DT_INST_PWMS_FLAGS(inst) DT_INST_PWMS_FLAGS_BY_IDX(inst, 0)
