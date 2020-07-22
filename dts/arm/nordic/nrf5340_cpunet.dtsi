@@ -52,7 +52,6 @@
 
 	soc {
 		sram1: memory@21000000 {
-			device_type = "memory";
 			compatible = "mmio-sram";
 		};
 

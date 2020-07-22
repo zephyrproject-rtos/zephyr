@@ -38,14 +38,12 @@
 	};
 
 	iccm0: iccm@ICCM_ADDR {
-		device_type = "memory";
 		compatible = "arc,iccm";
 		reg = <DT_ADDR(ICCM_ADDR) ICCM_SIZE>;
 	};
 
 	dccm0: dccm@DCCM_ADDR {
 		compatible = "arc,dccm";
-		device_type = "memory";
 		reg = <DT_ADDR(DCCM_ADDR) DCCM_SIZE>;
 	};
 
