@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2020 Nordic Smiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* I2C bus pins are exposed in the Arduino Uno header.
+ *
+ *  Bus        SDA          SCL
+ *          Pin   Hdr    Pin   Hdr
+ *  i2c1    PB9   D14    PB8   D15
+ *  i2c3    PC1   A4     PC0   A5
+ *
+ * Short D14 to A4, and D15 to A5, for the test to pass.
+ */
+
+&i2c1 {
+	eeprom0: eeprom@54 {
+		compatible = "atmel,at24";
+		reg = <0x54>;
+		label = "EEPROM_0";
+		size = <1024>;
+		pagesize = <16>;
+		address-width = <8>;
+		timeout = <5>;
+	};
+};
+
+&i2c3 {
+	eeprom1: eeprom@56 {
+		compatible = "atmel,at24";
+		reg = <0x56>;
+		label = "EEPROM_1";
+		size = <1024>;
+		pagesize = <16>;
+		address-width = <8>;
+		timeout = <5>;
+	};
+};
