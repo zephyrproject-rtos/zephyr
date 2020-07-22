@@ -396,7 +396,10 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 
 #if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 		/* AuxPtr flag */
-		if (pri_hdr_prev.aux_ptr) {
+		/* Need aux for connectable or scannable extended advertising */
+		if (pri_hdr_prev.aux_ptr ||
+		    ((evt_prop & (BT_HCI_LE_ADV_PROP_CONN |
+				  BT_HCI_LE_ADV_PROP_SCAN)))) {
 			pri_hdr->aux_ptr = 1;
 			pri_dptr += sizeof(struct pdu_adv_aux_ptr);
 		}
@@ -473,6 +476,20 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 		/* NOTE: TargetA, filled at enable and RPA timeout */
 
 		/* NOTE: AdvA, filled at enable and RPA timeout */
+
+#if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
+		/* Make sure aux is created if we have AuxPtr */
+		if (pri_hdr->aux_ptr) {
+			uint8_t err;
+
+			err = ull_adv_aux_hdr_set_clear(adv, 0, 0, NULL);
+			if (err) {
+				/* TODO: cleanup? */
+				return err;
+			}
+		}
+#endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
+
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 	} else if (pdu->len == 0) {
