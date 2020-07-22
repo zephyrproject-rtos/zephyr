@@ -16,6 +16,21 @@
 #define NSEC_PER_CYCLE \
 	(NSEC_PER_SEC / CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC)
 
+/* Specify accepted tolerance. On some Zephyr platforms  (e.g. nRF5x) the busy
+ * wait loop and the system timer are based on different mechanisms and may not
+ * align perfectly. 1 percent base intolerance is to cover CPU processing in the
+ * test.
+ */
+#if CONFIG_NRF_RTC_TIMER
+/* High frequency clock used for k_busy_wait may have up to 8% tolerance.
+ * Additionally, if RC is used for low frequency clock then it has 5% tolerance.
+ */
+#define TOLERANCE_PPC \
+	(1 + 8 + (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC) ? 5 : 0))
+#else
+#define TOLERANCE_PPC 1
+#endif
+
 /** req and rem are both NULL */
 void test_nanosleep_NULL_NULL(void)
 {
@@ -164,8 +179,6 @@ static void common(const uint32_t s, uint32_t ns)
 {
 	uint32_t then;
 	uint32_t now;
-	uint32_t dt;
-	uint64_t dt_ns;
 	int r;
 	struct timespec req = {s, ns};
 	struct timespec rem = {0, 0};
@@ -186,22 +199,19 @@ static void common(const uint32_t s, uint32_t ns)
 	zassert_equal(rem.tv_nsec, 0, "actual: %d expected: %d",
 		rem.tv_nsec, 0);
 
-	ns += s * NSEC_PER_SEC;
+	uint64_t exp_ns = s * NSEC_PER_SEC + ns;
+	uint64_t tolerance_ns = MAX(NSEC_PER_CYCLE,
+				    (TOLERANCE_PPC * exp_ns) / 100U);
+	uint64_t tck_ns = k_cyc_to_ns_ceil64((now == then)
+					     ? 1U
+					     : (now - then));
+	int64_t delta_ns = (int64_t)(exp_ns - tck_ns);
 
-	dt = now - then;
-	dt_ns = k_cyc_to_ns_ceil64(dt);
-	if (dt_ns == 0) {
-		/* k_cycle_get_32() does not seem to be completely accurate on
-		 * some virtual platforms in CI (some function calls to
-		 * nanosleep reportedly take 0ns).
-		 */
-		dt_ns = 1;
-	}
-
-	printk("dt_ns: %llu\n", dt_ns);
-
-	zassert_true(dt_ns >= ns, "expected dt_ns >= %d: actual: %d", (int)ns,
-		(int)dt_ns);
+	zassert_true((delta_ns < 0)
+		     ? ((uint64_t)-delta_ns <= tolerance_ns)
+		     : ((uint64_t)delta_ns <= tolerance_ns),
+		"error %lld beyond tolerance %llu for %llu vs %llu",
+		     delta_ns, tolerance_ns, exp_ns, tck_ns);
 
 	/* TODO: Upper bounds check when hr timers are available */
 }
@@ -209,7 +219,12 @@ static void common(const uint32_t s, uint32_t ns)
 /** sleep for 1ns */
 void test_nanosleep_0_1(void)
 {
-	common(0, 1);
+	if (IS_ENABLED(CONFIG_QEMU_TARGET)) {
+		/* QEMU target tick adjustment fails for 1 ns durations */
+		ztest_test_skip();
+	} else {
+		common(0, 1);
+	}
 }
 
 /** sleep for 500000000ns */
