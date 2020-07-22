@@ -1,0 +1,43 @@
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: ILI9163 162x132 Display Controller
+
+compatible: "ilitek,ili9163"
+
+include: spi-device.yaml
+
+properties:
+    reset-gpios:
+      type: phandle-array
+      required: false
+
+    cmd-data-gpios:
+      type: phandle-array
+      required: true
+
+    height:
+      type: int
+      required: true
+      description: Height in pixels of the panel driven by the controller
+
+    width:
+      type: int
+      required: true
+      description: Width in pixels of the panel driven by the controller
+
+    x-offset:
+      type: int
+      required: false
+      description: The column offset in pixels of the LCD to the controller memory
+
+    y-offset:
+      type: int
+      required: false
+      description: The row offset in pixels of the LCD to the controller memory
+
+    madc:
+      type: int
+      required: false
+      description: Memory Access Data Control

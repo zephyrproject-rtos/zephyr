@@ -1,0 +1,29 @@
+# ILI9163 display driver configuration options
+
+#
+# Copyright (c) 2020 Jabil Inc.
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig ILI9163
+	bool "ILI9163 display driver"
+	depends on SPI
+	help
+	Enable driver for ILI9163 display driver.
+
+if ILI9163
+
+choice
+	prompt "Color pixel format"
+	help
+	Specify the color pixel format of the ILI9163 display controller.
+
+config ILI9163_RGB565
+	bool "RGB565"
+
+config ILI9163_RGB888
+	bool "RGB888"
+
+endchoice
+
+endif #ILI9163
