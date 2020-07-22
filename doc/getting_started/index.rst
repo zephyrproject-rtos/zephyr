@@ -422,3 +422,6 @@ Here are some next steps for exploring Zephyr:
 * Check out :ref:`beyond-GSG` for additional setup alternatives and ideas
 * Discover :ref:`project-resources` for getting help from the Zephyr
   community
+* Explore open source projects to see how they are leveraging Zephyr:
+  * [Libre Solar Charge Controller Firmware](https://github.com/LibreSolar/charge-controller-firmware) - firmware for the Libre Solar Charge Controllers
+  * [ZMK Firmware](https://zmkfirmware.dev) - An open source mechanical keyboard firmware.
