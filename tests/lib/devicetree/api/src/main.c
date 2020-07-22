@@ -19,6 +19,25 @@
 #define TEST_IRQ	DT_NODELABEL(test_irq)
 #define TEST_TEMP	DT_NODELABEL(test_temp_sensor)
 
+#define TEST_I2C_DEV DT_PATH(test, i2c_11112222, test_i2c_dev_10)
+#define TEST_I2C_BUS DT_BUS(TEST_I2C_DEV)
+
+#define TEST_SPI DT_NODELABEL(test_spi)
+
+#define TEST_SPI_DEV_0 DT_PATH(test, spi_33334444, test_spi_dev_0)
+#define TEST_SPI_BUS_0 DT_BUS(TEST_SPI_DEV_0)
+
+#define TEST_SPI_DEV_1 DT_PATH(test, spi_33334444, test_spi_dev_1)
+#define TEST_SPI_BUS_1 DT_BUS(TEST_SPI_DEV_1)
+
+#define TEST_SPI_NO_CS DT_NODELABEL(test_spi_no_cs)
+#define TEST_SPI_DEV_NO_CS DT_NODELABEL(test_spi_no_cs)
+
+#define TA_HAS_COMPAT(compat) DT_NODE_HAS_COMPAT(TEST_ARRAYS, compat)
+
+#define TO_STRING(x) TO_STRING_(x)
+#define TO_STRING_(x) #x
+
 static void test_path_props(void)
 {
 	zassert_true(!strcmp(DT_LABEL(TEST_DEADBEEF), "TEST_GPIO_1"),
@@ -182,8 +201,6 @@ static void test_has_nodelabel(void)
 		      "TEST_NODELABEL_ALLCAPS");
 }
 
-#define TA_HAS_COMPAT(compat) DT_NODE_HAS_COMPAT(TEST_ARRAYS, compat)
-
 static void test_has_compat(void)
 {
 	unsigned int compats;
@@ -221,20 +238,6 @@ static void test_has_status(void)
 	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(disabled_gpio), okay),
 		      0, "vnd,disabled-compat not okay");
 }
-
-#define TEST_I2C_DEV DT_PATH(test, i2c_11112222, test_i2c_dev_10)
-#define TEST_I2C_BUS DT_BUS(TEST_I2C_DEV)
-
-#define TEST_SPI DT_NODELABEL(test_spi)
-
-#define TEST_SPI_DEV_0 DT_PATH(test, spi_33334444, test_spi_dev_0)
-#define TEST_SPI_BUS_0 DT_BUS(TEST_SPI_DEV_0)
-
-#define TEST_SPI_DEV_1 DT_PATH(test, spi_33334444, test_spi_dev_1)
-#define TEST_SPI_BUS_1 DT_BUS(TEST_SPI_DEV_1)
-
-#define TEST_SPI_NO_CS DT_NODELABEL(test_spi_no_cs)
-#define TEST_SPI_DEV_NO_CS DT_NODELABEL(test_spi_no_cs)
 
 static void test_bus(void)
 {
@@ -1118,9 +1121,6 @@ static void test_pwms(void)
 	zassert_equal(DT_INST_PWMS_FLAGS(0), 3, "pwm channel");
 }
 
-#define TO_STRING(x) TO_STRING_(x)
-#define TO_STRING_(x) #x
-
 static void test_macro_names(void)
 {
 	/* white box */
@@ -1142,6 +1142,9 @@ static void test_macro_names(void)
 
 	zassert_true(!strcmp(TO_STRING(CHILD_NODE_ID), TO_STRING(FULL_PATH_ID)),
 		     "child");
+
+#undef CHILD_NODE_ID
+#undef FULL_PATH_ID
 }
 
 static int a[] = DT_PROP(TEST_ARRAYS, a);
