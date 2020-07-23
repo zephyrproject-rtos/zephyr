@@ -211,6 +211,7 @@ static void ipv6_event_handler(struct net_mgmt_event_callback *cb,
 				memcpy(&laddr,
 				       &ipv6->unicast[i].address.in6_addr,
 				       sizeof(laddr));
+				break;
 			}
 		}
 	}
