@@ -3047,7 +3047,7 @@ class TestSuite(DisablePyTestCollectionMixin):
             for _, instance in inst.items():
                 handler_time = instance.metrics.get('handler_time', 0)
                 duration += handler_time
-                if full_report:
+                if full_report and not instance.build_only:
                     for k in instance.results.keys():
                         if instance.results[k] == 'PASS':
                             passes += 1
@@ -3056,6 +3056,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                         elif instance.results[k] == 'SKIP':
                             skips += 1
                         else:
+                            logger.info(f"result is {instance.results[k]} for {k}, counting as failure")
                             fails += 1
                 else:
                     if instance.status in ["error", "failed", "timeout"]:
@@ -3065,8 +3066,10 @@ class TestSuite(DisablePyTestCollectionMixin):
                             fails += 1
                     elif instance.status == 'skipped':
                         skips += 1
-                    else:
+                    elif instance.status == 'passed':
                         passes += 1
+                    else:
+                        logger.error(f"Unknown status {instance.status}")
 
             total = (errors + passes + fails + skips)
             # do not produce a report if no tests were actually run (only built)
@@ -3111,7 +3114,6 @@ class TestSuite(DisablePyTestCollectionMixin):
 
                 if full_report:
                     for k in instance.results.keys():
-
                         # remove testcases that are being re-run from exiting reports
                         for tc in eleTestsuite.findall(f'testcase/[@name="{k}"]'):
                             eleTestsuite.remove(tc)
@@ -3121,7 +3123,9 @@ class TestSuite(DisablePyTestCollectionMixin):
                             eleTestsuite, 'testcase',
                             classname=classname,
                             name="%s" % (k), time="%f" % handler_time)
-                        if instance.results[k] in ['FAIL', 'BLOCK']:
+
+                        if instance.results[k] in ['FAIL', 'BLOCK'] or \
+                            (instance.build_only and instance.status in ["error", "failed", "timeout"]):
                             if instance.results[k] == 'FAIL':
                                 el = ET.SubElement(
                                     eleTestcase,
@@ -3129,7 +3133,6 @@ class TestSuite(DisablePyTestCollectionMixin):
                                     type="failure",
                                     message="failed")
                             else:
-
                                 el = ET.SubElement(
                                     eleTestcase,
                                     'error',
@@ -3139,9 +3142,11 @@ class TestSuite(DisablePyTestCollectionMixin):
                             log_file = os.path.join(p, "handler.log")
                             el.text = self.process_log(log_file)
 
-                        elif instance.results[k] == 'PASS':
+                        elif instance.results[k] == 'PASS' \
+                            or (instance.build_only and instance.status in ["passed"]):
                             pass
-                        elif instance.results[k] == 'SKIP':
+                        elif instance.results[k] == 'SKIP' \
+                            or (instance.build_only and instance.status in ["skipped"]):
                             el = ET.SubElement(eleTestcase, 'skipped', type="skipped", message="Skipped")
                         else:
                             el = ET.SubElement(
@@ -3163,6 +3168,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                         classname=classname,
                         name="%s" % (instance.testcase.name),
                         time="%f" % handler_time)
+
                     if instance.status in ["error", "failed", "timeout"]:
                         failure = ET.SubElement(
                             eleTestcase,
