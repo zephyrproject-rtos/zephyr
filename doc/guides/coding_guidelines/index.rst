@@ -109,7 +109,8 @@ severity and the equivlent rules from other standards for reference.
       -  Advisory
       -  If a pointer to a structure or union is never dereferenced within a translation unit, then the implementation of the object should be hidden
       -  `DCL12-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152098/>`_
-      -  `Dir 4.8 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/D_04_08.c>`_
+      -  | `Dir 4.8 example 1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/D_04_08_1.c>`_
+         | `Dir 4.8 example 2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/D_04_08_2.c>`_
     * -  Dir 4.9
       -  Advisory
       -  A function should be used in preference to a function-like macro where they are interchangeable
@@ -155,7 +156,8 @@ severity and the equivlent rules from other standards for reference.
       -  Required
       -  A project shall not contain unreachable code
       -  `MSC07-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152362/>`_
-      -  `Rule 2.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_02_01.c>`_
+      -  | `Rule 2.1 example 1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_02_01_1.c>`_
+         | `Rule 2.1 example 2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_02_01_2.c>`_
     * -  Rule 2.2
       -  Required
       -  There shall be no dead code
@@ -200,7 +202,8 @@ severity and the equivlent rules from other standards for reference.
       -  Required
       -  External identifiers shall be distinct
       -  `DCL23-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152406/>`_
-      -  `Rule 5.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_01.c>`_
+      -  | `Rule 5.1 example 1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_01_1.c>`_
+         | `Rule 5.1 example 2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_01_2.c>`_
     * -  Rule 5.2
       -  Required
       -  Identifiers declared in the same scope and name space shall be distinct
@@ -235,12 +238,14 @@ severity and the equivlent rules from other standards for reference.
       -  Required
       -  Identifiers that define objects or functions with external linkage shall be unique
       -  N/A
-      -  `Rule 5.8 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_08.c>`_
+      -  | `Rule 5.8 example 1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_08_1.c>`_
+         | `Rule 5.8 example 2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_08_2.c>`_
     * -  Rule 5.9
       -  Advisory
       -  Identifiers that define objects or functions with internal linkage should be unique
       -  N/A
-      -  `Rule 5.9 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_09.c>`_
+      -  | `Rule 5.9 example 1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_09_1.c>`_
+         | `Rule 5.9 example 2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_09_2.c>`_
     * -  Rule 6.1
       -  Required
       -  Bit-fields shall only be declared with an appropriate type
@@ -295,12 +300,14 @@ severity and the equivlent rules from other standards for reference.
       -  Required
       -  An external object or function shall be declared once in one and only one file
       -  N/A
-      -  `Rule 8.5 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_05.c>`_
+      -  | `Rule 8.5 example 1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_05_1.c>`_
+         | `Rule 8.5 example 2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_05_2.c>`_
     * -  Rule 8.6
       -  Required
       -  An identifier with external linkage shall have exactly one external definition
       -  N/A
-      -  `Rule 8.6 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_06.c>`_
+      -  | `Rule 8.6 example 1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_06_1.c>`_
+         | `Rule 8.6 example 2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_06_2.c>`_
     * -  Rule 8.8
       -  Required
       -  The static storage class specifier shall be used in all declarations of objects and functions that have internal linkage
@@ -440,7 +447,8 @@ severity and the equivlent rules from other standards for reference.
       -  Required
       -  Initializer lists shall not contain persistent side effects
       -  N/A
-      -  `Rule 13.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_13_01.c>`_
+      -  | `Rule 13.1 example 1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_13_01_1.c>`_
+         | `Rule 13.1 example 2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_13_01_2.c>`_
     * -  Rule 13.2
       -  Required
       -  The value of an expression and its persistent side effects shall be the same under all permitted evaluation orders
@@ -460,7 +468,8 @@ severity and the equivlent rules from other standards for reference.
       -  Required
       -  The right hand operand of a logical && or || operator shall not contain persistent side effects
       -  `EXP10-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152207/>`_
-      -  `Rule 13.5 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_13_05.c>`_
+      -  | `Rule 13.5 example 1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_13_05_1.c>`_
+         | `Rule 13.5 example 2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_13_05_2.c>`_
     * -  Rule 13.6
       -  Mandatory
       -  The operand of the sizeof operator shall not contain any expression which has potential side effects
