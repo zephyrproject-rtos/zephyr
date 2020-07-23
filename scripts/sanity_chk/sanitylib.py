@@ -3204,6 +3204,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         with open(filename, 'wb') as report:
             report.write(result)
 
+        return fails, passes, errors, skips
 
     def csv_report(self, filename):
         with open(filename, "wt") as csvfile:
