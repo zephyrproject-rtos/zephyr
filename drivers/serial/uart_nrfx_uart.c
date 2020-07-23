@@ -969,6 +969,8 @@ static int uart_nrfx_init(struct device *dev)
 {
 	int err;
 
+	nrf_uart_disable(uart0_addr);
+
 	/* Setting default height state of the TX PIN to avoid glitches
 	 * on the line during peripheral activation/deactivation.
 	 */

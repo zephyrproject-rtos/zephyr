@@ -1268,6 +1268,7 @@ static int uarte_instance_init(struct device *dev,
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	struct uarte_nrfx_data *data = get_dev_data(dev);
 
+	nrf_uarte_disable(uarte);
 
 	nrf_gpio_pin_write(config->pseltxd, 1);
 	nrf_gpio_cfg_output(config->pseltxd);
