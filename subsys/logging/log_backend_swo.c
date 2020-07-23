@@ -63,7 +63,7 @@ static int char_out(uint8_t *data, size_t length, void *ctx)
 	return length;
 }
 
-LOG_OUTPUT_DEFINE(log_output, char_out, buf, sizeof(buf));
+LOG_OUTPUT_DEFINE(log_output_swo, char_out, buf, sizeof(buf));
 
 static void log_backend_swo_put(const struct log_backend *const backend,
 		struct log_msg *msg)
@@ -71,7 +71,7 @@ static void log_backend_swo_put(const struct log_backend *const backend,
 	uint32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_SWO_SYST_ENABLE) ?
 		LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
 
-	log_backend_std_put(&log_output, flag, msg);
+	log_backend_std_put(&log_output_swo, flag, msg);
 }
 
 static void log_backend_swo_init(void)
@@ -108,7 +108,7 @@ static void dropped(const struct log_backend *const backend, uint32_t cnt)
 {
 	ARG_UNUSED(backend);
 
-	log_backend_std_dropped(&log_output, cnt);
+	log_backend_std_dropped(&log_output_swo, cnt);
 }
 
 static void log_backend_swo_sync_string(const struct log_backend *const backend,
@@ -118,7 +118,7 @@ static void log_backend_swo_sync_string(const struct log_backend *const backend,
 	uint32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_SWO_SYST_ENABLE) ?
 		LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
 
-	log_backend_std_sync_string(&log_output, flag, src_level,
+	log_backend_std_sync_string(&log_output_swo, flag, src_level,
 				    timestamp, fmt, ap);
 }
 
@@ -130,7 +130,7 @@ static void log_backend_swo_sync_hexdump(
 	uint32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_SWO_SYST_ENABLE) ?
 		LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
 
-	log_backend_std_sync_hexdump(&log_output, flag, src_level,
+	log_backend_std_sync_hexdump(&log_output_swo, flag, src_level,
 				     timestamp, metadata, data, length);
 }
 

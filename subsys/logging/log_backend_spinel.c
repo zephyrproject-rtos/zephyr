@@ -20,7 +20,7 @@ static bool panic_mode;
 
 static int write(uint8_t *data, size_t length, void *ctx);
 
-LOG_OUTPUT_DEFINE(log_output, write, char_buf, sizeof(char_buf));
+LOG_OUTPUT_DEFINE(log_output_spinel, write, char_buf, sizeof(char_buf));
 
 static inline bool is_panic_mode(void)
 {
@@ -33,7 +33,7 @@ static void put(const struct log_backend *const backend,
 	/* prevent adding CRLF, which may crash spinel decoding */
 	uint32_t flag = LOG_OUTPUT_FLAG_CRLF_NONE;
 
-	log_backend_std_put(&log_output, flag, msg);
+	log_backend_std_put(&log_output_spinel, flag, msg);
 }
 
 static void sync_string(const struct log_backend *const backend,
@@ -43,7 +43,7 @@ static void sync_string(const struct log_backend *const backend,
 	/* prevent adding CRLF, which may crash spinel decoding */
 	uint32_t flag = LOG_OUTPUT_FLAG_CRLF_NONE;
 
-	log_backend_std_sync_string(&log_output, flag, src_level,
+	log_backend_std_sync_string(&log_output_spinel, flag, src_level,
 				    timestamp, fmt, ap);
 }
 
@@ -55,7 +55,7 @@ static void sync_hexdump(const struct log_backend *const backend,
 	/* prevent adding CRLF, which may crash spinel decoding */
 	uint32_t flag = LOG_OUTPUT_FLAG_CRLF_NONE;
 
-	log_backend_std_sync_hexdump(&log_output, flag, src_level,
+	log_backend_std_sync_hexdump(&log_output_spinel, flag, src_level,
 				     timestamp, metadata, data, length);
 }
 
@@ -74,7 +74,7 @@ static void dropped(const struct log_backend *const backend, uint32_t cnt)
 {
 	ARG_UNUSED(backend);
 
-	log_backend_std_dropped(&log_output, cnt);
+	log_backend_std_dropped(&log_output_spinel, cnt);
 }
 
 static int write(uint8_t *data, size_t length, void *ctx)

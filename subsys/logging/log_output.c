@@ -229,9 +229,9 @@ static void color_print(const struct log_output *log_output,
 			bool color, bool start, uint32_t level)
 {
 	if (color) {
-		const char *color = start && (colors[level] != NULL) ?
+		const char *log_color = start && (colors[level] != NULL) ?
 				colors[level] : LOG_COLOR_CODE_DEFAULT;
-		print_formatted(log_output, "%s", color);
+		print_formatted(log_output, "%s", log_color);
 	}
 }
 
