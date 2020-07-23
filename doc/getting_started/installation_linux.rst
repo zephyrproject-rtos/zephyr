@@ -87,8 +87,8 @@ need one.
 
          sudo dnf group install "Development Tools" "C Development Tools and Libraries"
          dnf install git cmake ninja-build gperf ccache dfu-util dtc wget \
-           python3-pip python3-tkinter xz file glibc-devel.i686 libstdc++-devel.i686 \
-           SDL2-devel
+           python3-psutil python3-pip python3-tkinter xz file \
+           glibc-devel.i686 libstdc++-devel.i686 SDL2-devel
 
    .. group-tab:: Clear Linux
 
