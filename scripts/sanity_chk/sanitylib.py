@@ -28,6 +28,7 @@ import xml.etree.ElementTree as ET
 import logging
 import pty
 from pathlib import Path
+import traceback
 from distutils.spawn import find_executable
 from colorama import Fore
 import pickle
@@ -2952,7 +2953,9 @@ class TestSuite(DisablePyTestCollectionMixin):
                     try:
                         data = future.result()
                     except Exception as exc:
-                        logger.error('%r generated an exception: %s' % (test, exc))
+                        logger.error('%r generated an exception:' % (test,))
+                        for line in traceback.format_exc().splitlines():
+                            logger.error(line)
                         sys.exit('%r generated an exception: %s' % (test, exc))
 
                     else:
