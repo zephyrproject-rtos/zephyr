@@ -7,7 +7,7 @@
 #include <drivers/clock_control.h>
 #include "nrf_clock_calibration.h"
 #include <drivers/clock_control/nrf_clock_control.h>
-#include <hal/nrf_clock.h>
+#include <nrfx_clock.h>
 #include <logging/log.h>
 #include <stdlib.h>
 
@@ -109,7 +109,7 @@ static void start_hw_cal(void)
 		*(volatile uint32_t *)0x40000C34 = 0x00000002;
 	}
 
-	nrf_clock_task_trigger(NRF_CLOCK, NRF_CLOCK_TASK_CAL);
+	nrfx_clock_calibration_start();
 	calib_skip_cnt = CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP;
 }
 
@@ -249,12 +249,6 @@ static inline struct device *temp_device(void)
 
 void z_nrf_clock_calibration_init(struct onoff_manager *onoff_mgrs)
 {
-	/* Anomaly 36: After watchdog timeout reset, CPU lockup reset, soft
-	 * reset, or pin reset EVENTS_DONE and EVENTS_CTTO are not reset.
-	 */
-	nrf_clock_event_clear(NRF_CLOCK, NRF_CLOCK_EVENT_DONE);
-	nrf_clock_int_enable(NRF_CLOCK, NRF_CLOCK_INT_DONE_MASK);
-
 	mgrs = onoff_mgrs;
 	total_cnt = 0;
 	total_skips_cnt = 0;
@@ -300,10 +294,7 @@ void z_nrf_clock_calibration_lfclk_stopped(void)
 
 void z_nrf_clock_calibration_isr(void)
 {
-	if (nrf_clock_event_check(NRF_CLOCK, NRF_CLOCK_EVENT_DONE)) {
-		nrf_clock_event_clear(NRF_CLOCK, NRF_CLOCK_EVENT_DONE);
-		on_hw_cal_done();
-	}
+	on_hw_cal_done();
 }
 
 int z_nrf_clock_calibration_count(void)

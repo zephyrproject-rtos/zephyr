@@ -11,8 +11,9 @@
 #include <drivers/clock_control/nrf_clock_control.h>
 #include "nrf_clock_calibration.h"
 #include <logging/log.h>
-#include <hal/nrf_power.h>
 #include <shell/shell.h>
+#include <nrfx_clock.h>
+#include <nrfx_power.h>
 
 LOG_MODULE_REGISTER(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
@@ -78,33 +79,6 @@ struct nrf_clock_control_config {
 static atomic_t hfclk_users;
 static uint64_t hf_start_tstamp;
 static uint64_t hf_stop_tstamp;
-
-/* Return true if given event has enabled interrupt and is triggered. Event
- * is cleared.
- */
-static bool clock_event_check_and_clean(nrf_clock_event_t evt, uint32_t intmask)
-{
-	bool ret = nrf_clock_event_check(NRF_CLOCK, evt) &&
-			nrf_clock_int_enable_check(NRF_CLOCK, intmask);
-
-	if (ret) {
-		nrf_clock_event_clear(NRF_CLOCK, evt);
-	}
-
-	return ret;
-}
-
-static void clock_irqs_enable(void)
-{
-	nrf_clock_int_enable(NRF_CLOCK,
-			(NRF_CLOCK_INT_HF_STARTED_MASK |
-			 NRF_CLOCK_INT_LF_STARTED_MASK |
-			 COND_CODE_1(CONFIG_USB_NRFX,
-				(NRF_POWER_INT_USBDETECTED_MASK |
-				 NRF_POWER_INT_USBREMOVED_MASK |
-				 NRF_POWER_INT_USBPWRRDY_MASK),
-				(0))));
-}
 
 static struct nrf_clock_control_sub_data *get_sub_data(struct device *dev,
 					      enum clock_control_nrf_type type)
@@ -369,7 +343,7 @@ static int async_start(struct device *dev, clock_control_subsys_t subsys,
 	subdata->cb = data->cb;
 	subdata->user_data = data->user_data;
 
-	 get_sub_config(dev, type)->start();
+	get_sub_config(dev, type)->start();
 
 	return 0;
 }
@@ -499,6 +473,65 @@ void z_nrf_clock_control_lf_on(enum nrf_lfclk_start_mode start_mode)
 	}
 }
 
+static void clock_event_handler(nrfx_clock_evt_type_t event)
+{
+	struct device *dev = DEVICE_GET(clock_nrf);
+	switch (event) {
+	case NRFX_CLOCK_EVT_HFCLK_STARTED:
+	{
+		struct nrf_clock_control_sub_data *data =
+				get_sub_data(dev, CLOCK_CONTROL_NRF_TYPE_HFCLK);
+
+		/* Check needed due to anomaly 201:
+		 * HFCLKSTARTED may be generated twice.
+		 */
+		if (GET_STATUS(data->flags) == CLOCK_CONTROL_STATUS_STARTING) {
+			clkstarted_handle(dev, CLOCK_CONTROL_NRF_TYPE_HFCLK);
+		}
+
+		break;
+	}
+	case NRFX_CLOCK_EVT_LFCLK_STARTED:
+		if (IS_ENABLED(
+			CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION)) {
+			z_nrf_clock_calibration_lfclk_started();
+		}
+		clkstarted_handle(dev, CLOCK_CONTROL_NRF_TYPE_LFCLK);
+		break;
+	case NRFX_CLOCK_EVT_CAL_DONE:
+		if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION)) {
+			z_nrf_clock_calibration_isr();
+		}
+		break;
+	default:
+		__ASSERT_NO_MSG(0);
+		break;
+	}
+}
+
+
+#if defined(CONFIG_USB_NRFX)
+static void usb_event_handler(nrfx_power_usb_evt_t event)
+{
+	extern void usb_dc_nrfx_power_event_callback(nrfx_power_usb_evt_t event);
+
+	switch (event) {
+	case NRFX_POWER_USB_EVT_DETECTED:
+		usb_dc_nrfx_power_event_callback(NRFX_POWER_USB_EVT_DETECTED);
+		break;
+	case NRFX_POWER_USB_EVT_REMOVED:
+		usb_dc_nrfx_power_event_callback(NRFX_POWER_USB_EVT_REMOVED);
+		break;
+	case NRFX_POWER_USB_EVT_READY:
+		usb_dc_nrfx_power_event_callback(NRFX_POWER_USB_EVT_READY);
+		break;
+	default:
+		__ASSERT_NO_MSG(0);
+		break;
+	}
+}
+#endif
+
 /* Note: this function has public linkage, and MUST have this
  * particular name.  The platform architecture itself doesn't care,
  * but there is a test (tests/kernel/arm_irq_vector_table) that needs
@@ -511,18 +544,26 @@ void nrf_power_clock_isr(void *arg);
 
 static int clk_init(struct device *dev)
 {
-	int err;
+	nrfx_err_t nrfx_err;
 	static const struct onoff_transitions transitions = {
 		.start = onoff_start,
 		.stop = onoff_stop
 	};
 
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
-		    nrf_power_clock_isr, 0, 0);
-
+		    nrfx_isr, nrfx_power_clock_irq_handler, 0);
 	irq_enable(DT_INST_IRQN(0));
 
-	nrf_clock_lf_src_set(NRF_CLOCK, CLOCK_CONTROL_NRF_K32SRC);
+#if (defined(CONFIG_USB_NRFX) && defined(CONFIG_SOC_SERIES_NRF53X))
+	IRQ_CONNECT(USBREGULATOR_IRQn, DT_INST_IRQ(0, priority),
+		    nrfx_usbreg_irq_handler, 0, 0);
+	irq_enable(USBREGULATOR_IRQn);
+#endif
+
+	nrfx_err = nrfx_clock_init(clock_event_handler);
+	if (nrfx_err != NRFX_SUCCESS) {
+		return -EIO;
+	}
 
 	if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION)) {
 		struct nrf_clock_control_data *data = dev->driver_data;
@@ -530,10 +571,11 @@ static int clk_init(struct device *dev)
 		z_nrf_clock_calibration_init(data->mgr);
 	}
 
-	clock_irqs_enable();
+	nrfx_clock_enable();
 
 	for (enum clock_control_nrf_type i = 0;
 		i < CLOCK_CONTROL_NRF_TYPE_COUNT; i++) {
+		int err;
 		struct nrf_clock_control_sub_data *subdata =
 						get_sub_data(dev, i);
 
@@ -546,8 +588,17 @@ static int clk_init(struct device *dev)
 		subdata->flags = CLOCK_CONTROL_STATUS_OFF;
 	}
 
+#if defined(CONFIG_USB_NRFX)
+	static const nrfx_power_usbevt_config_t config = {
+		.handler = usb_event_handler
+	};
+
+	nrfx_power_usbevt_init(&config);
+	nrfx_power_usbevt_enable();
+#endif
 	return 0;
 }
+
 static const struct clock_control_driver_api clock_control_api = {
 	.on = api_blocking_start,
 	.off = api_stop,
@@ -576,98 +627,6 @@ DEVICE_AND_API_INIT(clock_nrf, DT_INST_LABEL(0),
 		    clk_init, &data, &config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &clock_control_api);
-
-#if defined(CONFIG_USB_NRFX)
-static bool power_event_check_and_clean(nrf_power_event_t evt, uint32_t intmask)
-{
-	bool ret = nrf_power_event_check(NRF_POWER, evt) &&
-			nrf_power_int_enable_check(NRF_POWER, intmask);
-
-	if (ret) {
-		nrf_power_event_clear(NRF_POWER, evt);
-	}
-
-	return ret;
-}
-#endif
-
-static void usb_power_isr(void)
-{
-#if defined(CONFIG_USB_NRFX)
-	extern void usb_dc_nrfx_power_event_callback(nrf_power_event_t event);
-
-	if (power_event_check_and_clean(NRF_POWER_EVENT_USBDETECTED,
-					NRF_POWER_INT_USBDETECTED_MASK)) {
-		usb_dc_nrfx_power_event_callback(NRF_POWER_EVENT_USBDETECTED);
-	}
-
-	if (power_event_check_and_clean(NRF_POWER_EVENT_USBPWRRDY,
-					NRF_POWER_INT_USBPWRRDY_MASK)) {
-		usb_dc_nrfx_power_event_callback(NRF_POWER_EVENT_USBPWRRDY);
-	}
-
-	if (power_event_check_and_clean(NRF_POWER_EVENT_USBREMOVED,
-					NRF_POWER_INT_USBREMOVED_MASK)) {
-		usb_dc_nrfx_power_event_callback(NRF_POWER_EVENT_USBREMOVED);
-	}
-#endif
-}
-
-void nrf_power_clock_isr(void *arg)
-{
-	ARG_UNUSED(arg);
-	struct device *dev = DEVICE_GET(clock_nrf);
-
-	if (clock_event_check_and_clean(NRF_CLOCK_EVENT_HFCLKSTARTED,
-					NRF_CLOCK_INT_HF_STARTED_MASK)) {
-		struct nrf_clock_control_sub_data *data =
-				get_sub_data(dev, CLOCK_CONTROL_NRF_TYPE_HFCLK);
-
-		/* Check needed due to anomaly 201:
-		 * HFCLKSTARTED may be generated twice.
-		 *
-		 * Also software should be notified about clock being on only
-		 * if generic request occured.
-		 */
-		if ((GET_STATUS(data->flags) == CLOCK_CONTROL_STATUS_STARTING)
-			&& (hfclk_users & HF_USER_GENERIC)) {
-			clkstarted_handle(dev, CLOCK_CONTROL_NRF_TYPE_HFCLK);
-		}
-	}
-
-	if (clock_event_check_and_clean(NRF_CLOCK_EVENT_LFCLKSTARTED,
-					NRF_CLOCK_INT_LF_STARTED_MASK)) {
-		if (IS_ENABLED(
-			CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION)) {
-			z_nrf_clock_calibration_lfclk_started();
-		}
-		clkstarted_handle(dev, CLOCK_CONTROL_NRF_TYPE_LFCLK);
-	}
-
-	usb_power_isr();
-
-	if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION)) {
-		z_nrf_clock_calibration_isr();
-	}
-}
-
-#ifdef CONFIG_USB_NRFX
-void nrf5_power_usb_power_int_enable(bool enable)
-{
-	uint32_t mask;
-
-	mask = NRF_POWER_INT_USBDETECTED_MASK |
-	       NRF_POWER_INT_USBREMOVED_MASK |
-	       NRF_POWER_INT_USBPWRRDY_MASK;
-
-	if (enable) {
-		nrf_power_int_enable(NRF_POWER, mask);
-		irq_enable(DT_INST_IRQN(0));
-	} else {
-		nrf_power_int_disable(NRF_POWER, mask);
-	}
-}
-#endif
 
 static int cmd_status(const struct shell *shell, size_t argc, char **argv)
 {
