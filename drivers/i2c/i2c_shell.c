@@ -226,7 +226,7 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;
 	entry->help = NULL;
-	entry->subcmd = &dsub_device_name;
+	entry->subcmd = NULL;
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_i2c_cmds,
