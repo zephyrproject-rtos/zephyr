@@ -23,6 +23,8 @@ Pins Assignment of the Adafruit 2.8" TFT Touch Shield v2
 +=======================+=============================================+
 | D4                    | MicroSD SPI CSn                             |
 +-----------------------+---------------------------------------------+
+| D7                    | Touch Controller IRQ (see note below)       |
++-----------------------+---------------------------------------------+
 | D8                    | STMPE610 SPI CSn (Resistive Touch Version)  |
 +-----------------------+---------------------------------------------+
 | D9                    | ILI9341 DC       (Data/Command)             |
@@ -39,6 +41,11 @@ Pins Assignment of the Adafruit 2.8" TFT Touch Shield v2
 +-----------------------+---------------------------------------------+
 | SCL                   | FT6206 SCL       (Capacitive Touch Version) |
 +-----------------------+---------------------------------------------+
+
+.. note::
+   Touch controller IRQ line is not connected by default. You will need to
+   solder the ``ICSP_SI1`` jumper to use it. You will also need to adjust
+   driver configuration and its Device Tree entry to make use of it.
 
 Requirements
 ************
