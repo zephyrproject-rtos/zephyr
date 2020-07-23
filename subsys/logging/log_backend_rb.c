@@ -81,9 +81,9 @@ static int char_out(uint8_t *data, size_t length, void *ctx)
 }
 
 /* magic and log id takes space */
-static uint8_t buf[CONFIG_LOG_BACKEND_RB_SLOT_SIZE - 4];
+static uint8_t rb_log_buf[CONFIG_LOG_BACKEND_RB_SLOT_SIZE - 4];
 
-LOG_OUTPUT_DEFINE(log_output, char_out, buf, sizeof(buf));
+LOG_OUTPUT_DEFINE(log_output_rb, char_out, rb_log_buf, sizeof(rb_log_buf));
 
 static void put(const struct log_backend *const backend,
 		struct log_msg *msg)
@@ -96,21 +96,21 @@ static void put(const struct log_backend *const backend,
 		flags |= LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
 	}
 
-	log_output_msg_process(&log_output, msg, flags);
+	log_output_msg_process(&log_output_rb, msg, flags);
 
 	log_msg_put(msg);
 }
 
 static void panic(struct log_backend const *const backend)
 {
-	log_output_flush(&log_output);
+	log_output_flush(&log_output_rb);
 }
 
 static void dropped(const struct log_backend *const backend, uint32_t cnt)
 {
 	ARG_UNUSED(backend);
 
-	log_output_dropped_process(&log_output, cnt);
+	log_output_dropped_process(&log_output_rb, cnt);
 }
 
 static void sync_string(const struct log_backend *const backend,
@@ -125,7 +125,8 @@ static void sync_string(const struct log_backend *const backend,
 	}
 
 	key = irq_lock();
-	log_output_string(&log_output, src_level, timestamp, fmt, ap, flags);
+	log_output_string(&log_output_rb, src_level,
+			  timestamp, fmt, ap, flags);
 	irq_unlock(key);
 }
 
@@ -141,7 +142,7 @@ static void sync_hexdump(const struct log_backend *const backend,
 	}
 
 	key = irq_lock();
-	log_output_hexdump(&log_output, src_level, timestamp,
+	log_output_hexdump(&log_output_rb, src_level, timestamp,
 			   metadata, data, length, flags);
 	irq_unlock(key);
 }

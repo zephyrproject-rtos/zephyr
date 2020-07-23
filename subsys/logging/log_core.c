@@ -760,13 +760,14 @@ uint32_t z_impl_log_filter_set(struct log_backend const *const backend,
 		uint32_t *filters = log_dynamic_filters_get(src_id);
 
 		if (backend == NULL) {
-			struct log_backend const *backend;
+			struct log_backend const *iter_backend;
 			uint32_t max = 0U;
 			uint32_t current;
 
 			for (int i = 0; i < log_backend_count_get(); i++) {
-				backend = log_backend_get(i);
-				current = log_filter_set(backend, domain_id,
+				iter_backend = log_backend_get(i);
+				current = log_filter_set(iter_backend,
+							 domain_id,
 							 src_id, level);
 				max = MAX(current, max);
 			}
