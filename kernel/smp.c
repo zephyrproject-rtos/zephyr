@@ -63,11 +63,11 @@ void z_smp_release_global_lock(struct k_thread *thread)
 #if CONFIG_MP_NUM_CPUS > 1
 static FUNC_NORETURN void smp_init_top(void *arg)
 {
-	atomic_t *start_flag = arg;
+	atomic_t *cpu_start_flag = arg;
 	struct k_thread dummy_thread;
 
 	/* Wait for the signal to begin scheduling */
-	while (!atomic_get(start_flag)) {
+	while (!atomic_get(cpu_start_flag)) {
 	}
 
 	z_dummy_thread_init(&dummy_thread);
