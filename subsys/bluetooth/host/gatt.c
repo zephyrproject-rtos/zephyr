@@ -4511,34 +4511,6 @@ static int bt_gatt_store_cf(struct bt_conn *conn)
 
 }
 
-void bt_gatt_disconnected(struct bt_conn *conn)
-{
-	BT_DBG("conn %p", conn);
-	bt_gatt_foreach_attr(0x0001, 0xffff, disconnected_cb, conn);
-
-#if defined(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE)
-	gatt_ccc_conn_unqueue(conn);
-
-	if (gatt_ccc_conn_queue_is_empty()) {
-		k_delayed_work_cancel(&gatt_ccc_store.work);
-	}
-#endif
-
-	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
-	    bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
-		bt_gatt_store_ccc(conn->id, &conn->le.dst);
-		bt_gatt_store_cf(conn);
-	}
-
-#if defined(CONFIG_BT_GATT_CLIENT)
-	remove_subscriptions(conn);
-#endif /* CONFIG_BT_GATT_CLIENT */
-
-#if defined(CONFIG_BT_GATT_CACHING)
-	remove_cf_cfg(conn);
-#endif
-}
-
 static struct gatt_cf_cfg *find_cf_cfg_by_addr(uint8_t id,
 					       const bt_addr_le_t *addr)
 {
@@ -4986,4 +4958,32 @@ int bt_gatt_clear(uint8_t id, const bt_addr_le_t *addr)
 	}
 
 	return 0;
+}
+
+void bt_gatt_disconnected(struct bt_conn *conn)
+{
+	BT_DBG("conn %p", conn);
+	bt_gatt_foreach_attr(0x0001, 0xffff, disconnected_cb, conn);
+
+#if defined(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE)
+	gatt_ccc_conn_unqueue(conn);
+
+	if (gatt_ccc_conn_queue_is_empty()) {
+		k_delayed_work_cancel(&gatt_ccc_store.work);
+	}
+#endif
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
+	    bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+		bt_gatt_store_ccc(conn->id, &conn->le.dst);
+		bt_gatt_store_cf(conn);
+	}
+
+#if defined(CONFIG_BT_GATT_CLIENT)
+	remove_subscriptions(conn);
+#endif /* CONFIG_BT_GATT_CLIENT */
+
+#if defined(CONFIG_BT_GATT_CACHING)
+	remove_cf_cfg(conn);
+#endif
 }
