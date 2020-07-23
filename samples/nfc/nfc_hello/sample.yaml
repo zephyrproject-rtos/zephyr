@@ -1,9 +1,0 @@
-sample:
-  description: Test an elementary signal-through with NFC module connected to the second UART.
-  name: NFC Sample
-tests:
-  sample.nfc.hello:
-    arch_whitelist: x86 arm
-    filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
-    tags: nfc
-    harness: nfc
