@@ -11,7 +11,7 @@ resolution of 320x240 pixels, is based on the ILI9341 controller.
 This shield comes with a resistive (STMPE610 controller)
 or capacitive (FT6206 controller) touchscreen. While the
 Zephyr RTOS supports display output to these screens,
-it currently does not support touchscreen input.
+touchscreen input is supported only on Capacitive Touch version.
 More information about the shield can be found
 at the `Adafruit 2.8" TFT Touch Shield v2 website`_.
 
