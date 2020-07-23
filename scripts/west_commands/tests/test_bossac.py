@@ -19,18 +19,21 @@ TEST_BOSSAC_PORT = 'test-bossac-serial'
 TEST_OFFSET = 1234
 TEST_FLASH_ADDRESS = 5678
 
-EXPECTED_COMMANDS = [
+EXPECTED_COMMANDS_V170 = [
     ['stty', '-F', TEST_BOSSAC_PORT, 'raw', 'ispeed', '1200', 'ospeed', '1200',
      'cs8', '-cstopb', 'ignpar', 'eol', '255', 'eof', '255'],
     ['bossac', '-p', TEST_BOSSAC_PORT, '-R', '-e', '-w', '-v',
      '-b', RC_KERNEL_BIN],
 ]
 
-EXPECTED_COMMANDS_WITH_OFFSET = [
-    ['stty', '-F', TEST_BOSSAC_PORT, 'raw', 'ispeed', '1200', 'ospeed', '1200',
-     'cs8', '-cstopb', 'ignpar', 'eol', '255', 'eof', '255'],
+EXPECTED_COMMANDS = [
     ['bossac', '-p', TEST_BOSSAC_PORT, '-R', '-e', '-w', '-v',
-     '-b', RC_KERNEL_BIN, '-o', str(TEST_OFFSET)],
+     '-b', RC_KERNEL_BIN, '--arduino-erase'],
+]
+
+EXPECTED_COMMANDS_WITH_OFFSET = [
+    ['bossac', '-p', TEST_BOSSAC_PORT, '-R', '-e', '-w', '-v',
+     '-b', RC_KERNEL_BIN, '-o', str(TEST_OFFSET), '--arduino-erase'],
 ]
 
 EXPECTED_COMMANDS_WITH_FLASH_ADDRESS = [
@@ -57,7 +60,33 @@ EXPECTED_COMMANDS_WITH_FLASH_ADDRESS = [
 def require_patch(program):
     assert program in ['bossac', 'stty']
 
-@patch('runners.bossac.BossacBinaryRunner.supports', return_value=True)
+
+def supports_none(name):
+    return False
+
+
+def supports_offset(name):
+    return name == '--offset'
+
+
+def supports_erase(name):
+    return name == '--arduino-erase'
+
+
+def supports_all(name):
+    return True
+
+
+@patch('runners.bossac.BossacBinaryRunner.supports', side_effect=supports_none)
+@patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
+@patch('runners.core.ZephyrBinaryRunner.check_call')
+def test_bossac_init_v170(cc, req, supports, runner_config):
+    '''Test commands when BOSSA v1.7.0 is detected.'''
+    runner = BossacBinaryRunner(runner_config, port=TEST_BOSSAC_PORT)
+    runner.run('flash')
+    assert cc.call_args_list == [call(x) for x in EXPECTED_COMMANDS_V170]
+
+@patch('runners.bossac.BossacBinaryRunner.supports', side_effect=supports_all)
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
 def test_bossac_init(cc, req, supports, runner_config):
@@ -67,7 +96,7 @@ def test_bossac_init(cc, req, supports, runner_config):
     runner.run('flash')
     assert cc.call_args_list == [call(x) for x in EXPECTED_COMMANDS_WITH_OFFSET]
 
-@patch('runners.bossac.BossacBinaryRunner.supports', return_value=True)
+@patch('runners.bossac.BossacBinaryRunner.supports', side_effect=supports_all)
 @patch('runners.core.BuildConfiguration._init')
 @patch('runners.bossac.BossacBinaryRunner.get_flash_offset',
        return_value=None)
@@ -84,7 +113,7 @@ def test_bossac_create(cc, req, gfa, bcfg, supports, runner_config):
     assert cc.call_args_list == [call(x) for x in EXPECTED_COMMANDS]
 
 
-@patch('runners.bossac.BossacBinaryRunner.supports', return_value=True)
+@patch('runners.bossac.BossacBinaryRunner.supports', side_effect=supports_all)
 @patch('runners.core.BuildConfiguration._init')
 @patch('runners.bossac.BossacBinaryRunner.get_flash_offset',
        return_value=TEST_FLASH_ADDRESS)
@@ -103,7 +132,7 @@ def test_bossac_create_with_offset(cc, req, gfa, bcfg, supports,
     assert cc.call_args_list == [call(x) for x in EXPECTED_COMMANDS_WITH_OFFSET]
 
 
-@patch('runners.bossac.BossacBinaryRunner.supports', return_value=True)
+@patch('runners.bossac.BossacBinaryRunner.supports', side_effect=supports_offset)
 @patch('runners.core.BuildConfiguration._init')
 @patch('runners.bossac.BossacBinaryRunner.get_flash_offset',
        return_value=TEST_FLASH_ADDRESS)

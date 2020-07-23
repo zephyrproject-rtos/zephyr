@@ -108,13 +108,6 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
 
         self.require(self.bossac)
 
-        if platform.system() == 'Linux':
-            self.require('stty')
-            cmd_stty = ['stty', '-F', self.port, 'raw', 'ispeed', '1200',
-                        'ospeed', '1200', 'cs8', '-cstopb', 'ignpar', 'eol', '255',
-                        'eof', '255']
-            self.check_call(cmd_stty)
-
         cmd_flash = [self.bossac, '-p', self.port, '-R', '-e', '-w', '-v',
                      '-b', self.cfg.bin_file]
 
@@ -122,5 +115,14 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
 
         if offset:
             cmd_flash += ['-o', '%s' % offset]
+
+        if self.supports('--arduino-erase'):
+            cmd_flash += ['--arduino-erase']
+        else:
+            self.require('stty')
+            cmd_stty = ['stty', '-F', self.port, 'raw', 'ispeed', '1200',
+                        'ospeed', '1200', 'cs8', '-cstopb', 'ignpar', 'eol', '255',
+                        'eof', '255']
+            self.check_call(cmd_stty)
 
         self.check_call(cmd_flash)
