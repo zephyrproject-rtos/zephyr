@@ -271,15 +271,6 @@ static bool tab_prepare(const struct shell *shell,
 	return true;
 }
 
-/* Empty command is identified by null handler and subcommand but contrary
- * to array termination null command, it has non-null syntax address.
- */
-static inline bool is_empty_cmd(const struct shell_static_entry *entry)
-{
-	return entry->syntax &&
-		(entry->handler == NULL) && (entry->subcmd == NULL);
-}
-
 static inline bool is_completion_candidate(const char *candidate,
 					   const char *str, size_t len)
 {
@@ -302,10 +293,9 @@ static void find_completion_candidates(const struct shell *shell,
 
 	while ((candidate = shell_cmd_get(cmd, idx, &dloc)) != NULL) {
 		bool is_candidate;
-
 		is_candidate = is_completion_candidate(candidate->syntax,
 						incompl_cmd, incompl_cmd_len);
-		if (!is_empty_cmd(candidate) && is_candidate) {
+		if (is_candidate) {
 			*longest = Z_MAX(strlen(candidate->syntax), *longest);
 			if (*cnt == 0) {
 				*first_idx = idx;
@@ -389,17 +379,14 @@ static void tab_options_print(const struct shell *shell,
 	tab_item_print(shell, SHELL_INIT_OPTION_PRINTER, longest);
 
 	while (cnt) {
-		bool is_empty;
-
 		/* shell->ctx->active_cmd can be safely used outside of command
 		 * context to save stack
 		 */
 		match = shell_cmd_get(cmd, idx, &shell->ctx->active_cmd);
 		__ASSERT_NO_MSG(match != NULL);
 		idx++;
-		is_empty = is_empty_cmd(match);
-		if (is_empty || (str && match->syntax &&
-		    !is_completion_candidate(match->syntax, str, str_len))) {
+		if (str && match->syntax &&
+		    !is_completion_candidate(match->syntax, str, str_len)) {
 			continue;
 		}
 
@@ -752,7 +739,6 @@ static void tab_handle(const struct shell *shell)
 
 	find_completion_candidates(shell, cmd, argv[arg_idx], &first, &cnt,
 				   &longest);
-
 	if (cnt == 1) {
 		/* Autocompletion.*/
 		autocomplete(shell, cmd, argv[arg_idx], first);
