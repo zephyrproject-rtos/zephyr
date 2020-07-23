@@ -17,3 +17,11 @@
 		cmd-data-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;	/* D9 */
 	};
 };
+
+&arduino_i2c {
+	touch_controller: ft5336@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		label = "FT5336";
+	};
+};
