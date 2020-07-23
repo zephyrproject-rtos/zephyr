@@ -1340,7 +1340,7 @@ int usb_set_config(const uint8_t *device_descriptor)
 
 int usb_enable(usb_dc_status_callback status_cb)
 {
-	int ret;
+	int ret = 0;
 	struct usb_dc_ep_cfg_data ep0_cfg;
 
 	/* Prevent from calling usb_enable form different contex.
@@ -1350,7 +1350,14 @@ int usb_enable(usb_dc_status_callback status_cb)
 	k_mutex_lock(&usb_enable_lock, K_FOREVER);
 
 	if (usb_dev.enabled == true) {
-		ret = 0;
+		if (status_cb != NULL) {
+			if (usb_dev.user_status_callback == NULL) {
+				usb_dev.user_status_callback = status_cb;
+			} else {
+				ret = -EINVAL;
+			}
+		}
+
 		goto out;
 	}
 
@@ -1360,7 +1367,6 @@ int usb_enable(usb_dc_status_callback status_cb)
 		goto out;
 	}
 
-	usb_dev.user_status_callback = status_cb;
 	usb_register_status_callback(forward_status_cb);
 	usb_dc_set_status_callback(forward_status_cb);
 

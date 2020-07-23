@@ -231,6 +231,12 @@ int usb_deconfig(void);
  * before invoking this, so that any data or events on the bus are processed
  * correctly by the associated class handling code.
  *
+ * @note This function may be invoked multiple times.  Only the first invocation
+ * will cause the USB core subsystem to be enabled.  Subsequent invocations may
+ * add a callback if one had not already been assigned.  If a callback is added
+ * after the initial call it will be invoked only for new status changes: the
+ * status at the point the callback was installed is not provided.
+ *
  * @param[in] status_cb Callback registered by user to notify
  *                      about USB device controller state.
  *
