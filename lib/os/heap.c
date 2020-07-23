@@ -227,16 +227,16 @@ void *sys_heap_alloc(struct sys_heap *heap, size_t bytes)
 	}
 
 	struct z_heap *h = heap->heap;
-	size_t chunksz = bytes_to_chunksz(h, bytes);
-	chunkid_t c = alloc_chunk(h, chunksz);
+	size_t chunk_sz = bytes_to_chunksz(h, bytes);
+	chunkid_t c = alloc_chunk(h, chunk_sz);
 	if (c == 0) {
 		return NULL;
 	}
 
 	/* Split off remainder if any */
-	if (chunk_size(h, c) > chunksz) {
-		split_chunks(h, c, c + chunksz);
-		free_list_add(h, c + chunksz);
+	if (chunk_size(h, c) > chunk_sz) {
+		split_chunks(h, c, c + chunk_sz);
+		free_list_add(h, c + chunk_sz);
 	}
 
 	set_chunk_used(h, c, true);
