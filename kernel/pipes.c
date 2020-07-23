@@ -548,7 +548,7 @@ int z_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 		 * Lock interrupts and unlock the scheduler before
 		 * manipulating the writers wait_q.
 		 */
-		k_spinlock_key_t key = k_spin_lock(&pipe->lock);
+		k_spinlock_key_t key2 = k_spin_lock(&pipe->lock);
 		z_sched_unlock_no_reschedule();
 
 		async_desc->desc.buffer = data + num_bytes_written;
@@ -557,7 +557,7 @@ int z_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 
 		z_pend_thread((struct k_thread *) &async_desc->thread,
 			     &pipe->wait_q.writers, K_FOREVER);
-		z_reschedule(&pipe->lock, key);
+		z_reschedule(&pipe->lock, key2);
 		return 0;
 	}
 #endif
@@ -573,9 +573,9 @@ int z_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 		 * Lock interrupts and unlock the scheduler before
 		 * manipulating the writers wait_q.
 		 */
-		k_spinlock_key_t key = k_spin_lock(&pipe->lock);
+		k_spinlock_key_t key2 = k_spin_lock(&pipe->lock);
 		z_sched_unlock_no_reschedule();
-		(void)z_pend_curr(&pipe->lock, key,
+		(void)z_pend_curr(&pipe->lock, key2,
 				 &pipe->wait_q.writers, timeout);
 	} else {
 		k_sched_unlock();
@@ -725,10 +725,10 @@ int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 
 	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		_current->base.swap_data = &pipe_desc;
-		k_spinlock_key_t key = k_spin_lock(&pipe->lock);
+		k_spinlock_key_t key2 = k_spin_lock(&pipe->lock);
 
 		z_sched_unlock_no_reschedule();
-		(void)z_pend_curr(&pipe->lock, key,
+		(void)z_pend_curr(&pipe->lock, key2,
 				 &pipe->wait_q.readers, timeout);
 	} else {
 		k_sched_unlock();
