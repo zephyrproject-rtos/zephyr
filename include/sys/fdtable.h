@@ -96,10 +96,15 @@ void *z_get_fd_obj(int fd, const struct fd_op_vtable *vtable, int err);
  *
  * @param fd File descriptor previously returned by z_reserve_fd()
  * @param vtable A pointer to a pointer variable to store the vtable
+ * @param lock An optional pointer to a pointer variable to store the mutex
+ *        preventing concurrent descriptor access. The lock is not taken,
+ *        it is just returned for the caller to use if necessary. Pass NULL
+ *        if the lock is not needed by the caller.
  *
  * @return Object pointer or NULL, with errno set
  */
-void *z_get_fd_obj_and_vtable(int fd, const struct fd_op_vtable **vtable);
+void *z_get_fd_obj_and_vtable(int fd, const struct fd_op_vtable **vtable,
+			      struct k_mutex **lock);
 
 /**
  * @brief Call ioctl vmethod on an object using varargs.
@@ -141,6 +146,7 @@ enum {
 	ZFD_IOCTL_POLL_PREPARE,
 	ZFD_IOCTL_POLL_UPDATE,
 	ZFD_IOCTL_POLL_OFFLOAD,
+	ZFD_IOCTL_SET_LOCK,
 };
 
 #ifdef __cplusplus

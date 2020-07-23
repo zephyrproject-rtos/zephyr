@@ -274,6 +274,13 @@ __net_socket struct net_context {
 		struct k_fifo accept_q;
 	};
 
+	struct {
+		/** Condition variable used when receiving data */
+		struct k_condvar recv;
+
+		/** Mutex used by condition variable */
+		struct k_mutex *lock;
+	} cond;
 #endif /* CONFIG_NET_SOCKETS */
 
 #if defined(CONFIG_NET_OFFLOAD)
