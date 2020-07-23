@@ -25,6 +25,7 @@ void z_work_q_main(void *work_q_ptr, void *p2, void *p3)
 		}
 
 		handler = work->handler;
+		__ASSERT(handler != NULL, "handler must be provided");
 
 		/* Reset pending state so it can be resubmitted by handler */
 		if (atomic_test_and_clear_bit(work->flags,
