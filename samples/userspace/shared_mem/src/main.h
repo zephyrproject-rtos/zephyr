@@ -43,7 +43,7 @@ void ct(void);
  * Constant
  */
 
-#define STACKSIZE 1024
+#define STACKSIZE 512
 
 #define PRIORITY 7
 

@@ -35,6 +35,10 @@ static char *cause_str(ulong_t cause)
 		return "Load address misaligned";
 	case 5:
 		return "Load access fault";
+	case 6:
+		return "Store address misaligned";
+	case 7:
+		return "Store access fault";
 	default:
 		return "unknown";
 	}

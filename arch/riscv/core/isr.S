@@ -466,6 +466,7 @@ reschedule:
 #ifdef CONFIG_MEMORY_PROTECTION
 	/* Restore PMP settings and reload reference to _kernel.current. */
 	addi a0, t1, 0
+	/* TODO: This should only apply to U-mode. */
 	call z_riscv_pmp_configure
 	la t0, _kernel
 	RV_OP_LOADREG t1, _kernel_offset_to_current(t0)

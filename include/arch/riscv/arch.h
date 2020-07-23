@@ -193,43 +193,41 @@ typedef uint32_t k_mem_partition_attr_t;
 #define RV_PMP_RWX	(RV_PMP_R | RV_PMP_W | RV_PMP_X)
 
 /* Read/write/execute access permission attributes */
-#define K_MEM_PARTITION_P_NA_U_NA	(RV_PMP_TOR)
-#define K_MEM_PARTITION_P_RW_U_RW	(RV_PMP_TOR | RV_PMP_RW)
-#define K_MEM_PARTITION_P_RW_U_RO	(RV_PMP_TOR | RV_PMP_R)
-#define K_MEM_PARTITION_P_RW_U_NA	(RV_PMP_TOR)
-#define K_MEM_PARTITION_P_RO_U_RO	(RV_PMP_TOR | RV_PMP_R)
-#define K_MEM_PARTITION_P_RO_U_NA	(RV_PMP_TOR)
-#define K_MEM_PARTITION_P_RWX_U_RWX	(RV_PMP_TOR | RV_PMP_RWX)
-#define K_MEM_PARTITION_P_RWX_U_RX	(RV_PMP_TOR | RV_PMP_RX)
-#define K_MEM_PARTITION_P_RX_U_RX	(RV_PMP_TOR | RV_PMP_RX)
+#define K_MEM_PARTITION_P_NA_U_NA	0
+#define K_MEM_PARTITION_P_RW_U_RW	(RV_PMP_RW)
+#define K_MEM_PARTITION_P_RW_U_RO	(RV_PMP_R)
+#define K_MEM_PARTITION_P_RW_U_NA	0
+#define K_MEM_PARTITION_P_RO_U_RO	(RV_PMP_R)
+#define K_MEM_PARTITION_P_RO_U_NA	0
+#define K_MEM_PARTITION_P_RWX_U_RWX	(RV_PMP_RWX)
+#define K_MEM_PARTITION_P_RWX_U_RX	(RV_PMP_RX)
+#define K_MEM_PARTITION_P_RX_U_RX	(RV_PMP_RX)
 
 #define POW2_CEIL(x) ((1 << (31 - __builtin_clz(x))) < x ?  \
 		1 << (31 - __builtin_clz(x) + 1) : \
 		1 << (31 - __builtin_clz(x)))
-
-/* Macros for encoding and decoding PMP NAPOT address registers */ 
-#define RV_NAPOT_CALC(addr, size) ((0xffffffff >> \
-		(32 - (__builtin_ctz(POW2_CEIL(size) >> 3)))) | \
-		(((uint32_t)addr) >> 2))
-#define RV_NAPOT_SIZE(pmpaddr) (1 << (__builtin_ctz(~pmpaddr) + 3))
-#define RV_NAPOT_ADDR(pmpaddr) ((pmpaddr >> __builtin_ctz(~pmpaddr)) \
-		<< (__builtin_ctz(~pmpaddr) + 2))
 
 /*
  * The following macros generate naturally-aligned power-of-two privilege stacks
  * for userspace threads. See sys/thread_stack.h for more information.
  */
 #define ARCH_THREAD_STACK_LEN(size) (POW2_CEIL(size))
+
 #define ARCH_THREAD_STACK_MEMBER(sym, size) \
 	struct z_thread_stack_element __aligned(POW2_CEIL(size)) \
 		sym[POW2_CEIL(size)]
+
 #define ARCH_THREAD_STACK_SIZEOF(sym) (sizeof(sym))
+
 #define ARCH_THREAD_STACK_BUFFER(sym) ((char *)(sym))
+
 #define ARCH_THREAD_STACK_RESERVED 0
+
 #define ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
 	struct z_thread_stack_element __noinit \
 		__aligned(POW2_CEIL(size)) \
 		sym[nmemb][ARCH_THREAD_STACK_LEN(size)]
+
 #define ARCH_THREAD_STACK_DEFINE(sym, size) \
 	struct z_thread_stack_element __noinit \
 		__aligned(POW2_CEIL(size)) sym[POW2_CEIL(size)]
