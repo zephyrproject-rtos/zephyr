@@ -269,6 +269,8 @@ if [ -n "$main_ci" ]; then
 	tail -n +2 test_file_1.txt > test_file_1_in.txt
 	cat test_file_3.txt test_file_2_in.txt test_file_1_in.txt > test_file.txt
 
+	cat test_file.txt
+
 	echo "+++ run sanitycheck"
 
 	# Run a subset of tests based on matrix size
