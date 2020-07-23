@@ -124,7 +124,9 @@ The size of the heap memory pool is specified using the
 :option:`CONFIG_HEAP_MEM_POOL_SIZE` configuration option.
 
 By default, the heap memory pool size is zero bytes. This value instructs
-the kernel not to define the heap memory pool object.
+the kernel not to define the heap memory pool object. The maximum size is limited
+by the amount of available memory in the system. The project build will fail in
+the link stage if the size specified can not be supported.
 
 Allocating Memory
 =================

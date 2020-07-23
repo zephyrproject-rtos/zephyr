@@ -473,9 +473,9 @@ config HEAP_MEM_POOL_SIZE
 	default 1024 if POSIX_MQUEUE
 	help
 	  This option specifies the size of the heap memory pool used when
-	  dynamically allocating memory using k_malloc(). Supported values
-	  are: 256, 1024, 4096, and 16384. A size of zero means that no
-	  heap memory pool is defined.
+	  dynamically allocating memory using k_malloc(). The maximum size of
+	  the memory pool is only limited to available memory. A size of zero
+	  means that no heap memory pool is defined.
 
 config HEAP_MEM_POOL_MIN_SIZE
 	int "The smallest blocks in the heap memory pool (in bytes)"
