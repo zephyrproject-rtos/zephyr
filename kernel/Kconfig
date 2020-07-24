@@ -457,9 +457,19 @@ config NUM_PIPE_ASYNC_MSGS
 	  Setting this option to 0 disables support for asynchronous
 	  pipe messages.
 
+config KERNEL_HEAP
+	bool "Enable the kernel's heap"
+	default y
+	depends on MULTITHREADING
+	help
+	  This option enables the kernel's implementation of a heap,
+	  including the ability to use K_HEAP_DEFINE and all of the
+	  k_heap_*() functions.
+
 config MEM_POOL_HEAP_BACKEND
 	bool "Use k_heap as the backend for k_mem_pool"
 	default y
+	depends on KERNEL_HEAP
 	help
 	  This selects a backend implementation for k_mem_pool based
 	  on the sys_heap abstraction instead of the legacy

@@ -9,6 +9,13 @@ dynamically allocate memory.
 Synchronized Heap Allocator
 ***************************
 
+Enabling the allocator
+======================
+
+The synchronized heap allocator can be enabled and disabled using the
+:option:`CONFIG_KERNEL_HEAP` Kconfig option. When enabled, all heaps defined
+with the :c:macro:`K_HEAP_DEFINE` are initalized automatically at boot time.
+
 Creating a Heap
 ===============
 

@@ -8,7 +8,6 @@ add_library(kernel
   fatal.c
   idle.c
   init.c
-  kheap.c
   mailbox.c
   mem_slab.c
   mempool.c
@@ -39,6 +38,7 @@ set_target_properties(
 target_sources_ifdef(CONFIG_STACK_CANARIES        kernel PRIVATE compiler_stack_protect.c)
 target_sources_ifdef(CONFIG_SYS_CLOCK_EXISTS      kernel PRIVATE timeout.c timer.c)
 target_sources_ifdef(CONFIG_ATOMIC_OPERATIONS_C   kernel PRIVATE atomic_c.c)
+target_sources_ifdef(CONFIG_KERNEL_HEAP           kernel PRIVATE kheap.c)
 target_sources_if_kconfig(                        kernel PRIVATE mmu.c)
 target_sources_if_kconfig(                        kernel PRIVATE poll.c)
 
