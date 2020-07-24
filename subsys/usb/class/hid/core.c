@@ -127,6 +127,8 @@ struct hid_device_info {
 #ifdef CONFIG_USB_HID_BOOT_PROTOCOL
 	uint8_t protocol;
 #endif
+	bool configured;
+	bool suspended;
 	struct usb_dev_data common;
 };
 
@@ -337,10 +339,12 @@ static void hid_do_status_cb(struct hid_device_info *dev_data,
 {
 	switch (status) {
 	case USB_DC_ERROR:
-		LOG_DBG("USB device error");
+		LOG_INF("Device error");
 		break;
 	case USB_DC_RESET:
-		LOG_DBG("USB device reset detected");
+		LOG_INF("Device reset detected");
+		dev_data->configured = false;
+		dev_data->suspended = false;
 #ifdef CONFIG_USB_HID_BOOT_PROTOCOL
 		dev_data->protocol = HID_PROTOCOL_REPORT;
 #endif
@@ -349,19 +353,29 @@ static void hid_do_status_cb(struct hid_device_info *dev_data,
 #endif
 		break;
 	case USB_DC_CONNECTED:
-		LOG_DBG("USB device connected");
+		LOG_INF("Device connected");
 		break;
 	case USB_DC_CONFIGURED:
-		LOG_DBG("USB device configured");
+		LOG_INF("Device configured");
+		dev_data->configured = true;
 		break;
 	case USB_DC_DISCONNECTED:
-		LOG_DBG("USB device disconnected");
+		LOG_INF("Device disconnected");
+		dev_data->configured = false;
+		dev_data->suspended = false;
 		break;
 	case USB_DC_SUSPEND:
-		LOG_DBG("USB device suspended");
+		LOG_INF("Device suspended");
+		dev_data->suspended = true;
 		break;
 	case USB_DC_RESUME:
-		LOG_DBG("USB device resumed");
+		LOG_INF("Device resumed");
+		if (dev_data->suspended) {
+			LOG_INF("from suspend");
+			dev_data->suspended = false;
+		} else {
+			LOG_DBG("Spurious resume event");
+		}
 		break;
 	case USB_DC_SOF:
 #ifdef CONFIG_USB_DEVICE_SOF
@@ -372,7 +386,7 @@ static void hid_do_status_cb(struct hid_device_info *dev_data,
 		break;
 	case USB_DC_UNKNOWN:
 	default:
-		LOG_DBG("USB unknown state");
+		LOG_INF("Unknown event");
 		break;
 	}
 
@@ -680,9 +694,16 @@ int hid_int_ep_write(const struct device *dev, const uint8_t *data, uint32_t dat
 		     uint32_t *bytes_ret)
 {
 	const struct usb_cfg_data *cfg = dev->config;
+	struct hid_device_info *hid_dev_data = dev->data;
 
-	return usb_write(cfg->endpoint[HID_INT_IN_EP_IDX].ep_addr, data,
+	if (hid_dev_data->configured && !hid_dev_data->suspended) {
+		return usb_write(cfg->endpoint[HID_INT_IN_EP_IDX].ep_addr, data,
 			 data_len, bytes_ret);
+	} else {
+		LOG_WRN("Device is not configured");
+		return -EAGAIN;
+	}
+
 }
 
 int hid_int_ep_read(const struct device *dev, uint8_t *data, uint32_t max_data_len,
