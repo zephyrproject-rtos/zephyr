@@ -276,6 +276,13 @@ disable:
 		goto exit;
 	}
 
+	if (!enable) {
+		err = ll_adv_aux_set_remove(handle);
+		if (err) {
+			goto exit;
+		}
+	}
+
 exit:
 	shell_print(shell, "done (err= %d).", err);
 
