@@ -238,6 +238,7 @@ void *_sbrk(int count)
 {
 	void *ret, *ptr;
 
+	/* coverity[CHECKED_RETURN] */
 	sys_sem_take(&heap_sem, K_FOREVER);
 
 #if CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE
@@ -253,6 +254,7 @@ void *_sbrk(int count)
 		ret = (void *)-1;
 	}
 
+	/* coverity[CHECKED_RETURN] */
 	sys_sem_give(&heap_sem);
 
 	return ret;
