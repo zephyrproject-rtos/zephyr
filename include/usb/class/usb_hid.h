@@ -42,9 +42,9 @@ struct usb_hid_descriptor {
 } __packed;
 
 /* HID Class Descriptor Types */
-
-#define HID_CLASS_DESCRIPTOR_HID	(REQTYPE_TYPE_CLASS << 5 | 0x01)
-#define HID_CLASS_DESCRIPTOR_REPORT	(REQTYPE_TYPE_CLASS << 5 | 0x02)
+#define USB_DESC_HID			0x21
+#define USB_DESC_HID_REPORT		0x22
+#define USB_DESC_HID_PHYSICAL		0x23
 
 /* HID Class Specific Requests */
 
