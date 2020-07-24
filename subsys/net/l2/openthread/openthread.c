@@ -142,7 +142,7 @@ void otSysEventSignalPending(void)
 	k_sem_give(&ot_sem);
 }
 
-void ot_state_changed_handler(uint32_t flags, void *context)
+static void ot_state_changed_handler(uint32_t flags, void *context)
 {
 	struct openthread_context *ot_context = context;
 
@@ -174,7 +174,7 @@ void ot_state_changed_handler(uint32_t flags, void *context)
 	}
 }
 
-void ot_receive_handler(otMessage *aMessage, void *context)
+static void ot_receive_handler(otMessage *aMessage, void *context)
 {
 	struct openthread_context *ot_context = context;
 
@@ -244,7 +244,7 @@ out:
 	otMessageFree(aMessage);
 }
 
-void ot_joiner_start_handler(otError error, void *context)
+static void ot_joiner_start_handler(otError error, void *context)
 {
 	struct openthread_context *ot_context = context;
 
