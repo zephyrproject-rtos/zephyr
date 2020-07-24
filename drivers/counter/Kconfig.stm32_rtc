@@ -13,7 +13,7 @@ menuconfig COUNTER_RTC_STM32
 	select REQUIRES_FULL_LIBC
 	help
 	  Build RTC driver for STM32 SoCs.
-	  Tested on STM32 F0, F2, F3, F4, L4, F7, G4, H7 series
+	  Tested on STM32 F0, F2, F3, F4, L1, L4, F7, G4, H7 series
 
 choice COUNTER_RTC_STM32_CLOCK_SRC
 	bool "RTC clock source"
