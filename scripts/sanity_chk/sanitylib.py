@@ -1612,7 +1612,6 @@ class TestInstance(DisablePyTestCollectionMixin):
         self.name = os.path.join(platform.name, testcase.name)
         self.build_dir = os.path.join(outdir, platform.name, testcase.name)
 
-        self.build_only = True
         self.run = False
 
         self.results = {}
@@ -1620,39 +1619,56 @@ class TestInstance(DisablePyTestCollectionMixin):
     def __lt__(self, other):
         return self.name < other.name
 
+
+    def testcase_runnable(self, testcase, fixtures):
+        can_run = False
+        # console harness allows us to run the test and capture data.
+        if testcase.harness in [ 'console', 'ztest']:
+
+            # if we have a fixture that is also being supplied on the
+            # command-line, then we need to run the test, not just build it.
+            fixture = testcase.harness_config.get('fixture')
+            if fixture:
+                if fixture in fixtures:
+                    can_run = True
+                else:
+                    can_run = False
+            else:
+                can_run = True
+
+        elif testcase.harness:
+            can_run = False
+        else:
+            can_run = True
+
+        return can_run
+
+
     # Global testsuite parameters
     def check_build_or_run(self, build_only=False, enable_slow=False, device_testing=False, fixtures=[]):
 
         # right now we only support building on windows. running is still work
         # in progress.
         if os.name == 'nt':
-            self.build_only = True
-            self.run = False
-            return
-
-        _build_only = True
+            return False
 
         # we asked for build-only on the command line
         if build_only or self.testcase.build_only:
-            self.build_only = True
-            self.run = False
-            return
+            return False
 
         # Do not run slow tests:
         skip_slow = self.testcase.slow and not enable_slow
         if skip_slow:
-            self.build_only = True
-            self.run = False
-            return
+            return False
 
-        runnable = bool(self.testcase.type == "unit" or \
+        target_ready = bool(self.testcase.type == "unit" or \
                         self.platform.type == "native" or \
                         self.platform.simulation in ["mdb", "nsim", "renode", "qemu"] or \
                         device_testing)
 
         if self.platform.simulation == "nsim":
             if not find_executable("nsimdrv"):
-                runnable = False
+                target_ready = False
 
         if self.platform.simulation == "mdb":
             if not find_executable("mdb"):
@@ -1660,30 +1676,11 @@ class TestInstance(DisablePyTestCollectionMixin):
 
         if self.platform.simulation == "renode":
             if not find_executable("renode"):
-                runnable = False
+                target_ready = False
 
-        # console harness allows us to run the test and capture data.
-        if self.testcase.harness in [ 'console', 'ztest']:
+        testcase_runnable = self.testcase_runnable(self.testcase, fixtures)
 
-            # if we have a fixture that is also being supplied on the
-            # command-line, then we need to run the test, not just build it.
-            fixture = self.testcase.harness_config.get('fixture')
-            if fixture:
-                if fixture in fixtures:
-                    _build_only = False
-                else:
-                    _build_only = True
-            else:
-                _build_only = False
-
-        elif self.testcase.harness:
-            _build_only = True
-        else:
-            _build_only = False
-
-        self.build_only = not (not _build_only and runnable)
-        self.run = not self.build_only
-        return
+        return testcase_runnable and target_ready
 
     def create_overlay(self, platform, enable_asan=False, enable_ubsan=False, enable_coverage=False, coverage_platform=[]):
         # Create this in a "sanitycheck/" subdirectory otherwise this
@@ -2742,7 +2739,7 @@ class TestSuite(DisablePyTestCollectionMixin):
 
                     platform = self.get_platform(row["platform"])
                     instance = TestInstance(self.testcases[test], platform, self.outdir)
-                    instance.check_build_or_run(
+                    instance.run = instance.check_build_or_run(
                         self.build_only,
                         self.enable_slow,
                         self.device_testing,
@@ -2810,7 +2807,7 @@ class TestSuite(DisablePyTestCollectionMixin):
             instance_list = []
             for plat in platforms:
                 instance = TestInstance(tc, plat, self.outdir)
-                instance.check_build_or_run(
+                instance.run = instance.check_build_or_run(
                     self.build_only,
                     self.enable_slow,
                     self.device_testing,
@@ -2823,7 +2820,6 @@ class TestSuite(DisablePyTestCollectionMixin):
                     for h in self.connected_hardware:
                         if h['platform'] == plat.name:
                             if tc.harness_config.get('fixture') in h.get('fixtures', []):
-                                instance.build_only = False
                                 instance.run = True
 
                 if not force_platform and plat.name in exclude_platform:
@@ -2833,7 +2829,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                     # Discard silently
                     continue
 
-                if device_testing_filter and instance.build_only:
+                if device_testing_filter and not instance.run:
                     discards[instance] = discards.get(instance, "Not runnable on device")
 
                 if self.integration and tc.integration_platforms and plat.name not in tc.integration_platforms:
