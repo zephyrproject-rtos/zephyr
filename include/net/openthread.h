@@ -59,6 +59,9 @@ struct openthread_context {
 
 	/** Array for storing net_pkt for OpenThread internal usage */
 	struct pkt_list_elem pkt_list[CONFIG_OPENTHREAD_PKT_LIST_SIZE];
+
+	/** A mutex to protect API calls from being preempted. */
+	struct k_mutex api_lock;
 };
 /**
  * INTERNAL_HIDDEN @endcond
@@ -103,6 +106,24 @@ struct otInstance *openthread_get_default_instance(void);
  * @param ot_context
  */
 int openthread_start(struct openthread_context *ot_context);
+
+/**
+ * @brief Lock internal mutex before accessing OT API.
+ *
+ * @details OpenThread API is not thread-safe, therefore before accessing any
+ * API function, it's needed to lock the internal mutex, to prevent the
+ * OpenThread thread from prempting the API call.
+ *
+ * @param ot_context Context to lock.
+ */
+void openthread_api_mutex_lock(struct openthread_context *ot_context);
+
+/**
+ * @brief Unlock internal mutex after accessing OT API.
+ *
+ * @param ot_context Context to unlock.
+ */
+void openthread_api_mutex_unlock(struct openthread_context *ot_context);
 
 #define OPENTHREAD_L2_CTX_TYPE struct openthread_context
 
