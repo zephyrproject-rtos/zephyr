@@ -45,6 +45,7 @@ __weak void k_sys_fatal_error_handler(unsigned int reason,
 }
 /* LCOV_EXCL_STOP */
 
+#if defined(CONFIG_MULTITHREADING)
 static const char *thread_name_get(struct k_thread *thread)
 {
 	const char *thread_name = k_thread_name_get(thread);
@@ -55,6 +56,7 @@ static const char *thread_name_get(struct k_thread *thread)
 
 	return thread_name;
 }
+#endif
 
 static const char *reason_to_str(unsigned int reason)
 {
@@ -97,7 +99,9 @@ void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 	 * appropriate.
 	 */
 	unsigned int key = arch_irq_lock();
+#if defined(CONFIG_MULTITHREADING)
 	struct k_thread *thread = k_current_get();
+#endif
 
 	/* sanitycheck looks for the "ZEPHYR FATAL ERROR" string, don't
 	 * change it without also updating sanitycheck
@@ -117,8 +121,10 @@ void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 	}
 #endif
 
+#if defined(CONFIG_MULTITHREADING)
 	LOG_ERR("Current thread: %p (%s)", thread,
 		log_strdup(thread_name_get(thread)));
+#endif
 
 	k_sys_fatal_error_handler(reason, esf);
 
@@ -176,5 +182,7 @@ void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 	}
 
 	arch_irq_unlock(key);
+#if defined(CONFIG_MULTITHREADING)
 	k_thread_abort(thread);
+#endif
 }
