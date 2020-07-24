@@ -214,6 +214,9 @@ void *thread_top_term(void *p1)
 	}
 
 	if (id >= 2) {
+		if (IS_ENABLED(CONFIG_PTHREAD_DYNAMIC_STACK)) {
+			zassert_false(pthread_detach(self), "failed to set detach state");
+		}
 		ret = pthread_detach(self);
 		if (id == 2) {
 			zassert_equal(ret, EINVAL, "re-detached thread!");
@@ -301,18 +304,20 @@ void test_posix_pthread_execution(void)
 	ret = pthread_setname_np(NULL, thr_name);
 	zassert_equal(ret, ESRCH, "uninitialized setname!");
 
-	/* TESTPOINT: Try creating thread before attr init */
-	ret = pthread_create(&newthread[0], &attr[0],
-				thread_top_exec, NULL);
-	zassert_equal(ret, EINVAL, "thread created before attr init!");
+	if (!IS_ENABLED(CONFIG_PTHREAD_DYNAMIC_STACK)) {
+		/*  TESTPOINT: Try creating thread before attr init */
+		ret = pthread_create(&newthread[0], &attr[0],
+					thread_top_exec, NULL);
+		zassert_equal(ret, EINVAL, "thread created before attr init!");
+	}
 
 	for (i = 0; i < N_THR_E; i++) {
 		ret = pthread_attr_init(&attr[i]);
 		if (ret != 0) {
 			zassert_false(pthread_attr_destroy(&attr[i]),
-				      "Unable to destroy pthread object attrib");
+					  "Unable to destroy pthread object attrib");
 			zassert_false(pthread_attr_init(&attr[i]),
-				      "Unable to create pthread object attrib");
+					  "Unable to create pthread object attrib");
 		}
 
 		/* TESTPOINTS: Retrieve set stack attributes and compare */
@@ -333,11 +338,16 @@ void test_posix_pthread_execution(void)
 		pthread_attr_setschedparam(&attr[i], &schedparam);
 		pthread_attr_getschedparam(&attr[i], &getschedparam);
 		zassert_equal(schedparam.sched_priority,
-			      getschedparam.sched_priority,
-			      "scheduling priorities do not match!");
+				  getschedparam.sched_priority,
+				  "scheduling priorities do not match!");
 
-		ret = pthread_create(&newthread[i], &attr[i], thread_top_exec,
-				INT_TO_POINTER(i));
+		if (IS_ENABLED(CONFIG_PTHREAD_DYNAMIC_STACK)) {
+			ret = pthread_create(&newthread[i], NULL, thread_top_exec,
+					INT_TO_POINTER(i));
+		} else {
+			ret = pthread_create(&newthread[i], &attr[i], thread_top_exec,
+					INT_TO_POINTER(i));
+		}
 
 		/* TESTPOINT: Check if thread is created successfully */
 		zassert_false(ret, "Number of threads exceed max limit");
@@ -429,8 +439,13 @@ void test_posix_pthread_termination(void)
 		schedparam.sched_priority = 2;
 		pthread_attr_setschedparam(&attr[i], &schedparam);
 		pthread_attr_setstack(&attr[i], &stack_t[i][0], STACKS);
-		ret = pthread_create(&newthread[i], &attr[i], thread_top_term,
-				     INT_TO_POINTER(i));
+		if (IS_ENABLED(CONFIG_PTHREAD_DYNAMIC_STACK)) {
+			ret = pthread_create(&newthread[i], NULL, thread_top_term,
+						INT_TO_POINTER(i));
+		} else {
+			ret = pthread_create(&newthread[i], &attr[i], thread_top_term,
+						INT_TO_POINTER(i));
+		}
 
 		zassert_false(ret, "Not enough space to create new thread");
 	}

@@ -8,11 +8,24 @@ tests:
     platform_exclude: nsim_sem_mpu_stack_guard nsim_em_mpu_stack_guard
     extra_configs:
       - CONFIG_NEWLIB_LIBC=n
+  portability.posix.common.pthread.dynamic_stack:
+    platform_exclude: nsim_sem_mpu_stack_guard nsim_em_mpu_stack_guard
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=n
+      - CONFIG_PTHREAD_DYNAMIC_STACK=y
+      - CONFIG_PTHREAD_DYNAMIC_STACK_RESERVED_COUNT=8
   portability.posix.common.newlib:
     platform_exclude: nsim_sem_mpu_stack_guard nsim_em_mpu_stack_guard
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
+  portability.posix.common.newlib.pthread.dynamic_stack:
+    platform_exclude: nsim_sem_mpu_stack_guard nsim_em_mpu_stack_guard
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+      - CONFIG_PTHREAD_DYNAMIC_STACK=y
+      - CONFIG_PTHREAD_DYNAMIC_STACK_RESERVED_COUNT=8
   portability.posix.common.nsim:
     platform_whitelist: nsim_sem_mpu_stack_guard nsim_em_mpu_stack_guard
     extra_configs:
