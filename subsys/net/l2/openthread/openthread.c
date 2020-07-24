@@ -264,11 +264,15 @@ static void openthread_process(void *context, void *arg2, void *arg3)
 	struct openthread_context *ot_context = context;
 
 	while (1) {
+		openthread_api_mutex_lock(ot_context);
+
 		while (otTaskletsArePending(ot_context->instance)) {
 			otTaskletsProcess(ot_context->instance);
 		}
 
 		otSysProcessDrivers(ot_context->instance);
+
+		openthread_api_mutex_unlock(ot_context);
 
 		k_sem_take(&ot_sem, K_FOREVER);
 	}
@@ -324,6 +328,8 @@ int openthread_start(struct openthread_context *ot_context)
 	otInstance *ot_instance = ot_context->instance;
 	otError error;
 
+	openthread_api_mutex_lock(ot_context);
+
 	/* Sleepy End Device specific configuration. */
 	if (IS_ENABLED(CONFIG_OPENTHREAD_MTD_SED)) {
 		otLinkModeConfig ot_mode = otThreadGetLinkMode(ot_instance);
@@ -355,7 +361,7 @@ int openthread_start(struct openthread_context *ot_context)
 			NET_ERR("Failed to start joiner [%d]", error);
 		}
 
-		return error == OT_ERROR_NONE ? 0 : -EIO;
+		goto exit;
 	} else {
 		/* No dataset - load the default configuration. */
 		NET_DBG("Loading OpenThread default configuration.");
@@ -379,6 +385,9 @@ int openthread_start(struct openthread_context *ot_context)
 		NET_ERR("Failed to start the OpenThread network [%d]", error);
 	}
 
+exit:
+	openthread_api_mutex_unlock(ot_context);
+
 	return error == OT_ERROR_NONE ? 0 : -EIO;
 }
 
@@ -386,10 +395,14 @@ int openthread_stop(struct openthread_context *ot_context)
 {
 	otError error;
 
+	openthread_api_mutex_lock(ot_context);
+
 	error = otThreadSetEnabled(ot_context->instance, false);
 	if (error == OT_ERROR_INVALID_STATE) {
 		NET_DBG("Openthread interface was not up [%d]", error);
 	}
+
+	openthread_api_mutex_unlock(ot_context);
 
 	return 0;
 }
@@ -399,6 +412,8 @@ static int openthread_init(struct net_if *iface)
 	struct openthread_context *ot_context = net_if_l2_data(iface);
 
 	NET_DBG("openthread_init");
+
+	k_mutex_init(&ot_context->api_lock);
 
 	ll_addr = net_if_get_link_addr(iface);
 
@@ -511,6 +526,16 @@ struct otInstance *openthread_get_default_instance(void)
 void openthread_set_state_changed_cb(otStateChangedCallback cb)
 {
 	state_changed_cb = cb;
+}
+
+void openthread_api_mutex_lock(struct openthread_context *ot_context)
+{
+	(void)k_mutex_lock(&ot_context->api_lock, K_FOREVER);
+}
+
+void openthread_api_mutex_unlock(struct openthread_context *ot_context)
+{
+	(void)k_mutex_unlock(&ot_context->api_lock);
 }
 
 NET_L2_INIT(OPENTHREAD_L2, openthread_recv, openthread_send, openthread_enable,
