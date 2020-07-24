@@ -297,10 +297,12 @@ validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *buf, uint8_t *length
 		break;
 	case IEEE802154_CFI_ASSOCIATION_RESPONSE:
 		len += IEEE802154_CMD_ASSOC_RES_LENGTH;
+		/* Fall through */
 	case IEEE802154_CFI_DISASSOCIATION_NOTIFICATION:
 		if (c->cfi == IEEE802154_CFI_DISASSOCIATION_NOTIFICATION) {
 			len += IEEE802154_CMD_DISASSOC_NOTE_LENGTH;
 		}
+		/* Fall through */
 	case IEEE802154_CFI_PAN_ID_CONLICT_NOTIFICATION:
 		ar = 1U;
 		comp = 1U;
