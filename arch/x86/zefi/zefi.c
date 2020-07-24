@@ -96,7 +96,7 @@ uintptr_t __abi efi_entry(void *img_handle, struct efi_system_table *sys_tab)
 
 	unsigned char *code = (void *)zefi_entry;
 
-	printf("Jumping to Entry Point: %p (%x %x %x %x %x %x)\n",
+	printf("Jumping to Entry Point: %p (%x %x %x %x %x %x %x)\n",
 	       code, code[0], code[1], code[2], code[3],
 	       code[4], code[5], code[6]);
 
