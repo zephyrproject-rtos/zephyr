@@ -92,6 +92,8 @@ The Zephyr nucleo_f091rc board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | independent watchdog                |
 +-----------+------------+-------------------------------------+
+| COUNTER   | on-chip    | rtc                                 |
++-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c controller                      |
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | SPI controller                      |
