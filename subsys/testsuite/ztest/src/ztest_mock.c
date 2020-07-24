@@ -215,7 +215,12 @@ void z_ztest_check_expected_data(const char *fn, const char *name, void *data,
 	param = find_and_delete_value(&parameter_list, fn, name);
 	if (!param) {
 		PRINT("Failed to find parameter %s for %s\n", name, fn);
+		/* No return from this function but for coverity reasons
+		 * put a return after to avoid the warning of a null
+		 * dereference of param below.
+		 */
 		ztest_test_fail();
+		return;
 	}
 
 	expected = (void *)param->value;
