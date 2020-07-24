@@ -23,6 +23,12 @@ LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 #include "sockets_internal.h"
 #include "tls_internal.h"
 
+/* Need these for POLLIN, POLLOUT, MSG_PEEK, etc. */
+#if defined(CONFIG_POSIX_API)
+#include "posix/poll.h"
+#include "posix/sys/socket.h"
+#endif
+
 #define FAILED (-1)
 
 /* Increment by 1 to make sure we do not store the value of 0, which has
