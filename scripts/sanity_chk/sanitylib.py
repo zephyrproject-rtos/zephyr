@@ -811,14 +811,18 @@ class QEMUHandler(Handler):
         while True:
             this_timeout = int((timeout_time - time.time()) * 1000)
             if this_timeout < 0 or not p.poll(this_timeout):
-                if pid and this_timeout > 0:
-                    #there is possibility we polled nothing because
-                    #of host not scheduled QEMU process enough CPU
-                    #time during p.poll(this_timeout)
-                    cpu_time = QEMUHandler._get_cpu_time(pid)
-                    if cpu_time < timeout and not out_state:
-                        timeout_time = time.time() + (timeout - cpu_time)
-                        continue
+                try:
+                    if pid and this_timeout > 0:
+                        #there's possibility we polled nothing because
+                        #of not enough CPU time scheduled by host for
+                        #QEMU process during p.poll(this_timeout)
+                        cpu_time = QEMUHandler._get_cpu_time(pid)
+                        if cpu_time < timeout and not out_state:
+                            timeout_time = time.time() + (timeout - cpu_time)
+                            continue
+                except ProcessLookupError:
+                    out_state = "failed"
+                    break
 
                 if not out_state:
                     out_state = "timeout"
