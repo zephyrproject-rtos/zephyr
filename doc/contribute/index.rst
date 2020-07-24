@@ -716,10 +716,15 @@ Contributing non-Apache 2.0 licensed components
 
 Importing code into the Zephyr OS from other projects that use a license
 other than the Apache 2.0 license needs to be fully understood in
-context and approved by the `Zephyr governing board`_.
+context and approved by the `Zephyr governing board`_. The board will
+automatically reject licenses that have not been approved by the `Open Source
+Initiative (OSI)`_.
 
 .. _Zephyr governing board:
    https://www.zephyrproject.org/governance/
+
+.. _Open Source Initiative (OSI):
+   https://opensource.org/licenses/alphabetical
 
 By carefully reviewing potential contributions and also enforcing a
 :ref:`DCO` for contributed code, we ensure that
