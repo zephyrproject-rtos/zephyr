@@ -63,6 +63,7 @@ if not ZEPHYR_BASE:
 
 # This is needed to load edt.pickle files.
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts", "dts"))
+import edtlib  # pylint: disable=unused-import
 
 hw_map_local = threading.Lock()
 report_lock = threading.Lock()
