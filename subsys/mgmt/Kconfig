@@ -6,6 +6,8 @@ menu "Device Management"
 
 source "subsys/mgmt/mcumgr/Kconfig"
 
+source "subsys/mgmt/hawkbit/Kconfig"
+
 source "subsys/mgmt/updatehub/Kconfig"
 
 source "subsys/mgmt/osdp/Kconfig"
