@@ -436,6 +436,115 @@ static void test_advx_main(void)
 	}
 	printk("success.\n");
 
+	printk("Removing adv aux set that's created and disabled ...");
+	err = ll_adv_aux_set_remove(handle);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Removing adv aux set that's not created ...");
+	err = ll_adv_aux_set_remove(handle);
+	if (err != BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Creating new adv set...");
+	err = ll_adv_params_set(handle, evt_prop, ADV_INTERVAL, adv_type,
+				OWN_ADDR_TYPE, PEER_ADDR_TYPE, PEER_ADDR,
+				ADV_CHAN_MAP, FILTER_POLICY, ADV_TX_PWR,
+				phy_p, ADV_SEC_SKIP, phy_s, ADV_SID,
+				SCAN_REQ_NOT);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Update advertising data 2...");
+	err = ll_adv_aux_ad_data_set(handle, AD_OP, AD_FRAG_PREF,
+				     sizeof(adv_data2), (void *)adv_data2);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Enabling adv set...");
+	err = ll_adv_enable(handle, 1, 0, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	k_sleep(K_MSEC(400));
+
+	printk("Removing adv aux set that's created and enabled  ...");
+	err = ll_adv_aux_set_remove(handle);
+	if (err != BT_HCI_ERR_CMD_DISALLOWED) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Disabling adv set...");
+	err = ll_adv_enable(handle, 0, 0, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Removing adv aux set that's created and disabled  ...");
+	err = ll_adv_aux_set_remove(handle);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Creating new adv set...");
+	err = ll_adv_params_set(handle, evt_prop, ADV_INTERVAL, adv_type,
+				OWN_ADDR_TYPE, PEER_ADDR_TYPE, PEER_ADDR,
+				ADV_CHAN_MAP, FILTER_POLICY, ADV_TX_PWR,
+				phy_p, ADV_SEC_SKIP, phy_s, ADV_SID,
+				SCAN_REQ_NOT);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Starting periodic 1M advertising...");
+	err = ll_adv_sync_param_set(handle, ADV_INTERVAL_PERIODIC, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("enabling periodic...");
+	err = ll_adv_sync_enable(handle, 1);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Trying to remove an adv set with sync enabled ...");
+	err = ll_adv_aux_set_remove(handle);
+	if (err != BT_HCI_ERR_CMD_DISALLOWED) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Disabling periodic...");
+	err = ll_adv_sync_enable(handle, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Trying to remove an adv set after sync disabled ...");
+	err = ll_adv_aux_set_remove(handle);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
 	PASS("AdvX tests Passed\n");
 	bs_trace_silent_exit(0);
 
