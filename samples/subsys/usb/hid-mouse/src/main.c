@@ -320,7 +320,10 @@ void main(void)
 		status[MOUSE_X_REPORT_POS] = 0U;
 		report[MOUSE_Y_REPORT_POS] = status[MOUSE_Y_REPORT_POS];
 		status[MOUSE_Y_REPORT_POS] = 0U;
-		hid_int_ep_write(hid_dev, report, sizeof(report), NULL);
+		ret = hid_int_ep_write(hid_dev, report, sizeof(report), NULL);
+		if (ret) {
+			LOG_ERR("HID write error, %d", ret);
+		}
 
 		/* Toggle LED on sent report */
 		ret = gpio_pin_toggle(led_dev, LED);
