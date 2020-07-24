@@ -163,6 +163,16 @@
 			label = "SPI_1";
 		};
 
+		rtc: rtc@40002800 {
+			compatible = "st,stm32-rtc";
+			reg = <0x40002800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>;
+			interrupts = <2 0>;
+			prescaler = <32768>;
+			status = "disabled";
+			label = "RTC_0";
+		};
+
 		iwdg: watchdog@40003000 {
 			compatible = "st,stm32-watchdog";
 			reg = <0x40003000 0x400>;
