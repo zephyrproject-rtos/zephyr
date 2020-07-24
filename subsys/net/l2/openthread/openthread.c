@@ -400,6 +400,8 @@ static int openthread_init(struct net_if *iface)
 
 	NET_DBG("openthread_init");
 
+	ll_addr = net_if_get_link_addr(iface);
+
 	otSysInit(0, NULL);
 
 	ot_context->instance = otInstanceInitSingle();
@@ -430,8 +432,6 @@ static int openthread_init(struct net_if *iface)
 					&ot_state_changed_handler,
 					ot_context);
 	}
-
-	ll_addr = net_if_get_link_addr(iface);
 
 	net_mgmt_init_event_callback(&ip6_addr_cb, ipv6_addr_event_handler,
 				     NET_EVENT_IPV6_ADDR_ADD |
