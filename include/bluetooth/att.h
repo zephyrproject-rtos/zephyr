@@ -43,6 +43,9 @@ extern "C" {
 #define BT_ATT_ERR_PROCEDURE_IN_PROGRESS	0xfe
 #define BT_ATT_ERR_OUT_OF_RANGE			0xff
 
+/* Version 5.2, Vol 3, Part F, 3.2.9 defines maximum attribute length to 512 */
+#define BT_ATT_MAX_ATTRIBUTE_LEN		512
+
 #ifdef __cplusplus
 }
 #endif
