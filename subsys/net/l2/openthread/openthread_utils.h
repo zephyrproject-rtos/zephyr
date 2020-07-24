@@ -31,7 +31,7 @@ struct net_pkt *pkt_list_peek(struct openthread_context *context);
 void pkt_list_remove_last(struct openthread_context *context);
 void pkt_list_remove_first(struct openthread_context *context);
 
-inline int pkt_list_is_full(struct openthread_context *context)
+static inline int pkt_list_is_full(struct openthread_context *context)
 {
 	return context->pkt_list_full;
 }
