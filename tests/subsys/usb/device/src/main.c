@@ -9,7 +9,6 @@
 
 #include <sys/byteorder.h>
 #include <usb/usb_device.h>
-#include <usb/usb_common.h>
 
 /* Max packet size for endpoints */
 #define BULK_EP_MPS		64
@@ -27,11 +26,11 @@ struct usb_device_desc {
 #define INITIALIZER_IF							\
 	{								\
 		.bLength = sizeof(struct usb_if_descriptor),		\
-		.bDescriptorType = USB_INTERFACE_DESC,			\
+		.bDescriptorType = USB_DESC_INTERFACE,			\
 		.bInterfaceNumber = 0,					\
 		.bAlternateSetting = 0,					\
 		.bNumEndpoints = 1,					\
-		.bInterfaceClass = CUSTOM_CLASS,			\
+		.bInterfaceClass = USB_BCC_VENDOR,			\
 		.bInterfaceSubClass = 0,				\
 		.bInterfaceProtocol = 0,				\
 		.iInterface = 0,					\
@@ -40,14 +39,14 @@ struct usb_device_desc {
 #define INITIALIZER_IF_EP(addr, attr, mps, interval)			\
 	{								\
 		.bLength = sizeof(struct usb_ep_descriptor),		\
-		.bDescriptorType = USB_ENDPOINT_DESC,			\
+		.bDescriptorType = USB_DESC_ENDPOINT,			\
 		.bEndpointAddress = addr,				\
 		.bmAttributes = attr,					\
 		.wMaxPacketSize = sys_cpu_to_le16(mps),			\
 		.bInterval = interval,					\
 	}
 
-USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_device_desc dev_desc = {
+USBD_CLASS_DESC_DEFINE(primary, 0) struct usb_device_desc dev_desc = {
 	.if0 = INITIALIZER_IF,
 	.if0_in_ep = INITIALIZER_IF_EP(ENDP_BULK_IN, USB_DC_EP_BULK,
 				       BULK_EP_MPS, 0),
