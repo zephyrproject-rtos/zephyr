@@ -43,7 +43,7 @@ target_sources_if_kconfig(                        kernel PRIVATE mmu.c)
 target_sources_if_kconfig(                        kernel PRIVATE poll.c)
 
 if(${CONFIG_MEM_POOL_HEAP_BACKEND})
-else()
+elseif(${CONFIG_KERNEL_MEM_POOL})
   target_sources(kernel PRIVATE mempool_sys.c)
 endif()
 

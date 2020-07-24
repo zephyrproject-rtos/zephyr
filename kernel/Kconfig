@@ -466,10 +466,19 @@ config KERNEL_HEAP
 	  including the ability to use K_HEAP_DEFINE and all of the
 	  k_heap_*() functions.
 
+config KERNEL_MEM_POOL
+	bool "Enable the kernel's memory pools"
+	default y
+	depends on MULTITHREADING
+	help
+	  This option enables the kernel's implementation of memory pools,
+	  including the ability to use K_MEM_POOL_DEFINE and all of the
+	  k_mem_pool_*() functions.
+
 config MEM_POOL_HEAP_BACKEND
 	bool "Use k_heap as the backend for k_mem_pool"
 	default y
-	depends on KERNEL_HEAP
+	depends on KERNEL_HEAP && KERNEL_MEM_POOL
 	help
 	  This selects a backend implementation for k_mem_pool based
 	  on the sys_heap abstraction instead of the legacy

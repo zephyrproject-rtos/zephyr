@@ -116,6 +116,14 @@ needed.
 Implementation
 **************
 
+Enabling the functionality
+==========================
+
+Kernel memory pools can be enabled and disabled using the
+:option:`CONFIG_KERNEL_MEM_POOL` Kconfig option. When enabled, all memory
+pools defined with the :c:macro:`K_MEM_POOL_DEFINE` are initalized
+automatically at boot time.
+
 Defining a Memory Pool
 ======================
 
