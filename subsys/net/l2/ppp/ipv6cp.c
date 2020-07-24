@@ -444,6 +444,7 @@ static void ipv6cp_down(struct ppp_fsm *fsm)
 	struct ppp_context *ctx = CONTAINER_OF(fsm, struct ppp_context,
 					       ipv6cp.fsm);
 	struct net_linkaddr peer_lladdr;
+	struct in6_addr my_addr;
 	struct in6_addr peer_addr;
 	int ret;
 
@@ -454,6 +455,10 @@ static void ipv6cp_down(struct ppp_fsm *fsm)
 	ctx->is_ipv6cp_up = false;
 
 	ppp_network_down(ctx, PPP_IPV6);
+
+	/* Remove my address */
+	setup_iid_address(ctx->ipv6cp.my_options.iid, &my_addr);
+	net_if_ipv6_addr_rm(ctx->iface, &my_addr);
 
 	/* Remove peer from neighbor table */
 	setup_iid_address(ctx->ipv6cp.peer_options.iid, &peer_addr);
