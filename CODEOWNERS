@@ -18,7 +18,7 @@
 /.github/workflows/                       @galak @nashif
 /.buildkite/				  @galak
 /MAINTAINERS.yml                          @ioannisg @MaureenHelm
-/arch/arc/                                @vonhust @ruuddw
+/arch/arc/                                @abrodkin @ruuddw
 /arch/arm/                                @MaureenHelm @galak @ioannisg
 /arch/arm/core/aarch32/cortex_m/cmse/     @ioannisg
 /arch/arm/core/aarch64/                   @carlocaione
@@ -26,7 +26,7 @@
 /arch/arm/include/aarch64/                @carlocaione
 /arch/arm/core/aarch32/cortex_a_r/        @MaureenHelm @galak @ioannisg @bbolen @stephanosio
 /arch/common/                             @andrewboie @ioannisg @andyross
-/soc/arc/snps_*/                          @vonhust @ruuddw
+/soc/arc/snps_*/                          @abrodkin @ruuddw
 /soc/nios2/                               @nashif @wentongwu
 /soc/arm/                                 @MaureenHelm @galak @ioannisg
 /soc/arm/arm/mps2/                        @fvincenzo
@@ -59,7 +59,7 @@
 /soc/x86/                                 @andrewboie
 /arch/xtensa/                             @andrewboie @dcpleung @andyross
 /soc/xtensa/                              @andrewboie @dcpleung @andyross
-/boards/arc/                              @vonhust @ruuddw
+/boards/arc/                              @abrodkin @ruuddw
 /boards/arm/                              @MaureenHelm @galak
 /boards/arm/96b_argonkey/                 @avisconti
 /boards/arm/96b_avenger96/                @Mani-Sadhasivam
@@ -252,7 +252,7 @@
 /drivers/watchdog/wdt_handlers.c          @andrewboie
 /drivers/wifi/                            @jukkar @tbursztyka @pfalcon
 /drivers/wifi/eswifi/                     @loicpoulain
-/dts/arc/                                 @vonhust @ruuddw @iriszzw
+/dts/arc/                                 @abrodkin @ruuddw @iriszzw
 /dts/arm/atmel/sam4e*                     @nandojve
 /dts/arm/atmel/samr21.dtsi                @benpicco
 /dts/arm/atmel/sam*5*.dtsi                @benpicco
@@ -320,7 +320,7 @@
 /include/drivers/lora.h                   @Mani-Sadhasivam
 /include/drivers/peci.h                   @albertofloyd @franciscomunoz @scottwcpg
 /include/app_memory/                      @andrewboie
-/include/arch/arc/                        @vonhust @ruuddw
+/include/arch/arc/                        @abrodkin @ruuddw
 /include/arch/arc/arch.h                  @andrewboie
 /include/arch/arc/v2/irq.h                @andrewboie
 /include/arch/arm/aarch32/                @MaureenHelm @galak @ioannisg
