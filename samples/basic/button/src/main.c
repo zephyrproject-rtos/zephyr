@@ -12,7 +12,7 @@
 #include <sys/printk.h>
 #include <inttypes.h>
 
-#define SLEEP_TIME_MS	1
+#define SLEEP_TIME_MS	(IS_ENABLED(CONFIG_MULTITHREADING) ? 1U : 1000U)
 
 /*
  * Devicetree helper macro which gets the 'flags' cell from a 'gpios'
@@ -50,10 +50,13 @@ static void match_led_to_button(struct device *button, struct device *led);
 
 static struct gpio_callback button_cb_data;
 
+volatile uint32_t pressed_cyc;
+
 void button_pressed(struct device *dev, struct gpio_callback *cb,
 		    uint32_t pins)
 {
-	printk("Button pressed at %" PRIu32 "\n", k_cycle_get_32());
+	pressed_cyc = k_cycle_get_32();
+	printk("Button pressed at %" PRIu32 "\n", pressed_cyc);
 }
 
 void main(void)
@@ -61,6 +64,13 @@ void main(void)
 	struct device *button;
 	struct device *led;
 	int ret;
+	uint32_t last_press_cyc = pressed_cyc;
+
+	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
+		/* TODO: this unlock should not be necessary */
+		irq_unlock(0);
+		printk("MULTITHREADING disabled\n");
+	}
 
 	button = device_get_binding(SW0_GPIO_LABEL);
 	if (button == NULL) {
@@ -92,8 +102,19 @@ void main(void)
 
 	printk("Press the button\n");
 	while (1) {
+		uint32_t press_cyc = pressed_cyc;
+		if (last_press_cyc != press_cyc) {
+			printk("Press at %u cyc (%u interval)\n",
+			       press_cyc, press_cyc - last_press_cyc);
+			last_press_cyc = press_cyc;
+
+		}
 		match_led_to_button(button, led);
-		k_msleep(SLEEP_TIME_MS);
+		if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+			k_msleep(SLEEP_TIME_MS);
+		} else {
+			k_busy_wait(USEC_PER_SEC / MSEC_PER_SEC * SLEEP_TIME_MS);
+		}
 	}
 }
 
