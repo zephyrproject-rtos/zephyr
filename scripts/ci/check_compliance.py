@@ -728,8 +728,6 @@ class Nits(ComplianceTest):
                "defconfig" in fname or \
                fname == "README":
 
-                self.check_source_file(fname)
-
     def check_kconfig_header(self, fname):
         # Checks for a spammy copy-pasted header format
 
