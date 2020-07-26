@@ -53,7 +53,7 @@ static inline void trigger_irq(int irq)
 {
 	printk("Triggering irq : %d\n", irq);
 #if defined(CONFIG_SOC_TI_LM3S6965_QEMU) || defined(CONFIG_CPU_CORTEX_M0) \
-	|| defined(CONFIG_CPU_CORTEX_M0PLUS)
+	|| defined(CONFIG_CPU_CORTEX_M0PLUS) || defined(CONFIG_CPU_CORTEX_M1)
 	NVIC_SetPendingIRQ(irq);
 #else
 	NVIC->STIR = irq;
