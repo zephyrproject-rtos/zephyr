@@ -70,6 +70,8 @@ typedef enum {
 #define __CM0_REV        0
 #elif defined(CONFIG_CPU_CORTEX_M0PLUS)
 #define __CM0PLUS_REV    0
+#elif defined(CONFIG_CPU_CORTEX_M1)
+#define __CM1_REV        0
 #elif defined(CONFIG_CPU_CORTEX_M3)
 #define __CM3_REV        0
 #elif defined(CONFIG_CPU_CORTEX_M4)
@@ -103,6 +105,8 @@ typedef enum {
 #include <core_cm0.h>
 #elif defined(CONFIG_CPU_CORTEX_M0PLUS)
 #include <core_cm0plus.h>
+#elif defined(CONFIG_CPU_CORTEX_M1)
+#include <core_cm1.h>
 #elif defined(CONFIG_CPU_CORTEX_M3)
 #include <core_cm3.h>
 #elif defined(CONFIG_CPU_CORTEX_M4)

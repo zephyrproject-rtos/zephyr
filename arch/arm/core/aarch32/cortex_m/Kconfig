@@ -23,6 +23,13 @@ config CPU_CORTEX_M0PLUS
 	help
 	  This option signifies the use of a Cortex-M0+ CPU
 
+config CPU_CORTEX_M1
+	bool
+	select CPU_CORTEX_M
+	select ARMV6_M_ARMV8_M_BASELINE
+	help
+	  This option signifies the use of a Cortex-M1 CPU
+
 config CPU_CORTEX_M3
 	bool
 	select CPU_CORTEX_M
@@ -72,7 +79,7 @@ config CPU_CORTEX_M_HAS_SYSTICK
 
 config CPU_CORTEX_M_HAS_DWT
 	bool
-	depends on !CPU_CORTEX_M0 && !CPU_CORTEX_M0PLUS
+	depends on !CPU_CORTEX_M0 && !CPU_CORTEX_M0PLUS && !CPU_CORTEX_M1
 	help
 	  This option signifies that the CPU implements the Data Watchpoint and
 	  Trace (DWT) unit specified by the ARMv7-M and above.
@@ -96,14 +103,14 @@ config CPU_CORTEX_M_HAS_BASEPRI
 
 config CPU_CORTEX_M_HAS_VTOR
 	bool
-	depends on !CPU_CORTEX_M0
+	depends on !CPU_CORTEX_M0 && !CPU_CORTEX_M1
 	help
 	  This option signifies the CPU has the VTOR register.
 	  The VTOR indicates the offset of the vector table base
 	  address from memory address 0x00000000. Always present
 	  in CPUs implementing the ARMv7-M or ARMv8-M architectures.
 	  Optional in CPUs implementing ARMv6-M, ARMv8-M Baseline
-	  architectures (except for Cortex-M0, where it is never
+	  architectures (except for Cortex-M0/M1, where it is never
 	  implemented).
 
 config CPU_CORTEX_M_HAS_SPLIM
@@ -229,7 +236,7 @@ config ARMV8_M_DSP
 	  This option signifies the use of an ARMv8-M processor
 	  implementation supporting the DSP Extension.
 
-menu "ARM Cortex-M0/M0+/M3/M4/M7/M23/M33 options"
+menu "ARM Cortex-M0/M0+/M1/M3/M4/M7/M23/M33 options"
     depends on ARMV6_M_ARMV8_M_BASELINE || ARMV7_M_ARMV8_M_MAINLINE
 
 config GEN_ISR_TABLES
