@@ -5,8 +5,6 @@
  */
 
 /*
- * This file is intentionally empty.  This shield target all board with a free
- * SPI port.  This type of boards should define a board overlay.  If you board
- * have Arduino, MikroBus, Xplained, Xplained Pro or any other standard header
- * you must use the generic overlay accordingly.
+ * This file is intentionally empty. Please confer with shield documentation
+ * for instructions to use this shield.
  */
