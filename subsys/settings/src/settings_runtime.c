@@ -49,6 +49,10 @@ int settings_runtime_get(const char *name, void *data, size_t len)
 		return -EINVAL;
 	}
 
+	if (!ch->h_get) {
+		return -ENOTSUP;
+	}
+
 	return ch->h_get(name_key, data, len);
 }
 
