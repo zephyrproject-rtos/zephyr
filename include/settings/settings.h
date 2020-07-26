@@ -129,7 +129,7 @@ struct settings_handler {
  */
 struct settings_handler_static {
 
-	char *name;
+	const char *name;
 	/**< Name of subtree. */
 
 	int (*h_get)(const char *key, char *val, int val_len_max);
