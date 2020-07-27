@@ -59,7 +59,10 @@ static inline nrf_spim_frequency_t get_nrf_spim_frequency(uint32_t frequency)
 		return NRF_SPIM_FREQ_2M;
 	} else if (frequency < 8000000) {
 		return NRF_SPIM_FREQ_4M;
-#if defined(CONFIG_SOC_NRF52833) || defined(CONFIG_SOC_NRF52840)
+/* Only the devices with HS-SPI can use SPI clock higher than 8 MHz and
+ * have SPIM_FREQUENCY_FREQUENCY_M32 defined in their own bitfields.h
+ */
+#if defined(SPIM_FREQUENCY_FREQUENCY_M32)
 	} else if (frequency < 16000000) {
 		return NRF_SPIM_FREQ_8M;
 	} else if (frequency < 32000000) {
