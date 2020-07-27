@@ -5,10 +5,8 @@
  */
 
 /**
- * @addtogroup t_dma_mem_to_mem
- * @{
- * @defgroup t_dma_m2m_chan_burst test_dma_m2m_chan_burst
- * @brief TestPurpose: verify zephyr dma memory to memory transfer
+ * @file
+ * @brief Verify zephyr dma memory to memory transfer
  * @details
  * - Test Steps
  *   -# Set dma channel configuration including source/dest addr, burstlen
@@ -16,7 +14,6 @@
  *   -# Start transfer
  * - Expected Results
  *   -# Data is transferred correctly from src to dest
- * @}
  */
 
 #include <zephyr.h>

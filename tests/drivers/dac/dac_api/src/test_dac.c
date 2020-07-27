@@ -4,13 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
- * @addtogroup test_dac_basic_operations
- * @{
- * @defgroup t_dac_basic_basic_operations test_dac_write
- * @brief TestPurpose: verify DAC driver handles single write
- * @}
- */
 
 #include <drivers/dac.h>
 #include <zephyr.h>

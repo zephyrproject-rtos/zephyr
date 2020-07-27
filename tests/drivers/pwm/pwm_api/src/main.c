@@ -4,12 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_driver_pwm
- * @{
- * @defgroup t_pwm_basic test_pwm_basic_operations
- * @}
- */
 
 #include <zephyr.h>
 #include <ztest.h>

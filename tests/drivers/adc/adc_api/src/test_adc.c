@@ -5,13 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
- * @addtogroup test_adc_basic_operations
- * @{
- * @defgroup t_adc_basic_basic_operations test_adc_sample
- * @brief TestPurpose: verify ADC driver handles different sampling scenarios
- * @}
- */
 
 #include <drivers/adc.h>
 #include <zephyr.h>
