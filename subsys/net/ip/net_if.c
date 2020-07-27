@@ -1074,7 +1074,7 @@ static void rs_timeout(struct k_work *work)
 			}
 		}
 
-		if (!iface) {
+		if (iface) {
 			NET_DBG("RS no respond iface %p count %d",
 				iface, ipv6->rs_count);
 			if (ipv6->rs_count < RS_COUNT) {
