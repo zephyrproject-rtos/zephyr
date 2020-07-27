@@ -671,6 +671,22 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
+
+		wdog0: wdog@400b8000 {
+			compatible = "nxp,imx-wdog";
+			reg = <0x400b8000 0xA>;
+			status = "disabled";
+			interrupts = <92 0>;
+			label = "WDOG0";
+		};
+
+		wdog1: wdog@400d0000 {
+			compatible = "nxp,imx-wdog";
+			reg = <0x400d0000 0xA>;
+			status = "disabled";
+			interrupts = <45 0>;
+			label = "WDOG1";
+		};
 	};
 };
 

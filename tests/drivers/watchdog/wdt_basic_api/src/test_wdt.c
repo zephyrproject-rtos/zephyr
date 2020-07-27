@@ -125,20 +125,26 @@ static struct wdt_timeout_cfg m_cfg_wdt1;
 #define DATATYPE uint32_t
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
+#define NOINIT_SECTION ".dtcm_noinit.test_wdt"
+#else
+#define NOINIT_SECTION ".noinit.test_wdt"
+#endif
+
 /* m_state indicates state of particular test. Used to check whether testcase
  * should go to reset state or check other values after reset.
  */
-volatile DATATYPE m_state __attribute__((section(".noinit.test_wdt")));
+volatile DATATYPE m_state __attribute__((section(NOINIT_SECTION)));
 
 /* m_testcase_index is incremented after each test to make test possible
  * switch to next testcase.
  */
-volatile DATATYPE m_testcase_index __attribute__((section(".noinit.test_wdt")));
+volatile DATATYPE m_testcase_index __attribute__((section(NOINIT_SECTION)));
 
 /* m_testvalue contains value set in interrupt callback to point whether
  * first or second interrupt was fired.
  */
-volatile DATATYPE m_testvalue __attribute__((section(".noinit.test_wdt")));
+volatile DATATYPE m_testvalue __attribute__((section(NOINIT_SECTION)));
 
 #if TEST_WDT_CALLBACK_1
 static void wdt_int_cb0(const struct device *wdt_dev, int channel_id)
