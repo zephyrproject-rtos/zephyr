@@ -10,6 +10,20 @@ system those are called *modules*. These modules must be integrated with the
 Zephyr build system, as described in more detail in other sections on
 this page.
 
+To be classified as a candidate for being included in the default list of
+modules, an external project is required to have its own life-cycle outside
+the Zephyr Project, that is, reside in its own repository, and have its own
+contribution and maintenance workfow and release process. Zephyr modules
+should not contain code that is written exclusively for Zephyr. Instead,
+such code should be contributed to the main zephyr tree.
+
+Modules to be included in the default manifest of the Zephyr project need to
+provide functionality or features endorsed and approved by the project Technical
+Steering Committee and should comply with the
+:ref:`module licensing requirements<modules_licensing>` and
+:ref:`contribute guidelines<modules_contributing>`. They should also have a
+Zephyr developer that is committed to maintain the module codebase.
+
 Zephyr depends on several categories of modules, including:
 
 - Debugger integration
