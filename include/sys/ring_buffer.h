@@ -45,7 +45,8 @@ struct ring_buf {
 		uint32_t *buf32;	 /**< Memory region for stored entries */
 		uint8_t *buf8;
 	} buf;
-	uint32_t mask;   /**< Modulo mask if size is a power of 2 */
+	uint32_t mask;	/**< Modulo mask if size is a power of 2 */
+	bool any;	/**< Set to true if any data is in the buffer */
 };
 
 /**
@@ -149,6 +150,7 @@ static inline void ring_buf_init(struct ring_buf *buf, uint32_t size, void *data
 	memset(buf, 0, sizeof(struct ring_buf));
 	buf->size = size;
 	buf->buf.buf32 = (uint32_t *)data;
+	buf->any = false;
 	if (is_power_of_two(size)) {
 		buf->mask = size - 1;
 	} else {
@@ -156,7 +158,8 @@ static inline void ring_buf_init(struct ring_buf *buf, uint32_t size, void *data
 	}
 }
 
-/** @brief Determine free space based on ring buffer parameters.
+/** @brief Determine free space of non-empty buffer based on ring buffer
+ *	   parameters.
  *
  * @note Function for internal use.
  *
@@ -169,12 +172,12 @@ static inline void ring_buf_init(struct ring_buf *buf, uint32_t size, void *data
 static inline uint32_t z_ring_buf_custom_space_get(uint32_t size, uint32_t head,
 					      uint32_t tail)
 {
-	if (tail < head) {
-		return head - tail - 1;
+	if (tail <= head) {
+		return head - tail;
 	}
 
 	/* buf->tail > buf->head */
-	return (size - tail) + head - 1;
+	return (size - tail) + head;
 }
 
 /**
@@ -186,7 +189,7 @@ static inline uint32_t z_ring_buf_custom_space_get(uint32_t size, uint32_t head,
  */
 static inline int ring_buf_is_empty(struct ring_buf *buf)
 {
-	return (buf->head == buf->tail);
+	return !buf->any;
 }
 
 /**
@@ -198,19 +201,8 @@ static inline void ring_buf_reset(struct ring_buf *buf)
 {
 	buf->head = 0;
 	buf->tail = 0;
+	buf->any = false;
 	memset(&buf->misc, 0, sizeof(buf->misc));
-}
-
-/**
- * @brief Determine free space in a ring buffer.
- *
- * @param buf Address of ring buffer.
- *
- * @return Ring buffer free space (in 32-bit words or bytes).
- */
-static inline uint32_t ring_buf_space_get(struct ring_buf *buf)
-{
-	return z_ring_buf_custom_space_get(buf->size, buf->head, buf->tail);
 }
 
 /**
@@ -222,8 +214,21 @@ static inline uint32_t ring_buf_space_get(struct ring_buf *buf)
  */
 static inline uint32_t ring_buf_capacity_get(struct ring_buf *buf)
 {
-	/* One element is used to distinguish between empty and full state. */
-	return buf->size - 1;
+	return buf->size;
+}
+
+/**
+ * @brief Determine free space in a ring buffer.
+ *
+ * @param buf Address of ring buffer.
+ *
+ * @return Ring buffer free space (in 32-bit words or bytes).
+ */
+static inline uint32_t ring_buf_space_get(struct ring_buf *buf)
+{
+	return ring_buf_is_empty(buf) ?
+		ring_buf_capacity_get(buf) :
+		z_ring_buf_custom_space_get(buf->size, buf->head, buf->tail);
 }
 
 /**

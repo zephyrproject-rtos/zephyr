@@ -47,6 +47,8 @@ int ring_buf_item_put(struct ring_buf *buf, uint16_t type, uint8_t value,
 			}
 			buf->tail = (buf->tail + size32 + 1) % buf->size;
 		}
+
+		buf->any = true;
 		rc = 0U;
 	} else {
 		buf->misc.item_mode.dropped_put_count++;
@@ -91,6 +93,10 @@ int ring_buf_item_get(struct ring_buf *buf, uint16_t *type, uint8_t *value,
 		buf->head = (buf->head + header->length + 1) % buf->size;
 	}
 
+	if (buf->head == buf->tail) {
+		buf->any = false;
+	}
+
 	return 0;
 }
 
@@ -110,7 +116,9 @@ uint32_t ring_buf_put_claim(struct ring_buf *buf, uint8_t **data, uint32_t size)
 {
 	uint32_t space, trail_size, allocated;
 
-	space = z_ring_buf_custom_space_get(buf->size, buf->head,
+	space = ring_buf_is_empty(buf) ?
+		ring_buf_capacity_get(buf) :
+		z_ring_buf_custom_space_get(buf->size, buf->head,
 					    buf->misc.byte_mode.tmp_tail);
 
 	/* Limit requested size to available size. */
@@ -121,8 +129,10 @@ uint32_t ring_buf_put_claim(struct ring_buf *buf, uint8_t **data, uint32_t size)
 	allocated = MIN(trail_size, size);
 
 	*data = &buf->buf.buf8[buf->misc.byte_mode.tmp_tail];
+
 	buf->misc.byte_mode.tmp_tail =
 		wrap(buf->misc.byte_mode.tmp_tail + allocated, buf->size);
+
 
 	return allocated;
 }
@@ -131,6 +141,10 @@ int ring_buf_put_finish(struct ring_buf *buf, uint32_t size)
 {
 	if (size > ring_buf_space_get(buf)) {
 		return -EINVAL;
+	}
+
+	if (size) {
+		buf->any = true;
 	}
 
 	buf->tail = wrap(buf->tail + size, buf->size);
@@ -164,7 +178,8 @@ uint32_t ring_buf_get_claim(struct ring_buf *buf, uint8_t **data, uint32_t size)
 {
 	uint32_t space, granted_size, trail_size;
 
-	space = (buf->size - 1) -
+	space = ring_buf_is_empty(buf) ? 0 :
+		buf->size -
 		z_ring_buf_custom_space_get(buf->size,
 					    buf->misc.byte_mode.tmp_head,
 					    buf->tail);
@@ -185,10 +200,12 @@ uint32_t ring_buf_get_claim(struct ring_buf *buf, uint8_t **data, uint32_t size)
 
 int ring_buf_get_finish(struct ring_buf *buf, uint32_t size)
 {
-	uint32_t allocated = (buf->size - 1) - ring_buf_space_get(buf);
+	uint32_t allocated = buf->size - ring_buf_space_get(buf);
 
 	if (size > allocated) {
 		return -EINVAL;
+	} else if (size == allocated) {
+		buf->any = false;
 	}
 
 	buf->head = wrap(buf->head + size, buf->size);
