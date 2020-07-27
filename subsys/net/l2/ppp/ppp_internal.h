@@ -44,6 +44,8 @@ struct ppp_packet {
 /** Max number of IPV6CP options */
 #define MAX_IPV6CP_OPTIONS 1
 
+#define PPP_BUF_ALLOC_TIMEOUT	K_MSEC(100)
+
 /** Protocol handler information. */
 struct ppp_protocol_handler {
 	/** Protocol init function */
@@ -112,7 +114,8 @@ void ppp_change_state_debug(struct ppp_fsm *fsm, enum ppp_state new_state,
 			    const char *caller, int line);
 #endif
 
-struct net_buf *ppp_get_net_buf(struct net_buf *root_buf, uint8_t len);
+struct ppp_context *ppp_fsm_ctx(struct ppp_fsm *fsm);
+struct net_if *ppp_fsm_iface(struct ppp_fsm *fsm);
 int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 		 enum ppp_packet_type type, uint8_t id,
 		 void *data, uint32_t data_len);

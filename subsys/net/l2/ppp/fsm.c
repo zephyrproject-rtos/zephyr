@@ -17,16 +17,40 @@ LOG_MODULE_DECLARE(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 
 #include "ppp_internal.h"
 
-#define BUF_ALLOC_TIMEOUT K_MSEC(100)
-
 /* This timeout is in milliseconds */
 #define FSM_TIMEOUT K_MSEC(CONFIG_NET_L2_PPP_TIMEOUT)
 
 #define MAX_NACK_LOOPS CONFIG_NET_L2_PPP_MAX_NACK_LOOPS
 
+struct ppp_context *ppp_fsm_ctx(struct ppp_fsm *fsm)
+{
+	if (fsm->protocol == PPP_LCP) {
+		return CONTAINER_OF(fsm, struct ppp_context, lcp.fsm);
+#if defined(CONFIG_NET_IPV4)
+	} else if (fsm->protocol == PPP_IPCP) {
+		return CONTAINER_OF(fsm, struct ppp_context, ipcp.fsm);
+#endif
+#if defined(CONFIG_NET_IPV6)
+	} else if (fsm->protocol == PPP_IPV6CP) {
+		return CONTAINER_OF(fsm, struct ppp_context, ipv6cp.fsm);
+#endif
+	}
+
+	return NULL;
+}
+
+struct net_if *ppp_fsm_iface(struct ppp_fsm *fsm)
+{
+	struct ppp_context *ctx = ppp_fsm_ctx(fsm);
+
+	NET_ASSERT(ctx->iface);
+
+	return ctx->iface;
+}
+
 static void fsm_send_configure_req(struct ppp_fsm *fsm, bool retransmit)
 {
-	struct net_buf *options = NULL;
+	struct net_pkt *pkt = NULL;
 
 	if (fsm->state != PPP_ACK_RECEIVED &&
 	    fsm->state != PPP_ACK_SENT &&
@@ -48,7 +72,7 @@ static void fsm_send_configure_req(struct ppp_fsm *fsm, bool retransmit)
 	fsm->ack_received = false;
 
 	if (fsm->cb.config_info_add) {
-		options = fsm->cb.config_info_add(fsm);
+		pkt = fsm->cb.config_info_add(fsm);
 	}
 
 	NET_DBG("[%s/%p] Sending %s (%d) id %d to peer while in %s (%d)",
@@ -57,7 +81,7 @@ static void fsm_send_configure_req(struct ppp_fsm *fsm, bool retransmit)
 		fsm->state);
 
 	(void)ppp_send_pkt(fsm, NULL, PPP_CONFIGURE_REQ, fsm->req_id,
-			   options, options ? net_buf_frags_len(options) : 0);
+			   pkt, pkt ? net_pkt_get_len(pkt) : 0);
 
 	fsm->retransmits--;
 
@@ -355,26 +379,11 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 	int ret;
 
 	if (!iface) {
-		struct ppp_context *ctx;
-
-		if (fsm && fsm->protocol == PPP_LCP) {
-			ctx = CONTAINER_OF(fsm, struct ppp_context, lcp.fsm);
-#if defined(CONFIG_NET_IPV4)
-		} else if (fsm && fsm->protocol == PPP_IPCP) {
-			ctx = CONTAINER_OF(fsm, struct ppp_context, ipcp.fsm);
-#endif
-#if defined(CONFIG_NET_IPV6)
-		} else if (fsm && fsm->protocol == PPP_IPV6CP) {
-			ctx = CONTAINER_OF(fsm, struct ppp_context,
-					   ipv6cp.fsm);
-#endif
-		} else {
+		if (!fsm) {
 			return -ENOENT;
 		}
 
-		NET_ASSERT(ctx->iface);
-
-		iface = ctx->iface;
+		iface = ppp_fsm_iface(fsm);
 	}
 
 	if (fsm) {
@@ -390,9 +399,8 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 	case PPP_CONFIGURE_ACK:
 	case PPP_CONFIGURE_NACK:
 	case PPP_CONFIGURE_REJ:
-		pkt = data;
-		/* FALLTHROUGH */
 	case PPP_CONFIGURE_REQ:
+		pkt = data;
 		/* 2 + 1 + 1 (configure-[req|ack|nack|rej]) +
 		 * data_len (options)
 		 */
@@ -437,14 +445,14 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 		pkt = net_pkt_alloc_with_buffer(iface,
 						sizeof(uint16_t) + len,
 						AF_UNSPEC, 0,
-						BUF_ALLOC_TIMEOUT);
+						PPP_BUF_ALLOC_TIMEOUT);
 		if (!pkt) {
 			goto out_of_mem;
 		}
 	} else {
 		struct net_buf *buf;
 
-		buf = net_pkt_get_reserve_tx_data(BUF_ALLOC_TIMEOUT);
+		buf = net_pkt_get_reserve_tx_data(PPP_BUF_ALLOC_TIMEOUT);
 		if (!buf) {
 			LOG_ERR("failed to allocate buffer");
 			goto out_of_mem;
@@ -499,12 +507,6 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 		}
 	} else if (type == PPP_ECHO_REPLY) {
 		net_pkt_copy(pkt, req_pkt, len);
-	} else if (type == PPP_CONFIGURE_REQ) {
-		/* add options */
-		if (data) {
-			net_buf_frag_add(pkt->buffer, data);
-		}
-
 	} else if (type == PPP_PROTOCOL_REJ) {
 		net_pkt_cursor_init(req_pkt);
 		net_pkt_copy(pkt, req_pkt, len);
@@ -597,7 +599,7 @@ static enum net_verdict fsm_recv_configure_req(struct ppp_fsm *fsm,
 					sizeof(uint16_t) + sizeof(uint16_t) +
 						sizeof(uint8_t) + sizeof(uint8_t) +
 						remaining_len,
-					AF_UNSPEC, 0, BUF_ALLOC_TIMEOUT);
+					AF_UNSPEC, 0, PPP_BUF_ALLOC_TIMEOUT);
 	if (!out) {
 		return NET_DROP;
 	}

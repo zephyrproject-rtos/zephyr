@@ -25,76 +25,47 @@ static enum net_verdict ipcp_handle(struct ppp_context *ctx,
 	return ppp_fsm_input(&ctx->ipcp.fsm, PPP_IPCP, pkt);
 }
 
-static bool append_to_buf(struct net_buf *buf, uint8_t *data, uint8_t data_len)
-{
-	if (data_len > net_buf_tailroom(buf)) {
-		return false;
-	}
-
-	/* FIXME: use net_pkt api so that we can handle a case where data might
-	 * split to two net_buf's
-	 */
-	net_buf_add_mem(buf, data, data_len);
-
-	return true;
-}
-
 /* Length is (6): code + id + IPv4 address length. RFC 1332 and also
  * DNS in RFC 1877.
  */
 #define IP_ADDRESS_OPTION_LEN (1 + 1 + 4)
 
-static struct net_buf *ipcp_config_info_add(struct ppp_fsm *fsm)
+static struct net_pkt *ipcp_config_info_add(struct ppp_fsm *fsm)
 {
 	struct ppp_context *ctx = CONTAINER_OF(fsm, struct ppp_context,
 					       ipcp.fsm);
 
 	/* Currently we support IP address and DNS servers */
-	uint8_t options[3 * IP_ADDRESS_OPTION_LEN];
-	const struct in_addr *my_addr;
-	struct net_buf *buf;
-	bool added;
+	const struct in_addr *addr;
+	struct net_pkt *pkt;
 
-	my_addr = &ctx->ipcp.my_options.address;
-
-	uint8_t *option = options;
-	option[0] = IPCP_OPTION_IP_ADDRESS;
-	option[1] = IP_ADDRESS_OPTION_LEN;
-	memcpy(&option[2], &my_addr->s_addr, sizeof(my_addr->s_addr));
-	option += IP_ADDRESS_OPTION_LEN;
-
-	my_addr = &ctx->ipcp.my_options.dns1_address;
-	option[0] = IPCP_OPTION_DNS1;
-	option[1] = IP_ADDRESS_OPTION_LEN;
-	memcpy(&option[2], &my_addr->s_addr, sizeof(my_addr->s_addr));
-
-	option += IP_ADDRESS_OPTION_LEN;
-	my_addr = &ctx->ipcp.my_options.dns2_address;
-	option[0] = IPCP_OPTION_DNS2;
-	option[1] = IP_ADDRESS_OPTION_LEN;
-	memcpy(&option[2], &my_addr->s_addr, sizeof(my_addr->s_addr));
-
-	buf = ppp_get_net_buf(NULL, 0);
-	if (!buf) {
-		goto out_of_mem;
+	pkt = net_pkt_alloc_with_buffer(ppp_fsm_iface(fsm),
+					3 * IP_ADDRESS_OPTION_LEN,
+					AF_UNSPEC, 0, PPP_BUF_ALLOC_TIMEOUT);
+	if (!pkt) {
+		return NULL;
 	}
 
-	added = append_to_buf(buf, options, sizeof(options));
-	if (!added) {
-		goto out_of_mem;
-	}
+	addr = &ctx->ipcp.my_options.address;
+	net_pkt_write_u8(pkt, IPCP_OPTION_IP_ADDRESS);
+	net_pkt_write_u8(pkt, IP_ADDRESS_OPTION_LEN);
+	net_pkt_write(pkt, &addr->s_addr, sizeof(addr->s_addr));
 
 	NET_DBG("Added IPCP IP Address option %d.%d.%d.%d",
-		option[2], option[3], option[4], option[5]);
+		addr->s4_addr[0], addr->s4_addr[1],
+		addr->s4_addr[2], addr->s4_addr[3]);
 
-	return buf;
+	addr = &ctx->ipcp.my_options.dns1_address;
+	net_pkt_write_u8(pkt, IPCP_OPTION_DNS1);
+	net_pkt_write_u8(pkt, IP_ADDRESS_OPTION_LEN);
+	net_pkt_write(pkt, &addr->s_addr, sizeof(addr->s_addr));
 
-out_of_mem:
-	if (buf) {
-		net_buf_unref(buf);
-	}
+	addr = &ctx->ipcp.my_options.dns2_address;
+	net_pkt_write_u8(pkt, IPCP_OPTION_DNS2);
+	net_pkt_write_u8(pkt, IP_ADDRESS_OPTION_LEN);
+	net_pkt_write(pkt, &addr->s_addr, sizeof(addr->s_addr));
 
-	return NULL;
+	return pkt;
 }
 
 static int ipcp_config_info_req(struct ppp_fsm *fsm,
