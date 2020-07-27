@@ -326,9 +326,9 @@ static int tcp_conn_unref(struct tcp *conn)
 
 	k_delayed_work_cancel(&conn->timewait_timer);
 
-	memset(conn, 0, sizeof(*conn));
-
 	sys_slist_find_and_remove(&tcp_conns, (sys_snode_t *)conn);
+
+	memset(conn, 0, sizeof(*conn));
 
 	k_mem_slab_free(&tcp_conns_slab, (void **)&conn);
 
