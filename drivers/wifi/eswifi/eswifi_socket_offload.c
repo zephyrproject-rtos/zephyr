@@ -58,7 +58,7 @@ static int eswifi_socket_connect(void *obj, const struct sockaddr *addr,
 	int ret;
 
 	if ((addrlen == 0) || (addr == NULL) ||
-	    (sock > ESWIFI_OFFLOAD_MAX_SOCKETS)) {
+	    (sock >= ESWIFI_OFFLOAD_MAX_SOCKETS)) {
 		return -EINVAL;
 	}
 
@@ -97,7 +97,7 @@ static int __eswifi_socket_accept(void *obj, struct sockaddr *addr,
 	int ret;
 
 	if ((addrlen == NULL) || (addr == NULL) ||
-	    (sock > ESWIFI_OFFLOAD_MAX_SOCKETS)) {
+	    (sock >= ESWIFI_OFFLOAD_MAX_SOCKETS)) {
 		return -EINVAL;
 	}
 
@@ -294,7 +294,7 @@ static ssize_t eswifi_socket_recv(void *obj, void *buf, size_t max_len,
 	struct net_pkt *pkt;
 
 	if ((max_len == 0) || (buf == NULL) ||
-	    (sock > ESWIFI_OFFLOAD_MAX_SOCKETS)) {
+	    (sock >= ESWIFI_OFFLOAD_MAX_SOCKETS)) {
 		return -EINVAL;
 	}
 
@@ -356,7 +356,7 @@ static int eswifi_socket_close(int sock)
 	struct net_pkt *pkt;
 	int ret;
 
-	if (sock > ESWIFI_OFFLOAD_MAX_SOCKETS) {
+	if (sock >= ESWIFI_OFFLOAD_MAX_SOCKETS) {
 		return -EINVAL;
 	}
 
@@ -435,7 +435,7 @@ static int eswifi_socket_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 		return -1;
 	}
 
-	if (sock > ESWIFI_OFFLOAD_MAX_SOCKETS) {
+	if (sock >= ESWIFI_OFFLOAD_MAX_SOCKETS) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -460,7 +460,7 @@ static int eswifi_socket_bind(void *obj, const struct sockaddr *addr,
 	int ret;
 
 	if ((addrlen == 0) || (addr == NULL) ||
-	    (sock > ESWIFI_OFFLOAD_MAX_SOCKETS)) {
+	    (sock >= ESWIFI_OFFLOAD_MAX_SOCKETS)) {
 		return -EINVAL;
 	}
 
