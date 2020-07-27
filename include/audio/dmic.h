@@ -17,10 +17,18 @@
 #ifndef ZEPHYR_INCLUDE_AUDIO_DMIC_H_
 #define ZEPHYR_INCLUDE_AUDIO_DMIC_H_
 
+
+/**
+ * @defgroup audio_interface Audio
+ * @{
+ * @}
+ */
+
 /**
  * @brief Abstraction for digital microphones
  *
  * @defgroup audio_dmic_interface Digital Microphone Interface
+ * @ingroup audio_interface
  * @{
  */
 
