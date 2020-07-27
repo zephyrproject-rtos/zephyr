@@ -142,133 +142,80 @@ static struct net_pkt *ipcp_config_info_add(struct ppp_fsm *fsm)
 	return ppp_my_options_add(fsm, 3 * IP_ADDRESS_OPTION_LEN);
 }
 
+struct ipcp_peer_option_data {
+	bool addr_present;
+	struct in_addr addr;
+};
+
+static int ipcp_ip_address_parse(struct ppp_fsm *fsm, struct net_pkt *pkt,
+				 void *user_data)
+{
+	struct ipcp_peer_option_data *data = user_data;
+	int ret;
+
+	ret = net_pkt_read(pkt, &data->addr, sizeof(data->addr));
+	if (ret < 0) {
+		/* Should not happen, is the pkt corrupt? */
+		return -EMSGSIZE;
+	}
+
+	if (CONFIG_NET_L2_PPP_LOG_LEVEL >= LOG_LEVEL_DBG) {
+		char dst[INET_ADDRSTRLEN];
+		char *addr_str;
+
+		addr_str = net_addr_ntop(AF_INET, &data->addr, dst,
+					 sizeof(dst));
+
+		NET_DBG("[IPCP] Received peer address %s",
+			log_strdup(addr_str));
+	}
+
+	data->addr_present = true;
+
+	return 0;
+}
+
+static const struct ppp_peer_option_info ipcp_peer_options[] = {
+	PPP_PEER_OPTION(IPCP_OPTION_IP_ADDRESS, ipcp_ip_address_parse),
+};
+
 static int ipcp_config_info_req(struct ppp_fsm *fsm,
 				struct net_pkt *pkt,
 				uint16_t length,
 				struct net_pkt *ret_pkt)
 {
-	int nack_idx = 0, address_option_idx = -1;
-	struct ppp_option_pkt options[MAX_IPCP_OPTIONS];
-	struct ppp_option_pkt nack_options[MAX_IPCP_OPTIONS];
-	enum ppp_packet_type code;
+	struct ppp_context *ctx =
+		CONTAINER_OF(fsm, struct ppp_context, ipcp.fsm);
+	struct ipcp_peer_option_data data = {
+		.addr_present = false,
+	};
 	int ret;
-	int i;
 
-	memset(options, 0, sizeof(options));
-	memset(nack_options, 0, sizeof(nack_options));
-
-	ret = ppp_parse_options_array(fsm, pkt, length, options,
-				      ARRAY_SIZE(options));
-	if (ret < 0) {
-		return -EINVAL;
+	ret = ppp_config_info_req(fsm, pkt, length, ret_pkt, PPP_IPCP,
+				  ipcp_peer_options,
+				  ARRAY_SIZE(ipcp_peer_options),
+				  &data);
+	if (ret != PPP_CONFIGURE_ACK) {
+		/* There are some issues with configuration still */
+		return ret;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(options); i++) {
-		if (options[i].type.ipcp != IPCP_OPTION_RESERVED) {
-			NET_DBG("[%s/%p] %s option %s (%d) len %d",
-				fsm->name, fsm, "Check",
-				ppp_option2str(PPP_IPCP, options[i].type.ipcp),
-				options[i].type.ipcp, options[i].len);
-		}
-
-		switch (options[i].type.ipcp) {
-		case IPCP_OPTION_RESERVED:
-			continue;
-
-		case IPCP_OPTION_IP_ADDRESS:
-			/* Currently we only accept one option (IP address) */
-			address_option_idx = i;
-			break;
-
-		default:
-			nack_options[nack_idx].type.ipcp =
-				options[i].type.ipcp;
-			nack_options[nack_idx].len = options[i].len;
-
-			if (options[i].len > 2) {
-				memcpy(&nack_options[nack_idx].value,
-				       &options[i].value,
-				       sizeof(nack_options[nack_idx].value));
-			}
-
-			nack_idx++;
-			break;
-		}
+	if (!data.addr_present) {
+		NET_DBG("[%s/%p] No %saddress provided",
+			fsm->name, fsm, "peer ");
+		return PPP_CONFIGURE_ACK;
 	}
 
-	if (nack_idx > 0) {
-		code = PPP_CONFIGURE_REJ;
+	/* The address is the remote address, we then need
+	 * to figure out what our address should be.
+	 *
+	 * TODO:
+	 *   - check that the IP address can be accepted
+	 */
 
-		/* Fill ret_pkt with options that are not accepted */
-		for (i = 0; i < MIN(nack_idx, ARRAY_SIZE(nack_options)); i++) {
-			net_pkt_write_u8(ret_pkt, nack_options[i].type.ipcp);
-			net_pkt_write_u8(ret_pkt, nack_options[i].len);
+	memcpy(&ctx->ipcp.peer_options.address, &data.addr, sizeof(data.addr));
 
-			/* If there is some data, copy it to result buf */
-			if (nack_options[i].value.pos) {
-				net_pkt_cursor_restore(pkt,
-						       &nack_options[i].value);
-				net_pkt_copy(ret_pkt, pkt,
-					     nack_options[i].len - 1 - 1);
-			}
-		}
-	} else {
-		struct ppp_context *ctx;
-		struct in_addr addr;
-		int ret;
-
-		ctx = CONTAINER_OF(fsm, struct ppp_context, ipcp.fsm);
-
-		if (address_option_idx < 0) {
-			/* The address option was not present, but we
-			 * can continue without it.
-			 */
-			NET_DBG("[%s/%p] No %saddress provided",
-				fsm->name, fsm, "peer ");
-			return PPP_CONFIGURE_ACK;
-		}
-
-		code = PPP_CONFIGURE_ACK;
-
-		net_pkt_cursor_restore(pkt,
-				       &options[address_option_idx].value);
-
-		ret = net_pkt_read(pkt, (uint32_t *)&addr, sizeof(addr));
-		if (ret < 0) {
-			/* Should not happen, is the pkt corrupt? */
-			return -EMSGSIZE;
-		}
-
-		memcpy(&ctx->ipcp.peer_options.address, &addr, sizeof(addr));
-
-		if (CONFIG_NET_L2_PPP_LOG_LEVEL >= LOG_LEVEL_DBG) {
-			char dst[INET_ADDRSTRLEN];
-			char *addr_str;
-
-			addr_str = net_addr_ntop(AF_INET, &addr, dst,
-						 sizeof(dst));
-
-			NET_DBG("[%s/%p] Received %saddress %s",
-				fsm->name, fsm, "peer ", log_strdup(addr_str));
-		}
-
-		if (addr.s_addr) {
-			/* The address is the remote address, we then need
-			 * to figure out what our address should be.
-			 *
-			 * TODO:
-			 *   - check that the IP address can be accepted
-			 */
-
-			net_pkt_write_u8(ret_pkt, IPCP_OPTION_IP_ADDRESS);
-			net_pkt_write_u8(ret_pkt, IP_ADDRESS_OPTION_LEN);
-
-			net_pkt_write(ret_pkt, &addr.s_addr,
-				      sizeof(addr.s_addr));
-		}
-	}
-
-	return code;
+	return PPP_CONFIGURE_ACK;
 }
 
 static void ipcp_set_dns_servers(struct ppp_fsm *fsm)

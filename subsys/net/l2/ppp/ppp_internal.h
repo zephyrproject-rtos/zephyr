@@ -72,6 +72,27 @@ struct ppp_protocol_handler {
 	uint16_t protocol;
 };
 
+struct ppp_peer_option_info {
+	uint8_t code;
+	int (*parse)(struct ppp_fsm *fsm, struct net_pkt *pkt,
+		     void *user_data);
+};
+
+#define PPP_PEER_OPTION(_code, _parse)		\
+	{					\
+		.code = _code,			\
+		.parse = _parse,		\
+	}
+
+int ppp_config_info_req(struct ppp_fsm *fsm,
+			struct net_pkt *pkt,
+			uint16_t length,
+			struct net_pkt *ret_pkt,
+			enum ppp_protocol_type protocol,
+			const struct ppp_peer_option_info *options_info,
+			size_t num_options_info,
+			void *user_data);
+
 #define PPP_PROTO_GET_NAME(proto_name)		\
 	(ppp_protocol_handler_##proto_name)
 
