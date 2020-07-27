@@ -56,11 +56,6 @@ config NET_L2_PPP_MAX_OPTIONS
 	  How many options we support. This is used to allocate space for
 	  each option. The default (8) is a reasonably small value.
 
-config NET_L2_PPP_OPTION_MRU_NEG
-	bool "Negotiate MRU option if needed"
-	help
-	  Try to negotiate with peer for MRU (MTU) for the link.
-
 config NET_L2_PPP_OPTION_DNS_USE
 	bool "Use negotiated DNS servers"
 	depends on DNS_RESOLVER

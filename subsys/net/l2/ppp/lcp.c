@@ -258,13 +258,6 @@ static void lcp_init(struct ppp_context *ctx)
 	ctx->lcp.fsm.cb.finished = lcp_finished;
 	ctx->lcp.fsm.cb.proto_extension = lcp_handle_ext;
 	ctx->lcp.fsm.cb.config_info_req = lcp_config_info_req;
-
-	ctx->lcp.my_options.negotiate_proto_compression = false;
-	ctx->lcp.my_options.negotiate_addr_compression = false;
-	ctx->lcp.my_options.negotiate_async_map = false;
-	ctx->lcp.my_options.negotiate_magic = false;
-	ctx->lcp.my_options.negotiate_mru =
-		IS_ENABLED(CONFIG_NET_L2_PPP_OPTION_MRU_NEG) ? true : false;
 }
 
 PPP_PROTOCOL_REGISTER(LCP, PPP_LCP,

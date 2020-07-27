@@ -337,23 +337,6 @@ struct lcp_options {
 
 	/** Maximum Receive Unit value */
 	uint16_t mru;
-
-	/* Flags what to negotiate */
-
-	/** Negotiate MRU */
-	uint16_t negotiate_mru : 1;
-
-	/** Negotiate */
-	uint16_t negotiate_async_map :1;
-
-	/** Negotiate HDLC protocol field compression*/
-	uint16_t negotiate_proto_compression :1;
-
-	/** Negotiate HDLC address/control field compression */
-	uint16_t negotiate_addr_compression :1;
-
-	/** Negotiate magic number */
-	uint16_t negotiate_magic :1;
 };
 
 struct ipcp_options {
