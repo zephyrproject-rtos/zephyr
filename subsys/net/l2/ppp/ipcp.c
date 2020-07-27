@@ -463,6 +463,7 @@ static void ipcp_init(struct ppp_context *ctx)
 	ctx->ipcp.fsm.cb.config_info_add = ipcp_config_info_add;
 	ctx->ipcp.fsm.cb.config_info_req = ipcp_config_info_req;
 	ctx->ipcp.fsm.cb.config_info_nack = ipcp_config_info_nack;
+	ctx->ipcp.fsm.cb.config_info_rej = ppp_my_options_parse_conf_rej;
 }
 
 PPP_PROTOCOL_REGISTER(IPCP, PPP_IPCP,
