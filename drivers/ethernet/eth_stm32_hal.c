@@ -52,7 +52,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define ETH_MEDIA_INTERFACE_MII		HAL_ETH_MII_MODE
 #define ETH_MEDIA_INTERFACE_RMII	HAL_ETH_RMII_MODE
 
-#define ETH_DMA_TRANSMIT_TIMEOUT	20U  /* transmit timeout in sys tiks */
+#define ETH_DMA_TX_TIMEOUT_MS	20U  /* transmit timeout in milliseconds */
 
 #else
 
@@ -184,7 +184,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 
 	total_len = net_pkt_get_len(pkt);
 	if (total_len > ETH_TX_BUF_SIZE) {
-		LOG_ERR("PKT to big");
+		LOG_ERR("PKT too big");
 		res = -EIO;
 		goto error;
 	}
@@ -221,18 +221,72 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	tx_config.Length = total_len;
 	tx_config.TxBuffer = tx_buffer_def;
 
-	hal_ret = HAL_ETH_Transmit(heth, &tx_config, ETH_DMA_TRANSMIT_TIMEOUT);
-#else
-	hal_ret = HAL_ETH_TransmitFrame(heth, total_len);
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
+	/* Reset TX complete interrupt semaphore before TX request*/
+	k_sem_reset(&dev_data->tx_int_sem);
+
+	/* tx_buffer is allocated on function stack, we need */
+	/* to wait for the transfer to complete */
+	/* So it is not freed before the interrupt happens */
+	hal_ret = HAL_ETH_Transmit_IT(heth, &tx_config);
 
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("HAL_ETH_Transmit{Frame}: failed!");
+		LOG_ERR("HAL_ETH_Transmit: failed!");
 		res = -EIO;
 		goto error;
 	}
 
-#if !defined(CONFIG_SOC_SERIES_STM32H7X)
+	/* Wait for end of TX buffer transmission */
+	/* If the semaphore timeout breaks, it means */
+	/* an error occurred or IT was not fired */
+	if (k_sem_take(&dev_data->tx_int_sem,
+			K_MSEC(ETH_DMA_TX_TIMEOUT_MS)) != 0) {
+
+		LOG_ERR("HAL_ETH_TransmitIT tx_int_sem take timeout");
+		res = -EIO;
+
+		/* Content of the packet could be the reason for timeout */
+		LOG_HEXDUMP_ERR(dma_buffer, total_len, "eth packet timeout");
+
+		/* Check for errors */
+		/* Ethernet device was put in error state */
+		/* Error state is unrecoverable ? */
+		if (HAL_ETH_GetState(heth) == HAL_ETH_STATE_ERROR) {
+			LOG_ERR("%s: ETH in error state: errorcode:%x",
+				__func__,
+				HAL_ETH_GetError(heth));
+			/* TODO recover from error state by restarting eth */
+		}
+
+		/* Check for DMA errors */
+		if (HAL_ETH_GetDMAError(heth)) {
+			LOG_ERR("%s: ETH DMA error: dmaerror:%x",
+				__func__,
+				HAL_ETH_GetDMAError(heth));
+			/* DMA fatal bus errors are putting in error state*/
+			/* TODO recover from this */
+		}
+
+		/* Check for MAC errors */
+		if (HAL_ETH_GetDMAError(heth)) {
+			LOG_ERR("%s: ETH DMA error: macerror:%x",
+				__func__,
+				HAL_ETH_GetDMAError(heth));
+			/* MAC errors are putting in error state*/
+			/* TODO recover from this */
+		}
+
+		goto error;
+	}
+
+#else
+	hal_ret = HAL_ETH_TransmitFrame(heth, total_len);
+
+	if (hal_ret != HAL_OK) {
+		LOG_ERR("HAL_ETH_Transmit: failed!");
+		res = -EIO;
+		goto error;
+	}
+
 	/* When Transmit Underflow flag is set, clear it and issue a
 	 * Transmit Poll Demand to resume transmission.
 	 */
@@ -482,7 +536,66 @@ static void eth_isr(const struct device *dev)
 
 	HAL_ETH_IRQHandler(heth);
 }
+#ifdef CONFIG_SOC_SERIES_STM32H7X
+void HAL_ETH_TxCpltCallback(ETH_HandleTypeDef *heth_handle)
+{
+	__ASSERT_NO_MSG(heth_handle != NULL);
 
+	struct eth_stm32_hal_dev_data *dev_data =
+		CONTAINER_OF(heth_handle, struct eth_stm32_hal_dev_data, heth);
+
+	__ASSERT_NO_MSG(dev_data != NULL);
+
+	k_sem_give(&dev_data->tx_int_sem);
+
+}
+/* DMA and MAC errors callback only appear in H7 series */
+void HAL_ETH_DMAErrorCallback(ETH_HandleTypeDef *heth_handle)
+{
+	__ASSERT_NO_MSG(heth_handle != NULL);
+
+	LOG_ERR("%s errorcode:%x dmaerror:%x",
+		__func__,
+		HAL_ETH_GetError(heth_handle),
+		HAL_ETH_GetDMAError(heth_handle));
+
+	/* State of eth handle is ERROR in case of unrecoverable error */
+	/* unrecoverable (ETH_DMACSR_FBE | ETH_DMACSR_TPS | ETH_DMACSR_RPS) */
+	if (HAL_ETH_GetState(heth_handle) == HAL_ETH_STATE_ERROR) {
+		LOG_ERR("%s ethernet in error state", __func__);
+		/* TODO restart the ETH peripheral to recover */
+		return;
+	}
+
+	/* Recoverable errors don't put ETH in error state */
+	/* ETH_DMACSR_CDE | ETH_DMACSR_ETI | ETH_DMACSR_RWT */
+	/* | ETH_DMACSR_RBU | ETH_DMACSR_AIS) */
+
+	/* TODO Check if we were TX transmitting and the unlock semaphore */
+	/* To return the error as soon as possible else we'll just wait */
+	/* for the timeout */
+
+
+}
+void HAL_ETH_MACErrorCallback(ETH_HandleTypeDef *heth_handle)
+{
+	__ASSERT_NO_MSG(heth_handle != NULL);
+
+	/* MAC errors dumping */
+	LOG_ERR("%s errorcode:%x macerror:%x",
+		__func__,
+		HAL_ETH_GetError(heth_handle),
+		HAL_ETH_GetMACError(heth_handle));
+
+	/* State of eth handle is ERROR in case of unrecoverable error */
+	if (HAL_ETH_GetState(heth_handle) == HAL_ETH_STATE_ERROR) {
+		LOG_ERR("%s ethernet in error state", __func__);
+		/* TODO restart or reconfig ETH peripheral to recover */
+
+		return;
+	}
+}
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
 
 void HAL_ETH_RxCpltCallback(ETH_HandleTypeDef *heth_handle)
 {
@@ -581,6 +694,9 @@ static int eth_initialize(const struct device *dev)
 	/* Initialize semaphores */
 	k_mutex_init(&dev_data->tx_mutex);
 	k_sem_init(&dev_data->rx_int_sem, 0, UINT_MAX);
+#ifdef CONFIG_SOC_SERIES_STM32H7X
+	k_sem_init(&dev_data->tx_int_sem, 0, UINT_MAX);
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
 
 	/* Start interruption-poll thread */
 	k_thread_create(&dev_data->rx_thread, dev_data->rx_thread_stack,
