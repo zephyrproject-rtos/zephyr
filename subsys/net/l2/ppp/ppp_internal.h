@@ -144,8 +144,14 @@ enum net_verdict ppp_fsm_recv_discard_req(struct ppp_fsm *fsm,
 					  struct net_pkt *pkt);
 
 const struct ppp_protocol_handler *ppp_lcp_get(void);
-int ppp_parse_options(struct ppp_fsm *fsm, struct net_pkt *pkt, uint16_t length,
-		      struct ppp_option_pkt options[], int options_len);
+int ppp_parse_options_array(struct ppp_fsm *fsm, struct net_pkt *pkt,
+			    uint16_t length, struct ppp_option_pkt options[],
+			    int options_len);
+int ppp_parse_options(struct ppp_fsm *fsm, struct net_pkt *pkt,
+		      uint16_t length,
+		      int (*parse)(struct net_pkt *pkt, uint8_t code,
+				   uint8_t len, void *user_data),
+		      void *user_data);
 
 void ppp_link_established(struct ppp_context *ctx, struct ppp_fsm *fsm);
 void ppp_link_terminated(struct ppp_context *ctx);

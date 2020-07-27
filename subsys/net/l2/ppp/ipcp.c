@@ -83,7 +83,8 @@ static int ipcp_config_info_req(struct ppp_fsm *fsm,
 	memset(options, 0, sizeof(options));
 	memset(nack_options, 0, sizeof(nack_options));
 
-	ret = ppp_parse_options(fsm, pkt, length, options, ARRAY_SIZE(options));
+	ret = ppp_parse_options_array(fsm, pkt, length, options,
+				      ARRAY_SIZE(options));
 	if (ret < 0) {
 		return -EINVAL;
 	}
@@ -259,8 +260,8 @@ static int ipcp_config_info_nack(struct ppp_fsm *fsm,
 
 	memset(nack_options, 0, sizeof(nack_options));
 
-	ret = ppp_parse_options(fsm, pkt, length, nack_options,
-				ARRAY_SIZE(nack_options));
+	ret = ppp_parse_options_array(fsm, pkt, length, nack_options,
+				      ARRAY_SIZE(nack_options));
 	if (ret < 0) {
 		return -EINVAL;
 	}
