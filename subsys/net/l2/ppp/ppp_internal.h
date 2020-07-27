@@ -162,3 +162,42 @@ void ppp_network_up(struct ppp_context *ctx, int proto);
 void ppp_network_down(struct ppp_context *ctx, int proto);
 void ppp_network_done(struct ppp_context *ctx, int proto);
 void ppp_network_all_down(struct ppp_context *ctx);
+
+struct ppp_my_option_info {
+	uint8_t code;
+	int (*conf_req_add)(struct ppp_context *ctx, struct net_pkt *pkt);
+	int (*conf_ack_handle)(struct ppp_context *ctx, struct net_pkt *pkt,
+			       uint8_t oplen);
+	int (*conf_nak_handle)(struct ppp_context *ctx, struct net_pkt *pkt,
+			       uint8_t oplen);
+};
+
+#define PPP_MY_OPTION(_code, _req_add, _handle_ack, _handle_nak)	\
+	{								\
+		.code = _code,						\
+		.conf_req_add = _req_add,				\
+		.conf_ack_handle = _handle_ack,				\
+		.conf_nak_handle = _handle_nak,				\
+	}
+
+struct net_pkt *ppp_my_options_add(struct ppp_fsm *fsm, size_t packet_len);
+
+int ppp_my_options_parse_conf_ack(struct ppp_fsm *fsm,
+				  struct net_pkt *pkt,
+				  uint16_t length);
+
+int ppp_my_options_parse_conf_nak(struct ppp_fsm *fsm,
+				  struct net_pkt *pkt,
+				  uint16_t length);
+
+int ppp_my_options_parse_conf_rej(struct ppp_fsm *fsm,
+				  struct net_pkt *pkt,
+				  uint16_t length);
+
+uint32_t ppp_my_option_flags(struct ppp_fsm *fsm, uint8_t code);
+
+static inline bool ppp_my_option_is_acked(struct ppp_fsm *fsm,
+					  uint8_t code)
+{
+	return ppp_my_option_flags(fsm, code) & PPP_MY_OPTION_ACKED;
+}

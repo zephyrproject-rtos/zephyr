@@ -176,12 +176,25 @@ void ppp_fsm_init(struct ppp_fsm *fsm, uint16_t protocol)
 	k_delayed_work_init(&fsm->timer, ppp_fsm_timeout);
 }
 
+static void fsm_down(struct ppp_fsm *fsm)
+{
+	size_t i;
+
+	for (i = 0; i < fsm->my_options.count; i++) {
+		fsm->my_options.data[i].flags = 0;
+	}
+
+	if (fsm->cb.down) {
+		fsm->cb.down(fsm);
+	}
+}
+
 static void terminate(struct ppp_fsm *fsm, enum ppp_state next_state)
 {
 	if (fsm->state != PPP_OPENED) {
 		k_delayed_work_cancel(&fsm->timer);
-	} else if (fsm->cb.down) {
-		fsm->cb.down(fsm);
+	} else {
+		fsm_down(fsm);
 	}
 
 	fsm->retransmits = MAX_CONFIGURE_REQ;
@@ -273,9 +286,7 @@ void ppp_fsm_lower_down(struct ppp_fsm *fsm)
 
 	case PPP_OPENED:
 		ppp_change_state(fsm, PPP_STARTING);
-		if (fsm->cb.down) {
-			fsm->cb.down(fsm);
-		}
+		fsm_down(fsm);
 
 		break;
 
@@ -572,9 +583,7 @@ static enum net_verdict fsm_recv_configure_req(struct ppp_fsm *fsm,
 		return NET_OK;
 
 	case PPP_OPENED:
-		if (fsm->cb.down) {
-			fsm->cb.down(fsm);
-		}
+		fsm_down(fsm);
 
 		fsm_send_configure_req(fsm, false);
 		ppp_change_state(fsm, PPP_REQUEST_SENT);
@@ -715,9 +724,7 @@ static enum net_verdict fsm_recv_configure_ack(struct ppp_fsm *fsm, uint8_t id,
 		break;
 
 	case PPP_OPENED:
-		if (fsm->cb.down) {
-			fsm->cb.down(fsm);
-		}
+		fsm_down(fsm);
 
 		fsm_send_configure_req(fsm, false);
 		ppp_change_state(fsm, PPP_REQUEST_SENT);
@@ -823,9 +830,7 @@ static enum net_verdict fsm_recv_configure_nack_rej(struct ppp_fsm *fsm,
 		break;
 
 	case PPP_OPENED:
-		if (fsm->cb.down) {
-			fsm->cb.down(fsm);
-		}
+		fsm_down(fsm);
 
 		fsm_send_configure_req(fsm, false);
 		ppp_change_state(fsm, PPP_REQUEST_SENT);
@@ -870,9 +875,7 @@ static enum net_verdict fsm_recv_terminate_req(struct ppp_fsm *fsm, uint8_t id,
 		fsm->retransmits = 0;
 		ppp_change_state(fsm, PPP_STOPPING);
 
-		if (fsm->cb.down) {
-			fsm->cb.down(fsm);
-		}
+		fsm_down(fsm);
 
 		(void)k_delayed_work_submit(&fsm->timer, FSM_TIMEOUT);
 		break;
@@ -904,9 +907,7 @@ static enum net_verdict fsm_recv_terminate_ack(struct ppp_fsm *fsm, uint8_t id,
 		goto stopped;
 
 	case PPP_OPENED:
-		if (fsm->cb.down) {
-			fsm->cb.down(fsm);
-		}
+		fsm_down(fsm);
 
 		fsm_send_configure_req(fsm, false);
 		ppp_change_state(fsm, PPP_REQUEST_SENT);

@@ -121,3 +121,173 @@ int ppp_parse_options(struct ppp_fsm *fsm, struct net_pkt *pkt,
 
 	return 0;
 }
+
+struct net_pkt *ppp_my_options_add(struct ppp_fsm *fsm, size_t packet_len)
+{
+	struct ppp_context *ctx = ppp_fsm_ctx(fsm);
+	const struct ppp_my_option_info *info;
+	struct ppp_my_option_data *data;
+	struct net_pkt *pkt;
+	size_t i;
+	int err;
+
+	pkt = net_pkt_alloc_with_buffer(ppp_fsm_iface(fsm), packet_len,
+					AF_UNSPEC, 0, PPP_BUF_ALLOC_TIMEOUT);
+	if (!pkt) {
+		return NULL;
+	}
+
+	for (i = 0; i < fsm->my_options.count; i++) {
+		info = &fsm->my_options.info[i];
+		data = &fsm->my_options.data[i];
+
+		if (data->flags & PPP_MY_OPTION_REJECTED) {
+			continue;
+		}
+
+		err = net_pkt_write_u8(pkt, info->code);
+		if (err) {
+			goto unref_pkt;
+		}
+
+		err = info->conf_req_add(ctx, pkt);
+		if (err) {
+			goto unref_pkt;
+		}
+	}
+
+	return pkt;
+
+unref_pkt:
+	net_pkt_unref(pkt);
+
+	return NULL;
+}
+
+typedef int (*ppp_my_option_handle_t)(struct ppp_context *ctx,
+				      struct net_pkt *pkt, uint8_t len,
+				      const struct ppp_my_option_info *info,
+				      struct ppp_my_option_data *data);
+
+struct ppp_my_option_handle_data {
+	struct ppp_fsm *fsm;
+	ppp_my_option_handle_t handle;
+};
+
+static int ppp_my_option_get(struct ppp_fsm *fsm, uint8_t code,
+			     const struct ppp_my_option_info **info,
+			     struct ppp_my_option_data **data)
+{
+	int i;
+
+	for (i = 0; i < fsm->my_options.count; i++) {
+		if (fsm->my_options.info[i].code == code) {
+			*info = &fsm->my_options.info[i];
+			*data = &fsm->my_options.data[i];
+			return 0;
+		}
+	}
+
+	return -ENOENT;
+}
+
+static int ppp_my_option_parse(struct net_pkt *pkt, uint8_t code,
+			       uint8_t len, void *user_data)
+{
+	struct ppp_my_option_handle_data *d = user_data;
+	struct ppp_context *ctx = ppp_fsm_ctx(d->fsm);
+	const struct ppp_my_option_info *info;
+	struct ppp_my_option_data *data;
+	int ret;
+
+	ret = ppp_my_option_get(d->fsm, code, &info, &data);
+	if (ret < 0) {
+		return 0;
+	}
+
+	return d->handle(ctx, pkt, len, info, data);
+}
+
+static int ppp_my_options_parse(struct ppp_fsm *fsm,
+				struct net_pkt *pkt,
+				uint16_t length,
+				ppp_my_option_handle_t handle)
+{
+	struct ppp_my_option_handle_data parse_data = {
+		.fsm = fsm,
+		.handle = handle,
+	};
+
+	return ppp_parse_options(fsm, pkt, length, ppp_my_option_parse,
+				 &parse_data);
+}
+
+static int ppp_my_option_parse_conf_ack(struct ppp_context *ctx,
+					struct net_pkt *pkt, uint8_t len,
+					const struct ppp_my_option_info *info,
+					struct ppp_my_option_data *data)
+{
+	data->flags |= PPP_MY_OPTION_ACKED;
+
+	if (info->conf_ack_handle) {
+		return info->conf_ack_handle(ctx, pkt, len);
+	}
+
+	return 0;
+}
+
+int ppp_my_options_parse_conf_ack(struct ppp_fsm *fsm,
+				  struct net_pkt *pkt,
+				  uint16_t length)
+{
+	return ppp_my_options_parse(fsm, pkt, length,
+				    ppp_my_option_parse_conf_ack);
+}
+
+static int ppp_my_option_parse_conf_nak(struct ppp_context *ctx,
+					struct net_pkt *pkt, uint8_t len,
+					const struct ppp_my_option_info *info,
+					struct ppp_my_option_data *data)
+{
+	return info->conf_nak_handle(ctx, pkt, len);
+}
+
+int ppp_my_options_parse_conf_nak(struct ppp_fsm *fsm,
+				  struct net_pkt *pkt,
+				  uint16_t length)
+{
+	return ppp_my_options_parse(fsm, pkt, length,
+				    ppp_my_option_parse_conf_nak);
+}
+
+static int ppp_my_option_parse_conf_rej(struct ppp_context *ctx,
+					struct net_pkt *pkt, uint8_t len,
+					const struct ppp_my_option_info *info,
+					struct ppp_my_option_data *data)
+{
+	data->flags |= PPP_MY_OPTION_REJECTED;
+
+	return 0;
+}
+
+int ppp_my_options_parse_conf_rej(struct ppp_fsm *fsm,
+				  struct net_pkt *pkt,
+				  uint16_t length)
+{
+	return ppp_my_options_parse(fsm, pkt, length,
+				    ppp_my_option_parse_conf_rej);
+}
+
+uint32_t ppp_my_option_flags(struct ppp_fsm *fsm, uint8_t code)
+{
+	const struct ppp_my_option_info *info;
+	struct ppp_my_option_data *data;
+	int ret;
+
+	ret = ppp_my_option_get(fsm, code, &info, &data);
+	if (ret) {
+		return false;
+	}
+
+	return data->flags;
+}
