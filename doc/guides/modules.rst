@@ -24,13 +24,65 @@ Steering Committee and should comply with the
 :ref:`contribute guidelines<modules_contributing>`. They should also have a
 Zephyr developer that is committed to maintain the module codebase.
 
-Zephyr depends on several categories of modules, including:
+Zephyr depends on several categories of modules, including but not limited to:
 
 - Debugger integration
 - Silicon vendor Hardware Abstraction Layers (HALs)
 - Cryptography libraries
 - File Systems
 - Inter-Process Communication (IPC) libraries
+
+This page summarizes a list of policies and best practices which aim at
+better organizing the workflow in Zephyr modules.
+
+Contributing to Zephyr modules
+******************************
+
+.. _modules_contributing:
+
+
+Individual Roles & Responsibilities
+===================================
+
+To facilitate management of Zephyr module repositories, the following
+individual roles are defined.
+
+**Administrator:** Each Zephyr module shall have an administrator
+who is responsible for managing access to the module repository,
+for example, for adding individuals as Collaborators in the repository
+at the request of the module owner. Module administrators are
+members of the Administrators team, that is a group of project
+members with admin rights to module GitHub repositories.
+
+**Module owner:** Each module shall have a module code owner. Module
+owners will have the overall responsibility of the contents of a
+Zephyr module repository. In particular, a module owner will:
+
+* coordinate code reviewing in the module repository
+* be the default assignee in pull-requests against the repository's
+  main branch
+* request additional collaborators to be added to the repository, as
+  they see fit
+* regularly synchronize the module repository with its upstream
+  counterpart following the policies described in
+  :ref:`modules_synchronization`
+* be aware of security vulnerability issues in the external project
+  and update the module repository to include security fixes, as
+  soon as the fixes are available in the upstream code base
+* list any known security vulnerability issues, present in the
+  module codebase, in Zephyr release notes.
+
+
+  .. note::
+
+     Module owners are not required to be Zephyr
+     :ref:`Maintainers <project_roles>`.
+
+**Merger:** The Zephyr Release Engineering team has the right and the
+responsibility to merge approved pull requests in the main branch of a
+module repository.
+
+
 
 The build system variable :makevar:`ZEPHYR_MODULES` is a `CMake list`_ of
 absolute paths to the directories containing Zephyr modules. These modules
