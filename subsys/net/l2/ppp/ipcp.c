@@ -100,10 +100,9 @@ out_of_mem:
 static int ipcp_config_info_req(struct ppp_fsm *fsm,
 				struct net_pkt *pkt,
 				uint16_t length,
-				struct net_buf **ret_buf)
+				struct net_pkt *ret_pkt)
 {
 	int nack_idx = 0, address_option_idx = -1;
-	struct net_buf *buf = NULL;
 	struct ppp_option_pkt options[MAX_IPCP_OPTIONS];
 	struct ppp_option_pkt nack_options[MAX_IPCP_OPTIONS];
 	enum ppp_packet_type code;
@@ -152,43 +151,19 @@ static int ipcp_config_info_req(struct ppp_fsm *fsm,
 	}
 
 	if (nack_idx > 0) {
-		struct net_buf *nack_buf;
-
 		code = PPP_CONFIGURE_REJ;
 
-		/* Create net_buf containing options that are not accepted */
+		/* Fill ret_pkt with options that are not accepted */
 		for (i = 0; i < MIN(nack_idx, ARRAY_SIZE(nack_options)); i++) {
-			bool added;
-
-			nack_buf = ppp_get_net_buf(buf, nack_options[i].len);
-			if (!nack_buf) {
-				goto bail_out;
-			}
-
-			if (!buf) {
-				buf = nack_buf;
-			}
-
-			added = append_to_buf(nack_buf,
-					      &nack_options[i].type.ipcp, 1);
-			if (!added) {
-				goto bail_out;
-			}
-
-			added = append_to_buf(nack_buf, &nack_options[i].len,
-					      1);
-			if (!added) {
-				goto bail_out;
-			}
+			net_pkt_write_u8(ret_pkt, nack_options[i].type.ipcp);
+			net_pkt_write_u8(ret_pkt, nack_options[i].len);
 
 			/* If there is some data, copy it to result buf */
 			if (nack_options[i].value.pos) {
-				added = append_to_buf(nack_buf,
-						nack_options[i].value.pos,
-						nack_options[i].len - 1 - 1);
-				if (!added) {
-					goto bail_out;
-				}
+				net_pkt_cursor_restore(pkt,
+						       &nack_options[i].value);
+				net_pkt_copy(ret_pkt, pkt,
+					     nack_options[i].len - 1 - 1);
 			}
 		}
 	} else {
@@ -232,9 +207,6 @@ static int ipcp_config_info_req(struct ppp_fsm *fsm,
 		}
 
 		if (addr.s_addr) {
-			bool added;
-			uint8_t val;
-
 			/* The address is the remote address, we then need
 			 * to figure out what our address should be.
 			 *
@@ -242,43 +214,15 @@ static int ipcp_config_info_req(struct ppp_fsm *fsm,
 			 *   - check that the IP address can be accepted
 			 */
 
-			buf = ppp_get_net_buf(NULL, IP_ADDRESS_OPTION_LEN);
-			if (!buf) {
-				goto bail_out;
-			}
+			net_pkt_write_u8(ret_pkt, IPCP_OPTION_IP_ADDRESS);
+			net_pkt_write_u8(ret_pkt, IP_ADDRESS_OPTION_LEN);
 
-			val = IPCP_OPTION_IP_ADDRESS;
-			added = append_to_buf(buf, &val, sizeof(val));
-			if (!added) {
-				goto bail_out;
-			}
-
-			val = IP_ADDRESS_OPTION_LEN;
-			added = append_to_buf(buf, &val, sizeof(val));
-			if (!added) {
-				goto bail_out;
-			}
-
-			added = append_to_buf(buf, (uint8_t *)&addr.s_addr,
-					      sizeof(addr.s_addr));
-			if (!added) {
-				goto bail_out;
-			}
+			net_pkt_write(ret_pkt, &addr.s_addr,
+				      sizeof(addr.s_addr));
 		}
 	}
 
-	if (buf) {
-		*ret_buf = buf;
-	}
-
 	return code;
-
-bail_out:
-	if (buf) {
-		net_buf_unref(buf);
-	}
-
-	return -ENOMEM;
 }
 
 static void ipcp_set_dns_servers(struct ppp_fsm *fsm)

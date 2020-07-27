@@ -351,7 +351,7 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 	uint16_t protocol = 0;
 	size_t len = 0;
 	struct ppp_packet ppp;
-	struct net_pkt *pkt;
+	struct net_pkt *pkt = NULL;
 	int ret;
 
 	if (!iface) {
@@ -390,6 +390,8 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 	case PPP_CONFIGURE_ACK:
 	case PPP_CONFIGURE_NACK:
 	case PPP_CONFIGURE_REJ:
+		pkt = data;
+		/* FALLTHROUGH */
 	case PPP_CONFIGURE_REQ:
 		/* 2 + 1 + 1 (configure-[req|ack|nack|rej]) +
 		 * data_len (options)
@@ -431,11 +433,25 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 	ppp.id = id;
 	ppp.length = htons(len);
 
-	pkt = net_pkt_alloc_with_buffer(iface,
-					sizeof(uint16_t) + len,
-					AF_UNSPEC, 0, BUF_ALLOC_TIMEOUT);
 	if (!pkt) {
-		goto out_of_mem;
+		pkt = net_pkt_alloc_with_buffer(iface,
+						sizeof(uint16_t) + len,
+						AF_UNSPEC, 0,
+						BUF_ALLOC_TIMEOUT);
+		if (!pkt) {
+			goto out_of_mem;
+		}
+	} else {
+		struct net_buf *buf;
+
+		buf = net_pkt_get_reserve_tx_data(BUF_ALLOC_TIMEOUT);
+		if (!buf) {
+			LOG_ERR("failed to allocate buffer");
+			goto out_of_mem;
+		}
+
+		net_pkt_frag_insert(pkt, buf);
+		net_pkt_cursor_init(pkt);
 	}
 
 	ret = net_pkt_write_be16(pkt, protocol);
@@ -483,8 +499,7 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 		}
 	} else if (type == PPP_ECHO_REPLY) {
 		net_pkt_copy(pkt, req_pkt, len);
-	} else if (type == PPP_CONFIGURE_ACK || type == PPP_CONFIGURE_REQ ||
-		   type == PPP_CONFIGURE_REJ || type == PPP_CONFIGURE_NACK) {
+	} else if (type == PPP_CONFIGURE_REQ) {
 		/* add options */
 		if (data) {
 			net_buf_frag_add(pkt->buffer, data);
@@ -533,7 +548,7 @@ static enum net_verdict fsm_recv_configure_req(struct ppp_fsm *fsm,
 					       struct net_pkt *pkt,
 					       uint16_t remaining_len)
 {
-	struct net_buf *buf = NULL;
+	struct net_pkt *out = NULL;
 	int len = 0;
 	enum ppp_packet_type code;
 
@@ -578,12 +593,23 @@ static enum net_verdict fsm_recv_configure_req(struct ppp_fsm *fsm,
 		return NET_DROP;
 	}
 
+	out = net_pkt_alloc_with_buffer(net_pkt_iface(pkt),
+					sizeof(uint16_t) + sizeof(uint16_t) +
+						sizeof(uint8_t) + sizeof(uint8_t) +
+						remaining_len,
+					AF_UNSPEC, 0, BUF_ALLOC_TIMEOUT);
+	if (!out) {
+		return NET_DROP;
+	}
+
+	net_pkt_cursor_init(out);
+
 	if (fsm->cb.config_info_req) {
 		int ret;
 
-		ret = fsm->cb.config_info_req(fsm, pkt, remaining_len, &buf);
+		ret = fsm->cb.config_info_req(fsm, pkt, remaining_len, out);
 		if (ret < 0) {
-			return NET_DROP;
+			goto unref_out_pkt;
 		}
 
 		if (fsm->nack_loops >= MAX_NACK_LOOPS &&
@@ -592,13 +618,12 @@ static enum net_verdict fsm_recv_configure_req(struct ppp_fsm *fsm,
 		}
 
 		code = ret;
-		len = net_buf_frags_len(buf);
-
+		len = net_pkt_get_len(out);
 	} else if (remaining_len) {
-		/* If there are any options at this point, then reject.
-		 * TODO: construct the NACKed options buf
-		 */
 		code = PPP_CONFIGURE_REJ;
+
+		net_pkt_copy(out, pkt, remaining_len);
+		len = remaining_len;
 	} else {
 		code = PPP_CONFIGURE_ACK;
 	}
@@ -607,7 +632,7 @@ static enum net_verdict fsm_recv_configure_req(struct ppp_fsm *fsm,
 		fsm->name, fsm, ppp_pkt_type2str(code), code, id,
 		ppp_state_str(fsm->state), fsm->state);
 
-	(void)ppp_send_pkt(fsm, NULL, code, id, buf, len);
+	(void)ppp_send_pkt(fsm, NULL, code, id, out, len);
 
 	if (code == PPP_CONFIGURE_ACK) {
 		if (fsm->state == PPP_ACK_RECEIVED) {
@@ -634,6 +659,11 @@ static enum net_verdict fsm_recv_configure_req(struct ppp_fsm *fsm,
 	}
 
 	return NET_OK;
+
+unref_out_pkt:
+	net_pkt_unref(out);
+
+	return NET_DROP;
 }
 
 static enum net_verdict fsm_recv_configure_ack(struct ppp_fsm *fsm, uint8_t id,

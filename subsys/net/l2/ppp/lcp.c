@@ -57,127 +57,6 @@ static enum net_verdict lcp_handle(struct ppp_context *ctx,
 	return ppp_fsm_input(&ctx->lcp.fsm, PPP_LCP, pkt);
 }
 
-static bool append_to_buf(struct net_buf *buf, uint8_t *data, uint8_t data_len)
-{
-	if (data_len > net_buf_tailroom(buf)) {
-		return false;
-	}
-
-	/* FIXME: use net_pkt api so that we can handle a case where data
-	 * might split to two net_buf's
-	 */
-	net_buf_add_mem(buf, data, data_len);
-
-	return true;
-}
-
-static int lcp_config_info_req(struct ppp_fsm *fsm,
-			       struct net_pkt *pkt,
-			       uint16_t length,
-			       struct net_buf **buf)
-{
-	struct ppp_option_pkt options[MAX_LCP_OPTIONS];
-	struct ppp_option_pkt nack_options[MAX_LCP_OPTIONS];
-	struct net_buf *nack = NULL;
-	enum ppp_packet_type code;
-	int i, nack_idx = 0;
-	int ret;
-
-	memset(options, 0, sizeof(options));
-	memset(nack_options, 0, sizeof(nack_options));
-
-	ret = ppp_parse_options(fsm, pkt, length, options, ARRAY_SIZE(options));
-	if (ret < 0) {
-		return -EINVAL;
-	}
-
-	for (i = 0; i < ARRAY_SIZE(options); i++) {
-		if (options[i].type.lcp != LCP_OPTION_RESERVED) {
-			NET_DBG("[%s/%p] %s option %s (%d) len %d",
-				fsm->name, fsm, "Check",
-				ppp_option2str(PPP_LCP, options[i].type.lcp),
-				options[i].type.lcp, options[i].len);
-		}
-
-		switch (options[i].type.lcp) {
-		case LCP_OPTION_RESERVED:
-			continue;
-
-		default:
-			nack_options[nack_idx].type.lcp = options[i].type.lcp;
-			nack_options[nack_idx].len = options[i].len;
-
-			if (options[i].len > 2) {
-				memcpy(&nack_options[nack_idx].value,
-				       &options[i].value,
-				       sizeof(nack_options[nack_idx].value));
-			}
-
-			nack_idx++;
-			break;
-		}
-	}
-
-	if (nack_idx > 0) {
-		struct net_buf *nack_buf;
-
-		code = PPP_CONFIGURE_REJ;
-
-		/* Create net_buf containing options that are not accepted */
-		for (i = 0; i < MIN(nack_idx, ARRAY_SIZE(nack_options)); i++) {
-			bool added;
-
-			nack_buf = ppp_get_net_buf(nack, nack_options[i].len);
-			if (!nack_buf) {
-				goto out_of_mem;
-			}
-
-			if (!nack) {
-				nack = nack_buf;
-			}
-
-			added = append_to_buf(nack_buf,
-					      &nack_options[i].type.lcp, 1);
-			if (!added) {
-				goto out_of_mem;
-			}
-
-			added = append_to_buf(nack_buf, &nack_options[i].len,
-					      1);
-			if (!added) {
-				goto out_of_mem;
-			}
-
-			/* If there is some data, copy it to result buf */
-			if (nack_options[i].value.pos) {
-				added = append_to_buf(nack_buf,
-						nack_options[i].value.pos,
-						nack_options[i].len - 1 - 1);
-				if (!added) {
-					goto out_of_mem;
-				}
-			}
-
-			continue;
-
-		out_of_mem:
-			if (nack) {
-				net_buf_unref(nack);
-			}
-
-			return -ENOMEM;
-		}
-	} else {
-		code = PPP_CONFIGURE_ACK;
-	}
-
-	if (nack) {
-		*buf = nack;
-	}
-
-	return code;
-}
-
 static void lcp_lower_down(struct ppp_context *ctx)
 {
 	ppp_fsm_lower_down(&ctx->lcp.fsm);
@@ -256,7 +135,6 @@ static void lcp_init(struct ppp_context *ctx)
 	ctx->lcp.fsm.cb.starting = lcp_starting;
 	ctx->lcp.fsm.cb.finished = lcp_finished;
 	ctx->lcp.fsm.cb.proto_extension = lcp_handle_ext;
-	ctx->lcp.fsm.cb.config_info_req = lcp_config_info_req;
 }
 
 PPP_PROTOCOL_REGISTER(LCP, PPP_LCP,

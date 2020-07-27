@@ -241,7 +241,7 @@ struct ppp_fsm {
 		int (*config_info_req)(struct ppp_fsm *fsm,
 				       struct net_pkt *pkt,
 				       uint16_t length,
-				       struct net_buf **buf);
+				       struct net_pkt *ret_pkt);
 
 		/** Reject Configuration Information */
 		int (*config_info_rej)(struct ppp_fsm *fsm,
