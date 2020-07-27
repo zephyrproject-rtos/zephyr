@@ -212,6 +212,9 @@ enum ipv6cp_option_type {
 typedef void (*net_ppp_lcp_echo_reply_cb_t)(void *user_data,
 					    size_t user_data_len);
 
+struct ppp_my_option_data;
+struct ppp_my_option_info;
+
 /**
  * Generic PPP Finite State Machine
  */
@@ -278,6 +281,17 @@ struct ppp_fsm {
 						    struct net_pkt *pkt);
 	} cb;
 
+	struct {
+		/** Options information */
+		const struct ppp_my_option_info *info;
+
+		/** Options negotiation data */
+		struct ppp_my_option_data *data;
+
+		/** Number of negotiated options */
+		size_t count;
+	} my_options;
+
 	/** Option bits */
 	uint32_t flags;
 
@@ -328,6 +342,13 @@ struct ppp_option_pkt {
 	uint8_t len;
 };
 
+#define PPP_MY_OPTION_ACKED	BIT(0)
+#define PPP_MY_OPTION_REJECTED	BIT(1)
+
+struct ppp_my_option_data {
+	uint32_t flags;
+};
+
 struct lcp_options {
 	/** Magic number */
 	uint32_t magic;
@@ -346,10 +367,14 @@ struct ipcp_options {
 	struct in_addr dns2_address;
 };
 
+#define IPCP_NUM_MY_OPTIONS	3
+
 struct ipv6cp_options {
 	/** Interface identifier */
 	uint8_t iid[PPP_INTERFACE_IDENTIFIER_LEN];
 };
+
+#define IPV6CP_NUM_MY_OPTIONS	1
 
 /** PPP L2 context specific to certain network interface */
 struct ppp_context {
@@ -405,6 +430,9 @@ struct ppp_context {
 
 		/** Options that peer accepted */
 		struct ipcp_options peer_accepted;
+
+		/** My options runtime data */
+		struct ppp_my_option_data my_options_data[IPCP_NUM_MY_OPTIONS];
 	} ipcp;
 #endif
 
@@ -424,6 +452,9 @@ struct ppp_context {
 
 		/** Options that peer accepted */
 		struct ipv6cp_options peer_accepted;
+
+		/** My options runtime data */
+		struct ppp_my_option_data my_options_data[IPV6CP_NUM_MY_OPTIONS];
 	} ipv6cp;
 #endif
 
