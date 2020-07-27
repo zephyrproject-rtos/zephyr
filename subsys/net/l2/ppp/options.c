@@ -122,6 +122,128 @@ int ppp_parse_options(struct ppp_fsm *fsm, struct net_pkt *pkt,
 	return 0;
 }
 
+static const struct ppp_peer_option_info *
+ppp_peer_option_info_get(const struct ppp_peer_option_info *options,
+			 size_t num_options,
+			 uint8_t code)
+{
+	size_t i;
+
+	for (i = 0; i < num_options; i++) {
+		if (options[i].code == code) {
+			return &options[i];
+		}
+	}
+
+	return NULL;
+}
+
+struct ppp_parse_option_conf_req_data {
+	struct ppp_fsm *fsm;
+	struct net_pkt *ret_pkt;
+	enum ppp_protocol_type protocol;
+	const struct ppp_peer_option_info *options_info;
+	size_t num_options_info;
+	void *user_data;
+
+	int rej_count;
+};
+
+static int ppp_parse_option_conf_req_unsupported(struct net_pkt *pkt,
+						 uint8_t code, uint8_t len,
+						 void *user_data)
+{
+	struct ppp_parse_option_conf_req_data *parse_data = user_data;
+	struct ppp_fsm *fsm = parse_data->fsm;
+	struct net_pkt *ret_pkt = parse_data->ret_pkt;
+	const struct ppp_peer_option_info *option_info =
+		ppp_peer_option_info_get(parse_data->options_info,
+					 parse_data->num_options_info,
+					 code);
+
+	NET_DBG("[%s/%p] %s option %s (%d) len %d",
+		fsm->name, fsm, "Check",
+		ppp_option2str(parse_data->protocol, code),
+		code, len);
+
+	if (option_info) {
+		return 0;
+	}
+
+	parse_data->rej_count++;
+
+	net_pkt_write_u8(ret_pkt, code);
+	net_pkt_write_u8(ret_pkt, len + sizeof(code) + sizeof(len));
+
+	if (len > 0) {
+		net_pkt_copy(ret_pkt, pkt, len);
+	}
+
+	return 0;
+}
+
+static int ppp_parse_option_conf_req_supported(struct net_pkt *pkt,
+					       uint8_t code, uint8_t len,
+					       void *user_data)
+{
+	struct ppp_parse_option_conf_req_data *parse_data = user_data;
+	struct ppp_fsm *fsm = parse_data->fsm;
+	const struct ppp_peer_option_info *option_info =
+		ppp_peer_option_info_get(parse_data->options_info,
+					 parse_data->num_options_info,
+					 code);
+
+	return option_info->parse(fsm, pkt, parse_data->user_data);
+}
+
+int ppp_config_info_req(struct ppp_fsm *fsm,
+			struct net_pkt *pkt,
+			uint16_t length,
+			struct net_pkt *ret_pkt,
+			enum ppp_protocol_type protocol,
+			const struct ppp_peer_option_info *options_info,
+			size_t num_options_info,
+			void *user_data)
+{
+	struct ppp_parse_option_conf_req_data parse_data = {
+		.fsm = fsm,
+		.ret_pkt = ret_pkt,
+		.protocol = protocol,
+		.options_info = options_info,
+		.num_options_info = num_options_info,
+		.user_data = user_data,
+	};
+	struct net_pkt_cursor cursor;
+	int ret;
+
+	net_pkt_cursor_backup(pkt, &cursor);
+
+	ret = ppp_parse_options(fsm, pkt, length,
+				ppp_parse_option_conf_req_unsupported,
+				&parse_data);
+	if (ret < 0) {
+		return -EINVAL;
+	}
+
+	if (parse_data.rej_count) {
+		return PPP_CONFIGURE_REJ;
+	}
+
+	net_pkt_cursor_restore(pkt, &cursor);
+
+	ret = ppp_parse_options(fsm, pkt, length,
+				ppp_parse_option_conf_req_supported,
+				&parse_data);
+	if (ret < 0) {
+		return -EINVAL;
+	}
+
+	net_pkt_cursor_restore(pkt, &cursor);
+	net_pkt_copy(ret_pkt, pkt, length);
+
+	return PPP_CONFIGURE_ACK;
+}
+
 struct net_pkt *ppp_my_options_add(struct ppp_fsm *fsm, size_t packet_len)
 {
 	struct ppp_context *ctx = ppp_fsm_ctx(fsm);
