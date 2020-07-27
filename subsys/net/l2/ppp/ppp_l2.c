@@ -21,8 +21,6 @@ LOG_MODULE_REGISTER(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 #include "ppp_stats.h"
 #include "ppp_internal.h"
 
-#define BUF_ALLOC_TIMEOUT K_MSEC(100)
-
 static const struct ppp_protocol_handler *ppp_lcp;
 
 static void ppp_update_rx_stats(struct net_if *iface,
