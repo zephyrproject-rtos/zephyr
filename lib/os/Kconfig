@@ -16,6 +16,18 @@ config RING_BUFFER
 	  buffers manage their own buffer memory and can store arbitrary data.
 	  For optimal performance, use buffer sizes that are a power of 2.
 
+if RING_BUFFER
+
+config RING_BUFFER_REWIND_THRESHOLD
+	int "Rewind threshold"
+	default 8
+	help
+	  Value unlikely to be modifed except for test purposes. Another reason
+	  when threshold might need to be decreased is if huge buffers are used
+	  because buffer size cannot exceed 2^(3 - threshold).
+
+endif # RING_BUFFER
+
 config BASE64
 	bool "Enable base64 encoding and decoding"
 	help

@@ -97,6 +97,8 @@ struct ring_buf {
  * @param size32 Size of ring buffer (in 32-bit words).
  */
 #define RING_BUF_ITEM_DECLARE_SIZE(name, size32) \
+	BUILD_ASSERT(size32 < (1 << (31 - CONFIG_RING_BUFFER_REWIND_THRESHOLD)),\
+		"Huge buffer, reduce reindex threshold"); \
 	static uint32_t _ring_buffer_data_##name[size32]; \
 	struct ring_buf name = { \
 		.size = size32, \
@@ -121,6 +123,8 @@ struct ring_buf {
  * @param size8 Size of ring buffer (in bytes).
  */
 #define RING_BUF_DECLARE(name, size8) \
+	BUILD_ASSERT(size8 < (1 << (31 - CONFIG_RING_BUFFER_REWIND_THRESHOLD)),\
+		"Huge buffer, reduce reindex threshold"); \
 	static uint8_t _ring_buffer_data_##name[size8]; \
 	struct ring_buf name = { \
 		.size = size8, \
@@ -156,27 +160,6 @@ static inline void ring_buf_init(struct ring_buf *buf, uint32_t size, void *data
 	}
 }
 
-/** @brief Determine free space based on ring buffer parameters.
- *
- * @note Function for internal use.
- *
- * @param size Ring buffer size.
- * @param head Ring buffer head.
- * @param tail Ring buffer tail.
- *
- *  @return Ring buffer free space (in 32-bit words or bytes).
- */
-static inline uint32_t z_ring_buf_custom_space_get(uint32_t size, uint32_t head,
-					      uint32_t tail)
-{
-	if (tail < head) {
-		return head - tail - 1;
-	}
-
-	/* buf->tail > buf->head */
-	return (size - tail) + head - 1;
-}
-
 /**
  * @brief Determine if a ring buffer is empty.
  *
@@ -210,7 +193,7 @@ static inline void ring_buf_reset(struct ring_buf *buf)
  */
 static inline uint32_t ring_buf_space_get(struct ring_buf *buf)
 {
-	return z_ring_buf_custom_space_get(buf->size, buf->head, buf->tail);
+	return buf->size - (buf->tail - buf->head);
 }
 
 /**
@@ -222,8 +205,7 @@ static inline uint32_t ring_buf_space_get(struct ring_buf *buf)
  */
 static inline uint32_t ring_buf_capacity_get(struct ring_buf *buf)
 {
-	/* One element is used to distinguish between empty and full state. */
-	return buf->size - 1;
+	return buf->size;
 }
 
 /**
@@ -302,7 +284,7 @@ int ring_buf_item_get(struct ring_buf *buf, uint16_t *type, uint8_t *value,
  *	   there is not enough free space or buffer wraps.
  */
 uint32_t ring_buf_put_claim(struct ring_buf *buf, uint8_t **data, uint32_t size);
-
+void ring_buf_put_unclaim(struct ring_buf *buf, uint32_t size);
 /**
  * @brief Indicate number of bytes written to allocated buffers.
  *
@@ -321,7 +303,7 @@ uint32_t ring_buf_put_claim(struct ring_buf *buf, uint8_t **data, uint32_t size)
  * @retval 0 Successful operation.
  * @retval -EINVAL Provided @a size exceeds free space in the ring buffer.
  */
-int ring_buf_put_finish(struct ring_buf *buf, uint32_t size);
+int ring_buf_put_finish(struct ring_buf *buf, uint32_t size, bool partial);
 
 /**
  * @brief Write (copy) data to a ring buffer.
