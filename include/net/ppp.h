@@ -326,22 +326,6 @@ struct ppp_fsm {
 	uint8_t ack_received : 1;
 };
 
-/** PPP configuration options */
-struct ppp_option_pkt {
-	/** Option value */
-	struct net_pkt_cursor value;
-
-	/** Option type */
-	union {
-		enum lcp_option_type lcp;
-		enum ipcp_option_type ipcp;
-		enum ipv6cp_option_type ipv6cp;
-	} type;
-
-	/** Option length */
-	uint8_t len;
-};
-
 #define PPP_MY_OPTION_ACKED	BIT(0)
 #define PPP_MY_OPTION_REJECTED	BIT(1)
 
