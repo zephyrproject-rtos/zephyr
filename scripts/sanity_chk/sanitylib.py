@@ -3065,7 +3065,6 @@ class TestSuite(DisablePyTestCollectionMixin):
                         elif instance.results[k] == 'SKIP':
                             skips += 1
                         else:
-                            logger.info(f"result is {instance.results[k]} for {k}, counting as failure")
                             fails += 1
                 else:
                     if instance.status in ["error", "failed", "timeout"]:
