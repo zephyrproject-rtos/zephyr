@@ -103,9 +103,6 @@ shouldn't be needed.
 Internal Operation
 ==================
 
-The ring buffer always maintains an empty 32-bit word (byte in bytes mode) in
-its data buffer to allow it to distinguish between empty and full states.
-
 If the size of the data buffer is a power of two, the ring buffer
 uses efficient masking operations instead of expensive modulo operations
 when enqueuing and dequeuing data items. This option is applicable only for
