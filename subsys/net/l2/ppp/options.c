@@ -18,14 +18,10 @@ LOG_MODULE_DECLARE(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 
 #define ALLOC_TIMEOUT K_MSEC(100)
 
-enum net_verdict ppp_parse_options(struct ppp_fsm *fsm,
-				   struct net_pkt *pkt,
-				   uint16_t length,
-				   struct ppp_option_pkt options[],
-				   int options_len)
+int ppp_parse_options(struct ppp_fsm *fsm, struct net_pkt *pkt, uint16_t length,
+		      struct ppp_option_pkt options[], int options_len)
 {
 	int remaining = length, pkt_remaining;
-	enum net_verdict verdict;
 	uint8_t opt_type, opt_len;
 	int ret, idx = 0;
 
@@ -33,8 +29,7 @@ enum net_verdict ppp_parse_options(struct ppp_fsm *fsm,
 	if (remaining != pkt_remaining) {
 		NET_DBG("Expecting %d but pkt data length is %d bytes",
 			remaining, pkt_remaining);
-		verdict = NET_DROP;
-		goto out;
+		return -EMSGSIZE;
 	}
 
 	while (remaining > 0) {
@@ -42,22 +37,19 @@ enum net_verdict ppp_parse_options(struct ppp_fsm *fsm,
 		if (ret < 0) {
 			NET_DBG("Cannot read %s (%d) (remaining len %d)",
 				"opt_type", ret, pkt_remaining);
-			verdict = NET_DROP;
-			goto out;
+			return -EBADMSG;
 		}
 
 		ret = net_pkt_read_u8(pkt, &opt_len);
 		if (ret < 0) {
 			NET_DBG("Cannot read %s (%d) (remaining len %d)",
 				"opt_len", ret, remaining);
-			verdict = NET_DROP;
-			goto out;
+			return -EBADMSG;
 		}
 
 		if (idx >= options_len) {
 			NET_DBG("Cannot insert options (max %d)", options_len);
-			verdict = NET_DROP;
-			goto out;
+			return -ENOMEM;
 		}
 
 		options[idx].type.lcp = opt_type;
@@ -77,17 +69,13 @@ enum net_verdict ppp_parse_options(struct ppp_fsm *fsm,
 		remaining -= opt_len;
 
 		idx++;
-	};
-
-	if (remaining < 0) {
-		verdict = NET_DROP;
-		goto out;
 	}
 
-	verdict = NET_OK;
+	if (remaining < 0) {
+		return -EBADMSG;
+	}
 
-out:
-	return verdict;
+	return 0;
 }
 
 struct net_buf *ppp_get_net_buf(struct net_buf *root_buf, uint8_t len)

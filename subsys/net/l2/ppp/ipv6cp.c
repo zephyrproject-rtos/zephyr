@@ -97,15 +97,14 @@ static int ipv6cp_config_info_req(struct ppp_fsm *fsm,
 	struct ppp_option_pkt options[MAX_IPV6CP_OPTIONS];
 	struct ppp_option_pkt nack_options[MAX_IPV6CP_OPTIONS];
 	enum ppp_packet_type code;
-	enum net_verdict verdict;
+	int ret;
 	int i;
 
 	memset(options, 0, sizeof(options));
 	memset(nack_options, 0, sizeof(nack_options));
 
-	verdict = ppp_parse_options(fsm, pkt, length, options,
-				    ARRAY_SIZE(options));
-	if (verdict != NET_OK) {
+	ret = ppp_parse_options(fsm, pkt, length, options, ARRAY_SIZE(options));
+	if (ret < 0) {
 		return -EINVAL;
 	}
 
@@ -271,13 +270,12 @@ static int ipv6cp_config_info_ack(struct ppp_fsm *fsm,
 	struct ppp_option_pkt nack_options[MAX_IPV6CP_OPTIONS];
 	uint8_t iface_id[PPP_INTERFACE_IDENTIFIER_LEN];
 	int i, ret, iface_id_option_idx = -1;
-	enum net_verdict verdict;
 
 	memset(nack_options, 0, sizeof(nack_options));
 
-	verdict = ppp_parse_options(fsm, pkt, length, nack_options,
-				    ARRAY_SIZE(nack_options));
-	if (verdict != NET_OK) {
+	ret = ppp_parse_options(fsm, pkt, length, nack_options,
+				ARRAY_SIZE(nack_options));
+	if (ret < 0) {
 		return -EINVAL;
 	}
 
