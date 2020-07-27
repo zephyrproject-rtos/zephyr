@@ -2,4 +2,6 @@ tests:
   drivers.spi:
     depends_on: spi
     tags: drivers spi
-    harness: loopback
+    harness: ztest
+    harness_config:
+      fixture: spi_loopback
