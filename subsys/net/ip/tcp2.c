@@ -207,10 +207,10 @@ static size_t tcp_data_len(struct net_pkt *pkt)
 {
 	struct tcphdr *th = th_get(pkt);
 	size_t tcp_options_len = (th->th_off - 5) * 4;
-	ssize_t len = net_pkt_get_len(pkt) - net_pkt_ip_hdr_len(pkt) -
+	int len = net_pkt_get_len(pkt) - net_pkt_ip_hdr_len(pkt) -
 		net_pkt_ip_opts_len(pkt) - sizeof(*th) - tcp_options_len;
 
-	return len > 0 ? len : 0;
+	return len > 0 ? (size_t)len : 0;
 }
 
 static const char *tcp_th(struct net_pkt *pkt)
@@ -541,9 +541,9 @@ end:
 	return result;
 }
 
-static size_t tcp_data_get(struct tcp *conn, struct net_pkt *pkt)
+static int tcp_data_get(struct tcp *conn, struct net_pkt *pkt)
 {
-	ssize_t len = tcp_data_len(pkt);
+	int len = tcp_data_len(pkt);
 
 	if (tcp_recv_cb) {
 		tcp_recv_cb(conn, pkt);
