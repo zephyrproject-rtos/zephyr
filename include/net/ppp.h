@@ -226,7 +226,7 @@ struct ppp_fsm {
 				       uint16_t length);
 
 		/** Add Configuration Information */
-		struct net_buf *(*config_info_add)(struct ppp_fsm *fsm);
+		struct net_pkt *(*config_info_add)(struct ppp_fsm *fsm);
 
 		/** Length of Configuration Information */
 		int  (*config_info_len)(struct ppp_fsm *fsm);

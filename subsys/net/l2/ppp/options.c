@@ -77,29 +77,3 @@ int ppp_parse_options(struct ppp_fsm *fsm, struct net_pkt *pkt, uint16_t length,
 
 	return 0;
 }
-
-struct net_buf *ppp_get_net_buf(struct net_buf *root_buf, uint8_t len)
-{
-	struct net_buf *tmp;
-
-	if (root_buf) {
-		tmp = net_buf_frag_last(root_buf);
-
-		if (len > net_buf_tailroom(tmp)) {
-			tmp = net_pkt_get_reserve_tx_data(ALLOC_TIMEOUT);
-			if (tmp) {
-				net_buf_frag_add(root_buf, tmp);
-			}
-		}
-
-		return tmp;
-
-	}
-
-	tmp = net_pkt_get_reserve_tx_data(ALLOC_TIMEOUT);
-	if (tmp) {
-		return tmp;
-	}
-
-	return NULL;
-}

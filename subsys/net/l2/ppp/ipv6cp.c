@@ -24,34 +24,18 @@ static enum net_verdict ipv6cp_handle(struct ppp_context *ctx,
 	return ppp_fsm_input(&ctx->ipv6cp.fsm, PPP_IPV6CP, pkt);
 }
 
-static bool append_to_buf(struct net_buf *buf, uint8_t *data, uint8_t data_len)
-{
-	if (data_len > net_buf_tailroom(buf)) {
-		return false;
-	}
-
-	/* FIXME: use net_pkt api so that we can handle a case where data might
-	 * split to two net_buf's
-	 */
-	net_buf_add_mem(buf, data, data_len);
-
-	return true;
-}
-
 /* Length is (10): code + id + interface identifier length */
 #define INTERFACE_IDENTIFIER_OPTION_LEN (1 + 1 + 8)
 
-static struct net_buf *ipv6cp_config_info_add(struct ppp_fsm *fsm)
+static struct net_pkt *ipv6cp_config_info_add(struct ppp_fsm *fsm)
 {
 	struct ppp_context *ctx = CONTAINER_OF(fsm, struct ppp_context,
 					       ipv6cp.fsm);
 
 	/* Currently we support only one option (IP address) */
-	uint8_t option[INTERFACE_IDENTIFIER_OPTION_LEN];
 	uint8_t iid[PPP_INTERFACE_IDENTIFIER_LEN];
 	struct net_linkaddr *linkaddr;
-	struct net_buf *buf;
-	bool added;
+	struct net_pkt *pkt;
 
 	linkaddr = net_if_get_link_addr(ctx->iface);
 	if (linkaddr->len == 8) {
@@ -63,28 +47,18 @@ static struct net_buf *ipv6cp_config_info_add(struct ppp_fsm *fsm)
 		memcpy(iid + 5, linkaddr->addr + 3, 3);
 	}
 
-	option[0] = IPV6CP_OPTION_INTERFACE_IDENTIFIER;
-	option[1] = INTERFACE_IDENTIFIER_OPTION_LEN;
-	memcpy(&option[2], iid, sizeof(iid));
-
-	buf = ppp_get_net_buf(NULL, sizeof(option));
-	if (!buf) {
-		goto out_of_mem;
+	pkt = net_pkt_alloc_with_buffer(ppp_fsm_iface(fsm),
+					INTERFACE_IDENTIFIER_OPTION_LEN,
+					AF_UNSPEC, 0, PPP_BUF_ALLOC_TIMEOUT);
+	if (!pkt) {
+		return NULL;
 	}
 
-	added = append_to_buf(buf, option, sizeof(option));
-	if (!added) {
-		goto out_of_mem;
-	}
+	net_pkt_write_u8(pkt, IPV6CP_OPTION_INTERFACE_IDENTIFIER);
+	net_pkt_write_u8(pkt, INTERFACE_IDENTIFIER_OPTION_LEN);
+	net_pkt_write(pkt, iid, sizeof(iid));
 
-	return buf;
-
-out_of_mem:
-	if (buf) {
-		net_buf_unref(buf);
-	}
-
-	return NULL;
+	return pkt;
 }
 
 static int ipv6cp_config_info_req(struct ppp_fsm *fsm,
