@@ -303,8 +303,8 @@ void ppp_fsm_open(struct ppp_fsm *fsm)
 
 	switch (fsm->state) {
 	case PPP_CLOSED:
-		fsm_send_configure_req(fsm, false);
 		ppp_change_state(fsm, PPP_REQUEST_SENT);
+		fsm_send_configure_req(fsm, false);
 		break;
 
 	case PPP_CLOSING:
