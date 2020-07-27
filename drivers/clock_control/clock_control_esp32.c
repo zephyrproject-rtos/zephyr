@@ -10,6 +10,7 @@
 #include <soc/dport_reg.h>
 #include <soc/rtc.h>
 #include <soc/rtc_cntl_reg.h>
+#include <soc/syscon_periph.h>
 #include <drivers/uart.h>
 #include <soc/apb_ctrl_reg.h>
 
@@ -64,13 +65,37 @@ struct pll_cfg {
 
 #define CLOCK_REGS_BANK_COUNT 	    3
 
+/* ESP32 and ESP32-S2 put SOC_CLK_SEL field in different registers; handle the
+ * different macro names here
+ */
+#if defined(CONFIG_SOC_ESP32)
+#define SOC_CLK_SEL_REG   RTC_CNTL_CLK_CONF_REG
+#define SOC_CLK_SEL       RTC_CNTL_SOC_CLK_SEL
+#define SOC_CLK_SEL_M     RTC_CNTL_SOC_CLK_SEL_M
+#define SOC_CLK_SEL_V     RTC_CNTL_SOC_CLK_SEL_V
+#define SOC_CLK_SEL_S     RTC_CNTL_SOC_CLK_SEL_S
+
+#define SOC_CLK_SEL_XTL   RTC_CNTL_SOC_CLK_SEL_XTL
+#define SOC_CLK_SEL_PLL   RTC_CNTL_SOC_CLK_SEL_PLL
+
+#elif defined(CONFIG_SOC_ESP32S2)
+#define SOC_CLK_SEL_REG   DPORT_SYSCLK_CONF_REG
+#define SOC_CLK_SEL       DPORT_SOC_CLK_SEL
+#define SOC_CLK_SEL_M     DPORT_SOC_CLK_SEL_M
+#define SOC_CLK_SEL_V     DPORT_SOC_CLK_SEL_V
+#define SOC_CLK_SEL_S     DPORT_SOC_CLK_SEL_S
+
+#define SOC_CLK_SEL_XTL   DPORT_SOC_CLK_SEL_XTL
+#define SOC_CLK_SEL_PLL   DPORT_SOC_CLK_SEL_PLL
+#endif
+
 const struct control_regs clock_control_regs[CLOCK_REGS_BANK_COUNT] = {
 	[0] = { .clk = DPORT_PERIP_CLK_EN_REG, .rst = DPORT_PERIP_RST_EN_REG },
 	[1] = { .clk = DPORT_PERI_CLK_EN_REG,  .rst = DPORT_PERI_RST_EN_REG },
 	[2] = { .clk = DPORT_WIFI_CLK_EN_REG,  .rst = DPORT_CORE_RST_EN_REG }
 };
 
-static uint32_t const xtal_freq[] = {
+static uint32_t const _xtal_freq[] = {
 	[ESP32_CLK_XTAL_40M] = 40,
 	[ESP32_CLK_XTAL_26M] = 26
 };
@@ -133,7 +158,9 @@ static void bbpll_configure(rtc_xtal_freq_t xtal_freq, uint32_t pll_freq)
 
 	/* Enable PLL, Clear PowerDown (_PD) flags */
 	CLEAR_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG,
+#if defined(CONFIG_SOC_ESP32)
 			    RTC_CNTL_BIAS_I2C_FORCE_PD |
+#endif
 			    RTC_CNTL_BB_I2C_FORCE_PD |
 			    RTC_CNTL_BBPLL_FORCE_PD |
 			    RTC_CNTL_BBPLL_I2C_FORCE_PD);
@@ -192,13 +219,15 @@ static void cpuclk_pll_configure(uint32_t xtal_freq, uint32_t cpu_freq)
 	/* Set CPU Speed (80,160,240) */
 	DPORT_REG_WRITE(DPORT_CPU_PER_CONF_REG, cpu_period_sel);
 	/* Set PLL as CPU Clock Source */
-	REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_SOC_CLK_SEL, RTC_CNTL_SOC_CLK_SEL_PLL);
+	REG_SET_FIELD(SOC_CLK_SEL_REG, SOC_CLK_SEL, SOC_CLK_SEL_PLL);
 
+#if defined(CONFIG_SOC_ESP32)
 	/*
 	 * Update REF_Tick,
 	 * if PLL is the cpu clock source, APB frequency is always 80MHz
 	 */
 	REG_WRITE(APB_CTRL_PLL_TICK_CONF_REG, PLL_APB_CLK_FREQ - 1);
+#endif
 }
 
 static int clock_control_esp32_on(struct device *dev,
@@ -249,13 +278,13 @@ static int clock_control_esp32_get_rate(struct device *dev,
 	ARG_UNUSED(sub_system);
 
 	uint32_t xtal_freq_sel = DEV_CFG(dev)->xtal_freq_sel;
-	uint32_t soc_clk_sel = REG_GET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_SOC_CLK_SEL);
+	uint32_t soc_clk_sel = REG_GET_FIELD(SOC_CLK_SEL_REG, SOC_CLK_SEL);
 
 	switch (soc_clk_sel) {
-	case RTC_CNTL_SOC_CLK_SEL_XTL:
-		*rate = xtal_freq[xtal_freq_sel];
+	case SOC_CLK_SEL_XTL:
+		*rate = MHZ(_xtal_freq[xtal_freq_sel]);
 		return 0;
-	case RTC_CNTL_SOC_CLK_SEL_PLL:
+	case SOC_CLK_SEL_PLL:
 		*rate = MHZ(80);
 		return 0;
 	default:
@@ -267,17 +296,29 @@ static int clock_control_esp32_get_rate(struct device *dev,
 static int clock_control_esp32_init(struct device *dev)
 {
 	struct esp32_clock_config *cfg = DEV_CFG(dev);
+	uint32_t xtal_freq = _xtal_freq[cfg->xtal_freq_sel];
 
 	/* Wait for UART first before changing freq to avoid garbage on console */
 	esp32_rom_uart_tx_wait_idle(0);
 
 	switch (cfg->clk_src_sel) {
 	case ESP32_CLK_SRC_XTAL:
+#if defined(CONFIG_SOC_ESP32)
 		REG_SET_FIELD(APB_CTRL_SYSCLK_CONF_REG, APB_CTRL_PRE_DIV_CNT, cfg->xtal_div);
 		/* adjust ref_tick */
-		REG_WRITE(APB_CTRL_XTAL_TICK_CONF_REG, xtal_freq[cfg->xtal_freq_sel] - 1);
+		REG_WRITE(APB_CTRL_XTAL_TICK_CONF_REG, xtal_freq - 1);
+#elif defined(CONFIG_SOC_ESP32S2)
+		/* ESP32-S2 requires changes to SYSTEM_PRE_DIV_CNT to first go through 1 if
+		 * transitioning to or from 2; so just always set to 1 first (see TRM 2.2.3)
+		 */
+		REG_SET_FIELD(DPORT_SYSCLK_CONF_REG, DPORT_PRE_DIV_CNT, 0);
+		REG_SET_FIELD(DPORT_SYSCLK_CONF_REG, DPORT_PRE_DIV_CNT, cfg->xtal_div);
+
+		/* adjust ref_tick */
+		REG_SET_FIELD(APB_CTRL_TICK_CONF_REG, APB_CTRL_XTAL_TICK_NUM, xtal_freq - 1);
+#endif
 		/* switch clock source */
-		REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_SOC_CLK_SEL, RTC_CNTL_SOC_CLK_SEL_XTL);
+		REG_SET_FIELD(SOC_CLK_SEL_REG, SOC_CLK_SEL, SOC_CLK_SEL_XTL);
 		break;
 	case ESP32_CLK_SRC_PLL:
 		cpuclk_pll_configure(cfg->xtal_freq_sel, cfg->cpu_freq);
@@ -290,7 +331,7 @@ static int clock_control_esp32_init(struct device *dev)
 	 * This should be updated on each frequency change
 	 * New CCOUNT = Current CCOUNT * (new freq / old freq)
 	 */
-	XTHAL_SET_CCOUNT((uint64_t)XTHAL_GET_CCOUNT() * cfg->cpu_freq / xtal_freq[cfg->xtal_freq_sel]);
+	XTHAL_SET_CCOUNT((uint64_t)XTHAL_GET_CCOUNT() * cfg->cpu_freq / xtal_freq);
 	return 0;
 }
 

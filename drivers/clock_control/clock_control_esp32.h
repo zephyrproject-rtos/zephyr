@@ -31,10 +31,12 @@
  * Get voltage level for CPU to run at 240 MHz, or for flash/PSRAM to run at 80 MHz.
  * 0x0: level 7; 0x1: level 6; 0x2: level 5; 0x3: level 4. (RO)
  */
+#if defined(CONFIG_SOC_ESP32)
 #define GET_HP_VOLTAGE          (RTC_CNTL_DBIAS_1V25 - ((EFUSE_BLK0_RDATA5_REG >> 22) & 0x3))
 #define DIG_DBIAS_240M          GET_HP_VOLTAGE
 #define DIG_DBIAS_80M_160M      RTC_CNTL_DBIAS_1V10     /* FIXME: This macro should be GET_HP_VOLTAGE in case of 80Mhz flash frequency */
 #define DIG_DBIAS_XTAL          RTC_CNTL_DBIAS_1V10
+#endif
 
 /**
  * Register definitions for digital PLL (BBPLL)

@@ -14,12 +14,13 @@ import sys
 class Esp32BinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for espidf.'''
 
-    def __init__(self, cfg, device, baud=921600, flash_size='detect',
+    def __init__(self, cfg, device, baud=921600, chip='esp32', flash_size='detect',
                  flash_freq='40m', flash_mode='dio', espidf='espidf',
                  bootloader_bin=None, partition_table_bin=None):
         super().__init__(cfg)
         self.elf = cfg.elf_file
         self.device = device
+        self.chip = chip
         self.baud = baud
         self.flash_size = flash_size
         self.flash_freq = flash_freq
@@ -47,8 +48,10 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
                             help='serial port to flash, default /dev/ttyUSB0')
         parser.add_argument('--esp-baud-rate', default='921600',
                             help='serial baud rate, default 921600')
-        parser.add_argument('--esp-flash-size', default='detect',
-                            help='flash size, default "detect"')
+        parser.add_argument('--esp-chip', default='esp32',
+                            help='device soc, default esp32')
+        parser.add_argument('--esp-flash-size', default='4MB',
+                            help='flash size, default "4MB"')
         parser.add_argument('--esp-flash-freq', default='40m',
                             help='flash frequency, default "40m"')
         parser.add_argument('--esp-flash-mode', default='dio',
@@ -71,7 +74,7 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
                                'esptool', 'esptool.py')
 
         return Esp32BinaryRunner(
-            cfg, args.esp_device, baud=args.esp_baud_rate,
+            cfg, args.esp_device, chip=args.esp_chip, baud=args.esp_baud_rate,
             flash_size=args.esp_flash_size, flash_freq=args.esp_flash_freq,
             flash_mode=args.esp_flash_mode, espidf=espidf,
             bootloader_bin=args.esp_flash_bootloader,
@@ -80,13 +83,17 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
     def do_run(self, command, **kwargs):
         self.require(self.espidf)
         bin_name = path.splitext(self.elf)[0] + path.extsep + 'bin'
-        cmd_convert = [self.espidf, '--chip', 'esp32', 'elf2image', self.elf]
-        cmd_flash = [self.espidf, '--chip', 'esp32', '--port', self.device,
+        cmd_convert = [self.espidf, '--chip', self.chip,
+                       'elf2image', self.elf,
+                       '--flash_mode', self.flash_mode,
+                       '--flash_freq', self.flash_freq,
+                       '--flash_size', self.flash_size]
+        cmd_flash = [self.espidf, '--chip', self.chip, '--port', self.device,
                      '--baud', self.baud, '--before', 'default_reset',
                      '--after', 'hard_reset', 'write_flash', '-u',
-                     '--flash_mode', self.flash_mode,
-                     '--flash_freq', self.flash_freq,
-                     '--flash_size', self.flash_size]
+                     '--flash_mode', 'keep',
+                     '--flash_freq', 'keep',
+                     '--flash_size', 'keep']
 
         # Execute Python interpreter if calling a Python script
         if self.espidf.lower().endswith(".py") and sys.executable:

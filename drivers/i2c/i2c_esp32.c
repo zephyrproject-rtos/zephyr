@@ -11,6 +11,7 @@
 #include <soc/i2c_reg.h>
 #include <rom/gpio.h>
 #include <soc/gpio_sig_map.h>
+#include <soc/periph_defs.h>
 
 #include <soc.h>
 #include <errno.h>
@@ -26,6 +27,27 @@
 LOG_MODULE_REGISTER(i2c_esp32);
 
 #include "i2c-priv.h"
+
+#if defined(CONFIG_SOC_ESP32S2)
+/* Handle some changed names */
+#define I2C_ACK_ERR_INT_RAW   I2C_NACK_INT_RAW
+#define I2C_ACK_ERR_INT_RAW_M I2C_NACK_INT_RAW_M
+#define I2C_ACK_ERR_INT_RAW_V I2C_NACK_INT_RAW_V
+#define I2C_ACK_ERR_INT_RAW_S I2C_NACK_INT_RAW_S
+
+#define I2C_ACK_ERR_INT_ENA   I2C_NACK_INT_ENA
+#define I2C_ACK_ERR_INT_ENA_M I2C_NACK_INT_ENA_M
+#define I2C_ACK_ERR_INT_ENA_V I2C_NACK_INT_ENA_V
+#define I2C_ACK_ERR_INT_ENA_S I2C_NACK_INT_ENA_S
+
+#define I2C_ACK_ERR_INT_ST   I2C_NACK_INT_ST
+#define I2C_ACK_ERR_INT_ST_M I2C_NACK_INT_ST_M
+#define I2C_ACK_ERR_INT_ST_V I2C_NACK_INT_ST_V
+#define I2C_ACK_ERR_INT_ST_S I2C_NACK_INT_ST_S
+
+#define I2C_DATA_APB_REG(i)      (0x60013000 + (i) * 0x14000 + 0x001c)
+
+#endif
 
 /* Number of entries in hardware command queue */
 #define I2C_ESP32_NUM_CMDS 16

@@ -283,6 +283,7 @@
 /dts/arm/armv8-a.dtsi                     @carlocaione
 /dts/arm/xilinx/                          @bbolen @stephanosio
 /dts/xtensa/xtensa.dtsi                   @ydamigos
+/dts/xtensa/espressif/esp32s2.dtsi        @mrrosen
 /dts/xtensa/intel/                        @dcpleung
 /dts/bindings/                            @galak
 /dts/bindings/can/                        @alexanderwachter

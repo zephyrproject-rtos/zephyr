@@ -5,6 +5,6 @@
 
 config PINMUX_ESP32
 	bool "ESP32 Pin multiplexer driver"
-	depends on SOC_ESP32
+	depends on SOC_ESP32 || SOC_ESP32S2
 	help
 	  Enable driver for ESP32 Pin multiplexer.

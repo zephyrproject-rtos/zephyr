@@ -1,0 +1,12 @@
+identifier: esp32s2
+name: ESP-32-S2
+type: mcu
+arch: xtensa
+toolchain:
+  - espressif
+supported:
+  - gpio
+  - i2c
+  - watchdog
+  - uart
+  - pinmux
