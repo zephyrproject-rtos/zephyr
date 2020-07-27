@@ -436,6 +436,7 @@ static void ipv6cp_init(struct ppp_context *ctx)
 	ctx->ipv6cp.fsm.cb.finished = ipv6cp_finished;
 	ctx->ipv6cp.fsm.cb.proto_reject = ipv6cp_proto_reject;
 	ctx->ipv6cp.fsm.cb.config_info_ack = ipv6cp_config_info_ack;
+	ctx->ipv6cp.fsm.cb.config_info_rej = ppp_my_options_parse_conf_rej;
 	ctx->ipv6cp.fsm.cb.config_info_add = ipv6cp_config_info_add;
 	ctx->ipv6cp.fsm.cb.config_info_req = ipv6cp_config_info_req;
 }
