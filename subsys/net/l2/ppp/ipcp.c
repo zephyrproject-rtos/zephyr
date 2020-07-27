@@ -107,15 +107,14 @@ static int ipcp_config_info_req(struct ppp_fsm *fsm,
 	struct ppp_option_pkt options[MAX_IPCP_OPTIONS];
 	struct ppp_option_pkt nack_options[MAX_IPCP_OPTIONS];
 	enum ppp_packet_type code;
-	enum net_verdict verdict;
+	int ret;
 	int i;
 
 	memset(options, 0, sizeof(options));
 	memset(nack_options, 0, sizeof(nack_options));
 
-	verdict = ppp_parse_options(fsm, pkt, length, options,
-				    ARRAY_SIZE(options));
-	if (verdict != NET_OK) {
+	ret = ppp_parse_options(fsm, pkt, length, options, ARRAY_SIZE(options));
+	if (ret < 0) {
 		return -EINVAL;
 	}
 
@@ -340,15 +339,14 @@ static int ipcp_config_info_nack(struct ppp_fsm *fsm,
 	struct ppp_context *ctx = CONTAINER_OF(fsm, struct ppp_context,
 					       ipcp.fsm);
 	struct ppp_option_pkt nack_options[MAX_IPCP_OPTIONS];
-	enum net_verdict verdict;
 	int i, ret, address_option_idx = -1;
 	struct in_addr addr, *dst_addr;
 
 	memset(nack_options, 0, sizeof(nack_options));
 
-	verdict = ppp_parse_options(fsm, pkt, length, nack_options,
-				    ARRAY_SIZE(nack_options));
-	if (verdict != NET_OK) {
+	ret = ppp_parse_options(fsm, pkt, length, nack_options,
+				ARRAY_SIZE(nack_options));
+	if (ret < 0) {
 		return -EINVAL;
 	}
 

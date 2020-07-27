@@ -80,15 +80,14 @@ static int lcp_config_info_req(struct ppp_fsm *fsm,
 	struct ppp_option_pkt nack_options[MAX_LCP_OPTIONS];
 	struct net_buf *nack = NULL;
 	enum ppp_packet_type code;
-	enum net_verdict verdict;
 	int i, nack_idx = 0;
+	int ret;
 
 	memset(options, 0, sizeof(options));
 	memset(nack_options, 0, sizeof(nack_options));
 
-	verdict = ppp_parse_options(fsm, pkt, length, options,
-				    ARRAY_SIZE(options));
-	if (verdict != NET_OK) {
+	ret = ppp_parse_options(fsm, pkt, length, options, ARRAY_SIZE(options));
+	if (ret < 0) {
 		return -EINVAL;
 	}
 
