@@ -261,6 +261,12 @@ config OPENTHREAD_NCP_RADIO
 	help
 	  Enable NCP in OpenThread stack as radio-only
 
+config OPENTHREAD_NCP_VENDOR_HOOK_SOURCE
+	string "NCP vendor hook source file"
+	depends on OPENTHREAD_NCP
+	help
+	  Enable vendor specific code and specific the filename
+
 config OPENTHREAD_NCP_SPINEL_ON_UART_DEV_NAME
 	string "UART device to use for NCP SPINEL"
 	default "UART_0"
