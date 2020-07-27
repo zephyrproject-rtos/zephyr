@@ -404,12 +404,6 @@ struct ppp_context {
 		/** Options that peer want to request */
 		struct lcp_options peer_options;
 
-		/** Options that we accepted */
-		struct lcp_options my_accepted;
-
-		/** Options that peer accepted */
-		struct lcp_options peer_accepted;
-
 		/** Magic-Number value */
 		uint32_t magic;
 	} lcp;
@@ -424,12 +418,6 @@ struct ppp_context {
 
 		/** Options that peer want to request */
 		struct ipcp_options peer_options;
-
-		/** Options that we accepted */
-		struct ipcp_options my_accepted;
-
-		/** Options that peer accepted */
-		struct ipcp_options peer_accepted;
 
 		/** My options runtime data */
 		struct ppp_my_option_data my_options_data[IPCP_NUM_MY_OPTIONS];
@@ -446,12 +434,6 @@ struct ppp_context {
 
 		/** Options that peer want to request */
 		struct ipv6cp_options peer_options;
-
-		/** Options that we accepted */
-		struct ipv6cp_options my_accepted;
-
-		/** Options that peer accepted */
-		struct ipv6cp_options peer_accepted;
 
 		/** My options runtime data */
 		struct ppp_my_option_data my_options_data[IPV6CP_NUM_MY_OPTIONS];
