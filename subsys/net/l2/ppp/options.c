@@ -18,51 +18,6 @@ LOG_MODULE_DECLARE(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 
 #define ALLOC_TIMEOUT K_MSEC(100)
 
-struct ppp_parse_option_array_data {
-	int idx;
-	struct ppp_option_pkt *options;
-	int options_len;
-};
-
-static int ppp_parse_option_array_elem(struct net_pkt *pkt, uint8_t code,
-				       uint8_t len, void *user_data)
-{
-	struct ppp_parse_option_array_data *parse_data = user_data;
-	struct ppp_option_pkt *options = parse_data->options;
-	int options_len = parse_data->options_len;
-	int idx = parse_data->idx;
-
-	if (idx >= options_len) {
-		NET_DBG("Cannot insert options (max %d)", options_len);
-		return -ENOMEM;
-	}
-
-	options[idx].type.lcp = code;
-	options[idx].len = len;
-
-	if (len > 0) {
-		/* There is an option value here */
-		net_pkt_cursor_backup(pkt, &options[idx].value);
-	}
-
-	parse_data->idx++;
-
-	return 0;
-}
-
-int ppp_parse_options_array(struct ppp_fsm *fsm, struct net_pkt *pkt,
-			    uint16_t length, struct ppp_option_pkt options[],
-			    int options_len)
-{
-	struct ppp_parse_option_array_data parse_data = {
-		.options = options,
-		.options_len = options_len,
-	};
-
-	return ppp_parse_options(fsm, pkt, length, ppp_parse_option_array_elem,
-				 &parse_data);
-}
-
 int ppp_parse_options(struct ppp_fsm *fsm, struct net_pkt *pkt,
 		      uint16_t length,
 		      int (*parse)(struct net_pkt *pkt, uint8_t code,
