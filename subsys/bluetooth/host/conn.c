@@ -906,14 +906,36 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 	/* Check packet boundary flags */
 	switch (flags) {
 	case BT_ACL_START:
+		if (conn->rx) {
+			BT_ERR("Unexpected first L2CAP frame");
+			bt_conn_reset_rx_state(conn);
+		}
+
+		if (!buf->len) {
+			BT_DBG("Empty ACL_START");
+			net_buf_unref(buf);
+			return;
+		}
+
+		if (buf->len < sizeof(len)) {
+			/* Got ACL data of size less than the length field.
+			 * Don't parse the length field until the next
+			 * BT_ACL_CONT when it might be valid (=>2 bytes).
+			 */
+			conn->rx = buf;
+			return;
+		}
+
 		hdr = (void *)buf->data;
 		len = sys_le16_to_cpu(hdr->len);
 
 		BT_DBG("First, len %u final %u", buf->len, len);
 
-		if (conn->rx_len) {
-			BT_ERR("Unexpected first L2CAP frame");
+		if (buf->len > (sizeof(*hdr) + len)) {
+			BT_ERR("L2CAP overflow");
 			bt_conn_reset_rx_state(conn);
+			net_buf_unref(buf);
+			return;
 		}
 
 		conn->rx_len = (sizeof(*hdr) + len) - buf->len;
@@ -925,11 +947,31 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 
 		break;
 	case BT_ACL_CONT:
-		if (!conn->rx_len) {
+		if (!conn->rx) {
 			BT_ERR("Unexpected L2CAP continuation");
 			bt_conn_reset_rx_state(conn);
 			net_buf_unref(buf);
 			return;
+		}
+
+		if (!buf->len) {
+			BT_DBG("Empty ACL_CONT");
+			net_buf_unref(buf);
+			return;
+		}
+
+		/* Have we received the full length field in the L2CAP header
+		 * yet?
+		 */
+		if (conn->rx->len < sizeof(uint16_t)) {
+			uint16_t len = (conn->rx->data[0] | buf->data[0] << 8);
+
+			conn->rx_len = sizeof(struct bt_l2cap_hdr) + len;
+
+			/* Subtract 1 for the first 1-byte segment received in
+			 * BT_ACL_START.
+			 */
+			conn->rx_len -= 1;
 		}
 
 		if (buf->len > conn->rx_len) {
