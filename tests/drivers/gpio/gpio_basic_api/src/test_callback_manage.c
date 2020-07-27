@@ -4,13 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_gpio_basic_api
- * @{
- * @defgroup t_gpio_callback_manage test_gpio_callback_manage
- * @brief TestPurpose: verify zephyr gpio callback add/remove and enable/disable
- * @}
- */
 
 #include "test_gpio.h"
 

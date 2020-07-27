@@ -4,14 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_gpio_api
- * @{
- * @defgroup t_gpio_api_pin test_gpio_api_pin
- * @brief TestPurpose: verify all gpio pin functions using single pin configured
- *        as input/output.
- * @}
- */
 
 #include <limits.h>
 #include <sys/util.h>

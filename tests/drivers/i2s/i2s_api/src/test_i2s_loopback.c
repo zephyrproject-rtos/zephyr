@@ -4,13 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
- * @addtogroup t_i2s_api
- * @{
- * @defgroup t_i2s_loopback test_i2s_loopback
- * @brief TestPurpose: verify I2S master can read and write in loopback mode
- * @}
- */
 
 #include <zephyr.h>
 #include <ztest.h>

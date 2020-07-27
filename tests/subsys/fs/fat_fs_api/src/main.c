@@ -4,12 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_fat_fs
- * @{
- * @defgroup t_fat_fs_basic test_fat_fs_basic_operations
- * @}
- */
 
 #include "test_fat.h"
 

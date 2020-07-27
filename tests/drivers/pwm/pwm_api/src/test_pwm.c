@@ -4,12 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
- * @addtogroup test_pwm_basic_operations
- * @{
- * @defgroup t_pwm_basic_operations test_pwm_sample
- * @brief TestPurpose: verify PWM can work well when configure
- *			through usec, nsec, or cycle.
+/**
+ * @file
+ * @brief Verify PWM can work well when configure through usec,
+ * nsec, or cycle.
+ *
  * @details
  * - Test Steps
  *   -# Bind PWM_0 port 0.
@@ -23,7 +22,6 @@
  *	Always on  ->  Period : Pulse (1 : 1)  ->  3.3V
  *	Half on  ->  Period : Pulse (2 : 1)  ->  1.65V
  *	Always off  ->  Period : Pulse (1 : 0)  ->  0V
- * @}
  */
 
 #include <device.h>

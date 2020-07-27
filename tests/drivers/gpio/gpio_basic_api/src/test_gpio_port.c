@@ -4,13 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_gpio_basic_api
- * @{
- * @defgroup t_gpio_basic_read_write test_gpio_basic_read_write
- * @brief TestPurpose: verify zephyr gpio read and write correctly
- * @}
- */
 
 #include "test_gpio.h"
 
