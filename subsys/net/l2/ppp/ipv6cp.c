@@ -90,10 +90,9 @@ out_of_mem:
 static int ipv6cp_config_info_req(struct ppp_fsm *fsm,
 				struct net_pkt *pkt,
 				uint16_t length,
-				struct net_buf **ret_buf)
+				struct net_pkt *ret_pkt)
 {
 	int nack_idx = 0, iface_id_option_idx = -1;
-	struct net_buf *buf = NULL;
 	struct ppp_option_pkt options[MAX_IPV6CP_OPTIONS];
 	struct ppp_option_pkt nack_options[MAX_IPV6CP_OPTIONS];
 	enum ppp_packet_type code;
@@ -143,52 +142,24 @@ static int ipv6cp_config_info_req(struct ppp_fsm *fsm,
 	}
 
 	if (nack_idx > 0) {
-		struct net_buf *nack_buf;
+		code = PPP_CONFIGURE_REJ;
 
-		/* Once rejected count logic is in, it will be possible
-		 * to set this code to PPP_CONFIGURE_REJ. */
-		code = PPP_CONFIGURE_NACK;
-
-		/* Create net_buf containing options that are not accepted */
+		/* Fill ret_pkt with options that are not accepted */
 		for (i = 0; i < MIN(nack_idx, ARRAY_SIZE(nack_options)); i++) {
-			bool added;
-
-			nack_buf = ppp_get_net_buf(buf, nack_options[i].len);
-			if (!nack_buf) {
-				goto bail_out;
-			}
-
-			if (!buf) {
-				buf = nack_buf;
-			}
-
-			added = append_to_buf(nack_buf,
-					      &nack_options[i].type.ipv6cp, 1);
-			if (!added) {
-				goto bail_out;
-			}
-
-			added = append_to_buf(nack_buf, &nack_options[i].len,
-					      1);
-			if (!added) {
-				goto bail_out;
-			}
+			net_pkt_write_u8(ret_pkt, nack_options[i].type.ipv6cp);
+			net_pkt_write_u8(ret_pkt, nack_options[i].len);
 
 			/* If there is some data, copy it to result buf */
 			if (nack_options[i].value.pos) {
-				added = append_to_buf(nack_buf,
-						nack_options[i].value.pos,
-						nack_options[i].len - 1 - 1);
-				if (!added) {
-					goto bail_out;
-				}
+				net_pkt_cursor_restore(pkt,
+						       &nack_options[i].value);
+				net_pkt_copy(ret_pkt, pkt,
+					     nack_options[i].len - 1 - 1);
 			}
 		}
 	} else {
 		uint8_t iface_id[PPP_INTERFACE_IDENTIFIER_LEN];
 		struct ppp_context *ctx;
-		bool added;
-		uint8_t val;
 		int ret;
 
 		ctx = CONTAINER_OF(fsm, struct ppp_context, ipv6cp.fsm);
@@ -224,41 +195,13 @@ static int ipv6cp_config_info_req(struct ppp_fsm *fsm,
 
 		/* TODO: check whether iid is empty and create one if so */
 
-		buf = ppp_get_net_buf(NULL, INTERFACE_IDENTIFIER_OPTION_LEN);
-		if (!buf) {
-			goto bail_out;
-		}
+		net_pkt_write_u8(ret_pkt, IPV6CP_OPTION_INTERFACE_IDENTIFIER);
+		net_pkt_write_u8(ret_pkt, INTERFACE_IDENTIFIER_OPTION_LEN);
 
-		val = IPV6CP_OPTION_INTERFACE_IDENTIFIER;
-		added = append_to_buf(buf, &val, sizeof(val));
-		if (!added) {
-			goto bail_out;
-		}
-
-		val = INTERFACE_IDENTIFIER_OPTION_LEN;
-		added = append_to_buf(buf, &val, sizeof(val));
-		if (!added) {
-			goto bail_out;
-		}
-
-		added = append_to_buf(buf, iface_id, sizeof(iface_id));
-		if (!added) {
-			goto bail_out;
-		}
-	}
-
-	if (buf) {
-		*ret_buf = buf;
+		net_pkt_write(ret_pkt, iface_id, sizeof(iface_id));
 	}
 
 	return code;
-
-bail_out:
-	if (buf) {
-		net_buf_unref(buf);
-	}
-
-	return -ENOMEM;
 }
 
 static int ipv6cp_config_info_ack(struct ppp_fsm *fsm,
