@@ -3861,6 +3861,11 @@ static uint8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 		auth = req->auth_req & BT_SMP_AUTH_MASK;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_SMP_SC_PAIR_ONLY) &&
+	    !(auth & BT_SMP_AUTH_SC)) {
+		return BT_SMP_ERR_AUTH_REQUIREMENTS;
+	}
+
 	if (IS_ENABLED(CONFIG_BT_BONDING_REQUIRED) &&
 	    !(bondable && (auth & BT_SMP_AUTH_BONDING))) {
 		/* Reject security req if not both intend to bond */
