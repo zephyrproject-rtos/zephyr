@@ -5,7 +5,7 @@
 
 config HAS_ESP_IDF
 	bool "Espressif ESP-IDF support"
-	depends on SOC_ESP32
+	depends on SOC_ESP32 || SOC_ESP32S2
 
 # ESP-IDF Configurations that appear is some header files used
 config IDF_TARGET
@@ -17,3 +17,8 @@ config IDF_TARGET_ESP32
 	bool
 	depends on HAS_ESP_IDF
 	default y if IDF_TARGET="esp32"
+
+config IDF_TARGET_ESP32S2
+	bool
+	depends on HAS_ESP_IDF
+	default y if IDF_TARGET="esp32s2"

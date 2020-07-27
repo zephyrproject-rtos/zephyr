@@ -1,0 +1,14 @@
+# ESP32-S2 board configuration
+
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_ESP32S2
+
+config SOC
+	default "esp32s2"
+
+config IRQ_OFFLOAD_INTNUM
+	default 7
+
+endif

@@ -9,6 +9,7 @@
 /* Include esp-idf headers first to avoid redefining BIT() macro */
 #include <rom/ets_sys.h>
 #include <soc/dport_reg.h>
+#include <soc/periph_defs.h>
 
 #include <rom/gpio.h>
 
