@@ -13,9 +13,6 @@
 /**
  * @brief Test cases to device driver initialization
  *
- * @ingroup all_tests
- *
- * @{
  */
 
 #define MY_DRIVER_LV_1    "my_driver_level_1"
@@ -168,6 +165,3 @@ DEVICE_AND_API_INIT(my_driver_priority_3, MY_DRIVER_PRI_3,
 DEVICE_AND_API_INIT(my_driver_priority_4, MY_DRIVER_PRI_4,
 		&my_driver_pri_4_init, NULL, NULL, POST_KERNEL, 4,
 		&funcs_my_drivers);
-/**
- * @}
- */
