@@ -529,7 +529,7 @@ class ElfHelper:
             if ko.type_obj.api:
                 continue
 
-            _, user_ram_allowed = kobjects[ko.type_obj.name]
+            _, user_ram_allowed, _ = kobjects[ko.type_obj.name]
             if not user_ram_allowed and app_smem_start <= addr < app_smem_end:
                 self.debug_die(die,
                                "object '%s' found in invalid location %s"
