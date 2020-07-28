@@ -3381,7 +3381,12 @@ static inline void k_work_submit(struct k_work *work)
 static inline int k_delayed_work_submit(struct k_delayed_work *work,
 					k_timeout_t delay)
 {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunknown-pragmas"
+#pragma coverity compliance fp "MISRA C-2012 Directive 4.7" \
+			       "No need to check return value here"
 	return k_delayed_work_submit_to_queue(&k_sys_work_q, work, delay);
+#pragma GCC diagnostic pop
 }
 
 /**
