@@ -26,7 +26,7 @@ void config_setup_littlefs(void)
 	rc = flash_area_open(FLASH_AREA_ID(littlefs_dev), &fap);
 	zassert_true(rc == 0, "opening flash area for erase [%d]\n", rc);
 
-	flash_area_erase(fap, fap->fa_off, fap->fa_size);
+	rc = flash_area_erase(fap, fap->fa_off, fap->fa_size);
 	zassert_true(rc == 0, "erasing flash area [%d]\n", rc);
 
 	rc = fs_mount(&littlefs_mnt);
