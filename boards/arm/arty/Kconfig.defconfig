@@ -1,0 +1,31 @@
+# Digilent Arty board configuration
+
+# Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ARTY_A7_ARM_DESIGNSTART_M1
+
+config BOARD
+	default "arty_a7_arm_designstart_m1"
+
+config CPU_CORTEX_M_HAS_SYSTICK
+	default y
+
+config NUM_IRQS
+	default 8
+
+if SERIAL
+
+config UART_XLNX_UARTLITE
+	default y
+
+endif # SERIAL
+
+if GPIO
+
+config GPIO_XLNX_AXI
+	default y
+
+endif # GPIO
+
+endif # BOARD_ARTY_A7_ARM_DESIGNSTART_M1
