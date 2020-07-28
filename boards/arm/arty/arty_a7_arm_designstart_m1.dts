@@ -1,0 +1,225 @@
+/*
+ * Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm/armv6-m.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+#include <mem.h>
+
+/ {
+	model = "Digilent Arty A7 ARM DesignStart Cortex-M1";
+
+	chosen {
+		zephyr,console = &uartlite0;
+		zephyr,shell-uart = &uartlite0;
+		zephyr,flash = &itcm;
+		/* Use DTCM as SRAM by default */
+		zephyr,sram = &dtcm;
+	};
+
+	aliases {
+		led0 = &led_ld4;
+		led1 = &led_ld5;
+		led2 = &led_ld6;
+		led3 = &led_ld7;
+		sw0 = &sw0;
+		sw1 = &sw1;
+		sw2 = &sw2;
+		sw3 = &sw3;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led_ld0_red: led_ld0_red {
+			gpios = <&gpio1 2 GPIO_ACTIVE_HIGH>;
+			label = "LED LD0 RED";
+		};
+		led_ld0_green: led_ld0_green {
+			gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+			label = "LED LD0 GREEN";
+		};
+		led_ld0_blue: led_ld0_blue {
+			gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>;
+			label = "LED LD0 BLUE";
+		};
+
+		led_ld1_red: led_ld1_red {
+			gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
+			label = "LED LD1 RED";
+		};
+		led_ld1_green: led_ld1_green {
+			gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+			label = "LED LD1 GREEN";
+		};
+		led_ld1_blue: led_ld1_blue {
+			gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
+			label = "LED LD1 BLUE";
+		};
+
+		led_ld2_red: led_ld2_red {
+			gpios = <&gpio1 8 GPIO_ACTIVE_HIGH>;
+			label = "LED LD2 RED";
+		};
+		led_ld2_green: led_ld2_green {
+			gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
+			label = "LED LD2 GREEN";
+		};
+		led_ld2_blue: led_ld2_blue {
+			gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
+			label = "LED LD2 BLUE";
+		};
+
+		led_ld3_red: led_ld3_red {
+			gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+			label = "LED LD3 RED";
+		};
+		led_ld3_green: led_ld3_green {
+			gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+			label = "LED LD3 GREEN";
+		};
+		led_ld3_blue: led_ld3_blue {
+			gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>;
+			label = "LED LD3 BLUE";
+		};
+
+		led_ld4: led_ld4 {
+			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+			label = "LED LD4";
+		};
+		led_ld5: led_ld5 {
+			gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+			label = "LED LD5";
+		};
+		led_ld6: led_ld6 {
+			gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+			label = "LED LD6";
+		};
+		led_ld7: led_ld7 {
+			gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+			label = "LED LD7";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		sw0: sw0 {
+			gpios = <&gpio0_2 0 GPIO_ACTIVE_HIGH>;
+			label = "SW0";
+		};
+		sw1: sw1 {
+			gpios = <&gpio0_2 1 GPIO_ACTIVE_HIGH>;
+			label = "SW1";
+		};
+		sw2: sw2 {
+			gpios = <&gpio0_2 2 GPIO_ACTIVE_HIGH>;
+			label = "SW2";
+		};
+		sw3: sw3 {
+			gpios = <&gpio0_2 3 GPIO_ACTIVE_HIGH>;
+			label = "SW3";
+		};
+		btn0: btn0 {
+			gpios = <&gpio1_2 0 GPIO_ACTIVE_HIGH>;
+			label = "BTN0";
+		};
+		btn1: btn1 {
+			gpios = <&gpio1_2 1 GPIO_ACTIVE_HIGH>;
+			label = "BTN1";
+		};
+		btn2: btn2 {
+			gpios = <&gpio1_2 2 GPIO_ACTIVE_HIGH>;
+			label = "BTN2";
+		};
+		btn3: btn3 {
+			gpios = <&gpio1_2 3 GPIO_ACTIVE_HIGH>;
+			label = "BTN3";
+		};
+	};
+
+	soc {
+		itcm: memory@0 {
+			compatible = "arm,itcm";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+		};
+
+		dtcm: memory@20000000 {
+			compatible = "arm,dtcm";
+			reg = <0x20000000 DT_SIZE_K(32)>;
+		};
+
+		uartlite0: uartlite@40100000 {
+			compatible = "xlnx,xps-uartlite-1.00.a";
+			interrupts = <0 0>;
+			reg = <0x40100000 0x10000>;
+			label = "UART_0";
+		};
+
+		gpio0: gpio@40110000 {
+			compatible = "xlnx,xps-gpio-1.00.a";
+			interrupts = <1 0>;
+			reg = <0x40110000 0x10000>;
+			label = "GPIO_0";
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			xlnx,all-inputs = <0x0>;
+			xlnx,all-inputs-2 = <0x1>;
+			xlnx,all-outputs = <0x0>;
+			xlnx,all-outputs-2 = <0x0>;
+			xlnx,dout-default = <0x0>;
+			xlnx,dout-default-2 = <0x0>;
+			xlnx,gpio-width = <0x4>;
+			xlnx,gpio2-width = <0x4>;
+			xlnx,is-dual = <0x1>;
+			xlnx,tri-default = <0xffffffff>;
+			xlnx,tri-default-2 = <0xffffffff>;
+
+			gpio0_2: gpio2 {
+				compatible = "xlnx,xps-gpio-1.00.a-gpio2";
+				label = "GPIO_0_2";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+		};
+
+		gpio1: gpio@40120000 {
+			compatible = "xlnx,xps-gpio-1.00.a";
+			interrupts = <2 0>;
+			reg = <0x40120000 0x10000>;
+			label = "GPIO_1";
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			xlnx,all-inputs = <0x0>;
+			xlnx,all-inputs-2 = <0x1>;
+			xlnx,all-outputs = <0x0>;
+			xlnx,all-outputs-2 = <0x0>;
+			xlnx,dout-default = <0x0>;
+			xlnx,dout-default-2 = <0x0>;
+			xlnx,gpio-width = <0xc>;
+			xlnx,gpio2-width = <0x4>;
+			xlnx,is-dual = <0x1>;
+			xlnx,tri-default = <0xffffffff>;
+			xlnx,tri-default-2 = <0xffffffff>;
+
+			gpio1_2: gpio2 {
+				compatible = "xlnx,xps-gpio-1.00.a-gpio2";
+				label = "GPIO_1_2";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+		};
+
+		bram0: memory@60000000 {
+			compatible = "mmio-sram";
+			reg = <0x60000000 DT_SIZE_K(64)>;
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <2>;
+};
