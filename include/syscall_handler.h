@@ -311,7 +311,12 @@ extern int z_user_string_copy(char *dst, const char *src, size_t maxlen);
 #define Z_SYSCALL_VERIFY_MSG(expr, fmt, ...) ({ \
 	bool expr_copy = !(expr); \
 	if (expr_copy) { \
+		_Pragma("coverity compliance block deviate \
+			'MISRA C-2012 Rule 5.3' \
+			'LOG_MODULE_DECLARE() re-defines variables'"); \
 		LOG_MODULE_DECLARE(os); \
+		_Pragma("coverity compliance end_block \
+			'MISRA C-2012 Rule 5.3'"); \
 		LOG_ERR("syscall %s failed check: " fmt, \
 			__func__, ##__VA_ARGS__); \
 	} \

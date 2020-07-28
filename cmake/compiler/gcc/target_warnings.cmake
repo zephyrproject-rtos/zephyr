@@ -12,6 +12,13 @@ macro(toolchain_cc_warning_base)
     -Wno-main
   )
 
+  # Need to ignore Coverity related pragmas in macros,
+  # as _Pragma("GCC diagnostics ...") inside those macros
+  # has no effects.
+  zephyr_compile_options(
+    -Wno-unknown-pragmas
+  )
+
 if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "9.1.0")
   zephyr_compile_options(
     # FIXME: Remove once #16587 is fixed
