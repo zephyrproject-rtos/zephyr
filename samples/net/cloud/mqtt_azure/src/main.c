@@ -249,8 +249,9 @@ static void mqtt_event_handler(struct mqtt_client *const client,
 					data,
 					len >= sizeof(data) - 1 ?
 					sizeof(data) - 1 : len);
-			if (bytes_read < 0 && bytes_read != -EAGAIN) {
-				LOG_ERR("failure to read payload");
+			if (bytes_read < 0) {
+				LOG_ERR("failure to read payload (%d)",
+					bytes_read);
 				break;
 			}
 
