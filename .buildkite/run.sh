@@ -53,6 +53,10 @@ fi
 mv sanity-out/sanitycheck.xml sanitycheck-${BUILDKITE_JOB_ID}.xml
 buildkite-agent artifact upload sanitycheck-${BUILDKITE_JOB_ID}.xml
 
+
+# Upload test_file to get list of tests that are build/run
+buildkite-agent artifact upload test_file.txt
+
 # ccache stats
 echo "--- ccache stats at finish"
 ccache -s
