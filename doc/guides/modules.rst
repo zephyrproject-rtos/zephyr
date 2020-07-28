@@ -373,6 +373,9 @@ after 2 Zephyr releases.
      original URL, as they are required by older Zephyr versions.
 
 
+Integrate modules in Zephyr build system
+****************************************
+
 The build system variable :makevar:`ZEPHYR_MODULES` is a `CMake list`_ of
 absolute paths to the directories containing Zephyr modules. These modules
 contain :file:`CMakeLists.txt` and :file:`Kconfig` files describing how to
@@ -557,12 +560,12 @@ are maintained in the module. For example:
 
 
 Module Inclusion
-****************
+================
 
 .. _modules_using_west:
 
 Using West
-==========
+----------
 
 If west is installed and :makevar:`ZEPHYR_MODULES` is not already set, the
 build system finds all the modules in your :term:`west installation` and uses
@@ -585,7 +588,7 @@ Each project in the ``west list`` output is tested like this:
   and is not added to :makevar:`ZEPHYR_MODULES`.
 
 Without West
-============
+------------
 
 If you don't have west installed or don't want the build system to use it to
 find Zephyr modules, you can set :makevar:`ZEPHYR_MODULES` yourself using one
@@ -623,7 +626,7 @@ section.
    zephyr-modules.cmake`` to your CMake command line.
 
 Not using modules
-=================
+-----------------
 
 If you don't have west installed and don't specify :makevar:`ZEPHYR_MODULES`
 yourself, then no additional modules are added to the build. You will still be
