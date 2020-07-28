@@ -203,6 +203,75 @@ License checks (via CI tools) shall be enabled on every pull request that
 adds new content in module repositories.
 
 
+Documentation requirements
+**************************
+
+All Zephyr module repositories shall include an .rst file documenting:
+
+* the scope and the purpose of the module
+* how the module integrates with Zephyr
+* the owner of the module repository
+* synchronization information with the external project (commit, SHA, version etc.)
+* licensing information as described in :ref:`modules_licensing`.
+
+The file shall be required for the inclusion of the module and the contained
+information should be kept up to date.
+
+
+Testing requirements
+********************
+
+All Zephyr modules should provide some level of **integration** testing,
+ensuring that the integration with Zephyr works correctly.
+Integration tests:
+
+* may be in the form of a minimal set of samples and tests that reside
+  in the zephyr main tree
+* should verify basic usage of the module (configuration,
+  functional APIs, etc.) that is integrated with Zephyr.
+* shall be built and executed (for example in QEMU) as part of
+  sanitycheck runs in pull requests that introduce changes in module
+  repositories.
+
+  .. note::
+
+     New modules, that are candidates for being included in the Zephyr
+     default manifest, shall provide some level of integration testing.
+
+  .. note::
+
+     Vendor HALs are implicitly tested via Zephyr tests built or executed
+     on target platforms, so they do not need to provide integration tests.
+
+The purpose of integration testing is not to provide functional verification
+of the module; this should be part of the testing framework of the external
+project.
+
+Certain external projects provide test suites that reside in the upstream
+testing infrastructure but are written explicitly for Zephyr. These tests
+may (but are not required to) be part of the Zephyr test framework.
+
+Deprecating and removing modules
+*********************************
+
+Modules may be deprecated for reasons including, but not limited to:
+
+* Lack of maintainership in the module
+* Licensing changes in the external project
+* Codebase becoming obsolete
+
+The module information shall indicate whether a module is
+deprecated and the build system shall issue a warning
+when trying to build Zephyr using a deprecated module.
+
+Deprecated modules may be removed from the Zephyr default manifest
+after 2 Zephyr releases.
+
+  .. note::
+
+     Repositories of removed modules shall remain accessible via their
+     original URL, as they are required by older Zephyr versions.
+
 
 The build system variable :makevar:`ZEPHYR_MODULES` is a `CMake list`_ of
 absolute paths to the directories containing Zephyr modules. These modules
