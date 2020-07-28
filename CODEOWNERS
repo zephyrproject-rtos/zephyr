@@ -229,6 +229,7 @@
 /drivers/serial/uart_rtt.c                @carlescufi @pkral78
 /drivers/serial/Kconfig.xlnx              @wjliang
 /drivers/serial/uart_xlnx_ps.c            @wjliang
+/drivers/serial/uart_xlnx_uartlite.c      @henrikbrixandersen
 /drivers/serial/*xmc4xxx*                 @parthitce
 /drivers/serial/*nuvoton*                 @ssekar15
 /drivers/serial/*npcx*                    @MulinChao
