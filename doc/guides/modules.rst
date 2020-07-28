@@ -155,6 +155,55 @@ labels corresponding to each module, where applicable.
      :ref:`Release Quality Criteria<release_quality_criteria>`.
 
 
+.. _modules_licensing:
+
+Licensing requirements and policies
+***********************************
+
+All source files in a module's codebase shall include a license header,
+unless the module repository has **main license file** that covers source
+files that do not include license headers.
+
+Main license files shall be added in the module's codebase by Zephyr
+developers, only if they exist as part of the external project,
+and they contain a permissive OSI-compliant license. Main license files
+should preferably contain the full license text instead of including an
+SPDX license identifier. If multiple main license files are present it
+shall be made clear which license applies to each source file in a module's
+codebase.
+
+Individual license headers in module source files supersede the main license.
+
+Any new content to be added in a module repository will require to have
+license coverage.
+
+  .. note::
+
+     Zephyr recommends conveying module licensing via individual license
+     headers and main license files. This not a hard requirement; should
+     an external project have its own practice of conveying how licensing
+     applies in the module's codebase (for example, by having a single or
+     multiple main license files), this practice may be accepted by and
+     be referred to in the Zephyr module, as long as licensing requirements,
+     for example OSI compliance, are satisfied.
+
+License policies
+================
+
+When creating a module repository a developer shall:
+
+* import the main license files, if they exist in the external project, and
+* document (for example in the module README or .yml file) the default license
+  that covers the module's codebase.
+
+License checks
+--------------
+
+License checks (via CI tools) shall be enabled on every pull request that
+adds new content in module repositories.
+
+
+
 The build system variable :makevar:`ZEPHYR_MODULES` is a `CMake list`_ of
 absolute paths to the directories containing Zephyr modules. These modules
 contain :file:`CMakeLists.txt` and :file:`Kconfig` files describing how to
