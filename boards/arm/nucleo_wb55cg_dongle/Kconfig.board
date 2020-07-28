@@ -1,0 +1,8 @@
+# STM32WB55CG Nucleo USB dongle configuration
+
+# Copyright (c) 2020 Pete Johanson
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_WB55CG_DONGLE
+	bool "Nucleo WB55CG USB DONGLE"
+	depends on SOC_STM32WB55XX

@@ -1,0 +1,24 @@
+# STM32LWB55CG USB dongle configuration
+
+# Copyright (c) 2020 Pete Johanson
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NUCLEO_WB55CG_DONGLE
+
+config BOARD
+	default "nucleo_wb55cg_dongle"
+
+config CLOCK_STM32_LSE
+	default y
+
+choice STM32_LPTIM_CLOCK
+	default STM32_LPTIM_CLOCK_LSE
+	depends on STM32_LPTIM_TIMER
+endchoice
+
+choice BT_HCI_BUS_TYPE
+	default BT_STM32_IPM
+	depends on BT
+endchoice
+
+endif # BOARD_NUCLEO_WB55CG

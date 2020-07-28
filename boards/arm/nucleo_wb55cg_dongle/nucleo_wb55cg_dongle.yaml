@@ -1,0 +1,19 @@
+identifier: nucleo_wb55cg_dongle
+name: ST Nucleo WB55CG Dongle
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 96
+flash: 1024
+supported:
+  - gpio
+  - i2c
+  - counter
+  - spi
+  - pwm
+  - adc
+  - watchdog
+  - usb_device
