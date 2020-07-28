@@ -137,8 +137,7 @@ struct bt_conn {
 	uint8_t			err;
 
 	bt_conn_state_t		state;
-
-	uint16_t		        rx_len;
+	uint16_t rx_len;
 	struct net_buf		*rx;
 
 	/* Sent but not acknowledged TX packets with a callback */
