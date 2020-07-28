@@ -304,7 +304,9 @@ uint8_t u8_to_dec(char *buf, uint8_t buflen, uint8_t value);
 #endif
 
 /** @brief 64-bit unsigned integer with bit position @p _n set. */
+#ifndef BIT64
 #define BIT64(_n) (1ULL << (_n))
+#endif
 
 /**
  * @brief Set or clear a bit depending on a boolean value

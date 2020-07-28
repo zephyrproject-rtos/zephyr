@@ -1,0 +1,19 @@
+# Espressif ESP-IDF module
+
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config HAS_ESP_IDF
+	bool "Espressif ESP-IDF support"
+	depends on SOC_ESP32
+
+# ESP-IDF Configurations that appear is some header files used
+config IDF_TARGET
+	string
+	depends on HAS_ESP_IDF
+	default SOC
+
+config IDF_TARGET_ESP32
+	bool
+	depends on HAS_ESP_IDF
+	default y if IDF_TARGET="esp32"
