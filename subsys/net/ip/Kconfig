@@ -378,19 +378,19 @@ config NET_TCP_RETRY_COUNT
 choice
 	prompt "Select TCP stack"
 	depends on NET_TCP
-	default NET_TCP1
+	default NET_TCP2
 	help
 	  Select the TCP stack implementation to use.
 
-config NET_TCP1
-	bool "Current stable TCP stack"
-	help
-	  The current TCP stack that has been in use since Zephyr 1.0.
-
 config NET_TCP2
-	bool "Experimental TCP stack"
+	bool "New TCP stack"
 	help
-	  Enable experimental TCP which is under development.
+	  Enable new TCP stack for Zephyr 2.4
+
+config NET_TCP1
+	bool "Legacy TCP stack"
+	help
+	  The legacy TCP stack that has been in use since Zephyr 1.0.
 
 endchoice
 
