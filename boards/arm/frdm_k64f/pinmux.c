@@ -155,6 +155,13 @@ static int frdm_k64f_pinmux_init(struct device *dev)
 		       PORT_PCR_PE_MASK | PORT_PCR_PS_MASK);
 #endif
 
+#if CONFIG_SHIELD_ADAFRUIT_WINC1500
+	/* IRQ, ENable, RST */
+	pinmux_pin_set(portc,  3, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(portc,  2, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(porta,  2, PORT_PCR_MUX(kPORT_MuxAsGpio));
+#endif
+
 	return 0;
 }
 
