@@ -398,13 +398,24 @@ static int stm32_clock_control_init(struct device *dev)
 	/* PLL will stay in reset state configuration */
 #endif /* CONFIG_CLOCK_STM32_PLL_SRC_* */
 
+
+	/* Preset the prescalers prior to chosing SYSCLK */
+	/* Prevents APB clock to go over limits */
+	/* Set buses (Sys,AHB, APB1, APB2 & APB4) prescalers */
+	LL_RCC_SetSysPrescaler(sysclk_prescaler(CONFIG_CLOCK_STM32_D1CPRE));
+	LL_RCC_SetAHBPrescaler(ahb_prescaler(CONFIG_CLOCK_STM32_HPRE));
+	LL_RCC_SetAPB1Prescaler(apb1_prescaler(CONFIG_CLOCK_STM32_D2PPRE1));
+	LL_RCC_SetAPB2Prescaler(apb2_prescaler(CONFIG_CLOCK_STM32_D2PPRE2));
+	LL_RCC_SetAPB3Prescaler(apb3_prescaler(CONFIG_CLOCK_STM32_D1PPRE));
+	LL_RCC_SetAPB4Prescaler(apb4_prescaler(CONFIG_CLOCK_STM32_D3PPRE));
+
+
 #if defined(CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL)
 
 	/* Enable PLL*/
 	LL_RCC_PLL1_Enable();
 	while (LL_RCC_PLL1_IsReady() != 1) {
 	}
-
 
 	/* Set PLL1 as System Clock Source */
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_PLL1);
@@ -448,14 +459,6 @@ static int stm32_clock_control_init(struct device *dev)
 	}
 
 #endif /* CLOCK_STM32_SYSCLK_SRC */
-
-	/* Set buses (Sys,AHB, APB1, APB2 & APB4) prescalers */
-	LL_RCC_SetSysPrescaler(sysclk_prescaler(CONFIG_CLOCK_STM32_D1CPRE));
-	LL_RCC_SetAHBPrescaler(ahb_prescaler(CONFIG_CLOCK_STM32_HPRE));
-	LL_RCC_SetAPB1Prescaler(apb1_prescaler(CONFIG_CLOCK_STM32_D2PPRE1));
-	LL_RCC_SetAPB2Prescaler(apb2_prescaler(CONFIG_CLOCK_STM32_D2PPRE2));
-	LL_RCC_SetAPB3Prescaler(apb3_prescaler(CONFIG_CLOCK_STM32_D1PPRE));
-	LL_RCC_SetAPB4Prescaler(apb4_prescaler(CONFIG_CLOCK_STM32_D3PPRE));
 
 	/* Set FLASH latency */
 	/* AXI clock is SYSCLK / HPRE */
