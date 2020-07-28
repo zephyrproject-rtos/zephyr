@@ -37,9 +37,9 @@ struct ring_buf {
 	union ring_buf_misc {
 		struct ring_buf_misc_item_mode {
 			uint32_t dropped_put_count; /**< Running tally of the
-						   * number of failed put
-						   * attempts.
-						   */
+						     * number of failed put
+						     * attempts.
+						     */
 		} item_mode;
 		struct ring_buf_misc_byte_mode {
 			uint32_t tmp_tail;
@@ -49,7 +49,7 @@ struct ring_buf {
 	uint32_t size;   /**< Size of buf in 32-bit chunks */
 
 	union ring_buf_buffer {
-		uint32_t *buf32;	 /**< Memory region for stored entries */
+		uint32_t *buf32; /**< Memory region for stored entries */
 		uint8_t *buf8;
 	} buf;
 	uint32_t mask;   /**< Modulo mask if size is a power of 2 */
@@ -148,10 +148,12 @@ struct ring_buf {
  *
  * @param buf Address of ring buffer.
  * @param size Ring buffer size (in 32-bit words or bytes).
- * @param data Ring buffer data area (uint32_t data[size] or uint8_t data[size] for
- *	       bytes mode).
+ * @param data Ring buffer data area (uint32_t data[size] or uint8_t data[size]
+ *	       for bytes mode).
  */
-static inline void ring_buf_init(struct ring_buf *buf, uint32_t size, void *data)
+static inline void ring_buf_init(struct ring_buf *buf,
+				 uint32_t size,
+				 void *data)
 {
 	__ASSERT(size < RING_BUFFER_MAX_SIZE, RING_BUFFER_SIZE_ASSERT_MSG);
 
@@ -288,7 +290,9 @@ int ring_buf_item_get(struct ring_buf *buf, uint16_t *type, uint8_t *value,
  * @return Size of allocated buffer which can be smaller than requested if
  *	   there is not enough free space or buffer wraps.
  */
-uint32_t ring_buf_put_claim(struct ring_buf *buf, uint8_t **data, uint32_t size);
+uint32_t ring_buf_put_claim(struct ring_buf *buf,
+			    uint8_t **data,
+			    uint32_t size);
 
 /**
  * @brief Indicate number of bytes written to allocated buffers.
@@ -356,7 +360,9 @@ uint32_t ring_buf_put(struct ring_buf *buf, const uint8_t *data, uint32_t size);
  * @return Number of valid bytes in the provided buffer which can be smaller
  *	   than requested if there is not enough free space or buffer wraps.
  */
-uint32_t ring_buf_get_claim(struct ring_buf *buf, uint8_t **data, uint32_t size);
+uint32_t ring_buf_get_claim(struct ring_buf *buf,
+			    uint8_t **data,
+			    uint32_t size);
 
 /**
  * @brief Indicate number of bytes read from claimed buffer.
