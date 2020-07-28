@@ -2130,10 +2130,6 @@ uint16_t bt_gatt_get_mtu(struct bt_conn *conn)
 uint8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			uint8_t mask)
 {
-	if (IS_ENABLED(CONFIG_BT_CONN_DISABLE_SECURITY)) {
-		return 0;
-	}
-
 	if ((mask & BT_GATT_PERM_READ) &&
 	    (!(attr->perm & BT_GATT_PERM_READ_MASK) || !attr->read)) {
 		return BT_ATT_ERR_READ_NOT_PERMITTED;
@@ -2142,6 +2138,10 @@ uint8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr
 	if ((mask & BT_GATT_PERM_WRITE) &&
 	    (!(attr->perm & BT_GATT_PERM_WRITE_MASK) || !attr->write)) {
 		return BT_ATT_ERR_WRITE_NOT_PERMITTED;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CONN_DISABLE_SECURITY)) {
+		return 0;
 	}
 
 	mask &= attr->perm;
