@@ -309,6 +309,10 @@ struct bt_gatt_cpf {
  *  macros such as BT_GATT_PRIMARY_SERVICE, BT_GATT_CHARACTERISTIC,
  *  BT_GATT_DESCRIPTOR, etc.
  *
+ *  When using :option:`CONFIG_BT_SETTINGS` then all services that should have
+ *  bond configuration loaded, i.e. CCC values, must be registered before
+ *  calling @ref settings_load.
+ *
  *  When using :option:`CONFIG_BT_GATT_CACHING` and :option:`CONFIG_BT_SETTINGS`
  *  then all services that should be included in the GATT Database Hash
  *  calculation should be added before calling @ref settings_load.
