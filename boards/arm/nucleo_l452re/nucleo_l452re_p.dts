@@ -10,13 +10,13 @@
 #include "arduino_r3_connector.dtsi"
 
 / {
-	model = "STMicroelectronics STM32L452RE-NUCLEO board";
+	model = "STMicroelectronics STM32L452RE-P-NUCLEO board";
 	compatible = "st,stm32l452re-nucleo", "st,stm32l452";
 
 	leds {
 		compatible = "gpio-leds";
 		green_led: led_0 {
-			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiob 13 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
 	};
