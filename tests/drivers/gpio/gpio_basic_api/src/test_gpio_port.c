@@ -76,13 +76,15 @@ static int setup(void)
 
 	TC_PRINT("Check %s output %d connected to input %d\n", DEV_NAME,
 		 PIN_OUT, PIN_IN);
-	rc = gpio_pin_configure(dev, PIN_OUT, GPIO_OUTPUT_LOW);
-	zassert_equal(rc, 0,
-		      "pin config output low failed");
 
 	rc = gpio_pin_configure(dev, PIN_IN, GPIO_INPUT);
 	zassert_equal(rc, 0,
 		      "pin config input failed");
+
+	/* Test output low */
+	rc = gpio_pin_configure(dev, PIN_OUT, GPIO_OUTPUT_LOW);
+	zassert_equal(rc, 0,
+		      "pin config output low failed");
 
 	rc = gpio_port_get_raw(dev, &v1);
 	zassert_equal(rc, 0,
@@ -97,6 +99,16 @@ static int setup(void)
 	zassert_equal(v1 & BIT(PIN_IN), 0,
 		      "out low does not read low");
 
+	/* Disconnect output */
+	rc = gpio_pin_configure(dev, PIN_OUT, GPIO_DISCONNECTED);
+	if (rc == -ENOTSUP) {
+		TC_PRINT("NOTE: cannot configure pin as disconnected; trying as input\n");
+		rc = gpio_pin_configure(dev, PIN_OUT, GPIO_INPUT);
+	}
+	zassert_equal(rc, 0,
+		      "output disconnect failed");
+
+	/* Test output high */
 	rc = gpio_pin_configure(dev, PIN_OUT, GPIO_OUTPUT_HIGH);
 	zassert_equal(rc, 0,
 		      "pin config output high failed");
