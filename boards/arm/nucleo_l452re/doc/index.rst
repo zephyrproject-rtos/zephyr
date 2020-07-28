@@ -10,7 +10,7 @@ The Nucleo L452RE board features an ARM Cortex-M4 based STM32L452RE MCU
 with a wide range of connectivity support and configurations. Here are
 some highlights of the Nucleo L452RE board:
 
-- STM32 microcontroller in UFQFPN32 package
+- STM32 microcontroller in LQFP64 package
 - Arduino Uno V3 connectivity
 - On-board ST-LINK/V2-1 debugger/programmer with SWD connector
 - Flexible board power supply:
@@ -136,7 +136,7 @@ input/output, pull-up, etc.
 
 Available pins:
 ---------------
-.. image:: img/nucleo-l452re-pinout.png
+.. image:: img/nucleo_l452re_pinout.png
    :width: 496px
    :align: center
    :height: 446px
@@ -150,10 +150,15 @@ Default Zephyr Peripheral Mapping:
 - UART_1_TX : PA9
 - UART_1_RX : PA10
 - UART_2_TX : PA2
-- UART_2_RX : PA15
+- UART_2_RX : PA3
 - I2C_1_SCL : PB6
 - I2C_1_SDA : PB7
 - PWM_2_CH1 : PA0
+- SPI_SCK : PA5
+- SPI_MISO : PA6
+- SPI_MOSI : PA7
+- CAN_TX : PA11
+- CAN_RX : PA12
 - LD2 : PA5
 
 System Clock
