@@ -975,6 +975,20 @@ static void gatt_ccc_conn_unqueue(struct bt_conn *conn)
 	}
 }
 
+static void gatt_ccc_conn_enqueue(struct bt_conn *conn)
+{
+	if ((!gatt_ccc_conn_is_queued(conn)) &&
+	    bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+		/* Store the connection with the same index it has in
+		 * the conns array
+		 */
+		gatt_ccc_store.conn_list[bt_conn_index(conn)] =
+			bt_conn_ref(conn);
+
+		k_delayed_work_submit(&gatt_ccc_store.work, CCC_STORE_DELAY);
+	}
+}
+
 static bool gatt_ccc_conn_queue_is_empty(void)
 {
 	for (size_t i = 0; i < CONFIG_BT_MAX_CONN; i++) {
@@ -1575,16 +1589,7 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 		gatt_ccc_changed(attr, ccc);
 
 #if defined(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE)
-		if ((!gatt_ccc_conn_is_queued(conn)) &&
-		    bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
-			/* Store the connection with the same index it has in
-			 * the conns array
-			 */
-			gatt_ccc_store.conn_list[bt_conn_index(conn)] =
-				bt_conn_ref(conn);
-			k_delayed_work_submit(&gatt_ccc_store.work,
-					      CCC_STORE_DELAY);
-		}
+		gatt_ccc_conn_enqueue(conn);
 #endif
 	}
 
