@@ -1114,6 +1114,56 @@ static void db_changed(void)
 #endif
 }
 
+static void gatt_unregister_ccc(struct _bt_gatt_ccc *ccc)
+{
+	ccc->value = 0;
+
+	for (size_t i = 0; i < ARRAY_SIZE(ccc->cfg); i++) {
+		struct bt_gatt_ccc_cfg *cfg = &ccc->cfg[i];
+
+		if (bt_addr_le_cmp(&cfg->peer, BT_ADDR_LE_ANY)) {
+			struct bt_conn *conn;
+			bool store = true;
+
+			conn = bt_conn_lookup_addr_le(cfg->id, &cfg->peer);
+			if (conn) {
+				if (conn->state == BT_CONN_CONNECTED) {
+#if defined(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE)
+					gatt_ccc_conn_enqueue(conn);
+#endif
+					store = false;
+				}
+
+				bt_conn_unref(conn);
+			}
+
+			if (IS_ENABLED(CONFIG_BT_SETTINGS) && store &&
+			    bt_addr_le_is_bonded(cfg->id, &cfg->peer)) {
+				bt_gatt_store_ccc(cfg->id, &cfg->peer);
+			}
+
+			clear_ccc_cfg(cfg);
+		}
+	}
+}
+
+static int gatt_unregister(struct bt_gatt_service *svc)
+{
+	if (!sys_slist_find_and_remove(&db, &svc->node)) {
+		return -ENOENT;
+	}
+
+	for (uint16_t i = 0; i < svc->attr_count; i++) {
+		struct bt_gatt_attr *attr = &svc->attrs[i];
+
+		if (attr->write == bt_gatt_attr_write_ccc) {
+			gatt_unregister_ccc(attr->user_data);
+		}
+	}
+
+	return 0;
+}
+
 int bt_gatt_service_register(struct bt_gatt_service *svc)
 {
 	int err;
@@ -1146,10 +1196,13 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 
 int bt_gatt_service_unregister(struct bt_gatt_service *svc)
 {
+	int err;
+
 	__ASSERT(svc, "invalid parameters\n");
 
-	if (!sys_slist_find_and_remove(&db, &svc->node)) {
-		return -ENOENT;
+	err = gatt_unregister(svc);
+	if (err) {
+		return err;
 	}
 
 	sc_indicate(svc->attrs[0].handle,
