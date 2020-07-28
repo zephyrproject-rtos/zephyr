@@ -644,7 +644,7 @@ Zephyr needs a reference to the changes to be able to verify the changes. In the
 main tree this is done using revisions. For code that is already merged and part
 of the tree we use the commit hash, a tag, or a branch name. For pull requests
 however, we require specifying the pull request number in the revision field to
-allow building the Zephyr main tree with the changes submitted to the
+allow building the zephyr main tree with the changes submitted to the
 module.
 
 To avoid merging changes to master with pull request information, the pull
@@ -659,16 +659,8 @@ using exactly the same process. In this case you will change multiple entries of
 all modules that have a pull request against them.
 
 
-Submitting a new module
-========================
-
-Requirements
--------------
-
-Modules to be included in the default manifest of the Zephyr project need to
-provide functionality or features endorsed and approved by the project technical
-steering committee and should follow the project licensing and
-:ref:`contribute_guidelines`.
+Process for submitting a new module
+===================================
 
 A request for a new module should be initialized using an RFC issue in the
 Zephyr project issue tracking system with details about the module and how it
@@ -680,9 +672,6 @@ guidelines.
 If a module is maintained as a fork of another project on Github, the Zephyr module
 related files and changes in relation to upstream need to be maintained in a
 special branch named ``zephyr``.
-
-Process
--------
 
 Follow the following steps to request a new module:
 
@@ -719,8 +708,8 @@ revision needs to be changed to the commit hash from the module repository.
 
 .. _changes_to_existing_module:
 
-Changes to existing modules
-===========================
+Process for submitting changes to existing modules
+==================================================
 
 #. Submit the changes using a pull request to an existing repository following
    the :ref:`contribution guidelines <contribute_guidelines>`.
