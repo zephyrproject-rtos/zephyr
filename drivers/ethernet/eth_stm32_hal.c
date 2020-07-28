@@ -54,6 +54,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define ETH_DMA_TX_TIMEOUT_MS	20U  /* transmit timeout in milliseconds */
 
+/* Only one tx_buffer is sufficient to pass only 1 dma_buffer */
+#define ETH_TXBUF_DEF_NB	1U
 #else
 
 #define GET_FIRST_DMA_TX_DESC(heth)	(heth->TxDesc)
@@ -210,9 +212,9 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	}
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
-	ETH_BufferTypeDef tx_buffer_def[ETH_TXBUFNB];
+	ETH_BufferTypeDef tx_buffer_def[ETH_TXBUF_DEF_NB];
 
-	memset(tx_buffer_def, 0, ETH_TXBUFNB*sizeof(ETH_BufferTypeDef));
+	memset(tx_buffer_def, 0, ETH_TXBUF_DEF_NB*sizeof(ETH_BufferTypeDef));
 
 	tx_buffer_def[cur_tx_desc_idx].buffer = dma_buffer;
 	tx_buffer_def[cur_tx_desc_idx].len = total_len;
