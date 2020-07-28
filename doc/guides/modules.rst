@@ -83,6 +83,77 @@ responsibility to merge approved pull requests in the main branch of a
 module repository.
 
 
+Maintaining the module codebase
+===============================
+
+Updates in the zephyr main tree, for example, in public Zephyr APIs,
+may require patching a module's codebase. The responsibility for keeping
+the module codebase up to date is shared between the **contributor** of
+such updates in Zephyr and the module **owner**. In particular:
+
+* the contributor of the original changes in Zephyr is required to submit
+  the corresponding changes that are required in module repositories, to
+  ensure that Zephyr CI on the pull request with the original changes, as
+  well as the module integration testing are successful.
+
+* the module owner has the overall responsibility for synchronizing
+  and testing the module codebase with the zephyr main tree.
+  This includes occasional advanced testing of the module's codebase
+  in addition to the testing performed by Zephyr's CI.
+  The module owner is required to fix issues in the module's codebase that
+  have not been caught by Zephyr pull request CI runs.
+
+
+
+Contributing changes to modules
+===============================
+
+Submitting and merging changes directly to a module's codebase, that is,
+before they have been merged in the corresponding external project
+repository, should be limited to:
+
+* changes required due to updates in the zephyr main tree
+* urgent changes that should not wait to be merged in the external project
+  first, such as fixes to security vulnerabilities.
+
+Non-trivial changes to a module's codebase, including changes in the module
+design or functionality should be discouraged, if the module has an upstream
+project repository. In that case, such changes shall be submitted to the
+upstream project, directly.
+
+:ref:`Submitting changes to modules <submitting_new_modules>` describes in
+detail the process of contributing changes to module repositories.
+
+Contribution guidelines
+-----------------------
+
+Contributing to Zephyr modules shall follow the generic project
+:ref:`Contribution guidelines <contribute_guidelines>`.
+
+**Pull Requests:** may be merged with minimum of 2 approvals, including
+an approval by the PR assignee. In addition to this, pull requests in module
+repositories may only be merged if the introduced changes are verified
+with Zephyr CI tools, as described in more detail in other sections on
+this page.
+
+The merging of pull requests in the main branch of a module
+repository must be coupled with the corresponding manifest
+file update in the zephyr main tree.
+
+**Issue Reporting:** GitHub issues are intentionally disabled in module
+repositories, in
+favor of a centralized policy for issue reporting. Tickets concerning, for
+example, bugs or enhancements in modules shall be opened in the main
+zephyr repository. Issues should be appropriately labeled using GitHub
+labels corresponding to each module, where applicable.
+
+  .. note::
+
+     It is allowed to file bug reports for zephyr modules to track
+     the corresponding upstream project bugs in Zephyr. These bug reports
+     shall not affect the
+     :ref:`Release Quality Criteria<release_quality_criteria>`.
+
 
 The build system variable :makevar:`ZEPHYR_MODULES` is a `CMake list`_ of
 absolute paths to the directories containing Zephyr modules. These modules
