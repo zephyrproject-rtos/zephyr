@@ -581,17 +581,25 @@ static int uarte_nrfx_rx_enable(struct device *dev, uint8_t *buf, size_t len,
 static int uarte_nrfx_rx_buf_rsp(struct device *dev, uint8_t *buf, size_t len)
 {
 	struct uarte_nrfx_data *data = get_dev_data(dev);
+	int err;
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
+	int key = irq_lock();
 
-	if (data->async->rx_next_buf == NULL) {
+	if ((data->async->rx_buf == NULL)) {
+		err = -EACCES;
+	} else if (data->async->rx_next_buf == NULL) {
 		data->async->rx_next_buf = buf;
 		data->async->rx_next_buf_len = len;
 		nrf_uarte_rx_buffer_set(uarte, buf, len);
 		nrf_uarte_shorts_enable(uarte, NRF_UARTE_SHORT_ENDRX_STARTRX);
+		err = 0;
 	} else {
-		return -EBUSY;
+		err = -EBUSY;
 	}
-	return 0;
+
+	irq_unlock(key);
+
+	return err;
 }
 
 static int uarte_nrfx_callback_set(struct device *dev, uart_callback_t callback,
@@ -844,6 +852,8 @@ static void endrx_isr(struct device *dev)
 	 * and here we just do the swap of which buffer the driver is following,
 	 * the next rx_timeout() will update the rx_offset.
 	 */
+	int key = irq_lock();
+
 	if (data->async->rx_next_buf) {
 		data->async->rx_buf = data->async->rx_next_buf;
 		data->async->rx_buf_len = data->async->rx_next_buf_len;
@@ -851,11 +861,22 @@ static void endrx_isr(struct device *dev)
 		data->async->rx_next_buf_len = 0;
 
 		data->async->rx_offset = 0;
-
+		/* Check is based on assumption that ISR handler handles
+		 * ENDRX before RXSTARTED so if short was set on time, RXSTARTED
+		 * event will be set.
+		 */
+		if (!nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXSTARTED)) {
+			nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTRX);
+		}
 		/* Remove the short until the subsequent next buffer is setup */
 		nrf_uarte_shorts_disable(uarte, NRF_UARTE_SHORT_ENDRX_STARTRX);
 	} else {
 		data->async->rx_buf = NULL;
+	}
+
+	irq_unlock(key);
+
+	if (data->async->rx_buf == NULL) {
 		evt.type = UART_RX_DISABLED;
 		user_callback(dev, &evt);
 	}
