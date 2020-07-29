@@ -35,6 +35,106 @@ Zephyr depends on several categories of modules, including but not limited to:
 This page summarizes a list of policies and best practices which aim at
 better organizing the workflow in Zephyr modules.
 
+Module Repositories
+*******************
+
+* All modules included in the default manifest shall be hosted in repositories
+  under the zephyrproject-rtos GitHub organization.
+
+* The module repository codebase shall include a *module.yml* file in a
+  :file:`zephyr/` folder at the root of the repository.
+
+* Module repository names should follow the convention of using lowercase
+  letters and dashes instead of underscores. This rule will apply to all
+  new module repositories, except for repositories that are directly
+  tracking external projects (hosted in Git repositories); such modules
+  may be named as their external project counterparts.
+
+  .. note::
+
+     Existing module repositories that do not conform to the above convention
+     do not need to be renamed to comply with the above convention.
+
+* Modules should use "zephyr" as the default name for the repository main
+  branch. Branches for specific purposes, for example, a module branch for
+  an LTS Zephyr version, shall have names starting with the 'zephyr\_' prefix.
+
+* If the module has an external (upstream) project repository, the module
+  repository should preserve the upstream repository folder structure.
+
+  .. note::
+
+     It is not required in module repositories to maintain a 'master'
+     branch mirroring the master branch of the external repository. It
+     is not recommended as this may generate confusion around the module's
+     main branch, which should be 'zephyr'.
+
+.. _modules_synchronization:
+
+Synchronizing with upstream
+===========================
+
+It is preferred to synchronize a module respository with the latest stable
+release of the corresponding external project. It is permitted, however, to
+update a Zephyr module repository with the latest development branch tip,
+if this is required to get important updates in the module codebase. When
+synchronizing a module with upstream it is mandatory to document the
+rationale for performing the particular update.
+
+Requirements for allowed practices
+----------------------------------
+
+Changes to the main branch of a module repository, including synchronization
+with upstream code base, may only be applied via pull requests. These pull
+requests shall be *verifiable* by Zephyr CI and *mergeable* (e.g. with the
+*Rebase and merge*, or *Create a merge commit* option using Github UI). This
+ensures that the incoming changes are always **reviewable**, and the
+*downstream* module repository history is incremental (that is, existing
+commits, tags, etc. are always preserved). This policy also allows to run
+Zephyr CI, git lint, identity, and license checks directly on the set of
+changes that are to be brought into the module repository.
+
+.. note::
+
+     Force-pushing to a module's main branch is not allowed.
+
+Allowed practices
+---------------------
+
+The following practices conform to the above requirements and should be
+followed in all modules repositories. It is up to the module code owner
+to select the preferred synchronization practice, however, it is required
+that the selected practice is consistently followed in the respective
+module repository.
+
+**Updating modules with a diff from upstream:**
+Upstream changes brought as a single *snapshot* commit (manual diff) in a
+pull request against the module's main branch, which may be merged using
+the *Rebase & merge* operation. This approach is simple and
+should be applicable to all modules with the downside of supressing the
+upstream history in the module repository.
+
+  .. note::
+
+     The above practice is the only allowed practice in modules where
+     the external project is not hosted in an upstream Git repository.
+
+The commit message is expected to identify the upstream project URL, the
+version to which the module is updated (upstream version, tag, commit SHA,
+if applicable, etc.), and the reason for the doing the update.
+
+**Updating modules by merging the upstream branch:**
+Upstream changes brought in by performing a Git merge of the intended upstream
+branch (e.g. main branch, latest release branch, etc.) submitting the result in
+pull request against the module main branch, and merging the pull request using
+the *Create a merge commit* operation.
+This approach is applicable to modules with an upstream project Git repository.
+The main advantages of this approach is that the upstream repository history
+(that is, the original commit SHAs) is preserved in the module repository. The
+downside of this approach is that two additional merge commits are generated in
+the downstream main branch.
+
+
 Contributing to Zephyr modules
 ******************************
 
@@ -574,8 +674,6 @@ created by the project team and initialized with basic information that would
 allow submitting code to the module project following the project contribution
 guidelines.
 
-All modules should be hosted in repositories under the Zephyr organization. The
-manifest should only point to repositories maintained under the Zephyr project.
 If a module is maintained as a fork of another project on Github, the Zephyr module
 related files and changes in relation to upstream need to be maintained in a
 special branch named ``zephyr``.
