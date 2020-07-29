@@ -12,7 +12,7 @@ zephyr_library_sources(lvgl_display_16bit.c)
 zephyr_library_sources(lvgl_display_24bit.c)
 zephyr_library_sources(lvgl_display_32bit.c)
 
-zephyr_library_sources_ifdef( CONFIG_LVGL_FILESYSTEM
+zephyr_library_sources_ifdef( CONFIG_LVGL_USE_FILESYSTEM
     lvgl_fs.c
 )
 
