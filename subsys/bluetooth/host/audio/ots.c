@@ -1425,5 +1425,25 @@ void bt_ots_dump_directory_listing(struct ots_svc_inst_t *inst)
 
 #endif /* defined(CONFIG_BT_DEBUG_OTS) */
 
+#if defined(CONFIG_BT_DEBUG_OTS)
+
+void bt_ots_dump_metadata(struct bt_ots_obj_metadata *p_metadata)
+{
+	char uuidstr[BT_UUID_STR_LEN];
+
+	BT_DBG("Object size: %d", p_metadata->size);
+
+	if (p_metadata->type.uuid.type == BT_UUID_TYPE_16) {
+		BT_DBG("Object type (UUID): %s, (0x%4x)",
+		       bt_ots_uuid_type_str(p_metadata->type.u16),
+		       p_metadata->type.u16.val);
+	} else {
+		bt_uuid_to_str(&p_metadata->type.uuid, uuidstr, sizeof(uuidstr));
+		BT_DBG("Object type UUID: %s", log_strdup(uuidstr));
+	}
+	BT_DBG("Object name: %s", log_strdup(p_metadata->name));
+}
+#endif /* defined(CONFIG_BT_DEBUG_OTS) */
+
 DEVICE_INIT(bt_ots, "bt_ots", &bt_ots_init, NULL, NULL,
 	    APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
