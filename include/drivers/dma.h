@@ -102,6 +102,21 @@ struct dma_block_config {
 };
 
 /**
+ * @typedef dma_callback_t
+ * @brief Callback function for DMA transfer completion
+ *
+ *  If enabled, callback function will be invoked at transfer completion
+ *  or when error happens.
+ *
+ * @param dev Pointer to the DMA device calling the callback.
+ * @param user_data A pointer to some user data or NULL
+ * @param channel The channel number
+ * @param status 0 on success, a negative errno otherwise
+ */
+typedef void (*dma_callback_t)(struct device *dev, void *user_data,
+			       uint32_t channel, int status);
+
+/**
  * @brief DMA configuration structure.
  *
  *     dma_slot             [ 0 : 6 ]   - which peripheral and direction
@@ -139,9 +154,7 @@ struct dma_block_config {
  *
  *     callback_arg  private argument from DMA client.
  *
- * dma_callback is the callback function pointer. If enabled, callback function
- *              will be invoked at transfer completion or when error happens
- *              (error_code: zero-transfer success, non zero-error happens).
+ *     dma_callback see dma_callback_t for details
  */
 struct dma_config {
 	uint32_t  dma_slot :             7;
@@ -162,8 +175,7 @@ struct dma_config {
 	uint32_t block_count;
 	struct dma_block_config *head_block;
 	void *callback_arg;
-	void (*dma_callback)(struct device *dev, void *callback_arg,
-			     uint32_t channel, int error_code);
+	dma_callback_t dma_callback;
 };
 
 /**
