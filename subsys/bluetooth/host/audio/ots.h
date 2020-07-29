@@ -646,6 +646,30 @@ struct bt_ots_obj_metadata *bt_ots_get_object(struct ots_svc_inst_t *inst,
 int bt_ots_update_object(struct ots_svc_inst_t *inst, uint64_t id,
 			 struct bt_ots_obj_metadata *p_metadata);
 
+
+/** @brief Convert OTS object type UUID to string */
+static inline const char *bt_ots_uuid_type_str(struct bt_uuid_16 uuid)
+{
+	switch (uuid.val) {
+#if defined(BT_MCS) || defined(BT_MCC)
+	case BT_UUID_OTS_TYPE_MPL_ICON_VAL:
+		return "Icon Object";
+	case BT_UUID_OTS_TYPE_TRACK_SEGMENT_VAL:
+		return "Track Segments Object";
+	case BT_UUID_OTS_TYPE_TRACK_VAL:
+		return "Track Object";
+	case BT_UUID_OTS_TYPE_GROUP_VAL:
+		return "Group Object";
+#endif /* defined(BT_MCS) || defined(BT_MCC) */
+	case BT_UUID_OTS_DIRECTORY_LISTING_VAL:
+		return "Directory Listing Object";
+	case BT_UUID_OTS_TYPE_UNSPECIFIED_VAL:
+		return "Unspecified object";
+	default:
+		return "Unknown";
+	}
+}
+
 #if defined(CONFIG_BT_DEBUG_OTS)
 
 /** @brief Dump the content of the directory listing object in Hex (Debug).
@@ -653,6 +677,15 @@ int bt_ots_update_object(struct ots_svc_inst_t *inst, uint64_t id,
  *  @param inst Pointer to the OTS instance.
  */
 void bt_ots_dump_directory_listing(struct ots_svc_inst_t *inst);
+
+
+/** @brief Dump object metadata
+ *
+ * Dump object metadata using BT_DBG
+ *
+ * @param metadata (Pointer to) object metadata to print.
+ */
+void bt_ots_dump_metadata(struct bt_ots_obj_metadata *p_metadata);
 
 #endif /* defined(CONFIG_BT_DEBUG_OTS) */
 
