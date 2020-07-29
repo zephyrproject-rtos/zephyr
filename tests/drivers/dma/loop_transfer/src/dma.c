@@ -96,7 +96,7 @@ void main(void)
 	dma_cfg.dest_data_size = 1U;
 	dma_cfg.source_burst_length = 1U;
 	dma_cfg.dest_burst_length = 1U;
-	dma_cfg.callback_arg = NULL;
+	dma_cfg.user_data = NULL;
 	dma_cfg.dma_callback = dma_user_callback;
 	dma_cfg.block_count = 1U;
 	dma_cfg.head_block = &dma_block_cfg;
