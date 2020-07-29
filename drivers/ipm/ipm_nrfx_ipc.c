@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(ipm_nrfx_ipc);
 
 struct ipm_nrf_data {
 	ipm_callback_t callback;
-	void *callback_ctx;
+	void *user_data;
 };
 
 static struct ipm_nrf_data nrfx_ipm_data;
@@ -39,7 +39,7 @@ static void nrfx_ipc_handler(uint32_t event_mask, void *p_context)
 				 "Illegal event_idx: %d", event_idx);
 			event_mask &= ~BIT(event_idx);
 			nrfx_ipm_data.callback(DEVICE_GET(ipm_nrf),
-					       nrfx_ipm_data.callback_ctx,
+					       nrfx_ipm_data.user_data,
 					       event_idx,
 					       NULL);
 		}
@@ -77,10 +77,10 @@ static uint32_t ipm_nrf_max_id_val_get(struct device *dev)
 
 static void ipm_nrf_register_callback(struct device *dev,
 				      ipm_callback_t cb,
-				      void *context)
+				      void *user_data)
 {
 	nrfx_ipm_data.callback = cb;
-	nrfx_ipm_data.callback_ctx = context;
+	nrfx_ipm_data.user_data = user_data;
 }
 
 static int ipm_nrf_set_enabled(struct device *dev, int enable)
@@ -119,7 +119,7 @@ DEVICE_AND_API_INIT(ipm_nrf, DT_INST_LABEL(0),
 
 struct vipm_nrf_data {
 	ipm_callback_t callback[NRFX_IPC_ID_MAX_VALUE];
-	void *callback_ctx[NRFX_IPC_ID_MAX_VALUE];
+	void *user_data[NRFX_IPC_ID_MAX_VALUE];
 	struct device *ipm_device[NRFX_IPC_ID_MAX_VALUE];
 	bool ipm_init;
 };
@@ -137,7 +137,7 @@ static void vipm_dispatcher(uint32_t event_mask, void *p_context)
 		if (nrfx_vipm_data.callback[event_idx] != NULL) {
 			nrfx_vipm_data.callback[event_idx]
 				(nrfx_vipm_data.ipm_device[event_idx],
-				 nrfx_vipm_data.callback_ctx[event_idx],
+				 nrfx_vipm_data.user_data[event_idx],
 				 0,
 				 NULL);
 		}
@@ -194,11 +194,11 @@ static int vipm_nrf_##_idx##_send(struct device *dev, int wait,		\
 									\
 static void vipm_nrf_##_idx##_register_callback(struct device *dev,	\
 						ipm_callback_t cb,	\
-						void *context)		\
+						void *user_data)	\
 {									\
 	if (IS_ENABLED(CONFIG_IPM_MSG_CH_##_idx##_RX)) {		\
 		nrfx_vipm_data.callback[_idx] = cb;			\
-		nrfx_vipm_data.callback_ctx[_idx] = context;		\
+		nrfx_vipm_data.user_data[_idx] = user_data;		\
 		nrfx_vipm_data.ipm_device[_idx] = dev;			\
 	} else {							\
 		LOG_WRN("Trying to register a callback"			\

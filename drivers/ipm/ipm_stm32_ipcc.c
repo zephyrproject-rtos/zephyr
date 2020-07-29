@@ -96,7 +96,7 @@ struct stm32_ipcc_mailbox_config {
 struct stm32_ipcc_mbx_data {
 	uint32_t num_ch;
 	ipm_callback_t callback;
-	void *callback_ctx;
+	void *user_data;
 };
 
 static struct stm32_ipcc_mbx_data stm32_IPCC_data;
@@ -122,7 +122,7 @@ static void stm32_ipcc_mailbox_rx_isr(void *arg)
 
 		if (data->callback) {
 			/* Only one MAILBOX, id is unused and set to 0 */
-			data->callback(dev, data->callback_ctx, i, &value);
+			data->callback(dev, data->user_data, i, &value);
 		}
 		/* clear status to acknoledge message reception */
 		IPCC_ClearFlag_CHx(cfg->ipcc, i);
@@ -203,12 +203,12 @@ static uint32_t stm32_ipcc_mailbox_ipm_max_id_val_get(struct device *d)
 
 static void stm32_ipcc_mailbox_ipm_register_callback(struct device *d,
 						     ipm_callback_t cb,
-						     void *context)
+						     void *user_data)
 {
 	struct stm32_ipcc_mbx_data *data = DEV_DATA(d);
 
 	data->callback = cb;
-	data->callback_ctx = context;
+	data->user_data = user_data;
 }
 
 static int stm32_ipcc_mailbox_ipm_set_enabled(struct device *dev, int enable)

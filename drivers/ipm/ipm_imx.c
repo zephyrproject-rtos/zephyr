@@ -28,7 +28,7 @@ struct imx_mu_config {
 
 struct imx_mu_data {
 	ipm_callback_t callback;
-	void *callback_ctx;
+	void *user_data;
 };
 
 static void imx_mu_isr(void *arg)
@@ -69,7 +69,7 @@ static void imx_mu_isr(void *arg)
 				}
 
 				if (data->callback) {
-					data->callback(dev, data->callback_ctx,
+					data->callback(dev, data->user_data,
 						       (uint32_t)id,
 						       &data32[0]);
 				}
@@ -140,12 +140,12 @@ static uint32_t imx_mu_ipm_max_id_val_get(struct device *dev)
 
 static void imx_mu_ipm_register_callback(struct device *dev,
 					 ipm_callback_t cb,
-					 void *context)
+					 void *user_data)
 {
 	struct imx_mu_data *driver_data = dev->driver_data;
 
 	driver_data->callback = cb;
-	driver_data->callback_ctx = context;
+	driver_data->user_data = user_data;
 }
 
 static int imx_mu_ipm_set_enabled(struct device *dev, int enable)

@@ -65,7 +65,7 @@ struct ipm_mhu_device_config {
 /* Device data structure */
 struct ipm_mhu_data {
 	ipm_callback_t callback;
-	void *callback_ctx;
+	void *user_data;
 };
 
 #ifdef __cplusplus
