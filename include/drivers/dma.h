@@ -152,7 +152,7 @@ typedef void (*dma_callback_t)(struct device *dev, void *user_data,
  *     block_count  is the number of blocks used for block chaining, this
  *     depends on availability of the DMA controller.
  *
- *     callback_arg  private argument from DMA client.
+ *     user_data  private data from DMA client.
  *
  *     dma_callback see dma_callback_t for details
  */
@@ -174,7 +174,7 @@ struct dma_config {
 	uint32_t  dest_burst_length :   16;
 	uint32_t block_count;
 	struct dma_block_config *head_block;
-	void *callback_arg;
+	void *user_data;
 	dma_callback_t dma_callback;
 };
 
