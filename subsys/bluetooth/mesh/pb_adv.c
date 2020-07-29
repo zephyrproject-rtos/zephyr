@@ -334,19 +334,9 @@ static void gen_prov_cont(struct prov_rx *rx, struct net_buf_simple *buf)
 		return;
 	}
 
-	if (rx->xact_id != link.rx.id &&
-		rx->xact_id == link.rx.prev_id + 1) {
-		BT_WARN("Start segment losted");
-
-		link.rx.id = rx->xact_id;
-
-		net_buf_simple_reset(link.rx.buf);
-
-		link.rx.seg = SEG_NVAL;
-		link.rx.last_seg = SEG_NVAL;
-	} else if (rx->xact_id != link.rx.id) {
-		BT_WARN("Data for unknown transaction (%u != %u)",
-				rx->xact_id, link.rx.id);
+	if (rx->xact_id != link.rx.id) {
+		BT_WARN("Data for unknown transaction (0x%x != 0x%x)",
+			rx->xact_id, link.rx.id);
 		return;
 	}
 
@@ -402,7 +392,16 @@ static void gen_prov_ack(struct prov_rx *rx, struct net_buf_simple *buf)
 
 static void gen_prov_start(struct prov_rx *rx, struct net_buf_simple *buf)
 {
-	u8_t seg = SEG_NVAL;
+	uint8_t expected_id = next_transaction_id(link.rx.id);
+
+	if (link.rx.seg) {
+		if (rx->xact_id != link.rx.id) {
+			BT_WARN("Got Start while there are unreceived "
+				"segments");
+		}
+
+		return;
+	}
 
 	if (rx->xact_id == link.rx.id) {
 		if (!ack_pending()) {
@@ -410,6 +409,12 @@ static void gen_prov_start(struct prov_rx *rx, struct net_buf_simple *buf)
 			gen_prov_ack_send(rx->xact_id);
 		}
 
+		return;
+	}
+
+	if (rx->xact_id != expected_id) {
+		BT_WARN("Unexpected xact 0x%x, expected 0x%x", rx->xact_id,
+			expected_id);
 		return;
 	}
 
@@ -440,46 +445,16 @@ static void gen_prov_start(struct prov_rx *rx, struct net_buf_simple *buf)
 		return;
 	}
 
+	prov_clear_tx();
+
+	link.rx.seg = (1 << (START_LAST_SEG(rx->gpc) + 1)) - 1;
 	link.rx.last_seg = START_LAST_SEG(rx->gpc);
-
-	if (link.rx.seg & BIT(0)) {
-		seg = ~link.rx.seg;
-		BT_WARN("Seg Start package losted, (seg: 0x%02x)", seg);
-
-		seg = find_msb_set(seg) - 1;
-		if (seg > link.rx.last_seg) {
-			BT_ERR("Invalid segment index %u", seg);
-			prov_send_fail_msg(PROV_ERR_NVAL_FMT);
-			return;
-		}
-	}
-
-	if (link.rx.seg) {
-		seg = link.rx.seg;
-	}
-
-	link.rx.seg = seg & (1 << (START_LAST_SEG(rx->gpc) + 1)) - 1;
 	memcpy(link.rx.buf->data, buf->data, buf->len);
 	XACT_SEG_RECV(0);
 
-	if (link.rx.seg) {
-		return;
+	if (!link.rx.seg) {
+		prov_msg_recv();
 	}
-
-	if (link.rx.last_seg) {
-		uint8_t expect_len;
-
-		expect_len = (link.rx.buf->len - 20U -
-			      ((link.rx.last_seg - 1) * 23U));
-		if (expect_len != link.rx.buf->len) {
-			BT_ERR("Incorrect last seg len: %u != %u", expect_len,
-			       link.rx.buf->len);
-			prov_failed(PROV_ERR_NVAL_FMT);
-			return;
-		}
-	}
-
-	prov_msg_recv();
 }
 
 static void gen_prov_ctl(struct prov_rx *rx, struct net_buf_simple *buf)
