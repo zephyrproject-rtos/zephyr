@@ -25,6 +25,11 @@ west-commands:
       - name: flash
         class: Flash
         help: flash and run a binary on a board
+  - file: scripts/west_commands/board-reset.py
+    commands:
+      - name: board-reset
+        class: BoardReset
+        help: reset a board
   - file: scripts/west_commands/debug.py
     commands:
       - name: debug

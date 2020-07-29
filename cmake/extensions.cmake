@@ -621,8 +621,8 @@ endfunction()
 # manages the runners.
 
 function(_board_check_runner_type type) # private helper
-  if (NOT (("${type}" STREQUAL "FLASH") OR ("${type}" STREQUAL "DEBUG")))
-    message(FATAL_ERROR "invalid type ${type}; should be FLASH or DEBUG")
+  if (NOT (("${type}" STREQUAL "FLASH") OR ("${type}" STREQUAL "DEBUG") OR ("${type}" STREQUAL "RESET")))
+    message(FATAL_ERROR "invalid type ${type}; should be FLASH, DEBUG or RESET")
   endif()
 endfunction()
 
@@ -670,6 +670,11 @@ macro(board_set_debugger runner)
   board_set_runner(DEBUG ${runner})
 endmacro()
 
+# A convenience macro for board_set_runner(RESET ${runner}).
+macro(board_set_resetter runner)
+  board_set_runner(RESET ${runner})
+endmacro()
+
 # A convenience macro for board_set_runner_ifnset(FLASH ${runner}).
 macro(board_set_flasher_ifnset runner)
   board_set_runner_ifnset(FLASH ${runner})
@@ -678,6 +683,11 @@ endmacro()
 # A convenience macro for board_set_runner_ifnset(DEBUG ${runner}).
 macro(board_set_debugger_ifnset runner)
   board_set_runner_ifnset(DEBUG ${runner})
+endmacro()
+
+# A convenience macro for board_set_runner_ifnset(RESET ${runner}).
+macro(board_set_resetter_ifnset runner)
+  board_set_runner_ifnset(RESET ${runner})
 endmacro()
 
 # This function is intended for board.cmake files and application

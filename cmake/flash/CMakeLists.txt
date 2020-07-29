@@ -80,6 +80,10 @@ function(create_runners_yaml)
     runners_yaml_append("\n# Default debug runner if --runner is not given.")
     runners_yaml_append("debug-runner: ${BOARD_DEBUG_RUNNER}")
   endif()
+  if(DEFINED BOARD_RESET_RUNNER)
+    runners_yaml_append("\n# Default reset runner if --runner is not given.")
+    runners_yaml_append("reset-runner: ${BOARD_RESET_RUNNER}")
+  endif()
 
   # Sets up common runner configuration values.
   runners_yaml_append_config()
@@ -133,7 +137,7 @@ endif()
 
 # Generate the flash, debug, debugserver, attach targets within the build
 # system itself.
-foreach(target flash debug debugserver attach)
+foreach(target flash debug debugserver attach reset)
   if(target STREQUAL flash)
     set(comment "Flashing ${BOARD}")
   elseif(target STREQUAL debug)
@@ -147,6 +151,8 @@ foreach(target flash debug debugserver attach)
     endif()
   elseif(target STREQUAL attach)
     set(comment "Debugging ${BOARD}")
+  elseif(target STREQUAL reset)
+    set(comment "Reseting ${BOARD}")
   endif()
   string(TOUPPER ${target} TARGET_UPPER)
 

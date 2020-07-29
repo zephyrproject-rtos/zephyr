@@ -64,7 +64,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach'},
+        return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach', 'board-reset'},
                           flash_addr=True, erase=True)
 
     @classmethod
@@ -124,6 +124,8 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         self.require(self.pyocd)
         if command == 'flash':
             self.flash(**kwargs)
+        elif command == 'board-reset':
+            self.boardreset(**kwargs)
         else:
             self.debug_debugserver(command, **kwargs)
 
@@ -156,6 +158,19 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                [fname])
 
         self.logger.info('Flashing file: {}'.format(fname))
+        self.check_call(cmd)
+
+    def boardreset(self, **kwargs):
+        cmd = ([self.pyocd] +
+               ['commander'] +
+               ['-c', 'reset'] +
+               self.daparg_args +
+               self.target_args +
+               self.board_args +
+               self.frequency_args +
+               self.tool_opt_args)
+
+        self.logger.info('Resetting')
         self.check_call(cmd)
 
     def log_gdbserver_message(self):
