@@ -754,7 +754,7 @@ static void mfy_ticker_job_idle_get(void *param)
 
 	/* Ticker Job Silence */
 	ret = ticker_job_idle_get(TICKER_INSTANCE_ID_CTLR,
-				  TICKER_USER_ID_LLL,
+				  TICKER_USER_ID_ULL_LOW,
 				  ticker_op_job_disable, NULL);
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 		  (ret == TICKER_STATUS_BUSY));
