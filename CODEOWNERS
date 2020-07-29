@@ -186,6 +186,7 @@
 /drivers/dma/*sam0*                       @Sizurka
 /drivers/dma/dma_stm32*                   @cybertale @lowlander
 /drivers/dma/*pl330*                      @raveenp
+/drivers/dma/*iproc_pax*                  @raveenp
 /drivers/ec_host_cmd_periph/              @jettr
 /drivers/eeprom/                          @henrikbrixandersen
 /drivers/eeprom/eeprom_stm32.c            @KwonTae-young
