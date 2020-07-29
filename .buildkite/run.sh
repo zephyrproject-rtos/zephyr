@@ -21,6 +21,10 @@ echo ""
 echo "--- ccache stats at start"
 ccache -s
 
+# Temporary fix: Install lpc_checksum, needed to build images for
+# lpcxpresso11u68 boards
+pip3 install lpc_checksum
+
 if [ -n "${DAILY_BUILD}" ]; then
    SANITYCHECK_OPTIONS=" --inline-logs -N --build-only --all --retry-failed 3 -v "
    echo "--- DAILY BUILD"
