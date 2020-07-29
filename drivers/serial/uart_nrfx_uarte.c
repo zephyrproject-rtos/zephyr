@@ -15,7 +15,7 @@
 #include <sys/util.h>
 #include <kernel.h>
 #include <logging/log.h>
-LOG_MODULE_REGISTER(uart_nrfx_uarte, LOG_LEVEL_ERR);
+LOG_MODULE_REGISTER(uart_nrfx_uarte, LOG_LEVEL_WRN);
 
 /* Generalize PPI or DPPI channel management */
 #if defined(CONFIG_HAS_HW_NRF_PPI)
@@ -527,21 +527,12 @@ static int uarte_nrfx_rx_enable(struct device *dev, uint8_t *buf, size_t len,
 				int32_t timeout)
 {
 	struct uarte_nrfx_data *data = get_dev_data(dev);
-	const struct uarte_nrfx_config *cfg = get_dev_config(dev);
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 
 	if (nrf_uarte_rx_pin_get(uarte) == NRF_UARTE_PSEL_DISCONNECTED) {
 		__ASSERT(false, "TX only UARTE instance");
 		return -ENOTSUP;
 	}
-
-	if (hw_rx_counting_enabled(data)) {
-		nrfx_timer_clear(&cfg->timer);
-	} else {
-		data->async->rx_cnt.cnt = 0;
-	}
-	data->async->rx_total_byte_cnt = 0;
-	data->async->rx_total_user_byte_cnt = 0;
 
 	data->async->rx_timeout = timeout;
 	data->async->rx_timeout_slab =
@@ -557,6 +548,7 @@ static int uarte_nrfx_rx_enable(struct device *dev, uint8_t *buf, size_t len,
 
 	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDRX);
 	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
+	nrf_uarte_shorts_disable(uarte, NRF_UARTE_SHORT_ENDRX_STARTRX);
 
 	data->async->rx_enabled = true;
 	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTRX);
@@ -566,17 +558,52 @@ static int uarte_nrfx_rx_enable(struct device *dev, uint8_t *buf, size_t len,
 static int uarte_nrfx_rx_buf_rsp(struct device *dev, uint8_t *buf, size_t len)
 {
 	struct uarte_nrfx_data *data = get_dev_data(dev);
+	int err = 0;
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
+	int key = irq_lock();
+#if 0
 
-	if (data->async->rx_next_buf == NULL) {
+	if (data->async->is_in_irq || (data->async->rx_buf == NULL)
+		|| nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDRX)) {
+		err = -EAGAIN;
+	} else if (data->async->rx_next_buf == NULL) {
+		data->async->rx_next_buf = buf;
+		data->async->rx_next_buf_len = len;
+		nrf_uarte_rx_buffer_set(uarte, buf, len);
+		nrf_uarte_shorts_enable(uarte, NRF_UARTE_SHORT_ENDRX_STARTRX);
+		if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDRX)) {
+			/* Wait some time to ensure that if short was set in
+			 * time then RXSTARTED event will occur.
+			 */
+			nrf_gpio_cfg_output(26);
+			nrf_gpio_pin_set(26);
+			k_busy_wait(1);
+			if (!nrf_uarte_event_check(uarte,
+						   NRF_UARTE_EVENT_RXSTARTED)) {
+				err = -EAGAIN;
+				data->async->rx_next_buf = NULL;
+			}
+			nrf_gpio_pin_clear(26);
+
+		}
+	} else {
+		err = -EBUSY;
+	}
+#else
+	if ((data->async->rx_buf == NULL)) {
+		err = -EAGAIN;
+	} else if (data->async->rx_next_buf == NULL) {
 		data->async->rx_next_buf = buf;
 		data->async->rx_next_buf_len = len;
 		nrf_uarte_rx_buffer_set(uarte, buf, len);
 		nrf_uarte_shorts_enable(uarte, NRF_UARTE_SHORT_ENDRX_STARTRX);
 	} else {
-		return -EBUSY;
+		err = -EBUSY;
 	}
-	return 0;
+#endif
+	irq_unlock(key);
+
+	return err;
 }
 
 static int uarte_nrfx_callback_set(struct device *dev, uart_callback_t callback,
@@ -687,6 +714,8 @@ static void rx_timeout(struct k_timer *timer)
 		if (clipped ||
 			(data->async->rx_timeout_left
 				< data->async->rx_timeout_slab)) {
+
+			LOG_WRN("timeout read:%d", read);
 			/* rx_timeout ms elapsed since last receiving */
 			struct uart_event evt = {
 				.type = UART_RX_RDY,
@@ -766,8 +795,6 @@ static void endrx_isr(struct device *dev)
 		}
 	}
 
-	data->async->is_in_irq = true;
-
 	/* ensure rx timer is stopped - it will be restarted in RXSTARTED
 	 * handler if needed
 	 */
@@ -804,6 +831,7 @@ static void endrx_isr(struct device *dev)
 
 	/* Only send the RX_RDY event if there is something to send */
 	if (rx_len > 0) {
+		LOG_WRN("hw rxrdy");
 		struct uart_event evt = {
 			.type = UART_RX_RDY,
 			.data.rx.buf = data->async->rx_buf,
@@ -814,7 +842,6 @@ static void endrx_isr(struct device *dev)
 	}
 
 	if (!data->async->rx_enabled) {
-		data->async->is_in_irq = false;
 		return;
 	}
 
@@ -829,6 +856,8 @@ static void endrx_isr(struct device *dev)
 	 * and here we just do the swap of which buffer the driver is following,
 	 * the next rx_timeout() will update the rx_offset.
 	 */
+	int key = irq_lock();
+
 	if (data->async->rx_next_buf) {
 		data->async->rx_buf = data->async->rx_next_buf;
 		data->async->rx_buf_len = data->async->rx_next_buf_len;
@@ -836,16 +865,21 @@ static void endrx_isr(struct device *dev)
 		data->async->rx_next_buf_len = 0;
 
 		data->async->rx_offset = 0;
-
+		if (!nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXSTARTED)) {
+			nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTRX);
+		}
 		/* Remove the short until the subsequent next buffer is setup */
 		nrf_uarte_shorts_disable(uarte, NRF_UARTE_SHORT_ENDRX_STARTRX);
 	} else {
 		data->async->rx_buf = NULL;
+	}
+
+	irq_unlock(key);
+
+	if (data->async->rx_buf == NULL) {
 		evt.type = UART_RX_DISABLED;
 		user_callback(dev, &evt);
 	}
-
-	data->async->is_in_irq = false;
 }
 
 /* This handler is called when the reception is interrupted, in contrary to
@@ -936,8 +970,10 @@ static void uarte_nrfx_isr_async(struct device *dev)
 	}
 
 	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDRX)) {
+		data->async->is_in_irq = true;
 		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDRX);
 		endrx_isr(dev);
+		data->async->is_in_irq = false;
 	}
 
 	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXSTARTED)) {
@@ -1267,7 +1303,18 @@ static int uarte_instance_init(struct device *dev,
 	int err;
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	struct uarte_nrfx_data *data = get_dev_data(dev);
+#ifdef CONFIG_UART_ASYNC_API
+	const struct uarte_nrfx_config *cfg = get_dev_config(dev);
 
+
+	data->async->rx_total_byte_cnt = 0;
+	data->async->rx_total_user_byte_cnt = 0;
+	if (hw_rx_counting_enabled(data)) {
+		nrfx_timer_clear(&cfg->timer);
+	} else {
+		data->async->rx_cnt.cnt = 0;
+	}
+#endif
 	nrf_uarte_disable(uarte);
 
 	nrf_gpio_pin_write(config->pseltxd, 1);
