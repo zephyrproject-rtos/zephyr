@@ -20,10 +20,10 @@ if LVGL
 config LVGL_DISPLAY_DEV_NAME
 	default "SSD1306"
 
-config LVGL_HOR_RES
+config LVGL_HOR_RES_MAX
 	default 128
 
-config LVGL_VER_RES
+config LVGL_VER_RES_MAX
 	default 32 if SHIELD_SSD1306_128X32
 	default 64
 

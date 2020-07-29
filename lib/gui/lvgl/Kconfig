@@ -40,13 +40,13 @@ config LVGL_POINTER_KSCAN_MSGQ_COUNT
 
 endif # LVGL_POINTER_KSCAN
 
-config LVGL_HOR_RES
+config LVGL_HOR_RES_MAX
 	int "Horizontal Screen Resolution"
 	default 480
 	help
 	  Horizontal screen resolution in pixels
 
-config LVGL_VER_RES
+config LVGL_VER_RES_MAX
 	int "Vertical Screen Resolution"
 	default 320
 	help
@@ -121,40 +121,40 @@ config LVGL_COLOR_SCREEN_TRANSP
 
 choice
 	prompt "Chroma key color"
-	default LVGL_CHROMA_KEY_GREEN
+	default LVGL_COLOR_TRANSP_GREEN
 	help
 	  Color to to use as chroma key
 
-	config LVGL_CHROMA_KEY_RED
+	config LVGL_COLOR_TRANSP_RED
 		bool "Red"
 
-	config LVGL_CHROMA_KEY_GREEN
+	config LVGL_COLOR_TRANSP_GREEN
 		bool "Green"
 
-	config LVGL_CHROMA_KEY_BLUE
+	config LVGL_COLOR_TRANSP_BLUE
 		bool "Blue"
 
-	config LVGL_CHROMA_KEY_CUSTOM
+	config LVGL_COLOR_TRANSP_CUSTOM
 		bool "Custom"
 
 endchoice
 
-if LVGL_CHROMA_KEY_CUSTOM
-config LVGL_CUSTOM_CHROMA_KEY_RED
+if LVGL_COLOR_TRANSP_CUSTOM
+config LVGL_CUSTOM_COLOR_TRANSP_RED
 	hex "Chroma Key Red"
 	range 0x00 0xFF
 	default 0x00
 	help
 	  Value of the color red to be used in the chroma key
 
-config LVGL_CUSTOM_CHROMA_KEY_GREEN
+config LVGL_CUSTOM_COLOR_TRANSP_GREEN
 	hex "Chroma Key Green"
 	range 0x00 0xFF
 	default 0xFF
 	help
 	  Value of the color green to be used in the chroma key
 
-config LVGL_CUSTOM_CHROMA_KEY_BLUE
+config LVGL_CUSTOM_COLOR_TRANSP_BLUE
 	hex "Chroma Key Blue"
 	range 0x00 0xFF
 	default 0x00
@@ -253,25 +253,25 @@ config LVGL_BUFFER_ALLOC_DYNAMIC
 
 endchoice
 
-config LVGL_SCREEN_REFRESH_PERIOD
+config LVGL_DISP_DEF_REFR_PERIOD
 	int "Screen refresh period"
 	default 30
 	help
 	  Screen refresh period in milliseconds
 
-config LVGL_INPUT_REFRESH_PERIOD
+config LVGL_INDEV_DEF_READ_PERIOD
 	int "Input device refresh period"
 	default 30
 	help
 	  Refresh period for input devices in milliseconds
 
-config LVGL_INPUT_DRAG_THRESHOLD
+config LVGL_INDEV_DEF_DRAG_LIMIT
 	int "Drag Threshold"
 	default 10
 	help
 	  Threshold in pixels before entering drag mode
 
-config LVGL_INPUT_DRAG_THROW_SLOW_DOWN
+config LVGL_INDEV_DEF_DRAG_THROW
 	int "Drag throw slow-down"
 	default 10
 	range 0 100
@@ -279,26 +279,26 @@ config LVGL_INPUT_DRAG_THROW_SLOW_DOWN
 	  Percentage of slow down of a throw following a drag.
 	  Greater percentage means faster slow-down.
 
-config LVGL_INPUT_LONG_PRESS_TIME
+config LVGL_INDEV_DEF_LONG_PRESS_TIME
 	int "Long press time"
 	default 400
 	help
 	  Period in milliseconds before a press is seen as a long press
 
-config LVGL_INPUT_LONG_RESS_REPEAT_TIME
+config LVGL_INDEV_DEF_LONG_PRESS_REP_TIME
 	int "Long press repeat time"
 	default 100
 	help
 	  Period in milliseconds after which a new trigger is generated
 	  for a long press
 
-config LVGL_INPUT_GESTURE_LIMIT
+config LVGL_INDEV_DEF_GESTURE_LIMIT
 	int "Gesture threshold"
 	default 50
 	help
 	  Gesture threshold in pixels
 
-config LVGL_INPUT_GESTURE_MIN_VELOCITY
+config LVGL_INDEV_DEF_GESTURE_MIN_VELOCITY
 	int "Gesture minimum velocity"
 	default 3
 	help
@@ -316,13 +316,13 @@ config LVGL_TXT_ENC_UTF8
 
 endchoice
 
-config LVGL_TEXT_BREAK_CHARACTERS
+config LVGL_TXT_BREAK_CHARS
 	string "Text break characters"
 	default " ,.;:-_"
 	help
 	  Characters on which a text break can take place
 
-config LVGL_TEXT_LINE_BREAK_LONG_LEN
+config LVGL_TXT_LINE_BREAK_LONG_LEN
 	int "Minimal word length for line break"
 	default 0
 	help
@@ -330,27 +330,27 @@ config LVGL_TEXT_LINE_BREAK_LONG_LEN
 
 	  If the length is 0, no line break is allowed in the middle of a word.
 
-config LVGL_TEXT_LINE_BREAK_LONG_PRE_MIN_LEN
+config LVGL_TXT_LINE_BREAK_LONG_PRE_MIN_LEN
 	int "Minimal number of characters on line before line break"
 	default 3
 	help
 	  Minimal number of characters to place on a line before a line break
 	  in the middle of a word can occur.
 
-config LVGL_TEXT_LINE_BREAK_LONG_POST_MIN_LEN
+config LVGL_TXT_LINE_BREAK_LONG_POST_MIN_LEN
 	int "Minimal number of characters on line after line break"
 	default 3
 	help
 	  Minimal number of characters to place on a line after a line break
 	  occurred in the middle of a word.
 
-config LVGL_TEXT_COLOR_CMD
+config LVGL_TXT_COLOR_CMD
 	string "Text recoloring control character"
 	default "#"
 	help
 	  Control character to use for signalling text recoloring
 
-config LVGL_TEXT_USE_BIDI
+config LVGL_USE_BIDI
 	bool "Enable bidirectional text support"
 	help
 	  Enable bidirectional text support
@@ -359,25 +359,25 @@ config LVGL_TEXT_USE_BIDI
 	  Unicode Bidirectional Algorithm:
 	  https://www.w3.org/International/articles/inline-bidi-markup/uba-basics*/
 
-choice LVGL_TEXT_BIDI_MODE
+choice LVGL_BIDI_MODE
 	prompt "Bidirectional text processing direction"
-	default LVGL_TEXT_BIDI_DIR_AUTO
-	depends on LVGL_TEXT_USE_BIDI
+	default LVGL_BIDI_DIR_AUTO
+	depends on LVGL_USE_BIDI
 	help
 	  Direction of bidirectional text processing
 
-	config LVGL_TEXT_BIDI_DIR_AUTO
+	config LVGL_BIDI_DIR_AUTO
 		bool "Automatically detect direction"
 
-	config LVGL_TEXT_BIDI_DIR_LTR
+	config LVGL_BIDI_DIR_LTR
 		bool "Left-to-right"
 
-	config LVGL_TEXT_BIDI_DIR_RTL
+	config LVGL_BIDI_DIR_RTL
 		bool "Right-to-left"
 
 endchoice
 
-config LVGL_TEXT_ARABIC_PERSIAN_CHARS
+config LVGL_USE_ARABIC_PERSIAN_CHARS
 	bool "Enable Arabic/Persian processing"
 	help
 	  Enable Arabic/Persian processing
@@ -390,47 +390,47 @@ config LVGL_ANTIALIAS
 	help
 	  Enable anti-aliasing
 
-config LVGL_ANIMATION
+config LVGL_USE_ANIMATION
 	bool "Enable animations"
 	help
 	  Enable animations
 
-config LVGL_SHADOW
+config LVGL_USE_SHADOW
 	bool "Enable shadows"
 	help
 	  Enable shadows
 
 config LVGL_SHADOW_CACHE_SIZE
 	int "Shadow cache size"
-	depends on LVGL_SHADOW
+	depends on LVGL_USE_SHADOW
 	default 0
 	help
 	  Allow buffering some shadow calculation. This parameter is the maximum
 	  shadow size to buffer.
 
-config LVGL_BLEND_MODES
+config LVGL_USE_BLEND_MODES
 	bool "Enable other blend modes"
 	help
 	  Use other blend modes than normal
 
-config LVGL_OPA_SCALE
+config LVGL_USE_OPA_SCALE
 	bool "Enable opa_scale style property"
 	help
 	  Use the opa_scale style property to set the opacity of an object and
 	  its children at once
 
-config LVGL_IMG_TRANSFORM
+config LVGL_USE_IMG_TRANSFORM
 	bool "Enable image transformations"
 	help
 	  Use image zoom and rotation
 
-config LVGL_GROUP
+config LVGL_USE_GROUP
 	bool "Enable group support"
 	help
 	  Enable group support.
 	  Used by keyboard and button input
 
-config LVGL_GPU
+config LVGL_USE_GPU
 	bool "Enable GPU support"
 	help
 	  Enable GPU support
@@ -447,19 +447,19 @@ config LVGL_IMG_CF_ALPHA
 	help
 	  Enable support for alpha indexed images
 
-config LVGL_FILESYSTEM
+config LVGL_USE_FILESYSTEM
 	bool "Enable file system"
 	depends on FILE_SYSTEM
 	default y if FILE_SYSTEM
 	help
 	  Enable LittlevGL file system
 
-config LVGL_PERF_MONITOR
+config LVGL_USE_PERF_MONITOR
 	bool "Enable performance monitor"
 	help
 	  Show CPU usage and FPS count in the right bottom corner
 
-config LVGL_API_EXTENSION_V6
+config LVGL_USE_API_EXTENSION_V6
 	bool "Enable V6 API extensions"
 	help
 	  Use the functions and types from the older API if possible
