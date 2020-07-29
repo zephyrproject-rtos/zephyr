@@ -248,7 +248,7 @@ static bool i2c_sam0_dma_write_start(struct device *dev)
 	dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
 	dma_cfg.source_data_size = 1;
 	dma_cfg.dest_data_size = 1;
-	dma_cfg.callback_arg = dev;
+	dma_cfg.user_data = dev;
 	dma_cfg.dma_callback = i2c_sam0_dma_write_done;
 	dma_cfg.block_count = 1;
 	dma_cfg.head_block = &dma_blk;
@@ -345,7 +345,7 @@ static bool i2c_sam0_dma_read_start(struct device *dev)
 	dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
 	dma_cfg.source_data_size = 1;
 	dma_cfg.dest_data_size = 1;
-	dma_cfg.callback_arg = dev;
+	dma_cfg.user_data = dev;
 	dma_cfg.dma_callback = i2c_sam0_dma_read_done;
 	dma_cfg.block_count = 1;
 	dma_cfg.head_block = &dma_blk;

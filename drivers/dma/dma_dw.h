@@ -31,9 +31,9 @@ extern "C" {
 /* data for each DMA channel */
 struct dma_chan_data {
 	uint32_t direction;
-	void *blkcallback_arg;
+	void *blkuser_data;
 	dma_callback_t dma_blkcallback;
-	void *tfrcallback_arg;
+	void *tfruser_data;
 	dma_callback_t dma_tfrcallback;
 };
 

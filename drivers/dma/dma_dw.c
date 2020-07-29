@@ -99,7 +99,7 @@ static void dw_dma_isr(void *arg)
 			 * all the blocks are transferred.
 			 */
 			chan_data->dma_blkcallback(dev,
-						   chan_data->blkcallback_arg,
+						   chan_data->blkuser_data,
 						   channel, 0);
 		}
 	}
@@ -110,7 +110,7 @@ static void dw_dma_isr(void *arg)
 		chan_data = &dev_data->chan[channel];
 		if (chan_data->dma_tfrcallback) {
 			chan_data->dma_tfrcallback(dev,
-						   chan_data->tfrcallback_arg,
+						   chan_data->tfruser_data,
 						   channel, 0);
 		}
 	}
@@ -216,11 +216,11 @@ static int dw_dma_config(struct device *dev, uint32_t channel,
 	 */
 	if (cfg->complete_callback_en) {
 		chan_data->dma_blkcallback = cfg->dma_callback;
-		chan_data->blkcallback_arg = cfg->callback_arg;
+		chan_data->blkuser_data = cfg->user_data;
 		dw_write(dev_cfg->base, DW_MASK_BLOCK, INT_UNMASK(channel));
 	} else {
 		chan_data->dma_tfrcallback = cfg->dma_callback;
-		chan_data->tfrcallback_arg = cfg->callback_arg;
+		chan_data->tfruser_data = cfg->user_data;
 		dw_write(dev_cfg->base, DW_MASK_TFR, INT_UNMASK(channel));
 	}
 

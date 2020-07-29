@@ -452,7 +452,7 @@ static int spi_sam0_dma_rx_load(struct device *dev, uint8_t *buf,
 	dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
 	dma_cfg.source_data_size = 1;
 	dma_cfg.dest_data_size = 1;
-	dma_cfg.callback_arg = dev;
+	dma_cfg.user_data = dev;
 	dma_cfg.dma_callback = spi_sam0_dma_rx_done;
 	dma_cfg.block_count = 1;
 	dma_cfg.head_block = &dma_blk;

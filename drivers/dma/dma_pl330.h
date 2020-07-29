@@ -141,7 +141,7 @@ struct dma_pl330_ch_config {
 	enum dma_addr_adj dst_addr_adj;
 	enum dma_channel_direction direction;
 	uint32_t trans_size;
-	void *callback_arg;
+	void *user_data;
 	dma_callback_t dma_callback;
 	uint32_t dma_exe_addr;
 	struct k_mutex ch_mutex;
