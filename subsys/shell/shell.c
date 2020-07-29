@@ -236,11 +236,11 @@ static bool tab_prepare(const struct shell *shell,
 	(void)shell_make_argv(argc, *argv, shell->ctx->temp_buff,
 			      CONFIG_SHELL_ARGC_MAX);
 
-	if (IS_ENABLED(CONFIG_SHELL_CMDS_SELECT) &&
-	    (strcmp("select", (*argv)[0]) == 0)	 &&
-	    !shell_in_select_mode(shell)) {
-		*argv = *argv + 1;
-		*argc = *argc - 1;
+	if (IS_ENABLED(CONFIG_SHELL_CMDS_SELECT) && (*argc > 0))
+		if ((strcmp("select", (*argv)[0]) == 0)	 &&
+		    !shell_in_select_mode(shell)) {
+			*argv = *argv + 1;
+			*argc = *argc - 1;
 	}
 
 	/* If last command is not completed (followed by space) it is treated
