@@ -45,6 +45,7 @@
 
 #define XACT_ID_MAX  0x7f
 #define XACT_ID_NVAL 0xff
+#define SEG_NVAL     0xff
 
 #define RETRANSMIT_TIMEOUT  K_MSEC(500)
 #define BUF_TIMEOUT         K_MSEC(400)
@@ -334,9 +335,21 @@ static void gen_prov_cont(struct prov_rx *rx, struct net_buf_simple *buf)
 		return;
 	}
 
-	if (rx->xact_id != link.rx.id) {
+	if (!link.rx.seg &&
+	    next_transaction_id(link.rx.id) == rx->xact_id) {
+		BT_DBG("Start segment lost");
+
+		link.rx.id = rx->xact_id;
+
+		net_buf_simple_reset(link.rx.buf);
+
+		link.rx.seg = SEG_NVAL;
+		link.rx.last_seg = SEG_NVAL;
+
+		prov_clear_tx();
+	} else if (rx->xact_id != link.rx.id) {
 		BT_WARN("Data for unknown transaction (0x%x != 0x%x)",
-			rx->xact_id, link.rx.id);
+				rx->xact_id, link.rx.id);
 		return;
 	}
 
@@ -344,17 +357,6 @@ static void gen_prov_cont(struct prov_rx *rx, struct net_buf_simple *buf)
 		BT_ERR("Invalid segment index %u", seg);
 		prov_failed(PROV_ERR_NVAL_FMT);
 		return;
-	} else if (seg == link.rx.last_seg) {
-		uint8_t expect_len;
-
-		expect_len = (link.rx.buf->len - 20U -
-			      ((link.rx.last_seg - 1) * 23U));
-		if (expect_len != buf->len) {
-			BT_ERR("Incorrect last seg len: %u != %u", expect_len,
-			       buf->len);
-			prov_failed(PROV_ERR_NVAL_FMT);
-			return;
-		}
 	}
 
 	if (!(link.rx.seg & BIT(seg))) {
@@ -364,6 +366,19 @@ static void gen_prov_cont(struct prov_rx *rx, struct net_buf_simple *buf)
 
 	memcpy(XACT_SEG_DATA(seg), buf->data, buf->len);
 	XACT_SEG_RECV(seg);
+
+	if (seg == link.rx.last_seg && !(link.rx.seg & BIT(0))) {
+		uint8_t expect_len;
+
+		expect_len = (link.rx.buf->len - 20U -
+				((link.rx.last_seg - 1) * 23U));
+		if (expect_len != buf->len) {
+			BT_ERR("Incorrect last seg len: %u != %u", expect_len,
+					buf->len);
+			prov_failed(PROV_ERR_NVAL_FMT);
+			return;
+		}
+	}
 
 	if (!link.rx.seg) {
 		prov_msg_recv();
@@ -392,29 +407,25 @@ static void gen_prov_ack(struct prov_rx *rx, struct net_buf_simple *buf)
 
 static void gen_prov_start(struct prov_rx *rx, struct net_buf_simple *buf)
 {
-	uint8_t expected_id = next_transaction_id(link.rx.id);
-
-	if (link.rx.seg) {
-		if (rx->xact_id != link.rx.id) {
-			BT_WARN("Got Start while there are unreceived "
-				"segments");
-		}
-
-		return;
-	}
+	uint8_t seg = SEG_NVAL;
 
 	if (rx->xact_id == link.rx.id) {
-		if (!ack_pending()) {
-			BT_DBG("Resending ack");
-			gen_prov_ack_send(rx->xact_id);
+		if (!link.rx.seg) {
+			if (!ack_pending()) {
+				BT_DBG("Resending ack");
+				gen_prov_ack_send(rx->xact_id);
+			}
+
+			return;
 		}
 
-		return;
-	}
-
-	if (rx->xact_id != expected_id) {
+		if (!(link.rx.seg & BIT(0))) {
+			BT_DBG("Ignoring duplicate segment");
+			return;
+		}
+	} else if (rx->xact_id != next_transaction_id(link.rx.id)) {
 		BT_WARN("Unexpected xact 0x%x, expected 0x%x", rx->xact_id,
-			expected_id);
+			next_transaction_id(link.rx.id));
 		return;
 	}
 
@@ -447,8 +458,20 @@ static void gen_prov_start(struct prov_rx *rx, struct net_buf_simple *buf)
 
 	prov_clear_tx();
 
-	link.rx.seg = (1 << (START_LAST_SEG(rx->gpc) + 1)) - 1;
 	link.rx.last_seg = START_LAST_SEG(rx->gpc);
+
+	if ((link.rx.seg & BIT(0)) &&
+	    (find_msb_set(~link.rx.seg) >= link.rx.last_seg)) {
+		BT_ERR("Invalid segment index %u", seg);
+		prov_failed(PROV_ERR_NVAL_FMT);
+		return;
+	}
+
+	if (link.rx.seg) {
+		seg = link.rx.seg;
+	}
+
+	link.rx.seg = seg & ((1 << (START_LAST_SEG(rx->gpc) + 1)) - 1);
 	memcpy(link.rx.buf->data, buf->data, buf->len);
 	XACT_SEG_RECV(0);
 
