@@ -186,7 +186,7 @@ static int start_dma(struct device *dev_dma, uint32_t channel,
 }
 
 /* This function is executed in the interrupt context */
-static void dma_rx_callback(struct device *dma_dev, void *callback_arg,
+static void dma_rx_callback(struct device *dma_dev, void *user_data,
 			    uint32_t channel, int status)
 {
 	struct device *dev = get_dev_from_dma_channel(channel);
@@ -196,7 +196,7 @@ static void dma_rx_callback(struct device *dma_dev, void *callback_arg,
 	struct stream *stream = &dev_data->rx;
 	int ret;
 
-	ARG_UNUSED(callback_arg);
+	ARG_UNUSED(user_data);
 	__ASSERT_NO_MSG(stream->mem_block != NULL);
 
 	/* Stop reception if there was an error */
@@ -246,7 +246,7 @@ rx_disable:
 }
 
 /* This function is executed in the interrupt context */
-static void dma_tx_callback(struct device *dma_dev, void *callback_arg,
+static void dma_tx_callback(struct device *dma_dev, void *user_data,
 			    uint32_t channel, int status)
 {
 	struct device *dev = get_dev_from_dma_channel(channel);
@@ -257,7 +257,7 @@ static void dma_tx_callback(struct device *dma_dev, void *callback_arg,
 	size_t mem_block_size;
 	int ret;
 
-	ARG_UNUSED(callback_arg);
+	ARG_UNUSED(user_data);
 	__ASSERT_NO_MSG(stream->mem_block != NULL);
 
 	/* All block data sent */

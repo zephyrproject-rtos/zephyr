@@ -500,7 +500,7 @@ static int dma_pl330_configure(struct device *dev, uint32_t channel,
 	channel_cfg->trans_size = cfg->head_block->block_size;
 
 	channel_cfg->dma_callback = cfg->dma_callback;
-	channel_cfg->callback_arg = cfg->callback_arg;
+	channel_cfg->user_data = cfg->user_data;
 
 	if (cfg->head_block->source_addr_adj == DMA_ADDR_ADJ_INCREMENT ||
 	    cfg->head_block->source_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) {
@@ -536,7 +536,7 @@ static int dma_pl330_transfer_start(struct device *dev, uint32_t channel)
 
 	/* Execute callback */
 	if (channel_cfg->dma_callback) {
-		channel_cfg->dma_callback(dev, channel_cfg->callback_arg,
+		channel_cfg->dma_callback(dev, channel_cfg->user_data,
 					  channel, ret);
 	}
 
