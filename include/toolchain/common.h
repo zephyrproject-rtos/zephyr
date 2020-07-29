@@ -26,6 +26,14 @@
 #define TASK_ENTRY_CPP  extern "C"
 #endif
 
+#ifndef ZRESTRICT
+#ifndef __cplusplus
+#define ZRESTRICT restrict
+#else
+#define ZRESTRICT
+#endif
+#endif
+
 /*
  * Generate a reference to an external symbol.
  * The reference indicates to the linker that the symbol is required
