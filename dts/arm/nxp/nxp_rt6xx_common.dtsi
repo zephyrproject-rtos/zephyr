@@ -138,6 +138,22 @@
 		label = "FLEXCOMM_7";
 		status = "disabled";
 	};
+
+	hs_lspi: spi@126000 {
+		compatible = "nxp,lpc-spi";
+		/* Enabling cs-gpios below will allow using GPIO CS,
+		 rather than Flexcomm SS */
+		/* cs-gpios = <&gpio1 14 GPIO_ACTIVE_LOW>,
+			<&gpio1 15 GPIO_ACTIVE_LOW>,
+			<&gpio1 16 GPIO_ACTIVE_LOW>,
+			<&gpio1 17 GPIO_ACTIVE_LOW>; */
+		reg = <0x126000 0x1000>;
+		interrupts = <20 0>;
+		label = "HS_LSPI";
+		status = "disabled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
 };
 
 &nvic {
