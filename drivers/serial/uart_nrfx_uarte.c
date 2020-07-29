@@ -542,21 +542,12 @@ static int uarte_nrfx_rx_enable(struct device *dev, uint8_t *buf, size_t len,
 				int32_t timeout)
 {
 	struct uarte_nrfx_data *data = get_dev_data(dev);
-	const struct uarte_nrfx_config *cfg = get_dev_config(dev);
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 
 	if (nrf_uarte_rx_pin_get(uarte) == NRF_UARTE_PSEL_DISCONNECTED) {
 		__ASSERT(false, "TX only UARTE instance");
 		return -ENOTSUP;
 	}
-
-	if (hw_rx_counting_enabled(data)) {
-		nrfx_timer_clear(&cfg->timer);
-	} else {
-		data->async->rx_cnt.cnt = 0;
-	}
-	data->async->rx_total_byte_cnt = 0;
-	data->async->rx_total_user_byte_cnt = 0;
 
 	data->async->rx_timeout = timeout;
 	data->async->rx_timeout_slab =
