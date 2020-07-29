@@ -31,6 +31,97 @@
 #define z_apb4_prescaler(v) LL_RCC_APB4_DIV_ ## v
 #define apb4_prescaler(v) z_apb4_prescaler(v)
 
+/* Macro to check for clock feasability */
+/* It is Cortex M7's responsibility to setup clock tree */
+/* This check should only be performed for the M7 core code */
+#ifdef CONFIG_CPU_CORTEX_M7
+
+/* Define primary oscillator frequencies */
+/* Suppress the cast to uint32_t which */
+/* prevents from compare with #if > operator*/
+/* original defines in stm32h7xx_hal_conf.h*/
+#define HSI_FREQ 64000000UL	/* HSI_VALUE ((uint32_t)64000000) */
+/* HSE_VALUE overridden by the build system without C cast to uint*/
+/* Build system doesn't provide the UL type suffix for HSE_VALUE */
+/* Force HSE_FREQ to be cast to preprocessor UL to prevent overflow*/
+/* Only use these constants in preprocessor expressions */
+#define HSE_FREQ HSE_VALUE
+#define CSI_FREQ 4000000UL	/* CSI_VALUE ((uint32_t)4000000) */
+
+/* Choose PLL SRC */
+#ifdef CONFIG_CLOCK_STM32_PLL_SRC_HSI
+#define PLLSRC_FREQ  HSI_FREQ
+#elif defined(CONFIG_CLOCK_STM32_PLL_SRC_CSI)
+#define PLLSRC_FREQ  CSI_FREQ
+#elif defined(CONFIG_CLOCK_STM32_PLL_SRC_HSE)
+#define PLLSRC_FREQ  HSE_FREQ
+#else
+#define PLLSRC_FREQ 0
+#endif
+
+/* Given source clock and dividers, computed the output frequency of PLLP */
+#define PLLP_FREQ(pllsrc_freq, divm, divn, divp)	(((pllsrc_freq)*\
+							(divn))/((divm)*(divp)))
+
+/* PLL P output frequency value */
+#define PLLP_VALUE	PLLP_FREQ(\
+				PLLSRC_FREQ,\
+				CONFIG_CLOCK_STM32_PLL_M_DIVISOR,\
+				CONFIG_CLOCK_STM32_PLL_N_MULTIPLIER,\
+				CONFIG_CLOCK_STM32_PLL_P_DIVISOR)
+
+/* SYSCLKSRC before the D1CPRE prescaler */
+#ifdef CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL
+#define SYSCLKSRC_FREQ	PLLP_VALUE
+#elif defined(CONFIG_CLOCK_STM32_SYSCLK_SRC_HSI)
+#define SYSCLKSRC_FREQ	HSI_FREQ
+#elif defined(CONFIG_CLOCK_STM32_SYSCLK_SRC_CSI)
+#define SYSCLKSRC_FREQ	CSI_FREQ
+#elif defined(CONFIG_CLOCK_STM32_SYSCLK_SRC_HSE)
+#define SYSCLKSRC_FREQ	HSE_FREQ
+#endif
+
+/* ARM Sys CPU Clock before HPRE prescaler */
+#define SYSCLK_FREQ	((SYSCLKSRC_FREQ)/(CONFIG_CLOCK_STM32_D1CPRE))
+#define AHB_FREQ	((SYSCLK_FREQ)/(CONFIG_CLOCK_STM32_HPRE))
+#define APB1_FREQ	((AHB_FREQ)/(CONFIG_CLOCK_STM32_D2PPRE1))
+#define APB2_FREQ	((AHB_FREQ)/(CONFIG_CLOCK_STM32_D2PPRE2))
+#define APB3_FREQ	((AHB_FREQ)/(CONFIG_CLOCK_STM32_D1PPRE))
+#define APB4_FREQ	((AHB_FREQ)/(CONFIG_CLOCK_STM32_D3PPRE))
+
+/* Datasheet maximum frequency definitions */
+#define SYSCLK_FREQ_MAX	480000000UL
+#define AHB_FREQ_MAX	240000000UL
+#define APBx_FREQ_MAX	120000000UL
+
+#if SYSCLK_FREQ > SYSCLK_FREQ_MAX
+#error "SYSCLK frequency is too high, max is 480MHz"
+#endif
+#if AHB_FREQ > AHB_FREQ_MAX
+#error "AHB frequency is too high, max is 240MHz"
+#endif
+#if APB1_FREQ > APBx_FREQ_MAX
+#error "APB1 frequency is too high, max is 120MHz"
+#endif
+#if APB2_FREQ > APBx_FREQ_MAX
+#error "APB2 frequency is too high, max is 120MHz"
+#endif
+#if APB3_FREQ > APBx_FREQ_MAX
+#error "APB3 frequency is too high, max is 120MHz"
+#endif
+#if APB4_FREQ > APBx_FREQ_MAX
+#error "APB4 frequency is too high, max is 120MHz"
+#endif
+
+#if SYSCLK_FREQ != CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
+#error "Calculated CPU clock frequency (SYS clock) for M7 core doesn't match \
+CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC"
+#endif
+
+/* end of clock feasability check */
+#endif /* CONFIG_CPU_CORTEX_M7 */
+
+
 #if defined(CONFIG_CPU_CORTEX_M7)
 #if CONFIG_CLOCK_STM32_D1CPRE > 1
 /*
