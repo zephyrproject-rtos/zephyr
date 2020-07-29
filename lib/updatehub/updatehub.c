@@ -501,7 +501,11 @@ static enum updatehub_response install_update(void)
 		goto cleanup;
 	}
 
-	flash_img_init(&ctx.flash_ctx);
+	if (flash_img_init(&ctx.flash_ctx)) {
+		LOG_ERR("Unable init flash");
+		ctx.code_status = UPDATEHUB_FLASH_INIT_ERROR;
+		goto cleanup;
+	}
 
 	ctx.downloaded_size = 0;
 	updatehub_blk_set(UPDATEHUB_BLK_ATTEMPT, 0);
