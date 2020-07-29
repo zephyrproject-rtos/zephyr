@@ -301,6 +301,29 @@ should see the following message in the terminal:
    ***** Booting Zephyr OS v1.14.0-rc1 *****
    Hello World! frdm_k64f
 
+Troubleshooting
+===============
+
+If pyocd raises an uncaught ``DAPAccessIntf.TransferFaultError()`` exception
+when you try to flash or debug, it's possible that the K64F flash may have been
+locked by a corrupt application. You can unlock it with the following sequence
+of pyocd commands:
+
+.. code-block:: console
+
+   $ pyocd cmd
+   0001915:WARNING:target_kinetis:Forcing halt on connect in order to gain control of device
+   Connected to K64F [Halted]: 0240000026334e450028400d5e0e000e4eb1000097969900
+   >>> unlock
+   0016178:WARNING:target_kinetis:K64F secure state: unlocked successfully
+   >>> reinit
+   0034584:WARNING:target_kinetis:Forcing halt on connect in order to gain control of device
+   >>> load build/zephyr/zephyr.bin
+   [====================] 100%
+   >>> reset
+   Resetting target
+   >>> quit
+
 .. _FRDM-K64F Website:
    https://www.nxp.com/support/developer-resources/evaluation-and-development-boards/freedom-development-boards/mcu-boards/freedom-development-platform-for-kinetis-k64-k63-and-k24-mcus:FRDM-K64F
 
