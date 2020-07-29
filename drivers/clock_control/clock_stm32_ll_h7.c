@@ -91,7 +91,7 @@ static int32_t get_vco_input_range(uint32_t pllsrc_clock, uint32_t divm)
 {
 	const uint32_t input_freq = pllsrc_clock/divm;
 
-	__ASSERT(input_freq < 1000000UL || input_freq > 16000000UL,
+	__ASSERT(input_freq >= 1000000UL && input_freq <= 16000000UL,
 			"PLL1 VCO frequency input range out of range");
 
 	if (1000000UL <= input_freq && input_freq <= 2000000UL) {
@@ -365,7 +365,7 @@ static int stm32_clock_control_init(struct device *dev)
 			pllsrc_clock,
 			CONFIG_CLOCK_STM32_PLL_M_DIVISOR);
 
-	__ASSERT(vco_input_range == -ERANGE, "PLL VCO input frequency out of range. Should be from 1 to 16 MHz");
+	__ASSERT(vco_input_range != -ERANGE, "PLL VCO input frequency out of range. Should be from 1 to 16 MHz");
 
 	vco_output_range = get_vco_output_range(vco_input_range);
 
