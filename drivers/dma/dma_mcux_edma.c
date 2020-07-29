@@ -39,8 +39,7 @@ struct call_back {
 	edma_handle_t edma_handle;
 	struct device *dev;
 	void *callback_arg;
-	void (*dma_callback)(struct device *dev, void *callback_arg,
-			     uint32_t channel, int error_code);
+	dma_callback_t dma_callback;
 	enum dma_channel_direction dir;
 	bool busy;
 };

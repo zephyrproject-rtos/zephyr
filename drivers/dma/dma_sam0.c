@@ -15,11 +15,8 @@ LOG_MODULE_REGISTER(dma_sam0, CONFIG_DMA_LOG_LEVEL);
 
 #define DMA_REGS	((Dmac *)DT_INST_REG_ADDR(0))
 
-typedef void (*dma_callback)(struct device *dev, void *callback_arg,
-			     uint32_t channel, int error_code);
-
 struct dma_sam0_channel {
-	dma_callback cb;
+	dma_callback_t cb;
 	void *cb_arg;
 };
 

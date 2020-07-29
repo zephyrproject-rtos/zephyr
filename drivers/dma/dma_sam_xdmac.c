@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(dma_sam_xdmac);
 /* DMA channel configuration */
 struct sam_xdmac_channel_cfg {
 	void *callback_arg;
-	dma_callback callback;
+	dma_callback_t callback;
 };
 
 /* Device constant configuration parameters */

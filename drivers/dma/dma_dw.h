@@ -32,11 +32,9 @@ extern "C" {
 struct dma_chan_data {
 	uint32_t direction;
 	void *blkcallback_arg;
-	void (*dma_blkcallback)(struct device *dev, void *arg,
-				uint32_t channel, int error_code);
+	dma_callback_t dma_blkcallback;
 	void *tfrcallback_arg;
-	void (*dma_tfrcallback)(struct device *dev, void *arg,
-				uint32_t channel, int error_code);
+	dma_callback_t dma_tfrcallback;
 };
 
 #define DW_MAX_CHAN		8
