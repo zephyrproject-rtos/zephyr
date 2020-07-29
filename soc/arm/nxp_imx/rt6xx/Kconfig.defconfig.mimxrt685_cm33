@@ -24,4 +24,8 @@ config I2C_MCUX_FLEXCOMM
 	default y if HAS_MCUX_FLEXCOMM
 	depends on I2C
 
+config SPI_MCUX_FLEXCOMM
+	default y if HAS_MCUX_FLEXCOMM
+	depends on SPI
+
 endif # SOC_MIMXRT685S_CM33

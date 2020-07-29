@@ -84,6 +84,13 @@ arduino_i2c: &flexcomm2 {
 	};
 };
 
+arduino_spi: &flexcomm5 {
+	compatible = "nxp,lpc-spi";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+};
+
 &gpio0 {
 	status = "okay";
 };
