@@ -166,7 +166,7 @@ static int test_task(uint32_t chan_id, uint32_t blen, uint32_t block_count)
 	(void)memset(rx_data4, 0, sizeof(rx_data4));
 
 	/*
-	 * dma_block_cfg4 is assigned to 0 by default. Hence if callback_arg is
+	 * dma_block_cfg4 is assigned to 0 by default. Hence if user_data is
 	 * not assigned, it will be NULL implying there are no more blocks to
 	 * transfer
 	 */
