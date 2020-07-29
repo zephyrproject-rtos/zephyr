@@ -221,7 +221,7 @@ def test_apply_filters_part1(class_testsuite, all_testcases_dict, platforms_list
     assert all(x in list(discards.values()) for x in [expected_discards])
 
 TESTDATA_PART2 = [
-    ("device_testing", "True", "Not runnable on device"),
+    ("runnable", "True", "Not runnable on device"),
     ("exclude_tag", ['test_a'], "Command line testcase exclude filter"),
     ("run_individual_tests", ['scripts/tests/sanitycheck/test_data/testcases/tests/test_a/test_a.check_1'], "Testcase name filter"),
     ("arch", ['arm_test'], "Command line testcase arch filter"),
@@ -236,13 +236,22 @@ def test_apply_filters_part2(class_testsuite, all_testcases_dict,
     Part 2 : Response of apply_filters function (discard dictionary) have
              appropriate values according to the filters
     """
+
     class_testsuite.platforms = platforms_list
     class_testsuite.testcases = all_testcases_dict
-    kwargs = {extra_filter : extra_filter_value,
-              "exclude_platform" : ['demo_board_1'], "platform" : ['demo_board_2']}
+    kwargs = {
+        extra_filter : extra_filter_value,
+        "exclude_platform" : [
+            'demo_board_1'
+            ],
+        "platform" : [
+            'demo_board_2'
+            ]
+        }
     discards = class_testsuite.apply_filters(**kwargs)
-    assert type(list(discards.keys())[0]).__name__ == "TestInstance"
-    assert list(dict.fromkeys(discards.values())) == [expected_discards]
+    assert discards
+    for d in discards.values():
+        assert d == expected_discards
 
 
 TESTDATA_PART3 = [
