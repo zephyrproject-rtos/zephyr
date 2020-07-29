@@ -72,10 +72,10 @@ size_t z_impl_string_nlen_reg(char *src, size_t maxlen, int *err)
 #endif
 #elif defined(CONFIG_ARM)
 	__asm__ volatile (
+		"ldr r0, =0xDEADBEEF;\n\t"
 		"ldr r1, =0xDEADBEEF;\n\t"
 		"ldr r2, =0xDEADBEEF;\n\t"
 		"ldr r3, =0xDEADBEEF;\n\t"
-		"ldr r4, =0xDEADBEEF;\n\t"
 		);
 #elif defined(CONFIG_ARC)
     /* ARC currently not implemented */
@@ -507,13 +507,13 @@ void test_syscall_cpu_scrubs_regs(void)
 
 	ret = string_nlen_reg(user_string, BUF_SIZE, &err);
 	__asm__ volatile (
-		"\t ldr %%r1,=0" : "=r"(arm_reg_val[0]));
+		"\t ldr %%r0,=0" : "=r"(arm_reg_val[0]));
 	__asm__ volatile (
-		"\t ldr %%r2,=0" : "=r"(arm_reg_val[1]));
+		"\t ldr %%r1,=0" : "=r"(arm_reg_val[1]));
 	__asm__ volatile (
-		"\t ldr %%r3,=0" : "=r"(arm_reg_val[2]));
+		"\t ldr %%r2,=0" : "=r"(arm_reg_val[2]));
 	__asm__ volatile (
-		"\t ldr %%r4,=0" : "=r"(arm_reg_val[3]));
+		"\t ldr %%r3,=0" : "=r"(arm_reg_val[3]));
 
 	for (int i = 0; i < 4; i++) {
 		zassert_true(arm_reg_val[i] != DB_VAL,
