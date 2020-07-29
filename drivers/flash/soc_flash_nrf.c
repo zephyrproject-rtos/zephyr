@@ -416,10 +416,14 @@ static void time_slot_callback_abort(uint32_t ticks_at_expire, uint32_t remainde
 static void time_slot_callback_prepare(uint32_t ticks_at_expire, uint32_t remainder,
 				       uint16_t lazy, void *context)
 {
+#if defined(CONFIG_BT_CTLR_LOW_LAT)
+	time_slot_callback_abort(ticks_at_expire, remainder, lazy, context);
+#else /* !CONFIG_BT_CTLR_LOW_LAT */
 	time_slot_delay(ticks_at_expire,
 			HAL_TICKER_US_TO_TICKS(FLASH_RADIO_ABORT_DELAY_US),
 			time_slot_callback_abort,
 			context);
+#endif /* CONFIG_BT_CTLR_LOW_LAT */
 }
 
 static int work_in_time_slice(struct flash_op_desc *p_flash_op_desc)
