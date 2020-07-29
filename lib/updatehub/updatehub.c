@@ -216,11 +216,16 @@ static bool start_coap_client(void)
 
 static void cleanup_connection(void)
 {
+	int i;
+
 	if (close(ctx.sock) < 0) {
 		LOG_ERR("Could not close the socket");
 	}
 
-	memset(&ctx.fds[1], 0, sizeof(ctx.fds[1]));
+	for (i = 0; i < ctx.nfds; i++) {
+		memset(&ctx.fds[i], 0, sizeof(ctx.fds[i]));
+	}
+
 	ctx.nfds = 0;
 	ctx.sock = 0;
 }
@@ -737,6 +742,8 @@ enum updatehub_response updatehub_probe(void)
 		ctx.code_status = UPDATEHUB_METADATA_ERROR;
 		goto error;
 	}
+
+	ctx.nfds = 0;
 
 	if (!start_coap_client()) {
 		ctx.code_status = UPDATEHUB_NETWORKING_ERROR;
