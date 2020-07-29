@@ -141,6 +141,80 @@ static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
 
 #if !defined(CONFIG_CPU_CORTEX_M4)
 
+static inline uint32_t get_pllsrc_frequency(void)
+{
+	switch (LL_RCC_PLL_GetSource()) {
+	case LL_RCC_PLLSOURCE_HSI:
+		return HSI_VALUE;
+	case LL_RCC_PLLSOURCE_CSI:
+		return CSI_VALUE;
+	case LL_RCC_PLLSOURCE_HSE:
+		return HSE_VALUE;
+	case LL_RCC_PLLSOURCE_NONE:
+	default:
+		return 0;
+	}
+}
+
+static uint32_t get_hclk_frequency(void)
+{
+	uint32_t sysclk = 0;
+	uint32_t hpre = 0;
+
+	/* Get the current system clock source */
+	switch (LL_RCC_GetSysClkSource()) {
+	case LL_RCC_SYS_CLKSOURCE_STATUS_HSI:
+		sysclk = HSI_VALUE;
+		break;
+	case LL_RCC_SYS_CLKSOURCE_STATUS_CSI:
+		sysclk = CSI_VALUE;
+		break;
+	case LL_RCC_SYS_CLKSOURCE_STATUS_HSE:
+		sysclk = HSE_VALUE;
+		break;
+	case LL_RCC_SYS_CLKSOURCE_STATUS_PLL1:
+		sysclk = PLLP_FREQ(get_pllsrc_frequency(),
+				   LL_RCC_PLL1_GetM(),
+				   LL_RCC_PLL1_GetN(),
+				   LL_RCC_PLL1_GetP());
+		break;
+	}
+	/* AHB/HCLK clock is sysclk/HPRE AHB prescaler*/
+	switch (LL_RCC_GetAHBPrescaler()) {
+	case LL_RCC_AHB_DIV_1:
+		hpre = 1;
+		break;
+	case LL_RCC_AHB_DIV_2:
+		hpre = 2;
+		break;
+	case LL_RCC_AHB_DIV_4:
+		hpre = 4;
+		break;
+	case LL_RCC_AHB_DIV_8:
+		hpre = 8;
+		break;
+	case LL_RCC_AHB_DIV_16:
+		hpre = 16;
+		break;
+	case LL_RCC_AHB_DIV_64:
+		hpre = 64;
+		break;
+	case LL_RCC_AHB_DIV_128:
+		hpre = 128;
+		break;
+	case LL_RCC_AHB_DIV_256:
+		hpre = 256;
+		break;
+	case LL_RCC_AHB_DIV_512:
+		hpre = 512;
+		break;
+	default:
+		hpre = 1;
+		break;
+	}
+	return get_bus_clock(sysclk, hpre);
+}
+
 static int32_t prepare_regulator_voltage_scale(void)
 {
 	/* Make sure to put the CPU in highest Voltage scale during clock configuration */
@@ -366,6 +440,8 @@ static int stm32_clock_control_init(struct device *dev)
 
 #if !defined(CONFIG_CPU_CORTEX_M4)
 	uint32_t pllsrc_clock = 0;
+	uint32_t old_hclk_freq = 0;
+	uint32_t new_hclk_freq = 0;
 
 #if defined(CONFIG_CLOCK_STM32_PLL_SRC_HSE) || \
 	defined(CONFIG_CLOCK_STM32_PLL_SRC_HSI) || \
@@ -388,6 +464,19 @@ static int stm32_clock_control_init(struct device *dev)
 
 	/* Configure Voltage scale to comply with the desired system frequency */
 	prepare_regulator_voltage_scale();
+
+	/* Current hclk value */
+	old_hclk_freq = get_hclk_frequency();
+	/* AHB is HCLK clock to configure */
+	new_hclk_freq = get_bus_clock(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
+				      CONFIG_CLOCK_STM32_HPRE);
+
+	/* Set flash latency */
+	/* AHB/AXI/HCLK clock is SYSCLK / HPRE */
+	/* If freq increases, set flash latency before any clock setting */
+	if (new_hclk_freq > old_hclk_freq) {
+		LL_SetFlashLatency(new_hclk_freq);
+	}
 
 	/* Configure PLL source */
 	/* Can be HSE , HSI 64Mhz/HSIDIV, CSI 4MHz*/
@@ -552,10 +641,11 @@ static int stm32_clock_control_init(struct device *dev)
 #endif /* CLOCK_STM32_SYSCLK_SRC */
 
 	/* Set FLASH latency */
-	/* AXI clock is SYSCLK / HPRE */
-	LL_SetFlashLatency(get_bus_clock(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
-									 CONFIG_CLOCK_STM32_HPRE));
-
+	/* AHB/AXI/HCLK clock is SYSCLK / HPRE */
+	/* If freq not increased, set flash latency after all clock setting */
+	if (new_hclk_freq <= old_hclk_freq) {
+		LL_SetFlashLatency(new_hclk_freq);
+	}
 
 	optimize_regulator_voltage_scale(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 
