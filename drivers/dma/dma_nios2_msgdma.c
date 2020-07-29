@@ -26,8 +26,7 @@ struct nios2_msgdma_dev_cfg {
 	uint32_t direction;
 	struct k_sem sem_lock;
 	void *callback_arg;
-	void (*dma_callback)(struct device *dev, void *arg,
-			     uint32_t id, int error_code);
+	dma_callback_t dma_callback;
 };
 
 #define DEV_NAME(dev) ((dev)->name)

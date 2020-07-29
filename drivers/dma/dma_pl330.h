@@ -133,9 +133,6 @@ struct dma_pl330_ch_internal {
 	int nonsec_mode;
 };
 
-typedef void (*dma_xfer_callback)(struct device *dev, void *callback_arg,
-				  uint32_t channel, int error_code);
-
 struct dma_pl330_ch_config {
 	/* Channel configuration details */
 	uint64_t src_addr;
@@ -145,7 +142,7 @@ struct dma_pl330_ch_config {
 	enum dma_channel_direction direction;
 	uint32_t trans_size;
 	void *callback_arg;
-	dma_xfer_callback dma_callback;
+	dma_callback_t dma_callback;
 	uint32_t dma_exe_addr;
 	struct k_mutex ch_mutex;
 	int channel_active;

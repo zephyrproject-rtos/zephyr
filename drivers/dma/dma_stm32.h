@@ -20,8 +20,7 @@ struct dma_stm32_stream {
 	uint32_t src_size;
 	uint32_t dst_size;
 	void *callback_arg; /* holds the client data */
-	void (*dma_callback)(struct device *dev, void *arg,
-			     uint32_t id, int error_code);
+	dma_callback_t dma_callback;
 };
 
 struct dma_stm32_data {
