@@ -557,6 +557,7 @@ static inline int z_impl_uart_rx_enable(struct device *dev, uint8_t *buf,
  *
  * @retval -ENOTSUP If not supported.
  * @retval -EBUSY   Next buffer already set.
+ * @retval -EACCES  Receiver is already disabled (function called too late?).
  * @retval 0	    If successful, negative errno code otherwise.
  *
  */
