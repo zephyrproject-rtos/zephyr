@@ -20,14 +20,22 @@ struct spi_stm32_config {
 };
 
 #ifdef CONFIG_SPI_STM32_DMA
+
+#define SPI_STM32_DMA_ERROR_FLAG	0x01
+#define SPI_STM32_DMA_RX_DONE_FLAG	0x02
+#define SPI_STM32_DMA_TX_DONE_FLAG	0x04
+#define SPI_STM32_DMA_DONE_FLAG	\
+	(SPI_STM32_DMA_RX_DONE_FLAG | SPI_STM32_DMA_TX_DONE_FLAG)
+
 struct stream {
 	const char *dma_name;
+	const struct device *dma_dev;
 	uint32_t channel; /* stores the channel for dma or mux */
 	struct dma_config dma_cfg;
+	struct dma_block_config dma_blk_cfg;
 	uint8_t priority;
 	bool src_addr_increment;
 	bool dst_addr_increment;
-	bool transfer_complete;
 	int fifo_threshold;
 };
 #endif
@@ -35,11 +43,10 @@ struct stream {
 struct spi_stm32_data {
 	struct spi_context ctx;
 #ifdef CONFIG_SPI_STM32_DMA
-	const struct device *dev_dma_tx;
-	const struct device *dev_dma_rx;
+	struct k_sem status_sem;
+	volatile uint32_t status_flags;
 	struct stream dma_rx;
 	struct stream dma_tx;
-	size_t dma_segment_len;
 #endif
 };
 

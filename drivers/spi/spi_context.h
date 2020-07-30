@@ -348,6 +348,30 @@ static inline size_t spi_context_longest_current_buf(struct spi_context *ctx)
 	return ctx->tx_len > ctx->rx_len ? ctx->tx_len : ctx->rx_len;
 }
 
+static inline size_t spi_context_total_tx_len(struct spi_context *ctx)
+{
+	size_t n;
+	size_t total_len = 0;
+
+	for (n = 0; n < ctx->tx_count; ++n) {
+		total_len += ctx->current_tx[n].len;
+	}
+
+	return total_len;
+}
+
+static inline size_t spi_context_total_rx_len(struct spi_context *ctx)
+{
+	size_t n;
+	size_t total_len = 0;
+
+	for (n = 0; n < ctx->rx_count; ++n) {
+		total_len += ctx->current_rx[n].len;
+	}
+
+	return total_len;
+}
+
 #ifdef __cplusplus
 }
 #endif
