@@ -44,6 +44,7 @@
 	"command to be selected, it must meet the criteria:\n"		      \
 	" - it is a static command\n"					      \
 	" - it is not preceded by a dynamic command\n"			      \
+	" - it accepts arguments\n"					      \
 	"Return to the main command tree is done by pressing alt+r."
 
 #define SHELL_HELP_SHELL		"Useful, not Unix-like shell commands."
