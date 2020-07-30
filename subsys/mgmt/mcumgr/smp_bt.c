@@ -16,10 +16,10 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
-#include <mgmt/smp_bt.h>
-#include <mgmt/buf.h>
+#include <mgmt/mcumgr/smp_bt.h>
+#include <mgmt/mcumgr/buf.h>
 
-#include <mgmt/smp.h>
+#include <mgmt/mcumgr/smp.h>
 
 struct device;
 

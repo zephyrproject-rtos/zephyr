@@ -13,10 +13,10 @@
 #include <init.h>
 #include "net/buf.h"
 #include "mgmt/mgmt.h"
-#include "mgmt/serial.h"
-#include "mgmt/buf.h"
-#include "mgmt/smp.h"
-#include "mgmt/smp_shell.h"
+#include "mgmt/mcumgr/serial.h"
+#include "mgmt/mcumgr/buf.h"
+#include "mgmt/mcumgr/smp.h"
+#include "mgmt/mcumgr/smp_shell.h"
 
 static struct zephyr_smp_transport smp_shell_transport;
 

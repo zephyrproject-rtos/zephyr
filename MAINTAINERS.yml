@@ -841,9 +841,9 @@ MCU Manager:
     maintainers:
         - de-nordic
     files:
-        - subsys/mgmt/
-        - include/mgmt/
-        - samples/subsys/mgmt/
+        - subsys/mgmt/mcumgr/
+        - include/mgmt/mcumgr/
+        - samples/subsys/mgmt/mcumgr/
     labels:
         - "area: mcumgr"
 

@@ -12,8 +12,8 @@
 #include <sys/byteorder.h>
 #include <net/buf.h>
 #include <sys/base64.h>
-#include <mgmt/buf.h>
-#include <mgmt/serial.h>
+#include <mgmt/mcumgr/buf.h>
+#include <mgmt/mcumgr/serial.h>
 
 static void mcumgr_serial_free_rx_ctxt(struct mcumgr_serial_rx_ctxt *rx_ctxt)
 {
