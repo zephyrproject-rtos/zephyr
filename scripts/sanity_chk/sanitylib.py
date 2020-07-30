@@ -2844,7 +2844,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                     discards[instance] = "Excluded tags per platform (exclude_tags)"
                     continue
 
-                if not tc.tags or (plat.only_tags and tc.tags - set(plat.only_tags)):
+                if plat.only_tags and not set(plat.only_tags) & tc.tags:
                     discards[instance] = "Excluded tags per platform (only_tags)"
                     continue
 
