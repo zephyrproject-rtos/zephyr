@@ -9,7 +9,7 @@ Sanitycheck Testsuite are located in $ZEPHYR_BASE/scripts/tests directory with a
 Install all the dependencies using
 
 ```
-pip install -r $ZEPHYR_BASE/scripts/tests/sanitycheck/requirements.txt
+pip install -r $ZEPHYR_BASE/scripts/requirements-build-test.txt
 ```
 
 ## Executing testsuite
