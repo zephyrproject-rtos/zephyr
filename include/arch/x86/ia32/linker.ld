@@ -127,13 +127,6 @@ SECTIONS
 	*(".rodata.*")
 	*(.gnu.linkonce.r.*)
 
-#ifdef CONFIG_X86_MMU
-	. = ALIGN(4);
-	_mmu_region_list_start = .;
-	KEEP(*("._mmu_region.static.*"))
-	_mmu_region_list_end = .;
-#endif /* CONFIG_X86_MMU */
-
 #ifndef CONFIG_DYNAMIC_INTERRUPTS
 	. = ALIGN(8);
 	_idt_base_address = .;
