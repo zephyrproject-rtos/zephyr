@@ -13,6 +13,9 @@
 #include "stm32_hsem.h"
 
 /* Macros to fill up prescaler values */
+#define z_hsi_divider(v) LL_RCC_HSI_DIV ## v
+#define hsi_divider(v) z_hsi_divider(v)
+
 #define z_sysclk_prescaler(v) LL_RCC_SYSCLK_DIV_ ## v
 #define sysclk_prescaler(v) z_sysclk_prescaler(v)
 
@@ -50,7 +53,7 @@
 
 /* Choose PLL SRC */
 #ifdef CONFIG_CLOCK_STM32_PLL_SRC_HSI
-#define PLLSRC_FREQ  HSI_FREQ
+#define PLLSRC_FREQ  ((HSI_FREQ)/(CONFIG_CLOCK_STM32_HSI_DIVISOR))
 #elif defined(CONFIG_CLOCK_STM32_PLL_SRC_CSI)
 #define PLLSRC_FREQ  CSI_FREQ
 #elif defined(CONFIG_CLOCK_STM32_PLL_SRC_HSE)
@@ -74,7 +77,7 @@
 #ifdef CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL
 #define SYSCLKSRC_FREQ	PLLP_VALUE
 #elif defined(CONFIG_CLOCK_STM32_SYSCLK_SRC_HSI)
-#define SYSCLKSRC_FREQ	HSI_FREQ
+#define SYSCLKSRC_FREQ	((HSI_FREQ)/(CONFIG_CLOCK_STM32_HSI_DIVISOR))
 #elif defined(CONFIG_CLOCK_STM32_SYSCLK_SRC_CSI)
 #define SYSCLKSRC_FREQ	CSI_FREQ
 #elif defined(CONFIG_CLOCK_STM32_SYSCLK_SRC_HSE)
@@ -160,11 +163,29 @@ static uint32_t get_hclk_frequency(void)
 {
 	uint32_t sysclk = 0;
 	uint32_t hpre = 0;
+	uint32_t hsidiv = 0;
+
+	/* Get the current HSI divider */
+	switch (LL_RCC_HSI_GetDivider()) {
+	case LL_RCC_HSI_DIV2:
+		hsidiv = 2;
+		break;
+	case LL_RCC_HSI_DIV4:
+		hsidiv = 4;
+		break;
+	case LL_RCC_HSI_DIV8:
+		hsidiv = 8;
+		break;
+	case LL_RCC_HSI_DIV1:
+	default:
+		hsidiv = 1;
+		break;
+	}
 
 	/* Get the current system clock source */
 	switch (LL_RCC_GetSysClkSource()) {
 	case LL_RCC_SYS_CLKSOURCE_STATUS_HSI:
-		sysclk = HSI_VALUE;
+		sysclk = HSI_VALUE/hsidiv;
 		break;
 	case LL_RCC_SYS_CLKSOURCE_STATUS_CSI:
 		sysclk = CSI_VALUE;
@@ -518,10 +539,8 @@ static int stm32_clock_control_init(struct device *dev)
 	while (LL_RCC_HSI_IsReady() != 1) {
 	}
 
-	/* Calibrate the HSI */
-	LL_RCC_HSI_SetCalibTrimming(32);
-	/* @TODO make HSI divider configurable */
-	LL_RCC_HSI_SetDivider(LL_RCC_HSI_DIV1);
+	/* HSI divider configuration */
+	LL_RCC_HSI_SetDivider(hsi_divider(CONFIG_CLOCK_STM32_HSI_DIVISOR));
 
 	/* Main PLL configuration and activation */
 	LL_RCC_PLL_SetSource(LL_RCC_PLLSOURCE_HSI);
@@ -620,6 +639,9 @@ static int stm32_clock_control_init(struct device *dev)
 	LL_RCC_HSI_Enable();
 	while (LL_RCC_HSI_IsReady() != 1) {
 	}
+
+	/* HSI divider configuration */
+	LL_RCC_HSI_SetDivider(hsi_divider(CONFIG_CLOCK_STM32_HSI_DIVISOR));
 
 	/* Set sysclk source to HSI */
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
