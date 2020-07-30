@@ -38,8 +38,8 @@ static void test_cmd_help(void)
 	test_shell_execute_cmd("help", 0);
 	test_shell_execute_cmd("help -h", 1);
 	test_shell_execute_cmd("help --help", 1);
-	test_shell_execute_cmd("help dummy", 0);
-	test_shell_execute_cmd("help dummy dummy", 0);
+	test_shell_execute_cmd("help dummy", -EINVAL);
+	test_shell_execute_cmd("help dummy dummy", -EINVAL);
 }
 
 static void test_cmd_clear(void)
