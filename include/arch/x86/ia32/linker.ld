@@ -40,6 +40,7 @@
 #include <linker/linker-defs.h>
 #include <offsets.h>
 #include <sys/util.h>
+#include <sys/mem_manage.h>
 
 #include <linker/linker-tool.h>
 
@@ -67,7 +68,8 @@
 	#define MMU_PAGE_ALIGN_PERM
 #endif
 
-ENTRY(CONFIG_KERNEL_ENTRY)
+epoint = Z_MEM_PHYS_ADDR(CONFIG_KERNEL_ENTRY);
+ENTRY(epoint)
 
 /* SECTIONS definitions */
 SECTIONS
@@ -106,8 +108,9 @@ SECTIONS
  */
 #include <snippets-rom-start.ld>
 
-	*(.text_start)
-	*(".text_start.*")
+	/* Needs KEEP() as ENTRY() is given a physical address */
+	KEEP(*(.text_start))
+	KEEP(*(".text_start.*"))
 	*(.text)
 	*(".text.*")
 	*(.gnu.linkonce.t.*)
