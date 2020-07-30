@@ -548,7 +548,7 @@ fail:
 }
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
-void bt_l2cap_encrypt_change(struct bt_conn *conn, uint8_t hci_status)
+void bt_l2cap_security_changed(struct bt_conn *conn, uint8_t hci_status)
 {
 	struct bt_l2cap_chan *chan, *next;
 

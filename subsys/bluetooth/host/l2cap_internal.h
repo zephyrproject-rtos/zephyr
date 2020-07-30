@@ -285,7 +285,7 @@ void bt_l2cap_chan_set_state(struct bt_l2cap_chan *chan,
  * Notify L2CAP channels of a change in encryption state passing additionally
  * HCI status of performed security procedure.
  */
-void bt_l2cap_encrypt_change(struct bt_conn *conn, uint8_t hci_status);
+void bt_l2cap_security_changed(struct bt_conn *conn, uint8_t hci_status);
 
 /* Prepare an L2CAP PDU to be sent over a connection */
 struct net_buf *bt_l2cap_create_pdu_timeout(struct net_buf_pool *pool,
