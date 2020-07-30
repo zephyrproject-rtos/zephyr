@@ -21,8 +21,8 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(test);
 
-/* Max size is used internally in algorithm. Value is decreased in the test to
- * trigger rewind algorithm.
+/* Max size is used internally in the algorithm. Value is decreased in the test
+ * to trigger rewind algorithm.
  */
 #undef RING_BUFFER_MAX_SIZE
 #define RING_BUFFER_MAX_SIZE 0x00000200
@@ -842,6 +842,71 @@ void test_ringbuffer_equal_bufs(void)
 	}
 }
 
+void test_ringbuffer_performance(void)
+{
+	uint8_t buf[16];
+	struct ring_buf rbuf;
+	uint8_t indata[16];
+	uint8_t outdata[16];
+	uint8_t *ptr;
+	uint32_t timestamp;
+	int loop = 1000;
+
+	ring_buf_init(&rbuf, sizeof(buf), buf);
+
+	/* Test performance of copy put get 1 byte */
+	timestamp = k_cycle_get_32();
+	for (int i = 0; i < loop; i++) {
+		ring_buf_put(&rbuf, indata, 1);
+		ring_buf_get(&rbuf, outdata, 1);
+	}
+	timestamp =  k_cycle_get_32() - timestamp;
+	PRINT("1 byte put-get, avg cycles: %d\n", timestamp/loop);
+
+	/* Test performance of copy put get 1 byte */
+	ring_buf_reset(&rbuf);
+	timestamp = k_cycle_get_32();
+	for (int i = 0; i < loop; i++) {
+		ring_buf_put(&rbuf, indata, 4);
+		ring_buf_get(&rbuf, outdata, 4);
+	}
+	timestamp =  k_cycle_get_32() - timestamp;
+	PRINT("4 byte put-get, avg cycles: %d\n", timestamp/loop);
+
+	/* Test performance of put claim finish 1 byte */
+	ring_buf_reset(&rbuf);
+	timestamp = k_cycle_get_32();
+	for (int i = 0; i < loop; i++) {
+		ring_buf_put_claim(&rbuf, &ptr, 1);
+		ring_buf_put_finish(&rbuf, 1);
+		ring_buf_get(&rbuf, outdata, 1);
+	}
+	timestamp =  k_cycle_get_32() - timestamp;
+	PRINT("1 byte put claim-finish, avg cycles: %d\n", timestamp/loop);
+
+	/* Test performance of put claim finish 5 byte */
+	ring_buf_reset(&rbuf);
+	timestamp = k_cycle_get_32();
+	for (int i = 0; i < loop; i++) {
+		ring_buf_put_claim(&rbuf, &ptr, 5);
+		ring_buf_put_finish(&rbuf, 5);
+		ring_buf_get(&rbuf, outdata, 5);
+	}
+	timestamp =  k_cycle_get_32() - timestamp;
+	PRINT("5 byte put claim-finish, avg cycles: %d\n", timestamp/loop);
+
+	/* Test performance of copy put claim finish 5 byte */
+	ring_buf_reset(&rbuf);
+	timestamp = k_cycle_get_32();
+	for (int i = 0; i < loop; i++) {
+		ring_buf_put(&rbuf, indata, 5);
+		ring_buf_get_claim(&rbuf, &ptr, 5);
+		ring_buf_get_finish(&rbuf, 5);
+	}
+	timestamp =  k_cycle_get_32() - timestamp;
+	PRINT("5 byte get claim-finish, avg cycles: %d\n", timestamp/loop);
+}
+
 /*test case main entry*/
 void test_main(void)
 {
@@ -863,7 +928,8 @@ void test_main(void)
 		       ztest_unit_test(test_byte_put_free),
 		       ztest_unit_test(test_ringbuffer_equal_bufs),
 		       ztest_unit_test(test_capacity),
-		       ztest_unit_test(test_reset)
+		       ztest_unit_test(test_reset),
+		       ztest_unit_test(test_ringbuffer_performance)
 		);
 	ztest_run_test_suite(test_ringbuffer_api);
 }
