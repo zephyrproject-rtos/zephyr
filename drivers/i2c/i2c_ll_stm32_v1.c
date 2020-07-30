@@ -28,6 +28,18 @@ LOG_MODULE_REGISTER(i2c_ll_stm32_v1);
 #define I2C_REQUEST_READ        0x01
 #define HEADER                  0xF0
 
+static void stm32_i2c_generate_start_condition(I2C_TypeDef *i2c)
+{
+	uint16_t cr1 = LL_I2C_ReadReg(i2c, CR1);
+
+	if (cr1 & I2C_CR1_STOP) {
+		LOG_DBG("%s: START while STOP active!", __func__);
+		LL_I2C_WriteReg(i2c, CR1, cr1 & ~I2C_CR1_STOP);
+	}
+
+	LL_I2C_GenerateStartCondition(i2c);
+}
+
 #ifdef CONFIG_I2C_STM32_INTERRUPT
 
 static void stm32_i2c_disable_transfer_interrupts(struct device *dev)
@@ -110,7 +122,7 @@ static inline void msg_init(struct device *dev, struct i2c_msg *msg,
 	LL_I2C_DisableBitPOS(i2c);
 	LL_I2C_AcknowledgeNextData(i2c, LL_I2C_ACK);
 	if (msg->flags & I2C_MSG_RESTART) {
-		LL_I2C_GenerateStartCondition(i2c);
+		stm32_i2c_generate_start_condition(i2c);
 	}
 }
 
@@ -204,7 +216,7 @@ static inline void handle_addr(struct device *dev)
 		if (!data->current.is_write && data->current.is_restart) {
 			data->current.is_restart = 0U;
 			LL_I2C_ClearFlag_ADDR(i2c);
-			LL_I2C_GenerateStartCondition(i2c);
+			stm32_i2c_generate_start_condition(i2c);
 
 			return;
 		}
@@ -778,7 +790,7 @@ int32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 			}
 
 			LL_I2C_ClearFlag_ADDR(i2c);
-			LL_I2C_GenerateStartCondition(i2c);
+			stm32_i2c_generate_start_condition(i2c);
 			timeout = STM32_I2C_TIMEOUT_USEC;
 			while (!LL_I2C_IsActiveFlag_SB(i2c)) {
 				if (stm32_i2c_wait_timeout(&timeout)) {
