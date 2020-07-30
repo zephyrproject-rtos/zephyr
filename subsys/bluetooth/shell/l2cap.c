@@ -292,9 +292,17 @@ static int cmd_connect(const struct shell *shell, size_t argc, char *argv[])
 
 	psm = strtoul(argv[1], NULL, 16);
 
+	if (argc > 2) {
+		int sec;
+
+		sec = *argv[2] - '0';
+
+		l2ch_chan.ch.chan.required_sec_level = sec;
+	}
+
 	err = bt_l2cap_chan_connect(default_conn, &l2ch_chan.ch.chan, psm);
 	if (err < 0) {
-		shell_error(shell, "Unable to connect to psm %u (err %u)", psm,
+		shell_error(shell, "Unable to connect to psm %u (err %d)", psm,
 			    err);
 	} else {
 		shell_print(shell, "L2CAP connection pending");
@@ -420,7 +428,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(whitelist_cmds,
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(l2cap_cmds,
-	SHELL_CMD_ARG(connect, NULL, "<psm>", cmd_connect, 2, 0),
+	SHELL_CMD_ARG(connect, NULL, "<psm> [sec_level]", cmd_connect, 2, 1),
 	SHELL_CMD_ARG(disconnect, NULL, HELP_NONE, cmd_disconnect, 1, 0),
 	SHELL_CMD_ARG(metrics, NULL, "<value on, off>", cmd_metrics, 2, 0),
 	SHELL_CMD_ARG(recv, NULL, "[delay (in miliseconds)", cmd_recv, 1, 1),
