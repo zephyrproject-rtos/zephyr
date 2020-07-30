@@ -5,6 +5,17 @@
 
 if SOC_SERIES_STM32H7X
 
+# Oscillator clocks configuration options
+
+config CLOCK_STM32_HSI_DIVISOR
+	int "HSI Divisor"
+	depends on CLOCK_STM32_PLL_SRC_HSI || CLOCK_STM32_SYSCLK_SRC_HSI
+	default 1
+	range 1 8
+	help
+	  HSI Divisor to divide HSI base frequency value
+	  allowed values: 1, 2, 4, 8
+
 # Bus clocks configuration options
 
 config CLOCK_STM32_D1CPRE
