@@ -119,8 +119,15 @@ struct user_data {
 static void iface_cb(struct net_if *iface, void *user_data)
 {
 	struct user_data *ud = user_data;
+	struct net_linkaddr *link_addr;
 
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
+		return;
+	}
+
+	link_addr = net_if_get_link_addr(iface);
+	if (memcmp(link_addr->addr, lladdr1, sizeof(lladdr1)) != 0 &&
+	    memcmp(link_addr->addr, lladdr2, sizeof(lladdr2)) != 0) {
 		return;
 	}
 
