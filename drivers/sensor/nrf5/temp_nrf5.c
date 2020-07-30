@@ -61,7 +61,7 @@ static int temp_nrf5_sample_fetch(struct device *dev, enum sensor_channel chan)
 	k_sem_take(&data->device_sync_sem, K_FOREVER);
 
 	r = onoff_release(data->clk_mgr);
-	__ASSERT_NO_MSG(!r);
+	__ASSERT_NO_MSG(r >= 0);
 
 	data->sample = nrf_temp_result_get(NRF_TEMP);
 	LOG_DBG("sample: %d", data->sample);
