@@ -3685,7 +3685,8 @@ static void auth_complete(struct net_buf *buf)
 			 * Inform layers above HCI about non-zero authentication
 			 * status to make them able cleanup pending jobs.
 			 */
-			bt_l2cap_encrypt_change(conn, evt->status);
+			bt_conn_security_changed(conn, evt->status,
+						 security_err_get(evt->status));
 		}
 		reset_pairing(conn);
 	} else {
@@ -4134,8 +4135,8 @@ static void hci_encrypt_change(struct net_buf *buf)
 
 	if (evt->status) {
 		reset_pairing(conn);
-		bt_l2cap_encrypt_change(conn, evt->status);
-		bt_conn_security_changed(conn, security_err_get(evt->status));
+		bt_conn_security_changed(conn, evt->status,
+					 security_err_get(evt->status));
 		bt_conn_unref(conn);
 		return;
 	}
@@ -4179,8 +4180,7 @@ static void hci_encrypt_change(struct net_buf *buf)
 #endif /* CONFIG_BT_BREDR */
 	reset_pairing(conn);
 
-	bt_l2cap_encrypt_change(conn, evt->status);
-	bt_conn_security_changed(conn, BT_SECURITY_ERR_SUCCESS);
+	bt_conn_security_changed(conn, evt->status, BT_SECURITY_ERR_SUCCESS);
 
 	bt_conn_unref(conn);
 }
@@ -4203,8 +4203,8 @@ static void hci_encrypt_key_refresh_complete(struct net_buf *buf)
 
 	if (evt->status) {
 		reset_pairing(conn);
-		bt_l2cap_encrypt_change(conn, evt->status);
-		bt_conn_security_changed(conn, security_err_get(evt->status));
+		bt_conn_security_changed(conn, evt->status,
+					 security_err_get(evt->status));
 		bt_conn_unref(conn);
 		return;
 	}
@@ -4231,8 +4231,7 @@ static void hci_encrypt_key_refresh_complete(struct net_buf *buf)
 #endif /* CONFIG_BT_BREDR */
 
 	reset_pairing(conn);
-	bt_l2cap_encrypt_change(conn, evt->status);
-	bt_conn_security_changed(conn, BT_SECURITY_ERR_SUCCESS);
+	bt_conn_security_changed(conn, evt->status, BT_SECURITY_ERR_SUCCESS);
 	bt_conn_unref(conn);
 }
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
