@@ -34,6 +34,7 @@ from colorama import Fore
 import pickle
 import platform
 import yaml
+import json
 try:
     # Use the C LibYAML parser if available, rather than the Python parser.
     # It's much faster.
@@ -2521,6 +2522,7 @@ class TestSuite(DisablePyTestCollectionMixin):
             self.xunit_report(filename + ".xml", full_report=False, append=only_failed)
             self.xunit_report(filename + "_report.xml", full_report=True, append=only_failed)
             self.csv_report(filename + ".csv")
+            self.json_report(filename + ".json")
 
             self.target_report(outdir, suffix, append=only_failed)
             if self.discards:
@@ -2879,7 +2881,6 @@ class TestSuite(DisablePyTestCollectionMixin):
 
         self.discards = discards
         self.selected_platforms = set(p.platform.name for p in self.instances.values())
-
         return discards
 
     def add_instances(self, instance_list):
@@ -3228,6 +3229,44 @@ class TestSuite(DisablePyTestCollectionMixin):
                     rowdict["ram_size"] = ram_size
                     rowdict["rom_size"] = rom_size
                 cw.writerow(rowdict)
+
+    def set_default(self, obj):
+        if isinstance(obj,set):
+            return list (obj)
+        raise TypeError
+
+    def json_report(self, filename):
+        rowdict = {}
+        rowdict["environment"] = {"OS": os.name,
+                                    "Toolchain": self.get_toolchain()
+                                    }
+        rowdict["testspec"] = []
+        for instance in self.instances.values():
+            rowdict["testspec"].append({"test": instance.testcase.name,
+                                        "arch": instance.platform.arch,
+                                        "platform": instance.platform.name,
+                                        "handler": instance.platform.simulation,
+                                        "status": instance.status,
+                                        "extra_args": instance.testcase.extra_args,
+                                        "extra_configs": instance.testcase.extra_configs,
+                                        "harness": instance.testcase.harness,
+                                        "harness_config": instance.testcase.harness_config,
+                                        "type": instance.testcase.type,
+                                        "tags": instance.testcase.tags
+                                        })
+            if instance.status not in ["failed", "timeout"]:
+                if instance.handler:
+                    rowdict["testspec"].append({"handler_time": (instance.metrics.get           ("handler_time", 0))})
+                rowdict["testspec"].append({"ram_size": instance.metrics.get("ram_size", 0),
+                                            "rom_size": instance.metrics.get("rom_size", 0) 
+                                            })
+        rowdict["apply_filters"] = {"discards": str(self.apply_filters())}
+        with open(os.path.join(ZEPHYR_BASE, "sanity-out", "sanitycheck.log"), "r") as log_file:
+            log_string = log_file.read()
+            rowdict["logs"] = {"logs": log_string}
+        
+        with open(filename, "wt") as json_file:
+            json.dump(rowdict, json_file, indent=4, separators=(',',':'), default=self.set_default)
 
     def get_testcase(self, identifier):
         results = []

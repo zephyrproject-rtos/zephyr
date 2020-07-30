@@ -984,7 +984,6 @@ def main():
             run_individual_tests=run_individual_tests,
             device_testing=options.device_testing,
             force_platform=options.force_platform
-
         )
 
     if (options.export_tests or options.list_tests) and options.platform:
