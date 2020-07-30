@@ -1,0 +1,10 @@
+# This is test config file. Line starting with '#' will be ignored. Columns are comma separated. Whitespaces must not be used. If response is not required, leave the column blank.
+# dev0_ext_addr, dev0_short_addr, dev0_pan_id, dev0_is_coord, dev1_ext_addr, dev1_short_addr, dev1_pan_id, dev1_is_coord,  dev0 tx, expected response from dev1
+# Test 0 - Mac Command, Ack required
+43E382D10336CEF4,0000,11BB,true,F2D278C95436CEF4,0000,11BB,false,63c8b511bb000043e382d10336cef404,1200b50000
+# Test 1 - Mac Command, Ack not required
+43E382D10336CEF4,0000,11BB,true,F2D278C95436CEF4,0000,11BB,false,0308d5ffffffff07,
+# Test 2 - Data Frame, Ack required
+43E382D10336CEF4,517F,11BB,true,F2D278C95436CEF4,0000,11BB,false,6188b911bb0000517f481a0000517f1e02f2d278c95436cef443e382d10336cef4280300000043e382d10336cef40033a500a92575d4c2a9f80e5a,0200b90000
+# Test 3 - Data Frame, Ack required
+F2D278C95436CEF4,0000,11BB,true,43E382D10336CEF4,517F,11BB,false,6188de11bb517f0000481a517f00001e0543e382d10336cef4f2d278c95436cef42806000000f2d278c95436cef400cf81e939eaf08ecdc048147ab22a73c582843f067d27e889f9a05bd4126d195a4eb4af4c267b22a6827e38d8b3eb4d60855c5de011bd88a301,0200de0000

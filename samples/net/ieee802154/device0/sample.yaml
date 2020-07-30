@@ -1,0 +1,6 @@
+sample:
+  description: Test of native posix 802.15.4 radio_api driver
+  name: device0
+common:
+  harness: net
+  tags: posix net

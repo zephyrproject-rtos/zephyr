@@ -1,0 +1,12 @@
+# Copyright (c) 2020, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config IEEE802154_NATIVE_POSIX
+	bool	"Enable native posix ieee 802154 driver"
+	default n
+	depends on NETWORKING && BOARD_NATIVE_POSIX
+
+config IEEE802154_NATIVE_POSIX_DRV_NAME
+	string "Native Posix Ieee 802154 driver name"
+	default "natpos_802154"
+	depends on NETWORKING && BOARD_NATIVE_POSIX
