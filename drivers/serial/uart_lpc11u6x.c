@@ -336,7 +336,7 @@ static void lpc11u6x_uart0_isr(void *arg)
 	struct lpc11u6x_uart0_data *data = DEV_DATA(dev);
 
 	if (data->cb) {
-		data->cb(data->cb_data);
+		data->cb(dev, data->cb_data);
 	}
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
@@ -760,7 +760,7 @@ static void lpc11u6x_uartx_isr(struct device *dev)
 	struct lpc11u6x_uartx_data *data = DEV_DATA(dev);
 
 	if (data->cb) {
-		data->cb(data->cb_data);
+		data->cb(dev, data->cb_data);
 	}
 }
 
