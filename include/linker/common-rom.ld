@@ -79,7 +79,7 @@
 	Z_ITERABLE_SECTION_ROM(z_object_assignment, 4)
 #endif
 
-	SECTION_PROLOGUE(app_shmem_regions,,)
+	SECTION_DATA_PROLOGUE(app_shmem_regions,,)
 	{
 		__app_shmem_regions_start = .;
 		KEEP(*(SORT(.app_regions.*)));
