@@ -7,7 +7,7 @@
 #include <assert.h>
 #include <string.h>
 #include "net/buf.h"
-#include "mgmt/buf.h"
+#include "mgmt/mcumgr/buf.h"
 #include <tinycbor/compilersupport_p.h>
 
 NET_BUF_POOL_DEFINE(pkt_pool, CONFIG_MCUMGR_BUF_COUNT, CONFIG_MCUMGR_BUF_SIZE,

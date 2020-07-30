@@ -14,9 +14,9 @@
 #include <net/socket.h>
 #include <errno.h>
 #include <mgmt/mgmt.h>
-#include <mgmt/smp_udp.h>
-#include <mgmt/buf.h>
-#include <mgmt/smp.h>
+#include <mgmt/mcumgr/smp_udp.h>
+#include <mgmt/mcumgr/buf.h>
+#include <mgmt/mcumgr/smp.h>
 
 #define LOG_LEVEL CONFIG_MCUMGR_LOG_LEVEL
 #include <logging/log.h>

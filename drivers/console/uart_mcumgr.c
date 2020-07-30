@@ -13,7 +13,7 @@
 #include <string.h>
 #include <kernel.h>
 #include <drivers/uart.h>
-#include <mgmt/serial.h>
+#include <mgmt/mcumgr/serial.h>
 #include <drivers/console/uart_mcumgr.h>
 
 static struct device *uart_mcumgr_dev;

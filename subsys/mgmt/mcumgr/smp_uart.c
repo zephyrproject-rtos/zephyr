@@ -14,9 +14,9 @@
 #include "net/buf.h"
 #include <drivers/console/uart_mcumgr.h>
 #include "mgmt/mgmt.h"
-#include <mgmt/serial.h>
-#include "mgmt/buf.h"
-#include "mgmt/smp.h"
+#include <mgmt/mcumgr/serial.h>
+#include "mgmt/mcumgr/buf.h"
+#include "mgmt/mcumgr/smp.h"
 
 struct device;
 

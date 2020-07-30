@@ -11,7 +11,7 @@
 #include <sys/ring_buffer.h>
 #include <sys/atomic.h>
 #ifdef CONFIG_MCUMGR_SMP_SHELL
-#include "mgmt/smp_shell.h"
+#include "mgmt/mcumgr/smp_shell.h"
 #endif
 
 #ifdef __cplusplus

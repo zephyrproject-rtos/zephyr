@@ -7,9 +7,9 @@
 #include <zephyr.h>
 #include "net/buf.h"
 #include "mgmt/mgmt.h"
-#include "mgmt/buf.h"
+#include "mgmt/mcumgr/buf.h"
 #include "smp/smp.h"
-#include "mgmt/smp.h"
+#include "mgmt/mcumgr/smp.h"
 
 static mgmt_alloc_rsp_fn zephyr_smp_alloc_rsp;
 static mgmt_trim_front_fn zephyr_smp_trim_front;
