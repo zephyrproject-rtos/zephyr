@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <posix/posix.dtsi>
+#include <dt-bindings/i2c/i2c.h>
 
 / {
 	model = "Native POSIX Board";
@@ -22,6 +23,7 @@
 
 	aliases {
 		eeprom-0 = &eeprom0;
+		i2c-0 = &i2c0;
 	};
 
 	flashcontroller0: flash-controller@0 {
@@ -76,6 +78,16 @@
 		compatible = "zephyr,sim-eeprom";
 		label = "EEPROM_0";
 		size = <DT_SIZE_K(32)>;
+	};
+
+	i2c0: i2c@100 {
+		status = "okay";
+		compatible = "zephyr,i2c-emul-controller";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x100 4>;
+		label = "I2C_0";
 	};
 
 	uart0: uart {
