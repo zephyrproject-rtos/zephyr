@@ -65,30 +65,7 @@
  * unsigned int arch_swap (unsigned int eflags);
  */
 
-.macro read_tsc var_name
-	push %eax
-	push %edx
-	rdtsc
-	mov %eax,\var_name
-	mov %edx,\var_name+4
-	pop %edx
-	pop %eax
-.endm
 SECTION_FUNC(TEXT, arch_swap)
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	/* Save the eax and edx registers before reading the time stamp
-	* once done pop the values.
-	*/
-	push %eax
-	push %edx
-	rdtsc
-	mov %eax,arch_timing_swap_start
-	mov %edx,arch_timing_swap_start+4
-	pop %edx
-	pop %eax
-#endif
-
-
 #if defined(CONFIG_TRACING)
 	pushl	%eax
 	call	sys_trace_thread_switched_out
@@ -355,15 +332,6 @@ CROHandlingDone:
 	pushl	4(%esp)
 	popfl
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	cmp $0x1,arch_timing_value_swap_end
-	jne time_read_not_needed
-	movw $0x2,arch_timing_value_swap_end
-	read_tsc arch_timing_value_swap_common
-	pushl arch_timing_swap_start
-	popl arch_timing_value_swap_temp
-time_read_not_needed:
-#endif
 #if defined(CONFIG_TRACING)
 	pushl	%eax
 	call	sys_trace_thread_switched_in

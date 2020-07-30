@@ -374,18 +374,5 @@ SECTION_FUNC(TEXT, z_x86_userspace_enter)
 	push	$USER_CODE_SEG	/* CS */
 	push	$z_thread_entry	/* EIP */
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	/* Save the eax and edx registers before reading the time stamp
-	* once done pop the values.
-	*/
-	push %eax
-	push %edx
-	rdtsc
-	mov %eax,arch_timing_enter_user_mode_end
-	mov %edx,arch_timing_enter_user_mode_end+4
-	pop %edx
-	pop %eax
-#endif
-
 	/* We will land in z_thread_entry() in user mode after this */
 	KPTI_IRET_USER

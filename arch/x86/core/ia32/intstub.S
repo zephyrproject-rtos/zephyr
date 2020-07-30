@@ -35,7 +35,6 @@
 	GTEXT(z_sys_power_save_idle_exit)
 #endif
 
-
 /**
  *
  * @brief Inform the kernel of an interrupt
@@ -79,15 +78,6 @@ SECTION_FUNC(TEXT, _interrupt_enter)
 	 *  0  isr   <-- stack pointer
 	 */
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	pushl %eax
-	pushl %edx
-	rdtsc
-	mov %eax, arch_timing_irq_start
-	mov %edx, arch_timing_irq_start+4
-	pop %edx
-	pop %eax
-#endif
 	/*
 	 * The gen_idt tool creates an interrupt-gate descriptor for
 	 * all connections.  The processor will automatically clear the IF
@@ -165,20 +155,6 @@ SECTION_FUNC(TEXT, _interrupt_enter)
 alreadyOnIntStack:
 
 	push	%eax	/* interrupt handler argument */
-
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	/* Save the eax and edx registers before reading the time stamp
-	* once done pop the values
-	*/
-	pushl %eax
-	pushl %edx
-	rdtsc
-	mov %eax,arch_timing_irq_end
-	mov %edx,arch_timing_irq_end+4
-	pop %edx
-	pop %eax
-#endif
-
 
 #if defined(CONFIG_TRACING_ISR)
 	/* Save these as we are using to keep track of isr and isr_param */

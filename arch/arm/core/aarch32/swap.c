@@ -7,9 +7,6 @@
 #include <kernel.h>
 #include <kernel_internal.h>
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-extern void read_timer_start_of_swap(void);
-#endif
 extern const int _k_neg_eagain;
 
 /* The 'key' actually represents the BASEPRI register
@@ -35,10 +32,6 @@ extern const int _k_neg_eagain;
  */
 int arch_swap(unsigned int key)
 {
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	read_timer_start_of_swap();
-#endif
-
 	/* store off key and return value */
 	_current->arch.basepri = key;
 	_current->arch.swap_return_value = _k_neg_eagain;

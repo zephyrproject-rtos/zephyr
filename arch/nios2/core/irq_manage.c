@@ -80,11 +80,6 @@ void _enter_irq(uint32_t ipending)
 {
 	int index;
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	extern void read_timer_start_of_isr(void);
-	read_timer_start_of_isr();
-#endif
-
 	_kernel.cpus[0].nested++;
 
 #ifdef CONFIG_IRQ_OFFLOAD
@@ -103,10 +98,6 @@ void _enter_irq(uint32_t ipending)
 
 		ite = &_sw_isr_table[index];
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-		extern void read_timer_end_of_isr(void);
-		read_timer_end_of_isr();
-#endif
 		ite->isr(ite->arg);
 #ifdef CONFIG_TRACING_ISR
 		sys_trace_isr_exit();

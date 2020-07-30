@@ -64,11 +64,6 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 	ARG_UNUSED(lock);
 	struct k_thread *new_thread, *old_thread;
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	extern void read_timer_start_of_swap(void);
-	read_timer_start_of_swap();
-#endif
-
 	old_thread = _current;
 
 	z_check_stack_sentinel();

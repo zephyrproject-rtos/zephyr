@@ -21,7 +21,7 @@ GTEXT(_k_neg_eagain)
  */
 SECTION_FUNC(exception.other, arch_swap)
 
-#if defined(CONFIG_EXECUTION_BENCHMARKING) || defined(CONFIG_TRACING)
+#if defined(CONFIG_TRACING)
 	/* Get a reference to _kernel in r10 */
 	movhi r10, %hi(_kernel)
 	ori   r10, r10, %lo(_kernel)
@@ -34,11 +34,7 @@ SECTION_FUNC(exception.other, arch_swap)
 	stw ra,  _thread_offset_to_ra(r11)
 	stw sp,  _thread_offset_to_sp(r11)
 
-#if CONFIG_TRACING
 	call sys_trace_thread_switched_out
-#elif CONFIG_EXECUTION_BENCHMARKING
-	call read_timer_start_of_swap
-#endif
 	/* Get a reference to _kernel in r10 */
 	movhi r10, %hi(_kernel)
 	ori   r10, r10, %lo(_kernel)
@@ -139,7 +135,7 @@ no_unlock:
 	wrctl status, r3
 #endif
 
-#if defined(CONFIG_EXECUTION_BENCHMARKING) || defined(CONFIG_TRACING)
+#if defined(CONFIG_TRACING)
 	/* Get a reference to _kernel in r10 */
 	movhi r10, %hi(_kernel)
 	ori   r10, r10, %lo(_kernel)
@@ -151,11 +147,7 @@ no_unlock:
 	stw ra,  _thread_offset_to_ra(r11)
 	stw sp,  _thread_offset_to_sp(r11)
 
-#if CONFIG_TRACING
 	call sys_trace_thread_switched_in
-#elif CONFIG_EXECUTION_BENCHMARKING
-	call read_timer_end_of_swap
-#endif
 
 	/* Get a reference to _kernel in r10 */
 	movhi r10, %hi(_kernel)

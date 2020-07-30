@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if(CONFIG_GEN_ISR_TABLES OR CONFIG_EXECUTION_BENCHMARKING)
+if(CONFIG_GEN_ISR_TABLES)
   zephyr_library()
 
   zephyr_library_sources_ifdef(
@@ -8,16 +8,6 @@ if(CONFIG_GEN_ISR_TABLES OR CONFIG_EXECUTION_BENCHMARKING)
     isr_tables.c
     sw_isr_common.c
     )
-
-  zephyr_library_sources_ifdef(
-    CONFIG_EXECUTION_BENCHMARKING
-    timing_info_bench.c
-    )
-endif()
-
-
-if(NOT CONFIG_ARCH_HAS_TIMING_FUNCTIONS)
-zephyr_library_sources_ifdef(CONFIG_TIMING_FUNCTIONS timing.c)
 endif()
 
 # Put functions and data in their own binary sections so that ld can
@@ -43,4 +33,8 @@ zephyr_linker_sources_ifdef(CONFIG_NOCACHE_MEMORY
 if (DEFINED CONFIG_ARM OR DEFINED CONFIG_X86
     OR DEFINED CONFIG_SOC_OPENISA_RV32M1_RISCV32)
   zephyr_linker_sources(ROM_START SORT_KEY 0x0 rom_start_offset.ld)
+endif()
+
+if(NOT CONFIG_ARCH_HAS_TIMING_FUNCTIONS)
+zephyr_library_sources_ifdef(CONFIG_TIMING_FUNCTIONS timing.c)
 endif()
