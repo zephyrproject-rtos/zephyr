@@ -45,15 +45,9 @@
 #define ADV_INT_DEFAULT_MS 100
 #define ADV_INT_FAST_MS    20
 
-#if defined(CONFIG_BT_HOST_CRYPTO)
-#define ADV_STACK_SIZE 1024
-#else
-#define ADV_STACK_SIZE 768
-#endif
-
 static K_FIFO_DEFINE(adv_queue);
 static struct k_thread adv_thread_data;
-static K_THREAD_STACK_DEFINE(adv_thread_stack, ADV_STACK_SIZE);
+static K_THREAD_STACK_DEFINE(adv_thread_stack, CONFIG_BT_MESH_ADV_STACK_SIZE);
 
 NET_BUF_POOL_DEFINE(adv_buf_pool, CONFIG_BT_MESH_ADV_BUF_COUNT,
 		    BT_MESH_ADV_DATA_SIZE, BT_MESH_ADV_USER_DATA_SIZE, NULL);
