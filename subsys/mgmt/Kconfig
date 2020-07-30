@@ -6,4 +6,6 @@ menu "Management subsystems"
 
 source "subsys/mgmt/mcumgr/Kconfig"
 
+source "subsys/mgmt/updatehub/Kconfig"
+
 endmenu

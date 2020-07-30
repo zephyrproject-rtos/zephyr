@@ -386,7 +386,6 @@
 /samples/                                 @nashif
 /samples/basic/minimal/                   @carlescufi
 /samples/basic/servo_motor/boards/*microbit* @jhe
-/lib/updatehub/                           @nandojve @otavio
 /samples/bluetooth/                       @jhedberg @Vudentz @joerchan
 /samples/boards/intel_s1000_crb/          @sathishkuttan @dcpleung @nashif
 /samples/display/                         @vanwinkeljan
@@ -463,6 +462,7 @@
 /subsys/logging/log_backend_net.c         @nordic-krch @jukkar
 /subsys/mgmt/mcumgr/                      @carlescufi @nvlsianpu
 /subsys/mgmt/mcumgr/smp_udp.c             @aunsbjerg
+/subsys/mgmt/updatehub/                   @nandojve @otavio
 /subsys/net/buf.c                         @jukkar @jhedberg @tbursztyka @pfalcon
 /subsys/net/ip/                           @jukkar @tbursztyka @pfalcon
 /subsys/net/lib/                          @jukkar @tbursztyka @pfalcon
