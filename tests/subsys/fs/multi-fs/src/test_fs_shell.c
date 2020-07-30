@@ -30,7 +30,7 @@ void test_fs_help(void)
 {
 #ifdef CONFIG_FILE_SYSTEM_SHELL
 	test_shell_exec("help", 0);
-	test_shell_exec("help fs", 0);
+	test_shell_exec("help fs", -EINVAL);
 	test_shell_exec("fs mount fat", -EINVAL);
 	test_shell_exec("fs mount littlefs", -EINVAL);
 #else
