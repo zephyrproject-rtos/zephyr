@@ -2673,7 +2673,11 @@ static void bt_att_encrypt_change(struct bt_l2cap_chan *chan,
 	 * outstanding request about security failure.
 	 */
 	if (hci_status) {
-		att_handle_rsp(att_chan, NULL, 0, BT_ATT_ERR_AUTHENTICATION);
+		if (att_chan->req) {
+			att_handle_rsp(att_chan, NULL, 0,
+				       BT_ATT_ERR_AUTHENTICATION);
+		}
+
 		return;
 	}
 
