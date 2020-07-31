@@ -93,7 +93,7 @@ static int cleanup_test(struct unit_test *test)
 #define CPUHOLD_STACK_SZ (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 
 static struct k_thread cpuhold_threads[NUM_CPUHOLD];
-K_THREAD_STACK_ARRAY_DEFINE(cpuhold_stacks, NUM_CPUHOLD, CPUHOLD_STACK_SZ);
+K_KERNEL_STACK_ARRAY_DEFINE(cpuhold_stacks, NUM_CPUHOLD, CPUHOLD_STACK_SZ);
 static struct k_sem cpuhold_sem;
 volatile int cpuhold_active;
 
