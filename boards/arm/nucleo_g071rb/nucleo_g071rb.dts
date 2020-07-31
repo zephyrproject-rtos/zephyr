@@ -50,3 +50,10 @@
 &iwdg {
 	status = "okay";
 };
+
+&timers3 {
+	status = "okay";
+	pwm3: pwm {
+		status = "okay";
+	};
+};
