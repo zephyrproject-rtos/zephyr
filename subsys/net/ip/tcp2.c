@@ -1557,6 +1557,11 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 
 	context->user_data = user_data;
 
+	/* Remove the temporary connection handler and register
+	 * a proper now as we have an established connection.
+	 */
+	net_conn_unregister(context->conn_handler);
+
 	return net_conn_register(net_context_get_ip_proto(context),
 				 local_addr.sa_family,
 				 context->flags & NET_CONTEXT_REMOTE_ADDR_SET ?
