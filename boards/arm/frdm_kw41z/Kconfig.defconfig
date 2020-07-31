@@ -33,7 +33,7 @@ endif # PINMUX_MCUX
 
 config FXOS8700_DRDY_INT1
 	default y
-	depends on FXOS8700
+	depends on FXOS8700_TRIGGER
 
 config SPI_0
 	default y
