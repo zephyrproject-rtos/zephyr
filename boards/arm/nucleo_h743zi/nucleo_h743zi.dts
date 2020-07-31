@@ -111,3 +111,8 @@
 		     &eth_txd0_pg13
 		     &eth_txd1_pb13>;
 };
+
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pb5>;
+};
