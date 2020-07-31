@@ -17,7 +17,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(canopen_driver);
 
-K_THREAD_STACK_DEFINE(canopen_tx_workq_stack,
+K_KERNEL_STACK_DEFINE(canopen_tx_workq_stack,
 		      CONFIG_CANOPEN_TX_WORKQUEUE_STACK_SIZE);
 
 struct k_work_q canopen_tx_workq;
@@ -468,7 +468,7 @@ static int canopen_init(struct device *dev)
 	ARG_UNUSED(dev);
 
 	k_work_q_start(&canopen_tx_workq, canopen_tx_workq_stack,
-		       K_THREAD_STACK_SIZEOF(canopen_tx_workq_stack),
+		       K_KERNEL_STACK_SIZEOF(canopen_tx_workq_stack),
 		       CONFIG_CANOPEN_TX_WORKQUEUE_PRIORITY);
 
 	k_work_init(&canopen_tx_queue.work, canopen_tx_retry);
