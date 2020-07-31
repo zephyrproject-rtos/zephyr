@@ -36,10 +36,6 @@ config UART_SHELL_ON_DEV_NAME
 
 endif # USB
 
-config IEEE802154_NRF5
-	default y
-	depends on IEEE802154
-
 if DISK_ACCESS_FLASH
 
 config DISK_FLASH_DEV_NAME

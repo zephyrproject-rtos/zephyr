@@ -26,10 +26,6 @@ config USB_DEVICE_STACK
 
 endif # USB
 
-config IEEE802154_NRF5
-	default y
-	depends on IEEE802154
-
 config BT_CTLR
 	default y
 	depends on BT
