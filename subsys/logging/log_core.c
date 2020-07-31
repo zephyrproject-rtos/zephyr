@@ -1182,7 +1182,7 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 	}
 }
 
-K_THREAD_STACK_DEFINE(logging_stack, CONFIG_LOG_PROCESS_THREAD_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(logging_stack, CONFIG_LOG_PROCESS_THREAD_STACK_SIZE);
 struct k_thread logging_thread;
 
 static int enable_logger(struct device *arg)
@@ -1194,7 +1194,7 @@ static int enable_logger(struct device *arg)
 				log_process_thread_timer_expiry_fn, NULL);
 		/* start logging thread */
 		k_thread_create(&logging_thread, logging_stack,
-				K_THREAD_STACK_SIZEOF(logging_stack),
+				K_KERNEL_STACK_SIZEOF(logging_stack),
 				log_process_thread_func, NULL, NULL, NULL,
 				K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
 		k_thread_name_set(&logging_thread, "logging");
