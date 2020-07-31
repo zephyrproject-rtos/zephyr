@@ -8,6 +8,6 @@ zephyr_library_sources_ifdef(CONFIG_IPM_MHU ipm_mhu.c)
 zephyr_library_sources_ifdef(CONFIG_IPM_STM32_IPCC ipm_stm32_ipcc.c)
 zephyr_library_sources_ifdef(CONFIG_IPM_NRFX ipm_nrfx_ipc.c)
 
-zephyr_library_sources_if_kconfig(ipm_cavs_idc.c)
+zephyr_library_sources_ifdef(CONFIG_IPM_CAVS_IDC ipm_cavs_idc.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE   ipm_handlers.c)
