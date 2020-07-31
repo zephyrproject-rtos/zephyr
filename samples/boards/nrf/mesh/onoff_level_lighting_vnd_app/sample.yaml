@@ -5,3 +5,8 @@ tests:
     platform_whitelist: nrf52840dk_nrf52840
     tags: bluetooth
     harness: bluetooth
+  sample.bluetooth.mesh.onoff_level_lighting_vnd.mcumgr:
+    platform_whitelist: nrf52840dk_nrf52840
+    tags: bluetooth
+    harness: bluetooth
+    extra_args: OVERLAY_CONFIG="prj_smp_svr.conf"
