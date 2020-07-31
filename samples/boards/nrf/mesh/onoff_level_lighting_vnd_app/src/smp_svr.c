@@ -9,8 +9,8 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/gatt.h>
-#include <mgmt/buf.h>
-#include <mgmt/smp_bt.h>
+#include <mgmt/mcumgr/buf.h>
+#include <mgmt/mcumgr/smp_bt.h>
 #include <stats/stats.h>
 #include <stdlib.h>
 #include <string.h>
