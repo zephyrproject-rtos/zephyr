@@ -16,7 +16,7 @@
 #include "transition.h"
 
 #if defined(CONFIG_MCUMGR)
-#include <mgmt/smp_bt.h>
+#include <mgmt/mcumgr/smp_bt.h>
 #include "smp_svr.h"
 #endif
 
