@@ -141,7 +141,7 @@ struct lmp90xxx_data {
 	struct k_sem acq_sem;
 	struct k_sem drdyb_sem;
 
-	K_THREAD_STACK_MEMBER(stack,
+	K_KERNEL_STACK_MEMBER(stack,
 			CONFIG_ADC_LMP90XXX_ACQUISITION_THREAD_STACK_SIZE);
 };
 

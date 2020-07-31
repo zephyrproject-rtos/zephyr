@@ -47,7 +47,7 @@ enum ppp_driver_state {
 #define PPP_WORKQ_PRIORITY CONFIG_NET_PPP_RX_PRIORITY
 #define PPP_WORKQ_STACK_SIZE CONFIG_NET_PPP_RX_STACK_SIZE
 
-K_THREAD_STACK_DEFINE(ppp_workq, PPP_WORKQ_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(ppp_workq, PPP_WORKQ_STACK_SIZE);
 
 struct ppp_driver_context {
 	struct device *dev;
@@ -693,7 +693,7 @@ static int ppp_driver_init(struct device *dev)
 	k_work_init(&ppp->cb_work, ppp_isr_cb_work);
 
 	k_work_q_start(&ppp->cb_workq, ppp_workq,
-		       K_THREAD_STACK_SIZEOF(ppp_workq),
+		       K_KERNEL_STACK_SIZEOF(ppp_workq),
 		       K_PRIO_COOP(PPP_WORKQ_PRIORITY));
 	k_thread_name_set(&ppp->cb_workq.thread, "ppp_workq");
 #endif

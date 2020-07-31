@@ -20,7 +20,7 @@ void bt_rpmsg_rx(uint8_t *data, size_t len);
 static K_SEM_DEFINE(ready_sem, 0, 1);
 static K_SEM_DEFINE(rx_sem, 0, 1);
 
-static K_THREAD_STACK_DEFINE(bt_rpmsg_rx_thread_stack,
+static K_KERNEL_STACK_DEFINE(bt_rpmsg_rx_thread_stack,
 			     CONFIG_BT_RPMSG_NRF53_RX_STACK_SIZE);
 static struct k_thread bt_rpmsg_rx_thread_data;
 
@@ -180,7 +180,7 @@ int bt_rpmsg_platform_init(void)
 
 	/* Setup thread for RX data processing. */
 	k_thread_create(&bt_rpmsg_rx_thread_data, bt_rpmsg_rx_thread_stack,
-			K_THREAD_STACK_SIZEOF(bt_rpmsg_rx_thread_stack),
+			K_KERNEL_STACK_SIZEOF(bt_rpmsg_rx_thread_stack),
 			bt_rpmsg_rx_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_RPMSG_NRF53_RX_PRIO),
 			0, K_NO_WAIT);

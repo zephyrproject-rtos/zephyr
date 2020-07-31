@@ -107,12 +107,12 @@ NET_BUF_POOL_DEFINE(mdm_recv_pool, MDM_RECV_MAX_BUF, MDM_RECV_BUF_SIZE,
 		    0, NULL);
 
 /* RX thread structures */
-K_THREAD_STACK_DEFINE(modem_rx_stack,
+K_KERNEL_STACK_DEFINE(modem_rx_stack,
 		      CONFIG_MODEM_UBLOX_SARA_R4_RX_STACK_SIZE);
 struct k_thread modem_rx_thread;
 
 /* RX thread work queue */
-K_THREAD_STACK_DEFINE(modem_workq_stack,
+K_KERNEL_STACK_DEFINE(modem_workq_stack,
 		      CONFIG_MODEM_UBLOX_SARA_R4_RX_WORKQ_STACK_SIZE);
 static struct k_work_q modem_workq;
 
@@ -1725,7 +1725,7 @@ static int modem_init(struct device *dev)
 	/* initialize the work queue */
 	k_work_q_start(&modem_workq,
 		       modem_workq_stack,
-		       K_THREAD_STACK_SIZEOF(modem_workq_stack),
+		       K_KERNEL_STACK_SIZEOF(modem_workq_stack),
 		       K_PRIO_COOP(7));
 
 	/* socket config */
@@ -1787,7 +1787,7 @@ static int modem_init(struct device *dev)
 
 	/* start RX thread */
 	k_thread_create(&modem_rx_thread, modem_rx_stack,
-			K_THREAD_STACK_SIZEOF(modem_rx_stack),
+			K_KERNEL_STACK_SIZEOF(modem_rx_stack),
 			(k_thread_entry_t) modem_rx,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 

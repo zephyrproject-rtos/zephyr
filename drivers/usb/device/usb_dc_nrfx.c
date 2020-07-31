@@ -282,7 +282,7 @@ K_FIFO_DEFINE(usbd_evt_fifo);
  * of a system work queue item waiting for a USB transfer to be finished.
  */
 static struct k_work_q usbd_work_queue;
-static K_THREAD_STACK_DEFINE(usbd_work_queue_stack,
+static K_KERNEL_STACK_DEFINE(usbd_work_queue_stack,
 			     CONFIG_USB_NRFX_WORK_QUEUE_STACK_SIZE);
 
 
@@ -1331,7 +1331,7 @@ int usb_dc_attach(void)
 
 	k_work_q_start(&usbd_work_queue,
 		       usbd_work_queue_stack,
-		       K_THREAD_STACK_SIZEOF(usbd_work_queue_stack),
+		       K_KERNEL_STACK_SIZEOF(usbd_work_queue_stack),
 		       CONFIG_SYSTEM_WORKQUEUE_PRIORITY);
 
 	k_work_init(&ctx->usb_work, usbd_work_handler);

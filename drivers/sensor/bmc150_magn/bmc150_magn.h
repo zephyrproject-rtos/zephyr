@@ -117,7 +117,7 @@ struct bmc150_magn_data {
 	struct k_sem sem;
 
 #if defined(CONFIG_BMC150_MAGN_TRIGGER)
-	K_THREAD_STACK_MEMBER(thread_stack,
+	K_KERNEL_STACK_MEMBER(thread_stack,
 			      CONFIG_BMC150_MAGN_TRIGGER_THREAD_STACK);
 	struct k_thread thread;
 #endif

@@ -35,7 +35,7 @@ struct mcr20a_context {
 	struct k_sem seq_sync;
 	atomic_t seq_retval;
 	/************RX************/
-	K_THREAD_STACK_MEMBER(mcr20a_rx_stack,
+	K_KERNEL_STACK_MEMBER(mcr20a_rx_stack,
 			      CONFIG_IEEE802154_MCR20A_RX_STACK_SIZE);
 	struct k_thread mcr20a_rx_thread;
 };

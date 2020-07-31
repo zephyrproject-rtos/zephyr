@@ -829,7 +829,7 @@ static int mcp2515_init(struct device *dev)
 
 #if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
 
-static K_THREAD_STACK_DEFINE(mcp2515_int_thread_stack,
+static K_KERNEL_STACK_DEFINE(mcp2515_int_thread_stack,
 			     CONFIG_CAN_MCP2515_INT_THREAD_STACK_SIZE);
 
 static struct mcp2515_data mcp2515_data_1 = {

@@ -110,7 +110,7 @@ struct usb_device_data {
 	struct usb_ep_ctrl_data ep_ctrl[NUM_OF_EP_MAX];
 	bool attached;
 
-	K_THREAD_STACK_MEMBER(thread_stack, USBD_THREAD_STACK_SIZE);
+	K_KERNEL_STACK_MEMBER(thread_stack, USBD_THREAD_STACK_SIZE);
 	struct k_thread thread;
 };
 

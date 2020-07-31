@@ -66,7 +66,7 @@ LOG_MODULE_REGISTER(dw1000, LOG_LEVEL_INF);
 #define DWT_WORK_QUEUE_STACK_SIZE	512
 
 static struct k_work_q dwt_work_queue;
-static K_THREAD_STACK_DEFINE(dwt_work_queue_stack,
+static K_KERNEL_STACK_DEFINE(dwt_work_queue_stack,
 			     DWT_WORK_QUEUE_STACK_SIZE);
 
 struct dwt_phy_config {
@@ -1607,7 +1607,7 @@ static int dw1000_init(struct device *dev)
 	/* Initialize IRQ event work queue */
 	k_work_q_start(&dwt_work_queue,
 		       dwt_work_queue_stack,
-		       K_THREAD_STACK_SIZEOF(dwt_work_queue_stack),
+		       K_KERNEL_STACK_SIZEOF(dwt_work_queue_stack),
 		       CONFIG_SYSTEM_WORKQUEUE_PRIORITY);
 
 	k_work_init(&ctx->irq_cb_work, dwt_irq_work_handler);

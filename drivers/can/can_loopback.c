@@ -13,7 +13,7 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(can_driver, CONFIG_CAN_LOG_LEVEL);
 
-K_THREAD_STACK_DEFINE(tx_thread_stack,
+K_KERNEL_STACK_DEFINE(tx_thread_stack,
 		      CONFIG_CAN_LOOPBACK_TX_THREAD_STACK_SIZE);
 struct k_thread tx_thread_data;
 
@@ -258,7 +258,7 @@ static int can_loopback_init(struct device *dev)
 	}
 
 	tx_tid = k_thread_create(&tx_thread_data, tx_thread_stack,
-				 K_THREAD_STACK_SIZEOF(tx_thread_stack),
+				 K_KERNEL_STACK_SIZEOF(tx_thread_stack),
 				 tx_thread, data, NULL, NULL,
 				 CONFIG_CAN_LOOPBACK_TX_THREAD_PRIORITY,
 				 0, K_NO_WAIT);
@@ -299,7 +299,7 @@ static int socket_can_init_1(struct device *dev)
 	socket_context->rx_tid =
 		k_thread_create(&socket_context->rx_thread_data,
 				rx_thread_stack,
-				K_THREAD_STACK_SIZEOF(rx_thread_stack),
+				K_KERNEL_STACK_SIZEOF(rx_thread_stack),
 				rx_thread, socket_context, NULL, NULL,
 				RX_THREAD_PRIORITY, 0, K_NO_WAIT);
 

@@ -45,7 +45,7 @@ struct mcp320x_data {
 	struct k_thread thread;
 	struct k_sem sem;
 
-	K_THREAD_STACK_MEMBER(stack,
+	K_KERNEL_STACK_MEMBER(stack,
 			CONFIG_ADC_MCP320X_ACQUISITION_THREAD_STACK_SIZE);
 };
 

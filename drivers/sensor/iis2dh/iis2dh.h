@@ -69,7 +69,7 @@ struct iis2dh_data {
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t drdy_handler;
 #if defined(CONFIG_IIS2DH_TRIGGER_OWN_THREAD)
-	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_IIS2DH_THREAD_STACK_SIZE);
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_IIS2DH_THREAD_STACK_SIZE);
 	struct k_thread thread;
 	struct k_sem gpio_sem;
 #elif defined(CONFIG_IIS2DH_TRIGGER_GLOBAL_THREAD)

@@ -300,7 +300,7 @@ struct adxl372_data {
 	struct device *dev;
 
 #if defined(CONFIG_ADXL372_TRIGGER_OWN_THREAD)
-	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_ADXL372_THREAD_STACK_SIZE);
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_ADXL372_THREAD_STACK_SIZE);
 	struct k_sem gpio_sem;
 	struct k_thread thread;
 #elif defined(CONFIG_ADXL372_TRIGGER_GLOBAL_THREAD)

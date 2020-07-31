@@ -64,7 +64,7 @@ static struct k_fifo *lines_queue;
 static uint8_t (*completion_cb)(char *line, uint8_t len);
 static bool stdin_is_tty;
 
-static K_THREAD_STACK_DEFINE(stack, CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(stack, CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);
 static struct k_thread native_stdio_thread;
 
 static inline void found_eof(void)

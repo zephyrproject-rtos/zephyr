@@ -33,7 +33,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "eswifi.h"
 
 #define ESWIFI_WORKQUEUE_STACK_SIZE 1024
-K_THREAD_STACK_DEFINE(eswifi_work_q_stack, ESWIFI_WORKQUEUE_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(eswifi_work_q_stack, ESWIFI_WORKQUEUE_STACK_SIZE);
 
 static struct eswifi_dev eswifi0; /* static instance */
 
@@ -666,7 +666,7 @@ static int eswifi_init(struct device *dev)
 			   GPIO_OUTPUT_ACTIVE);
 
 	k_work_q_start(&eswifi->work_q, eswifi_work_q_stack,
-		       K_THREAD_STACK_SIZEOF(eswifi_work_q_stack),
+		       K_KERNEL_STACK_SIZEOF(eswifi_work_q_stack),
 		       CONFIG_SYSTEM_WORKQUEUE_PRIORITY - 1);
 
 	k_work_init(&eswifi->request_work, eswifi_request_work);

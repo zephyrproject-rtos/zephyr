@@ -586,7 +586,7 @@ static int eth_initialize(struct device *dev)
 
 	/* Start interruption-poll thread */
 	k_thread_create(&dev_data->rx_thread, dev_data->rx_thread_stack,
-			K_THREAD_STACK_SIZEOF(dev_data->rx_thread_stack),
+			K_KERNEL_STACK_SIZEOF(dev_data->rx_thread_stack),
 			rx_thread, (void *) dev, NULL, NULL,
 			K_PRIO_COOP(CONFIG_ETH_STM32_HAL_RX_THREAD_PRIO),
 			0, K_NO_WAIT);

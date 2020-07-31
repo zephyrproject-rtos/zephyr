@@ -149,12 +149,12 @@ NET_BUF_POOL_DEFINE(mdm_recv_pool, MDM_RECV_MAX_BUF, MDM_RECV_BUF_SIZE,
 static uint8_t mdm_recv_buf[MDM_MAX_DATA_LENGTH];
 
 /* RX thread structures */
-K_THREAD_STACK_DEFINE(wncm14a2a_rx_stack,
+K_KERNEL_STACK_DEFINE(wncm14a2a_rx_stack,
 		       CONFIG_MODEM_WNCM14A2A_RX_STACK_SIZE);
 struct k_thread wncm14a2a_rx_thread;
 
 /* RX thread work queue */
-K_THREAD_STACK_DEFINE(wncm14a2a_workq_stack,
+K_KERNEL_STACK_DEFINE(wncm14a2a_workq_stack,
 		      CONFIG_MODEM_WNCM14A2A_RX_WORKQ_STACK_SIZE);
 static struct k_work_q wncm14a2a_workq;
 
@@ -1462,7 +1462,7 @@ static int wncm14a2a_init(struct device *dev)
 	/* initialize the work queue */
 	k_work_q_start(&wncm14a2a_workq,
 		       wncm14a2a_workq_stack,
-		       K_THREAD_STACK_SIZEOF(wncm14a2a_workq_stack),
+		       K_KERNEL_STACK_SIZEOF(wncm14a2a_workq_stack),
 		       K_PRIO_COOP(7));
 
 	ictx.last_socket_id = 0;
@@ -1496,7 +1496,7 @@ static int wncm14a2a_init(struct device *dev)
 
 	/* start RX thread */
 	k_thread_create(&wncm14a2a_rx_thread, wncm14a2a_rx_stack,
-			K_THREAD_STACK_SIZEOF(wncm14a2a_rx_stack),
+			K_KERNEL_STACK_SIZEOF(wncm14a2a_rx_stack),
 			(k_thread_entry_t) wncm14a2a_rx,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 

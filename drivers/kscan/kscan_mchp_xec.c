@@ -54,7 +54,7 @@ struct kscan_xec_data {
 	struct k_thread thread;
 	atomic_t enable_scan;
 
-	K_THREAD_STACK_MEMBER(thread_stack, TASK_STACK_SIZE);
+	K_KERNEL_STACK_MEMBER(thread_stack, TASK_STACK_SIZE);
 };
 
 static KSCAN_Type *base = (KSCAN_Type *)

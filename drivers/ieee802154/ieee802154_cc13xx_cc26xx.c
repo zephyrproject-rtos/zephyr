@@ -434,7 +434,7 @@ static void ieee802154_cc13xx_cc26xx_data_init(struct device *dev)
 	k_sem_init(&drv_data->rx_done, 0, UINT_MAX);
 
 	k_thread_create(&drv_data->rx_thread, drv_data->rx_stack,
-			K_THREAD_STACK_SIZEOF(drv_data->rx_stack),
+			K_KERNEL_STACK_SIZEOF(drv_data->rx_stack),
 			ieee802154_cc13xx_cc26xx_rx, dev, NULL, NULL,
 			K_PRIO_COOP(2), 0, K_NO_WAIT);
 }

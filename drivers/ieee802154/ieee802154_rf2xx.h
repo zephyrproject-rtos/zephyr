@@ -116,7 +116,7 @@ struct rf2xx_context {
 	struct gpio_callback irq_cb;
 
 	struct k_thread trx_thread;
-	K_THREAD_STACK_MEMBER(trx_stack,
+	K_KERNEL_STACK_MEMBER(trx_stack,
 			      CONFIG_IEEE802154_RF2XX_RX_STACK_SIZE);
 	struct k_sem trx_isr_lock;
 	struct k_sem trx_tx_sync;

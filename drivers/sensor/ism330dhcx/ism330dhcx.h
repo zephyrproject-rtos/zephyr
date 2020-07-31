@@ -181,7 +181,7 @@ struct ism330dhcx_data {
 	struct device *dev;
 
 #if defined(CONFIG_ISM330DHCX_TRIGGER_OWN_THREAD)
-	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_ISM330DHCX_THREAD_STACK_SIZE);
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_ISM330DHCX_THREAD_STACK_SIZE);
 	struct k_thread thread;
 	struct k_sem gpio_sem;
 #elif defined(CONFIG_ISM330DHCX_TRIGGER_GLOBAL_THREAD)
