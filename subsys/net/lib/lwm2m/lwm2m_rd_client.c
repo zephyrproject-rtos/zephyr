@@ -779,6 +779,12 @@ static int sm_registration_done(void)
 	      (k_uptime_get() - client.last_update) / 1000))) {
 		forced_update = client.trigger_update;
 		client.trigger_update = 0U;
+
+		/** The LwM2M server might've changed the lifetime,
+		 *  update it just in case.
+		 */
+		sm_update_lifetime(client.ctx->srv_obj_inst, &client.lifetime);
+
 		ret = sm_send_registration(forced_update,
 					   do_update_reply_cb,
 					   do_update_timeout_cb);
