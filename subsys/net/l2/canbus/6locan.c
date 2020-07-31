@@ -37,7 +37,7 @@ extern uint16_t net_calc_chksum(struct net_pkt *pkt, uint8_t proto);
 static struct canbus_l2_ctx l2_ctx;
 
 static struct k_work_q net_canbus_workq;
-K_THREAD_STACK_DEFINE(net_canbus_stack, 512);
+K_KERNEL_STACK_DEFINE(net_canbus_stack, 512);
 
 char *net_sprint_addr(sa_family_t af, const void *addr);
 
@@ -1735,7 +1735,7 @@ void net_6locan_init(struct net_if *iface)
 	thread_priority = 6;
 
 	k_work_q_start(&net_canbus_workq, net_canbus_stack,
-		       K_THREAD_STACK_SIZEOF(net_canbus_stack),
+		       K_KERNEL_STACK_SIZEOF(net_canbus_stack),
 		       K_PRIO_COOP(thread_priority));
 	k_thread_name_set(&net_canbus_workq.thread, "isotp_work");
 	NET_DBG("Workq started. Thread ID: %p", &net_canbus_workq.thread);

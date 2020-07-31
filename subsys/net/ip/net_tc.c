@@ -19,11 +19,11 @@ LOG_MODULE_REGISTER(net_tc, CONFIG_NET_TC_LOG_LEVEL);
 #include "net_tc_mapping.h"
 
 /* Stacks for TX work queue */
-K_THREAD_STACK_ARRAY_DEFINE(tx_stack, NET_TC_TX_COUNT,
+K_KERNEL_STACK_ARRAY_DEFINE(tx_stack, NET_TC_TX_COUNT,
 			    CONFIG_NET_TX_STACK_SIZE);
 
 /* Stacks for RX work queue */
-K_THREAD_STACK_ARRAY_DEFINE(rx_stack, NET_TC_RX_COUNT,
+K_KERNEL_STACK_ARRAY_DEFINE(rx_stack, NET_TC_RX_COUNT,
 			    CONFIG_NET_RX_STACK_SIZE);
 
 static struct net_traffic_class tx_classes[NET_TC_TX_COUNT];
@@ -235,12 +235,12 @@ void net_tc_tx_init(void)
 		NET_DBG("[%d] Starting TX queue %p stack size %zd "
 			"prio %d (%d)", i,
 			&tx_classes[i].work_q.queue,
-			K_THREAD_STACK_SIZEOF(tx_stack[i]),
+			K_KERNEL_STACK_SIZEOF(tx_stack[i]),
 			thread_priority, K_PRIO_COOP(thread_priority));
 
 		k_work_q_start(&tx_classes[i].work_q,
 			       tx_stack[i],
-			       K_THREAD_STACK_SIZEOF(tx_stack[i]),
+			       K_KERNEL_STACK_SIZEOF(tx_stack[i]),
 			       K_PRIO_COOP(thread_priority));
 		k_thread_name_set(&tx_classes[i].work_q.thread, "tx_workq");
 	}
@@ -265,12 +265,12 @@ void net_tc_rx_init(void)
 		NET_DBG("[%d] Starting RX queue %p stack size %zd "
 			"prio %d (%d)", i,
 			&rx_classes[i].work_q.queue,
-			K_THREAD_STACK_SIZEOF(rx_stack[i]),
+			K_KERNEL_STACK_SIZEOF(rx_stack[i]),
 			thread_priority, K_PRIO_COOP(thread_priority));
 
 		k_work_q_start(&rx_classes[i].work_q,
 			       rx_stack[i],
-			       K_THREAD_STACK_SIZEOF(rx_stack[i]),
+			       K_KERNEL_STACK_SIZEOF(rx_stack[i]),
 			       K_PRIO_COOP(thread_priority));
 		k_thread_name_set(&rx_classes[i].work_q.thread, "rx_workq");
 	}

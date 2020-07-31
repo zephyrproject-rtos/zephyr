@@ -82,7 +82,7 @@ static uint8_t  energy_detection_channel;
 static int16_t energy_detected_value;
 
 ATOMIC_DEFINE(pending_events, PENDING_EVENT_COUNT);
-K_THREAD_STACK_DEFINE(ot_task_stack, OT_WORKER_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(ot_task_stack, OT_WORKER_STACK_SIZE);
 static struct k_work_q ot_work_q;
 static otError tx_result;
 
@@ -195,7 +195,7 @@ void platformRadioInit(void)
 	}
 
 	k_work_q_start(&ot_work_q, ot_task_stack,
-		       K_THREAD_STACK_SIZEOF(ot_task_stack),
+		       K_KERNEL_STACK_SIZEOF(ot_task_stack),
 		       OT_WORKER_PRIORITY);
 
 	if ((radio_api->get_capabilities(radio_dev) &

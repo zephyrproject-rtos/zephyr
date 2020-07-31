@@ -36,7 +36,7 @@ struct mgmt_event_wait {
 static K_SEM_DEFINE(network_event, 0, UINT_MAX);
 static K_SEM_DEFINE(net_mgmt_lock, 1, 1);
 
-K_THREAD_STACK_DEFINE(mgmt_stack, CONFIG_NET_MGMT_EVENT_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(mgmt_stack, CONFIG_NET_MGMT_EVENT_STACK_SIZE);
 static struct k_thread mgmt_thread_data;
 static struct mgmt_event_entry events[CONFIG_NET_MGMT_EVENT_QUEUE_SIZE];
 static uint32_t global_event_mask;
@@ -387,7 +387,7 @@ void net_mgmt_event_init(void)
 			sizeof(struct mgmt_event_entry));
 
 	k_thread_create(&mgmt_thread_data, mgmt_stack,
-			K_THREAD_STACK_SIZEOF(mgmt_stack),
+			K_KERNEL_STACK_SIZEOF(mgmt_stack),
 			(k_thread_entry_t)mgmt_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(CONFIG_NET_MGMT_EVENT_THREAD_PRIO), 0,
 			K_NO_WAIT);
