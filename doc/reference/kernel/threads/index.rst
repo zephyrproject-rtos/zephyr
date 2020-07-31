@@ -150,6 +150,62 @@ The following factors make a thread unready:
   .. image:: thread_states.svg
      :align: center
 
+
+Thread Stack objects
+********************
+
+Every thread requires its own stack buffer for the CPU to push context.
+Depending on configuration, there are several constraints that must be
+met:
+
+- There may need to be additional memory reserved for memory management
+  structures
+- If guard-based stack overflow detection is enabled, a small write-
+  protected memory management region must immediately precede the stack buffer
+  to catch overflows.
+- If userspace is enabled, a separate fixed-size privilege elevation stack must
+  be reserved to serve as a private kernel stack for handling system calls.
+- If userspace is enabled, the thread's stack buffer must be appropriately
+  sized and aligned such that a memory protection region may be programmed
+  to exactly fit.
+
+The aligment constraints can be quite restrictive, for example some MPUs
+require their regions to be of some power of two in size, and aligned to its
+own size.
+
+Becasue of this, portable code can't simply pass an arbitrary character buffer
+to :cpp:func:`k_thread_create()`. Special macros exist to instantiate stacks,
+prefixed with ``K_KERNEL_STACK`` and ``K_THREAD_STACK``.
+
+Kernel-only Stacks
+==================
+
+If it is known that a thread will never run in user mode, or the stack is
+being used for special contexts like handling interrupts, it is best to
+define stacks using the ``K_KERNEL_STACK`` macros.
+
+These stacks save memory because an MPU region will never need to be
+programmed to cover the stack buffer itself, and the kernel will not need
+to reserve additional room for the privilege elevation stack, or memory
+management data structures which only pertain to user mode threads.
+
+Attempts from user mode to use stacks declared in this way will result in
+a fatal error for the caller.
+
+If ``CONFIG_USERSPACE`` is not enabled, the set of ``K_THREAD_STACK`` macros
+have an identical effect to the ``K_KERNEL_STACK`` macros.
+
+Thread stacks
+=============
+
+If it is known that a stack will need to host user threads, or if this
+cannot be determined, define the stack with ``K_THREAD_STACK`` macros.
+This may use more memory but the stack object is suitable for hosting
+user threads.
+
+If ``CONFIG_USERSPACE`` is not enabled, the set of ``K_THREAD_STACK`` macros
+have an identical effect to the ``K_KERNEL_STACK`` macros.
+
 .. _thread_priorities:
 
 Thread Priorities
@@ -301,9 +357,22 @@ Spawning a Thread
 =================
 
 A thread is spawned by defining its stack area and its thread control block,
-and then calling :cpp:func:`k_thread_create()`. The stack area must be defined
-using :c:macro:`K_THREAD_STACK_DEFINE` to ensure it is properly set up in
-memory.
+and then calling :cpp:func:`k_thread_create()`.
+
+The stack area must be defined using :c:macro:`K_THREAD_STACK_DEFINE` or
+:c:macro:`K_KERNEL_STACK_DEFINE` to ensure it is properly set up in memory.
+
+The size parameter for the stack must be one of three values:
+
+- The original requested stack size passed to
+  ``K_THREAD_STACK`` or ``K_KERNEL_STACK`` family of stack instantiation
+  macros.
+- For a stack object defined with the ``K_THREAD_STACK`` family of
+  macros, the return value of :c:macro:`K_THREAD_STACK_SIZEOF()` for that'
+  object.
+- For a stack object defined with the ``K_KERNEL_STACK`` family of
+  macros, the return value of :c:macro:`K_KERNEL_STACK_SIZEOF()` for that
+  object.
 
 The thread spawning function returns its thread id, which can be used
 to reference the thread.
