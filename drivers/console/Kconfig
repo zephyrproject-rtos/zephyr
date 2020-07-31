@@ -92,14 +92,6 @@ config USB_UART_CONSOLE
 	  layer currently doesn't support multiple interfaces, this shouldn't be
 	  selected in conjunction with, say, USB Mass Storage.
 
-config USB_UART_DTR_WAIT
-	bool "Wait on DTR control signal"
-	depends on USB_UART_CONSOLE
-	help
-	  Enable this option to use flow control on the console. The uart console
-	  waits until the DTR is asserted by the host.
-	  Note: Disabling this might lead to missing console prints.
-
 config RAM_CONSOLE
 	bool "Use RAM console"
 	select CONSOLE_HAS_DRIVER
