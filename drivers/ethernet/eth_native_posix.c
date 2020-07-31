@@ -65,7 +65,7 @@ struct eth_context {
 #endif
 };
 
-K_THREAD_STACK_DEFINE(eth_rx_stack, CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(eth_rx_stack, CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);
 static struct k_thread rx_thread_data;
 
 /* TODO: support multiple interfaces */
@@ -385,7 +385,7 @@ static void eth_rx(struct eth_context *ctx)
 static void create_rx_handler(struct eth_context *ctx)
 {
 	k_thread_create(&rx_thread_data, eth_rx_stack,
-			K_THREAD_STACK_SIZEOF(eth_rx_stack),
+			K_KERNEL_STACK_SIZEOF(eth_rx_stack),
 			(k_thread_entry_t)eth_rx,
 			ctx, NULL, NULL, K_PRIO_COOP(14),
 			0, K_NO_WAIT);

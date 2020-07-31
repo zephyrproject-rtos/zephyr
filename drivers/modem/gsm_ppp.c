@@ -68,7 +68,7 @@ static struct gsm_modem {
 
 NET_BUF_POOL_DEFINE(gsm_recv_pool, GSM_RECV_MAX_BUF, GSM_RECV_BUF_SIZE,
 		    0, NULL);
-K_THREAD_STACK_DEFINE(gsm_rx_stack, GSM_RX_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(gsm_rx_stack, GSM_RX_STACK_SIZE);
 
 struct k_thread gsm_rx_thread;
 
@@ -615,7 +615,7 @@ static int gsm_init(struct device *device)
 		gsm->context.iface.read, gsm->context.iface.write);
 
 	k_thread_create(&gsm_rx_thread, gsm_rx_stack,
-			K_THREAD_STACK_SIZEOF(gsm_rx_stack),
+			K_KERNEL_STACK_SIZEOF(gsm_rx_stack),
 			(k_thread_entry_t) gsm_rx,
 			gsm, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 	k_thread_name_set(&gsm_rx_thread, "gsm_rx");

@@ -108,7 +108,7 @@
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static struct k_thread rx_thread;
-static K_THREAD_STACK_DEFINE(rx_stack, 512);
+static K_KERNEL_STACK_DEFINE(rx_stack, 512);
 #endif
 
 struct uart_miv_regs_t {

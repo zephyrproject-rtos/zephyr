@@ -46,12 +46,12 @@ NET_BUF_POOL_DEFINE(mdm_recv_pool, MDM_RECV_MAX_BUF, MDM_RECV_BUF_SIZE,
 		    0, NULL);
 
 /* RX thread structures */
-K_THREAD_STACK_DEFINE(esp_rx_stack,
+K_KERNEL_STACK_DEFINE(esp_rx_stack,
 		      CONFIG_WIFI_ESP_RX_STACK_SIZE);
 struct k_thread esp_rx_thread;
 
 /* RX thread work queue */
-K_THREAD_STACK_DEFINE(esp_workq_stack,
+K_KERNEL_STACK_DEFINE(esp_workq_stack,
 		      CONFIG_WIFI_ESP_WORKQ_STACK_SIZE);
 
 struct esp_data esp_driver_data;
@@ -821,7 +821,7 @@ static int esp_init(struct device *dev)
 
 	/* initialize the work queue */
 	k_work_q_start(&data->workq, esp_workq_stack,
-		       K_THREAD_STACK_SIZEOF(esp_workq_stack),
+		       K_KERNEL_STACK_SIZEOF(esp_workq_stack),
 		       K_PRIO_COOP(CONFIG_WIFI_ESP_WORKQ_THREAD_PRIORITY));
 	k_thread_name_set(&data->workq.thread, "esp_workq");
 
@@ -868,7 +868,7 @@ static int esp_init(struct device *dev)
 
 	/* start RX thread */
 	k_thread_create(&esp_rx_thread, esp_rx_stack,
-			K_THREAD_STACK_SIZEOF(esp_rx_stack),
+			K_KERNEL_STACK_SIZEOF(esp_rx_stack),
 			(k_thread_entry_t)esp_rx,
 			dev, NULL, NULL,
 			K_PRIO_COOP(CONFIG_WIFI_ESP_RX_THREAD_PRIORITY), 0,

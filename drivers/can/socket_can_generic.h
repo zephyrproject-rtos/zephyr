@@ -21,7 +21,7 @@
 
 /* TODO: make msgq size configurable */
 CAN_DEFINE_MSGQ(socket_can_msgq, 5);
-K_THREAD_STACK_DEFINE(rx_thread_stack, RX_THREAD_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(rx_thread_stack, RX_THREAD_STACK_SIZE);
 
 struct socket_can_context {
 	struct device *can_dev;

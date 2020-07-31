@@ -70,7 +70,7 @@ static bt_addr_t bd_addr_udn;
 
 /* Rx thread definitions */
 K_FIFO_DEFINE(ipm_rx_events_fifo);
-static K_THREAD_STACK_DEFINE(ipm_rx_stack, CONFIG_BT_STM32_IPM_RX_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(ipm_rx_stack, CONFIG_BT_STM32_IPM_RX_STACK_SIZE);
 static struct k_thread ipm_rx_thread_data;
 
 static void stm32wb_start_ble(void)
@@ -492,7 +492,7 @@ static int bt_ipm_open(void)
 
 	/* Start RX thread */
 	k_thread_create(&ipm_rx_thread_data, ipm_rx_stack,
-			K_THREAD_STACK_SIZEOF(ipm_rx_stack),
+			K_KERNEL_STACK_SIZEOF(ipm_rx_stack),
 			(k_thread_entry_t)bt_ipm_rx_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_RX_PRIO - 1),
 			0, K_NO_WAIT);

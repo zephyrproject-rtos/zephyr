@@ -66,7 +66,7 @@ struct ieee802154_cc13xx_cc26xx_data {
 	struct k_sem fg_done;
 	struct k_sem rx_done;
 
-	K_THREAD_STACK_MEMBER(rx_stack,
+	K_KERNEL_STACK_MEMBER(rx_stack,
 			      CONFIG_IEEE802154_CC13XX_CC26XX_RX_STACK_SIZE);
 	struct k_thread rx_thread;
 

@@ -229,7 +229,7 @@ struct eth_enc28j60_config {
 
 struct eth_enc28j60_runtime {
 	struct net_if *iface;
-	K_THREAD_STACK_MEMBER(thread_stack,
+	K_KERNEL_STACK_MEMBER(thread_stack,
 			      CONFIG_ETH_ENC28J60_RX_THREAD_STACK_SIZE);
 	struct k_thread thread;
 	uint8_t mac_address[6];

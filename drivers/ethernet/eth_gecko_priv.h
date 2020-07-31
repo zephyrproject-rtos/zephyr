@@ -88,7 +88,7 @@ struct eth_gecko_dev_data {
 	struct k_sem tx_sem;
 	struct k_sem rx_sem;
 
-	K_THREAD_STACK_MEMBER(rx_thread_stack,
+	K_KERNEL_STACK_MEMBER(rx_thread_stack,
 		CONFIG_ETH_GECKO_RX_THREAD_STACK_SIZE);
 	struct k_thread rx_thread;
 	bool link_up;

@@ -89,7 +89,7 @@ struct ht16k33_data {
 	struct k_timer timer;
 	uint16_t key_state[HT16K33_KEYSCAN_ROWS];
 
-	K_THREAD_STACK_MEMBER(irq_thread_stack,
+	K_KERNEL_STACK_MEMBER(irq_thread_stack,
 			      CONFIG_HT16K33_KEYSCAN_IRQ_THREAD_STACK_SIZE);
 #endif /* CONFIG_HT16K33_KEYSCAN */
 };

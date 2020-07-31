@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(uart_mux, CONFIG_UART_MUX_LOG_LEVEL);
  * as the GSM modem uses global workqueue which causes difficulties if we do
  * the same here. This workqueue is shared between all the DLCI channels.
  */
-K_THREAD_STACK_DEFINE(uart_mux_stack, UART_MUX_WORKQ_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(uart_mux_stack, UART_MUX_WORKQ_STACK_SIZE);
 static struct k_work_q uart_mux_workq;
 
 /* The UART mux contains information about the real UART. It will synchronize
@@ -848,7 +848,7 @@ static int init_uart_mux(struct device *device)
 	ARG_UNUSED(device);
 
 	k_work_q_start(&uart_mux_workq, uart_mux_stack,
-		       K_THREAD_STACK_SIZEOF(uart_mux_stack),
+		       K_KERNEL_STACK_SIZEOF(uart_mux_stack),
 		       K_PRIO_COOP(UART_MUX_WORKQ_PRIORITY));
 	k_thread_name_set(&uart_mux_workq.thread, "uart_mux_workq");
 

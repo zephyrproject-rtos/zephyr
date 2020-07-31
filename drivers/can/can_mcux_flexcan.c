@@ -745,7 +745,7 @@ static int socket_can_init_0(struct device *dev)
 	socket_context->rx_tid =
 		k_thread_create(&socket_context->rx_thread_data,
 				rx_thread_stack,
-				K_THREAD_STACK_SIZEOF(rx_thread_stack),
+				K_KERNEL_STACK_SIZEOF(rx_thread_stack),
 				rx_thread, socket_context, NULL, NULL,
 				RX_THREAD_PRIORITY, 0, K_NO_WAIT);
 
