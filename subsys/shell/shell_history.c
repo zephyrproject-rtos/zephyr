@@ -116,7 +116,7 @@ static bool remove_from_tail(struct shell_history *history)
 
 	total_len = offsetof(struct shell_history_item, data) +
 			h_item->len + h_item->padding;
-	ring_buf_get_finish(history->ring_buf, total_len);
+	ring_buf_get_finish(history->ring_buf, total_len, true);
 
 	return true;
 }
@@ -171,7 +171,7 @@ void shell_history_put(struct shell_history *history, uint8_t *line, size_t len)
 						   (uint8_t **)&h_item, total_len);
 			if (claim2_len == total_len) {
 				ring_buf_put_finish(history->ring_buf,
-						    claim_len);
+						    claim_len, true);
 				padding += claim_len;
 				claim_len = total_len;
 			}
@@ -179,11 +179,13 @@ void shell_history_put(struct shell_history *history, uint8_t *line, size_t len)
 
 		if (claim_len == total_len) {
 			add_to_head(history, h_item, line, len, padding);
-			ring_buf_put_finish(history->ring_buf, claim_len);
+			ring_buf_put_finish(history->ring_buf,
+					    claim_len,
+					    true);
 			break;
 		}
 
-		ring_buf_put_finish(history->ring_buf, 0);
+		ring_buf_put_finish(history->ring_buf, 0, true);
 		if (remove_from_tail(history) == false) {
 			__ASSERT_NO_MSG(ring_buf_is_empty(history->ring_buf));
 			/* if history is empty reset ring buffer. Even when

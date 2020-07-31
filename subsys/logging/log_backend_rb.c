@@ -49,7 +49,8 @@ static void trace(const uint8_t *data, size_t length)
 		/* Remove oldest entry */
 		ring_buf_get_claim(&ringbuf, &dummy,
 				   CONFIG_LOG_BACKEND_RB_SLOT_SIZE);
-		ring_buf_get_finish(&ringbuf, CONFIG_LOG_BACKEND_RB_SLOT_SIZE);
+		ring_buf_get_finish(&ringbuf, CONFIG_LOG_BACKEND_RB_SLOT_SIZE,
+				    true);
 	}
 
 	ring_buf_put_claim(&ringbuf, (uint8_t **)&t,
@@ -70,7 +71,7 @@ static void trace(const uint8_t *data, size_t length)
 
 	SOC_DCACHE_FLUSH((void *)region, CONFIG_LOG_BACKEND_RB_SLOT_SIZE);
 
-	ring_buf_put_finish(&ringbuf, CONFIG_LOG_BACKEND_RB_SLOT_SIZE);
+	ring_buf_put_finish(&ringbuf, CONFIG_LOG_BACKEND_RB_SLOT_SIZE, true);
 }
 
 static int char_out(uint8_t *data, size_t length, void *ctx)

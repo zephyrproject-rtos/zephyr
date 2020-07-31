@@ -24,7 +24,7 @@ uint32_t tracing_buffer_put_claim(uint8_t **data, uint32_t size)
 
 int tracing_buffer_put_finish(uint32_t size)
 {
-	return ring_buf_put_finish(&tracing_ring_buf, size);
+	return ring_buf_put_finish(&tracing_ring_buf, size, true);
 }
 
 uint32_t tracing_buffer_put(uint8_t *data, uint32_t size)
@@ -39,7 +39,7 @@ uint32_t tracing_buffer_get_claim(uint8_t **data, uint32_t size)
 
 int tracing_buffer_get_finish(uint32_t size)
 {
-	return ring_buf_get_finish(&tracing_ring_buf, size);
+	return ring_buf_get_finish(&tracing_ring_buf, size, true);
 }
 
 uint32_t tracing_buffer_get(uint8_t *data, uint32_t size)

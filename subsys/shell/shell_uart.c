@@ -67,7 +67,7 @@ static void uart_rx_handle(struct device *dev,
 			}
 #endif /* CONFIG_MCUMGR_SMP_SHELL */
 			int err = ring_buf_put_finish(sh_uart->rx_ringbuf,
-						      rd_len);
+						      rd_len, true);
 			(void)err;
 			__ASSERT_NO_MSG(err == 0);
 		} else {
@@ -102,7 +102,7 @@ static void uart_tx_handle(struct device *dev, const struct shell_uart *sh_uart)
 				 sh_uart->tx_ringbuf->size);
 	if (len) {
 		len = uart_fifo_fill(dev, data, len);
-		err = ring_buf_get_finish(sh_uart->tx_ringbuf, len);
+		err = ring_buf_get_finish(sh_uart->tx_ringbuf, len, true);
 		__ASSERT_NO_MSG(err == 0);
 	} else {
 		uart_irq_tx_disable(dev);

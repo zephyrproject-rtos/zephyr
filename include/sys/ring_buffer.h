@@ -304,7 +304,35 @@ int ring_buf_item_get(struct ring_buf *buf, uint16_t *type, uint8_t *value,
 uint32_t ring_buf_put_claim(struct ring_buf *buf, uint8_t **data, uint32_t size);
 
 /**
+ * @brief Indicate amount of unused space which was previously claimed.
+ *
+ * Function is called after successful claiming if certain space within claimed
+ * buffer does not contain valid data. For example, whole claimed buffer is
+ * unclaimed after unsuccessful operation which was prematurely interrupted.
+ *
+ * If only one buffer is claimed at the time then @ref ring_buf_put_finish with
+ * option to unclaimed remaining space can be used as an alternative. However,
+ * if multiple claims occured and only partial unclaim is needed then this
+ * functiom must be used.
+ *
+ * @param  buf	Address of ring buffer.
+ * @param  size	Number of bytes to unclaim. Must be equal or less than claimed
+ *		bytes.
+ *
+ * @retval 0 Successful operation.
+ * @retval -EINVAL Provided @a size exceeds claimed space in the ring buffer.
+ */
+int ring_buf_put_unclaim(struct ring_buf *buf, uint32_t size);
+
+/**
  * @brief Indicate number of bytes written to allocated buffers.
+ *
+ * If claimed buffer is only partially filled and will no longer used, remaining
+ * space must be unclaimed. There are two options to unclaim the buffer:
+ * 1. Call @ref ring_buf_put_unclaim with amount of space to unclaim.
+ * 2. Set @p unclaim flag to true to unclaim whole claimed space except @p size.
+ *    Note that since whole remaining space is unclaimed this method cannot be
+ *    used if multiple claims occured and intention is to unclaim only part.
  *
  * @warning
  * Use cases involving multiple writers to the ring buffer must prevent
@@ -315,13 +343,16 @@ uint32_t ring_buf_put_claim(struct ring_buf *buf, uint8_t **data, uint32_t size)
  * Ring buffer instance should not mix byte access and item access
  * (calls prefixed with ring_buf_item_).
  *
- * @param  buf  Address of ring buffer.
- * @param  size Number of valid bytes in the allocated buffers.
+ * @param  buf     Address of ring buffer.
+ * @param  size    Number of valid bytes in the allocated buffers.
+ * @param  unclaim If set, remaining claimed buffer is unclaimed. If @p size
+ *		   is equal to the claimed space then this flag is irrelevant
+ *		   since zero length space is unclaimed.
  *
  * @retval 0 Successful operation.
  * @retval -EINVAL Provided @a size exceeds free space in the ring buffer.
  */
-int ring_buf_put_finish(struct ring_buf *buf, uint32_t size);
+int ring_buf_put_finish(struct ring_buf *buf, uint32_t size, bool unclaim);
 
 /**
  * @brief Write (copy) data to a ring buffer.
@@ -372,7 +403,35 @@ uint32_t ring_buf_put(struct ring_buf *buf, const uint8_t *data, uint32_t size);
 uint32_t ring_buf_get_claim(struct ring_buf *buf, uint8_t **data, uint32_t size);
 
 /**
+ * @brief Unclaim certain amount of space previously claimed for reading.
+ *
+ * Function is called after successful claiming if certain space within claimed
+ * buffer can be feed. For example, whole claimed buffer is unclaimed on
+ * prematurely interrupted getting process.
+ *
+ * If only one buffer is claimed at the time then @ref ring_buf_get_finish with
+ * option to unclaimed remaining space can be used as an alternative. However,
+ * if multiple claims occured and only partial unclaim is needed then this
+ * functiom must be used.
+ *
+ * @param  buf	Address of ring buffer.
+ * @param  size	Number of bytes to unclaim. Must be equal or less than claimed
+ *		bytes.
+ *
+ * @retval 0 Successful operation.
+ * @retval -EINVAL Provided @a size exceeds claimed space in the ring buffer.
+ */
+int ring_buf_get_unclaim(struct ring_buf *buf, uint32_t size);
+
+/**
  * @brief Indicate number of bytes read from claimed buffer.
+ *
+ * If claimed buffer is only partially filled and will no longer used, remaining
+ * space must be unclaimed. There are two options to unclaim the buffer:
+ * 1. Call @ref ring_buf_get_unclaim with amount of space to unclaim.
+ * 2. Set @p unclaim flag to true to unclaim remaining space (except @p size).
+ *    Note that since whole remaining space is unclaimed this method cannot be
+ *    used if multiple claims occured and intention is to unclaim only part.
  *
  * @warning
  * Use cases involving multiple reads of the ring buffer must prevent
@@ -383,13 +442,16 @@ uint32_t ring_buf_get_claim(struct ring_buf *buf, uint8_t **data, uint32_t size)
  * Ring buffer instance should not mix byte access and  item mode
  * (calls prefixed with ring_buf_item_).
  *
- * @param  buf  Address of ring buffer.
- * @param  size Number of bytes that can be freed.
+ * @param  buf     Address of ring buffer.
+ * @param  size    Number of bytes that can be freed.
+ * @param  unclaim If set, remaining claimed buffer is unclaimed. If @p size
+ *		   is equal to the claimed space then this flag is irrelevant
+ *		   since zero length space is unclaimed.
  *
  * @retval 0 Successful operation.
  * @retval -EINVAL Provided @a size exceeds valid bytes in the ring buffer.
  */
-int ring_buf_get_finish(struct ring_buf *buf, uint32_t size);
+int ring_buf_get_finish(struct ring_buf *buf, uint32_t size, bool unclaim);
 
 /**
  * @brief Read data from a ring buffer.

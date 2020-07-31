@@ -74,8 +74,9 @@ directly by the user. In the latter case, the operation is split into three stag
    user requests the destination location where data can be written.
 #. writing the data by the user (e.g. buffer written by DMA).
 #. indicating the amount of data written to the provided buffer
-   (:cpp:func:`ring_buf_put_finish()`). The amount
-   can be less than or equal to the allocated amount.
+   (:cpp:func:`ring_buf_put_finish()`). The amount can be less than or equal to
+   the allocated amount. Alternatively,idicating amount of not used data
+   (:cpp:func:`ring_buf_put_unclaim()`)
 
 Data can be retrieved from a ring buffer through copying
 (see :cpp:func:`ring_buf_get()`) or accessed directly by address. In the latter
@@ -85,8 +86,17 @@ into three stages:
 1. retrieving source location with valid data written to a ring buffer
    (see :cpp:func:`ring_buf_get_claim()`).
 #. processing data
-#. freeing processed data (see :cpp:func:`ring_buf_get_finish()`).
-   The amount freed can be less than or equal or to the retrieved amount.
+#. freeing processed data (see :cpp:func:`ring_buf_get_finish()` and
+   :cpp:func:`ring_buf_get_unclaim()`). The amount freed can be less than or
+   equal or to the retrieved amount.
+
+Note that when ring buffer memory is claimed for direct access, amount of claimed
+data can be less than requested. It can happen for two reasons:
+
+- there is no space available, e.g. buffer is almost full and there is not
+  enough space available.
+- claimed space is at the end of the buffer and space is limited by that. In that
+  case if claiming is repeated then more data can be claimed.
 
 Concurrency
 ===========
@@ -214,29 +224,6 @@ Bytes are copied to a **byte mode** ring buffer by calling
 	...
     }
 
-Data can be added to a **byte mode** ring buffer by directly accessing the
-ring buffer's memory.  For example:
-
-.. code-block:: c
-
-    uint32_t size;
-    uint32_t rx_size;
-    uint8_t *data;
-    int err;
-
-    /* Allocate buffer within a ring buffer memory. */
-    size = ring_buf_put_claim(&ring_buf, &data, MY_RING_BUF_BYTES);
-
-    /* Work directly on a ring buffer memory. */
-    rx_size = uart_rx(data, size);
-
-    /* Indicate amount of valid data. rx_size can be equal or less than size. */
-    err = ring_buf_put_finish(&ring_buf, rx_size);
-    if (err != 0) {
-        /* No space to put requested amount of data to ring buffer. */
-	...
-    }
-
 Retrieving Data
 ===============
 
@@ -279,30 +266,112 @@ Data bytes are copied out from a **byte mode** ring buffer by calling
         ...
     }
 
-Data can be retrieved from a **byte mode** ring buffer by direct
-operations on the ring buffer's memory.  For example:
+Direct access
+=============
+
+In simple, most common scenario, space is claimed for processing and finished
+when processing is completed. In that case, finishing (
+e.g. :cpp:func:`ring_buf_get_finish()`) is called with ``unclaim`` argument set
+to true to indicated that remaining space shall be unclaimed. An example would
+be claiming space for putting 8 bytes, copying 3 bytes and finishing with
+indication to unclaim remaining space (5 bytes):
 
 .. code-block:: c
 
-    uint32_t size;
-    uint32_t proc_size;
-    uint8_t *data;
-    int err;
+   len = ring_buf_put_claim(buf, &data, 8);
+   /* assuming that 8 bytes got allocated */
+   memcpy(data, source, 3);
+   ring_buf_put_finish(buf, 3, true);
 
-    /* Get buffer within a ring buffer memory. */
-    size = ring_buf_get_claim(&ring_buf, &data, MY_RING_BUF_BYTES);
+In that case remaining space is implicitly unclaimed. Alternatively, remaining
+space can be explicitly unclaimed. Equivalent example with explicit unclaiming:
 
-    /* Work directly on a ring buffer memory. */
-    proc_size = process(data, size);
+.. code-block:: c
 
-    /* Indicate amount of data that can be freed. proc_size can be equal or less
-     * than size.
-     */
-    err = ring_buf_get_finish(&ring_buf, proc_size);
-    if (err != 0) {
-        /* proc_size exceeds amount of valid data in a ring buffer. */
-	...
-    }
+   len = ring_buf_put_claim(buf, &data, 8);
+   /* assuming that 8 bytes got allocated */
+   memcpy(data, source, 3);
+   ring_buf_put_finish(buf, 3, false);
+   ring_buf_put_unclaim(buf, 5);
+
+After this operations, ring buffer contains 3 bytes of data. Getting data is
+done in the similar way:
+
+.. code-block:: c
+
+   len = ring_buf_get_claim(buf, &data, 8);
+   /* len == 3, currently only 2 bytes are fetched. */
+   memcpy(dest, data, 2);
+   ring_buf_put_finish(buf, 2, true);
+   /* At this point ring buffer still contains 1 byte */
+
+Explicit unclaiming is utilized in more complex scenarios. For example, if
+multiple spaces are claimed. In that case finishing with unclaim may lead to
+unintentional unclaiming. In the example bellow two buffers are claimed and
+passed to the driver. If requested amount of space cannot be claimed
+algorithm is backing off to retry later. During backing off, claimed space must
+be unclaimed:
+
+.. code-block:: c
+
+   len = ring_buf_put_claim(buf, &rxbuf, 8);
+   if (len < 8) {
+       /* Implicit unclaim of whole claimed space can be used only if it is
+        * ensured that only one space is claimed.
+        */
+       ring_buf_put_finish(buf, 0, true);
+       return;
+   }
+
+   err = driver_rx(rxbuf, 8);
+   if (err < 0) {
+       ring_buf_put_finish(buf, 0, true);
+       return;
+   }
+
+   len = ring_buf_put_claim(buf, &rxbuf2, 8);
+   if (len < 8) {
+       /* ring_buf_put_finish(buf, 0, true) cannot be used because it would
+        * unclaim space which is currently used by the driver (rxbuf).
+        */
+       ring_buf_put_unclaim(buf, len);
+       return;
+   }
+
+   /* driver supports double buffering and new buffer is provided before
+    * finishing the first one.
+    */
+   err = driver_rx(rxbuf2, 8);
+   if (err < 0) {
+       /* ring_buf_put_finish(buf, 0, true) cannot be used because it would
+        * unclaim space which is currently used by the driver.
+        */
+       ring_buf_put_unclaim(buf, 8);
+       return;
+   }
+
+Another example of finishing without unclaiming remaining space is to indicate
+new data in chunks:
+
+.. code-block:: c
+
+   len = ring_buf_put_claim(buf, &data, 8);
+   /* assuming that 8 bytes got allocated */
+
+   memcpy(data, source, 3);
+   data += 3;
+   /* 3 bytes already available for reading. */
+   ring_buf_put_finish(buf, 3, false);
+
+   memcpy(data, source, 4);
+   data += 4;
+   /* 4 bytes already available for reading. */
+   ring_buf_put_finish(buf, 4, false);
+
+   /* No more data to be put, unclaming remained 1 byte space. Claimed space for
+    * 8 bytes but only 7 used.
+    */
+   ring_buf_put_finish(buf, 0, true);
 
 API Reference
 *************

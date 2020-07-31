@@ -335,7 +335,7 @@ static void tx_work_handler(struct k_work *work)
 	usb_transfer(ep, data, len, USB_TRANS_WRITE,
 		     cdc_acm_write_cb, dev_data);
 
-	ring_buf_get_finish(dev_data->tx_ringbuf, len);
+	ring_buf_get_finish(dev_data->tx_ringbuf, len, true);
 }
 
 static void cdc_acm_read_cb(uint8_t ep, int size, void *priv)

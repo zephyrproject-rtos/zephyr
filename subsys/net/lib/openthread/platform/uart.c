@@ -67,7 +67,7 @@ static void uart_rx_handle(struct device *dev)
 			}
 
 			int err = ring_buf_put_finish(
-				ot_uart.rx_ringbuf, rd_len);
+				ot_uart.rx_ringbuf, rd_len, true);
 			(void)err;
 			__ASSERT_NO_MSG(err == 0);
 		} else {
@@ -132,7 +132,7 @@ void platformUartProcess(otInstance *aInstance)
 		otPlatUartReceived(data, len);
 		err = ring_buf_get_finish(
 				ot_uart.rx_ringbuf,
-				len);
+				len, true);
 		(void)err;
 		__ASSERT_NO_MSG(err == 0);
 	}

@@ -127,14 +127,29 @@ uint32_t ring_buf_put_claim(struct ring_buf *buf, uint8_t **data, uint32_t size)
 	return allocated;
 }
 
-int ring_buf_put_finish(struct ring_buf *buf, uint32_t size)
+int ring_buf_put_unclaim(struct ring_buf *buf, uint32_t size)
+{
+	if (size > z_ring_buf_custom_space_get(buf->size,
+					       buf->misc.byte_mode.tmp_tail,
+					       buf->tail)) {
+		return -EINVAL;
+	}
+
+	buf->misc.byte_mode.tmp_tail -= size;
+
+	return 0;
+}
+
+int ring_buf_put_finish(struct ring_buf *buf, uint32_t size, bool unclaim)
 {
 	if (size > ring_buf_space_get(buf)) {
 		return -EINVAL;
 	}
 
 	buf->tail = wrap(buf->tail + size, buf->size);
-	buf->misc.byte_mode.tmp_tail = buf->tail;
+	if (unclaim) {
+		buf->misc.byte_mode.tmp_tail = buf->tail;
+	}
 
 	return 0;
 }
@@ -154,7 +169,7 @@ uint32_t ring_buf_put(struct ring_buf *buf, const uint8_t *data, uint32_t size)
 		data += partial_size;
 	} while (size && partial_size);
 
-	err = ring_buf_put_finish(buf, total_size);
+	err = ring_buf_put_finish(buf, total_size, true);
 	__ASSERT_NO_MSG(err == 0);
 
 	return total_size;
@@ -183,7 +198,7 @@ uint32_t ring_buf_get_claim(struct ring_buf *buf, uint8_t **data, uint32_t size)
 	return granted_size;
 }
 
-int ring_buf_get_finish(struct ring_buf *buf, uint32_t size)
+int ring_buf_get_finish(struct ring_buf *buf, uint32_t size, bool unclaim)
 {
 	uint32_t allocated = (buf->size - 1) - ring_buf_space_get(buf);
 
@@ -192,7 +207,22 @@ int ring_buf_get_finish(struct ring_buf *buf, uint32_t size)
 	}
 
 	buf->head = wrap(buf->head + size, buf->size);
-	buf->misc.byte_mode.tmp_head = buf->head;
+	if (unclaim) {
+		buf->misc.byte_mode.tmp_head = buf->head;
+	}
+
+	return 0;
+}
+
+int ring_buf_get_unclaim(struct ring_buf *buf, uint32_t size)
+{
+	if (size > z_ring_buf_custom_space_get(buf->size,
+					       buf->misc.byte_mode.tmp_head,
+					       buf->head)) {
+		return -EINVAL;
+	}
+
+	buf->misc.byte_mode.tmp_head -= size;
 
 	return 0;
 }
@@ -212,7 +242,7 @@ uint32_t ring_buf_get(struct ring_buf *buf, uint8_t *data, uint32_t size)
 		data += partial_size;
 	} while (size && partial_size);
 
-	err = ring_buf_get_finish(buf, total_size);
+	err = ring_buf_get_finish(buf, total_size, true);
 	__ASSERT_NO_MSG(err == 0);
 
 	return total_size;

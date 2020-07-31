@@ -181,7 +181,7 @@ static void uart_mux_rx_work(struct k_work *work)
 
 	gsm_mux_recv_buf(uart_mux->mux, data, len);
 
-	ret = ring_buf_get_finish(uart_mux->rx_ringbuf, len);
+	ret = ring_buf_get_finish(uart_mux->rx_ringbuf, len, false);
 	if (ret < 0) {
 		LOG_DBG("Cannot flush ring buffer (%d)", ret);
 	}
@@ -215,7 +215,7 @@ static void uart_mux_tx_work(struct k_work *work)
 
 	(void)gsm_dlci_send(dev_data->dlci, data, len);
 
-	ring_buf_get_finish(dev_data->tx_ringbuf, len);
+	ring_buf_get_finish(dev_data->tx_ringbuf, len, false);
 }
 
 static int uart_mux_init(struct device *dev)

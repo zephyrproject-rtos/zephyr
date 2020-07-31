@@ -662,7 +662,7 @@ static int ppp_consume_ringbuf(struct ppp_driver_context *ppp)
 		}
 	} while (--tmp);
 
-	ret = ring_buf_get_finish(&ppp->rx_ringbuf, len);
+	ret = ring_buf_get_finish(&ppp->rx_ringbuf, len, false);
 	if (ret < 0) {
 		LOG_DBG("Cannot flush ring buffer (%d)", ret);
 	}

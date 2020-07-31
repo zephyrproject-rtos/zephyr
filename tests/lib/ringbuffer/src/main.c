@@ -327,13 +327,13 @@ void test_ringbuffer_alloc_put(void)
 	zassert_true(allocated == RINGBUFFER_SIZE - 2, NULL);
 
 	/* Putting too much returns error */
-	err = ring_buf_put_finish(&ringbuf_raw, RINGBUFFER_SIZE);
+	err = ring_buf_put_finish(&ringbuf_raw, RINGBUFFER_SIZE, true);
 	zassert_true(err != 0, NULL);
 
-	err = ring_buf_put_finish(&ringbuf_raw, 1);
+	err = ring_buf_put_finish(&ringbuf_raw, 1, true);
 	zassert_true(err == 0, NULL);
 
-	err = ring_buf_put_finish(&ringbuf_raw, RINGBUFFER_SIZE - 2);
+	err = ring_buf_put_finish(&ringbuf_raw, RINGBUFFER_SIZE - 2, true);
 	zassert_true(err == 0, NULL);
 
 	read_size = ring_buf_get(&ringbuf_raw, outputbuf,
@@ -361,7 +361,7 @@ void test_ringbuffer_alloc_put(void)
 			data[0] = inputbuf[3];
 		}
 
-		err = ring_buf_put_finish(&ringbuf_raw, 4);
+		err = ring_buf_put_finish(&ringbuf_raw, 4, true);
 		zassert_true(err == 0, NULL);
 
 		read_size = ring_buf_get(&ringbuf_raw,
@@ -411,10 +411,14 @@ void test_byte_put_free(void)
 		}
 
 		/* Freeing more than possible case. */
-		err = ring_buf_get_finish(&ringbuf_raw, RINGBUFFER_SIZE-1);
+		err = ring_buf_get_finish(&ringbuf_raw,
+					  RINGBUFFER_SIZE-1,
+					  true);
 		zassert_true(err != 0, NULL);
 
-		err = ring_buf_get_finish(&ringbuf_raw, RINGBUFFER_SIZE-2);
+		err = ring_buf_get_finish(&ringbuf_raw,
+					  RINGBUFFER_SIZE-2,
+					  true);
 		zassert_true(err == 0, NULL);
 	}
 }
@@ -518,6 +522,83 @@ void test_ringbuffer_array_perf(void)
 	zassert_equal(sizeof(tp), sizeof(ringbuf_stored[0]), NULL);
 }
 
+void test_ringbuffer_partial_put_finish(void)
+{
+	uint8_t buf[16];
+	uint8_t outbuf[16];
+	uint8_t data[8] = {1, 2, 3, 4, 5, 6, 7, 8};
+	uint8_t *inbuf;
+	uint8_t *inbuf2;
+	uint32_t len;
+	int err;
+
+	ring_buf_init(&ringbuf_raw, sizeof(buf), buf);
+
+	len = ring_buf_put_claim(&ringbuf_raw, &inbuf, 8);
+	zassert_equal(len, 8, NULL);
+
+	memcpy(inbuf, data, 8);
+
+	err = ring_buf_put_finish(&ringbuf_raw, 3, false);
+	zassert_equal(err, 0, NULL);
+
+	/* claiming another buffer when first one is only partially finished. */
+	len = ring_buf_put_claim(&ringbuf_raw, &inbuf2, 7);
+	zassert_equal(len, 7, NULL);
+
+	memcpy(inbuf2, data, 7);
+
+	err = ring_buf_put_finish(&ringbuf_raw, 5, false);
+	zassert_equal(err, 0, NULL);
+	err = ring_buf_put_finish(&ringbuf_raw, 3, false);
+	zassert_equal(err, 0, NULL);
+	err = ring_buf_put_finish(&ringbuf_raw, 4, false);
+	zassert_equal(err, 0, NULL);
+
+	len = ring_buf_get(&ringbuf_raw, outbuf, 15);
+	zassert_equal(len, 15, NULL);
+
+	zassert_equal(memcmp(&outbuf[0], data, 8), 0, NULL);
+	zassert_equal(memcmp(&outbuf[8], data, 7), 0, NULL);
+}
+
+
+void test_ringbuffer_partial_get_finish(void)
+{
+	uint8_t buf[16];
+	uint8_t data[8] = {1, 2, 3, 4, 5, 6, 7, 8};
+	uint8_t *inbuf;
+	uint8_t *inbuf2;
+	uint32_t len;
+	int err;
+
+	ring_buf_init(&ringbuf_raw, sizeof(buf), buf);
+
+	len = ring_buf_put(&ringbuf_raw, data, 8);
+	zassert_equal(len, 8, NULL);
+	len = ring_buf_put(&ringbuf_raw, data, 7);
+	zassert_equal(len, 7, NULL);
+
+	len = ring_buf_get_claim(&ringbuf_raw, &inbuf, 8);
+	zassert_equal(len, 8, NULL);
+
+	err = ring_buf_get_finish(&ringbuf_raw, 3, false);
+	zassert_equal(err, 0, NULL);
+
+	/* claiming another buffer when first one is only partially finished. */
+	len = ring_buf_get_claim(&ringbuf_raw, &inbuf2, 7);
+	zassert_equal(len, 7, NULL);
+
+	err = ring_buf_get_finish(&ringbuf_raw, 5, false);
+	zassert_equal(err, 0, NULL);
+	err = ring_buf_get_finish(&ringbuf_raw, 3, false);
+	zassert_equal(err, 0, NULL);
+	err = ring_buf_get_finish(&ringbuf_raw, 4, false);
+	zassert_equal(err, 0, NULL);
+
+	zassert_equal(memcmp(inbuf, data, 8), 0, NULL);
+	zassert_equal(memcmp(inbuf2, data, 7), 0, NULL);
+}
 
 /*test case main entry*/
 void test_main(void)
@@ -538,7 +619,9 @@ void test_main(void)
 			 ztest_unit_test(test_byte_put_free),
 			 ztest_unit_test(test_byte_put_free),
 			 ztest_unit_test(test_capacity),
-			 ztest_unit_test(test_reset)
+			 ztest_unit_test(test_reset),
+			 ztest_unit_test(test_ringbuffer_partial_put_finish),
+			 ztest_unit_test(test_ringbuffer_partial_get_finish)
 			 );
 	ztest_run_test_suite(test_ringbuffer_api);
 }
