@@ -15,4 +15,4 @@ zephyr_library_sources(
   crt0.S
   )
 
-zephyr_library_sources_if_kconfig(irq_offload.c)
+zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)

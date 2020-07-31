@@ -85,6 +85,11 @@ Removed APIs in this release
     :ref:`util_api`. Use ``FOR_EACH`` instead.
   * The CONFIG_NET_IF_USERSPACE_ACCESS is removed as it is no longer needed.
 
+* Build system
+
+  * The set of ``*_if_kconfig()`` CMake functions have been removed. Use
+    ``_ifdef(CONFIG_ ...)`` instead.
+
 Stable API changes in this release
 ==================================
 
