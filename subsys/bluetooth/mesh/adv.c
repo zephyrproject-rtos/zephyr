@@ -47,7 +47,7 @@
 
 static K_FIFO_DEFINE(adv_queue);
 static struct k_thread adv_thread_data;
-static K_THREAD_STACK_DEFINE(adv_thread_stack, CONFIG_BT_MESH_ADV_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(adv_thread_stack, CONFIG_BT_MESH_ADV_STACK_SIZE);
 
 NET_BUF_POOL_DEFINE(adv_buf_pool, CONFIG_BT_MESH_ADV_BUF_COUNT,
 		    BT_MESH_ADV_DATA_SIZE, BT_MESH_ADV_USER_DATA_SIZE, NULL);
@@ -290,7 +290,7 @@ static void bt_mesh_scan_cb(const bt_addr_le_t *addr, int8_t rssi,
 void bt_mesh_adv_init(void)
 {
 	k_thread_create(&adv_thread_data, adv_thread_stack,
-			K_THREAD_STACK_SIZEOF(adv_thread_stack), adv_thread,
+			K_KERNEL_STACK_SIZEOF(adv_thread_stack), adv_thread,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 	k_thread_name_set(&adv_thread_data, "BT Mesh adv");
 }
