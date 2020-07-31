@@ -5,6 +5,7 @@
  */
 
 #include <kernel.h>
+#include <ksched.h>
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <drivers/timer/system_timer.h>
@@ -157,7 +158,17 @@ void idle(void *unused1, void *unused2, void *unused3)
 		k_yield();
 #else
 		(void)arch_irq_lock();
-		sys_power_save_idle();
+
+		/*
+		 * Check if another thread is ready due to interrupts
+		 * taken before they were locked.
+		 */
+		if (z_get_next_ready_thread() == _current) {
+			sys_power_save_idle();
+		} else {
+			arch_irq_unlock(0);
+		}
+
 		IDLE_YIELD_IF_COOP();
 #endif
 	}
