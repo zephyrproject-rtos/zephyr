@@ -72,6 +72,9 @@ API Changes
   To maintain original behaviour within user code, two argument invocations
   should be converted to pass a third argument ``FS_O_CREATE | FS_O_RDWR``.
 
+* :c:func:`ring_buf_put_finish` and :c:func:`ring_buf_get_finish` have one more
+  argument ``unclaim``. Set ``unclaim`` to true for legacy behavior.
+
 Deprecated in this release
 ==========================
 
