@@ -94,7 +94,7 @@ extern void platformShellInit(otInstance *aInstance);
 
 K_SEM_DEFINE(ot_sem, 0, 1);
 
-K_THREAD_STACK_DEFINE(ot_stack_area, OT_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(ot_stack_area, OT_STACK_SIZE);
 static struct k_thread ot_thread_data;
 static k_tid_t ot_tid;
 static struct net_linkaddr *ll_addr;
@@ -452,7 +452,7 @@ static int openthread_init(struct net_if *iface)
 	net_mgmt_add_event_callback(&ip6_addr_cb);
 
 	ot_tid = k_thread_create(&ot_thread_data, ot_stack_area,
-				 K_THREAD_STACK_SIZEOF(ot_stack_area),
+				 K_KERNEL_STACK_SIZEOF(ot_stack_area),
 				 openthread_process,
 				 ot_context, NULL, NULL,
 				 OT_PRIORITY, 0, K_NO_WAIT);

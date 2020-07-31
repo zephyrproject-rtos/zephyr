@@ -98,7 +98,7 @@ static sys_slist_t mcast_monitor_callbacks;
 #define CONFIG_NET_PKT_TIMESTAMP_STACK_SIZE 1024
 #endif
 
-K_THREAD_STACK_DEFINE(tx_ts_stack, CONFIG_NET_PKT_TIMESTAMP_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(tx_ts_stack, CONFIG_NET_PKT_TIMESTAMP_STACK_SIZE);
 K_FIFO_DEFINE(tx_ts_queue);
 
 static struct k_thread tx_thread_ts;
@@ -3767,7 +3767,7 @@ void net_if_init(void)
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP_THREAD)
 	k_thread_create(&tx_thread_ts, tx_ts_stack,
-			K_THREAD_STACK_SIZEOF(tx_ts_stack),
+			K_KERNEL_STACK_SIZEOF(tx_ts_stack),
 			(k_thread_entry_t)net_tx_ts_thread,
 			NULL, NULL, NULL, K_PRIO_COOP(1), 0, K_NO_WAIT);
 	k_thread_name_set(&tx_thread_ts, "tx_tstamp");
