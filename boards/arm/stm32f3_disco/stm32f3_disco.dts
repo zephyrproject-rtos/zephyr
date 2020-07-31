@@ -145,3 +145,10 @@
 &iwdg {
 	status = "okay";
 };
+
+&timers1 {
+	status = "okay";
+	pwm1: pwm {
+		status = "okay";
+	};
+};
