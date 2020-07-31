@@ -41,7 +41,7 @@ static struct k_fifo rndis_cmd_queue;
 /*
  * Stack for cmd thread
  */
-static K_THREAD_STACK_DEFINE(cmd_stack, 2048);
+static K_KERNEL_STACK_DEFINE(cmd_stack, 2048);
 static struct k_thread cmd_thread_data;
 
 struct usb_rndis_config {
@@ -1090,7 +1090,7 @@ static int rndis_init(struct device *arg)
 	usb_register_os_desc(&os_desc);
 
 	k_thread_create(&cmd_thread_data, cmd_stack,
-			K_THREAD_STACK_SIZEOF(cmd_stack),
+			K_KERNEL_STACK_SIZEOF(cmd_stack),
 			(k_thread_entry_t)cmd_thread,
 			NULL, NULL, NULL, K_PRIO_COOP(8), 0, K_NO_WAIT);
 
