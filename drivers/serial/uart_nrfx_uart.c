@@ -494,16 +494,22 @@ static int uart_nrfx_rx_enable(struct device *dev, uint8_t *buf, size_t len,
 
 static int uart_nrfx_rx_buf_rsp(struct device *dev, uint8_t *buf, size_t len)
 {
-	if (!uart0_cb.rx_enabled) {
-		return -EACCES;
-	}
-	if (uart0_cb.rx_secondary_buffer_length != 0) {
-		return -EBUSY;
-	}
-	uart0_cb.rx_secondary_buffer = buf;
-	uart0_cb.rx_secondary_buffer_length = len;
+	int err;
+	int key = irq_lock();
 
-	return 0;
+	if (!uart0_cb.rx_enabled) {
+		err = -EACCES;
+	} else if (uart0_cb.rx_secondary_buffer_length != 0) {
+		err = -EBUSY;
+	} else {
+		uart0_cb.rx_secondary_buffer = buf;
+		uart0_cb.rx_secondary_buffer_length = len;
+		err = 0;
+	}
+
+	irq_unlock(key);
+
+	return err;
 }
 
 static int uart_nrfx_rx_disable(struct device *dev)
@@ -596,6 +602,13 @@ static void rx_isr(struct device *dev)
 			k_delayed_work_cancel(&uart0_cb.rx_timeout_work);
 		}
 		rx_rdy_evt(dev);
+
+		int key = irq_lock();
+
+		if (uart0_cb.rx_secondary_buffer_length == 0) {
+			uart0_cb.rx_enabled = 0;
+		}
+		irq_unlock(key);
 
 		if (uart0_cb.rx_secondary_buffer_length) {
 			buf_released_evt(dev);
