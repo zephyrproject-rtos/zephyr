@@ -86,7 +86,7 @@ static inline int spi_send(struct net_buf *buf)
 {
 	uint8_t header_master[5] = { 0 };
 	uint8_t header_slave[5] = { READY_NOW, SANITY_CHECK,
-				 0x00, 0x00, 0x00 };
+				    0x00, 0x00, 0x00 };
 	int ret;
 
 	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
@@ -146,10 +146,14 @@ static void bt_tx_thread(void *p1, void *p2, void *p3)
 {
 	uint8_t header_master[5];
 	uint8_t header_slave[5] = { READY_NOW, SANITY_CHECK,
-				 0x00, 0x00, 0x00 };
+				    0x00, 0x00, 0x00 };
 	struct net_buf *buf = NULL;
-	struct bt_hci_cmd_hdr cmd_hdr;
-	struct bt_hci_acl_hdr acl_hdr;
+
+	union {
+		struct bt_hci_cmd_hdr *cmd_hdr;
+		struct bt_hci_acl_hdr *acl_hdr;
+	} hci_hdr;
+	hci_hdr.cmd_hdr = (struct bt_hci_cmd_hdr *)&rxmsg[1];
 	int ret;
 
 	ARG_UNUSED(p1);
@@ -195,11 +199,12 @@ static void bt_tx_thread(void *p1, void *p2, void *p3)
 
 		switch (rxmsg[PACKET_TYPE]) {
 		case HCI_CMD:
-			buf = bt_buf_get_tx(BT_BUF_CMD, K_NO_WAIT, &rxmsg[1],
-					    sizeof(cmd_hdr));
+			buf = bt_buf_get_tx(BT_BUF_CMD, K_NO_WAIT,
+					    hci_hdr.cmd_hdr,
+					    sizeof(*hci_hdr.cmd_hdr));
 			if (buf) {
 				net_buf_add_mem(buf, &rxmsg[4],
-						cmd_hdr.param_len);
+						hci_hdr.cmd_hdr->param_len);
 			} else {
 				LOG_ERR("No available command buffers!");
 				continue;
@@ -207,10 +212,11 @@ static void bt_tx_thread(void *p1, void *p2, void *p3)
 			break;
 		case HCI_ACL:
 			buf = bt_buf_get_tx(BT_BUF_ACL_OUT, K_NO_WAIT,
-					    &rxmsg[1], sizeof(acl_hdr));
+					    hci_hdr.acl_hdr,
+					    sizeof(*hci_hdr.acl_hdr));
 			if (buf) {
 				net_buf_add_mem(buf, &rxmsg[5],
-						sys_le16_to_cpu(acl_hdr.len));
+						sys_le16_to_cpu(hci_hdr.acl_hdr->len));
 			} else {
 				LOG_ERR("No available ACL buffers!");
 				continue;
