@@ -157,7 +157,11 @@ osEvent osSignalWait(int32_t signals, uint32_t millisec)
 
 	/* Clear signal flags as the thread is ready now */
 	key = irq_lock();
-	thread_def->signal_results &= ~(signals);
+	if (signals) {
+		thread_def->signal_results &= ~(signals);
+	} else {
+		thread_def->signal_results = 0;
+	}
 	irq_unlock(key);
 
 	return evt;
