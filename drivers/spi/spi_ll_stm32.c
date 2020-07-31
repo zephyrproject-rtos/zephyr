@@ -37,7 +37,8 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
  * error flag, because STM32F1 SoCs do not support it and  STM32CUBE
  * for F1 family defines an unused LL_SPI_SR_FRE.
  */
-#ifdef CONFIG_SOC_SERIES_STM32MP1X
+#if defined(CONFIG_SOC_SERIES_STM32MP1X) || \
+    defined(CONFIG_SOC_SERIES_STM32H7X)
 #define SPI_STM32_ERR_MSK (LL_SPI_SR_UDR | LL_SPI_SR_CRCE | LL_SPI_SR_MODF | \
 			   LL_SPI_SR_OVR | LL_SPI_SR_TIFRE)
 #else
@@ -262,9 +263,11 @@ static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 		/* NOP */
 	}
 
-#ifdef CONFIG_SOC_SERIES_STM32MP1X
-	/* With the STM32MP1, if the device is the SPI master, we need to enable
-	 * the start of the transfer with LL_SPI_StartMasterTransfer(spi)
+#if defined(CONFIG_SOC_SERIES_STM32MP1X) || \
+    defined(CONFIG_SOC_SERIES_STM32H7X)
+	/* With the STM32MP1 and the STM32H7, if the device is the SPI master,
+	 * we need to enable the start of the transfer with
+	 * LL_SPI_StartMasterTransfer(spi)
 	 */
 	if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
 		LL_SPI_StartMasterTransfer(spi);
