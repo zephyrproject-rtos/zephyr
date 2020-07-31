@@ -15,6 +15,12 @@
 #define ULL_ADV_ENABLED_BITMASK_CREATED  (ULL_ADV_CREATED_BITMASK_CREATED << 1)
 #define ULL_ADV_ENABLED_BITMASK_EXTENDED (ULL_ADV_CREATED_BITMASK_EXTENDED << 1)
 
+#if defined(CONFIG_BT_CTLR_ADV_SET)
+#define BT_CTLR_ADV_SET CONFIG_BT_CTLR_ADV_SET
+#else /* CONFIG_BT_CTLR_ADV_SET */
+#define BT_CTLR_ADV_SET 1
+#endif /* CONFIG_BT_CTLR_ADV_SET */
+
 /* Helper functions to initialise and reset ull_adv module */
 int ull_adv_init(void);
 int ull_adv_reset(void);

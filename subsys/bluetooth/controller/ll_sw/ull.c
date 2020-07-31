@@ -222,18 +222,6 @@ static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
 #define BT_CTLR_MAX_CONN        0
 #endif
 
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
-
-#if defined(CONFIG_BT_CTLR_ADV_SET)
-#define BT_CTLR_ADV_SET CONFIG_BT_CTLR_ADV_SET
-#else /* CONFIG_BT_CTLR_ADV_SET */
-#define BT_CTLR_ADV_SET 1
-#endif /* CONFIG_BT_CTLR_ADV_SET */
-
-#else /* CONFIG_BT_CTLR_ADV_EXT */
-#define BT_CTLR_ADV_SET 0
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
-
 #define PDU_RX_POOL_SIZE (PDU_RX_NODE_POOL_ELEMENT_SIZE * \
 			  (RX_CNT + BT_CTLR_MAX_CONNECTABLE + \
 			   BT_CTLR_ADV_SET))

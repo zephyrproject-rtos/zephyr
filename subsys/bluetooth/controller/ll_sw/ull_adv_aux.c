@@ -595,10 +595,18 @@ uint8_t ll_adv_aux_set_remove(uint8_t handle)
 
 uint8_t ll_adv_aux_set_clear(void)
 {
-	/* TODO: reset/release all adv set primary channel and  Aux channel
-	 * PDUs
-	 */
-	return 0;
+	uint8_t retval = BT_HCI_ERR_SUCCESS;
+	uint8_t handle;
+	uint8_t err;
+
+	for (handle = 0; handle < BT_CTLR_ADV_SET; ++handle) {
+		err = ll_adv_aux_set_remove(handle);
+		if (err == BT_HCI_ERR_CMD_DISALLOWED) {
+			retval = err;
+		}
+	}
+
+	return retval;
 }
 
 int ull_adv_aux_init(void)

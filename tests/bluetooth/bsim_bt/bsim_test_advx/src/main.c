@@ -545,6 +545,64 @@ static void test_advx_main(void)
 	}
 	printk("success.\n");
 
+	uint8_t num_adv_sets;
+	num_adv_sets = ll_adv_aux_set_count_get();
+
+	printk("Creating every other adv set ...");
+	for (handle = 0; handle < num_adv_sets; handle += 2) {
+		err = ll_adv_params_set(handle, evt_prop, ADV_INTERVAL, adv_type,
+					OWN_ADDR_TYPE, PEER_ADDR_TYPE, PEER_ADDR,
+					ADV_CHAN_MAP, FILTER_POLICY, ADV_TX_PWR,
+					phy_p, ADV_SEC_SKIP, phy_s, ADV_SID,
+					SCAN_REQ_NOT);
+		if (err) {
+			goto exit;
+		}
+	}
+	printk("success.\n");
+
+	printk("Clearing all adv sets...");
+	err = ll_adv_aux_set_clear();
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Trying to remove adv sets ...");
+	for (handle = 0; handle < num_adv_sets; ++handle) {
+		err = ll_adv_aux_set_remove(handle);
+		if (err != BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER) {
+			goto exit;
+		}
+	}
+	printk("success.\n");
+
+	printk("Creating one adv set ...");
+	handle = 0;
+	err = ll_adv_params_set(handle, evt_prop, ADV_INTERVAL, adv_type,
+				OWN_ADDR_TYPE, PEER_ADDR_TYPE, PEER_ADDR,
+				ADV_CHAN_MAP, FILTER_POLICY, ADV_TX_PWR,
+				phy_p, ADV_SEC_SKIP, phy_s, ADV_SID,
+				SCAN_REQ_NOT);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Enabling adv set...");
+	err = ll_adv_enable(handle, 1, 0, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Clearing all adv sets...");
+	err = ll_adv_aux_set_clear();
+	if (err != BT_HCI_ERR_CMD_DISALLOWED) {
+		goto exit;
+	}
+	printk("success.\n");
+
 	PASS("AdvX tests Passed\n");
 	bs_trace_silent_exit(0);
 
