@@ -210,7 +210,7 @@ should see the following message in the terminal:
     https://www.nxp.com/docs/en/nxp/data-sheets/LPC55S1x_PDS.pdf
 
 .. _LPC55S16 User Manual:
-   https://www.nxp.com/docs/en/nxp/user-guides/UM11295.pdf
+   https://www.nxp.com/webapp/Download?colCode=UM11295
 
 .. _LPCxpresso55S16 Website:
    https://www.nxp.com/design/development-boards/lpcxpresso-boards/lpcxpresso55s16-development-board:LPC55S16-EVK
