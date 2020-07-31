@@ -281,11 +281,14 @@ static int lwm2m_setup(void)
 	/* Mark 1st instance of security object as a bootstrap server */
 	lwm2m_engine_set_u8("0/0/1", 1);
 
-	/* Create 2nd instance of server and security objects needed for
-	 * bootstrap process
-	 */
+	/* Create 2nd instance of security object needed for bootstrap */
 	lwm2m_engine_create_obj_inst("0/1");
-	lwm2m_engine_create_obj_inst("1/1");
+#else
+	/* Match Security object instance with a Server object instance with
+	 * Short Server ID.
+	 */
+	lwm2m_engine_set_u16("0/0/10", 101);
+	lwm2m_engine_set_u16("1/0/0", 101);
 #endif
 
 	/* setup SERVER object */
@@ -320,6 +323,7 @@ static int lwm2m_setup(void)
 	/* add power source resource instances */
 	lwm2m_engine_create_res_inst("3/0/6/0");
 	lwm2m_engine_set_res_data("3/0/6/0", &bat_idx, sizeof(bat_idx), 0);
+
 	lwm2m_engine_create_res_inst("3/0/7/0");
 	lwm2m_engine_set_res_data("3/0/7/0", &bat_mv, sizeof(bat_mv), 0);
 	lwm2m_engine_create_res_inst("3/0/8/0");

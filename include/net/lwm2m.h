@@ -93,6 +93,9 @@ struct lwm2m_ctx {
 	/** Current index of Security Object used for server credentials */
 	int sec_obj_inst;
 
+	/** Current index of Server Object used in this context. */
+	int srv_obj_inst;
+
 	/** Flag to enable BOOTSTRAP interface.  See Section 5.2
 	 *  "Bootstrap Interface" of LwM2M Technical Specification 1.0.2
 	 *  for more information.
