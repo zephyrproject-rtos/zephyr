@@ -424,8 +424,8 @@ static int engine_add_observer(struct lwm2m_message *msg,
 	}
 
 	/* defaults from server object */
-	attrs.pmin = lwm2m_server_get_pmin(msg->ctx->sec_obj_inst);
-	attrs.pmax = lwm2m_server_get_pmax(msg->ctx->sec_obj_inst);
+	attrs.pmin = lwm2m_server_get_pmin(msg->ctx->srv_obj_inst);
+	attrs.pmax = lwm2m_server_get_pmax(msg->ctx->srv_obj_inst);
 
 	/* TODO: observe dup checking */
 
@@ -2761,8 +2761,8 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 		}
 
 		/* defaults from server object */
-		nattrs.pmin = lwm2m_server_get_pmin(msg->ctx->sec_obj_inst);
-		nattrs.pmax = lwm2m_server_get_pmax(msg->ctx->sec_obj_inst);
+		nattrs.pmin = lwm2m_server_get_pmin(msg->ctx->srv_obj_inst);
+		nattrs.pmax = lwm2m_server_get_pmax(msg->ctx->srv_obj_inst);
 
 		ret = update_attrs(obj, &nattrs);
 		if (ret < 0) {
