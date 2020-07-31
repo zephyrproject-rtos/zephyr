@@ -258,7 +258,8 @@ static int configure_cs(void)
 #ifdef GPIO_CS_PIN
 	static struct spi_cs_control spi_conf_cs;
 
-	spi_conf_cs.gpio_pin = GPIO_CS_PIN,
+	spi_conf_cs.gpio_pin = GPIO_CS_PIN;
+	spi_conf_cs.gpio_dt_flags = GPIO_CS_FLAGS;
 	spi_conf_cs.gpio_dev = device_get_binding(
 		DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
 	if (!spi_conf_cs.gpio_dev) {
