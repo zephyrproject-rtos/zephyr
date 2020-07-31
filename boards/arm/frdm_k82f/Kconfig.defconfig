@@ -32,7 +32,7 @@ endif # FXOS8700
 
 config FXOS8700_DRDY_INT1
 	default y
-	depends on FXOS8700
+	depends on FXOS8700_TRIGGER
 
 if PINMUX_MCUX
 
