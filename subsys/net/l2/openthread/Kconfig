@@ -70,6 +70,23 @@ config OPENTHREAD_SOURCES
 
 endchoice
 
+choice
+	prompt "OpenThread stack version"
+	help
+	  This option selects version of Thread stack.
+
+config OPENTHREAD_THREAD_VERSION_1_1
+	bool "Version 1.1"
+config OPENTHREAD_THREAD_VERSION_1_2
+	bool "Version 1.2"
+endchoice
+
+config OPENTHREAD_THREAD_VERSION
+	string
+	default "1.1" if OPENTHREAD_THREAD_VERSION_1_1
+	default "1.2" if OPENTHREAD_THREAD_VERSION_1_2
+	default "unknown"
+
 config OPENTHREAD_PLAT
 	bool
 	help
