@@ -28,7 +28,7 @@ struct config {
 	struct zephyr_smp_transport smp_transport;
 	char recv_buffer[CONFIG_MCUMGR_SMP_UDP_MTU];
 	struct k_thread thread;
-	K_THREAD_STACK_MEMBER(stack, CONFIG_MCUMGR_SMP_UDP_STACK_SIZE);
+	K_KERNEL_STACK_MEMBER(stack, CONFIG_MCUMGR_SMP_UDP_STACK_SIZE);
 };
 
 struct configs {
@@ -179,7 +179,7 @@ static int create_socket(struct sockaddr *addr, const char *proto)
 static void create_thread(struct config *conf, const char *name)
 {
 	k_thread_create(&(conf->thread), conf->stack,
-			K_THREAD_STACK_SIZEOF(conf->stack),
+			K_KERNEL_STACK_SIZEOF(conf->stack),
 			smp_udp_receive_thread, conf, NULL, NULL,
 			CONFIG_MCUMGR_SMP_UDP_THREAD_PRIO, 0, K_FOREVER);
 
