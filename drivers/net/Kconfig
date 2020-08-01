@@ -8,6 +8,7 @@ menuconfig NET_PPP
 	bool "Point-to-point (PPP) UART based driver"
 	depends on NET_L2_PPP
 	depends on NET_NATIVE
+	select RING_BUFFER
 	select UART_MUX if GSM_MUX
 
 if NET_PPP
