@@ -20,6 +20,7 @@ config ARC
 	bool
 	select ARCH_IS_SET
 	select HAS_DTS
+	imply XIP
 	help
 	  ARC architecture
 
@@ -48,6 +49,7 @@ config NIOS2
 	select ARCH_IS_SET
 	select ATOMIC_OPERATIONS_C
 	select HAS_DTS
+	imply XIP
 	help
 	  Nios II Gen 2 architecture
 
@@ -55,6 +57,7 @@ config RISCV
 	bool
 	select ARCH_IS_SET
 	select HAS_DTS
+	imply XIP
 	help
 	  RISCV architecture
 
