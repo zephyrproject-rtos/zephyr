@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-
 #Example of product_uid, you must set you product uid.
 CONFIG_UPDATEHUB_PRODUCT_UID="e4d37cfe6ec48a2d069cc0bbb8b078677e9a0d8df3a027c4d8ea131130c4265f"
 

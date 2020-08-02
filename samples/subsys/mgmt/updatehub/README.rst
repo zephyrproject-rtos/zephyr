@@ -1,5 +1,5 @@
-UpdateHub sample
-################
+UpdateHub embedded Firmware Over-The-Air (FOTA) sample
+######################################################
 
 Overview
 ********
@@ -114,7 +114,7 @@ Step 4: Build UpdateHub
 ``UpdateHub`` can be built for the frdm_k64f as follows:
 
 .. zephyr-app-commands::
-    :zephyr-app: samples/net/updatehub/
+    :zephyr-app: samples/subsys/mgmt/updatehub
     :board: frdm_k64f
     :conf: "prj.conf overlay-prj.conf"
     :goals: build
