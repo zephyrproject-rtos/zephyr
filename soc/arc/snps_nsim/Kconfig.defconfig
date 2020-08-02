@@ -9,6 +9,9 @@ config SOC
 config UART_CONSOLE_ON_DEV_NAME
 	default "UART_0"
 
+config XIP
+	default n
+
 source "soc/arc/snps_nsim/Kconfig.defconfig.em"
 source "soc/arc/snps_nsim/Kconfig.defconfig.sem"
 source "soc/arc/snps_nsim/Kconfig.defconfig.hs"

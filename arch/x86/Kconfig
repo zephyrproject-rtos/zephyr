@@ -76,9 +76,6 @@ config IRQ_OFFLOAD_VECTOR
 	range 32 255
 	depends on IRQ_OFFLOAD
 
-config XIP
-	default n
-
 config PIC_DISABLE
 	bool "Disable PIC"
 	help
