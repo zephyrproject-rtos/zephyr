@@ -34,6 +34,10 @@
 #define FXOS8700_REG_TEMP			0x51
 #define FXOS8700_REG_M_CTRLREG1			0x5b
 #define FXOS8700_REG_M_CTRLREG2			0x5c
+#define FXOS8700_REG_M_INT_SRC			0x5e
+#define FXOS8700_REG_M_VECM_CFG			0x69
+#define FXOS8700_REG_M_VECM_THS_MSB		0x6a
+#define FXOS8700_REG_M_VECM_THS_LSB		0x6b
 
 /* Devices that are compatible with this driver: */
 #define WHOAMI_ID_MMA8451			0x1A
@@ -42,6 +46,8 @@
 #define WHOAMI_ID_FXOS8700			0xC7
 
 #define FXOS8700_DRDY_MASK			(1 << 0)
+#define FXOS8700_MAG_VECM_INT1_MASK		(1 << 0)
+#define FXOS8700_VECM_MASK			(1 << 1)
 #define FXOS8700_MOTION_MASK			(1 << 2)
 #define FXOS8700_PULSE_MASK			(1 << 3)
 
@@ -119,6 +125,11 @@ enum fxos8700_channel {
 	FXOS8700_CHANNEL_MAGN_Z,
 };
 
+/* FXOS8700 specific triggers */
+enum fxos_trigger_type {
+	FXOS8700_TRIG_M_VECM,
+};
+
 struct fxos8700_config {
 	char *i2c_name;
 #ifdef CONFIG_FXOS8700_TRIGGER
@@ -143,6 +154,10 @@ struct fxos8700_config {
 	uint8_t pulse_ltcy;
 	uint8_t pulse_wind;
 #endif
+#ifdef CONFIG_FXOS8700_MAG_VECM
+	uint8_t mag_vecm_cfg;
+	uint8_t mag_vecm_ths[2];
+#endif
 };
 
 struct fxos8700_data {
@@ -160,6 +175,9 @@ struct fxos8700_data {
 #endif
 #ifdef CONFIG_FXOS8700_MOTION
 	sensor_trigger_handler_t motion_handler;
+#endif
+#ifdef CONFIG_FXOS8700_MAG_VECM
+	sensor_trigger_handler_t m_vecm_handler;
 #endif
 #ifdef CONFIG_FXOS8700_TRIGGER_OWN_THREAD
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_FXOS8700_THREAD_STACK_SIZE);

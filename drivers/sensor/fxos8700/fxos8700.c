@@ -586,6 +586,11 @@ static const struct fxos8700_config fxos8700_config = {
 	.pulse_ltcy = CONFIG_FXOS8700_PULSE_LTCY,
 	.pulse_wind = CONFIG_FXOS8700_PULSE_WIND,
 #endif
+#ifdef CONFIG_FXOS8700_MAG_VECM
+	.mag_vecm_cfg = CONFIG_FXOS8700_MAG_VECM_CFG,
+	.mag_vecm_ths[0] = CONFIG_FXOS8700_MAG_VECM_THS_MSB,
+	.mag_vecm_ths[1] = CONFIG_FXOS8700_MAG_VECM_THS_LSB,
+#endif
 };
 
 static struct fxos8700_data fxos8700_data;

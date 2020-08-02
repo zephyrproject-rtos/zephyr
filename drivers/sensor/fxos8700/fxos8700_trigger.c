@@ -116,6 +116,24 @@ static int fxos8700_handle_motion_int(struct device *dev)
 }
 #endif
 
+#ifdef CONFIG_FXOS8700_MAG_VECM
+static int fxos8700_handle_m_vecm_int(struct device *dev)
+{
+	struct fxos8700_data *data = dev->driver_data;
+
+	struct sensor_trigger m_vecm_trig = {
+		.type = FXOS8700_TRIG_M_VECM,
+		.chan = SENSOR_CHAN_MAGN_XYZ,
+	};
+
+	if (data->m_vecm_handler) {
+		data->m_vecm_handler(dev, &m_vecm_trig);
+	}
+
+	return 0;
+}
+#endif
+
 static void fxos8700_handle_int(void *arg)
 {
 	struct device *dev = (struct device *)arg;
@@ -123,6 +141,7 @@ static void fxos8700_handle_int(void *arg)
 	struct fxos8700_data *data = dev->data;
 	uint8_t int_source;
 
+	/* Interrupt status register */
 	k_sem_take(&data->sem, K_FOREVER);
 
 	if (i2c_reg_read_byte(data->i2c, config->i2c_address,
@@ -145,6 +164,23 @@ static void fxos8700_handle_int(void *arg)
 #ifdef CONFIG_FXOS8700_MOTION
 	if (int_source & FXOS8700_MOTION_MASK) {
 		fxos8700_handle_motion_int(dev);
+	}
+#endif
+#ifdef CONFIG_FXOS8700_MAG_VECM
+	/* Magnetometer interrupt source register */
+	k_sem_take(&data->sem, K_FOREVER);
+
+	if (i2c_reg_read_byte(data->i2c, config->i2c_address,
+			      FXOS8700_REG_M_INT_SRC,
+			      &int_source)) {
+		LOG_ERR("Could not read magnetometer interrupt source");
+		int_source = 0U;
+	}
+
+	k_sem_give(&data->sem);
+
+	if (int_source & FXOS8700_VECM_MASK) {
+		fxos8700_handle_m_vecm_int(dev);
 	}
 #endif
 
@@ -209,6 +245,12 @@ int fxos8700_trigger_set(struct device *dev,
 	case SENSOR_TRIG_DELTA:
 		mask = FXOS8700_MOTION_MASK;
 		data->motion_handler = handler;
+		break;
+#endif
+#ifdef CONFIG_FXOS8700_MAG_VECM
+	case FXOS8700_TRIG_M_VECM:
+		mask = FXOS8700_VECM_MASK;
+		data->m_vecm_handler = handler;
 		break;
 #endif
 	default:
@@ -330,6 +372,43 @@ static int fxos8700_motion_init(struct device *dev)
 }
 #endif
 
+#ifdef CONFIG_FXOS8700_MAG_VECM
+static int fxos8700_m_vecm_init(struct device *dev)
+{
+	const struct fxos8700_config *config = dev->config_info;
+	struct fxos8700_data *data = dev->driver_data;
+	uint8_t m_vecm_cfg = config->mag_vecm_cfg;
+
+	/* Route the interrupt to INT1 pin */
+#if CONFIG_FXOS8700_MAG_VECM_INT1
+	m_vecm_cfg |= FXOS8700_MAG_VECM_INT1_MASK;
+#endif
+
+	/* Set magnetic vector-magnitude function */
+	if (i2c_reg_write_byte(data->i2c, config->i2c_address,
+			       FXOS8700_REG_M_VECM_CFG, m_vecm_cfg)) {
+		LOG_ERR("Could not set magnetic vector-magnitude function");
+		return -EIO;
+	}
+
+	/* Set magnetic vector-magnitude function threshold values:
+	 * handle both MSB and LSB registers
+	 */
+	if (i2c_reg_write_byte(data->i2c, config->i2c_address,
+			       FXOS8700_REG_M_VECM_THS_MSB, config->mag_vecm_ths[0])) {
+		LOG_ERR("Could not set magnetic vector-magnitude function threshold MSB value");
+		return -EIO;
+	}
+
+	if (i2c_reg_write_byte(data->i2c, config->i2c_address,
+			       FXOS8700_REG_M_VECM_THS_LSB, config->mag_vecm_ths[1])) {
+		LOG_ERR("Could not set magnetic vector-magnitude function threshold LSB value");
+		return -EIO;
+	}
+
+	return 0;
+}
+#endif
 
 int fxos8700_trigger_init(struct device *dev)
 {
@@ -375,6 +454,12 @@ int fxos8700_trigger_init(struct device *dev)
 #ifdef CONFIG_FXOS8700_MOTION
 	if (fxos8700_motion_init(dev)) {
 		LOG_ERR("Could not configure motion");
+		return -EIO;
+	}
+#endif
+#ifdef CONFIG_FXOS8700_MAG_VECM
+	if (fxos8700_m_vecm_init(dev)) {
+		LOG_ERR("Could not configure magnetic vector-magnitude");
 		return -EIO;
 	}
 #endif
