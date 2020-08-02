@@ -80,13 +80,15 @@ osThreadId osThreadCreate(const osThreadDef_t *thread_def, void *arg)
 	atomic_dec((atomic_t *)&thread_def->instances);
 	stk_ptr = thread_def->stack_mem;
 	prio = cmsis_to_zephyr_priority(thread_def->tpriority);
-	k_thread_custom_data_set((void *)thread_def);
 
 	tid = k_thread_create(&cm_thread[thread_def->instances],
 			stk_ptr[thread_def->instances], stacksz,
 			(k_thread_entry_t)zephyr_thread_wrapper,
 			(void *)arg, NULL, thread_def->pthread,
-			prio, 0, K_NO_WAIT);
+			prio, 0, K_FOREVER);
+
+	tid->custom_data = (void *)thread_def;
+	k_thread_start(tid);
 
 	return ((osThreadId)tid);
 }

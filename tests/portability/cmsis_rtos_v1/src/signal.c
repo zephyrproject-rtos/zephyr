@@ -36,6 +36,14 @@ void Thread_2(void const *arg)
 	zassert_not_equal(signals, 0x80000000, "");
 }
 
+void Thread_3(void const *arg)
+{
+	osEvent evt = osSignalWait(SIGNAL1, 100);
+
+	zassert_not_equal(evt.status, osEventSignal, "Signal not received");
+	zassert_not_equal(evt.value.signals, SIGNAL1, "Wrong signal received");
+}
+
 void test_multiple_signal_flags(void const *thread_id)
 {
 	int max_signal_cnt = osFeature_Signals;
@@ -69,7 +77,7 @@ void test_multiple_signal_flags(void const *thread_id)
 osThreadDef(Thread_1, osPriorityHigh, 3, 0);
 osThreadDef(Thread_2, osPriorityHigh, 1, 0);
 
-void test_signal_events_no_wait(void)
+void test_signal_events_no_wait_start(void const *arg)
 {
 	osThreadId id1;
 	osEvent evt;
@@ -89,7 +97,14 @@ void test_signal_events_no_wait(void)
 	osThreadTerminate(id1);
 }
 
-void test_signal_events_timeout(void)
+osThreadDef(test_signal_events_no_wait_start, osPriorityAboveNormal, 1, 0);
+
+void test_signal_events_no_wait(void)
+{
+	osThreadCreate(osThread(test_signal_events_no_wait_start), NULL);
+}
+
+void test_signal_events_timeout_start(void const *arg)
 {
 	osThreadId id1;
 	int signals;
@@ -112,7 +127,15 @@ void test_signal_events_timeout(void)
 	osThreadTerminate(id1);
 }
 
-void test_signal_events_signalled(void)
+osThreadDef(test_signal_events_timeout_start, osPriorityAboveNormal, 1, 0);
+
+void test_signal_events_timeout(void)
+{
+	osThreadCreate(osThread(test_signal_events_timeout_start), NULL);
+}
+
+
+void test_signal_events_signalled_start(void const *arg)
 {
 	osThreadId id1, id2;
 	osEvent evt;
@@ -160,6 +183,13 @@ void test_signal_events_signalled(void)
 	test_multiple_signal_flags(osThreadGetId());
 }
 
+osThreadDef(test_signal_events_signalled_start, osPriorityAboveNormal, 1, 0);
+
+void test_signal_events_signalled(void)
+{
+	osThreadCreate(osThread(test_signal_events_signalled_start), NULL);
+}
+
 /* IRQ offload function handler to set signal flag */
 static void offload_function(void *param)
 {
@@ -181,7 +211,7 @@ void test_signal_from_isr(void const *thread_id)
 
 osThreadDef(test_signal_from_isr, osPriorityHigh, 1, 0);
 
-void test_signal_events_isr(void)
+void test_signal_events_isr_start(void const *arg)
 {
 	osThreadId id;
 	osEvent evt;
@@ -193,4 +223,31 @@ void test_signal_events_isr(void)
 		      "signal wait failed unexpectedly");
 	zassert_equal((evt.value.signals & ISR_SIGNAL),
 		       ISR_SIGNAL, "unexpected signal wait value");
+}
+
+osThreadDef(test_signal_events_isr_start,  osPriorityAboveNormal, 1, 0);
+
+void test_signal_events_isr(void)
+{
+	osThreadCreate(osThread(test_signal_events_isr_start), NULL);
+}
+
+osThreadDef(Thread_3, osPriorityHigh, 1, 0);
+
+void test_signal_events_reverse(void)
+{
+	osThreadId id1;
+	int signals;
+
+	osThreadSetPriority(osThreadGetId(), osPriorityNormal);
+
+	id1 = osThreadCreate(osThread(Thread_3), NULL);
+	zassert_true(id1 != NULL, "Thread creation failed");
+
+	osDelay(100);
+	signals = osSignalSet(id1, SIGNAL1);
+
+	osDelay(100);
+	zassert_not_equal(signals, 0x80000000, "");
+	osThreadTerminate(id1);
 }
