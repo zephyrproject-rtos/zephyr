@@ -87,6 +87,13 @@ SECTION_FUNC(TEXT, arch_swap)
 	pop %edx
 	pop %eax
 #endif
+
+
+#if defined(CONFIG_TRACING)
+	pushl	%eax
+	call	sys_trace_thread_switched_out
+	popl	%eax
+#endif
 	/*
 	 * Push all non-volatile registers onto the stack; do not copy
 	 * any of these registers into the k_thread.  Only the 'esp' register
@@ -116,13 +123,6 @@ SECTION_FUNC(TEXT, arch_swap)
 
 	movl	_kernel_offset_to_current(%edi), %edx
 	movl	%esp, _thread_offset_to_esp(%edx)
-
-#ifdef CONFIG_TRACING
-	/* Register the context switch */
-	push %edx
-	call	sys_trace_thread_switched_in
-	pop %edx
-#endif
 	movl	_kernel_offset_to_ready_q_cache(%edi), %eax
 
 	/*
@@ -363,6 +363,11 @@ CROHandlingDone:
 	pushl arch_timing_swap_start
 	popl arch_timing_value_swap_temp
 time_read_not_needed:
+#endif
+#if defined(CONFIG_TRACING)
+	pushl	%eax
+	call	sys_trace_thread_switched_in
+	popl	%eax
 #endif
 	ret
 

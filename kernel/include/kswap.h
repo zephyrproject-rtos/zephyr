@@ -97,7 +97,6 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 #endif
 
 	if (new_thread != old_thread) {
-		sys_trace_thread_switched_out();
 #ifdef CONFIG_TIMESLICING
 		z_reset_time_slice();
 #endif
@@ -113,6 +112,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 			z_smp_release_global_lock(new_thread);
 		}
 #endif
+		sys_trace_thread_switched_out();
 		_current_cpu->current = new_thread;
 		wait_for_switch(new_thread);
 		arch_switch(new_thread->switch_handle,
@@ -155,13 +155,7 @@ static inline int z_swap_irqlock(unsigned int key)
 {
 	int ret;
 	z_check_stack_sentinel();
-#ifndef CONFIG_ARM
-	sys_trace_thread_switched_out();
-#endif
 	ret = arch_swap(key);
-#ifndef CONFIG_ARM
-	sys_trace_thread_switched_in();
-#endif
 	return ret;
 }
 

@@ -228,6 +228,9 @@ xtensa_switch:
 #ifdef CONFIG_EXECUTION_BENCHMARKING
 	call4 read_timer_end_of_swap
 #endif
+#ifdef CONFIG_TRACING
+	call4 sys_trace_thread_switched_in
+#endif
 	j _restore_context
 _switch_restore_pc:
 	retw
