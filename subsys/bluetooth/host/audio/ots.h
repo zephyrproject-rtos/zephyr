@@ -619,6 +619,7 @@ int bt_ots_add_object(struct ots_svc_inst_t *inst,
  *
  * TODO: Should consider using anonymous object pointers instead of IDs?
  *
+ *  @param inst       Pointer to the OTS instance.
  *  @param id         Id of the object to remove (u48).
  *
  *  @return 0 in case of success or negative value in case of error.
@@ -627,29 +628,33 @@ int bt_ots_remove_object(struct ots_svc_inst_t *inst, uint64_t id);
 
 /** @brief
  *
- * @param inst Pointer to the OTS instancc.
- * @param id   ID of the object to get.
+ *  @param inst       Pointer to the OTS instance.
+ *  @param inst Pointer to the OTS instance.
+ *  @param id   ID of the object to get.
  *
- * @return Pointer to a copy of the object metadata.
+ *  @return Pointer to a copy of the object metadata.
  */
 struct bt_ots_obj_metadata *bt_ots_get_object(struct ots_svc_inst_t *inst,
 					      uint64_t id);
 
 /** @brief Update the metadata of an object in OTS.
  *
+ *  @param inst       Pointer to the OTS instance.
  *  @param id         ID of the updated object (u48).
  *  @param metadata   (Pointer to) metadata of the updated object.
  */
 int bt_ots_update_object(struct ots_svc_inst_t *inst, uint64_t id,
 			 struct bt_ots_obj_metadata *p_metadata);
 
-#if defined(CONFIG_BT_OTS_DEBUG)
+#if defined(CONFIG_BT_DEBUG_OTS)
 
 /** @brief Dump the content of the directory listing object in Hex (Debug).
+ *
+ *  @param inst Pointer to the OTS instance.
  */
-void bt_ots_dump_directory_listing(void);
+void bt_ots_dump_directory_listing(struct ots_svc_inst_t *inst);
 
-#endif /* defined(CONFIG_BT_OTS_DEBUG) */
+#endif /* defined(CONFIG_BT_DEBUG_OTS) */
 
 
 #ifdef __cplusplus
