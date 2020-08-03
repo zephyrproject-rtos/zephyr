@@ -1408,25 +1408,22 @@ int bt_ots_update_object(struct ots_svc_inst_t *inst, uint64_t id,
 	return 0;
 }
 
-#if defined(CONFIG_BT_OTS_DEBUG)
+#if defined(CONFIG_BT_DEBUG_OTS)
 
-void bt_ots_dump_directory_listing(uint8_t index)
+void bt_ots_dump_directory_listing(struct ots_svc_inst_t *inst)
 {
-	struct ots_object *p_dirlisting_obj;
+	struct ots_object *p_dirlisting_obj = inst->p_dirlisting_obj;
 
-	if (index >= ARRAY_SIZE(ots_inst.svc_insts[index])) {
-		BT_ERR("Invalid index %u", index);
-		return;
-	}
+	/* TODO: Consider using something like `bt_otc_decode_dirlisting` to
+	 * pretty print the dirlisting content
+	 */
 
-	p_dirlisting_obj = &ots_inst.svc_insts[index].p_dirlisting_obj;
-
-	BT_HEXDUMP_DBG(p_dirlisting_obj->p_data,
+	BT_HEXDUMP_DBG(inst->dirlisting_content,
 		       p_dirlisting_obj->metadata.size,
 		       "Content");
 }
 
-#endif /* defined(CONFIG_BT_OTS_DEBUG) */
+#endif /* defined(CONFIG_BT_DEBUG_OTS) */
 
 DEVICE_INIT(bt_ots, "bt_ots", &bt_ots_init, NULL, NULL,
 	    APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
