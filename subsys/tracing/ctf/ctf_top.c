@@ -168,6 +168,48 @@ void sys_trace_void(unsigned int id)
 	ctf_top_void(id);
 }
 
+void sys_trace_semaphore_init(struct k_sem *sem)
+{
+	ctf_top_semaphore_init(
+		(uint32_t)(uintptr_t)sem
+		);
+}
+
+void sys_trace_semaphore_take(struct k_sem *sem)
+{
+	ctf_top_semaphore_take(
+		(uint32_t)(uintptr_t)sem
+		);
+}
+
+void sys_trace_semaphore_give(struct k_sem *sem)
+{
+	ctf_top_semaphore_give(
+		(uint32_t)(uintptr_t)sem
+		);
+}
+
+void sys_trace_mutex_init(struct k_mutex *mutex)
+{
+	ctf_top_mutex_init(
+		(uint32_t)(uintptr_t)mutex
+		);
+}
+
+void sys_trace_mutex_lock(struct k_mutex *mutex)
+{
+	ctf_top_mutex_lock(
+		(uint32_t)(uintptr_t)mutex
+		);
+}
+
+void sys_trace_mutex_unlock(struct k_mutex *mutex)
+{
+	ctf_top_mutex_unlock(
+		(uint32_t)(uintptr_t)mutex
+		);
+}
+
 void sys_trace_end_call(unsigned int id)
 {
 	ctf_top_end_call(id);

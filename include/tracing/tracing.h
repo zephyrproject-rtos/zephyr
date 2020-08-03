@@ -50,16 +50,19 @@
 
 /**
  * @brief Called when setting priority of a thread
+ * @param thread Thread structure
  */
 #define sys_trace_thread_priority_set(thread)
 
 /**
  * @brief Called when a thread is being created
+ * @param thread Thread structure
  */
 #define sys_trace_thread_create(thread)
 
 /**
  * @brief Called when a thread is being aborted
+ * @param thread Thread structure
  *
  */
 #define sys_trace_thread_abort(thread)
@@ -132,6 +135,41 @@
  */
 #define sys_trace_idle()
 
+/**
+ * @brief Trace initialisation of a Semaphore
+ * @param sem Semaphore object
+ */
+#define sys_trace_semaphore_init(sem)
+
+/**
+ * @brief Trace taking a Semaphore
+ * @param sem Semaphore object
+ */
+#define sys_trace_semaphore_take(sem)
+
+/**
+ * @brief Trace giving a Semaphore
+ * @param sem Semaphore object
+ */
+#define sys_trace_semaphore_give(sem)
+
+/**
+ * @brief Trace initialisation of a Mutex
+ * @param mutex  Mutex object
+ */
+#define sys_trace_mutex_init(mutex)
+
+/**
+ * @brief Trace locking a Mutex
+ * @param mutex Mutex object
+ */
+#define sys_trace_mutex_lock(mutex)
+
+/**
+ * @brief Trace unlocking a Mutex
+ * @param mutex Mutex object
+ */
+#define sys_trace_mutex_unlock(mutex)
 /**
  * @}
  */

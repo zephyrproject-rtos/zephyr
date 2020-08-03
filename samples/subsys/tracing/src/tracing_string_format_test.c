@@ -92,3 +92,33 @@ void sys_trace_end_call(unsigned int id)
 {
 	TRACING_STRING("%s %d\n", __func__, __LINE__);
 }
+
+void sys_trace_semaphore_init(struct k_sem *sem)
+{
+	TRACING_STRING("%s %d\n", __func__, __LINE__);
+}
+
+void sys_trace_semaphore_take(struct k_sem *sem)
+{
+	TRACING_STRING("%s %d\n", __func__, __LINE__);
+}
+
+void sys_trace_semaphore_give(struct k_sem *sem)
+{
+	TRACING_STRING("%s %d\n", __func__, __LINE__);
+}
+
+void sys_trace_mutex_init(struct k_mutex *mutex)
+{
+	TRACING_STRING("%s %d\n", __func__, __LINE__);
+}
+
+void sys_trace_mutex_lock(struct k_mutex *mutex)
+{
+	TRACING_STRING("%s %d\n", __func__, __LINE__);
+}
+
+void sys_trace_mutex_unlock(struct k_mutex *mutex)
+{
+	TRACING_STRING("%s %d\n", __func__, __LINE__);
+}

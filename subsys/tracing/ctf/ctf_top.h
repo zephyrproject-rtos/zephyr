@@ -84,7 +84,13 @@ typedef enum {
 	CTF_EVENT_ISR_EXIT_TO_SCHEDULER =  0x22,
 	CTF_EVENT_IDLE                  =  0x30,
 	CTF_EVENT_ID_START_CALL         =  0x41,
-	CTF_EVENT_ID_END_CALL           =  0x42
+	CTF_EVENT_ID_END_CALL           =  0x42,
+	CTF_EVENT_SEMAPHORE_INIT		=  0x43,
+	CTF_EVENT_SEMAPHORE_GIVE		=  0x44,
+	CTF_EVENT_SEMAPHORE_TAKE		=  0x45,
+	CTF_EVENT_MUTEX_INIT			=  0x46,
+	CTF_EVENT_MUTEX_LOCK			=  0x47,
+	CTF_EVENT_MUTEX_UNLOCK			=  0x48,
 } ctf_event_t;
 
 
@@ -265,6 +271,54 @@ static inline void ctf_top_end_call(uint32_t id)
 	CTF_EVENT(
 		CTF_LITERAL(uint8_t, CTF_EVENT_ID_END_CALL),
 		id
+		);
+}
+
+static inline void ctf_top_semaphore_init(uint32_t sem_id)
+{
+	CTF_EVENT(
+		CTF_LITERAL(uint8_t, CTF_EVENT_SEMAPHORE_INIT),
+		sem_id
+		);
+}
+
+static inline void ctf_top_semaphore_take(uint32_t sem_id)
+{
+	CTF_EVENT(
+		CTF_LITERAL(uint8_t, CTF_EVENT_SEMAPHORE_TAKE),
+		sem_id
+		);
+}
+
+static inline void ctf_top_semaphore_give(uint32_t sem_id)
+{
+	CTF_EVENT(
+		CTF_LITERAL(uint8_t, CTF_EVENT_SEMAPHORE_GIVE),
+		sem_id
+		);
+}
+
+static inline void ctf_top_mutex_init(uint32_t mutex_id)
+{
+	CTF_EVENT(
+		CTF_LITERAL(uint8_t, CTF_EVENT_MUTEX_INIT),
+		mutex_id
+		);
+}
+
+static inline void ctf_top_mutex_lock(uint32_t mutex_id)
+{
+	CTF_EVENT(
+		CTF_LITERAL(uint8_t, CTF_EVENT_MUTEX_LOCK),
+		mutex_id
+		);
+}
+
+static inline void ctf_top_mutex_unlock(uint32_t mutex_id)
+{
+	CTF_EVENT(
+		CTF_LITERAL(uint8_t, CTF_EVENT_MUTEX_UNLOCK),
+		mutex_id
 		);
 }
 
