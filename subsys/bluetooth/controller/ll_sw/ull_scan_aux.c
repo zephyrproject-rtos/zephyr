@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
+#include <sys/byteorder.h>
 #include <sys/util.h>
 
 #include "util/mem.h"
@@ -28,6 +28,7 @@
 
 #include "ull_internal.h"
 #include "ull_scan_internal.h"
+#include "ull_sync_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_scan_aux
@@ -44,6 +45,9 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		      uint16_t lazy, void *param);
 static void ticker_op_cb(uint32_t status, void *param);
 static void ticker_op_aux_failure(void *param);
+
+static void sync_setup(struct ll_scan_set *scan, uint8_t phy,
+		       struct pdu_adv_sync_info *si);
 
 static struct ll_scan_aux_set ll_scan_aux_pool[CONFIG_BT_CTLR_SCAN_AUX_SET];
 static void *scan_aux_free;
@@ -80,6 +84,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy)
 	struct ll_scan_aux_set *aux;
 	uint32_t window_widening_us;
 	uint32_t ticks_slot_offset;
+	struct ll_scan_set *scan;
 	struct ll_sync_set *sync;
 	struct lll_scan_aux *lll;
 	struct pdu_adv_adi *adi;
@@ -103,10 +108,9 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy)
 		aux = NULL;
 	}
 
+	scan = NULL;
 	sync = NULL;
 	if (IS_ENABLED(CONFIG_BT_CTLR_SCAN_PERIODIC)) {
-		struct ll_scan_set *scan;
-
 		if (aux) {
 			struct lll_scan *lll_scan;
 
@@ -116,7 +120,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy)
 			scan = (void *)HDR_LLL2EVT(ftr->param);
 		}
 
-		sync = scan->sync;
+		sync = scan->per_scan.sync;
 	}
 
 	rx->link = link;
@@ -137,9 +141,9 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy)
 
 	if (h->adv_addr) {
 		if (IS_ENABLED(CONFIG_BT_CTLR_SCAN_PERIODIC) && sync &&
-		    (pdu->tx_addr == sync->adv_addr_type) &&
-		    !memcmp(ptr, sync->adv_addr, BDADDR_SIZE)) {
-			sync->state = LL_SYNC_STATE_ADDR_MATCH;
+		    (pdu->tx_addr == scan->per_scan.adv_addr_type) &&
+		    !memcmp(ptr, scan->per_scan.adv_addr, BDADDR_SIZE)) {
+			scan->per_scan.state = LL_SYNC_STATE_ADDR_MATCH;
 		}
 
 		ptr += BDADDR_SIZE;
@@ -168,9 +172,9 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy)
 		ptr += sizeof(*si);
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_SCAN_PERIODIC) && sync &&
-		    adi && (adi->sid == sync->sid) &&
-		    (sync->state == LL_SYNC_STATE_ADDR_MATCH)) {
-			printk("SYNC CREATE MATCH\n");
+		    adi && (adi->sid == scan->per_scan.sid) &&
+		    (scan->per_scan.state == LL_SYNC_STATE_ADDR_MATCH)) {
+			sync_setup(scan, aux->lll.phy, si);
 		}
 	}
 
@@ -271,7 +275,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy)
 
 ull_scan_aux_rx_flush:
 	if (IS_ENABLED(CONFIG_BT_CTLR_SCAN_PERIODIC) && sync) {
-		sync->state = LL_SYNC_STATE_IDLE;
+		scan->per_scan.state = LL_SYNC_STATE_IDLE;
 	}
 
 	if (aux) {
@@ -396,4 +400,40 @@ static void ticker_op_cb(uint32_t status, void *param)
 static void ticker_op_aux_failure(void *param)
 {
 	flush(param, NULL);
+}
+
+static void sync_setup(struct ll_scan_set *scan, uint8_t phy,
+		       struct pdu_adv_sync_info *si)
+{
+	struct ll_sync_set *sync;
+	struct node_rx_sync *se;
+	struct node_rx_pdu *rx;
+	uint16_t interval;
+	uint16_t handle;
+	uint8_t sca;
+
+	sync = scan->per_scan.sync;
+	scan->per_scan.sync = NULL;
+
+	sync->lll.phy = phy;
+
+	handle = ull_sync_handle_get(sync);
+	interval = sys_le16_to_cpu(si->interval);
+	sca = (si->sca_chm[4] & 0xC0) >> 5;
+
+	rx = (void *)scan->per_scan.node_rx_estab;
+	rx->hdr.type = NODE_RX_TYPE_SYNC;
+	rx->hdr.handle = handle;
+	se = (void *)rx->pdu;
+	se->status = BT_HCI_ERR_SUCCESS;
+	se->interval = interval;
+	se->phy = phy; /* TODO: first set bit? */
+	se->sca = sca;
+
+	rx->hdr.rx_ftr.param = scan;
+
+	ll_rx_put(rx->hdr.link, rx);
+	ll_rx_sched();
+
+	/* TODO: start ticker and hence the periodic sync events */
 }

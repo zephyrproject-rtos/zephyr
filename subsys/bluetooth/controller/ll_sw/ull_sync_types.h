@@ -12,16 +12,11 @@ struct ll_sync_set {
 	struct evt_hdr evt;
 	struct ull_hdr ull;
 	struct lll_sync lll;
+};
 
-	uint8_t sid;
-	uint8_t adv_addr_type:1;
-	uint8_t filter_policy:1;
-	uint8_t state:2;
-
-	uint8_t adv_addr[BDADDR_SIZE];
-	uint16_t skip;
-	uint16_t skip_countdown;
-	uint16_t timeout;
-
-	/* TODO: handling of sync CTE type */
+struct node_rx_sync {
+	uint8_t status;
+	uint8_t  phy;
+	uint16_t interval;
+	uint8_t  sca;
 };
