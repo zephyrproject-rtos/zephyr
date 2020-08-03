@@ -478,6 +478,13 @@ FUNC_NORETURN void z_cstart(void)
 #ifdef CONFIG_MULTITHREADING
 	switch_to_main_thread(prepare_multithreading());
 #else
+#ifdef ARCH_SWITCH_TO_MAIN_NO_MULTITHREADING
+	/* Custom ARCH-specific routine to switch to main()
+	 * in the case of no multi-threading.
+	 */
+	ARCH_SWITCH_TO_MAIN_NO_MULTITHREADING(bg_thread_main,
+		NULL, NULL, NULL);
+#else
 	bg_thread_main(NULL, NULL, NULL);
 
 	/* LCOV_EXCL_START
@@ -488,6 +495,7 @@ FUNC_NORETURN void z_cstart(void)
 	}
 	/* LCOV_EXCL_STOP */
 #endif
+#endif /* CONFIG_MULTITHREADING */
 
 	/*
 	 * Compiler can't tell that the above routines won't return and issues
