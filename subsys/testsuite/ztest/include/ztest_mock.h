@@ -55,24 +55,24 @@
 /**
  * @brief Tell function @a func to expect the data @a data for @a param
  *
- * When using ztest_check_expected_data(), tell that the data ponted by @a param
- * should be same as data at @a data.
- * Only data pointer is stored by this function so it must still be valid when
- * ztest_check_expected_data is called.
+ * When using ztest_check_expected_data(), the data pointed to by
+ * @a param should be same @a data in this function. Only data pointer is stored
+ * by this function, so it must still be valid when ztest_check_expected_data is
+ * called.
  *
  * @param func Function in question
  * @param param Parameter for which the data should be set
  * @param data pointer for the data for parameter @a param
  */
 #define ztest_expect_data(func, param, data)                                   \
-	z_ztest_expect_data(STRINGIFY(func), STRINGIFY(param), (data))
+	z_ztest_expect_data(STRINGIFY(func), STRINGIFY(param), (void *)(data))
 
 /**
  * @brief If data pointed by @a param don't match the data set by
  * ztest_expect_data(), fail the test
  *
- * This will first check that does @a param have a value to be expected, and
- * then checks whether the data pointed by parameter are equal to expected data.
+ * This will first check that @a param is expected to be null or non-null and
+ * then check whether the data pointed by parameter is equal to expected data.
  * If either of these checks fail, the current test will fail. This
  * must be called from the called function.
  *
@@ -80,8 +80,8 @@
  * @param length Length of the data to compare
  */
 #define ztest_check_expected_data(param, length)                               \
-	z_ztest_check_expected_data(__func__, STRINGIFY(param), (param),       \
-				    (length))
+	z_ztest_check_expected_data(__func__, STRINGIFY(param),                \
+				    (void *)(param), (length))
 
 /**
  * @brief Tell @a func that it should return @a value

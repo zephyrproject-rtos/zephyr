@@ -239,12 +239,12 @@ void z_ztest_check_expected_data(const char *fn, const char *name, void *data,
 		PRINT("%s:%s received null pointer\n", fn, name);
 		ztest_test_fail();
 	} else if (data == NULL && expected != NULL) {
-		PRINT("%s:%s received data fhile expected null pointer\n", fn,
+		PRINT("%s:%s received data while expected null pointer\n", fn,
 		      name);
 		ztest_test_fail();
 	} else if (data != NULL) {
 		if (memcmp(data, expected, length) != 0) {
-			PRINT("%s:%s data provided dont match\n", fn, name);
+			PRINT("%s:%s data provided don't match\n", fn, name);
 			ztest_test_fail();
 		}
 	}
