@@ -11,7 +11,8 @@ typealias enum : uint32_t {
 	MUTEX_LOCK = 35,
 	SEMA_INIT = 36,
 	SEMA_GIVE = 37,
-	SEMA_TAKE = 38
+	SEMA_TAKE = 38,
+	SLEEP = 39
 } := call_id;
 
 struct event_header {
