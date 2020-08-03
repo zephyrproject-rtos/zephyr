@@ -75,7 +75,6 @@ static inline int __parse_ssid(char *str, char *ssid)
 static void __parse_scan_res(char *str, struct wifi_scan_result *res)
 {
 	int field = 0;
-	int ret;
 
 	/* fmt => #001,"SSID",MACADDR,RSSI,BITRATE,MODE,SECURITY,BAND,CHANNEL */
 
