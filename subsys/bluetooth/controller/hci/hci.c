@@ -28,7 +28,11 @@
 #include "hal/ccm.h"
 #include "ll_sw/pdu.h"
 #include "ll_sw/lll.h"
+#include "ll_sw/lll_scan.h"
+#include "ll_sw/lll_sync.h"
 #include "ll_sw/lll_conn.h"
+#include "ll_sw/ull_scan_types.h"
+#include "ll_sw/ull_sync_types.h"
 #include "ll_sw/ull_conn_types.h"
 #include "ll.h"
 #include "ll_feat.h"
@@ -3801,6 +3805,38 @@ static void le_adv_ext_coded_report(struct pdu_data *pdu_data,
 {
 	le_adv_ext_report(pdu_data, node_rx, buf, BIT(2));
 }
+
+#if defined(CONFIG_BT_CTLR_SCAN_PERIODIC)
+static void le_per_adv_sync_established(struct pdu_data *pdu_data,
+					struct node_rx_pdu *node_rx,
+					struct net_buf *buf)
+{
+	struct bt_hci_evt_le_per_adv_sync_established *sep;
+	struct ll_scan_set *scan;
+	struct node_rx_sync *se;
+
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_PER_ADV_SYNC_ESTABLISHED)) {
+		return;
+	}
+
+	scan = node_rx->hdr.rx_ftr.param;
+
+	sep = meta_evt(buf, BT_HCI_EVT_LE_PER_ADV_SYNC_ESTABLISHED,
+		       sizeof(*sep));
+
+	se = (void *)pdu_data;
+	sep->status = se->status;
+	sep->handle = sys_cpu_to_le16(node_rx->hdr.handle);
+	sep->sid = scan->per_scan.sid;
+	/* FIXME: fill based on filter_policy options */
+	sep->adv_addr.type = scan->per_scan.adv_addr_type;
+	memcpy(&sep->adv_addr.a.val[0], scan->per_scan.adv_addr, BDADDR_SIZE);
+	sep->phy = find_lsb_set(se->phy);
+	sep->interval = sys_cpu_to_le16(se->interval);
+	sep->clock_accuracy = se->sca;
+}
+#endif /* CONFIG_BT_CTLR_SCAN_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
 
@@ -4155,6 +4191,12 @@ static void encode_control(struct node_rx_pdu *node_rx,
 	case NODE_RX_TYPE_EXT_CODED_REPORT:
 		le_adv_ext_coded_report(pdu_data, node_rx, buf);
 		break;
+
+#if defined(CONFIG_BT_CTLR_SCAN_PERIODIC)
+	case NODE_RX_TYPE_SYNC:
+		le_per_adv_sync_established(pdu_data, node_rx, buf);
+		break;
+#endif /* CONFIG_BT_CTLR_SCAN_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
 
@@ -4591,8 +4633,15 @@ uint8_t hci_get_class(struct node_rx_pdu *node_rx)
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_CTLR_SCAN_PERIODIC)
 			__fallthrough;
+		case NODE_RX_TYPE_SYNC:
+#endif /* CONFIG_BT_CTLR_SCAN_PERIODIC */
+
+#if defined(CONFIG_BT_BROADCASTER)
 		case NODE_RX_TYPE_EXT_ADV_TERMINATE:
+#endif /* CONFIG_BT_BROADCASTER */
+
 			return HCI_CLASS_EVT_REQUIRED;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 

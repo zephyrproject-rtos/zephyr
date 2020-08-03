@@ -34,6 +34,7 @@
 #include "lll.h"
 #include "lll_adv.h"
 #include "lll_scan.h"
+#include "lll_sync.h"
 #include "lll_conn.h"
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"
@@ -43,6 +44,7 @@
 #include "ull_internal.h"
 #include "ull_adv_internal.h"
 #include "ull_scan_internal.h"
+#include "ull_sync_internal.h"
 #include "ull_conn_internal.h"
 
 #if defined(CONFIG_BT_CTLR_USER_EXT)
@@ -728,6 +730,11 @@ void ll_rx_dequeue(void)
 
 #if defined(CONFIG_BT_OBSERVER)
 	case NODE_RX_TYPE_REPORT:
+
+#if defined(CONFIG_BT_CTLR_SCAN_PERIODIC)
+		/* fall through */
+	case NODE_RX_TYPE_SYNC:
+#endif /* CONFIG_BT_CTLR_SCAN_PERIODIC */
 #endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
@@ -884,11 +891,20 @@ void ll_rx_mem_release(void **node_rx)
 #endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_OBSERVER)
 			__fallthrough;
 		case NODE_RX_TYPE_EXT_1M_REPORT:
 		case NODE_RX_TYPE_EXT_2M_REPORT:
 		case NODE_RX_TYPE_EXT_CODED_REPORT:
+
+#if defined(CONFIG_BT_CTLR_SCAN_PERIODIC)
+		case NODE_RX_TYPE_SYNC:
+#endif /* CONFIG_BT_CTLR_SCAN_PERIODIC */
+#endif /* CONFIG_BT_OBSERVER */
+
+#if defined(CONFIG_BT_BROADCASTER)
 		case NODE_RX_TYPE_EXT_ADV_TERMINATE:
+#endif /* CONFIG_BT_BROADCASTER */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
