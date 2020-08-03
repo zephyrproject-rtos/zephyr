@@ -340,8 +340,11 @@ int arch_float_disable(struct k_thread *thread)
 }
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
-void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
-				k_thread_entry_t _main)
+/* Internal function for Cortex-M initialization,
+ * applicable to either case of running Zephyr
+ * with or without multi-threading support.
+ */
+static void z_arm_prepare_switch_to_main(void)
 {
 #if defined(CONFIG_FPU)
 	/* Initialize the Floating Point Status and Control Register when in
@@ -365,6 +368,13 @@ void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 	 */
 	z_arm_configure_static_mpu_regions();
 #endif
+}
+
+void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
+				k_thread_entry_t _main)
+{
+	z_arm_prepare_switch_to_main();
+
 	_current = main_thread;
 #ifdef CONFIG_TRACING
 	sys_trace_thread_switched_in();
