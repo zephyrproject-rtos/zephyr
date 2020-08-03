@@ -256,11 +256,13 @@ void configure_builtin_stack_guard(struct k_thread *thread)
  */
 uint32_t z_check_thread_stack_fail(const uint32_t fault_addr, const uint32_t psp)
 {
+#if defined(CONFIG_MULTITHREADING)
 	const struct k_thread *thread = _current;
 
 	if (!thread) {
 		return 0;
 	}
+#endif
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	uint32_t guard_len = (thread->base.user_options & K_FP_REGS) ?
@@ -298,12 +300,21 @@ uint32_t z_check_thread_stack_fail(const uint32_t fault_addr, const uint32_t psp
 		}
 	}
 #else /* CONFIG_USERSPACE */
+#if defined(CONFIG_MULTITHREADING)
 	if (IS_MPU_GUARD_VIOLATION(thread->stack_info.start - guard_len,
 			guard_len,
 			fault_addr, psp)) {
 		/* Thread stack corruption */
 		return thread->stack_info.start;
 	}
+#else
+	if (IS_MPU_GUARD_VIOLATION((uint32_t)z_main_stack,
+			guard_len,
+			fault_addr, psp)) {
+		/* Thread stack corruption */
+		return (uint32_t)Z_THREAD_STACK_BUFFER(z_main_stack);
+	}
+#endif
 #endif /* CONFIG_USERSPACE */
 
 	return 0;
