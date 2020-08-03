@@ -167,3 +167,51 @@ event {
 		call_id id;
 	};
 };
+
+event {
+	name = semaphore_init;
+	id = 0x43;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = semaphore_take;
+	id = 0x45;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = semaphore_give;
+	id = 0x44;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = mutex_init;
+	id = 0x46;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = mutex_lock;
+	id = 0x47;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = mutex_unlock;
+	id = 0x48;
+	fields := struct {
+		uint32_t id;
+	};
+};

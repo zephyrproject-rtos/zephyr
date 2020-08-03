@@ -73,7 +73,7 @@ int z_impl_k_mutex_init(struct k_mutex *mutex)
 	mutex->owner = NULL;
 	mutex->lock_count = 0U;
 
-	sys_trace_void(SYS_TRACE_ID_MUTEX_INIT);
+	sys_trace_mutex_init(mutex);
 
 	z_waitq_init(&mutex->wait_q);
 
@@ -124,7 +124,7 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 
 	__ASSERT(!arch_is_in_isr(), "mutexes cannot be used inside ISRs");
 
-	sys_trace_void(SYS_TRACE_ID_MUTEX_LOCK);
+	sys_trace_mutex_lock(mutex);
 	key = k_spin_lock(&lock);
 
 	if (likely((mutex->lock_count == 0U) || (mutex->owner == _current))) {
@@ -233,7 +233,7 @@ int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 	 */
 	__ASSERT_NO_MSG(mutex->lock_count > 0U);
 
-	sys_trace_void(SYS_TRACE_ID_MUTEX_UNLOCK);
+	sys_trace_mutex_unlock(mutex);
 	z_sched_lock();
 
 	LOG_DBG("mutex %p lock_count: %d", mutex, mutex->lock_count);
