@@ -77,7 +77,10 @@
 	status = "okay";
 };
 
-
 &mac {
+	status = "okay";
+};
+
+&dac1 {
 	status = "okay";
 };
