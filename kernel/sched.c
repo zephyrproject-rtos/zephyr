@@ -1220,6 +1220,7 @@ int32_t z_impl_k_sleep(k_timeout_t timeout)
 	k_ticks_t ticks;
 
 	__ASSERT(!arch_is_in_isr(), "");
+	sys_trace_void(SYS_TRACE_ID_SLEEP);
 
 	if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
 		k_thread_suspend(_current);
@@ -1233,6 +1234,7 @@ int32_t z_impl_k_sleep(k_timeout_t timeout)
 #endif
 
 	ticks = z_tick_sleep(ticks);
+	sys_trace_end_call(SYS_TRACE_ID_SLEEP);
 	return k_ticks_to_ms_floor64(ticks);
 }
 
