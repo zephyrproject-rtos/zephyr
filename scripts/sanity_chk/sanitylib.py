@@ -1524,7 +1524,7 @@ Tests should reference the category and subsystem with a dot as a separator.
                 for match in _matches:
                     if not match.decode().startswith("test_"):
                         warnings = "Found a test that does not start with test_"
-                matches = [match.decode().replace("test_", "") for match in _matches]
+                matches = [match.decode().replace("test_", "", 1) for match in _matches]
                 return matches, warnings
 
     def scan_path(self, path):
