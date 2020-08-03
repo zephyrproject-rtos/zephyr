@@ -64,7 +64,7 @@ config ZTEST_MOCKING
 
 config ZTEST_PARAMETER_COUNT
 	int "Count of parameters or return values reserved"
-	default 1
+	default 10
 	depends on ZTEST_MOCKING
 	help
 	  Maximum amount of concurrent return values / expected parameters.
