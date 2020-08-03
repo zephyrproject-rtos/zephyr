@@ -23,6 +23,10 @@
 #define FP_GUARD_EXTRA_SIZE	0
 #endif
 
+#if !defined(CONFIG_MULTITHREADING) && defined(CONFIG_CPU_CORTEX_M)
+extern K_THREAD_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
+#endif
+
 /* An initial context, to be "restored" by z_arm_pendsv(), is put at the other
  * end of the stack, and thus reusable by the stack when not needed anymore.
  *
@@ -430,3 +434,58 @@ void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 
 	CODE_UNREACHABLE;
 }
+
+#if !defined(CONFIG_MULTITHREADING) && defined(CONFIG_CPU_CORTEX_M)
+
+FUNC_NORETURN void z_arm_switch_to_main_no_multithreading(
+	k_thread_entry_t main_entry, void *p1, void *p2, void *p3)
+{
+	z_arm_prepare_switch_to_main();
+
+	/* Set PSP to the highest address of the main stack. */
+	char *psp =	Z_THREAD_STACK_BUFFER(z_main_stack) +
+		K_THREAD_STACK_SIZEOF(z_main_stack);
+
+#if defined(CONFIG_BUILTIN_STACK_GUARD)
+	char *psplim = (Z_THREAD_STACK_BUFFER(z_main_stack));
+	/* Clear PSPLIM before setting it to guard the main stack area. */
+	__set_PSPLIM(0);
+#endif
+
+	/* Store all required input in registers, to be accesible
+	 * after stack pointer change. The function is not going
+	 * to return, so callee-saved registers do not need to be
+	 * stacked.
+	 */
+	register void *p1_inreg __asm__("r0") = p1;
+	register void *p2_inreg __asm__("r1") = p2;
+	register void *p3_inreg __asm__("r2") = p3;
+
+	__asm__ volatile (
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+	"msr  PSPLIM, %[_psplim]\n\t"
+#endif
+	"msr  PSP, %[_psp]\n\t"       /* __set_PSP(psp) */
+	"blx  %[_main_entry]\n\t"     /* main_entry(p1, p2, p3) */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+	"cpsid i\n\t"         /* disable_irq() */
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+	"msr BASEPRI, %[basepri]\n\t"/* __set_BASEPRI(_EXC_IRQ_DEFAULT_PRIO) */
+	"isb\n\t"
+#endif
+	"loop: b loop\n\t"    /* while (true); */
+	:
+	: "r" (p1_inreg), "r" (p2_inreg), "r" (p3_inreg),
+	  [_psp]"r" (psp), [_main_entry]"r" (main_entry)
+#if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+	, [basepri] "r" (_EXC_IRQ_DEFAULT_PRIO)
+#endif
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+	, [_psplim]"r" (psplim)
+#endif
+	:
+	);
+
+	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
+}
+#endif /* !CONFIG_MULTITHREADING && CONFIG_CPU_CORTEX_M */
