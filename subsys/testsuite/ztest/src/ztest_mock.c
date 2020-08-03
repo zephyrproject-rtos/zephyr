@@ -67,25 +67,34 @@ void vprintk(const char *fmt, va_list ap)
 	unsigned long int(name)[((bits) + BITS_PER_UL - 1) / BITS_PER_UL]
 
 static inline int sys_bitfield_find_first_clear(const unsigned long *bitmap,
-						unsigned int bits)
+						const unsigned int bits)
 {
-	unsigned int words = (bits + BITS_PER_UL - 1) / BITS_PER_UL;
-	unsigned int cnt;
+	const size_t words = (bits + BITS_PER_UL - 1) / BITS_PER_UL;
+	size_t cnt;
 	unsigned int long neg_bitmap;
 
 	/*
-	 * By bitwise negating the bitmap, we are actually implemeting
+	 * By bitwise negating the bitmap, we are actually implementing
 	 * ffc (find first clear) using ffs (find first set).
 	 */
-	for (cnt = 0U; cnt < words; cnt++) {
+	for (cnt = 0; cnt < words; cnt++) {
 		neg_bitmap = ~bitmap[cnt];
-		if (neg_bitmap == 0) /* all full */
+		if (neg_bitmap == 0) {
+			/* All full. Try next word. */
 			continue;
-		else if (neg_bitmap == ~0UL) /* first bit */
+		} else if (neg_bitmap == ~0UL) {
+			/* First bit is free */
 			return cnt * BITS_PER_UL;
-		else
-			return cnt * BITS_PER_UL + __builtin_ffsl(neg_bitmap) -
-			       1;
+		} else {
+			const unsigned int bit = (cnt * BITS_PER_UL) +
+						 __builtin_ffsl(neg_bitmap) - 1;
+			/* Ensure first free bit is within total bits count */
+			if (bit < bits) {
+				return bit;
+			} else {
+				return -1;
+			}
+		}
 	}
 	return -1;
 }
