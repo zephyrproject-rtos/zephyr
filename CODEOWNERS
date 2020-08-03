@@ -233,6 +233,7 @@
 /drivers/pwm/*npcx*                       @MulinChao
 /drivers/pwm/*sam0*                       @nzmichaelh
 /drivers/pwm/*stm32*                      @gmarull
+/drivers/regulator/                       @pabigot
 /drivers/sensor/                          @MaureenHelm
 /drivers/sensor/ams_iAQcore/              @alexanderwachter
 /drivers/sensor/ens210/                   @alexanderwachter
