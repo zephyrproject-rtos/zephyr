@@ -682,8 +682,9 @@ static void dma_stm32_irq_##chan(void *arg)				\
 do {									\
 	if (!irq_is_enabled(DT_INST_IRQ_BY_IDX(dma, chan, irq))) {	\
 		irq_connect_dynamic(DT_INST_IRQ_BY_IDX(dma, chan, irq), \
-			DT_INST_IRQ_BY_IDX(dma, chan, priority),        \
-			dma_stm32_irq_handler, dev, 0);			\
+			    DT_INST_IRQ_BY_IDX(dma, chan, priority),	\
+			    (void (*)(const void *))			\
+				    dma_stm32_irq_handler, dev, 0);	\
 		irq_enable(DT_INST_IRQ_BY_IDX(dma, chan, irq));	        \
 	}								\
 	data->max_streams++;						\

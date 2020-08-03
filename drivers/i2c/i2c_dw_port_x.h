@@ -55,8 +55,8 @@ static void i2c_config_@NUM@(struct device *port)
 
 	irq_connect_dynamic(irq,
 			    DT_INST_IRQ(@NUM@, priority),
-			    i2c_dw_isr, DEVICE_GET(i2c_@NUM@),
-			    INST_@NUM@_IRQ_FLAGS);
+			    (void (*)(const void *))i2c_dw_isr,
+			    DEVICE_GET(i2c_@NUM@), INST_@NUM@_IRQ_FLAGS);
 	pcie_irq_enable(DT_INST_REG_ADDR(@NUM@), irq);
 
 #else
