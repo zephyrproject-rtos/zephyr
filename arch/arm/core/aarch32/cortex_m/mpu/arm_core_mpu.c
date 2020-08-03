@@ -46,6 +46,10 @@ LOG_MODULE_REGISTER(mpu);
 #define _MPU_DYNAMIC_REGIONS_AREA_SIZE ((uint32_t)&__kernel_ram_end - \
 		_MPU_DYNAMIC_REGIONS_AREA_START)
 
+#if !defined(CONFIG_MULTITHREADING) && defined(CONFIG_MPU_STACK_GUARD)
+extern K_THREAD_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
+#endif
+
 /**
  * @brief Use the HW-specific MPU driver to program
  *        the static MPU regions.
@@ -86,6 +90,21 @@ void z_arm_configure_static_mpu_regions(void)
 		};
 #endif /* CONFIG_ARCH_HAS_RAMFUNC_SUPPORT */
 
+#if !defined(CONFIG_MULTITHREADING) && defined(CONFIG_MPU_STACK_GUARD)
+		/* Main stack MPU guard to detect overflow.
+		 * Note:
+		 * FPU_SHARING and USERSPACE are not supported features
+		 * under CONFIG_MULTITHREADING=n, so the MPU guard (if
+		 * exists) is reserved aside of CONFIG_MAIN_STACK_SIZE
+		 * and there is no requirement for larger guard area (FP
+		 * context is not stacked).
+		 */
+		const struct k_mem_partition main_stack_guard_region = {
+			.start = (uint32_t)z_main_stack,
+			.size = (uint32_t)MPU_GUARD_ALIGN_AND_SIZE,
+			.attr = K_MEM_PARTITION_P_RO_U_NA,
+		};
+#endif /* !CONFIG_MULTITHREADING && CONFIG_MPU_STACK_GUARD */
 	/* Define a constant array of k_mem_partition objects
 	 * to hold the configuration of the respective static
 	 * MPU regions.
@@ -97,6 +116,9 @@ void z_arm_configure_static_mpu_regions(void)
 #if defined(CONFIG_NOCACHE_MEMORY)
 		&nocache_region,
 #endif /* CONFIG_NOCACHE_MEMORY */
+#if !defined(CONFIG_MULTITHREADING) && defined(CONFIG_MPU_STACK_GUARD)
+		&main_stack_guard_region,
+#endif /* !CONFIG_MULTITHREADING && CONFIG_MPU_STACK_GUARD */
 #if defined(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT)
 		&ramfunc_region
 #endif /* CONFIG_ARCH_HAS_RAMFUNC_SUPPORT */
@@ -112,7 +134,8 @@ void z_arm_configure_static_mpu_regions(void)
 		(uint32_t)&_image_ram_start,
 		(uint32_t)&__kernel_ram_end);
 
-#if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
+#if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS) && \
+	defined(CONFIG_MULTITHREADING)
 	/* Define a constant array of k_mem_partition objects that holds the
 	 * boundaries of the areas, inside which dynamic region programming
 	 * is allowed. The information is passed to the underlying driver at
