@@ -2701,20 +2701,6 @@ static enum bt_security_err security_err_get(uint8_t hci_err)
 		return BT_SECURITY_ERR_UNSPECIFIED;
 	}
 }
-
-static void reset_pairing(struct bt_conn *conn)
-{
-#if defined(CONFIG_BT_BREDR)
-	if (conn->type == BT_CONN_TYPE_BR) {
-		atomic_clear_bit(conn->flags, BT_CONN_BR_PAIRING);
-		atomic_clear_bit(conn->flags, BT_CONN_BR_PAIRING_INITIATOR);
-		atomic_clear_bit(conn->flags, BT_CONN_BR_LEGACY_SECURE);
-	}
-#endif /* CONFIG_BT_BREDR */
-
-	/* Reset required security level to current operational */
-	conn->required_sec_level = conn->sec_level;
-}
 #endif /* defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR) */
 
 #if defined(CONFIG_BT_BREDR)
@@ -3680,15 +3666,12 @@ static void auth_complete(struct net_buf *buf)
 	}
 
 	if (evt->status) {
-		if (conn->state == BT_CONN_CONNECTED) {
-			/*
-			 * Inform layers above HCI about non-zero authentication
-			 * status to make them able cleanup pending jobs.
-			 */
-			bt_conn_security_changed(conn, evt->status,
-						 security_err_get(evt->status));
-		}
-		reset_pairing(conn);
+		/*
+		 * Inform layers above HCI about non-zero authentication
+		 * status to make them able cleanup pending jobs.
+		 */
+		bt_conn_security_changed(conn, evt->status,
+					 security_err_get(evt->status));
 	} else {
 		link_encr(handle);
 	}
@@ -4134,7 +4117,6 @@ static void hci_encrypt_change(struct net_buf *buf)
 	}
 
 	if (evt->status) {
-		reset_pairing(conn);
 		bt_conn_security_changed(conn, evt->status,
 					 security_err_get(evt->status));
 		bt_conn_unref(conn);
@@ -4178,7 +4160,6 @@ static void hci_encrypt_change(struct net_buf *buf)
 		}
 	}
 #endif /* CONFIG_BT_BREDR */
-	reset_pairing(conn);
 
 	bt_conn_security_changed(conn, evt->status, BT_SECURITY_ERR_SUCCESS);
 
@@ -4202,7 +4183,6 @@ static void hci_encrypt_key_refresh_complete(struct net_buf *buf)
 	}
 
 	if (evt->status) {
-		reset_pairing(conn);
 		bt_conn_security_changed(conn, evt->status,
 					 security_err_get(evt->status));
 		bt_conn_unref(conn);
@@ -4230,7 +4210,6 @@ static void hci_encrypt_key_refresh_complete(struct net_buf *buf)
 	}
 #endif /* CONFIG_BT_BREDR */
 
-	reset_pairing(conn);
 	bt_conn_security_changed(conn, evt->status, BT_SECURITY_ERR_SUCCESS);
 	bt_conn_unref(conn);
 }
