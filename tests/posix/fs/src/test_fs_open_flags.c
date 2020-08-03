@@ -51,7 +51,6 @@ static int test_file_open_flags(void)
 	fd = open(THE_FILE, O_CREAT | O_WRONLY);
 	if (fd < 0) {
 		TC_PRINT("Expected success; fd = %d, errno = %d\n", fd, errno);
-		close(fd);
 		return TC_FAIL;
 	}
 
