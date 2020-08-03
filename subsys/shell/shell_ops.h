@@ -151,6 +151,16 @@ static inline void flag_last_nl_set(const struct shell *shell, uint8_t val)
 	shell->ctx->internal.flags.last_nl = val;
 }
 
+static inline bool flag_print_noinit_get(const struct shell *shell)
+{
+	return shell->ctx->internal.flags.print_noinit == 1 ? true : false;
+}
+
+static inline void flag_print_noinit_set(const struct shell *shell, bool val)
+{
+	shell->ctx->internal.flags.print_noinit = val ? 1 : 0;
+}
+
 void shell_op_cursor_vert_move(const struct shell *shell, int32_t delta);
 void shell_op_cursor_horiz_move(const struct shell *shell, int32_t delta);
 

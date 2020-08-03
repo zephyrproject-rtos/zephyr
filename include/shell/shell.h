@@ -541,8 +541,9 @@ struct shell_flags {
 	uint32_t tx_rdy      :1;
 	uint32_t mode_delete :1; /*!< Operation mode of backspace key */
 	uint32_t history_exit:1; /*!< Request to exit history mode */
-	uint32_t cmd_ctx	  :1; /*!< Shell is executing command */
+	uint32_t cmd_ctx     :1; /*!< Shell is executing command */
 	uint32_t last_nl     :8; /*!< Last received new line character */
+	uint32_t print_noinit:1; /*!< Print request from not initialized shell*/
 };
 
 BUILD_ASSERT((sizeof(struct shell_flags) == sizeof(uint32_t)),

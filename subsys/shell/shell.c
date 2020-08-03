@@ -25,6 +25,8 @@
 #endif
 
 #define SHELL_MSG_CMD_NOT_FOUND		": command not found"
+#define SHELL_MSG_BACKEND_NOT_ACTIVE	\
+	"WARNING: A print request was detected on not active shell backend.\n"
 
 #define SHELL_INIT_OPTION_PRINTER	(NULL)
 
@@ -85,6 +87,11 @@ static void state_set(const struct shell *shell, enum shell_state state)
 
 	if (state == SHELL_STATE_ACTIVE) {
 		cmd_buffer_clear(shell);
+		if (flag_print_noinit_get(shell)) {
+			shell_internal_fprintf(shell, SHELL_WARNING, "%s",
+					       SHELL_MSG_BACKEND_NOT_ACTIVE);
+			flag_print_noinit_set(shell, false);
+		}
 		shell_print_prompt_and_cmd(shell);
 	}
 }
@@ -1354,6 +1361,7 @@ void shell_vfprintf(const struct shell *shell, enum shell_vt100_color color,
 
 	/* Sending a message to a non-active shell leads to a dead lock. */
 	if (shell->ctx->state != SHELL_STATE_ACTIVE) {
+		flag_print_noinit_set(shell, true);
 		return;
 	}
 
