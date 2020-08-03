@@ -863,6 +863,20 @@ config BUILD_OUTPUT_S19_GAP_FILL
 	help
 	  Fill gaps in s19 based files.
 
+config BUILD_OUTPUT_VERILOG
+	bool "Build a binary in Verilog memory hex dump format"
+	help
+	  Build a Verilog memory hex dump binary zephyr/zephyr.mem in the build
+	  directory. The name of this file can be customized with
+	  CONFIG_KERNEL_BIN_NAME.
+
+config BUILD_OUTPUT_VERILOG_DATA_WIDTH
+	int "Verilog output format data width"
+	depends on BUILD_OUTPUT_VERILOG
+	default 1
+	help
+	  Verilog memory hex dump output format data element width in bytes.
+
 config BUILD_OUTPUT_UF2
 	bool "Build a binary in UF2 format"
 	depends on BUILD_OUTPUT_BIN

@@ -1982,6 +1982,26 @@ if(CONFIG_BUILD_OUTPUT_S19)
   endif()
 endif()
 
+if(CONFIG_BUILD_OUTPUT_VERILOG)
+  get_property(elfconvert_formats TARGET bintools PROPERTY elfconvert_formats)
+  if(verilog IN_LIST elfconvert_formats)
+    # Should we print a warning if case the tools does not support converting to verilog ?
+    list(APPEND
+      post_build_commands
+      COMMAND
+        $<TARGET_PROPERTY:bintools,elfconvert_command>
+        $<TARGET_PROPERTY:bintools,elfconvert_flag>
+        $<TARGET_PROPERTY:bintools,elfconvert_flag_outtarget>verilog
+        $<TARGET_PROPERTY:bintools,elfconvert_flag_verilog_data_width>${CONFIG_BUILD_OUTPUT_VERILOG_DATA_WIDTH}
+        $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
+        $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${KERNEL_VERILOG_NAME}
+        $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
+    )
+    list(APPEND post_build_byproducts ${KERNEL_VERILOG_NAME})
+    set(BYPRODUCT_KERNEL_VERILOG_NAME "${PROJECT_BINARY_DIR}/${KERNEL_VERILOG_NAME}" CACHE FILEPATH "Kernel Verilog file" FORCE)
+  endif()
+endif()
+
 if(CONFIG_OUTPUT_DISASSEMBLY)
   if(CONFIG_OUTPUT_DISASSEMBLE_ALL)
     set(disassembly_type "$<TARGET_PROPERTY:bintools,disassembly_flag_all>")

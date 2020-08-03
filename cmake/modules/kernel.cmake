@@ -173,6 +173,7 @@ set(KERNEL_STRIP_NAME ${KERNEL_NAME}.strip)
 set(KERNEL_META_NAME  ${KERNEL_NAME}.meta)
 set(KERNEL_MOT_NAME  ${KERNEL_NAME}.mot)
 set(KERNEL_SYMBOLS_NAME    ${KERNEL_NAME}.symbols)
+set(KERNEL_VERILOG_NAME    ${KERNEL_NAME}.mem)
 
 # Enable dynamic library support when required by LLEXT.
 if(CONFIG_LLEXT AND CONFIG_LLEXT_TYPE_ELF_SHAREDLIB)
