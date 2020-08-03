@@ -279,7 +279,7 @@ SECTION_FUNC(TEXT, _isr_demux)
 	bl read_timer_start_of_isr
 #endif
 
-#if defined(CONFIG_TRACING)
+#if defined(CONFIG_TRACING_ISR)
 	bl sys_trace_isr_enter
 #endif
 	/* cannot be done before this point because we must be able to run C */
@@ -309,7 +309,7 @@ irq_hint_handled:
 	jl_s.d [r1]
 	ld_s r0, [r0] /* delay slot: ISR parameter into r0  */
 
-#ifdef CONFIG_TRACING_ISR
+#if defined(CONFIG_TRACING_ISR)
 	bl sys_trace_isr_exit
 #endif
 
