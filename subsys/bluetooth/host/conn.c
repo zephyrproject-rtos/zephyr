@@ -828,14 +828,12 @@ int bt_conn_set_security(struct bt_conn *conn, bt_security_t sec)
 		return -ENOTCONN;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_SMP_SC_ONLY) &&
-	    sec < BT_SECURITY_L4) {
-		return -EOPNOTSUPP;
+	if (IS_ENABLED(CONFIG_BT_SMP_SC_ONLY)) {
+		sec = BT_SECURITY_L4;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY) &&
-	    sec > BT_SECURITY_L3) {
-		return -EOPNOTSUPP;
+	if (IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
+		sec = BT_SECURITY_L3;
 	}
 
 	/* nothing to do */
