@@ -1,0 +1,17 @@
+# Copyright 2019-2020, Peter Bigot Consulting, LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: Voltage/Current Regulators
+
+include: [base.yaml, power.yaml]
+
+# Linux defines several dozen properties.  We're providing only the ones
+# currently useful to Zephyr.
+properties:
+  regulator-always-on:
+    type: boolean
+    description: regulator should always be on
+
+  regulator-boot-on:
+    type: boolean
+    description: regulator should be turned on at startup
