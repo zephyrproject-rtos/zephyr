@@ -177,13 +177,13 @@ struct eswifi_dev *eswifi_by_iface_idx(uint8_t iface)
 
 static int __parse_ipv4_address(char *str, char *ssid, uint8_t ip[4])
 {
-	unsigned int byte = -1;
+	int byte = -1;
 
 	/* fmt => [JOIN   ] SSID,192.168.2.18,0,0 */
 	while (*str && byte < 4) {
 		if (byte == -1) {
 			if (!strncmp(str, ssid, strlen(ssid))) {
-				byte = 0U;
+				byte = 0;
 				str += strlen(ssid);
 			}
 			str++;
