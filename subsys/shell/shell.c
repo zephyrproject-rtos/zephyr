@@ -1109,7 +1109,6 @@ static int instance_init(const struct shell *shell, const void *p_config,
 	flag_echo_set(shell, IS_ENABLED(CONFIG_SHELL_ECHO_STATUS));
 	flag_mode_delete_set(shell,
 			     IS_ENABLED(CONFIG_SHELL_BACKSPACE_MODE_DELETE));
-	shell->ctx->state = SHELL_STATE_INITIALIZED;
 	shell->ctx->vt100_ctx.cons.terminal_wid =
 					CONFIG_SHELL_DEFAULT_TERMINAL_WIDTH;
 	shell->ctx->vt100_ctx.cons.terminal_hei =
@@ -1117,9 +1116,14 @@ static int instance_init(const struct shell *shell, const void *p_config,
 	shell->ctx->vt100_ctx.cons.name_len = shell_strlen(shell->ctx->prompt);
 	flag_use_colors_set(shell, IS_ENABLED(CONFIG_SHELL_VT100_COLORS));
 
-	return shell->iface->api->init(shell->iface, p_config,
-				       transport_evt_handler,
-				       (void *) shell);
+	int ret = shell->iface->api->init(shell->iface, p_config,
+					  transport_evt_handler,
+					  (void *)shell);
+	if (ret == 0) {
+		shell->ctx->state = SHELL_STATE_INITIALIZED;
+	}
+
+	return ret;
 }
 
 static int instance_uninit(const struct shell *shell)
@@ -1347,6 +1351,11 @@ void shell_vfprintf(const struct shell *shell, enum shell_vt100_color color,
 	__ASSERT_NO_MSG(shell->ctx);
 	__ASSERT_NO_MSG(shell->fprintf_ctx);
 	__ASSERT_NO_MSG(fmt);
+
+	/* Sending a message to a non-active shell leads to a dead lock. */
+	if (shell->ctx->state != SHELL_STATE_ACTIVE) {
+		return;
+	}
 
 	k_mutex_lock(&shell->ctx->wr_mtx, K_FOREVER);
 	if (!flag_cmd_ctx_get(shell)) {
