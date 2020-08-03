@@ -35,6 +35,10 @@ extern void z_arc_firq_stack_set(void);
 extern void arch_irq_enable(unsigned int irq);
 extern void arch_irq_disable(unsigned int irq);
 extern int arch_irq_is_enabled(unsigned int irq);
+#ifdef CONFIG_TRACING_ISR
+extern void sys_trace_isr_enter(void);
+extern void sys_trace_isr_exit(void);
+#endif
 
 extern void _irq_exit(void);
 extern void z_irq_priority_set(unsigned int irq, unsigned int prio,
@@ -92,8 +96,8 @@ extern void z_irq_spurious(void *unused);
 
 static inline void arch_isr_direct_header(void)
 {
-#ifdef CONFIG_TRACING
-	z_sys_trace_isr_enter();
+#ifdef CONFIG_TRACING_ISR
+	sys_trace_isr_enter();
 #endif
 }
 
@@ -104,8 +108,8 @@ static inline void arch_isr_direct_footer(int maybe_swap)
 	    z_arc_v2_aux_reg_read(_ARC_V2_AUX_IRQ_HINT)) {
 		z_arc_v2_aux_reg_write(_ARC_V2_AUX_IRQ_HINT, 0);
 	}
-#ifdef CONFIG_TRACING
-	z_sys_trace_isr_exit();
+#ifdef CONFIG_TRACING_ISR
+	sys_trace_isr_exit();
 #endif
 }
 
