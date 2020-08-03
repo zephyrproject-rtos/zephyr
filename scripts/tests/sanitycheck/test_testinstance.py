@@ -114,7 +114,7 @@ def test_get_unique_exception(testcase_root, workdir, name, exception):
         assert unique == exception
 
 TESTDATA_5 = [
-    ("testcases/tests/test_ztest.c", None, ['a', 'c', 'unit_a', 'newline', 'aa', 'user', 'last']),
+    ("testcases/tests/test_ztest.c", None, ['a', 'c', 'unit_a', 'newline', 'test_test_aa', 'user', 'last']),
     ("testcases/tests/test_a/test_ztest_error.c", "Found a test that does not start with test_", ['1a', '1c', '2a', '2b']),
     ("testcases/tests/test_a/test_ztest_error_1.c", "found invalid #ifdef, #endif in ztest_test_suite()", ['unit_1a', 'unit_1b', 'Unit_1c']),
 ]
@@ -131,7 +131,7 @@ def test_scan_file(test_data, test_file, expected_warnings, expected_subcases):
 
 
 TESTDATA_6 = [
-    ("testcases/tests", ['a', 'c', 'unit_a', 'newline', 'aa', 'user', 'last']),
+    ("testcases/tests", ['a', 'c', 'unit_a', 'newline', 'test_test_aa', 'user', 'last']),
     ("testcases/tests/test_a", ['unit_1a', 'unit_1b', 'Unit_1c', '1a', '1c', '2a', '2b']),
 ]
 
