@@ -1071,11 +1071,26 @@ uint8_t bt_conn_enc_key_size(struct bt_conn *conn)
 	return 0;
 }
 
+static void reset_pairing(struct bt_conn *conn)
+{
+#if defined(CONFIG_BT_BREDR)
+	if (conn->type == BT_CONN_TYPE_BR) {
+		atomic_clear_bit(conn->flags, BT_CONN_BR_PAIRING);
+		atomic_clear_bit(conn->flags, BT_CONN_BR_PAIRING_INITIATOR);
+		atomic_clear_bit(conn->flags, BT_CONN_BR_LEGACY_SECURE);
+	}
+#endif /* CONFIG_BT_BREDR */
+
+	/* Reset required security level to current operational */
+	conn->required_sec_level = conn->sec_level;
+}
+
 void bt_conn_security_changed(struct bt_conn *conn, uint8_t hci_err,
 			      enum bt_security_err err)
 {
 	struct bt_conn_cb *cb;
 
+	reset_pairing(conn);
 	bt_l2cap_security_changed(conn, hci_err);
 
 	for (cb = callback_list; cb; cb = cb->_next) {
