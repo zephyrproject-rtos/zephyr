@@ -43,7 +43,7 @@
 	 * Store SPSR_ELn and ELR_ELn. This is needed to support nested
 	 * exception handlers
 	 */
-	switch_el x3, 3f, 2f, 1f
+	switch_el x2, 3f, 2f, 1f
 3:
 	mrs	x0, spsr_el3
 	mrs	x1, elr_el3
@@ -77,7 +77,7 @@
 	 * exception handlers
 	 */
 	ldp	x0, x1, [sp], #16
-	switch_el x3, 3f, 2f, 1f
+	switch_el x2, 3f, 2f, 1f
 3:
 	msr	spsr_el3, x0
 	msr	elr_el3, x1
