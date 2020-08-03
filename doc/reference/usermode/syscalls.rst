@@ -250,7 +250,7 @@ passed in.  This includes:
 * Any other arguments that have a limited range of valid values.
 
 Verification functions involve a great deal of boilerplate code which has been
-made simpler by some macros in ``include/syscall_handler.h``.
+made simpler by some macros in :zephyr_file:`include/syscall_handler.h`.
 Verification functions should be declared using these macros.
 
 Argument Validation
