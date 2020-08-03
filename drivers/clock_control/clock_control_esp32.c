@@ -7,7 +7,10 @@
 #define DT_DRV_COMPAT espressif_esp32_rtc
 
 #include <dt-bindings/clock/esp32_clock.h>
+#include <esp_bit_defs.h>
 #include <soc/dport_reg.h>
+#include <esp32/rom/uart.h>
+#include <esp32/rom/rtc.h>
 #include <soc/rtc.h>
 #include <soc/rtc_cntl_reg.h>
 #include <drivers/uart.h>
@@ -156,6 +159,7 @@ static void bbpll_configure(rtc_xtal_freq_t xtal_freq, uint32_t pll_freq)
 
 	/* Configure the voltage */
 	REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, dbias_wak);
+	esp32_rom_ets_delay_us(DELAY_PLL_DBIAS_RAISE);
 
 	I2C_WRITEREG_RTC(I2C_BBPLL, I2C_BBPLL_ENDIV5, cfg->endiv5);
 	I2C_WRITEREG_RTC(I2C_BBPLL, I2C_BBPLL_BBADC_DSMP, cfg->bbadc_dsmp);
@@ -165,6 +169,39 @@ static void bbpll_configure(rtc_xtal_freq_t xtal_freq, uint32_t pll_freq)
 	I2C_WRITEREG_RTC(I2C_BBPLL, I2C_BBPLL_OC_LREF, i2c_bbpll_lref);
 	I2C_WRITEREG_RTC(I2C_BBPLL, I2C_BBPLL_OC_DIV_7_0, bb_cfg->div7_0);
 	I2C_WRITEREG_RTC(I2C_BBPLL, I2C_BBPLL_OC_DCUR, ((bb_cfg->bw << 6) | bb_cfg->dcur));
+}
+
+static inline uint32_t clk_val_to_reg_val(uint32_t val)
+{
+	return (val & UINT16_MAX) | ((val & UINT16_MAX) << 16);
+}
+
+void IRAM_ATTR ets_update_cpu_frequency(uint32_t ticks_per_us)
+{
+	/* Update scale factors used by ets_delay_us */
+	esp32_rom_g_ticks_per_us_pro = ticks_per_us;
+	esp32_rom_g_ticks_per_us_app = ticks_per_us;
+}
+
+static void esp32_cpu_freq_to_xtal(int freq, int div)
+{
+	ets_update_cpu_frequency(freq);
+
+	uint32_t apb_freq = MHZ(freq);
+	WRITE_PERI_REG(RTC_APB_FREQ_REG, clk_val_to_reg_val(apb_freq >> 12));
+	/* set divider from XTAL to APB clock */
+	REG_SET_FIELD(APB_CTRL_SYSCLK_CONF_REG, APB_CTRL_PRE_DIV_CNT, div - 1);
+	/* adjust ref_tick */
+	REG_WRITE(APB_CTRL_XTAL_TICK_CONF_REG, MHZ(freq) / REF_CLK_FREQ - 1);
+	/* switch clock source */
+	REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_SOC_CLK_SEL, RTC_CNTL_SOC_CLK_SEL_XTL);
+
+	/* lower the voltage */
+	if (freq <= 2) {
+		REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_2M);
+	} else {
+		REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_XTAL);
+	}
 }
 
 static void cpuclk_pll_configure(uint32_t xtal_freq, uint32_t cpu_freq)
@@ -193,6 +230,8 @@ static void cpuclk_pll_configure(uint32_t xtal_freq, uint32_t cpu_freq)
 	DPORT_REG_WRITE(DPORT_CPU_PER_CONF_REG, cpu_period_sel);
 	/* Set PLL as CPU Clock Source */
 	REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_SOC_CLK_SEL, RTC_CNTL_SOC_CLK_SEL_PLL);
+
+	ets_update_cpu_frequency(cpu_freq);
 
 	/*
 	 * Update REF_Tick,
@@ -280,6 +319,7 @@ static int clock_control_esp32_init(const struct device *dev)
 		REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_SOC_CLK_SEL, RTC_CNTL_SOC_CLK_SEL_XTL);
 		break;
 	case ESP32_CLK_SRC_PLL:
+		esp32_cpu_freq_to_xtal(xtal_freq[cfg->xtal_freq_sel], 1);
 		cpuclk_pll_configure(cfg->xtal_freq_sel, cfg->cpu_freq);
 		break;
 	default:

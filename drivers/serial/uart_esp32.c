@@ -7,10 +7,10 @@
 #define DT_DRV_COMPAT espressif_esp32_uart
 
 /* Include esp-idf headers first to avoid redefining BIT() macro */
-#include <rom/ets_sys.h>
+#include <esp32/rom/ets_sys.h>
 #include <soc/dport_reg.h>
 
-#include <rom/gpio.h>
+#include <esp32/rom/gpio.h>
 
 #include <soc/gpio_sig_map.h>
 
