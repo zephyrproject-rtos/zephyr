@@ -2,5 +2,8 @@ common:
   tags: dac drivers
 tests:
   drivers.dac:
-    depends_on: dac
+    depends_on: dac adc
     platform_exclude: arduino_zero
+    harness: ztest
+    harness_config:
+      fixture: dac_adc_loopback
