@@ -806,6 +806,8 @@ void ll_rx_dequeue(void)
 	case NODE_RX_TYPE_MESH_REPORT:
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
+	case NODE_RX_TYPE_EXT_SCAN_TERMINATE:
+
 #if defined(CONFIG_BT_CTLR_USER_EXT)
 	case NODE_RX_TYPE_USER_START ... NODE_RX_TYPE_USER_END:
 		__fallthrough;
@@ -932,6 +934,8 @@ void ll_rx_mem_release(void **node_rx)
 		case NODE_RX_TYPE_EXT_CODED_REPORT:
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
+
+		case NODE_RX_TYPE_EXT_SCAN_TERMINATE:
 
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
 		case NODE_RX_TYPE_SCAN_REQ:
@@ -1928,10 +1932,14 @@ static inline void rx_demux_event_done(memq_link_t *link,
 #endif /* CONFIG_BT_BROADCASTER */
 
 #if defined(CONFIG_BT_OBSERVER)
-		/* fallthrough checkpatch workaround! */
+	case EVENT_DONE_EXTRA_TYPE_SCAN:
+		ull_scan_done(done);
+		break;
+
 	case EVENT_DONE_EXTRA_TYPE_SCAN_AUX:
 		ull_scan_aux_done(done);
 		break;
+
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	case EVENT_DONE_EXTRA_TYPE_SYNC:
 		ull_sync_done(done);

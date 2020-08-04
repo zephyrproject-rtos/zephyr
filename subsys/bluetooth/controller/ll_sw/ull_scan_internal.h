@@ -48,3 +48,6 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy);
 
 /* Helper to clean up auxiliary channel scanning */
 void ull_scan_aux_done(struct node_rx_event_done *done);
+
+/* helper function to handle scan done events */
+void ull_scan_done(struct node_rx_event_done *done);

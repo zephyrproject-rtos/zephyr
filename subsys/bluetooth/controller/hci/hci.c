@@ -1164,7 +1164,7 @@ static void le_set_scan_enable(struct net_buf *buf, struct net_buf **evt)
 	}
 #endif
 
-	status = ll_scan_enable(cmd->enable);
+	status = ll_scan_enable(cmd->enable, 0, 0);
 
 	*evt = cmd_complete_status(status);
 }
@@ -2138,8 +2138,7 @@ static void le_set_ext_scan_enable(struct net_buf *buf, struct net_buf **evt)
 	}
 #endif
 
-	/* FIXME: Add implementation to use duration and period parameters. */
-	status = ll_scan_enable(cmd->enable);
+	status = ll_scan_enable(cmd->enable, cmd->period, cmd->duration);
 
 	*evt = cmd_complete_status(status);
 }
@@ -4337,6 +4336,9 @@ static void encode_control(struct node_rx_pdu *node_rx,
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_BROADCASTER */
 
+	case NODE_RX_TYPE_EXT_SCAN_TERMINATE:
+		break;
+
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
 	case NODE_RX_TYPE_SCAN_REQ:
 		le_scan_req_received(pdu_data, node_rx, buf);
@@ -4774,6 +4776,10 @@ uint8_t hci_get_class(struct node_rx_pdu *node_rx)
 
 			return HCI_CLASS_EVT_REQUIRED;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
+
+			/* fallthrough */
+		case NODE_RX_TYPE_EXT_SCAN_TERMINATE:
+			return HCI_CLASS_EVT_REQUIRED;
 
 #if defined(CONFIG_BT_CONN)
 		case NODE_RX_TYPE_CONNECTION:
