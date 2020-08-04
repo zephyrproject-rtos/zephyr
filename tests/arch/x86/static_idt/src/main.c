@@ -98,7 +98,7 @@ void exc_divide_error_handler(z_arch_esf_t *p_esf)
 	/* provide evidence that the handler executed */
 	exc_handler_executed = 1;
 }
-_EXCEPTION_CONNECT_NOCODE(exc_divide_error_handler, IV_DIVIDE_ERROR);
+_EXCEPTION_CONNECT_NOCODE(exc_divide_error_handler, IV_DIVIDE_ERROR, 0);
 extern void *_EXCEPTION_STUB_NAME(exc_divide_error_handler, IV_DIVIDE_ERROR);
 
 /**
