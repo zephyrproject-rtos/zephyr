@@ -571,7 +571,7 @@ add_custom_target(${SYSCALL_LIST_H_TARGET} DEPENDS ${syscall_list_h})
 add_custom_target(${PARSE_SYSCALLS_TARGET}
   DEPENDS
   ${syscalls_json}
-  ${subsys_jsonstruct_tags_json}
+  ${struct_tags_json}
   )
 
 # 64-bit systems do not require special handling of 64-bit system call
@@ -644,7 +644,7 @@ target_include_directories(${OFFSETS_LIB} PRIVATE
   ${ARCH_DIR}/${ARCH}/include
   )
 target_link_libraries(${OFFSETS_LIB} zephyr_interface)
-add_dependencies(     ${OFFSETS_LIB}
+add_dependencies(zephyr_interface
   ${SYSCALL_LIST_H_TARGET}
   ${DRIVER_VALIDATION_H_TARGET}
   ${KOBJ_TYPES_H_TARGET}
