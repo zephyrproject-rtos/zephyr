@@ -371,7 +371,7 @@ on_thread_stack:
 
 reschedule:
 #if CONFIG_TRACING
-	call sys_trace_thread_switched_in
+	call sys_trace_thread_switched_out
 #endif
 	/* Get reference to _kernel */
 	la t0, _kernel
@@ -525,6 +525,9 @@ skip_load_fp_caller_saved_benchmark:
 
 	/* Release stack space */
 	addi sp, sp, __z_arch_esf_t_SIZEOF
+#endif
+#if CONFIG_TRACING
+	call sys_trace_thread_switched_in
 #endif
 
 no_reschedule:
