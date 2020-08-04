@@ -9,7 +9,15 @@
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
 
 /* Offset for the Direct interrupt used in this test. */
+#ifdef CONFIG_BOARD_ARTY_A7_ARM_DESIGNSTART_M1
+/*
+ * IRQ 7 is used as level-detect non-interrupt signal on this board and always
+ * pending if no V2C-DAPLINK shield is installed. Use IRQ 6 instead.
+ */
+#define DIRECT_ISR_OFFSET 6
+#else
 #define DIRECT_ISR_OFFSET (CONFIG_NUM_IRQS - 1)
+#endif
 
 static volatile int test_flag;
 
