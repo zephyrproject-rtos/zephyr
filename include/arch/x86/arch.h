@@ -290,11 +290,16 @@ static inline uint64_t z_tsc_read(void)
 		);
 #endif
 
+#ifdef CONFIG_X86_64
 	/*
 	 * We cannot use "=A", since this would use %rax on x86_64 and
 	 * return only the lower 32bits of the TSC
 	 */
 	__asm__ volatile ("rdtsc" : "=a" (rv.lo), "=d" (rv.hi));
+#else
+	/* "=A" means that value is in eax:edx pair. */
+	__asm__ volatile ("rdtsc" : "=A" (rv.value));
+#endif
 
 	return rv.value;
 }
