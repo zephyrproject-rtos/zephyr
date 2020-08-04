@@ -30,6 +30,9 @@ int arch_swap(unsigned int key)
 	 * and so forth.  But we do not need to do so because we use posix
 	 * threads => those are all nicely kept by the native OS kernel
 	 */
+#if CONFIG_TRACING
+	sys_trace_thread_switched_out();
+#endif
 	_current->callee_saved.key = key;
 	_current->callee_saved.retval = -EAGAIN;
 
@@ -47,6 +50,9 @@ int arch_swap(unsigned int key)
 
 
 	_current = _kernel.ready_q.cache;
+#if CONFIG_TRACING
+	sys_trace_thread_switched_in();
+#endif
 
 	/*
 	 * Here a "real" arch would load all processor registers for the thread
