@@ -270,6 +270,16 @@ static inline uint64_t z_tsc_read(void)
 		uint64_t  value;
 	}  rv;
 
+#ifdef CONFIG_X86_64
+	/*
+	 * According to Intel 64 and IA-32 Architectures Software
+	 * Developer’s Manual, volume 3, chapter 8.2.5, LFENCE provides
+	 * a more efficient method of controlling memory ordering than
+	 * the CPUID instruction. So use LFENCE here, as all 64-bit
+	 * CPUs have LFENCE.
+	 */
+	__asm__ volatile ("lfence");
+#else
 	/* rdtsc & cpuid clobbers eax, ebx, ecx and edx registers */
 	__asm__ volatile (/* serialize */
 		"xorl %%eax,%%eax;"
@@ -278,6 +288,8 @@ static inline uint64_t z_tsc_read(void)
 		:
 		: "%eax", "%ebx", "%ecx", "%edx"
 		);
+#endif
+
 	/*
 	 * We cannot use "=A", since this would use %rax on x86_64 and
 	 * return only the lower 32bits of the TSC
