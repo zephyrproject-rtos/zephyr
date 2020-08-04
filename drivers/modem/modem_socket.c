@@ -241,6 +241,9 @@ void modem_socket_put(struct modem_socket_config *cfg, int sock_fd)
 	sock->is_connected = false;
 	(void)memset(&sock->src, 0, sizeof(struct sockaddr));
 	(void)memset(&sock->dst, 0, sizeof(struct sockaddr));
+	memset(&sock->packet_sizes, 0, sizeof(sock->packet_sizes));
+	sock->packet_count = 0;
+	k_sem_reset(&sock->sem_data_ready);
 
 	k_sem_give(&cfg->sem_lock);
 }
