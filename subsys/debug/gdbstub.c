@@ -262,6 +262,18 @@ int z_gdb_main_loop(struct gdb_ctx *ctx, bool start)
 			CHECK_INT(data_len);
 
 			/* Read Memory */
+
+			/*
+			 * GDB ask the guest to read parameters when
+			 * the user request backtrace. If the
+			 * parameter is a NULL pointer this will cause
+			 * a fault. Just send a packet informing that
+			 * this address is invalid
+			 */
+			if (addr == 0L) {
+				gdb_send_packet(GDB_ERROR_MEMORY, 3);
+				break;
+			}
 			ret = gdb_mem_read(buf, sizeof(buf), addr, data_len);
 			CHECK_FAILURE(ret == -1);
 			gdb_send_packet(buf, ret);
@@ -276,6 +288,11 @@ int z_gdb_main_loop(struct gdb_ctx *ctx, bool start)
 			CHECK_SYMBOL(',');
 			CHECK_INT(data_len);
 			CHECK_SYMBOL(':');
+
+			if (addr == 0L) {
+				gdb_send_packet(GDB_ERROR_MEMORY, 3);
+				break;
+			}
 
 			/* Write Memory */
 			pkt_len = gdb_mem_write(ptr, addr, data_len);
