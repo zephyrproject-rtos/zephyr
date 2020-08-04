@@ -534,7 +534,7 @@ static int init_rtc(const struct device *dev, uint32_t prescaler)
 	NRF_RTC_Type *rtc = nrfx_config->rtc;
 	int err;
 
-	z_nrf_clock_control_lf_on(NRF_LFCLK_START_MODE_NOWAIT);
+	z_nrf_clock_control_lf_on(CLOCK_CONTROL_NRF_LF_START_NOWAIT);
 
 	nrf_rtc_prescaler_set(rtc, prescaler);
 
