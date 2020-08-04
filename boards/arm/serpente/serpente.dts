@@ -78,6 +78,10 @@
 
 &sercom2 {
 	status = "okay";
+	compatible = "atmel,sam0-uart";
+	current-speed = <115200>;
+	rxpo = <1>;
+	txpo = <0>;
 };
 
 &sercom3 {
