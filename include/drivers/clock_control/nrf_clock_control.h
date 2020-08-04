@@ -37,9 +37,9 @@ enum clock_control_nrf_type {
 
 /** @brief LF clock start modes. */
 enum nrf_lfclk_start_mode {
-	NRF_LFCLK_START_MODE_NOWAIT,
-	NRF_LFCLK_START_MODE_SPINWAIT_RUNNING,
-	NRF_LFCLK_START_MODE_SPINWAIT_STABLE,
+	CLOCK_CONTROL_NRF_LF_START_NOWAIT,
+	CLOCK_CONTROL_NRF_LF_START_AVAILABLE,
+	CLOCK_CONTROL_NRF_LF_START_STABLE,
 };
 
 /* Define 32KHz clock source */

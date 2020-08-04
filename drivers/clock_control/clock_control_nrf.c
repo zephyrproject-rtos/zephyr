@@ -444,6 +444,7 @@ static void lfclk_spinwait(nrf_clock_lfclk_t t)
 
 	while (!(nrfx_clock_is_running(d, (void *)&type) && (type == t))) {
 		/* empty */
+		/* k_cpu_idle(); */
 	}
 }
 
@@ -463,16 +464,21 @@ void z_nrf_clock_control_lf_on(enum nrf_lfclk_start_mode start_mode)
 		__ASSERT_NO_MSG(err >= 0);
 	}
 
+	/* In case of simulated board leave immediately. */
+	if (IS_ENABLED(CONFIG_BOARD_NRF52_BSIM)) {
+		return;
+	}
+
 	switch (start_mode) {
-	case NRF_LFCLK_START_MODE_SPINWAIT_STABLE:
+	case CLOCK_CONTROL_NRF_LF_START_STABLE:
 		lfclk_spinwait(CLOCK_CONTROL_NRF_K32SRC);
 		break;
 
-	case NRF_LFCLK_START_MODE_SPINWAIT_RUNNING:
+	case CLOCK_CONTROL_NRF_LF_START_AVAILABLE:
 		lfclk_spinwait(NRF_CLOCK_LFCLK_RC);
 		break;
 
-	case NRF_LFCLK_START_MODE_NOWAIT:
+	case CLOCK_CONTROL_NRF_LF_START_NOWAIT:
 		break;
 
 	default:
