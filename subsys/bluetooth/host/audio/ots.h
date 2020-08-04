@@ -495,8 +495,6 @@ struct bt_ots_obj_metadata {
 	uint32_t                      size;
 	struct bt_ots_obj_type        type;
 	char                          *name;
-	bt_ots_obj_content_cb_t       content_cb;
-	bt_ots_obj_on_select_cb_t     select_cb;
 };
 
 /** @brief OTS server callback structure. */
