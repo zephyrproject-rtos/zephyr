@@ -328,4 +328,5 @@ void _FpNotAvailableExcHandler(z_arch_esf_t *pEsf)
 
 	k_float_enable(_current, _FP_USER_MASK);
 }
-_EXCEPTION_CONNECT_NOCODE(_FpNotAvailableExcHandler, IV_DEVICE_NOT_AVAILABLE);
+_EXCEPTION_CONNECT_NOCODE(_FpNotAvailableExcHandler,
+		IV_DEVICE_NOT_AVAILABLE, 0);

@@ -150,5 +150,5 @@ void arch_gdb_init(void)
 }
 
 /* Hook current IDT. */
-_EXCEPTION_CONNECT_NOCODE(z_gdb_debug_isr, IV_DEBUG);
-_EXCEPTION_CONNECT_NOCODE(z_gdb_break_isr, IV_BREAKPOINT);
+_EXCEPTION_CONNECT_NOCODE(z_gdb_debug_isr, IV_DEBUG, 3);
+_EXCEPTION_CONNECT_NOCODE(z_gdb_break_isr, IV_BREAKPOINT, 3);
