@@ -8,6 +8,10 @@ struct ll_scan_set {
 	struct evt_hdr  evt;
 	struct ull_hdr  ull;
 	struct lll_scan lll;
+	uint32_t period;
+	uint32_t duration;
+	uint32_t dur_counter;
+	struct node_rx_hdr *node_rx_scan_term;
 
 	uint8_t is_enabled:1;
 	uint8_t own_addr_type:2;

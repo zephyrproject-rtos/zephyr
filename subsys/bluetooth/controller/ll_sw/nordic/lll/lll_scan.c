@@ -556,6 +556,13 @@ static void isr_done(void *param)
 	 * master event.
 	 */
 	radio_tmr_end_capture();
+
+	struct event_done_extra *extra;
+
+	extra = ull_event_done_extra_get();
+	LL_ASSERT(extra);
+
+	extra->type = EVENT_DONE_EXTRA_TYPE_SCAN;
 }
 
 static void isr_window(void *param)

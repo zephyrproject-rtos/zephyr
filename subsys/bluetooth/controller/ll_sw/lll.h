@@ -223,6 +223,8 @@ enum node_rx_type {
 	NODE_RX_TYPE_MESH_REPORT = 0x18,
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
+	NODE_RX_TYPE_EXT_SCAN_TERMINATE = 0x17,
+
 /* Following proprietary defines must be at end of enum range */
 #if defined(CONFIG_BT_CTLR_USER_EXT)
 	NODE_RX_TYPE_USER_START = 0x18,
@@ -294,6 +296,8 @@ enum {
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	EVENT_DONE_EXTRA_TYPE_ADV,
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
+
+	EVENT_DONE_EXTRA_TYPE_SCAN,
 
 #if defined(CONFIG_BT_OBSERVER)
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
