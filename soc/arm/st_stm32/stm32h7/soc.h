@@ -76,6 +76,10 @@
 #include <stm32h7xx_ll_tim.h>
 #endif /* CONFIG_PWM_STM32 */
 
+#ifdef CONFIG_ENTROPY_STM32_RNG
+#include <stm32h7xx_ll_rng.h>
+#endif /* CONFIG_ENTROPY_STM32_RNG */
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32F7_SOC_H7_ */
