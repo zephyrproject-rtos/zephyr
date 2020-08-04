@@ -41,7 +41,8 @@ static void l2cap_sent(struct bt_l2cap_chan *chan);
 static void l2cap_status(struct bt_l2cap_chan *chan, atomic_t *status);
 static void l2cap_connected(struct bt_l2cap_chan *chan);
 static void l2cap_disconnected(struct bt_l2cap_chan *chan);
-static int l2cap_obj_send(struct ots_svc_inst_t *inst, uint32_t data_len);
+static int l2cap_obj_send(struct ots_svc_inst_t *inst, uint32_t data_len,
+			  struct bt_conn *conn);
 
 NET_BUF_POOL_FIXED_DEFINE(ots_tx_pool, 1, DATA_MTU, NULL);
 NET_BUF_SIMPLE_DEFINE_STATIC(gatt_buf, CONFIG_BT_L2CAP_TX_MTU);
@@ -214,6 +215,14 @@ static struct ots_svc_inst_t *lookup_inst_by_attr(
 	return NULL;
 }
 
+static uint32_t on_dir_listing_content(struct ots_svc_inst_t *inst,
+				       uint8_t **data, uint32_t len,
+				       uint32_t offset)
+{
+	*data = &inst->dirlisting_content[offset];
+	return (inst->p_dirlisting_obj->metadata.size - offset);
+}
+
 /* L2CAP CoC*/
 static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
@@ -263,7 +272,7 @@ static void l2cap_disconnected(struct bt_l2cap_chan *chan)
 	}
 }
 
-static int resume_send(void)
+static int resume_send(struct bt_conn *conn)
 {
 	int ret;
 	struct net_buf *buf;
@@ -293,10 +302,19 @@ static int resume_send(void)
 		len = max_tx_len;
 	}
 
-	if (cur_obj->metadata.content_cb) {
-		uint32_t buf_len = cur_obj->metadata.content_cb(active_inst, cur_obj->id,
-						    ots_inst.sent_len,
-						    len, &p_data);
+	if (active_inst->cbs->obj_read) {
+		uint32_t buf_len;
+
+		if (cur_obj->id == BT_OTS_DIRLISTING_ID) {
+			buf_len = on_dir_listing_content(active_inst, &p_data,
+							 len,
+							 ots_inst.sent_len);
+		} else {
+			buf_len = active_inst->cbs->obj_read(
+				active_inst, conn, cur_obj->id, &p_data, len,
+				ots_inst.sent_len);
+		}
+
 
 		if (!buf_len || !p_data) {
 			BT_WARN("content callback returned 0 length");
@@ -349,7 +367,7 @@ static void l2cap_sent(struct bt_l2cap_chan *chan)
 		BT_DBG("still %u bytes to send, resume sending",
 		       ots_inst.remaining_len);
 
-		err = resume_send();
+		err = resume_send(chan->conn);
 	} else {
 		ots_inst.active_inst = NULL;
 		BT_DBG("Read completed");
@@ -359,7 +377,8 @@ static void l2cap_sent(struct bt_l2cap_chan *chan)
 
 			if (inst->is_read_to_be_started) {
 				BT_DBG("Executing read for next service inst");
-				l2cap_obj_send(inst, inst->requested_read_size);
+				l2cap_obj_send(inst, inst->requested_read_size,
+					       chan->conn);
 			}
 		}
 	}
@@ -369,7 +388,8 @@ static void l2cap_sent(struct bt_l2cap_chan *chan)
 	}
 }
 
-static int l2cap_obj_send(struct ots_svc_inst_t *inst, uint32_t data_len)
+static int l2cap_obj_send(struct ots_svc_inst_t *inst, uint32_t data_len,
+			  struct bt_conn *conn)
 {
 	int credits;
 	int ret;
@@ -393,7 +413,7 @@ static int l2cap_obj_send(struct ots_svc_inst_t *inst, uint32_t data_len)
 		BT_DBG("no credits available");
 	}
 
-	ret = resume_send();
+	ret = resume_send(conn);
 
 	if (ret < 0) {
 		BT_WARN("Unable to send: %d", -ret);
@@ -425,7 +445,8 @@ void oacp_ind_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		BT_DBG("Start sending object, size %u, offset %u",
 		       inst->requested_read_size, offset);
 
-		err_code = l2cap_obj_send(inst, inst->requested_read_size);
+		err_code = l2cap_obj_send(inst, inst->requested_read_size,
+					  conn);
 
 		if (err_code) {
 			BT_DBG("l2cap_obj_send returned 0x%x", -err_code);
@@ -452,11 +473,6 @@ static enum bt_ots_oacp_res_code oacp_read_proc(struct ots_svc_inst_t *inst,
 
 	if (inst->cur_obj_p->is_valid == false) {
 		BT_DBG("read object: current object is invalid");
-		return BT_OTS_OACP_RES_INV_OBJ;
-	}
-
-	if (!inst->cur_obj_p->metadata.content_cb) {
-		BT_DBG("read object: current obj data ptr set to NULL");
 		return BT_OTS_OACP_RES_INV_OBJ;
 	}
 
@@ -791,7 +807,8 @@ static bool ots_lf_is_obj_valid(struct ots_object *p_obj)
 		p_obj->is_valid;
 }
 
-static enum bt_ots_olcp_res_code olcp_first(struct ots_svc_inst_t *inst)
+static enum bt_ots_olcp_res_code olcp_first(struct ots_svc_inst_t *inst,
+					    struct bt_conn *conn)
 {
 	bool found = false;
 
@@ -807,14 +824,15 @@ static enum bt_ots_olcp_res_code olcp_first(struct ots_svc_inst_t *inst)
 		return BT_OTS_OLCP_RES_NO_OBJECT;
 	}
 
-	if (inst->cur_obj_p->metadata.select_cb) {
-		inst->cur_obj_p->metadata.select_cb(inst->cur_obj_p->id);
+	if (inst->cbs->obj_selected) {
+		inst->cbs->obj_selected(inst, conn, inst->cur_obj_p->id);
 	}
 
 	return BT_OTS_OLCP_RES_SUCCESS;
 }
 
-static enum bt_ots_olcp_res_code olcp_last(struct ots_svc_inst_t *inst)
+static enum bt_ots_olcp_res_code olcp_last(struct ots_svc_inst_t *inst,
+					   struct bt_conn *conn)
 {
 	bool found = false;
 
@@ -834,15 +852,16 @@ static enum bt_ots_olcp_res_code olcp_last(struct ots_svc_inst_t *inst)
 		return BT_OTS_OLCP_RES_NO_OBJECT;
 	}
 
-	if (inst->cur_obj_p->metadata.select_cb) {
-		inst->cur_obj_p->metadata.select_cb(inst->cur_obj_p->id);
+	if (inst->cbs->obj_selected) {
+		inst->cbs->obj_selected(inst, conn, inst->cur_obj_p->id);
 	}
 
 	return BT_OTS_OLCP_RES_SUCCESS;
 }
 
 static enum bt_ots_olcp_res_code olcp_goto(struct ots_svc_inst_t *inst,
-					   uint64_t obj_id)
+					   uint64_t obj_id,
+					   struct bt_conn *conn)
 {
 	uint64_t pos = obj_id;
 
@@ -866,14 +885,15 @@ static enum bt_ots_olcp_res_code olcp_goto(struct ots_svc_inst_t *inst,
 
 	inst->cur_obj_p = &inst->obj_list.objects[pos];
 
-	if (inst->cur_obj_p->metadata.select_cb) {
-		inst->cur_obj_p->metadata.select_cb(inst->cur_obj_p->id);
+	if (inst->cbs->obj_selected) {
+		inst->cbs->obj_selected(inst, conn, inst->cur_obj_p->id);
 	}
 
 	return BT_OTS_OLCP_RES_SUCCESS;
 }
 
-static enum bt_ots_olcp_res_code olcp_prev(struct ots_svc_inst_t *inst)
+static enum bt_ots_olcp_res_code olcp_prev(struct ots_svc_inst_t *inst,
+					   struct bt_conn *conn)
 {
 	bool found = false;
 	/* We assume current object is the first object in the list, and if not
@@ -902,14 +922,15 @@ static enum bt_ots_olcp_res_code olcp_prev(struct ots_svc_inst_t *inst)
 		return BT_OTS_OLCP_RES_NO_OBJECT;
 	}
 
-	if (inst->cur_obj_p->metadata.select_cb) {
-		inst->cur_obj_p->metadata.select_cb(inst->cur_obj_p->id);
+	if (inst->cbs->obj_selected) {
+		inst->cbs->obj_selected(inst, conn, inst->cur_obj_p->id);
 	}
 
 	return BT_OTS_OLCP_RES_SUCCESS;
 }
 
-static enum bt_ots_olcp_res_code olcp_next(struct ots_svc_inst_t *inst)
+static enum bt_ots_olcp_res_code olcp_next(struct ots_svc_inst_t *inst,
+					   struct bt_conn *conn)
 {
 	bool found = false;
 	/* We assume current object is the last object in the list, and if not
@@ -936,8 +957,8 @@ static enum bt_ots_olcp_res_code olcp_next(struct ots_svc_inst_t *inst)
 
 	inst->cur_obj_p = p_obj;
 
-	if (inst->cur_obj_p->metadata.select_cb) {
-		inst->cur_obj_p->metadata.select_cb(inst->cur_obj_p->id);
+	if (inst->cbs->obj_selected) {
+		inst->cbs->obj_selected(inst, conn, inst->cur_obj_p->id);
 	}
 
 	return BT_OTS_OLCP_RES_SUCCESS;
@@ -973,7 +994,8 @@ static int olcp_response_send(struct ots_svc_inst_t *inst,
 }
 
 static enum bt_ots_olcp_res_code olcp_do_proc(struct ots_svc_inst_t *inst,
-					      struct bt_ots_olcp_proc *p_proc)
+					      struct bt_ots_olcp_proc *p_proc,
+					      struct bt_conn *conn)
 {
 	enum bt_ots_olcp_res_code olcp_status;
 
@@ -983,19 +1005,19 @@ static enum bt_ots_olcp_res_code olcp_do_proc(struct ots_svc_inst_t *inst,
 
 	switch (p_proc->type) {
 	case BT_OTS_OLCP_PROC_FIRST:
-		olcp_status = olcp_first(inst);
+		olcp_status = olcp_first(inst, conn);
 		break;
 	case BT_OTS_OLCP_PROC_LAST:
-		olcp_status = olcp_last(inst);
+		olcp_status = olcp_last(inst, conn);
 		break;
 	case BT_OTS_OLCP_PROC_PREV:
-		olcp_status = olcp_prev(inst);
+		olcp_status = olcp_prev(inst, conn);
 		break;
 	case BT_OTS_OLCP_PROC_NEXT:
-		olcp_status = olcp_next(inst);
+		olcp_status = olcp_next(inst, conn);
 		break;
 	case BT_OTS_OLCP_PROC_GOTO:
-		olcp_status = olcp_goto(inst, p_proc->goto_id);
+		olcp_status = olcp_goto(inst, p_proc->goto_id, conn);
 		break;
 	default:
 		olcp_status = BT_OTS_OLCP_RES_PROC_NOT_SUP;
@@ -1058,7 +1080,7 @@ static ssize_t olcp_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	BT_DBG("OLCP: Opcode: 0x%x, status 0x%x", olcp_proc.type, olcp_status);
 
 	if (olcp_status == BT_OTS_OLCP_RES_SUCCESS) {
-		olcp_status = olcp_do_proc(inst, &olcp_proc);
+		olcp_status = olcp_do_proc(inst, &olcp_proc, conn);
 		BT_DBG("ots_olcp_do_proc status 0x%x", olcp_status);
 	}
 
@@ -1176,14 +1198,6 @@ static struct ots_object *get_object_by_id(struct ots_svc_inst_t *inst,
 	return obj;
 }
 
-static uint32_t on_dir_listing_content(struct ots_svc_inst_t *inst,
-				       uint64_t id, uint32_t offset,
-				       uint32_t len, uint8_t **data)
-{
-	*data = &inst->dirlisting_content[offset];
-	return (inst->p_dirlisting_obj->metadata.size - offset);
-}
-
 static void create_dir_listing_object(struct ots_svc_inst_t *inst)
 {
 	static char *dir_listing_name = OTS_DIR_LISTING_NAME;
@@ -1201,7 +1215,6 @@ static void create_dir_listing_object(struct ots_svc_inst_t *inst)
 	BT_OTS_OBJ_SET_PROP_READ(inst->p_dirlisting_obj->properties, true);
 
 	inst->p_dirlisting_obj->alloc_len = BT_OTS_DIR_LISTING_MAX_SIZE;
-	inst->p_dirlisting_obj->metadata.content_cb = on_dir_listing_content;
 
 	encode_object_list(inst);
 }
@@ -1380,7 +1393,6 @@ int bt_ots_update_object(struct ots_svc_inst_t *inst, uint64_t id,
 {
 	struct ots_object *obj;
 
-	__ASSERT(p_metadata->content_cb, "content_cb shall be set");
 	__ASSERT(p_metadata->name, "name shall be set");
 
 	obj = get_object_by_id(inst, id);
