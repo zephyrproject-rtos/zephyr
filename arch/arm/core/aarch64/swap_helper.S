@@ -35,7 +35,7 @@ GTEXT(z_arm64_context_switch)
 SECTION_FUNC(TEXT, z_arm64_context_switch)
 #ifdef CONFIG_TRACING
 	stp	xzr, x30, [sp, #-16]!
-	bl	sys_trace_thread_switched_in
+	bl	sys_trace_thread_switched_out
 	ldp	xzr, x30, [sp], #16
 #endif
 	/* load _kernel into x0 and current k_thread into x1 */
@@ -79,7 +79,7 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 
 #ifdef CONFIG_TRACING
 	stp	xzr, x30, [sp, #-16]!
-	bl	sys_trace_thread_switched_out
+	bl	sys_trace_thread_switched_in
 	ldp	xzr, x30, [sp], #16
 #endif
 
