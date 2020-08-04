@@ -36,10 +36,20 @@ static inline uint32_t get_available_nvic_line(uint32_t initial_offset)
 				/*
 				 * If the NVIC line is pending, it is
 				 * guaranteed that it is implemented; clear the
-				 * line and return the NVIC line number.
+				 * line.
 				 */
 				NVIC_ClearPendingIRQ(i);
-				break;
+
+				if (!NVIC_GetPendingIRQ(i)) {
+					/*
+					 * If the NVIC line can be successfully
+					 * un-pended, it is guaranteed that it
+					 * can be used for software interrupt
+					 * triggering. Return the NVIC line
+					 * number.
+					 */
+					break;
+				}
 			}
 		}
 	}
