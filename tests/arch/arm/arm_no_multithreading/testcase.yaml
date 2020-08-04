@@ -1,0 +1,6 @@
+tests:
+  arch.arm.no_multithreading:
+    filter: CONFIG_ARMV6_M_ARMV8_M_BASELINE or CONFIG_ARMV7_M_ARMV8_M_MAINLINE
+    tags: arm
+    arch_whitelist: arm
+    platform_exclude: degu_evk
