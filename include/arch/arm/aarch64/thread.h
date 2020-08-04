@@ -41,7 +41,7 @@ struct _callee_saved {
 typedef struct _callee_saved _callee_saved_t;
 
 struct _thread_arch {
-	uint32_t swap_return_value;
+	/* empty */
 };
 
 typedef struct _thread_arch _thread_arch_t;

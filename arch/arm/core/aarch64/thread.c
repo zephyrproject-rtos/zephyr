@@ -77,4 +77,13 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 	thread->callee_saved.sp = (uint64_t)pInitCtx;
 	thread->callee_saved.x30 = (uint64_t)z_thread_entry_wrapper;
+
+	thread->switch_handle = thread;
+}
+
+void *z_arch_get_next_switch_handle(struct k_thread **old_thread)
+{
+	*old_thread =  _current;
+
+	return z_get_next_switch_handle(*old_thread);
 }
