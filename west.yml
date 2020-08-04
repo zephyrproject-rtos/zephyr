@@ -110,7 +110,7 @@ manifest:
       revision: d216ec32cdb78ec873689234f710b3c9bb096bcd
       path: modules/lib/openthread
     - name: segger
-      revision: 6fcf61606d6012d2c44129edc033f59331e268bc
+      revision: pull/3/head
       path: modules/debug/segger
     - name: tinycbor
       path: modules/lib/tinycbor
