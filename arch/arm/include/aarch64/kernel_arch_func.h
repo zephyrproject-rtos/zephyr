@@ -32,10 +32,11 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 {
 }
 
-static ALWAYS_INLINE void
-arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
+static inline void arch_switch(void *switch_to, void **switched_from)
 {
-	thread->arch.swap_return_value = value;
+	z_arm64_call_svc(switch_to, switched_from);
+
+	return;
 }
 
 extern void z_arm64_fatal_error(const z_arch_esf_t *esf, unsigned int reason);

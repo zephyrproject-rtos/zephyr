@@ -14,8 +14,7 @@ zephyr_library_sources(
   irq_manage.c
   prep_c.c
   reset.S
-  swap.c
-  swap_helper.S
+  switch.S
   thread.c
   vector_table.S
 )

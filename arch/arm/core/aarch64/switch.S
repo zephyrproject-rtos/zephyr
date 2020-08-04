@@ -22,7 +22,6 @@
 _ASM_FILE_PROLOGUE
 
 GDATA(_kernel)
-GDATA(_k_neg_eagain)
 
 /**
  * @brief Routine to handle context switches
@@ -34,13 +33,12 @@ GDATA(_k_neg_eagain)
 GTEXT(z_arm64_context_switch)
 SECTION_FUNC(TEXT, z_arm64_context_switch)
 #ifdef CONFIG_TRACING
+	stp	x0, x1, [sp, #-16]!
 	stp	xzr, x30, [sp, #-16]!
 	bl	sys_trace_thread_switched_out
 	ldp	xzr, x30, [sp], #16
+	ldp	x0, x1, [sp], #16
 #endif
-	/* load _kernel into x0 and current k_thread into x1 */
-	ldr	x0, =_kernel
-	ldr	x1, [x0, #_kernel_offset_to_current]
 
 	/* addr of callee-saved regs in thread in x2 */
 	ldr	x2, =_thread_offset_to_callee_saved
@@ -58,13 +56,9 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	mov	x1, sp
 	str	x1, [x2]
 
-	/* fetch the thread to run from the ready queue cache */
-	ldr	x1, [x0, #_kernel_offset_to_ready_q_cache]
-	str	x1, [x0, #_kernel_offset_to_current]
-
 	/* addr of callee-saved regs in thread in x2 */
 	ldr	x2, =_thread_offset_to_callee_saved
-	add	x2, x2, x1
+	add	x2, x2, x0
 
 	/* Restore x19-x29 plus x30 */
 	ldp	x19, x20, [x2], #16
@@ -152,7 +146,7 @@ SECTION_FUNC(TEXT, z_thread_entry_wrapper)
 
 GTEXT(z_arm64_svc)
 SECTION_FUNC(TEXT, z_arm64_svc)
-	z_arm64_enter_exc x0, x1, x2
+	z_arm64_enter_exc x2, x3, x4
 
 	switch_el x1, 3f, 2f, 1f
 3:
@@ -197,12 +191,15 @@ offload:
 	b	inv
 
 context_switch:
-	/* Check if we need to context switch */
-	ldr	x0, =_kernel
-	ldr	x1, [x0, #_kernel_offset_to_current]
-	ldr	x2, [x0, #_kernel_offset_to_ready_q_cache]
-	cmp	x1, x2
-	beq	exit
+	/*
+	 * Retrieve x0 and x1 from the stack:
+	 *  - x0 = new_thread->switch_handle = switch_to thread
+	 *  - x1 = x1 = &old_thread->switch_handle = current thread
+	 */
+	ldp	x0, x1, [sp, #(16 * 10)]
+
+	/* Get old thread from x1 */
+	sub	x1, x1, ___thread_t_switch_handle_OFFSET
 
 	/* Switch thread */
 	bl	z_arm64_context_switch
