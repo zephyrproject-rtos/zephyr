@@ -97,9 +97,14 @@ void threadA(void *dummy1, void *dummy2, void *dummy3)
 	/* spawn threadB */
 	k_tid_t tid = k_thread_create(&threadB_data, threadB_stack_area,
 			STACKSIZE, threadB, NULL, NULL, NULL,
-			PRIORITY, 0, K_NO_WAIT);
+			PRIORITY, 0, K_FOREVER);
 
 	k_thread_name_set(tid, "thread_b");
+#if CONFIG_SCHED_CPU_MASK
+	k_thread_cpu_mask_disable(&threadB_data, 1);
+	k_thread_cpu_mask_enable(&threadB_data, 0);
+#endif
+	k_thread_start(&threadB_data);
 
 	/* invoke routine to ping-pong hello messages with threadB */
 	helloLoop(__func__, &threadA_sem, &threadB_sem);
