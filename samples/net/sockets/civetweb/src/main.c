@@ -89,6 +89,7 @@ int system_info_handler(struct mg_connection *conn, void *cbdata)
 	mg_printf(conn, "<li>host os - %s</li>\n", info.os);
 	mg_printf(conn, "<li>server - civetweb %s</li>\n", info.version);
 	mg_printf(conn, "<li>compiler - %s</li>\n", info.compiler);
+	mg_printf(conn, "<li>board - %s</li>\n", CONFIG_BOARD);
 	mg_printf(conn, "</ul>\n");
 
 	mg_printf(conn, "</body></html>\n");
