@@ -40,6 +40,64 @@ Finally, you can also specify the list of modules yourself in various ways, or
 not use modules at all if your application doesn't need them.
 
 
+Module yaml file description
+****************************
+
+A module can be described using a file named :file:`zephyr/module.yml`.
+The format of :file:`zephyr/module.yml` is described in the following:
+
+
+Build files
+===========
+
+Inclusion of build files, :file:`CMakeLists.txt` and :file:`Kconfig`, can be
+described as:
+
+.. code-block:: yaml
+
+   build:
+     cmake: <cmake-directory>
+     kconfig: <directory>/Kconfig
+
+The ``cmake: <cmake-directory>`` part specifies that
+:file:`<cmake-directory>` contains the :file:`CMakeLists.txt` to use. The
+``kconfig: <directory>/Kconfig`` part specifies the Kconfig file to use.
+Neither is required: ``cmake`` defaults to ``zephyr``, and ``kconfig``
+defaults to ``zephyr/Kconfig``.
+
+Here is an example :file:`module.yml` file referring to
+:file:`CMakeLists.txt` and :file:`Kconfig` files in the root directory of the
+module:
+
+.. code-block:: yaml
+
+   build:
+     cmake: .
+     kconfig: Kconfig
+
+
+Sanitycheck
+===========
+
+To execute both tests and samples available in modules, the Zephyr test runner
+(sanitycheck) should be pointed to the directories containing those samples and
+tests. This can be done by specifying the path to both samples and tests in the
+:file:`zephyr/module.yml` file.  Additionally, if a module defines out of tree
+boards, the module file can point sanitycheck to the path where those files
+are maintained in the module. For example:
+
+
+.. code-block:: yaml
+
+    build:
+      cmake: .
+    samples:
+      - samples
+    tests:
+      - tests
+    boards:
+      - boards
+
 
 Module Inclusion
 ****************
@@ -57,50 +115,9 @@ just those projects which have the necessary module metadata files.
 
 Each project in the ``west list`` output is tested like this:
 
-- If the project contains a file named :file:`zephyr/module.yml`, then
-  its contents should look like this:
-
-  .. code-block:: yaml
-
-     build:
-       cmake: <cmake-directory>
-       kconfig: <directory>/Kconfig
-
-  The ``cmake: <cmake-directory>`` part specifies that
-  :file:`<cmake-directory>` contains the :file:`CMakeLists.txt` to use. The
-  ``kconfig: <directory>/Kconfig`` part specifies the Kconfig file to use.
-  Neither is required: ``cmake`` defaults to ``zephyr``, and ``kconfig``
-  defaults to ``zephyr/Kconfig``.
-
-  Here is an example :file:`module.yml` file referring to
-  :file:`CMakeLists.txt` and :file:`Kconfig` files in the root directory of the
-  module:
-
-  .. code-block:: yaml
-
-     build:
-       cmake: .
-       kconfig: Kconfig
-
-- To execute both tests and samples available in modules, the Zephyr test runner
-  (sanitycheck) should be pointed to the directories containing those samples and
-  tests. This can be done by specifying the path to both samples and tests in the
-  :file:`zephyr/module.yml` file.  Additionally, if a module defines out of tree
-  boards, the module file can point sanitycheck to the path where those files
-  are maintained in the module. For example:
-
-
-  .. code-block:: yaml
-
-      build:
-        cmake: .
-      samples:
-        - samples
-      tests:
-        - tests
-      boards:
-        - boards
-
+- If the project contains a file named :file:`zephyr/module.yml`, then the
+  content of that file will be used to determine which files should be added
+  to the build, as described in the previous section.
 
 - Otherwise (i.e. if the project has no :file:`zephyr/module.yml`), the
   build system looks for :file:`zephyr/CMakeLists.txt` and
