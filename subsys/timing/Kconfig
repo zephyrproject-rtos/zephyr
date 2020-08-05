@@ -1,0 +1,9 @@
+# Copyright (c) 2020 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config TIMING_FUNCTIONS
+	bool "Timing Functions"
+	help
+	  When enabled, timing related functions are compiled. This is
+	  useful for gathering timing on code execution.
