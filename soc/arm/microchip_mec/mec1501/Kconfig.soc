@@ -76,3 +76,25 @@ config SOC_MEC1501_VCI_PINS_AS_GPIOS
 	  By default these pins are not GPIOs, but HW controlled.
 	  Set this if VCI pin block HW logic is not required in the board
 	  design.
+
+choice
+	prompt "Select JTAG configuration"
+	default SOC_MEC1501_NO_JTAG_SUPPORT
+
+config SOC_MEC1501_NO_JTAG_SUPPORT
+	bool "Disable JTAG support"
+	help
+	  JTAG TRACE pins will be used as GPIOs or ADC.
+
+config SOC_MEC1501_ENABLE_JTAG_SUPPORT
+	bool "JTAG support enable without tracing capabilies"
+	help
+	  JTAG TRACE pins will be used as GPIOs or ADC.
+
+config SOC_MEC1501_ENABLE_JTAG_AND_TRACING
+	bool "JTAG support enable without tracing capabilies"
+	help
+	  JTAG TRACE pins will be used as in trace mode.
+
+endchoice
+
