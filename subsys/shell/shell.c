@@ -1215,8 +1215,10 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 			     K_FOREVER);
 
 		if (err != 0) {
+			k_mutex_lock(&shell->ctx->wr_mtx, K_FOREVER);
 			shell_internal_fprintf(shell, SHELL_ERROR,
 					       "Shell thread error: %d", err);
+			k_mutex_unlock(&shell->ctx->wr_mtx);
 			return;
 		}
 
@@ -1287,13 +1289,16 @@ int shell_start(const struct shell *shell)
 		return -ENOTSUP;
 	}
 
+	k_mutex_lock(&shell->ctx->wr_mtx, K_FOREVER);
+
 	if (IS_ENABLED(CONFIG_SHELL_VT100_COLORS)) {
 		shell_vt100_color_set(shell, SHELL_NORMAL);
 	}
 
 	shell_raw_fprintf(shell->fprintf_ctx, "\n\n");
-
 	state_set(shell, SHELL_STATE_ACTIVE);
+
+	k_mutex_unlock(&shell->ctx->wr_mtx);
 
 	return 0;
 }
