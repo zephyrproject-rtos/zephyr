@@ -49,6 +49,8 @@ source "subsys/settings/Kconfig"
 
 source "subsys/testsuite/Kconfig"
 
+source "subsys/timing/Kconfig"
+
 source "subsys/tracing/Kconfig"
 
 endmenu

@@ -316,6 +316,7 @@ config BOOT_DELAY
 
 config EXECUTION_BENCHMARKING
 	bool "Timing metrics"
+	select TIMING_FUNCTIONS
 	help
 	  This option enables the tracking of various times inside the kernel
 	  the exact set of metrics being tracked is board-dependent.

@@ -47,3 +47,9 @@ config QEMU_ICOUNT_SHIFT
 # There might not be any board options, hence the optional source
 osource "$(BOARD_DIR)/Kconfig"
 endmenu
+
+config BOARD_HAS_TIMING_FUNCTIONS
+	bool
+	help
+	  Should be selected if board provides custom method for retrieving
+	  timestamps and cycle count.

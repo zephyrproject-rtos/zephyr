@@ -522,6 +522,7 @@
 /subsys/stats/                            @nvlsianpu
 /subsys/storage/                          @nvlsianpu
 /subsys/testsuite/                        @nashif
+/subsys/timing/                           @nashif @dcpleung
 /subsys/usb/                              @jfischer-phytec-iot @finikorg
 /tests/                                   @nashif
 /tests/application_development/libcxx/    @pabigot
