@@ -382,17 +382,6 @@ free_buffers:
 	return ret;
 }
 
-
-static int cmd_flash(const struct shell *shell, size_t argc, char **argv)
-{
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
-
-	shell_help(shell);
-	return 0;
-}
-
-
 static int cmd_write_block_size(const struct shell *shell, size_t argc,
 				char **argv)
 {
@@ -823,4 +812,4 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_flash,
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
-SHELL_CMD_REGISTER(flash, &sub_flash, "Flash realated commands.", cmd_flash);
+SHELL_CMD_REGISTER(flash, &sub_flash, "Flash realated commands.", NULL);
