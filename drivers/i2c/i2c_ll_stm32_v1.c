@@ -54,6 +54,17 @@ static void stm32_i2c_enable_transfer_interrupts(struct device *dev)
 
 #endif
 
+static int stm32_i2c_wait_timeout(uint16_t *timeout)
+{
+	if (*timeout == 0) {
+		return 1;
+	} else {
+		k_busy_wait(1);
+		(*timeout)--;
+		return 0;
+	}
+}
+
 static void stm32_i2c_master_finish(struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
@@ -73,6 +84,13 @@ static void stm32_i2c_master_finish(struct device *dev)
 		LL_I2C_AcknowledgeNextData(i2c, LL_I2C_ACK);
 	}
 #else
+	uint16_t timeout = STM32_I2C_TIMEOUT_USEC;
+
+	while (LL_I2C_IsActiveFlag_BUSY(i2c)) {
+		if (stm32_i2c_wait_timeout(&timeout)) {
+			break;
+		}
+	}
 	LL_I2C_Disable(i2c);
 #endif
 }
@@ -625,17 +643,6 @@ static inline int check_errors(struct device *dev, const char *funcname)
 	return 0;
 error:
 	return -EIO;
-}
-
-static int stm32_i2c_wait_timeout(uint16_t *timeout)
-{
-	if (*timeout == 0) {
-		return 1;
-	} else {
-		k_busy_wait(1);
-		(*timeout)--;
-		return 0;
-	}
 }
 
 int32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
