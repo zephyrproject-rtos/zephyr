@@ -130,7 +130,9 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 void z_impl_z_test_1cpu_start(void)
 {
 	cpuhold_active = 1;
-
+#ifdef CONFIG_THREAD_NAME
+	char tname[CONFIG_THREAD_MAX_NAME_LEN];
+#endif
 	k_sem_init(&cpuhold_sem, 0, 999);
 
 	/* Spawn N-1 threads to "hold" the other CPUs, waiting for
@@ -145,6 +147,10 @@ void z_impl_z_test_1cpu_start(void)
 				cpuhold_stacks[i], CPUHOLD_STACK_SZ,
 				(k_thread_entry_t) cpu_hold, NULL, NULL, NULL,
 				K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);
+#ifdef CONFIG_THREAD_NAME
+		snprintk(tname, CONFIG_THREAD_MAX_NAME_LEN, "cpuhold%02d", i);
+		k_thread_name_set(&cpuhold_threads[i], tname);
+#endif
 		k_sem_take(&cpuhold_sem, K_FOREVER);
 	}
 }
@@ -328,6 +334,7 @@ static int run_test(struct unit_test *test)
 			test->thread_options | K_INHERIT_PERMS,
 				K_NO_WAIT);
 
+	k_thread_name_set(&ztest_thread, "ztest_thread");
 	k_thread_join(&ztest_thread, K_FOREVER);
 
 	phase = TEST_PHASE_TEARDOWN;
