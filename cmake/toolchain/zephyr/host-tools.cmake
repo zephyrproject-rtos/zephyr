@@ -12,7 +12,7 @@ set(MINIMUM_REQUIRED_SDK_VERSION 0.11.3)
 
 # This is the minimum required version for Zephyr to work (Old style)
 set(REQUIRED_SDK_VER 0.11.1)
-set(TOOLCHAIN_ARCH x86_64)
+cmake_host_system_information(RESULT TOOLCHAIN_ARCH QUERY OS_PLATFORM)
 
 set_ifndef(ZEPHYR_TOOLCHAIN_VARIANT $ENV{ZEPHYR_TOOLCHAIN_VARIANT} "")
 set_ifndef(ZEPHYR_SDK_INSTALL_DIR   $ENV{ZEPHYR_SDK_INSTALL_DIR} "")
