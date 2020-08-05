@@ -76,6 +76,53 @@ module:
      kconfig: Kconfig
 
 
+Build settings
+==============
+
+It is possible to specify additional build settings that must be used when
+including the module into the build system.
+
+All ``root`` settings are relative to the root of the module.
+
+Build settings supported in the :file:`module.yml` file are:
+
+- ``board_root``: Contains additional boards that are available to the build
+  system. Additional boards must be located in a :file:`<board_root>/boards`
+  folder.
+- ``dts_root``: Contains additional dts files related to the architecture/soc
+  families. Additional dts files must be located in a :file:`<dts_root>/dts`
+  folder.
+- ``soc_root``: Contains additional SoCs that are available to the build
+  system. Additional SoCs must be located in a :file:`<soc_root>/soc` folder.
+- ``arch_root``: Contains additional architectures that are available to the
+  build system. Additional architectures must be located in a
+  :file:`<arch_root>/arch` folder.
+
+Example of a :file:`module.yaml` file containing additional roots, and the
+corresponding file system layout.
+
+.. code-block:: yaml
+
+   build:
+     settings:
+       board_root: .
+       dts_root: .
+       soc_root: .
+       arch_root: .
+
+
+requires the following folder structure:
+
+.. code-block:: none
+
+   <module-root>
+   ├── arch
+   ├── boards
+   ├── dts
+   └── soc
+
+
+
 Sanitycheck
 ===========
 
