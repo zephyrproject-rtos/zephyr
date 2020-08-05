@@ -659,9 +659,7 @@ static void test_get_caps_test(void)
 
 	/* proper mapping */
 	ztest_returns_value(get_capabilities_caps_mock, IEEE802154_HW_CSMA);
-	zassert_equal(otPlatRadioGetCaps(ot),
-		      OT_RADIO_CAPS_TRANSMIT_RETRIES |
-			      OT_RADIO_CAPS_CSMA_BACKOFF,
+	zassert_equal(otPlatRadioGetCaps(ot), OT_RADIO_CAPS_CSMA_BACKOFF,
 		      "Incorrect capabilities returned.");
 
 	ztest_returns_value(get_capabilities_caps_mock,
@@ -684,8 +682,8 @@ static void test_get_caps_test(void)
 			IEEE802154_HW_TXTIME);
 	zassert_equal(
 		otPlatRadioGetCaps(ot),
-		OT_RADIO_CAPS_TRANSMIT_RETRIES | OT_RADIO_CAPS_CSMA_BACKOFF |
-			OT_RADIO_CAPS_ENERGY_SCAN | OT_RADIO_CAPS_ACK_TIMEOUT,
+		OT_RADIO_CAPS_CSMA_BACKOFF | OT_RADIO_CAPS_ENERGY_SCAN |
+			OT_RADIO_CAPS_ACK_TIMEOUT,
 		"Incorrect capabilities returned.");
 
 	rapi.get_capabilities = get_capabilities;

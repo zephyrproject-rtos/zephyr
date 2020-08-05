@@ -611,8 +611,7 @@ otRadioCaps otPlatRadioGetCaps(otInstance *aInstance)
 	}
 
 	if (radio_caps & IEEE802154_HW_CSMA) {
-		caps |= OT_RADIO_CAPS_CSMA_BACKOFF |
-			OT_RADIO_CAPS_TRANSMIT_RETRIES;
+		caps |= OT_RADIO_CAPS_CSMA_BACKOFF;
 	}
 
 	if (radio_caps & IEEE802154_HW_TX_RX_ACK) {
