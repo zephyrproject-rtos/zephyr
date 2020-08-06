@@ -114,4 +114,5 @@ endmacro()
 list(APPEND CXX_EXCLUDED_OPTIONS
   -Werror=implicit-int
   -Wold-style-definition
+  -Wno-pointer-sign
   )
