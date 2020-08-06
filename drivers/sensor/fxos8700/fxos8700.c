@@ -555,15 +555,7 @@ static const struct fxos8700_config fxos8700_config = {
 	.start_channel = FXOS8700_CHANNEL_ACCEL_X,
 	.num_channels = FXOS8700_NUM_HYBRID_CHANNELS,
 #endif
-#if CONFIG_FXOS8700_PM_NORMAL
-	.power_mode = FXOS8700_PM_NORMAL,
-#elif CONFIG_FXOS8700_PM_LOW_NOISE_LOW_POWER
-	.power_mode = FXOS8700_PM_LOW_NOISE_LOW_POWER,
-#elif CONFIG_FXOS8700_PM_HIGH_RESOLUTION
-	.power_mode = FXOS8700_PM_HIGH_RESOLUTION,
-#else
-	.power_mode = FXOS8700_PM_LOW_POWER,
-#endif
+	.power_mode = DT_INST_PROP(0, power_mode),
 	.range = DT_INST_PROP(0, range),
 #ifdef CONFIG_FXOS8700_TRIGGER
 #ifdef CONFIG_FXOS8700_DRDY_INT1
