@@ -538,7 +538,12 @@ otError otPlatRadioTransmit(otInstance *aInstance, otRadioFrame *aPacket)
 
 	__ASSERT_NO_MSG(aPacket == &sTransmitFrame);
 
-	if (sState == OT_RADIO_STATE_RECEIVE) {
+	enum ieee802154_hw_caps radio_caps;
+
+	radio_caps = radio_api->get_capabilities(radio_dev);
+
+	if ((sState == OT_RADIO_STATE_RECEIVE) ||
+		(radio_caps & IEEE802154_HW_SLEEP_TO_TX)) {
 		if (run_tx_task(aInstance) == 0) {
 			error = OT_ERROR_NONE;
 		}
@@ -616,6 +621,10 @@ otRadioCaps otPlatRadioGetCaps(otInstance *aInstance)
 
 	if (radio_caps & IEEE802154_HW_TX_RX_ACK) {
 		caps |= OT_RADIO_CAPS_ACK_TIMEOUT;
+	}
+
+	if (radio_caps & IEEE802154_HW_SLEEP_TO_TX) {
+		caps |= OT_RADIO_CAPS_SLEEP_TO_TX;
 	}
 
 	return caps;
