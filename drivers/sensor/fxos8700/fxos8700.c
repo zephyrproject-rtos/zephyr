@@ -580,13 +580,13 @@ static const struct fxos8700_config fxos8700_config = {
 #endif
 #endif
 #ifdef CONFIG_FXOS8700_PULSE
-	.pulse_cfg = CONFIG_FXOS8700_PULSE_CFG,
-	.pulse_ths[0] = CONFIG_FXOS8700_PULSE_THSX,
-	.pulse_ths[1] = CONFIG_FXOS8700_PULSE_THSY,
-	.pulse_ths[2] = CONFIG_FXOS8700_PULSE_THSZ,
-	.pulse_tmlt = CONFIG_FXOS8700_PULSE_TMLT,
-	.pulse_ltcy = CONFIG_FXOS8700_PULSE_LTCY,
-	.pulse_wind = CONFIG_FXOS8700_PULSE_WIND,
+	.pulse_cfg = DT_INST_PROP(0, pulse_cfg),
+	.pulse_ths[0] = DT_INST_PROP(0, pulse_thsx),
+	.pulse_ths[1] = DT_INST_PROP(0, pulse_thsy),
+	.pulse_ths[2] = DT_INST_PROP(0, pulse_thsz),
+	.pulse_tmlt = DT_INST_PROP(0, pulse_tmlt),
+	.pulse_ltcy = DT_INST_PROP(0, pulse_ltcy),
+	.pulse_wind = DT_INST_PROP(0, pulse_wind),
 #endif
 #ifdef CONFIG_FXOS8700_MAG_VECM
 	.mag_vecm_cfg = CONFIG_FXOS8700_MAG_VECM_CFG,
