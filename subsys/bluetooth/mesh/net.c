@@ -215,12 +215,18 @@ int bt_mesh_net_create(uint16_t idx, uint8_t flags, const uint8_t key[16],
 	atomic_set_bit_to(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS,
 			  BT_MESH_IV_UPDATE(flags));
 
-	/* If IV Update is already in progress, set minimum required hours,
-	 * since the 96-hour minimum requirement doesn't apply in this case straight
-	 * after provisioning.
+	/* If the node is added to a network when the network is in Normal
+	 * operation, then it shall operate in Normal operation for at least
+	 * 96 hours. If a node is added to a network while the network is
+	 * in the IV Update in Progress state, then the node shall be given
+	 * the new IV Index value and operate in IV Update in Progress
+	 * operation without the restriction of being in this state for at
+	 * least 96 hours.
 	 */
 	if (BT_MESH_IV_UPDATE(flags)) {
 		bt_mesh.ivu_duration = BT_MESH_IVU_MIN_HOURS;
+	} else {
+		bt_mesh.ivu_duration = 0U;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
