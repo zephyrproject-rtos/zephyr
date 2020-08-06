@@ -36,6 +36,7 @@ enum ieee802154_hw_caps {
 	IEEE802154_HW_SUB_GHZ	  = BIT(6), /* Sub-GHz radio supported */
 	IEEE802154_HW_ENERGY_SCAN = BIT(7), /* Energy scan supported */
 	IEEE802154_HW_TXTIME	  = BIT(8), /* TX at specified time supported */
+	IEEE802154_HW_SLEEP_TO_TX = BIT(9), /* TX directly from sleep supported */
 };
 
 enum ieee802154_filter_type {

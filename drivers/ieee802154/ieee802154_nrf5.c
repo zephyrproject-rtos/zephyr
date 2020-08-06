@@ -159,7 +159,8 @@ static enum ieee802154_hw_caps nrf5_get_capabilities(struct device *dev)
 {
 	return IEEE802154_HW_FCS | IEEE802154_HW_FILTER |
 	       IEEE802154_HW_CSMA | IEEE802154_HW_2_4_GHZ |
-	       IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_ENERGY_SCAN;
+	       IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_ENERGY_SCAN |
+	       IEEE802154_HW_SLEEP_TO_TX;
 }
 
 static int nrf5_cca(struct device *dev)
