@@ -200,7 +200,11 @@ static bool async_capable(const char *dev_name, clock_control_subsys_t subsys)
 		/* pend util clock is started */
 	}
 
-	clock_control_off(dev, subsys);
+	err = clock_control_off(dev, subsys);
+	if (err < 0) {
+		printk("clock_control_off failed %d", err);
+		return false;
+	}
 
 	return true;
 }
