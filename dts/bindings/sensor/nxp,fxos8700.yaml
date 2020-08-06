@@ -32,6 +32,16 @@ properties:
         The property value should ensure the flags properly describe
         the signal that is presented to the driver.
 
+    range:
+      type: int
+      required: false
+      default: 8
+      description: Range in g
+      enum:
+        - 8 # 8g (0.976 mg/LSB)
+        - 4 # 4g (0.488 mg/LSB)
+        - 2 # 2g (0.244 mg/LSB)
+
     pulse-cfg:
       type: int
       required: false

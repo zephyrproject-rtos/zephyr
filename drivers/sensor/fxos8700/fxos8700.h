@@ -103,12 +103,6 @@ enum fxos8700_mode {
 	FXOS8700_MODE_HYBRID		= 3,
 };
 
-enum fxos8700_range {
-	FXOS8700_RANGE_2G		= 0,
-	FXOS8700_RANGE_4G,
-	FXOS8700_RANGE_8G,
-};
-
 enum fxos8700_power_mode {
 	FXOS8700_PM_NORMAL		= 0,
 	FXOS8700_PM_LOW_NOISE_LOW_POWER,
@@ -143,7 +137,7 @@ struct fxos8700_config {
 	gpio_dt_flags_t reset_flags;
 	enum fxos8700_mode mode;
 	enum fxos8700_power_mode power_mode;
-	enum fxos8700_range range;
+	uint8_t range;
 	uint8_t start_addr;
 	uint8_t start_channel;
 	uint8_t num_channels;

@@ -38,21 +38,6 @@ config FXOS8700_TEMP
 	  device to the next.
 
 choice
-	prompt "Range"
-	default FXOS8700_RANGE_8G
-
-config FXOS8700_RANGE_8G
-	bool "8g (0.976 mg/LSB)"
-
-config FXOS8700_RANGE_4G
-	bool "4g (0.488 mg/LSB)"
-
-config FXOS8700_RANGE_2G
-	bool "2g (0.244 mg/LSB)"
-
-endchoice
-
-choice
 	prompt "Power mode"
 	default FXOS8700_PM_NORMAL
 
