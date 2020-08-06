@@ -9,6 +9,7 @@
 #define DT_DRV_COMPAT openisa_rv32m1_lpspi
 
 #include <errno.h>
+#include <soc.h>
 #include <drivers/spi.h>
 #include <drivers/clock_control.h>
 #include <fsl_lpspi.h>

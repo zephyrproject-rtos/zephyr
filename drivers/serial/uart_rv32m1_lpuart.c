@@ -9,10 +9,10 @@
 
 #include <errno.h>
 #include <device.h>
+#include <soc.h>
 #include <drivers/uart.h>
 #include <drivers/clock_control.h>
 #include <fsl_lpuart.h>
-#include <soc.h>
 
 struct rv32m1_lpuart_config {
 	LPUART_Type *base;

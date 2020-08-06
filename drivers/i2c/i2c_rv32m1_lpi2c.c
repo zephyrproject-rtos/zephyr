@@ -10,6 +10,7 @@
 
 #define DT_DRV_COMPAT openisa_rv32m1_lpi2c
 
+#include <soc.h>
 #include <drivers/i2c.h>
 #include <drivers/clock_control.h>
 #include <fsl_lpi2c.h>
