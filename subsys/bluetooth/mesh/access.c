@@ -107,7 +107,11 @@ int32_t bt_mesh_model_pub_period_get(struct bt_mesh_model *mod)
 	}
 
 	if (mod->pub->fast_period) {
-		return period >> mod->pub->period_div;
+		if (!period) {
+			return 0;
+		}
+
+		return MAX(period >> mod->pub->period_div, 100);
 	} else {
 		return period;
 	}
