@@ -71,3 +71,8 @@ tests:
     extra_args: CONF_FILE=eeprom.conf
     min_ram: 32
     depends_on: gpio i2c spi
+  drivers.adc.build:
+    build_only: true
+    extra_args: CONF_FILE=adc.conf
+    min_ram: 32
+    depends_on: adc spi
