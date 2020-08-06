@@ -289,39 +289,40 @@ config OUTPUT_PRINT_MEMORY_USAGE
 	  ram_report and
 	  https://sourceware.org/binutils/docs/ld/MEMORY.html
 
+config BUILD_NO_GAP_FILL
+	bool "Don't fill gaps in generated hex/bin/s19 files."
+
 config BUILD_OUTPUT_HEX
 	bool "Build a binary in HEX format"
 	help
-	  Build a binary in HEX format. This will build a zephyr.hex file need
-	  by some platforms.
+	  Build an Intel HEX binary zephyr/zephyr.hex in the build directory.
+	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
 
 config BUILD_OUTPUT_BIN
 	bool "Build a binary in BIN format"
 	default y
 	help
-	  Build a binary in BIN format. This will build a zephyr.bin file need
-	  by some platforms.
+	  Build a "raw" binary zephyr/zephyr.bin in the build directory.
+	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
 
 config BUILD_OUTPUT_EXE
 	bool "Build a binary in ELF format with .exe extension"
 	help
-	  Build a binary in ELF format that can run in the host system. This
-	  will build a zephyr.exe file.
+	  Build an ELF binary that can run in the host system at
+	  zephyr/zephyr.exe in the build directory.
+	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
 
 config BUILD_OUTPUT_S19
 	bool "Build a binary in S19 format"
 	help
-	  Build a binary in S19 format. This will build a zephyr.s19 file need
-	  by some platforms.
-
-config BUILD_NO_GAP_FILL
-	bool "Don't fill gaps in generated hex/bin/s19 files."
+	  Build an S19 binary zephyr/zephyr.s19 in the build directory.
+	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
 
 config BUILD_OUTPUT_STRIPPED
 	bool "Build a stripped binary"
 	help
-	  Build a stripped binary. This will build a zephyr.stripped file need
-	  by some platforms.
+	  Build a stripped binary zephyr/zephyr.strip in the build directory.
+	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
 
 config APPLICATION_DEFINED_SYSCALL
 	bool "Scan application folder for any syscall definition"
