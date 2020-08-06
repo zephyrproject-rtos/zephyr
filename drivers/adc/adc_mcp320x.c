@@ -341,7 +341,7 @@ static const struct adc_driver_api mcp320x_adc_api = {
 		.spi_cs_dt_flags = \
 			UTIL_AND( \
 			DT_SPI_DEV_HAS_CS_GPIOS(INST_DT_MCP320X(n, t)), \
-			DT_SPI_DEV_CS_GPIOS_DT_FLAGS(INST_DT_MCP320X(n, t)) \
+			DT_SPI_DEV_CS_GPIOS_FLAGS(INST_DT_MCP320X(n, t)) \
 			), \
 		.spi_cfg = { \
 			.operation = (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | \
