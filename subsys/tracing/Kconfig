@@ -145,7 +145,7 @@ choice
 config TRACING_BACKEND_UART
 	bool "Enable UART backend"
 	depends on UART_CONSOLE
-	depends on TRACING_ASYNC
+
 	help
 	  Use UART to output tracing data.
 
