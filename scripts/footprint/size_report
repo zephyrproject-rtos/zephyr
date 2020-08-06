@@ -217,7 +217,8 @@ def get_die_filename(die, lineprog):
 
     # Prepend output path to relative path
     if not path.is_absolute():
-        path = Path(args.output) / path
+        output = Path(args.output)
+        path = output.joinpath(path)
 
     # Change path to relative to Zephyr base
     path = path.resolve()
