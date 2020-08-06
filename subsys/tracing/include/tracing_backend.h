@@ -61,7 +61,7 @@ struct tracing_backend {
 static inline void tracing_backend_init(
 		const struct tracing_backend *backend)
 {
-	if (backend && backend->api) {
+	if (backend && backend->api && backend->api->init) {
 		backend->api->init();
 	}
 }
