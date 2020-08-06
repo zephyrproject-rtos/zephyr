@@ -11,6 +11,7 @@ foreach(report ram_report rom_report)
     -k ${ZEPHYR_BINARY_DIR}/${KERNEL_ELF_NAME}
     -z ${ZEPHYR_BASE}
     -o ${CMAKE_BINARY_DIR}
+    --json ${CMAKE_BINARY_DIR}/${flag_for_${report}}.json
     ${flag_for_${report}}
     DEPENDS ${logical_target_for_zephyr_elf}
             $<TARGET_PROPERTY:zephyr_property_target,${report}_DEPENDENCIES>
