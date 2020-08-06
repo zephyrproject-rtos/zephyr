@@ -166,20 +166,20 @@ test_spi_enc424j600: enc424j600@10 {
 	spi-max-frequency = <0>;
 	int-gpios = <&test_gpio 0 0>;
 };
-test_spi_mcp23s17: mcp23s17@0 {
+test_spi_mcp23s17: mcp23s17@11 {
 	compatible = "microchip,mcp23s17";
 	label = "GPIO_E0";
 	spi-max-frequency = <0>;
-	reg = <0x0>;
+	reg = <0x11>;
 	gpio-controller;
 	#gpio-cells = <2>;
 	ngpios = <16>;
 };
 
-test_spi_mcp2515: mcp2515@11 {
+test_spi_mcp2515: mcp2515@12 {
 	compatible = "microchip,mcp2515";
 	label = "MCP2515";
-	reg = <0x11>;
+	reg = <0x12>;
 	spi-max-frequency = <0>;
 	osc-freq = <0>;
 	int-gpios = <&test_gpio 0 0>;
@@ -192,29 +192,29 @@ test_spi_mcp2515: mcp2515@11 {
 	phase-seg2 = <0>;
 };
 
-test_spi_mcr20a: mcr20a@12 {
+test_spi_mcr20a: mcr20a@13 {
 	compatible = "nxp,mcr20a";
 	label = "MCR20A";
-	reg = <0x12>;
+	reg = <0x13>;
 	spi-max-frequency = <0>;
 	irqb-gpios = <&test_gpio 0 0>;
 	reset-gpios = <&test_gpio 0 0>;
 };
 
-test_spi_sx1276: sx1276@13 {
+test_spi_sx1276: sx1276@14 {
 	compatible = "semtech,sx1276";
 	label = "SX1276";
-	reg = <0x13>;
+	reg = <0x14>;
 	spi-max-frequency = <0>;
 	reset-gpios = <&test_gpio 0 0>;
 	dio-gpios = <&test_gpio 0 0>;
 	power-amplifier-output = "rfo";
 };
 
-test_spi_st7789v: st7789v@14 {
+test_spi_st7789v: st7789v@15 {
 	compatible = "sitronix,st7789v";
 	label = "ST7789V";
-	reg = <0x14>;
+	reg = <0x15>;
 	spi-max-frequency = <0>;
 	reset-gpios = <&test_gpio 0 0>;
 	cmd-data-gpios = <&test_gpio 0 0>;
@@ -237,10 +237,10 @@ test_spi_st7789v: st7789v@14 {
 	rgb-param = [];
 };
 
-test_spi_ssd16xxfb: ssd16xxfb@15 {
+test_spi_ssd16xxfb: ssd16xxfb@16 {
 	compatible = "solomon,ssd16xxfb";
 	label = "SSD16XXFB";
-	reg = <0x15>;
+	reg = <0x16>;
 	spi-max-frequency = <0>;
 	height = <0>;
 	width = <0>;
@@ -258,116 +258,116 @@ test_spi_ssd16xxfb: ssd16xxfb@15 {
 	lut-default = [];
 };
 
-test_spi_iis2dlpc: iis2dlpc@16 {
+test_spi_iis2dlpc: iis2dlpc@17 {
 	compatible = "st,iis2dlpc";
 	label = "IIS2DLPC";
-	reg = <0x16>;
-	spi-max-frequency = <0>;
-	drdy-gpios = <&test_gpio 0 0>;
-};
-
-test_spi_iis2mdc: iis2mdc@17 {
-	compatible = "st,iis2mdc";
-	label = "IIS2MDC";
 	reg = <0x17>;
 	spi-max-frequency = <0>;
 	drdy-gpios = <&test_gpio 0 0>;
 };
 
-test_spi_iis3dhhc: iis3dhhc@18 {
-	compatible = "st,iis3dhhc";
-	label = "IIS3DHHC";
+test_spi_iis2mdc: iis2mdc@18 {
+	compatible = "st,iis2mdc";
+	label = "IIS2MDC";
 	reg = <0x18>;
-	spi-max-frequency = <0>;
-	irq-gpios = <&test_gpio 0 0>;
-};
-
-test_spi_ism330dhcx: ism330dhcx@19 {
-	compatible = "st,ism330dhcx";
-	label = "ISM330DHCX";
-	reg = <0x19>;
 	spi-max-frequency = <0>;
 	drdy-gpios = <&test_gpio 0 0>;
 };
 
-test_spi_lis2dh: lis2dh@1a {
+test_spi_iis3dhhc: iis3dhhc@19 {
+	compatible = "st,iis3dhhc";
+	label = "IIS3DHHC";
+	reg = <0x19>;
+	spi-max-frequency = <0>;
+	irq-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_ism330dhcx: ism330dhcx@1a {
+	compatible = "st,ism330dhcx";
+	label = "ISM330DHCX";
+	reg = <0x1a>;
+	spi-max-frequency = <0>;
+	drdy-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_lis2dh: lis2dh@1b {
 	compatible = "st,lis2dh";
 	label = "LIS2DH";
-	reg = <0x1a>;
+	reg = <0x1b>;
 	spi-max-frequency = <0>;
 	irq-gpios = <&test_gpio 0 0>;
 	/* disconnect-sdo-sa0-pull-up; */
 };
 
-test_spi_lis2ds12: lis2ds12@1b {
+test_spi_lis2ds12: lis2ds12@1c {
 	compatible = "st,lis2ds12";
 	label = "LIS2DS12";
-	reg = <0x1b>;
-	spi-max-frequency = <0>;
-	irq-gpios = <&test_gpio 0 0>;
-};
-
-test_spi_lis2dw12: lis2dw12@1c {
-	compatible = "st,lis2dw12";
-	label = "LIS2DW12";
 	reg = <0x1c>;
 	spi-max-frequency = <0>;
 	irq-gpios = <&test_gpio 0 0>;
 };
 
-test_spi_lis2mdl: lis2mdl@1d {
-	compatible = "st,lis2mdl";
-	label = "LIS2MDL";
+test_spi_lis2dw12: lis2dw12@1d {
+	compatible = "st,lis2dw12";
+	label = "LIS2DW12";
 	reg = <0x1d>;
 	spi-max-frequency = <0>;
 	irq-gpios = <&test_gpio 0 0>;
 };
 
-test_spi_lps22hh: lps22hh@1e {
+test_spi_lis2mdl: lis2mdl@1e {
+	compatible = "st,lis2mdl";
+	label = "LIS2MDL";
+	reg = <0x1e>;
+	spi-max-frequency = <0>;
+	irq-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_lps22hh: lps22hh@1f {
 	compatible = "st,lps22hh";
 	label = "LPS22HH";
-	reg = <0x1e>;
+	reg = <0x1f>;
 	spi-max-frequency = <0>;
 	drdy-gpios = <&test_gpio 0 0>;
 };
 
-test_spi_lsm303agr_accel: lsm303agr-accel@1f {
+test_spi_lsm303agr_accel: lsm303agr-accel@20 {
 	compatible = "st,lsm303agr-accel";
 	label = "LSM303AGR-ACCEL";
-	reg = <0x1f>;
+	reg = <0x20>;
 	spi-max-frequency = <0>;
 	irq-gpios = <&test_gpio 0 0>;
 	/* disconnect-sdo-sa0-pull-up; */
 };
 
-test_spi_lsm6dsl: lsm6dsl@20 {
+test_spi_lsm6dsl: lsm6dsl@21 {
 	compatible = "st,lsm6dsl";
 	label = "LSM6DSL";
-	reg = <0x20>;
-	spi-max-frequency = <0>;
-	irq-gpios = <&test_gpio 0 0>;
-};
-
-test_spi_lsm6dso: lsm6dso@21 {
-	compatible = "st,lsm6dso";
-	label = "LSM6DSO";
 	reg = <0x21>;
 	spi-max-frequency = <0>;
 	irq-gpios = <&test_gpio 0 0>;
 };
 
-test_spi_cc1200: cc1200@22 {
+test_spi_lsm6dso: lsm6dso@22 {
+	compatible = "st,lsm6dso";
+	label = "LSM6DSO";
+	reg = <0x22>;
+	spi-max-frequency = <0>;
+	irq-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_cc1200: cc1200@23 {
 	compatible = "ti,cc1200";
 	label = "CC1200";
-	reg = <0x22>;
+	reg = <0x23>;
 	spi-max-frequency = <0>;
 	int-gpios = <&test_gpio 0 0>;
 };
 
-test_spi_cc2520: cc2520@23 {
+test_spi_cc2520: cc2520@24 {
 	compatible = "ti,cc2520";
 	label = "CC2520";
-	reg = <0x23>;
+	reg = <0x24>;
 	spi-max-frequency = <0>;
 	vreg-en-gpios = <&test_gpio 0 0>;
 	reset-gpios = <&test_gpio 0 0>;
@@ -377,89 +377,89 @@ test_spi_cc2520: cc2520@23 {
 	fifop-gpios = <&test_gpio 0 0>;
 };
 
-test_spi_lmp90077: lmp90077@24 {
+test_spi_lmp90077: lmp90077@25 {
 	compatible = "ti,lmp90077";
 	label = "LMP90077";
-	reg = <0x24>;
-	spi-max-frequency = <0>;
-	drdyb-gpios = <&test_gpio 0 0>;
-	#io-channel-cells = <2>;
-};
-
-test_spi_lmp90078: lmp90078@25 {
-	compatible = "ti,lmp90078";
-	label = "LMP90078";
 	reg = <0x25>;
 	spi-max-frequency = <0>;
 	drdyb-gpios = <&test_gpio 0 0>;
 	#io-channel-cells = <2>;
 };
 
-test_spi_lmp90079: lmp90079@26 {
-	compatible = "ti,lmp90079";
-	label = "LMP90079";
+test_spi_lmp90078: lmp90078@26 {
+	compatible = "ti,lmp90078";
+	label = "LMP90078";
 	reg = <0x26>;
 	spi-max-frequency = <0>;
 	drdyb-gpios = <&test_gpio 0 0>;
 	#io-channel-cells = <2>;
 };
 
-test_spi_lmp90080: lmp90080@27 {
-	compatible = "ti,lmp90080";
-	label = "LMP90080";
+test_spi_lmp90079: lmp90079@27 {
+	compatible = "ti,lmp90079";
+	label = "LMP90079";
 	reg = <0x27>;
 	spi-max-frequency = <0>;
 	drdyb-gpios = <&test_gpio 0 0>;
 	#io-channel-cells = <2>;
 };
 
-test_spi_lmp90097: lmp90097@28 {
-	compatible = "ti,lmp90097";
-	label = "LMP90097";
+test_spi_lmp90080: lmp90080@28 {
+	compatible = "ti,lmp90080";
+	label = "LMP90080";
 	reg = <0x28>;
 	spi-max-frequency = <0>;
 	drdyb-gpios = <&test_gpio 0 0>;
 	#io-channel-cells = <2>;
 };
 
-test_spi_lmp90098: lmp90098@29 {
-	compatible = "ti,lmp90098";
-	label = "LMP90098";
+test_spi_lmp90097: lmp90097@29 {
+	compatible = "ti,lmp90097";
+	label = "LMP90097";
 	reg = <0x29>;
 	spi-max-frequency = <0>;
 	drdyb-gpios = <&test_gpio 0 0>;
 	#io-channel-cells = <2>;
 };
 
-test_spi_lmp90099: lmp90099@2a {
-	compatible = "ti,lmp90099";
-	label = "LMP90099";
+test_spi_lmp90098: lmp90098@2a {
+	compatible = "ti,lmp90098";
+	label = "LMP90098";
 	reg = <0x2a>;
 	spi-max-frequency = <0>;
 	drdyb-gpios = <&test_gpio 0 0>;
 	#io-channel-cells = <2>;
 };
 
-test_spi_lmp90100: lmp90100@2b {
-	compatible = "ti,lmp90100";
-	label = "LMP90100";
+test_spi_lmp90099: lmp90099@2b {
+	compatible = "ti,lmp90099";
+	label = "LMP90099";
 	reg = <0x2b>;
 	spi-max-frequency = <0>;
 	drdyb-gpios = <&test_gpio 0 0>;
 	#io-channel-cells = <2>;
 };
 
-test_spi_w25q16: w25q16@2c {
+test_spi_lmp90100: lmp90100@2c {
+	compatible = "ti,lmp90100";
+	label = "LMP90100";
+	reg = <0x2c>;
+	spi-max-frequency = <0>;
+	drdyb-gpios = <&test_gpio 0 0>;
+	#io-channel-cells = <2>;
+};
+
+test_spi_w25q16: w25q16@2d {
 	compatible = "winbond,w25q16";
 	label = "W25Q16";
-	reg = <0x2c>;
+	reg = <0x2d>;
 	spi-max-frequency = <0>;
 };
 
-test_spi_ws2812_spi: ws2812-spi@2d {
+test_spi_ws2812_spi: ws2812-spi@2e {
 	compatible = "worldsemi,ws2812-spi";
 	label = "WS2812-SPI";
-	reg = <0x2d>;
+	reg = <0x2e>;
 	spi-max-frequency = <0>;
 	spi-one-frame = <0>;
 	spi-zero-frame = <0>;
@@ -467,26 +467,26 @@ test_spi_ws2812_spi: ws2812-spi@2d {
 	/* has-white-channel; */
 };
 
-test_spi_bt_hci_spi: bt-hci-spi@2e {
+test_spi_bt_hci_spi: bt-hci-spi@2f {
 	compatible = "zephyr,bt-hci-spi";
 	label = "BT-HCI-SPI";
-	reg = <0x2e>;
+	reg = <0x2f>;
 	spi-max-frequency = <0>;
 	irq-gpios = <&test_gpio 0 0>;
 	reset-gpios = <&test_gpio 0 0>;
 };
 
-test_spi_mmc_spi_slot: mmc-spi-slot@2f {
+test_spi_mmc_spi_slot: mmc-spi-slot@30 {
 	compatible = "zephyr,mmc-spi-slot";
 	label = "MMC-SPI-SLOT";
-	reg = <0x2f>;
+	reg = <0x30>;
 	spi-max-frequency = <0>;
 };
 
-test_spi_iis2dh: iis2dh@30 {
+test_spi_iis2dh: iis2dh@31 {
 	compatible = "st,iis2dh";
 	label = "IIS2DH";
-	reg = <0x30>;
+	reg = <0x31>;
 	spi-max-frequency = <0>;
 	drdy-gpios = <&test_gpio 0 0>;
 };
