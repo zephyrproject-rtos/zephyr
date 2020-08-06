@@ -98,6 +98,30 @@ static void i2c_pinmux(struct pinmux_ports_t *p, uint8_t port_sel)
 	}
 }
 
+static void configure_debug_interface(void)
+{
+	/* No debug support */
+	ECS_REGS->DEBUG_CTRL = 0;
+	ECS_REGS->ETM_CTRL = 0;
+
+#ifdef CONFIG_SOC_MEC1501_DEBUG_WITHOUT_TRACING
+	/* Release JTAG TDI and JTAG TDO pins so they can be
+	 * controlled by their respective PCR register (UART2).
+	 * For more details see table 44-1
+	 */
+	ECS_REGS->DEBUG_CTRL = (MCHP_ECS_DCTRL_DBG_EN |
+				MCHP_ECS_DCTRL_MODE_SWD);
+#elif defined(CONFIG_SOC_MEC1501_DEBUG_AND_TRACING)
+	#if defined(CONFIG_SOC_MEC1501_DEBUG_AND_ETM_TRACING)
+	#pragma error "TRACE DATA are not exposed in HW connector"
+	#elif defined(CONFIG_SOC_MEC1501_DEBUG_AND_SWV_TRACING)
+		ECS_REGS->DEBUG_CTRL = (MCHP_ECS_DCTRL_DBG_EN |
+				MCHP_ECS_DCTRL_MODE_SWD_SWV);
+	#endif /* CONFIG_SOC_MEC1501_DEBUG_AND_TRACING */
+
+#endif /* CONFIG_SOC_MEC1501_DEBUG_WITHOUT_TRACING */
+}
+
 static int board_pinmux_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -141,12 +165,8 @@ static int board_pinmux_init(struct device *dev)
 #ifdef CONFIG_SOC_MEC1501_VTR3_1_8V
 	ECS_REGS->GPIO_BANK_PWR |= MCHP_ECS_VTR3_LVL_18;
 #endif
-	/* Release JTAG TDI and JTAG TDO pins so they can be
-	 * controlled by their respective PCR register (UART2).
-	 * For more details see table 44-1
-	 */
-	ECS_REGS->DEBUG_CTRL = (MCHP_ECS_DCTRL_DBG_EN |
-				MCHP_ECS_DCTRL_MODE_SWD);
+
+	configure_debug_interface();
 
 	/* Configure pins that are not GPIOS by default */
 #ifdef CONFIG_SOC_MEC1501_VCI_PINS_AS_GPIOS
@@ -190,10 +210,12 @@ static int board_pinmux_init(struct device *dev)
 
 	/* ADC pin muxes, ADC00 - ADC07 */
 	/* Note, by default ETM is enabled ADC00-ADC03 are not available */
+#ifndef CONFIG_SOC_MEC1501_DEBUG_AND_ETM_TRACING
 	pinmux_pin_set(porte, MCHP_GPIO_200, MCHP_GPIO_CTRL_MUX_F1);
 	pinmux_pin_set(porte, MCHP_GPIO_201, MCHP_GPIO_CTRL_MUX_F1);
 	pinmux_pin_set(porte, MCHP_GPIO_202, MCHP_GPIO_CTRL_MUX_F1);
 	pinmux_pin_set(porte, MCHP_GPIO_203, MCHP_GPIO_CTRL_MUX_F1);
+#endif
 	pinmux_pin_set(porte, MCHP_GPIO_204, MCHP_GPIO_CTRL_MUX_F1);
 	pinmux_pin_set(porte, MCHP_GPIO_205, MCHP_GPIO_CTRL_MUX_F1);
 	pinmux_pin_set(porte, MCHP_GPIO_206, MCHP_GPIO_CTRL_MUX_F1);
