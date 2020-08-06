@@ -42,6 +42,17 @@ properties:
         - 4 # 4g (0.488 mg/LSB)
         - 2 # 2g (0.244 mg/LSB)
 
+    power-mode:
+      type: int
+      required: false
+      default: 0
+      description: Power mode
+      enum:
+        - 0 # Normal
+        - 1 # Low noise, low power
+        - 2 # High resolution
+        - 3 # Low power
+
     pulse-cfg:
       type: int
       required: false
