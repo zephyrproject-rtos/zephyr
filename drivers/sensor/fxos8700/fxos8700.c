@@ -15,6 +15,9 @@
 
 LOG_MODULE_REGISTER(FXOS8700, CONFIG_SENSOR_LOG_LEVEL);
 
+/* Convert the range (8g, 4g, 2g) to the encoded FS register field value */
+#define RANGE2FS(x) (__builtin_ctz(x) - 1)
+
 int fxos8700_set_odr(const struct device *dev, const struct sensor_value *val)
 {
 	const struct fxos8700_config *config = dev->config;
@@ -178,18 +181,18 @@ exit:
 }
 
 static void fxos8700_accel_convert(struct sensor_value *val, int16_t raw,
-				   enum fxos8700_range range)
+				   uint8_t range)
 {
 	uint8_t frac_bits;
 	int64_t micro_ms2;
 
 	/* The range encoding is convenient to compute the number of fractional
 	 * bits:
-	 * - 2g mode (range = 0) has 14 fractional bits
-	 * - 4g mode (range = 1) has 13 fractional bits
-	 * - 8g mode (range = 2) has 12 fractional bits
+	 * - 2g mode (fs = 0) has 14 fractional bits
+	 * - 4g mode (fs = 1) has 13 fractional bits
+	 * - 8g mode (fs = 2) has 12 fractional bits
 	 */
-	frac_bits = 14 - range;
+	frac_bits = 14 - RANGE2FS(range);
 
 	/* Convert units to micro m/s^2. Intermediate results before the shift
 	 * are 40 bits wide.
@@ -489,7 +492,7 @@ static int fxos8700_init(const struct device *dev)
 	if (i2c_reg_update_byte(data->i2c, config->i2c_address,
 				FXOS8700_REG_XYZ_DATA_CFG,
 				FXOS8700_XYZ_DATA_CFG_FS_MASK,
-				config->range)) {
+				RANGE2FS(config->range))) {
 		LOG_ERR("Could not set range");
 		return -EIO;
 	}
@@ -561,13 +564,7 @@ static const struct fxos8700_config fxos8700_config = {
 #else
 	.power_mode = FXOS8700_PM_LOW_POWER,
 #endif
-#if CONFIG_FXOS8700_RANGE_8G
-	.range = FXOS8700_RANGE_8G,
-#elif CONFIG_FXOS8700_RANGE_4G
-	.range = FXOS8700_RANGE_4G,
-#else
-	.range = FXOS8700_RANGE_2G,
-#endif
+	.range = DT_INST_PROP(0, range),
 #ifdef CONFIG_FXOS8700_TRIGGER
 #ifdef CONFIG_FXOS8700_DRDY_INT1
 	.gpio_name = DT_INST_GPIO_LABEL(0, int1_gpios),
