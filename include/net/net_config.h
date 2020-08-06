@@ -12,6 +12,8 @@
 #define ZEPHYR_INCLUDE_NET_NET_CONFIG_H_
 
 #include <zephyr/types.h>
+#include <device.h>
+#include <net/net_if.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,6 +49,9 @@ extern "C" {
 /**
  * @brief Initialize this network application.
  *
+ * @details This will call net_config_init_by_iface() with NULL network
+ *          interface.
+ *
  * @param app_info String describing this application.
  * @param flags Flags related to services needed by the client.
  * @param timeout How long to wait the network setup before continuing
@@ -55,6 +60,41 @@ extern "C" {
  * @return 0 if ok, <0 if error.
  */
 int net_config_init(const char *app_info, uint32_t flags, int32_t timeout);
+
+/**
+ * @brief Initialize this network application using a specific network
+ * interface.
+ *
+ * @details If network interface is set to NULL, then the default one
+ *          is used in the configuration.
+ *
+ * @param iface Initialize networking using this network interface.
+ * @param app_info String describing this application.
+ * @param flags Flags related to services needed by the client.
+ * @param timeout How long to wait the network setup before continuing
+ * the startup.
+ *
+ * @return 0 if ok, <0 if error.
+ */
+int net_config_init_by_iface(struct net_if *iface, const char *app_info,
+			     uint32_t flags, int32_t timeout);
+
+/**
+ * @brief Initialize this network application.
+ *
+ * @details If CONFIG_NET_CONFIG_AUTO_INIT is set, then this function is called
+ *          automatically when the device boots. If that is not desired, unset
+ *          the config option and call the function manually when the
+ *          application starts.
+ *
+ * @param device Network device to use. The function will figure out what
+ *        network interface to use based on the device. If the device is NULL,
+ *        then default network interface is used by the function.
+ * @param app_info String describing this application.
+ *
+ * @return 0 if ok, <0 if error.
+ */
+int net_config_init_app(struct device *device, const char *app_info);
 
 /**
  * @}

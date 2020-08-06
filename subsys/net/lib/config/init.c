@@ -333,10 +333,10 @@ static bool check_interface(struct net_if *iface)
 }
 #endif
 
-int net_config_init(const char *app_info, uint32_t flags, int32_t timeout)
+int net_config_init_by_iface(struct net_if *iface, const char *app_info,
+			     uint32_t flags, int32_t timeout)
 {
 #define LOOP_DIVIDER 10
-	struct net_if *iface = net_if_get_default();
 	int loop = timeout / LOOP_DIVIDER;
 	int count;
 
@@ -345,8 +345,7 @@ int net_config_init(const char *app_info, uint32_t flags, int32_t timeout)
 	}
 
 	if (!iface) {
-		NET_ERR("No network interfaces");
-		return -ENODEV;
+		iface = net_if_get_default();
 	}
 
 	if (timeout < 0) {
@@ -412,13 +411,25 @@ int net_config_init(const char *app_info, uint32_t flags, int32_t timeout)
 	return 0;
 }
 
-#if defined(CONFIG_NET_CONFIG_AUTO_INIT)
-static int init_app(struct device *device)
+int net_config_init(const char *app_info, uint32_t flags,
+		    int32_t timeout)
 {
+	return net_config_init_by_iface(NULL, app_info, flags, timeout);
+}
+
+int net_config_init_app(struct device *device, const char *app_info)
+{
+	struct net_if *iface = NULL;
 	uint32_t flags = 0U;
 	int ret;
 
-	ARG_UNUSED(device);
+	if (device) {
+		iface = net_if_lookup_by_dev(device);
+		if (iface == NULL) {
+			NET_WARN("No interface for device %p, using default",
+				 device);
+		}
+	}
 
 #if defined(CONFIG_NET_IPV6)
 	/* IEEE 802.15.4 is only usable if IPv6 is enabled */
@@ -446,8 +457,8 @@ static int init_app(struct device *device)
 	}
 
 	/* Initialize the application automatically if needed */
-	ret = net_config_init("Initializing network", flags,
-			      CONFIG_NET_CONFIG_INIT_TIMEOUT * MSEC_PER_SEC);
+	ret = net_config_init_by_iface(iface, app_info, flags,
+				CONFIG_NET_CONFIG_INIT_TIMEOUT * MSEC_PER_SEC);
 	if (ret < 0) {
 		NET_ERR("Network initialization failed (%d)", ret);
 	}
@@ -468,6 +479,16 @@ static int init_app(struct device *device)
 	}
 
 	return ret;
+}
+
+#if defined(CONFIG_NET_CONFIG_AUTO_INIT)
+static int init_app(struct device *device)
+{
+	ARG_UNUSED(device);
+
+	(void)net_config_init_app(NULL, "Initializing network");
+
+	return 0;
 }
 
 SYS_INIT(init_app, APPLICATION, CONFIG_NET_CONFIG_INIT_PRIO);
