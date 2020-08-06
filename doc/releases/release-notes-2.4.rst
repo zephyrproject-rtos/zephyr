@@ -249,6 +249,13 @@ Drivers and Sensors
 
 * SPI
 
+  * The SPI driver subsystem has been updated to use the flags specified
+    in the cs-gpios devicetree properties rather than the
+    SPI_CS_ACTIVE_LOW/HIGH configuration options.  Devicetree files that
+    specify 0 for this field will probably need to be updated to specify
+    GPIO_ACTIVE_LOW.  SPI_CS_ACTIVE_LOW/HIGH are still used for chip
+    selects that are not specified by a cs-gpios property.
+
 
 * Timer
 
