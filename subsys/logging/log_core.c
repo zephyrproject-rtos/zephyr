@@ -391,8 +391,12 @@ void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap,
 			backend = log_backend_get(i);
 
 			if (log_backend_is_active(backend)) {
+				va_list ap_tmp;
+
+				va_copy(ap_tmp, ap);
 				log_backend_put_sync_string(backend, src_level,
-						     timestamp, fmt, ap);
+						     timestamp, fmt, ap_tmp);
+				va_end(ap_tmp);
 			}
 		}
 	} else {
