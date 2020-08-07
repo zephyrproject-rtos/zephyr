@@ -492,7 +492,10 @@ enum ethernet_hw_caps eth_posix_native_get_capabilities(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_HW_VLAN
+	return 0
+#if defined(CONFIG_NET_VLAN)
+		| ETHERNET_HW_VLAN
+#endif
 #if defined(CONFIG_ETH_NATIVE_POSIX_VLAN_TAG_STRIP)
 		| ETHERNET_HW_VLAN_TAG_STRIP
 #endif
