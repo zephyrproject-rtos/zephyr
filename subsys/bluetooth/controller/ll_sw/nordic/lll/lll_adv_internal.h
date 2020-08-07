@@ -70,3 +70,7 @@ lll_adv_sync_data_curr_get(struct lll_adv_sync *lll)
 }
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
+
+bool lll_adv_scan_req_check(struct lll_adv *lll, struct pdu_adv *sr,
+			    uint8_t tx_addr, uint8_t *addr,
+			    uint8_t devmatch_ok, uint8_t *rl_idx);
