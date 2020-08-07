@@ -14,3 +14,8 @@ zephyr_sources_ifdef(
   CONFIG_THREAD_ANALYZER
   thread_analyzer.c
   )
+
+add_subdirectory_ifdef(
+  CONFIG_DEBUG_COREDUMP
+  coredump
+  )
