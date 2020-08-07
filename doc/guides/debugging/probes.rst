@@ -192,13 +192,13 @@ Using Segger J-Link
 Once STLink is flashed with SEGGER FW and J-Link GDB server is installed on your
 host computer, you can flash and debug as follows:
 
-Use CMake with ``-DZEPHYR_BOARD_FLASH_RUNNER=jlink`` to change the default OpenOCD
+Use CMake with ``-DBOARD_FLASH_RUNNER=jlink`` to change the default OpenOCD
 runner to J-Link. Alternatively, you might add the following line to your
 application ``CMakeList.txt`` file.
 
   .. code-block:: cmake
 
-     set(ZEPHYR_BOARD_FLASH_RUNNER jlink)
+     set(BOARD_FLASH_RUNNER jlink)
 
 If you use West (Zephyr's meta-tool) you can modify the default runner using
 the ``--runner`` (or ``-r``) option.
