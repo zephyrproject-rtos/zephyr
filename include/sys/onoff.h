@@ -229,7 +229,7 @@ struct onoff_client;
  *
  * These functions may be invoked from any context including
  * pre-kernel, ISR, or cooperative or pre-emptible threads.
- * Compatible functions must be isr-callable and non-suspendable.
+ * Compatible functions must be isr-ok and not sleep.
  *
  * @param mgr the manager for which the operation was initiated.
  *
@@ -489,7 +489,7 @@ int onoff_reset(struct onoff_manager *mgr,
  *
  * These functions may be invoked from any context including
  * pre-kernel, ISR, or cooperative or pre-emptible threads.
- * Compatible functions must be isr-callable and non-suspendable.
+ * Compatible functions must be isr-ok and not sleep.
  *
  * The callback is permitted to unregister itself from the manager,
  * but must not register or unregister any other monitors.
