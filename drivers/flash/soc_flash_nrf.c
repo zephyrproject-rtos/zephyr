@@ -42,10 +42,10 @@
 #endif /* CONFIG_SOC_FLASH_NRF_PARTIAL_ERASE */
 
 static int write_op(void *context); /* instance of flash_op_handler_t */
-static int write_in_timeslice(off_t addr, const void *data, size_t len);
+static int write_synchronously(off_t addr, const void *data, size_t len);
 
 static int erase_op(void *context); /* instance of flash_op_handler_t */
-static int erase_in_timeslice(uint32_t addr, uint32_t size);
+static int erase_synchronously(uint32_t addr, uint32_t size);
 #endif /* !CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE */
 
 static const struct flash_parameters flash_nrf_parameters = {
@@ -158,7 +158,7 @@ static int flash_nrf_write(const struct device *dev, off_t addr,
 
 #ifndef CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE
 	if (nrf_flash_sync_is_required()) {
-		ret = write_in_timeslice(addr, data, len);
+		ret = write_synchronously(addr, data, len);
 	} else
 #endif /* !CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE */
 	{
@@ -201,7 +201,7 @@ static int flash_nrf_erase(const struct device *dev, off_t addr, size_t size)
 
 #ifndef CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE
 	if (nrf_flash_sync_is_required()) {
-		ret = erase_in_timeslice(addr, size);
+		ret = erase_synchronously(addr, size);
 	} else
 #endif /* !CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE */
 	{
@@ -271,7 +271,7 @@ DEVICE_AND_API_INIT(nrf_flash, DT_INST_LABEL(0), nrf_flash_init,
 
 #ifndef CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE
 
-static int erase_in_timeslice(uint32_t addr, uint32_t size)
+static int erase_synchronously(uint32_t addr, uint32_t size)
 {
 	struct flash_context context = {
 		.flash_addr = addr,
@@ -291,7 +291,7 @@ static int erase_in_timeslice(uint32_t addr, uint32_t size)
 	return nrf_flash_sync_exe(&flash_op_desc);
 }
 
-static int write_in_timeslice(off_t addr, const void *data, size_t len)
+static int write_synchronously(off_t addr, const void *data, size_t len)
 {
 	struct flash_context context = {
 		.data_addr = (uint32_t) data,
