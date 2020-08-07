@@ -681,6 +681,11 @@ int bt_le_ext_adv_stop(struct bt_le_ext_adv *adv);
  *  currently advertising then the advertising data will be updated in
  *  subsequent advertising events.
  *
+ *  When both @ref BT_LE_ADV_OPT_EXT_ADV and @ref BT_LE_ADV_OPT_SCANNABLE are
+ *  enabled then advertising data is ignored.
+ *  When @ref BT_LE_ADV_OPT_SCANNABLE is not enabled then scan response data is
+ *  ignored.
+ *
  *  If the advertising set has been configured to send advertising data on the
  *  primary advertising channels then the maximum data length is
  *  @ref BT_GAP_ADV_MAX_ADV_DATA_LEN bytes.
