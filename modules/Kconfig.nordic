@@ -11,14 +11,25 @@ menu "Nordic drivers"
 menuconfig NRF_802154_RADIO_DRIVER
 	bool "Enable nRF IEEE 802.15.4 radio driver"
 	depends on HAS_HW_NRF_RADIO_IEEE802154
+	select DYNAMIC_INTERRUPTS
 	help
 	  This option enables nRF IEEE 802.15.4 radio driver in Zephyr. Note,
 	  that beside the radio peripheral itself, this drivers occupies several
 	  other peripherals. A complete list can be found in the hal_nordic
 	  repository, within drivers/nrf_radio_802154/nrf_802154_peripherals.h
-	  file.
+	  file. As the nRF IEEE 802.15.4 radio driver defines IRQ configuration
+	  abstraction layer API and its Zephyr-specific implementation uses dynamic
+	  interrupts, the DYNAMIC_INTERRUPTS switch is selected unconditionally.
 
 if NRF_802154_RADIO_DRIVER
+
+config NRF_802154_MULTIPROTOCOL_SUPPORT
+	bool
+	help
+	  In dynamic multiprotocol applications, access to the radio peripheral
+	  must be distributed by an arbiter. To support this arbitration
+	  in the driver, this option must be enabled. Otherwise, the driver
+	  assumes that access to the radio peripheral is granted indefinitely.
 
 choice NRF_802154_CCA_MODE
 	prompt "nRF IEEE 802.15.4 CCA mode"
