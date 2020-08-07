@@ -18,7 +18,7 @@ from build_helpers import find_build_dir, is_zephyr_build, \
     FIND_BUILD_DIR_DESCRIPTION
 from runners.core import BuildConfiguration
 from zcmake import CMakeCache
-from zephyr_ext_common import Forceable, cached_runner_config, \
+from zephyr_ext_common import Forceable, load_dot_config, \
     ZEPHYR_SCRIPTS
 
 # This is needed to load edt.pickle files.
@@ -212,7 +212,6 @@ class ImgtoolSigner(Signer):
 
         args = command.args
         b = pathlib.Path(build_dir)
-        cache = CMakeCache.from_build_dir(build_dir)
 
         tool_path = self.find_imgtool(command, args)
         # The vector table offset is set in Kconfig:
@@ -222,17 +221,30 @@ class ImgtoolSigner(Signer):
         flash = self.edt_flash_node(b)
         align, addr, size = self.edt_flash_params(flash)
 
-        runner_config = cached_runner_config(build_dir, cache)
+        dot_config_file = b / 'zephyr' / '.config'
+        if not dot_config_file.is_file():
+            log.die(f"no .config found at {dot_config_file}")
+
+        dot_config = load_dot_config(dot_config_file)
+
+        if dot_config.get('CONFIG_BOOTLOADER_MCUBOOT', 'n') != 'y':
+            log.wrn("CONFIG_BOOTLOADER_MCUBOOT is not set to y in "
+                    f"{dot_config_file}; this probably won't work")
+
+        kernel = dot_config.get('CONFIG_KERNEL_BIN_NAME', 'zephyr')
+
         if 'bin' in formats:
-            in_bin = runner_config.bin_file
-            if not in_bin:
-                log.die("can't find unsigned .bin to sign")
+            in_bin = b / 'zephyr' / f'{kernel}.bin'
+            if not in_bin.is_file():
+                log.die(f"no unsigned .bin found at {in_bin}")
+            in_bin = os.fspath(in_bin)
         else:
             in_bin = None
         if 'hex' in formats:
-            in_hex = runner_config.hex_file
-            if not in_hex:
-                log.die("can't find unsigned .hex to sign")
+            in_hex = b / 'zephyr' / f'{kernel}.hex'
+            if not in_hex.is_file():
+                log.die(f"no unsigned .hex found at {in_hex}")
+            in_hex = os.fspath(in_hex)
         else:
             in_hex = None
 
@@ -253,17 +265,19 @@ class ImgtoolSigner(Signer):
                      '--slot-size', str(size)]
         sign_base.extend(args.tool_args)
 
-        log.banner('signed binaries:')
+        log.banner('signing binaries')
         if in_bin:
             out_bin = args.sbin or str(b / 'zephyr' / 'zephyr.signed.bin')
             sign_bin = sign_base + [in_bin, out_bin]
-            log.inf('bin: {}'.format(out_bin))
+            log.inf(f'unsigned bin: {in_bin}')
+            log.inf(f'signed bin:   {out_bin}')
             log.dbg(quote_sh_list(sign_bin))
             subprocess.check_call(sign_bin)
         if in_hex:
             out_hex = args.shex or str(b / 'zephyr' / 'zephyr.signed.hex')
             sign_hex = sign_base + [in_hex, out_hex]
-            log.inf('hex: {}'.format(out_hex))
+            log.inf(f'unsigned hex: {in_hex}')
+            log.inf(f'signed hex:   {out_hex}')
             log.dbg(quote_sh_list(sign_hex))
             subprocess.check_call(sign_hex)
 
