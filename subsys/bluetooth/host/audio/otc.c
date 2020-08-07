@@ -168,15 +168,17 @@ static int read_attr(struct bt_conn *conn,
 static void print_oacp_response(enum bt_ots_oacp_proc_type req_opcode,
 				enum bt_ots_oacp_res_code result_code)
 {
-	BT_DBG("Request OP Code: %s", lit_request[req_opcode]);
-	BT_DBG("Result Code    : %s", lit_result[result_code]);
+	BT_DBG("Request OP Code: %s", log_strdup(lit_request[req_opcode]));
+	BT_DBG("Result Code    : %s", log_strdup(lit_result[result_code]));
 }
 
 static void print_olcp_response(enum bt_ots_olcp_proc_type req_opcode,
 				enum bt_ots_olcp_res_code result_code)
 {
-	BT_DBG("Request OP Code: %s", lit_olcp_request[req_opcode]);
-	BT_DBG("Result Code    : %s", lit_olcp_result[result_code]);
+	BT_DBG("Request OP Code: %s",
+	       log_strdup(lit_olcp_request[req_opcode]));
+	BT_DBG("Result Code    : %s",
+	       log_strdup(lit_olcp_result[result_code]));
 }
 
 static void date_time_decode(struct net_buf_simple *buf,
@@ -703,8 +705,6 @@ static uint8_t read_object_size_cb(struct bt_conn *conn, uint8_t err,
 		return BT_GATT_ITER_STOP;
 	}
 
-	inst->busy = false;
-
 	if (err) {
 		BT_DBG("err: 0x%02X", err);
 	} else if (data) {
@@ -769,8 +769,6 @@ static uint8_t read_obj_id_cb(struct bt_conn *conn, uint8_t err,
 		BT_ERR("Instance not found");
 		return BT_GATT_ITER_STOP;
 	}
-
-	inst->busy = false;
 
 	if (err) {
 		BT_DBG("err: 0x%02X", err);
@@ -860,9 +858,6 @@ static uint8_t read_obj_type_cb(struct bt_conn *conn, uint8_t err,
 {
 	struct bt_otc_internal_instance_t *inst =
 		lookup_inst_by_handle(params->single.handle);
-	struct net_buf_simple net_buf;
-
-	net_buf_simple_init_with_data(&net_buf, (void *)data, length);
 
 	BT_DBG("handle %d, length %u", params->single.handle, length);
 
@@ -873,13 +868,15 @@ static uint8_t read_obj_type_cb(struct bt_conn *conn, uint8_t err,
 
 	if (data) {
 		if (length == BT_UUID_SIZE_128 || length == BT_UUID_SIZE_16) {
-			bt_uuid_create(
-				&inst->otc_inst->cur_object.type_uuid.uuid,
-				net_buf_simple_pull_mem(&net_buf, length),
-				length);
-			BT_HEXDUMP_DBG(
-				inst->otc_inst->cur_object.type_uuid.u128.val,
-				length, "UUID type read");
+			char uuid_str[BT_UUID_STR_LEN];
+			struct bt_uuid *uuid =
+				&inst->otc_inst->cur_object.type_uuid.uuid;
+
+			bt_uuid_create(uuid, data, length);
+
+			bt_uuid_to_str(uuid, uuid_str, sizeof(uuid_str));
+			BT_DBG("UUID type read: %s", log_strdup(uuid_str));
+
 			BT_OTC_SET_METADATA_REQ_TYPE(inst->metadata_read, true);
 		} else {
 			BT_WARN("Invalid length %u (expected max %u)",
@@ -1020,8 +1017,6 @@ static uint8_t read_obj_properties_cb(struct bt_conn *conn, uint8_t err,
 		BT_ERR("Instance not found");
 		return BT_GATT_ITER_STOP;
 	}
-
-	inst->busy = false;
 
 	if (err) {
 		BT_WARN("err: 0x%02X", err);
@@ -1232,6 +1227,7 @@ static void read_next_metadata(struct bt_conn *conn,
 				conn, inst->metadata_err, inst->otc_inst,
 				inst->metadata_read);
 		}
+		return;
 	}
 
 	if (err) {
@@ -1270,7 +1266,9 @@ int bt_otc_obj_metadata_read(struct bt_conn *conn,
 	inst->metadata_to_read = metadata & BT_OTC_METADATA_REQ_ALL;
 	inst->metadata_read_attempted = 0;
 
+	inst->busy = true;
 	read_next_metadata(conn, inst);
+
 	return 0;
 }
 
@@ -1488,7 +1486,7 @@ void bt_otc_metadata_display(struct bt_otc_obj_metadata *metadata,
 
 		u64_to_uint48array_str(metadata->id, t);
 		BT_INFO("Object ID: 0x%s", log_strdup(t));
-		BT_INFO("Object name: %s", metadata->name);
+		BT_INFO("Object name: %s", log_strdup(metadata->name));
 		BT_INFO("Object Current Size: %u", metadata->current_size);
 		BT_INFO("Object Allocate Size: %u", metadata->alloc_size);
 
