@@ -534,6 +534,7 @@
 /tests/net/lib/coap/                      @rveerama1
 /tests/net/socket/socketpair/             @cfriedt
 /tests/net/socket/                        @jukkar @tbursztyka @pfalcon
+/tests/subsys/debug/coredump/             @dcpleung
 /tests/subsys/fs/                         @nashif @wentongwu
 /tests/subsys/settings/                   @nvlsianpu
 /tests/subsys/shell/                      @jakub-uC @nordic-krch

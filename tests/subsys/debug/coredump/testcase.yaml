@@ -1,0 +1,14 @@
+tests:
+  coredump.logging_backend:
+    tags: ignore_faults ignore_qemu_crash
+    filter: CONFIG_ARCH_SUPPORTS_COREDUMP
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "Coredump: (.*)"
+        - "E: #CD:BEGIN#"
+        - "E: #CD:5([aA])45([0-9a-fA-F]+)"
+        - "E: #CD:41([0-9a-fA-F]+)"
+        - "E: #CD:4([dD])([0-9a-fA-F]+)"
+        - "E: #CD:END#"
