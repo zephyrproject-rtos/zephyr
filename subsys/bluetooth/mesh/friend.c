@@ -1615,6 +1615,26 @@ bool bt_mesh_friend_queue_has_space(uint16_t net_idx, uint16_t src, uint16_t dst
 	return someone_has_space;
 }
 
+static bool friend_queue_check_dup(struct bt_mesh_friend *frnd, uint32_t seq,
+				   uint16_t src)
+{
+	struct bt_mesh_net_rx rx;
+	sys_snode_t *cur;
+
+	for (cur = sys_slist_peek_head(&frnd->queue); cur != NULL;
+	     cur = sys_slist_peek_next(cur)) {
+		struct net_buf *buf = (void *)cur;
+
+		bt_mesh_net_header_parse(&buf->b, &rx);
+
+		if ((src == rx.ctx.addr) && (seq == rx.seq)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static bool friend_queue_prepare_space(struct bt_mesh_friend *frnd, uint16_t addr,
 				       const uint64_t *seq_auth, uint8_t seg_count)
 {
@@ -1673,6 +1693,10 @@ void bt_mesh_friend_enqueue_rx(struct bt_mesh_net_rx *rx,
 
 		if (friend_lpn_matches(frnd, rx->sub->net_idx,
 					rx->ctx.addr)) {
+			continue;
+		}
+
+		if (friend_queue_check_dup(frnd, rx->seq, rx->ctx.addr)) {
 			continue;
 		}
 
