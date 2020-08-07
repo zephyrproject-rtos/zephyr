@@ -12,3 +12,16 @@ tests:
   sample.net.syslog.without_timefuncs:
     extra_configs:
       - CONFIG_NEWLIB_LIBC=n
+  sample.net.syslog.ipv4_only:
+    extra_configs:
+      - CONFIG_NET_IPV6=n
+      - CONFIG_NET_CONFIG_NEED_IPV6=n
+      - CONFIG_NET_CONFIG_MY_IPV6_ADDR=""
+      - CONFIG_NET_CONFIG_PEER_IPV6_ADDR=""
+      - CONFIG_LOG_BACKEND_NET_SERVER="192.0.2.1:514"
+  sample.net.syslog.ipv6_only:
+    extra_configs:
+      - CONFIG_NET_IPV4=n
+      - CONFIG_NET_CONFIG_NEED_IPV4=n
+      - CONFIG_NET_CONFIG_MY_IPV4_ADDR=""
+      - CONFIG_NET_CONFIG_PEER_IPV4_ADDR=""
