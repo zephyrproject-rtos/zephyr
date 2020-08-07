@@ -27,7 +27,7 @@ tests:
     min_ram: 32
     platform_exclude:  frdm_kw41z
     tags: drivers
-    depends_on: adc spi
+    depends_on: gpio adc spi
   sensors.build.a_h:
     build_only: true
     extra_args: CONF_FILE=sensors_a_h.conf
@@ -42,7 +42,7 @@ tests:
     min_ram: 32
     platform_exclude:  frdm_kw41z
     tags: drivers
-    depends_on: adc spi
+    depends_on: gpio adc spi
   sensors.build.stmemsc:
     build_only: true
     extra_args: CONF_FILE=sensors_stmemsc.conf
