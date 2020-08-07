@@ -155,28 +155,6 @@ otError otPlatUartEnable(void)
 		return OT_ERROR_FAILED;
 	}
 
-#ifdef CONFIG_OPENTHREAD_NCP_SPINEL_ON_UART_ACM
-	int ret = usb_enable(NULL);
-	uint32_t baudrate = 0U;
-
-	if (ret != 0) {
-		LOG_ERR("Failed to enable USB");
-		return OT_ERROR_FAILED;
-	}
-
-	LOG_INF("Wait for host to settle");
-	k_sleep(K_SECONDS(1));
-
-	ret = uart_line_ctrl_get(ot_uart.dev,
-				 UART_LINE_CTRL_BAUD_RATE,
-				 &baudrate);
-	if (ret) {
-		LOG_WRN("Failed to get baudrate, ret code %d", ret);
-	} else {
-		LOG_INF("Baudrate detected: %d", baudrate);
-	}
-#endif
-
 	uart_irq_callback_user_data_set(ot_uart.dev,
 					uart_callback,
 					(void *)&ot_uart);
