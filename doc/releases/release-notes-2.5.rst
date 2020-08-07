@@ -39,6 +39,10 @@ API Changes
 * Changed vcnl4040 dts binding default for property 'proximity-trigger'.
   Changed the default to match the HW POR state for this property.
 
+* The :c:func:`clock_control_async_on` function will now take ``callback`` and
+  ``user_data`` as arguments instead of structure which contained list node,
+  callback and user data.
+
 Deprecated in this release
 ==========================
 
