@@ -296,6 +296,18 @@ Build and Infrastructure
 
 * Devicetree
 
+* Support for multiple SOC and ARCH roots.
+  The :ref:`SOC_ROOT <application>` and ``ARCH_ROOT`` variables used to specify
+  support files for out of tree SoCs and architectures now accept multiple
+  paths, separated by semicolons. As a result, the ``SOC_DIR`` Kconfig variable
+  is no longer supported.
+
+  Uses like ``source $(SOC_DIR)/<path>`` must be changed to
+  ``rsource <relative>/<path>`` or similar.
+
+* BOARD, SOC, DTS, and ARCH roots can now be specified in each module's
+  :file:`zephyr/module.yml` file; see :ref:`modules_build_settings`.
+
 Libraries / Subsystems
 **********************
 
