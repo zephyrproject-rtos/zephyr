@@ -78,9 +78,21 @@ void test_main(void)
 
 			if (NVIC_GetPendingIRQ(i)) {
 				/* If the NVIC line is pending, it is
-				 * guaranteed that it is implemented.
+				 * guaranteed that it is implemented; clear the
+				 * line.
 				 */
-				break;
+				NVIC_ClearPendingIRQ(i);
+
+				if (!NVIC_GetPendingIRQ(i)) {
+					/*
+					 * If the NVIC line can be successfully
+					 * un-pended, it is guaranteed that it
+					 * can be used for software interrupt
+					 * triggering. Trigger it.
+					 */
+					NVIC_SetPendingIRQ(i);
+					break;
+				}
 			}
 		}
 	}
