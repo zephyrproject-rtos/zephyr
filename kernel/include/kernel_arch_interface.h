@@ -299,6 +299,28 @@ static inline void arch_nop(void);
 
 /** @} */
 
+/**
+ * @defgroup arch-coredump Architecture-specific core dump APIs
+ * @ingroup arch-interface
+ * @{
+ */
+
+/**
+ * @brief Architecture-specific handling during coredump
+ *
+ * This dumps architecture-specific information during coredump.
+ *
+ * @param esf Exception Stack Frame (arch-specific)
+ */
+void arch_coredump_info_dump(const z_arch_esf_t *esf);
+
+/**
+ * @brief Get the target code specified by the architecture.
+ */
+uint16_t arch_coredump_tgt_code_get(void);
+
+/** @} */
+
 /* Include arch-specific inline function implementation */
 #include <kernel_arch_func.h>
 

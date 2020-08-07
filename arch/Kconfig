@@ -392,6 +392,9 @@ config ARCH_HAS_RAMFUNC_SUPPORT
 config ARCH_HAS_NESTED_EXCEPTION_DETECTION
 	bool
 
+config ARCH_SUPPORTS_COREDUMP
+	bool
+
 #
 # Other architecture related options
 #

@@ -342,4 +342,6 @@ config OPENOCD_SUPPORT
 	  OpenOCD to determine the state of running threads.  (This option
 	  selects CONFIG_THREAD_MONITOR, so all of its caveats are implied.)
 
+rsource "coredump/Kconfig"
+
 endmenu

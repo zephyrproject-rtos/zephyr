@@ -354,6 +354,7 @@
 /include/canbus/                          @alexanderwachter
 /include/tracing/                         @wentongwu @nashif
 /include/debug/                           @nashif
+/include/debug/coredump.h                 @dcpleung
 /include/device.h                         @wentongwu @nashif
 /include/devicetree.h                     @galak
 /include/display/                         @vanwinkeljan
@@ -426,6 +427,7 @@
 /samples/userspace/                       @andrewboie
 /scripts/coccicheck                       @himanshujha199640 @JuliaLawall
 /scripts/coccinelle/                      @himanshujha199640 @JuliaLawall
+/scripts/coredump/                        @dcpleung
 /scripts/kconfig/                         @ulfalizer
 /scripts/sanity_chk/expr_parser.py        @nashif
 /scripts/gen_app_partitions.py            @andrewboie
@@ -460,6 +462,7 @@
 /subsys/canbus/                           @alexanderwachter
 /subsys/cpp/                              @pabigot @vanwinkeljan
 /subsys/debug/                            @nashif
+/subsys/debug/coredump/                   @dcpleung
 /subsys/dfu/                              @nvlsianpu
 /subsys/tracing/                          @nashif @wentongwu
 /subsys/debug/asan_hacks.c                @vanwinkeljan @aescolar @daor-oti
