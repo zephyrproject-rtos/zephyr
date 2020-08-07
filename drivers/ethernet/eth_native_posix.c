@@ -52,6 +52,9 @@ struct eth_context {
 	struct net_linkaddr ll_addr;
 	struct net_if *iface;
 	const char *if_name;
+	k_tid_t rx_thread;
+	struct z_thread_stack_element *rx_stack;
+	size_t rx_stack_size;
 	int dev_fd;
 	bool init_done;
 	bool status;
@@ -65,11 +68,12 @@ struct eth_context {
 #endif
 };
 
-K_KERNEL_STACK_DEFINE(eth_rx_stack, CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);
-static struct k_thread rx_thread_data;
+#define DEFINE_RX_THREAD(x, _)						\
+	K_KERNEL_STACK_DEFINE(rx_thread_stack_##x,			\
+			      CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);\
+	static struct k_thread rx_thread_data_##x;
 
-/* TODO: support multiple interfaces */
-static struct eth_context eth_context_data;
+UTIL_LISTIFY(CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT, DEFINE_RX_THREAD, _)
 
 #if defined(CONFIG_NET_GPTP)
 static bool need_timestamping(struct gptp_hdr *hdr)
@@ -382,14 +386,28 @@ static void eth_rx(struct eth_context *ctx)
 	}
 }
 
+#if defined(CONFIG_THREAD_MAX_NAME_LEN)
+#define THREAD_MAX_NAME_LEN CONFIG_THREAD_MAX_NAME_LEN
+#else
+#define THREAD_MAX_NAME_LEN 1
+#endif
+
 static void create_rx_handler(struct eth_context *ctx)
 {
-	k_thread_create(&rx_thread_data, eth_rx_stack,
-			K_KERNEL_STACK_SIZEOF(eth_rx_stack),
+	k_thread_create(ctx->rx_thread,
+			ctx->rx_stack,
+			ctx->rx_stack_size,
 			(k_thread_entry_t)eth_rx,
 			ctx, NULL, NULL, K_PRIO_COOP(14),
 			0, K_NO_WAIT);
-	k_thread_name_set(&rx_thread_data, "eth_native_posix_rx");
+
+	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+		char name[THREAD_MAX_NAME_LEN];
+
+		snprintk(name, sizeof(name), "eth_native_posix_rx-%s",
+			 ctx->if_name);
+		k_thread_name_set(ctx->rx_thread, name);
+	}
 }
 
 static void eth_iface_init(struct net_if *iface)
@@ -414,7 +432,7 @@ static void eth_iface_init(struct net_if *iface)
 
 	ctx->init_done = true;
 
-#if defined(CONFIG_ETH_NATIVE_POSIX_RANDOM_MAC)
+#if IS_ENABLED(CONFIG_ETH_NATIVE_POSIX_RANDOM_MAC)
 	/* 00-00-5E-00-53-xx Documentation RFC 7042 */
 	gen_random_mac(ctx->mac_addr, 0x00, 0x00, 0x5E);
 
@@ -428,6 +446,12 @@ static void eth_iface_init(struct net_if *iface)
 		ctx->mac_addr[5] = 0x01;
 	}
 #else
+	/* Difficult to configure MAC addresses any sane way if we have more
+	 * than one network interface.
+	 */
+	BUILD_ASSERT(CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT == 1,
+		     "Cannot have static MAC if interface count > 1");
+
 	if (CONFIG_ETH_NATIVE_POSIX_MAC_ADDR[0] != 0) {
 		if (net_bytes_from_str(ctx->mac_addr, sizeof(ctx->mac_addr),
 				       CONFIG_ETH_NATIVE_POSIX_MAC_ADDR) < 0) {
@@ -437,10 +461,18 @@ static void eth_iface_init(struct net_if *iface)
 	}
 #endif
 
+	/* If we have only one network interface, then use the name
+	 * defined in the Kconfig directly. This way there is no need to
+	 * change the documentation etc. and break things.
+	 */
+	if (CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT == 1) {
+		ctx->if_name = ETH_NATIVE_POSIX_DRV_NAME;
+	}
+
+	LOG_DBG("Interface %p using \"%s\"", iface, log_strdup(ctx->if_name));
+
 	net_if_set_link_addr(iface, ll_addr->addr, ll_addr->len,
 			     NET_LINK_ETHERNET);
-
-	ctx->if_name = ETH_NATIVE_POSIX_DRV_NAME;
 
 	ctx->dev_fd = eth_iface_create(ctx->if_name, false);
 	if (ctx->dev_fd < 0) {
@@ -582,18 +614,44 @@ static const struct ethernet_api eth_if_api = {
 #endif
 };
 
-ETH_NET_DEVICE_INIT(eth_native_posix, ETH_NATIVE_POSIX_DRV_NAME,
-		    eth_init, device_pm_control_nop, &eth_context_data, NULL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &eth_if_api,
-		    NET_ETH_MTU);
+#define DEFINE_ETH_DEV_DATA(x, _)					     \
+	static struct eth_context eth_context_data_##x = {		     \
+		.if_name = CONFIG_ETH_NATIVE_POSIX_DRV_NAME #x,		     \
+		.rx_thread = &rx_thread_data_##x,			     \
+		.rx_stack = rx_thread_stack_##x,			     \
+		.rx_stack_size = K_KERNEL_STACK_SIZEOF(rx_thread_stack_##x), \
+	};
+
+UTIL_LISTIFY(CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT, DEFINE_ETH_DEV_DATA, _)
+
+#define DEFINE_ETH_DEVICE(x, _)						\
+	ETH_NET_DEVICE_INIT(eth_native_posix_##x,			\
+			    CONFIG_ETH_NATIVE_POSIX_DRV_NAME #x,	\
+			    eth_init, device_pm_control_nop,		\
+			    &eth_context_data_##x,			\
+			    NULL,					\
+			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
+			    &eth_if_api,				\
+			    NET_ETH_MTU);
+
+UTIL_LISTIFY(CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT, DEFINE_ETH_DEVICE, _)
 
 #if defined(CONFIG_ETH_NATIVE_POSIX_PTP_CLOCK)
+
+#if IS_ENABLED(CONFIG_NET_GPTP)
+BUILD_ASSERT(								\
+	CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT == CONFIG_NET_GPTP_NUM_PORTS, \
+	"Number of network interfaces must match gPTP port count");
+#endif
+
 struct ptp_context {
 	struct eth_context *eth_context;
 };
 
-static struct ptp_context ptp_0_context;
+#define DEFINE_PTP_DEV_DATA(x, _) \
+	static struct ptp_context ptp_context_##x;
 
+UTIL_LISTIFY(CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT, DEFINE_PTP_DEV_DATA, _)
 
 static int ptp_clock_set_native_posix(struct device *clk,
 				      struct net_ptp_time *tm)
@@ -649,20 +707,31 @@ static const struct ptp_clock_driver_api api = {
 	.rate_adjust = ptp_clock_rate_adjust_native_posix,
 };
 
-static int ptp_init(struct device *port)
-{
-	struct device *eth_dev = DEVICE_GET(eth_native_posix);
-	struct eth_context *context = eth_dev->data;
-	struct ptp_context *ptp_context = port->data;
+#define PTP_INIT_FUNC(x, _)						\
+	static int ptp_init_##x(struct device *port)			\
+	{								\
+		struct device *eth_dev = DEVICE_GET(eth_native_posix_##x); \
+		struct eth_context *context = eth_dev->data;	\
+		struct ptp_context *ptp_context = port->data;	\
+									\
+		context->ptp_clock = port;				\
+		ptp_context->eth_context = context;			\
+									\
+		return 0;						\
+	}
 
-	context->ptp_clock = port;
-	ptp_context->eth_context = context;
+UTIL_LISTIFY(CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT, PTP_INIT_FUNC, _)
 
-	return 0;
-}
+#define DEFINE_PTP_DEVICE(x, _)						\
+	DEVICE_AND_API_INIT(eth_native_posix_ptp_clock_##x,		\
+			    PTP_CLOCK_NAME "_" #x,			\
+			    ptp_init_##x,				\
+			    &ptp_context_##x,				\
+			    NULL,					\
+			    POST_KERNEL,				\
+			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
+			    &api);
 
-DEVICE_AND_API_INIT(eth_native_posix_ptp_clock_0, PTP_CLOCK_NAME,
-		    ptp_init, &ptp_0_context, NULL, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &api);
+UTIL_LISTIFY(CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT, DEFINE_PTP_DEVICE, _)
 
 #endif /* CONFIG_ETH_NATIVE_POSIX_PTP_CLOCK */
