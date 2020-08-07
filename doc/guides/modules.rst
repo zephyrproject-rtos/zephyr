@@ -75,6 +75,7 @@ module:
      cmake: .
      kconfig: Kconfig
 
+.. _modules_build_settings:
 
 Build settings
 ==============
