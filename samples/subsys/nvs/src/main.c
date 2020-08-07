@@ -72,9 +72,9 @@ void main(void)
 	/* define the nvs file system by settings with:
 	 *	sector_size equal to the pagesize,
 	 *	3 sectors
-	 *	starting at FLASH_AREA_OFFSET(storage)
+	 *	starting at FLASH_AREA_OFFSET(FLASH_AREA_LABEL_NVS)
 	 */
-	fs.offset = FLASH_AREA_OFFSET(storage);
+	fs.offset = FLASH_AREA_OFFSET(FLASH_AREA_LABEL_NVS);
 	rc = flash_get_page_info_by_offs(
 		device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL),
 		fs.offset, &info);

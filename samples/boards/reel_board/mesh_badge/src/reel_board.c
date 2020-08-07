@@ -580,8 +580,8 @@ static int erase_storage(void)
 
 	dev = device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 
-	return flash_erase(dev, FLASH_AREA_OFFSET(storage),
-			   FLASH_AREA_SIZE(storage));
+	return flash_erase(dev, FLASH_AREA_OFFSET(FLASH_AREA_LABEL_SETTINGS),
+			   FLASH_AREA_SIZE(FLASH_AREA_LABEL_SETTINGS));
 }
 
 void board_refresh_display(void)

@@ -26,7 +26,7 @@ static FATFS fat_fs;
 static struct fs_mount_t fs_mnt = {
 	.type = FS_FATFS,
 	.mnt_point = FATFS_MNTP,
-	.storage_dev = (void *)FLASH_AREA_ID(storage),
+	.storage_dev = (void *)FLASH_AREA_ID_FAT,
 	.fs_data = &fat_fs,
 };
 #elif CONFIG_FILE_SYSTEM_LITTLEFS
@@ -37,7 +37,7 @@ FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(storage);
 static struct fs_mount_t fs_mnt = {
 	.type = FS_LITTLEFS,
 	.fs_data = &storage,
-	.storage_dev = (void *)FLASH_AREA_ID(storage),
+	.storage_dev = (void *)FLASH_AREA_ID_LITTLEFS,
 	.mnt_point = "/lfs",
 };
 #else
