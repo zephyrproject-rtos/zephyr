@@ -53,7 +53,6 @@ struct l2ch {
 };
 
 struct ots_object {
-	uint32_t                    properties;
 	uint32_t                    alloc_len;
 	bool                        is_valid;
 	bool                        is_locked;
@@ -476,7 +475,7 @@ static enum bt_ots_oacp_res_code oacp_read_proc(struct ots_svc_inst_t *inst,
 		return BT_OTS_OACP_RES_INV_OBJ;
 	}
 
-	if (BT_OTS_OBJ_GET_PROP_READ(inst->cur_obj_p->properties) == false) {
+	if (!BT_OTS_OBJ_GET_PROP_READ(inst->cur_obj_p->metadata.properties)) {
 		return BT_OTS_OACP_RES_NOT_PERMITTED;
 	}
 
@@ -791,9 +790,11 @@ static ssize_t obj_prop_read(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_OTS_OBJECT_NOT_SELECTED);
 	}
 
-	BT_DBG("Object's properties: 0x%x", inst->cur_obj_p->properties);
+	BT_DBG("Object's metadata.properties: 0x%x",
+	       inst->cur_obj_p->metadata.properties);
 
-	net_buf_simple_add_le32(&gatt_buf, inst->cur_obj_p->properties);
+	net_buf_simple_add_le32(&gatt_buf,
+				inst->cur_obj_p->metadata.properties);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
 				 gatt_buf.data, gatt_buf.len);
@@ -1148,7 +1149,7 @@ static void encode_record(struct ots_object *p_obj,
 		net_buf_simple_add_le32(net_buf, p_obj->metadata.size);
 	}
 
-	net_buf_simple_add_le32(net_buf, p_obj->properties);
+	net_buf_simple_add_le32(net_buf, p_obj->metadata.properties);
 
 	/*encode the record length at the beginning*/
 	sys_put_le16(net_buf->len - start_len, record_length_p);
@@ -1212,7 +1213,8 @@ static void create_dir_listing_object(struct ots_svc_inst_t *inst)
 	inst->p_dirlisting_obj->id = OTS_DIR_LISTING_ID;
 	inst->p_dirlisting_obj->metadata.type.uuid.type = BT_UUID_TYPE_16;
 	inst->p_dirlisting_obj->metadata.type.u16.val = OTS_DIR_LISTING_TYPE;
-	BT_OTS_OBJ_SET_PROP_READ(inst->p_dirlisting_obj->properties, true);
+	BT_OTS_OBJ_SET_PROP_READ(inst->p_dirlisting_obj->metadata.properties,
+				 true);
 
 	inst->p_dirlisting_obj->alloc_len = BT_OTS_DIR_LISTING_MAX_SIZE;
 
