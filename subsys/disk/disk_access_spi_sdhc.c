@@ -29,6 +29,7 @@ struct sdhc_spi_data {
 	struct device *cs;
 	uint32_t pin;
 	gpio_dt_flags_t flags;
+	struct spi_cs_control cs_ctrl;
 
 	bool high_capacity;
 	uint32_t sector_count;
@@ -72,7 +73,11 @@ static int sdhc_spi_trace(struct sdhc_spi_data *data, int dir, int err,
 /* Asserts or deasserts chip select */
 static void sdhc_spi_set_cs(struct sdhc_spi_data *data, int value)
 {
-	gpio_pin_set(data->cs, data->pin, value);
+	/* there seems to be a mix up between 0 meaning low or high
+	 * when the sdhc_spi_set_cs is used
+	 * Changed to use _raw function to have 0 = low, 1 = high
+	 */
+	gpio_pin_set_raw(data->cs, data->pin, value);
 }
 
 /* Receives a fixed number of bytes */
@@ -460,12 +465,12 @@ static int sdhc_spi_recover(struct sdhc_spi_data *data)
 /* Attempts to return the card to idle mode */
 static int sdhc_spi_go_idle(struct sdhc_spi_data *data)
 {
-	sdhc_spi_set_cs(data, 1);
+	sdhc_spi_set_cs(data, 0);
 
 	/* Write the initial >= 74 clocks */
 	sdhc_spi_tx(data, sdhc_ones, 10);
 
-	sdhc_spi_set_cs(data, 0);
+	sdhc_spi_set_cs(data, 1);
 
 	return sdhc_spi_cmd_r1_idle(data, SDHC_GO_IDLE_STATE, 0);
 }
@@ -777,6 +782,17 @@ static int sdhc_spi_init(struct device *dev)
 
 	data->pin = DT_SPI_DEV_CS_GPIOS_PIN(DT_INST(0, zephyr_mmc_spi_slot));
 	data->flags = DT_SPI_DEV_CS_GPIOS_FLAGS(DT_INST(0, zephyr_mmc_spi_slot));
+
+
+	/* TODO why is active low not picked up */
+	data->flags |= GPIO_ACTIVE_LOW;
+
+	/* can we use cs_ctrl directly instead of data->cs, data->pin etc. */
+	data->cs_ctrl.delay = 0;
+	data->cs_ctrl.gpio_dt_flags = data->flags;
+	data->cs_ctrl.gpio_dev = data->cs;
+	data->cs_ctrl.gpio_pin = data->pin;
+	data->cfg.cs = &data->cs_ctrl;
 
 	disk_spi_sdhc_init(dev);
 
