@@ -300,7 +300,8 @@ static void iface_up_handler(struct net_mgmt_event_callback *cb,
 			     uint32_t mgmt_event, struct net_if *iface)
 {
 	if (mgmt_event == NET_EVENT_IF_UP) {
-		NET_INFO("Interface %p coming up", iface);
+		NET_INFO("Interface %d (%p) coming up",
+			 net_if_get_by_iface(iface), iface);
 
 		k_sem_reset(&counter);
 		k_sem_give(&waiter);
@@ -315,7 +316,8 @@ static bool check_interface(struct net_if *iface)
 		return true;
 	}
 
-	NET_INFO("Waiting interface %p to be up...", iface);
+	NET_INFO("Waiting interface %d (%p) to be up...",
+		 net_if_get_by_iface(iface), iface);
 
 	net_mgmt_init_event_callback(&mgmt_iface_cb, iface_up_handler,
 				     NET_EVENT_IF_UP);
