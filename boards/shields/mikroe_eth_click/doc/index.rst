@@ -1,5 +1,8 @@
 .. _mikroe_eth_click:
 
+MikroElektronika ETH Click
+##########################
+
 Overview
 ********
 
