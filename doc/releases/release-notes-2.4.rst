@@ -267,6 +267,18 @@ Drivers and Sensors
 
 * USB
 
+  * The usb_enable() function, which, for some samples, was invoked
+    automatically on system boot up, now needs to be explicitly called
+    by the application in order to enable the USB subsystem. If your
+    application relies on any of the following Kconfig options, then
+    it shall also enable the USB subsystem:
+
+    * :option:`CONFIG_OPENTHREAD_NCP_SPINEL_ON_UART_ACM`
+    * :option:`CONFIG_USB_DEVICE_NETWORK_ECM`
+    * :option:`CONFIG_USB_DEVICE_NETWORK_EEM`
+    * :option:`CONFIG_USB_DEVICE_NETWORK_RNDIS`
+    * :option:`CONFIG_TRACING_BACKEND_USB`
+    * :option:`CONFIG_USB_UART_CONSOLE`
 
 * Video
 
@@ -355,6 +367,9 @@ Libraries / Subsystems
     system. LVGL maintainers are currently investigating ways for reducing the
     library footprint when some options are not enabled, so you should wait for
     future releases if higher ROM usage is a concern for your application.
+
+* Tracing:
+  * Tracing backed API now checks if init function exists prio to calling it.
 
 HALs
 ****
