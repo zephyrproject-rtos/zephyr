@@ -27,7 +27,6 @@
 #include "beacon.h"
 #include "foundation.h"
 
-#define UNPROVISIONED_INTERVAL     K_SECONDS(5)
 #define PROVISIONED_INTERVAL       K_SECONDS(10)
 
 #define BEACON_TYPE_UNPROVISIONED  0x00
@@ -149,6 +148,7 @@ static int secure_beacon_send(void)
 	return 0;
 }
 
+#if defined(CONFIG_BT_MESH_PB_ADV)
 static int unprovisioned_beacon_send(void)
 {
 	const struct bt_mesh_prov *prov;
@@ -204,6 +204,7 @@ static int unprovisioned_beacon_send(void)
 
 	return 0;
 }
+#endif
 
 static void unprovisioned_beacon_recv(struct net_buf_simple *buf)
 {
@@ -268,10 +269,12 @@ static void update_beacon_observation(void)
 static void beacon_send(struct k_work *work)
 {
 	/* Don't send anything if we have an active provisioning link */
-	if (IS_ENABLED(CONFIG_BT_MESH_PROV) && bt_prov_active()) {
-		k_delayed_work_submit(&beacon_timer, UNPROVISIONED_INTERVAL);
+#if defined(CONFIG_BT_MESH_PB_ADV)
+	if (bt_prov_active()) {
+		k_delayed_work_submit(&beacon_timer, K_SECONDS(CONFIG_BT_MESH_UNPROV_BEACON_INT));
 		return;
 	}
+#endif
 
 	BT_DBG("");
 
@@ -285,10 +288,13 @@ static void beacon_send(struct k_work *work)
 			k_delayed_work_submit(&beacon_timer,
 					      PROVISIONED_INTERVAL);
 		}
-	} else if (IS_ENABLED(CONFIG_BT_MESH_PB_ADV)) {
-		unprovisioned_beacon_send();
-		k_delayed_work_submit(&beacon_timer, UNPROVISIONED_INTERVAL);
+
+		return;
 	}
+#if defined(CONFIG_BT_MESH_PB_ADV)
+	unprovisioned_beacon_send();
+	k_delayed_work_submit(&beacon_timer, K_SECONDS(CONFIG_BT_MESH_UNPROV_BEACON_INT));
+#endif
 }
 
 static void secure_beacon_recv(struct net_buf_simple *buf)
