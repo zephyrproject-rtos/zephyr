@@ -77,6 +77,11 @@ API Changes
   This renaming was done to get rid of legacy names, for which the reasons
   do no longer apply.
 
+* All device instances got a const qualifier. So this applies to all APIs
+  manipulating ``struct device *`` (ADC, GPIO, I2C, ...). In order to avoid
+  const qualifier loss on ISRs, all ISRs now take a ``const *void`` as a
+  paremeter as well.
+
 Deprecated in this release
 ==========================
 
