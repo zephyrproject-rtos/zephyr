@@ -3409,7 +3409,7 @@ class Lcov(CoverageTool):
         self.ignores.append('*' + pattern + '*')
 
     def add_ignore_directory(self, pattern):
-        self.ignores.append(pattern + '/*')
+        self.ignores.append('*/' + pattern + '/*')
 
     def _generate(self, outdir, coveragelog):
         coveragefile = os.path.join(outdir, "coverage.info")
@@ -3462,7 +3462,7 @@ class Gcovr(CoverageTool):
         self.ignores.append('.*' + pattern + '.*')
 
     def add_ignore_directory(self, pattern):
-        self.ignores.append(pattern + '/.*')
+        self.ignores.append(".*/" + pattern + '/.*')
 
     @staticmethod
     def _interleave_list(prefix, list):
