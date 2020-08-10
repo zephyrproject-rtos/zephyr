@@ -42,15 +42,16 @@ def compare_with_hardened_conf(kconf, hardened_kconf_filename):
     with open(hardened_kconf_filename) as csvfile:
         csvreader = csv.reader(csvfile)
         for row in csvreader:
-            name = row[0]
-            recommended = row[1]
-            try:
-                symbol = kconf.syms[name]
-                current = symbol.str_value
-            except KeyError:
-                symbol = None
-                current = None
-            options.append(Option(name=name, current=current,
+            if len(row) > 1:
+                name = row[0]
+                recommended = row[1]
+                try:
+                    symbol = kconf.syms[name]
+                    current = symbol.str_value
+                except KeyError:
+                    symbol = None
+                    current = None
+                options.append(Option(name=name, current=current,
                                   recommended=recommended, symbol=symbol))
     return options
 
