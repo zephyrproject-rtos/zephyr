@@ -14,6 +14,8 @@ menuconfig CLOCK_CONTROL_NRF
 	bool "NRF Clock controller support"
 	depends on SOC_COMPATIBLE_NRF
 	depends on !CLOCK_CONTROL_NRF_FORCE_ALT
+	select NRFX_CLOCK
+	select NRFX_POWER
 	default y
 	help
 	  Enable support for the Nordic Semiconductor nRFxx series SoC clock
