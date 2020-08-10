@@ -257,6 +257,10 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 	adv->lll.chan_map = chan_map;
 	adv->lll.filter_policy = filter_policy;
 
+#if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
+	adv->lll.scan_req_notify = sreq;
+#endif
+
 	/* update the "current" primary adv data */
 	pdu = lll_adv_data_peek(&adv->lll);
 #if defined(CONFIG_BT_CTLR_ADV_EXT)

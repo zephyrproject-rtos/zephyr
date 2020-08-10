@@ -68,6 +68,10 @@ struct lll_adv {
 	uint8_t phy_s:3;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
+#if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
+	uint8_t scan_req_notify:1;
+#endif
+
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	uint8_t is_mesh:1;
 #endif /* CONFIG_BT_HCI_MESH_EXT */
