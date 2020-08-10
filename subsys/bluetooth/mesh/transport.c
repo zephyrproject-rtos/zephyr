@@ -814,7 +814,7 @@ static int trans_ack(struct bt_mesh_net_rx *rx, uint8_t hdr,
 
 	if (buf->len < 6) {
 		LOG_ERR("Too short ack message");
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	seq_zero = net_buf_simple_pull_be16(buf);
@@ -835,7 +835,7 @@ static int trans_ack(struct bt_mesh_net_rx *rx, uint8_t hdr,
 	tx = seg_tx_lookup(seq_zero, obo, rx->ctx.addr);
 	if (!tx) {
 		LOG_WRN("No matching TX context for ack");
-		return -EINVAL;
+		return -ENOENT;
 	}
 
 	if (!BT_MESH_ADDR_IS_UNICAST(tx->dst)) {
@@ -945,7 +945,7 @@ static int ctl_recv(struct bt_mesh_net_rx *rx, uint8_t hdr,
 
 	LOG_WRN("Unhandled TransOpCode 0x%02x", ctl_op);
 
-	return -ENOENT;
+	return -EBADMSG;
 }
 
 static int trans_unseg(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx,
@@ -958,7 +958,7 @@ static int trans_unseg(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx,
 
 	if (buf->len < 1) {
 		LOG_ERR("Too small unsegmented PDU");
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	if (bt_mesh_rpl_check(rx, NULL)) {
@@ -1283,7 +1283,7 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
 
 	if (buf->len < 5) {
 		LOG_ERR("Too short segmented message (len %u)", buf->len);
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	if (bt_mesh_rpl_check(net_rx, &rpl)) {
@@ -1307,7 +1307,7 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
 
 	if (seg_o > seg_n) {
 		LOG_ERR("SegO greater than SegN (%u > %u)", seg_o, seg_n);
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	/* According to Mesh 1.0 specification:

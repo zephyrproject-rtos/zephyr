@@ -616,7 +616,7 @@ int bt_mesh_lpn_friend_offer(struct bt_mesh_net_rx *rx,
 
 	if (buf->len < sizeof(*msg)) {
 		LOG_WRN("Too short Friend Offer");
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	if (lpn->state != BT_MESH_LPN_WAIT_OFFER) {
@@ -626,7 +626,7 @@ int bt_mesh_lpn_friend_offer(struct bt_mesh_net_rx *rx,
 
 	if (!msg->recv_win) {
 		LOG_WRN("Prohibited ReceiveWindow value");
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	frnd_counter = sys_be16_to_cpu(msg->frnd_counter);
@@ -679,7 +679,7 @@ int bt_mesh_lpn_friend_clear_cfm(struct bt_mesh_net_rx *rx,
 
 	if (buf->len < sizeof(*msg)) {
 		LOG_WRN("Too short Friend Clear Confirm");
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	if (lpn->state != BT_MESH_LPN_CLEAR) {
@@ -969,7 +969,7 @@ int bt_mesh_lpn_friend_sub_cfm(struct bt_mesh_net_rx *rx,
 
 	if (buf->len < sizeof(*msg)) {
 		LOG_WRN("Too short Friend Subscription Confirm");
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	LOG_DBG("xact 0x%02x", msg->xact);
@@ -1032,7 +1032,7 @@ int bt_mesh_lpn_friend_update(struct bt_mesh_net_rx *rx,
 
 	if (buf->len < sizeof(*msg)) {
 		LOG_WRN("Too short Friend Update");
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	if (lpn->sent_req != TRANS_CTL_OP_FRIEND_POLL) {
