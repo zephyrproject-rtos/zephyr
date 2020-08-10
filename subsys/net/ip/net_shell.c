@@ -1889,6 +1889,8 @@ static int cmd_net_dns(const struct shell *shell, size_t argc, char *argv[])
 }
 
 #if defined(CONFIG_NET_GPTP)
+static const char *selected_role_str(int port);
+
 static void gptp_port_cb(int port, struct net_if *iface, void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
@@ -1896,12 +1898,13 @@ static void gptp_port_cb(int port, struct net_if *iface, void *user_data)
 	int *count = data->user_data;
 
 	if (*count == 0) {
-		PR("Port Interface\n");
+		PR("Port Interface  \tRole\n");
 	}
 
 	(*count)++;
 
-	PR("%2d   %p\n", port, iface);
+	PR("%2d   %p [%d]  \t%s\n", port, iface, net_if_get_by_iface(iface),
+	   selected_role_str(port));
 }
 
 static const char *pdelay_req2str(enum gptp_pdelay_req_states state)
@@ -2154,7 +2157,12 @@ static void gptp_print_port_info(const struct shell *shell, int port)
 		return;
 	}
 
-	PR("Port id    : %d\n", port_ds->port_id.port_number);
+	NET_ASSERT(port == port_ds->port_id.port_number,
+		   "Port number mismatch! (%d vs %d)", port,
+		   port_ds->port_id.port_number);
+
+	PR("Port id    : %d (%s)\n", port_ds->port_id.port_number,
+	   selected_role_str(port_ds->port_id.port_number));
 	PR("Interface  : %p [%d]\n", iface, net_if_get_by_iface(iface));
 	PR("Clock id   : ");
 	for (i = 0; i < sizeof(port_ds->port_id.clk_id); i++) {
