@@ -72,6 +72,11 @@ API Changes
   To maintain original behaviour within user code, two argument invocations
   should be converted to pass a third argument ``FS_O_CREATE | FS_O_RDWR``.
 
+* The struct device got 3 attributes renamed: ``config_info`` to ``config``,
+  ``driver_api`` to ``api`` and finally ``driver_data`` to ``data``.
+  This renaming was done to get rid of legacy names, for which the reasons
+  do no longer apply.
+
 Deprecated in this release
 ==========================
 
