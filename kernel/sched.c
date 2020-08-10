@@ -748,9 +748,27 @@ static inline int resched(uint32_t key)
 	return arch_irq_unlocked(key) && !arch_is_in_isr();
 }
 
+/*
+ * Check if the next ready thread is the same as the current thread
+ * and save the trip if true.
+ */
+static inline bool need_swap(void)
+{
+	/* the SMP case will be handled in C based z_swap() */
+#ifdef CONFIG_SMP
+	return true;
+#else
+	struct k_thread *new_thread;
+
+	/* Check if the next ready thread is the same as the current thread */
+	new_thread = z_get_next_ready_thread();
+	return new_thread != _current;
+#endif
+}
+
 void z_reschedule(struct k_spinlock *lock, k_spinlock_key_t key)
 {
-	if (resched(key.key)) {
+	if (resched(key.key) && need_swap()) {
 		z_swap(lock, key);
 	} else {
 		k_spin_unlock(lock, key);
