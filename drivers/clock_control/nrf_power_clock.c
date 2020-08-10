@@ -11,7 +11,6 @@
 #include <drivers/clock_control/nrf_clock_control.h>
 #include "nrf_clock_calibration.h"
 #include <nrfx_clock.h>
-#include <nrfx_power.h>
 #include <logging/log.h>
 #include <shell/shell.h>
 
@@ -504,29 +503,6 @@ static void clock_event_handler(nrfx_clock_evt_type_t event)
 	}
 }
 
-#if defined(CONFIG_USB_NRFX)
-
-static void usb_event_handler(nrfx_power_usb_evt_t event)
-{
-	extern void usb_dc_nrfx_power_event_callback(nrf_power_event_t evt);
-
-	switch (event) {
-	case NRFX_POWER_USB_EVT_DETECTED:
-		usb_dc_nrfx_power_event_callback(NRF_POWER_EVENT_USBDETECTED);
-		break;
-	case NRFX_POWER_USB_EVT_REMOVED:
-		usb_dc_nrfx_power_event_callback(NRF_POWER_EVENT_USBREMOVED);
-		break;
-	case NRFX_POWER_USB_EVT_READY:
-		usb_dc_nrfx_power_event_callback(NRF_POWER_EVENT_USBPWRRDY);
-		break;
-	default:
-		__ASSERT_NO_MSG(0);
-		break;
-	}
-}
-#endif
-
 static int clk_init(struct device *dev)
 {
 	nrfx_err_t nrfx_err;
@@ -540,15 +516,6 @@ static int clk_init(struct device *dev)
 		    nrfx_isr, nrfx_power_clock_irq_handler, 0);
 	irq_enable(DT_INST_IRQN(0));
 
-#if defined(CONFIG_USB_NRFX) && defined(CONFIG_SOC_SERIES_NRF53X)
-	/* Use CLOCK/POWER priority for compatibility with other series where
-	 * USB events are handled by CLOCK interrupt handler.
-	 */
-	IRQ_CONNECT(USBREGULATOR_IRQn, DT_INST_IRQ(0, priority),
-		    nrfx_usbreg_irq_handler, 0, 0);
-	irq_enable(USBREGULATOR_IRQn);
-#endif
-
 	nrfx_err = nrfx_clock_init(clock_event_handler);
 	if (nrfx_err != NRFX_SUCCESS) {
 		return -EIO;
@@ -561,12 +528,6 @@ static int clk_init(struct device *dev)
 	}
 
 	nrfx_clock_enable();
-
-	static const nrfx_power_usbevt_config_t config = {
-		.handler = usb_event_handler
-	};
-
-	nrfx_power_usbevt_init(&config);
 
 	for (enum clock_control_nrf_type i = 0;
 		i < CLOCK_CONTROL_NRF_TYPE_COUNT; i++) {
@@ -613,17 +574,6 @@ DEVICE_AND_API_INIT(clock_nrf, DT_INST_LABEL(0),
 		    clk_init, &data, &config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &clock_control_api);
-
-#ifdef CONFIG_USB_NRFX
-void nrf5_power_usb_power_int_enable(bool enable)
-{
-	if (enable) {
-		nrfx_power_usbevt_enable();
-	} else {
-		nrfx_power_usbevt_disable();
-	}
-}
-#endif
 
 static int cmd_status(const struct shell *shell, size_t argc, char **argv)
 {
