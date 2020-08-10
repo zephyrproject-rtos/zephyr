@@ -14,6 +14,11 @@ config BOARD_NRF52_BSIM
 	# of it), so that the corresponding driver becomes available (see
 	# dependencies of the ENTROPY_NRF5_RNG option).
 	select HAS_HW_NRF_RNG
+	# Do the same for the CLOCK and POWER peripherals, so that the nrfx
+	# drivers for them can be used.
+	select HAS_HW_NRF_CLOCK
+	select HAS_HW_NRF_POWER
+	select HAS_NRFX
 	help
 	  Will produce a console Linux process which can be executed natively.
 	  It needs the BabbleSim simulator both in compile time and to execute
