@@ -83,4 +83,3 @@ THREAD_MONITOR,n,experimental
 THREAD_NAME,n,experimental
 UART_ASYNC_API,n,experimental
 MCUMGR_CMD_FS_MGMT,n
-
