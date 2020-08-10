@@ -127,7 +127,8 @@ bool lll_adv_scan_req_check(struct lll_adv *lll, struct pdu_adv *sr,
 }
 
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
-int lll_adv_scan_req_report(struct pdu_adv *pdu_adv_rx, uint8_t rssi_ready)
+int lll_adv_scan_req_report(struct lll_adv *lll, struct pdu_adv *pdu_adv_rx,
+			    uint8_t rssi_ready)
 {
 	struct node_rx_pdu *node_rx;
 	struct pdu_adv *pdu_adv;
@@ -141,7 +142,7 @@ int lll_adv_scan_req_report(struct pdu_adv *pdu_adv_rx, uint8_t rssi_ready)
 
 	/* Prepare the report (scan req) */
 	node_rx->hdr.type = NODE_RX_TYPE_SCAN_REQ;
-	node_rx->hdr.handle = 0xffff;
+	node_rx->hdr.handle = ull_adv_lll_handle_get(lll);
 
 	/* Make a copy of PDU into Rx node (as the received PDU is in the
 	 * scratch buffer), and save the RSSI value.
@@ -715,7 +716,7 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 			uint32_t err;
 
 			/* Generate the scan request event */
-			err = lll_adv_scan_req_report(pdu_rx, rssi_ready);
+			err = lll_adv_scan_req_report(lll, pdu_rx, rssi_ready);
 			if (err) {
 				/* Scan Response will not be transmitted */
 				return err;
