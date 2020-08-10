@@ -250,7 +250,7 @@ int bt_mesh_friend_clear(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 
 	if (buf->len < sizeof(*msg)) {
 		LOG_WRN("Too short Friend Clear");
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	lpn_addr = sys_be16_to_cpu(msg->lpn_addr);
@@ -618,7 +618,7 @@ int bt_mesh_friend_sub_add(struct bt_mesh_net_rx *rx,
 
 	if (buf->len < BT_MESH_FRIEND_SUB_MIN_LEN) {
 		LOG_WRN("Too short Friend Subscription Add");
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	frnd = bt_mesh_friend_find(rx->sub->net_idx, rx->ctx.addr, true, true);
@@ -653,7 +653,7 @@ int bt_mesh_friend_sub_rem(struct bt_mesh_net_rx *rx,
 
 	if (buf->len < BT_MESH_FRIEND_SUB_MIN_LEN) {
 		LOG_WRN("Too short Friend Subscription Remove");
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	frnd = bt_mesh_friend_find(rx->sub->net_idx, rx->ctx.addr, true, true);
@@ -706,7 +706,7 @@ int bt_mesh_friend_poll(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 
 	if (buf->len < sizeof(*msg)) {
 		LOG_WRN("Too short Friend Poll");
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	frnd = bt_mesh_friend_find(rx->sub->net_idx, rx->ctx.addr, true, false);
@@ -717,7 +717,7 @@ int bt_mesh_friend_poll(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 
 	if (msg->fsn & ~1) {
 		LOG_WRN("Prohibited (non-zero) padding bits");
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	if (frnd->pending_buf) {
@@ -865,7 +865,7 @@ int bt_mesh_friend_clear_cfm(struct bt_mesh_net_rx *rx,
 
 	if (buf->len < sizeof(*msg)) {
 		LOG_WRN("Too short Friend Clear Confirm");
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	frnd = find_clear(rx->ctx.addr);
@@ -975,34 +975,34 @@ int bt_mesh_friend_req(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 
 	if (buf->len < sizeof(*msg)) {
 		LOG_WRN("Too short Friend Request");
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	if (msg->recv_delay <= 0x09) {
 		LOG_WRN("Prohibited ReceiveDelay (0x%02x)", msg->recv_delay);
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	poll_to = sys_get_be24(msg->poll_to);
 
 	if (poll_to <= 0x000009 || poll_to >= 0x34bc00) {
 		LOG_WRN("Prohibited PollTimeout (0x%06x)", poll_to);
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	if (msg->num_elem == 0x00) {
 		LOG_WRN("Prohibited NumElements value (0x00)");
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	if (!BT_MESH_ADDR_IS_UNICAST(rx->ctx.addr + msg->num_elem - 1)) {
 		LOG_WRN("LPN elements stretch outside of unicast range");
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	if (!MIN_QUEUE_SIZE_LOG(msg->criteria)) {
 		LOG_WRN("Prohibited Minimum Queue Size in Friend Request");
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	if (CONFIG_BT_MESH_FRIEND_QUEUE_SIZE < MIN_QUEUE_SIZE(msg->criteria)) {

@@ -827,6 +827,7 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
 	NET_BUF_SIMPLE_DEFINE(buf, BT_MESH_NET_MAX_PDU_LEN);
 	struct bt_mesh_net_rx rx = { .ctx.recv_rssi = rssi };
 	struct net_buf_simple_state state;
+	int err;
 
 	LOG_DBG("rssi %d net_if %u", rssi, net_if);
 
@@ -855,18 +856,23 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
 		}
 	}
 
-	/* The transport layer has indicated that it has rejected the message,
-	 * but would like to see it again if it is received in the future.
-	 * This can happen if a message is received when the device is in
-	 * Low Power mode, but the message was not encrypted with the friend
-	 * credentials. Remove it from the message cache so that we accept
-	 * it again in the future.
-	 */
-	if (bt_mesh_trans_recv(&buf, &rx) == -EAGAIN) {
+	err = bt_mesh_trans_recv(&buf, &rx);
+	if (err == -EAGAIN) {
+		/* The transport layer has indicated that it has rejected the message,
+		 * but would like to see it again if it is received in the future.
+		 * This can happen if a message is received when the device is in
+		 * Low Power mode, but the message was not encrypted with the friend
+		 * credentials. Remove it from the message cache so that we accept
+		 * it again in the future.
+		 */
 		LOG_WRN("Removing rejected message from Network Message Cache");
 		/* Rewind the next index now that we're not using this entry */
 		msg_cache[--msg_cache_next].src = BT_MESH_ADDR_UNASSIGNED;
 		dup_cache[--dup_cache_next] = 0;
+		return;
+	} else if (err == -EBADMSG) {
+		LOG_DBG("Not relaying message rejected by the Transport layer");
+		return;
 	}
 
 	/* Relay if this was a group/virtual address, or if the destination
