@@ -3,3 +3,4 @@
 -r requirements-doc.txt
 -r requirements-run-test.txt
 -r requirements-extras.txt
+-r requirements-compliance.txt
