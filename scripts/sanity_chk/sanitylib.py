@@ -3265,7 +3265,7 @@ class CoverageTool:
         if tool == 'lcov':
             t =  Lcov()
         elif tool == 'gcovr':
-            t =  Lcov()
+            t =  Gcovr()
         else:
             logger.error("Unsupported coverage tool specified: {}".format(tool))
             return None
