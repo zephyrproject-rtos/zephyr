@@ -74,4 +74,6 @@ source "drivers/gpio/Kconfig.litex"
 
 source "drivers/gpio/Kconfig.lpc11u6x"
 
+source "drivers/gpio/Kconfig.xlnx"
+
 endif # GPIO
