@@ -36,4 +36,11 @@ config ETH_MCUX_NO_PHY_SMI
 
 endif # NETWORKING
 
+if NET_DSA
+
+config DSA_KSZ8794
+	default y if SPI
+
+endif # NET_DSA
+
 endif # BOARD_IP_K66F
