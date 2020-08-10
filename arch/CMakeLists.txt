@@ -8,4 +8,4 @@ include_directories(
   )
 
 add_subdirectory(common)
-add_subdirectory(${ARCH_DIR}/${ARCH} arch/${ARCH})
+add_subdirectory(${ARCH_DIR}/${ARCH} arch/${ARCH}) # one newline
