@@ -711,7 +711,7 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
 		if (!IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) ||
-		    0 /* TODO: extended adv. scan req notification enabled */) {
+		    lll->scan_req_notify) {
 			uint32_t err;
 
 			/* Generate the scan request event */
