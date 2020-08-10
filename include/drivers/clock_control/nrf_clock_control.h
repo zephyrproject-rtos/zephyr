@@ -80,10 +80,6 @@ enum nrf_lfclk_start_mode {
 #define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 7
 #endif
 
-#if defined(CONFIG_USB_NRFX)
-void nrf5_power_usb_power_int_enable(bool enable);
-#endif
-
 /** @brief Force LF clock calibration. */
 void z_nrf_clock_calibration_force_start(void);
 
