@@ -126,6 +126,19 @@ config SOC_DCDC_NRF53X_HV
 	help
 	  Enable nRF53 series System on Chip High Voltage DC/DC converter.
 
+config NRF5340_ENABLE_CPUNET
+	bool "Enable nRF53 Network MCU"
+	help
+	  This option enables releasing the Network 'force off' signal, which
+	  as a consequence will power up the Network MCU during system boot.
+	  Additionally, the option allocates GPIO pins that will be used by UARTE
+	  of the Network MCU.
+	  Note: The non-secure image can only be started by the secure firmware,
+	  so when this option is used with the non-secure version of the board,
+	  the application needs to take into consideration, that the secure firmware
+	  may already have started the Network MCU.
+	default y if BT
+
 endif # SOC_NRF5340_CPUAPP
 
 
