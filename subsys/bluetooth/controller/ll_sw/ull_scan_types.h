@@ -23,10 +23,6 @@ struct ll_scan_set {
 		uint8_t adv_addr[BDADDR_SIZE];
 
 		struct node_rx_hdr *node_rx_estab;
-		struct {
-			struct node_rx_hdr node_rx_lost;
-			uint8_t status;
-		};
 
 		struct ll_sync_set *sync;
 	} per_scan;

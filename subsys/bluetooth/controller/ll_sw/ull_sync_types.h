@@ -13,7 +13,12 @@ struct ll_sync_set {
 	struct ull_hdr ull;
 	struct lll_sync lll;
 
-	uint8_t is_enabled:1;
+	uint16_t skip;
+	uint16_t timeout;
+	uint16_t timeout_reload;
+	uint16_t timeout_expire;
+
+	struct node_rx_hdr node_rx_lost;
 };
 
 struct node_rx_sync {

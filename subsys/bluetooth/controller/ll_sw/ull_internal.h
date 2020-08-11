@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Macro to convert time in us to connection interval units */
+#define RADIO_CONN_EVENTS(x, y) ((uint16_t)(((x) + (y) - 1) / (y)))
+
+/* Macro to convert time in us to periodic advertising interval units */
+#define RADIO_SYNC_EVENTS(x, y) ((uint16_t)(((x) + (y) - 1) / (y)))
+
 static inline uint8_t ull_ref_get(struct ull_hdr *hdr)
 {
 	return hdr->ref;

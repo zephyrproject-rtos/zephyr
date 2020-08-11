@@ -78,8 +78,8 @@ void lll_sync_prepare(void *param)
 	/* Instants elapsed */
 	elapsed = p->lazy + 1;
 
-	/* Save the (latency + 1) for use in event */
-	lll->latency_prepare += elapsed;
+	/* Save the (skip + 1) for use in event */
+	lll->skip_prepare += elapsed;
 
 	/* Accumulate window widening */
 	lll->window_widening_prepare_us += lll->window_widening_periodic_us *
@@ -115,17 +115,17 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	lll = p->param;
 
-	/* Deduce the latency */
-	lll->latency_event = lll->latency_prepare - 1;
+	/* Deduce the skip */
+	lll->skip_event = lll->skip_prepare - 1;
 
 	/* Calculate the current event counter value */
-	event_counter = lll->event_counter + lll->latency_event;
+	event_counter = lll->event_counter + lll->skip_event;
 
 	/* Update event counter to next value */
-	lll->event_counter = lll->event_counter + lll->latency_prepare;
+	lll->event_counter = lll->event_counter + lll->skip_prepare;
 
 	/* Reset accumulated latencies */
-	lll->latency_prepare = 0;
+	lll->skip_prepare = 0;
 
 	/* Current window widening */
 	lll->window_widening_event_us += lll->window_widening_prepare_us;
@@ -242,6 +242,7 @@ static void isr_rx(void *param)
 	struct event_done_extra *e;
 	uint8_t rssi_ready;
 	uint8_t trx_done;
+	uint8_t trx_cnt;
 	uint8_t crc_ok;
 
 	/* Read radio status and events */
@@ -257,25 +258,29 @@ static void isr_rx(void *param)
 	lll_isr_rx_status_reset();
 
 	/* No Rx */
+	trx_cnt = 0U;
 	if (!trx_done) {
 		/* TODO: Combine the early exit with above if-then-else block
 		 */
-		goto isr_rx_exit;
+		goto isr_rx_done;
 	}
 
+	/* Rx-ed */
+	trx_cnt = 1U;
+
+	/* Check CRC and generate Periodic Advertising Report */
 	if (crc_ok) {
 		/* TODO: */
 		printk("CRC OK\n");
-	} else {
-		printk("CRC BAD\n");
 	}
 
+isr_rx_done:
 	/* Calculate and place the drift information in done event */
 	e = ull_event_done_extra_get();
 	LL_ASSERT(e);
 
 	e->type = EVENT_DONE_EXTRA_TYPE_SYNC;
-	e->trx_cnt = 1U;
+	e->trx_cnt = trx_cnt;
 	e->crc_valid = crc_ok;
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -292,6 +297,5 @@ static void isr_rx(void *param)
 	lll->window_widening_event_us = 0U;
 	lll->window_size_event_us = 0U;
 
-isr_rx_exit:
 	lll_isr_cleanup(param);
 }
