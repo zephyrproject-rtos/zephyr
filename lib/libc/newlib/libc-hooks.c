@@ -51,7 +51,7 @@ MALLOC_BSS static unsigned char __aligned(CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE)
 #define HEAP_BASE	ROUND_UP(USED_RAM_END_ADDR, \
 				 CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE)
 #elif defined(CONFIG_ARC)
-#define HEAP_BASE	Z_ARC_MPU_SIZE_ALIGN(USED_RAM_END_ADDR)
+#define HEAP_BASE	ROUND_UP(USED_RAM_END_ADDR, Z_ARC_MPU_ALIGN)
 #else
 #error "Unsupported platform"
 #endif /* CONFIG_<arch> */
