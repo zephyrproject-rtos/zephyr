@@ -8,6 +8,39 @@
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_STM32_PINCTRL_H_
 
 #include <dt-bindings/pinctrl/stm32-pinctrl-common.h>
+
+/* Adapted from Linux: include/dt-bindings/pinctrl/stm32-pinfunc.h */
+
+/**
+ * @brief Pin modes
+ */
+
+#define AF0     0x0
+#define AF1     0x1
+#define AF2     0x2
+#define AF3     0x3
+#define AF4     0x4
+#define AF5     0x5
+#define AF6     0x6
+#define AF7     0x7
+#define AF8     0x8
+#define AF9     0x9
+#define AF10    0xa
+#define AF11    0xb
+#define AF12    0xc
+#define AF13    0xd
+#define AF14    0xe
+#define AF15    0xf
+#define ANALOG  0x10
+
+/**
+ * @brief Macro to generate pinmux int using port, pin number and mode arguments
+ * This is taken from Linux equivalent st,stm32f429-pinctrl binding
+ */
+
+#define PIN_NO(port, line)	(((port) - 'A') * 0x10 + (line))
+#define STM32_PINMUX(port, line, mode) (((PIN_NO(port, line)) << 8) | (mode))
+
 /**
  * @brief PIN configuration bitfield
  *
