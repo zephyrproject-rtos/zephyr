@@ -407,17 +407,23 @@ static int can_close_socket(struct net_context *ctx)
 	return 0;
 }
 
-static int can_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
+static int can_sock_close_vmeth(void *obj)
 {
-	if (request == ZFD_IOCTL_CLOSE) {
-		int ret;
+	int ret;
 
-		ret = can_close_socket(obj);
-		if (ret < 0) {
-			NET_DBG("Cannot detach net_context %p (%d)", obj, ret);
-		}
+	ret = can_close_socket(obj);
+	if (ret < 0) {
+		NET_DBG("Cannot detach net_context %p (%d)", obj, ret);
+
+		errno = -ret;
+		ret = -1;
 	}
 
+	return ret;
+}
+
+static int can_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
+{
 	return sock_fd_op_vtable.fd_vtable.ioctl(obj, request, args);
 }
 
@@ -670,6 +676,7 @@ static const struct socket_op_vtable can_sock_fd_op_vtable = {
 	.fd_vtable = {
 		.read = can_sock_read_vmeth,
 		.write = can_sock_write_vmeth,
+		.close = can_sock_close_vmeth,
 		.ioctl = can_sock_ioctl_vmeth,
 	},
 	.bind = can_sock_bind_vmeth,

@@ -1198,7 +1198,7 @@ int ztls_close_ctx(struct net_context *ctx)
 		err = -EBADF;
 	}
 
-	ret = z_fdtable_call_ioctl(&sock_fd_op_vtable.fd_vtable, ctx, ZFD_IOCTL_CLOSE);
+	ret = sock_fd_op_vtable.fd_vtable.close(ctx);
 
 	/* In case close fails, we propagate errno value set by close.
 	 * In case close succeeds, but tls_release fails, set errno
@@ -1340,7 +1340,7 @@ error:
 		__ASSERT(err == 0, "TLS context release failed");
 	}
 
-	err = z_fdtable_call_ioctl(&sock_fd_op_vtable.fd_vtable, child, ZFD_IOCTL_CLOSE);
+	err = sock_fd_op_vtable.fd_vtable.close(child);
 	__ASSERT(err == 0, "Child socket close failed");
 
 	z_free_fd(fd);
@@ -1956,9 +1956,6 @@ static int tls_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		/* Pass the call to the core socket implementation. */
 		return sock_fd_op_vtable.fd_vtable.ioctl(obj, request, args);
 
-	case ZFD_IOCTL_CLOSE:
-		return ztls_close_ctx(obj);
-
 	case ZFD_IOCTL_POLL_PREPARE: {
 		struct zsock_pollfd *pfd;
 		struct k_poll_event **pev;
@@ -2044,11 +2041,16 @@ static int tls_sock_setsockopt_vmeth(void *obj, int level, int optname,
 	return ztls_setsockopt_ctx(obj, level, optname, optval, optlen);
 }
 
+static int tls_sock_close_vmeth(void *obj)
+{
+	return ztls_close_ctx(obj);
+}
 
 static const struct socket_op_vtable tls_sock_fd_op_vtable = {
 	.fd_vtable = {
 		.read = tls_sock_read_vmeth,
 		.write = tls_sock_write_vmeth,
+		.close = tls_sock_close_vmeth,
 		.ioctl = tls_sock_ioctl_vmeth,
 	},
 	.bind = tls_sock_bind_vmeth,

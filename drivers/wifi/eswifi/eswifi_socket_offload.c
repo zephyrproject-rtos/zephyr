@@ -499,15 +499,16 @@ static int eswifi_socket_create(int family, int type, int proto)
 	return fd;
 }
 
+static int eswifi_socket_close(void *obj)
+{
+	return eswifi_socket_close(sd);
+}
+
 static int eswifi_socket_ioctl(void *obj, unsigned int request, va_list args)
 {
 	int sd = OBJ_TO_SD(obj);
 
 	switch (request) {
-	/* Handle close specifically. */
-	case ZFD_IOCTL_CLOSE:
-		return eswifi_socket_close(sd);
-
 	case ZFD_IOCTL_POLL_PREPARE:
 		return -EXDEV;
 
@@ -547,6 +548,7 @@ static const struct socket_op_vtable eswifi_socket_fd_op_vtable = {
 	.fd_vtable = {
 		.read = eswifi_socket_read,
 		.write = eswifi_socket_write,
+		.close = eswifi_socket_close,
 		.ioctl = eswifi_socket_ioctl,
 	},
 	.bind = eswifi_socket_bind,

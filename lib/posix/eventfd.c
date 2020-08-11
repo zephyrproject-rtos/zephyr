@@ -130,6 +130,15 @@ static ssize_t eventfd_write_op(void *obj, const void *buf, size_t sz)
 	return sizeof(eventfd_t);
 }
 
+static int eventfd_close_op(void *obj)
+{
+	struct eventfd *efd = (struct eventfd *)obj;
+
+	efd->flags = 0;
+
+	return 0;
+}
+
 static int eventfd_ioctl_op(void *obj, unsigned int request, va_list args)
 {
 	struct eventfd *efd = (struct eventfd *)obj;
@@ -152,10 +161,6 @@ static int eventfd_ioctl_op(void *obj, unsigned int request, va_list args)
 
 		return 0;
 	}
-
-	case ZFD_IOCTL_CLOSE:
-		efd->flags = 0;
-		return 0;
 
 	case ZFD_IOCTL_POLL_PREPARE: {
 		struct zsock_pollfd *pfd;
@@ -188,6 +193,7 @@ static int eventfd_ioctl_op(void *obj, unsigned int request, va_list args)
 static const struct fd_op_vtable eventfd_fd_vtable = {
 	.read = eventfd_read_op,
 	.write = eventfd_write_op,
+	.close = eventfd_close_op,
 	.ioctl = eventfd_ioctl_op,
 };
 

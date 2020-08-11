@@ -927,14 +927,6 @@ static int spair_ioctl(void *obj, unsigned int request, va_list args)
 			goto out;
 		}
 
-		case ZFD_IOCTL_CLOSE: {
-			/* disconnect the remote endpoint */
-			spair_delete(spair);
-			have_local_sem = false;
-			res = 0;
-			goto out;
-		}
-
 		case ZFD_IOCTL_POLL_PREPARE: {
 			pfd = va_arg(args, struct zsock_pollfd *);
 			pev = va_arg(args, struct k_poll_event **);
@@ -1129,10 +1121,27 @@ static int spair_setsockopt(void *obj, int level, int optname,
 	return -1;
 }
 
+static int spair_close(void *obj)
+{
+	struct spair *const spair = (struct spair *)obj;
+	int res;
+
+	res = k_sem_take(&spair->sem, K_FOREVER);
+	__ASSERT(res == 0, "failed to take local sem: %d", res);
+
+	/* disconnect the remote endpoint */
+	spair_delete(spair);
+
+	/* Note that the semaphore released already so need to do it here */
+
+	return 0;
+}
+
 static const struct socket_op_vtable spair_fd_op_vtable = {
 	.fd_vtable = {
 		.read = spair_read,
 		.write = spair_write,
+		.close = spair_close,
 		.ioctl = spair_ioctl,
 	},
 	.bind = spair_bind,

@@ -1453,13 +1453,14 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len,
 	return ret;
 }
 
+static int offload_close(void *obj)
+{
+	return offload_close((struct modem_socket *)obj);
+}
+
 static int offload_ioctl(void *obj, unsigned int request, va_list args)
 {
 	switch (request) {
-	/* Handle close specifically. */
-	case ZFD_IOCTL_CLOSE:
-		return offload_close((struct modem_socket *)obj);
-
 	case ZFD_IOCTL_POLL_PREPARE:
 		return -EXDEV;
 
@@ -1532,6 +1533,7 @@ static const struct socket_op_vtable offload_socket_fd_op_vtable = {
 	.fd_vtable = {
 		.read = offload_read,
 		.write = offload_write,
+		.close = offload_close,
 		.ioctl = offload_ioctl,
 	},
 	.bind = offload_bind,
