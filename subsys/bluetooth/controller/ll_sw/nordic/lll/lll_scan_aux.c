@@ -99,6 +99,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	trx_cnt = 0U;
 
+	/* Start setting up Radio h/w */
 	radio_reset();
 
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
@@ -107,7 +108,6 @@ static int prepare_cb(struct lll_prepare_param *p)
 	radio_tx_power_set(RADIO_TXP_DEFAULT);
 #endif
 
-	/* TODO: if coded we use S8? */
 	radio_phy_set(lll->phy, 1);
 	radio_pkt_configure(8, PDU_AC_PAYLOAD_SIZE_MAX, (lll->phy << 1));
 

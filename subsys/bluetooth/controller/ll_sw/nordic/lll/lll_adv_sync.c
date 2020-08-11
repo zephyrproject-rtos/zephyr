@@ -116,6 +116,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	/* Reset accumulated latencies */
 	lll->latency_prepare = 0;
 
+	/* Calculate the radio channel to use */
 	data_chan_use = lll_chan_sel_2(event_counter, lll->data_chan_id,
 				       &lll->data_chan_map[0],
 				       lll->data_chan_count);
