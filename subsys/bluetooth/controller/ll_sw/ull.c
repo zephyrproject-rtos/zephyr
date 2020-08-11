@@ -267,6 +267,9 @@ static inline void *mark_get(void *m);
 static inline void done_alloc(void);
 static inline void rx_alloc(uint8_t max);
 static void rx_demux(void *param);
+static inline void rx_demux_conn_tx_ack(uint8_t ack_last, uint16_t handle,
+					memq_link_t *link,
+					struct node_tx *node_tx);
 static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx);
 static inline void rx_demux_event_done(memq_link_t *link,
 				       struct node_rx_hdr *rx);
@@ -1612,38 +1615,6 @@ static uint8_t tx_cmplt_get(uint16_t *handle, uint8_t *first, uint8_t last)
 	return cmplt;
 }
 
-static inline void rx_demux_conn_tx_ack(uint8_t ack_last, uint16_t handle,
-					memq_link_t *link,
-					struct node_tx *node_tx)
-{
-#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
-	do {
-#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
-		/* Dequeue node */
-		ull_conn_ack_dequeue();
-
-		/* Process Tx ack */
-		ull_conn_tx_ack(handle, link, node_tx);
-
-		/* Release link mem */
-		ull_conn_link_tx_release(link);
-
-		/* check for more rx ack */
-		link = ull_conn_ack_by_last_peek(ack_last, &handle, &node_tx);
-
-#if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
-		if (!link)
-#else /* CONFIG_BT_CTLR_LOW_LAT_ULL */
-	} while (link);
-#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
-
-		{
-			/* trigger thread to call ll_rx_get() */
-			ll_rx_sched();
-		}
-}
-#endif /* CONFIG_BT_CONN */
-
 static void rx_demux(void *param)
 {
 	memq_link_t *link;
@@ -1710,6 +1681,38 @@ static void rx_demux(void *param)
 	} while (link);
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 }
+
+static inline void rx_demux_conn_tx_ack(uint8_t ack_last, uint16_t handle,
+					memq_link_t *link,
+					struct node_tx *node_tx)
+{
+#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
+	do {
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
+		/* Dequeue node */
+		ull_conn_ack_dequeue();
+
+		/* Process Tx ack */
+		ull_conn_tx_ack(handle, link, node_tx);
+
+		/* Release link mem */
+		ull_conn_link_tx_release(link);
+
+		/* check for more rx ack */
+		link = ull_conn_ack_by_last_peek(ack_last, &handle, &node_tx);
+
+#if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
+		if (!link)
+#else /* CONFIG_BT_CTLR_LOW_LAT_ULL */
+	} while (link);
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
+
+		{
+			/* trigger thread to call ll_rx_get() */
+			ll_rx_sched();
+		}
+}
+#endif /* CONFIG_BT_CONN */
 
 /**
  * @brief Dispatch rx objects
