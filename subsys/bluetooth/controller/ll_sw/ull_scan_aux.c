@@ -23,6 +23,7 @@
 #include "lll_scan_aux.h"
 
 #include "ull_scan_types.h"
+#include "ull_sync_types.h"
 
 #include "ull_internal.h"
 #include "ull_scan_internal.h"
