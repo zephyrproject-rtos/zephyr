@@ -280,6 +280,12 @@ class _DTFlashAction(argparse.Action):
             namespace.dt_flash = False
 
 
+class _ToggleAction(argparse.Action):
+
+    def __call__(self, parser, args, ignored, option):
+        setattr(args, self.dest, not option.startswith('--no-'))
+
+
 class ZephyrBinaryRunner(abc.ABC):
     '''Abstract superclass for binary runners (flashers, debuggers).
 
@@ -429,8 +435,9 @@ class ZephyrBinaryRunner(abc.ABC):
         else:
             parser.add_argument('--dt-flash', help=argparse.SUPPRESS)
 
-        parser.add_argument('--erase', action='store_true',
-                            help=('if given, mass erase flash before loading'
+        parser.add_argument('--erase', '--no-erase', nargs=0,
+                            action=_ToggleAction,
+                            help=("mass erase flash before loading, or don't"
                                   if caps.erase else argparse.SUPPRESS))
 
         # Runner-specific options.
@@ -454,7 +461,10 @@ class ZephyrBinaryRunner(abc.ABC):
         if args.erase and not caps.erase:
             _missing_cap(cls, '--erase')
 
-        return cls.do_create(cfg, args)
+        ret = cls.do_create(cfg, args)
+        if args.erase:
+            ret.logger.info('mass erase requested')
+        return ret
 
     @classmethod
     @abc.abstractmethod
