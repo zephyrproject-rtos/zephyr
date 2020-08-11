@@ -88,9 +88,9 @@ provisionee:
   production, which the provisioner can query in some application specific
   way.
 * **Input OOB:** The user inputs the authentication value. The available input
-  actions are listed in :cpp:enum:`bt_mesh_input_action_t`.
+  actions are listed in :c:enum:`bt_mesh_input_action_t`.
 * **Output OOB:** Show the user the authentication value. The available output
-  actions are listed in :cpp:enum:`bt_mesh_output_action_t`.
+  actions are listed in :c:enum:`bt_mesh_output_action_t`.
 
 The application must provide callbacks for the supported authentication
 methods in :c:struct:`bt_mesh_prov`, as well as enabling the supported actions

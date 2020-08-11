@@ -827,7 +827,7 @@ In addition to implementing these APIs, there are some other tasks as well:
   be established. This is closely tied to how the _arch_syscall_invoke macros
   are implemented. On system call, the appropriate handler function needs to
   be looked up in _k_syscall_table. Bad system call IDs should jump to the
-  :cpp:enum:`K_SYSCALL_BAD` handler. Upon completion of the system call, care
+  :c:enum:`K_SYSCALL_BAD` handler. Upon completion of the system call, care
   must be taken not to leak any register state back to user mode.
 
 API Reference
