@@ -1870,20 +1870,20 @@ static inline void rx_demux_event_done(memq_link_t *link,
 		break;
 #endif /* CONFIG_BT_CONN */
 
-#if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_BROADCASTER)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_BROADCASTER)
 	case EVENT_DONE_EXTRA_TYPE_ADV:
 		ull_adv_done(done);
 		break;
-#endif /* CONFIG_BT_CTLR_ADV_EXT && CONFIG_BT_BROADCASTER */
+#endif /* CONFIG_BT_BROADCASTER */
 
 #if defined(CONFIG_BT_OBSERVER)
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
 		/* fallthrough checkpatch workaround! */
 	case EVENT_DONE_EXTRA_TYPE_SCAN_AUX:
 		ull_scan_aux_done(done);
 		break;
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CTLR_USER_EXT)
 	case EVENT_DONE_EXTRA_TYPE_USER_START
