@@ -38,6 +38,7 @@
 #include "lll_conn.h"
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"
+#include "ull_sync_types.h"
 #include "ull_conn_types.h"
 #include "ull_filter.h"
 
@@ -896,10 +897,6 @@ void ll_rx_mem_release(void **node_rx)
 		case NODE_RX_TYPE_EXT_1M_REPORT:
 		case NODE_RX_TYPE_EXT_2M_REPORT:
 		case NODE_RX_TYPE_EXT_CODED_REPORT:
-
-#if defined(CONFIG_BT_CTLR_SCAN_PERIODIC)
-		case NODE_RX_TYPE_SYNC:
-#endif /* CONFIG_BT_CTLR_SCAN_PERIODIC */
 #endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_BROADCASTER)
@@ -959,6 +956,24 @@ void ll_rx_mem_release(void **node_rx)
 			ll_rx_link_inc_quota(1);
 			mem_release(rx_free, &mem_pdu_rx.free);
 			break;
+
+#if defined(CONFIG_BT_CTLR_SCAN_PERIODIC)
+		case NODE_RX_TYPE_SYNC:
+		{
+			struct node_rx_sync *se =
+				(void *)((struct node_rx_pdu *)rx_free)->pdu;
+
+			if (se->status) {
+				ull_sync_release(rx_free->rx_ftr.param);
+
+				break;
+			}
+
+			ll_rx_link_inc_quota(1);
+			mem_release(rx_free, &mem_pdu_rx.free);
+		}
+		break;
+#endif /* CONFIG_BT_CTLR_SCAN_PERIODIC */
 
 #if defined(CONFIG_BT_CONN)
 		case NODE_RX_TYPE_TERMINATE:
