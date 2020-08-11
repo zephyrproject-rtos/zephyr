@@ -307,7 +307,7 @@ enum {
 
 };
 
-struct event_done_extra_slave {
+struct event_done_extra_drift {
 	uint32_t start_to_address_actual_us;
 	uint32_t window_widening_event_us;
 	uint32_t preamble_to_addr_us;
@@ -322,9 +322,11 @@ struct event_done_extra {
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 			uint8_t  mic_state;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
+#if defined(CONFIG_BT_PERIPHERAL) || defined(CONFIG_BT_CTLR_SCAN_PERIODIC)
 			union {
-				struct event_done_extra_slave slave;
+				struct event_done_extra_drift drift;
 			};
+#endif /* CONFIG_BT_PERIPHERAL || CONFIG_BT_CTLR_SCAN_PERIODIC */
 		};
 	};
 };
