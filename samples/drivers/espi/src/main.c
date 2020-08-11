@@ -25,6 +25,7 @@ LOG_MODULE_DECLARE(espi, CONFIG_ESPI_LOG_LEVEL);
 
 /* Maximum bytes for OOB transactions */
 #define MAX_RESP_SIZE         20u
+#define MIN_GET_TEMP_CYCLES   5u
 
 /* eSPI flash parameters */
 #define MAX_TEST_BUF_SIZE     1024u
@@ -673,7 +674,7 @@ int espi_test(void)
 	/*  Attempt to use OOB channel to read temperature, regardless of
 	 * if is enabled or not.
 	 */
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < MIN_GET_TEMP_CYCLES; i++) {
 		int temp;
 
 		ret = get_pch_temp(espi_dev, &temp);
