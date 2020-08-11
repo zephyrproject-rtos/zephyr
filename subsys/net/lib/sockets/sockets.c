@@ -247,18 +247,20 @@ int z_impl_zsock_close(int sock)
 {
 	const struct socket_op_vtable *vtable;
 	void *ctx = get_sock_vtable(sock, &vtable);
+	int ret;
 
 	if (ctx == NULL) {
 		errno = EBADF;
 		return -1;
 	}
 
-	z_free_fd(sock);
-
 	NET_DBG("close: ctx=%p, fd=%d", ctx, sock);
 
-	return z_fdtable_call_ioctl((const struct fd_op_vtable *)vtable,
-				    ctx, ZFD_IOCTL_CLOSE);
+	ret = vtable->fd_vtable.close(ctx);
+
+	z_free_fd(sock);
+
+	return ret;
 }
 
 #ifdef CONFIG_USERSPACE
@@ -1747,9 +1749,6 @@ static int sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		return 0;
 	}
 
-	case ZFD_IOCTL_CLOSE:
-		return zsock_close_ctx(obj);
-
 	case ZFD_IOCTL_POLL_PREPARE: {
 		struct zsock_pollfd *pfd;
 		struct k_poll_event **pev;
@@ -1844,11 +1843,16 @@ static int sock_setsockopt_vmeth(void *obj, int level, int optname,
 	return zsock_setsockopt_ctx(obj, level, optname, optval, optlen);
 }
 
+static int sock_close_vmeth(void *obj)
+{
+	return zsock_close_ctx(obj);
+}
 
 const struct socket_op_vtable sock_fd_op_vtable = {
 	.fd_vtable = {
 		.read = sock_read_vmeth,
 		.write = sock_write_vmeth,
+		.close = sock_close_vmeth,
 		.ioctl = sock_ioctl_vmeth,
 	},
 	.bind = sock_bind_vmeth,

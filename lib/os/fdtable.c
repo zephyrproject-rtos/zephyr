@@ -222,7 +222,8 @@ int close(int fd)
 		return -1;
 	}
 
-	res = z_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj, ZFD_IOCTL_CLOSE);
+	res = fdtable[fd].vtable->close(fdtable[fd].obj);
+
 	z_free_fd(fd);
 
 	return res;

@@ -123,17 +123,23 @@ int open(const char *name, int flags, ...)
 	return fd;
 }
 
+static int fs_close_vmeth(void *obj)
+{
+	struct posix_fs_desc *ptr = obj;
+	int rc;
+
+	rc = fs_close(&ptr->file);
+	posix_fs_free_obj(ptr);
+
+	return rc;
+}
+
 static int fs_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 {
 	int rc = 0;
 	struct posix_fs_desc *ptr = obj;
 
 	switch (request) {
-	case ZFD_IOCTL_CLOSE:
-		rc = fs_close(&ptr->file);
-		posix_fs_free_obj(ptr);
-		break;
-
 	case ZFD_IOCTL_LSEEK: {
 		off_t offset;
 		int whence;
@@ -202,6 +208,7 @@ static ssize_t fs_read_vmeth(void *obj, void *buffer, size_t count)
 static struct fd_op_vtable fs_fd_op_vtable = {
 	.read = fs_read_vmeth,
 	.write = fs_write_vmeth,
+	.close = fs_close_vmeth,
 	.ioctl = fs_ioctl_vmeth,
 };
 
