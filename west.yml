@@ -22,6 +22,9 @@ manifest:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
 
+    - name: karstenkoenig
+      url-base: https://github.com/karstenkoenig
+
   #
   # Please add items below based on alphabetical order
   projects:
@@ -59,7 +62,8 @@ manifest:
       revision: 8139a8445900ddbf495f65de21ddeab31ac97951
       path: modules/hal/nordic
     - name: hal_openisa
-      revision: 40d049f69c50b58ea20473bee14cf93f518bf262
+      remote: karstenkoenig
+      revision: c0c06ddf20e4bc295ee9897b4d3827c9ed4015da
       path: modules/hal/openisa
     - name: hal_nuvoton
       revision: b4d31f33238713a568e23618845702fadd67386f
