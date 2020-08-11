@@ -322,13 +322,12 @@ errout:
 }
 
 #ifdef CONFIG_USERSPACE
-int z_vrfy_zsock_socketpair(int family, int type, int proto,
-					  int *sv)
+int z_vrfy_zsock_socketpair(int family, int type, int proto, int *sv)
 {
 	int ret;
 	int tmp[2];
 
-	if (Z_SYSCALL_MEMORY_WRITE(sv, sizeof(tmp)) != 0) {
+	if (!sv || Z_SYSCALL_MEMORY_WRITE(sv, sizeof(tmp)) != 0) {
 		/* not listed in normative spec, but mimics linux behaviour */
 		errno = EFAULT;
 		ret = -1;
