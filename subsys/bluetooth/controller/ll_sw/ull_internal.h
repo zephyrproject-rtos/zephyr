@@ -41,3 +41,6 @@ void *ull_update_mark(void *param);
 void *ull_update_unmark(void *param);
 void *ull_update_mark_get(void);
 int ull_disable(void *param);
+void ull_drift_ticks_get(struct node_rx_event_done *done,
+			 uint32_t *ticks_drift_plus,
+			 uint32_t *ticks_drift_minus);

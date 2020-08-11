@@ -1096,8 +1096,8 @@ void ull_conn_done(struct node_rx_event_done *done)
 		if (0) {
 #if defined(CONFIG_BT_PERIPHERAL)
 		} else if (lll->role) {
-			ull_slave_done(done, &ticks_drift_plus,
-				       &ticks_drift_minus);
+			ull_drift_ticks_get(done, &ticks_drift_plus,
+					    &ticks_drift_minus);
 
 			if (!conn->tx_head) {
 				ull_conn_tx_demux(UINT8_MAX);
@@ -1281,8 +1281,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 	}
 
 	/* update conn ticker */
-	if ((ticks_drift_plus != 0U) || (ticks_drift_minus != 0U) ||
-	    (lazy != 0U) || (force != 0U)) {
+	if (ticks_drift_plus || ticks_drift_minus || lazy || force) {
 		uint8_t ticker_id = TICKER_ID_CONN_BASE + lll->handle;
 		struct ll_conn *conn = lll->hdr.parent;
 		uint32_t ticker_status;

@@ -1319,6 +1319,50 @@ void *ull_event_done(void *param)
 	return evdone;
 }
 
+/**
+ * @brief Extract timing from completed event
+ *
+ * @param node_rx_event_done[in] Done event containing fresh timing information
+ * @param ticks_drift_plus[out]  Positive part of drift uncertainty window
+ * @param ticks_drift_minus[out] Negative part of drift uncertainty window
+ */
+void ull_drift_ticks_get(struct node_rx_event_done *done,
+			 uint32_t *ticks_drift_plus,
+			 uint32_t *ticks_drift_minus)
+{
+	uint32_t start_to_address_expected_us;
+	uint32_t start_to_address_actual_us;
+	uint32_t window_widening_event_us;
+	uint32_t preamble_to_addr_us;
+
+	start_to_address_actual_us =
+		done->extra.drift.start_to_address_actual_us;
+	window_widening_event_us =
+		done->extra.drift.window_widening_event_us;
+	preamble_to_addr_us =
+		done->extra.drift.preamble_to_addr_us;
+
+	start_to_address_expected_us = EVENT_JITTER_US +
+				       EVENT_TICKER_RES_MARGIN_US +
+				       window_widening_event_us +
+				       preamble_to_addr_us;
+
+	if (start_to_address_actual_us <= start_to_address_expected_us) {
+		*ticks_drift_plus =
+			HAL_TICKER_US_TO_TICKS(window_widening_event_us);
+		*ticks_drift_minus =
+			HAL_TICKER_US_TO_TICKS((start_to_address_expected_us -
+					       start_to_address_actual_us));
+	} else {
+		*ticks_drift_plus =
+			HAL_TICKER_US_TO_TICKS(start_to_address_actual_us);
+		*ticks_drift_minus =
+			HAL_TICKER_US_TO_TICKS(EVENT_JITTER_US +
+					       EVENT_TICKER_RES_MARGIN_US +
+					       preamble_to_addr_us);
+	}
+}
+
 static inline int init_reset(void)
 {
 	memq_link_t *link;
