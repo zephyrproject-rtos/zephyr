@@ -46,11 +46,11 @@ void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
  */
 void config_enable_default_clocks(void)
 {
-#ifdef CONFIG_CLOCK_STM32_LSE
-	/* LSE belongs to the back-up domain, enable access.*/
-
 	/* Enable the power interface clock */
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+
+#ifdef CONFIG_CLOCK_STM32_LSE
+	/* LSE belongs to the back-up domain, enable access.*/
 
 	/* Set the DBP bit in the Power control register 1 (PWR_CR1) */
 	LL_PWR_EnableBkUpAccess();
