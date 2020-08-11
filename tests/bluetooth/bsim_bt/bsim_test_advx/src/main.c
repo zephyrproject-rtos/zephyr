@@ -462,7 +462,7 @@ static void test_advx_main(void)
 	}
 	printk("success.\n");
 
-	k_sleep(K_MSEC(400));
+	k_sleep(K_MSEC(1000));
 
 	printk("Disabling periodic...");
 	err = ll_adv_sync_enable(handle, 0);
@@ -479,6 +479,8 @@ static void test_advx_main(void)
 		goto exit;
 	}
 	printk("success.\n");
+
+	k_sleep(K_MSEC(1000));
 
 	printk("Adding scan response data on non-scannable set...");
 	err = ll_adv_aux_sr_data_set(handle, AD_OP, AD_FRAG_PREF,
@@ -530,7 +532,7 @@ static void test_advx_main(void)
 	}
 	printk("success.\n");
 
-	k_sleep(K_MSEC(400));
+	k_sleep(K_MSEC(1000));
 
 	printk("Removing adv aux set that's created and disabled ...");
 	err = ll_adv_aux_set_remove(handle);
@@ -815,7 +817,7 @@ static struct bt_le_scan_cb scan_callbacks = {
 	.recv = scan_recv,
 };
 
-static bool is_sync;
+static bool volatile is_sync;
 
 static void
 per_adv_sync_sync_cb(struct bt_le_per_adv_sync *sync,
@@ -826,7 +828,7 @@ per_adv_sync_sync_cb(struct bt_le_per_adv_sync *sync,
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 
 	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s synced, "
-	       "Interval 0x%04x (%u ms), PHY %s",
+	       "Interval 0x%04x (%u ms), PHY %s\n",
 	       bt_le_per_adv_sync_get_index(sync), le_addr,
 	       info->interval, info->interval * 5 / 4, phy2str(info->phy));
 
@@ -938,6 +940,25 @@ static void test_scanx_main(void)
 	printk("success.\n");
 
 	printk("Creating Periodic Advertising Sync...");
+	bt_addr_le_copy(&sync_create_param.addr, &per_addr);
+	sync_create_param.options = 0;
+	sync_create_param.sid = 0xf;
+	sync_create_param.skip = 0;
+	sync_create_param.timeout = 0xa;
+	err = bt_le_per_adv_sync_create(&sync_create_param, &sync_cb, &sync);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Canceling Periodic Advertising Sync...");
+	err = bt_le_per_adv_sync_delete(sync);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Creating Periodic Advertising Sync...");
 	is_sync = false;
 	bt_addr_le_copy(&sync_create_param.addr, &per_addr);
 	sync_create_param.options = 0;
@@ -950,11 +971,25 @@ static void test_scanx_main(void)
 	}
 	printk("success.\n");
 
+	printk("Start scanning...");
+	err = bt_le_scan_start(&scan_param, scan_cb);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
 	printk("Waiting...");
 	while (!is_sync) {
 		k_sleep(K_MSEC(100));
 	}
 	printk("done.\n");
+
+	printk("Deleting Periodic Advertising Sync...");
+	err = bt_le_per_adv_sync_delete(sync);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
 
 	PASS("ScanX tests Passed\n");
 
