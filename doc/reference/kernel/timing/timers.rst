@@ -35,11 +35,11 @@ A timer has the following key properties:
 
 * An :dfn:`expiry function` that is executed each time the timer expires.
   The function is executed by the system clock interrupt handler.
-  If no expiry function is required a :c:macro:`NULL` function can be specified.
+  If no expiry function is required a ``NULL`` function can be specified.
 
 * A :dfn:`stop function` that is executed if the timer is stopped prematurely
   while running. The function is executed by the thread that stops the timer.
-  If no stop function is required a :c:macro:`NULL` function can be specified.
+  If no stop function is required a ``NULL`` function can be specified.
 
 * A :dfn:`status` value that indicates how many times the timer has expired
   since the status value was last read.
