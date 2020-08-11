@@ -39,6 +39,7 @@ PROVIDE ( crc32_le = 0x4005cfec );
 PROVIDE ( Cache_Read_Disable_rom = 0x40009ab8 );
 PROVIDE ( Cache_Read_Enable_rom = 0x40009a84 );
 PROVIDE ( Cache_Read_Init_rom = 0x40009950 );
+PROVIDE ( phy_get_romfuncs = 0x40004100 );
 PROVIDE ( SPI1 = 0x3ff42fff );
 PROVIDE ( SPI2 = 0x3ff64fff );
 PROVIDE ( SPI3 = 0x3ff65fff );

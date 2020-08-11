@@ -50,6 +50,11 @@
 			status = "ok";
 		};
 
+	wifi: wifi {
+		compatible = "espressif,esp32-wifi";
+		status = "disabled";
+	};
+
 		uart0: uart@3ff40000 {
 			compatible = "espressif,esp32-uart";
 			reg = <0x3ff40000 0x400>;
@@ -161,5 +166,7 @@
 			clocks = <&rtc ESP32_SPI3_MODULE>;
 			status = "disabled";
 		};
+
 	};
+
 };
