@@ -2053,6 +2053,68 @@ static void le_set_ext_scan_enable(struct net_buf *buf, struct net_buf **evt)
 
 	*evt = cmd_complete_status(status);
 }
+
+#if defined(CONFIG_BT_CTLR_SCAN_PERIODIC)
+static void le_per_adv_create_sync(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_per_adv_create_sync *cmd = (void *)buf->data;
+	uint16_t sync_timeout;
+	uint8_t status;
+	uint16_t skip;
+
+	skip = sys_le16_to_cpu(cmd->skip);
+	sync_timeout = sys_le16_to_cpu(cmd->sync_timeout);
+
+	status = ll_scan_sync_create(cmd->options, cmd->sid, cmd->addr.type,
+				     cmd->addr.a.val, skip, sync_timeout,
+				     cmd->cte_type);
+
+	*evt = cmd_status(status);
+}
+
+static void le_per_adv_create_sync_cancel(struct net_buf *buf,
+					  struct net_buf **evt)
+{
+	struct bt_hci_evt_cc_status *ccst;
+	uint8_t status;
+
+	status = ll_scan_sync_create_cancel();
+
+	ccst = hci_cmd_complete(evt, sizeof(*ccst));
+	ccst->status = status;
+}
+
+static void le_per_adv_terminate_sync(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_per_adv_terminate_sync *cmd = (void *)buf->data;
+	struct bt_hci_evt_cc_status *ccst;
+	uint16_t handle;
+	uint8_t status;
+
+	handle = sys_le16_to_cpu(cmd->handle);
+
+	status = ll_scan_sync_terminate(handle);
+
+	ccst = hci_cmd_complete(evt, sizeof(*ccst));
+	ccst->status = status;
+}
+
+#if FIXME
+static void le_per_adv_recv_enable(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_evt_cc_status *ccst;
+	uint16_t handle;
+	uint8_t status;
+
+	handle = sys_le16_to_cpu(cmd->handle);
+
+	status = ll_scan_sync_recv_enable(handle, cmd->enable);
+
+	ccst = hci_cmd_complete(evt, sizeof(*ccst));
+	ccst->status = status;
+}
+#endif
+#endif /* CONFIG_BT_CTLR_SCAN_PERIODIC */
 #endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_CENTRAL)
@@ -2368,6 +2430,27 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 	case BT_OCF(BT_HCI_OP_LE_SET_EXT_SCAN_ENABLE):
 		le_set_ext_scan_enable(cmd, evt);
 		break;
+
+#if defined(CONFIG_BT_CTLR_SCAN_PERIODIC)
+	case BT_OCF(BT_HCI_OP_LE_PER_ADV_CREATE_SYNC):
+		le_per_adv_create_sync(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_LE_PER_ADV_CREATE_SYNC_CANCEL):
+		le_per_adv_create_sync_cancel(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_LE_PER_ADV_TERMINATE_SYNC):
+		le_per_adv_terminate_sync(cmd, evt);
+		break;
+
+	/* FIXME: Enable when definition is added to hci.h */
+#if FIXME
+	case BT_OCF(BT_HCI_OP_LE_PER_ADV_RECV_ENABLE:
+		le_per_adv_recv_enable(cmd, evt);
+		break;
+#endif
+#endif /* CONFIG_BT_CTLR_SCAN_PERIODIC */
 #endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_CONN)
