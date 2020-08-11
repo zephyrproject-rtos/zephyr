@@ -286,7 +286,10 @@ struct node_rx_pdu {
 
 enum {
 	EVENT_DONE_EXTRA_TYPE_NONE,
+
+#if defined(CONFIG_BT_CONN)
 	EVENT_DONE_EXTRA_TYPE_CONN,
+#endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	EVENT_DONE_EXTRA_TYPE_ADV,
