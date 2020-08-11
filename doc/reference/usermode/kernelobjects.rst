@@ -12,7 +12,7 @@ A kernel object can be one of three classes of data:
   set of subsystems
 
 The set of known kernel objects and driver subsystems is defined in
-include/kernel.h as :cpp:enum:`k_objects`.
+include/kernel.h as :c:enum:`k_objects`.
 
 Kernel objects are completely opaque to user threads. User threads work
 with addresses to kernel objects when making API calls, but may never
@@ -125,7 +125,7 @@ includes:
   of this bitfield is controlled by the :option:`CONFIG_MAX_THREAD_BYTES`
   option and the build system will generate an error if this value is too low.
 * A type field indicating what kind of object this is, which is some
-  instance of :cpp:enum:`k_objects`.
+  instance of :c:enum:`k_objects`.
 * A set of flags for that object. This is currently used to track
   initialization state and whether an object is public or not.
 * An extra data field. The semantics of this field vary by object type, see
