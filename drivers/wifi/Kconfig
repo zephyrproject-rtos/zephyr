@@ -33,5 +33,6 @@ source "drivers/wifi/winc1500/Kconfig.winc1500"
 source "drivers/wifi/simplelink/Kconfig.simplelink"
 source "drivers/wifi/eswifi/Kconfig.eswifi"
 source "drivers/wifi/esp/Kconfig.esp"
+source "drivers/wifi/esp32/Kconfig.esp32"
 
 endif # WIFI
