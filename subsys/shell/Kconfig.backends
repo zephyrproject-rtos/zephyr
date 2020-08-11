@@ -37,6 +37,9 @@ config UART_SHELL_ON_DEV_NAME
 	help
 	  This option specifies the name of UART device to be used for the
 	  SHELL UART backend.
+	  In case when DTS is enabled (HAS_DTS), the default value is
+	  set from DTS chosen node 'zephyr,shell-uart' but can be overridden
+	  here.
 
 # Internal config to enable UART interrupts if supported.
 config SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
