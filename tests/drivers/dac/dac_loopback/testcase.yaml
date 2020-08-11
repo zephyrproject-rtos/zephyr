@@ -3,3 +3,4 @@ common:
 tests:
   drivers.dac:
     depends_on: dac
+    platform_exclude: arduino_zero
