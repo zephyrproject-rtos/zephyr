@@ -313,7 +313,7 @@ uint32_t ull_adv_sync_start(struct ll_adv_sync_set *sync, uint32_t ticks_anchor,
 		ticks_slot_overhead = 0;
 	}
 
-	interval_us = (uint64_t)sync->interval * 1250U;
+	interval_us = (uint32_t)sync->interval * 1250U;
 
 	sync_handle = sync_handle_get(sync);
 
