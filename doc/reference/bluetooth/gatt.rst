@@ -9,37 +9,37 @@ and attribute declaration.
 
 Services can be registered using :c:func:`bt_gatt_service_register` API
 which takes the :c:struct:`bt_gatt_service` struct that provides the list of
-attributes the service contains. The helper macro :cpp:func:`BT_GATT_SERVICE`
+attributes the service contains. The helper macro :c:macro:`BT_GATT_SERVICE()`
 can be used to declare a service.
 
 Attributes can be declared using the :c:struct:`bt_gatt_attr` struct or using
 one of the helper macros:
 
-    :cpp:func:`BT_GATT_PRIMARY_SERVICE`
+    :c:macro:`BT_GATT_PRIMARY_SERVICE`
         Declares a Primary Service.
 
-    :cpp:func:`BT_GATT_SECONDARY_SERVICE`
+    :c:macro:`BT_GATT_SECONDARY_SERVICE`
         Declares a Secondary Service.
 
-    :cpp:func:`BT_GATT_INCLUDE_SERVICE`
+    :c:macro:`BT_GATT_INCLUDE_SERVICE`
         Declares a Include Service.
 
-    :cpp:func:`BT_GATT_CHARACTERISTIC`
+    :c:macro:`BT_GATT_CHARACTERISTIC`
         Declares a Characteristic.
 
-    :cpp:func:`BT_GATT_DESCRIPTOR`
+    :c:macro:`BT_GATT_DESCRIPTOR`
         Declares a Descriptor.
 
-    :cpp:func:`BT_GATT_ATTRIBUTE`
+    :c:macro:`BT_GATT_ATTRIBUTE`
         Declares an Attribute.
 
-    :cpp:func:`BT_GATT_CCC`
+    :c:macro:`BT_GATT_CCC`
         Declares a Client Characteristic Configuration.
 
-    :cpp:func:`BT_GATT_CEP`
+    :c:macro:`BT_GATT_CEP`
         Declares a Characteristic Extended Properties.
 
-    :cpp:func:`BT_GATT_CUD`
+    :c:macro:`BT_GATT_CUD`
         Declares a Characteristic User Format.
 
 Each attribute contain a ``uuid``, which describes their type, a ``read``

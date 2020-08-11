@@ -144,10 +144,10 @@ parameter.
 
 Each architecture also has to implement primitives for interrupt control:
 
-* locking interrupts: :c:func:`irq_lock`, :c:func:`irq_unlock`.
-* registering interrupts: :c:func:`IRQ_CONNECT`.
+* locking interrupts: :c:macro:`irq_lock()`, :c:macro:`irq_unlock()`.
+* registering interrupts: :c:macro:`IRQ_CONNECT()`.
 * programming the priority if possible :c:func:`irq_priority_set`.
-* enabling/disabling interrupts: :c:func:`irq_enable`, :c:func:`irq_disable`.
+* enabling/disabling interrupts: :c:macro:`irq_enable()`, :c:macro:`irq_disable()`.
 
 .. note::
 

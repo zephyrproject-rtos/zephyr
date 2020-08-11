@@ -40,8 +40,8 @@ Data item mode
 ==============
 
 A **data item mode** ring buffer instance is declared using
-:cpp:func:`RING_BUF_ITEM_DECLARE_POW2()` or
-:cpp:func:`RING_BUF_ITEM_DECLARE_SIZE()` and accessed using
+:c:macro:`RING_BUF_ITEM_DECLARE_POW2()` or
+:c:macro:`RING_BUF_ITEM_DECLARE_SIZE()` and accessed using
 :c:func:`ring_buf_item_put` and :c:func:`ring_buf_item_get`.
 
 A ring buffer **data item** is an array of 32-bit words from 0 to 1020 bytes
@@ -61,7 +61,7 @@ Byte mode
 =========
 
 A **byte mode** ring buffer instance is declared using
-:cpp:func:`RING_BUF_DECLARE_SIZE()` and accessed using:
+:c:macro:`RING_BUF_ITEM_DECLARE_SIZE()` and accessed using:
 :c:func:`ring_buf_put_claim`, :c:func:`ring_buf_put_finish`,
 :c:func:`ring_buf_get_claim`, :c:func:`ring_buf_get_finish`,
 :c:func:`ring_buf_put` and :c:func:`ring_buf_get`.
