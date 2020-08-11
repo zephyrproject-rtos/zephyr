@@ -2077,12 +2077,12 @@ static void le_per_adv_create_sync(struct net_buf *buf, struct net_buf **evt)
 }
 
 static void le_per_adv_create_sync_cancel(struct net_buf *buf,
-					  struct net_buf **evt)
+					  struct net_buf **evt, void **node_rx)
 {
 	struct bt_hci_evt_cc_status *ccst;
 	uint8_t status;
 
-	status = ll_sync_create_cancel();
+	status = ll_sync_create_cancel(node_rx);
 
 	ccst = hci_cmd_complete(evt, sizeof(*ccst));
 	ccst->status = status;
@@ -2441,7 +2441,7 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_PER_ADV_CREATE_SYNC_CANCEL):
-		le_per_adv_create_sync_cancel(cmd, evt);
+		le_per_adv_create_sync_cancel(cmd, evt, node_rx);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_PER_ADV_TERMINATE_SYNC):
@@ -3820,14 +3820,19 @@ static void le_per_adv_sync_established(struct pdu_data *pdu_data,
 		return;
 	}
 
-	scan = node_rx->hdr.rx_ftr.param;
-
 	sep = meta_evt(buf, BT_HCI_EVT_LE_PER_ADV_SYNC_ESTABLISHED,
 		       sizeof(*sep));
 
 	se = (void *)pdu_data;
 	sep->status = se->status;
 	sep->handle = sys_cpu_to_le16(node_rx->hdr.handle);
+
+	if (sep->status) {
+		return;
+	}
+
+	scan = node_rx->hdr.rx_ftr.param;
+
 	sep->sid = scan->per_scan.sid;
 	/* FIXME: fill based on filter_policy options */
 	sep->adv_addr.type = scan->per_scan.adv_addr_type;

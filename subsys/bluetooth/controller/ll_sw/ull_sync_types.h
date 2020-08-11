@@ -12,6 +12,8 @@ struct ll_sync_set {
 	struct evt_hdr evt;
 	struct ull_hdr ull;
 	struct lll_sync lll;
+
+	uint8_t is_enabled:1;
 };
 
 struct node_rx_sync {
