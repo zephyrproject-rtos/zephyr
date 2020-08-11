@@ -124,10 +124,6 @@ int lll_conn_init(void);
 int lll_conn_reset(void);
 void lll_conn_flush(uint16_t handle, struct lll_conn *lll);
 
-uint8_t lll_conn_sca_local_get(void);
-uint32_t lll_conn_ppm_local_get(void);
-uint32_t lll_conn_ppm_get(uint8_t sca);
-
 void lll_conn_prepare_reset(void);
 void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param);
 void lll_conn_isr_rx(void *param);

@@ -780,7 +780,7 @@ static inline uint32_t isr_rx_pdu(struct lll_scan *lll, uint8_t devmatch_ok,
 		       &lll_conn->data_chan_map[0],
 		       sizeof(pdu_tx->connect_ind.chan_map));
 		pdu_tx->connect_ind.hop = lll_conn->data_chan_hop;
-		pdu_tx->connect_ind.sca = lll_conn_sca_local_get();
+		pdu_tx->connect_ind.sca = lll_clock_sca_local_get();
 
 		radio_pkt_tx_set(pdu_tx);
 

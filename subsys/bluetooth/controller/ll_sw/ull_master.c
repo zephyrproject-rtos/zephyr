@@ -593,7 +593,7 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	cc->interval = lll->interval;
 	cc->latency = lll->latency;
 	cc->timeout = scan->lll.conn_timeout;
-	cc->sca = lll_conn_sca_local_get();
+	cc->sca = lll_clock_sca_local_get();
 
 	lll->handle = ll_conn_handle_get(conn);
 	rx->handle = lll->handle;

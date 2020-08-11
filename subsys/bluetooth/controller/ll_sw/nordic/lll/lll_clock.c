@@ -19,6 +19,8 @@
 #define LFCLOCK_TIMEOUT_MS 500
 #define HFCLOCK_TIMEOUT_MS 2
 
+static uint16_t const sca_ppm_lut[] = {500, 250, 150, 100, 75, 50, 30, 20};
+
 struct lll_clock_state {
 	struct onoff_client cli;
 	struct k_sem sem;
@@ -112,4 +114,19 @@ int lll_hfclock_off(void)
 	DEBUG_RADIO_XTAL(0);
 
 	return 0;
+}
+
+uint8_t lll_clock_sca_local_get(void)
+{
+	return CLOCK_CONTROL_NRF_K32SRC_ACCURACY;
+}
+
+uint32_t lll_clock_ppm_local_get(void)
+{
+	return sca_ppm_lut[CLOCK_CONTROL_NRF_K32SRC_ACCURACY];
+}
+
+uint32_t lll_clock_ppm_get(uint8_t sca)
+{
+	return sca_ppm_lut[sca];
 }

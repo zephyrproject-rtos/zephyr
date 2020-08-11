@@ -25,6 +25,7 @@
 
 #include "lll.h"
 #include "lll_vendor.h"
+#include "lll_clock.h"
 #include "lll_adv.h"
 #include "lll_conn.h"
 #include "lll_slave.h"
@@ -101,8 +102,8 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	/* calculate the window widening */
 	conn->slave.sca = pdu_adv->connect_ind.sca;
 	lll->slave.window_widening_periodic_us =
-		(((lll_conn_ppm_local_get() +
-		   lll_conn_ppm_get(conn->slave.sca)) *
+		(((lll_clock_ppm_local_get() +
+		   lll_clock_ppm_get(conn->slave.sca)) *
 		  conn_interval_us) + (1000000 - 1)) / 1000000U;
 	lll->slave.window_widening_max_us = (conn_interval_us >> 1) -
 					    EVENT_IFS_US;
