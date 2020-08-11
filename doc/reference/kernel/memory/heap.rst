@@ -112,7 +112,7 @@ subject to space availability.
 A thread can dynamically allocate a chunk of heap memory by calling
 :c:func:`k_malloc`. The address of the allocated chunk is
 guaranteed to be aligned on a multiple of pointer sizes. If a suitable
-chunk of heap memory cannot be found :c:macro:`NULL` is returned.
+chunk of heap memory cannot be found ``NULL`` is returned.
 
 When the thread is finished with a chunk of heap memory it can release
 the chunk back to the system heap by calling :c:func:`k_free`.
