@@ -1952,7 +1952,6 @@ static int tls_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 	/* fcntl() commands */
 	case F_GETFL:
 	case F_SETFL:
-	case ZFD_IOCTL_GETSOCKNAME:
 		/* Pass the call to the core socket implementation. */
 		return sock_fd_op_vtable.fd_vtable.ioctl(obj, request, args);
 
@@ -2046,6 +2045,13 @@ static int tls_sock_close_vmeth(void *obj)
 	return ztls_close_ctx(obj);
 }
 
+static int tls_sock_getsockname_vmeth(void *obj, struct sockaddr *addr,
+				      socklen_t *addrlen)
+{
+	/* Pass the call to the core socket implementation. */
+	return sock_fd_op_vtable.getsockname(obj, addr, addrlen);
+}
+
 static const struct socket_op_vtable tls_sock_fd_op_vtable = {
 	.fd_vtable = {
 		.read = tls_sock_read_vmeth,
@@ -2062,6 +2068,7 @@ static const struct socket_op_vtable tls_sock_fd_op_vtable = {
 	.recvfrom = tls_sock_recvfrom_vmeth,
 	.getsockopt = tls_sock_getsockopt_vmeth,
 	.setsockopt = tls_sock_setsockopt_vmeth,
+	.getsockname = tls_sock_getsockname_vmeth,
 };
 
 static bool tls_is_supported(int family, int type, int proto)
