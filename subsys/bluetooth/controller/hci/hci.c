@@ -2065,9 +2065,9 @@ static void le_per_adv_create_sync(struct net_buf *buf, struct net_buf **evt)
 	skip = sys_le16_to_cpu(cmd->skip);
 	sync_timeout = sys_le16_to_cpu(cmd->sync_timeout);
 
-	status = ll_scan_sync_create(cmd->options, cmd->sid, cmd->addr.type,
-				     cmd->addr.a.val, skip, sync_timeout,
-				     cmd->cte_type);
+	status = ll_sync_create(cmd->options, cmd->sid, cmd->addr.type,
+				cmd->addr.a.val, skip, sync_timeout,
+				cmd->cte_type);
 
 	*evt = cmd_status(status);
 }
@@ -2078,7 +2078,7 @@ static void le_per_adv_create_sync_cancel(struct net_buf *buf,
 	struct bt_hci_evt_cc_status *ccst;
 	uint8_t status;
 
-	status = ll_scan_sync_create_cancel();
+	status = ll_sync_create_cancel();
 
 	ccst = hci_cmd_complete(evt, sizeof(*ccst));
 	ccst->status = status;
@@ -2093,7 +2093,7 @@ static void le_per_adv_terminate_sync(struct net_buf *buf, struct net_buf **evt)
 
 	handle = sys_le16_to_cpu(cmd->handle);
 
-	status = ll_scan_sync_terminate(handle);
+	status = ll_sync_terminate(handle);
 
 	ccst = hci_cmd_complete(evt, sizeof(*ccst));
 	ccst->status = status;
@@ -2108,7 +2108,7 @@ static void le_per_adv_recv_enable(struct net_buf *buf, struct net_buf **evt)
 
 	handle = sys_le16_to_cpu(cmd->handle);
 
-	status = ll_scan_sync_recv_enable(handle, cmd->enable);
+	status = ll_sync_recv_enable(handle, cmd->enable);
 
 	ccst = hci_cmd_complete(evt, sizeof(*ccst));
 	ccst->status = status;
