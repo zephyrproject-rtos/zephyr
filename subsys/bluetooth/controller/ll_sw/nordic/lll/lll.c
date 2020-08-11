@@ -330,6 +330,30 @@ int lll_is_abort_cb(void *next, int prio, void *curr,
 	return -ECANCELED;
 }
 
+void lll_abort_cb(struct lll_prepare_param *prepare_param, void *param)
+{
+	int err;
+
+	/* NOTE: This is not a prepare being cancelled */
+	if (!prepare_param) {
+		/* Perform event abort here.
+		 * After event has been cleanly aborted, clean up resources
+		 * and dispatch event done.
+		 */
+		radio_isr_set(lll_isr_done, param);
+		radio_disable();
+		return;
+	}
+
+	/* NOTE: Else clean the top half preparations of the aborted event
+	 * currently in preparation pipeline.
+	 */
+	err = lll_hfclock_off();
+	LL_ASSERT(err >= 0);
+
+	lll_done(param);
+}
+
 uint32_t lll_evt_offset_get(struct evt_hdr *evt)
 {
 	if (0) {
