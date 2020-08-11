@@ -18,13 +18,13 @@ struct uart_mcux_config {
 	UART_Type *base;
 	char *clock_name;
 	clock_control_subsys_t clock_subsys;
-	struct uart_config uart_cfg;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(struct device *dev);
 #endif
 };
 
 struct uart_mcux_data {
+	struct uart_config uart_cfg;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t callback;
 	void *cb_data;
@@ -35,6 +35,7 @@ static int uart_mcux_configure(struct device *dev,
 			       const struct uart_config *cfg)
 {
 	const struct uart_mcux_config *config = dev->config;
+	struct uart_mcux_data *data = dev->data;
 	uart_config_t uart_config;
 	struct device *clock_dev;
 	uint32_t clock_freq;
@@ -101,6 +102,17 @@ FSL_FEATURE_UART_HAS_STOP_BIT_CONFIG_SUPPORT
 	if (retval != kStatus_Success) {
 		return -EINVAL;
 	}
+
+	data->uart_cfg = *cfg;
+
+	return 0;
+}
+
+static int uart_mcux_config_get(struct device *dev, struct uart_config *cfg)
+{
+	struct uart_mcux_data *data = dev->data;
+
+	*cfg = data->uart_cfg;
 
 	return 0;
 }
@@ -305,10 +317,13 @@ static void uart_mcux_isr(void *arg)
 
 static int uart_mcux_init(struct device *dev)
 {
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	const struct uart_mcux_config *config = dev->config;
+#endif
+	struct uart_mcux_data *data = dev->data;
 	int err;
 
-	err = uart_mcux_configure(dev, &config->uart_cfg);
+	err = uart_mcux_configure(dev, &data->uart_cfg);
 	if (err != 0) {
 		return err;
 	}
@@ -325,6 +340,7 @@ static const struct uart_driver_api uart_mcux_driver_api = {
 	.poll_out = uart_mcux_poll_out,
 	.err_check = uart_mcux_err_check,
 	.configure = uart_mcux_configure,
+	.config_get = uart_mcux_config_get,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = uart_mcux_fifo_fill,
 	.fifo_read = uart_mcux_fifo_read,
@@ -348,14 +364,6 @@ static const struct uart_mcux_config uart_mcux_##n##_config = {		\
 	.base = (UART_Type *)DT_INST_REG_ADDR(n),			\
 	.clock_name = DT_INST_CLOCKS_LABEL(n),				\
 	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
-	.uart_cfg = {							\
-		.stop_bits = UART_CFG_STOP_BITS_1,			\
-		.data_bits = UART_CFG_DATA_BITS_8,			\
-		.baudrate  = DT_INST_PROP(n, current_speed),		\
-		.parity    = UART_CFG_PARITY_NONE,			\
-		.flow_ctrl = DT_INST_PROP(n, hw_flow_control) ?		\
-			UART_CFG_FLOW_CTRL_RTS_CTS : UART_CFG_FLOW_CTRL_NONE,\
-	},								\
 	IRQ_FUNC_INIT							\
 }
 
@@ -388,7 +396,16 @@ static const struct uart_mcux_config uart_mcux_##n##_config = {		\
 
 #define UART_MCUX_INIT(n)						\
 									\
-	static struct uart_mcux_data uart_mcux_##n##_data;		\
+	static struct uart_mcux_data uart_mcux_##n##_data = {		\
+		.uart_cfg = {						\
+			.stop_bits = UART_CFG_STOP_BITS_1,		\
+			.data_bits = UART_CFG_DATA_BITS_8,		\
+			.baudrate  = DT_INST_PROP(n, current_speed),	\
+			.parity    = UART_CFG_PARITY_NONE,		\
+			.flow_ctrl = DT_INST_PROP(n, hw_flow_control) ?	\
+				UART_CFG_FLOW_CTRL_RTS_CTS : UART_CFG_FLOW_CTRL_NONE,\
+		},							\
+	};								\
 									\
 	static const struct uart_mcux_config uart_mcux_##n##_config;	\
 									\
