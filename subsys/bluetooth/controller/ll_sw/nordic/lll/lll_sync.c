@@ -6,9 +6,11 @@
 #include <stdint.h>
 
 #include <toolchain.h>
+#include <sys/util.h>
 
 #include "hal/ccm.h"
 #include "hal/radio.h"
+#include "hal/ticker.h"
 
 #include "util/util.h"
 #include "util/memq.h"
@@ -22,6 +24,8 @@
 #include "lll_sync.h"
 
 #include "lll_internal.h"
+#include "lll_tim_internal.h"
+#include "lll_prof_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_lll_sync
@@ -30,6 +34,8 @@
 #include "hal/debug.h"
 
 static int init_reset(void);
+static int prepare_cb(struct lll_prepare_param *p);
+static void isr_rx(void *param);
 
 int lll_sync_init(void)
 {
@@ -55,7 +61,6 @@ int lll_sync_reset(void)
 	return 0;
 }
 
-#if WIP
 void lll_sync_prepare(void *param)
 {
 	struct lll_prepare_param *p;
@@ -84,19 +89,18 @@ void lll_sync_prepare(void *param)
 	}
 
 	/* Invoke common pipeline handling of prepare */
-	err = lll_prepare(is_abort_cb, abort_cb, prepare_cb, 0, p);
+	err = lll_prepare(lll_is_abort_cb, lll_abort_cb, prepare_cb, 0, p);
 	LL_ASSERT(!err || err == -EINPROGRESS);
 }
-#endif
 
 static int init_reset(void)
 {
 	return 0;
 }
 
-#if WIP
 static int prepare_cb(struct lll_prepare_param *p)
 {
+	struct node_rx_pdu *node_rx;
 	uint32_t ticks_at_event;
 	uint32_t ticks_at_start;
 	uint16_t event_counter;
@@ -107,7 +111,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	uint32_t remainder;
 	uint32_t hcto;
 
-	DEBUG_RADIO_START_S(1);
+	DEBUG_RADIO_START_O(1);
 
 	lll = p->param;
 
@@ -168,15 +172,9 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	radio_tmr_tifs_set(EVENT_IFS_US);
 
-#if defined(CONFIG_BT_CTLR_PHY)
 	radio_switch_complete_and_disable();
-	radio_switch_complete_and_tx(lll->phy_rx, 0, lll->phy_tx,
-				     lll->phy_flags);
-#else /* !CONFIG_BT_CTLR_PHY */
-	radio_switch_complete_and_tx(0, 0, 0, 0);
-#endif /* !CONFIG_BT_CTLR_PHY */
 
-	ticks_at_event = prepare_param->ticks_at_expire;
+	ticks_at_event = p->ticks_at_expire;
 	evt = HDR_LLL2EVT(lll);
 	ticks_at_event += lll_evt_offset_get(evt);
 
@@ -196,7 +194,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	hcto += radio_rx_ready_delay_get(lll->phy, 1);
-	hcto += addr_us_get(lll->phy_rx);
+	hcto += addr_us_get(lll->phy);
 	hcto += radio_rx_chain_delay_get(lll->phy, 1);
 #else /* !CONFIG_BT_CTLR_PHY */
 	hcto += radio_rx_ready_delay_get(0, 0);
@@ -232,7 +230,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
 	(EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
 	/* check if preempt to start has changed */
-	if (lll_preempt_calc(evt, (TICKER_ID_CONN_BASE + lll->handle),
+	if (lll_preempt_calc(evt, (TICKER_ID_SCAN_SYNC_BASE +
+				   ull_sync_lll_handle_get(lll)),
 			     ticks_at_event)) {
 		radio_isr_set(lll_isr_abort, lll);
 		radio_disable();
@@ -245,8 +244,60 @@ static int prepare_cb(struct lll_prepare_param *p)
 		LL_ASSERT(!ret);
 	}
 
-	DEBUG_RADIO_START_S(1);
+	DEBUG_RADIO_START_O(1);
 
+	printk("SYNC PREPARE\n");
 	return 0;
 }
-#endif
+
+static void isr_rx(void *param)
+{
+	uint8_t rssi_ready;
+	uint8_t trx_done;
+	uint8_t crc_ok;
+
+	/* TODO: may be we dont need to profile, as there is no use of tIFS */
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_latency_capture();
+	}
+
+	/* Read radio status and events */
+	trx_done = radio_is_done();
+	if (trx_done) {
+		crc_ok = radio_crc_is_valid();
+		rssi_ready = radio_rssi_is_ready();
+	} else {
+		crc_ok = rssi_ready = 0U;
+	}
+
+	/* Clear radio rx status and events */
+	lll_isr_rx_status_reset();
+
+	/* No Rx */
+	if (!trx_done) {
+		/* TODO: Combine the early exit with above if-then-else block
+		 */
+		printk("RX FAILED\n");
+
+		return;
+	}
+
+	if (crc_ok) {
+		/* TODO: */
+		printk("CRC OK\n");
+	} else {
+		printk("CRC BAD\n");
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_cputime_capture();
+	}
+
+	/* TODO: drift compensation */
+
+	lll_isr_cleanup(param);
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_send();
+	}
+}

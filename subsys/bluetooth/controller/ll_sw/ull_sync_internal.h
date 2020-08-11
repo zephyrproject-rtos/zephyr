@@ -8,3 +8,5 @@ int ull_sync_init(void);
 int ull_sync_reset(void);
 uint16_t ull_sync_handle_get(struct ll_sync_set *sync);
 void ull_sync_release(struct ll_sync_set *sync);
+void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
+		    struct node_rx_hdr *node_rx, struct pdu_adv_sync_info *si);

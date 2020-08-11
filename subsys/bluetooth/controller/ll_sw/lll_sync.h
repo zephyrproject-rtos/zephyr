@@ -18,6 +18,13 @@ struct lll_sync {
 	uint8_t data_chan_count:6;
 	uint16_t data_chan_id;
 
+	uint32_t window_widening_periodic_us;
+	uint32_t window_widening_max_us;
+	uint32_t window_widening_prepare_us;
+	uint32_t window_widening_event_us;
+	uint32_t window_size_prepare_us;
+	uint32_t window_size_event_us;
+
 	uint8_t phy:3;
 	uint8_t is_enabled:1;
 };
@@ -25,3 +32,5 @@ struct lll_sync {
 int lll_sync_init(void);
 int lll_sync_reset(void);
 void lll_sync_prepare(void *param);
+
+extern uint16_t ull_sync_lll_handle_get(struct lll_sync *lll);

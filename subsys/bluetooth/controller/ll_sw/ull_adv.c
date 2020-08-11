@@ -1356,7 +1356,7 @@ inline uint16_t ull_adv_handle_get(struct ll_adv_set *adv)
 
 uint16_t ull_adv_lll_handle_get(struct lll_adv *lll)
 {
-	return ull_adv_handle_get((void *)lll->hdr.parent);
+	return ull_adv_handle_get((void *)HDR_LLL2EVT(lll));
 }
 
 inline struct ll_adv_set *ull_adv_is_enabled_get(uint8_t handle)
