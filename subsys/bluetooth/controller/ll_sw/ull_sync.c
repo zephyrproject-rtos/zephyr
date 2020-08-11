@@ -43,10 +43,13 @@
 static int init_reset(void);
 static inline struct ll_sync_set *sync_acquire(void);
 static struct ll_sync_set *is_enabled_get(uint16_t handle);
+static void timeout_cleanup(struct ll_sync_set *sync);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		      uint16_t lazy, void *param);
 static void ticker_op_cb(uint32_t status, void *param);
 static void ticker_update_sync_op_cb(uint32_t status, void *param);
+static void ticker_stop_op_cb(uint32_t status, void *param);
+static void sync_lost(void *param);
 
 static struct ll_sync_set ll_sync_pool[CONFIG_BT_CTLR_SCAN_SYNC_SET];
 static void *sync_free;
@@ -104,8 +107,6 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
 
-	sync->is_enabled = 0U;
-
 	scan->per_scan.filter_policy = options & BIT(0);
 	if (!scan->per_scan.filter_policy) {
 		scan->per_scan.sid = sid;
@@ -113,16 +114,17 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 		memcpy(scan->per_scan.adv_addr, adv_addr, BDADDR_SIZE);
 	}
 
-	/* TODO: Support for skip */
-
-	/* TODO: Support for timeout */
+	sync->skip = skip;
+	sync->timeout = sync_timeout;
 
 	/* TODO: Support for CTE type */
 
 	/* Initialize sync context */
+	sync->timeout_reload = 0U;
+	sync->timeout_expire = 0U;
 	lll_sync = &sync->lll;
-	lll_sync->latency_prepare = 0U;
-	lll_sync->latency_event = 0U;
+	lll_sync->skip_prepare = 0U;
+	lll_sync->skip_event = 0U;
 	lll_sync->data_chan_id = 0U;
 	lll_sync->window_widening_prepare_us = 0U;
 	lll_sync->window_widening_event_us = 0U;
@@ -136,7 +138,7 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 	/* established and sync_lost node_rx */
 	node_rx->link = link_sync_estab;
 	scan->per_scan.node_rx_estab = node_rx;
-	scan->per_scan.node_rx_lost.link = link_sync_lost;
+	sync->node_rx_lost.link = link_sync_lost;
 
 	/* Initialise ULL and LLL headers */
 	ull_hdr_init(&sync->ull);
@@ -182,19 +184,19 @@ uint8_t ll_sync_create_cancel(void **rx)
 	/* Check for race condition where in sync is established when sync
 	 * context was set to NULL.
 	 */
-	if (sync->is_enabled) {
+	if (sync->timeout_reload) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
 	node_rx = (void *)scan->per_scan.node_rx_estab;
 	link_sync_estab = node_rx->hdr.link;
-	link_sync_lost = scan->per_scan.node_rx_lost.link;
+	link_sync_lost = sync->node_rx_lost.link;
 
 	ll_rx_link_release(link_sync_lost);
 	ll_rx_link_release(link_sync_estab);
 	ll_rx_release(node_rx);
 
-	node_rx = (void *)&scan->per_scan.node_rx_lost;
+	node_rx = (void *)&sync->node_rx_lost;
 	node_rx->hdr.type = NODE_RX_TYPE_SYNC;
 	node_rx->hdr.handle = 0xffff;
 	node_rx->hdr.rx_ftr.param = sync;
@@ -206,16 +208,47 @@ uint8_t ll_sync_create_cancel(void **rx)
 	return 0;
 }
 
-uint8_t ll_sync_terminate(uint16_t handle)
+uint8_t ll_sync_terminate(uint16_t handle, void **rx)
 {
+	struct node_rx_pdu *node_rx;
+	memq_link_t *link_sync_lost;
 	struct ll_sync_set *sync;
+	uint32_t volatile ret_cb;
+	uint32_t ret;
+	void *mark;
 
 	sync = is_enabled_get(handle);
 	if (!sync) {
+		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
+	}
+
+	mark = ull_disable_mark(sync);
+	LL_ASSERT(mark == sync);
+
+	ret_cb = TICKER_STATUS_BUSY;
+	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
+			  TICKER_ID_SCAN_SYNC_BASE + handle,
+			  ull_ticker_status_give, (void *)&ret_cb);
+	ret = ull_ticker_status_take(ret, &ret_cb);
+	if (ret) {
+		mark = ull_disable_mark(sync);
+		LL_ASSERT(mark == sync);
+
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	/* TODO: Stop periodic sync events */
+	mark = ull_disable_unmark(sync);
+	LL_ASSERT(mark == sync);
+
+	link_sync_lost = sync->node_rx_lost.link;
+	ll_rx_link_release(link_sync_lost);
+
+	node_rx = (void *)&sync->node_rx_lost;
+	node_rx->hdr.type = NODE_RX_TYPE_SYNC_LOST;
+	node_rx->hdr.handle = handle;
+	node_rx->hdr.rx_ftr.param = sync;
+
+	*rx = node_rx;
 
 	return 0;
 }
@@ -296,8 +329,6 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	sync = scan->per_scan.sync;
 	scan->per_scan.sync = NULL;
 
-	sync->is_enabled = 1U;
-
 	lll = &sync->lll;
 	memcpy(lll->data_chan_map, si->sca_chm, sizeof(lll->data_chan_map));
 	lll->data_chan_map[4] &= ~0xE0;
@@ -315,6 +346,9 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	sca = si->sca_chm[4] >> 5;
 	interval = sys_le16_to_cpu(si->interval);
 	interval_us = interval * 1250U;
+
+	sync->timeout_reload = RADIO_SYNC_EVENTS((sync->timeout * 10U * 1000U),
+						 interval_us);
 
 	lll->window_widening_periodic_us =
 		(((lll_clock_ppm_local_get() + lll_clock_ppm_get(sca)) *
@@ -393,17 +427,72 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 void ull_sync_done(struct node_rx_event_done *done)
 {
 	struct lll_sync *lll = (void *)HDR_ULL2LLL(done->param);
+	struct ll_sync_set *sync = (void *)HDR_LLL2EVT(lll);
 	uint32_t ticks_drift_minus;
 	uint32_t ticks_drift_plus;
-	uint16_t lazy = 0U;
-	uint8_t force = 0U;
+	uint16_t elapsed_event;
+	uint16_t skip_event;
+	uint16_t lazy;
+	uint8_t force;
 
-	/* TODO: use skip value and decide on the laziness using latency_event.
+	/* Events elapsed used in timeout checks below */
+	skip_event = lll->skip_event;
+	elapsed_event = skip_event + 1;
+
+	/* Sync drift compensation and new skip calculation
 	 */
+	ticks_drift_plus = 0U;
+	ticks_drift_minus = 0U;
+	if (done->extra.trx_cnt) {
+		/* Calculate drift in ticks unit */
+		ull_drift_ticks_get(done, &ticks_drift_plus,
+				    &ticks_drift_minus);
 
-	ull_drift_ticks_get(done, &ticks_drift_plus, &ticks_drift_minus);
+		/* Enforce skip */
+		lll->skip_event = sync->skip;
+	}
+
+	/* Reset supervision countdown */
+	if (done->extra.crc_valid) {
+		sync->timeout_expire = 0U;
+	}
+
+	/* if anchor point not sync-ed, start timeout countdown, and break
+	 * skip if any.
+	 */
+	else {
+		if (!sync->timeout_expire) {
+			sync->timeout_expire = sync->timeout_reload;
+		}
+	}
+
+	/* check timeout */
+	force = 0U;
+	if (sync->timeout_expire) {
+		if (sync->timeout_expire > elapsed_event) {
+			sync->timeout_expire -= elapsed_event;
+
+			/* break skip */
+			lll->skip_event = 0U;
+
+			if (skip_event) {
+				force = 1U;
+			}
+		} else {
+			timeout_cleanup(sync);
+
+			return;
+		}
+	}
+
+	/* check if skip needs update */
+	lazy = 0U;
+	if ((force) || (skip_event != lll->skip_event)) {
+		lazy = lll->skip_event + 1U;
+	}
+
+	/* Update Sync ticker instance */
 	if (ticks_drift_plus || ticks_drift_minus || lazy || force) {
-		struct ll_sync_set *sync = (void *)HDR_LLL2EVT(lll);
 		uint16_t sync_handle = ull_sync_handle_get(sync);
 		uint32_t ticker_status;
 
@@ -447,11 +536,24 @@ static struct ll_sync_set *is_enabled_get(uint16_t handle)
 	struct ll_sync_set *sync;
 
 	sync = ull_sync_set_get(handle);
-	if (!sync || !sync->is_enabled) {
+	if (!sync || !sync->timeout_reload) {
 		return NULL;
 	}
 
 	return sync;
+}
+
+static void timeout_cleanup(struct ll_sync_set *sync)
+{
+	uint16_t sync_handle = ull_sync_handle_get(sync);
+	uint32_t ret;
+
+	/* Stop Periodic Sync Ticker */
+	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+			  TICKER_ID_SCAN_SYNC_BASE + sync_handle,
+			  ticker_stop_op_cb, (void *)sync);
+	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+		  (ret == TICKER_STATUS_BUSY));
 }
 
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
@@ -500,4 +602,34 @@ static void ticker_update_sync_op_cb(uint32_t status, void *param)
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS ||
 		  param == ull_update_mark_get() ||
 		  param == ull_disable_mark_get());
+}
+
+static void ticker_stop_op_cb(uint32_t status, void *param)
+{
+	uint32_t retval;
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, sync_lost};
+
+	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+
+	mfy.param = param;
+
+	retval = mayfly_enqueue(TICKER_USER_ID_ULL_LOW, TICKER_USER_ID_ULL_HIGH,
+				0, &mfy);
+	LL_ASSERT(!retval);
+}
+
+static void sync_lost(void *param)
+{
+	struct ll_sync_set *sync = param;
+	struct node_rx_pdu *rx;
+
+	/* Generate Periodic advertising sync lost */
+	rx = (void *)&sync->node_rx_lost;
+	rx->hdr.handle = ull_sync_handle_get(sync);
+	rx->hdr.type = NODE_RX_TYPE_SYNC_LOST;
+
+	/* Enqueue the sync lost towards ULL context */
+	ll_rx_put(rx->hdr.link, rx);
+	ll_rx_sched();
 }

@@ -1156,7 +1156,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 			conn->supervision_expire -= elapsed_event;
 
 			/* break latency */
-			lll->latency_event = 0;
+			lll->latency_event = 0U;
 
 			/* Force both master and slave when close to
 			 * supervision timeout.
@@ -1175,7 +1175,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 					force = conn->slave.force & 0x01;
 
 					/* rotate force bits */
-					conn->slave.force >>= 1;
+					conn->slave.force >>= 1U;
 					if (force) {
 						conn->slave.force |= BIT(31);
 					}
@@ -1242,7 +1242,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 
 #if defined(CONFIG_BT_CTLR_CONN_RSSI_EVENT)
 	/* generate RSSI event */
-	if (lll->rssi_sample_count == 0) {
+	if (lll->rssi_sample_count == 0U) {
 		struct node_rx_pdu *rx;
 		struct pdu_data *pdu_data_rx;
 
@@ -1271,13 +1271,13 @@ void ull_conn_done(struct node_rx_event_done *done)
 	     ((conn->llcp_type == LLCP_CONN_UPD) ||
 	      (conn->llcp_type == LLCP_CHAN_MAP))) ||
 	    (conn->llcp_cu.req != conn->llcp_cu.ack)) {
-		lll->latency_event = 0;
+		lll->latency_event = 0U;
 	}
 
 	/* check if latency needs update */
 	lazy = 0U;
 	if ((force) || (latency_event != lll->latency_event)) {
-		lazy = lll->latency_event + 1;
+		lazy = lll->latency_event + 1U;
 	}
 
 	/* update conn ticker */

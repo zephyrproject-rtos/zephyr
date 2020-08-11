@@ -2088,7 +2088,8 @@ static void le_per_adv_create_sync_cancel(struct net_buf *buf,
 	ccst->status = status;
 }
 
-static void le_per_adv_terminate_sync(struct net_buf *buf, struct net_buf **evt)
+static void le_per_adv_terminate_sync(struct net_buf *buf, struct net_buf **evt,
+				      void **node_rx)
 {
 	struct bt_hci_cp_le_per_adv_terminate_sync *cmd = (void *)buf->data;
 	struct bt_hci_evt_cc_status *ccst;
@@ -2097,7 +2098,7 @@ static void le_per_adv_terminate_sync(struct net_buf *buf, struct net_buf **evt)
 
 	handle = sys_le16_to_cpu(cmd->handle);
 
-	status = ll_sync_terminate(handle);
+	status = ll_sync_terminate(handle, node_rx);
 
 	ccst = hci_cmd_complete(evt, sizeof(*ccst));
 	ccst->status = status;
@@ -2445,7 +2446,7 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_PER_ADV_TERMINATE_SYNC):
-		le_per_adv_terminate_sync(cmd, evt);
+		le_per_adv_terminate_sync(cmd, evt, node_rx);
 		break;
 
 	/* FIXME: Enable when definition is added to hci.h */
@@ -3841,6 +3842,21 @@ static void le_per_adv_sync_established(struct pdu_data *pdu_data,
 	sep->interval = sys_cpu_to_le16(se->interval);
 	sep->clock_accuracy = se->sca;
 }
+
+static void le_per_adv_sync_lost(struct pdu_data *pdu_data,
+				 struct node_rx_pdu *node_rx,
+				 struct net_buf *buf)
+{
+	struct bt_hci_evt_le_per_adv_sync_lost *sep;
+
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_PER_ADV_SYNC_LOST)) {
+		return;
+	}
+
+	sep = meta_evt(buf, BT_HCI_EVT_LE_PER_ADV_SYNC_LOST, sizeof(*sep));
+	sep->handle = sys_cpu_to_le16(node_rx->hdr.handle);
+}
 #endif /* CONFIG_BT_CTLR_SCAN_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
@@ -3866,8 +3882,8 @@ static void le_adv_ext_terminate(struct pdu_data *pdu_data,
 	sep->num_completed_ext_adv_evts =
 		node_rx->hdr.rx_ftr.param_adv_term.num_events;
 }
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_BROADCASTER */
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
 static void le_scan_req_received(struct pdu_data *pdu_data,
@@ -4200,6 +4216,9 @@ static void encode_control(struct node_rx_pdu *node_rx,
 #if defined(CONFIG_BT_CTLR_SCAN_PERIODIC)
 	case NODE_RX_TYPE_SYNC:
 		le_per_adv_sync_established(pdu_data, node_rx, buf);
+		break;
+	case NODE_RX_TYPE_SYNC_LOST:
+		le_per_adv_sync_lost(pdu_data, node_rx, buf);
 		break;
 #endif /* CONFIG_BT_CTLR_SCAN_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
@@ -4641,6 +4660,7 @@ uint8_t hci_get_class(struct node_rx_pdu *node_rx)
 #if defined(CONFIG_BT_CTLR_SCAN_PERIODIC)
 			__fallthrough;
 		case NODE_RX_TYPE_SYNC:
+		case NODE_RX_TYPE_SYNC_LOST:
 #endif /* CONFIG_BT_CTLR_SCAN_PERIODIC */
 
 #if defined(CONFIG_BT_BROADCASTER)
