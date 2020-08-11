@@ -32,6 +32,7 @@
 #include "ll_feat.h"
 #include "ll_settings.h"
 #include "lll.h"
+#include "lll_vendor.h"
 #include "lll_adv.h"
 #include "lll_scan.h"
 #include "lll_sync.h"
@@ -1885,6 +1886,11 @@ static inline void rx_demux_event_done(memq_link_t *link,
 	case EVENT_DONE_EXTRA_TYPE_SCAN_AUX:
 		ull_scan_aux_done(done);
 		break;
+#if defined(CONFIG_BT_CTLR_SCAN_PERIODIC)
+	case EVENT_DONE_EXTRA_TYPE_SYNC:
+		ull_sync_done(done);
+		break;
+#endif /* CONFIG_BT_CTLR_SCAN_PERIODIC */
 #endif /* CONFIG_BT_OBSERVER */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 

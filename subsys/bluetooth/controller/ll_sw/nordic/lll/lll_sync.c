@@ -134,10 +134,6 @@ static int prepare_cb(struct lll_prepare_param *p)
 		lll->window_widening_event_us =	lll->window_widening_max_us;
 	}
 
-	/* Current window size */
-	lll->window_size_event_us += lll->window_size_prepare_us;
-	lll->window_size_prepare_us = 0;
-
 	/* Calculate the radio channel to use */
 	data_chan_use = lll_chan_sel_2(event_counter, lll->data_chan_id,
 				       &lll->data_chan_map[0],
@@ -185,7 +181,6 @@ static int prepare_cb(struct lll_prepare_param *p)
 	remainder_us = radio_tmr_start(0, ticks_at_start, remainder);
 
 	radio_tmr_aa_capture();
-	radio_tmr_aa_save(0);
 
 	hcto = remainder_us +
 	       ((EVENT_JITTER_US + EVENT_TICKER_RES_MARGIN_US +
@@ -238,21 +233,16 @@ static int prepare_cb(struct lll_prepare_param *p)
 	}
 
 	DEBUG_RADIO_START_O(1);
-
-	printk("SYNC PREPARE\n");
 	return 0;
 }
 
 static void isr_rx(void *param)
 {
+	struct lll_sync *lll = param;
+	struct event_done_extra *e;
 	uint8_t rssi_ready;
 	uint8_t trx_done;
 	uint8_t crc_ok;
-
-	/* TODO: may be we dont need to profile, as there is no use of tIFS */
-	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-		lll_prof_latency_capture();
-	}
 
 	/* Read radio status and events */
 	trx_done = radio_is_done();
@@ -270,9 +260,7 @@ static void isr_rx(void *param)
 	if (!trx_done) {
 		/* TODO: Combine the early exit with above if-then-else block
 		 */
-		printk("RX FAILED\n");
-
-		return;
+		goto isr_rx_exit;
 	}
 
 	if (crc_ok) {
@@ -282,15 +270,28 @@ static void isr_rx(void *param)
 		printk("CRC BAD\n");
 	}
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-		lll_prof_cputime_capture();
-	}
+	/* Calculate and place the drift information in done event */
+	e = ull_event_done_extra_get();
+	LL_ASSERT(e);
 
-	/* TODO: drift compensation */
+	e->type = EVENT_DONE_EXTRA_TYPE_SYNC;
+	e->trx_cnt = 1U;
+	e->crc_valid = crc_ok;
 
+#if defined(CONFIG_BT_CTLR_PHY)
+	e->drift.preamble_to_addr_us = addr_us_get(lll->phy);
+#else /* !CONFIG_BT_CTLR_PHY */
+	e->drift.preamble_to_addr_us = addr_us_get(0);
+#endif /* !CONFIG_BT_CTLR_PHY */
+
+	e->drift.start_to_address_actual_us = radio_tmr_aa_get() -
+					      radio_tmr_ready_get();
+	e->drift.window_widening_event_us = lll->window_widening_event_us;
+
+	/* Reset window widening, as anchor point sync-ed */
+	lll->window_widening_event_us = 0U;
+	lll->window_size_event_us = 0U;
+
+isr_rx_exit:
 	lll_isr_cleanup(param);
-
-	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-		lll_prof_send();
-	}
 }

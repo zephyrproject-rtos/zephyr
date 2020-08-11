@@ -46,6 +46,7 @@ static struct ll_sync_set *is_enabled_get(uint16_t handle);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		      uint16_t lazy, void *param);
 static void ticker_op_cb(uint32_t status, void *param);
+static void ticker_update_sync_op_cb(uint32_t status, void *param);
 
 static struct ll_sync_set ll_sync_pool[CONFIG_BT_CTLR_SCAN_SYNC_SET];
 static void *sync_free;
@@ -58,6 +59,7 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 	memq_link_t *link_sync_estab;
 	memq_link_t *link_sync_lost;
 	struct node_rx_hdr *node_rx;
+	struct lll_sync *lll_sync;
 	struct ll_scan_set *scan;
 	struct ll_sync_set *sync;
 
@@ -117,8 +119,16 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 
 	/* TODO: Support for CTE type */
 
+	/* Initialize sync context */
+	lll_sync = &sync->lll;
+	lll_sync->latency_prepare = 0U;
+	lll_sync->latency_event = 0U;
+	lll_sync->data_chan_id = 0U;
+	lll_sync->window_widening_prepare_us = 0U;
+	lll_sync->window_widening_event_us = 0U;
+
 	/* Reporting initially enabled/disabled */
-	sync->lll.is_enabled = options & BIT(1);
+	lll_sync->is_enabled = options & BIT(1);
 
 	/* Initialise state */
 	scan->per_scan.state = LL_SYNC_STATE_IDLE;
@@ -130,7 +140,7 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 
 	/* Initialise ULL and LLL headers */
 	ull_hdr_init(&sync->ull);
-	lll_hdr_init(&sync->lll, sync);
+	lll_hdr_init(lll_sync, sync);
 
 	/* Enable scanner to create sync */
 	scan->per_scan.sync = sync;
@@ -346,7 +356,7 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	interval_us -= lll->window_widening_periodic_us;
 
 	/* TODO: active_to_start feature port */
-	sync->evt.ticks_active_to_start = 0;
+	sync->evt.ticks_active_to_start = 0U;
 	sync->evt.ticks_xtal_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	sync->evt.ticks_preempt_to_start =
@@ -378,6 +388,43 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 			   ticker_cb, sync, ticker_op_cb, (void *)__LINE__);
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 		  (ret == TICKER_STATUS_BUSY));
+}
+
+void ull_sync_done(struct node_rx_event_done *done)
+{
+	struct lll_sync *lll = (void *)HDR_ULL2LLL(done->param);
+	uint32_t ticks_drift_minus;
+	uint32_t ticks_drift_plus;
+	uint16_t lazy = 0U;
+	uint8_t force = 0U;
+
+	/* TODO: use skip value and decide on the laziness using latency_event.
+	 */
+
+	ull_drift_ticks_get(done, &ticks_drift_plus, &ticks_drift_minus);
+	if (ticks_drift_plus || ticks_drift_minus || lazy || force) {
+		struct ll_sync_set *sync = (void *)HDR_LLL2EVT(lll);
+		uint16_t sync_handle = ull_sync_handle_get(sync);
+		uint32_t ticker_status;
+
+		/* Call to ticker_update can fail under the race
+		 * condition where in the periodic sync role is being stopped
+		 * but at the same time it is preempted by periodic sync event
+		 * that gets into close state. Accept failure when periodic sync
+		 * role is being stopped.
+		 */
+		ticker_status = ticker_update(TICKER_INSTANCE_ID_CTLR,
+					      TICKER_USER_ID_ULL_HIGH,
+					      (TICKER_ID_SCAN_SYNC_BASE +
+					       sync_handle),
+					      ticks_drift_plus,
+					      ticks_drift_minus, 0, 0,
+					      lazy, force,
+					      ticker_update_sync_op_cb, sync);
+		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
+			  (ticker_status == TICKER_STATUS_BUSY) ||
+			  ((void *)sync == ull_disable_mark_get()));
+	}
 }
 
 static int init_reset(void)
@@ -446,4 +493,11 @@ static void ticker_op_cb(uint32_t status, void *param)
 	ARG_UNUSED(param);
 
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+}
+
+static void ticker_update_sync_op_cb(uint32_t status, void *param)
+{
+	LL_ASSERT(status == TICKER_STATUS_SUCCESS ||
+		  param == ull_update_mark_get() ||
+		  param == ull_disable_mark_get());
 }

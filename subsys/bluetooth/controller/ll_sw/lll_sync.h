@@ -22,7 +22,6 @@ struct lll_sync {
 	uint32_t window_widening_max_us;
 	uint32_t window_widening_prepare_us;
 	uint32_t window_widening_event_us;
-	uint32_t window_size_prepare_us;
 	uint32_t window_size_event_us;
 
 	uint8_t phy:3;
