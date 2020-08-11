@@ -217,7 +217,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 	remainder_us = radio_tmr_start(0, ticks_at_start, remainder);
 
 	/* capture end of Rx-ed PDU, for initiator to calculate first
-	 * master event.
+	 * master event or extended scan to schedule auxiliary channel
+	 * reception.
 	 */
 	radio_tmr_end_capture();
 
