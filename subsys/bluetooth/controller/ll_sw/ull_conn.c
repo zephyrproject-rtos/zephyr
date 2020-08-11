@@ -23,9 +23,12 @@
 #include "ticker/ticker.h"
 
 #include "pdu.h"
+
 #include "lll.h"
-#include "lll_tim_internal.h"
+#include "lll_clock.h"
 #include "lll_conn.h"
+#include "lll_tim_internal.h"
+
 #include "ull_conn_types.h"
 #include "ull_internal.h"
 #include "ull_sched_internal.h"
@@ -2357,8 +2360,8 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 				instant_latency;
 
 			lll->slave.window_widening_periodic_us =
-				(((lll_conn_ppm_local_get() +
-				   lll_conn_ppm_get(conn->slave.sca)) *
+				(((lll_clock_ppm_local_get() +
+				   lll_clock_ppm_get(conn->slave.sca)) *
 				  conn_interval_us) + (1000000 - 1)) / 1000000U;
 			lll->slave.window_widening_max_us =
 				(conn_interval_us >> 1) - EVENT_IFS_US;

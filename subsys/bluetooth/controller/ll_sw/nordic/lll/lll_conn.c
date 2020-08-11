@@ -42,7 +42,6 @@ static inline int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 			     struct node_tx **tx_release, uint8_t *is_done);
 static void empty_tx_init(void);
 
-static uint16_t const sca_ppm_lut[] = {500, 250, 150, 100, 75, 50, 30, 20};
 static uint8_t crc_expire;
 static uint8_t crc_valid;
 static uint16_t trx_cnt;
@@ -121,21 +120,6 @@ int lll_conn_reset(void)
 void lll_conn_flush(uint16_t handle, struct lll_conn *lll)
 {
 	/* Nothing to be flushed */
-}
-
-uint8_t lll_conn_sca_local_get(void)
-{
-	return CLOCK_CONTROL_NRF_K32SRC_ACCURACY;
-}
-
-uint32_t lll_conn_ppm_local_get(void)
-{
-	return sca_ppm_lut[CLOCK_CONTROL_NRF_K32SRC_ACCURACY];
-}
-
-uint32_t lll_conn_ppm_get(uint8_t sca)
-{
-	return sca_ppm_lut[sca];
 }
 
 void lll_conn_prepare_reset(void)
