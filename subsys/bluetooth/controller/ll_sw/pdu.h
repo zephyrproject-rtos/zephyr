@@ -206,7 +206,6 @@ struct pdu_adv_connect_ind {
 	} __packed;
 } __packed;
 
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
 struct pdu_adv_com_ext_adv {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	uint8_t ext_hdr_len:6;
@@ -314,7 +313,6 @@ struct pdu_adv_sync_info {
 	uint8_t  crc_init[3];
 	uint16_t evt_cntr;
 } __packed;
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 enum pdu_adv_type {
 	PDU_ADV_TYPE_ADV_IND = 0x00,
