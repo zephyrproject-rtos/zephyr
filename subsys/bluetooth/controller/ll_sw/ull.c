@@ -345,6 +345,18 @@ int ll_init(struct k_sem *sem_rx)
 	}
 #endif /* CONFIG_BT_OBSERVER */
 
+#if defined(CONFIG_BT_CTLR_SCAN_PERIODIC)
+	err = lll_sync_init();
+	if (err) {
+		return err;
+	}
+
+	err = ull_sync_init();
+	if (err) {
+		return err;
+	}
+#endif /* CONFIG_BT_CTLR_SCAN_PERIODIC */
+
 #if defined(CONFIG_BT_CONN)
 	err = lll_conn_init();
 	if (err) {
@@ -387,6 +399,12 @@ void ll_reset(void)
 	err = ull_scan_reset();
 	LL_ASSERT(!err);
 #endif /* CONFIG_BT_OBSERVER */
+
+#if defined(CONFIG_BT_CTLR_SCAN_PERIODIC)
+	/* Reset periodic sync sets */
+	err = ull_sync_reset();
+	LL_ASSERT(!err);
+#endif /* CONFIG_BT_CTLR_SCAN_PERIODIC */
 
 #if defined(CONFIG_BT_CONN)
 #if defined(CONFIG_BT_CENTRAL)
