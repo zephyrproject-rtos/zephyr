@@ -21,6 +21,7 @@
 #include "lll_vendor.h"
 #include "lll_scan.h"
 #include "lll_scan_aux.h"
+#include "lll_sync.h"
 
 #include "ull_scan_types.h"
 #include "ull_sync_types.h"
@@ -75,28 +76,47 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy)
 {
 	struct pdu_adv_aux_ptr *aux_ptr;
 	struct pdu_adv_com_ext_adv *p;
-	struct ll_scan_aux_set *aux;
 	uint32_t ticks_slot_overhead;
+	struct ll_scan_aux_set *aux;
 	uint32_t window_widening_us;
-	struct lll_scan_aux *lll;
-	struct node_rx_ftr *ftr;
 	uint32_t ticks_slot_offset;
-	struct pdu_adv_hdr *h;
+	struct ll_sync_set *sync;
+	struct lll_scan_aux *lll;
+	struct pdu_adv_adi *adi;
+	struct node_rx_ftr *ftr;
 	uint32_t ready_delay_us;
-	struct pdu_adv *pdu;
 	uint32_t aux_offset_us;
 	uint32_t ticker_status;
+	struct pdu_adv_hdr *h;
+	struct pdu_adv *pdu;
 	uint8_t aux_handle;
 	uint8_t *ptr;
 
 	ftr = &rx->rx_ftr;
 	lll = ftr->param;
-	aux = lll->hdr.parent;
+	aux = (void *)HDR_LLL2EVT(lll);
 	if (((uint8_t *)aux < (uint8_t *)ll_scan_aux_pool) ||
 	    ((uint8_t *)aux > ((uint8_t *)ll_scan_aux_pool +
 			    (sizeof(struct ll_scan_aux_set) *
 			     (CONFIG_BT_CTLR_SCAN_AUX_SET - 1))))) {
+		/* NOTE: We are most probably ADV_EXT_IND on primary channel */
 		aux = NULL;
+	}
+
+	sync = NULL;
+	if (IS_ENABLED(CONFIG_BT_CTLR_SCAN_PERIODIC)) {
+		struct ll_scan_set *scan;
+
+		if (aux) {
+			struct lll_scan *lll_scan;
+
+			lll_scan = aux->rx_head->rx_ftr.param;
+			scan = (void *)HDR_LLL2EVT(lll_scan);
+		} else {
+			scan = (void *)HDR_LLL2EVT(ftr->param);
+		}
+
+		sync = scan->sync;
 	}
 
 	rx->link = link;
@@ -109,13 +129,19 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy)
 	}
 
 	h = (void *)p->ext_hdr_adi_adv_data;
-	if (!h->aux_ptr) {
+	if (!h->aux_ptr && !sync) {
 		goto ull_scan_aux_rx_flush;
 	}
 
 	ptr = (uint8_t *)h + sizeof(*h);
 
 	if (h->adv_addr) {
+		if (IS_ENABLED(CONFIG_BT_CTLR_SCAN_PERIODIC) && sync &&
+		    (pdu->tx_addr == sync->adv_addr_type) &&
+		    !memcmp(ptr, sync->adv_addr, BDADDR_SIZE)) {
+			sync->state = LL_SYNC_STATE_ADDR_MATCH;
+		}
+
 		ptr += BDADDR_SIZE;
 	}
 
@@ -123,15 +149,32 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy)
 		ptr += BDADDR_SIZE;
 	}
 
+	adi = NULL;
 	if (h->adi) {
-		struct pdu_adv_adi *adi;
-
 		adi = (void *)ptr;
 		ptr += sizeof(*adi);
 	}
 
-	aux_ptr = (void *)ptr;
-	if (!aux_ptr->offs) {
+	aux_ptr = NULL;
+	if (h->aux_ptr) {
+		aux_ptr = (void *)ptr;
+		ptr += sizeof(*aux_ptr);
+	}
+
+	if (h->sync_info) {
+		struct pdu_adv_sync_info *si;
+
+		si = (void *)ptr;
+		ptr += sizeof(*si);
+
+		if (IS_ENABLED(CONFIG_BT_CTLR_SCAN_PERIODIC) && sync &&
+		    adi && (adi->sid == sync->sid) &&
+		    (sync->state == LL_SYNC_STATE_ADDR_MATCH)) {
+			printk("SYNC CREATE MATCH\n");
+		}
+	}
+
+	if (!aux_ptr || !aux_ptr->offs) {
 		goto ull_scan_aux_rx_flush;
 	}
 
@@ -146,8 +189,6 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy)
 
 		ull_hdr_init(&aux->ull);
 		lll_hdr_init(lll, aux);
-	} else {
-		LL_ASSERT(0);
 	}
 
 	/* Enqueue the rx in aux context */
@@ -229,6 +270,10 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy)
 	return;
 
 ull_scan_aux_rx_flush:
+	if (IS_ENABLED(CONFIG_BT_CTLR_SCAN_PERIODIC) && sync) {
+		sync->state = LL_SYNC_STATE_IDLE;
+	}
+
 	if (aux) {
 		flush(aux, rx);
 

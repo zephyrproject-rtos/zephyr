@@ -11,6 +11,10 @@ struct ll_scan_set {
 
 	uint8_t is_enabled:1;
 	uint8_t own_addr_type:2;
+
+#if defined(CONFIG_BT_CTLR_SCAN_PERIODIC)
+	struct ll_sync_set *sync;
+#endif
 };
 
 struct ll_scan_aux_set {
