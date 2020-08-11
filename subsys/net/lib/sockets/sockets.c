@@ -1679,8 +1679,7 @@ int z_impl_zsock_getsockname(int sock, struct sockaddr *addr,
 
 	NET_DBG("getsockname: ctx=%p, fd=%d", ctx, sock);
 
-	return z_fdtable_call_ioctl((const struct fd_op_vtable *)vtable, ctx,
-				    ZFD_IOCTL_GETSOCKNAME, addr, addrlen);
+	return vtable->getsockname(ctx, addr, addrlen);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -1771,16 +1770,6 @@ static int sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		return zsock_poll_update_ctx(obj, pfd, pev);
 	}
 
-	case ZFD_IOCTL_GETSOCKNAME: {
-		struct sockaddr *addr;
-		socklen_t *addrlen;
-
-		addr = va_arg(args, struct sockaddr *);
-		addrlen = va_arg(args, socklen_t *);
-
-		return zsock_getsockname_ctx(obj, addr, addrlen);
-	}
-
 	default:
 		errno = EOPNOTSUPP;
 		return -1;
@@ -1848,6 +1837,12 @@ static int sock_close_vmeth(void *obj)
 	return zsock_close_ctx(obj);
 }
 
+static int sock_getsockname_vmeth(void *obj, struct sockaddr *addr,
+				  socklen_t *addrlen)
+{
+	return zsock_getsockname_ctx(obj, addr, addrlen);
+}
+
 const struct socket_op_vtable sock_fd_op_vtable = {
 	.fd_vtable = {
 		.read = sock_read_vmeth,
@@ -1864,4 +1859,5 @@ const struct socket_op_vtable sock_fd_op_vtable = {
 	.recvfrom = sock_recvfrom_vmeth,
 	.getsockopt = sock_getsockopt_vmeth,
 	.setsockopt = sock_setsockopt_vmeth,
+	.getsockname = sock_getsockname_vmeth,
 };

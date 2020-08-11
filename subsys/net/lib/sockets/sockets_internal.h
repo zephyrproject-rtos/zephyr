@@ -48,6 +48,8 @@ struct socket_op_vtable {
 	int (*setsockopt)(void *obj, int level, int optname,
 			  const void *optval, socklen_t optlen);
 	ssize_t (*sendmsg)(void *obj, const struct msghdr *msg, int flags);
+	int (*getsockname)(void *obj, struct sockaddr *addr,
+			   socklen_t *addrlen);
 };
 
 #endif /* _SOCKETS_INTERNAL_H_ */
