@@ -449,7 +449,7 @@ static void cdc_acm_do_cb(struct cdc_acm_dev_data_t *dev_data,
 		break;
 	case USB_DC_RESUME:
 		if (dev_data->usb_status == USB_DC_SUSPEND) {
-			cdc_acm_read_cb(cfg->endpoint[ACM_OUT_EP_IDX].ep_addr,
+			cdc_acm_read_cb(class_data->endpoints[ACM_OUT_EP_IDX].ep_addr,
 					0, dev_data);
 			dev_data->usb_status = USB_DC_CONFIGURED;
 			LOG_INF("Define resumed");
