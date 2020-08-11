@@ -203,6 +203,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 #endif /* !CONFIG_BT_CTLR_PHY */
 
 	radio_tmr_hcto_configure(hcto);
+	radio_tmr_end_capture();
+	radio_rssi_measure();
 
 #if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
 	radio_gpio_lna_setup();
@@ -217,15 +219,6 @@ static int prepare_cb(struct lll_prepare_param *p)
 				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
 #endif /* !CONFIG_BT_CTLR_PHY */
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
-
-#if defined(CONFIG_BT_CTLR_PROFILE_ISR) || \
-	defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
-	radio_tmr_end_capture();
-#endif /* CONFIG_BT_CTLR_PROFILE_ISR */
-
-#if defined(CONFIG_BT_CTLR_CONN_RSSI)
-	radio_rssi_measure();
-#endif /* CONFIG_BT_CTLR_CONN_RSSI */
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
 	(EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
