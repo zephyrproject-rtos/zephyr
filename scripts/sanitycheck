@@ -1074,8 +1074,7 @@ def main():
         return
 
     if options.subset:
-        suite.instances = OrderedDict(sorted(suite.instances.items(),
-                            key=lambda x: x[0][x[0].find("/") + 1:]))
+        suite.instances = OrderedDict(sorted(suite.instances.items()))
 
         subset, sets = options.subset.split("/")
         subset = int(subset)
