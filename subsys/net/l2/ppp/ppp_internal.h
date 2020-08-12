@@ -64,12 +64,15 @@ struct ppp_peer_option_info {
 	uint8_t code;
 	int (*parse)(struct ppp_fsm *fsm, struct net_pkt *pkt,
 		     void *user_data);
+	int (*nack)(struct ppp_fsm *fsm, struct net_pkt *ret_pkt,
+		    void *user_data);
 };
 
-#define PPP_PEER_OPTION(_code, _parse)		\
+#define PPP_PEER_OPTION(_code, _parse, _nack)	\
 	{					\
 		.code = _code,			\
 		.parse = _parse,		\
+		.nack = _nack,			\
 	}
 
 int ppp_config_info_req(struct ppp_fsm *fsm,

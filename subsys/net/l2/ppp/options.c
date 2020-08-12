@@ -101,6 +101,7 @@ struct ppp_parse_option_conf_req_data {
 	size_t num_options_info;
 	void *user_data;
 
+	int nack_count;
 	int rej_count;
 };
 
@@ -147,8 +148,16 @@ static int ppp_parse_option_conf_req_supported(struct net_pkt *pkt,
 		ppp_peer_option_info_get(parse_data->options_info,
 					 parse_data->num_options_info,
 					 code);
+	int ret;
 
-	return option_info->parse(fsm, pkt, parse_data->user_data);
+	ret = option_info->parse(fsm, pkt, parse_data->user_data);
+	if (ret == -EINVAL) {
+		parse_data->nack_count++;
+		ret = option_info->nack(fsm, parse_data->ret_pkt,
+					parse_data->user_data);
+	}
+
+	return ret;
 }
 
 int ppp_config_info_req(struct ppp_fsm *fsm,
@@ -191,6 +200,10 @@ int ppp_config_info_req(struct ppp_fsm *fsm,
 				&parse_data);
 	if (ret < 0) {
 		return -EINVAL;
+	}
+
+	if (parse_data.nack_count) {
+		return PPP_CONFIGURE_NACK;
 	}
 
 	net_pkt_cursor_restore(pkt, &cursor);
