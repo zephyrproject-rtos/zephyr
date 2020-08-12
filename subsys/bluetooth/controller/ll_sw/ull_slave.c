@@ -67,8 +67,6 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	uint16_t interval;
 	uint8_t chan_sel;
 
-	((struct lll_adv *)ftr->param)->conn = NULL;
-
 	adv = ((struct lll_adv *)ftr->param)->hdr.parent;
 	conn = lll->hdr.parent;
 
@@ -87,6 +85,9 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	if ((lll->data_chan_hop < 5) || (lll->data_chan_hop > 16)) {
 		return;
 	}
+
+	((struct lll_adv *)ftr->param)->conn = NULL;
+
 	interval = sys_le16_to_cpu(pdu_adv->connect_ind.interval);
 	lll->interval = interval;
 	lll->latency = sys_le16_to_cpu(pdu_adv->connect_ind.latency);
