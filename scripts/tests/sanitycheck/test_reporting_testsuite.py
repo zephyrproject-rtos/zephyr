@@ -106,7 +106,7 @@ def test_xunit_report(class_testsuite, test_data,
     assert filesize != 0
 
     tree = ET.parse(filename)
-    assert int(tree.findall('testsuite')[0].attrib["skip"]) == int(skips)
+    assert int(tree.findall('testsuite')[0].attrib["skipped"]) == int(skips)
     assert int(tree.findall('testsuite')[0].attrib["failures"]) == int(fails)
     assert int(tree.findall('testsuite')[0].attrib["errors"]) == int(errors)
     assert int(tree.findall('testsuite')[0].attrib["tests"]) == int(passes+fails+skips+errors)
