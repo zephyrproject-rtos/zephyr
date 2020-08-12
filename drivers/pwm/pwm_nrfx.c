@@ -345,7 +345,7 @@ static int pwm_nrfx_pm_control(struct device *dev,
 	static int pwm_##idx##_nrfx_pm_control(struct device *dev,	\
 					       uint32_t ctrl_command,	\
 					       void *context,		\
-					       device_pm_cb cb,		\
+					       device_pm_cb_t cb,		\
 					       void *arg)		\
 	{								\
 		static uint32_t current_state = DEVICE_PM_ACTIVE_STATE;	\

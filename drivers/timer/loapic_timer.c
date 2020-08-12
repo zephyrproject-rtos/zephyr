@@ -638,7 +638,7 @@ static int sys_clock_resume(struct device *dev)
 * the *context may include IN data or/and OUT data
 */
 int z_clock_device_ctrl(struct device *port, uint32_t ctrl_command,
-			  void *context, device_pm_cb cb, void *arg)
+			  void *context, device_pm_cb_t cb, void *arg)
 {
 	int ret = 0;
 

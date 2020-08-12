@@ -395,7 +395,7 @@ int loapic_resume(struct device *port)
 * the *context may include IN data or/and OUT data
 */
 static int loapic_device_ctrl(struct device *port, uint32_t ctrl_command,
-			      void *context, device_pm_cb cb, void *arg)
+			      void *context, device_pm_cb_t cb, void *arg)
 {
 	int ret = 0;
 

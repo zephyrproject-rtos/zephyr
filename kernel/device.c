@@ -119,7 +119,7 @@ size_t z_device_get_all_static(struct device **devices)
 int device_pm_control_nop(struct device *unused_device,
 		       uint32_t unused_ctrl_command,
 		       void *unused_context,
-		       device_pm_cb cb,
+		       device_pm_cb_t cb,
 		       void *unused_arg)
 {
 	return -ENOTSUP;

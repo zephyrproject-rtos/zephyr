@@ -29,7 +29,7 @@ int __weak z_clock_driver_init(struct device *device)
 }
 
 int __weak z_clock_device_ctrl(struct device *device, uint32_t ctrl_command,
-			       void *context, device_pm_cb cb, void *arg)
+			       void *context, device_pm_cb_t cb, void *arg)
 {
 	return -ENOTSUP;
 }

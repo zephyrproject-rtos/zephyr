@@ -212,7 +212,7 @@ static int init_twi(struct device *dev)
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 static int twi_nrfx_pm_control(struct device *dev, uint32_t ctrl_command,
-				void *context, device_pm_cb cb, void *arg)
+				void *context, device_pm_cb_t cb, void *arg)
 {
 	int ret = 0;
 	uint32_t pm_current_state = get_dev_data(dev)->pm_state;

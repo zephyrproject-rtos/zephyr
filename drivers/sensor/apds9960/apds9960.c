@@ -408,7 +408,7 @@ static int apds9960_init_interrupt(struct device *dev)
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 static int apds9960_device_ctrl(struct device *dev, uint32_t ctrl_command,
-				void *context, device_pm_cb cb, void *arg)
+				void *context, device_pm_cb_t cb, void *arg)
 {
 	const struct apds9960_config *config = dev->config_info;
 	struct apds9960_data *data = dev->driver_data;

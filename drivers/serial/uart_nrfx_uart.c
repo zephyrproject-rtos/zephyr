@@ -1127,7 +1127,7 @@ static void uart_nrfx_set_power_state(struct device *dev, uint32_t new_state)
 }
 
 static int uart_nrfx_pm_control(struct device *dev, uint32_t ctrl_command,
-				void *context, device_pm_cb cb, void *arg)
+				void *context, device_pm_cb_t cb, void *arg)
 {
 	static uint32_t current_state = DEVICE_PM_ACTIVE_STATE;
 

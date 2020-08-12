@@ -193,7 +193,7 @@ static int arc_v2_irq_unit_get_state(struct device *dev)
  * @return operation result
  */
 static int arc_v2_irq_unit_device_ctrl(struct device *device,
-		uint32_t ctrl_command, void *context, device_pm_cb cb, void *arg)
+		uint32_t ctrl_command, void *context, device_pm_cb_t cb, void *arg)
 {
 	int ret = 0;
 	unsigned int key = arch_irq_lock();

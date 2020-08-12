@@ -585,7 +585,7 @@ static int spi_flash_at45_init(struct device *dev)
 
 #if IS_ENABLED(CONFIG_DEVICE_POWER_MANAGEMENT)
 static int spi_flash_at45_pm_control(struct device *dev, uint32_t ctrl_command,
-				     void *context, device_pm_cb cb, void *arg)
+				     void *context, device_pm_cb_t cb, void *arg)
 {
 	struct spi_flash_at45_data *dev_data = get_dev_data(dev);
 	const struct spi_flash_at45_config *dev_config = get_dev_config(dev);

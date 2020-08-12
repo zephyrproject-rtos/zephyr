@@ -45,7 +45,7 @@ static int dummy_resume_from_suspend(struct device *dev)
 }
 
 static int dummy_parent_pm_ctrl(struct device *dev, uint32_t ctrl_command,
-				void *context, device_pm_cb cb, void *arg)
+				void *context, device_pm_cb_t cb, void *arg)
 {
 	int ret = 0;
 

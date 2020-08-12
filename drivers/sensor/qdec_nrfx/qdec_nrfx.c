@@ -269,7 +269,7 @@ static int qdec_nrfx_pm_set_state(struct qdec_nrfx_data *data,
 }
 
 static int qdec_nrfx_pm_control(struct device *dev, uint32_t ctrl_command,
-				void *context, device_pm_cb cb, void *arg)
+				void *context, device_pm_cb_t cb, void *arg)
 {
 	struct qdec_nrfx_data *data = &qdec_nrfx_data;
 	int err;
