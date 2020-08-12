@@ -9,7 +9,7 @@
 static void i2c_config_@NUM@(struct device *port);
 
 static const struct i2c_dw_rom_config i2c_config_dw_@NUM@ = {
-	DEVICE_MMIO_ROM_INIT(@NUM@),
+	DEVICE_MMIO_ROM_INIT(DT_DRV_INST(@NUM@)),
 	.config_func = i2c_config_@NUM@,
 	.bitrate = DT_INST_PROP(@NUM@, clock_frequency),
 

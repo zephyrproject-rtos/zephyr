@@ -12,7 +12,7 @@
 
 #include <dt-bindings/interrupt-controller/intel-ioapic.h>
 
-DEVICE_MMIO_TOPLEVEL_STATIC(hpet_regs, 0);
+DEVICE_MMIO_TOPLEVEL_STATIC(hpet_regs, DT_DRV_INST(0));
 
 #define HPET_REG32(off) (*(volatile uint32_t *)(long)			\
 			 (DEVICE_MMIO_TOPLEVEL_GET(hpet_regs) + (off)))

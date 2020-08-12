@@ -17,7 +17,7 @@ static const struct uart_ns16550_device_config uart_ns16550_dev_cfg_@NUM@ = {
 #ifdef UART_NS16550_ACCESS_IOPORT
 	.port = DT_INST_REG_ADDR(@NUM@),
 #elif !DT_INST_PROP(@NUM@, pcie)
-	DEVICE_MMIO_ROM_INIT(@NUM@),
+	DEVICE_MMIO_ROM_INIT(DT_DRV_INST(@NUM@)),
 #endif
 	.sys_clk_freq = DT_INST_PROP(@NUM@, clock_frequency),
 

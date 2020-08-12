@@ -557,7 +557,7 @@ static const struct gpio_intel_apl_config				\
 	.common = {							\
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),	\
 	},								\
-	DEVICE_MMIO_NAMED_ROM_INIT(reg_base, n),			\
+	DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),			\
 	.pin_offset = DT_INST_PROP(n, pin_offset),			\
 	.num_pins = DT_INST_PROP(n, ngpios),				\
 };									\

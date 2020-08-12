@@ -327,7 +327,7 @@ Then when the particular instance is declared:
   }
 
   const static struct my_driver_config my_driver_config_0 = {
-        DEVICE_MMIO_ROM_INIT(0),
+        DEVICE_MMIO_ROM_INIT(DT_DRV_INST(0)),
         .config_func = my_driver_config_irq_0
   }
 
@@ -467,7 +467,7 @@ is made within the init function:
    }
 
    const static struct my_driver_config my_driver_config_0 = {
-      DEVICE_MMIO_ROM_INIT(DT_INST(...)),
+      DEVICE_MMIO_ROM_INIT(DT_DRV_INST(...)),
       ...
    }
 
@@ -527,8 +527,8 @@ For example:
 
    const static struct my_driver_config my_driver_config_0 = {
       ...
-      DEVICE_MMIO_NAMED_ROM_INIT(courge, DT_INST(...)),
-      DEVICE_MMIO_NAMED_ROM_INIT(grault, DT_INST(...)),
+      DEVICE_MMIO_NAMED_ROM_INIT(courge, DT_DRV_INST(...)),
+      DEVICE_MMIO_NAMED_ROM_INIT(grault, DT_DRV_INST(...)),
       ...
    }
 
@@ -561,7 +561,7 @@ for example:
 
 .. code-block:: C
 
-   DEVICE_MMIO_TOPLEVEL_STATIC(my_regs, DT_INST(..));
+   DEVICE_MMIO_TOPLEVEL_STATIC(my_regs, DT_DRV_INST(..));
 
    void some_init_code(...)
    {
