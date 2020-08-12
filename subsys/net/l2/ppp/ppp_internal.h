@@ -35,9 +35,6 @@ struct ppp_packet {
 /** Max Configure-Request transmissions */
 #define MAX_CONFIGURE_REQ CONFIG_NET_L2_PPP_MAX_CONFIGURE_REQ_RETRANSMITS
 
-/** Max number of LCP options */
-#define MAX_LCP_OPTIONS CONFIG_NET_L2_PPP_MAX_OPTIONS
-
 /** Max number of IPCP options */
 #define MAX_IPCP_OPTIONS 4
 
