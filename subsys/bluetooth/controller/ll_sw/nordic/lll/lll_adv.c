@@ -128,7 +128,7 @@ bool lll_adv_scan_req_check(struct lll_adv *lll, struct pdu_adv *sr,
 
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
 int lll_adv_scan_req_report(struct lll_adv *lll, struct pdu_adv *pdu_adv_rx,
-			    uint8_t rssi_ready)
+			    uint8_t rl_idx, uint8_t rssi_ready)
 {
 	struct node_rx_pdu *node_rx;
 	struct pdu_adv *pdu_adv;
@@ -153,6 +153,9 @@ int lll_adv_scan_req_report(struct lll_adv *lll, struct pdu_adv *pdu_adv_rx,
 
 	node_rx->hdr.rx_ftr.rssi = (rssi_ready) ? (radio_rssi_get() & 0x7f) :
 						  0x7f;
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	node_rx->hdr.rx_ftr.rl_idx = rl_idx;
+#endif
 
 	ull_rx_put(node_rx->hdr.link, node_rx);
 	ull_rx_sched();
@@ -716,7 +719,8 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 			uint32_t err;
 
 			/* Generate the scan request event */
-			err = lll_adv_scan_req_report(lll, pdu_rx, rssi_ready);
+			err = lll_adv_scan_req_report(lll, pdu_rx, rl_idx,
+						      rssi_ready);
 			if (err) {
 				/* Scan Response will not be transmitted */
 				return err;
