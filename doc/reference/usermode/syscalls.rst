@@ -210,7 +210,7 @@ kind of checking with assertions. When writing the implementation function,
 validation of any parameters is optional and should be done with assertions.
 
 All implementation functions must follow the naming convention, which is the
-name of the API prefixed with ``_impl_``. Implementation functions may be
+name of the API prefixed with ``z_impl_``. Implementation functions may be
 declared in the same header as the API as a static inline function or
 declared in some C file. There is no prototype needed for implementation
 functions, these are automatically generated.
@@ -446,7 +446,7 @@ In some cases the amount of data isn't known at compile time or may be too
 large to allocate on the stack. In this scenario, it may be necessary to draw
 memory from the caller's resource pool via :c:func:`z_thread_malloc()`. This
 should always be a method of last resort. Functional safety programming
-guidelines heavily discourge the use of heaps, the fact that a resource pool is
+guidelines heavily discourage the use of heaps, the fact that a resource pool is
 used must be clearly documented, and any issue with allocations must be
 propaged to the caller with a ``-ENOMEM`` return value, never a ``Z_OOPS()``.
 
@@ -528,7 +528,7 @@ Verification Return Value Policies
 When verifying system calls, it's important to note which kinds of verification
 failures should propagate a return value to the caller, and which should
 simply invoke :c:macro:`Z_OOPS()` which kills the calling thread. The current
-coventions are as follows:
+conventions are as follows:
 
 #. For system calls that are defined but not compiled, invocations of these
    missing system calls are routed to :c:func:`handler_no_syscall()` which
