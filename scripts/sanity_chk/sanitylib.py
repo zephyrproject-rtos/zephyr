@@ -3109,21 +3109,21 @@ class TestSuite(DisablePyTestCollectionMixin):
                     eleTestsuite = ts[0]
                     eleTestsuite.attrib['failures'] = "%d" % fails
                     eleTestsuite.attrib['errors'] = "%d" % errors
-                    eleTestsuite.attrib['skip'] = "%d" % skips
+                    eleTestsuite.attrib['skipped'] = "%d" % skips
                 else:
                     logger.info(f"Did not find any existing results for {p}")
                     eleTestsuite = ET.SubElement(eleTestsuites, 'testsuite',
                                 name=run, time="%f" % duration,
                                 tests="%d" % (total),
                                 failures="%d" % fails,
-                                errors="%d" % (errors), skip="%s" % (skips))
+                                errors="%d" % (errors), skipped="%s" % (skips))
 
             else:
                 eleTestsuite = ET.SubElement(eleTestsuites, 'testsuite',
                                              name=run, time="%f" % duration,
                                              tests="%d" % (total),
                                              failures="%d" % fails,
-                                             errors="%d" % (errors), skip="%s" % (skips))
+                                             errors="%d" % (errors), skipped="%s" % (skips))
 
             for _, instance in inst.items():
                 if full_report:
