@@ -28,7 +28,7 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/rfcomm.h>
 #include <bluetooth/sdp.h>
-#include <bluetooth/hci.h>
+#include <bluetooth/iso.h>
 
 #include <shell/shell.h>
 
@@ -70,10 +70,8 @@ static struct bt_le_oob oob_remote;
 #define HCI_CMD_MAX_PARAM 65
 
 #if defined(CONFIG_BT_EXT_ADV)
-#if defined(CONFIG_BT_BROADCASTER)
-static uint8_t selected_adv;
+uint8_t selected_adv;
 struct bt_le_ext_adv *adv_sets[CONFIG_BT_EXT_ADV_MAX_ADV_SET];
-#endif /* CONFIG_BT_BROADCASTER */
 #endif /* CONFIG_BT_EXT_ADV */
 
 #if defined(CONFIG_BT_OBSERVER) || defined(CONFIG_BT_USER_PHY_UPDATE)
@@ -464,7 +462,7 @@ static struct bt_le_ext_adv_cb adv_callbacks = {
 
 
 #if defined(CONFIG_BT_PER_ADV_SYNC)
-static struct bt_le_per_adv_sync *per_adv_syncs[CONFIG_BT_PER_ADV_SYNC_MAX];
+struct bt_le_per_adv_sync *per_adv_syncs[CONFIG_BT_PER_ADV_SYNC_MAX];
 
 static void per_adv_sync_sync_cb(struct bt_le_per_adv_sync *sync,
 				 struct bt_le_per_adv_sync_synced_info *info)
@@ -528,10 +526,29 @@ static void per_adv_sync_recv_cb(
 		    info->rssi, info->cte_type, buf->len);
 }
 
+static void per_adv_sync_biginfo_cb(struct bt_le_per_adv_sync *sync,
+				    const struct bt_iso_biginfo *biginfo)
+{
+	char le_addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(biginfo->addr, le_addr, sizeof(le_addr));
+	shell_print(ctx_shell, "PER_ADV_SYNC[%u]: [DEVICE]: %s, sid 0x%02x, num_bis %u, "
+		    "nse 0x%02x, interval 0x%04x (%u ms), bn 0x%02x, pto 0x%02x, irc 0x%02x, "
+		    "max_pdu 0x%04x, sdu_interval 0x%04x, max_sdu 0x%04x, phy %s, framing 0x%02x, "
+		    "%sencrypted",
+		    bt_le_per_adv_sync_get_index(sync), le_addr, biginfo->sid, biginfo->num_bis,
+		    biginfo->sub_evt_count, biginfo->iso_interval,
+		    BT_INTERVAL_TO_MS(biginfo->iso_interval), biginfo->burst_number,
+		    biginfo->offset, biginfo->rep_count, biginfo->max_pdu, biginfo->sdu_interval,
+		    biginfo->max_sdu, phy2str(biginfo->phy), biginfo->framing,
+		    biginfo->encryption ? "" : "not ");
+}
+
 static struct bt_le_per_adv_sync_cb per_adv_sync_cb = {
 	.synced = per_adv_sync_sync_cb,
 	.term = per_adv_sync_terminated_cb,
-	.recv = per_adv_sync_recv_cb
+	.recv = per_adv_sync_recv_cb,
+	.biginfo = per_adv_sync_biginfo_cb,
 };
 #endif /* CONFIG_BT_PER_ADV_SYNC */
 
