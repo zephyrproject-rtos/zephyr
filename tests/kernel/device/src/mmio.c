@@ -25,7 +25,7 @@ struct foo_single_config_info {
 };
 
 const struct foo_single_config_info foo0_config = {
-	DEVICE_MMIO_ROM_INIT(0),
+	DEVICE_MMIO_ROM_INIT(DT_DRV_INST(0)),
 };
 
 int foo_single_init(struct device *device)
@@ -114,8 +114,8 @@ struct foo_mult_config_info {
 };
 
 const struct foo_mult_config_info foo12_config = {
-	DEVICE_MMIO_NAMED_ROM_INIT(courge, 1),
-	DEVICE_MMIO_NAMED_ROM_INIT(grault, 2)
+	DEVICE_MMIO_NAMED_ROM_INIT(courge, DT_DRV_INST(1)),
+	DEVICE_MMIO_NAMED_ROM_INIT(grault, DT_DRV_INST(2))
 };
 
 #define DEV_DATA(dev)	((struct foo_mult_dev_data *)((dev)->data))
@@ -194,8 +194,8 @@ void test_mmio_multiple(void)
 /*
  * Not using driver model, toplevel definition
  */
-DEVICE_MMIO_TOPLEVEL(foo3, 3);
-DEVICE_MMIO_TOPLEVEL_STATIC(foo4, 4);
+DEVICE_MMIO_TOPLEVEL(foo3, DT_DRV_INST(3));
+DEVICE_MMIO_TOPLEVEL_STATIC(foo4, DT_DRV_INST(4));
 
 /**
  * @brief Test DEVICE_MMIO_TOPLEVEL_* macros

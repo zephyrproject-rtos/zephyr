@@ -64,7 +64,7 @@
 #include <drivers/interrupt_controller/loapic.h> /* public API declarations and registers */
 #include "intc_ioapic_priv.h"
 
-DEVICE_MMIO_TOPLEVEL_STATIC(ioapic_regs, 0);
+DEVICE_MMIO_TOPLEVEL_STATIC(ioapic_regs, DT_DRV_INST(0));
 
 #define IOAPIC_REG DEVICE_MMIO_TOPLEVEL_GET(ioapic_regs)
 #define BITS_PER_IRQ  4

@@ -55,10 +55,10 @@ struct z_device_mmio_rom {
 	size_t size;
 };
 
-#define Z_DEVICE_MMIO_ROM_INITIALIZER(instance) \
+#define Z_DEVICE_MMIO_ROM_INITIALIZER(node_id) \
 	{ \
-		.phys_addr = DT_INST_REG_ADDR(instance), \
-		.size = DT_INST_REG_SIZE(instance) \
+		.phys_addr = DT_REG_ADDR(node_id), \
+		.size = DT_REG_SIZE(node_id) \
 	}
 
 /**
@@ -106,9 +106,9 @@ struct z_device_mmio_rom {
 	mm_reg_t addr;
 };
 
-#define Z_DEVICE_MMIO_ROM_INITIALIZER(instance) \
+#define Z_DEVICE_MMIO_ROM_INITIALIZER(node_id) \
 	{ \
-		.addr = DT_INST_REG_ADDR(instance) \
+		.addr = DT_REG_ADDR(node_id) \
 	}
 #endif /* DEVICE_MMIO_IS_IN_RAM */
 #endif /* !_ASMLANGUAGE */
@@ -167,7 +167,7 @@ struct z_device_mmio_rom {
  * This is useful for the target MMIO address location when using
  * device_map() directly.
  *
- * @param device device instance object
+ * @param device device node_id object
  * @retval mm_reg_t  pointer to storage location
  */
 #define DEVICE_MMIO_RAM_PTR(device)	(mm_reg_t *)((device)->data)
@@ -218,27 +218,27 @@ struct z_device_mmio_rom {
 	((struct z_device_mmio_rom *)((device)->config))
 
 /**
- * @def DEVICE_MMIO_ROM_INIT(instance)
+ * @def DEVICE_MMIO_ROM_INIT(node_id)
  *
  * @brief Initialize a DEVICE_MMIO_ROM member
  *
  * Initialize MMIO-related information within a specific instance of
  * a device config struct, using information from DTS.
  *
- * Example for an instance of a driver belonging to the "foo" subsystem:
+ * Example for a driver belonging to the "foo" subsystem:
  *
  * struct foo_config my_config = {
- *	DEVICE_MMIO_ROM_INIT(instance),
+ *	DEVICE_MMIO_ROM_INIT(DT_DRV_INST(...)),
  *	.baz = 2;
  *	...
  * }
  *
  * @see DEVICE_MMIO_ROM()
  *
- * @param instance DTS instance
+ * @param node_id DTS node_id
  */
-#define DEVICE_MMIO_ROM_INIT(instance) \
-	._mmio = Z_DEVICE_MMIO_ROM_INITIALIZER(instance)
+#define DEVICE_MMIO_ROM_INIT(node_id) \
+	._mmio = Z_DEVICE_MMIO_ROM_INITIALIZER(node_id)
 
 /**
  * @def DEVICE_MMIO_MAP(device, flags)
@@ -407,7 +407,7 @@ struct z_device_mmio_rom {
 #define DEVICE_MMIO_NAMED_ROM_PTR(device, name) (&(DEV_CFG(device)->name))
 
 /**
- * @def DEVICE_MMIO_NAMED_ROM_INIT(name, instance)
+ * @def DEVICE_MMIO_NAMED_ROM_INIT(name, node_id)
  *
  * @brief Initialize a named DEVICE_MMIO_NAMED_ROM member
  *
@@ -419,8 +419,8 @@ struct z_device_mmio_rom {
  *
  * struct foo_config my_config = {
  *	bar = 7;
- *	DEVICE_MMIO_NAMED_ROM_INIT(courge, instance);
- *	DEVICE_MMIO_NAMED_ROM_INIT(grault, instance);
+ *	DEVICE_MMIO_NAMED_ROM_INIT(courge, DT_DRV_INST(...));
+ *	DEVICE_MMIO_NAMED_ROM_INIT(grault, DT_DRV_INST(...));
  *	baz = 2;
  *	...
  * }
@@ -428,10 +428,10 @@ struct z_device_mmio_rom {
  * @see DEVICE_MMIO_NAMED_ROM()
  *
  * @param name Member name within config for the MMIO region
- * @param instance DTS instance
+ * @param node_id DTS node identifier
  */
-#define DEVICE_MMIO_NAMED_ROM_INIT(name, instance) \
-	.name = Z_DEVICE_MMIO_ROM_INITIALIZER(instance)
+#define DEVICE_MMIO_NAMED_ROM_INIT(name, node_id) \
+	.name = Z_DEVICE_MMIO_ROM_INITIALIZER(node_id)
 
 /**
  * @def DEVICE_MMIO_NAMED_MAP(device, name, flags)
@@ -523,7 +523,7 @@ struct z_device_mmio_rom {
  #define Z_TOPLEVEL_RAM_NAME(name) _CONCAT(z_mmio_ram__, name)
 
 /**
- * @def DEVICE_MMIO_TOPLEVEL(name, instance)
+ * @def DEVICE_MMIO_TOPLEVEL(name, node_id)
  *
  * @brief Declare top-level storage for MMIO information, global scope
  *
@@ -535,17 +535,17 @@ struct z_device_mmio_rom {
  * other C files, using DEVICE_MMIO_TOPLEVEL_DECLARE.
  *
  * @param name Base symbol name
- * @param instance Device-tree instance for this region
+ * @param node_id Device-tree node identifier for this region
  */
 #ifdef DEVICE_MMIO_IS_IN_RAM
-#define DEVICE_MMIO_TOPLEVEL(name, instance) \
+#define DEVICE_MMIO_TOPLEVEL(name, node_id) \
 	mm_reg_t Z_TOPLEVEL_RAM_NAME(name); \
 	const struct z_device_mmio_rom Z_TOPLEVEL_ROM_NAME(name) = \
-		Z_DEVICE_MMIO_ROM_INITIALIZER(instance)
+		Z_DEVICE_MMIO_ROM_INITIALIZER(node_id)
 #else
-#define DEVICE_MMIO_TOPLEVEL(name, instance) \
+#define DEVICE_MMIO_TOPLEVEL(name, node_id) \
 	const struct z_device_mmio_rom Z_TOPLEVEL_ROM_NAME(name) = \
-		Z_DEVICE_MMIO_ROM_INITIALIZER(instance)
+		Z_DEVICE_MMIO_ROM_INITIALIZER(node_id)
 #endif /* DEVICE_MMIO_IS_IN_RAM */
 
 /**
@@ -572,7 +572,7 @@ struct z_device_mmio_rom {
 #endif /* DEVICE_MMIO_IS_IN_RAM */
 
 /**
- * @def  DEVICE_MMIO_TOPLEVEL_STATIC(name, instance)
+ * @def  DEVICE_MMIO_TOPLEVEL_STATIC(name, node_id)
  *
  * @brief Declare top-level storage for MMIO information, static scope
  *
@@ -583,17 +583,17 @@ struct z_device_mmio_rom {
  * The scope of this declaration is static.
  *
  * @param name Name of the top-level MMIO region
- * @param instance Device-tree instance for this region
+ * @param node_id Device-tree node identifier for this region
  */
 #ifdef DEVICE_MMIO_IS_IN_RAM
-#define DEVICE_MMIO_TOPLEVEL_STATIC(name, instance) \
+#define DEVICE_MMIO_TOPLEVEL_STATIC(name, node_id) \
 	static mm_reg_t Z_TOPLEVEL_RAM_NAME(name); \
 	static const struct z_device_mmio_rom Z_TOPLEVEL_ROM_NAME(name) = \
-		Z_DEVICE_MMIO_ROM_INITIALIZER(instance)
+		Z_DEVICE_MMIO_ROM_INITIALIZER(node_id)
 #else
-#define DEVICE_MMIO_TOPLEVEL_STATIC(name, instance) \
+#define DEVICE_MMIO_TOPLEVEL_STATIC(name, node_id) \
 	static const struct z_device_mmio_rom Z_TOPLEVEL_ROM_NAME(name) = \
-		Z_DEVICE_MMIO_ROM_INITIALIZER(instance)
+		Z_DEVICE_MMIO_ROM_INITIALIZER(node_id)
 #endif /* DEVICE_MMIO_IS_IN_RAM */
 
 #ifdef DEVICE_MMIO_IS_IN_RAM
