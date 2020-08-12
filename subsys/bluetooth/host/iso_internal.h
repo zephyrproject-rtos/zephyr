@@ -26,6 +26,19 @@ struct iso_data {
 	uint32_t ts;
 };
 
+struct bt_iso_big {
+	/** Array of ISO channels to setup as BIS (the BIG). */
+	struct bt_iso_chan **bis;
+
+	/** Total number of BISes in the BIG. */
+	uint8_t  num_bis;
+
+	/** The BIG handle */
+	uint8_t handle;
+
+	atomic_t initialized;
+};
+
 #define iso(buf) ((struct iso_data *)net_buf_user_data(buf))
 
 #if defined(CONFIG_BT_ISO_MAX_CHAN)
@@ -46,6 +59,18 @@ void hci_le_cis_estabilished(struct net_buf *buf);
 
 /* Process CIS Request event */
 void hci_le_cis_req(struct net_buf *buf);
+
+/** Process BIG complete event */
+void hci_le_big_complete(struct net_buf *buf);
+
+/** Process BIG terminate event */
+void hci_le_big_termimate(struct net_buf *buf);
+
+/** Process BIG sync established event */
+void hci_le_big_sync_established(struct net_buf *buf);
+
+/** Process BIG sync lost event */
+void hci_le_big_sync_lost(struct net_buf *buf);
 
 /* Notify ISO channels of a new connection */
 int bt_iso_accept(struct bt_conn *conn);

@@ -54,6 +54,9 @@ struct bt_le_per_adv_sync;
 /* Don't require everyone to include conn.h */
 struct bt_conn;
 
+/* Don't require everyone to include iso.h */
+struct bt_iso_biginfo;
+
 struct bt_le_ext_adv_sent_info {
 	/** The number of advertising events completed. */
 	uint8_t num_sent;
@@ -1191,6 +1194,17 @@ struct bt_le_per_adv_sync_cb {
 	void (*state_changed)(struct bt_le_per_adv_sync *sync,
 			      const struct bt_le_per_adv_sync_state_info *info);
 
+	/**
+	 * @brief BIGInfo advertising report received.
+	 *
+	 * This callback notifies the application of a BIGInfo advertising report.
+	 * This is received if the advertiser is broadcasting isochronous streams in a BIG.
+	 * See iso.h for more information.
+	 *
+	 * @param sync     The advertising set object.
+	 * @param biginfo  The BIGInfo report.
+	 */
+	void (*biginfo)(struct bt_le_per_adv_sync *sync, const struct bt_iso_biginfo *biginfo);
 
 	sys_snode_t node;
 };

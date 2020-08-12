@@ -79,24 +79,25 @@ struct bt_iso_chan_qos {
 	/** @brief Channel direction
 	 *
 	 *  Possible values: BT_ISO_CHAN_QOS_IN, BT_ISO_CHAN_QOS_OUT or
-	 *  BT_ISO_CHAN_QOS_INOUT.
+	 *  BT_ISO_CHAN_QOS_INOUT. Shall be BT_ISO_CHAN_QOS_IN for broadcast
+	 *  transmitting, and BT_ISO_CHAN_QOS_OUT for broadcast receiver.
 	 */
 	uint8_t				dir;
-	/** Channel interval */
+	/** Channel interval in us. Value range 0x0000FF - 0x0FFFFFF. */
 	uint32_t			interval;
-	/** Channel SCA */
+	/** Channel SCA - Only for CIS */
 	uint8_t				sca;
-	/** Channel packing mode */
+	/** Channel packing mode. 0 for unpacked, 1 for packed. */
 	uint8_t				packing;
-	/** Channel framing mode */
+	/** Channel framing mode. 0 for unframed, 1 for framed. */
 	uint8_t				framing;
-	/** Channel Latency */
+	/** Channel Latency in ms. Value range 0x0005 - 0x0FA0. */
 	uint16_t			latency;
-	/** Channel SDU */
+	/** Channel SDU. Value range 0x0000 0 0x0FFF. */
 	uint8_t				sdu;
-	/** Channel PHY */
+	/** Channel PHY - See BT_GAP_LE_PHY for values. Shall not be BT_GAP_LE_PHY_NONE. */
 	uint8_t				phy;
-	/** Channel Retransmission Number */
+	/** Channel Retransmission Number. Value range 0x00 - 0x0F. */
 	uint8_t				rtn;
 };
 
@@ -116,6 +117,103 @@ struct bt_iso_chan_path {
 	uint8_t				cc_len;
 	/** Codec Configuration */
 	uint8_t				cc[0];
+};
+
+
+/** Opaque type representing an Broadcast Isochronous Group (BIG). */
+struct bt_iso_big;
+
+struct bt_iso_big_create_param {
+	/** Array of pointers to BIS channels */
+	struct bt_iso_chan **bis_channels;
+
+	/** Number channels in @p bis_channels */
+	uint8_t num_bis;
+
+	/** Whether or not to encrypt the streams. */
+	bool  encryption;
+
+	/** @brief Broadcast code
+	 *
+	 *  The code used to derive the session key that is used to encrypt and
+	 *  decrypt BIS payloads.
+	 */
+	uint8_t  bcode[16];
+};
+
+struct bt_iso_big_sync_param {
+	/** Array of pointers to BIS channels */
+	struct bt_iso_chan **bis_channels;
+
+	/** Number channels in @p bis_channels */
+	uint8_t num_bis;
+
+	/** Bitfield of the BISes to sync to */
+	uint32_t bis_bitfield;
+
+	/** @brief Maximum subevents
+	 *
+	 *  The MSE (Maximum Subevents) parameter is the maximum number of subevents that a
+	 *  Controller should use to receive data payloads in each interval for a BIS
+	 */
+	uint32_t mse;
+
+	/** Synchronization timeout for the BIG (N * 10 MS) */
+	uint16_t sync_timeout;
+
+	/** Whether or not the streams of the BIG are encrypted */
+	bool  encryption;
+
+	/** @brief Broadcast code
+	 *
+	 *  The code used to derive the session key that is used to encrypt and
+	 *  decrypt BIS payloads.
+	 */
+	uint8_t  bcode[16];
+};
+
+struct bt_iso_biginfo {
+	/** Address of the advertiser */
+	const bt_addr_le_t *addr;
+
+	/** Advertiser SID */
+	uint8_t sid;
+
+	/** Number of BISes in the BIG */
+	uint8_t  num_bis;
+
+	/** Maximum number of subevents in each isochronous event */
+	uint8_t  sub_evt_count;
+
+	/** Interval between two BIG anchor point (N * 1.25 ms) */
+	uint16_t iso_interval;
+
+	/** The number of new payloads in each BIS event */
+	uint8_t  burst_number;
+
+	/** Offset used for pre-transmissions */
+	uint8_t  offset;
+
+	/** The number of times a payload is transmitted in a BIS event */
+	uint8_t  rep_count;
+
+	/** Maximum size, in octets, of the payload */
+	uint16_t max_pdu;
+
+	/** The interval, in microseconds, of periodic SDUs. */
+	uint32_t sdu_interval;
+
+	/** Maximum size of an SDU, in octets. */
+	uint16_t max_sdu;
+
+	/** Channel PHY */
+	uint8_t  phy;
+
+	/** Channel framing mode */
+	uint8_t  framing;
+
+	/** Whether or not the BIG is encrypted */
+	bool  encryption;
 };
 
 /** @brief ISO Channel operations structure. */
@@ -244,6 +342,38 @@ int bt_iso_chan_disconnect(struct bt_iso_chan *chan);
  *  @return Bytes sent in case of success or negative value in case of error.
  */
 int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf);
+
+/** @brief Creates a BIG as a broadcaster
+ *
+ *  @param[in] padv      Pointer to the periodic advertising object the BIGInfo shall be sent on.
+ *  @param[in] param     The parameters used to create and enable the BIG. The QOS parameters are
+ *                       determined by the QOS field of the first BIS in the BIS list of this
+ *                       parameter.
+ *  @param[out] out_big  Broadcast Isochronous Group object on success.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_iso_big_create(struct bt_le_ext_adv *padv, struct bt_iso_big_create_param *param,
+		      struct bt_iso_big **out_big);
+
+/** @brief Terminates a BIG as a broadcaster or receiver
+ *
+ *  @param big    Pointer to the BIG structure.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_iso_big_terminate(struct bt_iso_big *big);
+
+/** @brief Creates a BIG as a receiver
+ *
+ *  @param[in] sync     Pointer to the periodic advertising sync object the BIGInfo was received on.
+ *  @param[in] param    The parameters used to create and enable the BIG sync.
+ *  @param[out] out_big Broadcast Isochronous Group object on success.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_param *param,
+		    struct bt_iso_big **out_big);
 
 #ifdef __cplusplus
 }
