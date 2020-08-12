@@ -15,7 +15,7 @@
 #include <stddef.h>
 #include <drivers/clock_control.h>
 #ifdef CONFIG_SOC_SERIES_STM32F1X
-#include <dt-bindings/pinctrl/stm32-pinctrlf1.h>
+#include <dt-bindings/pinctrl/stm32f1-pinctrl.h>
 #else
 #include <dt-bindings/pinctrl/stm32-pinctrl.h>
 #endif /* CONFIG_SOC_SERIES_STM32F1X */
