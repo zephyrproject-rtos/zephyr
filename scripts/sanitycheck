@@ -978,6 +978,7 @@ def main():
         suite.selected_platforms = set(p.platform.name for p in suite.instances.values())
     elif options.test_only:
         suite.load_from_file(last_run, filter_status=['skipped'])
+        suite.selected_platforms = set(p.platform.name for p in suite.instances.values())
     else:
         discards = suite.apply_filters(
             build_only=options.build_only,
