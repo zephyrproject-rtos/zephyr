@@ -101,8 +101,8 @@ static int mimxrt1060_evk_init(const struct device *dev)
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
-#if !DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay)
-	/* LED */
+#if !CONFIG_NET_L2_ETHERNET
+	/* Shared GPIO between USER_LED and ENET_RST */
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_09_GPIO1_IO09, 0);
 
 	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B0_09_GPIO1_IO09,
@@ -180,7 +180,9 @@ static int mimxrt1060_evk_init(const struct device *dev)
 	IOMUXC_SetPinMux(IOMUXC_GPIO_EMC_40_ENET_MDC, 0);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_EMC_41_ENET_MDIO, 0);
 
+	/* Shared GPIO between USER_LED and ENET_RST */
 	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B0_09_GPIO1_IO09, 0xB0A9u);
+
 	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B0_10_GPIO1_IO10, 0xB0A9u);
 	IOMUXC_SetPinConfig(IOMUXC_GPIO_B1_04_ENET_RX_DATA00, 0xB0E9);
 	IOMUXC_SetPinConfig(IOMUXC_GPIO_B1_05_ENET_RX_DATA01, 0xB0E9);
