@@ -9,6 +9,35 @@
 
 #include <dt-bindings/pinctrl/stm32-pinctrl-common.h>
 
+/* Adapted from Linux: include/dt-bindings/pinctrl/stm32-pinfunc.h */
+
+/**
+ * @brief Macro to generate pinmux int using port, pin number and mode arguments
+ * This is adapted from Linux equivalent st,stm32f429-pinctrl binding
+ */
+
+#define PIN_NO(port, line)	(((port) - 'A') * 0x10 + (line))
+#define STM32F1_PINMUX(port, line, mode, remap) \
+			(((PIN_NO(port, line)) << 8) | (mode << 6) | (remap))
+
+/**
+ * @brief Pin modes
+ */
+
+#define ALTERNATE	0x0  /* Alternate function output */
+#define GPIO_IN		0x1  /* Input */
+#define ANALOG		0x2  /* Analog */
+
+/**
+ * @brief Pin remapping configurations
+ */
+
+#define NO_REMAP	0x0  /* No remapping */
+#define REMAP_1		0x1  /* Partial remapping 1 */
+#define REMAP_2		0x2  /* Partial remapping 2 */
+#define REMAP_3		0x3  /* Partial remapping 3 */
+#define REMAP_FULL	0x4  /* Full remapping */
+
 /**
  * @brief PIN configuration bitfield
  *
