@@ -28,6 +28,7 @@ void spin_for_ms(int ticks);
 
 void test_priority_cooperative(void);
 void test_priority_preemptible(void);
+void test_priority_preemptible_wait_prio(void);
 void test_bad_priorities(void);
 void test_yield_cooperative(void);
 void test_sleep_cooperative(void);
