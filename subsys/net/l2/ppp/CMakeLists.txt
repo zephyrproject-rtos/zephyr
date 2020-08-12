@@ -12,7 +12,6 @@ zephyr_library_sources_ifdef(CONFIG_NET_L2_PPP
 			     ppp_l2.c
 			     fsm.c
 			     lcp.c
-			     auth.c
 			     options.c
 			     link.c
 			     network.c
