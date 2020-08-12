@@ -35,12 +35,6 @@ struct ppp_packet {
 /** Max Configure-Request transmissions */
 #define MAX_CONFIGURE_REQ CONFIG_NET_L2_PPP_MAX_CONFIGURE_REQ_RETRANSMITS
 
-/** Max number of IPCP options */
-#define MAX_IPCP_OPTIONS 4
-
-/** Max number of IPV6CP options */
-#define MAX_IPV6CP_OPTIONS 1
-
 #define PPP_BUF_ALLOC_TIMEOUT	K_MSEC(100)
 
 /** Protocol handler information. */
