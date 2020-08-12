@@ -50,9 +50,19 @@
 						<< STM32_OTYPER_SHIFT) | \
 	(ST_STM32_SLEW_RATE(inst, i) << STM32_OSPEEDR_SHIFT))
 #else
-/* This is made for compilation purpose only, F1 support is not available yet */
-#define ST_STM32_PINCFG(inst, i)
-#endif
+#define ST_STM32_PINCFG(inst, i) \
+	(((STM32_NO_PULL * ST_STM32_FUNC(inst, i, bias_disable))	 \
+						<< STM32_PUPD_SHIFT) |	 \
+	((STM32_PULL_UP * ST_STM32_FUNC(inst, i, bias_pull_up))		 \
+						<< STM32_PUPD_SHIFT) |	 \
+	((STM32_PULL_DOWN * ST_STM32_FUNC(inst, i, bias_pull_down))	 \
+						<< STM32_PUPD_SHIFT) |	 \
+	((STM32_PUSH_PULL * ST_STM32_FUNC(inst, i, drive_push_pull))	 \
+						<< STM32_CNF_OUT_0_SHIFT) | \
+	((STM32_OPEN_DRAIN * ST_STM32_FUNC(inst, i, drive_open_drain))	 \
+						<< STM32_CNF_OUT_0_SHIFT) | \
+	(ST_STM32_SLEW_RATE(inst, i) << STM32_MODE_OSPEED_SHIFT))
+#endif /* CONFIG_SOC_SERIES_STM32F1X */
 
 /* Construct a soc_gpio_pinctrl element for pin cfg */
 #define ST_STM32_DT_PIN(inst, idx)				\
