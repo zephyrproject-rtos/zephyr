@@ -24,7 +24,7 @@ Building and Running
 ********************
 
 This project outputs test status and info to the console. It can be built and
-executed on MPS2+ AN521.
+executed on MPS2+ AN521 and ST Nucleo L552ZE Q.
 
 On MPS2+ AN521:
 ===============
@@ -102,6 +102,35 @@ Or, post build:
    .. code-block:: bash
 
       $ ninja run
+
+On ST Nucleo L552ZE Q:
+======================
+
+This sample was tested on Ubuntu 18.04 with Zephyr SDK 0.11.3.
+
+Build Zephyr with a non-secure configuration:
+
+   .. code-block:: bash
+
+      $ west build -b nucleo_l552ze_q_ns samples/tfm_integration/tfm_ipc/
+
+Two scripts are avalaible in the ``build/tfm/install`` folder:
+
+  - ``regression.sh``: Sets platform option bytes config and erase platform.
+  - ``TFM_UPDATE.sh``: Writes bl2, secure, and non secure image in target.
+
+Run them in the following order to flash the board:
+
+   .. code-block:: bash
+
+      $ ./build/tfm/install/regression.sh
+      $ ./build/tfm/install/TFM_UPDATE.sh
+
+Reset the board.
+
+ .. note::
+      Note that ``arm-none-eabi-gcc`` should be available in the PATH variable and that ``STM32_Programmer_CLI`` is required to run ``regression.sh`` and ``TFM_UPDATE.sh`` (see https://www.st.com/en/development-tools/stm32cubeprog.html). If you are still having trouble running these scripts, check the Programming and Debugging section of the :ref:`nucleo_l552ze_q_board` documentation.
+
 
 Sample Output
 =============
