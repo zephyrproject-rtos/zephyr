@@ -86,8 +86,6 @@ struct bt_mesh_va {
 	uint8_t  uuid[16];
 };
 
-void bt_mesh_set_hb_sub_dst(uint16_t addr);
-
 bool bt_mesh_tx_in_progress(void);
 
 void bt_mesh_rx_reset(void);
@@ -114,8 +112,6 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx);
 void bt_mesh_trans_init(void);
 
 void bt_mesh_trans_reset(void);
-
-int bt_mesh_heartbeat_send(const struct bt_mesh_send_cb *cb, void *cb_data);
 
 struct bt_mesh_va *bt_mesh_va_get(uint16_t index);
 

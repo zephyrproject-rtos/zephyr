@@ -34,8 +34,11 @@ struct bt_mesh_cfg_srv {
 	uint8_t frnd;                 /**< Friend state */
 	uint8_t default_ttl;          /**< Default TTL */
 
-	/** Heartbeat Publication parameters */
-	struct bt_mesh_hb_pub {
+	/** Heartbeat Publication parameters.
+	 *
+	 * @deprecated in favor of standalone API in bluetooth/mesh/heartbeat.h.
+	 */
+	struct {
 		struct k_delayed_work timer;
 
 		/** Destination address. */
@@ -55,10 +58,13 @@ struct bt_mesh_cfg_srv {
 		uint16_t feat;
 		/** Network index used for publishing. */
 		uint16_t net_idx;
-	} hb_pub;
+	} hb_pub __deprecated;
 
-	/** Heartbeat Subscription parameters. */
-	struct bt_mesh_hb_sub {
+	/** Heartbeat Subscription parameters.
+	 *
+	 * @deprecated in favor of standalone API in bluetooth/mesh/heartbeat.h.
+	 */
+	struct {
 		/** Subscription period exipration timestamp. */
 		int64_t  expiry;
 		/** Source address to receive Heartbeats from. */
@@ -93,9 +99,12 @@ struct bt_mesh_cfg_srv {
 		 *              @ref BT_MESH_FEAT_PROXY,
 		 *              @ref BT_MESH_FEAT_FRIEND and
 		 *              @ref BT_MESH_FEAT_LOW_POWER.
+		 *
+		 * @deprecated Please use the @ref bt_mesh_hb_cb registration
+		 *             function.
 		 */
 		void (*func)(uint8_t hops, uint16_t feat);
-	} hb_sub;
+	} hb_sub __deprecated;
 };
 
 /** @def BT_MESH_MODEL_CFG_SRV
