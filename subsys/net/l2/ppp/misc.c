@@ -184,6 +184,12 @@ const char *ppp_proto2str(uint16_t proto)
 		return "IPCP";
 	case PPP_IPV6CP:
 		return "IPV6CP";
+	case PPP_PAP:
+		return "PAP";
+	case PPP_CHAP:
+		return "CHAP";
+	case PPP_EAP:
+		return "EAP";
 	}
 #else
 	ARG_UNUSED(proto);
