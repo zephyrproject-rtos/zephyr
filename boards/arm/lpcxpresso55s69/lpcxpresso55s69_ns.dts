@@ -84,3 +84,7 @@
 &wwdt0 {
 	status = "okay";
 };
+
+&adc0 {
+	status = "okay";
+};
