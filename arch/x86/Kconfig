@@ -191,7 +191,7 @@ config X86_MMU
 
 config X86_MMU_PAGE_POOL_PAGES
 	int "Number of pages to reserve for building page tables"
-	default 16
+	default 17
 	depends on X86_MMU
 	help
 	  Building page tables at boot requires a pool of free memory pages
