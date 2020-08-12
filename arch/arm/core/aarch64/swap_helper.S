@@ -152,7 +152,7 @@ SECTION_FUNC(TEXT, z_thread_entry_wrapper)
 
 GTEXT(z_arm64_svc)
 SECTION_FUNC(TEXT, z_arm64_svc)
-	z_arm64_enter_exc
+	z_arm64_enter_exc x0, x1, x2
 
 	switch_el x1, 3f, 2f, 1f
 3:
@@ -208,7 +208,7 @@ context_switch:
 	bl	z_arm64_context_switch
 
 exit:
-	z_arm64_exit_exc
+	z_arm64_exit_exc x0, x1, x2
 
 inv:
 	mov	x0, #0 /* K_ERR_CPU_EXCEPTION */
