@@ -26,9 +26,6 @@ struct ppp_packet {
 	uint16_t length;
 } __packed;
 
-/** Timeout in milliseconds */
-#define PPP_TIMEOUT K_SECONDS(3)
-
 /** Max Terminate-Request transmissions */
 #define MAX_TERMINATE_REQ  CONFIG_NET_L2_PPP_MAX_TERMINATE_REQ_RETRANSMITS
 
