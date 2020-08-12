@@ -59,7 +59,7 @@ if (CONFIG_BUILD_WITH_TFM)
 			 ${ADD_S_IMAGE_MIN_VER}
 			 ${ADD_SECURITY_COUNTER_NS}
 			 -H 0x400
-			 ${CMAKE_BINARY_DIR}/zephyr/zephyr.bin
+			 ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_BIN_NAME}
 			 ${CMAKE_BINARY_DIR}/zephyr_ns_signed.bin
 
 		#Create concatenated binary image from the two independently signed binary file
