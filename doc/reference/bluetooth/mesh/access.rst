@@ -93,10 +93,10 @@ the mesh network than the individual nodes will.
 
 To support publishing with the publication parameters, the model must allocate
 a packet buffer for publishing, and pass it to
-:cpp:var:`bt_mesh_model_pub::msg`. The Config Server may also set up period
+:c:member:`bt_mesh_model_pub.msg`. The Config Server may also set up period
 publication for the publication message. To support this, the model must
-populate the :cpp:var:`bt_mesh_model_pub::update` callback. The
-:cpp:var:`bt_mesh_model_pub::update` callback will be called right before the
+populate the :c:member:`bt_mesh_model_pub.update` callback. The
+:c:member:`bt_mesh_model_pub.update` callback will be called right before the
 message is published, allowing the model to change the payload to reflect its
 current state.
 
@@ -133,7 +133,7 @@ data, leveraging the internal model instance encoding scheme. Models can store
 one user defined data entry per instance by calling
 :c:func:`bt_mesh_model_data_store`. To be able to read out the data the
 next time the device reboots, the model's
-:cpp:var:`bt_mesh_model_cb::settings_set()` callback must be populated. This
+:c:member:`bt_mesh_model_cb.settings_set` callback must be populated. This
 callback gets called when model specific data is found in the persistent
 storage. The model can retrieve the data by calling the ``read_cb`` passed as
 a parameter to the callback. See the :ref:`settings_api` module documentation for
