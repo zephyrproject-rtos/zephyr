@@ -125,12 +125,8 @@ struct label {
 
 void bt_mesh_cfg_reset(void);
 
-void bt_mesh_heartbeat(uint16_t src, uint16_t dst, uint8_t hops, uint16_t feat);
-
 void bt_mesh_attention(struct bt_mesh_model *model, uint8_t time);
 
-struct bt_mesh_hb_pub *bt_mesh_hb_pub_get(void);
-void bt_mesh_hb_pub_disable(void);
 struct bt_mesh_cfg_srv *bt_mesh_cfg_get(void);
 
 uint8_t bt_mesh_net_transmit_get(void);

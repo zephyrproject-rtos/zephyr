@@ -12,6 +12,7 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH
     app_keys.c
     transport.c
     rpl.c
+    heartbeat.c
     crypto.c
     access.c
     cfg_srv.c

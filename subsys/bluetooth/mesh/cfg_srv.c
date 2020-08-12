@@ -30,6 +30,7 @@
 #include "rpl.h"
 #include "lpn.h"
 #include "transport.h"
+#include "heartbeat.h"
 #include "crypto.h"
 #include "access.h"
 #include "beacon.h"
@@ -620,9 +621,7 @@ static void gatt_proxy_set(struct bt_mesh_model *model,
 		bt_mesh_store_cfg();
 	}
 
-	if (cfg->hb_pub.feat & BT_MESH_FEAT_PROXY) {
-		(void)bt_mesh_heartbeat_send(NULL, NULL);
-	}
+	bt_mesh_hb_feature_changed(BT_MESH_FEAT_PROXY);
 
 send_status:
 	send_gatt_proxy_status(model, ctx);
@@ -726,9 +725,7 @@ static void relay_set(struct bt_mesh_model *model,
 		       BT_MESH_TRANSMIT_COUNT(cfg->relay_retransmit),
 		       BT_MESH_TRANSMIT_INT(cfg->relay_retransmit));
 
-		if ((cfg->hb_pub.feat & BT_MESH_FEAT_RELAY) && change) {
-			(void)bt_mesh_heartbeat_send(NULL, NULL);
-		}
+		bt_mesh_hb_feature_changed(BT_MESH_FEAT_RELAY);
 	} else {
 		BT_WARN("Invalid Relay value 0x%02x", buf->data[0]);
 		return;
@@ -1699,18 +1696,6 @@ static void net_key_update(struct bt_mesh_model *model,
 	send_net_key_status(model, ctx, idx, status);
 }
 
-static void hb_pub_disable(struct bt_mesh_cfg_srv *cfg)
-{
-	BT_DBG("");
-
-	cfg->hb_pub.dst = BT_MESH_ADDR_UNASSIGNED;
-	cfg->hb_pub.count = 0U;
-	cfg->hb_pub.ttl = 0U;
-	cfg->hb_pub.period = 0U;
-
-	k_delayed_work_cancel(&cfg->hb_pub.timer);
-}
-
 static void net_key_del(struct bt_mesh_model *model,
 			struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf)
@@ -2139,9 +2124,7 @@ static void friend_set(struct bt_mesh_model *model,
 		}
 	}
 
-	if (cfg->hb_pub.feat & BT_MESH_FEAT_FRIEND) {
-		(void)bt_mesh_heartbeat_send(NULL, NULL);
-	}
+	bt_mesh_hb_feature_changed(BT_MESH_FEAT_FRIEND);
 
 send_status:
 	send_friend_status(model, ctx);
@@ -2249,17 +2232,6 @@ static void krp_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 	send_krp_status(model, ctx, idx, phase, status);
 }
 
-static uint8_t hb_log(uint16_t val)
-{
-	if (!val) {
-		return 0x00;
-	} else if (val == 0xffff) {
-		return 0xff;
-	} else {
-		return 32 - __builtin_clz(val);
-	}
-}
-
 static uint8_t hb_pub_count_log(uint16_t val)
 {
 	if (!val) {
@@ -2270,17 +2242,6 @@ static uint8_t hb_pub_count_log(uint16_t val)
 		return 0xff;
 	} else {
 		return 32 - __builtin_clz(val - 1) + 1;
-	}
-}
-
-static uint16_t hb_pwr2(uint8_t val, uint8_t sub)
-{
-	if (!val) {
-		return 0x0000;
-	} else if (val == 0xff || val == 0x11) {
-		return 0xffff;
-	} else {
-		return (1 << (val - sub));
 	}
 }
 
@@ -2295,10 +2256,9 @@ struct hb_pub_param {
 
 static void hb_pub_send_status(struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx, uint8_t status,
-			       struct hb_pub_param *orig_msg)
+			       const struct bt_mesh_hb_pub *pub)
 {
 	BT_MESH_MODEL_BUF_DEFINE(msg, OP_HEARTBEAT_PUB_STATUS, 10);
-	struct bt_mesh_cfg_srv *cfg = model->user_data;
 
 	BT_DBG("src 0x%04x status 0x%02x", ctx->addr, status);
 
@@ -2306,20 +2266,13 @@ static void hb_pub_send_status(struct bt_mesh_model *model,
 
 	net_buf_simple_add_u8(&msg, status);
 
-	if (orig_msg) {
-		memcpy(net_buf_simple_add(&msg, sizeof(*orig_msg)), orig_msg,
-		       sizeof(*orig_msg));
-		goto send;
-	}
+	net_buf_simple_add_le16(&msg, pub->dst);
+	net_buf_simple_add_u8(&msg, hb_pub_count_log(pub->count));
+	net_buf_simple_add_u8(&msg, bt_mesh_hb_log(pub->period));
+	net_buf_simple_add_u8(&msg, pub->ttl);
+	net_buf_simple_add_le16(&msg, pub->feat);
+	net_buf_simple_add_le16(&msg, pub->net_idx);
 
-	net_buf_simple_add_le16(&msg, cfg->hb_pub.dst);
-	net_buf_simple_add_u8(&msg, hb_pub_count_log(cfg->hb_pub.count));
-	net_buf_simple_add_u8(&msg, cfg->hb_pub.period);
-	net_buf_simple_add_u8(&msg, cfg->hb_pub.ttl);
-	net_buf_simple_add_le16(&msg, cfg->hb_pub.feat);
-	net_buf_simple_add_le16(&msg, cfg->hb_pub.net_idx);
-
-send:
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
 		BT_ERR("Unable to send Heartbeat Publication Status");
 	}
@@ -2329,9 +2282,13 @@ static void heartbeat_pub_get(struct bt_mesh_model *model,
 			      struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
+	struct bt_mesh_hb_pub pub;
+
 	BT_DBG("src 0x%04x", ctx->addr);
 
-	hb_pub_send_status(model, ctx, STATUS_SUCCESS, NULL);
+	bt_mesh_hb_pub_get(&pub);
+
+	hb_pub_send_status(model, ctx, STATUS_SUCCESS, &pub);
 }
 
 static void heartbeat_pub_set(struct bt_mesh_model *model,
@@ -2339,27 +2296,32 @@ static void heartbeat_pub_set(struct bt_mesh_model *model,
 			      struct net_buf_simple *buf)
 {
 	struct hb_pub_param *param = (void *)buf->data;
-	struct bt_mesh_cfg_srv *cfg = model->user_data;
-	uint16_t dst, feat, idx;
+	struct bt_mesh_hb_pub pub;
 	uint8_t status;
 
 	BT_DBG("src 0x%04x", ctx->addr);
 
-	dst = sys_le16_to_cpu(param->dst);
+	pub.dst = sys_le16_to_cpu(param->dst);
+	pub.count = bt_mesh_hb_pwr2(param->count_log);
+	pub.period = bt_mesh_hb_pwr2(param->period_log);
+	pub.ttl = param->ttl;
+	pub.feat = sys_le16_to_cpu(param->feat);
+	pub.net_idx = sys_le16_to_cpu(param->net_idx);
+
 	/* All other address types but virtual are valid */
-	if (BT_MESH_ADDR_IS_VIRTUAL(dst)) {
+	if (BT_MESH_ADDR_IS_VIRTUAL(pub.dst)) {
 		status = STATUS_INVALID_ADDRESS;
-		goto failed;
+		goto rsp;
 	}
 
 	if (param->count_log > 0x11 && param->count_log != 0xff) {
 		status = STATUS_CANNOT_SET;
-		goto failed;
+		goto rsp;
 	}
 
 	if (param->period_log > 0x10) {
 		status = STATUS_CANNOT_SET;
-		goto failed;
+		goto rsp;
 	}
 
 	if (param->ttl > BT_MESH_TTL_MAX && param->ttl != BT_MESH_TTL_DEFAULT) {
@@ -2367,82 +2329,34 @@ static void heartbeat_pub_set(struct bt_mesh_model *model,
 		return;
 	}
 
-	feat = sys_le16_to_cpu(param->feat);
-
-	idx = sys_le16_to_cpu(param->net_idx);
-	if (idx > 0xfff) {
-		BT_ERR("Invalid NetKeyIndex 0x%04x", idx);
+	if (pub.net_idx > 0xfff) {
+		BT_ERR("Invalid NetKeyIndex 0x%04x", pub.net_idx);
 		return;
 	}
 
-	if (!bt_mesh_subnet_get(idx)) {
-		status = STATUS_INVALID_NETKEY;
-		goto failed;
-	}
+	status = bt_mesh_hb_pub_set(&pub);
 
-	cfg->hb_pub.dst = dst;
-	cfg->hb_pub.period = param->period_log;
-	cfg->hb_pub.feat = feat & BT_MESH_FEAT_SUPPORTED;
-	cfg->hb_pub.net_idx = idx;
-
-	if (dst == BT_MESH_ADDR_UNASSIGNED) {
-		hb_pub_disable(cfg);
-	} else {
-		/* 2^(n-1) */
-		cfg->hb_pub.count = hb_pwr2(param->count_log, 1);
-		cfg->hb_pub.ttl = param->ttl;
-
-		BT_DBG("period %u ms", hb_pwr2(param->period_log, 1) * 1000U);
-
-		/* The first Heartbeat message shall be published as soon
-		 * as possible after the Heartbeat Publication Period state
-		 * has been configured for periodic publishing.
-		 */
-		if (param->period_log && param->count_log) {
-			k_work_submit(&cfg->hb_pub.timer.work);
-		} else {
-			k_delayed_work_cancel(&cfg->hb_pub.timer);
-		}
-	}
-
-	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		bt_mesh_store_hb_pub();
-	}
-
-	hb_pub_send_status(model, ctx, STATUS_SUCCESS, NULL);
-
-	return;
-
-failed:
-	hb_pub_send_status(model, ctx, status, param);
+rsp:
+	hb_pub_send_status(model, ctx, status, &pub);
 }
 
 static void hb_sub_send_status(struct bt_mesh_model *model,
-			       struct bt_mesh_msg_ctx *ctx, uint8_t status)
+			       struct bt_mesh_msg_ctx *ctx,
+			       const struct bt_mesh_hb_sub *sub)
 {
 	BT_MESH_MODEL_BUF_DEFINE(msg, OP_HEARTBEAT_SUB_STATUS, 9);
-	struct bt_mesh_cfg_srv *cfg = model->user_data;
-	uint16_t period;
-	int64_t uptime;
 
-	BT_DBG("src 0x%04x status 0x%02x", ctx->addr, status);
-
-	uptime = k_uptime_get();
-	if (uptime > cfg->hb_sub.expiry) {
-		period = 0U;
-	} else {
-		period = (cfg->hb_sub.expiry - uptime) / 1000;
-	}
+	BT_DBG("src 0x%04x ", ctx->addr);
 
 	bt_mesh_model_msg_init(&msg, OP_HEARTBEAT_SUB_STATUS);
 
-	net_buf_simple_add_u8(&msg, status);
-	net_buf_simple_add_le16(&msg, cfg->hb_sub.src);
-	net_buf_simple_add_le16(&msg, cfg->hb_sub.dst);
-	net_buf_simple_add_u8(&msg, hb_log(period));
-	net_buf_simple_add_u8(&msg, hb_log(cfg->hb_sub.count));
-	net_buf_simple_add_u8(&msg, cfg->hb_sub.min_hops);
-	net_buf_simple_add_u8(&msg, cfg->hb_sub.max_hops);
+	net_buf_simple_add_u8(&msg, STATUS_SUCCESS);
+	net_buf_simple_add_le16(&msg, sub->src);
+	net_buf_simple_add_le16(&msg, sub->dst);
+	net_buf_simple_add_u8(&msg, bt_mesh_hb_log(sub->remaining));
+	net_buf_simple_add_u8(&msg, bt_mesh_hb_log(sub->count));
+	net_buf_simple_add_u8(&msg, sub->min_hops);
+	net_buf_simple_add_u8(&msg, sub->max_hops);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
 		BT_ERR("Unable to send Heartbeat Subscription Status");
@@ -2453,92 +2367,58 @@ static void heartbeat_sub_get(struct bt_mesh_model *model,
 			      struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
+	struct bt_mesh_hb_sub sub;
+
 	BT_DBG("src 0x%04x", ctx->addr);
 
-	hb_sub_send_status(model, ctx, STATUS_SUCCESS);
+	bt_mesh_hb_sub_get(&sub);
+
+	hb_sub_send_status(model, ctx, &sub);
 }
 
 static void heartbeat_sub_set(struct bt_mesh_model *model,
 			      struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
-	struct bt_mesh_cfg_srv *cfg = model->user_data;
+	uint8_t period_log, status;
+	struct bt_mesh_hb_sub sub;
 	uint16_t sub_src, sub_dst;
-	uint8_t sub_period;
-	int32_t period_ms;
+	uint32_t period;
 
 	BT_DBG("src 0x%04x", ctx->addr);
 
 	sub_src = net_buf_simple_pull_le16(buf);
 	sub_dst = net_buf_simple_pull_le16(buf);
-	sub_period = net_buf_simple_pull_u8(buf);
+	period_log = net_buf_simple_pull_u8(buf);
 
 	BT_DBG("sub_src 0x%04x sub_dst 0x%04x period 0x%02x",
-	       sub_src, sub_dst, sub_period);
+	       sub_src, sub_dst, period_log);
 
-	if (sub_src != BT_MESH_ADDR_UNASSIGNED &&
-	    !BT_MESH_ADDR_IS_UNICAST(sub_src)) {
-		BT_WARN("Prohibited source address");
+	if (period_log > 0x11) {
+		BT_WARN("Prohibited subscription period 0x%02x", period_log);
 		return;
 	}
 
-	if (BT_MESH_ADDR_IS_VIRTUAL(sub_dst) || BT_MESH_ADDR_IS_RFU(sub_dst) ||
-	    (BT_MESH_ADDR_IS_UNICAST(sub_dst) &&
-	     sub_dst != bt_mesh_primary_addr())) {
-		BT_WARN("Prohibited destination address");
-		return;
-	}
+	period = bt_mesh_hb_pwr2(period_log);
 
-	if (sub_period > 0x11) {
-		BT_WARN("Prohibited subscription period 0x%02x", sub_period);
-		return;
-	}
-
-	if (sub_src == BT_MESH_ADDR_UNASSIGNED ||
-	    sub_dst == BT_MESH_ADDR_UNASSIGNED ||
-	    sub_period == 0x00) {
-		/* Only an explicit address change to unassigned should
-		 * trigger clearing of the values according to
-		 * MESH/NODE/CFG/HBS/BV-02-C.
+	status = bt_mesh_hb_sub_set(sub_src, sub_dst, period);
+	if (status != STATUS_SUCCESS) {
+		/* All errors are caused by invalid packets, which should be
+		 * ignored.
 		 */
-		if (sub_src == BT_MESH_ADDR_UNASSIGNED ||
-		    sub_dst == BT_MESH_ADDR_UNASSIGNED) {
-			cfg->hb_sub.src = BT_MESH_ADDR_UNASSIGNED;
-			cfg->hb_sub.dst = BT_MESH_ADDR_UNASSIGNED;
-			cfg->hb_sub.min_hops = BT_MESH_TTL_MAX;
-			cfg->hb_sub.max_hops = 0U;
-			cfg->hb_sub.count = 0U;
-		}
-
-		period_ms = 0;
-	} else {
-		cfg->hb_sub.src = sub_src;
-		cfg->hb_sub.dst = sub_dst;
-		cfg->hb_sub.min_hops = BT_MESH_TTL_MAX;
-		cfg->hb_sub.max_hops = 0U;
-		cfg->hb_sub.count = 0U;
-		period_ms = hb_pwr2(sub_period, 1) * 1000U;
+		return;
 	}
 
-	/* Let the transport layer know it needs to handle this address */
-	bt_mesh_set_hb_sub_dst(cfg->hb_sub.dst);
-
-	BT_DBG("period_ms %u", period_ms);
-
-	if (period_ms) {
-		cfg->hb_sub.expiry = k_uptime_get() + period_ms;
-	} else {
-		cfg->hb_sub.expiry = 0;
-	}
-
-	hb_sub_send_status(model, ctx, STATUS_SUCCESS);
+	bt_mesh_hb_sub_get(&sub);
 
 	/* MESH/NODE/CFG/HBS/BV-01-C expects the MinHops to be 0x7f after
 	 * disabling subscription, but 0x00 for subsequent Get requests.
 	 */
-	if (!period_ms) {
-		cfg->hb_sub.min_hops = 0U;
+	if (!period_log) {
+		sub.min_hops = BT_MESH_TTL_MAX;
 	}
+
+	hb_sub_send_status(model, ctx, &sub);
 }
 
 const struct bt_mesh_model_op bt_mesh_cfg_srv_op[] = {
@@ -2592,60 +2472,6 @@ const struct bt_mesh_model_op bt_mesh_cfg_srv_op[] = {
 	BT_MESH_MODEL_OP_END,
 };
 
-static void hb_publish_end_cb(int err, void *cb_data)
-{
-	struct bt_mesh_cfg_srv *cfg = cb_data;
-	uint16_t period_ms;
-
-	period_ms = hb_pwr2(cfg->hb_pub.period, 1) * 1000U;
-	if (period_ms && cfg->hb_pub.count > 1) {
-		k_delayed_work_submit(&cfg->hb_pub.timer, K_MSEC(period_ms));
-	}
-
-	if (cfg->hb_pub.count != 0xffff) {
-		cfg->hb_pub.count--;
-	}
-}
-
-static void hb_publish_start_cb(uint16_t duration, int err, void *cb_data)
-{
-	if (err) {
-		hb_publish_end_cb(err, cb_data);
-	}
-}
-
-static void hb_publish(struct k_work *work)
-{
-	static const struct bt_mesh_send_cb publish_cb = {
-		.start = hb_publish_start_cb,
-		.end = hb_publish_end_cb,
-	};
-	struct bt_mesh_cfg_srv *cfg = CONTAINER_OF(work,
-						   struct bt_mesh_cfg_srv,
-						   hb_pub.timer.work);
-	struct bt_mesh_subnet *sub;
-	int err;
-
-	BT_DBG("hb_pub.count: %u", cfg->hb_pub.count);
-
-	sub = bt_mesh_subnet_get(cfg->hb_pub.net_idx);
-	if (!sub) {
-		BT_ERR("No matching subnet for idx 0x%02x",
-		       cfg->hb_pub.net_idx);
-		cfg->hb_pub.dst = BT_MESH_ADDR_UNASSIGNED;
-		return;
-	}
-
-	if (cfg->hb_pub.count == 0U) {
-		return;
-	}
-
-	err = bt_mesh_heartbeat_send(&publish_cb, cfg);
-	if (err) {
-		hb_publish_end_cb(err, cfg);
-	}
-}
-
 static bool conf_is_valid(struct bt_mesh_cfg_srv *cfg)
 {
 	if (cfg->relay > 0x02) {
@@ -2671,6 +2497,14 @@ static bool conf_is_valid(struct bt_mesh_cfg_srv *cfg)
 	return true;
 }
 
+static void (*hb_sub_cb)(uint8_t hops, uint16_t features);
+static struct bt_mesh_hb_cb hb_cb;
+
+static void hb_recv_wrapper(const struct bt_mesh_hb_sub *sub, uint8_t hops, uint16_t features)
+{
+	hb_sub_cb(hops, features);
+}
+
 static int cfg_srv_init(struct bt_mesh_model *model)
 {
 	struct bt_mesh_cfg_srv *cfg = model->user_data;
@@ -2690,6 +2524,11 @@ static int cfg_srv_init(struct bt_mesh_model *model)
 		return -EINVAL;
 	}
 
+	if (cfg->hb_sub.func) {
+		hb_sub_cb = cfg->hb_sub.func;
+		hb_cb.recv = hb_recv_wrapper;
+	}
+
 	/*
 	 * Configuration Model security is device-key based and only the local
 	 * device-key is allowed to access this model.
@@ -2707,10 +2546,6 @@ static int cfg_srv_init(struct bt_mesh_model *model)
 	if (!IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
 		cfg->gatt_proxy = BT_MESH_GATT_PROXY_NOT_SUPPORTED;
 	}
-
-	k_delayed_work_init(&cfg->hb_pub.timer, hb_publish);
-	cfg->hb_pub.net_idx = BT_MESH_KEY_UNUSED;
-	cfg->hb_sub.expiry = 0;
 
 	cfg->model = model;
 
@@ -2749,47 +2584,7 @@ static void mod_reset(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 
 void bt_mesh_cfg_reset(void)
 {
-	struct bt_mesh_cfg_srv *cfg = conf;
-
-	BT_DBG("");
-
-	bt_mesh_set_hb_sub_dst(BT_MESH_ADDR_UNASSIGNED);
-
-	cfg->hb_sub.src = BT_MESH_ADDR_UNASSIGNED;
-	cfg->hb_sub.dst = BT_MESH_ADDR_UNASSIGNED;
-	cfg->hb_sub.expiry = 0;
-
 	bt_mesh_model_foreach(mod_reset, NULL);
-}
-
-void bt_mesh_heartbeat(uint16_t src, uint16_t dst, uint8_t hops, uint16_t feat)
-{
-	struct bt_mesh_cfg_srv *cfg = conf;
-
-	if (src != cfg->hb_sub.src || dst != cfg->hb_sub.dst) {
-		BT_WARN("No subscription for received heartbeat");
-		return;
-	}
-
-	if (k_uptime_get() > cfg->hb_sub.expiry) {
-		BT_WARN("Heartbeat subscription period expired");
-		return;
-	}
-
-	cfg->hb_sub.min_hops = MIN(cfg->hb_sub.min_hops, hops);
-	cfg->hb_sub.max_hops = MAX(cfg->hb_sub.max_hops, hops);
-
-	if (cfg->hb_sub.count < 0xffff) {
-		cfg->hb_sub.count++;
-	}
-
-	BT_DBG("src 0x%04x dst 0x%04x hops %u min %u max %u count %u", src,
-	       dst, hops, cfg->hb_sub.min_hops, cfg->hb_sub.max_hops,
-	       cfg->hb_sub.count);
-
-	if (cfg->hb_sub.func) {
-		cfg->hb_sub.func(hops, feat);
-	}
 }
 
 uint8_t bt_mesh_net_transmit_get(void)
@@ -2854,16 +2649,6 @@ uint8_t bt_mesh_default_ttl_get(void)
 	}
 
 	return DEFAULT_TTL;
-}
-
-struct bt_mesh_hb_pub *bt_mesh_hb_pub_get(void)
-{
-	return &conf->hb_pub;
-}
-
-void bt_mesh_hb_pub_disable(void)
-{
-	hb_pub_disable(conf);
 }
 
 struct bt_mesh_cfg_srv *bt_mesh_cfg_get(void)

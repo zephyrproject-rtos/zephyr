@@ -105,6 +105,8 @@
 #if defined(CONFIG_BT_MESH)
 	Z_ITERABLE_SECTION_ROM(bt_mesh_subnet_cb, 4)
 	Z_ITERABLE_SECTION_ROM(bt_mesh_app_key_cb, 4)
+
+	Z_ITERABLE_SECTION_ROM(bt_mesh_hb_cb, 4)
 #endif
 
 #if defined(CONFIG_BT_MESH_FRIEND)

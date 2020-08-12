@@ -35,6 +35,7 @@
 #include "access.h"
 #include "foundation.h"
 #include "settings.h"
+#include "heartbeat.h"
 #include "transport.h"
 
 #define AID_MASK                    ((uint8_t)(BIT_MASK(6)))
@@ -123,13 +124,6 @@ static struct seg_rx {
 K_MEM_SLAB_DEFINE(segs, BT_MESH_APP_SEG_SDU_MAX, CONFIG_BT_MESH_SEG_BUFS, 4);
 
 static struct bt_mesh_va virtual_addrs[CONFIG_BT_MESH_LABEL_COUNT];
-
-static uint16_t hb_sub_dst = BT_MESH_ADDR_UNASSIGNED;
-
-void bt_mesh_set_hb_sub_dst(uint16_t addr)
-{
-	hb_sub_dst = addr;
-}
 
 static int send_unseg(struct bt_mesh_net_tx *tx, struct net_buf_simple *sdu,
 		      const struct bt_mesh_send_cb *cb, void *cb_data,
@@ -862,36 +856,6 @@ static int trans_ack(struct bt_mesh_net_rx *rx, uint8_t hdr,
 	return 0;
 }
 
-static int trans_heartbeat(struct bt_mesh_net_rx *rx,
-			   struct net_buf_simple *buf)
-{
-	uint8_t init_ttl, hops;
-	uint16_t feat;
-
-	if (buf->len < 3) {
-		BT_ERR("Too short heartbeat message");
-		return -EINVAL;
-	}
-
-	if (rx->ctx.recv_dst != hb_sub_dst) {
-		BT_WARN("Ignoring heartbeat to non-subscribed destination");
-		return 0;
-	}
-
-	init_ttl = (net_buf_simple_pull_u8(buf) & 0x7f);
-	feat = net_buf_simple_pull_be16(buf);
-
-	hops = (init_ttl - rx->ctx.recv_ttl + 1);
-
-	BT_DBG("src 0x%04x TTL %u InitTTL %u (%u hop%s) feat 0x%04x",
-	       rx->ctx.addr, rx->ctx.recv_ttl, init_ttl, hops,
-	       (hops == 1U) ? "" : "s", feat);
-
-	bt_mesh_heartbeat(rx->ctx.addr, rx->ctx.recv_dst, hops, feat);
-
-	return 0;
-}
-
 static int ctl_recv(struct bt_mesh_net_rx *rx, uint8_t hdr,
 		    struct net_buf_simple *buf, uint64_t *seq_auth)
 {
@@ -903,7 +867,7 @@ static int ctl_recv(struct bt_mesh_net_rx *rx, uint8_t hdr,
 	case TRANS_CTL_OP_ACK:
 		return trans_ack(rx, hdr, buf, seq_auth);
 	case TRANS_CTL_OP_HEARTBEAT:
-		return trans_heartbeat(rx, buf);
+		return bt_mesh_hb_recv(rx, buf);
 	}
 
 	/* Only acks and heartbeats may need processing without local_match */
@@ -1625,58 +1589,6 @@ void bt_mesh_trans_init(void)
 	for (i = 0; i < ARRAY_SIZE(seg_rx); i++) {
 		k_delayed_work_init(&seg_rx[i].ack, seg_ack);
 	}
-}
-
-int bt_mesh_heartbeat_send(const struct bt_mesh_send_cb *cb, void *cb_data)
-{
-	struct bt_mesh_cfg_srv *cfg = bt_mesh_cfg_get();
-	uint16_t feat = 0U;
-	struct __packed {
-		uint8_t  init_ttl;
-		uint16_t feat;
-	} hb;
-	struct bt_mesh_msg_ctx ctx = {
-		.net_idx = cfg->hb_pub.net_idx,
-		.app_idx = BT_MESH_KEY_UNUSED,
-		.addr = cfg->hb_pub.dst,
-		.send_ttl = cfg->hb_pub.ttl,
-	};
-	struct bt_mesh_net_tx tx = {
-		.sub = bt_mesh_subnet_get(cfg->hb_pub.net_idx),
-		.ctx = &ctx,
-		.src = bt_mesh_model_elem(cfg->model)->addr,
-		.xmit = bt_mesh_net_transmit_get(),
-	};
-
-	/* Do nothing if heartbeat publication is not enabled */
-	if (cfg->hb_pub.dst == BT_MESH_ADDR_UNASSIGNED) {
-		return 0;
-	}
-
-	hb.init_ttl = cfg->hb_pub.ttl;
-
-	if (bt_mesh_relay_get() == BT_MESH_RELAY_ENABLED) {
-		feat |= BT_MESH_FEAT_RELAY;
-	}
-
-	if (bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED) {
-		feat |= BT_MESH_FEAT_PROXY;
-	}
-
-	if (bt_mesh_friend_get() == BT_MESH_FRIEND_ENABLED) {
-		feat |= BT_MESH_FEAT_FRIEND;
-	}
-
-	if (bt_mesh_lpn_established()) {
-		feat |= BT_MESH_FEAT_LOW_POWER;
-	}
-
-	hb.feat = sys_cpu_to_be16(feat);
-
-	BT_DBG("InitTTL %u feat 0x%04x", cfg->hb_pub.ttl, feat);
-
-	return bt_mesh_ctl_send(&tx, TRANS_CTL_OP_HEARTBEAT, &hb, sizeof(hb),
-				cb, cb_data);
 }
 
 struct bt_mesh_va *bt_mesh_va_get(uint16_t index)
