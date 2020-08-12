@@ -129,7 +129,7 @@ includes:
 * A set of flags for that object. This is currently used to track
   initialization state and whether an object is public or not.
 * An extra data field. The semantics of this field vary by object type, see
-  the definition of :c:type:`z_object_data`.
+  the definition of :c:union:`z_object_data`.
 
 Dynamic objects allocated at runtime are tracked in a runtime red/black tree
 which is used in parallel to the gperf table when validating object pointers.
