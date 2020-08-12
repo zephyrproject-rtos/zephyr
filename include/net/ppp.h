@@ -345,6 +345,9 @@ struct lcp_options {
 
 	/** Maximum Receive Unit value */
 	uint16_t mru;
+
+	/** Which authentication protocol was negotiated (0 means none) */
+	uint16_t auth_proto;
 };
 
 struct ipcp_options {
@@ -427,6 +430,13 @@ struct ppp_context {
 	} ipv6cp;
 #endif
 
+#if defined(CONFIG_NET_L2_PPP_PAP)
+	struct {
+		/** Finite state machine for PAP */
+		struct ppp_fsm fsm;
+	} pap;
+#endif
+
 #if defined(CONFIG_NET_SHELL)
 	struct {
 		struct {
@@ -490,6 +500,12 @@ struct ppp_context {
 
 	/** IPV6CP open status (open / closed) */
 	uint16_t is_ipv6cp_open : 1;
+
+	/** PAP status (up / down) */
+	uint16_t is_pap_up : 1;
+
+	/** PAP open status (open / closed) */
+	uint16_t is_pap_open : 1;
 };
 
 /**

@@ -54,6 +54,15 @@ config NET_L2_PPP_OPTION_DNS_USE
 	help
 	  Use the DNS servers negotiated in the IPCP configuration.
 
+config NET_L2_PPP_AUTH_SUPPORT
+	bool
+
+config NET_L2_PPP_PAP
+	bool "PAP authentication protocol"
+	select NET_L2_PPP_AUTH_SUPPORT
+	help
+	  Enable support for PAP authentication protocol.
+
 module = NET_L2_PPP
 module-dep = NET_LOG
 module-str = Log level for ppp L2 layer

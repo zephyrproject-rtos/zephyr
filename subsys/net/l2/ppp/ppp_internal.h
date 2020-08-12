@@ -163,6 +163,7 @@ int ppp_parse_options(struct ppp_fsm *fsm, struct net_pkt *pkt,
 		      void *user_data);
 
 void ppp_link_established(struct ppp_context *ctx, struct ppp_fsm *fsm);
+void ppp_link_authenticated(struct ppp_context *ctx);
 void ppp_link_terminated(struct ppp_context *ctx);
 void ppp_link_down(struct ppp_context *ctx);
 void ppp_link_needed(struct ppp_context *ctx);

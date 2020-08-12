@@ -34,6 +34,10 @@ struct ppp_context *ppp_fsm_ctx(struct ppp_fsm *fsm)
 	} else if (fsm->protocol == PPP_IPV6CP) {
 		return CONTAINER_OF(fsm, struct ppp_context, ipv6cp.fsm);
 #endif
+#if defined(CONFIG_NET_L2_PPP_PAP)
+	} else if (fsm->protocol == PPP_PAP) {
+		return CONTAINER_OF(fsm, struct ppp_context, pap.fsm);
+#endif
 	}
 
 	return NULL;
