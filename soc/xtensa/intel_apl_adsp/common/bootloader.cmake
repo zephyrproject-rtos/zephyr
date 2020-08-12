@@ -19,7 +19,7 @@ add_custom_target(
   DEPENDS base_module
   DEPENDS ${ZEPHYR_FINAL_EXECUTABLE}
   COMMAND ${CMAKE_OBJCOPY} --dump-section .data=mod-apl.bin $<TARGET_FILE:base_module>
-  COMMAND ${CMAKE_OBJCOPY} --add-section .module=mod-apl.bin --set-section-flags .module=load,readonly ${CMAKE_BINARY_DIR}/zephyr/zephyr.elf ${CMAKE_BINARY_DIR}/zephyr/zephyr.elf.mod
+  COMMAND ${CMAKE_OBJCOPY} --add-section .module=mod-apl.bin --set-section-flags .module=load,readonly ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME} ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME}.mod
   )
 
 add_custom_target(

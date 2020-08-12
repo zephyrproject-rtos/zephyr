@@ -37,7 +37,7 @@ ExternalProject_Add(
   INSTALL_COMMAND ""      # This particular build system has no install command
   CMAKE_CACHE_ARGS -DBOARD:STRING=${BOARD_REMOTE}
   CMAKE_CACHE_ARGS -DDTC_OVERLAY_FILE:STRING=${DTC_OVERLAY_FILE}
-  BUILD_BYPRODUCTS "${REMOTE_ZEPHYR_DIR}/zephyr.bin"
+  BUILD_BYPRODUCTS "${REMOTE_ZEPHYR_DIR}/${KERNEL_BIN_NAME}"
   # NB: Do we need to pass on more CMake variables?
   BUILD_ALWAYS True
 )

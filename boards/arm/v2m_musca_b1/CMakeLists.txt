@@ -38,7 +38,7 @@ if (CONFIG_BUILD_WITH_TFM)
 		COMMAND ${PYTHON_EXECUTABLE} ${TFM_MCUBOOT_DIR}/scripts/assemble.py
 		ARGS --layout ${PREPROCESSED_FILE}.c
 			-s ${CMAKE_BINARY_DIR}/tfm/install/outputs/MUSCA_B1/tfm_s.bin
-			-n ${CMAKE_BINARY_DIR}/zephyr/zephyr.bin
+			-n ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_BIN_NAME}
 			-o ${CMAKE_BINARY_DIR}/tfm_full.bin
 
 		#Sign concatenated binary image with default public key in mcuboot folder
