@@ -3571,6 +3571,17 @@ static int cmd_net_ppp_status(const struct shell *shell, size_t argc,
 								"yes" : "no");
 #endif /* CONFIG_NET_IPV6 */
 
+#if defined(CONFIG_NET_L2_PPP_PAP)
+	PR("PAP state           : %s (%d)\n",
+	   ppp_state_str(ctx->pap.fsm.state), ctx->pap.fsm.state);
+	PR("PAP retransmits     : %u\n", ctx->pap.fsm.retransmits);
+	PR("PAP NACK loops      : %u\n", ctx->pap.fsm.nack_loops);
+	PR("PAP NACKs recv      : %u\n", ctx->pap.fsm.recv_nack_loops);
+	PR("PAP current id      : %d\n", ctx->pap.fsm.id);
+	PR("PAP ACK received    : %s\n", ctx->pap.fsm.ack_received ?
+								"yes" : "no");
+#endif /* CONFIG_NET_L2_PPP_PAP */
+
 #else
 	PR_INFO("Set %s to enable %s support.\n",
 		"CONFIG_NET_L2_PPP and CONFIG_NET_PPP", "PPP");
