@@ -196,7 +196,11 @@ static int prepare_cb(struct lll_prepare_param *p)
 				       filter->addr_type_bitmask,
 				       (uint8_t *)filter->bdaddr);
 
-		radio_ar_configure(count, irks);
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		radio_ar_configure(count, irks, (lll->phy << 2));
+#else
+		radio_ar_configure(count, irks, 0);
+#endif
 	} else
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
@@ -461,6 +465,7 @@ isr_rx_do_close:
 
 static void isr_tx(void *param)
 {
+	struct lll_scan *lll = param;
 	struct node_rx_pdu *node_rx;
 	uint32_t hcto;
 
@@ -482,7 +487,12 @@ static void isr_tx(void *param)
 	if (ull_filter_lll_rl_enabled()) {
 		uint8_t count, *irks = ull_filter_lll_irks_get(&count);
 
-		radio_ar_configure(count, irks);
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		radio_ar_configure(count, irks, (lll->phy << 2));
+#else
+		ARG_UNUSED(lll);
+		radio_ar_configure(count, irks, 0);
+#endif
 	}
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
@@ -534,7 +544,12 @@ static void isr_common_done(void *param)
 	if (ull_filter_lll_rl_enabled()) {
 		uint8_t count, *irks = ull_filter_lll_irks_get(&count);
 
-		radio_ar_configure(count, irks);
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		radio_ar_configure(count, irks, (lll->phy << 2));
+#else
+		ARG_UNUSED(lll);
+		radio_ar_configure(count, irks, 0);
+#endif
 	}
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
