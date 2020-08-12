@@ -222,6 +222,22 @@
 		clk-divider = <1>;
 		label = "WWDT_0";
 	};
+
+	adc0: adc@A0000 {
+		compatible = "nxp,lpc-lpadc";
+		reg = <0xA0000 0x580>;
+		interrupts = <22 0>;
+		status = "disabled";
+		clk-divider = <8>;
+		clk-source = <0>;
+		voltage-ref= <2>;
+		calibration-average = <128>;
+		power-level = <1>;
+		label = "ADC_0";
+		offset-value-a = <10>;
+		offset-value-b = <10>;
+		#io-channel-cells = <1>;
+	};
 };
 
 &nvic {
