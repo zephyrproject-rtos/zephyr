@@ -1104,20 +1104,50 @@ uint32_t radio_ccm_mic_is_valid(void)
 
 static uint8_t MALIGN(4) _aar_scratch[3];
 
-void radio_ar_configure(uint32_t nirk, void *irk)
+void radio_ar_configure(uint32_t nirk, void *irk, uint8_t flags)
 {
+	uint32_t addrptr;
+	uint8_t bcc;
+	uint8_t phy;
+
+	/* Flags provide hint on how to setup AAR:
+	 * ...0b - RX on primary channel
+	 * ...1b - RX on secondary channel
+	 * XXX.b = RX PHY
+	 * 0000b = default case mapped to 0010b
+	 *
+	 * That means 1M on primary channel will configure for legacy PDU (LLL
+	 * may need to resolve again if extended PDU was received), other
+	 * combinations configure for extended PDU.
+	 */
+
+	phy = flags >> 1;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) && ((flags & BIT(0)) ||
+						   (phy > BIT(0)))) {
+		addrptr = NRF_RADIO->PACKETPTR + 1;
+		if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED) && (phy == BIT(2))) {
+			bcc = 120;
+		} else {
+			bcc = 80;
+		}
+	} else {
+		addrptr = NRF_RADIO->PACKETPTR - 1;
+		bcc = 64;
+	}
+
 	NRF_AAR->ENABLE = (AAR_ENABLE_ENABLE_Enabled << AAR_ENABLE_ENABLE_Pos) &
 			  AAR_ENABLE_ENABLE_Msk;
 	NRF_AAR->NIRK = nirk;
 	NRF_AAR->IRKPTR = (uint32_t)irk;
-	NRF_AAR->ADDRPTR = (uint32_t)NRF_RADIO->PACKETPTR - 1;
+	NRF_AAR->ADDRPTR = addrptr;
 	NRF_AAR->SCRATCHPTR = (uint32_t)&_aar_scratch[0];
 
 	NRF_AAR->EVENTS_END = 0;
 	NRF_AAR->EVENTS_RESOLVED = 0;
 	NRF_AAR->EVENTS_NOTRESOLVED = 0;
 
-	radio_bc_configure(64);
+	radio_bc_configure(bcc);
 	radio_bc_status_reset();
 
 	hal_trigger_aar_ppi_config();
