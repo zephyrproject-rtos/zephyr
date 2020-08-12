@@ -614,7 +614,7 @@ static void isr_tx(void *param)
 	if (ull_filter_lll_rl_enabled()) {
 		uint8_t count, *irks = ull_filter_lll_irks_get(&count);
 
-		radio_ar_configure(count, irks);
+		radio_ar_configure(count, irks, 0);
 	}
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
