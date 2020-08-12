@@ -57,6 +57,14 @@ config IEEE802154_VENDOR_OUI
 
 endif # IEEE802154_VENDOR_OUI_ENABLE
 
+config IEEE802154_EUI64_CUSTOM_SOURCE
+	bool "Enable custom source of EUI64"
+	depends on IEEE802154_NRF5
+	help
+	  This option enables providing custom source of EUI64.
+	  If enabled, User is obliged to provide implementation
+	  of ieee802154_radio_get_eui64() method.
+
 source "drivers/ieee802154/Kconfig.cc2520"
 
 source "drivers/ieee802154/Kconfig.kw41z"

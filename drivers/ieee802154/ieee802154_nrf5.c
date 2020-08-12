@@ -66,21 +66,23 @@ static struct nrf5_802154_data nrf5_data;
 #define IEEE802154_NRF5_VENDOR_OUI (uint32_t)0xF4CE36
 #endif
 
-static void nrf5_get_eui64(uint8_t *mac)
+#if !CONFIG_IEEE802154_EUI64_CUSTOM_SOURCE
+void ieee802154_radio_get_eui64(uint8_t *eui64)
 {
 	uint64_t factoryAddress;
 	uint32_t index = 0;
 
 	/* Set the MAC Address Block Larger (MA-L) formerly called OUI. */
-	mac[index++] = (IEEE802154_NRF5_VENDOR_OUI >> 16) & 0xff;
-	mac[index++] = (IEEE802154_NRF5_VENDOR_OUI >> 8) & 0xff;
-	mac[index++] = IEEE802154_NRF5_VENDOR_OUI & 0xff;
+	eui64[index++] = (IEEE802154_NRF5_VENDOR_OUI >> 16) & 0xff;
+	eui64[index++] = (IEEE802154_NRF5_VENDOR_OUI >> 8) & 0xff;
+	eui64[index++] = IEEE802154_NRF5_VENDOR_OUI & 0xff;
 
 	/* Use device identifier assigned during the production. */
 	factoryAddress = (uint64_t)NRF_FICR->DEVICEID[0] << 32;
 	factoryAddress |= NRF_FICR->DEVICEID[1];
-	memcpy(mac + index, &factoryAddress, sizeof(factoryAddress) - index);
+	memcpy(eui64 + index, &factoryAddress, sizeof(factoryAddress) - index);
 }
+#endif
 
 static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 {
@@ -506,7 +508,7 @@ static void nrf5_iface_init(struct net_if *iface)
 	struct device *dev = net_if_get_device(iface);
 	struct nrf5_802154_data *nrf5_radio = NRF5_802154_DATA(dev);
 
-	nrf5_get_eui64(nrf5_radio->mac);
+	ieee802154_radio_get_eui64(nrf5_radio->mac);
 	net_if_set_link_addr(iface, nrf5_radio->mac, sizeof(nrf5_radio->mac),
 			     NET_LINK_IEEE802154);
 

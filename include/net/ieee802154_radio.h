@@ -270,6 +270,13 @@ void ieee802154_init(struct net_if *iface);
 #define ieee802154_init(_iface_)
 #endif /* CONFIG_IEEE802154_RAW_MODE */
 
+/**
+ * @brief Store EUI64 value under given location
+ *
+ * @param eui64 An address where EUI64 value should be stored
+ */
+void ieee802154_radio_get_eui64(uint8_t *eui64);
+
 #ifdef __cplusplus
 }
 #endif
