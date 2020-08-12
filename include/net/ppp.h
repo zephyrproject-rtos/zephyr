@@ -80,6 +80,9 @@ enum ppp_protocol_type {
 	PPP_IPV6CP = 0x8057, /**< RFC 5072 */
 	PPP_CCP    = 0x80FD, /**< RFC 1962 */
 	PPP_LCP    = 0xc021, /**< RFC 1661 */
+	PPP_PAP    = 0xc023, /**< RFC 1334 */
+	PPP_CHAP   = 0xc223, /**< RFC 1334 */
+	PPP_EAP    = 0xc227, /**< RFC 2284 */
 };
 
 /**
