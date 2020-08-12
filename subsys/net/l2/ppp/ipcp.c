@@ -176,7 +176,7 @@ static int ipcp_ip_address_parse(struct ppp_fsm *fsm, struct net_pkt *pkt,
 }
 
 static const struct ppp_peer_option_info ipcp_peer_options[] = {
-	PPP_PEER_OPTION(IPCP_OPTION_IP_ADDRESS, ipcp_ip_address_parse),
+	PPP_PEER_OPTION(IPCP_OPTION_IP_ADDRESS, ipcp_ip_address_parse, NULL),
 };
 
 static int ipcp_config_info_req(struct ppp_fsm *fsm,

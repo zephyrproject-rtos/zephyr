@@ -117,7 +117,7 @@ static int ipv6cp_interface_identifier_parse(struct ppp_fsm *fsm,
 
 static const struct ppp_peer_option_info ipv6cp_peer_options[] = {
 	PPP_PEER_OPTION(IPV6CP_OPTION_INTERFACE_IDENTIFIER,
-			ipv6cp_interface_identifier_parse),
+			ipv6cp_interface_identifier_parse, NULL),
 };
 
 static int ipv6cp_config_info_req(struct ppp_fsm *fsm,
