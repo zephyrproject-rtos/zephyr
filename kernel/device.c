@@ -23,12 +23,6 @@ extern const struct init_entry __init_SMP_start[];
 extern struct device __device_start[];
 extern struct device __device_end[];
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-extern uint32_t __device_busy_start[];
-extern uint32_t __device_busy_end[];
-#define DEVICE_BUSY_SIZE (__device_busy_end - __device_busy_start)
-#endif
-
 /**
  * @brief Execute all the init entry initialization functions at a given level
  *
@@ -130,46 +124,4 @@ int device_pm_control_nop(struct device *unused_device,
 {
 	return -ENOTSUP;
 }
-
-int device_any_busy_check(void)
-{
-	int i = 0;
-
-	for (i = 0; i < DEVICE_BUSY_SIZE; i++) {
-		if (__device_busy_start[i] != 0U) {
-			return -EBUSY;
-		}
-	}
-	return 0;
-}
-
-int device_busy_check(struct device *chk_dev)
-{
-	if (atomic_test_bit((const atomic_t *)__device_busy_start,
-			    (chk_dev - __device_start))) {
-		return -EBUSY;
-	}
-	return 0;
-}
-
 #endif
-
-void device_busy_set(struct device *busy_dev)
-{
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	atomic_set_bit((atomic_t *) __device_busy_start,
-		       (busy_dev - __device_start));
-#else
-	ARG_UNUSED(busy_dev);
-#endif
-}
-
-void device_busy_clear(struct device *busy_dev)
-{
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	atomic_clear_bit((atomic_t *) __device_busy_start,
-			 (busy_dev - __device_start));
-#else
-	ARG_UNUSED(busy_dev);
-#endif
-}

@@ -808,11 +808,6 @@ static void uart_nrfx_irq_tx_enable(struct device *dev)
 
 	disable_tx_irq = false;
 
-	/* Indicate that this device started a transaction that should not be
-	 * interrupted by putting the SoC into the deep sleep mode.
-	 */
-	device_busy_set(dev);
-
 	/* Activate the transmitter. */
 	nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STARTTX);
 
@@ -932,11 +927,6 @@ static void uart_nrfx_isr(void *arg)
 		 * consume power.
 		 */
 		nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STOPTX);
-
-		/* The transaction is over. It is okay to enter the deep sleep
-		 * mode if needed.
-		 */
-		device_busy_clear(dev);
 
 		disable_tx_irq = false;
 

@@ -50,8 +50,7 @@ extern void test_mmio_device_map(void);
  *
  * @ingroup kernel_device_tests
  *
- * @see device_get_binding(), device_busy_set(), device_busy_clear(),
- * DEVICE_AND_API_INIT()
+ * @see device_get_binding(), DEVICE_AND_API_INIT()
  */
 void test_dummy_device(void)
 {
@@ -64,9 +63,6 @@ void test_dummy_device(void)
 	/* Validates device binding for an existing device object */
 	dev = device_get_binding(DUMMY_PORT_2);
 	zassert_false((dev == NULL), NULL);
-
-	device_busy_set(dev);
-	device_busy_clear(dev);
 
 	/* device_get_binding() returns false for device object
 	 * with failed init.
@@ -209,9 +205,7 @@ static void test_build_suspend_device_list(void)
  * enabled. It also checks if the device is in the middle of a transaction,
  * sets/clears busy status and validates status again.
  *
- * @see device_get_binding(), device_busy_set(), device_busy_clear(),
- * device_busy_check(), device_any_busy_check(),
- * device_list_get(), device_set_power_state()
+ * @see device_get_binding(), device_list_get(), device_set_power_state()
  */
 void test_dummy_device_pm(void)
 {
@@ -221,9 +215,6 @@ void test_dummy_device_pm(void)
 	dev = device_get_binding(DUMMY_PORT_2);
 	zassert_false((dev == NULL), NULL);
 
-	busy = device_any_busy_check();
-	zassert_true((busy == 0), NULL);
-
 	/* Set device state to DEVICE_PM_ACTIVE_STATE */
 	ret = device_set_power_state(dev, DEVICE_PM_ACTIVE_STATE, NULL, NULL);
 	if (ret == -ENOTSUP) {
@@ -232,21 +223,6 @@ void test_dummy_device_pm(void)
 		return;
 	}
 	zassert_true((ret == 0), "Unable to set active state to device");
-
-	/* Set device state to BUSY*/
-	device_busy_set(dev);
-
-	busy = device_any_busy_check();
-	zassert_false((busy == 0), NULL);
-
-	busy = device_busy_check(dev);
-	zassert_false((busy == 0), NULL);
-
-	/* Clear device BUSY state*/
-	device_busy_clear(dev);
-
-	busy = device_busy_check(dev);
-	zassert_true((busy == 0), NULL);
 
 	/* Set device state to DEVICE_PM_FORCE_SUSPEND_STATE */
 	ret = device_set_power_state(dev,

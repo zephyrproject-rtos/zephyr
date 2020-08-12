@@ -234,11 +234,6 @@ static void uart_cc13xx_cc26xx_irq_tx_enable(struct device *dev)
 		 * When tx irq is enabled, it is implicit that we are expecting
 		 * to transmit using the uart, hence we should no longer go
 		 * into standby.
-		 *
-		 * Instead of using device_busy_set(), which currently does
-		 * not impact the PM policy, we specifically disable the
-		 * standby mode instead, since it is the power state that
-		 * would interfere with a transfer.
 		 */
 		sys_pm_ctrl_disable_state(SYS_POWER_STATE_SLEEP_2);
 		get_dev_data(dev)->tx_constrained = true;

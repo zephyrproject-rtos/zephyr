@@ -325,25 +325,6 @@ static inline bool z_device_ready(const struct device *dev)
  */
 const char *device_pm_state_str(uint32_t state);
 
-/**
- * @brief Indicate that the device is in the middle of a transaction
- *
- * Called by a device driver to indicate that it is in the middle of a
- * transaction.
- *
- * @param busy_dev Pointer to device structure of the driver instance.
- */
-void device_busy_set(struct device *busy_dev);
-
-/**
- * @brief Indicate that the device has completed its transaction
- *
- * Called by a device driver to indicate the end of a transaction.
- *
- * @param busy_dev Pointer to device structure of the driver instance.
- */
-void device_busy_clear(struct device *busy_dev);
-
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 /*
  * Device PM functions
@@ -430,30 +411,6 @@ __deprecated static inline void device_list_get(struct device **device_list, int
 {
 	*device_count = z_device_get_all_static(device_list);
 }
-
-/**
- * @brief Check if any device is in the middle of a transaction
- *
- * Called by an application to see if any device is in the middle
- * of a critical transaction that cannot be interrupted.
- *
- * @retval 0 if no device is busy
- * @retval -EBUSY if any device is busy
- */
-int device_any_busy_check(void);
-
-/**
- * @brief Check if a specific device is in the middle of a transaction
- *
- * Called by an application to see if a particular device is in the
- * middle of a critical transaction that cannot be interrupted.
- *
- * @param chk_dev Pointer to device structure of the specific device driver
- * the caller is interested in.
- * @retval 0 if the device is not busy
- * @retval -EBUSY if the device is busy
- */
-int device_busy_check(struct device *chk_dev);
 
 #ifdef CONFIG_DEVICE_IDLE_PM
 
