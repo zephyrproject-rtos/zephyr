@@ -51,3 +51,26 @@ void osdp_cmd_free(struct osdp_pd *pd, struct osdp_cmd *cmd)
 {
 	k_mem_slab_free(&pd->cmd.slab, (void **)&cmd);
 }
+
+void osdp_cmd_enqueue(struct osdp_pd *pd, struct osdp_cmd *cmd)
+{
+	sys_slist_append(&pd->cmd.queue, &cmd->node);
+}
+
+int osdp_cmd_dequeue(struct osdp_pd *pd, struct osdp_cmd **cmd)
+{
+	sys_snode_t *node;
+
+	node = sys_slist_peek_head(&pd->cmd.queue);
+	if (node == NULL) {
+		return -1;
+	}
+	sys_slist_remove(&pd->cmd.queue, NULL, node);
+	*cmd = CONTAINER_OF(node, struct osdp_cmd, node);
+	return 0;
+}
+
+struct osdp_cmd *osdp_cmd_get_last(struct osdp_pd *pd)
+{
+	return (struct osdp_cmd *)sys_slist_peek_tail(&pd->cmd.queue);
+}
