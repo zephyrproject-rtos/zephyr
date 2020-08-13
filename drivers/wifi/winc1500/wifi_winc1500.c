@@ -54,6 +54,7 @@ NMI_API sint16 send(SOCKET sock, void *pvSendBuffer,
 NMI_API sint16 sendto(SOCKET sock, void *pvSendBuffer,
 		      uint16 u16SendLength, uint16 flags,
 		      struct sockaddr *pstrDestAddr, uint8 u8AddrLen);
+NMI_API sint8 close(SOCKET sock);
 
 enum socket_errors {
 	SOCK_ERR_NO_ERROR = 0,
@@ -303,7 +304,11 @@ static int winc1500_get(sa_family_t family,
 		return -1;
 	}
 
-	sock = socket(family, type, 0);
+	/* winc1500 atmel uses AF_INET 2 instead of zephyrs AF_INET 1
+	 * we have checked if family is AF_INET so we can hardcode this
+	 * for now.
+	 */
+	sock = socket(2, type, 0);
 	if (sock < 0) {
 		LOG_ERR("socket error!");
 		return -1;
@@ -421,6 +426,7 @@ static int winc1500_accept(struct net_context *context,
 	int ret;
 
 	w1500_data.socket_data[socket].accept_cb = cb;
+	w1500_data.socket_data[socket].accept_user_data = user_data;
 
 	ret = accept(socket, NULL, 0);
 	if (ret) {
@@ -555,14 +561,18 @@ static int winc1500_recv(struct net_context *context,
 	SOCKET socket = (int) context->offload_context;
 	int ret;
 
+	w1500_data.socket_data[socket].recv_cb = cb;
+	w1500_data.socket_data[socket].recv_user_data = user_data;
+	if (!cb) {
+		return 0;
+	}
+
 	ret = prepare_pkt(&w1500_data.socket_data[socket]);
 	if (ret) {
 		LOG_ERR("Could not reserve packet buffer");
 		return -ENOMEM;
 	}
 
-	w1500_data.socket_data[socket].recv_cb = cb;
-	w1500_data.socket_data[socket].recv_user_data = user_data;
 
 	ret = recv(socket, w1500_data.socket_data[socket].pkt_buf->data,
 		   CONFIG_WIFI_WINC1500_MAX_PACKET_SIZE, timeout);
@@ -580,7 +590,19 @@ static int winc1500_recv(struct net_context *context,
  */
 static int winc1500_put(struct net_context *context)
 {
-	return 0;
+	SOCKET sock = (int) context->offload_context;
+	struct socket_data *sd = &w1500_data.socket_data[sock];
+	int ret;
+
+	memset(&(context->remote), 0, sizeof(struct sockaddr_in));
+	context->flags &= ~NET_CONTEXT_REMOTE_ADDR_SET;
+	ret = close(sock);
+
+	net_pkt_unref(sd->rx_pkt);
+
+	memset(sd, 0, sizeof(struct socket_data));
+
+	return ret;
 }
 
 static struct net_offload winc1500_offload = {
@@ -799,18 +821,6 @@ static bool handle_socket_msg_recv(SOCKET sock,
 			return false;
 		}
 	}
-
-	if (prepare_pkt(sd)) {
-		LOG_ERR("Could not reserve packet buffer");
-		return false;
-	}
-
-	if (recv(sock, sd->pkt_buf->data,
-		 CONFIG_WIFI_WINC1500_MAX_PACKET_SIZE, 0)) {
-		LOG_ERR("Could not receive packet in the buffer");
-		return false;
-	}
-
 	return true;
 }
 
@@ -883,17 +893,33 @@ static void handle_socket_msg_accept(struct socket_data *sd, void *pvMsg)
 				      IPPROTO_TCP, &a_sd->context);
 		if (ret < 0) {
 			LOG_ERR("Cannot get new net context for ACCEPT");
-		} else {
-			a_sd->context->offload_context =
-				(void *)((int)accept_msg->sock);
-
-			sd->accept_cb(a_sd->context,
-				      (struct sockaddr *)&accept_msg->strAddr,
-				      sizeof(struct sockaddr_in),
-				      (accept_msg->sock > 0) ?
-				      0 : accept_msg->sock,
-				      sd->accept_user_data);
+			return;
 		}
+		/* We get a new socket from accept_msg but we need a new
+		 * context as well. The new context gives us another socket
+		 * so we have to close that one first.
+		 */
+		close((int)a_sd->context->offload_context);
+
+		a_sd->context->offload_context =
+				(void *)((int)accept_msg->sock);
+		/** The iface is reset when getting a new context. */
+		a_sd->context->iface = sd->context->iface;
+
+		/** Setup remote */
+		a_sd->context->remote.sa_family = AF_INET;
+		net_sin(&a_sd->context->remote)->sin_port =
+			accept_msg->strAddr.sin_port;
+		net_sin(&a_sd->context->remote)->sin_addr.s_addr =
+			accept_msg->strAddr.sin_addr.s_addr;
+		a_sd->context->flags |= NET_CONTEXT_REMOTE_ADDR_SET;
+
+		sd->accept_cb(a_sd->context,
+			      (struct sockaddr *)&accept_msg->strAddr,
+			      sizeof(struct sockaddr_in),
+			      (accept_msg->sock > 0) ?
+			      0 : accept_msg->sock,
+			      sd->accept_user_data);
 	}
 }
 
@@ -1027,6 +1053,38 @@ static int winc1500_mgmt_disconnect(const struct device *device)
 	return 0;
 }
 
+static int winc1500_mgmt_ap_enable(const struct device *dev,
+			      struct wifi_connect_req_params *params)
+{
+	tstrM2MAPConfig strM2MAPConfig;
+
+	memset(&strM2MAPConfig, 0x00, sizeof(tstrM2MAPConfig));
+	strcpy((char *)&strM2MAPConfig.au8SSID, params->ssid);
+	strM2MAPConfig.u8ListenChannel = params->channel;
+	/** security is hardcoded as open for now */
+	strM2MAPConfig.u8SecType = M2M_WIFI_SEC_OPEN;
+	/** DHCP: 192.168.1.1 */
+	strM2MAPConfig.au8DHCPServerIP[0] = 0xC0;
+	strM2MAPConfig.au8DHCPServerIP[1] = 0xA8;
+	strM2MAPConfig.au8DHCPServerIP[2] = 0x01;
+	strM2MAPConfig.au8DHCPServerIP[3] = 0x01;
+
+	if (m2m_wifi_enable_ap(&strM2MAPConfig) != M2M_SUCCESS) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int winc1500_mgmt_ap_disable(const struct device *dev)
+{
+	if (m2m_wifi_disable_ap() != M2M_SUCCESS) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
 static void winc1500_iface_init(struct net_if *iface)
 {
 	LOG_DBG("eth_init:net_if_set_link_addr:"
@@ -1047,6 +1105,8 @@ static const struct net_wifi_mgmt_offload winc1500_api = {
 	.scan		= winc1500_mgmt_scan,
 	.connect	= winc1500_mgmt_connect,
 	.disconnect	= winc1500_mgmt_disconnect,
+	.ap_enable	= winc1500_mgmt_ap_enable,
+	.ap_disable	= winc1500_mgmt_ap_disable,
 };
 
 static int winc1500_init(const struct device *dev)
