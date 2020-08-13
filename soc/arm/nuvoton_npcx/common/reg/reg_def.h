@@ -258,4 +258,32 @@ struct uart_reg_t {
 #define NPCX_UFRCTL_RNEMPTY_EN                6
 #define NPCX_UFRCTL_ERR_EN                    7
 
+/*
+ * Multi-Input Wake-Up Unit (MIWU) device registers
+ */
+
+/* MIWU multi-registers */
+#define NPCX_WKEDG_OFFSET(n)    (0x000 + ((n) * 2L) + ((n) < 5 ? 0 : 0x1E))
+#define NPCX_WKAEDG_OFFSET(n)   (0x001 + ((n) * 2L) + ((n) < 5 ? 0 : 0x1E))
+#define NPCX_WKPND_OFFSET(n)    (0x00A + ((n) * 4L) + ((n) < 5 ? 0 : 0x10))
+#define NPCX_WKPCL_OFFSET(n)    (0x00C + ((n) * 4L) + ((n) < 5 ? 0 : 0x10))
+#define NPCX_WKEN_OFFSET(n)     (0x01E + ((n) * 2L) + ((n) < 5 ? 0 : 0x12))
+#define NPCX_WKINEN_OFFSET(n)   (0x01F + ((n) * 2L) + ((n) < 5 ? 0 : 0x12))
+#define NPCX_WKMOD_OFFSET(n)    (0x070 + (n))
+
+#define NPCX_WKEDG(base, n) (*(volatile uint8_t *)(base + \
+						NPCX_WKEDG_OFFSET(n)))
+#define NPCX_WKAEDG(base, n) (*(volatile uint8_t *)(base + \
+						NPCX_WKAEDG_OFFSET(n)))
+#define NPCX_WKPND(base, n) (*(volatile uint8_t *)(base + \
+						NPCX_WKPND_OFFSET(n)))
+#define NPCX_WKPCL(base, n) (*(volatile uint8_t *)(base + \
+						NPCX_WKPCL_OFFSET(n)))
+#define NPCX_WKEN(base, n) (*(volatile uint8_t *)(base + \
+						NPCX_WKEN_OFFSET(n)))
+#define NPCX_WKINEN(base, n) (*(volatile uint8_t *)(base + \
+						NPCX_WKINEN_OFFSET(n)))
+#define NPCX_WKMOD(base, n) (*(volatile uint8_t *)(base + \
+						NPCX_WKMOD_OFFSET(n)))
+
 #endif /* _NUVOTON_NPCX_REG_DEF_H */

@@ -1,0 +1,26 @@
+# Copyright (c) 2020 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NPCX Multi-Input Wake-Up Unit (MIWU) node
+
+compatible: "nuvoton,npcx-miwu"
+
+include: [base.yaml]
+
+properties:
+    label:
+        required: true
+
+    index:
+        type: int
+        required: true
+        description: index of miwu device
+
+    "#miwu-cells":
+        type: int
+        required: true
+        description: Number of items to present a MIWU input souce specifier
+
+miwu-cells:
+  - group
+  - bit
