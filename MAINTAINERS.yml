@@ -340,7 +340,7 @@ Documentation:
         - drivers/can/
         - dts/bindings/can/
         - include/drivers/can.h
-        - samples/drivers/CAN/
+        - samples/drivers/can/
         - tests/drivers/can/
     labels:
         - "area: CAN"
@@ -805,7 +805,7 @@ Little FS:
     files:
         - subsys/fs/Kconfig.littlefs
         - subsys/fs/littlefs_fs.c
-        - tests/subsys/fs/littlefs
+        - tests/subsys/fs/littlefs/
     description: >-
        Little FS
 
