@@ -1255,7 +1255,7 @@ void radio_ar_resolve(uint8_t *addr)
 	NRF_AAR->EVENTS_RESOLVED = 0;
 	NRF_AAR->EVENTS_NOTRESOLVED = 0;
 
-	NRF_AAR->TASKS_START = 1;
+	nrf_aar_task_trigger(NRF_AAR, NRF_AAR_TASK_START);
 
 	nrf_aar_int_enable(NRF_AAR, AAR_INTENSET_END_Msk);
 	while (NRF_AAR->EVENTS_END == 0) {
