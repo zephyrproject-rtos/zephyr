@@ -107,7 +107,7 @@ manifest:
       revision: 170a2579dd890f78f5056f0959cdb9c9bea259a1
       path: modules/lib/loramac-node
     - name: openthread
-      revision: e294e1d5073f40d7d735b40bda5bfbe05dbf7a8a
+      revision: 9950843843d1f570057c2eaf458fe137134422e3
       path: modules/lib/openthread
     - name: segger
       revision: 6fcf61606d6012d2c44129edc033f59331e268bc
