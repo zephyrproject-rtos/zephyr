@@ -177,7 +177,7 @@ are included in that order by the C preprocessor.
 Here are some ways to set it:
 
 1. on the cmake build command line
-   (``-DDTC_OVERLAY_FILE=file1.overlay;file2.overlay``)
+   (``-DDTC_OVERLAY_FILE="file1.overlay;file2.overlay"``)
 #. with the CMake ``set()`` command in the application ``CMakeLists.txt``,
    before including zephyr's :file:`boilerplate.cmake` file
 #. using a ``DTC_OVERLAY_FILE`` environment variable (deprecated)
