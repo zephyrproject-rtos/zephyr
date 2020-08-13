@@ -1,0 +1,26 @@
+# nRF21540 DK NRF52840 board configuration
+
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NRF21540DK_NRF52840
+
+config BOARD
+	default "nrf21540dk_nrf52840"
+
+if USB
+
+config USB_NRFX
+	default y
+
+config USB_DEVICE_STACK
+	default y
+
+endif # USB
+
+config BT_CTLR
+	# Disabled until PA/LNA support for nRF21540 front-end is added
+	# in Zephyr Bluetooth Controller
+	# default BT
+
+endif # BOARD_NRF21540DK_NRF52840
