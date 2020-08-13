@@ -1951,6 +1951,7 @@ class ProjectBuilder(FilterBuilder):
         self.log = "build.log"
         self.instance = instance
         self.suite = suite
+        self.filtered_tests = 0
 
         self.lsan = kwargs.get('lsan', False)
         self.asan = kwargs.get('asan', False)
@@ -2062,9 +2063,9 @@ class ProjectBuilder(FilterBuilder):
                     logger.debug("filtering %s" % self.instance.name)
                     self.instance.status = "skipped"
                     self.instance.reason = "filter"
+                    self.suite.build_filtered_tests += 1
                     for case in self.instance.testcase.cases:
                         self.instance.results.update({case: 'SKIP'})
-                        self.suite.total_skipped_cases += 1
                     pipeline.put({"op": "report", "test": self.instance})
                 else:
                     pipeline.put({"op": "build", "test": self.instance})
@@ -2160,10 +2161,8 @@ class ProjectBuilder(FilterBuilder):
             if not self.verbose:
                 self.log_info_file(self.inline_logs)
         elif instance.status == "skipped":
-            self.suite.total_skipped += 1
             status = Fore.YELLOW + "SKIPPED" + Fore.RESET
         elif instance.status == "passed":
-            self.suite.total_passed += 1
             status = Fore.GREEN + "PASSED" + Fore.RESET
         else:
             logger.debug(f"Unknown status = {instance.status}")
@@ -2196,8 +2195,8 @@ class ProjectBuilder(FilterBuilder):
                 self.suite.total_to_do,
                 Fore.RESET,
                 int((float(self.suite.total_done) / self.suite.total_to_do) * 100),
-                Fore.YELLOW if self.suite.total_skipped > 0 else Fore.RESET,
-                self.suite.total_skipped,
+                Fore.YELLOW if self.suite.build_filtered_tests > 0 else Fore.RESET,
+                self.suite.build_filtered_tests,
                 Fore.RESET,
                 Fore.RED if self.suite.total_failed > 0 else Fore.RESET,
                 self.suite.total_failed,
@@ -2366,9 +2365,11 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.total_tests = 0  # number of test instances
         self.total_cases = 0  # number of test cases
         self.total_skipped_cases = 0  # number of skipped test cases
+        self.total_to_do = 0 # number of test instances to be run
         self.total_done = 0  # tests completed
         self.total_failed = 0
         self.total_skipped = 0
+        self.build_filtered_tests = 0
         self.total_passed = 0
         self.total_errors = 0
 
@@ -2397,12 +2398,23 @@ class TestSuite(DisablePyTestCollectionMixin):
         sys.stdout.write(what + "\n")
         sys.stdout.flush()
 
-    def update(self):
+    def update_counting(self):
         self.total_tests = len(self.instances)
-        self.total_to_do = self.total_tests - self.total_skipped
         self.total_cases = 0
-        for instance in self.instances:
-            self.total_cases += len(self.instances[instance].testcase.cases)
+        self.total_skipped = 0
+        self.total_skipped_cases = 0
+        self.total_passed = 0
+        for instance in self.instances.values():
+            self.total_cases += len(instance.testcase.cases)
+            if instance.status == 'skipped':
+                self.total_skipped += 1
+                self.total_skipped_cases += len(instance.testcase.cases)
+            elif instance.status == "passed":
+                self.total_passed += 1
+                for res in instance.results.values():
+                    if res == 'SKIP':
+                        self.total_skipped_cases += 1
+        self.total_to_do = self.total_tests - self.total_skipped
 
 
     def compare_metrics(self, filename):
@@ -2889,10 +2901,6 @@ class TestSuite(DisablePyTestCollectionMixin):
             instance.reason = self.discards[instance]
             instance.status = "skipped"
             instance.fill_results_by_status()
-            # We only count skipped tests for instances in self.instances
-            if self.instances.get(instance.name, False):
-                self.total_skipped += 1
-                self.total_skipped_cases += len(instance.testcase.cases)
 
         return discards
 
