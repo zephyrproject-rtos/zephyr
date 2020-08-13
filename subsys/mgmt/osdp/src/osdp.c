@@ -94,7 +94,7 @@ struct osdp *osdp_get_ctx()
 	return &osdp_ctx;
 }
 
-static struct osdp *osdp_build_ctx()
+static struct osdp *osdp_build_ctx(struct osdp_channel *channel)
 {
 	int i;
 	struct osdp *ctx;
@@ -109,7 +109,12 @@ static struct osdp *osdp_build_ctx()
 
 	for (i = 0; i < CONFIG_OSDP_NUM_CONNECTED_PD; i++) {
 		pd = TO_PD(ctx, i);
+		pd->offset = i;
+		pd->seq_number = -1;
 		pd->__parent = ctx;
+		pd->address = CONFIG_OSDP_PD_ADDRESS;
+		pd->baud_rate = CONFIG_OSDP_UART_BAUD_RATE;
+		memcpy(&pd->channel, channel, sizeof(struct osdp_channel));
 		k_mem_slab_init(&pd->cmd.slab,
 				pd->cmd.slab_buf, sizeof(struct osdp_cmd),
 				CONFIG_OSDP_PD_COMMAND_QUEUE_SIZE);
@@ -164,8 +169,8 @@ static int osdp_init(const struct device *arg)
 	uart_irq_rx_enable(p->dev);
 
 	/* setup OSDP */
-	ctx = osdp_build_ctx();
-	if (osdp_setup(ctx, &channel)) {
+	ctx = osdp_build_ctx(&channel);
+	if (osdp_setup(ctx)) {
 		LOG_ERR("Failed to setup OSDP device!");
 		return -1;
 	}

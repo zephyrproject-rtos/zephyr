@@ -380,13 +380,10 @@ struct osdp_pd {
 	struct osdp_pd_id id;
 
 	/* PD state management */
-	enum osdp_pd_state_e pd_state;
+	enum osdp_pd_state_e state;
 	int64_t tstamp;
-	int64_t sc_tstamp;
-	int phy_state;
 	uint8_t rx_buf[CONFIG_OSDP_UART_BUFFER_LENGTH];
 	int rx_buf_len;
-	int64_t phy_tstamp;
 
 	int cmd_id;
 	int reply_id;
@@ -410,7 +407,6 @@ struct osdp {
 	int magic;
 	uint32_t flags;
 
-	uint8_t sc_master_key[16];
 	struct osdp_cp *cp;
 	struct osdp_pd *pd;
 };
@@ -431,12 +427,15 @@ void osdp_dump(const char *head, uint8_t *buf, int len);
 uint16_t osdp_compute_crc16(const uint8_t *buf, size_t len);
 struct osdp_cmd *osdp_cmd_alloc(struct osdp_pd *pd);
 void osdp_cmd_free(struct osdp_pd *pd, struct osdp_cmd *cmd);
+void osdp_cmd_enqueue(struct osdp_pd *pd, struct osdp_cmd *cmd);
+int osdp_cmd_dequeue(struct osdp_pd *pd, struct osdp_cmd **cmd);
+struct osdp_cmd *osdp_cmd_get_last(struct osdp_pd *pd);
 
 /* from osdp.c */
 struct osdp *osdp_get_ctx();
 
 /* must be implemented by CP or PD */
-int osdp_setup(struct osdp *ctx, struct osdp_channel *channel);
+int osdp_setup(struct osdp *ctx);
 void osdp_update(struct osdp *ctx);
 
 #endif	/* _OSDP_COMMON_H_ */
