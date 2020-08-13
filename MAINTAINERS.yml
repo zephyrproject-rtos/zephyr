@@ -506,7 +506,6 @@ Documentation:
         - drivers/i2c/
         - dts/bindings/i2c/
         - include/drivers/i2c.h
-        - include/drivers/i2c/
     labels:
         - "area: I2C"
 
