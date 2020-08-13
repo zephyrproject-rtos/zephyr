@@ -29,6 +29,12 @@ config UART_NPCX
 	help
 	  Enable support for NPCX UART driver.
 
+config GPIO_NPCX
+	default y
+	depends on GPIO
+	help
+	  Enable support for NPCX GPIO driver.
+
 source "soc/arm/nuvoton_npcx/npcx7/Kconfig.defconfig.npcx7*"
 
 endif # SOC_SERIES_NPCX7

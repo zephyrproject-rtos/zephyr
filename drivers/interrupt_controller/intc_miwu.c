@@ -54,6 +54,7 @@
 #include <drivers/gpio.h>
 
 #include "soc_miwu.h"
+#include "soc_gpio.h"
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(intc_miwu, LOG_LEVEL_ERR);
@@ -95,7 +96,19 @@ static void intc_miwu_dispatch_gpio_isr(uint8_t wui_table,
 	struct miwu_io_callback *cb, *tmp;
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&cb_list_gpio, cb, tmp, node) {
-		/* Will implement in next commit */
+		/* Pending bit, group and table match the wui item in list */
+		if (cb->params.wui.table == wui_table
+			&& cb->params.wui.group == wui_group
+			&& cb->params.wui.bit == wui_bit) {
+			__ASSERT(cb->handler, "No GPIO callback handler!");
+			/*
+			 * Execute GPIO callback and the other callback might
+			 * match the same wui item.
+			 */
+			cb->handler(soc_get_gpio_dev(cb->params.gpio_port),
+					(struct gpio_callback *)cb,
+					cb->params.pin_mask);
+		}
 	}
 }
 

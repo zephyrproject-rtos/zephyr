@@ -286,4 +286,26 @@ struct uart_reg_t {
 #define NPCX_WKMOD(base, n) (*(volatile uint8_t *)(base + \
 						NPCX_WKMOD_OFFSET(n)))
 
+/*
+ * General-Purpose I/O (GPIO) device registers
+ */
+struct gpio_reg {
+	/* 0x000: Port GPIOx Data Out */
+	volatile uint8_t PDOUT;
+	/* 0x001: Port GPIOx Data In */
+	volatile uint8_t PDIN;
+	/* 0x002: Port GPIOx Direction */
+	volatile uint8_t PDIR;
+	/* 0x003: Port GPIOx Pull-Up or Pull-Down Enable */
+	volatile uint8_t PPULL;
+	/* 0x004: Port GPIOx Pull-Up/Down Selection */
+	volatile uint8_t PPUD;
+	/* 0x005: Port GPIOx Drive Enable by VDD Present */
+	volatile uint8_t PENVDD;
+	/* 0x006: Port GPIOx Output Type */
+	volatile uint8_t PTYPE;
+	/* 0x007: Port GPIOx Lock Control */
+	volatile uint8_t PLOCK_CTL;
+};
+
 #endif /* _NUVOTON_NPCX_REG_DEF_H */
