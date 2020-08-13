@@ -321,7 +321,6 @@ static int init_spim(const struct device *dev)
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	data->pm_state = DEVICE_PM_ACTIVE_STATE;
 #endif
-	spi_context_unlock_unconditionally(&data->ctx);
 
 	return 0;
 }
@@ -412,7 +411,9 @@ static int spim_nrfx_pm_control(const struct device *dev,
 		IRQ_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_SPIM##idx),		       \
 			    DT_IRQ(SPIM(idx), priority),		       \
 			    nrfx_isr, nrfx_spim_##idx##_irq_handler, 0);       \
-		return init_spim(dev);					       \
+		int err = init_spim(dev);				       \
+		spi_context_unlock_unconditionally(&get_dev_data(dev)->ctx);   \
+		return err;						       \
 	}								       \
 	static struct spi_nrfx_data spi_##idx##_data = {		       \
 		SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),		       \
