@@ -162,7 +162,11 @@ int __eswifi_off_start_client(struct eswifi_dev *eswifi,
 
 	/* Stop any running client */
 	snprintk(eswifi->buf, sizeof(eswifi->buf), "P6=0\r");
-	eswifi_at_cmd(eswifi, eswifi->buf);
+	err = eswifi_at_cmd(eswifi, eswifi->buf);
+	if (err < 0) {
+		LOG_ERR("Unable to stop running client");
+		return -EIO;
+	}
 
 	/* Set Remote IP */
 	snprintk(eswifi->buf, sizeof(eswifi->buf), "P3=%u.%u.%u.%u\r",
