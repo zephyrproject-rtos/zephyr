@@ -251,7 +251,8 @@ should know about.
    3 ways (in order of precedence):
 
    * As a parameter to the ``west build`` or ``cmake`` invocation via the
-     ``-D`` command-line switch
+     ``-D`` command-line switch. If you have multiple overlay files, you should
+     use quotations, ``"file1.overlay;file2.overlay"``
    * As :ref:`env_vars`.
    * As a ``set(<VARIABLE> <VALUE>)`` statement in your :file:`CMakeLists.txt`
 
@@ -273,7 +274,7 @@ should know about.
   See :ref:`initial-conf` for more information.
 
 * :makevar:`DTC_OVERLAY_FILE`: One or more devicetree overlay files to use.
-  Multiple files can be separated with spaces or semicolons.
+  Multiple files can be separated with semicolons.
   See :ref:`set-devicetree-overlays` for examples and :ref:`devicetree-intro`
   for information about devicetree and Zephyr.
 
