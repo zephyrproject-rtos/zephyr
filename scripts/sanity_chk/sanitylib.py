@@ -2600,6 +2600,9 @@ class TestSuite(DisablePyTestCollectionMixin):
                 try:
                     platform = Platform()
                     platform.load(file)
+                    if platform.name in [p.name for p in self.platforms]:
+                        logger.error(f"Duplicate platform {platform.name} in {file}")
+                        raise Exception(f"Duplicate platform identifier {platform.name} found")
                     if platform.sanitycheck:
                         self.platforms.append(platform)
                         if platform.default:
