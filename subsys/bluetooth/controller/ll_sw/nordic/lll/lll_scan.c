@@ -59,10 +59,10 @@ static void isr_cleanup(void *param);
 
 static inline bool isr_rx_scan_check(struct lll_scan *lll, uint8_t irkmatch_ok,
 				     uint8_t devmatch_ok, uint8_t rl_idx);
-static inline int isr_rx_pdu(struct lll_scan *lll, uint8_t devmatch_ok,
-			     uint8_t devmatch_id, uint8_t irkmatch_ok,
-			     uint8_t irkmatch_id, uint8_t rl_idx,
-			     uint8_t rssi_ready);
+static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
+			     uint8_t devmatch_ok, uint8_t devmatch_id,
+			     uint8_t irkmatch_ok, uint8_t irkmatch_id,
+			     uint8_t rl_idx, uint8_t rssi_ready);
 static inline bool isr_scan_init_check(struct lll_scan *lll,
 				       struct pdu_adv *pdu, uint8_t rl_idx);
 static inline bool isr_scan_init_adva_check(struct lll_scan *lll,
@@ -397,6 +397,8 @@ static void ticker_op_start_cb(uint32_t status, void *param)
 static void isr_rx(void *param)
 {
 	struct lll_scan *lll;
+	struct node_rx_pdu *node_rx;
+	struct pdu_adv *pdu_adv_rx;
 	uint8_t devmatch_ok;
 	uint8_t devmatch_id;
 	uint8_t irkmatch_ok;
@@ -434,7 +436,20 @@ static void isr_rx(void *param)
 		goto isr_rx_do_close;
 	}
 
+	node_rx = ull_pdu_rx_alloc_peek(1);
+	LL_ASSERT(node_rx);
+
+	pdu_adv_rx = (void *)node_rx->pdu;
+
 #if defined(CONFIG_BT_CTLR_PRIVACY)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	if (!irkmatch_ok && (pdu_adv_rx->type == PDU_ADV_TYPE_EXT_IND) &&
+	    (pdu_adv_rx->tx_addr)) {
+		radio_ar_resolve(&pdu_adv_rx->payload[2]);
+		irkmatch_ok = radio_ar_has_match();
+		irkmatch_id = radio_ar_match_get();
+	}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 	rl_idx = devmatch_ok ?
 		 ull_filter_lll_rl_idx(!!(lll->filter_policy & 0x01),
 				       devmatch_id) :
@@ -442,13 +457,13 @@ static void isr_rx(void *param)
 			       FILTER_IDX_NONE;
 #else
 	rl_idx = FILTER_IDX_NONE;
-#endif
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 	if (crc_ok && isr_rx_scan_check(lll, irkmatch_ok, devmatch_ok,
 					rl_idx)) {
 		int err;
 
-		err = isr_rx_pdu(lll, devmatch_ok, devmatch_id, irkmatch_ok,
-				 irkmatch_id, rl_idx, rssi_ready);
+		err = isr_rx_pdu(lll, pdu_adv_rx, devmatch_ok, devmatch_id,
+				 irkmatch_ok, irkmatch_id, rl_idx, rssi_ready);
 		if (!err) {
 			if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 				lll_prof_send();
@@ -700,19 +715,12 @@ static inline bool isr_rx_scan_check(struct lll_scan *lll, uint8_t irkmatch_ok,
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 }
 
-static inline int isr_rx_pdu(struct lll_scan *lll, uint8_t devmatch_ok,
-			     uint8_t devmatch_id, uint8_t irkmatch_ok,
-			     uint8_t irkmatch_id, uint8_t rl_idx,
-			     uint8_t rssi_ready)
+static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
+			     uint8_t devmatch_ok, uint8_t devmatch_id,
+			     uint8_t irkmatch_ok, uint8_t irkmatch_id,
+			     uint8_t rl_idx, uint8_t rssi_ready)
 {
-	struct node_rx_pdu *node_rx;
-	struct pdu_adv *pdu_adv_rx;
 	bool dir_report = false;
-
-	node_rx = ull_pdu_rx_alloc_peek(1);
-	LL_ASSERT(node_rx);
-
-	pdu_adv_rx = (void *)node_rx->pdu;
 
 	if (0) {
 #if defined(CONFIG_BT_CENTRAL)
