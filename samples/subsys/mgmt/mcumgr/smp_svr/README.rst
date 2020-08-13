@@ -158,7 +158,7 @@ documentation.
 Flashing the sample image
 *************************
 
-Upload the :file:`zephyr.signed.bin` file from the previous to image slot-0 of your
+Upload the :file:`zephyr.signed.hex` file from the previous to image slot-0 of your
 board.  The location of image slot-0 varies by board, as described in
 :ref:`mcuboot_partitions`.
 
@@ -168,7 +168,7 @@ the image.
 
 .. code-block:: console
 
-    west flash --bin-file build/zephyr/zephyr.signed.bin
+    west flash --hex-file build/zephyr/zephyr.signed.hex
 
 We need to explicity specify the *signed* image file, otherwise the non-signed version
 will be used and the image wont be runnable.
