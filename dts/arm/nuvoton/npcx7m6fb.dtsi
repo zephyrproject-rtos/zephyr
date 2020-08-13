@@ -10,6 +10,10 @@
 
 /* NPCX7 series pinmux mapping table */
 #include "npcx/npcx7-alts-map.dtsi"
+/* NPCX7 series mapping table between MIWU wui bits and source device */
+#include "npcx/npcx7-miwus-wui-map.dtsi"
+/* NPCX7 series mapping table between MIWU groups and interrupts */
+#include "npcx/npcx7-miwus-int-map.dtsi"
 
 / {
 	cpus {
@@ -79,6 +83,30 @@
 			pinctrl = <&alta_uart2_sl>; /* PIN75.86 */
 			status = "disabled";
 			label = "UART_2";
+		};
+
+		miwu0: miwu@400bb000 {
+			compatible = "nuvoton,npcx-miwu";
+			reg = <0x400bb000 0x2000>;
+			index = <0>;
+			#miwu-cells = <2>;
+			label="MIWU_0";
+		};
+
+		miwu1: miwu@400bd000 {
+			compatible = "nuvoton,npcx-miwu";
+			reg = <0x400bd000 0x2000>;
+			index = <1>;
+			#miwu-cells = <2>;
+			label="MIWU_1";
+		};
+
+		miwu2: miwu@400bf000 {
+			compatible = "nuvoton,npcx-miwu";
+			reg = <0x400bf000 0x2000>;
+			index = <2>;
+			#miwu-cells = <2>;
+			label="MIWU_2";
 		};
 	};
 };

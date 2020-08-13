@@ -42,3 +42,7 @@ NPCX_REG_SIZE_CHECK(uart_reg_t, 0x027);
 NPCX_REG_OFFSET_CHECK(uart_reg_t, UPSR, 0x00E);
 NPCX_REG_OFFSET_CHECK(uart_reg_t, UFTSTS, 0x020);
 NPCX_REG_OFFSET_CHECK(uart_reg_t, UFRCTL, 0x026);
+
+/* GPIO register structure check */
+NPCX_REG_SIZE_CHECK(gpio_reg, 0x008);
+NPCX_REG_OFFSET_CHECK(gpio_reg, PLOCK_CTL, 0x007);
