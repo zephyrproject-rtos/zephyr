@@ -13,6 +13,7 @@
 #include <nrfx/hal/nrf_rtc.h>
 #include <nrfx/hal/nrf_timer.h>
 #include <nrfx/hal/nrf_ccm.h>
+#include <nrfx/hal/nrf_aar.h>
 
 #include "util/mem.h"
 #include "hal/ccm.h"
@@ -1241,4 +1242,26 @@ uint32_t radio_ar_has_match(void)
 		NRF_AAR->EVENTS_END &&
 		NRF_AAR->EVENTS_RESOLVED &&
 		!NRF_AAR->EVENTS_NOTRESOLVED);
+}
+
+void radio_ar_resolve(uint8_t *addr)
+{
+	NRF_AAR->ENABLE = (AAR_ENABLE_ENABLE_Enabled << AAR_ENABLE_ENABLE_Pos) &
+			  AAR_ENABLE_ENABLE_Msk;
+
+	NRF_AAR->ADDRPTR = (uint32_t)addr - 3;
+
+	NRF_AAR->EVENTS_END = 0;
+	NRF_AAR->EVENTS_RESOLVED = 0;
+	NRF_AAR->EVENTS_NOTRESOLVED = 0;
+
+	NRF_AAR->TASKS_START = 1;
+
+	nrf_aar_int_enable(NRF_AAR, AAR_INTENSET_END_Msk);
+	while (NRF_AAR->EVENTS_END == 0) {
+		__WFE();
+		__SEV();
+		__WFE();
+	}
+	nrf_aar_int_disable(NRF_AAR, AAR_INTENCLR_END_Msk);
 }
