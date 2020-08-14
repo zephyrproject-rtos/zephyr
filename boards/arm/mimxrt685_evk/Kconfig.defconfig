@@ -32,4 +32,11 @@ config FXOS8700_DRDY_INT1
 	default y
 	depends on FXOS8700_TRIGGER
 
+if DMA_MCUX_LPC
+
+config HEAP_MEM_POOL_SIZE
+	default 4096
+
+endif # DMA_MCUX_LPC
+
 endif # BOARD_MIMXRT685_EVK

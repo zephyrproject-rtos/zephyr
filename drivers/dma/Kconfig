@@ -56,6 +56,8 @@ source "drivers/dma/Kconfig.sam0"
 
 source "drivers/dma/Kconfig.mcux_edma"
 
+source "drivers/dma/Kconfig.mcux_lpc"
+
 source "drivers/dma/Kconfig.dma_pl330"
 
 endif # DMA

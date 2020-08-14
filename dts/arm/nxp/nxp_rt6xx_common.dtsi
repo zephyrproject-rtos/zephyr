@@ -154,6 +154,24 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 	};
+
+	dma0: dma-controller@104000 {
+		compatible = "nxp,lpc-dma";
+		reg = <0x104000 0x1000>;
+		interrupts = <1 0>;
+		label = "DMA_0";
+		status = "disabled";
+		#dma-cells = <0>;
+	};
+
+	dma1: dma-controller@105000 {
+		compatible = "nxp,lpc-dma";
+		reg = <0x105000 0x1000>;
+		interrupts = <54 0>;
+		label = "DMA_1";
+		status = "disabled";
+		#dma-cells = <0>;
+	};
 };
 
 &nvic {
