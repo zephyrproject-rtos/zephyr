@@ -357,6 +357,10 @@ static const struct z_exc_handle exceptions[] = {
 
 void z_x86_page_fault_handler(z_arch_esf_t *esf)
 {
+#if !defined(CONFIG_X86_64) && defined(CONFIG_DEBUG_COREDUMP)
+	z_x86_exception_vector = IV_PAGE_FAULT;
+#endif
+
 #ifdef CONFIG_USERSPACE
 	int i;
 

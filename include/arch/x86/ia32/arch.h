@@ -343,6 +343,7 @@ typedef struct nanoEsf {
 	unsigned int eflags;
 } z_arch_esf_t;
 
+extern unsigned int z_x86_exception_vector;
 
 struct _x86_syscall_stack_frame {
 	uint32_t eip;

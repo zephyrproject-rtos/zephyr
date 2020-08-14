@@ -35,12 +35,12 @@ struct x86_esf {
 #ifdef CONFIG_EXCEPTION_DEBUG
 	/* callee-saved */
 	unsigned long rbx;
-	unsigned long rbp;
 	unsigned long r12;
 	unsigned long r13;
 	unsigned long r14;
 	unsigned long r15;
 #endif /* CONFIG_EXCEPTION_DEBUG */
+	unsigned long rbp;
 
 	/* Caller-saved regs */
 	unsigned long rax;

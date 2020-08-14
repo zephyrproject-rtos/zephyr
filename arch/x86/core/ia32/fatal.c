@@ -20,6 +20,10 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(os);
 
+#ifdef CONFIG_DEBUG_COREDUMP
+unsigned int z_x86_exception_vector;
+#endif
+
 __weak void z_debug_fatal_hook(const z_arch_esf_t *esf) { ARG_UNUSED(esf); }
 
 void z_x86_spurious_irq(const z_arch_esf_t *esf)
@@ -58,6 +62,10 @@ NANO_CPU_INT_REGISTER(_kernel_oops_handler, NANO_SOFT_IRQ,
 FUNC_NORETURN static void generic_exc_handle(unsigned int vector,
 					     const z_arch_esf_t *pEsf)
 {
+#ifdef CONFIG_DEBUG_COREDUMP
+	z_x86_exception_vector = vector;
+#endif
+
 	z_x86_unhandled_cpu_exception(vector, pEsf);
 }
 
