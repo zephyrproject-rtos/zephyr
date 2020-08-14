@@ -516,6 +516,10 @@ void z_impl_k_thread_abort(k_tid_t thread)
 			thread_idx,
 			__func__);
 
+		if (arch_is_in_isr()) {
+			return;
+		}
+
 		(void)z_swap_irqlock(key);
 		CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 	}
