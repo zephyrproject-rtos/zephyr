@@ -15,6 +15,9 @@ canopen
 packaging
 progress
 
+# for ram/rom reports
+anytree
+
 # intelhex used by mergehex.py
 intelhex
 
