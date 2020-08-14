@@ -7,10 +7,12 @@
 #define DT_DRV_COMPAT nuvoton_npcx_uart
 
 #include <assert.h>
+#include <drivers/gpio.h>
 #include <drivers/uart.h>
 #include <drivers/clock_control.h>
 #include <kernel.h>
 #include <soc.h>
+#include "soc_miwu.h"
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(uart_npcx, LOG_LEVEL_ERR);
@@ -20,6 +22,8 @@ struct uart_npcx_config {
 	struct uart_device_config uconf;
 	/* clock configuration */
 	struct npcx_clk_cfg clk_cfg;
+	/* int-mux configuration */
+	const struct npcx_wui wui_map;
 	/* pinmux configuration */
 	const uint8_t   alts_size;
 	const struct npcx_alt *alts_list;
@@ -333,6 +337,19 @@ static int uart_npcx_init(struct device *dev)
 	/* Configure UART interrupts */
 	config->uconf.irq_config_func(dev);
 #endif
+
+#if defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES)
+	/*
+	 * Configure the UART wake-up event triggered from a falling edge
+	 * on CR_SIN pin. No need for callback function.
+	 */
+	soc_miwu_interrupt_configure(&config->wui_map,
+			NPCX_MIWU_MODE_EDGE, NPCX_MIWU_TRIG_LOW);
+
+	/* Enable irq of interrupt-input module */
+	soc_miwu_irq_enable(&config->wui_map);
+#endif
+
 
 	/* Configure pin-mux for uart device */
 	soc_pinctrl_mux_configure(config->alts_list, config->alts_size, 1);
