@@ -480,13 +480,13 @@ except: /*
 	pushq %rdx
 	pushq %rcx
 	pushq %rax
+	pushq %rbp
 #ifdef CONFIG_EXCEPTION_DEBUG
 	/* Callee saved regs */
 	pushq %r15
 	pushq %r14
 	pushq %r13
 	pushq %r12
-	pushq %rbp
 	pushq %rbx
 #endif /* CONFIG_EXCEPTION_DEBUG */
 	movq %rsp, %rdi
@@ -498,12 +498,12 @@ except: /*
 	 */
 #ifdef CONFIG_EXCEPTION_DEBUG
 	popq %rbx
-	popq %rbp
 	popq %r12
 	popq %r13
 	popq %r14
 	popq %r15
 #endif /* CONFIG_EXCEPTION_DEBUG */
+	popq %rbp
 	popq %rax
 	popq %rcx
 	popq %rdx

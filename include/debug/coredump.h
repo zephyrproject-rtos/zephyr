@@ -23,6 +23,8 @@
 /* Target code */
 enum z_coredump_tgt_code {
 	COREDUMP_TGT_UNKNOWN = 0,
+	COREDUMP_TGT_X86,
+	COREDUMP_TGT_X86_64,
 };
 
 /* Coredump header */

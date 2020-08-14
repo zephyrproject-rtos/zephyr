@@ -40,6 +40,7 @@ config X86
 	select ATOMIC_OPERATIONS_BUILTIN
 	select HAS_DTS
 	select ARCH_HAS_CUSTOM_SWAP_TO_MAIN if !X86_64
+	select ARCH_SUPPORTS_COREDUMP
 	select CPU_HAS_MMU
 	help
 	  x86 architecture
