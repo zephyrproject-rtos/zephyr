@@ -192,3 +192,41 @@ void test_delayed_thread_abort(void)
 	/* Restore the priority */
 	k_thread_priority_set(k_current_get(), current_prio);
 }
+
+static volatile bool isr_finished;
+
+static void offload_func(void *param)
+{
+	struct k_thread *t = param;
+
+	k_thread_abort(t);
+
+	/* k_thread_abort() in an isr shouldn't affect the ISR's execution */
+	isr_finished = true;
+}
+
+static void entry_abort_isr(void *p1, void *p2, void *p3)
+{
+	/* Simulate taking an interrupt which kills this thread */
+	irq_offload(offload_func, k_current_get());
+
+	printk("shouldn't see this, thread should have been killed");
+	ztest_test_fail();
+}
+
+/**
+ * @ingroup kernel_thread_tests
+ * @brief Show that threads can be aborted from interrupt context
+ *
+ * @see k_thread_abort()
+ */
+void test_abort_from_isr(void)
+{
+	isr_finished = false;
+	k_thread_create(&tdata, tstack, STACK_SIZE, entry_abort_isr,
+			NULL, NULL, NULL, 0, 0, K_NO_WAIT);
+
+
+	k_thread_join(&tdata, K_FOREVER);
+	zassert_true(isr_finished, "ISR did not complete");
+}
