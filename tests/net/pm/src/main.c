@@ -178,6 +178,8 @@ void test_pm(void)
 	ret = sendto(sock, data, ARRAY_SIZE(data), 0,
 		     (struct sockaddr *)&addr4, sizeof(struct sockaddr_in));
 	zassert_true(ret > 0, "Could not send data");
+
+	close(sock);
 }
 
 void test_main(void)
