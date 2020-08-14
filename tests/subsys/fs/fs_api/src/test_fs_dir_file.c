@@ -27,7 +27,7 @@ static struct fs_mount_t test_fs_mnt_1 = {
 };
 
 static struct fs_mount_t test_fs_mnt_unsupported_fs = {
-		.type = FS_TYPE_END,
+		.type = FS_TYPE_EXTERNAL_BASE,
 		.mnt_point = "/MMCBLOCK:",
 		.fs_data = &test_data,
 };
