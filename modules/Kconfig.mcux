@@ -204,6 +204,11 @@ config HAS_MCUX_EDMA
 	help
 	  Set if the EDMA module is present on the SoC.
 
+config HAS_MCUX_LPC_DMA
+	bool
+	help
+	  Set if the DMA module is present on the SoC.
+
 config HAS_MCUX_RDC
 	bool
 	help

@@ -18,6 +18,7 @@ supported:
   - arduino_i2c
   - arduino_spi
   - counter
+  - dma
   - gpio
   - hwinfo
   - i2c

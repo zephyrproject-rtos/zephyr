@@ -1,0 +1,18 @@
+# Copyright (c) 2020, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP LPC DMA controller
+
+compatible: "nxp,lpc-dma"
+
+include: dma-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    dma-channels:
+      required: true
