@@ -57,6 +57,8 @@ hardware features:
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
+| QSPI      | on-chip    | QSPI flash                          |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 :file:`boards/arm/arty/arty_a7_arm_designstart_m1_defconfig`. Other hardware

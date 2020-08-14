@@ -150,6 +150,32 @@
 			reg = <0x20000000 DT_SIZE_K(32)>;
 		};
 
+		daplink_quad_spi0: spi@40020000 {
+			compatible = "xlnx,xps-spi-2.00.a";
+			status = "disabled";
+			reg = <0x40020000 0x10000>;
+			interrupts = <4 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			label = "DAPLINK_QUAD_SPI_0";
+
+			xlnx,num-ss-bits = <0x1>;
+			xlnx,num-transfer-bits = <0x8>;
+		};
+
+		daplink_single_spi0: spi@40030000 {
+			compatible = "xlnx,xps-spi-2.00.a";
+			status = "disabled";
+			reg = <0x40030000 0x10000>;
+			interrupts = <5 0>;
+			label = "DAPLINK_SINGLE_SPI_0";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			xlnx,num-ss-bits = <0x1>;
+			xlnx,num-transfer-bits = <0x8>;
+		};
+
 		uartlite0: uartlite@40100000 {
 			compatible = "xlnx,xps-uartlite-1.00.a";
 			interrupts = <0 0>;
@@ -210,6 +236,38 @@
 				label = "GPIO_1_2";
 				gpio-controller;
 				#gpio-cells = <2>;
+			};
+		};
+
+		quad_spi0: spi@40130000 {
+			compatible = "xlnx,xps-spi-2.00.a";
+			reg = <0x40130000 0x10000>;
+			interrupts = <3 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			label = "QUAD_SPI_0";
+
+			xlnx,num-ss-bits = <0x1>;
+			xlnx,num-transfer-bits = <0x8>;
+
+			flash0: flash@0 {
+				compatible = "micron,n25q128a","jedec,spi-nor";
+				reg = <0>;
+				spi-max-frequency = <108000000>;
+				size = <DT_SIZE_M(128)>;
+				jedec-id = [20 ba 18];
+				label = "FLASH_0";
+
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					fpga_bitstream_partition: partition@0 {
+						label = "fpga_bitstream";
+						reg = <0x00000000 0x218000>;
+					};
+				};
 			};
 		};
 

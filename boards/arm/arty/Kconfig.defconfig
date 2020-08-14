@@ -28,4 +28,18 @@ config GPIO_XLNX_AXI
 
 endif # GPIO
 
+if SPI
+
+config SPI_XLNX_AXI_QUADSPI
+	default y
+
+endif # SPI
+
+if FLASH
+
+config SPI_NOR
+	default y if SPI_XLNX_AXI_QUADSPI
+
+endif # FLASH
+
 endif # BOARD_ARTY_A7_ARM_DESIGNSTART_M1
