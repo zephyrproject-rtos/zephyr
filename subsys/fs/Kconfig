@@ -36,6 +36,18 @@ config FILE_SYSTEM_MAX_TYPES
 	  LittleFS, but it is possible to define additional ones and
 	  register them.  A slot is required for each type.
 
+config FILE_SYSTEM_MAX_FILE_NAME
+       int "Optional override for maximum file name length"
+       default -1
+       help
+         Specify the maximum file name allowed across all enabled file
+         system types.  Zero or a negative value selects the maximum
+         file name length for enabled in-tree file systems.  This
+         default may be inappropriate when registering an out-of-tree
+         file system.  Selecting a value less than the actual length
+         supported by a file system may result in memory access
+         violations.
+
 menu "FatFs Settings"
 	visible if FAT_FILESYSTEM_ELM
 
