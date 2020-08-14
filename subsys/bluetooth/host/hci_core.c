@@ -866,7 +866,7 @@ static void adv_update_rpa(struct bt_le_ext_adv *adv, void *data)
 
 static void le_update_private_addr(void)
 {
-	struct bt_le_ext_adv *adv;
+	struct bt_le_ext_adv *adv = NULL;
 	bool adv_enabled = false;
 	uint8_t id = BT_ID_DEFAULT;
 	int err;
@@ -919,7 +919,7 @@ static void le_update_private_addr(void)
 		return;
 	}
 
-	if (adv_enabled) {
+	if (adv && adv_enabled) {
 		set_le_adv_enable_legacy(adv, true);
 	}
 
