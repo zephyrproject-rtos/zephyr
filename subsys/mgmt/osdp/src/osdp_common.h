@@ -120,6 +120,7 @@
 #define PD_FLAG_TAMPER          0x00000002 /* local tamper status */
 #define PD_FLAG_POWER           0x00000004 /* local power status */
 #define PD_FLAG_R_TAMPER        0x00000008 /* remote tamper status */
+#define PD_FLAG_AWAIT_RESP      0x00000020 /* set after command is sent */
 #define PD_FLAG_SKIP_SEQ_CHECK  0x00000040 /* disable seq checks (debug) */
 #define PD_FLAG_SC_USE_SCBKD    0x00000080 /* in this SC attempt, use SCBKD */
 #define PD_FLAG_SC_ACTIVE       0x00000100 /* secure channel is active */
@@ -176,6 +177,28 @@ enum osdp_pd_state_e {
 	OSDP_PD_STATE_IDLE,
 	OSDP_PD_STATE_SEND_REPLY,
 	OSDP_PD_STATE_ERR,
+};
+
+enum osdp_cp_phy_state_e {
+	OSDP_CP_PHY_STATE_IDLE,
+	OSDP_CP_PHY_STATE_SEND_CMD,
+	OSDP_CP_PHY_STATE_REPLY_WAIT,
+	OSDP_CP_PHY_STATE_WAIT,
+	OSDP_CP_PHY_STATE_ERR,
+	OSDP_CP_PHY_STATE_ERR_WAIT,
+	OSDP_CP_PHY_STATE_CLEANUP,
+};
+
+enum osdp_cp_state_e {
+	OSDP_CP_STATE_INIT,
+	OSDP_CP_STATE_IDREQ,
+	OSDP_CP_STATE_CAPDET,
+	OSDP_CP_STATE_SC_INIT,
+	OSDP_CP_STATE_SC_CHLNG,
+	OSDP_CP_STATE_SC_SCRYPT,
+	OSDP_CP_STATE_SET_SCBK,
+	OSDP_CP_STATE_ONLINE,
+	OSDP_CP_STATE_OFFLINE
 };
 
 enum osdp_pkt_errors_e {
@@ -367,6 +390,11 @@ struct osdp_cmd_queue {
 	uint8_t slab_buf[OSDP_CMD_SLAB_BUF_SIZE];
 };
 
+struct osdp_notifiers {
+	int (*keypress)(int address, uint8_t key);
+	int (*cardread)(int address, int format, uint8_t *data, int len);
+};
+
 struct osdp_pd {
 	void *__parent;
 	int offset;
@@ -380,7 +408,13 @@ struct osdp_pd {
 	struct osdp_pd_id id;
 
 	/* PD state management */
+#ifdef CONFIG_OSDP_MODE_PD
 	enum osdp_pd_state_e state;
+#else
+	enum osdp_cp_state_e state;
+	enum osdp_cp_phy_state_e phy_state;
+	int64_t phy_tstamp;
+#endif
 	int64_t tstamp;
 	uint8_t rx_buf[CONFIG_OSDP_UART_BUFFER_LENGTH];
 	int rx_buf_len;
@@ -396,11 +430,10 @@ struct osdp_pd {
 struct osdp_cp {
 	void *__parent;
 	uint32_t flags;
-
 	int num_pd;
-
 	struct osdp_pd *current_pd;	/* current operational pd's pointer */
 	int pd_offset;			/* current pd's offset into ctx->pd */
+	struct osdp_notifiers notifier;
 };
 
 struct osdp {
@@ -433,6 +466,11 @@ struct osdp_cmd *osdp_cmd_get_last(struct osdp_pd *pd);
 
 /* from osdp.c */
 struct osdp *osdp_get_ctx();
+
+/* from osdp_cp.c */
+#ifdef CONFIG_OSDP_MODE_CP
+int osdp_extract_address(int *address);
+#endif
 
 /* must be implemented by CP or PD */
 int osdp_setup(struct osdp *ctx);
