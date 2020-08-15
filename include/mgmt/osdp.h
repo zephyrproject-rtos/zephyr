@@ -210,6 +210,8 @@ struct osdp_cmd {
 	};
 };
 
+#ifdef CONFIG_OSDP_MODE_PD
+
 /**
  * @param cmd pointer to a command structure that would be filled by the driver.
  *
@@ -217,6 +219,20 @@ struct osdp_cmd {
  * @retval -1 on failure.
  */
 int osdp_pd_get_cmd(struct osdp_cmd *cmd);
+
+#else /* CONFIG_OSDP_MODE_PD */
+
+int osdp_cp_set_callback_key_press(
+	int (*cb)(int address, uint8_t key));
+int osdp_cp_set_callback_card_read(
+	int (*cb)(int address, int format, uint8_t *data, int len));
+int osdp_cp_send_cmd_output(int pd, struct osdp_cmd_output *p);
+int osdp_cp_send_cmd_led(int pd, struct osdp_cmd_led *p);
+int osdp_cp_send_cmd_buzzer(int pd, struct osdp_cmd_buzzer *p);
+int osdp_cp_send_cmd_text(int pd, struct osdp_cmd_text *p);
+int osdp_cp_send_cmd_comset(int pd, struct osdp_cmd_comset *p);
+
+#endif /* CONFIG_OSDP_MODE_PD */
 
 #ifdef __cplusplus
 }

@@ -570,7 +570,7 @@ void osdp_update(struct osdp *ctx)
 		if (ret == 0) {
 			pd_decode_command(pd, pd->rx_buf, pd->rx_buf_len);
 		}
-		pd->pd_state = OSDP_PD_STATE_SEND_REPLY;
+		pd->state = OSDP_PD_STATE_SEND_REPLY;
 		__fallthrough;
 	case OSDP_PD_STATE_SEND_REPLY:
 		if (pd_send_reply(pd) == -1) {

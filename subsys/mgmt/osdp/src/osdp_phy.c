@@ -272,6 +272,9 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 
 void osdp_phy_state_reset(struct osdp_pd *pd)
 {
+#ifdef CONFIG_OSDP_MODE_CP
+	pd->phy_state = 0;
+#endif
 	pd->seq_number = -1;
 	pd->rx_buf_len = 0;
 }

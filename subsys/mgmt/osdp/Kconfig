@@ -73,4 +73,8 @@ if OSDP_MODE_PD
 source "subsys/mgmt/osdp/Kconfig.pd"
 endif
 
+if OSDP_MODE_CP
+source "subsys/mgmt/osdp/Kconfig.cp"
+endif
+
 endif # OSDP

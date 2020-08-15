@@ -9,6 +9,9 @@ zephyr_library()
 # PD mode specific sources
 zephyr_library_sources_ifdef(CONFIG_OSDP_MODE_PD src/osdp_pd.c)
 
+# CP mode specific sources
+zephyr_library_sources_ifdef(CONFIG_OSDP_MODE_CP src/osdp_cp.c)
+
 # Common sources
 zephyr_library_sources_ifdef(CONFIG_OSDP
 	src/osdp_phy.c
