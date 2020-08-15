@@ -9,4 +9,4 @@ include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
 
 project(osdp_sample)
 
-target_sources(app PRIVATE src/main.c)
+target_sources_ifdef(CONFIG_OSDP_MODE_PD app PRIVATE src/pd_main.c)
