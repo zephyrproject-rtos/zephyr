@@ -62,7 +62,7 @@ static void tmutex_test_lock(struct k_mutex *pmutex,
 			entry_fn, pmutex, NULL, NULL,
 			K_PRIO_PREEMPT(0),
 			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
-	k_mutex_lock(pmutex, K_FOREVER);
+	zassert_true(k_mutex_lock(pmutex, K_FOREVER) == 0, NULL);
 	TC_PRINT("access resource from main thread\n");
 
 	/* wait for spawn thread to take action */
@@ -78,7 +78,7 @@ static void tmutex_test_lock_timeout(struct k_mutex *pmutex,
 			entry_fn, pmutex, NULL, NULL,
 			K_PRIO_PREEMPT(0),
 			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
-	k_mutex_lock(pmutex, K_FOREVER);
+	zassert_true(k_mutex_lock(pmutex, K_FOREVER) == 0, NULL);
 	TC_PRINT("access resource from main thread\n");
 
 	/* wait for spawn thread to take action */
