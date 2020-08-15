@@ -31,7 +31,7 @@ struct mcux_iuart_data {
 };
 
 #define DEV_CFG(dev)						\
-	((const struct mcux_iuart_config * const)(dev)->config_info)
+	((const struct mcux_iuart_config * const)(dev)->config)
 
 static int mcux_iuart_poll_in(struct device *dev, unsigned char *c)
 {
@@ -204,7 +204,7 @@ static void mcux_iuart_irq_callback_set(struct device *dev,
 				       uart_irq_callback_user_data_t cb,
 				       void *cb_data)
 {
-	struct mcux_iuart_data *data = dev->driver_data;
+	struct mcux_iuart_data *data = dev->data;
 
 	data->callback = cb;
 	data->cb_data = cb_data;
@@ -213,7 +213,7 @@ static void mcux_iuart_irq_callback_set(struct device *dev,
 static void mcux_iuart_isr(void *arg)
 {
 	struct device *dev = arg;
-	struct mcux_iuart_data *data = dev->driver_data;
+	struct mcux_iuart_data *data = dev->data;
 
 	if (data->callback) {
 		data->callback(dev, data->cb_data);
