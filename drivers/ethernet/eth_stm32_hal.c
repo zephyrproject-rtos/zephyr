@@ -591,6 +591,8 @@ static int eth_initialize(struct device *dev)
 			K_PRIO_COOP(CONFIG_ETH_STM32_HAL_RX_THREAD_PRIO),
 			0, K_NO_WAIT);
 
+	k_thread_name_set(&dev_data->rx_thread, "stm_eth");
+
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
 	for (uint32_t i = 0; i < ETH_RX_DESC_CNT; i++) {
 		hal_ret = HAL_ETH_DescAssignMemory(heth, i, dma_rx_buffer[i],
