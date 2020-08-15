@@ -109,8 +109,6 @@ void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
 
 		to->dticks = ticks + elapsed();
 		for (t = first(); t != NULL; t = next(t)) {
-			__ASSERT(t->dticks >= 0, "");
-
 			if (t->dticks > to->dticks) {
 				t->dticks -= to->dticks;
 				sys_dlist_insert(&t->node, &to->node);
