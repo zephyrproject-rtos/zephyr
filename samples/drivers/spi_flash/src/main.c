@@ -7,6 +7,7 @@
 #include <zephyr.h>
 #include <drivers/flash.h>
 #include <device.h>
+#include <devicetree.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -28,6 +29,10 @@
 
 #if defined(CONFIG_BOARD_ADAFRUIT_FEATHER_STM32F405)
 #define FLASH_TEST_REGION_OFFSET 0xf000
+#elif defined(CONFIG_BOARD_ARTY_A7_ARM_DESIGNSTART_M1)
+/* The FPGA bitstream is stored in the lower 536 sectors of the flash. */
+#define FLASH_TEST_REGION_OFFSET \
+	DT_REG_SIZE(DT_NODE_BY_FIXED_PARTITION_LABEL(fpga_bitstream))
 #else
 #define FLASH_TEST_REGION_OFFSET 0xff000
 #endif
