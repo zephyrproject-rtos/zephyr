@@ -390,7 +390,8 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (len != REPLY_BUSY_DATA_LEN) {
 			break;
 		}
-		return OSDP_CP_ERR_RETRY_CMD;
+		ret = OSDP_CP_ERR_RETRY_CMD;
+		break;
 	default:
 		LOG_DBG(TAG "unexpected reply: 0x%02x", pd->reply_id);
 		return OSDP_CP_ERR_GENERIC;
