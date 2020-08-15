@@ -350,8 +350,9 @@ static ssize_t eswifi_socket_recvfrom(void *obj, void *buf, size_t len,
 	return eswifi_socket_recv(obj, buf, len, flags);
 }
 
-static int eswifi_socket_close(int sock)
+static int eswifi_socket_close(void *obj)
 {
+	int sock = OBJ_TO_SD(obj);
 	struct eswifi_off_socket *socket;
 	struct net_pkt *pkt;
 	int ret;
@@ -497,11 +498,6 @@ static int eswifi_socket_create(int family, int type, int proto)
 					&eswifi_socket_fd_op_vtable);
 
 	return fd;
-}
-
-static int eswifi_socket_close(void *obj)
-{
-	return eswifi_socket_close(sd);
 }
 
 static int eswifi_socket_ioctl(void *obj, unsigned int request, va_list args)

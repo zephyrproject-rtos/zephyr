@@ -281,8 +281,9 @@ exit:
 	return retval;
 }
 
-static int simplelink_close(int sd)
+static int simplelink_close(void *obj)
 {
+	int sd = OBJ_TO_SD(obj);
 	int retval;
 
 	retval = sl_Close(sd);
@@ -1122,11 +1123,6 @@ static int simplelink_fcntl(int sd, int cmd, va_list args)
 
 exit:
 	return retval;
-}
-
-static int simplelink_close(void *obj)
-{
-	return simplelink_close(sd);
 }
 
 static int simplelink_ioctl(void *obj, unsigned int request, va_list args)

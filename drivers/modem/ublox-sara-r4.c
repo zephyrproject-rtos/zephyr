@@ -1205,8 +1205,9 @@ static int offload_socket(int family, int type, int proto)
 	return ret;
 }
 
-static int offload_close(struct modem_socket *sock)
+static int offload_close(void *obj)
 {
+	struct modem_socket *sock = (struct modem_socket *)obj;
 	char buf[sizeof("AT+USOCL=#\r")];
 	int ret;
 
@@ -1451,11 +1452,6 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len,
 
 	errno = 0;
 	return ret;
-}
-
-static int offload_close(void *obj)
-{
-	return offload_close((struct modem_socket *)obj);
 }
 
 static int offload_ioctl(void *obj, unsigned int request, va_list args)
