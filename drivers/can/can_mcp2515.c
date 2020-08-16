@@ -271,6 +271,24 @@ const int mcp2515_set_mode(struct device *dev, uint8_t mcp2515_mode)
 	return 0;
 }
 
+static int mcp2515_get_mode(struct device *dev, uint8_t *mode)
+{
+	uint8_t canstat;
+
+	if (mode == NULL) {
+		return -EINVAL;
+	}
+
+	if (mcp2515_cmd_read_reg(dev, MCP2515_ADDR_CANSTAT, &canstat, 1)) {
+		return -EIO;
+	}
+
+	*mode = (canstat & MCP2515_CANSTAT_MODE_MASK)
+		>> MCP2515_CANSTAT_MODE_POS;
+
+	return 0;
+}
+
 static int mcp2515_configure(struct device *dev, enum can_mode mode,
 			     uint32_t bitrate)
 {
@@ -280,6 +298,7 @@ static int mcp2515_configure(struct device *dev, enum can_mode mode,
 
 	/* CNF3, CNF2, CNF1, CANINTE */
 	uint8_t config_buf[4];
+	uint8_t reset_mode;
 
 	if (bitrate == 0) {
 		bitrate = dev_cfg->bus_speed;
@@ -345,10 +364,32 @@ static int mcp2515_configure(struct device *dev, enum can_mode mode,
 	config_buf[3] = caninte;
 
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
+
+	/* Wait 128 OSC1 clock cycles at 1MHz (minimum clock in frequency)
+	 * see MCP2515 datasheet section 8.1 Oscillator Start-up Timer
+	 */
+	k_usleep(128);
+
 	/* will enter configuration mode automatically */
 	ret = mcp2515_cmd_soft_reset(dev);
 	if (ret < 0) {
 		LOG_ERR("Failed to reset the device [%d]", ret);
+		goto done;
+	}
+
+	k_usleep(128);
+
+	ret = mcp2515_get_mode(dev, &reset_mode);
+	if (ret < 0) {
+		LOG_ERR("Failed to read device mode [%d]",
+			ret);
+		goto done;
+	}
+
+	if (reset_mode != MCP2515_MODE_CONFIGURATION) {
+		LOG_ERR("Device did not reset into configuration mode [%d]",
+			reset_mode);
+		ret = -EIO;
 		goto done;
 	}
 
