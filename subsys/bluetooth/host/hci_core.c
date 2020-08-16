@@ -4303,15 +4303,13 @@ int bt_le_scan_update(bool fast_scan)
 
 		conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL,
 					       BT_CONN_CONNECT_SCAN);
-		if (!conn) {
-			return 0;
+		if (conn) {
+			atomic_set_bit(bt_dev.flags, BT_DEV_SCAN_FILTER_DUP);
+
+			bt_conn_unref(conn);
+
+			return start_passive_scan(fast_scan);
 		}
-
-		atomic_set_bit(bt_dev.flags, BT_DEV_SCAN_FILTER_DUP);
-
-		bt_conn_unref(conn);
-
-		return start_passive_scan(fast_scan);
 	}
 
 #if defined(CONFIG_BT_PER_ADV_SYNC)
