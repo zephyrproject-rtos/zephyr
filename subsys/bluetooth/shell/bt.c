@@ -1433,12 +1433,12 @@ static int cmd_per_adv_sync_create(const struct shell *shell, size_t argc,
 	int err;
 	struct bt_le_per_adv_sync_param create_params = { 0 };
 	uint32_t options = 0;
-	struct bt_le_per_adv_sync *free_per_adv_sync = NULL;
+	struct bt_le_per_adv_sync **free_per_adv_sync = NULL;
 	int i = 0;
 
 	for (i = 0; i < ARRAY_SIZE(per_adv_syncs); i++) {
 		if (per_adv_syncs[i] == NULL) {
-			free_per_adv_sync = per_adv_syncs[i];
+			free_per_adv_sync = &per_adv_syncs[i];
 			break;
 		}
 	}
@@ -1495,7 +1495,7 @@ static int cmd_per_adv_sync_create(const struct shell *shell, size_t argc,
 	create_params.options = options;
 
 	err = bt_le_per_adv_sync_create(&create_params, &per_adv_sync_cb,
-					&free_per_adv_sync);
+					free_per_adv_sync);
 	if (err) {
 		shell_error(shell, "Per adv sync failed (%d)", err);
 	} else {
