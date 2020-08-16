@@ -1366,17 +1366,11 @@ static int cmd_per_adv_data(const struct shell *shell, size_t argc,
 
 #if defined(CONFIG_BT_PER_ADV_SYNC)
 static struct bt_le_per_adv_sync *per_adv_syncs[CONFIG_BT_PER_ADV_SYNC_MAX];
-static struct bt_le_per_adv_sync *selected_per_adv_sync;
 
 static void per_adv_sync_sync_cb(struct bt_le_per_adv_sync *sync,
 				 struct bt_le_per_adv_sync_synced_info *info)
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
-
-	if (selected_per_adv_sync != sync) {
-		shell_error(ctx_shell, "Invalid per adv sync object");
-		return;
-	}
 
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 	shell_print(ctx_shell, "PER_ADV_SYNC[%u]: [DEVICE]: %s synced, "
@@ -1391,15 +1385,9 @@ static void per_adv_sync_terminated_cb(
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
 
-	if (selected_per_adv_sync != sync) {
-		shell_error(ctx_shell, "Invalid per adv sync object");
-		return;
-	}
-
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 	shell_print(ctx_shell, "PER_ADV_SYNC[%u]: [DEVICE]: %s sync terminated",
 		    bt_le_per_adv_sync_get_index(sync), le_addr);
-	selected_per_adv_sync = NULL;
 }
 
 static void per_adv_sync_recv_cb(
@@ -1408,11 +1396,6 @@ static void per_adv_sync_recv_cb(
 	struct net_buf_simple *buf)
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
-
-	if (selected_per_adv_sync != sync) {
-		shell_error(ctx_shell, "Invalid per adv sync object");
-		return;
-	}
 
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 	shell_print(ctx_shell, "PER_ADV_SYNC[%u]: [DEVICE]: %s, tx_power %i, "
