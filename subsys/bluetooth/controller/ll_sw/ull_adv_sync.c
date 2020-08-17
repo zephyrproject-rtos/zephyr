@@ -148,19 +148,10 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 	/* TODO: AdvData */
 
 	/* Calc tertiary PDU len */
-	ter_len = ter_dptr - (uint8_t *)ter_com_hdr;
-	if (ter_len >
-	    (offsetof(struct pdu_adv_com_ext_adv, ext_hdr_adi_adv_data) +
-	     sizeof(*ter_hdr))) {
-		ter_com_hdr->ext_hdr_len = ter_len -
-					   offsetof(struct pdu_adv_com_ext_adv,
-						    ext_hdr_adi_adv_data);
-		ter_pdu->len = ter_len;
-	} else {
-		ter_com_hdr->ext_hdr_len = 0U;
-		ter_pdu->len = offsetof(struct pdu_adv_com_ext_adv,
-				    ext_hdr_adi_adv_data);
-	}
+	ter_len = ull_adv_aux_hdr_len_get(ter_com_hdr, ter_dptr);
+	ull_adv_aux_hdr_len_fill(ter_com_hdr, ter_len);
+
+	ter_pdu->len = ter_len;
 
 	return 0;
 }

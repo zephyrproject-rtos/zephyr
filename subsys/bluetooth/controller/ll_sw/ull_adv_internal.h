@@ -88,6 +88,31 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 				  uint16_t sec_hdr_rem_fields,
 				  void *value);
 
+/* helper function to calculate common ext adv payload header length */
+static inline uint8_t
+ull_adv_aux_hdr_len_get(struct pdu_adv_com_ext_adv *com_hdr, uint8_t *dptr)
+{
+	uint8_t len;
+
+	len = dptr - (uint8_t *)com_hdr;
+	if (len <= (offsetof(struct pdu_adv_com_ext_adv, ext_hdr_adi_adv_data) +
+		    sizeof(struct pdu_adv_hdr))) {
+		len = offsetof(struct pdu_adv_com_ext_adv,
+			       ext_hdr_adi_adv_data);
+	}
+
+	return len;
+}
+
+/* helper function to fill common ext adv payload header length */
+static inline void
+ull_adv_aux_hdr_len_fill(struct pdu_adv_com_ext_adv *com_hdr, uint8_t len)
+{
+	com_hdr->ext_hdr_len = len - offsetof(struct pdu_adv_com_ext_adv,
+					      ext_hdr_adi_adv_data);
+
+}
+
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 int ull_adv_sync_init(void);
 int ull_adv_sync_reset(void);
