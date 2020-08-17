@@ -103,6 +103,10 @@ Removed APIs in this release
 Stable API changes in this release
 ==================================
 
+* USB
+
+  * HID class callbacks now takes a parameter ``const struct device*`` which
+    is the HID device for which callback was called.
 
 Kernel
 ******

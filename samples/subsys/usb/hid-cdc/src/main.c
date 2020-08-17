@@ -192,8 +192,10 @@ static const char *evt_fail	=	"Unknown event detected!\r\n";
 static const char *set_str	=	"String set to: ";
 static const char *endl		=	"\r\n";
 
-static void in_ready_cb(void)
+static void in_ready_cb(const struct device *dev)
 {
+	ARG_UNUSED(dev);
+
 	k_sem_give(&usb_sem);
 }
 
