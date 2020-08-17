@@ -37,6 +37,9 @@ CONFIG_GPIO=y
 # PWM Driver
 CONFIG_PWM=y
 
+# ADC Driver
+CONFIG_ADC=y
+
 # ESPI Driver
 CONFIG_ESPI=y
 

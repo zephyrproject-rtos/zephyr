@@ -53,6 +53,12 @@ NPCX_REG_OFFSET_CHECK(pwm_reg, PWMCTL, 0x004);
 NPCX_REG_OFFSET_CHECK(pwm_reg, DCR, 0x006);
 NPCX_REG_OFFSET_CHECK(pwm_reg, PWMCTLEX, 0x00c);
 
+/* ADC register structure check */
+NPCX_REG_SIZE_CHECK(adc_reg, 0x54);
+NPCX_REG_OFFSET_CHECK(adc_reg, THRCTL1, 0x014);
+NPCX_REG_OFFSET_CHECK(adc_reg, ADCCNF2, 0x020);
+NPCX_REG_OFFSET_CHECK(adc_reg, CHNDAT, 0x040);
+
 /* ESPI register structure check */
 NPCX_REG_SIZE_CHECK(espi_reg, 0x500);
 NPCX_REG_OFFSET_CHECK(espi_reg, FLASHCFG, 0x034);

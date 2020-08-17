@@ -41,6 +41,15 @@ config PWM_NPCX
 	help
 	  Enable support for NPCX PWM driver.
 
+config ADC_NPCX
+	default y
+	depends on ADC
+	help
+	  Enable support for NPCX ADC driver. In NPCX7 series, it includes a
+	  10-bit resolution Analog-to-Digital Converter (ADC). Up to 10 voltage
+	  inputs can be measured and a internal voltage reference (VREF), 2.816V
+	  (typical) is used for measurement.
+
 config ESPI_NPCX
 	default y
 	depends on ESPI
