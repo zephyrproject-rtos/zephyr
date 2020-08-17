@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018-2020 PHYTEC Messtechnik GmbH
+ * Copyright (c) 2020 Endian Technologies AB
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +18,7 @@ LOG_MODULE_REGISTER(ssd16xx);
 #include <drivers/gpio.h>
 #include <drivers/spi.h>
 #include <sys/byteorder.h>
+#include <assert.h>
 
 #include "ssd16xx_regs.h"
 #include <display/cfb.h>
@@ -69,6 +71,9 @@ struct ssd16xx_data {
 #endif
 	uint8_t scan_mode;
 	uint8_t update_cmd;
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uint32_t pm_state;
+#endif
 };
 
 #if DT_INST_NODE_HAS_PROP(0, lut_initial)
@@ -536,19 +541,22 @@ static int ssd16xx_load_ws_default(struct device *dev)
 	return 0;
 }
 
+static void ssd16xx_reset_display(struct ssd16xx_data *driver)
+{
+	LOG_DBG("Resetting display");
+	gpio_pin_set(driver->reset, SSD16XX_RESET_PIN, 1);
+	k_msleep(SSD16XX_RESET_DELAY);
+	gpio_pin_set(driver->reset, SSD16XX_RESET_PIN, 0);
+	k_msleep(SSD16XX_RESET_DELAY);
+}
+
 static int ssd16xx_controller_init(struct device *dev)
 {
 	int err;
 	uint8_t tmp[3];
 	size_t len;
 	struct ssd16xx_data *driver = dev->data;
-
-	LOG_DBG("");
-
-	gpio_pin_set(driver->reset, SSD16XX_RESET_PIN, 1);
-	k_msleep(SSD16XX_RESET_DELAY);
-	gpio_pin_set(driver->reset, SSD16XX_RESET_PIN, 0);
-	k_msleep(SSD16XX_RESET_DELAY);
+	ssd16xx_reset_display(driver);
 	ssd16xx_busy_wait(driver);
 
 	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_SW_RESET, NULL, 0);
@@ -698,8 +706,69 @@ static int ssd16xx_init(struct device *dev)
 	driver->spi_config.cs = &driver->cs_ctrl;
 #endif
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	driver->pm_state = DEVICE_PM_ACTIVE_STATE;
+#endif
+
 	return ssd16xx_controller_init(dev);
 }
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+static void ssd16xx_set_power_state(struct device *dev, uint32_t new_state)
+{
+	int err;
+	uint8_t tmp[1];
+	struct ssd16xx_data *driver = dev->data;
+
+	if (new_state == DEVICE_PM_ACTIVE_STATE) {
+		if (driver->pm_state == DEVICE_PM_LOW_POWER_STATE) {
+			ssd16xx_reset_display(driver);
+			ssd16xx_busy_wait(driver);
+		} else {
+			assert(driver->pm_state == DEVICE_PM_SUSPEND_STATE ||
+			       driver->pm_state == DEVICE_PM_OFF_STATE);
+			/* This can wake up the display if its power was cut */
+			ssd16xx_controller_init(dev);
+		}
+	} else {
+		assert(new_state == DEVICE_PM_LOW_POWER_STATE ||
+		       new_state == DEVICE_PM_SUSPEND_STATE ||
+		       new_state == DEVICE_PM_OFF_STATE);
+
+		ssd16xx_busy_wait(driver);
+		tmp[0] = SSD16XX_SLEEP_MODE_DSM;
+		err = ssd16xx_write_cmd(driver, SSD16XX_CMD_SLEEP_MODE, tmp, 1);
+		if (err < 0) {
+			LOG_ERR("Could not set deep sleep mode");
+			return;
+		}
+	}
+}
+
+static int ssd16xx_pm_control(struct device *dev, uint32_t ctrl_command,
+			      void *context, device_pm_cb cb, void *arg)
+{
+	struct ssd16xx_data *driver = (struct ssd16xx_data *)dev->data;
+
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+		uint32_t new_state = *((const uint32_t *)context);
+
+		if (new_state != driver->pm_state) {
+			ssd16xx_set_power_state(dev, new_state);
+			driver->pm_state = new_state;
+		}
+	} else {
+		assert(ctrl_command == DEVICE_PM_GET_POWER_STATE);
+		*((uint32_t *)context) = driver->pm_state;
+	}
+
+	if (cb) {
+		cb(dev, 0, context, arg);
+	}
+
+	return 0;
+}
+#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
 
 static struct ssd16xx_data ssd16xx_driver;
 
@@ -716,8 +785,14 @@ static struct display_driver_api ssd16xx_driver_api = {
 	.set_orientation = ssd16xx_set_orientation,
 };
 
-
+#ifndef CONFIG_DEVICE_POWER_MANAGEMENT
 DEVICE_AND_API_INIT(ssd16xx, DT_INST_LABEL(0), ssd16xx_init,
 		    &ssd16xx_driver, NULL,
 		    POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY,
 		    &ssd16xx_driver_api);
+#else
+DEVICE_DEFINE(ssd16xx, DT_INST_LABEL(0), ssd16xx_init,
+	      ssd16xx_pm_control, &ssd16xx_driver, NULL,
+		    POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY,
+		    &ssd16xx_driver_api);
+#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
