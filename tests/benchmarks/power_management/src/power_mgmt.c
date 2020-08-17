@@ -249,15 +249,12 @@ int test_pwr_mgmt_multithread(uint8_t cycles)
 		LOG_INF("Suspend...");
 		suspend_all_tasks();
 		LOG_INF("About to enter light sleep");
-		
 		pm_trigger_marker();
-		
 		k_msleep(CONFIG_SYS_PM_MIN_RESIDENCY_SLEEP_1 +
 			 LT_EXTRA_SLP_TIME);
 		k_busy_wait(100);
 
 		LOG_INF("Wake from Light Sleep");
-		
 		pm_exit_marker();
 		
 		LOG_INF("Resume");
@@ -268,14 +265,12 @@ int test_pwr_mgmt_multithread(uint8_t cycles)
 		suspend_all_tasks();
 		LOG_INF("About to enter deep sleep");
 
-		/* GPIO toggle to measure latency for deep sleep */
 		pm_trigger_marker();
 		k_msleep(CONFIG_SYS_PM_MIN_RESIDENCY_DEEP_SLEEP_1 +
 			 DP_EXTRA_SLP_TIME);
 		k_busy_wait(100);
 
 		LOG_INF("Wake from Deep Sleep");
-
 		pm_exit_marker();
 		LOG_INF("Resume");
 		resume_all_tasks();
@@ -303,15 +298,12 @@ int test_pwr_mgmt_singlethread(uint8_t cycles)
 		LOG_INF("About to enter light sleep");
 		
 		pm_trigger_marker();
-		
 		k_msleep(CONFIG_SYS_PM_MIN_RESIDENCY_SLEEP_1 +
 			 LT_EXTRA_SLP_TIME);
 		k_busy_wait(100);
-
 		LOG_INF("Wake from Light Sleep");
-		
 		pm_exit_marker();
-		
+
 		/* Trigger Deep Sleep 1 state. 48MHz PLL off */
 		LOG_INF("About to enter deep Sleep");
 
@@ -322,7 +314,6 @@ int test_pwr_mgmt_singlethread(uint8_t cycles)
 		k_busy_wait(100);
 
 		LOG_INF("Wake from Deep Sleep");
-
 		pm_exit_marker();
 	}
 
