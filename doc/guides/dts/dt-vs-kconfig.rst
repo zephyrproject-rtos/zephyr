@@ -53,6 +53,13 @@ instance.
 
 There are **exceptions** to these rules:
 
+* Because Kconfig is unable to flexibly control some instance-specific driver
+  configuration parameters, such as the size of an internal buffer, these
+  options may be defined in devicetree.  However, to make clear that they are
+  specific to Zephyr drivers and not hardware description or configuration these
+  properties should be prefixed with ``zephyr,``,
+  e.g. ``zephyr,random-mac-address`` in the common Ethernet devicetree
+  properties.
 * Devicetree's ``chosen`` keyword, which allows the user to select a specific
   instance of a hardware device to be used for a particular purpose. An example
   of this is selecting a particular UART for use as the system's console.
