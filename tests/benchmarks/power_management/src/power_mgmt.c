@@ -305,7 +305,6 @@ int test_pwr_mgmt_singlethread(uint8_t cycles)
 		/* Trigger Deep Sleep 1 state. 48MHz PLL off */
 		LOG_INF("About to enter deep Sleep");
 
-		/* GPIO toggle to measure latency */
 		pm_trigger_marker();
 		k_msleep(CONFIG_SYS_PM_MIN_RESIDENCY_DEEP_SLEEP_1 +
 			 DP_EXTRA_SLP_TIME);
