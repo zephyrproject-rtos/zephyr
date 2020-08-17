@@ -515,6 +515,16 @@ config LOG_BACKEND_NET_SYST_ENABLE
 	help
 	  When enabled backend is using networking to output syst format logs.
 
+config LOG_BACKEND_NET_AUTOSTART
+	bool "Automatically start networking backend"
+	default y if NET_CONFIG_NEED_IPV4 || NET_CONFIG_NEED_IPV6
+	help
+	  When enabled automatically start the networking backend on
+	  application start. If no routes to the logging server are available
+	  on application startup, this must be set to n and the backend must be
+	  started by the application later on. Otherwise the logging
+	  thread might block.
+
 endif # LOG_BACKEND_NET
 
 config LOG_BACKEND_RB
