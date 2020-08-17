@@ -113,6 +113,9 @@ ull_adv_aux_hdr_len_fill(struct pdu_adv_com_ext_adv *com_hdr, uint8_t len)
 
 }
 
+/* helper function to fill the aux ptr structure in common ext adv payload */
+void ull_adv_aux_ptr_fill(uint8_t **dptr, uint8_t phy_s);
+
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 int ull_adv_sync_init(void);
 int ull_adv_sync_reset(void);
