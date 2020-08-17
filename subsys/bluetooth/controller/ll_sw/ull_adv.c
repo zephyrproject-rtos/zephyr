@@ -439,20 +439,7 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 #if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 		/* AuxPtr */
 		if (pri_hdr->aux_ptr) {
-			struct pdu_adv_aux_ptr *aux_ptr;
-
-			pri_dptr -= sizeof(struct pdu_adv_aux_ptr);
-
-			/* NOTE: Aux Offset will be set in advertiser LLL event
-			 */
-			aux_ptr = (void *)pri_dptr;
-
-			/* FIXME: implementation defined */
-			aux_ptr->chan_idx = 0;
-			aux_ptr->ca = 0;
-			aux_ptr->offs_units = 0;
-
-			aux_ptr->phy = find_lsb_set(phy_s) - 1;
+			ull_adv_aux_ptr_fill(&pri_dptr, phy_s);
 		}
 		adv->lll.phy_s = phy_s;
 #endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */

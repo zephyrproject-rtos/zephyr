@@ -583,42 +583,12 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	if (pri_hdr_prev.aux_ptr) {
 		pri_dptr_prev -= sizeof(struct pdu_adv_aux_ptr);
 	}
-	{
-		struct pdu_adv_aux_ptr *aux_ptr;
+	ull_adv_aux_ptr_fill(&pri_dptr, lll->phy_s);
 
-		pri_dptr -= sizeof(struct pdu_adv_aux_ptr);
-
-		/* NOTE: Aux Offset will be set in advertiser LLL event
-		 */
-		aux_ptr = (void *)pri_dptr;
-
-		/* FIXME: implementation defined */
-		aux_ptr->chan_idx = 0U;
-		aux_ptr->ca = 0U;
-		aux_ptr->offs_units = 0U;
-
-		aux_ptr->phy = find_lsb_set(lll->phy_s) - 1;
-	}
-
-	/* TODO: reduce duplicate code if below remains similar to
-	 * primary PDU
-	 */
 	if (sec_hdr_prev.aux_ptr) {
-		struct pdu_adv_aux_ptr *aux_ptr;
-
 		sec_dptr_prev -= sizeof(struct pdu_adv_aux_ptr);
-		sec_dptr -= sizeof(struct pdu_adv_aux_ptr);
 
-		/* NOTE: Aux Offset will be set in advertiser LLL event
-		 */
-		aux_ptr = (void *)sec_dptr;
-
-		/* FIXME: implementation defined */
-		aux_ptr->chan_idx = 0U;
-		aux_ptr->ca = 0U;
-		aux_ptr->offs_units = 0U;
-
-		aux_ptr->phy = find_lsb_set(lll->phy_s) - 1;
+		ull_adv_aux_ptr_fill(&sec_dptr, lll->phy_s);
 	}
 
 	/* ADI */
@@ -688,6 +658,25 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 
 	return 0;
 }
+
+void ull_adv_aux_ptr_fill(uint8_t **dptr, uint8_t phy_s)
+{
+	struct pdu_adv_aux_ptr *aux_ptr;
+
+	*dptr -= sizeof(struct pdu_adv_aux_ptr);
+
+	/* NOTE: Aux Offset will be set in advertiser LLL event
+	 */
+	aux_ptr = (void *)*dptr;
+
+	/* FIXME: implementation defined */
+	aux_ptr->chan_idx = 0U;
+	aux_ptr->ca = 0U;
+	aux_ptr->offs_units = 0U;
+
+	aux_ptr->phy = find_lsb_set(phy_s) - 1;
+}
+
 #if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 uint8_t ull_adv_aux_lll_handle_get(struct lll_adv_aux *lll)
 {
