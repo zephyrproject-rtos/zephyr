@@ -641,8 +641,9 @@ static void route_mcast_cb(struct net_route_entry_mcast *entry,
 	PR("==========================================================="
 	   "%s\n", extra);
 
-	PR("IPv6 group : %s\n", net_sprint_ipv6_addr(&entry->group));
-	PR("Lifetime   : %u\n", entry->lifetime);
+	PR("IPv6 group     : %s\n", net_sprint_ipv6_addr(&entry->group));
+	PR("IPv6 group len : %d\n", entry->prefix_len);
+	PR("Lifetime       : %u\n", entry->lifetime);
 }
 
 static void iface_per_mcast_route_cb(struct net_if *iface, void *user_data)

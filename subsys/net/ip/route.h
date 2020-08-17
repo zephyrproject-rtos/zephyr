@@ -186,12 +186,28 @@ struct net_route_entry_mcast {
 	/** Routing entry lifetime in seconds. */
 	uint32_t lifetime;
 
-	/** Is this entry in user or not */
+	/** Is this entry in use or not */
 	bool is_used;
+
+	/** IPv6 multicast group prefix length. */
+	uint8_t prefix_len;
 };
 
 typedef void (*net_route_mcast_cb_t)(struct net_route_entry_mcast *entry,
 				     void *user_data);
+
+/**
+ * @brief Forwards a multicast packet by checking the local multicast
+ * routing table
+ *
+ * @param pkt The original received ipv6 packet to forward
+ * @param hdr The IPv6 header of the packet
+ *
+ * @return Number of interfaces which forwarded the packet, or a negative
+ * value in case of an error.
+ */
+int net_route_mcast_forward_packet(struct net_pkt *pkt,
+				   const struct net_ipv6_hdr *hdr);
 
 /**
  * @brief Go through all the multicast routing entries and call callback
@@ -212,11 +228,13 @@ int net_route_mcast_foreach(net_route_mcast_cb_t cb,
  *
  * @param iface Network interface to use.
  * @param group IPv6 multicast address.
+ * @param prefix_len Length of the IPv6 group that must match.
  *
  * @return Multicast routing entry.
  */
 struct net_route_entry_mcast *net_route_mcast_add(struct net_if *iface,
-						  struct in6_addr *group);
+						  struct in6_addr *group,
+						  uint8_t prefix_len);
 
 /**
  * @brief Delete a multicast routing entry.

@@ -181,6 +181,12 @@ enum net_if_flag {
 	/** Power management specific: interface is being suspended */
 	NET_IF_SUSPENDED,
 
+	/** Flag defines if received multicasts of other interface are
+	 * forwarded on this interface. This activates multicast
+	 * routing / forwarding for this interface.
+	 */
+	NET_IF_FORWARD_MULTICASTS,
+
 /** @cond INTERNAL_HIDDEN */
 	/* Total number of flags - must be at the end of the enum */
 	NET_IF_NUM_FLAGS
