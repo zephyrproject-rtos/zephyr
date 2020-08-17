@@ -57,11 +57,12 @@ struct usb_hid_descriptor {
 
 /* Public headers */
 
-typedef int (*hid_cb_t)(struct usb_setup_packet *setup, int32_t *len,
+typedef int (*hid_cb_t)(const struct device *dev,
+			struct usb_setup_packet *setup, int32_t *len,
 			uint8_t **data);
-typedef void (*hid_int_ready_callback)(void);
-typedef void (*hid_protocol_cb_t)(uint8_t protocol);
-typedef void (*hid_idle_cb_t)(uint16_t report_id);
+typedef void (*hid_int_ready_callback)(const struct device *dev);
+typedef void (*hid_protocol_cb_t)(const struct device *dev, uint8_t protocol);
+typedef void (*hid_idle_cb_t)(const struct device *dev, uint16_t report_id);
 
 struct hid_ops {
 	hid_cb_t get_report;
