@@ -3,7 +3,7 @@ sample:
 tests:
   sample.usb.mass_flash:
     min_ram: 32
-    depends_on: flash
+    depends_on: usb_device flash
     extra_args: OVERLAY_CONFIG="overlay-flash-disk.conf"
     extra_configs:
         - CONFIG_LOG_DEFAULT_LEVEL=3
