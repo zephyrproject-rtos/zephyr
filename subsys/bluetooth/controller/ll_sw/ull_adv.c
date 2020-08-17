@@ -412,12 +412,14 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 			pri_com_hdr->ext_hdr_len = len -
 				offsetof(struct pdu_adv_com_ext_adv,
 					 ext_hdr_adi_adv_data);
-			pdu->len = len;
 		} else {
 			pri_com_hdr->ext_hdr_len = 0;
-			pdu->len = offsetof(struct pdu_adv_com_ext_adv,
-					    ext_hdr_adi_adv_data);
+			len = offsetof(struct pdu_adv_com_ext_adv,
+				       ext_hdr_adi_adv_data);
 		}
+
+		/* Set PDU length */
+		pdu->len = len;
 
 		/* Start filling primary PDU payload based on flags */
 
