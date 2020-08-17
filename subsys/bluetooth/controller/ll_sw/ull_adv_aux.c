@@ -42,6 +42,8 @@ static int init_reset(void);
 static inline struct ll_adv_aux_set *aux_acquire(void);
 static inline void aux_release(struct ll_adv_aux_set *aux);
 static inline uint8_t aux_handle_get(struct ll_adv_aux_set *aux);
+static inline void sync_info_fill(struct lll_adv_sync *lll_sync,
+				  uint8_t **dptr);
 static void mfy_aux_offset_get(void *param);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		      uint16_t lazy, void *param);
@@ -558,25 +560,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 		sec_dptr_prev -= sizeof(struct pdu_adv_sync_info);
 	}
 	if (sec_hdr->sync_info) {
-		struct lll_adv_sync *lll_sync;
-		struct ll_adv_sync_set *sync;
-		struct pdu_adv_sync_info *si;
-
-		sec_dptr -= sizeof(*si);
-
-		lll_sync = lll->sync;
-		sync = (void *)HDR_LLL2EVT(lll_sync);
-
-		si = (void *)sec_dptr;
-		si->offs = 0U; /* NOTE: Filled by secondary prepare */
-		si->offs_units = 0U;
-		si->interval = sys_cpu_to_le16(sync->interval);
-		memcpy(si->sca_chm, lll_sync->data_chan_map,
-		       sizeof(si->sca_chm));
-		memcpy(&si->aa, lll_sync->access_addr, sizeof(si->aa));
-		memcpy(si->crc_init, lll_sync->crc_init, sizeof(si->crc_init));
-
-		si->evt_cntr = 0U; /* TODO: Implementation defined */
+		sync_info_fill(lll->sync, &sec_dptr);
 	}
 
 	/* AuxPtr */
@@ -860,6 +844,28 @@ static inline uint8_t aux_handle_get(struct ll_adv_aux_set *aux)
 {
 	return mem_index_get(aux, ll_adv_aux_pool,
 			     sizeof(struct ll_adv_aux_set));
+}
+
+static inline void sync_info_fill(struct lll_adv_sync *lll_sync,
+				  uint8_t **dptr)
+{
+	struct ll_adv_sync_set *sync;
+	struct pdu_adv_sync_info *si;
+
+	*dptr -= sizeof(*si);
+
+	sync = (void *)HDR_LLL2EVT(lll_sync);
+
+	si = (void *)*dptr;
+	si->offs = 0U; /* NOTE: Filled by secondary prepare */
+	si->offs_units = 0U; /* TODO: implementation defined */
+	si->interval = sys_cpu_to_le16(sync->interval);
+	memcpy(si->sca_chm, lll_sync->data_chan_map,
+	       sizeof(si->sca_chm));
+	memcpy(&si->aa, lll_sync->access_addr, sizeof(si->aa));
+	memcpy(si->crc_init, lll_sync->crc_init, sizeof(si->crc_init));
+
+	si->evt_cntr = 0U; /* NOTE: Filled by secondary prepare */
 }
 
 static void mfy_aux_offset_get(void *param)
