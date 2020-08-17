@@ -299,11 +299,11 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 {
 	struct pdu_adv_com_ext_adv *pri_com_hdr, *pri_com_hdr_prev;
 	struct pdu_adv_com_ext_adv *sec_com_hdr, *sec_com_hdr_prev;
-	uint8_t pri_len, pri_len_prev, sec_len, sec_len_prev;
 	struct pdu_adv_hdr *pri_hdr, pri_hdr_prev;
 	struct pdu_adv_hdr *sec_hdr, sec_hdr_prev;
 	struct pdu_adv *pri_pdu, *pri_pdu_prev;
 	struct pdu_adv *sec_pdu_prev, *sec_pdu;
+	uint8_t pri_len, sec_len, sec_len_prev;
 	uint8_t *pri_dptr, *pri_dptr_prev;
 	uint8_t *sec_dptr, *sec_dptr_prev;
 	uint8_t pri_idx, sec_idx, ad_len;
@@ -491,23 +491,14 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	/* TODO: ACAD in secondary channel PDU */
 
 	/* Calc primary PDU len */
-	pri_len_prev = pri_dptr_prev - (uint8_t *)pri_com_hdr_prev;
-	pri_len = pri_dptr - (uint8_t *)pri_com_hdr;
-	pri_com_hdr->ext_hdr_len = pri_len -
-				   offsetof(struct pdu_adv_com_ext_adv,
-					    ext_hdr_adi_adv_data);
+	pri_len = ull_adv_aux_hdr_len_get(pri_com_hdr, pri_dptr);
+	ull_adv_aux_hdr_len_fill(pri_com_hdr, pri_len);
 
 	/* set the primary PDU len */
 	pri_pdu->len = pri_len;
 
 	/* Calc previous secondary PDU len */
-	sec_len_prev = sec_dptr_prev - (uint8_t *)sec_com_hdr_prev;
-	if (sec_len_prev <= (offsetof(struct pdu_adv_com_ext_adv,
-				      ext_hdr_adi_adv_data) +
-			     sizeof(sec_hdr_prev))) {
-		sec_len_prev = offsetof(struct pdu_adv_com_ext_adv,
-					ext_hdr_adi_adv_data);
-	}
+	sec_len_prev = ull_adv_aux_hdr_len_get(sec_com_hdr_prev, sec_dptr_prev);
 
 	/* Did we parse beyond PDU length? */
 	if (sec_len_prev > sec_pdu_prev->len) {
@@ -517,19 +508,10 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	}
 
 	/* Calc current secondary PDU len */
-	sec_len = sec_dptr - (uint8_t *)sec_com_hdr;
-	if (sec_len > (offsetof(struct pdu_adv_com_ext_adv,
-				ext_hdr_adi_adv_data) +
-		       sizeof(*sec_hdr))) {
-		sec_com_hdr->ext_hdr_len =
-			sec_len - offsetof(struct pdu_adv_com_ext_adv,
-					   ext_hdr_adi_adv_data);
-	} else {
-		sec_com_hdr->ext_hdr_len = 0;
-		sec_len = offsetof(struct pdu_adv_com_ext_adv,
-				   ext_hdr_adi_adv_data);
-	}
+	sec_len = ull_adv_aux_hdr_len_get(sec_com_hdr, sec_dptr);
+	ull_adv_aux_hdr_len_fill(sec_com_hdr, sec_len);
 
+	/* AD Data, add or remove */
 	if (sec_hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_AD_DATA) {
 		uint8_t *val_ptr = value;
 

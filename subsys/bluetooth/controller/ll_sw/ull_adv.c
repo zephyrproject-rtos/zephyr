@@ -406,17 +406,8 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 		}
 
 		/* Calc primary PDU len */
-		len = pri_dptr - (uint8_t *)pri_com_hdr;
-		if (len > (offsetof(struct pdu_adv_com_ext_adv,
-				    ext_hdr_adi_adv_data) + sizeof(*pri_hdr))) {
-			pri_com_hdr->ext_hdr_len = len -
-				offsetof(struct pdu_adv_com_ext_adv,
-					 ext_hdr_adi_adv_data);
-		} else {
-			pri_com_hdr->ext_hdr_len = 0;
-			len = offsetof(struct pdu_adv_com_ext_adv,
-				       ext_hdr_adi_adv_data);
-		}
+		len = ull_adv_aux_hdr_len_get(pri_com_hdr, pri_dptr);
+		ull_adv_aux_hdr_len_fill(pri_com_hdr, len);
 
 		/* Set PDU length */
 		pdu->len = len;
