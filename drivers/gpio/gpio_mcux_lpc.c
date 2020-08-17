@@ -75,11 +75,19 @@ static int gpio_mcux_lpc_configure(struct device *dev, gpio_pin_t pin,
 		return -ENOTSUP;
 	}
 
+#ifdef IOPCTL
+	IOPCTL_Type *pinmux_base = config->pinmux_base;
+	uint32_t *pinconfig = (uint32_t *)&(pinmux_base->PIO[port][pin]);
+
+	/*
+	 * Enable input buffer for both input and output pins, it costs
+	 * nothing and allows values to be read back.
+	 */
+	*pinconfig |= IOPCTL_PIO_INBUF_EN;
+#endif
+
 	if (flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) {
 #ifdef IOPCTL
-		IOPCTL_Type *pinmux_base = config->pinmux_base;
-		uint32_t *pinconfig = (uint32_t *)&(pinmux_base->PIO[port][pin]);
-
 		*pinconfig |= IOPCTL_PIO_PUPD_EN;
 		if ((flags & GPIO_PULL_UP) != 0) {
 			*pinconfig |= IOPCTL_PIO_PULLUP_EN;
