@@ -1127,6 +1127,9 @@ static void usbd_event_handler(nrfx_usbd_evt_t const *const p_event)
 		break;
 	case NRFX_USBD_EVT_WUREQ:
 		LOG_DBG("RemoteWU initiated");
+		evt.evt_type = USBD_EVT_POWER;
+		evt.evt.pwr_evt.state = USBD_RESUMED;
+		put_evt = true;
 		break;
 	case NRFX_USBD_EVT_RESET:
 		evt.evt_type = USBD_EVT_RESET;
