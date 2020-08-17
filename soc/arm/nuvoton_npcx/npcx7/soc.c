@@ -66,6 +66,12 @@ NPCX_REG_OFFSET_CHECK(adc_reg, THRCTL1, 0x014);
 NPCX_REG_OFFSET_CHECK(adc_reg, ADCCNF2, 0x020);
 NPCX_REG_OFFSET_CHECK(adc_reg, CHNDAT, 0x040);
 
+/* TWD register structure check */
+NPCX_REG_SIZE_CHECK(twd_reg, 0x012);
+NPCX_REG_OFFSET_CHECK(twd_reg, T0CSR, 0x006);
+NPCX_REG_OFFSET_CHECK(twd_reg, TWMWD, 0x00e);
+NPCX_REG_OFFSET_CHECK(twd_reg, WDCP, 0x010);
+
 /* ESPI register structure check */
 NPCX_REG_SIZE_CHECK(espi_reg, 0x500);
 NPCX_REG_OFFSET_CHECK(espi_reg, FLASHCFG, 0x034);
