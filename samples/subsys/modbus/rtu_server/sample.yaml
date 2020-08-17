@@ -1,0 +1,9 @@
+sample:
+  name: Modbus RTU Server Sample
+tests:
+  sample.modbus.rtu_server:
+    tags: uart modbus
+    filter: dt_compat_enabled_with_alias("gpio-leds", "led0") and
+            dt_compat_enabled_with_alias("gpio-leds", "led1") and
+            dt_compat_enabled_with_alias("gpio-leds", "led2")
+    depends_on: gpio, arduino_serial
