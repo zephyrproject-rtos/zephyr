@@ -441,6 +441,13 @@
 			label = "ADC_0";
 		};
 
+		twd0: watchdog@400d8000 {
+			compatible = "nuvoton,npcx-watchdog";
+			reg = <0x400d8000 0x2000>;
+			t0_out = <&wui_t0out>;
+			label = "TWD_0";
+		};
+
 		espi0: espi@4000a000 {
 			compatible = "nuvoton,npcx-espi";
 			reg = <0x4000a000 0x2000>;

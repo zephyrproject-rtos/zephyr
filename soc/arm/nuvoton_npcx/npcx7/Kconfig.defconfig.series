@@ -50,6 +50,17 @@ config ADC_NPCX
 	  inputs can be measured and a internal voltage reference (VREF), 2.816V
 	  (typical) is used for measurement.
 
+config WDT_NPCX
+	default y
+	depends on WATCHDOG
+	help
+	  Enable support for NPCX Watchdog driver. Besides watchdog
+	  functionality, it also provides the protection mechanism over software
+	  execution. After setting the configuration registers, the software can
+	  lock it to provide a higher level of protection against subsequent
+	  erroneous software action. Once a section of the TWD is locked, only
+	  reset or the unlock sequence releases it.
+
 config ESPI_NPCX
 	default y
 	depends on ESPI

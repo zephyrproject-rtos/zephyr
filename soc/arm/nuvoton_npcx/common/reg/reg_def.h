@@ -456,6 +456,51 @@ struct adc_reg {
 #define NPCX_THR_DCTL_THR_DVAL                FIELD(0, 10)
 
 /*
+ * Timer Watchdog (TWD) device registers
+ */
+struct twd_reg {
+	/* 0x000: Timer and Watchdog Configuration */
+	volatile uint8_t TWCFG;
+	volatile uint8_t reserved1;
+	/* 0x002: Timer and Watchdog Clock Prescaler */
+	volatile uint8_t TWCP;
+	volatile uint8_t reserved2;
+	/* 0x004: TWD Timer 0 */
+	volatile uint16_t TWDT0;
+	/* 0x006: TWDT0 Control and Status */
+	volatile uint8_t T0CSR;
+	volatile uint8_t reserved3;
+	/* 0x008: Watchdog Count */
+	volatile uint8_t WDCNT;
+	volatile uint8_t reserved4;
+	/* 0x00A: Watchdog Service Data Match */
+	volatile uint8_t WDSDM;
+	volatile uint8_t reserved5;
+	/* 0x00C: TWD Timer 0 Counter */
+	volatile uint16_t TWMT0;
+	/* 0x00E: Watchdog Counter */
+	volatile uint8_t TWMWD;
+	volatile uint8_t reserved6;
+	/* 0x010: Watchdog Clock Prescaler */
+	volatile uint8_t WDCP;
+	volatile uint8_t reserved7;
+};
+
+/* TWD register fields */
+#define NPCX_TWCFG_LTWCFG                      0
+#define NPCX_TWCFG_LTWCP                       1
+#define NPCX_TWCFG_LTWDT0                      2
+#define NPCX_TWCFG_LWDCNT                      3
+#define NPCX_TWCFG_WDCT0I                      4
+#define NPCX_TWCFG_WDSDME                      5
+#define NPCX_T0CSR_RST                         0
+#define NPCX_T0CSR_TC                          1
+#define NPCX_T0CSR_WDLTD                       3
+#define NPCX_T0CSR_WDRST_STS                   4
+#define NPCX_T0CSR_WD_RUN                      5
+#define NPCX_T0CSR_TESDIS                      7
+
+/*
  * Enhanced Serial Peripheral Interface (eSPI) device registers
  */
 struct espi_reg {
