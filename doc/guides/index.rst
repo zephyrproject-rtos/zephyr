@@ -11,6 +11,7 @@ User and Developer Guides
    bluetooth/index.rst
    build/index
    coding_guidelines/index
+   design_guidelines.rst
    c_library
    ../README.rst
    documentation/index
