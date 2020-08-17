@@ -45,11 +45,14 @@ supporting both the Bluetooth Low Energy and 802.15.4 wireless technologies.
 * Kconfig should determine which **software features** should be built for the
   radio, such as selecting a BLE or 802.15.4 protocol stack.
 
-There are two noteworthy **exceptions** to these rules:
+As another example, Kconfig options that formerly enabled a particular
+instance of a driver (that is itself enabled by Kconfig) have been
+removed.  The devices are selected individually using devicetree's
+:ref:`status <dt-important-props>` keyword on the corresponding hardware
+instance.
+
+There are **exceptions** to these rules:
 
 * Devicetree's ``chosen`` keyword, which allows the user to select a specific
   instance of a hardware device to be used for a particular purpose. An example
   of this is selecting a particular UART for use as the system's console.
-* Devicetree's ``status`` keyword, which allows the user to enable or disable a
-  particular instance of a hardware device. This takes precedence over related
-  Kconfig options which serve a similar purpose.
