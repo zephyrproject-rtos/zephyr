@@ -905,12 +905,28 @@ static inline bool net_ipv6_is_addr_mcast_scope(const struct in6_addr *addr,
 }
 
 /**
+ * @brief Check if the IPv6 addresses have the same multicast scope (FFyx::).
+ *
+ * @param addr_1 IPv6 address 1
+ * @param addr_2 IPv6 address 2
+ *
+ * @return True if both addresses have same multicast scope,
+ * false otherwise.
+ */
+static inline bool net_ipv6_is_same_mcast_scope(const struct in6_addr *addr_1,
+						const struct in6_addr *addr_2)
+{
+	return (addr_1->s6_addr[0] == 0xff) && (addr_2->s6_addr[0] == 0xff) &&
+			(addr_1->s6_addr[1] == addr_2->s6_addr[1]);
+}
+
+/**
  * @brief Check if the IPv6 address is a global multicast address (FFxE::/16).
  *
  * @param addr IPv6 address.
  *
  * @return True if the address is global multicast address, false otherwise.
-*/
+ */
 static inline bool net_ipv6_is_addr_mcast_global(const struct in6_addr *addr)
 {
 	return net_ipv6_is_addr_mcast_scope(addr, 0x0e);
@@ -928,6 +944,20 @@ static inline bool net_ipv6_is_addr_mcast_global(const struct in6_addr *addr)
 static inline bool net_ipv6_is_addr_mcast_iface(const struct in6_addr *addr)
 {
 	return net_ipv6_is_addr_mcast_scope(addr, 0x01);
+}
+
+/**
+ * @brief Check if the IPv6 address is a link local scope multicast
+ * address (FFx2::).
+ *
+ * @param addr IPv6 address.
+ *
+ * @return True if the address is a link local scope multicast address,
+ * false otherwise.
+ */
+static inline bool net_ipv6_is_addr_mcast_link(const struct in6_addr *addr)
+{
+	return net_ipv6_is_addr_mcast_scope(addr, 0x02);
 }
 
 /**
