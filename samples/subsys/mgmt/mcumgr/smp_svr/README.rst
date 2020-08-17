@@ -119,6 +119,18 @@ Zephyr. The ``smp_svr`` sample comes in different flavours.
             -- \
             -DOVERLAY_CONFIG='overlay-serial.conf;overlay-fs.conf'
 
+   .. group-tab:: Shell
+
+      To build the shell sample:
+
+      .. code-block:: console
+
+         west build \
+            -b frdm_k64f \
+            samples/subsys/mgmt/mcumgr/smp_svr \
+            -- \
+            -DOVERLAY_CONFIG='overlay-shell.conf'
+
    .. group-tab:: UDP
 
       The UDP transport for SMP supports both IPv4 and IPv6.
@@ -187,6 +199,13 @@ send a string to the remote target device and have it echo it back:
       .. code-block:: console
 
          sudo mcumgr --conntype ble --connstring ctlr_name=hci0,peer_name='Zephyr' echo hello
+         hello
+
+   .. group-tab:: Shell
+
+      .. code-block:: console
+
+         mcumgr --conntype serial --connstring "/dev/ttyACM0,baud=115200" echo hello
          hello
 
    .. group-tab:: UDP
