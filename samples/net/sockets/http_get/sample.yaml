@@ -19,3 +19,6 @@ tests:
     extra_configs:
       - CONFIG_NET_SOCKETS_POSIX_NAMES=n
       - CONFIG_POSIX_API=y
+  sample.net.sockets.http_get.offload.simplelink:
+    platform_whitelist: cc3220sf_launchxl
+    tags: net socket offload simplelink
