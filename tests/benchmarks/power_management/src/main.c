@@ -11,7 +11,6 @@
 LOG_MODULE_DECLARE(brd_pm_test);
 #include "power_mgmt.h"
 
-
 #define MAX_CYCLES 5ul
 
 void main(void)
