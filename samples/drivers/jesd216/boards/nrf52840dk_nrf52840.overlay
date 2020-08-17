@@ -13,7 +13,7 @@
 
 &spi2 {
 	status = "okay";
-	cs-gpios = <&gpio0 17 0>, <&gpio1 5 0>;
+	cs-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>, <&gpio1 5 GPIO_ACTIVE_LOW>;
 	mx25r64: mx25r6435f@0 {
 		status = "okay";
 		compatible = "jedec,spi-nor";
