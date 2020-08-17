@@ -22,6 +22,28 @@
 		"Failed in offset check of register structure member!")
 
 /*
+ * NPCX register access checking via structure macro function to mitigate the
+ * risk of unexpected compiling results if module contains different length
+ * registers. For example, a word register access might break into two byte
+ * register accesses by adding 'packed' attribute.
+ *
+ * For example, add this macro for word register 'PRSC' of PWM module in its
+ * device init function for checking violation. Once it occurred, core will be
+ * stalled forever and easy to find out what happens.
+ */
+#define NPCX_REG_WORD_ACCESS_CHECK(reg, val) { \
+		uint16_t placeholder = reg; \
+		reg = val; \
+		__ASSERT(reg == val, "16-bit reg access failed!"); \
+		reg = placeholder; \
+	}
+#define NPCX_REG_DWORD_ACCESS_CHECK(reg, val) { \
+		uint32_t placeholder = reg; \
+		reg = val; \
+		__ASSERT(reg == val, "32-bit reg access failed!"); \
+		reg = placeholder; \
+	}
+/*
  * Core Domain Clock Generator (CDCG) device registers
  */
 struct cdcg_reg {
@@ -307,6 +329,33 @@ struct gpio_reg {
 	/* 0x007: Port GPIOx Lock Control */
 	volatile uint8_t PLOCK_CTL;
 };
+
+/*
+ * Pulse Width Modulator (PWM) device registers
+ */
+struct pwm_reg {
+	/* 0x000: Clock Prescaler */
+	volatile uint16_t PRSC;
+	/* 0x002: Cycle Time */
+	volatile uint16_t CTR;
+	/* 0x004: PWM Control */
+	volatile uint8_t PWMCTL;
+	volatile uint8_t reserved1;
+	/* 0x006: Duty Cycle */
+	volatile uint16_t DCR;
+	volatile uint8_t reserved2[4];
+	/* 0x00C: PWM Control Extended */
+	volatile uint8_t PWMCTLEX;
+	volatile uint8_t reserved3;
+};
+
+/* PWM register fields */
+#define NPCX_PWMCTL_INVP                      0
+#define NPCX_PWMCTL_CKSEL                     1
+#define NPCX_PWMCTL_HB_DC_CTL_FIELD           FIELD(2, 2)
+#define NPCX_PWMCTL_PWR                       7
+#define NPCX_PWMCTLEX_FCK_SEL_FIELD           FIELD(4, 2)
+#define NPCX_PWMCTLEX_OD_OUT                  7
 
 /*
  * Enhanced Serial Peripheral Interface (eSPI) device registers
@@ -680,6 +729,7 @@ struct kbc_reg {
 /*
  * Power Management Channel (PMCH) device registers
  */
+
 struct pmch_reg {
 	/* 0x000: Host Interface PM Status */
 	volatile uint8_t HIPMST;

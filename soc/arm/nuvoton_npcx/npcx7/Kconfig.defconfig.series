@@ -35,6 +35,12 @@ config GPIO_NPCX
 	help
 	  Enable support for NPCX GPIO driver.
 
+config PWM_NPCX
+	default y
+	depends on PWM
+	help
+	  Enable support for NPCX PWM driver.
+
 config ESPI_NPCX
 	default y
 	depends on ESPI

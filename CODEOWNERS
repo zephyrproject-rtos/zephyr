@@ -226,6 +226,7 @@
 /drivers/pinmux/*npcx*                    @MulinChao
 /drivers/ps2/                             @albertofloyd @franciscomunoz @scottwcpg
 /drivers/pwm/*litex*                      @mateusz-holenko @kgugala @pgielda
+/drivers/pwm/*npcx*                       @MulinChao
 /drivers/pwm/*sam0*                       @nzmichaelh
 /drivers/pwm/*stm32*                      @gmarull
 /drivers/sensor/                          @MaureenHelm
