@@ -1,11 +1,13 @@
 # Copyright (c) 2020 Nuvoton Technology Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-description: Nuvoton, NPCX-I2C node
+description: Nuvoton, NPCX-I2C controller node
 
-compatible: "nuvoton,npcx-i2c"
+compatible: "nuvoton,npcx-i2c-ctrl"
 
 include: [i2c-controller.yaml]
+
+bus: i2c
 
 properties:
     reg:
@@ -14,7 +16,3 @@ properties:
         required: true
     label:
         required: true
-    pinctrl-0:
-        type: phandles
-        required: true
-        description: configurations of pinmux controllers

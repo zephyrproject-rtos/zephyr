@@ -62,6 +62,16 @@ config ESPI_NPCX
 	  https://www.intel.com/content/www/us/en/support/articles/000020952/
 	  software/chipset-software.html for more detail.
 
+config I2C_NPCX
+	default y
+	depends on I2C
+	help
+	  Enable support for NPCX I2C driver. The NPCX SMB/I2C modules provides
+	  full support for a two-wire SMBus/I2C synchronous serial interface.
+	  Each interface is a two-wire serial interface that is compatible with
+	  both Intel SMBus and Philips I2C physical layer. There are 8 SMBus
+	  modules and 10 buses in NPCX7 series.
+
 source "soc/arm/nuvoton_npcx/npcx7/Kconfig.defconfig.npcx7*"
 
 endif # SOC_SERIES_NPCX7

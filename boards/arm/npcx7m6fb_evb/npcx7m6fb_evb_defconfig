@@ -43,6 +43,9 @@ CONFIG_ADC=y
 # ESPI Driver
 CONFIG_ESPI=y
 
+# I2C Driver
+CONFIG_I2C=y
+
 # Console Driver
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
