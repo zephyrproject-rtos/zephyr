@@ -162,6 +162,7 @@
 /drivers/*/*lpc11u6x*                     @mbittan @simonguinot
 /drivers/adc/                             @anangl
 /drivers/adc/adc_stm32.c                  @cybertale
+/drivers/adc/*npcx*                       @MulinChao
 /drivers/bluetooth/                       @joerchan @jhedberg @Vudentz
 /drivers/can/                             @alexanderwachter
 /drivers/can/*mcp2515*                    @karstenkoenig

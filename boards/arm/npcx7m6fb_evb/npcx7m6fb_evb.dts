@@ -44,6 +44,11 @@
 	status = "okay";
 };
 
+&adc0 {
+	/* ADC pinmux is changed only if related channel is configured. */
+	status = "okay";
+};
+
 &espi0 {
 	status = "okay";
 };
