@@ -22,6 +22,8 @@
 		pwm-led0 = &pwm_led0_green;
 		/* For pwm test suites */
 		pwm-0 = &pwm6;
+		/* For i2c test suites */
+		i2c-0 = &i2c0_0;
 	};
 
 	pwmleds {
@@ -51,4 +53,9 @@
 
 &espi0 {
 	status = "okay";
+};
+
+&i2c0_0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
 };
