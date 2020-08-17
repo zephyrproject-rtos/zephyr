@@ -256,7 +256,6 @@ int test_pwr_mgmt_multithread(uint8_t cycles)
 
 		LOG_INF("Wake from Light Sleep");
 		pm_exit_marker();
-		
 		LOG_INF("Resume");
 		resume_all_tasks();
 
@@ -296,7 +295,6 @@ int test_pwr_mgmt_singlethread(uint8_t cycles)
 
 		/* Trigger Light Sleep 1 state. 48MHz PLL stays on */
 		LOG_INF("About to enter light sleep");
-		
 		pm_trigger_marker();
 		k_msleep(CONFIG_SYS_PM_MIN_RESIDENCY_SLEEP_1 +
 			 LT_EXTRA_SLP_TIME);
