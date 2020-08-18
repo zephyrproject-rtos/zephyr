@@ -53,7 +53,7 @@ Examples
 * The requirements of :c:type:`counter_alarm_callback_t` invoked when a
   counter device alarm fires are satisfied by::
 
-    void handle_alarm(struct device *dev,
+    void handle_alarm(const struct device *dev,
                       uint8_t chan_id,
 		      uint32_t ticks,
 		      void *user_data)
