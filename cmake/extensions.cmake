@@ -253,6 +253,7 @@ function(process_flags lang input output)
   # The flags might contains compile language generator expressions that
   # look like this:
   # $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions>
+  # $<$<COMPILE_LANGUAGE:CXX>:$<OTHER_EXPRESSION>>
   #
   # Flags that don't specify a language like this apply to all
   # languages.
@@ -274,9 +275,18 @@ function(process_flags lang input output)
     set(is_compile_lang_generator_expression 0)
     foreach(l ${languages})
       if(flag MATCHES "<COMPILE_LANGUAGE:${l}>:([^>]+)>")
+        set(updated_flag ${CMAKE_MATCH_1})
         set(is_compile_lang_generator_expression 1)
         if(${l} STREQUAL ${lang})
-          list(APPEND tmp_list ${CMAKE_MATCH_1})
+          # This test will match in case there are more generator expressions in the flag.
+          # As example: $<$<COMPILE_LANGUAGE:C>:$<OTHER_EXPRESSION>>
+          #             $<$<OTHER_EXPRESSION:$<COMPILE_LANGUAGE:C>:something>>
+          string(REGEX MATCH "(\\\$<)[^\\\$]*(\\\$<)[^\\\$]*(\\\$<)" IGNORE_RESULT ${flag})
+          if(CMAKE_MATCH_2)
+            # Nested generator expressions are used, just substitue `$<COMPILE_LANGUAGE:${l}>` to `1`
+            string(REGEX REPLACE "\\\$<COMPILE_LANGUAGE:${l}>" "1" updated_flag ${flag})
+          endif()
+          list(APPEND tmp_list ${updated_flag})
           break()
         endif()
       endif()
