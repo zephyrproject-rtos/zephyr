@@ -1,5 +1,6 @@
 common:
   tags: device userspace
+  platform_exclude: mec15xxevb_assy6853
   integration_platforms:
     - native_posix
 tests:
