@@ -27,8 +27,8 @@
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL,
-		      0x12, 0x18, /* HID Service */
-		      0x0f, 0x18), /* Battery Service */
+		      BT_UUID_16_ENCODE(BT_UUID_HIDS_VAL),
+		      BT_UUID_16_ENCODE(BT_UUID_BAS_VAL)),
 };
 
 static void connected(struct bt_conn *conn, uint8_t err)

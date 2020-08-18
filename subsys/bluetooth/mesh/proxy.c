@@ -1026,11 +1026,14 @@ int bt_mesh_proxy_send(struct bt_conn *conn, uint8_t type,
 }
 
 #if defined(CONFIG_BT_MESH_PB_GATT)
-static uint8_t prov_svc_data[20] = { 0x27, 0x18, };
+static uint8_t prov_svc_data[20] = {
+	BT_UUID_16_ENCODE(BT_UUID_MESH_PROV_VAL),
+};
 
 static const struct bt_data prov_ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-	BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0x27, 0x18),
+	BT_DATA_BYTES(BT_DATA_UUID16_ALL,
+		      BT_UUID_16_ENCODE(BT_UUID_MESH_PROV_VAL)),
 	BT_DATA(BT_DATA_SVC_DATA16, prov_svc_data, sizeof(prov_svc_data)),
 };
 #endif /* PB_GATT */
@@ -1045,17 +1048,21 @@ static const struct bt_data prov_ad[] = {
 
 #define NODE_ID_TIMEOUT (CONFIG_BT_MESH_NODE_ID_TIMEOUT * MSEC_PER_SEC)
 
-static uint8_t proxy_svc_data[NODE_ID_LEN] = { 0x28, 0x18, };
+static uint8_t proxy_svc_data[NODE_ID_LEN] = {
+	BT_UUID_16_ENCODE(BT_UUID_MESH_PROXY_VAL),
+};
 
 static const struct bt_data node_id_ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-	BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0x28, 0x18),
+	BT_DATA_BYTES(BT_DATA_UUID16_ALL,
+		      BT_UUID_16_ENCODE(BT_UUID_MESH_PROXY_VAL)),
 	BT_DATA(BT_DATA_SVC_DATA16, proxy_svc_data, NODE_ID_LEN),
 };
 
 static const struct bt_data net_id_ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-	BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0x28, 0x18),
+	BT_DATA_BYTES(BT_DATA_UUID16_ALL,
+		      BT_UUID_16_ENCODE(BT_UUID_MESH_PROXY_VAL)),
 	BT_DATA(BT_DATA_SVC_DATA16, proxy_svc_data, NET_ID_LEN),
 };
 
