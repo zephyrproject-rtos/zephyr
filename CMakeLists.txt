@@ -717,18 +717,15 @@ if(CONFIG_GEN_ISR_TABLES)
 
   # isr_tables.c is generated from ${ZEPHYR_PREBUILT_EXECUTABLE} by
   # gen_isr_tables.py
-  set(obj_copy_cmd "")
-  bintools_objcopy(
-    RESULT_CMD_LIST obj_copy_cmd
-    TARGET_INPUT    ${OUTPUT_FORMAT}
-    TARGET_OUTPUT   "binary"
-    SECTION_ONLY    ".intList"
-    FILE_INPUT      $<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
-    FILE_OUTPUT     "isrList.bin"
-    )
   add_custom_command(
     OUTPUT isr_tables.c
-    ${obj_copy_cmd}
+    COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_intarget>${OUTPUT_FORMAT}
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_outtarget>binary
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_section_only>.intList
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>$<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>isrList.bin
     COMMAND ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/arch/common/gen_isr_tables.py
     --output-source isr_tables.c
@@ -738,6 +735,7 @@ if(CONFIG_GEN_ISR_TABLES)
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--debug>
     ${GEN_ISR_TABLE_EXTRA_ARG}
     DEPENDS ${ZEPHYR_PREBUILT_EXECUTABLE}
+    COMMAND_EXPAND_LISTS
     )
   set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES isr_tables.c)
 endif()
@@ -857,23 +855,18 @@ if(CONFIG_USERSPACE)
 
   set(OUTPUT_OBJ_PATH ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/output_lib.dir/${OUTPUT_OBJ})
 
-  set(obj_copy_cmd "")
-  set(obj_copy_sections_rename
-    .data=.kobject_data.data
-    .text=.kobject_data.text
-    .rodata=.kobject_data.rodata
-    )
-  bintools_objcopy(
-    RESULT_CMD_LIST obj_copy_cmd
-    SECTION_RENAME  ${obj_copy_sections_rename}
-    FILE_INPUT      ${OUTPUT_OBJ_PATH}
-    FILE_OUTPUT     ${OUTPUT_OBJ_RENAMED}
-    )
   add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_OBJ_RENAMED}
-    ${obj_copy_cmd}
+    COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_section_rename>.data=.kobject_data.data
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_section_rename>.text=.kobject_data.text
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_section_rename>.rodata=.kobject_data.rodata
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${OUTPUT_OBJ_PATH}
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${OUTPUT_OBJ_RENAMED}
     DEPENDS output_lib
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMAND_EXPAND_LISTS
     )
   add_custom_target(output_obj_renamed DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_OBJ_RENAMED})
 
@@ -1187,8 +1180,8 @@ if(CONFIG_OUTPUT_DISASSEMBLE_ALL)
     COMMAND $<TARGET_PROPERTY:bintools,disassembly_command>
             $<TARGET_PROPERTY:bintools,disassembly_flag>
             ${disassembly_type}
-            $<TARGET_PROPERTY:bintools,disassembly_flag_infile> ${KERNEL_ELF_NAME}
-            $<TARGET_PROPERTY:bintools,disassembly_flag_outfile> ${KERNEL_LST_NAME}
+            $<TARGET_PROPERTY:bintools,disassembly_flag_infile>${KERNEL_ELF_NAME}
+            $<TARGET_PROPERTY:bintools,disassembly_flag_outfile>${KERNEL_LST_NAME}
     )
   list(APPEND
     post_build_byproducts
@@ -1198,44 +1191,33 @@ if(CONFIG_OUTPUT_DISASSEMBLE_ALL)
 endif()
 
 if(CONFIG_OUTPUT_STAT)
-  set(out_stat_cmd    "")
-  set(out_stat_byprod "")
-  bintools_readelf(
-    RESULT_CMD_LIST    out_stat_cmd
-    RESULT_BYPROD_LIST out_stat_byprod
-    HEADERS
-    FILE_INPUT         ${KERNEL_ELF_NAME}
-    FILE_OUTPUT        ${KERNEL_STAT_NAME}
-    )
+#  zephyr_post_build(TOOLS bintools COMMAND readelf FLAGS headers INFILE file OUTFILE outfile)
   list(APPEND
     post_build_commands
-    ${out_stat_cmd}
+    COMMAND $<TARGET_PROPERTY:bintools,readelf_command>
+            $<TARGET_PROPERTY:bintools,readelf_flag>
+            $<TARGET_PROPERTY:bintools,readelf_flag_headers>
+            $<TARGET_PROPERTY:bintools,readelf_flag_infile> ${KERNEL_ELF_NAME}
+            $<TARGET_PROPERTY:bintools,readelf_flag_outfile> ${KERNEL_STAT_NAME}
     )
   list(APPEND
     post_build_byproducts
     ${KERNEL_STAT_NAME}
-    ${out_stat_byprod}
     )
 endif()
 
 if(CONFIG_BUILD_OUTPUT_STRIPPED)
-  set(out_stripped_cmd    "")
-  set(out_stripped_byprod "")
-  bintools_strip(
-    RESULT_CMD_LIST    out_stripped_cmd
-    RESULT_BYPROD_LIST out_stripped_byprod
-    STRIP_ALL
-    FILE_INPUT         ${KERNEL_ELF_NAME}
-    FILE_OUTPUT        ${KERNEL_STRIP_NAME}
-    )
   list(APPEND
     post_build_commands
-    ${out_stripped_cmd}
+    COMMAND $<TARGET_PROPERTY:bintools,strip_command>
+            $<TARGET_PROPERTY:bintools,strip_flag>
+            $<TARGET_PROPERTY:bintools,strip_flag_all>
+            $<TARGET_PROPERTY:bintools,strip_flag_infile>${KERNEL_ELF_NAME}
+            $<TARGET_PROPERTY:bintools,strip_flag_outfile>${KERNEL_STRIP_NAME}
     )
   list(APPEND
     post_build_byproducts
     ${KERNEL_STRIP_NAME}
-    ${out_stripped_byprod}
     )
 endif()
 
