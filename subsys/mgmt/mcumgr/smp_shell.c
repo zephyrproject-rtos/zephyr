@@ -86,34 +86,41 @@ static int read_mcumgr_byte(struct smp_shell_data *data, uint8_t byte)
 	return SMP_SHELL_MCUMGR_STATE_NONE;
 }
 
-bool smp_shell_rx_byte(struct smp_shell_data *data, uint8_t byte)
+size_t smp_shell_rx_bytes(struct smp_shell_data *data, const uint8_t *bytes,
+			  size_t size)
 {
-	int mcumgr_state;
+	size_t consumed = 0;		/* Number of bytes consumed by SMP */
 
-	mcumgr_state = read_mcumgr_byte(data, byte);
-	if (mcumgr_state == SMP_SHELL_MCUMGR_STATE_NONE) {
-		/* Not an mcumgr command; let the shell process the byte. */
-		return false;
+	/* Process all bytes that are accepted as SMP commands. */
+	while (size != consumed) {
+		uint8_t byte = bytes[consumed];
+		int mcumgr_state = read_mcumgr_byte(data, byte);
+
+		if (mcumgr_state == SMP_SHELL_MCUMGR_STATE_NONE) {
+			break;
+		}
+
+		if (data->cur < sizeof(data->mcumgr_buff) - 1) {
+			data->mcumgr_buff[data->cur] = byte;
+			++data->cur;
+		}
+
+		/* Newline in payload means complete frame */
+		if (mcumgr_state == SMP_SHELL_MCUMGR_STATE_PAYLOAD &&
+		    byte == '\n') {
+			data->mcumgr_buff[data->cur] = '\0';
+			data->cmd_rdy = true;
+			atomic_clear_bit(&data->esc_state, ESC_MCUMGR_PKT_1);
+			atomic_clear_bit(&data->esc_state, ESC_MCUMGR_PKT_2);
+			atomic_clear_bit(&data->esc_state, ESC_MCUMGR_FRAG_1);
+			atomic_clear_bit(&data->esc_state, ESC_MCUMGR_FRAG_2);
+			data->cur = 0U;
+		}
+
+		++consumed;
 	}
 
-	/*
-	 * The received byte is part of an mcumgr command.  Process the byte
-	 * and return true to indicate that shell should ignore it.
-	 */
-	if (data->cur < sizeof(data->mcumgr_buff) - 1) {
-		data->mcumgr_buff[data->cur++] = byte;
-	}
-	if (mcumgr_state == SMP_SHELL_MCUMGR_STATE_PAYLOAD && byte == '\n') {
-		data->mcumgr_buff[data->cur] = '\0';
-		data->cmd_rdy = true;
-		atomic_clear_bit(&data->esc_state, ESC_MCUMGR_PKT_1);
-		atomic_clear_bit(&data->esc_state, ESC_MCUMGR_PKT_2);
-		atomic_clear_bit(&data->esc_state, ESC_MCUMGR_FRAG_1);
-		atomic_clear_bit(&data->esc_state, ESC_MCUMGR_FRAG_2);
-		data->cur = 0U;
-	}
-
-	return true;
+	return consumed;
 }
 
 void smp_shell_process(struct smp_shell_data *data)

@@ -34,6 +34,9 @@ static void uart_rx_handle(const struct device *dev,
 	uint32_t len;
 	uint32_t rd_len;
 	bool new_data = false;
+#ifdef CONFIG_MCUMGR_SMP_SHELL
+	struct smp_shell_data *const smp = &sh_uart->ctrl_blk->smp;
+#endif
 
 	do {
 		len = ring_buf_put_claim(sh_uart->rx_ringbuf, &data,
@@ -53,14 +56,7 @@ static void uart_rx_handle(const struct device *dev,
 			/* Divert bytes from shell handling if it is
 			 * part of an mcumgr frame.
 			 */
-			size_t i;
-
-			for (i = 0; i < rd_len; i++) {
-				if (!smp_shell_rx_byte(&sh_uart->ctrl_blk->smp,
-						       data[i])) {
-					break;
-				}
-			}
+			size_t i = smp_shell_rx_bytes(smp, data, rd_len);
 
 			rd_len -= i;
 
@@ -86,7 +82,7 @@ static void uart_rx_handle(const struct device *dev,
 			 * feeding it to SMP as a part of mcumgr frame.
 			 */
 			if ((rd_len != 0) &&
-			    smp_shell_rx_byte(&sh_uart->ctrl_blk->smp, dummy)) {
+			    (smp_shell_rx_bytes(smp, &dummy, 1) == 1)) {
 				new_data = true;
 			}
 #endif /* CONFIG_MCUMGR_SMP_SHELL */
