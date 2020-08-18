@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/types.h>
+#include <bluetooth/hci.h>
 #include <sys/byteorder.h>
 #include <sys/util.h>
 
@@ -19,6 +20,7 @@
 #include "lll.h"
 #include "lll_vendor.h"
 #include "lll_clock.h"
+#include "lll_filter.h"
 #include "lll_scan.h"
 #include "lll_scan_aux.h"
 
@@ -321,6 +323,11 @@ static int isr_rx_pdu(struct lll_scan_aux *lll, uint8_t rssi_ready)
 			    radio_rx_chain_delay_get(lll->phy, 1);
 
 	ftr->rssi = (rssi_ready) ? (radio_rssi_get() & 0x7f) : 0x7f;
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	/* TODO: Use correct rl_idx value when privacy support is added */
+	ftr->rl_idx = FILTER_IDX_NONE;
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
 	ull_rx_put(node_rx->hdr.link, node_rx);
 	ull_rx_sched();
