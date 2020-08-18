@@ -1402,6 +1402,111 @@ function(toolchain_parse_make_rule input_file include_files)
   set(${include_files} ${result} PARENT_SCOPE)
 endfunction()
 
+# 'check_set_linker_property' is a function that check the provided linker
+# flag and only set the linker property if the check succeeds
+#
+# This function is similar in nature to the CMake set_property function, but
+# with the extension that it will check that the linker supports the flag before
+# setting the property.
+#
+# APPEND: Flag indicated that the property should be appended to the existing
+#         value list for the property.
+# TARGET: Name of target on which to add the property (commonly: linker)
+# PROPERTY: Name of property with the value(s) following immediately after
+#           property name
+function(check_set_linker_property)
+  set(options APPEND)
+  set(single_args TARGET)
+  set(multi_args  PROPERTY)
+  cmake_parse_arguments(LINKER_PROPERTY "${options}" "${single_args}" "${multi_args}" ${ARGN})
+
+  if(LINKER_PROPERTY_APPEND)
+   set(APPEND "APPEND")
+  endif()
+
+  list(GET LINKER_PROPERTY_PROPERTY 0 property)
+  list(REMOVE_AT LINKER_PROPERTY_PROPERTY 0)
+  set(option ${LINKER_PROPERTY_PROPERTY})
+
+  string(MAKE_C_IDENTIFIER check${option} check)
+
+  set(SAVED_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
+  set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${option}")
+  zephyr_check_compiler_flag(C "" ${check})
+  set(CMAKE_REQUIRED_FLAGS ${SAVED_CMAKE_REQUIRED_FLAGS})
+
+  if(${check})
+    set_property(TARGET ${LINKER_PROPERTY_TARGET} ${APPEND} PROPERTY ${property} ${option})
+  endif()
+endfunction()
+
+# 'set_compiler_property' is a function that sets the property for the C and
+# C++ property targets used for toolchain abstraction.
+#
+# This function is similar in nature to the CMake set_property function, but
+# with the extension that it will set the property on both the compile and
+# compiler-cpp targets.
+#
+# APPEND: Flag indicated that the property should be appended to the existing
+#         value list for the property.
+# PROPERTY: Name of property with the value(s) following immediately after
+#           property name
+function(set_compiler_property)
+  set(options APPEND)
+  set(multi_args  PROPERTY)
+  cmake_parse_arguments(COMPILER_PROPERTY "${options}" "${single_args}" "${multi_args}" ${ARGN})
+  if(COMPILER_PROPERTY_APPEND)
+   set(APPEND "APPEND")
+   set(APPEND-CPP "APPEND")
+  endif()
+
+  set_property(TARGET compiler ${APPEND} PROPERTY ${COMPILER_PROPERTY_PROPERTY})
+  set_property(TARGET compiler-cpp ${APPEND} PROPERTY ${COMPILER_PROPERTY_PROPERTY})
+endfunction()
+
+# 'check_set_compiler_property' is a function that check the provided compiler
+# flag and only set the compiler or compiler-cpp property if the check succeeds
+#
+# This function is similar in nature to the CMake set_property function, but
+# with the extension that it will check that the compiler supports the flag
+# before setting the property on compiler or compiler-cpp targets.
+#
+# APPEND: Flag indicated that the property should be appended to the existing
+#         value list for the property.
+# PROPERTY: Name of property with the value(s) following immediately after
+#           property name
+function(check_set_compiler_property)
+  set(options APPEND)
+  set(multi_args  PROPERTY)
+  cmake_parse_arguments(COMPILER_PROPERTY "${options}" "${single_args}" "${multi_args}" ${ARGN})
+  if(COMPILER_PROPERTY_APPEND)
+   set(APPEND "APPEND")
+   set(APPEND-CPP "APPEND")
+  endif()
+
+  list(GET COMPILER_PROPERTY_PROPERTY 0 property)
+  list(REMOVE_AT COMPILER_PROPERTY_PROPERTY 0)
+
+  foreach(option ${COMPILER_PROPERTY_PROPERTY})
+    if(CONFIG_CPLUSPLUS)
+      zephyr_check_compiler_flag(CXX ${option} check)
+
+      if(${check})
+        set_property(TARGET compiler-cpp ${APPEND-CPP} PROPERTY ${property} ${option})
+        set(APPEND-CPP "APPEND")
+      endif()
+    endif()
+
+    zephyr_check_compiler_flag(C ${option} check)
+
+    if(${check})
+      set_property(TARGET compiler ${APPEND} PROPERTY ${property} ${option})
+      set(APPEND "APPEND")
+    endif()
+  endforeach()
+endfunction()
+
+
 # 3.4. Debugging CMake
 
 # Usage:

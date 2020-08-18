@@ -550,6 +550,13 @@ alternate .overlay file using this parameter. These settings will override the \
 settings in the board's .dts file. Multiple files may be listed, e.g. \
 DTC_OVERLAY_FILE=\"dts1.overlay dts2.overlay\"")
 
+# Populate USER_CACHE_DIR with a directory that user applications may
+# write cache files to.
+if(NOT DEFINED USER_CACHE_DIR)
+  find_appropriate_cache_directory(USER_CACHE_DIR)
+endif()
+message(STATUS "Cache files will be written to: ${USER_CACHE_DIR}")
+
 # Prevent CMake from testing the toolchain
 set(CMAKE_C_COMPILER_FORCED   1)
 set(CMAKE_CXX_COMPILER_FORCED 1)
@@ -605,6 +612,12 @@ include(${ZEPHYR_BASE}/cmake/target_toolchain.cmake)
 
 project(Zephyr-Kernel VERSION ${PROJECT_VERSION})
 enable_language(C CXX ASM)
+# The setup / configuration of the toolchain itself and the configuration of
+# supported compilation flags are now split, as this allows to use the toolchain
+# for generic purposes, for example DTS, and then test the toolchain for
+# supported flags at stage two.
+# Testing the toolchain flags requires the enable_language() to have been called in CMake.
+include(${ZEPHYR_BASE}/cmake/target_toolchain_flags.cmake)
 
 # 'project' sets PROJECT_BINARY_DIR to ${CMAKE_CURRENT_BINARY_DIR},
 # but for legacy reasons we need it to be set to
@@ -623,13 +636,6 @@ set(KERNEL_S19_NAME   ${KERNEL_NAME}.s19)
 set(KERNEL_EXE_NAME   ${KERNEL_NAME}.exe)
 set(KERNEL_STAT_NAME  ${KERNEL_NAME}.stat)
 set(KERNEL_STRIP_NAME ${KERNEL_NAME}.strip)
-
-# Populate USER_CACHE_DIR with a directory that user applications may
-# write cache files to.
-if(NOT DEFINED USER_CACHE_DIR)
-  find_appropriate_cache_directory(USER_CACHE_DIR)
-endif()
-message(STATUS "Cache files will be written to: ${USER_CACHE_DIR}")
 
 include(${BOARD_DIR}/board.cmake OPTIONAL)
 
