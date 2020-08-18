@@ -961,8 +961,13 @@ class QEMUHandler(Handler):
                     proc.kill()
                     self.returncode = proc.returncode
             else:
-                logger.debug(f"No timeout, return code from qemu: {self.returncode}")
+                logger.debug(f"No timeout, return code from qemu: {proc.returncode}")
                 self.returncode = proc.returncode
+
+            # Need to wait for harness to finish processing
+            # output from QEMU. Otherwise it might miss some
+            # error messages.
+            self.thread.join()
 
             if os.path.exists(self.pid_fn):
                 os.unlink(self.pid_fn)
