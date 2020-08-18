@@ -79,31 +79,30 @@ struct bt_uuid_128 {
 #define BT_UUID_32(__u) CONTAINER_OF(__u, struct bt_uuid_32, uuid)
 #define BT_UUID_128(__u) CONTAINER_OF(__u, struct bt_uuid_128, uuid)
 
-/**
- * @brief Encode 128 bit UUID into an array values
+/** @brief Encode 128 bit UUID into an array values
  *
- * Helper macro to initialize a 128-bit UUID value from the UUID format.
- * Can be combined with BT_UUID_DECLARE_128 to declare a 128-bit UUID from
- * the readable form of UUIDs.
+ *  Helper macro to initialize a 128-bit UUID value from the UUID format.
+ *  Can be combined with BT_UUID_DECLARE_128 to declare a 128-bit UUID from
+ *  the readable form of UUIDs.
  *
- * Example for how to declare the UUID `6E400001-B5A3-F393-E0A9-E50E24DCCA9E`
+ *  Example for how to declare the UUID `6E400001-B5A3-F393-E0A9-E50E24DCCA9E`
  *
- * @code
- * BT_UUID_DECLARE_128(
+ *  @code
+ *  BT_UUID_DECLARE_128(
  *       BT_UUID_128_ENCODE(0x6E400001, 0xB5A3, 0xF393, 0xE0A9, 0xE50E24DCCA9E))
- * @endcode
+ *  @endcode
  *
- * Just replace the hyphen by the comma and add `0x` prefixes.
+ *  Just replace the hyphen by the comma and add `0x` prefixes.
  *
- * @param w32 First part of the UUID (32 bits)
- * @param w1  Second part of the UUID (16 bits)
- * @param w2  Third part of the UUID (16 bits)
- * @param w3  Fourth part of the UUID (16 bits)
- * @param w48 Fifth part of the UUID (48 bits)
+ *  @param w32 First part of the UUID (32 bits)
+ *  @param w1  Second part of the UUID (16 bits)
+ *  @param w2  Third part of the UUID (16 bits)
+ *  @param w3  Fourth part of the UUID (16 bits)
+ *  @param w48 Fifth part of the UUID (48 bits)
  *
- * @return The comma separated values for UUID 128 initializer that
- *         may be used directly as an argument for
- *         @ref BT_UUID_INIT_128 or @ref BT_UUID_DECLARE_128
+ *  @return The comma separated values for UUID 128 initializer that
+ *          may be used directly as an argument for
+ *          @ref BT_UUID_INIT_128 or @ref BT_UUID_DECLARE_128
  */
 #define BT_UUID_128_ENCODE(w32, w1, w2, w3, w48) \
 	(((w48) >>  0) & 0xFF), \
@@ -118,6 +117,46 @@ struct bt_uuid_128 {
 	(((w2)  >>  8) & 0xFF), \
 	(((w1)  >>  0) & 0xFF), \
 	(((w1)  >>  8) & 0xFF), \
+	(((w32) >>  0) & 0xFF), \
+	(((w32) >>  8) & 0xFF), \
+	(((w32) >> 16) & 0xFF), \
+	(((w32) >> 24) & 0xFF)
+
+/** @brief Encode 16 bit UUID into an array values
+ *
+ *  Helper macro to encode 16-bit UUID values into advertising data.
+ *
+ *  Example for how to declare the UUID `0x180a`
+ *
+ *  @code
+ *  BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(0x180a),
+ *  @endcode
+ *
+ * @param w16 UUID value (16-bits)
+ *
+ * @return The comma separated values for UUID 16 value that
+ *         may be used directly as an argument for @ref BT_DATA_BYTES.
+ */
+#define BT_UUID_16_ENCODE(w16)  \
+	(((w16) >>  0) & 0xFF), \
+	(((w16) >>  8) & 0xFF)
+
+/** @brief Encode 32 bit UUID into an array values
+ *
+ *  Helper macro to encode 32-bit UUID values into advertising data.
+ *
+ *  Example for how to declare the UUID `0x180a01af`
+ *
+ *  @code
+ *  BT_DATA_BYTES(BT_DATA_UUID32_ALL, BT_UUID_32_ENCODE(0x180a01af),
+ *  @endcode
+ *
+ * @param w32 UUID value (32-bits)
+ *
+ * @return The comma separated values for UUID 32 value that
+ *         may be used directly as an argument for @ref BT_DATA_BYTES.
+ */
+#define BT_UUID_32_ENCODE(w32)  \
 	(((w32) >>  0) & 0xFF), \
 	(((w32) >>  8) & 0xFF), \
 	(((w32) >> 16) & 0xFF), \
