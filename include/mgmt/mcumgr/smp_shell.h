@@ -26,17 +26,19 @@ struct smp_shell_data {
 };
 
 /**
- * @brief Attempts to process a received byte as part of an SMP frame.
+ * @brief Attempt to process received bytes as part of an SMP frame.
  *
- * This function should be called with every received byte.
+ * Called to scan buffer from the beginning and consume all bytes that are
+ * part of SMP frame until frame or buffer ends.
  *
  * @param data SMP shell transfer data.
- * @param byte The byte just received.
+ * @param bytes Buffer with bytes to process
+ * @param size Number of bytes to process
  *
- * @return true if the command being received is an mcumgr frame; false if it
- *		is a plain shell command.
+ * @return number of bytes consumed by the SMP
  */
-bool smp_shell_rx_byte(struct smp_shell_data *data, uint8_t byte);
+size_t smp_shell_rx_bytes(struct smp_shell_data *data, const uint8_t *bytes,
+			  size_t size);
 
 /**
  * @brief Processes SMP data and executes command if full frame was received.
