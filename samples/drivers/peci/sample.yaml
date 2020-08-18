@@ -2,6 +2,9 @@ sample:
   name: PECI driver  sample
 tests:
   sample.drivers.peci:
+    # theoretically EVB can be connected to Intel RVP as well,
+    # but HW setup is not documented, hence qualifying as unsupported.
+    platform_exclude: mec15xxevb_assy6853
     tags: drivers
     harness: console
     harness_config:
