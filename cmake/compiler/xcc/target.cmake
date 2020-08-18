@@ -65,19 +65,3 @@ endforeach()
 # toolchain-specific flags at generation time.
 list(APPEND CMAKE_REQUIRED_FLAGS -nostartfiles -nostdlib ${isystem_include_flags} -Wl,--unresolved-symbols=ignore-in-object-files)
 string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
-
-# Load toolchain_cc-family macros
-include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_security_fortify.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_security_canaries.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_optimizations.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_cpp.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_asm.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_baremetal.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_imacros.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_base.cmake)
-
-if(CC STREQUAL "clang")
-  include(${ZEPHYR_BASE}/cmake/compiler/clang/target_warnings.cmake)
-else()
-  include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_warnings.cmake)
-endif()
