@@ -1284,6 +1284,11 @@ if(CONFIG_BUILD_OUTPUT_EXE)
     )
 endif()
 
+# Generate and use MCUboot related artifacts as needed.
+if(CONFIG_BOOTLOADER_MCUBOOT)
+  include(${CMAKE_CURRENT_LIST_DIR}/cmake/mcuboot.cmake)
+endif()
+
 get_property(extra_post_build_commands
   GLOBAL PROPERTY
   extra_post_build_commands
