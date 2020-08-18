@@ -1105,6 +1105,24 @@ uint8_t ll_adv_enable(uint8_t enable)
 					 ticks_slot_overhead;
 
 #if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+		/* Add sync_info into auxiliary PDU */
+		if (lll->sync) {
+			sync = (void *)HDR_LLL2EVT(lll->sync);
+			if (sync->is_enabled && !sync->is_started) {
+				ret = ull_adv_aux_hdr_set_clear(adv,
+					ULL_ADV_PDU_HDR_FIELD_SYNC_INFO,
+					0, NULL, NULL);
+				if (ret) {
+					return ret;
+				}
+			} else {
+				/* Do not start periodic advertising */
+				sync = NULL;
+			}
+		}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+
 		if (lll->aux) {
 			struct lll_adv_aux *lll_aux = lll->aux;
 			uint32_t ticks_slot_overhead_aux;
@@ -1120,39 +1138,28 @@ uint8_t ll_adv_enable(uint8_t enable)
 			ticks_slot_overhead_aux = ull_adv_aux_evt_init(aux);
 
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
-			if (lll->sync) {
-				struct lll_adv_sync *lll_sync = lll->sync;
+			/* Start periodic advertising if enabled and not already
+			 * started.
+			 */
+			if (sync) {
+				const uint32_t ticks_slot_aux =
+					aux->evt.ticks_slot +
+					ticks_slot_overhead_aux;
+				uint32_t ticks_anchor_sync =
+					ticks_anchor_aux +
+					ticks_slot_aux +
+					HAL_TICKER_US_TO_TICKS(EVENT_MAFS_US);
 
-				sync = (void *)HDR_LLL2EVT(lll_sync);
+				ull_hdr_init(&sync->ull);
 
-				if (sync->is_enabled && !sync->is_started) {
-					const uint32_t ticks_slot_aux =
-						aux->evt.ticks_slot +
-						ticks_slot_overhead_aux;
-					uint32_t ticks_anchor_sync =
-						ticks_anchor_aux +
-						ticks_slot_aux +
-						HAL_TICKER_US_TO_TICKS(EVENT_MAFS_US);
-
-					/* Add sync_info into auxiliary PDU */
-					ret = ull_adv_aux_hdr_set_clear(adv,
-						ULL_ADV_PDU_HDR_FIELD_SYNC_INFO,
-						0, NULL, NULL);
-					if (ret) {
-						return ret;
-					}
-
-					ull_hdr_init(&sync->ull);
-
-					ret = ull_adv_sync_start(sync,
-								 ticks_anchor_sync,
-								 &ret_cb);
-					if (ret) {
-						goto failure_cleanup;
-					}
-
-					sync_is_started = 1U;
+				ret = ull_adv_sync_start(sync,
+							 ticks_anchor_sync,
+							 &ret_cb);
+				if (ret) {
+					goto failure_cleanup;
 				}
+
+				sync_is_started = 1U;
 			}
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 
