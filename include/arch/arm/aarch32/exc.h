@@ -91,6 +91,8 @@ struct __esf {
 #endif
 };
 
+extern uint32_t z_arm_coredump_fault_sp;
+
 typedef struct __esf z_arch_esf_t;
 
 #ifdef CONFIG_CPU_CORTEX_M

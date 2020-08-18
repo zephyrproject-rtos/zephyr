@@ -6,11 +6,13 @@
 
 from gdbstubs.arch.x86 import GdbStub_x86
 from gdbstubs.arch.x86_64 import GdbStub_x86_64
+from gdbstubs.arch.arm_cortex_m import GdbStub_ARM_CortexM
 
 class TgtCode:
     UNKNOWN = 0
     X86 = 1
     X86_64 = 2
+    ARM_CORTEX_M = 3
 
 def get_gdbstub(logfile, elffile):
     stub = None
@@ -21,5 +23,7 @@ def get_gdbstub(logfile, elffile):
         stub = GdbStub_x86(logfile=logfile, elffile=elffile)
     elif tgt_code == TgtCode.X86_64:
         stub = GdbStub_x86_64(logfile=logfile, elffile=elffile)
+    elif tgt_code == TgtCode.ARM_CORTEX_M:
+        stub = GdbStub_ARM_CortexM(logfile=logfile, elffile=elffile)
 
     return stub
