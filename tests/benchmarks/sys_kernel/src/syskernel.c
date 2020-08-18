@@ -88,19 +88,6 @@ int check_result(int i, uint32_t t)
 	return 1;
 }
 
-
-/**
- *
- * @brief Check for a key press
- *
- * @return 1 when a keyboard key is pressed, or 0 if no keyboard support
- */
-int kbhit(void)
-{
-	return 0;
-}
-
-
 /**
  *
  * @brief Prepares the test output
@@ -193,7 +180,7 @@ void main(void)
 		}
 		TC_PRINT_RUNID;
 
-	} while (continuously && !kbhit());
+	} while (continuously);
 
 	output_close();
 }
