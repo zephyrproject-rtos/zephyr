@@ -652,7 +652,7 @@ static int va_set(const char *name, size_t len_rd,
 		  settings_read_cb read_cb, void *cb_arg)
 {
 	struct va_val va;
-	struct label *lab;
+	struct bt_mesh_va *lab;
 	uint16_t index;
 	int err;
 
@@ -679,7 +679,7 @@ static int va_set(const char *name, size_t len_rd,
 		return 0;
 	}
 
-	lab = get_label(index);
+	lab = bt_mesh_va_get(index);
 	if (lab == NULL) {
 		BT_WARN("Out of labels buffers");
 		return -ENOBUFS;
@@ -1803,17 +1803,18 @@ static void store_pending_mod(struct bt_mesh_model *mod,
 #define IS_VA_DEL(_label)	((_label)->ref == 0)
 static void store_pending_va(void)
 {
-	struct label *lab;
+	struct bt_mesh_va *lab;
 	struct va_val va;
 	char path[18];
 	uint16_t i;
 	int err;
 
-	for (i = 0; (lab = get_label(i)) != NULL; i++) {
-		if (!atomic_test_and_clear_bit(lab->flags,
-					       BT_MESH_VA_CHANGED)) {
+	for (i = 0; (lab = bt_mesh_va_get(i)) != NULL; i++) {
+		if (!lab->changed) {
 			continue;
 		}
+
+		lab->changed = 0U;
 
 		snprintk(path, sizeof(path), "bt/mesh/Va/%x", i);
 

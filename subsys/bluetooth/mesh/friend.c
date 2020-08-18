@@ -367,7 +367,7 @@ static int unseg_app_sdu_unpack(struct bt_mesh_friend *frnd,
 	meta->crypto.aszmic = 0;
 
 	if (BT_MESH_ADDR_IS_VIRTUAL(meta->crypto.dst)) {
-		meta->crypto.ad = bt_mesh_label_uuid_get(meta->crypto.dst);
+		meta->crypto.ad = bt_mesh_va_label_get(meta->crypto.dst);
 		if (!meta->crypto.ad) {
 			return -ENOENT;
 		}
