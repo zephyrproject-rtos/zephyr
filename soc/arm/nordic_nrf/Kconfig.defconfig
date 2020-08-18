@@ -33,6 +33,9 @@ config SYS_POWER_MANAGEMENT
 config BUILD_OUTPUT_HEX
 	default y
 
+config SOC_HAS_TIMING_FUNCTIONS
+	default y
+
 config GPIO
 	default y
 	depends on SPI
