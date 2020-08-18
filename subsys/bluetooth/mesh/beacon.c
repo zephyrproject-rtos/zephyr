@@ -245,7 +245,7 @@ static void beacon_send(struct k_work *work)
 		(void)bt_mesh_subnet_find(secure_beacon_send, NULL);
 
 		/* Only resubmit if beaconing is still enabled */
-		if (bt_mesh_beacon_get() == BT_MESH_BEACON_ENABLED ||
+		if (bt_mesh_beacon_enabled() ||
 		    atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_INITIATOR)) {
 			k_delayed_work_submit(&beacon_timer,
 					      PROVISIONED_INTERVAL);
@@ -367,7 +367,7 @@ static void secure_beacon_recv(struct net_buf_simple *buf)
 	bt_mesh_net_iv_update(params.iv_index, BT_MESH_IV_UPDATE(params.flags));
 
 update_stats:
-	if (bt_mesh_beacon_get() == BT_MESH_BEACON_ENABLED &&
+	if (bt_mesh_beacon_enabled() &&
 	    sub->beacons_cur < 0xff) {
 		sub->beacons_cur++;
 	}
@@ -439,7 +439,7 @@ void bt_mesh_beacon_ivu_initiator(bool enable)
 
 	if (enable) {
 		k_work_submit(&beacon_timer.work);
-	} else if (bt_mesh_beacon_get() == BT_MESH_BEACON_DISABLED) {
+	} else if (!bt_mesh_beacon_enabled()) {
 		k_delayed_work_cancel(&beacon_timer);
 	}
 }

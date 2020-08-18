@@ -174,6 +174,12 @@ enum {
 	BT_MESH_MOD_PENDING,
 	BT_MESH_VA_PENDING,
 
+	/* Feature flags */
+	BT_MESH_RELAY,
+	BT_MESH_BEACON,
+	BT_MESH_GATT_PROXY,
+	BT_MESH_FRIEND,
+
 	/* Don't touch - intentionally last */
 	BT_MESH_FLAG_COUNT,
 };
@@ -199,6 +205,10 @@ struct bt_mesh_net {
 
 	/* Number of hours in current IV Update state */
 	uint8_t  ivu_duration;
+
+	uint8_t net_xmit;
+	uint8_t relay_xmit;
+	uint8_t default_ttl;
 
 	/* Timer to track duration in current IV Update state */
 	struct k_delayed_work ivu_timer;

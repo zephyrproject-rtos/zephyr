@@ -37,6 +37,7 @@
 #include "beacon.h"
 #include "settings.h"
 #include "prov.h"
+#include "cfg.h"
 
 /* Minimum valid Mesh Network PDU length. The Network headers
  * themselves take up 9 bytes. After that there is a minimum of 1 byte
