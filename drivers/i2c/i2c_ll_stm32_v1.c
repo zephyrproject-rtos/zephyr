@@ -66,6 +66,8 @@ static void stm32_i2c_enable_transfer_interrupts(struct device *dev)
 	LL_I2C_EnableIT_BUF(i2c);
 }
 
+#endif /* CONFIG_I2C_STM32_INTERRUPT */
+
 static void stm32_i2c_reset(struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
@@ -77,7 +79,9 @@ static void stm32_i2c_reset(struct device *dev)
 
 	/* disable i2c and disable IRQ's */
 	LL_I2C_Disable(i2c);
+#ifdef CONFIG_I2C_STM32_INTERRUPT
 	stm32_i2c_disable_transfer_interrupts(dev);
+#endif
 
 	/* save all important registers before reset */
 	cr1 = LL_I2C_ReadReg(i2c, CR1);
@@ -109,7 +113,6 @@ static void stm32_i2c_reset(struct device *dev)
 #endif
 }
 
-#endif /* CONFIG_I2C_STM32_INTERRUPT */
 
 static void stm32_i2c_master_finish(struct device *dev)
 {
@@ -714,6 +717,7 @@ int32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 	uint32_t len = msg->len;
 	uint16_t timeout;
 	uint8_t *buf = msg->buf;
+	int32_t res;
 
 	msg_init(dev, msg, next_msg_flags, saddr, I2C_REQUEST_WRITE);
 
@@ -794,7 +798,12 @@ int32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 
 end:
 	check_errors(dev, __func__);
-	return msg_end(dev, next_msg_flags, __func__);
+	res = msg_end(dev, next_msg_flags, __func__);
+	if (res < 0) {
+		stm32_i2c_reset(dev);
+	}
+
+	return res;
 }
 
 int32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
@@ -806,6 +815,7 @@ int32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 	uint32_t len = msg->len;
 	uint16_t timeout;
 	uint8_t *buf = msg->buf;
+	int32_t res;
 
 	msg_init(dev, msg, next_msg_flags, saddr, I2C_REQUEST_READ);
 
@@ -950,7 +960,12 @@ int32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 	}
 end:
 	check_errors(dev, __func__);
-	return msg_end(dev, next_msg_flags, __func__);
+	res = msg_end(dev, next_msg_flags, __func__);
+	if (res < 0) {
+		stm32_i2c_reset(dev);
+	}
+
+	return res;
 }
 #endif /* CONFIG_I2C_STM32_INTERRUPT */
 
