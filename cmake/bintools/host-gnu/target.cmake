@@ -10,9 +10,5 @@ find_program(CMAKE_READELF readelf)
 
 find_program(CMAKE_GDB     gdb    )
 
-# Use the gnu binutil abstraction macros
-include(${ZEPHYR_BASE}/cmake/bintools/gnu/target_memusage.cmake)
-include(${ZEPHYR_BASE}/cmake/bintools/gnu/target_objcopy.cmake)
-include(${ZEPHYR_BASE}/cmake/bintools/gnu/target_objdump.cmake)
-include(${ZEPHYR_BASE}/cmake/bintools/gnu/target_readelf.cmake)
-include(${ZEPHYR_BASE}/cmake/bintools/gnu/target_strip.cmake)
+# Include bin tool properties
+include(${ZEPHYR_BASE}/cmake/bintools/gnu/target_bintools.cmake)
