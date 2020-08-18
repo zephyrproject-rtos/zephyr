@@ -188,6 +188,10 @@ Bluetooth
 
 * Mesh
 
+  * The ``bt_mesh_cfg_srv`` structure has been deprecated in favor of a
+    standalone Heartbeat API and Kconfig entries for default state values.
+
+
 * BLE split software Controller
 
 * HCI Driver

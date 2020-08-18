@@ -478,7 +478,11 @@ static bool model_has_dst(struct bt_mesh_model *mod, uint16_t dst)
 		return !!bt_mesh_model_find_group(&mod, dst);
 	}
 
-	return (mod->elem_idx == 0 && bt_mesh_fixed_group_match(dst));
+	/* If a message with a fixed group address is sent to the access layer,
+	 * the lower layers have already confirmed that we are subscribing to
+	 * it. All models on the primary element should receive the message.
+	 */
+	return mod->elem_idx == 0;
 }
 
 static const struct bt_mesh_model_op *find_op(struct bt_mesh_model *models,
@@ -539,23 +543,6 @@ static int get_opcode(struct net_buf_simple *buf, uint32_t *opcode)
 	}
 
 	CODE_UNREACHABLE;
-}
-
-bool bt_mesh_fixed_group_match(uint16_t addr)
-{
-	/* Check for fixed group addresses */
-	switch (addr) {
-	case BT_MESH_ADDR_ALL_NODES:
-		return true;
-	case BT_MESH_ADDR_PROXIES:
-		return (bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED);
-	case BT_MESH_ADDR_FRIENDS:
-		return (bt_mesh_friend_get() == BT_MESH_FRIEND_ENABLED);
-	case BT_MESH_ADDR_RELAYS:
-		return (bt_mesh_relay_get() == BT_MESH_RELAY_ENABLED);
-	default:
-		return false;
-	}
 }
 
 void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)

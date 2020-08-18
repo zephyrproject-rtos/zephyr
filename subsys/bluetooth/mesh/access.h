@@ -36,8 +36,6 @@ void bt_mesh_model_tree_walk(struct bt_mesh_model *root,
 
 uint16_t *bt_mesh_model_find_group(struct bt_mesh_model **mod, uint16_t addr);
 
-bool bt_mesh_fixed_group_match(uint16_t addr);
-
 void bt_mesh_model_foreach(void (*func)(struct bt_mesh_model *mod,
 					struct bt_mesh_elem *elem,
 					bool vnd, bool primary,

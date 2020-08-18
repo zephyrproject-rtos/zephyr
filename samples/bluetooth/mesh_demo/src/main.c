@@ -40,29 +40,12 @@ static const uint32_t iv_index;
 static uint8_t flags;
 static uint16_t addr = NODE_ADDR;
 
-static void heartbeat(uint8_t hops, uint16_t feat)
+static void heartbeat(const struct bt_mesh_hb_sub *sub, uint8_t hops,
+		      uint16_t feat)
 {
 	board_heartbeat(hops, feat);
 	board_play("100H");
 }
-
-static struct bt_mesh_cfg_srv cfg_srv = {
-#if defined(CONFIG_BOARD_BBC_MICROBIT)
-	.relay = BT_MESH_RELAY_ENABLED,
-	.beacon = BT_MESH_BEACON_DISABLED,
-#else
-	.relay = BT_MESH_RELAY_ENABLED,
-	.beacon = BT_MESH_BEACON_ENABLED,
-#endif
-	.frnd = BT_MESH_FRIEND_NOT_SUPPORTED,
-	.default_ttl = 7,
-
-	/* 3 transmissions with 20ms interval */
-	.net_transmit = BT_MESH_TRANSMIT(2, 20),
-	.relay_retransmit = BT_MESH_TRANSMIT(3, 20),
-
-	.hb_sub.func = heartbeat,
-};
 
 static struct bt_mesh_cfg_cli cfg_cli = {
 };
@@ -92,7 +75,7 @@ static struct bt_mesh_health_srv health_srv = {
 BT_MESH_HEALTH_PUB_DEFINE(health_pub, 0);
 
 static struct bt_mesh_model root_models[] = {
-	BT_MESH_MODEL_CFG_SRV(&cfg_srv),
+	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
 };
@@ -173,6 +156,10 @@ static const uint8_t dev_uuid[16] = { 0xdd, 0xdd };
 
 static const struct bt_mesh_prov prov = {
 	.uuid = dev_uuid,
+};
+
+BT_MESH_HB_CB_DEFINE(hb_cb) = {
+	.recv = heartbeat,
 };
 
 static void bt_ready(int err)

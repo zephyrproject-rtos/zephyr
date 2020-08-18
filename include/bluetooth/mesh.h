@@ -16,6 +16,7 @@
 
 #include <bluetooth/mesh/access.h>
 #include <bluetooth/mesh/main.h>
+#include <bluetooth/mesh/cfg.h>
 #include <bluetooth/mesh/cfg_srv.h>
 #include <bluetooth/mesh/health_srv.h>
 #include <bluetooth/mesh/cfg_cli.h>
