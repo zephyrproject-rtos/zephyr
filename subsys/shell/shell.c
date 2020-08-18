@@ -81,7 +81,7 @@ static int cmd_precheck(const struct shell *shell,
 	return 0;
 }
 
-static void state_set(const struct shell *shell, enum shell_state state)
+static inline void state_set(const struct shell *shell, enum shell_state state)
 {
 	shell->ctx->state = state;
 
@@ -94,6 +94,11 @@ static void state_set(const struct shell *shell, enum shell_state state)
 		}
 		shell_print_prompt_and_cmd(shell);
 	}
+}
+
+static inline enum shell_state state_get(const struct shell *shell)
+{
+	return shell->ctx->state;
 }
 
 static void tab_item_print(const struct shell *shell, const char *option,
@@ -1127,7 +1132,7 @@ static int instance_init(const struct shell *shell, const void *p_config,
 					  transport_evt_handler,
 					  (void *)shell);
 	if (ret == 0) {
-		shell->ctx->state = SHELL_STATE_INITIALIZED;
+		state_set(shell, SHELL_STATE_INITIALIZED);
 	}
 
 	return ret;
@@ -1155,8 +1160,7 @@ static int instance_uninit(const struct shell *shell)
 	}
 
 	history_purge(shell);
-
-	shell->ctx->state = SHELL_STATE_UNINITIALIZED;
+	state_set(shell, SHELL_STATE_UNINITIALIZED);
 
 	return 0;
 }
@@ -1285,7 +1289,7 @@ int shell_start(const struct shell *shell)
 	__ASSERT_NO_MSG(shell);
 	__ASSERT_NO_MSG(shell->ctx && shell->iface && shell->default_prompt);
 
-	if (shell->ctx->state != SHELL_STATE_INITIALIZED) {
+	if (state_get(shell) != SHELL_STATE_INITIALIZED) {
 		return -ENOTSUP;
 	}
 
@@ -1308,8 +1312,10 @@ int shell_stop(const struct shell *shell)
 	__ASSERT_NO_MSG(shell);
 	__ASSERT_NO_MSG(shell->ctx);
 
-	if ((shell->ctx->state == SHELL_STATE_INITIALIZED) ||
-	    (shell->ctx->state == SHELL_STATE_UNINITIALIZED)) {
+	enum shell_state state = state_get(shell);
+
+	if ((state == SHELL_STATE_INITIALIZED) ||
+	    (state == SHELL_STATE_UNINITIALIZED)) {
 		return -ENOTSUP;
 	}
 
@@ -1365,7 +1371,7 @@ void shell_vfprintf(const struct shell *shell, enum shell_vt100_color color,
 	__ASSERT_NO_MSG(fmt);
 
 	/* Sending a message to a non-active shell leads to a dead lock. */
-	if (shell->ctx->state != SHELL_STATE_ACTIVE) {
+	if (state_get(shell) != SHELL_STATE_ACTIVE) {
 		flag_print_noinit_set(shell, true);
 		return;
 	}
