@@ -46,6 +46,8 @@ unset(CMAKE_C_COMPILER CACHE)
 # In Zephyr, toolchains require a port under cmake/toolchain/.
 # Each toolchain port must set COMPILER and LINKER.
 # E.g. toolchain/llvm may pick {clang, ld} or {clang, lld}.
+add_custom_target(bintools)
+
 include(${TOOLCHAIN_ROOT}/cmake/compiler/${COMPILER}/target.cmake OPTIONAL)
 include(${TOOLCHAIN_ROOT}/cmake/linker/${LINKER}/target.cmake OPTIONAL)
 include(${TOOLCHAIN_ROOT}/cmake/bintools/${BINTOOLS}/target.cmake OPTIONAL)
