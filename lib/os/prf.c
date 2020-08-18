@@ -234,7 +234,7 @@ static int _to_float(char *buf, uint64_t double_temp, char c,
 
 	if (exp == 0x7ff) {
 		if (!fract) {
-			if (isupper(c)) {
+			if (isupper((int)c)) {
 				*buf++ = 'I';
 				*buf++ = 'N';
 				*buf++ = 'F';
@@ -244,7 +244,7 @@ static int _to_float(char *buf, uint64_t double_temp, char c,
 				*buf++ = 'f';
 			}
 		} else {
-			if (isupper(c)) {
+			if (isupper((int)c)) {
 				*buf++ = 'N';
 				*buf++ = 'A';
 				*buf++ = 'N';
@@ -426,7 +426,7 @@ static int _atoi(const char **sptr)
 	const char *p = *sptr - 1;
 	int i = 0;
 
-	while (isdigit(*p)) {
+	while (isdigit((int)*p)) {
 		i = 10 * i + *p++ - '0';
 	}
 	*sptr = p;
@@ -499,7 +499,7 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 					width = -width;
 				}
 				c = *format++;
-			} else if (!isdigit(c)) {
+			} else if (!isdigit((int)c)) {
 				width = 0;
 			} else {
 				width = _atoi(&format);	/* Find width */
@@ -603,7 +603,7 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 					prefix = 1;
 				}
 				clen += zero.predot + zero.postdot + zero.trail;
-				if (!isdigit(buf[prefix])) {
+				if (!isdigit((int)buf[prefix])) {
 					/* inf or nan: no zero padding */
 					fzero = false;
 				}
@@ -752,7 +752,7 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 			count += clen;
 			if (zero.predot) {
 				c = *cptr;
-				while (isdigit(c)) {
+				while (isdigit((int)c)) {
 					PUTC(c);
 					clen--;
 					c = *++cptr;
@@ -775,7 +775,7 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 			}
 			if (zero.trail) {
 				c = *cptr;
-				while (isdigit(c) || c == '.') {
+				while (isdigit((int)c) || c == '.') {
 					PUTC(c);
 					clen--;
 					c = *++cptr;
