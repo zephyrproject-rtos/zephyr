@@ -27,6 +27,7 @@ config ARC
 config ARM
 	bool
 	select ARCH_IS_SET
+	select ARCH_SUPPORTS_COREDUMP if CPU_CORTEX_M
 	select HAS_DTS
 	# FIXME: current state of the code for all ARM requires this, but
 	# is really only necessary for Cortex-M with ARM MPU!

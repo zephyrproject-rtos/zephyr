@@ -13,6 +13,8 @@ zephyr_library_sources(
   thread_abort.c
   )
 
+zephyr_library_sources_ifdef(CONFIG_DEBUG_COREDUMP coredump.c)
+
 if (CONFIG_SW_VECTOR_RELAY)
 if (CONFIG_CPU_CORTEX_M_HAS_VTOR)
   set(relay_vector_table_sort_key relay_vectors)
