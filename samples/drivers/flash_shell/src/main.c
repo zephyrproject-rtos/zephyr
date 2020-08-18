@@ -372,11 +372,11 @@ free_buffers:
 	k_free(before_data);
 	k_free(after_data);
 
-	ret = flash_write_protection_set(flash_device, true);
-	if (ret) {
+	int ret1 = flash_write_protection_set(flash_device, true);
+	if (ret1) {
 		PR_ERROR(shell, "Failed to enable flash protection (err: %d)."
-				"\n", ret);
-		return ret;
+				"\n", ret1);
+		return ret1;
 	}
 
 	return ret;
