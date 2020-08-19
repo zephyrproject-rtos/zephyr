@@ -27,67 +27,71 @@ SHELL_DEFINE(shell_uart, CONFIG_SHELL_PROMPT_UART, &shell_transport_uart,
 	     SHELL_FLAG_OLF_CRLF);
 
 #ifdef CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
+static inline size_t smp_rx_bytes(const struct shell_uart *sh_uart,
+				  uint8_t *data, size_t len)
+{
+#ifdef CONFIG_MCUMGR_SMP_SHELL
+	return smp_shell_rx_bytes(&sh_uart->ctrl_blk->smp, data, len);
+#else
+	return 0;
+#endif
+}
+
 static void uart_rx_handle(const struct device *dev,
 			   const struct shell_uart *sh_uart)
 {
-	uint8_t *data;
-	uint32_t len;
-	uint32_t rd_len;
+	uint8_t discard_buffer[1];
+	uint8_t *rd_buffer;
+	uint32_t rd_space; /* space in rd_buffer */
+	uint32_t rd_len; /* bytes read from uart_fifo */
+	uint32_t rd_idx;
+	uint32_t shell_rd_len; /* bytes to be consumed by shell (non-SMP) */
 	bool new_data = false;
-#ifdef CONFIG_MCUMGR_SMP_SHELL
-	struct smp_shell_data *const smp = &sh_uart->ctrl_blk->smp;
-#endif
 
 	do {
-		len = ring_buf_put_claim(sh_uart->rx_ringbuf, &data,
-					 sh_uart->rx_ringbuf->size);
-
-		if (len > 0) {
-			rd_len = uart_fifo_read(dev, data, len);
-
-			/* If there is any new data to be either taken into
-			 * ring buffer or consumed by the SMP, signal the
-			 * shell_thread.
-			 */
-			if (rd_len > 0) {
-				new_data = true;
-			}
-#ifdef CONFIG_MCUMGR_SMP_SHELL
-			/* Divert bytes from shell handling if it is
-			 * part of an mcumgr frame.
-			 */
-			size_t i = smp_shell_rx_bytes(smp, data, rd_len);
-
-			rd_len -= i;
-
-			if (rd_len) {
-				for (uint32_t j = 0; j < rd_len; j++) {
-					data[j] = data[i + j];
-				}
-			}
-#endif /* CONFIG_MCUMGR_SMP_SHELL */
-			int err = ring_buf_put_finish(sh_uart->rx_ringbuf,
-						      rd_len);
-			(void)err;
-			__ASSERT_NO_MSG(err == 0);
-		} else {
-			uint8_t dummy;
-
-			/* No space in the ring buffer - consume byte. */
+		rd_space = ring_buf_put_claim(sh_uart->rx_ringbuf, &rd_buffer,
+					      sh_uart->rx_ringbuf->size);
+		if (rd_space == 0) {
 			LOG_WRN("RX ring buffer full.");
 
-			rd_len = uart_fifo_read(dev, &dummy, 1);
-#ifdef CONFIG_MCUMGR_SMP_SHELL
-			/* If successful in getting byte from the fifo, try
-			 * feeding it to SMP as a part of mcumgr frame.
-			 */
-			if ((rd_len != 0) &&
-			    (smp_shell_rx_bytes(smp, &dummy, 1) == 1)) {
-				new_data = true;
-			}
-#endif /* CONFIG_MCUMGR_SMP_SHELL */
+			rd_buffer = discard_buffer;
+			rd_space = sizeof(discard_buffer);
 		}
-	} while (rd_len && (rd_len == len));
+
+		rd_len = uart_fifo_read(dev, rd_buffer, rd_space);
+		rd_idx = 0;
+		shell_rd_len = 0;
+
+		while (rd_idx < rd_len) {
+			size_t consumed = smp_rx_bytes(sh_uart, &rd_buffer[rd_idx],
+						       rd_len - rd_idx);
+
+			rd_idx += consumed;
+
+			if (rd_idx >= rd_len) {
+				/* Whole rd_buffer was consumed at this point */
+				break;
+			}
+
+			/* First byte that was not consumed is shell byte */
+			rd_buffer[shell_rd_len++] = rd_buffer[rd_idx++];
+		}
+
+		if (rd_buffer != discard_buffer) {
+			int err = ring_buf_put_finish(sh_uart->rx_ringbuf,
+						      shell_rd_len);
+			(void)err;
+			__ASSERT_NO_MSG(err == 0);
+
+			new_data = true;
+		} else if (shell_rd_len < sizeof(discard_buffer)) {
+			/*
+			 * This is the case when ringbuf was full, but
+			 * some SMP byte was consumed.
+			 */
+			new_data = true;
+		}
+	} while (rd_len && (rd_len == rd_space));
 
 	if (new_data) {
 		sh_uart->ctrl_blk->handler(SHELL_TRANSPORT_EVT_RX_RDY,
