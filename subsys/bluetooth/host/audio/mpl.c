@@ -6,6 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <sys/util.h>
+
 #include "mpl.h"
 #include "uint48_util.h"
 #include "ots.h"
@@ -22,8 +24,10 @@
 #define PLAYBACK_SPEED_PARAM_DEFAULT MPL_PLAYBACK_SPEED_UNITY
 
 /* Temporary hardcoded setup for groups, tracks and segements */
-/* A parent group, with a number of groups, one of which has */
-/* a number of tracks, one of which has a number of segments */
+/* There is one parent group, which is the parent of a number of groups. */
+/* The groups have a number of tracks.  */
+/* (There is only one level of groups, there are no groups of groups.) */
+/* The first track of the first group has track segments, other tracks not. */
 
 /* Track segments */
 static struct mpl_tseg_t seg_2;
@@ -247,7 +251,8 @@ static struct mpl_mediaplayer_t pl = {
 	.playback_speed_param	  = PLAYBACK_SPEED_PARAM_DEFAULT,
 	.seeking_speed_factor	  = MPL_SEEKING_SPEED_FACTOR_ZERO,
 	.playing_order		  = MPL_PLAYING_ORDER_INORDER_REPEAT,
-	.playing_orders_supported = MPL_PLAYING_ORDER_INORDER_REPEAT,
+	.playing_orders_supported = MPL_PLAYING_ORDERS_SUPPORTED_INORDER_ONCE | \
+				    MPL_PLAYING_ORDERS_SUPPORTED_INORDER_REPEAT,
 	.operations_supported	  = 0x001fffff, /* All opcodes */
 #ifdef CONFIG_BT_OTS
 	.search_results_id	  = 0,
@@ -2309,15 +2314,35 @@ int32_t mpl_track_position_get(void)
 
 void mpl_track_position_set(int32_t position)
 {
-	if (position < 0) {
-		pl.track_pos = 0;
-	} else if (position > pl.group->track->duration) {
-		pl.track_pos = pl.group->track->duration;
+	int32_t old_pos = pl.track_pos;
+	int32_t new_pos;
+
+	if (position >= 0) {
+		if (position > pl.group->track->duration) {
+			/* Do not go beyond end of track */
+			new_pos = pl.group->track->duration;
+		} else {
+			new_pos = position;
+		}
 	} else {
-		pl.track_pos = position;
+		/* Negative position, handle as offset from _end_ of track */
+		/* (Note minus sign below) */
+		if (position < -pl.group->track->duration) {
+			new_pos = 0;
+		} else {
+			/* (Remember position is negative) */
+			new_pos = pl.group->track->duration + position;
+		}
 	}
+
 	BT_DBG("Pos. given: %d, resulting pos.: %d (duration is %d)",
-	       position, pl.track_pos, pl.group->track->duration);
+	       position, new_pos, pl.group->track->duration);
+
+	if (new_pos != old_pos) {
+		/* Set new position and notify it */
+		pl.track_pos = new_pos;
+		mpl_track_position_cb(new_pos);
+	}
 }
 
 int8_t mpl_playback_speed_get(void)
@@ -2422,6 +2447,13 @@ uint64_t mpl_parent_group_id_get(void)
 {
 	return pl.group->parent->id;
 }
+#if defined(CONFIG_BT_DEBUG_MCS) && defined(CONFIG_BT_TESTING)
+void mpl_test_unset_parent_group(void)
+{
+	BT_DBG("Setting current group to be it's own parent");
+	pl.group->parent = pl.group;
+}
+#endif /* CONFIG_BT_DEBUG_MCS && CONFIG_BT_TESTING */
 #endif /* CONFIG_BT_OTS */
 
 uint8_t mpl_playing_order_get(void)
@@ -2431,7 +2463,9 @@ uint8_t mpl_playing_order_get(void)
 
 void mpl_playing_order_set(uint8_t order)
 {
-	pl.playing_order = order;
+	if (BIT(order - 1) & pl.playing_orders_supported) {
+		pl.playing_order = order;
+	}
 }
 
 uint16_t mpl_playing_orders_supported_get(void)
@@ -2443,6 +2477,14 @@ uint8_t mpl_media_state_get(void)
 {
 	return pl.state;
 }
+
+#if defined(CONFIG_BT_DEBUG_MCS) && defined(CONFIG_BT_TESTING)
+void mpl_test_media_state_set(uint8_t state)
+{
+	pl.state = state;
+	mpl_media_state_cb(pl.state);
+}
+#endif /* CONFIG_BT_DEBUG_MCS && CONFIG_BT_TESTING */
 
 void mpl_operation_set(struct mpl_op_t operation)
 {
@@ -2490,6 +2532,11 @@ static void parse_search(struct mpl_search_t search)
 			break;
 		}
 		sci.type = (uint8_t)search.search[index++];
+		if (sci.type <  MPL_SEARCH_TYPE_TRACK_NAME ||
+		    sci.type > MPL_SEARCH_TYPE_ONLY_GROUPS) {
+			search_failed = true;
+			break;
+		}
 		memcpy(&sci.param, &search.search[index], sci.len - 1);
 		index += sci.len - 1;
 
@@ -2534,3 +2581,87 @@ uint8_t mpl_content_ctrl_id_get(void)
 {
 	return pl.content_ctrl_id;
 }
+
+#if CONFIG_BT_DEBUG_MCS
+void mpl_debug_dump_state(void)
+{
+#if CONFIG_BT_OTS
+	char t[UINT48_STR_LEN];
+	struct mpl_group_t *group;
+	struct mpl_track_t *track;
+#endif /* CONFIG_BT_OTS */
+
+	BT_DBG("Mediaplayer name: %s", log_strdup(pl.name));
+
+#if CONFIG_BT_OTS
+	u64_to_uint48array_str(pl.icon_id, t);
+	BT_DBG("Icon ID: 0x%s", log_strdup(t));
+#endif /* CONFIG_BT_OTS */
+
+	BT_DBG("Icon URI: %s", log_strdup(pl.icon_uri));
+	BT_DBG("Track position: %d", pl.track_pos);
+	BT_DBG("Media state: %d", pl.state);
+	BT_DBG("Playback speed parameter: %d", pl.playback_speed_param);
+	BT_DBG("Seeking speed factor: %d", pl.seeking_speed_factor);
+	BT_DBG("Playing order: %d", pl.playing_order);
+	BT_DBG("Playing orders supported: 0x%x", pl.playing_orders_supported);
+	BT_DBG("Operations supported: %d", pl.operations_supported);
+	BT_DBG("Content control ID: %d", pl.content_ctrl_id);
+
+#if CONFIG_BT_OTS
+	u64_to_uint48array_str(pl.group->id, t);
+	BT_DBG("Current group: 0x%s", log_strdup(t));
+
+	u64_to_uint48array_str(pl.group->parent->id, t);
+	BT_DBG("Current group's parent: 0x%s", log_strdup(t));
+
+	u64_to_uint48array_str(pl.group->track->id, t);
+	BT_DBG("Current track: 0x%s", log_strdup(t));
+
+	if (pl.group->track->next) {
+		u64_to_uint48array_str(pl.group->track->next->id, t);
+		BT_DBG("Next track: 0x%s", log_strdup(t));
+	} else {
+		BT_DBG("No next track");
+	}
+
+	if (pl.search_results_id) {
+		u64_to_uint48array_str(pl.search_results_id, t);
+		BT_DBG("Search results: 0x%s", log_strdup(t));
+	} else {
+		BT_DBG("No search results");
+	}
+
+	BT_DBG("Groups and tracks:");
+	group = pl.group;
+
+	while (group->prev != NULL) {
+		group = group->prev;
+	}
+
+	while (group) {
+		u64_to_uint48array_str(group->id, t);
+		BT_DBG("Group: 0x%s, %s", log_strdup(t),
+		       log_strdup(group->title));
+
+		u64_to_uint48array_str(group->parent->id, t);
+		BT_DBG("\tParent: 0x%s, %s", log_strdup(t),
+		       log_strdup(group->parent->title));
+
+		track = group->track;
+		while (track->prev != NULL) {
+			track = track->prev;
+		}
+
+		while (track) {
+			u64_to_uint48array_str(track->id, t);
+			BT_DBG("\tTrack: 0x%s, %s, duration: %d", log_strdup(t),
+			       log_strdup(track->title), track->duration);
+			track = track->next;
+		}
+
+		group = group->next;
+	}
+#endif /* CONFIG_BT_OTS */
+}
+#endif /* CONFIG_BT_DEBUG_MCS */

@@ -30,6 +30,65 @@ extern const struct shell *ctx_shell;
 
 #if defined(CONFIG_BT_MCS)
 
+#if defined(CONFIG_BT_DEBUG_MCS) && defined(CONFIG_BT_TESTING)
+int cmd_mpl_test_set_media_state(const struct shell *shell, size_t argc,
+				  char *argv[])
+{
+	uint8_t state = strtol(argv[1], NULL, 0);
+
+	mpl_test_media_state_set(state);
+
+	return 0;
+}
+
+#ifdef CONFIG_BT_OTS
+int cmd_mpl_test_unset_parent_group(const struct shell *shell, size_t argc,
+				    char *argv[])
+{
+	mpl_test_unset_parent_group();
+
+	return 0;
+}
+#endif /* CONFIG_BT_OTS */
+
+/* Interface to _local_ control point, for testing and debugging */
+int cmd_mpl_test_set_operation(const struct shell *shell, size_t argc,
+				char *argv[])
+{
+	struct mpl_op_t op;
+
+
+	if (argc > 1) {
+		op.opcode = strtol(argv[1], NULL, 0);
+	} else {
+		shell_error(shell, "Invalid parameter");
+		return -ENOEXEC;
+	}
+
+	if (argc > 2) {
+		op.use_param = true;
+		op.param = strtol(argv[2], NULL, 0);
+	} else {
+		op.use_param = false;
+		op.param = 0;
+	}
+
+	mpl_operation_set(op);
+
+	return 0;
+}
+#endif /* CONFIG_BT_DEBUG_MCS && CONFIG_BT_TESTING */
+
+#if defined(CONFIG_BT_DEBUG_MCS)
+int cmd_mpl_debug_dump_state(const struct shell *shell, size_t argc,
+			     char *argv[])
+{
+	mpl_debug_dump_state();
+
+	return 0;
+}
+#endif /* CONFIG_BT_DEBUG_MCS */
+
 int cmd_mpl_init(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err = mpl_init();
@@ -166,38 +225,71 @@ static int cmd_mpl(const struct shell *shell, size_t argc, char **argv)
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(mpl_cmds,
-	SHELL_CMD_ARG(init, NULL, NULL,
+#if defined(CONFIG_BT_DEBUG_MCS) && defined(CONFIG_BT_TESTING)
+	SHELL_CMD_ARG(test_set_media_state, NULL,
+		      "Set the media player state (test) <state>",
+		      cmd_mpl_test_set_media_state, 2, 0),
+#if CONFIG_BT_OTS
+	SHELL_CMD_ARG(test_unset_parent_group, NULL,
+		      "Set current group to be its own parent (test)",
+		      cmd_mpl_test_unset_parent_group, 1, 0),
+#endif /* CONFIG_BT_OTS */
+	SHELL_CMD_ARG(test_set_operation, NULL,
+		      "Write opcode to local control point (test) <opcode> [argument]",
+		      cmd_mpl_test_set_operation, 2, 1),
+#endif /* CONFIG_BT_DEBUG_MCS && CONFIG_BT_TESTING */
+#if defined(CONFIG_BT_DEBUG_MCS)
+	SHELL_CMD_ARG(debug_dump_state, NULL,
+		      "Dump media player's state as debug output (debug)",
+		      cmd_mpl_debug_dump_state, 1, 0),
+#endif /* CONFIG_BT_DEBUG_MCC */
+	SHELL_CMD_ARG(init, NULL,
+		      "Initialize media player",
 		      cmd_mpl_init, 1, 0),
-	SHELL_CMD_ARG(track_changed_cb, NULL, NULL,
+	SHELL_CMD_ARG(track_changed_cb, NULL,
+		      "Send Track Changed notification",
 		      cmd_mpl_track_changed_cb, 1, 0),
-	SHELL_CMD_ARG(title_changed_cb, NULL, NULL,
+	SHELL_CMD_ARG(title_changed_cb, NULL,
+		      "Send (fake) Track Title notification",
 		      cmd_mpl_title_changed_cb, 1, 0),
-	SHELL_CMD_ARG(duration_changed_cb, NULL, NULL,
+	SHELL_CMD_ARG(duration_changed_cb, NULL,
+		      "Send Track Duration notification",
 		      cmd_mpl_duration_changed_cb, 1, 0),
-	SHELL_CMD_ARG(position_changed_cb, NULL, NULL,
+	SHELL_CMD_ARG(position_changed_cb, NULL,
+		      "Send Track Position notification",
 		      cmd_mpl_position_changed_cb, 1, 0),
-	SHELL_CMD_ARG(playback_speed_changed_cb, NULL, NULL,
+	SHELL_CMD_ARG(playback_speed_changed_cb, NULL,
+		      "Send Playback Speed notification",
 		      cmd_mpl_playback_speed_changed_cb, 1, 0),
-	SHELL_CMD_ARG(seeking_speed_changed_cb, NULL, NULL,
+	SHELL_CMD_ARG(seeking_speed_changed_cb, NULL,
+		      "Send Seeking Speed notification",
 		      cmd_mpl_seeking_speed_changed_cb, 1, 0),
 #ifdef CONFIG_BT_OTS
-	SHELL_CMD_ARG(current_track_id_changed_cb, NULL, NULL,
+	SHELL_CMD_ARG(current_track_id_changed_cb, NULL,
+		      "Send Current Track notification",
 		      cmd_mpl_current_track_id_changed_cb, 1, 0),
-	SHELL_CMD_ARG(next_track_id_changed_cb, NULL, NULL,
+	SHELL_CMD_ARG(next_track_id_changed_cb, NULL,
+		      "Send Next Track notification",
 		      cmd_mpl_next_track_id_changed_cb, 1, 0),
-	SHELL_CMD_ARG(group_id_changed_cb, NULL, NULL,
+	SHELL_CMD_ARG(group_id_changed_cb, NULL,
+		      "Send Current Group notification",
 		      cmd_mpl_group_id_changed_cb, 1, 0),
-	SHELL_CMD_ARG(parent_group_id_changed_cb, NULL, NULL,
+	SHELL_CMD_ARG(parent_group_id_changed_cb, NULL,
+		      "Send Parent Group notification",
 		      cmd_mpl_parent_group_id_changed_cb, 1, 0),
 #endif /* CONFIG_BT_OTS */
-	SHELL_CMD_ARG(playing_order_changed_cb, NULL, NULL,
+	SHELL_CMD_ARG(playing_order_changed_cb, NULL,
+		      "Send Playing Order notification",
 		      cmd_mpl_playing_order_changed_cb, 1, 0),
-	SHELL_CMD_ARG(state_changed_cb, NULL, NULL,
+	SHELL_CMD_ARG(state_changed_cb, NULL,
+		      "Send Media State notification",
 		      cmd_mpl_state_changed_cb, 1, 0),
-	SHELL_CMD_ARG(media_opcodes_changed_cb, NULL, NULL,
+	SHELL_CMD_ARG(media_opcodes_changed_cb, NULL,
+		      "Send Supported Opcodes notfication",
 		      cmd_mpl_media_opcodes_changed_cb, 1, 0),
 #ifdef CONFIG_BT_OTS
-	SHELL_CMD_ARG(search_results_changed_cb, NULL, NULL,
+	SHELL_CMD_ARG(search_results_changed_cb, NULL,
+		      "Send Search Results Object ID notification",
 		      cmd_mpl_search_results_changed_cb, 1, 0),
 #endif /* CONFIG_BT_OTS */
 	SHELL_SUBCMD_SET_END

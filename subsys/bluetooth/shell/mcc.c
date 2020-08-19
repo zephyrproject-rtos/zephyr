@@ -901,6 +901,54 @@ int cmd_mcc_set_scp_ioptest(const struct shell *shell, size_t argc,
 	return result;
 }
 
+#if defined(CONFIG_BT_DEBUG_MCC) && defined(CONFIG_BT_TESTING)
+int cmd_mcc_test_set_scp_iop_invalid_type(const struct shell *shell,
+					  size_t argc, char *argv[])
+{
+	int result;
+	struct mpl_search_t search;
+
+	search.search[0] = 2;
+	search.search[1] = (char)14; /* Invalid type value */
+	search.search[2] = 't';  /* Anything */
+	search.len = 3;
+
+	shell_print(shell, "Search string: ");
+	shell_hexdump(shell, (uint8_t *)&search.search, search.len);
+
+	result = bt_mcc_set_scp(default_conn, search);
+	if (result) {
+		shell_print(shell, "Fail: %d", result);
+	}
+
+	return result;
+}
+
+int cmd_mcc_test_set_scp_invalid_sci_len(const struct shell *shell,
+					 size_t argc, char *argv[])
+{
+	/* Reproduce a search that caused hard fault when sent from peer */
+	/* in IOP testing */
+
+	int result;
+	struct mpl_search_t search;
+
+	char offending_search[9] = {6, 1, 't', 'r', 'a', 'c', 'k', 0, 1 };
+
+	search.len = 9;
+	memcpy(&search.search, offending_search, search.len);
+
+	shell_print(shell, "Search string: ");
+	shell_hexdump(shell, (uint8_t *)&search.search, search.len);
+
+	result = bt_mcc_set_scp(default_conn, search);
+	if (result) {
+		shell_print(shell, "Fail: %d", result);
+	}
+
+	return result;
+}
+#endif /* CONFIG_BT_DEBUG_MCC && CONFIG_BT_TESTING */
 
 int cmd_mcc_read_search_results_obj_id(const struct shell *shell, size_t argc,
 				       char *argv[])
@@ -1178,72 +1226,87 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mcc_cmds,
 		      cmd_mcc_init, 1, 0),
 	SHELL_CMD_ARG(discover_mcs, NULL,
 		      "Discover Media Control Service [subscribe]",
-		      cmd_mcc_discover_mcs, 1, 0),
-	SHELL_CMD_ARG(read_player_name, NULL, NULL,
+		      cmd_mcc_discover_mcs, 1, 1),
+	SHELL_CMD_ARG(read_player_name, NULL, "Read Media Player Name",
 		      cmd_mcc_read_player_name, 1, 0),
 #ifdef CONFIG_BT_OTC
-	SHELL_CMD_ARG(read_icon_obj_id, NULL, NULL,
+	SHELL_CMD_ARG(read_icon_obj_id, NULL, "Read Icon Object ID",
 		      cmd_mcc_read_icon_obj_id, 1, 0),
 #endif /* CONFIG_BT_OTC */
-	SHELL_CMD_ARG(read_icon_uri, NULL, NULL,
+	SHELL_CMD_ARG(read_icon_uri, NULL, "Read Icon URI",
 		      cmd_mcc_read_icon_uri, 1, 0),
-	SHELL_CMD_ARG(read_track_title, NULL, NULL,
+	SHELL_CMD_ARG(read_track_title, NULL, "Read Track Title",
 		      cmd_mcc_read_track_title, 1, 0),
-	SHELL_CMD_ARG(read_track_duration, NULL, NULL,
+	SHELL_CMD_ARG(read_track_duration, NULL, "Read Track Duration",
 		      cmd_mcc_read_track_duration, 1, 0),
-	SHELL_CMD_ARG(read_track_position, NULL, NULL,
+	SHELL_CMD_ARG(read_track_position, NULL, "Read Track Position",
 		      cmd_mcc_read_track_position, 1, 0),
-	SHELL_CMD_ARG(set_track_position, NULL, NULL,
+	SHELL_CMD_ARG(set_track_position, NULL, "Set Track position <position>",
 		      cmd_mcc_set_track_position, 2, 0),
-	SHELL_CMD_ARG(read_playback_speed, NULL, NULL,
+	SHELL_CMD_ARG(read_playback_speed, NULL, "Read Playback Speed",
 		      cmd_mcc_read_playback_speed, 1, 0),
-	SHELL_CMD_ARG(set_playback_speed, NULL, NULL,
+	SHELL_CMD_ARG(set_playback_speed, NULL, "Set Playback Speed <speed>",
 		      cmd_mcc_set_playback_speed, 2, 0),
-	SHELL_CMD_ARG(read_seeking_speed, NULL, NULL,
+       SHELL_CMD_ARG(read_seeking_speed, NULL, "Read Seeking Speed",
 		      cmd_mcc_read_seeking_speed, 1, 0),
 #ifdef CONFIG_BT_OTC
-	SHELL_CMD_ARG(read_track_segments_obj_id, NULL, NULL,
+	SHELL_CMD_ARG(read_track_segments_obj_id, NULL,
+		      "Read Track Segments Object ID",
 		      cmd_mcc_read_track_segments_obj_id, 1, 0),
-	SHELL_CMD_ARG(read_current_track_obj_id, NULL, NULL,
+	SHELL_CMD_ARG(read_current_track_obj_id, NULL,
+		      "Read Current Track Object ID",
 		      cmd_mcc_read_current_track_obj_id, 1, 0),
-	SHELL_CMD_ARG(read_next_track_obj_id, NULL, NULL,
+	SHELL_CMD_ARG(read_next_track_obj_id, NULL,
+		      "Read Next Track Object ID",
 		      cmd_mcc_read_next_track_obj_id, 1, 0),
-	SHELL_CMD_ARG(read_current_group_obj_id, NULL, NULL,
+	SHELL_CMD_ARG(read_current_group_obj_id, NULL,
+		      "Read Current Group Object ID",
 		      cmd_mcc_read_current_group_obj_id, 1, 0),
-	SHELL_CMD_ARG(read_parent_group_obj_id, NULL, NULL,
+	SHELL_CMD_ARG(read_parent_group_obj_id, NULL,
+		      "Read Parent Group Object ID",
 		      cmd_mcc_read_parent_group_obj_id, 1, 0),
 #endif /* CONFIG_BT_OTC */
-	SHELL_CMD_ARG(read_playing_order, NULL, NULL,
+	SHELL_CMD_ARG(read_playing_order, NULL, "Read Playing Order",
 		      cmd_mcc_read_playing_order, 1, 0),
-	SHELL_CMD_ARG(set_playing_order, NULL, NULL,
+	SHELL_CMD_ARG(set_playing_order, NULL, "Set Playing Order <order>",
 		      cmd_mcc_set_playing_order, 2, 0),
-	SHELL_CMD_ARG(read_playing_orders_supported, NULL, NULL,
+       SHELL_CMD_ARG(read_playing_orders_supported, NULL,
+		     "Read Playing Orders Supported",
 		      cmd_mcc_read_playing_orders_supported, 1, 0),
-	SHELL_CMD_ARG(read_media_state, NULL, NULL,
+	SHELL_CMD_ARG(read_media_state, NULL, "Read Media State",
 		      cmd_mcc_read_media_state, 1, 0),
-	SHELL_CMD_ARG(set_cp, NULL, "Set opcode/operation",
+	SHELL_CMD_ARG(set_cp, NULL, "Set opcode/operation <opcode> [argument]",
 		      cmd_mcc_set_cp, 2, 1),
-	SHELL_CMD_ARG(read_opcodes_supported, NULL, NULL,
+	SHELL_CMD_ARG(read_opcodes_supported, NULL, "Read Opcodes Supported",
 		      cmd_mcc_read_opcodes_supported, 1, 0),
 #ifdef CONFIG_BT_OTC
-	SHELL_CMD_ARG(set_scp_raw, NULL, "Set search - raw search as input",
+	SHELL_CMD_ARG(set_scp_raw, NULL, "Set search <search control item sequence>",
 		      cmd_mcc_set_scp_raw, 2, 0),
 	SHELL_CMD_ARG(set_scp_ioptest, NULL,
-		      "Set search - IOP test round as input",
+		      "Set search - IOP test round as input <round number>",
 		      cmd_mcc_set_scp_ioptest, 2, 0),
-	SHELL_CMD_ARG(read_search_results_obj_id, NULL, NULL,
+#if defined(CONFIG_BT_DEBUG_MCC) && defined(CONFIG_BT_TESTING)
+	SHELL_CMD_ARG(test_set_scp_iop_invalid_type, NULL,
+		      "Set search - IOP test, invalid type value (test)",
+		      cmd_mcc_test_set_scp_iop_invalid_type, 1, 0),
+	SHELL_CMD_ARG(test_set_scp_invalid_sci_len, NULL,
+		      "Set search - invalid sci length (test)",
+		      cmd_mcc_test_set_scp_invalid_sci_len, 1, 0),
+#endif /* CONFIG_BT_DEBUG_MCC && CONFIG_BT_TESTING */
+	SHELL_CMD_ARG(read_search_results_obj_id, NULL,
+		      "Read Search Results Object ID",
 		      cmd_mcc_read_search_results_obj_id, 1, 0),
 #endif /* CONFIG_BT_OTC */
-	SHELL_CMD_ARG(read_content_control_id, NULL, NULL,
+	SHELL_CMD_ARG(read_content_control_id, NULL, "Read Content Control ID",
 		      cmd_mcc_read_content_control_id, 1, 0),
 #ifdef CONFIG_BT_OTC
-	SHELL_CMD_ARG(ots_read_features, NULL, NULL,
+	SHELL_CMD_ARG(ots_read_features, NULL, "Read OTC Features",
 		      cmd_mcc_otc_read_features, 1, 0),
-	SHELL_CMD_ARG(ots_oacp_read, NULL, "read current object",
+	SHELL_CMD_ARG(ots_oacp_read, NULL, "Read current object",
 		      cmd_mcc_otc_read, 1, 0),
-	SHELL_CMD_ARG(ots_read_metadata, NULL, "read current object's metadata",
+	SHELL_CMD_ARG(ots_read_metadata, NULL, "Read current object's metadata",
 		      cmd_mcc_otc_read_metadata, 1, 0),
-	SHELL_CMD_ARG(ots_select, NULL, "Select an object, by its ID",
+	SHELL_CMD_ARG(ots_select, NULL, "Select an object by its ID <ID>",
 		      cmd_mcc_otc_select, 2, 0),
 	SHELL_CMD_ARG(ots_read_icon_object, NULL, "Read Icon Object",
 		      cmd_mcc_otc_read_icon_object, 1, 0),

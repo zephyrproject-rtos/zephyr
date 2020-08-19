@@ -46,6 +46,12 @@ static ssize_t player_name_read(struct bt_conn *conn,
 				 strlen(name));
 }
 
+static void player_name_cfg_changed(const struct bt_gatt_attr *attr,
+				    uint16_t value)
+{
+	BT_DBG("value 0x%04x", value);
+}
+
 #ifdef CONFIG_BT_OTS
 static ssize_t icon_id_read(struct bt_conn *conn,
 			    const struct bt_gatt_attr *attr, void *buf,
@@ -691,11 +697,14 @@ static ssize_t content_ctrl_id_read(struct bt_conn *conn,
 
 /* Media control service attributes */
 #define BT_MCS_SERVICE_DEFINITION \
-	BT_GATT_PRIMARY_SERVICE(BT_UUID_MCS), \
+	BT_GATT_PRIMARY_SERVICE(BT_UUID_GMCS), \
 	BT_GATT_INCLUDE_SERVICE(NULL), /* To be overwritten */ \
 	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_PLAYER_NAME, \
-			       BT_GATT_CHRC_READ, BT_GATT_PERM_READ_ENCRYPT, \
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
+			       BT_GATT_PERM_READ_ENCRYPT, \
 			       player_name_read, NULL, NULL), \
+	BT_GATT_CCC(player_name_cfg_changed, \
+		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
 	ICON_OBJ_ID_CHARACTERISTIC_IF_OTS \
 	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_ICON_URI, \
 			       BT_GATT_CHRC_READ, BT_GATT_PERM_READ_ENCRYPT, \
