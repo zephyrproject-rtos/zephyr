@@ -122,6 +122,14 @@
 			label = "I2C_1";
 		};
 
+		pdm: pdm@4001d000 {
+			compatible = "nordic,nrf-pdm";
+			reg = <0x4001d000 0x1000>;
+			interrupts = <29 1>;
+			status = "disabled";
+			label = "PDM";
+		};
+
 		pwm0: pwm@4001c000 {
 			compatible = "nordic,nrf-pwm";
 			reg = <0x4001c000 0x1000>;
