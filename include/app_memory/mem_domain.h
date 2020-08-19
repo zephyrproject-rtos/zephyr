@@ -49,21 +49,23 @@ struct k_mem_partition {
 #endif /* CONFIG_MEMORY_PROTECTION */
 };
 
+#ifdef CONFIG_USERSPACE
 /**
  * @brief Memory Domain
  *
  */
 struct k_mem_domain {
-#ifdef CONFIG_USERSPACE
 	/** partitions in the domain */
 	struct k_mem_partition partitions[CONFIG_MAX_DOMAIN_PARTITIONS];
-#endif	/* CONFIG_USERSPACE */
 	/** domain q */
 	sys_dlist_t mem_domain_q;
 	/** number of partitions in the domain */
 	uint8_t num_partitions;
 };
-
+#else
+/* To support use of IS_ENABLED for the APIs below */
+struct k_mem_domain;
+#endif /* CONFIG_USERSPACE */
 
 /**
  * @brief Initialize a memory domain.
