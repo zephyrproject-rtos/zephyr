@@ -61,13 +61,6 @@ config BT_CTLR_RX_PRIO_STACK_SIZE
 	int "High priority Rx thread stack size" if !SOC_COMPATIBLE_NRF
 	default 448
 
-config BT_CTLR_RX_PRIO
-	# Hidden option for Controller's Co-Operative high priority Rx thread
-	# priority.
-	int
-	default 6
-
-
 config BT_CTLR_SETTINGS
 	bool "Settings System"
 	depends on SETTINGS
