@@ -97,6 +97,8 @@ class Sign(Forceable):
 
         parser.add_argument('-d', '--build-dir',
                             help=FIND_BUILD_DIR_DESCRIPTION)
+        parser.add_argument('-q', '--quiet', action='store_true',
+                            help='suppress non-error output')
         self.add_force_arg(parser)
 
         # general options
@@ -172,7 +174,8 @@ class Sign(Forceable):
             formats.append('hex')
 
         if not formats:
-            log.dbg('nothing to do: no output files')
+            if not args.quiet:
+                log.dbg('nothing to do: no output files')
             return
 
         # Delegate to the signer.
@@ -218,7 +221,7 @@ class ImgtoolSigner(Signer):
         vtoff = self.get_cfg(command, bcfg, 'CONFIG_ROM_START_OFFSET')
         # Flash device write alignment and the partition's slot size
         # come from devicetree:
-        flash = self.edt_flash_node(b)
+        flash = self.edt_flash_node(b, args.quiet)
         align, addr, size = self.edt_flash_params(flash)
 
         dot_config_file = b / 'zephyr' / '.config'
@@ -248,10 +251,11 @@ class ImgtoolSigner(Signer):
         else:
             in_hex = None
 
-        log.banner('image configuration:')
-        log.inf('partition offset: {0} (0x{0:x})'.format(addr))
-        log.inf('partition size: {0} (0x{0:x})'.format(size))
-        log.inf('rom start offset: {0} (0x{0:x})'.format(vtoff))
+        if not args.quiet:
+            log.banner('image configuration:')
+            log.inf('partition offset: {0} (0x{0:x})'.format(addr))
+            log.inf('partition size: {0} (0x{0:x})'.format(size))
+            log.inf('rom start offset: {0} (0x{0:x})'.format(vtoff))
 
         # Base sign command.
         #
@@ -265,20 +269,23 @@ class ImgtoolSigner(Signer):
                      '--slot-size', str(size)]
         sign_base.extend(args.tool_args)
 
-        log.banner('signing binaries')
+        if not args.quiet:
+            log.banner('signing binaries')
         if in_bin:
             out_bin = args.sbin or str(b / 'zephyr' / 'zephyr.signed.bin')
             sign_bin = sign_base + [in_bin, out_bin]
-            log.inf(f'unsigned bin: {in_bin}')
-            log.inf(f'signed bin:   {out_bin}')
-            log.dbg(quote_sh_list(sign_bin))
+            if not args.quiet:
+                log.inf(f'unsigned bin: {in_bin}')
+                log.inf(f'signed bin:   {out_bin}')
+                log.dbg(quote_sh_list(sign_bin))
             subprocess.check_call(sign_bin)
         if in_hex:
             out_hex = args.shex or str(b / 'zephyr' / 'zephyr.signed.hex')
             sign_hex = sign_base + [in_hex, out_hex]
-            log.inf(f'unsigned hex: {in_hex}')
-            log.inf(f'signed hex:   {out_hex}')
-            log.dbg(quote_sh_list(sign_hex))
+            if not args.quiet:
+                log.inf(f'unsigned hex: {in_hex}')
+                log.inf(f'signed hex:   {out_hex}')
+                log.dbg(quote_sh_list(sign_hex))
             subprocess.check_call(sign_hex)
 
     @staticmethod
@@ -305,14 +312,15 @@ class ImgtoolSigner(Signer):
             return None
 
     @staticmethod
-    def edt_flash_node(b):
+    def edt_flash_node(b, quiet=False):
         # Get the EDT Node corresponding to the zephyr,flash chosen DT
         # node; 'b' is the build directory as a pathlib object.
 
         # Ensure the build directory has a compiled DTS file
         # where we expect it to be.
         dts = b / 'zephyr' / 'zephyr.dts'
-        log.dbg('DTS file:', dts, level=log.VERBOSE_VERY)
+        if not quiet:
+            log.dbg('DTS file:', dts, level=log.VERBOSE_VERY)
         edt_pickle = b / 'zephyr' / 'edt.pickle'
         if not edt_pickle.is_file():
             log.die("can't load devicetree; expected to find:", edt_pickle)
@@ -404,7 +412,8 @@ class RimageSigner(Signer):
         if board != 'up_squared_adsp':
             log.die('Supported only for up_squared_adsp board')
 
-        log.inf('Signing with tool {}'.format(tool_path))
+        if not args.quiet:
+            log.inf('Signing with tool {}'.format(tool_path))
 
         bootloader = str(b / 'zephyr' / 'bootloader.elf.mod')
         kernel = str(b / 'zephyr' / 'zephyr.elf.mod')
@@ -414,5 +423,6 @@ class RimageSigner(Signer):
                      ['-o', out_bin, '-m', 'apl', '-i', '3'] +
                      [bootloader, kernel])
 
-        log.inf(quote_sh_list(sign_base))
+        if not args.quiet:
+            log.inf(quote_sh_list(sign_base))
         subprocess.check_call(sign_base)
