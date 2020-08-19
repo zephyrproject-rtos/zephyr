@@ -159,6 +159,11 @@ config BT_RX_PRIO
 	depends on BT_HCI_HOST || BT_RECV_IS_RX_THREAD
 	default 8
 
+config BT_DRIVER_RX_HIGH_PRIO
+	# Hidden option for Co-Operative HCI driver RX thread priority
+	int
+	default 6
+
 if BT_HCI_HOST
 
 config BT_HOST_CRYPTO
