@@ -57,5 +57,13 @@ find_program(
   bossac
   )
 
+# imgtool is an optional dependency (the build may also fall back to
+# scripts/imgtool.py in the mcuboot repository if that's present in
+# some cases)
+find_program(
+  IMGTOOL
+  imgtool
+  )
+
 # TODO: Should we instead find one qemu binary for each ARCH?
 # TODO: This will probably need to be re-organized when there exists more than one SDK.
