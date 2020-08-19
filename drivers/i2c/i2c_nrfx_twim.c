@@ -67,14 +67,22 @@ static int i2c_nrfx_twim_transfer(struct device *dev, struct i2c_msg *msgs,
 			break;
 		}
 
-		bool last_or_non_concatenable =
-			((msgs[i].flags & I2C_MSG_STOP)
-			 || !(i + 1 < num_msgs)
-			 || (msgs[i + 1].flags & I2C_MSG_RESTART)
-			 || ((msgs[i + 1].flags & I2C_MSG_READ)
-			     != (msgs[i].flags & I2C_MSG_READ)));
+		/* Merge this fragment with the next if it's not the last
+		 * fragment, this one doesn't end a bus transaction, the next
+		 * one doesn't start a bus transaction, and the direction of
+		 * the next fragment is the same as this one.
+		 */
+		bool concat_next = ((i + 1) < num_msgs)
+			&& !(msgs[i].flags & I2C_MSG_STOP)
+			&& !(msgs[i + 1].flags & I2C_MSG_RESTART)
+			&& ((msgs[i].flags & I2C_MSG_READ)
+			    == (msgs[i + 1].flags & I2C_MSG_READ));
 
-		if ((concat_len != 0) || !last_or_non_concatenable) {
+		/* If we need to concatenate the next message, or we've
+		 * already committed to concatenate this message, add it to
+		 * the buffer after verifying there's room.
+		 */
+		if (concat_next || (concat_len != 0)) {
 			if ((concat_len + msgs[i].len) > concat_buf_size) {
 				LOG_ERR("concat-buf overflow: %u + %u > %u",
 					concat_len, msgs[i].len, concat_buf_size);
@@ -89,19 +97,19 @@ static int i2c_nrfx_twim_transfer(struct device *dev, struct i2c_msg *msgs,
 			concat_len += msgs[i].len;
 		}
 
-		if (last_or_non_concatenable) {
-			if (concat_len == 0) {
-				cur_xfer.p_primary_buf = msgs[i].buf;
-				cur_xfer.primary_length = msgs[i].len;
-			} else {
-				cur_xfer.p_primary_buf = concat_buf;
-				cur_xfer.primary_length = concat_len;
-			}
-			cur_xfer.type = (msgs[i].flags & I2C_MSG_READ) ?
-					 NRFX_TWIM_XFER_RX : NRFX_TWIM_XFER_TX;
-		} else {
+		if (concat_next) {
 			continue;
 		}
+
+		if (concat_len == 0) {
+			cur_xfer.p_primary_buf = msgs[i].buf;
+			cur_xfer.primary_length = msgs[i].len;
+		} else {
+			cur_xfer.p_primary_buf = concat_buf;
+			cur_xfer.primary_length = concat_len;
+		}
+		cur_xfer.type = (msgs[i].flags & I2C_MSG_READ) ?
+			NRFX_TWIM_XFER_RX : NRFX_TWIM_XFER_TX;
 
 		nrfx_err_t res = nrfx_twim_xfer(&get_dev_config(dev)->twim,
 						&cur_xfer,
