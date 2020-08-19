@@ -158,6 +158,7 @@ void test_z_fd_multiple_access(void)
 	void *obj = (void *)vtable;
 
 	shared_fd = z_reserve_fd();
+	zassert_true(shared_fd >= 0, "fd < 0");
 
 	z_finalize_fd(shared_fd, obj, vtable);
 
