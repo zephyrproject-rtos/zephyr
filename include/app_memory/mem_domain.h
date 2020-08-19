@@ -64,6 +64,9 @@ struct k_mem_domain {
 	sys_dlist_t mem_domain_q;
 	/** number of partitions in the domain */
 	uint8_t num_partitions;
+#ifdef CONFIG_ARCH_MEM_DOMAIN_DATA
+	struct arch_mem_domain arch;
+#endif /* CONFIG_ARCH_MEM_DOMAIN_DATA */
 };
 #else
 /* To support use of IS_ENABLED for the APIs below */

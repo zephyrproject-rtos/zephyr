@@ -12,6 +12,10 @@
 #include <stdbool.h>
 #include <spinlock.h>
 
+#define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_DECLARE(os);
+
 static struct k_spinlock lock;
 static uint8_t max_partitions;
 
@@ -123,6 +127,20 @@ void k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
 	}
 
 	sys_dlist_init(&domain->mem_domain_q);
+
+#ifdef CONFIG_ARCH_MEM_DOMAIN_DATA
+	int ret = arch_mem_domain_init(domain);
+
+	/* TODO propagate return values, see #24609.
+	 *
+	 * Not using an assertion here as this is a memory allocation error
+	 */
+	if (ret != 0) {
+		LOG_ERR("architecture-specific initialization failed for domain %p with %d",
+			domain, ret);
+		k_panic();
+	}
+#endif
 
 	k_spin_unlock(&lock, key);
 }
