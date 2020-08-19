@@ -8,7 +8,7 @@ compatible: "nordic,nrf-twim"
 include: nordic,nrf-twi-common.yaml
 
 properties:
-    concat-buf-size:
+    zephyr,concat-buf-size:
         type: int
         required: false
         description:
