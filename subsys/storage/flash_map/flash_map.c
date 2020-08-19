@@ -2,6 +2,7 @@
  * Copyright (c) 2017 Nordic Semiconductor ASA
  * Copyright (c) 2015 Runtime Inc
  * Copyright (c) 2017 Linaro Ltd
+ * Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +15,12 @@
 #include <drivers/flash.h>
 #include <soc.h>
 #include <init.h>
+
+#if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY)
+#include <tinycrypt/constants.h>
+#include <tinycrypt/sha256.h>
+#include <string.h>
+#endif
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 struct layout_data {
@@ -262,3 +269,60 @@ const struct device *flash_area_get_device(const struct flash_area *fa)
 {
 	return device_get_binding(fa->fa_dev_name);
 }
+
+#if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY)
+int flash_area_check_int_sha256(const struct flash_area *fa,
+				const struct flash_area_check *fac)
+{
+	unsigned char hash[TC_SHA256_DIGEST_SIZE];
+	struct tc_sha256_state_struct sha;
+	struct device *dev;
+	int to_read;
+	int pos;
+	int rc;
+
+	if (!fa || !fac || !fac->match || !fac->rbuf ||
+	    fac->clen <= 0 || fac->off < 0 || fac->rblen <= 0) {
+		return -EINVAL;
+	}
+
+	if (!is_in_flash_area_bounds(fa, fac->off, fac->clen)) {
+		return -EINVAL;
+	}
+
+	if (tc_sha256_init(&sha) != TC_CRYPTO_SUCCESS) {
+		return -ESRCH;
+	}
+
+	dev = device_get_binding(fa->fa_dev_name);
+	to_read = fac->rblen;
+
+	for (pos = 0; pos < fac->clen; pos += to_read) {
+		if (pos + to_read > fac->clen) {
+			to_read = fac->clen - pos;
+		}
+
+		rc = flash_read(dev, (fa->fa_off + fac->off + pos),
+				fac->rbuf, to_read);
+		if (rc != 0) {
+			return rc;
+		}
+
+		if (tc_sha256_update(&sha,
+				     fac->rbuf,
+				     to_read) != TC_CRYPTO_SUCCESS) {
+			return -ESRCH;
+		}
+	}
+
+	if (tc_sha256_final(hash, &sha) != TC_CRYPTO_SUCCESS) {
+		return -ESRCH;
+	}
+
+	if (memcmp(hash, fac->match, TC_SHA256_DIGEST_SIZE)) {
+		return -EILSEQ;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_FLASH_AREA_CHECK_INTEGRITY */
