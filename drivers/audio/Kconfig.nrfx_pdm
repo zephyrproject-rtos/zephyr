@@ -1,0 +1,13 @@
+# Copyright (c) 2020, Oticon A/S
+# SPDX-License-Identifier: Apache-2.0
+
+# Workaround for not being able to have commas in macro arguments
+DT_COMPAT_NORDIC_NRF_PDM   := nordic,nrf-pdm
+
+config PDM_NRFX
+	bool "nRF PDM nrfx driver"
+	default y
+	depends on HAS_HW_NRF_PDM && $(dt_nodelabel_has_compat,pdm,$(DT_COMPAT_NORDIC_NRF_PDM))
+	select NRFX_PDM
+	help
+		Enable support for nrfx Hardware PDM driver for nRF52 MCU series.

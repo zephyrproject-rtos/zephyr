@@ -1,6 +1,7 @@
 # Audio Codec configuration options
 
 # Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2020 Oticon A/S
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig AUDIO
@@ -54,5 +55,29 @@ source "drivers/audio/Kconfig.intel_dmic"
 source "drivers/audio/Kconfig.mpxxdtyy"
 
 endif # AUDIO_DMIC
+
+menuconfig PDM
+	bool "PDM (Pulse Density Modulation) Drivers"
+	help
+	  Enable config options for PDM drivers.
+
+if PDM
+
+config PDM_BUFFER_SIZE
+	int "Size of the buffer for the PDM driver"
+	range 10 32767
+	default 256
+	depends on PDM
+	help
+		Size of the PDM buffer,
+		can be between 10-32767.
+
+module = PDM
+module-str = pdm
+source "subsys/logging/Kconfig.template.log_config"
+
+source "drivers/audio/Kconfig.nrfx_pdm"
+
+endif # PDM
 
 endif # AUDIO
