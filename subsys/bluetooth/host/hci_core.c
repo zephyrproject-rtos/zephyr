@@ -4681,16 +4681,14 @@ static void le_per_adv_sync_lost(struct net_buf *buf)
 	term_info.addr = &per_adv_sync->addr;
 	term_info.sid = per_adv_sync->sid;
 
-	/* Clearing bit before callback, so the caller will be able to restart
+	/* Deleting before callback, so the caller will be able to restart
 	 * sync in the callback
 	 */
-	atomic_clear_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_SYNCED);
+	per_adv_sync_delete(per_adv_sync);
 
 	if (per_adv_sync->cb && per_adv_sync->cb->term) {
 		per_adv_sync->cb->term(per_adv_sync, &term_info);
 	}
-
-	per_adv_sync_delete(per_adv_sync);
 }
 #endif /* defined(CONFIG_BT_PER_ADV_SYNC) */
 #endif /* defined(CONFIG_BT_EXT_ADV) */
