@@ -560,6 +560,7 @@ void ll_rx_dequeue(void)
 	/* handle object specific clean up */
 	switch (rx->type) {
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_OBSERVER)
 	case NODE_RX_TYPE_EXT_1M_REPORT:
 	case NODE_RX_TYPE_EXT_2M_REPORT:
 	case NODE_RX_TYPE_EXT_CODED_REPORT:
@@ -583,17 +584,18 @@ void ll_rx_dequeue(void)
 		}
 	}
 	break;
+#endif /* CONFIG_BT_OBSERVER */
 
+#if defined(CONFIG_BT_BROADCASTER)
 	case NODE_RX_TYPE_EXT_ADV_TERMINATE:
 	{
-		struct lll_conn *lll_conn;
 		struct ll_adv_set *adv;
-		struct ll_conn *conn;
-		memq_link_t *link;
 
 		adv = ull_adv_set_get(rx->handle);
 
-		lll_conn = adv->lll.conn;
+#if defined(CONFIG_BT_PERIPHERAL)
+		struct lll_conn *lll_conn = adv->lll.conn;
+
 		if (!lll_conn) {
 			adv->is_enabled = 0U;
 
@@ -601,23 +603,29 @@ void ll_rx_dequeue(void)
 		}
 
 		LL_ASSERT(!lll_conn->link_tx_free);
-		link = memq_deinit(&lll_conn->memq_tx.head,
-				   &lll_conn->memq_tx.tail);
+
+		memq_link_t *link = memq_deinit(&lll_conn->memq_tx.head,
+						&lll_conn->memq_tx.tail);
 		LL_ASSERT(link);
+
 		lll_conn->link_tx_free = link;
 
-		conn = (void *)HDR_LLL2EVT(lll_conn);
+		struct ll_conn *conn = (void *)HDR_LLL2EVT(lll_conn);
+
 		ll_conn_release(conn);
 		adv->lll.conn = NULL;
 
 		ll_rx_release(adv->node_rx_cc_free);
 		adv->node_rx_cc_free = NULL;
+
 		ll_rx_link_release(adv->link_cc_free);
 		adv->link_cc_free = NULL;
+#endif /* CONFIG_BT_PERIPHERAL */
 
 		adv->is_enabled = 0U;
 	}
 	break;
+#endif /* CONFIG_BT_BROADCASTER */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CONN)
