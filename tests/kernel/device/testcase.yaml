@@ -1,6 +1,5 @@
 common:
   tags: device userspace
-  platform_exclude: mec15xxevb_assy6853
   integration_platforms:
     - native_posix
 tests:
@@ -8,5 +7,6 @@ tests:
     tags: device
   kernel.device.pm:
     tags: device
+    platform_exclude: mec15xxevb_assy6853
     extra_configs:
       - CONFIG_DEVICE_POWER_MANAGEMENT=y
