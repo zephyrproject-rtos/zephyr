@@ -25,7 +25,8 @@ typedef struct k_thread *k_tid_t;
 #ifdef CONFIG_MEMORY_PROTECTION
 /**
  * @def K_MEM_PARTITION_DEFINE
- * @brief Used to declare a memory partition
+ *
+ * @brief Statically declare a memory partition
  */
 #ifdef _ARCH_MEM_PARTITION_ALIGN_CHECK
 #define K_MEM_PARTITION_DEFINE(name, start, size, attr) \
@@ -38,7 +39,17 @@ typedef struct k_thread *k_tid_t;
 		{ (uintptr_t)start, size, attr}
 #endif /* _ARCH_MEM_PARTITION_ALIGN_CHECK */
 
-/* memory partition */
+/**
+ * @brief Memory Partition
+ *
+ * A memory partition is a region of memory in the linear address space
+ * with a specific access policy.
+ *
+ * The alignment of the starting address, and the alignment of the size
+ * value may have varying requirements based on the capabilities of the
+ * underlying memory management hardware; arbitrary values are unlikely
+ * to work.
+ */
 struct k_mem_partition {
 	/** start address of memory partition */
 	uintptr_t start;
@@ -56,13 +67,25 @@ struct k_mem_partition;
 /**
  * @brief Memory Domain
  *
+ * A memory domain is a collection of memory partitions, used to represent
+ * a user thread's access policy for the linear addresss space. A thread
+ * may be a member of only one memory domain, but any memory domain may
+ * have multiple threads that are members.
+ *
+ * Supervisor threads may also be a member of a memory domain; this has
+ * no implications on their memory access but can be useful as any child
+ * threads inherit the memory domain membership of the parent.
+ *
+ * A user thread belonging to a memory domain with no active partitions
+ * will have guaranteed access to its own stack buffer, program text,
+ * and read-only data.
  */
 struct k_mem_domain {
 	/** partitions in the domain */
 	struct k_mem_partition partitions[CONFIG_MAX_DOMAIN_PARTITIONS];
-	/** domain q */
+	/** Doubly linked list of member threads */
 	sys_dlist_t mem_domain_q;
-	/** number of partitions in the domain */
+	/** number of active partitions in the domain */
 	uint8_t num_partitions;
 #ifdef CONFIG_ARCH_MEM_DOMAIN_DATA
 	struct arch_mem_domain arch;
@@ -113,6 +136,8 @@ extern void k_mem_domain_destroy(struct k_mem_domain *domain);
  *   varies per architecture.
  * - Memory domain partitions are only intended to control access to memory
  *   from user mode threads.
+ * - If CONFIG_EXECUTE_XOR_WRITE is enabled, the partition must not allow
+ *   both writes and execution.
  *
  * Violating these constraints may lead to CPU exceptions or undefined
  * behavior.
