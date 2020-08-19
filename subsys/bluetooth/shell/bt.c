@@ -49,7 +49,9 @@ struct bt_conn *default_conn;
 static struct bt_conn *pairing_conn;
 
 static struct bt_le_oob oob_local;
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 static struct bt_le_oob oob_remote;
+#endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR) */
 #endif /* CONFIG_BT_CONN */
 
 #define NAME_LEN 30
@@ -63,9 +65,11 @@ static struct bt_le_oob oob_remote;
 #define HCI_CMD_MAX_PARAM 65
 
 #if defined(CONFIG_BT_EXT_ADV)
+#if defined(CONFIG_BT_BROADCASTER)
 static uint8_t selected_adv;
 struct bt_le_ext_adv *adv_sets[CONFIG_BT_EXT_ADV_MAX_ADV_SET];
-#endif
+#endif /* CONFIG_BT_BROADCASTER */
+#endif /* CONFIG_BT_EXT_ADV */
 
 #if defined(CONFIG_BT_OBSERVER)
 static bool data_cb(struct bt_data *data, void *user_data)
@@ -123,23 +127,13 @@ static void scan_timeout(void)
 }
 #endif /* CONFIG_BT_OBSERVER */
 
-#if defined(CONFIG_BT_BROADCASTER) && defined(CONFIG_BT_EXT_ADV)
+#if defined(CONFIG_BT_EXT_ADV)
+#if defined(CONFIG_BT_BROADCASTER)
 static void adv_sent(struct bt_le_ext_adv *adv,
 		     struct bt_le_ext_adv_sent_info *info)
 {
 	shell_print(ctx_shell, "Advertiser[%d] %p sent %d",
 		    bt_le_ext_adv_get_index(adv), adv, info->num_sent);
-}
-
-static void adv_connected(struct bt_le_ext_adv *adv,
-			  struct bt_le_ext_adv_connected_info *info)
-{
-	char str[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(info->conn), str, sizeof(str));
-
-	shell_print(ctx_shell, "Advertiser[%d] %p connected by %s",
-		    bt_le_ext_adv_get_index(adv), adv, str);
 }
 
 static void adv_scanned(struct bt_le_ext_adv *adv,
@@ -152,7 +146,21 @@ static void adv_scanned(struct bt_le_ext_adv *adv,
 	shell_print(ctx_shell, "Advertiser[%d] %p scanned by %s",
 		    bt_le_ext_adv_get_index(adv), adv, str);
 }
-#endif /* defined(CONFIG_BT_BROADCASTER) && defined(CONFIG_BT_EXT_ADV) */
+#endif /* CONFIG_BT_BROADCASTER */
+
+#if defined(CONFIG_BT_PERIPHERAL)
+static void adv_connected(struct bt_le_ext_adv *adv,
+			  struct bt_le_ext_adv_connected_info *info)
+{
+	char str[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(info->conn), str, sizeof(str));
+
+	shell_print(ctx_shell, "Advertiser[%d] %p connected by %s",
+		    bt_le_ext_adv_get_index(adv), adv, str);
+}
+#endif /* CONFIG_BT_PERIPHERAL */
+#endif /* CONFIG_BT_EXT_ADV */
 
 #if !defined(CONFIG_BT_CONN)
 #if 0 /* FIXME: Add support for changing prompt */
@@ -406,13 +414,17 @@ static struct bt_le_scan_cb scan_callbacks = {
 };
 #endif /* defined(CONFIG_BT_OBSERVER) */
 
-#if defined(CONFIG_BT_BROADCASTER) && defined(CONFIG_BT_EXT_ADV)
+#if defined(CONFIG_BT_EXT_ADV)
+#if defined(CONFIG_BT_BROADCASTER)
 static struct bt_le_ext_adv_cb adv_callbacks = {
 	.sent = adv_sent,
-	.connected = adv_connected,
 	.scanned = adv_scanned,
+#if defined(CONFIG_BT_PERIPHERAL)
+	.connected = adv_connected,
+#endif /* CONFIG_BT_PERIPHERAL */
 };
-#endif /* defined(CONFIG_BT_BROADCASTER) && defined(CONFIG_BT_EXT_ADV) */
+#endif /* CONFIG_BT_BROADCASTER */
+#endif /* CONFIG_BT_EXT_ADV */
 
 static void bt_ready(int err)
 {
@@ -1206,26 +1218,6 @@ static int cmd_adv_select(const struct shell *shell, size_t argc, char *argv[])
 	return -ENOEXEC;
 }
 
-static int cmd_adv_oob(const struct shell *shell, size_t argc, char *argv[])
-{
-	struct bt_le_ext_adv *adv = adv_sets[selected_adv];
-	int err;
-
-	if (!adv) {
-		return -EINVAL;
-	}
-
-	err = bt_le_ext_adv_oob_get_local(adv, &oob_local);
-	if (err) {
-		shell_error(shell, "OOB data failed");
-		return err;
-	}
-
-	print_le_oob(shell, &oob_local);
-
-	return 0;
-}
-
 static int cmd_adv_info(const struct shell *shell, size_t argc, char *argv[])
 {
 	struct bt_le_ext_adv *adv = adv_sets[selected_adv];
@@ -1247,6 +1239,28 @@ static int cmd_adv_info(const struct shell *shell, size_t argc, char *argv[])
 
 	return 0;
 }
+
+#if defined(CONFIG_BT_PERIPHERAL)
+static int cmd_adv_oob(const struct shell *shell, size_t argc, char *argv[])
+{
+	struct bt_le_ext_adv *adv = adv_sets[selected_adv];
+	int err;
+
+	if (!adv) {
+		return -EINVAL;
+	}
+
+	err = bt_le_ext_adv_oob_get_local(adv, &oob_local);
+	if (err) {
+		shell_error(shell, "OOB data failed");
+		return err;
+	}
+
+	print_le_oob(shell, &oob_local);
+
+	return 0;
+}
+#endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_PER_ADV)
 static int cmd_per_adv(const struct shell *shell, size_t argc, char *argv[])
@@ -1945,6 +1959,7 @@ static int cmd_oob(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 static int cmd_oob_remote(const struct shell *shell, size_t argc,
 			     char *argv[])
 {
@@ -1980,6 +1995,7 @@ static int cmd_oob_clear(const struct shell *shell, size_t argc, char *argv[])
 
 	return 0;
 }
+#endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR) */
 
 static int cmd_clear(const struct shell *shell, size_t argc, char *argv[])
 {
@@ -2748,8 +2764,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(adv-stop, NULL, "", cmd_adv_stop, 1, 0),
 	SHELL_CMD_ARG(adv-delete, NULL, "", cmd_adv_delete, 1, 0),
 	SHELL_CMD_ARG(adv-select, NULL, "[adv]", cmd_adv_select, 1, 1),
-	SHELL_CMD_ARG(adv-oob, NULL, HELP_NONE, cmd_adv_oob, 1, 0),
 	SHELL_CMD_ARG(adv-info, NULL, HELP_NONE, cmd_adv_info, 1, 0),
+#if defined(CONFIG_BT_PERIPHERAL)
+	SHELL_CMD_ARG(adv-oob, NULL, HELP_NONE, cmd_adv_oob, 1, 0),
+#endif /* CONFIG_BT_PERIPHERAL */
 #if defined(CONFIG_BT_PER_ADV)
 	SHELL_CMD_ARG(per-adv, NULL, "<type: off, on>", cmd_per_adv, 2, 0),
 	SHELL_CMD_ARG(per-adv-param, NULL,
