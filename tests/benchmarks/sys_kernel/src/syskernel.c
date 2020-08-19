@@ -44,7 +44,7 @@ void begin_test(void)
 {
 	/*
 	 * Invoke bench_test_start in order to be able to use
-	 * tCheck static variable.
+	 * timestamp_check static variable.
 	 */
 	bench_test_start();
 }
@@ -61,7 +61,7 @@ void begin_test(void)
 int check_result(int i, uint32_t t)
 {
 	/*
-	 * bench_test_end checks tCheck static variable.
+	 * bench_test_end checks timestamp_check static variable.
 	 * bench_test_start modifies it
 	 */
 	if (bench_test_end() != 0) {
