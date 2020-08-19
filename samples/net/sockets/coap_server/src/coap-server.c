@@ -1201,6 +1201,12 @@ static const char * const test_path[] = { "test", NULL };
 
 static const char * const segments_path[] = { "seg1", "seg2", "seg3", NULL };
 
+#if defined(CONFIG_COAP_URI_WILDCARD)
+static const char * const wildcard1_path[] = { "wild1", "+", "wild3", NULL };
+
+static const char * const wildcard2_path[] = { "wild2", "#", NULL };
+#endif /* CONFIG_COAP_URI_WILDCARD */
+
 static const char * const query_path[] = { "query", NULL };
 
 static const char * const separate_path[] = { "separate", NULL };
@@ -1240,6 +1246,14 @@ static struct coap_resource resources[] = {
 	{ .get = piggyback_get,
 	  .path = segments_path,
 	},
+#if defined(CONFIG_COAP_URI_WILDCARD)
+	{ .get = piggyback_get,
+	  .path = wildcard1_path,
+	},
+	{ .get = piggyback_get,
+	  .path = wildcard2_path,
+	},
+#endif /* CONFIG_COAP_URI_WILDCARD */
 	{ .get = query_get,
 	  .path = query_path,
 	},
