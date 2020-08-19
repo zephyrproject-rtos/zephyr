@@ -3726,7 +3726,7 @@ static int cmd_net_stats(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
-#if defined(CONFIG_NET_TCP1) && defined(CONFIG_NET_NATIVE_TCP)
+#if defined(CONFIG_NET_TCP) && defined(CONFIG_NET_NATIVE_TCP)
 static struct net_context *tcp_ctx;
 static const struct shell *tcp_shell;
 
@@ -3957,7 +3957,7 @@ static void tcp_recv_cb(struct net_context *context, struct net_pkt *pkt,
 static int cmd_net_tcp_connect(const struct shell *shell, size_t argc,
 			       char *argv[])
 {
-#if defined(CONFIG_NET_TCP1) && defined(CONFIG_NET_NATIVE_TCP)
+#if defined(CONFIG_NET_TCP) && defined(CONFIG_NET_NATIVE_TCP)
 	int arg = 0;
 
 	/* tcp connect <ip> port */
@@ -4001,7 +4001,7 @@ static int cmd_net_tcp_connect(const struct shell *shell, size_t argc,
 static int cmd_net_tcp_send(const struct shell *shell, size_t argc,
 			    char *argv[])
 {
-#if defined(CONFIG_NET_TCP1) && defined(CONFIG_NET_NATIVE_TCP)
+#if defined(CONFIG_NET_TCP) && defined(CONFIG_NET_NATIVE_TCP)
 	int arg = 0;
 	int ret;
 	struct net_shell_user_data user_data;
@@ -4038,7 +4038,7 @@ static int cmd_net_tcp_send(const struct shell *shell, size_t argc,
 static int cmd_net_tcp_recv(const struct shell *shell, size_t argc,
 			    char *argv[])
 {
-#if defined(CONFIG_NET_TCP1) && defined(CONFIG_NET_NATIVE_TCP)
+#if defined(CONFIG_NET_TCP) && defined(CONFIG_NET_NATIVE_TCP)
 	int ret;
 	struct net_shell_user_data user_data;
 
@@ -4067,7 +4067,7 @@ static int cmd_net_tcp_recv(const struct shell *shell, size_t argc,
 static int cmd_net_tcp_close(const struct shell *shell, size_t argc,
 			     char *argv[])
 {
-#if defined(CONFIG_NET_TCP1) && defined(CONFIG_NET_NATIVE_TCP)
+#if defined(CONFIG_NET_TCP) && defined(CONFIG_NET_NATIVE_TCP)
 	int ret;
 
 	/* tcp close */
