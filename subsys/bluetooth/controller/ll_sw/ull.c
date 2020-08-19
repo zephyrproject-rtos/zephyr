@@ -8,13 +8,15 @@
 #include <stdbool.h>
 #include <errno.h>
 
-#include <zephyr/types.h>
+#include <zephyr.h>
+#include <soc.h>
 #include <device.h>
 #include <drivers/entropy.h>
 #include <bluetooth/hci.h>
 
-#include "hal/cntr.h"
+#include "hal/cpu.h"
 #include "hal/ccm.h"
+#include "hal/cntr.h"
 #include "hal/ticker.h"
 
 #include "util/util.h"
