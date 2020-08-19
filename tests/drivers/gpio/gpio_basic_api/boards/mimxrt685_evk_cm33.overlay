@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2020, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	resources {
+		compatible = "test,gpio_basic_api";
+		out-gpios = <&gpio0 5 0>; /* Arduino A0 */
+		in-gpios  = <&gpio0 6 0>; /* Arduino A1 */
+	};
+};
