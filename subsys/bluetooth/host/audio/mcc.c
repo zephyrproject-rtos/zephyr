@@ -65,6 +65,7 @@ struct mcs_instance_t {
 #endif /* CONFIG_BT_OTC */
 	uint16_t content_control_id_handle;
 
+	struct bt_gatt_subscribe_params player_name_sub_params;
 	struct bt_gatt_subscribe_params track_changed_sub_params;
 	struct bt_gatt_subscribe_params track_title_sub_params;
 	struct bt_gatt_subscribe_params track_dur_sub_params;
@@ -842,7 +843,11 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 	BT_DBG("Notification, handle: %d", handle);
 
 	if (data) {
-		if (handle == mcs_inst.track_changed_handle) {
+		if (handle == mcs_inst.player_name_handle) {
+			BT_DBG("Player Name notification");
+			mcc_read_player_name_cb(conn, 0, NULL, data, length);
+
+		} else if (handle == mcs_inst.track_changed_handle) {
 			/* The Track Changed characteristic can only be */
 			/* notified, so that is handled directly here */
 
@@ -1117,7 +1122,7 @@ static uint8_t discover_include_func(struct bt_conn *conn,
 	}
 
 	/* No more included services found */
-	BT_DBG("Discover include complete for MCS: OTS");
+	BT_DBG("Discover include complete for GMCS: OTS");
 	(void)memset(params, 0, sizeof(*params));
 	if (mcs_inst.otc_inst_cnt) {
 
@@ -1151,7 +1156,7 @@ static uint8_t discover_include_func(struct bt_conn *conn,
 
 
 /* This function is called when characteristics are found.
- * The function will store handles, and optionally subscribe to, MCS
+ * The function will store handles, and optionally subscribe to, GMCS
  * characteristics.
  * After this, the function will start discovery of included services.
  */
@@ -1178,6 +1183,7 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 		if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_PLAYER_NAME)) {
 			BT_DBG("Player name, UUID: %s", bt_uuid_str(chrc->uuid));
 			mcs_inst.player_name_handle = chrc->value_handle;
+			sub_params = &mcs_inst.player_name_sub_params;
 #ifdef CONFIG_BT_OTC
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_ICON_OBJ_ID)) {
 			BT_DBG("Icon Object, UUID: %s", bt_uuid_str(chrc->uuid));
@@ -1280,7 +1286,7 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 	}
 
 	/* No more attributes found */
-	BT_DBG("Setup complete for MCS");
+	BT_DBG("Setup complete for GMCS");
 	(void)memset(params, 0, sizeof(*params));
 
 #ifdef CONFIG_BT_OTC
@@ -1311,9 +1317,9 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 }
 
 
-/* This function is called when a (primary) MCS service has been discovered.
+/* This function is called when a (primary) GMCS service has been discovered.
  * The function will store the start and end handle for the service. It will
- * then start discovery of the characteristics of the MCS service.
+ * then start discovery of the characteristics of the GMCS service.
  */
 static uint8_t discover_primary_func(struct bt_conn *conn,
 				     const struct bt_gatt_attr *attr,
@@ -1333,7 +1339,7 @@ static uint8_t discover_primary_func(struct bt_conn *conn,
 		}
 
 		/* We have found an attribute, and it is a primary service */
-		/* (Must be MCS, since that is the one we searched for.) */
+		/* (Must be GMCS, since that is the one we searched for.) */
 		BT_DBG("Primary discovery complete");
 		BT_DBG("UUID: %s", bt_uuid_str(attr->uuid));
 		prim_service = (struct bt_gatt_service_val *)attr->user_data;
@@ -1350,7 +1356,7 @@ static uint8_t discover_primary_func(struct bt_conn *conn,
 		discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 		discover_params.func = discover_mcs_char_func;
 
-		BT_DBG("Start discovery of MCS characteristics");
+		BT_DBG("Start discovery of GMCS characteristics");
 		err = bt_gatt_discover(conn, &discover_params);
 		if (err) {
 			BT_DBG("Discover failed (err %d)", err);
@@ -1363,7 +1369,7 @@ static uint8_t discover_primary_func(struct bt_conn *conn,
 	}
 
 	/* No attribute of the searched for type found */
-	BT_DBG("Could not find an MCS instance on the server");
+	BT_DBG("Could not find an GMCS instance on the server");
 	cur_mcs_inst = NULL;
 	if (mcc_cb && mcc_cb->discover_mcs) {
 		mcc_cb->discover_mcs(conn, -ENODATA);
@@ -1403,9 +1409,9 @@ int bt_mcc_init(struct bt_conn *conn, struct bt_mcc_cb_t *cb)
  * part, and then initiates a further discovery, with a new callback function.
  *
  * The order of discovery is follows:
- * 1: Discover MCS primary service (started here)
- * 2: Discover characteristics of MCS
- * 3: Discover OTS service included in MCS
+ * 1: Discover GMCS primary service (started here)
+ * 2: Discover characteristics of GMCS
+ * 3: Discover OTS service included in GMCS
  * 4: Discover characteristics of OTS
  */
 int bt_mcc_discover_mcs(struct bt_conn *conn, bool subscribe)
@@ -1419,7 +1425,7 @@ int bt_mcc_discover_mcs(struct bt_conn *conn, bool subscribe)
 	subscribe_all = subscribe;
 	memset(&discover_params, 0, sizeof(discover_params));
 	memset(&mcs_inst, 0, sizeof(mcs_inst));
-	memcpy(&uuid, BT_UUID_MCS, sizeof(uuid));
+	memcpy(&uuid, BT_UUID_GMCS, sizeof(uuid));
 
 	discover_params.func = discover_primary_func;
 	discover_params.uuid = &uuid.uuid;
@@ -1427,7 +1433,7 @@ int bt_mcc_discover_mcs(struct bt_conn *conn, bool subscribe)
 	discover_params.start_handle = FIRST_HANDLE;
 	discover_params.end_handle = LAST_HANDLE;
 
-	BT_DBG("start discovery of MCS primary service");
+	BT_DBG("start discovery of GMCS primary service");
 	return bt_gatt_discover(conn, &discover_params);
 }
 
@@ -2218,6 +2224,8 @@ int on_icon_content(struct bt_conn *conn, uint32_t offset, uint32_t len,
 	BT_INFO("Received Media Player Icon content, %i bytes at offset %i",
 		len, offset);
 
+	BT_HEXDUMP_DBG(data_p, len, "Icon content");
+
 	return BT_OTC_CONTINUE;
 }
 
@@ -2257,6 +2265,8 @@ int on_track_content(struct bt_conn *conn, uint32_t offset, uint32_t len,
 	BT_INFO("Received Current Track content, %i bytes at offset %i",
 		len, offset);
 
+	BT_HEXDUMP_DBG(data_p, len, "Track content");
+
 	return BT_OTC_CONTINUE;
 }
 
@@ -2266,6 +2276,8 @@ int on_next_track_content(struct bt_conn *conn, uint32_t offset, uint32_t len,
 {
 	BT_INFO("Received Next Track content, %i bytes at offset %i",
 		len, offset);
+
+	BT_HEXDUMP_DBG(data_p, len, "Track content");
 
 	return BT_OTC_CONTINUE;
 }
