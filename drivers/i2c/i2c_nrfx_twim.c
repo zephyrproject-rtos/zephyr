@@ -75,8 +75,9 @@ static int i2c_nrfx_twim_transfer(struct device *dev, struct i2c_msg *msgs,
 			     != (msgs[i].flags & I2C_MSG_READ)));
 
 		if ((concat_len != 0) || !last_or_non_concatenable) {
-			if (msgs[i].len > concat_buf_size) {
-				LOG_ERR("Concatenation buffer is too small");
+			if ((concat_len + msgs[i].len) > concat_buf_size) {
+				LOG_ERR("concat-buf overflow: %u + %u > %u",
+					concat_len, msgs[i].len, concat_buf_size);
 				return -ENOSPC;
 			}
 			if (!(msgs[i].flags & I2C_MSG_READ)) {
