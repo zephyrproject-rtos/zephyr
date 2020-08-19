@@ -7186,10 +7186,6 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 		return -EINVAL;
 	}
 
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
-		return -EBUSY;
-	}
-
 	per_adv_sync = per_adv_sync_new();
 	if (!per_adv_sync) {
 		return -ENOMEM;
