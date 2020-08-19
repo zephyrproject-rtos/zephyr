@@ -1402,6 +1402,15 @@ uint8_t ull_adv_data_set(struct ll_adv_set *adv, uint8_t len,
 
 	/* update adv pdu fields. */
 	pdu = lll_adv_data_alloc(&adv->lll, &idx);
+
+	/* check for race condition with LLL ISR */
+	if (IS_ENABLED(CONFIG_ASSERT)) {
+		uint8_t idx_test;
+
+		lll_adv_data_alloc(&adv->lll, &idx_test);
+		__ASSERT((idx == idx_test), "Probable AD Data Corruption.\n");
+	}
+
 	pdu->type = prev->type;
 	pdu->rfu = 0U;
 
