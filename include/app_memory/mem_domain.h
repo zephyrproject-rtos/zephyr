@@ -22,6 +22,7 @@ typedef struct k_thread *k_tid_t;
  * @{
  */
 
+#ifdef CONFIG_MEMORY_PROTECTION
 /**
  * @def K_MEM_PARTITION_DEFINE
  * @brief Used to declare a memory partition
@@ -43,11 +44,13 @@ struct k_mem_partition {
 	uintptr_t start;
 	/** size of memory partition */
 	size_t size;
-#if defined(CONFIG_MEMORY_PROTECTION)
 	/** attribute of memory partition */
 	k_mem_partition_attr_t attr;
-#endif /* CONFIG_MEMORY_PROTECTION */
 };
+#else
+/* To support use of IS_ENABLED for the APIs below */
+struct k_mem_partition;
+#endif /* CONFIG_MEMORY_PROTECTION */
 
 #ifdef CONFIG_USERSPACE
 /**
