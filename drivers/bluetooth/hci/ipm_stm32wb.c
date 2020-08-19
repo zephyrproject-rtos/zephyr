@@ -494,7 +494,7 @@ static int bt_ipm_open(void)
 	k_thread_create(&ipm_rx_thread_data, ipm_rx_stack,
 			K_KERNEL_STACK_SIZEOF(ipm_rx_stack),
 			(k_thread_entry_t)bt_ipm_rx_thread, NULL, NULL, NULL,
-			K_PRIO_COOP(CONFIG_BT_RX_PRIO - 1),
+			K_PRIO_COOP(CONFIG_BT_RX_PRIO_HIGH),
 			0, K_NO_WAIT);
 
 	/* Take BLE out of reset */

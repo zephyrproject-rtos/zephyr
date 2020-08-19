@@ -506,7 +506,7 @@ static int bt_spi_open(void)
 	k_thread_create(&spi_rx_thread_data, spi_rx_stack,
 			K_KERNEL_STACK_SIZEOF(spi_rx_stack),
 			(k_thread_entry_t)bt_spi_rx_thread, NULL, NULL, NULL,
-			K_PRIO_COOP(CONFIG_BT_RX_PRIO - 1),
+			K_PRIO_COOP(CONFIG_BT_RX_PRIO_HIGH),
 			0, K_NO_WAIT);
 
 	/* Take BLE out of reset */

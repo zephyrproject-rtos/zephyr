@@ -155,9 +155,21 @@ config BT_RX_STACK_SIZE
 
 config BT_RX_PRIO
 	# Hidden option for Co-Operative Rx thread priority
+	# HCI drivers that select BT_RECV_IS_RX_THREAD should call bt_recv from
+	# this priority.
+	# Otherwise the host will process events in this priority.
 	int
 	depends on BT_HCI_HOST || BT_RECV_IS_RX_THREAD
 	default 8
+
+config BT_RX_PRIO_HIGH
+	# Hidden option for Co-Operative RX thread high priority
+	# HCI drivers that select BT_RECV_IS_RX_THREAD should call bt_recv_prio
+	# from this context.
+	# Otherwise HCI drivers should call bt_recv from this context, or from
+	# interrupt handler.
+	int
+	default 6
 
 if BT_HCI_HOST
 

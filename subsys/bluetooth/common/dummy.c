@@ -18,16 +18,15 @@
  * transaction violations in ATT and SMP protocols.
  */
 BUILD_ASSERT(CONFIG_BT_HCI_TX_PRIO < CONFIG_BT_RX_PRIO);
-#endif
 
-#if defined(CONFIG_BT_CTLR)
-/* The Bluetooth Controller's priority receive thread priority shall be higher
- * than the Bluetooth Host's Tx and the Controller's receive thread priority.
+/* The Bluetooth subsystem requires that higher priority events shall be given
+ * in a priority higher than the Bluetooth Host's Tx and the Controller's
+ * receive thread priority.
  * This is required in order to dispatch Number of Completed Packets event
  * before any new data arrives on a connection to the Host threads.
  */
-BUILD_ASSERT(CONFIG_BT_CTLR_RX_PRIO < CONFIG_BT_HCI_TX_PRIO);
-#endif /* CONFIG_BT_CTLR */
+BUILD_ASSERT(CONFIG_BT_RX_PRIO_HIGH < CONFIG_BT_HCI_TX_PRIO);
+#endif /* defined(CONFIG_BT_HCI_HOST) */
 
 /* Immediate logging is not supported with the software-based Link Layer
  * since it introduces ISR latency due to outputting log messages with
