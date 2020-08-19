@@ -21,6 +21,7 @@
 
 #include <init.h>
 #include <sys/device_mmio.h>
+#include <power/power_state.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -169,8 +170,46 @@ extern "C" {
  */
 #define DEVICE_DECLARE(name) static struct device DEVICE_NAME_GET(name)
 
-typedef void (*device_pm_cb)(struct device *dev,
-			     int status, void *context, void *arg);
+/** @typedef device_pm_control_t
+ *
+ * @brief Device power state transition function.
+ *
+ * For command DEVICE_PM_SET_POWER_STATE, this function of individual
+ * device will just start the power state transition, this function's
+ * return value indicates the start success or not, and the transition
+ * result will be updated by the callback function.
+ *
+ * For command DEVICE_PM_GET_POWER_STATE, this function will return
+ * the device's current power state to parameter context.
+ *
+ * @param dev Device instance.
+ * @param command Device power state transition command.
+ * @param state Pointer to device power state.
+ * @param cb Device power state transition callback.
+ * @param arg Pointer to device pm state argument.
+ *
+ * @retval 0 if start the transition or get the current power
+ *         state successfully, otherwise negative error code.
+ */
+typedef int (*device_pm_control_t)(struct device *device,
+				   uint32_t command, device_pm_t *state,
+				   device_pm_cb_t cb, void *arg);
+
+/** @typedef device_pm_cb_t
+ *
+ * @brief Device power state transition callback function.
+ *
+ * The callback function of individual device will update the result of
+ * power state transition.
+ *
+ * @param dev Device instance.
+ * @param status Result of device power state transition, this will be 0
+ *               on success, or a negative error code.
+ * @param state Pointer to device power state.
+ * @param arg Pointer to device pm state argument.
+ */
+typedef void (*device_pm_cb_t)(struct device *dev, int status,
+			       device_pm_t *state, void *arg);
 
 /**
  * @brief Device PM info
@@ -186,6 +225,8 @@ struct device_pm {
 	atomic_t usage;
 	/** Device idle internal power state */
 	atomic_t fsm_state;
+	/** the count of active children of the device */
+	atomic_t child_count;
 	/** Work object for asynchronous calls */
 	struct k_work work;
 	/** Event object to listen to the sync request events */
@@ -207,9 +248,7 @@ struct device {
 	/** Address of the device instance private data */
 	void * const driver_data;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	/** Power Management function */
-	int (*device_pm_control)(struct device *device, uint32_t command,
-				 void *context, device_pm_cb cb, void *arg);
+	device_pm_control_t device_pm_control;
 	/** Pointer to device instance power management data */
 	struct device_pm * const pm;
 #endif
@@ -347,7 +386,7 @@ const char *device_pm_state_str(uint32_t state);
 int device_pm_control_nop(struct device *unused_device,
 			  uint32_t unused_ctrl_command,
 			  void *unused_context,
-			  device_pm_cb cb,
+			  device_pm_cb_t cb,
 			  void *unused_arg);
 /**
  * @brief Call the set power state function of a device
@@ -364,8 +403,8 @@ int device_pm_control_nop(struct device *unused_device,
  * @retval Errno Negative errno code if failure. Callback will not be called.
  */
 static inline int device_set_power_state(struct device *device,
-					 uint32_t device_power_state,
-					 device_pm_cb cb, void *arg)
+					 device_pm_t device_power_state,
+					 device_pm_cb_t cb, void *arg)
 {
 	return device->device_pm_control(device,
 					 DEVICE_PM_SET_POWER_STATE,
