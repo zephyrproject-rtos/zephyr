@@ -28,4 +28,12 @@ config FLASH_MAP_CUSTOM
 	  User must provide such a description in place of default on
 	  if had enabled this option.
 
+config FLASH_AREA_CHECK_INTEGRITY
+	bool "Enable flash check functions"
+	select TINYCRYPT
+	select TINYCRYPT_SHA256
+	help
+	  If enabled, there will be available the backend to check flash
+	  integrity using SHA-256 verification algorithm.
+
 endif
