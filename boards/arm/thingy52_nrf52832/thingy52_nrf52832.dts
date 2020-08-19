@@ -2,6 +2,7 @@
  * Copyright (c) 2017 Shawn Nock <shawn@monadnock.ca>
  * Copyright (c) 2017 Linaro Limited
  * Copyright (c) 2018 Aapo Vienamo
+ * Copyright (c) 2020 Oticon A/S
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -74,6 +75,12 @@
 
 &gpio0 {
 	status = "okay";
+};
+
+&pdm {
+	status = "okay";
+	clk-pin = <26>;
+	din-pin = <25>;
 };
 
 &uart0 {
