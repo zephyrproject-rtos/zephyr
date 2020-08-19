@@ -502,8 +502,6 @@ static int eswifi_socket_create(int family, int type, int proto)
 
 static int eswifi_socket_ioctl(void *obj, unsigned int request, va_list args)
 {
-	int sd = OBJ_TO_SD(obj);
-
 	switch (request) {
 	case ZFD_IOCTL_POLL_PREPARE:
 		return -EXDEV;
