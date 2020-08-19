@@ -8,8 +8,10 @@
 #include <string.h>
 
 #include <zephyr.h>
+#include <soc.h>
 #include <bluetooth/hci.h>
 
+#include "hal/cpu.h"
 #include "hal/ccm.h"
 #include "hal/radio.h"
 #include "hal/ticker.h"
@@ -47,7 +49,6 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_adv
 #include "common/log.h"
-#include <soc.h>
 #include "hal/debug.h"
 
 inline struct ll_adv_set *ull_adv_set_get(uint8_t handle);
