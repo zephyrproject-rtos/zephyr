@@ -87,7 +87,7 @@ static void eswifi_off_read_work(struct k_work *work)
 {
 	struct eswifi_off_socket *socket;
 	struct eswifi_dev *eswifi;
-	struct net_pkt *pkt;
+	struct net_pkt *pkt = NULL;
 	int err, len;
 	char *data;
 
@@ -109,8 +109,14 @@ static void eswifi_off_read_work(struct k_work *work)
 	len = __read_data(eswifi, 1460, &data); /* 1460 is max size */
 	if (len < 0) {
 		__stop_socket(eswifi, socket);
-		goto done;
-	} else if (!len || !socket->recv_cb) {
+
+		if (socket->recv_cb) {
+			/* send EOF (null pkt) */
+			goto do_recv_cb;
+		}
+	}
+
+	if (!len || !socket->recv_cb) {
 		goto done;
 	}
 
@@ -127,16 +133,19 @@ static void eswifi_off_read_work(struct k_work *work)
 		LOG_WRN("Incomplete buffer copy");
 	}
 
-	eswifi_unlock(eswifi);
-
 	net_pkt_cursor_init(pkt);
+
+do_recv_cb:
 	socket->recv_cb(socket->context, pkt,
 			NULL, NULL, 0, socket->recv_data);
 
-	eswifi_lock(eswifi);
+	if (!socket->context) {
+		/* something destroyed the socket in the recv path */
+		eswifi_unlock(eswifi);
+		return;
+	}
 
 	k_sem_give(&socket->read_sem);
-	k_yield();
 
 done:
 	err = k_delayed_work_submit_to_queue(&eswifi->work_q,
@@ -225,11 +234,6 @@ int __eswifi_accept(struct eswifi_dev *eswifi, struct eswifi_off_socket *socket)
 int __eswifi_socket_free(struct eswifi_dev *eswifi,
 			 struct eswifi_off_socket *socket)
 {
-	if ((socket->type == ESWIFI_TRANSPORT_TCP ||
-	     socket->type == ESWIFI_TRANSPORT_TCP_SSL) &&
-	     socket->state != ESWIFI_SOCKET_STATE_CONNECTED)
-		return -ENOTCONN;
-
 	__select_socket(eswifi, socket->index);
 	k_delayed_work_cancel(&socket->read_work);
 

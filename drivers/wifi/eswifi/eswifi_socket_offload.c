@@ -45,6 +45,10 @@ static void __process_received(struct net_context *context,
 {
 	struct eswifi_off_socket *socket = user_data;
 
+	if (!pkt) {
+		return;
+	}
+
 	eswifi_lock(eswifi);
 	k_fifo_put(&socket->fifo, pkt);
 	eswifi_unlock(eswifi);
