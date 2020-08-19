@@ -310,10 +310,10 @@ static int twim_nrfx_pm_control(struct device *dev, uint32_t ctrl_command,
 #define I2C_FREQUENCY(idx)						       \
 	I2C_NRFX_TWIM_FREQUENCY(DT_PROP(I2C(idx), clock_frequency))
 
-#define CONCAT_BUF_SIZE(idx) DT_PROP(I2C(idx), concat_buf_size)
+#define CONCAT_BUF_SIZE(idx) DT_PROP(I2C(idx), zephyr_concat_buf_size)
 
 #define I2C_CONCAT_BUF(idx)						       \
-	COND_CODE_1(DT_NODE_HAS_PROP(I2C(idx), concat_buf_size),	       \
+	COND_CODE_1(DT_NODE_HAS_PROP(I2C(idx), zephyr_concat_buf_size),	       \
 	(.concat_buf = twim_##idx##_concat_buf,				       \
 	.concat_buf_size = CONCAT_BUF_SIZE(idx),), ())
 
@@ -327,7 +327,7 @@ static int twim_nrfx_pm_control(struct device *dev, uint32_t ctrl_command,
 			    nrfx_isr, nrfx_twim_##idx##_irq_handler, 0);       \
 		return init_twim(dev);					       \
 	}								       \
-	COND_CODE_1(DT_NODE_HAS_PROP(I2C(idx), concat_buf_size),	       \
+	COND_CODE_1(DT_NODE_HAS_PROP(I2C(idx), zephyr_concat_buf_size),	       \
 	(static uint8_t twim_##idx##_concat_buf[CONCAT_BUF_SIZE(idx)];),       \
 	())								       \
 									       \
