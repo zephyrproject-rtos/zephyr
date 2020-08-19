@@ -32,7 +32,8 @@ static bool is_mesh_local(struct openthread_context *context,
 	const otMeshLocalPrefix *ml_prefix =
 				otThreadGetMeshLocalPrefix(context->instance);
 
-	return (memcmp(address, ml_prefix->m8, sizeof(ml_prefix)) == 0);
+	return ml_prefix ? (memcmp(address, ml_prefix->m8, sizeof(ml_prefix)) == 0) :
+			   false;
 }
 
 int pkt_list_add(struct openthread_context *context, struct net_pkt *pkt)
@@ -180,6 +181,7 @@ void add_ipv6_addr_to_ot(struct openthread_context *context)
 			break;
 		}
 	}
+	i = i < 0 ? 0 : i;
 
 	ipv6->unicast[i].is_mesh_local = is_mesh_local(
 			context, ipv6->unicast[i].address.in6_addr.s6_addr);

@@ -105,11 +105,6 @@ static void reset_pending_event(enum pending_events event)
 	atomic_clear_bit(pending_events, event);
 }
 
-static inline void clear_pending_events(void)
-{
-	atomic_clear(pending_events);
-}
-
 void energy_detected(struct device *dev, int16_t max_ed)
 {
 	if (dev == radio_dev) {
@@ -279,7 +274,8 @@ static void openthread_handle_received_frame(otInstance *instance,
 {
 	otRadioFrame recv_frame;
 
-	recv_frame.mPsdu = net_buf_frag_last(pkt->buffer)->data;
+	recv_frame.mPsdu = net_buf_frag_last(pkt->buffer) ?
+			   net_buf_frag_last(pkt->buffer)->data : NULL;
 	/* Length inc. CRC. */
 	recv_frame.mLength = net_buf_frags_len(pkt->buffer);
 	recv_frame.mChannel = platformRadioChannelGet(instance);
