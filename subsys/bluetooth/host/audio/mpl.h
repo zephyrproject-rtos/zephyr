@@ -66,6 +66,20 @@ extern "C" {
 #define MPL_PLAYING_ORDER_SHUFFLE_ONCE   0x09
 #define MPL_PLAYING_ORDER_SHUFFLE_REPEAT 0x0a
 
+/* Playing orders supported */
+/* A bitmap, in the same order as the playing orders above */
+/* Note that playing order 1 corresponds to bit 0, and so on. */
+#define MPL_PLAYING_ORDERS_SUPPORTED_SINGLE_ONCE    BIT(0)
+#define MPL_PLAYING_ORDERS_SUPPORTED_SINGLE_REPEAT  BIT(1)
+#define MPL_PLAYING_ORDERS_SUPPORTED_INORDER_ONCE   BIT(2)
+#define MPL_PLAYING_ORDERS_SUPPORTED_INORDER_REPEAT BIT(3)
+#define MPL_PLAYING_ORDERS_SUPPORTED_OLDEST_ONCE    BIT(4)
+#define MPL_PLAYING_ORDERS_SUPPORTED_OLDEST_REPEAT  BIT(5)
+#define MPL_PLAYING_ORDERS_SUPPORTED_NEWEST_ONCE    BIT(6)
+#define MPL_PLAYING_ORDERS_SUPPORTED_NEWEST_REPEAT  BIT(7)
+#define MPL_PLAYING_ORDERS_SUPPORTED_SHUFFLE_ONCE   BIT(8)
+#define MPL_PLAYING_ORDERS_SUPPORTED_SHUFFLE_REPEAT BIT(9)
+
 /* Media states */
 #define MPL_MEDIA_STATE_INACTIVE 0x00
 #define MPL_MEDIA_STATE_PLAYING  0x01
@@ -287,6 +301,10 @@ void mpl_group_id_cb(uint64_t id);
 
 uint64_t mpl_parent_group_id_get(void);
 void mpl_parent_group_id_cb(uint64_t id);
+#if defined(CONFIG_BT_DEBUG_MCS) && defined(CONFIG_BT_TESTING)
+/* For  IOP testing - set current group to be it's own parent */
+void mpl_test_unset_parent_group(void);
+#endif /* CONFIG_BT_DEBUG_MCS && CONFIG_BT_TESTING */
 #endif /* CONFIG_BT_OTS */
 
 uint8_t mpl_playing_order_get(void);
@@ -296,6 +314,9 @@ void mpl_playing_order_cb(uint8_t order);
 uint16_t mpl_playing_orders_supported_get(void);
 
 uint8_t mpl_media_state_get(void);
+#if defined(CONFIG_BT_DEBUG_MCS) && defined(CONFIG_BT_TESTING)
+void mpl_test_media_state_set(uint8_t state);
+#endif /* CONFIG_BT_DEBUG_MCS && CONFIG_BT_TESTING */
 void mpl_media_state_cb(uint8_t state);
 
 void mpl_operation_set(struct mpl_op_t operation);
@@ -313,6 +334,13 @@ void mpl_search_results_id_cb(uint64_t id);
 #endif /* CONFIG_BT_OTS */
 
 uint8_t mpl_content_ctrl_id_get(void);
+
+#if CONFIG_BT_DEBUG_MCS
+/* Output the mediaplayer's state information */
+void mpl_debug_dump_state(void);
+#endif /* CONFIG_BT_DEBUG_MCS */
+
+struct ots_svc_inst_t *bt_mcs_get_ots(void);
 
 #ifdef __cplusplus
 }
