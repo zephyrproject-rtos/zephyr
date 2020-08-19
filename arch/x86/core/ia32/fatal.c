@@ -62,7 +62,7 @@ FUNC_NORETURN static void generic_exc_handle(unsigned int vector,
 }
 
 #define _EXC_FUNC(vector) \
-FUNC_NORETURN void handle_exc_##vector(const z_arch_esf_t *pEsf) \
+FUNC_NORETURN __used static void handle_exc_##vector(const z_arch_esf_t *pEsf) \
 { \
 	generic_exc_handle(vector, pEsf); \
 }
