@@ -33,6 +33,7 @@
 
 #include "ull_internal.h"
 #include "ull_scan_internal.h"
+#include "ull_sync_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_sync
@@ -208,9 +209,8 @@ uint8_t ll_sync_create_cancel(void **rx)
 	return 0;
 }
 
-uint8_t ll_sync_terminate(uint16_t handle, void **rx)
+uint8_t ll_sync_terminate(uint16_t handle)
 {
-	struct node_rx_pdu *node_rx;
 	memq_link_t *link_sync_lost;
 	struct ll_sync_set *sync;
 	uint32_t volatile ret_cb;
@@ -243,12 +243,7 @@ uint8_t ll_sync_terminate(uint16_t handle, void **rx)
 	link_sync_lost = sync->node_rx_lost.link;
 	ll_rx_link_release(link_sync_lost);
 
-	node_rx = (void *)&sync->node_rx_lost;
-	node_rx->hdr.type = NODE_RX_TYPE_SYNC_LOST;
-	node_rx->hdr.handle = handle;
-	node_rx->hdr.rx_ftr.param = sync;
-
-	*rx = node_rx;
+	ull_sync_release(sync);
 
 	return 0;
 }

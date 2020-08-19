@@ -2088,8 +2088,7 @@ static void le_per_adv_create_sync_cancel(struct net_buf *buf,
 	ccst->status = status;
 }
 
-static void le_per_adv_terminate_sync(struct net_buf *buf, struct net_buf **evt,
-				      void **node_rx)
+static void le_per_adv_terminate_sync(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_per_adv_terminate_sync *cmd = (void *)buf->data;
 	struct bt_hci_evt_cc_status *ccst;
@@ -2098,7 +2097,7 @@ static void le_per_adv_terminate_sync(struct net_buf *buf, struct net_buf **evt,
 
 	handle = sys_le16_to_cpu(cmd->handle);
 
-	status = ll_sync_terminate(handle, node_rx);
+	status = ll_sync_terminate(handle);
 
 	ccst = hci_cmd_complete(evt, sizeof(*ccst));
 	ccst->status = status;
@@ -2446,7 +2445,7 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_PER_ADV_TERMINATE_SYNC):
-		le_per_adv_terminate_sync(cmd, evt, node_rx);
+		le_per_adv_terminate_sync(cmd, evt);
 		break;
 
 	/* FIXME: Enable when definition is added to hci.h */

@@ -102,7 +102,7 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 		       uint8_t *adv_addr, uint16_t skip,
 		       uint16_t sync_timeout, uint8_t sync_cte_type);
 uint8_t ll_sync_create_cancel(void **rx);
-uint8_t ll_sync_terminate(uint16_t handle, void **rx);
+uint8_t ll_sync_terminate(uint16_t handle);
 uint8_t ll_sync_recv_enable(uint16_t handle, uint8_t enable);
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 uint8_t ll_scan_params_set(uint8_t type, uint16_t interval, uint16_t window,
