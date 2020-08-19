@@ -122,6 +122,8 @@
 
 #define K_MEM_PARTITION_P_RX_U_NA   (MMU_ENTRY_READ | MMU_ENTRY_SUPERVISOR)
 
+#define K_MEM_PARTITION_IS_EXECUTABLE(attr)	(((attr) & Z_X86_MMU_XD) == 0)
+#define K_MEM_PARTITION_IS_WRITABLE(attr)	(((attr) & Z_X86_MMU_RW) != 0)
 
  /* memory partition access permission mask */
 #define K_MEM_PARTITION_PERM_MASK   (Z_X86_MMU_RW | Z_X86_MMU_US | \
