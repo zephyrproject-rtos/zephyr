@@ -78,7 +78,8 @@ static int i2c_nrfx_twim_transfer(struct device *dev, struct i2c_msg *msgs,
 			if ((concat_len + msgs[i].len) > concat_buf_size) {
 				LOG_ERR("concat-buf overflow: %u + %u > %u",
 					concat_len, msgs[i].len, concat_buf_size);
-				return -ENOSPC;
+				ret = -ENOSPC;
+				break;
 			}
 			if (!(msgs[i].flags & I2C_MSG_READ)) {
 				memcpy(concat_buf + concat_len,
