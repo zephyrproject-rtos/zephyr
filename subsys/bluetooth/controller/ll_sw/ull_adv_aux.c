@@ -118,7 +118,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 
 	val_ptr = value;
 	*val_ptr++ = len;
-	*((uint32_t *)val_ptr) = (uint32_t)data;
+	sys_put_le32((uint32_t)data, val_ptr);
 	err = ull_adv_aux_hdr_set_clear(adv, ULL_ADV_PDU_HDR_FIELD_AD_DATA,
 					0, value, NULL);
 	if (err) {
@@ -620,7 +620,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 		ad_len = *val_ptr;
 		val_ptr++;
 
-		ad_data = (void *)*((uint32_t *)val_ptr);
+		ad_data = (void *)sys_get_le32(val_ptr);
 	} else {
 		/* Calc the previous AD data length in auxiliary PDU */
 		ad_len = sec_pdu_prev->len - sec_len_prev;
