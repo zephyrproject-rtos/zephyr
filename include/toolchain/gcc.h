@@ -165,6 +165,9 @@ do {                                                                    \
 			__attribute__((long_call, section(".ramfunc")))
 #endif /* !CONFIG_XIP */
 
+#ifndef __fallthrough
+#define __fallthrough        __attribute__((fallthrough))
+#endif
 #ifndef __packed
 #define __packed        __attribute__((__packed__))
 #endif
