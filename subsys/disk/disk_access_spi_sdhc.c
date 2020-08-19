@@ -20,16 +20,17 @@ LOG_MODULE_REGISTER(sdhc_spi, CONFIG_DISK_LOG_LEVEL);
 /* Clock speed used after initialisation */
 #define SDHC_SPI_SPEED 4000000
 
-#if !DT_NODE_HAS_STATUS(DT_INST(0, zephyr_mmc_spi_slot), okay)
+#define SPI_SDHC_NODE DT_INST(0, zephyr_mmc_spi_slot)
+
+#if !DT_NODE_HAS_STATUS(SPI_SDHC_NODE, okay)
 #warning NO SDHC slot specified on board
 #else
 struct sdhc_spi_data {
 	struct device *spi;
 	struct spi_config cfg;
-	struct device *cs;
-	uint32_t pin;
-	gpio_dt_flags_t flags;
-
+#if DT_SPI_DEV_HAS_CS_GPIOS(SPI_SDHC_NODE)
+	struct spi_cs_control cs;
+#endif
 	bool high_capacity;
 	uint32_t sector_count;
 	uint8_t status;
@@ -67,12 +68,6 @@ static int sdhc_spi_trace(struct sdhc_spi_data *data, int dir, int err,
 	}
 #endif
 	return err;
-}
-
-/* Asserts or deasserts chip select */
-static void sdhc_spi_set_cs(struct sdhc_spi_data *data, int value)
-{
-	gpio_pin_set(data->cs, data->pin, value);
 }
 
 /* Receives a fixed number of bytes */
@@ -460,12 +455,9 @@ static int sdhc_spi_recover(struct sdhc_spi_data *data)
 /* Attempts to return the card to idle mode */
 static int sdhc_spi_go_idle(struct sdhc_spi_data *data)
 {
-	sdhc_spi_set_cs(data, 1);
-
 	/* Write the initial >= 74 clocks */
 	sdhc_spi_tx(data, sdhc_ones, 10);
-
-	sdhc_spi_set_cs(data, 0);
+	spi_release(data->spi, &data->cfg);
 
 	return sdhc_spi_cmd_r1_idle(data, SDHC_GO_IDLE_STATE, 0);
 }
@@ -673,8 +665,6 @@ static int sdhc_spi_read(struct sdhc_spi_data *data,
 		addr = sector * SDMMC_DEFAULT_BLOCK_SIZE;
 	}
 
-	sdhc_spi_set_cs(data, 0);
-
 	/* Send the start read command */
 	err = sdhc_spi_cmd_r1(data, SDHC_READ_MULTIPLE_BLOCK, addr);
 	if (err != 0) {
@@ -698,7 +688,7 @@ static int sdhc_spi_read(struct sdhc_spi_data *data,
 	err = sdhc_spi_skip_until_ready(data);
 
 error:
-	sdhc_spi_set_cs(data, 1);
+	spi_release(data->spi, &data->cfg);
 
 	return err;
 }
@@ -713,8 +703,6 @@ static int sdhc_spi_write(struct sdhc_spi_data *data,
 	if (err != 0) {
 		return err;
 	}
-
-	sdhc_spi_set_cs(data, 0);
 
 	/* Write the blocks one-by-one */
 	for (; count != 0U; count--) {
@@ -755,7 +743,7 @@ static int sdhc_spi_write(struct sdhc_spi_data *data,
 
 	err = 0;
 error:
-	sdhc_spi_set_cs(data, 1);
+	spi_release(data->spi, &data->cfg);
 
 	return err;
 }
@@ -766,22 +754,25 @@ static int sdhc_spi_init(struct device *dev)
 {
 	struct sdhc_spi_data *data = dev->data;
 
-	data->spi = device_get_binding(DT_BUS_LABEL(DT_INST(0, zephyr_mmc_spi_slot)));
+	data->spi = device_get_binding(DT_BUS_LABEL(SPI_SDHC_NODE));
 
 	data->cfg.frequency = SDHC_SPI_INITIAL_SPEED;
 	data->cfg.operation = SPI_WORD_SET(8) | SPI_HOLD_ON_CS;
-	data->cfg.slave = DT_REG_ADDR(DT_INST(0, zephyr_mmc_spi_slot));
-	data->cs = device_get_binding(
-		DT_SPI_DEV_CS_GPIOS_LABEL(DT_INST(0, zephyr_mmc_spi_slot)));
-	__ASSERT_NO_MSG(data->cs != NULL);
+	data->cfg.slave = DT_REG_ADDR(SPI_SDHC_NODE);
 
-	data->pin = DT_SPI_DEV_CS_GPIOS_PIN(DT_INST(0, zephyr_mmc_spi_slot));
-	data->flags = DT_SPI_DEV_CS_GPIOS_FLAGS(DT_INST(0, zephyr_mmc_spi_slot));
+#if DT_SPI_DEV_HAS_CS_GPIOS(SPI_SDHC_NODE)
+	data->cs.gpio_dev =
+		device_get_binding(DT_SPI_DEV_CS_GPIOS_LABEL(SPI_SDHC_NODE));
+	__ASSERT_NO_MSG(data->cs.gpio_dev != NULL);
+
+	data->cs.gpio_pin = DT_SPI_DEV_CS_GPIOS_PIN(SPI_SDHC_NODE);
+	data->cs.gpio_dt_flags = DT_SPI_DEV_CS_GPIOS_FLAGS(SPI_SDHC_NODE);
+	data->cfg.cs = &data->cs;
+#endif
 
 	disk_spi_sdhc_init(dev);
 
-	return gpio_pin_configure(data->cs, data->pin,
-				  GPIO_OUTPUT_INACTIVE | data->flags);
+	return 0;
 }
 
 static int disk_spi_sdhc_access_status(struct disk_info *disk)
@@ -866,7 +857,7 @@ static int disk_spi_sdhc_access_init(struct disk_info *disk)
 	int err;
 
 	err = sdhc_spi_detect(data);
-	sdhc_spi_set_cs(data, 1);
+	spi_release(data->spi, &data->cfg);
 
 	return err;
 }
@@ -898,7 +889,7 @@ static int disk_spi_sdhc_init(struct device *dev)
 static struct sdhc_spi_data sdhc_spi_data_0;
 
 DEVICE_AND_API_INIT(sdhc_spi_0,
-	DT_LABEL(DT_INST(0, zephyr_mmc_spi_slot)),
+	DT_LABEL(SPI_SDHC_NODE),
 	sdhc_spi_init, &sdhc_spi_data_0, NULL,
 	APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 #endif
