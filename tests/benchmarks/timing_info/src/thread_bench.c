@@ -89,6 +89,64 @@ uint32_t benchmarking_overhead_swap(void)
 }
 #endif
 
+
+#if defined(CONFIG_CPU_CORTEX_M) && defined(CONFIG_DYNAMIC_INTERRUPTS)
+static void dyn_isr_handler(void *args)
+{
+	ARG_UNUSED(args);
+}
+
+int install_dynamic_interrupt_and_get_line(void)
+{
+	int i;
+
+	for (i = CONFIG_NUM_IRQS - 1; i >= 0; i--) {
+		if (NVIC_GetEnableIRQ(i) == 0) {
+			/*
+			 * Interrupts configured statically with IRQ_CONNECT(.)
+			 * are automatically enabled. NVIC_GetEnableIRQ()
+			 * returning false, here, implies that the IRQ line is
+			 * either not implemented or it is not enabled, thus,
+			 * currently not in use by Zephyr.
+			 */
+
+			/* Set the NVIC line to pending. */
+			NVIC_SetPendingIRQ(i);
+
+			if (NVIC_GetPendingIRQ(i)) {
+				/* If the NVIC line is pending, it is
+				 * guaranteed that it is implemented; clear the
+				 * line.
+				 */
+				NVIC_ClearPendingIRQ(i);
+
+				if (!NVIC_GetPendingIRQ(i)) {
+					/*
+					 * If the NVIC line can be successfully
+					 * un-pended, it is guaranteed that it
+					 * can be used for software interrupt
+					 * triggering.
+					 */
+					break;
+				}
+			}
+		}
+	}
+
+	if (i >= 0) {
+		/* Install the interrupt */
+		NVIC_DisableIRQ(i);
+		arch_irq_connect_dynamic(i, 0 /* highest priority */,
+			dyn_isr_handler,
+			NULL,
+			0);
+		NVIC_EnableIRQ(i);
+	}
+
+	return i;
+}
+#endif
+
 void test_thread_entry(void *p, void *p1, void *p2)
 {
 	static int i;
@@ -145,6 +203,17 @@ void system_thread_bench(void)
 		arch_timing_swap_start;
 
 	/* Interrupt latency*/
+#if defined(CONFIG_CORTEX_M_SYSTICK) && defined(CONFIG_DYNAMIC_INTERRUPTS)
+	int irq_line = install_dynamic_interrupt_and_get_line();
+
+	if (irq_line >= 0) {
+		NVIC_SetPendingIRQ(irq_line);
+		__DSB();
+		__ISB();
+	} else {
+		TC_PRINT("No available IRQ line for ISR latency measuring\n");
+	}
+#endif
 	uint64_t local_end_intr_time = arch_timing_irq_end;
 	uint64_t local_start_intr_time = arch_timing_irq_start;
 
