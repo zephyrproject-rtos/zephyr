@@ -5,8 +5,8 @@
  */
 
 struct lll_adv_pdu {
-	uint8_t           first;
-	uint8_t           last;
+	uint8_t volatile first;
+	uint8_t          last;
 	/* TODO: use,
 	 * struct pdu_adv *pdu[DOUBLE_BUFFER_SIZE];
 	 */
