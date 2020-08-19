@@ -268,18 +268,17 @@ static inline void *mark_get(void *m);
 static inline void done_alloc(void);
 static inline void rx_alloc(uint8_t max);
 static void rx_demux(void *param);
+#if defined(CONFIG_BT_CONN)
+static uint8_t tx_cmplt_get(uint16_t *handle, uint8_t *first, uint8_t last);
 static inline void rx_demux_conn_tx_ack(uint8_t ack_last, uint16_t handle,
 					memq_link_t *link,
 					struct node_tx *node_tx);
+#endif /* CONFIG_BT_CONN */
 static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx);
 static inline void rx_demux_event_done(memq_link_t *link,
 				       struct node_rx_hdr *rx);
 static inline void ll_rx_link_inc_quota(int8_t delta);
 static void disabled_cb(void *param);
-
-#if defined(CONFIG_BT_CONN)
-static uint8_t tx_cmplt_get(uint16_t *handle, uint8_t *first, uint8_t last);
-#endif /* CONFIG_BT_CONN */
 
 int ll_init(struct k_sem *sem_rx)
 {
@@ -1327,6 +1326,7 @@ void *ull_event_done(void *param)
 	return evdone;
 }
 
+#if defined(CONFIG_BT_PERIPHERAL) || defined(CONFIG_BT_CTLR_SCAN_PERIODIC)
 /**
  * @brief Extract timing from completed event
  *
@@ -1370,6 +1370,7 @@ void ull_drift_ticks_get(struct node_rx_event_done *done,
 					       preamble_to_addr_us);
 	}
 }
+#endif /* CONFIG_BT_PERIPHERAL || CONFIG_BT_CTLR_SCAN_PERIODIC */
 
 static inline int init_reset(void)
 {
@@ -1575,51 +1576,6 @@ static inline void rx_alloc(uint8_t max)
 	}
 }
 
-#if defined(CONFIG_BT_CONN)
-static uint8_t tx_cmplt_get(uint16_t *handle, uint8_t *first, uint8_t last)
-{
-	struct lll_tx *tx;
-	uint8_t cmplt;
-
-	tx = mfifo_dequeue_iter_get(mfifo_tx_ack.m, mfifo_tx_ack.s,
-				    mfifo_tx_ack.n, mfifo_tx_ack.f, last,
-				    first);
-	if (!tx) {
-		return 0;
-	}
-
-	*handle = tx->handle;
-	cmplt = 0U;
-	do {
-		struct node_tx *node_tx;
-		struct pdu_data *p;
-
-		node_tx = tx->node;
-		p = (void *)node_tx->pdu;
-		if (!node_tx || (node_tx == (void *)1) ||
-		    (((uint32_t)node_tx & ~3) &&
-		     (p->ll_id == PDU_DATA_LLID_DATA_START ||
-		      p->ll_id == PDU_DATA_LLID_DATA_CONTINUE))) {
-			/* data packet, hence count num cmplt */
-			tx->node = (void *)1;
-			cmplt++;
-		} else {
-			/* ctrl packet or flushed, hence dont count num cmplt */
-			tx->node = (void *)2;
-		}
-
-		if (((uint32_t)node_tx & ~3)) {
-			ll_tx_mem_release(node_tx);
-		}
-
-		tx = mfifo_dequeue_iter_get(mfifo_tx_ack.m, mfifo_tx_ack.s,
-					    mfifo_tx_ack.n, mfifo_tx_ack.f,
-					    last, first);
-	} while (tx && tx->handle == *handle);
-
-	return cmplt;
-}
-
 static void rx_demux(void *param)
 {
 	memq_link_t *link;
@@ -1685,6 +1641,51 @@ static void rx_demux(void *param)
 #if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
 	} while (link);
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
+}
+
+#if defined(CONFIG_BT_CONN)
+static uint8_t tx_cmplt_get(uint16_t *handle, uint8_t *first, uint8_t last)
+{
+	struct lll_tx *tx;
+	uint8_t cmplt;
+
+	tx = mfifo_dequeue_iter_get(mfifo_tx_ack.m, mfifo_tx_ack.s,
+				    mfifo_tx_ack.n, mfifo_tx_ack.f, last,
+				    first);
+	if (!tx) {
+		return 0;
+	}
+
+	*handle = tx->handle;
+	cmplt = 0U;
+	do {
+		struct node_tx *node_tx;
+		struct pdu_data *p;
+
+		node_tx = tx->node;
+		p = (void *)node_tx->pdu;
+		if (!node_tx || (node_tx == (void *)1) ||
+		    (((uint32_t)node_tx & ~3) &&
+		     (p->ll_id == PDU_DATA_LLID_DATA_START ||
+		      p->ll_id == PDU_DATA_LLID_DATA_CONTINUE))) {
+			/* data packet, hence count num cmplt */
+			tx->node = (void *)1;
+			cmplt++;
+		} else {
+			/* ctrl packet or flushed, hence dont count num cmplt */
+			tx->node = (void *)2;
+		}
+
+		if (((uint32_t)node_tx & ~3)) {
+			ll_tx_mem_release(node_tx);
+		}
+
+		tx = mfifo_dequeue_iter_get(mfifo_tx_ack.m, mfifo_tx_ack.s,
+					    mfifo_tx_ack.n, mfifo_tx_ack.f,
+					    last, first);
+	} while (tx && tx->handle == *handle);
+
+	return cmplt;
 }
 
 static inline void rx_demux_conn_tx_ack(uint8_t ack_last, uint16_t handle,
