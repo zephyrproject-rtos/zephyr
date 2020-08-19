@@ -67,12 +67,13 @@ static int i2c_nrfx_twim_transfer(struct device *dev, struct i2c_msg *msgs,
 			break;
 		}
 
-		/* Merge this fragment with the next if it's not the last
-		 * fragment, this one doesn't end a bus transaction, the next
-		 * one doesn't start a bus transaction, and the direction of
-		 * the next fragment is the same as this one.
+		/* Merge this fragment with the next if we have a buffer, this
+		 * isn't the last fragment, it doesn't end a bus transaction,
+		 * the next one doesn't start a bus transaction, and the
+		 * direction of the next fragment is the same as this one.
 		 */
-		bool concat_next = ((i + 1) < num_msgs)
+		bool concat_next = (concat_buf_size > 0)
+			&& ((i + 1) < num_msgs)
 			&& !(msgs[i].flags & I2C_MSG_STOP)
 			&& !(msgs[i + 1].flags & I2C_MSG_RESTART)
 			&& ((msgs[i].flags & I2C_MSG_READ)
