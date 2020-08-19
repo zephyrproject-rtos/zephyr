@@ -2371,9 +2371,11 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 #endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_CENTRAL)
 	case BT_OCF(BT_HCI_OP_LE_EXT_CREATE_CONN):
 		le_ext_create_connection(cmd, evt);
 		break;
+#endif /* CONFIG_BT_CENTRAL */
 #endif /* CONFIG_BT_CONN */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
@@ -3716,7 +3718,11 @@ static void le_adv_ext_coded_report(struct pdu_data *pdu_data,
 {
 	le_adv_ext_report(pdu_data, node_rx, buf, BIT(2));
 }
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+#endif /* CONFIG_BT_OBSERVER */
 
+#if defined(CONFIG_BT_BROADCASTER)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
 static void le_adv_ext_terminate(struct pdu_data *pdu_data,
 				    struct node_rx_pdu *node_rx,
 				    struct net_buf *buf)
@@ -3737,7 +3743,7 @@ static void le_adv_ext_terminate(struct pdu_data *pdu_data,
 		node_rx->hdr.rx_ftr.param_adv_term.num_events;
 }
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
-#endif /* CONFIG_BT_OBSERVER */
+#endif /* CONFIG_BT_BROADCASTER */
 
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
 static void le_scan_req_received(struct pdu_data *pdu_data,
