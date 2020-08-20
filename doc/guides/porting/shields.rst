@@ -78,9 +78,9 @@ files to a shield, as follows:
 .. code-block:: none
 
    boards/shields/<shield>
-   └── <boards>
-       ├── board.overlay
-       └── board.defconfig
+   └── boards
+       ├── <board>.overlay
+       └── <board>.defconfig
 
 
 Shield activation
@@ -132,10 +132,10 @@ revision:
    ├── <shield_v1>.defconfig
    ├── <shield_v2>.overlay
    ├── <shield_v2>.defconfig
-   └── <boards>
+   └── boards
        └── <shield_v2>
-           ├── board.overlay
-           └── board.defconfig
+           ├── <board>.overlay
+           └── <board>.defconfig
 
 GPIO nexus nodes
 ****************
