@@ -17,6 +17,8 @@ source "subsys/debug/Kconfig"
 
 source "subsys/disk/Kconfig"
 
+source "subsys/emul/Kconfig"
+
 source "subsys/fb/Kconfig"
 
 source "subsys/fs/Kconfig"
