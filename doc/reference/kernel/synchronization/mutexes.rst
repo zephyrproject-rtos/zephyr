@@ -93,7 +93,7 @@ Implementation
 Defining a Mutex
 ================
 
-A mutex is defined using a variable of type :c:type:`k_mutex`.
+A mutex is defined using a variable of type :c:struct:`k_mutex`.
 It must then be initialized by calling :c:func:`k_mutex_init`.
 
 The following code defines and initializes a mutex.

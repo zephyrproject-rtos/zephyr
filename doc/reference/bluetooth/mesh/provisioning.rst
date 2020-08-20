@@ -93,7 +93,7 @@ provisionee:
   actions are listed in :cpp:enum:`bt_mesh_output_action_t`.
 
 The application must provide callbacks for the supported authentication
-methods in :cpp:type:`bt_mesh_prov`, as well as enabling the supported actions
+methods in :c:struct:`bt_mesh_prov`, as well as enabling the supported actions
 in :cpp:var:`bt_mesh_prov::output_actions` and
 :cpp:var:`bt_mesh_prov::input_actions`.
 

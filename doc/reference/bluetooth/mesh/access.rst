@@ -79,9 +79,9 @@ Model publication
 
 The models may send messages in two ways:
 
-* By specifying a set of message parameters in a :cpp:type:`bt_mesh_msg_ctx`,
+* By specifying a set of message parameters in a :c:struct:`bt_mesh_msg_ctx`,
   and calling :c:func:`bt_mesh_model_send`.
-* By setting up a :cpp:type:`bt_mesh_model_pub` structure and calling
+* By setting up a :c:struct:`bt_mesh_model_pub` structure and calling
   :c:func:`bt_mesh_model_publish`.
 
 When publishing messages with :c:func:`bt_mesh_model_publish`, the model

@@ -9,7 +9,7 @@ Memory Pools
     in current Zephyr code.  It still exists for applications which
     require the specific memory allocation and alignment patterns
     detailed below, but the default heap implementation (including the
-    default backend to the k_mem_pool APIs) is now a :c:type:` k_heap`
+    default backend to the k_mem_pool APIs) is now a :c:struct:`k_heap`
     allocator, which is a better choice for general purpose
     code.
 
@@ -119,7 +119,7 @@ Implementation
 Defining a Memory Pool
 ======================
 
-A memory pool is defined using a variable of type :c:type:`k_mem_pool`.
+A memory pool is defined using a variable of type :c:struct:`k_mem_pool`.
 However, since a memory pool also requires a number of variable-size data
 structures to represent its block sets and the status of its quad-blocks,
 the kernel does not support the runtime definition of a memory pool.
