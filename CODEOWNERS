@@ -190,7 +190,9 @@
 /drivers/i2c/*litex*                      @mateusz-holenko @kgugala @pgielda
 /drivers/i2s/i2s_ll_stm32*                @avisconti
 /drivers/i2c/i2c_common.c                 @sjg20
+/drivers/i2c/i2c_emul.c                   @sjg20
 /drivers/i2c/i2c_shell.c                  @nashif
+/drivers/i2c/Kconfig.i2c_emul             @sjg20
 /drivers/i2s/*litex*                      @mateusz-holenko @kgugala @pgielda
 /drivers/ieee802154/                      @jukkar @tbursztyka
 /drivers/ieee802154/ieee802154_rf2xx*     @jukkar @tbursztyka @nandojve
@@ -302,6 +304,7 @@
 /dts/xtensa/intel/                        @dcpleung
 /dts/bindings/                            @galak
 /dts/bindings/can/                        @alexanderwachter
+/dts/bindings/i2c/zephyr*i2c-emul.yaml    @sjg20
 /dts/bindings/iio/adc/st*stm32-adc.yaml   @cybertale
 /dts/bindings/serial/ns16550.yaml         @andrewboie
 /dts/bindings/*/nordic*                   @anangl
@@ -324,6 +327,7 @@
 /include/drivers/espi.h                   @albertofloyd @franciscomunoz @scottwcpg
 /include/drivers/bluetooth/               @joerchan @jhedberg @Vudentz
 /include/drivers/flash.h                  @nashif @carlescufi @galak @MaureenHelm @nvlsianpu
+/include/drivers/i2c_emul.h               @sjg20
 /include/drivers/led/ht16k33.h            @henrikbrixandersen
 /include/drivers/interrupt_controller/    @andrewboie
 /include/drivers/interrupt_controller/gic.h @stephanosio
