@@ -131,8 +131,6 @@ void ppp_link_down(struct ppp_context *ctx)
 		return;
 	}
 
-	ppp_change_phase(ctx, PPP_NETWORK);
-
 	ppp_network_all_down(ctx);
 
 	ppp_change_phase(ctx, PPP_DEAD);
