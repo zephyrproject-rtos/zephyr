@@ -365,6 +365,7 @@
 /include/dt-bindings/dma/stm32_dma.h      @cybertale
 /include/dt-bindings/pcie/                @andrewboie
 /include/dt-bindings/usb/usb.h            @galak @finikorg
+/include/emul.h                           @sjg20
 /include/fs/                              @nashif @wentongwu
 /include/init.h                           @andrewboie @andyross
 /include/irq.h                            @andrewboie @andyross
@@ -472,6 +473,7 @@
 /subsys/disk/disk_access_sdhc.h           @JunYangNXP
 /subsys/disk/disk_access_usdhc.c          @JunYangNXP
 /subsys/disk/disk_access_stm32_sdmmc.c    @anthonybrandon
+/subsys/emul/                             @sjg20
 /subsys/fb/                               @jfischer-phytec-iot
 /subsys/fs/                               @nashif
 /subsys/fs/fcb/                           @nvlsianpu

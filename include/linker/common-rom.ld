@@ -106,6 +106,15 @@
 	Z_ITERABLE_SECTION_ROM(settings_handler_static, 4)
 #endif
 
+#if defined(CONFIG_EMUL)
+	SECTION_DATA_PROLOGUE(log_const_sections,,)
+	{
+		__emul_list_start = .;
+		KEEP(*(SORT_BY_NAME(".emulators")));
+		__emul_list_end = .;
+	} GROUP_LINK_IN(ROMABLE_REGION)
+#endif /* CONFIG_EMUL */
+
 	SECTION_DATA_PROLOGUE(log_const_sections,,)
 	{
 		__log_const_start = .;
