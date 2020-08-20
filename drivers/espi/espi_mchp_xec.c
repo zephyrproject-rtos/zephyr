@@ -241,8 +241,8 @@ static int espi_xec_configure(struct device *dev, struct espi_cfg *cfg)
 	}
 
 	if (iomode != cur_iomode) {
-		cap1 &= ~MCHP_ESPI_GBL_CAP1_IO_MODE_MASK0 <<
-			MCHP_ESPI_GBL_CAP1_IO_MODE_POS;
+		cap1 &= ~(MCHP_ESPI_GBL_CAP1_IO_MODE_MASK0 <<
+			MCHP_ESPI_GBL_CAP1_IO_MODE_POS);
 		cap1 |= (iomode << MCHP_ESPI_GBL_CAP1_IO_MODE_POS);
 	}
 
