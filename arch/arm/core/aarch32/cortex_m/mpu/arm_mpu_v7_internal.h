@@ -54,11 +54,11 @@ static int mpu_partition_is_valid(const struct k_mem_partition *part)
 	 * partition must align with size.
 	 */
 	int partition_is_valid =
-		((part->size & (part->size - 1)) == 0U)
+		((part->size & (part->size - 1U)) == 0U)
 		&&
 		(part->size >= CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE)
 		&&
-		((part->start & (part->size - 1)) == 0U);
+		((part->start & (part->size - 1U)) == 0U);
 
 	return partition_is_valid;
 }
@@ -87,7 +87,7 @@ static inline uint32_t size_to_mpu_rasr_size(uint32_t size)
 		return REGION_4G;
 	}
 
-	return ((32 - __builtin_clz(size - 1) - 2 + 1) << MPU_RASR_SIZE_Pos) &
+	return ((32 - __builtin_clz(size - 1U) - 2 + 1) << MPU_RASR_SIZE_Pos) &
 		MPU_RASR_SIZE_Msk;
 }
 
@@ -128,7 +128,7 @@ static inline int get_dyn_region_min_index(void)
  */
 static inline uint32_t mpu_rasr_size_to_size(uint32_t rasr_size)
 {
-	return 1 << (rasr_size + 1);
+	return 1 << (rasr_size + 1U);
 }
 
 static inline uint32_t mpu_region_get_base(uint32_t index)
@@ -216,10 +216,10 @@ static inline int is_in_region(uint32_t r_index, uint32_t start, uint32_t size)
 
 	r_addr_start = rbar & MPU_RBAR_ADDR_Msk;
 	r_size_lshift = ((rasr & MPU_RASR_SIZE_Msk) >>
-			MPU_RASR_SIZE_Pos) + 1;
-	r_addr_end = r_addr_start + (1UL << r_size_lshift) - 1;
+			MPU_RASR_SIZE_Pos) + 1U;
+	r_addr_end = r_addr_start + (1UL << r_size_lshift) - 1UL;
 
-	size = size == 0 ? 0 : size - 1;
+	size = size == 0U ? 0U : size - 1U;
 	if (u32_add_overflow(start, size, &end)) {
 		return 0;
 	}
@@ -258,7 +258,7 @@ static inline int mpu_buffer_validate(void *addr, size_t size, int write)
 	int32_t r_index;
 
 	/* Iterate all mpu regions in reversed order */
-	for (r_index = get_num_regions() - 1; r_index >= 0;  r_index--) {
+	for (r_index = get_num_regions() - 1U; r_index >= 0;  r_index--) {
 		if (!is_enabled_region(r_index) ||
 		    !is_in_region(r_index, (uint32_t)addr, size)) {
 			continue;

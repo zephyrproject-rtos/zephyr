@@ -40,7 +40,7 @@ typedef uint32_t printk_val_t;
  * less, obviously).  Funny formula produces 10 max digits for 32 bit,
  * 21 for 64.
  */
-#define DIGITS_BUFLEN (11 * (sizeof(printk_val_t) / 4) - 1)
+#define DIGITS_BUFLEN (11U * (sizeof(printk_val_t) / 4U) - 1U)
 
 #ifdef CONFIG_PRINTK_SYNC
 static struct k_spinlock lock;
@@ -96,25 +96,25 @@ void *__printk_get_hook(void)
 }
 #endif /* CONFIG_PRINTK */
 
-static void print_digits(out_func_t out, void *ctx, printk_val_t num, int base,
+static void print_digits(out_func_t out, void *ctx, printk_val_t num, unsigned int base,
 			 bool pad_before, char pad_char, int min_width)
 {
 	char buf[DIGITS_BUFLEN];
-	int i;
+	unsigned int i;
 
 	/* Print it backwards into the end of the buffer, low digits first */
-	for (i = DIGITS_BUFLEN - 1; num != 0; i--) {
+	for (i = DIGITS_BUFLEN - 1U; num != 0U; i--) {
 		buf[i] = "0123456789abcdef"[num % base];
 		num /= base;
 	}
 
-	if (i == DIGITS_BUFLEN - 1) {
+	if (i == DIGITS_BUFLEN - 1U) {
 		buf[i] = '0';
 	} else {
 		i++;
 	}
 
-	int pad = MAX(min_width - (DIGITS_BUFLEN - i), 0);
+	int pad = MAX(min_width - (int)(DIGITS_BUFLEN - i), 0);
 
 	for (/**/; pad > 0 && pad_before; pad--) {
 		out(pad_char, ctx);
@@ -130,20 +130,20 @@ static void print_digits(out_func_t out, void *ctx, printk_val_t num, int base,
 static void print_hex(out_func_t out, void *ctx, printk_val_t num,
 		      enum pad_type padding, int min_width)
 {
-	print_digits(out, ctx, num, 16, padding != PAD_SPACE_AFTER,
+	print_digits(out, ctx, num, 16U, padding != PAD_SPACE_AFTER,
 		     padding == PAD_ZERO_BEFORE ? '0' : ' ', min_width);
 }
 
 static void print_dec(out_func_t out, void *ctx, printk_val_t num,
 		      enum pad_type padding, int min_width)
 {
-	print_digits(out, ctx, num, 10, padding != PAD_SPACE_AFTER,
+	print_digits(out, ctx, num, 10U, padding != PAD_SPACE_AFTER,
 		     padding == PAD_ZERO_BEFORE ? '0' : ' ', min_width);
 }
 
 static bool ok64(out_func_t out, void *ctx, long long val)
 {
-	if (sizeof(printk_val_t) < 8 && val != (long) val) {
+	if (sizeof(printk_val_t) < 8U && val != (long) val) {
 		out('E', ctx);
 		out('R', ctx);
 		out('R', ctx);
@@ -154,9 +154,9 @@ static bool ok64(out_func_t out, void *ctx, long long val)
 
 static bool negative(printk_val_t val)
 {
-	const printk_val_t hibit = ~(((printk_val_t) ~1) >> 1);
+	const printk_val_t hibit = ~(((printk_val_t) ~1) >> 1U);
 
-	return (val & hibit) != 0;
+	return (val & hibit) != 0U;
 }
 
 /**
@@ -266,7 +266,7 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 				out('x', ctx);
 				/* left-pad pointers with zeros */
 				padding = PAD_ZERO_BEFORE;
-				min_width = sizeof(void *) * 2;
+				min_width = sizeof(void *) * 2U;
 				__fallthrough;
 			case 'x':
 			case 'X': {

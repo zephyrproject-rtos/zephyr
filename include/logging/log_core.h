@@ -31,7 +31,7 @@ extern "C" {
 #endif
 
 #if !defined(CONFIG_LOG) || defined(CONFIG_LOG_MINIMAL)
-#define CONFIG_LOG_DOMAIN_ID 0
+#define CONFIG_LOG_DOMAIN_ID 0U
 #endif
 
 #define LOG_FUNCTION_PREFIX_MASK \
@@ -120,14 +120,14 @@ extern "C" {
  * @brief Macro for getting ID of current module.
  */
 #define LOG_CURRENT_MODULE_ID() (__log_level != 0 ? \
-	log_const_source_id(__log_current_const_data) : 0)
+	log_const_source_id(__log_current_const_data) : 0U)
 
 /**
  * @def LOG_CURRENT_DYNAMIC_DATA_ADDR
  * @brief Macro for getting address of dynamic structure of current module.
  */
 #define LOG_CURRENT_DYNAMIC_DATA_ADDR()	(__log_level ? \
-	__log_current_dynamic_data : (struct log_source_dynamic_data *)0)
+	__log_current_dynamic_data : (struct log_source_dynamic_data *)0U)
 
 /** @brief Macro for getting ID of the element of the section.
  *

@@ -80,7 +80,7 @@ static int region_allocate_and_init(const uint8_t index,
 	const struct arm_mpu_region *region_conf)
 {
 	/* Attempt to allocate new region index. */
-	if (index > (get_num_regions() - 1)) {
+	if (index > (get_num_regions() - 1U)) {
 
 		/* No available MPU region index. */
 		LOG_ERR("Failed to allocate new MPU region %u\n", index);

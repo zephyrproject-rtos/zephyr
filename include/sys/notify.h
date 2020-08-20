@@ -47,7 +47,7 @@ struct sys_notify;
  */
 #define SYS_NOTIFY_METHOD_CALLBACK 3
 
-#define SYS_NOTIFY_METHOD_MASK 0x03
+#define SYS_NOTIFY_METHOD_MASK 0x03U
 #define SYS_NOTIFY_METHOD_POS 0
 
 /**

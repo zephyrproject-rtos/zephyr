@@ -49,7 +49,7 @@ extern "C" {
 /**
  * @brief Value exposed by ONOFF_STATE_MASK when service is off.
  */
-#define ONOFF_STATE_OFF 0
+#define ONOFF_STATE_OFF 0U
 
 /**
  * @brief Value exposed by ONOFF_STATE_MASK when service is on.
