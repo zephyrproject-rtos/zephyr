@@ -66,7 +66,7 @@ static void remove_timeout(struct _timeout *t)
 
 static int32_t elapsed(void)
 {
-	return announce_remaining == 0 ? z_clock_elapsed() : 0;
+	return announce_remaining == 0 ? z_clock_elapsed() : 0U;
 }
 
 static int32_t next_timeout(void)

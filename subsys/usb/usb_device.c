@@ -92,12 +92,12 @@ LOG_MODULE_REGISTER(usb_device);
 #define INTF_DESC_bAlternateSetting 3 /** Alternate setting offset */
 
 /* endpoint descriptor field offsets */
-#define ENDP_DESC_bEndpointAddress  2 /** Endpoint address offset */
-#define ENDP_DESC_bmAttributes      3 /** Bulk or interrupt? */
-#define ENDP_DESC_wMaxPacketSize    4 /** Maximum packet size offset */
+#define ENDP_DESC_bEndpointAddress  2U /** Endpoint address offset */
+#define ENDP_DESC_bmAttributes      3U /** Bulk or interrupt? */
+#define ENDP_DESC_wMaxPacketSize    4U /** Maximum packet size offset */
 
-#define MAX_NUM_REQ_HANDLERS        4
-#define MAX_STD_REQ_MSG_SIZE        8
+#define MAX_NUM_REQ_HANDLERS        4U
+#define MAX_STD_REQ_MSG_SIZE        8U
 
 /* Default USB control EP, always 0 and 0x80 */
 #define USB_CONTROL_OUT_EP0         0
@@ -415,7 +415,7 @@ static bool usb_get_descriptor(uint16_t type_index, uint16_t lang_id,
 	uint8_t type = 0U;
 	uint8_t index = 0U;
 	uint8_t *p = NULL;
-	int32_t cur_index = 0;
+	uint32_t cur_index = 0U;
 	bool found = false;
 
 	/*Avoid compiler warning until this is used for something*/
@@ -434,7 +434,7 @@ static bool usb_get_descriptor(uint16_t type_index, uint16_t lang_id,
 	}
 
 	p = (uint8_t *)usb_dev.descriptors;
-	cur_index = 0;
+	cur_index = 0U;
 
 	while (p[DESC_bLength] != 0U) {
 		if (p[DESC_bDescriptorType] == type) {

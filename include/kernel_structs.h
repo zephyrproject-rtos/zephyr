@@ -72,10 +72,10 @@
 #endif
 
 /* lowest value of _thread_base.preempt at which a thread is non-preemptible */
-#define _NON_PREEMPT_THRESHOLD 0x0080
+#define _NON_PREEMPT_THRESHOLD 0x0080U
 
 /* highest value of _thread_base.preempt at which a thread is preemptible */
-#define _PREEMPT_THRESHOLD (_NON_PREEMPT_THRESHOLD - 1)
+#define _PREEMPT_THRESHOLD (_NON_PREEMPT_THRESHOLD - 1U)
 
 #if !defined(_ASMLANGUAGE)
 

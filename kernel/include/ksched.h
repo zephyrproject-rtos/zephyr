@@ -126,7 +126,7 @@ static inline bool z_is_thread_timeout_active(struct k_thread *thread)
 
 static inline bool z_is_thread_ready(struct k_thread *thread)
 {
-	return !((z_is_thread_prevented_from_running(thread)) != 0 ||
+	return !((z_is_thread_prevented_from_running(thread)) != 0U ||
 		 z_is_thread_timeout_active(thread));
 }
 

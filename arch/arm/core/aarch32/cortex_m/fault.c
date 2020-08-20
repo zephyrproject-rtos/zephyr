@@ -175,8 +175,8 @@ static bool memory_fault_recoverable(z_arch_esf_t *esf)
 #ifdef CONFIG_USERSPACE
 	for (int i = 0; i < ARRAY_SIZE(exceptions); i++) {
 		/* Mask out instruction mode */
-		uint32_t start = (uint32_t)exceptions[i].start & ~0x1;
-		uint32_t end = (uint32_t)exceptions[i].end & ~0x1;
+		uint32_t start = (uint32_t)exceptions[i].start & ~0x1U;
+		uint32_t end = (uint32_t)exceptions[i].end & ~0x1U;
 
 		if (esf->basic.pc >= start && esf->basic.pc < end) {
 			esf->basic.pc = (uint32_t)(exceptions[i].fixup);

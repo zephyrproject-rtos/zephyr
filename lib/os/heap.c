@@ -51,7 +51,7 @@ static void free_list_add_bidx(struct z_heap *h, chunkid_t c, int bidx)
 {
 	struct z_heap_bucket *b = &h->buckets[bidx];
 
-	if (b->next == 0) {
+	if (b->next == 0U) {
 		CHECK((h->avail_buckets & (1 << bidx)) == 0);
 
 		/* Empty list, first item */
@@ -208,7 +208,7 @@ static chunkid_t alloc_chunk(struct z_heap *h, size_t sz)
 	 */
 	size_t bmask = h->avail_buckets & ~((1 << (bi + 1)) - 1);
 
-	if ((bmask & h->avail_buckets) != 0) {
+	if ((bmask & h->avail_buckets) != 0U) {
 		int minbucket = __builtin_ctz(bmask & h->avail_buckets);
 		chunkid_t c = h->buckets[minbucket].next;
 
@@ -222,14 +222,14 @@ static chunkid_t alloc_chunk(struct z_heap *h, size_t sz)
 
 void *sys_heap_alloc(struct sys_heap *heap, size_t bytes)
 {
-	if (bytes == 0) {
+	if (bytes == 0U) {
 		return NULL;
 	}
 
 	struct z_heap *h = heap->heap;
 	size_t chunk_sz = bytes_to_chunksz(h, bytes);
 	chunkid_t c = alloc_chunk(h, chunk_sz);
-	if (c == 0) {
+	if (c == 0U) {
 		return NULL;
 	}
 

@@ -97,13 +97,13 @@ static void prevent_false_prev_evt(void)
  */
 static void handle_next_tick_case(uint32_t t)
 {
-	set_comparator(t + 2);
+	set_comparator(t + 2U);
 	while (t != counter()) {
 		/* already expired, tick elapsed but event might not be
 		 * generated. Trigger interrupt.
 		 */
 		t = counter();
-		set_comparator(t + 2);
+		set_comparator(t + 2U);
 	}
 }
 
@@ -117,7 +117,7 @@ static void set_absolute_ticks(uint32_t abs_val)
 	uint32_t t = counter();
 
 	diff = counter_sub(abs_val, t);
-	if (diff == 1) {
+	if (diff == 1U) {
 		handle_next_tick_case(t);
 		return;
 	}

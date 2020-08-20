@@ -4912,7 +4912,7 @@ enum _poll_types_bits {
 	_POLL_NUM_TYPES
 };
 
-#define Z_POLL_TYPE_BIT(type) (1 << ((type) - 1))
+#define Z_POLL_TYPE_BIT(type) (1U << ((type) - 1U))
 
 /* private - states bit positions */
 enum _poll_states_bits {
@@ -4934,7 +4934,7 @@ enum _poll_states_bits {
 	_POLL_NUM_STATES
 };
 
-#define Z_POLL_STATE_BIT(state) (1 << ((state) - 1))
+#define Z_POLL_STATE_BIT(state) (1U << ((state) - 1U))
 
 #define _POLL_EVENT_NUM_UNUSED_BITS \
 	(32 - (0 \

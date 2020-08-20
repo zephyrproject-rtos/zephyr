@@ -64,7 +64,7 @@ static inline bool alloc_bit_is_set(struct sys_mem_pool_base *p,
 	uint32_t *word;
 	int bit = get_bit_ptr(p, level, bn, &word);
 
-	return (*word >> bit) & 1;
+	return (*word >> bit) & 1U;
 }
 #endif
 
@@ -76,7 +76,7 @@ static int partner_alloc_bits(struct sys_mem_pool_base *p, int level, int bn)
 	uint32_t *word;
 	int bit = get_bit_ptr(p, level, bn, &word);
 
-	return (*word >> (4*(bit / 4))) & 0xf;
+	return (*word >> (4*(bit / 4))) & 0xfU;
 }
 
 void z_sys_mem_pool_base_init(struct sys_mem_pool_base *p)

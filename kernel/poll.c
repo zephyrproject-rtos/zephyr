@@ -56,7 +56,7 @@ static inline bool is_condition_met(struct k_poll_event *event, uint32_t *state)
 {
 	switch (event->type) {
 	case K_POLL_TYPE_SEM_AVAILABLE:
-		if (k_sem_count_get(event->sem) > 0) {
+		if (k_sem_count_get(event->sem) > 0U) {
 			*state = K_POLL_STATE_SEM_AVAILABLE;
 			return true;
 		}
