@@ -1024,6 +1024,57 @@ static inline bool net_ipv6_is_addr_mcast_group(const struct in6_addr *addr,
 }
 
 /**
+ * @brief Check if the IPv6 address belongs to the all nodes multicast group
+ *
+ * @param addr IPv6 address
+ *
+ * @return True if the IPv6 multicast address belongs to the all nodes multicast
+ * group, false otherwise
+ */
+static inline bool
+net_ipv6_is_addr_mcast_all_nodes_group(const struct in6_addr *addr)
+{
+	static const struct in6_addr all_nodes_mcast_group = {
+		{ { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		    0x00, 0x00, 0x00, 0x00, 0x00, 0x01 } }
+	};
+
+	return net_ipv6_is_addr_mcast_group(addr, &all_nodes_mcast_group);
+}
+
+/**
+ * @brief Check if the IPv6 address is a interface scope all nodes multicast
+ * address (FF01::1).
+ *
+ * @param addr IPv6 address.
+ *
+ * @return True if the address is a interface scope all nodes multicast address,
+ * false otherwise.
+ */
+static inline bool
+net_ipv6_is_addr_mcast_iface_all_nodes(const struct in6_addr *addr)
+{
+	return net_ipv6_is_addr_mcast_iface(addr) &&
+	       net_ipv6_is_addr_mcast_all_nodes_group(addr);
+}
+
+/**
+ * @brief Check if the IPv6 address is a link local scope all nodes multicast
+ * address (FF02::1).
+ *
+ * @param addr IPv6 address.
+ *
+ * @return True if the address is a link local scope all nodes multicast
+ * address, false otherwise.
+ */
+static inline bool
+net_ipv6_is_addr_mcast_link_all_nodes(const struct in6_addr *addr)
+{
+	return net_ipv6_is_addr_mcast_link(addr) &&
+	       net_ipv6_is_addr_mcast_all_nodes_group(addr);
+}
+
+/**
  *  @brief Create solicited node IPv6 multicast address
  *  FF02:0:0:0:0:1:FFXX:XXXX defined in RFC 3513
  *

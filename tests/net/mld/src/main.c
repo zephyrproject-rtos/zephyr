@@ -387,6 +387,37 @@ static void send_query(struct net_if *iface)
 	zassert_false(ret, "Failed to receive data");
 }
 
+/* interface needs to join the MLDv2-capable routers multicast group before it
+ * can receive MLD queries
+ */
+static void join_mldv2_capable_routers_group(void)
+{
+	struct net_if *iface = net_if_get_default();
+	int ret;
+
+	net_ipv6_addr_create(&mcast_addr, 0xff02, 0, 0, 0, 0, 0, 0, 0x0016);
+	ret = net_ipv6_mld_join(iface, &mcast_addr);
+
+	zassert_true(ret == 0 || ret == -EALREADY,
+		     "Cannot join MLDv2-capable routers multicast group");
+
+	k_yield();
+}
+
+static void leave_mldv2_capable_routers_group(void)
+{
+	struct net_if *iface = net_if_get_default();
+	int ret;
+
+	net_ipv6_addr_create(&mcast_addr, 0xff02, 0, 0, 0, 0, 0, 0, 0x0016);
+	ret = net_ipv6_mld_leave(iface, &mcast_addr);
+
+	zassert_equal(ret, 0,
+		      "Cannot leave MLDv2-capable routers multicast group");
+
+	k_yield();
+}
+
 /* We are not really interested to parse the query at this point */
 static enum net_verdict handle_mld_query(struct net_pkt *pkt,
 					 struct net_ipv6_hdr *ip_hdr,
@@ -407,6 +438,8 @@ static struct net_icmpv6_handler mld_query_input_handler = {
 
 static void test_catch_query(void)
 {
+	join_mldv2_capable_routers_group();
+
 	is_query_received = false;
 
 	net_icmpv6_register_handler(&mld_query_input_handler);
@@ -426,6 +459,8 @@ static void test_catch_query(void)
 	is_query_received = false;
 
 	net_icmpv6_unregister_handler(&mld_query_input_handler);
+
+	leave_mldv2_capable_routers_group();
 }
 
 static void test_verify_send_report(void)
