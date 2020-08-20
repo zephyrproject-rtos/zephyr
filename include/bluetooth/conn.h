@@ -107,7 +107,7 @@ struct bt_conn_le_phy_param {
  */
 #define BT_CONN_LE_PHY_PARAM_INIT(_pref_tx_phy, _pref_rx_phy) \
 { \
-	.option = BT_CONN_LE_PHY_OPT_NONE, \
+	.options = BT_CONN_LE_PHY_OPT_NONE, \
 	.pref_tx_phy = (_pref_tx_phy), \
 	.pref_rx_phy = (_pref_rx_phy), \
 }
