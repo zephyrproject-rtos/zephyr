@@ -18,15 +18,6 @@
 #define I2C_READREG_RTC(block, reg_add)	\
 	esp32_rom_i2c_readReg(block, block##_HOSTID,  reg_add)
 
-
-# define XTHAL_GET_CCOUNT()     ({ int __ccount;					     \
-				   __asm__ __volatile__ ("rsr.ccount %0" : "=a" (__ccount)); \
-				   __ccount; })
-
-# define XTHAL_SET_CCOUNT(v)    do { int __ccount = (int)(v);						   \
-				     __asm__ __volatile__ ("wsr.ccount %0" : : "a" (__ccount) : "memory"); \
-				} while (0)
-
 /*
  * Get voltage level for CPU to run at 240 MHz, or for flash/PSRAM to run at 80 MHz.
  * 0x0: level 7; 0x1: level 6; 0x2: level 5; 0x3: level 4. (RO)

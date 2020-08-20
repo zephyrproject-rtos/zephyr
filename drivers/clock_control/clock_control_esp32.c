@@ -20,6 +20,7 @@
 #include <drivers/clock_control.h>
 #include <sys/util.h>
 #include "clock_control_esp32.h"
+#include "driver/periph_ctrl.h"
 
 struct esp32_clock_config {
 	uint32_t clk_src_sel;
@@ -176,6 +177,16 @@ static inline uint32_t clk_val_to_reg_val(uint32_t val)
 	return (val & UINT16_MAX) | ((val & UINT16_MAX) << 16);
 }
 
+int IRAM_ATTR esp_clk_cpu_freq(void)
+{
+	return MHZ(esp32_rom_g_ticks_per_us_pro);
+}
+
+int IRAM_ATTR esp_clk_apb_freq(void)
+{
+	return MHZ(MIN(esp32_rom_g_ticks_per_us_pro, 80));
+}
+
 void IRAM_ATTR ets_update_cpu_frequency(uint32_t ticks_per_us)
 {
 	/* Update scale factors used by ets_delay_us */
@@ -325,6 +336,9 @@ static int clock_control_esp32_init(const struct device *dev)
 	default:
 		return -EINVAL;
 	}
+
+	/* Enable RNG clock. */
+	periph_module_enable(PERIPH_RNG_MODULE);
 
 	/* Re-calculate the CCOUNT register value to make time calculation correct.
 	 * This should be updated on each frequency change
