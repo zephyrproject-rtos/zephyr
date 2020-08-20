@@ -210,7 +210,7 @@ extern "C" {
  *
  * @param spi_dev a SPI device node identifier
  * @return flags value of spi_dev's chip select GPIO specifier, or
- *         zero if there is one
+ *         zero if there is none
  */
 #define DT_SPI_DEV_CS_GPIOS_FLAGS(spi_dev) \
 	DT_GPIO_FLAGS_BY_IDX(DT_BUS(spi_dev), cs_gpios, DT_REG_ADDR(spi_dev))
