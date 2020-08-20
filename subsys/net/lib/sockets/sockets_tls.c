@@ -14,7 +14,6 @@ LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <init.h>
 #include <drivers/entropy.h>
 #include <sys/util.h>
-#include <net/net_context.h>
 #include <net/socket.h>
 #include <random/rand32.h>
 #include <syscall_handler.h>
@@ -39,8 +38,6 @@ LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include "sockets_internal.h"
 #include "tls_internal.h"
-
-extern const struct socket_op_vtable sock_fd_op_vtable;
 
 static const struct socket_op_vtable tls_sock_fd_op_vtable;
 
@@ -74,6 +71,12 @@ struct tls_context {
 	/** Information whether TLS context is used. */
 	bool is_used;
 
+	/** Underlying TCP/UDP socket. */
+	int sock;
+
+	/** Socket type. */
+	enum net_sock_type type;
+
 	/** Secure protocol version running on TLS context. */
 	enum net_ip_protocol_secure tls_version;
 
@@ -82,6 +85,9 @@ struct tls_context {
 
 	/** Information whether TLS context was initialized. */
 	bool is_initialized;
+
+	/** Information whether underlying socket is listening. */
+	bool is_listening;
 
 	/** Information whether TLS handshake is complete or not. */
 	struct k_sem tls_established;
@@ -147,9 +153,6 @@ static struct tls_context tls_contexts[CONFIG_NET_SOCKETS_TLS_MAX_CONTEXTS];
 
 /* A mutex for protecting TLS context allocation. */
 static struct k_mutex context_lock;
-
-#define IS_LISTENING(context) (net_context_get_state(context) == \
-			       NET_CONTEXT_LISTENING)
 
 #if defined(MBEDTLS_DEBUG_C) && (CONFIG_NET_SOCKETS_LOG_LEVEL >= LOG_LEVEL_DBG)
 static void tls_debug(void *ctx, int level, const char *file,
@@ -295,9 +298,9 @@ static int tls_init(struct device *unused)
 
 SYS_INIT(tls_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
-static inline bool is_handshake_complete(struct net_context *ctx)
+static inline bool is_handshake_complete(struct tls_context *ctx)
 {
-	return k_sem_count_get(&ctx->tls->tls_established) != 0;
+	return k_sem_count_get(&ctx->tls_established) != 0;
 }
 
 /* Allocate TLS context. */
@@ -314,6 +317,7 @@ static struct tls_context *tls_alloc(void)
 			(void)memset(tls, 0, sizeof(*tls));
 			tls->is_used = true;
 			tls->options.verify_level = -1;
+			tls->sock = -1;
 
 			NET_DBG("Allocated TLS context, %p", tls);
 			break;
@@ -357,6 +361,7 @@ static struct tls_context *tls_clone(struct tls_context *source_tls)
 	}
 
 	target_tls->tls_version = source_tls->tls_version;
+	target_tls->type = source_tls->type;
 
 	memcpy(&target_tls->options, &source_tls->options,
 	       sizeof(target_tls->options));
@@ -408,19 +413,19 @@ static inline int time_left(uint32_t start, uint32_t timeout)
 }
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
-static bool dtls_is_peer_addr_valid(struct net_context *context,
+static bool dtls_is_peer_addr_valid(struct tls_context *context,
 				    const struct sockaddr *peer_addr,
 				    socklen_t addrlen)
 {
-	if (context->tls->dtls_peer_addrlen != addrlen ||
-	    context->tls->dtls_peer_addr.sa_family != peer_addr->sa_family) {
+	if (context->dtls_peer_addrlen != addrlen ||
+	    context->dtls_peer_addr.sa_family != peer_addr->sa_family) {
 		return false;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && peer_addr->sa_family == AF_INET6) {
 		struct sockaddr_in6 *addr1 = net_sin6(peer_addr);
 		struct sockaddr_in6 *addr2 =
-				net_sin6(&context->tls->dtls_peer_addr);
+				net_sin6(&context->dtls_peer_addr);
 
 		return (addr1->sin6_port == addr2->sin6_port) &&
 			net_ipv6_addr_cmp(&addr1->sin6_addr, &addr2->sin6_addr);
@@ -428,7 +433,7 @@ static bool dtls_is_peer_addr_valid(struct net_context *context,
 		   peer_addr->sa_family == AF_INET) {
 		struct sockaddr_in *addr1 = net_sin(peer_addr);
 		struct sockaddr_in *addr2 =
-				net_sin(&context->tls->dtls_peer_addr);
+				net_sin(&context->dtls_peer_addr);
 
 		return (addr1->sin_port == addr2->sin_port) &&
 			net_ipv4_addr_cmp(&addr1->sin_addr, &addr2->sin_addr);
@@ -437,34 +442,34 @@ static bool dtls_is_peer_addr_valid(struct net_context *context,
 	return false;
 }
 
-static void dtls_peer_address_set(struct net_context *context,
+static void dtls_peer_address_set(struct tls_context *context,
 				  const struct sockaddr *peer_addr,
 				  socklen_t addrlen)
 {
-	if (addrlen <= sizeof(context->tls->dtls_peer_addr)) {
-		memcpy(&context->tls->dtls_peer_addr, peer_addr, addrlen);
-		context->tls->dtls_peer_addrlen = addrlen;
+	if (addrlen <= sizeof(context->dtls_peer_addr)) {
+		memcpy(&context->dtls_peer_addr, peer_addr, addrlen);
+		context->dtls_peer_addrlen = addrlen;
 	}
 }
 
-static void dtls_peer_address_get(struct net_context *context,
+static void dtls_peer_address_get(struct tls_context *context,
 				  struct sockaddr *peer_addr,
 				  socklen_t *addrlen)
 {
-	socklen_t len = MIN(context->tls->dtls_peer_addrlen, *addrlen);
+	socklen_t len = MIN(context->dtls_peer_addrlen, *addrlen);
 
-	memcpy(peer_addr, &context->tls->dtls_peer_addr, len);
+	memcpy(peer_addr, &context->dtls_peer_addr, len);
 	*addrlen = len;
 }
 
 static int dtls_tx(void *ctx, const unsigned char *buf, size_t len)
 {
-	struct net_context *net_ctx = ctx;
+	struct tls_context *tls_ctx = ctx;
 	ssize_t sent;
 
-	sent = sock_fd_op_vtable.sendto(net_ctx, buf, len, net_ctx->tls->flags,
-					&net_ctx->tls->dtls_peer_addr,
-					net_ctx->tls->dtls_peer_addrlen);
+	sent = zsock_sendto(tls_ctx->sock, buf, len, tls_ctx->flags,
+			    &tls_ctx->dtls_peer_addr,
+			    tls_ctx->dtls_peer_addrlen);
 	if (sent < 0) {
 		if (errno == EAGAIN) {
 			return MBEDTLS_ERR_SSL_WANT_WRITE;
@@ -479,18 +484,18 @@ static int dtls_tx(void *ctx, const unsigned char *buf, size_t len)
 static int dtls_rx(void *ctx, unsigned char *buf, size_t len,
 		   uint32_t dtls_timeout)
 {
-	struct net_context *net_ctx = ctx;
-	bool is_block = !((net_ctx->tls->flags & ZSOCK_MSG_DONTWAIT) ||
-			  sock_is_nonblock(net_ctx));
-	k_timeout_t timeout = (dtls_timeout == 0U) ? K_FOREVER :
-						     K_MSEC(dtls_timeout);
-	uint64_t end = z_timeout_end_calc(timeout);
+	struct tls_context *tls_ctx = ctx;
+	bool is_block = !((tls_ctx->flags & ZSOCK_MSG_DONTWAIT) ||
+			  (zsock_fcntl(tls_ctx->sock, F_GETFL, 0) &
+			   O_NONBLOCK));
+	int timeout = (dtls_timeout == 0U) ? -1 : timeout;
+	uint32_t entry_time = k_uptime_get_32();
 	socklen_t addrlen = sizeof(struct sockaddr);
 	struct sockaddr addr;
 	int err;
 	ssize_t received;
 	bool retry;
-	struct k_poll_event pev;
+	struct zsock_pollfd fds;
 
 	do {
 		retry = false;
@@ -499,18 +504,16 @@ static int dtls_rx(void *ctx, unsigned char *buf, size_t len,
 		 * k_poll for timeout functionality.
 		 */
 		if (is_block) {
-			pev.obj = &net_ctx->recv_q;
-			pev.type = K_POLL_TYPE_FIFO_DATA_AVAILABLE;
-			pev.mode = K_POLL_MODE_NOTIFY_ONLY;
-			pev.state = K_POLL_STATE_NOT_READY;
+			fds.fd = tls_ctx->sock;
+			fds.events = ZSOCK_POLLIN;
 
-			if (k_poll(&pev, 1, timeout) == -EAGAIN) {
+			if (zsock_poll(&fds, 1, timeout) == 0) {
 				return MBEDTLS_ERR_SSL_TIMEOUT;
 			}
 		}
 
-		received = sock_fd_op_vtable.recvfrom(
-				net_ctx, buf, len, net_ctx->tls->flags,
+		received = zsock_recvfrom(
+				tls_ctx->sock, buf, len, tls_ctx->flags,
 				&addr, &addrlen);
 		if (received < 0) {
 			if (errno == EAGAIN) {
@@ -520,14 +523,13 @@ static int dtls_rx(void *ctx, unsigned char *buf, size_t len,
 			return MBEDTLS_ERR_NET_RECV_FAILED;
 		}
 
-		if (net_ctx->tls->dtls_peer_addrlen == 0) {
+		if (tls_ctx->dtls_peer_addrlen == 0) {
 			/* Only allow to store peer address for DTLS servers. */
-			if (net_ctx->tls->options.role
-					== MBEDTLS_SSL_IS_SERVER) {
-				dtls_peer_address_set(net_ctx, &addr, addrlen);
+			if (tls_ctx->options.role == MBEDTLS_SSL_IS_SERVER) {
+				dtls_peer_address_set(tls_ctx, &addr, addrlen);
 
 				err = mbedtls_ssl_set_client_transport_id(
-					&net_ctx->tls->ssl,
+					&tls_ctx->ssl,
 					(const unsigned char *)&addr, addrlen);
 				if (err < 0) {
 					return err;
@@ -538,19 +540,17 @@ static int dtls_rx(void *ctx, unsigned char *buf, size_t len,
 				 */
 				return MBEDTLS_ERR_SSL_PEER_VERIFY_FAILED;
 			}
-		} else if (!dtls_is_peer_addr_valid(net_ctx, &addr, addrlen)) {
+		} else if (!dtls_is_peer_addr_valid(tls_ctx, &addr, addrlen)) {
 			/* Received data from different peer, ignore it. */
 			retry = true;
 
-			if (!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
+			if (timeout != -1) {
 				/* Recalculate the timeout value. */
-				int64_t remaining = end - z_tick_get();
+				timeout = time_left(entry_time, dtls_timeout);
 
-				if (remaining <= 0) {
+				if (timeout <= 0) {
 					return MBEDTLS_ERR_SSL_TIMEOUT;
 				}
-
-				timeout = Z_TIMEOUT_TICKS(remaining);
 			}
 		}
 	} while (retry);
@@ -561,11 +561,11 @@ static int dtls_rx(void *ctx, unsigned char *buf, size_t len,
 
 static int tls_tx(void *ctx, const unsigned char *buf, size_t len)
 {
-	struct net_context *net_ctx = ctx;
+	struct tls_context *tls_ctx = ctx;
 	ssize_t sent;
 
-	sent = sock_fd_op_vtable.sendto(ctx, buf, len,
-					net_ctx->tls->flags, NULL, 0);
+	sent = zsock_sendto(tls_ctx->sock, buf, len,
+			    tls_ctx->flags, NULL, 0);
 	if (sent < 0) {
 		if (errno == EAGAIN) {
 			return MBEDTLS_ERR_SSL_WANT_WRITE;
@@ -579,11 +579,11 @@ static int tls_tx(void *ctx, const unsigned char *buf, size_t len)
 
 static int tls_rx(void *ctx, unsigned char *buf, size_t len)
 {
-	struct net_context *net_ctx = ctx;
+	struct tls_context *tls_ctx = ctx;
 	ssize_t received;
 
-	received = sock_fd_op_vtable.recvfrom(ctx, buf, len,
-					      net_ctx->tls->flags, NULL, 0);
+	received = zsock_recvfrom(tls_ctx->sock, buf, len,
+				  tls_ctx->flags, NULL, 0);
 	if (received < 0) {
 		if (errno == EAGAIN) {
 			return MBEDTLS_ERR_SSL_WANT_READ;
@@ -759,31 +759,31 @@ exit:
 	return err;
 }
 
-static int tls_mbedtls_reset(struct net_context *context)
+static int tls_mbedtls_reset(struct tls_context *context)
 {
 	int ret;
 
-	ret = mbedtls_ssl_session_reset(&context->tls->ssl);
+	ret = mbedtls_ssl_session_reset(&context->ssl);
 	if (ret != 0) {
 		return ret;
 	}
 
-	k_sem_init(&context->tls->tls_established, 0, 1);
+	k_sem_init(&context->tls_established, 0, 1);
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
-	(void)memset(&context->tls->dtls_peer_addr, 0,
-		     sizeof(context->tls->dtls_peer_addr));
-	context->tls->dtls_peer_addrlen = 0;
+	(void)memset(&context->dtls_peer_addr, 0,
+		     sizeof(context->dtls_peer_addr));
+	context->dtls_peer_addrlen = 0;
 #endif
 
 	return 0;
 }
 
-static int tls_mbedtls_handshake(struct net_context *context, bool block)
+static int tls_mbedtls_handshake(struct tls_context *context, bool block)
 {
 	int ret;
 
-	while ((ret = mbedtls_ssl_handshake(&context->tls->ssl)) != 0) {
+	while ((ret = mbedtls_ssl_handshake(&context->ssl)) != 0) {
 		if (ret == MBEDTLS_ERR_SSL_WANT_READ ||
 		    ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
 			if (block) {
@@ -810,35 +810,35 @@ static int tls_mbedtls_handshake(struct net_context *context, bool block)
 	}
 
 	if (ret == 0) {
-		k_sem_give(&context->tls->tls_established);
+		k_sem_give(&context->tls_established);
 	}
 
 	return ret;
 }
 
-static int tls_mbedtls_init(struct net_context *context, bool is_server)
+static int tls_mbedtls_init(struct tls_context *context, bool is_server)
 {
 	int role, type, ret;
 
 	role = is_server ? MBEDTLS_SSL_IS_SERVER : MBEDTLS_SSL_IS_CLIENT;
 
-	type = (net_context_get_type(context) == SOCK_STREAM) ?
+	type = (context->type == SOCK_STREAM) ?
 		MBEDTLS_SSL_TRANSPORT_STREAM :
 		MBEDTLS_SSL_TRANSPORT_DATAGRAM;
 
 	if (type == MBEDTLS_SSL_TRANSPORT_STREAM) {
-		mbedtls_ssl_set_bio(&context->tls->ssl, context,
+		mbedtls_ssl_set_bio(&context->ssl, context,
 				    tls_tx, tls_rx, NULL);
 	} else {
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
-		mbedtls_ssl_set_bio(&context->tls->ssl, context,
+		mbedtls_ssl_set_bio(&context->ssl, context,
 				    dtls_tx, NULL, dtls_rx);
 #else
 		return -ENOTSUP;
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 	}
 
-	ret = mbedtls_ssl_config_defaults(&context->tls->config, role, type,
+	ret = mbedtls_ssl_config_defaults(&context->config, role, type,
 					  MBEDTLS_SSL_PRESET_DEFAULT);
 	if (ret != 0) {
 		/* According to mbedTLS API documentation,
@@ -849,36 +849,36 @@ static int tls_mbedtls_init(struct net_context *context, bool is_server)
 	}
 
 #if defined(MBEDTLS_SSL_RENEGOTIATION)
-	mbedtls_ssl_conf_legacy_renegotiation(&context->tls->config,
+	mbedtls_ssl_conf_legacy_renegotiation(&context->config,
 					   MBEDTLS_SSL_LEGACY_BREAK_HANDSHAKE);
-	mbedtls_ssl_conf_renegotiation(&context->tls->config,
+	mbedtls_ssl_conf_renegotiation(&context->config,
 				       MBEDTLS_SSL_RENEGOTIATION_ENABLED);
 #endif
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 	if (type == MBEDTLS_SSL_TRANSPORT_DATAGRAM) {
 		/* DTLS requires timer callbacks to operate */
-		mbedtls_ssl_set_timer_cb(&context->tls->ssl,
-					 &context->tls->dtls_timing,
+		mbedtls_ssl_set_timer_cb(&context->ssl,
+					 &context->dtls_timing,
 					 dtls_timing_set_delay,
 					 dtls_timing_get_delay);
 
 		/* Configure cookie for DTLS server */
 		if (role == MBEDTLS_SSL_IS_SERVER) {
-			ret = mbedtls_ssl_cookie_setup(&context->tls->cookie,
+			ret = mbedtls_ssl_cookie_setup(&context->cookie,
 						       mbedtls_ctr_drbg_random,
 						       &tls_ctr_drbg);
 			if (ret != 0) {
 				return -ENOMEM;
 			}
 
-			mbedtls_ssl_conf_dtls_cookies(&context->tls->config,
+			mbedtls_ssl_conf_dtls_cookies(&context->config,
 						      mbedtls_ssl_cookie_write,
 						      mbedtls_ssl_cookie_check,
-						      &context->tls->cookie);
+						      &context->cookie);
 
 			mbedtls_ssl_conf_read_timeout(
-					&context->tls->config,
+					&context->config,
 					CONFIG_NET_SOCKETS_DTLS_TIMEOUT);
 		}
 	}
@@ -889,30 +889,30 @@ static int tls_mbedtls_init(struct net_context *context, bool is_server)
 	 * verification - only if hostname option was not set. Otherwise
 	 * depend on user configuration.
 	 */
-	if (!is_server && !context->tls->options.is_hostname_set) {
-		mbedtls_ssl_set_hostname(&context->tls->ssl, "");
+	if (!is_server && !context->options.is_hostname_set) {
+		mbedtls_ssl_set_hostname(&context->ssl, "");
 	}
 #endif
 
 	/* If verification level was specified explicitly, set it. Otherwise,
 	 * use mbedTLS default values (required for client, none for server)
 	 */
-	if (context->tls->options.verify_level != -1) {
-		mbedtls_ssl_conf_authmode(&context->tls->config,
-					  context->tls->options.verify_level);
+	if (context->options.verify_level != -1) {
+		mbedtls_ssl_conf_authmode(&context->config,
+					  context->options.verify_level);
 	}
 
-	mbedtls_ssl_conf_rng(&context->tls->config,
+	mbedtls_ssl_conf_rng(&context->config,
 			     mbedtls_ctr_drbg_random,
 			     &tls_ctr_drbg);
 
-	ret = tls_mbedtls_set_credentials(context->tls);
+	ret = tls_mbedtls_set_credentials(context);
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = mbedtls_ssl_setup(&context->tls->ssl,
-				&context->tls->config);
+	ret = mbedtls_ssl_setup(&context->ssl,
+				&context->config);
 	if (ret != 0) {
 		/* According to mbedTLS API documentation,
 		 * mbedtls_ssl_setup can fail due to memory allocation failure
@@ -920,12 +920,12 @@ static int tls_mbedtls_init(struct net_context *context, bool is_server)
 		return -ENOMEM;
 	}
 
-	context->tls->is_initialized = true;
+	context->is_initialized = true;
 
 	return 0;
 }
 
-static int tls_opt_sec_tag_list_set(struct net_context *context,
+static int tls_opt_sec_tag_list_set(struct tls_context *context,
 				    const void *optval, socklen_t optlen)
 {
 	int sec_tag_cnt;
@@ -940,17 +940,17 @@ static int tls_opt_sec_tag_list_set(struct net_context *context,
 
 	sec_tag_cnt = optlen / sizeof(sec_tag_t);
 	if (sec_tag_cnt >
-		ARRAY_SIZE(context->tls->options.sec_tag_list.sec_tags)) {
+		ARRAY_SIZE(context->options.sec_tag_list.sec_tags)) {
 		return -EINVAL;
 	}
 
-	memcpy(context->tls->options.sec_tag_list.sec_tags, optval, optlen);
-	context->tls->options.sec_tag_list.sec_tag_count = sec_tag_cnt;
+	memcpy(context->options.sec_tag_list.sec_tags, optval, optlen);
+	context->options.sec_tag_list.sec_tag_count = sec_tag_cnt;
 
 	return 0;
 }
 
-static int tls_opt_sec_tag_list_get(struct net_context *context,
+static int tls_opt_sec_tag_list_get(struct tls_context *context,
 				    void *optval, socklen_t *optlen)
 {
 	int len;
@@ -959,34 +959,34 @@ static int tls_opt_sec_tag_list_get(struct net_context *context,
 		return -EINVAL;
 	}
 
-	len = MIN(context->tls->options.sec_tag_list.sec_tag_count *
+	len = MIN(context->options.sec_tag_list.sec_tag_count *
 		  sizeof(sec_tag_t), *optlen);
 
-	memcpy(optval, context->tls->options.sec_tag_list.sec_tags, len);
+	memcpy(optval, context->options.sec_tag_list.sec_tags, len);
 	*optlen = len;
 
 	return 0;
 }
 
-static int tls_opt_hostname_set(struct net_context *context,
+static int tls_opt_hostname_set(struct tls_context *context,
 				const void *optval, socklen_t optlen)
 {
 	ARG_UNUSED(optlen);
 
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
-	if (mbedtls_ssl_set_hostname(&context->tls->ssl, optval) != 0) {
+	if (mbedtls_ssl_set_hostname(&context->ssl, optval) != 0) {
 		return -EINVAL;
 	}
 #else
 	return -ENOPROTOOPT;
 #endif
 
-	context->tls->options.is_hostname_set = true;
+	context->options.is_hostname_set = true;
 
 	return 0;
 }
 
-static int tls_opt_ciphersuite_list_set(struct net_context *context,
+static int tls_opt_ciphersuite_list_set(struct tls_context *context,
 					const void *optval, socklen_t optlen)
 {
 	int cipher_cnt;
@@ -1002,17 +1002,17 @@ static int tls_opt_ciphersuite_list_set(struct net_context *context,
 	cipher_cnt = optlen / sizeof(int);
 
 	/* + 1 for 0-termination. */
-	if (cipher_cnt + 1 > ARRAY_SIZE(context->tls->options.ciphersuites)) {
+	if (cipher_cnt + 1 > ARRAY_SIZE(context->options.ciphersuites)) {
 		return -EINVAL;
 	}
 
-	memcpy(context->tls->options.ciphersuites, optval, optlen);
-	context->tls->options.ciphersuites[cipher_cnt] = 0;
+	memcpy(context->options.ciphersuites, optval, optlen);
+	context->options.ciphersuites[cipher_cnt] = 0;
 
 	return 0;
 }
 
-static int tls_opt_ciphersuite_list_get(struct net_context *context,
+static int tls_opt_ciphersuite_list_get(struct tls_context *context,
 					void *optval, socklen_t *optlen)
 {
 	const int *selected_ciphers;
@@ -1023,11 +1023,11 @@ static int tls_opt_ciphersuite_list_get(struct net_context *context,
 		return -EINVAL;
 	}
 
-	if (context->tls->options.ciphersuites[0] == 0) {
+	if (context->options.ciphersuites[0] == 0) {
 		/* No specific ciphersuites configured, return all available. */
 		selected_ciphers = mbedtls_ssl_list_ciphersuites();
 	} else {
-		selected_ciphers = context->tls->options.ciphersuites;
+		selected_ciphers = context->options.ciphersuites;
 	}
 
 	cipher_cnt = *optlen / sizeof(int);
@@ -1044,7 +1044,7 @@ static int tls_opt_ciphersuite_list_get(struct net_context *context,
 	return 0;
 }
 
-static int tls_opt_ciphersuite_used_get(struct net_context *context,
+static int tls_opt_ciphersuite_used_get(struct tls_context *context,
 					void *optval, socklen_t *optlen)
 {
 	const char *ciph;
@@ -1053,7 +1053,7 @@ static int tls_opt_ciphersuite_used_get(struct net_context *context,
 		return -EINVAL;
 	}
 
-	ciph = mbedtls_ssl_get_ciphersuite(&context->tls->ssl);
+	ciph = mbedtls_ssl_get_ciphersuite(&context->ssl);
 	if (ciph == NULL) {
 		return -ENOTCONN;
 	}
@@ -1063,7 +1063,7 @@ static int tls_opt_ciphersuite_used_get(struct net_context *context,
 	return 0;
 }
 
-static int tls_opt_peer_verify_set(struct net_context *context,
+static int tls_opt_peer_verify_set(struct tls_context *context,
 				   const void *optval, socklen_t optlen)
 {
 	int *peer_verify;
@@ -1084,12 +1084,12 @@ static int tls_opt_peer_verify_set(struct net_context *context,
 		return -EINVAL;
 	}
 
-	context->tls->options.verify_level = *peer_verify;
+	context->options.verify_level = *peer_verify;
 
 	return 0;
 }
 
-static int tls_opt_dtls_role_set(struct net_context *context,
+static int tls_opt_dtls_role_set(struct tls_context *context,
 				 const void *optval, socklen_t optlen)
 {
 	int *role;
@@ -1108,7 +1108,7 @@ static int tls_opt_dtls_role_set(struct net_context *context,
 		return -EINVAL;
 	}
 
-	context->tls->options.role = *role;
+	context->options.role = *role;
 
 	return 0;
 }
@@ -1146,8 +1146,9 @@ static int ztls_socket(int family, int type, int proto)
 {
 	enum net_ip_protocol_secure tls_proto = proto;
 	int fd = z_reserve_fd();
+	int sock = -1;
 	int ret;
-	struct net_context *ctx;
+	struct tls_context *ctx;
 
 	if (fd < 0) {
 		return -1;
@@ -1159,55 +1160,43 @@ static int ztls_socket(int family, int type, int proto)
 		return -1;
 	}
 
-	ret = net_context_get(family, type, proto, &ctx);
-	if (ret < 0) {
-		z_free_fd(fd);
-		errno = -ret;
-		return -1;
-	}
-
-	/* Initialize user_data, all other calls will preserve it */
-	ctx->user_data = NULL;
-
-	/* recv_q and accept_q are in union */
-	k_fifo_init(&ctx->recv_q);
-
-	ctx->tls = tls_alloc();
-	if (ctx->tls == NULL) {
-		z_free_fd(fd);
-		(void)net_context_put(ctx);
+	ctx = tls_alloc();
+	if (ctx == NULL) {
 		errno = ENOMEM;
-		return -1;
+		goto error;
 	}
 
-	ctx->tls->tls_version = tls_proto;
-
-	if (proto == IPPROTO_TCP) {
-		net_context_ref(ctx);
+	sock = zsock_socket(family, type, proto);
+	if (sock < 0) {
+		goto error;
 	}
+
+	ctx->tls_version = tls_proto;
+	ctx->type = (proto == IPPROTO_TCP) ? SOCK_STREAM : SOCK_DGRAM;
+	ctx->sock = sock;
 
 	z_finalize_fd(
 		fd, ctx, (const struct fd_op_vtable *)&tls_sock_fd_op_vtable);
 
 	return fd;
+
+error:
+	z_free_fd(fd);
+
+	return -1;
 }
 
-int ztls_close_ctx(struct net_context *ctx)
+int ztls_close_ctx(struct tls_context *ctx)
 {
 	int ret, err = 0;
 
+	/* Try to send close notification. */
+	ctx->flags = 0;
 
-	if (ctx->tls != NULL) {
-		/* Try to send close notification. */
-		ctx->tls->flags = 0;
-		(void)mbedtls_ssl_close_notify(&ctx->tls->ssl);
+	(void)mbedtls_ssl_close_notify(&ctx->ssl);
 
-		err = tls_release(ctx->tls);
-	} else {
-		err = -EBADF;
-	}
-
-	ret = sock_fd_op_vtable.fd_vtable.close(ctx);
+	err = tls_release(ctx);
+	ret = zsock_close(ctx->sock);
 
 	/* In case close fails, we propagate errno value set by close.
 	 * In case close succeeds, but tls_release fails, set errno
@@ -1221,22 +1210,17 @@ int ztls_close_ctx(struct net_context *ctx)
 	return ret;
 }
 
-int ztls_connect_ctx(struct net_context *ctx, const struct sockaddr *addr,
+int ztls_connect_ctx(struct tls_context *ctx, const struct sockaddr *addr,
 		     socklen_t addrlen)
 {
 	int ret;
 
-	if (ctx->tls == NULL) {
-		errno = EBADF;
-		return -1;
-	}
-
-	ret = sock_fd_op_vtable.connect(ctx, addr, addrlen);
+	ret = zsock_connect(ctx->sock, addr, addrlen);
 	if (ret < 0) {
 		return ret;
 	}
 
-	if (net_context_get_type(ctx) == SOCK_STREAM) {
+	if (ctx->type == SOCK_STREAM) {
 		/* Do the handshake for TLS, not DTLS. */
 		ret = tls_mbedtls_init(ctx, false);
 		if (ret < 0) {
@@ -1244,7 +1228,7 @@ int ztls_connect_ctx(struct net_context *ctx, const struct sockaddr *addr,
 		}
 
 		/* Do not use any socket flags during the handshake. */
-		ctx->tls->flags = 0;
+		ctx->flags = 0;
 
 		/* TODO For simplicity, TLS handshake blocks the socket
 		 * even for non-blocking socket.
@@ -1270,60 +1254,33 @@ error:
 	return -1;
 }
 
-int ztls_accept_ctx(struct net_context *parent, struct sockaddr *addr,
+int ztls_accept_ctx(struct tls_context *parent, struct sockaddr *addr,
 		    socklen_t *addrlen)
 {
-	int ret, err, fd;
-	struct net_context *child;
-
-	if (parent->tls == NULL) {
-		errno = EBADF;
-		return -1;
-	}
+	struct tls_context *child = NULL;
+	int ret, err, fd, sock;
 
 	fd = z_reserve_fd();
 	if (fd < 0) {
 		return -1;
 	}
 
-	child = k_fifo_get(&parent->accept_q, K_FOREVER);
+	sock = zsock_accept(parent->sock, addr, addrlen);
+	if (sock < 0) {
+		ret = -errno;
+		goto error;
+	}
+
+	child = tls_clone(parent);
 	if (child == NULL) {
-		z_free_fd(fd);
-		/* Return EINVAL which is the same error code used under Linux
-		 * when calling shutdown on a blocked accept call
-		 */
-		errno = EINVAL;
-		return -1;
+		ret = -ENOMEM;
+		goto error;
 	}
-
-	if (addr != NULL && addrlen != NULL) {
-		int len = MIN(*addrlen, sizeof(child->remote));
-
-		memcpy(addr, &child->remote, len);
-		/* addrlen is a value-result argument, set to actual
-		 * size of source address
-		 */
-		if (child->remote.sa_family == AF_INET) {
-			*addrlen = sizeof(struct sockaddr_in);
-		} else if (child->remote.sa_family == AF_INET6) {
-			*addrlen = sizeof(struct sockaddr_in6);
-		} else {
-			ret = -ENOTSUP;
-			goto error;
-		}
-	}
-
-	net_context_set_accepting(child, false);
-	net_context_ref(child);
 
 	z_finalize_fd(
 		fd, child, (const struct fd_op_vtable *)&tls_sock_fd_op_vtable);
 
-	child->tls = tls_clone(parent->tls);
-	if (!child->tls) {
-		ret = -ENOMEM;
-		goto error;
-	}
+	child->sock = sock;
 
 	ret = tls_mbedtls_init(child, true);
 	if (ret < 0) {
@@ -1331,7 +1288,7 @@ int ztls_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 	}
 
 	/* Do not use any socket flags during the handshake. */
-	child->tls->flags = 0;
+	child->flags = 0;
 
 	/* TODO For simplicity, TLS handshake blocks the socket even for
 	 * non-blocking socket.
@@ -1344,13 +1301,15 @@ int ztls_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 	return fd;
 
 error:
-	if (child->tls != NULL) {
-		err = tls_release(child->tls);
+	if (child != NULL) {
+		err = tls_release(child);
 		__ASSERT(err == 0, "TLS context release failed");
 	}
 
-	err = sock_fd_op_vtable.fd_vtable.close(child);
-	__ASSERT(err == 0, "Child socket close failed");
+	if (sock >= 0) {
+		err = zsock_close(sock);
+		__ASSERT(err == 0, "Child socket close failed");
+	}
 
 	z_free_fd(fd);
 
@@ -1358,12 +1317,12 @@ error:
 	return -1;
 }
 
-static ssize_t send_tls(struct net_context *ctx, const void *buf,
+static ssize_t send_tls(struct tls_context *ctx, const void *buf,
 			size_t len, int flags)
 {
 	int ret;
 
-	ret = mbedtls_ssl_write(&ctx->tls->ssl, buf, len);
+	ret = mbedtls_ssl_write(&ctx->ssl, buf, len);
 	if (ret >= 0) {
 		return ret;
 	}
@@ -1379,7 +1338,7 @@ static ssize_t send_tls(struct net_context *ctx, const void *buf,
 }
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
-static ssize_t sendto_dtls_client(struct net_context *ctx, const void *buf,
+static ssize_t sendto_dtls_client(struct tls_context *ctx, const void *buf,
 				  size_t len, int flags,
 				  const struct sockaddr *dest_addr,
 				  socklen_t addrlen)
@@ -1390,11 +1349,11 @@ static ssize_t sendto_dtls_client(struct net_context *ctx, const void *buf,
 		/* No address provided, check if we have stored one,
 		 * otherwise return error.
 		 */
-		if (ctx->tls->dtls_peer_addrlen == 0) {
+		if (ctx->dtls_peer_addrlen == 0) {
 			ret = -EDESTADDRREQ;
 			goto error;
 		}
-	} else if (ctx->tls->dtls_peer_addrlen == 0) {
+	} else if (ctx->dtls_peer_addrlen == 0) {
 		/* Address provided and no peer address stored. */
 		dtls_peer_address_set(ctx, dest_addr, addrlen);
 	} else if (!dtls_is_peer_addr_valid(ctx, dest_addr, addrlen) != 0) {
@@ -1403,7 +1362,7 @@ static ssize_t sendto_dtls_client(struct net_context *ctx, const void *buf,
 		goto error;
 	}
 
-	if (!ctx->tls->is_initialized) {
+	if (!ctx->is_initialized) {
 		ret = tls_mbedtls_init(ctx, false);
 		if (ret < 0) {
 			goto error;
@@ -1427,7 +1386,7 @@ error:
 	return -1;
 }
 
-static ssize_t sendto_dtls_server(struct net_context *ctx, const void *buf,
+static ssize_t sendto_dtls_server(struct tls_context *ctx, const void *buf,
 				  size_t len, int flags,
 				  const struct sockaddr *dest_addr,
 				  socklen_t addrlen)
@@ -1451,25 +1410,20 @@ static ssize_t sendto_dtls_server(struct net_context *ctx, const void *buf,
 }
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
-ssize_t ztls_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
+ssize_t ztls_sendto_ctx(struct tls_context *ctx, const void *buf, size_t len,
 			int flags, const struct sockaddr *dest_addr,
 			socklen_t addrlen)
 {
-	if (ctx->tls == NULL) {
-		errno = EBADF;
-		return -1;
-	}
-
-	ctx->tls->flags = flags;
+	ctx->flags = flags;
 
 	/* TLS */
-	if (net_context_get_type(ctx) == SOCK_STREAM) {
+	if (ctx->type == SOCK_STREAM) {
 		return send_tls(ctx, buf, len, flags);
 	}
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 	/* DTLS */
-	if (ctx->tls->options.role == MBEDTLS_SSL_IS_SERVER) {
+	if (ctx->options.role == MBEDTLS_SSL_IS_SERVER) {
 		return sendto_dtls_server(ctx, buf, len, flags,
 					  dest_addr, addrlen);
 	}
@@ -1481,7 +1435,7 @@ ssize_t ztls_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 }
 
-ssize_t ztls_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
+ssize_t ztls_sendmsg_ctx(struct tls_context *ctx, const struct msghdr *msg,
 			 int flags)
 {
 	ssize_t len;
@@ -1504,12 +1458,12 @@ ssize_t ztls_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
 	return len;
 }
 
-static ssize_t recv_tls(struct net_context *ctx, void *buf,
+static ssize_t recv_tls(struct tls_context *ctx, void *buf,
 			size_t max_len, int flags)
 {
 	int ret;
 
-	ret = mbedtls_ssl_read(&ctx->tls->ssl, buf, max_len);
+	ret = mbedtls_ssl_read(&ctx->ssl, buf, max_len);
 	if (ret >= 0) {
 		return ret;
 	}
@@ -1538,7 +1492,7 @@ static ssize_t recv_tls(struct net_context *ctx, void *buf,
 }
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
-static ssize_t recvfrom_dtls_client(struct net_context *ctx, void *buf,
+static ssize_t recvfrom_dtls_client(struct tls_context *ctx, void *buf,
 				    size_t max_len, int flags,
 				    struct sockaddr *src_addr,
 				    socklen_t *addrlen)
@@ -1550,7 +1504,7 @@ static ssize_t recvfrom_dtls_client(struct net_context *ctx, void *buf,
 		goto error;
 	}
 
-	ret = mbedtls_ssl_read(&ctx->tls->ssl, buf, max_len);
+	ret = mbedtls_ssl_read(&ctx->ssl, buf, max_len);
 	if (ret >= 0) {
 		if (src_addr && addrlen) {
 			dtls_peer_address_get(ctx, src_addr, addrlen);
@@ -1564,7 +1518,7 @@ static ssize_t recvfrom_dtls_client(struct net_context *ctx, void *buf,
 		return 0;
 
 	case MBEDTLS_ERR_SSL_TIMEOUT:
-		(void)mbedtls_ssl_close_notify(&ctx->tls->ssl);
+		(void)mbedtls_ssl_close_notify(&ctx->ssl);
 		ret = -ETIMEDOUT;
 		break;
 
@@ -1583,7 +1537,7 @@ error:
 	return -1;
 }
 
-static ssize_t recvfrom_dtls_server(struct net_context *ctx, void *buf,
+static ssize_t recvfrom_dtls_server(struct tls_context *ctx, void *buf,
 				    size_t max_len, int flags,
 				    struct sockaddr *src_addr,
 				    socklen_t *addrlen)
@@ -1591,9 +1545,9 @@ static ssize_t recvfrom_dtls_server(struct net_context *ctx, void *buf,
 	int ret;
 	bool repeat;
 	bool is_block = !((flags & ZSOCK_MSG_DONTWAIT) ||
-			  sock_is_nonblock(ctx));
+			  (zsock_fcntl(ctx->sock, F_GETFL, 0) & O_NONBLOCK));
 
-	if (!ctx->tls->is_initialized) {
+	if (!ctx->is_initialized) {
 		ret = tls_mbedtls_init(ctx, true);
 		if (ret < 0) {
 			goto error;
@@ -1625,7 +1579,7 @@ static ssize_t recvfrom_dtls_server(struct net_context *ctx, void *buf,
 			}
 		}
 
-		ret = mbedtls_ssl_read(&ctx->tls->ssl, buf, max_len);
+		ret = mbedtls_ssl_read(&ctx->ssl, buf, max_len);
 		if (ret >= 0) {
 			if (src_addr && addrlen) {
 				dtls_peer_address_get(ctx, src_addr, addrlen);
@@ -1635,7 +1589,7 @@ static ssize_t recvfrom_dtls_server(struct net_context *ctx, void *buf,
 
 		switch (ret) {
 		case MBEDTLS_ERR_SSL_TIMEOUT:
-			(void)mbedtls_ssl_close_notify(&ctx->tls->ssl);
+			(void)mbedtls_ssl_close_notify(&ctx->ssl);
 			/* fallthrough */
 
 		case MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY:
@@ -1665,15 +1619,10 @@ error:
 }
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
-ssize_t ztls_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
+ssize_t ztls_recvfrom_ctx(struct tls_context *ctx, void *buf, size_t max_len,
 			  int flags, struct sockaddr *src_addr,
 			  socklen_t *addrlen)
 {
-	if (ctx->tls == NULL) {
-		errno = EBADF;
-		return -1;
-	}
-
 	if (flags & ZSOCK_MSG_PEEK) {
 		/* TODO mbedTLS does not support 'peeking' This could be
 		 * bypassed by having intermediate buffer for peeking
@@ -1682,16 +1631,16 @@ ssize_t ztls_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
 		return -1;
 	}
 
-	ctx->tls->flags = flags;
+	ctx->flags = flags;
 
 	/* TLS */
-	if (net_context_get_type(ctx) == SOCK_STREAM) {
+	if (ctx->type == SOCK_STREAM) {
 		return recv_tls(ctx, buf, max_len, flags);
 	}
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 	/* DTLS */
-	if (ctx->tls->options.role == MBEDTLS_SSL_IS_SERVER) {
+	if (ctx->options.role == MBEDTLS_SSL_IS_SERVER) {
 		return recvfrom_dtls_server(ctx, buf, max_len, flags,
 					    src_addr, addrlen);
 	}
@@ -1704,52 +1653,34 @@ ssize_t ztls_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 }
 
-static int ztls_poll_prepare_ctx(struct net_context *ctx,
+static int ztls_poll_prepare_ctx(struct tls_context *ctx,
 				 struct zsock_pollfd *pfd,
 				 struct k_poll_event **pev,
 				 struct k_poll_event *pev_end)
 {
-	if (ctx->tls == NULL) {
-		/* POLLNVAL flag will be set in the update function. */
-		return 0;
+	const struct fd_op_vtable *vtable;
+	void *obj;
+	int ret;
+
+	obj = z_get_fd_obj_and_vtable(
+		ctx->sock, (const struct fd_op_vtable **)&vtable);
+	if (obj == NULL) {
+		return -EBADF;
+	}
+
+	ret = z_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_POLL_PREPARE,
+				   pfd, pev, pev_end);
+	if (ret != 0) {
+		return ret;
 	}
 
 	if (pfd->events & ZSOCK_POLLIN) {
-		if (*pev == pev_end) {
-			return -ENOMEM;
-		}
-
-		/* DTLS client should wait for the handshake to complete before
-		 * it actually starts to poll for data.
-		 */
-		if (net_context_get_type(ctx) == SOCK_DGRAM &&
-		    ctx->tls->options.role == MBEDTLS_SSL_IS_CLIENT &&
-		    !is_handshake_complete(ctx)) {
-			(*pev)->obj = &ctx->tls->tls_established;
-			(*pev)->type = K_POLL_TYPE_SEM_AVAILABLE;
-		} else {
-			/* Otherwise, monitor fifo for data/connections. */
-			(*pev)->obj = &ctx->recv_q;
-			(*pev)->type = K_POLL_TYPE_FIFO_DATA_AVAILABLE;
-		}
-
-		(*pev)->mode = K_POLL_MODE_NOTIFY_ONLY;
-		(*pev)->state = K_POLL_STATE_NOT_READY;
-		(*pev)++;
-
-		/* If socket is already in EOF, it can be reported
-		 * immediately, so we tell poll() to short-circuit wait.
-		 */
-		if (sock_is_eof(ctx)) {
-			return -EALREADY;
-		}
-
 		/* If there already is mbedTLS data to read, there is no
 		 * need to set the k_poll_event object. Return EALREADY
 		 * so we won't block in the k_poll.
 		 */
-		if (!IS_LISTENING(ctx)) {
-			if (mbedtls_ssl_get_bytes_avail(&ctx->tls->ssl) > 0) {
+		if (!ctx->is_listening) {
+			if (mbedtls_ssl_get_bytes_avail(&ctx->ssl) > 0) {
 				return -EALREADY;
 			}
 		}
@@ -1758,103 +1689,85 @@ static int ztls_poll_prepare_ctx(struct net_context *ctx,
 	return 0;
 }
 
-static int ztls_poll_update_ctx(struct net_context *ctx,
+static int ztls_poll_update_ctx(struct tls_context *ctx,
 				struct zsock_pollfd *pfd,
 				struct k_poll_event **pev)
 {
-	if (ctx->tls == NULL) {
-		pfd->revents = ZSOCK_POLLNVAL;
-		return 0;
+	const struct fd_op_vtable *vtable;
+	void *obj;
+	int ret;
+
+	obj = z_get_fd_obj_and_vtable(
+		ctx->sock, (const struct fd_op_vtable **)&vtable);
+	if (obj == NULL) {
+		return -EBADF;
 	}
 
-	/* For now, assume that socket is always writable */
-	if (pfd->events & ZSOCK_POLLOUT) {
-		pfd->revents |= ZSOCK_POLLOUT;
+	ret = z_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_POLL_UPDATE,
+				   pfd, pev);
+	if (ret != 0) {
+		return ret;
 	}
 
 	if (pfd->events & ZSOCK_POLLIN) {
-		/* Check if socket was waiting for the handshake to complete. */
-		if ((*pev)->obj == &ctx->tls->tls_established) {
-			if ((*pev)->state == K_POLL_STATE_NOT_READY) {
+		if (!ctx->is_listening) {
+			/* Already had TLS data to read on socket. */
+			if (mbedtls_ssl_get_bytes_avail(&ctx->ssl) > 0) {
+				pfd->revents |= ZSOCK_POLLIN;
 				goto next;
 			}
-
-			/* Reconfigure the poll event to wait for data now. */
-			(*pev)->obj = &ctx->recv_q;
-			(*pev)->type = K_POLL_TYPE_FIFO_DATA_AVAILABLE;
-			(*pev)->mode = K_POLL_MODE_NOTIFY_ONLY;
-			(*pev)->state = K_POLL_STATE_NOT_READY;
-
-			goto again;
 		}
 
-		if (sock_is_eof(ctx)) {
-			pfd->revents |= ZSOCK_POLLIN;
+		if (!(pfd->revents & ZSOCK_POLLIN)) {
+			/* No new data on a socket. */
 			goto next;
 		}
 
-		if (!IS_LISTENING(ctx)) {
-			/* Already had TLS data to read on socket. */
-			if (mbedtls_ssl_get_bytes_avail(&ctx->tls->ssl) > 0) {
-				pfd->revents |= ZSOCK_POLLIN;
-				goto next;
-			}
+		if (ctx->is_listening) {
+			goto next;
 		}
 
-		/* Some encrypted data received on the socket. */
-		if ((*pev)->state != K_POLL_STATE_NOT_READY) {
-			if (IS_LISTENING(ctx)) {
-				pfd->revents |= ZSOCK_POLLIN;
-				goto next;
-			}
-
-			/* EAGAIN might happen during or just after
-			 * DTLS handshake.
-			 */
-			if (recv(pfd->fd, NULL, 0, ZSOCK_MSG_DONTWAIT) < 0 &&
-			    errno != EAGAIN) {
-				pfd->revents |= ZSOCK_POLLERR;
-				goto next;
-			}
-
-			if (mbedtls_ssl_get_bytes_avail(&ctx->tls->ssl) > 0 ||
-			    sock_is_eof(ctx)) {
-				pfd->revents |= ZSOCK_POLLIN;
-				goto next;
-			}
-
-			/* Received encrypted data, but still not enough
-			 * to decrypt it and return data through socket,
-			 * ask for retry.
-			 */
-
-			(*pev)->state = K_POLL_STATE_NOT_READY;
+		if (!is_handshake_complete(ctx)) {
 			goto again;
 		}
 
-		goto next;
+		ret = zsock_recv(pfd->fd, NULL, 0, ZSOCK_MSG_DONTWAIT);
+		if (ret == 0 && ctx->type == SOCK_STREAM) {
+			pfd->revents |= ZSOCK_POLLHUP;
+			goto next;
+		/* EAGAIN might happen during or just after DTLS  handshake. */
+		} else if (ret < 0 && errno != EAGAIN) {
+			pfd->revents |= ZSOCK_POLLERR;
+			goto next;
+		}
+
+		if (mbedtls_ssl_get_bytes_avail(&ctx->ssl) == 0) {
+			goto again;
+		}
 	}
 
-	return 0;
-
 next:
-	(*pev)++;
 	return 0;
 
 again:
-	(*pev)++;
-	return -EAGAIN;
+	/* Received encrypted data, but still not enough
+	 * to decrypt it and return data through socket,
+	 * ask for retry if no other events are set.
+	 */
+	pfd->revents &= ~ZSOCK_POLLIN;
+
+	if (pfd->revents != 0) {
+		(*pev - 1)->state = K_POLL_STATE_NOT_READY;
+		return -EAGAIN;
+	}
+
+	return 0;
 }
 
-int ztls_getsockopt_ctx(struct net_context *ctx, int level, int optname,
+int ztls_getsockopt_ctx(struct tls_context *ctx, int level, int optname,
 			void *optval, socklen_t *optlen)
 {
 	int err;
-
-	if (!ctx->tls) {
-		errno = EBADF;
-		return -1;
-	}
 
 	if (!optval || !optlen) {
 		errno = EINVAL;
@@ -1862,8 +1775,8 @@ int ztls_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 	}
 
 	if (level != SOL_TLS) {
-		return sock_fd_op_vtable.getsockopt(ctx, level, optname,
-						    optval, optlen);
+		return zsock_getsockopt(ctx->sock, level, optname,
+					optval, optlen);
 	}
 
 	switch (optname) {
@@ -1893,19 +1806,14 @@ int ztls_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 	return 0;
 }
 
-int ztls_setsockopt_ctx(struct net_context *ctx, int level, int optname,
+int ztls_setsockopt_ctx(struct tls_context *ctx, int level, int optname,
 			const void *optval, socklen_t optlen)
 {
 	int err;
 
-	if (!ctx->tls) {
-		errno = EBADF;
-		return -1;
-	}
-
 	if (level != SOL_TLS) {
-		return sock_fd_op_vtable.setsockopt(ctx, level, optname,
-						    optval, optlen);
+		return zsock_setsockopt(ctx->sock, level, optname,
+					optval, optlen);
 	}
 
 	switch (optname) {
@@ -1956,13 +1864,25 @@ static ssize_t tls_sock_write_vmeth(void *obj, const void *buffer,
 
 static int tls_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 {
-	switch (request) {
+	struct tls_context *ctx = obj;
 
+	switch (request) {
 	/* fcntl() commands */
 	case F_GETFL:
-	case F_SETFL:
+	case F_SETFL: {
+		const struct fd_op_vtable *vtable;
+		void *obj;
+
+		obj = z_get_fd_obj_and_vtable(ctx->sock,
+					(const struct fd_op_vtable **)&vtable);
+		if (obj == NULL) {
+			errno = EBADF;
+			return -1;
+		}
+
 		/* Pass the call to the core socket implementation. */
-		return sock_fd_op_vtable.fd_vtable.ioctl(obj, request, args);
+		return vtable->ioctl(obj, request, args);
+	}
 
 	case ZFD_IOCTL_POLL_PREPARE: {
 		struct zsock_pollfd *pfd;
@@ -1995,7 +1915,9 @@ static int tls_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 static int tls_sock_bind_vmeth(void *obj, const struct sockaddr *addr,
 			       socklen_t addrlen)
 {
-	return sock_fd_op_vtable.bind(obj, addr, addrlen);
+	struct tls_context *ctx = obj;
+
+	return bind(ctx->sock, addr, addrlen);
 }
 
 static int tls_sock_connect_vmeth(void *obj, const struct sockaddr *addr,
@@ -2006,7 +1928,11 @@ static int tls_sock_connect_vmeth(void *obj, const struct sockaddr *addr,
 
 static int tls_sock_listen_vmeth(void *obj, int backlog)
 {
-	return sock_fd_op_vtable.listen(obj, backlog);
+	struct tls_context *ctx = obj;
+
+	ctx->is_listening = true;
+
+	return zsock_listen(ctx->sock, backlog);
 }
 
 static int tls_sock_accept_vmeth(void *obj, struct sockaddr *addr,
@@ -2057,8 +1983,9 @@ static int tls_sock_close_vmeth(void *obj)
 static int tls_sock_getsockname_vmeth(void *obj, struct sockaddr *addr,
 				      socklen_t *addrlen)
 {
-	/* Pass the call to the core socket implementation. */
-	return sock_fd_op_vtable.getsockname(obj, addr, addrlen);
+	struct tls_context *ctx = obj;
+
+	return zsock_getsockname(ctx->sock, addr, addrlen);
 }
 
 static const struct socket_op_vtable tls_sock_fd_op_vtable = {
