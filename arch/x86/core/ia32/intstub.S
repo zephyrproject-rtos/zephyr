@@ -129,19 +129,6 @@ SECTION_FUNC(TEXT, _interrupt_enter)
 	 */
 	pushl	%edi
 
-
-#if defined(CONFIG_TRACING_ISR)
-
-	/* Save these as we are using to keep track of isr and isr_param */
-	pushl	%eax
-	pushl	%edx
-
-	call	sys_trace_isr_enter
-
-	popl	%edx
-	popl	%eax
-#endif
-
 	/* load %ecx with &_kernel */
 
 	movl	$_kernel, %ecx
@@ -192,6 +179,16 @@ alreadyOnIntStack:
 	pop %eax
 #endif
 
+
+#if defined(CONFIG_TRACING_ISR)
+	/* Save these as we are using to keep track of isr and isr_param */
+	pushl	%eax
+	pushl	%edx
+	call	sys_trace_isr_enter
+	popl	%edx
+	popl	%eax
+#endif
+
 #ifdef CONFIG_NESTED_INTERRUPTS
 	sti			/* re-enable interrupts */
 #endif
@@ -201,6 +198,12 @@ alreadyOnIntStack:
 	addl	$0x4, %esp
 #ifdef CONFIG_NESTED_INTERRUPTS
 	cli			/* disable interrupts again */
+#endif
+
+#if defined(CONFIG_TRACING_ISR)
+	pushl	%eax
+	call	sys_trace_isr_exit
+	popl	%eax
 #endif
 
 	xorl	%eax, %eax
@@ -221,7 +224,6 @@ alreadyOnIntStack:
 	movl	$_kernel, %ecx
 	decl	_kernel_offset_to_nested(%ecx)	/* dec interrupt nest count */
 	jne	nestedInterrupt                 /* 'iret' if nested case */
-
 
 #ifdef CONFIG_PREEMPT_ENABLED
 	movl	_kernel_offset_to_current(%ecx), %edx
