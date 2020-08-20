@@ -8,8 +8,8 @@ configuration option: :option:`CONFIG_BT_L2CAP_DYNAMIC_CHANNEL`. This channels
 support segmentation and reassembly transparently, they also support credit
 based flow control making it suitable for data streams.
 
-Channels instances are represented by the :cpp:class:`bt_l2cap_chan` struct which
-contains the callbacks in the :cpp:class:`bt_l2cap_chan_ops` struct to inform
+Channels instances are represented by the :c:struct:`bt_l2cap_chan` struct which
+contains the callbacks in the :c:struct:`bt_l2cap_chan_ops` struct to inform
 when the channel has been connected, disconnected or when the encryption has
 changed.
 In addition to that it also contains the ``recv`` callback which is called
@@ -26,7 +26,7 @@ it may block if no credits are available, and resuming as soon as more credits
 are available.
 
 Servers can be registered using :c:func:`bt_l2cap_server_register` API passing
-the :cpp:class:`bt_l2cap_server` struct which informs what ``psm`` it should
+the :c:struct:`bt_l2cap_server` struct which informs what ``psm`` it should
 listen to, the required security level ``sec_level``, and the callback
 ``accept`` which is called to authorize incoming connection requests and
 allocate channel instances.

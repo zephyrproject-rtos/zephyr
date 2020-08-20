@@ -90,8 +90,8 @@ For example:
   :c:func:`k_queue_get` may provide a timeout after which the
   routine will return with an error code if no data is available.
 
-* Kernel ``struct k_timer`` objects must specify delays for their
-  duration and period.
+* Kernel :c:struct:`k_timer` objects must specify delays for
+  their duration and period.
 
 * The kernel ``k_delayed_work`` API provides a timeout parameter
   indicating when a work queue item will be added to the system queue.
@@ -130,7 +130,7 @@ managed in a single, global queue of events.  Each event is stored in
 a double-linked list, with an attendant delta count in ticks from the
 previous event.  The action to take on an event is specified as a
 callback function pointer provided by the subsystem requesting the
-event, along with a ``struct _timeout`` tracking struct that is
+event, along with a :c:struct:`_timeout` tracking struct that is
 expected to be embedded within subsystem-defined data structures (for
 example: a ``struct wait_q``, or a ``k_tid_t`` thread struct).
 

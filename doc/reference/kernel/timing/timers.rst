@@ -103,7 +103,7 @@ Implementation
 Defining a Timer
 ================
 
-A timer is defined using a variable of type :c:type:`k_timer`.
+A timer is defined using a variable of type :c:struct:`k_timer`.
 It must then be initialized by calling :c:func:`k_timer_init`.
 
 The following code defines and initializes a timer.

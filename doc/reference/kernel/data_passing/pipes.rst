@@ -52,7 +52,7 @@ waiting sender(s).
 Implementation
 **************
 
-A pipe is defined using a variable of type :c:type:`k_pipe` and an
+A pipe is defined using a variable of type :c:struct:`k_pipe` and an
 optional character buffer of type ``unsigned char``. It must then be
 initialized by calling :c:func:`k_pipe_init`.
 

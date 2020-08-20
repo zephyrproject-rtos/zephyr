@@ -13,7 +13,7 @@ Creating a Heap
 ===============
 
 The simplest way to define a heap is statically, with the
-:c:macro:`K_HEAP_DEFINE` macro.  This creates a static :c:type:`k_heap` variable
+:c:macro:`K_HEAP_DEFINE` macro.  This creates a static :c:struct:`k_heap` variable
 with a given name that manages a memory region of the
 specified size.
 
@@ -46,8 +46,8 @@ returned by :c:func:`k_heap_alloc` for the same heap.  Freeing a
 Low Level Heap Allocator
 ************************
 
-The underlying implementation of the :c:type:`k_heap`
-abstraction is provided a data structure named :c:type:`sys_heap`.  This
+The underlying implementation of the :c:struct:`k_heap`
+abstraction is provided a data structure named :c:struct:`sys_heap`.  This
 implements exactly the same allocation semantics, but
 provides no kernel synchronization tools.  It is available for
 applications that want to manage their own blocks of memory in
@@ -79,7 +79,7 @@ combined with adjacent free blocks to prevent fragmentation.
 All metadata is stored at the beginning of the contiguous block of
 heap memory, including the variable-length list of bucket list heads
 (which depend on heap size).  The only external memory required is the
-:c:type:`sys_heap` structure itself.
+:c:struct:`sys_heap` structure itself.
 
 The ``sys_heap`` functions are unsynchronized.  Care must be taken by
 any users to prevent concurrent access.  Only one context may be

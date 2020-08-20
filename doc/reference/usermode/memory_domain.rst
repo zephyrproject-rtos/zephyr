@@ -333,7 +333,7 @@ Create a Memory Domain
 ----------------------
 
 A memory domain is defined using a variable of type
-:c:type:`k_mem_domain`. It must then be initialized by calling
+:c:struct:`k_mem_domain`. It must then be initialized by calling
 :c:func:`k_mem_domain_init`.
 
 The following code defines and initializes an empty memory domain.

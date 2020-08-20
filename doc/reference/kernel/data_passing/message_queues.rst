@@ -70,7 +70,7 @@ Implementation
 Defining a Message Queue
 ========================
 
-A message queue is defined using a variable of type :c:type:`k_msgq`.
+A message queue is defined using a variable of type :c:struct:`k_msgq`.
 It must then be initialized by calling :c:func:`k_msgq_init`.
 
 The following code defines and initializes an empty message queue

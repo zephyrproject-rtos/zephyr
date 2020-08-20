@@ -321,7 +321,7 @@ Man-In-The-Middle (MITM) attacks, it is recommended to use some
 out-of-band channel during the pairing. If the devices have a sufficient
 user interface this "channel" is the user itself. The capabilities of
 the device are registered using the :c:func:`bt_conn_auth_cb_register`
-API.  The :c:type:`bt_conn_auth_cb` struct that's passed to this API has
+API.  The :c:struct:`bt_conn_auth_cb` struct that's passed to this API has
 a set of optional callbacks that can be used during the pairing - if the
 device lacks some feature the corresponding callback may be set to NULL.
 For example, if the device does not have an input method but does have a

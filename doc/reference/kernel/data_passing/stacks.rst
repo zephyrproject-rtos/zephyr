@@ -55,7 +55,7 @@ Implementation
 Defining a Stack
 ================
 
-A stack is defined using a variable of type :c:type:`k_stack`.
+A stack is defined using a variable of type :c:struct:`k_stack`.
 It must then be initialized by calling :c:func:`k_stack_init` or
 :c:func:`k_stack_alloc_init`. In the latter case, a buffer is not
 provided and it is instead allocated from the calling thread's resource

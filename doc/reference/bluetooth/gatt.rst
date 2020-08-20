@@ -8,11 +8,11 @@ GATT layer manages the service database providing APIs for service registration
 and attribute declaration.
 
 Services can be registered using :c:func:`bt_gatt_service_register` API
-which takes the :cpp:class:`bt_gatt_service` struct that provides the list of
+which takes the :c:struct:`bt_gatt_service` struct that provides the list of
 attributes the service contains. The helper macro :cpp:func:`BT_GATT_SERVICE`
 can be used to declare a service.
 
-Attributes can be declared using the :cpp:class:`bt_gatt_attr` struct or using
+Attributes can be declared using the :c:struct:`bt_gatt_attr` struct or using
 one of the helper macros:
 
     :cpp:func:`BT_GATT_PRIMARY_SERVICE`
@@ -62,7 +62,7 @@ Client procedures can be enabled with the configuration option:
 
 Discover procedures can be initiated with the use of
 :c:func:`bt_gatt_discover` API which takes the
-:cpp:class:`bt_gatt_discover_params` struct which describes the type of
+:c:struct:`bt_gatt_discover_params` struct which describes the type of
 discovery. The parameters also serves as a filter when setting the ``uuid``
 field only attributes which matches will be discovered, in contrast setting it
 to NULL allows all attributes to be discovered.
@@ -71,19 +71,19 @@ to NULL allows all attributes to be discovered.
   Caching discovered attributes is not supported.
 
 Read procedures are supported by :c:func:`bt_gatt_read` API which takes the
-:cpp:class:`bt_gatt_read_params` struct as parameters. In the parameters one or
+:c:struct:`bt_gatt_read_params` struct as parameters. In the parameters one or
 more attributes can be set, though setting multiple handles requires the option:
 :option:`CONFIG_BT_GATT_READ_MULTIPLE`
 
 Write procedures are supported by :c:func:`bt_gatt_write` API and takes
-:cpp:class:`bt_gatt_write_params` struct as parameters. In case the write
+:c:struct:`bt_gatt_write_params` struct as parameters. In case the write
 operation don't require a response :c:func:`bt_gatt_write_without_response`
 or :c:func:`bt_gatt_write_without_response_cb` APIs can be used, with the
 later working similarly to :c:func:`bt_gatt_notify_cb`.
 
 Subscriptions to notification and indication can be initiated with use of
 :c:func:`bt_gatt_subscribe` API which takes
-:cpp:class:`bt_gatt_subscribe_params` as parameters. Multiple subscriptions to
+:c:struct:`bt_gatt_subscribe_params` as parameters. Multiple subscriptions to
 the same attribute are supported so there could be multiple ``notify`` callback
 being triggered for the same attribute. Subscriptions can be removed with use of
 :c:func:`bt_gatt_unsubscribe` API.
