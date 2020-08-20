@@ -1113,9 +1113,38 @@ static int tls_opt_dtls_role_set(struct net_context *context,
 	return 0;
 }
 
+static int protocol_check(int family, int type, int *proto)
+{
+	if (family != AF_INET && family != AF_INET6) {
+		return -EAFNOSUPPORT;
+	}
+
+	if (*proto >= IPPROTO_TLS_1_0 && *proto <= IPPROTO_TLS_1_2) {
+		if (type != SOCK_STREAM) {
+			return -EPROTOTYPE;
+		}
+
+		*proto = IPPROTO_TCP;
+	} else if (*proto >= IPPROTO_DTLS_1_0 && *proto <= IPPROTO_DTLS_1_2) {
+		if (!IS_ENABLED(CONFIG_NET_SOCKETS_ENABLE_DTLS)) {
+			return -EPROTONOSUPPORT;
+		}
+
+		if (type != SOCK_DGRAM) {
+			return -EPROTOTYPE;
+		}
+
+		*proto = IPPROTO_UDP;
+	} else {
+		return -EPROTONOSUPPORT;
+	}
+
+	return 0;
+}
+
 static int ztls_socket(int family, int type, int proto)
 {
-	enum net_ip_protocol_secure tls_proto = 0;
+	enum net_ip_protocol_secure tls_proto = proto;
 	int fd = z_reserve_fd();
 	int ret;
 	struct net_context *ctx;
@@ -1124,27 +1153,10 @@ static int ztls_socket(int family, int type, int proto)
 		return -1;
 	}
 
-	if (proto >= IPPROTO_TLS_1_0 && proto <= IPPROTO_TLS_1_2) {
-		if (type != SOCK_STREAM) {
-			errno = EPROTOTYPE;
-			return -1;
-		}
-
-		tls_proto = proto;
-		proto = IPPROTO_TCP;
-	} else if (proto >= IPPROTO_DTLS_1_0 && proto <= IPPROTO_DTLS_1_2) {
-#if !defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
-		errno = EPROTONOSUPPORT;
+	ret = protocol_check(family, type, &proto);
+	if (ret < 0) {
+		errno = -ret;
 		return -1;
-#else
-		if (type != SOCK_DGRAM) {
-			errno = EPROTOTYPE;
-			return -1;
-		}
-
-		tls_proto = proto;
-		proto = IPPROTO_UDP;
-#endif
 	}
 
 	ret = net_context_get(family, type, proto, &ctx);
@@ -1160,18 +1172,15 @@ static int ztls_socket(int family, int type, int proto)
 	/* recv_q and accept_q are in union */
 	k_fifo_init(&ctx->recv_q);
 
-	if (tls_proto != 0) {
-		/* If TLS protocol is used, allocate TLS context */
-		ctx->tls = tls_alloc();
-		if (ctx->tls == NULL) {
-			z_free_fd(fd);
-			(void)net_context_put(ctx);
-			errno = ENOMEM;
-			return -1;
-		}
-
-		ctx->tls->tls_version = tls_proto;
+	ctx->tls = tls_alloc();
+	if (ctx->tls == NULL) {
+		z_free_fd(fd);
+		(void)net_context_put(ctx);
+		errno = ENOMEM;
+		return -1;
 	}
+
+	ctx->tls->tls_version = tls_proto;
 
 	if (proto == IPPROTO_TCP) {
 		net_context_ref(ctx);
@@ -2073,9 +2082,7 @@ static const struct socket_op_vtable tls_sock_fd_op_vtable = {
 
 static bool tls_is_supported(int family, int type, int proto)
 {
-	if ((family == AF_INET || family == AF_INET6) &&
-	    (((proto >= IPPROTO_TLS_1_0) && (proto <= IPPROTO_TLS_1_2)) ||
-	     (proto >= IPPROTO_DTLS_1_0 && proto <= IPPROTO_DTLS_1_2))) {
+	if (protocol_check(family, type, &proto) == 0) {
 		return true;
 	}
 
