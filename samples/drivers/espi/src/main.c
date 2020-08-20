@@ -31,8 +31,9 @@ LOG_MODULE_DECLARE(espi, CONFIG_ESPI_LOG_LEVEL);
 #define MAX_FLASH_REQUEST     64u
 #define TARGET_FLASH_REGION   0x72000ul
 
-/* 20 MHz */
-#define MIN_ESPI_FREQ         20u
+#define ESPI_FREQ_20MHZ       20u
+#define ESPI_FREQ_25MHZ       25u
+#define ESPI_FREQ_66MHZ       66u
 
 #define K_WAIT_DELAY          100u
 
@@ -191,9 +192,9 @@ int espi_init(void)
 	 * 20MHz frequency and only logical channel 0 and 1 are supported
 	 */
 	struct espi_cfg cfg = {
-		ESPI_IO_MODE_SINGLE_LINE,
-		ESPI_CHANNEL_VWIRE | ESPI_CHANNEL_PERIPHERAL,
-		MIN_ESPI_FREQ,
+		.io_caps = ESPI_IO_MODE_SINGLE_LINE,
+		.channel_caps = ESPI_CHANNEL_VWIRE | ESPI_CHANNEL_PERIPHERAL,
+		.max_freq = ESPI_FREQ_20MHZ,
 	};
 
 	/* If eSPI driver supports additional capabilities use them */
@@ -202,6 +203,8 @@ int espi_init(void)
 #endif
 #ifdef CONFIG_ESPI_FLASH_CHANNEL
 	cfg.channel_caps |= ESPI_CHANNEL_FLASH;
+	cfg.io_caps |= ESPI_IO_MODE_QUAD_LINES;
+	cfg.max_freq = ESPI_FREQ_25MHZ;
 #endif
 
 	ret = espi_config(espi_dev, &cfg);
