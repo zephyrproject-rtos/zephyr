@@ -602,6 +602,20 @@ int stm32_i2c_configure_timing(struct device *dev, uint32_t clock)
 	uint32_t presc = 1U;
 	uint32_t timing = 0U;
 
+	/*  Look for an adequate preset timing value */
+	for (uint32_t i = 0; i < cfg->n_timings; i++) {
+		const struct i2c_config_timing *preset = &cfg->timings[i];
+		uint32_t speed = i2c_map_dt_bitrate(preset->i2c_speed);
+
+		if ((I2C_SPEED_GET(speed) == I2C_SPEED_GET(data->dev_config))
+		   && (preset->periph_clock == clock)) {
+			/*  Found a matching periph clock and i2c speed */
+			LL_I2C_SetTiming(i2c, preset->timing_setting);
+			return 0;
+		}
+	}
+
+	/* No preset timing was provided, let's dynamically configure */
 	switch (I2C_SPEED_GET(data->dev_config)) {
 	case I2C_SPEED_STANDARD:
 		i2c_h_min_time = 4000U;

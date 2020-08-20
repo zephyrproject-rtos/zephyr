@@ -11,6 +11,20 @@
 
 typedef void (*irq_config_func_t)(struct device *port);
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2)
+/**
+ * @brief structure to convey optional i2c timings settings
+ */
+struct i2c_config_timing {
+	/* i2c peripheral clock in Hz */
+	uint32_t periph_clock;
+	/* i2c bus speed in Hz */
+	uint32_t i2c_speed;
+	/* I2C_TIMINGR register value of i2c v2 peripheral */
+	uint32_t timing_setting;
+};
+#endif
+
 struct i2c_stm32_config {
 #ifdef CONFIG_I2C_STM32_INTERRUPT
 	irq_config_func_t irq_config_func;
@@ -18,6 +32,10 @@ struct i2c_stm32_config {
 	struct stm32_pclken pclken;
 	I2C_TypeDef *i2c;
 	uint32_t bitrate;
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2)
+	const struct i2c_config_timing *timings;
+	size_t n_timings;
+#endif
 };
 
 struct i2c_stm32_data {
