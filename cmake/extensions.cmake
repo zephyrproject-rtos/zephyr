@@ -195,44 +195,51 @@ function(zephyr_get_compile_options_for_lang_as_string lang i)
 endfunction()
 
 function(zephyr_get_include_directories_for_lang lang i)
-  get_property_and_add_prefix(flags zephyr_interface INTERFACE_INCLUDE_DIRECTORIES
-    "-I"
-    ${ARGN}
-    )
+  zephyr_get_parse_args(args ${ARGN})
+  get_property(flags TARGET zephyr_interface PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
 
   process_flags(${lang} flags output_list)
+  string(REPLACE ";" "$<SEMICOLON>" genexp_output_list "${output_list}")
 
-  set(${i} ${output_list} PARENT_SCOPE)
+  if(NOT ARGN)
+    set(result_output_list "-I$<JOIN:${genexp_output_list}, -I>")
+  elseif(args_STRIP_PREFIX)
+    # The list has no prefix, so don't add it.
+    set(result_output_list ${output_list})
+  else()
+    set(result_output_list "-I$<JOIN:${genexp_output_list},${ARGN}-I>")
+  endif()
+  set(${i} ${result_output_list} PARENT_SCOPE)
 endfunction()
 
 function(zephyr_get_system_include_directories_for_lang lang i)
-  get_property_and_add_prefix(flags zephyr_interface INTERFACE_SYSTEM_INCLUDE_DIRECTORIES
-    "-isystem"
-    ${ARGN}
-    )
+  get_property(flags TARGET zephyr_interface PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES)
 
   process_flags(${lang} flags output_list)
+  string(REPLACE ";" "$<SEMICOLON>" genexp_output_list "${output_list}")
+  set(result_output_list "-isystem$<JOIN:${genexp_output_list}, -isystem>")
 
-  set(${i} ${output_list} PARENT_SCOPE)
+  set(${i} ${result_output_list} PARENT_SCOPE)
 endfunction()
 
 function(zephyr_get_compile_definitions_for_lang lang i)
-  get_property_and_add_prefix(flags zephyr_interface INTERFACE_COMPILE_DEFINITIONS
-    "-D"
-    ${ARGN}
-    )
+  get_property(flags TARGET zephyr_interface PROPERTY INTERFACE_COMPILE_DEFINITIONS)
 
   process_flags(${lang} flags output_list)
+  string(REPLACE ";" "$<SEMICOLON>" genexp_output_list "${output_list}")
+  set(result_output_list "-D$<JOIN:${genexp_output_list}, -D>")
 
-  set(${i} ${output_list} PARENT_SCOPE)
+  set(${i} ${result_output_list} PARENT_SCOPE)
 endfunction()
 
 function(zephyr_get_compile_options_for_lang lang i)
   get_property(flags TARGET zephyr_interface PROPERTY INTERFACE_COMPILE_OPTIONS)
 
   process_flags(${lang} flags output_list)
+  string(REPLACE ";" "$<SEMICOLON>" genexp_output_list "${output_list}")
+  set(result_output_list " $<JOIN:${genexp_output_list}, >")
 
-  set(${i} ${output_list} PARENT_SCOPE)
+  set(${i} ${result_output_list} PARENT_SCOPE)
 endfunction()
 
 # This function writes a dict to it's output parameter
@@ -297,6 +304,11 @@ function(process_flags lang input output)
       # then this tag must be removed to return real compile/linker flags.
       if(flag MATCHES "SHELL:[ ]*(.*)")
         separate_arguments(flag UNIX_COMMAND ${CMAKE_MATCH_1})
+      endif()
+      # Flags may be placed inside generator expression, therefore any flag
+      # which is not already a generator expression must have commas converted.
+      if(NOT flag MATCHES "\\\$<.*>")
+        string(REPLACE "," "$<COMMA>" flag "${flag}")
       endif()
       list(APPEND tmp_list ${flag})
     endif()
