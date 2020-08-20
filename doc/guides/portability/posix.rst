@@ -304,8 +304,8 @@ This is implemented as part of the minimal C library available in Zephyr.
     strtod(),
     strtof(),
     strtoimax(),
-    trtok(),
-    strtok_r(),
+    strtok(),
+    strtok_r(),+
     strtol(),+
     strtold(),
     strtoll(),
