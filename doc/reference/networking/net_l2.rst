@@ -72,9 +72,9 @@ There are, however, two differences:
 - The driver_api pointer must point to a valid :c:struct:`net_if_api`
   pointer.
 
-- The network device driver must use ``NET_DEVICE_INIT_INSTANCE()``
-  or ``ETH_NET_DEVICE_INIT()`` for Ethernet devices. These
-  macros will call the ``DEVICE_AND_API_INIT()`` macro, and also
+- The network device driver must use :c:macro:`NET_DEVICE_INIT_INSTANCE()`
+  or :c:macro:`ETH_NET_DEVICE_INIT()` for Ethernet devices. These
+  macros will call the :c:macro:`DEVICE_AND_API_INIT()` macro, and also
   instantiate a unique :c:struct:`net_if` related to the created
   device driver instance.
 
