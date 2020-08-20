@@ -7,6 +7,7 @@
 #define ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_API_H_
 
 #include <xtensa/hal.h>
+#include <xtensa/core-macros.h>
 #include "xtensa_rtos.h"
 #include "xtensa_context.h"
 
