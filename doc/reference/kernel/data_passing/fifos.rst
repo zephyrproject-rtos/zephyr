@@ -37,7 +37,7 @@ The item is given directly to a waiting thread, if one exists;
 otherwise the item is added to the FIFO's queue.
 There is no limit to the number of items that may be queued.
 
-A data item may be **removed** from a FIF by a thread. If the FIFO's queue
+A data item may be **removed** from a FIFO by a thread. If the FIFO's queue
 is empty a thread may choose to wait for a data item to be given.
 Any number of threads may wait on an empty FIFO simultaneously.
 When a data item is added, it is given to the highest priority thread
