@@ -259,7 +259,7 @@ void main(void)
 		uint32_t addr = jesd216_param_addr(php);
 
 		printf("PH%u: %04x rev %u.%u: %u DW @ %x\n",
-		       (php - hp->phdr), id, php->rev_major, php->rev_minor,
+		       (uint32_t)(php - hp->phdr), id, php->rev_major, php->rev_minor,
 		       php->len_dw, addr);
 
 		uint32_t dw[php->len_dw];
