@@ -977,7 +977,12 @@ void ll_rx_mem_release(void **node_rx)
 
 		case NODE_RX_TYPE_SYNC_LOST:
 		{
-			ull_sync_release(rx_free->rx_ftr.param);
+			struct ll_sync_set *sync =
+				(void *)rx_free->rx_ftr.param;
+
+			sync->timeout_reload = 0U;
+
+			ull_sync_release(sync);
 		}
 		break;
 #endif /* CONFIG_BT_CTLR_SCAN_PERIODIC */
