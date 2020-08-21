@@ -293,6 +293,11 @@ function(process_flags lang input output)
     endforeach()
 
     if(NOT is_compile_lang_generator_expression)
+      # SHELL is used to avoid de-deplucation, but when process flags
+      # then this tag must be removed to return real compile/linker flags.
+      if(flag MATCHES "SHELL:[ ]*(.*)")
+        separate_arguments(flag UNIX_COMMAND ${CMAKE_MATCH_1})
+      endif()
       list(APPEND tmp_list ${flag})
     endif()
   endforeach()
