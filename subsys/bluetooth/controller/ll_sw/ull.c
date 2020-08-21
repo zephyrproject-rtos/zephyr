@@ -100,12 +100,18 @@
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 #define BT_SCAN_AUX_TICKER_NODES ((TICKER_ID_SCAN_AUX_LAST) - \
 				  (TICKER_ID_SCAN_AUX_BASE) + 1)
+#if defined(CONFIG_BT_CTLR_SCAN_PERIODIC)
+#define BT_SCAN_SYNC_TICKER_NODES ((TICKER_ID_SCAN_SYNC_LAST) - \
+				   (TICKER_ID_SCAN_SYNC_BASE) + 1)
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 #define BT_SCAN_AUX_TICKER_NODES 0
+#define BT_SCAN_SYNC_TICKER_NODES 0
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 #else
 #define BT_SCAN_TICKER_NODES 0
 #define BT_SCAN_AUX_TICKER_NODES 0
+#define BT_SCAN_SYNC_TICKER_NODES 0
 #endif
 
 #if defined(CONFIG_BT_CONN)
@@ -134,6 +140,7 @@
 				   BT_ADV_SYNC_TICKER_NODES + \
 				   BT_SCAN_TICKER_NODES + \
 				   BT_SCAN_AUX_TICKER_NODES + \
+				   BT_SCAN_SYNC_TICKER_NODES + \
 				   BT_CONN_TICKER_NODES + \
 				   FLASH_TICKER_NODES + \
 				   USER_TICKER_NODES)
@@ -228,9 +235,15 @@ static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
 #define BT_CTLR_MAX_CONN        0
 #endif
 
+#if defined(CONFIG_BT_CTLR_SCAN_SYNC_SET)
+#define BT_CTLR_SCAN_SYNC_SET CONFIG_BT_CTLR_SCAN_SYNC_SET
+#else
+#define BT_CTLR_SCAN_SYNC_SET 0
+#endif
+
 #define PDU_RX_POOL_SIZE (PDU_RX_NODE_POOL_ELEMENT_SIZE * \
 			  (RX_CNT + BT_CTLR_MAX_CONNECTABLE + \
-			   BT_CTLR_ADV_SET))
+			   BT_CTLR_ADV_SET + BT_CTLR_SCAN_SYNC_SET))
 
 static struct {
 	void *free;
@@ -239,7 +252,8 @@ static struct {
 
 #define LINK_RX_POOL_SIZE (sizeof(memq_link_t) * (RX_CNT + 2 + \
 						  BT_CTLR_MAX_CONN + \
-						  BT_CTLR_ADV_SET))
+						  BT_CTLR_ADV_SET + \
+						  (BT_CTLR_SCAN_SYNC_SET * 2)))
 static struct {
 	uint8_t quota_pdu; /* Number of un-utilized buffers */
 
