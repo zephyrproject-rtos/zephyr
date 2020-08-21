@@ -123,7 +123,7 @@ struct zsock_pollfd {
 /** @} */
 
 /* Valid values for TLS_PEER_VERIFY option */
-#define TLS_PEER_VERIFY_NONE 0 /**< Peer verification disabled. */
+#define TLS_PEER_VERIFY_NONE 0     /**< Peer verification disabled. */
 #define TLS_PEER_VERIFY_OPTIONAL 1 /**< Peer verification optional. */
 #define TLS_PEER_VERIFY_REQUIRED 2 /**< Peer verification required. */
 

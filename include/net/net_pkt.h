@@ -184,9 +184,10 @@ struct net_pkt {
 	};
 
 #if defined(CONFIG_NET_TCP)
-	uint8_t tcp_first_msg     : 1; /* Is this the first time this pkt is sent,
-				     * or is this a resend of a TCP segment.
-				     */
+	uint8_t tcp_first_msg     : 1; /* Is this the first time this pkt is
+					* sent, or is this a resend of a TCP
+					* segment.
+					*/
 #endif
 
 	union {
@@ -478,7 +479,8 @@ static inline uint8_t net_pkt_ipv6_next_hdr(struct net_pkt *pkt)
 	return pkt->ipv6_next_hdr;
 }
 
-static inline void net_pkt_set_ipv6_next_hdr(struct net_pkt *pkt, uint8_t next_hdr)
+static inline void net_pkt_set_ipv6_next_hdr(struct net_pkt *pkt,
+					     uint8_t next_hdr)
 {
 	pkt->ipv6_next_hdr = next_hdr;
 }
@@ -536,7 +538,8 @@ static inline uint8_t net_pkt_ipv6_next_hdr(struct net_pkt *pkt)
 	return 0;
 }
 
-static inline void net_pkt_set_ipv6_next_hdr(struct net_pkt *pkt, uint8_t next_hdr)
+static inline void net_pkt_set_ipv6_next_hdr(struct net_pkt *pkt,
+					     uint8_t next_hdr)
 {
 	ARG_UNUSED(pkt);
 	ARG_UNUSED(next_hdr);
