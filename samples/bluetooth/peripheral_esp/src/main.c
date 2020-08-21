@@ -190,14 +190,14 @@ static ssize_t read_temp_trigger_setting(struct bt_conn *conn,
 	switch (sensor->condition) {
 	/* Operand N/A */
 	case ESS_TRIGGER_INACTIVE:
-		/* fallthrough */
+		__fallthrough;
 	case ESS_VALUE_CHANGED:
 		return bt_gatt_attr_read(conn, attr, buf, len, offset,
 					 &sensor->condition,
 					 sizeof(sensor->condition));
 	/* Seconds */
 	case ESS_FIXED_TIME_INTERVAL:
-		/* fallthrough */
+		__fallthrough;
 	case ESS_NO_LESS_THAN_SPECIFIED_TIME: {
 			struct es_trigger_setting_seconds rp;
 

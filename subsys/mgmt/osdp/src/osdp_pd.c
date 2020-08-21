@@ -581,7 +581,7 @@ void osdp_update(struct osdp *ctx)
 			pd_decode_command(pd, pd->rx_buf, pd->rx_buf_len);
 		}
 		pd->pd_state = OSDP_PD_STATE_SEND_REPLY;
-		/* FALLTHRU */
+		__fallthrough;
 	case OSDP_PD_STATE_SEND_REPLY:
 		if (pd_send_reply(pd) == -1) {
 			pd->pd_state = OSDP_PD_STATE_ERR;

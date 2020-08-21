@@ -62,14 +62,14 @@ static int lp3943_get_led_reg(uint32_t *led, uint8_t *reg)
 	case 0:
 	case 1:
 	case 2:
-		/* Fall through */
+		__fallthrough;
 	case 3:
 		*reg = LP3943_LS0;
 		break;
 	case 4:
 	case 5:
 	case 6:
-		/* Fall through */
+		__fallthrough;
 	case 7:
 		*reg = LP3943_LS1;
 		*led -= 4U;
@@ -77,7 +77,7 @@ static int lp3943_get_led_reg(uint32_t *led, uint8_t *reg)
 	case 8:
 	case 9:
 	case 10:
-		/* Fall through */
+		__fallthrough;
 	case 11:
 		*reg = LP3943_LS2;
 		*led -= 8U;
@@ -85,7 +85,7 @@ static int lp3943_get_led_reg(uint32_t *led, uint8_t *reg)
 	case 12:
 	case 13:
 	case 14:
-		/* Fall through */
+		__fallthrough;
 	case 15:
 		*reg = LP3943_LS3;
 		*led -= 12U;

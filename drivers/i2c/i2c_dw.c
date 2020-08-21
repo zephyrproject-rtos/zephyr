@@ -310,7 +310,7 @@ static int i2c_dw_setup(struct device *dev, uint16_t slave_address)
 
 		break;
 	case I2C_SPEED_FAST:
-		/* fall through */
+		__fallthrough;
 	case I2C_SPEED_FAST_PLUS:
 		LOG_DBG("I2C: speed set to FAST or FAST_PLUS");
 		regs->ic_fs_scl_lcnt = dw->lcnt;
@@ -531,7 +531,7 @@ static int i2c_dw_runtime_configure(struct device *dev, uint32_t config)
 		dw->hcnt = value;
 		break;
 	case I2C_SPEED_FAST:
-		/* fall through */
+		__fallthrough;
 	case I2C_SPEED_FAST_PLUS:
 		/*
 		 * Following the directions on DW spec page 59, IC_FS_SCL_LCNT

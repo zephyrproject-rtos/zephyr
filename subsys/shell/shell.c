@@ -999,8 +999,7 @@ static void state_collect(const struct shell *shell)
 			case '4': /* END Button in ESC[n~ mode */
 				receive_state_change(shell,
 						SHELL_RECEIVE_TILDE_EXP);
-				/* fall through */
-				/* no break */
+				__fallthrough;
 			case 'F': /* END Button in VT100 mode */
 				shell_op_cursor_end_move(shell);
 				break;
@@ -1008,8 +1007,7 @@ static void state_collect(const struct shell *shell)
 			case '1': /* HOME Button in ESC[n~ mode */
 				receive_state_change(shell,
 						SHELL_RECEIVE_TILDE_EXP);
-				/* fall through */
-				/* no break */
+				__fallthrough;
 			case 'H': /* HOME Button in VT100 mode */
 				shell_op_cursor_home_move(shell);
 				break;
@@ -1017,8 +1015,7 @@ static void state_collect(const struct shell *shell)
 			case '2': /* INSERT Button in ESC[n~ mode */
 				receive_state_change(shell,
 						SHELL_RECEIVE_TILDE_EXP);
-				/* fall through */
-				/* no break */
+				__fallthrough;
 			case 'L': {/* INSERT Button in VT100 mode */
 				bool status = flag_insert_mode_get(shell);
 				flag_insert_mode_set(shell, !status);

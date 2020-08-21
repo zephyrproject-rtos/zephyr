@@ -298,7 +298,7 @@ static void receive_state_machine(struct isotp_recv_ctx *ctx)
 
 		ctx->wft = ISOTP_WFT_FIRST;
 		ctx->state = ISOTP_RX_STATE_TRY_ALLOC;
-		/* FALLTHROUGH */
+		__fallthrough;
 	case ISOTP_RX_STATE_TRY_ALLOC:
 		LOG_DBG("SM try to allocate");
 		z_abort_timeout(&ctx->timeout);
@@ -309,7 +309,7 @@ static void receive_state_machine(struct isotp_recv_ctx *ctx)
 		}
 
 		ctx->state = ISOTP_RX_STATE_SEND_FC;
-		/* FALLTHROUGH */
+		__fallthrough;
 	case ISOTP_RX_STATE_SEND_FC:
 		LOG_DBG("SM send CTS FC frame");
 		receive_send_fc(ctx, ISOTP_PCI_FS_CTS);
@@ -333,7 +333,7 @@ static void receive_state_machine(struct isotp_recv_ctx *ctx)
 		LOG_ERR("Sent %d wait frames. Giving up to alloc now",
 			ctx->wft);
 		receive_report_error(ctx, ISOTP_N_BUFFER_OVERFLW);
-		/* FALLTHROUGH */
+		__fallthrough;
 	case ISOTP_RX_STATE_ERR:
 		LOG_DBG("SM ERR state. err nr: %d", ctx->error_nr);
 		z_abort_timeout(&ctx->timeout);
@@ -346,7 +346,7 @@ static void receive_state_machine(struct isotp_recv_ctx *ctx)
 		net_buf_unref(ctx->buf);
 		ctx->buf = NULL;
 		ctx->state = ISOTP_RX_STATE_RECYCLE;
-		/* FALLTHROUGH */
+		__fallthrough;
 	case ISOTP_RX_STATE_RECYCLE:
 		LOG_DBG("SM recycle context for next message");
 		ctx->buf = net_buf_alloc_fixed(&isotp_rx_sf_ff_pool, K_NO_WAIT);
@@ -360,7 +360,7 @@ static void receive_state_machine(struct isotp_recv_ctx *ctx)
 		sys_slist_find_and_remove(&global_ctx.ff_sf_alloc_list,
 					  &ctx->alloc_node);
 		ctx->state = ISOTP_RX_STATE_WAIT_FF_SF;
-		/* FALLTHROUGH */
+		__fallthrough;
 	case ISOTP_RX_STATE_UNBOUND:
 		break;
 
@@ -1044,7 +1044,7 @@ static void send_state_machine(struct isotp_send_ctx *ctx)
 
 	case ISOTP_TX_ERR:
 		LOG_DBG("SM error");
-		/* FALLTHROUGH */
+		__fallthrough;
 	case ISOTP_TX_WAIT_FIN:
 		if (ctx->filter_id >= 0) {
 			can_detach(ctx->can_dev, ctx->filter_id);

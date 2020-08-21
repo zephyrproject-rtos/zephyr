@@ -458,7 +458,7 @@ void hci_evt_link_key_notify(struct net_buf *buf)
 		break;
 	case BT_LK_AUTH_COMBINATION_P192:
 		conn->br.link_key->flags |= BT_LINK_KEY_AUTHENTICATED;
-		/* fall through */
+		__fallthrough;
 	case BT_LK_UNAUTH_COMBINATION_P192:
 		/* Mark no-bond so that link-key is removed on disconnection */
 		if (ssp_get_auth(conn) < BT_HCI_DEDICATED_BONDING) {
@@ -469,7 +469,7 @@ void hci_evt_link_key_notify(struct net_buf *buf)
 		break;
 	case BT_LK_AUTH_COMBINATION_P256:
 		conn->br.link_key->flags |= BT_LINK_KEY_AUTHENTICATED;
-		/* fall through */
+		__fallthrough;
 	case BT_LK_UNAUTH_COMBINATION_P256:
 		conn->br.link_key->flags |= BT_LINK_KEY_SC;
 

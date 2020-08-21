@@ -1155,27 +1155,27 @@ void dns_init_resolver(void)
 #if DNS_SERVER_COUNT > 4
 	case 5:
 		dns_servers[4] = CONFIG_DNS_SERVER5;
-		/* fallthrough */
+		__fallthrough;
 #endif
 #if DNS_SERVER_COUNT > 3
 	case 4:
 		dns_servers[3] = CONFIG_DNS_SERVER4;
-		/* fallthrough */
+		__fallthrough;
 #endif
 #if DNS_SERVER_COUNT > 2
 	case 3:
 		dns_servers[2] = CONFIG_DNS_SERVER3;
-		/* fallthrough */
+		__fallthrough;
 #endif
 #if DNS_SERVER_COUNT > 1
 	case 2:
 		dns_servers[1] = CONFIG_DNS_SERVER2;
-		/* fallthrough */
+		__fallthrough;
 #endif
 #if DNS_SERVER_COUNT > 0
 	case 1:
 		dns_servers[0] = CONFIG_DNS_SERVER1;
-		/* fallthrough */
+		__fallthrough;
 #endif
 	case 0:
 		break;

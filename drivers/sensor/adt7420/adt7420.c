@@ -84,7 +84,7 @@ static int adt7420_attr_set(struct device *dev,
 		return 0;
 	case SENSOR_ATTR_UPPER_THRESH:
 		reg = ADT7420_REG_T_HIGH_MSB;
-		/* Fallthrough */
+		__fallthrough;
 	case SENSOR_ATTR_LOWER_THRESH:
 		if (!reg) {
 			reg = ADT7420_REG_T_LOW_MSB;

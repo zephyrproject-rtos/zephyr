@@ -235,7 +235,7 @@ static int json_next_token(struct lwm2m_input_context *in,
 				break;
 			}
 
-			/* fallthrough */
+			__fallthrough;
 
 		default:
 			json_add_char(in, fd);

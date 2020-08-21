@@ -124,7 +124,8 @@ static int lpc11u6x_uart0_configure(struct device *dev,
 		flags |= LPC11U6X_UART0_LCR_PARTIY_ENABLE |
 			LPC11U6X_UART0_LCR_PARTIY_EVEN;
 		break;
-	case UART_CFG_PARITY_MARK: /* fallthrough */
+	case UART_CFG_PARITY_MARK:
+		__fallthrough;
 	case UART_CFG_PARITY_SPACE:
 		return -ENOTSUP;
 	default:
@@ -539,7 +540,8 @@ static int lpc11u6x_uartx_configure(struct device *dev,
 	case UART_CFG_PARITY_EVEN:
 		flags |= LPC11U6X_UARTX_CFG_PARITY_EVEN;
 		break;
-	case UART_CFG_PARITY_MARK: /* fallthrough */
+	case UART_CFG_PARITY_MARK:
+		__fallthrough;
 	case UART_CFG_PARITY_SPACE:
 		return -ENOTSUP;
 	default:
@@ -562,7 +564,8 @@ static int lpc11u6x_uartx_configure(struct device *dev,
 	}
 
 	switch (cfg->data_bits) {
-	case UART_CFG_DATA_BITS_5: /* fallthrough */
+	case UART_CFG_DATA_BITS_5:
+		__fallthrough;
 	case UART_CFG_DATA_BITS_6:
 		return -ENOTSUP;
 	case UART_CFG_DATA_BITS_7:

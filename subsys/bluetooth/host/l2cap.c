@@ -1532,6 +1532,7 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 			return;
 		}
 		bt_l2cap_chan_remove(conn, &chan->chan);
+		__fallthrough;
 	default:
 		bt_l2cap_chan_del(&chan->chan);
 	}
@@ -1929,7 +1930,7 @@ static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 			le_conn_param_update_req(l2cap, hdr->ident, buf);
 			break;
 		}
-	/* Fall-through */
+		__fallthrough;
 	default:
 		BT_WARN("Unknown L2CAP PDU code 0x%02x", hdr->code);
 		l2cap_send_reject(chan->conn, hdr->ident,

@@ -533,7 +533,7 @@ static uint32_t dhcph4_manage_timers(struct net_if *iface, int64_t timeout)
 		break;
 	case NET_DHCPV4_INIT:
 		dhcpv4_enter_selecting(iface);
-		/* Fall through, as discover msg needs to be sent */
+		__fallthrough;
 	case NET_DHCPV4_SELECTING:
 		/* Failed to get OFFER message, send DISCOVER again */
 		return dhcpv4_send_discover(iface);
@@ -1147,7 +1147,7 @@ void net_dhcpv4_stop(struct net_if *iface)
 			NET_DBG("Failed to remove addr from iface");
 		}
 
-		/* Fall through */
+		__fallthrough;
 	case NET_DHCPV4_INIT:
 	case NET_DHCPV4_SELECTING:
 	case NET_DHCPV4_REQUESTING:

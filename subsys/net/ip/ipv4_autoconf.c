@@ -195,7 +195,7 @@ static void ipv4_autoconf_send(struct net_if_ipv4_autoconf *ipv4auto)
 			ipv4_autoconf_send_probe(ipv4auto);
 			break;
 		}
-	/* passthrough */
+		__fallthrough;
 	case NET_IPV4_AUTOCONF_ANNOUNCE:
 		if (ipv4auto->announce_cnt <=
 		    (IPV4_AUTOCONF_ANNOUNCE_NUM - 1)) {

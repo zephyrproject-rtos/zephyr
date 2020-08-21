@@ -259,7 +259,7 @@ static void *lexer_json(struct lexer *lexer)
 				return lexer_number;
 			}
 
-			/* fallthrough */
+			__fallthrough;
 		default:
 			if (isspace(chr)) {
 				ignore(lexer);
@@ -343,7 +343,7 @@ static int obj_next(struct json_obj *json,
 			return -EINVAL;
 		}
 
-		/* fallthrough */
+		__fallthrough;
 	case JSON_TOK_STRING:
 		kv->key = token.start;
 		kv->key_len = (size_t)(token.end - token.start);
