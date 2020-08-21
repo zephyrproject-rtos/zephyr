@@ -18,6 +18,7 @@ coverage
 
 # used for west-command testing
 pytest
+mypy
 
 # used for mocking functions in pytest
 mock>=4.0.1
