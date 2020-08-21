@@ -21,6 +21,7 @@ import shlex
 import shutil
 import signal
 import subprocess
+from typing import Dict, List, NoReturn, Optional, Set, Type, Union
 
 # Turn on to enable just logging the commands that would be run (at
 # info rather than debug level), without actually running them. This
@@ -123,9 +124,9 @@ class BuildConfiguration:
 
     Kconfig configuration values are available (parsed from .config).'''
 
-    def __init__(self, build_dir):
+    def __init__(self, build_dir: str):
         self.build_dir = build_dir
-        self.options = {}
+        self.options: Dict[str, Union[str, int]] = {}
         self._init()
 
     def __contains__(self, item):
@@ -140,7 +141,7 @@ class BuildConfiguration:
     def _init(self):
         self._parse(os.path.join(self.build_dir, 'zephyr', '.config'))
 
-    def _parse(self, filename):
+    def _parse(self, filename: str):
         with open(filename, 'r') as f:
             for line in f:
                 line = line.strip()
@@ -199,8 +200,10 @@ class RunnerCaps:
     '''
 
     def __init__(self,
-                 commands={'flash', 'debug', 'debugserver', 'attach'},
-                 flash_addr=False, erase=False):
+                 commands: Set[str] = {'flash', 'debug',
+                                       'debugserver', 'attach'},
+                 flash_addr: bool = False,
+                 erase: bool = False):
         self.commands = commands
         self.flash_addr = bool(flash_addr)
         self.erase = bool(erase)
@@ -212,12 +215,10 @@ class RunnerCaps:
                 ')')
 
 
-def _missing_cap(cls, option):
+def _missing_cap(cls: Type['ZephyrBinaryRunner'], option: str) -> NoReturn:
     # Helper function that's called when an option was given on the
-    # command line that corresponds to a missing capability.
-    #
-    # 'cls' is a ZephyrBinaryRunner subclass; 'option' is an option
-    # that can't be supported due to missing capability.
+    # command line that corresponds to a missing capability in the
+    # runner class cls.
 
     raise ValueError(f"{cls.name()} doesn't support {option} option")
 
@@ -240,9 +241,11 @@ class RunnerConfig:
     # violation, but it's very convenient to have a single place to
     # store the locations of tools (like gdb and openocd) that are
     # needed by multiple ZephyrBinaryRunner subclasses.
-    def __init__(self, build_dir, board_dir,
-                 elf_file, hex_file, bin_file,
-                 gdb=None, openocd=None, openocd_search=None):
+    def __init__(self, build_dir: str, board_dir: str,
+                 elf_file: str, hex_file: str, bin_file: str,
+                 gdb: Optional[str] = None,
+                 openocd: Optional[str] = None,
+                 openocd_search: Optional[str] = None):
         self.build_dir = build_dir
         '''Zephyr application build directory'''
 
@@ -373,10 +376,9 @@ class ZephyrBinaryRunner(abc.ABC):
     commands in its constructor.  The actual command execution is
     handled in the run() method.'''
 
-    def __init__(self, cfg):
-        '''Initialize core runner state.
+    def __init__(self, cfg: RunnerConfig):
+        '''Initialize core runner state.'''
 
-        ``cfg`` is a RunnerConfig instance.'''
         self.cfg = cfg
         '''RunnerConfig for this instance.'''
 
@@ -384,13 +386,13 @@ class ZephyrBinaryRunner(abc.ABC):
         '''logging.Logger for this instance.'''
 
     @staticmethod
-    def get_runners():
+    def get_runners() -> List[Type['ZephyrBinaryRunner']]:
         '''Get a list of all currently defined runner classes.'''
         return ZephyrBinaryRunner.__subclasses__()
 
     @classmethod
     @abc.abstractmethod
-    def name(cls):
+    def name(cls) -> str:
         '''Return this runner's user-visible name.
 
         When choosing a name, pick something short and lowercase,
@@ -398,7 +400,7 @@ class ZephyrBinaryRunner(abc.ABC):
         the target architecture/board (like xtensa etc.).'''
 
     @classmethod
-    def capabilities(cls):
+    def capabilities(cls) -> RunnerCaps:
         '''Returns a RunnerCaps representing this runner's capabilities.
 
         This implementation returns the default capabilities.
@@ -420,6 +422,9 @@ class ZephyrBinaryRunner(abc.ABC):
 
         Runner-specific options are added through the do_add_parser()
         hook.'''
+        # Unfortunately, the parser argument's type is not documented
+        # in typeshed, so we can't type annotate much here.
+
         # Common options that depend on runner capabilities. If a
         # capability is not supported, the option string or strings
         # are added anyway, to prevent an individual runner class from
@@ -449,12 +454,13 @@ class ZephyrBinaryRunner(abc.ABC):
         '''Hook for adding runner-specific options.'''
 
     @classmethod
-    def create(cls, cfg, args):
+    def create(cls, cfg: RunnerConfig,
+               args: argparse.Namespace) -> 'ZephyrBinaryRunner':
         '''Create an instance from command-line arguments.
 
-        - ``cfg``: RunnerConfig instance (pass to superclass __init__)
-        - ``args``: runner-specific argument namespace parsed from
-          execution environment, as specified by ``add_parser()``.'''
+        - ``cfg``: runner configuration (pass to superclass __init__)
+        - ``args``: arguments parsed from execution environment, as
+          specified by ``add_parser()``.'''
         caps = cls.capabilities()
         if args.dt_flash and not caps.flash_addr:
             _missing_cap(cls, '--dt-flash')
@@ -468,11 +474,14 @@ class ZephyrBinaryRunner(abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    def do_create(cls, cfg, args):
+    def do_create(cls, cfg: RunnerConfig,
+                  args: argparse.Namespace) -> 'ZephyrBinaryRunner':
         '''Hook for instance creation from command line arguments.'''
 
     @classmethod
-    def get_flash_address(cls, args, build_conf, default=0x0):
+    def get_flash_address(cls, args: argparse.Namespace,
+                          build_conf: BuildConfiguration,
+                          default: int = 0x0) -> int:
         '''Helper method for extracting a flash address.
 
         If args.dt_flash is true, get the address from the
@@ -492,7 +501,7 @@ class ZephyrBinaryRunner(abc.ABC):
         else:
             return default
 
-    def run(self, command, **kwargs):
+    def run(self, command: str, **kwargs):
         '''Runs command ('flash', 'debug', 'debugserver', 'attach').
 
         This is the main entry point to this runner.'''
@@ -503,13 +512,13 @@ class ZephyrBinaryRunner(abc.ABC):
         self.do_run(command, **kwargs)
 
     @abc.abstractmethod
-    def do_run(self, command, **kwargs):
+    def do_run(self, command: str, **kwargs):
         '''Concrete runner; run() delegates to this. Implement in subclasses.
 
         In case of an unsupported command, raise a ValueError.'''
 
     @staticmethod
-    def require(program):
+    def require(program: str):
         '''Require that a program is installed before proceeding.
 
         :param program: name of the program that is required,
@@ -543,14 +552,14 @@ class ZephyrBinaryRunner(abc.ABC):
             server_proc.terminate()
             server_proc.wait()
 
-    def _log_cmd(self, cmd):
+    def _log_cmd(self, cmd: List[str]):
         escaped = ' '.join(shlex.quote(s) for s in cmd)
         if not _DRY_RUN:
             self.logger.debug(escaped)
         else:
             self.logger.info(escaped)
 
-    def call(self, cmd):
+    def call(self, cmd: List[str]) -> int:
         '''Subclass subprocess.call() wrapper.
 
         Subclasses should use this method to run command in a
@@ -562,7 +571,7 @@ class ZephyrBinaryRunner(abc.ABC):
             return 0
         return subprocess.call(cmd)
 
-    def check_call(self, cmd):
+    def check_call(self, cmd: List[str]):
         '''Subclass subprocess.check_call() wrapper.
 
         Subclasses should use this method to run command in a
@@ -574,7 +583,7 @@ class ZephyrBinaryRunner(abc.ABC):
             return
         subprocess.check_call(cmd)
 
-    def check_output(self, cmd, **kwargs):
+    def check_output(self, cmd: List[str], **kwargs) -> bytes:
         '''Subclass subprocess.check_output() wrapper.
 
         Subclasses should use this method to run command in a
@@ -586,7 +595,7 @@ class ZephyrBinaryRunner(abc.ABC):
             return b''
         return subprocess.check_output(cmd, **kwargs)
 
-    def popen_ignore_int(self, cmd):
+    def popen_ignore_int(self, cmd: List[str]) -> subprocess.Popen:
         '''Spawn a child command, ensuring it ignores SIGINT.
 
         The returned subprocess.Popen object must be manually terminated.'''
@@ -595,12 +604,15 @@ class ZephyrBinaryRunner(abc.ABC):
         system = platform.system()
 
         if system == 'Windows':
-            cflags |= subprocess.CREATE_NEW_PROCESS_GROUP
+            # We can't type check this line on Unix operating systems:
+            # mypy thinks the subprocess module has no such attribute.
+            cflags |= subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore
         elif system in {'Linux', 'Darwin'}:
-            preexec = os.setsid
+            # We can't type check this on Windows for the same reason.
+            preexec = os.setsid # type: ignore
 
         self._log_cmd(cmd)
         if _DRY_RUN:
-            return _DebugDummyPopen()
+            return _DebugDummyPopen()  # type: ignore
 
         return subprocess.Popen(cmd, creationflags=cflags, preexec_fn=preexec)
