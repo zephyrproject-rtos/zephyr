@@ -119,7 +119,7 @@ struct net_buf_simple {
 #define NET_BUF_SIMPLE(_size)                        \
 	((struct net_buf_simple *)(&(struct {        \
 		struct net_buf_simple buf;           \
-		uint8_t data[_size];                    \
+		uint8_t data[_size];                 \
 	}) {                                         \
 		.buf.size = _size,                   \
 	}))
@@ -790,7 +790,8 @@ struct net_buf {
 };
 
 struct net_buf_data_cb {
-	uint8_t * (*alloc)(struct net_buf *buf, size_t *size, k_timeout_t timeout);
+	uint8_t * (*alloc)(struct net_buf *buf, size_t *size,
+			   k_timeout_t timeout);
 	uint8_t * (*ref)(struct net_buf *buf, uint8_t *data);
 	void   (*unref)(struct net_buf *buf, uint8_t *data);
 };
@@ -840,7 +841,7 @@ struct net_buf_pool {
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
 #define NET_BUF_POOL_INITIALIZER(_pool, _alloc, _bufs, _count, _destroy) \
 	{                                                                    \
-		.free = Z_LIFO_INITIALIZER(_pool.free),                     \
+		.free = Z_LIFO_INITIALIZER(_pool.free),                      \
 		.buf_count = _count,                                         \
 		.uninit_count = _count,                                      \
 		.avail_count = _count,                                       \
@@ -852,7 +853,7 @@ struct net_buf_pool {
 #else
 #define NET_BUF_POOL_INITIALIZER(_pool, _alloc, _bufs, _count, _destroy)     \
 	{                                                                    \
-		.free = Z_LIFO_INITIALIZER(_pool.free),                     \
+		.free = Z_LIFO_INITIALIZER(_pool.free),                      \
 		.buf_count = _count,                                         \
 		.uninit_count = _count,                                      \
 		.destroy = _destroy,                                         \
@@ -935,10 +936,10 @@ extern const struct net_buf_data_cb net_buf_fixed_cb;
  */
 #define NET_BUF_POOL_FIXED_DEFINE(_name, _count, _data_size, _destroy)        \
 	static struct net_buf net_buf_##_name[_count] __noinit;               \
-	static uint8_t __noinit net_buf_data_##_name[_count][_data_size];        \
+	static uint8_t __noinit net_buf_data_##_name[_count][_data_size];     \
 	static const struct net_buf_pool_fixed net_buf_fixed_##_name = {      \
 		.data_size = _data_size,                                      \
-		.data_pool = (uint8_t *)net_buf_data_##_name,                    \
+		.data_pool = (uint8_t *)net_buf_data_##_name,                 \
 	};                                                                    \
 	static const struct net_buf_data_alloc net_buf_fixed_alloc_##_name = {\
 		.cb = &net_buf_fixed_cb,                                      \

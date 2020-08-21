@@ -134,7 +134,8 @@ struct lwm2m_ctx {
  * @return Callback returns a pointer to the data buffer or NULL for failure.
  */
 typedef void *(*lwm2m_engine_get_data_cb_t)(uint16_t obj_inst_id,
-					    uint16_t res_id, uint16_t res_inst_id,
+					    uint16_t res_id,
+					    uint16_t res_inst_id,
 					    size_t *data_len);
 
 /**
@@ -784,8 +785,8 @@ int lwm2m_engine_set_res_data(char *pathstr, void *data_ptr, uint16_t data_len,
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_get_res_data(char *pathstr, void **data_ptr, uint16_t *data_len,
-			      uint8_t *data_flags);
+int lwm2m_engine_get_res_data(char *pathstr, void **data_ptr,
+			      uint16_t *data_len, uint8_t *data_flags);
 
 /**
  * @brief Create a resource instance

@@ -221,7 +221,8 @@ void net_mgmt_del_event_callback(struct net_mgmt_event_callback *cb);
 void net_mgmt_event_notify_with_info(uint32_t mgmt_event, struct net_if *iface,
 				     void *info, size_t length);
 
-static inline void net_mgmt_event_notify(uint32_t mgmt_event, struct net_if *iface)
+static inline void net_mgmt_event_notify(uint32_t mgmt_event,
+					 struct net_if *iface)
 {
 	net_mgmt_event_notify_with_info(mgmt_event, iface, NULL, 0);
 }

@@ -716,8 +716,8 @@ static inline void net_if_stop_rs(struct net_if *iface)
  * @brief Set a network interface's link address
  *
  * @param iface Pointer to a network interface structure
- * @param addr A pointer to a uint8_t buffer representing the address. The buffer
- *             must remain valid throughout interface lifetime.
+ * @param addr A pointer to a uint8_t buffer representing the address.
+ *             The buffer must remain valid throughout interface lifetime.
  * @param len length of the address buffer
  * @param type network bearer type of this link address
  *
