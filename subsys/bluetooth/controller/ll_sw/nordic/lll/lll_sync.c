@@ -271,7 +271,7 @@ static void isr_rx(void *param)
 	/* Check CRC and generate Periodic Advertising Report */
 	if (crc_ok) {
 		/* TODO: */
-		printk("CRC OK\n");
+		BT_WARN("CRC OK");
 	}
 
 isr_rx_done:
