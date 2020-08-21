@@ -143,8 +143,11 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 					&ret_cb);
 		ret = ull_ticker_status_take(ret, &ret_cb);
 		if (ret != TICKER_STATUS_SUCCESS) {
-			/* FIXME: Use a better error code */
-			return BT_HCI_ERR_CMD_DISALLOWED;
+			/* NOTE: This failure, to start an auxiliary channel
+			 * radio event shall not occur unless a defect in the
+			 * controller design.
+			 */
+			return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
 		}
 
 		aux->is_started = 1;
@@ -170,9 +173,9 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	 */
 
 	/* TODO: handle other op values */
-	if ((op != 0x03) && (op != 0x04)) {
-		/* FIXME: error code */
-		return BT_HCI_ERR_CMD_DISALLOWED;
+	if ((op != BT_HCI_LE_EXT_ADV_OP_COMPLETE_DATA) &&
+	    (op != BT_HCI_LE_EXT_ADV_OP_UNCHANGED_DATA)) {
+		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 	}
 
 	/* Get the advertising set instance */
