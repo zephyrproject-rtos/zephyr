@@ -622,6 +622,7 @@ static void sync_lost(void *param)
 	rx = (void *)&sync->node_rx_lost;
 	rx->hdr.handle = ull_sync_handle_get(sync);
 	rx->hdr.type = NODE_RX_TYPE_SYNC_LOST;
+	rx->hdr.rx_ftr.param = sync;
 
 	/* Enqueue the sync lost towards ULL context */
 	ll_rx_put(rx->hdr.link, rx);
