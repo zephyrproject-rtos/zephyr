@@ -24,8 +24,6 @@ struct dma_stm32_stream {
 };
 
 struct dma_stm32_data {
-	int max_streams;
-	struct dma_stm32_stream *streams;
 };
 
 struct dma_stm32_config {
@@ -33,6 +31,8 @@ struct dma_stm32_config {
 	void (*config_irq)(const struct device *dev);
 	bool support_m2m;
 	uint32_t base;
+	uint32_t max_streams;
+	struct dma_stm32_stream *streams;
 };
 
 #ifdef CONFIG_DMA_STM32_V1
@@ -56,6 +56,8 @@ extern void (*func_ll_clear_gi[])(DMA_TypeDef *DMAx);
 #ifdef CONFIG_DMA_STM32_V1
 extern uint32_t table_ll_channel[];
 #endif
+
+bool stm32_dma_is_irq_active(DMA_TypeDef *dma, uint32_t id);
 
 void stm32_dma_dump_stream_irq(DMA_TypeDef *dma, uint32_t id);
 void stm32_dma_clear_stream_irq(DMA_TypeDef *dma, uint32_t id);

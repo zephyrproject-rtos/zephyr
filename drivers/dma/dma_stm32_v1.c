@@ -160,6 +160,45 @@ void stm32_dma_dump_stream_irq(DMA_TypeDef *dma, uint32_t id)
 		func_ll_is_active_fe[id](dma));
 }
 
+static inline bool stm32_dma_is_tc_irq_active(DMA_TypeDef *dma, uint32_t id)
+{
+	return LL_DMA_IsEnabledIT_TC(dma, id) &&
+	       func_ll_is_active_tc[id[(dma);
+}
+
+static inline bool stm32_dma_is_ht_irq_active(DMA_TypeDef *dma, uint32_t id)
+{
+	return LL_DMA_IsEnabledIT_HT(dma, id) &&
+	       func_ll_is_active_ht[id](dma);
+}
+
+static inline bool stm32_dma_is_te_irq_active(DMA_TypeDef *dma, uint32_t id)
+{
+	return LL_DMA_IsEnabledIT_TE(dma, id) &&
+	       func_ll_is_active_te[id](dma);
+}
+
+static inline bool stm32_dma_is_dme_irq_active(DMA_TypeDef *dma, uint32_t id)
+{
+	return LL_DMA_IsEnabledIT_DME(dma, id) &&
+	       func_ll_is_active_dme[id](dma);
+}
+
+static inline bool stm32_dma_is_fe_irq_active(DMA_TypeDef *dma, uint32_t id)
+{
+	return LL_DMA_IsEnabledIT_FE(dma, id) &&
+	       func_ll_is_active_fe[id](dma);
+}
+
+bool stm32_dma_is_irq_active(DMA_TypeDef *dma, uint32_t id)
+{
+	return stm32_dma_is_tc_irq_active(dma, id) ||
+	       stm32_dma_is_ht_irq_active(dma, id) ||
+	       stm32_dma_is_te_irq_active(dma, id) ||
+	       stm32_dma_is_dme_irq_active(dma, id) ||
+	       stm32_dma_is_fe_irq_active(dma, id);
+}
+
 void stm32_dma_clear_stream_irq(DMA_TypeDef *dma, uint32_t id)
 {
 	func_ll_clear_te[id](dma);
