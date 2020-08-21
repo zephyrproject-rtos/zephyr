@@ -783,6 +783,20 @@ You can also define the variable in the application :file:`CMakeLists.txt`
 file. Make sure to do so **before** pulling in the Zephyr boilerplate with
 ``find_package(Zephyr ...)``.
 
+Devicetree source are passed through the C preprocessor, so you can
+include files that can be located in a ``DTS_ROOT`` directory.  By
+convention devicetree include files have a ``.dtsi`` extension.
+
+You can also use the preprocessor to control the content of a devicetree
+file, by specifying directives through the ``DTS_EXTRA_CPPFLAGS`` CMake
+Cache variable:
+
+.. zephyr-app-commands::
+   :tool: all
+   :board: <board name>
+   :gen-args: -DDTS_EXTRA_CPPFLAGS=-DTEST_ENABLE_FEATURE
+   :goals: build
+   :compact:
 
 Application Debugging
 *********************

@@ -140,6 +140,7 @@ if(SUPPORTS_DTS)
     ${DTC_INCLUDE_FLAG_FOR_DTS}  # include the DTS source and overlays
     ${NOSYSDEF_CFLAG}
     -D__DTS__
+    ${DTS_EXTRA_CPPFLAGS}
     -P
     -E   # Stop after preprocessing
     -MD  # Generate a dependency file as a side-effect
