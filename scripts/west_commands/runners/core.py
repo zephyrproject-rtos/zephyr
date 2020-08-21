@@ -328,7 +328,7 @@ class ZephyrBinaryRunner(abc.ABC):
     information on how to configure the runner to work with the board.
 
     The build system will then place enough information in the build
-    directory so to create and use runners with this class's create()
+    directory to create and use runners with this class's create()
     method, which provides a command line argument parsing API. You
     can also create runners by instantiating subclasses directly.
 
