@@ -595,7 +595,6 @@ static void ticker_op_cb(uint32_t status, void *param)
 static void ticker_update_sync_op_cb(uint32_t status, void *param)
 {
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS ||
-		  param == ull_update_mark_get() ||
 		  param == ull_disable_mark_get());
 }
 
