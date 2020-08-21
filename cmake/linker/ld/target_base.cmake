@@ -12,6 +12,9 @@ macro(toolchain_ld_base)
   # LINKERFLAGPREFIX comes from linker/ld/target.cmake
   zephyr_ld_options(
     ${TOOLCHAIN_LD_FLAGS}
+  )
+
+  zephyr_ld_options(
     ${LINKERFLAGPREFIX},--gc-sections
     ${LINKERFLAGPREFIX},--build-id=none
   )

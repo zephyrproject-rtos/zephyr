@@ -253,6 +253,9 @@ function(zephyr_get_parse_args return_dict)
     if(x STREQUAL STRIP_PREFIX)
       set(${return_dict}_STRIP_PREFIX 1 PARENT_SCOPE)
     endif()
+    if(x STREQUAL NO_SPLIT)
+      set(${return_dict}_NO_SPLIT 1 PARENT_SCOPE)
+    endif()
   endforeach()
 endfunction()
 
@@ -1381,15 +1384,26 @@ function(target_cc_option_fallback target scope option1 option2)
 endfunction()
 
 function(target_ld_options target scope)
+  zephyr_get_parse_args(args ${ARGN})
+  list(REMOVE_ITEM ARGN NO_SPLIT)
+
   foreach(option ${ARGN})
-    string(MAKE_C_IDENTIFIER check${option} check)
+    if(args_NO_SPLIT)
+      set(option ${ARGN})
+    endif()
+    string(JOIN "" check_identifier "check" ${option})
+    string(MAKE_C_IDENTIFIER ${check_identifier} check)
 
     set(SAVED_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
-    set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${option}")
+    string(JOIN " " CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS} ${option})
     zephyr_check_compiler_flag(C "" ${check})
     set(CMAKE_REQUIRED_FLAGS ${SAVED_CMAKE_REQUIRED_FLAGS})
 
     target_link_libraries_ifdef(${check} ${target} ${scope} ${option})
+
+    if(args_NO_SPLIT)
+      break()
+    endif()
   endforeach()
 endfunction()
 
