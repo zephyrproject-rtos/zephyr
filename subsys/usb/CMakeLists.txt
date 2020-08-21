@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if(CONFIG_USB_DEVICE_STACK)
+if(CONFIG_USB_DEVICE_LEGACY_STACK)
   zephyr_include_directories(${ZEPHYR_BASE}/subsys/usb)
 
   zephyr_sources(

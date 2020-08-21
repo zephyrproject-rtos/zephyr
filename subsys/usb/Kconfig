@@ -10,7 +10,21 @@ menuconfig USB_DEVICE_STACK
 	help
 	  Enable USB device stack.
 
-if USB_DEVICE_STACK
+choice
+	prompt "Supported USB device stack implementations"
+	default USB_DEVICE_LEGACY_STACK
+	help
+	  Specify the implementation of the USB device stack.
+
+config USB_DEVICE_LEGACY_STACK
+	bool "Legacy USB device stack"
+
+config USBD_DEVICE_STACK
+	bool "New experimental USB device stack"
+
+endchoice
+
+if USB_DEVICE_LEGACY_STACK
 
 module = USB_DEVICE
 module-str = usb device
@@ -108,4 +122,4 @@ config USB_MAX_POWER
 
 source "subsys/usb/class/Kconfig"
 
-endif # USB_DEVICE_STACK
+endif # USBL_DEVICE_STACK
