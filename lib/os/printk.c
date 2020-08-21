@@ -197,7 +197,7 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 					padding = PAD_ZERO_BEFORE;
 					goto still_might_format;
 				}
-				/* Fall through */
+				__fallthrough;
 			case '1':
 			case '2':
 			case '3':
@@ -206,7 +206,6 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 			case '6':
 			case '7':
 			case '8':
-				/* Fall through */
 			case '9':
 				if (min_width < 0) {
 					min_width = *fmt - '0';
@@ -266,7 +265,7 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 				/* left-pad pointers with zeros */
 				padding = PAD_ZERO_BEFORE;
 				min_width = sizeof(void *) * 2;
-				/* Fall through */
+				__fallthrough;
 			case 'x':
 			case 'X': {
 				printk_val_t x;

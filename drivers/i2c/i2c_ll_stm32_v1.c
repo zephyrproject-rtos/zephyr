@@ -940,7 +940,7 @@ int32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 
 			/* Set NACK before reading N-2 byte*/
 			LL_I2C_AcknowledgeNextData(i2c, LL_I2C_NACK);
-		/* Fall through */
+			__fallthrough;
 		default:
 			len--;
 			*buf = LL_I2C_ReceiveData8(i2c);

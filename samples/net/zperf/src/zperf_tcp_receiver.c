@@ -65,7 +65,7 @@ static void tcp_received(struct net_context *context,
 		zperf_reset_session_stats(session);
 		session->start_time = k_cycle_get_32();
 		session->state = STATE_ONGOING;
-		/* fall through */
+		__fallthrough;
 	case STATE_ONGOING:
 		session->counter++;
 

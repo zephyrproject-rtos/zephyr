@@ -237,12 +237,12 @@ static void lpc11u6x_i2c_isr(void *arg)
 		if (!transfer->nr_msgs) {
 			transfer->status = LPC11U6X_I2C_STATUS_OK;
 		}
-		/* fallthrough */
+		__fallthrough;
 	case LPC11U6X_I2C_MASTER_RX_DAT_ACK:
 		transfer->curr_buf[0] = i2c->dat;
 		transfer->curr_buf++;
 		transfer->curr_len--;
-		/* fallthrough */
+		__fallthrough;
 	case LPC11U6X_I2C_MASTER_RX_ADR_ACK:
 		if (transfer->curr_len <= 1) {
 			clear |= LPC11U6X_I2C_CONTROL_AA;

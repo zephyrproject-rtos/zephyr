@@ -2073,7 +2073,7 @@ static inline void ticker_job_op_inquire(struct ticker_instance *instance,
 					uop->params.slot_get.ticker_id,
 					uop->params.slot_get.ticks_current,
 					uop->params.slot_get.ticks_to_expire);
-		/* Fall-through */
+		__fallthrough;
 	case TICKER_USER_OP_TYPE_IDLE_GET:
 		uop->status = TICKER_STATUS_SUCCESS;
 		fp_op_func = uop->fp_op_func;

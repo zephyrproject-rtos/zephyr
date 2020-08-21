@@ -531,6 +531,7 @@ bool bt_mesh_kr_update(struct bt_mesh_subnet *sub, uint8_t new_kr, bool new_key)
 		 *
 		 * Intentional fall-through.
 		 */
+			__fallthrough;
 		case BT_MESH_KR_PHASE_2:
 			BT_DBG("KR Phase 0x%02x -> Normal", sub->kr_phase);
 			bt_mesh_net_revoke_keys(sub);

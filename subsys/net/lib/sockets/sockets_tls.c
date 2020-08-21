@@ -1627,7 +1627,7 @@ static ssize_t recvfrom_dtls_server(struct net_context *ctx, void *buf,
 		switch (ret) {
 		case MBEDTLS_ERR_SSL_TIMEOUT:
 			(void)mbedtls_ssl_close_notify(&ctx->tls->ssl);
-			/* fallthrough */
+			__fallthrough;
 
 		case MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY:
 		case MBEDTLS_ERR_SSL_CLIENT_RECONNECT:

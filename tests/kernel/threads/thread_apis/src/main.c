@@ -346,7 +346,7 @@ int join_scenario(enum control_method m)
 		break;
 	case OTHER_ABORT_TIMEOUT:
 		timeout = K_MSEC(JOIN_TIMEOUT_MS);
-		/* Fall through */
+		__fallthrough;
 	case OTHER_ABORT:
 		printk("ztest_thread: create control_thread\n");
 		k_thread_create(&control_thread, control_stack, STACK_SIZE,

@@ -587,17 +587,17 @@ static void mcux_flexcan_transfer_callback(CAN_Type *base,
 
 	switch (status) {
 	case kStatus_FLEXCAN_UnHandled:
-		/* fallthrough */
+		__fallthrough;
 	case kStatus_FLEXCAN_ErrorStatus:
 		mcux_flexcan_transfer_error_status(dev, result);
 		break;
 	case kStatus_FLEXCAN_TxSwitchToRx:
-		/* fallthrough */
+		__fallthrough;
 	case kStatus_FLEXCAN_TxIdle:
 		mcux_flexcan_transfer_tx_idle(dev, result);
 		break;
 	case kStatus_FLEXCAN_RxOverflow:
-		/* fallthrough */
+		__fallthrough;
 	case kStatus_FLEXCAN_RxIdle:
 		mcux_flexcan_transfer_rx_idle(dev, result);
 		break;

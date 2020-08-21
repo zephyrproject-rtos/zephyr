@@ -384,10 +384,10 @@ static int eeprom_at25_read(struct device *dev, off_t offset, void *buf,
 	switch (config->addr_width) {
 	case 24:
 		*paddr++ = offset >> 16;
-		/* Fallthrough */
+		__fallthrough;
 	case 16:
 		*paddr++ = offset >> 8;
-		/* Fallthrough */
+		__fallthrough;
 	case 8:
 		*paddr++ = offset;
 		break;
@@ -450,10 +450,10 @@ static int eeprom_at25_write(struct device *dev, off_t offset,
 	switch (config->addr_width) {
 	case 24:
 		*paddr++ = offset >> 16;
-		/* Fallthrough */
+		__fallthrough;
 	case 16:
 		*paddr++ = offset >> 8;
-		/* Fallthrough */
+		__fallthrough;
 	case 8:
 		*paddr++ = offset;
 		break;

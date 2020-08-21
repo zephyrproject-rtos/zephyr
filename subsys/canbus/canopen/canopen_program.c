@@ -266,7 +266,7 @@ static CO_SDO_abortCode_t canopen_odf_1f51(CO_ODF_arg_t *odf_arg)
 		ab = canopen_program_cmd_confirm();
 		break;
 	case PROGRAM_CTRL_RESET:
-		/* Fallthrough */
+		__fallthrough;
 	default:
 		LOG_DBG("unsupported command '%d'", cmd);
 		ab = CO_SDO_AB_INVALID_VALUE;

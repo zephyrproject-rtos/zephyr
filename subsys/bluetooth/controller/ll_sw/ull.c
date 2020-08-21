@@ -746,7 +746,7 @@ void ll_rx_dequeue(void)
 	case NODE_RX_TYPE_USER_START ... NODE_RX_TYPE_USER_END:
 #endif /* CONFIG_BT_CTLR_USER_EXT */
 
-	/* fall through */
+		__fallthrough;
 
 	/* Ensure that at least one 'case' statement is present for this
 	 * code block.
@@ -848,7 +848,7 @@ void ll_rx_mem_release(void **node_rx)
 			}
 		}
 
-		/* passthrough */
+		__fallthrough;
 		case NODE_RX_TYPE_DC_PDU:
 #endif /* CONFIG_BT_CONN */
 
@@ -857,7 +857,7 @@ void ll_rx_mem_release(void **node_rx)
 #endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-			/* fallthrough */
+			__fallthrough;
 		case NODE_RX_TYPE_EXT_1M_REPORT:
 		case NODE_RX_TYPE_EXT_2M_REPORT:
 		case NODE_RX_TYPE_EXT_CODED_REPORT:

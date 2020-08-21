@@ -125,7 +125,7 @@ struct net_buf *bt_buf_get_tx(enum bt_buf_type type, k_timeout_t timeout,
 			size--;
 			break;
 		}
-	/* Fallthrough */
+		__fallthrough;
 	default:
 		BT_ERR("Invalid type: %u", type);
 		return NULL;
