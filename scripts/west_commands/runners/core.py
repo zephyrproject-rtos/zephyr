@@ -21,7 +21,8 @@ import shlex
 import shutil
 import signal
 import subprocess
-from typing import Dict, List, NoReturn, Optional, Set, Type, Union
+from typing import Dict, List, NamedTuple, NoReturn, Optional, Set, Type, \
+    Union
 
 # Turn on to enable just logging the commands that would be run (at
 # info rather than debug level), without actually running them. This
@@ -223,52 +224,21 @@ def _missing_cap(cls: Type['ZephyrBinaryRunner'], option: str) -> NoReturn:
     raise ValueError(f"{cls.name()} doesn't support {option} option")
 
 
-class RunnerConfig:
+class RunnerConfig(NamedTuple):
     '''Runner execution-time configuration.
 
     This is a common object shared by all runners. Individual runners
     can register specific configuration options using their
     do_add_parser() hooks.
-
-    This class's __slots__ contains exactly the configuration variables.
     '''
-
-    __slots__ = ['build_dir', 'board_dir', 'elf_file', 'hex_file',
-                 'bin_file', 'gdb', 'openocd', 'openocd_search']
-
-    # TODO: revisit whether we can get rid of some of these.  Having
-    # tool-specific configuration options here is a layering
-    # violation, but it's very convenient to have a single place to
-    # store the locations of tools (like gdb and openocd) that are
-    # needed by multiple ZephyrBinaryRunner subclasses.
-    def __init__(self, build_dir: str, board_dir: str,
-                 elf_file: str, hex_file: str, bin_file: str,
-                 gdb: Optional[str] = None,
-                 openocd: Optional[str] = None,
-                 openocd_search: Optional[str] = None):
-        self.build_dir = build_dir
-        '''Zephyr application build directory'''
-
-        self.board_dir = board_dir
-        '''Zephyr board directory'''
-
-        self.elf_file = elf_file
-        '''Path to the elf file that the runner should operate on'''
-
-        self.hex_file = hex_file
-        '''Path to the hex file that the runner should operate on'''
-
-        self.bin_file = bin_file
-        '''Path to the bin file that the runner should operate on'''
-
-        self.gdb = gdb
-        ''''Path to GDB compatible with the target, may be None.'''
-
-        self.openocd = openocd
-        '''Path to OpenOCD to use for this target, may be None.'''
-
-        self.openocd_search = openocd_search
-        '''directory to add to OpenOCD search path, may be None.'''
+    build_dir: str              # application build directory
+    board_dir: str              # board definition directory
+    elf_file: str               # zephyr.elf path
+    hex_file: str               # zephyr.hex path
+    bin_file: str               # zephyr.bin path
+    gdb: Optional[str] = None   # path to a usable gdb
+    openocd: Optional[str] = None  # path to a usable openocd
+    openocd_search: Optional[str] = None  # add this to openocd search path
 
 
 _YN_CHOICES = ['Y', 'y', 'N', 'n', 'yes', 'no', 'YES', 'NO']
