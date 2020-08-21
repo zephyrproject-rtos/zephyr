@@ -260,4 +260,48 @@ config LOG_BACKEND_ADSP
 	  Enable backend for the host trace protocol of the Intel ADSP
 	  family of audio processors
 
+config LOG_BACKEND_FS
+	bool "Enable LittleFS backend"
+	depends on FILE_SYSTEM
+	help
+	  When enabled backend is using LittleFS to output logs.
+
+if LOG_BACKEND_FS
+
+config LOG_BACKEND_FS_OVERWRITE
+	bool "Enable old log files overwrite"
+	default y
+	help
+	  When enabled backend overwrites oldest log files.
+	  In other case, when memory is full, new messages are dropped.
+
+config LOG_BACKEND_FS_FILE_PREFIX
+	string "Log file name prefix"
+	default "log."
+	help
+	  User defined name of log files saved in the file system.
+	  The prefix is followed by the number of log file.
+
+config LOG_BACKEND_FS_DIR
+	string "Log directory"
+	default "/lfs1"
+	help
+	  Directory to which log files will be written.
+
+config LOG_BACKEND_FS_FILE_SIZE
+	int "User defined log file size"
+	default 4096
+	range 128 16384
+	help
+	  Max log file size (in bytes).
+
+config LOG_BACKEND_FS_FILES_LIMIT
+	int "Max number of files containing logs"
+	default 10
+	help
+	  Limit of number of files with logs. It is also limited by
+	  size of file system partition.
+
+endif # LOG_BACKEND_FS
+
 endmenu
