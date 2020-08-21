@@ -172,6 +172,9 @@ static inline int is_user_accessible_region(uint32_t r_index, int write)
 static inline int mpu_buffer_validate(void *addr, size_t size, int write)
 {
 	int32_t r_index;
+	int rc = -EPERM;
+
+	int key = arch_irq_lock();
 
 	/* Iterate all mpu regions in reversed order */
 	for (r_index = get_num_regions() - 1U; r_index >= 0;  r_index--) {
@@ -186,14 +189,15 @@ static inline int mpu_buffer_validate(void *addr, size_t size, int write)
 		 * matched region that grants permission or denies access.
 		 */
 		if (is_user_accessible_region(r_index, write)) {
-			return 0;
+			rc = 0;
 		} else {
-			return -EPERM;
+			rc = -EPERM;
 		}
+		break;
 	}
 
-	return -EPERM;
-
+	arch_irq_unlock(key);
+	return rc;
 }
 
 #endif /* CONFIG_USERSPACE */
