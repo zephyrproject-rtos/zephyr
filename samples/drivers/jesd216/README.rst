@@ -28,7 +28,7 @@ Sample Output
 
 .. code-block:: console
 
-   MX25R8035F: SFDP v 1.6 AP ff with 2 PH
+   MX25R8035F: SFDP v 1.6 AP ff with 3 PH
    PH0: ff00 rev 1.6: 16 DW @ 30
    Summary of BFP content:
    DTR Clocking not supported
@@ -44,7 +44,7 @@ Sample Output
    ET1: instr 20h for 4096 By; typ 48 ms, max 384 ms
    ET2: instr 52h for 32768 By; typ 240 ms, max 1920 ms
    ET3: instr D8h for 65536 By; typ 480 ms, max 3840 ms
-   Chip erase: typ 5120 ms, max 30720 ms
+   Chip erase: typ 6144 ms, max 36864 ms
    Byte program: type 32 + 1 * B us, max 192 + 6 * B us
    Page program: typ 896 us, max 5376 us
    Page size: 256 By
@@ -60,5 +60,9 @@ Sample Output
    PH1: ffc2 rev 1.0: 4 DW @ 110
    sfdp-ffc2 = [
            00 36 50 16  9d f9 c0 64  fe cf ff ff  ff ff ff ff
+           ];
+   PH2: ff84 rev 1.0: 2 DW @ c0
+   sfdp-ff84 = [
+           00 00 f0 ff  ff ff ff ff
            ];
    jedec-id = [c2 28 14];
