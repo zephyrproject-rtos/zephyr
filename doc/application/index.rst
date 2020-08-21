@@ -587,11 +587,11 @@ again.
 .. _application_debugging:
 .. _custom_board_definition:
 
-Custom Board, DeviceTree and SOC Definitions
+Custom Board, Devicetree and SOC Definitions
 ********************************************
 
 In cases where the board or platform you are developing for is not yet
-supported by Zephyr, you can add board, DeviceTree and SOC definitions
+supported by Zephyr, you can add board, Devicetree and SOC definitions
 to your application without having to add them to the Zephyr tree.
 
 The structure needed to support out-of-tree board and SOC development
@@ -752,10 +752,10 @@ Zephyr boilerplate with ``find_package(Zephyr ...)``.
 
 .. _dts_root:
 
-DeviceTree Definitions
+Devicetree Definitions
 ======================
 
-DeviceTree directory trees are found in ``APPLICATION_SOURCE_DIR``,
+Devicetree directory trees are found in ``APPLICATION_SOURCE_DIR``,
 ``BOARD_DIR``, and ``ZEPHYR_BASE``, but additional trees, or DTS_ROOTs,
 can be added by creating this directory tree::
 
