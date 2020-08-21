@@ -7,6 +7,8 @@
 #include <drivers/uart.h>
 #include <SEGGER_RTT.h>
 
+#define DT_DRV_COMPAT segger_rtt_uart
+
 struct uart_rtt_config {
 	void *up_buffer;
 	size_t up_size;
@@ -77,44 +79,44 @@ static const struct uart_driver_api uart_rtt_driver_api = {
 	.poll_out = uart_rtt_poll_out,
 };
 
-#if CONFIG_UART_RTT_0
+#define UART_RTT(idx)                   DT_NODELABEL(rtt##idx)
+#define UART_RTT_PROP(idx, prop)        DT_PROP(UART_RTT(idx), prop)
+#define UART_RTT_CONFIG_NAME(idx)       uart_rtt##idx##_config
 
-DEVICE_AND_API_INIT(uart_rtt0, "RTT_0", uart_rtt_init, NULL, NULL,
-		    /* Initialize UART device after RTT init. */
-		    PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &uart_rtt_driver_api);
+#define UART_RTT_CONFIG(idx)						    \
+	static								    \
+	uint8_t uart_rtt##idx##_tx_buf[UART_RTT_PROP(idx, tx_buffer_size)]; \
+	static								    \
+	uint8_t uart_rtt##idx##_rx_buf[UART_RTT_PROP(idx, rx_buffer_size)]; \
+									    \
+	static const struct uart_rtt_config UART_RTT_CONFIG_NAME(idx) = {   \
+		.up_buffer = uart_rtt##idx##_tx_buf,			    \
+		.up_size = sizeof(uart_rtt##idx##_tx_buf),		    \
+		.down_buffer = uart_rtt##idx##_rx_buf,			    \
+		.down_size = sizeof(uart_rtt##idx##_rx_buf),		    \
+	}
 
-#endif
-
-#define UART_RTT_CHANNEL(n)                                                    \
-	static uint8_t                                                            \
-		uart_rtt##n##_tx_buffer[CONFIG_UART_RTT_##n##_TX_BUFFER_SIZE]; \
-	static uint8_t                                                            \
-		uart_rtt##n##_rx_buffer[CONFIG_UART_RTT_##n##_RX_BUFFER_SIZE]; \
-									       \
-	static const char uart_rtt##n##_name[] = "RTT_" #n "\0";               \
-									       \
-	static const struct uart_rtt_config uart_rtt##n##_config = {           \
-		.channel = n,                                                  \
-		.up_buffer = uart_rtt##n##_tx_buffer,                          \
-		.up_size = sizeof(uart_rtt##n##_tx_buffer),                    \
-		.down_buffer = uart_rtt##n##_rx_buffer,                        \
-		.down_size = sizeof(uart_rtt##n##_rx_buffer),                  \
-	};                                                                     \
-									       \
-	DEVICE_AND_API_INIT(uart_rtt##n, uart_rtt##n##_name, uart_rtt_init,    \
-			    NULL, &uart_rtt##n##_config, PRE_KERNEL_2,         \
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                \
+#define UART_RTT_INIT(idx, config)					      \
+	DEVICE_AND_API_INIT(uart_rtt##idx, DT_LABEL(UART_RTT(idx)),	      \
+			    uart_rtt_init, NULL, config,		      \
+			    PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
 			    &uart_rtt_driver_api)
 
-#if CONFIG_UART_RTT_1
-UART_RTT_CHANNEL(1);
+#ifdef CONFIG_UART_RTT_0
+UART_RTT_INIT(0, NULL);
 #endif
 
-#if CONFIG_UART_RTT_2
-UART_RTT_CHANNEL(2);
+#ifdef CONFIG_UART_RTT_1
+UART_RTT_CONFIG(1);
+UART_RTT_INIT(1, &UART_RTT_CONFIG_NAME(1));
 #endif
 
-#if CONFIG_UART_RTT_3
-UART_RTT_CHANNEL(3);
+#ifdef CONFIG_UART_RTT_2
+UART_RTT_CONFIG(2);
+UART_RTT_INIT(2, &UART_RTT_CONFIG_NAME(2));
+#endif
+
+#ifdef CONFIG_UART_RTT_3
+UART_RTT_CONFIG(3);
+UART_RTT_INIT(3, &UART_RTT_CONFIG_NAME(3));
 #endif

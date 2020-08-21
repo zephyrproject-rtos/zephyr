@@ -11,8 +11,11 @@ menuconfig UART_RTT
 
 if UART_RTT
 
+# Workaround for not being able to have commas in macro arguments
+DT_COMPAT_SEGGER_RTT_UART  := segger,rtt-uart
+
 config UART_RTT_0
-	bool "Enable UART on RTT channel 0"
+	def_bool $(dt_nodelabel_has_compat,rtt0,$(DT_COMPAT_SEGGER_RTT_UART))
 	depends on SEGGER_RTT_MAX_NUM_UP_BUFFERS >= 1 && SEGGER_RTT_MAX_NUM_DOWN_BUFFERS >= 1
 	depends on SEGGER_RTT_MODE_NO_BLOCK_SKIP
 	select SERIAL_HAS_DRIVER
@@ -21,82 +24,28 @@ config UART_RTT_0
 	  Enable UART on (default) RTT channel 0. Default channel has to be configured in non-blocking skip mode.
 
 config UART_RTT_1
-	bool "Enable UART on RTT channel 1"
+	def_bool $(dt_nodelabel_has_compat,rtt1,$(DT_COMPAT_SEGGER_RTT_UART))
 	depends on SEGGER_RTT_MAX_NUM_UP_BUFFERS >= 2 && SEGGER_RTT_MAX_NUM_DOWN_BUFFERS >= 2
 	select SERIAL_HAS_DRIVER
 	select UART_RTT_DRIVER
 	help
 	  Enable UART on RTT channel 1
 
-if UART_RTT_1
-
-config UART_RTT_1_TX_BUFFER_SIZE
-	int "Size of RTT_1 TX buffer (up to host)"
-	range 1 65535
-	default 1024
-	help
-	  Size of the RTT up buffer for UART 1 transmission.
-
-config UART_RTT_1_RX_BUFFER_SIZE
-	int "Size of RTT_1 RX buffer (down from host)"
-	range 1 65535
-	default 16
-	help
-	  Size of the RTT down buffer for UART 1 reception.
-
-endif
-
 config UART_RTT_2
-	bool "Enable UART on RTT channel 2"
+	def_bool $(dt_nodelabel_has_compat,rtt2,$(DT_COMPAT_SEGGER_RTT_UART))
 	depends on SEGGER_RTT_MAX_NUM_UP_BUFFERS >= 3 && SEGGER_RTT_MAX_NUM_DOWN_BUFFERS >= 3
 	select SERIAL_HAS_DRIVER
 	select UART_RTT_DRIVER
 	help
 	  Enable UART on RTT channel 2
 
-if UART_RTT_2
-
-config UART_RTT_2_TX_BUFFER_SIZE
-	int "Size of RTT_2 TX buffer (up to host)"
-	range 1 65535
-	default 1024
-	help
-	  Size of the RTT up buffer for UART 2 transmission.
-
-config UART_RTT_2_RX_BUFFER_SIZE
-	int "Size of RTT_2 RX buffer (down from host)"
-	range 1 65535
-	default 16
-	help
-	  Size of the RTT down buffer for UART 2 reception.
-
-endif
-
 config UART_RTT_3
-	bool "Enable UART on RTT channel 3"
+	def_bool $(dt_nodelabel_has_compat,rtt3,$(DT_COMPAT_SEGGER_RTT_UART))
 	depends on SEGGER_RTT_MAX_NUM_UP_BUFFERS >= 4 && SEGGER_RTT_MAX_NUM_DOWN_BUFFERS >= 4
 	select SERIAL_HAS_DRIVER
 	select UART_RTT_DRIVER
 	help
 	  Enable UART on RTT channel 3
-
-if UART_RTT_3
-
-config UART_RTT_3_TX_BUFFER_SIZE
-	int "Size of RTT_3 TX buffer (up to host)"
-	range 1 65535
-	default 1024
-	help
-	  Size of the RTT up buffer for UART 3 transmission.
-
-config UART_RTT_3_RX_BUFFER_SIZE
-	int "Size of RTT_3 RX buffer (down from host)"
-	range 1 65535
-	default 16
-	help
-	  Size of the RTT down buffer for UART 3 reception.
-
-endif
 
 config UART_RTT_DRIVER
 	bool
