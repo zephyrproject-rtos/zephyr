@@ -414,6 +414,7 @@ void test_mem_domain_add_partitions_simple(void *p1, void *p2, void *p3)
 			  1,
 			  mem_domain_tc3_partition_array);
 
+	/* Add additional partitions up to the max permitted number. */
 	for (index = 1U; (index < max_partitions) && (index < 8); index++) {
 		k_mem_domain_add_partition(&mem_domain_tc3_mem_domain,
 					   mem_domain_tc3_partition_array \
@@ -468,7 +469,7 @@ static void mem_domain_test_6_1(void *p1, void *p2, void *p3)
 {
 	set_fault_valid(false);
 
-	mem_domain_tc3_part2[0] = 10U;
+	mem_domain_tc3_part1[0] = 10U;
 	k_thread_abort(k_current_get());
 }
 
@@ -476,7 +477,7 @@ static void mem_domain_test_6_2(void *p1, void *p2, void *p3)
 {
 	set_fault_valid(true);
 
-	mem_domain_tc3_part2[0] = 10U;
+	mem_domain_tc3_part1[0] = 10U;
 	zassert_unreachable(ERROR_STR);
 }
 
@@ -492,9 +493,18 @@ static void mem_domain_test_6_2(void *p1, void *p2, void *p3)
  */
 void test_mem_domain_remove_partitions(void *p1, void *p2, void *p3)
 {
+	uint8_t max_partitions = (uint8_t)arch_mem_domain_max_partitions_get();
+
+	/* Re-initialize domain with the max permitted number of partitions */
+	k_mem_domain_init(&mem_domain_tc3_mem_domain,
+			  MIN(max_partitions,
+			    ARRAY_SIZE(mem_domain_tc3_partition_array)),
+			  mem_domain_tc3_partition_array);
+
 	k_mem_domain_add_thread(&mem_domain_tc3_mem_domain,
 				k_current_get());
 
+	mem_domain_tc3_part1[0] = 10U;
 	mem_domain_tc3_part2[0] = 10U;
 
 	k_thread_create(&mem_domain_6_tid,
@@ -507,7 +517,7 @@ void test_mem_domain_remove_partitions(void *p1, void *p2, void *p3)
 	k_thread_join(&mem_domain_6_tid, K_FOREVER);
 
 	k_mem_domain_remove_partition(&mem_domain_tc3_mem_domain,
-				      &mem_domain_tc3_part2_struct);
+				      &mem_domain_tc3_part1_struct);
 
 	k_thread_create(&mem_domain_6_tid,
 			mem_domain_6_stack,
