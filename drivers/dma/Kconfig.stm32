@@ -6,7 +6,7 @@
 
 config DMA_STM32
 	bool "Enable STM32 DMA driver"
-	select DYNAMIC_INTERRUPTS
+	select USE_STM32_LL_DMA
 	depends on SOC_FAMILY_STM32
 	help
 	  DMA driver for STM32 series SoCs.
@@ -16,14 +16,12 @@ if DMA_STM32
 config DMA_STM32_V1
 	bool
 	depends on SOC_SERIES_STM32F2X || SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X
-	select USE_STM32_LL_DMA
 	help
 	  Enable DMA support on F2/F4/F7 series SoCs.
 
 config DMA_STM32_V2
 	bool
 	depends on SOC_SERIES_STM32F0X || SOC_SERIES_STM32F1X || SOC_SERIES_STM32F3X || SOC_SERIES_STM32L0X || SOC_SERIES_STM32L4X || SOC_SERIES_STM32WBX
-	select USE_STM32_LL_DMA
 	help
 	  Enable DMA support on F0/F1/F3/L0/L4/WB series SoCs.
 
@@ -33,5 +31,12 @@ config DMAMUX_STM32
 	depends on SOC_STM32L4R5XX || SOC_SERIES_STM32WBX
 	help
 	  Enable DMAMUX support on L4R/WB series SoCs.
+
+config DMA_STM32_SHARED_IRQS
+	bool
+	default y
+	depends on SOC_SERIES_STM32F0X || SOC_SERIES_STM32L0X
+	help
+	  Enable shared IRQ support on devices where channels share 1 IRQ.
 
 endif # DMA_STM32
