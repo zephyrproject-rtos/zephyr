@@ -23,6 +23,8 @@ source "subsys/mgmt/Kconfig"
 
 source "subsys/net/Kconfig"
 
+source "subsys/power/Kconfig"
+
 source "subsys/shell/Kconfig"
 
 source "subsys/usb/Kconfig"
