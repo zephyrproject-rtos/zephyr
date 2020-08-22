@@ -498,3 +498,54 @@ test_spi_mcp3204: mcp3204@32 {
 	label = "MCP3204";
 	#io-channel-cells = <1>;
 };
+
+test_spi_dac60508: dac60508@33 {
+	compatible = "ti,dac60508";
+	label = "DAC60508";
+	reg = <0x33>;
+	spi-max-frequency = <0>;
+	#io-channel-cells = <1>;
+	voltage-reference = <0>;
+	channel0-gain = <0>;
+	channel1-gain = <0>;
+	channel2-gain = <0>;
+	channel3-gain = <0>;
+	channel4-gain = <0>;
+	channel5-gain = <0>;
+	channel6-gain = <0>;
+	channel7-gain = <0>;
+};
+
+test_spi_dac70508: dac70508@34 {
+	compatible = "ti,dac70508";
+	label = "DAC70508";
+	reg = <0x34>;
+	spi-max-frequency = <0>;
+	#io-channel-cells = <1>;
+	voltage-reference = <0>;
+	channel0-gain = <0>;
+	channel1-gain = <0>;
+	channel2-gain = <0>;
+	channel3-gain = <0>;
+	channel4-gain = <0>;
+	channel5-gain = <0>;
+	channel6-gain = <0>;
+	channel7-gain = <0>;
+};
+
+test_spi_dac80508: dac80508@35 {
+	compatible = "ti,dac80508";
+	label = "DAC80508";
+	reg = <0x35>;
+	spi-max-frequency = <0>;
+	#io-channel-cells = <1>;
+	voltage-reference = <0>;
+	channel0-gain = <0>;
+	channel1-gain = <0>;
+	channel2-gain = <0>;
+	channel3-gain = <0>;
+	channel4-gain = <0>;
+	channel5-gain = <0>;
+	channel6-gain = <0>;
+	channel7-gain = <0>;
+};
