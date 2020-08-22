@@ -3,6 +3,8 @@
 # Copyright (c) 2016-2017 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+menu "Sub Systems and OS Services"
+
 source "subsys/bluetooth/Kconfig"
 
 source "subsys/console/Kconfig"
@@ -42,3 +44,5 @@ source "subsys/fb/Kconfig"
 source "subsys/jwt/Kconfig"
 
 source "subsys/canbus/Kconfig"
+
+endmenu
