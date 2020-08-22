@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig USB_DEVICE_STACK
-	bool "USB device stack"
+	bool "USB Device Support"
 	depends on USB_DEVICE_DRIVER || ARCH_POSIX
 	select HWINFO
 	help

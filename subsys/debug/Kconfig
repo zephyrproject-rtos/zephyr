@@ -12,23 +12,6 @@ config BOOT_TIME_MEASUREMENT
 	help
 	  This option enables the recording of timestamps during system boot.
 
-config STATS
-	bool "Statistics support"
-	help
-	  Enable per-module event counters for troubleshooting, maintenance,
-	  and usage monitoring.  Statistics can be retrieved with the mcumgr
-	  management subsystem.
-
-config STATS_NAMES
-	bool "Statistic names"
-	depends on STATS
-	help
-	  Include a full name string for each statistic in the build.  If this
-	  setting is disabled, statistics are assigned generic names of the
-	  form "s0", "s1", etc.  Enabling this setting simplifies debugging,
-	  but results in a larger code size.
-
-
 menuconfig THREAD_ANALYZER
 	bool "Enable Thread analyzer"
 	select INIT_STACKS
