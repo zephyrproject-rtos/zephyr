@@ -202,11 +202,11 @@ config UART_MCUMGR
 if UART_MCUMGR
 
 # Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_UART_PIPE := zephyr,uart-mcumgr
+DT_CHOSEN_Z_UART_MCUMGR := zephyr,uart-mcumgr
 
 config UART_MCUMGR_ON_DEV_NAME
 	string "Device Name of UART Device for mcumgr UART"
-	default "$(dt_chosen_label,$(DT_CHOSEN_Z_UART_PIPE))" if HAS_DTS
+	default "$(dt_chosen_label,$(DT_CHOSEN_Z_UART_MCUMGR))" if HAS_DTS
 	default "UART_0"
 	help
 	  This option specifies the name of UART device to be used
