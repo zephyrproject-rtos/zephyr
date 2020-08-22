@@ -2,7 +2,7 @@
 
 # SPDX-License-Identifier: Apache-2.0
 
-menu "Management subsystems"
+menu "Device Management"
 
 source "subsys/mgmt/mcumgr/Kconfig"
 
