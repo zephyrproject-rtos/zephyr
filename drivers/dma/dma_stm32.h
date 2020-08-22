@@ -44,7 +44,11 @@ struct dma_stm32_config {
 #define STREAM_OFFSET 1
 #endif /* CONFIG_DMA_STM32_V1 */
 
-extern uint32_t table_ll_stream[];
+uint32_t dma_stm32_id_to_stream(uint32_t id);
+#ifdef CONFIG_DMA_STM32_V1
+uint32_t dma_stm32_slot_to_channel(uint32_t id);
+#endif
+
 extern uint32_t (*func_ll_is_active_tc[])(DMA_TypeDef *DMAx);
 extern void (*func_ll_clear_tc[])(DMA_TypeDef *DMAx);
 extern uint32_t (*func_ll_is_active_ht[])(DMA_TypeDef *DMAx);
@@ -52,9 +56,6 @@ extern void (*func_ll_clear_ht[])(DMA_TypeDef *DMAx);
 #ifdef CONFIG_DMA_STM32_V2
 extern uint32_t (*func_ll_is_active_gi[])(DMA_TypeDef *DMAx);
 extern void (*func_ll_clear_gi[])(DMA_TypeDef *DMAx);
-#endif
-#ifdef CONFIG_DMA_STM32_V1
-extern uint32_t table_ll_channel[];
 #endif
 
 bool stm32_dma_is_irq_active(DMA_TypeDef *dma, uint32_t id);

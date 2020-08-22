@@ -18,27 +18,41 @@ LOG_MODULE_REGISTER(dma_stm32_v1);
 /* DMA burst length */
 #define BURST_TRANS_LENGTH_1			0
 
-uint32_t table_ll_stream[] = {
-	LL_DMA_STREAM_0,
-	LL_DMA_STREAM_1,
-	LL_DMA_STREAM_2,
-	LL_DMA_STREAM_3,
-	LL_DMA_STREAM_4,
-	LL_DMA_STREAM_5,
-	LL_DMA_STREAM_6,
-	LL_DMA_STREAM_7,
-};
+uint32_t dma_stm32_id_to_stream(uint32_t id)
+{
+	static const uint32_t stream_nr[] = {
+		LL_DMA_STREAM_0,
+		LL_DMA_STREAM_1,
+		LL_DMA_STREAM_2,
+		LL_DMA_STREAM_3,
+		LL_DMA_STREAM_4,
+		LL_DMA_STREAM_5,
+		LL_DMA_STREAM_6,
+		LL_DMA_STREAM_7,
+	};
 
-uint32_t table_ll_channel[] = {
-	LL_DMA_CHANNEL_0,
-	LL_DMA_CHANNEL_1,
-	LL_DMA_CHANNEL_2,
-	LL_DMA_CHANNEL_3,
-	LL_DMA_CHANNEL_4,
-	LL_DMA_CHANNEL_5,
-	LL_DMA_CHANNEL_6,
-	LL_DMA_CHANNEL_7,
-};
+	__ASSERT_NO_MSG(id < ARRAY_SIZE(stream_nr));
+
+	return stream_nr[id];
+}
+
+uint32_t dma_stm32_slot_to_channel(uint32_t slot)
+{
+	static const uint32_t channel_nr[] = {
+		LL_DMA_CHANNEL_0,
+		LL_DMA_CHANNEL_1,
+		LL_DMA_CHANNEL_2,
+		LL_DMA_CHANNEL_3,
+		LL_DMA_CHANNEL_4,
+		LL_DMA_CHANNEL_5,
+		LL_DMA_CHANNEL_6,
+		LL_DMA_CHANNEL_7,
+	};
+
+	__ASSERT_NO_MSG(slot < ARRAY_SIZE(channel_nr));
+
+	return channel_nr[slot];
+}
 
 void (*func_ll_clear_ht[])(DMA_TypeDef *DMAx) = {
 	LL_DMA_ClearFlag_HT0,
@@ -230,29 +244,29 @@ bool stm32_dma_is_unexpected_irq_happened(DMA_TypeDef *dma, uint32_t id)
 
 void stm32_dma_enable_stream(DMA_TypeDef *dma, uint32_t id)
 {
-	LL_DMA_EnableStream(dma, table_ll_stream[id]);
+	LL_DMA_EnableStream(dma, dma_stm32_id_to_stream(id));
 }
 
 int stm32_dma_disable_stream(DMA_TypeDef *dma, uint32_t id)
 {
 
-	if (!LL_DMA_IsEnabledStream(dma, table_ll_stream[id])) {
+	if (!LL_DMA_IsEnabledStream(dma, dma_stm32_id_to_stream(id))) {
 		return 0;
 	}
-	LL_DMA_DisableStream(dma, table_ll_stream[id]);
+	LL_DMA_DisableStream(dma, dma_stm32_id_to_stream(id));
 
 	return -EAGAIN;
 }
 
 void stm32_dma_disable_fifo_irq(DMA_TypeDef *dma, uint32_t id)
 {
-	LL_DMA_DisableIT_FE(dma, table_ll_stream[id]);
+	LL_DMA_DisableIT_FE(dma, dma_stm32_id_to_stream(id));
 }
 
 void stm32_dma_config_channel_function(DMA_TypeDef *dma, uint32_t id, uint32_t slot)
 {
-	LL_DMA_SetChannelSelection(dma, table_ll_stream[id],
-			table_ll_channel[slot]);
+	LL_DMA_SetChannelSelection(dma, dma_stm32_id_to_stream(id),
+			dma_stm32_slot_to_channel(slot));
 }
 
 uint32_t stm32_dma_get_mburst(struct dma_config *config, bool source_periph)

@@ -15,22 +15,30 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(dma_stm32_v2);
 
-uint32_t table_ll_stream[] = {
-	LL_DMA_CHANNEL_1,
-	LL_DMA_CHANNEL_2,
-	LL_DMA_CHANNEL_3,
-	LL_DMA_CHANNEL_4,
-	LL_DMA_CHANNEL_5,
+
+uint32_t dma_stm32_id_to_stream(uint32_t id)
+{
+	static const uint32_t stream_nr[] = {
+		LL_DMA_CHANNEL_1,
+		LL_DMA_CHANNEL_2,
+		LL_DMA_CHANNEL_3,
+		LL_DMA_CHANNEL_4,
+		LL_DMA_CHANNEL_5,
 #if defined(LL_DMA_CHANNEL_6)
-	LL_DMA_CHANNEL_6,
-#endif /* LL_DMA_CHANNEL_6 */
+		LL_DMA_CHANNEL_6,
 #if defined(LL_DMA_CHANNEL_7)
-	LL_DMA_CHANNEL_7,
-#endif /* LL_DMA_CHANNEL_7 */
+		LL_DMA_CHANNEL_7,
 #if defined(LL_DMA_CHANNEL_8)
-	LL_DMA_CHANNEL_8,
-#endif
-};
+		LL_DMA_CHANNEL_8,
+#endif /* LL_DMA_CHANNEL_8 */
+#endif /* LL_DMA_CHANNEL_7 */
+#endif /* LL_DMA_CHANNEL_6 */
+	};
+
+	__ASSERT_NO_MSG(id < ARRAY_SIZE(stream_nr));
+
+	return stream_nr[id];
+}
 
 void (*func_ll_clear_ht[])(DMA_TypeDef *DMAx) = {
 	LL_DMA_ClearFlag_HT1,
@@ -227,15 +235,15 @@ bool stm32_dma_is_unexpected_irq_happened(DMA_TypeDef *dma, uint32_t id)
 
 void stm32_dma_enable_stream(DMA_TypeDef *dma, uint32_t id)
 {
-	LL_DMA_EnableChannel(dma, table_ll_stream[id]);
+	LL_DMA_EnableChannel(dma, dma_stm32_id_to_stream(id));
 }
 
 int stm32_dma_disable_stream(DMA_TypeDef *dma, uint32_t id)
 {
-	if (!LL_DMA_IsEnabledChannel(dma, table_ll_stream[id])) {
+	if (!LL_DMA_IsEnabledChannel(dma, dma_stm32_id_to_stream(id))) {
 		return 0;
 	}
-	LL_DMA_DisableChannel(dma, table_ll_stream[id]);
+	LL_DMA_DisableChannel(dma, dma_stm32_id_to_stream(id));
 
 	return -EAGAIN;
 }
