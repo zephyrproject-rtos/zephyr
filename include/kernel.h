@@ -3168,6 +3168,84 @@ __syscall int k_mutex_unlock(struct k_mutex *mutex);
  * @}
  */
 
+
+struct k_condvar {
+	_wait_q_t wait_q;
+};
+
+#define Z_CONDVAR_INITIALIZER(obj)                                             \
+	{                                                                      \
+		.wait_q = Z_WAIT_Q_INIT(&obj.wait_q),                          \
+	}
+
+/**
+ * @defgroup condvar_apis Condition Variables APIs
+ * @ingroup kernel_apis
+ * @{
+ */
+
+/**
+ * @brief Initialize a condition variable
+ *
+ * @param condvar pointer to a @p k_condvar structure
+ * @retval 0 Condition variable created successfully
+ */
+__syscall int k_condvar_init(struct k_condvar *condvar);
+
+/**
+ * @brief Signals one thread that is pending on the condition variable
+ *
+ * @param condvar pointer to a @p k_condvar structure
+ * @retval 0 On success
+ */
+__syscall int k_condvar_signal(struct k_condvar *condvar);
+
+/**
+ * @brief Unblock all threads that are pending on the condition
+ * variable
+ *
+ * @param condvar pointer to a @p k_condvar structure
+ * @return An integer with number of woken threads on success
+ */
+__syscall int k_condvar_broadcast(struct k_condvar *condvar);
+
+/**
+ * @brief Waits on the condition variable releasing the mutex lock
+ *
+ * Automically releases the currently owned mutex, blocks the current thread
+ * waiting on the condition variable specified by @a condvar,
+ * and finally acquires the mutex again.
+ *
+ * The waiting thread unblocks only after another thread calls
+ * k_condvar_signal, or k_condvar_broadcast with the same condition variable.
+ *
+ * @param condvar pointer to a @p k_condvar structure
+ * @param mutex Address of the mutex.
+ * @param timeout Waiting period for the condition variable
+ *                or one of the special values K_NO_WAIT and K_FOREVER.
+ * @retval 0 On success
+ * @retval -EAGAIN Waiting period timed out.
+ */
+__syscall int k_condvar_wait(struct k_condvar *condvar, struct k_mutex *mutex,
+			     k_timeout_t timeout);
+
+/**
+ * @brief Statically define and initialize a condition variable.
+ *
+ * The condition variable can be accessed outside the module where it is
+ * defined using:
+ *
+ * @code extern struct k_condvar <name>; @endcode
+ *
+ * @param name Name of the condition variable.
+ */
+#define K_CONDVAR_DEFINE(name)                                                 \
+	Z_STRUCT_SECTION_ITERABLE(k_condvar, name) =                           \
+		Z_CONDVAR_INITIALIZER(name)
+/**
+ * @}
+ */
+
 /**
  * @cond INTERNAL_HIDDEN
  */

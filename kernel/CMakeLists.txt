@@ -24,6 +24,7 @@ list(APPEND kernel_files
   thread_abort.c
   version.c
   work_q.c
+  condvar.c
   smp.c
   banner.c
   )
