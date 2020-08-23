@@ -875,6 +875,8 @@ static int ppp_stop(struct device *dev)
 
 	net_ppp_carrier_off(context->iface);
 
+	atomic_set(&context->modem_init_done, false);
+
 	return 0;
 }
 

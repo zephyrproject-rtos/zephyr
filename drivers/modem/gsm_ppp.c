@@ -72,6 +72,8 @@ K_KERNEL_STACK_DEFINE(gsm_rx_stack, GSM_RX_STACK_SIZE);
 
 struct k_thread gsm_rx_thread;
 
+bool is_booting_phase = true;
+
 static void gsm_rx(struct gsm_modem *gsm)
 {
 	LOG_DBG("starting");
@@ -302,7 +304,21 @@ static void set_ppp_carrier_on(struct gsm_modem *gsm)
 	}
 
 	api = (const struct ppp_api *)ppp_dev->api;
-	api->start(ppp_dev);
+	if (is_booting_phase) {
+		api->start(ppp_dev);
+	} else {
+		int status;
+		struct net_if *iface;
+
+		iface = net_if_get_first_by_type(&NET_L2_GET_NAME(PPP));
+
+		/* Notify L2 to enable the interface */
+
+		status = net_if_l2(iface)->enable(iface, true);
+		if (status < 0) {
+			LOG_DBG("not able to net interface up");
+		}
+	}
 }
 
 static void gsm_finalize_connection(struct gsm_modem *gsm)
@@ -609,6 +625,20 @@ static void gsm_configure(struct k_work *work)
 	gsm_finalize_connection(gsm);
 }
 
+static void thread_configure_init(bool is_booting)
+{
+	if (is_booting || !IS_ENABLED(CONFIG_GSM_MUX)) {
+		k_thread_create(&gsm_rx_thread, gsm_rx_stack,
+			K_THREAD_STACK_SIZEOF(gsm_rx_stack),
+			(k_thread_entry_t) gsm_rx,
+			&gsm, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+		k_thread_name_set(&gsm_rx_thread, "gsm_rx");
+	}
+
+	k_delayed_work_init(&gsm.gsm_configure_work, gsm_configure);
+	(void)k_delayed_work_submit(&gsm.gsm_configure_work, K_NO_WAIT);
+}
+
 static int gsm_init(struct device *device)
 {
 	struct gsm_modem *gsm = device->data;
@@ -668,17 +698,29 @@ static int gsm_init(struct device *device)
 	LOG_DBG("iface->read %p iface->write %p",
 		gsm->context.iface.read, gsm->context.iface.write);
 
-	k_thread_create(&gsm_rx_thread, gsm_rx_stack,
-			K_KERNEL_STACK_SIZEOF(gsm_rx_stack),
-			(k_thread_entry_t) gsm_rx,
-			gsm, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
-	k_thread_name_set(&gsm_rx_thread, "gsm_rx");
-
-	k_delayed_work_init(&gsm->gsm_configure_work, gsm_configure);
-
-	(void)k_delayed_work_submit(&gsm->gsm_configure_work, K_NO_WAIT);
+	thread_configure_init(is_booting_phase);
 
 	return 0;
+}
+
+void gsm_ppp_restart(void)
+{
+	int r;
+
+	is_booting_phase = false;
+
+	/*
+	 * Switching to modem UART interface to enable the modem for CONNECT
+	 */
+
+	r = modem_iface_uart_init_dev(&gsm.context.iface,
+			CONFIG_MODEM_GSM_UART_NAME);
+	if (r < 0) {
+		LOG_DBG("iface uart error %d", r);
+		return;
+	}
+
+	thread_configure_init(is_booting_phase);
 }
 
 DEVICE_INIT(gsm_ppp, "modem_gsm", gsm_init, &gsm, NULL, POST_KERNEL,
