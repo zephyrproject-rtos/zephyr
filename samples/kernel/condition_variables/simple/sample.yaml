@@ -1,0 +1,8 @@
+tests:
+  sample.kernel.cond_var.simple:
+    tags: kernel condition_variables
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - ".*done == 20 so everyone is done"
