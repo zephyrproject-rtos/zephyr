@@ -384,7 +384,7 @@ leading zeroes or sign (e.g. 32), or an equivalent symbolic name (e.g.
 ``CONFIG_KERNEL_INIT_PRIORITY_DEFAULT + 5``).
 
 Drivers and other system utilities can determine whether startup is
-still in pre-kernel states by using the :cpp:func:`k_is_pre_kernel()`
+still in pre-kernel states by using the :c:func:`k_is_pre_kernel`
 function.
 
 System Drivers
@@ -442,7 +442,7 @@ DTS and do not need any RAM-based storage for it.
 
 For drivers that may need to deal with this situation, a set of
 APIs under the DEVICE_MMIO scope are defined, along with a mapping function
-:cpp:func:`device_map()`.
+:c:func:`device_map`.
 
 Device Model Drivers with one MMIO region
 =========================================
@@ -580,7 +580,7 @@ Drivers that do not use DTS
 ===========================
 
 Some drivers may not obtain the MMIO physical address from DTS, such as
-is the case with PCI-E. In this case the :cpp:func:`device_map()` function
+is the case with PCI-E. In this case the :c:func:`device_map` function
 may be used directly:
 
 .. code-block:: C

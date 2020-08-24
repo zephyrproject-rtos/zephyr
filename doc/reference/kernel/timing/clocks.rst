@@ -20,14 +20,14 @@ understood, though they may not match the precision of the underlying
 hardware perfectly.
 
 The kernel presents a "cycle" count via the
-:cpp:func:`k_cycle_get_32()` API.  The intent is that this counter
+:c:func:`k_cycle_get_32` API.  The intent is that this counter
 represents the fastest cycle counter that the operating system is able
 to present to the user (for example, a CPU cycle counter) and that the
 read operation is very fast.  The expectation is that very sensitive
 application code might use this in a polling manner to achieve maximal
 precision.  The frequency of this counter is required to be steady
 over time, and is available from
-:cpp:func:`sys_clock_hw_cycles_per_sec()` (which on almost all
+:c:func:`sys_clock_hw_cycles_per_sec` (which on almost all
 platforms is a runtime constant that evaluates to
 CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC).
 
@@ -53,10 +53,10 @@ Control of rounding is provided, and each conversion is available in
 "near" (round to nearest).  Finally the output precision can be
 specified as either 32 or 64 bits.
 
-For example: :cpp:func:`k_ms_to_ticks_ceil32()` will convert a
+For example: :c:func:`k_ms_to_ticks_ceil32` will convert a
 millisecond input value to the next higher number of ticks, returning
 a result truncated to 32 bits of precision; and
-:cpp:func:`k_cyc_to_us_floor64()` will convert a measured cycle count
+:c:func:`k_cyc_to_us_floor64` will convert a measured cycle count
 to an elapsed number of microseconds in a full 64 bits of precision.
 See the reference documentation for the full enumeration of conversion
 routines.
@@ -70,14 +70,14 @@ Uptime
 ======
 
 The kernel tracks a system uptime count on behalf of the application.
-This is available at all times via :cpp:func:`k_uptime_get()`, which
+This is available at all times via :c:func:`k_uptime_get`, which
 provides an uptime value in milliseconds since system boot.  This is
 expected to be the utility used by most portable application code.
 
 The internal tracking, however, is as a 64 bit integer count of ticks.
 Apps with precise timing requirements (that are willing to do their
 own conversions to portable real time units) may access this with
-:cpp:func:`k_uptime_ticks()`.
+:c:func:`k_uptime_ticks`.
 
 Timeouts
 ========
@@ -86,8 +86,8 @@ The Zephyr kernel provides many APIs with a "timeout" parameter.
 Conceptually, this indicates the time at which an event will occur.
 For example:
 
-* Kernel blocking operations like :cpp:func:`k_sem_take()` or
-  :cpp:func:`k_queue_get()` may provide a timeout after which the
+* Kernel blocking operations like :c:func:`k_sem_take` or
+  :c:func:`k_queue_get` may provide a timeout after which the
   routine will return with an error code if no data is available.
 
 * Kernel ``struct k_timer`` objects must specify delays for their
@@ -223,7 +223,7 @@ and minimal.  But some notes are important to detail:
   driver, not the kernel.
 
 * The next timeout value passed back to the driver via
-  :cpp:func:`z_clock_set_timeout()` is done identically for every CPU.
+  :c:func:`z_clock_set_timeout` is done identically for every CPU.
   So by default, every CPU will see simultaneous timer interrupts for
   every event, even though by definition only one of them should see a
   non-zero ticks argument to ``z_clock_announce()``.  This is probably
@@ -244,7 +244,7 @@ tracked independently on each CPU in an SMP context.
 
 Because there may be no other hardware available to drive timeslicing,
 Zephyr multiplexes the existing timer driver.  This means that the
-value passed to :cpp:func:`z_clock_set_timeout()` may be clamped to a
+value passed to :c:func:`z_clock_set_timeout` may be clamped to a
 smaller value than the current next timeout when a time sliced thread
 is currently scheduled.
 
@@ -340,7 +340,7 @@ code.  For example, consider this design:
 
 This code requires that the timeout value be inspected, which is no
 longer possible.  For situations like this, the new API provides an
-internal :cpp:func:`z_timeout_end_calc()` routine that converts an
+internal :c:func:`z_timeout_end_calc` routine that converts an
 arbitrary timeout to the uptime value in ticks at which it will
 expire.  So such a loop might look like:
 
@@ -362,7 +362,7 @@ expire.  So such a loop might look like:
         }
     }
 
-Note that :cpp:func:`z_timeout_end_calc()` returns values in units of
+Note that :c:func:`z_timeout_end_calc` returns values in units of
 ticks, to prevent conversion aliasing, is always presented at 64 bit
 uptime precision to prevent rollover bugs, handles special
 :c:macro:`K_FOREVER` naturally (as ``UINT64_MAX``), and works
@@ -371,7 +371,7 @@ identically for absolute timeouts as well as conventional ones.
 But some care is still required for subsystems that use it.  Note that
 delta timeouts need to be interpreted relative to a "current time",
 and obviously that time is the time of the call to
-:cpp:func:`z_timeout_end_calc()`.  But the user expects that the time is
+:c:func:`z_timeout_end_calc`.  But the user expects that the time is
 the time they passed the timeout to you.  Care must be taken to call
 this function just once, as synchronously as possible to the timeout
 creation in user code.  It should not be used on a "stored" timeout

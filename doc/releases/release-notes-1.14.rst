@@ -924,7 +924,7 @@ Libraries / Subsystems
   - Added :c:macro:`LOG_PANIC()` call to the fault handlers to ensure that
     logs are output on fault
   - Added mechanism for handling logging of transient strings. See
-    :cpp:func:`log_strdup`
+    :c:func:`log_strdup`
   - Added support for up to 15 arguments in the log message
   - Added optional function name prefix in the log message
   - Changed logging thread priority to the lowest application priority
@@ -937,7 +937,7 @@ Libraries / Subsystems
     - net
     - SWO
     - Xtensa Sim
-  - Changed default timestamp source function to :cpp:func:`k_uptime_get_32`
+  - Changed default timestamp source function to :c:func:`k_uptime_get_32`
 
 * Shell:
 

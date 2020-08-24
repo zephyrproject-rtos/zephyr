@@ -259,8 +259,8 @@ Peripheral role
 Most Zephyr-based BLE devices will most likely be peripheral-role
 devices. This means that they perform connectable advertising and expose
 one or more GATT services. After registering services using the
-:cpp:func:`bt_gatt_service_register` API the application will typically
-start connectable advertising using the :cpp:func:`bt_le_adv_start` API.
+:c:func:`bt_gatt_service_register` API the application will typically
+start connectable advertising using the :c:func:`bt_le_adv_start` API.
 
 There are several peripheral sample applications available in the tree,
 such as :zephyr_file:`samples/bluetooth/peripheral_hr`.
@@ -277,12 +277,12 @@ client, first performing discovery of available services and then
 accessing one or more supported services.
 
 To initially discover a device to connect to the application will likely
-use the :cpp:func:`bt_le_scan_start` API, wait for an appropriate device
+use the :c:func:`bt_le_scan_start` API, wait for an appropriate device
 to be found (using the scan callback), stop scanning using
-:cpp:func:`bt_le_scan_stop` and then connect to the device using
-:cpp:func:`bt_conn_create_le`. If the central wants to keep
+:c:func:`bt_le_scan_stop` and then connect to the device using
+:c:func:`bt_conn_create_le`. If the central wants to keep
 automatically reconnecting to the peripheral it should use the
-:cpp:func:`bt_le_set_auto_conn` API.
+:c:func:`bt_le_set_auto_conn` API.
 
 There are some sample applications for the central role available in the
 tree, such as :zephyr_file:`samples/bluetooth/central_hr`.
@@ -290,7 +290,7 @@ tree, such as :zephyr_file:`samples/bluetooth/central_hr`.
 Observer role
 =============
 
-An observer role device will use the :cpp:func:`bt_le_scan_start` API to
+An observer role device will use the :c:func:`bt_le_scan_start` API to
 scan for device, but it will not connect to any of them. Instead it will
 simply utilize the advertising data of found devices, combining it
 optionally with the received signal strength (RSSI).
@@ -298,7 +298,7 @@ optionally with the received signal strength (RSSI).
 Broadcaster role
 ================
 
-A broadcaster role device will use the :cpp:func:`bt_le_adv_start` API to
+A broadcaster role device will use the :c:func:`bt_le_adv_start` API to
 advertise specific advertising data, but the type of advertising will be
 non-connectable, i.e. other device will not be able to connect to it.
 
@@ -314,13 +314,13 @@ Security
 To achieve a secure relationship between two Bluetooth devices a process
 called pairing is used. This process can either be triggered implicitly
 through the security properties of GATT services, or explicitly using
-the :cpp:func:`bt_conn_security` API on a connection object.
+the :c:func:`bt_conn_security` API on a connection object.
 
 To achieve a higher security level, and protect against
 Man-In-The-Middle (MITM) attacks, it is recommended to use some
 out-of-band channel during the pairing. If the devices have a sufficient
 user interface this "channel" is the user itself. The capabilities of
-the device are registered using the :cpp:func:`bt_conn_auth_cb_register`
+the device are registered using the :c:func:`bt_conn_auth_cb_register`
 API.  The :c:type:`bt_conn_auth_cb` struct that's passed to this API has
 a set of optional callbacks that can be used during the pairing - if the
 device lacks some feature the corresponding callback may be set to NULL.

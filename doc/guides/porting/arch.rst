@@ -297,7 +297,7 @@ mode if the thread triggered a fatal exception, but not if the thread
 gracefully exits its entry point function.
 
 This means implementing an architecture-specific version of
-:cpp:func:`k_thread_abort`, and setting the Kconfig option
+:c:func:`k_thread_abort`, and setting the Kconfig option
 :option:`CONFIG_ARCH_HAS_THREAD_ABORT` as needed for the architecture (e.g. see
 :zephyr_file:`arch/arm/core/aarch32/cortex_m/Kconfig`).
 
@@ -465,7 +465,7 @@ Memory Management
 
 If the target platform enables paging and requires drivers to memory-map
 their I/O regions, :option:`CONFIG_MMU` needs to be enabled and the
-:cpp:func:`arch_mem_map()` API implemented.
+:c:func:`arch_mem_map` API implemented.
 
 Stack Objects
 *************
@@ -764,25 +764,25 @@ implemented, and the system must enable the :option:`CONFIG_ARCH_HAS_USERSPACE`
 option. Please see the documentation for each of these functions for more
 details:
 
-* :cpp:func:`arch_buffer_validate()` to test whether the current thread has
+* :c:func:`arch_buffer_validate` to test whether the current thread has
   access permissions to a particular memory region
 
-* :cpp:func:`arch_user_mode_enter()` which will irreversibly drop a supervisor
+* :c:func:`arch_user_mode_enter` which will irreversibly drop a supervisor
   thread to user mode privileges. The stack must be wiped.
 
-* :cpp:func:`arch_syscall_oops()` which generates a kernel oops when system
+* :c:func:`arch_syscall_oops` which generates a kernel oops when system
   call parameters can't be validated, in such a way that the oops appears to be
   generated from where the system call was invoked in the user thread
 
-* :cpp:func:`arch_syscall_invoke0()` through
-  :cpp:func:`arch_syscall_invoke6()` invoke a system call with the
+* :c:func:`arch_syscall_invoke0` through
+  :c:func:`arch_syscall_invoke6` invoke a system call with the
   appropriate number of arguments which must all be passed in during the
   privilege elevation via registers.
 
-* :cpp:func:`arch_is_user_context()` return nonzero if the CPU is currently
+* :c:func:`arch_is_user_context` return nonzero if the CPU is currently
   running in user mode
 
-* :cpp:func:`arch_mem_domain_max_partitions_get()` which indicates the max
+* :c:func:`arch_mem_domain_max_partitions_get` which indicates the max
   number of regions for a memory domain. MMU systems have an unlimited amount,
   MPU systems have constraints on this.
 
@@ -792,21 +792,21 @@ If so, CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API must be selected by the
 architecture and some additional APIs must be implemented. This is common
 on MMU systems and uncommon on MPU systems:
 
-* :cpp:func:`arch_mem_domain_thread_add()`
+* :c:func:`arch_mem_domain_thread_add`
 
-* :cpp:func:`arch_mem_domain_thread_remove()`
+* :c:func:`arch_mem_domain_thread_remove`
 
-* :cpp:func:`arch_mem_domain_partition_add()`
+* :c:func:`arch_mem_domain_partition_add`
 
-* :cpp:func:`arch_mem_domain_partition_remove()`
+* :c:func:`arch_mem_domain_partition_remove`
 
-* :cpp:func:`arch_mem_domain_destroy()`
+* :c:func:`arch_mem_domain_destroy`
 
 Please see the doxygen documentation of these APIs for details.
 
 In addition to implementing these APIs, there are some other tasks as well:
 
-* :cpp:func:`_new_thread()` needs to spawn threads with :c:macro:`K_USER` in
+* :c:func:`_new_thread` needs to spawn threads with :c:macro:`K_USER` in
   user mode
 
 * On context switch, the outgoing thread's stack memory should be marked

@@ -42,15 +42,15 @@ Data item mode
 A **data item mode** ring buffer instance is declared using
 :cpp:func:`RING_BUF_ITEM_DECLARE_POW2()` or
 :cpp:func:`RING_BUF_ITEM_DECLARE_SIZE()` and accessed using
-:cpp:func:`ring_buf_item_put()` and :cpp:func:`ring_buf_item_get()`.
+:c:func:`ring_buf_item_put` and :c:func:`ring_buf_item_get`.
 
 A ring buffer **data item** is an array of 32-bit words from 0 to 1020 bytes
-in length. When a data item is **enqueued** (:cpp:func:`ring_buf_item_put()`)
+in length. When a data item is **enqueued** (:c:func:`ring_buf_item_put`)
 its contents are copied to the data buffer, along with its associated metadata
 values (which occupy one additional 32-bit word). If the ring buffer has
 insufficient space to hold the new data item the enqueue operation fails.
 
-A data items is **dequeued** (:cpp:func:`ring_buf_item_get()`) from a ring
+A data items is **dequeued** (:c:func:`ring_buf_item_get`) from a ring
 buffer by removing the oldest enqueued item. The contents of the dequeued data
 item, as well as its two metadata values, are copied to areas supplied by the
 retriever. If the ring buffer is empty, or if the data array supplied by the
@@ -62,30 +62,30 @@ Byte mode
 
 A **byte mode** ring buffer instance is declared using
 :cpp:func:`RING_BUF_DECLARE_SIZE()` and accessed using:
-:cpp:func:`ring_buf_put_claim()`, :cpp:func:`ring_buf_put_finish()`,
-:cpp:func:`ring_buf_get_claim()`, :cpp:func:`ring_buf_get_finish()`,
-:cpp:func:`ring_buf_put()` and :cpp:func:`ring_buf_get()`.
+:c:func:`ring_buf_put_claim`, :c:func:`ring_buf_put_finish`,
+:c:func:`ring_buf_get_claim`, :c:func:`ring_buf_get_finish`,
+:c:func:`ring_buf_put` and :c:func:`ring_buf_get`.
 
 Data can be copied into the ring buffer (see
-:cpp:func:`ring_buf_put()`) or ring buffer memory can be used
+:c:func:`ring_buf_put`) or ring buffer memory can be used
 directly by the user. In the latter case, the operation is split into three stages:
 
-1. allocating the buffer (:cpp:func:`ring_buf_put_claim()`) when
+1. allocating the buffer (:c:func:`ring_buf_put_claim`) when
    user requests the destination location where data can be written.
 #. writing the data by the user (e.g. buffer written by DMA).
 #. indicating the amount of data written to the provided buffer
-   (:cpp:func:`ring_buf_put_finish()`). The amount
+   (:c:func:`ring_buf_put_finish`). The amount
    can be less than or equal to the allocated amount.
 
 Data can be retrieved from a ring buffer through copying
-(see :cpp:func:`ring_buf_get()`) or accessed directly by address. In the latter
+(see :c:func:`ring_buf_get`) or accessed directly by address. In the latter
 case, the operation is split
 into three stages:
 
 1. retrieving source location with valid data written to a ring buffer
-   (see :cpp:func:`ring_buf_get_claim()`).
+   (see :c:func:`ring_buf_get_claim`).
 #. processing data
-#. freeing processed data (see :cpp:func:`ring_buf_get_finish()`).
+#. freeing processed data (see :c:func:`ring_buf_get_finish`).
    The amount freed can be less than or equal or to the retrieved amount.
 
 Concurrency
@@ -118,7 +118,7 @@ Defining a Ring Buffer
 ======================
 
 A ring buffer is defined using a variable of type :c:type:`ring_buf`.
-It must then be initialized by calling :cpp:func:`ring_buf_init()`.
+It must then be initialized by calling :c:func:`ring_buf_init`.
 
 The following code defines and initializes an empty **data item mode** ring
 buffer (which is part of a larger data structure). The ring buffer's data buffer
@@ -173,7 +173,7 @@ Enqueuing Data
 ==============
 
 A data item is added to a ring buffer by calling
-:cpp:func:`ring_buf_item_put()`.
+:c:func:`ring_buf_item_put`.
 
 .. code-block:: c
 
@@ -201,7 +201,7 @@ can be specified.
     }
 
 Bytes are copied to a **byte mode** ring buffer by calling
-:cpp:func:`ring_buf_put()`.
+:c:func:`ring_buf_put`.
 
 .. code-block:: c
 
@@ -241,7 +241,7 @@ Retrieving Data
 ===============
 
 A data item is removed from a ring buffer by calling
-:cpp:func:`ring_buf_item_get()`.
+:c:func:`ring_buf_item_get`.
 
 .. code-block:: c
 
@@ -264,7 +264,7 @@ A data item is removed from a ring buffer by calling
     }
 
 Data bytes are copied out from a **byte mode** ring buffer by calling
-:cpp:func:`ring_buf_get()`. For example:
+:c:func:`ring_buf_get`. For example:
 
 .. code-block:: c
 

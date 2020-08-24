@@ -40,7 +40,7 @@ more details. The generic L2 API has these functions:
 
 - ``recv()``: All device drivers, once they receive a packet which they put
   into a :c:type:`net_pkt`, will push this buffer to the network
-  stack via :c:func:`net_recv_data()`. At this point, the network
+  stack via :c:func:`net_recv_data`. At this point, the network
   stack does not know what to do with it. Instead, it passes the
   buffer along to the L2 stack's ``recv()`` function for handling.
   The L2 stack does what it needs to do with the packet, for example, parsing
@@ -91,12 +91,12 @@ Ethernet device driver
 On reception, it is up to the device driver to fill-in the network packet with
 as many data buffers as required. The network packet itself is a
 :c:type:`net_pkt` and should be allocated through
-:c:func:`net_pkt_rx_alloc_with_buffer()`. Then all data buffers will be
-automatically allocated and filled by :c:func:`net_pkt_write()`.
+:c:func:`net_pkt_rx_alloc_with_buffer`. Then all data buffers will be
+automatically allocated and filled by :c:func:`net_pkt_write`.
 
 After all the network data has been received, the device driver needs to
-call :c:func:`net_recv_data()`. If that call fails, it will be up to the
-device driver to unreference the buffer via :c:func:`net_pkt_unref()`.
+call :c:func:`net_recv_data`. If that call fails, it will be up to the
+device driver to unreference the buffer via :c:func:`net_pkt_unref`.
 
 On sending, the device driver send function will be called, and it is up to
 the device driver to send the network packet all at once, with all the buffers.
@@ -132,9 +132,9 @@ here as well.  There are two specific differences however:
   :c:type:`ieee802154_radio_api` requires a tx function pointer which differs
   from the :c:type:`net_if_api` send function pointer.
   Instead, the IEEE 802.15.4 L2, provides a generic
-  :c:func:`ieee802154_radio_send()` meant to be given as
+  :c:func:`ieee802154_radio_send` meant to be given as
   :c:type:`net_if` send function. It turn, the implementation
-  of :c:func:`ieee802154_radio_send()` will ensure the same behavior:
+  of :c:func:`ieee802154_radio_send` will ensure the same behavior:
   sending one buffer at a time through :c:type:`ieee802154_radio_api` tx
   function, and unreferencing the network packet
   only when all the transmission were successful.
