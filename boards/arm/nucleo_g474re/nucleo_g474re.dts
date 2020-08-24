@@ -87,7 +87,7 @@
 &flash0 {
 	/*
 	 * For more information, see:
-	 * https://docs.zephyrproject.org/latest/guides/dts/legacy-macros.html#legacy-flash-partitions
+	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
 	 */
 	partitions {
 		compatible = "fixed-partitions";
@@ -107,5 +107,9 @@
 };
 
 &rng {
+	status = "okay";
+};
+
+&adc1 {
 	status = "okay";
 };
