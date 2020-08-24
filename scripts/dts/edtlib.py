@@ -149,6 +149,16 @@ class EDT:
     bindings_dirs:
       The bindings directory paths passed to __init__()
 
+    scc_order:
+      A list of lists of Nodes. All elements of each list
+      depend on each other, and the Nodes in any list do not depend
+      on any Node in a subsequent list. Each list defines a Strongly
+      Connected Component (SCC) of the graph.
+
+      For an acyclic graph each list will be a singleton. Cycles
+      will be represented by lists with multiple nodes. Cycles are
+      not expected to be present in devicetree graphs.
+
     The standard library's pickle module can be used to marshal and
     unmarshal EDT objects.
     """
@@ -207,9 +217,8 @@ class EDT:
 
         self._init_compat2binding(bindings_dirs)
         self._init_nodes()
+        self._init_graph()
         self._init_luts()
-
-        self._define_order()
 
         # Drop the reference to the open warn file. This is necessary
         # to make this object pickleable, but also allows it to get
@@ -261,26 +270,20 @@ class EDT:
         return "<EDT for '{}', binding directories '{}'>".format(
             self.dts_path, self.bindings_dirs)
 
+    @property
     def scc_order(self):
-        """
-        Returns a list of lists of Nodes where all elements of each list
-        depend on each other, and the Nodes in any list do not depend
-        on any Node in a subsequent list.  Each list defines a Strongly
-        Connected Component (SCC) of the graph.
-
-        For an acyclic graph each list will be a singleton.  Cycles
-        will be represented by lists with multiple nodes.  Cycles are
-        not expected to be present in devicetree graphs.
-        """
         try:
             return self._graph.scc_order()
         except Exception as e:
             raise EDTError(e)
 
-    def _define_order(self):
+    def _init_graph(self):
         # Constructs a graph of dependencies between Node instances,
-        # then calculates a partial order over the dependencies.  The
-        # algorithm supports detecting dependency loops.
+        # which is usable for computing a partial order over the dependencies.
+        # The algorithm supports detecting dependency loops.
+        #
+        # Actually computing the SCC order is lazily deferred to the
+        # first time the scc_order property is read.
 
         self._graph = Graph()
 
@@ -305,11 +308,6 @@ class EDT:
             # generates.
             for intr in node.interrupts:
                 self._graph.add_edge(node, intr.controller)
-
-        # Calculate an order that ensures no node is before any node
-        # it depends on.  This sets the dep_ordinal field in each
-        # Node.
-        self.scc_order()
 
     def _init_compat2binding(self, bindings_dirs):
         # Creates self._compat2binding. This is a dictionary that maps
