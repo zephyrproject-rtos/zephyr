@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-function(runner_yml_write content)
+function(runners_yaml_append content)
   # Append ${content}\n to a target property which is later evaluated as a
   # generator expression when writing the flash runner yaml file.
   # We define this function here to have access to the `flash` target.
@@ -13,6 +13,52 @@ function(runner_yml_write content)
     )
 endfunction()
 
+function(get_runners_prop prop out_var default_value)
+  # Get property 'prop' from runners_yaml_props_target, storing its
+  # value in 'out_var'. If the property is not found (value is
+  # ...-NOTFOUND), 'out_var' is set to 'default_value'.
+
+  get_target_property(out runners_yaml_props_target "${prop}")
+
+  if("${out}" STREQUAL "out-NOTFOUND")
+    set("${out_var}" "${default_value}" PARENT_SCOPE)
+  else()
+    set("${out_var}" "${out}" PARENT_SCOPE)
+  endif()
+endfunction()
+
+function(runners_yaml_append_config)
+  # Append the common configuration values to the relevant property target.
+
+  runners_yaml_append("\n# Common runner configuration values.")
+  runners_yaml_append("config:")
+  runners_yaml_append("  board_dir: ${BOARD_DIR}")
+  get_runners_prop(elf_file elf "${KERNEL_ELF_NAME}")
+  runners_yaml_append("  # Build outputs:")
+  runners_yaml_append("  elf_file: ${elf}")
+  if(CONFIG_BUILD_OUTPUT_HEX)
+    get_runners_prop(hex_file hex "${KERNEL_HEX_NAME}")
+    runners_yaml_append("  hex_file: ${hex}")
+  endif()
+  if(CONFIG_BUILD_OUTPUT_BIN)
+    get_runners_prop(bin_file bin "${KERNEL_BIN_NAME}")
+    runners_yaml_append("  bin_file: ${bin}")
+  endif()
+
+  if (DEFINED CMAKE_GDB OR DEFINED OPENOCD OR DEFINED OPENOCD_DEFAULT_PATH)
+    runners_yaml_append("  # Host tools:")
+  endif()
+  if (DEFINED CMAKE_GDB)
+    runners_yaml_append("  gdb: ${CMAKE_GDB}")
+  endif()
+  if (DEFINED OPENOCD)
+    runners_yaml_append("  openocd: ${OPENOCD}")
+  endif()
+  if(DEFINED OPENOCD_DEFAULT_PATH)
+    runners_yaml_append("  openocd_search: ${OPENOCD_DEFAULT_PATH}")
+  endif()
+  runners_yaml_append("")
+endfunction()
 
 # Save runner state in a YAML file, and put that YAML file's location
 # in the cache.
@@ -21,57 +67,39 @@ function(create_runners_yaml)
 
   set(runners_yaml "${PROJECT_BINARY_DIR}/runners.yaml")
 
-  runner_yml_write("# Available runners configured by board.cmake.\nrunners:")
+  runners_yaml_append("# Available runners configured by board.cmake.\nrunners:")
   foreach(runner ${runners})
-    runner_yml_write("- ${runner}")
+    runners_yaml_append("- ${runner}")
   endforeach()
 
   if(DEFINED BOARD_FLASH_RUNNER)
-    runner_yml_write("\n# Default flash runner if --runner is not given.")
-    runner_yml_write("flash-runner: ${BOARD_FLASH_RUNNER}")
+    runners_yaml_append("\n# Default flash runner if --runner is not given.")
+    runners_yaml_append("flash-runner: ${BOARD_FLASH_RUNNER}")
   endif()
   if(DEFINED BOARD_DEBUG_RUNNER)
-    runner_yml_write("\n# Default debug runner if --runner is not given.")
-    runner_yml_write("debug-runner: ${BOARD_DEBUG_RUNNER}")
+    runners_yaml_append("\n# Default debug runner if --runner is not given.")
+    runners_yaml_append("debug-runner: ${BOARD_DEBUG_RUNNER}")
   endif()
 
-  runner_yml_write("\n# Default command line arguments. The ones in \"common\" are always given.\n# The other sub-keys give runner-specific arguments.")
-  runner_yml_write("args:\n  common:")
-
-  # Get default settings for common arguments.
-  #
-  # TODO: clean up the host tools arguments. These are really runner
-  # specific; they only continue to exist here out of inertia.
-
-  runner_yml_write("\
-  - --board-dir=${BOARD_DIR}
-  - --elf-file=${PROJECT_BINARY_DIR}/${KERNEL_ELF_NAME}
-  - --hex-file=${PROJECT_BINARY_DIR}/${KERNEL_HEX_NAME}
-  - --bin-file=${PROJECT_BINARY_DIR}/${KERNEL_BIN_NAME}")
-  if (DEFINED CMAKE_GDB)
-    runner_yml_write("  - --gdb=${CMAKE_GDB}")
-  endif()
-  if (DEFINED OPENOCD)
-    runner_yml_write("  - --openocd=${OPENOCD}")
-  endif()
-  if(DEFINED OPENOCD_DEFAULT_PATH)
-    runner_yml_write("  - --openocd-search=${OPENOCD_DEFAULT_PATH}")
-  endif()
+  # Sets up common runner configuration values.
+  runners_yaml_append_config()
 
   # Get runner-specific arguments set in the board files.
+  runners_yaml_append("# Runner specific arguments")
+  runners_yaml_append("args:")
   foreach(runner ${runners})
     string(MAKE_C_IDENTIFIER ${runner} runner_id)
-    runner_yml_write("  ${runner}:")
+    runners_yaml_append("  ${runner}:")
     get_property(args GLOBAL PROPERTY "BOARD_RUNNER_ARGS_${runner_id}")
     if(args)
       # Usually, the runner has arguments. Append them to runners.yaml,
       # one per line.
       foreach(arg ${args})
-        runner_yml_write("    - ${arg}")
+        runners_yaml_append("    - ${arg}")
       endforeach()
     else()
       # If the runner doesn't need any arguments, just use an empty list.
-      runner_yml_write("    []\n")
+      runners_yaml_append("    []\n")
     endif()
   endforeach()
 
