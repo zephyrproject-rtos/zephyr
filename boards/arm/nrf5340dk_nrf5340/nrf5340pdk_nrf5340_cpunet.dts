@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <nordic/nrf5340_cpunet_qkaa.dtsi>
+#include <nordic/nrf5340_cpunet_qkaa_eng_a.dtsi>
 
 / {
 	model = "Nordic NRF5340 PDK NRF5340 Network";
