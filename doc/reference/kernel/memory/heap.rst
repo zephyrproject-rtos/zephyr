@@ -38,7 +38,7 @@ Releasing Memory
 ================
 
 Memory allocated with :cpp:func:`k_heap_alloc()` must be released using
-:cpp:func:`k_heap_free()`.  Similar to stanard C ``free()``, the pointer
+:cpp:func:`k_heap_free()`.  Similar to standard C ``free()``, the pointer
 provided must be either a ``NULL`` value or a pointer previously
 returned by :cpp:func:`k_heap_alloc()` for the same heap.  Freeing a
 ``NULL`` value is defined to have no effect.
