@@ -30,19 +30,19 @@ extern "C" {
  * The following #defines are used to configure the I2C controller.
  */
 
-/** I2C Standard Speed */
+/** I2C Standard Speed: 100 kHz */
 #define I2C_SPEED_STANDARD		(0x1U)
 
-/** I2C Fast Speed */
+/** I2C Fast Speed: 400 kHz */
 #define I2C_SPEED_FAST			(0x2U)
 
-/** I2C Fast Plus Speed */
+/** I2C Fast Plus Speed: 1 MHz */
 #define I2C_SPEED_FAST_PLUS		(0x3U)
 
-/** I2C High Speed */
+/** I2C High Speed: 3.4 MHz */
 #define I2C_SPEED_HIGH			(0x4U)
 
-/** I2C Ultra Fast Speed */
+/** I2C Ultra Fast Speed: 5 MHz */
 #define I2C_SPEED_ULTRA			(0x5U)
 
 #define I2C_SPEED_SHIFT			(1U)
