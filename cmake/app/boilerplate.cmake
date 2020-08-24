@@ -75,6 +75,27 @@ message(STATUS "Application: ${APPLICATION_SOURCE_DIR}")
 
 add_custom_target(code_data_relocation_target)
 
+# The zephyr/runners.yaml file in the build directory is used to
+# configure the scripts/west_commands/runners Python package used
+# by 'west flash', 'west debug', etc.
+#
+# This is a helper target for setting property:value pairs related to
+# this file:
+#
+# Property         Description
+# --------------   --------------------------------------------------
+# bin_file         "zephyr.bin" file for flashing
+# hex_file         "zephyr.hex" file for flashing
+# elf_file         "zephyr.elf" file for flashing or debugging
+# yaml_contents    generated contents of runners.yaml
+#
+# Note: there are quotes around "zephyr.bin" etc. because the actual
+# paths can be changed, e.g. to flash signed versions of these files
+# for consumption by bootloaders such as MCUboot.
+#
+# See cmake/flash/CMakeLists.txt for more details.
+add_custom_target(runners_yaml_props_target)
+
 # CMake's 'project' concept has proven to not be very useful for Zephyr
 # due in part to how Zephyr is organized and in part to it not fitting well
 # with cross compilation.

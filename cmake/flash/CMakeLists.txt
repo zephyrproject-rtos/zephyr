@@ -1,14 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
-add_custom_target(runner_yml_props_target)
-
 function(runner_yml_write content)
   # Append ${content}\n to a target property which is later evaluated as a
   # generator expression when writing the flash runner yaml file.
   # We define this function here to have access to the `flash` target.
 
   set_property(
-    TARGET         runner_yml_props_target
+    TARGET         runners_yaml_props_target
     APPEND_STRING
     PROPERTY       yaml_contents
     "${content}\n"
@@ -79,7 +77,7 @@ function(create_runners_yaml)
 
   # Write the final contents and set its location in the cache.
   file(GENERATE OUTPUT "${runners_yaml}" CONTENT
-    $<TARGET_PROPERTY:runner_yml_props_target,yaml_contents>)
+    $<TARGET_PROPERTY:runners_yaml_props_target,yaml_contents>)
   set(ZEPHYR_RUNNERS_YAML "${runners_yaml}" CACHE INTERNAL
     "a configuration file for the runners Python package")
 endfunction()
