@@ -1006,8 +1006,9 @@ class SizeCalculator:
         "k_msgq_area",
         "k_mbox_area",
         "k_pipe_area",
-        "net_if",
-        "net_if_dev",
+        "net_if_area",
+        "net_if_dev_area",
+        "net_l2_area",
         "net_l2_data",
         "k_queue_area",
         "_net_buf_pool_area",
@@ -1030,7 +1031,9 @@ class SizeCalculator:
         "priv_stacks_noinit",
         "_GCOV_BSS_SECTION_NAME",
         "gcov",
-        "nocache"
+        "nocache",
+        "devices",
+        "k_heap_area",
     ]
 
     # These get copied into RAM only on non-XIP
@@ -1042,19 +1045,19 @@ class SizeCalculator:
         "reset",
         "z_object_assignment_area",
         "rodata",
-        "devconfig",
         "net_l2",
         "vector",
         "sw_isr_table",
         "settings_handler_static_area",
-        "bt_l2cap_fixed_chan",
-        "bt_l2cap_br_fixec_chan",
-        "bt_gatt_service_static",
+        "bt_l2cap_fixed_chan_area",
+        "bt_l2cap_br_fixed_chan_area",
+        "bt_gatt_service_static_area",
         "vectors",
         "net_socket_register_area",
         "net_ppp_proto",
         "shell_area",
         "tracing_backend_area",
+        "ppp_protocol_handler_area",
     ]
 
     def __init__(self, filename, extra_sections):
