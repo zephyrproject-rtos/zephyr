@@ -16,7 +16,7 @@
 };
 
 &mpu {
-	arm,num-mpu-regions = <8>;
+	arm,num-mpu-regions = <16>;
 };
 
 / {
