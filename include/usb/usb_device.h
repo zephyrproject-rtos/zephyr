@@ -48,17 +48,17 @@ extern "C" {
  * These macros should be used to place the USB descriptors
  * in predetermined order in the RAM.
  */
-#define USBD_DEVICE_DESCR_DEFINE(p) \
+#define USBD_DEVICE_DESC_DEFINE(p) \
 	static __in_section(usb, descriptor_##p, 0) __used __aligned(1)
-#define USBD_CLASS_DESCR_DEFINE(p, instance) \
+#define USBD_CLASS_DESC_DEFINE(p, instance) \
 	static __in_section(usb, descriptor_##p.1, instance) __used __aligned(1)
-#define USBD_MISC_DESCR_DEFINE(p) \
+#define USBD_MISC_DESC_DEFINE(p) \
 	static __in_section(usb, descriptor_##p, 2) __used __aligned(1)
-#define USBD_USER_DESCR_DEFINE(p) \
+#define USBD_USER_DESC_DEFINE(p) \
 	static __in_section(usb, descriptor_##p, 3) __used __aligned(1)
-#define USBD_STRING_DESCR_DEFINE(p) \
+#define USBD_STRING_DESC_DEFINE(p) \
 	static __in_section(usb, descriptor_##p, 4) __used __aligned(1)
-#define USBD_TERM_DESCR_DEFINE(p) \
+#define USBD_TERM_DESC_DEFINE(p) \
 	static __in_section(usb, descriptor_##p, 5) __used __aligned(1)
 
 /*
