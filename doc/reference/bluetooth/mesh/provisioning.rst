@@ -29,10 +29,10 @@ Beaconing
 To start the provisioning process, the unprovisioned device must first start
 broadcasting the Unprovisioned Beacon. This makes it visible to nearby
 provisioners, which can initiate the provisioning. To indicate that the device
-needs to be provisioned, call :cpp:func:`bt_mesh_prov_enable()`. The device
+needs to be provisioned, call :c:func:`bt_mesh_prov_enable`. The device
 starts broadcasting the Unprovisioned Beacon with the device UUID and the
 ``OOB information`` field, as specified in the ``prov`` parameter passed to
-:cpp:func:`bt_mesh_init`. Additionally, a Uniform Resource Identifier (URI)
+:c:func:`bt_mesh_init`. Additionally, a Uniform Resource Identifier (URI)
 may be specified, which can point the provisioner to the location of some Out
 Of Band information, such as the device's public key or an authentication
 value database. The URI is advertised in a separate beacon, with a URI hash
@@ -106,7 +106,7 @@ sequence should be repeated after a delay of three seconds or more.
 When an Input OOB action is selected, the user should be prompted when the
 application receives the :cpp:var:`bt_mesh_prov::input` callback. The user
 response should be fed back to the Provisioning API through
-:cpp:func:`bt_mesh_input_string()` or :cpp:func:`bt_mesh_input_number()`. If
+:c:func:`bt_mesh_input_string` or :c:func:`bt_mesh_input_number`. If
 no user response is recorded within 60 seconds, the Provisioning process is
 aborted.
 

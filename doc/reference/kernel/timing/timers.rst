@@ -104,7 +104,7 @@ Defining a Timer
 ================
 
 A timer is defined using a variable of type :c:type:`k_timer`.
-It must then be initialized by calling :cpp:func:`k_timer_init()`.
+It must then be initialized by calling :c:func:`k_timer_init`.
 
 The following code defines and initializes a timer.
 
@@ -222,7 +222,7 @@ amount of time.
 Use a timer to determine whether or not a specified amount of time has
 elapsed.  In particular, timers should be used when higher precision
 and/or unit control is required than that afforded by the simpler
-``k_sleep()`` and ``k_usleep()`` calls.
+:c:func:`k_sleep` and :c:func:`k_usleep` calls.
 
 Use a timer to perform other work while carrying out operations
 involving time limits.

@@ -29,7 +29,7 @@ the first word of an item for use as a pointer to the next data item in the
 queue. Consequently, a data item that holds N bytes of application data
 requires N+4 (or N+8) bytes of memory. There are no alignment or reserved
 space requirements for data items if they are added with
-:cpp:func:`k_lifo_alloc_put()`, instead additional memory is temporarily
+:c:func:`k_lifo_alloc_put`, instead additional memory is temporarily
 allocated from the calling thread's resource pool.
 
 A data item may be **added** to a LIFO by a thread or an ISR.
@@ -54,7 +54,7 @@ Defining a LIFO
 ===============
 
 A LIFO is defined using a variable of type :c:type:`k_lifo`.
-It must then be initialized by calling :cpp:func:`k_lifo_init()`.
+It must then be initialized by calling :c:func:`k_lifo_init`.
 
 The following defines and initializes an empty LIFO.
 
@@ -76,7 +76,7 @@ The following code has the same effect as the code segment above.
 Writing to a LIFO
 =================
 
-A data item is added to a LIFO by calling :cpp:func:`k_lifo_put()`.
+A data item is added to a LIFO by calling :c:func:`k_lifo_put`.
 
 The following code builds on the example above, and uses the LIFO
 to send data to one or more consumer threads.
@@ -103,7 +103,7 @@ to send data to one or more consumer threads.
         }
     }
 
-A data item can be added to a LIFO with :cpp:func:`k_lifo_alloc_put()`.
+A data item can be added to a LIFO with :c:func:`k_lifo_alloc_put`.
 With this API, there is no need to reserve space for the kernel's use in
 the data item, instead additional memory will be allocated from the calling
 thread's resource pool until the item is read.
@@ -111,7 +111,7 @@ thread's resource pool until the item is read.
 Reading from a LIFO
 ===================
 
-A data item is removed from a LIFO by calling :cpp:func:`k_lifo_get()`.
+A data item is removed from a LIFO by calling :c:func:`k_lifo_get`.
 
 The following code builds on the example above, and uses the LIFO
 to obtain data items from a producer thread,

@@ -156,10 +156,10 @@ another real or simulated device.
 Initialization
 **************
 
-The Bluetooth subsystem is initialized using the :cpp:func:`bt_enable`
+The Bluetooth subsystem is initialized using the :c:func:`bt_enable`
 function. The caller should ensure that function succeeds by checking
 the return code for errors. If a function pointer is passed to
-:cpp:func:`bt_enable`, the initialization happens asynchronously, and the
+:c:func:`bt_enable`, the initialization happens asynchronously, and the
 completion is notified through the given function.
 
 Bluetooth Application Example
@@ -174,8 +174,8 @@ advertising, effectively acting as a Bluetooth Low Energy broadcaster.
    :lines: 19-
    :linenos:
 
-The key APIs employed by the beacon sample are :cpp:func:`bt_enable`
-that's used to initialize Bluetooth and then :cpp:func:`bt_le_adv_start`
+The key APIs employed by the beacon sample are :c:func:`bt_enable`
+that's used to initialize Bluetooth and then :c:func:`bt_le_adv_start`
 that's used to start advertising a specific combination of advertising
 and scan response data.
 

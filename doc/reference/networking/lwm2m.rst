@@ -355,7 +355,7 @@ to connect as well as set the ``Manufacturer`` and ``Reboot`` resources in the
 	lwm2m_engine_register_exec_callback("3/0/4", device_reboot_cb);
 
 Lastly, we start the LwM2M RD client (which in turn starts the LwM2M engine).
-The second parameter of :c:func:`lwm2m_rd_client_start()` is the client
+The second parameter of :c:func:`lwm2m_rd_client_start` is the client
 endpoint name.  This is important as it needs to be unique per LwM2M server:
 
 .. code-block:: c
@@ -398,7 +398,7 @@ resource.  Lastly, set the client identity and PSK resources.
 	/* Set the client pre-shared key (PSK) */
 	lwm2m_engine_set_opaque("0/0/5", (void *)client_psk, sizeof(client_psk));
 
-Before calling :c:func:`lwm2m_rd_client_start()` assign the tls_tag # where the
+Before calling :c:func:`lwm2m_rd_client_start` assign the tls_tag # where the
 LwM2M library should store the DTLS information prior to connection (normally a
 value of 1 is ok here).
 

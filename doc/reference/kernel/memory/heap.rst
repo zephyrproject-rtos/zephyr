@@ -18,12 +18,12 @@ with a given name that manages a memory region of the
 specified size.
 
 Heaps can also be created to manage arbitrary regions of
-application-controlled memory using :cpp:func:`k_heap_init()`.
+application-controlled memory using :c:func:`k_heap_init`.
 
 Allocating Memory
 =================
 
-Memory can be allocated from a heap using :cpp:func:`k_heap_alloc()`,
+Memory can be allocated from a heap using :c:func:`k_heap_alloc`,
 passing it the address of the heap object and the number of bytes
 desired.  This functions similarly to standard C ``malloc()``,
 returning a NULL pointer on an allocation failure.
@@ -37,10 +37,10 @@ sleep before returning, or else one of the constant timeout values
 Releasing Memory
 ================
 
-Memory allocated with :cpp:func:`k_heap_alloc()` must be released using
-:cpp:func:`k_heap_free()`.  Similar to standard C ``free()``, the pointer
+Memory allocated with :c:func:`k_heap_alloc` must be released using
+:c:func:`k_heap_free`.  Similar to standard C ``free()``, the pointer
 provided must be either a ``NULL`` value or a pointer previously
-returned by :cpp:func:`k_heap_alloc()` for the same heap.  Freeing a
+returned by :c:func:`k_heap_alloc` for the same heap.  Freeing a
 ``NULL`` value is defined to have no effect.
 
 Low Level Heap Allocator
@@ -100,7 +100,7 @@ System Heap
 
 The :dfn:`system heap` is a predefined memory allocator that allows
 threads to dynamically allocate memory from a common memory region in
-a :cpp:func:`malloc()`-like manner.
+a :c:func:`malloc`-like manner.
 
 Only a single system heap is be defined. Unlike other heaps or memory
 pools, the system heap cannot be directly referenced using its
@@ -110,12 +110,12 @@ The size of the system heap is configurable to arbitrary sizes,
 subject to space availability.
 
 A thread can dynamically allocate a chunk of heap memory by calling
-:cpp:func:`k_malloc()`. The address of the allocated chunk is
+:c:func:`k_malloc`. The address of the allocated chunk is
 guaranteed to be aligned on a multiple of pointer sizes. If a suitable
 chunk of heap memory cannot be found :c:macro:`NULL` is returned.
 
 When the thread is finished with a chunk of heap memory it can release
-the chunk back to the system heap by calling :cpp:func:`k_free()`.
+the chunk back to the system heap by calling :c:func:`k_free`.
 
 Defining the Heap Memory Pool
 =============================
@@ -131,7 +131,7 @@ the link stage if the size specified can not be supported.
 Allocating Memory
 =================
 
-A chunk of heap memory is allocated by calling :cpp:func:`k_malloc()`.
+A chunk of heap memory is allocated by calling :c:func:`k_malloc`.
 
 The following code allocates a 200 byte chunk of heap memory, then fills it
 with zeros. A warning is issued if a suitable chunk is not obtained.
@@ -154,7 +154,7 @@ since that is the closest matching size supported by the heap memory pool.
 Releasing Memory
 ================
 
-A chunk of heap memory is released by calling :cpp:func:`k_free()`.
+A chunk of heap memory is released by calling :c:func:`k_free`.
 
 The following code allocates a 75 byte chunk of memory, then releases it
 once it is no longer needed. (A 256 byte memory block from the heap memory
@@ -172,7 +172,7 @@ Suggested Uses
 ==============
 
 Use the heap memory pool to dynamically allocate memory in a
-:cpp:func:`malloc()`-like manner.
+:c:func:`malloc`-like manner.
 
 Configuration Options
 =====================

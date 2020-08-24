@@ -76,20 +76,20 @@ Dynamic Objects
 
 Kernel objects may also be allocated at runtime if
 :option:`CONFIG_DYNAMIC_OBJECTS` is enabled. In this case, the
-:cpp:func:`k_object_alloc()` API may be used to instantiate an object from
+:c:func:`k_object_alloc` API may be used to instantiate an object from
 the calling thread's resource pool. Such allocations may be freed in two
 ways:
 
-* Supervisor threads may call :cpp:func:`k_object_free()` to force a dynamic
+* Supervisor threads may call :c:func:`k_object_free` to force a dynamic
   object to be released.
 
 * If an object's references drop to zero (which happens when no threads have
   permissions on it) the object will be automatically freed. User threads
   may drop their own permission on an object with
-  :cpp:func:`k_object_release()`, and their permissions are automatically
+  :c:func:`k_object_release`, and their permissions are automatically
   cleared when a thread terminates. Supervisor threads may additionally
   revoke references for another thread using
-  :cpp:func:`k_object_access_revoke()`.
+  :c:func:`k_object_access_revoke`.
 
 Because permissions are also used for reference counting, it is important for
 supervisor threads to acquire permissions on objects they are using even though
@@ -140,7 +140,7 @@ Supervisor Thread Access Permission
 Supervisor threads can access any kernel object. However, permissions for
 supervisor threads are still tracked for two reasons:
 
-* If a supervisor thread calls :cpp:func:`k_thread_user_mode_enter()`, the
+* If a supervisor thread calls :c:func:`k_thread_user_mode_enter`, the
   thread will then run in user mode with any permissions it had been granted
   (in many cases, by itself) when it was a supervisor thread.
 
@@ -162,17 +162,17 @@ ways to do this.
 
 * A thread that has permission on an object, or is running in supervisor mode,
   may grant permission on that object to another thread via the
-  :c:func:`k_object_access_grant()` API. The convenience function
-  :c:func:`k_thread_access_grant()` may also be used, which accepts a
+  :c:func:`k_object_access_grant` API. The convenience function
+  :c:func:`k_thread_access_grant` may also be used, which accepts a
   NULL-terminated list of kernel objects and calls
-  :c:func:`k_object_access_grant()` on each of them. The thread being granted
+  :c:func:`k_object_access_grant` on each of them. The thread being granted
   permission, or the object whose access is being granted, do not need to be in
   an initialized state. If the caller is from user mode, the caller must have
   permissions on both the kernel object and the target thread object.
 
 * Supervisor threads may declare a particular kernel object to be a public
   object, usable by all current and future threads with the
-  :c:func:`k_object_access_all_grant()` API. You must assume that any
+  :c:func:`k_object_access_all_grant` API. You must assume that any
   untrusted or exploited code will then be able to access the object. Use
   this API with caution!
 
@@ -181,16 +181,16 @@ ways to do this.
   access to a set of kernel objects at boot time.
 
 Once a thread has been granted access to an object, such access may be
-removed with the :c:func:`k_object_access_revoke()` API. This API is not
+removed with the :c:func:`k_object_access_revoke` API. This API is not
 available to user threads, however user threads may use
-:c:func:`k_object_release()` to relinquish their own permissions on an
+:c:func:`k_object_release` to relinquish their own permissions on an
 object.
 
 API calls from supervisor mode to set permissions on kernel objects that are
 not being tracked by the kernel will be no-ops. Doing the same from user mode
 will result in a fatal error for the calling thread.
 
-Objects allocated with :cpp:func:`k_object_alloc()` implicitly grant
+Objects allocated with :c:func:`k_object_alloc` implicitly grant
 permission on the allocated object to the calling thread.
 
 Initialization State
@@ -210,7 +210,7 @@ Some objects will be implicitly initialized at boot:
   is run by the kernel early in the boot process.
 
 If a kernel object is initialized with a private static initializer, the object
-must have :c:func:`z_object_init()` called on it at some point by a supervisor
+must have :c:func:`z_object_init` called on it at some point by a supervisor
 thread, otherwise the kernel will consider the object uninitialized if accessed
 by a user thread. This is very uncommon, typically only for kernel objects that
 are embedded within some larger struct and initialized statically.

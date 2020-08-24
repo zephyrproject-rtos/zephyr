@@ -86,7 +86,7 @@ prior to returning, since the kernel does *not* reclaim them automatically.
     ability to respawn a thread that terminates.
 
 In some cases a thread may want to sleep until another thread terminates.
-This can be accomplished with the :cpp:func:`k_thread_join()` API. This
+This can be accomplished with the :c:func:`k_thread_join` API. This
 will block the calling thread until either the timeout expires, the target
 thread self-exits, or the target thread aborts (either due to a
 k_thread_abort() call or triggering a fatal error).
@@ -99,7 +99,7 @@ automatically aborts a thread if the thread triggers a fatal error condition,
 such as dereferencing a null pointer.
 
 A thread can also be aborted by another thread (or by itself)
-by calling :cpp:func:`k_thread_abort()`. However, it is typically preferable
+by calling :c:func:`k_thread_abort`. However, it is typically preferable
 to signal a thread to terminate itself gracefully, rather than aborting it.
 
 As with thread termination, the kernel does not reclaim shared resources
@@ -113,16 +113,16 @@ Thread Suspension
 ==================
 
 A thread can be prevented from executing for an indefinite period of time
-if it becomes **suspended**. The function :cpp:func:`k_thread_suspend()`
+if it becomes **suspended**. The function :c:func:`k_thread_suspend`
 can be used to suspend any thread, including the calling thread.
 Suspending a thread that is already suspended has no additional effect.
 
 Once suspended, a thread cannot be scheduled until another thread calls
-:cpp:func:`k_thread_resume()` to remove the suspension.
+:c:func:`k_thread_resume` to remove the suspension.
 
 .. note::
    A thread can prevent itself from executing for a specified period of time
-   using :cpp:func:`k_sleep()`. However, this is different from suspending
+   using :c:func:`k_sleep`. However, this is different from suspending
    a thread since a sleeping thread becomes executable automatically when the
    time limit is reached.
 
@@ -174,7 +174,7 @@ require their regions to be of some power of two in size, and aligned to its
 own size.
 
 Becasue of this, portable code can't simply pass an arbitrary character buffer
-to :cpp:func:`k_thread_create()`. Special macros exist to instantiate stacks,
+to :c:func:`k_thread_create`. Special macros exist to instantiate stacks,
 prefixed with ``K_KERNEL_STACK`` and ``K_THREAD_STACK``.
 
 Kernel-only Stacks
@@ -317,8 +317,8 @@ it chooses. The default custom data value for a thread is zero.
 By default, thread custom data support is disabled. The configuration option
 :option:`CONFIG_THREAD_CUSTOM_DATA` can be used to enable support.
 
-The :cpp:func:`k_thread_custom_data_set()` and
-:cpp:func:`k_thread_custom_data_get()` functions are used to write and read
+The :c:func:`k_thread_custom_data_set` and
+:c:func:`k_thread_custom_data_get` functions are used to write and read
 a thread's custom data, respectively. A thread can only access its own
 custom data, and not that of another thread.
 
@@ -357,7 +357,7 @@ Spawning a Thread
 =================
 
 A thread is spawned by defining its stack area and its thread control block,
-and then calling :cpp:func:`k_thread_create()`.
+and then calling :c:func:`k_thread_create`.
 
 The stack area must be defined using :c:macro:`K_THREAD_STACK_DEFINE` or
 :c:macro:`K_KERNEL_STACK_DEFINE` to ensure it is properly set up in memory.
@@ -413,7 +413,7 @@ The following code has the same effect as the code segment above.
                     MY_PRIORITY, 0, 0);
 
 .. note::
-   The delay parameter to :cpp:func:`k_thread_create()` is a
+   The delay parameter to :c:func:`k_thread_create` is a
    :c:type:`k_timeout_t` value, so :c:macro:`K_NO_WAIT` means to start the
    thread immediately. The corresponding parameter to :c:macro:`K_THREAD_DEFINE`
    is a duration in integral milliseconds, so the equivalent argument is 0.
@@ -422,7 +422,7 @@ User Mode Constraints
 ---------------------
 
 This section only applies if :option:`CONFIG_USERSPACE` is enabled, and a user
-thread tries to create a new thread. The :c:func:`k_thread_create()` API is
+thread tries to create a new thread. The :c:func:`k_thread_create` API is
 still used, but there are additional constraints which must be met or the
 calling thread will be terminated:
 
@@ -449,7 +449,7 @@ Dropping Permissions
 
 If :option:`CONFIG_USERSPACE` is enabled, a thread running in supervisor mode
 may perform a one-way transition to user mode using the
-:cpp:func:`k_thread_user_mode_enter()` API. This is a one-way operation which
+:c:func:`k_thread_user_mode_enter` API. This is a one-way operation which
 will reset and zero the thread's stack memory. The thread will be marked
 as non-essential.
 

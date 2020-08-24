@@ -6,7 +6,7 @@ Thread analyzer
 The thread analyzer module enables all the Zephyr options required to track
 the thread information, e.g. thread stack size usage.
 The analysis is performed on demand when the application calls
-:cpp:func:`thread_analyzer_run` or :cpp:func:`thread_analyzer_print`.
+:c:func:`thread_analyzer_run` or :c:func:`thread_analyzer_print`.
 
 Configuration
 *************

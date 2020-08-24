@@ -124,11 +124,11 @@ the work item is always processed by the workqueue and cannot be canceled.
 Triggered Work
 **************
 
-The :cpp:func:`k_work_poll_submit()` interface schedules a triggered work
+The :c:func:`k_work_poll_submit` interface schedules a triggered work
 item in response to a **poll event** (see :ref:`polling_v2`), that will
 call a user-defined function when a monitored resource becomes available
 or poll signal is raised, or a timeout occurs.
-In contrast to :cpp:func:`k_poll()`, the triggered work does not require
+In contrast to :c:func:`k_poll`, the triggered work does not require
 a dedicated thread waiting or actively polling for a poll event.
 
 A triggered work item is a standard work item that has the following
@@ -181,7 +181,7 @@ Defining a Workqueue
 
 A workqueue is defined using a variable of type :c:type:`k_work_q`.
 The workqueue is initialized by defining the stack area used by its thread
-and then calling :cpp:func:`k_work_q_start()`. The stack area must be defined
+and then calling :c:func:`k_work_q_start`. The stack area must be defined
 using :c:macro:`K_THREAD_STACK_DEFINE` to ensure it is properly set up in
 memory.
 
@@ -203,11 +203,11 @@ Submitting a Work Item
 ======================
 
 A work item is defined using a variable of type :c:type:`k_work`.
-It must then be initialized by calling :cpp:func:`k_work_init()`.
+It must then be initialized by calling :c:func:`k_work_init`.
 
 An initialized work item can be submitted to the system workqueue by
-calling :cpp:func:`k_work_submit()`, or to a specified workqueue by
-calling :cpp:func:`k_work_submit_to_queue()`.
+calling :c:func:`k_work_submit`, or to a specified workqueue by
+calling :c:func:`k_work_submit_to_queue`.
 
 The following code demonstrates how an ISR can offload the printing
 of error messages to the system workqueue. Note that if the ISR attempts
@@ -251,13 +251,13 @@ Submitting a Delayed Work Item
 
 A delayed work item is defined using a variable of type
 :c:type:`k_delayed_work`. It must then be initialized by calling
-:cpp:func:`k_delayed_work_init()`.
+:c:func:`k_delayed_work_init`.
 
 An initialized delayed work item can be submitted to the system workqueue by
-calling :cpp:func:`k_delayed_work_submit()`, or to a specified workqueue by
-calling :cpp:func:`k_delayed_work_submit_to_queue()`. A delayed work item
+calling :c:func:`k_delayed_work_submit`, or to a specified workqueue by
+calling :c:func:`k_delayed_work_submit_to_queue`. A delayed work item
 that has been submitted but not yet consumed by its workqueue can be canceled
-by calling :cpp:func:`k_delayed_work_cancel()`.
+by calling :c:func:`k_delayed_work_cancel`.
 
 Suggested Uses
 **************

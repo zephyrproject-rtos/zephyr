@@ -54,8 +54,8 @@ Application interfaces
 Only two Application Interfaces as defined in section 9 of the standard
 are available:
 
-- ``ClockTargetPhaseDiscontinuity`` interface (:cpp:func:`gptp_register_phase_dis_cb()`)
-- ``ClockTargetEventCapture`` interface  (:cpp:func:`gptp_event_capture()`)
+- ``ClockTargetPhaseDiscontinuity`` interface (:c:func:`gptp_register_phase_dis_cb`)
+- ``ClockTargetEventCapture`` interface  (:c:func:`gptp_event_capture`)
 
 Testing
 *******

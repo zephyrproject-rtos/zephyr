@@ -6,9 +6,9 @@ console_getline() Sample Application
 Overview
 ********
 
-This example shows how to use :cpp:func:`console_getline()` function.
+This example shows how to use :c:func:`console_getline` function.
 Similar to the well-known ANSI C gets() and fgets() functions,
-:cpp:func:`console_getline()` either returns the next available input
+:c:func:`console_getline` either returns the next available input
 line or blocks waiting for one. Using this function, it should be fairly
 easy to port existing ANSI C, POSIX, or Linux applications which process
 console input line by line. The sample also allows to see details of how

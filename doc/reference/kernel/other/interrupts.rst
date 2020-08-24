@@ -53,7 +53,7 @@ nesting support is enabled.
 .. important::
     Many kernel APIs can be used only by threads, and not by ISRs. In cases
     where a routine may be invoked by both threads and ISRs the kernel
-    provides the :cpp:func:`k_is_in_isr()` API to allow the routine to
+    provides the :c:func:`k_is_in_isr` API to allow the routine to
     alter its behavior depending on whether it is executing as part of
     a thread or as part of an ISR.
 
@@ -211,7 +211,7 @@ Defining a regular ISR
 ======================
 
 An ISR is defined at runtime by calling :c:macro:`IRQ_CONNECT`. It must
-then be enabled by calling :cpp:func:`irq_enable()`.
+then be enabled by calling :c:func:`irq_enable`.
 
 .. important::
     IRQ_CONNECT() is not a C function and does some inline assembly magic
@@ -245,7 +245,7 @@ The following code defines and enables an ISR.
 Since the :c:macro:`IRQ_CONNECT` macro requires that all its parameters be
 known at build time, in some cases this may not be acceptable. It is also
 possible to install interrupts at runtime with
-:cpp:func:`irq_connect_dynamic()`. It is used in exactly the same way as
+:c:func:`irq_connect_dynamic`. It is used in exactly the same way as
 :c:macro:`IRQ_CONNECT`:
 
 .. code-block:: c
@@ -424,7 +424,7 @@ On x86 when an interrupt or exception vector is executed by the CPU, there is
 no foolproof way to determine which vector was fired, so a software ISR table
 indexed by IRQ line is not used. Instead, the :c:macro:`IRQ_CONNECT` call
 creates a small assembly language function which calls the common interrupt
-code in :cpp:func:`_interrupt_enter` with the ISR and parameter as arguments.
+code in :c:func:`_interrupt_enter` with the ISR and parameter as arguments.
 It is the address of this assembly interrupt stub which gets placed in the IDT.
 For interrupts declared with :c:macro:`IRQ_DIRECT_CONNECT` the parameterless
 ISR is placed directly in the IDT.
