@@ -31,7 +31,7 @@ extern "C" {
 /**
  * @defgroup fcb_data_structures Flash Circular Buffer Data Structures
  * @ingroup fcb
- *
+ * @{
  */
 
 #define FCB_MAX_LEN	(CHAR_MAX | CHAR_MAX << 7) /**< Max length of element */
