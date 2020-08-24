@@ -501,7 +501,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 
 		sec_pdu->tx_addr = own_addr_type & 0x1;
 	} else if (pri_hdr_prev.adv_addr) {
-		sec_pdu->tx_addr = pri_pdu->tx_addr;
+		sec_pdu->tx_addr = pri_pdu_prev->tx_addr;
 	} else if (sec_hdr_prev.adv_addr) {
 		sec_pdu->tx_addr = sec_pdu_prev->tx_addr;
 	} else {
