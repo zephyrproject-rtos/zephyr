@@ -132,6 +132,10 @@ class EDT:
       A collections.OrderedDict that maps a node label to the node with
       that label.
 
+    dep_ord2node:
+      A collections.OrderedDict that maps an ordinal to the node with
+      that dependency ordinal.
+
     chosen_nodes:
       A collections.OrderedDict that maps the properties defined on the
       devicetree's /chosen node to their values. 'chosen' is indexed by
@@ -519,6 +523,7 @@ class EDT:
         # Initialize node lookup tables (LUTs).
 
         self.label2node = OrderedDict()
+        self.dep_ord2node = OrderedDict()
         self.compat2enabled = defaultdict(list)
         self.compat2nodes = defaultdict(list)
         self.compat2okay = defaultdict(list)
@@ -535,6 +540,10 @@ class EDT:
 
                 if node.status == "okay":
                     self.compat2okay[compat].append(node)
+
+        for nodeset in self.scc_order:
+            node = nodeset[0]
+            self.dep_ord2node[node.dep_ordinal] = node
 
     def _check_binding(self, binding, binding_path):
         # Does sanity checking on 'binding'. Only takes 'self' for the sake of
