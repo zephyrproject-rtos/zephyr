@@ -55,15 +55,6 @@
 #include "ull_vendor.h"
 #endif /* CONFIG_BT_CTLR_USER_EXT */
 
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-static u16_t default_tx_octets;
-static u16_t default_tx_time;
-#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
-
-#if defined(CONFIG_BT_CTLR_PHY)
-static u8_t default_phy_tx;
-static u8_t default_phy_rx;
-#endif /* CONFIG_BT_CTLR_PHY */
 
 
 
@@ -139,20 +130,6 @@ u8_t ll_phy_default_set(u8_t tx, u8_t rx)
 	default_phy_rx = rx;
 
 	return 0;
-}
-
-/*
- * the next 2 functions are not called by HCI, but
- * provide data given by an HCI call to ll_phy_default_set
- */
-u8_t ull_conn_default_phy_tx_get(void)
-{
-	return default_phy_tx;
-}
-
-u8_t ull_conn_default_phy_rx_get(void)
-{
-	return default_phy_rx;
 }
 
 u8_t ll_phy_get(u16_t handle, u8_t *tx, u8_t *rx)
@@ -263,17 +240,6 @@ u32_t ll_length_default_set(u16_t max_tx_octets, u16_t max_tx_time)
 	return 0;
 }
 
-u16_t ull_conn_default_tx_octets_get(void)
-{
-	return default_tx_octets;
-}
-
-#if defined(CONFIG_BT_CTLR_PHY)
-u16_t ull_conn_default_tx_time_get(void)
-{
-	return default_tx_time;
-}
-#endif /* CONFIG_BT_CTLR_PHY */
 
 
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
