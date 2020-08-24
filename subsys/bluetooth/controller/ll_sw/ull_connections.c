@@ -32,6 +32,17 @@ static void *conn_free;
 static u8_t data_chan_map[5] = {0xFF, 0xFF, 0xFF, 0xFF, 0x1F};
 static u8_t data_chan_count = 37U;
 
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+static u16_t default_tx_octets;
+static u16_t default_tx_time;
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
+#if defined(CONFIG_BT_CTLR_PHY)
+static u8_t default_phy_tx;
+static u8_t default_phy_rx;
+#endif /* CONFIG_BT_CTLR_PHY */
+
+
 static uint16_t init_reset(void);
 
 static uint16_t init_reset(void)
@@ -126,3 +137,29 @@ void ull_conn_chan_map_set(u8_t *chan_map)
 	data_chan_count = util_ones_count_get(data_chan_map,
 					      sizeof(data_chan_map));
 }
+
+#if defined(CONFIG_BT_CTLR_PHY)
+u8_t ull_conn_default_phy_tx_get(void)
+{
+	return default_phy_tx;
+}
+
+u8_t ull_conn_default_phy_rx_get(void)
+{
+	return default_phy_rx;
+}
+#endif /* CONFIG_BT_CTLR_PHY */
+
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+u16_t ull_conn_default_tx_octets_get(void)
+{
+	return default_tx_octets;
+}
+
+#if defined(CONFIG_BT_CTLR_PHY)
+u16_t ull_conn_default_tx_time_get(void)
+{
+	return default_tx_time;
+}
+#endif /* CONFIG_BT_CTLR_PHY */
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
