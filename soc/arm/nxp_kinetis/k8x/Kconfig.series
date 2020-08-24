@@ -23,5 +23,7 @@ config SOC_SERIES_KINETIS_K8X
 	select HAS_MCUX_TRNG
 	select HAS_OSC
 	select HAS_MCG
+	select HAS_MCUX_EDMA
+	select HAS_MCUX_PIT
 	help
 	  Enable support for Kinetis K8x MCU series
