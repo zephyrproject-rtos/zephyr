@@ -60,6 +60,24 @@ if(WEST OR ZEPHYR_MODULES)
     endforeach()
   endif()
 
+  if(EXISTS ${CMAKE_BINARY_DIR}/zephyr_modules.txt)
+    file(STRINGS ${CMAKE_BINARY_DIR}/zephyr_modules.txt ZEPHYR_MODULES_TXT
+         ENCODING UTF-8)
+    set(ZEPHYR_MODULE_NAMES)
+
+    foreach(module ${ZEPHYR_MODULES_TXT})
+      # Match "<name>":"<path>" for each line of file, each corresponding to
+      # one module. The use of quotes is required due to CMake not supporting
+      # lazy regexes (it supports greedy only).
+      string(REGEX REPLACE "\"(.*)\":\".*\"" "\\1" module_name ${module})
+      string(REGEX REPLACE "\".*\":\"(.*)\"" "\\1" module_path ${module})
+
+      list(APPEND ZEPHYR_MODULE_NAMES ${module_name})
+
+      string(TOUPPER ${module_name} MODULE_NAME_UPPER)
+      set(ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR ${module_path})
+    endforeach()
+  endif()
 else()
 
   file(WRITE ${KCONFIG_MODULES_FILE}
