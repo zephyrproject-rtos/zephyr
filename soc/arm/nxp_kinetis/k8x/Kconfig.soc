@@ -41,4 +41,40 @@ config SOC_PART_NUMBER_KINETIS_K8X
 	  number selection choice defines the default value for this
 	  string.
 
+config K8X_CORE_CLOCK_DIVIDER
+	int "Freescale K8x core clock divider"
+	default 1
+	help
+	  This option specifies the divide value for the K8x processor core clock
+	  from the system clock.
+
+config K8X_BUS_CLOCK_DIVIDER
+	int "Freescale K8x bus clock divider"
+	default 2
+	help
+	  This option specifies the divide value for the K8x bus clock from the
+	  system clock.
+
+config K8X_FLEXBUS_CLOCK_DIVIDER
+	int "Freescale K8x FlexBus clock divider"
+	default 2
+	help
+	  This option specifies the divide value for the K8x FlexBus clock from the
+	  system clock.
+
+config K8X_FLASH_CLOCK_DIVIDER
+	int "Freescale K8x flash clock divider"
+	default 5
+	help
+	  This option specifies the divide value for the K8x flash clock from the
+	  system clock.
+
+config DMA_MCUX_EDMA
+	default y if HAS_MCUX_EDMA
+	depends on DMA
+
+config COUNTER_MCUX_PIT
+	default y if HAS_MCUX_PIT
+	depends on COUNTER
+
 endif # SOC_SERIES_KINETIS_K8X
