@@ -2441,7 +2441,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                                ("rom_size", int, True)]
 
         if not os.path.exists(filename):
-            logger.info("Cannot compare metrics, %s not found" % filename)
+            logger.error("Cannot compare metrics, %s not found" % filename)
             return []
 
         results = []
@@ -2471,12 +2471,12 @@ class TestSuite(DisablePyTestCollectionMixin):
                                 lower_better))
         return results
 
-    def misc_reports(self, report, show_footprint, all_deltas,
-                     footprint_threshold, last_metrics):
-
+    def footprint_reports(self, report, show_footprint, all_deltas,
+                          footprint_threshold, last_metrics):
         if not report:
             return
 
+        logger.debug("running footprint_reports")
         deltas = self.compare_metrics(report)
         warnings = 0
         if deltas and show_footprint:
@@ -2485,9 +2485,11 @@ class TestSuite(DisablePyTestCollectionMixin):
                                        (delta > 0 and not lower_better)):
                     continue
 
-                percentage = (float(delta) / float(value - delta))
-                if not all_deltas and (percentage <
-                                       (footprint_threshold / 100.0)):
+                percentage = 0
+                if value > delta:
+                    percentage = (float(delta) / float(value - delta))
+
+                if not all_deltas and (percentage < (footprint_threshold / 100.0)):
                     continue
 
                 logger.info("{:<25} {:<60} {}{}{}: {} {:<+4}, is now {:6} {:+.2%}".format(
@@ -2512,7 +2514,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                               str(instance.metrics.get("unrecognized", []))))
                 failed += 1
 
-            if instance.metrics['handler_time']:
+            if instance.metrics.get('handler_time', None):
                 run += 1
 
         if self.total_tests and self.total_tests != self.total_skipped:

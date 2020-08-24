@@ -704,11 +704,18 @@ def main():
     start_time = time.time()
 
     options = parse_arguments()
-
+    previous_results = None
     # Cleanup
     if options.no_clean or options.only_failed or options.test_only:
         if os.path.exists(options.outdir):
             print("Keeping artifacts untouched")
+    elif options.last_metrics:
+        ls = os.path.join(options.outdir, "sanitycheck.csv")
+        if os.path.exists(ls):
+            with open(ls, "r") as fp:
+                previous_results = fp.read()
+        else:
+            sys.exit(f"Can't compare metrics with non existing file {ls}")
     elif os.path.exists(options.outdir):
         if options.clobber_output:
             print("Deleting output directory {}".format(options.outdir))
@@ -721,7 +728,12 @@ def main():
                     shutil.move(options.outdir, new_out)
                     break
 
+    previous_results_file = None
     os.makedirs(options.outdir, exist_ok=True)
+    if options.last_metrics and previous_results:
+        previous_results_file = os.path.join(options.outdir, "baseline.csv")
+        with open(previous_results_file, "w") as fp:
+            fp.write(previous_results)
 
     # create file handler which logs even debug messages
     if options.log_file:
@@ -1118,8 +1130,20 @@ def main():
         if retries == 0 or suite.total_failed == suite.total_errors:
             break
 
-    suite.misc_reports(options.compare_report, options.show_footprint,
-                       options.all_deltas, options.footprint_threshold, options.last_metrics)
+
+    # figure out which report to use for size comparison
+    if options.compare_report:
+        report_to_use = options.compare_report
+    elif options.last_metrics:
+        report_to_use = previous_results_file
+    else:
+        report_to_use = suite.RELEASE_DATA
+
+    suite.footprint_reports(report_to_use,
+                            options.show_footprint,
+                            options.all_deltas,
+                            options.footprint_threshold,
+                            options.last_metrics)
 
     suite.duration = time.time() - start_time
     suite.update_counting()
