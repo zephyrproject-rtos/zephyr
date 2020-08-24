@@ -7,7 +7,7 @@
 
 import argparse
 import logging
-from os import close, getcwd, path
+from os import close, getcwd, path, fspath
 from pathlib import Path
 from subprocess import CalledProcessError
 import sys
@@ -109,6 +109,7 @@ def add_parser_common(command, parser_adder=None, parser=None):
         Not all runners respect --elf-file / --hex-file / --bin-file, nor use
         gdb or openocd.'''))
 
+    # Options used to override RunnerConfig values in runners.yaml.
     # TODO: is this actually useful?
     group.add_argument('--board-dir', metavar='DIR', help='board directory')
     # FIXME: we should just have a single --file argument. The variation
@@ -142,7 +143,8 @@ def do_run_common(command, user_args, user_runner_args):
         rebuild(command, build_dir, user_args)
 
     # Load runners.yaml.
-    runners_yaml = load_runners_yaml(runners_yaml_path(cache), user_args)
+    yaml_path = runners_yaml_path(build_dir, board)
+    runners_yaml = load_runners_yaml(yaml_path)
 
     # Get a concrete ZephyrBinaryRunner subclass to use based on
     # runners.yaml and command line arguments.
@@ -159,15 +161,11 @@ def do_run_common(command, user_args, user_runner_args):
     # parsing, it will show up here, and needs to be filtered out.
     runner_args = [arg for arg in user_runner_args if arg != '--']
 
-    # Arguments are provided in this order to allow the specific to
-    # override the general:
+    # Arguments in this order to allow specific to override general:
     #
-    # - common runners.yaml arguments
     # - runner-specific runners.yaml arguments
-    # - command line arguments
-    final_argv = (runners_yaml['args']['common'] +
-                  runners_yaml['args'][runner_name] +
-                  runner_args)
+    # - user-provided command line arguments
+    final_argv = runners_yaml['args'][runner_name] + runner_args
 
     # 'user_args' contains parsed arguments which are:
     #
@@ -200,16 +198,15 @@ def do_run_common(command, user_args, user_runner_args):
         if v is not None:
             setattr(args, a, v)
 
-    # Create the RunnerConfig from the values assigned to common
-    # arguments. This is a hacky way to go about this; probably
-    # ZephyrBinaryRunner should define what it needs to make this
-    # happen by itself. That would be a larger refactoring of the
-    # runners package than there's time for right now, though.
-    #
+    # Create the RunnerConfig from runners.yaml and any command line
+    # overrides.
+    runner_config = get_runner_config(build_dir, yaml_path, runners_yaml, args)
+    log.dbg(f'runner_config: {runner_config}', level=log.VERBOSE_VERY)
+
     # Use that RunnerConfig to create the ZephyrBinaryRunner instance
     # and call its run().
     try:
-        runner = runner_cls.create(runner_cfg_from_args(args, build_dir), args)
+        runner = runner_cls.create(runner_config, args)
         runner.run(command_name)
     except ValueError as ve:
         log.err(str(ve), fatal=True)
@@ -266,18 +263,16 @@ def rebuild(command, build_dir, args):
         else:
             log.die(f're-build in {build_dir} failed (no --build-dir given)')
 
-def runners_yaml_path(cache):
-    try:
-        return cache['ZEPHYR_RUNNERS_YAML']
-    except KeyError:
-        board = cache.get('CACHED_BOARD')
+def runners_yaml_path(build_dir, board):
+    ret = Path(build_dir) / 'zephyr' / 'runners.yaml'
+    if not ret.is_file():
         log.die(f'either a pristine build is needed, or board {board} '
                 "doesn't support west flash/debug "
                 '(no ZEPHYR_RUNNERS_YAML in CMake cache)')
+    return ret
 
-def load_runners_yaml(path, args):
-    # Load runners.yaml using its location in the CMake cache,
-    # allowing a command line override for the cache file location.
+def load_runners_yaml(path):
+    # Load runners.yaml and convert to Python object.
 
     try:
         with open(path, 'r') as f:
@@ -319,11 +314,41 @@ def use_runner_cls(command, board, args, runners_yaml, cache):
 
     return runner_cls
 
-def runner_cfg_from_args(args, build_dir):
-    return RunnerConfig(build_dir, args.board_dir, args.elf_file,
-                        args.hex_file, args.bin_file,
-                        gdb=args.gdb, openocd=args.openocd,
-                        openocd_search=args.openocd_search)
+def get_runner_config(build_dir, yaml_path, runners_yaml, args=None):
+    # Get a RunnerConfig object for the current run. yaml_config is
+    # runners.yaml's config: map, and args are the command line arguments.
+    yaml_config = runners_yaml['config']
+    yaml_dir = yaml_path.parent
+    if args is None:
+        args = argparse.Namespace()
+
+    def output_file(filetype):
+
+        from_args = getattr(args, f'{filetype}_file', None)
+        if from_args is not None:
+            return from_args
+
+        from_yaml = yaml_config.get(f'{filetype}_file')
+        if from_yaml is not None:
+            # Output paths in runners.yaml are relative to the
+            # directory containing the runners.yaml file.
+            return fspath(yaml_dir / from_yaml)
+
+        # FIXME these RunnerConfig values really ought to be
+        # Optional[str], but some runners rely on them being str.
+        return ''
+
+    def config(attr):
+        return getattr(args, attr, None) or yaml_config.get(attr)
+
+    return RunnerConfig(build_dir,
+                        yaml_config['board_dir'],
+                        output_file('elf'),
+                        output_file('hex'),
+                        output_file('bin'),
+                        config('gdb'),
+                        config('openocd'),
+                        config('openocd_search'))
 
 def dump_traceback():
     # Save the current exception to a file and return its path.
@@ -345,8 +370,8 @@ def dump_context(command, args, unknown_args):
     else:
         cache = load_cmake_cache(build_dir, args)
         board = cache['CACHED_BOARD']
-        yaml_path = runners_yaml_path(cache)
-        runners_yaml = load_runners_yaml(yaml_path, args)
+        yaml_path = runners_yaml_path(build_dir, board)
+        runners_yaml = load_runners_yaml(yaml_path)
 
     # Re-build unless asked not to, to make sure the output is up to date.
     if build_dir and not args.skip_rebuild:
@@ -447,6 +472,8 @@ def dump_all_runner_context(command, runners_yaml, board, build_dir):
     available = runners_yaml['runners']
     available_cls = {r: all_cls[r] for r in available if r in all_cls}
     default_runner = runners_yaml[command.runner_key]
+    yaml_path = runners_yaml_path(build_dir, board)
+    runners_yaml = load_runners_yaml(yaml_path)
 
     log.inf(f'zephyr runners which support "west {command.name}":',
             colorize=True)
@@ -461,7 +488,10 @@ def dump_all_runner_context(command, runners_yaml, board, build_dir):
     dump_wrapped_lines(', '.join(available), INDENT)
     log.inf(f'default runner in runners.yaml:', colorize=True)
     log.inf(INDENT + default_runner)
-    dump_runner_args('common', runners_yaml)
+    log.inf('common runner configuration:', colorize=True)
+    runner_config = get_runner_config(build_dir, yaml_path, runners_yaml)
+    for field, value in zip(runner_config._fields, runner_config):
+        log.inf(f'{INDENT}- {field}: {value}')
     log.inf('runner-specific context:', colorize=True)
     for cls in available_cls.values():
         dump_runner_context(command, cls, runners_yaml, INDENT)
