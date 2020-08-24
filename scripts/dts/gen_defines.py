@@ -155,7 +155,7 @@ Directories with bindings:
 Nodes in dependency order (ordinal and path):
 """
 
-    for scc in edt.scc_order():
+    for scc in edt.scc_order:
         if len(scc) > 1:
             err("cycle in devicetree involving "
                 + ", ".join(node.path for node in scc))
