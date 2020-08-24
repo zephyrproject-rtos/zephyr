@@ -344,6 +344,12 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	pri_hdr_prev = *pri_hdr;
 	pri_dptr_prev = (uint8_t *)pri_hdr + sizeof(*pri_hdr);
 
+	/* Advertising data are not supported by scannable instances */
+	if ((sec_hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_AD_DATA) &&
+	    (pri_com_hdr_prev->adv_mode & BT_HCI_LE_ADV_PROP_SCAN)) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
 	/* Get reference to new primary PDU data buffer */
 	pri_pdu = lll_adv_data_alloc(lll, &pri_idx);
 	pri_pdu->type = pri_pdu_prev->type;
