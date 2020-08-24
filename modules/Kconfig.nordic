@@ -88,6 +88,10 @@ config NRFX_CLOCK
 	bool "Enable CLOCK driver"
 	depends on HAS_HW_NRF_CLOCK
 
+config NRFX_CLOCK_LFXO_TWO_STAGE_ENABLED
+	bool "Enable two stage start sequence of the low frequency clock"
+	depends on NRFX_CLOCK
+
 config NRFX_COMP
 	bool "Enable COMP driver"
 	depends on HAS_HW_NRF_COMP
