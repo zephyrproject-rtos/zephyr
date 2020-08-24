@@ -182,8 +182,10 @@ void test_string_nlen(void)
 	/* Skip this scenario for nsim_sem emulated board, unfortunately
 	 * the emulator doesn't set up memory as specified in DTS and poking
 	 * this address doesn't fault
+	 * Also skip this scenario for em_starterkit_7d, which won't generate
+	 * exceptions when unmapped address is accessed.
 	 */
-#if !(defined(CONFIG_BOARD_NSIM) && defined(CONFIG_SOC_NSIM_SEM))
+#if !((defined(CONFIG_BOARD_NSIM) && defined(CONFIG_SOC_NSIM_SEM)) || defined(CONFIG_SOC_EMSK_EM7D))
 	/* Try to blow up the kernel */
 	ret = string_nlen((char *)FAULTY_ADDRESS, BUF_SIZE, &err);
 	zassert_equal(err, -1, "nonsense string address did not fault");
