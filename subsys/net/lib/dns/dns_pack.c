@@ -361,14 +361,10 @@ int dns_copy_qname(u8_t *buf, u16_t *len, u16_t size,
 	u8_t *msg = dns_msg->msg;
 	u16_t lb_size;
 	int rc = -EINVAL;
-	int i = 0;
 
 	*len = 0U;
 
-	/* Iterate ANCOUNT + 1 to allow the Query's QNAME to be parsed.
-	 * This is required to avoid 'alias loops'
-	 */
-	while (i++ < dns_header_ancount(dns_msg->msg) + 1) {
+	while (1) {
 		if (pos >= msg_size) {
 			rc = -ENOMEM;
 			break;
