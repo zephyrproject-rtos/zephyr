@@ -3520,14 +3520,15 @@ class HardwareMap:
         self.detected = []
         self.connected_hardware = []
 
-    def load_device_from_cmdline(self, serial, platform, is_pty):
+    def load_device_from_cmdline(self, serial, platform, pre_script, is_pty):
         device = {
             "serial": None,
             "platform": platform,
             "serial_pty": None,
             "counter": 0,
             "available": True,
-            "connected": True
+            "connected": True,
+            "pre_script": pre_script
         }
 
         if is_pty:

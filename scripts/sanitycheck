@@ -619,6 +619,11 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
                         for testing on hardware that is listed in the file.
                         """)
 
+    parser.add_argument("--pre-script",
+                        help="""specify a pre script. This will be executed
+                        before device handler open serial port and invoke runner.
+                        """)
+
     parser.add_argument(
         "--west-flash", nargs='?', const=[],
         help="""Uses west instead of ninja or make to flash when running with
@@ -878,10 +883,12 @@ def main():
                 if options.device_serial:
                     hwm.load_device_from_cmdline(options.device_serial,
                                                  options.platform[0],
+                                                 options.pre_script,
                                                  False)
                 else:
                     hwm.load_device_from_cmdline(options.device_serial_pty,
                                                  options.platform[0],
+                                                 options.pre_script,
                                                  True)
 
                 suite.connected_hardware = hwm.connected_hardware
