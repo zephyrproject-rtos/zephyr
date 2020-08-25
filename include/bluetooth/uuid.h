@@ -1552,6 +1552,15 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_MCS \
 	BT_UUID_DECLARE_16(BT_UUID_MCS_VAL)
+/** @def BT_UUID_GMCS_VAL
+ *  @brief Generic Media Control Service value
+ */
+#define BT_UUID_GMCS_VAL 0x8fde
+/** @def BT_UUID_GMCS
+ *  @brief Generic Media Control Service
+ */
+#define BT_UUID_GMCS \
+	BT_UUID_DECLARE_16(BT_UUID_GMCS_VAL)
 /** @def BT_UUID_MCS_PLAYER_NAME_VAL
  *  @brief Media player name value
  */
