@@ -59,7 +59,8 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
                                     tool_opt=args.tool_opt)
 
     def ensure_snr(self):
-        self.snr = self.get_board_snr(self.snr or "*")
+        if not self.snr or "*" in self.snr:
+            self.snr = self.get_board_snr(self.snr or "*")
 
     def get_boards(self):
         snrs = self.check_output(['nrfjprog', '--ids'])
