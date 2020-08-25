@@ -9,6 +9,7 @@
 
 #include <errno.h>
 #include <drivers/spi.h>
+#include <drivers/clock_control.h>
 #include <fsl_spi.h>
 #include <logging/log.h>
 
@@ -21,11 +22,14 @@ LOG_MODULE_REGISTER(spi_mcux_flexcomm, CONFIG_SPI_LOG_LEVEL);
 
 struct spi_mcux_config {
 	SPI_Type *base;
+	char *clock_name;
+	clock_control_subsys_t clock_subsys;
 	void (*irq_config_func)(const struct device *dev);
 };
 
 struct spi_mcux_data {
 	const struct device *dev;
+	const struct device *dev_clock;
 	spi_master_handle_t handle;
 	struct spi_context ctx;
 	size_t transfer_len;
@@ -143,6 +147,12 @@ static int spi_mcux_configure(const struct device *dev,
 
 		SPI_MasterGetDefaultConfig(&master_config);
 
+		/* Get the clock frequency */
+		if (clock_control_get_rate(data->dev_clock,
+					   config->clock_subsys, &clock_freq)) {
+			return -EINVAL;
+		}
+
 		if (spi_cfg->slave > SPI_CHIP_SELECT_COUNT) {
 			LOG_ERR("Slave %d is greater than %d",
 				    spi_cfg->slave, SPI_CHIP_SELECT_COUNT);
@@ -169,12 +179,6 @@ static int spi_mcux_configure(const struct device *dev,
 			: kSPI_MsbFirst;
 
 		master_config.baudRate_Bps = spi_cfg->frequency;
-
-		/* The clock frequency is hardcoded CPU's speed to allow SPI to
-		 * function at high speeds. The core clock and flexcomm should
-		 * use the same clock source.
-		 */
-		clock_freq = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 
 		SPI_MasterInit(base, &master_config, clock_freq);
 
@@ -282,6 +286,11 @@ static int spi_mcux_init(const struct device *dev)
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
 
+	data->dev_clock = device_get_binding(config->clock_name);
+	if (data->dev_clock == NULL) {
+		return -ENODEV;
+	}
+
 	config->irq_config_func(dev);
 
 	data->dev = dev;
@@ -304,6 +313,9 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 	static const struct spi_mcux_config spi_mcux_config_##id = {	\
 		.base =							\
 		(SPI_Type *)DT_INST_REG_ADDR(id),			\
+		.clock_name = DT_INST_CLOCKS_LABEL(id),			\
+		.clock_subsys =					\
+		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),\
 		.irq_config_func = spi_mcux_config_func_##id,		\
 	};								\
 	static struct spi_mcux_data spi_mcux_data_##id = {		\
