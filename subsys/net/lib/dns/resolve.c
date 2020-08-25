@@ -556,7 +556,8 @@ static int dns_read(struct dns_resolve_context *ctx,
 		}
 
 		/* Update the answer offset to point to the next RR (answer) */
-		dns_msg.answer_offset += DNS_ANSWER_PTR_LEN;
+		dns_msg.answer_offset += dns_msg.response_position -
+							dns_msg.answer_offset;
 		dns_msg.answer_offset += dns_msg.response_length;
 
 		server_idx++;
