@@ -502,7 +502,7 @@ some defaults are assumed:
   :c:macro:`ARCH_STACK_PTR_ALIGN`
 - :c:macro:`ARCH_THREAD_STACK_OBJ_ALIGN`: default align to
   :c:macro:`ARCH_STACK_PTR_ALIGN`
-- :c:macro:`ARCH_THREAD_STACK_SIZE_ALIGN(size)`: default round up to
+- :c:macro:`ARCH_THREAD_STACK_SIZE_ALIGN`: default round up to
   :c:macro:`ARCH_STACK_PTR_ALIGN`
 
 All stack creation macros are defined in terms of these.
@@ -720,9 +720,9 @@ without any reserved memory to allow efficient packing in memory. Thus,
 any guards in the thread stack must be completely carved out, and the
 privilege elevation stack must be allocated elsewhere.
 
-:c:macro:`ARCH_THREAD_STACK_SIZE_ADJUST(size)` and
-:c:macro:`ARCH_THREAD_STACK_OBJ_ALIGN(size)` should both be defined to
-:c:macro:`Z_POW2_CEIL(size)`. :c:macro:`K_THREAD_STACK_RESERVED` must be 0.
+:c:macro:`ARCH_THREAD_STACK_SIZE_ADJUST()` and
+:c:macro:`ARCH_THREAD_STACK_OBJ_ALIGN()` should both be defined to
+:c:macro:`Z_POW2_CEIL()`. :c:macro:`K_THREAD_STACK_RESERVED` must be 0.
 
 For the privilege stacks, the :option:`CONFIG_GEN_PRIV_STACKS` must be,
 enabled. For every thread stack found in the system, a corresponding fixed-
