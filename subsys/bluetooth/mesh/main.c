@@ -24,6 +24,7 @@
 #include "adv.h"
 #include "prov.h"
 #include "net.h"
+#include "app_keys.h"
 #include "rpl.h"
 #include "beacon.h"
 #include "lpn.h"
@@ -129,13 +130,6 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 		bt_mesh_lpn_group_add(BT_MESH_ADDR_ALL_NODES);
 	}
 
-	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		BT_DBG("Storing network information persistently");
-		bt_mesh_store_net();
-		bt_mesh_store_subnet(&bt_mesh.sub[0]);
-		bt_mesh_store_iv(false);
-	}
-
 	bt_mesh_start();
 
 	return 0;
@@ -178,6 +172,8 @@ void bt_mesh_reset(void)
 
 	bt_mesh_rx_reset();
 	bt_mesh_tx_reset();
+	bt_mesh_app_keys_reset();
+	bt_mesh_net_keys_reset();
 
 	bt_mesh_net_loopback_clear(BT_MESH_KEY_ANY);
 
@@ -192,7 +188,7 @@ void bt_mesh_reset(void)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
-		bt_mesh_friend_clear_net_idx(BT_MESH_KEY_ANY);
+		bt_mesh_friends_clear();
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {

@@ -175,20 +175,20 @@ static const struct bt_mesh_send_cb clear_sent_cb = {
 static int send_friend_clear(void)
 {
 	struct bt_mesh_msg_ctx ctx = {
-		.net_idx     = bt_mesh.sub[0].net_idx,
+		.net_idx     = bt_mesh.lpn.sub->net_idx,
 		.app_idx     = BT_MESH_KEY_UNUSED,
 		.addr        = bt_mesh.lpn.frnd,
 		.send_ttl    = 0,
 	};
 	struct bt_mesh_net_tx tx = {
-		.sub = &bt_mesh.sub[0],
+		.sub = bt_mesh.lpn.sub,
 		.ctx = &ctx,
 		.src = bt_mesh_primary_addr(),
 		.xmit = bt_mesh_net_transmit_get(),
 	};
 	struct bt_mesh_ctl_friend_clear req = {
 		.lpn_addr    = sys_cpu_to_be16(tx.src),
-		.lpn_counter = sys_cpu_to_be16(bt_mesh.lpn.counter),
+		.lpn_counter = sys_cpu_to_be16(bt_mesh.lpn.lpn_counter),
 	};
 
 	BT_DBG("");
@@ -215,8 +215,6 @@ static void clear_friendship(bool force, bool disable)
 
 	k_delayed_work_cancel(&lpn->timer);
 
-	friend_cred_del(bt_mesh.sub[0].net_idx, lpn->frnd);
-
 	if (lpn->clear_success) {
 		lpn->old_friend = BT_MESH_ADDR_UNASSIGNED;
 	} else {
@@ -236,6 +234,7 @@ static void clear_friendship(bool force, bool disable)
 	lpn->sent_req = 0U;
 	lpn->established = 0U;
 	lpn->clear_success = 0U;
+	lpn->sub = NULL;
 
 	group_zero(lpn->added);
 	group_zero(lpn->pending);
@@ -289,13 +288,13 @@ static int send_friend_req(struct bt_mesh_lpn *lpn)
 {
 	const struct bt_mesh_comp *comp = bt_mesh_comp_get();
 	struct bt_mesh_msg_ctx ctx = {
-		.net_idx  = bt_mesh.sub[0].net_idx,
+		.net_idx  = lpn->sub->net_idx,
 		.app_idx  = BT_MESH_KEY_UNUSED,
 		.addr     = BT_MESH_ADDR_FRIENDS,
 		.send_ttl = 0,
 	};
 	struct bt_mesh_net_tx tx = {
-		.sub = &bt_mesh.sub[0],
+		.sub = bt_mesh.lpn.sub,
 		.ctx = &ctx,
 		.src = bt_mesh_primary_addr(),
 		.xmit = POLL_XMIT,
@@ -306,7 +305,7 @@ static int send_friend_req(struct bt_mesh_lpn *lpn)
 		.poll_to     = LPN_POLL_TO,
 		.prev_addr   = sys_cpu_to_be16(lpn->old_friend),
 		.num_elem    = comp->elem_count,
-		.lpn_counter = sys_cpu_to_be16(lpn->counter),
+		.lpn_counter = sys_cpu_to_be16(lpn->lpn_counter),
 	};
 
 	BT_DBG("");
@@ -355,13 +354,13 @@ static const struct bt_mesh_send_cb req_sent_cb = {
 static int send_friend_poll(void)
 {
 	struct bt_mesh_msg_ctx ctx = {
-		.net_idx     = bt_mesh.sub[0].net_idx,
+		.net_idx     = bt_mesh.lpn.sub->net_idx,
 		.app_idx     = BT_MESH_KEY_UNUSED,
 		.addr        = bt_mesh.lpn.frnd,
 		.send_ttl    = 0,
 	};
 	struct bt_mesh_net_tx tx = {
-		.sub = &bt_mesh.sub[0],
+		.sub = bt_mesh.lpn.sub,
 		.ctx = &ctx,
 		.src = bt_mesh_primary_addr(),
 		.xmit = POLL_XMIT,
@@ -482,13 +481,21 @@ void bt_mesh_lpn_msg_received(struct bt_mesh_net_rx *rx)
 	send_friend_poll();
 }
 
+static int friend_cred_create(struct bt_mesh_net_cred *cred,
+			      const uint8_t key[16])
+{
+	struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
+
+	return bt_mesh_friend_cred_create(cred, bt_mesh_primary_addr(),
+					  lpn->frnd, lpn->lpn_counter,
+					  lpn->frnd_counter, key);
+}
+
 int bt_mesh_lpn_friend_offer(struct bt_mesh_net_rx *rx,
 			     struct net_buf_simple *buf)
 {
 	struct bt_mesh_ctl_friend_offer *msg = (void *)buf->data;
 	struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
-	struct bt_mesh_subnet *sub = rx->sub;
-	struct friend_cred *cred;
 	uint16_t frnd_counter;
 	int err;
 
@@ -513,16 +520,26 @@ int bt_mesh_lpn_friend_offer(struct bt_mesh_net_rx *rx,
 	       msg->recv_win, msg->queue_size, msg->sub_list_size, msg->rssi,
 	       frnd_counter);
 
+	lpn->frnd_counter = frnd_counter;
 	lpn->frnd = rx->ctx.addr;
+	lpn->sub = rx->sub;
 
-	cred = friend_cred_create(sub, lpn->frnd, lpn->counter, frnd_counter);
-	if (!cred) {
-		lpn->frnd = BT_MESH_ADDR_UNASSIGNED;
-		return -ENOMEM;
+	/* Create friend credentials for each of the valid keys in the
+	 * friendship subnet:
+	 */
+	for (int i = 0; i < ARRAY_SIZE(lpn->cred); i++) {
+		if (!lpn->sub->keys[i].valid) {
+			continue;
+		}
+
+		err = friend_cred_create(&lpn->cred[i], lpn->sub->keys[i].net);
+		if (err) {
+			lpn->frnd = BT_MESH_ADDR_UNASSIGNED;
+			return err;
+		}
 	}
 
 	/* TODO: Add offer acceptance criteria check */
-
 	k_delayed_work_cancel(&lpn->timer);
 
 	lpn->recv_win = msg->recv_win;
@@ -530,14 +547,14 @@ int bt_mesh_lpn_friend_offer(struct bt_mesh_net_rx *rx,
 
 	err = send_friend_poll();
 	if (err) {
-		friend_cred_clear(cred);
+		lpn->sub = NULL;
 		lpn->frnd = BT_MESH_ADDR_UNASSIGNED;
 		lpn->recv_win = 0U;
 		lpn->queue_size = 0U;
 		return err;
 	}
 
-	lpn->counter++;
+	lpn->lpn_counter++;
 
 	return 0;
 }
@@ -564,7 +581,7 @@ int bt_mesh_lpn_friend_clear_cfm(struct bt_mesh_net_rx *rx,
 
 	BT_DBG("LPNAddress 0x%04x LPNCounter 0x%04x", addr, counter);
 
-	if (addr != bt_mesh_primary_addr() || counter != lpn->counter) {
+	if (addr != bt_mesh_primary_addr() || counter != lpn->lpn_counter) {
 		BT_WARN("Invalid parameters in Friend Clear Confirm");
 		return 0;
 	}
@@ -637,13 +654,13 @@ static bool sub_update(uint8_t op)
 	struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
 	int added_count = group_popcount(lpn->added);
 	struct bt_mesh_msg_ctx ctx = {
-		.net_idx     = bt_mesh.sub[0].net_idx,
+		.net_idx     = lpn->sub->net_idx,
 		.app_idx     = BT_MESH_KEY_UNUSED,
 		.addr        = lpn->frnd,
 		.send_ttl    = 0,
 	};
 	struct bt_mesh_net_tx tx = {
-		.sub = &bt_mesh.sub[0],
+		.sub = lpn->sub,
 		.ctx = &ctx,
 		.src = bt_mesh_primary_addr(),
 		.xmit = POLL_XMIT,
@@ -764,7 +781,7 @@ static void lpn_timeout(struct k_work *work)
 		if (IS_ENABLED(CONFIG_BT_MESH_LPN_ESTABLISHMENT)) {
 			bt_mesh_scan_disable();
 		}
-		lpn->counter++;
+		lpn->lpn_counter++;
 		lpn_set_state(BT_MESH_LPN_ENABLED);
 		lpn->sent_req = 0U;
 		k_delayed_work_submit(&lpn->timer, FRIEND_REQ_RETRY_TIMEOUT);
@@ -985,11 +1002,7 @@ int bt_mesh_lpn_friend_update(struct bt_mesh_net_rx *rx,
 	BT_DBG("flags 0x%02x iv_index 0x%08x md %u", msg->flags, iv_index,
 	       msg->md);
 
-	if (bt_mesh_kr_update(sub, BT_MESH_KEY_REFRESH(msg->flags),
-			      rx->new_key)) {
-		bt_mesh_net_beacon_update(sub);
-	}
-
+	bt_mesh_kr_update(sub, BT_MESH_KEY_REFRESH(msg->flags), rx->new_key);
 	bt_mesh_net_iv_update(iv_index, BT_MESH_IV_UPDATE(msg->flags));
 
 	if (lpn->groups_changed) {
@@ -1028,6 +1041,26 @@ void bt_mesh_lpn_set_cb(void (*cb)(uint16_t friend_addr, bool established))
 {
 	lpn_cb = cb;
 }
+
+static void subnet_evt(struct bt_mesh_subnet *sub, enum bt_mesh_key_evt evt)
+{
+	switch (evt) {
+	case BT_MESH_KEY_DELETED:
+		if (sub == bt_mesh.lpn.sub) {
+			BT_DBG("NetKey deleted");
+			clear_friendship(true, false);
+		}
+		break;
+	case BT_MESH_KEY_UPDATED:
+		BT_DBG("NetKey updated");
+		friend_cred_create(&bt_mesh.lpn.cred[1], sub->keys[1].net);
+		break;
+	default:
+		break;
+	}
+}
+
+BT_MESH_SUBNET_CB_DEFINE(subnet_evt);
 
 int bt_mesh_lpn_init(void)
 {

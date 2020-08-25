@@ -158,27 +158,16 @@ static int publish_retransmit(struct bt_mesh_model *mod)
 {
 	NET_BUF_SIMPLE_DEFINE(sdu, BT_MESH_TX_SDU_MAX);
 	struct bt_mesh_model_pub *pub = mod->pub;
-	struct bt_mesh_app_key *key;
 	struct bt_mesh_msg_ctx ctx = {
 		.addr = pub->addr,
 		.send_ttl = pub->ttl,
+		.app_idx = pub->key,
 	};
 	struct bt_mesh_net_tx tx = {
 		.ctx = &ctx,
 		.src = bt_mesh_model_elem(mod)->addr,
-		.xmit = bt_mesh_net_transmit_get(),
 		.friend_cred = pub->cred,
 	};
-
-	key = bt_mesh_app_key_find(pub->key);
-	if (!key) {
-		return -EADDRNOTAVAIL;
-	}
-
-	tx.sub = bt_mesh_subnet_get(key->net_idx);
-
-	ctx.net_idx = key->net_idx;
-	ctx.app_idx = key->app_idx;
 
 	net_buf_simple_add_mem(&sdu, pub->msg->data, pub->msg->len);
 
@@ -695,24 +684,9 @@ int bt_mesh_model_send(struct bt_mesh_model *model,
 		       struct net_buf_simple *msg,
 		       const struct bt_mesh_send_cb *cb, void *cb_data)
 {
-	struct bt_mesh_app_key *app_key;
-
-	if (!BT_MESH_IS_DEV_KEY(ctx->app_idx)) {
-		app_key = bt_mesh_app_key_find(ctx->app_idx);
-		if (!app_key) {
-			BT_ERR("Unknown app_idx 0x%04x", ctx->app_idx);
-			return -EINVAL;
-		}
-
-		ctx->net_idx = app_key->net_idx;
-	}
-
 	struct bt_mesh_net_tx tx = {
-		.sub = bt_mesh_subnet_get(ctx->net_idx),
 		.ctx = ctx,
 		.src = bt_mesh_model_elem(model)->addr,
-		.xmit = bt_mesh_net_transmit_get(),
-		.friend_cred = 0,
 	};
 
 	return model_send(model, &tx, false, msg, cb, cb_data);
@@ -722,13 +696,15 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 {
 	NET_BUF_SIMPLE_DEFINE(sdu, BT_MESH_TX_SDU_MAX);
 	struct bt_mesh_model_pub *pub = model->pub;
-	struct bt_mesh_app_key *key;
 	struct bt_mesh_msg_ctx ctx = {
+		.addr = pub->addr,
+		.send_ttl = pub->ttl,
+		.send_rel = pub->send_rel,
+		.app_idx = pub->key,
 	};
 	struct bt_mesh_net_tx tx = {
 		.ctx = &ctx,
 		.src = bt_mesh_model_elem(model)->addr,
-		.xmit = bt_mesh_net_transmit_get(),
 	};
 	int err;
 
@@ -739,11 +715,6 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 	}
 
 	if (pub->addr == BT_MESH_ADDR_UNASSIGNED) {
-		return -EADDRNOTAVAIL;
-	}
-
-	key = bt_mesh_app_key_find(pub->key);
-	if (!key) {
 		return -EADDRNOTAVAIL;
 	}
 
@@ -759,14 +730,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 
 	net_buf_simple_add_mem(&sdu, pub->msg->data, pub->msg->len);
 
-	ctx.addr = pub->addr;
-	ctx.send_ttl = pub->ttl;
-	ctx.send_rel = pub->send_rel;
-	ctx.net_idx = key->net_idx;
-	ctx.app_idx = key->app_idx;
-
 	tx.friend_cred = pub->cred;
-	tx.sub = bt_mesh_subnet_get(ctx.net_idx),
 
 	pub->count = BT_MESH_PUB_TRANSMIT_COUNT(pub->retransmit);
 
