@@ -120,11 +120,15 @@
 
 #define STM32G4X_PINMUX_FUNC_PA14_I2C1_SDA                                     \
 	(STM32_PINMUX_ALT_FUNC_4 | STM32_OPENDRAIN_PULLUP)
+#define STM32G4X_PINMUX_FUNC_PA14_PWM8_CH2                                     \
+	(STM32_PINMUX_ALT_FUNC_5 | STM32_PUSHPULL_NOPULL)
 #define STM32G4X_PINMUX_FUNC_PA14_USART2_TX                                    \
 	(STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_PULLUP)
 
 #define STM32G4X_PINMUX_FUNC_PA15_PWM2_CH1                                     \
 	(STM32_PINMUX_ALT_FUNC_1 | STM32_PUSHPULL_NOPULL)
+#define STM32G4X_PINMUX_FUNC_PA15_PWM8_CH1                                     \
+	(STM32_PINMUX_ALT_FUNC_2 | STM32_PUSHPULL_NOPULL)
 #define STM32G4X_PINMUX_FUNC_PA15_I2C1_SCL                                     \
 	(STM32_PINMUX_ALT_FUNC_4 | STM32_OPENDRAIN_PULLUP)
 #define STM32G4X_PINMUX_FUNC_PA15_SPI1_NSS                                     \
@@ -176,6 +180,8 @@
 
 #define STM32G4X_PINMUX_FUNC_PB6_PWM4_CH1                                      \
 	(STM32_PINMUX_ALT_FUNC_2 | STM32_PUSHPULL_NOPULL)
+#define STM32G4X_PINMUX_FUNC_PB6_PWM8_CH1                                      \
+	(STM32_PINMUX_ALT_FUNC_5 | STM32_PUSHPULL_NOPULL)
 #define STM32G4X_PINMUX_FUNC_PB6_USART1_TX                                     \
 	(STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_PULLUP)
 
@@ -198,6 +204,8 @@
 	(STM32_PINMUX_ALT_FUNC_7 | STM32_PUPDR_NO_PULL)
 #define STM32G4X_PINMUX_FUNC_PB8_FDCAN1_RX                                     \
 	(STM32_PINMUX_ALT_FUNC_9 | STM32_PUSHPULL_NOPULL)
+#define STM32G4X_PINMUX_FUNC_PB8_PWM8_CH2                                      \
+	(STM32_PINMUX_ALT_FUNC_10 | STM32_PUSHPULL_NOPULL)
 
 #define STM32G4X_PINMUX_FUNC_PB9_PWM4_CH4                                      \
 	(STM32_PINMUX_ALT_FUNC_2 | STM32_PUSHPULL_NOPULL)
@@ -207,6 +215,8 @@
 	(STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_PULLUP)
 #define STM32G4X_PINMUX_FUNC_PB9_FDCAN1_TX                                     \
 	(STM32_PINMUX_ALT_FUNC_9 | STM32_PUSHPULL_NOPULL)
+#define STM32G4X_PINMUX_FUNC_PB9_PWM8_CH3                                      \
+	(STM32_PINMUX_ALT_FUNC_10 | STM32_PUSHPULL_NOPULL)
 
 #define STM32G4X_PINMUX_FUNC_PB10_PWM2_CH3                                     \
 	(STM32_PINMUX_ALT_FUNC_1 | STM32_PUSHPULL_NOPULL)
@@ -283,17 +293,25 @@
 
 #define STM32G4X_PINMUX_FUNC_PC6_PWM3_CH1                                      \
 	(STM32_PINMUX_ALT_FUNC_2 | STM32_PUSHPULL_NOPULL)
+#define STM32G4X_PINMUX_FUNC_PC6_PWM8_CH1                                      \
+	(STM32_PINMUX_ALT_FUNC_4 | STM32_PUSHPULL_NOPULL)
 
 #define STM32G4X_PINMUX_FUNC_PC7_PWM3_CH2                                      \
 	(STM32_PINMUX_ALT_FUNC_2 | STM32_PUSHPULL_NOPULL)
+#define STM32G4X_PINMUX_FUNC_PC7_PWM8_CH2                                      \
+	(STM32_PINMUX_ALT_FUNC_4 | STM32_PUSHPULL_NOPULL)
 
 #define STM32G4X_PINMUX_FUNC_PC8_PWM3_CH3                                      \
 	(STM32_PINMUX_ALT_FUNC_2 | STM32_PUSHPULL_NOPULL)
+#define STM32G4X_PINMUX_FUNC_PC8_PWM8_CH3                                      \
+	(STM32_PINMUX_ALT_FUNC_4 | STM32_PUSHPULL_NOPULL)
 #define STM32G4X_PINMUX_FUNC_PC8_I2C3_SCL                                      \
 	(STM32_PINMUX_ALT_FUNC_8 | STM32_OPENDRAIN_PULLUP)
 
 #define STM32G4X_PINMUX_FUNC_PC9_PWM3_CH4                                      \
 	(STM32_PINMUX_ALT_FUNC_2 | STM32_PUSHPULL_NOPULL)
+#define STM32G4X_PINMUX_FUNC_PC9_PWM8_CH4                                      \
+	(STM32_PINMUX_ALT_FUNC_4 | STM32_PUSHPULL_NOPULL)
 #define STM32G4X_PINMUX_FUNC_PC9_I2C3_SDA                                      \
 	(STM32_PINMUX_ALT_FUNC_8 | STM32_OPENDRAIN_PULLUP)
 
@@ -320,6 +338,8 @@
 #define STM32G4X_PINMUX_FUNC_PD0_FDCAN1_RX                                     \
 	(STM32_PINMUX_ALT_FUNC_9 | STM32_PUSHPULL_NOPULL)
 
+#define STM32G4X_PINMUX_FUNC_PD1_PWM8_CH4                                      \
+	(STM32_PINMUX_ALT_FUNC_4 | STM32_PUSHPULL_NOPULL)
 #define STM32G4X_PINMUX_FUNC_PD1_FDCAN1_TX                                     \
 	(STM32_PINMUX_ALT_FUNC_9 | STM32_PUSHPULL_NOPULL)
 
