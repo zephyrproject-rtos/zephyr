@@ -92,6 +92,18 @@ struct k_mem_domain {
 	struct arch_mem_domain arch;
 #endif /* CONFIG_ARCH_MEM_DOMAIN_DATA */
 };
+
+/**
+ * Default memory domain
+ *
+ * All threads are a member of some memory domain, even if running in
+ * supervisor mode. Threads belong to this default memory domain if they
+ * haven't been added to or inherited membership from some other domain.
+ *
+ * This memory domain has the z_libc_partition partition for the C library
+ * added to it if exists.
+ */
+extern struct k_mem_domain k_mem_domain_default;
 #else
 /* To support use of IS_ENABLED for the APIs below */
 struct k_mem_domain;
@@ -164,7 +176,8 @@ extern void k_mem_domain_remove_partition(struct k_mem_domain *domain,
 /**
  * @brief Add a thread into a memory domain.
  *
- * Add a thread into a memory domain.
+ * Add a thread into a memory domain. It will be removed from whatever
+ * memory domain it previously belonged to.
  *
  * @param domain The memory domain that the thread is going to be added into.
  * @param thread ID of thread going to be added into the memory domain.
