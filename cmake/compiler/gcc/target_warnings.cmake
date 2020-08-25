@@ -115,6 +115,7 @@ macro(toolchain_cc_warning_error_coding_guideline_check dest_var_name)
       -Wvla
       -Wimplicit-fallthrough=2
       -Wconversion
+      -Woverride-init
       )
   endif()
 endmacro()
