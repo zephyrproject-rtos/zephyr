@@ -104,7 +104,6 @@ void test_permission_inheritance(void *p1, void *p2, void *p3)
 			  ARRAY_SIZE(inherit_memory_partition_array),
 			  inherit_memory_partition_array);
 
-	k_mem_domain_remove_thread(k_current_get());
 	parent_tid = k_current_get();
 	k_mem_domain_add_thread(&inherit_mem_domain, parent_tid);
 

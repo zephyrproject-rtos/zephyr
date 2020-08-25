@@ -189,10 +189,12 @@ extern void k_mem_domain_add_thread(struct k_mem_domain *domain,
 /**
  * @brief Remove a thread from its memory domain.
  *
- * Remove a thread from its memory domain.
+ * Remove a thread from its memory domain. It will be reassigned to the
+ * default memory domain.
  *
  * @param thread ID of thread going to be removed from its memory domain.
  */
+__deprecated
 extern void k_mem_domain_remove_thread(k_tid_t thread);
 
 /** @} */
