@@ -334,7 +334,7 @@ int dns_unpack_response_query(struct dns_msg_t *dns_msg)
 
 	/* 4 bytes more due to qtype and qclass */
 	offset += DNS_QTYPE_LEN + DNS_QCLASS_LEN;
-	if (offset > dns_msg->msg_size) {
+	if (offset >= dns_msg->msg_size) {
 		return -ENOMEM;
 	}
 
