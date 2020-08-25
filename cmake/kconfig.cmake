@@ -48,6 +48,17 @@ endif()
 # separated list instead.
 string(REPLACE ";" "?" DTS_ROOT_BINDINGS "${DTS_ROOT_BINDINGS}")
 
+# Export each `ZEPHYR_<module>_MODULE_DIR` to Kconfig.
+# This allows Kconfig files to refer relative from a modules root as:
+# source "$(ZEPHYR_FOO_MODULE_DIR)/Kconfig"
+foreach(module_name ${ZEPHYR_MODULE_NAMES})
+  string(TOUPPER ${module_name} MODULE_NAME_UPPER)
+  list(APPEND
+       ZEPHYR_KCONFIG_MODULES_DIR
+       "ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR=${ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR}"
+  )
+endforeach()
+
 # A list of common environment settings used when invoking Kconfig during CMake
 # configure time or menuconfig and related build target.
 set(COMMON_KCONFIG_ENV_SETTINGS
@@ -64,6 +75,8 @@ set(COMMON_KCONFIG_ENV_SETTINGS
   KCONFIG_BINARY_DIR=${KCONFIG_BINARY_DIR}
   TOOLCHAIN_KCONFIG_DIR=${TOOLCHAIN_KCONFIG_DIR}
   EDT_PICKLE=${EDT_PICKLE}
+  # Export all Zephyr modules to Kconfig
+  ${ZEPHYR_KCONFIG_MODULES_DIR}
 )
 
 # Allow out-of-tree users to add their own Kconfig python frontend
