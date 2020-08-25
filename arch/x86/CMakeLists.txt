@@ -54,3 +54,4 @@ if (CONFIG_MMU)
 
   add_bin_file_to_the_next_link(pagetables_bin_target pagetables)
 endif()
+zephyr_library_sources_ifdef(CONFIG_TIMING_FUNCTIONS timing.c)
