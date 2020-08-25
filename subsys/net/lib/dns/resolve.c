@@ -394,6 +394,12 @@ static int dns_read(struct dns_resolve_context *ctx,
 	dns_msg.msg = dns_data->data;
 	dns_msg.msg_size = data_len;
 
+	/* Make sure that we can read DNS id, flags and rcode */
+	if (dns_msg.msg_size < (sizeof(*dns_id) + sizeof(uint16_t))) {
+		ret = DNS_EAI_FAIL;
+		goto quit;
+	}
+
 	/* The dns_unpack_response_header() has design flaw as it expects
 	 * dns id to be given instead of returning the id to the caller.
 	 * In our case we would like to get it returned instead so that we
