@@ -208,7 +208,7 @@ struct device {
 	void * const data;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	/** Power Management function */
-	int (*device_pm_control)(struct device *device, uint32_t command,
+	int (*device_pm_control)(struct device *dev, uint32_t command,
 				 void *context, device_pm_cb cb, void *arg);
 	/** Pointer to device instance power management data */
 	struct device_pm * const pm;
@@ -374,7 +374,7 @@ int device_pm_control_nop(struct device *unused_device,
  * Called by the application or power management service to let the device do
  * required operations when moving to the required power state
  * Note that devices may support just some of the device power states
- * @param device Pointer to device structure of the driver instance.
+ * @param dev Pointer to device structure of the driver instance.
  * @param device_power_state Device power state to be set
  * @param cb Callback function to notify device power status
  * @param arg Caller passed argument to callback function
@@ -382,11 +382,11 @@ int device_pm_control_nop(struct device *unused_device,
  * @retval 0 If successful in queuing the request or changing the state.
  * @retval Errno Negative errno code if failure. Callback will not be called.
  */
-static inline int device_set_power_state(struct device *device,
+static inline int device_set_power_state(struct device *dev,
 					 uint32_t device_power_state,
 					 device_pm_cb cb, void *arg)
 {
-	return device->device_pm_control(device,
+	return dev->device_pm_control(dev,
 					 DEVICE_PM_SET_POWER_STATE,
 					 &device_power_state, cb, arg);
 }
@@ -398,16 +398,16 @@ static inline int device_set_power_state(struct device *device,
  * power state at any time. This state will be one of the defined
  * power states allowed for the devices in that system
  *
- * @param device pointer to device structure of the driver instance.
+ * @param dev pointer to device structure of the driver instance.
  * @param device_power_state Device power state to be filled by the device
  *
  * @retval 0 If successful.
  * @retval Errno Negative errno code if failure.
  */
-static inline int device_get_power_state(struct device *device,
+static inline int device_get_power_state(struct device *dev,
 					 uint32_t *device_power_state)
 {
-	return device->device_pm_control(device,
+	return dev->device_pm_control(dev,
 					 DEVICE_PM_GET_POWER_STATE,
 					 device_power_state,
 					 NULL, NULL);

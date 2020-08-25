@@ -5037,25 +5037,25 @@ struct k_poll_event {
 	};
 };
 
-#define K_POLL_EVENT_INITIALIZER(event_type, event_mode, event_obj) \
+#define K_POLL_EVENT_INITIALIZER(_event_type, _event_mode, _event_obj) \
 	{ \
 	.poller = NULL, \
-	.type = event_type, \
+	.type = _event_type, \
 	.state = K_POLL_STATE_NOT_READY, \
-	.mode = event_mode, \
+	.mode = _event_mode, \
 	.unused = 0, \
-	.obj = event_obj, \
+	.obj = _event_obj, \
 	}
 
-#define K_POLL_EVENT_STATIC_INITIALIZER(event_type, event_mode, event_obj, \
+#define K_POLL_EVENT_STATIC_INITIALIZER(_event_type, _event_mode, _event_obj, \
 					event_tag) \
 	{ \
 	.tag = event_tag, \
-	.type = event_type, \
+	.type = _event_type, \
 	.state = K_POLL_STATE_NOT_READY, \
-	.mode = event_mode, \
+	.mode = _event_mode, \
 	.unused = 0, \
-	.obj = event_obj, \
+	.obj = _event_obj, \
 	}
 
 /**

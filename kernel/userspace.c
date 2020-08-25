@@ -255,26 +255,26 @@ static void thread_idx_free(uintptr_t tidx)
 
 struct z_object *z_dynamic_object_create(size_t size)
 {
-	struct dyn_obj *dyn_obj;
+	struct dyn_obj *dyn;
 
-	dyn_obj = z_thread_malloc(sizeof(*dyn_obj) + size);
-	if (dyn_obj == NULL) {
+	dyn = z_thread_malloc(sizeof(*dyn) + size);
+	if (dyn == NULL) {
 		LOG_ERR("could not allocate kernel object, out of memory");
 		return NULL;
 	}
 
-	dyn_obj->kobj.name = &dyn_obj->data;
-	dyn_obj->kobj.type = K_OBJ_ANY;
-	dyn_obj->kobj.flags = 0;
-	(void)memset(dyn_obj->kobj.perms, 0, CONFIG_MAX_THREAD_BYTES);
+	dyn->kobj.name = &dyn->data;
+	dyn->kobj.type = K_OBJ_ANY;
+	dyn->kobj.flags = 0;
+	(void)memset(dyn->kobj.perms, 0, CONFIG_MAX_THREAD_BYTES);
 
 	k_spinlock_key_t key = k_spin_lock(&lists_lock);
 
-	rb_insert(&obj_rb_tree, &dyn_obj->node);
-	sys_dlist_append(&obj_list, &dyn_obj->obj_list);
+	rb_insert(&obj_rb_tree, &dyn->node);
+	sys_dlist_append(&obj_list, &dyn->obj_list);
 	k_spin_unlock(&lists_lock, key);
 
-	return &dyn_obj->kobj;
+	return &dyn->kobj;
 }
 
 void *z_impl_k_object_alloc(enum k_objects otype)
@@ -332,7 +332,7 @@ void *z_impl_k_object_alloc(enum k_objects otype)
 
 void k_object_free(void *obj)
 {
-	struct dyn_obj *dyn_obj;
+	struct dyn_obj *dyn;
 
 	/* This function is intentionally not exposed to user mode.
 	 * There's currently no robust way to track that an object isn't
@@ -341,19 +341,19 @@ void k_object_free(void *obj)
 
 	k_spinlock_key_t key = k_spin_lock(&objfree_lock);
 
-	dyn_obj = dyn_object_find(obj);
-	if (dyn_obj != NULL) {
-		rb_remove(&obj_rb_tree, &dyn_obj->node);
-		sys_dlist_remove(&dyn_obj->obj_list);
+	dyn = dyn_object_find(obj);
+	if (dyn != NULL) {
+		rb_remove(&obj_rb_tree, &dyn->node);
+		sys_dlist_remove(&dyn->obj_list);
 
-		if (dyn_obj->kobj.type == K_OBJ_THREAD) {
-			thread_idx_free(dyn_obj->kobj.data.thread_id);
+		if (dyn->kobj.type == K_OBJ_THREAD) {
+			thread_idx_free(dyn->kobj.data.thread_id);
 		}
 	}
 	k_spin_unlock(&objfree_lock, key);
 
-	if (dyn_obj != NULL) {
-		k_free(dyn_obj);
+	if (dyn != NULL) {
+		k_free(dyn);
 	}
 }
 
@@ -410,7 +410,7 @@ static void unref_check(struct z_object *ko, uintptr_t index)
 	sys_bitfield_clear_bit((mem_addr_t)&ko->perms, index);
 
 #ifdef CONFIG_DYNAMIC_OBJECTS
-	struct dyn_obj *dyn_obj =
+	struct dyn_obj *dyn =
 			CONTAINER_OF(ko, struct dyn_obj, kobj);
 
 	if ((ko->flags & K_OBJ_FLAG_ALLOC) == 0U) {
@@ -443,9 +443,9 @@ static void unref_check(struct z_object *ko, uintptr_t index)
 		break;
 	}
 
-	rb_remove(&obj_rb_tree, &dyn_obj->node);
-	sys_dlist_remove(&dyn_obj->obj_list);
-	k_free(dyn_obj);
+	rb_remove(&obj_rb_tree, &dyn->node);
+	sys_dlist_remove(&dyn->obj_list);
+	k_free(dyn);
 out:
 #endif
 	k_spin_unlock(&obj_lock, key);
