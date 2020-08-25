@@ -56,6 +56,24 @@
 			#io-channel-cells = <1>;
 		};
 
+		dac1: dac@50000800 {
+			compatible = "st,stm32-dac";
+			reg = <0x50000800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00010000>;
+			status = "disabled";
+			label = "DAC_1";
+			#io-channel-cells = <1>;
+		};
+
+		dac3: dac@50001000 {
+			compatible = "st,stm32-dac";
+			reg = <0x50001000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00040000>;
+			status = "disabled";
+			label = "DAC_3";
+			#io-channel-cells = <1>;
+		};
+
 		flash: flash-controller@40022000 {
 			compatible = "st,stm32-flash-controller", "st,stm32g4-flash-controller";
 			label = "FLASH_CTRL";
