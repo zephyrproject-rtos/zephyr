@@ -217,7 +217,8 @@ void arm_core_mpu_mem_partition_config_update(
 		break;
 	}
 	__ASSERT(reg_index != get_num_regions(),
-		 "Memory domain partition not found\n");
+		 "Memory domain partition %p size %zu not found\n",
+		 (void *)partition->start, partition->size);
 
 	/* Modify the permissions */
 	partition->attr = *new_attr;
