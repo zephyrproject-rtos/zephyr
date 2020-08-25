@@ -565,35 +565,3 @@ void test_mem_domain_remove_thread(void *p1, void *p2, void *p3)
 				 NULL, NULL, NULL);
 
 }
-/****************************************************************************/
-
-/**
- * @brief Test memory domain destroy, which removes all thread assignments to it
- *
- * @details Test k_mem_domain_destroy API
- *
- * @ingroup kernel_memprotect_tests
- *
- * @see k_mem_domain_add_thread(), k_mem_domain_destroy()
- * */
-void test_mem_domain_destroy(void)
-{
-	k_mem_domain_init(&mem_domain1,
-			  ARRAY_SIZE(mem_domain_memory_partition_array1),
-			  mem_domain_memory_partition_array1);
-	k_mem_domain_remove_thread(k_current_get());
-
-	k_mem_domain_add_thread(&mem_domain1, k_current_get());
-
-	k_tid_t tid = k_current_get();
-
-	if (tid->mem_domain_info.mem_domain == &mem_domain1) {
-		k_mem_domain_destroy(&mem_domain1);
-
-		zassert_true(tid->mem_domain_info.mem_domain !=
-			     &mem_domain1, "The thread has reference to"
-			     " memory domain which is already destroyed");
-	} else {
-		zassert_unreachable("k_mem_domain_add_thread() failed");
-	}
-}

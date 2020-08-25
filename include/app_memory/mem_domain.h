@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <sys/dlist.h>
+#include <toolchain.h>
 
 /* Forward declaration */
 struct k_thread;
@@ -118,6 +119,7 @@ extern void k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
  *
  * @param domain The memory domain to be destroyed.
  */
+__deprecated
 extern void k_mem_domain_destroy(struct k_mem_domain *domain);
 
 /**
