@@ -11,6 +11,7 @@
 #include <sys/__assert.h>
 #include <stdbool.h>
 #include <spinlock.h>
+#include <sys/libc-hooks.h>
 
 #define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
 #include <logging/log.h>
@@ -18,6 +19,8 @@ LOG_MODULE_DECLARE(os);
 
 static struct k_spinlock lock;
 static uint8_t max_partitions;
+
+struct k_mem_domain k_mem_domain_default;
 
 #if __ASSERT_ON
 static bool check_add_partition(struct k_mem_domain *domain,
@@ -225,12 +228,12 @@ void k_mem_domain_add_thread(struct k_mem_domain *domain, k_tid_t thread)
 
 	__ASSERT_NO_MSG(domain != NULL);
 	__ASSERT_NO_MSG(thread != NULL);
-	__ASSERT(thread->mem_domain_info.mem_domain == NULL,
-		 "thread %p belongs to a different memory domain %p",
-		 thread, thread->mem_domain_info.mem_domain);
 
 	key = k_spin_lock(&lock);
-
+	if (thread->mem_domain_info.mem_domain != NULL) {
+		sys_dlist_remove(&thread->mem_domain_info.mem_domain_q_node);
+		arch_mem_domain_thread_remove(thread);
+	}
 	sys_dlist_append(&domain->mem_domain_q,
 			 &thread->mem_domain_info.mem_domain_q_node);
 	thread->mem_domain_info.mem_domain = domain;
@@ -242,18 +245,7 @@ void k_mem_domain_add_thread(struct k_mem_domain *domain, k_tid_t thread)
 
 void k_mem_domain_remove_thread(k_tid_t thread)
 {
-	k_spinlock_key_t key;
-
-	__ASSERT_NO_MSG(thread != NULL);
-	__ASSERT(thread->mem_domain_info.mem_domain != NULL,
-		 "thread does not belong to a memory domain");
-
-	key = k_spin_lock(&lock);
-	arch_mem_domain_thread_remove(thread);
-
-	sys_dlist_remove(&thread->mem_domain_info.mem_domain_q_node);
-	thread->mem_domain_info.mem_domain = NULL;
-	k_spin_unlock(&lock, key);
+	k_mem_domain_add_thread(&k_mem_domain_default, thread);
 }
 
 static int init_mem_domain_module(struct device *arg)
@@ -267,6 +259,11 @@ static int init_mem_domain_module(struct device *arg)
 	 * out of bounds error.
 	 */
 	__ASSERT(max_partitions <= CONFIG_MAX_DOMAIN_PARTITIONS, "");
+
+	k_mem_domain_init(&k_mem_domain_default, 0, NULL);
+#ifdef Z_LIBC_PARTITION_EXISTS
+	k_mem_domain_add_partition(&k_mem_domain_default, &z_libc_partition);
+#endif /* Z_LIBC_PARTITION_EXISTS */
 
 	return 0;
 }

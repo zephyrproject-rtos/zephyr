@@ -197,7 +197,7 @@ static inline void z_dummy_thread_init(struct k_thread *dummy_thread)
 	dummy_thread->stack_info.size = 0U;
 #endif
 #ifdef CONFIG_USERSPACE
-	dummy_thread->mem_domain_info.mem_domain = 0;
+	dummy_thread->mem_domain_info.mem_domain = &k_mem_domain_default;
 #endif
 
 	_current_cpu->current = dummy_thread;
