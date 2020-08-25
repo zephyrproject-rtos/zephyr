@@ -559,7 +559,7 @@ void test_mem_domain_remove_thread(void *p1, void *p2, void *p3)
 
 
 	k_mem_domain_remove_thread(k_current_get());
-	k_mem_domain_add_thread(&ztest_mem_domain, k_current_get());
+	k_mem_domain_add_thread(&k_mem_domain_default, k_current_get());
 
 	k_thread_user_mode_enter(mem_domain_for_user_tc7,
 				 NULL, NULL, NULL);
