@@ -102,6 +102,11 @@
 
 	Z_ITERABLE_SECTION_ROM(bt_gatt_service_static, 4)
 
+#if defined(CONFIG_BT_MESH)
+	Z_ITERABLE_SECTION_ROM(bt_mesh_subnet_cb, 4)
+	Z_ITERABLE_SECTION_ROM(bt_mesh_app_key_cb, 4)
+#endif
+
 #if defined(CONFIG_EC_HOST_CMD)
 	Z_ITERABLE_SECTION_ROM(ec_host_cmd_handler, 4)
 #endif

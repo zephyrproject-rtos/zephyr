@@ -642,6 +642,12 @@ config BT_MESH_DEBUG_CRYPTO
 	  Use this option to enable cryptographic debug logs for the
 	  Bluetooth Mesh functionality.
 
+config BT_MESH_DEBUG_KEYS
+	bool "Key management debug"
+	help
+	  Use this option to enable key management debug logs for the
+	  Bluetooth Mesh functionality.
+
 config BT_MESH_DEBUG_PROV
 	bool "Provisioning debug"
 	help
