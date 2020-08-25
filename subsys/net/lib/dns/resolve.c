@@ -527,6 +527,13 @@ static int dns_read(struct dns_resolve_context *ctx,
 				goto quit;
 			}
 
+			if ((dns_msg.response_position + address_size) >
+			    dns_msg.msg_size) {
+				/* Too short message */
+				ret = DNS_EAI_FAIL;
+				goto quit;
+			}
+
 			src = dns_msg.msg + dns_msg.response_position;
 			memcpy(addr, src, address_size);
 
