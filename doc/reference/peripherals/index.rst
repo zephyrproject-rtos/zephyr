@@ -26,6 +26,7 @@ Peripherals
    pwm.rst
    ps2.rst
    peci.rst
+   regulators.rst
    rtc.rst
    sensor.rst
    spi.rst
