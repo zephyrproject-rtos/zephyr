@@ -135,12 +135,14 @@ def process_cmake(module, meta):
     cmake_path = os.path.join(module, cmake_setting or 'zephyr')
     cmake_file = os.path.join(cmake_path, 'CMakeLists.txt')
     if os.path.isfile(cmake_file):
-        return('\"{}\":\"{}\"\n'
+        return('\"{}\":\"{}\":\"{}\"\n'
                .format(module_path.name,
+                       module_path.as_posix(),
                        Path(cmake_path).resolve().as_posix()))
     else:
-        return ""
-
+        return('\"{}\":\"{}\":\"\"\n'
+               .format(module_path.name,
+                       module_path.as_posix()))
 
 def process_settings(module, meta):
     section = meta.get('build', dict())
@@ -174,7 +176,6 @@ def process_kconfig(module, meta):
                                          .resolve().as_posix())
     else:
         return ""
-
 
 def process_sanitycheck(module, meta):
 
