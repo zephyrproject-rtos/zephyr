@@ -395,7 +395,7 @@
 		timers8: timers@40013400 {
 			compatible = "st,stm32-timers";
 			reg = <0x40013400 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00004000>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00002000>;
 			interrupts = <43 0>, <44 0>, <45 0>, <46 0>;
 			interrupt-names = "brk", "up", "trgcom", "cc";
 			status = "disabled";
