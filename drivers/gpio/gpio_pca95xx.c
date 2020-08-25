@@ -64,8 +64,13 @@ struct gpio_pca95xx_config {
 
 	/** The slave address of the chip */
 	uint16_t i2c_slave_addr;
-
 	uint8_t capabilities;
+
+#ifdef CONFIG_GPIO_PCA95XX_INTERRUPT
+	const char *gpio_port;
+	gpio_pin_t int_pin;
+	gpio_dt_flags_t int_flags;
+#endif
 };
 
 /** Runtime driver data */
@@ -75,15 +80,26 @@ struct gpio_pca95xx_drv_data {
 
 	/** Master I2C device */
 	const struct device *i2c_master;
+	const struct device *exp_dev;
 
 	struct {
 		uint16_t output;
 		uint16_t dir;
 		uint16_t pud_en;
 		uint16_t pud_sel;
+#ifdef CONFIG_GPIO_PCA95XX_INTERRUPT
+		uint16_t int_mask;
+		uint16_t pol_invert;
+#endif
 	} reg_cache;
 
 	struct k_sem lock;
+#ifdef CONFIG_GPIO_PCA95XX_INTERRUPT
+	const struct device *gpio;
+	struct gpio_callback gpio_cb;
+	struct k_work work;
+	sys_slist_t cb_list;
+#endif
 };
 
 /**
@@ -379,6 +395,11 @@ static int gpio_pca95xx_port_get_raw(const struct device *dev,
 		goto done;
 	}
 
+#ifdef CONFIG_GPIO_PCA95XX_INTERRUPT
+	if (drv_data->reg_cache.pol_invert) {
+		buf = drv_data->reg_cache.pol_invert ^ buf;
+	}
+#endif
 	*value = buf;
 
 done:
@@ -448,12 +469,154 @@ static int gpio_pca95xx_port_toggle_bits(const struct device *dev,
 	return ret;
 }
 
-static int gpio_pca95xx_pin_interrupt_configure(const struct device *dev,
-						  gpio_pin_t pin,
-						  enum gpio_int_mode mode,
-						  enum gpio_int_trig trig)
+#ifdef CONFIG_GPIO_PCA95XX_INTERRUPT
+static void gpio_pca95xx_work_handler(struct k_work *work)
 {
+	struct gpio_pca95xx_drv_data *ddata =
+			CONTAINER_OF(work, struct gpio_pca95xx_drv_data, work);
+	uint16_t status;
+	int i = 0;
+
+	if (read_port_regs(ddata->exp_dev, REG_INT_STATUS_PORT0,
+			   &status) != 0) {
+		return;
+	}
+
+	while (status) {
+		if (status & 0x1) {
+			gpio_fire_callbacks(&ddata->cb_list,
+					    ddata->exp_dev,
+					    BIT(i));
+		}
+		status >>= 1;
+		i++;
+	}
+}
+
+static void gpio_pca95xx_global_callback(const struct device *port,
+					 struct gpio_callback *cb, uint32_t pin)
+{
+	struct gpio_pca95xx_drv_data *ddata =
+			CONTAINER_OF(cb, struct gpio_pca95xx_drv_data, gpio_cb);
+
+	ARG_UNUSED(port);
+	ARG_UNUSED(pin);
+
+	k_work_submit(&ddata->work);
+}
+
+static int gpio_pca95xx_interrupt_init(const struct device *dev)
+{
+	struct gpio_pca95xx_drv_data *ddata = dev->data;
+	const struct gpio_pca95xx_config *cfg = dev->config;
+	int ret;
+
+	ddata->gpio = device_get_binding(cfg->gpio_port);
+	if (!ddata->gpio) {
+		LOG_ERR("Gpio controller %s not found.", cfg->gpio_port);
+		return -EINVAL;
+	}
+
+	ddata->work.handler = gpio_pca95xx_work_handler;
+
+	ret = gpio_pin_configure(ddata->gpio, cfg->int_pin,
+				 GPIO_INPUT | cfg->int_flags);
+	if (ret) {
+		LOG_ERR("gpio %d input config failed err %d.",
+			 cfg->int_pin, ret);
+		return ret;
+	}
+
+	gpio_init_callback(&ddata->gpio_cb, gpio_pca95xx_global_callback,
+			   BIT(cfg->int_pin));
+
+	ret = gpio_add_callback(ddata->gpio, &ddata->gpio_cb);
+	if (ret) {
+		LOG_ERR("gpio add callback err %d.", ret);
+		return ret;
+	}
+
+	ret = gpio_pin_interrupt_configure(ddata->gpio, cfg->int_pin,
+					   GPIO_INT_EDGE_FALLING);
+
+	return ret;
+}
+
+static int gpio_pca95xxx_manage_callback(const struct device *dev,
+					 struct gpio_callback *cb,
+					 bool set)
+{
+	struct gpio_pca95xx_drv_data *ddata = dev->data;
+
+	return gpio_manage_callback(&ddata->cb_list, cb, set);
+}
+
+static uint32_t gpio_pca95xxx_get_pending_int(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
 	return -ENOTSUP;
+}
+#endif
+
+static int gpio_pca95xx_pin_interrupt_configure(const struct device *dev,
+			gpio_pin_t pin, enum gpio_int_mode mode,
+			enum gpio_int_trig trig)
+{
+	int ret = 0;
+
+	if (!IS_ENABLED(CONFIG_GPIO_PCA95XX_INTERRUPT)
+	    && (mode != GPIO_INT_MODE_DISABLED)) {
+		return -ENOTSUP;
+	}
+
+#ifdef CONFIG_GPIO_PCA95XX_INTERRUPT
+	struct gpio_pca95xx_drv_data * const drv_data =
+		(struct gpio_pca95xx_drv_data * const)dev->data;
+
+	/* Level trigger interrupts not supported */
+	if (mode == GPIO_INT_MODE_LEVEL) {
+		return -ENOTSUP;
+	}
+
+	k_sem_take(&drv_data->lock, K_FOREVER);
+
+	if (mode == GPIO_INT_MODE_DISABLED) {
+		if (!(drv_data->reg_cache.int_mask & ~BIT(pin))) {
+			ret = write_port_regs(dev, REG_INT_MASK_PORT0,
+				&drv_data->reg_cache.int_mask,
+				drv_data->reg_cache.int_mask | BIT(pin));
+
+			write_port_regs(dev, REG_POL_INV_PORT0,
+				&drv_data->reg_cache.pol_invert,
+				drv_data->reg_cache.pol_invert & ~BIT(pin));
+		}
+		goto exit;
+	}
+
+	ret = setup_pin_dir(dev, pin, GPIO_INPUT);
+	if (ret) {
+		goto exit;
+	}
+
+	if (trig & GPIO_INT_TRIG_LOW) {
+		ret = write_port_regs(dev, REG_POL_INV_PORT0,
+				&drv_data->reg_cache.pol_invert,
+				drv_data->reg_cache.pol_invert | BIT(pin));
+		if (ret) {
+			goto exit;
+		}
+	}
+
+	ret = write_port_regs(dev, REG_INT_MASK_PORT0,
+			      &drv_data->reg_cache.int_mask,
+			      drv_data->reg_cache.int_mask & ~BIT(pin));
+
+exit:
+	k_sem_give(&drv_data->lock);
+#endif /* CONFIG_GPIO_PCA95XX_INTERRUPT */
+
+	return ret;
 }
 
 static const struct gpio_driver_api gpio_pca95xx_drv_api_funcs = {
@@ -464,7 +627,12 @@ static const struct gpio_driver_api gpio_pca95xx_drv_api_funcs = {
 	.port_clear_bits_raw = gpio_pca95xx_port_clear_bits_raw,
 	.port_toggle_bits = gpio_pca95xx_port_toggle_bits,
 	.pin_interrupt_configure = gpio_pca95xx_pin_interrupt_configure,
+#ifdef CONFIG_GPIO_PCA95XX_INTERRUPT
+	.manage_callback = gpio_pca95xxx_manage_callback,
+	.get_pending_int = gpio_pca95xxx_get_pending_int,
+#endif
 };
+
 
 /**
  * @brief Initialization function of PCA95XX
@@ -485,17 +653,42 @@ static int gpio_pca95xx_init(const struct device *dev)
 		return -EINVAL;
 	}
 	drv_data->i2c_master = i2c_master;
+	drv_data->exp_dev = dev;
 
 	k_sem_init(&drv_data->lock, 1, 1);
 
+#ifdef CONFIG_GPIO_PCA95XX_INTERRUPT
+	int ret = gpio_pca95xx_interrupt_init(dev);
+	if (ret) {
+		LOG_ERR("interrupt init fail %d\n", ret);
+		return ret;
+	}
+#endif
+
 	return 0;
 }
+
+#ifdef CONFIG_GPIO_PCA95XX_INTERRUPT
+#define EXPAND_INTERRUPT(inst) 						\
+	.gpio_port = DT_INST_GPIO_LABEL(inst, int_gpios),               \
+	.int_pin = DT_INST_GPIO_PIN(inst, int_gpios),                   \
+	.int_flags = DT_INST_GPIO_FLAGS(inst, int_gpios),  		\
+
+#define EXPAND_INTERRUPT_DRV_DATA(inst) 				\
+	.reg_cache.int_mask = 0xFFFF,					\
+	.reg_cache.pol_invert = 0,					\
+
+#else
+#define EXPAND_INTERRUPT_DRV_DATA(inst)
+#define EXPAND_INTERRUPT(inst)
+#endif
 
 #define GPIO_PCA95XX_DEVICE_INSTANCE(inst)				\
 static const struct gpio_pca95xx_config gpio_pca95xx_##inst##_cfg = {	\
 	.common = {							\
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),	\
 	},								\
+	EXPAND_INTERRUPT(inst)						\
 	.i2c_master_dev_name = DT_INST_BUS_LABEL(inst),	\
 	.i2c_slave_addr = DT_INST_REG_ADDR(inst),	\
 	.capabilities =							\
@@ -509,6 +702,7 @@ static struct gpio_pca95xx_drv_data gpio_pca95xx_##inst##_drvdata = {	\
 	.reg_cache.dir = 0xFFFF,					\
 	.reg_cache.pud_en = 0x0,					\
 	.reg_cache.pud_sel = 0xFFFF,					\
+	EXPAND_INTERRUPT_DRV_DATA(inst)					\
 };									\
 									\
 DEVICE_AND_API_INIT(gpio_pca95xx_##inst,				\

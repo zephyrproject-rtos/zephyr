@@ -11,6 +11,13 @@ properties:
     label:
       required: true
 
+    int-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        This property specifies the connection for INT, signal to
+        low when interrput is raised.
+
     has-pud:
       type: boolean
       required: false
