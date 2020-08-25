@@ -17,14 +17,15 @@
 #include <errno.h>
 #include <device.h>
 #include <drivers/uart.h>
+#include <drivers/clock_control.h>
 #include <fsl_usart.h>
-#include <fsl_clock.h>
 #include <soc.h>
 #include <fsl_device_registers.h>
 
 struct mcux_flexcomm_config {
 	USART_Type *base;
-	uint32_t clock_source;
+	char *clock_name;
+	clock_control_subsys_t clock_subsys;
 	uint32_t baud_rate;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(const struct device *dev);
@@ -247,8 +248,18 @@ static int mcux_flexcomm_init(const struct device *dev)
 	const struct mcux_flexcomm_config *config = dev->config;
 	usart_config_t usart_config;
 	uint32_t clock_freq;
+	const struct device *clock_dev;
 
-	clock_freq = CLOCK_GetFlexCommClkFreq(config->clock_source);
+	/* Get the clock frequency */
+	clock_dev = device_get_binding(config->clock_name);
+	if (clock_dev == NULL) {
+		return -EINVAL;
+	}
+
+	if (clock_control_get_rate(clock_dev, config->clock_subsys,
+				   &clock_freq)) {
+		return -EINVAL;
+	}
 
 	USART_GetDefaultConfig(&usart_config);
 	usart_config.enableTx = true;
@@ -312,7 +323,9 @@ static const struct uart_driver_api mcux_flexcomm_driver_api = {
 #define UART_MCUX_FLEXCOMM_DECLARE_CFG(n, IRQ_FUNC_INIT)		\
 static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config = {	\
 	.base = (USART_Type *)DT_INST_REG_ADDR(n),			\
-	.clock_source = 0,						\
+	.clock_name = DT_INST_CLOCKS_LABEL(n),				\
+	.clock_subsys =				\
+	(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
 	.baud_rate = DT_INST_PROP(n, current_speed),			\
 	IRQ_FUNC_INIT							\
 }
