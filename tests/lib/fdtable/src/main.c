@@ -57,7 +57,6 @@ void test_z_get_fd_obj(void)
 
 	/* take branch -- if (_check_fd(fd) < 0) */
 	zassert_is_null(obj, "obj not is NULL");
-	zassert_equal(errno, EBADF, "errno not set");
 
 	obj = (void *)1;
 	vtable = (const struct fd_op_vtable *)1;
@@ -142,14 +141,11 @@ static void test_cb(void *fd_ptr)
 	zassert_not_null(obj, "obj is null");
 	zassert_not_null(vtable, "vtable is null");
 
-	/* This is very much artificial and only meaningful in this test. */
-	z_finalize_fd(fd, obj, vtable);
-
-	/* The object should not be null after the free as ref count is 1 */
 	z_free_fd(fd);
 
 	obj = z_get_fd_obj_and_vtable(fd, &vtable);
-	zassert_not_null(obj, "obj is null");
+	zassert_is_null(obj, "obj is still there");
+	zassert_equal(errno, EBADF, "fd was found");
 }
 
 void test_z_fd_multiple_access(void)
@@ -170,12 +166,7 @@ void test_z_fd_multiple_access(void)
 
 	k_thread_join(&fd_thread, K_FOREVER);
 
-	obj = z_get_fd_obj_and_vtable(shared_fd, &vtable);
-	zassert_not_null(obj, "obj disappeared");
-	zassert_not_null(vtable, "vtable disappeared");
-
-	z_free_fd(shared_fd);
-
+	/* should be null since freed in the other thread */
 	obj = z_get_fd_obj_and_vtable(shared_fd, &vtable);
 	zassert_is_null(obj, "obj is still there");
 	zassert_equal(errno, EBADF, "fd was found");
