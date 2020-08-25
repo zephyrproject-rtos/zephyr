@@ -69,13 +69,15 @@ if(WEST OR ZEPHYR_MODULES)
       # Match "<name>":"<path>" for each line of file, each corresponding to
       # one module. The use of quotes is required due to CMake not supporting
       # lazy regexes (it supports greedy only).
-      string(REGEX REPLACE "\"(.*)\":\".*\"" "\\1" module_name ${module})
-      string(REGEX REPLACE "\".*\":\"(.*)\"" "\\1" module_path ${module})
+      string(REGEX REPLACE "\"(.*)\":\".*\":\".*\"" "\\1" module_name ${module})
+      string(REGEX REPLACE "\".*\":\"(.*)\":\".*\"" "\\1" module_path ${module})
+      string(REGEX REPLACE "\".*\":\".*\":\"(.*)\"" "\\1" cmake_path ${module})
 
       list(APPEND ZEPHYR_MODULE_NAMES ${module_name})
 
       string(TOUPPER ${module_name} MODULE_NAME_UPPER)
       set(ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR ${module_path})
+      set(ZEPHYR_${MODULE_NAME_UPPER}_CMAKE_DIR ${cmake_path})
     endforeach()
   endif()
 else()

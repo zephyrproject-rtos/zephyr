@@ -470,11 +470,15 @@ foreach(module_name ${ZEPHYR_MODULE_NAMES})
   # the main binary dir instead.
   # https://cmake.org/pipermail/cmake/2019-June/069547.html
   string(TOUPPER ${module_name} MODULE_NAME_UPPER)
-  set(ZEPHYR_CURRENT_MODULE_DIR ${ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR})
-  add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR} ${CMAKE_BINARY_DIR}/modules/${module_name})
+  if(NOT ${ZEPHYR_${MODULE_NAME_UPPER}_CMAKE_DIR} STREQUAL "")
+    set(ZEPHYR_CURRENT_MODULE_DIR ${ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR})
+    set(ZEPHYR_CURRENT_CMAKE_DIR ${ZEPHYR_${MODULE_NAME_UPPER}_CMAKE_DIR})
+    add_subdirectory(${ZEPHYR_CURRENT_CMAKE_DIR} ${CMAKE_BINARY_DIR}/modules/${module_name})
+  endif()
 endforeach()
-# Done processing modules, clear ZEPHYR_CURRENT_MODULE_DIR.
+# Done processing modules, clear ZEPHYR_CURRENT_MODULE_DIR and ZEPHYR_CURRENT_CMAKE_DIR.
 set(ZEPHYR_CURRENT_MODULE_DIR)
+set(ZEPHYR_CURRENT_CMAKE_DIR)
 
 set(syscall_list_h   ${CMAKE_CURRENT_BINARY_DIR}/include/generated/syscall_list.h)
 set(syscalls_json    ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls.json)
