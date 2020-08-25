@@ -7,12 +7,6 @@ set(QEMU_KERNEL_OPTION "-device;loader,file=${CMAKE_BINARY_DIR}/tfm_qemu.hex")
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
-set(BL2 $ENV{BL2})
-if(NOT DEFINED BL2)
-    #by default build with MCUboot
-    set(BL2 True)
-endif()
-
 # Add "tfm" as an external project via the TF-M module's cmake file
 if(${TFM_TARGET_PLATFORM} STREQUAL "STM_NUCLEO_L552ZE_Q")
    trusted_firmware_build(BINARY_DIR ${CMAKE_BINARY_DIR}/tfm
@@ -20,7 +14,6 @@ if(${TFM_TARGET_PLATFORM} STREQUAL "STM_NUCLEO_L552ZE_Q")
                           IPC
                           CFGFILE "ConfigRegressionIPCTfmLevel2"
                           OUT_VENEERS_FILE VENEERS_FILE
-                          BL2 ${BL2}
    )
 else()
    trusted_firmware_build(BINARY_DIR ${CMAKE_BINARY_DIR}/tfm
@@ -28,7 +21,6 @@ else()
                           IPC
                           CFGFILE "ConfigRegressionIPC"
                           OUT_VENEERS_FILE VENEERS_FILE
-                          BL2 ${BL2}
   )
 endif()
 

@@ -196,10 +196,10 @@ see the following message in the terminal:
    Hello World! lpcxpresso55s69_cpu0
 
 Building and flashing secure/non-secure with Arm |reg| TrustZone |reg|
----------------------------------------------------------------------
+----------------------------------------------------------------------
 The TF-M integration samples can be run using the ``lpcxpresso55s69_ns`` target.
-Next we need to manually flash the secure (`tfm_s.hex`)
-and non-secure (`zephyr.hex`) images wth a J-Link as follows:
+Next we need to manually flash the secure (``tfm_s.hex``)
+and non-secure (``zephyr.hex``) images wth a J-Link as follows:
 
 .. code-block:: console
 

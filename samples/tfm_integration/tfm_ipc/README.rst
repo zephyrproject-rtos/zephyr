@@ -131,6 +131,27 @@ Reset the board.
  .. note::
       Note that ``arm-none-eabi-gcc`` should be available in the PATH variable and that ``STM32_Programmer_CLI`` is required to run ``regression.sh`` and ``TFM_UPDATE.sh`` (see https://www.st.com/en/development-tools/stm32cubeprog.html). If you are still having trouble running these scripts, check the Programming and Debugging section of the :ref:`nucleo_l552ze_q_board` documentation.
 
+On LPCxpresso55S69:
+===================
+
+Build Zephyr with a non-secure configuration:
+
+   .. code-block:: bash
+
+      $ west build -p -b lpcxpresso55s69_ns samples/tfm_integration/tfm_ipc/ --
+
+Next we need to manually flash the secure (``tfm_s.hex``)
+and non-secure (``zephyr.hex``) images wth a J-Link as follows:
+
+   .. code-block:: console
+
+      JLinkExe -device lpc55s69 -if swd -speed 2000 -autoconnect 1
+      J-Link>loadfile build/tfm/install/outputs/LPC55S69/tfm_s.hex
+      J-Link>loadfile build/zephyr/zephyr.hex
+
+NOTE: At present, the LPC55S69 doesn't include support for the MCUBoot bootloader.
+
+We need to reset the board manually after flashing the image to run this code.
 
 Sample Output
 =============
