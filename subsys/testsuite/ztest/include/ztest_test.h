@@ -169,7 +169,6 @@ __syscall void z_test_1cpu_stop(void);
 #define ZTEST_BMEM	K_APP_BMEM(ztest_mem_partition)
 #define ZTEST_SECTION	K_APP_DMEM_SECTION(ztest_mem_partition)
 extern struct k_mem_partition ztest_mem_partition;
-extern struct k_mem_domain ztest_mem_domain;
 #else
 #define ZTEST_DMEM
 #define ZTEST_BMEM

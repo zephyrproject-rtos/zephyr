@@ -399,7 +399,6 @@ void end_report(void)
 }
 
 #ifdef CONFIG_USERSPACE
-struct k_mem_domain ztest_mem_domain;
 K_APPMEM_PARTITION_DEFINE(ztest_mem_partition);
 #endif
 
@@ -416,24 +415,18 @@ int main(void)
 void main(void)
 {
 #ifdef CONFIG_USERSPACE
-	struct k_mem_partition *parts[] = {
-#ifdef Z_LIBC_PARTITION_EXISTS
-		/* C library globals, stack canary storage, etc */
-		&z_libc_partition,
-#endif
-#ifdef Z_MALLOC_PARTITION_EXISTS
-		/* Required for access to malloc arena */
-		&z_malloc_partition,
-#endif
-		&ztest_mem_partition
-	};
-
-	/* Ztests just have one memory domain with one partition.
-	 * Any variables that user code may reference need to go in them,
-	 * using the ZTEST_DMEM and ZTEST_BMEM macros.
+	/* Partition containing globals tagged with ZTEST_DMEM and ZTEST_BMEM
+	 * macros. Any variables that user code may reference need to be
+	 * placed in this partition if no other memory domain configuration
+	 * is made.
 	 */
-	k_mem_domain_init(&ztest_mem_domain, ARRAY_SIZE(parts), parts);
-	k_mem_domain_add_thread(&ztest_mem_domain, k_current_get());
+	k_mem_domain_add_partition(&k_mem_domain_default,
+				   &ztest_mem_partition);
+#ifdef Z_MALLOC_PARTITION_EXISTS
+	/* Allow access to malloc() memory */
+	k_mem_domain_add_partition(&k_mem_domain_default,
+				   &z_malloc_partition);
+#endif
 #endif /* CONFIG_USERSPACE */
 
 	z_init_mock();
