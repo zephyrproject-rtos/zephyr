@@ -451,10 +451,13 @@ bool bt_mesh_is_provisioned(void);
 #define BT_MESH_NODE_IDENTITY_RUNNING       0x01
 #define BT_MESH_NODE_IDENTITY_NOT_SUPPORTED 0x02
 
-/* Features */
+/** Relay feature */
 #define BT_MESH_FEAT_RELAY                  BIT(0)
+/** GATT Proxy feature */
 #define BT_MESH_FEAT_PROXY                  BIT(1)
+/** Friend feature */
 #define BT_MESH_FEAT_FRIEND                 BIT(2)
+/** Low Power Node feature */
 #define BT_MESH_FEAT_LOW_POWER              BIT(3)
 #define BT_MESH_FEAT_SUPPORTED              (BT_MESH_FEAT_RELAY |   \
 					     BT_MESH_FEAT_PROXY |   \
