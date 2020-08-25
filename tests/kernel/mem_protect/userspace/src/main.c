@@ -651,9 +651,6 @@ static void test_access_other_memdomain(void)
 	 */
 
 	k_mem_domain_init(&dom1, ARRAY_SIZE(parts), parts);
-
-	/* remove current thread from domain dom0 and add to dom1 */
-	k_mem_domain_remove_thread(k_current_get());
 	k_mem_domain_add_thread(&dom1, k_current_get());
 
 	/* Create user mode thread */
@@ -708,9 +705,6 @@ static void test_domain_add_thread_drop_to_user(void)
 
 	expect_fault = false;
 	k_mem_domain_init(&add_thread_drop_dom, ARRAY_SIZE(parts), parts);
-	k_mem_domain_remove_thread(k_current_get());
-
-	k_sleep(K_MSEC(1));
 	k_mem_domain_add_thread(&add_thread_drop_dom, k_current_get());
 
 	k_thread_user_mode_enter(user_half, NULL, NULL, NULL);
@@ -729,33 +723,10 @@ static void test_domain_add_part_drop_to_user(void)
 
 	expect_fault = false;
 	k_mem_domain_init(&add_part_drop_dom, ARRAY_SIZE(parts), parts);
-	k_mem_domain_remove_thread(k_current_get());
 	k_mem_domain_add_thread(&add_part_drop_dom, k_current_get());
 
 	k_sleep(K_MSEC(1));
 	k_mem_domain_add_partition(&add_part_drop_dom, &access_part);
-
-	k_thread_user_mode_enter(user_half, NULL, NULL, NULL);
-}
-
-/* Show that self-removing from a memory domain and then dropping to user
- * mode faults as expected.
- *
- * @ingroup kernel_memprotect_tests
- */
-static void test_domain_remove_thread_drop_to_user(void)
-{
-	struct k_mem_partition *parts[] = {&part0, &access_part,
-					   &ztest_mem_partition};
-
-	expect_fault = true;
-	expected_reason = K_ERR_CPU_EXCEPTION;
-	k_mem_domain_init(&remove_thread_drop_dom, ARRAY_SIZE(parts), parts);
-	k_mem_domain_remove_thread(k_current_get());
-	k_mem_domain_add_thread(&remove_thread_drop_dom, k_current_get());
-
-	k_sleep(K_MSEC(1));
-	k_mem_domain_remove_thread(k_current_get());
 
 	k_thread_user_mode_enter(user_half, NULL, NULL, NULL);
 }
@@ -774,7 +745,6 @@ static void test_domain_remove_part_drop_to_user(void)
 	expect_fault = true;
 	expected_reason = K_ERR_CPU_EXCEPTION;
 	k_mem_domain_init(&remove_part_drop_dom, ARRAY_SIZE(parts), parts);
-	k_mem_domain_remove_thread(k_current_get());
 	k_mem_domain_add_thread(&remove_part_drop_dom, k_current_get());
 
 	k_sleep(K_MSEC(1));
@@ -820,9 +790,6 @@ static void test_domain_add_thread_context_switch(void)
 
 	expect_fault = false;
 	k_mem_domain_init(&add_thread_ctx_dom, ARRAY_SIZE(parts), parts);
-	k_mem_domain_remove_thread(k_current_get());
-
-	k_sleep(K_MSEC(1));
 	k_mem_domain_add_thread(&add_thread_ctx_dom, k_current_get());
 
 	spawn_user();
@@ -839,33 +806,10 @@ static void test_domain_add_part_context_switch(void)
 
 	expect_fault = false;
 	k_mem_domain_init(&add_part_ctx_dom, ARRAY_SIZE(parts), parts);
-	k_mem_domain_remove_thread(k_current_get());
 	k_mem_domain_add_thread(&add_part_ctx_dom, k_current_get());
 
 	k_sleep(K_MSEC(1));
 	k_mem_domain_add_partition(&add_part_ctx_dom, &access_part);
-
-	spawn_user();
-}
-
-/* Show that self-removing from a memory domain and then switching to another
- * user thread in the same domain faults as expected.
- *
- * @ingroup kernel_memprotect_tests
- */
-static void test_domain_remove_thread_context_switch(void)
-{
-	struct k_mem_partition *parts[] = {&part0, &access_part,
-					   &ztest_mem_partition};
-
-	expect_fault = true;
-	expected_reason = K_ERR_CPU_EXCEPTION;
-	k_mem_domain_init(&remove_thread_ctx_dom, ARRAY_SIZE(parts), parts);
-	k_mem_domain_remove_thread(k_current_get());
-	k_mem_domain_add_thread(&remove_thread_ctx_dom, k_current_get());
-
-	k_sleep(K_MSEC(1));
-	k_mem_domain_remove_thread(k_current_get());
 
 	spawn_user();
 }
@@ -885,7 +829,6 @@ static void test_domain_remove_part_context_switch(void)
 	expect_fault = true;
 	expected_reason = K_ERR_CPU_EXCEPTION;
 	k_mem_domain_init(&remove_part_ctx_dom, ARRAY_SIZE(parts), parts);
-	k_mem_domain_remove_thread(k_current_get());
 	k_mem_domain_add_thread(&remove_part_ctx_dom, k_current_get());
 
 	k_sleep(K_MSEC(1));
@@ -1087,7 +1030,6 @@ void test_main(void)
 	struct k_mem_partition *parts[] = {&part0, &part1,
 		&ztest_mem_partition};
 
-	k_mem_domain_remove_thread(k_current_get());
 	k_mem_domain_init(&dom0, ARRAY_SIZE(parts), parts);
 	k_mem_domain_add_thread(&dom0, k_current_get());
 
@@ -1131,11 +1073,9 @@ void test_main(void)
 			 ztest_unit_test(test_domain_add_thread_drop_to_user),
 			 ztest_unit_test(test_domain_add_part_drop_to_user),
 			 ztest_unit_test(test_domain_remove_part_drop_to_user),
-			 ztest_unit_test(test_domain_remove_thread_drop_to_user),
 			 ztest_unit_test(test_domain_add_thread_context_switch),
 			 ztest_unit_test(test_domain_add_part_context_switch),
 			 ztest_unit_test(test_domain_remove_part_context_switch),
-			 ztest_unit_test(test_domain_remove_thread_context_switch),
 			 ztest_user_unit_test(test_unimplemented_syscall),
 			 ztest_user_unit_test(test_bad_syscall),
 			 ztest_user_unit_test(test_oops_panic),

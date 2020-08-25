@@ -104,7 +104,6 @@ static void mem_domain_test_1(void *tc_number, void *p2, void *p3)
 {
 	if ((uintptr_t)tc_number == 1U) {
 		mem_domain_buf[0] = 10U;
-		k_mem_domain_remove_thread(k_current_get());
 		k_mem_domain_add_thread(&mem_domain_mem_domain,
 					k_current_get());
 	}
@@ -189,7 +188,6 @@ void test_mem_domain_partitions_user_rw(void)
 			  ARRAY_SIZE(mem_domain_memory_partition_array),
 			  mem_domain_memory_partition_array);
 
-	k_mem_domain_remove_thread(k_current_get());
 	k_mem_domain_add_thread(&mem_domain_mem_domain,
 				k_current_get());
 
@@ -230,7 +228,6 @@ void test_mem_domain_partitions_user_ro(void)
 	k_mem_domain_init(&mem_domain1,
 			  ARRAY_SIZE(mem_domain_memory_partition_array1),
 			  mem_domain_memory_partition_array1);
-	k_mem_domain_remove_thread(k_current_get());
 
 	k_mem_domain_add_thread(&mem_domain1, k_current_get());
 
@@ -248,7 +245,6 @@ void test_mem_domain_partitions_supervisor_rw(void)
 	k_mem_domain_init(&mem_domain_mem_domain,
 			  ARRAY_SIZE(mem_domain_memory_partition_array1),
 			  mem_domain_memory_partition_array1);
-	k_mem_domain_remove_thread(k_current_get());
 
 	k_mem_domain_add_thread(&mem_domain_mem_domain, k_current_get());
 
@@ -354,8 +350,6 @@ void test_mem_domain_add_partitions_invalid(void *p1, void *p2, void *p3)
 	uint8_t max_partitions = (uint8_t)arch_mem_domain_max_partitions_get() - 1;
 	uint8_t index;
 
-	k_mem_domain_remove_thread(k_current_get());
-
 	mem_domain_init();
 	k_mem_domain_init(&mem_domain_tc3_mem_domain,
 			  1,
@@ -367,15 +361,13 @@ void test_mem_domain_add_partitions_invalid(void *p1, void *p2, void *p3)
 					   [index]);
 
 	}
-	/* The next add_thread and remove_thread is done so that the
+	/* The next add_thread is done so that the
 	 * memory domain for mem_domain_tc3_mem_domain partitions are
 	 * initialized. Because the pages/regions will not be configuired for
 	 * the partitions in mem_domain_tc3_mem_domain when do a add_partition.
 	 */
 	k_mem_domain_add_thread(&mem_domain_tc3_mem_domain,
 				k_current_get());
-
-	k_mem_domain_remove_thread(k_current_get());
 
 	/* configure a different memory domain for the current thread. */
 	k_mem_domain_add_thread(&mem_domain_mem_domain,
@@ -429,7 +421,6 @@ void test_mem_domain_add_partitions_simple(void *p1, void *p2, void *p3)
 
 	}
 
-	k_mem_domain_remove_thread(k_current_get());
 	k_mem_domain_add_thread(&mem_domain_tc3_mem_domain,
 				k_current_get());
 
@@ -460,7 +451,6 @@ static void mem_domain_for_user_tc5(void *p1, void *p2, void *p3)
  */
 void test_mem_domain_remove_partitions_simple(void *p1, void *p2, void *p3)
 {
-	k_mem_domain_remove_thread(k_current_get());
 	k_mem_domain_add_thread(&mem_domain_tc3_mem_domain,
 				k_current_get());
 
@@ -502,7 +492,6 @@ static void mem_domain_test_6_2(void *p1, void *p2, void *p3)
  */
 void test_mem_domain_remove_partitions(void *p1, void *p2, void *p3)
 {
-	k_mem_domain_remove_thread(k_current_get());
 	k_mem_domain_add_thread(&mem_domain_tc3_mem_domain,
 				k_current_get());
 
@@ -528,40 +517,4 @@ void test_mem_domain_remove_partitions(void *p1, void *p2, void *p3)
 			-1, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
 	k_thread_join(&mem_domain_6_tid, K_FOREVER);
-}
-/****************************************************************************/
-
-static void mem_domain_for_user_tc7(void *p1, void *p2, void *p3)
-{
-	set_fault_valid(true);
-
-	/* will generate a fault */
-	mem_domain_tc3_part4[0] = 10U;
-	zassert_unreachable(ERROR_STR);
-}
-
-/**
- * @brief Test removal of a thread from the memory domain.
- *
- * @details Till now all the test suite would have tested add thread.
- * this ensures that remove is working correctly.
- *
- * @ingroup kernel_memprotect_tests
- *
- * @see k_mem_domain_remove_thread()
- */
-void test_mem_domain_remove_thread(void *p1, void *p2, void *p3)
-{
-	k_mem_domain_remove_thread(k_current_get());
-
-	k_mem_domain_add_thread(&mem_domain_tc3_mem_domain,
-				k_current_get());
-
-
-	k_mem_domain_remove_thread(k_current_get());
-	k_mem_domain_add_thread(&k_mem_domain_default, k_current_get());
-
-	k_thread_user_mode_enter(mem_domain_for_user_tc7,
-				 NULL, NULL, NULL);
-
 }
