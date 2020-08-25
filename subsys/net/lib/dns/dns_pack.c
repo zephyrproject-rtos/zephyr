@@ -9,7 +9,9 @@
 
 #include "dns_pack.h"
 
-static inline u16_t dns_strlen(const char *str)
+#include "dns_internal.h"
+
+static inline uint16_t dns_strlen(const char *str)
 {
 	if (str == NULL) {
 		return 0;
