@@ -54,3 +54,9 @@ if (CONFIG_MMU)
 
   add_bin_file_to_the_next_link(pagetables_bin_target pagetables)
 endif()
+
+if(CONFIG_ARCH_HAS_TIMING_FUNCTIONS AND
+    NOT CONFIG_SOC_HAS_TIMING_FUNCTIONS AND
+    NOT CONFIG_BOARD_HAS_TIMING_FUNCTIONS)
+zephyr_library_sources_ifdef(CONFIG_TIMING_FUNCTIONS timing.c)
+endif()
