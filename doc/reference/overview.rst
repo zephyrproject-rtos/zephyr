@@ -199,6 +199,11 @@ current :ref:`stability level <api_lifecycle>`.
      - 1.0
      - 2.2
 
+   * - :ref:`regulator_api`
+     - Experimental
+     - 2.4
+     - 2.4
+
    * - :ref:`sensor_api`
      - Stable
      - 1.2
