@@ -631,6 +631,13 @@ class DeviceHandler(Handler):
         else:
             command = [self.generator_cmd, "-C", self.build_dir, "flash"]
 
+        pre_script = hardware.get('pre_script')
+        post_flash_script = hardware.get('post_flash_script')
+        post_script = hardware.get('post_script')
+
+        if pre_script:
+            self.run_custom_script(pre_script, 30)
+
         try:
             ser = serial.Serial(
                 serial_device,
@@ -661,13 +668,6 @@ class DeviceHandler(Handler):
         harness.configure(self.instance)
         read_pipe, write_pipe = os.pipe()
         start_time = time.time()
-
-        pre_script = hardware.get('pre_script')
-        post_flash_script = hardware.get('post_flash_script')
-        post_script = hardware.get('post_script')
-
-        if pre_script:
-            self.run_custom_script(pre_script, 30)
 
         t = threading.Thread(target=self.monitor_serial, daemon=True,
                              args=(ser, read_pipe, harness))
