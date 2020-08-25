@@ -181,6 +181,9 @@ void k_mem_domain_add_partition(struct k_mem_domain *domain,
 	__ASSERT(p_idx < max_partitions,
 		 "no free partition slots available");
 
+	LOG_DBG("add partition base %lx size %zu to domain %p\n",
+		part->start, part->size, domain);
+
 	domain->partitions[p_idx].start = part->start;
 	domain->partitions[p_idx].size = part->size;
 	domain->partitions[p_idx].attr = part->attr;
@@ -212,6 +215,9 @@ void k_mem_domain_remove_partition(struct k_mem_domain *domain,
 
 	__ASSERT(p_idx < max_partitions, "no matching partition found");
 
+	LOG_DBG("remove partition base %lx size %zu from domain %p\n",
+		part->start, part->size, domain);
+
 	arch_mem_domain_partition_remove(domain, p_idx);
 
 	/* A zero-sized partition denotes it's a free partition */
@@ -231,9 +237,13 @@ void k_mem_domain_add_thread(struct k_mem_domain *domain, k_tid_t thread)
 
 	key = k_spin_lock(&lock);
 	if (thread->mem_domain_info.mem_domain != NULL) {
+		LOG_DBG("remove thread %p from memory domain %p\n",
+			thread, thread->mem_domain_info.mem_domain);
 		sys_dlist_remove(&thread->mem_domain_info.mem_domain_q_node);
 		arch_mem_domain_thread_remove(thread);
 	}
+
+	LOG_DBG("add thread %p to domain %p\n", thread, domain);
 	sys_dlist_append(&domain->mem_domain_q,
 			 &thread->mem_domain_info.mem_domain_q_node);
 	thread->mem_domain_info.mem_domain = domain;
