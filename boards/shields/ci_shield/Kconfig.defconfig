@@ -1,0 +1,12 @@
+# Copyright (c) 2020 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if DISK_ACCESS_SDHC
+
+config SPI
+	default y
+
+config DISK_ACCESS_SPI_SDHC
+	default y
+
+endif
