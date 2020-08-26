@@ -3,4 +3,4 @@ sample:
   name: civetweb
 tests:
   sample.net.sockets.civetweb:
-    platform_whitelist: sam_e70_xplained
+    platform_allow: sam_e70_xplained

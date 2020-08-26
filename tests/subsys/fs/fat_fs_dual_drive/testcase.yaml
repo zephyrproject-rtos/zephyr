@@ -1,4 +1,4 @@
 tests:
   filesystem.fat.dual_drive:
-    platform_whitelist: qemu_x86 native_posix
+    platform_allow: qemu_x86 native_posix
     tags: filesystem

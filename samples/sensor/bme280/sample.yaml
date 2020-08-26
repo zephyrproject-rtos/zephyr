@@ -4,7 +4,7 @@ tests:
   sample.sensor.bme280:
     harness: console
     tags: sensors
-    platform_whitelist: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk_nrf52840
     harness_config:
         type: one_line
         regex:

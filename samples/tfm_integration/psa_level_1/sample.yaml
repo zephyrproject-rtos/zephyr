@@ -5,7 +5,7 @@ sample:
 tests:
     sample.tfm_ipc:
         tags: introduction
-        platform_whitelist: mps2_an521_nonsecure
+        platform_allow: mps2_an521_nonsecure
         harness: console
         harness_config:
           type: multi_line

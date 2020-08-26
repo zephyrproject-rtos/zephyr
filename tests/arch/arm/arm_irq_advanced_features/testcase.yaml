@@ -2,4 +2,4 @@ tests:
   arch.arm.irq_advanced_features:
     filter: CONFIG_ARMV6_M_ARMV8_M_BASELINE or CONFIG_ARMV7_M_ARMV8_M_MAINLINE
     tags: arm interrupt
-    arch_whitelist: arm
+    arch_allow: arm

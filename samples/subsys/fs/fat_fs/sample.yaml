@@ -6,4 +6,4 @@ tests:
   sample.filesystem.fat_fs:
     depends_on: sdhc
   sample.filesystem.fat_fs.overlay:
-    platform_whitelist: nrf52840_blip
+    platform_allow: nrf52840_blip

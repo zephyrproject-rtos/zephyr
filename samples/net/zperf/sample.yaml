@@ -9,7 +9,7 @@ sample:
   name: zperf
 tests:
   sample.net.zperf:
-    platform_whitelist: qemu_x86
+    platform_allow: qemu_x86
   sample.net.zperf.netusb_ecm:
     extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
     tags: usb net zperf
@@ -29,7 +29,7 @@ tests:
     tags: usb net zperf
     depends_on: usb_device
   sample.net.zperf.shield:
-    platform_whitelist: reel_board
+    platform_allow: reel_board
     extra_args: SHIELD=link_board_eth
     tags: shield net zperf
     depends_on: arduino_spi arduino_gpio

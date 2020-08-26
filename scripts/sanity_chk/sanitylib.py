@@ -1437,13 +1437,13 @@ class TestCase(DisablePyTestCollectionMixin):
         self.tags = set()
         self.extra_args = None
         self.extra_configs = None
-        self.arch_whitelist = None
+        self.arch_allow = None
         self.arch_exclude = None
         self.skip = False
         self.platform_exclude = None
-        self.platform_whitelist = None
+        self.platform_allow = None
         self.toolchain_exclude = None
-        self.toolchain_whitelist = None
+        self.toolchain_allow = None
         self.tc_filter = None
         self.timeout = 60
         self.harness = ""
@@ -2134,19 +2134,19 @@ class ProjectBuilder(FilterBuilder):
 
     def cleanup_artifacts(self):
         logger.debug("Cleaning up {}".format(self.instance.build_dir))
-        whitelist = [
+        allow = [
             'zephyr/.config',
             'handler.log',
             'build.log',
             'device.log',
             'recording.csv',
             ]
-        whitelist = [os.path.join(self.instance.build_dir, file) for file in whitelist]
+        allow = [os.path.join(self.instance.build_dir, file) for file in allow]
 
         for dirpath, dirnames, filenames in os.walk(self.instance.build_dir, topdown=False):
             for name in filenames:
                 path = os.path.join(dirpath, name)
-                if path not in whitelist:
+                if path not in allow:
                     os.remove(path)
             # Remove empty directories and symbolic links to directories
             for dir in dirnames:
@@ -2321,14 +2321,14 @@ class TestSuite(DisablePyTestCollectionMixin):
                        "min_ram": {"type": "int", "default": 8},
                        "depends_on": {"type": "set"},
                        "min_flash": {"type": "int", "default": 32},
-                       "arch_whitelist": {"type": "set"},
+                       "arch_allow": {"type": "set"},
                        "arch_exclude": {"type": "set"},
                        "extra_sections": {"type": "list", "default": []},
                        "integration_platforms": {"type": "list", "default": []},
                        "platform_exclude": {"type": "set"},
-                       "platform_whitelist": {"type": "set"},
+                       "platform_allow": {"type": "set"},
                        "toolchain_exclude": {"type": "set"},
-                       "toolchain_whitelist": {"type": "set"},
+                       "toolchain_allow": {"type": "set"},
                        "filter": {"type": "str"},
                        "harness": {"type": "str"},
                        "harness_config": {"type": "map", "default": {}}
@@ -2668,13 +2668,13 @@ class TestSuite(DisablePyTestCollectionMixin):
                         tc.tags = tc_dict["tags"]
                         tc.extra_args = tc_dict["extra_args"]
                         tc.extra_configs = tc_dict["extra_configs"]
-                        tc.arch_whitelist = tc_dict["arch_whitelist"]
+                        tc.arch_allow = tc_dict["arch_allow"]
                         tc.arch_exclude = tc_dict["arch_exclude"]
                         tc.skip = tc_dict["skip"]
                         tc.platform_exclude = tc_dict["platform_exclude"]
-                        tc.platform_whitelist = tc_dict["platform_whitelist"]
+                        tc.platform_allow = tc_dict["platform_allow"]
                         tc.toolchain_exclude = tc_dict["toolchain_exclude"]
-                        tc.toolchain_whitelist = tc_dict["toolchain_whitelist"]
+                        tc.toolchain_allow = tc_dict["toolchain_allow"]
                         tc.tc_filter = tc_dict["filter"]
                         tc.timeout = tc_dict["timeout"]
                         tc.harness = tc_dict["harness"]
@@ -2833,8 +2833,8 @@ class TestSuite(DisablePyTestCollectionMixin):
 
                 if not force_platform:
 
-                    if tc.arch_whitelist and plat.arch not in tc.arch_whitelist:
-                        discards[instance] = discards.get(instance, "Not in test case arch whitelist")
+                    if tc.arch_allow and plat.arch not in tc.arch_allow:
+                        discards[instance] = discards.get(instance, "Not in test case arch allow list")
 
                     if tc.arch_exclude and plat.arch in tc.arch_exclude:
                         discards[instance] = discards.get(instance, "In test case arch exclude")
@@ -2848,11 +2848,11 @@ class TestSuite(DisablePyTestCollectionMixin):
                 if platform_filter and plat.name not in platform_filter:
                     discards[instance] = discards.get(instance, "Command line platform filter")
 
-                if tc.platform_whitelist and plat.name not in tc.platform_whitelist:
-                    discards[instance] = discards.get(instance, "Not in testcase platform whitelist")
+                if tc.platform_allow and plat.name not in tc.platform_allow:
+                    discards[instance] = discards.get(instance, "Not in testcase platform allow list")
 
-                if tc.toolchain_whitelist and toolchain not in tc.toolchain_whitelist:
-                    discards[instance] = discards.get(instance, "Not in testcase toolchain whitelist")
+                if tc.toolchain_allow and toolchain not in tc.toolchain_allow:
+                    discards[instance] = discards.get(instance, "Not in testcase toolchain allow list")
 
                 if not plat.env_satisfied:
                     discards[instance] = discards.get(instance, "Environment ({}) not satisfied".format(", ".join(plat.env)))
@@ -2890,9 +2890,9 @@ class TestSuite(DisablePyTestCollectionMixin):
             # if sanitycheck was launched with no platform options at all, we
             # take all default platforms
             if default_platforms and not tc.build_on_all:
-                if tc.platform_whitelist:
+                if tc.platform_allow:
                     a = set(self.default_platforms)
-                    b = set(tc.platform_whitelist)
+                    b = set(tc.platform_allow)
                     c = a.intersection(b)
                     if c:
                         aa = list(filter(lambda tc: tc.platform.name in c, instance_list))

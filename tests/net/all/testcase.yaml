@@ -1,6 +1,6 @@
 common:
   # Only used for compile testing so it is enough to use one platform here.
-  platform_whitelist: qemu_x86
+  platform_allow: qemu_x86
 tests:
   net.build:
     build_only: true

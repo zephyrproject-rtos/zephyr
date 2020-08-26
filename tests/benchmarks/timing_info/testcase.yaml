@@ -12,7 +12,7 @@ tests:
   benchmark.kernel.timing.userspace:
     filter: CONFIG_ARCH_HAS_USERSPACE
     extra_args: CONF_FILE=prj_userspace.conf
-    arch_whitelist: x86 arm arc
+    arch_allow: x86 arm arc
     tags: benchmark userspace
     harness: console
     harness_config:

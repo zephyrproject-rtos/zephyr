@@ -11,5 +11,5 @@ tests:
   sample.sensor.ccs811:
     harness: sensor
     tags: sensors
-    platform_whitelist: thingy52_nrf52832 efr32mg_sltb004a
+    platform_allow: thingy52_nrf52832 efr32mg_sltb004a
     depends_on: i2c

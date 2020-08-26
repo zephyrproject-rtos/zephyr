@@ -7,4 +7,4 @@ tests:
     depends_on: kscan
     tags: drivers kscan
     extra_args: CONF_FILE="mec15xxevb_assy6853.conf"
-    platform_whitelist: mec15xxevb_assy6853
+    platform_allow: mec15xxevb_assy6853

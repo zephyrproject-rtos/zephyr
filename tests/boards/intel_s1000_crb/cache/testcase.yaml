@@ -1,4 +1,4 @@
 tests:
   boards.s1000_crb.cache:
-    platform_whitelist: intel_s1000_crb
+    platform_allow: intel_s1000_crb
     tags: boards

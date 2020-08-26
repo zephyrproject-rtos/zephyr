@@ -4,4 +4,4 @@ tests:
     min_ram: 32
     filter: ( CONFIG_FLASH_SHELL )
     tags: flash shell
-    platform_whitelist: qemu_x86 native_posix
+    platform_allow: qemu_x86 native_posix

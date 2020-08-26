@@ -3,5 +3,5 @@ sample:
 tests:
   sample.bluetooth.beacon:
     harness: bluetooth
-    platform_whitelist: qemu_cortex_m3 qemu_x86 nrf52dk_nrf52832
+    platform_allow: qemu_cortex_m3 qemu_x86 nrf52dk_nrf52832
     tags: bluetooth

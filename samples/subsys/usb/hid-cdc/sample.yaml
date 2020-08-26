@@ -3,6 +3,6 @@ sample:
 tests:
   sample.usb.hid-cdc:
     depends_on: usb_device
-    platform_whitelist: nrf52840dk_nrf52840 nrf52840dongle_nrf52840
+    platform_allow: nrf52840dk_nrf52840 nrf52840dongle_nrf52840
     harness: button
     tags: usb
