@@ -57,6 +57,11 @@ Controller qualifications
      - Qualifying Company
      - Compatible Hardware
 
+   * - 2.2.x
+     - `QDID 150092 <https://launchstudio.bluetooth.com/ListingDetails/108089>`__
+     - Nordic Semiconductor
+     - nRF52x
+
    * - 1.14.x
      - `QDID 135679 <https://launchstudio.bluetooth.com/ListingDetails/90777>`__
      - Nordic Semiconductor
