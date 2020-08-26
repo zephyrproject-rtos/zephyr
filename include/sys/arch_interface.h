@@ -540,6 +540,7 @@ int arch_mem_domain_max_partitions_get(void);
 int arch_mem_domain_init(struct k_mem_domain *domain);
 #endif /* CONFIG_ARCH_MEM_DOMAIN_DATA */
 
+#ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
 /**
  * @brief Add a thread to a memory domain (arch-specific)
  *
@@ -606,6 +607,7 @@ void arch_mem_domain_partition_add(struct k_mem_domain *domain,
  * @param domain The memory domain structure which needs to be deleted.
  */
 void arch_mem_domain_destroy(struct k_mem_domain *domain);
+#endif /* CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API */
 
 /**
  * @brief Check memory region permissions
