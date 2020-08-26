@@ -105,7 +105,8 @@ The on-board JTAG is used for configuring and debugging the Xilinx FPGA
 itself. It is available on USB connector ``J10``.
 
 The external SWD debug probe can be connected to connector ``J4`` (``nSRST`` on
-``IO39``, ``SWDIO`` on ``IO40``, and ``SWCLK`` on ``IO41``).
+``IO39``, ``SWDIO`` on ``IO40``, and ``SWCLK`` on ``IO41``). Another option is
+to use the dedicated :ref:`v2c_daplink_shield`.
 
 Programming and Debugging
 *************************
