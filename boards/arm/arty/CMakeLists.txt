@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
+zephyr_library()
+zephyr_library_sources(board.c)
+
 if((CONFIG_BOARD_ARTY_A7_ARM_DESIGNSTART_M1) AND (CONFIG_BUILD_OUTPUT_BIN))
   # Generate zephyr.mem verilog memory hex dump file for initialising ITCM in
   # Xilinx Vivado.

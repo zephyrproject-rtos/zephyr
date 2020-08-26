@@ -135,7 +135,31 @@
 		};
 	};
 
+	daplink_qspi_mux: daplink_qspi_mux {
+		compatible = "arm,daplink-qspi-mux";
+		status = "disabled";
+		interrupt-parent = <&nvic>;
+		interrupts = <7 0>;
+		mux-gpios = <&daplink_gpio0 0 GPIO_ACTIVE_HIGH>;
+	};
+
 	soc {
+		daplink_gpio0: gpio@40010000 {
+			compatible = "xlnx,xps-gpio-1.00.a";
+			status = "disabled";
+			reg = <0x40010000 0x10000>;
+			label = "DAPLINK_GPIO_0";
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			xlnx,all-inputs = <0x0>;
+			xlnx,all-outputs = <0x0>;
+			xlnx,dout-default = <0x0>;
+			xlnx,gpio-width = <0x20>;
+			xlnx,is-dual = <0x0>;
+			xlnx,tri-default = <0xffffffff>;
+		};
+
 		daplink_quad_spi0: spi@40020000 {
 			compatible = "xlnx,xps-spi-2.00.a";
 			status = "disabled";
