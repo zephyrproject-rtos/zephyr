@@ -786,11 +786,23 @@ details:
   number of regions for a memory domain. MMU systems have an unlimited amount,
   MPU systems have constraints on this.
 
-* :cpp:func:`arch_mem_domain_partition_remove()` Remove a partition from
-  a memory domain if the currently executing thread was part of that domain.
+Some architectures may need to update software memory management structures
+or modify hardware registers on another CPU when memory domain APIs are invoked.
+If so, CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API must be selected by the
+architecture and some additional APIs must be implemented. This is common
+on MMU systems and uncommon on MPU systems:
 
-* :cpp:func:`arch_mem_domain_destroy()` Reset the thread's memory domain
-  configuration
+* :cpp:func:`arch_mem_domain_thread_add()`
+
+* :cpp:func:`arch_mem_domain_thread_remove()`
+
+* :cpp:func:`arch_mem_domain_partition_add()`
+
+* :cpp:func:`arch_mem_domain_partition_remove()`
+
+* :cpp:func:`arch_mem_domain_destroy()`
+
+Please see the doxygen documentation of these APIs for details.
 
 In addition to implementing these APIs, there are some other tasks as well:
 
