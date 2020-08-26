@@ -752,9 +752,8 @@ void ll_rx_dequeue(void)
 
 #if defined(CONFIG_BT_CTLR_USER_EXT)
 	case NODE_RX_TYPE_USER_START ... NODE_RX_TYPE_USER_END:
-#endif /* CONFIG_BT_CTLR_USER_EXT */
-
 		__fallthrough;
+#endif /* CONFIG_BT_CTLR_USER_EXT */
 
 	/* Ensure that at least one 'case' statement is present for this
 	 * code block.
