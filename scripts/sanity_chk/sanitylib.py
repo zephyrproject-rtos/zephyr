@@ -2756,6 +2756,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         device_testing_filter = kwargs.get('device_testing')
         force_toolchain = kwargs.get('force_toolchain')
         force_platform = kwargs.get('force_platform')
+        emu_filter = kwargs.get('emulation_only')
 
         logger.debug("platform filter: " + str(platform_filter))
         logger.debug("    arch_filter: " + str(arch_filter))
@@ -2763,9 +2764,12 @@ class TestSuite(DisablePyTestCollectionMixin):
         logger.debug("    exclude_tag: " + str(exclude_tag))
 
         default_platforms = False
+        emulation_platforms = False
 
         if platform_filter:
             platforms = list(filter(lambda p: p.name in platform_filter, self.platforms))
+        elif emu_filter:
+            platforms = list(filter(lambda p: p.simulation != 'na', self.platforms))
         else:
             platforms = self.platforms
 
@@ -2773,9 +2777,12 @@ class TestSuite(DisablePyTestCollectionMixin):
             logger.info("Selecting all possible platforms per test case")
             # When --all used, any --platform arguments ignored
             platform_filter = []
-        elif not platform_filter:
+        elif not platform_filter and not emu_filter:
             logger.info("Selecting default platforms per test case")
             default_platforms = True
+        elif emu_filter:
+            logger.info("Selecting emulation platforms per test case")
+            emulation_platforms = True
 
         logger.info("Building initial testcase list...")
 
@@ -2905,6 +2912,10 @@ class TestSuite(DisablePyTestCollectionMixin):
 
                 for instance in list(filter(lambda inst: not inst.platform.default, instance_list)):
                     discards[instance] = discards.get(instance, "Not a default test platform")
+            elif emulation_platforms:
+                self.add_instances(instance_list)
+                for instance in list(filter(lambda inst: not inst.platform.simulation != 'na', instance_list)):
+                    discards[instance] = discards.get(instance, "Not an emulated platform")
 
             else:
                 self.add_instances(instance_list)
