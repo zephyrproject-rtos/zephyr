@@ -449,13 +449,6 @@ test_spi_lmp90100: lmp90100@2c {
 	#io-channel-cells = <2>;
 };
 
-test_spi_w25q16: w25q16@2d {
-	compatible = "winbond,w25q16";
-	label = "W25Q16";
-	reg = <0x2d>;
-	spi-max-frequency = <0>;
-};
-
 test_spi_ws2812_spi: ws2812-spi@2e {
 	compatible = "worldsemi,ws2812-spi";
 	label = "WS2812-SPI";

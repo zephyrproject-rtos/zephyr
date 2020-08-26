@@ -1,8 +1,0 @@
-# Copyright (c) 2018, Linaro Limited
-# SPDX-License-Identifier: Apache-2.0
-
-description: SPI slave NOR FLASH
-
-compatible: "winbond,w25q16"
-
-include: spi-device.yaml

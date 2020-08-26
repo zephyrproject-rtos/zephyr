@@ -11,11 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#if (CONFIG_SPI_FLASH_W25QXXDV - 0)
-/* NB: W25Q16DV is a JEDEC spi-nor device, but has a separate driver. */
-#define FLASH_DEVICE CONFIG_SPI_FLASH_W25QXXDV_DRV_NAME
-#define FLASH_NAME "W25QXXDV"
-#elif (CONFIG_SPI_NOR - 0) ||				\
+#if (CONFIG_SPI_NOR - 0) ||				\
 	DT_NODE_HAS_STATUS(DT_INST(0, jedec_spi_nor), okay)
 #define FLASH_DEVICE DT_LABEL(DT_INST(0, jedec_spi_nor))
 #define FLASH_NAME "JEDEC SPI-NOR"
