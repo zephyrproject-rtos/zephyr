@@ -25,6 +25,9 @@ config UART_XLNX_UARTLITE
 
 endif # SERIAL
 
+config GPIO
+	default y if "$(dt_nodelabel_enabled,daplink_qspi_mux)"
+
 if GPIO
 
 config GPIO_XLNX_AXI

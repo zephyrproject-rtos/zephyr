@@ -1,0 +1,21 @@
+# Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+description: ARM DesignStart FPGA DAPLink QSPI bus multiplexer
+
+compatible: "arm,daplink-qspi-mux"
+
+include: base.yaml
+
+properties:
+    interrupts:
+      required: true
+      description: |
+        IRQ line connected to the level-detect non-interrupt DAPLink shield
+        fitted signal
+
+    mux-gpios:
+      type: phandle-array
+      required: true
+      description: |
+        GPIO for controlling the DAPLink QSPI bus multiplexer
