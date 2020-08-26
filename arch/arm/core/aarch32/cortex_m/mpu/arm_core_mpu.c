@@ -323,33 +323,6 @@ int arch_mem_domain_max_partitions_get(void)
 	return ARM_CORE_MPU_MAX_DOMAIN_PARTITIONS_GET(available_regions);
 }
 
-void arch_mem_domain_thread_add(struct k_thread *thread)
-{
-	/* No-op on this architecture */
-}
-
-void arch_mem_domain_destroy(struct k_mem_domain *domain)
-{
-	/* No-op on this architecture */
-}
-
-void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
-				      uint32_t partition_id)
-{
-	/* No-op on this architecture */
-}
-
-void arch_mem_domain_partition_add(struct k_mem_domain *domain,
-				   uint32_t partition_id)
-{
-	/* No-op on this architecture */
-}
-
-void arch_mem_domain_thread_remove(struct k_thread *thread)
-{
-	/* No-op on this architecture */
-}
-
 int arch_buffer_validate(void *addr, size_t size, int write)
 {
 	return arm_core_mpu_buffer_validate(addr, size, write);

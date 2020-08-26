@@ -33,42 +33,6 @@ int arch_mem_domain_max_partitions_get(void)
 }
 
 /*
- * Reset MPU region for a single memory partition
- */
-void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
-				      uint32_t partition_id)
-{
-	/* No-op on this architecture */
-}
-
-/*
- * Configure MPU memory domain
- */
-void arch_mem_domain_thread_add(struct k_thread *thread)
-{
-	/* No-op on this architecture */
-}
-
-/*
- * Destroy MPU regions for the mem domain
- */
-void arch_mem_domain_destroy(struct k_mem_domain *domain)
-{
-	/* No-op on this architecture */
-}
-
-void arch_mem_domain_partition_add(struct k_mem_domain *domain,
-				   uint32_t partition_id)
-{
-	/* No-op on this architecture */
-}
-
-void arch_mem_domain_thread_remove(struct k_thread *thread)
-{
-	/* No-op on this architecture */
-}
-
-/*
  * Validate the given buffer is user accessible or not
  */
 int arch_buffer_validate(void *addr, size_t size, int write)

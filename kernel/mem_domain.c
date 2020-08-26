@@ -146,7 +146,9 @@ void k_mem_domain_destroy(struct k_mem_domain *domain)
 
 	key = k_spin_lock(&lock);
 
+#ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
 	arch_mem_domain_destroy(domain);
+#endif
 
 	SYS_DLIST_FOR_EACH_NODE_SAFE(&domain->mem_domain_q, node, next_node) {
 		struct k_thread *thread =
@@ -190,7 +192,9 @@ void k_mem_domain_add_partition(struct k_mem_domain *domain,
 
 	domain->num_partitions++;
 
+#ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
 	arch_mem_domain_partition_add(domain, p_idx);
+#endif
 	k_spin_unlock(&lock, key);
 }
 
@@ -218,7 +222,9 @@ void k_mem_domain_remove_partition(struct k_mem_domain *domain,
 	LOG_DBG("remove partition base %lx size %zu from domain %p\n",
 		part->start, part->size, domain);
 
+#ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
 	arch_mem_domain_partition_remove(domain, p_idx);
+#endif
 
 	/* A zero-sized partition denotes it's a free partition */
 	domain->partitions[p_idx].size = 0U;
@@ -240,7 +246,9 @@ void k_mem_domain_add_thread(struct k_mem_domain *domain, k_tid_t thread)
 		LOG_DBG("remove thread %p from memory domain %p\n",
 			thread, thread->mem_domain_info.mem_domain);
 		sys_dlist_remove(&thread->mem_domain_info.mem_domain_q_node);
+#ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
 		arch_mem_domain_thread_remove(thread);
+#endif
 	}
 
 	LOG_DBG("add thread %p to domain %p\n", thread, domain);
@@ -248,7 +256,9 @@ void k_mem_domain_add_thread(struct k_mem_domain *domain, k_tid_t thread)
 			 &thread->mem_domain_info.mem_domain_q_node);
 	thread->mem_domain_info.mem_domain = domain;
 
+#ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
 	arch_mem_domain_thread_add(thread);
+#endif
 
 	k_spin_unlock(&lock, key);
 }
