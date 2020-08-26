@@ -171,6 +171,12 @@ endmenu
 
 menu "Compiler Options"
 
+config CODING_GUIDELINE_CHECK
+	bool "Enforce coding guideline rules"
+	help
+	  Use available compiler flags to check coding guideline rules during
+	  the build.
+
 config NATIVE_APPLICATION
 	bool "Build as a native host application"
 	help
