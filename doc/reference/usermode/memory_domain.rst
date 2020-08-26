@@ -146,11 +146,20 @@ mode. In some cases this may be unavoidable; for example some architectures do
 not allow for the definition of regions which are read-only to user mode but
 read-write to supervisor mode. A great deal of care must be taken when working
 with such regions to not unintentionally cause the kernel to crash when
-accessing such a region.
+accessing such a region. Any attempt to use memory domain APIs to control
+supervisor mode access is at best undefined behavior; supervisor mode access
+policy is only intended to be controlled by boot-time memory regions.
 
 Memory domain APIs are only available to supervisor mode. The only control
 user mode has over memory domains is that any user thread's child threads
 will automatically become members of the parent's domain.
+
+All threads are members of a memory domain, including supervisor threads
+(even though this has no implications on their memory access). There is a
+default domain ``k_mem_domain_default`` which will be assigned to threads if
+they have not been specifically assigned to a domain, or inherited a memory
+domain membership from their parent thread. The main thread starts as a
+member of the default domain.
 
 Memory Partitions
 =================
@@ -395,6 +404,9 @@ call:
 
     k_mem_domain_add_thread(&app0_domain, app_thread_id);
 
+If the thread was already a member of some other domain (including the
+default domain), it will be removed from it in favor of the new one.
+
 In addition, if a thread is a member of a memory domain, and it creates a
 child thread, that thread will belong to the domain as well.
 
@@ -411,24 +423,6 @@ domain.
 The k_mem_domain_remove_partition() API finds the memory partition
 that matches the given parameter and removes that partition from the
 memory domain.
-
-Remove a Thread from the Memory Domain
---------------------------------------
-
-The following code shows how to remove a thread from the memory domain.
-
-.. code-block:: c
-
-    k_mem_domain_remove_thread(app_thread_id);
-
-Destroy a Memory Domain
------------------------
-
-The following code shows how to destroy a memory domain.
-
-.. code-block:: c
-
-    k_mem_domain_destroy(&app0_domain);
 
 Available Partition Attributes
 ------------------------------
@@ -449,6 +443,8 @@ Some examples of partition attributes are:
     K_MEM_PARTITION_P_RW_U_RW
     /* Denote partition is privileged read/write, unprivileged read-only */
     K_MEM_PARTITION_P_RW_U_RO
+
+In almost all cases ``K_MEM_PARTITION_P_RW_U_RW`` is the right choice.
 
 Configuration Options
 *********************
